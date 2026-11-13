@@ -42,6 +42,8 @@ subgroup, `AddSubgroup.quotientDistribMulAction`, is in
 * `TauCeti.exists_ne_zero_nsmul_eq_zero_invariant_of_isProP`: the fixed element may be taken of
   order `p`; `TauCeti.exists_addSubgroup_natCard_eq_invariant_of_isProP` packages it as a
   `G`-stable subgroup of order `p` with trivial action.
+* `TauCeti.IsProP.smul_zmod_eq_self`: a pro-`p` group acting continuously on `ZMod p` acts
+  trivially.
 * `TauCeti.exists_notMem_nsmul_mem_smul_sub_mem_of_isProP`: the relative form, a fixed element
   of order `p` modulo a `G`-stable subgroup `N ≠ ⊤`.
 
@@ -119,6 +121,17 @@ theorem exists_addSubgroup_natCard_eq_invariant_of_isProP (hG : IsProP p G) [Non
     rw [smul_comm, hm g]
 
 end FixedPoints
+
+/-- **A pro-`p` group acts trivially on `𝔽_p`.** A continuous action of a pro-`p` group `G` on
+`ZMod p` by additive automorphisms is trivial: the `G`-stable subgroup of order `p` with trivial
+action given by `exists_addSubgroup_natCard_eq_invariant_of_isProP` is all of `ZMod p`. -/
+theorem IsProP.smul_zmod_eq_self {G : Type*} [Group G] [TopologicalSpace G] (hG : IsProP p G)
+    [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)] (g : G) (m : ZMod p) :
+    g • m = m := by
+  obtain ⟨N, hN, hfix⟩ := exists_addSubgroup_natCard_eq_invariant_of_isProP (M := ZMod p) hG
+    (IsAddPGroup.iff_card.mpr ⟨1, by simp⟩)
+  have hNtop : N = ⊤ := AddSubgroup.eq_top_of_card_eq N (by simp [hN])
+  exact hfix g m (hNtop ▸ AddSubgroup.mem_top m)
 
 section Quotient
 

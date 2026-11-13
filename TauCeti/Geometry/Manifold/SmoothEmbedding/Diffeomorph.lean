@@ -33,11 +33,10 @@ transport moves it by the ambient diffeomorphism, and the two assemble into an a
 self-diffeomorphism group `TauCeti.Diff` of the target and a right action of that of the source;
 the two actions commute, which is recorded as a `SMulCommClass` instance.
 
-This is the transport layer that layer 4 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`) needs for its geometric presentations, where a knot
-presentation is a smooth embedding of the circle into the ambient manifold `N`: reversing the
-orientation of such a presentation and rotating its parametrisation are precisely precomposition
-with a diffeomorphism of the circle, while the ambient `Diff(N)`-action is postcomposition.
+This is the transport needed by geometric knot presentations, where a knot presentation is a
+smooth embedding of the circle into the ambient manifold `N`: reversing the orientation of such a
+presentation and rotating its parametrisation are precisely precomposition with a diffeomorphism
+of the circle, while the ambient `Diff(N)`-action is postcomposition.
 
 ## Main results
 
@@ -160,6 +159,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   [TopologicalSpace P] [ChartedSpace G' P]
   {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N] [IsManifold K n P] {f : M → N}
 
+omit [IsManifold J n N] in
 /-- Transporting a smooth embedding from a boundaryless manifold by a diffeomorphism of the target
 onto a boundaryless manifold gives a smooth embedding, also when the new target has a different
 finite-dimensional model. -/

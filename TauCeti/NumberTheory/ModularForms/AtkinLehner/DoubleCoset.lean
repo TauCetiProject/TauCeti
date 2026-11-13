@@ -82,19 +82,14 @@ theorem IsAtkinLehnerMatrix.mem_normalizer_map_mapGL (hQN : Q ∣ N)
     (hw : (w : Matrix (Fin 2) (Fin 2) ℚ) = M.map (Int.cast : ℤ → ℚ)) :
     w ∈ Subgroup.normalizer
       (((Gamma0 N).map (mapGL ℚ) : Subgroup (GL (Fin 2) ℚ)) : Set (GL (Fin 2) ℚ)) := by
-  have hQ : Q ≠ 0 := by
-    intro hQ
-    apply Matrix.GeneralLinearGroup.det_ne_zero w
-    rw [hw, ← Int.cast_det, h.det_eq, hQ]
-    norm_num
   refine Subgroup.mem_normalizer_iff.mpr fun x ↦ ⟨?_, fun hx ↦ ?_⟩
   · rintro ⟨γ, hγ, rfl⟩
-    obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQ hQN hγ
+    obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN hγ
     refine ⟨δ, hδ, ?_⟩
     rw [eq_mul_inv_iff_mul_eq]
     exact (mul_eq_mul_of_intMatrix hw (mapGL_coe_matrix γ) (mapGL_coe_matrix δ) hmul).symm
   · obtain ⟨δ, hδ, hδx⟩ := hx
-    obtain ⟨γ, hγ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQ hQN hδ
+    obtain ⟨γ, hγ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQN hδ
     refine ⟨γ, hγ, ?_⟩
     have hw' := mul_eq_mul_of_intMatrix hw (mapGL_coe_matrix γ) (mapGL_coe_matrix δ) hmul.symm
     rw [hδx, inv_mul_cancel_right] at hw'
@@ -139,6 +134,22 @@ private lemma isCoprime_atkinLehnerConj_zero_zero {Q m a b c d p q r s : ℤ}
     exact hs.add_mul_left_left _
   · rw [hm]
     exact (hp.of_mul_right_right).add_mul_left_left _
+
+/-- A rational matrix with the entries of the integral conjugate `atkinLehnerConj` of positive
+determinant and upper-left entry coprime to `N = Q m` lies in `Δ₀(N)`. -/
+private lemma mem_Delta0_of_eq_atkinLehnerConj {Q m a b c d p q r s : ℤ} {β : GL (Fin 2) ℚ}
+    {B : Matrix (Fin 2) (Fin 2) ℤ} (hN : (N : ℤ) = Q * m)
+    (hB : B = atkinLehnerConj Q m a b c d p q r s)
+    (hβB : (β : Matrix (Fin 2) (Fin 2) ℚ) = B.map (Int.cast : ℤ → ℚ)) (hdet : 0 < B.det)
+    (hB00 : IsCoprime (B 0 0) (Q * m)) : β ∈ Delta0 N := by
+  refine (mem_Delta0_iff N).mpr ⟨B, hβB, ?_, ?_, ?_⟩
+  · rw [hβB, ← Int.cast_det]
+    exact_mod_cast hdet
+  · rw [hN, hB]
+    simp only [atkinLehnerConj, of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
+      cons_val_fin_one]
+    exact dvd_mul_right _ _
+  · exact Int.isUnit_intCast_iff_gcd_eq_one.mpr (Int.isCoprime_iff_gcd_eq_one.mp (hN ▸ hB00))
 
 /-- **Conjugation by an Atkin–Lehner matrix fixes a `Γ₀(N)` double coset of determinant coprime
 to `Q`.** If `W` is an Atkin–Lehner matrix for `Q ∣ N` and `α ∈ Δ₀(N)` has an integral matrix `A`
@@ -191,15 +202,7 @@ theorem IsAtkinLehnerMatrix.inv_mul_mul_mem_doubleCoset [NeZero N] (hQN : Q ∣ 
   have hB00 : IsCoprime (B 0 0) ((Q : ℤ) * m) :=
     isCoprime_atkinLehnerConj_zero_zero hred hpN hsQ
   -- `β ∈ Δ₀(N)`
-  have hβΔ : β ∈ Delta0 N := by
-    refine (mem_Delta0_iff N).mpr ⟨B, hβB, ?_, ?_, ?_⟩
-    · rw [hβB, ← Int.cast_det, hdetB]
-      exact_mod_cast hApos
-    · rw [hN, hB]
-      simp only [atkinLehnerConj, of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
-        cons_val_fin_one]
-      exact dvd_mul_right _ _
-    · exact Int.isUnit_intCast_iff_gcd_eq_one.mpr (Int.isCoprime_iff_gcd_eq_one.mp (hN ▸ hB00))
+  have hβΔ : β ∈ Delta0 N := mem_Delta0_of_eq_atkinLehnerConj hN hB hβB (hdetB ▸ hApos) hB00
   -- a common divisor of either matrix divides its upper-left entry, so is coprime to `det W = Q`
   have hcopQ : ∀ e x : ℤ, IsCoprime x ((Q : ℤ) * m) → e ∣ x → IsCoprime e W.det :=
     fun e x hx hex ↦ h.det_eq ▸ (hx.of_isCoprime_of_dvd_left hex).of_mul_right_left

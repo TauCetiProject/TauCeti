@@ -8,11 +8,13 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Topology.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.Diffeomorph
-import Mathlib.Geometry.Manifold.BumpFunction
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -20,24 +22,41 @@ import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 A section of a hom bundle with finite-dimensional source fibres is smooth if and only if
 it sends every globally smooth section to a smooth section. This turns smoothness of
 tensorial operations on sections into smoothness of the associated tensor field, by
-applying the criterion once for each argument.
+applying the criterion once for each argument. Its sufficient direction also holds for `C^n`
+smoothness on a set (`TauCeti.Manifold.contMDiffOn_hom_of_forall_contMDiff`). In particular,
+multiplying a `C^n` hom-bundle section by a constant scalar acting on the target fibres gives a
+`C^n` section (`TauCeti.Manifold.contMDiffOn_hom_const_smul`).
 
 The criterion applies over arbitrary smooth finite-dimensional manifolds, including
 noncompact manifolds and manifolds with boundary, and places no finite-dimensionality
 assumption on the target fibres.
 
+Composition of differentiable Hom-bundle sections is differentiable, including within
+parameter sets (`MDifferentiableWithinAt.clm_bundle_comp`).
+
 The file also records that pulling back a fixed continuous bilinear form on the model fibre
 along a trivialization gives a `C^n` field of bilinear forms over its base set
-(`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), and that fibrewise inversion
-preserves smoothness of a hom-bundle section at every point where the section is invertible
-(`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle form of the
-smoothness of inversion of continuous linear maps between Banach spaces. A constant bilinear
-pairing between trivial bundles is a smooth hom-bundle section
+(`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), conversely that a field of
+bilinear forms which is `C^n` at a point reads in the trivialization at that point as a family of
+bilinear forms on the model fibre which is `C^n` there
+(`TauCeti.Manifold.exists_contMDiffAt_apply_eq_apply_symm`). Over the whole base set of an atlas
+trivialization of a `C^n` vector bundle, a `C^n` field of bilinear forms reads as a `C^n` family of
+bilinear forms on the model fibre (`Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ`). Fibrewise
+inversion preserves smoothness of a hom-bundle section at every point where the section is
+invertible (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle
+form of the smoothness of inversion of continuous linear maps between Banach spaces. A constant
+bilinear pairing between trivial bundles is a smooth hom-bundle section
 (`TauCeti.contMDiff_const_bundlePairing`). A hom-bundle section whose coordinate expressions are
 constant on the common frame domains is smooth
 (`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`).
 
-Interchanging the two inputs of a smooth bilinear bundle map preserves smoothness
+Fibrewise composition preserves joint `Cⁿ` regularity along any common base map
+(`ContMDiff.clm_bundle_comp`). The corresponding native section operation is
+`ContMDiffSection.clmComp`; it requires no finite rank or completeness assumption.
+
+Negation of a hom-bundle section along any base map preserves its regularity
+(`ContMDiff.clm_bundle_neg`). Interchanging the inputs of a smooth bilinear bundle map preserves
+smoothness
 (`ContMDiffWithinAt.clm_bundle_flip`), without a choice of fibre norms. This permits
 contraction of a smooth tensor in any input slot.
 
@@ -49,10 +68,12 @@ The same holds for families depending on a parameter in a manifold `P`, as secti
 projection `P × B → B` and maps `P × TotalSpace F₁ E₁ → TotalSpace F₂ E₂`
 (`TauCeti.contMDiff_hom_bundle_prod_iff`, `TauCeti.contMDiffAt_hom_bundle_prod_iff`).
 Combined with fibrewise inversion, a `C^n` family of fibrewise linear equivalences therefore
-induces a `C^n` diffeomorphism of total spaces, `TauCeti.bundleDiffeomorph`, whose inverse is
+induces a `C^n` diffeomorphism of total spaces (`TauCeti.bundleDiffeomorph`, or
+`TauCeti.bundleDiffeomorphOfHom` from a `C^n` Hom-bundle section), whose inverse is
 automatically `C^n`. Over the model `𝓘(ℂ, EB)` with `n = ∞`, these are the holomorphic bundle
 morphisms and equivalences of holomorphic vector bundles. They are the `C^n` counterparts of
-`TauCeti.continuous_hom_bundle_iff` and `TauCeti.bundleHomeomorph`. A family of fibrewise linear
+`TauCeti.continuous_hom_bundle_iff`, `TauCeti.bundleHomeomorph`, and
+`TauCeti.bundleHomeomorphOfHom`. A family of fibrewise linear
 maps is realized by a `C^n` diffeomorphism of total spaces exactly when its total-space map is
 `C^n` and its fibre maps are bijective (`TauCeti.exists_bundleDiffeomorph_iff`).
 -/
@@ -111,6 +132,32 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
   [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
 
+omit [ContMDiffVectorBundle ∞ G W I] in
+/-- A hom-bundle section with finite-dimensional source fibres is `C^n` on a set as soon as its
+evaluation on every globally smooth section is `C^n` there. -/
+theorem contMDiffOn_hom_of_forall_contMDiff {n : ℕ∞ω} (hn : n ≤ ∞)
+    [ContMDiffVectorBundle n G W I] {u : Set M} {A : Π x : M, V x →L[ℝ] W x}
+    (hA : ∀ s : Π x : M, V x, CMDiff ∞ (T% s) →
+      ContMDiffOn I (I.prod 𝓘(ℝ, G)) n (fun y ↦ TotalSpace.mk' G y (A y (s y))) u) :
+    ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] G) y (A y)) u := by
+  have : ContMDiffVectorBundle n F V I := .of_le hn
+  refine contMDiffOn_of_locally_contMDiffOn fun x _ ↦ ?_
+  let e := trivializationAt F V x
+  let e' := trivializationAt G W x
+  let b := Module.Basis.ofVectorSpace ℝ F
+  have := FiniteDimensional.fintypeBasisIndex b
+  obtain ⟨s, hs, hse⟩ :=
+    e.exists_contMDiff_eventuallyEq_localFrame (I := I) b (mem_baseSet_trivializationAt F V x)
+  obtain ⟨t, ht, hto, hxt⟩ := eventually_nhds_iff.1 (Filter.eventually_all.2 hse)
+  refine ⟨t ∩ (e.baseSet ∩ e'.baseSet), hto.inter (e.open_baseSet.inter e'.open_baseSet),
+    ⟨hxt, mem_baseSet_trivializationAt F V x, mem_baseSet_trivializationAt G W x⟩, ?_⟩
+  refine contMDiffOn_hom_of_localFrame (n := n) (b := b) (e := e) (e' := e') (f := id)
+    (u := u ∩ (t ∩ (e.baseSet ∩ e'.baseSet))) (A := A)
+    (contMDiffOn_id (I := I)) (fun y hy ↦ hy.2.2) fun i ↦ ?_
+  refine ((hA (s i) (hs i)).mono inter_subset_left).congr fun y hy ↦ ?_
+  simp [ht y hy.2.1 i]
+
 /-- A hom-bundle section with finite-dimensional source fibres is smooth exactly when
 its evaluation on every globally smooth section is smooth. The target fibres need not
 be finite-dimensional, and the base need not be compact or boundaryless. -/
@@ -118,31 +165,26 @@ theorem contMDiff_hom_iff (A : Π x : M, V x →L[ℝ] W x) :
     ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] G) x (A x)) ↔
       ∀ s : Π x : M, V x, CMDiff ∞ (T% s) →
-        ContMDiff I (I.prod 𝓘(ℝ, G)) ∞ (fun x ↦ TotalSpace.mk' G x (A x (s x))) := by
-  constructor
-  · intro hA s hs
-    exact hA.clm_bundle_apply hs
-  · intro hA x
-    let e := trivializationAt F V x
-    let e' := trivializationAt G W x
-    have hx : x ∈ e.baseSet ∩ e'.baseSet :=
-      ⟨mem_baseSet_trivializationAt F V x, mem_baseSet_trivializationAt G W x⟩
-    have hopen := e.open_baseSet.inter e'.open_baseSet
-    obtain ⟨ρ, hρ, -⟩ :=
-      (SmoothBumpFunction.nhds_basis_support (I := I) (hopen.mem_nhds hx)).mem_iff.mp
-        (hopen.mem_nhds hx)
-    obtain ⟨u, hu, huopen, hxu⟩ := mem_nhds_iff.mp
-      (ρ.eventuallyEq_one.and (hopen.mem_nhds hx))
-    let b := Module.Basis.ofVectorSpace ℝ F
-    have htest (j) : CMDiff ∞ (T% ((ρ : M → ℝ) • e.localFrame b j)) :=
-      ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet
-        (hρ.trans inter_subset_left) (e.contMDiffOn_localFrame_baseSet ∞ b j)
-    have hlocal := contMDiffOn_hom_of_localFrame (I := I) (e := e) (e' := e') b
-      (f := fun y ↦ y) contMDiffOn_id (fun y hy ↦ (hu hy).2) (A := A) (fun j ↦
-        ((hA _ (htest j)).contMDiffOn).congr (fun y hy ↦ by
-          dsimp only [Pi.smul_apply']
-          simp only [(hu hy).1, Pi.one_apply, one_smul]))
-    exact hlocal.contMDiffAt (huopen.mem_nhds hxu)
+        ContMDiff I (I.prod 𝓘(ℝ, G)) ∞ (fun x ↦ TotalSpace.mk' G x (A x (s x))) :=
+  ⟨fun hA _ hs ↦ hA.clm_bundle_apply hs, fun hA ↦ contMDiffOn_univ.1
+    (contMDiffOn_hom_of_forall_contMDiff le_rfl fun s hs ↦ (hA s hs).contMDiffOn)⟩
+
+omit [ContMDiffVectorBundle ∞ G W I] in
+/-- Multiplying a `C^n` hom-bundle section with finite-dimensional source fibres by a constant
+of a normed field extension `𝕜` of `ℝ` acting on the target fibres gives a `C^n` section. -/
+theorem contMDiffOn_hom_const_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] [∀ x, Module 𝕜 (W x)]
+    [∀ x, IsScalarTower ℝ 𝕜 (W x)] [∀ x, ContinuousConstSMul 𝕜 (W x)] [VectorBundle 𝕜 G W]
+    {n : ℕ∞ω} (hn : n ≤ ∞) [ContMDiffVectorBundle n G W I] {u : Set M}
+    {A : Π x : M, V x →L[ℝ] W x} (c : 𝕜)
+    (hA : ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] G) y (A y)) u) :
+    ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] G) y ((c • A) y)) u := by
+  have : ContMDiffVectorBundle n F V I := .of_le hn
+  refine contMDiffOn_hom_of_forall_contMDiff hn fun s hs ↦ ?_
+  exact ContMDiffOn.smul_totalSpace (a := fun _ ↦ c) contMDiffOn_const
+    (hA.clm_bundle_apply ((hs.of_le hn).contMDiffOn))
 
 section PullbackForm
 
@@ -176,7 +218,65 @@ theorem contMDiffOn_trivializationAt_pullbackForm [ContMDiffVectorBundle n F E I
   ext v w
   simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, hb]
 
+/-- Conversely, a field `β` of bilinear forms which is `C^n` at `x`, read in the preferred
+trivialization `e` at `x` as `b ↦ β b (e.symm b ·) (e.symm b ·)`, is a family of bilinear forms on
+the model fibre which is `C^n` at `x`. -/
+theorem exists_contMDiffAt_apply_eq_apply_symm {β : (b : B) → E b →L[ℝ] E b →L[ℝ] ℝ} {x : B}
+    (hβ : ContMDiffAt IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
+      (fun b ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun b ↦ E b →L[ℝ] E b →L[ℝ] ℝ) b (β b))
+      x) :
+    ∃ φ : B → F →L[ℝ] F →L[ℝ] ℝ, ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ) n φ x ∧
+      ∀ b ∈ (trivializationAt F E x).baseSet, ∀ u v,
+        φ b u v = β b ((trivializationAt F E x).symm b u) ((trivializationAt F E x).symm b v) := by
+  refine ⟨fun b ↦ ContinuousLinearMap.inCoordinates F E (F →L[ℝ] ℝ)
+    (fun b ↦ E b →L[ℝ] Trivial B ℝ b) x b x b (β b),
+    ((contMDiffAt_hom_bundle _).1 hβ).2, fun b hb u v ↦ ?_⟩
+  rw [inCoordinates_apply_eq₂ (𝕜 := ℝ) (F₃ := ℝ) (E₃ := Trivial B ℝ) hb hb (Set.mem_univ _)]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
+    LinearMap.id_coe, id_eq]
+
 end PullbackForm
+
+section TrivializationForm
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : WithTop ℕ∞} [ContMDiffVectorBundle n F V IB]
+
+/-- **A `C^n` field of bilinear forms read in a trivialization.** Over the base set of a
+trivialization `e` in the atlas of `V`, a field `β` of bilinear forms on the fibres which is `C^n`
+there reads as the `C^n` family `y ↦ β y (e.symm y ·) (e.symm y ·)` of bilinear forms on the model
+fibre. Unlike `TauCeti.Manifold.exists_contMDiffAt_apply_eq_apply_symm`, which reads `β` only at
+the centre of the preferred trivialization and needs no smoothness of `V`, this holds on the whole
+base set, which requires `V` to be a `C^n` vector bundle. -/
+theorem _root_.Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ
+    {β : ∀ x, V x →L[𝕜] V x →L[𝕜] G}
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
+    (hβ : ContMDiffOn IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) x (β x))
+      e.baseSet) :
+    ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G) n
+      (fun y ↦ ((β y).toLinearMap₁₂.compl₁₂ (e.symmₗ 𝕜 y)
+        (e.symmₗ 𝕜 y)).toContinuousBilinearMap) e.baseSet := by
+  intro y hy
+  -- Each fixed vector of the model fibre reads as a `C^n` section over the base set.
+  have hs (u : F) := e.contMDiffOn_section_symm (IB := IB) (n := n) e.open_baseSet subset_rfl
+    (contMDiffOn_const (c := u)) y hy
+  refine TauCeti.contMDiffWithinAt_clm_apply.mpr fun v ↦
+    TauCeti.contMDiffWithinAt_clm_apply.mpr fun w ↦ ?_
+  have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := G) (E₃ := Bundle.Trivial B G)
+    (b := id) (hβ y hy) (hs v) (hs w)
+  exact (contMDiffWithinAt_totalSpace_iff.mp h).2.congr
+    (fun z hz ↦ by simp [e.symmₗ_apply hz]) (by simp [e.symmₗ_apply hy])
+
+end TrivializationForm
 
 end TauCeti.Manifold
 
@@ -219,6 +319,104 @@ end ConstantCoordinates
 
 end TauCeti
 
+section Composition
+
+variable {𝕜 B M F₁ F₂ F₃ EB HB EM HM : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] [TopologicalSpace HM]
+  {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] {V₁ V₂ V₃ : B → Type*}
+  [∀ b, AddCommGroup (V₁ b)] [∀ b, Module 𝕜 (V₁ b)] [∀ b, TopologicalSpace (V₁ b)]
+  [∀ b, AddCommGroup (V₂ b)] [∀ b, Module 𝕜 (V₂ b)] [∀ b, TopologicalSpace (V₂ b)]
+  [∀ b, AddCommGroup (V₃ b)] [∀ b, Module 𝕜 (V₃ b)] [∀ b, TopologicalSpace (V₃ b)]
+  [∀ b, IsTopologicalAddGroup (V₂ b)] [∀ b, ContinuousSMul 𝕜 (V₂ b)]
+  [∀ b, IsTopologicalAddGroup (V₃ b)] [∀ b, ContinuousSMul 𝕜 (V₃ b)]
+  [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
+  [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
+  [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
+  {n : WithTop ℕ∞} {b : M → B}
+  {A : ∀ y, V₂ (b y) →L[𝕜] V₃ (b y)} {C : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
+
+/-- Composing two hom-bundle fields along the same base map preserves their regularity at a
+point. -/
+theorem ContMDiffAt.clm_bundle_comp {x : M}
+    (hA : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃) (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (A y)) x)
+    (hC : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y)) x) :
+    ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) x := by
+  have hAx := (contMDiffAt_hom_bundle _).mp hA
+  have hCx := (contMDiffAt_hom_bundle _).mp hC
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨hAx.1, (hAx.2.clm_comp hCx.2).congr_of_eventuallyEq ?_⟩
+  filter_upwards [hAx.1.continuousAt.preimage_mem_nhds
+    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F₂ V₂ (b x)))] with y hy
+  exact ContinuousLinearMap.inCoordinates_comp (A y) (C y) hy
+
+/-- Composing two hom-bundle fields along the same base map preserves their regularity. -/
+theorem ContMDiff.clm_bundle_comp
+    (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃) (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (A y)))
+    (hC : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y))) :
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) :=
+  fun x ↦ (hA x).clm_bundle_comp (hC x)
+
+/-- Composition of native `Cⁿ` hom-bundle sections. -/
+def ContMDiffSection.clmComp
+    (A : Cₛ^n⟮IB; F₂ →L[𝕜] F₃, fun x ↦ V₂ x →L[𝕜] V₃ x⟯)
+    (C : Cₛ^n⟮IB; F₁ →L[𝕜] F₂, fun x ↦ V₁ x →L[𝕜] V₂ x⟯) :
+    Cₛ^n⟮IB; F₁ →L[𝕜] F₃, fun x ↦ V₁ x →L[𝕜] V₃ x⟯ :=
+  ⟨fun x ↦ (A x).comp (C x), A.contMDiff.clm_bundle_comp C.contMDiff⟩
+
+@[simp]
+theorem ContMDiffSection.clmComp_apply
+    (A : Cₛ^n⟮IB; F₂ →L[𝕜] F₃, fun x ↦ V₂ x →L[𝕜] V₃ x⟯)
+    (C : Cₛ^n⟮IB; F₁ →L[𝕜] F₂, fun x ↦ V₁ x →L[𝕜] V₂ x⟯) (x : B) :
+    A.clmComp C x = (A x).comp (C x) := (rfl)
+
+end Composition
+
+section Neg
+
+variable {𝕜 B M F₁ F₂ : Type*} [NontriviallyNormedField 𝕜]
+  {EB HB EM HM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B]
+  [ChartedSpace HB B] [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M]
+  [ChartedSpace HM M] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] {V : B → Type*} {W : B → Type*}
+  [∀ b, AddCommGroup (V b)] [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)]
+  [∀ b, AddCommGroup (W b)] [∀ b, Module 𝕜 (W b)] [∀ b, TopologicalSpace (W b)]
+  [∀ b, IsTopologicalAddGroup (W b)] [∀ b, ContinuousSMul 𝕜 (W b)]
+  [TopologicalSpace (TotalSpace F₁ V)] [FiberBundle F₁ V] [VectorBundle 𝕜 F₁ V]
+  [TopologicalSpace (TotalSpace F₂ W)] [FiberBundle F₂ W] [VectorBundle 𝕜 F₂ W]
+  {n : WithTop ℕ∞} {b : M → B} {A : ∀ y, V (b y) →L[𝕜] W (b y)}
+
+/-- Negating a hom-bundle section along any base map preserves its regularity. -/
+theorem ContMDiff.clm_bundle_neg
+    (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (A y))) :
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (-A y)) := by
+  intro x
+  have h := hA x
+  rw [contMDiffAt_hom_bundle] at h ⊢
+  refine ⟨h.1, ?_⟩
+  simpa only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_neg,
+    ContinuousLinearMap.neg_comp] using h.2.neg
+
+end Neg
+
 section Inverse
 
 variable {𝕜 B F₁ F₂ M : Type*} {n : WithTop ℕ∞}
@@ -260,17 +458,12 @@ theorem ContMDiffWithinAt.clm_bundle_inverse
     rw [ContinuousLinearMap.inCoordinates_eq h₁ h₂]
     exact ContinuousLinearMap.isInvertible_equiv.comp
       (hx.comp ContinuousLinearMap.isInvertible_equiv)
-  -- Near `x`, the inverse in coordinates is the inverse of the coordinate expression, and
+  -- The inverse in coordinates is the inverse of the coordinate expression, and
   -- inversion is smooth at an invertible map.
-  have hev : ∀ᶠ m in 𝓝[s] x, b m ∈ (trivializationAt F₁ E₁ (b x)).baseSet ∧
-      b m ∈ (trivializationAt F₂ E₂ (b x)).baseSet :=
-    hϕ.1.continuousWithinAt.preimage_mem_nhdsWithin <| Filter.inter_mem
-      ((trivializationAt F₁ E₁ (b x)).open_baseSet.mem_nhds h₁)
-      ((trivializationAt F₂ E₂ (b x)).open_baseSet.mem_nhds h₂)
   have hcomp := (hinv.contDiffAt_map_inverse (n := n)).contMDiffAt.comp_contMDiffWithinAt x hϕ.2
-  refine hcomp.congr_of_eventuallyEq ?_ (ContinuousLinearMap.inCoordinates_inverse (ϕ x) h₁ h₂)
-  filter_upwards [hev] with m hm
-  exact ContinuousLinearMap.inCoordinates_inverse (ϕ m) hm.1 hm.2
+  exact hcomp.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun m ↦ ContinuousLinearMap.inCoordinates_inverse (ϕ m))
+    (ContinuousLinearMap.inCoordinates_inverse (ϕ x))
 
 /-- Consider linear maps `ϕ m : E₁ (b m) → E₂ (b m)` depending `C^n` on `m`, over a base map
 `b : M → B`, with `ϕ x` invertible. Then the fibrewise inverses `(ϕ m).inverse` depend `C^n` on
@@ -360,13 +553,13 @@ theorem contMDiffAt_hom_bundle_prod_iff [CompleteSpace 𝕜] [FiniteDimensional 
     -- The section `y ↦ e₁.symm y w` is `C^n` near `q.2`: read in `e₁`, it is constant.
     have hs : ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁)) n
         (fun y ↦ TotalSpace.mk' F₁ y (e₁.symm y w)) q.2 := by
-      rw [contMDiffAt_section]
+      rw [contMDiffAt_section_iff]
       refine (contMDiffAt_const (c := w)).congr_of_eventuallyEq ?_
       filter_upwards [e₁.open_baseSet.mem_nhds h₁] with y hy
       exact congr(Prod.snd $(e₁.apply_mk_symm hy w))
     -- Applying the total-space map to this section, with the parameter, and reading the result
     -- in `e₂` gives the coordinate expression of `ϕ` applied to `w`.
-    have ht := (contMDiffAt_totalSpace.1 ((hϕ (e₁.symm q.2 w)).comp q
+    have ht := (contMDiffAt_totalSpace_iff.1 ((hϕ (e₁.symm q.2 w)).comp q
       (contMDiffAt_fst.prodMk (hs.comp q contMDiffAt_snd)))).2
     refine ht.congr_of_eventuallyEq ?_
     filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
@@ -431,7 +624,7 @@ theorem contMDiff_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
       (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2))) :
     ContMDiff (IB.prod 𝓘(𝕜, F₂)) (IB.prod 𝓘(𝕜, F₁)) n
       (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.2)) := by
-  let := FiniteDimensional.complete 𝕜 F₁
+  let := FiniteDimensional.completeSpace 𝕜 F₁
   have h := (contMDiff_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).2 he
   have hi := h.clm_bundle_inverse fun x ↦ ContinuousLinearMap.isInvertible_equiv
   have ha := (hi.comp (contMDiff_proj E₂)).clm_bundle_apply contMDiff_id
@@ -449,6 +642,8 @@ def bundleDiffeomorph (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
   right_inv p := by simp
   contMDiff_toFun := he
   contMDiff_invFun := contMDiff_bundle_symm e he
+
+section
 
 variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
   (he : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
@@ -469,6 +664,35 @@ theorem bundleDiffeomorph_symm_apply (p : TotalSpace F₂ E₂) :
 theorem toHomeomorph_bundleDiffeomorph :
     (bundleDiffeomorph e he).toHomeomorph = bundleHomeomorph e he.continuous :=
   Homeomorph.ext fun p ↦ by simp
+
+end
+
+section
+
+variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
+  (he : ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+    (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
+
+/-- The `C^n` diffeomorphism of total spaces induced by a family of fibrewise continuous linear
+equivalences whose underlying continuous linear maps form a `C^n` Hom-bundle section. -/
+def bundleDiffeomorphOfHom :
+    TotalSpace F₁ E₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, F₁), IB.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ E₂ :=
+  bundleDiffeomorph e
+    (((contMDiff_hom_bundle_iff (IB := IB) (fun x ↦ (e x).toContinuousLinearMap)).1 he).congr
+      fun _ ↦ rfl)
+
+@[simp] theorem bundleDiffeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
+    bundleDiffeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
+
+@[simp] theorem bundleDiffeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
+    (bundleDiffeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
+
+/-- The underlying homeomorphism of `bundleDiffeomorphOfHom` is `bundleHomeomorphOfHom`. -/
+@[simp] theorem toHomeomorph_bundleDiffeomorphOfHom :
+    (bundleDiffeomorphOfHom e he).toHomeomorph = bundleHomeomorphOfHom e he.continuous :=
+  Homeomorph.ext fun p ↦ by simp
+
+end
 
 /-- For a finite-dimensional model source, a family of fibrewise linear maps is realized by a
 `C^n` diffeomorphism of total spaces exactly when the induced map of total spaces is `C^n` and
@@ -568,3 +792,66 @@ theorem _root_.ContMDiffWithinAt.clm_bundle_flip
     (heq.self_of_nhdsWithin (Set.mem_insert x s))
 
 end Flip
+
+section Composition
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB EM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  {HB HM : Type*} [TopologicalSpace HB] [TopologicalSpace HM]
+  {IB : ModelWithCorners 𝕜 EB HB} {IM : ModelWithCorners 𝕜 EM HM}
+  {B M : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  [TopologicalSpace M] [ChartedSpace HM M]
+  {F₁ F₂ F₃ : Type*}
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {V₁ V₂ V₃ : B → Type*}
+  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
+  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
+  [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+  [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
+  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
+  [TopologicalSpace (TotalSpace F₁ V₁)] [TopologicalSpace (TotalSpace F₂ V₂)]
+  [TopologicalSpace (TotalSpace F₃ V₃)]
+  [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
+  [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
+  [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
+  {b : M → B} {s : Set M} {x : M}
+  {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
+  {C : ∀ y, V₂ (b y) →L[𝕜] V₃ (b y)}
+
+/-- Composition of differentiable Hom-bundle sections is differentiable within a set.
+The families may lie over a varying base map, and no finite-rank assumption is needed. -/
+theorem MDifferentiableWithinAt.clm_bundle_comp
+    (hC : MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃))
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+        (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (C y)) s x)
+    (hA : MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂))
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s x) :
+    MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃))
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((C y).comp (A y))) s x := by
+  simp only [mdifferentiableWithinAt_hom_bundle] at hC hA ⊢
+  have h₂ := mem_baseSet_trivializationAt F₂ V₂ (b x)
+  refine ⟨hA.1, (hC.2.clm_comp hA.2).congr_of_eventuallyEq ?_
+    (ContinuousLinearMap.inCoordinates_comp _ _ h₂)⟩
+  filter_upwards [hA.1.continuousWithinAt.preimage_mem_nhdsWithin
+    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds h₂)] with y hy
+  exact ContinuousLinearMap.inCoordinates_comp _ _ hy
+
+/-- Composition of Hom-bundle sections differentiable at a point is differentiable there. -/
+theorem MDifferentiableAt.clm_bundle_comp
+    (hC : MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃))
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+        (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (C y)) x)
+    (hA : MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂))
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) x) :
+    MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃))
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((C y).comp (A y))) x :=
+  MDifferentiableWithinAt.clm_bundle_comp hC hA
+
+end Composition

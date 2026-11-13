@@ -203,7 +203,7 @@ theorem coindBotMap_hom_apply_coe {A B : Rep k G} (f : A ⟶ B)
 @[reassoc]
 theorem coindBotUnit_naturality {A B : Rep k G} (f : A ⟶ B) :
     f ≫ coindBotUnit B = coindBotUnit A ≫ coindBotMap f := by
-  apply Rep.hom_ext
+  apply hom_ext
   apply Representation.IntertwiningMap.ext
   ext a g
   -- Evaluate the two composites as maps into the coinduced function space.
@@ -211,7 +211,7 @@ theorem coindBotUnit_naturality {A B : Rep k G} (f : A ⟶ B) :
     ((coindBotMap f).hom ((coindBotUnit A).hom a)).1 g
   rw [coindBotUnit_hom_apply_coe, coindBotMap_hom_apply_coe,
     coindBotUnit_hom_apply_coe]
-  exact (Rep.hom_comm_apply f g a).symm
+  exact (hom_comm_apply f g a).symm
 
 /-- The canonical embedding into coinduction, as a natural transformation. -/
 @[expose] def coindBotUnitNatTrans : 𝟭 (Rep k G) ⟶ coindBotRepFunctor (k := k) (G := G) where
@@ -282,13 +282,13 @@ embedding of `A` into its coinduced representation. -/
 @[reassoc]
 theorem comp_toCoindBot_of_leftInverse {A B : Rep k G} (f : A ⟶ B) {r : B.V →ₗ[k] A.V}
     (hr : Function.LeftInverse r f.hom) : f ≫ toCoindBot B r = coindBotUnit A := by
-  apply Rep.hom_ext
+  apply hom_ext
   apply Representation.IntertwiningMap.ext
   ext a : 1
   refine Subtype.ext (funext fun g ↦ ?_)
   -- Evaluate both sides as functions `G → A`.
   change ((toCoindBot B r).hom (f.hom a)).1 g = ((coindBotUnit A).hom a).1 g
-  rw [toCoindBot_hom_apply_coe, coindBotUnit_hom_apply_coe, ← Rep.hom_comm_apply, hr]
+  rw [toCoindBot_hom_apply_coe, coindBotUnit_hom_apply_coe, ← hom_comm_apply, hr]
 
 end Coinduction
 
@@ -338,7 +338,7 @@ theorem indBot_hom_ext {X : Type u} [AddCommGroup X] [Module k X] {B : Rep k G}
         f'.hom
           (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X) 1 x)) :
     f = f' :=
-  (indResHomEquiv (⊥ : Subgroup G).subtype _ B).injective <| Rep.hom_ext <|
+  (indResHomEquiv (⊥ : Subgroup G).subtype _ B).injective <| hom_ext <|
     IntertwiningMap.ext <| LinearMap.ext h
 
 /-- The canonical projection from the representation induced from the trivial subgroup on the
@@ -399,9 +399,9 @@ theorem indBotMap_hom_mk {A B : Rep k G} (f : A ⟶ B) (g : G) (a : A) :
 theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
     indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f :=
   indBot_hom_ext fun a ↦ by
-    rw [Rep.hom_comp, Rep.hom_comp, IntertwiningMap.comp_apply, IntertwiningMap.comp_apply,
+    rw [hom_comp, hom_comp, IntertwiningMap.comp_apply, IntertwiningMap.comp_apply,
       indBotMap_hom_mk, indBotCounit_hom_mk, indBotCounit_hom_mk]
-    exact (Rep.hom_comm_apply f 1⁻¹ a).symm
+    exact (hom_comm_apply f 1⁻¹ a).symm
 
 /-- The morphism `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x` to a representation from the representation induced from
 the trivial subgroup, attached to a `k`-linear map `s`. -/
@@ -427,8 +427,8 @@ theorem fromIndBot_comp_of_rightInverse {A B : Rep k G} (f : B ⟶ A)
     {s : A.V →ₗ[k] B.V} (hs : Function.RightInverse s f.hom) :
     fromIndBot B s ≫ f = indBotCounit A :=
   indBot_hom_ext fun a ↦ by
-    rw [Rep.hom_comp, IntertwiningMap.comp_apply, fromIndBot_hom_mk, indBotCounit_hom_mk,
-      Rep.hom_comm_apply, hs a]
+    rw [hom_comp, IntertwiningMap.comp_apply, fromIndBot_hom_mk, indBotCounit_hom_mk,
+      hom_comm_apply, hs a]
 
 /-- Induction on the underlying module, viewed as an endofunctor of representations. -/
 @[expose] def indBotRepFunctor : Rep k G ⥤ Rep k G :=
@@ -464,7 +464,7 @@ def indBotEquivFinsupp (X : Type u) [AddCommGroup X] [Module k X] :
   (Submodule.quotEquivOfEqBot _ <| Submodule.span_eq_bot.2 fun _ hx ↦ by
     obtain ⟨⟨g, v⟩, rfl⟩ := hx
     obtain rfl : g = 1 := Subsingleton.elim g 1
-    simp).trans TauCeti.MonoidAlgebra.tensorEquivFinsupp
+    simp).trans (TauCeti.MonoidAlgebra.tensorEquivFinsupp k G X)
 
 /-- The underlying module of the induced representation on generators: `⟦g ⊗ₜ x⟧ ↦ single g x`. -/
 theorem indBotEquivFinsupp_mk (X : Type u) [AddCommGroup X] [Module k X] (g : G) (x : X) :
@@ -473,7 +473,7 @@ theorem indBotEquivFinsupp_mk (X : Type u) [AddCommGroup X] [Module k X] (g : G)
       Finsupp.single g x := by
   -- `quotEquivOfEqBot` is the identity on classes, so on a generator only `tensorEquivFinsupp`
   -- acts.
-  change TauCeti.MonoidAlgebra.tensorEquivFinsupp (MonoidAlgebra.single g (1 : k) ⊗ₜ[k] x) = _
+  change TauCeti.MonoidAlgebra.tensorEquivFinsupp k G X (MonoidAlgebra.single g (1 : k) ⊗ₜ[k] x) = _
   simp
 
 /-- `G` acts on the finitely supported functions underlying the representation induced from the

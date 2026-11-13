@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
-import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Constructions of open normal subgroups
@@ -17,32 +16,26 @@ open normal subgroups, the trivial subgroup of a group with the discrete topolog
 group. All are stated for an arbitrary topological space structure on a group; no continuity of
 the group operations is required.
 
-Two continuity criteria for maps into the discrete quotients by open normal subgroups are recorded
-as well: a map into the quotient by an intersection is continuous when its composites with the two
-quotient maps are, and a map into the quotient by a preimage is continuous when its composite with
-the homomorphism followed by the quotient map is. Separate continuity of multiplication makes
-the relevant quotients discrete; the preimage criterion needs it only on the target group.
-
 ## Main definitions
 
 * `OpenNormalSubgroup.comap`: the preimage of an open normal subgroup under a continuous
   group homomorphism.
 * `OpenNormalSubgroup.prod`: the product of two open normal subgroups, as an open normal subgroup
   of the product group.
-* `TauCeti.openNormalSubgroupBot`: the trivial subgroup of a group with the discrete
-  topology, as an open normal subgroup.
-* `TauCeti.openNormalSubgroupTop`: the whole group, as an open normal subgroup.
+
+## Main instances
+
+* `OrderTop (OpenNormalSubgroup G)`: the whole group is the greatest open normal subgroup; in
+  particular `OpenNormalSubgroup G` is inhabited.
+* `BoundedOrder (OpenNormalSubgroup G)` for `G` with the discrete topology: the trivial subgroup
+  is the least open normal subgroup.
 
 ## Main results
 
 * `OpenNormalSubgroup.toSubgroup_inf`, `OpenNormalSubgroup.toSubgroup_sup`: the lattice operations
   on open normal subgroups are those of the underlying subgroups.
-* `OpenNormalSubgroup.continuous_mk_inf`, `OpenNormalSubgroup.continuous_mk_comap`: continuity of
-  a map into the quotient by an intersection, and by a preimage, of open normal subgroups.
-* `TauCeti.mem_openNormalSubgroupBot`: the trivial open normal subgroup contains only the
-  identity.
-* `TauCeti.openNormalSubgroupBot_le`: the trivial open normal subgroup lies below every open
-  normal subgroup.
+* `OpenNormalSubgroup.mem_top`, `OpenNormalSubgroup.mem_bot`: the top open normal subgroup
+  contains every element, and the bottom one only the identity.
 -/
 
 public section
@@ -68,6 +61,63 @@ subgroups. -/
 theorem toSubgroup_sup [SeparatelyContinuousMul G] (U V : OpenNormalSubgroup G) :
     (U ⊔ V).toSubgroup = U.toSubgroup ⊔ V.toSubgroup :=
   (rfl)
+
+/-- The whole group, as an open normal subgroup. -/
+instance instTopOpenNormalSubgroup : Top (OpenNormalSubgroup G) :=
+  ⟨⟨⊤, Subgroup.normal_top⟩⟩
+
+/-- The top open normal subgroup as a set is the whole group. -/
+@[simp, norm_cast]
+theorem coe_top : ((⊤ : OpenNormalSubgroup G) : Set G) = Set.univ :=
+  (rfl)
+
+/-- The underlying subgroup of the top open normal subgroup is `⊤`. -/
+@[simp]
+theorem toSubgroup_top : (⊤ : OpenNormalSubgroup G).toSubgroup = ⊤ :=
+  (rfl)
+
+/-- Every element lies in the top open normal subgroup. -/
+@[simp]
+theorem mem_top (x : G) : x ∈ (⊤ : OpenNormalSubgroup G) :=
+  Set.mem_univ x
+
+instance instOrderTopOpenNormalSubgroup : OrderTop (OpenNormalSubgroup G) where
+  le_top _ := Set.subset_univ _
+
+instance instInhabitedOpenNormalSubgroup : Inhabited (OpenNormalSubgroup G) :=
+  ⟨⊤⟩
+
+section DiscreteTopology
+
+variable [DiscreteTopology G]
+
+/-- The trivial subgroup of a group with the discrete topology, as an open normal subgroup. -/
+instance instBotOpenNormalSubgroup : Bot (OpenNormalSubgroup G) :=
+  ⟨⟨⟨⊥, isOpen_discrete _⟩, Subgroup.normal_bot⟩⟩
+
+/-- The bottom open normal subgroup of a discrete group as a set is `{1}`. -/
+@[simp, norm_cast]
+theorem coe_bot : ((⊥ : OpenNormalSubgroup G) : Set G) = {1} :=
+  (rfl)
+
+/-- The underlying subgroup of the bottom open normal subgroup is `⊥`. -/
+@[simp]
+theorem toSubgroup_bot : (⊥ : OpenNormalSubgroup G).toSubgroup = ⊥ :=
+  (rfl)
+
+/-- The bottom open normal subgroup of a discrete group contains only the identity. -/
+@[simp]
+theorem mem_bot {x : G} : x ∈ (⊥ : OpenNormalSubgroup G) ↔ x = 1 :=
+  Subgroup.mem_bot
+
+instance instOrderBotOpenNormalSubgroup : OrderBot (OpenNormalSubgroup G) where
+  bot_le U _ hx := Subgroup.mem_bot.1 hx ▸ one_mem U
+
+/-- `OpenNormalSubgroup G` is a bounded order for discrete `G`. This is not synthesized from the
+`OrderTop` and `OrderBot` instances. -/
+instance instBoundedOrderOpenNormalSubgroup : BoundedOrder (OpenNormalSubgroup G) where
+
+end DiscreteTopology
 
 /-- The preimage of an open normal subgroup under a continuous group homomorphism.
 Its underlying subgroup is definitionally `U.toSubgroup.comap f`. -/
@@ -123,82 +173,4 @@ theorem mem_prod {U : OpenNormalSubgroup G} {V : OpenNormalSubgroup H} {x : G ×
     x ∈ U.prod V ↔ x.1 ∈ U ∧ x.2 ∈ V :=
   Iff.rfl
 
-/-- A map into the quotient by the intersection of two open normal subgroups is continuous as
-soon as its composites with the two quotient maps are. -/
-theorem continuous_mk_inf [SeparatelyContinuousMul G] {X : Type*} [TopologicalSpace X]
-    {U V : OpenNormalSubgroup G} {g : X → G}
-    (hU : Continuous fun x ↦ (g x : G ⧸ U.toSubgroup))
-    (hV : Continuous fun x ↦ (g x : G ⧸ V.toSubgroup)) :
-    Continuous fun x ↦ (g x : G ⧸ (U ⊓ V).toSubgroup) := by
-  rw [continuous_discrete_rng]
-  intro d
-  obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective d
-  have : (fun x ↦ (g x : G ⧸ (U ⊓ V).toSubgroup)) ⁻¹' {(y : G ⧸ (U ⊓ V).toSubgroup)} =
-      (fun x ↦ (g x : G ⧸ U.toSubgroup)) ⁻¹' {(y : G ⧸ U.toSubgroup)} ∩
-        (fun x ↦ (g x : G ⧸ V.toSubgroup)) ⁻¹' {(y : G ⧸ V.toSubgroup)} := by
-    ext x
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_inter_iff, QuotientGroup.eq]
-    exact Subgroup.mem_inf
-  rw [this]
-  exact (hU.isOpen_preimage _ (isOpen_discrete _)).inter (hV.isOpen_preimage _ (isOpen_discrete _))
-
-/-- A map into the quotient by the preimage of an open normal subgroup under a continuous
-homomorphism is continuous as soon as its composite with the homomorphism followed by the
-quotient map is. No continuity of the group operations on the source group is required. -/
-theorem continuous_mk_comap [SeparatelyContinuousMul H] {X : Type*} [TopologicalSpace X]
-    (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) {g : X → G}
-    (hg : Continuous fun x ↦ (f (g x) : H ⧸ U.toSubgroup)) :
-    Continuous fun x ↦ (g x : G ⧸ (U.comap f hf).toSubgroup) := by
-  let φ := QuotientGroup.map (U.comap f hf).toSubgroup U.toSubgroup f
-    (toSubgroup_comap U f hf).le
-  have hφ : Function.Injective φ := by
-    intro a b
-    obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective a
-    obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective b
-    simp only [φ, QuotientGroup.map_mk, QuotientGroup.eq, toSubgroup_comap,
-      Subgroup.mem_comap, map_mul, map_inv]
-    exact id
-  exact (IsLocallyConstant.desc _ φ
-    ((IsLocallyConstant.iff_continuous _).2 hg) hφ).continuous
-
 end OpenNormalSubgroup
-
-namespace TauCeti
-
-/-- The trivial subgroup of a group with the discrete topology, as an open normal subgroup. -/
-def openNormalSubgroupBot (G : Type*) [Group G] [TopologicalSpace G] [DiscreteTopology G] :
-    OpenNormalSubgroup G where
-  toOpenSubgroup := ⟨⊥, isOpen_discrete _⟩
-  isNormal' := inferInstance
-
-/-- The underlying subgroup of `openNormalSubgroupBot` is `⊥`. -/
-@[simp]
-theorem openNormalSubgroupBot_toSubgroup (G : Type*) [Group G] [TopologicalSpace G]
-    [DiscreteTopology G] : (openNormalSubgroupBot G).toSubgroup = ⊥ :=
-  (rfl)
-
-/-- The trivial open normal subgroup contains only the identity. -/
-@[simp]
-theorem mem_openNormalSubgroupBot {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
-    {x : G} : x ∈ openNormalSubgroupBot G ↔ x = 1 :=
-  Subgroup.mem_bot
-
-/-- The trivial open normal subgroup of a discrete group lies below every open normal subgroup. -/
-theorem openNormalSubgroupBot_le {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
-    {U : OpenNormalSubgroup G} : openNormalSubgroupBot G ≤ U := by
-  rw [← OpenNormalSubgroup.toSubgroup_le, openNormalSubgroupBot_toSubgroup]
-  exact bot_le
-
-/-- The whole group, as an open normal subgroup. It is the greatest element of
-`OpenNormalSubgroup G`, and in particular witnesses that this type is nonempty. -/
-def openNormalSubgroupTop (G : Type*) [Group G] [TopologicalSpace G] : OpenNormalSubgroup G where
-  toOpenSubgroup := ⊤
-  isNormal' := Subgroup.normal_top
-
-/-- The underlying subgroup of `openNormalSubgroupTop` is `⊤`. -/
-@[simp]
-theorem openNormalSubgroupTop_toSubgroup (G : Type*) [Group G] [TopologicalSpace G] :
-    (openNormalSubgroupTop G).toSubgroup = ⊤ :=
-  (rfl)
-
-end TauCeti

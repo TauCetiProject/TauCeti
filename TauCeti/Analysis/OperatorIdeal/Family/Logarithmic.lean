@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Equivalence
+public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Isometry
 public import TauCeti.Analysis.OperatorIdeal.Family.KyFan.Dominance
+public import TauCeti.Analysis.OperatorIdeal.Family.Modulus
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 
@@ -173,7 +174,7 @@ noncomputable def logarithmic : OperatorIdealFamily.{u, v, w} 𝕜 where
           ENNReal.add_div
       _ ≤ _ := add_le_add (le_iSup_of_le N le_rfl) (le_iSup_of_le N le_rfl)
   gauge_smul c T := by
-    simp only [ContinuousLinearMap.kyFanGauge_smul, ENNReal.coe_mul, enorm_eq_nnnorm,
+    simp only [ContinuousLinearMap.kyFanGauge_smul, ENNReal.coe_mul, eNorm_eq_nnNorm,
       ENNReal.mul_iSup, mul_div_assoc]
   enorm_le_gauge T := by
     refine le_iSup_of_le 0 ?_
@@ -181,7 +182,7 @@ noncomputable def logarithmic : OperatorIdealFamily.{u, v, w} 𝕜 where
       rw [ENNReal.ofReal_le_one]
       norm_num
       linarith [Real.log_le_sub_one_of_pos (zero_lt_two' ℝ)]
-    rw [zero_add, ContinuousLinearMap.kyFanGauge_one, ← enorm_eq_nnnorm]
+    rw [zero_add, ContinuousLinearMap.kyFanGauge_one, ← eNorm_eq_nnNorm]
     exact (ENNReal.le_div_iff_mul_le (Or.inl (ofReal_log_add_two_ne_zero 0))
       (Or.inl ENNReal.ofReal_ne_top)).2
       (mul_le_of_le_one_right' hlog)
@@ -193,7 +194,7 @@ noncomputable def logarithmic : OperatorIdealFamily.{u, v, w} 𝕜 where
           exact L.kyFanGauge_comp_comp_le A R (N + 1)
       _ = ‖L‖ₑ * ((A.kyFanGauge (N + 1) : ℝ≥0∞) / ENNReal.ofReal (Real.log (N + 2))) *
             ‖R‖ₑ := by
-          simp only [ENNReal.coe_mul, enorm_eq_nnnorm, div_eq_mul_inv]
+          simp only [ENNReal.coe_mul, eNorm_eq_nnNorm, div_eq_mul_inv]
           ring
       _ ≤ _ := by
           gcongr
@@ -296,6 +297,26 @@ theorem mem_finiteSubmodule_logarithmic_iff_bddAbove (T : E →L[𝕜] F) :
     convert hN using 3
     push_cast
     ring
+
+/-- Operators with the same approximation numbers lie in `L^(1,∞)` simultaneously, even across
+different Hilbert-space universes. -/
+theorem _root_.ContinuousLinearMap.SameSingularValues.mem_finiteSubmodule_logarithmic_iff
+    {G H : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+    {S : G →L[𝕜] H} {T : E →L[𝕜] F} (h : ContinuousLinearMap.SameSingularValues S T) :
+    S ∈ ((logarithmic 𝕜).operatorGauge G H).finiteSubmodule ↔
+      T ∈ ((logarithmic 𝕜).operatorGauge E F).finiteSubmodule := by
+  rw [mem_finiteSubmodule_logarithmic_iff_bddAbove, mem_finiteSubmodule_logarithmic_iff_bddAbove,
+    h.kyFanLogMean_eq]
+
+/-- Conjugation by a linear isometric equivalence preserves membership in `L^(1,∞)`, even across
+different Hilbert-space universes. -/
+theorem _root_.LinearIsometryEquiv.conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff
+    (e : E ≃ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    e.conjStarAlgEquiv T ∈ ((logarithmic 𝕜).operatorGauge F F).finiteSubmodule ↔
+      T ∈ ((logarithmic 𝕜).operatorGauge E E).finiteSubmodule :=
+  (ContinuousLinearMap.sameSingularValues_comp_linearIsometryEquiv T e.symm
+    e).mem_finiteSubmodule_logarithmic_iff
 
 /-- An operator whose logarithmic means are bounded by a bounded sequence lies in `L^(1,∞)`. -/
 theorem mem_finiteSubmodule_logarithmic_of_forall_kyFanLogMean_le {T : E →L[𝕜] F} (g : ℕ →ᵇ ℝ)

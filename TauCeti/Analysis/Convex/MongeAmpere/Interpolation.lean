@@ -165,7 +165,7 @@ private theorem exists_measurableSet_restrict_eq_self
   obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ :=
     exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient ρ hf hbot hH
   exact ⟨S, hSm, hSD, hDS, restrict_eq_self_of_ae_mem (mem_ae_iff.2
-    ((measure_congr (EventuallyEqSet.compl (hμ.ae_eq hDS))).symm.trans (mem_ae_iff.1 hμD))),
+    ((measure_congr (EventuallyEqSet.compl (hμ.ae_le hDS))).symm.trans (mem_ae_iff.1 hμD))),
     H', hH'm, hHS, fun x hx => hHS x hx ▸ hS x hx⟩
 
 /-- **Change of variables along the interpolating map.** Let `s` be a measurable set at each point
@@ -329,7 +329,7 @@ private theorem map_restrict_gradient_mutuallySingular
   have hρ : ρ (G '' Z) = 0 := by
     have hZ0 : Z ∩ {x | (H x).det ≠ 0} = ∅ :=
       eq_empty_iff_forall_notMem.2 fun x hx => hx.2 (hdet x hx.1)
-    have := withDensity_image_gradient_eq_setLIntegral ρ hf hZm (by rw [hZ0]; exact .empty) hZ 1
+    have := withDensity_image_gradient_eq_setLIntegral ρ hf (by rw [hZ0]; exact .empty) hZ 1
     rw [withDensity_one] at this
     rw [this]
     exact (setLIntegral_congr_fun hZm fun x hx => by simp [hdet x hx]).trans lintegral_zero
@@ -376,7 +376,7 @@ private theorem exists_map_gradient_restrict_decomposition
       fun x hx => ⟨(hS x hx.1).1, (hS x hx.1).2.2⟩
     rwa [inter_eq_left.2 fun x (hx : x ∈ Z) => hx.2] at this
   have hcov (s : Set E) (hs : MeasurableSet s) (hsZ : s ⊆ Z) :=
-    withDensity_image_gradient_eq_setLIntegral ρ hf hs
+    withDensity_image_gradient_eq_setLIntegral ρ hf
       (by rwa [inter_eq_left.2 fun x (hx : x ∈ s) => (hsZ hx).2]) fun x hx => hS x (hsZ hx).1
   -- On `S`, the complement of `Z` is the degenerate set.
   have hSZ (x : E) (hx : x ∈ S) : x ∉ Z ↔ (H x).det = 0 := by

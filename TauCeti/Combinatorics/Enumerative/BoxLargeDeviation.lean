@@ -32,6 +32,9 @@ fewer than the unknowns, so Siegel's lemma gives a solution with small coefficie
   `{0, 1 / r, …, 1}`, `∑ k ≤ r, exp (t (k / r - 1 / 2)) ≤ (r + 1) exp (t² / 8)`.
 * `TauCeti.card_filter_sum_div_le_mul_one_sub_le`: the count
   `#{d : ∑ i, d i / r i ≤ (n / 2) (1 - ε)} ≤ (∏ i, (r i + 1)) exp (-ε² n / 2)` for `ε ≥ 0`.
+* `TauCeti.two_mul_mul_card_filter_le`: if `2 D ≤ exp (ε² n / 2)`, then `2 D` times that count is
+  at most the size `∏ i, (r i + 1)` of the box.
+* `TauCeti.one_le_sum_of_le_exp`: such a bound with `D > 0` forces `n > 0`, so `∑ i, r i ≥ 1`.
 
 ## Implementation notes
 
@@ -92,13 +95,12 @@ theorem sum_range_exp_mul_div_sub_half_le {r : ℕ} (hr : r ≠ 0) (t : ℝ) :
     ring
   have hsq : ∀ k ∈ range (r + 1), f k ^ 2 / 2 ≤ t ^ 2 / 8 := by
     intro k hk
-    have hk : (k : ℝ) ≤ r := by exact_mod_cast Nat.lt_succ_iff.mp (mem_range.mp hk)
     have h0 : 0 ≤ (k : ℝ) / r := by positivity
-    have h1 : (k : ℝ) / r ≤ 1 := div_le_one_of_le₀ hk (Nat.cast_nonneg r)
-    have hc : ((k : ℝ) / r - 1 / 2) ^ 2 ≤ 1 / 4 := by nlinarith
-    have := mul_le_mul_of_nonneg_left hc (sq_nonneg t)
+    have h1 : (k : ℝ) / r ≤ 1 :=
+      div_le_one_of_le₀ (mod_cast Nat.lt_succ_iff.mp (mem_range.mp hk)) r.cast_nonneg
+    -- `(x - 1 / 2) ^ 2 = 1 / 4 - x (1 - x)` for `x = k / r ∈ [0, 1]`.
     rw [hf]
-    linarith [mul_pow t ((k : ℝ) / r - 1 / 2) 2]
+    linarith [mul_nonneg (sq_nonneg t) (mul_nonneg h0 (sub_nonneg.mpr h1))]
   calc ∑ k ∈ range (r + 1), exp (f k)
       = ∑ k ∈ range (r + 1), cosh (f k) := by
         simp_rw [cosh_eq]
@@ -145,9 +147,38 @@ theorem card_filter_sum_div_le_mul_one_sub_le {ι : Type*} [Fintype ι] [Decidab
         gcongr with i
         exact sum_range_exp_mul_div_sub_half_le (hr i) _
     _ = (∏ i, ((r i : ℝ) + 1)) * exp (-(ε ^ 2 * n / 2)) := by
-        rw [prod_mul_distrib, prod_const, card_univ, ← exp_nat_mul, ← hn, mul_left_comm,
-          ← exp_add]
+        simp only [prod_mul_distrib, prod_const, card_univ, ← exp_nat_mul, ← hn]
+        rw [mul_left_comm, ← exp_add]
         congr 2
         ring
+
+/-- Counting the equations: if `2 D ≤ exp (ε² n / 2)`, then `2 D` times the number of points `d`
+of the box `∏ᵢ {0, …, rᵢ}` with `∑ᵢ dᵢ / rᵢ ≤ (n / 2) (1 - ε)` is at most the number
+`∏ᵢ (rᵢ + 1)` of all points of the box. -/
+theorem two_mul_mul_card_filter_le {ι : Type*} [Fintype ι] [DecidableEq ι] {r : ι → ℕ}
+    (hr : ∀ i, r i ≠ 0) {ε : ℝ} (hε : 0 ≤ ε) {D : ℕ}
+    (hDε : 2 * (D : ℝ) ≤ exp (ε ^ 2 * Fintype.card ι / 2)) :
+    2 * (D * #{d ∈ Fintype.piFinset fun i ↦ range (r i + 1) |
+        ∑ i, (d i : ℝ) / r i ≤ Fintype.card ι / 2 * (1 - ε)}) ≤
+      #(Fintype.piFinset fun i ↦ range (r i + 1)) := by
+  have hcount := card_filter_sum_div_le_mul_one_sub_le hr hε
+  rw [exp_neg, ← div_eq_mul_inv, le_div_iff₀ (exp_pos _)] at hcount
+  rw [← Nat.cast_le (α := ℝ), card_piFinset_range]
+  push_cast
+  refine le_trans ?_ hcount
+  rw [← mul_assoc, mul_comm _ (exp _)]
+  gcongr
+
+/-- If the number `n` of variables satisfies `2 D ≤ exp (ε² n / 2)` for some `D > 0`, then `n` is
+positive, so the total degree `∑ᵢ rᵢ` is at least one when every `rᵢ` is nonzero. -/
+theorem one_le_sum_of_le_exp {ι : Type*} [Fintype ι] {r : ι → ℕ} (hr : ∀ i, r i ≠ 0) {ε : ℝ}
+    {D : ℕ} (hD : 0 < D) (hDε : 2 * (D : ℝ) ≤ exp (ε ^ 2 * Fintype.card ι / 2)) : 1 ≤ ∑ i, r i := by
+  have hι : Fintype.card ι ≠ 0 := by
+    intro hι
+    rw [hι] at hDε
+    norm_num at hDε
+    linarith [show (1 : ℝ) ≤ D by exact_mod_cast hD]
+  obtain ⟨i⟩ := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero hι)
+  exact (Nat.one_le_iff_ne_zero.mpr (hr i)).trans (single_le_sum (by simp) (mem_univ i))
 
 end TauCeti

@@ -54,7 +54,7 @@ to a block, hence has the same central character as one.
   version requiring only a split centre is
   `TauCeti.card_normalized_isClassEigenrow_of_nonempty_center_algEquiv`.
   Dropping the normalization only adds scalar multiples:
-  `TauCeti.exists_eq_smul_centralCharacterTable` says **every nonzero common left eigenvector of the
+  `TauCeti.exists_eq_smul_centralCharacterTable` says **every common left eigenvector of the
   class-multiplication matrices is a multiple of a row of `Ω`**, and
   `TauCeti.linearIndependent_centralCharacterTable` says those rows are linearly independent, hence
   a basis.
@@ -282,14 +282,18 @@ theorem isClassEigenrow_iff_exists_centralCharacterTable_eq {v : ConjClasses G �
   · rintro ⟨i, rfl⟩
     exact isClassEigenrow_centralCharacterTable i
 
-/-- **Every nonzero common left eigenvector of the class-multiplication matrices is a multiple of a
+/-- **Every common left eigenvector of the class-multiplication matrices is a multiple of a
 row of the central character table**, so the rows of `Ω` are those eigenvectors up to scale.
-Normalization need not be assumed: the value of such a vector at the class of `1` is automatically
-nonzero, and is exactly the scale factor. -/
-theorem exists_eq_smul_centralCharacterTable {w : ConjClasses G → k} (hw₀ : w ≠ 0)
+Normalization need not be assumed: the value of a nonzero such vector at the class of `1` is
+automatically nonzero, and is exactly the scale factor. The zero vector is the zero multiple of any
+row. -/
+theorem exists_eq_smul_centralCharacterTable {w : ConjClasses G → k}
     (hw : ∀ Cᵢ : ConjClasses G, ∃ c : k,
       w ᵥ* (classMultMatrix Cᵢ).map (Int.cast : ℤ → k) = c • w) :
     ∃ i, w = w (ConjClasses.mk (1 : G)) • centralCharacterTable k G i := by
+  by_cases hw₀ : w = 0
+  · have : NeZero (Nat.card (ConjClasses G)) := ⟨Nat.card_pos.ne'⟩
+    exact ⟨0, by simp [hw₀]⟩
   have hw₁ : w (ConjClasses.mk (1 : G)) ≠ 0 := by
     intro h₀
     refine hw₀ (funext fun Cᵢ => ?_)

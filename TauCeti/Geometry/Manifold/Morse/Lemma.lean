@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Pi
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # The Morse lemma on a smooth manifold
@@ -39,6 +40,15 @@ stable and unstable manifolds are then studied.
   the model.
 * `TauCeti.MorseChart.max_norm_fst_norm_snd_splitCoord`: the sup norm of the coordinates is the
   larger of the norms of the two factors of the split coordinates.
+* `TauCeti.MorseChart.apply_toChart_symm_coord_symm_splitCoord_symm`: the Morse normal form in
+  split coordinates.
+* `TauCeti.MorseChart.lt_apply_of_norm_fst_eq`, `TauCeti.MorseChart.apply_lt_of_norm_snd_eq`: `f`
+  is above `f x` where the contracting split coordinate dominates and below `f x` where the
+  expanding one dominates.
+* `TauCeti.MorseChart.finrank_snd_splitCoord` and
+  `TauCeti.MorseChart.finrank_fst_splitCoord_add_manifoldMorseIndex`: the expanding factor of the
+  split coordinates has dimension the Morse index, and the contracting factor the complementary
+  dimension.
 * `TauCeti.MorseChart.neg`: a Morse chart for `f` is a Morse chart for `-f`, with the opposite
   weights.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
@@ -150,6 +160,11 @@ theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
     MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
   mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
 
+include φ in
+/-- A space with a Morse chart is finite-dimensional. -/
+theorem finiteDimensional : FiniteDimensional ℝ E :=
+  Module.Finite.equiv φ.coord.symm
+
 /-- A coordinate of a Morse chart has weight different from `1` exactly when it has negative
 weight. -/
 theorem weight_ne_one_iff (i : Fin (Module.finrank ℝ E)) : ¬φ.weight i = 1 ↔ φ.weight i < 0 := by
@@ -202,25 +217,111 @@ theorem max_norm_fst_norm_snd_splitCoord (z : Fin (Module.finrank ℝ E) → ℝ
     · exact le_max_of_le_left (by simpa using norm_le_pi_norm (φ.splitCoord z).fst ⟨i, hi⟩)
     · exact le_max_of_le_right (by simpa using norm_le_pi_norm (φ.splitCoord z).snd ⟨i, hi⟩)
 
-variable [FiniteDimensional ℝ E]
+/-- The expanding factor of the split coordinates of a Morse chart has dimension the Morse index. -/
+theorem finrank_snd_splitCoord :
+    Module.finrank ℝ ({i // ¬φ.weight i = 1} → ℝ) = manifoldMorseIndex 𝓘(ℝ, E) f x := by
+  rw [Module.finrank_fintype_fun_eq_card, ← φ.ncard_weight_neg, ← Nat.card_eq_fintype_card,
+    ← Nat.card_coe_set_eq]
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun i ↦ ?_)
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> norm_num [hi]
 
-/-- The split coordinates of a Morse chart, as a continuous linear equivalence of the model. -/
-noncomputable def splitCoordL :
-    E ≃L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
-  (φ.coord.trans φ.splitCoord).toContinuousLinearEquiv
+/-- The contracting and expanding factors of the split coordinates of a Morse chart have
+complementary dimensions. -/
+theorem finrank_fst_splitCoord_add_manifoldMorseIndex :
+    Module.finrank ℝ ({i // φ.weight i = 1} → ℝ) + manifoldMorseIndex 𝓘(ℝ, E) f x =
+      Module.finrank ℝ E := by
+  rw [← φ.finrank_snd_splitCoord, Module.finrank_fintype_fun_eq_card,
+    Module.finrank_fintype_fun_eq_card, Fintype.card_subtype_compl, Fintype.card_fin]
+  have := Fintype.card_subtype_le fun i ↦ φ.weight i = 1
+  rw [Fintype.card_fin] at this
+  omega
 
-/-- The continuous split coordinates of a point of the model are the split coordinates of its
-coordinates. -/
-@[simp]
-theorem splitCoordL_apply (z : E) : φ.splitCoordL z = φ.splitCoord (φ.coord z) :=
-  (rfl)
+section SplitBox
 
-/-- The point of the model with given continuous split coordinates. -/
-@[simp]
-theorem splitCoordL_symm_apply
-    (w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))) :
-    φ.splitCoordL.symm w = φ.coord.symm (φ.splitCoord.symm w) :=
-  (rfl)
+/-- **The Morse normal form in split coordinates.** At the point with split coordinates `(u, v)`,
+`f = f x + (Σᵢ uᵢ² - Σⱼ vⱼ²) / 2`. -/
+theorem apply_toChart_symm_coord_symm_splitCoord_symm
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
+    f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) =
+      f x + 2⁻¹ * (∑ i, z.fst i ^ 2 - ∑ i, z.snd i ^ 2) := by
+  rw [φ.eq_quadratic _ (φ.toChart.map_target hz), φ.toChart.right_inv hz,
+    LinearEquiv.apply_symm_apply,
+    ← Fintype.sum_subtype_add_sum_subtype (fun i ↦ φ.weight i = 1), sub_eq_add_neg,
+    ← Finset.sum_neg_distrib]
+  congr 2
+  congr 1
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp [i.2]
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp [(φ.weight_eq_neg_one_or_eq_one i).resolve_right i.2]
+    norm_num
+
+variable {φ}
+
+/-- On the box, the split coordinates read a point of the chart. -/
+theorem coord_symm_splitCoord_symm_mem_target_of_norm_le {ε : ℝ}
+    (hε : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hfst : ‖z.fst‖ ≤ ε) (hsnd : ‖z.snd‖ ≤ ε) :
+    φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target :=
+  hε _ <| by
+    rw [← φ.max_norm_fst_norm_snd_splitCoord, LinearEquiv.apply_symm_apply]
+    exact max_le hfst hsnd
+
+variable (φ) in
+/-- The point with given split coordinates determines them. -/
+theorem injOn_toChart_symm_coord_symm_splitCoord_symm :
+    InjOn (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)))
+      {z | φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target} := fun z hz z' hz' h ↦
+  φ.splitCoord.symm.injective (φ.coord.symm.injective
+    (φ.toChart.symm.injOn (by simpa using hz) (by simpa using hz') h))
+
+/-- **Above the critical value on the entrance face.** At a point of the chart whose contracting
+split coordinate has norm `ε` and whose expanding one is small, `f` exceeds `f x`. -/
+theorem lt_apply_of_norm_fst_eq {ε : ℝ}
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) (hfst : ‖z.fst‖ = ε)
+    (hsnd : Module.finrank ℝ E * ‖z.snd‖ ^ 2 < ε ^ 2) :
+    f x < f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) := by
+  rw [φ.apply_toChart_symm_coord_symm_splitCoord_symm hz]
+  -- Compare the sup norms of the split coordinates with their `L²` norms.
+  have h₁ : ‖z.fst‖ ^ 2 ≤ ∑ i, z.fst i ^ 2 := by
+    have h := PiLp.dist_ofLp_le (WithLp.toLp 2 z.fst) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have h₂ : ∑ i, z.snd i ^ 2 ≤ Fintype.card {i // ¬φ.weight i = 1} * ‖z.snd‖ ^ 2 := by
+    have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp (WithLp.toLp 2 z.snd) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2, mul_pow] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have hcard : (Fintype.card {i // ¬φ.weight i = 1} : ℝ) ≤ Module.finrank ℝ E := by
+    exact_mod_cast (Fintype.card_subtype_le _).trans (Fintype.card_fin _).le
+  rw [hfst] at h₁
+  nlinarith [mul_le_mul_of_nonneg_right hcard (sq_nonneg ‖z.snd‖)]
+
+/-- **Below the critical value on the exit face.** At a point of the chart whose expanding split
+coordinate has norm `ε` and whose contracting one is small, `f` is less than `f x`. -/
+theorem apply_lt_of_norm_snd_eq {ε : ℝ}
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) (hsnd : ‖z.snd‖ = ε)
+    (hfst : Module.finrank ℝ E * ‖z.fst‖ ^ 2 < ε ^ 2) :
+    f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) < f x := by
+  rw [φ.apply_toChart_symm_coord_symm_splitCoord_symm hz]
+  -- Compare the sup norms of the split coordinates with their `L²` norms.
+  have h₁ : ‖z.snd‖ ^ 2 ≤ ∑ i, z.snd i ^ 2 := by
+    have h := PiLp.dist_ofLp_le (WithLp.toLp 2 z.snd) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have h₂ : ∑ i, z.fst i ^ 2 ≤ Fintype.card {i // φ.weight i = 1} * ‖z.fst‖ ^ 2 := by
+    have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp (WithLp.toLp 2 z.fst) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2, mul_pow] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have hcard : (Fintype.card {i // φ.weight i = 1} : ℝ) ≤ Module.finrank ℝ E := by
+    exact_mod_cast (Fintype.card_subtype_le _).trans (Fintype.card_fin _).le
+  rw [hsnd] at h₁
+  nlinarith [mul_le_mul_of_nonneg_right hcard (sq_nonneg ‖z.fst‖)]
+
+end SplitBox
 
 /-- A Morse chart for `f` at a nondegenerate critical point is a Morse chart for `-f`, with the
 opposite weights. -/
@@ -265,6 +366,26 @@ theorem neg_coord (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
 theorem neg_weight (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     (φ.neg h).weight = -φ.weight := by
   rw [neg]
+
+variable [FiniteDimensional ℝ E]
+
+/-- The split coordinates of a Morse chart, as a continuous linear equivalence of the model. -/
+noncomputable def splitCoordL :
+    E ≃L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
+  (φ.coord.trans φ.splitCoord).toContinuousLinearEquiv
+
+/-- The continuous split coordinates of a point of the model are the split coordinates of its
+coordinates. -/
+@[simp]
+theorem splitCoordL_apply (z : E) : φ.splitCoordL z = φ.splitCoord (φ.coord z) :=
+  (rfl)
+
+/-- The point of the model with given continuous split coordinates. -/
+@[simp]
+theorem splitCoordL_symm_apply
+    (w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))) :
+    φ.splitCoordL.symm w = φ.coord.symm (φ.splitCoord.symm w) :=
+  (rfl)
 
 end MorseChart
 

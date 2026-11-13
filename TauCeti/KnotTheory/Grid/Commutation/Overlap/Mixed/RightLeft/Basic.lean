@@ -204,8 +204,6 @@ theorem recutRightEqLeft_toRectangleDecomposition
     exact (D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn).1.symm
   · simp only [recutRightEqLeft,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left, rightLeftRecut]
-  · simp only [recutRightEqLeft,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right, rightLeftRecut]
 
 /-- The promoted decomposition is an empty-rectangle recut of the original composite domain. -/
 theorem isRecut_recutRightEqLeft (D : GridRectanglePentagonDecomposition a s x z)
@@ -243,7 +241,7 @@ theorem recutRightEqLeft_geometry (D : GridRectanglePentagonDecomposition a s x 
     E.rectangle.top = D.rectangle.top ∧
         s ∈ Grid.cIco E.pentagon.bottom E.pentagon.top := by
   let E := D.recutRightEqLeft hcommon hrectangle hpentagon hturn
-  obtain ⟨hright, hptop, hrtop, hturn'⟩ :=
+  obtain ⟨_, hptop, hrtop, hturn'⟩ :=
     D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn
   refine ⟨?_, ?_, ?_, ?_⟩
   · simp only [recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,
@@ -419,12 +417,11 @@ private theorem rightLeftOverlapPartner_injective :
   have hD := G.rightLeftOverlapPartner_isRecut C D
   have hE := G.rightLeftOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨honeD, hfD, hsD⟩ := G.rightLeftOverlapSource_recut_data C D.val D.property
-  obtain ⟨honeE, hfE, hsE⟩ := G.rightLeftOverlapSource_recut_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  obtain ⟨_, hfD, hsD⟩ := G.rightLeftOverlapSource_recut_data C D.val D.property
+  obtain ⟨_, hfE, hsE⟩ := G.rightLeftOverlapSource_recut_data C E.val E.property
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

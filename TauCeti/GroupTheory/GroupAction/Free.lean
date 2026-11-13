@@ -35,13 +35,20 @@ If a group `G` acts freely on `X`, every orbit is a copy of `G`, so `Nat.card G`
 Mathlib's `MulAction.selfEquivOrbitsQuotientProd` identifies `X` with the product of its orbit space
 and `G`; its inverse sends `(q, g)` to the translate `g • q.out` of the chosen representative.
 
+## Tubes
+
+The map `(g, s) ↦ g • σ s : G × S → X` is injective on a tube `G × U` iff every `σ s` with
+`s ∈ U` has trivial stabilizer and `s ↦ ⟦σ s⟧ : U → X ⧸ G` is injective. This is the injectivity
+of a quotient chart in the free proper quotient theorem.
+
 ## Main results
 
-* `TauCeti.MulAction.eq_empty_of_forall_exists_smul_mem`: the descent principle.
-* `TauCeti.MulAction.natCard_dvd_natCard_of_isCancelSMul`: the order of a group acting freely
-  divides the number of points.
+* `MulAction.eq_empty_of_forall_exists_smul_mem`: the descent principle.
+* `MulAction.natCard_dvd_natCard_of_isCancelSMul`: the order of a group acting freely divides
+  the number of points.
 * `MulAction.selfEquivOrbitsQuotientProd_symm_apply`: the inverse of the orbit decomposition of a
   free action evaluated at `(q, g)` is `g • q.out`.
+* `MulAction.injOn_smul_univ_prod_iff`: injectivity of `(g, s) ↦ g • σ s` on a tube `G × U`.
 
 ## References
 
@@ -52,7 +59,9 @@ Eichler–Selberg trace formula*, J. Reine Angew. Math. **762** (2020), 105–12
 
 public section
 
-namespace TauCeti.MulAction
+namespace MulAction
+
+section Monoid
 
 variable {G X : Type*} [Monoid G] [MulAction G X]
 
@@ -85,32 +94,18 @@ theorem eq_empty_of_forall_exists_smul_mem [IsCancelSMul G X] {E P : Set G} (hP 
   rw [mul_smul, ← hpx]
   exact heq.symm
 
-open _root_.MulAction in
+end Monoid
+
+variable {G X : Type*} [Group G] [MulAction G X]
+
 /-- **The order of a group acting freely divides the number of points**: every orbit of a free
 action of `G` is a copy of `G`. No finiteness is needed, as `Nat.card` vanishes on infinite types,
 and a free action on a nonempty finite type is by a finite group. -/
-theorem natCard_dvd_natCard_of_isCancelSMul {G X : Type*} [Group G] [MulAction G X]
-    [IsCancelSMul G X] : Nat.card G ∣ Nat.card X := by
-  classical
-  rcases finite_or_infinite X with hX | hX
-  swap
-  · simp
-  rcases isEmpty_or_nonempty X with hX | ⟨⟨x⟩⟩
-  · simp
-  have : Finite G := .of_injective (· • x) fun _ _ ↦ IsCancelSMul.right_cancel _ _ x
-  let Ω := orbitRel.Quotient G X
-  let _ : Fintype Ω := Fintype.ofFinite Ω
-  let _ (ω : Ω) : Finite (G ⧸ stabilizer G ω.out) := Quotient.finite _
-  rw [Nat.card_congr (selfEquivSigmaOrbitsQuotientStabilizer G X), Nat.card_sigma]
-  simp_rw [IsCancelSMul.stabilizer_eq_bot]
-  rw [Nat.card_congr QuotientGroup.quotientBot.toEquiv]
-  simp
-
-end TauCeti.MulAction
-
-namespace MulAction
-
-variable {G X : Type*} [Group G] [MulAction G X]
+theorem natCard_dvd_natCard_of_isCancelSMul [IsCancelSMul G X] :
+    Nat.card G ∣ Nat.card X := by
+  rw [Nat.card_congr (selfEquivOrbitsQuotientProd (G := G) (X := X)
+    IsCancelSMul.stabilizer_eq_bot), Nat.card_prod]
+  exact Dvd.intro_left _ rfl
 
 /-- For a free action, the inverse of the orbit decomposition `selfEquivOrbitsQuotientProd'`
 attached to a choice `φ` of orbit representatives sends `(q, g)` to `g • φ q`. -/
@@ -138,5 +133,32 @@ theorem selfEquivOrbitsQuotientProd_symm_apply (h : ∀ b : X, stabilizer G b = 
     (q : orbitRel.Quotient G X) (g : G) :
     (selfEquivOrbitsQuotientProd h).symm (q, g) = g • q.out :=
   selfEquivOrbitsQuotientProd'_symm_apply _ h q g
+
+open Set in
+/-- **Injectivity of a slice map on a tube.** The map `(g, s) ↦ g • σ s` is injective on
+`G × U` iff every `σ s` with `s ∈ U` has trivial stabilizer and `s ↦ ⟦σ s⟧` is injective on `U`
+as a map to the orbit space. -/
+@[to_additive /-- **Injectivity of a slice map on a tube.** The map `(g, s) ↦ g +ᵥ σ s` is
+injective on `G × U` iff every `σ s` with `s ∈ U` has trivial stabilizer and `s ↦ ⟦σ s⟧` is
+injective on `U` as a map to the orbit space. -/]
+theorem injOn_smul_univ_prod_iff {S : Type*} {σ : S → X} {U : Set S} :
+    InjOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) ↔
+      (∀ s ∈ U, stabilizer G (σ s) = ⊥) ∧
+        InjOn (fun s ↦ (Quotient.mk (orbitRel G X) (σ s) : orbitRel.Quotient G X)) U := by
+  constructor
+  · intro h
+    refine ⟨fun s hs ↦ (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ ?_, fun s hs s' hs' hss' ↦ ?_⟩
+    · have := @h (g, s) ⟨mem_univ _, hs⟩ (1, s) ⟨mem_univ _, hs⟩ (by simpa using hg)
+      exact congrArg Prod.fst this
+    · obtain ⟨g, hg⟩ := Quotient.exact hss'
+      have := @h (g, s') ⟨mem_univ _, hs'⟩ (1, s) ⟨mem_univ _, hs⟩ (by simpa using hg)
+      exact (congrArg Prod.snd this).symm
+  · rintro ⟨hstab, hinj⟩ ⟨g, s⟩ ⟨-, hs⟩ ⟨g', s'⟩ ⟨-, hs'⟩ (hgg' : g • σ s = g' • σ s')
+    have hmove : (g'⁻¹ * g) • σ s = σ s' := by rw [mul_smul, hgg', inv_smul_smul]
+    have hrel : orbitRel G X (σ s') (σ s) := orbitRel_apply.mpr ⟨g'⁻¹ * g, hmove⟩
+    obtain rfl : s = s' := hinj hs hs' (Quotient.sound hrel).symm
+    have hmem : g'⁻¹ * g ∈ stabilizer G (σ s) := mem_stabilizer_iff.mpr hmove
+    rw [hstab s hs, Subgroup.mem_bot, inv_mul_eq_one] at hmem
+    rw [hmem]
 
 end MulAction

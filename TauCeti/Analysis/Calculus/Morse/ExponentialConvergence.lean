@@ -248,7 +248,6 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
     linarith
   set q : ℝ := Real.sqrt G
   have hq0 : 0 < q := Real.sqrt_pos.2 hG
-  have hqne : q ≠ 0 := hq0.ne'
   have hqq : q * q = G := Real.mul_self_sqrt hG.le
   -- the energy is dominated by `G * exp (-lam * (t - T))`
   have hdecay : ∀ t ∈ Ici T, f (γ t) - f p ≤ q * q * Real.exp (-(lam * (t - T))) := by
@@ -264,7 +263,6 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
   have hr1 : r < 1 := by
     rw [hrdef]
     exact Real.exp_lt_one_iff.2 (by linarith)
-  have hone : (0 : ℝ) < 1 - r := by linarith
   have hlimit : ∀ t ∈ Ici T,
       ‖γ t - p‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) / (1 - r) := by
     intro t ht
@@ -325,8 +323,7 @@ gradient trajectory for `-f` on `Ici (-a)`. -/
 private theorem comp_neg_isIntegralCurveOn_neg
     (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a)) :
     IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
-  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ by
-    simpa using (gradient_const_smul (𝕜 := ℝ) (F := E) (f := f) (x := y) (-1))
+  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ gradient_neg
   have hdomain : {t : ℝ | t * (-1) ∈ Iic a} = Ici (-a) := by
     ext t
     simp only [mem_ofPred_eq, mem_Iic, mem_Ici, mul_neg, mul_one, neg_le]

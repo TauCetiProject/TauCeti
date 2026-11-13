@@ -14,8 +14,8 @@ public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Analytic
 For a function analytic near a point, pullback on holomorphic stalks is an isomorphism
 exactly when the derivative is nonzero. In fact, surjectivity alone suffices: a preimage of
 the coordinate germ provides a holomorphic left inverse, so the chain rule forces a nonzero
-derivative. Conversely, the analytic inverse function theorem supplies preimages of every
-germ, and local openness detects equality of pulled-back germs.
+derivative. Conversely, the analytic inverse function theorem supplies a local analytic inverse,
+along which pullback is bijective (`stalkPullback_bijective`).
 
 These criteria concern the native structure-sheaf stalks, including their entire germ maps,
 not merely their residue fields. They recognize inverses of maps on branches of nodal curves.
@@ -34,6 +34,13 @@ namespace TauCeti.holomorphicStructureSheaf
 
 variable {f : ℂ → ℂ} {a : ℂ} (hf : AnalyticAt ℂ f a)
 
+/-- For a nonzero derivative, the analytic local inverse makes pullback bijective. -/
+private theorem stalkPullback_bijective_of_deriv_ne_zero (hne : deriv f a ≠ 0) :
+    Function.Bijective (stalkPullback (eventually_contMDiffAt_of_analyticAt hf)) :=
+  stalkPullback_bijective _ (eventually_contMDiffAt_of_analyticAt (hf.analyticAt_localInverse hne))
+    (hf.hasStrictDerivAt.eventually_left_inverse hne)
+    (hf.hasStrictDerivAt.eventually_right_inverse hne)
+
 /-- Pullback on holomorphic stalks is surjective exactly when the branch derivative is nonzero.
 Surjectivity of the residue-field map alone would not suffice. -/
 theorem stalkPullback_surjective_iff :
@@ -51,34 +58,14 @@ theorem stalkPullback_surjective_iff :
     have hmul := hder.unique (hasDerivAt_id a)
     intro hz
     simp [hz] at hmul
-  · intro hne t
-    let g := hf.hasStrictDerivAt.localInverse f (deriv f a) a hne
-    have hga : g (f a) = a := HasStrictFDerivAt.localInverse_apply_image _
-    have hg : AnalyticAt ℂ g (f a) := hf.analyticAt_localInverse hne
-    have hgf : ∀ᶠ z in 𝓝 a, g (f z) = z :=
-      hf.hasStrictDerivAt.eventually_left_inverse hne
-    obtain ⟨u, hua, hut⟩ := exists_toFilterGerm_eq_analyticAt a t
-    obtain ⟨v, hv⟩ := exists_toFilterGerm_eq_of_analyticAt (hua.comp_of_eq hg hga)
-    refine ⟨v, toFilterGerm_nhds_injective a ?_⟩
-    rw [toFilterGerm_stalkPullback, hv, hut, Germ.coe_compTendsto, Germ.coe_eq]
-    exact hgf.mono fun z hz ↦ congrArg u hz
+  · exact fun hne ↦ (stalkPullback_bijective_of_deriv_ne_zero hf hne).2
 
 /-- A local analytic map induces an isomorphism of holomorphic stalks exactly when its
 derivative is nonzero. -/
 theorem stalkPullback_bijective_iff :
     Function.Bijective (stalkPullback (eventually_contMDiffAt_of_analyticAt hf)) ↔
-      deriv f a ≠ 0 := by
-  refine ⟨fun h ↦ (stalkPullback_surjective_iff hf).mp h.2, fun hne ↦ ⟨?_,
-    (stalkPullback_surjective_iff hf).mpr hne⟩⟩
-  intro t u htu
-  obtain ⟨v, _, hvt⟩ := exists_toFilterGerm_eq (f a) t
-  obtain ⟨w, _, hwu⟩ := exists_toFilterGerm_eq (f a) u
-  apply toFilterGerm_nhds_injective (f a)
-  have h := congrArg (toFilterGerm 𝓘(ℂ) ℂ a (𝓝 a) le_rfl) htu
-  rw [toFilterGerm_stalkPullback, toFilterGerm_stalkPullback, hvt, hwu,
-    Germ.coe_compTendsto, Germ.coe_compTendsto, Germ.coe_eq] at h
-  rw [hvt, hwu, Germ.coe_eq, ← hf.hasStrictDerivAt.map_nhds_eq hne]
-  exact h
+      deriv f a ≠ 0 :=
+  ⟨fun h ↦ (stalkPullback_surjective_iff hf).mp h.2, stalkPullback_bijective_of_deriv_ne_zero hf⟩
 
 /-- The holomorphic-stalk isomorphism induced by an analytic map with nonzero derivative. -/
 def stalkPullbackEquiv (hf0 : deriv f a ≠ 0) :

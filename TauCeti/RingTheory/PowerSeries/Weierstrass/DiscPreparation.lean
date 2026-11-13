@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.EvalAt
+public import TauCeti.RingTheory.PowerSeries.GaussNorm.Radius
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 import Mathlib.Analysis.Normed.Algebra.Ultra
 
@@ -54,6 +55,11 @@ Taking `r = s` gives uniqueness of the normalised preparation.
 * `TauCeti.PowerSeries.IsDiscPreparation.dvd_of_le`: the polynomial factor at a radius `r` divides
   the polynomial factor at every radius `s ≥ r`.
 * `TauCeti.PowerSeries.IsDiscPreparation.gaussNorm_sub_lt`: `‖f - P‖_r < ‖f‖_r`.
+* `TauCeti.PowerSeries.IsDiscPreparation.gaussNorm_sub_one_le_div` and
+  `TauCeti.PowerSeries.IsDiscPreparation.gaussNorm_sub_le_mul_div`: on a smaller positive
+  disc, `‖U - 1‖_s ≤ s / r` and `‖f - P‖_s ≤ ‖f‖_s * (s / r)`.
+* `TauCeti.PowerSeries.tendsto_gaussNorm_sub_of_isDiscPreparation`: disc polynomials at
+  radii tending to infinity converge to the series in each fixed positive-radius Gauss norm.
 * `TauCeti.PowerSeries.IsDiscPreparation.order_eq` and
   `TauCeti.PowerSeries.IsDiscPreparation.evalAt_eq_zero_iff`: `f` and `P` have the same order of
   vanishing at `0` and the same zeros in the closed disc of radius `r`, in every complete normed
@@ -64,11 +70,14 @@ Taking `r = s` gives uniqueness of the normalised preparation.
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.2.2, Theorem 1, for Weierstrass
   preparation.
 * M. Lazard, *Les zéros d'une fonction analytique d'une variable sur un corps valué complet*,
-  Publications Mathématiques de l'IHÉS 14 (1962), §3, for the polynomials attached to closed
-  discs and their divisibility as the radius grows.
+  Publications Mathématiques de l'IHÉS 14 (1962), §§3–4, for the polynomials attached to closed
+  discs, their divisibility as the radius grows, and their approximation estimates.
 -/
 
 public section
+
+open Filter
+open scoped Topology
 
 namespace TauCeti.PowerSeries
 
@@ -158,6 +167,43 @@ theorem gaussNorm_sub_lt (h : IsDiscPreparation r d f P U) (hr : 0 < r) :
   exact mul_lt_of_lt_one_right hP h.gaussNorm_sub_one_lt
 
 omit [IsUltrametricDist K] in
+/-- The normalised cofactor is uniformly close to one on a smaller disc, with
+an explicit bound depending only on the ratio of radii. -/
+theorem gaussNorm_sub_one_le_div (h : IsDiscPreparation r d f P U)
+    (hr : 0 < r) (hs : 0 ≤ s) (hsr : s ≤ r) :
+    (U - 1).gaussNorm norm s ≤ s / r := by
+  have hbound := PowerSeries.gaussNorm_sub_one_le_mul_div (f := U) hr hs hsr
+    (hasGaussNorm_of_isRestricted (h.isRestricted.sub (isRestricted_one r)))
+    h.constantCoeff_eq_one
+  exact hbound.trans (mul_le_of_le_one_left (by positivity) h.gaussNorm_sub_one_lt.le)
+
+/-- The disc polynomial has the same Gauss norm as the series on every positive
+smaller disc, not only on the preparation disc. -/
+theorem gaussNorm_coe_of_le (h : IsDiscPreparation r d f P U)
+    (hs : 0 < s) (hsr : s ≤ r) :
+    (P : PowerSeries K).gaussNorm norm s = f.gaussNorm norm s := by
+  have hUs := isRestricted_of_abs_le h.isRestricted (abs_le_abs_of_nonneg hs.le hsr)
+  have hclose : (U - 1).gaussNorm norm s < 1 :=
+    (gaussNorm_le_gaussNorm_of_le norm_nonneg hs.le hsr
+      (hasGaussNorm_of_isRestricted (h.isRestricted.sub (isRestricted_one r)))).trans_lt
+        h.gaussNorm_sub_one_lt
+  rw [h.eq_mul, gaussNorm_mul_of_isRestricted hs (isRestricted_polynomial P) hUs,
+    gaussNorm_eq_one_of_gaussNorm_sub_one_lt hUs hclose, mul_one]
+
+/-- The normalised disc polynomial approximates the series on every smaller
+positive disc, with error at most `‖f‖_s * (s / r)`. -/
+theorem gaussNorm_sub_le_mul_div (h : IsDiscPreparation r d f P U)
+    (hs : 0 < s) (hsr : s ≤ r) :
+    (f - P).gaussNorm norm s ≤ f.gaussNorm norm s * (s / r) := by
+  have hUs := isRestricted_of_abs_le h.isRestricted (abs_le_abs_of_nonneg hs.le hsr)
+  have heq : f - P = (P : PowerSeries K) * (U - 1) := by
+    rw [h.eq_mul, mul_sub, mul_one]
+  rw [heq, gaussNorm_mul_of_isRestricted hs (isRestricted_polynomial P)
+    (hUs.sub (isRestricted_one s)), h.gaussNorm_coe_of_le hs hsr]
+  exact mul_le_mul_of_nonneg_left (h.gaussNorm_sub_one_le_div (hs.trans_le hsr) hs.le hsr)
+    (PowerSeries.gaussNorm_nonneg _ _ _ norm_nonneg)
+
+omit [IsUltrametricDist K] in
 /-- **The order of vanishing at `0`.** The series `f` and the polynomial factor of its normalised
 disc preparation have the same order of vanishing at `0`. -/
 theorem order_eq (h : IsDiscPreparation r d f P U) : f.order = (P : PowerSeries K).order := by
@@ -202,7 +248,7 @@ theorem dvd_of_le [CompleteSpace K] (h : IsDiscPreparation r d f P U)
     h'.constantCoeff_eq_one).mpr hVr1).exists_right_inv
   have hVW : V * (W : PowerSeries K) = 1 := congrArg Subtype.val hW
   -- Normalise `P` to the monic polynomial `ω = a⁻¹ • P`, distinguished of degree `d` at `r`.
-  set a := P.leadingCoeff with ha_def
+  set a := P.leadingCoeff
   have ha : a ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr h.ne_zero
   set ω : Polynomial K := Polynomial.C a⁻¹ * P with hω_def
   have hω : ω.IsMonicOfDegree d :=
@@ -239,7 +285,7 @@ theorem unique [CompleteSpace K] (h : IsDiscPreparation r d f P U)
   obtain ⟨c, -, rfl⟩ := Polynomial.isUnit_iff.mp (IsUnit.of_mul_eq_one _ huu)
   have hc : c = 1 := by
     simpa [h.coeff_zero_eq_one, h'.coeff_zero_eq_one, eq_comm] using
-      congrArg (Polynomial.coeff · 0) hu
+      congrArg (AddMonoidAlgebra.coeff · 0) hu
   have hPQ : P = Q := by rw [hu, hc, Polynomial.C_1, mul_one]
   refine ⟨hPQ, mul_left_cancel₀ (by exact_mod_cast h.ne_zero : (P : PowerSeries K) ≠ 0) ?_⟩
   rw [← h.eq_mul, hPQ, ← h'.eq_mul]
@@ -256,7 +302,7 @@ theorem IsDistinguished.exists_isDiscPreparation [CompleteSpace K] (hf : IsDisti
   obtain ⟨e, ω, he, hω, heω⟩ :=
     hf.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hf.coeff_ne_zero) hr hfr
   -- `f(0) = e(0) * ω(0) = 1`, so `b = ω(0)` is nonzero. Put `P = b⁻¹ • ω` and `U = b • e`.
-  set b := ω.coeff 0 with hb_def
+  set b := ω.coeff 0
   have h0 : b * constantCoeff (e : PowerSeries K) = 1 := by
     rw [← hf0, ← heω, map_mul, Polynomial.constantCoeff_coe, mul_comm]
   have hb : b ≠ 0 := left_ne_zero_of_mul_eq_one h0
@@ -305,5 +351,34 @@ theorem exists_isDiscPreparation_iff [CompleteSpace K] (hr : 0 < r) :
     exact (isRestricted_polynomial P).mul h.isRestricted
   · rw [h.eq_mul, map_mul, Polynomial.constantCoeff_coe, h.coeff_zero_eq_one,
       h.constantCoeff_eq_one, one_mul]
+
+variable {ι : Type*} {l : Filter ι} {ρ : ι → ℝ} {D : ι → ℕ}
+  {p : ι → Polynomial K} {u : ι → PowerSeries K}
+
+omit [IsUltrametricDist K] in
+/-- At radii tending to infinity, any family of normalised disc cofactors tends
+to one in each fixed positive-radius Gauss norm. Only eventual preparation is needed. -/
+theorem tendsto_gaussNorm_sub_one_of_isDiscPreparation
+    (hρ : Tendsto ρ l atTop)
+    (h : ∀ᶠ i in l, IsDiscPreparation (ρ i) (D i) f (p i) (u i)) (hs : 0 < s) :
+    Tendsto (fun i ↦ (u i - 1).gaussNorm norm s) l (𝓝 0) := by
+  apply squeeze_zero' (Eventually.of_forall fun _ ↦
+    PowerSeries.gaussNorm_nonneg _ _ _ norm_nonneg) ?_
+    ((tendsto_const_nhds (x := s)).div_atTop hρ)
+  filter_upwards [h, hρ.eventually_ge_atTop s] with i hi hsi
+  exact hi.gaussNorm_sub_one_le_div (hs.trans_le hsi) hs.le hsi
+
+/-- At radii tending to infinity, the normalised disc polynomials converge to
+the series in every fixed positive-radius Gauss norm. -/
+theorem tendsto_gaussNorm_sub_of_isDiscPreparation
+    (hρ : Tendsto ρ l atTop)
+    (h : ∀ᶠ i in l, IsDiscPreparation (ρ i) (D i) f (p i) (u i)) (hs : 0 < s) :
+    Tendsto (fun i ↦ (f - p i).gaussNorm norm s) l (𝓝 0) := by
+  apply squeeze_zero' (Eventually.of_forall fun _ ↦
+    PowerSeries.gaussNorm_nonneg _ _ _ norm_nonneg) ?_
+    (by simpa using
+      ((tendsto_const_nhds (x := s)).div_atTop hρ).const_mul (f.gaussNorm norm s))
+  filter_upwards [h, hρ.eventually_ge_atTop s] with i hi hsi
+  exact hi.gaussNorm_sub_le_mul_div hs hsi
 
 end TauCeti.PowerSeries

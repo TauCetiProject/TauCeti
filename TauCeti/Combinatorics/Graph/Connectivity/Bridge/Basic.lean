@@ -272,17 +272,21 @@ theorem componentCount_deleteEdges_bridgeSet [Finite V(G)] :
 
 /-! ### Bridges and cycles -/
 
-/-- A bridge lies on no cycle. -/
-theorem IsBridge.notMem_edges_of_isCycle (he : G.IsBridge e) {p : G.Walk u u}
-    (hp : p.IsCycle) : e ∉ p.edges := by
+/-- A bridge lies on no closed trail. -/
+theorem IsBridge.notMem_edges_of_isTrail (he : G.IsBridge e) {p : G.Walk u u}
+    (hp : p.IsTrail) : e ∉ p.edges := by
   intro hep
   obtain ⟨x, y, h, q, r, rfl⟩ := Walk.mem_edges_iff_exists_append.mp hep
-  have htrail := hp.isTrail
-  rw [Walk.isTrail_def, Walk.edges_append, Walk.edges_cons] at htrail
-  have hq : e ∉ q.edges := fun heq ↦ List.disjoint_of_nodup_append htrail heq (by simp)
-  have hr : e ∉ r.edges := ((List.nodup_append.mp htrail).2.1).notMem
+  rw [Walk.isTrail_def, Walk.edges_append, Walk.edges_cons] at hp
+  have hq : e ∉ q.edges := fun heq ↦ List.disjoint_of_nodup_append hp heq (by simp)
+  have hr : e ∉ r.edges := ((List.nodup_append.mp hp).2.1).notMem
   rw [(h.symm).isBridge_iff_forall_walk_mem_edges] at he
   simpa [Walk.edges_append, hq, hr] using he (r.append q)
+
+/-- A bridge lies on no cycle. -/
+theorem IsBridge.notMem_edges_of_isCycle (he : G.IsBridge e) {p : G.Walk u u}
+    (hp : p.IsCycle) : e ∉ p.edges :=
+  he.notMem_edges_of_isTrail hp.isTrail
 
 /-- An actual edge is a bridge exactly when it lies on no cycle. -/
 theorem isBridge_iff_forall_cycle_notMem (he : e ∈ E(G)) :
@@ -296,6 +300,24 @@ theorem isBridge_iff_forall_cycle_notMem (he : e ∈ E(G)) :
   refine hcyc (.cons e h q.bypass) ?_ (by simp)
   exact (Walk.cons_isCycle_iff ..).mpr
     ⟨q.bypass_isPath, fun hm ↦ hq e (q.edges_bypass_subset_edges hm) rfl⟩
+
+/-- An edge on a cycle in a subgraph is not a bridge in the containing graph. -/
+theorem Walk.IsCycle.not_isBridge_of_le {K : Graph α β} (hKG : K ≤ G)
+    {p : K.Walk x x} (hp : p.IsCycle) (he : e ∈ p.edges) : ¬ G.IsBridge e := by
+  intro hbridge
+  exact hbridge.notMem_edges_of_isCycle (hp.mapLe hKG) (by
+    simpa only [Walk.edges_mapLe_eq_edges] using he)
+
+/-- No edge of the graph traced by a cycle is a bridge. -/
+theorem Walk.IsCycle.not_isBridge_walkGraph {p : G.Walk x x} (hp : p.IsCycle)
+    (e : β) : ¬ (G.walkGraph p).IsBridge e := by
+  intro he
+  have hpos : 0 < p.length := Nat.pos_of_ne_zero fun h ↦ hp.not_nil (Walk.length_eq_zero_iff.mp h)
+  let q := p.transfer (p.walkGraph_le_of_pos hpos) fun f hf ↦
+    (p.mem_edgeSet_walkGraph f).mpr hf
+  have hq : q.IsCycle := (Walk.isCycle_transfer (p.walkGraph_le_of_pos hpos) p _).mpr hp
+  exact hq.not_isBridge_of_le le_rfl (by
+    simpa only [q, Walk.edges_transfer] using (p.mem_edgeSet_walkGraph e).mp he.mem_edgeSet) he
 
 /-- Deleting all bridges leaves a graph without bridges. -/
 theorem not_isBridge_deleteEdges_bridgeSet (G : Graph α β) (e : β) :
@@ -419,8 +441,9 @@ theorem isForest_banana_singleton (huw : u ≠ w) (e : β) : (banana u w {e}).Is
     exact hf ▸ isBridge_banana_singleton huw e
 
 /-- No edge of a graph on two vertices with several edges is a bridge. -/
-theorem not_isBridge_banana {F : Set β} (he : e ∈ F) (hf : f ∈ F) (hfe : f ≠ e) :
-    ¬ (banana u w F).IsBridge e :=
-  IsLink.not_isBridge_of_isLink_of_ne (x := u) (y := w) (by simp [he]) (by simp [hf]) hfe
+theorem not_isBridge_banana {F : Set β} (hf : f ∈ F) (hfe : f ≠ e) :
+    ¬ (banana u w F).IsBridge e := fun h ↦ by
+  have he : e ∈ F := by simpa using h.mem_edgeSet
+  exact IsLink.not_isBridge_of_isLink_of_ne (x := u) (y := w) (by simp [he]) (by simp [hf]) hfe h
 
 end Graph

@@ -51,6 +51,18 @@ theorem poissonMeasure_singleton_zero_eq_one_iff {r : ℝ≥0} : Po(r) {0} = 1 �
   rw [poissonMeasure_singleton, ENNReal.ofReal_eq_one]
   simp
 
+/-- A Poisson singleton has nonzero mass exactly when the rate is positive or the count is zero. -/
+theorem poissonMeasure_singleton_ne_zero_iff (r : ℝ≥0) (n : ℕ) :
+    poissonMeasure r {n} ≠ 0 ↔ r ≠ 0 ∨ n = 0 := by
+  by_cases hr : r = 0
+  · subst r
+    cases n <;> simp [poissonMeasure_zero]
+  · rw [poissonMeasure_singleton, ENNReal.ofReal_ne_zero_iff]
+    constructor
+    · exact fun _ ↦ Or.inl hr
+    · intro _
+      positivity
+
 /-- The probability-generating series of a Poisson law: weighted by the Poisson masses, the powers
 `z ^ k` sum to `exp ((z - 1) * r)`. -/
 theorem hasSum_pow_poissonMeasure (r : ℝ≥0) (z : ℝ) :
@@ -230,3 +242,15 @@ theorem variance_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace
   exact variance_id_map_cast_poissonMeasure r
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+/-- A real random variable with Poisson law has centered second moment equal to the rate. -/
+theorem integral_sub_sq_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0} (hX : HasLaw X Po(ℝ, r) P) :
+    ∫ ω, (X ω - r) ^ 2 ∂P = r := by
+  have h := TauCeti.Probability.variance_of_hasLaw_map_cast_poissonMeasure hX
+  rwa [variance_eq_integral hX.aemeasurable,
+    TauCeti.Probability.integral_of_hasLaw_map_cast_poissonMeasure hX] at h
+
+end ProbabilityTheory.HasLaw

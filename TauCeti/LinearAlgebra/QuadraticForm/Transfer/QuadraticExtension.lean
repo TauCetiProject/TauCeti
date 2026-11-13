@@ -149,7 +149,7 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 The hypothesis `Tr a ≠ 0` cannot be dropped: at `Tr a = 0` both entries vanish, while for
 `a ≠ 0` the form is the hyperbolic plane (`equivalent_traceTransfer_smul_sq_hyperbolicPlane`). -/
-theorem equivalent_traceTransfer_smul_sq_weightedSumSquares_of_sq [Invertible (2 : K)]
+theorem equivalent_traceTransfer_smul_sq_weightedSumSquares_of_sq
     {x : L} {d : K} (hfin : Module.finrank K L = 2)
     (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d) {a : L}
     (htr : Algebra.trace K L a ≠ 0) :
@@ -161,6 +161,15 @@ theorem equivalent_traceTransfer_smul_sq_weightedSumSquares_of_sq [Invertible (2
   have ha : a ≠ 0 := by
     rintro rfl
     simp at htr
+  -- the trace of `c + e x` is `2 c`, so `Tr a ≠ 0` forces `2 ≠ 0`
+  have h2 : (2 : K) ≠ 0 := by
+    intro h2
+    obtain ⟨e, c, ha'⟩ := Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul
+      K L hx a
+    rw [ha', Algebra.IsQuadraticExtension.trace_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2]
+      at htr
+    exact htr (by rw [h2, zero_mul])
+  have : Invertible (2 : K) := invertibleOfNonzero h2
   set Q := (a • QuadraticMap.sq (R := L) (A := L)).traceTransfer K
   have hQ (z : L) : Q z = Algebra.trace K L (a * (z * z)) := by
     simp [Q]
@@ -257,7 +266,7 @@ theorem equivalent_traceTransfer_smul_sq_hyperbolicPlane [Invertible (2 : K)]
     rw [hac, Algebra.trace_algebraMap, hfin, two_nsmul, ← two_mul] at htr
     exact hce ((mul_eq_zero.mp htr).resolve_left (two_ne_zero' K))
   have hspan : Submodule.span K {1, y} = ⊤ := by
-    have hli := TauCeti.linearIndependent_one_of_notMem_range_algebraMap K L hy
+    have hli := (TauCeti.linearIndependent_one_iff_notMem_range_algebraMap K L).mpr hy
     rw [← Matrix.range_cons_cons_empty,
       hli.span_eq_top_of_card_eq_finrank (by rw [Fintype.card_fin, hfin])]
   exact QuadraticMap.Equivalent.trans

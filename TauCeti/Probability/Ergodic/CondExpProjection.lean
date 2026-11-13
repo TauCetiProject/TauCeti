@@ -10,7 +10,7 @@ public import TauCeti.Probability.Ergodic.MeanErgodic
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 import TauCeti.Probability.Ergodic.BirkhoffLp
 import Mathlib.Dynamics.BirkhoffSum.QuasiMeasurePreserving
-import TauCeti.MeasureTheory.Function.L2ToL1Convergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # The mean ergodic projection is conditional expectation given the invariants
@@ -37,7 +37,8 @@ statement into the probabilists' mean ergodic theorem: the time averages
 `birkhoffAverage ℝ T f n` of an integrable square-integrable observable converge in `L²` to
 `μ[f | MeasurableSpace.invariants T]`. The translation between the operator Birkhoff averages of
 the composition operator and the pointwise Birkhoff averages of a representative is
-`coeFn_birkhoffAverage_compMeasurePreserving` of `TauCeti.Probability.Ergodic.BirkhoffLp`.
+`MeasureTheory.Lp.coeFn_birkhoffAverage_compMeasurePreserving` of
+`TauCeti.Probability.Ergodic.BirkhoffLp`.
 
 ## Main results
 
@@ -55,8 +56,7 @@ the composition operator and the pointwise Birkhoff averages of a representative
   expectation tends to `0`. This is the shape a consumer integrating against a bounded weight
   wants, and it needs no integrability hypothesis of its own.
 
-The `Exchangeability` roadmap records this identification as the Layer 5 milestone
-`proj_eq_condexp`, whose migration source is the `Ergodic` subtree of
+The same identification is `proj_eq_condexp` in the `Ergodic` subtree of
 `cameronfreer/exchangeability`. Nothing here is a port: the statements are for an arbitrary
 measure-preserving map rather than the path-space shift, and the proofs consume Mathlib's
 `condExpL2` and von Neumann mean ergodic theorem.
@@ -148,8 +148,8 @@ theorem tendsto_eLpNorm_birkhoffAverage_sub_condExp (T : Ω → Ω) (hT : Measur
   have haverage : ⇑(birkhoffAverage ℝ
       (Lp.compMeasurePreservingₗᵢ ℝ T hT).toContinuousLinearMap id n (hf.toLp f)) =ᵐ[μ]
       birkhoffAverage ℝ T f n := by
-    rw [LinearIsometry.coe_toContinuousLinearMap, coe_compMeasurePreservingₗᵢ]
-    exact (coeFn_birkhoffAverage_compMeasurePreserving hT (hf.toLp f) n).trans
+    rw [LinearIsometry.coe_toContinuousLinearMap, Lp.coe_compMeasurePreservingₗᵢ]
+    exact (Lp.coeFn_birkhoffAverage_compMeasurePreserving ℝ (hf.toLp f) hT n).trans
       (hT.quasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq ℝ hf.coeFn_toLp n)
   have hprojection : ⇑(metProjection (𝕜 := ℝ) T hT (hf.toLp f)) =ᵐ[μ]
       μ[f | MeasurableSpace.invariants T] :=
@@ -171,20 +171,8 @@ theorem tendsto_integral_abs_birkhoffAverage_sub_condExp (T : Ω → Ω)
     Tendsto (fun n => ∫ ω, |birkhoffAverage ℝ T f n ω
         - μ[f | MeasurableSpace.invariants T] ω| ∂μ) atTop (𝓝 0) := by
   have hf_int : Integrable f μ := hf.integrable one_le_two
-  -- Measurability comes from the `Lᵖ` representative, through the same transfer the `L²`
-  -- statement above uses; nothing about `birkhoffAverage` is unfolded here.
-  have hBA : ∀ n : ℕ, AEStronglyMeasurable (birkhoffAverage ℝ T f n) μ := by
-    intro n
-    refine (Lp.aestronglyMeasurable (birkhoffAverage ℝ
-      (Lp.compMeasurePreservingₗᵢ ℝ T hT).toContinuousLinearMap id n (hf.toLp f))).congr ?_
-    rw [LinearIsometry.coe_toContinuousLinearMap, coe_compMeasurePreservingₗᵢ]
-    exact (coeFn_birkhoffAverage_compMeasurePreserving hT (hf.toLp f) n).trans
-      (hT.quasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq ℝ hf.coeFn_toLp n)
-  have hmeas : ∀ n : ℕ, AEStronglyMeasurable
-      (birkhoffAverage ℝ T f n - μ[f | MeasurableSpace.invariants T]) μ := fun n =>
-    (hBA n).sub integrable_condExp.aestronglyMeasurable
   simpa only [Pi.sub_apply, Real.norm_eq_abs] using
-    TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm_two hmeas
+    TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm one_le_two
       (tendsto_eLpNorm_birkhoffAverage_sub_condExp T hT hf hf_int)
 
 end Probability

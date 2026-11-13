@@ -130,7 +130,7 @@ local instance {X : Type*} [AddCommMonoid X] [Module R X] :
 
 section Unary
 
-variable (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B) (G : InternalGrading R M)
+variable (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B) (G : InternalGrading R M ℤ)
   (d : Module.End R M)
 
 /-- The differential `b_A ⊗ 1 + τ ⊗ d` of `Tᶜ(sA) ⊗ M`: the bar differential of `A` on the left
@@ -572,14 +572,14 @@ end LeftComodule
 section Transfer
 
 variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B} (MM : AInfinityBimodule AA BB M)
-  {GN : InternalGrading R N} {dN : Module.End R N}
+  {GN : InternalGrading R N ℤ} {dN : Module.End R N}
   (c : LinearSpecialContraction MM.differential dN)
   (hh : LinearMap.IsHomogeneous c.homotopy MM.grading.piece MM.grading.piece (-1))
   (hincl : LinearMap.IsHomogeneous c.incl GN.piece MM.grading.piece 0)
   (hproj : LinearMap.IsHomogeneous c.proj MM.grading.piece GN.piece 0)
 
 /-- The unary part is the tensor product differential of `Tᶜ(sA) ⊗ M` with `Tᶜ(sB)`. -/
-theorem unaryBarDifferential_eq_rTensor_add (G : InternalGrading R M) (d : Module.End R M) :
+theorem unaryBarDifferential_eq_rTensor_add (G : InternalGrading R M ℤ) (d : Module.End R M) :
     unaryBarDifferential AA BB G d =
       (leftUnaryDifferential AA d).rTensor (TensorWords R B) +
         BB.coaugmentedBarDifferential.lTensor (TensorWords R A ⊗[R] M) ∘ₗ
@@ -587,8 +587,8 @@ theorem unaryBarDifferential_eq_rTensor_add (G : InternalGrading R M) (d : Modul
   rw [unaryBarDifferential_def, AInfinityRightModule.unaryBarDifferential_def]
 
 /-- A homogeneous map `g` gives a map `1 ⊗ g` of the same degree for the left gradings. -/
-private theorem isHomogeneous_lTensor_leftGrading {G : InternalGrading R M}
-    {G' : InternalGrading R N} {g : M →ₗ[R] N} {r : ℤ}
+private theorem isHomogeneous_lTensor_leftGrading {G : InternalGrading R M ℤ}
+    {G' : InternalGrading R N ℤ} {g : M →ₗ[R] N} {r : ℤ}
     (hg : LinearMap.IsHomogeneous g G.piece G'.piece r) :
     LinearMap.IsHomogeneous (g.lTensor (TensorWords R A)) ((leftGrading AA G).shift 1).piece
       ((leftGrading AA G').shift 1).piece r := by
@@ -598,8 +598,8 @@ private theorem isHomogeneous_lTensor_leftGrading {G : InternalGrading R M}
       (LinearMap.isHomogeneous_shift_piece_iff.2 hg)
 
 /-- A homogeneous map `g` gives a map `τ ⊗ g` of the same degree for the left gradings. -/
-private theorem isHomogeneous_map_koszulTwist_leftGrading {G : InternalGrading R M}
-    {G' : InternalGrading R N} {g : M →ₗ[R] N} {r : ℤ}
+private theorem isHomogeneous_map_koszulTwist_leftGrading {G : InternalGrading R M ℤ}
+    {G' : InternalGrading R N ℤ} {g : M →ₗ[R] N} {r : ℤ}
     (hg : LinearMap.IsHomogeneous g G.piece G'.piece r) :
     LinearMap.IsHomogeneous
       (TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) g)
@@ -613,8 +613,8 @@ private theorem isHomogeneous_map_koszulTwist_leftGrading {G : InternalGrading R
 
 /-- A homogeneous map `f` of `Tᶜ(sA) ⊗ sM` gives a map `f ⊗ 1` of the same degree for the bar
 gradings. -/
-private theorem isHomogeneous_rTensor_of_leftGrading {G : InternalGrading R M}
-    {G' : InternalGrading R N} {f : TensorWords R A ⊗[R] M →ₗ[R] TensorWords R A ⊗[R] N} {r : ℤ}
+private theorem isHomogeneous_rTensor_of_leftGrading {G : InternalGrading R M ℤ}
+    {G' : InternalGrading R N ℤ} {f : TensorWords R A ⊗[R] M →ₗ[R] TensorWords R A ⊗[R] N} {r : ℤ}
     (hf : LinearMap.IsHomogeneous f ((leftGrading AA G).shift 1).piece
       ((leftGrading AA G').shift 1).piece r) :
     LinearMap.IsHomogeneous (f.rTensor (TensorWords R B))
@@ -1035,7 +1035,6 @@ theorem transferBarDifferential_comp_self :
       0 :=
   LinearSpecialContraction.perturbedDifferential_comp_perturbedDifferential_eq_zero _ _
     MM.unaryBarDifferential_add_higherBarDifferential_comp_self
-    (MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy c hh hincl hproj)
     MM.unaryBarDifferential_differential_comp_self
 
 include hincl hproj in

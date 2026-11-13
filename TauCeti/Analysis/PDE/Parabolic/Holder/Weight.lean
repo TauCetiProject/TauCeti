@@ -197,6 +197,40 @@ theorem euclideanWeightedZerothOrderCoeff_apply (p : slab (E := EuclideanSpace �
         ∑ i, b i p * dℓ i (p : ParabolicSpaceTime _).space := by
   simp [euclideanWeightedZerothOrderCoeff]
 
+/-- The algebra behind conjugation by a weight `W = exp ℓ`. Writing `A`, `B`, `C` for the
+coefficients, `L = ∂ℓ`, `M = ∂²ℓ`, and `T`, `D`, `H`, `V` for the time derivative, gradient,
+Hessian and value of `v`, applying `∂ₜ - Aⁱʲ ∂ᵢ∂ⱼ - Bⁱ ∂ᵢ - C` to `W v` gives `W` times the operator
+with first order coefficient `Bⁱ + ∑ⱼ (Aⁱʲ + Aʲⁱ) Lⱼ` and zeroth order coefficient
+`C + ∑ Aⁱʲ (Mᵢⱼ + Lᵢ Lⱼ) + ∑ Bⁱ Lᵢ` applied to `v`. -/
+private theorem weighted_parabolic_expression_eq {R : Type*} [CommRing R] (W T V C : R)
+    (A H M : ι → ι → R) (B L D : ι → R) :
+    W * (T - (∑ i, ∑ j, A i j * H i j + ∑ i, (B i + ∑ j, (A i j + A j i) * L j) * D i +
+      (C + ∑ i, ∑ j, A i j * (M i j + L i * L j) + ∑ i, B i * L i) * V)) =
+    W * T - (∑ i, ∑ j, A i j * (W * (H i j + L i * D j + L j * D i +
+        (M i j + L i * L j) * V)) + ∑ i, B i * (W * (D i + L i * V)) + C * (W * V)) := by
+  have hswap : ∑ i, ∑ j, A i j * (L i * D j) = ∑ i, ∑ j, A j i * (L j * D i) := Finset.sum_comm
+  have h₂ : ∑ i, ∑ j, A i j * (W * (H i j + L i * D j + L j * D i + (M i j + L i * L j) * V)) =
+      W * (∑ i, ∑ j, A i j * H i j + ∑ i, (∑ j, (A i j + A j i) * L j) * D i +
+        (∑ i, ∑ j, A i j * (M i j + L i * L j)) * V) := by
+    calc _ = W * (∑ i, ∑ j, A i j * H i j + ∑ i, ∑ j, A i j * (L i * D j) +
+          ∑ i, ∑ j, A i j * (L j * D i) + ∑ i, ∑ j, A i j * (M i j + L i * L j) * V) := by
+          simp only [Finset.mul_sum, ← Finset.sum_add_distrib]
+          exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+      _ = _ := by
+          rw [hswap]
+          congr 1
+          simp only [Finset.sum_mul, ← Finset.sum_add_distrib]
+          exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+  have h₁ : ∑ i, B i * (W * (D i + L i * V)) = W * (∑ i, B i * D i + (∑ i, B i * L i) * V) := by
+    rw [Finset.sum_mul, ← Finset.sum_add_distrib, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ by ring
+  have h₀ : ∑ i, (B i + ∑ j, (A i j + A j i) * L j) * D i =
+      ∑ i, B i * D i + ∑ i, (∑ j, (A i j + A j i) * L j) * D i := by
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun i _ ↦ add_mul _ _ _
+  rw [h₂, h₁, h₀]
+  ring
+
 /-- **Conjugation by a spatial weight.** Let `ℓ` be `C²` on `ℝⁿ`, with partial derivatives
 `∂ᵢℓ = dℓ i` and `∂ᵢ∂ⱼℓ = d2ℓ i j` bounded and `α`-Hölder, and let `u = exp ℓ • v` on the slab
 for some `v ∈ C_b^{2+α,1+α/2}`. Then the classical parabolic operator
@@ -247,40 +281,10 @@ theorem exp_mul_euclideanParabolicOperatorL_eq [DecidableEq ι] (hα : α ≤ 1)
     euclideanWeightedFirstOrderCoeff_apply, euclideanWeightedZerothOrderCoeff_apply,
     space_slabMk, _root_.smul_apply, _root_.add_apply, ContinuousLinearMap.smulRight_apply, hdℓ,
     hd2ℓ, smul_eq_mul]
-  set H := spatialSecondFDerivL v (slabMk x t)
-  set D := spatialFDerivL v (slabMk x t)
-  set e : ι → EuclideanSpace ℝ ι := fun i ↦ EuclideanSpace.single i 1
-  -- The cross terms `aⁱʲ (∂ᵢℓ ∂ⱼv + ∂ⱼℓ ∂ᵢv)` form the extra first-order coefficient.
-  have hswap : ∑ i, ∑ j, a i j (slabMk x t) * (dℓ i x * D (e j)) =
-      ∑ i, ∑ j, a j i (slabMk x t) * (dℓ j x * D (e i)) := Finset.sum_comm
-  have h₂ : ∑ i, ∑ j, a i j (slabMk x t) * (exp (ℓ x) * (H (e i) (e j) + dℓ i x * D (e j) +
-        dℓ j x * D (e i) + (d2ℓ i j x + dℓ i x * dℓ j x) * v (slabMk x t))) =
-      exp (ℓ x) * (∑ i, ∑ j, a i j (slabMk x t) * H (e i) (e j) +
-        ∑ i, (∑ j, (a i j (slabMk x t) + a j i (slabMk x t)) * dℓ j x) * D (e i) +
-        (∑ i, ∑ j, a i j (slabMk x t) * (d2ℓ i j x + dℓ i x * dℓ j x)) * v (slabMk x t)) := by
-    calc _ = exp (ℓ x) * (∑ i, ∑ j, a i j (slabMk x t) * H (e i) (e j) +
-          ∑ i, ∑ j, a i j (slabMk x t) * (dℓ i x * D (e j)) +
-          ∑ i, ∑ j, a i j (slabMk x t) * (dℓ j x * D (e i)) +
-          ∑ i, ∑ j, a i j (slabMk x t) * (d2ℓ i j x + dℓ i x * dℓ j x) * v (slabMk x t)) := by
-          simp only [Finset.mul_sum, ← Finset.sum_add_distrib]
-          exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-      _ = _ := by
-          rw [hswap]
-          congr 1
-          simp only [Finset.sum_mul, ← Finset.sum_add_distrib]
-          exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-  have h₁ : ∑ i, b i (slabMk x t) * (exp (ℓ x) * (D (e i) + dℓ i x * v (slabMk x t))) =
-      exp (ℓ x) * (∑ i, b i (slabMk x t) * D (e i) +
-        (∑ i, b i (slabMk x t) * dℓ i x) * v (slabMk x t)) := by
-    rw [Finset.sum_mul, ← Finset.sum_add_distrib, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
-  have h₀ : ∑ i, (b i (slabMk x t) + ∑ j, (a i j (slabMk x t) + a j i (slabMk x t)) * dℓ j x) *
-        D (e i) = ∑ i, b i (slabMk x t) * D (e i) +
-      ∑ i, (∑ j, (a i j (slabMk x t) + a j i (slabMk x t)) * dℓ j x) * D (e i) := by
-    rw [← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ ↦ add_mul _ _ _
-  rw [h₂, h₁, h₀]
-  ring
+  exact weighted_parabolic_expression_eq (exp (ℓ x)) _ _ _ (fun i j ↦ a i j (slabMk x t))
+    (fun i j ↦ spatialSecondFDerivL v (slabMk x t) (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1)) (fun i j ↦ d2ℓ i j x) (fun i ↦ b i (slabMk x t))
+    (fun i ↦ dℓ i x) (fun i ↦ spatialFDerivL v (slabMk x t) (EuclideanSpace.single i 1))
 
 end Euclidean
 
@@ -467,15 +471,15 @@ variable (A : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] E →L[ℝ]
 /-- The first-order coefficient `B_w H = B H + A (ℓ ⊗ H + H ⊗ ℓ)` of the operator conjugated by
 the weight `exp φ` with gradient `ℓ = Dφ`, as a field in `C_b^{α,α/2}`. -/
 def weightFirstOrderCoeff : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] F) →L[ℝ] F) :=
-  B + firstOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _ lipschitzWith_slab_space ℓ)
+  B + firstOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _ lipschitzWith_slabSpace ℓ)
 
 /-- The zeroth-order coefficient `C_w y = C y + A ((M + ℓ ⊗ ℓ) ⊗ y) + B (ℓ ⊗ y)` of the operator
 conjugated by the weight `exp φ` with gradient `ℓ = Dφ` and Hessian `M = D²φ`, as a field in
 `C_b^{α,α/2}`. -/
 def weightZerothOrderCoeff : HolderSpace α (slab (E := E) t₀ t₁) (F →L[ℝ] F) :=
-  C + zerothOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _ lipschitzWith_slab_space
+  C + zerothOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _ lipschitzWith_slabSpace
       (M + (smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ)) +
-    gradCorrL.compHolder₂ B (HolderSpace.compLipschitzL _ lipschitzWith_slab_space ℓ)
+    gradCorrL.compHolder₂ B (HolderSpace.compLipschitzL _ lipschitzWith_slabSpace ℓ)
 
 @[simp]
 theorem weightFirstOrderCoeff_apply (p : slab (E := E) t₀ t₁) (H : E →L[ℝ] F) :
@@ -519,7 +523,7 @@ theorem norm_weightZerothOrderCoeff_le :
     refine (norm_compHolder₂_apply_le _ _ _).trans ?_
     nlinarith [norm_smulRightL_le (𝕜 := ℝ) (E := E) (Fₗ := E →L[ℝ] ℝ), norm_nonneg ℓ]
   have h₁ : ‖zerothOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _
-      (lipschitzWith_slab_space (a := t₀) (b := t₁))
+      (lipschitzWith_slabSpace (a := t₀) (b := t₁))
         (M + (smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ))‖ ≤ ‖A‖ * (‖M‖ + ‖ℓ‖ * ‖ℓ‖) := by
     refine (norm_compHolder₂_apply_le _ _ _).trans ?_
     calc _ ≤ 1 * ‖A‖ * (‖M‖ + ‖ℓ‖ * ‖ℓ‖) := by
@@ -529,7 +533,7 @@ theorem norm_weightZerothOrderCoeff_le :
               (HolderSpace.norm_compLipschitzL_le_one _) _).trans_eq (one_mul _)).trans hQ
       _ = _ := by ring
   have h₂ : ‖gradCorrL.compHolder₂ B (HolderSpace.compLipschitzL _
-      (lipschitzWith_slab_space (a := t₀) (b := t₁)) ℓ)‖ ≤ ‖B‖ * ‖ℓ‖ := by
+      (lipschitzWith_slabSpace (a := t₀) (b := t₁)) ℓ)‖ ≤ ‖B‖ * ‖ℓ‖ := by
     refine (norm_compHolder₂_apply_le _ _ _).trans ?_
     calc _ ≤ 1 * ‖B‖ * ‖ℓ‖ := by
           gcongr

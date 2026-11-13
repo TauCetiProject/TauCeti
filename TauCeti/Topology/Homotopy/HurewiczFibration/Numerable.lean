@@ -16,7 +16,7 @@ import TauCeti.Topology.Semicontinuity.CompactInfimum
 /-!
 # Local-to-global homotopy lifting over numerable covers
 
-Dold's local-to-global theorem for fibrations: let `p : E → B` be a continuous map and
+Dold's local-to-global theorem for fibrations: let `p : E → B` be a map and
 `(U i)_{i ∈ ι}` a numerable cover of `B`, meaning there exists a locally finite partition of unity
 `ρ : PartitionOfUnity ι B` with `support (ρ i) ⊆ U i` for all `i`. If for a space `A` each
 restriction `p ⁻¹' U i → U i` has the homotopy lifting property with respect to every open subset
@@ -32,7 +32,7 @@ Hurewicz fibration (`TauCeti.isHurewiczFibration_of_isOpenCover`).
 
 ## Implementation notes
 
-Given a homotopy `H : C(I × A, B)` starting at `p ∘ f` on a nonempty space `A`:
+Given a homotopy `H : C(I × A, B)` starting at `p ∘ f` on a space `A`:
 
 1. For each subdivision number `m + 1` and tuple `α : Fin (m + 1) → ι`, define the tube weight
    `η m α a = ⨅ k, ⨅ t ∈ [k/(m+1), (k+1)/(m+1)], ρ (α k) (H (t, a))`. Compactness of the segments
@@ -65,7 +65,6 @@ Given a homotopy `H : C(I × A, B)` starting at `p ∘ f` on a nonempty space `A
 
 * A. Dold, *Partitions of unity in the theory of fibrations*, Ann. of Math. (2) 78 (1963),
   223–255, Theorem 4.8.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Theorem 4.42.
 -/
 
 public section
@@ -181,7 +180,6 @@ private theorem exists_tubeWeight_pos (ρ : PartitionOfUnity ι B) (H : C(I × A
 private theorem exists_nhds_finset_support (ρ : PartitionOfUnity ι B) (H : C(I × A, B))
     (a₀ : A) :
     ∃ F : Finset ι, ∀ᶠ a in 𝓝 a₀, ∀ t : I, support (fun i ↦ ρ i (H (t, a))) ⊆ F := by
-  classical
   have hlf : LocallyFinite fun i ↦ H ⁻¹' support (ρ i) :=
     ρ.locallyFinite.preimage_continuous H.continuous
   obtain ⟨W, hW, hfin⟩ := hlf.exists_mem_nhdsSet_finite (isCompact_univ.prod isCompact_singleton)
@@ -282,7 +280,6 @@ private theorem exists_truncTubeWeight_pos (ρ : PartitionOfUnity ι B)
 private theorem locallyFinite_truncTubeWeight (ρ : PartitionOfUnity ι B)
     (H : C(I × A, B)) :
     LocallyFinite fun idx ↦ support (truncTubeWeight ρ H idx) := by
-  classical
   intro a₀
   obtain ⟨m₀, α₀, hm₀⟩ := exists_tubeWeight_pos ρ H a₀
   have hM_pos : 0 < levelMax ρ H m₀ a₀ := hm₀.trans_le (le_levelMax ρ H m₀ α₀ a₀)
@@ -385,13 +382,14 @@ private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p :
     (LO : PartialLift p (f.restrict O) (restrictHomotopy H O) (τ₂.restrict O))
     (hLO : ∀ (t : I) (x : O), τ₁ x.1 = τ₂ x.1 → LO.map (t, x) = L.map (t, x.1)) :
     ∃ L' : PartialLift p f H τ₂,
-      ∀ t x, τ₁ x = τ₂ x → L'.map (t, x) = L.map (t, x) := by
+      (∀ t x, τ₁ x = τ₂ x → L'.map (t, x) = L.map (t, x)) ∧
+        ∀ (t : I) (x : O), L'.map (t, x.1) = LO.map (t, x) := by
   classical
   let raw (z : I × X) : E :=
     if hz : z.2 ∈ O then LO.map (z.1, ⟨z.2, hz⟩) else L.map z
   have hraw_pos : ∀ (t : I) {x : X} (hx : x ∈ O), raw (t, x) = LO.map (t, ⟨x, hx⟩) := by
     intro t x hx; dsimp only [raw]; split_ifs; rfl
-  have hraw_neg : ∀ (t : I) {x : X} (hx : x ∉ O), raw (t, x) = L.map (t, x) := by
+  have hraw_neg : ∀ (t : I) {x : X}, x ∉ O → raw (t, x) = L.map (t, x) := by
     intro t x hx; dsimp only [raw]; split_ifs; rfl
   have hraw_eq_of_eq : ∀ t x, τ₁ x = τ₂ x → raw (t, x) = L.map (t, x) := fun t x heq ↦ by
     by_cases hx : x ∈ O
@@ -435,7 +433,7 @@ private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p :
       · have heq := heq_of_notMem hx
         rw [hraw_eq_of_eq t x heq, hraw_eq_of_eq (τ₂ x) x heq, ← heq]
         exact L.const_of_ge t x (heq ▸ ht)
-  }, hraw_eq_of_eq⟩
+  }, hraw_eq_of_eq, fun t x ↦ hraw_pos t x.2⟩
 
 private def stepTime {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I)) : C(I × X, I) :=
   ⟨fun z ↦ ⟨min (τ₂ z.2 : ℝ) ((τ₁ z.2 : ℝ) + (z.1 : ℝ)),
@@ -449,15 +447,15 @@ private theorem coe_stepTime {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X
   rfl
 
 private theorem stepTime_mem_Icc {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
-    (hτ : ∀ x, τ₁ x ≤ τ₂ x) (s : I) (x : X) :
+    {x : X} (hx : τ₁ x ≤ τ₂ x) (s : I) :
     stepTime τ₁ τ₂ (s, x) ∈ Icc (τ₁ x) (τ₂ x) :=
-  ⟨le_min (hτ x) (le_add_of_nonneg_right s.2.1), min_le_left _ _⟩
+  ⟨le_min hx (le_add_of_nonneg_right s.2.1), min_le_left _ _⟩
 
 private theorem stepTime_zero {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
-    (hτ : ∀ x, τ₁ x ≤ τ₂ x) (x : X) :
+    {x : X} (hx : τ₁ x ≤ τ₂ x) :
     stepTime τ₁ τ₂ (0, x) = τ₁ x := by
   ext
-  have hle : (τ₁ x : ℝ) ≤ τ₂ x := hτ x
+  have hle : (τ₁ x : ℝ) ≤ τ₂ x := hx
   simp [hle]
 
 private def stepOffset {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
@@ -488,12 +486,12 @@ private theorem stepOffset_eq_zero_of_eq {X : Type*} [TopologicalSpace X] {τ₁
   have hmin : min (τ₂ x : ℝ) (t : ℝ) ≤ τ₁ x := heq ▸ min_le_left _ _
   simp [max_eq_left hmin]
 
-private theorem stepTime_stepOffset_of_gt {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
-    (hτ : ∀ x, τ₁ x ≤ τ₂ x) {t : I} {x : X} (ht : τ₁ x < t) :
+private theorem stepTime_stepOffset_of_ge {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
+    (hτ : ∀ x, τ₁ x ≤ τ₂ x) {t : I} {x : X} (ht : τ₁ x ≤ t) :
     stepTime τ₁ τ₂ (stepOffset hτ (t, x), x) = min t (τ₂ x) := by
   ext
   have hmax : max (τ₁ x : ℝ) (min (τ₂ x : ℝ) (t : ℝ)) = min (τ₂ x : ℝ) (t : ℝ) :=
-    max_eq_right (le_min (hτ x) ht.le)
+    max_eq_right (le_min (hτ x) ht)
   rw [coe_stepTime, coe_stepOffset, hmax, add_sub_cancel, ← min_assoc, min_self, min_comm]
   rfl
 
@@ -508,12 +506,11 @@ private theorem PartialLift.advanceOpen {X : Type*} [TopologicalSpace X] {p : E 
     (hHU : ∀ x ∈ O, ∀ t ∈ Icc (τ₁ x) (τ₂ x), H (t, x) ∈ U) :
     ∃ L' : PartialLift p f H τ₂,
       ∀ t x, τ₁ x = τ₂ x → L'.map (t, x) = L.map (t, x) := by
-  classical
   let gO : C(O, E) := ⟨fun x ↦ L.map (τ₁ x.1, x.1), by fun_prop⟩
   let KO : C(I × O, B) := ⟨fun z ↦ H (stepTime τ₁ τ₂ (z.1, z.2.1), z.2.1), by fun_prop⟩
   obtain ⟨GO, hGO_proj, hGO_zero⟩ := hhlp.exists_lift_of_mem gO KO
-    (fun z ↦ hHU z.2.1 z.2.2 _ (stepTime_mem_Icc hτ z.1 z.2.1))
-    (fun x ↦ by simp only [KO, gO, ContinuousMap.coe_mk, stepTime_zero hτ, L.proj_eq, min_self])
+    (fun z ↦ hHU z.2.1 z.2.2 _ (stepTime_mem_Icc (hτ _) z.1))
+    (fun x ↦ by simp only [KO, gO, ContinuousMap.coe_mk, stepTime_zero (hτ _), L.proj_eq, min_self])
   let onO : C(I × O, E) :=
     ⟨fun z ↦ if z.1 ≤ τ₁ z.2.1 then L.map (z.1, z.2.1)
         else GO (stepOffset hτ (z.1, z.2.1), z.2),
@@ -535,7 +532,7 @@ private theorem PartialLift.advanceOpen {X : Type*} [TopologicalSpace X] {p : E 
         split_ifs with ht
         · rw [L.proj_eq, min_eq_left ht, min_eq_left (ht.trans (hτ x.1))]
         · rw [← Function.comp_apply (f := p), hGO_proj]
-          exact stepTime_stepOffset_of_gt hτ (not_le.1 ht) ▸ rfl
+          exact stepTime_stepOffset_of_ge hτ (not_le.1 ht).le ▸ rfl
       zero_eq := fun x ↦ by
         rw [honO_apply, ContinuousMap.restrict_apply, ite_eq_left unitInterval.nonneg', L.zero_eq]
       const_of_ge := fun t x ht ↦ by
@@ -548,7 +545,7 @@ private theorem PartialLift.advanceOpen {X : Type*} [TopologicalSpace X] {p : E 
             ite_eq_right (not_le.2 (hlt.trans_le ht)), ite_eq_right (not_le.2 hlt)]
           have htle : (τ₂ x.1 : ℝ) ≤ t := ht
           exact congrArg (fun s ↦ GO (s, x)) (Subtype.ext (by simp [min_eq_left htle])) }
-  exact L.extendFromOpen hτ hO hclos LO honO_eq_of_eq
+  exact (L.extendFromOpen hτ hO hclos LO honO_eq_of_eq).imp fun _ h ↦ h.1
 
 private noncomputable def clipSegTime {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I))
     (m : ℕ) (j : Fin (m + 2)) : C(X, I) :=
@@ -566,9 +563,9 @@ private theorem clipSegTime_zero {X : Type*} [TopologicalSpace X] {τ₁ τ₂ :
     max_eq_left unitInterval.nonneg']
 
 private theorem clipSegTime_last {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
-    (hτ : ∀ x, τ₁ x ≤ τ₂ x) (m : ℕ) (x : X) :
+    {x : X} (hx : τ₁ x ≤ τ₂ x) (m : ℕ) :
     clipSegTime τ₁ τ₂ m (Fin.last (m + 1)) x = τ₂ x := by
-  rw [clipSegTime_apply, segEndpt_last, min_eq_left unitInterval.le_one', max_eq_right (hτ x)]
+  rw [clipSegTime_apply, segEndpt_last, min_eq_left unitInterval.le_one', max_eq_right hx]
 
 private theorem clipSegTime_mono {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I))
     (m : ℕ) (k : Fin (m + 1)) (x : X) :
@@ -661,7 +658,45 @@ private theorem PartialLift.advanceTube {ι : Type*} {A : Type w} [TopologicalSp
           (hS.isOpenEmbedding_subtypeVal.comp hO.isOpenEmbedding_subtypeVal)) hHU
       exact ⟨Lk', fun t x heq ↦ (hLk' t x (clipSegTime_eq_of_eq m k heq)).trans (hLk t x heq)⟩
   obtain ⟨Llast, hLlast⟩ := step (Fin.last (m + 1))
-  exact ⟨Llast.congrTime (clipSegTime_last hτ m), hLlast⟩
+  exact ⟨Llast.congrTime (fun x ↦ clipSegTime_last (hτ x) m), hLlast⟩
+
+/-- Glue partial lifts defined on pairwise disjoint open sets `S i` into a partial lift on their
+union, which agrees with `LF i` on `S i`. -/
+private theorem PartialLift.exists_of_pairwise_disjoint_isOpen {X : Type*} [TopologicalSpace X]
+    {p : E → B} {f : C(X, E)} {H : C(I × X, B)} {τ : C(X, I)} {κ : Type*} {S : κ → Set X}
+    (hS : ∀ i, IsOpen (S i)) (hdisj : ∀ i j x, x ∈ S i → x ∈ S j → i = j)
+    (LF : ∀ i, PartialLift p (f.restrict (S i)) (restrictHomotopy H (S i)) (τ.restrict (S i))) :
+    ∃ LO : PartialLift p (f.restrict (⋃ i, S i)) (restrictHomotopy H (⋃ i, S i))
+        (τ.restrict (⋃ i, S i)),
+      ∀ i t (x : ⋃ i, S i) (hx : x.1 ∈ S i), LO.map (t, x) = (LF i).map (t, ⟨x.1, hx⟩) := by
+  let T (i : κ) : Set (I × ⋃ i, S i) := {z | z.2.1 ∈ S i}
+  let φ (i : κ) : C(T i, E) :=
+    (LF i).map.comp ⟨fun z ↦ (z.1.1, ⟨z.1.2.1, z.2⟩), by fun_prop⟩
+  let onO : C(I × ⋃ i, S i, E) :=
+    ContinuousMap.liftCover T φ
+      (fun i j z hzi hzj ↦ by
+        cases hdisj i j z.2.1 hzi hzj
+        rfl)
+      fun z ↦ by
+        obtain ⟨i, hi⟩ := mem_iUnion.1 z.2.2
+        exact ⟨i, ((hS i).preimage continuous_subtype_val).preimage continuous_snd |>.mem_nhds hi⟩
+  have honO_stratum : ∀ i t (x : ⋃ i, S i) (hx : x.1 ∈ S i),
+      onO (t, x) = (LF i).map (t, ⟨x.1, hx⟩) :=
+    fun i t x hx ↦ ContinuousMap.liftCover_coe (φ := φ) (i := i) ⟨(t, x), hx⟩
+  refine ⟨{ map := onO
+            proj_eq := fun t x ↦ ?_
+            zero_eq := fun x ↦ ?_
+            const_of_ge := fun t x ht ↦ ?_ }, honO_stratum⟩
+  · obtain ⟨i, hxi⟩ := mem_iUnion.1 x.2
+    rw [honO_stratum i t x hxi]
+    exact (LF i).proj_eq t ⟨x.1, hxi⟩
+  · obtain ⟨i, hxi⟩ := mem_iUnion.1 x.2
+    rw [honO_stratum i 0 x hxi]
+    exact (LF i).zero_eq ⟨x.1, hxi⟩
+  · obtain ⟨i, hxi⟩ := mem_iUnion.1 x.2
+    rw [ContinuousMap.restrict_apply, honO_stratum i t x hxi,
+      honO_stratum i (τ x.1) x hxi]
+    exact (LF i).const_of_ge t ⟨x.1, hxi⟩ ht
 
 end PartialLift
 
@@ -670,7 +705,6 @@ section SequentialSchedule
 private def cumTime {A : Type w} [TopologicalSpace A] (μ : PartitionOfUnity ℕ A) (n : ℕ) :
     C(A, I) :=
   ⟨fun a ↦ ⟨∑ j ∈ Finset.range n, μ j a, Finset.sum_nonneg fun j _ ↦ μ.nonneg j a, by
-      classical
       exact (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left
         fun j _ _ ↦ μ.nonneg j a).trans
           (μ.sum_finsupport' (mem_univ a) Finset.subset_union_right).le⟩,
@@ -719,7 +753,6 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
       ∀ t a, cumTime (tubePartition ρ H).gapPartition.shrink n a =
         cumTime (tubePartition ρ H).gapPartition.shrink (n + 1) a →
         L'.map (t, a) = L.map (t, a) := by
-  classical
   let ν := tubePartition ρ H
   let μ := ν.gapPartition.shrink
   let τ₁ := cumTime μ n
@@ -732,7 +765,7 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
       ∃ LF : PartialLift p (f.restrict (Stratum F.1)) (restrictHomotopy H (Stratum F.1))
         (τ₂.restrict (Stratum F.1)),
       ∀ t (x : Stratum F.1), τ₁ x.1 = τ₂ x.1 → LF.map (t, x) = L.map (t, x.1) := by
-    intro ⟨F, hcard, hne⟩
+    intro ⟨F, _, hne⟩
     let idx := hne.choose
     refine (L.restrict (Stratum F)).advanceTube ρ hρ hlift (hStratum_open F)
       (fun x ↦ hτ x.1) idx.1 idx.2 fun x k t ht ↦ ?_
@@ -740,56 +773,24 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
     rw [tubePartition, PartitionOfUnity.ofExistsPos_pos_iff] at hν_pos
     exact pos_of_tubeWeight_pos (tubeWeight_pos_of_truncTubeWeight_pos hν_pos) k ht
   choose LF hLF using hlocal
-  let hasStratum (a : A) : Prop :=
-    ∃ F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty}, a ∈ Stratum F.1
-  let O : Set A := {a : A | hasStratum a}
-  have hO : IsOpen O := by
-    convert isOpen_iUnion fun F : {F // F.card = n ∧ F.Nonempty} ↦ hStratum_open F.1
-    ext a; simp [O, hasStratum]
-  have hclos_sub : closure {a : A | τ₁ a < τ₂ a} ⊆ O := fun a ha ↦ by
+  have hclos_sub : closure {a : A | τ₁ a < τ₂ a} ⊆
+      ⋃ F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty}, Stratum F.1 :=
+    fun a ha ↦ by
     have hsupp_gap : a ∈ support (ν.gapPartition n) :=
       ν.gapPartition.tsupport_shrink_subset_support n (closure_cumTime_lt_subset μ n ha)
     have hpos_gap : 0 < ν.gapPartition n a :=
       lt_of_le_of_ne (ν.gapPartition.nonneg n a) (Ne.symm hsupp_gap)
     obtain ⟨F, hcard, hgap⟩ := ν.exists_gap_pos_of_gapPartition_pos hpos_gap
-    exact ⟨⟨F, hcard, (ν.gap_pos_iff.1 hgap).1⟩, hgap⟩
-  let onO_fun (z : I × O) : E := (LF z.2.2.choose).map (z.1, ⟨z.2.1, z.2.2.choose_spec⟩)
-  have honO_stratum :
-      ∀ (F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty})
-        (t : I) (x : O) (hx : x.1 ∈ Stratum F.1),
-        onO_fun (t, x) = (LF F).map (t, ⟨x.1, hx⟩) := by
-    intro F t x hx
-    have hsub : x.2.choose = F := Subtype.ext <|
-      ν.eq_of_gap_pos_of_card_eq x.2.choose_spec hx (x.2.choose.2.1.trans F.2.1.symm)
-    cases hsub; rfl
-  have honO_cont : Continuous onO_fun := by
-    refine continuous_iff_continuousAt.2 fun ⟨t₀, x₀⟩ ↦ ?_
-    obtain ⟨F, hx₀F⟩ := x₀.2
-    let UF : Set O := {x : O | x.1 ∈ Stratum F.1}
-    have hUF_open : IsOpen UF := (hStratum_open F.1).preimage continuous_subtype_val
-    have hOn : ContinuousOn onO_fun (univ ×ˢ UF) :=
-      continuousOn_iff_continuous_domRestrict.2 <|
-        (by fun_prop : Continuous fun z : univ ×ˢ UF ↦ (LF F).map (z.1.1, ⟨z.1.2.1, z.2.2⟩)).congr
-          fun z ↦ (honO_stratum F z.1.1 z.1.2 z.2.2).symm
-    exact hOn.continuousAt ((isOpen_univ.prod hUF_open).mem_nhds ⟨mem_univ t₀, hx₀F⟩)
-  let LO : PartialLift p (f.restrict O) (restrictHomotopy H O) (τ₂.restrict O) :=
-    { map := ⟨onO_fun, honO_cont⟩
-      proj_eq := fun t x ↦ by
-        obtain ⟨F, hxF⟩ := x.2
-        rw [ContinuousMap.coe_mk, honO_stratum F t x hxF]
-        exact (LF F).proj_eq t ⟨x.1, hxF⟩
-      zero_eq := fun x ↦ by
-        obtain ⟨F, hxF⟩ := x.2
-        rw [ContinuousMap.coe_mk, honO_stratum F 0 x hxF]
-        exact (LF F).zero_eq ⟨x.1, hxF⟩
-      const_of_ge := fun t x ht ↦ by
-        obtain ⟨F, hxF⟩ := x.2
-        rw [ContinuousMap.coe_mk, ContinuousMap.restrict_apply,
-          honO_stratum F t x hxF, honO_stratum F (τ₂ x.1) x hxF]
-        exact (LF F).const_of_ge t ⟨x.1, hxF⟩ ht }
-  refine L.extendFromOpen hτ hO hclos_sub LO fun t x heq ↦ ?_
-  obtain ⟨F, hxF⟩ := x.2
-  exact (honO_stratum F t x hxF).trans (hLF F t ⟨x.1, hxF⟩ heq)
+    exact mem_iUnion.2 ⟨⟨F, hcard, (ν.gap_pos_iff.1 hgap).1⟩, hgap⟩
+  obtain ⟨LO, hLO⟩ := PartialLift.exists_of_pairwise_disjoint_isOpen
+    (S := fun F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty} ↦
+      Stratum F.1) (fun F ↦ hStratum_open F.1)
+    (fun F F' x hF hF' ↦ Subtype.ext (ν.eq_of_gap_pos_of_card_eq hF hF' (F.2.1.trans F'.2.1.symm)))
+    LF
+  refine (L.extendFromOpen hτ ?_ hclos_sub LO fun t x heq ↦ ?_).imp fun _ h ↦ h.1
+  · exact isOpen_iUnion fun F ↦ hStratum_open F.1
+  obtain ⟨F, hxF⟩ := mem_iUnion.1 x.2
+  exact (hLO F t x hxF).trans (hLF F t ⟨x.1, hxF⟩ heq)
 
 end SequentialSchedule
 
@@ -810,7 +811,6 @@ theorem HasHomotopyLiftingProperty.of_partitionOfUnity {p : E → B}
         (Set.MapsTo.restrict p (p ⁻¹' U i) (U i) (mapsTo_preimage p (U i))) W) :
     HasHomotopyLiftingProperty p A := by
   intro f H hH
-  classical
   let μ := (tubePartition ρ H).gapPartition.shrink
   let stepChoice : ∀ (n : ℕ) (Ln : PartialLift p f H (cumTime μ n)),
       {L' : PartialLift p f H (cumTime μ (n + 1)) //
@@ -823,8 +823,8 @@ theorem HasHomotopyLiftingProperty.of_partitionOfUnity {p : E → B}
   have hL_eq : ∀ n t a, cumTime μ n a = cumTime μ (n + 1) a →
       (L (n + 1)).map (t, a) = (L n).map (t, a) :=
     fun n ↦ (stepChoice n (L n)).2
-  have hL_stable : ∀ {N n : ℕ} (hNn : N ≤ n) {a : A}
-      (hsupp : μ.finsupport a ⊆ Finset.range N) (t : I),
+  have hL_stable : ∀ {N n : ℕ}, N ≤ n → ∀ {a : A},
+      μ.finsupport a ⊆ Finset.range N → ∀ (t : I),
       (L n).map (t, a) = (L N).map (t, a) := by
     intro N n hNn a hsupp t
     induction n, hNn using Nat.le_induction with

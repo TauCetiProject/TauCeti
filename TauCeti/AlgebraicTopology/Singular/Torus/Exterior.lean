@@ -83,9 +83,9 @@ instance free_singularHomology_pi_circle [Module.Free k M] (ι : Type u) [Finite
   .of_equiv (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).mapIso
     (sphereOnePiIsoCirclePi ι)).toLinearEquiv
 
-/-- Over a nontrivial commutative ring, the homology of the torus `ι → S¹` with coefficients in a
-free module of finite rank has finite rank. -/
-instance finite_singularHomology_pi_circle [Nontrivial k] [Module.Free k M] [Module.Finite k M]
+/-- The homology of the torus `ι → S¹` with coefficients in a free module of finite rank has
+finite rank. -/
+instance finite_singularHomology_pi_circle [Module.Free k M] [Module.Finite k M]
     (ι : Type u) [Finite ι] (q : ℕ) :
     Module.Finite k (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).obj
       (TopCat.of (ι → ULift.{u} Circle))) :=
@@ -107,8 +107,8 @@ theorem subsingleton_singularHomology_circle (j : ℕ) :
     Subsingleton (((singularHomologyFunctor (ModuleCat.{u} k) (j + 2)).obj M).obj
       (TopCat.of (ULift.{u} Circle))) :=
   ModuleCat.subsingleton_of_isZero <|
-    ((isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne M (n := 1) (k := j + 2)
-      (by omega)).of_iso ((reducedSingularHomologySuccIso M (j + 1)).app _).symm).of_iso
+    (isZero_singularHomologyFunctor_topCatSphere_of_ne M (n := 1) (q := j + 1)
+      (by omega)).of_iso
       (((singularHomologyFunctor (ModuleCat.{u} k) (j + 2)).obj M).mapIso sphereOneIsoCircle).symm
 
 end Circle

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -59,6 +60,20 @@ public noncomputable section
 open Filter Function OnePoint Set Topology
 
 open scoped Manifold
+
+namespace OnePoint
+
+/-- The affine coordinate has a simple pole at infinity. -/
+@[simp]
+theorem meromorphicOrderAt_affineChart_infty :
+    TauCeti.RiemannSurface.meromorphicOrderAt (affineChart : OnePoint ℂ → ℂ) ∞ = (-1 : ℤ) := by
+  rw [TauCeti.RiemannSurface.meromorphicOrderAt_def, chartAt_infty, invChart_infty,
+    affineChart_comp_invChart_symm]
+  have h := _root_.meromorphicOrderAt_inv (f := (id : ℂ → ℂ)) (x := 0)
+  rw [_root_.meromorphicOrderAt_id] at h
+  convert h using 1 <;> simp [Pi.inv_def, Function.id_def]
+
+end OnePoint
 
 namespace TauCeti.RiemannSurface
 
@@ -145,7 +160,7 @@ private theorem exists_mdifferentiableAt_eventuallyEq {g : ℂ → ℂ} {z₀ : 
     have hinv : 0 < _root_.meromorphicOrderAt g⁻¹ z₀ := by
       obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 hord.ne_top
       rw [← hn] at hord
-      rw [meromorphicOrderAt_inv, ← hn]
+      rw [_root_.meromorphicOrderAt_inv, ← hn]
       exact_mod_cast neg_pos.2 (WithTop.coe_lt_coe.1 hord)
     have han := hg.inv.meromorphicOrderAt_nonneg_iff_analyticAt_toMeromorphicNFAt.1 hinv.le
     have hsymm : ∀ w, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (invChart.symm : ℂ → OnePoint ℂ) w := by
@@ -162,13 +177,11 @@ private theorem exists_mdifferentiableAt_eventuallyEq {g : ℂ → ℂ} {z₀ : 
 
 /-! ### Holomorphy -/
 
-variable [IsManifold 𝓘(ℂ) 1 X]
-
 /-- Near a point where `f` is meromorphic, `sphereMap f` is the composite of the chart with a map
 to the sphere which is holomorphic near the coordinate of the point, and `f` agrees with this
 composite on a punctured neighbourhood. -/
 private theorem exists_eventuallyEq_comp_chartAt (hf : MeromorphicAt f x) :
-    ∃ Φ : ℂ → OnePoint ℂ, (∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (Φ ∘ chartAt ℂ x) y) ∧
+    ∃ Φ : ℂ → OnePoint ℂ, (∀ᶠ z in 𝓝 (chartAt ℂ x x), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) Φ z) ∧
       (fun y ↦ (f y : OnePoint ℂ)) =ᶠ[𝓝[≠] x] Φ ∘ chartAt ℂ x ∧
       sphereMap f =ᶠ[𝓝 x] Φ ∘ chartAt ℂ x ∧
       (Φ (chartAt ℂ x x) = ∞ ↔ meromorphicOrderAt f x < 0) := by
@@ -177,22 +190,24 @@ private theorem exists_eventuallyEq_comp_chartAt (hf : MeromorphicAt f x) :
   have hx := mem_chart_source ℂ x
   have hsource : ∀ᶠ y in 𝓝 x, y ∈ (chartAt ℂ x).source :=
     (chartAt ℂ x).open_source.mem_nhds hx
-  have hmd : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (Φ ∘ chartAt ℂ x) y := by
+  have hcont : ∀ᶠ y in 𝓝 x, ContinuousAt (Φ ∘ chartAt ℂ x) y := by
     filter_upwards [hsource, ((chartAt ℂ x).continuousAt hx).eventually hΦ] with y hy hΦy
-    exact hΦy.comp y (mdifferentiableAt_atlas (chart_mem_atlas ℂ x) hy)
+    exact hΦy.continuousAt.comp ((chartAt ℂ x).continuousAt hy)
   have hfeq : (fun y ↦ (f y : OnePoint ℂ)) =ᶠ[𝓝[≠] x] Φ ∘ chartAt ℂ x := by
     filter_upwards [nhdsWithin_le_nhds hsource, (tendsto_chartAt_nhdsNE x).eventually heq] with
       y hy hΦy
     simpa [(chartAt ℂ x).left_inv hy] using hΦy
-  exact ⟨Φ, hmd, hfeq,
-    sphereMap_eventuallyEq hfeq (hmd.mono fun _ h ↦ h.continuousAt), hinf⟩
+  exact ⟨Φ, hΦ, hfeq, sphereMap_eventuallyEq hfeq hcont, hinf⟩
 
+open scoped ContDiff in
 /-- **Meromorphic functions are holomorphic maps to the Riemann sphere.** If `f` is meromorphic at
 `x`, then `sphereMap f` is holomorphic at `x`. -/
 theorem mdifferentiableAt_sphereMap (hf : MeromorphicAt f x) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (sphereMap f) x := by
-  obtain ⟨Φ, hmd, -, heq, -⟩ := exists_eventuallyEq_comp_chartAt hf
-  exact hmd.self_of_nhds.congr_of_eventuallyEq heq
+  obtain ⟨Φ, hΦ, -, heq, -⟩ := exists_eventuallyEq_comp_chartAt hf
+  exact (hΦ.self_of_nhds.comp x
+    ((contMDiffAt_extChartAt (I := 𝓘(ℂ)) (n := ω) (x := x)).mdifferentiableAt
+      (by simp))).congr_of_eventuallyEq heq
 
 /-- **Meromorphic functions are holomorphic maps to the Riemann sphere.** If `f` is meromorphic at
 every point, then `sphereMap f` is holomorphic. -/
@@ -212,6 +227,32 @@ theorem sphereMap_eq_infty_iff (hf : MeromorphicAt f x) :
     sphereMap f x = ∞ ↔ meromorphicOrderAt f x < 0 := by
   obtain ⟨Φ, -, -, heq, hinf⟩ := exists_eventuallyEq_comp_chartAt hf
   rw [heq.self_of_nhds, comp_apply, hinf]
+
+/-- Filling removable singularities and reading in the affine chart preserves a meromorphic
+function on a punctured neighbourhood. -/
+theorem affineChart_sphereMap_eventuallyEq (hf : MeromorphicAt f x) :
+    (fun y ↦ OnePoint.affineChart (sphereMap f y)) =ᶠ[𝓝[≠] x] f :=
+  (eventually_sphereMap_eq hf).mono fun _ hy ↦ by simp [hy]
+
+open scoped ContDiff in
+/-- The filled affine representative of a meromorphic function is holomorphic at a point
+where its order is nonnegative. -/
+theorem contMDiffAt_affineChart_sphereMap (hf : MeromorphicAt f x)
+    (h : 0 ≤ meromorphicOrderAt f x) :
+    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (fun y ↦ OnePoint.affineChart (sphereMap f y)) x := by
+  have hx : sphereMap f x ≠ (∞ : OnePoint ℂ) :=
+    (sphereMap_eq_infty_iff hf).not.mpr (not_lt.mpr h)
+  obtain ⟨Φ, hΦ, -, heq, -⟩ := exists_eventuallyEq_comp_chartAt hf
+  have hΦx : Φ (chartAt ℂ x x) ≠ (∞ : OnePoint ℂ) := by
+    rw [← comp_apply (f := Φ) (g := chartAt ℂ x), ← heq.self_of_nhds]
+    exact hx
+  have hh : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (fun z ↦ OnePoint.affineChart (Φ z)) (chartAt ℂ x x) := by
+    apply (contMDiffAt_iff_eventually_mdifferentiableAt (by simp)).2
+    filter_upwards [hΦ.self_of_nhds.continuousAt.eventually (isOpen_ne.mem_nhds hΦx), hΦ] with
+      z hz hΦz
+    exact (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using hz)).comp z hΦz
+  exact (hh.comp x (contMDiffAt_extChartAt (I := 𝓘(ℂ)) (n := ω) (x := x))).congr_of_eventuallyEq
+    (heq.mono fun y hy ↦ by simp [hy])
 
 /-- At a point where `f` is meromorphic, `sphereMap f` takes a finite value `c` exactly when `f`
 tends to `c` on punctured neighbourhoods of the point. -/
@@ -235,7 +276,7 @@ private theorem exists_sphereMap_ne (hf : ∀ x, MeromorphicAt f x) {x₀ : X}
   filter_upwards [eventually_sphereMap_eq (hf x₀)] with y hy
   exact coe_injective (by rw [← hy, ← hy₀, hconst y y₀])
 
-variable [CompactSpace X] [PreconnectedSpace X]
+variable [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] [PreconnectedSpace X]
 
 /-- **The finite holomorphic map defined by a meromorphic function.** On a compact connected
 Riemann surface, a meromorphic function which is not constant near some point `x₀` defines the

@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
+public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # Wigner matrices
@@ -27,12 +28,14 @@ This file defines `TauCeti.wignerMatrix` and proves the structural facts consume
 and resolvent methods:
 
 * the entry formulas and `wignerMatrix_isHermitian`;
+* the Hermitian trace-square identity `Matrix.IsHermitian.trace_mul_self_eq_sum_norm_sq`;
 * the matrix depends only on the entries in its corner (`wignerMatrix_congr`), and the top-left
   `m × m` corner of `Hₙ` is `√(m/n) Hₘ` (`submatrix_castLE_wignerMatrix`);
 * measurability in the sample point;
 * when the entries are independent, the minor `Hₙ` is independent of the off-diagonal entries of
-  the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`), and the law of `Hₙ`
-  depends only on the laws of the entries (`identDistrib_wignerMatrix`);
+  the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
+  the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`), and the
+  law of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
 * centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
   give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
   integrable when the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
@@ -255,6 +258,26 @@ theorem indepFun_wignerMatrix_column (hξ : ∀ ij, AEMeasurable (ξ ij) P)
   · rw [Function.extend_val_apply (inr_mem_cornerIndices hi)]
     simp
 
+/-- The principal minor of a Wigner matrix obtained by deleting the last row and column is
+independent of the off-diagonal entries removed from that row and column. -/
+theorem indepFun_submatrix_castSucc_wignerMatrix (hξ : ∀ ij, AEMeasurable (ξ ij) P)
+    (hη : ∀ i, AEMeasurable (η i) P)
+    (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
+    (n : ℕ) :
+    IndepFun
+      (fun ω ↦ (wignerMatrix ξ η (n + 1) ω).submatrix Fin.castSucc Fin.castSucc)
+      (fun ω (i : Fin n) ↦ ξ ⟨(i.val, n), i.2⟩ ω) P := by
+  have h := (indepFun_wignerMatrix_column hξ hη hindep n).comp
+    (measurable_const_smul (((Real.sqrt n / Real.sqrt (n + 1) : ℝ) : ℂ))) measurable_id
+  convert h using 1
+  · funext ω
+    have hcast : Fin.castLE (Nat.le_succ n) = Fin.castSucc := by
+      funext i
+      exact Fin.ext rfl
+    simpa only [hcast, Function.comp_apply, Nat.cast_add, Nat.cast_one, Nat.cast_succ] using
+      (submatrix_castLE_wignerMatrix (ξ := ξ) (η := η) ω (Nat.le_succ n))
+  · rfl
+
 /-- The law of a Wigner matrix with independent entries depends only on the laws of the
 entries: two arrays of independent entries with identically distributed coordinates give
 identically distributed Wigner matrices of every size. -/
@@ -371,13 +394,8 @@ theorem integral_re_trace_wignerMatrix_mul_self {σ2 s : ℝ}
     simp only [← Finset.mul_sum, h, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ,
       ↓reduceIte, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     ring
-  -- `trₙ Hₙ² = n⁻¹ ∑ᵢⱼ |Hᵢⱼ|²` because `Hₙ` is Hermitian.
-  have htrace (ω : Ω) : (wignerMatrix ξ η n ω * wignerMatrix ξ η n ω).trace =
-      ((∑ i, ∑ j, ‖wignerMatrix ξ η n ω i j‖ ^ 2 : ℝ) : ℂ) := by
-    simp only [trace, diag_apply, Matrix.mul_apply, Complex.ofReal_sum, Complex.ofReal_pow]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← (wignerMatrix_isHermitian ξ η ω n).apply j i, Complex.star_def, Complex.mul_conj']
-  simp_rw [htrace, ← Complex.ofReal_natCast, ← Complex.ofReal_inv,
+  simp_rw [(wignerMatrix_isHermitian ξ η _ _).trace_mul_self_eq_sum_norm_sq,
+    ← Complex.ofReal_natCast, ← Complex.ofReal_inv,
     ← Complex.ofReal_mul, Complex.ofReal_re]
   rw [integral_const_mul, integral_finsetSum _ fun i _ ↦
     integrable_finsetSum _ fun j _ ↦ integrable_norm_wignerMatrix_apply_sq hξi hηi i j]

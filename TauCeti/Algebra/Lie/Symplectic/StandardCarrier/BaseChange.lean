@@ -77,12 +77,7 @@ constructed symplectic group scheme.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * B. Conrad, *Reductive Group Schemes*, §1.
 
-This advances the base-change target in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`,
-"Base change along `ℤ → k` for any commutative ring `k`, and the compatibility of the pinning with
-it". The resulting specialized pinned carrier is an input to milestone L0, "pinned ambient
-groups", of `TauCetiRoadmap/CFSGStatement/README.md`, which reads the carrier of a finite group of
-Lie type off the points of a pinned Chevalley--Demazure group over an algebraic closure. The
-declaration structure follows the sibling specialization for the pinned Geck carrier in
+The declaration structure follows the sibling specialization for the pinned Geck carrier in
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.BaseChange`. Every
 declaration below is the corresponding generic Kostant declaration at this carrier's data; the
 transport reading the generic base-change presentation through a named integral defining ideal is
@@ -290,9 +285,10 @@ theorem mem_baseChangeDefiningPointsSubgroup_iff_mem_points (B : CommAlgCat.{w} 
         (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
         (baseChangeDefiningIdeal n A) B ↔
       GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)) g ∈ points n B := by
-  exact GeneralLinear.mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
+  exact GeneralLinear.mem_quotientPointsSubgroup_iff_mem_of_surjective
     ((n + 1) + (n + 1)) (baseChangeDefiningIdeal n A) B (points n B)
-      (baseChangePointsMulEquiv n A B) (coe_baseChangePointsMulEquiv_apply n A B) g
+      (baseChangePointsMulEquiv n A B) (baseChangePointsMulEquiv n A B).surjective
+      (coe_baseChangePointsMulEquiv_apply n A B) g
 
 /-! ## The transported root subgroups -/
 
@@ -487,7 +483,7 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
           CommHopfAlgCat.baseChangeMap (weightTorusIntegralCoordinateMap n) ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup (Fin (n + 1)))))) =
       weightTorusToBaseChangeCoordinateMap n A := by
   rw [baseChangeCoordinateIso, weightTorusIntegralCoordinateMap,

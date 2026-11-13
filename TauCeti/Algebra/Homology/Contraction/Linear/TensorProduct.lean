@@ -66,7 +66,7 @@ variable {R : Type uR} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup C] [Module R C]
   {dM : Module.End R M} {dN : Module.End R N}
-  (G : InternalGrading R M) (H : InternalGrading R N) (b : Module.End R C)
+  (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) (b : Module.End R C)
   (c : LinearContraction dM dN)
   (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
   (hi : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
@@ -122,21 +122,21 @@ theorem rTensor_homotopy :
     (c.rTensor G H b hh hi hp).homotopy = c.homotopy.rTensor C := (rfl)
 
 /-- The tensor extension's inclusion has degree zero for any grading on the right factor. -/
-theorem isHomogeneous_rTensor_incl (K : InternalGrading R C) :
+theorem isHomogeneous_rTensor_incl (K : InternalGrading R C ℤ) :
     LinearMap.IsHomogeneous (c.rTensor G H b hh hi hp).incl
       (H.tensorProduct K).piece (G.tensorProduct K).piece 0 := by
   rw [rTensor_incl]
   exact hi.rTensor K
 
 /-- The tensor extension's projection has degree zero for any grading on the right factor. -/
-theorem isHomogeneous_rTensor_proj (K : InternalGrading R C) :
+theorem isHomogeneous_rTensor_proj (K : InternalGrading R C ℤ) :
     LinearMap.IsHomogeneous (c.rTensor G H b hh hi hp).proj
       (G.tensorProduct K).piece (H.tensorProduct K).piece 0 := by
   rw [rTensor_proj]
   exact hp.rTensor K
 
 /-- The tensor extension's homotopy has degree minus one for any grading on the right factor. -/
-theorem isHomogeneous_rTensor_homotopy (K : InternalGrading R C) :
+theorem isHomogeneous_rTensor_homotopy (K : InternalGrading R C ℤ) :
     LinearMap.IsHomogeneous (c.rTensor G H b hh hi hp).homotopy
       (G.tensorProduct K).piece (G.tensorProduct K).piece (-1) := by
   rw [rTensor_homotopy]
@@ -149,7 +149,7 @@ namespace LinearSpecialContraction
 variable {R : Type uR} {M : Type uM} {N : Type uN} {C : Type uC} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup C] [Module R C]
   {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN)
-  {GM : InternalGrading R M} {GN : InternalGrading R N}
+  {GM : InternalGrading R M ℤ} {GN : InternalGrading R N ℤ}
   (hh : LinearMap.IsHomogeneous c.homotopy GM.piece GM.piece (-1))
   (hincl : LinearMap.IsHomogeneous c.incl GN.piece GM.piece 0)
   (hproj : LinearMap.IsHomogeneous c.proj GM.piece GN.piece 0)
@@ -200,7 +200,7 @@ variable {R : Type uR} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup C] [Module R C]
   {dM : Module.End R M} {dN : Module.End R N}
-  {K : InternalGrading R C} {b : Module.End R C}
+  {K : InternalGrading R C ℤ} {b : Module.End R C}
   (hb : LinearMap.IsHomogeneous b K.piece K.piece 1) (c : LinearContraction dM dN)
 
 include hb in
@@ -258,7 +258,7 @@ namespace LinearSpecialContraction
 variable {R : Type uR} {M : Type uM} {N : Type uN} {C : Type uC} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup C] [Module R C]
   {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN)
-  {K : InternalGrading R C} {b : Module.End R C}
+  {K : InternalGrading R C ℤ} {b : Module.End R C}
   (hb : LinearMap.IsHomogeneous b K.piece K.piece 1)
 
 /-- **Tensoring a special contraction on the left with a complex.**  A special contraction

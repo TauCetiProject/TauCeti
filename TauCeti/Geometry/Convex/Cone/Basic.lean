@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.Prod
@@ -43,10 +42,8 @@ variable {R V V' : Type*} [Semiring R] [PartialOrder R] [AddCommGroup V] [AddCom
 /-- The image of a salient convex cone under an injective linear map is salient. -/
 theorem map {C : ConvexCone R V} {g : V →ₗ[R] V'} (hC : C.Salient)
     (hg : Function.Injective g) : (C.map g).Salient := by
-  rintro _ ⟨x, hx, rfl⟩ hne hneg
-  obtain ⟨y, hy, hgy⟩ := hneg
-  have hyx : y = -x := hg (by rw [map_neg]; exact hgy)
-  exact hC x hx (fun h ↦ hne (by simp [h])) (hyx ▸ hy)
+  rintro _ ⟨x, hx, rfl⟩ hne ⟨y, hy, hgy⟩
+  exact hC x hx (by rintro rfl; simp at hne) (hg (hgy.trans (map_neg g x).symm) ▸ hy)
 
 /-- A product of salient pointed cones is salient. -/
 theorem prod [IsOrderedRing R] {σ : PointedCone R V} {τ : PointedCone R V'}
@@ -72,9 +69,9 @@ theorem salient_hull_singleton (x : V) : (hull R {x} : ConvexCone R V).Salient :
   obtain ⟨r, hr0, rfl⟩ := mem_hull_singleton.1 hy
   obtain ⟨t, ht0, ht⟩ := mem_hull_singleton.1 hny
   have hrt : (r + t) • x = 0 := by rw [add_smul, ht, add_neg_cancel]
-  rcases eq_zero_or_eq_zero_of_smul_eq_zero hrt with h | h
-  · exact hy0 (by rw [((add_eq_zero_iff_of_nonneg hr0 ht0).1 h).1, zero_smul])
-  · exact hy0 (by rw [h, smul_zero])
+  rcases eq_zero_or_eq_zero_of_smul_eq_zero hrt with h | rfl
+  · simp [((add_eq_zero_iff_of_nonneg hr0 ht0).1 h).1] at hy0
+  · simp at hy0
 
 end HullSalient
 
@@ -122,3 +119,15 @@ theorem finrank_span_coe_bot_prod (q : PointedCone R V') :
 end Prod
 
 end PointedCone
+
+namespace LinearMap
+
+variable {R V V' : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommMonoid V] [Module R V] [AddCommMonoid V'] [Module R V']
+
+/-- A linear map sends the zero cone to the zero cone. -/
+theorem mapsTo_bot_pointedCone (g : V →ₗ[R] V') :
+    Set.MapsTo g (⊥ : PointedCone R V) (⊥ : PointedCone R V') := by
+  simp [Set.MapsTo]
+
+end LinearMap

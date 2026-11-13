@@ -79,7 +79,7 @@ theorem isSeparable_adjoinRoot_X_pow_sub_C_X (hn : (n : k) ≠ 0) :
     Algebra.IsSeparable (RatFunc k) (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k))) := by
   have hn' : (n : RatFunc k) ≠ 0 := by
     rwa [← map_natCast (algebraMap k (RatFunc k)), _root_.map_ne_zero]
-  exact isSeparable_of_pow_eq_of_adjoin_eq_top hn' RatFunc.X_ne_zero
+  exact isSeparable_of_pow_eq_of_adjoin_eq_top hn'
     (by simpa [AdjoinRoot.algebraMap_eq] using root_X_pow_sub_C_pow n (RatFunc.X : RatFunc k))
     (IntermediateField.adjoin_root_eq_top _)
 
@@ -102,8 +102,7 @@ theorem isTotallyRamified_adjoinRoot_X_pow_sub_C_X (hn : (n : k) ≠ 0)
   have := isSeparable_adjoinRoot_X_pow_sub_C_X k n hn
   rw [Place.isTotallyRamified_iff, finrank_adjoinRoot_X_pow_sub_C_X,
     Place.ramificationIdx_eq_of_pow_eq k (RatFunc k) (IntermediateField.adjoin_root_eq_top _)
-      (root_pow_eq k n) hn
-      (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero one_ne_zero 1 0)]
+      (root_pow_eq k n) hn]
   rcases hP with hP | hP <;> rw [hP]
   · rw [Place.ord_adicOfIrreducible_X_algebraMap_mul_X_zpow_mul_X_sub_one_zpow one_ne_zero,
       Int.gcd_one_right, Nat.div_one]
@@ -120,8 +119,7 @@ theorem ramificationIdx_adjoinRoot_X_pow_sub_C_X_eq_one (hn : (n : k) ≠ 0)
     Place.ramificationIdx (RatFunc k) P = 1 := by
   have := isSeparable_adjoinRoot_X_pow_sub_C_X k n hn
   refine Place.ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k (RatFunc k)
-    (IntermediateField.adjoin_root_eq_top _) (root_pow_eq k n) hn
-    (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero one_ne_zero 1 0) ?_
+    (IntermediateField.adjoin_root_eq_top _) (root_pow_eq k n) hn ?_
   rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ one_ne_zero,
     Place.ord_X_eq_zero_of_ne hP0 hPinf]
   simp

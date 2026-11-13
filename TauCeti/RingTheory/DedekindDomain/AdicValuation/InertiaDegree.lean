@@ -68,7 +68,7 @@ theorem algebraMap_residueFieldEquivAdicCompletion (x : R ⧸ v.asIdeal) :
   rw [Ideal.Quotient.algebraMap_mk_of_liesOver, residueFieldEquivAdicCompletion_apply_mk,
     residueFieldEquivAdicCompletion_apply_mk, IsLocalRing.ResidueField.algebraMap_residue]
   refine congrArg (IsLocalRing.residue _) (Subtype.ext ?_)
-  rw [TauCeti.coe_algebraMap_integerRing, algebraMap_adicCompletionExtensionAlgebra]
+  rw [Valuation.HasExtension.val_algebraMap, algebraMap_adicCompletionExtensionAlgebra]
   exact adicCompletionExtension_algebraMap K L v w a
 
 /-- **The local residue degree is the global inertia degree.** For `w` a height-one prime of `B`

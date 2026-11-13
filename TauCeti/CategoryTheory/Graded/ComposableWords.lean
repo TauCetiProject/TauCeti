@@ -125,13 +125,16 @@ theorem composableWords_induction {X Y : C} {P : ReducedTensorWords R (TotalHom 
       (∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) →
         IsComposableString a b n → a (n - 1) = X → b 0 = Y →
           P (of R _ ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i)))
-    (zero : P 0) (add : ∀ x y, P x → P y → P (x + y)) (smul : ∀ (r : R) x, P x → P (r • x))
+    (add : ∀ x y, P x → P y → P (x + y)) (smul : ∀ (r : R) x, P x → P (r • x))
     {w : ReducedTensorWords R (TotalHom R C)} (hw : w ∈ composableWords R X Y) : P w := by
   induction hw using Submodule.span_induction with
   | mem w hw =>
     obtain ⟨n, hn, a, b, z, hz, hab, ha, hb, rfl⟩ := hw
     exact word n hn a b z hz hab ha hb
-  | zero => exact zero
+  | zero =>
+    have h := word 1 Nat.one_pos (fun _ ↦ X) (fun _ ↦ Y) (fun _ ↦ 0) (fun _ _ ↦ zero_mem _)
+      ⟨fun i hi ↦ absurd hi (by omega)⟩ rfl rfl
+    rwa [(PiTensorProduct.tprod R).map_coord_zero (0 : Fin 1) rfl, map_zero] at h
   | add x y _ _ hx hy => exact add x y hx hy
   | smul r x _ hx => exact smul r x hx
 
@@ -225,9 +228,15 @@ theorem ofLetter_mem_composableWords {X Y : C} {u : TotalHom R C}
 morphism to the target of its first. -/
 theorem subword_mem_composableWords {n : ℕ} {a b : ℕ → C} {z : ℕ → TotalHom R C}
     (hz : ∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) {p s : ℕ}
-    (hab : IsComposableString (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s) (hs : 0 < s)
-    (hps : p + s ≤ n) :
+    (hab : IsComposableString (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s) :
     subword R (fun i : Fin n ↦ z i) p s ∈ composableWords R (a (p + s - 1)) (b p) := by
+  rcases Nat.eq_zero_or_pos s with rfl | hs
+  · rw [subword_length_zero R _ p]
+    exact zero_mem _
+  by_cases hps : p + s ≤ n
+  swap
+  · rw [subword_eq_zero_of_lt_add R _ (by omega)]
+    exact zero_mem _
   rw [subword_eq_of_tprod R _ hs hps]
   have h := of_tprod_mem_composableWords hs (a := fun j ↦ a (p + j)) (b := fun j ↦ b (p + j))
     (z := fun j ↦ z (p + j)) (fun i hi ↦ hz (p + i) (by omega)) hab
@@ -236,9 +245,13 @@ theorem subword_mem_composableWords {n : ℕ} {a b : ℕ → C} {z : ℕ → Tot
 /-- A block of a word of morphisms which is not composable is a non-composable word. -/
 theorem subword_mem_nonComposableWords {n : ℕ} {a b : ℕ → C} {z : ℕ → TotalHom R C}
     (hz : ∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) {p s : ℕ}
-    (hab : ¬ IsComposableString (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s) (hps : p + s ≤ n) :
+    (hab : ¬ IsComposableString (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s) :
     subword R (fun i : Fin n ↦ z i) p s ∈ nonComposableWords R C := by
   have hs : 0 < s := Nat.pos_of_ne_zero fun h ↦ hab ⟨fun i hi ↦ absurd hi (by omega)⟩
+  by_cases hps : p + s ≤ n
+  swap
+  · rw [subword_eq_zero_of_lt_add R _ (by omega)]
+    exact zero_mem _
   rw [subword_eq_of_tprod R _ hs hps]
   exact of_tprod_mem_nonComposableWords hs (a := fun j ↦ a (p + j)) (b := fun j ↦ b (p + j))
     (z := fun j ↦ z (p + j)) (fun i hi ↦ hz (p + i) (by omega)) hab
@@ -249,7 +262,7 @@ theorem exists_subword_mem_composableWords {n : ℕ} {a b : ℕ → C} {z : ℕ 
     (hab : IsComposableString a b n) (p s : ℕ) :
     ∃ X Y : C, subword R (fun i : Fin n ↦ z i) p s ∈ composableWords R X Y := by
   by_cases h : 0 < s ∧ p + s ≤ n
-  · exact ⟨_, _, subword_mem_composableWords hz (hab.block h.2) h.1 h.2⟩
+  · exact ⟨_, _, subword_mem_composableWords hz (hab.block h.2)⟩
   · have h0 : subword R (fun i : Fin n ↦ z i) p s = 0 := by
       rcases Nat.eq_zero_or_pos s with rfl | hs
       · exact subword_length_zero R _ p
@@ -309,16 +322,24 @@ theorem prepend_mem_composableWords {X Y Z : C} {u : TotalHom R C}
   | add x y _ _ hx hy => simpa using add_mem hx hy
   | smul r x _ hx => simpa using Submodule.smul_mem _ r hx
 
-/-- Prepending a morphism to a non-composable word gives a non-composable word. -/
-theorem prepend_mem_nonComposableWords {Y Z : C} {u : TotalHom R C}
-    (hu : u ∈ LinearMap.range (homInclusion (R := R) Y Z)) {w : ReducedTensorWords R (TotalHom R C)}
+/-- Prepending an element of the total module of morphisms to a non-composable word gives a
+non-composable word. -/
+theorem prepend_mem_nonComposableWords {u : TotalHom R C}
+    {w : ReducedTensorWords R (TotalHom R C)}
     (hw : w ∈ nonComposableWords R C) : prepend R _ u w ∈ nonComposableWords R C := by
+  classical
   induction hw using Submodule.span_induction with
   | mem w hw =>
     obtain ⟨n, hn, a, b, z, hz, hab, rfl⟩ := hw
-    rw [prepend_of_tprod_cons]
-    exact of_tprod_mem_nonComposableWords _ (cons_mem hz hu)
-      (not_isComposableString_cons hab Y Z)
+    induction u using totalHom_induction with
+    | zero => simp
+    | homInclusion Y Z f =>
+      have hu : homInclusion (R := R) Y Z f ∈ LinearMap.range (homInclusion (R := R) Y Z) :=
+        ⟨f, rfl⟩
+      rw [prepend_of_tprod_cons]
+      exact of_tprod_mem_nonComposableWords _ (cons_mem hz hu)
+        (not_isComposableString_cons hab Y Z)
+    | add x y hx hy => simpa using add_mem hx hy
   | zero => simp
   | add x y _ _ hx hy => simpa using add_mem hx hy
   | smul r x _ hx => simpa using Submodule.smul_mem _ r hx
@@ -331,7 +352,7 @@ theorem prepend_mem_nonComposableWords_of_ne {X Y Y' Z : C} {u : TotalHom R C}
     prepend R _ u w ∈ nonComposableWords R C := by
   induction hw using Submodule.span_induction with
   | mem w hw =>
-    obtain ⟨n, hn, a, b, z, hz, hab, rfl, rfl, rfl⟩ := hw
+    obtain ⟨n, hn, a, b, z, hz, _, rfl, rfl, rfl⟩ := hw
     rw [prepend_of_tprod_cons]
     exact of_tprod_mem_nonComposableWords _ (cons_mem hz hu)
       fun h ↦ hne (h.eq 0 (by omega))
@@ -400,6 +421,86 @@ structure IsWordPathCompatible {D : Type u'} [GradedLinearQuiver.{u', v', w} R D
   eq_zero_of_mem_nonComposableWords {w : ReducedTensorWords R (TotalHom R C)} :
     w ∈ nonComposableWords R C → t w = 0
 
+/-- The forward direction of `isWordPathCompatible_iff`: a path-compatible map on words restricts to
+a path-compatible multilinear map on words of each positive length. -/
+private theorem isPathCompatible_of_isWordPathCompatible {D : Type u'}
+    [GradedLinearQuiver.{u', v', w} R D] {φ : C → D}
+    {t : ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R D}
+    (ht : IsWordPathCompatible φ t) (n : ℕ) (hn : 0 < n) :
+    IsPathCompatible φ ((t ∘ₗ of R _ ⟨n, hn⟩).compMultilinearMap
+      (PiTensorProduct.tprod R (s := fun _ : Fin n ↦ TotalHom R C))) := by
+  -- Clamp natural indices to the string, to read strings of `Fin n` as natural-indexed strings.
+  let j : ℕ → Fin n := fun i ↦ ⟨min i (n - 1), by omega⟩
+  have hj (i : Fin n) : j i = i := Fin.ext (min_eq_left (by have := i.isLt; omega))
+  constructor
+  · intro X x
+    let a : ℕ → C := fun i ↦ X (j i).rev.castSucc
+    let b : ℕ → C := fun i ↦ X (j i).rev.succ
+    have hw := of_tprod_mem_composableWords hn (a := a) (b := b)
+      (z := fun i ↦ homInclusion (a i) (b i) (x (j i))) (fun i _ ↦ LinearMap.mem_range_self _ _)
+      ⟨fun i hi ↦ congrArg X (Fin.ext (by simp [j, Fin.val_rev]; omega))⟩
+    have ha : a (n - 1) = X 0 := congrArg X (Fin.ext (by simp [j, Fin.val_rev]; omega))
+    have hb : b 0 = X (Fin.last n) := congrArg X (Fin.ext (by simp [j, Fin.val_rev]; omega))
+    have h := ht.mem_range_of_mem_composableWords hw
+    rw [ha, hb] at h
+    have hx : (fun i : Fin n ↦ homInclusion (a i) (b i) (x (j i))) =
+        fun i ↦ homInclusion _ _ (x i) := funext fun i ↦
+      congrArg (fun k : Fin n ↦ homInclusion (R := R) (X k.rev.castSucc) (X k.rev.succ) (x k))
+        (hj i)
+    simpa only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, hx] using h
+  · intro s t' x i i' hii' hne
+    let a : ℕ → C := fun k ↦ s (j k)
+    let b : ℕ → C := fun k ↦ t' (j k)
+    have hw := of_tprod_mem_nonComposableWords hn (a := a) (b := b)
+      (z := fun k ↦ homInclusion (a k) (b k) (x (j k))) (fun k _ ↦ LinearMap.mem_range_self _ _)
+      fun hc ↦ hne <| by
+        have e := hc.eq i (by omega)
+        simp only [a, b] at e
+        rwa [show j (i + 1) = i' from Fin.ext (by simp [j, hii']; omega), hj] at e
+    have hx : (fun k : Fin n ↦ homInclusion (a k) (b k) (x (j k))) =
+        fun k ↦ homInclusion _ _ (x k) := funext fun k ↦
+      congrArg (fun k' : Fin n ↦ homInclusion (R := R) (s k') (t' k') (x k')) (hj k)
+    simpa only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, hx] using
+      ht.eq_zero_of_mem_nonComposableWords hw
+
+/-- The backward direction of `isWordPathCompatible_iff`: if the restrictions to words of each
+positive length are path-compatible, so is the map on words. -/
+private theorem isWordPathCompatible_of_isPathCompatible {D : Type u'}
+    [GradedLinearQuiver.{u', v', w} R D] {φ : C → D}
+    {t : ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R D}
+    (h : ∀ (n : ℕ) (hn : 0 < n),
+      IsPathCompatible φ ((t ∘ₗ of R _ ⟨n, hn⟩).compMultilinearMap
+        (PiTensorProduct.tprod R (s := fun _ : Fin n ↦ TotalHom R C)))) :
+    IsWordPathCompatible φ t := by
+  constructor
+  · intro X Y w hw
+    induction hw using Submodule.span_induction with
+    | mem w hw =>
+      obtain ⟨n, hn, a, b, z, hz, hab, rfl, rfl, rfl⟩ := hw
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
+      choose g hg using fun i : Fin (m + 1) ↦ hz i i.isLt
+      have e := (h (m + 1) hn).mem_range_homInclusion_of_chain (fun i ↦ a i) (fun i ↦ b i) g
+        (fun k ↦ by simpa using hab.eq k (by have := k.isLt; omega)) (a := a m) (b := b 0)
+        (by simp) (by simp)
+      simpa [hg] using e
+    | zero => simp
+    | add x y _ _ hx hy => simpa using add_mem hx hy
+    | smul r x _ hx => simpa using Submodule.smul_mem _ r hx
+  · intro w hw
+    induction hw using Submodule.span_induction with
+    | mem w hw =>
+      obtain ⟨n, hn, a, b, z, hz, hab, rfl⟩ := hw
+      choose g hg using fun i : Fin n ↦ hz i i.isLt
+      obtain ⟨i, hi, hne⟩ : ∃ i, ∃ _ : i + 1 < n, b (i + 1) ≠ a i := by
+        by_contra! hc
+        exact hab ⟨hc⟩
+      have e := (h n hn).eq_zero_of_ne (fun k ↦ a k) (fun k ↦ b k) g ⟨i, by omega⟩ ⟨i + 1, hi⟩
+        rfl hne
+      simpa [hg] using e
+    | zero => simp
+    | add x y _ _ hx hy => simp [hx, hy]
+    | smul r x _ hx => simp [hx]
+
 /-- **Word-level path compatibility is path compatibility on words of each length.** A linear map
 from the bar construction is path-compatible on words exactly when its restriction to words of
 every positive length `n`, as a multilinear map of `n` morphisms, is path-compatible. -/
@@ -409,69 +510,8 @@ theorem isWordPathCompatible_iff {D : Type u'} [GradedLinearQuiver.{u', v', w} R
       IsPathCompatible φ ((t ∘ₗ of R _ ⟨n, hn⟩).compMultilinearMap
         (PiTensorProduct.tprod R (s := fun _ : Fin n ↦ TotalHom R C))) := by
   constructor
-  · intro ht n hn
-    -- Clamp natural indices to the string, to read strings of `Fin n` as natural-indexed strings.
-    let j : ℕ → Fin n := fun i ↦ ⟨min i (n - 1), by omega⟩
-    have hj (i : Fin n) : j i = i := Fin.ext (min_eq_left (by have := i.isLt; omega))
-    constructor
-    · intro X x
-      let a : ℕ → C := fun i ↦ X (j i).rev.castSucc
-      let b : ℕ → C := fun i ↦ X (j i).rev.succ
-      have hw := of_tprod_mem_composableWords hn (a := a) (b := b)
-        (z := fun i ↦ homInclusion (a i) (b i) (x (j i))) (fun i _ ↦ LinearMap.mem_range_self _ _)
-        ⟨fun i hi ↦ congrArg X (Fin.ext (by simp [j, Fin.val_rev]; omega))⟩
-      have ha : a (n - 1) = X 0 := congrArg X (Fin.ext (by simp [j, Fin.val_rev]; omega))
-      have hb : b 0 = X (Fin.last n) := congrArg X (Fin.ext (by simp [j, Fin.val_rev]; omega))
-      have h := ht.mem_range_of_mem_composableWords hw
-      rw [ha, hb] at h
-      have hx : (fun i : Fin n ↦ homInclusion (a i) (b i) (x (j i))) =
-          fun i ↦ homInclusion _ _ (x i) := funext fun i ↦
-        congrArg (fun k : Fin n ↦ homInclusion (R := R) (X k.rev.castSucc) (X k.rev.succ) (x k))
-          (hj i)
-      simpa only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, hx] using h
-    · intro s t' x i i' hii' hne
-      let a : ℕ → C := fun k ↦ s (j k)
-      let b : ℕ → C := fun k ↦ t' (j k)
-      have hw := of_tprod_mem_nonComposableWords hn (a := a) (b := b)
-        (z := fun k ↦ homInclusion (a k) (b k) (x (j k))) (fun k _ ↦ LinearMap.mem_range_self _ _)
-        fun hc ↦ hne <| by
-          have e := hc.eq i (by omega)
-          simp only [a, b] at e
-          rwa [show j (i + 1) = i' from Fin.ext (by simp [j, hii']; omega), hj] at e
-      have hx : (fun k : Fin n ↦ homInclusion (a k) (b k) (x (j k))) =
-          fun k ↦ homInclusion _ _ (x k) := funext fun k ↦
-        congrArg (fun k' : Fin n ↦ homInclusion (R := R) (s k') (t' k') (x k')) (hj k)
-      simpa only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, hx] using
-        ht.eq_zero_of_mem_nonComposableWords hw
-  · intro h
-    constructor
-    · intro X Y w hw
-      induction hw using Submodule.span_induction with
-      | mem w hw =>
-        obtain ⟨n, hn, a, b, z, hz, hab, rfl, rfl, rfl⟩ := hw
-        obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
-        choose g hg using fun i : Fin (m + 1) ↦ hz i i.isLt
-        have e := (h (m + 1) hn).mem_range_homInclusion_of_chain (fun i ↦ a i) (fun i ↦ b i) g
-          (fun k ↦ by simpa using hab.eq k (by have := k.isLt; omega)) (a := a m) (b := b 0)
-          (by simp) (by simp)
-        simpa [hg] using e
-      | zero => simp
-      | add x y _ _ hx hy => simpa using add_mem hx hy
-      | smul r x _ hx => simpa using Submodule.smul_mem _ r hx
-    · intro w hw
-      induction hw using Submodule.span_induction with
-      | mem w hw =>
-        obtain ⟨n, hn, a, b, z, hz, hab, rfl⟩ := hw
-        choose g hg using fun i : Fin n ↦ hz i i.isLt
-        obtain ⟨i, hi, hne⟩ : ∃ i, ∃ _ : i + 1 < n, b (i + 1) ≠ a i := by
-          by_contra! hc
-          exact hab ⟨hc⟩
-        have e := (h n hn).eq_zero_of_ne (fun k ↦ a k) (fun k ↦ b k) g ⟨i, by omega⟩ ⟨i + 1, hi⟩
-          rfl hne
-        simpa [hg] using e
-      | zero => simp
-      | add x y _ _ hx hy => simp [hx, hy]
-      | smul r x _ hx => simp [hx]
+  · exact fun ht n hn ↦ isPathCompatible_of_isWordPathCompatible ht n hn
+  · exact isWordPathCompatible_of_isPathCompatible
 
 /-- Precomposing a path-compatible map with a letterwise map of total modules along an injective
 map of objects gives a path-compatible map. -/
@@ -514,7 +554,7 @@ theorem IsWordPathCompatible.eq_of_totalHomMap_eq {D : Type u'}
 word from `X` to `Y`, and every non-composable word has length at least two. -/
 theorem isWordPathCompatible_letter : IsWordPathCompatible id (letter R (TotalHom R C)) where
   mem_range_of_mem_composableWords {X Y} {w} hw := by
-    refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_) (by simp)
+    refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_)
       (fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy)
       (fun r x hx ↦ by rw [map_smul]; exact Submodule.smul_mem _ r hx) hw
     rw [letter_of_tprod R _ hn z]
@@ -551,7 +591,7 @@ private theorem IsWordPathCompatible.coalgHom_subword_mem (ht : IsWordPathCompat
     intro p hs hps
     rw [coalgHom_subword]
     refine add_mem (ofLetter_mem_composableWords (ht.mem_range_of_mem_composableWords
-      (subword_mem_composableWords hz (hab.block hps) hs hps))) (Submodule.sum_mem _ fun d hd ↦ ?_)
+      (subword_mem_composableWords hz (hab.block hps)))) (Submodule.sum_mem _ fun d hd ↦ ?_)
     rw [Finset.mem_range] at hd
     rcases Nat.eq_zero_or_pos d with rfl | hd₀
     · simp
@@ -560,7 +600,7 @@ private theorem IsWordPathCompatible.coalgHom_subword_mem (ht : IsWordPathCompat
       have hrest := ih (s - d) (by omega) (p + d) (by omega) (by omega)
       rw [show p + d + (s - d) - 1 = p + s - 1 by omega, hjoin] at hrest
       exact prepend_mem_composableWords (ht.mem_range_of_mem_composableWords
-        (subword_mem_composableWords hz (hab.block (by omega)) hd₀ (by omega))) hrest
+        (subword_mem_composableWords hz (hab.block (by omega)))) hrest
 
 /-- **The coalgebra morphism with path-compatible Taylor components preserves composable words.**
 It sends composable words from `X` to `Y` to composable words from `φ X` to `φ Y`. -/
@@ -632,7 +672,7 @@ private theorem IsWordPathCompatible.coalgHom_subword_mem_nonComposableWords
         refine prepend_mem_nonComposableWords_of_ne hu hrest fun e ↦
           ne_of_not_isComposableString_block hd hns h₁ h₂ (hφ ?_)
         simpa [show p + (d - 1) = p + d - 1 by omega] using e
-      · exact prepend_mem_nonComposableWords hu (ih (s - d) (by omega) (p + d) (by omega) h₂)
+      · exact prepend_mem_nonComposableWords (ih (s - d) (by omega) (p + d) (by omega) h₂)
     · rw [ht.eq_zero_of_mem_nonComposableWords
         (of_tprod_mem_nonComposableWords hd₀ (hzq p d (by omega)) h₁)]
       simp
@@ -715,11 +755,11 @@ theorem koszulTwist_shift_mem_range (c q : ℤ) {X Y : C} {u : TotalHom R C}
   exact Submodule.smul_mem _ _ (koszulTwist_mem_range_homInclusion q hu)
 
 /-- The natural-indexed string with its first `p` morphisms Koszul-twisted. -/
-private noncomputable def twistNat (G : InternalGrading R (TotalHom R C)) (q : ℤ)
+private noncomputable def twistNat (G : InternalGrading R (TotalHom R C) ℤ) (q : ℤ)
     (z : ℕ → TotalHom R C) (p : ℕ) : ℕ → TotalHom R C :=
   fun i ↦ if i < p then G.koszulTwist q (z i) else z i
 
-private theorem twistedTuple_eq_twistNat (G : InternalGrading R (TotalHom R C)) (q : ℤ) {n : ℕ}
+private theorem twistedTuple_eq_twistNat (G : InternalGrading R (TotalHom R C) ℤ) (q : ℤ) {n : ℕ}
     (z : ℕ → TotalHom R C) (p : ℕ) :
     G.twistedTuple q (fun i : Fin n ↦ z i) 0 p = fun i : Fin n ↦ twistNat G q z p i := by
   funext i
@@ -751,12 +791,12 @@ theorem IsWordPathCompatible.gradedCoderiv_mem_composableWords (ht : IsWordPathC
     by_cases hfit : 0 < d ∧ p + d ≤ n
     · obtain ⟨hd, hpd⟩ := hfit
       have he := ht.mem_range_of_mem_composableWords
-        (subword_mem_composableWords hz (hab.block hpd) hd hpd)
+        (subword_mem_composableWords hz (hab.block hpd))
       rw [twistedTuple_eq_twistNat, splice_eq_of_tprod_replaceBlock R _ hd hpd]
       have h := of_tprod_mem_composableWords (by omega)
         (replaceBlock_mem_range_homInclusion (twistNat_mem c q hz p) he hpd)
         (hab.replaceBlock hd hpd)
-      rwa [replaceBlock_last a hd hpd, replaceBlock_zero] at h
+      rwa [replaceBlock_last a hpd, replaceBlock_zero] at h
     · rw [splice_eq_zero_of_not_fits R _ _ hfit]
       exact zero_mem _
   | zero => simp
@@ -778,12 +818,12 @@ theorem IsWordPathCompatible.gradedCoderiv_mem_nonComposableWords (ht : IsWordPa
       by_cases hblock : IsComposableString (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) d
       · -- The collapsed block is composable, so the string with the block replaced is not.
         have he := ht.mem_range_of_mem_composableWords
-          (subword_mem_composableWords hz hblock hd hpd)
+          (subword_mem_composableWords hz hblock)
         rw [twistedTuple_eq_twistNat, splice_eq_of_tprod_replaceBlock R _ hd hpd]
         exact of_tprod_mem_nonComposableWords _
           (replaceBlock_mem_range_homInclusion (twistNat_mem c q hz p) he hpd)
-          ((not_isComposableString_block_or_replaceBlock hab hpd).resolve_left (not_not.2 hblock))
-      · rw [ht.eq_zero_of_mem_nonComposableWords (subword_mem_nonComposableWords hz hblock hpd),
+          ((not_isComposableString_block_or_replaceBlock hab).resolve_left (not_not.2 hblock))
+      · rw [ht.eq_zero_of_mem_nonComposableWords (subword_mem_nonComposableWords hz hblock),
           splice_zero]
         exact zero_mem _
     · rw [splice_eq_zero_of_not_fits R _ _ hfit]
@@ -807,7 +847,7 @@ theorem IsWordPathCompatible.comp_gradedCoderiv {D : Type u'} [GradedLinearQuive
 letterwise map `Θ` relates the Taylor maps `t` and `t₁` on composable words, it relates their graded
 Taylor expansions on composable words. -/
 theorem map_gradedCoderiv_of_mem_composableWords {M₁ : Type*} [AddCommMonoid M₁] [Module R M₁]
-    {G : InternalGrading R (TotalHom R C)} {G₁ : InternalGrading R M₁}
+    {G : InternalGrading R (TotalHom R C) ℤ} {G₁ : InternalGrading R M₁ ℤ}
     {Θ : TotalHom R C →ₗ[R] M₁} (hΘ : LinearMap.IsHomogeneous Θ G.piece G₁.piece 0)
     {t₁ : ReducedTensorWords R M₁ →ₗ[R] M₁}
     (h : ∀ X Y : C, ∀ w ∈ composableWords R X Y,

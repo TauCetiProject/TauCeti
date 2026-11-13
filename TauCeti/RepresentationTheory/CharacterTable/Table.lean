@@ -177,9 +177,12 @@ theorem nonempty_equiv_conjClasses_irreducibleCharacters :
 instance : Finite (irreducibleCharacters k G) :=
   Finite.of_equiv _ (nonempty_equiv_conjClasses_irreducibleCharacters k G).some
 
-/-- **A finite group has as many irreducible characters as conjugacy classes.** -/
+omit [Finite G] in
+/-- **A group with invertible order has as many irreducible characters as conjugacy classes.** -/
 theorem card_irreducibleCharacters :
     Nat.card (irreducibleCharacters k G) = Nat.card (ConjClasses G) :=
+  have : Finite G := Nat.finite_of_card_ne_zero fun h =>
+    Invertible.ne_zero (Nat.card G : k) (by simp [h])
   (Nat.card_congr (nonempty_equiv_conjClasses_irreducibleCharacters k G).some).symm
 
 end Set

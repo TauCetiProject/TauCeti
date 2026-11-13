@@ -39,9 +39,11 @@ For a DG right module `ℳ` and a one-sided cocycle (`m x y = 0` whenever `ind x
 coefficient differential on `P →₀ M` preserves the filtration, so its stages are subcomplexes
 `RowFiniteTwistingCocycle.indexCochainComplex` of the coefficient complex, exhaustive with no
 finiteness hypothesis on `P` (`RowFiniteTwistingCocycle.exists_mem_range_indexSubobject_arrow_f`).
-The graded piece `F_{p+1} / F_p` is the complex `rowFiniteIndexGradedPieceComplex` of
-finite-support families of coefficients on the generators of index `p + 1`, with the coefficient
-differential in each coordinate (`RowFiniteTwistingCocycle.indexShortComplex_shortExact`).
+For generator indices bounded above, the filtration reaches the whole complex
+(`RowFiniteTwistingCocycle.indexSubobject_eq_top`). The graded piece `F_{p+1} / F_p` is the
+complex `rowFiniteIndexGradedPieceComplex` of finite-support families of coefficients on the
+generators of index `p + 1`, with the coefficient differential in each coordinate
+(`RowFiniteTwistingCocycle.indexShortComplex_shortExact`).
 
 ## References
 
@@ -172,6 +174,27 @@ theorem rowFiniteIndexGrading_le_rowFiniteIndexFiltration (p n : ℤ) :
 theorem rowFiniteIndexGrading_le_rowFiniteTotalGrading (p n : ℤ) :
     rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteTotalGrading ℳ ind n :=
   inf_le_right
+
+/-- Extending a family of coefficients on the generators of index `p` by zero preserves the total
+degree. -/
+theorem mapDomain_subtypeVal_mem_rowFiniteTotalGrading {p n : ℤ} {f : {x // ind x = p} →₀ M}
+    (hf : f ∈ rowFiniteTotalGrading ℳ (fun x : {x // ind x = p} ↦ ind x) n) :
+    f.mapDomain Subtype.val ∈ rowFiniteTotalGrading ℳ ind n := by
+  rw [mem_rowFiniteTotalGrading_iff] at hf ⊢
+  intro x
+  by_cases hx : ind x = p
+  · rw [show x = ((⟨x, hx⟩ : {x // ind x = p}) : P) from rfl,
+      Finsupp.mapDomain_apply_of_injective Subtype.val_injective]
+    exact hf _
+  · rw [Finsupp.mapDomain_of_notMem_range _ _ (by rintro ⟨y, rfl⟩; exact hx y.2)]
+    exact zero_mem _
+
+/-- A family of coefficients on the generators of index `p`, extended by zero, lies in the stage
+of index `p` of the index filtration. -/
+theorem mapDomain_subtypeVal_mem_rowFiniteIndexFiltration {p : ℤ} (f : {x // ind x = p} →₀ M) :
+    f.mapDomain Subtype.val ∈ rowFiniteIndexFiltration (R := R) ind p :=
+  (mem_rowFiniteIndexFiltration_iff ind).2 fun _ hx ↦
+    Finsupp.mapDomain_of_notMem_range _ _ (by rintro ⟨z, rfl⟩; exact hx.ne' z.2)
 
 /-- For cohomologically nonpositive coefficients, a vector of total degree `n` is carried by
 generators of index at most `-n`. -/
@@ -387,20 +410,9 @@ include hm
 generators of index less than `ind x`. -/
 theorem coefficientDifferential_single_sub_mem (x : P) (α : M) :
     m.coefficientDifferential hM (Finsupp.single x α) - Finsupp.single x (dM α) ∈
-      rowFiniteIndexFiltration (R := R) ind (ind x - 1) := by
-  classical
-  induction α using DirectSum.Decomposition.inductionOn ℳ with
-  | zero => simp
-  | @homogeneous q α =>
-    rw [m.coefficientDifferential_single hM x α.2, add_sub_cancel_left]
-    refine Submodule.smul_of_tower_mem _ _ (Submodule.finsuppSum_mem _ _ _ _ fun y hy ↦ ?_)
-    have hyx : ind y < ind x := lt_of_not_ge fun h ↦ hy (hm x y h)
-    rw [mem_rowFiniteIndexFiltration_iff]
-    intro z hz
-    exact Finsupp.single_eq_of_ne (by rintro rfl; omega)
-  | add α β hα hβ =>
-    rw [Finsupp.single_add, map_add, map_add, Finsupp.single_add, add_sub_add_comm]
-    exact add_mem hα hβ
+      rowFiniteIndexFiltration (R := R) ind (ind x - 1) :=
+  (mem_rowFiniteIndexFiltration_iff ind).mpr fun z hz ↦
+    m.coefficientDifferential_single_sub_apply_of_m_eq_zero hM x α (hm x z (by omega))
 
 /-- On a vector carried by generators of index at most `p`, the twisting part of the coefficient
 differential is carried by generators of index at most `p - 1`. -/
@@ -442,10 +454,9 @@ theorem coefficientDifferential_mem_rowFiniteIndexFiltration {p : ℤ} {f : P �
 the coefficient differential of the module. -/
 theorem coefficientDifferential_apply_of_eq {p : ℤ} {f : P →₀ M}
     (hf : f ∈ rowFiniteIndexFiltration (R := R) ind p) {x : P} (hx : ind x = p) :
-    m.coefficientDifferential hM f x = dM (f x) := by
-  have h := (mem_rowFiniteIndexFiltration_iff ind).mp
-    (m.coefficientDifferential_sub_mem_rowFiniteIndexFiltration hM hm hf) x (by omega)
-  simpa [sub_eq_zero] using h
+    m.coefficientDifferential hM f x = dM (f x) :=
+  m.coefficientDifferential_apply_of_forall_m_eq_zero hM fun y hy ↦ hm y x <| hx ▸
+    le_of_not_gt fun h ↦ hy ((mem_rowFiniteIndexFiltration_iff ind).mp hf y h)
 
 /-- The coefficient differential carries the degree-`n` part of `F_p` into degree `n + 1`. -/
 theorem coefficientDifferential_mem_rowFiniteIndexGrading {p n : ℤ} {f : P →₀ M}
@@ -583,6 +594,20 @@ theorem indexSubobject_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) :
   apply (m.coefficientCochainComplexXEquiv hM n).injective
   apply Subtype.ext
   simpa using hf
+
+/-- Above every generator index the index filtration is the whole coefficient complex. -/
+theorem indexSubobject_eq_top {p : ℤ} (hp : ∀ x, ind x ≤ p) :
+    m.indexSubobject hM hm p = ⊤ := by
+  have : ∀ n, IsIso ((m.indexCochainComplexι hM hm p).f n) := fun n ↦
+    (ConcreteCategory.isIso_iff_bijective _).mpr
+      ⟨(ModuleCat.mono_iff_injective _).mp inferInstance, fun f ↦ by
+        have hf := (m.mem_range_indexSubobject_arrow_f_iff hM hm p n f).mpr
+          fun x hx ↦ absurd (hp x) (not_le.mpr hx)
+        rw [indexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk] at hf
+        obtain ⟨g, rfl⟩ := hf
+        exact ⟨_, rfl⟩⟩
+  have := HomologicalComplex.Hom.isIso_of_components (m.indexCochainComplexι hM hm p)
+  exact Subobject.mk_eq_top_of_isIso _
 
 /-! ### The graded pieces of the index filtration -/
 

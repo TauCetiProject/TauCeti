@@ -144,6 +144,16 @@ theorem clebschGordanVector_zero (m : ℕ) (ε : ℤˣ) (n : ℕ) (δ : ℤˣ) :
     clebschGordanVector q m ε n δ 0 = tmul ℂ (UqSl2 q) (vec q m ε 0) (vec q n δ 0) := by
   simp [clebschGordanVector_def]
 
+/-- The subleading Clebsch–Gordan highest vector `w₁` is
+`v₀ ⊗ v₁ + (-δ q^m [n]_q / [m]_q) v₁ ⊗ v₀`. -/
+theorem clebschGordanVector_one (m : ℕ) (ε : ℤˣ) (n : ℕ) (δ : ℤˣ) :
+    clebschGordanVector q m ε n δ 1 =
+      tmul ℂ (UqSl2 q) (vec q m ε 0) (vec q n δ 1) +
+        (-(δ : ℂ) * q ^ (m : ℤ) * quantumInteger q n / quantumInteger q m) •
+          tmul ℂ (UqSl2 q) (vec q m ε 1) (vec q n δ 0) := by
+  rw [clebschGordanVector_def]
+  simp [Finset.sum_range_succ, clebschGordanCoeff_succ]
+
 /-- Reassociating `w_j ⊗ x` expands it into pure triple tensors `v_i ⊗ (v_(j - i) ⊗ x)`. -/
 theorem assoc_clebschGordanVector_tmul {P : Type*} [AddCommMonoid P] [Module ℂ P]
     [Module (UqSl2 q) P] [IsScalarTower ℂ (UqSl2 q) P] (j : ℕ) (x : P) :
@@ -235,11 +245,39 @@ private theorem clebschGordanVector_mem_weightSpace_natCast {j : ℕ} (hj : 2 * 
   have h := clebschGordanVector_mem_weightSpace (q := q) (m := m) (ε := ε) (n := n) (δ := δ) j
   rwa [show (m : ℤ) + n - 2 * j = ((m + n - 2 * j : ℕ) : ℤ) by omega, zpow_natCast] at h
 
-/-- For `j ≤ min m n`, the lowering string of `w_j` vanishes after `m + n - 2j + 1` steps. -/
-theorem f_pow_smul_clebschGordanVector (hq : IsGenericQuantumParameter q) {j : ℕ} (hjm : j ≤ m)
-    (hjn : j ≤ n) : f q ^ (m + n - 2 * j + 1) • clebschGordanVector q m ε n δ j = 0 :=
-  f_pow_succ_smul_eq_zero_of_highest_weight_vector hq
-    (clebschGordanVector_mem_weightSpace_natCast (by omega)) (e_smul_clebschGordanVector hq hjm)
+omit [Fact (q ≠ 0)] in
+/-- For `n < j`, the Clebsch–Gordan coefficients `α_i` vanish from `i = j - n` on. -/
+private theorem clebschGordanCoeff_eq_zero_of_le {j : ℕ} (hj : n < j) {i : ℕ} (hi : j - n ≤ i) :
+    clebschGordanCoeff q m n δ j i = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hj
+  obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_le (show k + 1 ≤ i by omega)
+  induction t with
+  | zero =>
+    rw [clebschGordanCoeff_succ]
+    have : ((n : ℤ) - ((n + k + 1 : ℕ) : ℤ) + (k : ℕ) + 1) = 0 := by push_cast; ring
+    rw [this]
+    simp
+  | succ t ih =>
+    rw [← add_assoc, clebschGordanCoeff_succ, ih (by omega), mul_zero]
+
+/-- For `n < j`, the Clebsch–Gordan vector `w_j` is zero. -/
+@[simp]
+theorem clebschGordanVector_eq_zero_of_lt {j : ℕ} (hj : n < j) :
+    clebschGordanVector q m ε n δ j = 0 := by
+  rw [clebschGordanVector_def]
+  refine Finset.sum_eq_zero fun i _ => ?_
+  by_cases h : j - n ≤ i
+  · rw [clebschGordanCoeff_eq_zero_of_le hj h, zero_smul]
+  · rw [vec_eq_zero_of_lt (by omega : (n : ℤ) < j - i)]
+    simp
+
+/-- For `j ≤ m`, the lowering string of `w_j` vanishes after `m + n - 2j + 1` steps. -/
+theorem f_pow_smul_clebschGordanVector (hq : IsGenericQuantumParameter q) {j : ℕ} (hjm : j ≤ m) :
+    f q ^ (m + n - 2 * j + 1) • clebschGordanVector q m ε n δ j = 0 := by
+  rcases le_or_gt j n with hjn | hjn
+  · exact f_pow_succ_smul_eq_zero_of_highest_weight_vector hq
+      (clebschGordanVector_mem_weightSpace_natCast (by omega)) (e_smul_clebschGordanVector hq hjm)
+  · rw [clebschGordanVector_eq_zero_of_lt hjn, smul_zero]
 
 /-- The summand index `j ≤ min m n` is at most `m`. -/
 private theorem val_le_left (j : Fin (min m n + 1)) : (j : ℕ) ≤ m := by
@@ -258,7 +296,7 @@ def clebschGordanInclusion (hq : IsGenericQuantumParameter q) (j : Fin (min m n 
       Tensor ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ) :=
   LadderModule.lift hq (clebschGordanVector_mem_weightSpace_natCast (by omega))
     (e_smul_clebschGordanVector hq (val_le_left j))
-    (f_pow_smul_clebschGordanVector hq (val_le_left j) (val_le_right j))
+    (f_pow_smul_clebschGordanVector hq (val_le_left j))
 
 /-- The Clebsch–Gordan inclusion sends `v₀` to the highest vector `w_j`. -/
 @[simp]
@@ -273,7 +311,7 @@ theorem clebschGordanInclusion_vec_zero (hq : IsGenericQuantumParameter q)
 theorem clebschGordanInclusion_vec (hq : IsGenericQuantumParameter q) (j : Fin (min m n + 1))
     (k : ℕ) :
     clebschGordanInclusion (ε := ε) (δ := δ) hq j (vec q _ _ k) =
-      (∏ i ∈ Finset.range k, quantumInteger q (i + 1))⁻¹ •
+      (quantumFactorial q k)⁻¹ •
         f q ^ k • clebschGordanVector q m ε n δ j :=
   lift_vec ..
 

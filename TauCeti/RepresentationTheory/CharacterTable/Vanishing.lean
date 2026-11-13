@@ -58,9 +58,10 @@ it gives `Representation.char_eq_zero_or_exists_apply_eq_smul`, the form of Isaa
 
 public section
 
-namespace TauCeti
-
+open TauCeti
 open Module (finrank)
+
+namespace Representation
 
 section Integrality
 
@@ -74,7 +75,7 @@ Bézout splits `χ(g) / χ(1)` as an integer combination of the central-characte
 `ωᵪ(K_C) = |C| χ(g) / χ(1)` and of `χ(g)`, both of which are algebraic integers. No hypothesis on
 the characteristic is needed: if the degree happens to vanish in `k` the quotient is `0`, which is
 an algebraic integer for the trivial reason. -/
-theorem _root_.Representation.isIntegral_char_div_finrank (ρ : Representation k G V)
+theorem isIntegral_char_div_finrank (ρ : Representation k G V)
     [ρ.IsIrreducible] {g : G}
     (h : (Nat.card (ConjClasses.mk g).carrier).Coprime (finrank k V)) :
     IsIntegral ℤ (ρ.character g / (finrank k V : k)) := by
@@ -130,7 +131,7 @@ there the maximum absolute value `χ(1)` that any character value can have.
 The average `χ(g) / χ(1)` is an algebraic integer (`Representation.isIntegral_char_div_finrank`)
 and `χ(g)` is a sum of `χ(1)` roots of unity, so Kronecker's theorem leaves no other
 possibility. -/
-theorem _root_.Representation.char_eq_zero_or_norm_char_eq_finrank
+theorem char_eq_zero_or_norm_char_eq_finrank
     (ρ : Representation ℂ G V) [ρ.IsIrreducible] {g : G}
     (h : (Nat.card (ConjClasses.mk g).carrier).Coprime (finrank ℂ V)) :
     ρ.character g = 0 ∨ ‖ρ.character g‖ = finrank ℂ V := by
@@ -148,7 +149,7 @@ theorem _root_.Representation.char_eq_zero_or_norm_char_eq_finrank
 `g` has size coprime to the degree of an irreducible complex representation `ρ`, then either its
 character vanishes at `g`, or `ρ g` is a scalar `μ • 1`, that is, `g` lies in the centre `Z(χ)` of
 the character (Isaacs, Lemma 2.27). -/
-theorem _root_.Representation.char_eq_zero_or_exists_apply_eq_smul
+theorem char_eq_zero_or_exists_apply_eq_smul
     (ρ : Representation ℂ G V) [ρ.IsIrreducible] {g : G}
     (h : (Nat.card (ConjClasses.mk g).carrier).Coprime (finrank ℂ V)) :
     ρ.character g = 0 ∨ ∃ μ : ℂ, ρ g = μ • 1 :=
@@ -158,20 +159,24 @@ theorem _root_.Representation.char_eq_zero_or_exists_apply_eq_smul
 
 end Complex
 
+end Representation
+
+namespace FDRep
+
 section Bundled
 
 variable {G : Type*} [Group G] [Finite G]
 
 /-- **The average of an irreducible character over its degree is an algebraic integer**, for a
 bundled finite-dimensional representation over an algebraically closed field. -/
-theorem _root_.FDRep.isIntegral_char_div_finrank {k : Type*} [Field k] [IsAlgClosed k]
+theorem isIntegral_char_div_finrank {k : Type*} [Field k] [IsAlgClosed k]
     (X : FDRep k G) [_root_.Representation.IsIrreducible X.ρ] {g : G}
     (h : (Nat.card (ConjClasses.mk g).carrier).Coprime (finrank k X)) :
     IsIntegral ℤ (X.character g / (finrank k X : k)) :=
   Representation.isIntegral_char_div_finrank X.ρ h
 
 /-- **Burnside's vanishing theorem**, for a bundled finite-dimensional complex representation. -/
-theorem _root_.FDRep.char_eq_zero_or_norm_char_eq_finrank (X : FDRep ℂ G)
+theorem char_eq_zero_or_norm_char_eq_finrank (X : FDRep ℂ G)
     [_root_.Representation.IsIrreducible X.ρ] {g : G}
     (h : (Nat.card (ConjClasses.mk g).carrier).Coprime (finrank ℂ X)) :
     X.character g = 0 ∨ ‖X.character g‖ = finrank ℂ X :=
@@ -179,7 +184,7 @@ theorem _root_.FDRep.char_eq_zero_or_norm_char_eq_finrank (X : FDRep ℂ G)
 
 /-- **Burnside's vanishing theorem, scalar form**, for a bundled finite-dimensional complex
 representation. -/
-theorem _root_.FDRep.char_eq_zero_or_exists_apply_eq_smul (X : FDRep ℂ G)
+theorem char_eq_zero_or_exists_apply_eq_smul (X : FDRep ℂ G)
     [_root_.Representation.IsIrreducible X.ρ] {g : G}
     (h : (Nat.card (ConjClasses.mk g).carrier).Coprime (finrank ℂ X)) :
     X.character g = 0 ∨ ∃ μ : ℂ, X.ρ g = μ • 1 :=
@@ -187,4 +192,4 @@ theorem _root_.FDRep.char_eq_zero_or_exists_apply_eq_smul (X : FDRep ℂ G)
 
 end Bundled
 
-end TauCeti
+end FDRep

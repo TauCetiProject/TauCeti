@@ -8,9 +8,12 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.Deriv.Linear
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Tactic.Module
 
 /-!
-# Absolutely continuous solutions of a scalar linear equation in a complex normed space
+# Solutions of a scalar linear equation
 
 An absolutely continuous solution of `f' = k • f` almost everywhere on a compact real interval
 is the exponential solution with its prescribed initial value. No differentiability at every
@@ -21,6 +24,13 @@ fundamental theorem of calculus makes this product constant on the entire interv
 For imaginary `k`, this identifies plane curves whose velocity is a fixed rotation and scaling
 of their position relative to a center. Such equations describe equality in the area–energy
 inequality for closed plane curves.
+
+For a continuous, time-dependent real coefficient `g`, a differentiable solution of `P' = g • P`
+on an interval `J`, open or closed, is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
+(`TauCeti.eq_exp_integral_smul_of_hasDerivWithinAt_smul`), by the integrating factor
+`exp (-∫ₛᵘ g)`. For a constant coefficient `c`, a function with `v' = c • v` at every time
+`τ ≤ a` (with a two-sided derivative at `a`) is `v τ = exp (c (τ - a)) • v a` for `τ ≤ a`
+(`TauCeti.eq_exp_smul_of_hasDerivAt_smul_of_le`).
 -/
 
 public section
@@ -100,3 +110,53 @@ theorem ae_hasDerivAt_smul_sub_iff (hf : AbsolutelyContinuousOnInterval f a b) (
     simp [smul_smul, mul_comm]
 
 end AbsolutelyContinuousOnInterval
+
+namespace TauCeti
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- **Integrating factor.** On an order-connected set `J`, a solution of the linear equation
+`P' = g • P` within `J`, with real coefficient `g` continuous on `J`, satisfies
+`P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`, in either order. -/
+theorem eq_exp_integral_smul_of_hasDerivWithinAt_smul {J : Set ℝ} (hJc : J.OrdConnected)
+    {g : ℝ → ℝ} (hg : ContinuousOn g J) {P : ℝ → V}
+    (hP : ∀ u ∈ J, HasDerivWithinAt P (g u • P u) J u) {s t : ℝ} (hs : s ∈ J) (ht : t ∈ J) :
+    P t = Real.exp (∫ u in s..t, g u) • P s := by
+  -- Work on the interval `[[s, t]] ⊆ J`, and extend `g` continuously from it to all of `ℝ`, so
+  -- that its primitive `G` is differentiable everywhere.
+  have hsub : uIcc s t ⊆ J := hJc.uIcc_subset hs ht
+  have hle : s ⊓ t ≤ s ⊔ t := inf_le_sup
+  set g' : ℝ → ℝ := fun u ↦ g (projIcc (s ⊓ t) (s ⊔ t) hle u)
+  have hg' : Continuous g' :=
+    (hg.mono hsub).comp_continuous (continuous_subtype_val.comp continuous_projIcc)
+      fun u ↦ Subtype.mem _
+  have hgg' (u : ℝ) (hu : u ∈ uIcc s t) : g' u = g u := by
+    simp only [g', projIcc_of_mem hle hu]
+  set G : ℝ → ℝ := fun u ↦ ∫ τ in s..u, g' τ
+  -- `u ↦ e^{-G u} P u` has zero derivative within `[[s, t]]`, so it is constant there.
+  have hderiv (u : ℝ) (hu : u ∈ uIcc s t) :
+      HasDerivWithinAt (fun u ↦ Real.exp (-G u) • P u) 0 (uIcc s t) u := by
+    have hG := (hg'.integral_hasStrictDerivAt s u).hasDerivAt.hasDerivWithinAt (s := uIcc s t)
+    refine (hG.neg.exp.smul ((hP u (hsub hu)).mono hsub)).congr_deriv ?_
+    rw [hgg' u hu]
+    module
+  have hconst : Real.exp (-G t) • P t = Real.exp (-G s) • P s := by
+    have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le hderiv (fun _ _ ↦ norm_zero.le)
+      (convex_uIcc s t) left_mem_uIcc right_mem_uIcc
+    rwa [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
+  have hGs : G s = 0 := intervalIntegral.integral_same
+  have hGt : G t = ∫ u in s..t, g u := intervalIntegral.integral_congr fun u hu ↦ hgg' u hu
+  rw [hGs, neg_zero, Real.exp_zero, one_smul] at hconst
+  rw [← hconst, smul_smul, ← Real.exp_add, ← hGt, add_neg_cancel, Real.exp_zero, one_smul]
+
+/-- **Constant-coefficient solutions on a closed left half-line.** If `v' = c • v` at every time
+`τ ≤ a`, then `v τ = exp (c (τ - a)) • v a` for every `τ ≤ a`. The equation is only required at
+times `τ ≤ a` (with a two-sided derivative at `a`), so `v` need not solve it after time `a`. -/
+theorem eq_exp_smul_of_hasDerivAt_smul_of_le {v : ℝ → V} {c a : ℝ}
+    (hv : ∀ τ, τ ≤ a → HasDerivAt v (c • v τ) τ) {τ : ℝ} (hτ : τ ≤ a) :
+    v τ = Real.exp (c * (τ - a)) • v a := by
+  have h := eq_exp_integral_smul_of_hasDerivWithinAt_smul ordConnected_Iic continuousOn_const
+    (fun σ hσ ↦ (hv σ hσ).hasDerivWithinAt) (s := a) (mem_Iic.2 le_rfl) (mem_Iic.2 hτ)
+  rwa [intervalIntegral.integral_const, smul_eq_mul, mul_comm] at h
+
+end TauCeti

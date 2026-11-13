@@ -100,17 +100,8 @@ theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries
   let x : ℂ := (Ideal.absNorm P.asIdeal : ℂ) ^ (-s)
   let b : ℕ → ℂ := fun e ↦ PowerSeries.coeff e (D.localLogDerivSeries P)
   let a : ℕ → ℂ := fun e ↦ D (P.primeIdealPow e)
-  have hlocal : Summable fun e : ℕ ↦
-      idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow e) := by
-    have hsum := LSeriesSummable_of_abscissaOfAbsConv_lt_re hs
-    rw [LSeriesSummable] at hsum
-    have hsum' := hsum.comp_injective <|
-      Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
-    refine hsum'.congr fun e ↦ ?_
-    simp only [Function.comp_apply]
-    rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
-        (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)),
-      D.localArithmeticFactor_apply_pow, idealTerm_def, P.absNorm_primeIdealPow]
+  have hlocal := summable_idealTerm_primeIdealPow D.toIdealArithmeticFunction P
+    (LSeriesSummable_of_abscissaOfAbsConv_lt_re (by rwa [← D.localArithmeticFactor_eq]))
   have ha : Summable fun e : ℕ ↦ a e * x ^ e :=
     hlocal.congr fun e ↦
       idealTerm_primeIdealPow_eq_mul_cpow_neg D.toIdealArithmeticFunction P s e
@@ -125,17 +116,8 @@ theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries
     tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm hcoeff.norm ha.norm
   have hinner (n : ℕ) :
       ∑ ij ∈ Finset.antidiagonal n, (b ij.1 * x ^ ij.1) * (a ij.2 * x ^ ij.2) =
-        (n : ℂ) * a n * x ^ n := by
-    calc
-      _ = (∑ ij ∈ Finset.antidiagonal n, b ij.1 * a ij.2) * x ^ n := by
-        rw [Finset.sum_mul]
-        apply Finset.sum_congr rfl
-        intro ij hij
-        rw [Finset.mem_antidiagonal] at hij
-        rw [← hij, pow_add]
-        ring
-      _ = (n : ℂ) * a n * x ^ n := by
-        rw [D.sum_antidiagonal_coeff_localLogDerivSeries_eq P n]
+        (n : ℂ) * a n * x ^ n :=
+    D.sum_antidiagonal_mul_pow_localLogDerivSeries P x n
   have hweighted : Summable fun n : ℕ ↦ (n : ℂ) * a n * x ^ n :=
     (summable_sum_mul_antidiagonal_of_summable_norm'
       hcoeff.norm hcoeff ha.norm ha).congr hinner
@@ -147,11 +129,8 @@ theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries
   have hlog (n : ℕ) :
       Complex.log (Ideal.absNorm P.asIdeal : ℂ) * ((n : ℂ) * a n * x ^ n) =
         Complex.log (Ideal.absNorm (P.primeIdealPow n : Ideal (𝓞 K)) : ℂ) *
-          idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow n) := by
-    rw [idealTerm_primeIdealPow_eq_mul_cpow_neg]
-    rw [P.absNorm_primeIdealPow, ← Complex.natCast_log, ← Complex.natCast_log]
-    push_cast [Real.log_pow]
-    ring
+          idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow n) :=
+    log_absNorm_mul_natCast_mul_pow_eq D.toIdealArithmeticFunction P s n
   have hlog_tsum :
       Complex.log (Ideal.absNorm P.asIdeal : ℂ) *
           (∑' n : ℕ, (n : ℂ) * a n * x ^ n) =

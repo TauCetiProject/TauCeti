@@ -269,11 +269,10 @@ private theorem mfderiv_neckInl_apply (ha : 0 ≤ a) (w : neck E a b)
   have hP := (contMDiff_neckPunctureInl h₁ d₁ ha w).mdifferentiableAt (by simp)
   have hval : Subtype.val ∘ neckInl h₁ h₂ ha = Sum.inl ∘ neckPunctureInl (b := b) h₁ ha := rfl
   have hval' : Subtype.val ∘ neckPunctureInl (b := b) h₁ ha = e₁ ∘ Subtype.val := rfl
-  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply
-    ((contMDiff_neckInl h₁ h₂ d₁ ha w).mdifferentiableAt (by simp)) ξ).symm.trans ?_
+  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply ξ).symm.trans ?_
   rw [hval, TauCeti.mfderiv_sumInl_comp_apply hP,
-    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply hP ξ, hval']
-  exact TauCeti.Manifold.mfderiv_comp_subtype_val_apply ((d₁ w.1).mdifferentiableAt (by simp)) ξ
+    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply ξ, hval']
+  exact TauCeti.Manifold.mfderiv_comp_subtype_val_apply ξ
 
 omit [IsManifold I ∞ M] [IsManifold I ∞ N] in
 include d₂ in
@@ -292,11 +291,10 @@ private theorem mfderiv_neckInr_apply (ha : 0 ≤ a) (w : neck E a b)
   have hval : Subtype.val ∘ neckInr h₁ h₂ ha = Sum.inr ∘ neckPunctureInr (b := b) h₂ ha := rfl
   have hval' : Subtype.val ∘ neckPunctureInr (b := b) h₂ ha =
       (e₂ ∘ inversion 0 1) ∘ Subtype.val := rfl
-  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply
-    ((contMDiff_neckInr h₁ h₂ d₂ ha w).mdifferentiableAt (by simp)) ξ).symm.trans ?_
+  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply ξ).symm.trans ?_
   rw [hval, TauCeti.mfderiv_sumInr_comp_apply hP,
-    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply hP ξ, hval']
-  refine (TauCeti.Manifold.mfderiv_comp_subtype_val_apply (he₂.comp _ hinv) ξ).trans ?_
+    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply ξ, hval']
+  refine (TauCeti.Manifold.mfderiv_comp_subtype_val_apply ξ).trans ?_
   rw [mfderiv_comp _ he₂ hinv, mfderiv_eq_fderiv]
   exact ContinuousLinearMap.comp_apply _ _ _
 
@@ -445,16 +443,14 @@ def connectedSum (ha : 0 ≤ a) (hab : a < b) :
   (outerMetric g₁ g₂ h₁ h₂).descend (isLocalDiffeomorph_outerMap h₁ h₂ d₁ d₂)
     (outerMap_surjective h₁ h₂ ha hab) (outerMetric_inner_eq h₁ h₂ d₁ d₂ hg ha hab)
 
-include d₁ d₂ in
+omit [IsManifold I ∞ M] [IsManifold I ∞ N] in
 /-- The differential of the map from the two regions is that of the quotient map. -/
 private theorem mfderiv_outerMap_apply
     (z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous) (u : TangentSpace I z) :
     letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
     mfderiv I I (outerMap h₁ h₂) z u = mfderiv I I (ConnectedSum.mk e₁ e₂) z.1 u :=
   letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
-  haveI := ConnectedSum.isManifold (n := ⊤) h₁ h₂ d₁ d₂
-  TauCeti.Manifold.mfderiv_comp_subtype_val_apply
-    ((isLocalDiffeomorph_mk (n := ⊤) h₁ h₂ d₁ d₂ z.1).mdifferentiableAt (by simp)) u
+  TauCeti.Manifold.mfderiv_comp_subtype_val_apply u
 
 /-- On `M` outside `e₁ (closedBall 0 a)`, the glued metric is `g₁`. -/
 theorem connectedSum_inner_mfderiv_inl (ha : 0 ≤ a) (hab : a < b) (x : puncture e₁)
@@ -468,7 +464,7 @@ theorem connectedSum_inner_mfderiv_inl (ha : 0 ≤ a) (hab : a < b) (x : punctur
   let z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous := ⟨Sum.inl x, hx⟩
   have hD (t : TangentSpace I x) :
       mfderiv I I (outerMap h₁ h₂) z t = mfderiv I I (inl e₁ e₂) x t :=
-    (mfderiv_outerMap_apply h₁ h₂ d₁ d₂ z t).trans
+    (mfderiv_outerMap_apply h₁ h₂ z t).trans
       (mfderiv_inl_apply (n := ⊤) h₁ h₂ d₁ d₂ (by simp) x t).symm
   have h := descend_inner_mfderiv_of_eq (outerMetric g₁ g₂ h₁ h₂)
     (isLocalDiffeomorph_outerMap h₁ h₂ d₁ d₂) (outerMap_surjective h₁ h₂ ha hab)
@@ -489,7 +485,7 @@ theorem connectedSum_inner_mfderiv_inr (ha : 0 ≤ a) (hab : a < b) (y : punctur
   let z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous := ⟨Sum.inr y, hy⟩
   have hD (t : TangentSpace I y) :
       mfderiv I I (outerMap h₁ h₂) z t = mfderiv I I (inr e₁ e₂) y t :=
-    (mfderiv_outerMap_apply h₁ h₂ d₁ d₂ z t).trans
+    (mfderiv_outerMap_apply h₁ h₂ z t).trans
       (mfderiv_inr_apply (n := ⊤) h₁ h₂ d₁ d₂ (by simp) y t).symm
   have h := descend_inner_mfderiv_of_eq (outerMetric g₁ g₂ h₁ h₂)
     (isLocalDiffeomorph_outerMap h₁ h₂ d₁ d₂) (outerMap_surjective h₁ h₂ ha hab)

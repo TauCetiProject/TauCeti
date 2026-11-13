@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.NumberTheory.AbelSummation
 
@@ -13,9 +14,14 @@ public import Mathlib.NumberTheory.AbelSummation
 
 Mathlib's `Mathlib/NumberTheory/AbelSummation.lean` proves the summation-by-parts identity
 `∑_{k ≤ x} f k c k = f x ∑_{k ≤ x} c k - ∫ f' (t) ∑_{k ≤ t} c k dt` and derives convergence
-criteria from it. This file draws two further consequences from a growth hypothesis on the
-partial sums `∑_{1 ≤ k ≤ t} c k`.
+criteria from it. This file records the elementary properties of the partial-sum step function
+`t ↦ ∑_{1 ≤ k ≤ t} c k` that such arguments need, and draws two further consequences from a growth
+hypothesis on it.
 
+* **The step function.** It vanishes for `t < 1`, hence is `O(g)` near `0` for every `g`, and it
+  is locally integrable on `[0, ∞)`. Together with a bound `O(t ^ r)` at infinity (see
+  `Asymptotics.IsBigO.comp_natFloor_rpow`) these are the hypotheses of Mathlib's Mellin-transform
+  criteria, through which the partial-summation integral of an `L`-series is studied.
 * **A logarithmic weight.** Mathlib's `summable_mul_of_bigO_atTop'` converts a bound on the partial
   sums of a sequence into the convergence of a weighted series, provided the weight is
   differentiable and the derivative of the weight against the partial sums admits an integrable
@@ -32,6 +38,10 @@ partial sums `∑_{1 ≤ k ≤ t} c k`.
 
 ## Main declarations
 
+* `TauCeti.sum_Icc_one_natFloor_eq_zero`: `∑_{1 ≤ k ≤ t} c k = 0` for `t < 1`.
+* `TauCeti.isBigO_sum_Icc_natFloor_nhdsGT_zero`: the step function is `O(g)` as `t → 0⁺`.
+* `TauCeti.locallyIntegrableOn_sum_Icc_natFloor`: the step function is locally integrable on
+  `[0, ∞)`.
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
   nonnegative sequence are `O(t log t)`, then `∑ u n / (n (1 + log n) ^ 3)` converges.
 * `TauCeti.sum_Icc_rpow_mul_eq`: the exact Abel-summation identity for the weight `t ^ τ`.
@@ -47,6 +57,28 @@ open Asymptotics Filter MeasureTheory Set
 open scoped Topology
 
 variable {t : ℝ}
+
+/-! ### The partial-sum step function -/
+
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k` vanishes below `1`. -/
+theorem sum_Icc_one_natFloor_eq_zero {M : Type*} [AddCommMonoid M] (c : ℕ → M) (ht : t < 1) :
+    ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k = 0 := by
+  simp [Nat.floor_eq_zero.mpr ht]
+
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k` vanishes near `0`, so it is `O(g)`
+as `t → 0⁺` for every `g`. -/
+theorem isBigO_sum_Icc_natFloor_nhdsGT_zero {E F : Type*} [SeminormedAddCommGroup E] [Norm F]
+    (c : ℕ → E) (g : ℝ → F) :
+    (fun t : ℝ ↦ ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k) =O[𝓝[>] 0] g := by
+  refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
+  exact (sum_Icc_one_natFloor_eq_zero c ht.2).symm
+
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc m ⌊t⌋₊, c k` is locally integrable on
+`[0, ∞)`. -/
+theorem locallyIntegrableOn_sum_Icc_natFloor {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) (m : ℕ) :
+    LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.Icc m ⌊t⌋₊, c k) (Ici 0) := by
+  simpa using locallyIntegrableOn_mul_sum_Icc c le_rfl (m := m) (locallyIntegrableOn_const 1)
 
 /-! ### The comparison weight -/
 
@@ -247,12 +279,23 @@ private lemma sum_Icc_zero_mul_ite (g c : ℕ → ℝ) (m : ℕ) :
   simp [hn0]
 
 /-- The Abel-summation identity `sum_mul_eq_sub_integral_mul₀` for the weight `t ^ τ`:
-`∑_{1 ≤ n ≤ x} n ^ τ c n = x ^ τ S(x) - τ ∫ t in 1..x, t ^ (τ - 1) S(t)` for `x ≥ 1`, where
-`S(t) = ∑_{1 ≤ n ≤ t} c n`. -/
-theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) {x : ℝ} (hx : 1 ≤ x) :
+`∑_{1 ≤ n ≤ x} n ^ τ c n = x ^ τ S(x) - τ ∫ t in 1..x, t ^ (τ - 1) S(t)`, where
+`S(t) = ∑_{1 ≤ n ≤ t} c n`. For `x < 1` both sides are `0`. -/
+theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) (x : ℝ) :
     ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, (n : ℝ) ^ τ * c n =
       x ^ τ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n -
         τ * ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n := by
+  rcases lt_or_ge x 1 with hx | hx
+  · -- the sums are empty and the integrand vanishes off the single point `1`
+    have h0 : ⌊x⌋₊ = 0 := Nat.floor_eq_zero.2 hx
+    have hint : ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n = 0 := by
+      refine (intervalIntegral.integral_congr_ae (g := fun _ ↦ 0) ?_).trans (by simp)
+      filter_upwards [(Set.countable_singleton (1 : ℝ)).ae_notMem MeasureTheory.volume] with t ht
+        ht'
+      rw [Set.uIoc_of_ge hx.le] at ht'
+      have ht1 : t < 1 := lt_of_le_of_ne ht'.2 ht
+      simp [Nat.floor_eq_zero.2 ht1]
+    simp [h0, hint]
   have hderiv : deriv (fun u : ℝ ↦ u ^ τ) = fun t ↦ τ * t ^ (τ - 1) :=
     funext fun t ↦ Real.deriv_rpow_const t τ
   have habel := sum_mul_eq_sub_integral_mul₀ (f := fun u : ℝ ↦ u ^ τ)
@@ -272,6 +315,68 @@ theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) {x : ℝ} (hx : 1 ≤ x
   funext t
   ring
 
+/-- The partial sums of `c`, minus a linear function, are interval integrable from `1` to any
+`x`, being a step function minus a continuous function. -/
+theorem intervalIntegrable_sum_Icc_sub_mul (c : ℕ → ℝ) (κ x : ℝ) :
+    IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n - κ * t) volume 1 x := by
+  have hS_int : IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) volume 1 x := by
+    rcases le_total 1 x with hx | hx
+    · refine (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_
+      simpa using integrableOn_mul_sum_Icc c (m := 1) zero_le_one
+        (continuous_const (y := (1 : ℝ))).integrableOn_Icc
+    · refine IntervalIntegrable.symm ((intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_)
+      have hA : IntegrableOn (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) (Icc (min x 0) 0) := by
+        refine (integrableOn_zero (μ := volume) (s := Icc (min x 0) 0)).congr_fun
+          (fun t ht ↦ ?_) measurableSet_Icc
+        simp [Nat.floor_eq_zero.mpr (by linarith [ht.2] : t < 1)]
+      have hB : IntegrableOn (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) (Icc 0 1) := by
+        simpa using integrableOn_mul_sum_Icc c (m := 1) le_rfl
+          (continuous_const (y := (1 : ℝ))).integrableOn_Icc
+      refine (hA.union hB).mono_set fun t ht ↦ ?_
+      rcases le_total t 0 with h | h
+      · exact Or.inl ⟨(min_le_left _ _).trans ht.1, h⟩
+      · exact Or.inr ⟨h, ht.2⟩
+  exact hS_int.sub ((continuous_const.mul continuous_id).intervalIntegrable 1 x)
+
+/-- The Abel-summation identity `sum_Icc_rpow_mul_eq`, with the partial sums `S t` split as
+`(S t - κ t) + κ t` inside the integral and everything divided by `x ^ (τ + 1)`. It holds for
+every exponent `τ ≠ -1`. -/
+theorem sum_Icc_rpow_mul_eq_div_add_integral_sub_mul {c : ℕ → ℝ} {κ τ : ℝ} (hτ : τ ≠ -1)
+    {x : ℝ} (hx : 1 ≤ x) :
+    x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n -
+        τ * ((∫ t in (1 : ℝ)..x, t ^ (τ - 1) *
+          (∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n - κ * t)) / x ^ (τ + 1)) -
+        τ * κ / (τ + 1) + τ * κ / (τ + 1) * (x ^ (τ + 1))⁻¹ =
+      (x ^ (τ + 1))⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, (n : ℝ) ^ τ * c n := by
+  have hE_int := intervalIntegrable_sum_Icc_sub_mul c κ x
+  set S : ℝ → ℝ := fun t ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n
+  set E : ℝ → ℝ := fun t ↦ S t - κ * t with hE
+  have hτ1 : τ + 1 ≠ 0 := fun h ↦ hτ (by linarith)
+  have hx0 : 0 < x := by linarith
+  have h0 : (0 : ℝ) ∉ uIcc 1 x := by
+    rw [uIcc_of_le hx]
+    exact fun h ↦ by linarith [h.1]
+  have hcont : ContinuousOn (fun t : ℝ ↦ t ^ (τ - 1)) (uIcc 1 x) := fun t ht ↦ by
+    rw [uIcc_of_le hx] at ht
+    exact (Real.continuousAt_rpow_const _ _ (Or.inl (by linarith [ht.1]))).continuousWithinAt
+  have hsplit : ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * S t =
+      (∫ t in (1 : ℝ)..x, t ^ (τ - 1) * E t) + κ * ((x ^ (τ + 1) - 1) / (τ + 1)) := by
+    have hκ : ∫ t in (1 : ℝ)..x, t ^ τ = (x ^ (τ + 1) - 1) / (τ + 1) := by
+      rw [integral_rpow (Or.inr ⟨hτ, h0⟩), Real.one_rpow]
+    rw [← hκ, ← intervalIntegral.integral_const_mul,
+      ← intervalIntegral.integral_add (hE_int.continuousOn_mul hcont)
+        ((intervalIntegral.intervalIntegrable_rpow (Or.inr h0)).const_mul κ)]
+    refine intervalIntegral.integral_congr fun t ht ↦ ?_
+    rw [uIcc_of_le hx] at ht
+    have ht0 : 0 < t := by linarith [ht.1]
+    simp only [hE]
+    rw [Real.rpow_sub_one ht0.ne']
+    field_simp
+    ring
+  rw [sum_Icc_rpow_mul_eq c τ x, hsplit, Real.rpow_add_one hx0.ne']
+  field_simp
+  ring
+
 /-- **Partial sums weighted by a power.** If the partial sums of `c` grow like `κ x`, that is
 `x⁻¹ ∑_{1 ≤ n ≤ x} c n → κ`, then for every exponent `τ > -1` the partial sums weighted by `n ^ τ`
 grow like `κ x ^ (τ + 1) / (τ + 1)`:
@@ -281,27 +386,10 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
     Tendsto (fun x : ℝ ↦ (x ^ (τ + 1))⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, (n : ℝ) ^ τ * c n) atTop
       (𝓝 (κ / (τ + 1))) := by
   have hτ1 : 0 < τ + 1 := by linarith
-  set S : ℝ → ℝ := fun t ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n
-  set E : ℝ → ℝ := fun t ↦ S t - κ * t with hE
-  -- The partial sums are interval integrable above `1`, being a step function.
-  have hE_int (x : ℝ) (hx : 1 ≤ x) : IntervalIntegrable E volume 1 x := by
-    have hS_int : IntervalIntegrable S volume 1 x := by
-      refine (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_
-      simpa using integrableOn_mul_sum_Icc c (m := 1) zero_le_one
-        (continuous_const (y := (1 : ℝ))).integrableOn_Icc
-    exact hS_int.sub ((continuous_const.mul continuous_id).intervalIntegrable 1 x)
-  -- The hypothesis says `E t = o(t)`.
-  have hEo : E =o[atTop] id := by
-    refine (isLittleO_iff_tendsto' ?_).mpr ?_
-    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht h0
-      exact absurd h0 ht.ne'
-    · have h0 : Tendsto (fun t ↦ t⁻¹ * S t - κ) atTop (𝓝 0) := by
-        simpa using h.sub_const κ
-      refine h0.congr' ?_
-      filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
-      simp only [hE, id]
-      field_simp
-  have hI := (isLittleO_integral_rpow_sub_one_mul hτ hE_int hEo).tendsto_div_nhds_zero
+  have hI := (isLittleO_integral_rpow_sub_one_mul hτ
+    (fun x _ ↦ intervalIntegrable_sum_Icc_sub_mul c κ x)
+    ((isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mpr
+      (by simpa [div_eq_mul_inv, mul_comm] using h))).tendsto_div_nhds_zero
   have hpow : Tendsto (fun x : ℝ ↦ (x ^ (τ + 1))⁻¹) atTop (𝓝 0) :=
     (tendsto_rpow_atTop hτ1).inv_tendsto_atTop
   have hlim := ((h.sub (hI.const_mul τ)).sub_const (τ * κ / (τ + 1))).add
@@ -311,28 +399,7 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
     ring
   rw [hval] at hlim
   refine hlim.congr' ?_
-  -- In the Abel-summation identity, split `S t = E t + κ t` inside the integral.
   filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
-  have hx0 : 0 < x := by linarith
-  have hcont : ContinuousOn (fun t : ℝ ↦ t ^ (τ - 1)) (uIcc 1 x) := fun t ht ↦ by
-    rw [uIcc_of_le hx] at ht
-    exact (Real.continuousAt_rpow_const _ _ (Or.inl (by linarith [ht.1]))).continuousWithinAt
-  have hsplit : ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * S t =
-      (∫ t in (1 : ℝ)..x, t ^ (τ - 1) * E t) + κ * ((x ^ (τ + 1) - 1) / (τ + 1)) := by
-    have hκ : ∫ t in (1 : ℝ)..x, t ^ τ = (x ^ (τ + 1) - 1) / (τ + 1) := by
-      rw [integral_rpow (Or.inl hτ), Real.one_rpow]
-    rw [← hκ, ← intervalIntegral.integral_const_mul,
-      ← intervalIntegral.integral_add ((hE_int x hx).continuousOn_mul hcont)
-        ((intervalIntegral.intervalIntegrable_rpow' hτ).const_mul κ)]
-    refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    rw [uIcc_of_le hx] at ht
-    have ht0 : 0 < t := by linarith [ht.1]
-    simp only [hE]
-    rw [Real.rpow_sub_one ht0.ne']
-    field_simp
-    ring
-  rw [sum_Icc_rpow_mul_eq c τ hx, hsplit, Real.rpow_add_one hx0.ne']
-  field_simp
-  ring
+  exact sum_Icc_rpow_mul_eq_div_add_integral_sub_mul hτ.ne' hx
 
 end TauCeti

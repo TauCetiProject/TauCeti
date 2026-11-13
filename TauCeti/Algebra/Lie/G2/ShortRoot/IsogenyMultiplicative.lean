@@ -222,14 +222,7 @@ private theorem eq_sum_isogenySource_add_sum_crossBivector [CharP R 3]
     rw [Matrix.transpose_apply, Matrix.neg_apply] at h
     rw [h]
     ring
-  have e0 := (g2CrossMap_apply W 0).symm.trans (hc 0)
-  have e1 := (g2CrossMap_apply W 1).symm.trans (hc 1)
-  have e2 := (g2CrossMap_apply W 2).symm.trans (hc 2)
-  have e3 := (g2CrossMap_apply W 3).symm.trans (hc 3)
-  have e4 := (g2CrossMap_apply W 4).symm.trans (hc 4)
-  have e5 := (g2CrossMap_apply W 5).symm.trans (hc 5)
-  have e6 := (g2CrossMap_apply W 6).symm.trans (hc 6)
-  simp [Fin.sum_univ_seven, crossOperator_def] at e0 e1 e2 e3 e4 e5 e6
+  obtain ⟨e0, e1, e2, e3, e4, e5, e6⟩ := coordinates_of_g2CrossMap_eq_zero hc
   have hsum : ((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +
       ∑ a, isogenyKernelCoeff a W • (crossBivector a).map (Int.cast : ℤ → R))ᵀ =
       -((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +

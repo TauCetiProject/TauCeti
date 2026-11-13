@@ -69,13 +69,9 @@ the matrix entries, so its fixed set is not the points over a subfield.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
 
-This advances the target "points over an algebraically closed field as a group, functorially in
-the field, so that a field endomorphism induces a group endomorphism of the points. The `q`-power
-Frobenius is the case a consumer asks for first" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, by saying which points that endomorphism fixes. Its
-consumer is milestone L3 of `TauCetiRoadmap/CFSGStatement/README.md`, which sets `H_d` to be the
-fixed subgroup of the Steinberg map of a valid Lie-type index; on the untwisted type-`A` branch
-the Steinberg map is the Frobenius, and this says what `H_d` is there.
+A finite group of Lie type is read from the fixed subgroup of a Steinberg map. For the untwisted
+type-`A` family the Steinberg map is this Frobenius, and this file says what its fixed subgroup
+is.
 -/
 
 public section

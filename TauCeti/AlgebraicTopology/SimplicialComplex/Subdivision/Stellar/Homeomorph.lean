@@ -9,26 +9,30 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Re
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
-import all TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 import Mathlib.Topology.Algebra.Ring.Real
 
 /-!
-# Finite stellar subdivisions preserve the weak polyhedron
+# Stellar subdivisions preserve the weak polyhedron
 
 Placing a new vertex at the barycenter of the starred face gives a homeomorphism from the
-polyhedron of a finite stellar subdivision to the original polyhedron. Consequently a finite
-sequence of stellar moves and inverse moves preserves the homeomorphism type of a finite
-polyhedron. These identifications provide the topological part of the local sphere and ball
-models used in triangulated manifolds; piecewise-linear regularity is a separate assertion.
+polyhedron of a stellar subdivision to the original polyhedron. Consequently a finite sequence of
+stellar moves and inverse moves preserves the homeomorphism type of a polyhedron. These
+identifications provide the topological part of the local sphere and ball models used in
+triangulated manifolds; piecewise-linear regularity is a separate assertion.
+
+No finiteness or local-finiteness hypothesis is needed, and the topology is the weak topology
+throughout. For a complex that is not locally finite this differs from the coordinate topology,
+so the homeomorphism is not obtained by transporting coordinates: continuity in each direction is
+tested on closed simplices, each of which lies in a finite part of the complex.
 
 A precomplex can omit vertices, so its polyhedron is the subset of an ambient weak realization
 whose supports are its faces. The single-move theorem allows any ambient complex containing
 both precomplexes. The sequence theorem uses the full complex as a common ambient space.
-Finiteness means finitely many faces, with no restriction on the ambient vertex type.
 
-The construction uses the bijective barycentric map of `Stellar.Realization` and the compact
-subpolyhedron and coordinate-embedding theorems of `Realization.Finite`. Intrinsic stellar
-equivalences are transported through the relabeling homeomorphisms from `Realization.Relabel`.
+The construction uses the bijective barycentric map of `Stellar.Realization`, the closed-simplex
+continuity criterion of `Realization.Subcomplex`, and, on finite parts, the compact subpolyhedron
+and coordinate-embedding theorems of `Realization.Finite`. Intrinsic stellar equivalences are
+transported through the relabeling homeomorphisms from `Realization.Relabel`.
 
 ## References
 
@@ -47,10 +51,10 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} [DecidableEq ι] {K L : PreAbstractSimplicialComplex ι}
   {A : AbstractSimplicialComplex ι} {σ : Finset ι} {v : ι}
 
-/-- The barycentric identification of a finite stellar subdivision is a homeomorphism for
-the weak subpolyhedron topologies. The new vertex goes to the barycenter of `σ` and the old
-vertices are fixed, as specified by the underlying linear map. -/
-theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
+/-- The finite case of `exists_homeomorph_stellarSubdivision`: both polyhedra are compact,
+so the continuous barycentric bijection is a homeomorphism. -/
+private theorem exists_homeomorph_stellarSubdivision_of_finite (hσ : σ ∈ K)
+    (hv : ({v} : Finset ι) ∉ K)
     (hfin : K.faces.Finite) (hK : K ≤ A.toPreAbstractSimplicialComplex)
     (hS : stellarSubdivision K σ v ≤ A.toPreAbstractSimplicialComplex) :
     ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} ≃ₜ
@@ -72,10 +76,8 @@ theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finse
   have hmem (P : PreAbstractSimplicialComplex ι) (hP : P ≤ A.toPreAbstractSimplicialComplex)
       (y : ι →₀ ℝ) (hy : y ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) P).space) :
       y ∈ (standardGeometricComplex A).space ∧ y.support ∈ P := by
-    obtain ⟨hypos, hysum, hyface⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hy
-    refine ⟨mem_realization_iff.mpr ⟨y.support, hP hyface, ?_⟩, hyface⟩
-    simpa only [Finset.coe_image] using mem_standardSimplex_iff.mpr
-      ⟨hypos, hysum, Finset.Subset.refl _⟩
+    obtain ⟨h₁, h₂, h₃⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hy
+    exact ⟨TauCeti.mem_standardGeometricComplex_space_iff.mpr ⟨h₁, h₂, hP h₃⟩, h₃⟩
   have hb := bijOn_stellarSubdivisionLinearMap hσ hv
   let f : S → T := fun x =>
     ⟨⟨Finset.stellarSubdivisionLinearMap σ v x.1.1,
@@ -113,32 +115,125 @@ theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finse
   let e := (Equiv.ofBijective f hbij).toHomeomorphOfContinuousClosed hc hc.isClosedMap
   exact ⟨e, hfval⟩
 
-/-- Stellar equivalent finite precomplexes have homeomorphic weak polyhedra. The subtypes
-exclude every unused vertex, even though their common ambient complex contains all vertices. -/
-theorem StellarEquivalent.nonempty_homeomorph (h : StellarEquivalent K L)
-    (hfin : K.faces.Finite) :
+/-- The barycentric identification of a stellar subdivision is a homeomorphism for the weak
+subpolyhedron topologies. The new vertex goes to the barycenter of `σ` and the old vertices are
+fixed, as specified by the underlying linear map. The complex may be infinite and need not be
+locally finite. -/
+theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
+    (hK : K ≤ A.toPreAbstractSimplicialComplex)
+    (hS : stellarSubdivision K σ v ≤ A.toPreAbstractSimplicialComplex) :
+    ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} ≃ₜ
+        {x : Realization A // x.1.support ∈ K},
+      ∀ x, (e x).1.1 = Finset.stellarSubdivisionLinearMap σ v x.1.1 := by
+  classical
+  -- Continuity in each direction is tested on closed simplices. A closed simplex of either
+  -- complex lies in the finite part of `K` on its vertices together with `σ`, where the
+  -- compactness argument of the finite case gives a homeomorphism agreeing with the global map.
+  -- The finite part of `K` on the vertices of a finite set `W ⊇ σ`, and its starring.
+  have hsub (W : Finset ι) : K ⊓ simplex W ≤ K := inf_le_left
+  have hsubS (W : Finset ι) :
+      stellarSubdivision (K ⊓ simplex W) σ v ≤ stellarSubdivision K σ v :=
+    stellarSubdivision_mono (hsub W)
+  have hlocal (W : Finset ι) (hW : σ ⊆ W) :
+      ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision (K ⊓ simplex W) σ v} ≃ₜ
+          {x : Realization A // x.1.support ∈ K ⊓ simplex W},
+        ∀ x, (e x).1.1 = Finset.stellarSubdivisionLinearMap σ v x.1.1 :=
+    exists_homeomorph_stellarSubdivision_of_finite
+      (mem_inf.mpr ⟨hσ, mem_simplex.mpr ⟨(K.isRelLowerSet_faces hσ).1, hW⟩⟩)
+      (fun h => hv (mem_inf.mp h).1)
+      ((finite_faces_simplex W).subset fun _ hτ => (mem_inf.mp hτ).2)
+      ((hsub W).trans hK) ((hsubS W).trans hS)
+  choose e he using hlocal
+  -- The global barycentric bijection.
+  have hb := bijOn_stellarSubdivisionLinearMap hσ hv
+  have hspace (P : PreAbstractSimplicialComplex ι) (x : {x : Realization A // x.1.support ∈ P}) :
+      x.1.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) P).space :=
+    Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
+      ⟨Realization.nonneg A x.1, Realization.sum_eq_one A x.1, x.2⟩
+  have hmem (y : ι →₀ ℝ) (hy : y ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) K).space) :
+      y ∈ (standardGeometricComplex A).space ∧ y.support ∈ K := by
+    obtain ⟨h₁, h₂, h₃⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hy
+    exact ⟨TauCeti.mem_standardGeometricComplex_space_iff.mpr ⟨h₁, h₂, hK h₃⟩, h₃⟩
+  let f : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} →
+      {x : Realization A // x.1.support ∈ K} := fun x =>
+    ⟨⟨Finset.stellarSubdivisionLinearMap σ v x.1.1, (hmem _ (hb.mapsTo (hspace _ x))).1⟩,
+      (hmem _ (hb.mapsTo (hspace _ x))).2⟩
+  have hfval (x : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v}) :
+      (f x).1.1 = Finset.stellarSubdivisionLinearMap σ v x.1.1 := rfl
+  have hinj : Function.Injective f := fun x y hxy =>
+    Subtype.ext (Subtype.ext (hb.injOn (hspace _ x) (hspace _ y)
+      (by simpa only [hfval] using congrArg (fun z => z.1.1) hxy)))
+  -- On each finite part, `f` agrees with the finite homeomorphism.
+  have hcompat (W : Finset ι) (hW : σ ⊆ W)
+      (x : {x : Realization A // x.1.support ∈ stellarSubdivision (K ⊓ simplex W) σ v}) :
+      f ⟨x.1, hsubS W x.2⟩ = ⟨(e W hW x).1, (mem_inf.mp (e W hW x).2).1⟩ :=
+    Subtype.ext (Subtype.ext (he W hW x).symm)
+  have hsurj : Function.Surjective f := by
+    intro y
+    have hW : σ ⊆ y.1.1.support ∪ σ := Finset.subset_union_right
+    let y' : {x : Realization A // x.1.support ∈ K ⊓ simplex (y.1.1.support ∪ σ)} :=
+      ⟨y.1, mem_inf.mpr ⟨y.2, mem_simplex.mpr ⟨(K.isRelLowerSet_faces y.2).1,
+        Finset.subset_union_left⟩⟩⟩
+    refine ⟨⟨((e _ hW).symm y').1, hsubS _ ((e _ hW).symm y').2⟩, ?_⟩
+    rw [hcompat _ hW, Homeomorph.apply_symm_apply]
+  let F := Equiv.ofBijective f ⟨hinj, hsurj⟩
+  -- Each closed simplex of `K` lies in the finite part spanned by its vertices and `σ`.
+  have hsimplex (τ W : Finset ι) (hτ : τ ∈ K) (hτW : τ ⊆ W) : τ ∈ K ⊓ simplex W :=
+    mem_inf.mpr ⟨hτ, mem_simplex.mpr ⟨(K.isRelLowerSet_faces hτ).1, hτW⟩⟩
+  have hincT (W : Finset ι) :
+      Continuous fun y : {x : Realization A // x.1.support ∈ K ⊓ simplex W} =>
+        (⟨y.1, (mem_inf.mp y.2).1⟩ : {x : Realization A // x.1.support ∈ K}) :=
+    continuous_subtype_val.subtype_mk _
+  have hincS (W : Finset ι) :
+      Continuous fun y : {x : Realization A //
+          x.1.support ∈ stellarSubdivision (K ⊓ simplex W) σ v} =>
+        (⟨y.1, hsubS W y.2⟩ : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v}) :=
+    continuous_subtype_val.subtype_mk _
+  have hcont : Continuous f := by
+    refine (continuous_subtype_iff_faceInclusion hS).mpr fun τ hτ => ?_
+    have hW : σ ⊆ τ.erase v ∪ σ := Finset.subset_union_right
+    -- A stellar simplex is a stellar simplex of the finite part on `τ.erase v ∪ σ`.
+    have hτW : τ ∈ stellarSubdivision (K ⊓ simplex (τ.erase v ∪ σ)) σ v := by
+      rcases mem_stellarSubdivision_iff.mp hτ with ⟨hvτ, hτK, hστ⟩ | ⟨hvτ, hστ, hτK⟩
+      · refine mem_stellarSubdivision_iff.mpr (Or.inl ⟨hvτ, hsimplex _ _ hτK ?_, hστ⟩)
+        rw [Finset.erase_eq_of_notMem hvτ]
+        exact Finset.subset_union_left
+      · exact mem_stellarSubdivision_iff.mpr
+          (Or.inr ⟨hvτ, hστ, hsimplex _ _ hτK Finset.Subset.rfl⟩)
+    have hSW := (hsubS (τ.erase v ∪ σ)).trans hS
+    refine ((hincT _).comp ((e _ hW).continuous.comp
+      ((continuous_faceInclusion A ⟨τ, hSW hτW⟩).subtype_mk
+        (support_faceInclusion_mem hSW hτW)))).congr fun x => ?_
+    exact (hcompat _ hW _).symm
+  have hcontSymm : Continuous F.symm := by
+    refine (continuous_subtype_iff_faceInclusion hK).mpr fun ρ hρ => ?_
+    have hW : σ ⊆ ρ ∪ σ := Finset.subset_union_right
+    have hρW : ρ ∈ K ⊓ simplex (ρ ∪ σ) := hsimplex _ _ hρ Finset.subset_union_left
+    have hKW := (hsub (ρ ∪ σ)).trans hK
+    refine ((hincS _).comp ((e _ hW).symm.continuous.comp
+      ((continuous_faceInclusion A ⟨ρ, hKW hρW⟩).subtype_mk
+        (support_faceInclusion_mem hKW hρW)))).congr fun x => ?_
+    refine (F.symm_apply_eq.mpr ((hcompat _ hW _).trans (Subtype.ext ?_)).symm).symm
+    simp only [Function.comp_apply, Homeomorph.apply_symm_apply]
+  exact ⟨{ toEquiv := F, continuous_toFun := hcont, continuous_invFun := hcontSymm }, hfval⟩
+
+/-- Stellar equivalent precomplexes have homeomorphic weak polyhedra. The subtypes exclude every
+unused vertex, even though their common ambient complex contains all vertices. -/
+theorem StellarEquivalent.nonempty_homeomorph (h : StellarEquivalent K L) :
     Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
       {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L}) := by
   have hle (P : PreAbstractSimplicialComplex ι) :
       P ≤ (⊤ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex :=
     fun _ hτ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
       (P.isRelLowerSet_faces.prop_of_mem hτ)
-  -- Unfold the equivalence closure to retain the sub-equivalence witnesses during induction;
-  -- their finiteness preservation supplies compactness for inverse and intermediate moves.
-  unfold StellarEquivalent at h
-  induction h with
-  | rel P Q h =>
-    obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp h
-    obtain ⟨e, -⟩ := exists_homeomorph_stellarSubdivision hσ hv hfin (hle P) (hle _)
-    exact ⟨e.symm⟩
-  | refl =>
-    exact ⟨Homeomorph.refl _⟩
-  | symm P Q h ih =>
-    exact (ih ((StellarEquivalent.finite_faces_iff h).mpr hfin)).map Homeomorph.symm
-  | trans P Q R hPQ _ ihPQ ihQR =>
-    obtain ⟨e⟩ := ihPQ hfin
-    obtain ⟨e'⟩ := ihQR ((StellarEquivalent.finite_faces_iff hPQ).mp hfin)
-    exact ⟨e.trans e'⟩
+  refine h.induction_on (P := fun A B => Nonempty
+      ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
+        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B}))
+    (fun P Q hPQ => ?_) (fun _ => ⟨Homeomorph.refl _⟩)
+    (fun _ _ ⟨e⟩ => ⟨e.symm⟩) (fun _ _ _ ⟨e⟩ ⟨e'⟩ => ⟨e.trans e'⟩)
+  obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp hPQ
+  obtain ⟨e, -⟩ := exists_homeomorph_stellarSubdivision hσ hv (hle P) (hle _)
+  exact ⟨e.symm⟩
 
 private noncomputable def topRelabelingHomeomorph {κ : Type*} [DecidableEq κ]
     (P : PreAbstractSimplicialComplex ι) (f : ι ↪ κ) :
@@ -154,41 +249,15 @@ private noncomputable def topRelabelingHomeomorph {κ : Type*} [DecidableEq κ]
 use different vertex labels. The two relabelings in the definition are removed by the canonical
 homeomorphisms of `Realization.Relabel`. -/
 theorem StellarEquivalentUpToRelabeling.nonempty_homeomorph
-    (h : StellarEquivalentUpToRelabeling K L) (hfin : K.faces.Finite) :
+    (h : StellarEquivalentUpToRelabeling K L) :
     Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
       {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L}) := by
-  have aux : ∀ A B : PreAbstractSimplicialComplex ι,
-      StellarEquivalentUpToRelabeling A B →
-        (A.faces.Finite ↔ B.faces.Finite) ∧
-          (A.faces.Finite →
-            Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-              {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B})) := by
-    intro A B hAB
-    apply StellarEquivalentUpToRelabeling.induction_on hAB
-    · intro P Q f g he
-      have hPmap : (P.map f).faces.Finite ↔ P.faces.Finite :=
-        finite_faces_map_iff_of_injective f f.injective
-      have hQmap : (Q.map g).faces.Finite ↔ Q.faces.Finite :=
-        finite_faces_map_iff_of_injective g g.injective
-      refine ⟨hPmap.symm.trans (he.finite_faces_iff.trans hQmap), ?_⟩
-      intro hPfin
-      have hPmapfin : (P.map f).faces.Finite := hPmap.mpr hPfin
-      obtain ⟨e⟩ := he.nonempty_homeomorph hPmapfin
-      exact ⟨(topRelabelingHomeomorph P f).trans
-        (e.trans (topRelabelingHomeomorph Q g).symm)⟩
-    · intro P
-      exact ⟨Iff.rfl, fun _ => ⟨Homeomorph.refl _⟩⟩
-    · intro P Q ih
-      refine ⟨ih.1.symm, ?_⟩
-      intro hQfin
-      obtain ⟨e⟩ := ih.2 (ih.1.mpr hQfin)
-      exact ⟨e.symm⟩
-    · intro P Q R ihPQ ihQR
-      refine ⟨ihPQ.1.trans ihQR.1, ?_⟩
-      intro hPfin
-      obtain ⟨e⟩ := ihPQ.2 hPfin
-      obtain ⟨e'⟩ := ihQR.2 (ihPQ.1.mp hPfin)
-      exact ⟨e.trans e'⟩
-  exact (aux K L h).2 hfin
+  refine h.induction_on (P := fun A B => Nonempty
+      ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
+        {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B}))
+    (fun P Q f g he => ?_) (fun _ => ⟨Homeomorph.refl _⟩)
+    (fun _ _ ⟨e⟩ => ⟨e.symm⟩) (fun _ _ _ ⟨e⟩ ⟨e'⟩ => ⟨e.trans e'⟩)
+  obtain ⟨e⟩ := he.nonempty_homeomorph
+  exact ⟨(topRelabelingHomeomorph P f).trans (e.trans (topRelabelingHomeomorph Q g).symm)⟩
 
 end PreAbstractSimplicialComplex

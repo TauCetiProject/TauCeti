@@ -78,15 +78,17 @@ namespace presentedProP
 
 variable {X : Type u} [Finite X] (rels : Set (freeProP p X))
 
+omit [Fact p.Prime] in
 /-- A pro-`p` group presented on a finite type `X` has topological generator rank at most
-`Nat.card X`: it is the image of the free pro-`p` group on `X`, of rank `Nat.card X`, under the
-continuous surjection `mk`. -/
+`Nat.card X`: the `Nat.card X` generators topologically generate it. -/
 theorem topologicalGeneratorRankNat_le_card :
     topologicalGeneratorRankNat (presentedProP p X rels) isTopologicallyFinitelyGenerated ≤
       Nat.card X := by
-  rw [← topologicalGeneratorRankNat_freeProP p (isTopologicallyFinitelyGenerated_freeProP p X)]
-  exact topologicalGeneratorRankNat_le_of_surjective (mk p rels : freeProP p X →* _)
-    (map_continuous (mk p rels)) (mk_surjective p rels) _
+  classical
+  have := Fintype.ofFinite X
+  refine (topologicalGeneratorRankNat_le _ (s := Finset.univ.image (of p rels)) ?_).trans ?_
+  · simpa using topologicalClosure_closure_range_of_eq_top (p := p) (rels := rels)
+  · exact Finset.card_image_le.trans (by simp [Nat.card_eq_fintype_card])
 
 /-- **Minimal presentations.** A pro-`p` group presented on a finite type `X` has topological
 generator rank `Nat.card X` exactly when every relator lies in the Frattini subgroup of the free

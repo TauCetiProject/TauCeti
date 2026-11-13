@@ -44,7 +44,6 @@ variable {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [Norme
   [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
   [PreconnectedSpace M]
   [CompactSpace M] [MeasurableSpace M] [BorelSpace M]
-  [LindelofSpace M]
 
 /-- The total Riemannian volume carried by a bundled complete constant-curvature `-1` metric. -/
 noncomputable def hypVolumeOfMetric (g : HyperbolicMetric (I := I) (M := M)) : ℝ := by
@@ -55,7 +54,6 @@ noncomputable def hypVolumeOfMetric (g : HyperbolicMetric (I := I) (M := M)) : �
       (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
   exact riemannianTotalVolume I M
 
-omit [LindelofSpace M] in
 /-- `hypVolumeOfMetric` is the total volume for the metric carried by `g`. -/
 theorem hypVolumeOfMetric_def (g : HyperbolicMetric (I := I) (M := M)) :
     hypVolumeOfMetric (I := I) g =
@@ -67,7 +65,6 @@ theorem hypVolumeOfMetric_def (g : HyperbolicMetric (I := I) (M := M)) :
       riemannianTotalVolume I M := by
   rfl
 
-omit [LindelofSpace M] in
 /-- Hyperbolic volume is nonnegative, as a total Riemannian volume. -/
 theorem hypVolumeOfMetric_nonneg (g : HyperbolicMetric (I := I) (M := M)) :
     0 ≤ hypVolumeOfMetric (I := I) g := by
@@ -79,7 +76,6 @@ theorem hypVolumeOfMetric_nonneg (g : HyperbolicMetric (I := I) (M := M)) :
       (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
   exact riemannianTotalVolume_nonneg (I := I) (M := M)
 
-omit [LindelofSpace M] in
 /-- The volume is preserved by any bundled hyperbolic-metric isometry. -/
 theorem hypVolumeOfMetric_eq_of_isometry
     (g g' : HyperbolicMetric (I := I) (M := M))
@@ -99,17 +95,25 @@ theorem hypVolumeOfMetric_eq_of_isometry
   exact @RiemannianIsometry.riemannianTotalVolume_eq E _ _ _ H _ I M _ _ _ _ _ _
     gBundle gCont H _ I M _ _ _ _ _ _ g'Bundle g'Cont Φ
 
-omit [LindelofSpace M] in
 /-- Mostow rigidity identifies the total volumes of any two bundled hyperbolic metrics. -/
 theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
-    (hConn : ConnectedSpace M)
     (hdim : 3 ≤ Module.finrank ℝ E)
     (h : IsMostowRigid (I := I) (M := M))
     (g g' : HyperbolicMetric (I := I) (M := M)) :
     hypVolumeOfMetric (I := I) g = hypVolumeOfMetric (I := I) g' := by
-  let _ : ConnectedSpace M := hConn
-  obtain ⟨Φ⟩ := h.isometry (hdim := hdim) g g'
-  exact hypVolumeOfMetric_eq_of_isometry g g' Φ
+  rcases isEmpty_or_nonempty M with hM | hM
+  · have h0 (g : HyperbolicMetric (I := I) (M := M)) : hypVolumeOfMetric (I := I) g = 0 := by
+      unfold hypVolumeOfMetric
+      let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.metric.toRiemannianMetric⟩
+      let _ : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+          (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+      rw [riemannianTotalVolume_def, Set.univ_eq_empty_iff.mpr hM, MeasureTheory.measureReal_empty]
+    rw [h0, h0]
+  · let _ : ConnectedSpace M := ⟨hM⟩
+    obtain ⟨Φ⟩ := h.isometry (hdim := hdim) g g'
+    exact hypVolumeOfMetric_eq_of_isometry g g' Φ
 
 /-! ### Metric-independent hyperbolic volume -/
 
@@ -122,32 +126,29 @@ hyperbolic metric. Mostow rigidity itself is not proved in this file. -/
 noncomputable def hypVolume (h : IsHyperbolic (I := I) (M := M)) : ℝ :=
   hypVolumeOfMetric (I := I) (Classical.choice (isHyperbolic_iff.mp h))
 
-omit [LindelofSpace M] in
 /-- Hyperbolic volume is the volume of the chosen bundled hyperbolic metric. -/
 theorem hypVolume_def (h : IsHyperbolic (I := I) (M := M)) :
     hypVolume (I := I) h =
       hypVolumeOfMetric (I := I) (Classical.choice (isHyperbolic_iff.mp h)) :=
   (rfl)
 
-omit [LindelofSpace M] in
 /-- The hyperbolic volume of a compact hyperbolic manifold is nonnegative. -/
 theorem hypVolume_nonneg (h : IsHyperbolic (I := I) (M := M)) :
     0 ≤ hypVolume (I := I) h := by
   rw [hypVolume_def]
   exact hypVolumeOfMetric_nonneg (Classical.choice (isHyperbolic_iff.mp h))
 
-omit [LindelofSpace M] in
-/-- On a closed connected manifold of dimension at least three, Mostow rigidity makes
-hyperbolic volume independent of the metric chosen in its definition. -/
+/-- On a closed manifold of dimension at least three, Mostow rigidity makes hyperbolic volume
+independent of the metric chosen in its definition. Connectedness is needed only to apply Mostow
+rigidity: an empty manifold has volume `0` for every metric. -/
 theorem hypVolume_eq_hypVolumeOfMetric [BoundarylessManifold I M]
-    (hConn : ConnectedSpace M)
     (hdim : 3 ≤ Module.finrank ℝ E)
     (hMostow : IsMostowRigid (I := I) (M := M))
     (h : IsHyperbolic (I := I) (M := M))
     (g : HyperbolicMetric (I := I) (M := M)) :
     hypVolume (I := I) h = hypVolumeOfMetric (I := I) g := by
   rw [hypVolume_def]
-  exact hypVolumeOfMetric_eq_of_mostow hConn hdim hMostow
+  exact hypVolumeOfMetric_eq_of_mostow hdim hMostow
     (Classical.choice (isHyperbolic_iff.mp h)) g
 
 end TauCeti

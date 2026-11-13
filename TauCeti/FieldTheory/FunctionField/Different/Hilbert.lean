@@ -181,7 +181,7 @@ theorem differentExponent_eq_finsum_card_ramificationGroup_sub_one :
   have hcard (i : ℕ) : Nat.card (IsLocalRing.ramificationGroup (P.integers.inertiaSubgroup F)
       P.integers i) = Nat.card (ramificationGroup F P i) := by
     rw [← IsLocalRing.subgroupOf_ramificationGroup,
-      ← ramificationGroup_eq_isLocalRing_ramificationGroup]
+      ← ramificationGroup_def]
     exact Nat.card_congr
       (Subgroup.subgroupOfEquivOfLe (ramificationGroup_le_inertiaSubgroup F P i)).toEquiv
   have hterm (g : P.integers.inertiaSubgroup F) (hg : g ∈ Finset.univ.erase 1) :

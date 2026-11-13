@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -27,7 +28,7 @@ regularization.
 It records that for `0 < d`, `0 < a` and `e < a`, the time `d * e / a` lies strictly before `d`;
 this is where a timed piece of duration `d` running across `[0, a]` reaches `e`.
 
-It also records how to remove a term `ε * C` from a bound valid for every `ε > 0`, and how
+It also records how to remove a term `ε * C` from a bound valid for every `ε ∈ (0, δ₀]`, and how
 to transfer bounds from maximizers of `f + εw` when the barrier `w` is bounded above.
 
 Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
@@ -37,10 +38,40 @@ It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + 
 `(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, the comparison
 `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for `0 < t`, `0 < r ≤ ρ`, which compares the
 profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
-bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
+bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`, and an error-budget bound: if `0 ≤ ε`, `0 < K`
+and `K` dominates `a + b` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`. It also records the
+absorption bound `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)` from `K₀ + N = K + γ N + 2 β e H`,
+`H ≤ C (K₀ + N)` and `2 C β e H ≤ H / 2`, together with the bookkeeping bound
+`C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and `P`.
+
+It records that `(b - a)⁻¹ ≤ 2 / b` for `0 < b` and `2 a < b`, and that
+`a / ((b - a) b) ≤ 2 a / b²` for `0 ≤ a` and `2 a < b`, the form in which a kernel estimate
+`a / ((b - a) b)` outside a disc of radius `a` becomes an inverse-square bound.
+
+Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
+than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
+
+It also records that `|p| * (C₀ * (Lam / lam)) ≤ A` follows from
+`|p| ≤ A / (C₀ + 1) * (lam / Lam)`, the choice of exponent range in an estimate where `p` is
+multiplied by a constant `C₀` times a ratio `Lam / lam` of ellipticity bounds.
+
+It further records the power inequality `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`
+from `L / (2 r) < m + 1`, which bounds the volume of a convex set containing a ball and a point.
+
+It also records how to bound a sum `U + Y` from `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`:
+solve the second estimate for `Y` and substitute it into the first.
+
+It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
+`[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
+elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
+Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`.
 
 ## Main results
 
+* `TauCeti.mul_le_iff_bounds`: characterize `a * t ≤ b` by the lower or upper bound on `t`
+  determined by the sign of `a`, including the zero-coefficient case.
+* `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
+  `a ≤ m`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
   `f + εw` to `f` when `w` is bounded above.
 * `TauCeti.one_div_add_one_div_le_two_div`: for `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most
@@ -54,25 +85,72 @@ bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
 * `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
   `0 < t` and `0 < r ≤ ρ`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
+* `TauCeti.pow_five_lt_of_mul_div_le`: `ε ^ 5 < g` from `0 < ε`, `ε * n ^ 2 < M`,
+  `0 < D ≤ n ^ 2` and `ε ^ 2 * ε ^ 2 * (M / D) ≤ g`.
+* `TauCeti.mul_le_of_le_div_mul`: `x * (C₀ * (Lam / lam)) ≤ A` from
+  `x ≤ A / (C₀ + 1) * (lam / Lam)`, for `0 ≤ A`, `0 ≤ C₀`, `0 ≤ lam` and `0 ≤ Lam`.
+* `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
+  `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
+* `TauCeti.sub_div_sub_mem_Icc`: `(c - a) / (b - a) ∈ [0, 1]` for `c ∈ [a, b]`.
+* `TauCeti.one_add_sum_inv_pos`, `TauCeti.inv_le_one_add_sum_inv`: for nonnegative `x i`,
+  `0 < 1 + ∑ i ∈ s, (x i)⁻¹` and `(x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹` for `j ∈ s`.
+* `TauCeti.nonneg_of_le_div_pow`: `0 ≤ A` from `0 ≤ a` and `a ≤ A / t ^ k` with `0 < t`.
+* `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
+  `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
+* `TauCeti.inv_sub_le_two_div`: `(b - a)⁻¹ ≤ 2 / b` for `0 < b` and `2 a < b`.
+* `TauCeti.div_sub_mul_le_two_mul_div_sq`: `a / ((b - a) b) ≤ 2 a / b²` for `0 ≤ a` and
+  `2 a < b`.
+* `TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow`: `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) *
+  (r / 2) ^ n)` for `0 < r`, `1 ≤ n` and `L / (2 r) < m + 1`.
+* `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
+  `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
+* `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
 -/
 
 public section
 
 namespace TauCeti
 
+/-- A scalar inequality is equivalent to its sign-dependent bounds: a negative coefficient
+gives a lower bound, a positive coefficient gives an upper bound, and a zero coefficient
+requires a nonnegative right-hand side. -/
+theorem mul_le_iff_bounds {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {a b t : K} :
+    a * t ≤ b ↔ (a = 0 → 0 ≤ b) ∧ (a < 0 → b / a ≤ t) ∧ (0 < a → t ≤ b / a) := by
+  constructor
+  · intro h
+    refine ⟨?_, fun ha => (div_le_iff_of_neg' ha).mpr h,
+      fun ha => (le_div_iff₀' ha).mpr h⟩
+    intro ha
+    simpa only [ha, zero_mul] using h
+  · rintro ⟨hz, hlow, hupp⟩
+    rcases lt_trichotomy a 0 with ha | ha | ha
+    · exact (div_le_iff_of_neg' ha).mp (hlow ha)
+    · simpa only [ha, zero_mul] using hz ha
+    · exact (le_div_iff₀' ha).mp (hupp ha)
+
+/-- If `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then `a ≤ m`. No sign assumption on `C` is
+needed. -/
+theorem le_of_forall_mem_Ioc_mul_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a m C δ₀ : α} (hδ₀ : 0 < δ₀)
+    (h : ∀ ε ∈ Set.Ioc 0 δ₀, a ≤ m + ε * C) : a ≤ m := by
+  by_cases hC : 0 < C
+  · by_contra! ham
+    have hε := h (min δ₀ ((a - m) / (2 * C))) ⟨lt_min hδ₀ (by positivity), min_le_left _ _⟩
+    have hle : min δ₀ ((a - m) / (2 * C)) * C ≤ (a - m) / 2 :=
+      calc min δ₀ ((a - m) / (2 * C)) * C ≤ (a - m) / (2 * C) * C := by
+            gcongr
+            exact min_le_right _ _
+        _ = (a - m) / 2 := by field_simp
+    linarith
+  · have hε := h δ₀ ⟨hδ₀, le_rfl⟩
+    nlinarith
+
 /-- If `a ≤ m + ε * C` for every positive `ε`, then `a ≤ m`. No sign assumption on `C` is
 needed. -/
 theorem le_of_forall_pos_mul_le {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    {a m C : α} (h : ∀ ε : α, 0 < ε → a ≤ m + ε * C) : a ≤ m := by
-  by_cases hC : 0 < C
-  · by_contra! ham
-    have hε := h ((a - m) / (2 * C)) (by positivity)
-    have heq : (a - m) / (2 * C) * C = (a - m) / 2 := by field_simp
-    rw [heq] at hε
-    linarith
-  · have hε := h 1 one_pos
-    simp only [one_mul] at hε
-    linarith
+    {a m C : α} (h : ∀ ε : α, 0 < ε → a ≤ m + ε * C) : a ≤ m :=
+  le_of_forall_mem_Ioc_mul_le one_pos fun ε hε ↦ h ε hε.1
 
 /-- For `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most `2 / b`. -/
 theorem one_div_add_one_div_le_two_div {α : Type*} [Field α] [LinearOrder α]
@@ -164,6 +242,169 @@ theorem mul_le_one_of_le_inv_one_add {α : Type*} [Semifield α] [LinearOrder α
   refine (mul_le_mul_of_nonneg_right ha hb).trans ?_
   rw [inv_mul_eq_div, div_le_one (add_pos_of_pos_of_nonneg zero_lt_one hb)]
   exact le_add_of_nonneg_left zero_le_one
+
+/-- The barrier `ε * (c * (1 + n ^ 2))` dominates an upper bound `r ≤ M` once the radius `n`
+exceeds `M / ε`, for `c ≥ 1` and `ε > 0`. -/
+theorem sub_mul_mul_one_add_sq_neg_of_lt {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {c ε M r n : α} (hc : 1 ≤ c) (hε : 0 < ε)
+    (hr : r ≤ M) (hn : M / ε < n) :
+    r - ε * (c * (1 + n ^ 2)) < 0 := by
+  have h2 : M < ε * n := by
+    rw [← div_lt_iff₀' hε]
+    linarith
+  have h3 : n ≤ 1 + n ^ 2 := by
+    nlinarith [sq_nonneg (n - 1)]
+  have h4 : ε * (1 + n ^ 2) ≤ ε * (c * (1 + n ^ 2)) :=
+    mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) hc) hε.le
+  nlinarith [mul_le_mul_of_nonneg_left h3 hε.le]
+
+/-- The normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in `[0, 1]`. For a
+degenerate interval `a = b` it is `0`. -/
+theorem sub_div_sub_mem_Icc {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b c : α} (hc : c ∈ Set.Icc a b) : (c - a) / (b - a) ∈ Set.Icc 0 1 :=
+  ⟨div_nonneg (sub_nonneg.2 hc.1) (sub_nonneg.2 (hc.1.trans hc.2)),
+    div_le_one_of_le₀ (sub_le_sub_right hc.2 a) (sub_nonneg.2 (hc.1.trans hc.2))⟩
+
+/-- For a finite family of nonnegative elements, `1 + ∑ i ∈ s, (x i)⁻¹` is positive. -/
+theorem one_add_sum_inv_pos {α ι : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {s : Finset ι} {x : ι → α} (h : ∀ i ∈ s, 0 ≤ x i) : 0 < 1 + ∑ i ∈ s, (x i)⁻¹ :=
+  add_pos_of_pos_of_nonneg one_pos (Finset.sum_nonneg fun i hi => inv_nonneg.2 (h i hi))
+
+/-- For a finite family of nonnegative elements, each reciprocal `(x j)⁻¹` with `j ∈ s` is at
+most `1 + ∑ i ∈ s, (x i)⁻¹`. -/
+theorem inv_le_one_add_sum_inv {α ι : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {s : Finset ι} {x : ι → α} (h : ∀ i ∈ s, 0 ≤ x i) {j : ι}
+    (hj : j ∈ s) : (x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹ :=
+  (Finset.single_le_sum (fun i hi => inv_nonneg.2 (h i hi)) hj).trans
+    (le_add_of_nonneg_left zero_le_one)
+
+/-- If `0 < ε`, `ε * n ^ 2 < M`, `0 < D ≤ n ^ 2` and `ε ^ 2 * ε ^ 2 * (M / D) ≤ g`,
+then `ε ^ 5 < g`: the gain `ε² ε² M / D` exceeds `ε⁵`. -/
+theorem pow_five_lt_of_mul_div_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {ε M D n g : α} (hε : 0 < ε) (hD : 0 < D)
+    (hDn : D ≤ n ^ 2) (hbad : ε * n ^ 2 < M) (hgain : ε ^ 2 * ε ^ 2 * (M / D) ≤ g) :
+    ε ^ 5 < g := by
+  have hn : 0 < n ^ 2 := hD.trans_le hDn
+  have hM₀ : 0 ≤ M := hbad.le.trans' (by positivity)
+  have hM : ε < M / D :=
+    ((lt_div_iff₀ hn).2 hbad).trans_le (div_le_div_of_nonneg_left hM₀ hD hDn)
+  have hε4 : 0 < ε ^ 2 * ε ^ 2 := by positivity
+  nlinarith
+
+/-- The error budget: for `0 ≤ ε` and `0 < K` dominating `a + b`, the two error terms
+`ε / (2 K) * a` and `b * (ε / (2 K))` sum to at most `ε / 2`. -/
+theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a b K ε : α} (hε : 0 ≤ ε) (hK0 : 0 < K) (hK : a + b ≤ K) :
+    ε / (2 * K) * a + b * (ε / (2 * K)) ≤ ε / 2 := by
+  calc _ = ε / (2 * K) * (a + b) := by ring
+    _ ≤ ε / (2 * K) * K :=
+        mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+    _ = ε / 2 := by field_simp
+
+/-- Beyond twice `a`, where `b - a ≥ b / 2`, the inverse `(b - a)⁻¹` is at most `2 / b`. -/
+theorem inv_sub_le_two_div {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b : α} (hb : 0 < b) (h : 2 * a < b) : (b - a)⁻¹ ≤ 2 / b := by
+  rw [inv_le_iff_one_le_mul₀ (by linarith), div_mul_eq_mul_div, le_div_iff₀ hb]
+  linarith
+
+/-- Beyond twice `a ≥ 0`, where `b - a ≥ b / 2`, the quotient `a / ((b - a) b)` is at most
+`2 a / b²`. -/
+theorem div_sub_mul_le_two_mul_div_sq {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a b : α} (ha : 0 ≤ a) (h : 2 * a < b) :
+    a / ((b - a) * b) ≤ 2 * a / b ^ 2 := by
+  have hb : 0 < b := by linarith
+  rw [div_le_div_iff₀ (mul_pos (by linarith) hb) (by positivity)]
+  nlinarith [mul_nonneg (mul_nonneg ha hb.le) (sub_nonneg.mpr h.le)]
+
+/-- If `x ≤ A / (C₀ + 1) * (lam / Lam)` for `A ≥ 0`, `C₀ ≥ 0`, `lam ≥ 0` and `Lam ≥ 0`, then
+`x * (C₀ * (Lam / lam)) ≤ A`. -/
+theorem mul_le_of_le_div_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {A C₀ lam Lam x : α} (hA : 0 ≤ A) (hC₀ : 0 ≤ C₀) (hlam : 0 ≤ lam) (hLam : 0 ≤ Lam)
+    (hx : x ≤ A / (C₀ + 1) * (lam / Lam)) :
+    x * (C₀ * (Lam / lam)) ≤ A := by
+  have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
+    rw [div_mul_div_comm, mul_comm lam]
+    exact div_self_le_one _
+  calc x * (C₀ * (Lam / lam))
+      ≤ A / (C₀ + 1) * (lam / Lam) * (C₀ * (Lam / lam)) := by gcongr
+    _ = A * (C₀ / (C₀ + 1)) * (lam / Lam * (Lam / lam)) := by field_simp
+    _ ≤ A * 1 * 1 :=
+        mul_le_mul (mul_le_mul_of_nonneg_left
+          (div_le_one_of_le₀ (by linarith) (by linarith)) hA) hratio (by positivity)
+          (by positivity)
+    _ = A := by rw [mul_one, mul_one]
+
+/-- The inequality behind the volume bound for a convex set containing a ball and a point: if
+`L / (2 r) < m + 1` then `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`. -/
+theorem mul_pow_le_two_pow_mul_succ_mul_pow {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {L r : α} {m n : ℕ} (hr : 0 < r) (hn : 1 ≤ n)
+    (hm : L / (2 * r) < m + 1) :
+    L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
+  have hrn : r ^ n = r * r ^ (n - 1) := by rw [← pow_succ', Nat.sub_add_cancel hn]
+  have h2 : (2 : α) ^ (n + 1) * (r / 2) ^ n = 2 * r ^ n := by
+    rw [div_pow, pow_succ]
+    field_simp
+  rw [div_lt_iff₀ (by positivity)] at hm
+  calc L * r ^ (n - 1) ≤ (m + 1) * (2 * r) * r ^ (n - 1) := by gcongr
+    _ = 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
+      rw [mul_left_comm (2 ^ (n + 1) : α), h2, hrn]
+      ring
+
+/-- If `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`, where `a, b ≥ 0`, `c > 0` and `Z, W ≥ 0`,
+then `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)`. -/
+theorem add_le_mul_add_mul_of_le_of_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {U Y Z W M a b c : α} (hc : 0 < c)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (hZ : 0 ≤ Z) (hW : 0 ≤ W)
+    (hX : U ≤ 2 * Z + 2 * M ^ 2 * Y) (hY : c / 2 * Y ≤ a * Z + b * W) :
+    U + Y ≤ (2 + (2 * M ^ 2 + 1) * (2 / c) * (a + b)) * Z +
+      (2 + (2 * M ^ 2 + 1) * (2 / c) * (a + b)) * W := by
+  have hY' : Y ≤ 2 / c * (a * Z + b * W) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    linarith
+  have hk : 0 ≤ (2 * M ^ 2 + 1) * (2 / c) := by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : α) ≤ 2 * M ^ 2 + 1),
+    mul_nonneg (mul_nonneg hk hb) hZ, mul_nonneg (mul_nonneg hk ha) hW,
+    mul_nonneg (mul_nonneg hk ha) hZ, mul_nonneg (mul_nonneg hk hb) hW]
+
+/-- Absorbing the term `X * J` with `X ≤ 1 / 2` into the left side: `J ≤ Y + X * J` gives
+`J ≤ 2 * Y` for `0 ≤ J`. -/
+theorem le_two_mul_of_le_add_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {J X Y : α} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2) (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
+  nlinarith [mul_le_mul_of_nonneg_right hX hJ]
+
+/-- The bookkeeping bound `C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and
+`P`. -/
+theorem mul_add_mul_add_le_mul_one_add_mul_add {R : Type*} [CommSemiring R] [PartialOrder R]
+    [IsOrderedRing R] {C M N P : R} (hC : 0 ≤ C) (hM : 0 ≤ M) (hP : 0 ≤ P) :
+    C * (M + N * P + N) ≤ C * (1 + P) * (M + N) := by
+  have h : M + N * P + N ≤ (1 + P) * (M + N) := by
+    calc M + N * P + N ≤ M + N * P + N + P * M := le_add_of_nonneg_right (mul_nonneg hP hM)
+      _ = (1 + P) * (M + N) := by ring
+  calc C * (M + N * P + N) ≤ C * ((1 + P) * (M + N)) := mul_le_mul_of_nonneg_left h hC
+    _ = C * (1 + P) * (M + N) := by ring
+
+/-- The absorption step of an a priori estimate: if `K₀ + N = K + γ N + 2 β e H`, with
+`H ≤ C (K₀ + N)` and `2 C β e H ≤ H / 2`, then `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)`, for
+nonnegative `C`, `K`, `N` and `γ`. -/
+theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] {C K N γ β e H K₀ : R} (hC : 0 ≤ C)
+    (hK : 0 ≤ K) (hN : 0 ≤ N) (hγ : 0 ≤ γ) (hK₀ : K₀ + N = K + γ * N + 2 * β * e * H)
+    (hHle : H ≤ C * (K₀ + N)) (habs : 2 * C * β * e * H ≤ 1 / 2 * H) :
+    C * (K₀ + N) ≤ 2 * C * (1 + γ) * (K + N) := by
+  have hKγ : 0 ≤ C * (K + γ * N) := by positivity
+  rw [hK₀] at hHle ⊢
+  have hγN : K + γ * N ≤ (1 + γ) * (K + N) := by nlinarith
+  have hsplit : C * (K + γ * N + 2 * β * e * H) = C * (K + γ * N) + 2 * C * β * e * H := by
+    ring
+  rw [hsplit] at hHle ⊢
+  have hCγ : C * (K + γ * N) ≤ C * ((1 + γ) * (K + N)) :=
+    mul_le_mul_of_nonneg_left hγN hC
+  linarith
+
+/-- A nonnegative quantity bounded by `A / t ^ k` with `t > 0` forces `0 ≤ A`. -/
+theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a A t : α} {k : ℕ} (ht : 0 < t) (h : a ≤ A / t ^ k) (ha : 0 ≤ a) : 0 ≤ A := by
+  simpa using (le_div_iff₀ (pow_pos ht k)).1 (ha.trans h)
 
 end TauCeti
 

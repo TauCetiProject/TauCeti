@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Real.Basic
 public import TauCeti.Geometry.Convex.Cone.Basic
 public import TauCeti.Geometry.Convex.Cone.Face.Basic
 public import TauCeti.Geometry.Convex.Cone.Face.Finite
@@ -54,7 +55,6 @@ namespace TauCeti.Toric
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] {σ τ : PointedCone ℝ V}
 
 /-- A ray of a pointed cone is a face whose linear span has real dimension one. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 abbrev ToricRay (σ : PointedCone ℝ V) :=
   {ρ : σ.Face // Module.finrank ℝ (Submodule.span ℝ ((ρ : PointedCone ℝ V) : Set V)) = 1}
 
@@ -172,7 +172,7 @@ theorem toPointedCone_eq_of_hull_singleton {x : V}
     (ρ : ToricRay (PointedCone.hull ℝ {x})) : ρ.toPointedCone = PointedCone.hull ℝ {x} := by
   have hx : x ∈ ρ.toPointedCone := by
     by_contra hx
-    have h := ρ.1.eq_hull_inter_of_eq_hull {x} rfl
+    have h := ρ.1.isFaceOf.eq_hull_inter_of_eq_hull rfl
     rw [Set.singleton_inter_eq_empty.2 (by simpa using hx)] at h
     exact ρ.toPointedCone_ne_bot (by simpa using h)
   exact le_antisymm ρ.1.isFaceOf.le (Submodule.span_le.2 (Set.singleton_subset_iff.2 hx))

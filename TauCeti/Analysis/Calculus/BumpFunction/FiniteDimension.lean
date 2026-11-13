@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 
 /-!
 # Extending finite-dimensional smooth germs
@@ -22,9 +23,19 @@ the same order. A smooth bump function performs the extension while preserving t
 function near the base point. Since the bump is compactly supported, so is the representative,
 and a representative of order at least one is moreover globally Lipschitz.
 
+Dually, a function smooth outside a compact set agrees near every point outside a larger compact
+set with a globally smooth function, obtained by cutting it off near the origin
+(`TauCeti.exists_contDiff_eventually_eventuallyEq`). This lets estimates at infinity be proved for
+globally smooth functions only.
+
+A function which is `C^n` at every point of a sphere can be filled in across the open ball it
+bounds: it agrees near every point outside the ball with a function which is `C^n` at every point
+of the closed ball (`TauCeti.exists_contDiffAt_closedBall_eventuallyEq`).
+
 These general calculus lemmas are used by the parameter-dependent ODE construction for the
 Lie-group exponential, and by the construction of a local flow out of the global solution of a
-globally Lipschitz field.
+globally Lipschitz field. Filling in a hole reduces Stokes' formula on a disc with
+holes to Stokes' formula on a closed disc.
 -/
 
 public section
@@ -40,7 +51,7 @@ theorem ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact [FiniteDimensional 
     (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
     ∃ g : E → F, ContDiff ℝ n g ∧ HasCompactSupport g ∧ tsupport g ⊆ U ∧
       Function.support g ⊆ Function.support f ∧ ∀ x ∈ K, g =ᶠ[nhds x] f := by
-  obtain ⟨ψ, hψ, -, hψone, hψcpt, hψsupp⟩ := hK.exists_contDiff_cutoff hU hKU
+  obtain ⟨ψ, hψ, -, hψone, hψcpt, hψsupp⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hU hKU
   have hg : ContDiff ℝ n (fun x ↦ ψ x • f x) := by
     apply ContMDiff.contDiff
     refine contMDiff_of_tsupport fun x hx ↦ ?_
@@ -50,10 +61,8 @@ theorem ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact [FiniteDimensional 
   refine ⟨fun x ↦ ψ x • f x, hg, hψcpt.smul_right,
     (tsupport_smul_subset_left ψ f).trans hψsupp, Function.support_smul_subset_right ψ f, ?_⟩
   intro x hx
-  filter_upwards [isOpen_interior.mem_nhds (hψone hx)] with y hy
-  have hone : ψ y = 1 := by
-    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using interior_subset hy
-  simp only [hone, one_smul]
+  filter_upwards [hψone x hx] with y hy
+  simp only [hy, one_smul]
 
 /-- A function which is smooth on a neighbourhood of a point of a finite-dimensional real normed
 space agrees near that point with a compactly supported globally smooth function of the same
@@ -88,3 +97,73 @@ theorem ContDiffOn.exists_lipschitzWith_contDiff_eventuallyEq_of_finiteDimension
   obtain ⟨g, hg, hgsupp, hgf⟩ := hf.exists_contDiff_eventuallyEq_of_finiteDimensional hs
   obtain ⟨C, hC⟩ := hg.lipschitzWith_of_hasCompactSupport hgsupp (by simp)
   exact ⟨g, C, hg, hC, hgf⟩
+
+namespace TauCeti
+
+open Filter Topology
+
+/-- A function smooth outside a compact set agrees, near every point outside a larger compact set,
+with a globally smooth function. -/
+theorem exists_contDiff_eventually_eventuallyEq [FiniteDimensional ℝ E] {n : ℕ∞} {f : E → F}
+    (hf : ∀ᶠ x in cocompact E, ContDiffAt ℝ n f x) :
+    ∃ g : E → F, ContDiff ℝ n g ∧ ∀ᶠ x in cocompact E, g =ᶠ[𝓝 x] f := by
+  obtain ⟨R, -, hR⟩ :=
+    hasBasis_cobounded_norm.eventually_iff.mp (Metric.cobounded_eq_cocompact (α := E) ▸ hf)
+  set r := max R 0 + 1
+  let b : ContDiffBump (0 : E) := ⟨r, r + 1, by positivity, by linarith⟩
+  refine ⟨fun x ↦ (1 - b x) • f x, contDiff_iff_contDiffAt.2 fun x ↦ ?_, ?_⟩
+  · by_cases hx : ‖x‖ < r
+    · -- Near the ball of radius `r` the cutoff vanishes.
+      refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
+      filter_upwards [(isOpen_lt continuous_norm continuous_const).mem_nhds hx] with y hy
+      rw [b.one_of_mem_closedBall (by simpa using hy.le), sub_self, zero_smul]
+    · exact (contDiffAt_const.sub b.contDiff.contDiffAt).smul
+        (hR (Set.mem_ofPred.mpr (by linarith [le_max_left R 0, not_lt.mp hx])))
+  · filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_gt_atTop (r + 1)] with x hx
+    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
+    rw [b.zero_of_le_dist (by simpa using hy.le), sub_zero, one_smul]
+
+open Metric
+
+/-- **Filling a hole.** A function which is `C^n` at every point of the sphere `dist x c = r` of a
+finite-dimensional real normed space agrees, near every point outside the open ball
+`dist x c < r`, with a function which is `C^n` at every point of the closed ball. Nothing is
+assumed about the function inside the ball: a bump function cuts it off there, away from the
+sphere. -/
+theorem exists_contDiffAt_closedBall_eventuallyEq [FiniteDimensional ℝ E] {n : ℕ} {f : E → F}
+    {c : E} {r : ℝ} (hf : ∀ x ∈ sphere c r, ContDiffAt ℝ n f x) :
+    ∃ g : E → F, (∀ x ∈ closedBall c r, ContDiffAt ℝ n g x) ∧
+      ∀ x ∉ ball c r, g =ᶠ[nhds x] f := by
+  rcases le_or_gt r 0 with hr | hr
+  · -- A closed ball of nonpositive radius lies in its sphere.
+    refine ⟨f, fun x hx ↦ hf x (mem_sphere.2 ?_), fun x _ ↦ .rfl⟩
+    exact le_antisymm (mem_closedBall.1 hx) (hr.trans dist_nonneg)
+  -- The points of the closed ball at which `f` is not `C^n` lie in a smaller concentric ball.
+  have hU : IsOpen {x | ContDiffAt ℝ n f x} :=
+    isOpen_iff_mem_nhds.2 fun x hx ↦ hx.eventually (by simp)
+  obtain ⟨r', hr'r, hK⟩ := exists_lt_subset_ball (isClosed_closedBall.sdiff hU) fun x hx ↦
+    mem_ball.2 <| (mem_closedBall.1 hx.1).lt_of_ne fun h ↦ hx.2 (hf x (mem_sphere.2 h))
+  set a := max r' (r / 2)
+  have ha : 0 < a := lt_max_of_lt_right (half_pos hr)
+  have har : a < r := max_lt hr'r (half_lt_self hr)
+  let χ : ContDiffBump c := ⟨a, (a + r) / 2, ha, by linarith⟩
+  refine ⟨fun x ↦ (1 - χ x) • f x, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · rcases lt_or_ge (dist x c) a with h | h
+    · -- Deep inside the ball the cut-off function vanishes.
+      refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
+      filter_upwards [isOpen_ball.mem_nhds (mem_ball.2 h)] with y hy
+      rw [χ.one_of_mem_closedBall (ball_subset_closedBall hy), sub_self, zero_smul]
+    · -- Elsewhere in the closed ball `f` is `C^n`.
+      have hfx : ContDiffAt ℝ n f x := by
+        by_contra hfx
+        exact (mem_ball.1 (ball_subset_ball (le_max_left r' (r / 2)) (hK ⟨hx, hfx⟩))).not_ge h
+      exact (contDiffAt_const.sub χ.contDiffAt).smul hfx
+  · -- Outside the ball the bump vanishes.
+    have hx' : (a + r) / 2 < dist x c := by
+      rw [mem_ball, not_lt] at hx
+      linarith
+    filter_upwards [(isOpen_lt continuous_const (continuous_id.dist continuous_const)).mem_nhds
+      hx'] with y hy
+    rw [χ.zero_of_le_dist (x := y) hy.le, sub_zero, one_smul]
+
+end TauCeti

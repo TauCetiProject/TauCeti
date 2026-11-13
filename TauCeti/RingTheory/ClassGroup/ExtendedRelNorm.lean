@@ -58,9 +58,9 @@ that elaboration problem rather than escaping it.
 
 ## Provenance
 
-⚠ *mathlib-track*. `TauCetiRoadmap/EllipticCurves/README.md:1092` lists
-`ClassGroup.extendedRelNormHom` among the components of D. Angdinata's shared isogeny development,
-under the same flag the sibling `Isogeny` files carry.
+`ClassGroup.extendedRelNormHom` follows D. Angdinata's isogeny development, where the composite
+pushes an ideal class from the coordinate ring of an isogeny's source to that of its target,
+through the intermediate ring; here that map is `TauCeti.Isogeny.pushClassMonoidHom`.
 
 No AINTLIB material is ported, but that repository carries the two nearest relatives, and the
 shape of this file follows from how each falls short of the composite. At

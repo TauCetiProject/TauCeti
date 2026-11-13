@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.Probability.Distributions.Beta
 public import TauCeti.Probability.Cdf
 import TauCeti.Analysis.SpecialFunctions.Beta
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
@@ -105,15 +105,20 @@ theorem yuleSimonWeightReal_zero (ρ : ℝ) : yuleSimonWeightReal ρ 0 = 0 := by
 
 /-- The mass at one is `ρ / (ρ + 1)`. -/
 theorem yuleSimonWeightReal_one (hρ : 0 < ρ) : yuleSimonWeightReal ρ 1 = ρ / (ρ + 1) := by
-  rw [yuleSimonWeightReal, Nat.cast_one, beta_comm, beta_one_right (by positivity)]
+  rw [yuleSimonWeightReal, Nat.cast_one, beta_one_left (by positivity)]
   ring
 
 /-- The masses satisfy the recursion `p (k + 1) = k / (k + ρ + 1) * p k` at positive `k`. -/
-theorem yuleSimonWeightReal_add_one (hρ : 0 < ρ) {k : ℕ} (hk : k ≠ 0) :
+theorem yuleSimonWeightReal_add_one {k : ℕ} (hk : k ≠ 0) :
     yuleSimonWeightReal ρ (k + 1) = k / (k + ρ + 1) * yuleSimonWeightReal ρ k := by
   have hk' : (0 : ℝ) < k := by exact_mod_cast Nat.pos_of_ne_zero hk
+  by_cases hs : (k : ℝ) + ρ + 1 = 0
+  · have hρ' : ρ + 1 = -(k : ℝ) := by linarith
+    rw [yuleSimonWeightReal, yuleSimonWeightReal, hs, div_zero, zero_mul, Nat.cast_succ, beta,
+      add_assoc, hρ', Real.Gamma_neg_nat_eq_zero]
+    simp
   rw [yuleSimonWeightReal, yuleSimonWeightReal, Nat.cast_succ,
-    beta_add_one_left hk'.ne' (by positivity), ← add_assoc]
+    beta_add_one_left hk'.ne' (by rwa [← add_assoc]), ← add_assoc]
   ring
 
 /-- For positive shape, the real mass is positive exactly at the positive integers. -/
@@ -142,7 +147,7 @@ private theorem sub_mul_beta_add_one_eq_yuleSimonWeightReal (hρ : 0 < ρ) {k : 
     k * beta k (ρ + 1) - ((k + 1 : ℕ) : ℝ) * beta (k + 1 : ℕ) (ρ + 1) =
       yuleSimonWeightReal ρ (k + 1) := by
   have hk' : (0 : ℝ) < k := by exact_mod_cast Nat.pos_of_ne_zero hk
-  rw [yuleSimonWeightReal_add_one hρ hk, yuleSimonWeightReal, Nat.cast_succ,
+  rw [yuleSimonWeightReal_add_one hk, yuleSimonWeightReal, Nat.cast_succ,
     beta_add_one_left hk'.ne' (by positivity)]
   field_simp
   ring
@@ -154,8 +159,8 @@ private theorem sum_range_yuleSimonWeightReal (hρ : 0 < ρ) {n : ℕ} (hn : n �
   induction m with
   | zero =>
     rw [Finset.sum_range_succ, Finset.sum_range_one, yuleSimonWeightReal_zero,
-      yuleSimonWeightReal_one hρ, Nat.cast_one, one_mul, beta_comm,
-      beta_one_right (by positivity)]
+      yuleSimonWeightReal_one hρ, Nat.cast_one, one_mul,
+      beta_one_left (by positivity)]
     field_simp
     ring
   | succ m ih =>

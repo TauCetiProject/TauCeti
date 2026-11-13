@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FirstHomology
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.HomotopyDiscrete
 
 /-!
 # Acyclicity of loop spaces and aspherical spaces
@@ -28,6 +29,9 @@ characterization of vanishing higher homotopy groups:
   point if and only if `X` is aspherical (`TauCeti.IsAspherical`), i.e., an Eilenberg--Mac Lane
   space `K(π₁(X, x), 1)` (`TauCeti.IsEilenbergMacLaneSpaceOne`). In the forward direction, the
   positive-degree homology of `Ω²X` and `ΩᴹΩᴹX` vanishes with coefficients in any ring.
+* If `πₙ₊₂(X, x)` is trivial for every `n : ℕ`, the Moore loop space `ΩᴹX` itself has no homology
+  in positive degrees, with coefficients in any ring, although it need not be path connected: its
+  path components are the elements of `π₁(X, x)`, and each of them is weakly contractible.
 
 Both the fixed-interval and Moore loop-space models, as well as simplicial singular chains and
 normalized cubical chains, are treated.
@@ -44,6 +48,9 @@ specializations to `ℤ` take small spaces. The Hurewicz equivalences used here 
   `TauCeti.MooreLoopSpace.isZero_homology_normalizedCubicalChainComplex_double`,
   `TauCeti.MooreLoopSpace.isZero_homology_singularChains_double`: vanishing of the positive-degree
   homology of `Ω²X` and `ΩᴹΩᴹX` over any coefficient ring when `πₙ₊₂(X, x)` vanishes for all `n`.
+* `TauCeti.MooreLoopSpace.isZero_homology_normalizedCubicalChainComplex_of_forall_subsingleton`,
+  `TauCeti.MooreLoopSpace.isZero_homology_singularChains_of_forall_subsingleton`:
+  under the same hypothesis, vanishing of the positive-degree homology of `ΩᴹX`.
 * `TauCeti.pathConnectedSpace_doubleLoopSpace_and_forall_isZero_homology_singularChains_iff`,
   `TauCeti.MooreLoopSpace.pathConnectedSpace_double_and_forall_isZero_homology_singularChains_iff`:
   `Ω²X` and `ΩᴹΩᴹX` have the integral homology of a point if and only if `πₙ₊₂(X, x)` vanishes for
@@ -150,6 +157,26 @@ theorem isZero_homology_singularChains_double {x : X}
       (TopCat.of (MooreLoopSpace (MooreLoopSpace X x) 1))).homology m) :=
   (isZero_homology_normalizedCubicalChainComplex_double R hX hm0).of_iso
     (singularCubicalHomologyIso R (TopCat.of (MooreLoopSpace (MooreLoopSpace X x) 1)) m)
+
+/-- **The Moore loop space of an aspherical space has no homology in positive degrees.** If
+`π_ (n + 2) X x` vanishes for all `n : ℕ`, then the positive-degree normalized cubical homology of
+`MooreLoopSpace X x` vanishes over any coefficient ring `R`. The loop space need not be path
+connected: its path components are the elements of `π₁(X, x)`, and each of them is weakly
+contractible. -/
+theorem isZero_homology_normalizedCubicalChainComplex_of_forall_subsingleton {x : X}
+    (hX : ∀ n : ℕ, Subsingleton (π_ (n + 2) X x)) {m : ℕ} (hm0 : m ≠ 0) :
+    IsZero (((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace X x))).homology m) :=
+  TauCeti.isZero_homology_normalizedCubicalChainComplex_of_forall_subsingleton_homotopyGroup R
+    (fun n γ ↦ (subsingleton_homotopyGroup_succ_iff γ n).2 (hX n)) hm0
+
+/-- **The Moore loop space of an aspherical space has no singular homology in positive degrees.**
+If `π_ (n + 2) X x` vanishes for all `n : ℕ`, then the positive-degree singular homology of
+`MooreLoopSpace X x` vanishes over any coefficient ring `R`. -/
+theorem isZero_homology_singularChains_of_forall_subsingleton {x : X}
+    (hX : ∀ n : ℕ, Subsingleton (π_ (n + 2) X x)) {m : ℕ} (hm0 : m ≠ 0) :
+    IsZero (((singularChains R).obj (TopCat.of (MooreLoopSpace X x))).homology m) :=
+  (isZero_homology_normalizedCubicalChainComplex_of_forall_subsingleton R hX hm0).of_iso
+    (singularCubicalHomologyIso R (TopCat.of (MooreLoopSpace X x)) m)
 
 end MooreLoopSpace
 

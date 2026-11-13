@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.Manifold
+import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Sym.Card
@@ -46,6 +47,8 @@ manifold structure.
 * `TauCeti.mem_stiefel_iff`: the points of `TauCeti.stiefel E k` are the orthonormal families.
 * `TauCeti.mem_stiefel_two_iff`: the points of `TauCeti.stiefel E 2` are the pairs of orthogonal
   unit vectors.
+* `TauCeti.mem_stiefel_two_euclideanSpace_iff`: orthonormality of a pair of vectors of a Euclidean
+  space, in terms of dot products of coordinates.
 * `TauCeti.nonempty_stiefel`: the Stiefel manifold is nonempty exactly when `k ≤ finrank ℝ E`.
 * `TauCeti.gramSym2Deriv_surjective` and `TauCeti.index_gramSym2Deriv`: the Gram map is regular
   along the Stiefel manifold, with derivative of index `k n - (k + 1).choose 2`.
@@ -53,8 +56,19 @@ manifold structure.
 * `TauCeti.isCompact_stiefel`: the Stiefel manifold is compact.
 * `TauCeti.contMDiff_coe_stiefel` and `TauCeti.contMDiff_stiefelProj`: the inclusion into
   `Fin k → E` and the projections to the unit sphere are smooth.
+* `TauCeti.continuous_stiefelProj`: the projections to the unit sphere are continuous in every
+  dimension.
 * `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
-  range of the differential of the inclusion, is the kernel of the derivative of the Gram map.
+  range of the differential of the inclusion, is the kernel of the derivative of the Gram map;
+  `TauCeti.gramSym2Deriv_mfderiv_coe_stiefel` is the inclusion of the range in the kernel.
+* `TauCeti.injective_mfderiv_coe_stiefel`: the differential of the inclusion is injective.
+* `ContMDiff.codRestrict_stiefel`: smooth maps with orthonormal values are smooth maps into
+  the Stiefel manifold.
+* `TauCeti.finrank_stiefelTwoModel`: the manifold of orthonormal two-frames of a space of
+  dimension `n + 2` has dimension `2 n + 1`.
+* `TauCeti.stiefelTwoReflection`: the frame reflection `(u, v) ↦ (u, -v)`, an involution
+  (`TauCeti.stiefelTwoReflection_stiefelTwoReflection`), smooth by
+  `TauCeti.contMDiff_stiefelTwoReflection`.
 
 ## References
 
@@ -139,17 +153,36 @@ theorem gramSym2Deriv_surjective {v : Fin k → E} (hv : Orthonormal ℝ v) :
 variable {E k} in
 /-- At an orthonormal family, the derivative of the Gram map has index
 `k n - (k + 1).choose 2`, where `n = finrank ℝ E` and `(k + 1).choose 2` is the number of
-unordered pairs of indices. The truncated subtraction is harmless: the index is the dimension
-of the kernel, as the derivative is surjective. -/
-theorem index_gramSym2Deriv [FiniteDimensional ℝ E] {v : Fin k → E} (hv : Orthonormal ℝ v) :
+unordered pairs of indices.
+
+For finite-dimensional `E` the truncated subtraction is harmless: the derivative is surjective,
+so the index is the genuine dimension `k n - (k + 1).choose 2` of the kernel.
+
+For infinite-dimensional `E` the statement is a convention. If `k = 0`, the domain and the kernel
+are zero-dimensional and both sides vanish. If `k > 0`, the kernel is infinite-dimensional, so
+its `Module.finrank` is the junk value `0`, and the right-hand side is `0` because
+`finrank ℝ E = 0` (also a junk value) and natural subtraction truncates
+`0 - (k + 1).choose 2 = 0`. -/
+theorem index_gramSym2Deriv {v : Fin k → E} (hv : Orthonormal ℝ v) :
     (gramSym2Deriv E k v).index = (k * finrank ℝ E - (k + 1).choose 2 : ℕ) := by
   have h₁ := (gramSym2Deriv E k v).index_of_surjective (gramSym2Deriv_surjective hv)
-  have h₂ := (gramSym2Deriv E k v).index_eq_of_finiteDimensional
-  rw [Module.finrank_pi_fintype, Module.finrank_fintype_fun_eq_card, Sym2.card] at h₂
-  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at h₂
-  generalize k * finrank ℝ E = N at h₂ ⊢
-  generalize (k + 1).choose 2 = C at h₂ ⊢
-  omega
+  by_cases hE : FiniteDimensional ℝ E
+  · have h₂ := (gramSym2Deriv E k v).index_eq_of_finiteDimensional
+    rw [Module.finrank_pi_fintype, Module.finrank_fintype_fun_eq_card, Sym2.card] at h₂
+    simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at h₂
+    generalize k * finrank ℝ E = N at h₂ ⊢
+    generalize (k + 1).choose 2 = C at h₂ ⊢
+    omega
+  · rw [h₁, Module.finrank_of_not_finite hE, mul_zero, Nat.zero_sub]
+    obtain rfl | hk := k.eq_zero_or_pos
+    · have : Subsingleton (gramSym2Deriv E 0 v).ker := inferInstance
+      simp [Module.finrank_zero_of_subsingleton]
+    · have : ¬ Module.Finite ℝ (gramSym2Deriv E k v).ker := fun hker ↦ hE <| by
+        let T : (Fin k → E) →ₗ[ℝ] (Sym2 (Fin k) → ℝ) := gramSym2Deriv E k v
+        have : Module.Finite ℝ ((Fin k → E) ⧸ T.ker) := .equiv T.quotKerEquivRange.symm
+        have : Module.Finite ℝ (Fin k → E) := .of_submodule_quotient T.ker
+        exact Module.Finite.of_pi (fun _ : Fin k ↦ E) ⟨0, hk⟩
+      simp [Module.finrank_of_not_finite this]
 
 /-! ### The Stiefel manifold -/
 
@@ -176,6 +209,20 @@ theorem mem_stiefel_two_iff {v : Fin 2 → E} :
     v ∈ stiefel E 2 ↔ ‖v 0‖ = 1 ∧ ‖v 1‖ = 1 ∧ ⟪v 0, v 1⟫ = 0 := by
   simp [mem_stiefel_iff, Orthonormal, Pairwise, Fin.forall_fin_two, real_inner_comm (v 0),
     and_assoc]
+
+open WithLp in
+/-- A pair of vectors of `EuclideanSpace ℝ ι` is orthonormal exactly when the dot products of their
+coordinates are those of an orthonormal pair. -/
+theorem mem_stiefel_two_euclideanSpace_iff {ι : Type*} [Fintype ι]
+    {v : Fin 2 → EuclideanSpace ℝ ι} :
+    v ∈ stiefel (EuclideanSpace ℝ ι) 2 ↔
+      ofLp (v 0) ⬝ᵥ ofLp (v 0) = 1 ∧ ofLp (v 1) ⬝ᵥ ofLp (v 1) = 1 ∧
+        ofLp (v 0) ⬝ᵥ ofLp (v 1) = 0 := by
+  have hnorm (x : EuclideanSpace ℝ ι) : ‖x‖ = 1 ↔ ofLp x ⬝ᵥ ofLp x = 1 := by
+    rw [← pow_eq_one_iff_of_nonneg (norm_nonneg x) two_ne_zero, ← real_inner_self_eq_norm_sq,
+      EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
+  rw [mem_stiefel_two_iff, hnorm, hnorm, EuclideanSpace.inner_eq_star_dotProduct, star_trivial,
+    dotProduct_comm (ofLp (v 1)) (ofLp (v 0))]
 
 /-- The vectors of a frame in the Stiefel manifold are unit vectors. -/
 theorem norm_eq_one_of_mem_stiefel {v : Fin k → E} (hv : v ∈ stiefel E k) (i : Fin k) :
@@ -245,6 +292,34 @@ theorem range_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
   exact (LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)).trans
     (Submodule.range_subtype _)
 
+variable {E k} in
+/-- A tangent vector to the Stiefel manifold at `v`, read in the space of `k`-families, is killed
+by the derivative `TauCeti.gramSym2Deriv E k v` of the Gram map. -/
+theorem gramSym2Deriv_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k)
+    (t : TangentSpace 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) v) :
+    gramSym2Deriv E k v (mfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
+      𝓘(ℝ, Fin k → E) ((↑) : stiefel E k → Fin k → E) v t) = 0 :=
+  (range_mfderiv_coe_stiefel v).le (LinearMap.mem_range_self _ t)
+
+variable {E k} in
+/-- The differential of the inclusion of the Stiefel manifold into the space of `k`-families is
+injective: the inclusion is an immersion. -/
+theorem injective_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
+    Injective (mfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E)
+      ((↑) : stiefel E k → Fin k → E) v) :=
+  injective_mfderiv_coe_levelSet _ _ _ _ v
+
+variable {E k} in
+/-- **Maps into the Stiefel manifold.** A `C^r` map into the space of `k`-families whose values
+are orthonormal is a `C^r` map into the Stiefel manifold. -/
+theorem _root_.ContMDiff.codRestrict_stiefel [FiniteDimensional ℝ E] {E' H M : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H] {I : ModelWithCorners ℝ E' H}
+    [TopologicalSpace M] [ChartedSpace H M] {r : ℕ∞ω} {g : M → Fin k → E}
+    (hg : ContMDiff I 𝓘(ℝ, Fin k → E) r g) (hgk : ∀ x, g x ∈ stiefel E k) :
+    ContMDiff I 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) r
+      (fun x ↦ (⟨g x, hgk x⟩ : stiefel E k)) :=
+  ContMDiff.codRestrict_levelSet _ _ _ _ hg hgk
+
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
 `i = 0` this is the projection of the unit tangent bundle of the sphere to its base. -/
 def stiefelProj (i : Fin k) (v : stiefel E k) : Metric.sphere (0 : E) 1 :=
@@ -255,6 +330,13 @@ variable {E k} in
 theorem coe_stiefelProj (i : Fin k) (v : stiefel E k) : (stiefelProj E k i v : E) = v.1 i :=
   (rfl)
 
+variable {E k} in
+/-- The projection of a frame to its `i`th vector is continuous, for every real inner product
+space. -/
+@[fun_prop]
+theorem continuous_stiefelProj (i : Fin k) : Continuous (stiefelProj E k i) :=
+  continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtype_val)
+
 /-- The projection of a frame to its `i`th vector is smooth, for Mathlib's manifold structure on
 the unit sphere. The `FiniteDimensional` instance, which also follows from the `Fact`, is the one
 the manifold structure of the Stiefel manifold is stated with. -/
@@ -264,6 +346,65 @@ theorem contMDiff_stiefelProj [FiniteDimensional ℝ E] {n : ℕ} [Fact (finrank
       (stiefelProj E k i) :=
   (((contDiff_apply ℝ (fun _ ↦ E) i).contMDiff).comp
     (contMDiff_coe_stiefel E k)).codRestrict_sphere _
+
+variable {E} in
+/-- **Orthonormal pairs are unit tangent vectors of the sphere.** For a point `x` of the unit
+sphere, `(x, w)` is an orthonormal pair exactly when `w` is a unit vector tangent to the sphere at
+`x`, that is, in the range of the differential of the inclusion of the sphere at `x`. So
+`TauCeti.stiefel E 2` is the unit tangent bundle of the unit sphere of `E` for the metric induced
+by the inner product of `E`. -/
+theorem mem_stiefel_two_iff_mem_range_mvfderiv {n : ℕ}
+    [Fact (finrank ℝ E = n + 1)] (x : Metric.sphere (0 : E) 1) (w : E) :
+    ![(x : E), w] ∈ stiefel E 2 ↔
+      w ∈ (mvfderiv (𝓡 n) ((↑) : Metric.sphere (0 : E) 1 → E) x).range ∧ ‖w‖ = 1 := by
+  rw [mem_stiefel_two_iff, range_mvfderiv_subtypeVal,
+    Submodule.mem_orthogonal_singleton_iff_inner_right]
+  simp [norm_eq_of_mem_sphere x, and_comm]
+
+/-! ### Orthonormal two-frames -/
+
+variable {E}
+
+/-- The Stiefel manifold of orthonormal two-frames of a space of dimension `n + 2` has dimension
+`2 n + 1`. -/
+theorem finrank_stiefelTwoModel {n : ℕ} [Fact (finrank ℝ E = n + 1 + 1)] :
+    finrank ℝ (Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) = 2 * n + 1 := by
+  rw [Module.finrank_fin_fun, (Fact.out : finrank ℝ E = n + 1 + 1)]
+  simp only [Nat.choose, Nat.reduceAdd]
+  omega
+
+/-- The **frame reflection** `(u, v) ↦ (u, -v)` of the Stiefel manifold of orthonormal
+two-frames. -/
+def stiefelTwoReflection (w : stiefel E 2) : stiefel E 2 :=
+  ⟨![w.1 0, -w.1 1], by
+    obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.2
+    exact mem_stiefel_two_iff.2 ⟨by simpa using hu, by simpa using hv, by simpa using huv⟩⟩
+
+@[simp]
+theorem coe_stiefelTwoReflection (w : stiefel E 2) :
+    (stiefelTwoReflection w : Fin 2 → E) = ![w.1 0, -w.1 1] :=
+  (rfl)
+
+/-- The frame reflection is an involution. -/
+@[simp]
+theorem stiefelTwoReflection_stiefelTwoReflection (w : stiefel E 2) :
+    stiefelTwoReflection (stiefelTwoReflection w) = w := by
+  refine Subtype.ext (funext fun i ↦ ?_)
+  fin_cases i <;> simp
+
+/-- The frame reflection is smooth. -/
+theorem contMDiff_stiefelTwoReflection [FiniteDimensional ℝ E] {r : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ)
+      𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) r (stiefelTwoReflection (E := E)) := by
+  have h (L : (Fin 2 → E) →L[ℝ] E) :
+      ContMDiff 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, E) r
+        fun w : stiefel E 2 ↦ L w :=
+    L.contMDiff.comp (contMDiff_coe_stiefel E 2)
+  refine ContMDiff.codRestrict_stiefel (g := fun w : stiefel E 2 ↦ ![w.1 0, -w.1 1])
+    (contMDiff_pi_module_iff.2 fun i ↦ ?_) fun w ↦ (stiefelTwoReflection w).2
+  fin_cases i
+  · exact h (ContinuousLinearMap.proj 0)
+  · exact h (-ContinuousLinearMap.proj 1)
 
 end
 

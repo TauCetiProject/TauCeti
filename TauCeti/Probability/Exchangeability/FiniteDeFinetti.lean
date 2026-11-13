@@ -5,7 +5,7 @@ Authors: Codex, Alexander Richard Towell
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.TotalVariation
+public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Probability.Exchangeability.SamplingWithoutReplacement
 
 /-!
@@ -24,7 +24,7 @@ independently, a uniform map `ι → κ`, and reads the selected entries. It is 
 injective map; when `κ` is nonempty, by the previous paragraph it is the mixture over `ρ` of the
 finite product laws of the empirical distributions. The law `sampleWithoutReplacement ρ` already
 represents every shorter marginal of a finite exchangeable process. The collision coupling between
-uniform maps and uniform injective maps consequently gives, for every measurable event `A`,
+uniform maps and uniform injective maps consequently gives, for every event `A`,
 
 ```text
 prefixLaw μ X m A ≤ sampleWithReplacement (prefixLaw μ X n) A + choose(m, 2) / n
@@ -83,13 +83,12 @@ section FiniteExchangeability
 
 /-- **Finite de Finetti theorem.** If the first `n` coordinates of a process are exchangeable and
 `m ≤ n`, then its `m`-prefix law and the with-replacement sample of its `n`-prefix law differ by
-at most `choose m 2 / n` on every measurable event, in both directions. For `n > 0` that sample is
+at most `choose m 2 / n` on every event, in both directions. For `n > 0` that sample is
 the empirical-product mixture (`sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`). -/
 theorem ExchangeableAt.finiteDeFinetti
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
-    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
-    (hA : MeasurableSet A) :
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (A : Set (Fin m → α)) :
     prefixLaw μ X m A ≤ sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A +
         m.choose 2 / n ∧
       sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A ≤ prefixLaw μ X m A +
@@ -100,11 +99,11 @@ theorem ExchangeableAt.finiteDeFinetti
   rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
   constructor
   · simpa using sampleWithoutReplacement_le_sampleWithReplacement_add
-      (ρ := prefixLaw μ X n) hA
+      (ρ := prefixLaw μ X n) A
   · simpa using sampleWithReplacement_le_sampleWithoutReplacement_add
-      (ρ := prefixLaw μ X n) hA
+      (ρ := prefixLaw μ X n) A
 
-/-- **Finite de Finetti with the exact collision error.** The discrepancy on any measurable
+/-- **Finite de Finetti with the exact collision error.** The discrepancy on any
 event between an exchangeable prefix and its with-replacement sample (the empirical-product
 mixture when `n > 0`) is bounded by `1 - (n)_m / n^m`, where `(n)_m` counts ordered injections.
 This retains the overlap between pairwise collisions lost in the union bound.
@@ -112,8 +111,7 @@ The empty-sample case `m = n = 0` has error zero. -/
 theorem ExchangeableAt.finiteDeFinetti_exact_collision
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
-    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
-    (hA : MeasurableSet A) :
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (A : Set (Fin m → α)) :
     prefixLaw μ X m A ≤ sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A +
         (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) ∧
       sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A ≤ prefixLaw μ X m A +
@@ -126,61 +124,57 @@ theorem ExchangeableAt.finiteDeFinetti_exact_collision
   constructor
   · simpa using
       sampleWithoutReplacement_le_sampleWithReplacement_add_collision
-        (ρ := prefixLaw μ X n) hA
+        (ρ := prefixLaw μ X n) A
   · simpa using
       sampleWithReplacement_le_sampleWithoutReplacement_add_collision
-        (ρ := prefixLaw μ X n) hA
+        (ρ := prefixLaw μ X n) A
 
 /-- **Exact finite de Finetti bound, exchangeable law to empirical mixture.** Under finite
-exchangeability and `m ≤ n`, the prefix law exceeds its with-replacement sample on a measurable
+exchangeability and `m ≤ n`, the prefix law exceeds its with-replacement sample on an
 event by at most the exact index-collision error. -/
 theorem ExchangeableAt.prefixLaw_le_sampleWithReplacement_add_exact_collision
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
-    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
-    (hA : MeasurableSet A) :
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (A : Set (Fin m → α)) :
     prefixLaw μ X m A ≤ sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A +
       (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) :=
-  (h.finiteDeFinetti_exact_collision hmn hX hA).1
+  (h.finiteDeFinetti_exact_collision hmn hX A).1
 
 /-- **Exact finite de Finetti bound, empirical mixture to exchangeable law.** Under finite
-exchangeability and `m ≤ n`, the with-replacement sample exceeds the prefix law on a measurable
+exchangeability and `m ≤ n`, the with-replacement sample exceeds the prefix law on an
 event by at most the exact index-collision error. -/
 theorem ExchangeableAt.sampleWithReplacement_le_prefixLaw_add_exact_collision
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
-    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
-    (hA : MeasurableSet A) :
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (A : Set (Fin m → α)) :
     sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A ≤ prefixLaw μ X m A +
       (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) :=
-  (h.finiteDeFinetti_exact_collision hmn hX hA).2
+  (h.finiteDeFinetti_exact_collision hmn hX A).2
 
 /-- **Quantitative finite de Finetti bound, exchangeable law to empirical mixture.** If the first
-`n` coordinates of a process are exchangeable and `m ≤ n`, then every measurable event under the
+`n` coordinates of a process are exchangeable and `m ≤ n`, then every event under the
 `m`-prefix law has mass at most its mass under sampling `m` entries with replacement from the first
 `n` coordinates, plus `choose m 2 / n`. For `n > 0` that sample is the mixture of `m`-fold products
 of the empirical distribution of the first `n` coordinates. -/
 theorem ExchangeableAt.prefixLaw_le_sampleWithReplacement_add
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
-    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
-    (hA : MeasurableSet A) :
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (A : Set (Fin m → α)) :
     prefixLaw μ X m A ≤ sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A +
       m.choose 2 / n :=
-  (h.finiteDeFinetti hmn hX hA).1
+  (h.finiteDeFinetti hmn hX A).1
 
 /-- **Quantitative finite de Finetti bound, empirical mixture to exchangeable law.** Under the
-same hypotheses, every measurable event under the with-replacement sample (for `n > 0`, the
+same hypotheses, every event under the with-replacement sample (for `n > 0`, the
 empirical-product mixture) has mass at most its mass under the `m`-prefix law plus
 `choose m 2 / n`. -/
 theorem ExchangeableAt.sampleWithReplacement_le_prefixLaw_add
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
-    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
-    (hA : MeasurableSet A) :
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (A : Set (Fin m → α)) :
     sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A ≤ prefixLaw μ X m A +
       m.choose 2 / n :=
-  (h.finiteDeFinetti hmn hX hA).2
+  (h.finiteDeFinetti hmn hX A).2
 
 /-- **Finite de Finetti theorem, total-variation form.** If the first `n` coordinates of a
 process are exchangeable and `m ≤ n`, then the total variation distance between the `m`-prefix
@@ -198,8 +192,8 @@ theorem ExchangeableAt.etvDist_prefixLaw_sampleWithReplacement_le
       2 * (m.choose 2 / n) := by
   rw [two_mul]
   exact etvDist_le_of_forall_le_add
-    (fun _ hA => h.prefixLaw_le_sampleWithReplacement_add hmn hX hA)
-    (fun _ hA => h.sampleWithReplacement_le_prefixLaw_add hmn hX hA)
+    (fun A _ => h.prefixLaw_le_sampleWithReplacement_add hmn hX A)
+    (fun A _ => h.sampleWithReplacement_le_prefixLaw_add hmn hX A)
 
 /-- The finite de Finetti approximation with exact collision error, for Mathlib's total
 variation distance `etvDist`. Its signed-measure normalization is twice the probability-distance
@@ -212,8 +206,8 @@ theorem ExchangeableAt.etvDist_prefixLaw_sampleWithReplacement_le_exact_collisio
       2 * (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) := by
   rw [two_mul]
   exact etvDist_le_of_forall_le_add
-    (fun _ hA => h.prefixLaw_le_sampleWithReplacement_add_exact_collision hmn hX hA)
-    (fun _ hA => h.sampleWithReplacement_le_prefixLaw_add_exact_collision hmn hX hA)
+    (fun A _ => h.prefixLaw_le_sampleWithReplacement_add_exact_collision hmn hX A)
+    (fun A _ => h.sampleWithReplacement_le_prefixLaw_add_exact_collision hmn hX A)
 
 end FiniteExchangeability
 

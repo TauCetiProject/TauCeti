@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Huber.Basic
 
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Huber.RingOfDefinition
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Adic homomorphisms of Huber rings
@@ -97,15 +97,15 @@ theorem isOpen_map (hf : IsAdicHom f) {I : Ideal A} (hI : IsOpen (I : Set A)) :
 theorem isBounded_image (hf : IsAdicHom f) {S : Set A} (hS : IsBounded S) :
     IsBounded (f '' S) := by
   obtain ⟨P, Q, heq⟩ := hf.exists_map_extendedIdealOfDefinition_eq
-  exact hS.image_of_isOpen_map_extendedIdealOfDefinition P Q hf.continuous.continuousAt
-    (heq ▸ Q.isOpen_extendedIdealOfDefinition)
+  exact hS.image_of_map_extendedIdealOfDefinition_mem_nhds P Q hf.continuous.continuousAt
+    ((heq ▸ Q.isOpen_extendedIdealOfDefinition).mem_nhds (zero_mem _))
 
 /-- Adic homomorphisms carry power-bounded elements to power-bounded elements. -/
 theorem isPowerBounded_map (hf : IsAdicHom f) {a : A} (ha : IsPowerBounded a) :
     IsPowerBounded (f a) := by
   obtain ⟨P, Q, heq⟩ := hf.exists_map_extendedIdealOfDefinition_eq
-  exact ha.map_of_isOpen_map_extendedIdealOfDefinition P Q hf.continuous.continuousAt
-    (heq ▸ Q.isOpen_extendedIdealOfDefinition)
+  exact ha.map_of_map_extendedIdealOfDefinition_mem_nhds P Q hf.continuous.continuousAt
+    ((heq ▸ Q.isOpen_extendedIdealOfDefinition).mem_nhds (zero_mem _))
 
 end IsAdicHom
 
@@ -125,8 +125,8 @@ private theorem exists_pairOfDefinition_of_continuous [IsHuberRing B] (P : PairO
   obtain ⟨Q₀⟩ := IsHuberRing.nonempty_pairOfDefinition (A := B)
   have hb : IsBounded (P.ringOfDefinition.map f : Set B) := by
     rw [Subring.coe_map]
-    exact P.isBounded_ringOfDefinition.image_of_isOpen_map_extendedIdealOfDefinition
-      P Q₀ hf.continuousAt hI
+    exact P.isBounded_ringOfDefinition.image_of_map_extendedIdealOfDefinition_mem_nhds
+      P Q₀ hf.continuousAt (hI.mem_nhds (zero_mem _))
   let Q := Q₀.enlargeSup (P.ringOfDefinition.map f) hb
   have h : ∀ a ∈ P.ringOfDefinition, f a ∈ Q.ringOfDefinition := by
     intro a ha
@@ -159,6 +159,7 @@ theorem exists_pairOfDefinition_map_eq (hf : IsAdicHom f) (P : PairOfDefinition 
   exact exists_pairOfDefinition_of_continuous P hf.continuous
     (hf.isOpen_map P.isOpen_extendedIdealOfDefinition)
 
+omit [IsTopologicalRing B] in
 /-- An open quotient homomorphism from a Huber ring is adic. -/
 theorem of_isOpenQuotientMap [IsHuberRing A] (hf : IsOpenQuotientMap f) :
     IsAdicHom f := by
@@ -207,6 +208,7 @@ theorem of_isTateRing [IsHuberRing B] [IsTateRing A]
     (hf : Continuous f) : IsAdicHom f :=
   of_continuous_isOpen_map hf fun _ hI ↦ IsTateRing.isOpen_map_of_isOpen f hI
 
+omit [IsTopologicalRing A] in
 /-- A homomorphism from a discrete Huber ring is adic exactly when its target is discrete. -/
 theorem of_discrete_iff [DiscreteTopology A] :
     IsAdicHom f ↔ DiscreteTopology B := by

@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.CartanExists
+public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
+public import Mathlib.LinearAlgebra.RootSystem.BaseExists
+import TauCeti.Algebra.Lie.Subalgebra.Engel
 
 /-!
 # A semisimple element lies in a Cartan subalgebra
@@ -20,10 +23,17 @@ semisimple adjoint action lies in some Cartan subalgebra
 The Cartan subalgebra is a Cartan subalgebra of the Engel subalgebra `engel K x`, viewed inside
 `L`. This is the step that places the neutral element of an `sl₂` triple in a Cartan subalgebra.
 
+Over an algebraically closed field of characteristic zero, when the Killing form of `L` is
+nondegenerate, a Cartan subalgebra comes with a base of its root system
+(`TauCeti.exists_isCartanSubalgebra_base`). This is the choice behind statements that mention
+neither.
+
 ## Main results
 
 * `TauCeti.exists_isCartanSubalgebra_mem_of_isSemisimple_ad`: an element with semisimple adjoint
   action lies in a Cartan subalgebra.
+* `TauCeti.exists_isCartanSubalgebra_base`: a Lie algebra with nondegenerate Killing form has a
+  Cartan subalgebra whose root system has a base.
 
 ## References
 
@@ -58,13 +68,8 @@ theorem exists_isCartanSubalgebra_mem_of_isSemisimple_ad [Infinite K] [FiniteDim
     rwa [← hinj hw]
   -- `x` is central in its Engel subalgebra, because the generalized kernel of `ad x` is its kernel
   have hxE : x ∈ E := self_mem_engel K x
-  have hcentral (w : E) : ⁅(⟨x, hxE⟩ : E), w⁆ = 0 := by
-    have hw : (w : L) ∈ (ad K L x).maxGenEigenspace 0 := by
-      obtain ⟨n, hn⟩ := (mem_engel_iff K x w).mp w.2
-      exact (Module.End.mem_maxGenEigenspace _ _ _).mpr ⟨n, by simpa using hn⟩
-    rw [hx.isFinitelySemisimple.maxGenEigenspace_eq_eigenspace, Module.End.mem_eigenspace_iff,
-      zero_smul] at hw
-    exact Subtype.ext hw
+  have hcentral (w : E) : ⁅(⟨x, hxE⟩ : E), w⁆ = 0 :=
+    Subtype.ext ((mem_engel_iff_lie_eq_zero hx.isFinitelySemisimple).1 w.2)
   have hxC : (⟨x, hxE⟩ : E) ∈ C := by
     rw [← hC.self_normalizing, mem_normalizer_iff]
     intro w _
@@ -89,5 +94,17 @@ theorem exists_isCartanSubalgebra_mem_of_isSemisimple_ad [Infinite K] [FiniteDim
     refine hmemC.mp ?_
     rw [LieSubalgebra.coe_bracket]
     exact (mem_normalizer_iff (C.map E.incl) z).mp hz w (hmemC.mpr hw)
+
+variable (K L) in
+/-- **A Cartan subalgebra with a base of its root system.** A finite-dimensional Lie algebra with
+nondegenerate Killing form over an algebraically closed field of characteristic zero has a Cartan
+subalgebra, and the root system of a Cartan subalgebra has a base. -/
+theorem exists_isCartanSubalgebra_base [CharZero K] [IsAlgClosed K] [FiniteDimensional K L]
+    [IsKilling K L] :
+    ∃ (H : LieSubalgebra K L) (_ : H.IsCartanSubalgebra),
+      Nonempty (IsKilling.rootSystem H).Base := by
+  obtain ⟨x₀, hx₀⟩ := exists_isCartanSubalgebra_engel K L
+  have _i : (engel K x₀).IsCartanSubalgebra := hx₀
+  exact ⟨_, _i, (IsKilling.rootSystem _).nonempty_base⟩
 
 end TauCeti

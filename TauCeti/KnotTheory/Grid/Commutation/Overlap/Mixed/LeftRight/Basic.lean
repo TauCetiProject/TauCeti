@@ -220,8 +220,6 @@ theorem recutLeftEqRight_toRectangleDecomposition
     exact (D.leftRightRecut_first_right hcommon hrectangle hpentagon hturn).symm
   · simp only [recutLeftEqRight,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left, leftRightRecut]
-  · simp only [recutLeftEqRight,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right, leftRightRecut]
 
 /-- The promoted decomposition is an empty-rectangle recut of the original composite domain. -/
 theorem isRecut_recutLeftEqRight (D : GridRectanglePentagonDecomposition a s x z)
@@ -452,12 +450,11 @@ private theorem leftRightOverlapPartner_injective :
   have hD := G.leftRightOverlapPartner_isRecut C D
   have hE := G.leftRightOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨honeD, hfD, hsD⟩ := G.leftRightOverlapSource_recut_data C D.val D.property
-  obtain ⟨honeE, hfE, hsE⟩ := G.leftRightOverlapSource_recut_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  obtain ⟨_, hfD, hsD⟩ := G.leftRightOverlapSource_recut_data C D.val D.property
+  obtain ⟨_, hfE, hsE⟩ := G.leftRightOverlapSource_recut_data C E.val E.property
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

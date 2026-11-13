@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.WarpedProd
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
-import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.WarpedProd
@@ -25,10 +24,13 @@ The Hessian and the horizontal norm are those of the base metric.
 
 These identities use the installed warped metric, characterized by
 `TauCeti.Manifold.IsWarpedProduct`, and the existing Levi-Civita connection formula.
-They hold at each point where the warping function is nonzero, without a sign assumption.
+They hold at every point, without a sign or nonvanishing assumption on the warping function:
+where it vanishes the positive definite metric leaves no vertical vectors, so the divisions by it
+only multiply zero.
 
 The tensor identity allows zero vectors and zero-dimensional factors. The sectional formula
-requires nonzero horizontal and vertical vectors, so that they span a genuine tangent plane.
+requires a nonzero vertical vector; for a zero horizontal vector both sides vanish by the
+convention for division by zero.
 
 ## References
 
@@ -70,8 +72,6 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
       (hessian I f p.1 (X p.1) (Y p.1) / f p.1) • prodVectorField 0 V p := by
   have h0M : CMDiff ∞ (T% (0 : Π x : M, TangentSpace I x)) :=
     contMDiff_zeroSection ℝ (TangentSpace I)
-  have h0N : CMDiff ∞ (T% (0 : Π y : N, TangentSpace J y)) :=
-    contMDiff_zeroSection ℝ (TangentSpace J)
   let cov := leviCivitaConnection (I.prod J) (M × N)
   let D := leviCivitaConnection I M
   let a : M → ℝ := fun x ↦ mvfderiv I f x (Y x) / f x
@@ -81,15 +81,10 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
   have hXY := D.contMDiff_apply hX hY
   -- On horizontal sections the connection has no horizontal/vertical correction except
   -- `∇_V Y = (Y f / f) V`.
-  have hh {W : Π x : M, TangentSpace I x} (hW : CMDiff ∞ (T% W)) (q : M × N)
-      (u : TangentSpace (I.prod J) q) :
-      tangentSpaceProdEquiv q (cov (prodVectorField W 0) q u) =
-        (D W q.1 (tangentSpaceProdEquiv q u).1,
-          (mvfderiv I f q.1 (W q.1) / f q.1) • (tangentSpaceProdEquiv q u).2) := by
-    simpa [cov, D, (leviCivitaConnection J N).isCovariantDerivativeOnUniv.zero] using
-      h.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField
-        (hf.mdifferentiableAt (by simp)) (hW.mdifferentiableAt (by simp))
-        (h0N.mdifferentiableAt (by simp)) u
+  have hh (W : Π x : M, TangentSpace I x) (hW : CMDiff ∞ (T% W)) (q : M × N)
+      (u : TangentSpace (I.prod J) q) :=
+    h.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField_zero (p := q)
+      (hf.mdifferentiableAt (by simp)) (hW.mdifferentiableAt (by simp)) u
   have hv (q : M × N) : cov (prodVectorField 0 V) q (prodVectorField X 0 q) =
       (mvfderiv I f q.1 (X q.1) / f q.1) • prodVectorField 0 V q := by
     apply (tangentSpaceProdEquiv q).injective
@@ -105,45 +100,21 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
     apply (tangentSpaceProdEquiv q).injective
     simp only [Pi.smul_apply', Function.comp_apply, map_smul,
       tangentSpaceProdEquiv_prodVectorField]
-    simpa [a] using hh hY q (prodVectorField 0 V q)
+    simpa [a] using hh _ hY q (prodVectorField 0 V q)
   have hXYeq : (fun q ↦ cov (prodVectorField Y 0) q (prodVectorField X 0 q)) =
       prodVectorField (fun x ↦ D Y x (X x)) 0 := by
     funext q
     apply (tangentSpaceProdEquiv q).injective
     rw [tangentSpaceProdEquiv_prodVectorField]
-    simpa using hh hY q (prodVectorField X 0 q)
+    simpa using hh _ hY q (prodVectorField X 0 q)
+  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
+  have : IsManifold J (minSmoothness ℝ 2) N := .of_le (n := ∞) (by simp)
   -- Horizontal and vertical lifts commute.
-  have hbracket : mlieBracket (I.prod J) (prodVectorField X 0) (prodVectorField 0 V) p = 0 := by
-    have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
-    have : IsManifold J (minSmoothness ℝ 2) N := .of_le (n := ∞) (by simp)
-    apply (tangentSpaceProdEquiv p).injective
-    rw [mlieBracket_prodVectorField (hX.mdifferentiableAt (by simp))
-      (h0M.mdifferentiableAt (by simp)) (h0N.mdifferentiableAt (by simp))
-      (hV.mdifferentiableAt (by simp))]
-    simp only [map_zero, tangentSpaceProdEquiv_prodVectorField, mlieBracket_zero_right,
-      mlieBracket_zero_left, Pi.zero_apply, Prod.mk_zero_zero]
+  have hbracket := mlieBracket_prodVectorField_horizontal_vertical (p := p)
+    (hX.mdifferentiableAt (by simp)) (hV.mdifferentiableAt (by simp))
   -- The derivative of `Y f / f` and the two connection corrections combine into `Hess f / f`.
-  have hcoeff :
-      a p.1 * (mvfderiv I f p.1 (X p.1) / f p.1) +
-          mvfderiv I a p.1 (X p.1) -
-          mvfderiv I f p.1 (D Y p.1 (X p.1)) / f p.1 =
-        hessian I f p.1 (X p.1) (Y p.1) / f p.1 := by
-    rw [hessian_apply_eq_mvfderiv_sub p.1 (hf.of_le (by simp)).contMDiffAt X Y
-      (hY.mdifferentiableAt (by simp))]
-    have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) p.1 (X p.1) =
-        -(f p.1 ^ 2)⁻¹ * mvfderiv I f p.1 (X p.1) := by
-      simpa only [Function.comp_def, fderiv_inv, ContinuousLinearMap.toSpanSingleton_apply,
-        smul_eq_mul, mul_comm] using
-        (mvfderiv_comp_apply_of_differentiableAt
-          (differentiableAt_inv hf₀) (hf.mdifferentiableAt (by simp)) (X p.1))
-    dsimp only [a]
-    simp only [div_eq_mul_inv]
-    rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) (hdY.mdifferentiableAt (by simp))
-      ((hf.mdifferentiableAt (by simp)).inv hf₀)]
-    simp only [add_apply, smul_apply, smul_eq_mul, hinv]
-    dsimp only [D]
-    field_simp [hf₀]
-    ring
+  have hcoeff := hessian_div_eq_mvfderiv_add (I := I) (hf.contMDiffAt.of_le (by simp))
+    (x := p.1) (hY.mdifferentiableAt (by simp)) hf₀ X
   -- Substitute these three derivatives in the definition of curvature.
   rw [curvatureOperator_apply, hVY, hXYeq, hbracket, map_zero, sub_zero,
     cov.isCovariantDerivativeOnUniv.leibniz
@@ -153,7 +124,7 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     mvfderiv_comp_fst_apply, prodVectorField_fst, Function.comp_apply, map_add, map_sub,
     map_smul, hv, smul_smul]
-  rw [hh hXY]
+  rw [hh _ hXY]
   simp only [tangentSpaceProdEquiv_prodVectorField, Pi.zero_apply, map_zero, Prod.smul_mk,
     smul_zero, Prod.mk_add_mk, Prod.mk_sub_mk, zero_add, sub_zero]
   rw [← add_smul, ← sub_smul, hcoeff]
@@ -164,13 +135,17 @@ variable [T2Space M] [T2Space N]
 and a vertical vector `V`. The Hessian is computed on the base. -/
 theorem IsWarpedProduct.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertical_horizontal
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hf₀ : f p.1 ≠ 0) (u w : TangentSpace I p.1) (v : TangentSpace J p.2) :
+    (p : M × N) (u w : TangentSpace I p.1) (v : TangentSpace J p.2) :
     tangentSpaceProdEquiv p
         ((leviCivitaConnection (I.prod J) (M × N)).curvatureTensor p
           ((tangentSpaceProdEquiv p).symm (u, 0))
           ((tangentSpaceProdEquiv p).symm (0, v))
           ((tangentSpaceProdEquiv p).symm (w, 0))) =
       (0, (hessian I f p.1 u w / f p.1) • v) := by
+  -- Where the warping function vanishes there are no vertical vectors.
+  rcases eq_or_ne (f p.1) 0 with hf₀ | hf₀
+  · obtain rfl := h.eq_zero_of_warping_eq_zero hf₀ v
+    simp only [Prod.mk_zero_zero, map_zero, LinearMap.zero_apply, smul_zero]
   obtain ⟨X, hX, hXp⟩ := exists_contMDiff_section_eq I E ∞ u
   obtain ⟨Y, hY, hYp⟩ := exists_contMDiff_section_eq I E ∞ w
   obtain ⟨V, hV, hVp⟩ := exists_contMDiff_section_eq J F ∞ v
@@ -194,33 +169,43 @@ theorem IsWarpedProduct.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertica
 paired with the vertical metric: `⟨R(X,V)W,Y⟩ = -f Hess f(X,Y) ⟨V,W⟩_N`. -/
 theorem IsWarpedProduct.inner_curvatureTensor_horizontal_vertical_vertical_horizontal
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hf₀ : f p.1 ≠ 0) (u w : TangentSpace I p.1) (v z : TangentSpace J p.2) :
+    (p : M × N) (u w : TangentSpace I p.1) (v z : TangentSpace J p.2) :
     ⟪(leviCivitaConnection (I.prod J) (M × N)).curvatureTensor p
         ((tangentSpaceProdEquiv p).symm (u, 0))
         ((tangentSpaceProdEquiv p).symm (0, v))
         ((tangentSpaceProdEquiv p).symm (0, z)),
       (tangentSpaceProdEquiv p).symm (w, 0)⟫_ℝ =
       -f p.1 * hessian I f p.1 u w * ⟪v, z⟫_ℝ := by
+  -- Where the warping function vanishes there are no vertical vectors.
+  rcases eq_or_ne (f p.1) 0 with hf₀ | hf₀
+  · obtain rfl := h.eq_zero_of_warping_eq_zero hf₀ v
+    simp only [Prod.mk_zero_zero, map_zero, LinearMap.zero_apply, inner_zero_left, mul_zero]
   rw [(isMetricCompatible_leviCivitaConnection (I.prod J)).inner_curvatureTensor_eq_neg,
     h.inner_eq, ContinuousLinearEquiv.apply_symm_apply,
-    h.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertical_horizontal hf p hf₀]
+    h.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertical_horizontal hf p]
   simp only [inner_zero_left, zero_add, inner_smul_right]
   rw [real_inner_comm z v]
   field_simp [hf₀]
 
 /-- A mixed plane in a warped product has sectional curvature
-`-Hess f(X,X) / (f |X|²)`. Both spanning vectors are nonzero; no normalization is required. -/
+`-Hess f(X,X) / (f |X|²)`. The vertical vector is nonzero; no normalization is required,
+and both sides vanish for a zero horizontal vector. -/
 theorem IsWarpedProduct.sectionalCurvature_horizontal_vertical
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hf₀ : f p.1 ≠ 0) (u : TangentSpace I p.1) (v : TangentSpace J p.2)
-    (hu : u ≠ 0) (hv : v ≠ 0) :
+    (p : M × N) (u : TangentSpace I p.1) (v : TangentSpace J p.2) (hv : v ≠ 0) :
     (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
         (isMetricCompatible_leviCivitaConnection (I.prod J)) p
         ((tangentSpaceProdEquiv p).symm (u, 0))
         ((tangentSpaceProdEquiv p).symm (0, v)) =
       -hessian I f p.1 u u / (f p.1 * ‖u‖ ^ 2) := by
+  -- A nonzero vertical vector forces the warping function not to vanish.
+  have hf₀ : f p.1 ≠ 0 := fun h₀ ↦ hv (h.eq_zero_of_warping_eq_zero h₀ v)
+  rcases eq_or_ne u 0 with rfl | hu
+  · rw [sectionalCurvature_apply]
+    simp only [Prod.mk_zero_zero, map_zero, inner_zero_right, zero_div]
+    simp
   rw [sectionalCurvature_apply,
-    h.inner_curvatureTensor_horizontal_vertical_vertical_horizontal hf p hf₀,
+    h.inner_curvatureTensor_horizontal_vertical_vertical_horizontal hf p,
     Matrix.real_det_gram_fin_two]
   simp only [h.inner_eq, ContinuousLinearEquiv.apply_symm_apply, inner_zero_left,
     inner_zero_right, zero_add, add_zero, mul_zero, real_inner_self_eq_norm_sq]

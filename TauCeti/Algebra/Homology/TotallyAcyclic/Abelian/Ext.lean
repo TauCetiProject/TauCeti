@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences
+public import TauCeti.Algebra.Homology.Ext.Presentation
 
 /-!
 # Gorenstein-projective objects have no higher extensions by projectives
@@ -16,7 +17,7 @@ Let `C` be an abelian category and `G` a Gorenstein-projective object of `C`. Th
 `Ext^{n+1}(G, Q) = 0` for every projective object `Q` of `C`.
 
 A complete resolution `P` of `G` is acyclic, so its cycles fit into short exact sequences
-`0 ⟶ Zⁱ ⟶ Pⁱ ⟶ Zⁱ⁺¹ ⟶ 0` (`HomologicalComplex.cyclesShortComplex_shortExact`). Since the middle
+`0 ⟶ Zⁱ ⟶ Pⁱ ⟶ Zⁱ⁺¹ ⟶ 0` (`HomologicalComplex.shortExact_mk_iCycles_toCycles`). Since the middle
 terms are projective, the long exact sequence of `Ext(-, Q)` shifts dimension:
 `Ext^{n+1}(Zⁱ⁺¹, Q)` is a quotient of `Ext^n(Zⁱ, Q)`. In degree `1`, the obstruction is a
 morphism `Zⁱ ⟶ Q` which does not extend to `Pⁱ`, and every such morphism extends because `P` is
@@ -62,23 +63,12 @@ projective objects. -/
 lemma ext_cycles_eq_zero (Q : C) [Projective Q] (n : ℕ) :
     ∀ (m : ℤ) (e : Ext.{w} (P.cycles m) Q (n + 1)), e = 0 := by
   have := hP.projective
-  induction n with
-  | zero =>
-    intro m e
-    have hS := P.cyclesShortComplex_shortExact (m - 1) m (by simp) (hP.acyclic m)
-    rw [HomologicalComplex.cyclesShortComplex_def] at hS
-    obtain ⟨x, rfl⟩ := Ext.contravariant_sequence_exact₃ hS Q e (Ext.eq_zero_of_projective _)
-      (n₀ := 0) rfl
-    obtain ⟨g, hg⟩ := hP.exists_comp_iCycles_eq (m - 1) (Ext.addEquiv₀ x)
-    rw [← Ext.mk₀_addEquiv₀_apply x, ← hg, ← Ext.mk₀_comp_mk₀]
-    exact hS.extClass_comp_assoc _
-  | succ n ih =>
-    intro m e
-    have hS := P.cyclesShortComplex_shortExact (m - 1) m (by simp) (hP.acyclic m)
-    rw [HomologicalComplex.cyclesShortComplex_def] at hS
-    obtain ⟨x, rfl⟩ := Ext.contravariant_sequence_exact₃ hS Q e (Ext.eq_zero_of_projective _)
-      (n₀ := n + 1) (by lia)
-    rw [ih (m - 1) x, Ext.comp_zero]
+  intro m
+  obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by lia⟩
+  exact TauCeti.ext_X₃_eq_zero_of_forall_exists_f_comp_eq
+    (S := fun m ↦ ShortComplex.mk (P.iCycles m) (P.toCycles m (m + 1)) (P.iCycles_toCycles _ _))
+    (fun m ↦ P.shortExact_mk_iCycles_toCycles m (m + 1) (by simp) (hP.acyclic (m + 1)))
+    (fun _ ↦ Iso.refl _) (fun m φ ↦ hP.exists_comp_iCycles_eq m φ) n k
 
 end IsTotallyAcyclicProjective
 
@@ -93,7 +83,6 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
 theorem isGorensteinProjective.ext_eq_zero {G : C} (hG : isGorensteinProjective C G) (Q : C)
     [Projective Q] {n : ℕ} (e : Ext.{w} G Q (n + 1)) : e = 0 := by
   obtain ⟨P, hP, ⟨i⟩⟩ := (isGorensteinProjective_iff G).1 hG
-  rw [← Ext.mk₀_id_comp e, ← i.inv_hom_id, ← Ext.mk₀_comp_mk₀, Ext.comp_assoc_of_second_deg_zero,
-    hP.ext_cycles_eq_zero Q n 0 ((Ext.mk₀ i.hom).comp e (zero_add _)), Ext.comp_zero]
+  exact TauCeti.ext_eq_zero_of_iso i.symm (hP.ext_cycles_eq_zero Q n 0) e
 
 end CategoryTheory

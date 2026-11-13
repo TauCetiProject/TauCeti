@@ -36,9 +36,10 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {5} ℚ K]
 
-private theorem card_gal_five : Nat.card (Gal(K/ℚ)) = 4 := by
+private theorem card_gal_five : Nat.card (Gal(K/ℚ)) = 2 ^ 2 := by
   rw [Nat.card_congr (galEquivZMod 5 K).toEquiv, Nat.card_eq_fintype_card,
     ZMod.card_units_eq_totient, Nat.totient_prime (by norm_num : Nat.Prime 5)]
+  norm_num
 
 private noncomputable def orderTwoSubgroup : Subgroup (Gal(K/ℚ)) :=
   Subgroup.zpowers ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ))
@@ -100,9 +101,10 @@ theorem card_intermediateField_fifthCyclotomic :
     _ = Nat.card (Subgroup (Gal(K/ℚ))) := rfl
     _ = Nat.card (Subgroup (ZMod 5)ˣ) :=
       Nat.card_congr (galEquivZMod 5 K).mapSubgroup.toEquiv
-    _ = 3 := card_subgroups_of_card_eq_four (by
-      rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
-        Nat.totient_prime (by norm_num : Nat.Prime 5)])
+    _ = 3 := by
+      rw [card_subgroups_eq_card_divisors, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
+        Nat.totient_prime (by norm_num : Nat.Prime 5)]
+      decide
 
 end TauCeti.NumberField
 
@@ -121,7 +123,7 @@ theorem eq_bot_or_eq_fifthCyclotomicQuadraticSubfield_or_eq_top
   have : IsCyclic (ZMod 5)ˣ := ZMod.isCyclic_units_prime (by norm_num : Nat.Prime 5)
   have : IsCyclic (Gal(K/ℚ)) :=
     isCyclic_of_injective (galEquivZMod 5 K).toMonoidHom (galEquivZMod 5 K).injective
-  rcases subgroup_eq_bot_or_eq_or_eq_top_of_card_eq_two (card_gal_five (K := K))
+  rcases subgroup_eq_bot_or_eq_or_eq_top_of_card_eq_prime_sq Nat.prime_two card_gal_five
       (orderTwoSubgroup (K := K)) (card_orderTwoSubgroup (K := K)) F.fixingSubgroup with h | h | h
   · right; right
     rw [← IsGalois.fixedField_fixingSubgroup F, h, fixedField_bot]

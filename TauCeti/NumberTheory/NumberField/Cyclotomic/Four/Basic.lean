@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.RootsOfUnity
 public import TauCeti.NumberTheory.NumberField.Ideal.RootsOfUnity
 public import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
@@ -256,7 +257,7 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 /-- **Rational primes `q ≡ 3 (mod 4)` are inert in `𝓞 K = ℤ[i]`.** This is the analogue for the
 ring of integers of the fourth cyclotomic field of one direction of Mathlib's
 `GaussianInt.prime_iff_mod_four_eq_three_of_nat_prime`. -/
-theorem prime_natCast_of_mod_four_eq_three [HasEnoughRootsOfUnity (𝓞 K) 4] {q : ℕ}
+theorem prime_natCast_of_mod_four_eq_three {q : ℕ}
     (hq : q.Prime) (hq3 : q % 4 = 3) : Prime (q : 𝓞 K) := by
   have hN := absNorm_span_natCast_four (K := K) q
   have hne : span {(q : 𝓞 K)} ≠ ⊤ := by

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
-public import TauCeti.Topology.VectorBundle.ThomClass
+public import TauCeti.Topology.VectorBundle.Thom.Class
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Pair
 
@@ -22,7 +22,7 @@ complement of its zero section. For a subset `W` of the base, the Thom pair of t
 
 Over a subset of the base set of a linear trivialization `e`, the trivialization identifies this
 pair with the Thom pair `(W × F, W × (F ∖ {0}))` of the product bundle
-(`Bundle.Trivialization.thomPairOverIso`, in `TauCeti.Topology.VectorBundle.ThomClass`), whose
+(`Bundle.Trivialization.thomPairOverIso`, in `TauCeti.Topology.VectorBundle.Thom.Class`), whose
 relative homology vanishes below the rank. The
 Mayer–Vietoris sequence of the two pairs over open sets `U` and `V`
 (`TopCat.isZero_singularHomology_ofInclusion_union`) propagates this vanishing from `U`, `V` and
@@ -49,7 +49,7 @@ which agree over `U ∩ V` glue to a class over `U ∪ V`
 (`TauCeti.exists_singularCohomology_thomPairOver_union`). Over a single trivializing set, a class
 in the top degree `r` is determined by its restrictions to the fibre pairs `(E_b, E_b ∖ {0})`
 (`Bundle.Trivialization.singularCohomology_thomPairOver_ext`, in
-`TauCeti.Topology.VectorBundle.ThomClass`). Since `Hʳ⁻¹` vanishes over finite
+`TauCeti.Topology.VectorBundle.Thom.Class`). Since `Hʳ⁻¹` vanishes over finite
 unions of trivializing open sets, induction on the number of sets gives the same over such a union
 (`TauCeti.singularCohomology_thomPairOver_biUnion_ext`), and shows that classes over the sets
 with the same restrictions to the fibres where two sets meet glue to a class over the union
@@ -59,6 +59,14 @@ These finite-union results are the input for Thom classes over an arbitrary base
 arbitrary trivializing covers, and the Thom classes it produces, are in
 `TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion` and
 `TauCeti.Topology.VectorBundle.Orientation.ThomClass`.
+
+In homology, the Mayer–Vietoris sequence of the Thom pairs over open sets `U` and `V` is exact at
+`Hₙ(E|_U, E₀|_U) ⊞ Hₙ(E|_V, E₀|_V)` (`TauCeti.singularHomology_thomPairOver_mayerVietoris_exact`),
+and its map to `Hₙ(E|_{U ∪ V}, E₀|_{U ∪ V})` is an epimorphism when
+`Hₙ₋₁(E|_{U ∩ V}, E₀|_{U ∩ V})` vanishes (`TauCeti.epi_singularHomology_thomPairOver_union`). In
+the rank degree, where the homology below vanishes, this computes `Hᵣ(E|_{U ∪ V}, E₀|_{U ∪ V})`
+from the pairs over `U`, `V` and `U ∩ V`; this is used in
+`TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology`.
 
 ## Main results
 
@@ -77,6 +85,9 @@ arbitrary trivializing covers, and the Thom classes it produces, are in
   sets, a class in the top degree is determined on the fibres.
 * `TauCeti.exists_singularCohomology_thomPairOver_biUnion`: classes over finitely many
   trivializing open sets agreeing on the fibres glue to a class over their union.
+* `TauCeti.singularHomology_thomPairOver_mayerVietoris_exact`,
+  `TauCeti.epi_singularHomology_thomPairOver_union`: the Mayer–Vietoris sequence of the Thom pairs
+  over two open sets in homology.
 
 ## References
 
@@ -124,7 +135,7 @@ variable {B : Type w} {F : Type*} {E : B → Type w} [∀ b, Zero (E b)]
   [TopologicalSpace (TotalSpace F E)]
 
 /-- The relative homology of the Thom pair over the empty set vanishes. -/
-private theorem isZero_singularHomology_thomPairOver_empty (n : ℕ) :
+theorem isZero_singularHomology_thomPairOver_empty (n : ℕ) :
     IsZero ((thomPairOver F E ∅).singularHomology R n) := by
   rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
   exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
@@ -157,9 +168,8 @@ private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V
   have hopen₀ {W : Set B} (hW : IsOpen W) {T : Set (TotalSpace F E)}
       (hT : T ⊆ zeroSectionCompl F E) :
       IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W ∩ zeroSectionCompl F E)) := by
-    convert hopen hW T using 1
-    ext x
-    simp [hT x.2]
+    rw [preimage_inter, preimage_val_eq_univ_of_subset hT, inter_univ]
+    exact hopen hW T
   have hT : π F E ⁻¹' U ∩ zeroSectionCompl F E ∪ π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆
       zeroSectionCompl F E := union_subset inter_subset_right inter_subset_right
   exact ⟨hopen hU _, hopen hV _, hopen₀ hU hT, hopen₀ hV hT⟩
@@ -196,86 +206,63 @@ The Mayer–Vietoris sequence of the pairs `(E|_U, E₀|_U)` and `(E|_V, E₀|_V
 cohomology (`TopCat.singularCohomologyPairMayerVietoris_exact₁` and
 `TopCat.singularCohomologyPairMayerVietoris_exact₂`) is stated for the pairs
 `(E|_U ∪ E|_V, E₀|_U ∪ E₀|_V)` and `(E|_U ∩ E|_V, E₀|_U ∩ E₀|_V)`, which are the Thom pairs over
-`U ∪ V` and over `U ∩ V` written differently. -/
+`U ∪ V` and over `U ∩ V` written differently (`TopCat.restrictPreimagePairUnionIso` and
+`TopCat.restrictPreimagePairInterIso`). -/
 
 variable {B : Type w} {F : Type*} {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
   [∀ b, Zero (E b)] {U V : Set B}
 
-variable (F E U V) in
-/-- The Thom pair over `U ∪ V`, as the union pair of the Mayer–Vietoris sequence of the Thom pairs
-over `U` and over `V`. -/
-private def thomPairOverUnionIso :
-    TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
-        (union_subset_union (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
-          (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V)) ≅
-      thomPairOver F E (U ∪ V) where
-  hom := TopPair.ofHom (TopCat.ofHom (ContinuousMap.inclusion fun _ h ↦ h))
-    (TopCat.ofHom (ContinuousMap.inclusion fun _ h ↦
-      h.elim (fun h ↦ ⟨Or.inl h.1, h.2⟩) fun h ↦ ⟨Or.inr h.1, h.2⟩)) (by ext; rfl)
-  inv := TopPair.ofHom (TopCat.ofHom (ContinuousMap.inclusion fun _ h ↦ h))
-    (TopCat.ofHom (ContinuousMap.inclusion fun _ h ↦
-      h.1.elim (fun h' ↦ Or.inl ⟨h', h.2⟩) fun h' ↦ Or.inr ⟨h', h.2⟩)) (by ext; rfl)
-  hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
-  inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
-
-variable (F E U V) in
-/-- The Thom pair over `U ∩ V`, as the intersection pair of the Mayer–Vietoris sequence of the Thom
-pairs over `U` and over `V`. -/
-private def thomPairOverInterIso :
-    thomPairOver F E (U ∩ V) ≅
-      TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
-        (inter_subset_inter (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
-          (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V)) where
-  hom := TopPair.ofHom (TopCat.ofHom (ContinuousMap.inclusion fun _ h ↦ h))
-    (TopCat.ofHom (ContinuousMap.inclusion fun _ h ↦ ⟨⟨h.1.1, h.2⟩, h.1.2, h.2⟩)) (by ext; rfl)
-  inv := TopPair.ofHom (TopCat.ofHom (ContinuousMap.inclusion fun _ h ↦ h))
-    (TopCat.ofHom (ContinuousMap.inclusion fun _ h ↦ ⟨⟨h.1.1, h.2.1⟩, h.1.2⟩)) (by ext; rfl)
-  hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
-  inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
-
 /-- The restriction from the union pair of the Mayer–Vietoris sequence to the pair over `U` is the
 restriction from `U ∪ V` to `U`. -/
-private theorem ofInclusionMap_comp_thomPairOverUnionIso_hom_left :
+private theorem ofInclusionMap_comp_restrictPreimagePairUnionIso_hom_left :
     TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion subset_union_left)
-        (fun _ hx ↦ subset_union_left hx) ≫ (thomPairOverUnionIso F E U V).hom =
+        (fun _ hx ↦ subset_union_left hx) ≫ (TopCat.restrictPreimagePairUnionIso
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).hom =
       thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V) :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
-    rfl)
+  TopPair.hom_ext_of_fst _ (by
+    rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+      TopCat.restrictPreimagePairUnionIso_hom_fst]
+    exact TopCat.ext fun v ↦
+      (thomPairOverMap_fst_apply F E (subset_union_left : U ⊆ U ∪ V) v).symm)
 
 /-- The restriction from the union pair of the Mayer–Vietoris sequence to the pair over `V` is the
 restriction from `U ∪ V` to `V`. -/
-private theorem ofInclusionMap_comp_thomPairOverUnionIso_hom_right :
+private theorem ofInclusionMap_comp_restrictPreimagePairUnionIso_hom_right :
     TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion subset_union_right)
-        (fun _ hx ↦ subset_union_right hx) ≫ (thomPairOverUnionIso F E U V).hom =
+        (fun _ hx ↦ subset_union_right hx) ≫ (TopCat.restrictPreimagePairUnionIso
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).hom =
       thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V) :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
-    rfl)
+  TopPair.hom_ext_of_fst _ (by
+    rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+      TopCat.restrictPreimagePairUnionIso_hom_fst]
+    exact TopCat.ext fun v ↦
+      (thomPairOverMap_fst_apply F E (subset_union_right : V ⊆ U ∪ V) v).symm)
 
 /-- The restriction from the pair over `U ∩ V` to the pair over `U`, through the intersection pair
 of the Mayer–Vietoris sequence. -/
-private theorem thomPairOverInterIso_hom_comp_ofInclusionMap_left :
-    (thomPairOverInterIso F E U V).hom ≫ TopPair.ofInclusionMap _ _
+private theorem restrictPreimagePairInterIso_inv_comp_ofInclusionMap_left :
+    (TopCat.restrictPreimagePairInterIso (X := TopCat.of (TotalSpace F E)) (π F E)
+        (zeroSectionCompl F E) U V).inv ≫ TopPair.ofInclusionMap _ _
         (ContinuousMap.inclusion inter_subset_left) (fun _ hx ↦ inter_subset_left hx) =
       thomPairOverMap F E (inter_subset_left : U ∩ V ⊆ U) :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
-    rfl)
+  TopPair.hom_ext_of_fst _ (by
+    rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+      TopCat.restrictPreimagePairInterIso_inv_fst]
+    exact TopCat.ext fun v ↦
+      (thomPairOverMap_fst_apply F E (inter_subset_left : U ∩ V ⊆ U) v).symm)
 
 /-- The restriction from the pair over `U ∩ V` to the pair over `V`, through the intersection pair
 of the Mayer–Vietoris sequence. -/
-private theorem thomPairOverInterIso_hom_comp_ofInclusionMap_right :
-    (thomPairOverInterIso F E U V).hom ≫ TopPair.ofInclusionMap _ _
+private theorem restrictPreimagePairInterIso_inv_comp_ofInclusionMap_right :
+    (TopCat.restrictPreimagePairInterIso (X := TopCat.of (TotalSpace F E)) (π F E)
+        (zeroSectionCompl F E) U V).inv ≫ TopPair.ofInclusionMap _ _
         (ContinuousMap.inclusion inter_subset_right) (fun _ hx ↦ inter_subset_right hx) =
       thomPairOverMap F E (inter_subset_right : U ∩ V ⊆ V) :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
-    rfl)
+  TopPair.hom_ext_of_fst _ (by
+    rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+      TopCat.restrictPreimagePairInterIso_inv_fst]
+    exact TopCat.ext fun v ↦
+      (thomPairOverMap_fst_apply F E (inter_subset_right : U ∩ V ⊆ V) v).symm)
 
 variable {R} {k : Type*} [Ring k] [Linear k C] {M : C}
 
@@ -286,7 +273,9 @@ private abbrev thomPairOverToBiprod (n : ℕ) :
     (thomPairOver F E (U ∪ V)).singularCohomology R k M n ⟶
       (thomPairOver F E U).singularCohomology R k M n ⊞
         (thomPairOver F E V).singularCohomology R k M n :=
-  TopPair.singularCohomologyMap (thomPairOverUnionIso F E U V).hom n ≫
+  TopPair.singularCohomologyMap (P' := thomPairOver F E (U ∪ V))
+      (TopCat.restrictPreimagePairUnionIso (X := TopCat.of (TotalSpace F E)) (π F E)
+        (zeroSectionCompl F E) U V).hom n ≫
     TopCat.singularCohomologyPairMayerVietorisToBiprod R k M (X := TopCat.of (TotalSpace F E))
       (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
       (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n
@@ -296,31 +285,38 @@ private theorem thomPairOverToBiprod_fst (n : ℕ) :
     thomPairOverToBiprod R F E U V k M n ≫ biprod.fst =
       TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_left) n := by
   rw [Category.assoc, TopCat.singularCohomologyPairMayerVietorisToBiprod_fst,
-    ← TopPair.singularCohomologyMap_comp, ofInclusionMap_comp_thomPairOverUnionIso_hom_left]
+    ← TopPair.singularCohomologyMap_comp,
+    ofInclusionMap_comp_restrictPreimagePairUnionIso_hom_left]
 
 /-- The second component of the Mayer–Vietoris map is the restriction from `U ∪ V` to `V`. -/
 private theorem thomPairOverToBiprod_snd (n : ℕ) :
     thomPairOverToBiprod R F E U V k M n ≫ biprod.snd =
       TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_right) n := by
   rw [Category.assoc, TopCat.singularCohomologyPairMayerVietorisToBiprod_snd,
-    ← TopPair.singularCohomologyMap_comp, ofInclusionMap_comp_thomPairOverUnionIso_hom_right]
+    ← TopPair.singularCohomologyMap_comp,
+    ofInclusionMap_comp_restrictPreimagePairUnionIso_hom_right]
 
 /-- The second map of the Mayer–Vietoris sequence of the Thom pairs over `U` and over `V`, read in
 the cohomology of the Thom pair over `U ∩ V`, sends `(a, b)` to the difference of the restrictions
 of `a` and `b` to `U ∩ V`. -/
-private theorem singularCohomologyPairMayerVietorisFromBiprod_thomPairOverInterIso (n : ℕ) :
+private theorem singularCohomologyPairMayerVietorisFromBiprod_restrictPreimagePairInterIso
+    (n : ℕ) :
     TopCat.singularCohomologyPairMayerVietorisFromBiprod R k M (X := TopCat.of (TotalSpace F E))
         (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
         (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n ≫
-          TopPair.singularCohomologyMap (thomPairOverInterIso F E U V).hom n =
+          TopPair.singularCohomologyMap (P := thomPairOver F E (U ∩ V))
+            (TopCat.restrictPreimagePairInterIso (X := TopCat.of (TotalSpace F E)) (π F E)
+              (zeroSectionCompl F E) U V).inv n =
       biprod.desc (TopPair.singularCohomologyMap (thomPairOverMap F E inter_subset_left) n)
         (-TopPair.singularCohomologyMap (thomPairOverMap F E inter_subset_right) n) := by
   refine biprod.hom_ext' _ _ ?_ ?_
   · rw [TopCat.inl_singularCohomologyPairMayerVietorisFromBiprod_assoc,
-      ← TopPair.singularCohomologyMap_comp, thomPairOverInterIso_hom_comp_ofInclusionMap_left,
+      ← TopPair.singularCohomologyMap_comp,
+      restrictPreimagePairInterIso_inv_comp_ofInclusionMap_left,
       biprod.inl_desc]
   · rw [TopCat.inr_singularCohomologyPairMayerVietorisFromBiprod_assoc, Preadditive.neg_comp,
-      ← TopPair.singularCohomologyMap_comp, thomPairOverInterIso_hom_comp_ofInclusionMap_right,
+      ← TopPair.singularCohomologyMap_comp,
+      restrictPreimagePairInterIso_inv_comp_ofInclusionMap_right,
       biprod.inr_desc]
 
 variable [TopologicalSpace B] [∀ b, TopologicalSpace (E b)] [TopologicalSpace F] [FiberBundle F E]
@@ -339,8 +335,10 @@ theorem singularCohomology_thomPairOver_union_ext (hU : IsOpen U) (hV : IsOpen V
   -- The first map of the Mayer–Vietoris sequence is injective in degree `n`.
   have hmono : Mono (thomPairOverToBiprod R F E U V k M n) := by
     have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-        (thomPairOverUnionIso F E U V).hom n) :=
-      (TopPair.singularCohomologyFunctor R k M n).map_isIso (thomPairOverUnionIso F E U V).hom.op
+        (P' := thomPairOver F E (U ∪ V)) (TopCat.restrictPreimagePairUnionIso
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).hom n) :=
+      (TopPair.singularCohomologyFunctor R k M n).map_isIso
+        (TopCat.restrictPreimagePairUnionIso _ _ U V).hom.op
     have : Mono (TopCat.singularCohomologyPairMayerVietorisToBiprod R k M
         (X := TopCat.of (TotalSpace F E))
         (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
@@ -352,7 +350,8 @@ theorem singularCohomology_thomPairOver_union_ext (hU : IsOpen U) (hV : IsOpen V
         refine (TopCat.singularCohomologyPairMayerVietoris_exact₁ R k M _ _ hA hB hC hD m
           (m + 1)).mono_g (IsZero.eq_of_src ?_ _ _)
         exact (hUV m rfl).of_iso ((TopPair.singularCohomologyFunctor R k M m).mapIso
-          (thomPairOverInterIso F E U V).op)
+          (TopCat.restrictPreimagePairInterIso (X := TopCat.of (TotalSpace F E)) (π F E)
+            (zeroSectionCompl F E) U V).symm.op)
     exact mono_comp _ _
   -- Its two components are the restrictions to `U` and to `V`.
   refine (ModuleCat.mono_iff_injective _).1 hmono
@@ -381,26 +380,138 @@ theorem exists_singularCohomology_thomPairOver_union (hU : IsOpen U) (hV : IsOpe
   -- image there is the difference of the restrictions of `a` and `b` to `U ∩ V`.
   have hz : TopCat.singularCohomologyPairMayerVietorisFromBiprod R k M hCA hDB n z = 0 := by
     have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-        (thomPairOverInterIso F E U V).hom n) :=
-      (TopPair.singularCohomologyFunctor R k M n).map_isIso (thomPairOverInterIso F E U V).hom.op
+        (P := thomPairOver F E (U ∩ V)) (TopCat.restrictPreimagePairInterIso
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).inv n) :=
+      (TopPair.singularCohomologyFunctor R k M n).map_isIso
+        (TopCat.restrictPreimagePairInterIso _ _ U V).inv.op
     refine (ModuleCat.mono_iff_injective (TopPair.singularCohomologyMap
-      (thomPairOverInterIso F E U V).hom n)).1 inferInstance ?_
+      (P := thomPairOver F E (U ∩ V)) (TopCat.restrictPreimagePairInterIso
+        (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).inv n)).1
+      inferInstance ?_
     rw [← ConcreteCategory.comp_apply,
-      singularCohomologyPairMayerVietorisFromBiprod_thomPairOverInterIso]
+      singularCohomologyPairMayerVietorisFromBiprod_restrictPreimagePairInterIso]
     simp [z, ← ConcreteCategory.comp_apply, hab]
   obtain ⟨x, hx⟩ := (ShortComplex.moduleCat_exact_iff _).1
     (TopCat.singularCohomologyPairMayerVietoris_exact₂ R k M hCA hDB hA hB hC hD n) z hz
   -- A preimage of `(a, b)` under the first map of the Mayer–Vietoris sequence.
   have hι : thomPairOverToBiprod R F E U V k M n
-      (TopPair.singularCohomologyMap (thomPairOverUnionIso F E U V).inv n x) = z := by
+      (TopPair.singularCohomologyMap (P := thomPairOver F E (U ∪ V))
+        (TopCat.restrictPreimagePairUnionIso (X := TopCat.of (TotalSpace F E)) (π F E)
+          (zeroSectionCompl F E) U V).inv n x) = z := by
     simpa [← TopPair.singularCohomologyMap_comp_apply] using hx
-  refine ⟨TopPair.singularCohomologyMap (thomPairOverUnionIso F E U V).inv n x, ?_, ?_⟩
+  refine ⟨TopPair.singularCohomologyMap (P := thomPairOver F E (U ∪ V))
+    (TopCat.restrictPreimagePairUnionIso (X := TopCat.of (TotalSpace F E)) (π F E)
+      (zeroSectionCompl F E) U V).inv n x, ?_, ?_⟩
   · rw [← thomPairOverToBiprod_fst, ConcreteCategory.comp_apply, hι]
     simp [z, ← ConcreteCategory.comp_apply]
   · rw [← thomPairOverToBiprod_snd, ConcreteCategory.comp_apply, hι]
     simp [z, ← ConcreteCategory.comp_apply]
 
 end Gluing
+
+section HomologyGluing
+
+/-! ### The Mayer–Vietoris sequence of Thom pairs in homology
+
+The Mayer–Vietoris sequence of the pairs `(E|_U, E₀|_U)` and `(E|_V, E₀|_V)` in homology
+(`TopCat.pairMayerVietoris_exact₂` and `TopCat.pairMayerVietoris_exact₃`), read on the Thom pairs
+over `U ∩ V`, `U`, `V` and `U ∪ V`. -/
+
+variable {B : Type w} {F : Type*} {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, Zero (E b)] {U V : Set B}
+
+/-- The first two maps of the Mayer–Vietoris sequence of the Thom pairs over `U` and `V` in
+homology compose to zero: both composites are the restriction from `U ∩ V` to `U ∪ V`. -/
+theorem singularHomology_thomPairOver_mayerVietoris_comp_eq_zero (n : ℕ) :
+    biprod.lift (TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_left) R n)
+        (-TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_right) R n) ≫
+      biprod.desc
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V)) R n)
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R n) =
+      0 := by
+  simp [← TopPair.singularHomologyMap_comp]
+
+/-- The second map of the Mayer–Vietoris sequence of the Thom pairs over `U` and `V` in homology is
+that of the pairs `(E|_U, E₀|_U)` and `(E|_V, E₀|_V)` of subspaces of `E`, followed by the
+identification of their union pair with the Thom pair over `U ∪ V`. -/
+private theorem biprod_desc_singularHomologyMap_thomPairOverMap (n : ℕ) :
+    biprod.desc
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V)) R n)
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R n) =
+      TopCat.pairMayerVietorisFromBiprod R (X := TopCat.of (TotalSpace F E))
+          (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
+          (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n ≫
+        TopPair.singularHomologyMap (TopCat.restrictPreimagePairUnionIso
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).hom R n := by
+  refine biprod.hom_ext' _ _ ?_ ?_
+  · simp only [biprod.inl_desc, TopCat.inl_pairMayerVietorisFromBiprod_assoc,
+      ← TopPair.singularHomologyMap_comp]
+    exact congrArg (TopPair.singularHomologyMap · R n)
+      (ofInclusionMap_comp_restrictPreimagePairUnionIso_hom_left (F := F) (E := E) (U := U)
+        (V := V)).symm
+  · simp only [biprod.inr_desc, TopCat.inr_pairMayerVietorisFromBiprod_assoc,
+      ← TopPair.singularHomologyMap_comp]
+    exact congrArg (TopPair.singularHomologyMap · R n)
+      (ofInclusionMap_comp_restrictPreimagePairUnionIso_hom_right (F := F) (E := E) (U := U)
+        (V := V)).symm
+
+variable [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+
+/-- **Exactness of the Mayer–Vietoris sequence of Thom pairs in homology** at
+`Hₙ(E|_U, E₀|_U) ⊞ Hₙ(E|_V, E₀|_V)`, for open sets `U` and `V` of the base: the first map has
+components the restriction from `U ∩ V` to `U` and minus the restriction to `V`, and the second map
+is the sum of the restrictions to `U ∪ V`. -/
+theorem singularHomology_thomPairOver_mayerVietoris_exact (hU : IsOpen U) (hV : IsOpen V)
+    (n : ℕ) :
+    (ShortComplex.mk _ _ (singularHomology_thomPairOver_mayerVietoris_comp_eq_zero (F := F)
+      (E := E) (U := U) (V := V) R n)).Exact := by
+  obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
+  refine (ShortComplex.exact_iff_of_iso ?_).2 (TopCat.pairMayerVietoris_exact₂ R
+    (X := TopCat.of (TotalSpace F E)) inter_subset_left inter_subset_left hA hB hC hD n)
+  refine ShortComplex.isoMk (asIso (TopPair.singularHomologyMap
+      (TopCat.restrictPreimagePairInterIso
+        (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).inv R n)) (Iso.refl _)
+    (asIso (TopPair.singularHomologyMap (TopCat.restrictPreimagePairUnionIso
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).inv R n)) ?_ ?_
+  · refine biprod.hom_ext _ _ ?_ ?_
+    · simp only [Category.assoc, TopCat.pairMayerVietorisToBiprod_fst, Iso.refl_hom,
+        Category.id_comp, biprod.lift_fst, ← TopPair.singularHomologyMap_comp, asIso_hom]
+      exact congrArg (TopPair.singularHomologyMap · R n)
+        (restrictPreimagePairInterIso_inv_comp_ofInclusionMap_left (F := F) (E := E) (U := U)
+          (V := V))
+    · simp only [Category.assoc, TopCat.pairMayerVietorisToBiprod_snd, Iso.refl_hom,
+        Category.id_comp, biprod.lift_snd, Preadditive.comp_neg,
+        ← TopPair.singularHomologyMap_comp, asIso_hom]
+      exact congrArg (fun f ↦ -TopPair.singularHomologyMap f R n)
+        (restrictPreimagePairInterIso_inv_comp_ofInclusionMap_right (F := F) (E := E) (U := U)
+          (V := V))
+  · simp only [Iso.refl_hom, Category.id_comp, asIso_hom,
+      biprod_desc_singularHomologyMap_thomPairOverMap, Category.assoc,
+      ← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id,
+      Category.comp_id]
+
+/-- **The end of the Mayer–Vietoris sequence of Thom pairs in homology**: for open sets `U` and `V`
+of the base, if `Hₙ₋₁(E|_{U ∩ V}, E₀|_{U ∩ V})` vanishes (or `n = 0`), every class over `U ∪ V` is
+a sum of restrictions of classes over `U` and over `V`. -/
+theorem epi_singularHomology_thomPairOver_union (hU : IsOpen U) (hV : IsOpen V) {n : ℕ}
+    (hUV : ∀ m, m + 1 = n → IsZero ((thomPairOver F E (U ∩ V)).singularHomology R m)) :
+    Epi (biprod.desc
+      (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V)) R n)
+      (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R
+        n)) := by
+  obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
+  rw [biprod_desc_singularHomologyMap_thomPairOverMap]
+  refine epi_comp' ?_ inferInstance
+  cases n with
+  | zero => exact TopCat.epi_pairMayerVietorisFromBiprod_zero R _ _ hA hB hC hD
+  | succ m =>
+    refine (TopCat.pairMayerVietoris_exact₃ R _ _ hA hB hC hD (m + 1) m).epi_f
+      (IsZero.eq_of_tgt ?_ _ _)
+    exact (hUV m rfl).of_iso
+      (asIso (TopPair.singularHomologyMap (TopCat.restrictPreimagePairInterIso
+        (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).hom R m))
+
+end HomologyGluing
 
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
@@ -418,7 +529,7 @@ theorem isZero_singularHomology_thomPairOver_biUnion {ι : Type*} (s : Finset ι
   classical
   induction s using Finset.induction_on generalizing W n with
   | empty => simpa using isZero_singularHomology_thomPairOver_empty R n
-  | insert a s ha ih =>
+  | insert a s _ ih =>
     rw [Finset.set_biUnion_insert]
     obtain ⟨e, _, he⟩ := hWe a (Finset.mem_insert_self a s)
     refine isZero_singularHomology_thomPairOver_union R (hWo a (Finset.mem_insert_self a s))
@@ -522,7 +633,7 @@ theorem singularCohomology_thomPairOver_biUnion_ext {ι : Type*} (s : Finset ι)
     refine (ModuleCat.subsingleton_of_isZero ?_).elim u v
     refine TopPair.isZero_singularCohomology_of_isZero_singularHomology _ R' M' _ fun j _ ↦ ?_
     simpa using isZero_singularHomology_thomPairOver_empty (E := E) R' j
-  | insert a s ha ih =>
+  | insert a s _ ih =>
     revert u v
     rw [Finset.set_biUnion_insert]
     intro u v h

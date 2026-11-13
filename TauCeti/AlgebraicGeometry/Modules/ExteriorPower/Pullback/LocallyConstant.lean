@@ -95,7 +95,7 @@ private def comparisonFiber (n : ℕ) :
 
 /-- The restricted comparison is an isomorphism when the `n`-th exterior power comparison is. -/
 private lemma isIso_comparisonFiber_app (n : ℕ) (M : Y.Modules)
-    (h : IsIso ((pullbackExteriorPowerComparison f n).app M)) :
+    (_ : IsIso ((pullbackExteriorPowerComparison f n).app M)) :
     IsIso ((comparisonFiber f r n).app M) :=
   IsIso.comp_isIso' inferInstance (Functor.map_isIso
     (restrictFunctor (Scheme.Opens.ι ((r.comap f.base.hom).fiberClopens n).toOpens)) _)

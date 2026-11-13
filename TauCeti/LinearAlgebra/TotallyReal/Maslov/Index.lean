@@ -12,7 +12,7 @@ public import TauCeti.Topology.Circle.Degree
 /-!
 # The Maslov index of a loop of totally real subspaces
 
-Let `E` be a finite-dimensional complex normed space and `Λ` a loop of maximal totally real
+Let `E` be a complex normed space and `Λ` a loop of maximal totally real
 subspaces of `E` (`TauCeti.TotallyRealLoop`): a family `Λ : [0, 1] → Submodule ℝ E` with
 `Λ 0 = Λ 1` of the form `Λ t = A t L₀`, where `L₀` is maximal totally real and `A` is a continuous
 path of complex-linear automorphisms of `E`.
@@ -20,7 +20,9 @@ path of complex-linear automorphisms of `E`.
 Its **Maslov index** `μ(Λ)` (`TauCeti.TotallyRealLoop.maslovIndex`) is the degree
 (`Circle.degree`) of the loop of Maslov phases `t ↦ ρ(Λ 0, Λ t)` of the circle, read as a path
 (`TauCeti.TotallyRealLoop.maslovPhasePath`), where
-`ρ(L₀, A L₀) = det A / conj (det A)` is `TauCeti.IsMaximalTotallyReal.maslovPhase`.
+`ρ(L₀, A L₀) = det A / conj (det A)` is `TauCeti.IsMaximalTotallyReal.maslovPhase`. If `E` is
+infinite-dimensional every determinant is `1`, every phase is `1` and the index is `0`
+(`TauCeti.TotallyRealLoop.maslovIndex_of_not_finite`).
 
 * It does not depend on the reference subspace: for any maximal totally real `L₀` the phases
   `ρ(L₀, Λ t)` differ from `ρ(Λ 0, Λ t)` by the constant factor `ρ(L₀, Λ 0)`, so `μ(Λ)` is the
@@ -39,8 +41,12 @@ Its **Maslov index** `μ(Λ)` (`TauCeti.TotallyRealLoop.maslovIndex`) is the deg
   defined.
 * It is normalized: the half-turn `t ↦ e^{iπt} L₀`, which closes up since `-L₀ = L₀`, has Maslov
   index `n = dim_ℂ E` (`TauCeti.TotallyRealLoop.maslovIndex_rotation`); for `E = ℂ` and `L₀ = ℝ`
-  this is the loop `e^{iπt} ℝ` of Maslov index one. The constant loop has Maslov index zero
+  this is the loop `e^{iπt} ℝ` of Maslov index one. More generally the `k`-fold half-turn
+  `t ↦ e^{iπkt} L₀` has Maslov index `k n` for every integer `k`
+  (`TauCeti.TotallyRealLoop.maslovIndex_rotationZPow`). The constant loop has Maslov index zero
   (`TauCeti.TotallyRealLoop.maslovIndex_const`).
+* It changes sign when the loop is traversed backwards
+  (`TauCeti.TotallyRealLoop.maslovIndex_symm`).
 
 The boundary Maslov index of a bundle pair, which enters the Riemann--Roch formula for
 Cauchy--Riemann operators with totally real boundary conditions, is the Maslov index of the loop of
@@ -64,8 +70,7 @@ namespace TauCeti
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  (Λ : TotallyRealLoop E)
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (Λ : TotallyRealLoop E)
 
 /-- Along a loop of maximal totally real subspaces, the Maslov phase relative to any fixed maximal
 totally real subspace varies continuously. -/
@@ -95,9 +100,16 @@ theorem maslovPhasePath_apply (t : I) :
   (rfl)
 
 /-- The **Maslov index** of a loop of maximal totally real subspaces: the degree of its loop of
-Maslov phases `t ↦ ρ(Λ 0, Λ t)` in the circle. -/
+Maslov phases `t ↦ ρ(Λ 0, Λ t)` in the circle. In an infinite-dimensional `E` every Maslov phase is
+the junk value `1`, so the index is `0` there. -/
 noncomputable def maslovIndex : ℤ :=
   Circle.degree Λ.maslovPhasePath
+
+/-- In an infinite-dimensional space the Maslov index of every loop is `0`. -/
+@[simp]
+theorem maslovIndex_of_not_finite (h : ¬ Module.Finite ℂ E) : Λ.maslovIndex = 0 :=
+  (Circle.degree_congr _ (Path.refl 1) fun t ↦ Circle.ext (by simp [h])).trans
+    (Circle.degree_refl 1)
 
 /-- The Maslov index read off a continuous angle function of the Maslov phases relative to an
 arbitrary maximal totally real reference subspace `L₀`: if `e^{i θ t} = ρ(L₀, Λ t)`, then
@@ -143,17 +155,21 @@ theorem maslovIndex_eq_degree {L₀ : Submodule ℝ E}
   rw [← Circle.coe_exp, hθγ, hγ]
 
 /-- **Homotopy invariance of the Maslov index.** Let `A (s, t)` be a continuous two-parameter
-family of complex-linear automorphisms and `L₀` a maximal totally real subspace such that every
-`t ↦ A (s, t) L₀` is a closed loop. Then the loops `Λ₀ t = A (0, t) L₀` and `Λ₁ t = A (1, t) L₀`
-have the same Maslov index. -/
+family of complex-linear automorphisms and `L₀` a subspace such that every
+`t ↦ A (s, t) L₀` is a closed loop (`L₀` is then automatically maximal totally real, since
+`A (0, 0)` carries it to the maximal totally real `Λ₀ 0`). Then the loops `Λ₀ t = A (0, t) L₀`
+and `Λ₁ t = A (1, t) L₀` have the same Maslov index. -/
 theorem maslovIndex_eq_of_homotopy (Λ₀ Λ₁ : TotallyRealLoop E) {L₀ : Submodule ℝ E}
-    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀)
     (A : I × I → E ≃L[ℂ] E) (hA : Continuous fun p => (A p : E →L[ℂ] E))
     (h₀ : ∀ t, Λ₀ t = L₀.map (((A (0, t)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ))
     (h₁ : ∀ t, Λ₁ t = L₀.map (((A (1, t)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ))
     (hA01 : ∀ s, L₀.map (((A (s, 0)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) =
       L₀.map (((A (s, 1)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ)) :
     Λ₀.maslovIndex = Λ₁.maslovIndex := by
+  -- `L₀` is maximal totally real, being carried to the maximal `Λ₀ 0` by a complex-linear
+  -- automorphism.
+  have hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀ := by
+    exact (Λ₀.isMaximalTotallyReal 0).of_map_linearEquiv (A (0, 0)).toLinearEquiv (h₀ 0)
   -- The homotopy of Maslov phases `ρ(L₀, A (s, t) L₀) = det A (s, t) / conj (det A (s, t))`.
   let F : C(I × I, Circle) :=
     ⟨fun p => ⟨hL₀.maslovPhase (hL₀.map_linearEquiv (A p).toLinearEquiv),
@@ -177,12 +193,14 @@ theorem maslovIndex_eq_of_homotopy (Λ₀ Λ₁ : TotallyRealLoop E) {L₀ : Sub
 /-- The Maslov index counts half-turns of the determinant of a frame: if `Λ t = A t L₀` and
 `det (A t) = |det (A t)| e^{i φ t}` with `φ` continuous, then `φ 1 - φ 0 = π μ(Λ)`. -/
 theorem sub_eq_maslovIndex_mul_pi {L₀ : Submodule ℝ E}
-    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀)
     (A : I → E ≃ₗ[ℂ] E) (hA : ∀ t, Λ t = L₀.map ((A t : E →ₗ[ℂ] E).restrictScalars ℝ))
     {φ : I → ℝ} (hφ : Continuous φ)
     (h : ∀ t, LinearMap.det (A t : E →ₗ[ℂ] E) =
       ‖LinearMap.det (A t : E →ₗ[ℂ] E)‖ * Complex.exp (φ t * Complex.I)) :
     φ 1 - φ 0 = Λ.maslovIndex * π := by
+  -- `L₀` is maximal totally real, being carried to the maximal `Λ 0` by `A 0`.
+  have hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀ := by
+    exact (Λ.isMaximalTotallyReal 0).of_map_linearEquiv (A 0) (hA 0)
   have hphase (t : I) : Complex.exp ((2 * φ t : ℝ) * Complex.I) =
       hL₀.maslovPhase (Λ.isMaximalTotallyReal t) := by
     rw [hL₀.maslovPhase_congr (Λ.isMaximalTotallyReal t) (hL₀.map_linearEquiv (A t)) (hA t),
@@ -206,34 +224,55 @@ theorem maslovIndex_const {L₀ : Submodule ℝ E}
       simp)
     (by simp)
 
-/-- **Normalization of the Maslov index.** The half-turn `t ↦ e^{iπt} L₀` of a maximal totally
-real subspace of an `n`-dimensional complex space has Maslov index `n`. -/
+/-- **Normalization of the Maslov index, `k`-fold version.** The `k`-fold half-turn
+`t ↦ e^{iπkt} L₀` of a maximal totally real subspace of an `n`-dimensional complex space has
+Maslov index `k n`, for every integer `k`. -/
 @[simp]
-theorem maslovIndex_rotation {L₀ : Submodule ℝ E}
-    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
-    (rotation hL₀).maslovIndex = finrank ℂ E := by
-  -- The frame `t ↦ e^{iπt} • id` has determinant `e^{iπnt}`.
+theorem maslovIndex_rotationZPow {L₀ : Submodule ℝ E}
+    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) (k : ℤ) :
+    (rotationZPow hL₀ k).maslovIndex = k * finrank ℂ E := by
+  -- The frame `t ↦ e^{iπkt} • id` has determinant `e^{iπknt}`.
   let A (t : I) : E ≃ₗ[ℂ] E := LinearEquiv.smulOfNeZero ℂ E
-    (Complex.exp ((π * t : ℝ) * Complex.I)) (Complex.exp_ne_zero _)
+    (Complex.exp ((π * k * t : ℝ) * Complex.I)) (Complex.exp_ne_zero _)
   have hA (t : I) :
-      (A t : E →ₗ[ℂ] E) = Complex.exp ((π * t : ℝ) * Complex.I) • LinearMap.id := by
+      (A t : E →ₗ[ℂ] E) = Complex.exp ((π * k * t : ℝ) * Complex.I) • LinearMap.id := by
     ext x
     simp [A]
-  have key := (rotation hL₀).sub_eq_maslovIndex_mul_pi hL₀ A
+  have key := (rotationZPow hL₀ k).sub_eq_maslovIndex_mul_pi A
     (fun t => by
-      have hlsmul : LinearMap.lsmul ℂ E (Complex.exp ((π * t : ℝ) * Complex.I)) =
-          Complex.exp ((π * t : ℝ) * Complex.I) • LinearMap.id := by
+      have hlsmul : LinearMap.lsmul ℂ E (Complex.exp ((π * k * t : ℝ) * Complex.I)) =
+          Complex.exp ((π * k * t : ℝ) * Complex.I) • LinearMap.id := by
         ext x
         simp
-      rw [rotation_apply, hA, hlsmul])
-    (φ := fun t => finrank ℂ E * (π * t)) (by fun_prop) (fun t => by
+      rw [rotationZPow_apply, hA, hlsmul])
+    (φ := fun t => finrank ℂ E * (π * k * t)) (by fun_prop) (fun t => by
       rw [hA, LinearMap.det_smul, LinearMap.det_id, mul_one, norm_pow,
         Complex.norm_exp_ofReal_mul_I]
       simp [← Complex.exp_nat_mul]
       ring_nf)
   have hπ : (π : ℝ) ≠ 0 := Real.pi_ne_zero
   simp only [Set.Icc.coe_one, Set.Icc.coe_zero, mul_one, mul_zero, sub_zero] at key
-  exact_mod_cast (mul_right_cancel₀ hπ key).symm
+  have key' : ((k * finrank ℂ E : ℤ) : ℝ) * π = (rotationZPow hL₀ k).maslovIndex * π := by
+    push_cast
+    linarith
+  exact_mod_cast (mul_right_cancel₀ hπ key').symm
+
+/-- **Normalization of the Maslov index.** The half-turn `t ↦ e^{iπt} L₀` of a maximal totally
+real subspace of an `n`-dimensional complex space has Maslov index `n`. -/
+@[simp]
+theorem maslovIndex_rotation {L₀ : Submodule ℝ E}
+    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
+    (rotation hL₀).maslovIndex = finrank ℂ E := by
+  simpa only [rotationZPow_one, Int.cast_one, one_mul] using maslovIndex_rotationZPow hL₀ 1
+
+/-- **Reversing a loop negates its Maslov index**: traversing the boundary the other way turns the
+loop of Maslov phases around. -/
+@[simp]
+theorem maslovIndex_symm : Λ.symm.maslovIndex = -Λ.maslovIndex := by
+  rw [Λ.symm.maslovIndex_eq_degree (Λ.isMaximalTotallyReal 0) Λ.maslovPhasePath.symm fun t => ?_,
+    Circle.degree_symm, maslovIndex]
+  rw [Path.symm_apply, Function.comp_apply, maslovPhasePath_apply]
+  exact (Λ.isMaximalTotallyReal 0).maslovPhase_congr _ _ (symm_apply Λ t).symm
 
 end TotallyRealLoop
 

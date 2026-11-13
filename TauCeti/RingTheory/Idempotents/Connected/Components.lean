@@ -45,8 +45,7 @@ constructs a `Fintype` internally for the finite sum.
 * J. S. Milne, *Algebraic Groups* (2017), Section 2.a.
 
 This supplies the idempotent decomposition needed for the identity component and component group
-in Layer 3 of the ReductiveGroups roadmap; it does not itself assert compatibility with base
-change.
+of an affine group scheme; it does not itself assert compatibility with base change.
 -/
 
 public section
@@ -126,6 +125,16 @@ theorem mem_basicOpen_connectedComponentsIdempotent
       (x : ConnectedComponents (PrimeSpectrum R)) = C := by
   rw [← SetLike.mem_coe, basicOpen_connectedComponentsIdempotent]
   simp only [Set.mem_preimage, Set.mem_singleton_iff]
+
+/-- The idempotent selecting a connected component is nonzero, because the component is nonempty
+and the idempotent does not vanish at any of its points. -/
+@[simp]
+theorem connectedComponentsIdempotent_ne_zero (C : ConnectedComponents (PrimeSpectrum R)) :
+    connectedComponentsIdempotent C ≠ 0 := by
+  obtain ⟨x, hx⟩ := ConnectedComponents.surjective_coe C
+  intro h0
+  have hmem := (mem_basicOpen_connectedComponentsIdempotent C x).mpr hx
+  simp [h0] at hmem
 
 /-- Distinct connected components have orthogonal component-indexed idempotents. -/
 theorem connectedComponentsIdempotent_mul_eq_zero

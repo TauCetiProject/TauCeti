@@ -86,6 +86,24 @@ theorem cylindricalEndLift_inf_eq (z : ℂ) :
   rw [cylindricalEndLift_inf, coordInv_inf]
   simp only [neg_mul, Complex.exp_neg, div_eq_mul_inv]
 
+/-- The end lifts at `0` and at `∞` are both centred at `0`, so they differ by a translation of the
+cylinder: the end lift at `0` is the end lift at `∞` shifted by `log 4 / (2π)`. -/
+theorem cylindricalEndLift_zero_eq_inf_add (z : ℂ) :
+    zero.cylindricalEndLift z =
+      inf.cylindricalEndLift (z + (Real.log 4 / (2 * Real.pi) : ℝ)) := by
+  -- The shift contributes the factor `exp (-log 4) = 1 / 4`.
+  have h4 :
+      Complex.exp (-(2 * (Real.pi : ℂ)) * ((Real.log 4 / (2 * Real.pi) : ℝ) : ℂ)) = 1 / 4 := by
+    have hr : -(2 * (Real.pi : ℂ)) * ((Real.log 4 / (2 * Real.pi) : ℝ) : ℂ) =
+        ((-Real.log 4 : ℝ) : ℂ) := by
+      push_cast
+      field_simp
+    rw [hr, ← Complex.ofReal_exp, Real.exp_neg, Real.exp_log (by norm_num)]
+    norm_num
+  simp only [cylindricalEndLift_zero, cylindricalEndLift_inf]
+  rw [mul_add, Complex.exp_add, h4]
+  ring
+
 /-- On real angular lifts, the two finite cylindrical ends have their holomorphic lift. -/
 theorem coe_cylindricalEnd_apply_mk (q : Puncture) (hq : q ≠ inf)
     (s : Ioi (0 : ℝ)) (t : ℝ) :

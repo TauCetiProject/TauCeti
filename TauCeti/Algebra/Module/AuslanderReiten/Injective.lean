@@ -34,7 +34,7 @@ namespace TauCeti.IsMinimalProjectivePresentation
 
 variable {k A P₀ P₁ M : Type*} [Field k] [Ring A] [Algebra k A]
   [FiniteDimensional k A]
-  [AddCommGroup P₀] [Module A P₀] [Module.Finite A P₀]
+  [AddCommGroup P₀] [Module A P₀]
   [AddCommGroup P₁] [Module A P₁] [Module.Finite A P₁]
   [AddCommGroup M] [Module A M]
   {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}

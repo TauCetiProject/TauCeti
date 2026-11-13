@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
-public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.FiniteSpectrum
+public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Eigenvector
 public import TauCeti.Analysis.InnerProductSpace.Modulus
+public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
@@ -37,12 +38,18 @@ this order makes `E →L[𝕜] E` a star-ordered ring. At `𝕜 = ℂ` all of th
 on the complex `C⋆`-algebra `E →L[ℂ] E`, and at `𝕜 = ℝ` it is supplied by
 `ContinuousLinearMap.instContinuousFunctionalCalculusRealIsSelfAdjoint`. Completeness of `E`,
 automatic in finite dimension, is assumed because Mathlib's adjoint on `E →L[𝕜] E` requires it.
+The exception is `LinearMap.toContinuousLinearMap_operatorAbs_eq_modulus`, which omits the
+real-algebra, functional-calculus and star-ordered-ring instances and needs only completeness of
+both `E` and `F`.
 
 ## Main results
 
 * `ContinuousLinearMap.cfc_apply_of_apply_eq_smul`: if `T x = μ x`, then `f(T) x = f(μ) x`.
 * `LinearMap.IsSymmetric.toContinuousLinearMap_cfc`: the finite spectral calculus `f(T)` is the
   continuous functional calculus `cfc f T`.
+* `ContinuousLinearMap.cfc_indicator_eq_starProjection`: the spectral projector
+  `cfc (Ω.indicator 1) T` of a self-adjoint `T` is the orthogonal projection onto the point-spectral
+  subspace `Module.End.pointSpectralSubspace T Ω`.
 * `LinearMap.IsPositive.toContinuousLinearMap_sqrt`: the finite positive square root is
   `CFC.sqrt`.
 * `LinearMap.toContinuousLinearMap_operatorAbs`: the finite modulus of a rectangular map `A` is
@@ -74,7 +81,8 @@ theorem cfc_apply_of_apply_eq_smul (f : ℝ → ℝ) {T : E →L[𝕜] E} {x : E
     rw [ContinuousLinearMap.smul_def, IsScalarTower.algebraMap_apply ℝ 𝕜 (E →L[𝕜] E),
       algebraMap_apply, RCLike.algebraMap_eq_ofReal]
   rw [← ContinuousLinearMap.smul_def, ← halg] at hx ⊢
-  exact TauCeti.cfc_smul_of_smul_eq_algebraMap_smul f (T.finite_spectrum ℝ) hx hT
+  exact TauCeti.cfc_smul_of_smul_eq_algebraMap_smul f hx ((T.finite_spectrum ℝ).continuousOn _)
+    hT
 
 end ContinuousLinearMap
 
@@ -124,13 +132,41 @@ theorem toContinuousLinearMap_operatorAbs_eq_cfcAbs (A : E →ₗ[𝕜] E) :
   rw [toContinuousLinearMap_operatorAbs, CFC.abs, ContinuousLinearMap.star_eq_adjoint,
     ← adjoint_toContinuousLinearMap, ContinuousLinearMap.mul_def]
 
+omit [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+  [ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint] [StarOrderedRing (E →L[𝕜] E)] in
 /-- **Agreement of the finite and bounded moduli.** For a linear map between
 finite-dimensional real or complex inner product spaces, the finite spectral modulus is the
 bounded-operator modulus after converting the maps to continuous linear maps. -/
 theorem toContinuousLinearMap_operatorAbs_eq_modulus [CompleteSpace F]
     (A : E →ₗ[𝕜] F) :
     toContinuousLinearMap A.operatorAbs = (toContinuousLinearMap A).modulus := by
-  simp only [toContinuousLinearMap_operatorAbs, ContinuousLinearMap.modulus_eq_sqrt,
-    adjoint_toContinuousLinearMap]
+  refine ContinuousLinearMap.eq_modulus_iff.2
+    ⟨(LinearMap.isPositive_toContinuousLinearMap_iff _).mpr A.isPositive_operatorAbs, ?_⟩
+  ext x
+  have h := congr($(A.operatorAbs_sq) x)
+  rw [LinearMap.comp_apply, LinearMap.comp_apply] at h
+  simpa [← adjoint_toContinuousLinearMap] using h
 
 end LinearMap
+
+namespace ContinuousLinearMap
+
+variable [CompleteSpace E] [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+  [ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint]
+
+/-- **The spectral projector is an orthogonal projection.** For a self-adjoint operator `T` on a
+finite-dimensional space and a set `Ω ⊆ ℝ`, `cfc (Ω.indicator 1) T` is the orthogonal projection
+onto the sum of the eigenspaces of `T` at the eigenvalues in `Ω`. -/
+theorem cfc_indicator_eq_starProjection (Ω : Set ℝ) {T : E →L[𝕜] E} (hT : IsSelfAdjoint T) :
+    cfc (Ω.indicator 1) T =
+      (Module.End.pointSpectralSubspace (T : E →ₗ[𝕜] E) Ω).starProjection := by
+  have hs : (T : E →ₗ[𝕜] E).IsSymmetric := isSelfAdjoint_iff_isSymmetric.mp hT
+  have h := hs.toContinuousLinearMap_cfc (Ω.indicator 1)
+  have hT' : LinearMap.toContinuousLinearMap (T : E →ₗ[𝕜] E) = T := by
+    ext
+    simp
+  rw [← hs.coe_starProjection_pointSpectralSubspace, hT'] at h
+  ext v
+  simpa using congr($h v).symm
+
+end ContinuousLinearMap

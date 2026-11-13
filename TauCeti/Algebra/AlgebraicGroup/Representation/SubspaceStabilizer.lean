@@ -68,10 +68,10 @@ theorem baseChange_definingSubspace (I : HopfIdeal k H) (V : Subcomodule k H H)
   rw [definingSubspace]
   exact (LinearMap.ker_baseChange_of_flat A _).symm
 
-/-- Over a free coordinate Hopf algebra, a finitely generated Hopf ideal has generators in
+/-- Over a projective coordinate Hopf algebra, a finitely generated Hopf ideal has generators in
 one finite regular subcomodule. The generator property lets the same subcomodule be used in
 the stabilizer characterizations at any value-algebra universe. -/
-theorem exists_finite_subcomodule_generating [Module.Free k H]
+theorem exists_finite_subcomodule_generating [Module.Projective k H]
     (I : HopfIdeal k H) (hI : I.toIdeal.FG) :
     ∃ V : Subcomodule k H H, Module.Finite k V.toSubmodule ∧
       I.toIdeal ≤ Ideal.span ((V : Set H) ∩ (I : Set H)) := by

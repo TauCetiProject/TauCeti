@@ -60,7 +60,7 @@ noncomputable section
 
 namespace TauCeti
 
-open ContinuousLinearMap MeasureTheory
+open ContinuousLinearMap _root_.MeasureTheory
 open scoped Convolution ENNReal
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]

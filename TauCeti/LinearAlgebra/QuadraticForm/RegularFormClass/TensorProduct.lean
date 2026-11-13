@@ -306,14 +306,18 @@ theorem presentedFormOneIsometryEquiv_apply
     presentedFormOneIsometryEquiv x =
       x (Fin.cast RegularFormPresentation.fst_one.symm 0) := (rfl)
 
+omit [Invertible (2 : K)] in
 /-- Tensoring a presentation on the right with the rank-one presentation preserves its form up
 to isometry. -/
 theorem presentedForm_tmul_one (p : RegularFormPresentation K) :
     (presentedForm (p.tmul (RegularFormPresentation.one (K := K)))).Equivalent
-      (presentedForm p) :=
-  (equivalent_presentedForm_tmul p RegularFormPresentation.one).trans
-    ((((QuadraticMap.Equivalent.refl _).tmul ⟨presentedFormOneIsometryEquiv⟩).trans
-      ⟨QuadraticForm.tensorRId (presentedForm p)⟩))
+      (presentedForm p) := by
+  rw [presentedForm_eq_weightedSumSquares, presentedForm_eq_weightedSumSquares]
+  refine QuadraticForm.equivalent_weightedSumSquares_of_comp_eq (finCongr (mul_one p.1)) ?_
+  funext i
+  simp only [RegularFormPresentation.one, RegularFormPresentation.tmul, finProdFinEquiv,
+    Equiv.symm_mk, Equiv.coe_fn_mk, mul_one]
+  exact congrArg p.2 (Fin.ext (by simp [Fin.divNat]; rfl))
 
 /-- Tensor product of isometry classes. -/
 instance : Mul (RegularFormClass K) :=

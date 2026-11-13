@@ -329,22 +329,26 @@ theorem sum_sign_univ {p f : Polynomial R} {cs : List (Polynomial R)}
 
 
 /-- Sturm–Tarski for Mathlib's sequence on `(a, ∞)`, even when `a` is a root. -/
-theorem sum_sign_sturmSeq_Ioi {p : R[X]} (hp : p ≠ 0) (f : R[X]) (a : R) :
+theorem sum_sign_sturmSeq_Ioi (p f : R[X]) (a : R) :
     (signVariationsRight (sturmSeq p (f * p.derivative)) a : ℤ) -
         signVariationsAtTop (sturmSeq p (f * p.derivative)) =
       ∑ r ∈ p.roots.toFinset.filter (a < ·), (SignType.sign (f.eval r) : ℤ) := by
   classical
+  by_cases hp : p = 0
+  · simp [hp]
   have hsigned := IsSignedRemainderSeq.sturmSeq p (f * p.derivative)
   have hseed := (IsTarskiSeed.mul_derivative p f).sturmSeq
   rw [sturmSeq_cons hp] at hsigned hseed ⊢
   exact sum_sign_Ioi hsigned hseed a
 
 /-- Sturm–Tarski for Mathlib's sequence on `(-∞, b)`, even when `b` is a root. -/
-theorem sum_sign_sturmSeq_Iio {p : R[X]} (hp : p ≠ 0) (f : R[X]) (b : R) :
+theorem sum_sign_sturmSeq_Iio (p f : R[X]) (b : R) :
     (signVariationsAtBot (sturmSeq p (f * p.derivative)) : ℤ) -
         signVariationsLeft (sturmSeq p (f * p.derivative)) b =
       ∑ r ∈ p.roots.toFinset.filter (· < b), (SignType.sign (f.eval r) : ℤ) := by
   classical
+  by_cases hp : p = 0
+  · simp [hp]
   have hsigned := IsSignedRemainderSeq.sturmSeq p (f * p.derivative)
   have hseed := (IsTarskiSeed.mul_derivative p f).sturmSeq
   rw [sturmSeq_cons hp] at hsigned hseed ⊢
@@ -364,20 +368,20 @@ theorem sum_sign_sturmSeq_univ (p f : R[X]) :
   exact sum_sign_univ hsigned hseed
 
 /-- Sturm counting of distinct roots in `(a, ∞)`, with no restriction on the endpoint. -/
-theorem card_roots_toFinset_Ioi {p : R[X]} (hp : p ≠ 0) (a : R) :
+theorem card_roots_toFinset_Ioi (p : R[X]) (a : R) :
     (signVariationsRight (sturmSeq p p.derivative) a : ℤ) -
         signVariationsAtTop (sturmSeq p p.derivative) =
       (p.roots.toFinset.filter (a < ·)).card := by
   classical
-  simpa using sum_sign_sturmSeq_Ioi hp 1 a
+  simpa using sum_sign_sturmSeq_Ioi p 1 a
 
 /-- Sturm counting of distinct roots in `(-∞, b)`, with no restriction on the endpoint. -/
-theorem card_roots_toFinset_Iio {p : R[X]} (hp : p ≠ 0) (b : R) :
+theorem card_roots_toFinset_Iio (p : R[X]) (b : R) :
     (signVariationsAtBot (sturmSeq p p.derivative) : ℤ) -
         signVariationsLeft (sturmSeq p p.derivative) b =
       (p.roots.toFinset.filter (· < b)).card := by
   classical
-  simpa using sum_sign_sturmSeq_Iio hp 1 b
+  simpa using sum_sign_sturmSeq_Iio p 1 b
 
 /-- Classical Sturm counting of all distinct roots of a nonzero polynomial. For `p = 0` both
 sides are zero: `sturmSeq 0 _ = []` and `Polynomial.roots 0 = 0` by convention. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.NumberField.Ideal.RootsOfUnity
+import TauCeti.FieldTheory.Finite.RootsOfUnity
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
@@ -37,10 +38,15 @@ object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
   root of unity `ζ` of `𝓞 K`.
 * `Ideal.powerResidueSymbol_pow_div`: `((x / P)_n) ^ (n / d) = (x / P)_d` for `d ∣ n`.
 * `Ideal.orderOf_powerResidueSymbol`: the symbol has order `n`.
+* `Ideal.powerResidueSymbol_pow_eq_self`: the `q`-th power of the symbol is itself when
+  `n ∣ q - 1`.
 * `Ideal.powerResidueSymbol_intCast_eq_one`: `(m / P)_n = 1` for an integer `m` prime to the
   rational prime `q ∈ P` when `n (q - 1) ∣ N P - 1`.
 * `Ideal.map_powerResidueSymbol`: Galois equivariance, `σ ((α / P)_n) = (σ α / σ P)_n` for a ring
   isomorphism `σ : 𝓞 K ≃+* 𝓞 L`.
+* `Ideal.powerResidueSymbol_ringHomComp_eq_pow`: read in an extension `L` with a prime `𝔓` over
+  `P`, the symbol is the power `ω ^ ((N P - 1) / n)` of any multiplicative character `ω` lifting
+  the map of residue fields, such as the Teichmüller character.
 
 ## References
 
@@ -146,13 +152,14 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
   have hN : absNorm P - 1 ≠ 0 := by
     rw [absNorm_eq_natCard, ← Nat.card_units]
     exact Nat.card_pos.ne'
-  -- The symbol takes a primitive `n`-th root of unity as value at a generator of `(𝓞 K ⧸ P)ˣ`.
-  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := (𝓞 K ⧸ P)ˣ)
-  have hg' : IsPrimitiveRoot g (absNorm P - 1) := by
-    rw [absNorm_eq_natCard, ← Nat.card_units, ← orderOf_eq_card_of_forall_mem_zpowers hg]
-    exact IsPrimitiveRoot.orderOf g
+  -- The symbol takes a primitive `n`-th root of unity as value at a primitive `(N P - 1)`-st root
+  -- of unity `g` of the residue field.
+  obtain ⟨g, hg⟩ := TauCeti.exists_isPrimitiveRoot_of_dvd_natCard_sub_one (F := 𝓞 K ⧸ P)
+    (d := absNorm P - 1) (by rw [absNorm_eq_natCard])
+  lift g to (𝓞 K ⧸ P)ˣ using hg.isUnit hN
+  rw [IsPrimitiveRoot.coe_units_iff] at hg
   have hξ : IsPrimitiveRoot (powerResidueSymbol P n g) n := by
-    have h := hg'.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hdvd |>.mpr ⟨hN, NeZero.ne n⟩)
+    have h := hg.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hdvd |>.mpr ⟨hN, NeZero.ne n⟩)
       (Nat.div_dvd_of_dvd hdvd)
     rw [Nat.div_div_self hdvd hN] at h
     rw [powerResidueSymbol_coe_unit hP, IsPrimitiveRoot.coe_units_iff,
@@ -169,6 +176,17 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
 @[simp]
 theorem powerResidueSymbol_one : powerResidueSymbol P 1 = 1 :=
   orderOf_eq_one_iff.mp (orderOf_powerResidueSymbol (Nat.coprime_one_right _))
+
+/-- The `q`-th power of the power residue symbol of `P` is itself when `q` is positive and `n`
+divides `q - 1`. No condition on `N P` is needed, as the symbol is trivial when `N P` is not prime
+to `n`. -/
+theorem powerResidueSymbol_pow_eq_self {q : ℕ} (hnq : n ∣ q - 1) (hq : 0 < q) :
+    powerResidueSymbol P n ^ q = powerResidueSymbol P n := by
+  by_cases hP : (absNorm P).Coprime n
+  · have h0 : powerResidueSymbol P n ^ n = 1 := by
+      simpa [orderOf_powerResidueSymbol hP] using pow_orderOf_eq_one (powerResidueSymbol P n)
+    simpa only [pow_one] using (pow_eq_pow_of_modEq ((Nat.modEq_iff_dvd' hq).2 hnq) h0).symm
+  · rw [powerResidueSymbol_of_not_coprime hP, one_pow]
 
 /-- **Rational integers at a prime of large residue degree.** Let `q` be a rational prime in `P`
 with `n (q - 1) ∣ N P - 1`. Then `(m / P)_n = 1` for every integer `m` prime to `q`, since
@@ -234,5 +252,34 @@ example (σ : 𝓞 K ≃+* 𝓞 K) (hP : (absNorm P).Coprime n) {ζ : 𝓞 K} (h
   refine ⟨by rw [powerResidueSymbol_mk_of_pow_eq_one hP hζ, map_pow, hσ, ← pow_mul], ?_⟩
   rw [hσ, powerResidueSymbol_mk_of_pow_eq_one (by rwa [absNorm_map_of_ringEquiv]) hζk,
     absNorm_map_of_ringEquiv, ← pow_mul]
+
+section Extension
+
+variable {L : Type*} [Field L] [NumberField L] [Algebra K L]
+
+/-- **The power residue symbol through a multiplicative lift at a prime above.** Let `𝔓` be a
+maximal ideal of `𝓞 L` over `P`, and let `ω` be a multiplicative
+character of `𝓞 K ⧸ P` with values in `𝓞 L` lifting the residue map `𝓞 K ⧸ P → 𝓞 L ⧸ 𝔓`, such
+as the Teichmüller character (`Ideal.exists_mulChar_mk_eq`). If `N P` is prime to `n`, then the
+`n`-th power residue symbol at `P`, read in `𝓞 L`, is `ω ^ ((N P - 1) / n)`. -/
+theorem powerResidueSymbol_ringHomComp_eq_pow (P : Ideal (𝓞 K)) [P.IsMaximal]
+    (𝔓 : Ideal (𝓞 L)) [𝔓.IsMaximal] [𝔓.LiesOver P] (hP : (absNorm P).Coprime n)
+    {ω : MulChar (𝓞 K ⧸ P) (𝓞 L)}
+    (hω : ∀ x, Ideal.Quotient.mk 𝔓 (ω x) = algebraMap (𝓞 K ⧸ P) (𝓞 L ⧸ 𝔓) x) :
+    (powerResidueSymbol P n).ringHomComp (algebraMap (𝓞 K) (𝓞 L)) = ω ^ ((absNorm P - 1) / n) := by
+  let _ := Ideal.Quotient.field P
+  refine MulChar.ext fun u ↦ ?_
+  have hk : (absNorm P - 1) / n * n = absNorm P - 1 := Nat.div_mul_cancel (dvd_absNorm_sub_one hP)
+  -- Both sides are `n`-th roots of unity of `𝓞 L` congruent to `u ^ ((N P - 1) / n)` modulo `𝔓`.
+  have h𝔓 : (absNorm 𝔓).Coprime n := absNorm_pow_inertiaDeg P 𝔓 ▸ hP.pow_left _
+  refine eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' h𝔓 ?_ ?_ ?_
+  · rw [MulChar.ringHomComp_apply, ← map_pow, powerResidueSymbol_pow_eq_one hP u.ne_zero, map_one]
+  · rw [MulChar.pow_apply_coe, ← pow_mul, hk, ← map_pow, ← Units.val_pow_eq_pow_val,
+      pow_absNorm_sub_one_eq_one, Units.val_one, MulChar.map_one]
+  · rw [MulChar.ringHomComp_apply, MulChar.pow_apply_coe, map_pow, hω,
+      ← Quotient.algebraMap_mk_of_liesOver (P := 𝔓) (p := P), mk_powerResidueSymbol hP u.ne_zero,
+      map_pow]
+
+end Extension
 
 end Ideal

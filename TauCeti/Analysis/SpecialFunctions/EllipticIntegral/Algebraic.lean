@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
-import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric
+import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Basic
 
 /-!
 # The algebraic form of Legendre's elliptic integrals

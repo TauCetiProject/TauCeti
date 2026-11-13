@@ -30,9 +30,19 @@ The table is closed under negation, and it carries an alternating sign, normaliz
 negative. The sign supplies the entries of the invariant alternating form of the minuscule
 carrier.
 
+Twice the inverse Cartan matrix defines an integral quadratic form on the weight lattice.
+The table is exactly the set of weights with quadratic value `3` under this form.
+
 ## Main declarations
 
 * `TauCeti.DynkinType.e7MinusculeWeight`: the fifty-six weights in fundamental coordinates.
+* `TauCeti.DynkinType.e7TwiceInverse`: the integral twice-inverse Cartan matrix.
+* `TauCeti.DynkinType.cartanMatrix_E7_mul_e7TwiceInverse`: its product with the Cartan matrix
+  is twice the identity.
+* `TauCeti.DynkinType.mem_range_e7MinusculeWeight_of_quadratic_eq_three`: weights with
+  quadratic value `3` belong to the table.
+* `TauCeti.DynkinType.odd_e7MinusculeWeight_add_add`: every weight pairs oddly with the sum of
+  the simple coroots at the Bourbaki nodes `2`, `5` and `7`.
 * `TauCeti.DynkinType.e7MinusculeReflection`: the permutation induced by a simple reflection.
 * `TauCeti.DynkinType.e7MinusculeWeight_reflection`: the simple-reflection equation.
 * `TauCeti.DynkinType.exists_e7MinusculeWeight_apply_eq_neg_one_iff_ne_zero`: the highest weight
@@ -102,6 +112,70 @@ def e7MinusculeWeight : Fin 56 → Fin 7 → ℤ := ![
   ![0, 0, 0, -1, 1, 0, 0], ![0, 0, 0, 0, -1, 1, 0],
   ![0, 0, 0, 0, 0, -1, 1], ![0, 0, 0, 0, 0, 0, -1]]
 
+/-- Twice the inverse of the type-`E₇` Cartan matrix in Bourbaki node order (Plate VI).
+Its integral entries allow finite checks of the weight-lattice quadratic form. -/
+def e7TwiceInverse : Matrix (Fin 7) (Fin 7) ℤ := !![
+  4, 4, 6, 8, 6, 4, 2;
+  4, 7, 8, 12, 9, 6, 3;
+  6, 8, 12, 16, 12, 8, 4;
+  8, 12, 16, 24, 18, 12, 6;
+  6, 9, 12, 18, 15, 10, 5;
+  4, 6, 8, 12, 10, 8, 4;
+  2, 3, 4, 6, 5, 4, 3]
+
+/-- The E₇ Cartan matrix times its integral twice-inverse is twice the identity. -/
+theorem cartanMatrix_E7_mul_e7TwiceInverse : CartanMatrix.E 7 * e7TwiceInverse = 2 := by
+  rw [CartanMatrix.E_seven_eq]
+  decide
+
+private theorem bounded_weights_exhaustion : ∀ w : Fin 7 → Fin 3,
+    (∑ i, (∑ j, e7TwiceInverse i j * ((w j : ℤ) - 1)) * ((w i : ℤ) - 1)) = 3 →
+      ∃ a, e7MinusculeWeight a = fun j ↦ (w j : ℤ) - 1 := by
+  unfold e7TwiceInverse
+  simp only [Fin.forall_fin_succ_pi, Fin.forall_fin_zero_pi]
+  decide +kernel
+
+/-- The quadratic form of twice the inverse Cartan matrix is positive semidefinite: it is the
+sum of the squares of the rows of its `LDLᵀ` decomposition. -/
+private theorem quadratic_e7TwiceInverse_nonneg (v : Fin 7 → ℤ) :
+    0 ≤ ∑ i, (∑ j, e7TwiceInverse i j * v j) * v i := by
+  simp only [e7TwiceInverse, Fin.sum_univ_seven, Matrix.of_apply, Matrix.cons_val]
+  nlinarith [sq_nonneg (2 * v 0 + 2 * v 1 + 3 * v 2 + 4 * v 3 + 3 * v 4 + 2 * v 5 + v 6),
+    sq_nonneg (3 * v 1 + 2 * v 2 + 4 * v 3 + 3 * v 4 + 2 * v 5 + v 6),
+    sq_nonneg (5 * v 2 + 4 * v 3 + 3 * v 4 + 2 * v 5 + v 6),
+    sq_nonneg (4 * v 3 + 3 * v 4 + 2 * v 5 + v 6),
+    sq_nonneg (3 * v 4 + 2 * v 5 + v 6), sq_nonneg (2 * v 5 + v 6), sq_nonneg (v 6)]
+
+/-- Reflecting `2 w` in the `i`-th coroot direction by `w i` lowers the quadratic form: the value
+at `2 w - w i * (i-th column of the Cartan matrix)` is `4 Q w - 4 (w i)²`. -/
+private theorem quadratic_e7TwiceInverse_reflect (w : Fin 7 → ℤ) (i : Fin 7) :
+    (∑ k, (∑ j, e7TwiceInverse k j * (2 * w j - w i * CartanMatrix.E 7 j i)) *
+        (2 * w k - w i * CartanMatrix.E 7 k i)) =
+      4 * (∑ k, (∑ j, e7TwiceInverse k j * w j) * w k) - 4 * w i ^ 2 := by
+  rw [CartanMatrix.E_seven_eq]
+  fin_cases i <;>
+    simp only [e7TwiceInverse, Fin.sum_univ_seven, Matrix.of_apply, Matrix.cons_val,
+      Fin.reduceFinMk, Fin.isValue] <;> ring
+
+/-- An integral weight with quadratic value `3` under twice the inverse Cartan matrix belongs to
+the minuscule table. -/
+theorem mem_range_e7MinusculeWeight_of_quadratic_eq_three (w : Fin 7 → ℤ)
+    (hn : (∑ i, (∑ j, e7TwiceInverse i j * w j) * w i) = 3) :
+    w ∈ Set.range e7MinusculeWeight := by
+  -- Positivity of the form at the reflected vector gives `(w i)² ≤ 3`, hence `w i ∈ [-1, 1]`.
+  have hw (i : Fin 7) : -1 ≤ w i ∧ w i ≤ 1 := by
+    have h := quadratic_e7TwiceInverse_nonneg (fun j ↦ 2 * w j - w i * CartanMatrix.E 7 j i)
+    rw [quadratic_e7TwiceInverse_reflect, hn] at h
+    constructor <;> nlinarith
+  let v : Fin 7 → Fin 3 := fun i ↦ ⟨(w i + 1).toNat, by have := hw i; omega⟩
+  have hv : (fun i ↦ (v i : ℤ) - 1) = w := by
+    funext i
+    have := hw i
+    simp only [v]
+    omega
+  obtain ⟨a, ha⟩ := bounded_weights_exhaustion v (by simpa only [← hv] using hn)
+  exact ⟨a, ha.trans hv⟩
+
 /-- The fifty-six minuscule weights are pairwise distinct. -/
 theorem e7MinusculeWeight_injective : Function.Injective e7MinusculeWeight := by
   decide +kernel +revert
@@ -116,6 +190,14 @@ theorem e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (a : Fin 56) (i 
     e7MinusculeWeight a i = -1 ∨ e7MinusculeWeight a i = 0 ∨
       e7MinusculeWeight a i = 1 := by
   fin_cases a <;> fin_cases i <;> decide
+
+/-- **Every `E₇` minuscule weight pairs oddly with the sum of the simple coroots at the Bourbaki
+nodes `2`, `5` and `7`** (zero-based indices `1`, `4` and `6`). These are the nodes at which `ϖ₇`
+has a half-integral coefficient in the simple-root basis, and the parity is constant along the
+Weyl orbit. -/
+theorem odd_e7MinusculeWeight_add_add (a : Fin 56) :
+    Odd (e7MinusculeWeight a 1 + e7MinusculeWeight a 4 + e7MinusculeWeight a 6) := by
+  fin_cases a <;> decide
 
 /-- The highest weight `ϖ₇`, at index `0`, is the only weight of the table with no simple-coroot
 coordinate equal to `-1`. -/

@@ -66,7 +66,7 @@ private theorem exists_rank_eq_two (δ : Kˣ) {s : ℤˣ} (hs : IsSquare (-δ) �
   refine ⟨Quotient.mk (regularFormSetoid K) ⟨2, ![a, a * δ]⟩, rank_mk _, ?_, ?_⟩
   · rw [discr_mk, Fin.prod_univ_two, squareClass_eq_iff_isSquare_mul]
     exact ⟨a * δ, by simp only [Matrix.cons_val_zero, Matrix.cons_val_one]; ac_rfl⟩
-  · rw [localHasse_mk_binary, hilbertSymbol_self_mul (Invertible.ne_zero (2 : K)), ha]
+  · rw [localHasse_mk_binary, hilbertSymbol_self_mul, ha]
 
 /-- Realization in rank three: every discriminant and every local Hasse invariant occur. The class
 is `y ⊥ ⟨c⟩`, where `-cδ` is a nonsquare and `y` is a binary class of discriminant `[cδ]`. -/
@@ -88,7 +88,7 @@ private theorem exists_rank_eq_three (δ : Kˣ) (s : ℤˣ) :
     exact ⟨c * δ, by ac_rfl⟩
   · rw [localHasse_add, hys, localHasse_mk_rankOne, hyd, discr_mk, Fin.prod_univ_one,
       hilbertSymbolOnSquareClasses_squareClass, hilbertSymbol_comm (c * δ),
-      hilbertSymbol_self_mul (Invertible.ne_zero (2 : K)), mul_one, mul_assoc,
+      hilbertSymbol_self_mul, mul_one, mul_assoc,
       Int.units_mul_self, mul_one]
 
 /-- Realization in every rank at least three: adding `⟨1⟩` changes neither the discriminant nor

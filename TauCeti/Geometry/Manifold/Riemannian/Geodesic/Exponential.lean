@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -38,10 +39,14 @@ defined for all time.
 * `TauCeti.Manifold.expDomain`: the natural domain of the exponential map at `p`.
 * `TauCeti.Manifold.riemannianExp`: the exponential map at `p`.
 * `TauCeti.Manifold.IsGeodesicallyCompleteAt`: every geodesic leaving `p` is defined for all time.
+* `TauCeti.Manifold.IsGeodesicallyCompleteAt.geodesicInterval_eq_univ`: at such a point every
+  maximal geodesic interval is the whole real line.
 * `TauCeti.Manifold.mem_geodesicInterval_iff_smul_mem_expDomain`: the maximal interval of `v` is
   the set of times `t` with `t • v` in the domain.
 * `TauCeti.Manifold.riemannianExp_smul`: `exp_p (t • v)` is the maximal geodesic at time `t`,
   on and off its natural interval (where both sides take the junk value).
+* `TauCeti.Manifold.mem_expDomain_of_norm_le_dist`: a vector with `‖v‖ ≤ dist p (exp_p v)` lies
+  in the domain, since off it `exp_p v` is the junk value `p`.
 * `TauCeti.Manifold.starConvex_expDomain`: the domain is star-shaped at `0`.
 * `TauCeti.Manifold.isOpen_setOfPred_mem_expDomain` and
   `TauCeti.Manifold.contMDiffOn_riemannianExp_tangentBundle`: on the tangent bundle, the domain of
@@ -57,6 +62,9 @@ defined for all time.
   is the identity.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_zero`: the exponential map is a local
   diffeomorphism at `0`.
+* `TauCeti.Manifold.continuousAt_norm_angular_riemannianExp_zero` and
+  `TauCeti.Manifold.contDiffOn_inner_angular_riemannianExp`: regularity of the differential of the
+  exponential map applied to a fixed tangent vector.
 * `TauCeti.Manifold.radialVariation_eq_maximalGeodesic`,
   `TauCeti.Manifold.contMDiffAt_radialVariation` and
   `TauCeti.Manifold.eventually_acceleration_radialVariation_eq_zero`: the radial variation
@@ -71,8 +79,6 @@ defined for all time.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §2, Prop. 2.9.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5, Prop. 5.19.
 -/
-
--- Roadmap: HopfRinow
 
 public section
 
@@ -135,6 +141,22 @@ variable [I.Boundaryless]
     (hv : v ∉ expDomain I M p) : riemannianExp I M p v = p :=
   maximalGeodesic_eq_of_not_mem (mt mem_expDomain_iff.2 hv)
 
+section Metric
+
+variable {M : Type*} [MetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- A tangent vector `v` with `‖v‖ ≤ dist p (exp_p v)` lies in the domain of `exp_p`: off the
+domain `exp_p v` is the junk value `p`, which forces `v = 0`. -/
+theorem mem_expDomain_of_norm_le_dist {p : M} {v : TangentSpace I p}
+    (hmin : ‖v‖ ≤ dist p (riemannianExp I M p v)) : v ∈ expDomain I M p := by
+  by_contra hv
+  rw [riemannianExp_of_notMem_expDomain hv, dist_self, norm_le_zero_iff] at hmin
+  exact hv (hmin ▸ zero_mem_expDomain p)
+
+end Metric
+
 /-! ### Homogeneity -/
 
 /-- **The domain of the exponential map along a ray.**  A time `t` lies in the maximal geodesic
@@ -166,13 +188,18 @@ theorem riemannianExp_smul [T2Space M]
         (mt mem_geodesicInterval_iff_smul_mem_expDomain.mpr ht),
       maximalGeodesic_eq_of_not_mem ht]
 
+omit [I.Boundaryless] in
 /-- The domain of the exponential map is star-shaped at the zero vector. -/
 theorem starConvex_expDomain (p : M) : StarConvex ℝ (0 : TangentSpace I p) (expDomain I M p) := by
   intro v hv a b _ hb hab
-  rw [smul_zero, zero_add, ← mem_geodesicInterval_iff_smul_mem_expDomain]
-  have hb1 : b ≤ 1 := by linarith
-  exact ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.1 hv)
-    ⟨hb, hb1⟩
+  rw [smul_zero, zero_add]
+  rcases eq_or_ne b 0 with rfl | hb0
+  · rw [zero_smul]
+    exact zero_mem_expDomain p
+  · rw [mem_expDomain_iff, mem_geodesicInterval_smul_iff hb0, mul_one]
+    have hv1 := mem_expDomain_iff.1 hv
+    exact ordConnected_geodesicInterval.out (zero_mem_geodesicInterval_of_mem hv1) hv1
+      ⟨hb, by linarith⟩
 
 /-! ### Regularity -/
 
@@ -483,6 +510,39 @@ theorem variationField_radialVariation
 
 end RadialVariation
 
+/-! ### Regularity of the differential along a fixed direction -/
+
+/-- The Riemannian norm of the differential of the exponential map, applied to a fixed tangent
+vector `w` and evaluated along the line `r ↦ r • v`, is continuous at the centre. The norm is the
+varying Riemannian tangent norm, rather than a fixed model-space norm. -/
+theorem continuousAt_norm_angular_riemannianExp_zero [T2Space M] (p : M)
+    (v w : TangentSpace I p) :
+    ContinuousAt (fun r : ℝ ↦
+      ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) w‖) 0 := by
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
+      (V := fun x : M ↦ TangentSpace I x)
+  have h := (contMDiffOn_riemannianExp (I := I) (M := M) p).continuousOn_norm_mfderiv
+    (by simp) (isOpen_expDomain p) w
+  have hz : (0 : TangentSpace I p) ∈ expDomain I M p := zero_mem_expDomain p
+  have h0 := h.continuousAt ((isOpen_expDomain p).mem_nhds hz)
+  have h0' : ContinuousAt (fun z : TangentSpace I p ↦
+      ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w‖)
+      ((fun r : ℝ ↦ r • v) 0) := by simpa only [zero_smul] using h0
+  exact h0'.comp (f := fun r : ℝ ↦ r • v) (x := 0)
+    ((continuous_id.smul continuous_const :
+    Continuous (fun r : ℝ ↦ r • v)).continuousAt)
+
+/-- The squared Riemannian length of the differential of the exponential map, applied to a fixed
+tangent vector `w`, is smooth on the exponential domain. -/
+theorem contDiffOn_inner_angular_riemannianExp [T2Space M] (p : M) (w : TangentSpace I p) :
+    ContDiffOn ℝ ∞ (fun z : TangentSpace I p ↦
+      inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w)
+        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w))
+      (expDomain I M p) :=
+  (contMDiffOn_riemannianExp p).contDiffOn_inner_mfderiv (by simp)
+    (isOpen_expDomain p) w w
+
 end Boundaryless
 
 /-! ### Completeness at a point -/
@@ -492,6 +552,13 @@ variable (I M) in
 `p` is defined for all time. -/
 def IsGeodesicallyCompleteAt (p : M) : Prop :=
   ∀ v : TangentSpace I p, geodesicInterval I M p v = univ
+
+/-- At a point where the manifold is geodesically complete, every maximal geodesic interval is
+the whole real line. -/
+theorem IsGeodesicallyCompleteAt.geodesicInterval_eq_univ {p : M}
+    (hp : IsGeodesicallyCompleteAt I M p) (v : TangentSpace I p) :
+    geodesicInterval I M p v = univ :=
+  hp v
 
 /-- **Completeness at a point via the exponential map.**  The exponential map at `p` is defined on
 all of `T_p M` exactly when every geodesic leaving `p` is defined for all time. -/

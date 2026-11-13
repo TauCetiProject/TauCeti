@@ -83,7 +83,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 
 -- The finiteness structure on the neighbourhoods under which the `D₄` algebras of
 -- `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.Basic` are stated.
-attribute [local instance] d4NeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Walks and their signs -/
 
@@ -321,19 +321,32 @@ private theorem signlessPreprojectiveD4FrobeniusFunctional_mk_ofPath
   rw [signlessPreprojectiveD4FrobeniusFunctional, LinearMap.comp_apply, LinearEquiv.coe_coe, h,
     Submodule.liftQ_apply, d4SocleFunctionalAux_ofPath]
 
+/-- The socle sign of the reversal of a list of vertices vanishes unless the list is a walk. -/
+private theorem signlessPreprojectiveD4SocleSign_reverse_of_not_isChain {l : List (Fin 4)}
+    (hl : ¬ l.IsChain zigzagD4Graph.Adj) : signlessPreprojectiveD4SocleSign l.reverse = 0 := by
+  by_cases hlen : l.length = 5
+  · match l, hlen with
+    | [a, b, c, d, e], _ =>
+      revert hl a b c d e
+      decide
+  · exact signlessPreprojectiveD4SocleSign_of_length_ne (by simpa using hlen)
+
 /-- The Frobenius functional takes the class of a walk to the socle sign of its vertices, read
 from the first vertex. -/
-theorem signlessPreprojectiveD4FrobeniusFunctional_signlessWord (l : List (Fin 4))
-    (hl : l.IsChain zigzagD4Graph.Adj) (hne : l ≠ []) :
+theorem signlessPreprojectiveD4FrobeniusFunctional_signlessWord (l : List (Fin 4)) :
     φ (W l) = signlessPreprojectiveD4SocleSign l.reverse := by
-  obtain ⟨i, r, rfl⟩ : ∃ i r, l = i :: r := by
-    cases l with
-    | nil => exact absurd rfl hne
-    | cons i r => exact ⟨i, r, rfl⟩
-  obtain ⟨a, p, hp, hv⟩ := exists_ofPath_eq_signlessWord k i r hl
-  rw [← hp, signlessPreprojectiveD4FrobeniusFunctional_mk_ofPath]
-  simp only [hv, List.map_map]
-  simp [Function.comp_def, vertexEquiv_symm_vertex]
+  by_cases hl : l.IsChain zigzagD4Graph.Adj
+  · obtain ⟨i, r, rfl⟩ | rfl : (∃ i r, l = i :: r) ∨ l = [] := by
+      cases l with
+      | nil => exact Or.inr rfl
+      | cons i r => exact Or.inl ⟨i, r, rfl⟩
+    · obtain ⟨a, p, hp, hv⟩ := exists_ofPath_eq_signlessWord k i r hl
+      rw [← hp, signlessPreprojectiveD4FrobeniusFunctional_mk_ofPath]
+      simp only [hv, List.map_map]
+      simp [Function.comp_def, vertexEquiv_symm_vertex]
+    · simp [signlessWord_nil, signlessPreprojectiveD4SocleSign]
+  · rw [signlessWord_eq_zero_of_not_isChain k hl, map_zero,
+      signlessPreprojectiveD4SocleSign_reverse_of_not_isChain hl, Int.cast_zero]
 
 /-! ### The basis walks and the Gram matrix -/
 
@@ -356,10 +369,6 @@ private def d4Gram (s t : List (Fin 4)) : ℤ :=
 
 private theorem isChain_of_mem_signlessPreprojectiveD4BasisWalks :
     ∀ t ∈ T, t ≠ [] ∧ t.IsChain zigzagD4Graph.Adj := by
-  decide
-
-private theorem isChain_append_of_mem_signlessPreprojectiveD4BasisWalks :
-    ∀ s ∈ T, ∀ t ∈ T, s.getLast? = t.head? → (s.dropLast ++ t).IsChain zigzagD4Graph.Adj := by
   decide
 
 /-- Every column of the Gram matrix has exactly one nonzero entry. -/
@@ -391,8 +400,6 @@ private theorem signlessPreprojectiveD4FrobeniusFunctional_mul {s t : List (Fin 
   by_cases h : s.getLast hs₀ = j
   · rw [ite_eq_left h, ite_eq_left (congrArg some h)]
     exact signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _
-      (isChain_append_of_mem_signlessPreprojectiveD4BasisWalks s hs _ ht
-        (by rw [hlast, h, List.head?_cons])) (by simp)
   · rw [ite_eq_right h, ite_eq_right (fun h' => h (Option.some.inj h')), map_zero, Int.cast_zero]
 
 /-- A combination of the rows of the Gram matrix which vanishes in every column is trivial. -/

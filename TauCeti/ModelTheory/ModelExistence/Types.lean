@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.BackAndForth.ExtensionPair
 public import TauCeti.ModelTheory.BackAndForth.Karp
 public import TauCeti.ModelTheory.Infinitary.Theory
 
@@ -44,6 +45,9 @@ analysing structures that realize countably many types.
   partial type exactly when no realized type contains it.
 * `TauCeti.infEquivAt_nat_iff_realizedTypes_zero_eq`: two structures satisfy the same
   `L_{ω₁ω}` sentences exactly when they realize the same complete types at arity `0`.
+* `TauCeti.SameAtomicType.infinitaryType_eq_of_isExtensionPair`: between relational structures
+  forming extension pairs in both directions, such as nonempty dense linear orders without
+  endpoints, tuples of the same atomic type have the same complete type.
 * `FirstOrder.Language.exists_isolatingFormula`: if a structure realizes countably many complete
   `n`-types, each realized type is isolated among them by a single formula.
 
@@ -188,5 +192,16 @@ theorem infEquivAt_nat_iff_realizedTypes_zero_eq :
   rw [infEquivAt_iff_forall_realize, realizedTypes_zero, realizedTypes_zero,
     Set.singleton_eq_singleton_iff, Set.ext_iff]
   simp only [mem_infinitaryType]
+
+/-- **Atomic types determine complete types along extension pairs.** In a relational language,
+when `M` and `N` form an extension pair in both directions, tuples of `M` and `N` with the same
+atomic type have the same complete `L_{ω₁ω}`-type: they are back-and-forth equivalent at every
+level, in particular at the quantifier rank of each formula. -/
+theorem SameAtomicType.infinitaryType_eq_of_isExtensionPair [L.IsRelational] {n : ℕ}
+    {a : Fin n → M} {b : Fin n → N} (h : SameAtomicType (L := L) a b)
+    (hMN : L.IsExtensionPair M N) (hNM : L.IsExtensionPair N M) :
+    infinitaryType (L := L) M a = infinitaryType N b := by
+  ext φ
+  exact (h.bfEquiv_of_isExtensionPair hMN hNM φ.qrank).realize_iff_of_qrank_le φ le_rfl _ _
 
 end TauCeti

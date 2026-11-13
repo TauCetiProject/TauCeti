@@ -46,13 +46,13 @@ open Filter Set Topology Function
 
 namespace TauCeti.ThricePuncturedSphere
 
-/-- **The thrice-punctured sphere has no nontrivial puncture-preserving automorphisms.** A map
-`f` that is holomorphic and injective on `ℂ ∖ {0, 1}`, maps it into itself, and tends to `0`
-at `0` and to `1` at `1`, is the identity on `ℂ ∖ {0, 1}`. -/
-theorem eqOn_id_of_injOn {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f {w | w ≠ 0 ∧ w ≠ 1})
-    (hmaps : MapsTo f {w | w ≠ 0 ∧ w ≠ 1} {w | w ≠ 0 ∧ w ≠ 1})
-    (hinj : InjOn f {w | w ≠ 0 ∧ w ≠ 1}) (h₀ : Tendsto f (𝓝[≠] 0) (𝓝 0))
-    (h₁ : Tendsto f (𝓝[≠] 1) (𝓝 1)) : EqOn f id {w | w ≠ 0 ∧ w ≠ 1} := by
+/-- A map holomorphic on `ℂ ∖ {0, 1}` that tends to `0` at `0` and to `1` at `1` agrees there with
+an entire function sending `0` to `0` and `1` to `1`: both punctures are removable. -/
+private lemma exists_differentiable_eqOn_of_tendsto {f : ℂ → ℂ}
+    (hf : DifferentiableOn ℂ f {w | w ≠ 0 ∧ w ≠ 1}) (h₀ : Tendsto f (𝓝[≠] 0) (𝓝 0))
+    (h₁ : Tendsto f (𝓝[≠] 1) (𝓝 1)) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ (∀ w, w ≠ 0 ∧ w ≠ 1 → g w = f w) ∧
+      (∀ w, ¬(w ≠ 0 ∧ w ≠ 1) → g w = w) ∧ g 0 = 0 ∧ g 1 = 1 := by
   set S : Set ℂ := {w | w ≠ 0 ∧ w ≠ 1}
   have hSo : IsOpen S := isOpen_ne.inter isOpen_ne
   -- Fill in the two finite punctures.
@@ -92,6 +92,17 @@ theorem eqOn_id_of_injOn {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f {w | w �
       exact hc (not_or.1 h)
     exacts [h₀.congr' ((hpunct 0 hc).mono fun w hw => (hgS w hw).symm),
       h₁.congr' ((hpunct 1 hc).mono fun w hw => (hgS w hw).symm)]
+  exact ⟨g, hd, hgS, hgc, hg0, hg1⟩
+
+/-- **The thrice-punctured sphere has no nontrivial puncture-preserving automorphisms.** A map
+`f` that is holomorphic and injective on `ℂ ∖ {0, 1}`, maps it into itself, and tends to `0`
+at `0` and to `1` at `1`, is the identity on `ℂ ∖ {0, 1}`. -/
+theorem eqOn_id_of_injOn {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f {w | w ≠ 0 ∧ w ≠ 1})
+    (hmaps : MapsTo f {w | w ≠ 0 ∧ w ≠ 1} {w | w ≠ 0 ∧ w ≠ 1})
+    (hinj : InjOn f {w | w ≠ 0 ∧ w ≠ 1}) (h₀ : Tendsto f (𝓝[≠] 0) (𝓝 0))
+    (h₁ : Tendsto f (𝓝[≠] 1) (𝓝 1)) : EqOn f id {w | w ≠ 0 ∧ w ≠ 1} := by
+  set S : Set ℂ := {w | w ≠ 0 ∧ w ≠ 1}
+  obtain ⟨g, hd, hgS, hgc, hg0, hg1⟩ := exists_differentiable_eqOn_of_tendsto hf h₀ h₁
   -- `g` maps `S` into `S` and fixes the punctures, so it is injective.
   have hgmem : ∀ w, g w ∈ S ↔ w ∈ S := fun w => by
     by_cases hw : w ∈ S

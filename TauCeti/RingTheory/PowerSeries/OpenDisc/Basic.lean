@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import Mathlib.Analysis.Normed.Ring.Finite
+import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Analysis.Normed.Field.NatCast
 
 /-!
@@ -61,7 +63,8 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
   `PowerSeries.OnOpenDisc.summable_coeff_mul_pow`: absolute summability at points inside the
   disc, and summability when the coefficient ring is complete.
 * `PowerSeries.OnOpenDisc.isRestricted`: a series on the open disc of radius `R₀` is restricted
-  at every radius `r` with `|r| < R₀`.
+  at every radius `r` with `|r| < R₀`; `PowerSeries.OnOpenDisc.isRestricted_max` is the form for
+  the larger of two radii below `R₀`, one of them nonnegative.
 * `PowerSeries.onOpenDisc_iff_of_tendsto`: the condition can be tested along radii tending
   to `R₀` from below.
 * `PowerSeries.onOpenDisc_iff_forall_hasGaussNorm`: the condition amounts to bounded weighted
@@ -76,6 +79,8 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
 * `PowerSeries.OnOpenDisc.hasseDeriv`, `PowerSeries.OnOpenDisc.derivative` and
   `PowerSeries.OnOpenDisc.map`: the condition is preserved by Hasse derivatives and bounded
   coefficient maps.
+* `PowerSeries.OnOpenDisc.rescale`: if `f(X)` lies on the open disc of radius `‖a‖ * R₀`, then
+  `f(aX)` lies on the open disc of radius `R₀`.
 * `PowerSeries.onOpenDisc_log`: over a normed field of characteristic zero, `log (1 + X)` lies on
   the open unit disc.
 
@@ -112,6 +117,12 @@ theorem OnOpenDisc.isRestricted (hf : f.OnOpenDisc R₀) {r : ℝ} (hr : |r| < R
   have hs : 0 < s := (abs_nonneg r).trans_lt hrs
   exact TauCeti.PowerSeries.isRestricted_of_abs_le (hf s hs hsR)
     (hrs.le.trans_eq (abs_of_pos hs).symm)
+
+/-- A series on the open disc of radius `R₀` is restricted at the larger of a nonnegative radius
+`s < R₀` and a radius `t < R₀`. -/
+theorem OnOpenDisc.isRestricted_max (hf : f.OnOpenDisc R₀) {s t : ℝ} (hs : 0 ≤ s)
+    (hsR : s < R₀) (htR : t < R₀) : f.IsRestricted (max s t) :=
+  hf.isRestricted (by rw [abs_of_nonneg (le_max_of_le_left hs)]; exact max_lt hsR htR)
 
 /-- Inside its open disc, the weighted coefficient norms of a power series are summable.
 No completeness or ultrametric hypothesis is needed. -/
@@ -268,8 +279,10 @@ theorem OnOpenDisc.hasseDeriv (hf : f.OnOpenDisc R₀) (k : ℕ) :
 that disc coefficientwise. -/
 theorem OnOpenDisc.map {S : Type*} [NormedRing S] (hf : f.OnOpenDisc R₀) (φ : R →+* S) {C : ℝ}
     (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) : (map φ f).OnOpenDisc R₀ :=
-  -- `PowerSeries.map φ` is `MvPowerSeries.map φ` in the single variable `Unit`.
-  fun r hr hrR ↦ (hf r hr hrR).map φ hφ
+  -- `PowerSeries.map φ` is `MvPowerSeries.map φ` in the single variable `Unit`, and
+  -- `MvPowerSeries.map φ f` is definitionally `fun t ↦ φ (coeff t f)`, the series that
+  -- `isRestricted_map` shows to be restricted.
+  fun r hr hrR ↦ MvPowerSeries.isRestricted_map _ φ hφ (hf r hr hrR)
 
 /-- The geometric series `∑ aⁿ Xⁿ` lies on the open disc of radius `‖a‖⁻¹`: at a radius
 `r < ‖a‖⁻¹`, its weighted coefficient norms are bounded by `(‖a‖ r)ⁿ` from `n = 1` on. -/
@@ -343,6 +356,18 @@ theorem OnOpenDisc.derivative (hf : f.OnOpenDisc R₀) : (d⁄dX f).OnOpenDisc R
   rw [← hasseDeriv_one_apply]
   exact hf.hasseDeriv 1
 
+/-- **Rescaling changes the radius of the disc.** If `f(X)` lies on the open disc of radius
+`‖a‖ * R₀`, then `f(aX)` lies on the open disc of radius `R₀`. For `a = 0` the series `f(0 · X)`
+is the constant `f(0)`, which lies on every open disc. -/
+theorem OnOpenDisc.rescale {a : R} (hf : f.OnOpenDisc (‖a‖ * R₀)) :
+    (rescale a f).OnOpenDisc R₀ := by
+  intro r hr hrR
+  rcases (norm_nonneg a).eq_or_lt with ha | ha
+  · obtain rfl : a = 0 := norm_eq_zero.mp ha.symm
+    rw [rescale_zero_apply]
+    exact onOpenDisc_C _ r hr hrR
+  · exact (hf.isRestricted (by rw [abs_of_pos (by positivity)]; gcongr)).rescale
+
 end NormedCommRing
 
 section NormedField
@@ -355,15 +380,35 @@ theorem norm_coeff_log_le (n : ℕ) : ‖coeff n (log K)‖ ≤ ‖(n : K)⁻¹�
   · simp
   · simp [coeff_log, hn, div_eq_mul_inv]
 
+omit [CharZero K] in
 /-- A series whose coefficient norms are bounded by the norms of inverse natural numbers
 lies on the open unit disc. -/
 theorem onOpenDisc_one_of_norm_coeff_le {f : K⟦X⟧}
     (h : ∀ n, ‖coeff n f‖ ≤ ‖(n : K)⁻¹‖) : f.OnOpenDisc 1 := by
-  refine onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
-  rw [isRestricted_iff']
-  exact squeeze_zero (fun n ↦ by positivity)
-    (fun n ↦ mul_le_mul_of_nonneg_right (h n) (pow_nonneg hr.le n))
-    (NormedField.tendsto_norm_inv_natCast_mul_pow K hr.le hr1)
+  obtain ⟨p, hp⟩ := CharP.exists K
+  rcases CharP.char_is_prime_or_zero K p with hprime | rfl
+  · -- In positive characteristic every nonzero natural number has norm `1`.
+    have : Fact p.Prime := ⟨hprime⟩
+    refine onOpenDisc_of_bddAbove_norm_coeff ⟨1, ?_⟩
+    rintro _ ⟨n, rfl⟩
+    refine (h n).trans ?_
+    rw [norm_inv]
+    by_cases hn : (n : K) = 0
+    · simp [hn]
+    · have hn' : (n : ZMod p) ≠ 0 := fun h0 ↦ hn (by
+        rw [← map_natCast (ZMod.castHom (dvd_refl p) K) n, h0, map_zero])
+      have hpow : (n : K) ^ (p - 1) = 1 := by
+        simpa using congrArg (ZMod.castHom (dvd_refl p) K) (ZMod.pow_card_sub_one_eq_one hn')
+      have hnorm : ‖(n : K)‖ = 1 :=
+        (isOfFinOrder_iff_pow_eq_one.mpr
+          ⟨p - 1, Nat.sub_pos_of_lt hprime.one_lt, hpow⟩).norm_eq_one
+      simp [hnorm]
+  · have : CharZero K := (CharP.charP_zero_iff_charZero K).mp hp
+    refine onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
+    rw [isRestricted_iff']
+    exact squeeze_zero (fun n ↦ by positivity)
+      (fun n ↦ mul_le_mul_of_nonneg_right (h n) (pow_nonneg hr.le n))
+      (NormedField.tendsto_norm_inv_natCast_mul_pow K hr.le hr1)
 
 /-- Over a normed field of characteristic zero, the logarithm series `log (1 + X)` lies on the
 open unit disc. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.GroupTheory.GroupAction.Basic
+import Mathlib.Data.Fin.VecNotation
 
 /-!
 # Vertex degrees and graph actions
@@ -24,15 +25,17 @@ set is finite, without requiring a finite vertex set.
 * `SimpleGraph.degree_eq_of_pretransitive`: a pretransitive graph action preserves degrees.
 * `SimpleGraph.exists_adj_adj_ne_of_three_le_degree`: a vertex of degree at least three has two
   distinct neighbours, both different from any given vertex.
+* `SimpleGraph.exists_injective_adj_ne_of_three_le_degree`: the same, as an injective
+  `Fin 2`-indexed family.
 -/
 
 public section
 
-namespace TauCeti
+namespace SimpleGraph
 
 /-- **Two distinct neighbours of `v` other than a given vertex `x`, from a degree of at least
 three.** -/
-theorem _root_.SimpleGraph.exists_adj_adj_ne_of_three_le_degree {V : Type*}
+theorem exists_adj_adj_ne_of_three_le_degree {V : Type*}
     {G : SimpleGraph V} {v : V} [Fintype (G.neighborSet v)] (hv : 3 ≤ G.degree v) (x : V) :
     ∃ a b, G.Adj v a ∧ G.Adj v b ∧ a ≠ b ∧ a ≠ x ∧ b ≠ x := by
   classical
@@ -44,8 +47,17 @@ theorem _root_.SimpleGraph.exists_adj_adj_ne_of_three_le_degree {V : Type*}
   rw [Finset.mem_erase, SimpleGraph.mem_neighborFinset] at ha hb
   exact ⟨a, b, ha.2, hb.2, hab, ha.1, hb.1⟩
 
+/-- **Two distinct neighbours of `v` other than a given vertex `x`, indexed by `Fin 2`, from a
+degree of at least three.** -/
+theorem _root_.SimpleGraph.exists_injective_adj_ne_of_three_le_degree {V : Type*}
+    {G : SimpleGraph V} {v : V} [Fintype (G.neighborSet v)] (hv : 3 ≤ G.degree v) (x : V) :
+    ∃ c : Fin 2 → V, Function.Injective c ∧ (∀ i, G.Adj v (c i)) ∧ ∀ i, c i ≠ x := by
+  obtain ⟨a, b, ha, hb, hab, hax, hbx⟩ := G.exists_adj_adj_ne_of_three_le_degree hv x
+  exact ⟨![a, b], Matrix.injective_pair_iff_ne.mpr hab,
+    by simpa [Fin.forall_fin_two] using ⟨ha, hb⟩, by simpa [Fin.forall_fin_two] using ⟨hax, hbx⟩⟩
+
 /-- A pretransitive action preserving adjacency gives equal degrees in a locally finite graph. -/
-theorem _root_.SimpleGraph.degree_eq_of_pretransitive
+theorem degree_eq_of_pretransitive
     {V : Type*} {G : SimpleGraph V} [G.LocallyFinite]
     {Γ : Type*} [Group Γ] [MulAction Γ V]
     [MulAction.IsPretransitive Γ V]
@@ -63,4 +75,4 @@ theorem _root_.SimpleGraph.degree_eq_of_pretransitive
           exact hact g h }
   exact (e.degree_eq i).symm
 
-end TauCeti
+end SimpleGraph

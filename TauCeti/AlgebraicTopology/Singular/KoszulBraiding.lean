@@ -25,7 +25,7 @@ chain-level form of the graded commutativity of the cup product.
 Both homotopies are transported from the simplicial statement
 `SSet.alexanderWhitneyKoszulBraidingHomotopy` along the comparison map
 `Sing (X × Y) ⟶ Sing X × Sing Y`, which commutes with the swaps
-(`CategoryTheory.CartesianMonoidalCategory.map_braiding_hom_comp_prodComparison`).
+(`CategoryTheory.Functor.map_braiding_hom_comp_prodComparison`).
 
 Since the shuffle map is a homotopy inverse of the Alexander–Whitney map (the Eilenberg–Zilber
 theorem), the Koszul braiding followed by the shuffle map of `Y × X` is chain homotopic to the
@@ -72,7 +72,7 @@ def alexanderWhitneyKoszulBraidingHomotopy (X Y : TopCat.{w}) (R S : C) :
         (R ⊗ S))).trans <|
       Homotopy.ofEq <| by
         rw [alexanderWhitney_def, ← NatTrans.naturality_assoc, ← Functor.map_comp_assoc,
-          ← CartesianMonoidalCategory.map_braiding_hom_comp_prodComparison, Functor.map_comp_assoc,
+          ← toSSet.map_braiding_hom_comp_prodComparison, Functor.map_comp_assoc,
           NatTrans.naturality_assoc, NatTrans.naturality_assoc]
 
 /-- **The shuffle map commutes with the interchange of factors up to homotopy**: the Koszul

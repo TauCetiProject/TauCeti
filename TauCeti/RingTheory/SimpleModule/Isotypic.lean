@@ -25,7 +25,8 @@ finiteness assumption on `M`. A map from a simple module into an isotypic module
 type is zero (`IsIsotypicOfType.linearMap_eq_zero`). The isotypic components of pairwise
 non-isomorphic simple modules are independent (`TauCeti.iSupIndep_isotypicComponent`); this is the
 indexed form of Mathlib's `sSupIndep_isotypicComponents`, allowing types that do not occur in the
-module.
+module. In particular, the isotypic components of two non-isomorphic simple modules are disjoint
+(`TauCeti.disjoint_isotypicComponent`).
 
 ## Main definitions
 
@@ -131,6 +132,27 @@ theorem linearMap_eq_zero (h : IsIsotypicOfType R M N)
     have : IsSimpleModule R (LinearMap.range f) := .congr e.symm
     exact False.elim (hne ⟨e.trans (h (LinearMap.range f)).some⟩)
   · exact hzero
+
+/-- A direct sum of copies of an isotypic module has the same simple type.
+No semisimplicity or finiteness assumption on the summands is required. -/
+theorem finsupp (h : IsIsotypicOfType R M N) (ι : Type*) :
+    IsIsotypicOfType R (ι →₀ M) N := by
+  classical
+  intro T hT
+  have := IsSimpleModule.nontrivial R T
+  obtain ⟨x, hx⟩ := exists_ne (0 : T)
+  obtain ⟨i, hi⟩ : ∃ i, (x : ι →₀ M) i ≠ 0 := by
+    by_contra! h
+    apply hx
+    exact Subtype.ext (Finsupp.ext h)
+  let f : T →ₗ[R] M := (Finsupp.lapply i).comp T.subtype
+  have hf : f ≠ 0 := by
+    intro hf
+    exact hi (LinearMap.congr_fun hf x)
+  have hinj := f.injective_or_eq_zero.resolve_right hf
+  let e := LinearEquiv.ofInjective f hinj
+  have : IsSimpleModule R (LinearMap.range f) := .congr e.symm
+  exact ⟨e.trans (h (LinearMap.range f)).some⟩
 
 end IsIsotypicOfType
 
@@ -281,5 +303,22 @@ theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddC
   obtain ⟨e'⟩ := isIsotypicOfType_submodule_iff.mp
     (IsIsotypicOfType.isotypicComponent R M (S j)) N (hN.trans (congrArg Subtype.val hij).le)
   exact Subtype.ext (hS i j ⟨e.symm.trans e'⟩)
+
+/-- The isotypic components of two non-isomorphic simple modules are disjoint. -/
+theorem disjoint_isotypicComponent (S S' : Type*) [AddCommGroup S] [Module R S]
+    [IsSimpleModule R S] [AddCommGroup S'] [Module R S'] [IsSimpleModule R S']
+    (h : ¬ Nonempty (S ≃ₗ[R] S')) :
+    Disjoint (isotypicComponent R M S) (isotypicComponent R M S') := by
+  rw [disjoint_iff]
+  by_contra hne
+  -- A simple submodule of the intersection is a copy of both `S` and `S'`.
+  have : IsSemisimpleModule R ↥(isotypicComponent R M S ⊓ isotypicComponent R M S') :=
+    .of_injective _ (Submodule.inclusion_injective inf_le_left)
+  obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hne
+  obtain ⟨e⟩ := isIsotypicOfType_submodule_iff.mp
+    (IsIsotypicOfType.isotypicComponent R M S) N (hN.trans inf_le_left)
+  obtain ⟨e'⟩ := isIsotypicOfType_submodule_iff.mp
+    (IsIsotypicOfType.isotypicComponent R M S') N (hN.trans inf_le_right)
+  exact h ⟨e.symm.trans e'⟩
 
 end TauCeti

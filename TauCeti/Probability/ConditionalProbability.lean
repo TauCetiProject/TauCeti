@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
+public import TauCeti.MeasureTheory.Measure.Support
 
 /-!
 # Conditional measures and the law of total probability
@@ -53,6 +54,7 @@ recovers the law.
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
 * `ProbabilityTheory.map_cond_preimage`
+* `ProbabilityTheory.cond_univ_restrict`
 * `ProbabilityTheory.cond_compl_singleton_real`,
   `ProbabilityTheory.cond_compl_singleton_real_singleton`,
   `ProbabilityTheory.integrable_cond_compl_singleton_iff`,
@@ -66,6 +68,20 @@ recovers the law.
 public section
 
 open MeasureTheory Set
+open scoped ENNReal NNReal
+
+/-- On a discrete space, conditioning on a finite-mass event retains precisely the original
+support points in that event. A null event gives empty support. -/
+theorem MeasureTheory.Measure.support_cond {X : Type*} [TopologicalSpace X]
+    [DiscreteTopology X] [MeasurableSpace X] [MeasurableSingletonClass X]
+    (μ : Measure X) (s : Set X) (hμs : μ s ≠ ⊤) :
+    (ProbabilityTheory.cond μ s).support = μ.support ∩ s := by
+  rw [ProbabilityTheory.cond,
+    Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr hμs)]
+  ext x
+  simp only [Measure.mem_support_iff_measure_singleton_pos, Set.mem_inter_iff,
+    Measure.restrict_apply (measurableSet_singleton x)]
+  by_cases hx : x ∈ s <;> simp [hx]
 
 namespace ProbabilityTheory
 
@@ -75,6 +91,13 @@ variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
 theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
     μ[|s] = μ[|t] := by
   rw [cond, cond, measure_congr h, Measure.restrict_congr_set h]
+
+/-- On a measurable subset of the conditioning event, the real conditional mass is the
+original real mass divided by the real mass of the conditioning event. -/
+theorem cond_real_of_subset {μ : Measure Ω} {s t : Set Ω} (ht : MeasurableSet t)
+    (hsub : t ⊆ s) :
+    (cond μ s).real t = μ.real t / μ.real s := by
+  simp [measureReal_def, cond_apply' ht, inter_eq_right.mpr hsub, div_eq_mul_inv, mul_comm]
 
 /-- Scaling an integral under a conditional measure by the finite mass of the conditioning
 event recovers the corresponding set integral. -/
@@ -183,13 +206,29 @@ theorem _root_.Measurable.cond_preimage_Ico (hμ : Measurable μ)
 
 end MovingIntervals
 
-/-- A function whose norm is bounded on a measurable event `s` is integrable for the conditional
-measure `μ[|s]`. For instance, a point drawn uniformly from a bounded Borel set of a normed space
-has integrable position. -/
+/-- A function whose norm is bounded on an event `s`, measurable or not, is integrable for the
+conditional measure `μ[|s]`. For instance, the position of a point drawn from the conditional
+Lebesgue measure of a bounded set of a normed space is integrable. -/
 theorem integrable_cond_of_norm_le {E : Type*} [NormedAddCommGroup E] {μ : Measure Ω}
-    {s : Set Ω} {f : Ω → E} (hs : MeasurableSet s) (hf : AEStronglyMeasurable f μ[|s]) {C : ℝ}
-    (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : Integrable f μ[|s] :=
-  Integrable.of_bound hf C ((ae_cond_mem hs).mono hC)
+    {s : Set Ω} {f : Ω → E} (hf : AEStronglyMeasurable f μ[|s]) {C : ℝ}
+    (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : Integrable f μ[|s] := by
+  by_cases hμ : μ s = ∞
+  · simp [cond, hμ]
+  refine Integrable.of_bound hf C ?_
+  have hg := hf.stronglyMeasurable_mk.norm.measurable
+  have hN : MeasurableSet {x | C < ‖hf.mk f x‖} := measurableSet_lt measurable_const hg
+  obtain ⟨T, hTsub, hT, hT0⟩ := exists_measurable_superset_of_null (ae_iff.1 hf.ae_eq_mk)
+  have hsT : μ (s ∩ T) = 0 := by
+    have := hT0
+    rwa [cond_apply' hT, mul_eq_zero, or_iff_right (ENNReal.inv_ne_zero.2 hμ)] at this
+  have hsN : μ (s ∩ {x | C < ‖hf.mk f x‖}) = 0 :=
+    measure_mono_null (t := s ∩ T)
+      (fun x hx ↦ ⟨hx.1, hTsub fun h ↦ (hC x hx.1).not_gt (h ▸ hx.2)⟩) hsT
+  have hNnull : μ[|s] {x | C < ‖hf.mk f x‖} = 0 := by
+    rw [cond_apply' hN, hsN, mul_zero]
+  filter_upwards [hf.ae_eq_mk, measure_eq_zero_iff_ae_notMem.1 hNnull] with x hx hx'
+  rw [hx]
+  exact not_lt.1 hx'
 
 /-- A measurable map that scales measure by a constant factor transports conditional measures:
 if `μ (f ⁻¹' A) = k * ν A` for every measurable `A`, with `k ≠ 0` finite, then `f` carries `μ`
@@ -247,6 +286,18 @@ theorem integrable_cond_compl_singleton_iff [IsFiniteMeasure μ] {E : Type*}
         (ENNReal.inv_ne_top.2 hμ), IntegrableOn]
   rw [hcompl, ← integrableOn_univ, ← compl_union_self {a}, integrableOn_union,
     and_iff_left hatom]
+
+omit [MeasurableSingletonClass Ω] in
+/-- Conditioning away from a point rescales the nonnegative integral of a function vanishing
+there by the reciprocal retained mass. This identity includes infinite integrals and arbitrary
+measures. -/
+theorem lintegral_cond_compl_singleton_of_eq_zero {f : Ω → ℝ≥0∞} (hf : f a = 0) :
+    ∫⁻ x, f x ∂μ[|{a}ᶜ] = (μ {a}ᶜ)⁻¹ * ∫⁻ x, f x ∂μ := by
+  rw [cond, lintegral_smul_measure,
+    setLIntegral_eq_of_support_subset (fun x hx => by
+      simp only [mem_compl_iff, mem_singleton_iff]
+      intro h
+      exact hx (h ▸ hf)), smul_eq_mul]
 
 variable [IsProbabilityMeasure μ]
 
@@ -313,6 +364,11 @@ theorem integral_cond_compl_singleton_of_eq_zero {E : Type*} [NormedAddCommGroup
 
 end ComplSingleton
 
+/-- Conditioning the restriction of a measure to `s` on the whole space is conditioning on `s`. -/
+@[simp]
+theorem cond_univ_restrict (μ : Measure Ω) (s : Set Ω) : (μ.restrict s)[|univ] = μ[|s] := by
+  rw [cond, cond, Measure.restrict_apply_univ, Measure.restrict_univ]
+
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure
@@ -320,46 +376,67 @@ namespace MeasureTheory.Measure
 open Filter ProbabilityTheory
 open scoped ENNReal Topology
 
-/-- Mathlib's total variation distance from a probability law conditioned on a positive-mass
-measurable event to the original law is twice the excluded mass. -/
-theorem tvDist_cond_self {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
-    [IsProbabilityMeasure μ] {A : Set Ω} (hA : MeasurableSet A) (hμA : μ A ≠ 0) :
-    tvDist (cond μ A) μ = 2 * (1 - μ.real A) := by
-  let _ := cond_isProbabilityMeasure hμA
-  have hH : IsHahnDecomposition μ (cond μ A) A := by
-    refine ⟨hA, ?_, ?_⟩
-    · rw [ProbabilityTheory.cond, Measure.restrict_smul, Measure.restrict_restrict hA,
-        inter_self]
-      apply Measure.le_iff.mpr
-      intro B hB
-      rw [_root_.smul_apply, smul_eq_mul]
-      have hi : 1 ≤ (μ A)⁻¹ := by
-        simpa using ENNReal.inv_le_inv.mpr (prob_le_one (μ := μ) (s := A))
-      simpa only [one_mul] using mul_le_mul_of_nonneg_right hi
-        (bot_le : (0 : ℝ≥0∞) ≤ μ.restrict A B)
-    · rw [ProbabilityTheory.cond, Measure.restrict_smul, Measure.restrict_restrict hA.compl]
-      simp only [compl_inter_self, Measure.restrict_empty, smul_zero]
-      exact bot_le
-  have hfull : (cond μ A).real A = 1 := by
-    simp only [measureReal_def, cond_apply_self hμA (measure_ne_top μ A), ENNReal.toReal_one]
-  have hzero : (cond μ A).real Aᶜ = 0 := by
-    simp [measureReal_def, cond_apply hA]
-  rw [tvDist_comm, hH.tvDist_eq, hfull, hzero, probReal_compl_eq_one_sub hA]
-  ring
+/-- Removing zero increments and dividing by a nonzero spacing rescales the extended mean by
+the reciprocal spacing and reciprocal retained mass. No normalization hypothesis is needed. -/
+theorem lintegral_div_cond_compl_zero (μ : Measure ℝ≥0) {a : ℝ≥0} (ha : a ≠ 0) :
+    ∫⁻ t, (t / a : ℝ≥0) ∂μ[|{0}ᶜ] =
+      (∫⁻ t, (t : ℝ≥0∞) ∂μ) / ((a : ℝ≥0∞) * μ {0}ᶜ) := by
+  simp_rw [ENNReal.coe_div ha]
+  rw [lintegral_cond_compl_singleton_of_eq_zero
+    (f := fun t : ℝ≥0 ↦ (t : ℝ≥0∞) / a) (by simp)]
+  simp_rw [div_eq_mul_inv]
+  rw [lintegral_mul_const _ measurable_coe_nnreal_ennreal]
+  rw [ENNReal.mul_inv (.inl (by exact_mod_cast ha)) (.inl ENNReal.coe_ne_top)]
+  simp only [mul_comm, mul_left_comm, mul_assoc]
 
-/-- Conditioning a probability law on eventually measurable events whose masses tend to one
-converges to that law in total variation. -/
+/-- Mathlib's total variation distance from a probability law conditioned on a positive-mass
+event `A` to the original law is `2 * (1 - μ.real A)`. The event need not be measurable: `μ A` is
+then the outer measure, and `1 - μ.real A` is the mass of the complement of a measurable hull
+`toMeasurable μ A`, so the distance is twice the excluded mass of that hull (for measurable `A`,
+just twice the mass of `Aᶜ`). -/
+theorem tvDist_cond_self {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
+    [IsProbabilityMeasure μ] {A : Set Ω} (hμA : μ A ≠ 0) :
+    tvDist (cond μ A) μ = 2 * (1 - μ.real A) := by
+  have key : ∀ {A : Set Ω}, MeasurableSet A → μ A ≠ 0 →
+      tvDist (cond μ A) μ = 2 * (1 - μ.real A) := by
+    intro A hA hμA
+    let _ := cond_isProbabilityMeasure hμA
+    have hH : IsHahnDecomposition μ (cond μ A) A := by
+      refine ⟨hA, ?_, ?_⟩
+      · rw [ProbabilityTheory.cond, Measure.restrict_smul, Measure.restrict_restrict hA,
+          inter_self]
+        apply Measure.le_iff.mpr
+        intro B _
+        rw [_root_.smul_apply, smul_eq_mul]
+        have hi : 1 ≤ (μ A)⁻¹ := by
+          simpa using ENNReal.inv_le_inv.mpr (prob_le_one (μ := μ) (s := A))
+        simpa only [one_mul] using mul_le_mul_of_nonneg_right hi
+          (bot_le : (0 : ℝ≥0∞) ≤ μ.restrict A B)
+      · rw [ProbabilityTheory.cond, Measure.restrict_smul, Measure.restrict_restrict hA.compl]
+        simp only [compl_inter_self, Measure.restrict_empty, smul_zero]
+        exact bot_le
+    have hfull : (cond μ A).real A = 1 := by
+      simp only [measureReal_def, cond_apply_self hμA (measure_ne_top μ A), ENNReal.toReal_one]
+    have hzero : (cond μ A).real Aᶜ = 0 := by
+      simp [measureReal_def, cond_apply hA]
+    rw [tvDist_comm, hH.tvDist_eq, hfull, hzero, probReal_compl_eq_one_sub hA]
+    ring
+  rw [← cond_toMeasurable_eq]
+  have := key (measurableSet_toMeasurable μ A) (by rwa [measure_toMeasurable])
+  rwa [measureReal_def, measure_toMeasurable, ← measureReal_def] at this
+
+/-- Conditioning a probability law on events whose masses tend to one converges to that law in
+total variation. -/
 theorem tendsto_tvDist_cond {Ω ι : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
     [IsProbabilityMeasure μ] {l : Filter ι} {A : ι → Set Ω}
-    (hA : ∀ᶠ i in l, MeasurableSet (A i))
     (hmass : Tendsto (fun i ↦ μ.real (A i)) l (𝓝 1)) :
     Tendsto (fun i ↦ tvDist (cond μ (A i)) μ) l (𝓝 0) := by
   have h : Tendsto (fun i ↦ 2 * (1 - μ.real (A i))) l (𝓝 (2 * (1 - 1 : ℝ))) :=
     (tendsto_const_nhds.sub hmass).const_mul 2
   simp only [sub_self, mul_zero] at h
   apply h.congr'
-  filter_upwards [hA, hmass.eventually (eventually_gt_nhds zero_lt_one)] with i hi hpos
-  exact (μ.tvDist_cond_self hi
+  filter_upwards [hmass.eventually (eventually_gt_nhds zero_lt_one)] with i hpos
+  exact (μ.tvDist_cond_self
     ((measureReal_ne_zero_iff (measure_ne_top μ _)).mp hpos.ne')).symm
 
 variable {α : Type*} [PartialOrder α] [MeasurableSpace α] (μ : Measure α)

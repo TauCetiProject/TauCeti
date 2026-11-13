@@ -26,7 +26,7 @@ This works for arbitrary topological coefficient fibres without choosing fibre n
 normed coefficients on the model space it agrees with `ContinuousAlternatingMap.curryLeft`, and
 in the chart at a point it is `curryLeft` of the coordinate expressions of the form and the field.
 Consequently the interior product of a differentiable field and a differentiable form is a
-differentiable form.
+differentiable form, and that of a `C^n` field and a `C^n` form is a `C^n` form.
 
 ## References
 
@@ -261,6 +261,23 @@ theorem RoughForm.interior_self (X : (x : M) → TangentSpace I x)
     (ω : RoughForm I M F (k + 2)) : (ω.interior X).interior X = 0 :=
   bundleInterior_self X ω
 
+/-- A form vanishes on a field into which it was obtained by insertion: if `ι_X ω = α`, then
+`ι_X α = ω(X, X, ...) = 0`. For a one-form `α` and `ω = dα` this says that a primitive vanishes
+on its Liouville field. -/
+theorem RoughForm.interior_eq_zero_of_interior_eq {ω : RoughForm I M F (k + 2)}
+    {α : RoughForm I M F (k + 1)} {X : (x : M) → TangentSpace I x} (h : ω.interior X = α) :
+    α.interior X = 0 := by
+  rw [← h]
+  exact RoughForm.interior_self X ω
+
+/-- Pointwise form of `RoughForm.interior_eq_zero_of_interior_eq` for one-forms: if `ι_X ω = α`
+for a two-form `ω`, then `α_y(X_y) = 0` at every point `y`. -/
+theorem RoughForm.apply_eq_zero_of_interior_eq {ω : RoughForm I M F 2} {α : RoughForm I M F 1}
+    {X : (x : M) → TangentSpace I x} (h : ω.interior X = α) (y : M) : α y ![X y] = 0 := by
+  have h0 := congrArg (fun β : RoughForm I M F 0 ↦ β y ![])
+    (RoughForm.interior_eq_zero_of_interior_eq h)
+  simpa only [RoughForm.interior_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] using h0
+
 /-- Interior products by two vector fields anticommute. -/
 theorem RoughForm.interior_swap [IsTopologicalAddGroup F]
     (X Y : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 2)) :
@@ -362,15 +379,48 @@ theorem RoughForm.mdifferentiableAt_interior {F : Type*} [NormedAddCommGroup F]
       (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (ω.interior X y)) x := by
   refine mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self ?_
   -- In the chart at `x`, the interior product is `curryLeft` of the two coordinate expressions.
-  have hω' := ω.differentiableWithinAt_inChartAt (s := Set.univ) hω.mdifferentiableWithinAt
+  have hω' := ω.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt hω
   have hX' := (hX.mdifferentiableWithinAt (s := Set.univ)
     ).differentiableWithinAt_mpullbackWithin_extChartAt_symm
-  simp only [Set.preimage_univ, Set.univ_inter] at hω' hX'
+  simp only [Set.preimage_univ, Set.univ_inter] at hX'
   refine (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)
     ).toContinuousLinearMap.differentiableAt.comp_differentiableWithinAt _ hω').clm_apply
       hX').congr_of_eventuallyEq ?_ (RoughForm.inChartAt_interior X ω (mem_extChartAt_target x))
   filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
   exact RoughForm.inChartAt_interior X ω hz
+
+/-- The interior product of a vector field and a fixed-coefficient form, both `C^n` at a point, is
+a section of the alternating bundle which is `C^n` at that point. -/
+theorem RoughForm.contMDiffAt_interior {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [IsManifold I 1 M] {n : WithTop ℕ∞} {X : (x : M) → TangentSpace I x}
+    {ω : RoughForm I M F (k + 1)} {x : M}
+    (hX : ContMDiffAt I I.tangent n (fun y ↦ (X y : TangentBundle I M)) x)
+    (hω : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) y (ω y)) x) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (ω.interior X y)) x := by
+  refine contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_
+  -- In the chart at `x`, the interior product is `curryLeft` of the two coordinate expressions.
+  have hω' := ω.contDiffWithinAt_range_inChartAt_of_contMDiffAt hω
+  have hX' := (hX.contMDiffWithinAt (s := Set.univ)
+    ).contDiffWithinAt_mpullbackWithin_extChartAt_symm
+  simp only [Set.preimage_univ, Set.univ_inter] at hX'
+  refine (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)
+    ).toContinuousLinearMap.contDiff.comp_contDiffWithinAt hω').clm_apply
+      hX').congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
+    exact RoughForm.inChartAt_interior X ω hz
+  · exact RoughForm.inChartAt_interior X ω (mem_extChartAt_target x)
+
+/-- The interior product of a `C^n` vector field and a `C^n` fixed-coefficient form is a `C^n`
+form. -/
+theorem IsSmoothForm.interior {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [IsManifold I 1 M] {n : WithTop ℕ∞} {X : (x : M) → TangentSpace I x}
+    {ω : RoughForm I M F (k + 1)} (hω : IsSmoothForm I n ω)
+    (hX : ContMDiff I I.tangent n (fun y ↦ (X y : TangentBundle I M))) :
+    IsSmoothForm I n (ω.interior X) :=
+  (isSmoothForm_def n _).mpr fun x ↦
+    RoughForm.contMDiffAt_interior (hX x) ((isSmoothForm_def n ω).mp hω x)
 
 end FixedCoefficients
 

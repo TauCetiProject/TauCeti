@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Diagonal
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Basic
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PeriodAction
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangular.Basic
+import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Trace
 
 /-!
 # Upper-triangular contributions to the level-one trace formula
@@ -16,24 +18,23 @@ For an upper-triangular matrix `M = (a b; 0 d)`, substitution on degree-`w` bina
 triangular in the monomial basis. Its diagonal entries are `aⁱdʷ⁻ⁱ`, independently of `b`, so
 its trace is the Eichler--Selberg weight polynomial `P_{w+2}(a+d,ad)`.
 
-This file also evaluates Popa--Zagier's explicit Hecke element on the canonical
-upper-triangular representatives `FixedDetMatrices.reps n`. Its coefficient is `1` in the
-interior of the interval `0 ≤ b ≤ d-a`, `1/2` at a non-scalar endpoint, `1/6` at a scalar
-matrix, and `0` outside the interval. Combining the coefficient and trace calculations gives
-the contribution of each representative to the ambient binary-form trace.
+This file also evaluates Popa--Zagier's explicit Hecke element on upper-triangular matrices
+`(a b; 0 d)` with `0 < a`, in particular on the canonical representatives
+`FixedDetMatrices.reps n`. Its coefficient is `1` in the interior of the interval
+`0 ≤ b ≤ d-a`, `1/2` at a non-scalar endpoint, `1/6` at a scalar matrix, and `0` outside the
+interval. Combining the coefficient and trace calculations gives the contribution of each such
+matrix to the ambient binary-form trace.
 
 ## Main results
 
 * `TauCeti.trace_binaryFormRep_upperTriangular_eq_dickson_eval`: the binary-form trace of an
   upper-triangular matrix.
-* `TauCeti.TraceFormulaMatrixModule.trace_binaryFormAction_upperTriangular_eq_dickson_eval`:
-  the corresponding statement for a projective determinant matrix.
 * `TauCeti.PopaZagier.weight_upperTriangular`: the unnormalised Popa--Zagier weight.
 * `TauCeti.PopaZagier.upperTriangularCoeff`: the normalised coefficient of `(a b; 0 d)`.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_upperTriangular`: the coefficient
-  of a positive-diagonal upper-triangular matrix.
-* `TauCeti.TraceFormulaMatrixModule.trace_popaZagierElement_single_upperTriangularRep`: the
-  contribution of one canonical representative.
+  of an upper-triangular matrix with positive upper-left entry.
+* `TauCeti.TraceFormulaMatrixModule.trace_popaZagierElement_single_upperTriangular`: the
+  contribution of one upper-triangular matrix with positive upper-left entry.
 
 ## References
 
@@ -66,10 +67,10 @@ theorem trace_binaryFormRep_upperTriangular_eq_dickson_eval {R : Type*} [CommRin
 
 namespace PopaZagier
 
-/-- The unnormalised Popa--Zagier weight of a positive-diagonal upper-triangular matrix. The
-four cases give weights `12`, `2`, `6`, and `0`; division by `12` produces the coefficient of
+/-- The unnormalised Popa--Zagier weight of an upper-triangular matrix `(a b; 0 d)` with `0 < a`.
+The four cases give weights `12`, `2`, `6`, and `0`; division by `12` produces the coefficient of
 the explicit Hecke element. -/
-theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) (hd : 0 < d) :
+theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) :
     weight !![a, b; 0, d] =
       if 0 < b ∧ b < d - a then 12
       else if a = d ∧ b = 0 then 2
@@ -79,7 +80,7 @@ theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) (hd : 0 < d) :
     Fin.isValue]
   grind [weight₁, weight₂, weight₃, weight₄, chainWeight₃]
 
-/-- The coefficient of the positive-diagonal upper-triangular matrix `(a b; 0 d)` in
+/-- The coefficient of the upper-triangular matrix `(a b; 0 d)` with `0 < a` in
 Popa--Zagier's explicit Hecke element: `1` in the interior of the interval `0 ≤ b ≤ d - a`,
 `1/6` at a scalar matrix, `1/2` at a non-scalar endpoint, and `0` outside the interval. -/
 def upperTriangularCoeff (a b d : ℤ) : ℚ :=
@@ -100,39 +101,12 @@ end PopaZagier
 
 namespace TraceFormulaMatrixModule
 
-/-- A projective upper-triangular determinant matrix has the Dickson trace determined by its
-matrix trace and determinant. -/
-theorem trace_binaryFormAction_upperTriangular_eq_dickson_eval {R : Type*} [CommRing R]
-    {n : ℤ} (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) (hA : A.1 1 0 = 0) :
-    LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
-        (binaryFormAction (R := R) hw (mk A)) =
-      (Polynomial.dickson 2 (n : R) w).eval ((A.1 0 0 + A.1 1 1 : ℤ) : R) := by
-  rw [binaryFormAction_mk]
-  have hm : A.1 = !![A.1 0 0, A.1 0 1; 0, A.1 1 1] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [hA]
-  conv_lhs =>
-    rw [hm, trace_binaryFormRep_upperTriangular_eq_dickson_eval]
-  have had : A.1 0 0 * A.1 1 1 = n :=
-    FixedDetMatrices.apply_zero_zero_mul_apply_one_one hA
-  congr 2
-  exact congrArg (Int.castRingHom R) had
-
-/-- A single upper-triangular basis element contributes its coefficient times the Dickson trace
-to the ambient binary-form space. -/
-theorem trace_periodAction_single_upperTriangular_eq_dickson_eval {R : Type*} [CommRing R]
-    {n : ℤ} (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) (hA : A.1 1 0 = 0) (c : R) :
-    LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
-        (periodAction (R := R) hw (single (mk A) c)) =
-      c * (Polynomial.dickson 2 (n : R) w).eval ((A.1 0 0 + A.1 1 1 : ℤ) : R) := by
-  rw [periodAction_single, map_smul, smul_eq_mul,
-    trace_binaryFormAction_upperTriangular_eq_dickson_eval w hw A hA]
-
-/-- The coefficient of a positive-diagonal upper-triangular matrix in Popa--Zagier's explicit
-Hecke element. Interior matrices have coefficient `1`, non-scalar endpoints have coefficient
-`1/2`, a scalar matrix has coefficient `1/6`, and all other matrices have coefficient `0`. -/
+/-- The coefficient of an upper-triangular matrix with positive upper-left entry in
+Popa--Zagier's explicit Hecke element. Interior matrices have coefficient `1`, non-scalar
+endpoints have coefficient `1/2`, a scalar matrix has coefficient `1/6`, and all other matrices
+have coefficient `0`. -/
 theorem coeff_popaZagierElement_upperTriangular {n : ℤ} (A : TraceFormulaMatrix n)
-    (hc : A.1 1 0 = 0) (ha : 0 < A.1 0 0) (hd : 0 < A.1 1 1) :
+    (hc : A.1 1 0 = 0) (ha : 0 < A.1 0 0) :
     (popaZagierElement ℚ n).coeff (mk A) =
       PopaZagier.upperTriangularCoeff (A.1 0 0) (A.1 0 1) (A.1 1 1) := by
   rw [coeff_popaZagierElement_mk_of_pos A (Or.inr ⟨hc, ha⟩)]
@@ -140,25 +114,21 @@ theorem coeff_popaZagierElement_upperTriangular {n : ℤ} (A : TraceFormulaMatri
     ext i j
     fin_cases i <;> fin_cases j <;> simp [hc]
   conv_lhs =>
-    rw [hm, PopaZagier.weight_upperTriangular _ _ _ ha hd]
+    rw [hm, PopaZagier.weight_upperTriangular _ _ _ ha]
   rw [PopaZagier.upperTriangularCoeff_def]
   split_ifs <;> norm_num
 
-/-- The contribution of one canonical upper-triangular representative to the trace of
+/-- The contribution of one upper-triangular matrix with positive upper-left entry to the trace of
 Popa--Zagier's explicit element on the ambient binary-form space. -/
-theorem trace_popaZagierElement_single_upperTriangularRep {n : ℤ} (hn : 0 < n)
-    (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) (hA : A ∈ FixedDetMatrices.reps n) :
+theorem trace_popaZagierElement_single_upperTriangular {n : ℤ}
+    (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) (hc : A.1 1 0 = 0) (ha : 0 < A.1 0 0) :
     LinearMap.trace ℚ (homogeneousSubmodule (Fin 2) ℚ w)
         (periodAction hw
           (single (mk A) ((popaZagierElement ℚ n).coeff (mk A)))) =
       PopaZagier.upperTriangularCoeff (A.1 0 0) (A.1 0 1) (A.1 1 1) *
         (Polynomial.dickson 2 (n : ℚ) w).eval ((A.1 0 0 + A.1 1 1 : ℤ) : ℚ) := by
-  obtain ⟨hc, ha, -, -⟩ := hA
-  have had : A.1 0 0 * A.1 1 1 = n :=
-    FixedDetMatrices.apply_zero_zero_mul_apply_one_one hc
-  have hd : 0 < A.1 1 1 := by nlinarith
-  rw [trace_periodAction_single_upperTriangular_eq_dickson_eval w hw A hc,
-    coeff_popaZagierElement_upperTriangular A hc ha hd]
+  rw [trace_periodAction_single_eq_dickson_eval w hw A, Matrix.trace_fin_two,
+    coeff_popaZagierElement_upperTriangular A hc ha]
 
 end TraceFormulaMatrixModule
 

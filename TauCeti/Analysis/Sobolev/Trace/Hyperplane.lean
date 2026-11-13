@@ -76,6 +76,46 @@ private theorem rpow_energy_nonneg (u : WithLp 2 (ℝ × E) → ℝ) {r : ℝ} (
   add_nonneg (mul_nonneg (sub_nonneg.2 hr) (Real.rpow_nonneg (abs_nonneg _) _))
     (Real.rpow_nonneg (norm_nonneg (fderiv ℝ u x)) _)
 
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- **The one-dimensional trace estimate on a normal line.** For `1 ≤ r` and a compactly supported
+`C¹` function `u` on `ℝ × E`, `|u(a, y)|ʳ` is bounded by the integral of
+`(r - 1) |u|ʳ + ‖Du‖ʳ` over the half-line `t > a` of the normal line through `(a, y)`. -/
+private theorem abs_rpow_le_integral_Ioi_energy
+    {u : WithLp 2 (ℝ × E) → ℝ} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
+    (a : ℝ) {r : ℝ} (hr : 1 ≤ r) (y : E) :
+    |u (WithLp.toLp 2 (a, y))| ^ r ≤
+      ∫ t : ℝ in Ioi a, ((r - 1) * |u (WithLp.toLp 2 (t, y))| ^ r +
+        ‖fderiv ℝ u (WithLp.toLp 2 (t, y))‖ ^ r) := by
+  set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r
+  have hFc : Continuous F := continuous_rpow_energy hu hr
+  have hs : HasCompactSupport F := hasCompactSupport_rpow_energy hsupp hr
+  have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
+    (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
+      (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
+  have hpath : ContDiff ℝ 1 (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
+    ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
+      (contDiff_id.prodMk contDiff_const)
+  have hg := hu.comp hpath
+  have hgs := hsupp.comp_isClosedEmbedding he
+  have hd (t : ℝ) : deriv (u ∘ fun s : ℝ ↦ WithLp.toLp 2 (s, y)) t =
+      fderiv ℝ u (WithLp.toLp 2 (t, y)) (WithLp.toLp 2 (1, (0 : E))) := by
+    have hp : HasDerivAt (fun s : ℝ ↦ WithLp.toLp 2 (s, y))
+        (WithLp.toLp 2 (1, (0 : E))) t :=
+      ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt).comp_hasDerivAt t
+        ((hasDerivAt_id t).prodMk (hasDerivAt_const t y))
+    exact ((hu.differentiable one_ne_zero _).hasFDerivAt.comp_hasDerivAt t hp).deriv
+  refine (abs_rpow_le_integral_Ioi hg hgs a hr).trans (integral_mono_of_nonneg
+    (Filter.Eventually.of_forall fun t ↦ add_nonneg
+      (mul_nonneg (sub_nonneg.2 hr) (Real.rpow_nonneg (abs_nonneg _) _))
+      (Real.rpow_nonneg (abs_nonneg _) _))
+    ((hFc.comp he.continuous).integrable_of_hasCompactSupport
+      (hs.comp_isClosedEmbedding he)).integrableOn
+    (Filter.Eventually.of_forall fun t ↦ ?_))
+  have hb := (fderiv ℝ u (WithLp.toLp 2 (t, y))).le_opNorm (WithLp.toLp 2 (1, (0 : E)))
+  simp only [WithLp.norm_toLp_fst, norm_one, mul_one, Real.norm_eq_abs] at hb
+  simp only [Function.comp_apply, hd t]
+  gcongr
+
 /-- **The one-sided flat `Lʳ` trace inequality.** For `1 ≤ r` and a compactly supported `C¹`
 function `u` on `ℝ × E`, the integral of `|u|ʳ` over the hyperplane `{a} × E` is bounded by the
 integral of `(r - 1) |u|ʳ + ‖Du‖ʳ` over the half-space `{x | a < x.fst}`. -/
@@ -85,7 +125,7 @@ theorem integral_hyperplane_abs_rpow_le_integral_halfSpace
     (∫ y : E, |u (WithLp.toLp 2 (a, y))| ^ r) ≤
       ∫ x : WithLp 2 (ℝ × E) in {x | a < (WithLp.ofLp x).1},
         (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r := by
-  set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r with hF
+  set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r
   have hFc : Continuous F := continuous_rpow_energy hu hr
   have hs : HasCompactSupport F := hasCompactSupport_rpow_energy hsupp hr
   have hint : Integrable F volume := hFc.integrable_of_hasCompactSupport hs
@@ -95,35 +135,9 @@ theorem integral_hyperplane_abs_rpow_le_integral_halfSpace
       ((volume.restrict (Ioi a)).prod volume) := by
     rw [Measure.restrict_prod_eq_prod_univ]
     exact hprod.integrableOn
-  -- Apply the one-dimensional estimate on each normal line.
   have hline (y : E) : |u (WithLp.toLp 2 (a, y))| ^ r ≤
-      ∫ t : ℝ in Ioi a, F (WithLp.toLp 2 (t, y)) := by
-    have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
-      (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-        (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
-    have hpath : ContDiff ℝ 1 (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
-      ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
-        (contDiff_id.prodMk contDiff_const)
-    have hg := hu.comp hpath
-    have hgs := hsupp.comp_isClosedEmbedding he
-    have hd (t : ℝ) : deriv (u ∘ fun s : ℝ ↦ WithLp.toLp 2 (s, y)) t =
-        fderiv ℝ u (WithLp.toLp 2 (t, y)) (WithLp.toLp 2 (1, (0 : E))) := by
-      have hp : HasDerivAt (fun s : ℝ ↦ WithLp.toLp 2 (s, y))
-          (WithLp.toLp 2 (1, (0 : E))) t :=
-        ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt).comp_hasDerivAt t
-          ((hasDerivAt_id t).prodMk (hasDerivAt_const t y))
-      exact ((hu.differentiable one_ne_zero _).hasFDerivAt.comp_hasDerivAt t hp).deriv
-    refine (abs_rpow_le_integral_Ioi hg hgs a hr).trans (integral_mono_of_nonneg
-      (Filter.Eventually.of_forall fun t ↦ add_nonneg
-        (mul_nonneg (sub_nonneg.2 hr) (Real.rpow_nonneg (abs_nonneg _) _))
-        (Real.rpow_nonneg (abs_nonneg _) _))
-      ((hFc.comp he.continuous).integrable_of_hasCompactSupport
-        (hs.comp_isClosedEmbedding he)).integrableOn
-      (Filter.Eventually.of_forall fun t ↦ ?_))
-    have hb := (fderiv ℝ u (WithLp.toLp 2 (t, y))).le_opNorm (WithLp.toLp 2 (1, (0 : E)))
-    simp only [WithLp.norm_toLp_fst, norm_one, mul_one, Real.norm_eq_abs] at hb
-    simp only [hF, Function.comp_apply, hd t]
-    gcongr
+      ∫ t : ℝ in Ioi a, F (WithLp.toLp 2 (t, y)) :=
+    abs_rpow_le_integral_Ioi_energy hu hsupp a hr y
   -- Integrate the slice estimates and use the volume-preserving product coordinates.
   calc
     _ ≤ ∫ y : E, ∫ t : ℝ in Ioi a, F (WithLp.toLp 2 (t, y)) :=
@@ -154,6 +168,7 @@ theorem integral_hyperplane_abs_rpow_le_integral
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+omit [Fact (1 ≤ p)] in
 /-- If `V` and `G` represent `u` and its gradient `μ`-almost everywhere, the integral of the `Lᵖ`
 energy density `(p - 1) |u|ᵖ + ‖Du‖ᵖ` is `(p - 1) ‖V‖ᵖ + ‖G‖ᵖ`. With `μ` the volume restricted to
 a domain, this evaluates the right side of the flat trace inequality on test functions. -/
@@ -163,7 +178,8 @@ theorem integral_rpow_energy_eq_of_ae_eq {F : Type*} [NormedAddCommGroup F]
     (hG : G =ᵐ[μ] ∇ u) :
     ∫ x, (p.toReal - 1) * |u x| ^ p.toReal + ‖fderiv ℝ u x‖ ^ p.toReal ∂μ =
       (p.toReal - 1) * ‖V‖ ^ p.toReal + ‖G‖ ^ p.toReal := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp
   have hv : (fun x ↦ ‖V x‖ ^ p.toReal) =ᵐ[μ] fun x ↦ |u x| ^ p.toReal := by
     filter_upwards [hV] with x hx
     rw [hx, Real.norm_eq_abs]

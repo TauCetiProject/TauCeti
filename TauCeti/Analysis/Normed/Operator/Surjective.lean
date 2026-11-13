@@ -6,24 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Analysis.Normed.Operator.Completeness
-public import Mathlib.Analysis.Normed.Ring.Units
-public import Mathlib.LinearAlgebra.Isomorphisms
+public import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.MetricSpace.Contracting
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 
 /-!
 # Stability of surjectivity under small perturbations
+
+An additive endomorphism of a complete normed group that is uniformly closer than `1` to the
+identity is surjective, by the contraction mapping principle; the next two results reduce to it.
 
 Surjectivity onto a finite-dimensional space is stable under small perturbations in the operator
 norm: the surjective maps form an open subset of the space of continuous linear maps. The source
 is an arbitrary seminormed space over a complete nontrivially normed field.
 
-Surjectivity onto a Banach space is stable under perturbations that are small relative to the map
-itself. If `Q` is a surjective linear map from a module `D` into a Banach space and
-`‖K z‖ ≤ θ * ‖Q z‖` for every `z` with `θ < 1`, then `Q + K` is surjective: `K` factors as
-`S ∘ Q` with `‖S‖ ≤ θ`, and `Q + K = (1 + S) ∘ Q` with `1 + S` invertible by the Neumann series.
-No topology on `D` is needed, which is what makes the statement usable for operators defined on
-the domain of an unbounded operator.
+Surjectivity onto a complete normed group is stable under perturbations that are small relative
+to the map itself. If `Q` is a surjective linear map from a module `D` over any semiring into a
+complete normed group and `‖K z‖ ≤ θ * ‖Q z‖` for every `z` with `θ < 1`, then `Q + K` is
+surjective: `K` factors as `S ∘ Q` with `S` additive and `‖S y‖ ≤ θ * ‖y‖`, and
+`Q + K = (id + S) ∘ Q` with `id + S` within `θ` of the identity. No topology on `D` is needed,
+which is what makes the statement usable for operators defined on the domain of an unbounded
+operator.
 
 Mathlib records the companion fact that a surjective continuous linear map between Banach spaces
 is an open map, in `ContinuousLinearMap.isOpenMap`; the openness proved here is openness of the
@@ -31,13 +34,18 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
 
 ## Main results
 
-* `TauCeti.isOpen_setOf_surjective`: surjectivity onto a finite-dimensional space is an open
-  condition on continuous linear maps.
-* `LinearMap.surjective_add_of_norm_le`: a surjective linear map into a Banach space stays
-  surjective under a perturbation bounded by `θ < 1` times the map.
 * `TauCeti.surjective_of_norm_sub_apply_le`: an additive endomorphism of a complete normed
   group (for instance a linear map over any ring) uniformly closer than `1` to the identity is
   surjective.
+* `TauCeti.isOpen_setOf_surjective`: surjectivity onto a finite-dimensional space is an open
+  condition on continuous linear maps.
+* `LinearMap.surjective_add_of_norm_le`: a surjective linear map into a complete normed group
+  stays surjective under a perturbation bounded by `θ < 1` times the map.
+* `ContinuousLinearMap.surjective_of_norm_sub_lt_inv_rightInverse`: a perturbation smaller than
+  the reciprocal bound of a given bounded nonlinear right inverse stays surjective.
+* `ContinuousLinearMap.surjective_coprod_toSpanSingleton_iff`: a continuous linear map extended
+  by the line through a vector is surjective exactly when its range and the vector span the
+  target.
 -/
 
 public section
@@ -46,93 +54,7 @@ open Function
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
-
-/-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear
-maps. -/
-theorem isOpen_setOf_surjective : IsOpen {A : E →L[𝕜] F | Surjective A} := by
-  rw [Metric.isOpen_iff]
-  rintro A (hA : Surjective A)
-  obtain ⟨R, hAR⟩ := A.exists_rightInverse_of_surjective (A.range_eq_top_of_surjective hA)
-  have hAR : ∀ y, A (R y) = y := fun y ↦ by
-    have := congrArg (fun g : F →L[𝕜] F ↦ g y) hAR
-    simpa using this
-  refine ⟨(‖R‖ + 1)⁻¹, by positivity, fun B hB ↦ ?_⟩
-  have hBA : ‖B - A‖ < (‖R‖ + 1)⁻¹ := by
-    rwa [Metric.mem_ball, dist_eq_norm] at hB
-  have hlt : ‖B - A‖ * ‖R‖ < 1 := by
-    have h₁ : ‖B - A‖ * ‖R‖ ≤ (‖R‖ + 1)⁻¹ * ‖R‖ :=
-      mul_le_mul_of_nonneg_right hBA.le (norm_nonneg R)
-    have h₂ : (‖R‖ + 1)⁻¹ * ‖R‖ < 1 := by
-      rw [inv_mul_eq_div, div_lt_one (by positivity)]
-      linarith
-    linarith
-  have key : ∀ y : F, ‖B (R y) - y‖ ≤ ‖B - A‖ * ‖R‖ * ‖y‖ := by
-    intro y
-    have hsub : B (R y) - y = (B - A) (R y) := by simp [hAR]
-    rw [hsub]
-    calc ‖(B - A) (R y)‖ ≤ ‖B - A‖ * ‖R y‖ := (B - A).le_opNorm _
-      _ ≤ ‖B - A‖ * (‖R‖ * ‖y‖) := by gcongr; exact R.le_opNorm y
-      _ = ‖B - A‖ * ‖R‖ * ‖y‖ := by ring
-  have hinj : Injective ((B.comp R : F →L[𝕜] F) : F →ₗ[𝕜] F) := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro y hy
-    by_contra hy0
-    have h1 : ‖y‖ ≤ ‖B - A‖ * ‖R‖ * ‖y‖ := by
-      have hy' : B (R y) = 0 := hy
-      have := key y
-      rw [hy', zero_sub, norm_neg] at this
-      exact this
-    have h2 : 0 < ‖y‖ := norm_pos_iff.2 hy0
-    nlinarith
-  intro w
-  obtain ⟨y, hy⟩ := LinearMap.injective_iff_surjective.1 hinj w
-  exact ⟨R y, by simpa using hy⟩
-
-end TauCeti
-
-namespace LinearMap
-
-variable {𝕜 D Y : Type*} [NontriviallyNormedField 𝕜] [AddCommGroup D] [Module 𝕜 D]
-  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [CompleteSpace Y]
-
-/-- **Surjectivity is stable under relatively small perturbations.** If `Q : D →ₗ[𝕜] Y` is a
-surjective linear map into a Banach space and `‖K z‖ ≤ θ * ‖Q z‖` for every `z`, with `θ < 1`, then
-`Q + K` is surjective. -/
-theorem surjective_add_of_norm_le (Q K : D →ₗ[𝕜] Y) (hQ : Surjective Q) {θ : ℝ} (hθ : θ < 1)
-    (hK : ∀ z, ‖K z‖ ≤ θ * ‖Q z‖) : Surjective (Q + K) := by
-  have hK' : ∀ z, ‖K z‖ ≤ max θ 0 * ‖Q z‖ := fun z ↦
-    (hK z).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
-  have hker : ker Q ≤ ker K := fun z hz ↦ by
-    have := hK' z
-    rw [mem_ker] at hz ⊢
-    rwa [hz, norm_zero, mul_zero, norm_le_zero_iff] at this
-  -- `K` factors through `Q` as `S ∘ Q`, with `S` of norm at most `θ`.
-  let S : Y →ₗ[𝕜] Y := (ker Q).liftQ K hker ∘ₗ (Q.quotKerEquivOfSurjective hQ).symm.toLinearMap
-  have hS : ∀ z, S (Q z) = K z := fun z ↦ by
-    simp [S, quotKerEquivOfSurjective_symm_apply]
-  have hSb : ∀ y, ‖S y‖ ≤ max θ 0 * ‖y‖ := fun y ↦ by
-    obtain ⟨z, rfl⟩ := hQ y
-    rw [hS]
-    exact hK' z
-  have hnorm : ‖-S.mkContinuous (max θ 0) hSb‖ < 1 := by
-    rw [norm_neg]
-    exact (S.mkContinuous_norm_le (le_max_right _ _) hSb).trans_lt (max_lt hθ one_pos)
-  -- `Q + K = (1 + S) ∘ Q`, and `1 + S` is invertible.
-  let u := Units.oneSub _ hnorm
-  intro y
-  obtain ⟨z, hz⟩ := hQ ((↑u⁻¹ : Y →L[𝕜] Y) y)
-  refine ⟨z, ?_⟩
-  have hu : (↑u : Y →L[𝕜] Y) ((↑u⁻¹ : Y →L[𝕜] Y) y) = y := by
-    rw [← mul_apply_eq_comp, u.mul_inv, one_apply_eq_self]
-  rw [← hu, ← hz, Units.val_oneSub]
-  simp [hS]
-
-end LinearMap
-
-namespace TauCeti
+section ContractingPerturbation
 
 variable {M F : Type*} [NormedAddCommGroup M] [CompleteSpace M] [FunLike F M M]
   [AddMonoidHomClass F M M]
@@ -150,6 +72,105 @@ theorem surjective_of_norm_sub_apply_le {v : F} {c : ℝ} (hc : c < 1)
   rw [sub_add_eq_add_sub, sub_eq_iff_eq_add, add_right_inj] at hs
   exact ⟨_, hs.symm⟩
 
+end ContractingPerturbation
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear
+maps. -/
+theorem isOpen_setOf_surjective : IsOpen {A : E →L[𝕜] F | Surjective A} := by
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
+  rw [Metric.isOpen_iff]
+  rintro A (hA : Surjective A)
+  obtain ⟨R, hAR⟩ := A.exists_rightInverse_of_surjective (A.range_eq_top_of_surjective hA)
+  have hAR (y : F) : A (R y) = y := by simpa using DFunLike.congr_fun hAR y
+  refine ⟨(‖R‖ + 1)⁻¹, by positivity, fun B hB ↦ ?_⟩
+  rw [Metric.mem_ball, dist_eq_norm] at hB
+  have hlt : ‖B - A‖ * ‖R‖ < 1 := calc
+    ‖B - A‖ * ‖R‖ ≤ ‖B - A‖ * (‖R‖ + 1) := by gcongr; linarith
+    _ < (‖R‖ + 1)⁻¹ * (‖R‖ + 1) := by gcongr
+    _ = 1 := inv_mul_cancel₀ (by positivity)
+  -- Since `A ∘ R = id`, the endomorphism `B ∘ R` of `F` is within `‖B - A‖ * ‖R‖ < 1` of the
+  -- identity, hence onto.
+  have hBR : Surjective (B.comp R) := surjective_of_norm_sub_apply_le hlt fun y ↦ calc
+    ‖y - B.comp R y‖ = ‖(B - A) (R y)‖ := by
+      rw [norm_sub_rev, ContinuousLinearMap.comp_apply, sub_apply, hAR]
+    _ ≤ ‖B - A‖ * (‖R‖ * ‖y‖) := (B - A).le_opNorm_of_le (R.le_opNorm y)
+    _ = ‖B - A‖ * ‖R‖ * ‖y‖ := (mul_assoc _ _ _).symm
+  rw [ContinuousLinearMap.coe_comp] at hBR
+  exact hBR.of_comp
+
 end TauCeti
 
-end
+namespace LinearMap
+
+variable {R D Y : Type*} [Semiring R] [AddCommGroup D] [Module R D]
+  [NormedAddCommGroup Y] [Module R Y] [CompleteSpace Y]
+
+/-- **Surjectivity is stable under relatively small perturbations.** If `Q : D →ₗ[R] Y` is a
+surjective linear map into a complete normed group and `‖K z‖ ≤ θ * ‖Q z‖` for every `z`, with
+`θ < 1`, then `Q + K` is surjective. Only additivity is used: the scalars `R` are an arbitrary
+semiring, unrelated to the norm of `Y`, and `R = ℕ` covers additive homomorphisms. -/
+theorem surjective_add_of_norm_le (Q K : D →ₗ[R] Y) (hQ : Surjective Q) {θ : ℝ} (hθ : θ < 1)
+    (hK : ∀ z, ‖K z‖ ≤ θ * ‖Q z‖) : Surjective (Q + K) := by
+  have hker : Q.toAddMonoidHom.ker ≤ K.toAddMonoidHom.ker := fun z hz ↦ by
+    rw [AddMonoidHom.mem_ker, toAddMonoidHom_coe] at hz ⊢
+    simpa [hz] using hK z
+  -- `K` factors through `Q` as `S ∘ Q`, with `S` additive. (`liftOfSurjective` abbreviates
+  -- `liftOfRightInverse` at `surjInv hQ`, hence the lemma used for `hS`.)
+  let S : Y →+ Y := Q.toAddMonoidHom.liftOfSurjective hQ ⟨K.toAddMonoidHom, hker⟩
+  have hS (z : D) : S (Q z) = K z :=
+    Q.toAddMonoidHom.liftOfRightInverse_comp_apply _ _ ⟨K.toAddMonoidHom, hker⟩ z
+  -- `Q + K = (id + S) ∘ Q`, and `id + S` is within `θ` of the identity, hence onto.
+  have hQK : ⇑(Q + K) = ⇑(AddMonoidHom.id Y + S) ∘ ⇑Q := by
+    ext z
+    simp [hS]
+  have hSY : Surjective ⇑(AddMonoidHom.id Y + S) :=
+    TauCeti.surjective_of_norm_sub_apply_le hθ fun y ↦ by
+      obtain ⟨z, rfl⟩ := hQ y
+      simpa [hS] using hK z
+  rw [hQK]
+  exact hSY.comp hQ
+
+end LinearMap
+
+namespace ContinuousLinearMap
+
+open Set
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A perturbation smaller than the reciprocal bound of a nonlinear right inverse stays onto.
+No complement to the kernel is needed. -/
+theorem surjective_of_norm_sub_lt_inv_rightInverse [CompleteSpace E]
+    (T S : E →L[𝕜] F) (R : T.NonlinearRightInverse)
+    (h : ‖S - T‖ < (R.nnNorm : ℝ)⁻¹) : Function.Surjective S := by
+  have ha : ApproximatesLinearOn (S : E → F) T univ ‖S - T‖₊ := by
+    intro x _ y _
+    have he : S x - S y - T (x - y) = (S - T) (x - y) := by
+      simp only [map_sub, sub_apply]
+      abel
+    rw [he]
+    exact (S - T).le_opNorm _
+  have hnn : ‖S - T‖₊ < R.nnNorm⁻¹ := by exact_mod_cast h
+  have hopen : IsOpen (Set.range S) := by
+    simpa only [image_univ] using ha.open_image R isOpen_univ (Or.inr hnn)
+  apply LinearMap.range_eq_top.1
+  apply Submodule.eq_top_of_nonempty_interior'
+  rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe, hopen.interior_eq]
+  exact ⟨0, 0, map_zero S⟩
+
+/-- A continuous linear map and a vector together span the target exactly when the map extended
+by the line through the vector is surjective. -/
+theorem surjective_coprod_toSpanSingleton_iff {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] (L : V →L[𝕜] F) (v : F) :
+    Function.Surjective (L.coprod (toSpanSingleton 𝕜 v)) ↔
+      LinearMap.range (L : V →ₗ[𝕜] F) ⊔ (𝕜 ∙ v) = ⊤ := by
+  rw [← coe_coe, ← LinearMap.range_eq_top, range_coprod, toLinearMap_toSpanSingleton,
+    LinearMap.range_toSpanSingleton]
+
+end ContinuousLinearMap

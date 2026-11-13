@@ -257,6 +257,56 @@ lemma coe_supportedSubmoduleFunctor_map_ι_hom_app_apply (Z S : Closeds X)
 instance additive_supportedSubmoduleFunctor : (supportedSubmoduleFunctor (R := R) S).Additive where
   map_add {F G f g} := (cancel_mono (G.supportedSubmoduleι S)).1 (by simp)
 
+/-- The functor `F ↦ Γ_S(W,F)` of sections on `W` supported in `S`. -/
+abbrev supportedSubmoduleSectionsFunctor (W : Opens X) :
+    Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R) ⥤ ModuleCat.{u} R :=
+  supportedSubmoduleFunctor S ⋙ (sheafSections _ _).obj (op W)
+
+/-- The supported-section functor on an open is additive in the coefficient sheaf. -/
+instance additive_supportedSubmoduleSectionsFunctor (W : Opens X) :
+    (supportedSubmoduleSectionsFunctor (R := R) S W).Additive := by
+  have : ((sheafSections (Opens.grothendieckTopology X)
+      (ModuleCat.{u} R)).obj (op W)).Additive :=
+    Functor.additive_of_iso (sheafSectionsNatIsoEvaluation
+      (J := Opens.grothendieckTopology X) (A := ModuleCat.{u} R) (X := W)).symm
+  exact inferInstanceAs ((supportedSubmoduleFunctor S ⋙
+    (sheafSections _ (ModuleCat.{u} R)).obj (op W)).Additive)
+
+/-- Restriction of supported sections, natural in the coefficient sheaf. -/
+def supportedSubmoduleSectionsRestrict {W' W : Opens X} (i : W' ⟶ W) :
+    supportedSubmoduleSectionsFunctor (R := R) S W ⟶
+      supportedSubmoduleSectionsFunctor S W' :=
+  Functor.whiskerLeft (supportedSubmoduleFunctor S)
+    ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map i.op)
+
+/-- Restriction of supported sections leaves the usual restriction in the ambient sheaf. -/
+-- Rewrite before evaluation simplifies the bundled section object.
+@[simp↓]
+lemma coe_supportedSubmoduleSectionsRestrict_app_apply {W' W : Opens X} (i : W' ⟶ W)
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+    (s : F.supportedSubmodule S W) :
+    ((supportedSubmoduleSectionsRestrict (R := R) S i).app F s).val = F.obj.map i.op s :=
+  (rfl)
+
+/-- Restriction along an identity open inclusion is the identity transformation. -/
+@[simp]
+lemma supportedSubmoduleSectionsRestrict_id (W : Opens X) :
+    supportedSubmoduleSectionsRestrict (R := R) S (𝟙 W) = 𝟙 _ := by
+  ext F s
+  apply Subtype.ext
+  simp [supportedSubmoduleSectionsRestrict]
+
+/-- Restricting through two open inclusions agrees with restriction along their composite. -/
+@[reassoc (attr := simp)]
+lemma supportedSubmoduleSectionsRestrict_comp {W'' W' W : Opens X}
+    (i : W'' ⟶ W') (j : W' ⟶ W) :
+    supportedSubmoduleSectionsRestrict (R := R) S j ≫
+        supportedSubmoduleSectionsRestrict S i =
+      supportedSubmoduleSectionsRestrict S (i ≫ j) := by
+  ext F s
+  apply Subtype.ext
+  simp [supportedSubmoduleSectionsRestrict, ← Functor.map_comp, ← op_comp]
+
 /-- The comparison with underlying abelian supported sections is natural in the sheaf. -/
 def supportedSubmoduleFunctorForgetIso :
     supportedSubmoduleFunctor S ⋙ sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) ≅

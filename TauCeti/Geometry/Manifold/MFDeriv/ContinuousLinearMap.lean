@@ -24,6 +24,10 @@ the case used when differentiating changes of fiber coordinates at the zero of a
 It is stated for any map agreeing with `y ↦ c y (u y)` near the point, which is how fiber
 coordinates in two trivializations are related.
 
+For differentiable maps `A : M → F →L[𝕜] F'` and `p : M → F`, `mvfderiv_clm_apply` gives
+the product rule `d(A p) = (dA) p + A (dp)`, the manifold counterpart of Mathlib's
+`fderiv_clm_apply`. Its constant-vector case is `mvfderiv_clm_apply_const`.
+
 For maps on a normed space, it also records how `mvfderiv` acts on vectors given in the
 model space through `NormedSpace.fromTangentSpace`: there it is the Fréchet derivative.
 The precomposing continuous linear map may have any module equipped with a topology as its source.
@@ -85,10 +89,23 @@ vector-valued manifold derivative: `d (fun z ↦ c z w) x v = (d c x v) w`. -/
 theorem mvfderiv_clm_apply_const {c : M → F →L[𝕜] F'}
     (hc : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] F') c x) (w : F) (v : TangentSpace I x) :
     mvfderiv I (fun z ↦ c z w) x v = mvfderiv I c x v w := by
-  have h := mvfderiv_comp_apply_of_differentiableAt (g := c) (x := x)
-    (ContinuousLinearMap.apply 𝕜 F' w).differentiableAt hc v
-  rw [ContinuousLinearMap.fderiv, ContinuousLinearMap.apply_apply] at h
-  exact h
+  exact (ContinuousLinearMap.apply 𝕜 F' w).mvfderiv_comp_apply hc v
+
+/-- The **product rule** for the application `y ↦ A y (p y)` of a family of continuous linear maps
+to a vector-valued function on a manifold. -/
+theorem mvfderiv_clm_apply {A : M → F →L[𝕜] F'} {p : M → F} {x : M} (hA : MDiffAt A x)
+    (hp : MDiffAt p x) (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ A y (p y)) x v = mvfderiv I A x v (p x) + A x (mvfderiv I p x v) := by
+  have hpair := hA.prodMk_space hp
+  have hfst := (ContinuousLinearMap.fst 𝕜 (F →L[𝕜] F') F).mvfderiv_comp_apply hpair v
+  have hsnd := (ContinuousLinearMap.snd 𝕜 (F →L[𝕜] F') F).mvfderiv_comp_apply hpair v
+  simp only [Function.comp_def, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
+    at hfst hsnd
+  rw [← Function.comp_def (fun q : (F →L[𝕜] F') × F ↦ q.1 q.2) fun y ↦ (A y, p y),
+    mvfderiv_comp_apply_of_differentiableAt (g := fun y ↦ (A y, p y))
+      (φ := fun q : (F →L[𝕜] F') × F ↦ q.1 q.2)
+      (isBoundedBilinearMap_apply.differentiableAt (A x, p x)) hpair,
+    isBoundedBilinearMap_apply.fderiv, IsBoundedBilinearMap.deriv_apply, ← hfst, ← hsnd, add_comm]
 
 /-- On a normed space, the vector-valued manifold derivative applied to model-space vectors
 `L v`, viewed as tangent vectors via `NormedSpace.fromTangentSpace`, is the Fréchet derivative

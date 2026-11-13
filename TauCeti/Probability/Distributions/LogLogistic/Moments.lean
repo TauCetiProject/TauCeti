@@ -59,16 +59,17 @@ theorem integrable_rpow_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (q : �
   have hcomp : (fun x : ℝ => x ^ q) ∘ Real.exp = fun y => Real.exp (q * y) := by
     funext y
     rw [Function.comp_apply, ← Real.exp_mul, mul_comm]
-  rw [logLogisticMeasure_of_pos ha hb,
+  rw [logLogisticMeasure_of_pos ha,
     integrable_map_measure (by fun_prop) Real.measurable_exp.aemeasurable, hcomp,
     integrable_exp_mul_id_logisticMeasure_iff (inv_pos.mpr hb), div_inv_eq_mul, neg_one_mul,
     one_div, inv_inv, abs_lt]
 
 /-- **The real-power moments of the log-logistic law.** For `|q| < b`,
 `E[X ^ q] = a ^ q * Γ(1 + q / b) * Γ(1 - q / b)`. -/
-theorem integral_rpow_logLogisticMeasure (ha : 0 < a) (hb : 0 < b) (hq : |q| < b) :
+theorem integral_rpow_logLogisticMeasure (ha : 0 < a) (hq : |q| < b) :
     ∫ x, x ^ q ∂logLogisticMeasure a b =
       a ^ q * Real.Gamma (1 + q / b) * Real.Gamma (1 - q / b) := by
+  have hb : 0 < b := (abs_nonneg q).trans_lt hq
   have hq' := abs_lt.mp hq
   have hmem : q ∈ Ioo (-1 / b⁻¹) (1 / b⁻¹) := by
     rw [div_inv_eq_mul, neg_one_mul, one_div, inv_inv]
@@ -77,7 +78,7 @@ theorem integral_rpow_logLogisticMeasure (ha : 0 < a) (hb : 0 < b) (hq : |q| < b
   have hmgf : ∫ y, Real.exp y ^ q ∂logisticMeasure (Real.log a) b⁻¹ =
       mgf id (logisticMeasure (Real.log a) b⁻¹) q := by
     simp only [mgf, id_eq, ← Real.exp_mul, mul_comm q]
-  rw [logLogisticMeasure_of_pos ha hb,
+  rw [logLogisticMeasure_of_pos ha,
     integral_map Real.measurable_exp.aemeasurable (by fun_prop), hmgf,
     mgf_id_logisticMeasure (inv_pos.mpr hb) hmem, Real.rpow_def_of_pos ha, inv_mul_eq_div]
   ring_nf
@@ -91,11 +92,11 @@ theorem integrable_pow_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (n : ℕ
 
 /-- The natural raw moments of the log-logistic law: for `n < b`,
 `E[X ^ n] = a ^ n * Γ(1 + n / b) * Γ(1 - n / b)`. -/
-theorem integral_pow_logLogisticMeasure (ha : 0 < a) (hb : 0 < b) {n : ℕ} (hn : (n : ℝ) < b) :
+theorem integral_pow_logLogisticMeasure (ha : 0 < a) {n : ℕ} (hn : (n : ℝ) < b) :
     ∫ x, x ^ n ∂logLogisticMeasure a b =
       a ^ n * Real.Gamma (1 + n / b) * Real.Gamma (1 - n / b) := by
   simpa only [Real.rpow_natCast] using
-    integral_rpow_logLogisticMeasure ha hb (q := n) (by rwa [Nat.abs_cast])
+    integral_rpow_logLogisticMeasure ha (q := n) (by rwa [Nat.abs_cast])
 
 /-! ### Mean and variance -/
 
@@ -110,14 +111,14 @@ theorem integrable_id_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) :
 /-- **The mean of the log-logistic law** is `a * Γ(1 + 1 / b) * Γ(1 - 1 / b)` for `b > 1`. -/
 theorem integral_id_logLogisticMeasure (ha : 0 < a) (hb : 1 < b) :
     ∫ x, x ∂logLogisticMeasure a b = a * Real.Gamma (1 + 1 / b) * Real.Gamma (1 - 1 / b) := by
-  simpa using integral_pow_logLogisticMeasure ha (zero_lt_one.trans hb) (n := 1) (by simpa)
+  simpa using integral_pow_logLogisticMeasure ha (n := 1) (by simpa)
 
 /-- The second raw moment of the log-logistic law is `a ^ 2 * Γ(1 + 2 / b) * Γ(1 - 2 / b)` for
 `b > 2`. -/
 theorem integral_sq_logLogisticMeasure (ha : 0 < a) (hb : 2 < b) :
     ∫ x, x ^ 2 ∂logLogisticMeasure a b =
       a ^ 2 * Real.Gamma (1 + 2 / b) * Real.Gamma (1 - 2 / b) := by
-  simpa using integral_pow_logLogisticMeasure ha (zero_lt_two.trans hb) (n := 2) (by simpa)
+  simpa using integral_pow_logLogisticMeasure ha (n := 2) (by simpa)
 
 /-- **The variance of the log-logistic law** for `b > 2` is
 `a ^ 2 * (Γ(1 + 2 / b) * Γ(1 - 2 / b) - (Γ(1 + 1 / b) * Γ(1 - 1 / b)) ^ 2)`. -/
@@ -154,7 +155,7 @@ theorem integrable_exp_mul_id_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (
     TauCeti.integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable hnonneg⟩
   have hmom : ¬ Integrable (fun x : ℝ => id x ^ b) (logLogisticMeasure a b) := by
     simp [integrable_rpow_logLogisticMeasure_iff ha hb, abs_of_pos hb]
-  exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow b measurable_id.aemeasurable
+  exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow b
     hnonneg hb.le hmom ht h
 
 /-- The exact exponential-integrability domain of a log-logistic law is the nonpositive

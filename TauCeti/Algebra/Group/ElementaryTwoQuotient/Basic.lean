@@ -421,12 +421,15 @@ theorem card_elementaryTwoQuotient_dvd_card :
   rw [card_elementaryTwoQuotient_eq_index_square]
   exact Subgroup.index_dvd_card (Subgroup.square G)
 
-/-- Rank form of `TauCeti.card_elementaryTwoQuotient_dvd_card`: when `G / G²` is a finite
-`ZMod 2`-vector space, `2 ^ TauCeti.twoRank G` divides `|G|`. -/
-theorem two_pow_twoRank_dvd_card [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
-    2 ^ twoRank G ∣ Nat.card G := by
-  rw [← card_elementaryTwoQuotient_eq_two_pow_twoRank]
-  exact card_elementaryTwoQuotient_dvd_card G
+/-- Rank form of `TauCeti.card_elementaryTwoQuotient_dvd_card`: `2 ^ TauCeti.twoRank G` divides
+`|G|`. When `G / G²` is an infinite-dimensional `ZMod 2`-vector space, `twoRank G` is the junk
+value `0`. -/
+theorem two_pow_twoRank_dvd_card : 2 ^ twoRank G ∣ Nat.card G := by
+  by_cases h : Module.Finite (ZMod 2) (ElementaryTwoQuotient G)
+  · rw [← card_elementaryTwoQuotient_eq_two_pow_twoRank]
+    exact card_elementaryTwoQuotient_dvd_card G
+  · rw [twoRank, Module.finrank_of_not_finite h, pow_zero]
+    exact one_dvd _
 
 section FiniteCardinality
 

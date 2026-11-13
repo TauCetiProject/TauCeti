@@ -20,19 +20,20 @@ continuous linear coordinate equivalence `e : E ≃L[𝕜] Fin n → 𝕜`, if a
 of `s ∩ (extChartAt I x).source` in `Fin n → 𝕜` under `e ∘ extChartAt I x` is a `d`-dimensional
 analytic submanifold in the sense of `TauCeti.IsAnalyticSubmanifold`.
 
-When `I` is boundaryless and `M` is an analytic manifold (`IsManifold I ω M`), transition maps
-between extended charts of the maximal `C^ω` atlas are analytic open partial homeomorphisms on
-their open domains. Consequently:
+On any charted space:
 
 * `IsMAnalyticSubmanifold I e d s` is independent of the choice of continuous linear equivalence
-  `e : E ≃L[𝕜] Fin n → 𝕜` and invariant under `ModelWithCorners.transContinuousLinearEquiv`
-  (even without boundarylessness or `IsManifold`);
-* `IsMAnalyticSubmanifold I e d s` is independent of the choice of charts in `maximalAtlas I ω M`
-  or `atlas H M`, and is equivalent to local straightening on an open neighborhood of the image of
-  each `x ∈ s` in *some* maximal-atlas chart;
-* open subsets, singletons, nonempty discrete subsets (in dimension `0`), and nonempty relatively
-  open subsets of analytic submanifolds are analytic submanifolds, and the property is local in the
-  ambient topology of `M`.
+  `e : E ≃L[𝕜] Fin n → 𝕜` and invariant under `ModelWithCorners.transContinuousLinearEquiv`;
+* the `0`-dimensional analytic submanifolds are exactly the nonempty discrete subsets (for
+  instance singletons), and nonempty relatively open subsets of analytic submanifolds are analytic
+  submanifolds.
+
+When `I` is boundaryless, nonempty open subsets of `M` are analytic submanifolds. When moreover
+`M` is an analytic manifold (`IsManifold I ω M`), transition maps between extended charts of the
+maximal `C^ω` atlas are analytic open partial homeomorphisms on their open domains. Consequently
+`IsMAnalyticSubmanifold I e d s` is independent of the choice of charts in `maximalAtlas I ω M` or
+`atlas H M`, is equivalent to local straightening on an open neighborhood of the image of each
+`x ∈ s` in *some* maximal-atlas chart, and is local in the ambient topology of `M`.
 
 ## Main declarations
 
@@ -75,6 +76,21 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {n n' d : ℕ} {s t u : Set M}
+
+/-! ### Analytic charts as `C^k` maps -/
+
+/-- An analytic chart is `C^k` on its source as a map between model vector spaces. -/
+theorem IsAnalyticChart.contMDiffOn {S : Set (Fin n → 𝕜)} {k : WithTop ℕ∞}
+    {φ : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)} (h : IsAnalyticChart d S φ) :
+    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) k φ φ.source :=
+  (h.analyticOnNhd.contDiffOn φ.open_source.uniqueDiffOn).contMDiffOn
+
+/-- The inverse of an analytic chart is `C^k` on its target as a map between model vector
+spaces. -/
+theorem IsAnalyticChart.contMDiffOn_symm {S : Set (Fin n → 𝕜)} {k : WithTop ℕ∞}
+    {φ : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)} (h : IsAnalyticChart d S φ) :
+    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) k φ.symm φ.target :=
+  (h.analyticOnNhd_symm.contDiffOn φ.open_target.uniqueDiffOn).contMDiffOn
 
 /-! ### Definition and coordinate-equivalence independence -/
 
@@ -173,67 +189,33 @@ theorem isMAnalyticSubmanifold_singleton {e : E ≃L[𝕜] Fin n → 𝕜} (a : 
   rw [hmem, image_singleton]
   exact isAnalyticSubmanifold_singleton _
 
-/-! ### Open subsets, zero-dimensional submanifolds, restrictions, and chart transitions -/
+/-! ### Zero-dimensional submanifolds and restrictions -/
 
-section Boundaryless
-
-variable [I.Boundaryless]
-
-/-- A `0`-dimensional analytic submanifold of a boundaryless charted space is discrete in its
-subspace topology. -/
+/-- A `0`-dimensional analytic submanifold of a charted space is discrete in its subspace
+topology. -/
 theorem IsMAnalyticSubmanifold.isDiscrete {e : E ≃L[𝕜] Fin n → 𝕜}
     (hs : IsMAnalyticSubmanifold I e 0 s) : IsDiscrete s := by
-  rw [isDiscrete_iff_forall_mem_exists_isOpen]
-  intro x hxs
-  set C := (chartAt H x).extendTrans I e.toHomeomorph
-  have hC_coe : ⇑C = e ∘ extChartAt I x := by
-    ext y
-    simp [C, extChartAt]
-  have hxC : x ∈ C.source := by simp [C]
-  have hdisc : IsDiscrete (C '' (s ∩ C.source)) := by
-    simpa [hC_coe, C, extChartAt] using (hs.image_extChartAt hxs).isDiscrete
-  obtain ⟨U, hU, hUC⟩ :=
-    isDiscrete_iff_forall_mem_exists_isOpen.1 hdisc (C x) ⟨x, ⟨hxs, hxC⟩, rfl⟩
-  refine ⟨C.source ∩ C ⁻¹' U, C.continuousOn.isOpen_inter_preimage C.open_source hU, ?_⟩
-  ext y
-  constructor
-  · rintro ⟨⟨hyC, hyU⟩, hys⟩
-    have hCy : C y = C x := mem_singleton_iff.1 (hUC ▸ ⟨hyU, y, ⟨hys, hyC⟩, rfl⟩)
-    exact mem_singleton_iff.2 (C.injOn hyC hxC hCy)
-  · rintro rfl
-    have hyU : C y ∈ U := (hUC.symm ▸ mem_singleton (C y)).1
-    exact ⟨⟨hxC, hyU⟩, hxs⟩
+  refine .of_nhdsWithin fun x hxs ↦ ?_
+  have h := (hs.image_extChartAt hxs).isDiscrete.preimage e.continuous.continuousOn e.injective
+  rw [image_comp, e.injective.preimage_image, inter_comm] at h
+  rw [← map_extChartAt_symm_nhdsWithin (I := I) x, ← map_extChartAt_nhdsWithin,
+    map_extChartAt_nhdsWithin_eq_image,
+    h.nhdsWithin _ (mem_image_of_mem _ ⟨mem_extChartAt_source x, hxs⟩), map_pure,
+    extChartAt_to_inv]
 
-/-- Every nonempty discrete subset of a boundaryless charted space is a `0`-dimensional analytic
+/-- Every nonempty discrete subset of a charted space is a `0`-dimensional analytic
 submanifold. -/
 theorem _root_.IsDiscrete.isMAnalyticSubmanifold_zero {e : E ≃L[𝕜] Fin n → 𝕜}
     (hs : IsDiscrete s) (hne : s.Nonempty) : IsMAnalyticSubmanifold I e 0 s := by
-  refine ⟨hne, fun x hxs ↦ ?_⟩
-  set C := (chartAt H x).extendTrans I e.toHomeomorph
-  have hC_coe : ⇑C = e ∘ extChartAt I x := by
-    ext y
-    simp [C, extChartAt]
-  have hneC : ((e ∘ extChartAt I x) '' (s ∩ (extChartAt I x).source)).Nonempty :=
-    ⟨e (extChartAt I x x), x, ⟨hxs, mem_extChartAt_source x⟩, rfl⟩
-  refine IsDiscrete.isAnalyticSubmanifold_zero ?_ hneC
-  rw [← hC_coe, isDiscrete_iff_forall_mem_exists_isOpen]
-  rintro _ ⟨y, ⟨hys, hyext⟩, rfl⟩
-  have hyC : y ∈ C.source := by simpa [C, extChartAt] using hyext
-  obtain ⟨W, hW, hWs⟩ := isDiscrete_iff_forall_mem_exists_isOpen.1 hs y hys
-  refine ⟨C.target ∩ C.symm ⁻¹' W, C.continuousOn_symm.isOpen_inter_preimage C.open_target hW, ?_⟩
-  ext w
-  constructor
-  · rintro ⟨⟨_, hwW⟩, z, ⟨hzs, hzext⟩, rfl⟩
-    have hzC : z ∈ C.source := by simpa [C, extChartAt] using hzext
-    rw [mem_preimage, C.left_inv hzC] at hwW
-    have hzy : z = y := mem_singleton_iff.1 (hWs ▸ ⟨hwW, hzs⟩)
-    exact mem_singleton_iff.2 (congrArg C hzy)
-  · rintro rfl
-    have hyW : y ∈ W := (hWs.symm ▸ mem_singleton y).1
-    exact ⟨⟨C.map_source hyC, by simpa [C.left_inv hyC] using hyW⟩, y, ⟨hys, hyext⟩, rfl⟩
+  refine ⟨hne, fun x hxs ↦ IsDiscrete.isAnalyticSubmanifold_zero ?_
+    ⟨e (extChartAt I x x), x, ⟨hxs, mem_extChartAt_source x⟩, rfl⟩⟩
+  rw [image_comp, inter_comm]
+  refine (IsDiscrete.of_nhdsWithin ?_).image e.toHomeomorph.isInducing
+  rintro _ ⟨y, ⟨hyext, hys⟩, rfl⟩
+  rw [← map_extChartAt_nhdsWithin_eq_image' hyext, hs.nhdsWithin y hys, map_pure]
 
-/-- On a boundaryless charted space, `0`-dimensional analytic submanifolds are precisely the
-nonempty discrete subsets. -/
+/-- On a charted space, `0`-dimensional analytic submanifolds are precisely the nonempty discrete
+subsets. -/
 @[simp]
 theorem isMAnalyticSubmanifold_zero_iff {e : E ≃L[𝕜] Fin n → 𝕜} :
     IsMAnalyticSubmanifold I e 0 s ↔ s.Nonempty ∧ IsDiscrete s :=
@@ -246,22 +228,19 @@ theorem IsMAnalyticSubmanifold.inter {e : E ≃L[𝕜] Fin n → 𝕜}
     (hs : IsMAnalyticSubmanifold I e d s) (hu : IsOpen u) (hne : (s ∩ u).Nonempty) :
     IsMAnalyticSubmanifold I e d (s ∩ u) := by
   refine ⟨hne, fun x ⟨hxs, hxu⟩ ↦ ?_⟩
-  set C := (chartAt H x).extendTrans I e.toHomeomorph
-  have hC_coe : ⇑C = e ∘ extChartAt I x := by
-    ext y
-    simp [C, extChartAt]
-  have hC_src : (extChartAt I x).source = C.source := by simp [C]
-  let V := C.target ∩ C.symm ⁻¹' u
-  have hV : IsOpen V := C.continuousOn_symm.isOpen_inter_preimage C.open_target hu
-  have heq : (e ∘ extChartAt I x) '' ((s ∩ u) ∩ (extChartAt I x).source) =
-      ((e ∘ extChartAt I x) '' (s ∩ (extChartAt I x).source)) ∩ V := by
-    rw [← hC_coe, hC_src, inter_comm (s ∩ u), C.image_source_inter_eq',
-      inter_comm s C.source, C.image_source_inter_eq', preimage_inter, inter_inter_distrib_left]
-  rw [heq]
-  have hxC : x ∈ C.source := by simp [C]
+  set V := (I.transContinuousLinearEquiv e).symm ⁻¹'
+    ((chartAt H x).target ∩ (chartAt H x).symm ⁻¹' u)
+  have hV : IsOpen V := ((chartAt H x).isOpen_inter_preimage_symm hu).preimage
+    (I.transContinuousLinearEquiv e).continuous_symm
+  have heq : (s ∩ u) ∩ (extChartAt I x).source =
+      (s ∩ (extChartAt I x).source) ∩ (e ∘ extChartAt I x) ⁻¹' V := by
+    ext z
+    by_cases hz : z ∈ (chartAt H x).source
+    · simp [V, hz, (chartAt H x).map_source hz, (chartAt H x).left_inv hz]
+    · simp [hz]
+  rw [heq, image_inter_preimage]
   exact (hs.image_extChartAt hxs).inter hV
-    ⟨C x, ⟨x, ⟨hxs, mem_extChartAt_source x⟩, by rw [← hC_coe]⟩,
-      C.map_source hxC, by simpa [C.left_inv hxC] using hxu⟩
+    ⟨e (extChartAt I x x), ⟨x, ⟨hxs, mem_extChartAt_source x⟩, rfl⟩, by simp [V, hxu]⟩
 
 /-- A nonempty relatively open subset of a `d`-dimensional analytic submanifold is a
 `d`-dimensional analytic submanifold. -/
@@ -275,6 +254,12 @@ theorem IsMAnalyticSubmanifold.of_isOpen_preimage_val {e : E ≃L[𝕜] Fin n �
     exact ⟨fun ⟨hxs, hxu⟩ ↦ (Set.ext_iff.mp hut ⟨x, hxs⟩).mp hxu,
       fun hxt ↦ ⟨hts hxt, (Set.ext_iff.mp hut ⟨x, hts hxt⟩).mpr hxt⟩⟩
   simpa only [heq] using hs.inter hu (heq.symm ▸ hne)
+
+/-! ### Open subsets and chart transitions -/
+
+section Boundaryless
+
+variable [I.Boundaryless]
 
 /-- Any nonempty open subset of a boundaryless charted space with `n`-dimensional model is an
 `n`-dimensional analytic submanifold. -/

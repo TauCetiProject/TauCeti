@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -23,14 +24,22 @@ approximated in operator norm by operators factoring through any operator `g : F
 dense range. On a finite-dimensional real domain, strict pointwise norm bounds are equivalent
 to strict operator-norm bounds.
 
+Bounded operators between finite-dimensional spaces form a finite-dimensional space over every
+finite extension of the scalars acting compatibly on the codomain, for instance over `ℂ` for
+real-linear operators into a complex space.
+
 ## Main results
 
 * `ContinuousLinearMap.finite_spectrum`: a bounded operator on a finite-dimensional normed space
   has finite spectrum, also over subfields of the scalars such as `ℝ ⊆ ℂ`.
+* `ContinuousLinearMap.isUnit_smul_one_sub`: on a finite-dimensional space, `c • 1 - T` is
+  invertible when `T` has no eigenvector of eigenvalue `c`.
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional real domain.
+* `ContinuousLinearMap.finiteDimensional_of_isScalarTower`: `E →L[𝕜] F` is finite-dimensional
+  over a finite extension `𝕜'` of `𝕜` acting on a finite-dimensional codomain `F`.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
   the operators sending a neighbourhood of `0` into a compact set form a compact set.
 -/
@@ -46,9 +55,19 @@ variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 `S` of scalars acting compatibly, for instance over `ℝ` for an operator on a complex space. -/
 theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →L[𝕜] V)]
     [IsScalarTower S 𝕜 (V →L[𝕜] V)] (T : V →L[𝕜] V) : (spectrum S T).Finite := by
-  have := FiniteDimensional.complete 𝕜 V
+  have := FiniteDimensional.completeSpace 𝕜 V
   rw [← spectrum.preimage_algebraMap 𝕜, spectrum_eq]
   exact (Module.End.finite_spectrum _).preimage (algebraMap S 𝕜).injective.injOn
+
+/-- On a finite-dimensional normed space, `c • 1 - T` is invertible as soon as `T` has no
+eigenvector of eigenvalue `c`. -/
+theorem isUnit_smul_one_sub {T : V →L[𝕜] V} {c : 𝕜} (h : ∀ v, T v = c • v → v = 0) :
+    IsUnit (c • 1 - T) := by
+  have := FiniteDimensional.completeSpace 𝕜 V
+  refine isUnit_iff_isUnit_toLinearMap.2
+    ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ h v ?_))
+  have hv' : c • v - T v = 0 := by simpa using hv
+  exact (sub_eq_zero.1 hv').symm
 
 /-- On continuous linear maps out of a finite-dimensional space, postcomposition with a
 continuous linear map of dense range has dense range: each `T : V →L[𝕜] E` is approximated in
@@ -96,6 +115,38 @@ theorem opNorm_lt_iff (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
         _ < c := by simpa only [hxnorm, mul_one] using h x hxne
 
 end StrictNorm
+
+section ScalarExtension
+
+variable {𝕜 𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [NormedAlgebra 𝕜 𝕜'] [FiniteDimensional 𝕜 𝕜']
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [IsScalarTower 𝕜 𝕜' F]
+  [FiniteDimensional 𝕜' F]
+
+/-- Bounded `𝕜`-linear operators between finite-dimensional spaces form a finite-dimensional
+space over a finite extension `𝕜'` of `𝕜` acting compatibly on the codomain, for instance over
+`ℂ` for real-linear operators into a finite-dimensional complex space. -/
+theorem finiteDimensional_of_isScalarTower : FiniteDimensional 𝕜' (E →L[𝕜] F) := by
+  have : FiniteDimensional 𝕜 F := Module.Finite.trans 𝕜' F
+  exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' (E →L[𝕜] F)
+
+end ScalarExtension
+
+section Invertible
+
+variable {𝕜 U G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup U] [NormedSpace 𝕜 U] [FiniteDimensional 𝕜 U]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+
+/-- An injective continuous linear map between finite-dimensional spaces of the same dimension is
+invertible. -/
+theorem isInvertible_of_injective_of_finrank_eq (A : U →L[𝕜] G)
+    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) (hinj : Function.Injective A) :
+    A.IsInvertible := by
+  exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, rfl⟩
+
+end Invertible
 
 end ContinuousLinearMap
 
