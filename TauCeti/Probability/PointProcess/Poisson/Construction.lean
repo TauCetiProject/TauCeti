@@ -8,13 +8,18 @@ module
 public import TauCeti.Probability.PointProcess.Poisson.Finite
 public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.Measure.Measurability
+public import TauCeti.Probability.PointProcess.Poisson.Basic
+import TauCeti.Probability.PointProcess.Poisson.LaplaceCharacterization
 
 /-!
 # Sampling with a sigma-finite Poisson intensity
 
 `Measure.poissonLaw` superposes independent finite Poisson samples on a countable
 measurable partition of a sigma-finite intensity. The resulting probability law has
-the Poisson exponential formula and its mean measure is the specified intensity.
+the Poisson exponential formula and its mean measure is the specified intensity. By the
+Laplace characterization, the identity random measure under this law is therefore a Poisson
+random measure with the specified intensity, so Poisson random measures exist for every
+sigma-finite intensity.
 Infinite total intensity and infinite test integrals are allowed, and atomic
 intensities retain multiplicities. No topology or nonempty location space is needed.
 
@@ -109,6 +114,13 @@ theorem laplaceFunctional_poissonLaw (Λ : Measure X) [SigmaFinite Λ]
   rw [sum_poissonPiece] at hsum
   rw [poissonLaw, laplaceFunctional_map _ measurable_sum measurable_id hf]
   exact hsum
+
+/-- **Existence of Poisson random measures.** Under the sigma-finite sampling law, the identity
+random measure is a Poisson random measure with intensity `Λ`. -/
+theorem isPoissonRandomMeasure_poissonLaw (Λ : Measure X) [SigmaFinite Λ] :
+    IsPoissonRandomMeasure Λ.poissonLaw id Λ :=
+  isPoissonRandomMeasure_of_laplaceFunctional measurable_id fun _ hf ↦
+    laplaceFunctional_poissonLaw Λ hf
 
 /-- The mean random measure of the sigma-finite construction is exactly its intensity. -/
 @[simp] theorem join_poissonLaw (Λ : Measure X) [SigmaFinite Λ] :
