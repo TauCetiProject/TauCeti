@@ -333,14 +333,8 @@ private lemma mem_cellBall_iff (m : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set
     cellChart_apply, ULift.norm_up]
 
 private lemma isClosed_cellBall : IsClosed (cellBall C x i) := by
-  have hK : IsCompact (closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i)) := by
-    have h : closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i) =
-        Homeomorph.ulift ⁻¹' closedBall 0 (cellRadius C x i) := by
-      ext u
-      rw [mem_preimage, mem_closedBall_zero_iff, mem_closedBall_zero_iff]
-      rfl
-    rw [h, Homeomorph.isCompact_preimage]
-    exact isCompact_closedBall _ _
+  have hK : IsCompact (closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i)) :=
+    isCompact_closedBall _ _
   exact (hK.image_of_continuousOn ((cellChart C i).continuousOn_symm.mono
     (closedBall_subset_target_cellChart C x hx))).isClosed
 
