@@ -201,8 +201,7 @@ theorem prod_morseTrajectorySlice_left {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(�
     mem_prod, mem_image, Pi.add_apply, Function.comp_apply, Prod.mk.injEq]
   constructor
   · rintro ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, hz⟩
-    obtain rfl := hX.eq_of_mem_unstableSet_inter_stableSet
-      hf.mdifferentiable ⟨hu₁, hs₁⟩
+    obtain rfl := hX.eq_of_mem_unstableSet_inter_stableSet ⟨hu₁, hs₁⟩
     exact ⟨z₂, ⟨hu₂, hs₂, by linarith⟩, rfl, rfl⟩
   · rintro ⟨z, ⟨hu, hs, hz⟩, rfl, rfl⟩
     exact ⟨⟨hxx.1, hu⟩, ⟨hxx.2, hs⟩, by linarith⟩
@@ -221,8 +220,7 @@ theorem prod_morseTrajectorySlice_right {y : N} (hy : mfderiv 𝓘(ℝ, E') 𝓘
     mem_prod, mem_image, Pi.add_apply, Function.comp_apply, Prod.mk.injEq]
   constructor
   · rintro ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, hz⟩
-    obtain rfl := hY.eq_of_mem_unstableSet_inter_stableSet
-      hg.mdifferentiable ⟨hu₂, hs₂⟩
+    obtain rfl := hY.eq_of_mem_unstableSet_inter_stableSet ⟨hu₂, hs₂⟩
     exact ⟨z₁, ⟨hu₁, hs₁, by linarith⟩, rfl, rfl⟩
   · rintro ⟨z, ⟨hu, hs, hz⟩, rfl, rfl⟩
     exact ⟨⟨hu, hyy.1⟩, ⟨hs, hyy.2⟩, by linarith⟩
