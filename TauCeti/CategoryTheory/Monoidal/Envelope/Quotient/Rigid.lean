@@ -263,6 +263,9 @@ theorem doubleRightDualFunctor_μ_obj (X Y : C) :
       ((toMonoidalQuotient I).obj X) ((toMonoidalQuotient I).obj Y) =
         (toMonoidalQuotient I).map (μ (doubleRightDualFunctor C) X Y) := by
   rw [doubleRightDualFunctor_μ, doubleRightDualFunctor_μ, rightDualTensorIso_obj_hom]
+  -- Rewriting the inverse comparison cannot match the descended duals with mapped source
+  -- duals at the rewriter's transparency, including the composite's fixed bidual endpoints.
+  -- Compose the descent equations as terms, using the chosen duals' definitional identification.
   exact (congrArg₂ (· ≫ ·) (rightDualTensorIso_obj_inv Yᘁ Xᘁ)
     (rightAdjointMate_map_rightRigid (rightDualTensorIso X Y).hom)).trans
       ((toMonoidalQuotient I).map_comp _ _).symm
@@ -274,6 +277,9 @@ theorem doubleRightDualFunctor_δ_obj (X Y : C) :
       ((toMonoidalQuotient I).obj X) ((toMonoidalQuotient I).obj Y) =
         (toMonoidalQuotient I).map (δ (doubleRightDualFunctor C) X Y) := by
   rw [doubleRightDualFunctor_δ, doubleRightDualFunctor_δ, rightDualTensorIso_obj_inv]
+  -- As for the tensorator, rewriting cannot match the tensor comparison at descended duals
+  -- with its mapped-source form while retaining the composite's fixed bidual endpoints.
+  -- Term congruence uses their definitional identification without abstracting those endpoints.
   exact (congrArg₂ (· ≫ ·) (rightAdjointMate_map_rightRigid (rightDualTensorIso X Y).inv)
     (rightDualTensorIso_obj_hom Yᘁ Xᘁ)).trans
       ((toMonoidalQuotient I).map_comp _ _).symm
@@ -318,6 +324,9 @@ theorem doubleRightDualFunctor_ε_eq_map :
   rw [doubleRightDualFunctor_ε_eq_rightAdjointMate,
     doubleRightDualFunctor_ε_eq_rightAdjointMate,
     rightDualIso_exactPairingUnit_hom, rightDualIso_exactPairingUnit_inv]
+  -- Rewriting the mate and map_comp leaves dual-instance presentations of the unit that
+  -- rw cannot identify. Term congruence identifies the rigidly chosen dual and its image
+  -- definitionally, keeping the composite's unit and bidual endpoints together.
   exact (congrArg₂ (· ≫ ·) (Eq.refl _)
     (rightAdjointMate_map_rightRigid (rightDualIso
       (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom)).trans
@@ -330,6 +339,9 @@ theorem doubleRightDualFunctor_η_eq_map :
       (toMonoidalQuotient I).map (η (doubleRightDualFunctor C)) := by
   apply (cancel_epi (ε (doubleRightDualFunctor (MonoidalQuotient I)))).mp
   rw [Functor.Monoidal.ε_η, doubleRightDualFunctor_ε_eq_map]
+  -- rw [← Functor.map_comp] cannot match the mapped bidual of the source unit with the
+  -- quotient unit's bidual at its transparency. Map the entire inverse law instead;
+  -- these endpoints are definitionally equal for the descended rigid dual choices.
   exact ((toMonoidalQuotient I).map_comp _ _).symm.trans
     (congrArg (toMonoidalQuotient I).map (Functor.Monoidal.ε_η (doubleRightDualFunctor C)))
       |>.trans ((toMonoidalQuotient I).map_id _) |>.symm
