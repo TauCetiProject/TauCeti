@@ -12,7 +12,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.Normed.Affine.MazurUlam
-import TauCeti.Algebra.Order.Ring.PosPartSq
+import TauCeti.Algebra.Order.Ring.PosPart.Sq
 
 /-!
 # Inner products of square-integrable functions

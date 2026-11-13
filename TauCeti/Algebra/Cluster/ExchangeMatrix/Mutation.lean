@@ -164,6 +164,38 @@ theorem matrixMutation_refl_submatrix_row (row : K ↪ I) (B : Matrix I K ℤ) (
       (matrixMutation row B k).submatrix row id :=
   matrixMutation_submatrix row.injective Function.injective_id (fun _ ↦ rfl) B k
 
+/-- A mutated column is supported on the union of its old support and the old support of
+the mutation column. No skew-symmetrizability hypothesis is needed. -/
+theorem support_matrixMutation_subset (row : K ↪ I) (B : Matrix I K ℤ) (k l : K) :
+    (Function.support fun i ↦ matrixMutation row B k i l) ⊆
+      (Function.support fun i ↦ B i l) ∪ Function.support fun i ↦ B i k := by
+  intro i hi
+  by_contra h
+  simp only [Set.mem_union, Function.mem_support, not_or, not_not] at h
+  exact hi (by simp [matrixMutation_apply, h.1, h.2])
+
+/-- A row vanishes after matrix mutation exactly when it vanished before mutation. -/
+@[simp]
+theorem matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K ℤ) (k : K) (i : I) :
+    (∀ l, matrixMutation row B k i l = 0) ↔ ∀ l, B i l = 0 := by
+  have hz (C : Matrix I K ℤ) (h : ∀ l, C i l = 0) :
+      ∀ l, matrixMutation row C k i l = 0 := by
+    intro l
+    simp [matrixMutation_apply, h]
+  exact ⟨fun h ↦ by simpa using hz (matrixMutation row B k) h, hz B⟩
+
+/-- No finite sequence of matrix mutations creates or removes a nonzero row. -/
+@[simp]
+theorem foldl_matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K ℤ)
+    (w : List K) (i : I) :
+    (∀ l, w.foldl (matrixMutation row) B i l = 0) ↔ ∀ l, B i l = 0 := by
+  induction w generalizing B with
+  | nil => rfl
+  | cons k w ih =>
+    simpa only [List.foldl_cons] using
+      (ih (matrixMutation row B k)).trans (matrixMutation_row_eq_zero_iff row B k i)
+
+
 end matrixMutation
 
 section fromBlocks
@@ -271,6 +303,12 @@ theorem mutation_matrix (k : K) : (B.mutation k).matrix = matrixMutation row B.m
 @[simp]
 theorem mutation_symmetrizer (k : K) : (B.mutation k).symmetrizer = B.symmetrizer :=
   (rfl)
+
+/-- Taking the underlying matrix commutes with a finite sequence of mutations. -/
+theorem foldl_mutation_matrix (w : List K) :
+    (w.foldl (fun C k ↦ C.mutation k) B).matrix = w.foldl (matrixMutation row) B.matrix :=
+  (List.foldl_hom (fun C : ExchangeMatrix row ↦ C.matrix)
+    (l := w) (init := B) (fun _ _ ↦ rfl)).symm
 
 /-- Mutating an exchange matrix twice in the same direction gives back the original exchange
 matrix. -/

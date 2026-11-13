@@ -283,6 +283,21 @@ theorem reindex_trans (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = r
         rw [Equiv.trans_apply, Equiv.trans_apply, h, h'] := by
   ext B : 2 <;> simp [Function.comp_assoc]
 
+/-- Taking principal blocks commutes with compatible relabelling. -/
+@[simp]
+theorem principal_reindex (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) :
+    (reindex eI eK h B).principal =
+      reindex (row := Function.Embedding.refl K) (row' := Function.Embedding.refl K')
+        eK eK (fun _ ↦ by simp only [Function.Embedding.refl_apply]) B.principal := by
+  ext : 1
+  · ext i j
+    have hi : eI.symm (row' i) = row (eK.symm i) := by
+      apply eI.injective
+      simpa using (h (eK.symm i)).symm
+    simp [hi]
+  · simp
+
 /-- The block diagonal sum of two exchange matrices: its mutable indices, its rows and its
 symmetrizer are the disjoint unions of those of the summands, and no entry joins the two. -/
 def sum {row₁ : K₁ ↪ I₁} {row₂ : K₂ ↪ I₂} (B₁ : ExchangeMatrix row₁) (B₂ : ExchangeMatrix row₂) :

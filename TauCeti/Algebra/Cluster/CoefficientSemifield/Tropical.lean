@@ -88,6 +88,22 @@ theorem eval_generator {Q : Type*} [CommGroup Q] (q : J → Q) (j : J) :
     freeAbelianCharEquiv.symm q (generator j) = q j := by
   simpa only [generator] using freeAbelianCharEquiv_symm_apply_ofAdd_single q j
 
+/-- Extending the family of tropical generators gives the identity group homomorphism. -/
+@[simp]
+theorem freeAbelianCharEquiv_symm_generator :
+    freeAbelianCharEquiv.symm (generator (J := J)) = MonoidHom.id (Trop J) := by
+  apply freeAbelianCharEquiv.injective
+  rw [MulEquiv.apply_symm_apply]
+  funext j
+  apply Multiplicative.toAdd.injective
+  simp [freeAbelianCharEquiv_apply]
+
+/-- A tropical monomial is the finite product of its generators to their integer exponents. -/
+theorem eq_prod_generator (a : Trop J) :
+    a = a.toAdd.prod (fun j n ↦ generator j ^ n) := by
+  simpa only [freeAbelianCharEquiv_symm_generator, MonoidHom.id_apply, ofAdd_toAdd] using
+    freeAbelianCharEquiv_symm_apply_ofAdd (M := Trop J) generator a.toAdd
+
 /-- The minimum of two distinct generators is the multiplicative identity. -/
 @[simp]
 theorem generator_add_generator {i j : J} (h : i ≠ j) : generator i + generator j = 1 := by
