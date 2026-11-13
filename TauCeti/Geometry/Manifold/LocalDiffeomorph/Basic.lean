@@ -469,14 +469,14 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq {N' : T
 
 /-- A chart `c` of the maximal `C^n` atlas of `N'` at `f x` pulls back along a `C^n` local
 diffeomorphism `f` at `x` to a chart `e` of the maximal `C^n` atlas of `M` at `x` with the same
-extended coordinates at `x`, in which the coordinate expression of every `g ∘ f` is the coordinate
-expression of `g` in `c`. -/
-theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq {N' Y : Type*}
+extended coordinates at `x`, in which the coordinate expression of `f` is the identity: near
+`e.extend I x`, `f ∘ (e.extend I).symm` agrees with `(c.extend I).symm`. -/
+theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq {N' : Type*}
     [TopologicalSpace N'] [ChartedSpace H N'] [IsManifold I n M] {f : M → N'}
     {x : M} (hf : IsLocalDiffeomorphAt I I n f x) {c : OpenPartialHomeomorph N' H}
     (hc : c ∈ IsManifold.maximalAtlas I n N') (hfx : f x ∈ c.source) :
     ∃ e ∈ IsManifold.maximalAtlas I n M, x ∈ e.source ∧ e.extend I x = c.extend I (f x) ∧
-      ∀ g : N' → Y, (g ∘ f) ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)] g ∘ (c.extend I).symm := by
+      f ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)] (c.extend I).symm := by
   obtain ⟨e, he, hx, heq⟩ := hf.exists_mem_maximalAtlas_eventuallyEq hc hfx
   -- On a neighbourhood of `x`, the extended chart `e` is the extended chart `c` after `f`.
   have hext : ∀ᶠ y in 𝓝 x, y ∈ e.source ∧ f y ∈ c.source ∧ e.extend I y = c.extend I (f y) := by
@@ -484,14 +484,14 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq 
       hf.contMDiffAt.continuousAt.preimage_mem_nhds (c.open_source.mem_nhds hfx)]
       with y hy hye hyc
     exact ⟨hye, hyc, by simp only [OpenPartialHomeomorph.extend_coe, Function.comp_apply, hy]⟩
-  refine ⟨e, he, hx, hext.self_of_nhds.2.2, fun g ↦ ?_⟩
-  -- In the model space `H`, the coordinate expression of `g ∘ f` in `e` is that of `g` in `c`.
-  have hH : ∀ᶠ h in 𝓝 (e x), (g ∘ f) (e.symm h) = g (c.symm h) := by
+  refine ⟨e, he, hx, hext.self_of_nhds.2.2, ?_⟩
+  -- In the model space `H`, the coordinate expression of `f` in `e` and `c` is the identity.
+  have hH : ∀ᶠ h in 𝓝 (e x), f (e.symm h) = c.symm h := by
     rw [← e.map_nhds_eq hx, Filter.eventually_map]
     filter_upwards [hext] with y ⟨hye, hyc, hy⟩
     have hy' : e y = c (f y) :=
       I.injective (by simpa only [OpenPartialHomeomorph.extend_coe, Function.comp_apply] using hy)
-    rw [Function.comp_apply, e.left_inv hye, hy', c.left_inv hyc]
+    rw [e.left_inv hye, hy', c.left_inv hyc]
   -- Transport this along the continuous map `I.symm`, which is how the extended charts invert.
   have hI : Filter.Tendsto I.symm (𝓝 (e.extend I x)) (𝓝 (e x)) := by
     simpa only [OpenPartialHomeomorph.extend_coe, Function.comp_apply, I.left_inv] using
