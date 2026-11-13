@@ -312,7 +312,8 @@ theorem map_appendHomeomorph_crossProduct_ofCube_id (p q : ℕ) :
           (ofCube (Fin p → I) R (ContinuousMap.id _))
           (ofCube (Fin q → I) R (ContinuousMap.id _))) =
       ofCube (Fin (p + q) → I) R (ContinuousMap.id _) := by
-  rw [crossProduct_ofCube, map_ofCube, SingularCube.appendHomeomorph_comp_crossProduct_id_id]
+  rw [crossProduct_ofCube, map_ofCube, SingularCube.crossProduct_id_id,
+    Homeomorph.toContinuousMap_comp_symm]
 
 /-- The cross product of normalized chains is natural in both spaces. -/
 theorem map_crossProduct {p q : ℕ} (f : C(X, Z)) (g : C(Y, W)) (a : NormalizedCubicalChain X R p)
