@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.RingTheory.Flat.Basic
+import TauCeti.LinearAlgebra.Dual.FiniteProjective
 import TauCeti.RingTheory.Extension.Generators
 import TauCeti.RingTheory.Extension.Presentation.Basic
 
@@ -97,11 +98,8 @@ variable (A B : Type*) [CommSemiring A] [AddCommMonoid B] [Module A B]
 
 private theorem nonempty_coords [Module.Finite A B] [Module.Projective A B] :
     Nonempty (Coords A B) := by
-  obtain ⟨n, p, s, -, -, hs⟩ := Module.Finite.exists_comp_eq_id_of_projective A B
-  refine ⟨⟨n, fun j ↦ p (Pi.single j 1), fun j ↦ LinearMap.proj j ∘ₗ s, fun x ↦ ?_⟩⟩
-  -- pull `p` out of the sum, which is then the expansion of `s x` in the standard basis
-  simpa only [LinearMap.comp_apply, LinearMap.proj_apply, LinearMap.id_apply, ← map_smul,
-    ← map_sum, ← pi_eq_sum_univ'] using LinearMap.congr_fun hs x
+  obtain ⟨n, b, φ, h⟩ := exists_sum_dual_smul_eq (R := A) (M := B)
+  exact ⟨⟨n, b, φ, h⟩⟩
 
 -- The chosen coordinate system on a finite projective module.
 private def coords [Module.Finite A B] [Module.Projective A B] : Coords A B :=
