@@ -276,7 +276,7 @@ private lemma IsSelfIntersectionMinusTwoChain.intersection_ends_eq_zero_of_lt_se
       (hc.intersection_self 0 (by omega)) (hc.intersection_self 1 (by omega))
       (hc.intersection_self 2 (by omega)) (hc.intersection_self 3 (by omega))
       (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
-      (hc.ne (by omega) (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
+      (hc.intersection_pos (by omega) (by omega))
       (hc.intersection_pos (by omega) (by omega))
       (hc.intersection_pos (by omega) (by omega))).2.2
   · exact (T.intersection_eq_zero_of_chain_five (by omega)
@@ -296,7 +296,7 @@ private lemma IsSelfIntersectionMinusTwoChain.intersection_ends_eq_zero_of_lt_se
       (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
       (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
       (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
-      (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
+      (hc.ne (by omega) (by omega) (by omega))
       (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
       (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
       (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
@@ -310,18 +310,18 @@ private lemma IsSelfIntersectionMinusTwoChain.window_eq_weight {t : ℕ} {c : �
     (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
     (h5 : 5 ≤ t) :
     ∀ a b d e f : ℕ, a < t → b < t → d < t → e < t → f < t →
-        a ≠ d → a ≠ e → a ≠ f → b ≠ e → b ≠ f → d ≠ f →
+        a ≠ d → a ≠ e → b ≠ e → b ≠ f → d ≠ f →
         0 < T.intersection (c a) (c b) → 0 < T.intersection (c b) (c d) →
         0 < T.intersection (c d) (c e) → 0 < T.intersection (c e) (c f) →
         T.intersection (c b) (c d) = (T.weight (c b) : ℤ) ∧
           T.intersection (c b) (c d) = (T.weight (c d) : ℤ) ∧
           T.intersection (c d) (c e) = (T.weight (c d) : ℤ) ∧
           T.intersection (c d) (c e) = (T.weight (c e) : ℤ) := by
-  intro a b d e f ha hb hd he hf had hae haf hbe hbf hdf hab hbd hde hef
+  intro a b d e f ha hb hd he hf had hae hbe hbf hdf hab hbd hde hef
   exact T.intersection_eq_weight_of_chain_five (by omega)
     (hc.intersection_self a ha) (hc.intersection_self b hb) (hc.intersection_self d hd)
     (hc.intersection_self e he) (hc.intersection_self f hf)
-    (hc.ne ha hd had) (hc.ne ha he hae) (hc.ne ha hf haf) (hc.ne hb he hbe)
+    (hc.ne ha hd had) (hc.ne ha he hae) (hc.ne hb he hbe)
     (hc.ne hb hf hbf) (hc.ne hd hf hdf) hab hbd hde hef
 
 /-- Every edge strictly inside a long chain equals the weight of both of its endpoints. -/
@@ -332,13 +332,13 @@ private lemma IsSelfIntersectionMinusTwoChain.interior_edge_eq_weight {t : ℕ} 
       T.intersection (c j) (c (j + 1)) = (T.weight (c (j + 1)) : ℤ) := by
   rcases eq_or_lt_of_le h1 with rfl | hj2
   · have key := hc.window_eq_weight hcard h5 0 1 2 3 4 (by omega) (by omega) (by omega)
-      (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+      (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
       (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
       (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
     exact ⟨key.1, key.2.1⟩
   · have key := hc.window_eq_weight hcard h5 (j - 2) (j - 1) j (j + 1) (j + 2)
       (by omega) (by omega) (by omega)
-      (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+      (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
       (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
       (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
     exact ⟨key.2.2.1, key.2.2.2⟩
@@ -372,12 +372,12 @@ private lemma IsSelfIntersectionMinusTwoChain.cycle_data {t : ℕ} {c : ℕ → 
   -- The two windows wrapping around the closing edge pin down the remaining data.
   have hwrap₁ := hc.window_eq_weight hcard h5 (t - 3) (t - 2) (t - 1) 0 1 (by omega)
     (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
     hpos' (hc.intersection_pos (by omega) (by omega))
   have hwrap₂ := hc.window_eq_weight hcard h5 (t - 2) (t - 1) 0 1 2 (by omega)
     (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
     (hc.intersection_pos (by omega) (by omega)) hpos'
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
   have hwtm2 : (T.weight (c (t - 2)) : ℤ) = W :=
@@ -785,7 +785,7 @@ private lemma IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end_fi
     (hc.intersection_self 4 (by omega))
     (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
     (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
-    (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
+    (hc.ne (by omega) (by omega) (by omega))
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hmem
