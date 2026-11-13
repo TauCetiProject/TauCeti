@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Basic
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 import TauCeti.NumberTheory.LocalField.Uniformizer
-import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 
 /-!
 # Hecke's unit relation for a presentation
@@ -69,13 +69,12 @@ namespace Grossencharacter
 /-- On the integral ideals prime to `𝔪`, the ideal character of the presented Hecke character is
 the unitary weight times the norm to the ideal-side shift: both are multiplicative, and at a prime
 both are the local component at a uniformizer (`toHeckeCharacter_primeIdele`). -/
-private theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
-    (h𝔣 : (⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :
-      Modulus K) ∣ 𝔪) (J : integralIdealsPrimeTo 𝔪) :
-    (χ.toHeckeCharacter.idealCharacter
-        (NumberFieldArithmetic.integralIdealsAwayHom K _ (integralIdealsPrimeToInclusion h𝔣 J)) :
-        ℂ) =
+theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
+    (J : integralIdealsPrimeTo 𝔪) :
+    (χ.toHeckeCharacter.idealCharacter (NumberFieldArithmetic.integralIdealsAwayHom K _
+        (integralIdealsPrimeToInclusion χ.mk_finiteConductor_dvd J)) : ℂ) =
       χ.unitaryWeight.1 J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ) := by
+  have h𝔣 := χ.mk_finiteConductor_dvd
   let g : integralIdealsPrimeTo 𝔪 →* ℂ :=
     { toFun J := χ.unitaryWeight.1 J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ)
       map_one' := by simp
@@ -110,8 +109,7 @@ theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 
       ∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ = 1 := by
   set ψ := χ.toHeckeCharacter
   set 𝔣 : Modulus K := ⟨ψ.finiteConductor, ψ.finiteConductor_ne_bot, ∅⟩
-  have h𝔣 : 𝔣 ∣ 𝔪 :=
-    Modulus.dvd_iff.mpr ⟨χ.finiteConductor_dvd_finitePart, Finset.empty_subset _⟩
+  have h𝔣 : 𝔣 ∣ 𝔪 := χ.mk_finiteConductor_dvd
   have hx𝔣 : IsCongrOne 𝔣 x := hx.mono h𝔣
   -- The fractional ideal of `x` is the integral ideal `(a)`, prime to `𝔪` and to `𝔣`.
   have hspan : ((Ideal.span {a} : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) =
@@ -132,7 +130,7 @@ theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 
     Subtype.ext (Units.ext (by
       rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, coe_integralIdealsPrimeToInclusion,
         hspan]))
-  have hfinite := coe_idealCharacter_integralIdealsAwayHom χ h𝔣 ⟨_, hmem hx⟩
+  have hfinite := coe_idealCharacter_integralIdealsAwayHom χ ⟨_, hmem hx⟩
   -- The ideal character of `(x)` is the inverse of the archimedean monomial: at a real place
   -- where the parities differ, the place divides `𝔪`, where `x` is positive.
   have hpos (w : {w : InfinitePlace K // w.IsReal})
