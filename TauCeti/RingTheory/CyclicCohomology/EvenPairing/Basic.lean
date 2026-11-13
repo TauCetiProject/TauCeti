@@ -65,7 +65,7 @@ idempotent entry. Associativity is not required: each Hochschild face fixes this
 theorem apply_const_eq_zero_of_mem_cyclicCoboundaries {n : ℕ} (hn : Even n)
     {φ : cyclicCochains R A M n} (hφ : φ ∈ cyclicCoboundaries R A M n) {e : A}
     (he : IsIdempotentElem e) :
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (fun _ ↦ e) = 0 := by
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (fun _ ↦ e) = 0 := by
   cases n with
   | zero =>
     rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ
@@ -95,7 +95,7 @@ def evenPairing (e : A) (he : IsIdempotentElem e) (m : ℕ) :
   desc (2 * m)
     ((m ! : R)⁻¹ •
       { toFun φ := ((φ : cyclicCochains R A M (2 * m)) :
-          MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e
+          MultilinearMap (RingHom.id R) (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e
         map_add' _ _ := rfl
         map_smul' _ _ := rfl })
     fun _ hφ ↦ by
@@ -109,7 +109,7 @@ theorem evenPairing_mk (e : A) (he : IsIdempotentElem e) (m : ℕ)
     (φ : cyclicCocycles R A M (2 * m)) :
     evenPairing e he m (mk R A M (2 * m) φ) =
       (m ! : R)⁻¹ • ((φ : cyclicCochains R A M (2 * m)) :
-        MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
+        MultilinearMap (RingHom.id R) (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
   simp [evenPairing]
 
 /-- The even pairing of the zero idempotent vanishes. -/
@@ -127,7 +127,7 @@ theorem evenPairing_matrixExtension_mk {ι : Type*} [Fintype ι] [DecidableEq ι
     evenPairing e he m (matrixExtension M ι (2 * m) (mk R A M (2 * m) φ)) =
       (m ! : R)⁻¹ • matrixCochainExtension ι (2 * m)
         ((φ : cyclicCochains R A M (2 * m)) :
-          MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
+          MultilinearMap (RingHom.id R) (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
   rw [matrixExtension_mk, evenPairing_mk, coe_matrixCyclicCochainExtension_apply]
 
 /-- **Additivity of the even pairing on direct sums**: the even pairing of the block-diagonal

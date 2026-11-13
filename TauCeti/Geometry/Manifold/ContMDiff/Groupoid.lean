@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.Basic
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.LocalInvariantProperties
 
 /-!
@@ -36,6 +37,8 @@ atlas is obtained in this way when the fibre is itself a manifold.
   inverse on its target.
 * `TauCeti.isManifold_of_hasGroupoid_contMDiffGroupoid`: a space charted over a `C^n` manifold `X`
   with transitions in `contMDiffGroupoid I n X` is a `C^n` manifold for the composite charts.
+* `TauCeti.contDiffAt_of_mem_contDiffGroupoid`: a member of the `C^n` groupoid of the model space
+  is `C^n` at each point of its source.
 -/
 
 public section
@@ -97,5 +100,10 @@ theorem isManifold_of_hasGroupoid_contMDiffGroupoid [IsManifold I n X] (M : Type
   let := ChartedSpace.comp H X M
   refine { StructureGroupoid.HasGroupoid.comp (contMDiffGroupoid I n X) fun e he ↦ ?_ with }
   rwa [isLocalStructomorphOn_contDiffGroupoid_iff]
+
+/-- A member of the `C^n` groupoid of the model space is `C^n` at every point of its source. -/
+theorem contDiffAt_of_mem_contDiffGroupoid {f : OpenPartialHomeomorph E E}
+    (hf : f ∈ contDiffGroupoid n 𝓘(𝕜, E)) {z : E} (hz : z ∈ f.source) : ContDiffAt 𝕜 n f z :=
+  (contMDiffOn_of_mem_contDiffGroupoid hf).contDiffOn.contDiffAt (f.open_source.mem_nhds hz)
 
 end TauCeti

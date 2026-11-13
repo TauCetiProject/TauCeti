@@ -22,7 +22,7 @@ of the orthogonal complements of the frames (`finiteOrthonormalFrame.forgetLastF
 The map is equivariant for `SO(N)`, so a continuous local section of the orbit map
 `SO(N) → V_r(ℝ^N)` through the standard frame (which is the Stiefel fibration
 `TauCeti.specialOrthogonalFrameMap`) translates the fibre over the standard frame onto the nearby
-fibres (`TauCeti.equivariantTrivialization`).
+fibres (`TauCeti.equivariantLocalSectionTrivialization`).
 
 Since the fibre `S^(N-r-1)` is `(N - r - 2)`-connected, the map is `(N - r - 1)`-connected.
 Starting from the one-point space `V_0(ℝ^N)`, induction along the tower
@@ -71,13 +71,15 @@ theorem exists_trivialization_forgetLast (h : r < N) (b : finiteOrthonormalFrame
   let := specialOrthogonalMulAction (r + 1) (r + m + 1)
   let := specialOrthogonalMulAction r (r + m + 1)
   have := continuousSMul_specialOrthogonalMulAction (r := r + 1) (N := r + m + 1)
-  let e := equivariantTrivialization forgetLast continuous_forgetLast
-    (fun A g ↦ by simp only [specialOrthogonal_smul_def, forgetLast_unitaryMap])
-    (forgetLast_surjective h (standard ℝ h.le)) c.baseSet c.open_baseSet
+  obtain ⟨e₀, he₀⟩ := forgetLast_surjective h (standard ℝ h.le)
+  let e := equivariantLocalSectionTrivialization forgetLast continuous_forgetLast
+    (fun A g ↦ by simp only [specialOrthogonal_smul_def, forgetLast_unitaryMap]) _ ⟨e₀, he₀⟩
+    c.baseSet c.open_baseSet
     (fun f ↦ c.toOpenPartialHomeomorph.symm (f, 1)) c.continuousOn_symm_prodMk_left
     fun f hf ↦ (specialOrthogonalFrameMap_eq_smul_standard _).symm.trans (c.proj_symm_apply' hf)
   refine ⟨e.transFiberHomeomorph (forgetLastFiberSphere _), ?_⟩
-  simpa only [Bundle.Trivialization.transFiberHomeomorph, e, equivariantTrivialization_baseSet]
+  simpa only [Bundle.Trivialization.transFiberHomeomorph, e,
+    equivariantLocalSectionTrivialization_baseSet]
     using hb
 
 /-- For `r < N`, forgetting the last vector `V_(r+1)(ℝ^N) → V_r(ℝ^N)` is a Serre fibration: it is

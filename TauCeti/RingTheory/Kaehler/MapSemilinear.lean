@@ -45,7 +45,7 @@ outside the `letI` scope.
   composition.
 * `KaehlerDifferential.mapSemilinear_apply_symm_apply`, `mapSemilinear_symm_apply_apply`: along
   an algebra isomorphism the maps for `e` and `e.symm` are mutually inverse.
-* `KaehlerDifferential.span_singleton_D_apply_eq_top_iff`: a generating differential `D a`
+* `KaehlerDifferential.span_singleton_mapSemilinear_eq_top_iff`: a generating differential
   transfers along an algebra isomorphism.
 
 ## Provenance
@@ -138,21 +138,23 @@ theorem mapSemilinear_symm_apply_apply (e : A ≃ₐ[R] B) (ω : Ω[A⁄R]) :
     mapSemilinear e.symm.toAlgHom (mapSemilinear e.toAlgHom ω) = ω :=
   mapSemilinear_apply_symm_apply e.symm ω
 
-private theorem span_singleton_D_apply_eq_top_of_eq_top (e : A ≃ₐ[R] B) {a : A}
-    (h : Submodule.span A {D R A a} = ⊤) : Submodule.span B {D R B (e a)} = ⊤ := by
-  refine eq_top_iff.mpr fun ξ _ ↦ Submodule.mem_span_singleton.mpr ?_
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
-    (h ▸ Submodule.mem_top : mapSemilinear e.symm.toAlgHom ξ ∈ Submodule.span A {D R A a})
+private theorem span_singleton_mapSemilinear_eq_top_of_eq_top (e : A ≃ₐ[R] B) {ω : Ω[A⁄R]}
+    (h : Submodule.span A {ω} = ⊤) : Submodule.span B {mapSemilinear e.toAlgHom ω} = ⊤ := by
+  rw [Submodule.span_singleton_eq_top_iff] at h ⊢
+  intro ξ
+  -- Write the transport of `ξ` back to `A` as a multiple of `ω`, then transport forward again.
+  obtain ⟨c, hc⟩ := h (mapSemilinear e.symm.toAlgHom ξ)
   refine ⟨e c, ?_⟩
-  rw [← mapSemilinear_apply_symm_apply e ξ, ← hc, mapSemilinear_smul, mapSemilinear_D,
-    AlgEquiv.toAlgHom_apply, AlgEquiv.toAlgHom_apply]
+  rw [← mapSemilinear_apply_symm_apply e ξ, ← hc, mapSemilinear_smul, AlgEquiv.toAlgHom_apply]
 
-/-- A single differential `D a` generates the Kähler differentials exactly when its transport
-`D (e a)` along an algebra isomorphism `e` does. -/
-theorem span_singleton_D_apply_eq_top_iff (e : A ≃ₐ[R] B) (a : A) :
-    Submodule.span B {D R B (e a)} = ⊤ ↔ Submodule.span A {D R A a} = ⊤ :=
-  ⟨fun h ↦ by simpa using span_singleton_D_apply_eq_top_of_eq_top e.symm h,
-    span_singleton_D_apply_eq_top_of_eq_top e⟩
+/-- A single differential `ω` generates the Kähler differentials exactly when its transport
+`mapSemilinear e ω` along an algebra isomorphism `e` does. -/
+theorem span_singleton_mapSemilinear_eq_top_iff (e : A ≃ₐ[R] B) (ω : Ω[A⁄R]) :
+    Submodule.span B {mapSemilinear e.toAlgHom ω} = ⊤ ↔ Submodule.span A {ω} = ⊤ :=
+  ⟨fun h ↦ by
+    simpa only [mapSemilinear_symm_apply_apply] using
+      span_singleton_mapSemilinear_eq_top_of_eq_top e.symm h,
+    span_singleton_mapSemilinear_eq_top_of_eq_top e⟩
 
 /-- On a tower, `mapSemilinear` along the structure map is Mathlib's `KaehlerDifferential.map`
 — the sense in which this construction extends the tower functoriality to arbitrary algebra

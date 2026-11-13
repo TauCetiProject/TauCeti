@@ -252,13 +252,9 @@ theorem charFun_logisticMeasure (hs : 0 < s) (ht : t ≠ 0) :
     charFun (logisticMeasure m s) t =
       Complex.exp (Complex.I * m * t) *
         (Real.pi * s * t / Real.sinh (Real.pi * s * t) : ℝ) := by
-  have hst : s * t ≠ 0 := mul_ne_zero hs.ne' ht
   have hz : (s : ℂ) * t * Complex.I ≠ 0 := by
     exact mul_ne_zero (mul_ne_zero (Complex.ofReal_ne_zero.mpr hs.ne')
       (Complex.ofReal_ne_zero.mpr ht)) Complex.I_ne_zero
-  have hsinh : Real.sinh (Real.pi * s * t) ≠ 0 := by
-    rw [Real.sinh_ne_zero]
-    exact mul_ne_zero (mul_ne_zero Real.pi_ne_zero hs.ne') ht
   rw [charFun_logisticMeasure_eq_gamma hs]
   have hGamma :
       Complex.Gamma (1 - (s : ℂ) * t * Complex.I) *

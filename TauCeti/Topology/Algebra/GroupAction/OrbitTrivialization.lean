@@ -32,11 +32,10 @@ the stabilizer of `x₀`, by `g ↦ (g • x₀, s (g • x₀)⁻¹ * g)` with 
 is `Subgroup.localSectionTrivializationOfCosetFibers` for the orbit map, whose fibres are the left
 cosets of the stabilizer; see Steenrod, *The Topology of Fibre Bundles*, §7.
 
-More generally, a continuous map `p : E → X` that is equivariant for actions of `G` is trivial over
-`U`, with fibre `p⁻¹(x₀)`, by `e ↦ (p e, s (p e)⁻¹ • e)` with inverse `(z, y) ↦ s z • y`: the local
-section translates the fibre over `x₀` onto the nearby fibres. This is how homogeneous bundles,
-such as the maps between Stiefel manifolds that forget vectors of a frame, are shown to be locally
-trivial.
+The same local section trivializes any continuous `G`-equivariant map `p : E → X` over `U`, with
+fibre `p⁻¹ {x₀}`, by `e ↦ (p e, s (p e)⁻¹ • e)` with inverse `(z, e) ↦ s z • e`. This adapts the
+chart of `Subgroup.localSectionTrivializationOfCosetFibers` from right multiplication on a group
+to an action on `E`.
 
 ## Main definitions and results
 
@@ -50,8 +49,9 @@ trivial.
   set, with fibre the stabilizer of `x₀`, determined by a continuous local section.
 * `TauCeti.orbitMapTrivialization_apply_mul`: it intertwines right multiplication by the
   stabilizer on `G` with right multiplication on the fibre.
-* `TauCeti.equivariantTrivialization`: the trivialization of an equivariant map over an open set,
-  with fibre the fibre over `x₀`, determined by a continuous local section of the orbit map of `x₀`.
+* `TauCeti.equivariantLocalSectionTrivialization`: the trivialization of a continuous equivariant
+  map over an open set, with fibre the preimage of `x₀`, determined by a continuous local section
+  of the orbit map of `x₀`.
 -/
 
 public section
@@ -199,109 +199,102 @@ theorem orbitMapTrivialization_apply_mul {g : G} (hg : g • x₀ ∈ U) (h : st
 
 end TauCeti
 
-/-! ### Equivariant maps to a space with local sections of an orbit map -/
+/-! ### Equivariant maps over an orbit map with local sections -/
 
 namespace TauCeti
 
-variable {G E X : Type*} [Group G] [MulAction G E] [MulAction G X]
+variable {G E X : Type*} [Group G] [MulAction G E] [MulAction G X] {p : E → X}
+  {x : X} {U : Set X} {s : X → G}
 
-/-- A point of the fibre of an equivariant map over `s z • x₀ = z` is carried by `(s z)⁻¹` into
-the fibre over `x₀`. -/
-private theorem equivariant_inv_smul_mem {p : E → X}
-    (hp_smul : ∀ (g : G) (e : E), p (g • e) = g • p e) {x₀ : X} {s : X → G} {e : E}
-    (hsec : s (p e) • x₀ = p e) : p ((s (p e))⁻¹ • e) = x₀ := by
-  rw [hp_smul, inv_smul_eq_iff, hsec]
+/-- Translating a point of the fibre over `x` by the local section lands over the point of `U`. -/
+private theorem map_smul_eq_of_localSection (hp : ∀ (g : G) (e : E), p (g • e) = g • p e)
+    (hsec : ∀ y ∈ U, s y • x = y) {y : X} (hy : y ∈ U) {e : E} (he : p e = x) :
+    p (s y • e) = y := by
+  rw [hp, he, hsec y hy]
 
-/-- The fibre coordinate of `equivariantTrivialization`: over `U` it is `s (p e)⁻¹ • e`, and
-elsewhere it is an arbitrary point of the fibre over `x₀`. -/
-private noncomputable def equivariantFiberCoord {p : E → X}
-    (hp_smul : ∀ (g : G) (e : E), p (g • e) = g • p e) {x₀ : X} (hx₀ : ∃ e, p e = x₀)
-    (U : Set X) (s : X → G) (hsec : ∀ z ∈ U, s z • x₀ = z) (e : E) : {e : E // p e = x₀} := by
-  classical
-  exact ⟨if p e ∈ U then (s (p e))⁻¹ • e else hx₀.choose, by
-    split_ifs with h
-    exacts [equivariant_inv_smul_mem hp_smul (hsec _ h), hx₀.choose_spec]⟩
+/-- The fiber coordinate of `equivariantLocalSectionTrivialization`: over `U` it is
+`s (p e)⁻¹ • e`, and elsewhere it is the given point `e₀` of the fibre. -/
+private noncomputable def equivariantSectionFiber (hp : ∀ (g : G) (e : E), p (g • e) = g • p e)
+    (U : Set X) (s : X → G) (hsec : ∀ y ∈ U, s y • x = y) (e₀ : {e : E // p e = x}) (e : E) :
+    {e : E // p e = x} :=
+  letI := Classical.dec (p e ∈ U)
+  if he : p e ∈ U then
+    ⟨(s (p e))⁻¹ • e, by rw [hp, inv_smul_eq_iff, hsec _ he]⟩
+  else e₀
 
-private theorem coe_equivariantFiberCoord {p : E → X}
-    {hp_smul : ∀ (g : G) (e : E), p (g • e) = g • p e} {x₀ : X} {hx₀ : ∃ e, p e = x₀}
-    {U : Set X} {s : X → G} {hsec : ∀ z ∈ U, s z • x₀ = z} {e : E} (he : p e ∈ U) :
-    (equivariantFiberCoord hp_smul hx₀ U s hsec e : E) = (s (p e))⁻¹ • e := by
-  simp [equivariantFiberCoord, he]
+private theorem coe_equivariantSectionFiber {hp : ∀ (g : G) (e : E), p (g • e) = g • p e}
+    {hsec : ∀ y ∈ U, s y • x = y} {e₀ : {e : E // p e = x}} {e : E} (he : p e ∈ U) :
+    (equivariantSectionFiber hp U s hsec e₀ e : E) = (s (p e))⁻¹ • e := by
+  simp only [equivariantSectionFiber, he, ↓reduceDIte]
 
 variable [TopologicalSpace G] [ContinuousInv G] [TopologicalSpace E] [ContinuousSMul G E]
   [TopologicalSpace X]
 
-private theorem continuousOn_equivariantFiberCoord {p : E → X} (hp : Continuous p)
-    {hp_smul : ∀ (g : G) (e : E), p (g • e) = g • p e} {x₀ : X} {hx₀ : ∃ e, p e = x₀}
-    {U : Set X} {s : X → G} (hs : ContinuousOn s U) {hsec : ∀ z ∈ U, s z • x₀ = z} :
-    ContinuousOn (equivariantFiberCoord hp_smul hx₀ U s hsec) (p ⁻¹' U) := by
-  refine Topology.IsEmbedding.subtypeVal.isInducing.continuousOn_iff.2 ?_
-  exact (((hs.comp hp.continuousOn fun _ he ↦ he).inv).smul continuousOn_id).congr
-    fun e he ↦ coe_equivariantFiberCoord he
-
-/-- Let `p : E → X` be a continuous map that is equivariant for actions of `G`, and let `s` be a
-section of the orbit map `g ↦ g • x₀`, continuous on an open set `U`. Then `p` is trivial over `U`
-with fibre `p⁻¹(x₀)`: the chart sends `e` over `U` to `(p e, s (p e)⁻¹ • e)`, and its inverse sends
-`(z, y)` to `s z • y`. The fibre over `x₀` is assumed nonempty, since a chart is a total map. -/
-noncomputable def equivariantTrivialization (p : E → X) (hp : Continuous p)
-    (hp_smul : ∀ (g : G) (e : E), p (g • e) = g • p e) {x₀ : X} (hx₀ : ∃ e, p e = x₀)
+/-- Let `p : E → X` be a continuous `G`-equivariant map, and `s` a section of the orbit map
+`g ↦ g • x`, continuous on an open set `U`. Then `p` is trivial over `U` with fibre `p⁻¹ {x}`:
+the chart sends `e` over `U` to `(p e, s (p e)⁻¹ • e)`, and its inverse sends `(y, e)` to
+`s y • e`. The point `e₀` of the fibre is only used to make the chart total. This adapts the
+chart of `Subgroup.localSectionTrivializationOfCosetFibers` from right multiplication on a group
+to an action on `E`; see Steenrod, *The Topology of Fibre Bundles*, §7. -/
+noncomputable def equivariantLocalSectionTrivialization (p : E → X) (hpc : Continuous p)
+    (hp : ∀ (g : G) (e : E), p (g • e) = g • p e) (x : X) (e₀ : {e : E // p e = x})
     (U : Set X) (hU : IsOpen U) (s : X → G) (hs : ContinuousOn s U)
-    (hsec : ∀ z ∈ U, s z • x₀ = z) :
-    Trivialization {e : E // p e = x₀} p where
-  toFun e := (p e, equivariantFiberCoord hp_smul hx₀ U s hsec e)
+    (hsec : ∀ y ∈ U, s y • x = y) : Trivialization {e : E // p e = x} p where
+  toFun e := (p e, equivariantSectionFiber hp U s hsec e₀ e)
   invFun q := s q.1 • (q.2 : E)
   source := p ⁻¹' U
   target := U ×ˢ univ
   map_source' _ he := ⟨he, mem_univ _⟩
   map_target' q hq := by
-    simpa only [mem_preimage, hp_smul, q.2.2, hsec q.1 (mem_prod.1 hq).1] using (mem_prod.1 hq).1
+    rw [mem_preimage, map_smul_eq_of_localSection hp hsec hq.1 q.2.2]
+    exact hq.1
   left_inv' e he := by
-    simp [coe_equivariantFiberCoord (mem_preimage.1 he)]
+    simp only [coe_equivariantSectionFiber he, smul_inv_smul]
   right_inv' q hq := by
-    have hq' : p (s q.1 • (q.2 : E)) = q.1 := by rw [hp_smul, q.2.2, hsec q.1 (mem_prod.1 hq).1]
+    have hq' := map_smul_eq_of_localSection hp hsec hq.1 q.2.2
     refine Prod.ext hq' (Subtype.ext ?_)
-    simp [coe_equivariantFiberCoord (hq'.symm ▸ (mem_prod.1 hq).1 : p (s q.1 • (q.2 : E)) ∈ U),
-      hq']
-  open_source := hU.preimage hp
+    rw [coe_equivariantSectionFiber (hq'.symm ▸ hq.1 : p (s q.1 • (q.2 : E)) ∈ U), hq',
+      inv_smul_smul]
+  open_source := hU.preimage hpc
   open_target := hU.prod isOpen_univ
-  continuousOn_toFun := hp.continuousOn.prodMk (continuousOn_equivariantFiberCoord hp hs)
+  continuousOn_toFun := by
+    refine hpc.continuousOn.prodMk ?_
+    refine (IsEmbedding.subtypeVal (p := fun e : E ↦ p e = x)).isInducing.continuousOn_iff.2 ?_
+    exact ((hs.comp hpc.continuousOn fun _ he ↦ he).inv.smul continuousOn_id).congr
+      fun e he ↦ coe_equivariantSectionFiber he
   continuousOn_invFun :=
-    (hs.comp continuousOn_fst fun _ hq ↦ (mem_prod.1 hq).1).smul
-      (continuous_subtype_val.comp continuous_snd).continuousOn
+    (hs.comp (continuousOn_fst (s := U ×ˢ univ)) fun _ hq ↦ hq.1).smul
+      (continuous_subtype_val.comp_continuousOn continuousOn_snd)
   baseSet := U
   open_baseSet := hU
   source_eq := rfl
   target_eq := rfl
   proj_toFun _ _ := rfl
 
-variable {p : E → X} {hp : Continuous p} {hp_smul : ∀ (g : G) (e : E), p (g • e) = g • p e}
-  {x₀ : X} {hx₀ : ∃ e, p e = x₀} {U : Set X} {hU : IsOpen U} {s : X → G} {hs : ContinuousOn s U}
-  {hsec : ∀ z ∈ U, s z • x₀ = z}
+variable {hpc : Continuous p} {hp : ∀ (g : G) (e : E), p (g • e) = g • p e}
+  {e₀ : {e : E // p e = x}} {hU : IsOpen U} {hs : ContinuousOn s U}
+  {hsec : ∀ y ∈ U, s y • x = y}
 
-/-- The base of `equivariantTrivialization` is the domain of the local section. -/
+/-- The base of `equivariantLocalSectionTrivialization` is the domain of the local section. -/
 @[simp]
-theorem equivariantTrivialization_baseSet :
-    (equivariantTrivialization p hp hp_smul hx₀ U hU s hs hsec).baseSet = U :=
+theorem equivariantLocalSectionTrivialization_baseSet :
+    (equivariantLocalSectionTrivialization p hpc hp x e₀ U hU s hs hsec).baseSet = U :=
   (rfl)
 
-/-- The base coordinate of `equivariantTrivialization` is `p`. -/
+/-- On the chart source, the fiber coordinate of `equivariantLocalSectionTrivialization` is
+`s (p e)⁻¹ • e`. -/
 @[simp]
-theorem equivariantTrivialization_apply_fst (e : E) :
-    (equivariantTrivialization p hp hp_smul hx₀ U hU s hs hsec e).1 = p e :=
-  (rfl)
+theorem equivariantLocalSectionTrivialization_fiberCoordinate {e : E} (he : p e ∈ U) :
+    ((equivariantLocalSectionTrivialization p hpc hp x e₀ U hU s hs hsec e).2 : E) =
+      (s (p e))⁻¹ • e :=
+  coe_equivariantSectionFiber (hp := hp) (hsec := hsec) he
 
-/-- Over the base, the fibre coordinate of `equivariantTrivialization` is `s (p e)⁻¹ • e`. -/
+/-- The inverse of `equivariantLocalSectionTrivialization` translates a point of the fibre by
+the local section. -/
 @[simp]
-theorem coe_equivariantTrivialization_apply_snd {e : E} (he : p e ∈ U) :
-    ((equivariantTrivialization p hp hp_smul hx₀ U hU s hs hsec e).2 : E) = (s (p e))⁻¹ • e :=
-  coe_equivariantFiberCoord (hp_smul := hp_smul) (hsec := hsec) he
-
-/-- The inverse of `equivariantTrivialization` moves a point of the fibre over `x₀` by the
-section. -/
-@[simp]
-theorem equivariantTrivialization_symm_apply (q : X × {e : E // p e = x₀}) :
-    (equivariantTrivialization p hp hp_smul hx₀ U hU s hs hsec).toOpenPartialHomeomorph.symm q =
-      s q.1 • (q.2 : E) :=
+theorem equivariantLocalSectionTrivialization_symm_apply (q : X × {e : E // p e = x}) :
+    (equivariantLocalSectionTrivialization p hpc hp x e₀ U hU s hs
+      hsec).toOpenPartialHomeomorph.symm q = s q.1 • (q.2 : E) :=
   (rfl)
 
 end TauCeti

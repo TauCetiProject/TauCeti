@@ -88,7 +88,7 @@ private theorem δ_shiftCochainEquiv {X Y : DGShiftClosure (CochainComplex V ℤ
       δ n (n + 1) (shiftCochainEquiv R X Y n f : Cochain (X.obj⟦X.shift⟧) (Y.obj⟦Y.shift⟧) n) :=
   (congrArg (cochainShiftLinearEquiv R X.obj Y.obj X.shift Y.shift (n + 1))
     (dgHomEquiv_dgDifferential R n f)).trans
-      (δ_cochainShiftLinearEquiv R _ _ _ _ _ _ rfl _).symm
+      (δ_cochainShiftLinearEquiv R _ _ _ _ _ _ _).symm
 
 /-- The DG functor `K[r] ↦ K⟦r⟧` evaluating the formal shifts of cochain complexes, acting on
 morphisms by the normalized identification `TauCeti.DGShiftClosure.shiftCochainEquiv`. -/

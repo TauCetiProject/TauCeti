@@ -92,7 +92,7 @@ theorem relEntropy_optimalPlan_le {P : Matrix (Fin 2) (Fin 2) ℝ}
 
 /-- The projective diameter is exactly the logarithm of four. -/
 @[simp] theorem projectiveDiameter_kernel : kernel.projectiveDiameter = log 4 := by
-  rw [projectiveDiameter_fin_two kernel_pos]
+  rw [projectiveDiameter_fin_two kernel]
   norm_num [kernel_def, abs_of_nonneg (log_nonneg (by norm_num : (1 : ℝ) ≤ 4))]
 
 /-- Each half-step has contraction factor `1/3`, not merely an unspecified factor below one. -/
@@ -141,8 +141,7 @@ theorem sum_abs_sum_iterate_zero :
 theorem sum_abs_sum_iterate_sub_le (n : ℕ) :
     ∑ j, |∑ i, iterate n i j - 1 / 2| ≤ exp ((1 / 3 : ℝ) ^ (2 * n) * log 4) - 1 := by
   have h := sum_abs_sum_sinkhornPlan_iterate_apply_sub_le kernel_pos
-    (fun _ ↦ by norm_num) (fun _ ↦ by norm_num) scaling optimalPlan_hasMarginals
-    row_pos col_pos (fun _ ↦ zero_lt_one) n
+    (fun _ ↦ by norm_num) scaling optimalPlan_hasMarginals col_pos (fun _ ↦ zero_lt_one) n
   rw [tanh_projectiveDiameter_kernel, projectiveDiameter_kernel] at h
   simpa only [iterate_def, Fin.sum_univ_two, add_halves, mul_one] using h
 
@@ -172,7 +171,7 @@ theorem dualValue_le (n : ℕ) : dualValue n ≤ relEntropy optimalPlan kernel :
 theorem relEntropy_sub_dualValue_le (n : ℕ) :
     relEntropy optimalPlan kernel - dualValue n ≤ (1 / 3 : ℝ) ^ (2 * n) * log 4 := by
   have h := scaling.relEntropy_sub_relEntropyDual_iterate_le optimalPlan_hasMarginals kernel_pos
-    (fun _ ↦ by norm_num) (fun _ ↦ by norm_num) row_pos col_pos (fun _ ↦ zero_lt_one) n
+    (fun _ ↦ by norm_num) col_pos (fun _ ↦ zero_lt_one) n
   rw [tanh_projectiveDiameter_kernel, projectiveDiameter_kernel] at h
   simpa only [dualValue_def, Function.iterate_succ_apply', Fin.sum_univ_two, add_halves, one_mul]
     using h
