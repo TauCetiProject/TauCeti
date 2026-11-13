@@ -132,6 +132,7 @@ theorem isSemisimple_of_pow_eq_one (ρ : Representation k G V) {g : G} {n : ℕ}
     (hg : g ^ n = 1) : End.IsSemisimple (ρ g) :=
   Module.End.isSemisimple_of_pow_eq_one hn (by rw [← map_pow, hg, map_one])
 
+omit [FiniteDimensional k V] in
 /-- **Character values are algebraic integers**: over any field, the value of a character at an
 element of finite order is integral over `ℤ`. Once the characteristic polynomial of `ρ g` splits
 this is the statement that a sum of roots of unity is an algebraic integer, and the general case
@@ -157,7 +158,7 @@ end Field
 
 section Rat
 
-variable {G : Type v} {V : Type w} [Monoid G] [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
+variable {G : Type v} {V : Type w} [Monoid G] [AddCommGroup V] [Module ℚ V]
 
 /-- **A rational character value is an integer.** The character of a representation over `ℚ` takes
 at an element of finite order a value that is integral over `ℤ`, and `ℤ` is integrally closed in

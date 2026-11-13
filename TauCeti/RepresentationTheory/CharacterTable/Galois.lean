@@ -87,7 +87,7 @@ universe u v w
 namespace Representation
 
 variable {k : Type u} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Monoid G]
-  [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  [AddCommGroup V] [Module k V]
 
 /-- **The Galois action on character values is by power maps.** If `g ^ n = 1` and the ring
 endomorphism `σ` of the coefficient field raises every `n`-th root of unity to the `j`-th power,
@@ -137,7 +137,7 @@ end Representation
 section ClassFunction
 
 variable {k : Type u} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Group G]
-  [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  [AddCommGroup V] [Module k V]
 
 /-- **The Galois twist of a character is the power-map twist of its class function.** On a group
 of exponent dividing `n`, the composite `σ ∘ χ` is `TauCeti.ClassFunction.powMap j` applied to the

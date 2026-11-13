@@ -128,6 +128,7 @@ private theorem isIntegral_trace_of_pow_eq_one_of_splits {f : End k V} {n : ℕ}
   rw [pow_eq_one_of_isRoot_charpoly hf (isRoot_of_mem_roots hμ)]
   exact isIntegral_one
 
+omit [FiniteDimensional k V] in
 /-- **The trace of an endomorphism of finite order is an algebraic integer**, over an arbitrary
 field. When the characteristic polynomial splits the trace is a sum of roots of unity; that
 splitting hypothesis is removed by base change to an algebraic closure, which preserves both the
@@ -135,6 +136,10 @@ order of `f` and, up to the field embedding, its trace, and an element of `k` wh
 closure is integral over `ℤ` is itself integral over `ℤ`. -/
 theorem isIntegral_trace_of_pow_eq_one {f : End k V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
     IsIntegral ℤ (LinearMap.trace k V f) := by
+  by_cases hfin : Module.Finite k V
+  swap
+  · rw [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin, LinearMap.zero_apply]
+    exact isIntegral_zero
   have hbase : f.baseChange (AlgebraicClosure k) ^ n = 1 := by
     rw [← LinearMap.baseChange_pow, hf, LinearMap.baseChange_one]
   have hint := isIntegral_trace_of_pow_eq_one_of_splits (k := AlgebraicClosure k) hn hbase
@@ -191,6 +196,7 @@ theorem trace_pow_eq_sum_eigenvalue_pow (hn : (n : k) ≠ 0) (hf : f ^ n = 1) (m
     (End.finite_hasEigenvalue f) (mapsTo_pow_eigenspace f · m)]
   exact Finset.sum_congr rfl fun μ _ => trace_pow_restrict_eigenspace f μ m
 
+omit [FiniteDimensional k V] in
 /-- **A ring endomorphism raising the roots of unity to the `j`-th power raises an endomorphism of
 finite order to the `j`-th power, as far as the trace can see**: if `f ^ n = 1` and `σ μ = μ ^ j`
 for every `n`-th root of unity `μ`, then `σ (tr f) = tr (f ^ j)`. Both sides are the sum
@@ -199,6 +205,9 @@ which enter as natural numbers. -/
 theorem map_trace_eq_trace_pow {j : ℕ} (hn : (n : k) ≠ 0) (hf : f ^ n = 1) (σ : k →+* k)
     (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ (LinearMap.trace k V f) = LinearMap.trace k V (f ^ j) := by
+  by_cases hfin : Module.Finite k V
+  swap
+  · simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin]
   conv_lhs => rw [← pow_one f]
   rw [trace_pow_eq_sum_eigenvalue_pow hn hf 1, trace_pow_eq_sum_eigenvalue_pow hn hf j, map_sum]
   refine Finset.sum_congr rfl fun μ hμ => ?_
@@ -216,11 +225,8 @@ omit [FiniteDimensional ℂ V] in
 the conjugate of the trace of `f` is the trace of its inverse `f ^ (n - 1)`: the eigenvalues of `f`
 are `n`-th roots of unity, and conjugation inverts those. -/
 theorem conj_trace_eq_trace_pow_sub_one {f : End ℂ V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
-    (starRingEnd ℂ) (LinearMap.trace ℂ V f) = LinearMap.trace ℂ V (f ^ (n - 1)) := by
-  by_cases hfin : Module.Finite ℂ V
-  swap
-  · simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin]
-  exact map_trace_eq_trace_pow (Nat.cast_ne_zero.2 hn) hf (starRingEnd ℂ) fun μ hμ => by
+    (starRingEnd ℂ) (LinearMap.trace ℂ V f) = LinearMap.trace ℂ V (f ^ (n - 1)) :=
+  map_trace_eq_trace_pow (Nat.cast_ne_zero.2 hn) hf (starRingEnd ℂ) fun μ hμ => by
     rw [← Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hμ hn)]
     exact inv_eq_of_mul_eq_one_right
       (by rw [← pow_succ', Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn), hμ])
