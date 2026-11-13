@@ -8,8 +8,6 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Core
 public import TauCeti.Combinatorics.Graph.Serre.Degree
 public import TauCeti.Combinatorics.Graph.Serre.Dist
-public import TauCeti.Combinatorics.Graph.Serre.Tree
-public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 import TauCeti.Data.List.Chain
 
@@ -49,7 +47,7 @@ one-vertex graph is that vertex, which lies on no nonempty cyclically reduced cl
 
 Kapovich and Myasnikov describe the hanging path by the degrees of its vertices
 (`SerreGraph.degree`): when the base vertex has degree one, it is the unique shortest path to the
-first vertex of degree at least three, and its other vertices have degree two. The two
+first vertex of degree at least three, and its internal vertices have degree two. The two
 descriptions agree:
 
 * `SerreGraph.IsCore.degree_le_two`, `SerreGraph.IsCore.two_le_degree` and
@@ -62,11 +60,11 @@ descriptions agree:
   two exactly when it lies on a cyclically reduced closed path, and degree zero exactly when the
   core is acyclic;
 * `SerreGraph.IsCore.notMem_cyclicDarts_iff_of_three_le_degree`: when the base vertex has degree
-  at most one, the darts on no cyclically reduced closed path are those of any path from the base
-  vertex to the first vertex of degree at least three;
+  at most one, the darts on no cyclically reduced closed path are the darts of any path from the
+  base vertex to the first vertex of degree at least three, and their reverses;
 * `SerreGraph.IsCore.existsUnique_three_le_degree`: when the base vertex has degree one, the end
   of the hanging path is the unique vertex of degree at least three joined to the base vertex by a
-  unique shortest path whose other vertices have degree two.
+  unique shortest path whose internal vertices have degree two.
 
 ## References
 
@@ -647,29 +645,6 @@ private theorem eq_of_mem_coreDarts {a : Γ.V} (ha : a ∉ Γ.cyclicVertices) {x
   exact (Γ.core_isCore a).mem_cyclicVertices_of_ne (e := ⟨x, hx⟩) (f := ⟨y, hy⟩)
     (Subtype.ext hxa) (Subtype.ext hya) fun h => hxy (congrArg Subtype.val h)
 
-/-- A dart leaving the start of a shortest path, that the path traverses in either direction, is
-its first dart. -/
-private theorem mem_head?_of_length_eq_dist {a b : Γ.V} {r : Γ.Path a b}
-    (hr : r.length = Γ.dist a b) {x : Γ.E} (hxa : Γ.src x = a)
-    (hx : x ∈ Path.darts Γ r ∨ Γ.rev x ∈ Path.darts Γ r) : x ∈ (Path.darts Γ r).head? := by
-  rcases hx with hx | hx
-  · obtain ⟨q, s, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ r hx
-    have h1 : Γ.dist (Γ.src x) b ≤ s.length + 1 := by
-      simpa [Quiver.Path.length_comp, add_comm] using dist_le_length ((Γ.dart x).toPath.comp s)
-    rw [hxa] at h1
-    simp only [Quiver.Path.length_comp, Quiver.Path.length_cons] at hr
-    have hq : Path.darts Γ q = [] := by
-      rw [← List.length_eq_zero_iff, Path.length_darts]
-      lia
-    simp [hq]
-  · exfalso
-    obtain ⟨q, s, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ r hx
-    have h1 := dist_le_length s
-    simp only [Quiver.Path.length_comp, Quiver.Path.length_cons] at hr
-    generalize s.length = n at h1 hr
-    rw [tgt_rev, hxa] at h1
-    lia
-
 /-- In a core, a vertex on no cyclically reduced closed path has degree at most two. -/
 theorem IsCore.degree_le_two {v a : Γ.V} (hΓ : Γ.IsCore v) (ha : a ∉ Γ.cyclicVertices) :
     Γ.degree a ≤ 2 := by
@@ -678,8 +653,9 @@ theorem IsCore.degree_le_two {v a : Γ.V} (hΓ : Γ.IsCore v) (ha : a ∉ Γ.cyc
   -- A dart leaving `a` lies in the core at `a` or is the first dart of a shortest path to `v`.
   have key : ∀ x, Γ.src x = a → x ∈ Γ.coreDarts a ∨ x ∈ (Path.darts Γ r).head? := fun x hxa =>
     (Γ.mem_coreDarts_or_mem_darts r
-      ((Γ.mem_coreDarts_iff v x).mpr (((Γ.isCore_iff v).mp hΓ).2 x))).imp_right
-        (mem_head?_of_length_eq_dist hr hxa)
+      ((Γ.mem_coreDarts_iff v x).mpr (((Γ.isCore_iff v).mp hΓ).2 x))).imp_right fun h =>
+        h.elim (Path.mem_head?_darts_of_length_le_dist hr.le · hxa) fun h =>
+          (Path.tgt_ne_of_length_le_dist hr.le h (by rw [tgt_rev, hxa])).elim
   by_contra h
   obtain ⟨x, y, z, hx, hy, hz, hxy, hxz, hyz⟩ :=
     three_le_degree_iff.mp (Order.add_one_le_of_lt (not_le.mp h))

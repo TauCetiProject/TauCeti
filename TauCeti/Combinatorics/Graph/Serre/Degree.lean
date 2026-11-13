@@ -43,11 +43,6 @@ theorem degree_def (a : Γ.V) : Γ.degree a = {e | Γ.src e = a}.encard := (rfl)
 
 variable {Γ} {a : Γ.V}
 
-/-- A set has at least `k` elements exactly when it has a subset with exactly `k` elements. -/
-private theorem le_encard_iff {α : Type*} {s : Set α} {k : ℕ∞} :
-    k ≤ s.encard ↔ ∃ t ⊆ s, t.encard = k :=
-  ⟨Set.exists_subset_encard_eq, fun ⟨_, ht, hk⟩ => hk ▸ Set.encard_le_encard ht⟩
-
 /-- A vertex has degree zero exactly when no dart issues from it. -/
 @[simp] theorem degree_eq_zero_iff : Γ.degree a = 0 ↔ ∀ e, Γ.src e ≠ a := by
   simp [degree, Set.eq_empty_iff_forall_notMem]
@@ -64,26 +59,21 @@ theorem degree_le_one_iff :
 /-- A vertex has degree at least two exactly when two distinct darts issue from it. -/
 theorem two_le_degree_iff :
     2 ≤ Γ.degree a ↔ ∃ e f, Γ.src e = a ∧ Γ.src f = a ∧ e ≠ f := by
-  rw [degree, le_encard_iff]
-  constructor
-  · rintro ⟨t, ht, h⟩
-    obtain ⟨e, f, hef, rfl⟩ := Set.encard_eq_two.mp h
-    exact ⟨e, f, ht (by simp), ht (by simp), hef⟩
-  · rintro ⟨e, f, he, hf, hef⟩
-    exact ⟨{e, f}, by simp [Set.insert_subset_iff, he, hf], Set.encard_pair hef⟩
+  rw [degree, ← one_add_one_eq_two, ENat.add_one_le_iff ENat.one_ne_top, Set.one_lt_encard_iff]
+  rfl
 
 /-- A vertex has degree at least three exactly when three distinct darts issue from it. -/
 theorem three_le_degree_iff :
     3 ≤ Γ.degree a ↔ ∃ e f g, Γ.src e = a ∧ Γ.src f = a ∧ Γ.src g = a ∧
       e ≠ f ∧ e ≠ g ∧ f ≠ g := by
-  rw [degree, le_encard_iff]
   constructor
-  · rintro ⟨t, ht, h⟩
+  · intro h
+    obtain ⟨t, ht, h⟩ := Set.exists_subset_encard_eq h
     obtain ⟨e, f, g, hef, heg, hfg, rfl⟩ := Set.encard_eq_three.mp h
     exact ⟨e, f, g, ht (by simp), ht (by simp), ht (by simp), hef, heg, hfg⟩
   · rintro ⟨e, f, g, he, hf, hg, hef, heg, hfg⟩
-    exact ⟨{e, f, g}, by simp [Set.insert_subset_iff, he, hf, hg],
-      Set.encard_eq_three.mpr ⟨e, f, g, hef, heg, hfg, rfl⟩⟩
+    exact (Set.encard_eq_three.mpr ⟨e, f, g, hef, heg, hfg, rfl⟩).symm.le.trans
+      (Set.encard_le_encard (by simp [Set.insert_subset_iff, he, hf, hg]))
 
 /-- The vertex of the rose has degree twice the number of petals: each petal is a loop. -/
 @[simp] theorem degree_rose (α : Type*) (a : (rose α).V) : (rose α).degree a = 2 * ENat.card α := by
