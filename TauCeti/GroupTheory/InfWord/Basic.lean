@@ -80,6 +80,7 @@ there is one. The instance `One Λ` is not used, because it need not be that ele
 * `TauCeti.InfWord.isReduced_inv`, `TauCeti.InfWord.IsReduced.take`,
   `TauCeti.InfWord.IsReduced.drop`: inverses and segments of reduced words are reduced.
 * `TauCeti.InfWord.isReduced_ofFun_const`: the constant word `x^α` is reduced.
+* `TauCeti.InfWord.ofFun_const_append_ofFun_const`: `x^α x^β = x^(α + β)` for `α, β ≥ 0`.
 
 ## References
 
@@ -156,9 +157,9 @@ def empty : InfWord Λ X where
 
 instance : Inhabited (InfWord Λ X) := ⟨empty Λ X⟩
 
-@[simp] theorem length_empty : (empty Λ X).length = 0 := (rfl)
+@[simp, grind =] theorem length_empty : (empty Λ X).length = 0 := (rfl)
 
-@[simp] theorem letter_empty (β : Λ) : (empty Λ X).letter β = none := (rfl)
+@[simp, grind =] theorem letter_empty (β : Λ) : (empty Λ X).letter β = none := (rfl)
 
 @[simp]
 theorem length_eq_zero_iff : w.length = 0 ↔ w = empty Λ X := by
@@ -178,15 +179,32 @@ def ofFun (α : Λ) (f : Λ → X × Bool) : InfWord Λ X where
   length_nonneg := le_max_right _ _
   isSome_letter β := by split_ifs with h <;> grind
 
-@[simp]
+@[simp, grind =]
 theorem length_ofFun (α : Λ) (f : Λ → X × Bool) : (ofFun α f).length = max α 0 := (rfl)
 
+@[grind =]
 theorem letter_ofFun (α : Λ) (f : Λ → X × Bool) (β : Λ) :
     (ofFun α f).letter β = if 0 < β ∧ β ≤ α then some (f β) else none := (rfl)
 
 theorem letter_ofFun_of_pos_of_le {α β : Λ} (f : Λ → X × Bool) (h0 : 0 < β) (hβ : β ≤ α) :
     (ofFun α f).letter β = some (f β) := by
   simp [letter_ofFun, h0, hβ]
+
+@[simp]
+theorem ofFun_eq_empty_iff {α : Λ} {f : Λ → X × Bool} : ofFun α f = empty Λ X ↔ α ≤ 0 := by
+  simp [← length_eq_zero_iff]
+
+theorem ofFun_of_nonpos {α : Λ} (f : Λ → X × Bool) (h : α ≤ 0) : ofFun α f = empty Λ X :=
+  ofFun_eq_empty_iff.2 h
+
+@[simp]
+theorem ofFun_zero (f : Λ → X × Bool) : ofFun 0 f = empty Λ X :=
+  ofFun_of_nonpos f le_rfl
+
+/-- The word `ofFun α f` only depends on the values of `f` on its domain `{β | 0 < β ≤ α}`. -/
+theorem ofFun_congr {α : Λ} {f g : Λ → X × Bool} (h : ∀ β, 0 < β → β ≤ α → f β = g β) :
+    ofFun α f = ofFun α g :=
+  ext rfl fun _ _ _ => by simp +contextual [letter_ofFun, h]
 
 /-- The initial segment `w|_β` of a word: its restriction to the positions `≤ β`. -/
 def take (w : InfWord Λ X) (β : Λ) : InfWord Λ X where
@@ -195,7 +213,7 @@ def take (w : InfWord Λ X) (β : Λ) : InfWord Λ X where
   length_nonneg := le_max_left _ _
   isSome_letter γ := by split_ifs <;> grind
 
-@[simp]
+@[simp, grind =]
 theorem length_take (w : InfWord Λ X) (β : Λ) :
     (w.take β).length = max 0 (min β w.length) := (rfl)
 
@@ -203,6 +221,7 @@ theorem length_take_of_le {w : InfWord Λ X} {β : Λ} (h0 : 0 ≤ β) (hβ : β
     (w.take β).length = β := by
   simp [h0, hβ]
 
+@[grind =]
 theorem letter_take (w : InfWord Λ X) (β γ : Λ) :
     (w.take β).letter γ = if γ ≤ β then w.letter γ else none := (rfl)
 
@@ -231,7 +250,24 @@ theorem take_empty (β : Λ) : (empty Λ X).take β = empty Λ X := by
 
 @[simp]
 theorem take_take (w : InfWord Λ X) (β γ : Λ) : (w.take β).take γ = w.take (min γ β) :=
-  ext (by simp; grind) fun δ _ _ => by simp only [letter_take, le_min_iff]; grind
+  ext (by simp; grind) fun _ _ _ => by grind
+
+@[simp]
+theorem take_eq_empty_iff {w : InfWord Λ X} {β : Λ} :
+    w.take β = empty Λ X ↔ β ≤ 0 ∨ w = empty Λ X := by
+  simp only [← length_eq_zero_iff, length_take]
+  grind
+
+@[simp]
+theorem take_eq_self_iff {w : InfWord Λ X} {β : Λ} :
+    w.take β = w ↔ w.length ≤ β ∨ w = empty Λ X := by
+  refine ⟨fun h => ?_, by rintro (h | rfl) <;> simp [take_of_length_le, *]⟩
+  rw [← length_eq_zero_iff]
+  grind
+
+@[simp]
+theorem take_ofFun (α β : Λ) (f : Λ → X × Bool) : (ofFun α f).take β = ofFun (min β α) f :=
+  ext (by simp; grind) fun _ _ _ => by grind
 
 end LinearOrder
 
@@ -295,9 +331,10 @@ instance : Append (InfWord Λ X) where
       length_nonneg := add_nonneg u.length_nonneg v.length_nonneg
       isSome_letter β := by split_ifs <;> grind }
 
-@[simp]
+@[simp, grind =]
 theorem length_append (u v : InfWord Λ X) : (u ++ v).length = u.length + v.length := (rfl)
 
+@[grind =]
 theorem letter_append (u v : InfWord Λ X) (β : Λ) :
     (u ++ v).letter β = if β ≤ u.length then u.letter β else v.letter (β - u.length) := (rfl)
 
@@ -351,6 +388,35 @@ theorem append_eq_empty_iff : u ++ v = empty Λ X ↔ u = empty Λ X ∧ v = emp
   simp_rw [← length_eq_zero_iff, length_append]
   exact add_eq_zero_iff_of_nonneg u.length_nonneg v.length_nonneg
 
+@[simp]
+theorem append_left_eq_self : u ++ v = v ↔ u = empty Λ X := by
+  refine ⟨fun h => ?_, fun h => h ▸ empty_append v⟩
+  simpa [← length_eq_zero_iff] using congrArg length h
+
+@[simp]
+theorem self_eq_append_left : v = u ++ v ↔ u = empty Λ X :=
+  eq_comm.trans append_left_eq_self
+
+@[simp]
+theorem append_right_eq_self : u ++ v = u ↔ v = empty Λ X := by
+  refine ⟨fun h => ?_, fun h => h ▸ append_empty u⟩
+  simpa [← length_eq_zero_iff] using congrArg length h
+
+@[simp]
+theorem self_eq_append_right : u = u ++ v ↔ v = empty Λ X :=
+  eq_comm.trans append_right_eq_self
+
+/-- For `α, β ≥ 0` the concatenation `ofFun α f ++ ofFun β g` is the word of length `α + β` that
+reads `f` on `[1, α]` and `γ ↦ g (γ - α)` on `[α + 1, α + β]`. -/
+theorem ofFun_append_ofFun {α : Λ} (f g : Λ → X × Bool) (hα : 0 ≤ α) (hβ : 0 ≤ β) :
+    ofFun α f ++ ofFun β g = ofFun (α + β) fun γ => if γ ≤ α then f γ else g (γ - α) :=
+  ext (by simp; grind) fun _ _ _ => by grind
+
+/-- The constant word `x^α x^β` is `x^(α + β)`. -/
+theorem ofFun_const_append_ofFun_const {α : Λ} (x : X × Bool) (hα : 0 ≤ α) (hβ : 0 ≤ β) :
+    (ofFun α fun _ => x) ++ ofFun β (fun _ => x) = ofFun (α + β) fun _ => x := by
+  simp [ofFun_append_ofFun _ _ hα hβ]
+
 /-- The final segment of a word complementary to `w.take β`: for `0 ≤ β` the letter of `w.drop β`
 at a position `γ > 0` is the letter of `w` at `γ + β`, and `w.drop β = w` for `β ≤ 0`. -/
 def drop (w : InfWord Λ X) (β : Λ) : InfWord Λ X where
@@ -359,7 +425,7 @@ def drop (w : InfWord Λ X) (β : Λ) : InfWord Λ X where
   length_nonneg := by grind
   isSome_letter γ := by split_ifs <;> grind
 
-@[simp]
+@[simp, grind =]
 theorem length_drop (w : InfWord Λ X) (β : Λ) :
     (w.drop β).length = w.length - max 0 (min β w.length) := (rfl)
 
@@ -367,6 +433,7 @@ theorem length_drop_of_le {w : InfWord Λ X} {β : Λ} (h0 : 0 ≤ β) (hβ : β
     (w.drop β).length = w.length - β := by
   simp [h0, hβ]
 
+@[grind =]
 theorem letter_drop (w : InfWord Λ X) (β γ : Λ) :
     (w.drop β).letter γ = if 0 < γ then w.letter (γ + max 0 β) else none := (rfl)
 
@@ -402,6 +469,21 @@ theorem drop_length (w : InfWord Λ X) : w.drop w.length = empty Λ X :=
 theorem drop_empty (β : Λ) : (empty Λ X).drop β = empty Λ X := by
   simp [← length_eq_zero_iff]
 
+@[simp]
+theorem drop_eq_empty_iff : w.drop β = empty Λ X ↔ w.length ≤ β ∨ w = empty Λ X := by
+  simp only [← length_eq_zero_iff, length_drop]
+  grind
+
+@[simp]
+theorem drop_eq_self_iff : w.drop β = w ↔ β ≤ 0 ∨ w = empty Λ X := by
+  refine ⟨fun h => ?_, by rintro (h | rfl) <;> simp [drop_of_nonpos, *]⟩
+  rw [← length_eq_zero_iff]
+  grind
+
+theorem drop_ofFun {α : Λ} (f : Λ → X × Bool) (hβ : 0 ≤ β) :
+    (ofFun α f).drop β = ofFun (α - β) fun γ => f (γ + β) :=
+  ext (by simp; grind) fun _ _ _ => by grind
+
 theorem drop_drop (w : InfWord Λ X) {γ : Λ} (hβ : 0 ≤ β) (hγ : 0 ≤ γ) :
     (w.drop β).drop γ = w.drop (β + γ) :=
   ext (by simp; grind) fun δ h0 _ => by
@@ -410,16 +492,14 @@ theorem drop_drop (w : InfWord Λ X) {γ : Λ} (hβ : 0 ≤ β) (hγ : 0 ≤ γ)
       max_eq_right hγ, max_eq_right (add_nonneg hβ hγ), add_assoc, add_comm γ]
 
 theorem take_append (u v : InfWord Λ X) (β : Λ) :
-    (u ++ v).take β = u.take β ++ v.take (β - u.length) := by
-  refine ext (by simp; grind) fun γ _ _ => ?_
-  simp only [letter_append, letter_take, length_take]
-  split_ifs <;> first | rfl | (exfalso; grind) | (congr 1; grind)
+    (u ++ v).take β = u.take β ++ v.take (β - u.length) :=
+  ext (by simp; grind) fun _ _ _ => by grind
 
 theorem take_append_of_le_length (v : InfWord Λ X) (h : β ≤ u.length) :
     (u ++ v).take β = u.take β := by
   rw [take_append, v.take_of_nonpos (sub_nonpos.2 h), append_empty]
 
-theorem take_length_add_append (u v : InfWord Λ X) (h : 0 ≤ β) :
+theorem take_append_length_add (u v : InfWord Λ X) (h : 0 ≤ β) :
     (u ++ v).take (u.length + β) = u ++ v.take β := by
   rw [take_append, u.take_of_length_le (le_add_of_nonneg_right h), add_sub_cancel_left]
 
@@ -436,17 +516,17 @@ theorem drop_append_of_le_length (v : InfWord Λ X) (h : β ≤ u.length) :
     (u ++ v).drop β = u.drop β ++ v := by
   rw [drop_append, v.drop_of_nonpos (sub_nonpos.2 h)]
 
-theorem drop_length_add_append (u v : InfWord Λ X) (h : 0 ≤ β) :
+theorem drop_append_length_add (u v : InfWord Λ X) (h : 0 ≤ β) :
     (u ++ v).drop (u.length + β) = v.drop β := by
   rw [drop_append, u.drop_of_length_le (le_add_of_nonneg_right h), add_sub_cancel_left,
     empty_append]
 
 @[simp]
-theorem take_length_append (u v : InfWord Λ X) : (u ++ v).take u.length = u := by
+theorem take_append_length (u v : InfWord Λ X) : (u ++ v).take u.length = u := by
   rw [take_append_of_le_length _ le_rfl, take_length]
 
 @[simp]
-theorem drop_length_append (u v : InfWord Λ X) : (u ++ v).drop u.length = v := by
+theorem drop_append_length (u v : InfWord Λ X) : (u ++ v).drop u.length = v := by
   rw [drop_append_of_le_length _ le_rfl, drop_length, empty_append]
 
 end Group
@@ -468,8 +548,9 @@ instance : Inv (InfWord Λ X) where
         grind [Order.succ_eq_add_succ_zero, Order.le_of_lt_succ, Order.lt_succ_of_not_isMax,
           not_isMax_of_lt] }
 
-@[simp] theorem length_inv (w : InfWord Λ X) : w⁻¹.length = w.length := (rfl)
+@[simp, grind =] theorem length_inv (w : InfWord Λ X) : w⁻¹.length = w.length := (rfl)
 
+@[grind =]
 theorem letter_inv (w : InfWord Λ X) (β : Λ) :
     w⁻¹.letter β = (w.letter (Order.succ w.length - β)).map (Prod.map id not) := (rfl)
 
@@ -480,6 +561,19 @@ instance : InvolutiveInv (InfWord Λ X) where
 @[simp]
 theorem inv_empty : (empty Λ X)⁻¹ = empty Λ X := by
   simp [← length_eq_zero_iff]
+
+@[simp]
+theorem inv_eq_empty_iff : w⁻¹ = empty Λ X ↔ w = empty Λ X := by
+  simp [← length_eq_zero_iff]
+
+/-- The inverse of `ofFun α f` reads the inverses of the letters of `f` backwards:
+`(ofFun α f)⁻¹(γ) = f(α + 1 - γ)⁻¹`. -/
+@[simp]
+theorem inv_ofFun (α : Λ) (f : Λ → X × Bool) :
+    (ofFun α f)⁻¹ = ofFun α fun γ => Prod.map id not (f (Order.succ α - γ)) :=
+  ext (by simp) fun _ _ _ => by
+    grind [Order.succ_eq_add_succ_zero, Order.le_of_lt_succ, Order.lt_succ_of_not_isMax,
+      not_isMax_of_lt]
 
 @[simp]
 theorem inv_append (u v : InfWord Λ X) : (u ++ v)⁻¹ = v⁻¹ ++ u⁻¹ := by

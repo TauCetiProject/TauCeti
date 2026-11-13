@@ -33,7 +33,8 @@ exactly the normal forms `FreeGroup.toWord g` of the elements `g` of the free gr
   final segments.
 * `TauCeti.InfWord.isReduced_ofList`: a list is a reduced `ℤ`-word iff it is reduced in the sense
   of `FreeGroup.IsReduced`.
-* `TauCeti.InfWord.isReduced_iff_mem_range_toWord`: the reduced `ℤ`-words are the words
+* `TauCeti.InfWord.isReduced_toList`: a `ℤ`-word is reduced iff its list of letters is reduced.
+* `TauCeti.InfWord.isReduced_iff_toList_mem_range_toWord`: the reduced `ℤ`-words are the words
   `FreeGroup.toWord g`.
 
 ## References
@@ -61,12 +62,13 @@ def ofList (L : List (X × Bool)) : InfWord ℤ X where
     · rw [Option.isSome_iff_ne_none, ne_eq, List.getElem?_eq_none_iff]; omega
     · simp [h]
 
-@[simp] theorem length_ofList (L : List (X × Bool)) : (ofList L).length = L.length := (rfl)
+@[simp, grind =] theorem length_ofList (L : List (X × Bool)) : (ofList L).length = L.length := (rfl)
 
+@[grind =]
 theorem letter_ofList (L : List (X × Bool)) (n : ℤ) :
     (ofList L).letter n = if 0 < n then L[n.toNat - 1]? else none := (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem letter_ofList_natCast_add_one (L : List (X × Bool)) (i : ℕ) :
     (ofList L).letter (i + 1) = L[i]? := by
   simp [letter_ofList, show (0 : ℤ) < i + 1 by omega]
@@ -80,27 +82,27 @@ def toList (w : InfWord ℤ X) : List (X × Bool) :=
   List.ofFn fun i : Fin w.length.toNat =>
     (w.letter (i + 1)).get ((w.isSome_letter _).2 (by omega))
 
-@[simp]
+@[simp, grind =]
 theorem length_toList (w : InfWord ℤ X) : w.toList.length = w.length.toNat := by
   simp [toList]
 
 theorem natCast_length_toList (w : InfWord ℤ X) : (w.toList.length : ℤ) = w.length := by
   simp [w.length_nonneg]
 
-@[simp]
+@[simp, grind =]
 theorem getElem?_toList (w : InfWord ℤ X) (i : ℕ) : w.toList[i]? = w.letter (i + 1) := by
   rw [toList, List.getElem?_ofFn]
   split_ifs with h
   · simp
   · exact (letter_eq_none_of_not_le (by omega)).symm
 
-@[simp]
+@[simp, grind =]
 theorem ofList_toList (w : InfWord ℤ X) : ofList w.toList = w := by
   refine ext (natCast_length_toList w) fun n h0 hn => ?_
   obtain ⟨i, rfl⟩ : ∃ i : ℕ, n = i + 1 := ⟨(n - 1).toNat, by omega⟩
   rw [letter_ofList_natCast_add_one, getElem?_toList]
 
-@[simp]
+@[simp, grind =]
 theorem toList_ofList (L : List (X × Bool)) : (ofList L).toList = L :=
   List.ext_getElem? fun i => by rw [getElem?_toList, letter_ofList_natCast_add_one]
 
@@ -115,6 +117,20 @@ def equivList : InfWord ℤ X ≃ List (X × Bool) where
 
 @[simp]
 theorem equivList_symm_apply (L : List (X × Bool)) : equivList.symm L = ofList L := (rfl)
+
+theorem toList_injective : Function.Injective (toList : InfWord ℤ X → List (X × Bool)) :=
+  equivList.injective
+
+theorem ofList_injective : Function.Injective (ofList : List (X × Bool) → InfWord ℤ X) :=
+  equivList.symm.injective
+
+@[simp]
+theorem toList_inj {u v : InfWord ℤ X} : u.toList = v.toList ↔ u = v :=
+  toList_injective.eq_iff
+
+@[simp]
+theorem ofList_inj {L₁ L₂ : List (X × Bool)} : ofList L₁ = ofList L₂ ↔ L₁ = L₂ :=
+  ofList_injective.eq_iff
 
 @[simp]
 theorem ofList_nil : ofList ([] : List (X × Bool)) = empty ℤ X := by
@@ -144,8 +160,16 @@ theorem ofList_invRev (L : List (X × Bool)) : ofList (FreeGroup.invRev L) = (of
   simp [Prod.map_def]
 
 @[simp]
+theorem ofList_eq_empty_iff {L : List (X × Bool)} : ofList L = empty ℤ X ↔ L = [] := by
+  rw [← ofList_nil, ofList_inj]
+
+@[simp]
 theorem toList_empty : (empty ℤ X).toList = [] := by
   rw [← ofList_nil, toList_ofList]
+
+@[simp]
+theorem toList_eq_nil_iff {w : InfWord ℤ X} : w.toList = [] ↔ w = empty ℤ X := by
+  rw [← toList_empty, toList_inj]
 
 @[simp]
 theorem toList_append (u v : InfWord ℤ X) : (u ++ v).toList = u.toList ++ v.toList := by
@@ -197,15 +221,17 @@ theorem isReduced_ofList {L : List (X × Bool)} : (ofList L).IsReduced ↔ FreeG
   obtain ⟨i, rfl⟩ : ∃ i : ℕ, n = i + 1 := ⟨(n - 1).toNat, by omega⟩
   exact (key i (by simp at hn; omega)).2 (h i (by simp at hn; omega))
 
-theorem isReduced_iff_isReduced_toList {w : InfWord ℤ X} :
-    w.IsReduced ↔ FreeGroup.IsReduced w.toList := by
+/-- The list of letters of a `ℤ`-word is a reduced word of the free group exactly when the
+`ℤ`-word is reduced. -/
+@[simp]
+theorem isReduced_toList {w : InfWord ℤ X} : FreeGroup.IsReduced w.toList ↔ w.IsReduced := by
   rw [← isReduced_ofList, ofList_toList]
 
 /-- For `Λ = ℤ` the reduced words are exactly the normal forms `FreeGroup.toWord` of the elements
 of the free group. -/
-theorem isReduced_iff_mem_range_toWord [DecidableEq X] {w : InfWord ℤ X} :
+theorem isReduced_iff_toList_mem_range_toWord [DecidableEq X] {w : InfWord ℤ X} :
     w.IsReduced ↔ w.toList ∈ Set.range (FreeGroup.toWord (α := X)) := by
-  rw [isReduced_iff_isReduced_toList]
+  rw [← isReduced_toList]
   refine ⟨fun h => ⟨FreeGroup.mk w.toList, ?_⟩, ?_⟩
   · exact FreeGroup.toWord_mk.trans h.reduce_eq
   · rintro ⟨g, hg⟩
