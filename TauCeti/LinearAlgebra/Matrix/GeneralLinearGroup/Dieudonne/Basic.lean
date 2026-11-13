@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Dieudonne.GaussJordan
 import Mathlib.GroupTheory.Perm.Fin
 
 /-!
-# The Dieudonné determinant and algebraic `K₁` of a division ring
+# The Dieudonné determinant over a division ring
 
 Over a noncommutative division ring `D`, the polynomial determinant no longer defines a group
 homomorphism on `GL n D`, because row operations only commute up to commutators of nonzero
@@ -17,23 +17,16 @@ scalars. Dieudonné (1943) constructed a canonical replacement valued in the abe
 `Group.Abelianization Dˣ = Dˣ / [Dˣ, Dˣ]`, sending every elementary matrix to `1` and every
 invertible diagonal matrix `diag(d₁, …, dₙ)` to `∏ᵢ Group.Abelianization.of dᵢ`.
 
-This file builds the Dieudonné determinant for arbitrary finite index types and uses it to compute
-the algebraic `K₁`-group of a division ring:
+This file constructs `Matrix.GeneralLinearGroup.dieudonneDet : GL n D →* Group.Abelianization Dˣ`
+for arbitrary finite index types:
 
-* **Gauss–Jordan factorization and normality.** Over a division ring `D`, every `g ∈ GL n D` (for
-  any chosen index `i : n`) decomposes as `e * diagGL (Pi.mulSingle i u)` with
-  `e ∈ TauCeti.elementarySubgroup n D` and `u : Dˣ`
-  (`TauCeti.exists_mem_elementarySubgroup_mul_diagGL_mulSingle`). Since diagonal matrices
-  normalize the generators of `TauCeti.elementarySubgroup n D`, the elementary subgroup is normal
-  already at every finite size (`TauCeti.elementarySubgroup_normal`), without stabilization.
-* **The Dieudonné determinant.** In rank at least two, Whitehead's lemma places `[Dˣ, Dˣ]` inside
-  `TauCeti.elementarySubgroup n D`, giving a surjective homomorphism
-  `Group.Abelianization Dˣ →* GL n D ⧸ TauCeti.elementarySubgroup n D`. Its injectivity—that a
-  single-entry diagonal matrix `diag(1, …, u)` lies in `E n D` only when
+* **Inductive Schur-complement construction.** In rank at least two, Whitehead's lemma places
+  `[Dˣ, Dˣ]` inside `TauCeti.elementarySubgroup n D`, and Gauss–Jordan factorization gives a
+  surjective homomorphism `Group.Abelianization Dˣ →* GL n D ⧸ TauCeti.elementarySubgroup n D`.
+  Its injectivity—that a single-entry diagonal matrix `diag(1, …, u)` lies in `E n D` only when
   `Group.Abelianization.of u = 1`—is proved inductively by building a left-transvection-invariant
   map via the Schur complement along a nonzero column-zero pivot and `Fin.cycleRange` pivot
-  independence. Inverting the resulting bijection yields
-  `Matrix.GeneralLinearGroup.dieudonneDet : GL n D →* Group.Abelianization Dˣ` without expanding
+  independence. Inverting the resulting bijection yields `dieudonneDet` without expanding
   `det(A * B)` by hand.
 * **Sharpness of rank bounds.** In rank `0`, `dieudonneDet` is trivial. In rank `1`, `E₁(D) = ⊥`
   while the kernel of `GL₁(D) ≃* Dˣ →* Group.Abelianization Dˣ` corresponds to `[Dˣ, Dˣ]`, so the
@@ -41,11 +34,9 @@ the algebraic `K₁`-group of a division ring:
   for noncommutative `D`. Conversely, `ker_dieudonneDet` holds even for `GL₂(𝔽₂) ≅ S₃`, where
   `E₂(𝔽₂) = ⊤` while `[GL₂(𝔽₂), GL₂(𝔽₂)]` has index `2`, so the kernel in rank `2` is `Eₙ(D)`
   rather than `[GLₙ(D), GLₙ(D)]` in general.
-* **Algebraic `K₁`.** Because `dieudonneDet` is invariant under `TauCeti.stabilizeGL`, it descends
-  to a canonical isomorphism
-  `TauCeti.AlgebraicK1.dieudonneDetEquiv : AlgebraicK1 D ≃* Group.Abelianization Dˣ` sending
-  `[scalar (Fin 1) d]` to `Group.Abelianization.of d`, and over a field `F` to
-  `TauCeti.AlgebraicK1.detEquiv : AlgebraicK1 F ≃* Fˣ`.
+
+For stabilization invariance and the induced isomorphism on algebraic `K₁`, see
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Dieudonne.AlgebraicK1`.
 
 ## Main definitions
 
@@ -53,29 +44,20 @@ the algebraic `K₁`-group of a division ring:
   `GL n D →* Group.Abelianization Dˣ` over a division ring `D`.
 * `TauCeti.quotientElementarySubgroupDieudonneEquiv`: the canonical isomorphism
   `GL n D ⧸ TauCeti.elementarySubgroup n D ≃* Group.Abelianization Dˣ` for `2 ≤ Fintype.card n`.
-* `TauCeti.AlgebraicK1.dieudonneDetEquiv`: the canonical isomorphism
-  `TauCeti.AlgebraicK1 D ≃* Group.Abelianization Dˣ` for a division ring `D`.
-* `TauCeti.AlgebraicK1.detEquiv`: the canonical isomorphism `TauCeti.AlgebraicK1 F ≃* Fˣ` for a
-  field `F`.
 
 ## Main results
 
-* `TauCeti.exists_mem_elementarySubgroup_mul_diagGL_mulSingle`: Gauss–Jordan factorization
-  `g = e * diagGL (Pi.mulSingle i u)` in `GL n D`.
-* `TauCeti.elementarySubgroup_normal`: `TauCeti.elementarySubgroup n D` is normal in `GL n D`.
 * `Matrix.GeneralLinearGroup.ker_dieudonneDet`: for `2 ≤ Fintype.card n`, the kernel of
   `dieudonneDet` is `TauCeti.elementarySubgroup n D`.
 * `Matrix.GeneralLinearGroup.dieudonneDet_diagGL`,
+  `Matrix.GeneralLinearGroup.dieudonneDet_permutationGL`,
   `Matrix.GeneralLinearGroup.dieudonneDet_fromBlocksGL`,
-  `Matrix.GeneralLinearGroup.dieudonneDet_stabilizeGL`,
-  `Matrix.GeneralLinearGroup.dieudonneDet_unitsMap_mapMatrix`: values on diagonal, block-diagonal,
-  stabilized, and ring-mapped matrices.
+  `Matrix.GeneralLinearGroup.dieudonneDet_unitsMap_mapMatrix`: values on diagonal, permutation,
+  block-diagonal, and ring-mapped matrices.
 * `Matrix.GeneralLinearGroup.eq_dieudonneDet`: characterization of `dieudonneDet` by vanishing on
   `TauCeti.elementarySubgroup n D` and its values on single-entry diagonal matrices.
 * `Matrix.GeneralLinearGroup.dieudonneDet_eq_of_det`: over a field, `dieudonneDet` is
   `Group.Abelianization.of ∘ det`.
-* `TauCeti.AlgebraicK1.mk_eq_one_iff_mem_elementarySubgroup`: over a division ring and for `2 ≤ n`,
-  a matrix in `GL (Fin n) D` represents `1` in `K₁(D)` if and only if it already lies in `Eₙ(D)`.
 
 ## References
 
@@ -84,7 +66,7 @@ the algebraic `K₁`-group of a division ring:
 * E. Artin, *Geometric Algebra*, Interscience (1957), Chapter IV, §3–§4.
 * J. Rosenberg, *Algebraic K-Theory and Its Applications*, GTM 147 (1994), §2.2.
 * C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, GSM 145 (2013), Chapter III,
-  §1.2.4 and Example 1.3.5.
+  Example 1.3.5.
 -/
 
 public section
@@ -96,120 +78,11 @@ open scoped commutatorElement
 
 namespace TauCeti
 
-section BlockHelpers
+/-! ## Inductive Schur-complement construction on `Fin m` -/
 
-variable {A : Type*} [Ring A] {m k : Type*} [DecidableEq m] [Fintype m] [DecidableEq k]
-  [Fintype k]
-
-/-- Placing an elementary matrix in the lower right block gives an elementary matrix: the
-inclusion `e ↦ 1 ⊕ e` maps the elementary subgroup into the elementary subgroup. -/
-theorem map_inr_elementarySubgroup_le_elementarySubgroup :
-    (elementarySubgroup k A).map (fromBlocksGL.comp (MonoidHom.inr (GL m A) (GL k A))) ≤
-      elementarySubgroup (m ⊕ k) A := by
-  refine Subgroup.map_le_iff_le_comap.2 (elementarySubgroup_le_iff.2 fun i j hij a ↦ ?_)
-  rw [Subgroup.mem_comap]
-  convert transvectionUnit_mem_elementarySubgroup (Sum.inr_injective.ne hij) a
-  ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
-
-/-- When an invertible block matrix is upper block-triangular with upper-left block `1`, its
-lower-right block is invertible, with inverse given by the lower-right block of the inverse. -/
-private def upperTriangularToBlocks₂₂GL (M : GL (m ⊕ k) A)
-    (h₁₁ : (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₁ = 1)
-    (h₂₁ : (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ = 0) : GL k A :=
-  have h1_22 : (1 : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂ = 1 := by
-    rw [← Matrix.fromBlocks_one, Matrix.toBlocks_fromBlocks₂₂]
-  { val := (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂
-    inv := ((M⁻¹ : GL (m ⊕ k) A) : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂
-    val_inv := by
-      have hmul := congrArg Matrix.toBlocks₂₂ M.mul_inv
-      rw [← Matrix.fromBlocks_toBlocks (M : Matrix (m ⊕ k) (m ⊕ k) A),
-        ← Matrix.fromBlocks_toBlocks ((M⁻¹ : GL (m ⊕ k) A) : Matrix (m ⊕ k) (m ⊕ k) A),
-        h₂₁, Matrix.fromBlocks_multiply, h1_22] at hmul
-      simpa using hmul
-    inv_val := by
-      have h1_21 : (1 : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ = 0 := by
-        rw [← Matrix.fromBlocks_one, Matrix.toBlocks_fromBlocks₂₁]
-      have h21 := congrArg Matrix.toBlocks₂₁ M.inv_mul
-      rw [← Matrix.fromBlocks_toBlocks (M : Matrix (m ⊕ k) (m ⊕ k) A),
-        ← Matrix.fromBlocks_toBlocks ((M⁻¹ : GL (m ⊕ k) A) : Matrix (m ⊕ k) (m ⊕ k) A),
-        h₁₁, h₂₁, Matrix.fromBlocks_multiply, h1_21] at h21
-      have hinv₂₁ : ((M⁻¹ : GL (m ⊕ k) A) : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ = 0 := by
-        simpa using h21
-      have hmul := congrArg Matrix.toBlocks₂₂ M.inv_mul
-      rw [← Matrix.fromBlocks_toBlocks (M : Matrix (m ⊕ k) (m ⊕ k) A),
-        ← Matrix.fromBlocks_toBlocks ((M⁻¹ : GL (m ⊕ k) A) : Matrix (m ⊕ k) (m ⊕ k) A),
-        hinv₂₁, Matrix.fromBlocks_multiply, h1_22] at hmul
-      simpa using hmul }
-
-@[simp]
-private theorem coe_upperTriangularToBlocks₂₂GL (M : GL (m ⊕ k) A)
-    (h₁₁ : (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₁ = 1)
-    (h₂₁ : (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ = 0) :
-    (upperTriangularToBlocks₂₂GL M h₁₁ h₂₁ : Matrix k k A) =
-      (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂ :=
-  rfl
-
-end BlockHelpers
-
-/-! ## Gauss–Jordan factorization and normality of the elementary subgroup -/
-
-section GaussJordan
+section SchurInduction
 
 variable {D : Type*} [DivisionRing D]
-
-/-- Every invertible matrix has at least one nonzero entry in any given column. -/
-private theorem exists_apply_ne_zero_col {n : Type*} [Fintype n] [DecidableEq n]
-    (g : GL n D) (j : n) : ∃ i : n, g i j ≠ 0 := by
-  by_contra! h
-  have h1 := congrFun (congrFun g.inv_mul j) j
-  simp [Matrix.mul_apply, h] at h1
-
-/-- Left multiplication by `1 + single i j c` adds `c` times row `j` to row `i`. -/
-@[simp]
-private theorem one_add_single_mul_apply {R : Type*} [Ring R] {n : Type*} [Fintype n]
-    [DecidableEq n] (i j : n) (c : R) (M : Matrix n n R) (r s : n) :
-    ((1 + single i j c) * M) r s = M r s + if r = i then c * M j s else 0 := by
-  rw [Matrix.add_mul, Matrix.one_mul, Matrix.add_apply]
-  congr 1
-  rw [Matrix.mul_apply]
-  split_ifs with hri
-  · subst hri; rw [Fintype.sum_eq_single j fun x hx ↦ by simp [hx.symm]]; simp
-  · simp [Ne.symm hri]
-
-/-- Left multiplication by `transvectionUnit hij c` adds `c` times row `j` to row `i`. -/
-private theorem transvectionUnit_mul_apply {R : Type*} [Ring R] {n : Type*} [Fintype n]
-    [DecidableEq n] {i j : n} (hij : i ≠ j) (c : R) (A : GL n R) (r s : n) :
-    (transvectionUnit hij c * A : GL n R) r s =
-      A r s + if r = i then c * A j s else 0 := by
-  have hmat : ((transvectionUnit hij c * A : GL n R) : Matrix n n R) =
-      (1 + single i j c) * (A : Matrix n n R) := by
-    rw [Units.val_mul, coe_transvectionUnit_eq_one_add_single]
-  exact (congrFun (congrFun hmat r) s).trans (one_add_single_mul_apply i j c A r s)
-
-/-- Over a division ring, any `A ∈ GL (Fin (k + 2)) D` can be left-multiplied by an elementary
-matrix so that its `(0, 0)` entry becomes `1`. -/
-private theorem exists_mem_elementarySubgroup_mul_apply_zero_zero_eq_one (k : ℕ)
-    (A : GL (Fin (k + 2)) D) :
-    ∃ e ∈ elementarySubgroup (Fin (k + 2)) D, ((e * A : GL (Fin (k + 2)) D) 0 0 : D) = 1 := by
-  have hstep1 : ∃ e₁ ∈ elementarySubgroup (Fin (k + 2)) D,
-      ((e₁ * A : GL (Fin (k + 2)) D) 1 0 : D) ≠ 0 := by
-    by_cases h10 : A 1 0 ≠ 0
-    · exact ⟨1, one_mem _, by simpa using h10⟩
-    push Not at h10
-    obtain ⟨i, hi⟩ := exists_apply_ne_zero_col A 0
-    have hi1 : (1 : Fin (k + 2)) ≠ i := fun h ↦ hi (h ▸ h10)
-    refine ⟨transvectionUnit hi1 1, transvectionUnit_mem_elementarySubgroup hi1 1, ?_⟩
-    rw [transvectionUnit_mul_apply]; simpa [h10] using hi
-  obtain ⟨e₁, he₁, hB10⟩ := hstep1
-  let B : GL (Fin (k + 2)) D := e₁ * A
-  have hB10' : B 1 0 ≠ 0 := hB10
-  have h01 : (0 : Fin (k + 2)) ≠ 1 := Fin.zero_ne_one
-  let e₂ := transvectionUnit h01 ((1 - B 0 0) * (B 1 0)⁻¹)
-  have hassoc : e₂ * (e₁ * A) = e₂ * B := rfl
-  refine ⟨e₂ * e₁, mul_mem (transvectionUnit_mem_elementarySubgroup _ _) he₁, ?_⟩
-  rw [mul_assoc, hassoc, transvectionUnit_mul_apply]
-  simp [mul_assoc, inv_mul_cancel₀ hB10']
 
 /-- The equivalence `Fin 1 ⊕ Fin m ≃ Fin (m + 1)` sending `inl 0` to `0` and `inr i` to
 `i.succ`. -/
@@ -225,168 +98,6 @@ private theorem finOneSumEquiv_inl (m : ℕ) (i : Fin 1) :
 private theorem finOneSumEquiv_inr (m : ℕ) (i : Fin m) :
     finOneSumEquiv m (Sum.inr i) = i.succ := by
   ext; simp [finOneSumEquiv]
-
-/-- Block elimination step on `Fin 1 ⊕ Fin (k + 1)` when the upper-left `1 × 1` entry is `1`. -/
-private theorem exists_mem_elementarySubgroup_mul_fromBlocksGL {k : ℕ}
-    (M : GL (Fin 1 ⊕ Fin (k + 1)) D)
-    (hM11 : (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₁ = 1) :
-    ∃ e ∈ elementarySubgroup (Fin 1 ⊕ Fin (k + 1)) D, ∃ S : GL (Fin (k + 1)) D,
-      M = e * fromBlocksGL (1, S) := by
-  let c := (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₂₁
-  let M' : GL (Fin 1 ⊕ Fin (k + 1)) D := lowerBlockGL (-c) * M
-  have hM'11 : (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₁ = 1 := by
-    have := congrArg Matrix.toBlocks₁₁ (Units.val_mul (lowerBlockGL (-c)) M)
-    rw [coe_lowerBlockGL,
-      ← Matrix.fromBlocks_toBlocks (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D),
-      hM11, Matrix.fromBlocks_multiply] at this
-    simpa [M'] using this
-  have hM'21 : (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₂₁ = 0 := by
-    have := congrArg Matrix.toBlocks₂₁ (Units.val_mul (lowerBlockGL (-c)) M)
-    rw [coe_lowerBlockGL,
-      ← Matrix.fromBlocks_toBlocks (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D),
-      hM11, Matrix.fromBlocks_multiply] at this
-    simpa [M', c] using this
-  let S := upperTriangularToBlocks₂₂GL M' hM'11 hM'21
-  let r := (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₂
-  let rS : Matrix (Fin 1) (Fin (k + 1)) D :=
-    r * ((S⁻¹ : GL (Fin (k + 1)) D) : Matrix (Fin (k + 1)) (Fin (k + 1)) D)
-  have hM'_eq : M' = upperBlockGL rS * fromBlocksGL (1, S) := by
-    apply Units.ext
-    rw [Units.val_mul (upperBlockGL rS) (fromBlocksGL (1, S)), coe_upperBlockGL, coe_fromBlocksGL,
-      Matrix.fromBlocks_multiply]
-    conv_lhs =>
-      rw [← Matrix.fromBlocks_toBlocks
-        (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D), hM'11, hM'21]
-    have hrS : rS * (S : Matrix (Fin (k + 1)) (Fin (k + 1)) D) = r := by
-      dsimp only [rS]; rw [Matrix.mul_assoc, S.inv_mul, Matrix.mul_one]
-    have hrS' : rS * (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₂₂ =
-        (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₂ := hrS
-    simp [S, hrS']
-  refine ⟨(lowerBlockGL (-c))⁻¹ * upperBlockGL rS,
-    mul_mem (inv_mem (lowerBlockGL_mem_elementarySubgroup _))
-      (upperBlockGL_mem_elementarySubgroup _), S, ?_⟩
-  have hM_from_M' : M = (lowerBlockGL (-c))⁻¹ * M' := by dsimp only [M']; group
-  rw [hM_from_M', hM'_eq, mul_assoc]
-
-/-- Inductive Gauss–Jordan factorization on `Fin (m + 1)`: every invertible matrix is an elementary
-matrix times a diagonal matrix concentrated at `Fin.last m`. -/
-private theorem exists_mem_elementarySubgroup_mul_lastDiag :
-    ∀ (m : ℕ) (A : GL (Fin (m + 1)) D),
-      ∃ e ∈ elementarySubgroup (Fin (m + 1)) D, ∃ u : Dˣ,
-        A = e * diagGL (Pi.mulSingle (Fin.last m) u)
-  | 0, A => by
-    have h00 : A 0 0 * (A⁻¹ : GL (Fin 1) D) 0 0 = 1 := by
-      simpa [Matrix.mul_apply] using congrFun (congrFun A.mul_inv 0) 0
-    have h00' : (A⁻¹ : GL (Fin 1) D) 0 0 * A 0 0 = 1 := by
-      simpa [Matrix.mul_apply] using congrFun (congrFun A.inv_mul 0) 0
-    refine ⟨1, one_mem _, ⟨A 0 0, (A⁻¹ : GL (Fin 1) D) 0 0, h00, h00'⟩, ?_⟩
-    ext i j; fin_cases i; fin_cases j; simp [Fin.last]
-  | k + 1, A => by
-    obtain ⟨e₁, he₁, h1⟩ := exists_mem_elementarySubgroup_mul_apply_zero_zero_eq_one k A
-    let sw := finOneSumEquiv (k + 1)
-    let M : GL (Fin 1 ⊕ Fin (k + 1)) D := sw.symm.reindexGL D (e₁ * A)
-    have hM11 : (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₁ = 1 := by
-      ext i j; fin_cases i; fin_cases j; simpa [M, sw, Matrix.toBlocks₁₁] using h1
-    obtain ⟨eM, heM, S, hM⟩ := exists_mem_elementarySubgroup_mul_fromBlocksGL M hM11
-    obtain ⟨eS, heS, u, hS⟩ := exists_mem_elementarySubgroup_mul_lastDiag k S
-    let e₂ : GL (Fin (k + 2)) D := sw.reindexGL D (eM * fromBlocksGL (1, eS))
-    have he₂ : e₂ ∈ elementarySubgroup (Fin (k + 2)) D := by
-      rw [← sw.map_reindexGL_elementarySubgroup]
-      exact ⟨_, mul_mem heM (map_inr_elementarySubgroup_le_elementarySubgroup ⟨eS, heS, rfl⟩), rfl⟩
-    have hdiag_sw : sw.reindexGL D (fromBlocksGL (1, diagGL (Pi.mulSingle (Fin.last k) u))) =
-        diagGL (Pi.mulSingle (Fin.last (k + 1)) u) := by
-      apply Units.ext; ext i j
-      obtain ⟨i, rfl⟩ := sw.surjective i
-      obtain ⟨j, rfl⟩ := sw.surjective j
-      rw [Equiv.coe_reindexGL, coe_fromBlocksGL, Matrix.submatrix_apply,
-        Equiv.symm_apply_apply, Equiv.symm_apply_apply]
-      rcases i with i | i <;> rcases j with j | j
-      · fin_cases i; fin_cases j; simp [sw, Fin.ext_iff]
-      · simp [sw, (Fin.succ_ne_zero j).symm]
-      · simp [sw]
-      · simp [sw, Matrix.diagonal_apply, Pi.mulSingle_apply, Fin.ext_iff, Fin.val_last]
-    have hM_decomp :
-        M = (eM * fromBlocksGL (1, eS)) *
-          fromBlocksGL (1, diagGL (Pi.mulSingle (Fin.last k) u)) := by
-      rw [hM, hS, ← Prod.one_mk_mul_one_mk, map_mul, mul_assoc]
-    refine ⟨e₁⁻¹ * e₂, mul_mem (inv_mem he₁) he₂, u, ?_⟩
-    have he₁A : e₁ * A = e₂ * diagGL (Pi.mulSingle (Fin.last (k + 1)) u) := by
-      simpa [M, map_mul, e₂, hdiag_sw] using congrArg (sw.reindexGL D) hM_decomp
-    rw [mul_assoc, ← he₁A, inv_mul_cancel_left]
-
-/-- **Gauss–Jordan factorization over a division ring.** Given any coordinate `i : n`, every
-invertible matrix `g ∈ GL n D` factors as an elementary matrix times a diagonal matrix whose only
-possibly non-identity diagonal entry sits at `i`. -/
-theorem exists_mem_elementarySubgroup_mul_diagGL_mulSingle {n : Type*} [Fintype n] [DecidableEq n]
-    (i : n) (g : GL n D) :
-    ∃ e ∈ elementarySubgroup n D, ∃ u : Dˣ, g = e * diagGL (Pi.mulSingle i u) := by
-  have hpos : 0 < Fintype.card n := Fintype.card_pos_iff.mpr ⟨i⟩
-  obtain ⟨m, hm⟩ : ∃ m, Fintype.card n = m + 1 := Nat.exists_eq_succ_of_ne_zero hpos.ne'
-  let e₀ : n ≃ Fin (m + 1) := Fintype.equivFinOfCardEq hm
-  let eqv : n ≃ Fin (m + 1) := e₀.trans (Equiv.swap (e₀ i) (Fin.last m))
-  have heqv_i : eqv i = Fin.last m := by simp [eqv]
-  obtain ⟨e', he', u, hg'⟩ :=
-    exists_mem_elementarySubgroup_mul_lastDiag m (eqv.reindexGL D g)
-  refine ⟨eqv.symm.reindexGL D e', ?_, u, ?_⟩
-  · rw [← eqv.symm.map_reindexGL_elementarySubgroup]; exact ⟨e', he', rfl⟩
-  · have hdiag : eqv.symm.reindexGL D (diagGL (Pi.mulSingle (Fin.last m) u)) =
-        diagGL (Pi.mulSingle i u) := by
-      ext a b
-      simp only [Equiv.coe_reindexGL, submatrix_apply, Equiv.symm_symm, diagGL_apply,
-        eqv.apply_eq_iff_eq, Pi.mulSingle_apply, ← heqv_i]
-    simpa [map_mul, hdiag] using congrArg (eqv.symm.reindexGL D) hg'
-
-/-- Over any ring, conjugating a transvection by `diagGL d` rescales its parameter. -/
-private theorem diagGL_conj_transvectionUnit {R : Type*} [Ring R] {n : Type*} [Fintype n]
-    [DecidableEq n] (d : n → Rˣ) {i j : n} (hij : i ≠ j) (c : R) :
-    diagGL d * transvectionUnit hij c * (diagGL d)⁻¹ =
-      transvectionUnit hij ((d i : R) * c * ((d j)⁻¹ : Rˣ)) := by
-  ext a b
-  rw [Units.val_mul, Units.val_mul, ← map_inv, diagGL_coe, diagGL_coe,
-    coe_transvectionUnit_eq_one_add_single, coe_transvectionUnit_eq_one_add_single,
-    Matrix.mul_diagonal, Matrix.diagonal_mul]
-  simp only [Matrix.add_apply, Matrix.one_apply, Matrix.single_apply]
-  rcases eq_or_ne a b with rfl | hab
-  · have hne : ¬(i = a ∧ j = a) := fun ⟨hi, hj⟩ ↦ hij (hi.trans hj.symm)
-    simp [hne]
-  · simp only [hab, ite_false, zero_add]
-    split_ifs with h
-    · rcases h with ⟨rfl, rfl⟩; rfl
-    · simp
-
-/-- **The elementary subgroup is normal over a division ring**, already at every finite matrix
-size. -/
-instance elementarySubgroup_normal {n : Type*} [Fintype n] [DecidableEq n] :
-    (elementarySubgroup n D).Normal where
-  conj_mem x hx g := by
-    rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
-    · exact Subsingleton.elim (g * x * g⁻¹) 1 ▸ one_mem _
-    have hdiag_norm (d : n → Dˣ) {y : GL n D} (hy : y ∈ elementarySubgroup n D) :
-        diagGL d * y * (diagGL d)⁻¹ ∈ elementarySubgroup n D := by
-      have hle : elementarySubgroup n D ≤
-          (elementarySubgroup n D).comap (MulAut.conj (diagGL d)).toMonoidHom := by
-        refine elementarySubgroup_le_iff.2 fun i j hij c ↦ ?_
-        rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
-          diagGL_conj_transvectionUnit]
-        exact transvectionUnit_mem_elementarySubgroup hij _
-      exact hle hy
-    obtain ⟨e, he, u, rfl⟩ := exists_mem_elementarySubgroup_mul_diagGL_mulSingle i₀ g
-    have hrewrite : (e * diagGL (Pi.mulSingle i₀ u)) * x * (e * diagGL (Pi.mulSingle i₀ u))⁻¹ =
-        e * (diagGL (Pi.mulSingle i₀ u) * x * (diagGL (Pi.mulSingle i₀ u))⁻¹) * e⁻¹ := by group
-    rw [hrewrite]
-    exact mul_mem (mul_mem he (hdiag_norm _ hx)) (inv_mem he)
-
-/-- Single-coordinate diagonal embedding `u ↦ diagGL (Pi.mulSingle i u)`. -/
-private def diagGLMulSingleHom {n : Type*} [Fintype n] [DecidableEq n] (i : n) :
-    Dˣ →* GL n D where
-  toFun u := diagGL (Pi.mulSingle i u)
-  map_one' := by simp
-  map_mul' u v := by rw [← map_mul]; congr 1; ext a; by_cases h : a = i <;> simp [h]
-
-@[simp]
-private theorem diagGLMulSingleHom_apply {n : Type*} [Fintype n] [DecidableEq n] (i : n)
-    (u : Dˣ) : diagGLMulSingleHom i u = diagGL (Pi.mulSingle i u) :=
-  rfl
 
 /-- In rank at least two, a commutator of units placed in the last diagonal coordinate lies in the
 elementary subgroup. -/
@@ -432,10 +143,10 @@ private def abelianizationToQuotientFin (k : ℕ) :
     Group.Abelianization Dˣ →* GL (Fin (k + 2)) D ⧸ elementarySubgroup (Fin (k + 2)) D :=
   QuotientGroup.lift (commutator Dˣ)
     ((QuotientGroup.mk' (elementarySubgroup (Fin (k + 2)) D)).comp
-      (diagGLMulSingleHom (Fin.last (k + 1))))
+      (diagGL.comp (MonoidHom.mulSingle (fun _ : Fin (k + 2) ↦ Dˣ) (Fin.last (k + 1)))))
     fun x hx ↦ by
       refine Subgroup.commutator_le.2 (fun u _ v _ ↦ ?_) hx
-      rw [MonoidHom.mem_ker, MonoidHom.comp_apply, diagGLMulSingleHom_apply,
+      rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.mulSingle_apply,
         QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
       exact diagGL_mulSingle_last_commutatorElement_mem k u v
 
@@ -449,7 +160,8 @@ private theorem abelianizationToQuotientFin_surjective (k : ℕ) :
     Function.Surjective (abelianizationToQuotientFin (D := D) k) := by
   intro q
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-  obtain ⟨e, he, u, rfl⟩ := exists_mem_elementarySubgroup_mul_lastDiag (k + 1) g
+  obtain ⟨e, he, u, rfl⟩ :=
+    exists_mem_elementarySubgroup_mul_diagGL_mulSingle (Fin.last (k + 1)) g
   refine ⟨Group.Abelianization.of u, ?_⟩
   rw [abelianizationToQuotientFin_of, QuotientGroup.eq]
   have hinv : (diagGL (Pi.mulSingle (Fin.last (k + 1)) u))⁻¹ *
@@ -459,30 +171,11 @@ private theorem abelianizationToQuotientFin_surjective (k : ℕ) :
   rw [hinv]
   exact elementarySubgroup_normal.conj_mem e he _
 
-end GaussJordan
-
-/-! ## Inductive Schur-complement construction on `Fin m` -/
-
-section SchurInduction
-
-variable {D : Type*} [DivisionRing D]
-
 /-- The `m × m` Schur complement obtained from `A : Matrix (Fin (m + 1)) (Fin (m + 1)) D` by
 eliminating column `0` using pivot row `p`. -/
 private def schurBlock {m : ℕ} (A : Matrix (Fin (m + 1)) (Fin (m + 1)) D) (p : Fin (m + 1)) :
     Matrix (Fin m) (Fin m) D :=
   fun r s ↦ A (p.succAbove r) s.succ - A (p.succAbove r) 0 * (A p 0)⁻¹ * A p s.succ
-
-@[simp]
-private theorem permMatrix_mul_apply {R : Type*} [Semiring R] {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (σ : Equiv.Perm ι) (M : Matrix ι ι R) (i j : ι) :
-    (σ.permMatrix R * M) i j = M (σ i) j := by
-  rw [Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Matrix.submatrix_apply, id]
-
-private theorem coe_permutationGL_mul_apply {R : Type*} [Semiring R] {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (σ : Equiv.Perm ι) (M : Matrix ι ι R) (i j : ι) :
-    ((permutationGL (k := R) σ : Matrix ι ι R) * M) i j = M (σ.symm i) j := by
-  rw [permutationGL_coe, permMatrix_mul_apply, Equiv.Perm.inv_def]
 
 /-- When `A ∈ GL (Fin (m + 1)) D` has `A p 0 ≠ 0`, `schurBlock A p` is invertible in
 `Matrix (Fin m) (Fin m) D`. -/
@@ -613,34 +306,6 @@ private theorem coe_colElimGL_mul_apply_succAbove {k : ℕ} (p : Fin (k + 1)) (w
       · intro x hx; dsimp only [eqv]; rw [coe_colElimGL_eqv_apply]; simp [Ne.symm hx]
     rw [hleft, hright, add_comm]
   simpa only [hq_eq, hp_eq] using hmain
-
-/-- Over any ring, `diagGL (Pi.mulSingle j (-1)) * transvectionWeylElement hij` is the permutation
-matrix of `Equiv.swap i j`. -/
-private theorem diagGL_mul_transvectionWeylElement_eq_permutationGL_swap {R : Type*} [Ring R]
-    {n : Type*} [Fintype n] [DecidableEq n] {i j : n} (hij : i ≠ j) :
-    diagGL (Pi.mulSingle j (-1 : Rˣ)) * transvectionWeylElement hij =
-      permutationGL (k := R) (Equiv.swap i j) := by
-  apply Units.ext
-  have h1 : (transvectionWeylElement (A := R) hij : Matrix n n R) =
-      (1 + single i j 1) * ((1 + single j i (-1)) * ((1 + single i j 1) * 1)) := by
-    rw [transvectionWeylElement_def, Units.val_mul, Units.val_mul,
-      coe_transvectionUnit_eq_one_add_single, coe_transvectionUnit_eq_one_add_single,
-      mul_assoc, Matrix.mul_one]
-  rw [Units.val_mul, diagGL_coe, h1, permutationGL_coe, Equiv.swap_inv,
-    ← Matrix.mul_one ((Equiv.swap i j).permMatrix R)]
-  ext a b
-  simp only [permMatrix_mul_apply, Matrix.diagonal_mul, one_add_single_mul_apply, Matrix.one_apply,
-    one_mul, neg_one_mul]
-  by_cases hai : a = i
-  · subst a
-    simp only [Pi.mulSingle_eq_of_ne hij, Units.val_one, one_mul, Equiv.swap_apply_left,
-      hij, hij.symm, ite_true, ite_false, add_zero]; abel
-  · by_cases haj : a = j
-    · subst a
-      simp only [Pi.mulSingle_eq_same, Units.val_neg, Units.val_one, neg_one_mul,
-        Equiv.swap_apply_right, hij.symm, ite_true, ite_false, add_zero]; abel
-    · simp only [Pi.mulSingle_eq_of_ne haj, Units.val_one, one_mul,
-        Equiv.swap_apply_of_ne_of_ne hai haj, hai, haj, ite_false, add_zero]
 
 /-- Any homomorphism on `GL n D` that kills transvections and sends `diagGL d` to
 `∏ i, Group.Abelianization.of (d i)` sends `permutationGL σ` to the cast of
@@ -886,20 +551,16 @@ private theorem bareDieudonne_transvectionUnit_mul {k : ℕ}
   by_cases hex : ∃ p : Fin (k + 2), p ≠ i ∧ A p 0 ≠ 0
   · obtain ⟨p, hpi, hp⟩ := hex
     have hp' : (transvectionUnit hij c * A : GL (Fin (k + 2)) D) p 0 ≠ 0 := by
-      rw [transvectionUnit_mul_apply]
-      simpa [hpi] using hp
+      rw [transvectionUnit_mul_apply]; simpa [hpi] using hp
     rw [bareDieudonne_eq_pivotVal f hf_transv hf_diag _ p hp',
       bareDieudonne_eq_pivotVal f hf_transv hf_diag A p hp]
     exact pivotVal_transvectionUnit_mul_of_ne f hf_transv A hij hpi.symm c hp
   · push Not at hex
     obtain ⟨p, hp⟩ := exists_apply_ne_zero_col A 0
-    have hpi : p = i := by
-      by_contra hne
-      exact hp (hex p hne)
+    have hpi : p = i := by by_contra hne; exact hp (hex p hne)
     subst hpi
     have hp' : (transvectionUnit hij c * A : GL (Fin (k + 2)) D) p 0 ≠ 0 := by
-      rw [transvectionUnit_mul_apply]
-      simpa [hex j hij.symm] using hp
+      rw [transvectionUnit_mul_apply]; simpa [hex j hij.symm] using hp
     rw [bareDieudonne_eq_pivotVal f hf_transv hf_diag _ p hp',
       bareDieudonne_eq_pivotVal f hf_transv hf_diag A p hp]
     exact pivotVal_transvectionUnit_mul_of_forall_eq_zero f A hij c hex hp
@@ -917,10 +578,8 @@ private theorem bareDieudonne_elementary_mul {k : ℕ}
     obtain ⟨i, j, hij, c, rfl⟩ := hx
     exact bareDieudonne_transvectionUnit_mul f hf_transv hf_diag hij c A
   | one => simp
-  | mul x y _ _ ihx ihy =>
-    rw [mul_assoc, ihx, ihy]
-  | inv x _ ih =>
-    rw [← ih (x⁻¹ * A), mul_inv_cancel_left]
+  | mul x y _ _ ihx ihy => rw [mul_assoc, ihx, ihy]
+  | inv x _ ih => rw [← ih (x⁻¹ * A), mul_inv_cancel_left]
 
 private theorem bareDieudonne_diagGL {k : ℕ}
     (f : GL (Fin (k + 1)) D →* Group.Abelianization Dˣ)
@@ -932,8 +591,7 @@ private theorem bareDieudonne_diagGL {k : ℕ}
   rw [bareDieudonne_eq_pivotVal f hf_transv hf_diag (diagGL d) 0 h0, pivotVal]
   have hu0 : Units.mk0 ((diagGL d : GL (Fin (k + 2)) D) 0 0) h0 = d 0 := Units.ext (by simp)
   have hschur : schurGL (diagGL d) 0 h0 = diagGL (fun i ↦ d i.succ) := by
-    apply Units.ext
-    ext r s
+    apply Units.ext; ext r s
     simp [coe_schurGL, schurBlock, diagGL_apply, Fin.zero_succAbove, Fin.succ_ne_zero]
   rw [Fin.val_zero, pow_zero, one_mul, hu0, hschur, hf_diag]
   conv_rhs => rw [Fin.prod_univ_succ]
@@ -976,7 +634,8 @@ private def dieudonneFinSuccSucc {k : ℕ} (prev : DieudonneFinData D (k + 1)) :
   let φ : GL (Fin (k + 2)) D →* Group.Abelianization Dˣ :=
     bij.symm.toMonoidHom.comp (QuotientGroup.mk' (elementarySubgroup (Fin (k + 2)) D))
   have hφ_eq_bare (A : GL (Fin (k + 2)) D) : φ A = bareDieudonne prev.hom A := by
-    obtain ⟨e, he, u, rfl⟩ := exists_mem_elementarySubgroup_mul_lastDiag (k + 1) A
+    obtain ⟨e, he, u, rfl⟩ :=
+      exists_mem_elementarySubgroup_mul_diagGL_mulSingle (Fin.last (k + 1)) A
     have hmk : QuotientGroup.mk' (elementarySubgroup (Fin (k + 2)) D)
         (e * diagGL (Pi.mulSingle (Fin.last (k + 1)) u)) =
         abelianizationToQuotientFin k (Group.Abelianization.of u) := by
@@ -999,9 +658,7 @@ private def dieudonneFinSuccSucc {k : ℕ} (prev : DieudonneFinData D (k + 1)) :
         (QuotientGroup.eq_one_iff _).2 (transvectionUnit_mem_elementarySubgroup hij c), map_one]
     map_diag := fun d ↦ (hφ_eq_bare _).trans
       (bareDieudonne_diagGL prev.hom prev.map_transvection prev.map_diag d)
-    ker_eq := fun _ ↦ by
-      ext g
-      simp [φ] }
+    ker_eq := fun _ ↦ by ext g; simp [φ] }
 
 private def dieudonneFinData (D : Type*) [DivisionRing D] : ∀ m : ℕ, DieudonneFinData D m
   | 0 =>
@@ -1060,13 +717,6 @@ private theorem dieudonneFinData_hom_finCongr {m k : ℕ} (h : m = k) (A : GL (F
   subst h
   exact congrArg (TauCeti.dieudonneFinData D m).hom (by ext i j; simp)
 
-private theorem exists_mem_elementarySubgroup_mul_diagGL (g : GL n D) :
-    ∃ e ∈ TauCeti.elementarySubgroup n D, ∃ d : n → Dˣ, g = e * TauCeti.diagGL d := by
-  rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
-  · exact ⟨1, one_mem _, 1, Subsingleton.elim _ _⟩
-  · obtain ⟨e, he, u, rfl⟩ := TauCeti.exists_mem_elementarySubgroup_mul_diagGL_mulSingle i₀ g
-    exact ⟨e, he, Pi.mulSingle i₀ u, rfl⟩
-
 /-- The **Dieudonné determinant** over a division ring `D`, taking values in the abelianized unit
 group `Group.Abelianization Dˣ = Dˣ / [Dˣ, Dˣ]`. -/
 def dieudonneDet : GL n D →* Group.Abelianization Dˣ :=
@@ -1083,9 +733,7 @@ theorem dieudonneDet_reindexGL {m : Type*} [Fintype m] [DecidableEq m] (e : n �
   let e₂ := Fintype.equivFin m
   let σ : Equiv.Perm (Fin (Fintype.card m)) :=
     (finCongr hcard).symm.trans (e₁.symm.trans (e.trans e₂))
-  have heq : e₁.trans ((finCongr hcard).trans σ) = e.trans e₂ := by
-    ext x
-    simp [σ]
+  have heq : e₁.trans ((finCongr hcard).trans σ) = e.trans e₂ := by ext x; simp [σ]
   have hreindex : e₂.reindexGL D (e.reindexGL D g) =
       σ.reindexGL D ((finCongr hcard).reindexGL D (e₁.reindexGL D g)) := by
     rw [← MulEquiv.trans_apply, ← MulEquiv.trans_apply, ← MulEquiv.trans_apply,
@@ -1136,8 +784,7 @@ theorem dieudonneDet_diagGL (d : n → Dˣ) :
     dieudonneDet (TauCeti.diagGL d) = ∏ i, Group.Abelianization.of (d i) := by
   let e := Fintype.equivFin n
   have hreindex : e.reindexGL D (TauCeti.diagGL d) = TauCeti.diagGL (d ∘ e.symm) := by
-    ext a b
-    simp [Matrix.diagonal_apply, e.symm.apply_eq_iff_eq]
+    ext a b; simp [Matrix.diagonal_apply, e.symm.apply_eq_iff_eq]
   dsimp only [dieudonneDet, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
   rw [hreindex, (TauCeti.dieudonneFinData D (Fintype.card n)).map_diag]
   exact e.symm.prod_comp (fun i ↦ Group.Abelianization.of (d i))
@@ -1164,18 +811,6 @@ theorem dieudonneDet_surjective [Nonempty n] :
   intro x
   refine QuotientGroup.induction_on x (fun u ↦ ⟨TauCeti.diagGL (Pi.mulSingle i u), ?_⟩)
   exact dieudonneDet_diagGL_mulSingle i u
-
-/-- Two monoid homomorphisms out of `GL n D` that vanish on `TauCeti.elementarySubgroup n D` and
-agree on the single-entry diagonal matrices at a chosen index `i : n` are equal. -/
-theorem hom_ext_of_elementarySubgroup_le_ker {G : Type*} [Monoid G] {φ ψ : GL n D →* G}
-    (hφ : TauCeti.elementarySubgroup n D ≤ φ.ker)
-    (hψ : TauCeti.elementarySubgroup n D ≤ ψ.ker) (i : n)
-    (hdiag : ∀ u : Dˣ,
-      φ (TauCeti.diagGL (Pi.mulSingle i u)) = ψ (TauCeti.diagGL (Pi.mulSingle i u))) :
-    φ = ψ := by
-  ext g
-  obtain ⟨e, he, u, rfl⟩ := TauCeti.exists_mem_elementarySubgroup_mul_diagGL_mulSingle i g
-  rw [map_mul, map_mul, hφ he, hψ he, one_mul, one_mul, hdiag]
 
 /-- **Uniqueness of the Dieudonné determinant.** A homomorphism
 `GL n D →* Group.Abelianization Dˣ` that vanishes on `TauCeti.elementarySubgroup n D` and sends
@@ -1225,8 +860,8 @@ theorem dieudonneDet_lowerBlockGL {m : Type*} [Fintype m] [DecidableEq m] (Y : M
 theorem dieudonneDet_fromBlocksGL {m : Type*} [Fintype m] [DecidableEq m]
     (u : GL n D) (v : GL m D) :
     dieudonneDet (TauCeti.fromBlocksGL (u, v)) = dieudonneDet u * dieudonneDet v := by
-  obtain ⟨eu, heu, d₁, rfl⟩ := exists_mem_elementarySubgroup_mul_diagGL u
-  obtain ⟨ev, hev, d₂, rfl⟩ := exists_mem_elementarySubgroup_mul_diagGL v
+  obtain ⟨eu, heu, d₁, rfl⟩ := TauCeti.exists_mem_elementarySubgroup_mul_diagGL u
+  obtain ⟨ev, hev, d₂, rfl⟩ := TauCeti.exists_mem_elementarySubgroup_mul_diagGL v
   have hprod : (eu * TauCeti.diagGL d₁, ev * TauCeti.diagGL d₂) =
       (eu, (1 : GL m D)) * ((1 : GL n D), ev) * (TauCeti.diagGL d₁, TauCeti.diagGL d₂) := by
     ext <;> simp
@@ -1248,21 +883,13 @@ theorem dieudonneDet_fromBlocksGL {m : Type*} [Fintype m] [DecidableEq m]
     dieudonneDet_diagGL, Fintype.prod_sum_type]
   rfl
 
-/-- Stabilization `u ↦ u ⊕ 1` preserves the Dieudonné determinant. -/
-@[simp]
-theorem dieudonneDet_stabilizeGL {a b : ℕ} (h : a ≤ b) (u : GL (Fin a) D) :
-    dieudonneDet (TauCeti.stabilizeGL D h u) = dieudonneDet u := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [Subsingleton.elim h (Nat.le_add_right a k), TauCeti.stabilizeGL_eq_reindexGL_fromBlocksGL,
-    dieudonneDet_reindexGL, dieudonneDet_fromBlocksGL, map_one, mul_one]
-
 /-- The Dieudonné determinant is natural with respect to ring homomorphisms `D →+* E` between
 division rings. -/
 @[simp]
 theorem dieudonneDet_unitsMap_mapMatrix {E : Type*} [DivisionRing E] (f : D →+* E) (g : GL n D) :
     dieudonneDet (Units.map (f.mapMatrix (m := n) : Matrix n n D →* Matrix n n E) g) =
       Group.Abelianization.map (Units.map (f : D →* E)) (dieudonneDet g) := by
-  obtain ⟨e, he, d, rfl⟩ := exists_mem_elementarySubgroup_mul_diagGL g
+  obtain ⟨e, he, d, rfl⟩ := TauCeti.exists_mem_elementarySubgroup_mul_diagGL g
   have hle : TauCeti.elementarySubgroup n D ≤
       (TauCeti.elementarySubgroup n E).comap
         (Units.map (f.mapMatrix (m := n) : Matrix n n D →* Matrix n n E)) := by
@@ -1275,8 +902,7 @@ theorem dieudonneDet_unitsMap_mapMatrix {E : Type*} [DivisionRing E] (f : D →+
   have hmap_diag :
       Units.map (f.mapMatrix (m := n) : Matrix n n D →* Matrix n n E) (TauCeti.diagGL d) =
         TauCeti.diagGL (fun i ↦ Units.map (f : D →* E) (d i)) := by
-    ext a b
-    simp [Matrix.diagonal_apply, apply_ite f]
+    ext a b; simp [Matrix.diagonal_apply, apply_ite f]
   rw [map_mul, map_mul, map_mul, dieudonneDet_of_mem_elementarySubgroup (hle he),
     dieudonneDet_of_mem_elementarySubgroup he, one_mul, one_mul, hmap_diag,
     dieudonneDet_diagGL, dieudonneDet_diagGL, map_prod]
@@ -1299,7 +925,7 @@ theorem dieudonneDet_map {F K : Type*} [Field F] [Field K] (f : F →+* K) (g : 
 `Group.Abelianization.of : Fˣ →* Group.Abelianization Fˣ`. -/
 theorem dieudonneDet_eq_of_det {F : Type*} [Field F] (g : GL n F) :
     dieudonneDet g = Group.Abelianization.of g.det := by
-  obtain ⟨e, he, d, rfl⟩ := exists_mem_elementarySubgroup_mul_diagGL g
+  obtain ⟨e, he, d, rfl⟩ := TauCeti.exists_mem_elementarySubgroup_mul_diagGL g
   have hdet_e : e.det = 1 :=
     (TauCeti.elementarySubgroup_le_iff (H := det.ker).2
       fun _ _ hij c ↦ TauCeti.det_transvectionUnit hij c) he
@@ -1310,7 +936,7 @@ end Field
 
 end Matrix.GeneralLinearGroup
 
-/-! ## Finite-rank quotients and algebraic `K₁` of division rings and fields -/
+/-! ## Finite-rank quotient by the elementary subgroup -/
 
 namespace TauCeti
 
@@ -1331,8 +957,8 @@ def quotientElementarySubgroupDieudonneEquiv (n : Type*) [Fintype n] [DecidableE
 theorem quotientElementarySubgroupDieudonneEquiv_mk {n : Type*} [Fintype n] [DecidableEq n]
     {D : Type*} [DivisionRing D] (hn : 2 ≤ Fintype.card n) (g : GL n D) :
     quotientElementarySubgroupDieudonneEquiv n D hn (QuotientGroup.mk g) =
-      GeneralLinearGroup.dieudonneDet g := by
-  rfl
+      GeneralLinearGroup.dieudonneDet g :=
+  (rfl)
 
 /-- The inverse of `TauCeti.quotientElementarySubgroupDieudonneEquiv` sends
 `Group.Abelianization.of u` to the coset of `diagGL (Pi.mulSingle i u)` at any index `i : n`. -/
@@ -1342,135 +968,6 @@ theorem quotientElementarySubgroupDieudonneEquiv_symm_of {n : Type*} [Fintype n]
       QuotientGroup.mk (diagGL (Pi.mulSingle i u)) := by
   rw [← GeneralLinearGroup.dieudonneDet_diagGL_mulSingle i u,
     ← quotientElementarySubgroupDieudonneEquiv_mk hn, MulEquiv.symm_apply_apply]
-
-namespace AlgebraicK1
-
-/-- **Algebraic `K₁` of a division ring.** The Dieudonné determinant induces a canonical
-isomorphism `AlgebraicK1 D ≃* Group.Abelianization Dˣ`, with inverse sending
-`Group.Abelianization.of u` to the `1 × 1` class `mk D 1 (GeneralLinearGroup.scalar (Fin 1) u)`. -/
-def dieudonneDetEquiv (D : Type*) [DivisionRing D] :
-    AlgebraicK1 D ≃* Group.Abelianization Dˣ where
-  toFun := lift (fun _ ↦ GeneralLinearGroup.dieudonneDet)
-    fun _ _ h u ↦ GeneralLinearGroup.dieudonneDet_stabilizeGL h u
-  invFun := Group.Abelianization.lift ((mk D 1).comp (GeneralLinearGroup.scalar (Fin 1)))
-  left_inv := by
-    have hcomp :
-        (Group.Abelianization.lift ((mk D 1).comp (GeneralLinearGroup.scalar (Fin 1)))).comp
-          (lift (fun _ ↦ GeneralLinearGroup.dieudonneDet)
-            fun _ _ h u ↦ GeneralLinearGroup.dieudonneDet_stabilizeGL h u) =
-          MonoidHom.id (AlgebraicK1 D) := by
-      refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
-      simp only [MonoidHom.comp_apply, MonoidHom.id_apply, lift_mk]
-      rcases n with _ | m
-      · rw [Subsingleton.elim u 1, map_one, map_one, map_one]
-      · obtain ⟨e, he, d, rfl⟩ := exists_mem_elementarySubgroup_mul_lastDiag m u
-        have he1 : mk D (m + 1) e = 1 :=
-          mk_eq_one_iff.2 ⟨m + 1, le_rfl, by simpa using he⟩
-        have hstab : mk D (m + 1) (diagGL (Pi.mulSingle (Fin.last m) d)) =
-            mk D 1 (GeneralLinearGroup.scalar (Fin 1) d) := by
-          have h1 : TauCeti.stabilizeGL D (Nat.succ_le_succ (Nat.zero_le m))
-              (GeneralLinearGroup.scalar (Fin 1) d) = diagGL (Pi.mulSingle 0 d) := by
-            ext i j; rw [TauCeti.coe_stabilizeGL_apply, diagGL_apply]
-            rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨i', rfl⟩ <;>
-              rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j', rfl⟩
-            · simp [GeneralLinearGroup.coe_scalar]
-            · simp [(Fin.succ_ne_zero j').symm]
-            · simp
-            · simp [Matrix.one_apply]
-          let σ : Equiv.Perm (Fin (m + 1)) := Equiv.swap 0 (Fin.last m)
-          have hconj : permutationGL σ * diagGL (Pi.mulSingle 0 d) * (permutationGL σ)⁻¹ =
-              diagGL (Pi.mulSingle (Fin.last m) d) := by
-            rw [permutationGL_mul_diagGL_mul_inv]; congr 1; funext i
-            have hσ : σ⁻¹ = Equiv.swap 0 (Fin.last m) := Equiv.swap_inv 0 (Fin.last m)
-            rw [hσ, Pi.mulSingle_apply, Pi.mulSingle_apply]
-            by_cases hi : i = Fin.last m
-            · subst hi; simp
-            · have hne : Equiv.swap 0 (Fin.last m) i ≠ 0 := fun h ↦
-                hi (by simpa using congrArg (Equiv.swap 0 (Fin.last m)) h)
-              simp [hi, hne]
-          rw [← hconj, ← h1, map_mul, map_mul, map_inv, mk_stabilizeGL]
-          calc
-            mk D (m + 1) (permutationGL σ) * mk D 1 (GeneralLinearGroup.scalar (Fin 1) d) *
-                (mk D (m + 1) (permutationGL σ))⁻¹
-              = mk D 1 (GeneralLinearGroup.scalar (Fin 1) d) *
-                  (mk D (m + 1) (permutationGL σ) * (mk D (m + 1) (permutationGL σ))⁻¹) := by
-                ac_rfl
-            _ = mk D 1 (GeneralLinearGroup.scalar (Fin 1) d) := by rw [mul_inv_cancel, mul_one]
-        rw [map_mul, GeneralLinearGroup.dieudonneDet_of_mem_elementarySubgroup he, one_mul,
-          GeneralLinearGroup.dieudonneDet_diagGL_mulSingle, Group.Abelianization.lift_apply_of,
-          MonoidHom.comp_apply, map_mul, he1, one_mul, hstab]
-    exact DFunLike.congr_fun hcomp
-  right_inv y := QuotientGroup.induction_on y fun u ↦ by
-    have hy : (QuotientGroup.mk u : Group.Abelianization Dˣ) = Group.Abelianization.of u := rfl
-    rw [hy, Group.Abelianization.lift_apply_of, MonoidHom.comp_apply, lift_mk,
-      GeneralLinearGroup.dieudonneDet_scalar, Fintype.card_fin, pow_one]
-  map_mul' := map_mul _
-
-/-- `dieudonneDetEquiv` evaluates on the class of `u ∈ GL (Fin n) D` as `u.dieudonneDet`. -/
-@[simp]
-theorem dieudonneDetEquiv_mk {D : Type*} [DivisionRing D] (n : ℕ) (u : GL (Fin n) D) :
-    dieudonneDetEquiv D (mk D n u) = GeneralLinearGroup.dieudonneDet u :=
-  lift_mk ..
-
-/-- The inverse of `dieudonneDetEquiv` sends `Group.Abelianization.of u` to
-`[scalar (Fin 1) u]`. -/
-@[simp]
-theorem dieudonneDetEquiv_symm_of {D : Type*} [DivisionRing D] (u : Dˣ) :
-    (dieudonneDetEquiv D).symm (Group.Abelianization.of u) =
-      mk D 1 (GeneralLinearGroup.scalar (Fin 1) u) := by
-  rfl
-
-/-- Naturality of `dieudonneDetEquiv` with respect to ring homomorphisms of division rings. -/
-@[simp]
-theorem dieudonneDetEquiv_map {D E : Type*} [DivisionRing D] [DivisionRing E] (f : D →+* E)
-    (x : AlgebraicK1 D) :
-    dieudonneDetEquiv E (map f x) =
-      Group.Abelianization.map (Units.map (f : D →* E)) (dieudonneDetEquiv D x) := by
-  obtain ⟨n, u, rfl⟩ := exists_mk x
-  rw [map_mk, dieudonneDetEquiv_mk, dieudonneDetEquiv_mk, RingHom.toMonoidHom_eq_coe,
-    GeneralLinearGroup.dieudonneDet_unitsMap_mapMatrix]
-
-/-- Over a division ring and in rank `2 ≤ n`, an invertible matrix represents `1` in
-`AlgebraicK1 D` if and only if it already lies in `TauCeti.elementarySubgroup (Fin n) D`. -/
-theorem mk_eq_one_iff_mem_elementarySubgroup {D : Type*} [DivisionRing D] {n : ℕ} (hn : 2 ≤ n)
-    {u : GL (Fin n) D} :
-    mk D n u = 1 ↔ u ∈ TauCeti.elementarySubgroup (Fin n) D := by
-  calc
-    mk D n u = 1 ↔ dieudonneDetEquiv D (mk D n u) = 1 :=
-      ⟨fun h ↦ by rw [h, map_one],
-        fun h ↦ (dieudonneDetEquiv D).injective (h.trans (map_one _).symm)⟩
-    _ ↔ u ∈ TauCeti.elementarySubgroup (Fin n) D := by
-      rw [dieudonneDetEquiv_mk,
-        GeneralLinearGroup.dieudonneDet_eq_one_iff (by simpa [Fintype.card_fin] using hn)]
-
-/-- **Algebraic `K₁` of a field.** The ordinary determinant induces a canonical isomorphism
-`AlgebraicK1 F ≃* Fˣ`, sending `[u]` to `u.det` and `a : Fˣ` to `[scalar (Fin 1) a]`. -/
-def detEquiv (F : Type*) [Field F] : AlgebraicK1 F ≃* Fˣ :=
-  (dieudonneDetEquiv F).trans Group.Abelianization.equivOfComm.symm
-
-/-- `detEquiv` evaluates on the class of `u ∈ GL (Fin n) F` as `u.det`. -/
-@[simp]
-theorem detEquiv_mk {F : Type*} [Field F] (n : ℕ) (u : GL (Fin n) F) :
-    detEquiv F (mk F n u) = u.det := by
-  simp [detEquiv, GeneralLinearGroup.dieudonneDet_eq_of_det]
-
-/-- The inverse of `detEquiv` sends `a : Fˣ` to `[scalar (Fin 1) a]`. -/
-@[simp]
-theorem detEquiv_symm_apply {F : Type*} [Field F] (a : Fˣ) :
-    (detEquiv F).symm a = mk F 1 (GeneralLinearGroup.scalar (Fin 1) a) := by
-  simp [detEquiv]
-
-/-- Naturality of `detEquiv` with respect to ring homomorphisms of fields. -/
-@[simp]
-theorem detEquiv_map {F K : Type*} [Field F] [Field K] (f : F →+* K) (x : AlgebraicK1 F) :
-    detEquiv K (map f x) = Units.map (f : F →* K) (detEquiv F x) := by
-  obtain ⟨n, u, rfl⟩ := exists_mk x
-  rw [detEquiv, MulEquiv.trans_apply, dieudonneDetEquiv_map, dieudonneDetEquiv_mk,
-    GeneralLinearGroup.dieudonneDet_eq_of_det, Group.Abelianization.map_of, detEquiv,
-    MulEquiv.trans_apply, dieudonneDetEquiv_mk, GeneralLinearGroup.dieudonneDet_eq_of_det]
-  simp
-
-end AlgebraicK1
 
 end TauCeti
 
