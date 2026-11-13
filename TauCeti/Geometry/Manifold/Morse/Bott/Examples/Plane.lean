@@ -73,7 +73,7 @@ variable [FiniteDimensional ℝ E]
 /-- Along the critical slice of `(x, y) ↦ y²` the Morse index is `0`. -/
 theorem manifoldMorseIndex_sq_comp_snd (x : M) :
     manifoldMorseIndex (I.prod 𝓘(ℝ, ℝ)) ((fun y : ℝ ↦ y ^ 2) ∘ Prod.snd) (x, 0) = 0 := by
-  rw [manifoldMorseIndex_comp_snd (by fun_prop)]
+  rw [manifoldMorseIndex_comp_snd, manifoldMorseIndex_modelSpace]
   exact morseIndex_real_of_pos (by simp)
 
 /-- Along the critical slice of `(x, y) ↦ y²` the Morse index of the negative `-y²` is `1`. -/
@@ -83,7 +83,7 @@ theorem manifoldMorseIndex_neg_sq_comp_snd (x : M) :
       -((fun y : ℝ ↦ y ^ 2) ∘ Prod.snd) = (fun y : ℝ ↦ -y ^ 2) ∘ (Prod.snd : M × ℝ → ℝ) := by
     funext p
     simp
-  rw [hneg, manifoldMorseIndex_comp_snd (by fun_prop)]
+  rw [hneg, manifoldMorseIndex_comp_snd, manifoldMorseIndex_modelSpace]
   exact morseIndex_real_of_neg (by simp)
 
 variable [I.Boundaryless] [IsManifold I 2 M] (hn : n ≠ 0)
@@ -122,12 +122,11 @@ theorem criticalHessian_pow_four_comp_snd (x : M) :
 
 /-- **The critical slice of `y⁴` is not Morse–Bott.** For nonempty `M`, the slice `M × {0}`, the
 critical set of `(x, y) ↦ y⁴`, is not a Morse–Bott critical submanifold. -/
-theorem not_isNondegenerateCriticalSubmanifold_pow_four_comp_snd [Nonempty M] (hn : n ≠ 0)
+theorem not_isNondegenerateCriticalSubmanifold_pow_four_comp_snd [Nonempty M]
     (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, ℝ)) n (fun x : M ↦ (x, (0 : ℝ)))) :
     ¬(SmoothEmbedding.ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold
       ((fun y : ℝ ↦ y ^ 4) ∘ Prod.snd) := by
-  rw [SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd_iff hn]
-  exact not_isNondegenerateCriticalPoint_pow_four
+  simp [SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd_iff]
 
 /-- **`y⁴` is not Morse–Bott on `M × ℝ`.** For nonempty `M`, no family of embeddings exhibits
 `(x, y) ↦ y⁴` as a Morse–Bott function. -/
@@ -135,10 +134,11 @@ theorem not_isMorseBottFamily_pow_four_comp_snd [Nonempty M]
     {ι : Type*} {E' : ι → Type*} [∀ a, NormedAddCommGroup (E' a)] [∀ a, NormedSpace ℝ (E' a)]
     {H' : ι → Type*} [∀ a, TopologicalSpace (H' a)] {J : ∀ a, ModelWithCorners ℝ (E' a) (H' a)}
     {S : ι → Type*} [∀ a, TopologicalSpace (S a)] [∀ a, ChartedSpace (H' a) (S a)]
-    (i : ∀ a, SmoothEmbedding (J a) (I.prod 𝓘(ℝ, ℝ)) n (S a) (M × ℝ)) (hn : n ≠ 0) :
-    ¬IsMorseBottFamily i ((fun y : ℝ ↦ y ^ 4) ∘ Prod.snd) :=
-  not_isMorseBottFamily_comp_snd i hn (criticalPoints_pow (by norm_num))
-    not_isNondegenerateCriticalPoint_pow_four
+    (i : ∀ a, SmoothEmbedding (J a) (I.prod 𝓘(ℝ, ℝ)) n (S a) (M × ℝ)) :
+    ¬IsMorseBottFamily i ((fun y : ℝ ↦ y ^ 4) ∘ Prod.snd) := by
+  refine not_isMorseBottFamily_comp_snd i (y := 0) (by simp [criticalPoints_pow])
+    (Filter.Eventually.of_forall fun z hz ↦ ?_) (by simp)
+  rwa [criticalPoints_pow (by norm_num), Set.mem_singleton_iff] at hz
 
 end PowFour
 

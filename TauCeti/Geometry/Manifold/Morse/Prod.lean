@@ -46,9 +46,8 @@ of the set.
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd`: the
   Morse index of the separated sum is the sum of the indices.
 * `TauCeti.criticalPoints_comp_snd` and `TauCeti.manifoldMorseIndex_comp_snd`: the critical
-  points of `(x, y) ↦ g y` on `M × N` are the points over critical points of `g`, and for a
-  function `q` on a normed space `V` the Morse index of `(x, v) ↦ q v` at `(x, v)` is that of `q`
-  at `v`.
+  points of `(x, y) ↦ g y` on `M × N` are the points over critical points of `g`, and its Morse
+  index at `(x, y)` is that of `g` at `y`.
 
 ## References
 
@@ -188,8 +187,8 @@ section CompSnd
 /-! ### Functions of the second factor
 
 A function `g` on `N` pulls back to the function `(x, y) ↦ g y` on `M × N`, which is constant along
-the slices `M × {y}`. Its critical points are the points over critical points of `g`, and when `N`
-is a normed space its Morse indices are those of `g`. -/
+the slices `M × {y}`. Its critical points are the points over critical points of `g`, and its Morse
+indices are those of `g`. -/
 
 /-- **Critical points of a function of the second factor.** A point `p` of `M × N` is a critical
 point of `(x, y) ↦ g y` exactly when `p.2` is a critical point of `g`. -/
@@ -206,18 +205,17 @@ theorem criticalPoints_comp_snd :
   rw [mem_criticalPoints_comp_snd_iff]
   simp
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {q : V → ℝ}
-
-/-- **The Morse index of a function of the second factor** at `(x, v)` is the Morse index of `q`
-at `v`: the slice directions contribute nothing to the Hessian. -/
-theorem manifoldMorseIndex_comp_snd [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] {v : V}
-    (hq : ContDiffAt ℝ 2 q v) (x : M) :
-    manifoldMorseIndex (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, v) = morseIndex q v := by
-  have hsum : (fun _ : M ↦ (0 : ℝ)) ∘ Prod.fst + q ∘ Prod.snd = q ∘ Prod.snd := by
-    funext p
-    simp
-  rw [← hsum, manifoldMorseIndex_comp_fst_add_comp_snd contDiffAt_const (by simpa using hq),
-    manifoldMorseIndex_const, manifoldMorseIndex_modelSpace, zero_add]
+/-- **The Morse index of a function of the second factor** at `p` is the Morse index of `g` at
+`p.2`: the slice directions contribute nothing to the Hessian. -/
+@[simp]
+theorem manifoldMorseIndex_comp_snd [FiniteDimensional ℝ E] (g : N → ℝ) (p : M × N) :
+    manifoldMorseIndex (I.prod I') (g ∘ Prod.snd) p = manifoldMorseIndex I' g p.2 := by
+  have hchart : (g ∘ Prod.snd) ∘ (extChartAt (I.prod I') p).symm =
+      (g ∘ (extChartAt I' p.2).symm) ∘ Prod.snd := by
+    funext z
+    simp only [Function.comp_apply, extChartAt_prod, PartialEquiv.prod_coe_symm]
+  rw [manifoldMorseIndex_def, manifoldMorseIndex_def, hchart, morseIndex_comp_snd]
+  simp only [extChartAt_prod, PartialEquiv.prod_coe]
 
 end CompSnd
 

@@ -58,7 +58,7 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_iff_of_subsingleton`: in dimension
   zero, Morse–Bott means Morse.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd`: the model example, the
-  slice `M × {0}` for `(x, v) ↦ q v` with `q` nondegenerate at `0`.
+  slice `M × {y}` for `(x, v) ↦ q v` with `q` nondegenerate at `y`.
 
 ## References
 
@@ -393,27 +393,28 @@ section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **The model Morse–Bott function.** If `q` has a nondegenerate critical point at `0`, then the
-slice `M × {0}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v`. The slice is a
-smooth embedding for instance by `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`. -/
-theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ}
-    (hq : IsNondegenerateCriticalPoint q 0)
-    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, (0 : V)))) :
+/-- **The model Morse–Bott function.** If `q` has a nondegenerate critical point at `y`, then the
+slice `M × {y}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v`. For `y = 0` the
+slice is a smooth embedding for instance by
+`TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`. -/
+theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ} {y : V}
+    (hq : IsNondegenerateCriticalPoint q y)
+    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, y))) :
     (ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold (q ∘ Prod.snd) where
   contMDiffAt x := by
     rw [ofIsSmoothEmbedding_apply]
-    exact hq.contDiffAt.contMDiffAt.comp (x, 0) contMDiffAt_snd
+    exact hq.contDiffAt.contMDiffAt.comp (x, y) contMDiffAt_snd
   mem_criticalPoints x := by
     rw [ofIsSmoothEmbedding_apply, mem_criticalPoints,
-      mvfderiv_comp (x, 0) (hq.contDiffAt.differentiableAt two_ne_zero).mdifferentiableAt
+      mvfderiv_comp (x, y) (hq.contDiffAt.differentiableAt two_ne_zero).mdifferentiableAt
         mdifferentiableAt_snd, mvfderiv_eq_fderiv, hq.fderiv_eq_zero,
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.zero_comp]
   ker_criticalHessian_le x v hv := by
     rw [ofIsSmoothEmbedding_apply] at hv
     have hv₂ : v.2 = 0 := (mem_ker_criticalHessian_comp_snd_iff hq x).1 hv
-    have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun y : M ↦ (y, (0 : V))) x =
+    have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun z : M ↦ (z, y)) x =
         (ContinuousLinearMap.id ℝ _).prod 0 :=
-      ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const (0 : V) x)).mfderiv
+      ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const y x)).mfderiv
     refine ⟨v.1, ?_⟩
     rw [coe_ofIsSmoothEmbedding, hD]
     exact Prod.ext rfl hv₂.symm

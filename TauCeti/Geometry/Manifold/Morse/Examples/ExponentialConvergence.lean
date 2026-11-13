@@ -25,7 +25,7 @@ the rate of that theorem.
   `-grad f` through `x₀` is `x₀ (1 + 8 x₀² t)^(-1/2)`
   (`TauCeti.maximalIntegralCurve_neg_mgradient_pow_four`). It converges to the critical point `0`
   (`TauCeti.tendsto_maximalIntegralCurve_neg_mgradient_pow_four`), which is degenerate
-  (`TauCeti.not_isNondegenerateCriticalPoint_pow_four`, which applies on the manifold `ℝ` by
+  (`TauCeti.isNondegenerateCriticalPoint_pow_iff`, which applies on the manifold `ℝ` by
   `TauCeti.isManifoldNondegenerateCriticalPoint_modelSpace_iff`), but only at a polynomial rate:
   its distance to `0` is `|x₀| (1 + 8 x₀² t)^(-1/2)`
   (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_pow_four`), and for `x₀ ≠ 0` it

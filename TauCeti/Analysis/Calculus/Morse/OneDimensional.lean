@@ -33,9 +33,8 @@ of one variable.
 * `TauCeti.morseIndex_real_of_neg` and `TauCeti.morseIndex_real_of_pos`: the Morse index is `1`
   where the second derivative is negative (a local maximum at a critical point) and `0` where it is
   positive (a local minimum at a critical point).
-* `TauCeti.isNondegenerateCriticalPoint_sq` and
-  `TauCeti.not_isNondegenerateCriticalPoint_pow_four`: `0` is a nondegenerate critical point of
-  `y ↦ y²` and a degenerate one of `y ↦ y⁴`.
+* `TauCeti.isNondegenerateCriticalPoint_pow_iff` and `TauCeti.isNondegenerateCriticalPoint_sq`:
+  the only nondegenerate critical point of a power `y ↦ yⁿ` is `0`, for `n = 2`.
 -/
 
 public section
@@ -92,15 +91,25 @@ theorem morseIndex_real_of_pos (hpos : 0 < iteratedDeriv 2 f t) : morseIndex f t
     rw [hessianQuadraticForm_real_apply]
     nlinarith [pow_pos (abs_pos.2 hv) 2, sq_abs v]
 
+/-- **Nondegenerate critical points of a power.** The function `y ↦ yⁿ` has a nondegenerate
+critical point at `t` exactly when `n = 2` and `t = 0`. For `n = 0` the Hessian vanishes
+everywhere, for `n = 1` there is no critical point, and for `3 ≤ n` the only critical point `0` has
+vanishing second derivative. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_pow_iff {n : ℕ} :
+    IsNondegenerateCriticalPoint (fun y : ℝ ↦ y ^ n) t ↔ n = 2 ∧ t = 0 := by
+  rw [isNondegenerateCriticalPoint_real_iff (by fun_prop)]
+  rcases n with _ | _ | _ | n
+  · simp [iteratedDeriv_const]
+  · simp
+  · simp [eq_comm]
+  · have h₂ : (n : ℝ) + 1 + 1 ≠ 0 := by positivity
+    have h₃ : (n : ℝ) + 1 + 1 + 1 ≠ 0 := by positivity
+    simp [h₂, h₃]
+
 /-- `0` is a nondegenerate critical point of `y ↦ y²`: the second derivative is `2` there. -/
 theorem isNondegenerateCriticalPoint_sq : IsNondegenerateCriticalPoint (fun y : ℝ ↦ y ^ 2) 0 :=
-  (isNondegenerateCriticalPoint_real_iff (by fun_prop)).2 (by simp)
-
-/-- `0` is a degenerate critical point of `y ↦ y⁴`: the second derivative vanishes there. -/
-theorem not_isNondegenerateCriticalPoint_pow_four :
-    ¬IsNondegenerateCriticalPoint (fun y : ℝ ↦ y ^ 4) 0 := by
-  rw [isNondegenerateCriticalPoint_real_iff (by fun_prop)]
-  simp
+  isNondegenerateCriticalPoint_pow_iff.2 ⟨rfl, rfl⟩
 
 end TauCeti
 
