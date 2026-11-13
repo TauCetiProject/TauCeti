@@ -23,9 +23,11 @@ residue field; the `n`-th power residue symbol `(x / P)_n` is its unique lift to
 of unity of `𝓞 K`. Together with `(0 / P)_n = 0` this is a multiplicative character
 `Ideal.powerResidueSymbol P n` of the residue field with values in `𝓞 K`, of order exactly `n`.
 
-At primes whose norm is not prime to `n` the symbol is, by convention, the trivial character; the
-lemmas below that describe its values all assume `N P` prime to `n`. The symbol is the basic
-object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
+At primes whose norm is not prime to `n` the symbol is, by convention, the trivial character.
+Most lemmas below that describe its values assume `N P` prime to `n`, but
+`powerResidueSymbol_pow_eq_one`, `powerResidueSymbol_pow_eq_self`,
+`powerResidueSymbol_intCast_eq_one` and `map_powerResidueSymbol` hold at every maximal `P`. The
+symbol is the basic object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
 
 ## Main definitions and results
 
@@ -94,16 +96,6 @@ private theorem powerResidueSymbol_coe_unit (hP : (absNorm P).Coprime n) (u : (�
   rw [powerResidueSymbol, dite_eq_left hP, MulChar.ofUnitHom_coe]
   simp [MonoidHom.codRestrict_apply]
 
-/-- If `N P` is prime to `n`, the exponent `(N P - 1) / n` of the power residue symbol is
-positive. -/
-private theorem absNorm_sub_one_div_ne_zero (hP : (absNorm P).Coprime n) :
-    (absNorm P - 1) / n ≠ 0 := by
-  let _ := Ideal.Quotient.field P
-  have hN : absNorm P - 1 ≠ 0 := by
-    rw [absNorm_eq_natCard, ← Nat.card_units]
-    exact Nat.card_pos.ne'
-  exact (Nat.div_ne_zero_iff_of_dvd (dvd_absNorm_sub_one hP)).mpr ⟨hN, NeZero.ne n⟩
-
 /-- **The defining congruence of the power residue symbol.** If `N P` is prime to `n`, then
 `(x / P)_n ≡ x ^ ((N P - 1) / n) (mod P)`. Both sides vanish at `x = 0`. -/
 theorem mk_powerResidueSymbol (hP : (absNorm P).Coprime n) {x : 𝓞 K ⧸ P} :
@@ -171,9 +163,7 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
     orderOf (powerResidueSymbol P n) = n := by
   let _ := Ideal.Quotient.field P
   have hdvd := dvd_absNorm_sub_one hP
-  have hN : absNorm P - 1 ≠ 0 := by
-    rw [absNorm_eq_natCard, ← Nat.card_units]
-    exact Nat.card_pos.ne'
+  have hN := absNorm_sub_one_ne_zero P
   -- The symbol takes a primitive `n`-th root of unity as value at a primitive `(N P - 1)`-st root
   -- of unity `g` of the residue field.
   obtain ⟨g, hg⟩ := TauCeti.exists_isPrimitiveRoot_of_dvd_natCard_sub_one (F := 𝓞 K ⧸ P)
@@ -181,8 +171,7 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
   lift g to (𝓞 K ⧸ P)ˣ using hg.isUnit hN
   rw [IsPrimitiveRoot.coe_units_iff] at hg
   have hξ : IsPrimitiveRoot (powerResidueSymbol P n g) n := by
-    have h := hg.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hdvd |>.mpr ⟨hN, NeZero.ne n⟩)
-      (Nat.div_dvd_of_dvd hdvd)
+    have h := hg.pow_of_dvd (absNorm_sub_one_div_ne_zero hP) (Nat.div_dvd_of_dvd hdvd)
     rw [Nat.div_div_self hdvd hN] at h
     rw [powerResidueSymbol_coe_unit hP, IsPrimitiveRoot.coe_units_iff,
       IsPrimitiveRoot.coe_submonoidClass_iff]

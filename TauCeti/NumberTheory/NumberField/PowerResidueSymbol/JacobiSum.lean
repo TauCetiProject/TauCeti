@@ -59,10 +59,7 @@ theorem jacobiSum_powerResidueSymbol_pow_mem (hP : (absNorm P).Coprime n) {a b :
     jacobiSum (powerResidueSymbol P n ^ a) (powerResidueSymbol P n ^ b) ∈ P := by
   let _ := Ideal.Quotient.field P
   set k := (absNorm P - 1) / n
-  have hN : absNorm P - 1 ≠ 0 := by
-    rw [absNorm_eq_natCard, ← Nat.card_units]
-    exact Nat.card_pos.ne'
-  have hk : k ≠ 0 := Nat.div_ne_zero_iff_of_dvd (dvd_absNorm_sub_one hP) |>.mpr ⟨hN, NeZero.ne n⟩
+  have hk : k ≠ 0 := absNorm_sub_one_div_ne_zero hP
   have hcard : Fintype.card (𝓞 K ⧸ P) - 1 = n * k := by
     rw [← Nat.card_eq_fintype_card, ← absNorm_eq_natCard,
       Nat.mul_div_cancel' (dvd_absNorm_sub_one hP)]
