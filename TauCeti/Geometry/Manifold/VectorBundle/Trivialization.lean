@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
 # The fibre coordinate and partial diffeomorphism of a bundle trivialization
@@ -23,7 +24,8 @@ For a vector bundle, the same reading applies to a `C^n` map from a normed space
 space: its fibre part, read through the linear map of the trivialization at the image of the base
 point, is a `C^n` map between normed spaces there. Read in the same way, the inclusion of a fibre
 into the total space is a continuous linear isomorphism onto the model fibre; hence it is `C^n`
-and has injective derivative. Moreover, every atlas trivialization of a `C^n`
+and has injective derivative, whose image is the kernel of the derivative of the projection when
+the fibres are finite-dimensional. Moreover, every atlas trivialization of a `C^n`
 vector bundle is a `C^n` partial diffeomorphism between its source in `TotalSpace F E` and its
 target `e.baseSet ×ˢ univ` in `B × F`, and hence a `C^n` local diffeomorphism in both directions.
 Read back through such a trivialization, a `C^n` family of vectors of the model fibre is a `C^n`
@@ -39,6 +41,9 @@ section.
 * `TauCeti.Manifold.contMDiff_totalSpaceMk`, `TauCeti.Manifold.injective_mfderiv_totalSpaceMk`:
   the inclusion of a fibre into the total space of a vector bundle is `C^n` and has injective
   derivative.
+* `TauCeti.Manifold.ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk`: for finite-dimensional
+  fibres, the vertical tangent vectors, those killed by the derivative of the projection, are the
+  derivatives of the inclusion of the fibre.
 * `Bundle.Trivialization.toPartialDiffeomorph`, `Bundle.Trivialization.isLocalDiffeomorphAt`,
   `Bundle.Trivialization.isLocalDiffeomorphAt_symm`: an atlas trivialization of a `C^n` vector
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
@@ -137,6 +142,40 @@ theorem injective_mfderiv_totalSpaceMk (b : B) (y : E b) :
     ContinuousLinearMap.mfderiv_eq] at h
   exact (e.symmL_continuousLinearMapAt (R := 𝕜) hb w₁).symm.trans
     ((congrArg (e.symmL 𝕜 b) h).trans (e.symmL_continuousLinearMapAt (R := 𝕜) hb w₂))
+
+/-- **The vertical tangent space of a vector bundle with finite-dimensional fibres.** At a point
+`⟨b, y⟩` of the total space, the kernel of the derivative of the projection is the image of the
+derivative of the inclusion of the fibre over `b`. -/
+theorem ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk [FiniteDimensional 𝕜 F] (b : B) (y : E b) :
+    (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩).ker =
+      (mfderiv 𝓘(𝕜, E b) (IB.prod 𝓘(𝕜, F)) (TotalSpace.mk b : E b → TotalSpace F E) y).range := by
+  have hb : b ∈ (trivializationAt F E b).baseSet := FiberBundle.mem_baseSet_trivializationAt F E b
+  have hπ : MDifferentiableAt (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩ :=
+    (Bundle.contMDiff_proj E (n := 1) _).mdifferentiableAt one_ne_zero
+  have hι : MDifferentiableAt 𝓘(𝕜, E b) (IB.prod 𝓘(𝕜, F))
+      (TotalSpace.mk b : E b → TotalSpace F E) y :=
+    ((contMDiff_totalSpaceMk (n := 1) b).mdifferentiable one_ne_zero) y
+  -- The kernel is the model fibre `F`, read in the preferred chart at `⟨b, y⟩`.
+  let ιF : F →ₗ[𝕜] TangentSpace (IB.prod 𝓘(𝕜, F)) (⟨b, y⟩ : TotalSpace F E) :=
+    LinearMap.inr 𝕜 EB F
+  have hker : (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩).ker = ιF.range := by
+    rw [Bundle.mfderiv_proj]
+    exact LinearMap.ker_fst 𝕜 EB F
+  have : FiniteDimensional 𝕜 (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩).ker := by
+    rw [hker]
+    exact LinearMap.finiteDimensional_range _
+  -- The image lies in the kernel since the projection is constant on the fibre, and both have
+  -- the dimension of `F`.
+  refine (Submodule.eq_of_le_of_finrank_eq ?_ ?_).symm
+  · rintro _ ⟨w, rfl⟩
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe,
+      ← mfderiv_comp_apply y hπ hι]
+    have hfun : (π F E ∘ (TotalSpace.mk b : E b → TotalSpace F E)) = fun _ ↦ b := rfl
+    rw [hfun, mfderiv_const]
+    rfl
+  · rw [LinearMap.finrank_range_of_inj (injective_mfderiv_totalSpaceMk b y), hker,
+      LinearMap.finrank_range_of_inj (f := ιF) LinearMap.inr_injective]
+    exact ((trivializationAt F E b).continuousLinearEquivAt 𝕜 b hb).toLinearEquiv.finrank_eq
 
 end TauCeti.Manifold
 

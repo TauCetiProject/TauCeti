@@ -30,8 +30,8 @@ coordinates built from the Riemannian distance to finitely many nearby centres.
 
 * `TauCeti.Manifold.exists_mem_nhds_forall_isNormalDomain_ball`: every point has a uniformly
   normal neighbourhood.
-* `IsCompact.exists_pos_forall_isNormalDomain_ball`: on an open neighbourhood of a compact set,
-  one positive radius gives normal domains at every point.
+* `IsCompact.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball`: on an open
+  neighbourhood of a compact set, one positive radius gives normal domains at every point.
 
 ## References
 
@@ -131,7 +131,8 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
 /-- **A uniform normal radius near a compact set.** For a compact set `K` of points there are a
 radius `r > 0` and an open set `U ⊇ K` such that the tangent ball of radius `r` at every point of
 `U` is a normal domain. -/
-theorem _root_.IsCompact.exists_pos_forall_isNormalDomain_ball {K : Set M} (hK : IsCompact K) :
+theorem _root_.IsCompact.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball {K : Set M}
+    (hK : IsCompact K) :
     ∃ r : ℝ, 0 < r ∧ ∃ U : Set M, IsOpen U ∧ K ⊆ U ∧
       ∀ q ∈ U, IsNormalDomain I M q (Metric.ball 0 r) := by
   choose! R hR W hW hRW using exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M)

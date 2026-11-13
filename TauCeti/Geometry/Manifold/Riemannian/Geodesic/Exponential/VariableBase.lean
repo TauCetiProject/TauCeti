@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
 import Mathlib.Geometry.Manifold.Instances.Icc
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
@@ -24,7 +23,8 @@ splits as `T_p M × T_p M` (the horizontal and vertical summands of
 `(u, v) ↦ (u, u + v)`: the zero section goes to the diagonal, and the fibre over `p` is sent
 through `exp_p`, whose differential at the origin is the identity. This differential is
 invertible, so by the inverse function theorem the map is a local diffeomorphism at `0_p`.
-Wherever the map is a local diffeomorphism, so is its restriction `exp_q` to a fibre.
+At a vector `v` in the domain of `exp_q`, the map is a local diffeomorphism at `⟨q, v⟩` exactly
+when its restriction `exp_q` to the fibre over `q` is one at `v`.
 
 ## Main results
 
@@ -37,6 +37,9 @@ Wherever the map is a local diffeomorphism, so is its restriction `exp_q` to a f
   every zero vector.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_of_prodMk`: where `(x, v) ↦ (x, exp_x v)`
   is a local diffeomorphism, so is `exp_q` on the fibre.
+* `TauCeti.Manifold.isLocalDiffeomorphAt_prodMk_proj_riemannianExp`,
+  `TauCeti.Manifold.isLocalDiffeomorphAt_prodMk_proj_riemannianExp_iff`: conversely, where `exp_q`
+  is a local diffeomorphism, so is `(x, v) ↦ (x, exp_x v)`.
 
 ## References
 
@@ -171,71 +174,49 @@ theorem isLocalDiffeomorphAt_riemannianExp_of_prodMk {q : M} {v : TangentSpace I
     BoundarylessManifold.isInteriorPoint (by simp)
     (e := (LinearEquiv.ofBijective _ hbij).toContinuousLinearEquiv) rfl
 
-/-- Where `exp_q` is a local diffeomorphism, so is `(x, v) ↦ (x, exp_x v)`: a tangent vector of
-`TM` killed by the differential of this map projects to zero, so it is vertical, and on vertical
-vectors the differential is that of `exp_q`. This is the converse of
+/-- Where `exp_q` is a local diffeomorphism at `v ∈ expDomain I M q`, so is
+`(x, v) ↦ (x, exp_x v)` at `⟨q, v⟩`. This is the converse of
 `isLocalDiffeomorphAt_riemannianExp_of_prodMk`. -/
 theorem isLocalDiffeomorphAt_prodMk_proj_riemannianExp {q : M} {v : TangentSpace I q}
     (hv : v ∈ expDomain I M q)
     (h : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I q) I ∞ (riemannianExp I M q) v) :
     IsLocalDiffeomorphAt I.tangent (I.prod I) ∞
       (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) ⟨q, v⟩ := by
-  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)
   set z : TangentBundle I M := ⟨q, v⟩
   let ι : TangentSpace I q → TangentBundle I M := TotalSpace.mk q
   have hzO : z ∈ {z : TangentBundle I M | z.2 ∈ expDomain I M z.proj} := hv
   have hOopen := isOpen_setOfPred_mem_expDomain (I := I) (M := M)
+  have hπd : MDifferentiableAt I.tangent I (π E (TangentSpace I)) z :=
+    (Bundle.contMDiff_proj (TangentSpace I) z).mdifferentiableAt one_ne_zero
   have hexpd : MDifferentiableAt I.tangent I (fun z : TangentBundle I M ↦
       riemannianExp I M z.proj z.2) z :=
     ((contMDiffOn_riemannianExp_tangentBundle z hzO).contMDiffAt
       (hOopen.mem_nhds hzO)).mdifferentiableAt (by simp)
   have hιd : MDifferentiableAt 𝓘(ℝ, TangentSpace I q) I.tangent ι v :=
     ((contMDiff_totalSpaceMk (n := 1) q).mdifferentiable one_ne_zero) v
-  set dι := mfderiv 𝓘(ℝ, TangentSpace I q) I.tangent ι v
-  -- The differential of `F` is the differential of the projection, which reads the first
-  -- coordinate of the model `E × E`, paired with that of `(x, v) ↦ exp_x v`.
-  have hdF (ξ : TangentSpace I.tangent z) : mfderiv I.tangent (I.prod I) F z ξ =
-      (ξ.1, mfderiv I.tangent I (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2) z
-        ξ) := by
-    rw [mfderiv_prodMk ((Bundle.contMDiff_proj (TangentSpace I) z).mdifferentiableAt one_ne_zero)
-      hexpd, Bundle.mfderiv_proj]
-    exact ContinuousLinearMap.prod_apply _ _ ξ
-  -- Vertical vectors, those of vanishing first coordinate, are the image of the differential of
-  -- the fibre inclusion `ι`: it is injective and lands in them, and both have the dimension of `E`.
-  have hι1 (w : TangentSpace I q) : (dι w).1 = 0 := by
-    have h := mfderiv_comp_apply v
-      ((Bundle.contMDiff_proj (TangentSpace I) (ι v)).mdifferentiableAt one_ne_zero) hιd w
-    have hfun : (TotalSpace.proj ∘ ι : TangentSpace I q → M) = fun _ ↦ q := rfl
-    rw [hfun, mfderiv_const, Bundle.mfderiv_proj] at h
-    exact h.symm
-  let dι₂ : TangentSpace I q →ₗ[ℝ] E :=
-    (LinearMap.snd ℝ E E).comp (dι : TangentSpace I q →L[ℝ] E × E).toLinearMap
-  have hdι₂ : Injective dι₂ := fun w w' hww' ↦
-    injective_mfderiv_totalSpaceMk q v (Prod.ext ((hι1 w).trans (hι1 w').symm) hww')
-  have hvert (ξ : TangentSpace I.tangent z) (hξ : ξ.1 = 0) : ∃ w, dι w = ξ := by
-    obtain ⟨w, hw⟩ := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank rfl).1 hdι₂ ξ.2
-    exact ⟨w, Prod.ext ((hι1 w).trans hξ.symm) hw⟩
-  -- On vertical vectors the differential of `F` is that of `exp_q`, which is injective.
-  have hinj : Injective (mfderiv I.tangent (I.prod I) F z) := by
-    refine (injective_iff_map_eq_zero _).2 fun ξ hξ ↦ ?_
-    rw [hdF] at hξ
-    obtain ⟨w, rfl⟩ := hvert ξ (congrArg Prod.fst hξ)
-    have hcomp := mfderiv_comp_apply v hexpd hιd w
-    have hfun : ((fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2) ∘ ι) =
-        riemannianExp I M q := rfl
-    rw [hfun] at hcomp
-    obtain ⟨A, hA⟩ := h.isInvertible_mfderiv (by simp)
-    have h0 : A w = 0 := by
-      rw [← ContinuousLinearEquiv.coe_coe, hA, hcomp]
-      exact congrArg Prod.snd hξ
-    rw [A.map_eq_zero_iff.1 h0, map_zero]
-  -- Both tangent spaces are definitionally the model space `E × E`, so their dimensions agree.
-  have hdim : Module.finrank ℝ (TangentSpace I.tangent z) =
-      Module.finrank ℝ (TangentSpace (I.prod I) (F z)) := rfl
-  have hbij : Bijective (mfderiv I.tangent (I.prod I) F z) :=
-    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
-  exact isLocalDiffeomorphAt_of_mfderiv_eq contMDiffOn_prodMk_proj_riemannianExp hOopen hzO
-    BoundarylessManifold.isInteriorPoint (by simp)
-    (e := (LinearEquiv.ofBijective _ hbij).toContinuousLinearEquiv) rfl
+  -- A vector killed by the differential is killed by that of the projection, so it is vertical,
+  -- and on vertical vectors the differential is that of `exp_q`, which is injective.
+  refine isLocalDiffeomorphAt_of_injective_mfderiv contMDiffOn_prodMk_proj_riemannianExp hOopen
+    hzO BoundarylessManifold.isInteriorPoint (by simp) ?_ rfl
+  refine (injective_iff_map_eq_zero _).2 fun ξ hξ ↦ ?_
+  rw [mfderiv_prodMk hπd hexpd] at hξ
+  replace hξ := Prod.mk_eq_zero.1 ((ContinuousLinearMap.prod_apply _ _ ξ).symm.trans hξ)
+  obtain ⟨w, rfl⟩ : ξ ∈ (mfderiv 𝓘(ℝ, TangentSpace I q) I.tangent ι v).range := by
+    rw [← ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk]
+    exact hξ.1
+  have hfun : ((fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2) ∘ ι) =
+      riemannianExp I M q := rfl
+  rw [ContinuousLinearMap.coe_coe, ← mfderiv_comp_apply v hexpd hιd, hfun] at hξ
+  rw [(h.isInvertible_mfderiv (by simp)).injective.eq_iff' (map_zero _) |>.1 hξ.2, map_zero]
+
+/-- At `v ∈ expDomain I M q`, the map `(x, v) ↦ (x, exp_x v)` is a local diffeomorphism at
+`⟨q, v⟩` exactly when `exp_q` is one at `v`. -/
+theorem isLocalDiffeomorphAt_prodMk_proj_riemannianExp_iff {q : M} {v : TangentSpace I q}
+    (hv : v ∈ expDomain I M q) :
+    IsLocalDiffeomorphAt I.tangent (I.prod I) ∞
+        (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) ⟨q, v⟩ ↔
+      IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I q) I ∞ (riemannianExp I M q) v :=
+  ⟨isLocalDiffeomorphAt_riemannianExp_of_prodMk hv,
+    isLocalDiffeomorphAt_prodMk_proj_riemannianExp hv⟩
 
 end TauCeti.Manifold
