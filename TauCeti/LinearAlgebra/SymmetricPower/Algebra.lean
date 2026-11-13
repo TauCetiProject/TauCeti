@@ -25,9 +25,9 @@ formed from families on `Fin n` using `SymmetricPower.finTprod`.
 
 ## Main declarations
 
-* `TauCeti.SymmetricPower.toSymmetricAlgebra` multiplies the generators of a pure symmetric tensor.
-* `TauCeti.SymmetricPower.toHomogeneous` restricts multiplication to its homogeneous component.
-* `TauCeti.SymmetricPower.equivHomogeneous` is the resulting equivalence.
+* `SymmetricPower.toSymmetricAlgebra` multiplies the generators of a pure symmetric tensor.
+* `SymmetricPower.toHomogeneous` restricts multiplication to its homogeneous component.
+* `SymmetricPower.equivHomogeneous` is the resulting equivalence.
 
 ## References
 
@@ -40,9 +40,7 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.SymmetricPower
-
-open _root_.SymmetricPower
+namespace SymmetricPower
 
 universe u v w
 
@@ -285,4 +283,4 @@ theorem equivHomogeneous_symm_prod_ι (n : ℕ) (m : Fin n → M)
   apply (equivHomogeneous (R := R) (M := M) n).injective
   simp only [LinearEquiv.apply_symm_apply, equivHomogeneous_tprod]
 
-end TauCeti.SymmetricPower
+end SymmetricPower

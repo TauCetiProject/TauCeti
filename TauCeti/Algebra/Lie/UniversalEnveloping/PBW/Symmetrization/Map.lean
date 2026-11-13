@@ -75,11 +75,11 @@ degreewise permutation average. -/
 @[simp]
 theorem pbwSymmetrizationMap_toSymmetricAlgebra (n : ℕ)
     (x : SymmetricPower R (ULift.{u} (Fin n)) L) :
-    pbwSymmetrizationMap R L (TauCeti.SymmetricPower.toSymmetricAlgebra R L n x) =
+    pbwSymmetrizationMap R L (SymmetricPower.toSymmetricAlgebra R L n x) =
       TauCeti.UniversalEnvelopingAlgebra.pbwSymmetrization R L n
         (IsUnit.natCast_factorial_of_algebra ℚ n) x := by
-  rw [← TauCeti.SymmetricPower.coe_equivHomogeneous_apply,
-    pbwSymmetrizationMap_of_mem R L (TauCeti.SymmetricPower.equivHomogeneous n x).property,
+  rw [← SymmetricPower.coe_equivHomogeneous_apply,
+    pbwSymmetrizationMap_of_mem R L (SymmetricPower.equivHomogeneous n x).property,
     pbwHomogeneousSymmetrization_equivHomogeneous]
 
 /-- Symmetrization sends a product of generators to the average of their
@@ -92,7 +92,7 @@ theorem pbwSymmetrizationMap_prod_ι (n : ℕ) (x : Fin n → L) :
     simpa only [List.map_ofFn, Function.comp_def, List.prod_ofFn, List.length_ofFn] using
       prod_map_ι_mem_homogeneousSubmodule R L (List.ofFn x)
   rw [pbwSymmetrizationMap_of_mem R L hp, pbwHomogeneousSymmetrization_apply,
-    TauCeti.SymmetricPower.equivHomogeneous_symm_prod_ι]
+    SymmetricPower.equivHomogeneous_symm_prod_ι]
   exact TauCeti.UniversalEnvelopingAlgebra.pbwSymmetrization_tprod_rat R L n _ x
 
 /-- Pure powers are unchanged by averaging their identical factors. -/
