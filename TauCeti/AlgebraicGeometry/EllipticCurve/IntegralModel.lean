@@ -71,9 +71,6 @@ from the change-of-variables formulas for the invariants, and `R` is integrally 
 
 ## Provenance
 
-⚠ *mathlib-track*. Statements about Mathlib's own `IsIntegral` for Weierstrass models and
-`VariableChange.baseChange`, with no Tau Ceti definitions involved.
-
 The descent is ported from FLT, https://github.com/ImperialCollegeLondon/FLT
 @ `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0` (Apache-2.0), file
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Reduction.lean`, declaration
