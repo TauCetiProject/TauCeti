@@ -43,7 +43,7 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   scale `R`: the product is `O(R ^ s / R ^ k)` in its `k`-th derivative.
 * `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
   `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
-* `TauCeti.exists_norm_le_one_add_norm_sq_rpow_of_lt_norm`: a bracket bound for a continuous
+* `Continuous.exists_norm_le_one_add_norm_sq_rpow_of_lt_norm`: a bracket bound for a continuous
   function on a proper space only needs to be checked outside a ball.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
@@ -175,8 +175,8 @@ theorem one_add_norm_sq_rpow_half_le_one_add_norm_rpow (x : E) {p : ℝ} (hp : 0
 /-- A bracket bound `‖f x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ρ` for a continuous function on a proper space
 needs to be checked only for `‖x‖ > R`: on the compact ball `‖x‖ ≤ R` it holds with another
 constant. -/
-theorem exists_norm_le_one_add_norm_sq_rpow_of_lt_norm [ProperSpace E] {F : Type*}
-    [SeminormedAddGroup F] {f : E → F} (hf : Continuous f) {R C ρ : ℝ}
+theorem _root_.Continuous.exists_norm_le_one_add_norm_sq_rpow_of_lt_norm [ProperSpace E]
+    {F : Type*} [SeminormedAddGroup F] {f : E → F} (hf : Continuous f) {R C ρ : ℝ}
     (h : ∀ x, R < ‖x‖ → ‖f x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ) :
     ∃ C', ∀ x, ‖f x‖ ≤ C' * (1 + ‖x‖ ^ 2) ^ ρ := by
   have hw (x : E) : 0 < 1 + ‖x‖ ^ 2 := by positivity

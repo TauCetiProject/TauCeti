@@ -127,7 +127,7 @@ at the even indices `2 * k < n`. -/
 @[to_additive /-- A sum over `range n` whose terms at odd indices are `0` is the sum of its terms
 at the even indices `2 * k < n`. -/]
 theorem prod_range_ite_even {M : Type*} [CommMonoid M] (f : ℕ → M) (n : ℕ) :
-    ∏ j ∈ range n, (if Even j then f (j / 2) else 1) = ∏ k ∈ range ((n + 1) / 2), f k := by
+    ∏ j ∈ range n, (if Even j then f j else 1) = ∏ k ∈ range ((n + 1) / 2), f (2 * k) := by
   induction n with
   | zero => simp
   | succ n ih =>
@@ -135,7 +135,7 @@ theorem prod_range_ite_even {M : Type*} [CommMonoid M] (f : ℕ → M) (n : ℕ)
     obtain ⟨m, rfl | rfl⟩ := Nat.even_or_odd' n
     · simp only [even_two_mul, ↓reduceIte]
       rw [show (2 * m + 1 + 1) / 2 = (2 * m + 1) / 2 + 1 by omega, prod_range_succ,
-        show (2 * m + 1) / 2 = m by omega, show 2 * m / 2 = m by omega]
+        show (2 * m + 1) / 2 = m by omega]
     · simp only [Nat.not_even_iff_odd.2 (odd_two_mul_add_one m), ↓reduceIte, mul_one]
       rw [show (2 * m + 1 + 1 + 1) / 2 = (2 * m + 1 + 1) / 2 by omega]
 

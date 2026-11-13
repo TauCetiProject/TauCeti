@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Binomial
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.RingTheory.Binomial
 
 /-!
@@ -159,7 +160,7 @@ private theorem besselRem_eq_mul_binomialError (χ : FrequencyCutoff (Coordinate
     (K : ℕ) {ξ : CoordinateSpace n} (hξ : 2 ≤ ‖ξ‖) :
     besselRem χ a K ξ = besselSq ξ ^ a * binomialError a K (besselSq ξ)⁻¹ := by
   have hu := besselSq_pos (norm_pos_iff.1 (by linarith) : ξ ≠ 0)
-  rw [besselRem, χ.apply_eq_one_of_two_le_norm hξ, one_mul, binomialError, mul_sub,
+  rw [besselRem, χ.apply_eq_one_of_two_le_norm hξ, one_mul, binomialError_def, mul_sub,
     ← Real.mul_rpow hu.le (by positivity), mul_add, mul_one, mul_inv_cancel₀ hu.ne', add_comm,
     besselSum, Finset.mul_sum]
   refine congrArg (_ - ·) (Finset.sum_congr rfl fun k _ ↦ ?_)
@@ -179,22 +180,16 @@ private theorem exists_norm_besselRem_le (χ : FrequencyCutoff (CoordinateSpace 
   refine ⟨C * (2 ^ |p| * C'), fun ξ hξ ↦ ?_⟩
   have h2π : 2 ≤ 2 * π := by linarith [Real.two_le_pi]
   have hu := besselSq_pos (norm_pos_iff.1 (by linarith) : ξ ≠ 0)
-  have hu1 : 1 ≤ besselSq ξ := by
-    rw [besselSq, norm_smul, Real.norm_of_nonneg (by positivity)]
-    refine one_le_pow₀ ?_
-    rw [inv_mul_eq_div, le_div_iff₀ (by positivity)]
+  have hη1 : 1 ≤ ‖(2 * π)⁻¹ • ξ‖ := by
+    rw [norm_smul, Real.norm_of_nonneg (by positivity), inv_mul_eq_div,
+      le_div_iff₀ (by positivity)]
     linarith
+  have hu1 : 1 ≤ besselSq ξ := one_le_pow₀ hη1
   -- Since `u ≥ 1`, `u` is comparable with `1 + u = 1 + ‖(2π)⁻¹ • ξ‖ ^ 2`.
   have hpow : besselSq ξ ^ p ≤ 2 ^ |p| * (1 + besselSq ξ) ^ p := by
-    rcases le_total 0 p with hp | hp
-    · calc besselSq ξ ^ p ≤ (1 + besselSq ξ) ^ p := Real.rpow_le_rpow hu.le (by linarith) hp
-        _ ≤ _ := le_mul_of_one_le_left (by positivity) (Real.one_le_rpow (by norm_num)
-            (abs_nonneg _))
-    · calc besselSq ξ ^ p ≤ ((1 + besselSq ξ) / 2) ^ p :=
-            Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hp
-        _ = _ := by
-            rw [Real.div_rpow (by positivity) (by norm_num), abs_of_nonpos hp,
-              Real.rpow_neg (by norm_num), div_eq_inv_mul]
+    have h := norm_rpow_le_one_add_norm_sq_rpow hη1 (2 * p)
+    rwa [abs_mul, abs_two, mul_div_cancel_left₀ _ two_ne_zero,
+      mul_div_cancel_left₀ _ two_ne_zero, Real.rpow_mul (norm_nonneg _), Real.rpow_two] at h
   have he := hC (besselSq ξ)⁻¹ ⟨by positivity, inv_le_one_of_one_le₀ hu1⟩
   rw [abs_of_pos (inv_pos.2 hu)] at he
   rw [Real.norm_eq_abs, besselRem_eq_mul_binomialError χ a K (by linarith), abs_mul,
@@ -220,7 +215,7 @@ private theorem exists_norm_iteratedFDeriv_besselRem_le (χ : FrequencyCutoff (C
   have hcont := (contDiff_besselRem χ a K).continuous_iteratedFDeriv (m := k) (mod_cast le_top)
   rcases k with _ | k
   · obtain ⟨C, hC⟩ := exists_norm_besselRem_le χ a K
-    refine exists_norm_le_one_add_norm_sq_rpow_of_lt_norm hcont (R := 2 * π) (C := C)
+    refine hcont.exists_norm_le_one_add_norm_sq_rpow_of_lt_norm (R := 2 * π) (C := C)
       fun ξ hξ ↦ ?_
     simpa using hC ξ hξ
   · -- At large frequencies `D r_a = r_{a - 1} • (a • L)` with `L` linear, so the Leibniz rule and
@@ -229,7 +224,7 @@ private theorem exists_norm_iteratedFDeriv_besselRem_le (χ : FrequencyCutoff (C
       (a • besselSqDeriv (n := n)).exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
         ((contDiff_besselRem χ (a - 1) K).of_le (mod_cast le_top)) (ρ := a - 1 - K)
         fun i hi ↦ ih i (Nat.lt_succ_of_le hi) (a - 1)
-    refine exists_norm_le_one_add_norm_sq_rpow_of_lt_norm hcont (R := 2) (C := C) fun ξ hξ ↦ ?_
+    refine hcont.exists_norm_le_one_add_norm_sq_rpow_of_lt_norm (R := 2) (C := C) fun ξ hξ ↦ ?_
     have hderiv : fderiv ℝ (besselRem χ a K) =ᶠ[𝓝 ξ]
         fun η ↦ besselRem χ (a - 1) K η • (a • besselSqDeriv) η := by
       filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds
@@ -268,29 +263,17 @@ private theorem coefficient_besselRemSymbol (χ : FrequencyCutoff (CoordinateSpa
 and zero for odd `j`. -/
 private def besselTerm (s : ℝ) (j : ℕ) :
     HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V V (s - j) :=
-  HomogeneousSymbol.mk'
-    (fun p ↦ (((if Even j then Ring.choose (s / 2) (j / 2) else 0) *
-      ‖(2 * π)⁻¹ • p.2‖ ^ (s - j) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V)
-    (by
-      intro p hp
-      have hc : (2 * π)⁻¹ • p.2 ≠ 0 := smul_ne_zero (by positivity) hp
-      refine ContDiffAt.contDiffWithinAt ?_
-      refine ((Complex.ofRealCLM.contDiff.contDiffAt).comp _ ?_).smul contDiffAt_const
-      refine contDiffAt_const.mul (ContDiffAt.rpow_const_of_ne ?_ (norm_pos_iff.2 hc).ne')
-      exact (contDiffAt_norm ℝ hc).comp p (contDiff_snd.const_smul ((2 * π)⁻¹)).contDiffAt)
-    fun x ξ _ t ht ↦ by
-      dsimp only
-      rw [smul_comm, norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg _),
-        ← Complex.coe_smul, smul_smul]
-      congr 1
-      push_cast
-      ring
+  ((((if Even j then Ring.choose (s / 2) (j / 2) else 0) * (2 * π)⁻¹ ^ (s - j) : ℝ) : ℂ)) •
+    HomogeneousSymbol.normRpow (CoordinateSpace n) (CoordinateSpace n) V (s - j)
 
 private theorem coefficient_besselTerm (s : ℝ) (j : ℕ) {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
     (besselTerm (V := V) s j).coefficient (x, ξ) =
       (((if Even j then Ring.choose (s / 2) (j / 2) else 0) * ‖(2 * π)⁻¹ • ξ‖ ^ (s - j) : ℝ) :
-        ℂ) • ContinuousLinearMap.id ℂ V :=
-  HomogeneousSymbol.coefficient_mk'_of_ne_zero _ _ _ hξ
+        ℂ) • ContinuousLinearMap.id ℂ V := by
+  rw [besselTerm, HomogeneousSymbol.coefficient_smul, Pi.smul_apply,
+    HomogeneousSymbol.coefficient_normRpow_of_ne_zero _ _ _ hξ, ← Complex.coe_smul, smul_smul,
+    ← Complex.ofReal_mul, norm_smul, Real.norm_of_nonneg (by positivity),
+    Real.mul_rpow (by positivity) (norm_nonneg _), mul_assoc]
 
 /-- The first `N` cut-off homogeneous terms sum to the first `⌈N / 2⌉` nonzero terms. -/
 private theorem sum_coefficient_besselTerm (χ : FrequencyCutoff (CoordinateSpace n)) (s : ℝ)
@@ -301,16 +284,14 @@ private theorem sum_coefficient_besselTerm (χ : FrequencyCutoff (CoordinateSpac
   · simp [χ.apply_zero]
   have hreal : ∑ j ∈ Finset.range N, χ ξ * ((if Even j then Ring.choose (s / 2) (j / 2) else 0) *
       ‖(2 * π)⁻¹ • ξ‖ ^ (s - j)) = χ ξ * besselSum (s / 2) ((N + 1) / 2) ξ := by
-    rw [← Finset.mul_sum, besselSum, ← Finset.sum_range_ite_even]
-    refine congrArg _ (Finset.sum_congr rfl fun j _ ↦ ?_)
-    split_ifs with hj
-    · obtain ⟨k, rfl⟩ := hj
-      -- `‖ξ / 2π‖ ^ (s - 2k) = (‖ξ / 2π‖ ^ 2) ^ (s / 2 - k)`.
-      rw [show (k + k) / 2 = k by omega, besselSq, ← Real.rpow_natCast,
-        ← Real.rpow_mul (norm_nonneg _)]
-      push_cast
-      ring_nf
-    · simp
+    simp only [ite_mul, zero_mul]
+    rw [← Finset.mul_sum, Finset.sum_range_ite_even, besselSum]
+    refine congrArg _ (Finset.sum_congr rfl fun k _ ↦ ?_)
+    -- `‖ξ / 2π‖ ^ (s - 2k) = (‖ξ / 2π‖ ^ 2) ^ (s / 2 - k)`.
+    rw [Nat.mul_div_cancel_left _ two_pos, besselSq, ← Real.rpow_natCast,
+      ← Real.rpow_mul (norm_nonneg _)]
+    push_cast
+    ring_nf
   calc ∑ j ∈ Finset.range N, χ ξ • (besselTerm (V := V) s j).coefficient (x, ξ)
       = ∑ j ∈ Finset.range N, ((χ ξ * ((if Even j then Ring.choose (s / 2) (j / 2) else 0) *
           ‖(2 * π)⁻¹ • ξ‖ ^ (s - j)) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by

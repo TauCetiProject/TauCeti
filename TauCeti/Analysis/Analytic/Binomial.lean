@@ -32,7 +32,8 @@ so the bound follows from the mean value theorem by induction on `K`.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
 * `TauCeti.binomialError` — the error `(1 + t) ^ a - ∑_{k<K} (a choose k) t ^ k` of the
-  binomial series after `K` terms.
+  binomial series after `K` terms; `TauCeti.binomialError_def` unfolds it and
+  `TauCeti.binomialError_succ_zero` records that it vanishes at `0` once a term is subtracted.
 * `TauCeti.hasDerivAt_binomialError` — the derivative of the error after `K + 1` terms is `a`
   times the error for the exponent `a - 1` after `K` terms.
 * `TauCeti.exists_abs_binomialError_le` — the error after `K` terms is `O(|t| ^ K)` on every
@@ -101,8 +102,18 @@ theorem summable_multichoose_mul_geometric_iff_norm_lt_one
 
 /-- The error `(1 + t) ^ a - ∑_{k<K} (a choose k) t ^ k` of the binomial series after `K`
 terms. -/
-@[expose] noncomputable def binomialError (a : ℝ) (K : ℕ) (t : ℝ) : ℝ :=
+noncomputable def binomialError (a : ℝ) (K : ℕ) (t : ℝ) : ℝ :=
   (1 + t) ^ a - ∑ k ∈ Finset.range K, Ring.choose a k * t ^ k
+
+/-- The defining formula of the binomial error. -/
+theorem binomialError_def (a : ℝ) (K : ℕ) (t : ℝ) :
+    binomialError a K t = (1 + t) ^ a - ∑ k ∈ Finset.range K, Ring.choose a k * t ^ k :=
+  (rfl)
+
+/-- After at least one term, the binomial error vanishes at `0`. -/
+@[simp]
+theorem binomialError_succ_zero (a : ℝ) (K : ℕ) : binomialError a (K + 1) 0 = 0 := by
+  simp [binomialError_def, Finset.sum_range_succ']
 
 /-- The derivative of the binomial error is `a` times the error for the exponent `a - 1`, with one
 term fewer. -/
@@ -125,7 +136,7 @@ theorem hasDerivAt_binomialError (a : ℝ) (K : ℕ) {t : ℝ} (ht : -1 < t) :
     push_cast
     ring
   refine (h1.sub h2).congr_deriv ?_
-  rw [binomialError, mul_sub, Finset.mul_sum]
+  rw [binomialError_def, mul_sub, Finset.mul_sum]
   simp [mul_assoc]
 
 /-- On every interval `[l, u]` with `-1 < l`, the binomial error after `K` terms is
@@ -146,8 +157,6 @@ theorem exists_abs_binomialError_le (a : ℝ) (K : ℕ) {l u : ℝ} (hl : -1 < l
     -- The error vanishes at `0` and its derivative is `O(|t| ^ K)` between `0` and `t`.
     obtain ⟨C, hC0, hC⟩ := ih (a - 1) (l := min l 0) (u := max u 0) (lt_min hl (by norm_num))
     refine ⟨|a| * C, by positivity, fun t ht ↦ ?_⟩
-    have h0 : binomialError a (K + 1) 0 = 0 := by
-      simp [binomialError, Finset.sum_range_succ']
     have hsub : uIcc 0 t ⊆ Icc (min l 0) (max u 0) :=
       uIcc_subset_Icc ⟨min_le_right _ _, le_max_right _ _⟩
         ⟨min_le_of_left_le ht.1, le_max_of_le_left ht.2⟩
@@ -161,7 +170,7 @@ theorem exists_abs_binomialError_le (a : ℝ) (K : ℕ) {l u : ℝ} (hl : -1 < l
         refine (hC τ (hsub hτ)).trans (mul_le_mul_of_nonneg_left ?_ hC0)
         exact pow_le_pow_left₀ (abs_nonneg _) (by simpa using abs_sub_left_of_mem_uIcc hτ) K)
       (convex_uIcc 0 t) left_mem_uIcc right_mem_uIcc
-    rw [h0, sub_zero, Real.norm_eq_abs, sub_zero, Real.norm_eq_abs] at hmvt
+    rw [binomialError_succ_zero, sub_zero, Real.norm_eq_abs, sub_zero, Real.norm_eq_abs] at hmvt
     rw [pow_succ]
     linarith
 
