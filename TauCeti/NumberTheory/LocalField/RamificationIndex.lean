@@ -722,7 +722,7 @@ theorem tameRamificationIndex_pos : 0 < tameRamificationIndex K L := by
 
 /-- The residue characteristic does not divide the tame index. -/
 @[simp]
-theorem not_dvd_tameRamificationIndex : ¬ ringChar 𝓀[K] ∣ tameRamificationIndex K L := by
+theorem not_ringChar_dvd_tameRamificationIndex : ¬ ringChar 𝓀[K] ∣ tameRamificationIndex K L := by
   rw [tameRamificationIndex_eq_ordCompl]
   exact Nat.not_dvd_ordCompl (CharP.prime_ringChar 𝓀[K])
     (ramificationIndex_pos (K := K) (L := L)).ne'
@@ -734,7 +734,7 @@ theorem tameRamificationIndex_eq_and_wildRamificationExponent_eq_iff {ε w : ℕ
       ¬ ringChar 𝓀[K] ∣ ε ∧ ε * ringChar 𝓀[K] ^ w = ramificationIndex K L := by
   constructor
   · rintro ⟨rfl, rfl⟩
-    exact ⟨not_dvd_tameRamificationIndex K L,
+    exact ⟨not_ringChar_dvd_tameRamificationIndex K L,
       tameRamificationIndex_mul_pow_wildRamificationExponent K L⟩
   · rintro ⟨hε, he⟩
     have ht : tameRamificationIndex K L = ε := by
