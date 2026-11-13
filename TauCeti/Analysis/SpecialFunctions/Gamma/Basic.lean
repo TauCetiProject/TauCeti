@@ -57,6 +57,9 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
+* `Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add_natCast`,
+  `Real.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add_natCast` — `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`
+  for all complex or real `s`, including the poles of `Γ`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
@@ -261,6 +264,17 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
 
+/-- For every `s : ℂ` and `n : ℕ`, `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`. Unlike
+`Complex.Gamma_add_nat_div_Gamma_eq`, this holds at the nonpositive integer poles of `Γ` as well,
+where Mathlib's `0⁻¹ = 0` convention agrees with the zeros of the entire function `1 / Γ`. -/
+theorem inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add_natCast (s : ℂ) (n : ℕ) :
+    (Gamma s)⁻¹ = (ascPochhammer ℂ n).eval s * (Gamma (s + n))⁻¹ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [ih, one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (s + n), ascPochhammer_succ_eval,
+      Nat.cast_succ, ← add_assoc, mul_assoc]
+
 end Complex
 
 namespace Real
@@ -275,6 +289,20 @@ theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
   have h := Complex.norm_inv_Gamma_add_natCast_le (s := s) (by simpa using hs) k
   have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
   rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
+
+/-- For every `s : ℝ` and `n : ℕ`, `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`, including at the nonpositive
+integer poles of `Real.Gamma`. -/
+theorem inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add_natCast (s : ℝ) (n : ℕ) :
+    (Gamma s)⁻¹ = (ascPochhammer ℝ n).eval s * (Gamma (s + n))⁻¹ := by
+  apply Complex.ofReal_inj.mp
+  have hcast : ((s + n : ℝ) : ℂ) = (s : ℂ) + n := by push_cast; ring
+  have hp : (((ascPochhammer ℝ n).eval s : ℝ) : ℂ) = (ascPochhammer ℂ n).eval (s : ℂ) := by
+    induction n with
+    | zero => simp
+    | succ n ih => simp [ascPochhammer_succ_eval, ih]
+  rw [Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_inv, ← Complex.Gamma_ofReal,
+    ← Complex.Gamma_ofReal, hcast, hp]
+  exact Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add_natCast (s : ℂ) n
 
 end Real
 

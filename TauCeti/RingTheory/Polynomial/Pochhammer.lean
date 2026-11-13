@@ -60,6 +60,11 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any ring, `x ^ m` is
   the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
   second kind `S(m, j)`.
+* `TauCeti.descPochhammer_eval_add`: Chu–Vandermonde identity for `Polynomial.eval` of falling
+  factorials at a sum of commuting ring elements.
+* `TauCeti.ascPochhammer_two_mul_eval`: doubling formula factoring
+  `(ascPochhammer K (2 * n)).eval a` into `4 ^ n` times the rising factorials of length `n` at
+  `a / 2` and `(a + 1) / 2`.
 -/
 
 public section
@@ -312,5 +317,35 @@ theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (
   have hD (j : ℕ) : aeval x (descPochhammer ℤ j) = (descPochhammer R j).eval x := by
     rw [aeval_def, algebraMap_int_eq, eval₂_eq_eval_map, descPochhammer_map]
   simpa [hD] using congrArg (aeval x) hP
+
+/-! ### Convolution and doubling identities -/
+
+/-- **Chu–Vandermonde identity for falling factorials.** In any ring, the degree `k` falling
+factorial at a sum `r + s` of commuting elements is the binomial convolution of the falling
+factorials at `r` and at `s`. This is the `Polynomial.eval` form of
+`Ring.descPochhammer_smeval_add`. -/
+theorem descPochhammer_eval_add {R : Type*} [Ring R] {r s : R} (k : ℕ) (h : Commute r s) :
+    (descPochhammer R k).eval (r + s) =
+      ∑ ij ∈ Finset.antidiagonal k, (k.choose ij.1 : R) *
+        ((descPochhammer R ij.1).eval r * (descPochhammer R ij.2).eval s) := by
+  have hsmeval (j : ℕ) (x : R) : (descPochhammer ℤ j).smeval x = (descPochhammer R j).eval x := by
+    rw [← aeval_eq_smeval, aeval_def, algebraMap_int_eq, ← eval_map, descPochhammer_map]
+  simpa only [hsmeval] using Ring.descPochhammer_smeval_add k h
+
+/-- **Doubling formula for rising factorials.** Over a semifield of characteristic zero, the
+rising factorial of even length `2 * n` at `a` factors into `4 ^ n` times the rising factorials of
+length `n` at `a / 2` and `(a + 1) / 2`. -/
+theorem ascPochhammer_two_mul_eval {K : Type*} [Semifield K] [CharZero K] (n : ℕ) (a : K) :
+    (ascPochhammer K (2 * n)).eval a =
+      4 ^ n * ((ascPochhammer K n).eval (a / 2) * (ascPochhammer K n).eval ((a + 1) / 2)) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have htwo : (2 : K) ≠ 0 := two_ne_zero
+    rw [Nat.mul_succ, ascPochhammer_succ_eval, ascPochhammer_succ_eval, ih,
+      ascPochhammer_succ_eval, ascPochhammer_succ_eval, pow_succ]
+    push_cast
+    field_simp
+    ring
 
 end TauCeti
