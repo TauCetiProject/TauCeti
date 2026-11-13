@@ -77,9 +77,7 @@ theorem _root_.Flow.orbit_reverse [SubtractionCommMonoid τ] [ContinuousNeg τ] 
 def prod {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ α) (ψ : Flow τ β) :
     Flow τ (α × β) where
   toFun t p := (ϕ t p.1, ψ t p.2)
-  cont' := by
-    change Continuous fun q : τ × α × β ↦ (ϕ q.1 q.2.1, ψ q.1 q.2.2)
-    fun_prop
+  cont' := by fun_prop
   map_add' t₁ t₂ p := by
     simp only [ϕ.map_add, ψ.map_add]
   map_zero' p := by

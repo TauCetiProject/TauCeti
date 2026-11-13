@@ -250,8 +250,8 @@ noncomputable def prod (φ : MorseChart E f x) (ψ : MorseChart E' g y) :
       classical
       -- The index is additive because `f` and `g` are smooth at the centres of their Morse charts.
       rw [modelWithCornersSelf_prod, manifoldMorseIndex_comp_fst_add_comp_snd
-        (φ.contMDiffAt.contDiffAt_comp_extChartAt_symm.of_le (by simp))
-        (ψ.contMDiffAt.contDiffAt_comp_extChartAt_symm.of_le (by simp)),
+        ((φ.contMDiffAt φ.mem_source).contDiffAt_comp_extChartAt_symm.of_le (by simp))
+        ((ψ.contMDiffAt ψ.mem_source).contDiffAt_comp_extChartAt_symm.of_le (by simp)),
         ← φ.ncard_weight_neg, ← ψ.ncard_weight_neg]
       simp only [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter]
       rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
@@ -260,9 +260,7 @@ noncomputable def prod (φ : MorseChart E f x) (ψ : MorseChart E' g y) :
       obtain ⟨hp₁, hp₂⟩ := hp
       simp only [Pi.add_apply, comp_apply, φ.eq_quadratic p.1 hp₁, ψ.eq_quadratic p.2 hp₂]
       rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
-      simp only [LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply, Equiv.apply_symm_apply,
-        LinearEquiv.prodCongr_apply, OpenPartialHomeomorph.prod_apply]
-      simp [LinearEquiv.sumArrowLequivProdArrow]
+      simp
       ring }
 
 variable (φ : MorseChart E f x) (ψ : MorseChart E' g y)
@@ -279,10 +277,7 @@ the second. -/
 @[simp]
 theorem prod_coord_apply (v : E × E') (i : Fin (Module.finrank ℝ (E × E'))) :
     (φ.prod ψ).coord v i = Sum.elim (φ.coord v.1) (ψ.coord v.2) (prodIndexEquiv E E' i) := by
-  simp only [prod, LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply,
-    LinearMap.funLeft_apply, LinearEquiv.prodCongr_apply]
-  generalize prodIndexEquiv E E' i = j
-  rcases j with j | j <;> rfl
+  rcases h : prodIndexEquiv E E' i with j | j <;> simp [prod, h]
 
 /-- A vector of `E × E'` with given coordinates in a product of Morse charts: its components have
 the coordinates of `E` and of `E'` respectively. -/

@@ -115,15 +115,6 @@ theorem mtangentConeAt_mono {s t : Set M} (hst : s ⊆ t) (y : M) :
     mtangentConeAt I s y ⊆ mtangentConeAt I t y :=
   tangentConeAt_mono (inter_subset_inter_left _ (preimage_mono hst))
 
-/-- A point `y` of the closure of `s` is read in its preferred extended chart as a point of the
-closure of the chart image of `s`, the set whose tangent cone is `TauCeti.mtangentConeAt I s y`. -/
-theorem extChartAt_mem_closure_preimage_symm_inter_range {s : Set M} {y : M}
-    (hy : y ∈ closure s) :
-    extChartAt I y y ∈ closure ((extChartAt I y).symm ⁻¹' s ∩ range I) := by
-  rw [mem_closure_iff_nhdsWithin_neBot] at hy ⊢
-  rw [← map_extChartAt_nhdsWithin]
-  exact hy.map _
-
 /-- For a normed space modelled on itself, the tangent cone of a subset is its tangent cone in the
 usual sense. -/
 @[simp]
