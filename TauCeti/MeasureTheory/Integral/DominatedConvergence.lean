@@ -47,6 +47,11 @@ on the whole space.
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
   `∫ g(t, F i t) dt → ∫ g(t, f t) dt` over `a..b` for every jointly continuous `g`.
+* `TauCeti.integrable_of_tendsto_of_integral_le` and
+  `TauCeti.integral_le_of_tendsto_of_integral_le`: Fatou's lemma for real integrals. An almost
+  everywhere limit of nonnegative integrable functions whose integrals are eventually at most `D`
+  is integrable, with integral at most `D`. No dominating function is needed, so this gives
+  integrability of the limit rather than assuming it.
 -/
 
 public section
@@ -260,6 +265,56 @@ theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => h'.2.not_gt hk) f).symm
     · refine tendsto_const_nhds.congr fun k => ?_
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
+
+section Fatou
+
+variable {F : ℕ → α → ℝ} {G : α → ℝ} {D : ℝ}
+
+/-- An almost everywhere limit of almost everywhere nonnegative functions is almost everywhere
+nonnegative. -/
+private lemma ae_nonneg_of_tendsto (hF₀ : ∀ n, 0 ≤ᵐ[μ] F n)
+    (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ F n x) atTop (𝓝 (G x))) : 0 ≤ᵐ[μ] G := by
+  filter_upwards [hlim, ae_all_iff.2 hF₀] with x hx h₀ using ge_of_tendsto' hx h₀
+
+/-- Fatou's lemma for the lower integrals of the nonnegative real functions `F n`. -/
+private lemma lintegral_ofReal_le_of_tendsto_of_integral_le (hF : ∀ n, Integrable (F n) μ)
+    (hF₀ : ∀ n, 0 ≤ᵐ[μ] F n) (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ F n x) atTop (𝓝 (G x)))
+    (hD : ∀ᶠ n in atTop, ∫ x, F n x ∂μ ≤ D) :
+    ∫⁻ x, ENNReal.ofReal (G x) ∂μ ≤ ENNReal.ofReal D :=
+  calc ∫⁻ x, ENNReal.ofReal (G x) ∂μ
+      = ∫⁻ x, liminf (fun n ↦ ENNReal.ofReal (F n x)) atTop ∂μ :=
+        lintegral_congr_ae <| hlim.mono fun x hx ↦
+          ((ENNReal.continuous_ofReal.tendsto _).comp hx).liminf_eq.symm
+    _ ≤ liminf (fun n ↦ ∫⁻ x, ENNReal.ofReal (F n x) ∂μ) atTop :=
+        lintegral_liminf_le' fun n ↦ (hF n).1.aemeasurable.ennreal_ofReal
+    _ ≤ ENNReal.ofReal D := liminf_le_of_frequently_le' <| Eventually.frequently <|
+        hD.mono fun n hn ↦ by
+          rw [← ofReal_integral_eq_lintegral_ofReal (hF n) (hF₀ n)]
+          exact ENNReal.ofReal_le_ofReal hn
+
+/-- **Fatou's lemma for real integrals**, integrability: an almost everywhere limit of nonnegative
+integrable functions whose integrals are eventually at most `D` is integrable. -/
+theorem integrable_of_tendsto_of_integral_le (hF : ∀ n, Integrable (F n) μ)
+    (hF₀ : ∀ n, 0 ≤ᵐ[μ] F n) (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ F n x) atTop (𝓝 (G x)))
+    (hD : ∀ᶠ n in atTop, ∫ x, F n x ∂μ ≤ D) : Integrable G μ :=
+  ⟨aestronglyMeasurable_of_tendsto_ae atTop (fun n ↦ (hF n).1) hlim,
+    (hasFiniteIntegral_iff_ofReal (ae_nonneg_of_tendsto hF₀ hlim)).2 <|
+      (lintegral_ofReal_le_of_tendsto_of_integral_le hF hF₀ hlim hD).trans_lt
+        ENNReal.ofReal_lt_top⟩
+
+/-- **Fatou's lemma for real integrals**, integral bound: an almost everywhere limit of
+nonnegative integrable functions whose integrals are eventually at most `D` has integral at most
+`D`. -/
+theorem integral_le_of_tendsto_of_integral_le (hF : ∀ n, Integrable (F n) μ)
+    (hF₀ : ∀ n, 0 ≤ᵐ[μ] F n) (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ F n x) atTop (𝓝 (G x)))
+    (hD : ∀ᶠ n in atTop, ∫ x, F n x ∂μ ≤ D) : ∫ x, G x ∂μ ≤ D := by
+  obtain ⟨n, hn⟩ := hD.exists
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_nonneg_of_tendsto hF₀ hlim)
+    (aestronglyMeasurable_of_tendsto_ae atTop (fun n ↦ (hF n).1) hlim)]
+  exact ENNReal.toReal_le_of_le_ofReal ((integral_nonneg_of_ae (hF₀ n)).trans hn)
+    (lintegral_ofReal_le_of_tendsto_of_integral_le hF hF₀ hlim hD)
+
+end Fatou
 
 end TauCeti
 
