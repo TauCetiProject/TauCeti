@@ -9,13 +9,15 @@ public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
-# Convexity of relative entropy in its first measure
+# Convexity of relative entropy
 
 For a fixed finite reference measure `ρ`, relative entropy is convex in the measure being
-compared to `ρ`. On its finite-value domain it is strictly convex: mixing two distinct
-finite measures with positive weights gives strictly less than their weighted entropies.
-This is the uniqueness mechanism for entropy minimization over convex sets of measures,
-in particular sets with prescribed marginals.
+compared to `ρ`, and in both finite measures jointly it is sublinear and hence jointly convex
+(`TauCeti.klDiv_add_le` and `TauCeti.klDiv_smul_add_smul_smul_add_smul_le`). On its finite-value
+domain in the first argument it is strictly convex: mixing two distinct finite measures with
+positive weights gives strictly less than their weighted entropies. This is the uniqueness
+mechanism for entropy minimization over convex sets of measures, in particular sets with
+prescribed marginals.
 
 The statements use Mathlib's finite-measure I-divergence `InformationTheory.klDiv`, including
 its mass correction. Neither normalization nor a topology on the measurable carrier is needed.
@@ -307,5 +309,90 @@ theorem mul_lintegral_enorm_sub_add_two_mul_klDiv_le (t : ℝ≥0) :
   simpa only [ENNReal.ofReal_toReal hμx.ne, ENNReal.ofReal_toReal hνx.ne] using
     mul_enorm_sub_add_two_mul_ofReal_klFun_le (μ.rnDeriv ρ x).toReal_nonneg
       (ν.rnDeriv ρ x).toReal_nonneg t
+
+/-! ### Subadditivity and joint convexity -/
+
+/-- When `μ ≪ ν ≪ ξ`, the relative entropy `klDiv μ ν` is the `ξ`-integral of the perspective
+`(dν/dξ) * klFun ((dμ/dξ) / (dν/dξ))`. -/
+private theorem klDiv_eq_lintegral_rnDeriv_mul_klFun_div {ξ : Measure α} [IsFiniteMeasure ξ]
+    (hμν : μ ≪ ν) (hνξ : ν ≪ ξ) :
+    klDiv μ ν = ∫⁻ x, ν.rnDeriv ξ x *
+      ENNReal.ofReal (klFun ((μ.rnDeriv ξ x).toReal / (ν.rnDeriv ξ x).toReal)) ∂ξ := by
+  have hμξ : μ ≪ ξ := hμν.trans hνξ
+  rw [klDiv_eq_lintegral_klFun_of_ac hμν]
+  refine (lintegral_congr_ae ?_).trans (lintegral_rnDeriv_mul hνξ (by fun_prop)).symm
+  filter_upwards [Measure.rnDeriv_eq_div hμξ hνξ] with x hx
+  rw [hx, ENNReal.toReal_div]
+
+/-- **Subadditivity of relative entropy.** For finite measures `μ₁, μ₂, ν₁, ν₂`, the relative
+entropy of `μ₁ + μ₂` against `ν₁ + ν₂` is at most `klDiv μ₁ ν₁ + klDiv μ₂ ν₂`. -/
+theorem klDiv_add_le {μ₁ μ₂ ν₁ ν₂ : Measure α} [IsFiniteMeasure μ₁] [IsFiniteMeasure μ₂]
+    [IsFiniteMeasure ν₁] [IsFiniteMeasure ν₂] :
+    klDiv (μ₁ + μ₂) (ν₁ + ν₂) ≤ klDiv μ₁ ν₁ + klDiv μ₂ ν₂ := by
+  by_cases h₁ : klDiv μ₁ ν₁ = ∞
+  · simp [h₁]
+  by_cases h₂ : klDiv μ₂ ν₂ = ∞
+  · simp [h₂]
+  have hμ₁ν₁ := (klDiv_ne_top_iff.1 h₁).1
+  have hμ₂ν₂ := (klDiv_ne_top_iff.1 h₂).1
+  set ξ := ν₁ + ν₂
+  have hν₁ξ : ν₁ ≪ ξ := Measure.AbsolutelyContinuous.rfl.add_right ν₂
+  have hν₂ξ : ν₂ ≪ ξ := Measure.AbsolutelyContinuous.rfl.add_right' ν₁
+  rw [klDiv_eq_lintegral_klFun_of_ac ((hμ₁ν₁.trans hν₁ξ).add_left (hμ₂ν₂.trans hν₂ξ)),
+    klDiv_eq_lintegral_rnDeriv_mul_klFun_div hμ₁ν₁ hν₁ξ,
+    klDiv_eq_lintegral_rnDeriv_mul_klFun_div hμ₂ν₂ hν₂ξ, ← lintegral_add_left (by fun_prop)]
+  refine lintegral_mono_ae ?_
+  filter_upwards [Measure.rnDeriv_add' μ₁ μ₂ ξ, Measure.rnDeriv_add' ν₁ ν₂ ξ, ξ.rnDeriv_self,
+    Measure.rnDeriv_mul_rnDeriv (κ := ξ) hμ₁ν₁, Measure.rnDeriv_mul_rnDeriv (κ := ξ) hμ₂ν₂,
+    Measure.rnDeriv_lt_top μ₁ ξ, Measure.rnDeriv_lt_top μ₂ ξ,
+    Measure.rnDeriv_lt_top ν₁ ξ, Measure.rnDeriv_lt_top ν₂ ξ]
+    with x hμadd hνadd hξself hmul₁ hmul₂ hμ₁fin hμ₂fin hν₁fin hν₂fin
+  set u₁ := (μ₁.rnDeriv ξ x).toReal
+  set u₂ := (μ₂.rnDeriv ξ x).toReal
+  set v₁ := (ν₁.rnDeriv ξ x).toReal
+  set v₂ := (ν₂.rnDeriv ξ x).toReal
+  have hu₁ : 0 ≤ u₁ := ENNReal.toReal_nonneg
+  have hu₂ : 0 ≤ u₂ := ENNReal.toReal_nonneg
+  have hv₁ : 0 ≤ v₁ := ENNReal.toReal_nonneg
+  have hv₂ : 0 ≤ v₂ := ENNReal.toReal_nonneg
+  have hμsum : ((μ₁ + μ₂).rnDeriv ξ x).toReal = u₁ + u₂ := by
+    rw [hμadd, Pi.add_apply, ENNReal.toReal_add hμ₁fin.ne hμ₂fin.ne]
+  have hvsum : v₁ + v₂ = 1 := by
+    have h := congrArg ENNReal.toReal (hνadd.symm.trans hξself)
+    rwa [Pi.add_apply, ENNReal.toReal_add hν₁fin.ne hν₂fin.ne, ENNReal.toReal_one] at h
+  have hmul_div₁ : v₁ * (u₁ / v₁) = u₁ := by
+    rcases eq_or_ne v₁ 0 with hv | hv
+    · have hν₀ : ν₁.rnDeriv ξ x = 0 :=
+        (ENNReal.toReal_eq_zero_iff _).1 hv |>.resolve_right hν₁fin.ne
+      have hμ₀ : μ₁.rnDeriv ξ x = 0 := by
+        simpa [Pi.mul_apply, hν₀] using hmul₁.symm
+      simp [hv, u₁, hμ₀]
+    · exact mul_div_cancel₀ u₁ hv
+  have hmul_div₂ : v₂ * (u₂ / v₂) = u₂ := by
+    rcases eq_or_ne v₂ 0 with hv | hv
+    · have hν₀ : ν₂.rnDeriv ξ x = 0 :=
+        (ENNReal.toReal_eq_zero_iff _).1 hv |>.resolve_right hν₂fin.ne
+      have hμ₀ : μ₂.rnDeriv ξ x = 0 := by
+        simpa [Pi.mul_apply, hν₀] using hmul₂.symm
+      simp [hv, u₂, hμ₀]
+    · exact mul_div_cancel₀ u₂ hv
+  have hconv : klFun (u₁ + u₂) ≤ v₁ * klFun (u₁ / v₁) + v₂ * klFun (u₂ / v₂) := by
+    have heq : u₁ + u₂ = v₁ * (u₁ / v₁) + v₂ * (u₂ / v₂) := by rw [hmul_div₁, hmul_div₂]
+    rw [heq]
+    simpa only [smul_eq_mul] using
+      convexOn_klFun.2 (div_nonneg hu₁ hv₁) (div_nonneg hu₂ hv₂) hv₁ hv₂ hvsum
+  rw [hμsum, ← ENNReal.ofReal_toReal hν₁fin.ne, ← ENNReal.ofReal_toReal hν₂fin.ne,
+    ← ENNReal.ofReal_mul hv₁, ← ENNReal.ofReal_mul hv₂,
+    ← ENNReal.ofReal_add (mul_nonneg hv₁ (klFun_nonneg (div_nonneg hu₁ hv₁)))
+      (mul_nonneg hv₂ (klFun_nonneg (div_nonneg hu₂ hv₂)))]
+  exact ENNReal.ofReal_le_ofReal hconv
+
+/-- **Joint convexity and sublinearity of relative entropy.** For finite measures `μ₁, μ₂, ν₁, ν₂`
+and nonnegative weights `a, b : ℝ≥0`, the relative entropy of `a • μ₁ + b • μ₂` against
+`a • ν₁ + b • ν₂` is at most `a * klDiv μ₁ ν₁ + b * klDiv μ₂ ν₂`. -/
+theorem klDiv_smul_add_smul_smul_add_smul_le {μ₁ μ₂ ν₁ ν₂ : Measure α} [IsFiniteMeasure μ₁]
+    [IsFiniteMeasure μ₂] [IsFiniteMeasure ν₁] [IsFiniteMeasure ν₂] (a b : ℝ≥0) :
+    klDiv (a • μ₁ + b • μ₂) (a • ν₁ + b • ν₂) ≤ a * klDiv μ₁ ν₁ + b * klDiv μ₂ ν₂ :=
+  klDiv_add_le.trans_eq (by rw [klDiv_smul_same, klDiv_smul_same])
 
 end TauCeti

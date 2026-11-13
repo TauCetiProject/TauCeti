@@ -12,6 +12,7 @@ public import TauCeti.InformationTheory.KullbackLeibler.Tilted
 public import TauCeti.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.L1Convergence
+import Mathlib.InformationTheory.KullbackLeibler.DataProcessing
 
 /-!
 # Entropic optimal transport and the static Schrödinger problem
@@ -71,6 +72,11 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
 * `TauCeti.entropicTransportCost_const`: for a constant cost the regularised value is the
   constant; when it is finite, with `Mathlib`'s `InformationTheory.klDiv_eq_zero_iff`, the product
   coupling is then the unique optimal plan at positive temperature.
+* `TauCeti.entropicTransportCost_comp_swap` and `TauCeti.entropicTransportCost_comm`: coordinate
+  exchange and symmetry for symmetric costs.
+* `TauCeti.entropicTransportCost_dirac_left`, `TauCeti.entropicTransportCost_dirac_right` and
+  `TauCeti.entropicTransportCost_dirac_dirac`: when one marginal is a Dirac mass the product
+  coupling is the unique feasible plan, so regularisation adds no entropy cost.
 * `TauCeti.lintegral_add_mul_klDiv_eq_mul_klDiv_tilted`: the Gibbs identity above, plan by plan.
 * `TauCeti.entropicTransportCost_eq_mul_schroedingerValue_add`: the same identity for the
   optimal values.
@@ -507,6 +513,89 @@ theorem entropicTransportCost_const [IsProbabilityMeasure μ] [IsProbabilityMeas
     (le_entropicTransportCost fun π hπ ↦ ?_)
   have := hπ.isProbabilityMeasure
   simp
+
+/-- Exchanging the two factors leaves the regularised transport cost unchanged when the cost is
+transported along `Prod.swap`. -/
+theorem entropicTransportCost_comp_swap [IsFiniteMeasure μ] (c : X × Y → ℝ≥0∞) (ε : ℝ≥0)
+    (ν : Measure Y) :
+    entropicTransportCost (c ∘ Prod.swap) ε ν μ = entropicTransportCost c ε μ ν := by
+  by_cases hex : ∃ π, IsCoupling π μ ν
+  · obtain ⟨π₀, hπ₀⟩ := hex
+    have := hπ₀.isFiniteMeasure
+    have : IsFiniteMeasure ν := hπ₀.snd_eq ▸ inferInstance
+    refine le_antisymm (le_entropicTransportCost fun π hπ ↦ ?_)
+      (le_entropicTransportCost fun σ hσ ↦ ?_)
+    · have := hπ.isFiniteMeasure
+      calc entropicTransportCost (c ∘ Prod.swap) ε ν μ
+          ≤ ∫⁻ w, c w.swap ∂π.map Prod.swap + ε * klDiv (π.map Prod.swap) (ν.prod μ) :=
+            entropicTransportCost_le hπ.swap _ ε
+        _ ≤ ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) := by
+            rw [show ∫⁻ w, c w.swap ∂π.map Prod.swap = ∫⁻ z, c z ∂π from
+              lintegral_map_equiv (μ := π) (c ∘ Prod.swap) MeasurableEquiv.prodComm,
+              ← Measure.prod_swap (μ := μ) (ν := ν)]
+            gcongr
+            exact klDiv_map_le _ _ measurable_swap
+    · have := hσ.isFiniteMeasure
+      calc entropicTransportCost c ε μ ν
+          ≤ ∫⁻ z, c z ∂σ.map Prod.swap + ε * klDiv (σ.map Prod.swap) (μ.prod ν) :=
+            entropicTransportCost_le hσ.swap _ ε
+        _ ≤ ∫⁻ w, c w.swap ∂σ + ε * klDiv σ (ν.prod μ) := by
+            rw [show ∫⁻ z, c z ∂σ.map Prod.swap = ∫⁻ w, c w.swap ∂σ from
+              lintegral_map_equiv (μ := σ) c MeasurableEquiv.prodComm,
+              ← Measure.prod_swap (μ := ν) (ν := μ)]
+            gcongr
+            exact klDiv_map_le _ _ measurable_swap
+  · have h₁ : ∀ π, ¬ IsCoupling π μ ν := fun π hπ ↦ hex ⟨π, hπ⟩
+    have h₂ : ∀ σ, ¬ IsCoupling σ ν μ := fun σ hσ ↦ hex ⟨σ.map Prod.swap, hσ.swap⟩
+    simp [entropicTransportCost_def, h₁, h₂]
+
+/-- For a symmetric cost, the regularised transport cost is symmetric in the two marginals,
+provided `μ` is finite (`ν` inherits finiteness whenever a coupling exists). -/
+theorem entropicTransportCost_comm {c : X × X → ℝ≥0∞} [IsFiniteMeasure μ]
+    (hcs : c ∘ Prod.swap = c) (ε : ℝ≥0) (ν : Measure X) :
+    entropicTransportCost c ε μ ν = entropicTransportCost c ε ν μ := by
+  rw [← entropicTransportCost_comp_swap c ε ν, hcs]
+
+/-- A Dirac source has only the product coupling `(Measure.dirac x).prod ν` with a probability
+target `ν`, whose relative entropy vanishes, so regularisation leaves the transport cost unchanged
+without any measurability hypothesis on `c`. -/
+theorem entropicTransportCost_dirac_left_eq_transportCost [IsProbabilityMeasure ν]
+    (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) (x : X) :
+    entropicTransportCost c ε (Measure.dirac x) ν = transportCost c (Measure.dirac x) ν := by
+  refine le_antisymm ?_ transportCost_le_entropicTransportCost
+  rw [transportCost_def]
+  refine le_iInf₂ fun π hπ ↦ (entropicTransportCost_le hπ c ε).trans_eq ?_
+  have hπeq : π = (Measure.dirac x).prod ν := by
+    rw [hπ.eq_map_prodMk, Measure.dirac_prod]
+  simp [hπeq, klDiv_self]
+
+/-- For a measurable cost, the regularised transport cost from a Dirac mass to a probability
+measure is the marginal integral of the cost. -/
+theorem entropicTransportCost_dirac_left [IsProbabilityMeasure ν] (hc : Measurable c) (ε : ℝ≥0)
+    (x : X) : entropicTransportCost c ε (Measure.dirac x) ν = ∫⁻ y, c (x, y) ∂ν := by
+  rw [entropicTransportCost_dirac_left_eq_transportCost, transportCost_dirac_left hc]
+
+/-- A Dirac target has only the product coupling `μ.prod (Measure.dirac y)` with a probability
+source `μ`, so regularisation leaves the transport cost unchanged without any measurability
+hypothesis on `c`. -/
+theorem entropicTransportCost_dirac_right_eq_transportCost [IsProbabilityMeasure μ]
+    (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) (y : Y) :
+    entropicTransportCost c ε μ (Measure.dirac y) = transportCost c μ (Measure.dirac y) := by
+  rw [← entropicTransportCost_comp_swap c ε (Measure.dirac y),
+    entropicTransportCost_dirac_left_eq_transportCost, ← transportCost_comp_swap μ]
+  rfl
+
+/-- For a measurable cost, the regularised transport cost from a probability measure to a Dirac
+mass is the marginal integral of the cost. -/
+theorem entropicTransportCost_dirac_right [IsProbabilityMeasure μ] (hc : Measurable c) (ε : ℝ≥0)
+    (y : Y) : entropicTransportCost c ε μ (Measure.dirac y) = ∫⁻ x, c (x, y) ∂μ := by
+  rw [entropicTransportCost_dirac_right_eq_transportCost, transportCost_dirac_right hc]
+
+/-- For a measurable cost, the regularised transport cost between two Dirac masses is the value of
+the cost at the pair. -/
+theorem entropicTransportCost_dirac_dirac (hc : Measurable c) (ε : ℝ≥0) (x : X) (y : Y) :
+    entropicTransportCost c ε (Measure.dirac x) (Measure.dirac y) = c (x, y) := by
+  rw [entropicTransportCost_dirac_left_eq_transportCost, transportCost_dirac_dirac hc]
 
 /-! ### The Gibbs reformulation -/
 
