@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 import Mathlib.Analysis.SpecialFunctions.Log.Base
-import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 
 /-!
 # The interior Hölder estimate of Krylov and Safonov
@@ -143,6 +143,121 @@ private theorem exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul {κ
     rw [mem_ball, ← hd, sub_add_cancel]
     exact hx
 
+/-- **Two supersolutions with constant sum.** There are `T ≥ 1` and `ε₀ > 0`, depending only on
+the dimension and on `κ`, with the following property. Let `v₁` and `v₂` be nonnegative
+supersolutions near `closedBall c R`, with `R ≥ 4 · 2ᵏ √n`, with a common right-hand side `g`
+satisfying `R ‖g⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`. If `v₁ + v₂ = 2 T`, then one of them exceeds `1` on
+`B(c, 2 · 2ᵏ √n)`. Otherwise the power decay would make both superlevel sets `{vᵢ ≥ T}` small in a
+translate of `dyadicCube k 0`, which they cover. -/
+private theorem exists_forall_one_lt_or_forall_one_lt_of_add_eq {κ : ℝ} (hκ : 0 < κ) :
+    ∃ T ε₀ : ℝ, 1 ≤ T ∧ 0 < ε₀ ∧
+      ∀ ⦃lam Lam R : ℝ⦄ ⦃k : ℤ⦄ ⦃c : EuclideanSpace ℝ ι⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃v₁ v₂ g : EuclideanSpace ℝ ι → ℝ⦄,
+        4 * 2 ^ k * √(Fintype.card ι) ≤ R →
+        UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
+        ContinuousOn v₁ (closedBall c R) → ContDiffOn ℝ 2 v₁ (ball c R) →
+        (∀ x ∈ closedBall c R, 0 ≤ v₁ x) →
+        (∀ x ∈ ball c R, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v₁) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ g x) →
+        ContinuousOn v₂ (closedBall c R) → ContDiffOn ℝ 2 v₂ (ball c R) →
+        (∀ x ∈ closedBall c R, 0 ≤ v₂ x) →
+        (∀ x ∈ ball c R, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v₂) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ g x) →
+        ENNReal.ofReal R * eLpNorm (fun x ↦ (g x)⁺) (Fintype.card ι)
+          (volume.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) →
+        (∀ x, v₁ x + v₂ x = 2 * T) →
+        (∀ x ∈ ball c (2 * 2 ^ k * √(Fintype.card ι)), 1 < v₁ x) ∨
+          ∀ x ∈ ball c (2 * 2 ^ k * √(Fintype.card ι)), 1 < v₂ x := by
+  obtain ⟨C, ε, ε₀, hC, hε, hε₀, H⟩ :=
+    exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul (ι := ι) hκ
+  set T := max 1 ((4 * C) ^ ε⁻¹)
+  have hT0 : 0 < T := one_pos.trans_le (le_max_left _ _)
+  -- `2 C T^(-ε) ≤ 1 / 2`.
+  have hCT : 2 * (C * T ^ (-ε)) ≤ 2⁻¹ := by
+    have h4C : ((4 * C) ^ ε⁻¹) ^ (-ε) = (4 * C)⁻¹ := by
+      rw [← Real.rpow_mul (by positivity), inv_mul_eq_div, neg_div, div_self hε.ne',
+        Real.rpow_neg_one]
+    have hle : T ^ (-ε) ≤ (4 * C)⁻¹ :=
+      h4C ▸ Real.rpow_le_rpow_of_nonpos (by positivity) (le_max_right _ _) (neg_nonpos.2 hε.le)
+    calc 2 * (C * T ^ (-ε)) ≤ 2 * (C * (4 * C)⁻¹) := by gcongr
+      _ = 2⁻¹ := by field_simp; norm_num
+  refine ⟨T, ε₀, le_max_left _ _, hε₀, ?_⟩
+  intro lam Lam R k c a v₁ v₂ g hR ha hLam hcont₁ hu₁ hnn₁ hv₁ hcont₂ hu₂ hnn₂ hv₂ hg hsum
+  by_contra! hnot
+  obtain ⟨h₁, h₂⟩ := hnot
+  -- The superlevel sets at `T` cover the translated cube `Q`, yet each fills at most half of it.
+  set d : EuclideanSpace ℝ ι := c - WithLp.toLp 2 fun _ ↦ 2⁻¹ * 2 ^ k
+  set Q : Set (EuclideanSpace ℝ ι) := WithLp.ofLp ⁻¹' dyadicCube k 0
+  have hQ : volume Q = volume (dyadicCube k 0) :=
+    (PiLp.volume_preserving_ofLp ι).measure_preimage
+      (measurableSet_dyadicCube k 0).nullMeasurableSet
+  have hcover : Q ⊆ ({x | T ≤ v₁ (x + d)} ∩ Q) ∪ ({x | T ≤ v₂ (x + d)} ∩ Q) := by
+    intro x hx
+    by_cases h : T ≤ v₁ (x + d)
+    · exact Or.inl ⟨h, hx⟩
+    · have h₂ : T ≤ v₂ (x + d) := by linarith [not_le.1 h, hsum (x + d)]
+      exact Or.inr ⟨h₂, hx⟩
+  have H₁ := H hR ha hLam hcont₁ hu₁ hnn₁ hv₁ hg h₁ hT0
+  have H₂ := H hR ha hLam hcont₂ hu₂ hnn₂ hv₂ hg h₂ hT0
+  have hpos : 0 < volume Q := hQ ▸ volume_dyadicCube_pos k 0
+  have hfin : volume Q ≠ ∞ := hQ ▸ volume_dyadicCube_ne_top k 0
+  have hle : volume Q ≤ ENNReal.ofReal 2⁻¹ * volume Q :=
+    calc volume Q ≤ volume ({x | T ≤ v₁ (x + d)} ∩ Q) + volume ({x | T ≤ v₂ (x + d)} ∩ Q) :=
+          (measure_mono hcover).trans (measure_union_le _ _)
+      _ ≤ ENNReal.ofReal (C * T ^ (-ε)) * volume Q +
+          ENNReal.ofReal (C * T ^ (-ε)) * volume Q := add_le_add H₁ H₂
+      _ = ENNReal.ofReal (2 * (C * T ^ (-ε))) * volume Q := by
+        rw [← add_mul, ← ENNReal.ofReal_add (by positivity) (by positivity), two_mul]
+      _ ≤ ENNReal.ofReal 2⁻¹ * volume Q := by gcongr
+  have h2 : ENNReal.ofReal 2⁻¹ * volume Q < volume Q := by
+    conv_rhs => rw [← one_mul (volume Q)]
+    exact ENNReal.mul_lt_mul_left hpos.ne' hfin
+      (by rw [ENNReal.ofReal_lt_one]; norm_num)
+  exact (hle.trans_lt h2).false
+
+omit [Nonempty ι] in
+/-- **Rescaled solutions are supersolutions.** If `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = y` at `x`, then
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ (t (u - b)) ≤ |t| ‖y‖` at `x`, for all constants `t` and `b`. -/
+private theorem sum_mul_fderiv_fderiv_const_mul_sub_const_le {A : Matrix ι ι ℝ}
+    {u : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι} {y : ℝ} (t b : ℝ)
+    (h : ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ u) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = y) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z ↦ t * (u z - b)) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ |t| * ‖y‖ := by
+  have h' : fderiv ℝ (fun z ↦ u z - b) = fderiv ℝ u := funext fun z ↦ fderiv_sub_const b
+  rw [sum_mul_fderiv_fderiv_const_mul, h', h, Real.norm_eq_abs, ← abs_mul]
+  exact le_abs_self _
+
+/-- **Smallness of the rescaled right-hand side.** If `‖f‖_{Lᵖ} ≤ F` and `ρ F ≤ b s` with
+`ρ ≥ 0` and `s > 0`, then `ρ ‖(s⁻¹ ‖f‖)⁺‖_{Lᵖ} ≤ b`. -/
+private theorem ofReal_mul_eLpNorm_posPart_inv_mul_norm_le {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {p : ℝ≥0∞} {f : X → ℝ} {ρ s F b : ℝ} (hρ : 0 ≤ ρ) (hs : 0 < s)
+    (hf : eLpNorm f p μ ≤ ENNReal.ofReal F) (hsF : ρ * F ≤ b * s) :
+    ENNReal.ofReal ρ * eLpNorm (fun x ↦ (s⁻¹ * ‖f x‖)⁺) p μ ≤ ENNReal.ofReal b := by
+  have hfm : AEStronglyMeasurable f μ :=
+    aestronglyMeasurable_of_eLpNorm_ne_top (hf.trans_lt ENNReal.ofReal_lt_top).ne
+  have h : (fun x ↦ (s⁻¹ * ‖f x‖)⁺) = s⁻¹ • fun x ↦ ‖f x‖ := by
+    funext x
+    simp only [Pi.smul_apply, smul_eq_mul]
+    exact posPart_eq_self.2 (by positivity)
+  rw [h, eLpNorm_const_smul, eLpNorm_norm _ hfm, Real.eNorm_eq_ofReal (by positivity)]
+  calc ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * eLpNorm f p μ) ≤
+        ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * ENNReal.ofReal F) := by gcongr
+    _ = ENNReal.ofReal (ρ * (s⁻¹ * F)) := by
+      rw [ENNReal.ofReal_mul hρ, ENNReal.ofReal_mul (by positivity)]
+    _ ≤ ENNReal.ofReal b := by
+      refine ENNReal.ofReal_le_ofReal ?_
+      rw [← div_eq_inv_mul, mul_div_assoc', div_le_iff₀ hs]
+      exact hsF
+
+/-- A dyadic scale `2ᵏ` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`, for `ρ, n > 0`. -/
+private theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : ℝ} (hρ : 0 < ρ) (hn : 0 < n) :
+    ∃ k : ℤ, 4 * 2 ^ k * n ≤ ρ ∧ ρ / 4 < 2 * 2 ^ k * n := by
+  obtain ⟨k, hk1, hk2⟩ := exists_mem_Ico_zpow (x := ρ / (4 * n)) (by positivity) one_lt_two
+  rw [le_div_iff₀ (by positivity)] at hk1
+  rw [div_lt_iff₀ (by positivity), zpow_add_one₀ two_ne_zero] at hk2
+  exact ⟨k, by linarith, by linarith⟩
+
 /-- **One step of oscillation decay.** There are `0 < δ < 1` and `K ≥ 0`, depending only on the
 dimension and on `κ`, with the following property. Let `a` be uniformly elliptic on `B(c, ρ)`
 with `λ ≤ Λ ≤ κ λ`, and let `u` be continuous on `closedBall c ρ` and `C²` in `B(c, ρ)` with
@@ -161,20 +276,7 @@ private theorem exists_mem_Icc_closedBall_div_four {κ : ℝ} (hκ : 0 < κ) :
         (∀ x ∈ closedBall c ρ, u x ∈ Icc m (m + L)) →
         ∃ m', ∀ x ∈ closedBall c (ρ / 4),
           u x ∈ Icc m' (m' + ((1 - δ) * L + K * ρ * F / lam)) := by
-  obtain ⟨C, ε, ε₀, hC, hε, hε₀, H⟩ :=
-    exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul (ι := ι) hκ
-  set T := max 1 ((4 * C) ^ ε⁻¹)
-  have hT1 : 1 ≤ T := le_max_left _ _
-  have hT0 : 0 < T := one_pos.trans_le hT1
-  -- `2 C T^(-ε) ≤ 1 / 2`.
-  have hCT : 2 * (C * T ^ (-ε)) ≤ 2⁻¹ := by
-    have h4C : ((4 * C) ^ ε⁻¹) ^ (-ε) = (4 * C)⁻¹ := by
-      rw [← Real.rpow_mul (by positivity), inv_mul_eq_div, neg_div, div_self hε.ne',
-        Real.rpow_neg_one]
-    have hle : T ^ (-ε) ≤ (4 * C)⁻¹ :=
-      h4C ▸ Real.rpow_le_rpow_of_nonpos (by positivity) (le_max_right _ _) (neg_nonpos.2 hε.le)
-    calc 2 * (C * T ^ (-ε)) ≤ 2 * (C * (4 * C)⁻¹) := by gcongr
-      _ = 2⁻¹ := by field_simp; norm_num
+  obtain ⟨T, ε₀, hT1, hε₀, H⟩ := exists_forall_one_lt_or_forall_one_lt_of_add_eq (ι := ι) hκ
   refine ⟨(2 * T)⁻¹, ε₀⁻¹, by positivity, inv_lt_one_of_one_lt₀ (by linarith), by positivity, ?_⟩
   intro lam Lam ρ m L F c a u f hρ hF ha hLam hcont hu heq hf hmem
   have hlam : 0 < lam := ha.pos
@@ -188,134 +290,56 @@ private theorem exists_mem_Icc_closedBall_div_four {κ : ℝ} (hκ : 0 < κ) :
         _ = ε₀⁻¹ * ρ * F / lam := by field_simp
     exact ⟨h.1, by linarith [h.2]⟩
   push Not at hsmall
+  -- Otherwise rescale `u` by `s = L / (2 T)`, which makes the right-hand side small, and pick
+  -- the dyadic scale of the power decay.
+  have hLpos : 0 < L := (by positivity : 0 ≤ 2 * T * ρ * F / (ε₀ * lam)).trans_lt hsmall
+  have hsF : ρ * F ≤ ε₀ * lam * (L / (2 * T)) := by
+    rw [div_lt_iff₀ (by positivity)] at hsmall
+    rw [mul_div_assoc', le_div_iff₀ (by positivity)]
+    linarith
   set s := L / (2 * T)
-  have hρF : 0 ≤ ρ * F / (ε₀ * lam) := by positivity
-  have hsF : ρ * F / (ε₀ * lam) < s := by
-    rw [lt_div_iff₀ (by positivity)]
-    calc ρ * F / (ε₀ * lam) * (2 * T) = 2 * T * ρ * F / (ε₀ * lam) := by ring
-      _ < L := hsmall
-  have hs : 0 < s := hρF.trans_lt hsF
-  have hLpos : 0 < L := by
-    have : 0 < L / (2 * T) := hs
-    exact (div_pos_iff_of_pos_right (by positivity)).1 this
-  -- A dyadic scale with `2ᵏ ≤ ρ / (4 √n) < 2ᵏ⁺¹`.
-  have hn : 0 < √(Fintype.card ι : ℝ) := Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
-  obtain ⟨k, hk1, hk2⟩ := exists_mem_Ico_zpow (x := ρ / (4 * √(Fintype.card ι : ℝ)))
-    (by positivity) one_lt_two
-  rw [le_div_iff₀ (by positivity)] at hk1
-  rw [div_lt_iff₀ (by positivity), zpow_add_one₀ two_ne_zero] at hk2
-  have hR : 4 * 2 ^ k * √(Fintype.card ι : ℝ) ≤ ρ := by linarith
+  have hs : 0 < s := div_pos hLpos (by positivity)
+  have hg := ofReal_mul_eLpNorm_posPart_inv_mul_norm_le hρ.le hs hf hsF
+  obtain ⟨k, hR, hk⟩ := exists_four_mul_two_zpow_mul_le_and_lt hρ
+    (Real.sqrt_pos.2 (Nat.cast_pos.2 (Fintype.card_pos (α := ι))))
   have hsub : closedBall c (ρ / 4) ⊆ ball c (2 * 2 ^ k * √(Fintype.card ι)) :=
-    closedBall_subset_ball (by linarith)
-  have hball : ball c ρ ⊆ closedBall c ρ := ball_subset_closedBall
-  -- The right-hand side `‖f‖ / s` is small.
-  have hfm : AEStronglyMeasurable f (volume.restrict (ball c ρ)) :=
-    aestronglyMeasurable_of_eLpNorm_ne_top (hf.trans_lt ENNReal.ofReal_lt_top).ne
-  have hg : ENNReal.ofReal ρ * eLpNorm (fun x ↦ (s⁻¹ * ‖f x‖)⁺) (Fintype.card ι)
-      (volume.restrict (ball c ρ)) ≤ ENNReal.ofReal (ε₀ * lam) := by
-    have h1 : (fun x ↦ (s⁻¹ * ‖f x‖)⁺) = s⁻¹ • fun x ↦ ‖f x‖ := by
-      funext x
-      simp only [Pi.smul_apply, smul_eq_mul]
-      exact posPart_eq_self.2 (by positivity)
-    rw [h1, eLpNorm_const_smul, eLpNorm_norm _ hfm, Real.eNorm_eq_ofReal (by positivity)]
-    calc ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * eLpNorm f (Fintype.card ι)
-          (volume.restrict (ball c ρ))) ≤
-          ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * ENNReal.ofReal F) := by gcongr
-      _ = ENNReal.ofReal (ρ * (s⁻¹ * F)) := by
-        rw [ENNReal.ofReal_mul hρ.le, ENNReal.ofReal_mul (by positivity)]
-      _ ≤ ENNReal.ofReal (ε₀ * lam) := by
-        refine ENNReal.ofReal_le_ofReal ?_
-        rw [div_lt_iff₀ (by positivity)] at hsF
-        rw [← div_eq_inv_mul, mul_div_assoc', div_le_iff₀ hs]
-        linarith
-  -- `v₁ = (u - m) / s` and `v₂ = (m + L - u) / s` are nonnegative supersolutions.
+    closedBall_subset_ball hk
+  -- `v₁ = (u - m) / s` and `v₂ = (m + L - u) / s` are nonnegative supersolutions with sum `2 T`.
   set v₁ := fun x ↦ s⁻¹ * (u x - m)
   set v₂ := fun x ↦ s⁻¹ * (m + L - u x)
-  have hv₁ : ∀ x ∈ ball c ρ, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v₁) x
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ s⁻¹ * ‖f x‖ := by
-    intro x hx
-    have h : fderiv ℝ (fun y ↦ u y - m) = fderiv ℝ u := funext fun y ↦ fderiv_sub_const m
-    rw [sum_mul_fderiv_fderiv_const_mul, h, heq x hx]
-    exact mul_le_mul_of_nonneg_left (le_abs_self _) (by positivity)
-  have hv₂ : ∀ x ∈ ball c ρ, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v₂) x
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ s⁻¹ * ‖f x‖ := by
-    intro x hx
-    have h : fderiv ℝ (fun y ↦ m + L - u y) = -fderiv ℝ u :=
-      funext fun y ↦ fderiv_const_sub (m + L)
-    rw [sum_mul_fderiv_fderiv_const_mul, h]
-    have h2 : fderiv ℝ (-fderiv ℝ u) x = -fderiv ℝ (fderiv ℝ u) x :=
-      fderiv_neg (f := fderiv ℝ u)
-    simp only [h2, _root_.neg_apply, mul_neg, Finset.sum_neg_distrib]
-    rw [heq x hx, ← mul_neg]
-    exact mul_le_mul_of_nonneg_left (Real.norm_eq_abs (f x) ▸ neg_le_abs _) (by positivity)
-  have hcont₁ : ContinuousOn v₁ (closedBall c ρ) :=
-    continuousOn_const.mul (hcont.sub continuousOn_const)
-  have hcont₂ : ContinuousOn v₂ (closedBall c ρ) :=
-    continuousOn_const.mul (continuousOn_const.sub hcont)
-  have hu₁ : ContDiffOn ℝ 2 v₁ (ball c ρ) := contDiffOn_const.mul (hu.sub contDiffOn_const)
-  have hu₂ : ContDiffOn ℝ 2 v₂ (ball c ρ) := contDiffOn_const.mul (contDiffOn_const.sub hu)
-  have hnn₁ : ∀ x ∈ closedBall c ρ, 0 ≤ v₁ x := fun x hx ↦
-    mul_nonneg (by positivity) (by linarith [(hmem x hx).1])
-  have hnn₂ : ∀ x ∈ closedBall c ρ, 0 ≤ v₂ x := fun x hx ↦
-    mul_nonneg (by positivity) (by linarith [(hmem x hx).2])
-  -- They cannot both be at most `1` near `c`: their superlevel sets at `T` would cover `Q`.
-  set d : EuclideanSpace ℝ ι := c - WithLp.toLp 2 fun _ ↦ 2⁻¹ * 2 ^ k
-  set Q : Set (EuclideanSpace ℝ ι) := WithLp.ofLp ⁻¹' dyadicCube k 0
-  have hQ : volume Q = volume (dyadicCube k 0) :=
-    (PiLp.volume_preserving_ofLp ι).measure_preimage
-      (measurableSet_dyadicCube k 0).nullMeasurableSet
-  have hcover : Q ⊆ ({x | T ≤ v₁ (x + d)} ∩ Q) ∪ ({x | T ≤ v₂ (x + d)} ∩ Q) := by
-    intro x hx
-    have hsum : v₁ (x + d) + v₂ (x + d) = 2 * T := by
-      have h : v₁ (x + d) + v₂ (x + d) = s⁻¹ * L := by
-        simp only [v₁, v₂]
-        ring
-      rw [h]
-      simp only [s]
-      field_simp [hLpos.ne']
-    by_cases h : T ≤ v₁ (x + d)
-    · exact Or.inl ⟨h, hx⟩
-    · exact Or.inr ⟨show T ≤ v₂ (x + d) by linarith [not_le.1 h], hx⟩
-  have hnot : ¬ ((∃ x ∈ ball c (2 * 2 ^ k * √(Fintype.card ι)), v₁ x ≤ 1) ∧
-      ∃ x ∈ ball c (2 * 2 ^ k * √(Fintype.card ι)), v₂ x ≤ 1) := by
-    rintro ⟨h₁, h₂⟩
-    have H₁ := H hR ha hLam hcont₁ hu₁ hnn₁ hv₁ hg h₁ hT0
-    have H₂ := H hR ha hLam hcont₂ hu₂ hnn₂ hv₂ hg h₂ hT0
-    have hpos : 0 < volume Q := hQ ▸ volume_dyadicCube_pos k 0
-    have hfin : volume Q ≠ ∞ := hQ ▸ volume_dyadicCube_ne_top k 0
-    have hle : volume Q ≤ ENNReal.ofReal 2⁻¹ * volume Q :=
-      calc volume Q ≤ volume ({x | T ≤ v₁ (x + d)} ∩ Q) + volume ({x | T ≤ v₂ (x + d)} ∩ Q) :=
-            (measure_mono hcover).trans (measure_union_le _ _)
-        _ ≤ ENNReal.ofReal (C * T ^ (-ε)) * volume Q +
-            ENNReal.ofReal (C * T ^ (-ε)) * volume Q := add_le_add H₁ H₂
-        _ = ENNReal.ofReal (2 * (C * T ^ (-ε))) * volume Q := by
-          rw [← add_mul, ← ENNReal.ofReal_add (by positivity) (by positivity), two_mul]
-        _ ≤ ENNReal.ofReal 2⁻¹ * volume Q := by gcongr
-    have h2 : ENNReal.ofReal 2⁻¹ * volume Q < volume Q := by
-      conv_rhs => rw [← one_mul (volume Q)]
-      exact ENNReal.mul_lt_mul_left hpos.ne' hfin
-        (by rw [ENNReal.ofReal_lt_one]; norm_num)
-    exact (hle.trans_lt h2).false
-  rw [not_and_or] at hnot
-  push Not at hnot
+  have hs' : |s⁻¹| = s⁻¹ := abs_of_pos (inv_pos.2 hs)
+  have hv₂ : v₂ = fun x ↦ -s⁻¹ * (u x - (m + L)) := funext fun x ↦ by simp only [v₂]; ring
+  have hsum : ∀ x, v₁ x + v₂ x = 2 * T := fun x ↦ by
+    simp only [v₁, v₂, s]
+    field_simp
+    ring
+  have hdec := H (v₁ := v₁) (v₂ := v₂) hR ha hLam
+    (continuousOn_const.mul (hcont.sub continuousOn_const))
+    (contDiffOn_const.mul (hu.sub contDiffOn_const))
+    (fun x hx ↦ mul_nonneg (by positivity) (by linarith [(hmem x hx).1]))
+    (fun x hx ↦ (sum_mul_fderiv_fderiv_const_mul_sub_const_le s⁻¹ m (heq x hx)).trans_eq
+      (by rw [hs']))
+    (continuousOn_const.mul (continuousOn_const.sub hcont))
+    (contDiffOn_const.mul (contDiffOn_const.sub hu))
+    (fun x hx ↦ mul_nonneg (by positivity) (by linarith [(hmem x hx).2]))
+    (fun x hx ↦ by
+      rw [hv₂]
+      exact (sum_mul_fderiv_fderiv_const_mul_sub_const_le (-s⁻¹) (m + L) (heq x hx)).trans_eq
+        (by rw [abs_neg, hs'])) hg hsum
   have hδL : (1 - (2 * T)⁻¹) * L = L - s := by
     simp only [s]
     ring
   have hK : 0 ≤ ε₀⁻¹ * ρ * F / lam := by positivity
-  rcases hnot with h₁ | h₂
+  rcases hdec with h₁ | h₂
   · -- `u > m + s` on `closedBall c (ρ / 4)`.
     refine ⟨m + s, fun x hx ↦ ?_⟩
     have h := hmem x (hρ4 hx)
-    have hv := h₁ x (hsub hx)
-    have : s < u x - m := by
-      rwa [lt_inv_mul_iff₀ hs, mul_one] at hv
+    have hv := (lt_inv_mul_iff₀ hs).1 (h₁ x (hsub hx))
     exact ⟨by linarith, by linarith [h.2]⟩
   · -- `u < m + L - s` on `closedBall c (ρ / 4)`.
     refine ⟨m, fun x hx ↦ ?_⟩
     have h := hmem x (hρ4 hx)
-    have hv := h₂ x (hsub hx)
-    have : s < m + L - u x := by
-      rwa [lt_inv_mul_iff₀ hs, mul_one] at hv
+    have hv := (lt_inv_mul_iff₀ hs).1 (h₂ x (hsub hx))
     exact ⟨h.1, by linarith⟩
 
 /-- **Iterated oscillation decay.** There are `1 / 2 ≤ θ < 1` and `K ≥ 0`, depending only on the
@@ -382,6 +406,73 @@ private theorem exists_mem_Icc_closedBall_div_four_pow {κ : ℝ} (hκ : 0 < κ)
       _ ≤ θ * (θ ^ j * (L + 4 * K * ρ * F / lam)) := mul_le_mul_of_nonneg_left hL' hθ0
       _ = θ ^ j * θ * (L + 4 * K * ρ * F / lam) := by ring
 
+/-- **Choice of scale for the Hölder bound.** Let `0 ≤ α ≤ 1` with `4^α = θ⁻¹`. For
+`0 < d < r` there is `j` with `d ≤ r / 4ʲ` and `θʲ ≤ 4 (d / r)^α`. -/
+private theorem exists_le_div_four_pow_and_pow_le {θ α d r : ℝ} (h4α : (4 : ℝ) ^ α = θ⁻¹)
+    (hα0 : 0 ≤ α) (hα1 : α ≤ 1) (hd : 0 < d) (hdr : d < r) :
+    ∃ j : ℕ, d ≤ r / 4 ^ j ∧ θ ^ j ≤ 4 * (d / r) ^ α := by
+  -- The scale `4ʲ ≤ r / d < 4ʲ⁺¹`.
+  obtain ⟨j, hj1, hj2⟩ := exists_nat_pow_near (x := r / d) (y := 4)
+    ((one_le_div hd).2 hdr.le) (by norm_num)
+  have hr : 0 < r := hd.trans hdr
+  refine ⟨j, ?_, ?_⟩
+  · rw [le_div_iff₀ (by positivity)]
+    rw [le_div_iff₀ hd] at hj1
+    linarith
+  -- `θʲ = (4ʲ)^(-α) ≤ 4 (d / r)^α`.
+  have hθ : θ = ((4 : ℝ) ^ α)⁻¹ := by rw [h4α, inv_inv]
+  have hr4 : r / (4 * d) ≤ 4 ^ j := by
+    rw [div_le_iff₀ (by positivity)]
+    rw [div_lt_iff₀ hd, pow_succ] at hj2
+    linarith
+  calc θ ^ j = (((4 : ℝ) ^ j) ^ α)⁻¹ := by
+        rw [hθ, inv_pow, Real.rpow_pow_comm (by norm_num)]
+    _ ≤ ((r / (4 * d)) ^ α)⁻¹ :=
+        inv_anti₀ (by positivity) (Real.rpow_le_rpow (by positivity) hr4 hα0)
+    _ = 4 ^ α * (d / r) ^ α := by
+        rw [← Real.inv_rpow (by positivity), inv_div, ← Real.mul_rpow (by norm_num)
+          (by positivity)]
+        ring_nf
+    _ ≤ 4 * (d / r) ^ α := by
+        gcongr
+        calc (4 : ℝ) ^ α ≤ 4 ^ (1 : ℝ) := Real.rpow_le_rpow_of_exponent_le (by norm_num) hα1
+          _ = 4 := Real.rpow_one 4
+
+/-- **Hölder bound from oscillation decay.** Let `0 ≤ α ≤ 1` with `4^α = θ⁻¹`, and let
+`|u x|, |u y| ≤ M` with `2 M ≤ B`. If for every `j` the function `u` takes values on
+`closedBall x (r / 4ʲ)` in an interval of length `θʲ B`, then
+`|u x - u y| ≤ 4 (dist x y / r)^α B`. -/
+private theorem dist_le_four_mul_dist_div_rpow_mul {X : Type*} [MetricSpace X]
+    {θ α r M B : ℝ} {u : X → ℝ} {x y : X} (h4α : (4 : ℝ) ^ α = θ⁻¹) (hα0 : 0 ≤ α)
+    (hα1 : α ≤ 1) (hr : 0 < r) (hMB : 2 * M ≤ B) (hux : |u x| ≤ M) (huy : |u y| ≤ M)
+    (hdec : ∀ j : ℕ, ∃ m, ∀ z ∈ closedBall x (r / 4 ^ j), u z ∈ Icc m (m + θ ^ j * B)) :
+    dist (u x) (u y) ≤ 4 * (dist x y / r) ^ α * B := by
+  obtain ⟨hux₁, hux₂⟩ := abs_le.1 hux
+  obtain ⟨huy₁, huy₂⟩ := abs_le.1 huy
+  have hB : 0 ≤ B := by linarith
+  rcases lt_or_ge (dist x y) r with hdr | hdr
+  · rcases eq_or_lt_of_le (dist_nonneg : 0 ≤ dist x y) with hd0 | hd0
+    · rw [dist_eq_zero.1 hd0.symm, dist_self]
+      positivity
+    obtain ⟨j, hj, hθj⟩ := exists_le_div_four_pow_and_pow_le h4α hα0 hα1 hd0 hdr
+    obtain ⟨m, hm⟩ := hdec j
+    have hxj : x ∈ closedBall x (r / 4 ^ j) := mem_closedBall_self (by positivity)
+    have hyj : y ∈ closedBall x (r / 4 ^ j) := by
+      rw [mem_closedBall, dist_comm]
+      exact hj
+    have h := Real.dist_le_of_mem_Icc (hm x hxj) (hm y hyj)
+    calc dist (u x) (u y) ≤ θ ^ j * B := by linarith
+      _ ≤ 4 * (dist x y / r) ^ α * B := by gcongr
+  · -- At distance at least `r` the bound `|u| ≤ M` suffices.
+    have h1 : 1 ≤ (dist x y / r) ^ α := Real.one_le_rpow ((one_le_div hr).2 hdr) hα0
+    have hdist : dist (u x) (u y) ≤ 2 * M := by
+      rw [Real.dist_eq, abs_le]
+      constructor <;> linarith
+    calc dist (u x) (u y) ≤ 1 * B := by linarith
+      _ ≤ 4 * (dist x y / r) ^ α * B := by
+        gcongr
+        linarith
+
 /-- **The interior Hölder estimate of Krylov and Safonov** (Gilbarg–Trudinger, Corollary 9.24,
 for classical solutions). Let `κ > 0`. There are `0 < α ≤ 1` and `C > 0`, depending only on the
 dimension and on `κ`, with the following property. Let `a` be uniformly elliptic on
@@ -435,13 +526,6 @@ theorem exists_holderOnWith_of_sum_mul_fderiv_fderiv_eq {κ : ℝ} (hκ : 0 < κ
     (m := -M) (L := 2 * M) fun z hz ↦ by
       have h := abs_le.1 (hM z (hxball hz))
       exact ⟨h.1, by linarith [h.2]⟩
-  set d := dist x y
-  have hMF : 0 ≤ M + r * F / lam := by positivity
-  have hrd : r ^ (-α) * d ^ α = (d / r) ^ α := by
-    rw [Real.div_rpow dist_nonneg hr.le, Real.rpow_neg hr.le, div_eq_inv_mul]
-  suffices key : dist (u x) (u y) ≤ 4 * max 2 K * ((d / r) ^ α * (M + r * F / lam)) by
-    calc dist (u x) (u y) ≤ 4 * max 2 K * ((d / r) ^ α * (M + r * F / lam)) := key
-      _ = 4 * max 2 K * r ^ (-α) * (M + r * F / lam) * d ^ α := by rw [← hrd]; ring
   have hΨ : 2 * M + K * r * F / lam ≤ max 2 K * (M + r * F / lam) := by
     have h1 : 2 * M ≤ max 2 K * M := mul_le_mul_of_nonneg_right (le_max_left _ _) hM0
     have h2 : K * (r * F / lam) ≤ max 2 K * (r * F / lam) :=
@@ -449,60 +533,16 @@ theorem exists_holderOnWith_of_sum_mul_fderiv_fderiv_eq {κ : ℝ} (hκ : 0 < κ
     rw [mul_add]
     calc 2 * M + K * r * F / lam = 2 * M + K * (r * F / lam) := by ring
       _ ≤ _ := add_le_add h1 h2
-  rcases lt_or_ge d r with hdr | hdr
-  · rcases eq_or_lt_of_le (dist_nonneg : 0 ≤ d) with hd0 | hd0
-    · rw [dist_eq_zero.1 hd0.symm, dist_self]
-      positivity
-    -- The scale `4ʲ ≤ r / d < 4ʲ⁺¹`.
-    obtain ⟨j, hj1, hj2⟩ := exists_nat_pow_near (x := r / d) (y := 4)
-      ((one_le_div hd0).2 hdr.le) (by norm_num)
-    obtain ⟨m', hm'⟩ := hdec j
-    have hdj : d ≤ r / 4 ^ j := by
-      rw [le_div_iff₀ (by positivity)]
-      rw [le_div_iff₀ hd0] at hj1
-      linarith
-    have hxj : x ∈ closedBall x (r / 4 ^ j) := mem_closedBall_self (by positivity)
-    have hyj : y ∈ closedBall x (r / 4 ^ j) := by
-      rw [mem_closedBall, dist_comm]
-      exact hdj
-    have hdist : dist (u x) (u y) ≤ θ ^ j * (2 * M + K * r * F / lam) := by
-      have h := Real.dist_le_of_mem_Icc (hm' x hxj) (hm' y hyj)
-      linarith
-    -- `θʲ = (4ʲ)^(-α) ≤ 4 (d / r)^α`.
-    have hθj : θ ^ j ≤ 4 * (d / r) ^ α := by
-      have hθ : θ = ((4 : ℝ) ^ α)⁻¹ := by rw [h4α, inv_inv]
-      have hr4 : r / (4 * d) ≤ 4 ^ j := by
-        rw [div_le_iff₀ (by positivity)]
-        rw [div_lt_iff₀ hd0, pow_succ] at hj2
-        linarith
-      calc θ ^ j = (((4 : ℝ) ^ j) ^ α)⁻¹ := by
-            rw [hθ, inv_pow, Real.rpow_pow_comm (by norm_num)]
-        _ ≤ ((r / (4 * d)) ^ α)⁻¹ :=
-            inv_anti₀ (by positivity) (Real.rpow_le_rpow (by positivity) hr4 hα0.le)
-        _ = 4 ^ α * (d / r) ^ α := by
-            rw [← Real.inv_rpow (by positivity), inv_div, ← Real.mul_rpow (by norm_num)
-              (by positivity)]
-            ring_nf
-        _ ≤ 4 * (d / r) ^ α := by
-            gcongr
-            calc (4 : ℝ) ^ α ≤ 4 ^ (1 : ℝ) :=
-                  Real.rpow_le_rpow_of_exponent_le (by norm_num) hα1
-              _ = 4 := Real.rpow_one 4
-    calc dist (u x) (u y) ≤ θ ^ j * (2 * M + K * r * F / lam) := hdist
-      _ ≤ 4 * (d / r) ^ α * (max 2 K * (M + r * F / lam)) := by gcongr
-      _ = 4 * max 2 K * ((d / r) ^ α * (M + r * F / lam)) := by ring
-  · -- At distance at least `r` the bound `|u| ≤ M` suffices.
-    have h1 : 1 ≤ (d / r) ^ α := Real.one_le_rpow ((one_le_div hr).2 hdr) hα0.le
-    have hux := abs_le.1 (hM x (ball_subset_ball (by linarith) hx))
-    have huy := abs_le.1 (hM y (ball_subset_ball (by linarith) hy))
-    have hdist : dist (u x) (u y) ≤ 2 * M := by
-      rw [Real.dist_eq, abs_le]
-      constructor <;> linarith
-    have h2K : 2 ≤ max 2 K := le_max_left _ _
-    have hrF : 0 ≤ r * F / lam := by positivity
-    calc dist (u x) (u y) ≤ 2 * M := hdist
-      _ ≤ 4 * max 2 K * (1 * (M + r * F / lam)) := by nlinarith
-      _ ≤ 4 * max 2 K * ((d / r) ^ α * (M + r * F / lam)) := by gcongr
+  have hrd : r ^ (-α) * dist x y ^ α = (dist x y / r) ^ α := by
+    rw [Real.div_rpow dist_nonneg hr.le, Real.rpow_neg hr.le, div_eq_inv_mul]
+  calc dist (u x) (u y) ≤ 4 * (dist x y / r) ^ α * (2 * M + K * r * F / lam) :=
+        dist_le_four_mul_dist_div_rpow_mul h4α hα0.le hα1 hr
+          (by have : 0 ≤ K * r * F / lam := by positivity
+              linarith)
+          (hM x (ball_subset_ball (by linarith) hx)) (hM y (ball_subset_ball (by linarith) hy))
+          hdec
+    _ ≤ 4 * (dist x y / r) ^ α * (max 2 K * (M + r * F / lam)) := by gcongr
+    _ = 4 * max 2 K * r ^ (-α) * (M + r * F / lam) * dist x y ^ α := by rw [← hrd]; ring
 
 end PDE
 
