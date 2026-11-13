@@ -22,7 +22,9 @@ one through `Complex.ofRealCLM`, and that a complex function is `Re φ + i Im φ
 
 Postcomposition with `T` increases the `C^k` seminorms at most by the factor `‖T‖`
 (`ContDiffMapSupportedIn.supSeminorm_postcompCLM_le`), and these seminorms do not depend on the
-scalar field (`ContDiffMapSupportedIn.supSeminorm_eq_of_scalars`).
+scalar field (`ContDiffMapSupportedIn.supSeminorm_eq_of_scalars`). In particular the real and
+imaginary parts do not increase them
+(`ContDiffMapSupportedIn.supSeminorm_postcompCLM_le_of_norm_le_one`).
 -/
 
 public section
@@ -178,6 +180,16 @@ theorem postcompCLM_re_add_I_smul_im (φ : 𝓓^{n}_{K}(E, ℂ)) :
       I • postcompCLM (𝕜 := ℝ) ofRealCLM (postcompCLM (𝕜 := ℝ) imCLM φ) = φ := by
   ext x
   simp [mul_comm I]
+
+/-- Postcomposition with a real-linear map `ℂ →L[ℝ] ℝ` of norm at most one, such as the real and
+imaginary parts, does not increase the `C^k` seminorms. -/
+theorem supSeminorm_postcompCLM_le_of_norm_le_one {T : ℂ →L[ℝ] ℝ} (hT : ‖T‖ ≤ 1) (k : ℕ)
+    (φ : 𝓓^{n}_{K}(E, ℂ)) :
+    ContDiffMapSupportedIn.supSeminorm ℝ E ℝ n K k (postcompCLM T φ) ≤
+      ContDiffMapSupportedIn.supSeminorm ℂ E ℂ n K k φ :=
+  (supSeminorm_postcompCLM_le T k φ).trans <| by
+    rw [supSeminorm_eq_of_scalars ℝ ℂ]
+    exact mul_le_of_le_one_left (apply_nonneg _ _) hT
 
 end Complex
 

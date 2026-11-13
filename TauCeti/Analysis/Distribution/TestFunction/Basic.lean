@@ -134,6 +134,7 @@ theorem toSupportedInCLM_ofSupportedIn {K K' : Compacts E} (hK'Ω : (K' : Set E)
 
 /-- Reading a test function as supported in `K` and then in a larger compact set `K'` is reading
 it as supported in `K'`. -/
+@[simp]
 theorem monoCLM_toSupportedInCLM {K K' : Compacts E} (hΩK : (Ω : Set E) ⊆ K) (hKK' : K ≤ K')
     (φ : 𝓓^{n}(Ω, F)) :
     (ContDiffMapSupportedIn.monoCLM 𝕜 (toSupportedInCLM 𝕜 hΩK φ) : 𝓓^{n}_{K'}(E, F)) =
@@ -143,6 +144,7 @@ theorem monoCLM_toSupportedInCLM {K K' : Compacts E} (hΩK : (Ω : Set E) ⊆ K)
 
 /-- Extending a test function from `Ω` to `Ω'` and reading it as supported in `K ⊇ Ω'` is reading
 it as supported in `K`. -/
+@[simp]
 theorem toSupportedInCLM_monoCLM {Ω' : Opens E} {K : Compacts E} (hΩΩ' : Ω ≤ Ω')
     (hΩ'K : (Ω' : Set E) ⊆ K) (φ : 𝓓^{n}(Ω, F)) :
     toSupportedInCLM 𝕜 hΩ'K (monoCLM ℝ φ) =

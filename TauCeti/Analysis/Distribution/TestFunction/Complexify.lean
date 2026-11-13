@@ -116,17 +116,6 @@ theorem complexifySupportedIn_smul (c : ℝ)
 
 end Module
 
-/-- Postcomposition with a real-linear map `ℂ →L[ℝ] ℝ` of norm at most one, such as the real and
-imaginary parts, does not increase the `C^k` seminorms. -/
-private theorem supSeminorm_postcompCLM_le_of_norm_le_one {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {K : Compacts G} {m : ℕ∞} {T : ℂ →L[ℝ] ℝ} (hT : ‖T‖ ≤ 1) (k : ℕ)
-    (χ : 𝓓^{m}_{K}(G, ℂ)) :
-    ContDiffMapSupportedIn.supSeminorm ℝ G ℝ m K k (postcompCLM T χ) ≤
-      ContDiffMapSupportedIn.supSeminorm ℂ G ℂ m K k χ :=
-  (supSeminorm_postcompCLM_le T k χ).trans <| by
-    rw [supSeminorm_eq_of_scalars ℝ ℂ]
-    exact mul_le_of_le_one_left (apply_nonneg _ _) hT
-
 /-- A bound of `B` by a product of `C^k` seminorms gives one of its complex-bilinear extension. -/
 theorem norm_complexifySupportedIn_le {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
     [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
