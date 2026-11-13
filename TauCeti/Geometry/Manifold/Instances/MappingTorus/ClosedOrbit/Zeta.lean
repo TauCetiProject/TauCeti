@@ -37,7 +37,7 @@ starting point in the orbit and are multiplied by `k` when the orbit is traverse
 (`TauCeti.SmoothMappingTorus.closedOrbitHomologyClass_apply_iterate`,
 `TauCeti.SmoothMappingTorus.closedOrbitHomologyClass_const_mul`); and the Lefschetz sign of a
 fixed point of `φ^[n]` is the same at all points of its orbit, since `φ` conjugates `φ^[n]` to
-itself (`TauCeti.det_id_sub_fixedPointDerivative_iterate_apply_iterate`).
+itself (`Diffeomorph.det_id_sub_fixedPointDerivative_iterate_apply_iterate`).
 
 ## Main results
 
@@ -107,7 +107,7 @@ theorem hasSum_orbitLog_closedOrbitHomologyClass_periodicPts :
       rintro _ _ rfl _ _
       rfl
     simp only
-    rw [det_id_sub_fixedPointDerivative_iterate_apply_iterate φ (by simp)
+    rw [φ.det_id_sub_fixedPointDerivative_iterate_apply_iterate (by simp)
       ((isPeriodicPt_minimalPeriod φ (x i)).const_mul (k + 1)) j, key _ _ (mul_comm _ _)]
 
 include hφ hx hrep in

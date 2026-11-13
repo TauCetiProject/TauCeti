@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Dynamics.PeriodicPts.Defs
+public import TauCeti.Dynamics.PeriodicPts.Parametrization
 public import TauCeti.RingTheory.NovikovSeries.OrbitZeta.Basic
 
 /-!
@@ -30,10 +30,11 @@ traversed: `c((k + 1) d i, f^[j] (x i)) = (k + 1) • γ i` and
 (`TauCeti.NovikovSeries.hasSum_orbitLog_periodicPts`).
 
 Indeed the points of period `(k + 1) d i` on the `i`-th orbit are the `d i` points `f^[j] (x i)`
-with `j < d i`, and the `(k + 1)`-fold iterate of the orbit is counted once for each of them, with
-weight `ε i (k + 1) / ((k + 1) d i)`. Together they contribute `ε i (k + 1) / (k + 1)`, the term
-of the orbit logarithm. The multiplicity `k + 1` in the denominator of the orbit logarithm thus
-becomes the period `n` in the denominator of the sum over periodic points.
+with `j < d i` (`Function.bijective_periodicPtsParam`), and the `(k + 1)`-fold iterate of the orbit
+is counted once for each of them, with weight `ε i (k + 1) / ((k + 1) d i)`. Together they
+contribute `ε i (k + 1) / (k + 1)`, the term of the orbit logarithm. The multiplicity `k + 1` in the
+denominator of the orbit logarithm thus becomes the period `n` in the denominator of the sum over
+periodic points.
 
 For a diffeomorphism of a compact manifold, with `c(n, y)` the class of the closed orbit of the
 suspension flow through `y` and `s(n, y)` the Lefschetz sign of `y` as a fixed point of `f^[n]`,
@@ -64,55 +65,6 @@ namespace TauCeti.NovikovSeries
 variable {α ι H : Type*} [AddCommMonoid H] {N : H →+ ℝ} {K : Type*} [CommRing K] [Algebra ℚ K]
   {f : α → α} {x : ι → α}
 
-/-- The point `f^[j] (x i)` has the positive period `(k + 1) d i`, where `d i` is the least period
-of `x i`. -/
-private theorem isPeriodicPt_succ_mul_minimalPeriod (hx : ∀ i, x i ∈ periodicPts f) (i : ι)
-    (k j : ℕ) :
-    0 < (k + 1) * minimalPeriod f (x i) ∧
-      IsPeriodicPt f ((k + 1) * minimalPeriod f (x i)) (f^[j] (x i)) :=
-  ⟨Nat.mul_pos k.succ_pos (minimalPeriod_pos_of_mem_periodicPts (hx i)),
-    ((isPeriodicPt_minimalPeriod f (x i)).apply_iterate j).const_mul (k + 1)⟩
-
-/-- The parametrization `(i, k, j) ↦ ((k + 1) d i, f^[j] (x i))`, `j < d i`, of the periodic
-points with a chosen positive period. -/
-private def periodicPtsParam (hx : ∀ i, x i ∈ periodicPts f) :
-    {q : (ι × ℕ) × ℕ // q.2 < minimalPeriod f (x q.1.1)} →
-      {p : ℕ × α // 0 < p.1 ∧ IsPeriodicPt f p.1 p.2} := fun q ↦
-  ⟨((q.1.1.2 + 1) * minimalPeriod f (x q.1.1.1), f^[q.1.2] (x q.1.1.1)),
-    isPeriodicPt_succ_mul_minimalPeriod hx _ _ _⟩
-
-/-- When `x` lists one point on each periodic orbit, every periodic point with a chosen positive
-period is parametrized exactly once. -/
-private theorem bijective_periodicPtsParam (hx : ∀ i, x i ∈ periodicPts f)
-    (hrep : ∀ y ∈ periodicPts f, ∃! i, ∃ j, f^[j] (x i) = y) :
-    Bijective (periodicPtsParam hx) := by
-  constructor
-  · rintro ⟨⟨⟨i, k⟩, j⟩, hj⟩ ⟨⟨⟨i', k'⟩, j'⟩, hj'⟩ h
-    simp only [periodicPtsParam, Subtype.mk.injEq, Prod.mk.injEq] at h
-    obtain ⟨hn, hy⟩ := h
-    have hper : f^[j] (x i) ∈ periodicPts f :=
-      mk_mem_periodicPts (isPeriodicPt_succ_mul_minimalPeriod hx i k j).1
-        (isPeriodicPt_succ_mul_minimalPeriod hx i k j).2
-    -- The two points lie on the same orbit, at the same position, with the same period.
-    obtain rfl : i = i' := (hrep _ hper).unique ⟨j, rfl⟩ ⟨j', hy.symm⟩
-    obtain rfl : j = j' := iterate_injOn_Iio_minimalPeriod hj hj' hy
-    obtain rfl : k = k' := by
-      have := Nat.eq_of_mul_eq_mul_right (minimalPeriod_pos_of_mem_periodicPts (hx i)) hn
-      omega
-    rfl
-  · rintro ⟨⟨n, y⟩, hn, hy⟩
-    simp only at hn hy
-    obtain ⟨i, ⟨j, hj⟩, -⟩ := hrep y (mk_mem_periodicPts hn hy)
-    have hd : minimalPeriod f y = minimalPeriod f (x i) := by
-      rw [← hj, minimalPeriod_apply_iterate (hx i)]
-    -- The period `n` is a multiple `m d i` of the least period, with `m ≥ 1`.
-    obtain ⟨m, rfl⟩ := hy.minimalPeriod_dvd
-    have hm : 0 < m := Nat.pos_of_mul_pos_left hn
-    refine ⟨⟨⟨⟨i, m - 1⟩, j % minimalPeriod f (x i)⟩,
-      Nat.mod_lt _ (minimalPeriod_pos_of_mem_periodicPts (hx i))⟩, ?_⟩
-    simp only [periodicPtsParam, Subtype.mk.injEq, Prod.mk.injEq]
-    exact ⟨by rw [hd, Nat.sub_add_cancel hm, mul_comm], by rw [iterate_mod_minimalPeriod_eq, hj]⟩
-
 /-- **The orbit logarithm as a sum over periodic points.** Let `x : ι → α` list one point on each
 periodic orbit of `f`, with least periods `d i = minimalPeriod f (x i)`, and let `γ i` be classes of
 positive period, only finitely many below each cutoff. Attach to each periodic point `y` with a
@@ -142,7 +94,10 @@ theorem hasSum_orbitLog_periodicPts (hx : ∀ i, x i ∈ periodicPts f)
       (single (c p) (algebraMap ℚ K ((s p : ℚ) / p.1.1)) : NovikovSeries K H N)) ∘
         Equiv.ofBijective _ (bijective_periodicPtsParam hx hrep) = fun q ↦ F q.1 := by
     funext ⟨⟨⟨i, k⟩, j⟩, hj⟩
-    simp only [comp_apply, Equiv.ofBijective_apply, periodicPtsParam, hc, hs, F, d]
+    have hq : periodicPtsParam hx ⟨((i, k), j), hj⟩ =
+        ⟨_, isPeriodicPt_succ_mul_minimalPeriod_iterate hx i k j⟩ :=
+      Subtype.ext (coe_periodicPtsParam hx _)
+    simp only [comp_apply, Equiv.ofBijective_apply, hq, hc, hs, F, d]
   rw [hterm]
   refine (hasSum_subtype_iff_indicator (s := S) (f := F)).2 ?_
   -- The terms tend to zero: only finitely many lie below each cutoff.

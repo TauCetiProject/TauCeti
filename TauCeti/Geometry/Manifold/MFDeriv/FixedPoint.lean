@@ -12,6 +12,7 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Dynamics.FixedPoints.Topology
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -100,9 +101,9 @@ computed in any chart, also on manifolds with boundary or corners
   excludes the eigenvalues `±1` of the return maps of all covers of period at most `N`.
 * `TauCeti.fixedPointDerivative_iterate`: at a fixed point where `f` is differentiable, the
   fixed-point derivative of `f^[n]` is the `n`-th power of that of `f`.
-* `TauCeti.det_id_sub_fixedPointDerivative_of_semiconj`: a diffeomorphism conjugating `f` to `g`
-  carries `det (1 - df_x)` to `det (1 - dg_(h x))`.
-* `TauCeti.det_id_sub_fixedPointDerivative_iterate_apply_iterate`: for a diffeomorphism `φ`,
+* `Diffeomorph.det_id_sub_fixedPointDerivative_of_semiconj`: a diffeomorphism conjugating `f` to
+  `g` carries `det (1 - df_x)` to `det (1 - dg_(h x))`.
+* `Diffeomorph.det_id_sub_fixedPointDerivative_iterate_apply_iterate`: for a diffeomorphism `φ`,
   `det (1 - d(φ^[k])_y)` is the same at all points `y` of a periodic orbit of period `k`.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
@@ -472,8 +473,8 @@ conjugate `f` to `g`, that is `h ∘ f = g ∘ h`. At a fixed point `x` of `f` a
 differentiable, the fixed-point derivative of `g` at the fixed point `h x` is that of `f` at `x`
 conjugated by `dh_x`, so `det (1 - dg_(h x)) = det (1 - df_x)`. Over `ℝ`, the local Lefschetz
 signs of `f` at `x` and of `g` at `h x` agree. -/
-theorem det_id_sub_fixedPointDerivative_of_semiconj (h : M ≃ₘ^n⟮I, I'⟯ M') (hn : n ≠ 0)
-    {g : M' → M'} (hfg : Semiconj h f g) (x : {x // f x = x})
+theorem _root_.Diffeomorph.det_id_sub_fixedPointDerivative_of_semiconj
+    (h : M ≃ₘ^n⟮I, I'⟯ M') (hn : n ≠ 0) {g : M' → M'} (hfg : Semiconj h f g) (x : {x // f x = x})
     (hf : MDifferentiableAt I I f x.1) :
     LinearMap.det (LinearMap.id - fixedPointDerivative I' g ⟨h x.1, IsFixedPt.map x.2 hfg⟩) =
       LinearMap.det (LinearMap.id - fixedPointDerivative I f x) := by
@@ -486,11 +487,7 @@ theorem det_id_sub_fixedPointDerivative_of_semiconj (h : M ≃ₘ^n⟮I, I'⟯ M
   have hA' : HasMFDerivAt I' I h.symm (h x) A' := (h.symm.mdifferentiable hn (h x)).hasMFDerivAt
   have hD : HasMFDerivAt I I f x D := hf.hasMFDerivAt
   have hAs : HasMFDerivAt I I' h (h.symm (h x)) A := by rw [h.symm_apply_apply]; exact hA
-  -- `A'` is the inverse of `A`, by the chain rule for `h⁻¹ ∘ h = id` and `h ∘ h⁻¹ = id`.
-  have h₁ : A'.comp A = ContinuousLinearMap.id 𝕜 (TangentSpace I x) := by
-    have hc := hA'.comp x hA
-    rw [show h.symm ∘ h = id from funext h.symm_apply_apply] at hc
-    exact hc.mfderiv.symm.trans (hasMFDerivAt_id x).mfderiv
+  -- `A' = dh⁻¹_(h x)` is a right inverse of `A`, by the chain rule for `h ∘ h⁻¹ = id`.
   have h₂ : A.comp A' = ContinuousLinearMap.id 𝕜 (TangentSpace I' (h x)) := by
     have hc := hAs.comp (h x) hA'
     rw [show h ∘ h.symm = id from funext h.apply_symm_apply] at hc
@@ -504,8 +501,13 @@ theorem det_id_sub_fixedPointDerivative_of_semiconj (h : M ≃ₘ^n⟮I, I'⟯ M
       rw [h.symm_apply_apply, hx]; exact hA
     rw [hg]
     exact hAf.comp (h x) (hDs.comp (h x) hA')
-  let e : TangentSpace I x ≃ₗ[𝕜] TangentSpace I' (h x) := LinearEquiv.ofLinearMap A A'
-    (LinearMap.ext fun v ↦ DFunLike.congr_fun h₂ v) (LinearMap.ext fun v ↦ DFunLike.congr_fun h₁ v)
+  -- The differential of `h` at `x` as a linear equivalence, whose inverse is `A'`.
+  let e : TangentSpace I x ≃ₗ[𝕜] TangentSpace I' (h x) :=
+    (h.mfderivToContinuousLinearEquiv hn x).toLinearEquiv
+  have he (v : TangentSpace I x) : e v = A v :=
+    DFunLike.congr_fun (h.mfderivToContinuousLinearEquiv_coe hn (x := x)) v
+  have he' (v : TangentSpace I' (h x)) : e.symm v = A' v :=
+    e.symm_apply_eq.2 (by rw [he]; exact (DFunLike.congr_fun h₂ v).symm)
   have hconj : LinearMap.id - ((A.comp (D.comp A') : TangentSpace I' (h x) →L[𝕜] _) :
       TangentSpace I' (h x) →ₗ[𝕜] TangentSpace I' (h x)) =
         (e : TangentSpace I x →ₗ[𝕜] TangentSpace I' (h x)) ∘ₗ
@@ -513,8 +515,7 @@ theorem det_id_sub_fixedPointDerivative_of_semiconj (h : M ≃ₘ^n⟮I, I'⟯ M
             (e.symm : TangentSpace I' (h x) →ₗ[𝕜] TangentSpace I x) := by
     refine LinearMap.ext fun v ↦ ?_
     simp only [LinearMap.sub_apply, LinearMap.id_apply, ContinuousLinearMap.coe_coe,
-      ContinuousLinearMap.comp_apply, LinearMap.comp_apply, map_sub, e, LinearEquiv.coe_coe,
-      LinearEquiv.coe_ofLinearMap, LinearEquiv.symm_ofLinearMap]
+      ContinuousLinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, map_sub, he', he]
     have hv := DFunLike.congr_fun h₂ v
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at hv
     rw [hv]
@@ -524,8 +525,8 @@ theorem det_id_sub_fixedPointDerivative_of_semiconj (h : M ≃ₘ^n⟮I, I'⟯ M
 /-- **The local Lefschetz sign is constant along an orbit.** For a `Cⁿ` diffeomorphism `φ`,
 `n ≠ 0`, and a point `x` of period `k`, the points `φ^[j] x` of the same orbit are fixed points
 of `φ^[k]` with `det (1 - d(φ^[k])_(φ^[j] x)) = det (1 - d(φ^[k])_x)`. -/
-theorem det_id_sub_fixedPointDerivative_iterate_apply_iterate (φ : M ≃ₘ^n⟮I, I⟯ M) (hn : n ≠ 0)
-    {k : ℕ} (hx : IsPeriodicPt φ k x) (j : ℕ) :
+theorem _root_.Diffeomorph.det_id_sub_fixedPointDerivative_iterate_apply_iterate
+    (φ : M ≃ₘ^n⟮I, I⟯ M) (hn : n ≠ 0) {k : ℕ} (hx : IsPeriodicPt φ k x) (j : ℕ) :
     LinearMap.det (LinearMap.id -
         fixedPointDerivative I (⇑φ)^[k] ⟨(⇑φ)^[j] x, (hx.apply_iterate j).eq⟩) =
       LinearMap.det (LinearMap.id - fixedPointDerivative I (⇑φ)^[k] ⟨x, hx.eq⟩) := by
@@ -539,7 +540,7 @@ theorem det_id_sub_fixedPointDerivative_iterate_apply_iterate (φ : M ≃ₘ^n�
       rintro _ rfl _
       rfl
     rw [key _ (iterate_succ_apply' _ _ _), ← ih]
-    exact det_id_sub_fixedPointDerivative_of_semiconj φ hn
+    exact φ.det_id_sub_fixedPointDerivative_of_semiconj hn
       (Function.Commute.iterate_right (Function.Commute.refl _) k)
       ⟨_, (hx.apply_iterate j).eq⟩ ((φ.contMDiff.iterate k).mdifferentiableAt hn)
 
