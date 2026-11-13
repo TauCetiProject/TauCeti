@@ -160,7 +160,7 @@ theorem continuous_intervalDirichletSolution {X : Type*} [TopologicalSpace X] [S
     Real.norm_eq_abs, intervalIntegral.integral_of_le y.2.1, ← integral_Icc_eq_integral_Ioo]
   refine abs_integral_le_integral_abs.trans (setIntegral_mono_set ?_
     (ae_of_all _ fun _ => abs_nonneg _)
-    (Ioc_subset_Icc_self.trans (Icc_subset_Icc_right y.2.2)).eventuallyLE)
+    (Ioc_subset_Icc_self.trans (Icc_subset_Icc_right y.2.2)).eventuallySubset)
   exact ((integrableOn_Icc_iff_integrableOn_Ioo (μ := volume)).2 ((hs _).sub (hs _))).abs
 
 /-- **The fixed point.** Let `a v` be a coefficient depending on `v ∈ C([x₀, x₁])`, with uniform
