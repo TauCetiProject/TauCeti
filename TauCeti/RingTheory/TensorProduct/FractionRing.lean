@@ -156,12 +156,8 @@ noncomputable def fractionRingTensorMapAlgHom (QA QB : Type*)
     (Algebra.TensorProduct.map f (AlgHom.id k K) : A ⊗[k] K →+* B ⊗[k] K)
     (nonZeroDivisors_le_comap_map_tensorProduct K QB hf)
   commutes' c := by
-    have hcA : algebraMap K (A ⊗[k] K) c = 1 ⊗ₜ[k] c := rfl
-    have hcB : algebraMap K (B ⊗[k] K) c = 1 ⊗ₜ[k] c := rfl
-    rw [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-      MonoidHom.coe_ofClass, IsScalarTower.algebraMap_apply K (A ⊗[k] K) QA, hcA,
-      IsLocalization.map_eq, AlgHom.coe_toRingHom, Algebra.TensorProduct.map_tmul, map_one,
-      AlgHom.id_apply, ← hcB, ← IsScalarTower.algebraMap_apply K (B ⊗[k] K) QB]
+    simp [IsScalarTower.algebraMap_apply K (A ⊗[k] K) QA,
+      IsScalarTower.algebraMap_apply K (B ⊗[k] K) QB, Algebra.TensorProduct.right_algebraMap_apply]
 
 section Apply
 
@@ -180,13 +176,12 @@ theorem fractionRingTensorMapAlgHom_algebraMap_tensorProduct (x : A ⊗[k] K) :
   IsLocalization.map_eq (nonZeroDivisors_le_comap_map_tensorProduct K QB hf) x
 
 /-- On the image of the left factor `A`, `fractionRingTensorMapAlgHom` acts via `f`. -/
+@[simp]
 theorem fractionRingTensorMapAlgHom_algebraMap_left [Algebra A QA]
     [IsScalarTower A (A ⊗[k] K) QA] [Algebra B QB] [IsScalarTower B (B ⊗[k] K) QB] (a : A) :
     fractionRingTensorMapAlgHom K QA QB hf (algebraMap A QA a) = algebraMap B QB (f a) := by
-  rw [IsScalarTower.algebraMap_apply A (A ⊗[k] K) QA,
-    fractionRingTensorMapAlgHom_algebraMap_tensorProduct,
+  simp [IsScalarTower.algebraMap_apply A (A ⊗[k] K) QA,
     IsScalarTower.algebraMap_apply B (B ⊗[k] K) QB]
-  rfl
 
 /-- On the image of a pure tensor `a ⊗ c`, `fractionRingTensorMapAlgHom` sends it to `f a * c`. -/
 theorem fractionRingTensorMapAlgHom_algebraMap_tmul [Algebra B QB]
@@ -195,9 +190,7 @@ theorem fractionRingTensorMapAlgHom_algebraMap_tmul [Algebra B QB]
       algebraMap B QB (f a) * algebraMap K QB c := by
   have hmul : (f a ⊗ₜ[k] c : B ⊗[k] K) =
       algebraMap B (B ⊗[k] K) (f a) * algebraMap K (B ⊗[k] K) c := by
-    -- Under `rightAlgebra`, `algebraMap K (B ⊗[k] K) c` is `1 ⊗ₜ c`.
-    change f a ⊗ₜ[k] c = algebraMap B (B ⊗[k] K) (f a) * (1 ⊗ₜ[k] c)
-    simp
+    simp [Algebra.TensorProduct.right_algebraMap_apply]
   rw [fractionRingTensorMapAlgHom_algebraMap_tensorProduct, Algebra.TensorProduct.map_tmul,
     AlgHom.id_apply, hmul, map_mul, ← IsScalarTower.algebraMap_apply,
     ← IsScalarTower.algebraMap_apply]
@@ -223,16 +216,13 @@ theorem apply_eq_fractionRingTensorMapAlgHom_of_apply_algebraMap [Algebra A QA]
     refine IsLocalization.ringHom_ext (nonZeroDivisors (A ⊗[k] K)) ?_
     refine Algebra.TensorProduct.ringHom_ext ?_ ?_
     · refine RingHom.ext fun a ↦ ?_
-      have ha : (Algebra.TensorProduct.includeLeftRingHom a : A ⊗[k] K) =
-          algebraMap A (A ⊗[k] K) a := rfl
-      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ha,
-        ← IsScalarTower.algebraMap_apply A (A ⊗[k] K) QA,
-        fractionRingTensorMapAlgHom_algebraMap_left, hA]
+      have hA' := hA a
+      simp [IsScalarTower.algebraMap_apply A (A ⊗[k] K) QA,
+        IsScalarTower.algebraMap_apply B (B ⊗[k] K) QB] at hA'
+      simp [hA']
     · refine RingHom.ext fun c ↦ ?_
-      have hc : (Algebra.TensorProduct.includeRight c : A ⊗[k] K) =
-          algebraMap K (A ⊗[k] K) c := rfl
-      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hc,
-        ← IsScalarTower.algebraMap_apply K (A ⊗[k] K) QA, AlgHom.commutes, hK]
+      simp [← Algebra.TensorProduct.right_algebraMap_apply,
+        ← IsScalarTower.algebraMap_apply K (A ⊗[k] K) QA, hK]
   exact congr($heq z)
 
 /-- **Uniqueness of the induced `K`-algebra map on fraction rings of tensor products.** Any
@@ -318,6 +308,13 @@ variable (QA QB : Type*)
   [IsScalarTower K (B ⊗[k] K) QB] [IsFractionRing (B ⊗[k] K) QB]
   (f : E →ₐ[k] B)
 
+/-- `fractionRingTensorFieldMapAlgHom` agrees with `fractionRingTensorMapAlgHom` for the
+automatic injectivity of `f : E →ₐ[k] B`. -/
+theorem fractionRingTensorFieldMapAlgHom_eq_fractionRingTensorMapAlgHom
+    (hf : Function.Injective f) :
+    fractionRingTensorFieldMapAlgHom K QA QB f = fractionRingTensorMapAlgHom K QA QB hf := by
+  rfl
+
 /-- On the image of `E ⊗[k] K`, `fractionRingTensorFieldMapAlgHom` acts as `f ⊗ id`. -/
 @[simp]
 theorem fractionRingTensorFieldMapAlgHom_algebraMap_tensorProduct (x : E ⊗[k] K) :
@@ -326,6 +323,7 @@ theorem fractionRingTensorFieldMapAlgHom_algebraMap_tensorProduct (x : E ⊗[k] 
   fractionRingTensorMapAlgHom_algebraMap_tensorProduct K QA QB _ x
 
 /-- On the image of the field `E`, `fractionRingTensorFieldMapAlgHom` acts via `f`. -/
+@[simp]
 theorem fractionRingTensorFieldMapAlgHom_algebraMap_left [Algebra E QA]
     [IsScalarTower E (E ⊗[k] K) QA] [Algebra B QB] [IsScalarTower B (B ⊗[k] K) QB] (a : E) :
     fractionRingTensorFieldMapAlgHom K QA QB f (algebraMap E QA a) = algebraMap B QB (f a) :=
@@ -387,13 +385,9 @@ noncomputable def fractionRingTensorCongrAlgEquiv (QA QB : Type*)
     [CommRing QB] [Algebra (B ⊗[k] K) QB] [Algebra K QB]
     [IsScalarTower K (B ⊗[k] K) QB] [IsFractionRing (B ⊗[k] K) QB]
     (e : A ≃ₐ[k] B) : QA ≃ₐ[K] QB :=
-  IsFractionRing.algEquivOfAlgEquiv
-    { (Algebra.TensorProduct.congr e (AlgEquiv.refl : K ≃ₐ[k] K)).toRingEquiv with
-      commutes' := fun c ↦ by
-        -- Under `rightAlgebra`, `algebraMap K (_ ⊗[k] K) c` is `1 ⊗ₜ c`.
-        change Algebra.TensorProduct.congr e (AlgEquiv.refl : K ≃ₐ[k] K) (1 ⊗ₜ[k] c) =
-          1 ⊗ₜ[k] c
-        simp }
+  IsFractionRing.algEquivOfAlgEquiv <| AlgEquiv.ofRingEquiv
+    (f := (Algebra.TensorProduct.congr e (AlgEquiv.refl : K ≃ₐ[k] K)).toRingEquiv)
+    fun c ↦ by simp [Algebra.TensorProduct.right_algebraMap_apply]
 
 /-- On the image of `A ⊗[k] K`, `fractionRingTensorCongrAlgEquiv` acts via `e ⊗ id`. -/
 @[simp]
@@ -409,6 +403,7 @@ theorem fractionRingTensorCongrAlgEquiv_algebraMap_tensorProduct (QA QB : Type*)
   IsFractionRing.algEquivOfAlgEquiv_algebraMap _ x
 
 /-- On the image of the left factor `A`, `fractionRingTensorCongrAlgEquiv` acts via `e`. -/
+@[simp]
 theorem fractionRingTensorCongrAlgEquiv_algebraMap_left (QA QB : Type*)
     [CommRing QA] [Algebra (A ⊗[k] K) QA] [Algebra K QA] [Algebra A QA]
     [IsScalarTower K (A ⊗[k] K) QA] [IsScalarTower A (A ⊗[k] K) QA]
@@ -418,12 +413,20 @@ theorem fractionRingTensorCongrAlgEquiv_algebraMap_left (QA QB : Type*)
     [IsFractionRing (B ⊗[k] K) QB]
     (e : A ≃ₐ[k] B) (a : A) :
     fractionRingTensorCongrAlgEquiv K QA QB e (algebraMap A QA a) = algebraMap B QB (e a) := by
-  have hb : (e a ⊗ₜ[k] (1 : K) : B ⊗[k] K) = algebraMap B (B ⊗[k] K) (e a) := rfl
-  rw [IsScalarTower.algebraMap_apply A (A ⊗[k] K) QA, Algebra.TensorProduct.algebraMap_apply,
-    Algebra.algebraMap_self_apply, fractionRingTensorCongrAlgEquiv_algebraMap_tensorProduct,
-    Algebra.TensorProduct.congr_apply, Algebra.TensorProduct.map_tmul, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.refl_toAlgHom, AlgHom.id_apply, hb,
-    ← IsScalarTower.algebraMap_apply B (B ⊗[k] K) QB]
+  simp [IsScalarTower.algebraMap_apply A (A ⊗[k] K) QA,
+    IsScalarTower.algebraMap_apply B (B ⊗[k] K) QB]
+
+/-- `fractionRingTensorCongrAlgEquiv` sends the identity equivalence on `A` to the identity on
+`QA`. -/
+@[simp]
+theorem fractionRingTensorCongrAlgEquiv_refl (QA : Type*)
+    [CommRing QA] [Algebra (A ⊗[k] K) QA] [Algebra K QA]
+    [IsScalarTower K (A ⊗[k] K) QA] [IsFractionRing (A ⊗[k] K) QA] :
+    fractionRingTensorCongrAlgEquiv K QA QA (AlgEquiv.refl : A ≃ₐ[k] A) = AlgEquiv.refl := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply AlgHom.toRingHom_injective
+  refine IsLocalization.ringHom_ext (nonZeroDivisors (A ⊗[k] K)) (RingHom.ext fun x ↦ ?_)
+  simp
 
 /-- Inverting `fractionRingTensorCongrAlgEquiv` corresponds to inverting `e`. -/
 @[simp]
@@ -438,9 +441,51 @@ theorem fractionRingTensorCongrAlgEquiv_symm (QA QB : Type*)
   apply AlgEquiv.coe_toAlgHom_injective
   apply AlgHom.toRingHom_injective
   refine IsLocalization.ringHom_ext (nonZeroDivisors (B ⊗[k] K)) (RingHom.ext fun x ↦ ?_)
-  simp [fractionRingTensorCongrAlgEquiv]
+  apply (fractionRingTensorCongrAlgEquiv K QA QB e).injective
+  simp [← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp]
+
+/-- `fractionRingTensorCongrAlgEquiv` respects composition of `k`-algebra equivalences. -/
+@[simp]
+theorem fractionRingTensorCongrAlgEquiv_trans {C : Type*} [CommRing C] [Algebra k C]
+    (QA QB QC : Type*)
+    [CommRing QA] [Algebra (A ⊗[k] K) QA] [Algebra K QA]
+    [IsScalarTower K (A ⊗[k] K) QA] [IsFractionRing (A ⊗[k] K) QA]
+    [CommRing QB] [Algebra (B ⊗[k] K) QB] [Algebra K QB]
+    [IsScalarTower K (B ⊗[k] K) QB] [IsFractionRing (B ⊗[k] K) QB]
+    [CommRing QC] [Algebra (C ⊗[k] K) QC] [Algebra K QC]
+    [IsScalarTower K (C ⊗[k] K) QC] [IsFractionRing (C ⊗[k] K) QC]
+    (e₁ : A ≃ₐ[k] B) (e₂ : B ≃ₐ[k] C) :
+    (fractionRingTensorCongrAlgEquiv K QA QB e₁).trans
+        (fractionRingTensorCongrAlgEquiv K QB QC e₂) =
+      fractionRingTensorCongrAlgEquiv K QA QC (e₁.trans e₂) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply AlgHom.toRingHom_injective
+  refine IsLocalization.ringHom_ext (nonZeroDivisors (A ⊗[k] K)) (RingHom.ext fun x ↦ ?_)
+  have he : (e₂ : B →ₐ[k] C).comp (e₁ : A →ₐ[k] B) = (e₁.trans e₂ : A →ₐ[k] C) := by
+    ext
+    simp
+  simp [← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp, he]
 
 end Congr
+
+/-- As a `K`-algebra homomorphism, `fractionRingTensorCongrAlgEquiv` agrees with
+`fractionRingTensorMapAlgHom` when `K` is flat over a commutative ring `k` and `QB` has no zero
+divisors. -/
+@[simp]
+theorem fractionRingTensorCongrAlgEquiv_toAlgHom {k A B : Type*} (K QA QB : Type*)
+    [CommRing k] [CommRing A] [CommRing B] [CommRing K]
+    [Algebra k A] [Algebra k B] [Algebra k K] [Module.Flat k K]
+    [CommRing QA] [Algebra (A ⊗[k] K) QA] [Algebra K QA]
+    [IsScalarTower K (A ⊗[k] K) QA] [IsFractionRing (A ⊗[k] K) QA]
+    [CommRing QB] [NoZeroDivisors QB] [Algebra (B ⊗[k] K) QB] [Algebra K QB]
+    [IsScalarTower K (B ⊗[k] K) QB] [IsFractionRing (B ⊗[k] K) QB]
+    (e : A ≃ₐ[k] B) :
+    (fractionRingTensorCongrAlgEquiv K QA QB e).toAlgHom =
+      fractionRingTensorMapAlgHom K QA QB
+        (show Function.Injective (e : A →ₐ[k] B) from e.injective) := by
+  apply AlgHom.toRingHom_injective
+  refine IsLocalization.ringHom_ext (nonZeroDivisors (A ⊗[k] K)) (RingHom.ext fun x ↦ ?_)
+  simp
 
 section Comm
 
@@ -485,6 +530,7 @@ theorem fractionRingTensorCommAlgEquiv_symm_algebraMap_tensorProduct (Q₁ Q₂ 
   rfl
 
 /-- `fractionRingTensorCommAlgEquiv` commutes with the canonical maps from `A`. -/
+@[simp]
 theorem fractionRingTensorCommAlgEquiv_algebraMap_left (Q₁ Q₂ : Type*)
     [CommRing Q₁] [Algebra (A ⊗[k] K) Q₁] [Algebra K Q₁] [Algebra A Q₁]
     [IsScalarTower K (A ⊗[k] K) Q₁] [IsScalarTower A (A ⊗[k] K) Q₁]
@@ -494,11 +540,21 @@ theorem fractionRingTensorCommAlgEquiv_algebraMap_left (Q₁ Q₂ : Type*)
     [IsFractionRing (K ⊗[k] A) Q₂]
     (a : A) :
     fractionRingTensorCommAlgEquiv k A K Q₁ Q₂ (algebraMap A Q₁ a) = algebraMap A Q₂ a := by
-  have ha : algebraMap A (K ⊗[k] A) a = 1 ⊗ₜ[k] a := rfl
-  rw [IsScalarTower.algebraMap_apply A (A ⊗[k] K) Q₁, Algebra.TensorProduct.algebraMap_apply,
-    Algebra.algebraMap_self_apply, fractionRingTensorCommAlgEquiv_algebraMap_tensorProduct,
-    Algebra.TensorProduct.comm_symm_tmul, ← ha,
-    ← IsScalarTower.algebraMap_apply A (K ⊗[k] A) Q₂]
+  simp [IsScalarTower.algebraMap_apply A (A ⊗[k] K) Q₁,
+    IsScalarTower.algebraMap_apply A (K ⊗[k] A) Q₂, Algebra.TensorProduct.right_algebraMap_apply]
+
+/-- The inverse of `fractionRingTensorCommAlgEquiv` commutes with the canonical maps from `A`. -/
+@[simp]
+theorem fractionRingTensorCommAlgEquiv_symm_algebraMap_right (Q₁ Q₂ : Type*)
+    [CommRing Q₁] [Algebra (A ⊗[k] K) Q₁] [Algebra K Q₁] [Algebra A Q₁]
+    [IsScalarTower K (A ⊗[k] K) Q₁] [IsScalarTower A (A ⊗[k] K) Q₁]
+    [IsFractionRing (A ⊗[k] K) Q₁]
+    [CommRing Q₂] [Algebra (K ⊗[k] A) Q₂] [Algebra K Q₂] [Algebra A Q₂]
+    [IsScalarTower K (K ⊗[k] A) Q₂] [IsScalarTower A (K ⊗[k] A) Q₂]
+    [IsFractionRing (K ⊗[k] A) Q₂]
+    (a : A) :
+    (fractionRingTensorCommAlgEquiv k A K Q₁ Q₂).symm (algebraMap A Q₂ a) = algebraMap A Q₁ a :=
+  (fractionRingTensorCommAlgEquiv k A K Q₁ Q₂).injective (by simp)
 
 end Comm
 

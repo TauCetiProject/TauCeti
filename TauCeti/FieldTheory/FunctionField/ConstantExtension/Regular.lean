@@ -111,7 +111,7 @@ theorem isIntegrallyClosedIn_of_constantCompositum_eq_top_of_isGeometricallyRedu
     IsIntegrallyClosedIn k' F' := by
   have := isDomain_tensorProduct_of_constantCompositum_eq_top_of_isGeometricallyReduced
     hex h (AlgebraicClosure k')
-  exact isIntegrallyClosedIn_of_isDomain_tensorProduct (k := k') (F := F') (AlgebraicClosure k')
+  exact isIntegrallyClosedIn_of_isDomain_tensorProduct (k := k') (K := F') (AlgebraicClosure k')
 
 /-- **Geometric reducedness after any algebraic constant extension of a regular field.** If `F / k`
 is geometrically reduced with exact constants and `F' = F · k'` for an algebraic extension `k' / k`
