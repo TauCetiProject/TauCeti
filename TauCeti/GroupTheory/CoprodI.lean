@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.CoprodI
+public import Mathlib.GroupTheory.Coprod.Basic
 
 /-!
 # Isomorphisms of free products of monoids
@@ -16,9 +17,14 @@ Mathlib's `MulEquiv.coprodCongr` for the free product of two monoids.  It is use
 free product of fundamental groups one factor at a time, for instance to recognise the
 fundamental group of a wedge of circles as a free group.
 
+The free product of a family of two monoids indexed by `Bool` is the binary free product
+`Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions.
+
 ## Main declarations
 
 * `MulEquiv.coprodICongr`: the isomorphism of free products induced by a family of isomorphisms.
+* `Monoid.CoprodI.boolEquivCoprod`: `CoprodI M ≃* Coprod (M false) (M true)` for a family `M`
+  indexed by `Bool`.
 -/
 
 public section
@@ -47,3 +53,38 @@ theorem coprodICongr_symm (e : ∀ i, M i ≃* N i) :
   (rfl)
 
 end MulEquiv
+
+namespace Monoid.CoprodI
+
+variable (M : Bool → Type*) [∀ i, Monoid (M i)]
+
+/-- The free product of a family of monoids indexed by `Bool` is the free product of its two
+members: the inclusion of `M false` corresponds to `Monoid.Coprod.inl` and that of `M true` to
+`Monoid.Coprod.inr`. -/
+def boolEquivCoprod : CoprodI M ≃* Coprod (M false) (M true) :=
+  MonoidHom.toMulEquiv
+    (lift fun
+      | false => Coprod.inl
+      | true => Coprod.inr)
+    (Coprod.lift (of (i := false)) (of (i := true)))
+    (by ext i x; cases i <;> simp) (by ext <;> simp)
+
+variable {M}
+
+@[simp]
+theorem boolEquivCoprod_of_false (x : M false) : boolEquivCoprod M (of x) = Coprod.inl x :=
+  lift_of _ _
+
+@[simp]
+theorem boolEquivCoprod_of_true (x : M true) : boolEquivCoprod M (of x) = Coprod.inr x :=
+  lift_of _ _
+
+@[simp]
+theorem boolEquivCoprod_symm_inl (x : M false) : (boolEquivCoprod M).symm (Coprod.inl x) = of x :=
+  Coprod.lift_apply_inl (of (i := false)) (of (i := true)) x
+
+@[simp]
+theorem boolEquivCoprod_symm_inr (x : M true) : (boolEquivCoprod M).symm (Coprod.inr x) = of x :=
+  Coprod.lift_apply_inr (of (i := false)) (of (i := true)) x
+
+end Monoid.CoprodI
