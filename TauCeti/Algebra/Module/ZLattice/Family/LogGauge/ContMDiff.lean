@@ -68,8 +68,7 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
-      (fun z ↦ by simpa only [powPullbackPeriod_apply] using
-        (hinj (rootsOfUnityBall.powMap m r z)))
+      (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
       (torusFamilyLogGauge P l) x := by
   let _ := periodAddAction P
@@ -77,13 +76,11 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
-    (fun z ↦ by simpa only [powPullbackPeriod_apply] using
-      (hinj (rootsOfUnityBall.powMap m r z)))
+    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
   obtain ⟨⟨z₀, e₀⟩, rfl⟩ := Quotient.exists_rep x
   have hz₀ : (z₀ : ℂ) ≠ 0 := by rwa [torusFamilyProjection_mk] at hx
   rw [← (isLocalDiffeomorph_torusFamily_mk (powPullbackPeriod m r P)
-    (fun z ↦ by simpa only [powPullbackPeriod_apply] using
-      (hinj (rootsOfUnityBall.powMap m r z)))
+    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (z₀, e₀)).contMDiffAt_comp_iff le_rfl]
   -- A branch centred at `z₀` is holomorphic even if `z₀` lies on the principal branch cut.
   let L : ℂ → ℂ := fun z ↦ log z₀ + log (z / z₀)

@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Power
 public import TauCeti.Geometry.Manifold.Instances.OpenBall.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
@@ -108,8 +107,7 @@ theorem contMDiff_coe_pow_rootsOfUnityBall {n : ℕ∞ω} :
 /-- The power map between the two discs is holomorphic for their open-subset atlases. -/
 theorem rootsOfUnityBall.contMDiff_powMap {n : ℕ∞ω} :
     ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (rootsOfUnityBall.powMap m r) := by
-  apply (TauCeti.ContMDiff.subtypeVal_comp_iff
-    ⟨Metric.ball (0 : ℂ) (r ^ m), Metric.isOpen_ball⟩ _).1
+  apply (contMDiff_ball_subtypeVal_comp_iff _).1
   simpa only [Function.comp_def, rootsOfUnityBall.coe_powMap] using
     (contMDiff_coe_pow_rootsOfUnityBall (m := m) (r := r) (n := n))
 

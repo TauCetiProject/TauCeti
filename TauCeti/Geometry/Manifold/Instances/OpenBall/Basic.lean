@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IsManifold.Basic
+public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # The manifold structure on an open ball
@@ -34,5 +34,42 @@ instance instIsManifoldBall {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [Nor
     (c : M) (r : ℝ) : IsManifold I n (Metric.ball c r) :=
   inferInstanceAs (IsManifold I n
     (⟨Metric.ball c r, Metric.isOpen_ball⟩ : TopologicalSpace.Opens M))
+
+/-- The chart of an open ball is the restriction of its ambient chart. -/
+theorem chartAt_ball {c : M} {r : ℝ} (x : Metric.ball c r) :
+    chartAt H x = (chartAt H (x : M)).subtypeRestr
+      (s := ⟨Metric.ball c r, Metric.isOpen_ball⟩) ⟨x⟩ := (rfl)
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω} {c : M} {r : ℝ}
+
+/-- The inclusion of an open ball into its ambient manifold is `C^n`. -/
+theorem contMDiff_ball_subtype_val :
+    ContMDiff I I n (Subtype.val : Metric.ball c r → M) :=
+  contMDiff_subtype_val (U := ⟨Metric.ball c r, Metric.isOpen_ball⟩)
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N]
+  [ChartedSpace H' N] (f : N → Metric.ball c r)
+
+/-- A map into an open ball is `C^n` within a set at a point iff its ambient map is. -/
+@[simp] theorem contMDiffWithinAt_ball_subtypeVal_comp_iff (s : Set N) (x : N) :
+    ContMDiffWithinAt I' I n (Subtype.val ∘ f) s x ↔ ContMDiffWithinAt I' I n f s x :=
+  ContMDiffWithinAt.subtypeVal_comp_iff ⟨Metric.ball c r, Metric.isOpen_ball⟩ f s x
+
+/-- A map into an open ball is `C^n` at a point iff its ambient map is. -/
+@[simp] theorem contMDiffAt_ball_subtypeVal_comp_iff (x : N) :
+    ContMDiffAt I' I n (Subtype.val ∘ f) x ↔ ContMDiffAt I' I n f x :=
+  ContMDiffAt.subtypeVal_comp_iff ⟨Metric.ball c r, Metric.isOpen_ball⟩ f x
+
+/-- A map into an open ball is `C^n` on a set iff its ambient map is. -/
+@[simp] theorem contMDiffOn_ball_subtypeVal_comp_iff (s : Set N) :
+    ContMDiffOn I' I n (Subtype.val ∘ f) s ↔ ContMDiffOn I' I n f s :=
+  ContMDiffOn.subtypeVal_comp_iff ⟨Metric.ball c r, Metric.isOpen_ball⟩ f s
+
+/-- A map into an open ball is `C^n` iff its ambient map is. -/
+@[simp] theorem contMDiff_ball_subtypeVal_comp_iff :
+    ContMDiff I' I n (Subtype.val ∘ f) ↔ ContMDiff I' I n f :=
+  ContMDiff.subtypeVal_comp_iff ⟨Metric.ball c r, Metric.isOpen_ball⟩ f
 
 end TauCeti
