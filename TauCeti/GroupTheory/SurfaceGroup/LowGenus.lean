@@ -144,19 +144,24 @@ theorem torusEquiv_symm_apply (v : Multiplicative (Fin 2 → ℤ)) :
   (rfl)
 
 /-- The sphere, the closed orientable surface of genus zero, has Euler characteristic `2`. -/
+@[simp]
 theorem eulerChar_zero_zero : eulerChar 0 0 = 2 := by norm_num [eulerChar_def]
 
 /-- The disc, of genus zero with one boundary component, has Euler characteristic `1`. -/
+@[simp]
 theorem eulerChar_zero_one : eulerChar 0 1 = 1 := by norm_num [eulerChar_def]
 
 /-- The pair of pants, of genus zero with three boundary components, has Euler
 characteristic `-1`. -/
+@[simp]
 theorem eulerChar_zero_three : eulerChar 0 3 = -1 := by norm_num [eulerChar_def]
 
 /-- The torus, the closed orientable surface of genus one, has Euler characteristic `0`. -/
+@[simp]
 theorem eulerChar_one_zero : eulerChar 1 0 = 0 := by norm_num [eulerChar_def]
 
 /-- The closed orientable surface of genus two has Euler characteristic `-2`. -/
+@[simp]
 theorem eulerChar_two_zero : eulerChar 2 0 = -2 := by norm_num [eulerChar_def]
 
 end Orientable
@@ -205,10 +210,12 @@ theorem natCard_projectivePlane : Nat.card (Nonorientable 1 0) = 2 := by
 
 /-- The projective plane, the closed nonorientable surface of genus one, has Euler
 characteristic `1`. -/
+@[simp]
 theorem eulerChar_one_zero : eulerChar 1 0 = 1 := by norm_num [eulerChar_def]
 
 /-- The Klein bottle, the closed nonorientable surface of genus two, has Euler characteristic `0`,
 the same as the torus. -/
+@[simp]
 theorem eulerChar_two_zero : eulerChar 2 0 = 0 := by norm_num [eulerChar_def]
 
 end Nonorientable

@@ -52,6 +52,7 @@ variable (g m : ℕ)
 
 /-- The abelianization of the orientable surface group `S⁺(g, m + 1)` has rank `2g + m`. A basis is
 `(freeBasis g m).abelianizationBasis`, the classes of `a₁, …, a_g, b₁, …, b_g, p₁, …, p_m`. -/
+@[simp]
 theorem finrank_abelianization :
     Module.finrank ℤ (Additive (Group.Abelianization (Orientable g (m + 1)))) = 2 * g + m := by
   rw [finrank_abelianization_eq_rank, rank_eq]
@@ -72,6 +73,7 @@ variable (g m : ℕ)
 
 /-- The abelianization of the nonorientable surface group `S⁻(g, m + 1)` has rank `g + m`. A basis
 is `(freeBasis g m).abelianizationBasis`, the classes of `c₁, …, c_g, p₁, …, p_m`. -/
+@[simp]
 theorem finrank_abelianization :
     Module.finrank ℤ (Additive (Group.Abelianization (Nonorientable g (m + 1)))) = g + m := by
   rw [finrank_abelianization_eq_rank, rank_eq]
