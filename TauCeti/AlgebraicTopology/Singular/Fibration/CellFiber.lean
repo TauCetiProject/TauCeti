@@ -47,6 +47,9 @@ are Serre fibrations in `TopCat.{u}`.
   characteristic map of the cell `j`, relative to its part over the boundary sphere.
 * `TauCeti.TopCat.cellDiskPullbackPairMap`: the projection
   `(Pⱼ, ∂Pⱼ) ⟶ (p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))`.
+* `TauCeti.TopCat.cellDiskPullbackPairHom`: the map `(Pⱼ, ∂Pⱼ) ⟶ (P'ⱼ, ∂P'ⱼ)` induced by a map over
+  `B`, which commutes with the projections
+  (`TauCeti.TopCat.cellDiskPullbackPairMap_comp_preimagePairMap`).
 * `TauCeti.TopCat.isColimitCofanSingularHomologyPreimageSkeletonPair`: the maps it induces on
   relative homology exhibit `Hₖ(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` as the coproduct of the `Hₖ(Pⱼ, ∂Pⱼ)`.
 * `TauCeti.TopCat.cellDiskPullbackPairSingularHomologyIso`: `Hq+n(Pⱼ, ∂Pⱼ) ≅ Hq(Fⱼ)`.
@@ -58,8 +61,9 @@ are Serre fibrations in `TopCat.{u}`.
 
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   Chapter II.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 5.1, the proof of Theorem 5.15.
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.1 (the homology spectral sequence).
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Section 5.1.
 -/
 
@@ -303,6 +307,42 @@ lemma coe_cellDiskPullbackPairMap_fst_apply (n : ℕ) (j : cell C n)
       (p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B)))
       (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j)) x).1 = x.1.2 :=
   (coe_cellPullbackPairMap_fst_apply n _).trans (cellDiskPullbackPairι_fst_apply_snd n j x)
+
+section Naturality
+
+variable {E' : _root_.TopCat.{u}} {p' : E' ⟶ B} {f : E ⟶ E'} (hf : f ≫ p' = p)
+
+/-- The map of pairs `(Pⱼ, ∂Pⱼ) ⟶ (P'ⱼ, ∂P'ⱼ)` of the pullbacks along the characteristic map of
+the `n`-cell `j` induced by a map `f` over `B`, that is with `f ≫ p' = p`. -/
+abbrev cellDiskPullbackPairHom (n : ℕ) (j : cell C n) :
+    cellDiskPullbackPair p C n j ⟶ cellDiskPullbackPair p' C n j :=
+  TopPair.ofSubsetMap (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf)
+    (TopCat.Hom.mapsTo_preimage_of_comp_eq _
+      (_root_.TopCat.pullbackMapOfCompEq_comp_pullbackFst (cellULiftMap C n j) hf) _)
+
+/-- The projections from the pullbacks along the characteristic maps of the cells are natural in
+maps `f` over `B`: they commute with the maps of pairs
+`(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹)) ⟶ (p'⁻¹(Xⁿ), p'⁻¹(Xⁿ⁻¹))` induced by `f`. -/
+@[reassoc]
+lemma cellDiskPullbackPairMap_comp_preimagePairMap (n : ℕ) (j : cell C n) :
+    cellDiskPullbackPairMap p C n j ≫
+        TopCat.Hom.preimagePairMap f hf (skeletonLT_subset_skeletonLT_succ C n) =
+      cellDiskPullbackPairHom hf n j ≫ cellDiskPullbackPairMap p' C n j :=
+  TopPair.hom_ext_of_fst _ (by
+    ext x
+    apply Subtype.ext
+    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopCat.Hom.preimagePairMap_fst,
+      TopPair.ofSubsetMap_fst]
+    -- Both sides send a point `x` of `Pⱼ` to `f x.1.2`.
+    calc ((f.preimageMap hf _ (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x) : E'))
+        = f (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x).1 :=
+          f.coe_preimageMap_apply hf _ _
+      _ = f x.1.2 := congrArg f (coe_cellDiskPullbackPairMap_fst_apply n j x)
+      _ = (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf x).1.2 :=
+          congrArg Prod.snd (_root_.TopCat.coe_pullbackMapOfCompEq_apply _ hf x).symm
+      _ = _ := (coe_cellDiskPullbackPairMap_fst_apply (p := p') n j _).symm)
+
+end Naturality
 
 include hp
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.Category.TopPair
+public import TauCeti.Topology.Category.TopCat.Fiber
 
 /-!
 # Topological pairs of nested subsets, and maps between pairs of subsets
@@ -42,6 +43,10 @@ projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
 them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`).
+
+A map `f` over `B`, that is with `f ≫ p' = p`, induces maps of pairs
+`(p⁻¹(T), p⁻¹(S)) ⟶ (p'⁻¹(T), p'⁻¹(S))` for nested subsets `S ⊆ T` of `B`
+(`TopCat.Hom.preimagePairMap`), whose components are the restrictions `TopCat.Hom.preimageMap`.
 -/
 
 public section
@@ -414,3 +419,30 @@ lemma mapsTo_tensorHom_preimage_snd {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
 end Preimage
 
 end TopCat
+
+namespace TopCat.Hom
+
+variable {E E' B : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B}
+
+/-- The map of pairs `(p⁻¹(T), p⁻¹(S)) ⟶ (p'⁻¹(T), p'⁻¹(S))` induced by a map `f` over `B`, that is
+with `f ≫ p' = p`, for nested subsets `S ⊆ T` of `B`. -/
+def preimagePairMap (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    TopPair.ofInclusion (X := E) (Set.preimage_mono (f := p) hST) ⟶
+      TopPair.ofInclusion (X := E') (Set.preimage_mono (f := p') hST) :=
+  TopPair.ofHom (f.preimageMap hf T) (f.preimageMap hf S) (by
+    ext x
+    -- Both sides send a point `x` of `p⁻¹(S)` to `f x`.
+    exact Subtype.ext ((f.coe_preimageMap_apply hf S x).trans
+      (f.coe_preimageMap_apply hf T (Set.inclusion (Set.preimage_mono hST) x)).symm))
+
+@[simp]
+lemma preimagePairMap_fst (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    TopPair.Hom.fst (preimagePairMap f hf hST) = f.preimageMap hf T :=
+  (rfl)
+
+@[simp]
+lemma preimagePairMap_snd (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    TopPair.Hom.snd (preimagePairMap f hf hST) = f.preimageMap hf S :=
+  (rfl)
+
+end TopCat.Hom

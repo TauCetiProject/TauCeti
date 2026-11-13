@@ -81,7 +81,10 @@ along straight lines. Over the closed unit ball, the radial deformation
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   Chapter II.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 4.D, the proof of Theorem 4D.10, and Section 5.1 (the Serre spectral sequence).
+  Section 4.D, the proof of Theorem 4D.10.
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.1 (the homology spectral sequence).
 -/
 
 public section
