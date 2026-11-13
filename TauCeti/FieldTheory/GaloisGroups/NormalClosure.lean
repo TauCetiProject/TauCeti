@@ -136,12 +136,14 @@ theorem exists_root_map_stabilizer_eq_fixingSubgroup {x : E} (hx : IsIntegral F 
 
 /-- When the minimal polynomial is separable, the image of a point stabilizer has
 index equal to the degree of the original simple extension. -/
-theorem index_map_stabilizer_galEquivNormalClosure {x : E} (hx : IsIntegral F x)
-    (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
+theorem index_map_stabilizer_galEquivNormalClosure {x : E}
     (hsep : (minpoly F x).Separable)
+    (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField) :
     ((stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure hx hsplit).toMonoidHom).index = Module.finrank F F⟮x⟯ := by
+      (galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit).toMonoidHom).index =
+      Module.finrank F F⟮x⟯ := by
+  have hx : IsIntegral F x := IsSeparable.isIntegral hsep
   rw [MulEquiv.toMonoidHom_eq_coe, Subgroup.index_map_equiv,
     index_stabilizer_eq_natDegree (minpoly.irreducible hx) hsep,
     adjoin.finrank hx]

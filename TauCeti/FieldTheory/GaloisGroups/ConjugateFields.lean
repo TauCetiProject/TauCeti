@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.ConjugateFields
 public import TauCeti.FieldTheory.GaloisGroups.Embeddings
 import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # Conjugate fields of a polynomial root
@@ -331,12 +332,10 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_fieldRange {x : E}
   let hx := IsSeparable.isIntegral hsep
   let N := normalClosure F F⟮x⟯ E
   let e := splittingFieldEquivNormalClosure hx hsplit
-  have hgen : (F⟮AdjoinSimple.gen F x⟯ : IntermediateField F F⟮x⟯) = ⊤ := by
-    apply (IntermediateField.lift_injective F⟮x⟯)
-    rw [IntermediateField.lift_adjoin_simple, AdjoinSimple.coe_gen, IntermediateField.lift_top]
   have hrange (φ : F⟮x⟯ →ₐ[F] N) :
       φ.fieldRange = F⟮φ (AdjoinSimple.gen F x)⟯ := by
-    rw [AlgHom.fieldRange_eq_map, ← hgen, IntermediateField.adjoin_map]
+    rw [AlgHom.fieldRange_eq_map, ← adjoin_adjoinSimple_gen_eq_top (F := F) x,
+      IntermediateField.adjoin_map]
     simp only [Set.image_singleton]
   let _ : IsGalois F N := isGalois_normalClosure_adjoin_simple hsep hsplit
   have hbase : F⟮(e y : N)⟯ = F⟮x⟯.restrict (le_normalClosure F⟮x⟯) := by

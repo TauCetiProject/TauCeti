@@ -8,6 +8,8 @@ module
 public import Mathlib.FieldTheory.Normal.Closure
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
 
 /-!
 # Normal closures in general and algebraically closed ambient fields
@@ -49,7 +51,7 @@ statements inside a finite Galois number field.
 -/
 
 /- The root-generation identity uses `normalClosure_le_iff` and
-`IntermediateField.adjoin.powerBasis`; the splitting-field and monotonicity results combine this
+`TauCeti.rootSetEquivAlgHomAdjoin`; the splitting-field and monotonicity results combine this
 with `adjoin_rootSet_isSplittingField` and `normalClosure_le_iff_le_of_normal`. -/
 
 public section
@@ -104,19 +106,14 @@ theorem normalClosure_adjoin_simple_eq_adjoin_rootSet {x : E} (hx : IsIntegral F
     normalClosure F F⟮x⟯ E = adjoin F ((minpoly F x).rootSet E) := by
   apply le_antisymm
   · refine normalClosure_le_iff.mpr fun f ↦ ?_
-    have hgen : (F⟮AdjoinSimple.gen F x⟯ : IntermediateField F F⟮x⟯) = ⊤ := by
-      apply lift_injective F⟮x⟯
-      rw [lift_adjoin_simple, AdjoinSimple.coe_gen, lift_top]
-    rw [AlgHom.fieldRange_eq_map, ← hgen, adjoin_map, Set.image_singleton, adjoin_simple_le_iff]
-    refine subset_adjoin F _ ((mem_rootSet_of_ne (minpoly.ne_zero hx)).mpr ?_)
-    rw [aeval_algHom_apply, aeval_gen_minpoly, map_zero]
-  · refine adjoin_le_iff.mpr fun y hy ↦ ?_
-    have hy_eval : aeval y (minpoly F (adjoin.powerBasis hx).gen) = 0 := by
-      rw [adjoin.powerBasis_gen, minpoly_gen]
-      exact (mem_rootSet.mp hy).2
-    let φ : F⟮x⟯ →ₐ[F] E := (adjoin.powerBasis hx).lift y hy_eval
-    refine φ.fieldRange_le_normalClosure ⟨(adjoin.powerBasis hx).gen, ?_⟩
-    exact (adjoin.powerBasis hx).lift_gen y hy_eval
+    rw [AlgHom.fieldRange_eq_map, ← adjoin_adjoinSimple_gen_eq_top (F := F) x, adjoin_map,
+      Set.image_singleton, adjoin_simple_le_iff]
+    refine subset_adjoin F _ ?_
+    rw [← rootSetEquivAlgHomAdjoin_symm_apply F E hx f]
+    exact ((rootSetEquivAlgHomAdjoin F E hx).symm f).2
+  · exact adjoin_le_iff.mpr fun y hy ↦
+      (rootSetEquivAlgHomAdjoin F E hx ⟨y, hy⟩).fieldRange_le_normalClosure
+        ⟨AdjoinSimple.gen F x, rootSetEquivAlgHomAdjoin_apply_gen F E hx ⟨y, hy⟩⟩
 
 /-- When `x` is integral over `F` and `minpoly F x` splits in `E`, the normal closure of `F⟮x⟯` in
 `E` is a splitting field of `minpoly F x` over `F`. No separability hypothesis is needed. -/
