@@ -63,6 +63,11 @@ def Path.darts {a b : Γ.V} (p : Γ.Path a b) : List Γ.E :=
   | nil => simp
   | cons p e ih => simp [ih]
 
+/-- A path of positive length traverses a dart. -/
+theorem Path.darts_ne_nil {a b : Γ.V} {p : Γ.Path a b} (h : 0 < p.length) :
+    Path.darts Γ p ≠ [] := fun h0 => by
+  simp [← Path.length_darts, h0] at h
+
 /-- A traversed dart separates a path into a prefix, that dart, and a suffix. -/
 theorem Path.exists_eq_cons_comp_of_mem_darts {a b : Γ.V} (p : Γ.Path a b)
     {e : Γ.E} (he : e ∈ Path.darts Γ p) :
@@ -256,6 +261,21 @@ theorem Path.exists_boundary_dart {a b : Γ.V} (p : Γ.Path a b) (R : Set Γ.V)
   obtain ⟨u, hu, v, hv, e, p₁, p₂, rfl⟩ :=
     Quiver.Path.exists_mem_notMem_hom_path_path_of_notMem_mem p R ha hb
   exact ⟨e.1, by simp, by rwa [e.2.1], by rwa [e.2.2]⟩
+
+/-- A list of consecutive darts starting at `a` and ending at `b` is the dart list of a path
+from `a` to `b`. The three conditions are expressed as one equation between lists of
+vertices, which is a finite computation for an explicit list of darts. -/
+theorem exists_path_darts_eq {a b : Γ.V} (l : List Γ.E)
+    (h : a :: l.map Γ.tgt = l.map Γ.src ++ [b]) : ∃ p : Γ.Path a b, Path.darts Γ p = l := by
+  induction l using List.reverseRecOn generalizing b with
+  | nil =>
+    obtain rfl : a = b := by simpa using h
+    exact ⟨.nil, Path.darts_nil Γ a⟩
+  | append_singleton l e ih =>
+    rw [List.map_append, List.map_append, ← List.cons_append] at h
+    obtain ⟨h₁, h₂⟩ := List.append_inj' h rfl
+    obtain ⟨p, hp⟩ := ih h₁
+    exact ⟨p.cons ⟨e, rfl, by simpa using h₂⟩, by simp [hp]⟩
 
 section Restrict
 

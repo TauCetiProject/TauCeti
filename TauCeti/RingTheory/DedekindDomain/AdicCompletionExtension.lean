@@ -72,8 +72,7 @@ Dedekind domain and one of its completions.
 ## Provenance
 
 Adapted, with the authors' proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/AdicCompletionExtension.lean`.
 
 That file in turn credits the FLT project

@@ -31,6 +31,10 @@ The canonical orientation is natural under pullback
 trivial bundle (`TauCeti.VectorBundleOrientation.complex_trivial`), and on a direct sum it is the
 direct-sum orientation of the canonical orientations of the summands, up to the identification of
 index types `2 * r₁ + 2 * r₂ = 2 * (r₁ + r₂)` (`TauCeti.VectorBundleOrientation.prod_complex`).
+A complex-linear isomorphism of fibres, possibly of bundles with different model fibres, preserves
+the canonical orientations (`TauCeti.VectorBundleOrientation.map_complex`), while a conjugate-linear
+one multiplies them by `(-1) ^ n`, `n` the complex rank
+(`TauCeti.VectorBundleOrientation.map_toRealLinearEquiv_complex`).
 
 ## Main definitions
 
@@ -46,6 +50,12 @@ index types `2 * r₁ + 2 * r₂ = 2 * (r₁ + r₂)` (`TauCeti.VectorBundleOrie
   bundle `B × F` is the constant orientation `complexOrientation F`.
 * `TauCeti.VectorBundleOrientation.prod_complex`: the direct-sum orientation of the canonical
   orientations is the canonical orientation of the direct sum.
+* `TauCeti.VectorBundleOrientation.map_complex`: a complex-linear isomorphism of fibres carries the
+  canonical orientation to the canonical orientation; `map_complex_same` is the simp form for
+  bundles with the same model fibre.
+* `TauCeti.VectorBundleOrientation.map_toRealLinearEquiv_complex`: a conjugate-linear isomorphism
+  of fibres multiplies the canonical orientation by `(-1) ^ n`, `n` the complex rank;
+  `map_toRealLinearEquiv_complex_same` is the simp form for bundles with the same model fibre.
 
 ## References
 
@@ -148,6 +158,86 @@ the canonical orientation of `F`. -/
 theorem complex_trivial : complex F (Bundle.Trivial B F) = trivial B (complexOrientation F) := by
   ext b
   rw [complex_apply, finCongr_refl, Orientation.reindex_refl, Equiv.refl_apply, trivial_apply]
+
+section FiberwiseEquiv
+
+variable {B : Type*} [TopologicalSpace B] {B' : Type*} [TopologicalSpace B']
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
+  [FiniteDimensional ℂ F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommGroup (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, Module ℂ (E b)] [∀ b, IsScalarTower ℝ ℂ (E b)]
+  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℂ F E]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace ℂ F']
+  [IsScalarTower ℝ ℂ F'] [FiniteDimensional ℂ F']
+  {E' : B' → Type*} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommGroup (E' b)]
+  [∀ b, Module ℝ (E' b)] [∀ b, Module ℂ (E' b)] [∀ b, IsScalarTower ℝ ℂ (E' b)]
+  [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] [VectorBundle ℂ F' E']
+
+local instance instVectorBundleRealComplexFiberwiseSource : VectorBundle ℝ F E :=
+  VectorBundle.restrictScalars ℝ ℂ F E
+local instance instVectorBundleRealComplexFiberwiseTarget : VectorBundle ℝ F' E' :=
+  VectorBundle.restrictScalars ℝ ℂ F' E'
+
+/-- A complex-linear isomorphism `E'_{b'} ≃ E_b` of fibres of complex vector bundles carries the
+canonical orientation of `E'_{b'}` to that of `E_b`, after identifying the index types
+`2 * dim F = 2 * dim F'` of the model fibres. -/
+theorem map_complex {b' : B'} {b : B} (f : E' b' ≃ₗ[ℂ] E b) :
+    Orientation.map _ (f.restrictScalars ℝ) (complex F' E' b') =
+      Orientation.reindex ℝ (E b)
+        (finCongr (by rw [← VectorBundle.finrank_eq ℂ F E b, ← VectorBundle.finrank_eq ℂ F' E' b',
+          f.finrank_eq]))
+        (complex F E b) := by
+  have := VectorBundle.finiteDimensional ℂ F E b
+  have := VectorBundle.finiteDimensional ℂ F' E' b'
+  rw [complex_apply, complex_apply, Orientation.map_reindex, f.map_complexOrientation,
+    ← Orientation.reindex_trans, ← Orientation.reindex_trans]
+  exact congrArg (Orientation.reindex ℝ (E b) · _) (Equiv.ext fun _ ↦ by simp)
+
+/-- A conjugate-linear isomorphism `E'_{b'} ≃ E_b` of fibres of complex vector bundles carries the
+canonical orientation of `E'_{b'}` to `(-1) ^ n` times that of `E_b`, after identifying the index
+types `2 * dim F = 2 * dim F'` of the model fibres, where `n` is the complex dimension of the model
+fibre `F'` of `E'`. -/
+theorem map_toRealLinearEquiv_complex {b' : B'} {b : B} (f : E' b' ≃ₛₗ[starRingEnd ℂ] E b) :
+    Orientation.map _ f.toRealLinearEquiv (complex F' E' b') =
+      (-1 : ℝˣ) ^ finrank ℂ F' •
+        Orientation.reindex ℝ (E b)
+          (finCongr (by rw [← VectorBundle.finrank_eq ℂ F E b,
+            ← VectorBundle.finrank_eq ℂ F' E' b', ← finrank_real_eq_two_mul_finrank_complex,
+            ← finrank_real_eq_two_mul_finrank_complex, f.toRealLinearEquiv.finrank_eq]))
+          (complex F E b) := by
+  have := VectorBundle.finiteDimensional ℂ F E b
+  have := VectorBundle.finiteDimensional ℂ F' E' b'
+  have hn : (-1 : ℝˣ) ^ finrank ℂ (E' b') = (-1) ^ finrank ℂ F' := by
+    rw [VectorBundle.finrank_eq ℂ F' E' b']
+  rw [complex_apply, complex_apply, Orientation.map_reindex,
+    f.map_toRealLinearEquiv_complexOrientation, hn, Orientation.reindex_units_smul,
+    ← Orientation.reindex_trans, ← Orientation.reindex_trans]
+  exact congrArg (fun e ↦ _ • Orientation.reindex ℝ (E b) e _) (Equiv.ext fun _ ↦ by simp)
+
+/-- A complex-linear isomorphism `E'_{b'} ≃ E_b` of fibres of complex vector bundles with the same
+model fibre `F` carries the canonical orientation of `E'_{b'}` to that of `E_b`. -/
+@[simp]
+theorem map_complex_same {E' : B' → Type*} [TopologicalSpace (TotalSpace F E')]
+    [∀ b, AddCommGroup (E' b)] [∀ b, Module ℝ (E' b)] [∀ b, Module ℂ (E' b)]
+    [∀ b, IsScalarTower ℝ ℂ (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
+    [VectorBundle ℂ F E'] {b' : B'} {b : B} (f : E' b' ≃ₗ[ℂ] E b) :
+    Orientation.map _ (f.restrictScalars ℝ) (complex F E' b') = complex F E b := by
+  rw [map_complex (F := F), finCongr_refl, Orientation.reindex_refl, Equiv.refl_apply]
+
+/-- A conjugate-linear isomorphism `E'_{b'} ≃ E_b` of fibres of complex vector bundles with the same
+model fibre `F` carries the canonical orientation of `E'_{b'}` to `(-1) ^ n` times that of `E_b`,
+where `n` is the complex dimension of `F`. -/
+@[simp]
+theorem map_toRealLinearEquiv_complex_same {E' : B' → Type*} [TopologicalSpace (TotalSpace F E')]
+    [∀ b, AddCommGroup (E' b)] [∀ b, Module ℝ (E' b)] [∀ b, Module ℂ (E' b)]
+    [∀ b, IsScalarTower ℝ ℂ (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
+    [VectorBundle ℂ F E'] {b' : B'} {b : B} (f : E' b' ≃ₛₗ[starRingEnd ℂ] E b) :
+    Orientation.map _ f.toRealLinearEquiv (complex F E' b') =
+      (-1 : ℝˣ) ^ finrank ℂ F • complex F E b := by
+  rw [map_toRealLinearEquiv_complex (F := F), finCongr_refl, Orientation.reindex_refl,
+    Equiv.refl_apply]
+
+end FiberwiseEquiv
 
 section Prod
 

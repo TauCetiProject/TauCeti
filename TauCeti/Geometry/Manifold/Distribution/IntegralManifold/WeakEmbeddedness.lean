@@ -85,7 +85,7 @@ private theorem eventually_sub_mem_of_range_subset
     {x : P} (hx : g x ∈ Φ.source) :
     ∀ᶠ y in 𝓝 x, Φ (g y) - Φ (g x) ∈ W := by
   -- Closedness supplies the quotient norm and its complete regularity.
-  let _ : IsClosed (W : Set E) := W.closed_of_finiteDimensional
+  let _ : IsClosed (W : Set E) := W.isClosed_of_finiteDimensional
   let U : Set N := f ⁻¹' Φ.source
   let V : Set P := g ⁻¹' Φ.source
   have hV : IsOpen V := hopen.preimage hg

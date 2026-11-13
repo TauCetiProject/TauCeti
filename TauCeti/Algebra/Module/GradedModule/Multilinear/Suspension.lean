@@ -47,13 +47,13 @@ variable {R : Type uR} [CommRing R] {ι : Type*} [Fintype ι]
   {M : ι → Type uM} {N : Type uN}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
   [AddCommMonoid N] [Module R N]
-  (G : ∀ i, InternalGrading R (M i)) (ℬ : ℤ → Submodule R N)
+  (G : ∀ i, InternalGrading R (M i) ℤ) (ℬ : ℤ → Submodule R N)
 
 /-- Precomposing the inputs by arbitrary Koszul twists preserves and reflects homogeneity.
 The input modules and twist parameters may vary from slot to slot. -/
 @[simp]
 theorem isHomogeneous_comp_koszulTwist_iff (t : ι → ℤ) (q : ℤ)
-    (f : MultilinearMap R M N) :
+    (f : MultilinearMap (RingHom.id R) M N) :
     TauCeti.MultilinearMap.IsHomogeneous
         (f.compLinearMap fun i ↦ (G i).koszulTwist (t i)) (fun i ↦ (G i).piece) ℬ q ↔
       TauCeti.MultilinearMap.IsHomogeneous f (fun i ↦ (G i).piece) ℬ q := by
@@ -74,7 +74,7 @@ end KoszulTwists
 variable {R : Type uR} [CommRing R] {n : ℕ} {M : Fin n → Type uM} {N : Type uN}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
   [AddCommMonoid N] [Module R N]
-  (G : ∀ i, InternalGrading R (M i)) (ℬ : ℤ → Submodule R N)
+  (G : ∀ i, InternalGrading R (M i) ℤ) (ℬ : ℤ → Submodule R N)
 
 /-- Suspension identifies arity-`n` operations of degree `q + 1 - n` with operations of
 degree `q` on the suspended pieces. Both directions twist input `i` by `n - 1 - i`
@@ -146,7 +146,9 @@ theorem suspensionEquiv_apply_of_mem (q : ℤ)
       fun i ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i) • x i := by
     funext i
     rw [(G i).koszulTwist_apply_of_mem (hx i), negOnePowCast_eq_intCast]
-  rw [ht, MultilinearMap.map_smul_univ, ← negOnePowCast_sum]
+  rw [ht, MultilinearMap.map_smul_univ]
+  simp only [RingHom.id_apply]
+  rw [← negOnePowCast_sum]
 
 /-- On homogeneous inputs, unsuspension has the identical sign when degrees are measured in
 the original gradings. -/

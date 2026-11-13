@@ -24,7 +24,7 @@ variable {α : Type*} {p : α → Prop}
 membership proofs forgotten. -/
 theorem val_mem_unattach_iff (a : Subtype p) (l : List (Subtype p)) :
     (a : α) ∈ l.unattach ↔ a ∈ l := by
-  rw [List.mem_unattach]
+  rw [mem_unattach]
   constructor
   · rintro ⟨_, h⟩
     simpa using h
@@ -34,6 +34,6 @@ theorem val_mem_unattach_iff (a : Subtype p) (l : List (Subtype p)) :
 /-- Forgetting membership proofs preserves and reflects duplicate-freeness. -/
 @[simp]
 theorem nodup_unattach_iff (l : List (Subtype p)) : l.unattach.Nodup ↔ l.Nodup := by
-  rw [List.unattach, List.nodup_map_iff Subtype.val_injective]
+  rw [unattach, nodup_map_iff Subtype.val_injective]
 
 end List

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import Mathlib.Logic.Function.Const
 import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -71,14 +72,29 @@ theorem IsDiffSubmersionAt.congr_of_eventuallyEq (hf : IsDiffSubmersionAt I J f 
   -- The equal values at `x` identify the two target tangent spaces.
   exact (tangentSpaceCast J (f x) (g x)).hasRightInverse.comp hf
 
-/-- Composites of differentiable maps with split-surjective differentials again have
-split-surjective differentials. -/
+/-- Composites of maps with split-surjective differentials again have split-surjective
+differentials. No differentiability is assumed: where a map is not differentiable its manifold
+derivative is `0`, which forces the relevant tangent space to be trivial. -/
 theorem IsDiffSubmersionAt.comp {g : N → M'}
-    (hg : IsDiffSubmersionAt J K g (f x)) (hf : IsDiffSubmersionAt I J f x)
-    (hgd : MDifferentiableAt J K g (f x)) (hfd : MDifferentiableAt I J f x) :
+    (hg : IsDiffSubmersionAt J K g (f x)) (hf : IsDiffSubmersionAt I J f x) :
     IsDiffSubmersionAt I K (g ∘ f) x := by
-  rw [isDiffSubmersionAt_iff, mfderiv_comp x hgd hfd]
-  exact ContinuousLinearMap.HasRightInverse.comp hg hf
+  by_cases hfd : MDifferentiableAt I J f x
+  · by_cases hgd : MDifferentiableAt J K g (f x)
+    · rw [isDiffSubmersionAt_iff, mfderiv_comp x hgd hfd]
+      exact ContinuousLinearMap.HasRightInverse.comp hg hf
+    · -- `mfderiv J K g (f x) = 0` has a right inverse, so the target `E'` is trivial.
+      rw [isDiffSubmersionAt_iff, mfderiv_zero_of_not_mdifferentiableAt hgd] at hg
+      have : Subsingleton (TangentSpace K ((g ∘ f) x)) :=
+        (Function.Surjective.isConst_iff hg.surjective).mp fun a b ↦ by simp
+      exact ⟨0, fun v ↦ Subsingleton.elim _ _⟩
+  · -- `mfderiv I J f x = 0` has a right inverse, so `F` is trivial, and so is `E'`.
+    rw [isDiffSubmersionAt_iff, mfderiv_zero_of_not_mdifferentiableAt hfd] at hf
+    rw [isDiffSubmersionAt_iff] at hg
+    have : Subsingleton (TangentSpace J (f x)) :=
+      (Function.Surjective.isConst_iff hf.surjective).mp fun a b ↦ by simp
+    have : Subsingleton (TangentSpace K ((g ∘ f) x)) :=
+      Function.Surjective.subsingleton hg.surjective
+    exact ⟨0, fun v ↦ Subsingleton.elim _ _⟩
 
 /-- For finite-dimensional targets, splitting the derivative is equivalent to being a regular
 point. No differentiability or finite-dimensionality of the source is needed. -/
@@ -164,8 +180,8 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
     (hs : Surjective (mfderiv I J f x)) :
     IsSubmersionAtOfComplement (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜)
       I J n f x := by
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
   have hf := hfU.contMDiffAt (hU.mem_nhds hxU)
   -- Split the derivative into target and kernel coordinates.
   let D : E →L[𝕜] F := mfderiv I J f x
