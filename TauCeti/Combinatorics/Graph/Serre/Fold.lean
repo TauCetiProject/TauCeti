@@ -11,19 +11,24 @@ public import Mathlib.SetTheory.Cardinal.NatCard
 /-!
 # Stallings folds of Serre graphs
 
-Let `e₁ ≠ e₂` be two darts of a Serre graph `Γ` issuing from the same vertex. The Stallings fold
-identifies `e₂` with `e₁`, the reverse of `e₂` with the reverse of `e₁`, and the terminal vertex of
-`e₂` with the terminal vertex of `e₁`. Two constructions cover the two possible shapes.
+Let `e₁` and `e₂` be two darts of a Serre graph `Γ` issuing from the same vertex, with `e₁`
+different from `e₂` and from the reverse of `e₂`. The Stallings fold identifies `e₂` with `e₁`, the
+reverse of `e₂` with the reverse of `e₁`, and the terminal vertex of `e₂` with the terminal vertex
+of `e₁`. Two constructions cover the two possible shapes.
 
 * When the two darts have the same terminal vertex, the fold deletes the geometric edge of `e₂`:
   `SerreGraph.deleteEdge`. It has the vertices of `Γ` and one geometric edge fewer.
 * When the terminal vertices are distinct, the fold deletes the geometric edge of `e₂` and the
-  vertex `t(e₂)`, every dart at `t(e₂)` being attached to `t(e₁)`: `SerreGraph.fold`. It has one
-  vertex and one geometric edge fewer.
+  vertex `t(e₂)`, every dart at `t(e₂)` being attached to `t(e₁)`: `SerreGraph.fold`. Here `e₁` is
+  automatically not the reverse of `e₂`. The fold has one vertex and one geometric edge fewer.
 
 In both cases the folding map `Γ → Γ'` sends `e₂` to `e₁`, the reverse of `e₂` to the reverse of
 `e₁`, and is the identity on the other darts; it is surjective on vertices, so a fold of a
 connected graph is connected.
+
+When `e₂` is a loop and `e₁` is its reverse, there is no folding map, since deleting the geometric
+edge of `e₂` deletes `e₁` too. Deleting that geometric edge still keeps a connected graph
+connected.
 
 The folded graph is built by deletion rather than as a quotient (compare the fold of a labelled
 graph, `TauCeti.StallingsGraph.foldAt`): its darts are those of `Γ` other than `e₂^{±1}`, its
@@ -34,7 +39,8 @@ restricts to the identity on them.
 
 * `TauCeti.SerreGraph.deleteEdge`: the graph without the geometric edge of a dart.
 * `TauCeti.SerreGraph.foldE`: the dart map of a fold.
-* `TauCeti.SerreGraph.deleteEdgeHom`: the folding map onto `Γ.deleteEdge e₂` for parallel darts.
+* `TauCeti.SerreGraph.deleteEdgeHom`: the folding map onto `Γ.deleteEdge e₂` for parallel darts
+  `e₁ ≠ e₂` with `e₁` not the reverse of `e₂`.
 * `TauCeti.SerreGraph.foldV`: the vertex map of a fold of two darts with distinct terminal
   vertices.
 * `TauCeti.SerreGraph.fold`: the fold of two darts with distinct terminal vertices.
@@ -43,7 +49,8 @@ restricts to the identity on them.
 ## Main results
 
 * `TauCeti.SerreGraph.Connected.deleteEdge`, `TauCeti.SerreGraph.Connected.fold`: folding two
-  darts with the same initial vertex keeps a connected graph connected.
+  darts with the same initial vertex keeps a connected graph connected. The first also covers a
+  loop `e₂` with `e₁` its reverse.
 * `TauCeti.SerreGraph.card_geomEdge_deleteEdge`, `TauCeti.SerreGraph.card_geomEdge_fold`: a fold
   removes one geometric edge.
 * `TauCeti.SerreGraph.card_V_fold`: a fold of darts with distinct terminal vertices removes one
@@ -149,8 +156,9 @@ theorem foldE_rev_apply {e₁ e₂ : Γ.E} (h₁ : e₁ ≠ e₂) (h₂ : e₁ �
   rw [foldE_of_ne h₁ h₂ hf hf', foldE_of_ne h₁ h₂ (by grind [rev_rev]) (by grind [rev_injective])]
 
 variable {Γ} in
-/-- The folding map of two parallel darts `e₁ ≠ e₂`: it sends `e₂` to `e₁`, the reverse of `e₂` to
-the reverse of `e₁`, and is the identity on the vertices and on the other darts. -/
+/-- The folding map of two parallel darts `e₁ ≠ e₂`, where `e₁` is not the reverse of `e₂`: it sends
+`e₂` to `e₁`, the reverse of `e₂` to the reverse of `e₁`, and is the identity on the vertices and on
+the other darts. -/
 noncomputable def deleteEdgeHom {e₁ e₂ : Γ.E} (h₁ : e₁ ≠ e₂) (h₂ : e₁ ≠ Γ.rev e₂)
     (hsrc : Γ.src e₁ = Γ.src e₂) (htgt : Γ.tgt e₁ = Γ.tgt e₂) : Γ.Hom (Γ.deleteEdge e₂) where
   mapV := id
@@ -171,6 +179,11 @@ variable {Γ} {e₁ e₂ : Γ.E} (h₁ : e₁ ≠ e₂) (h₂ : e₁ ≠ Γ.rev 
 /-- The dart map of the folding map of two parallel darts is the dart map `foldE` of the fold. -/
 theorem deleteEdgeHom_mapE (f : Γ.E) : (deleteEdgeHom h₁ h₂ hsrc htgt).mapE f = foldE h₁ h₂ f :=
   (rfl)
+
+-- With `Hom.map_rev`, `simp` also computes the image of the reverse of `e₂`.
+/-- The folding map of two parallel darts sends `e₂` to `e₁`. -/
+@[simp] theorem deleteEdgeHom_mapE_self : ((deleteEdgeHom h₁ h₂ hsrc htgt).mapE e₂).1 = e₁ :=
+  foldE_self h₁ h₂
 
 /-- The folding map of two parallel darts fixes every dart other than `e₂` and its reverse. -/
 @[simp] theorem deleteEdgeHom_mapE_val (f : (Γ.deleteEdge e₂).E) :
@@ -260,14 +273,6 @@ attached to `t(e₁)`. -/
   rfl
 
 variable {Γ} in
-/-- Two darts with the same initial vertex and distinct terminal vertices are not reverse to each
-other. -/
-theorem ne_rev_of_src_eq_of_tgt_ne {e₁ e₂ : Γ.E} (hsrc : Γ.src e₁ = Γ.src e₂)
-    (h : Γ.tgt e₁ ≠ Γ.tgt e₂) : e₁ ≠ Γ.rev e₂ := by
-  rintro rfl
-  simp_all
-
-variable {Γ} in
 /-- The folding map of two darts `e₁`, `e₂` with the same initial vertex and distinct terminal
 vertices: it sends `e₂` to `e₁`, the reverse of `e₂` to the reverse of `e₁`, the vertex `t(e₂)` to
 `t(e₁)`, and is the identity elsewhere. -/
@@ -294,6 +299,11 @@ variable {Γ} {e₁ e₂ : Γ.E} (h : Γ.tgt e₁ ≠ Γ.tgt e₂) (hsrc : Γ.sr
 theorem foldHom_mapE (f : Γ.E) : (foldHom h hsrc).mapE f =
     foldE (ne_of_apply_ne Γ.tgt h) (ne_rev_of_src_eq_of_tgt_ne hsrc h) f :=
   (rfl)
+
+-- With `Hom.map_rev`, `simp` also computes the image of the reverse of `e₂`.
+/-- The folding map sends `e₂` to `e₁`. -/
+@[simp] theorem foldHom_mapE_self : ((foldHom h hsrc).mapE e₂).1 = e₁ :=
+  foldE_self (ne_of_apply_ne Γ.tgt h) (ne_rev_of_src_eq_of_tgt_ne hsrc h)
 
 /-- The folding map fixes every dart other than `e₂` and its reverse. -/
 @[simp] theorem foldHom_mapE_val (f : (Γ.fold e₁ e₂ h).E) : (foldHom h hsrc).mapE f.1 = f :=
