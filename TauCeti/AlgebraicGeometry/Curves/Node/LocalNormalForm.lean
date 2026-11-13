@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
+public import TauCeti.AlgebraicGeometry.Curves.Node.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 public import TauCeti.RingTheory.Node.LocalNormalForm
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Smooth
 import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 
@@ -32,6 +34,9 @@ neighbourhood of `x` on which `X` is standard syntomic of relative dimension one
 the singular locus is cut out by the first Fitting ideal of the differentials, it is unramified
 over `R` because `X` is nodal, and it contains the prime of `x` because `X` is not smooth at `x`.
 
+The theorem `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_mem_specialFiber` includes
+smooth points as well: they admit a split-node chart with parameter zero and no base extension.
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra`: the étale local normal form `uv = h` at a
@@ -39,6 +44,8 @@ over `R` because `X` is nodal, and it contains the prime of `x` because `X` is n
 * `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_isDiscreteValuationRing`: the normal form
   `uv = 0` or `uv = πⁿ` over an étale extension of discrete valuation rings, at a non-smooth point
   of the special fibre.
+* `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_mem_specialFiber`: a chart at every
+  point of the special fibre, including smooth points.
 
 ## References
 
@@ -210,5 +217,36 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_isDiscreteVa
     exists_etale_spec_chart X V hV hxV ⟨Q, ‹_›⟩ hxQ φ hφ hφ₀ hφ₁
   exact ⟨R', ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, T, ‹_›, b, g, ψ, ⟨Q, ‹_›⟩, hπ', hb, hg, hψ, hgx, hgψ,
     PrimeSpectrum.ext (hψR'.trans hQR'), hy₀, hy₁⟩
+
+/-- Every point of the special fibre of a nodal relative curve over a DVR has an affine
+étale neighbourhood mapping étale to `uv = 0` or `uv = πⁿ` over an étale extension of DVRs.
+The image of the chosen point lies over the closed point of the extended base. At smooth
+points the base extension can be the identity and the parameter can be zero. -/
+theorem _root_.AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_mem_specialFiber
+    [IsDomain R] [IsDiscreteValuationRing R] {π : R} (hπ : Irreducible π) (X : Scheme.{u})
+    [X.Over (Spec (.of R))] (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)))
+    {x : X} (hxs : (X ↘ Spec (.of R)) x = IsLocalRing.closedPoint R) :
+    ∃ (R' : Type u) (_ : CommRing R') (_ : IsDomain R') (_ : IsDiscreteValuationRing R')
+      (_ : Algebra R R') (_ : Algebra.Etale R R') (_ : IsLocalHom (algebraMap R R'))
+      (T : Type u) (_ : CommRing T) (b : R') (g : Spec (.of T) ⟶ X)
+      (ψ : Spec (.of T) ⟶ Spec (.of (NodeAlgebra R' b))) (y : Spec (.of T)),
+      Irreducible (algebraMap R R' π) ∧ (b = 0 ∨ ∃ n : ℕ, 0 < n ∧ b = algebraMap R R' π ^ n) ∧
+        Etale g ∧ Etale ψ ∧ g y = x ∧
+        g ≫ (X ↘ Spec (.of R)) = ψ ≫ Spec.algebraMap R' (NodeAlgebra R' b) ≫
+          Spec.algebraMap R R' ∧
+        Spec.algebraMap R' (NodeAlgebra R' b) (ψ y) = IsLocalRing.closedPoint R' := by
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
+  by_cases hx : x ∈ (X ↘ Spec (.of R)).smoothLocus
+  · obtain ⟨T, _, g, ψ, y, hg, hψ, hgy, hbase, -, -⟩ :=
+      X.exists_etale_nodeAlgebra_zero_of_mem_smoothLocus hx
+    refine ⟨R, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+      inferInstance, T, inferInstance, 0, g, ψ, y, ?_, .inl rfl, hg, hψ, hgy, ?_, ?_⟩
+    · simpa using hπ
+    · simpa [Spec.algebraMap] using hbase
+    · rw [← Scheme.Hom.comp_apply, ← hbase, Scheme.Hom.comp_apply, hgy, hxs]
+  · obtain ⟨R', _, _, _, _, _, _, T, _, b, g, ψ, y, hπ', hb, hg, hψ, hgy, hbase, hy, -, -⟩ :=
+      X.exists_etale_nodeAlgebra_of_isDiscreteValuationRing hπ hnodal hx hxs
+    exact ⟨R', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+      inferInstance, T, inferInstance, b, g, ψ, y, hπ', hb, hg, hψ, hgy, hbase, hy⟩
 
 end TauCeti.AlgebraicGeometry
