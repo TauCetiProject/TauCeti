@@ -166,11 +166,11 @@ theorem graphPermD_forkRight (h : 2 ≤ n) :
     graphPermD n h (forkRight n hn) = forkLeft n hn := by
   simpa only [forkLeft, forkRight] using graphPermD_apply_right n h
 
-private def forkBlock {K : Type*} [Ring K] : Matrix (Fin n) (Fin n) K :=
+private def forkBlock {K : Type*} [AddGroupWithOne K] : Matrix (Fin n) (Fin n) K :=
   Matrix.single (forkLeft n hn) (forkRight n hn) 1 -
     Matrix.single (forkRight n hn) (forkLeft n hn) 1
 
-private theorem forkBlock_transpose {K : Type*} [Ring K] :
+private theorem forkBlock_transpose {K : Type*} [AddGroupWithOne K] :
     (forkBlock (K := K) n hn).transpose = -forkBlock n hn := by
   simpa only [forkBlock] using Matrix.transpose_single_sub_single (K := K)
     (forkLeft n hn) (forkRight n hn) (a := 1)
@@ -180,7 +180,7 @@ private theorem forkBlock_transpose {K : Type*} [Ring K] :
 
 For a chain node this is `E_{i,i+1} - E_{\bar{i+1},\bar i}`; at the fork node it is
 `E_{n-2,\bar{n-1}} - E_{n-1,\bar{n-2}}`. -/
-def raisingMatrix {K : Type*} [Ring K] (i : Fin n) :
+def raisingMatrix {K : Type*} [AddGroupWithOne K] (i : Fin n) :
     Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K :=
   if hi : (i : ℕ) + 1 < n then
     let A : Matrix (Fin n) (Fin n) K := Matrix.single i (chainNext n i hi) 1
@@ -189,16 +189,16 @@ def raisingMatrix {K : Type*} [Ring K] (i : Fin n) :
     Matrix.fromBlocks 0 (forkBlock n hn) 0 0
 
 /-- The lowering matrix is the transpose of the corresponding raising matrix. -/
-def loweringMatrix {K : Type*} [Ring K] (i : Fin n) :
+def loweringMatrix {K : Type*} [AddGroupWithOne K] (i : Fin n) :
     Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K :=
   (raisingMatrix n hn i).transpose
 
 /-- The lowering matrix equals the transpose of the corresponding raising matrix. -/
-theorem loweringMatrix_eq_transpose {K : Type*} [Ring K] (i : Fin n) :
+theorem loweringMatrix_eq_transpose {K : Type*} [AddGroupWithOne K] (i : Fin n) :
     loweringMatrix (K := K) n hn i = (raisingMatrix n hn i).transpose := (rfl)
 
 @[simp]
-theorem raisingMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
+theorem raisingMatrix_of_chain {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : (i : ℕ) + 1 < n) :
     raisingMatrix (K := K) n hn i =
       let A : Matrix (Fin n) (Fin n) K := Matrix.single i (chainNext n i hi) 1
@@ -206,7 +206,7 @@ theorem raisingMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
   simp [raisingMatrix, hi]
 
 @[simp]
-theorem raisingMatrix_of_fork {K : Type*} [Ring K] {i : Fin n}
+theorem raisingMatrix_of_fork {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : ¬(i : ℕ) + 1 < n) :
     raisingMatrix (K := K) n hn i =
       let B : Matrix (Fin n) (Fin n) K :=
@@ -216,7 +216,7 @@ theorem raisingMatrix_of_fork {K : Type*} [Ring K] {i : Fin n}
   simp [raisingMatrix, hi, forkBlock]
 
 /-- A chain raising matrix is a difference of two matrix units. -/
-theorem raisingMatrix_eq_single_sub_single_of_chain {K : Type*} [Ring K] {i : Fin n}
+theorem raisingMatrix_eq_single_sub_single_of_chain {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : (i : ℕ) + 1 < n) :
     raisingMatrix (K := K) n hn i =
       Matrix.single (.inl i) (.inl (chainNext n i hi)) 1 -
@@ -225,7 +225,7 @@ theorem raisingMatrix_eq_single_sub_single_of_chain {K : Type*} [Ring K] {i : Fi
   ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
 
 /-- A non-chain raising matrix is the alternating pair of matrix units at the fork. -/
-theorem raisingMatrix_eq_single_sub_single_of_fork {K : Type*} [Ring K] {i : Fin n}
+theorem raisingMatrix_eq_single_sub_single_of_fork {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : ¬(i : ℕ) + 1 < n) :
     raisingMatrix (K := K) n hn i =
       Matrix.single (.inl (forkLeft n hn)) (.inr (forkRight n hn)) 1 -
@@ -234,7 +234,7 @@ theorem raisingMatrix_eq_single_sub_single_of_fork {K : Type*} [Ring K] {i : Fin
   ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
 
 @[simp]
-theorem loweringMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
+theorem loweringMatrix_of_chain {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : (i : ℕ) + 1 < n) :
     loweringMatrix (K := K) n hn i =
       let A : Matrix (Fin n) (Fin n) K := Matrix.single i (chainNext n i hi) 1
@@ -243,7 +243,7 @@ theorem loweringMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
   simp
 
 @[simp]
-theorem loweringMatrix_of_fork {K : Type*} [Ring K] {i : Fin n}
+theorem loweringMatrix_of_fork {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : ¬(i : ℕ) + 1 < n) :
     loweringMatrix (K := K) n hn i =
       let B : Matrix (Fin n) (Fin n) K :=
