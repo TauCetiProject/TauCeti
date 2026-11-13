@@ -152,8 +152,9 @@ private theorem HomologicalComplex.signEq_torsionBracket {C : ChainComplex (Modu
     (hσ : ∀ i, ι (c (j + 1) i) = hb (σ i)) {κ₁ κ₀ : Type*} (u : κ₁ → H) (w : κ₀ → H)
     (e₁ : Fin p ≃ κ₁) (e₀ : Fin q ≃ κ₀) (hu : ∀ i, ι (b₁ i) = u (e₁ i))
     (hw : ∀ i, ι (s i) = w (e₀ i)) (e : Fin m ≃ κ₁ ⊕ κ₀) :
-    SignEq (HomologicalComplex.torsionBracket c hC b₁ b₀ s hs) (hb.det (Sum.elim u w ∘ e)) := by
-  have hn := HomologicalComplex.eq_add_of_exactAt c hC b₁ b₀
+    SignEq (HomologicalComplex.torsionBracket c (by simp) (by simp) hC b₁ b₀ s hs)
+      (hb.det (Sum.elim u w ∘ e)) := by
+  have hn := HomologicalComplex.eq_add_of_exactAt c (by simp) (by simp) hC b₁ b₀
   -- Transport the determinant along `ι`, which sends the basis `c (j + 1)` to `hb`.
   have hcb : hb = ((c (j + 1)).map ι).reindex σ :=
     Basis.eq_of_apply_eq fun i ↦ by simpa using (hσ (σ.symm i)).symm
@@ -162,7 +163,7 @@ private theorem HomologicalComplex.signEq_torsionBracket {C : ChainComplex (Modu
     congr 1
     funext i
     simp
-  rw [HomologicalComplex.torsionBracket_eq_det_append c hC b₁ b₀ s hs hn, hdet]
+  rw [HomologicalComplex.torsionBracket_eq_det_append c _ _ hC b₁ b₀ s hs hn, hdet]
   have hv : ⇑ι ∘ (Fin.append (fun k ↦ (b₁ k : C.X (j + 1))) s ∘ Fin.cast hn) ∘ σ.symm =
       Sum.elim u w ∘ (σ.symm.trans
         ((finCongr hn).trans (finSumFinEquiv.symm.trans (Equiv.sumCongr e₁ e₀)))) := by
@@ -272,10 +273,10 @@ boundary bases and lifts of the based long exact sequence. -/
 
 /-- The chosen boundary bases and lifts of the based long exact sequence. -/
 private abbrev lesBoundaryBasis (n : ℤ) :=
-  HomologicalComplex.chosenBoundaryBasis hS.homologySequenceComplex (hS.lesBasis h₁ h₂ h₃) n
+  HomologicalComplex.chosenBoundaryBasis hS.homologySequenceComplex (hS.lesBasis h₁ h₂ h₃) (n + 1) n
 
 private abbrev lesBoundaryLift (n : ℤ) :=
-  HomologicalComplex.chosenBoundaryLift hS.homologySequenceComplex (hS.lesBasis h₁ h₂ h₃) n
+  HomologicalComplex.chosenBoundaryLift hS.homologySequenceComplex (hS.lesBasis h₁ h₂ h₃) (n + 1) n
 
 /-- A basis of the image of the connecting map `Hₖ₊₁(S.X₃) → Hₖ(S.X₁)`. -/
 private def lesρ (k : ℤ) :
@@ -365,10 +366,10 @@ private theorem exists_lesIso₃_lesBoundaryBasis (k n : ℤ) (hn : n = 3 * k) :
 /-- The bracket of the based long exact sequence in degree `n + 1`, for the chosen boundary bases
 and lifts. -/
 private abbrev lesBracket (n : ℤ) : F :=
-  HomologicalComplex.torsionBracket (hS.lesBasis h₁ h₂ h₃)
+  HomologicalComplex.torsionBracket (hS.lesBasis h₁ h₂ h₃) (by simp) (by simp)
     (hS.acyclic_homologySequenceComplex (n + 1)) (hS.lesBoundaryBasis h₁ h₂ h₃ (n + 1))
     (hS.lesBoundaryBasis h₁ h₂ h₃ n) (hS.lesBoundaryLift h₁ h₂ h₃ n)
-    (HomologicalComplex.chosenBoundaryLift_spec _ _ n)
+    (HomologicalComplex.chosenBoundaryLift_spec _ _ (n + 1) n)
 
 /-- The bracket at `Hₖ(S.X₁)` is up to sign the determinant of `lesρ` followed by `lesψ`. -/
 private theorem signEq_lesBracket_one (k : ℤ) {κ₁ κ₀ : Type*} (u : κ₁ → S.X₁.homology k)
@@ -586,13 +587,13 @@ private theorem exact_boundaryPreimageMap (k : ℤ) :
     simpa [coe_boundaryPreimageMap] using (exact_f_f_g_f hS k).apply_apply_eq_zero (w : S.X₁.X k)
 
 /-- The chosen boundary bases and lifts of `S.X₁` and `S.X₃`. -/
-private abbrev boundaryBasis₁ (k : ℤ) := HomologicalComplex.chosenBoundaryBasis S.X₁ c₁ k
+private abbrev boundaryBasis₁ (k : ℤ) := HomologicalComplex.chosenBoundaryBasis S.X₁ c₁ (k + 1) k
 
-private abbrev boundaryLift₁ (k : ℤ) := HomologicalComplex.chosenBoundaryLift S.X₁ c₁ k
+private abbrev boundaryLift₁ (k : ℤ) := HomologicalComplex.chosenBoundaryLift S.X₁ c₁ (k + 1) k
 
-private abbrev boundaryBasis₃ (k : ℤ) := HomologicalComplex.chosenBoundaryBasis S.X₃ c₃ k
+private abbrev boundaryBasis₃ (k : ℤ) := HomologicalComplex.chosenBoundaryBasis S.X₃ c₃ (k + 1) k
 
-private abbrev boundaryLift₃ (k : ℤ) := HomologicalComplex.chosenBoundaryLift S.X₃ c₃ k
+private abbrev boundaryLift₃ (k : ℤ) := HomologicalComplex.chosenBoundaryLift S.X₃ c₃ (k + 1) k
 
 /-- Lifts to `S.X₂` of the lifts of the boundary basis of `S.X₃`. -/
 private def liftLift₃ (k : ℤ) (i : Fin (finrank F (LinearMap.range (S.X₃.d (k + 1) k).hom))) :
@@ -780,14 +781,14 @@ private theorem signEq_torsionBracketWithHomology {c₂ : ∀ i, Basis (Fin (n�
     · simp [z₃, H₃, coe_homologyBasis₃, homologyπ_cycγ']
   obtain ⟨e₁, he₁⟩ := HomologicalComplex.exists_torsionBracketWithHomology_eq_det_comp c₁
     (boundaryBasis₁ c₁ (j + 1)) (Equiv.refl _) H₁ ι₁ z₁ hz₁ (boundaryBasis₁ c₁ j) (Equiv.refl _)
-    (boundaryLift₁ c₁ j) (HomologicalComplex.chosenBoundaryLift_spec _ _ j)
+    (boundaryLift₁ c₁ j) (HomologicalComplex.chosenBoundaryLift_spec _ _ (j + 1) j)
   obtain ⟨e₂, he₂⟩ := HomologicalComplex.exists_torsionBracketWithHomology_eq_det_comp c₂
     (hS.boundaryBasis₂ h₁ h₂ h₃ c₁ c₃ (j + 1)) (Fintype.equivFin _) H₂ ι₂ z₂ hz₂
     (hS.boundaryBasis₂ h₁ h₂ h₃ c₁ c₃ j) (Fintype.equivFin _)
     (hS.boundaryLift₂ h₁ h₂ h₃ c₁ c₃ j) (hS.d_boundaryLift₂ h₁ h₂ h₃ c₁ c₃ j)
   obtain ⟨e₃, he₃⟩ := HomologicalComplex.exists_torsionBracketWithHomology_eq_det_comp c₃
     (boundaryBasis₃ c₃ (j + 1)) (Equiv.refl _) H₃ ι₃ z₃ hz₃ (boundaryBasis₃ c₃ j) (Equiv.refl _)
-    (boundaryLift₃ c₃ j) (HomologicalComplex.chosenBoundaryLift_spec _ _ j)
+    (boundaryLift₃ c₃ j) (HomologicalComplex.chosenBoundaryLift_spec _ _ (j + 1) j)
   -- Changing the homology bases to the adapted ones.
   have hm₁ := HomologicalComplex.torsionBracketWithHomology_eq_mul c₁ (bracketBasis₁ c₁ (j + 1))
     (h₁ (j + 1)) (y₁ (j + 1)) (hy₁ (j + 1)) (bracketBasis₁ c₁ j) (bracketLift₁ c₁ j)
@@ -964,7 +965,7 @@ theorem HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_of_shortExact
   have hK := HomologicalComplex.hasFiniteMulSupport_torsionBracket
     (c := hS.lesBasis h₁ h₂ h₃) hnK hS.acyclic_homologySequenceComplex
     (hS.lesBoundaryBasis h₁ h₂ h₃) (hS.lesBoundaryLift h₁ h₂ h₃)
-    (HomologicalComplex.chosenBoundaryLift_spec _ _)
+    fun j ↦ HomologicalComplex.chosenBoundaryLift_spec _ _ (j + 1) j
   rw [HomologicalComplex.reidemeisterTorsionWithHomology_eq_finprod hn
       (hS.bracketBasis₂ h₁ h₂ h₃ c₁ c₃) y₂ hy₂ (hS.bracketLift₂ h₁ h₂ h₃ c₁ c₃)
       (hS.d_bracketLift₂ h₁ h₂ h₃ c₁ c₃),
@@ -976,7 +977,7 @@ theorem HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_of_shortExact
       (ShortComplex.ShortExact.bracketLift₃ c₃) (ShortComplex.ShortExact.d_bracketLift₃ c₃),
     HomologicalComplex.reidemeisterTorsion_eq_finprod hnK hS.acyclic_homologySequenceComplex
       (hS.lesBoundaryBasis h₁ h₂ h₃) (hS.lesBoundaryLift h₁ h₂ h₃)
-      (HomologicalComplex.chosenBoundaryLift_spec _ _),
+      (fun j ↦ HomologicalComplex.chosenBoundaryLift_spec _ _ (j + 1) j),
     finprod_eq_finprod_three _ hK]
   have hs₁ := HomologicalComplex.hasFiniteMulSupport_torsionBracketWithHomology (c := c₁)
     (h := h₁) hn₁ (ShortComplex.ShortExact.bracketBasis₁ c₁) y₁ hy₁
