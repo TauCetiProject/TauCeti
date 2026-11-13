@@ -12,7 +12,6 @@ import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.CohenMacaulay.RegularSequence
 import TauCeti.RingTheory.Flat.LocalCriterion
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
-import TauCeti.RingTheory.Regular.RegularSequence
 
 import TauCeti.RingTheory.Regular.Pair
 

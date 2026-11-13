@@ -18,7 +18,6 @@ import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.QuotSMulTop
-import TauCeti.RingTheory.Regular.RegularSequence
 
 import TauCeti.RingTheory.Regular.Pair
 

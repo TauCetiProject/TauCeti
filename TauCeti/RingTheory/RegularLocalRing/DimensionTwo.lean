@@ -16,7 +16,6 @@ import Mathlib.RingTheory.UniqueFactorizationDomain.Kaplansky
 import TauCeti.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.Regular.LinearMap
-import TauCeti.RingTheory.Regular.RegularSequence
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 import TauCeti.RingTheory.Regular.Pair

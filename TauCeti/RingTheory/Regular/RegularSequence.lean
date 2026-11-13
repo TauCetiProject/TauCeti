@@ -85,6 +85,18 @@ theorem Ideal.ofList_eq_span_range_getElem (rs : List R) :
 end OfList
 
 
+section Subsingleton
+
+variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
+
+/-- Every finite sequence is weakly regular on a module with at most one element. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.of_subsingleton [Subsingleton M] (rs : List R) :
+    IsWeaklyRegular M rs :=
+  ⟨fun _ _ _ _ _ ↦ Subsingleton.elim _ _⟩
+
+end Subsingleton
+
+
 section FractionRing
 
 variable {R : Type u} [CommRing R] {K : Type v} [CommRing K] [Algebra R K] [IsFractionRing R K]

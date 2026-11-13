@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import Mathlib.Algebra.Regular.SMul
-public import TauCeti.RingTheory.Regular.RegularSequence
+public import Mathlib.RingTheory.Regular.RegularSequence
 
 import TauCeti.RingTheory.Regular.Pair
 

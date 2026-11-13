@@ -14,8 +14,6 @@ import TauCeti.RingTheory.Finiteness.Nakayama
 import TauCeti.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.Regular.RegularSequence
 
-import TauCeti.RingTheory.Regular.Pair
-
 /-!
 # Depth as the supremum of lengths of weakly regular sequences
 
