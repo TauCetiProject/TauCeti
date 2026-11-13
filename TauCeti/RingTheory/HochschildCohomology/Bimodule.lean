@@ -87,21 +87,21 @@ variable (R A M : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [AddCommGro
 /-- The Hochschild `n`-cocycles with coefficients in the bimodule `M`: the kernel of the
 Hochschild coboundary on `n`-cochains. -/
 def hochschildBimoduleCocycles (n : ℕ) :
-    Submodule R (MultilinearMap R (fun _ : Fin n ↦ A) M) :=
+    Submodule R ((Fin n → A) →ₘₗ[R] M) :=
   LinearMap.ker (hochschildBimoduleCoboundary R A M n)
 
 variable {R A M} in
 /-- A cochain is a cocycle exactly when its coboundary vanishes. -/
 @[simp]
 theorem mem_hochschildBimoduleCocycles_iff {n : ℕ}
-    {ψ : MultilinearMap R (fun _ : Fin n ↦ A) M} :
+    {ψ : (Fin n → A) →ₘₗ[R] M} :
     ψ ∈ hochschildBimoduleCocycles R A M n ↔ hochschildBimoduleCoboundary R A M n ψ = 0 :=
   LinearMap.mem_ker
 
 /-- The Hochschild `n`-coboundaries with coefficients in the bimodule `M`: zero in degree zero,
 and the range of the preceding coboundary in positive degree. -/
 def hochschildBimoduleCoboundaries :
-    (n : ℕ) → Submodule R (MultilinearMap R (fun _ : Fin n ↦ A) M)
+    (n : ℕ) → Submodule R ((Fin n → A) →ₘₗ[R] M)
   | 0 => ⊥
   | n + 1 => LinearMap.range (hochschildBimoduleCoboundary R A M n)
 
@@ -120,7 +120,7 @@ variable {R A M} in
 /-- A positive-degree coboundary is the coboundary of a cochain. -/
 @[simp]
 theorem mem_hochschildBimoduleCoboundaries_succ_iff {n : ℕ}
-    {ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} :
+    {ψ : (Fin (n + 1) → A) →ₘₗ[R] M} :
     ψ ∈ hochschildBimoduleCoboundaries R A M (n + 1) ↔
       ∃ φ, hochschildBimoduleCoboundary R A M n φ = ψ :=
   LinearMap.mem_range
@@ -137,15 +137,15 @@ theorem hochschildBimoduleCoboundaries_le_hochschildBimoduleCocycles [SMulCommCl
 variable {R A M} in
 /-- A degree-zero cochain is a cocycle exactly when its value is central. -/
 theorem mem_hochschildBimoduleCocycles_zero_iff (m : M) :
-    MultilinearMap.constOfIsEmpty R (fun _ : Fin 0 ↦ A) m ∈ hochschildBimoduleCocycles R A M 0 ↔
-      ∀ x : A, x • m = op x • m := by
+    MultilinearMap.constOfIsEmpty (RingHom.id R) (fun _ : Fin 0 ↦ A) m ∈
+        hochschildBimoduleCocycles R A M 0 ↔ ∀ x : A, x • m = op x • m := by
   rw [mem_hochschildBimoduleCocycles_iff, hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff]
 
 variable {R A M} in
 /-- A degree-one cochain is a cocycle exactly when it is a derivation, satisfying the Leibniz rule
 `f (x y) = x • f y + f x • y`. -/
 theorem mem_hochschildBimoduleCocycles_one_iff (f : A →ₗ[R] M) :
-    MultilinearMap.ofSubsingleton R A M 0 f ∈ hochschildBimoduleCocycles R A M 1 ↔
+    MultilinearMap.ofSubsingleton (RingHom.id R) A M 0 f ∈ hochschildBimoduleCocycles R A M 1 ↔
       ∀ x y : A, f (x * y) = x • f y + op y • f x := by
   rw [mem_hochschildBimoduleCocycles_iff, hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff]
 
@@ -153,21 +153,21 @@ variable {R A M} in
 /-- A degree-one cochain is a coboundary exactly when it is an inner derivation
 `a ↦ a • m - op a • m`. -/
 theorem mem_hochschildBimoduleCoboundaries_one_iff
-    (ψ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) :
+    (ψ : (Fin 1 → A) →ₘₗ[R] M) :
     ψ ∈ hochschildBimoduleCoboundaries R A M 1 ↔
       ∃ m : M, ∀ a : A, ψ (fun _ ↦ a) = a • m - op a • m := by
   rw [mem_hochschildBimoduleCoboundaries_succ_iff]
   constructor
   · rintro ⟨φ, rfl⟩
     refine ⟨φ 0, fun a ↦ ?_⟩
-    have hφ : φ = MultilinearMap.constOfIsEmpty R (fun _ : Fin 0 ↦ A) (φ 0) := by
+    have hφ : φ = MultilinearMap.constOfIsEmpty (RingHom.id R) (fun _ : Fin 0 ↦ A) (φ 0) := by
       ext v
       rw [MultilinearMap.constOfIsEmpty_apply, Subsingleton.elim v 0]
       rfl
     rw [hφ, hochschildBimoduleCoboundary_constOfIsEmpty, MultilinearMap.constOfIsEmpty_apply]
     rfl
   · rintro ⟨m, hm⟩
-    refine ⟨MultilinearMap.constOfIsEmpty R (fun _ : Fin 0 ↦ A) m, ?_⟩
+    refine ⟨MultilinearMap.constOfIsEmpty (RingHom.id R) (fun _ : Fin 0 ↦ A) m, ?_⟩
     ext a
     rw [hochschildBimoduleCoboundary_constOfIsEmpty]
     have ha : (fun _ : Fin 1 ↦ a 0) = a := funext fun i ↦ congrArg a (Subsingleton.elim 0 i)
@@ -185,14 +185,14 @@ section Complex
 `M`: in degree `n` the `R`-multilinear maps `Aⁿ → M`, with the Hochschild coboundary as
 differential. -/
 def hochschildBimoduleCochainComplex : CochainComplex (ModuleCat R) ℕ :=
-  CochainComplex.of (fun n ↦ ModuleCat.of R (MultilinearMap R (fun _ : Fin n ↦ A) M))
+  CochainComplex.of (fun n ↦ ModuleCat.of R ((Fin n → A) →ₘₗ[R] M))
     (fun n ↦ ModuleCat.ofHom (hochschildBimoduleCoboundary R A M n))
     fun _ ↦ ModuleCat.hom_ext hochschildBimoduleCoboundary_comp_hochschildBimoduleCoboundary
 
 /-- The degree-`n` term of the Hochschild cochain complex is the module of `n`-cochains. -/
 def hochschildBimoduleCochainComplexXIso (n : ℕ) :
     (hochschildBimoduleCochainComplex R A M).X n ≅
-      ModuleCat.of R (MultilinearMap R (fun _ : Fin n ↦ A) M) :=
+      ModuleCat.of R ((Fin n → A) →ₘₗ[R] M) :=
   Iso.refl _
 
 /-- Under the identifications `hochschildBimoduleCochainComplexXIso`, the differential of the
@@ -213,7 +213,7 @@ abbrev hochschildBimoduleCohomology (n : ℕ) : ModuleCat R :=
   (hochschildBimoduleCochainComplex R A M).homology n
 
 private theorem mem_hochschildBimoduleCocycles_iff_complex (n : ℕ)
-    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) :
+    (ψ : (Fin n → A) →ₘₗ[R] M) :
     ψ ∈ hochschildBimoduleCocycles R A M n ↔
       (hochschildBimoduleCochainComplex R A M).d n (n + 1)
         ((hochschildBimoduleCochainComplexXIso R A M n).inv ψ) = 0 := by
@@ -222,7 +222,7 @@ private theorem mem_hochschildBimoduleCocycles_iff_complex (n : ℕ)
       (hochschildBimoduleCoboundary R A M) (hochschildBimoduleCochainComplex_d R A M)]
 
 private theorem mem_hochschildBimoduleCoboundaries_iff_complex (n : ℕ)
-    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) :
+    (ψ : (Fin n → A) →ₘₗ[R] M) :
     ψ ∈ hochschildBimoduleCoboundaries R A M n ↔
       ∃ y : (hochschildBimoduleCochainComplex R A M).X ((ComplexShape.up ℕ).prev n),
         (hochschildBimoduleCochainComplex R A M).d ((ComplexShape.up ℕ).prev n) n y =
@@ -237,7 +237,7 @@ namespace hochschildBimoduleCohomology
 /-- The Hochschild cohomology class of a Hochschild cocycle. -/
 def mk (n : ℕ) : hochschildBimoduleCocycles R A M n →ₗ[R] hochschildBimoduleCohomology R A M n :=
   (hochschildBimoduleCochainComplex R A M).moduleCatCohomologyClassOfIso
-    (fun n ↦ MultilinearMap R (fun _ : Fin n ↦ A) M) (hochschildBimoduleCocycles R A M)
+    (fun n ↦ (Fin n → A) →ₘₗ[R] M) (hochschildBimoduleCocycles R A M)
     (hochschildBimoduleCochainComplexXIso R A M)
     (mem_hochschildBimoduleCocycles_iff_complex R A M) n
 
@@ -249,14 +249,14 @@ theorem mk_eq_homologyπ {n : ℕ} (ψ : hochschildBimoduleCocycles R A M n)
       ((hochschildBimoduleCochainComplex R A M).iCycles n z) = ψ) :
     mk R A M n ψ = (hochschildBimoduleCochainComplex R A M).homologyπ n z :=
   (hochschildBimoduleCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_homologyπ
-    (fun n ↦ MultilinearMap R (fun _ : Fin n ↦ A) M) (hochschildBimoduleCocycles R A M)
+    (fun n ↦ (Fin n → A) →ₘₗ[R] M) (hochschildBimoduleCocycles R A M)
     (hochschildBimoduleCochainComplexXIso R A M)
     (mem_hochschildBimoduleCocycles_iff_complex R A M) ψ z hz
 
 /-- Every Hochschild cohomology class is the class of a Hochschild cocycle. -/
 theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) :=
   (hochschildBimoduleCochainComplex R A M).moduleCatCohomologyClassOfIso_surjective
-    (fun n ↦ MultilinearMap R (fun _ : Fin n ↦ A) M) (hochschildBimoduleCocycles R A M)
+    (fun n ↦ (Fin n → A) →ₘₗ[R] M) (hochschildBimoduleCocycles R A M)
     (hochschildBimoduleCochainComplexXIso R A M)
     (mem_hochschildBimoduleCocycles_iff_complex R A M) n
 
@@ -264,9 +264,9 @@ theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) :=
 @[simp]
 theorem mk_eq_zero_iff (n : ℕ) (ψ : hochschildBimoduleCocycles R A M n) :
     mk R A M n ψ = 0 ↔
-      (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) ∈ hochschildBimoduleCoboundaries R A M n :=
+      (ψ : (Fin n → A) →ₘₗ[R] M) ∈ hochschildBimoduleCoboundaries R A M n :=
   (hochschildBimoduleCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff
-    (fun n ↦ MultilinearMap R (fun _ : Fin n ↦ A) M) (hochschildBimoduleCocycles R A M)
+    (fun n ↦ (Fin n → A) →ₘₗ[R] M) (hochschildBimoduleCocycles R A M)
     (hochschildBimoduleCoboundaries R A M) (hochschildBimoduleCochainComplexXIso R A M)
     (mem_hochschildBimoduleCocycles_iff_complex R A M)
     (mem_hochschildBimoduleCoboundaries_iff_complex R A M) n ψ
@@ -275,10 +275,10 @@ theorem mk_eq_zero_iff (n : ℕ) (ψ : hochschildBimoduleCocycles R A M n) :
 coboundary. -/
 theorem mk_eq_mk_iff (n : ℕ) (ψ φ : hochschildBimoduleCocycles R A M n) :
     mk R A M n ψ = mk R A M n φ ↔
-      (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) - φ ∈
+      (ψ : (Fin n → A) →ₘₗ[R] M) - φ ∈
         hochschildBimoduleCoboundaries R A M n :=
   (hochschildBimoduleCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_iff
-    (fun n ↦ MultilinearMap R (fun _ : Fin n ↦ A) M) (hochschildBimoduleCocycles R A M)
+    (fun n ↦ (Fin n → A) →ₘₗ[R] M) (hochschildBimoduleCocycles R A M)
     (hochschildBimoduleCoboundaries R A M) (hochschildBimoduleCochainComplexXIso R A M)
     (mem_hochschildBimoduleCocycles_iff_complex R A M)
     (mem_hochschildBimoduleCoboundaries_iff_complex R A M) n ψ φ
@@ -298,7 +298,7 @@ theorem linearMap_ext {n : ℕ} {f g : hochschildBimoduleCohomology R A M n →�
 cohomology. -/
 def desc (n : ℕ) (f : hochschildBimoduleCocycles R A M n →ₗ[R] N)
     (hf : ∀ ψ : hochschildBimoduleCocycles R A M n,
-      (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) ∈ hochschildBimoduleCoboundaries R A M n →
+      (ψ : (Fin n → A) →ₘₗ[R] M) ∈ hochschildBimoduleCoboundaries R A M n →
         f ψ = 0) :
     hochschildBimoduleCohomology R A M n →ₗ[R] N :=
   (mk R A M n).liftOfSurjective (mk_surjective R A M n)
@@ -309,7 +309,7 @@ def desc (n : ℕ) (f : hochschildBimoduleCocycles R A M n →ₗ[R] N)
 @[simp]
 theorem desc_mk (n : ℕ) (f : hochschildBimoduleCocycles R A M n →ₗ[R] N)
     (hf : ∀ ψ : hochschildBimoduleCocycles R A M n,
-      (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) ∈ hochschildBimoduleCoboundaries R A M n →
+      (ψ : (Fin n → A) →ₘₗ[R] M) ∈ hochschildBimoduleCoboundaries R A M n →
         f ψ = 0)
     (ψ : hochschildBimoduleCocycles R A M n) :
     desc n f hf (mk R A M n ψ) = f ψ :=
@@ -319,7 +319,7 @@ theorem desc_mk (n : ℕ) (f : hochschildBimoduleCocycles R A M n →ₗ[R] N)
 @[simp]
 theorem desc_comp_mk (n : ℕ) (f : hochschildBimoduleCocycles R A M n →ₗ[R] N)
     (hf : ∀ ψ : hochschildBimoduleCocycles R A M n,
-      (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) ∈ hochschildBimoduleCoboundaries R A M n →
+      (ψ : (Fin n → A) →ₘₗ[R] M) ∈ hochschildBimoduleCoboundaries R A M n →
         f ψ = 0) :
     desc n f hf ∘ₗ mk R A M n = f :=
   LinearMap.ext (desc_mk n f hf)
