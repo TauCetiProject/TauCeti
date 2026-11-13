@@ -82,6 +82,7 @@ theorem isUniform_besselPotential (s : ℝ) : (besselPotential s : Symbol n V V 
 
 /-- Multiplying a symbol by `⟨ξ / 2π⟩ ^ t` and then by `⟨ξ / 2π⟩ ^ t'` multiplies it by
 `⟨ξ / 2π⟩ ^ (t + t')`. -/
+@[simp]
 theorem coefficient_comp_besselPotential_comp_besselPotential {W : Type*} [NormedAddCommGroup W]
     [NormedSpace ℂ W] (a : Symbol n V W m) (t t' : ℝ) :
     ((a.comp (besselPotential t)).comp (besselPotential t')).coefficient =
@@ -92,6 +93,7 @@ theorem coefficient_comp_besselPotential_comp_besselPotential {W : Type*} [Norme
   rw [← Real.rpow_add (by positivity), add_div, add_comm (t' / 2)]
 
 /-- Multiplying a symbol by `⟨ξ / 2π⟩ ^ 0 = 1` does not change its coefficient. -/
+@[simp]
 theorem coefficient_comp_besselPotential_zero {W : Type*} [NormedAddCommGroup W]
     [NormedSpace ℂ W] (a : Symbol n V W m) :
     (a.comp (besselPotential 0)).coefficient = a.coefficient := by

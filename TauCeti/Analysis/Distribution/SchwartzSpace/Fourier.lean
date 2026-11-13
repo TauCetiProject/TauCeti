@@ -50,6 +50,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 * `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM`: the Bessel
   multipliers of orders `t` and `t'` compose to the one of order `t + t'`.
+* `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_neg_comp_fourierMultiplierCLM`: the Bessel
+  multiplier of order `-t` inverts the one of order `t`.
 * `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq`: the Bessel multiplier of order `2` is
   `1 - (2π)⁻² Δ`.
 * `SchwartzMap.fourierInv_apply_eq_fourier_neg`: `𝓕⁻ f x = 𝓕 f (-x)`.
@@ -193,6 +195,17 @@ theorem fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM (t t' : �
     ext x
     rw [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity), add_div]
   rw [fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) (by fun_prop), h]
+
+/-- The Bessel multiplier of order `-t`, with symbol `⟨ξ⟩ ^ (-t)`, inverts the one of order `t` on
+Schwartz functions. -/
+theorem fourierMultiplierCLM_one_add_norm_sq_rpow_neg_comp_fourierMultiplierCLM (t : ℝ) :
+    fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-t / 2) : ℝ) : ℂ)) ∘L
+        fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) =
+      ContinuousLinearMap.id ℂ 𝓢(E, F) := by
+  ext1 ψ
+  rw [ContinuousLinearMap.comp_apply,
+    fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM]
+  simp
 
 /-- The Fourier multiplier with symbol `⟨ξ⟩² = 1 + ‖ξ‖²`, the Bessel multiplier of order `2`, is
 the differential operator `1 - (2π)⁻² Δ` on Schwartz functions. -/

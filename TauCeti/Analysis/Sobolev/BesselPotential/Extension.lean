@@ -24,10 +24,13 @@ symbol `⟨ξ⟩ ^ t = (1 + ‖ξ‖ ^ 2) ^ (t / 2)`, extends to an operator `H^
 
 ## Main declarations
 
-* `SchwartzMap.HasSobolevExtension`: `A` extends to a bounded operator `H^s → H^r`.
+* `SchwartzMap.HasSobolevExtension`: `A` extends to a bounded operator `H^s → H^r`, characterised
+  by `SchwartzMap.hasSobolevExtension_iff`.
+* `SchwartzMap.hasSobolevExtension_zero`, `SchwartzMap.hasSobolevExtension_id`: the zero map and the
+  identity extend.
 * `SchwartzMap.HasSobolevExtension.comp`, `SchwartzMap.HasSobolevExtension.add`,
-  `SchwartzMap.HasSobolevExtension.smul`, `SchwartzMap.HasSobolevExtension.sub`: extensions compose
-  and form a vector space.
+  `SchwartzMap.HasSobolevExtension.neg`, `SchwartzMap.HasSobolevExtension.smul`,
+  `SchwartzMap.HasSobolevExtension.sub`: extensions compose and form a vector space.
 * `SchwartzMap.HasSobolevExtension.mono`: an extension into `H^r` is one into every `H^{r'}` with
   `r' ≤ r`.
 * `SchwartzMap.hasSobolevExtension_besselMultiplier`: `J^t` extends to `H^s → H^{s - t}`.
@@ -50,9 +53,26 @@ variable {E F G K : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
 
 /-- A continuous linear map `A` of Schwartz spaces extends to a bounded operator `H^s → H^r`: some
 continuous linear map `T : H^s(E, F) →L[ℂ] H^r(E, G)` agrees with `A` on Schwartz functions. -/
-@[expose] def HasSobolevExtension (A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)) (s r : ℝ) : Prop :=
+def HasSobolevExtension (A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)) (s r : ℝ) : Prop :=
   ∃ T : H^{s}(E, F) →L[ℂ] H^{r}(E, G),
     T ∘L toBesselPotentialSpaceCLM s 2 = toBesselPotentialSpaceCLM r 2 ∘L A
+
+/-- `A` extends to a bounded operator `H^s → H^r` if and only if some continuous linear map
+`T : H^s(E, F) →L[ℂ] H^r(E, G)` agrees with `A` on Schwartz functions. -/
+theorem hasSobolevExtension_iff {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)} {s r : ℝ} :
+    HasSobolevExtension A s r ↔ ∃ T : H^{s}(E, F) →L[ℂ] H^{r}(E, G),
+      T ∘L toBesselPotentialSpaceCLM s 2 = toBesselPotentialSpaceCLM r 2 ∘L A :=
+  Iff.rfl
+
+/-- The zero map extends to a bounded operator `H^s → H^r`. -/
+theorem hasSobolevExtension_zero (s r : ℝ) :
+    HasSobolevExtension (0 : 𝓢(E, F) →L[ℂ] 𝓢(E, G)) s r :=
+  ⟨0, by rw [ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero]⟩
+
+/-- The identity extends to a bounded operator `H^s → H^s`. -/
+theorem hasSobolevExtension_id (s : ℝ) :
+    HasSobolevExtension (ContinuousLinearMap.id ℂ 𝓢(E, F)) s s :=
+  ⟨ContinuousLinearMap.id ℂ _, by rw [ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_id]⟩
 
 namespace HasSobolevExtension
 
@@ -73,6 +93,11 @@ theorem add (hA : HasSobolevExtension A s r) (hB : HasSobolevExtension B s r) :
   obtain ⟨T', hT'⟩ := hB
   exact ⟨T + T', by rw [ContinuousLinearMap.add_comp, hT, hT', ContinuousLinearMap.comp_add]⟩
 
+/-- The negative of an operator extending to `H^s → H^r` extends to `H^s → H^r`. -/
+theorem neg (hA : HasSobolevExtension A s r) : HasSobolevExtension (-A) s r := by
+  obtain ⟨T, hT⟩ := hA
+  exact ⟨-T, by rw [ContinuousLinearMap.neg_comp, hT, ContinuousLinearMap.comp_neg]⟩
+
 /-- A complex multiple of an operator extending to `H^s → H^r` extends to `H^s → H^r`. -/
 theorem smul (hA : HasSobolevExtension A s r) (c : ℂ) : HasSobolevExtension (c • A) s r := by
   obtain ⟨T, hT⟩ := hA
@@ -85,7 +110,7 @@ theorem smul_real (hA : HasSobolevExtension A s r) (c : ℝ) : HasSobolevExtensi
 /-- The difference of operators extending to `H^s → H^r` extends to `H^s → H^r`. -/
 theorem sub (hA : HasSobolevExtension A s r) (hB : HasSobolevExtension B s r) :
     HasSobolevExtension (A - B) s r := by
-  simpa only [sub_eq_add_neg, neg_one_smul] using hA.add (hB.smul (-1))
+  simpa only [sub_eq_add_neg] using hA.add hB.neg
 
 /-- Extensions into `H^r` are extensions into every `H^{r'}` with `r' ≤ r`. -/
 theorem mono (hA : HasSobolevExtension A s r) {r' : ℝ} (h : r' ≤ r) :
