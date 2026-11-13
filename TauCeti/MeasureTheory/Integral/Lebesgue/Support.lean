@@ -5,33 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
-# Positive integrals and non-concentration at zero
+# Positive integrals and non-concentration on zero sets
 
-A probability law on the nonnegative half-line with positive extended mean gives
-mass strictly less than one to zero. This supplies nondegeneracy from a positive
-or infinite mean without assumptions on the law away from zero.
+For a zero or probability measure, a function with positive lower Lebesgue integral
+has a zero set of mass strictly less than one. In particular, no zero of the function
+can carry all the mass. No measurability assumption on the function is needed.
 -/
 
 public section
 
 open MeasureTheory
-open scoped ENNReal NNReal
+open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
-variable (μ : Measure ℝ≥0) [IsProbabilityMeasure μ]
+variable {α : Type*} [MeasurableSpace α] (μ : Measure α) [IsZeroOrProbabilityMeasure μ]
 
-/-- A probability law on the half-line with positive extended mean is not concentrated
-at zero. In particular, this applies to laws of infinite mean. -/
-theorem measure_singleton_zero_lt_one_of_lintegral_pos
-    (hmean : 0 < ∫⁻ u, (u : ℝ≥0∞) ∂μ) : μ {0} < 1 := by
-  have hpos := (lintegral_pos_iff_support measurable_coe_nnreal_ennreal).1 hmean
-  simpa [Function.support] using prob_compl_lt_one_sub_of_lt_prob hpos
-    (measurableSet_support measurable_coe_nnreal_ennreal)
+/-- A function with positive lower Lebesgue integral has a zero set of mass less than one. -/
+theorem measure_compl_support_lt_one_of_lintegral_pos {f : α → ℝ≥0∞}
+    (h : 0 < ∫⁻ u, f u ∂μ) : μ (Function.support f)ᶜ < 1 := by
+  obtain ⟨g, hg, hgf, hfg⟩ := exists_measurable_le_lintegral_eq μ f
+  have hpos := (lintegral_pos_iff_support hg).1 (hfg ▸ h)
+  refine lt_of_le_of_lt (measure_mono ?_) (by
+    simpa using prob_compl_lt_one_sub_of_lt_prob hpos (measurableSet_support hg))
+  intro x hx
+  simp only [Set.mem_compl_iff, Function.mem_support, not_not] at hx ⊢
+  exact le_antisymm ((hgf x).trans_eq hx) bot_le
+
+/-- A zero of a function with positive lower Lebesgue integral has mass less than one. -/
+theorem measure_singleton_lt_one_of_lintegral_pos {f : α → ℝ≥0∞} {a : α}
+    (ha : f a = 0) (h : 0 < ∫⁻ u, f u ∂μ) : μ {a} < 1 := by
+  refine lt_of_le_of_lt (measure_mono ?_) (μ.measure_compl_support_lt_one_of_lintegral_pos h)
+  simpa [Function.support] using ha
 
 end MeasureTheory.Measure
