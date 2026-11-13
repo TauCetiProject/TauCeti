@@ -152,13 +152,10 @@ trivial mapping class. -/
 theorem mk_final_eq_one (Φ : Diffeotopy I ∞ M)
     (hΦ : ∀ t x, x ∈ I.boundary M → Φ (t, x) = x) :
     mk I M ⟨Φ.final, Diffeomorph.mem_fixingSubgroup_of_forall fun x hx =>
-      (Φ.final_apply x).trans (hΦ 1 x hx)⟩ = 1 := by
-  refine mk_eq_one_iff.mpr ⟨?_⟩
-  refine ⟨⟨fun t => ⟨Φ.timeSlice t, Diffeomorph.mem_fixingSubgroup_of_forall fun x hx =>
-      (Φ.timeSlice_apply t x).trans (hΦ t x hx)⟩,
-    Φ.continuous_timeSlice.subtype_mk _⟩, ?_, ?_⟩
-  · exact Subtype.ext (Φ.timeSlice_zero.trans Diffeomorph.one_def.symm)
-  · exact Subtype.ext (Φ.final_def.symm)
+      (Φ.final_apply x).trans (hΦ 1 x hx)⟩ = 1 :=
+  mk_eq_one_iff.mpr (JoinedIn.joined_subtype ⟨Φ.toPath, fun t =>
+    Diffeomorph.mem_fixingSubgroup_of_forall fun x hx =>
+      (DFunLike.congr_fun (Φ.toPath_apply t) x).trans ((Φ.timeSlice_apply t x).trans (hΦ t x hx))⟩)
 
 section Orientation
 
