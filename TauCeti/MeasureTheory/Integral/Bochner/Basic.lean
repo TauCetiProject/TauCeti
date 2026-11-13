@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -27,6 +28,11 @@ for set and probability integrals.
 
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
+
+## Bounded multipliers
+
+* `MeasureTheory.norm_integral_smul_le_of_support_subset`: a multiplier `g` bounded by `K` on a
+  set containing the support of an integrable `f` gives `‖∫ g • f‖ ≤ K ∫ ‖f‖`.
 
 ## Differences of integrals
 
@@ -120,6 +126,10 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_eNorm`, whose
 * `TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub`: uniform convergence on a set of finite
   measure sends the lower integrals `∫⁻_s ‖f i - g‖ₑ` to `0`, which is `L¹` convergence on that set
   when the differences are almost everywhere strongly measurable.
+* `TendstoUniformly.tendsto_integral_smul_of_integrable`: integrals against a fixed integrable
+  weight `w` converge along any filter when scalar multipliers, in a space acting boundedly on the
+  codomain of `w`, converge uniformly to `f`, with `f • w` integrable and the products `fs i • w`
+  eventually almost everywhere strongly measurable.
 * `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a continuous weight with
   compact support in an open set `Ω` pass to limits of maps continuous on `Ω` that converge
   uniformly on the support of the weight.
@@ -182,6 +192,17 @@ theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
     ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) := by
   simpa only [AddMonoidHom.coe_toRealLinearMap] using
     (T.toRealLinearMap hT).integral_comp_comm hf
+
+/-- The integral of `g • f`, for a multiplier bounded by `K` on a set containing the support of
+the integrable function `f`, is at most `K ∫ ‖f‖`. -/
+theorem MeasureTheory.norm_integral_smul_le_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [NormedSpace ℝ E] [MeasurableSpace α]
+    {μ : Measure α} {f : α → E} {g : α → 𝕜} {s : Set α} {K : ℝ} (hf : Integrable f μ)
+    (hsupp : Function.support f ⊆ s) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
+    ‖∫ x, g x • f x ∂μ‖ ≤ K * ∫ x, ‖f x‖ ∂μ := by
+  rw [← integral_const_mul]
+  exact norm_integral_le_of_norm_le (hf.norm.const_mul K)
+    (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
 
 namespace Multiset
 
@@ -636,6 +657,40 @@ theorem tendsto_integral_smul_of_tendstoUniformlyOn {X F ι : Type*} [Topologica
     (Eventually.of_forall fun x hx ↦ image_eq_zero_of_notMem_tsupport hx)
     (Eventually.of_forall fun i ↦ hint (hf i)) (hint hg).aestronglyMeasurable
     (hlim.tendsto_setLIntegral_enorm_sub hac.measure_lt_top.ne)
+
+/-- If functions `fᵢ` with values in a space `𝕜` acting boundedly on the codomain `G` of `w`
+converge uniformly to `f` along any filter, then `∫ fᵢ w → ∫ f w` for every integrable `w` such
+that `f w` is integrable and `fun x => fᵢ x • w x` is eventually almost everywhere strongly
+measurable along the filter. -/
+theorem _root_.TendstoUniformly.tendsto_integral_smul_of_integrable {α ι 𝕜 G : Type*}
+    [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [PseudoMetricSpace 𝕜] [Zero 𝕜] [SMul 𝕜 G] [IsBoundedSMul 𝕜 G] {l : Filter ι}
+    {fs : ι → α → 𝕜} {f : α → 𝕜} {w : α → G} (hu : TendstoUniformly fs f l)
+    (hmeas : ∀ᶠ i in l, AEStronglyMeasurable (fun x => fs i x • w x) μ) (hw : Integrable w μ)
+    (hfw : Integrable (fun x => f x • w x) μ) :
+    Tendsto (fun i => ∫ x, fs i x • w x ∂μ) l (𝓝 (∫ x, f x • w x ∂μ)) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  set I : ℝ := ∫ x, ‖w x‖ ∂μ
+  have hδ0 : 0 < ε / (I + 1) := by positivity
+  filter_upwards [Metric.tendstoUniformly_iff.1 hu (ε / (I + 1)) hδ0, hmeas] with i hi hmi
+  have hbound : ∀ x, ‖f x • w x - fs i x • w x‖ ≤ ε / (I + 1) * ‖w x‖ := fun x => by
+    rw [← dist_eq_norm]
+    have h := dist_pair_smul (f x) (fs i x) (w x)
+    rw [dist_zero_right] at h
+    exact h.trans (mul_le_mul_of_nonneg_right (hi x).le (norm_nonneg _))
+  have hint : Integrable (fun x => fs i x • w x) μ :=
+    integrable_of_norm_sub_le hmi hfw (hw.norm.const_mul _) (Eventually.of_forall hbound)
+  rw [dist_eq_norm, ← integral_sub hint hfw]
+  calc ‖∫ x, (fs i x • w x - f x • w x) ∂μ‖
+      ≤ ∫ x, ε / (I + 1) * ‖w x‖ ∂μ :=
+        norm_integral_le_of_norm_le (hw.norm.const_mul _) (Eventually.of_forall fun x => by
+          rw [norm_sub_rev]
+          exact hbound x)
+    _ = ε / (I + 1) * I := integral_const_mul _ _
+    _ < ε := by
+        rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+        nlinarith
 
 /-- **Perturbing the weight of an integral.** Replacing the weight `a` by `b`, with
 `|b - a| ≤ η` and both vanishing off a set `K` of finite measure, changes the integral against a
