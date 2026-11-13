@@ -39,8 +39,6 @@ the generation of the product sigma algebra.
 
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Lemma 6.5.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, the Layer-1 design-validation milestone
-  requiring stability of finite coupling gluing under step approximation.
 -/
 
 public section

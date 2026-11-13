@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Affine
 public import TauCeti.NumberTheory.Height.NumberField
+import TauCeti.FieldTheory.IntermediateField.Map
 import TauCeti.NumberTheory.NumberField.AdjoinPair
 
 /-!
@@ -143,13 +144,15 @@ theorem absoluteProjectiveTupleHeight_comp (f : F →+* F') (x : ι → F) :
     have : NumberField E := {}
     have : FiniteDimensional ℚ E' := finiteDimensional_adjoin (by rintro _ ⟨i, rfl⟩; exact hfx i)
     have : NumberField E' := {}
-    -- `f` restricts to an isomorphism `ℚ(x) ≃ ℚ(f ∘ x)` sending `x` to `f ∘ x`.
-    let e : E ≃ₐ[ℚ] E' := adjoinRangeMapEquiv x f
+    -- `f` restricts to an isomorphism `ℚ(x) ≃ ℚ(f ∘ x)` sending `x` to `f ∘ x`; the ascription
+    -- uses that `f.toRatAlgHom` is `f` on elements by the `rfl` lemma `RingHom.toRatAlgHom_apply`.
+    let e : E ≃ₐ[ℚ] E' := adjoinRangeMapEquiv x f.toRatAlgHom
     rw [absoluteProjectiveTupleHeight, dite_eq_left hfx, absoluteProjectiveTupleHeight,
       dite_eq_left hx, ← e.toLinearEquiv.finrank_eq, ← mulHeight_ringEquiv e.toRingEquiv]
     -- `e` sends `⟨x i, _⟩` to `⟨f (x i), _⟩`.
     refine congrArg (· ^ _) (congrArg mulHeight (funext fun i ↦ Subtype.ext ?_))
-    exact (coe_adjoinRangeMapEquiv_apply x f ⟨x i, subset_adjoin ℚ _ (Set.mem_range_self i)⟩).symm
+    exact (coe_adjoinRangeMapEquiv_apply x f.toRatAlgHom
+      ⟨x i, subset_adjoin ℚ _ (Set.mem_range_self i)⟩).symm
   · obtain ⟨i, hi⟩ := not_forall.mp hx
     rw [absoluteProjectiveTupleHeight_of_not_isIntegral hi,
       absoluteProjectiveTupleHeight_of_not_isIntegral (i := i) ((hint i).not.mpr hi)]

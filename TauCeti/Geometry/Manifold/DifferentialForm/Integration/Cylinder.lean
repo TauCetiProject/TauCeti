@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.ContMDiff.Curve
@@ -140,6 +140,27 @@ theorem rectangleIntegral_comp_prodMap_affine {φ : RoughForm I M F 2} (hφ : Is
     (fun s _ ↦ by simpa using ((hasDerivAt_id s).const_mul (b - a)).const_add a)
     continuousOn_const]
   simp
+
+/-- **The area swept by a variation.** For a continuous form and a `C¹` map `u`, the integral over
+the restriction of `u` to `[s, s₀] × [a₂, b₂]`, rescaled to `[0, 1]` in the first coordinate, has
+derivative `-∫_{a₂}^{b₂} φ(∂_s u, ∂_t u) dt` in `s` at `s₀`, the integrand taken at `(s₀, t)`. -/
+theorem hasDerivAt_rectangleIntegral_comp_prodMap_affine [CompleteSpace F]
+    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (s₀ a₂ b₂ : ℝ) :
+    HasDerivAt
+      (fun s ↦ rectangleIntegral φ (u ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id) (0, a₂) (1, b₂))
+      (-∫ t in a₂..b₂, φ (u (s₀, t)) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s₀, t) (1, 0),
+        mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s₀, t) (0, 1)]) s₀ := by
+  have hf := continuous_integral_mpullback hφ hu a₂ b₂
+  have heq : (fun s ↦ rectangleIntegral φ (u ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id)
+      (0, a₂) (1, b₂)) = fun s ↦ -∫ x in s₀..s,
+        ∫ t in a₂..b₂, mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (x, t) ![(1, 0), (0, 1)] := by
+    funext s
+    rw [rectangleIntegral_comp_prodMap_affine hφ hu, rectangleIntegral_def,
+      intervalIntegral.integral_symm]
+  rw [heq]
+  convert (hf.integral_hasStrictDerivAt s₀ s₀).hasDerivAt.neg using 2
+  exact intervalIntegral.integral_congr fun t _ ↦ (mpullback_apply_pair u φ (s₀, t) _ _).symm
 
 end Continuous
 
@@ -389,6 +410,11 @@ private theorem glue_periodic (hu : ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 
   · exact hu _ ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
   · exact hv _ ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
 
+/-- The reparametrizations used in the gluing are smooth. -/
+private theorem contDiff_smoothTransition_affine {n : ℕ∞} (c d : ℝ) :
+    ContDiff ℝ n fun s : ℝ ↦ smoothTransition (c * s + d) :=
+  smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).add contDiff_const)
+
 variable {u v : ℝ × ℝ → M}
 
 private theorem contMDiff_glue {n : ℕ∞} (h : ∀ t, u (0, t) = v (0, t))
@@ -398,7 +424,7 @@ private theorem contMDiff_glue {n : ℕ∞} (h : ∀ t, u (0, t) = v (0, t))
   -- with `s > 1/3` it is a reparametrization of `v`.
   have hcomp {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n w) (c d : ℝ) :
       ContMDiff 𝓘(ℝ, ℝ × ℝ) I n fun z : ℝ × ℝ ↦ w (smoothTransition (c * z.1 + d), z.2) :=
-    hw.comp (((smoothTransition.contDiff_comp_mul_add c d).comp contDiff_fst).prodMk
+    hw.comp (((contDiff_smoothTransition_affine c d).comp contDiff_fst).prodMk
       contDiff_snd).contMDiff
   intro z
   rcases lt_or_ge z.1 (2 / 3) with hz | hz
@@ -422,9 +448,9 @@ private theorem rectangleIntegral_glue [IsManifold I 1 M]
         rectangleIntegral φ w (smoothTransition (c * a.1 + d), a.2)
           (smoothTransition (c * b.1 + d), b.2) :=
     rectangleIntegral_comp_prodMap hφ hw
-      (fun s _ ↦ ((smoothTransition.contDiff_comp_mul_add (n := 1) c d).differentiable
+      (fun s _ ↦ ((contDiff_smoothTransition_affine (n := 1) c d).differentiable
         one_ne_zero s).hasDerivAt)
-      ((smoothTransition.contDiff_comp_mul_add (n := 1) c d).continuous_deriv le_rfl).continuousOn
+      ((contDiff_smoothTransition_affine (n := 1) c d).continuous_deriv le_rfl).continuousOn
   rw [← rectangleIntegral_add_adjacent hφ (contMDiff_glue h hu hv) (0, 0) (1 / 2) (1, 1)]
   -- On `[0, 1/2]` the glued map runs backwards through `u`, on `[1/2, 1]` forwards through `v`.
   have hl : rectangleIntegral φ (glue u v) (0, 0) (1 / 2, 1) =

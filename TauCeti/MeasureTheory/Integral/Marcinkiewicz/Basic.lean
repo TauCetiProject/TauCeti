@@ -17,7 +17,7 @@ import Mathlib.MeasureTheory.Measure.Prod
 A **sublinear** operator `T` that is simultaneously of **weak type `(1,1)`** and bounded on `L^∞`
 is bounded on `L^p` for every `1 < p < ∞`. This is the diagonal case `p₀ = 1`, `p₁ = ∞` of the
 Marcinkiewicz interpolation theorem, and it is the mechanism that turns the Hardy–Littlewood
-maximal inequality into the strong `(p,p)` bounds, item 9 of Lane B of the PDE roadmap.
+maximal inequality into the strong `(p,p)` bounds.
 
 ## The statements proved here
 
@@ -234,7 +234,7 @@ theorem lintegral_rpow_le_of_mul_meas_ofReal_lt_le
     intro a
     have hsets : {x | a < f x} =ᵐ[μ] {x | a < hf.mk f x} := by
       filter_upwards [hae] with x hx
-      exact congrArg (fun z : ℝ≥0∞ => a < z) hx
+      exact Iff.of_eq (congrArg (fun z : ℝ≥0∞ => a < z) hx)
     rw [Measure.restrict_congr_set hsets]
     exact lintegral_congr_ae (ae_restrict_of_ae hae)
   have hrpow : (fun x => f x ^ p) =ᵐ[μ] fun x => hf.mk f x ^ p :=
@@ -282,7 +282,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
   have hvg : v =ᵐ[μ] g := hv.ae_eq_mk
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef
-  have hSmeas : MeasurableSet S := measurableSet_lt measurable_const hgmeas.enorm
+  have hSmeas : MeasurableSet S := measurableSet_lt measurable_const hgmeas.eNorm
   set g₁ : α → G := S.indicator v with hg₁def
   set g₂ : α → G := Sᶜ.indicator v with hg₂def
   have hg₁meas : AEMeasurable g₁ μ := hv.indicator hSmeas
@@ -296,7 +296,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
     filter_upwards [hvg] with x hx
     rw [hg₂def]
     by_cases hxS : x ∈ S
-    · rw [Set.indicator_of_notMem (by simp [hxS]), enorm_zero]
+    · rw [Set.indicator_of_notMem (by simp [hxS]), eNorm_zero]
       exact zero_le
     · rw [Set.indicator_of_mem (by simp [hxS]), hx]
       exact not_lt.1 (by simpa [hSdef] using hxS)
@@ -324,14 +324,14 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
   have hint : ∫⁻ x, ‖g₁ x‖ₑ ∂μ =
       ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ∂μ := by
     have henorm : (fun x => ‖v x‖ₑ) =ᵐ[μ] fun x => ‖g x‖ₑ :=
-      hvg.mono fun _ hx => congrArg enorm hx
+      hvg.mono fun _ hx => congrArg eNorm hx
     have hsets : {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ} =ᵐ[μ] S := by
       filter_upwards [henorm] with x hx
-      exact congrArg (fun z : ℝ≥0∞ => ENNReal.ofReal (c * t) < z) hx
+      exact Iff.of_eq (congrArg (fun z : ℝ≥0∞ => ENNReal.ofReal (c * t) < z) hx)
     calc ∫⁻ x, ‖g₁ x‖ₑ ∂μ
         = ∫⁻ x in S, ‖v x‖ₑ ∂μ := by
           rw [hg₁def]
-          simp_rw [enorm_indicator_eq_indicator_enorm]
+          simp_rw [eNorm_indicator_eq_indicator_eNorm]
           exact lintegral_indicator hSmeas _
       _ = ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ∂μ := by
           rw [Measure.restrict_congr_set hsets]
@@ -371,7 +371,7 @@ theorem lintegral_rpow_le_of_mul_meas_lt_le_of_le_eLpNormEssSup
     ∫⁻ y, T v y ^ p ∂ν ≤
       ENNReal.ofReal (p * c ^ (1 - p) / (p - 1)) * (ENNReal.ofReal d⁻¹ * A) *
         ∫⁻ x, ‖v x‖ₑ ^ p ∂μ := by
-  apply lintegral_rpow_le_of_mul_meas_ofReal_lt_le hv.enorm hTv hp hc
+  apply lintegral_rpow_le_of_mul_meas_ofReal_lt_le hv.eNorm hTv hp hc
   intro t ht
   exact mul_meas_ofReal_lt_le_setLIntegral hv ht hb hc hd hbcd hadd hweak hinfty
 

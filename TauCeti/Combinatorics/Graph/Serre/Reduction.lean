@@ -393,6 +393,33 @@ theorem existsUnique_homotopic_isReduced {a b : Γ.V} (p : Γ.Path a b) :
   exact (Homotopic.eq_of_isReduced Γ ((homotopic_reduce Γ p).symm.trans hq.1)
     (isReduced_reduce Γ p) hq.2).symm
 
+/-- A morphism of Serre graphs carries backtrack-homotopic paths to backtrack-homotopic paths. -/
+theorem Homotopic.mapPath {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} {p q : Γ.Path a b}
+    (h : Homotopic Γ p q) :
+    Homotopic Δ (f.toPrefunctor.mapPath p) (f.toPrefunctor.mapPath q) := by
+  induction h with
+  | refl => exact .refl _
+  | symm _ ih => exact ih.symm
+  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
+  | cons _ e ih => exact ih.cons _
+  | backtrack p e =>
+    simp only [Prefunctor.mapPath_cons, Prefunctor.map_reverse]
+    exact .backtrack _ _
+
+/-- The reduced form of the image of a path only depends on the reduced form of the path. -/
+@[simp] theorem reduce_mapPath_reduce {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V}
+    (p : Γ.Path a b) :
+    reduce Δ (f.toPrefunctor.mapPath (reduce Γ p)) = reduce Δ (f.toPrefunctor.mapPath p) :=
+  (((homotopic_reduce Γ p).mapPath Γ f).reduce_eq Δ).symm
+
+/-- A morphism injective on darts commutes with reduction of paths. -/
+theorem reduce_mapPath_of_injective {Δ : SerreGraph} (f : Γ.Hom Δ)
+    (hf : Function.Injective f.mapE) {a b : Γ.V} (p : Γ.Path a b) :
+    reduce Δ (f.toPrefunctor.mapPath p) = f.toPrefunctor.mapPath (reduce Γ p) := by
+  rw [← reduce_mapPath_reduce]
+  exact reduce_eq_self_of_isReduced Δ _
+    ((f.isReduced_mapPath_iff Γ hf _).mpr (isReduced_reduce Γ p))
+
 /-- Opposite directions of a rose petal remain distinct under path homotopy. -/
 theorem rose_not_homotopic_reverse {α : Type*} (a : α) :
     ¬ Homotopic (rose α) ((rose α).dart (a, true)).toPath
