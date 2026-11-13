@@ -108,19 +108,8 @@ theorem DirectSum.restrictSubtypeLinearEquiv_apply (p : ι → Prop) [DecidableP
   induction x using DirectSum.induction_on with
   | zero => simp
   | of j y =>
-    obtain ⟨i, hi⟩ := i
     rw [← DirectSum.lof_eq_of R]
-    by_cases hj : p j
-    · rw [DirectSum.restrictSubtypeLinearEquiv_lof M p hp hj]
-      obtain rfl | hji := eq_or_ne j i
-      · simp
-      · rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of,
-          DirectSum.of_eq_of_ne _ _ _ (show (⟨i, hi⟩ : {i // p i}).1 ≠ j from hji.symm),
-          DirectSum.of_eq_of_ne _ _ _ (show (⟨i, hi⟩ : {i // p i}) ≠ ⟨j, hj⟩ by
-            simpa using hji.symm)]
-    · rw [DirectSum.restrictSubtypeLinearEquiv_lof_of_not M p hp hj, DirectSum.lof_eq_of,
-        DirectSum.of_eq_of_ne _ _ _ (show (⟨i, hi⟩ : {i // p i}).1 ≠ j by rintro rfl; exact hj hi)]
-      rfl
+    by_cases hj : p j <;> simp [hj] <;> simp [DirectSum.lof_eq_of, DirectSum.of_apply] <;> grind
   | add x y hx hy => simp [hx, hy]
 
 /-- Each component of the inverse subtype restriction is the corresponding component at an index
