@@ -32,11 +32,9 @@ barrier is nonnegative and hence also a supersolution of `-Δ + V`. Such potenti
 solutions of a linear equation `Δ u = V u` of indefinite sign, to which the constant form does not
 apply: both `u` and `-u` are subsolutions of `-Δ + V`, so `|u|` decays at the rate `c`.
 
-A forcing term is allowed when it decays at a rate `c` strictly below the mass `c₁` of the
-potential `V ≥ c₁²`: if `V u - B exp (-c (‖x‖ - R)) ≤ Δ u`, then subtracting the barrier
-`B / (c₁² - c²) exp (-c (‖x‖ - R))` from `u` leaves an unforced subsolution. Linearizing a
-nonlinear equation about a decaying solution produces exactly such forcing terms, quadratic in
-quantities already known to decay.
+A forcing of size `B exp (-c ‖x‖)` is absorbed when the potential is bounded below by `a²` with
+`a > c > 0`: then `u x ≤ M exp (-c (‖x‖ - R)) + B / (a² - c²) exp (-c ‖x‖)`. This forced version
+is what differentiating a screened equation produces.
 
 This is the decay mechanism of massive fields: for instance, outside a large disc the logarithmic
 modulus defect `-log |α|²` of a plane vortex is such a subsolution for every rate `c < 1 / 2`.
@@ -46,9 +44,8 @@ modulus defect `-log |α|²` of a plane vortex is such a subsolution for every r
 * `TauCeti.le_mul_exp_of_mul_le_laplacian`: a subsolution of `-Δ + V`, `V ≥ c²`, on the exterior of
   a ball which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
 * `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: the case of the constant potential `c²`.
-* `TauCeti.le_mul_exp_of_mul_sub_le_laplacian`: a subsolution of `-Δ + V`, `V ≥ c₁²`, forced by a
-  term `B exp (-c (‖x‖ - R))` with `c < c₁`, is bounded by
-  `(M + B / (c₁² - c²)) exp (-c (‖x‖ - R))`.
+* `TauCeti.le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian`: the version with a forcing of
+  size `B exp (-c ‖x‖)` and a potential `V ≥ a² > c²`.
 
 ## References
 
@@ -154,57 +151,6 @@ theorem le_mul_exp_of_mul_le_laplacian {u V : E → ℝ} {R c M : ℝ} (hR : 0 <
     rw [← hbar, hy', sub_self, mul_zero, neg_zero, Real.exp_zero, mul_one]
     linarith
 
-/-- **Exponential decay of forced subsolutions of `-Δ + V`.** Let `u` be continuous on the exterior
-`‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with
-`V u - B exp (-c (‖x‖ - R)) ≤ Δ u` there for a potential `V ≥ c₁²`, where `0 < c < c₁` and
-`B ≥ 0`, and `u → 0` at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
-`u x ≤ (M + B / (c₁² - c²)) exp (-c (‖x‖ - R))` for every `x` with `‖x‖ ≥ R`.
-
-A forcing term decaying at the rate `c` costs only the amplitude `B / (c₁² - c²)`: that multiple
-of `exp (-c (‖x‖ - R))` absorbs it, because the potential exceeds the square of its rate by the
-gap `c₁² - c²`. -/
-theorem le_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R c c₁ M B : ℝ} (hR : 0 < R)
-    (hc : 0 < c) (hcc₁ : c < c₁) (hM : 0 ≤ M) (hB : 0 ≤ B)
-    (hcont : ContinuousOn u {x | R ≤ ‖x‖}) (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x)
-    (hV : ∀ x, R < ‖x‖ → c₁ ^ 2 ≤ V x)
-    (hsub : ∀ x, R < ‖x‖ → V x * u x - B * Real.exp (-(c * (‖x‖ - R))) ≤ Δ u x)
-    (hbdry : ∀ x, ‖x‖ = R → u x ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
-    (hx : R ≤ ‖x‖) :
-    u x ≤ (M + B / (c₁ ^ 2 - c ^ 2)) * Real.exp (-(c * (‖x‖ - R))) := by
-  have hgap : 0 < c₁ ^ 2 - c ^ 2 := by nlinarith
-  set A := B / (c₁ ^ 2 - c ^ 2) with hA
-  have hA₀ : 0 ≤ A := div_nonneg hB hgap.le
-  -- The absorbing barrier `φ = A exp (-c (‖x‖ - R))`, written as a radial profile.
-  set φ : E → ℝ := fun y ↦ A * Real.exp (c * R) * Real.exp (-(c * ‖y‖)) + 0 with hφ
-  have hφR : ∀ y, φ y = A * Real.exp (-(c * (‖y‖ - R))) := fun y ↦ by
-    simp only [hφ, exp_neg_mul_sub, add_zero, mul_assoc]
-  have hφ₀ : ∀ y, 0 ≤ φ y := fun y ↦ by rw [hφR]; positivity
-  have hφcd : ∀ y : E, y ≠ 0 → ContDiffAt ℝ 2 φ y := fun y hy ↦
-    (contDiffAt_const.mul (contDiffAt_const.mul (contDiffAt_norm ℝ hy)).neg.exp).add
-      contDiffAt_const
-  have hφlim : Tendsto φ (cocompact E) (𝓝 0) := by
-    have h := ((Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp
-      ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))).const_mul
-      (A * Real.exp (c * R))).add_const 0
-    simpa [hφ, Function.comp_def] using h
-  have hx₀ : ∀ y : E, R < ‖y‖ → y ≠ 0 := fun y hy ↦ norm_pos_iff.mp (hR.trans hy)
-  -- `u - φ` is an unforced subsolution of `-Δ + V`.
-  have key := le_mul_exp_of_mul_le_laplacian (u := u - φ) (V := V) hR hc.le hM
-    (hcont.sub (by fun_prop)) (fun y hy ↦ (hcd y hy).sub (hφcd y (hx₀ y hy)))
-    (fun y hy ↦ (pow_le_pow_left₀ hc.le hcc₁.le 2).trans (hV y hy)) (fun y hy ↦ by
-      rw [(hcd y hy).laplacian_sub (hφcd y (hx₀ y hy)), Pi.sub_apply, mul_sub]
-      have hΔφ := laplacian_exp_barrier_le (mul_nonneg hA₀ (Real.exp_pos (c * R)).le) hc.le
-        le_rfl (hx₀ y hy)
-      have hVφ := mul_le_mul_of_nonneg_right (hV y hy) (hφ₀ y)
-      have hforce : B * Real.exp (-(c * (‖y‖ - R))) = (c₁ ^ 2 - c ^ 2) * φ y := by
-        rw [hφR, hA]
-        field_simp
-      linarith [hsub y hy])
-    (fun y hy ↦ by linarith [hbdry y hy, hφ₀ y, show (u - φ) y = u y - φ y from rfl])
-    (by have h := hlim.sub hφlim; rwa [sub_zero] at h) hx
-  rw [Pi.sub_apply, hφR] at key
-  linarith
-
 /-- **Exponential decay of subsolutions of `-Δ + c²`.** Let `u` be continuous on the exterior
 `‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with `c² u ≤ Δ u` there for some `c ≥ 0`
 and `u → 0` at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
@@ -217,5 +163,58 @@ theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 
     u x ≤ M * Real.exp (-(c * (‖x‖ - R))) :=
   le_mul_exp_of_mul_le_laplacian (V := fun _ ↦ c ^ 2) hR hc hM hcont hcd (fun _ _ ↦ le_rfl) hsub
     hbdry hlim hx
+
+/-- **Exponential decay of forced subsolutions of `-Δ + V`.** Let `u` be continuous on the exterior
+`‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, and `u → 0` at infinity. Suppose that
+`V u - B exp (-c ‖x‖) ≤ Δ u` there for a potential `V ≥ a²` and a forcing constant `B ≥ 0`, where
+`0 < c < a`. If `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then for every `x` with `‖x‖ ≥ R`,
+
+`u x ≤ M exp (-c (‖x‖ - R)) + B / (a² - c²) exp (-c ‖x‖)`.
+
+The margin `a² - c²` between the potential and the rate absorbs the forcing: the barrier
+`B / (a² - c²) exp (-c ‖x‖)` is a supersolution of `-Δ + V` with forcing `B exp (-c ‖x‖)`. -/
+theorem le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R a c M B : ℝ}
+    (hR : 0 < R) (hc : 0 < c) (hca : c < a) (hM : 0 ≤ M) (hB : 0 ≤ B)
+    (hcont : ContinuousOn u {x | R ≤ ‖x‖}) (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x)
+    (hV : ∀ x, R < ‖x‖ → a ^ 2 ≤ V x)
+    (hsub : ∀ x, R < ‖x‖ → V x * u x - B * Real.exp (-(c * ‖x‖)) ≤ Δ u x)
+    (hbdry : ∀ x, ‖x‖ = R → u x ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
+    (hx : R ≤ ‖x‖) :
+    u x ≤ M * Real.exp (-(c * (‖x‖ - R))) + B / (a ^ 2 - c ^ 2) * Real.exp (-(c * ‖x‖)) := by
+  have hgap : 0 < a ^ 2 - c ^ 2 := by nlinarith
+  set A := B / (a ^ 2 - c ^ 2) with hA
+  have hA₀ : 0 ≤ A := div_nonneg hB hgap.le
+  -- Subtract the barrier `A exp (-c ‖x‖)`; the difference is an unforced subsolution.
+  set b : E → ℝ := fun y ↦ A * Real.exp (-(c * ‖y‖)) with hb
+  have hbcd : ∀ y : E, R < ‖y‖ → ContDiffAt ℝ 2 b y := fun y hy ↦ by
+    have hy₀ : y ≠ 0 := norm_pos_iff.mp (hR.trans hy)
+    have := (contDiffAt_norm ℝ hy₀ (n := 2))
+    fun_prop
+  have hle := le_mul_exp_of_mul_le_laplacian (u := u - b) (V := V) hR hc.le hM
+    (hcont.sub (by fun_prop)) (fun y hy ↦ (hcd y hy).sub (hbcd y hy))
+    (fun y hy ↦ (pow_le_pow_left₀ hc.le hca.le 2).trans (hV y hy)) ?_
+    (fun y hy ↦ by
+      have : 0 ≤ b y := by positivity
+      simp only [Pi.sub_apply]
+      linarith [hbdry y hy]) ?_ hx
+  · simp only [hb, Pi.sub_apply] at hle
+    linarith
+  · intro y hy
+    have hy₀ : y ≠ 0 := norm_pos_iff.mp (hR.trans hy)
+    rw [(hcd y hy).laplacian_sub (hbcd y hy)]
+    have hΔb : Δ b y ≤ c ^ 2 * b y := by
+      simpa [hb] using laplacian_exp_barrier_le (ε := 0) hA₀ hc.le le_rfl hy₀
+    have hcoef : B = A * (a ^ 2 - c ^ 2) := by
+      rw [hA, div_mul_cancel₀ _ hgap.ne']
+    have he : 0 ≤ Real.exp (-(c * ‖y‖)) := (Real.exp_pos _).le
+    have hVy := hV y hy
+    have hsuby := hsub y hy
+    simp only [hb, Pi.sub_apply] at hΔb ⊢
+    rw [hcoef] at hsuby
+    nlinarith [mul_nonneg (mul_nonneg hA₀ he) (sub_nonneg.mpr hVy)]
+  · have hexp : Tendsto b (cocompact E) (𝓝 0) := by
+      simpa [hb] using (tendsto_exp_neg_mul_norm_cocompact (E := E) hc).const_mul A
+    rw [Pi.sub_def]
+    simpa only [sub_zero] using hlim.sub hexp
 
 end TauCeti

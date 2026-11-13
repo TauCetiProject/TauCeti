@@ -40,9 +40,9 @@ of `exp` at two values of `ℓ`, hence at least `4 c²` outside a large disc
 (`Real.exp_min_le_dslope_exp`), and the forcing `F` is quadratic in first differences of `ℓ`
 (`Real.abs_exp_sub_exp_sub_exp_add_exp_sub_dslope_mul_le`). For `|k| ≤ |h|` the decay of the
 gradient bounds `|F| ≤ C |h| |k| exp (-2 c₁ |z|)`, and the comparison principle with forcing
-(`TauCeti.le_mul_exp_of_mul_sub_le_laplacian`) bounds `|D|` by `C' |h| |k| exp (-c |z|)` for every
-`c < c₁`. Letting `k → 0` bounds the differences `‖Dℓ (w + h) - Dℓ (w)‖ ≤ C' |h| exp (-c |z|)`,
-and letting `h → 0` bounds the second derivative
+(`TauCeti.le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian`) bounds `|D|` by
+`C' |h| |k| exp (-c |z|)` for every `c < c₁`. Letting `k → 0` bounds the differences
+`‖Dℓ (w + h) - Dℓ (w)‖ ≤ C' |h| exp (-c |z|)`, and letting `h → 0` bounds the second derivative
 (`TauCeti.norm_fderiv_fderiv_le_of_norm_mixedDifference_le`). Only `C²` regularity of the section
 is used: no third derivative and no commutation of `Δ` with a derivative is needed.
 
@@ -206,22 +206,28 @@ theorem abs_mixedDifference_le_mul_exp {R c c₁ K L : ℝ} (hR : 0 < R) (hc : 0
       hlim.comp (Homeomorph.addRight v).isClosedEmbedding.tendsto_cocompact
     simpa using (((htr (h + k)).sub (htr h)).sub (htr k)).add hlim
   have hM : 0 ≤ L * ‖h‖ * ‖k‖ := by positivity
-  have hB₀ : 0 ≤ B := by positivity
-  have hup := le_mul_exp_of_mul_sub_le_laplacian hR hc hcc₁ hM hB₀ hcont
+  -- The comparison principle takes its forcing in the form `B exp (c R) exp (-c |y|)`.
+  have hshift : ∀ y : ℂ, B * Real.exp (-(c * (‖y‖ - R))) =
+      B * Real.exp (c * R) * Real.exp (-(c * ‖y‖)) := fun y ↦ by
+    rw [exp_neg_mul_sub]
+    ring
+  have hB₁ : 0 ≤ B * Real.exp (c * R) := by positivity
+  have hup := le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian hR hc hcc₁ hM hB₁ hcont
     (fun y hy ↦ hDcd y hy.le) hVc
-    (fun y hy ↦ by linarith [(abs_le.mp (hforce y hy.le)).1])
+    (fun y hy ↦ by linarith [(abs_le.mp (hforce y hy.le)).1, hshift y])
     (fun y hy ↦ (le_abs_self _).trans (hbdry y h k hy hh hk)) hDlim hw
-  have hdown := le_mul_exp_of_mul_sub_le_laplacian (u := -D) hR hc hcc₁ hM hB₀ hcont.neg
-    (fun y hy ↦ (hDcd y hy.le).neg) hVc
+  have hdown := le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian (u := -D) hR hc hcc₁ hM hB₁
+    hcont.neg (fun y hy ↦ (hDcd y hy.le).neg) hVc
     (fun y hy ↦ by
       rw [laplacian_neg, Pi.neg_apply, Pi.neg_apply]
-      linarith [(abs_le.mp (hforce y hy.le)).2])
+      linarith [(abs_le.mp (hforce y hy.le)).2, hshift y])
     (fun y hy ↦ (neg_le_abs _).trans (hbdry y h k hy hh hk))
     (by have h := hDlim.neg; rwa [neg_zero] at h) hw
   have hgap : 0 < c₁ ^ 2 - c ^ 2 := by nlinarith
-  have heq : (L * ‖h‖ * ‖k‖ + B / (c₁ ^ 2 - c ^ 2)) =
-      (L + 3 * K ^ 2 / (4 * (c₁ ^ 2 - c ^ 2))) * ‖h‖ * ‖k‖ := by
-    rw [hB]
+  have heq : L * ‖h‖ * ‖k‖ * Real.exp (-(c * (‖w‖ - R))) +
+      B * Real.exp (c * R) / (c₁ ^ 2 - c ^ 2) * Real.exp (-(c * ‖w‖)) =
+      (L + 3 * K ^ 2 / (4 * (c₁ ^ 2 - c ^ 2))) * ‖h‖ * ‖k‖ * Real.exp (-(c * (‖w‖ - R))) := by
+    rw [exp_neg_mul_sub, hB]
     field_simp
   rw [heq] at hup hdown
   simp only [Pi.neg_apply] at hdown
