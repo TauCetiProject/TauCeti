@@ -43,25 +43,33 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] IsWellOrder.toHasWellFounded
 
-/-- Gram–Schmidt preserves a family's being parallel at a point for a metric connection. -/
-theorem apply_gramSchmidt_eq_zero (hcov : cov.IsMetricCompatible)
-    (hv : ∀ i, MDiffAt (T% (v i)) x)
-    (hli : LinearIndependent ℝ (fun i ↦ v i x)) (hzero : ∀ i, cov (v i) x = 0) (j : ι) :
+/-- Gram–Schmidt preserves a family's being parallel at a point for a metric connection. The
+Gram–Schmidt vector at an index is parallel at `x` when the input sections up to and including the
+index are differentiable and parallel at `x` and the input vectors strictly before the index are
+linearly independent there. -/
+theorem apply_gramSchmidt_eq_zero (hcov : cov.IsMetricCompatible) (j : ι)
+    (hv : ∀ i ≤ j, MDiffAt (T% (v i)) x)
+    (hli : LinearIndepOn ℝ (fun i ↦ v i x) (Set.Iio j)) (hzero : ∀ i ≤ j, cov (v i) x = 0) :
     cov (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j) x = 0 := by
   classical
   let w (i : ι) (y : M) := gramSchmidt ℝ (fun k ↦ v k y) i
-  have hw (i : ι) : MDiffAt (T% (w i)) x :=
-    MDifferentiableAt.gramSchmidt_bundle hv hli i
   induction j using WellFoundedLT.induction with
   | ind j ih =>
+    have hw (i : ι) (hi : i < j) : MDiffAt (T% (w i)) x :=
+      MDifferentiableAt.gramSchmidt_bundle i (fun k hk ↦ hv k (hk.trans hi.le))
+        (hli.mono (Set.Iio_subset_Iio hi.le))
+    have hwz (i : ι) (hi : i < j) : cov (w i) x = 0 :=
+      ih i hi (fun k hk ↦ hv k (hk.trans hi.le)) (hli.mono (Set.Iio_subset_Iio hi.le))
+        (fun k hk ↦ hzero k (hk.trans hi.le))
     have hc (i : ι) (hi : i < j) :
         HasMFDerivAt I 𝓘(ℝ) (fun y ↦ inner ℝ (w i y) (v j y) /
           inner ℝ (w i y) (w i y)) x 0 := by
       exact (
-        (hcov.hasMFDerivAt_inner_of_eq_zero (hw i)
-          (hv j) (ih i hi) (hzero j)).div
-          (hcov.hasMFDerivAt_inner_of_eq_zero (hw i) (hw i) (ih i hi) (ih i hi))
-          (inner_self_ne_zero.mpr (gramSchmidt_ne_zero i hli))).congr_mfderiv (by
+        (hcov.hasMFDerivAt_inner_of_eq_zero (hw i hi)
+          (hv j le_rfl) (hwz i hi) (hzero j le_rfl)).div
+          (hcov.hasMFDerivAt_inner_of_eq_zero (hw i hi) (hw i hi) (hwz i hi) (hwz i hi))
+          (inner_self_ne_zero.mpr (gramSchmidt_ne_zero_coe i
+            (hli.mono (Set.Iic_subset_Iio.2 hi)).linearIndependent))).congr_mfderiv (by
             ext
             -- Evaluate in ℝ to reconcile the scalar and scalar-tangent module instances.
             change (1 / inner ℝ (w i x) (w i x)) * 0 -
@@ -69,10 +77,10 @@ theorem apply_gramSchmidt_eq_zero (hcov : cov.IsMetricCompatible)
             ring)
     have ht (i : ι) (hi : i < j) : MDiffAt (T%
         ((fun y ↦ inner ℝ (w i y) (v j y) / inner ℝ (w i y) (w i y)) • w i)) x :=
-      (hc i hi).mdifferentiableAt.smul_section (hw i)
+      (hc i hi).mdifferentiableAt.smul_section (hw i hi)
     have hz (i : ι) (hi : i < j) :
         cov ((fun y ↦ inner ℝ (w i y) (v j y) / inner ℝ (w i y) (w i y)) • w i) x = 0 := by
-      rw [cov.isCovariantDerivativeOnUniv.leibniz (hw i) (hc i hi).mdifferentiableAt, ih i hi]
+      rw [cov.isCovariantDerivativeOnUniv.leibniz (hw i hi) (hc i hi).mdifferentiableAt, hwz i hi]
       simp [mvfderiv, (hc i hi).mfderiv]
     have hformula : (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j) = v j - ∑ i ∈ Finset.Iio j,
         (fun y ↦ inner ℝ (w i y) (v j y) / inner ℝ (w i y) (w i y)) • w i := by
@@ -84,35 +92,40 @@ theorem apply_gramSchmidt_eq_zero (hcov : cov.IsMetricCompatible)
       simpa only [Finset.sum_apply] using MDifferentiableAt.sum_section
         (fun i hi ↦ ht i (Finset.mem_Iio.mp hi))
     rw [hformula, cov.isCovariantDerivativeOnUniv.sub
-      (hv j) hsum,
+      (hv j le_rfl) hsum,
       TauCeti.Manifold.covariantDerivative_sum cov.isCovariantDerivativeOnUniv (Set.mem_univ x)
-        (fun i hi ↦ ht i (Finset.mem_Iio.mp hi)), hzero j]
+        (fun i hi ↦ ht i (Finset.mem_Iio.mp hi)), hzero j le_rfl]
     rw [Finset.sum_eq_zero (fun i hi ↦ hz i (Finset.mem_Iio.mp hi)), sub_zero]
 
 /-- Normalized Gram–Schmidt preserves a family's being parallel at a point for a metric
-connection. -/
-theorem apply_gramSchmidtNormed_eq_zero (hcov : cov.IsMetricCompatible)
-    (hv : ∀ i, MDiffAt (T% (v i)) x)
-    (hli : LinearIndependent ℝ (fun i ↦ v i x)) (hzero : ∀ i, cov (v i) x = 0) (j : ι) :
+connection. The normalized Gram–Schmidt vector at an index is parallel at `x` when the input
+sections up to and including the index are differentiable and parallel at `x` and the input
+vectors up to and including the index are linearly independent there. -/
+theorem apply_gramSchmidtNormed_eq_zero (hcov : cov.IsMetricCompatible) (j : ι)
+    (hv : ∀ i ≤ j, MDiffAt (T% (v i)) x)
+    (hli : LinearIndepOn ℝ (fun i ↦ v i x) (Set.Iic j)) (hzero : ∀ i ≤ j, cov (v i) x = 0) :
     cov (fun y ↦ gramSchmidtNormed ℝ (fun i ↦ v i y) j) x = 0 := by
   let w (y : M) := gramSchmidt ℝ (fun i ↦ v i y) j
   have hw : MDiffAt (T% w) x :=
-    MDifferentiableAt.gramSchmidt_bundle hv hli j
-  have hz : cov w x = 0 := hcov.apply_gramSchmidt_eq_zero hv hli hzero j
+    MDifferentiableAt.gramSchmidt_bundle j hv (hli.mono Set.Iio_subset_Iic_self)
+  have hz : cov w x = 0 :=
+    hcov.apply_gramSchmidt_eq_zero j hv (hli.mono Set.Iio_subset_Iic_self) hzero
+  have hne : gramSchmidt ℝ (fun i ↦ v i x) j ≠ 0 :=
+    gramSchmidt_ne_zero_coe j hli.linearIndependent
   have hinner := hcov.hasMFDerivAt_inner_of_eq_zero hw hw hz hz
   have hn : HasMFDerivAt I 𝓘(ℝ) (fun y ↦ ‖w y‖) x 0 := by
     have heq : (fun y ↦ ‖w y‖) = fun y ↦ Real.sqrt (inner ℝ (w y) (w y)) :=
       funext fun y ↦ norm_eq_sqrt_real_inner (w y)
     rw [heq]
     have hr := (Real.hasDerivAt_sqrt
-      (inner_self_ne_zero.mpr (gramSchmidt_ne_zero j hli))).hasFDerivAt.hasMFDerivAt
+      (inner_self_ne_zero.mpr hne)).hasFDerivAt.hasMFDerivAt
     exact (hr.comp x hinner).congr_mfderiv (by
       ext
       -- The target tangent space is identified with ℝ by evaluating the scalar derivative.
       change 0 * (1 / (2 * Real.sqrt (inner ℝ (w x) (w x)))) = 0
       ring)
   have hi : HasMFDerivAt I 𝓘(ℝ) (fun y ↦ ‖w y‖⁻¹) x 0 := by
-    exact (hn.inv (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero j hli))).congr_mfderiv
+    exact (hn.inv (norm_ne_zero_iff.mpr hne)).congr_mfderiv
       (by
         ext
         -- Evaluate the inverse derivative in ℝ, as for the square root above.
