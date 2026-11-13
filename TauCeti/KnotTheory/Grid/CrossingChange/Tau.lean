@@ -71,25 +71,6 @@ namespace IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
 
-/-- Exchanging the same two columns twice returns the original knot grid, whose `GH⁻` is torsion
-exactly when it was before. -/
-private theorem isTorsion_swapColumns_swapColumns_iff (a b : Fin n) :
-    letI := hG.unblockedHomologyModule K
-    letI := ((hG.swapColumns a b).swapColumns a b).unblockedHomologyModule K
-    Module.IsTorsion (Polynomial K)
-        (((G.swapColumns a b).swapColumns a b).unblockedHomology K) ↔
-      Module.IsTorsion (Polynomial K) (G.unblockedHomology K) := by
-  have key : ∀ {G₁ : GridDiagram n} (h₁ : G₁.IsKnot), G₁ = G →
-      (letI := hG.unblockedHomologyModule K
-       letI := h₁.unblockedHomologyModule K
-       Module.IsTorsion (Polynomial K) (G₁.unblockedHomology K) ↔
-        Module.IsTorsion (Polynomial K) (G.unblockedHomology K)) := by
-    rintro _ _ rfl
-    exact Iff.rfl
-  exact key _ (swapColumns_swapColumns ..)
-
-variable {K}
-
 /-- **The crossing change inequality for `τ`.** Let the segments of the columns `a` and
 `b = finRotate n a` of a knot grid `G` interleave with `O_a` on the arc of column `b`. Then
 `τ(G) - 1 ≤ τ(G') ≤ τ(G)` for `G' = G.swapColumns a b`, over every commutative ring of
@@ -134,7 +115,7 @@ theorem tau_swapColumns_mem_Icc_of_mem_columnArc {a : Fin n}
     have hT' : Module.IsTorsion (Polynomial K)
         ((G.swapColumns a (finRotate n a)).unblockedHomology K) := by
       by_contra hT'
-      exact (hΨ' hT') ((isTorsion_swapColumns_swapColumns_iff hG K _ _).mpr hT)
+      exact (hΨ' hT') ((hG.isTorsion_unblockedHomology_swapColumns_swapColumns_iff K _ _).mpr hT)
     rw [hG.tau_eq_zero_of_isTorsion K hT,
       (hG.swapColumns a (finRotate n a)).tau_eq_zero_of_isTorsion K hT']
     simp
@@ -155,7 +136,7 @@ theorem tau_swapColumns_mem_Icc_of_notMem_columnArc {a : Fin n}
     (hG.swapColumns a (finRotate n a)).tau K ∈ Set.Icc (hG.tau K) (hG.tau K + 1) := by
   -- In `G'` the markings of the exchanged columns appear in the other cyclic order, and
   -- exchanging the columns of `G'` again returns `G`.
-  have key := (hG.swapColumns a (finRotate n a)).tau_swapColumns_mem_Icc_of_mem_columnArc (K := K)
+  have key := (hG.swapColumns a (finRotate n a)).tau_swapColumns_mem_Icc_of_mem_columnArc K
     ((columnsInterleaving_swapColumns G _ _).mpr h.symm) (h.O_swapColumns_mem_columnArc_iff.mpr hO)
   rw [hG.tau_swapColumns_swapColumns] at key
   exact ⟨key.2, by linarith [key.1]⟩
@@ -169,9 +150,9 @@ theorem abs_tau_swapColumns_sub_tau_le_one {a : Fin n}
     |(hG.swapColumns a (finRotate n a)).tau K - hG.tau K| ≤ 1 := by
   rw [abs_sub_le_iff]
   by_cases hO : G.O a ∈ G.columnArc (finRotate n a)
-  · have key := hG.tau_swapColumns_mem_Icc_of_mem_columnArc (K := K) h hO
+  · have key := hG.tau_swapColumns_mem_Icc_of_mem_columnArc K h hO
     exact ⟨by linarith [key.2], by linarith [key.1]⟩
-  · have key := hG.tau_swapColumns_mem_Icc_of_notMem_columnArc (K := K) h hO
+  · have key := hG.tau_swapColumns_mem_Icc_of_notMem_columnArc K h hO
     exact ⟨by linarith [key.2], by linarith [key.1]⟩
 
 end IsKnot

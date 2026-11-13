@@ -547,7 +547,7 @@ theorem inr_mem_commutationPentagons {x y : GridState n}
   Finset.inr_mem_disjSum
 
 /-- The underlying rectangle of a counted commutation pentagon of either kind is empty. -/
-theorem toGridRectangleBetween_isEmpty_of_mem_commutationPentagons {x y : GridState n}
+theorem isEmpty_toGridRectangleBetween_of_mem_commutationPentagons {x y : GridState n}
     {P : GridCommutationPentagonBetween C.column C.turnRow x y}
     (hP : P ∈ G.commutationPentagons C x y) : P.toGridRectangleBetween.IsEmpty := by
   cases P with
@@ -693,8 +693,8 @@ theorem isEmpty_of_mem_pentagonPairDecompositions {x z : GridState n}
       C'.turnRow x z} (hD : D ∈ G.pentagonPairDecompositions C C' x z) :
     D.toRectangleDecomposition.first.IsEmpty ∧ D.toRectangleDecomposition.second.IsEmpty := by
   obtain ⟨hP, hQ⟩ := (G.mem_pentagonPairDecompositions C C' D).mp hD
-  exact ⟨G.toGridRectangleBetween_isEmpty_of_mem_commutationPentagons C hP,
-    toGridRectangleBetween_isEmpty_of_mem_commutationPentagons _ C' hQ⟩
+  exact ⟨G.isEmpty_toGridRectangleBetween_of_mem_commutationPentagons C hP,
+    isEmpty_toGridRectangleBetween_of_mem_commutationPentagons _ C' hQ⟩
 
 end
 
