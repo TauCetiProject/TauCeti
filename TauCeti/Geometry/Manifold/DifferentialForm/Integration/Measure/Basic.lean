@@ -268,7 +268,7 @@ theorem aemeasurable_ofReal_abs_inChartAt [MeasurableSpace E] [OpensMeasurableSp
     ((continuous_eval_const v).comp_continuousOn
       ((hφ.continuousOn_inChartAt α).mono
         ((image_mono hsα).trans (extChartAt I α).image_source_eq_target.subset))))).aemeasurable
-    (OpensMeasurableSpace.borel_le _ (hs.image_extChartAt α hsα))
+    (hs.image_extChartAt α hsα)
 
 /-- **The measure of a continuous nowhere-vanishing top form is positive on nonempty open sets.**
 In a chart the coefficient of such a form vanishes nowhere, and a nonempty open subset of a chart
