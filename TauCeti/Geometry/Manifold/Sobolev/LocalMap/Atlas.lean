@@ -14,6 +14,7 @@ import TauCeti.Analysis.Complex.RealDeriv
 import TauCeti.Analysis.Sobolev.Local.ChainRule
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -23,26 +24,33 @@ Let `X` be a Riemann surface and `M` a smooth manifold without boundary modelled
 space. The local Sobolev class `TauCeti.MemWkpLocMapOn I p k u s` tests the coordinate expressions
 of `u : X → M` in all charts of the maximal atlases. For `k ≤ 1` and open `s` we show that it
 suffices to test the charts of any subfamilies of the maximal atlases covering `s` and `u '' s`,
-and that composition with `C^ℓ` maps, `ℓ ≥ k`, preserves the class.
+and that composition with `C^ℓ` maps, `ℓ ≥ k`, preserves the class. Composition is treated for
+the classes `TauCeti.MemWkpLocMapOnGroupoid` of any structure groupoid, so it also applies up to
+the boundary of a bordered surface.
 
 Changing the holomorphic chart is the change of variables `MemWkpLoc.comp_contDiffOn_diffeo`
 along the transition map, which is real `C¹` with invertible derivative. Changing the chart of
 `M`, or composing with a `C^ℓ` map, is the chain rule `MemWkpLoc.contDiffOn_comp` for continuous
 `W^{1,p}_loc` maps. The two steps are glued with the locality of the planar classes,
-`memWkpLoc_iff_locally`. At order zero the class consists of the continuous maps.
+`memWkpLoc_iff_locally`. At order zero the class consists of the continuous maps
+(`TauCeti.memWkpLocMapOnGroupoid_zero_iff`).
 
 ## Main declarations
 
-* `TauCeti.memWkpLocMapOn_zero_iff`, `TauCeti.memWkpLocMap_zero_iff`: at order zero the class is
-  that of continuous maps.
+* `TauCeti.memWkpLoc_comp_chart_transition`: precomposition with the transition map between two
+  holomorphic charts preserves the planar classes of order at most one.
+* `TauCeti.memWkpLoc_extend_comp`: changing the target chart through a `C¹` map preserves the
+  planar class of order one on a measurable set.
 * `TauCeti.memWkpLocMapOn_iff_of_subset_maximalAtlas`: **chart independence**, testing families of
   charts covering `s` and `u '' s`; `TauCeti.memWkpLocMapOn_iff_atlas` and
   `TauCeti.memWkpLocMapOn_iff_chartAt` for the atlases and the preferred charts, and the versions
   for `TauCeti.MemWkpLocMap`.
-* `TauCeti.MemWkpLocMapOn.contMDiffOn_comp`, `ContMDiff.comp_memWkpLocMap`: composition with
-  `C^ℓ` maps into any manifold modelled on a real Banach space.
-* `Diffeomorph.memWkpLocMapOn_diffeomorph_comp_iff`,
-  `Diffeomorph.memWkpLocMap_diffeomorph_comp_iff`: invariance under diffeomorphisms of the target.
+* `TauCeti.MemWkpLocMapOnGroupoid.contMDiffOn_comp`, `ContMDiff.comp_memWkpLocMapGroupoid`:
+  composition with `C^ℓ` maps into any manifold modelled on a real Banach space, for the classes
+  of any structure groupoid, in particular also up to the boundary of a bordered surface.
+* `Diffeomorph.memWkpLocMapOnGroupoid_diffeomorph_comp_iff`,
+  `Diffeomorph.memWkpLocMapGroupoid_diffeomorph_comp_iff`: invariance under diffeomorphisms of the
+  target.
 * `TauCeti.memWkpLoc_mulLeft_two_chart_iff`: on `X = ℂ` the charts `z` and `2 z` give the same
   coordinate tests at every order, with first derivatives scaled by `2`
   (`TauCeti.HasWeakFDerivOn.comp_two_mul`); `TauCeti.conj_chart_notMem_maximalAtlas`: the
@@ -82,15 +90,6 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
 /-! ### Auxiliary facts on coordinate expressions -/
 
 omit [ChartedSpace ℂ X] [ChartedSpace H M] in
-/-- The coordinate expression of a map continuous on `s` is continuous on its domain. -/
-private theorem continuousOn_chart (hu : ContinuousOn u s) (φ : OpenPartialHomeomorph X ℂ)
-    (ψ : OpenPartialHomeomorph M H) :
-    ContinuousOn (ψ.extend I ∘ u ∘ φ.symm) (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) := by
-  refine (ψ.continuousOn_extend).comp (hu.comp (φ.continuousOn_symm.mono inter_subset_left)
-    fun _ hz ↦ hz.2.1) fun _ hz ↦ ?_
-  simpa using hz.2.2
-
-omit [ChartedSpace ℂ X] [ChartedSpace H M] in
 /-- The domain of a coordinate expression of a map continuous on an open set is open. -/
 private theorem isOpen_chart (hu : ContinuousOn u s) (hs : IsOpen s)
     (φ : OpenPartialHomeomorph X ℂ) (ψ : OpenPartialHomeomorph M H) :
@@ -99,7 +98,7 @@ private theorem isOpen_chart (hu : ContinuousOn u s) (hs : IsOpen s)
 
 /-- **Change of holomorphic chart.** Precomposition with the transition map `φ ∘ φ'⁻¹` between
 two holomorphic charts preserves the local classes of order at most one. -/
-private theorem memWkpLoc_comp_chart_transition {φ φ' : OpenPartialHomeomorph X ℂ}
+theorem memWkpLoc_comp_chart_transition {φ φ' : OpenPartialHomeomorph X ℂ}
     (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) (hφ' : φ' ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℂ → E} {U W : Set ℂ} (hk : k ≤ 1)
     (hg : MemWkpLoc p U k g) (hW : W ⊆ φ'.target ∩ φ'.symm ⁻¹' φ.source)
@@ -118,14 +117,14 @@ private theorem memWkpLoc_comp_chart_transition {φ φ' : OpenPartialHomeomorph 
   exact A.toLinearEquiv.isUnit_det'.ne_zero
 
 /-- **Change of target chart through a `C¹` map.** If `ψ ∘ v` is a continuous `W^{1,p}_loc` map on
-an open set `W` with `v` mapping `W` into the source of `ψ`, and `f` is `C¹` on an open set
+a measurable set `W` with `v` mapping `W` into the source of `ψ`, and `f` is `C¹` on an open set
 containing `v '' W`, then `ψ' ∘ f ∘ v` is in `W^{1,p}_loc(W)` for every chart `ψ'` of the target
 whose source contains `f '' (v '' W)`. -/
-private theorem memWkpLoc_extend_comp [I.Boundaryless] [CompleteSpace F']
+theorem memWkpLoc_extend_comp [I.Boundaryless] [CompleteSpace F']
     {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I ∞ M)
     {ψ' : OpenPartialHomeomorph N H'} (hψ' : ψ' ∈ IsManifold.maximalAtlas I' ∞ N)
     {f : M → N} {t : Set M} (hf : ContMDiffOn I I' 1 f t) (ht : IsOpen t)
-    {v : ℂ → M} {W : Set ℂ} (hW : IsOpen W) (hv : MemWkpLoc p W 1 (ψ.extend I ∘ v))
+    {v : ℂ → M} {W : Set ℂ} (hW : MeasurableSet W) (hv : MemWkpLoc p W 1 (ψ.extend I ∘ v))
     (hvc : ContinuousOn (ψ.extend I ∘ v) W)
     (hmaps : MapsTo v W (ψ.source ∩ (t ∩ f ⁻¹' ψ'.source))) :
     MemWkpLoc p W 1 (ψ'.extend I' ∘ f ∘ v) := by
@@ -145,23 +144,8 @@ private theorem memWkpLoc_extend_comp [I.Boundaryless] [CompleteSpace F']
     refine ⟨(ψ.extend I).map_source (by simpa using hvw.1), ?_⟩
     simpa [ψ.left_inv hvw.1] using hvw.2
   refine (hv.contDiffOn_comp hvc hO (contMDiffOn_iff_contDiffOn.1 hh) hmaps').congr_fun
-    (fun w hw ↦ ?_) hW.measurableSet
+    (fun w hw ↦ ?_) hW
   simp [ψ.left_inv (hmaps hw).1]
-
-/-! ### Order zero -/
-
-/-- At order zero, the local Sobolev maps on `s` are the maps continuous on `s`. -/
-@[simp]
-theorem memWkpLocMapOn_zero_iff : MemWkpLocMapOn I p 0 u s ↔ ContinuousOn u s :=
-  ⟨MemWkpLocMapOnGroupoid.continuousOn, fun hu ↦ memWkpLocMapOn_iff.2
-    ⟨hu, fun φ _ ψ _ ↦ memWkpLoc_zero_iff.2 (continuousOn_chart hu φ ψ).memLpLoc⟩⟩
-
-/-- At order zero, the local Sobolev maps are the continuous maps. -/
-@[simp]
-theorem memWkpLocMap_zero_iff : MemWkpLocMap I p 0 u ↔ Continuous u := by
-  have h : MemWkpLocMapOn I p 0 u univ ↔ MemWkpLocMap I p 0 u :=
-    memWkpLocMapOnGroupoid_univ
-  rw [← h, memWkpLocMapOn_zero_iff, continuousOn_univ]
 
 /-! ### Chart independence -/
 
@@ -182,7 +166,7 @@ theorem memWkpLocMapOn_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : IsOpen s)
   refine ⟨fun hu ↦ ⟨hu.continuousOn, fun φ hφ ψ hψ ↦ hu.memWkpLoc_chart (hA hφ) (hB hψ)⟩,
     fun ⟨hc, h⟩ ↦ ?_⟩
   rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hk with rfl | rfl
-  · exact memWkpLocMapOn_zero_iff.2 hc
+  · exact memWkpLocMapOnGroupoid_zero_iff.2 hc
   refine memWkpLocMapOn_iff.2 ⟨hc, fun φ' hφ' ψ' hψ' ↦ ?_⟩
   -- Change the holomorphic chart, for each chart of `B`.
   have h1 : ∀ ψ ∈ B, MemWkpLoc p (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) 1
@@ -204,10 +188,12 @@ theorem memWkpLocMapOn_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : IsOpen s)
   obtain ⟨ψ, hψB, hxψ⟩ := hBs _ hz.2.1
   have hO := isOpen_chart hc hs φ' ψ
   refine ⟨_, inter_mem_nhdsWithin _ (hO.mem_nhds ⟨hz.1, hz.2.1, hxψ⟩), ?_⟩
+  have hcψ : ContinuousOn (ψ.extend I ∘ u ∘ φ'.symm)
+      (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) := by
+    simpa only [mfld_simps] using hc.extend_comp_extend_symm (J := 𝓘(ℝ, ℂ)) φ' ψ
   exact memWkpLoc_extend_comp (hB hψB) hψ' contMDiffOn_id isOpen_univ
-    ((isOpen_chart hc hs φ' ψ').inter hO) ((h1 ψ hψB).mono inter_subset_right)
-    ((continuousOn_chart hc φ' ψ).mono inter_subset_right)
-    fun w hw ↦ ⟨hw.2.2.2, mem_univ _, hw.1.2.2⟩
+    ((isOpen_chart hc hs φ' ψ').inter hO).measurableSet ((h1 ψ hψB).mono inter_subset_right)
+    (hcψ.mono inter_subset_right) fun w hw ↦ ⟨hw.2.2.2, mem_univ _, hw.1.2.2⟩
 
 /-- **Chart independence on the whole surface.** For `k ≤ 1`, it suffices to test the coordinate
 expressions in the charts of a family `A` of holomorphic charts covering `X` and a family `B` of
@@ -274,58 +260,64 @@ end ChartIndependence
 
 section Composition
 
-variable [IsManifold I ∞ M] [I.Boundaryless] [CompleteSpace F']
+variable {H₀ : Type*} [TopologicalSpace H₀] {Y : Type*} [TopologicalSpace Y] [ChartedSpace H₀ Y]
+  {G : StructureGroupoid H₀} {J : ModelWithCorners ℝ ℂ H₀} {v : Y → M} {S : Set Y}
+  [IsManifold I ∞ M] [I.Boundaryless] [CompleteSpace F']
 
-/-- **Composition with `C^ℓ` maps.** If `u` is a local Sobolev map of order `k ≤ 1` on an open set
-`s`, mapping `s` into an open set `t` on which `f : M → N` is `C^ℓ` with `k ≤ ℓ`, then `f ∘ u` is a
-local Sobolev map of order `k` on `s`. The manifold `N` may have corners. -/
-theorem MemWkpLocMapOn.contMDiffOn_comp {n : ℕ∞ω} {f : M → N} {t : Set M}
-    (hu : MemWkpLocMapOn I p k u s) (hk : k ≤ 1) (hf : ContMDiffOn I I' n f t)
-    (hkn : (k : ℕ∞ω) ≤ n) (hs : IsOpen s) (ht : IsOpen t) (hst : MapsTo u s t) :
-    MemWkpLocMapOn I' p k (f ∘ u) s := by
-  have hc : ContinuousOn (f ∘ u) s := hf.continuousOn.comp hu.continuousOn hst
+/-- **Composition with `C^ℓ` maps.** If `v` is a local Sobolev map of order `k ≤ 1` on an open set
+`S`, for the charts of any structure groupoid, mapping `S` into an open set `t` on which
+`f : M → N` is `C^ℓ` with `k ≤ ℓ`, then `f ∘ v` is a local Sobolev map of order `k` on `S`. The
+manifold `N` may have corners. -/
+theorem MemWkpLocMapOnGroupoid.contMDiffOn_comp {n : ℕ∞ω} {f : M → N} {t : Set M}
+    (hv : MemWkpLocMapOnGroupoid G J I p k v S) (hk : k ≤ 1) (hf : ContMDiffOn I I' n f t)
+    (hkn : (k : ℕ∞ω) ≤ n) (hS : IsOpen S) (ht : IsOpen t) (hSt : MapsTo v S t) :
+    MemWkpLocMapOnGroupoid G J I' p k (f ∘ v) S := by
+  have hc : ContinuousOn (f ∘ v) S := hf.continuousOn.comp hv.continuousOn hSt
   rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hk with rfl | rfl
-  · exact memWkpLocMapOn_zero_iff.2 hc
-  refine memWkpLocMapOn_iff.2 ⟨hc, fun φ hφ ψ' hψ' ↦ memWkpLoc_iff_locally.2 fun z hz ↦ ?_⟩
-  have hO := isOpen_chart hu.continuousOn hs φ (chartAt H (u (φ.symm z)))
-  refine ⟨_, inter_mem_nhdsWithin _ (hO.mem_nhds ⟨hz.1, hz.2.1, mem_chart_source _ _⟩), ?_⟩
+  · exact memWkpLocMapOnGroupoid_zero_iff.2 hc
+  refine memWkpLocMapOnGroupoid_iff.2
+    ⟨hc, fun φ hφ ψ' hψ' ↦ memWkpLoc_iff_locally.2 fun z hz ↦ ?_⟩
+  set ψ := chartAt H (v ((φ.extend J).symm z))
+  have hO : IsOpen (S ∩ v ⁻¹' ψ.source) := hv.continuousOn.isOpen_inter_preimage hS ψ.open_source
+  refine ⟨_, inter_mem self_mem_nhdsWithin (nhdsWithin_mono _
+    (inter_subset_left.trans φ.extend_target_subset_range)
+    (φ.extend_target_inter_preimage_mem_nhdsWithin hO ⟨hz.1, hz.2.1, mem_chart_source _ _⟩)), ?_⟩
   exact memWkpLoc_extend_comp (IsManifold.chart_mem_maximalAtlas _) hψ' (hf.of_le hkn) ht
-    ((isOpen_chart hc hs φ ψ').inter hO)
-    ((hu.memWkpLoc_chart hφ (IsManifold.chart_mem_maximalAtlas _)).mono inter_subset_right)
-    ((continuousOn_chart hu.continuousOn φ _).mono inter_subset_right)
-    fun w hw ↦ ⟨hw.2.2.2, hst hw.2.2.1, hw.1.2.2⟩
+    ((φ.measurableSet_extend_target_inter_preimage
+      (hc.isOpen_inter_preimage hS ψ'.open_source)).inter
+      (φ.measurableSet_extend_target_inter_preimage hO))
+    ((hv.memWkpLoc_chart hφ (IsManifold.chart_mem_maximalAtlas _)).mono inter_subset_right)
+    ((hv.continuousOn.extend_comp_extend_symm φ ψ).mono inter_subset_right)
+    fun w hw ↦ ⟨hw.2.2.2, hSt hw.2.2.1, hw.1.2.2⟩
 
-/-- **Composition with `C^ℓ` maps.** If `u` is a local Sobolev map of order `k ≤ 1` and
-`f : M → N` is `C^ℓ` with `k ≤ ℓ`, then `f ∘ u` is a local Sobolev map of order `k`. -/
-theorem _root_.ContMDiff.comp_memWkpLocMap {n : ℕ∞ω} {f : M → N} (hf : ContMDiff I I' n f)
-    (hu : MemWkpLocMap I p k u) (hk : k ≤ 1) (hkn : (k : ℕ∞ω) ≤ n) :
-    MemWkpLocMap I' p k (f ∘ u) :=
-  memWkpLocMapOnGroupoid_univ.mp (MemWkpLocMapOn.contMDiffOn_comp
-    (memWkpLocMapOnGroupoid_univ.mpr hu) hk hf.contMDiffOn hkn
-    isOpen_univ isOpen_univ (mapsTo_univ _ _))
+/-- **Composition with `C^ℓ` maps.** If `v` is a local Sobolev map of order `k ≤ 1`, for the
+charts of any structure groupoid, and `f : M → N` is `C^ℓ` with `k ≤ ℓ`, then `f ∘ v` is a local
+Sobolev map of order `k`. -/
+theorem _root_.ContMDiff.comp_memWkpLocMapGroupoid {n : ℕ∞ω} {f : M → N}
+    (hf : ContMDiff I I' n f) (hv : MemWkpLocMapGroupoid G J I p k v) (hk : k ≤ 1)
+    (hkn : (k : ℕ∞ω) ≤ n) : MemWkpLocMapGroupoid G J I' p k (f ∘ v) :=
+  memWkpLocMapOnGroupoid_univ.mp ((memWkpLocMapOnGroupoid_univ.mpr hv).contMDiffOn_comp hk
+    hf.contMDiffOn hkn isOpen_univ isOpen_univ (mapsTo_univ _ _))
 
 variable [IsManifold I' ∞ N] [I'.Boundaryless] [CompleteSpace F]
 
 /-- Composition with a `C^ℓ` diffeomorphism, `ℓ ≥ k`, preserves and reflects the local Sobolev
-classes of order `k ≤ 1` on open sets. -/
-theorem _root_.Diffeomorph.memWkpLocMapOn_diffeomorph_comp_iff {n : ℕ∞ω} (e : M ≃ₘ^n⟮I, I'⟯ N)
-    (hk : k ≤ 1) (hkn : (k : ℕ∞ω) ≤ n) (hs : IsOpen s) :
-    MemWkpLocMapOn I' p k (e ∘ u) s ↔ MemWkpLocMapOn I p k u s := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.contMDiffOn_comp hk e.contMDiff.contMDiffOn hkn hs isOpen_univ
+classes of order `k ≤ 1` on open sets, for the charts of any structure groupoid. -/
+theorem _root_.Diffeomorph.memWkpLocMapOnGroupoid_diffeomorph_comp_iff {n : ℕ∞ω}
+    (e : M ≃ₘ^n⟮I, I'⟯ N) (hk : k ≤ 1) (hkn : (k : ℕ∞ω) ≤ n) (hS : IsOpen S) :
+    MemWkpLocMapOnGroupoid G J I' p k (e ∘ v) S ↔ MemWkpLocMapOnGroupoid G J I p k v S := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.contMDiffOn_comp hk e.contMDiff.contMDiffOn hkn hS isOpen_univ
     (mapsTo_univ _ _)⟩
-  have := h.contMDiffOn_comp hk e.symm.contMDiff.contMDiffOn hkn hs isOpen_univ (mapsTo_univ _ _)
+  have := h.contMDiffOn_comp hk e.symm.contMDiff.contMDiffOn hkn hS isOpen_univ (mapsTo_univ _ _)
   simpa [Function.comp_def] using this
 
 /-- Composition with a `C^ℓ` diffeomorphism, `ℓ ≥ k`, preserves and reflects the local Sobolev
-classes of order `k ≤ 1`. -/
-theorem _root_.Diffeomorph.memWkpLocMap_diffeomorph_comp_iff {n : ℕ∞ω} (e : M ≃ₘ^n⟮I, I'⟯ N)
-    (hk : k ≤ 1) (hkn : (k : ℕ∞ω) ≤ n) :
-    MemWkpLocMap I' p k (e ∘ u) ↔ MemWkpLocMap I p k u := by
-  have h : MemWkpLocMapOn I p k u univ ↔ MemWkpLocMap I p k u :=
-    memWkpLocMapOnGroupoid_univ
-  have h' : MemWkpLocMapOn I' p k (e ∘ u) univ ↔ MemWkpLocMap I' p k (e ∘ u) :=
-    memWkpLocMapOnGroupoid_univ
-  rw [← h', ← h, e.memWkpLocMapOn_diffeomorph_comp_iff hk hkn isOpen_univ]
+classes of order `k ≤ 1`, for the charts of any structure groupoid. -/
+theorem _root_.Diffeomorph.memWkpLocMapGroupoid_diffeomorph_comp_iff {n : ℕ∞ω}
+    (e : M ≃ₘ^n⟮I, I'⟯ N) (hk : k ≤ 1) (hkn : (k : ℕ∞ω) ≤ n) :
+    MemWkpLocMapGroupoid G J I' p k (e ∘ v) ↔ MemWkpLocMapGroupoid G J I p k v := by
+  rw [← memWkpLocMapOnGroupoid_univ, ← memWkpLocMapOnGroupoid_univ,
+    e.memWkpLocMapOnGroupoid_diffeomorph_comp_iff hk hkn isOpen_univ]
 
 end Composition
 

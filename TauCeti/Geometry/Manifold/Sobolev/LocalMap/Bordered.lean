@@ -51,6 +51,8 @@ their unfolding, restriction and monotonicity lemmas with the class for surfaces
   interior is a local Sobolev map up to the boundary, with the same order and exponent. The
   coordinate expressions in a bordered holomorphic chart are those in its restriction to the
   interior, read in `ℂ` through the open upper half-plane.
+  `TauCeti.MemWkpLocMap.memWkpLocMapOnBordered_borderedInterior` is the version for the whole
+  interior.
 * `TauCeti.not_memWkpLocMapOnBordered_sqrt_im`: on the closed upper half-disc, `z ↦ √(Im z)` is
   continuous but is not in the class of order `1` for any `p ≥ 2`, since the boundary chart
   tests its derivative `(2 √(Im z))⁻¹` on compact sets reaching the real axis.
@@ -206,6 +208,15 @@ theorem MemWkpLocMapOn.memWkpLocMapOnBordered_image [CompleteSpace F]
   exact ((hu.memWkpLoc_chart (subtypeRestr_trans_upperHalfPlaneChart_mem_maximalAtlas hφ hne)
     hψ).mono fun z hz ↦ (hmem z hz).1).congr_ae
       ((ae_restrict_iff' hVm).2 (Eventually.of_forall fun z hz ↦ (hmem z hz).2))
+
+/-- A local Sobolev map for the Riemann surface structure of the interior of a Riemann surface with
+boundary is a local Sobolev map up to the boundary on the interior, with the same order and
+exponent. -/
+theorem MemWkpLocMap.memWkpLocMapOnBordered_borderedInterior [CompleteSpace F]
+    (hu : MemWkpLocMap I p k (u ∘ ((↑) : borderedInterior X → X))) :
+    MemWkpLocMapOnBordered I p k u (borderedInterior X) := by
+  simpa using MemWkpLocMapOn.memWkpLocMapOnBordered_image (memWkpLocMapOnGroupoid_univ.mpr hu)
+    isOpen_univ
 
 end Interior
 
