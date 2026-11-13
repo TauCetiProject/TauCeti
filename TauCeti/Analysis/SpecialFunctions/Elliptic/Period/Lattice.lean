@@ -46,6 +46,8 @@ group to `ℂ / E.periodLattice`.
   determined by `g₂` and `g₃`, equivalently by its Weierstrass curve.
 * `PeriodPair.lattice_eq_smul_of_variableChange_smul_eq`: a change of variables `C` taking `E_Λ`
   to `E_{Λ'}` has `Λ' = C.u Λ`.
+* `PeriodPair.exists_lattice_eq_of_isZLattice`: every full lattice in `ℂ` is the lattice of a
+  period pair.
 * `WeierstrassCurve.periodLattice_eq_iff`: `E.periodLattice = Λ` exactly when `E` is the image of
   `E_Λ` under a change of variables with `u = 1`.
 * `WeierstrassCurve.variableChange_periodLattice`: rescaling naturality of the period
@@ -63,6 +65,31 @@ group to `ℂ / E.periodLattice`.
 public noncomputable section
 
 open Complex WeierstrassCurve
+
+/-! ### Period pairs of full lattices -/
+
+namespace PeriodPair
+
+/-- Every full lattice in `ℂ` is the lattice of a period pair: a `ℤ`-basis of the lattice is an
+`ℝ`-basis of `ℂ`. -/
+theorem exists_lattice_eq_of_isZLattice (Λ : Submodule ℤ ℂ) [DiscreteTopology Λ]
+    [IsZLattice ℝ Λ] : ∃ L : PeriodPair, L.lattice = Λ := by
+  have hrank : Module.finrank ℤ Λ = 2 := by
+    rw [ZLattice.rank ℝ Λ, Complex.finrank_real_complex]
+  let b : Module.Basis (Fin 2) ℤ Λ :=
+    (Module.Free.chooseBasis ℤ Λ).reindex (Fintype.equivFinOfCardEq (by
+      rw [← Module.finrank_eq_card_chooseBasisIndex, hrank]))
+  let b' := b.ofZLatticeBasis ℝ Λ
+  refine ⟨⟨b' 0, b' 1, ?_⟩, ?_⟩
+  · convert b'.linearIndependent using 1
+    ext i
+    fin_cases i <;> rfl
+  · rw [PeriodPair.lattice, ← b.ofZLatticeBasis_span ℝ]
+    congr 1
+    ext z
+    simp [b', Fin.exists_fin_two, eq_comm]
+
+end PeriodPair
 
 /-! ### The period lattice of a complex elliptic curve -/
 
