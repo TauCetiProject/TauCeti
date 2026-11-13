@@ -18,9 +18,9 @@ concentrated on a closed set `F` is concentrated on the paths with values in `F`
 When `F` is the range of a closed embedding `g : C(X, E)`, the law is therefore the image of a law
 on `C(T, X)` under postcomposition with `g`.
 
-Finite Borel laws on continuous maps, or on the fixed-basepoint subspace `BasedMap`, are
-uniquely determined by their finite-dimensional laws. These uniqueness statements use
-Mathlib's `IsProjectiveLimit.unique` and the evaluation-generated Borel sigma algebra.
+When `T` is second-countable and locally compact and `E` is second-countable and regular
+with its Borel measurable structure, finite Borel laws on `C(T, E)`, or on the fixed-basepoint
+subspace `BasedMap`, are uniquely determined by their finite-dimensional laws.
 
 ## Main results
 
@@ -37,6 +37,10 @@ Mathlib's `IsProjectiveLimit.unique` and the evaluation-generated Borel sigma al
   laws determine a finite Borel law on continuous maps.
 * `TauCeti.basedMap_measure_ext_of_forall_finset_map_restrict_eq`: the corresponding
   uniqueness criterion for based continuous maps.
+
+## References
+
+* Mathlib's `IsProjectiveLimit.unique`: uniqueness of finite-dimensional projective limits.
 -/
 
 public section
@@ -125,7 +129,7 @@ theorem basedMap_measure_ext_of_forall_finset_map_restrict_eq
   have heq : ν.map Subtype.val = ρ.map Subtype.val := by
     apply continuousMap_measure_ext_of_forall_finset_map_restrict_eq
     intro I
-    simpa only [Measure.map_map (ContinuousMap.measurable_restrict I) measurable_subtype_coe,
+    simpa only [Measure.map_map (ContinuousMap.measurable_finsetRestrict I) measurable_subtype_coe,
       Function.comp_def] using h I
   ext A hA
   obtain ⟨B, hB, rfl⟩ := hA

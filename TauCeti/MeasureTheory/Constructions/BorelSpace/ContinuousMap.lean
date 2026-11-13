@@ -61,7 +61,7 @@ theorem measurable_coeFun {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y
   Measurable.of_eval measurable_eval
 
 /-- Restricting a continuous map to finitely many evaluation points is measurable. -/
-theorem measurable_restrict {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+theorem measurable_finsetRestrict {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [MeasurableSpace Y] [BorelSpace Y] (I : Finset X) :
     Measurable (fun γ : C(X, Y) ↦ I.restrict (γ : X → Y)) :=
   (Finset.measurable_restrict I).comp measurable_coeFun
@@ -129,9 +129,9 @@ theorem measurableEmbedding_val [MeasurableSingletonClass E] :
   MeasurableEmbedding.subtype_coe ((ContinuousMap.measurable_eval t₀) (measurableSet_singleton x₀))
 
 /-- Restriction to finitely many times is measurable on based continuous maps. -/
-theorem measurable_restrict (I : Finset T) :
+theorem measurable_finsetRestrict (I : Finset T) :
     Measurable (fun γ : BasedMap T E t₀ x₀ ↦ I.restrict (γ.1 : T → E)) :=
-  (ContinuousMap.measurable_restrict I).comp measurable_subtype_coe
+  (ContinuousMap.measurable_finsetRestrict I).comp measurable_subtype_coe
 
 variable [SecondCountableTopology T] [LocallyCompactSpace T]
   [SecondCountableTopology E] [RegularSpace E] [MeasurableSpace Ω]

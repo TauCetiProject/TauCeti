@@ -10,22 +10,18 @@ public import TauCeti.MeasureTheory.Measure.ContinuousMap
 /-!
 # Realizing continuous processes on path space
 
-An a.e.-continuous process has a measurable realization in `C(T, E)`. If its initial value
-is almost everywhere `x₀`, it also has a realization in `BasedMap T E t₀ x₀`, the existing
-subtype of continuous maps taking `t₀` to `x₀`. Each realization agrees with the process at
-every time outside one common null set, even when the original coordinates are only a.e.
-measurable and the sample space is incomplete. For a finite source measure its pushforward
-is the unique law with the prescribed finite-dimensional laws; for a probability source
-measure this pushforward is a probability law.
+Let `T` be second-countable and locally compact, and let `E` be second-countable and regular
+with its Borel measurable structure. A process with a.e.-measurable coordinates and
+a.e.-continuous paths has a measurable realization in `C(T, E)`. If its initial value is
+almost everywhere `x₀`, it also has a realization in `BasedMap T E t₀ x₀`, the subtype of
+continuous maps taking `t₀` to `x₀`. Each realization agrees with the process at every time
+outside one common null set, even when the sample space is incomplete. For a finite source
+measure, there exists exactly one measure on the corresponding path space with the
+prescribed finite-dimensional laws.
 
 Taking `T = ℝ≥0`, or a compact time interval, gives continuous-path laws in the compact-open
 (or uniform, on a compact interval) topology. No Gaussian or independent-increment hypothesis
 is made: this construction alone does not assert that the resulting law is Wiener measure.
-
-The measurable-space inputs are `ContinuousMap.aemeasurable_iff_eval`, the all-point
-evaluation criterion for a.e. measurability, and Mathlib's `ContinuousMap.measurable_eval`.
-Law uniqueness uses `TauCeti.continuousMap_measure_ext_of_forall_finset_map_restrict_eq` and
-`TauCeti.basedMap_measure_ext_of_forall_finset_map_restrict_eq`.
 
 ## References
 
@@ -102,7 +98,7 @@ theorem exists_measurable_basedMap_ae_eq
 
 /-- A finite-measure process with a.e.-measurable coordinates and a.e.-continuous paths has
 exactly one measure on continuous paths with its finite-dimensional laws. -/
-theorem existsUnique_continuousMap_forall_finset_map_restrict_eq [IsFiniteMeasure μ]
+theorem existsUnique_continuousMap_measure_forall_finset_map_restrict_eq [IsFiniteMeasure μ]
     (hX : ∀ t, AEMeasurable (X t) μ)
     (hcont : ∀ᵐ ω ∂μ, Continuous (fun t ↦ X t ω)) :
     ∃! ν : Measure C(T, E), ∀ I : Finset T,
@@ -111,7 +107,7 @@ theorem existsUnique_continuousMap_forall_finset_map_restrict_eq [IsFiniteMeasur
   obtain ⟨F, hFm, hF⟩ := exists_measurable_continuousMap_ae_eq hX hcont
   have hlaw (I : Finset T) : (μ.map F).map (fun γ : C(T, E) ↦ I.restrict (γ : T → E)) =
       μ.map (fun ω ↦ I.restrict (X · ω)) := by
-    rw [Measure.map_map (ContinuousMap.measurable_restrict I) hFm]
+    rw [Measure.map_map (ContinuousMap.measurable_finsetRestrict I) hFm]
     apply Measure.map_congr
     filter_upwards [hF] with ω hω
     exact funext fun t ↦ hω t
@@ -123,7 +119,7 @@ theorem existsUnique_continuousMap_forall_finset_map_restrict_eq [IsFiniteMeasur
 /-- A finite-measure process with a.e.-measurable coordinates, a.e.-continuous paths and
 initial value `x₀` almost everywhere has exactly one measure on based continuous paths
 with its finite-dimensional laws. -/
-theorem existsUnique_basedMap_forall_finset_map_restrict_eq [IsFiniteMeasure μ]
+theorem existsUnique_basedMap_measure_forall_finset_map_restrict_eq [IsFiniteMeasure μ]
     (hX : ∀ t, AEMeasurable (X t) μ)
     (hcont : ∀ᵐ ω ∂μ, Continuous (fun t ↦ X t ω))
     (hstart : ∀ᵐ ω ∂μ, X t₀ ω = x₀) :
@@ -133,7 +129,7 @@ theorem existsUnique_basedMap_forall_finset_map_restrict_eq [IsFiniteMeasure μ]
   obtain ⟨F, hFm, hF⟩ := exists_measurable_basedMap_ae_eq hX hcont hstart
   have hlaw (I : Finset T) : (μ.map F).map (fun γ ↦ I.restrict (γ.1 : T → E)) =
       μ.map (fun ω ↦ I.restrict (X · ω)) := by
-    rw [Measure.map_map (BasedMap.measurable_restrict I) hFm]
+    rw [Measure.map_map (BasedMap.measurable_finsetRestrict I) hFm]
     apply Measure.map_congr
     filter_upwards [hF] with ω hω
     exact funext fun t ↦ hω t
