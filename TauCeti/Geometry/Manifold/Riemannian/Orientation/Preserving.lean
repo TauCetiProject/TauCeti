@@ -12,13 +12,15 @@ public import Mathlib.Analysis.InnerProductSpace.TwoDim
 /-!
 # Orientation-preserving maps and volume-form positivity
 
-An orientation-preserving map between oriented Riemannian manifolds preserves positivity of
-the Riemannian volume form on families of tangent vectors under its derivative, and conversely.
+For an orientation-preserving map between oriented Riemannian manifolds, the target Riemannian
+volume form is positive on `mfderiv I I' f x ∘ v` exactly when the source Riemannian volume form
+is positive on `v`
+(`IsOrientationPreservingAt.riemannianVolumeForm_mfderiv_comp_pos_iff`).
 
 Let `M` be an oriented Riemannian manifold and `F` an oriented real inner product space of the
 same dimension, with its constant orientation. If `f : M → F` preserves orientations at `x`,
-its derivative `mvfderiv I f x` sends a family of tangent vectors at `x` on which the Riemannian
-volume form is positive to a family on which the volume form of `F` is positive, and conversely
+the volume form of `F` is positive on `mvfderiv I f x ∘ v` exactly when the Riemannian volume
+form is positive on the family of tangent vectors `v` at `x`
 (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.volumeForm_mvfderiv_comp_pos_iff`).
 
 For an oriented Riemannian surface and a map `φ` into `ℂ` with its constant standard orientation
@@ -26,6 +28,11 @@ For an oriented Riemannian surface and a map `φ` into `ℂ` with its constant s
 If `φ` preserves orientations at `x`, a pair of tangent vectors has positive area form exactly
 when its image `(w, z)` under `mvfderiv I φ x` satisfies `0 < Im (conj w * z)`
 (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.im_conj_mvfderiv_mul_pos_iff`).
+
+These results translate intrinsic volume- or area-form positivity of tangent frames into
+Euclidean or planar positivity in positive coordinate charts. For example, a boundary tangent
+and an inward normal with positive intrinsic area have images satisfying `0 < Im (conj w * z)`
+in a positive complex chart, identifying the inward side as the left side of the image tangent.
 -/
 
 public section
