@@ -42,6 +42,9 @@ components of a reducible root system acts on the orthogonal sum of their root l
 * `TauCeti.IntegralLattice.Isometry.pi`: the orthogonal sum of a family of isometries.
 * `TauCeti.IntegralLattice.Isometry.piCongrLeft`: the isometry `⊥ k, L (σ k) ≅ ⊥ i, L i` induced
   by an equivalence `σ : κ ≃ ι` of index types.
+* `TauCeti.IntegralLattice.Isometry.piCongr`, `TauCeti.IntegralLattice.Isometry.piCongr'`: the
+  isometry `⊥ i, L i ≅ ⊥ k, M k` combining an equivalence `σ : ι ≃ κ` of index types with
+  summandwise isometries indexed by the source or target.
 
 ## References
 
@@ -315,6 +318,97 @@ theorem piCongrLeft_trans_pi (σ : κ ≃ ι) (f : ∀ i, Isometry (L i) (M i)) 
   ext x i
   obtain ⟨k, rfl⟩ := σ.surjective i
   simp only [trans_apply, pi_apply, piCongrLeft_apply_apply]
+
+section PiCongr
+
+variable {L}
+variable {W' : κ → Type w} [∀ k, AddCommGroup (W' k)] [∀ k, Module ℚ (W' k)]
+  {M' : ∀ k, IntegralLattice (W' k)}
+
+/-- **Transporting an orthogonal sum along an equivalence of indices and summandwise isometries.**
+Given `σ : ι ≃ κ` and isometries `f i : L i ≅ M' (σ i)`, this is the isometry
+`⊥ i, L i ≅ ⊥ k, M' k` moving the summand in position `i` to `σ i` through `f i`, the lattice
+counterpart of `Equiv.piCongr`. -/
+def piCongr (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i))) :
+    Isometry (IntegralLattice.pi L) (IntegralLattice.pi M') :=
+  (pi f).trans (piCongrLeft M' σ)
+
+/-- `Isometry.piCongr` is the orthogonal sum of `f` followed by `Isometry.piCongrLeft`. -/
+theorem piCongr_def (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i))) :
+    piCongr σ f = (pi f).trans (piCongrLeft M' σ) :=
+  (rfl)
+
+/-- `Isometry.piCongr` places `f i (x i)` in position `σ i`. -/
+@[simp]
+theorem piCongr_apply_apply (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i)))
+    (x : ∀ i, V i) (i : ι) :
+    piCongr σ f x (σ i) = f i (x i) := by
+  rw [piCongr, trans_apply, piCongrLeft_apply_apply, pi_apply]
+
+/-- The inverse of `Isometry.piCongr` reads position `σ i` through `(f i).symm`. -/
+@[simp]
+theorem piCongr_symm_apply (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i)))
+    (y : ∀ k, W' k) (i : ι) :
+    (piCongr σ f).symm y i = (f i).symm (y (σ i)) := by
+  rw [piCongr, symm_trans, trans_apply, pi_symm, pi_apply, piCongrLeft_symm_apply]
+
+/-- `Isometry.piCongr` along the identity equivalence and identity summand isometries is the
+identity. -/
+@[simp]
+theorem piCongr_refl :
+    piCongr (Equiv.refl ι) (fun i ↦ Isometry.refl (L i)) =
+      Isometry.refl (IntegralLattice.pi L) := by
+  ext x i
+  exact (piCongr_apply_apply (Equiv.refl ι) _ x i).trans
+    ((refl_apply (L i) (x i)).trans (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm)
+
+/-- **Transporting an orthogonal sum with summandwise isometries indexed by the target.**  Given
+`σ : ι ≃ κ` and isometries `f k : L (σ.symm k) ≅ M' k`, this is the isometry
+`⊥ i, L i ≅ ⊥ k, M' k` whose `k`-th coordinate is `f k (x (σ.symm k))`, the lattice counterpart of
+`Equiv.piCongr'`. -/
+def piCongr' (σ : ι ≃ κ) (f : ∀ k, Isometry (L (σ.symm k)) (M' k)) :
+    Isometry (IntegralLattice.pi L) (IntegralLattice.pi M') :=
+  (piCongr σ.symm fun k ↦ (f k).symm).symm
+
+/-- `Isometry.piCongr'` evaluates at coordinate `k` by applying `f k` to coordinate `σ.symm k`. -/
+@[simp]
+theorem piCongr'_apply (σ : ι ≃ κ) (f : ∀ k, Isometry (L (σ.symm k)) (M' k))
+    (x : ∀ i, V i) (k : κ) :
+    piCongr' σ f x k = f k (x (σ.symm k)) := by
+  rw [piCongr', piCongr_symm_apply, symm_symm]
+
+/-- The inverse of `Isometry.piCongr'` evaluates at `σ.symm k` by applying `(f k).symm` to
+coordinate `k`. -/
+@[simp]
+theorem piCongr'_symm_apply_symm_apply (σ : ι ≃ κ) (f : ∀ k, Isometry (L (σ.symm k)) (M' k))
+    (y : ∀ k, W' k) (k : κ) :
+    (piCongr' σ f).symm y (σ.symm k) = (f k).symm (y k) := by
+  rw [piCongr', symm_symm, piCongr_apply_apply]
+
+/-- `Isometry.piCongr'` along the identity equivalence and identity summand isometries is the
+identity. -/
+@[simp]
+theorem piCongr'_refl :
+    piCongr' (Equiv.refl ι) (fun i ↦ Isometry.refl (L i)) =
+      Isometry.refl (IntegralLattice.pi L) := by
+  ext x i
+  exact (piCongr'_apply (Equiv.refl ι) _ x i).trans
+    ((refl_apply (L i) _).trans (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm)
+
+/-- Composing two `Isometry.piCongr'` maps composes the index equivalences and the pulled-back
+summand isometries. -/
+theorem piCongr'_trans {μ : Type*} [Fintype μ] {X : μ → Type*} [∀ m, AddCommGroup (X m)]
+    [∀ m, Module ℚ (X m)] {N : ∀ m, IntegralLattice (X m)} (σ : ι ≃ κ)
+    (f : ∀ k, Isometry (L (σ.symm k)) (M' k)) (τ : κ ≃ μ)
+    (g : ∀ m, Isometry (M' (τ.symm m)) (N m)) :
+    (piCongr' σ f).trans (piCongr' τ g) =
+      piCongr' (σ.trans τ) fun m ↦ (f (τ.symm m)).trans (g m) := by
+  ext x m
+  rw [trans_apply, piCongr'_apply, piCongr'_apply]
+  exact ((trans_apply _ _ _).symm).trans
+    (piCongr'_apply (σ.trans τ) (fun m ↦ (f (τ.symm m)).trans (g m)) x m).symm
+
+end PiCongr
 
 section Unique
 

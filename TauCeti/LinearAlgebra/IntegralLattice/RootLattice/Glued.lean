@@ -32,10 +32,12 @@ Gluing along the zero subgroup gives `R` back.
 Glued lattices are natural in their glue data.  An isometry of orthogonal sums of root lattices
 that carries the glue subgroup `H` onto `H'`, read in glue-word coordinates, restricts to an
 isometry of the glued lattices.  This applies in particular to componentwise isometries of the root
-lattices and to permutations of the components, the two changes of coordinates under which glue
-words are natural.  When all components have the same type, combining the two gives the isometry
-induced by a signed permutation of the components which preserves the glue subgroup, the form in
-which automorphisms of a glue code act on the glued lattice.
+lattices, to permutations of the components, and to their composites
+(`gluedLatticePiCongrIsometry`, `gluedLatticePiCongrIsometry'`), so componentwise automorphisms may
+be combined with permutations even when not all components have the same type.  When all components
+have the same type, specializing to scalar sign changes gives the isometry induced by a signed
+permutation of the components which preserves the glue subgroup, the form in which automorphisms of
+a glue code act on the glued lattice.
 
 The root sublattice of a glued lattice is computed from the coset minima of the glue words in
 `TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots`.
@@ -56,9 +58,11 @@ The root sublattice of a glued lattice is computed from the coset minima of the 
   finite quadratic modules, in glue-word coordinates.
 * `TauCeti.DynkinType.gluedLatticeIsometry`: an isometry of the root lattices carrying one glue
   subgroup onto another induces an isometry of the glued lattices.
-* `TauCeti.DynkinType.gluedLatticePiIsometry`, `TauCeti.DynkinType.gluedLatticePiCongrLeftIsometry`:
-  the isometries of glued lattices induced by componentwise isometries of the root lattices and by
-  permutations of the components.
+* `TauCeti.DynkinType.gluedLatticePiIsometry`, `TauCeti.DynkinType.gluedLatticePiCongrLeftIsometry`,
+  `TauCeti.DynkinType.gluedLatticePiCongrIsometry`,
+  `TauCeti.DynkinType.gluedLatticePiCongrIsometry'`: the isometries of glued lattices induced by
+  componentwise isometries of the root lattices, by permutations of the components, and by their
+  composites.
 * `TauCeti.DynkinType.gluedLatticeSignedPermIsometry`: for identical components, the isometry of
   the glued lattice induced by a signed permutation of the components preserving the glue subgroup.
 * `TauCeti.DynkinType.gluedLatticeIsometryOfEq`: the isometry between the lattices glued from two
@@ -412,6 +416,82 @@ theorem gluedLatticePiIsometry_apply
 
 end Pi
 
+section PiCongr
+
+variable {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced}
+  (hvs : ∀ k, (s k).Valid)
+  {H' : AddSubgroup (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k))}
+  (hH' : (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k)).IsIsotropic H')
+
+/-- **Componentwise root-lattice isometries combined with a reindexing induce isometries of glued
+lattices.**  Given `σ : ι ≃ κ`, root-lattice isometries `f i` from `t i` to `s (σ i)`, and
+compatible glue-label maps `g i`, if moving `g i (w i)` to position `σ i` carries `H` onto `H'`,
+then `Isometry.piCongr σ f` restricts to an isometry of the glued lattices. -/
+noncomputable def gluedLatticePiCongrIsometry (σ : ι ≃ κ)
+    (f : ∀ i, IntegralLattice.Isometry ((t i).rootLattice (ht i))
+      ((s (σ i)).rootLattice (hs (σ i))))
+    (g : ∀ i, (t i).glueAlphabet (ht i) → (s (σ i)).glueAlphabet (hs (σ i)))
+    (hfg : ∀ i x, (s (σ i)).glueAlphabetIsometry (hvs (σ i)) (hs (σ i)) (g i x) =
+      (f i).discriminantQuadraticIsometry ((t i).isEven_rootLattice (ht i))
+        ((t i).glueAlphabetIsometry (hv i) (ht i) x))
+    (hgH : ∀ w, Equiv.piCongrLeft (fun k ↦ (s k).glueAlphabet (hs k)) σ
+      (fun i ↦ g i (w i)) ∈ H' ↔ w ∈ H) :
+    IntegralLattice.Isometry (gluedLattice t ht hv H hH) (gluedLattice s hs hvs H' hH') :=
+  gluedLatticeIsometry t ht hv H hH hvs hH' (Isometry.piCongr σ f)
+    (fun w ↦ Equiv.piCongrLeft (fun k ↦ (s k).glueAlphabet (hs k)) σ fun i ↦ g i (w i))
+    (discriminantQuadraticIsometry_piCongr_glueWordIsometry t ht hv hvs σ f g hfg) hgH
+
+/-- `gluedLatticePiCongrIsometry` places `f i (x i)` in component `σ i`. -/
+@[simp]
+theorem gluedLatticePiCongrIsometry_apply (σ : ι ≃ κ)
+    (f : ∀ i, IntegralLattice.Isometry ((t i).rootLattice (ht i))
+      ((s (σ i)).rootLattice (hs (σ i))))
+    (g : ∀ i, (t i).glueAlphabet (ht i) → (s (σ i)).glueAlphabet (hs (σ i)))
+    (hfg : ∀ i x, (s (σ i)).glueAlphabetIsometry (hvs (σ i)) (hs (σ i)) (g i x) =
+      (f i).discriminantQuadraticIsometry ((t i).isEven_rootLattice (ht i))
+        ((t i).glueAlphabetIsometry (hv i) (ht i) x))
+    (hgH : ∀ w, Equiv.piCongrLeft (fun k ↦ (s k).glueAlphabet (hs k)) σ
+      (fun i ↦ g i (w i)) ∈ H' ↔ w ∈ H)
+    (x : ∀ i, Fin (t i).rank → ℚ) (i : ι) :
+    gluedLatticePiCongrIsometry t ht hv H hH hvs hH' σ f g hfg hgH x (σ i) = f i (x i) := by
+  rw [gluedLatticePiCongrIsometry, gluedLatticeIsometry_apply, Isometry.piCongr_apply_apply]
+
+/-- **Componentwise root-lattice isometries indexed by the target, combined with a reindexing,
+induce isometries of glued lattices.**  Given `σ : ι ≃ κ`, root-lattice isometries `f k` from
+`t (σ.symm k)` to `s k`, and compatible glue-label maps `g k`, if the word `k ↦ g k (w (σ.symm k))`
+lies in `H'` exactly when `w ∈ H`, then `Isometry.piCongr' σ f` restricts to an isometry of the
+glued lattices. -/
+noncomputable def gluedLatticePiCongrIsometry' (σ : ι ≃ κ)
+    (f : ∀ k, IntegralLattice.Isometry ((t (σ.symm k)).rootLattice (ht (σ.symm k)))
+      ((s k).rootLattice (hs k)))
+    (g : ∀ k, (t (σ.symm k)).glueAlphabet (ht (σ.symm k)) → (s k).glueAlphabet (hs k))
+    (hfg : ∀ k x, (s k).glueAlphabetIsometry (hvs k) (hs k) (g k x) =
+      (f k).discriminantQuadraticIsometry ((t (σ.symm k)).isEven_rootLattice (ht (σ.symm k)))
+        ((t (σ.symm k)).glueAlphabetIsometry (hv (σ.symm k)) (ht (σ.symm k)) x))
+    (hgH : ∀ w, (fun k ↦ g k (w (σ.symm k))) ∈ H' ↔ w ∈ H) :
+    IntegralLattice.Isometry (gluedLattice t ht hv H hH) (gluedLattice s hs hvs H' hH') :=
+  gluedLatticeIsometry t ht hv H hH hvs hH' (Isometry.piCongr' σ f)
+    (fun w k ↦ g k (w (σ.symm k)))
+    (discriminantQuadraticIsometry_piCongr'_glueWordIsometry t ht hv hvs σ f g hfg) hgH
+
+/-- `gluedLatticePiCongrIsometry'` evaluates at component `k` by applying `f k` to component
+`σ.symm k`. -/
+@[simp]
+theorem gluedLatticePiCongrIsometry'_apply (σ : ι ≃ κ)
+    (f : ∀ k, IntegralLattice.Isometry ((t (σ.symm k)).rootLattice (ht (σ.symm k)))
+      ((s k).rootLattice (hs k)))
+    (g : ∀ k, (t (σ.symm k)).glueAlphabet (ht (σ.symm k)) → (s k).glueAlphabet (hs k))
+    (hfg : ∀ k x, (s k).glueAlphabetIsometry (hvs k) (hs k) (g k x) =
+      (f k).discriminantQuadraticIsometry ((t (σ.symm k)).isEven_rootLattice (ht (σ.symm k)))
+        ((t (σ.symm k)).glueAlphabetIsometry (hv (σ.symm k)) (ht (σ.symm k)) x))
+    (hgH : ∀ w, (fun k ↦ g k (w (σ.symm k))) ∈ H' ↔ w ∈ H)
+    (x : ∀ i, Fin (t i).rank → ℚ) (k : κ) :
+    gluedLatticePiCongrIsometry' t ht hv H hH hvs hH' σ f g hfg hgH x k =
+      f k (x (σ.symm k)) := by
+  rw [gluedLatticePiCongrIsometry', gluedLatticeIsometry_apply, Isometry.piCongr'_apply]
+
+end PiCongr
+
 section OfEq
 
 variable {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced}
@@ -429,31 +509,16 @@ family of components read off by position from a list with an explicitly given f
 noncomputable def gluedLatticeIsometryOfEq
     (hHH' : ∀ w, piGlueAlphabetCongr t ht σ h w ∈ H' ↔ w ∈ H) :
     IntegralLattice.Isometry (gluedLattice t ht hv H hH) (gluedLattice s hs hvs H' hH') :=
-  gluedLatticeIsometry t ht hv H hH hvs hH'
-    ((Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ).symm.trans
-      (Isometry.pi fun k ↦ (t (σ k)).rootLatticeIsometryOfEq (ht (σ k)) (h k) (hs k)))
-    (piGlueAlphabetCongr t ht σ h)
+  gluedLatticePiCongrIsometry' t ht hv H hH hvs hH' σ.symm
+    (fun k ↦ (t (σ k)).rootLatticeIsometryOfEq (ht (σ k)) (h k) (hs k))
+    (fun k ↦ FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr (h k) (ht (σ k)) (hs k)))
+    (fun k x ↦ glueAlphabetIsometry_ofEq (h k) (hv (σ k)) (hvs k) (ht (σ k)) (hs k) x)
     (fun w ↦ by
-      obtain ⟨v, rfl⟩ := (Equiv.piCongrLeft (fun i ↦ (t i).glueAlphabet (ht i)) σ).surjective w
-      have hσ := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
-        (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry t ht hv σ v)
-      have hpi := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
-        (discriminantQuadraticIsometry_pi_glueWordIsometry (fun k ↦ t (σ k))
-          (fun k ↦ ht (σ k)) (fun k ↦ hv (σ k)) hvs
-          (fun k ↦ (t (σ k)).rootLatticeIsometryOfEq (ht (σ k)) (h k) (hs k))
-          (fun k ↦ FiniteQuadraticModule.Isometry.ofEq
-            (glueAlphabet_congr (h k) (ht (σ k)) (hs k)))
-          (fun k x ↦ glueAlphabetIsometry_ofEq (h k) (hv (σ k)) (hvs k) (ht (σ k)) (hs k) x) v)
-      -- Undo the reindexing to reach the word `v` of `k ↦ t (σ k)`, then change the alphabets.
-      refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-      rw [Isometry.discriminantGroupEquiv_trans]
-      refine (LinearEquiv.trans_apply ..).trans ?_
-      have hsymm := (DFunLike.congr_fun (Isometry.discriminantGroupEquiv_symm
-        (Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ)) _).trans
-        ((congrArg _ hσ.symm).trans (LinearEquiv.symm_apply_apply _ _))
-      refine (congrArg _ hsymm).trans (hpi.trans (congrArg _ (funext fun k ↦ ?_)))
-      rw [piGlueAlphabetCongr_apply, Equiv.piCongrLeft_apply_apply])
-    hHH'
+      have hw : (fun k ↦ FiniteQuadraticModule.Isometry.ofEq
+          (glueAlphabet_congr (h k) (ht (σ k)) (hs k)) (w (σ k))) =
+          piGlueAlphabetCongr t ht σ h w :=
+        funext fun k ↦ (piGlueAlphabetCongr_apply t ht σ h w k).symm
+      exact hw ▸ hHH' w)
 
 /-- The isometry of glued lattices of equal families of components reads the coordinates of
 component `k` from those of component `σ k`. -/
@@ -463,8 +528,9 @@ theorem gluedLatticeIsometryOfEq_apply
     (x : ∀ i, Fin (t i).rank → ℚ) (k : κ) (j : Fin (s k).rank) :
     gluedLatticeIsometryOfEq t ht hv H hH hvs hH' σ h hHH' x k j =
       x (σ k) (Fin.cast (congrArg rank (h k)).symm j) := by
-  rw [gluedLatticeIsometryOfEq, gluedLatticeIsometry_apply, Isometry.trans_apply,
-    Isometry.pi_apply, rootLatticeIsometryOfEq_apply, Isometry.piCongrLeft_symm_apply]
+  rw [gluedLatticeIsometryOfEq]
+  exact (congrFun (gluedLatticePiCongrIsometry'_apply t ht hv H hH hvs hH' σ.symm _ _ _ _ x k)
+    j).trans ((t (σ k)).rootLatticeIsometryOfEq_apply (ht (σ k)) (h k) (hs k) (x (σ k)) j)
 
 end OfEq
 
