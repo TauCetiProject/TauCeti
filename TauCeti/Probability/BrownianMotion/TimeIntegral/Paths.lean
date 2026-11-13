@@ -94,7 +94,7 @@ theorem integral_sq_sum_mul_sub_integral (hB : IsPreBrownianReal B P)
     (∫ ω, ((∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) * B (t i) ω) -
       ∫ u in (t 0 : ℝ)..t n, B u.toNNReal ω) ^ 2 ∂P) =
         (∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) ^ 3) / 3 := by
-  rw [← hB.norm_sum_leftRiemannError_sq t ht n, ← Lp.integral_norm_sq_eq_norm_sq]
+  rw [← hB.norm_sum_leftRiemannError_sq (ht.monotoneOn _), ← Lp.integral_norm_sq_eq_norm_sq]
   apply integral_congr_ae
   filter_upwards [hB.coeFn_sum_leftRiemannError t n (ht (Nat.zero_le n)) hm] with ω hω
   rw [hω, Real.norm_eq_abs, sq_abs]
@@ -121,7 +121,7 @@ theorem tendstoInMeasure_sum_mul_sub_integral_zero (hB : IsPreBrownianReal B P)
     TendstoInMeasure P (fun k ω ↦
       (∑ i ∈ Finset.range (n k), ((t k (i + 1) : ℝ) - t k i) * B (t k i) ω) -
         ∫ u in (t k 0 : ℝ)..t k (n k), B u.toNNReal ω) l (fun _ ↦ 0) := by
-  have hLp := hB.tendsto_sum_leftRiemannError_zero ht hT hδ hlim
+  have hLp := hB.tendsto_sum_leftRiemannError_zero (fun k ↦ (ht k).monotoneOn _) hT hδ hlim
   exact TendstoInMeasure.congr
     (fun k ↦ hB.coeFn_sum_leftRiemannError (t k) (n k) (ht k (Nat.zero_le _)) (hm k))
     (Lp.coeFn_zero _ _ _) (tendstoInMeasure_of_tendsto_Lp hLp)

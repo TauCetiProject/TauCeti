@@ -112,15 +112,6 @@ theorem norm_toLp_sum_eval_sq_mul_sub_sub_sq_le (hB : IsPreBrownianReal B P)
       ((1 / 3 : ℝ) • (hB.memLp_pow_eval (t n) 3 (by norm_num)).toLp _ -
         ∫ u in (0 : ℝ)..t n, hB.toL2 u.toNNReal)‖ ^ 2 ≤
       6 * (t n : ℝ) ^ 2 * δ + 6 * (t n : ℝ) * δ ^ 2 := by
-  -- Clipping a negative mesh bound only affects an empty grid, whose horizon is zero.
-  have hδ : 0 ≤ max δ 0 := le_max_right _ _
-  have hm (i : ℕ) (hi : i < n) : (t (i + 1) : ℝ) - t i ≤ max δ 0 :=
-    (hmesh i hi).trans (le_max_left _ _)
-  have hend : (t n : ℝ) * max δ 0 = (t n : ℝ) * δ := by
-    rcases n.eq_zero_or_pos with rfl | hn
-    · simp only [hzero, NNReal.coe_zero, zero_mul]
-    · have h01 : (t 0 : ℝ) ≤ t 1 := by exact_mod_cast ht (Nat.zero_le n) hn (Nat.zero_le 1)
-      rw [max_eq_left ((sub_nonneg.mpr h01).trans (hmesh 0 hn))]
   let W := hB
   let Z (ω : Ω) := ∑ i ∈ range n, B (t i) ω *
     ((B (t (i + 1)) ω - B (t i) ω) ^ 2 - ((t (i + 1) : ℝ) - t i))
@@ -131,15 +122,17 @@ theorem norm_toLp_sum_eval_sq_mul_sub_sub_sq_le (hB : IsPreBrownianReal B P)
   let c := hC.toLp C
   let L := ∑ i ∈ range n, W.leftRiemannError (t i) (t (i + 1))
   -- The three previously computed second moments control the three error terms.
-  have hz : ‖z‖ ^ 2 ≤ 2 * (t n : ℝ) ^ 2 * max δ 0 := by
-    simpa only [z, MemLp.norm_toLp_sq, Real.norm_eq_abs, sq_abs, Z] using
-      W.integral_sq_sum_eval_mul_sq_sub_sub_le ht hδ hm
-  have hc : ‖c‖ ^ 2 ≤ 15 * (t n : ℝ) * (max δ 0) ^ 2 := by
+  have hz : ‖z‖ ^ 2 ≤ 2 * (t n : ℝ) ^ 2 * δ := by
+    have h := W.integral_sq_sum_eval_mul_sq_sub_sub_le ht hmesh
+    simp only [hzero, NNReal.coe_zero, sub_zero] at h
+    have hfactor : 2 * (t n : ℝ) * (t n : ℝ) * δ = 2 * (t n : ℝ) ^ 2 * δ := by ring
+    simpa only [z, MemLp.norm_toLp_sq, Real.norm_eq_abs, sq_abs, Z, hfactor] using h
+  have hc : ‖c‖ ^ 2 ≤ 15 * (t n : ℝ) * δ ^ 2 := by
     simpa only [c, MemLp.norm_toLp_sq, Real.norm_eq_abs, sq_abs, C, hzero,
-      NNReal.coe_zero, sub_zero] using W.integral_sq_sum_range_cube_sub_le ht hm
-  have hL : ‖L‖ ^ 2 ≤ (t n : ℝ) * (max δ 0) ^ 2 / 3 := by
+      NNReal.coe_zero, sub_zero] using W.integral_sq_sum_range_cube_sub_le ht hmesh
+  have hL : ‖L‖ ^ 2 ≤ (t n : ℝ) * δ ^ 2 / 3 := by
     simpa only [hzero, NNReal.coe_zero, sub_zero] using
-      W.norm_sum_leftRiemannError_sq_le_of_monotoneOn ht hm
+      W.norm_sum_leftRiemannError_sq_le ht hmesh
   -- The L² cubic decomposition leaves exactly the time-quadrature error.
   have hR : (∑ i ∈ range n, ((t (i + 1) : ℝ) - t i) • W.toL2 (t i)) -
       (∫ u in (0 : ℝ)..t n, W.toL2 u.toNNReal) = L := by
@@ -156,12 +149,8 @@ theorem norm_toLp_sum_eval_sq_mul_sub_sub_sq_le (hB : IsPreBrownianReal B P)
   norm_num at htriangle
   have hsquare := sq_le_sq₀ (norm_nonneg _) (by positivity) |>.mpr htriangle
   -- (a+b+c)² ≤ 3(a²+b²+c²); 3(2T²δ + 15Tδ²/9 + Tδ²/3) = 6T²δ + 6Tδ².
-  have hbound : ‖z + (1 / 3 : ℝ) • c + L‖ ^ 2 ≤
-      6 * (t n : ℝ) ^ 2 * max δ 0 + 6 * (t n : ℝ) * (max δ 0) ^ 2 := by
-    nlinarith [sq_nonneg (‖z‖ - ‖c‖ / 3), sq_nonneg (‖z‖ - ‖L‖),
-      sq_nonneg (‖c‖ / 3 - ‖L‖)]
-  convert hbound using 1; nlinarith [congrArg (fun x : ℝ ↦ (t n : ℝ) * x) hend,
-    congrArg (fun x : ℝ ↦ x * max δ 0) hend, congrArg (fun x : ℝ ↦ x * δ) hend]
+  nlinarith [sq_nonneg (‖z‖ - ‖c‖ / 3), sq_nonneg (‖z‖ - ‖L‖),
+    sq_nonneg (‖c‖ / 3 - ‖L‖)]
 
 /-- **The cubic Brownian Itô partition limit.** Along every deterministic vanishing-mesh
 family spanning `[0,T]`, the sums of `B² dB` converge in `L²` to `B_T³/3 - ∫₀ᵀ B_s ds`.

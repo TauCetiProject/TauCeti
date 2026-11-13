@@ -247,38 +247,44 @@ theorem sum_leftRiemannError_eq (hB : IsPreBrownianReal B P) (t : ℕ → ℝ≥
 /-- The exact squared `L²` error of Brownian left-rectangle quadrature on a nondecreasing grid.
 Repeated dates and the empty grid are allowed. -/
 theorem norm_sum_leftRiemannError_sq (hB : IsPreBrownianReal B P)
-    (t : ℕ → ℝ≥0) (ht : Monotone t) (n : ℕ) :
+    {t : ℕ → ℝ≥0} {n : ℕ} (ht : MonotoneOn t (Set.Iic n)) :
     ‖∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1))‖ ^ 2 =
       (∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) ^ 3) / 3 := by
-  have horth : Pairwise fun i j =>
+  have hstep (i : ℕ) (hi : i < n) : t i ≤ t (i + 1) :=
+    ht hi.le hi (Nat.le_succ i)
+  have horth : (Finset.range n : Set ℕ).Pairwise fun i j =>
       ⟪hB.leftRiemannError (t i) (t (i + 1)),
         hB.leftRiemannError (t j) (t (j + 1))⟫_ℝ = 0 := by
-    intro i j hij
+    intro i hi j hj hij
+    have hi := Finset.mem_range.mp hi
+    have hj := Finset.mem_range.mp hj
     rcases lt_or_gt_of_ne hij with hij | hij
-    · exact hB.inner_leftRiemannError_eq_zero (ht (Nat.le_succ i))
-        (ht (by omega)) (ht (Nat.le_succ j))
+    · exact hB.inner_leftRiemannError_eq_zero (hstep i hi)
+        (ht hi hj.le hij) (hstep j hj)
     · rw [real_inner_comm]
-      exact hB.inner_leftRiemannError_eq_zero (ht (Nat.le_succ j))
-        (ht (by omega)) (ht (Nat.le_succ i))
-  rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero (horth.set_pairwise _)]
-  simp_rw [hB.norm_leftRiemannError_sq (ht (Nat.le_succ _))]
-  rw [Finset.sum_div]
+      exact hB.inner_leftRiemannError_eq_zero (hstep j hj)
+        (ht hj hi.le hij) (hstep i hi)
+  rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero horth, Finset.sum_div]
+  exact Finset.sum_congr rfl fun i hi ↦
+    hB.norm_leftRiemannError_sq (hstep i (Finset.mem_range.mp hi))
 
 /-- The squared quadrature error is bounded by elapsed time times mesh squared, divided by three. -/
 theorem norm_sum_leftRiemannError_sq_le (hB : IsPreBrownianReal B P)
-    (t : ℕ → ℝ≥0) (ht : Monotone t) (n : ℕ) {δ : ℝ}
+    {t : ℕ → ℝ≥0} {n : ℕ} (ht : MonotoneOn t (Set.Iic n)) {δ : ℝ}
     (hδ : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ) :
     ‖∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1))‖ ^ 2 ≤
       ((t n : ℝ) - t 0) * δ ^ 2 / 3 := by
-  rw [hB.norm_sum_leftRiemannError_sq t ht n]
+  rw [hB.norm_sum_leftRiemannError_sq ht]
   gcongr
   calc
     ∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) ^ 3 ≤
         ∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) * δ ^ 2 := by
       apply Finset.sum_le_sum
       intro i hi
-      have hi0 : 0 ≤ (t (i + 1) : ℝ) - t i := sub_nonneg.mpr (ht (Nat.le_succ i))
-      have hiδ := hδ i (Finset.mem_range.mp hi)
+      have hi := Finset.mem_range.mp hi
+      have hi0 : 0 ≤ (t (i + 1) : ℝ) - t i :=
+        sub_nonneg.mpr (ht hi.le hi (Nat.le_succ i))
+      have hiδ := hδ i hi
       calc
         ((t (i + 1) : ℝ) - t i) ^ 3 =
             ((t (i + 1) : ℝ) - t i) * (((t (i + 1) : ℝ) - t i) ^ 2) := by ring
@@ -286,26 +292,6 @@ theorem norm_sum_leftRiemannError_sq_le (hB : IsPreBrownianReal B P)
           mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hi0 hiδ 2) hi0
     _ = ((t n : ℝ) - t 0) * δ ^ 2 := by
       rw [← Finset.sum_mul, Finset.sum_range_sub (fun i => (t i : ℝ))]
-
-/-- The quadrature mesh bound only requires monotonicity up to the last grid date. -/
-theorem norm_sum_leftRiemannError_sq_le_of_monotoneOn (hB : IsPreBrownianReal B P)
-    {t : ℕ → ℝ≥0} {n : ℕ} (ht : MonotoneOn t (Set.Iic n)) {δ : ℝ}
-    (hmesh : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ) :
-    ‖∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1))‖ ^ 2 ≤
-      ((t n : ℝ) - t 0) * δ ^ 2 / 3 := by
-  -- Extend the finite grid constantly after its last date.
-  let s (i : ℕ) := t (min i n)
-  have hs : Monotone s := fun i j hij ↦ ht (Set.mem_Iic.mpr (min_le_right _ _))
-    (Set.mem_Iic.mpr (min_le_right _ _)) (min_le_min_right n hij)
-  have heq : (∑ i ∈ Finset.range n, hB.leftRiemannError (s i) (s (i + 1))) =
-      ∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1)) := by
-    apply Finset.sum_congr rfl
-    intro i hi
-    simp only [s, min_eq_left (Finset.mem_range.mp hi).le,
-      min_eq_left (Nat.succ_le_of_lt (Finset.mem_range.mp hi))]
-  have hm (i : ℕ) (hi : i < n) : (s (i + 1) : ℝ) - s i ≤ δ := by
-    simpa only [s, min_eq_left hi.le, min_eq_left (Nat.succ_le_of_lt hi)] using hmesh i hi
-  simpa only [heq, s, min_self, Nat.zero_min] using hB.norm_sum_leftRiemannError_sq_le s hs n hm
 
 /-- On the equal grid with `n` cells, the exact squared quadrature error is `T³/(3n²)`.
 For `n = 0` both sides are zero, using division by zero in the formula. -/
@@ -319,7 +305,7 @@ theorem norm_sum_leftRiemannError_sq_equidistant (hB : IsPreBrownianReal B P)
     intro i j hij
     dsimp only
     gcongr
-  rw [hB.norm_sum_leftRiemannError_sq _ ht n]
+  rw [hB.norm_sum_leftRiemannError_sq (ht.monotoneOn _)]
   have hstep (i : ℕ) :
       ((((i + 1 : ℕ) : ℝ≥0) * T / n : ℝ≥0) : ℝ) -
         (((i : ℝ≥0) * T / n : ℝ≥0) : ℝ) = (T : ℝ) / n := by
@@ -335,7 +321,7 @@ theorem norm_sum_leftRiemannError_sq_equidistant (hB : IsPreBrownianReal B P)
 vanishing-mesh family, without nestedness or a fixed number of cells. -/
 theorem tendsto_sum_leftRiemannError_zero (hB : IsPreBrownianReal B P)
     {ι : Type*} {l : Filter ι} {t : ι → ℕ → ℝ≥0} {n : ι → ℕ} {δ : ι → ℝ}
-    (ht : ∀ k, Monotone (t k)) {T : ℝ≥0} (hT : ∀ k, t k (n k) ≤ T)
+    (ht : ∀ k, MonotoneOn (t k) (Set.Iic (n k))) {T : ℝ≥0} (hT : ∀ k, t k (n k) ≤ T)
     (hδ : ∀ k i, i < n k → (t k (i + 1) : ℝ) - t k i ≤ δ k)
     (hlim : Tendsto δ l (𝓝 0)) :
     Tendsto (fun k => ∑ i ∈ Finset.range (n k),
@@ -346,7 +332,7 @@ theorem tendsto_sum_leftRiemannError_zero (hB : IsPreBrownianReal B P)
         (T : ℝ) * (δ k) ^ 2 / 3 := by
     have hspan : (t k (n k) : ℝ) - t k 0 ≤ T :=
       (sub_le_self _ (t k 0).coe_nonneg).trans (hT k)
-    exact (hB.norm_sum_leftRiemannError_sq_le (t k) (ht k) (n k) (hδ k)).trans
+    exact (hB.norm_sum_leftRiemannError_sq_le (ht k) (hδ k)).trans
       (by gcongr)
   have hs : Tendsto (fun k =>
       ‖∑ i ∈ Finset.range (n k), hB.leftRiemannError (t k i) (t k (i + 1))‖ ^ 2)
