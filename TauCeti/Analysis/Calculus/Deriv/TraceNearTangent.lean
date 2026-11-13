@@ -140,22 +140,22 @@ private theorem norm_smul_add_smul_le {u w e : ℂ} {η ε l : ℝ} (hη1 : η �
           mul_nonneg (mul_nonneg hl0 hε.le) hη0]
 
 /-- If a set `S` near `z₀` lies in thin double cones around the line `z₀ + ℝ • u`, and a curve
-`p` with right derivative `w` at `0` leaves `z₀` strictly to the left of `u`
-(`0 < Im (conj u * w)`), then for small `ε > 0` the segment from `p ε` to the point
-`z₀ + ε • (I * u)` of the left normal ray does not meet `S`. -/
+`p` with right derivative `w` at `s₀` leaves `z₀` strictly to the left of `u`
+(`0 < Im (conj u * w)`), then for `s > s₀` close enough to `s₀` the segment from `p s` to the point
+`z₀ + (s - s₀) • (I * u)` of the left normal ray does not meet `S`. -/
 theorem HasDerivWithinAt.eventually_segment_subset_compl_of_abs_im_conj_mul_sub_le
-    {S : Set ℂ} {z₀ u w : ℂ} {p : ℝ → ℂ}
-    (hp : HasDerivWithinAt p w (Ici 0) 0)
+    {S : Set ℂ} {z₀ u w : ℂ} {p : ℝ → ℂ} {s₀ : ℝ}
+    (hp : HasDerivWithinAt p w (Ici s₀) s₀)
     (hcone : ∀ η > 0, ∃ ρ > 0, ∀ z ∈ S, ‖z - z₀‖ < ρ →
       |(conj u * (z - z₀)).im| ≤ η * ‖z - z₀‖)
-    (hp0 : p 0 = z₀)
+    (hp0 : p s₀ = z₀)
     (hw : 0 < (conj u * w).im) :
-    ∀ᶠ ε in 𝓝[>] 0, segment ℝ (p ε) (z₀ + ε • (I * u)) ⊆ Sᶜ := by
+    ∀ᶠ s in 𝓝[>] s₀, segment ℝ (p s) (z₀ + (s - s₀) • (I * u)) ⊆ Sᶜ := by
   have hu : u ≠ 0 := by
     rintro rfl
     simp at hw
   -- `κ` bounds from below how far `w` and `I * u` lie to the left of `u`; the segment points stay
-  -- in a ball of radius `M * ε`, and `η` is the relative error allowed for `p ε` around `ε • w`.
+  -- in a ball of radius `M * ε` for `ε = s - s₀`, and `η` bounds the relative error of `p s`.
   set κ := min (conj u * w).im (‖u‖ ^ 2)
   have hκ : 0 < κ := lt_min hw (by positivity)
   set M := ‖w‖ + ‖u‖ + 1
@@ -170,15 +170,17 @@ theorem HasDerivWithinAt.eventually_segment_subset_compl_of_abs_im_conj_mul_sub_
     nlinarith [norm_nonneg u]
   filter_upwards [nhdsWithin_mono _ Ioi_subset_Ici_self
       ((hasDerivWithinAt_iff_isLittleO.mp hp).def hη),
-    nhdsWithin_le_nhds (eventually_lt_nhds (show (0 : ℝ) < ρ / M by positivity)),
-    self_mem_nhdsWithin] with ε hεo hερ (hε : 0 < ε)
-  set e := p ε - p 0 - (ε - 0) • w
+    nhdsWithin_le_nhds (eventually_lt_nhds (lt_add_of_pos_right s₀ (div_pos hρ hM))),
+    self_mem_nhdsWithin] with s hεo hsρ (hs : s₀ < s)
+  set ε := s - s₀
+  have hε : 0 < ε := sub_pos.mpr hs
+  set e := p s - p s₀ - ε • w
   have he : ‖e‖ ≤ η * ε := by simpa [Real.norm_eq_abs, abs_of_pos hε] using hεo
   rw [segment_eq_image']
   rintro z ⟨l, ⟨hl0, hl1⟩, hlz⟩ hzS
   have hz : z - z₀ = ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e := by
     rw [← hlz]
-    simp only [e, hp0, sub_zero]
+    simp only [e, hp0, ε]
     module
   have hlow : 3 / 4 * κ * ε ≤ (conj u * (z - z₀)).im :=
     hz ▸ le_im_conj_mul_smul_add_smul (min_le_left _ _) (min_le_right _ _) hηu hε hl0 hl1 he
@@ -186,7 +188,9 @@ theorem HasDerivWithinAt.eventually_segment_subset_compl_of_abs_im_conj_mul_sub_
     hz ▸ norm_smul_add_smul_le (min_le_left _ _) hε hl0 hl1 he
   -- The point `z` is close to `z₀`, so it lies in the thin cone, which contradicts `hlow`.
   have hρs : ‖z - z₀‖ < ρ :=
-    hnorm.trans_lt (by rwa [lt_div_iff₀ hM, mul_comm] at hερ)
+    hnorm.trans_lt (by
+      have : ε < ρ / M := by dsimp [ε]; linarith
+      rwa [lt_div_iff₀ hM, mul_comm] at this)
   have hup := (le_abs_self _).trans (hc z hzS hρs)
   have h3 : κ / (4 * M) * ‖z - z₀‖ ≤ κ / 4 * ε := by
     calc κ / (4 * M) * ‖z - z₀‖ ≤ κ / (4 * M) * (M * ε) :=
@@ -195,15 +199,15 @@ theorem HasDerivWithinAt.eventually_segment_subset_compl_of_abs_im_conj_mul_sub_
   nlinarith [mul_pos hκ hε]
 
 /-- Let `γ` be continuous on a compact parameter set `K`, have derivative `v` within `K` at `t₀`,
-and visit `γ t₀` only at `t₀` on `K`. If `p` has right derivative `w` at `0` and leaves `γ t₀`
-strictly to the left of `v` (`0 < Im (conj v * w)`), then the segment from `p ε` to the left
-normal ray avoids the trace at all small positive times. -/
+and visit `γ t₀` only at `t₀` on `K`. If `p` has right derivative `w` at `s₀` and leaves `γ t₀`
+strictly to the left of `v` (`0 < Im (conj v * w)`), then the segment from `p s` to the left
+normal ray avoids the trace for all parameters sufficiently close to `s₀` from above. -/
 theorem HasDerivWithinAt.eventually_segment_subset_compl
     {γ : ℝ → ℂ} {K : Set ℝ} {t₀ : ℝ} {v w : ℂ} (hd : HasDerivWithinAt γ v K t₀)
     (hK : IsCompact K) (hγ : ContinuousOn γ K) (huniq : ∀ t ∈ K, γ t = γ t₀ → t = t₀)
-    {p : ℝ → ℂ} (hp0 : p 0 = γ t₀) (hp : HasDerivWithinAt p w (Ici 0) 0)
+    {p : ℝ → ℂ} {s₀ : ℝ} (hp0 : p s₀ = γ t₀) (hp : HasDerivWithinAt p w (Ici s₀) s₀)
     (hw : 0 < (conj v * w).im) :
-    ∀ᶠ ε in 𝓝[>] 0, segment ℝ (p ε) (γ t₀ + ε • (I * v)) ⊆ (γ '' K)ᶜ :=
+    ∀ᶠ s in 𝓝[>] s₀, segment ℝ (p s) (γ t₀ + (s - s₀) • (I * v)) ⊆ (γ '' K)ᶜ :=
   hp.eventually_segment_subset_compl_of_abs_im_conj_mul_sub_le
     (fun _ hη ↦ by
       obtain ⟨ρ, hρ, h⟩ := hK.exists_pos_forall_abs_im_conj_mul_sub_le hγ huniq hd hη

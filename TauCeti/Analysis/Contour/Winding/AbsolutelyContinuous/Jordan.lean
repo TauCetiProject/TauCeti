@@ -19,7 +19,6 @@ import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Circle
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.JordanCurve
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.NonzeroDeriv
 import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
-import TauCeti.Topology.JordanCurve.Path
 
 /-!
 # The Jordan index theorem and orientation sign for absolutely continuous and rectifiable curves

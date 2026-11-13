@@ -22,10 +22,10 @@ compact parameter set, the trace of `γ` lies in arbitrarily thin double cones
 
 For a simple closed absolutely continuous curve, this upgrades the normal identification of the
 orientation sign `jordanSign γ a b` (normal rays at a regular point enter the inside or the
-outside) to arbitrary curves `p` leaving `γ t₀` transversally: a short segment joins `p ε` to the
-normal ray without meeting the trace. A curve leaving strictly to the left of the tangent, that is
-with `0 < Im (conj v * w)` for its right derivative `w`, enters the bounded inside of a positively
-oriented curve and the unbounded outside of a negatively oriented one.
+outside) to arbitrary curves `p` leaving `γ t₀` transversally at a parameter `s₀`: a short segment
+joins `p s` to the normal ray without meeting the trace. A curve leaving strictly to the left of
+the tangent, that is with `0 < Im (conj v * w)` for its right derivative `w`, enters the bounded
+inside of a positively oriented curve and the unbounded outside of a negatively oriented one.
 
 ## Main results
 
@@ -48,16 +48,16 @@ open TauCeti TauCeti.Contour
 
 namespace AbsolutelyContinuousOnInterval
 
-variable {γ : ℝ → ℂ} {a b t₀ : ℝ} {v w : ℂ} {p : ℝ → ℂ}
+variable {γ : ℝ → ℂ} {a b t₀ s₀ : ℝ} {v w : ℂ} {p : ℝ → ℂ}
 
 /-- A transverse curve on the side selected by `σ = ±1` avoids the trace on a segment to
 that side's normal ray. The transverse inequality also guarantees that the tangent is nonzero. -/
 private theorem eventually_segment_subset_compl_of_hasDerivAt {σ : ℝ} (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
-    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hσ : σ = 1 ∨ σ = -1) (hp0 : p 0 = γ t₀)
-    (hp : HasDerivWithinAt p w (Ici 0) 0) (hw : 0 < σ * (conj v * w).im) :
-    v ≠ 0 ∧ ∀ᶠ ε in 𝓝[>] 0,
-      segment ℝ (p ε) (γ t₀ + ε • (σ • (I * v))) ⊆ (γ '' uIcc a b)ᶜ := by
+    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hσ : σ = 1 ∨ σ = -1) (hp0 : p s₀ = γ t₀)
+    (hp : HasDerivWithinAt p w (Ici s₀) s₀) (hw : 0 < σ * (conj v * w).im) :
+    v ≠ 0 ∧ ∀ᶠ s in 𝓝[>] s₀,
+      segment ℝ (p s) (γ t₀ + (s - s₀) • (σ • (I * v))) ⊆ (γ '' uIcc a b)ᶜ := by
   have hv : v ≠ 0 := by
     rintro rfl
     simp at hw
@@ -77,37 +77,44 @@ private theorem eventually_segment_subset_compl_of_hasDerivAt {σ : ℝ} (hab : 
 
 /-- **A transverse curve enters the inside on the side selected by the orientation.** Let `γ` be
 a simple closed absolutely continuous curve on `[a, b]`, with derivative `v` at an interior
-parameter `t₀`. A curve `p` with `p 0 = γ t₀` and right derivative `w` at `0` satisfying
+parameter `t₀`. A curve `p` with `p s₀ = γ t₀` and right derivative `w` at `s₀` satisfying
 `0 < jordanSign γ a b * Im (conj v * w)` lies in the bounded inside
-`filledHull (γ '' uIcc a b) \ γ '' uIcc a b` at all small positive times. For a positively
-oriented curve, this is the case of a curve leaving `γ t₀` strictly to the left of the tangent. -/
+`filledHull (γ '' uIcc a b) \ γ '' uIcc a b` for parameters sufficiently close to `s₀` from above.
+For a positively oriented curve, this is the case of a curve leaving `γ t₀` strictly to the left
+of the tangent. -/
 theorem eventually_mem_filledHull_sdiff_of_hasDerivAt (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
-    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p 0 = γ t₀)
-    (hp : HasDerivWithinAt p w (Ici 0) 0)
+    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p s₀ = γ t₀)
+    (hp : HasDerivWithinAt p w (Ici s₀) s₀)
     (hw : 0 < (jordanSign γ a b : ℝ) * (conj v * w).im) :
-    ∀ᶠ ε in 𝓝[>] 0, p ε ∈ filledHull (γ '' uIcc a b) \ γ '' uIcc a b := by
+    ∀ᶠ s in 𝓝[>] s₀, p s ∈ filledHull (γ '' uIcc a b) \ γ '' uIcc a b := by
   obtain ⟨hv, hseg⟩ := eventually_segment_subset_compl_of_hasDerivAt hab hγ hclosed hinj ht₀ hd
     (by exact_mod_cast hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj) hp0 hp hw
   have hC := hγ.isJordanCurve_image_uIcc hab hclosed hinj
-  filter_upwards [hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj
-    ht₀ hd hv, hseg] with ε hn hseg
+  have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+    · simpa using (continuous_sub_right s₀).continuousAt.tendsto.mono_left
+        (nhdsWithin_le_nhds : 𝓝[>] s₀ ≤ 𝓝 s₀)
+    · filter_upwards [self_mem_nhdsWithin] with s hs using sub_pos.mpr hs
+  filter_upwards [hsub.eventually
+    (hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj ht₀ hd hv),
+    hseg] with s hn hseg
   rw [hC.filledHull_sdiff_eq_connectedComponentIn hn.1]
   exact (convex_segment _ _).isPreconnected.subset_connectedComponentIn (right_mem_segment _ _ _)
     hseg (left_mem_segment _ _ _)
 
 /-- **A transverse curve enters the outside on the side opposite to the orientation.** Let `γ` be
 a simple closed absolutely continuous curve on `[a, b]`, with derivative `v` at an interior
-parameter `t₀`. A curve `p` with `p 0 = γ t₀` and right derivative `w` at `0` satisfying
-`jordanSign γ a b * Im (conj v * w) < 0` lies outside `filledHull (γ '' uIcc a b)` at all small
-positive times. For a negatively oriented curve, this is the case of a curve leaving `γ t₀`
-strictly to the left of the tangent. -/
+parameter `t₀`. A curve `p` with `p s₀ = γ t₀` and right derivative `w` at `s₀` satisfying
+`jordanSign γ a b * Im (conj v * w) < 0` lies outside `filledHull (γ '' uIcc a b)` for parameters
+sufficiently close to `s₀` from above. For a negatively oriented curve, this is the case of a curve
+leaving `γ t₀` strictly to the left of the tangent. -/
 theorem eventually_notMem_filledHull_of_hasDerivAt (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
-    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p 0 = γ t₀)
-    (hp : HasDerivWithinAt p w (Ici 0) 0)
+    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p s₀ = γ t₀)
+    (hp : HasDerivWithinAt p w (Ici s₀) s₀)
     (hw : (jordanSign γ a b : ℝ) * (conj v * w).im < 0) :
-    ∀ᶠ ε in 𝓝[>] 0, p ε ∉ filledHull (γ '' uIcc a b) := by
+    ∀ᶠ s in 𝓝[>] s₀, p s ∉ filledHull (γ '' uIcc a b) := by
   have hσ : -((jordanSign γ a b : ℤ) : ℝ) = 1 ∨ -((jordanSign γ a b : ℤ) : ℝ) = -1 := by
     rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> simp [h]
   obtain ⟨hv, hseg⟩ := eventually_segment_subset_compl_of_hasDerivAt hab hγ hclosed hinj ht₀ hd
@@ -116,21 +123,27 @@ theorem eventually_notMem_filledHull_of_hasDerivAt (hab : a < b)
     rw [Complex.rank_real_complex]
     exact Cardinal.one_lt_two
   have hbdd := (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).isBounded
-  filter_upwards [hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj
-    ht₀ hd hv, hseg] with ε hn hseg
+  have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+    · simpa using (continuous_sub_right s₀).continuousAt.tendsto.mono_left
+        (nhdsWithin_le_nhds : 𝓝[>] s₀ ≤ 𝓝 s₀)
+    · filter_upwards [self_mem_nhdsWithin] with s hs using sub_pos.mpr hs
+  filter_upwards [hsub.eventually
+    (hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj ht₀ hd hv),
+    hseg] with s hn hseg
   simp only [neg_smul, smul_neg, ← sub_eq_add_neg] at hseg
   have hmem := (convex_segment _ _).isPreconnected.subset_connectedComponentIn
     (right_mem_segment _ _ _) hseg (left_mem_segment _ _ _)
   rwa [← compl_filledHull_eq_connectedComponentIn hrank hbdd hn.2] at hmem
 
-/-- A transverse curve enters the bounded inside at all small positive times if and only if
-its right derivative lies on the side selected by the orientation sign. -/
+/-- A transverse curve enters the bounded inside for all parameters sufficiently close to `s₀`
+from above if and only if its right derivative lies on the side selected by the orientation sign. -/
 theorem jordanSign_mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
-    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p 0 = γ t₀)
-    (hp : HasDerivWithinAt p w (Ici 0) 0) (hw : (conj v * w).im ≠ 0) :
+    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p s₀ = γ t₀)
+    (hp : HasDerivWithinAt p w (Ici s₀) s₀) (hw : (conj v * w).im ≠ 0) :
     0 < (jordanSign γ a b : ℝ) * (conj v * w).im ↔
-      ∀ᶠ ε in 𝓝[>] 0, p ε ∈ filledHull (γ '' uIcc a b) \ γ '' uIcc a b := by
+      ∀ᶠ s in 𝓝[>] s₀, p s ∈ filledHull (γ '' uIcc a b) \ γ '' uIcc a b := by
   refine ⟨hγ.eventually_mem_filledHull_sdiff_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp, ?_⟩
   intro hmem
   have hne : (jordanSign γ a b : ℝ) * (conj v * w).im ≠ 0 := by
@@ -142,14 +155,14 @@ theorem jordanSign_mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff (hab 
   obtain ⟨ε, hin, hout⟩ := (hmem.and hout).exists
   exact hout hin.1
 
-/-- A transverse curve enters the unbounded outside at all small positive times if and only if
-its right derivative lies on the side opposite to the orientation sign. -/
+/-- A transverse curve enters the unbounded outside for all parameters sufficiently close to `s₀`
+from above if and only if its right derivative lies on the side opposite to the orientation sign. -/
 theorem jordanSign_mul_im_conj_mul_neg_iff_eventually_notMem_filledHull (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
-    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p 0 = γ t₀)
-    (hp : HasDerivWithinAt p w (Ici 0) 0) (hw : (conj v * w).im ≠ 0) :
+    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p s₀ = γ t₀)
+    (hp : HasDerivWithinAt p w (Ici s₀) s₀) (hw : (conj v * w).im ≠ 0) :
     (jordanSign γ a b : ℝ) * (conj v * w).im < 0 ↔
-      ∀ᶠ ε in 𝓝[>] 0, p ε ∉ filledHull (γ '' uIcc a b) := by
+      ∀ᶠ s in 𝓝[>] s₀, p s ∉ filledHull (γ '' uIcc a b) := by
   refine ⟨hγ.eventually_notMem_filledHull_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp, ?_⟩
   intro hout
   have hne : (jordanSign γ a b : ℝ) * (conj v * w).im ≠ 0 := by
