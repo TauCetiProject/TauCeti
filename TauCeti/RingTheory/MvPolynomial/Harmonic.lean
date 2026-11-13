@@ -282,8 +282,7 @@ private theorem eq_zero_of_laplacian_normSq_mul_add_nsmul_eq_zero [Nonempty σ] 
 
 /-- **Trivial kernel of `q ↦ Δ (r² q)`**: with at least one variable and coefficients in which
 multiplication by a positive integer is injective (for instance a field of characteristic zero),
-if `Δ (r² q) = 0`, then `q = 0`. When addition in `R` is cancellative (for instance in a ring) this
-gives injectivity. -/
+if `Δ (r² q) = 0`, then `q = 0`. When `R` is a ring this gives injectivity. -/
 theorem eq_zero_of_laplacian_normSq_mul_eq_zero [Nonempty σ] {q : MvPolynomial σ R}
     (h : laplacian (normSq σ R * q) = 0) : q = 0 := by
   -- The operator preserves the degree, so it vanishes on each homogeneous component of `q`.
