@@ -354,12 +354,13 @@ structure Solution where
 /-- The system `Ω*` of group equations over `F(A)` in the items: `L R⁻¹` for each equation
 `L = R` of `Ω`. -/
 def toSystem : Set (GX (FreeGroup A) (Fin Ω.numItems)) :=
-  (fun e => EqIneqSystem.toGX _ A (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹)) '' Ω.equations
+  (fun e => EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹)) ''
+    Ω.equations
 
 /-- The elements of `Ω*` are the words `L R⁻¹` for the equations `L = R` of `Ω`. -/
 theorem mem_toSystem_iff {w : GX (FreeGroup A) (Fin Ω.numItems)} :
     w ∈ Ω.toSystem ↔ ∃ e ∈ Ω.equations,
-      EqIneqSystem.toGX _ A (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹) = w :=
+      EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹) = w :=
   Iff.rfl
 
 /-- The points of `Ω*` are the group solutions of the equations of `Ω`: the assignments under
