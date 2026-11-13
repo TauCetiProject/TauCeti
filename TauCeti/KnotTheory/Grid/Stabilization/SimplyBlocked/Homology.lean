@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Basic
 public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
-import TauCeti.Algebra.Homology.SquareZero
 
 /-!
 # Stabilization invariance of simply blocked grid homology
@@ -73,34 +72,15 @@ local notation "G'" => GridDiagram.stabilizeX G (Fin.castSucc s)
 local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
 local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
 
-/-- The specialized stabilization map between the categorical chain carriers. -/
-private noncomputable def oneVariableSpecializationStabilizeXChainMap :
-    ((G').simplyBlockedComplex R j).X () →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
-      (G.simplyBlockedComplex R i).X () :=
-  (G.simplyBlockedChainEquiv R i).symm.toLinearMap.comp
-    ((G.simplyBlockedStabilizeXMap s i R).comp
-      ((G').simplyBlockedChainEquiv R j).toLinearMap)
-
-private theorem oneVariableSpecializationStabilizeXChainMap_d
-    (z : ((G').simplyBlockedComplex R j).X ()) :
-    oneVariableSpecializationStabilizeXChainMap G s i R
-        (((G').simplyBlockedComplex R j).d () () z) =
-      (G.simplyBlockedComplex R i).d () ()
-        (oneVariableSpecializationStabilizeXChainMap G s i R z) := by
-  apply (G.simplyBlockedChainEquiv R i).injective
-  simp only [oneVariableSpecializationStabilizeXChainMap, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, simplyBlockedChainEquiv_d]
-  exact G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R _
-
 /-- Stabilization on cycles of the one-variable specialization, with the chosen old `O`-marking
 blocked in each diagram. -/
 noncomputable def oneVariableSpecializationStabilizeXCyclesMap :
     LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom
       →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
       LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom :=
-  (oneVariableSpecializationStabilizeXChainMap G s i R).restrict fun z hz => by
-    rw [LinearMap.mem_ker] at hz ⊢
-    rw [← oneVariableSpecializationStabilizeXChainMap_d, hz, map_zero]
+  oneVariableSpecializationCyclesMapOfIntertwining R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
 
 /-- Under the explicit chain identifications, the map on cycles of the one-variable specialization
 is `simplyBlockedStabilizeXMap`. -/
@@ -108,35 +88,21 @@ is `simplyBlockedStabilizeXMap`. -/
 theorem simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap
     (z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom) :
     G.simplyBlockedChainEquiv R i (G.oneVariableSpecializationStabilizeXCyclesMap s i R z) =
-      G.simplyBlockedStabilizeXMap s i R ((G').simplyBlockedChainEquiv R j z) := by
-  simp only [oneVariableSpecializationStabilizeXCyclesMap, LinearMap.coe_restrict_apply,
-    oneVariableSpecializationStabilizeXChainMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.apply_symm_apply]
-
-private theorem oneVariableSpecializationStabilizeXCyclesMap_mem_boundariesInKer
-    {z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom}
-    (hz : z ∈ (((G').simplyBlockedComplex R j).d () ()).hom.boundariesInKer) :
-    G.oneVariableSpecializationStabilizeXCyclesMap s i R z ∈
-      ((G.simplyBlockedComplex R i).d () ()).hom.boundariesInKer := by
-  obtain ⟨w, hw⟩ := hz
-  refine ⟨oneVariableSpecializationStabilizeXChainMap G s i R w, ?_⟩
-  simp only [Submodule.subtype_apply, oneVariableSpecializationStabilizeXCyclesMap,
-    LinearMap.coe_restrict_apply] at hw ⊢
-  rw [← hw, oneVariableSpecializationStabilizeXChainMap_d]
+      G.simplyBlockedStabilizeXMap s i R ((G').simplyBlockedChainEquiv R j z) :=
+  simplyBlockedChainEquiv_oneVariableSpecializationCyclesMapOfIntertwining
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R) z
 
 /-- The specified semilinear stabilization comparison on the homology of the one-variable
 specialization, from the stabilized grid to the original grid. -/
 noncomputable def oneVariableSpecializationStabilizeXHomologyMap :
     ((G').simplyBlockedComplex R j).homology () →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
       (G.simplyBlockedComplex R i).homology () :=
-  (G.simplyBlockedComplex R i).moduleCatHomologyIso.toLinearEquiv.symm.toLinearMap.comp
-    ((Submodule.mapQ
-      (((G').simplyBlockedComplex R j).d () ()).hom.boundariesInKer
-      ((G.simplyBlockedComplex R i).d () ()).hom.boundariesInKer
-      (G.oneVariableSpecializationStabilizeXCyclesMap s i R)
-      (fun _ hz =>
-        G.oneVariableSpecializationStabilizeXCyclesMap_mem_boundariesInKer s i R hz)).comp
-          ((G').simplyBlockedComplex R j).moduleCatHomologyIso.toLinearEquiv.toLinearMap)
+  oneVariableSpecializationHomologyMapOfIntertwining
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
 
 /-- The stabilization comparison on the one-variable specialization sends a cycle class to the class
 of its stabilization image. -/
@@ -146,45 +112,25 @@ theorem oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecialization
     G.oneVariableSpecializationStabilizeXHomologyMap s i R
         ((G').oneVariableSpecializationHomologyClass R j z) =
       G.oneVariableSpecializationHomologyClass R i
-        (G.oneVariableSpecializationStabilizeXCyclesMap s i R z) := by
-  simp only [oneVariableSpecializationStabilizeXHomologyMap, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq]
-  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
-    HomologicalComplex.moduleCatHomologyIso_hom_moduleCatKerHomologyClass,
-    HomologicalComplex.moduleCatHomologyIso_hom_moduleCatKerHomologyClass,
-    LinearMap.homologyπ_apply, LinearMap.homologyπ_apply, Submodule.mapQ_apply]
+        (G.oneVariableSpecializationStabilizeXCyclesMap s i R z) :=
+  oneVariableSpecializationHomologyMapOfIntertwining_oneVariableSpecializationHomologyClass
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R) z
 
 /-- **Stabilization invariance for the one-variable specialization.** For any grid diagram `G`, the
 stabilization map from the homology of the specialization `V_{s.castSucc.succAbove i} = 0` of `G'`
 to the homology of the specialization `V_i = 0` of `G` is bijective. -/
 theorem oneVariableSpecializationStabilizeXHomologyMap_bijective :
     Function.Bijective (G.oneVariableSpecializationStabilizeXHomologyMap s i R) := by
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun y hy => ?_, fun y => ?_⟩
-  · -- A cycle whose stabilization image is a boundary is a boundary.
-    obtain ⟨z, rfl⟩ := (G').oneVariableSpecializationHomologyClass_surjective R j y
-    rw [oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecializationHomologyClass,
-      oneVariableSpecializationHomologyClass_eq_zero_iff,
-      mem_range_moduleCatToCycles_simplyBlockedComplex_iff,
-      simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap] at hy
-    rw [oneVariableSpecializationHomologyClass_eq_zero_iff,
-      mem_range_moduleCatToCycles_simplyBlockedComplex_iff]
-    exact G.mem_range_of_simplyBlockedStabilizeXMap_mem_range s i R
-      (((G').mem_ker_simplyBlockedComplex_d_iff R j z.1).mp z.2) hy
-  · -- Every cycle differs from the stabilization image of a cycle by a boundary.
-    obtain ⟨y, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective R i y
-    obtain ⟨x, hx, hxy⟩ := G.exists_sub_simplyBlockedStabilizeXMap_mem_range s i R
-      ((G.mem_ker_simplyBlockedComplex_d_iff R i y.1).mp y.2)
-    let z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom :=
-      ⟨((G').simplyBlockedChainEquiv R j).symm x, by
-        rw [mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
-        exact hx⟩
-    refine ⟨(G').oneVariableSpecializationHomologyClass R j z, ?_⟩
-    rw [oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecializationHomologyClass,
-      oneVariableSpecializationHomologyClass_eq_iff,
-      mem_range_moduleCatToCycles_simplyBlockedComplex_iff, Submodule.coe_sub, map_sub,
-      simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap,
-      LinearEquiv.apply_symm_apply, ← neg_sub]
-    exact neg_mem hxy
+  apply oneVariableSpecializationHomologyMapOfIntertwining_bijective
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
+  · intro x hx hfx
+    exact G.mem_range_of_simplyBlockedStabilizeXMap_mem_range s i R hx hfx
+  · intro y hy
+    exact G.exists_sub_simplyBlockedStabilizeXMap_mem_range s i R hy
 
 /-- The stabilization comparison on the homology of the one-variable specialization, packaged as an
 `R`-linear equivalence by restricting scalars along `MvPolynomial.C`. -/
@@ -193,17 +139,11 @@ noncomputable def oneVariableSpecializationStabilizeXHomologyEquiv :
         (((G').simplyBlockedComplex R j).homology ()) ≃ₗ[R]
       (ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)).obj
         ((G.simplyBlockedComplex R i).homology ()) :=
-  LinearEquiv.ofBijective
-    ({ toFun := G.oneVariableSpecializationStabilizeXHomologyMap s i R
-       map_add' := map_add _
-       map_smul' := fun r y => by
-         have h := (G.oneVariableSpecializationStabilizeXHomologyMap s i R).map_smulₛₗ
-           (MvPolynomial.C r) y
-         rwa [simplyBlockedStabilizeXRingHom_C] at h } :
-      (ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)).obj
-          (((G').simplyBlockedComplex R j).homology ()) →ₗ[R]
-        (ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)).obj
-          ((G.simplyBlockedComplex R i).homology ()))
+  oneVariableSpecializationHomologyLinearEquivOfIntertwining
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
+    (simplyBlockedStabilizeXRingHom_C s i R)
     (G.oneVariableSpecializationStabilizeXHomologyMap_bijective s i R)
 
 /-- On elements, `oneVariableSpecializationStabilizeXHomologyEquiv` is the semilinear stabilization
@@ -214,6 +154,11 @@ theorem oneVariableSpecializationStabilizeXHomologyEquiv_apply
       (((G').simplyBlockedComplex R j).homology ())) :
     G.oneVariableSpecializationStabilizeXHomologyEquiv s i R y =
       G.oneVariableSpecializationStabilizeXHomologyMap s i R y :=
-  (rfl)
+  oneVariableSpecializationHomologyLinearEquivOfIntertwining_apply
+    R j i (simplyBlockedStabilizeXRingHom s i R)
+    (G.simplyBlockedStabilizeXMap s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R)
+    (simplyBlockedStabilizeXRingHom_C s i R)
+    (G.oneVariableSpecializationStabilizeXHomologyMap_bijective s i R) y
 
 end TauCeti.GridDiagram

@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
 public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 public import TauCeti.Algebra.Module.GradedModule.Homology
-public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 
 /-!
 # The bigrading of simply blocked grid homology
@@ -20,13 +20,15 @@ For knot grids this is the bigrading of `G-hat`. For a link with several compone
 only the one-variable specialization: simply blocked link homology blocks one marking on
 each component.
 
-The homogeneous pieces are modules over the coefficient ring. We use the explicit
-`ModuleCat.restrictScalars` presentation of categorical homology to preserve its polynomial
-module structure and coefficient action. The internal decomposition prepares the bigraded
-Euler characteristic; no identification with the Alexander polynomial is asserted here.
+The homogeneous pieces are modules over the coefficient ring. The explicit
+`ModuleCat.restrictScalars` presentation fixes their coefficient action; the total homology
+retains its polynomial action, and each surviving variable lowers bidegree by `(2, 1)`.
+The internal decomposition prepares the bigraded Euler characteristic; no identification with the
+Alexander polynomial is asserted here.
 
-The comparison API restricts semilinear homology equivalences to coefficient scalars, descends
-chain-level bigrading preservation, and restricts homogeneous equivalences to their pieces.
+The comparison API descends cycle-level bigrading preservation to coefficient-linear
+homology maps and restricts degree-zero homology equivalences to their homogeneous pieces.
+It records forward and inverse membership and underlying-class equations for these restrictions.
 
 ## References
 
@@ -189,6 +191,56 @@ theorem isHomogeneous_oneVariableSpecializationHomologyMap
   rw [hclass]
   exact H.oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece R j
     (hdegree g z hz)
+
+/-- A degree-zero homology equivalence preserves and reflects each homogeneous piece. -/
+theorem bigradedHatHomologyEquiv_mem_piece_iff
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
+    (y : (Base).obj ((C).homology ())) :
+    e y ∈ H.bigradedHatHomologyPiece R j g ↔ y ∈ G.bigradedHatHomologyPiece R i g := by
+  simpa only [bigradedHatHomologyGrading_piece] using he.linearEquiv_mem_piece_iff g y
+
+/-- The inverse degree-zero equivalence also preserves and reflects homogeneous pieces. -/
+theorem bigradedHatHomologyEquiv_symm_mem_piece_iff
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
+    (y : (BaseH).obj ((D).homology ())) :
+    e.symm y ∈ G.bigradedHatHomologyPiece R i g ↔ y ∈ H.bigradedHatHomologyPiece R j g := by
+  simpa only [LinearEquiv.apply_symm_apply] using
+    (G.bigradedHatHomologyEquiv_mem_piece_iff R i H j e he g (e.symm y)).symm
+
+/-- Restrict a degree-zero homology equivalence to a specified homogeneous piece. -/
+noncomputable def bigradedHatHomologyPieceEquiv
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ) :
+    G.bigradedHatHomologyPiece R i g ≃ₗ[R] H.bigradedHatHomologyPiece R j g :=
+  e.ofSubmodules _ _ (by
+    ext y
+    rw [Submodule.mem_map_equiv, ← G.bigradedHatHomologyEquiv_mem_piece_iff R i H j e he g,
+      LinearEquiv.apply_symm_apply])
+
+/-- The piece equivalence applies the total homology equivalence to underlying classes. -/
+@[simp]
+theorem coe_bigradedHatHomologyPieceEquiv_apply
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
+    (y : G.bigradedHatHomologyPiece R i g) :
+    (G.bigradedHatHomologyPieceEquiv R i H j e he g y : (BaseH).obj ((D).homology ())) =
+      e y := (rfl)
+
+/-- The inverse piece equivalence applies the inverse total equivalence to underlying classes. -/
+@[simp]
+theorem coe_bigradedHatHomologyPieceEquiv_symm_apply
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
+    (y : H.bigradedHatHomologyPiece R j g) :
+    ((G.bigradedHatHomologyPieceEquiv R i H j e he g).symm y :
+        (Base).obj ((C).homology ())) = e.symm y := (rfl)
 
 end Comparison
 

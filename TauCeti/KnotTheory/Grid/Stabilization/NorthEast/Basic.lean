@@ -176,6 +176,29 @@ theorem stabilizeXSuccHomologyMap_bijective :
     ((G.rotate.stabilizeXHomologyMap_bijective s.rev R).comp
       (G.stabilizeXSuccSourceEquiv s R).bijective)
 
+/-- Every unblocked cycle differs from the image of a north-east stabilization cycle by a
+boundary. -/
+theorem exists_sub_stabilizeXSuccChainMap_mem_range {c : GridChainMinus R n}
+    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    ∃ z ∈ LinearMap.ker ((G.stabilizeX s.succ (G.X s).succ s).unblockedDifferential R),
+      c - G.stabilizeXSuccChainMap s R z ∈ LinearMap.range (G.unblockedDifferential R) :=
+  G.exists_sub_mem_range_of_surjective_unblockedHomologyMap _
+    (G.stabilizeXSuccChainMap s R) (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.stabilizeXSuccHomologyMap s R)
+    (fun z _ => G.stabilizeXSuccHomologyMap_unblockedHomologyClass s R z)
+    (G.stabilizeXSuccHomologyMap_bijective s R).2 hc
+
+/-- The north-east stabilization chain map reflects boundaries among unblocked cycles. -/
+theorem mem_range_of_stabilizeXSuccChainMap_mem_range {z : GridChainMinus R (n + 1)}
+    (hz : z ∈ LinearMap.ker ((G.stabilizeX s.succ (G.X s).succ s).unblockedDifferential R))
+    (h : G.stabilizeXSuccChainMap s R z ∈ LinearMap.range (G.unblockedDifferential R)) :
+    z ∈ LinearMap.range ((G.stabilizeX s.succ (G.X s).succ s).unblockedDifferential R) :=
+  G.mem_range_of_injective_unblockedHomologyMap _
+    (G.stabilizeXSuccChainMap s R) (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.stabilizeXSuccHomologyMap s R)
+    (fun w _ => G.stabilizeXSuccHomologyMap_unblockedHomologyClass s R w)
+    (G.stabilizeXSuccHomologyMap_bijective s R).1 hz h
+
 end GridDiagram
 
 namespace GridDiagram.IsKnot

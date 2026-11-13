@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
 public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
-public import TauCeti.KnotTheory.Grid.Grading.Unblocked.HalfTurn
+public import TauCeti.KnotTheory.Grid.Grading.HalfTurn
 
 /-!
 # The half-turn on unblocked grid homology
@@ -18,6 +18,8 @@ variables are renamed along `Fin.rev` (`Differential/HalfTurn.lean`). This file 
 symmetry to unblocked grid homology: `GH⁻(G)` and `GH⁻(G.rotate)` are identified by a
 semilinear equivalence along the renaming of the variables. It preserves the Alexander
 grading, so for a knot grid the two homologies are isomorphic as Alexander-graded `R[U]`-modules.
+On chains the half-turn preserves the
+full `O`-Maslov--Alexander bigrading, including the coefficient-variable degrees.
 
 ## Main definitions
 
@@ -84,6 +86,50 @@ theorem unblockedHomologyRotateEquiv_symm_unblockedHomologyClass
 end GridDiagram
 
 namespace OddComponentGridDiagram
+
+section Chains
+
+variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
+
+/-- The half-turn, including reversal of coefficient-variable indices, preserves the full
+`O`-Maslov--Alexander bigrading of unblocked chains. -/
+theorem halfTurnRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : GridChainMinus R n}
+    (hc : c ∈ G.bigradedChainMinusPiece R g) :
+    GridChain.halfTurnRenameEquiv R c ∈ G.rotate.bigradedChainMinusPiece R g := by
+  classical
+  rw [mem_bigradedChainMinusPiece] at hc ⊢
+  intro x e he
+  rw [GridChain.halfTurnRenameEquiv_apply,
+    support_rename_of_injective Fin.rev_injective, Finset.mem_image] at he
+  obtain ⟨e, he, rfl⟩ := he
+  have hM := G.1.maslovOℤ_rotate_halfTurn x.halfTurn
+  have hA := G.alexanderℤ_rotate_halfTurn x.halfTurn
+  rw [GridState.halfTurn_halfTurn] at hM hA
+  have hdegree : G.rotate.monomialBidegree x (e.mapDomain Fin.rev) =
+      G.monomialBidegree x.halfTurn e := by
+    apply Prod.ext <;>
+      simp only [monomialBidegree_fst, monomialBidegree_snd, hM, hA,
+        Finsupp.degree_mapDomain]
+  rw [hdegree]
+  exact hc x.halfTurn e he
+
+/-- The half-turn, including reversal of coefficient-variable indices, preserves the Alexander
+grading of unblocked chains. -/
+theorem halfTurnRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R n}
+    (hc : c ∈ G.alexanderChainMinusPiece R a) :
+    GridChain.halfTurnRenameEquiv R c ∈ G.rotate.alexanderChainMinusPiece R a := by
+  classical
+  rw [mem_alexanderChainMinusPiece] at hc ⊢
+  intro x e he
+  rw [GridChain.halfTurnRenameEquiv_apply,
+    support_rename_of_injective Fin.rev_injective, Finset.mem_image] at he
+  obtain ⟨e, he, rfl⟩ := he
+  have hx := G.alexanderℤ_rotate_halfTurn x.halfTurn
+  rw [GridState.halfTurn_halfTurn] at hx
+  rw [hx, Finsupp.degree_mapDomain]
+  exact hc x.halfTurn e he
+
+end Chains
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
 

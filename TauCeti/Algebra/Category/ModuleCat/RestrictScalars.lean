@@ -17,7 +17,7 @@ public import TauCeti.Algebra.Module.Projective.Trans
 Restriction of scalars along a ring homomorphism `f : R →+* S` keeps the underlying abelian
 group of a module and only changes which ring acts on it. This file records when the two
 finiteness properties defining `K₀(proj R)` and `G₀(mod R)` survive it. It also restricts a
-semilinear equivalence along compatible coefficient maps to a linear equivalence.
+semilinear map along compatible coefficient maps to a linear map.
 
 * Along a **surjective** ring homomorphism, finite generation is preserved and reflected: every
   scalar of `S` is the image of a scalar of `R`, so the `S`-span and the `R`-span of a set
@@ -35,7 +35,7 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
 
 ## Main definitions
 
-* `ModuleCat.restrictScalarsLinearEquiv`: a semilinear equivalence viewed linearly after
+* `ModuleCat.restrictScalarsLinearMap`: a semilinear map viewed linearly after
   restriction along compatible coefficient homomorphisms.
 * `RingHom.restrictScalarsSemilinearMap`: the identity of a module, as a semilinear map from its
   restriction of scalars.
@@ -204,34 +204,29 @@ end Function.Exact
 
 namespace ModuleCat
 
-section SemilinearEquivalence
+section SemilinearMap
 
 variable {R₀ : Type*} {S₁ : Type*} {S₂ : Type*} [Ring R₀] [Ring S₁] [Ring S₂]
-  (f₁ : R₀ →+* S₁) (f₂ : R₀ →+* S₂) {σ : S₁ →+* S₂} {σ' : S₂ →+* S₁}
-  [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  (f₁ : R₀ →+* S₁) (f₂ : R₀ →+* S₂) {σ : S₁ →+* S₂}
   {M₁ : ModuleCat.{v} S₁} {M₂ : ModuleCat.{u} S₂}
-  (e : M₁ ≃ₛₗ[σ] M₂) (hσ : ∀ r, σ (f₁ r) = f₂ r)
+  (g : M₁ →ₛₗ[σ] M₂) (hσ : ∀ r, σ (f₁ r) = f₂ r)
 
-/-- A semilinear equivalence becomes linear after restricting both scalar actions along
-compatible ring homomorphisms. The underlying map and inverse are unchanged. -/
-def restrictScalarsLinearEquiv :
-    (restrictScalars f₁).obj M₁ ≃ₗ[R₀] (restrictScalars f₂).obj M₂ :=
-  { e.toAddEquiv with
-    map_smul' := fun r x => by
-      rw [restrictScalars.smul_def, RingHom.id_apply, restrictScalars.smul_def']
-      exact (e.map_smulₛₗ (f₁ r) x).trans (by rw [hσ]; rfl) }
+/-- A semilinear map becomes linear after restricting both scalar actions along compatible
+ring homomorphisms. Its underlying function is unchanged. -/
+def restrictScalarsLinearMap :
+    (restrictScalars f₁).obj M₁ →ₗ[R₀] (restrictScalars f₂).obj M₂ where
+  toFun := g
+  map_add' := g.map_add
+  map_smul' r x := by
+    rw [restrictScalars.smul_def, RingHom.id_apply, restrictScalars.smul_def']
+    exact (g.map_smulₛₗ (f₁ r) x).trans (by rw [hσ])
 
--- These remain named rewrites so that simplification preserves the bundled equivalence in
--- expressions to which the generic equivalence inverse laws apply.
-/-- Restriction of scalars preserves the chosen forward map. -/
-theorem restrictScalarsLinearEquiv_apply (x) :
-    restrictScalarsLinearEquiv f₁ f₂ e hσ x = e x := (rfl)
+/-- Restriction of scalars preserves the chosen map. This remains a named rewrite to preserve
+bundled maps in expressions where their generic laws apply. -/
+theorem restrictScalarsLinearMap_apply (x) :
+    restrictScalarsLinearMap f₁ f₂ g hσ x = g x := (rfl)
 
-/-- Restriction of scalars preserves the chosen inverse map. -/
-theorem restrictScalarsLinearEquiv_symm_apply (x) :
-    (restrictScalarsLinearEquiv f₁ f₂ e hσ).symm x = e.symm x := (rfl)
-
-end SemilinearEquivalence
+end SemilinearMap
 
 variable {R : Type u₁} {S : Type u₂} [CommRing R] [Ring S] [Algebra R S]
 

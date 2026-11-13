@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Stabilization.Homology
-public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
-import TauCeti.KnotTheory.Grid.Homology.ExactSequence
+public import TauCeti.KnotTheory.Grid.SimplyBlocked.Map
 
 /-!
 # The simply blocked stabilization chain map
@@ -65,8 +64,7 @@ local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
 /-- The coefficient homomorphism of stabilization after blocking the transported old marking.
 Merge the stabilization columns using `s.predAbove`, then kill the variable of column `i`. -/
 noncomputable def simplyBlockedStabilizeXRingHom : S →+* A :=
-  (simplyBlockedRingHom R i).comp
-    ((rename (R := R) s.predAbove).toRingHom.comp (rename Subtype.val).toRingHom)
+  simplyBlockedRingHomAlong R s.predAbove i j
 
 /-- A surviving source variable is merged and then specialized in the old grid. In particular,
 when `i = s`, the other variable of the stabilization block also maps to zero. -/
@@ -85,22 +83,8 @@ theorem simplyBlockedStabilizeXRingHom_C (r : R) :
 /-- Merging columns commutes with blocking the transported old marking. -/
 theorem simplyBlockedStabilizeXRingHom_specialization (p : MvPolynomial (Fin (n + 1)) R) :
     simplyBlockedStabilizeXRingHom s i R (simplyBlockedRingHom R j p) =
-      simplyBlockedRingHom R i (rename s.predAbove p) := by
-  have h : ((killCompl (R := R) (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-      Subtype.val_injective).comp ((rename s.predAbove).comp (rename Subtype.val))).comp
-        (killCompl (f := (Subtype.val : {c : Fin (n + 1) // c ≠ j} → Fin (n + 1)))
-          Subtype.val_injective) =
-      (killCompl (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-        Subtype.val_injective).comp (rename s.predAbove) := by
-    ext c
-    by_cases hc : c = j
-    · subst c
-      simp [Fin.predAbove_succAbove]
-    · have hX : MvPolynomial.X c = rename Subtype.val
-          (MvPolynomial.X (R := R) (⟨c, hc⟩ : {c : Fin (n + 1) // c ≠ j})) := by simp
-      simp only [AlgHom.comp_apply]
-      rw [hX, killCompl_rename_app]
-  exact DFunLike.congr_fun h p
+      simplyBlockedRingHom R i (rename s.predAbove p) :=
+  simplyBlockedRingHomAlong_specialization R s.predAbove i j (by simp [Fin.predAbove_succAbove]) p
 
 end Semiring
 
@@ -114,16 +98,14 @@ local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
 generator is the specialization of the unblocked stabilization comparison. -/
 noncomputable def simplyBlockedStabilizeXMap :
     GridChainHat R (n + 1) j →ₛₗ[simplyBlockedStabilizeXRingHom s i R] GridChainHat R n i :=
-  (Finsupp.linearCombination A fun x : GridState (n + 1) =>
-    simplyBlockedSpecialization R i (G.stabilizeXChainMap s R (Finsupp.single x 1))).comp
-      (Finsupp.mapRange.linearMap (simplyBlockedStabilizeXRingHom s i R).toSemilinearMap)
+  simplyBlockedMapAlong R s.predAbove i j (G.stabilizeXChainMap s R)
 
 /-- The specialized stabilization map on a single supported coefficient. -/
 theorem simplyBlockedStabilizeXMap_single (x : GridState (n + 1)) (p : S) :
     G.simplyBlockedStabilizeXMap s i R (Finsupp.single x p) =
       simplyBlockedStabilizeXRingHom s i R p •
-        simplyBlockedSpecialization R i (G.stabilizeXChainMap s R (Finsupp.single x 1)) := by
-  simp [simplyBlockedStabilizeXMap]
+        simplyBlockedSpecialization R i (G.stabilizeXChainMap s R (Finsupp.single x 1)) :=
+  simplyBlockedMapAlong_single R s.predAbove i j (G.stabilizeXChainMap s R) x p
 
 /-- The matrix formula for the specialized stabilization comparison. -/
 @[simp]
@@ -131,30 +113,17 @@ theorem simplyBlockedStabilizeXMap_apply_apply (c : GridChainHat R (n + 1) j)
     (y : GridState n) :
     G.simplyBlockedStabilizeXMap s i R c y = c.sum fun x p =>
       simplyBlockedStabilizeXRingHom s i R p *
-        simplyBlockedRingHom R i (G.stabilizeXChainMap s R (Finsupp.single x 1) y) := by
-  induction c using Finsupp.induction_linear with
-  | zero => rw [map_zero, Finsupp.zero_apply, Finsupp.sum_zero_index]
-  | add c d hc hd =>
-    rw [map_add, Finsupp.add_apply, hc, hd, Finsupp.sum_add_index'] <;> simp [add_mul]
-  | single x p =>
-    rw [simplyBlockedStabilizeXMap_single, Finsupp.smul_apply, smul_eq_mul,
-      simplyBlockedSpecialization_apply, ← simplyBlockedRingHom_apply,
-      Finsupp.sum_single_index (by simp)]
+        simplyBlockedRingHom R i (G.stabilizeXChainMap s R (Finsupp.single x 1) y) :=
+  simplyBlockedMapAlong_apply_apply R s.predAbove i j (G.stabilizeXChainMap s R) c y
 
 /-- The simply blocked comparison is the descent of the unblocked stabilization map through
 coefficient specialization. -/
 @[simp]
 theorem simplyBlockedStabilizeXMap_simplyBlockedSpecialization (c : GridChainMinus R (n + 1)) :
     G.simplyBlockedStabilizeXMap s i R (simplyBlockedSpecialization R j c) =
-      simplyBlockedSpecialization R i (G.stabilizeXChainMap s R c) := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp only [map_zero]
-  | add c d hc hd => simp only [map_add, hc, hd]
-  | single x p =>
-    rw [simplyBlockedSpecialization_single, simplyBlockedStabilizeXMap_single,
-      ← simplyBlockedRingHom_apply, simplyBlockedStabilizeXRingHom_specialization,
-      ← Finsupp.smul_single_one x p, map_smulₛₗ, map_smulₛₗ]
-    rfl
+      simplyBlockedSpecialization R i (G.stabilizeXChainMap s R c) :=
+  simplyBlockedMapAlong_specialization R s.predAbove i j (G.stabilizeXChainMap s R)
+    (by simp [Fin.predAbove_succAbove]) c
 
 variable [CharP R 2]
 
@@ -162,44 +131,14 @@ variable [CharP R 2]
 theorem simplyBlockedStabilizeXMap_simplyBlockedDifferential (c : GridChainHat R (n + 1) j) :
     G.simplyBlockedStabilizeXMap s i R
         ((G.stabilizeX s.castSucc (G.X s).castSucc s).simplyBlockedDifferential R j c) =
-      G.simplyBlockedDifferential R i (G.simplyBlockedStabilizeXMap s i R c) := by
-  obtain ⟨c, rfl⟩ := simplyBlockedSpecialization_surjective R j c
-  rw [← simplyBlockedSpecialization_unblockedDifferential,
-    simplyBlockedStabilizeXMap_simplyBlockedSpecialization,
-    simplyBlockedStabilizeXMap_simplyBlockedSpecialization,
-    ← simplyBlockedSpecialization_unblockedDifferential,
-    stabilizeXChainMap_unblockedDifferential]
+      G.simplyBlockedDifferential R i (G.simplyBlockedStabilizeXMap s i R c) :=
+  simplyBlockedMapAlong_differential R s.predAbove i j (G.stabilizeXChainMap s R) G _
+    (by simp [Fin.predAbove_succAbove]) (G.stabilizeXChainMap_unblockedDifferential s R) c
 
 /-! ### Quasi-isomorphism after blocking -/
 
 local notation "G'" => GridDiagram.stabilizeX G (Fin.castSucc s)
   (Fin.castSucc (GridDiagram.X G s)) s
-
-omit [CharP R 2] in
-/-- Stabilization carries multiplication by the variable of the transported marking to
-multiplication by `V_i`. -/
-private theorem stabilizeXChainMap_X_smul (c : GridChainMinus R (n + 1)) :
-    G.stabilizeXChainMap s R ((MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • c) =
-      (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.stabilizeXChainMap s R c := by
-  rw [map_smulₛₗ]
-  simp [Fin.predAbove_succAbove]
-
-/-- `exists_sub_stabilizeXChainMap_mem_range` for the underlying additive maps. -/
-private theorem exists_sub_stabilizeXChainMap_mem_addRange (c : GridChainMinus R n)
-    (hc : c ∈ (G.unblockedDifferential R).toAddMonoidHom.ker) :
-    ∃ m ∈ ((G').unblockedDifferential R).toAddMonoidHom.ker,
-      c - (G.stabilizeXChainMap s R).toAddMonoidHom m ∈
-        (G.unblockedDifferential R).toAddMonoidHom.range := by
-  simpa using G.exists_sub_stabilizeXChainMap_mem_range s R (by simpa using hc)
-
-/-- `mem_range_of_stabilizeXChainMap_mem_range` for the underlying additive maps. -/
-private theorem mem_addRange_of_stabilizeXChainMap_mem_addRange (m : GridChainMinus R (n + 1))
-    (hm : m ∈ ((G').unblockedDifferential R).toAddMonoidHom.ker)
-    (h : (G.stabilizeXChainMap s R).toAddMonoidHom m ∈
-      (G.unblockedDifferential R).toAddMonoidHom.range) :
-    m ∈ ((G').unblockedDifferential R).toAddMonoidHom.range := by
-  simpa using G.mem_range_of_stabilizeXChainMap_mem_range s R (by simpa using hm)
-    (by simpa using h)
 
 /-- Every simply blocked cycle of `G` differs from the image of a simply blocked cycle of the
 stabilized diagram by a boundary. -/
@@ -207,22 +146,12 @@ theorem exists_sub_simplyBlockedStabilizeXMap_mem_range {y : GridChainHat R n i}
     (hy : y ∈ LinearMap.ker (G.simplyBlockedDifferential R i)) :
     ∃ x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j),
       y - G.simplyBlockedStabilizeXMap s i R x ∈
-        LinearMap.range (G.simplyBlockedDifferential R i) := by
-  -- Specialization at the blocked variable is a morphism from the short exact sequence
-  -- `0 → GC⁻ --V_j--> GC⁻ → GC^ → 0` of the stabilized diagram to that of `G`, and the unblocked
-  -- stabilization map is a quasi-isomorphism.
-  simpa using AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact
-    (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom
-    (f₁ := (G.stabilizeXChainMap s R).toAddMonoidHom)
-    (f := (G.stabilizeXChainMap s R).toAddMonoidHom)
-    ((G').isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
-    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
+        LinearMap.range (G.simplyBlockedDifferential R i) :=
+  exists_sub_simplyBlockedMapAlong_mem_range R s.predAbove i j
+    (G.stabilizeXChainMap s R) G _ (by simp [Fin.predAbove_succAbove])
     (G.stabilizeXChainMap_unblockedDifferential s R)
-    (G.stabilizeXChainMap_X_smul s i R)
-    (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
-    (G.exists_sub_stabilizeXChainMap_mem_addRange s R)
-    (G.exists_sub_stabilizeXChainMap_mem_addRange s R)
-    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R) (by simpa using hy)
+    (fun _ hc => G.exists_sub_stabilizeXChainMap_mem_range s R hc)
+    (fun _ hx h => G.mem_range_of_stabilizeXChainMap_mem_range s R hx h) hy
 
 /-- A simply blocked cycle of the stabilized diagram whose image in `G` is a boundary is itself a
 boundary. -/
@@ -230,21 +159,11 @@ theorem mem_range_of_simplyBlockedStabilizeXMap_mem_range {x : GridChainHat R (n
     (hx : x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j))
     (h : G.simplyBlockedStabilizeXMap s i R x ∈
       LinearMap.range (G.simplyBlockedDifferential R i)) :
-    x ∈ LinearMap.range ((G').simplyBlockedDifferential R j) := by
-  -- The same morphism of short exact sequences as in
-  -- `exists_sub_simplyBlockedStabilizeXMap_mem_range`.
-  simpa using AddMonoidHom.mem_range_of_map_mem_range_of_exact
-    (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom
-    (f₁ := (G.stabilizeXChainMap s R).toAddMonoidHom)
-    (f := (G.stabilizeXChainMap s R).toAddMonoidHom)
-    ((G').isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
-    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
+    x ∈ LinearMap.range ((G').simplyBlockedDifferential R j) :=
+  mem_range_of_simplyBlockedMapAlong_mem_range R s.predAbove i j
+    (G.stabilizeXChainMap s R) G _ (by simp [Fin.predAbove_succAbove])
     (G.stabilizeXChainMap_unblockedDifferential s R)
-    (G.stabilizeXChainMap_unblockedDifferential s R)
-    (G.stabilizeXChainMap_X_smul s i R)
-    (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
-    (G.exists_sub_stabilizeXChainMap_mem_addRange s R)
-    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R)
-    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R) (by simpa using hx) (by simpa using h)
+    (fun _ hc => G.exists_sub_stabilizeXChainMap_mem_range s R hc)
+    (fun _ hx h => G.mem_range_of_stabilizeXChainMap_mem_range s R hx h) hx h
 
 end TauCeti.GridDiagram
