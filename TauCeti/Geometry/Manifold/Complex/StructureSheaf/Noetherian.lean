@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Noetherian.Defs
 
 import Mathlib.RingTheory.FiniteType
 import TauCeti.Analysis.Analytic.Uniqueness
+import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 import TauCeti.RingTheory.Ideal.Quotient.Finite
@@ -132,6 +133,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 without boundary is a Noetherian ring. -/
 instance stalkIsNoetherianRing (x : X) :
     IsNoetherianRing ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
   refine @isNoetherianRing_of_ringEquiv _ _ _ _
     (stalkEquivModelSpace (I := I) (V := Fin (finrank ℂ E) → ℂ) x
       (ContinuousLinearEquiv.ofFinrankEq (by simp))).symm ?_

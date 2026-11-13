@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Dimension
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Noetherian
 public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 import Mathlib.Algebra.Module.SpanRankOperations
+import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
@@ -48,6 +49,7 @@ complex dimension of the manifold model. -/
 theorem spanFinrank_maximalIdeal_stalk (x : X) :
     (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
       Module.finrank ℂ E := by
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
   rw [← Ideal.spanFinrank_map_eq_of_ringEquiv
     (stalkEquivModelSpace (I := I) (V := Fin (Module.finrank ℂ E) → ℂ) x
       (ContinuousLinearEquiv.ofFinrankEq (by simp))),
