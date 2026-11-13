@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Torus
 public import TauCeti.Geometry.Symplectic.Lagrangian.Fibration
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.Submersion
+import TauCeti.Topology.Connected.Basic
 
 /-!
 # The fibres of a regular Lagrangian torus fibration are tori
@@ -55,41 +56,6 @@ variable {E H M F H' B : Type*}
   [T2Space B]
   {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate} {π : M → B}
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless]
-  [FiniteDimensional ℝ F] [IsManifold J ∞ B] in
-/-- **A fibre is a connected component of a level of pulled-back functions.** If `κ` is injective
-on an open neighbourhood of `π x`, then the connected component of `x` in its level of `κ ∘ π` is
-the fibre of `π` through `x`. -/
-theorem connectedComponentIn_preimage_comp_eq (h : hσ.IsLagrangianTorusFibration J π)
-    {Y : Type*} {κ : B → Y} {W : Set B} {x : M} (hW : IsOpen W) (hxW : π x ∈ W)
-    (hκ : InjOn κ W) :
-    connectedComponentIn ((κ ∘ π) ⁻¹' {(κ ∘ π) x}) x = π ⁻¹' {π x} := by
-  refine Subset.antisymm ?_ ((h.isConnected_preimage_singleton (π x)).isPreconnected
-    |>.subset_connectedComponentIn (by simp) fun y hy ↦ ?_)
-  · -- The level splits into the closed sets over `π x` and over the complement of `W`.
-    have hcover : connectedComponentIn ((κ ∘ π) ⁻¹' {(κ ∘ π) x}) x ⊆
-        π ⁻¹' {π x} ∪ π ⁻¹' Wᶜ := by
-      intro y hy
-      have hyG := connectedComponentIn_subset _ _ hy
-      simp only [mem_preimage, mem_singleton_iff, comp_apply] at hyG
-      by_cases hyW : π y ∈ W
-      · exact Or.inl (hκ hyW hxW hyG)
-      · exact Or.inr hyW
-    have hdisj : connectedComponentIn ((κ ∘ π) ⁻¹' {(κ ∘ π) x}) x ∩
-        (π ⁻¹' {π x} ∩ π ⁻¹' Wᶜ) = ∅ := by
-      ext y
-      simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_compl_iff,
-        mem_empty_iff_false, iff_false, not_and, not_not]
-      intro _ hyb
-      exact hyb ▸ hxW
-    rcases isPreconnected_iff_subset_of_disjoint_closed.1 isPreconnected_connectedComponentIn
-      (π ⁻¹' {π x}) (π ⁻¹' Wᶜ) (isClosed_singleton.preimage h.contMDiff.continuous)
-      (hW.isClosed_compl.preimage h.contMDiff.continuous) hcover hdisj with hb | hW'
-    · exact hb
-    · exact absurd (hW' (mem_connectedComponentIn (by simp))) (by simpa using hxW)
-  · simp only [mem_preimage, mem_singleton_iff] at hy
-    simp [hy]
-
 /-- **The fibres of a regular Lagrangian torus fibration are tori.** If `σ` is closed, so
 symplectic, every fibre of a regular Lagrangian torus fibration `π : M → B` over a Hausdorff
 manifold of dimension `n` is homeomorphic to the torus `(ℝ / ℤ)ⁿ`. -/
@@ -115,7 +81,8 @@ theorem nonempty_homeomorph_unitAddTorus (h : hσ.IsLagrangianTorusFibration J �
     rw [← (hWsub hc).1, ← (hWsub hd).1]
     exact e.injective hcd
   have hcomp : connectedComponentIn (G ⁻¹' {G x}) x = π ⁻¹' {π x} :=
-    h.connectedComponentIn_preimage_comp_eq hWo hbW hinj
+    (h.isConnected_preimage_singleton (π x)).isPreconnected.connectedComponentIn_preimage_comp_eq
+      h.contMDiff.continuous hWo hbW hinj
   have hreg : ∀ y ∈ connectedComponentIn (G ⁻¹' {G x}) x,
       IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) G y := by
     intro y hy

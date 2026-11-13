@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Fibration
-import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import Mathlib.LinearAlgebra.Matrix.Dual
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Topology.Connected.Basic
 
 /-!
 # The cotangent action on the fibres of a Lagrangian fibration and its period lattice
@@ -125,28 +126,16 @@ private theorem exists_isOpen_injOn_baseCoord (b : B) :
   exact (modelCoord F).injective hcd
 
 variable (F) in
-/-- The linear form `w ↦ ∑ i, vᵢ wᵢ` in the linear coordinates of `F`. -/
-private noncomputable def coordCovectorLinearMap :
-    (Fin (finrank ℝ F) → ℝ) →ₗ[ℝ] (F →L[ℝ] ℝ) :=
-  Fintype.linearCombination ℝ fun i ↦
-    (ContinuousLinearMap.proj i).comp (modelCoord F : F →L[ℝ] Fin (finrank ℝ F) → ℝ)
-
-private theorem coordCovectorLinearMap_apply_apply (v : Fin (finrank ℝ F) → ℝ) (w : F) :
-    coordCovectorLinearMap F v w = ∑ i, v i * modelCoord F w i := by
-  simp [coordCovectorLinearMap, Fintype.linearCombination_apply]
-
-private theorem injective_coordCovectorLinearMap :
-    Injective (coordCovectorLinearMap F) := by
-  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ funext fun j ↦ ?_
-  have h := congrArg (fun η : F →L[ℝ] ℝ ↦ η ((modelCoord F).symm (Pi.single j 1))) hv
-  simpa [coordCovectorLinearMap_apply_apply, Pi.single_apply] using h
-
-variable (F) in
-/-- The linear forms `w ↦ wᵢ` of the linear coordinates of `F` form a basis of its dual. -/
+/-- The linear forms `w ↦ wᵢ` of the linear coordinates of `F` form a basis of its dual: the
+covector with coordinates `v` is the dot product with `v`, read in the coordinates of `F`. -/
 private noncomputable def coordCovector : (Fin (finrank ℝ F) → ℝ) ≃L[ℝ] (F →L[ℝ] ℝ) :=
-  (LinearMap.linearEquivOfInjective (coordCovectorLinearMap F) injective_coordCovectorLinearMap
-    (by rw [Module.finrank_fin_fun, ← LinearMap.toContinuousLinearMap.finrank_eq,
-      Module.finrank_linearMap_self])).toContinuousLinearEquiv
+  ((dotProductEquiv ℝ (Fin (finrank ℝ F))).trans
+    ((modelCoord F).toLinearEquiv.dualMap.trans
+      LinearMap.toContinuousLinearMap)).toContinuousLinearEquiv
+
+private theorem coordCovector_apply_apply (v : Fin (finrank ℝ F) → ℝ) (w : F) :
+    coordCovector F v w = ∑ i, v i * modelCoord F w i :=
+  rfl
 
 /-- A linear combination of the base coordinates is a linear form of the base coordinates. -/
 private theorem sum_mul_baseCoord_eq_comp (b : B) (v : Fin (finrank ℝ F) → ℝ) :
@@ -170,10 +159,10 @@ private theorem mvfderiv_eq_coordCovector (b : B) (v : Fin (finrank ℝ F) → �
   rw [sum_mul_baseCoord_eq_comp, mvfderiv_comp_apply_of_differentiableAt ψ.differentiableAt
     ((contMDiff_baseCoord J b).mdifferentiableAt (by simp)), ψ.fderiv,
     mvfderiv_baseCoord_apply]
-  -- `coordCovector F v` is `coordCovectorLinearMap F v`, read on the tangent space at `b`.
-  change _ = coordCovectorLinearMap F v w
+  -- `coordCovector F v` is read on the tangent space at `b`.
+  change _ = coordCovector F v w
   simp only [ψ, sum_apply, smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul]
-  exact (coordCovectorLinearMap_apply_apply v w).symm
+  exact (coordCovector_apply_apply v w).symm
 
 variable {J}
 
@@ -318,7 +307,8 @@ private theorem baseCoord_comp_spec {b : B} (x : π ⁻¹' {b}) :
       2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E := by
   obtain ⟨W, hWo, hbW, hinj⟩ := exists_isOpen_injOn_baseCoord J b
   have hxb : π x = b := x.2
-  have hcomp := h.connectedComponentIn_preimage_comp_eq hWo (hxb ▸ hbW) hinj
+  have hcomp := (h.isConnected_preimage_singleton (π x)).isPreconnected
+    |>.connectedComponentIn_preimage_comp_eq h.contMDiff.continuous hWo (by rwa [hxb]) hinj
   rw [hxb] at hcomp
   refine ⟨hcomp, fun y hy ↦ ?_, ?_⟩
   · rw [hcomp, mem_preimage, mem_singleton_iff] at hy
