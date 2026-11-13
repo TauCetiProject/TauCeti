@@ -84,7 +84,7 @@ theorem green_triangle_of_det_eq_zero {c p q : ℂ} (hdet : triangleDet c p q = 
         curveIntegral (oneForm P Q) (Path.segment p q) -
         curveIntegral (oneForm P Q) (Path.segment c q) = 0 ∧
       (∫ z in convexHull ℝ {c, p, q}, curl P Q z) = 0 := by
-  have harea := volume_convexHull_triangle_eq_zero hdet
+  have harea := volume.addHaar_convexHull_triangle_eq_zero hdet
   refine ⟨?_, curveIntegral_triangle_eq_zero_of_det_eq_zero hdet hP hQ,
     setIntegral_measure_zero _ harea⟩
   simp [IntegrableOn, Measure.restrict_eq_zero.mpr harea]

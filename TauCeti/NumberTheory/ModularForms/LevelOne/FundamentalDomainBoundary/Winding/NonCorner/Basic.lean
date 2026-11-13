@@ -104,7 +104,7 @@ the contour keeps distance more than `ε` from `w` while the rotated branch stay
 plane, and within the window it stays within `ε`, then the `ε`-truncated index integrand is
 interval integrable over the whole contour and its integral is the window-endpoint log
 difference of the rotated branch. -/
-lemma truncated_integral_spec_of_slit_branch (hc : c ≠ 0)
+lemma truncated_integral_spec_of_slit_branch
     (h0 : 0 ≤ t₀ - δ) (hδ : 0 < δ) (h5 : t₀ + δ ≤ 5)
     (hslit : ∀ t ∈ Icc (0 : ℝ) 5, t ∉ Ioo (t₀ - δ) (t₀ + δ) →
       (fdBoundary H t - w) * c ∈ Complex.slitPlane)
@@ -118,6 +118,10 @@ lemma truncated_integral_spec_of_slit_branch (hc : c ≠ 0)
       Complex.log ((fdBoundary H (t₀ - δ) - w) * c) -
         Complex.log ((fdBoundary H (t₀ + δ) - w) * c) := by
   have hab2 : t₀ - δ ≤ t₀ + δ := by linarith
+  -- the slit-plane condition at the endpoint `t₀ - δ` of the window forces `c ≠ 0`
+  have hc : c ≠ 0 := by
+    rintro rfl
+    simpa using hslit (t₀ - δ) ⟨h0, by linarith⟩ fun h ↦ lt_irrefl _ h.1
   obtain ⟨hiL, heL⟩ := telescope_piece_of_slit_branch hc h0
     (Icc_subset_Icc le_rfl (by linarith)) (fun t ht ↦ hslit t ⟨ht.1, by linarith [ht.2]⟩
       fun hmem ↦ absurd ht.2 (not_le.mpr hmem.1))

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 
 /-!
 # Duality between `C₀(I, R)` and bounded families

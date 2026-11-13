@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Module.Alternating.AlmostComplexType
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
+import TauCeti.LinearAlgebra.Complex.LinearPart
 
 /-!
 # Alternation and the `(p,q)` type of complex-valued forms
@@ -24,7 +25,11 @@ satisfies the derivative of the type equation. The alternation of `η` then has 
 types `(p+2,q-1)`, `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only, and its two outer components,
 of types `(p+2,q-1)` and `(p-1,q+2)`, are determined by `ω` and the bilinear map
 `N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)` alone. When `J` does not vary, so that
-every `η v` has type `(p,q)`, only the types `(p+1,q)` and `(p,q+1)` remain.
+every `η v` has type `(p,q)`, only the types `(p+1,q)` and `(p,q+1)` remain. They are the
+alternations of the parts `½ (η - I • η ∘ J)` and `½ (η + I • η ∘ J)` of `η` which are
+complex-linear and conjugate-linear for `J`, respectively. This applies to the derivative of a
+family of forms of type `(p,q)`, which consists of forms of type `(p,q)` again
+(`ContinuousAlternatingMap.isOfType_fderivWithin`).
 
 On an almost complex manifold this is the pointwise reason why the exterior derivative of a form
 of type `(p,q)` has components of these four types only, and `N` is the Nijenhuis tensor.
@@ -41,6 +46,12 @@ of type `(p,q)` has components of these four types only, and `N` is the Nijenhui
   outer bidegrees through `N`.
 * `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_eq_zero_of_forall_isOfType`: the
   two bidegrees for a constant `J`.
+* `ContinuousAlternatingMap.isOfType_alternatizeUncurryFin_succ_left`,
+  `ContinuousAlternatingMap.isOfType_alternatizeUncurryFin_succ_right`: alternating a family of
+  forms of type `(p,q)` which is complex-linear, respectively conjugate-linear, for `J`.
+* `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_left`,
+  `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_right`: the two components
+  for a constant `J`.
 
 ## References
 
@@ -343,5 +354,96 @@ theorem typeProjection_alternatizeUncurryFin_eq_zero_of_forall_isOfType
   refine (smul_eq_zero.1 hpoly).resolve_left
     (typeShift_sq_add_one_ne_zero (hPQ.trans (by rw [hk])) (fun h ↦ h₂ (Prod.ext h (by omega)))
       fun h ↦ h₁ (Prod.ext h (by omega)))
+
+section Linear
+
+variable {J : E →L[ℝ] E} {p q : ℕ} {η : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F}
+
+/-- If `J` acts on the first argument of `η` by `c`, and on each value of `η` by its derivation
+with eigenvalue `d`, then the derivation of `J` acts on the alternation of `η` by `c + d`. -/
+private theorem alternatingDerivation_alternatizeUncurryFin_eq_smul {c d : ℂ}
+    (hd : ∀ v, J.alternatingDerivation (η v) = d • η v) (hc : ∀ v, η (J v) = c • η v) :
+    J.alternatingDerivation (alternatizeUncurryFin η) = (c + d) • alternatizeUncurryFin η := by
+  rw [J.alternatingDerivation_alternatizeUncurryFin (θ' := d • η) hd,
+    show η ∘L J = c • η from ContinuousLinearMap.ext hc, alternatizeUncurryFin_smul,
+    alternatizeUncurryFin_smul, add_smul]
+
+/-- Alternating a family of forms of type `(p,q)` which depends complex-linearly on its argument,
+`η (J v) = I • η v`, gives a form of type `(p+1,q)`. -/
+theorem isOfType_alternatizeUncurryFin_succ_left (hη : ∀ v, (η v).IsOfType J p q)
+    (hJ : ∀ v, η (J v) = I • η v) : (alternatizeUncurryFin η).IsOfType J (p + 1) q := by
+  refine isOfType_iff.2 ⟨by rw [add_right_comm, (hη 0).add_eq], ?_⟩
+  rw [alternatingDerivation_alternatizeUncurryFin_eq_smul
+    (fun v ↦ (hη v).alternatingDerivation_eq) hJ]
+  push_cast
+  ring_nf
+
+/-- Alternating a family of forms of type `(p,q)` which depends conjugate-linearly on its argument,
+`η (J v) = -I • η v`, gives a form of type `(p,q+1)`. -/
+theorem isOfType_alternatizeUncurryFin_succ_right (hη : ∀ v, (η v).IsOfType J p q)
+    (hJ : ∀ v, η (J v) = -I • η v) : (alternatizeUncurryFin η).IsOfType J p (q + 1) := by
+  refine isOfType_iff.2 ⟨by rw [← add_assoc, (hη 0).add_eq], ?_⟩
+  rw [alternatingDerivation_alternatizeUncurryFin_eq_smul
+    (fun v ↦ (hη v).alternatingDerivation_eq) hJ]
+  push_cast
+  ring_nf
+
+/-- The complex-linear and conjugate-linear parts `½ (η ∓ I • η ∘ J)` of a family of forms of
+type `(p,q)` are families of forms of type `(p,q)` adding up to `η`. -/
+private theorem isOfType_linearPart (hJ : ∀ v, J (J v) = -v) (hη : ∀ v, (η v).IsOfType J p q) :
+    (∀ v, (((2 : ℂ)⁻¹ • (η - I • η ∘L J)) v).IsOfType J p q) ∧
+      (∀ v, ((2 : ℂ)⁻¹ • (η - I • η ∘L J)) (J v) = I • ((2 : ℂ)⁻¹ • (η - I • η ∘L J)) v) ∧
+      (∀ v, (((2 : ℂ)⁻¹ • (η + I • η ∘L J)) v).IsOfType J p q) ∧
+      (∀ v, ((2 : ℂ)⁻¹ • (η + I • η ∘L J)) (J v) = -I • ((2 : ℂ)⁻¹ • (η + I • η ∘L J)) v) ∧
+      (2 : ℂ)⁻¹ • (η - I • η ∘L J) + (2 : ℂ)⁻¹ • (η + I • η ∘L J) = η := by
+  -- The two parts are `TauCeti.complexLinearPart` and `TauCeti.complexAntilinearPart` of `η` for
+  -- `J` and multiplication by `I` on forms.
+  let J' : (E [⋀^Fin k]→L[ℝ] F) →ₗ[ℝ] E [⋀^Fin k]→L[ℝ] F := I • LinearMap.id
+  have hJJ : (J : E →ₗ[ℝ] E) ∘ₗ J = -LinearMap.id := LinearMap.ext hJ
+  have hJ'J' : J' ∘ₗ J' = -LinearMap.id := by
+    ext β : 1
+    simp [J', smul_smul]
+  have hlin : ((2⁻¹ : ℂ) • (η - I • η ∘L J)).toLinearMap =
+      TauCeti.complexLinearPart J J' η := by
+    ext v : 1
+    simp [J', ← Complex.coe_smul]
+  have hanti : ((2⁻¹ : ℂ) • (η + I • η ∘L J)).toLinearMap =
+      TauCeti.complexAntilinearPart J J' η := by
+    ext v : 1
+    simp [J', ← Complex.coe_smul]
+  refine ⟨fun v ↦ ((hη v).sub ((hη (J v)).smul I)).smul _, fun v ↦ ?_,
+    fun v ↦ ((hη v).add ((hη (J v)).smul I)).smul _, fun v ↦ ?_, ?_⟩
+  · simpa [← hlin, J'] using (TauCeti.complexLinearPart_isComplexLinear hJJ hJ'J' η).apply v
+  · simpa [← hanti, J', add_comm] using
+      (TauCeti.complexAntilinearPart_isComplexAntilinear hJJ hJ'J' η).apply v
+  · refine ContinuousLinearMap.coe_injective ?_
+    rw [ContinuousLinearMap.toLinearMap_add, hlin, hanti,
+      TauCeti.complexLinearPart_add_complexAntilinearPart]
+
+/-- **The `(p+1,q)` component for a constant structure.** If every form `η v` of a family has type
+`(p,q)` for `J` with `J² = -1`, the component of type `(p+1,q)` of the alternation of `η` is the
+alternation of its complex-linear part `½ (η - I • η ∘ J)`. -/
+theorem typeProjection_alternatizeUncurryFin_succ_left (hJ : ∀ v, J (J v) = -v)
+    (hη : ∀ v, (η v).IsOfType J p q) :
+    J.typeProjection (p + 1) q (alternatizeUncurryFin η) =
+      alternatizeUncurryFin ((2 : ℂ)⁻¹ • (η - I • η ∘L J)) := by
+  obtain ⟨h₁, h₂, h₃, h₄, h⟩ := isOfType_linearPart hJ hη
+  conv_lhs => rw [← h, alternatizeUncurryFin_add, map_add]
+  rw [(isOfType_alternatizeUncurryFin_succ_left h₁ h₂).typeProjection_self,
+    (isOfType_alternatizeUncurryFin_succ_right h₃ h₄).typeProjection_of_ne (by simp), add_zero]
+
+/-- **The `(p,q+1)` component for a constant structure.** If every form `η v` of a family has type
+`(p,q)` for `J` with `J² = -1`, the component of type `(p,q+1)` of the alternation of `η` is the
+alternation of its conjugate-linear part `½ (η + I • η ∘ J)`. -/
+theorem typeProjection_alternatizeUncurryFin_succ_right (hJ : ∀ v, J (J v) = -v)
+    (hη : ∀ v, (η v).IsOfType J p q) :
+    J.typeProjection p (q + 1) (alternatizeUncurryFin η) =
+      alternatizeUncurryFin ((2 : ℂ)⁻¹ • (η + I • η ∘L J)) := by
+  obtain ⟨h₁, h₂, h₃, h₄, h⟩ := isOfType_linearPart hJ hη
+  conv_lhs => rw [← h, alternatizeUncurryFin_add, map_add]
+  rw [(isOfType_alternatizeUncurryFin_succ_left h₁ h₂).typeProjection_of_ne (by simp),
+    (isOfType_alternatizeUncurryFin_succ_right h₃ h₄).typeProjection_self, zero_add]
+
+end Linear
 
 end ContinuousAlternatingMap

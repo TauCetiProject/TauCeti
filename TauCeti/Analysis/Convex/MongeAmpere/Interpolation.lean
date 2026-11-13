@@ -165,7 +165,7 @@ private theorem exists_measurableSet_restrict_eq_self
   obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ :=
     exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient ρ hf hbot hH
   exact ⟨S, hSm, hSD, hDS, restrict_eq_self_of_ae_mem (mem_ae_iff.2
-    ((measure_congr (EventuallyEqSet.compl (hμ.ae_eq hDS))).symm.trans (mem_ae_iff.1 hμD))),
+    ((measure_congr (EventuallyEqSet.compl (hμ.ae_le hDS))).symm.trans (mem_ae_iff.1 hμD))),
     H', hH'm, hHS, fun x hx => hHS x hx ▸ hS x hx⟩
 
 /-- **Change of variables along the interpolating map.** Let `s` be a measurable set at each point
