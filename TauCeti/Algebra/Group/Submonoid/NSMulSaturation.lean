@@ -40,8 +40,8 @@ additive counterparts, e.g. `Submonoid.powSaturation` becomes `AddSubmonoid.nsmu
   is `PowSaturated` iff it equals its saturation.
 * `Submonoid.powSaturation_comap` and `Submonoid.powSaturation_inf`: saturation commutes with
   `comap` and `⊓`.
-* `Submonoid.closure_powSaturation_inf_closure`, `Submonoid.powSaturationInfClosureEquiv`, and
-  `Submonoid.powSaturated_comap_subtype_closure_iff`: saturation inside the generated subgroup.
+* `Submonoid.subgroupClosure_powSaturation_inf_closure`, `Submonoid.powSaturationInfClosureEquiv`,
+  and `Submonoid.powSaturated_comap_subtype_closure_iff`: saturation inside the generated subgroup.
 -/
 
 public section
@@ -155,7 +155,7 @@ variable {G : Type*} [CommGroup G] (s : Submonoid G)
 /-- Saturating `s` inside the subgroup it generates does not change the generated subgroup. -/
 @[to_additive /-- Saturating `s` inside the additive subgroup it generates does not
 change the generated additive subgroup. -/]
-theorem closure_powSaturation_inf_closure :
+theorem subgroupClosure_powSaturation_inf_closure :
     Subgroup.closure
         ((s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid : Submonoid G) : Set G) =
       Subgroup.closure (s : Set G) :=

@@ -118,6 +118,33 @@ theorem groupClosureToFractionRing_mapDomain_toGroupClosure (f : AddMonoidAlgebr
   rw [← mapDomainRingHom_apply (R := R) S.toGroupClosure]
   exact IsLocalization.map_eq (fun _ hx => mrange_of_le_nonZeroDivisors hx) f
 
+/-- `groupClosureToFractionRing` maps a monomial in `S` to its image under `algebraMap (R[S]) K`. -/
+@[simp]
+theorem groupClosureToFractionRing_single_toGroupClosure (s : S) (r : R) :
+    groupClosureToFractionRing S R K (single (S.toGroupClosure s) r) =
+      algebraMap (AddMonoidAlgebra R S) K (single s r) := by
+  rw [← mapDomain_single, groupClosureToFractionRing_mapDomain_toGroupClosure]
+
+/-- `groupClosureToFractionRing` maps a constant monomial `single 0 r` to its image under
+`algebraMap (R[S]) K`. -/
+@[simp]
+theorem groupClosureToFractionRing_single_zero (r : R) :
+    groupClosureToFractionRing S R K (single 0 r) =
+      algebraMap (AddMonoidAlgebra R S) K (single 0 r) := by
+  rw [← map_zero S.toGroupClosure, groupClosureToFractionRing_single_toGroupClosure]
+
+/-- `groupClosureToFractionRing` evaluates a Laurent monomial
+`single (S.toGroupClosure a - S.toGroupClosure b) r` as the fraction `single a r / single b 1` in
+`K`. -/
+theorem groupClosureToFractionRing_single_sub_toGroupClosure (a b : S) (r : R) :
+    groupClosureToFractionRing S R K (single (S.toGroupClosure a - S.toGroupClosure b) r) =
+      IsLocalization.mk' K (single a r) ⟨single b 1, single_mem_nonZeroDivisors b (one_mem _)⟩ := by
+  rw [IsLocalization.eq_mk'_iff_mul_eq]
+  dsimp only
+  rw [← groupClosureToFractionRing_single_toGroupClosure S R K b 1,
+    ← groupClosureToFractionRing_single_toGroupClosure S R K a r, ← map_mul, single_mul_single,
+    sub_add_cancel, mul_one]
+
 /-- `groupClosureToFractionRing` is injective. -/
 theorem groupClosureToFractionRing_injective :
     Function.Injective (groupClosureToFractionRing S R K) := by

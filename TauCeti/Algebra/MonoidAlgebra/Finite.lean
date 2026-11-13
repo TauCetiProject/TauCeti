@@ -31,14 +31,16 @@ Without commutativity, `R[N]` is still a finitely generated `R[M]`-module throug
 homomorphism `p : M →* N` into a finite monoid, since it is already finitely generated over `R`
 (`TauCeti.MonoidAlgebra.mapDomainRingHom_moduleFinite_of_finite`). This is the finiteness behind
 restricting representations of a finite group along a homomorphism. For any homomorphism
-`p : M →* N` of commutative monoids whose target is covered by finitely many translates of the
-image of `p`, `R[N]` is a finite `R[M]`-module over any commutative semiring `R`
+`p : M →* N` of commutative monoids whose target is covered by translates of the image of `p` along
+a family `s : ι → N`, the monomials `single (s i) 1` span `R[N]` as an `R[M]`-module
+(`TauCeti.MonoidAlgebra.span_range_single_eq_top_of_forall_exists_mul`). When the translate family
+is finite, `R[N]` is a finite `R[M]`-module over any commutative semiring `R`
 (`TauCeti.MonoidAlgebra.mapDomainRingHom_moduleFinite_of_exists_finset_mul`), and hence
 `(mapDomainRingHom R p).Finite` holds over any commutative ring `R`
 (`TauCeti.MonoidAlgebra.mapDomainRingHom_finite_of_exists_finset_mul`). Combining this with
 bounded-shift representatives for submonoid saturations shows that, for a finitely generated
-submonoid `S` of a torsion-free abelian group, the algebra of its saturation in an ambient
-finitely generated lattice or in `AddSubgroup.closure (S : Set G)` is finite over `R[S]`
+submonoid `S` of a torsion-free abelian group, the algebra of its saturation in an ambient free
+abelian group or in `AddSubgroup.closure (S : Set G)` is finite over `R[S]`
 (`TauCeti.AddMonoidAlgebra.mapDomainRingHom_inclusion_nsmulSaturation_finite` and
 `TauCeti.AddMonoidAlgebra.mapDomainRingHom_inclusion_nsmulSaturation_inf_closure_finite`).
 -/
@@ -48,6 +50,35 @@ public section
 namespace TauCeti.MonoidAlgebra
 
 open _root_.MonoidAlgebra
+
+/-- If every element of `N` is a translate `s i * p m` of an element of `p`'s image by a member of
+a family `s : ι → N`, then the monomials `single (s i) 1` span `R[N]` as an `R[M]`-module along
+`mapDomainRingHom R p` over any commutative semiring `R`. -/
+@[to_additive (dont_translate := R)
+  TauCeti.AddMonoidAlgebra.span_range_single_eq_top_of_forall_exists_add
+  /-- If every element of `N` is a shift `s i + p m` of an element of `p`'s image by a member of a
+  family `s : ι → N`, then the monomials `single (s i) 1` span `R[N]` as an `R[M]`-module along
+  `mapDomainRingHom R p` over any commutative semiring `R`. -/]
+theorem span_range_single_eq_top_of_forall_exists_mul {ι M N : Type*} [CommMonoid M]
+    [CommMonoid N] (R : Type*) [CommSemiring R] (p : M →* N) (s : ι → N)
+    (hs : ∀ n : N, ∃ i : ι, ∃ m : M, n = s i * p m) :
+    letI := (mapDomainRingHom R p).toAlgebra
+    Submodule.span (MonoidAlgebra R M) (Set.range fun i ↦ single (s i) (1 : R)) =
+      (⊤ : Submodule (MonoidAlgebra R M) (MonoidAlgebra R N)) := by
+  let := (mapDomainRingHom R p).toAlgebra
+  rw [eq_top_iff]
+  rintro x -
+  induction x using induction_linear with
+  | zero => exact Submodule.zero_mem _
+  | add _ _ hx hy => exact Submodule.add_mem _ hx hy
+  | single n r =>
+    obtain ⟨i, m, hnm⟩ := hs n
+    have hprod : p m * s i = n := by rw [mul_comm, hnm]
+    have hmem := Submodule.smul_mem
+      (Submodule.span (MonoidAlgebra R M) (Set.range fun i ↦ single (s i) (1 : R)))
+      (single m r) (Submodule.subset_span ⟨i, rfl⟩)
+    simpa only [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply,
+      mapDomain_single, single_mul_single, mul_one, hprod] using hmem
 
 section CommGroup
 
@@ -60,24 +91,10 @@ theorem span_range_single_quotient_eq_top [CommSemiring R] (p : M →* N)
     let := (mapDomainRingHom R p).toAlgebra
     Submodule.span (MonoidAlgebra R M) (Set.range fun q ↦ single (s q) (1 : R)) =
       (⊤ : Submodule (MonoidAlgebra R M) (MonoidAlgebra R N)) := by
-  let := (mapDomainRingHom R p).toAlgebra
-  apply top_unique
-  intro x hx
-  clear hx
-  induction x using induction_linear with
-  | zero => exact Submodule.zero_mem _
-  | add x y hx hy => exact Submodule.add_mem _ hx hy
-  | single n r =>
-    have hmem : n / s (QuotientGroup.mk' p.range n) ∈ p.range :=
-      QuotientGroup.eq_iff_div_mem.mp (hs (QuotientGroup.mk' p.range n)).symm
-    obtain ⟨m, hm⟩ := hmem
-    have hn : p m * s (QuotientGroup.mk' p.range n) = n := by
-      rw [hm, div_mul_cancel]
-    have h := Submodule.smul_mem
-      (Submodule.span (MonoidAlgebra R M) (Set.range fun q ↦ single (s q) (1 : R)))
-      (single m r) (Submodule.subset_span ⟨QuotientGroup.mk' p.range n, rfl⟩)
-    simpa only [Algebra.smul_def, RingHom.algebraMap_toAlgebra,
-      mapDomainRingHom_apply, mapDomain_single, single_mul_single, mul_one, hn] using h
+  refine span_range_single_eq_top_of_forall_exists_mul R p s fun n ↦ ?_
+  obtain ⟨m, hm⟩ : n / s (QuotientGroup.mk' p.range n) ∈ p.range :=
+    QuotientGroup.eq_iff_div_mem.mp (hs (QuotientGroup.mk' p.range n)).symm
+  exact ⟨QuotientGroup.mk' p.range n, m, by rw [hm, mul_comm, div_mul_cancel]⟩
 
 variable [CommRing R]
 
@@ -147,23 +164,10 @@ theorem mapDomainRingHom_moduleFinite_of_exists_finset_mul {M N : Type*} [CommMo
   obtain ⟨F, hF_mul⟩ := hF
   let := (mapDomainRingHom R p).toAlgebra
   apply Module.Finite.of_fg_top
-  refine Submodule.fg_def.mpr
-    ⟨Set.range fun z : F => single z.1 (1 : R), Set.finite_range _, ?_⟩
-  apply top_unique
-  intro x hx
-  clear hx
-  induction x using induction_linear with
-  | zero => exact Submodule.zero_mem _
-  | add _ _ hx hy => exact Submodule.add_mem _ hx hy
-  | single t r =>
-    obtain ⟨z, hz, s, htz⟩ := hF_mul t
-    have hprod : p s * z = t := by rw [mul_comm, htz]
-    have hz_mem : single z (1 : R) ∈ Set.range fun w : F => single w.1 (1 : R) := ⟨⟨z, hz⟩, rfl⟩
-    have hmem := Submodule.smul_mem
-      (Submodule.span (MonoidAlgebra R M) (Set.range fun w : F => single w.1 (1 : R)))
-      (single s r) (Submodule.subset_span hz_mem)
-    simpa only [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply,
-      mapDomain_single, single_mul_single, mul_one, hprod] using hmem
+  refine Submodule.fg_def.mpr ⟨Set.range fun z : F => single z.1 (1 : R), Set.finite_range _, ?_⟩
+  exact span_range_single_eq_top_of_forall_exists_mul R p Subtype.val fun x =>
+    let ⟨z, hz, s, hx⟩ := hF_mul x
+    ⟨⟨z, hz⟩, s, hx⟩
 
 /-- If the target of a commutative-monoid homomorphism `p : M →* N` is covered by finitely many
 translates of the image of `p`, then `mapDomainRingHom R p` is a finite ring homomorphism over any
@@ -189,11 +193,10 @@ namespace TauCeti.AddMonoidAlgebra
 
 open _root_.AddMonoidAlgebra
 
-/-- For a finitely generated submonoid `S` of a finitely generated torsion-free abelian group `L`,
-`R[S.nsmulSaturation]` is a finite `R[S]`-algebra over any commutative ring `R`. -/
+/-- For a finitely generated submonoid `S` of a free abelian group `L`, `R[S.nsmulSaturation]` is
+a finite `R[S]`-algebra over any commutative ring `R`. -/
 theorem mapDomainRingHom_inclusion_nsmulSaturation_finite {L : Type*} [AddCommGroup L]
-    [Module.Finite ℤ L] [HasUniqueDiv L] {S : AddSubmonoid L} (hS : S.FG)
-    (R : Type*) [CommRing R] :
+    [Module.Free ℤ L] {S : AddSubmonoid L} (hS : S.FG) (R : Type*) [CommRing R] :
     (mapDomainRingHom R (AddSubmonoid.inclusion S.le_nsmulSaturation)).Finite :=
   mapDomainRingHom_finite_of_exists_finset_add _
     (AddSubmonoid.exists_finset_inclusion_add S.le_nsmulSaturation

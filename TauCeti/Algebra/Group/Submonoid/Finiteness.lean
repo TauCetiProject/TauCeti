@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Torsion
 public import Mathlib.GroupTheory.Finiteness
+public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 import Mathlib.Algebra.EuclideanDomain.Int
@@ -14,9 +15,7 @@ import Mathlib.Algebra.Order.Monoid.Prod
 import Mathlib.Algebra.Order.Pi
 import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Data.Int.Interval
-import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.FreeModule.PID
-import Mathlib.RingTheory.Finiteness.Cardinality
 import TauCeti.LinearAlgebra.Basis.Order
 
 /-!
@@ -32,10 +31,10 @@ This file establishes two forms of Gordan's lemma for finitely generated additiv
   uses Mathlib's `AddSubmonoid.fg_iff_exists_fin_addMonoidHom` to parametrize both monoids by finite
   products of naturals, and `AddSubmonoid.fg_eqLocusM` to impose equality of their images (the
   slack-variable form of Gordan's lemma).
-* **Bounded shifts and saturations**: for a finitely generated submonoid `S` of a finitely generated
-  torsion-free abelian group `L`, Euclidean division of natural generator coefficients bounds
-  representatives of `S.nsmulSaturation` modulo `S` inside a finite coordinate box, yielding a
-  finite set `F ⊆ S.nsmulSaturation` with `S.nsmulSaturation = F + S`
+* **Bounded shifts and saturations**: for a finitely generated submonoid `S` of a free abelian
+  group `L`, Euclidean division of natural generator coefficients bounds representatives of
+  `S.nsmulSaturation` modulo `S` inside a finite coordinate box over the basis support of the
+  generators, yielding a finite set `F ⊆ S.nsmulSaturation` with `S.nsmulSaturation = F + S`
   (`AddSubmonoid.FG.exists_finset_subset_nsmulSaturation_add`). Consequently `S.nsmulSaturation` is
   finitely generated (`AddSubmonoid.FG.nsmulSaturation`), and for any finitely generated submonoid
   `S` of an arbitrary torsion-free abelian group `G`, its saturation inside
@@ -106,16 +105,15 @@ namespace AddSubmonoid
 
 section AmbientLattice
 
-variable {L : Type*} [AddCommGroup L] [Module.Finite ℤ L] [HasUniqueDiv L]
+variable {L : Type*} [AddCommGroup L] [Module.Free ℤ L]
 
 /-- **Bounded shifts for submonoid saturation.** If `S` is a finitely generated submonoid of a
-finitely generated torsion-free abelian group `L`, there is a finite subset `F ⊆ S.nsmulSaturation`
-such that every element of `S.nsmulSaturation` is of the form `z + s` with `z ∈ F` and `s ∈ S`. -/
+free abelian group `L`, there is a finite subset `F ⊆ S.nsmulSaturation` such that every element of
+`S.nsmulSaturation` is of the form `z + s` with `z ∈ F` and `s ∈ S`. -/
 theorem FG.exists_finset_subset_nsmulSaturation_add {S : AddSubmonoid L} (hS : S.FG) :
     ∃ F : Finset L, (F : Set L) ⊆ S.nsmulSaturation ∧
       ∀ x ∈ S.nsmulSaturation, ∃ z ∈ F, ∃ s ∈ S, x = z + s := by
   classical
-  have : Module.Free ℤ L := Module.free_of_finite_type_torsion_free'
   let b := Module.Free.chooseBasis ℤ L
   let ι := Module.Free.ChooseBasisIndex ℤ L
   obtain ⟨m, g, hg⟩ := fg_iff_exists_fin_addMonoidHom.mp hS
@@ -127,14 +125,21 @@ theorem FG.exists_finset_subset_nsmulSaturation_add {S : AddSubmonoid L} (hS : S
     conv_lhs => rw [hk_sum]
     rw [map_sum]
     exact Finset.sum_congr rfl fun j _ => map_nsmul g (k j) (Pi.single j 1)
+  let J : Finset ι := Finset.univ.biUnion fun j => (b.repr (a j)).support
   let B : ι → ℤ := fun i => ∑ j, |b.repr (a j) i|
-  let box : Finset (ι → ℤ) := Fintype.piFinset fun i => Finset.Icc (-B i) (B i)
-  let e : L ↪ (ι → ℤ) :=
-    ⟨fun z i => b.repr z i, fun z₁ z₂ h => b.repr.injective (Finsupp.ext (congrFun h))⟩
+  have hB (i : ι) (hi : i ∉ J) : B i = 0 := by
+    simp only [J, Finset.mem_biUnion, Finset.mem_univ, true_and, Finsupp.mem_support_iff,
+      not_exists, not_not] at hi
+    simp [B, hi]
+  let box : Finset (J → ℤ) := Fintype.piFinset fun i => Finset.Icc (-B i.1) (B i.1)
   have hfin : {z : L | z ∈ S.nsmulSaturation ∧ ∀ i, |b.repr z i| ≤ B i}.Finite := by
-    refine (box.finite_toSet.preimage_embedding e).subset fun z hz => ?_
-    rw [Set.mem_preimage, Finset.mem_coe, Fintype.mem_piFinset]
-    exact fun i => Finset.mem_Icc.mpr (abs_le.mp (hz.2 i))
+    refine box.finite_toSet.of_injOn (f := fun z (i : J) => b.repr z i.1)
+      (fun z hz => Fintype.mem_piFinset.mpr fun i => Finset.mem_Icc.mpr (abs_le.mp (hz.2 i.1)))
+      fun z₁ hz₁ z₂ hz₂ heq => b.repr.injective <| Finsupp.ext fun i => ?_
+    by_cases hi : i ∈ J
+    · exact congrFun heq ⟨i, hi⟩
+    · exact (abs_nonpos_iff.mp ((hz₁.2 i).trans_eq (hB i hi))).trans
+        (abs_nonpos_iff.mp ((hz₂.2 i).trans_eq (hB i hi))).symm
   refine ⟨hfin.toFinset, fun z hz => ((Set.Finite.mem_toFinset hfin).mp hz).1, fun x hx => ?_⟩
   obtain ⟨n, hn, hnx⟩ := mem_nsmulSaturation.mp hx
   rw [← hg, AddMonoidHom.mem_mrange] at hnx
@@ -157,8 +162,8 @@ theorem FG.exists_finset_subset_nsmulSaturation_add {S : AddSubmonoid L} (hS : S
   exact ⟨z, (Set.Finite.mem_toFinset hfin).mpr ⟨hz_sat, hz_bound⟩,
     s, hg ▸ ⟨q, rfl⟩, (sub_add_cancel x s).symm⟩
 
-/-- **Gordan's lemma for submonoid saturation.** In a finitely generated torsion-free abelian
-group `L`, the saturation of any finitely generated additive submonoid `S` is finitely generated. -/
+/-- **Gordan's lemma for submonoid saturation.** In a free abelian group `L`, the saturation of any
+finitely generated additive submonoid `S` is finitely generated. -/
 theorem FG.nsmulSaturation {S : AddSubmonoid L} (hS : S.FG) : S.nsmulSaturation.FG := by
   classical
   obtain ⟨F, hF_sub, hF_add⟩ := hS.exists_finset_subset_nsmulSaturation_add
@@ -185,6 +190,7 @@ theorem FG.exists_finset_subset_nsmulSaturation_inf_closure_add {S : AddSubmonoi
           ∃ z ∈ F, ∃ s ∈ S, x = z + s := by
   classical
   have := hS.moduleFinite_addSubgroup_closure
+  have : Module.Free ℤ (AddSubgroup.closure (S : Set G)) := Module.free_of_finite_type_torsion_free'
   obtain ⟨F₀, hF₀_sub, hF₀_add⟩ :=
     hS.comap_subtype_closure.exists_finset_subset_nsmulSaturation_add
   refine ⟨F₀.image Subtype.val, ?_, fun x hx => ?_⟩
@@ -206,6 +212,7 @@ submonoid `S` to `AddSubgroup.closure (S : Set G)` is finitely generated. -/
 theorem FG.nsmulSaturation_comap_subtype_closure {S : AddSubmonoid G} (hS : S.FG) :
     (S.comap (AddSubgroup.closure (S : Set G)).subtype).nsmulSaturation.FG := by
   have := hS.moduleFinite_addSubgroup_closure
+  have : Module.Free ℤ (AddSubgroup.closure (S : Set G)) := Module.free_of_finite_type_torsion_free'
   exact hS.comap_subtype_closure.nsmulSaturation
 
 /-- In any torsion-free abelian group `G`, the saturation of a finitely generated submonoid `S`

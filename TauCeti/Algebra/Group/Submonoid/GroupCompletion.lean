@@ -93,10 +93,8 @@ theorem FG.addSubgroup_closure {S : AddSubmonoid G} (hS : S.FG) :
 /-- Pulling back a finitely generated additive submonoid `S` to the subgroup it generates yields a
 finitely generated additive submonoid. -/
 theorem FG.comap_subtype_closure {S : AddSubmonoid G} (hS : S.FG) :
-    (S.comap (AddSubgroup.closure (S : Set G)).subtype).FG := by
-  have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).mpr hS
-  rw [← S.mrange_toGroupClosure, AddMonoidHom.mrange_eq_map]
-  exact AddMonoid.FG.fg_top.map S.toGroupClosure
+    (S.comap (AddSubgroup.closure (S : Set G)).subtype).FG :=
+  (isAddFG_congr S.toGroupClosureEquiv).mp hS
 
 end
 
