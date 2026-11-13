@@ -289,7 +289,7 @@ theorem lipschitzOnWith_neg_gradient_foldPotential (μ : ℝ) {R : ℝ} (hR : 0 
   rw [mem_Icc] at hx hy
   have hsum : |x + y| ≤ 2 * R := abs_le.2 ⟨by linarith, by linarith⟩
   simp only [gradient_foldPotential, dist_eq_norm, Real.norm_eq_abs, NNReal.coe_mul,
-    NNReal.coe_ofNat, coe_nnnorm, Real.norm_of_nonneg hR]
+    NNReal.coe_ofNat, coe_nnNorm, Real.norm_of_nonneg hR]
   have hdiff : -(x ^ 2 + μ) - -(y ^ 2 + μ) = -(x + y) * (x - y) := by ring
   rw [hdiff, abs_mul, abs_neg]
   exact mul_le_mul_of_nonneg_right hsum (abs_nonneg _)
