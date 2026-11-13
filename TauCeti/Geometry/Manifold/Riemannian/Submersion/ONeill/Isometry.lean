@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
+public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 
 /-!
@@ -18,12 +18,10 @@ More generally, local isometries intertwining two submersions near a point trans
 both tensors at that point, without any submersion assumption on the diagonal composite.
 In particular the formulas apply to restrictions to open submanifolds.
 
-The tensors use the actual Levi-Civita connection and horizontal/vertical projections.
-The proof combines their field formulas with the existing isometry transport of those
-projections and of the Levi-Civita connection. Neither completeness nor global
-injectivity or surjectivity of the local isometries is needed. In the composition special
-cases, the composite maps retain their Riemannian-submersion hypotheses, including their
-boundary normal forms.
+These identities allow both tensors to be computed in local isometric charts, coverings,
+and open restrictions. Neither completeness nor global injectivity or surjectivity of the
+local isometries is needed. In the composition special cases, the composite maps retain their
+Riemannian-submersion hypotheses, including their boundary normal forms.
 
 ## References
 
@@ -76,53 +74,6 @@ variable
 
 include h' hφ hψ
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [FiniteDimensional ℝ F] [IsManifold J ∞ N]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
-  [IsContMDiffRiemannianBundle K ∞ E' (fun z : P ↦ TangentSpace K z)]
-  [FiniteDimensional ℝ F'] [IsManifold L ∞ Q]
-  [IsContMDiffRiemannianBundle L ∞ F' (fun y : Q ↦ TangentSpace L y)] in
-/-- The two orthogonal projections are transported by a locally commuting square. -/
-private theorem mfderiv_projections_of_eventuallyEq {x : P}
-    (hcomm : f ∘ φ =ᶠ[𝓝 x] ψ ∘ f') (v : TangentSpace K x) :
-    (mfderiv K I φ x ((mfderiv K L f' x).kerᗮ.starProjection v) =
-      (mfderiv I J f (φ x)).kerᗮ.starProjection (mfderiv K I φ x v)) ∧
-    (mfderiv K I φ x ((mfderiv K L f' x).ker.starProjection v) =
-      (mfderiv I J f (φ x)).ker.starProjection (mfderiv K I φ x v)) := by
-  obtain ⟨e, he⟩ := hφ.exists_linearIsometryEquiv_eq_mfderiv x
-  have hd (w : TangentSpace K x) :
-      mfderiv I J f (φ x) (mfderiv K I φ x w) =
-        tangentSpaceCast J (ψ (f' x)) (f (φ x))
-          (mfderiv L J ψ (f' x) (mfderiv K L f' x w)) := by
-    have hc := congrArg (fun A ↦ A w) (hcomm.mfderiv_eq (I := K) (I' := J))
-    simpa only [mfderiv_comp x (h.isSubmersion.contMDiff.mdifferentiableAt (by simp))
-        (hφ.mdifferentiableAt x),
-      mfderiv_comp x (hψ.mdifferentiableAt (f' x))
-        (h'.isSubmersion.contMDiff.mdifferentiableAt (by simp)),
-      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, Function.comp_apply] using hc
-  have hk : (mfderiv K L f' x).ker.map (e.toLinearIsometry : _ →ₗ[ℝ] _) =
-      (mfderiv I J f (φ x)).ker := by
-    apply le_antisymm
-    · rintro _ ⟨w, hw, rfl⟩
-      have hw0 : mfderiv K L f' x w = 0 := hw
-      exact (congrArg (mfderiv I J f (φ x)) (he w)).trans
-        ((hd w).trans (by simp only [hw0, map_zero]))
-    · intro w hw
-      refine ⟨e.symm w, ?_, e.apply_symm_apply w⟩
-      have hw0 : mfderiv I J f (φ x) w = 0 := hw
-      have hzero : mfderiv K L f' x (e.symm w) = 0 := by
-        apply hψ.mfderiv_injective (f' x)
-        apply (tangentSpaceCast J (ψ (f' x)) (f (φ x))).injective
-        simpa only [map_zero, ← hd, ← he, e.apply_symm_apply] using hw0
-      exact hzero
-  have hV : mfderiv K I φ x ((mfderiv K L f' x).ker.starProjection v) =
-      (mfderiv I J f (φ x)).ker.starProjection (mfderiv K I φ x v) := by
-    simpa only [LinearIsometryEquiv.coe_toLinearIsometry, hk, he] using
-      e.toLinearIsometry.map_starProjection' (mfderiv K L f' x).ker v
-  refine ⟨?_, hV⟩
-  simp only [Submodule.starProjection_orthogonal, sub_apply,
-    ContinuousLinearMap.id_apply, map_sub, hV]
-
 /-- Transport of the differentiated horizontal and vertical parts of a pulled-back field.
 This common step is used by both fundamental tensors, with different projected directions. -/
 private theorem mfderiv_leviCivitaConnection_projections_of_eventuallyEq
@@ -148,14 +99,14 @@ private theorem mfderiv_leviCivitaConnection_projections_of_eventuallyEq
       mpullback K I φ (fun y ↦ (mfderiv I J f y).kerᗮ.starProjection (Y y)) z := by
     filter_upwards [hcomm.eventuallyEq_nhds] with z hz
     apply hφ.mfderiv_injective z
-    simp only [(h.mfderiv_projections_of_eventuallyEq h' hφ hψ hz _).1,
+    simp only [h.mfderiv_starProjection_orthogonal_ker_of_eventuallyEq h' hφ hψ hz,
       hφ.mfderiv_apply_mpullback]
   have hV : ∀ᶠ z in 𝓝 x, (mfderiv K L f' z).ker.starProjection
       (mpullback K I φ Y z) =
       mpullback K I φ (fun y ↦ (mfderiv I J f y).ker.starProjection (Y y)) z := by
     filter_upwards [hcomm.eventuallyEq_nhds] with z hz
     apply hφ.mfderiv_injective z
-    simp only [(h.mfderiv_projections_of_eventuallyEq h' hφ hψ hz _).2,
+    simp only [h.mfderiv_starProjection_ker_of_eventuallyEq h' hφ hψ hz,
       hφ.mfderiv_apply_mpullback]
   have hHd := ((h.contMDiff_starProjection_orthogonal_ker (n := ∞) (by simp)).mdifferentiableAt
     (by simp) (x := φ x)).clm_bundle_apply hY
@@ -184,8 +135,8 @@ theorem mfderiv_oneillA_of_eventuallyEq {x : P}
     (hφ.mpullback_apply_eq_iff Y v).2 (FiberBundle.extend_apply_self E _)
   have ha := congrArg (mfderiv K I φ x)
     (h'.oneillA_apply (hφ.mdifferentiableAt_mpullback hY) u)
-  simp only [map_add, (h.mfderiv_projections_of_eventuallyEq h' hφ hψ hcomm _).2,
-    (h.mfderiv_projections_of_eventuallyEq h' hφ hψ hcomm _).1,
+  simp only [map_add, h.mfderiv_starProjection_ker_of_eventuallyEq h' hφ hψ hcomm,
+    h.mfderiv_starProjection_orthogonal_ker_of_eventuallyEq h' hφ hψ hcomm,
     (h.mfderiv_leviCivitaConnection_projections_of_eventuallyEq h' hφ hψ hcomm hY _).1,
     (h.mfderiv_leviCivitaConnection_projections_of_eventuallyEq h' hφ hψ hcomm hY _).2] at ha
   simpa only [hYx, Y, FiberBundle.extend_apply_self] using
@@ -203,8 +154,8 @@ theorem mfderiv_oneillT_of_eventuallyEq {x : P}
     (hφ.mpullback_apply_eq_iff Y v).2 (FiberBundle.extend_apply_self E _)
   have ht := congrArg (mfderiv K I φ x)
     (h'.oneillT_apply (hφ.mdifferentiableAt_mpullback hY) u)
-  simp only [map_add, (h.mfderiv_projections_of_eventuallyEq h' hφ hψ hcomm _).1,
-    (h.mfderiv_projections_of_eventuallyEq h' hφ hψ hcomm _).2,
+  simp only [map_add, h.mfderiv_starProjection_orthogonal_ker_of_eventuallyEq h' hφ hψ hcomm,
+    h.mfderiv_starProjection_ker_of_eventuallyEq h' hφ hψ hcomm,
     (h.mfderiv_leviCivitaConnection_projections_of_eventuallyEq h' hφ hψ hcomm hY _).2,
     (h.mfderiv_leviCivitaConnection_projections_of_eventuallyEq h' hφ hψ hcomm hY _).1] at ht
   simpa only [hYx, Y, FiberBundle.extend_apply_self] using
