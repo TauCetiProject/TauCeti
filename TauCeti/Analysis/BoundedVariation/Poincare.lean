@@ -271,7 +271,7 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_eq_ball {c 
 /-! ### The localized inequality -/
 
 /-- The inequality on a convex open set `U` whose closure is a compact subset of `Ω`, with the
-mean over a measurable `T ⊆ U`, a set `A ⊆ U` and the variation of `u` on `Ω`. -/
+mean over a set `T ⊆ U` of nonzero measure, a set `A ⊆ U` and the variation of `u` on `Ω`. -/
 private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Set E}
     (hU : IsOpen U) (hUc : Convex ℝ U) (hUK : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω)
     (hu : LocallyIntegrableOn u Ω μ) (hT : T ⊆ U) (hT₀ : μ T ≠ 0) (hA : A ⊆ U) :
