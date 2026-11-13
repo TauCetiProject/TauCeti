@@ -71,12 +71,16 @@ theorem map_fst_restrict_univ_prod_apply {α β : Type*} [MeasurableSpace α]
 second space is compact. -/
 theorem isLocallyFiniteMeasure_map_fst {α β : Type*} [MeasurableSpace α]
     [MeasurableSpace β] [TopologicalSpace α] [TopologicalSpace β] [OpensMeasurableSpace α]
-    [T2Space α] [WeaklyLocallyCompactSpace α] [CompactSpace β] (μ : Measure (α × β))
+    [CompactSpace β] (μ : Measure (α × β))
     [IsLocallyFiniteMeasure μ] : IsLocallyFiniteMeasure (μ.map Prod.fst) := by
-  have : IsFiniteMeasureOnCompacts (μ.map Prod.fst) := ⟨fun K hK ↦ by
-    rw [map_apply measurable_fst hK.measurableSet, ← Set.prod_univ]
-    exact (hK.prod isCompact_univ).measure_lt_top⟩
-  infer_instance
+  refine ⟨fun x ↦ ?_⟩
+  obtain ⟨W, hW, hWo, hWfin⟩ :=
+    (isCompact_singleton (x := x)).prod isCompact_univ |>.exists_open_superset_measure_lt_top μ
+  obtain ⟨u, v, huo, _, hxu, hv, huv⟩ :=
+    generalized_tube_lemma isCompact_singleton isCompact_univ hWo hW
+  refine ⟨u, huo.mem_nhds (hxu (Set.mem_singleton x)), ?_⟩
+  rw [map_apply measurable_fst huo.measurableSet, ← Set.prod_univ]
+  exact (measure_mono ((Set.prod_mono Set.Subset.rfl hv).trans huv)).trans_lt hWfin
 
 /-- Projecting the part of a product measure in a measurable set gives the first measure
 weighted by the masses of the vertical sections. Only the second factor must be s-finite. -/

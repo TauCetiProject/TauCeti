@@ -107,7 +107,7 @@ theorem IsPoissonRandomMeasure.iIndepFun_restrict (h : IsPoissonRandomMeasure P 
 
 /-- Projected restrictions to disjoint mark sets are mutually independent random measures,
 for the full evaluation sigma-field. -/
-theorem IsPoissonRandomMeasure.iIndepFun_map_fst_restrict_prod
+theorem IsPoissonRandomMeasure.iIndepFun_map_fst_restrict_univ_prod
     {E : Type*} [MeasurableSpace E] {M : Ω → Measure (X × E)}
     {Λ : Measure (X × E)} (h : IsPoissonRandomMeasure P M Λ)
     {A : ι → Set E} (hA : ∀ i, MeasurableSet (A i))
@@ -128,5 +128,17 @@ theorem IsPoissonRandomMeasure.indepFun_restrict (h : IsPoissonRandomMeasure P N
   have hA b : MeasurableSet (A b) := by cases b <;> assumption
   have hd : Pairwise (Disjoint on A) := pairwise_disjoint_on_bool.mpr hst
   exact (h.iIndepFun_restrict hA hd).indepFun (i := true) (j := false) (by decide)
+
+/-- Projected restrictions to two disjoint measurable mark sets are independent random
+measures for the full evaluation sigma-field. -/
+theorem IsPoissonRandomMeasure.indepFun_map_fst_restrict_univ_prod
+    {E : Type*} [MeasurableSpace E] {M : Ω → Measure (X × E)}
+    {Λ : Measure (X × E)} (h : IsPoissonRandomMeasure P M Λ)
+    {s t : Set E} (hs : MeasurableSet s) (ht : MeasurableSet t) (hst : Disjoint s t) :
+    IndepFun (fun ω ↦ ((M ω).restrict (univ ×ˢ s)).map Prod.fst)
+      (fun ω ↦ ((M ω).restrict (univ ×ˢ t)).map Prod.fst) P := by
+  exact (h.indepFun_restrict (MeasurableSet.univ.prod hs) (MeasurableSet.univ.prod ht)
+    (hst.set_prod_right univ univ)).comp (Measure.measurable_map _ measurable_fst)
+      (Measure.measurable_map _ measurable_fst)
 
 end TauCeti.Probability
