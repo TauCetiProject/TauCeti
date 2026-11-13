@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
 /-!
@@ -125,13 +126,8 @@ compact. -/
 theorem of_forall_ae_eq_of_le [IsFiniteMeasure μ] {S₀ : X →L[𝕜] Lp E p₀ μ}
     (hS₀ : IsCompactOperator S₀) {S : X →L[𝕜] Lp E p μ} (hp : p ≤ p₀)
     (h : ∀ x, (S x : α → E) =ᵐ[μ] S₀ x) : IsCompactOperator S := by
-  have hexp : 0 ≤ 1 / p.toReal - 1 / p₀.toReal := by
-    rcases eq_or_ne p₀ ∞ with rfl | hp₀
-    · simp only [ENNReal.toReal_top, div_zero, sub_zero]
-      positivity
-    · exact sub_nonneg.2 (one_div_le_one_div_of_le (ENNReal.toReal_pos
-        (zero_lt_one.trans_le Fact.out).ne' (ne_top_of_le_ne_top hp₀ hp))
-        (ENNReal.toReal_mono hp₀ hp))
+  have hexp : 0 ≤ 1 / p.toReal - 1 / p₀.toReal :=
+    ENNReal.one_div_toReal_sub_one_div_toReal_nonneg (zero_lt_one.trans_le Fact.out).ne' hp
   -- `‖S x‖_p ≤ μ(α) ^ (1/p - 1/p₀) ‖S₀ x‖_{p₀}`, an interpolation bound with `θ = 0`.
   refine hS₀.of_norm_le_mul_rpow_mul_rpow (T₀ := S₀.toLinearMap) (T := S.toLinearMap) S₀
     (C := (μ Set.univ ^ (1 / p.toReal - 1 / p₀.toReal)).toReal) le_rfl zero_lt_one fun x => ?_
