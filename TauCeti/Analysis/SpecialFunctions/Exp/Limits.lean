@@ -22,11 +22,13 @@ natural numbers `k`.
 * `Real.tendsto_mul_exp_mul_nhds_zero`: `c e^{a u} → c` as `u → 0`.
 * `Real.tendsto_exp_mul_sub_one_div`: `(e^{a t} - 1) / t → a` as `t → 0`, `t ≠ 0`.
 * `Real.tendsto_exp_sub_natCast_atTop_nhds_zero`: `e^{t - k} → 0` as `k → ∞` in `ℕ`.
+* `Real.isBigO_exp_comp_sub_one`: if `f → 0` and `f = O(g)` along a filter, then
+  `e^f - 1 = O(g)`.
 -/
 
 public section
 
-open Filter
+open Asymptotics Filter
 open scoped Topology
 
 namespace Real
@@ -49,5 +51,13 @@ theorem tendsto_exp_sub_natCast_atTop_nhds_zero (t : ℝ) :
   refine tendsto_exp_atBot.comp ?_
   simp only [sub_eq_add_neg]
   exact tendsto_atBot_add_const_left _ t (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
+
+/-- If `f` tends to zero and `f = O(g)` along a filter, then `e^f - 1 = O(g)`: near zero,
+`e^u - 1 = O(u)` (`HasDerivAt.isBigO_sub` for `exp` at `0`). -/
+theorem isBigO_exp_comp_sub_one {α F : Type*} [Norm F] {l : Filter α} {f : α → ℝ} {g : α → F}
+    (hf : Tendsto f l (𝓝 0)) (hfg : f =O[l] g) : (fun x ↦ exp (f x) - 1) =O[l] g := by
+  have h := (hasDerivAt_exp 0).isBigO_sub.comp_tendsto hf
+  simp only [Function.comp_def, exp_zero, sub_zero] at h
+  exact h.trans hfg
 
 end Real

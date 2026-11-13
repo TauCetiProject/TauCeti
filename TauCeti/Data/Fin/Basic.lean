@@ -135,6 +135,8 @@ range, so the value is a `dite` rather than a plain application.
   read off the value.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
   `b - j`, or vanishes when there is no such index.
+* `TauCeti.finSigmaFinEquiv_lt_finSigmaFinEquiv_iff`: listing blocks consecutively orders their
+  entries lexicographically.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
 * `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
@@ -298,7 +300,7 @@ theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : F
     simp [← Finset.coe_inj, Set.Iio_def]
   rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
       fun j _ hj => hf j (by simpa using hj),
-    ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
+    ← Finset.insert_Iio, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
     Finset.prod_map]
   simp only [castLEEmb_apply]
 
@@ -1029,6 +1031,38 @@ theorem sum_ite_val_add {M : Type*} [AddCommMonoid M] {n : ℕ} (f : Fin n → M
     intro k _
     have := k.isLt
     exact ite_eq_right (by omega)
+
+open _root_.Finset in
+/-- Listing blocks of sizes `d 0, …, d (k - 1)` consecutively, `finSigmaFinEquiv` orders the
+entries lexicographically: first by block, then by position within the block. -/
+theorem finSigmaFinEquiv_lt_finSigmaFinEquiv_iff {k : ℕ} {d : Fin k → ℕ}
+    {x y : (i : Fin k) × Fin (d i)} :
+    finSigmaFinEquiv x < finSigmaFinEquiv y ↔ x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
+  -- The offset of block `i` is the sum of the sizes of the blocks before it.
+  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.2.le j) with hs
+  have hoff (i j : Fin k) (h : i < j) : s i + d i ≤ s j := by
+    set F : ℕ → ℕ := fun l ↦ if h : l < k then d ⟨l, h⟩ else 0
+    have hF (i : Fin k) : s i = ∑ l ∈ range i, F l := by
+      rw [hs, ← Fin.sum_univ_eq_sum_range]
+      refine Fintype.sum_congr _ _ fun l ↦ ?_
+      simp [F, l.2.trans i.2, Fin.castLE]
+    have hFi : F i = d i := by simp [F]
+    rw [hF, hF, ← hFi, ← sum_range_succ, ← sum_range_add_sum_Ico F (Fin.lt_def.1 h)]
+    exact Nat.le_add_right _ _
+  have hval (x : (i : Fin k) × Fin (d i)) : (finSigmaFinEquiv x : ℕ) = s x.1 + x.2 :=
+    finSigmaFinEquiv_apply x
+  rw [Fin.lt_def, hval, hval]
+  rcases x with ⟨i, a⟩
+  rcases y with ⟨j, c⟩
+  dsimp only
+  rcases lt_trichotomy i j with h | rfl | h
+  · have := hoff i j h
+    simp only [h, true_or, iff_true]
+    omega
+  · simp
+  · have := hoff j i h
+    simp only [h.not_gt, h.ne', false_and, or_self, iff_false, not_lt]
+    omega
 
 /-! ### Cyclic index arithmetic in `Fin 3` -/
 

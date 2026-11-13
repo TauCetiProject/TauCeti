@@ -144,6 +144,15 @@ theorem integral_symplecticForm_fderiv_eq_zero (ω : SymplecticForm V) (hu : Con
     ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) ∂μ = 0 :=
   integral_bilinForm_fderiv_apply_eq_zero_of_isAlt ω.isAlt hu hsupp _ _
 
+/-- A `C²` map with support in a compact set `K` has symplectic area zero over `K`. -/
+theorem setIntegral_symplecticForm_fderiv_eq_zero (ω : SymplecticForm V) {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) (hu : ContDiff ℝ 2 u) (huK : tsupport u ⊆ K) :
+    ∫ z in K, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) ∂μ = 0 := by
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
+    simp [fderiv_of_notMem_tsupport ℝ fun h ↦ hz (huK h)]]
+  exact integral_symplecticForm_fderiv_eq_zero ω hu
+    (hK.of_isClosed_subset (isClosed_tsupport u) huK : HasCompactSupport u)
+
 /-- **The energy identity for a compactly supported map.** The integrated standard energy density
 of a compactly supported `C²` map from the plane equals the integrated associated-metric square
 `g(D u, D u)` of its Cauchy--Riemann defect `D u = ∂s u + J (∂t u)`. This is an equality of
