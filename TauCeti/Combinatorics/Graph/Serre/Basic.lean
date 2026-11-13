@@ -18,7 +18,8 @@ a Serre graph keeps those directed edge identities, so its paths can be used for
 graph groups, and labelled-graph arguments.
 
 The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data attached to an
-unoriented edge, such as the edge groups of a graph of groups, is indexed by them.
+unoriented edge, such as the edge groups of a graph of groups, is indexed by them, and
+`GeomEdge.out` chooses a dart representing each of them.
 
 For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
 and the darts in `S`. More generally, a set `A` of vertices together with a reversal-closed set
@@ -118,6 +119,27 @@ def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e
 @[simp] theorem GeomEdge.lift_toGeomEdge {β : Sort*} (f : Γ.E → β)
     (hf : ∀ e, f (Γ.rev e) = f e) (e : Γ.E) : GeomEdge.lift Γ f hf (Γ.toGeomEdge e) = f e :=
   (rfl)
+
+/-- A chosen dart representing a geometric edge. -/
+noncomputable def GeomEdge.out (y : Γ.GeomEdge) : Γ.E :=
+  Quot.out y
+
+/-- The chosen dart of a geometric edge lies on it. -/
+@[simp] theorem toGeomEdge_out (y : Γ.GeomEdge) : Γ.toGeomEdge (GeomEdge.out Γ y) = y :=
+  Quot.out_eq y
+
+/-- Distinct geometric edges have distinct chosen darts. -/
+theorem GeomEdge.out_injective : Function.Injective (GeomEdge.out Γ) :=
+  Function.LeftInverse.injective Γ.toGeomEdge_out
+
+@[simp] theorem GeomEdge.out_inj {x y : Γ.GeomEdge} :
+    GeomEdge.out Γ x = GeomEdge.out Γ y ↔ x = y :=
+  (GeomEdge.out_injective Γ).eq_iff
+
+/-- The dart representing the geometric edge of a dart `e` is `e` or its reverse. -/
+theorem GeomEdge.out_toGeomEdge_eq_or_eq_rev (e : Γ.E) :
+    GeomEdge.out Γ (Γ.toGeomEdge e) = e ∨ GeomEdge.out Γ (Γ.toGeomEdge e) = Γ.rev e :=
+  Γ.toGeomEdge_eq_toGeomEdge_iff.mp (Γ.toGeomEdge_out _).symm
 
 /-- A bijection of darts commuting with reversal induces a bijection of geometric edges. -/
 def GeomEdge.congr {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
