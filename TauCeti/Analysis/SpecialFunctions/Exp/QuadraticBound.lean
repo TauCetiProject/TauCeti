@@ -7,9 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -91,67 +88,37 @@ private theorem exp_le_one_add_add_sq_div_of_nonneg_of_le {x c : ℝ} (hx : 0 �
   rw [mul_comm 2, ← div_div, div_eq_mul_inv _ (1 - c / 3)]
   linarith
 
+/-- For `x ≤ 0`, `exp x ≤ 1 + x + x ^ 2 / (2 * (1 - x / 3))`, the Padé-type bound
+`6 + 2 t ≤ exp t * (6 - 4 t + t ^ 2)` at `t = -x`. -/
+private theorem exp_le_one_add_add_sq_div_of_nonpos {x : ℝ} (hx : x ≤ 0) :
+    exp x ≤ 1 + x + x ^ 2 / (2 * (1 - x / 3)) := by
+  -- With `t = -x ≥ 0`, the Taylor bound `∑ i < 5, t ^ i / i ! ≤ exp t` times
+  -- `6 - 4 t + t ^ 2 > 0` is `6 + 2 t + t ^ 4 / 12 + t ^ 6 / 24 ≤ exp t * (6 - 4 t + t ^ 2)`.
+  have hT := sum_le_exp_of_nonneg (neg_nonneg.2 hx) 5
+  norm_num [Finset.sum_range_succ, Nat.factorial] at hT
+  have hq : 0 ≤ 6 + 4 * x + x ^ 2 := by nlinarith [sq_nonneg (x + 2)]
+  have key : 6 - 2 * x ≤ exp (-x) * (6 + 4 * x + x ^ 2) := by
+    nlinarith [mul_le_mul_of_nonneg_right hT hq, pow_two_nonneg (x ^ 2), pow_two_nonneg (x ^ 3)]
+  have h6 : 0 < 6 - 2 * x := by linarith
+  have heq : 1 + x + x ^ 2 / (2 * (1 - x / 3)) = (6 + 4 * x + x ^ 2) / (6 - 2 * x) := by
+    have hden : 2 * (1 - x / 3) = (6 - 2 * x) / 3 := by ring
+    rw [hden, div_div_eq_mul_div, eq_div_iff h6.ne', add_mul, div_mul_cancel₀ _ h6.ne']
+    ring
+  rw [heq, le_div_iff₀ h6]
+  calc exp x * (6 - 2 * x) ≤ exp x * (exp (-x) * (6 + 4 * x + x ^ 2)) :=
+        mul_le_mul_of_nonneg_left key (exp_pos x).le
+    _ = 6 + 4 * x + x ^ 2 := by rw [← mul_assoc, ← exp_add, add_neg_cancel, exp_zero, one_mul]
+
 /-- **Bernstein's exponential bound.** If `x ≤ c` with `c < 3`, then
 `exp x ≤ 1 + x + x ^ 2 / (2 * (1 - c / 3))`. Only an upper bound on `x` is needed. For `0 ≤ c`
 and `x ≤ 0` it is weaker than `Real.exp_le_one_add_add_sq_div_two_of_nonpos`. -/
 theorem exp_le_one_add_add_sq_div_of_le {x c : ℝ} (hxc : x ≤ c) (hc3 : c < 3) :
     exp x ≤ 1 + x + x ^ 2 / (2 * (1 - c / 3)) := by
-  by_cases hc0 : 0 ≤ c
-  · rcases le_total x 0 with hx | hx
-    · refine (exp_le_one_add_add_sq_div_two_of_nonpos hx).trans ?_
-      gcongr
-      · nlinarith
-      · linarith
-    · exact exp_le_one_add_add_sq_div_of_nonneg_of_le hx hxc hc3
-  · -- `c < 0`: the Padé-type bound `exp t * (6 - 4 t + t ^ 2) ≥ 6 + 2 t` for `t = -x ≥ 0`.
-    have hg : ∀ t : ℝ, HasDerivAt (fun t ↦ exp t * (2 - 2 * t + t ^ 2) - 2) (exp t * t ^ 2) t := by
-      intro t
-      have h1 : HasDerivAt (fun t : ℝ ↦ 2 - 2 * t + t ^ 2) (-2 + 2 * t) t :=
-        (((hasDerivAt_const t (2 : ℝ)).sub ((hasDerivAt_id t).const_mul 2)).add
-          (hasDerivAt_pow 2 t)).congr_deriv (by simp)
-      exact (((Real.hasDerivAt_exp t).mul h1).sub_const 2).congr_deriv (by ring)
-    have hg0 : ∀ t : ℝ, 0 ≤ t → 0 ≤ exp t * (2 - 2 * t + t ^ 2) - 2 := fun t ht ↦ by
-      have hmono : MonotoneOn (fun t ↦ exp t * (2 - 2 * t + t ^ 2) - 2) (Set.Ici 0) :=
-        monotoneOn_of_deriv_nonneg (convex_Ici 0) (fun t _ ↦ (hg t).continuousAt.continuousWithinAt)
-          (fun t _ ↦ (hg t).differentiableAt.differentiableWithinAt) fun t _ ↦ by
-            rw [(hg t).deriv]
-            positivity
-      simpa using hmono (Set.mem_Ici.2 le_rfl) (Set.mem_Ici.2 ht) ht
-    have hh : ∀ t : ℝ, HasDerivAt (fun t ↦ exp t * (6 - 4 * t + t ^ 2) - 6 - 2 * t)
-        (exp t * (2 - 2 * t + t ^ 2) - 2) t := by
-      intro t
-      have h1 : HasDerivAt (fun t : ℝ ↦ 6 - 4 * t + t ^ 2) (-4 + 2 * t) t :=
-        (((hasDerivAt_const t (6 : ℝ)).sub ((hasDerivAt_id t).const_mul 4)).add
-          (hasDerivAt_pow 2 t)).congr_deriv (by simp)
-      exact ((((Real.hasDerivAt_exp t).mul h1).sub_const 6).sub
-        ((hasDerivAt_id t).const_mul 2)).congr_deriv (by simp; ring)
-    have key : ∀ t : ℝ, 0 ≤ t → 6 + 2 * t ≤ exp t * (6 - 4 * t + t ^ 2) := fun t ht ↦ by
-      have hmono : MonotoneOn (fun t ↦ exp t * (6 - 4 * t + t ^ 2) - 6 - 2 * t) (Set.Ici 0) :=
-        monotoneOn_of_deriv_nonneg (convex_Ici 0) (fun t _ ↦ (hh t).continuousAt.continuousWithinAt)
-          (fun t _ ↦ (hh t).differentiableAt.differentiableWithinAt) fun t ht ↦ by
-            rw [(hh t).deriv]
-            exact hg0 t (interior_subset ht)
-      have := hmono (Set.mem_Ici.2 le_rfl) (Set.mem_Ici.2 ht) ht
-      simp only [exp_zero] at this
-      linarith
-    push Not at hc0
-    have hx0 : x ≤ 0 := hxc.trans hc0.le
-    have h6 : 0 < 6 - 2 * x := by linarith
-    have hk : exp x * (6 - 2 * x) ≤ 6 + 4 * x + x ^ 2 := by
-      have h := mul_le_mul_of_nonneg_left (key (-x) (neg_nonneg.2 hx0)) (exp_pos x).le
-      rw [← mul_assoc, ← exp_add, add_neg_cancel, exp_zero, one_mul] at h
-      linarith
-    have hc' : 0 < 2 * (1 - c / 3) := by linarith
-    calc exp x ≤ 1 + x + x ^ 2 / (2 * (1 - x / 3)) := by
-          have h6' := h6.ne'
-          have : 1 + x + x ^ 2 / (2 * (1 - x / 3)) = (6 + 4 * x + x ^ 2) / (6 - 2 * x) := by
-            rw [show 2 * (1 - x / 3) = (6 - 2 * x) / 3 by ring, div_div_eq_mul_div,
-              eq_div_iff h6', add_mul, div_mul_cancel₀ _ h6']
-            ring
-          rw [this, le_div_iff₀ h6]
-          exact hk
-      _ ≤ 1 + x + x ^ 2 / (2 * (1 - c / 3)) := by
-          gcongr
+  rcases le_total x 0 with hx | hx
+  · refine (exp_le_one_add_add_sq_div_of_nonpos hx).trans ?_
+    gcongr
+    linarith
+  · exact exp_le_one_add_add_sq_div_of_nonneg_of_le hx hxc hc3
 
 /-- Real numbers `S`, `t` and `V > 0` satisfy `t S + V exp (2 t) / 2 ≥ -S |t| - S ^ 2 / V`. For
 `t ≥ 0` this follows from `exp (2 t) ≥ 1 + 2 t + 2 t ^ 2` and `(V t + S) ^ 2 ≥ 0`. -/

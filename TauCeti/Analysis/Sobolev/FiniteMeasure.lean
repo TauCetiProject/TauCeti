@@ -176,17 +176,34 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivi
 
 The power `R ^ (1 - n δ)` is the one dictated by scaling, so the remaining constant depends only
 on `n`, `δ` and the normalization of `μ`. -/
-theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial E]
-    {x₀ : E} {R : ℝ} (hR : 0 < R) (hOmega : (Omega : Set E) = ball x₀ R)
+theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball
+    {x₀ : E} {R : ℝ} (hOmega : (Omega : Set E) = ball x₀ R)
     {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ} (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ)
     (hδn : δ < (finrank ℝ E : ℝ)⁻¹) {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤
       ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ * mu.real (ball 0 1) ^ (-δ) *
         ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ) * R ^ (1 - finrank ℝ E * δ)) *
         ‖W1p.gradient u‖ₑ := by
+  -- For `R ≤ 0` the ball is empty and the left side is `0`.
+  rcases le_or_gt R 0 with hR | hR
+  · have h0 : mu.restrict (Omega : Set E) = 0 := by
+      rw [hOmega, Metric.ball_eq_empty.2 hR, Measure.restrict_empty]
+    refine (eLpNorm_mono_measure _ h0.le).trans ?_
+    rw [eLpNorm_measure_zero]
+    exact zero_le
+  -- `E` is nontrivial: in dimension `0` we would have `δ < 0`, but `p ≤ q` gives `0 ≤ δ`.
+  have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
+  have hpq' : p.toReal ≤ q := ENNReal.toReal_le_of_le_ofReal q.2 (by simpa using hpq)
+  have hp0 : 0 < p.toReal :=
+    ENNReal.toReal_pos (zero_lt_one.trans_le hp1).ne' (ne_top_of_le_ne_top ENNReal.coe_ne_top hpq)
+  have hδ0 : 0 ≤ δ := hδ ▸ sub_nonneg.2 (inv_anti₀ hp0 hpq')
+  have hfin : 0 < finrank ℝ E := by
+    refine Nat.pos_of_ne_zero fun h0 ↦ ?_
+    rw [h0, Nat.cast_zero, inv_zero] at hδn
+    linarith
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos hfin
   set n := finrank ℝ E
   set ω := mu.real (ball (0 : E) 1)
-  have hn : (0 : ℝ) < n := by exact_mod_cast finrank_pos
   have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   have he : 0 ≤ (n : ℝ)⁻¹ - δ := sub_nonneg.2 hδn.le
   have h1δ : 0 ≤ 1 - δ := by

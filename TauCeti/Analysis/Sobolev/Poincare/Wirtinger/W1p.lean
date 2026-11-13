@@ -20,8 +20,8 @@ import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 # The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`
 
 Let `Ω` be a bounded convex open subset of a finite-dimensional real inner product space `E` of
-dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` be null-measurable and have
-positive measure.  This file proves, for `1 ≤ p < ∞` and every `u ∈ W^{1,p}(Ω)`,
+dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` have positive measure.  This
+file proves, for `1 ≤ p < ∞` and every `u ∈ W^{1,p}(Ω)`,
 
 `‖u - ⨍_S u‖_{Lᵖ(Ω)} ≤ μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S) * ‖∇u‖_{Lᵖ(Ω)}`,
 
@@ -312,11 +312,11 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
       Measure.restrict_restrict Omega.isOpen.measurableSet, inter_eq_right.2 hS]
   have hmu : mu S' = mu S := by
     rw [← Measure.restrict_apply_univ, hres, Measure.restrict_apply_univ]
+  have hmuR : mu.real S' = mu.real S := by rw [measureReal_def, measureReal_def, hmu]
   have h := W1p.eLpNorm_value_sub_setAverage_le_of_convex_of_nullMeasurableSet (S := S') hp hconv hb
     (Omega.isOpen.measurableSet.inter (measurableSet_toMeasurable mu S)).nullMeasurableSet
     inter_subset_left (hmu ▸ hS0) u
-  rwa [hres, show mu.real S' = mu.real S by rw [measureReal_def, measureReal_def, hmu]] at h
-
+  rwa [hres, hmuR] at h
 
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` is `2 ^ (n + 1) * R`: the deviation of

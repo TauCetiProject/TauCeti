@@ -20,6 +20,10 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 -- `setLIntegral_comp_preimage_of_map_eq_smul`, used only inside the proof of
 -- `TauCeti.setLIntegral_comp_mul_left_mul_rpow`.
 import TauCeti.MeasureTheory.Integral.Average
+-- `TauCeti.Analysis.SpecialFunctions.Pow.Real` is imported privately: it supplies
+-- `Real.mul_rpow_of_nonneg_left`, used only inside the proof of
+-- `TauCeti.setLIntegral_comp_mul_left_mul_rpow`.
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Lower integrals of a real power, and the layer cake formula in `ℝ≥0∞`
@@ -452,16 +456,10 @@ theorem setLIntegral_comp_mul_left_mul_rpow (g : ℝ → ℝ≥0∞) {c : ℝ} (
   rw [hT'] at h
   simp only [e, G, Homeomorph.toMeasurableEquiv_coe, Homeomorph.coe_mulLeft₀, abs_inv,
     abs_of_pos hc] at h
-  have hhom (s : ℝ) : (c * s) ^ q = c ^ q * s ^ q := by
-    rcases le_or_gt 0 s with hs | hs
-    · exact Real.mul_rpow hc.le hs
-    · rw [Real.rpow_def_of_neg hs, Real.rpow_def_of_neg (mul_neg_of_pos_of_neg hc hs),
-        Real.log_mul hc.ne' hs.ne, Real.rpow_def_of_pos hc, add_mul, Real.exp_add]
-      ring
   have hcongr : ∫⁻ s in T, g (c * s) * ENNReal.ofReal ((c * s) ^ q) =
       ∫⁻ s in T, ENNReal.ofReal (c ^ q) * (g (c * s) * ENNReal.ofReal (s ^ q)) :=
     lintegral_congr fun s => by
-      rw [hhom s, ENNReal.ofReal_mul (Real.rpow_nonneg hc.le q)]
+      rw [Real.mul_rpow_of_nonneg_left hc.le s q, ENNReal.ofReal_mul (Real.rpow_nonneg hc.le q)]
       ring
   rw [hcongr, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top] at h
   have hinv : ENNReal.ofReal (c ^ (-q)) * ENNReal.ofReal (c ^ q) = 1 := by

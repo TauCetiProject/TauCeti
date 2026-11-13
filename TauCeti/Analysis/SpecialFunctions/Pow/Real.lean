@@ -457,8 +457,9 @@ theorem Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow {α : Type*} (g :
     {f : α → ℝ} (hf : f.HasFiniteSupport) : (fun i ↦ g i ^ f i).HasFiniteMulSupport :=
   hf.subset fun i hi h ↦ hi (by simp [h])
 
-/-- A positive real raised to a finsum is the finprod of the powers. When the support is infinite,
-both sides are junk values: `a ^ 0 = 1` and the empty `finprod`. -/
+/-- A positive real raised to a finsum is the finprod of the powers. When `f` has infinite
+support, both sides equal `1`: on the left `a ^ 0 = 1`; on the right `1 ^ f i = 1` if `a = 1`,
+and otherwise `a ^ f i` has infinite multiplicative support, so the `finprod` is `1`. -/
 theorem Real.rpow_finsum_of_pos {α : Type*} {a : ℝ} (ha : 0 < a) {f : α → ℝ} :
     a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i := by
   by_cases hf : f.HasFiniteSupport
