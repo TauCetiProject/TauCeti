@@ -24,9 +24,10 @@ This file takes the variations from the separable Banach carrier
 that they still detect covector fields: if an integrable field `η` of covectors along `u`
 annihilates the Hamiltonian vector fields of every element of the carrier, then `η` vanishes almost
 everywhere on each open set `Ω` over which the graph of `u` lies in the interior of `C`
-(`TauCeti.SymplecticForm.ae_eq_zero_of_forall_integral_supportedInCarrierMap_eq_zero`).
-This is the cokernel-detection step of transversality, with a parameter space to which Sard–Smale
-applies. It holds whether `u` is constant or not.
+(`ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_supportedInCarrierMap_eq_zero`, in
+the namespace `TauCeti.SymplecticForm`, like the other declarations of this file). This is the
+cokernel-detection step of transversality, with a parameter space to which Sard–Smale applies.
+It holds whether `u` is constant or not.
 
 The pairing `δK ↦ ∫ η z (X_{δK(z, ·)}(u z)) dμ` is a continuous linear functional on
 `𝓓^{n}_{C}(P × V, ℝ)` (`TauCeti.SymplecticForm.hamiltonianPairing`), bounded by the `C¹`
@@ -36,8 +37,8 @@ functional vanishing on any family with dense range in `𝓓^{n}_{C}(P × V, ℝ
 `C^n` function supported in `C`, in particular on the smooth Hamiltonians supported in the interior
 of `C`, which detect `η` by
 `TauCeti.SymplecticForm.ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_eq_zero`
-(`TauCeti.SymplecticForm.ae_eq_zero_of_forall_integral_eq_zero_of_denseRange`). The carrier is
-such a family.
+(`ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_eq_zero_of_denseRange`). The carrier
+is such a family.
 
 ## Main definitions
 
@@ -51,10 +52,12 @@ such a family.
   of a function supported in `C` vanishes off `C` and is bounded by its `C¹` seminorm.
 * `TauCeti.SymplecticForm.integrable_apply_hamiltonianVectorField`: the integrand of the pairing
   is integrable.
-* `TauCeti.SymplecticForm.ae_eq_zero_of_forall_integral_eq_zero_of_denseRange`: Hamiltonian
+* In `TauCeti.SymplecticForm`,
+  `ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_eq_zero_of_denseRange`: Hamiltonian
   variations from a family with dense range in `𝓓^{n}_{C}(P × V, ℝ)` detect covector fields along
   a map.
-* `TauCeti.SymplecticForm.ae_eq_zero_of_forall_integral_supportedInCarrierMap_eq_zero`:
+* In `TauCeti.SymplecticForm`,
+  `ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_supportedInCarrierMap_eq_zero`:
   Hamiltonian variations from the carrier detect covector fields along a map.
 
 ## References
@@ -135,7 +138,9 @@ private theorem norm_apply_hamiltonianVectorField_le_indicator (ω : SymplecticF
   · rw [indicator_of_notMem hzS, ω.hamiltonianVectorField_eq_zero_of_notMem h
       fun hC ↦ hzS ⟨_, hC, rfl⟩, map_zero, norm_zero]
 
-variable [MeasurableSpace P] [BorelSpace P] {μ : Measure P}
+section OpensMeasurable
+
+variable [MeasurableSpace P] [OpensMeasurableSpace P] {μ : Measure P}
 
 /-- Along a map continuous on the projection of `C`, the pairing of an integrable covector field
 with the Hamiltonian vector field of a `C^n` function supported in `C`, `1 ≤ n`, is integrable. -/
@@ -208,7 +213,9 @@ theorem hamiltonianPairing_apply (ω : SymplecticForm V) (hn : 1 ≤ n) {u : P �
       ∫ z, η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z)) ∂μ :=
   (rfl)
 
-variable [FiniteDimensional ℝ P]
+end OpensMeasurable
+
+variable [MeasurableSpace P] [BorelSpace P] {μ : Measure P} [FiniteDimensional ℝ P]
 
 /-- **Dense families of Hamiltonian variations detect covector fields.** Let `C` be a compact set
 of `P × V`, let `u` be continuous on its projection to `P`, and let `η` be a field of covectors
@@ -217,7 +224,7 @@ along `u`, integrable on that projection. If `η` annihilates the Hamiltonian ve
 `𝓓^{n}_{C}(P × V, ℝ)`, `1 ≤ n`, in the sense that `∫ η z (X_{δK(z, ·)}(u z)) dμ = 0`, then `η`
 vanishes almost everywhere on every open set `Ω` over which the graph of `u` lies in the interior
 of `C`. -/
-theorem ae_eq_zero_of_forall_integral_eq_zero_of_denseRange
+theorem ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_eq_zero_of_denseRange
     (ω : SymplecticForm V) (hn : 1 ≤ n) {u : P → V}
     (hu : ContinuousOn u (Prod.fst '' (C : Set (P × V)))) {Ω : Set P} (hΩ : IsOpen Ω)
     (hΩC : ∀ z ∈ Ω, (z, u z) ∈ interior (C : Set (P × V))) {η : P → V →L[ℝ] ℝ}
@@ -229,13 +236,16 @@ theorem ae_eq_zero_of_forall_integral_eq_zero_of_denseRange
     ⟨(z, u z), interior_subset (hΩC z hz), rfl⟩
   -- The pairing vanishes on the dense range of `ι`, hence on all of `𝓓^{n}_{C}(P × V, ℝ)`.
   have hL : ⇑(ω.hamiltonianPairing hn hu hη) = 0 :=
-    hι.equalizer (ω.hamiltonianPairing hn hu hη).continuous continuous_const (funext h)
+    hι.equalizer (ω.hamiltonianPairing hn hu hη).continuous continuous_const
+      (funext fun x ↦ by simp [h x])
   refine ω.ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_eq_zero hΩ (hu.mono hΩS)
     (fun z hz ↦ isOpen_interior.mem_nhds (hΩC z hz)) (hη.mono_set hΩS).locallyIntegrableOn
     fun K hK _ hKC ↦ ?_
   -- A smooth Hamiltonian supported in the interior of `C` is a `C^n` function supported in `C`.
-  exact congrFun hL (ContDiffMapSupportedIn.of_support_subset (hK.of_le (by exact_mod_cast le_top))
-    (subset_tsupport _ |>.trans (hKC.trans interior_subset)))
+  simpa only [hamiltonianPairing_apply, ContDiffMapSupportedIn.coe_of_support_subset,
+    Function.uncurry_apply_pair, Pi.zero_apply] using
+    congrFun hL (ContDiffMapSupportedIn.of_support_subset (hK.of_le (by exact_mod_cast le_top))
+      (subset_tsupport _ |>.trans (hKC.trans interior_subset)))
 
 /-- **Hamiltonian variations from the separable Banach carrier detect covector fields.** Let `C`
 be a compact set of `P × V`, let `u` be continuous on its projection to `P`, and let `η` be a field
@@ -244,7 +254,7 @@ fields `z ↦ X_{δK(z, ·)}(u z)` of every element `δK` of the carrier
 `TauCeti.SupportedInCarrier (P × V) ℝ n C`, `1 ≤ n`, in the sense that
 `∫ η z (X_{δK(z, ·)}(u z)) dμ = 0`, then `η` vanishes almost everywhere on every open set `Ω` over
 which the graph of `u` lies in the interior of `C`. -/
-theorem ae_eq_zero_of_forall_integral_supportedInCarrierMap_eq_zero
+theorem ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_supportedInCarrierMap_eq_zero
     (ω : SymplecticForm V) (hn : 1 ≤ n) {u : P → V}
     (hu : ContinuousOn u (Prod.fst '' (C : Set (P × V)))) {Ω : Set P} (hΩ : IsOpen Ω)
     (hΩC : ∀ z ∈ Ω, (z, u z) ∈ interior (C : Set (P × V))) {η : P → V →L[ℝ] ℝ}
@@ -253,7 +263,7 @@ theorem ae_eq_zero_of_forall_integral_supportedInCarrierMap_eq_zero
       ∫ z, η z (ω.hamiltonianVectorField
         (fun y ↦ supportedInCarrierMap (P × V) ℝ n C x (z, y)) (u z)) ∂μ = 0) :
     ∀ᵐ z ∂μ, z ∈ Ω → η z = 0 :=
-  ω.ae_eq_zero_of_forall_integral_eq_zero_of_denseRange hn hu hΩ hΩC hη
-    (denseRange_supportedInCarrierMap (P × V) ℝ n C) h
+  ω.ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_eq_zero_of_denseRange hn hu hΩ hΩC
+    hη (denseRange_supportedInCarrierMap (P × V) ℝ n C) h
 
 end TauCeti.SymplecticForm

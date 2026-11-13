@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
+public import TauCeti.Analysis.Distribution.ContDiffMapSupportedIn
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.SecondCountableSpace
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -28,8 +28,8 @@ The topology of `𝓓^{n}_{K}(E, F)` is the coarsest one making each derivative
 is not separable, but `D^i f` vanishes off `K`, so its sup norm over `E` is its sup norm over `K`.
 Hence the same topology is induced by the restrictions `D^i f|_K ∈ C(K, E [×i]→L[ℝ] F)`
 (`ContDiffMapSupportedIn.restrictStructureMapCLM`, whose norm is the seminorm `N_i`), and the map
-`f ↦ (D^i f|_K)ᵢ` into the countable product `Π i, C(K, E [×i]→L[ℝ] F)` induces the topology of
-`𝓓^{n}_{K}(E, F)`. When `E` is finite-dimensional, each factor is second countable because `K` is
+`f ↦ (D^i f|_K)ᵢ` into the countable product `Π i, C(K, E [×i]→L[ℝ] F)` is a uniform
+embedding. When `E` is finite-dimensional, each factor is second countable because `K` is
 a compact metric space and `E [×i]→L[ℝ] F` is second countable, by currying one variable at a
 time. When `E` is infinite-dimensional, every compactly supported continuous function on `E`
 vanishes, so `𝓓^{n}_{K}(E, F)` is trivial.
@@ -43,8 +43,8 @@ vanishes, so `𝓓^{n}_{K}(E, F)` is trivial.
 
 * `ContDiffMapSupportedIn.norm_restrictStructureMapCLM`: the norm of the restricted `i`-th
   derivative is the seminorm `N_i`.
-* `ContDiffMapSupportedIn.isInducing_restrictStructureMapCLM`: the restricted derivatives induce
-  the topology of `𝓓^{n}_{K}(E, F)` from `Π i, C(K, E [×i]→L[ℝ] F)`.
+* `ContDiffMapSupportedIn.isUniformEmbedding_pi_restrictStructureMapCLM`: the restricted
+  derivatives embed `𝓓^{n}_{K}(E, F)` uniformly into `Π i, C(K, E [×i]→L[ℝ] F)`.
 * `ContDiffMapSupportedIn.instSecondCountableTopology`: `𝓓^{n}_{K}(E, F)` is second countable.
 
 ## References
@@ -64,14 +64,6 @@ variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddC
   [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
   [SMulCommClass ℝ 𝕜 F] {n : ℕ∞} {K : Compacts E}
 
-/-- The structure maps vanish off `K`. -/
-theorem structureMapCLM_apply_eq_zero_of_notMem (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) {x : E}
-    (hx : x ∉ K) : structureMapCLM 𝕜 n i f x = 0 := by
-  rw [structureMapCLM_apply]
-  split_ifs
-  · exact f.iteratedFDeriv_zero_on_compl hx
-  · simp
-
 variable (n) in
 /-- The `i`-th derivative of `f ∈ 𝓓^{n}_{K}(E, F)`, restricted to `K`, as a continuous linear map
 into the continuous maps on `K`. It is the derivative given by
@@ -81,7 +73,11 @@ noncomputable def restrictStructureMapCLM (i : ℕ) :
     𝓓^{n}_{K}(E, F) →L[𝕜] C(K, E [×i]→L[ℝ] F) :=
   ContDiffMapSupportedIn.mkCLMtoNormedSpace 𝕜 (G := C(K, E [×i]→L[ℝ] F))
     (fun f ↦ (structureMapCLM 𝕜 n i f).toContinuousMap.restrict K)
-    (fun f g ↦ by ext1; simp only [map_add]; rfl) (fun c f ↦ by ext1; simp only [map_smul]; rfl)
+    (fun f g ↦ by ext1; simp only [ContinuousMap.restrict_apply, map_add, ContinuousMap.add_apply,
+      BoundedContinuousFunction.coe_toContinuousMap, FunLike.coe_add, Pi.add_apply])
+    (fun c f ↦ by ext1; simp only [ContinuousMap.restrict_apply, map_smul,
+      ContinuousMap.smul_apply, BoundedContinuousFunction.coe_toContinuousMap, FunLike.coe_smul,
+      Pi.smul_apply])
     ⟨{i}, 1, zero_le_one, fun f ↦ by
       rw [Finset.sup_singleton, one_mul, ContDiffMapSupportedIn.seminorm_apply]
       refine (ContinuousMap.norm_le _ (by positivity)).2 fun x ↦ ?_
@@ -124,22 +120,33 @@ theorem dist_restrictStructureMapCLM (i : ℕ) (f g : 𝓓^{n}_{K}(E, F)) :
       = ‖restrictStructureMapCLM 𝕜 n i (f - g)‖ := by
         rw [map_sub]
         exact dist_eq_norm (restrictStructureMapCLM 𝕜 n i f) (restrictStructureMapCLM 𝕜 n i g)
-    _ = ‖structureMapCLM 𝕜 n i (f - g)‖ := norm_restrictStructureMapCLM 𝕜 i (f - g)
+    _ = ‖structureMapCLM 𝕜 n i (f - g)‖ :=
+      (norm_restrictStructureMapCLM 𝕜 i (f - g)).trans
+        (ContDiffMapSupportedIn.seminorm_apply 𝕜 i (f - g))
     _ = dist (structureMapCLM 𝕜 n i f) (structureMapCLM 𝕜 n i g) := by
       rw [map_sub]
       exact (dist_eq_norm (structureMapCLM 𝕜 n i f) (structureMapCLM 𝕜 n i g)).symm
 
-/-- The derivatives restricted to `K` induce the topology of `𝓓^{n}_{K}(E, F)` from the product
+/-- The derivatives restricted to `K` embed `𝓓^{n}_{K}(E, F)` uniformly into the product
 `Π i, C(K, E [×i]→L[ℝ] F)`. -/
-theorem isInducing_restrictStructureMapCLM :
-    IsInducing fun (f : 𝓓^{n}_{K}(E, F)) (i : ℕ) ↦ restrictStructureMapCLM ℝ n i f := by
-  have h : (topologicalSpace : TopologicalSpace 𝓓^{n}_{K}(E, F)) =
-      ⨅ i : ℕ, induced (restrictStructureMapCLM ℝ n i) inferInstance :=
-    iInf_congr fun i ↦ TauCeti.induced_eq_of_dist_eq fun f g ↦
-      (dist_restrictStructureMapCLM ℝ i f g).symm
-  -- `inducing_iInf_to_pi` is stated for the infimum topology, which is the topology of
-  -- `𝓓^{n}_{K}(E, F)` by `h`.
-  convert inducing_iInf_to_pi fun i : ℕ ↦ restrictStructureMapCLM ℝ (K := K) (F := F) n i
+theorem isUniformEmbedding_pi_restrictStructureMapCLM :
+    IsUniformEmbedding (ContinuousLinearMap.pi (restrictStructureMapCLM 𝕜 n) :
+      𝓓^{n}_{K}(E, F) →L[𝕜] Π i, C(K, E [×i]→L[ℝ] F)) where
+  injective f g hfg := structureMapCLM_zero_injective 𝕜 <| dist_eq_zero.1 <|
+    (dist_restrictStructureMapCLM 𝕜 0 f g).symm.trans (dist_eq_zero.2 congr($hfg 0))
+  toIsUniformInducing := by
+    -- Each restricted derivative has the same distances as the corresponding structure map, so
+    -- both families induce the uniform structure of `𝓓^{n}_{K}(E, F)`.
+    have h := (isUniformEmbedding_pi_structureMapCLM 𝕜 (n := n) (K := K) (E := E)
+      (F := F)).isUniformInducing
+    rw [isUniformInducing_iff_uniformSpace] at h ⊢
+    rw [← h, Pi.uniformSpace_eq, Pi.uniformSpace_eq, UniformSpace.comap_iInf,
+      UniformSpace.comap_iInf]
+    refine iInf_congr fun i ↦ ?_
+    rw [← UniformSpace.comap_comap, ← UniformSpace.comap_comap, ContinuousLinearMap.coe_pi',
+      ContinuousLinearMap.coe_pi']
+    exact TauCeti.uniformSpace_comap_eq_of_dist_eq fun f g ↦
+      dist_restrictStructureMapCLM 𝕜 i f g
 
 /-- **`𝓓^{n}_{K}(E, F)` is second countable**, hence separable, for second countable `F`. -/
 instance instSecondCountableTopology [SecondCountableTopology F] :
@@ -152,7 +159,7 @@ instance instSecondCountableTopology [SecondCountableTopology F] :
       | succ i ih =>
         exact (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (i + 1) ↦ E)
           F).toHomeomorph.secondCountableTopology
-    exact isInducing_restrictStructureMapCLM.secondCountableTopology
+    exact (isUniformEmbedding_pi_restrictStructureMapCLM ℝ).isInducing.secondCountableTopology
   · -- On an infinite-dimensional space, a compactly supported continuous function vanishes.
     have : Subsingleton 𝓓^{n}_{K}(E, F) := ⟨fun f g ↦ by
       have h (f : 𝓓^{n}_{K}(E, F)) : (f : E → F) = 0 :=
