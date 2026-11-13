@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-public import Mathlib.Topology.Instances.EReal.Lemmas
 public import TauCeti.MeasureTheory.Function.Monotone
 public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 public import TauCeti.Probability.Cdf
@@ -33,11 +31,12 @@ which is also the interval the uniform law is taken on.
 The *upper quantile* `μ.upperQuantile t = sInf {x | t < cdf μ x}` uses the strict inequality
 instead. Where `cdf μ` has a plateau at the level `t`, the lower and upper quantiles are the two
 ends of that plateau; elsewhere they agree. The upper quantile is characterized through the left
-limit of the cumulative distribution function, `x ≤ μ.upperQuantile t ↔ μ.real (Iio x) ≤ t`,
-which is why the quantiles of a law pushed forward along a decreasing map are expressed through
-the upper quantile of the original law. The lower quantile is left continuous and the upper
-quantile right continuous, and at both of them the level lies between the left limit and the
-value of the cumulative distribution function.
+limit of the cumulative distribution function: for a probability measure `μ` and a level
+`0 < t < 1`, `x ≤ μ.upperQuantile t ↔ μ.real (Iio x) ≤ t`, which is why the quantiles of a law
+pushed forward along a decreasing map are expressed through the upper quantile of the original
+law. At interior levels the lower quantile is left continuous and the upper quantile right
+continuous, and at both of them the level lies between the left limit and the value of the
+cumulative distribution function.
 
 The main result is **inverse transform sampling**: for a probability measure `μ` the quantile
 function pushes the uniform law on the open unit interval forward to `μ`. It presents every real
@@ -61,8 +60,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.cdf_quantile` and `MeasureTheory.Measure.quantile_cdf` — the exact
   inverse laws, when the cumulative distribution function is continuous, respectively strictly
   increasing where its values lie strictly between `0` and `1`; together they give
-  `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
-  `MeasureTheory.Measure.continuousOn_quantile`;
+  `MeasureTheory.Measure.quantile_lt_iff`, while `MeasureTheory.Measure.strictMonoOn_quantile`
+  follows from the first and `MeasureTheory.Measure.continuousOn_quantile` from the second
+  alone, so that it also covers laws with atoms;
 * `MeasureTheory.Measure.cdf_quantile_of_noAtoms` and
   `MeasureTheory.Measure.strictMonoOn_quantile_of_noAtoms` — the same two statements for an
   atomless law, without a continuity hypothesis;
@@ -90,7 +90,7 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.measureReal_Iio_quantile_le` and `MeasureTheory.Measure.le_cdf_quantile`
   — the level lies between the left limit and the value of the cumulative distribution function
   at the quantile, with the same bounds at the upper quantile; for an atomless law
-  `MeasureTheory.Measure.cdf_quantile` gives equality;
+  `MeasureTheory.Measure.cdf_quantile_of_noAtoms` gives equality;
 * `Set.OrdConnected.quantile_mem` and `Set.OrdConnected.upperQuantile_mem` — interior quantiles
   lie in every interval carrying the full mass of the measure;
 * `MeasureTheory.Measure.quantile_le_upperQuantile` and
