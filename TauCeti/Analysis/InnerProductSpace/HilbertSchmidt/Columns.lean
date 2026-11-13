@@ -203,8 +203,8 @@ theorem _root_.ContinuousLinearMap.hilbertSchmidtEnergy_ne_top_iff_summable (T :
     (b : HilbertBasis ι 𝕜 E) :
     T.hilbertSchmidtEnergy b ≠ ∞ ↔ Summable fun i ↦ ‖T (b i)‖ ^ 2 := by
   rw [ContinuousLinearMap.hilbertSchmidtEnergy_def]
-  have h := tsum_enorm_ne_top_iff_summable_norm (f := fun i ↦ ‖T (b i)‖ ^ 2)
-  simpa only [enorm_pow, enorm_norm, norm_pow, norm_norm] using h
+  have h := tsum_eNorm_ne_top_iff_summable_norm (f := fun i ↦ ‖T (b i)‖ ^ 2)
+  simpa only [eNorm_pow, eNorm_norm, norm_pow, norm_norm] using h
 
 /-- An operator has finite Hilbert–Schmidt energy exactly when its column family `i ↦ T bᵢ` lies
 in `ℓ²`. -/
@@ -249,7 +249,7 @@ theorem existsUnique_columnOperator_eq {T : E →L[𝕜] F} (hT : T.hilbertSchmi
 theorem hilbertSchmidtNorm_columnOperator [CompleteSpace E] (f : ℓ²(ι, F)) :
     (b.columnOperator f).hilbertSchmidtNorm = ‖f‖ := by
   rw [(b.columnOperator f).hilbertSchmidtNorm_eq_sqrt b, hilbertSchmidtEnergy_columnOperator,
-    ENNReal.toReal_pow, toReal_enorm, Real.sqrt_sq (norm_nonneg f)]
+    ENNReal.toReal_pow, toReal_eNorm, Real.sqrt_sq (norm_nonneg f)]
 
 variable {b} in
 /-- **Hilbert–Schmidt operators are compact.** An operator of finite Hilbert–Schmidt energy is a

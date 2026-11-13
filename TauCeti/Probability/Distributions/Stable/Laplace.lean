@@ -127,7 +127,7 @@ theorem mgf_id_stableMeasure_eq_exp_integral
     mgf id (stableMeasure α β s m) t =
       exp (m * t + ∫ x, exp ((s * t) * x) - 1 - (s * t) * sin x
         ∂stableLevyMeasure α β) := by
-  rcases eq_zero_or_pos s with rfl | hs
+  rcases eq_zero_or_pos s with rfl | _
   · rw [stableMeasure_zero_scale ⟨hα.1, hα.2.le⟩ hβ.le, mgf_dirac']
     simp [mul_comm]
   have hst : β * (s * t) ≤ 0 := by

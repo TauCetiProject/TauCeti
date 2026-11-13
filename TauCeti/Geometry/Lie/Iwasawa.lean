@@ -173,10 +173,10 @@ private lemma smooth_qMatrix :
         (fun c : Fin n → EuclideanSpace 𝕜 (Fin n) ↦ gramSchmidtNormed 𝕜 c) (cols g) := by
       apply contDiffAt_pi.mpr
       intro j
-      exact ContDiffAt.gramSchmidtNormed
-        (fun i ↦ (ContinuousLinearMap.proj i :
+      exact ContDiffAt.gramSchmidtNormed j
+        (fun i _ ↦ (ContinuousLinearMap.proj i :
           (Fin n → EuclideanSpace 𝕜 (Fin n)) →L[ℝ] EuclideanSpace 𝕜 (Fin n)).contDiff.contDiffAt)
-        (cols_independent g) j
+        ((cols_independent g).linearIndepOn _)
     have h := (coordEquiv (𝕜 := 𝕜)).contDiff.contDiffAt.comp (cols g) hs
     exact h.contMDiffAt.comp g (smooth_cols g)
   exact hh.congr fun g ↦ qMatrix_eq_coord g

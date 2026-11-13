@@ -14,14 +14,14 @@ import TauCeti.Geometry.Manifold.Immersion.Basic
 
 Mathlib provides the predicate `Manifold.IsSmoothEmbedding I J n f`, saying that a map between
 manifolds is a `C^n` immersion and a topological embedding, but it does not bundle maps satisfying
-that predicate. This file adds the small bundled type needed by the geometric-topology roadmap's
-first-class geometric knot/link presentations: a smooth presentation is a smooth embedding of the
-circle into an ambient manifold, and later files should traffic in the embedding as data rather
-than in a bare function plus detached hypotheses.
+that predicate. This file adds that small bundled type, in which geometric knot and link
+presentations are phrased: a smooth presentation is a smooth embedding of the circle into an
+ambient manifold, and it is handled as data rather than as a bare function plus detached
+hypotheses.
 
-The file deliberately stays at the general manifold level. The roadmap's circle presentations are
-special cases of this type, while the same bundled smooth embeddings are also the right inputs for
-later tubular-neighbourhood and surgery interfaces.
+The file deliberately stays at the general manifold level. Smooth knot presentations, embeddings
+of the circle, are special cases of this type, while the same bundled smooth embeddings are also
+the inputs of the tubular-neighbourhood and surgery constructions.
 
 ## Main definitions
 
