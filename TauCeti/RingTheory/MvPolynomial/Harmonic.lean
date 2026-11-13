@@ -28,8 +28,9 @@ identity give
 
 and hence, for `h ∈ H_l`, `Δ (r^(2(k+1)) h) = 2(k+1)(2l + n + 2k) r^(2k) h`.
 With at least one variable and coefficients in which multiplication by a positive integer is
-injective, the operator `q ↦ Δ (r² q)` is injective, so a harmonic polynomial divisible by `r²`
-is zero. Over a field of characteristic zero it is therefore bijective on `P_e`, which yields the
+injective, the operator `q ↦ Δ (r² q)` has trivial kernel (`Δ (r² q) = 0 → q = 0`), so a harmonic
+polynomial divisible by `r²` is zero. Over a field of characteristic zero it is injective, hence
+bijective on `P_e`, which yields the
 **Fischer decomposition**
 
 `P_(e+2) = H_(e+2) ⊕ r² P_e`,
@@ -55,8 +56,9 @@ notation class `Laplacian`, so that this file stays purely algebraic.
 * `MvPolynomial.laplacian_normSq_pow_mul`: `Δ (r^(2(k+1)) h) = 2(k+1)(2l + n + 2k) r^(2k) h`
   for `h ∈ H_l`.
 * `MvPolynomial.eq_zero_of_laplacian_normSq_mul_eq_zero` and
-  `MvPolynomial.exists_laplacian_normSq_mul_eq`: `q ↦ Δ (r² q)` is injective, and bijective on
-  `P_e` over a field of characteristic zero.
+  `MvPolynomial.exists_laplacian_normSq_mul_eq`: with at least one variable, `Δ (r² q) = 0 → q = 0`
+  (under `HasUniqueDiv R`), and `q ↦ Δ (r² q)` is bijective on `P_e` over a field of
+  characteristic zero.
 * `MvPolynomial.harmonicSubmodule_sup_map_mulLeft_normSq` and
   `MvPolynomial.disjoint_ker_laplacian_range_mulLeft_normSq`: the Fischer decomposition
   `P_(e+2) = H_(e+2) ⊕ r² P_e`.
@@ -149,7 +151,7 @@ theorem isHomogeneous_normSq : (normSq σ R).IsHomogeneous 2 :=
 
 /-- With no variables, `r² = 0`. -/
 @[simp]
-private theorem normSq_eq_zero_of_isEmpty [IsEmpty σ] : normSq σ R = 0 := by
+theorem normSq_eq_zero_of_isEmpty [IsEmpty σ] : normSq σ R = 0 := by
   simp [normSq_def]
 
 /-- `normSq` is a nonzero polynomial as soon as there is a variable. -/
@@ -232,7 +234,7 @@ theorem harmonicSubmodule_le_homogeneousSubmodule (d : ℕ) :
 
 /-- With no variables, every harmonic polynomial of positive degree is zero. -/
 @[simp]
-private theorem harmonicSubmodule_succ_eq_bot_of_isEmpty [IsEmpty σ] (n : ℕ) :
+theorem harmonicSubmodule_succ_eq_bot_of_isEmpty [IsEmpty σ] (n : ℕ) :
     harmonicSubmodule σ R (n + 1) = ⊥ := by
   simp [harmonicSubmodule]
 
@@ -278,9 +280,10 @@ private theorem eq_zero_of_laplacian_normSq_mul_add_nsmul_eq_zero [Nonempty σ] 
   exact @ih (e - 2) (by omega) _ N hq.laplacian <| by
     simpa only [map_add, map_nsmul, map_zero] using congrArg laplacian h
 
-/-- **Injectivity of `q ↦ Δ (r² q)`**: with at least one variable and coefficients in which
+/-- **Trivial kernel of `q ↦ Δ (r² q)`**: with at least one variable and coefficients in which
 multiplication by a positive integer is injective (for instance a field of characteristic zero),
-if `Δ (r² q) = 0`, then `q = 0`. -/
+if `Δ (r² q) = 0`, then `q = 0`. When addition in `R` is cancellative (for instance in a ring) this
+gives injectivity. -/
 theorem eq_zero_of_laplacian_normSq_mul_eq_zero [Nonempty σ] {q : MvPolynomial σ R}
     (h : laplacian (normSq σ R * q) = 0) : q = 0 := by
   -- The operator preserves the degree, so it vanishes on each homogeneous component of `q`.
