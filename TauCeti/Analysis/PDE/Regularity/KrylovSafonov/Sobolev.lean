@@ -112,7 +112,7 @@ private theorem ofReal_mul_eLpNorm_posPart_const_mul_le {F f : α → ℝ} {b R 
     funext x
     simp only [Pi.smul_apply, smul_eq_mul, posPart_def, mul_max_of_nonneg _ _ hb0, mul_zero]
   have hle1 : ‖b‖ₑ ≤ 1 := by
-    rw [Real.enorm_of_nonneg hb0, ENNReal.ofReal_le_one]
+    rw [Real.eNorm_of_nonneg hb0, ENNReal.ofReal_le_one]
     exact hb1
   rw [hscale, eLpNorm_const_smul]
   calc ENNReal.ofReal R * (‖b‖ₑ * eLpNorm (fun x ↦ (F x)⁺) q μ)
@@ -227,7 +227,7 @@ private theorem exists_sum_mul_fderiv_fderiv_smoothField_comp_le
   -- `B(c, R)` the operator `G` of `w ∘ A`, `w = ψ * u`, is `s²` times the operator of the mollified
   -- weak Hessian at `A x`, hence at most `s² g (A x)` with `g = f⁺ + K ‖D‖`, `D = Hψ - H`.
   have hqmp : QuasiMeasurePreserving A μ μ :=
-    ⟨(AffineMap.homothety_continuous c s).measurable, Measure.absolutelyContinuous_of_le_smul
+    ⟨(AffineMap.homothety_continuous c s).aemeasurable, Measure.absolutelyContinuous_of_le_smul
       (Measure.map_addHaar_homothety μ c hs0.ne').le⟩
   set G : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a (A x) i j *
     fderiv ℝ (fderiv ℝ (Wkp.smoothField ψ (Wkp.value 2 u) ∘ A)) x (EuclideanSpace.single i 1)
@@ -271,10 +271,10 @@ private theorem exists_sum_mul_fderiv_fderiv_smoothField_comp_le
     _ ≤ ENNReal.ofReal s⁻¹ * (ENNReal.ofReal (s ^ 2) *
           (eLpNorm (fun y ↦ (f y)⁺) n (μ.restrict (ball c R)) +
             ENNReal.ofReal K * eLpNorm D n (μ.restrict (ball c R)))) := by
-        rw [eLpNorm_const_smul, Real.enorm_of_nonneg (by positivity)]
+        rw [eLpNorm_const_smul, Real.eNorm_of_nonneg (by positivity)]
         gcongr
         refine (eLpNorm_add_le hn1).trans_eq ?_
-        rw [eLpNorm_const_smul, eLpNorm_norm _ hDm, Real.enorm_of_nonneg hK]
+        rw [eLpNorm_const_smul, eLpNorm_norm _ hDm, Real.eNorm_of_nonneg hK]
     _ = _ := by
         have h1 : ENNReal.ofReal s⁻¹ * ENNReal.ofReal (s ^ 2) = ENNReal.ofReal s := by
           rw [← ENNReal.ofReal_mul (by positivity)]
