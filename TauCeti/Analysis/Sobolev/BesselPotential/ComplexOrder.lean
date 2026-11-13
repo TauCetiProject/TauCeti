@@ -29,7 +29,7 @@ Stein's interpolation argument.
 * `SchwartzMap.besselPotentialCLM z`: the Bessel potential `J^z` of complex order on Schwartz
   space, with `SchwartzMap.fourier_besselPotentialCLM_apply`,
   `SchwartzMap.besselPotentialCLM_besselPotentialCLM_apply` and the comparison
-  `SchwartzMap.toTemperedDistribution_besselPotentialCLM_ofReal` with Mathlib's
+  `SchwartzMap.toTemperedDistributionCLM_besselPotentialCLM_ofReal` with Mathlib's
   `TemperedDistribution.besselPotential` at real orders.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_besselPotentialCLM`:
   `‖J^z u‖_{H^r} = ‖u‖_{H^{r + re z}}`.
@@ -60,6 +60,11 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 (`SchwartzMap.besselPotentialCLM_besselPotentialCLM_apply`). -/
 def besselPotentialCLM (z : ℂ) : 𝓢(E, F) →L[ℂ] 𝓢(E, F) :=
   fourierMultiplierCLM F (TauCeti.japaneseBracketCpow z)
+
+theorem besselPotentialCLM_def (z : ℂ) :
+    besselPotentialCLM (E := E) (F := F) z =
+      fourierMultiplierCLM F (TauCeti.japaneseBracketCpow z) :=
+  (rfl)
 
 /-- At a real order `s` the Bessel potential is the Fourier multiplier with symbol
 `(1 + ‖ξ‖ ^ 2) ^ (s / 2)`, the one defining the inclusion of Schwartz functions into `H^{s,p}`. -/
@@ -99,9 +104,16 @@ theorem besselPotentialCLM_besselPotentialCLM_apply (z w : ℂ) (u : 𝓢(E, F))
   funext ξ
   rw [Pi.mul_apply, TauCeti.japaneseBracketCpow_add, mul_comm]
 
+/-- The orders of Bessel potentials add: `J^w ∘ J^z = J^(z + w)`. -/
+theorem besselPotentialCLM_compL_besselPotentialCLM (z w : ℂ) :
+    besselPotentialCLM (E := E) (F := F) w ∘L besselPotentialCLM z =
+      besselPotentialCLM (z + w) := by
+  ext1 u
+  exact besselPotentialCLM_besselPotentialCLM_apply z w u
+
 /-- At a real order `s`, the Bessel potential of a Schwartz function is Mathlib's Bessel potential
 `TemperedDistribution.besselPotential E F s` of the corresponding tempered distribution. -/
-theorem toTemperedDistribution_besselPotentialCLM_ofReal (s : ℝ) (u : 𝓢(E, F)) :
+theorem toTemperedDistributionCLM_besselPotentialCLM_ofReal (s : ℝ) (u : 𝓢(E, F)) :
     (besselPotentialCLM (s : ℂ) u : 𝓢'(E, F)) =
       TemperedDistribution.besselPotential E F s (u : 𝓢'(E, F)) := by
   rw [besselPotentialCLM_ofReal, TemperedDistribution.besselPotential,
@@ -121,6 +133,7 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 
 /-- **The Bessel potentials shift the order of the `H^r` norms.** The `H^r` norm of `J^z u` is the
 `H^{r + re z}` norm of `u`; in particular imaginary orders act isometrically on every `H^r`. -/
+@[simp]
 theorem norm_toBesselPotentialSpaceCLM_besselPotentialCLM (r : ℝ) (z : ℂ) (u : 𝓢(E, H)) :
     ‖toBesselPotentialSpaceCLM r 2 (besselPotentialCLM z u)‖ =
       ‖toBesselPotentialSpaceCLM (r + z.re) 2 u‖ := by

@@ -37,7 +37,8 @@ interpolate operators between Bessel-potential spaces.
   `TauCeti.japaneseBracketCpow_eq_exp`.
 * `TauCeti.japaneseBracketCpow_ofReal`: for real `s` it is `(1 + ‖x‖ ^ 2) ^ (s / 2)`.
 * `TauCeti.norm_japaneseBracketCpow`: `‖⟨x⟩ ^ z‖ = (1 + ‖x‖ ^ 2) ^ (re z / 2)`.
-* `TauCeti.japaneseBracketCpow_add`: `⟨x⟩ ^ (z + w) = ⟨x⟩ ^ z ⟨x⟩ ^ w`.
+* `TauCeti.japaneseBracketCpow_add`: `⟨x⟩ ^ (z + w) = ⟨x⟩ ^ z ⟨x⟩ ^ w`, with
+  `TauCeti.japaneseBracketCpow_neg` and `TauCeti.japaneseBracketCpow_conj`.
 * `TauCeti.hasDerivAt_japaneseBracketCpow`: the derivative in the exponent, and the uniform
   second-order remainder bound `TauCeti.norm_japaneseBracketCpow_add_sub_sub_le`.
 * `TauCeti.hasTemperateGrowth_japaneseBracketCpow`: on a real inner product space,
@@ -82,7 +83,33 @@ theorem japaneseBracketCpow_ofReal (s : ℝ) (x : E) :
 theorem japaneseBracketCpow_zero (x : E) : japaneseBracketCpow 0 x = 1 := by
   rw [japaneseBracketCpow, zero_div, cpow_zero]
 
+@[simp]
+theorem japaneseBracketCpow_zero_right (z : ℂ) : japaneseBracketCpow z (0 : E) = 1 := by
+  simp [japaneseBracketCpow]
+
+@[simp]
+theorem japaneseBracketCpow_neg_right (z : ℂ) (x : E) :
+    japaneseBracketCpow z (-x) = japaneseBracketCpow z x := by
+  rw [japaneseBracketCpow, japaneseBracketCpow, norm_neg]
+
+@[simp]
+theorem japaneseBracketCpow_ne_zero (z : ℂ) (x : E) : japaneseBracketCpow z x ≠ 0 := by
+  rw [japaneseBracketCpow_eq_exp]
+  exact exp_ne_zero _
+
+/-- The power of order `-z` is the reciprocal of the power of order `z`. -/
+theorem japaneseBracketCpow_neg (z : ℂ) (x : E) :
+    japaneseBracketCpow (-z) x = (japaneseBracketCpow z x)⁻¹ := by
+  rw [japaneseBracketCpow, japaneseBracketCpow, neg_div, cpow_neg]
+
+/-- The power of order `conj z` is the complex conjugate of the power of order `z`. -/
+@[simp]
+theorem japaneseBracketCpow_conj (z : ℂ) (x : E) :
+    japaneseBracketCpow (starRingEnd ℂ z) x = starRingEnd ℂ (japaneseBracketCpow z x) := by
+  rw [japaneseBracketCpow_eq_exp, japaneseBracketCpow_eq_exp, ← exp_conj, map_mul, conj_ofReal]
+
 /-- The modulus of `⟨x⟩ ^ z` is the real power of order `re z`. -/
+@[simp]
 theorem norm_japaneseBracketCpow (z : ℂ) (x : E) :
     ‖japaneseBracketCpow z x‖ = (1 + ‖x‖ ^ 2) ^ (z.re / 2) := by
   rw [japaneseBracketCpow, norm_cpow_eq_rpow_re_of_pos (by positivity), div_ofNat_re]

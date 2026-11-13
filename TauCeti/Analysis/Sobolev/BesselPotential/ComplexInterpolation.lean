@@ -16,12 +16,13 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 /-!
 # Interpolation of operators on the Hilbert scale of Bessel-potential spaces
 
-Let `E` be a finite-dimensional real inner product space and `H^s = H^{s,2}` Mathlib's
-Bessel-potential spaces of functions on `E` with values in a complex Hilbert space. This file
-proves that the scale `(H^s)_{s ∈ ℝ}` interpolates operators: if a linear map `T` of Schwartz
-spaces is bounded `H^{s₀} → H^{t₀}` with norm at most `M₀` and `H^{s₁} → H^{t₁}` with norm at most
-`M₁`, then for `0 ≤ θ ≤ 1` it is bounded `H^{s_θ} → H^{t_θ}` with norm at most
-`M₀ ^ (1 - θ) M₁ ^ θ`, where `s_θ = (1 - θ) s₀ + θ s₁` and `t_θ = (1 - θ) t₀ + θ t₁`.
+Let `E₁` and `E₂` be finite-dimensional real inner product spaces and `H^s = H^{s,2}` Mathlib's
+Bessel-potential spaces of functions on `E₁` or `E₂` with values in a complex Hilbert space. This
+file proves that the scale `(H^s)_{s ∈ ℝ}` interpolates operators: if a linear map `T` from
+Schwartz functions on `E₁` to Schwartz functions on `E₂` is bounded `H^{s₀} → H^{t₀}` with norm
+at most `M₀` and `H^{s₁} → H^{t₁}` with norm at most `M₁`, then for `0 ≤ θ ≤ 1` it is bounded
+`H^{s_θ} → H^{t_θ}` with norm at most `M₀ ^ (1 - θ) M₁ ^ θ`, where `s_θ = (1 - θ) s₀ + θ s₁`
+and `t_θ = (1 - θ) t₀ + θ t₁`.
 
 The proof is Stein's argument with an analytic family of weights. The tool is the Bessel potential
 of complex order (`SchwartzMap.besselPotentialCLM`), the Fourier multiplier `J^z` with symbol the
@@ -35,19 +36,20 @@ Given Schwartz functions `u` and `v`, the function
 `G z = ∫ ⟪J^{d(conj z)} v, T (J^{c(z)} u)⟫`, `c(z) = s_θ - s_z`, `d(z) = t_z - t_θ`,
 
 is entire, bounded on the strip `0 ≤ re z ≤ 1`, and on the two boundary lines the duality of
-`H^{-t_j}` and `H^{t_j}` under the `L²` pairing (`SchwartzMap.norm_integral_inner_le`) bounds it by
+`H^{-t_j}` and `H^{t_j}` under the `L²` pairing
+(`SchwartzMap.norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm`) bounds it by
 `M_j ‖u‖_{H^{s_θ}} ‖v‖_{H^{-t_θ}}`. Hadamard's three-lines theorem then bounds `G θ = ∫ ⟪v, T u⟫`,
 and the choice `v = J^{2 t_θ} (T u)` turns this into the norm bound
 (`SchwartzMap.norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm`). Since Schwartz functions
 are dense, `T` then extends to a bounded operator `H^{s_θ} → H^{t_θ}`
-(`SchwartzMap.exists_extension_norm_le_rpow_mul_rpow`).
+(`SchwartzMap.exists_apply_toBesselPotentialSpaceCLM_eq_and_norm_le_rpow_mul_rpow`).
 
 ## Main declarations
 
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm`: the interpolation
   inequality.
-* `SchwartzMap.exists_extension_norm_le_rpow_mul_rpow`: the interpolated operator
-  `H^{s_θ} → H^{t_θ}`.
+* `SchwartzMap.exists_apply_toBesselPotentialSpaceCLM_eq_and_norm_le_rpow_mul_rpow`: the
+  interpolated operator `H^{s_θ} → H^{t_θ}`.
 
 ## References
 
@@ -64,8 +66,9 @@ open scoped ENNReal SchwartzMap BesselPotentialSpace InnerProductSpace ComplexCo
 
 namespace SchwartzMap
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
+variable {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [InnerProductSpace ℝ E₁] [FiniteDimensional ℝ E₁]
+  [MeasurableSpace E₁] [BorelSpace E₁] [NormedAddCommGroup E₂] [InnerProductSpace ℝ E₂]
+  [FiniteDimensional ℝ E₂] [MeasurableSpace E₂] [BorelSpace E₂]
 
 section Interpolation
 
@@ -74,10 +77,10 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [Complet
 
 /-- A linear map `T` of Schwartz spaces that is bounded `H^s → H^t` sends a family whose image in
 `H^s` is complex differentiable to a family whose image in `H^t` is complex differentiable. -/
-private theorem hasDerivAt_toBesselPotentialSpaceCLM_apply {T : 𝓢(E, V) →ₗ[ℂ] 𝓢(E, W)}
+private theorem hasDerivAt_toBesselPotentialSpaceCLM_apply {T : 𝓢(E₁, V) →ₗ[ℂ] 𝓢(E₂, W)}
     {s t M : ℝ}
     (hT : ∀ u, ‖toBesselPotentialSpaceCLM t 2 (T u)‖ ≤ M * ‖toBesselPotentialSpaceCLM s 2 u‖)
-    {f : ℂ → 𝓢(E, V)} {f' : 𝓢(E, V)} {z : ℂ}
+    {f : ℂ → 𝓢(E₁, V)} {f' : 𝓢(E₁, V)} {z : ℂ}
     (hf : HasDerivAt (fun w ↦ toBesselPotentialSpaceCLM s 2 (f w))
       (toBesselPotentialSpaceCLM s 2 f') z) :
     HasDerivAt (fun w ↦ toBesselPotentialSpaceCLM t 2 (T (f w)))
@@ -88,10 +91,10 @@ private theorem hasDerivAt_toBesselPotentialSpaceCLM_apply {T : 𝓢(E, V) →�
 
 /-- For a linear map `T` of Schwartz spaces that is bounded `H^s → H^t`, the pairing
 `z ↦ ∫ ⟪J^{a' + b' conj z} v, T (J^{a + b z} u)⟫` along affine families of orders is entire. -/
-private theorem differentiable_integral_inner_besselPotentialCLM {T : 𝓢(E, V) →ₗ[ℂ] 𝓢(E, W)}
+private theorem differentiable_integral_inner_besselPotentialCLM {T : 𝓢(E₁, V) →ₗ[ℂ] 𝓢(E₂, W)}
     {s t M : ℝ}
     (hT : ∀ u, ‖toBesselPotentialSpaceCLM t 2 (T u)‖ ≤ M * ‖toBesselPotentialSpaceCLM s 2 u‖)
-    (u : 𝓢(E, V)) (v : 𝓢(E, W)) (a b a' b' : ℂ) :
+    (u : 𝓢(E₁, V)) (v : 𝓢(E₂, W)) (a b a' b' : ℂ) :
     Differentiable ℂ fun z ↦ ∫ x,
       ⟪besselPotentialCLM (a' + conj z * b') v x, T (besselPotentialCLM (a + z * b) u) x⟫_ℂ := by
   intro z
@@ -100,8 +103,8 @@ private theorem differentiable_integral_inner_besselPotentialCLM {T : 𝓢(E, V)
   rw [← map_smul] at h1
   have h2 := (hasDerivAt_toBesselPotentialSpaceCLM_besselPotentialCLM (-t) v
     (a' + conj z * b')).scomp (conj z) (((hasDerivAt_id (conj z)).mul_const b').const_add a')
-  set eΦ := (BesselPotentialSpace.toLpₗᵢ E W t 2).toContinuousLinearEquiv
-  set eΨ := (BesselPotentialSpace.toLpₗᵢ E W (-t) 2).toContinuousLinearEquiv
+  set eΦ := (BesselPotentialSpace.toLpₗᵢ E₂ W t 2).toContinuousLinearEquiv
+  set eΨ := (BesselPotentialSpace.toLpₗᵢ E₂ W (-t) 2).toContinuousLinearEquiv
   obtain ⟨Φ', hΦ⟩ : ∃ Φ', HasDerivAt
       (fun w ↦ (toBesselPotentialSpaceCLM t 2 (T (besselPotentialCLM (a + w * b) u))).toLp) Φ' z :=
     ⟨_, (eΦ.hasFDerivAt.comp_hasDerivAt z (hasDerivAt_toBesselPotentialSpaceCLM_apply hT h1))
@@ -117,17 +120,17 @@ private theorem differentiable_integral_inner_besselPotentialCLM {T : 𝓢(E, V)
 /-- For a linear map `T` of Schwartz spaces with `‖T u‖_{H^r} ≤ M ‖u‖_{H^s}`, the duality of
 `H^{-r}` and `H^r` bounds the pairing `∫ ⟪J^{a' + b' conj z} v, T (J^{a + b z} u)⟫` by
 `‖v‖_{H^{-r + a' + b' re z}} M ‖u‖_{H^{s + a + b re z}}`. -/
-private theorem norm_integral_inner_besselPotentialCLM_le {T : 𝓢(E, V) →ₗ[ℂ] 𝓢(E, W)}
+private theorem norm_integral_inner_besselPotentialCLM_le {T : 𝓢(E₁, V) →ₗ[ℂ] 𝓢(E₂, W)}
     {r s M : ℝ}
     (hT : ∀ u, ‖toBesselPotentialSpaceCLM r 2 (T u)‖ ≤ M * ‖toBesselPotentialSpaceCLM s 2 u‖)
-    (u : 𝓢(E, V)) (v : 𝓢(E, W)) (a b a' b' : ℝ) (z : ℂ) :
+    (u : 𝓢(E₁, V)) (v : 𝓢(E₂, W)) (a b a' b' : ℝ) (z : ℂ) :
     ‖∫ x, ⟪besselPotentialCLM ((a' : ℂ) + conj z * b') v x,
         T (besselPotentialCLM ((a : ℂ) + z * b) u) x⟫_ℂ‖ ≤
       ‖toBesselPotentialSpaceCLM (-r + (a' + z.re * b')) 2 v‖ *
         (M * ‖toBesselPotentialSpaceCLM (s + (a + z.re * b)) 2 u‖) := by
   have hre : ((a : ℂ) + z * b).re = a + z.re * b := by simp
   have hre' : ((a' : ℂ) + conj z * b').re = a' + z.re * b' := by simp
-  refine (norm_integral_inner_le r _ _).trans ?_
+  refine (norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm r _ _).trans ?_
   rw [norm_toBesselPotentialSpaceCLM_besselPotentialCLM, hre', ← hre,
     ← norm_toBesselPotentialSpaceCLM_besselPotentialCLM s _ u]
   gcongr
@@ -135,10 +138,10 @@ private theorem norm_integral_inner_besselPotentialCLM_le {T : 𝓢(E, V) →ₗ
 
 /-- Under the hypotheses of `norm_integral_inner_besselPotentialCLM_le` with `0 ≤ M`, the pairing
 `∫ ⟪J^{a' + b' conj z} v, T (J^{a + b z} u)⟫` is bounded on the strip `0 ≤ re z ≤ 1`. -/
-private theorem bddAbove_norm_integral_inner_besselPotentialCLM {T : 𝓢(E, V) →ₗ[ℂ] 𝓢(E, W)}
+private theorem bddAbove_norm_integral_inner_besselPotentialCLM {T : 𝓢(E₁, V) →ₗ[ℂ] 𝓢(E₂, W)}
     {r s M : ℝ} (hM : 0 ≤ M)
     (hT : ∀ u, ‖toBesselPotentialSpaceCLM r 2 (T u)‖ ≤ M * ‖toBesselPotentialSpaceCLM s 2 u‖)
-    (u : 𝓢(E, V)) (v : 𝓢(E, W)) (a b a' b' : ℝ) :
+    (u : 𝓢(E₁, V)) (v : 𝓢(E₂, W)) (a b a' b' : ℝ) :
     BddAbove ((norm ∘ fun z ↦ ∫ x, ⟪besselPotentialCLM ((a' : ℂ) + conj z * b') v x,
       T (besselPotentialCLM ((a : ℂ) + z * b) u) x⟫_ℂ) '' verticalClosedStrip 0 1) := by
   refine ⟨‖toBesselPotentialSpaceCLM (-r + (a' + |b'|)) 2 v‖ *
@@ -161,17 +164,17 @@ Schwartz spaces with `‖T u‖_{H^{t₀}} ≤ M₀ ‖u‖_{H^{s₀}}` and `‖
 Then for `0 ≤ θ ≤ 1`,
 `‖T u‖_{H^{t_θ}} ≤ M₀ ^ (1 - θ) M₁ ^ θ ‖u‖_{H^{s_θ}}`, where `s_θ = (1 - θ) s₀ + θ s₁` and
 `t_θ = (1 - θ) t₀ + θ t₁`. -/
-theorem norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm {T : 𝓢(E, V) →ₗ[ℂ] 𝓢(E, W)}
+theorem norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm {T : 𝓢(E₁, V) →ₗ[ℂ] 𝓢(E₂, W)}
     {s₀ s₁ t₀ t₁ M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
     (h₀ : ∀ u, ‖toBesselPotentialSpaceCLM t₀ 2 (T u)‖ ≤ M₀ * ‖toBesselPotentialSpaceCLM s₀ 2 u‖)
     (h₁ : ∀ u, ‖toBesselPotentialSpaceCLM t₁ 2 (T u)‖ ≤ M₁ * ‖toBesselPotentialSpaceCLM s₁ 2 u‖)
-    {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) (u : 𝓢(E, V)) :
+    {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) (u : 𝓢(E₁, V)) :
     ‖toBesselPotentialSpaceCLM ((1 - θ) * t₀ + θ * t₁) 2 (T u)‖ ≤
       M₀ ^ (1 - θ) * M₁ ^ θ * ‖toBesselPotentialSpaceCLM ((1 - θ) * s₀ + θ * s₁) 2 u‖ := by
   set sθ := (1 - θ) * s₀ + θ * s₁ with hsθ
   set tθ := (1 - θ) * t₀ + θ * t₁ with htθ
   -- The test function `v = J^{2 tθ} (T u)` realizes the `H^{tθ}` norm of `T u` in the pairing.
-  set v : 𝓢(E, W) := besselPotentialCLM ((2 * tθ : ℝ) : ℂ) (T u) with hv
+  set v : 𝓢(E₂, W) := besselPotentialCLM ((2 * tθ : ℝ) : ℂ) (T u) with hv
   -- The pairing along the analytic families of orders `sθ - s_z` for `u` and `t_z - tθ` for `v`.
   set G : ℂ → ℂ := fun z ↦ ∫ x, ⟪besselPotentialCLM (((t₀ - tθ : ℝ) : ℂ) + conj z * (t₁ - t₀ : ℝ))
     v x, T (besselPotentialCLM (((sθ - s₀ : ℝ) : ℂ) + z * (s₀ - s₁ : ℝ)) u) x⟫_ℂ with hG
@@ -240,16 +243,17 @@ theorem norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm {T : 𝓢(E, V)
 `SchwartzMap.norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm`, the linear map `T` of
 Schwartz spaces extends to a bounded operator `H^{s_θ} → H^{t_θ}` of norm at most
 `M₀ ^ (1 - θ) M₁ ^ θ`. -/
-theorem exists_extension_norm_le_rpow_mul_rpow {T : 𝓢(E, V) →ₗ[ℂ] 𝓢(E, W)}
+theorem exists_apply_toBesselPotentialSpaceCLM_eq_and_norm_le_rpow_mul_rpow
+    {T : 𝓢(E₁, V) →ₗ[ℂ] 𝓢(E₂, W)}
     {s₀ s₁ t₀ t₁ M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
     (h₀ : ∀ u, ‖toBesselPotentialSpaceCLM t₀ 2 (T u)‖ ≤ M₀ * ‖toBesselPotentialSpaceCLM s₀ 2 u‖)
     (h₁ : ∀ u, ‖toBesselPotentialSpaceCLM t₁ 2 (T u)‖ ≤ M₁ * ‖toBesselPotentialSpaceCLM s₁ 2 u‖)
     {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) :
-    ∃ S : H^{(1 - θ) * s₀ + θ * s₁}(E, V) →L[ℂ] H^{(1 - θ) * t₀ + θ * t₁}(E, W),
+    ∃ S : H^{(1 - θ) * s₀ + θ * s₁}(E₁, V) →L[ℂ] H^{(1 - θ) * t₀ + θ * t₁}(E₂, W),
       (∀ u, S (toBesselPotentialSpaceCLM _ 2 u) = toBesselPotentialSpaceCLM _ 2 (T u)) ∧
         ‖S‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ := by
   have hbd := norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm hM₀ hM₁ h₀ h₁ hθ
-  have hdense := denseRange_toBesselPotentialSpaceCLM (E := E) (F := V)
+  have hdense := denseRange_toBesselPotentialSpaceCLM (E := E₁) (F := V)
     ((1 - θ) * s₀ + θ * s₁) (p := 2) ENNReal.ofNat_ne_top
   refine ⟨((toBesselPotentialSpaceCLM ((1 - θ) * t₀ + θ * t₁) 2).toLinearMap ∘ₗ T).extendOfNorm
     (toBesselPotentialSpaceCLM _ 2).toLinearMap, fun u ↦ ?_, ?_⟩

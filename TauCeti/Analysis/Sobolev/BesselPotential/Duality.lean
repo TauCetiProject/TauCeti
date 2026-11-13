@@ -56,9 +56,9 @@ values in a complex Hilbert space, the inner product of the `L²` parts of `a �
   `H^{-s}(E, F⋆) ≃ₗᵢ[ℂ] (H^s(E, F))⋆` given by the density pairing, with
   `BesselPotentialSpace.dualEquiv_apply_eq_integral` and its Schwartz-function form
   `BesselPotentialSpace.dualEquiv_toBesselPotentialSpaceCLM`.
-* `SchwartzMap.inner_toLp_toBesselPotentialSpaceCLM_neg`, `SchwartzMap.norm_integral_inner_le`:
-  the `L²` pairing of `H^{-r}` and `H^r` on Schwartz functions, and
-  `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}`.
+* `SchwartzMap.inner_toLp_toBesselPotentialSpaceCLM_neg`,
+  `SchwartzMap.norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm`: the `L²` pairing
+  of `H^{-r}` and `H^r` on Schwartz functions, and `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}`.
 
 ## References
 
@@ -311,7 +311,8 @@ theorem inner_toLp_toBesselPotentialSpaceCLM_neg (r : ℝ) (a b : 𝓢(E, F)) :
 
 /-- **Duality of `H^{-r}` and `H^r` under the `L²` pairing**:
 `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}` for Schwartz functions `a` and `b`. -/
-theorem norm_integral_inner_le (r : ℝ) (a b : 𝓢(E, F)) :
+theorem norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (r : ℝ)
+    (a b : 𝓢(E, F)) :
     ‖∫ x, ⟪a x, b x⟫_ℂ‖ ≤
       ‖toBesselPotentialSpaceCLM (-r) 2 a‖ * ‖toBesselPotentialSpaceCLM r 2 b‖ := by
   rw [← inner_toLp_toBesselPotentialSpaceCLM_neg r, ← BesselPotentialSpace.norm_toLp_eq,
