@@ -36,6 +36,7 @@ Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and
 ## Main results
 
 * `Complex.cot_neg`, `Complex.cot_zero`: the cotangent is odd, with junk value `0` at `0`.
+* `Complex.cot_mul_I`: the cotangent at an imaginary argument is a hyperbolic cotangent.
 * `TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast`: the expansion over `ℤ`.
 * `TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I`: the `q`-expansion in the upper half-plane.
 * `TauCeti.hasSum_pi_mul_cot_pi_mul_div_add_pi_mul_I`,
@@ -72,6 +73,12 @@ theorem cot_neg (z : ℂ) : cot (-z) = -cot z := by
 @[simp]
 theorem cot_zero : cot 0 = 0 := by
   simp [cot_eq_cos_div_sin]
+
+/-- The cotangent at an imaginary argument is a hyperbolic cotangent:
+`cot (z i) = -(cosh z / sinh z) i` for every complex `z` (both sides vanish at `z = 0`). -/
+theorem cot_mul_I (z : ℂ) : cot (z * I) = -(cosh z / sinh z) * I := by
+  rw [cot_eq_cos_div_sin, cos_mul_I, sin_mul_I, ← div_div, div_I]
+  ring
 
 end Complex
 

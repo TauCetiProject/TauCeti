@@ -103,7 +103,7 @@ theorem exists_continuous_ne_zero_eq_mul_prod_pow (hf : Continuous f) (s : Finse
   choose! v hvc hv0 hvf using hn
   set P : ℂ → ℂ := fun w ↦ ∏ z ∈ s, (w - z) ^ n z with hPdef
   -- `Q z` is the product with the factor at `z` removed
-  set Q : ℂ → ℂ → ℂ := fun z w ↦ ∏ y ∈ s.erase z, (w - y) ^ n y with hQdef
+  set Q : ℂ → ℂ → ℂ := fun z w ↦ ∏ y ∈ s.erase z, (w - y) ^ n y
   have hPQ : ∀ z ∈ s, ∀ w, P w = (w - z) ^ n z * Q z w := fun z hz w ↦
     (Finset.mul_prod_erase s (fun y ↦ (w - y) ^ n y) hz).symm
   have hQc : ∀ z, Continuous (Q z) := fun z ↦ by fun_prop

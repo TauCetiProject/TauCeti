@@ -22,6 +22,7 @@ containing `K` by exactly one `K`-algebra map.
 
 * `IsCyclotomicExtension.card_aut_eq_totient`: `#Gal(L / K) = φ n` when `Φ_n` is irreducible.
 * `IsCyclotomicExtension.isCyclic_aut`: the group is cyclic when `(ZMod n)ˣ` is.
+* `IsCyclotomicExtension.neZero_of_nontrivial_aut`: a nontrivial Galois group forces `n ≠ 0`.
 * `IsPrimitiveRoot.existsUnique_algHom_apply_eq`: exactly one `K`-algebra map sends a given
   primitive root to any other when `Φ_n` is irreducible.
 
@@ -47,6 +48,17 @@ public section
 open Polynomial
 
 namespace IsCyclotomicExtension
+
+/-- **A nontrivial cyclotomic Galois group has nonzero level.** At level `0` the algebra map
+`A → B` is surjective, so the identity is the only `A`-algebra automorphism of `B`. -/
+theorem neZero_of_nontrivial_aut {n : ℕ} (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
+    [IsCyclotomicExtension {n} A B] [Nontrivial (B ≃ₐ[A] B)] : NeZero n := by
+  refine ⟨?_⟩
+  rintro rfl
+  have : Subsingleton (Subalgebra A B) := subsingleton_of_bot_eq_top <|
+    (Algebra.surjective_algebraMap_iff.mp
+      (isCyclotomicExtension_zero_iff.mp ‹_›)).symm
+  exact not_nontrivial (B ≃ₐ[A] B) ‹_›
 
 variable {n : ℕ} [NeZero n] (K : Type*) [Field K] (L : Type*) [CommRing L] [IsDomain L]
   [Algebra K L] [IsCyclotomicExtension {n} K L]
