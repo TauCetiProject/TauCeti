@@ -46,8 +46,11 @@ ring is a regular ring in Mathlib's sense.
   local ring is its Krull dimension.
 * `TauCeti.IsRegularRing.hasProjectiveDimensionLE`: over a regular ring of dimension at most `n`,
   every module has projective dimension at most `n`.
-* `ModuleCat.projectiveDimension_le_ringKrullDim`: over a regular ring, the
-  projective dimension of every module is at most the Krull dimension of the ring.
+* `ModuleCat.projectiveDimension_le_ringKrullDim` and
+  `TauCeti.IsRegularRing.globalDimension_le_ringKrullDim`: over a regular ring, the projective
+  dimension of every module, and hence the global dimension, is at most the Krull dimension of the
+  ring (`TauCeti.IsRegularRing.exists_hasProjectiveDimensionLE` extracts a uniform natural-number
+  bound when `ringKrullDim R < ⊤`).
 * `TauCeti.IsRegularLocalRing.of_hasProjectiveDimensionLE`: a Noetherian local ring whose residue
   field has finite projective dimension is regular.
 * `TauCeti.isRegularLocalRing_iff_projectiveDimension_ne_top`: a Noetherian local ring is regular
@@ -269,6 +272,21 @@ theorem _root_.ModuleCat.projectiveDimension_le_ringKrullDim (M : ModuleCat.{v} 
     | top => exact le_top
     | coe n =>
       exact (projectiveDimension_le_iff M n).mpr (hasProjectiveDimensionLE (h ▸ le_rfl) M)
+
+/-- **The global dimension of a regular ring is at most its Krull dimension.** -/
+theorem globalDimension_le_ringKrullDim : globalDimension.{v} R ≤ ringKrullDim R :=
+  (globalDimension_le_iff R _).mpr ModuleCat.projectiveDimension_le_ringKrullDim
+
+/-- Over a regular ring of finite Krull dimension (`ringKrullDim R < ⊤`), there is a uniform
+natural-number bound on the projective dimension of all modules. -/
+theorem exists_hasProjectiveDimensionLE (hdim : ringKrullDim R < ⊤) :
+    ∃ d : ℕ, ∀ M : ModuleCat.{v} R, HasProjectiveDimensionLE M d := by
+  induction h : ringKrullDim R with
+  | bot => exact ⟨0, hasProjectiveDimensionLE (h ▸ bot_le)⟩
+  | coe d =>
+    induction d with
+    | top => exact absurd h hdim.ne
+    | coe n => exact ⟨n, hasProjectiveDimensionLE (h ▸ le_rfl)⟩
 
 end IsRegularRing
 
