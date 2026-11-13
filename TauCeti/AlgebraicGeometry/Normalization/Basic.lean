@@ -39,8 +39,10 @@ part of `f.normalization` over the open image of `f` is the normalization of `Y`
   normalization of a scheme-theoretically dominant morphism is scheme-theoretically dominant.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_toNormalization`: over the image of an open immersion
   `f : Y ⟶ J`, the normalization of `J` in `Y` is `Y`.
-* `TauCeti.AlgebraicGeometry.overNormalization`: the normalization of an integral scheme `X` over
-  `S`, in its function field, lies over `S` through the normalization morphism.
+* `AlgebraicGeometry.Scheme.Hom.canonicallyOverNormalization`: the relative normalization of
+  `f : Y ⟶ J` lies canonically over `J` through `f.fromNormalization`.
+* `AlgebraicGeometry.Scheme.Hom.isDominant_fromNormalization`: relative normalization of a dominant
+  morphism is dominant, hence surjective.
 
 ## References
 
@@ -94,6 +96,21 @@ theorem normalizationMap_comp {Y'' : Scheme.{u}} (h : Y'' ⟶ J) [QuasiCompact h
       f.normalizationMap h (φ ≫ ψ) (by rw [Category.assoc, hψ, hφ]) :=
   normalization.hom_ext f _ _ h.fromNormalization (by simp) (by simp) (by simp)
 
+/-- The relative normalization of `f : Y ⟶ J` lies canonically over `J` through
+`f.fromNormalization`, hence over every `S` that `J` lies over. -/
+@[simps! over]
+noncomputable instance canonicallyOverNormalization : f.normalization.CanonicallyOver J where
+  hom := f.fromNormalization
+
+/-- The normalization morphism lies over the target. -/
+instance isOver_fromNormalization : f.fromNormalization.IsOver J where
+  comp_over := Category.comp_id _
+
+/-- The morphism of relative normalizations induced by `φ` lies over `J`. -/
+instance isOver_normalizationMap (φ : Y ⟶ Y') (hφ : φ ≫ g = f) :
+    (f.normalizationMap g φ hφ).IsOver J where
+  comp_over := f.normalizationMap_fromNormalization g φ hφ
+
 /-- The canonical morphism from `Y` to its relative normalization is scheme-theoretically
 dominant. -/
 instance isSchemeTheoreticallyDominant_toNormalization :
@@ -144,27 +161,14 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.isSchemeTheoreticallyDominant_fromN
     infer_instance
   exact IsSchemeTheoreticallyDominant.of_comp f.toNormalization f.fromNormalization
 
+/-- Relative normalization of a dominant morphism is dominant over the target. Being integral,
+hence universally closed, the normalization morphism is then surjective. -/
+instance _root_.AlgebraicGeometry.Scheme.Hom.isDominant_fromNormalization {X Y : Scheme.{u}}
+    (f : X ⟶ Y) [QuasiCompact f] [QuasiSeparated f] [IsDominant f] :
+    IsDominant f.fromNormalization := by
+  have : IsDominant (f.toNormalization ≫ f.fromNormalization) := by
+    rw [f.toNormalization_fromNormalization]
+    infer_instance
+  exact IsDominant.of_comp f.toNormalization f.fromNormalization
+
 end TauCeti
-
-namespace TauCeti.AlgebraicGeometry
-
-open CategoryTheory _root_.AlgebraicGeometry
-
-universe u
-
-variable {S : Scheme.{u}} (X : Scheme.{u}) [X.Over S] [IsIntegral X]
-
-/-- The normalization of an integral scheme over `S` lies over `S` through the normalization
-morphism. -/
-noncomputable instance overNormalization :
-    (X.fromSpecStalk (genericPoint X)).normalization.Over S where
-  hom := (X.fromSpecStalk (genericPoint X)).fromNormalization ≫ X ↘ S
-
-/-- The structure morphism of the normalization is the normalization morphism followed by that of
-`X`. -/
-theorem normalization_over_hom :
-    (X.fromSpecStalk (genericPoint X)).normalization ↘ S =
-      (X.fromSpecStalk (genericPoint X)).fromNormalization ≫ X ↘ S :=
-  rfl
-
-end TauCeti.AlgebraicGeometry
