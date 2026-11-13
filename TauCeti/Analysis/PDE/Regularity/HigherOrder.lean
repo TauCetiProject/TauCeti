@@ -322,10 +322,10 @@ theorem exists_wkp_forcing_energyFormH1_principal_eq_of_contDiffOn
   -- The drift is `⟪b, ∇u⟫ = ∑ᵢ ⟪b, eᵢ⟫ ∂ᵢu`, a sum of smooth multiples of first derivatives.
   choose D hD using fun i => Wkp.exists_hasWeakLineDerivOn_value k w (e i)
   rw [hw] at hD
-  choose M hM using fun i => Wkp.exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k
+  choose M hM using fun i => Wkp.exists_value_ae_eq_mul_of_contDiffOn hU.uniqueDiffOn hΩ hΩU k
     (hb.inner ℝ (contDiffOn_const (c := e i))) (D i)
-  obtain ⟨N, hN⟩ := Wkp.exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k hc
-    (Wkp.lowerOrder k w)
+  obtain ⟨N, hN⟩ := Wkp.exists_value_ae_eq_mul_of_contDiffOn hU.uniqueDiffOn hΩ hΩU
+    k hc (Wkp.lowerOrder k w)
   refine ⟨F - ∑ i, M i - N, fun v => ?_⟩
   rw [energyFormH1_principal_eq_setIntegral_sub ha
     ((hb.continuousOn.mono hΩU).memLp_top_restrict_of_subset_isCompact hΩ hmΩ subset_closure)
