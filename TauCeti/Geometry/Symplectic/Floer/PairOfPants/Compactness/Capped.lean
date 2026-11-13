@@ -125,9 +125,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
       (contDiff_fst.contMDiff.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
   have hK' (v : ℂ) : ContDiffOn ℝ 3 (fun q : ℝ × ((ℝ × ℝ) × V) ↦
       cappedComparisonPerturbation H q.1 (equivRealProdCLM.symm q.2.1) q.2.2 v) univ :=
-    (((contMDiff_cappedComparisonPerturbation hH
-      fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff).comp hg).clm_apply
-      contMDiff_const).contDiff.contDiffOn
+    (contDiff_cappedComparisonPerturbation_apply (n := 3) hH hHs v).contDiffOn
   have hJ' : ContDiffOn ℝ 2 (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (cappedComparisonAlmostComplex h₀ J hJ
       q.1 (equivRealProdCLM.symm q.2.1) q.2.2).toLinearMap.toContinuousLinearMap) univ :=
     ((contMDiff_cappedComparisonAlmostComplex h₀ hJp
