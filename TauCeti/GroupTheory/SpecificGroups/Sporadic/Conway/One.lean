@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Leech.Projective
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Leech.AntipodalPairs
+public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Leech.Isometry
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 import Mathlib.Algebra.Group.Action.Hom
 
@@ -39,31 +39,42 @@ This definition does not identify it with any abstract presentation. -/
 abbrev Co1 := Co0 ⧸ Subgroup.zpowers (Isometry.neg leechLattice)
 
 /-- The first Conway lattice group's permutation representation on Leech minimal pairs. -/
-noncomputable def Co1.pairHom : Co1 →* Equiv.Perm (leechLattice.antipodalPairs 4) :=
+noncomputable def Co1.antipodalPairsHom : Co1 →* Equiv.Perm (leechLattice.antipodalPairs 4) :=
   QuotientGroup.lift _ (Isometry.antipodalPairsHom leechLattice 4)
     ker_antipodalPairsHom_leechLattice.symm.le
 
 /-- On a quotient representative, the pair action is the original lattice-isometry action. -/
 @[simp]
-theorem Co1.pairHom_mk (e : Co0) :
-    Co1.pairHom (e : Co1) = Isometry.antipodalPairsHom leechLattice 4 e :=
+theorem Co1.antipodalPairsHom_mk (e : Co0) :
+    Co1.antipodalPairsHom (e : Co1) = Isometry.antipodalPairsHom leechLattice 4 e :=
   QuotientGroup.lift_mk _ _ e
 
 /-- The permutation representation of the first Conway lattice group is faithful. -/
-theorem Co1.pairHom_injective : Function.Injective Co1.pairHom :=
+theorem Co1.antipodalPairsHom_injective : Function.Injective Co1.antipodalPairsHom :=
   (QuotientGroup.injective_lift_iff _ _ _).mpr ker_antipodalPairsHom_leechLattice.symm
 
 /-- The first Conway lattice group acts on the antipodal pairs of Leech minimal vectors. -/
 noncomputable instance Co1.instMulAction : MulAction Co1 (leechLattice.antipodalPairs 4) :=
-  MulAction.compHom _ Co1.pairHom
+  MulAction.compHom _ Co1.antipodalPairsHom
 
 /-- The Conway action on minimal pairs is given by the pair permutation representation. -/
-@[simp]
 theorem Co1.smul_def (g : Co1) (p : leechLattice.antipodalPairs 4) :
-    g • p = Co1.pairHom g p := (rfl)
+    g • p = Co1.antipodalPairsHom g p := (rfl)
+
+/-- A quotient representative acts by its lattice-isometry permutation of minimal pairs. -/
+@[simp]
+theorem Co1.mk_smul (e : Co0) (p : leechLattice.antipodalPairs 4) :
+    (e : Co1) • p = Isometry.antipodalPairsHom leechLattice 4 e p := (rfl)
+
+/-- The inverse of a quotient representative acts by the inverse pair permutation. -/
+@[simp]
+theorem Co1.mk_inv_smul (e : Co0) (p : leechLattice.antipodalPairs 4) :
+    (e : Co1)⁻¹ • p = (Isometry.antipodalPairsHom leechLattice 4 e).symm p := by
+  rw [Co1.smul_def, map_inv, Co1.antipodalPairsHom_mk]
+  rfl
 
 /-- The action of the first Conway lattice group on minimal pairs is faithful. -/
 instance Co1.instFaithfulSMul : FaithfulSMul Co1 (leechLattice.antipodalPairs 4) where
-  eq_of_smul_eq_smul h := Co1.pairHom_injective (Equiv.ext h)
+  eq_of_smul_eq_smul h := Co1.antipodalPairsHom_injective (Equiv.ext h)
 
 end TauCeti.Sporadic

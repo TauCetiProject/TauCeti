@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Leech.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Leech.MinimalVectors
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.AntipodalPairs
 
 /-!
@@ -92,7 +92,7 @@ theorem mem_ker_antipodalPairsHom_leechLattice_iff
         e (pair i t) = pair i t ∨ e (pair i t) = -pair i t := by
       obtain ⟨x, hx, hxe⟩ := pair_minimal hi t
       simpa only [hxe] using (Isometry.mem_ker_antipodalPairsHom_iff e 4).mp he x hx
-    apply e.eq_one_or_neg_of_span_of_pairing_ne_zero span_spanningPairs
+    apply e.eq_one_or_neg_of_span_of_form_ne_zero span_spanningPairs
       (hsign (by decide : (2 : Fin 24) ≠ 0) 1)
     · rintro x (⟨i, hi, rfl⟩ | rfl)
       · exact hsign hi 1

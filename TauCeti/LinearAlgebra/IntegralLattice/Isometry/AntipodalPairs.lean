@@ -34,12 +34,23 @@ def antipodalPairsHom (L : IntegralLattice V) (n : ℚ) :
   map_one' := antipodalPairsEquiv_refl L n
   map_mul' e f := antipodalPairsEquiv_trans f e n
 
+/-- The pair representation is induced by the isometry's antipodal-pair equivalence. -/
+theorem antipodalPairsHom_apply (e : Isometry L L) (n : ℚ) :
+    antipodalPairsHom L n e = e.antipodalPairsEquiv n := (rfl)
+
 /-- The pair permutation applies the isometry to both entries. -/
 @[simp]
 theorem coe_antipodalPairsHom_apply (e : Isometry L L) (n : ℚ)
     (p : L.antipodalPairs n) :
     (antipodalPairsHom L n e p : Sym2 L) = Sym2.map e.carrierEquiv p :=
   e.coe_antipodalPairsEquiv_apply n p
+
+/-- The inverse pair permutation applies the inverse isometry to both entries. -/
+@[simp]
+theorem coe_antipodalPairsHom_symm_apply (e : Isometry L L) (n : ℚ)
+    (p : L.antipodalPairs n) :
+    ((antipodalPairsHom L n e).symm p : Sym2 L) = Sym2.map e.carrierEquiv.symm p :=
+  e.coe_antipodalPairsEquiv_symm_apply n p
 
 /-- Negation fixes every antipodal pair. -/
 @[simp]
@@ -50,11 +61,6 @@ theorem antipodalPairsHom_neg (L : IntegralLattice V) (n : ℚ) :
   obtain ⟨x, _, hp⟩ := mem_antipodalPairs.mp p.2
   apply Subtype.ext
   simp [coe_antipodalPairsHom_apply, ← hp]
-
-/-- Negation generates a normal subgroup of the full lattice isometry group. -/
-instance instNormalZpowersNeg (L : IntegralLattice V) : (Subgroup.zpowers (neg L)).Normal :=
-  Subgroup.normal_of_le_center (Subgroup.zpowers_le.mpr
-    (Subgroup.mem_center_iff.mpr fun e ↦ Isometry.ext fun x ↦ by simp))
 
 /-- An isometry acts trivially on antipodal pairs exactly when it sends each vector of the
 shell to itself or its negative. -/
@@ -84,9 +90,10 @@ theorem mem_ker_antipodalPairsHom_iff (e : Isometry L L) (n : ℚ) :
     · have : e.carrierEquiv x = -x := Subtype.ext (by simpa using hx)
       simp [this]
 
-/-- Signs of an isometry agree on a spanning set whose vectors all pair nontrivially with
-one vector. This criterion does not require positive definiteness or finiteness. -/
-theorem eq_one_or_neg_of_span_of_pairing_ne_zero (e : Isometry L L) {S : Set V}
+/-- An isometry sending each vector of a spanning set and a vector pairing nontrivially with
+all of that set to itself or its negative is the identity or negation. This criterion does not
+require positive definiteness or finiteness. -/
+theorem eq_one_or_neg_of_span_of_form_ne_zero (e : Isometry L L) {S : Set V}
     (hspan : Submodule.span ℚ S = ⊤) {y : V} (hy : e y = y ∨ e y = -y)
     (hS : ∀ x ∈ S, e x = x ∨ e x = -x) (hpair : ∀ x ∈ S, L.form x y ≠ 0) :
     e = 1 ∨ e = neg L := by
