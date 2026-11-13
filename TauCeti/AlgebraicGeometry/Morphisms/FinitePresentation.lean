@@ -7,8 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Limits
-import Mathlib.Algebra.EuclideanDomain.Int
-import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.RingTheory.RingHom.FinitePresentation
 
 /-!

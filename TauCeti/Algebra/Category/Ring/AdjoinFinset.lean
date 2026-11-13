@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.Algebra.Category.Ring.FilteredColimits
-public import Mathlib.RingTheory.FiniteType
 
 /-!
 # A ring as the filtered colimit of its finitely generated subalgebras
