@@ -40,6 +40,8 @@ of `(f, b)` through the class of `(g, m) ∼ (f, m)`, `m = min (a, b, c(g, f))`,
 * `TauCeti.LyndonLength.ChiswellTree l`: the quotient of `{(g, a) | 0 ≤ a ≤ l g}`.
 * `TauCeti.LyndonLength.ChiswellTree.mk`: the class of `(g, a)`.
 * `TauCeti.LyndonLength.ChiswellTree.root`: the class of the pairs `(g, 0)`.
+* `TauCeti.LyndonLength.ChiswellTree.lift`: the function on the quotient induced by a function
+  of the pairs that is constant on classes (`ChiswellTree.lift_mk`, `ChiswellTree.lift_unique`).
 * `TauCeti.LyndonLength.chiswellMetric l`: the `Λ`-metric of the quotient.
 
 ## Main results
@@ -157,6 +159,34 @@ theorem mk_eq_mk_iff {g f : G} {a : Icc (0 : Λ) (l g)} {b : Icc (0 : Λ) (l f)}
   rw [coe_le_gromovProduct_iff]
   -- The relation of the quotient is, by definition, the vanishing of `preDist`.
   exact Quotient.eq.trans (preDist_eq_zero_iff l)
+
+section lift
+
+variable {β : Sort*}
+
+/-- A function of the pairs `(g, a)` taking the same value on `(g, a)` and `(f, b)` whenever
+`a = b ≤ c(g, f)` descends to a function on Chiswell's tree. -/
+def lift (φ : ∀ g : G, Icc (0 : Λ) (l g) → β)
+    (hφ : ∀ ⦃g f : G⦄ ⦃a : Icc (0 : Λ) (l g)⦄ ⦃b : Icc (0 : Λ) (l f)⦄, (a : Λ) = b →
+      ((a : Λ) : DivisibleHull Λ) ≤ l.gromovProduct g f → φ g a = φ f b) :
+    l.ChiswellTree → β :=
+  Quotient.lift (fun p => φ p.1 p.2) fun _ _ h =>
+    (mk_eq_mk_iff.1 (Quotient.sound h)).elim (hφ · ·)
+
+/-- The function induced by `φ` on Chiswell's tree takes the value `φ g a` at the class
+of `(g, a)`. -/
+@[simp]
+theorem lift_mk (φ : ∀ g : G, Icc (0 : Λ) (l g) → β) (hφ) (g : G) (a : Icc (0 : Λ) (l g)) :
+    lift φ hφ (mk g a) = φ g a :=
+  (rfl)
+
+/-- A function on Chiswell's tree taking the value `φ g a` at the class of each pair `(g, a)` is
+the function induced by `φ`. -/
+theorem lift_unique {φ : ∀ g : G, Icc (0 : Λ) (l g) → β} (hφ) {ψ : l.ChiswellTree → β}
+    (hψ : ∀ g a, ψ (mk g a) = φ g a) : ψ = lift φ hφ :=
+  funext fun x => by induction x with | mk g a => exact hψ g a
+
+end lift
 
 variable (l) in
 /-- The root of Chiswell's tree: the common class of the pairs `(g, 0)`. -/
