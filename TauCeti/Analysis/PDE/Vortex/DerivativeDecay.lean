@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Decay
 import TauCeti.Analysis.InnerProductSpace.Laplacian.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Exponential decay of the derivatives of a plane vortex
@@ -388,22 +389,14 @@ private theorem laplacian_log_normSq_hypotheses
     rw [laplacian_log_normSq_of_equation_eq_zero hp2.contDiffAt hq2.contDiffAt hα
       (Eventually.of_forall hsol), Real.exp_log (by positivity)]
     ring
-  · -- `|log |α|²| ≤ 2 (1 - |α|²)` where `|α|² ≥ 1 / 2`.
+  · -- `log |α|² = O(|α|² - 1)` as `|α|² → 1`, and `0 ≤ 1 - |α|² ≤ K exp (-c' |z|)`.
     obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hp2 hq2 hsol hlim hc'lt
-    refine IsBigO.of_bound (2 * K) ?_
-    filter_upwards [hpos] with z hz
-    have hz₀ : 0 < s z := (by norm_num : (0 : ℝ) < 1 / 2).trans hz
-    have hlog : Real.log (s z) ≤ 0 := Real.log_nonpos hz₀.le (hs₁ z)
-    have hinv := Real.log_le_sub_one_of_pos (inv_pos.mpr hz₀)
-    rw [Real.log_inv] at hinv
-    have hbound : -Real.log (s z) ≤ 2 * (1 - s z) := by
-      have : (s z)⁻¹ - 1 ≤ 2 * (1 - s z) := by
-        rw [inv_eq_one_div, div_sub_one hz₀.ne', div_le_iff₀ hz₀]
-        nlinarith [mul_nonneg (sub_nonneg.2 (hs₁ z)) (by linarith : (0 : ℝ) ≤ 2 * s z - 1)]
-      linarith
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonpos hlog, abs_of_pos (Real.exp_pos _)]
-    have := hK z
-    nlinarith
+    have hlog := (Real.hasDerivAt_log one_ne_zero).isBigO_sub.comp_tendsto hlim
+    simp only [Function.comp_def, Real.log_one, sub_zero] at hlog
+    refine hlog.trans (IsBigO.of_bound K (Eventually.of_forall fun z ↦ ?_))
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonpos (sub_nonpos.2 (hs₁ z)),
+      abs_of_pos (Real.exp_pos _)]
+    linarith [hK z]
   · obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hp2 hq2 hsol hlim
       (c := 0) (by norm_num)
     refine IsBigO.of_bound K ?_
@@ -444,11 +437,9 @@ theorem isBigO_iteratedFDeriv_normSq_sub_one
   have hpos : ∀ᶠ z in cocompact ℂ, 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
     hlim.eventually (lt_mem_nhds (by norm_num))
   refine (h.congr' ?_ EventuallyEq.rfl).trans (isBigO_exp_neg_mul_norm_of_le hcc' _)
-  obtain ⟨R, -, hR⟩ :=
-    hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ hpos)
-  filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop R] with z hz
+  filter_upwards [hpos.eventually_nhds_cocompact] with z hz
   refine Filter.EventuallyEq.eq_of_nhds (Filter.EventuallyEq.iteratedFDeriv ℝ ?_ n)
-  filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
-  rw [Real.exp_log (by linarith [hR (Set.mem_ofPred.mpr hw.le)])]
+  filter_upwards [hz] with w hw
+  rw [Real.exp_log (by linarith)]
 
 end TauCeti.Vortex

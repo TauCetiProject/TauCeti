@@ -83,6 +83,15 @@ theorem _root_.IsCompact.exists_tendsto_of_eventually_mem {ι : Type*} {s : Set 
   obtain ⟨x, hx, h⟩ := hs.ultrafilter_le_nhds' (U.map u) (Ultrafilter.mem_map.2 hu)
   exact ⟨x, hx, by rwa [Ultrafilter.coe_map] at h⟩
 
+/-- In an `R₁` space, a property holding outside a compact set holds near every point outside a
+compact set: the closure of a compact set is compact, and its complement is open. -/
+theorem _root_.Filter.Eventually.eventually_nhds_cocompact [R1Space X] {p : X → Prop}
+    (h : ∀ᶠ x in cocompact X, p x) : ∀ᶠ x in cocompact X, ∀ᶠ y in 𝓝 x, p y := by
+  rw [← coclosedCompact_eq_cocompact] at h ⊢
+  obtain ⟨K, hK, hKp⟩ := hasBasis_coclosedCompact.eventually_iff.mp h
+  exact hasBasis_coclosedCompact.eventually_iff.mpr
+    ⟨K, hK, fun x hx ↦ eventually_of_mem (hK.1.isOpen_compl.mem_nhds hx) fun y hy ↦ hKp hy⟩
+
 /-- A preconnected noncompact space has no compact connected component: its only component is the
 whole space. -/
 theorem not_isCompact_connectedComponent [PreconnectedSpace X] [NoncompactSpace X]

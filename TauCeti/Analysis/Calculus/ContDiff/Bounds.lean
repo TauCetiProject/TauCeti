@@ -58,10 +58,12 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
   `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
-* `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if the derivatives of
-  order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n` derivative of
-  `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`.
-* `ContDiff.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
+* `ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt`: the Leibniz bound for
+  `y ↦ B (f y) (g y)` at a point where `f` and `g` are `C^n`.
+* `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if `f` and `g` are
+  eventually `C^n` and their derivatives of order at most `n` are `O(ρ₁)` and `O(ρ₂)`, then the
+  order-`n` derivative of `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`.
+* `TauCeti.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
 -/
 
 public section
@@ -269,14 +271,35 @@ theorem ContDiff.norm_iteratedFDeriv_comp_const_smul_le {N : ℕ} {f : E → F}
   rw [iteratedFDeriv_comp_const_smul c (hf.of_le (by exact_mod_cast hp)), norm_smul, norm_pow]
   exact mul_le_mul (pow_le_pow_right₀ hc hp) (hC p hp _) (norm_nonneg _) (by positivity)
 
+/-- The Leibniz bound `ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear` at a point, for maps
+that are only `C^n` at that point. -/
+theorem ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt {D : Type*}
+    [NormedAddCommGroup D] [NormedSpace 𝕜 D] (B : E →L[𝕜] F →L[𝕜] G) {f : D → E} {g : D → F}
+    {n : ℕ} {x : D} (hf : ContDiffAt 𝕜 n f x) (hg : ContDiffAt 𝕜 n g x) :
+    ‖iteratedFDeriv 𝕜 n (fun y ↦ B (f y) (g y)) x‖ ≤
+      ‖B‖ * ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i f x‖ *
+        ‖iteratedFDeriv 𝕜 (n - i) g x‖ := by
+  -- Pass to an open neighbourhood of `x` on which both maps are `C^n`.
+  obtain ⟨s, hs, hfs⟩ := hf.contDiffOn (m := n) le_rfl (by simp)
+  obtain ⟨t, ht, hgt⟩ := hg.contDiffOn (m := n) le_rfl (by simp)
+  obtain ⟨U, hUst, hU, hxU⟩ := mem_nhds_iff.mp (Filter.inter_mem hs ht)
+  have H := B.norm_iteratedFDerivWithin_le_of_bilinear (hfs.mono (hUst.trans inter_subset_left))
+    (hgt.mono (hUst.trans inter_subset_right)) hU.uniqueDiffOn hxU le_rfl
+  have hfU (i : ℕ) : iteratedFDerivWithin 𝕜 i f U x = iteratedFDeriv 𝕜 i f x :=
+    iteratedFDerivWithin_of_isOpen i hU hxU
+  have hgU (i : ℕ) : iteratedFDerivWithin 𝕜 i g U x = iteratedFDeriv 𝕜 i g x :=
+    iteratedFDerivWithin_of_isOpen i hU hxU
+  rwa [iteratedFDerivWithin_of_isOpen n hU hxU, Finset.sum_congr rfl fun i _ ↦ by
+    rw [hfU, hgU]] at H
+
 open Asymptotics in
-/-- **Asymptotic bounds on the derivatives of a bilinear expression.** Along any filter, if the
-derivatives of order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n`
-derivative of `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`, by the Leibniz bound
-`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear`. -/
+/-- **Asymptotic bounds on the derivatives of a bilinear expression.** Along any filter, if `f` and
+`g` are eventually `C^n` and their derivatives of order at most `n` are `O(ρ₁)` and `O(ρ₂)`, then
+the order-`n` derivative of `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`, by the Leibniz bound
+`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt`. -/
 theorem ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear {D : Type*} [NormedAddCommGroup D]
-    [NormedSpace 𝕜 D] (B : E →L[𝕜] F →L[𝕜] G) {f : D → E} {g : D → F} {N : WithTop ℕ∞}
-    (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g) {n : ℕ} (hn : n ≤ N) {l : Filter D}
+    [NormedSpace 𝕜 D] (B : E →L[𝕜] F →L[𝕜] G) {f : D → E} {g : D → F} {n : ℕ} {l : Filter D}
+    (hf : ∀ᶠ y in l, ContDiffAt 𝕜 n f y) (hg : ∀ᶠ y in l, ContDiffAt 𝕜 n g y)
     {ρ₁ ρ₂ : D → ℝ} (hfn : ∀ i ≤ n, iteratedFDeriv 𝕜 i f =O[l] ρ₁)
     (hgn : ∀ i ≤ n, iteratedFDeriv 𝕜 i g =O[l] ρ₂) :
     iteratedFDeriv 𝕜 n (fun y ↦ B (f y) (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
@@ -286,22 +309,10 @@ theorem ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear {D : Type*} [Norme
     refine IsBigO.const_mul_left (IsBigO.fun_sum fun i hi ↦ ?_) _
     have hi' : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
     exact ((hfn i hi').norm_left.const_mul_left _).mul (hgn (n - i) (Nat.sub_le n i)).norm_left
-  refine IsBigO.trans (IsBigO.of_bound 1 (Filter.Eventually.of_forall fun y ↦ ?_)) hsum
+  refine IsBigO.trans (IsBigO.of_bound 1 ?_) hsum
+  filter_upwards [hf, hg] with y hfy hgy
   rw [one_mul, Real.norm_eq_abs]
-  exact (B.norm_iteratedFDeriv_le_of_bilinear hf hg y hn).trans (le_abs_self _)
-
-open Asymptotics in
-/-- The case `(c, v) ↦ c.smulRight v` of `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`:
-along any filter, if the derivatives of order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`,
-then the order-`n` derivative of `y ↦ (f y).smulRight (g y)` is `O(ρ₁ ρ₂)`. -/
-theorem ContDiff.isBigO_iteratedFDeriv_smulRight {D : Type*} [NormedAddCommGroup D]
-    [NormedSpace 𝕜 D] {f : D → E →L[𝕜] 𝕜} {g : D → G} {N : WithTop ℕ∞} (hf : ContDiff 𝕜 N f)
-    (hg : ContDiff 𝕜 N g) {n : ℕ} (hn : n ≤ N) {l : Filter D} {ρ₁ ρ₂ : D → ℝ}
-    (hfn : ∀ i ≤ n, iteratedFDeriv 𝕜 i f =O[l] ρ₁)
-    (hgn : ∀ i ≤ n, iteratedFDeriv 𝕜 i g =O[l] ρ₂) :
-    iteratedFDeriv 𝕜 n (fun y ↦ (f y).smulRight (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
-  simpa using (ContinuousLinearMap.smulRightL 𝕜 E G).isBigO_iteratedFDeriv_of_bilinear hf hg hn
-    hfn hgn
+  exact (B.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt hfy hgy).trans (le_abs_self _)
 
 namespace TauCeti
 
@@ -337,5 +348,19 @@ theorem norm_iteratedFDeriv_comp_le_of_contDiffAt {n : ℕ} {f : E → F}
   · intro j hj₁ hj
     rw [iteratedFDerivWithin_of_isOpen j hU hxU]
     exact hD j hj₁ hj
+
+open Asymptotics in
+/-- The case `(c, v) ↦ c.smulRight v` of `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`:
+along any filter, if `f` and `g` are eventually `C^n` and their derivatives of order at most `n`
+are `O(ρ₁)` and `O(ρ₂)`, then the order-`n` derivative of `y ↦ (f y).smulRight (g y)` is
+`O(ρ₁ ρ₂)`. -/
+theorem isBigO_iteratedFDeriv_smulRight {D : Type*} [NormedAddCommGroup D] [NormedSpace 𝕜 D]
+    {f : D → E →L[𝕜] 𝕜} {g : D → G} {n : ℕ} {l : Filter D} (hf : ∀ᶠ y in l, ContDiffAt 𝕜 n f y)
+    (hg : ∀ᶠ y in l, ContDiffAt 𝕜 n g y) {ρ₁ ρ₂ : D → ℝ}
+    (hfn : ∀ i ≤ n, iteratedFDeriv 𝕜 i f =O[l] ρ₁)
+    (hgn : ∀ i ≤ n, iteratedFDeriv 𝕜 i g =O[l] ρ₂) :
+    iteratedFDeriv 𝕜 n (fun y ↦ (f y).smulRight (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
+  simpa using (ContinuousLinearMap.smulRightL 𝕜 E G).isBigO_iteratedFDeriv_of_bilinear hf hg
+    hfn hgn
 
 end TauCeti

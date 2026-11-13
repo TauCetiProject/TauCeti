@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
+import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
@@ -34,7 +35,8 @@ apply: both `u` and `-u` are subsolutions of `-Δ + V`, so `|u|` decays at the r
 
 A forcing of size `B exp (-c ‖x‖)` is absorbed when the potential is bounded below by `a²` with
 `a > c > 0`: then `u x ≤ M exp (-c (‖x‖ - R)) + B / (a² - c²) exp (-c ‖x‖)`. This forced version
-is what differentiating a screened equation produces.
+is what differentiating a screened equation produces. Applied to norming functionals, it bounds
+vector-valued solutions of `Δ u = V • u + Φ` with a forcing `‖Φ‖ ≤ B exp (-c ‖x‖)`.
 
 This is the decay mechanism of massive fields: for instance, outside a large disc the logarithmic
 modulus defect `-log |α|²` of a plane vortex is such a subsolution for every rate `c < 1 / 2`.
@@ -46,6 +48,8 @@ modulus defect `-log |α|²` of a plane vortex is such a subsolution for every r
 * `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: the case of the constant potential `c²`.
 * `TauCeti.le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian`: the version with a forcing of
   size `B exp (-c ‖x‖)` and a potential `V ≥ a² > c²`.
+* `TauCeti.norm_le_mul_exp_add_div_mul_exp_of_norm_laplacian_sub_smul_le`: its vector-valued form
+  for `‖Δ u - V • u‖ ≤ B exp (-c ‖x‖)`.
 
 ## References
 
@@ -216,5 +220,43 @@ theorem le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R 
       simpa [hb] using (tendsto_exp_neg_mul_norm_cocompact (E := E) hc).const_mul A
     rw [Pi.sub_def]
     simpa only [sub_zero] using hlim.sub hexp
+
+/-- **Exponential decay of forced vector-valued solutions of `Δ u = V • u + Φ`.** Let `u` take
+values in a real normed space, be continuous on the exterior `‖x‖ ≥ R` of a ball of radius `R > 0`,
+`C²` on `‖x‖ > R`, and `u → 0` at infinity. Suppose that `‖Δ u - V • u‖ ≤ B exp (-c ‖x‖)` there for
+a potential `V ≥ a²` and a forcing constant `B ≥ 0`, where `0 < c < a`. If `‖u‖ ≤ M` on the sphere
+`‖x‖ = R`, with `M ≥ 0`, then for every `x` with `‖x‖ ≥ R`,
+
+`‖u x‖ ≤ M exp (-c (‖x‖ - R)) + B / (a² - c²) exp (-c ‖x‖)`.
+
+This is `TauCeti.le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian` for a norming functional of
+`u x`. -/
+theorem norm_le_mul_exp_add_div_mul_exp_of_norm_laplacian_sub_smul_le {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {u : E → G} {V : E → ℝ} {R a c M B : ℝ}
+    (hR : 0 < R) (hc : 0 < c) (hca : c < a) (hM : 0 ≤ M) (hB : 0 ≤ B)
+    (hcont : ContinuousOn u {x | R ≤ ‖x‖}) (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x)
+    (hV : ∀ x, R < ‖x‖ → a ^ 2 ≤ V x)
+    (hforce : ∀ x, R < ‖x‖ → ‖Δ u x - V x • u x‖ ≤ B * Real.exp (-(c * ‖x‖)))
+    (hbdry : ∀ x, ‖x‖ = R → ‖u x‖ ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
+    (hx : R ≤ ‖x‖) :
+    ‖u x‖ ≤ M * Real.exp (-(c * (‖x‖ - R))) + B / (a ^ 2 - c ^ 2) * Real.exp (-(c * ‖x‖)) := by
+  obtain ⟨φ, hφ1, hφx⟩ := exists_dual_vector'' ℝ (u x)
+  have hφx' : φ (u x) = ‖u x‖ := hφx
+  have hφle : ∀ v : G, φ v ≤ ‖v‖ := fun v ↦
+    (le_abs_self _).trans ((φ.le_opNorm v).trans (mul_le_of_le_one_left (norm_nonneg v) hφ1))
+  rw [← hφx']
+  refine le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian (u := φ ∘ u) hR hc hca hM hB
+    (φ.continuous.comp_continuousOn hcont) (fun y hy ↦ φ.contDiff.contDiffAt.comp y (hcd y hy)) hV
+    (fun y hy ↦ ?_) (fun y hy ↦ (hφle _).trans (hbdry y hy))
+    (by simpa using (φ.continuous.tendsto 0).comp hlim) hx
+  -- The equation for `φ ∘ u`.
+  rw [(hcd y hy).laplacian_CLM_comp_left (l := (φ : G →L[ℝ] ℝ))]
+  have hlow : -(B * Real.exp (-(c * ‖y‖))) ≤ φ (Δ u y - V y • u y) := by
+    have := (hφle (-(Δ u y - V y • u y))).trans ((norm_neg _).le.trans (hforce y hy))
+    rw [map_neg] at this
+    linarith
+  rw [map_sub, map_smul, smul_eq_mul] at hlow
+  simp only [Function.comp_apply]
+  linarith
 
 end TauCeti

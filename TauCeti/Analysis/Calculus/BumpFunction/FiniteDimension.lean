@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Extending finite-dimensional smooth germs
@@ -119,9 +120,11 @@ theorem exists_contDiff_eventually_eventuallyEq [FiniteDimensional ℝ E] {n : �
       rw [b.one_of_mem_closedBall (by simpa using hy.le), sub_self, zero_smul]
     · exact (contDiffAt_const.sub b.contDiff.contDiffAt).smul
         (hR (Set.mem_ofPred.mpr (by linarith [le_max_left R 0, not_lt.mp hx])))
-  · filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_gt_atTop (r + 1)] with x hx
-    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
-    rw [b.zero_of_le_dist (by simpa using hy.le), sub_zero, one_smul]
+  · -- Far out the cutoff is identically one.
+    have hfar : ∀ᶠ x in cocompact E, (1 - b x) • f x = f x := by
+      filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_ge_atTop (r + 1)] with x hx
+      rw [b.zero_of_le_dist (by simpa using hx), sub_zero, one_smul]
+    exact hfar.eventually_nhds_cocompact
 
 open Metric
 

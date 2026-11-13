@@ -58,7 +58,7 @@ functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mu
 `ContDiffAt.laplacian_comp` for a real function of a scalar function, the companion rule
 `ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, the commutation
 `ContDiffAt.laplacian_fderiv` of the Laplacian with the derivative and its iterate
-`ContDiff.laplacian_iteratedFDeriv`, and the locality
+`ContDiffAt.laplacian_iteratedFDeriv`, and the locality
 statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes identically.
 
 ## Main declarations
@@ -88,8 +88,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   directional derivatives along an orthonormal basis.
 * `TauCeti.laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I`: its planar form in
   the orthonormal directions `1` and `I`.
-* `ContDiffAt.laplacian_fderiv`, `ContDiff.laplacian_iteratedFDeriv`: `Δ (Df) = D (Δ f)` and
-  `Δ (Dⁿ f) = Dⁿ (Δ f)`.
+* `ContDiffAt.laplacian_fderiv`, `ContDiffAt.laplacian_iteratedFDeriv`,
+  `ContDiff.laplacian_iteratedFDeriv`: `Δ (Df) = D (Δ f)` and `Δ (Dⁿ f) = Dⁿ (Δ f)`.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
@@ -233,28 +233,36 @@ theorem _root_.ContDiffAt.laplacian_fderiv {f : E → F} {x : E} (hf : ContDiffA
     fderiv_clm_apply hD2 (differentiableAt_const _)]
   simp [b]
 
-/-- **The Laplacian commutes with iterated derivatives.** For a map of class `C^(n+2)`,
-`Δ (Dⁿ f) = Dⁿ (Δ f)`. -/
-theorem _root_.ContDiff.laplacian_iteratedFDeriv {f : E → F} {n : ℕ}
-    (hf : ContDiff ℝ (n + 2) f) : Δ (iteratedFDeriv ℝ n f) = iteratedFDeriv ℝ n (Δ f) := by
-  induction n with
+/-- **The Laplacian commutes with iterated derivatives.** For a map of class `C^(n+2)` at `x`,
+`Δ (Dⁿ f) x = Dⁿ (Δ f) x`. -/
+theorem _root_.ContDiffAt.laplacian_iteratedFDeriv {f : E → F} {x : E} {n : ℕ}
+    (hf : ContDiffAt ℝ (n + 2) f x) : Δ (iteratedFDeriv ℝ n f) x = iteratedFDeriv ℝ n (Δ f) x := by
+  induction n generalizing x with
   | zero =>
     rw [iteratedFDeriv_zero_eq_comp, iteratedFDeriv_zero_eq_comp]
-    exact laplacian_CLE_comp_left
-      (l := (continuousMultilinearCurryFin0 ℝ E F).symm.toContinuousLinearEquiv)
+    exact congrFun (laplacian_CLE_comp_left
+      (l := (continuousMultilinearCurryFin0 ℝ E F).symm.toContinuousLinearEquiv)) x
   | succ n ih =>
-    have hf' : ContDiff ℝ (n + 2) f := hf.of_le (by norm_cast; omega)
-    have h3 : ContDiff ℝ 3 (iteratedFDeriv ℝ n f) :=
+    have h3 : ContDiffAt ℝ 3 (iteratedFDeriv ℝ n f) x :=
       hf.iteratedFDeriv_right (by norm_cast; omega)
+    -- The order-`n` commutation holds near `x`.
+    have hnear : Δ (iteratedFDeriv ℝ n f) =ᶠ[𝓝 x] iteratedFDeriv ℝ n (Δ f) :=
+      (hf.eventually (Ne.symm (ne_of_beq_false rfl))).mono fun y hy ↦
+        ih (hy.of_le (by norm_cast; omega))
     rw [iteratedFDeriv_succ_eq_comp_left, iteratedFDeriv_succ_eq_comp_left]
     let Ψ := (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ E) F).symm
     have hΨ := laplacian_CLE_comp_left (f := fderiv ℝ (iteratedFDeriv ℝ n f))
       (F := E →L[ℝ] E [×n]→L[ℝ] F) (G := E [×n + 1]→L[ℝ] F) (l := Ψ.toContinuousLinearEquiv)
     rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hΨ
     rw [hΨ]
-    ext1 x
     simp only [Function.comp_apply]
-    rw [h3.contDiffAt.laplacian_fderiv, ih hf']
+    rw [h3.laplacian_fderiv, hnear.fderiv_eq]
+
+/-- **The Laplacian commutes with iterated derivatives.** For a map of class `C^(n+2)`,
+`Δ (Dⁿ f) = Dⁿ (Δ f)`. -/
+theorem _root_.ContDiff.laplacian_iteratedFDeriv {f : E → F} {n : ℕ}
+    (hf : ContDiff ℝ (n + 2) f) : Δ (iteratedFDeriv ℝ n f) = iteratedFDeriv ℝ n (Δ f) :=
+  funext fun _ ↦ hf.contDiffAt.laplacian_iteratedFDeriv
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
 /-- Scalar dilation as a continuous linear equivalence. -/

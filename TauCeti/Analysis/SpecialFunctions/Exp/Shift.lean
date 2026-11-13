@@ -49,7 +49,7 @@ theorem exp_neg_mul_sub (c t R : ℝ) :
 
 open Filter Topology in
 /-- For a positive rate `c`, the radial exponential `exp (-c ‖x‖)` tends to zero at infinity. -/
-theorem tendsto_exp_neg_mul_norm_cocompact {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
+theorem tendsto_exp_neg_mul_norm_cocompact {E : Type*} [SeminormedAddGroup E] [ProperSpace E]
     {c : ℝ} (hc : 0 < c) : Tendsto (fun x : E ↦ Real.exp (-(c * ‖x‖))) (cocompact E) (𝓝 0) :=
   Real.tendsto_exp_neg_atTop_nhds_zero.comp
     ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc)
