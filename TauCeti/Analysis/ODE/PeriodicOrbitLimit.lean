@@ -56,9 +56,10 @@ inequality (`TauCeti.integral_le_sqrt_mul_sqrt_integral_sq`), once the squared d
 are at most `1` the loops have the common modulus of continuity `B h + √h`, where `B` bounds `X`
 on the compact set, and the integral equation `x(t) - x(0) = ∫₀ᵗ X(τ, x(τ)) dτ` passes to the limit
 because the integral of the defect tends to `0`
-(`TauCeti.sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect`). The integrals are taken after
-applying a continuous linear map into a Banach space, such as the embedding of `V` into its
-completion, so that `V` itself need not be complete.
+(`TauCeti.sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect`, which, like
+`TauCeti.sub_eq_integral_add_integral_sliceDefect`, requires `V` to be complete). The periodic-orbit
+theorems below do not assume completeness of `V`: their proofs apply the same argument to the
+integrals after composing with the embedding of `V` into its completion, through private helpers.
 
 This is the step of the asymptotic analysis of Floer trajectories that produces the periodic orbit
 at an end: for a solution of the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on a
