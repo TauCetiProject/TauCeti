@@ -128,8 +128,8 @@ theorem sum_trace_popaZagierElement_single_upperTriangularRep (n w : ℕ) (hn : 
       apply Fintype.sum_congr
       intro x
       dsimp only [contribution]
-      rw [trace_popaZagierElement_single_upperTriangularRep (by exact_mod_cast hn) w hw
-        (e.symm x).1 (e.symm x).2]
+      obtain ⟨hc, ha, -, -⟩ := (e.symm x).2
+      rw [trace_popaZagierElement_single_upperTriangular w hw (e.symm x).1 hc ha]
       have hmatrix : (e.symm x).1.1 =
           !![(x.1.1.1 : ℤ), (x.2 : ℕ); 0, (n : ℤ).sign * x.1.1.2] := by
         simpa only [e] using FixedDetMatrices.coe_repsEquiv_symm_apply hnZ x
