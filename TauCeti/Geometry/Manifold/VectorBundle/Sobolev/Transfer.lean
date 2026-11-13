@@ -119,7 +119,7 @@ def transferL (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
     (hPc : IsCompact (closure (P : Set E))) (hPD : closure (P : Set E) ⊆ A.transferDomain i j)
     (hPQ : MapsTo ((A.chart i).symm ≫ₕ A.chart j) P Q) :
     (Fin (finrank ℝ F) → Wkp μ Q p k) →L[ℝ] (Fin (finrank ℝ F) → Wkp μ P p k) :=
-  (Wkp.contDiffOnOperatorSMulL (A.isOpen_transferDomain i j) hPc hPD k (finBasis ℝ F)
+  (Wkp.contDiffOnOperatorSMulL (A.isOpen_transferDomain i j).uniqueDiffOn hPc hPD k (finBasis ℝ F)
       (finBasis ℝ F) (A.contDiffOn_coordChangeL_transferDomain i j)).comp
     (ContinuousLinearMap.piMap fun _ ↦ Wkp.compL
       (A.exists_isChangeOfVariables_coordChange k hPc hPD hPQ).choose_spec.choose_spec hp)
@@ -135,7 +135,8 @@ theorem value_transferL_ae (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
       fun y ↦ (finBasis ℝ F).repr ((A.triv j).coordChangeL ℝ (A.triv i) ((A.chart i).symm y)
         (∑ l, Wkp.value k (u l) (((A.chart i).symm ≫ₕ A.chart j) y) • finBasis ℝ F l)) m := by
   set h := (A.exists_isChangeOfVariables_coordChange k hPc hPD hPQ).choose_spec.choose_spec
-  filter_upwards [Wkp.value_contDiffOnOperatorSMulL_ae (A.isOpen_transferDomain i j) hPc hPD k
+  filter_upwards [Wkp.value_contDiffOnOperatorSMulL_ae (A.isOpen_transferDomain i j).uniqueDiffOn
+      hPc hPD k
       (finBasis ℝ F) (finBasis ℝ F) (A.contDiffOn_coordChangeL_transferDomain i j)
       ((ContinuousLinearMap.piMap fun _ ↦ Wkp.compL h hp) u) m,
     ae_all_iff.2 fun l ↦ Wkp.value_compL_ae h hp (u l)] with y hy hl

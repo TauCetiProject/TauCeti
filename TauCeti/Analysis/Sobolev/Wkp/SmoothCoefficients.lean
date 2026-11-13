@@ -11,7 +11,8 @@ public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
 /-!
 # Multiplication by smooth matrix and operator coefficients on `W^{k,p}(Ω)`
 
-Let `Ω` be an open set whose closure is compact and contained in an open set `U`. A tuple
+Let `Ω` be an open set whose closure is compact and contained in a set `U` of unique
+differentiability, for instance an open set. A tuple
 `(u l)_{l ∈ ι}` of scalar Sobolev functions on `Ω` is multiplied by a matrix `(a m l)` of functions
 smooth on `U` by `(a u) m = ∑ l, a m l * u l`. This is a continuous linear map
 `(ι → W^{k,p}(Ω)) →L[ℝ] (κ → W^{k,p}(Ω))` for every order `k` and every `1 ≤ p ≤ ∞`
@@ -58,16 +59,18 @@ section Matrix
 variable {a : κ → ι → E → ℝ}
 
 /-- **Smooth matrix multiplication on tuples in `W^{k,p}(Ω)`.** If `Ω` has compact closure inside
-an open set `U` and every entry `a m l` is smooth on `U`, the tuple with entries
-`∑ l, a m l * u l` depends continuously and linearly on the tuple `u`. -/
-def contDiffOnMatrixSMulL (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
+a set `U` of unique differentiability, for instance an open set, and every entry `a m l` is smooth
+on `U`, the tuple with entries `∑ l, a m l * u l` depends continuously and linearly on the tuple
+`u`. -/
+def contDiffOnMatrixSMulL (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Omega : Set E)))
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (ha : ∀ m l, ContDiffOn ℝ ∞ (a m l) U) :
     (ι → Wkp mu Omega p k) →L[ℝ] (κ → Wkp mu Omega p k) :=
   ContinuousLinearMap.pi fun m ↦
     ∑ l, (contDiffOnSMulL hU hΩ hΩU k (ha m l)).comp (ContinuousLinearMap.proj l)
 
 @[simp]
-theorem contDiffOnMatrixSMulL_apply (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
+theorem contDiffOnMatrixSMulL_apply (hU : UniqueDiffOn ℝ U)
+    (hΩ : IsCompact (closure (Omega : Set E)))
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (ha : ∀ m l, ContDiffOn ℝ ∞ (a m l) U)
     (u : ι → Wkp mu Omega p k) (m : κ) :
     contDiffOnMatrixSMulL hU hΩ hΩU k ha u m =
@@ -76,7 +79,7 @@ theorem contDiffOnMatrixSMulL_apply (hU : IsOpen U) (hΩ : IsCompact (closure (O
 
 /-- The components of a smooth matrix product are the pointwise matrix products, almost
 everywhere on `Ω`. -/
-theorem value_contDiffOnMatrixSMulL_ae (hU : IsOpen U)
+theorem value_contDiffOnMatrixSMulL_ae (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     (ha : ∀ m l, ContDiffOn ℝ ∞ (a m l) U) (u : ι → Wkp mu Omega p k) (m : κ) :
     (value k (contDiffOnMatrixSMulL hU hΩ hΩU k ha u m) : E → ℝ) =ᵐ[mu.restrict Omega]
@@ -89,7 +92,7 @@ theorem value_contDiffOnMatrixSMulL_ae (hU : IsOpen U)
   exact Finset.sum_congr rfl fun l _ ↦ hl l
 
 /-- Smooth matrix multiplication commutes with forgetting the highest weak derivative. -/
-theorem lowerOrder_contDiffOnMatrixSMulL (hU : IsOpen U)
+theorem lowerOrder_contDiffOnMatrixSMulL (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     (ha : ∀ m l, ContDiffOn ℝ ∞ (a m l) U) (u : ι → Wkp mu Omega p (k + 1)) (m : κ) :
     lowerOrder k (contDiffOnMatrixSMulL hU hΩ hΩU (k + 1) ha u m) =
@@ -105,12 +108,12 @@ section Operator
 variable {F F' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup F']
   [NormedSpace ℝ F'] {g : E → F →L[ℝ] F'}
 
-/-- **Smooth operator coefficients on `W^{k,p}(Ω)`.** If `Ω` has compact closure inside an open set
-`U` and `g : E → F →L[ℝ] F'` is smooth on `U`, then multiplication by the matrix of `g` in bases
-`b` of `F` and `b'` of `F'` is a continuous linear map on tuples of Sobolev functions. Read as the
-components of `F`-valued maps, it sends `u` to `x ↦ g x (u x)`
-(`TauCeti.Wkp.value_contDiffOnOperatorSMulL_ae`). -/
-def contDiffOnOperatorSMulL (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
+/-- **Smooth operator coefficients on `W^{k,p}(Ω)`.** If `Ω` has compact closure inside a set
+`U` of unique differentiability, for instance an open set, and `g : E → F →L[ℝ] F'` is smooth on
+`U`, then multiplication by the matrix of `g` in bases `b` of `F` and `b'` of `F'` is a continuous
+linear map on tuples of Sobolev functions. Read as the components of `F`-valued maps, it sends `u`
+to `x ↦ g x (u x)` (`TauCeti.Wkp.value_contDiffOnOperatorSMulL_ae`). -/
+def contDiffOnOperatorSMulL (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Omega : Set E)))
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (b : Basis ι ℝ F) (b' : Basis κ ℝ F')
     [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U) :
     (ι → Wkp mu Omega p k) →L[ℝ] (κ → Wkp mu Omega p k) :=
@@ -118,7 +121,7 @@ def contDiffOnOperatorSMulL (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : S
     b'.contDiffOn_repr_apply (hg.clm_apply (contDiffOn_const (c := b l))) m
 
 @[simp]
-theorem contDiffOnOperatorSMulL_apply (hU : IsOpen U)
+theorem contDiffOnOperatorSMulL_apply (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     (b : Basis ι ℝ F) (b' : Basis κ ℝ F') [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U)
     (u : ι → Wkp mu Omega p k) (m : κ) :
@@ -130,7 +133,7 @@ theorem contDiffOnOperatorSMulL_apply (hU : IsOpen U)
 /-- The components in `b'` of a product with a smooth operator coefficient are, almost everywhere
 on `Ω`, the components of `g x` applied to the vector whose components in `b` are the values of
 the factors. -/
-theorem value_contDiffOnOperatorSMulL_ae (hU : IsOpen U)
+theorem value_contDiffOnOperatorSMulL_ae (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     (b : Basis ι ℝ F) (b' : Basis κ ℝ F') [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U)
     (u : ι → Wkp mu Omega p k) (m : κ) :
@@ -143,7 +146,7 @@ theorem value_contDiffOnOperatorSMulL_ae (hU : IsOpen U)
 
 /-- Multiplication by a smooth operator coefficient commutes with forgetting the highest weak
 derivative. -/
-theorem lowerOrder_contDiffOnOperatorSMulL (hU : IsOpen U)
+theorem lowerOrder_contDiffOnOperatorSMulL (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     (b : Basis ι ℝ F) (b' : Basis κ ℝ F') [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U)
     (u : ι → Wkp mu Omega p (k + 1)) (m : κ) :
