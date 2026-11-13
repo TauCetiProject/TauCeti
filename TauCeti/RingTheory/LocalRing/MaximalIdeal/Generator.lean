@@ -68,10 +68,10 @@ theorem isUnit_add_of_dvd {R : Type*} [CommRing R] [IsLocalRing R] {ϖ : R}
   exact fun hd ↦ ha (by simpa using dvd_sub hd hb)
 
 /-- A local ring whose maximal ideal is finitely generated and contained in the nilradical is
-Noetherian: every prime ideal contains the nilradical, so it is the maximal ideal, which is
-finitely generated. -/
+Noetherian. -/
 theorem isNoetherianRing_of_fg_of_le_nilradical {R : Type*} [CommRing R] [IsLocalRing R]
     (hfg : (maximalIdeal R).FG) (hn : maximalIdeal R ≤ nilradical R) : IsNoetherianRing R :=
+  -- Every prime ideal contains the nilradical, so it is the finitely generated maximal ideal.
   .of_prime fun P hP ↦ by
     rwa [le_antisymm (le_maximalIdeal hP.ne_top) (hn.trans (nilradical_le_prime P))]
 

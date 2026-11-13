@@ -25,10 +25,13 @@ rings is the **valuation** `(a, b)` of the arrow `X → Y` of the valued Ausland
 `a` is the dimension over the residue ring `F_Y` of the target and `b` the dimension over the
 residue ring `F_X` of the source (`TauCeti.irreducibleMorphismValuation`).
 
-This file makes the valuation usable. Over a commutative base ring `k`, both residue actions are
-compatible with the scalars of `k` (`TauCeti.instIsScalarTowerResiduePostcomp` and
-`TauCeti.instIsScalarTowerResiduePrecomp`), so `k → F_Y → Irr(X, Y)` and `k → F_X → Irr(X, Y)` are
-scalar towers. Consequently:
+This file makes the valuation usable. Over any base ring `k`, without finiteness assumptions, an
+entry of the valuation is one exactly when one irreducible morphism generates `Irr(X, Y)` over the
+corresponding residue ring, which is how valuations of explicit arrows are computed.
+
+Over a commutative base ring `k`, both residue actions are compatible with the scalars of `k`
+(`TauCeti.instIsScalarTowerResiduePostcomp` and `TauCeti.instIsScalarTowerResiduePrecomp`), so
+`k → F_Y → Irr(X, Y)` and `k → F_X → Irr(X, Y)` are scalar towers. Consequently:
 
 * **finiteness**: when `Irr(X, Y)` is finitely generated over `k` it is finite-dimensional over
   both residue division rings. This is the case for finitely generated modules over an Artin
@@ -38,9 +41,6 @@ scalar towers. Consequently:
 * **positivity**: in that case both entries of the valuation are positive exactly when an
   irreducible morphism `X ⟶ Y` exists, so a nonzero `Irr(X, Y)` is valued by a pair of positive
   integers;
-* **valuation one**: an entry of the valuation is one exactly when one irreducible morphism
-  generates `Irr(X, Y)` over the corresponding residue ring, which is how valuations of explicit
-  arrows are computed;
 * **the tower law over a field**: `dim_k Irr(X, Y) = dim_k F_Y · a = dim_k F_X · b`. The two residue
   division rings need not have the same `k`-dimension, which is how asymmetric valuations arise;
 * **algebraically closed fields**: when `k` is algebraically closed and the endomorphism algebras

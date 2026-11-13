@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.RingTheory.LocalRing.Defs
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
-import TauCeti.Algebra.Category.FGModuleCat.Basic
 import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
