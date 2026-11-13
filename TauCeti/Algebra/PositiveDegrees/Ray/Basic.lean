@@ -93,8 +93,13 @@ def degreeSemigroup (w : SupportedRay d) : AddSubsemigroup N where
 
 /-- Semigroup membership is membership in the set of actual ray degrees. -/
 @[simp]
-theorem mem_degreeSemigroup (w : SupportedRay d) (n : N) :
+theorem mem_degreeSemigroup {w : SupportedRay d} {n : N} :
     n ∈ w.degreeSemigroup ↔ n ∈ w.rayDegrees := Iff.rfl
+
+/-- The degree semigroup has exactly the actual allowed ray degrees as its carrier. -/
+@[simp]
+theorem coe_degreeSemigroup (w : SupportedRay d) :
+    (w.degreeSemigroup : Set N) = w.rayDegrees := (rfl)
 
 /-- Each supported ray has at least one actual allowed degree. -/
 theorem rayDegrees_nonempty (w : SupportedRay d) : w.rayDegrees.Nonempty := by

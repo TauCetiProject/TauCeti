@@ -124,7 +124,7 @@ theorem lie_eq_zero_of_mem_raySubmodule_of_forall {w v : SupportedRay d} {m m' :
       ⁅x, y⁆ = 0)
     {x y : L} (hx : x ∈ H.raySubmodule w m) (hy : y ∈ H.raySubmodule v m') : ⁅x, y⁆ = 0 := by
   rw [raySubmodule_def] at hx hy
-  exact Submodule.lie_eq_zero_of_mem_iSup
+  exact lie_eq_zero_of_mem_iSup
     (fun n : w.rayDegrees => H.wall n m) (fun n : v.rayDegrees => H.wall n m')
     (fun n n' => hwall n n.property n' n'.property) hx hy
 
@@ -165,6 +165,50 @@ theorem wallRayLieSubalgebra_toSubmodule (w : SupportedRay d) (m : Λ →+ ℤ) 
 @[simp]
 theorem mem_wallRayLieSubalgebra (w : SupportedRay d) (m : Λ →+ ℤ) (x : L) :
     x ∈ H.wallRayLieSubalgebra w m ↔ x ∈ H.raySubmodule w m := Iff.rfl
+
+/-- A wall ray Lie subalgebra lies in another exactly when all its wall spaces do. -/
+theorem wallRayLieSubalgebra_le_iff (w : SupportedRay d) (m : Λ →+ ℤ)
+    (K : LieSubalgebra R L) :
+    H.wallRayLieSubalgebra w m ≤ K ↔ ∀ n ∈ w.rayDegrees, H.wall n m ≤ K.toSubmodule := by
+  rw [← LieSubalgebra.toSubmodule_le_toSubmodule, wallRayLieSubalgebra_toSubmodule,
+    raySubmodule_le_iff]
+
+/-- Relabeling tangent directions pulls back the normal of a wall ray Lie subalgebra. -/
+@[simp]
+theorem mapTangent_wallRayLieSubalgebra {Λ' : Type*} [AddCommMonoid Λ']
+    (T : Λ →+ Λ') (w : SupportedRay d) (m : Λ' →+ ℤ) :
+    (H.mapTangent T).wallRayLieSubalgebra w m = H.wallRayLieSubalgebra w (m.comp T) := by
+  apply LieSubalgebra.toSubmodule_injective
+  simp only [wallRayLieSubalgebra_toSubmodule, mapTangent_raySubmodule]
+
+/-- Rescaling a normal by a nonzero integer preserves the wall ray Lie subalgebra. -/
+@[simp↓]
+theorem wallRayLieSubalgebra_rescale (w : SupportedRay d) (m : Λ →+ ℤ)
+    (c : ℤ) (hc : c ≠ 0) : H.wallRayLieSubalgebra w (c • m) = H.wallRayLieSubalgebra w m := by
+  apply LieSubalgebra.toSubmodule_injective
+  simp only [wallRayLieSubalgebra_toSubmodule, H.raySubmodule_rescale w m c hc]
+
+/-- Normals with the same kernel give the same wall ray Lie subalgebra. -/
+theorem wallRayLieSubalgebra_eq_of_ker_eq {Λ : Type*} [AddCommGroup Λ]
+    {ρ : Γ →+ Λ} {ℒ : Γ → Submodule R L} (H : DirectedWallSpaces ρ ℒ)
+    (w : SupportedRay d) {m m' : Λ →+ ℤ} (hker : m.ker = m'.ker) :
+    H.wallRayLieSubalgebra w m = H.wallRayLieSubalgebra w m' := by
+  apply LieSubalgebra.toSubmodule_injective
+  simp only [wallRayLieSubalgebra_toSubmodule, H.raySubmodule_eq_of_ker_eq w hker]
+
+/-- A zero normal gives the zero wall ray Lie subalgebra. -/
+@[simp]
+theorem wallRayLieSubalgebra_zero (w : SupportedRay d) : H.wallRayLieSubalgebra w 0 = ⊥ := by
+  apply LieSubalgebra.toSubmodule_injective
+  simp only [wallRayLieSubalgebra_toSubmodule, raySubmodule_zero, LieSubalgebra.bot_toSubmodule]
+
+/-- A normal not tangent to the generator gives the zero wall ray Lie subalgebra. -/
+@[simp]
+theorem wallRayLieSubalgebra_nontangent (w : SupportedRay d) (m : Λ →+ ℤ)
+    (hm : m (ρ w.generator) ≠ 0) : H.wallRayLieSubalgebra w m = ⊥ := by
+  apply LieSubalgebra.toSubmodule_injective
+  simp only [wallRayLieSubalgebra_toSubmodule, H.raySubmodule_nontangent w m hm,
+    LieSubalgebra.bot_toSubmodule]
 
 /-- A wall ray Lie subalgebra lies in the ambient supported-ray Lie subalgebra. -/
 theorem wallRayLieSubalgebra_le_rayLieSubalgebra [SetLike.GradedBracket ℒ ℒ]
@@ -224,6 +268,12 @@ theorem isHomogeneous_raySubmodule (w : SupportedRay d) (m : Λ →+ ℤ) :
   · exact H.wall_le_raySubmodule w m hn (H.decompose_mem_wall_of_mem_raySubmodule hx n)
   · rw [H.decompose_eq_zero_of_notMem_rayDegrees hx hn]
     exact Submodule.zero_mem _
+
+/-- Wall ray Lie subalgebras are stable under homogeneous projections. -/
+theorem isHomogeneous_wallRayLieSubalgebra (w : SupportedRay d) (m : Λ →+ ℤ) :
+    DirectSum.SetLike.IsHomogeneous ℒ (H.wallRayLieSubalgebra w m) := by
+  simpa only [DirectSum.SetLike.IsHomogeneous, mem_wallRayLieSubalgebra] using
+    H.isHomogeneous_raySubmodule w m
 
 /-- Membership in a ray sum is equivalent to the wall-space condition on every
 component and vanishing of all components off the actual allowed ray degrees. -/

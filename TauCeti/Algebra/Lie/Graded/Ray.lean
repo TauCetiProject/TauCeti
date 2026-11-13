@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Lie.Graded.Supported
-public import TauCeti.Algebra.Lie.Graded.Truncation
 public import TauCeti.Algebra.PositiveDegrees.Ray.Basic
 
 /-!
@@ -17,13 +16,9 @@ multiples of a supported primitive vector. The vector itself need not be allowed
 Its elements are characterized by vanishing of all components off the ray.
 The construction commutes with homogeneous images and degree truncations.
 
-`IsAbelianRays` says that each such Lie algebra is abelian. It can be checked on
-pairs of homogeneous elements, and is inherited by degree-preserving surjective
-maps on homogeneous pieces. This is the condition that permits independent labels
-on one primitive ray to be combined without choosing their order.
-
-The construction specializes `TauCeti.supportedLieSubalgebra`; the abelian criterion
-uses Mathlib's bilinear submodule images and `IsLieAbelian`.
+The abelian criterion checks commutation on pairs of homogeneous elements at
+actual allowed ray degrees. Both the construction and this criterion specialize
+`TauCeti.supportedLieSubalgebra`.
 
 Adapted from `Mei/Algebra/Lie/Graded/Ray.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -43,6 +38,10 @@ variable {N R L L' : Type*} [AddCommGroup N] [CommRing R]
 /-- The Lie subalgebra on the actual allowed positive multiples of a supported ray. -/
 def rayLieSubalgebra (w : SupportedRay d) : LieSubalgebra R L :=
   supportedLieSubalgebra ℒ w.degreeSemigroup
+
+/-- A ray Lie subalgebra is the subalgebra supported on its degree semigroup. -/
+theorem rayLieSubalgebra_def (w : SupportedRay d) :
+    rayLieSubalgebra ℒ w = supportedLieSubalgebra ℒ w.degreeSemigroup := (rfl)
 
 /-- The underlying module is the sum of the pieces at actual ray degrees. -/
 @[simp]
@@ -70,16 +69,8 @@ theorem rayLieSubalgebra_toSubmodule_eq_of_forall_ne_eq_bot (w : SupportedRay d)
     (rayLieSubalgebra ℒ w).toSubmodule = ℒ n := by
   simpa only [rayLieSubalgebra, SupportedRay.mem_degreeSemigroup] using
     supportedLieSubalgebra_toSubmodule_eq_of_forall_ne_eq_bot ℒ w.degreeSemigroup n
-      ((SupportedRay.mem_degreeSemigroup w n).mpr hn)
-      (fun m hm => hvan m ((SupportedRay.mem_degreeSemigroup w m).mp hm))
-
-/-- Abelian rays require commutation within each supported ray, not between distinct rays. -/
-class IsAbelianRays (d : PositiveDegrees N) (ℒ : N → Submodule R L)
-    [SetLike.GradedBracket ℒ ℒ] : Prop where
-  /-- Each supported ray Lie algebra is abelian. -/
-  isLieAbelian : ∀ w : SupportedRay d, IsLieAbelian (rayLieSubalgebra ℒ w)
-
-attribute [instance] IsAbelianRays.isLieAbelian
+      (SupportedRay.mem_degreeSemigroup.mpr hn)
+      (fun m hm => hvan m (SupportedRay.mem_degreeSemigroup.mp hm))
 
 /-- A single ray algebra is abelian exactly when its homogeneous pieces commute. -/
 theorem isLieAbelian_rayLieSubalgebra_iff (w : SupportedRay d) :
@@ -89,41 +80,12 @@ theorem isLieAbelian_rayLieSubalgebra_iff (w : SupportedRay d) :
   simpa only [SupportedRay.mem_degreeSemigroup] using
     isLieAbelian_supportedLieSubalgebra_iff ℒ w.degreeSemigroup
 
-/-- Abelian rays can be checked on homogeneous pairs at actual allowed ray degrees. -/
-theorem isAbelianRays_iff : IsAbelianRays d ℒ ↔
-    ∀ (w : SupportedRay d) (n m : N), n ∈ w.rayDegrees → m ∈ w.rayDegrees →
-      ∀ x ∈ ℒ n, ∀ y ∈ ℒ m, ⁅x, y⁆ = 0 := by
-  constructor
-  · intro h w n m hn hm
-    exact (isLieAbelian_rayLieSubalgebra_iff ℒ w).mp (h.isLieAbelian w) n hn m hm
-  · intro h
-    exact ⟨fun w => (isLieAbelian_rayLieSubalgebra_iff ℒ w).mpr
-      (fun n hn m hm => h w n m hn hm)⟩
-
-/-- Every grading of an abelian ambient Lie algebra has abelian rays. -/
-instance [IsLieAbelian L] : IsAbelianRays d ℒ :=
-  (isAbelianRays_iff ℒ).mpr fun _ _ _ _ _ _ _ _ _ => trivial_lie_zero L L _ _
-
-variable (ℳ : N → Submodule R L') [SetLike.GradedBracket ℳ ℳ]
-
 /-- Images of homogeneous pieces under a Lie map give the image ray algebra. -/
 theorem map_rayLieSubalgebra (w : SupportedRay d) (f : L →ₗ⁅R⁆ L') :
     letI := f.gradedBracket_map ℒ
     (rayLieSubalgebra ℒ w).map f =
       rayLieSubalgebra (fun n => (ℒ n).map f.toLinearMap) w :=
   map_supportedLieSubalgebra ℒ w.degreeSemigroup f
-
-/-- Surjectivity on homogeneous pieces preserves abelian rays, without injectivity. -/
-theorem isAbelianRays_of_le_map [IsAbelianRays d ℒ]
-    (f : L →ₗ⁅R⁆ L')
-    (hf : ∀ w : SupportedRay d, ∀ n ∈ w.rayDegrees, ℳ n ≤ (ℒ n).map f.toLinearMap) :
-    IsAbelianRays d ℳ := by
-  apply (isAbelianRays_iff ℳ).mpr
-  intro w n m hn hm x hx y hy
-  obtain ⟨a, ha, rfl⟩ := Submodule.mem_map.mp (hf w n hn hx)
-  obtain ⟨b, hb, rfl⟩ := Submodule.mem_map.mp (hf w m hm hy)
-  exact (f.map_lie a b).symm.trans (by
-    rw [(isAbelianRays_iff ℒ).mp ‹IsAbelianRays d ℒ› w n m hn hm a ha b hb, map_zero])
 
 variable [DecidableEq N] [DirectSum.Decomposition ℒ]
 
@@ -164,8 +126,8 @@ variable {N : Type} {R L : Type*} [AddCommGroup N] [CommRing R]
 theorem map_mkQ_rayLieSubalgebra (w : SupportedRay d) (k : ℕ) :
     (rayLieSubalgebra ℒ w).map (d.degreeIdeal ℒ k).mkQ =
       rayLieSubalgebra (d.truncatedGrading ℒ k) w := by
-  simpa only [LieIdeal.coe_mkQ, ← d.truncatedGrading_eq ℒ k] using
-    map_rayLieSubalgebra ℒ w (d.degreeIdeal ℒ k).mkQ
+  simpa only [rayLieSubalgebra_def] using
+    d.map_mkQ_supportedLieSubalgebra ℒ w.degreeSemigroup k
 
 /-- Degree truncation maps a ray Lie algebra onto its lower-order counterpart. -/
 @[simp]
@@ -173,13 +135,7 @@ theorem map_truncationMap_rayLieSubalgebra (w : SupportedRay d)
     {k l : ℕ} (h : k ≤ l) :
     (rayLieSubalgebra (d.truncatedGrading ℒ l) w).map (d.truncationMap ℒ h) =
       rayLieSubalgebra (d.truncatedGrading ℒ k) w := by
-  simpa only [d.map_truncationMap_truncatedGrading ℒ h] using
-    map_rayLieSubalgebra (d.truncatedGrading ℒ l) w (d.truncationMap ℒ h)
-
-/-- Finite degree quotients inherit abelian rays. -/
-instance isAbelianRays_truncatedGrading [IsAbelianRays d ℒ] (k : ℕ) :
-    IsAbelianRays d (d.truncatedGrading ℒ k) :=
-  isAbelianRays_of_le_map ℒ (d.truncatedGrading ℒ k) (d.degreeIdeal ℒ k).mkQ
-    (fun _ n _ => by rw [LieIdeal.coe_mkQ]; exact (d.truncatedGrading_eq ℒ k n).le)
+  simpa only [rayLieSubalgebra_def] using
+    d.map_truncationMap_supportedLieSubalgebra ℒ w.degreeSemigroup h
 
 end TauCeti.PositiveDegrees

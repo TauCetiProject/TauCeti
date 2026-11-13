@@ -48,7 +48,7 @@ theorem lie_mem_iSup_wall_of_mem_raySubmodule
     ⁅x, y⁆ ∈ ⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees,
       H.wall (a.val + b.val) (wallBracketNormal ρ a.val b.val m m') := by
   rw [raySubmodule_def] at hx hy
-  refine Submodule.lie_mem_of_mem_iSup
+  refine lie_mem_of_mem_iSup
     (fun a : w.rayDegrees => H.wall a m) (fun b : v.rayDegrees => H.wall b m') _
     (fun a b x hx y hy => ?_) hx hy
   exact Submodule.mem_iSup_of_mem a (Submodule.mem_iSup_of_mem b (H.bracket_mem hx hy))

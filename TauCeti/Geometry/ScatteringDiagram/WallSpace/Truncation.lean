@@ -47,7 +47,7 @@ theorem truncated_wall (k : ℕ) (n : Γ) (m : Λ →+ ℤ) :
   rw [truncated, map_wall]
 
 /-- The canonical graded quotient homomorphism preserves directed wall spaces. -/
-theorem mkQ_mem_truncated_wall (k : ℕ) (n : Γ) (m : Λ →+ ℤ) (x : L)
+theorem mkQ_mem_truncated_wall (k : ℕ) {n : Γ} {m : Λ →+ ℤ} {x : L}
     (hx : x ∈ H.wall n m) :
     (d.degreeIdeal ℒ k).mkQ x ∈ (H.truncated d k).wall n m := by
   rw [truncated_wall]
@@ -62,6 +62,13 @@ theorem map_truncationMap_wall {k l : ℕ} (h : k ≤ l) (n : Γ) (m : Λ →+ �
     ext x
     simp
   rw [truncated_wall, ← Submodule.map_comp, square, truncated_wall]
+
+/-- Lowering the cutoff preserves membership in a homogeneous wall space. -/
+theorem truncationMap_mem_wall {k l : ℕ} (h : k ≤ l) {n : Γ} {m : Λ →+ ℤ}
+    {x : d.truncatedLie ℒ l} (hx : x ∈ (H.truncated d l).wall n m) :
+    d.truncationMap ℒ h x ∈ (H.truncated d k).wall n m := by
+  rw [← H.map_truncationMap_wall d h n m]
+  exact Submodule.mem_map.mpr ⟨x, hx, rfl⟩
 
 end TauCeti.DirectedWallSpaces
 
@@ -80,12 +87,27 @@ theorem truncated_raySubmodule (k : ℕ) (w : SupportedRay d) (m : Λ →+ ℤ) 
       (H.raySubmodule w m).map (d.degreeIdeal ℒ k).mkQ.toLinearMap := by
   simp only [truncated, map_raySubmodule]
 
+/-- The degree quotient preserves membership in a supported-ray wall sum. -/
+theorem mkQ_mem_truncated_raySubmodule (k : ℕ) {w : SupportedRay d} {m : Λ →+ ℤ}
+    {x : L} (hx : x ∈ H.raySubmodule w m) :
+    (d.degreeIdeal ℒ k).mkQ x ∈ (H.truncated d k).raySubmodule w m := by
+  rw [truncated_raySubmodule]
+  exact Submodule.mem_map.mpr ⟨x, hx, rfl⟩
+
 /-- Lowering the cutoff maps a supported-ray wall sum onto its lower-order counterpart. -/
 theorem map_truncationMap_raySubmodule {k l : ℕ} (h : k ≤ l)
     (w : SupportedRay d) (m : Λ →+ ℤ) :
     ((H.truncated d l).raySubmodule w m).map (d.truncationMap ℒ h).toLinearMap =
       (H.truncated d k).raySubmodule w m := by
   simp only [raySubmodule_def, Submodule.map_iSup, map_truncationMap_wall]
+
+/-- Lowering the cutoff preserves membership in a supported-ray wall sum. -/
+theorem truncationMap_mem_raySubmodule {k l : ℕ} (h : k ≤ l)
+    {w : SupportedRay d} {m : Λ →+ ℤ} {x : d.truncatedLie ℒ l}
+    (hx : x ∈ (H.truncated d l).raySubmodule w m) :
+    d.truncationMap ℒ h x ∈ (H.truncated d k).raySubmodule w m := by
+  rw [← H.map_truncationMap_raySubmodule d h w m]
+  exact Submodule.mem_map.mpr ⟨x, hx, rfl⟩
 
 /-- Finite-order wall ray Lie subalgebras are quotient images of the original ones. -/
 @[simp]
