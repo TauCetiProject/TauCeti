@@ -205,8 +205,8 @@ private theorem coefficient_besselPotential_sharp (hb : b.HasCompactSpatialSuppo
 /-- **The superposition formula.** The quantization of the composition symbol of the Bessel
 weight of order `-t` with `b` is a superposition of modulated Fourier multipliers:
 `Op(⟨ξ⟩^(-t) # b) w (x) = ∫ exp(2πi ⟪η, x⟫) 𝓕⁻ (N_η 𝓕 w) (x) dη`. -/
-private theorem quantizeSchwartzValue_besselPotential_sharp (hb : b.HasCompactSpatialSupport)
-    (w : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+private theorem quantizeSchwartzValue_besselPotential_sharp_eq_integral
+    (hb : b.HasCompactSpatialSupport) (w : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue ((besselPotential (-t) : Symbol n W W (-t)).sharp b hb).coefficient w x =
       ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • 𝓕⁻ (fun ζ ↦ shiftedMultiplier b η ζ (𝓕 w ζ)) x := by
   obtain ⟨C, -, hC⟩ := hb.exists_norm_shiftedMultiplier_le ((n : ℝ) + 1)
@@ -342,24 +342,24 @@ private theorem HasCompactSpatialSupport.exists_eLpNorm_quantizeSchwartzValue_sh
       ((besselPotential (-t) : Symbol n W W (-t)).sharp b hb).coefficient w =
         fun x ↦ ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • T η x := by
     rw [hTdef]
-    exact funext (quantizeSchwartzValue_besselPotential_sharp hb w)
+    exact funext (quantizeSchwartzValue_besselPotential_sharp_eq_integral hb w)
   have hg : AEMeasurable (Function.uncurry fun x η ↦ ‖T η x‖ₑ) (volume.prod volume) := by
-    simpa only [Function.uncurry_def] using hcont.enorm.measurable.aemeasurable
+    simpa only [Function.uncurry_def] using hcont.eNorm.measurable.aemeasurable
   have hsm : AEStronglyMeasurable (fun x ↦ ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • T η x) volume := by
     have he : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪q.2, q.1⟫ : ℂ) :=
       continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
     exact (he.smul hcont).aestronglyMeasurable.integral_prod_right'
   have hTm (η : CoordinateSpace n) : AEStronglyMeasurable (T η) volume :=
     (hcont.comp (continuous_id.prodMk continuous_const)).aestronglyMeasurable
-  rw [hsup, eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hsm]
+  rw [hsup, eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hsm]
   calc (∫⁻ x, ‖∫ η, (𝐞 ⟪η, x⟫ : ℂ) • T η x‖ₑ ^ p.toReal) ^ (1 / p.toReal)
       ≤ (∫⁻ x, (∫⁻ η, ‖T η x‖ₑ) ^ p.toReal) ^ (1 / p.toReal) := by
         gcongr with x
-        refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq ?_)
-        simp [enorm_smul]
+        refine (eNorm_integral_le_lintegral_eNorm _).trans (le_of_eq ?_)
+        simp [eNorm_smul]
     _ ≤ ∫⁻ η, (∫⁻ x, ‖T η x‖ₑ ^ p.toReal) ^ (1 / p.toReal) := lintegral_Lp_lintegral_le hg hp1
     _ = ∫⁻ η, eLpNorm (T η) p volume := by
-        simp only [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top (hTm _)]
+        simp only [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (hTm _)]
     _ ≤ ∫⁻ η, C₀ * ENNReal.ofReal (S * ρ η) * eLpNorm w p volume := lintegral_mono hT
     _ = C₀ * ENNReal.ofReal S * I * eLpNorm w p volume := by
         simp only [ENNReal.ofReal_mul hS0, ← mul_assoc]

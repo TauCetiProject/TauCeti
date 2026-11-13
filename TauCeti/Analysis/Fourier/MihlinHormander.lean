@@ -416,8 +416,8 @@ theorem exists_eLpNorm_fourierInv_apply_le_of_norm_iteratedFDeriv_le {G H : Type
       ∀ u : 𝓢(V, G), eLpNorm (𝓕⁻ fun ξ ↦ b ξ (𝓕 u ξ)) p volume ≤
         C * A * eLpNorm u p volume := by
   classical
-  have := FiniteDimensional.complete ℂ G
-  have := FiniteDimensional.complete ℂ H
+  have := FiniteDimensional.completeSpace ℂ G
+  have := FiniteDimensional.completeSpace ℂ H
   set B := Module.finBasis ℂ (G →L[ℂ] H)
   set E := EuclideanSpace ℂ (Fin (finrank ℂ H))
   let e : H ≃L[ℂ] E := ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
@@ -439,7 +439,7 @@ theorem exists_eLpNorm_fourierInv_apply_le_of_norm_iteratedFDeriv_le {G H : Type
       (n := j) (by exact_mod_cast le_top)
     rw [ContinuousLinearMap.norm_restrictScalars] at h
     refine h.trans ?_
-    rw [NNReal.coe_mul, coe_nnnorm, mul_div_assoc]
+    rw [NNReal.coe_mul, coe_nnNorm, mul_div_assoc]
     gcongr
     exact hA j hj ξ hξ
   -- The multiplier of `b` is the sum of the scalar multipliers `mₖ(D)` applied to `e ∘ Bₖ ∘ u`.
