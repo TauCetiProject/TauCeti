@@ -44,6 +44,8 @@ approximately invertible Jacobian.
   along `Xᵢ` vanishes when `degreeOf i p < k`.
 * `MvPolynomial.coeff_iterate_pderiv_mem`: iterated partial derivatives keep the coefficients in
   an additive submonoid.
+* `MvPolynomial.iterate_pderiv_monomial`: the `k`-th iterated partial derivative along `Xᵢ` of the
+  monomial `a X^m` is `a mᵢ (mᵢ - 1) ⋯ (mᵢ - k + 1) X^(m - k eᵢ)`.
 * `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
 * `MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv`: Taylor's estimate
@@ -153,6 +155,20 @@ theorem coeff_iterate_pderiv_mem {S : Type*} [SetLike S R] [AddSubmonoidClass S 
   | succ k ih =>
     rw [Function.iterate_succ_apply']
     exact coeff_pderiv_mem ih i m
+
+/-- The `k`-th iterated partial derivative along `Xᵢ` of a monomial is
+`∂ᵏ/∂Xᵢᵏ (a X^m) = a mᵢ (mᵢ - 1) ⋯ (mᵢ - k + 1) X^(m - k eᵢ)`; it vanishes for `k > mᵢ`. -/
+theorem iterate_pderiv_monomial (i : σ) (k : ℕ) (m : σ →₀ ℕ) (a : R) :
+    (pderiv i)^[k] (monomial m a) =
+      monomial (m - Finsupp.single i k) (a * (m i).descFactorial k) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hm : m - Finsupp.single i k - Finsupp.single i 1 = m - Finsupp.single i (k + 1) := by
+      rw [tsub_tsub, ← Finsupp.single_add]
+    rw [Function.iterate_succ_apply', ih, pderiv_monomial, hm, Nat.descFactorial_succ,
+      Finsupp.tsub_apply, Finsupp.single_eq_same, Nat.cast_mul, mul_comm ((m i - k : ℕ) : R),
+      mul_assoc]
 
 /-- Iterated partial differentiation along `Xᵢ` of a one-variable polynomial in `Xᵢ` is iterated
 differentiation of the polynomial. -/
