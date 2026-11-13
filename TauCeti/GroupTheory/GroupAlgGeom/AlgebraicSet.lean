@@ -629,6 +629,7 @@ theorem quotientHomEquiv_apply_coe (φ : GHom (quotientCoeff N) ι) (x : X) :
 
 /-- Evaluation at the point corresponding to a `G`-homomorphism `φ : G[X] ⧸ N → H` is `φ`
 composed with the quotient map. -/
+@[simp]
 theorem eval_quotientHomEquiv (φ : GHom (quotientCoeff N) ι) (w : GX G X) :
     eval ι (quotientHomEquiv ι N φ) w = φ (w : GX G X ⧸ N) :=
   DFunLike.congr_fun (eval_eq_comp_mk' φ) w
