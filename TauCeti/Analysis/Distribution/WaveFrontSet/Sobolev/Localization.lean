@@ -239,7 +239,7 @@ private theorem memLp_one_add_norm_sq_rpow_smul_of_hasSum_of_countable {ι : Typ
     refine ne_top_of_le_ne_top (b := ENNReal.ofReal (∑' i, D * ((1 + ‖v i‖) ^ (k + N + r) *
       ‖a i‖)) * M) (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hM) ?_
     rw [ENNReal.ofReal_tsum_of_nonneg (fun i ↦ by positivity) hs, ← ENNReal.tsum_mul_right]
-    exact CompleteLattice.summable.tsum_le_tsum (fun i ↦ (Lp.enorm_toLp (hgL i)).trans_le (hgle i))
+    exact CompleteLattice.summable.tsum_le_tsum (fun i ↦ (Lp.eNorm_toLp (hgL i)).trans_le (hgle i))
       CompleteLattice.summable
   have h2 : ∀ᵐ η ∂(volume.restrict Γ'), ∀ i, f i η = g i η :=
     ae_all_iff.2 fun i ↦ (hgL i).coeFn_toLp
