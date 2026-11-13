@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Topology.Homotopy.Cube.Basic
+import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 
 /-!
 # Basic properties of homotopy groups
@@ -55,36 +56,17 @@ instance GenLoop.subsingleton_of_infinite {N X : Type*} [Infinite N] [Topologica
 open scoped unitInterval in
 /-- **Generalized loops indexed by an infinite set are null-homotopic** in every space. Such a
 loop `f` is the base point `x` on the dense boundary of the cube, so each value `f y` lies in the
-closure of `{x}`: every open set containing `f y` contains `x`. Hence the map that is `f` at time
-`0` and the base point at every later time is continuous, and it is a homotopy relative to the
-boundary from `f` to the constant loop. -/
+closure of `{x}`, that is, `x` specializes to `f y`. Hence the constant loop specializes to `f` in
+the compact-open topology, so the two are joined by a path in `Ω^ N X x`, which is a homotopy
+relative to the boundary (`GenLoop.homotopic_iff_joined`). -/
 theorem GenLoop.homotopic_const_of_infinite {N X : Type*} [Infinite N] [TopologicalSpace X]
     {x : X} (f : Ω^ N X x) : GenLoop.Homotopic f GenLoop.const := by
   have hx (y : I^N) : x ⤳ f y := specializes_iff_mem_closure.2 <|
     map_mem_closure (map_continuous f) (Cube.dense_boundary N y) fun z hz ↦ GenLoop.boundary f z hz
-  have hcont : Continuous fun p : I × I^N ↦ if p.1 = 0 then f p.2 else x := by
-    refine continuous_iff_continuousAt.2 fun ⟨t, y⟩ ↦ ?_
-    by_cases ht : t = 0
-    · subst ht
-      refine tendsto_nhds.2 fun V hV hfy ↦ ?_
-      replace hfy : f y ∈ V := by simpa using hfy
-      filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
-        ((hV.preimage (map_continuous f)).mem_nhds hfy)] with p (hp : f p.2 ∈ V)
-      change (if p.1 = 0 then f p.2 else x) ∈ V
-      split_ifs
-      exacts [hp, (hx y).mem_open hV hfy]
-    · refine (continuousAt_const (y := x)).congr ?_
-      filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds (isOpen_ne.mem_nhds ht)]
-        with p hp
-      exact (ite_eq_right hp).symm
-  exact ⟨{ toFun := fun p ↦ if p.1 = 0 then f p.2 else x
-           continuous_toFun := hcont
-           map_zero_left := fun _ ↦ ite_eq_left rfl
-           map_one_left := fun _ ↦ ite_eq_right one_ne_zero
-           prop' := fun t y hy ↦ by
-             change (if t = 0 then f y else x) = f y
-             split_ifs
-             exacts [rfl, (GenLoop.boundary f y hy).symm] }⟩
+  have h : (GenLoop.const : Ω^ N X x) ⤳ f :=
+    (subtype_specializes_iff _ _).2 (ContinuousMap.specializes_coe.1 (specializes_pi.2 hx))
+  exact GenLoop.homotopic_iff_joined.2
+    (h.joinedIn (Set.mem_univ _) (Set.mem_univ _)).joined.symm
 
 /-- **Homotopy sets indexed by an infinite set are trivial** in every space, since every
 generalized loop is homotopic to the constant loop (`GenLoop.homotopic_const_of_infinite`). -/
