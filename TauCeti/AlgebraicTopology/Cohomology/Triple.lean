@@ -54,41 +54,6 @@ namespace TopTriple
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
   (T : TopTriple.{w}) (R : C)
 
-/-- In each degree, the map `C(X, B) ⟶ C(X, A)` of relative singular chains of a triple
-`(X, A, B)` is a split epimorphism: a section of the quotient map `C(X) ⟶ C(X, A)`, followed by the
-quotient map `C(X) ⟶ C(X, B)`, is a section of it. -/
-instance isSplitEpi_singularChainComplexMap_totalToOuter_f (n : ℕ) :
-    IsSplitEpi ((TopPair.singularChainComplexMap (totalToOuter.app T) R).f n) :=
-  -- A section of the quotient map `C(X) ⟶ C(X, A)` in degree `n`, from the degreewise split chain
-  -- sequence of the pair `(X, A)`.
-  have hS := (TopPair.toSSetPair.obj (outerPair.obj T)).shortExact_chainComplexShortComplex R
-  have := hS.epi_g
-  have : (HomologicalComplex.eval C (ComplexShape.down ℕ) n).PreservesHomology := {}
-  let e := ShortComplex.Splitting.ofExactOfRetraction _
-    (hS.exact.map (HomologicalComplex.eval C _ n))
-    (retraction ((SSet.chainComplexMap (TopPair.toSSetPair.obj (outerPair.obj T)).hom R).f n))
-    (IsSplitMono.id ((SSet.chainComplexMap (TopPair.toSSetPair.obj (outerPair.obj T)).hom R).f n))
-    (inferInstanceAs (Epi (((outerPair.obj T).singularChainComplexπ R).f n)))
-  IsSplitEpi.mk' ⟨e.s ≫ ((totalPair.obj T).singularChainComplexπ R).f n,
-    (Category.assoc _ _ _).trans <| (congrArg (e.s ≫ ·) <|
-      (HomologicalComplex.comp_f _ _ n).symm.trans <|
-        congrArg (fun f ↦ f.f n) (T.singularChainComplexπ_comp_totalToOuter R)).trans
-      e.s_g⟩
-
-/-- In each degree, the map `C(A, B) ⟶ C(X, B)` of relative singular chains of a triple
-`(X, A, B)` is a split monomorphism, since the sequence of the triple is short exact with split
-last map. -/
-instance isSplitMono_singularChainComplexMap_innerToTotal_f (n : ℕ) :
-    IsSplitMono ((TopPair.singularChainComplexMap (innerToTotal.app T) R).f n) :=
-  have hS := T.shortExact_singularChainComplexShortComplex R
-  have : (HomologicalComplex.eval C (ComplexShape.down ℕ) n).PreservesHomology := {}
-  have := hS.mono_f
-  have : Mono ((TopPair.singularChainComplexMap (innerToTotal.app T) R).f n) :=
-    (HomologicalComplex.eval C (ComplexShape.down ℕ) n).map_mono _
-  (ShortComplex.Splitting.ofExactOfSection _ (hS.exact.map (HomologicalComplex.eval C _ n))
-    (section_ ((TopPair.singularChainComplexMap (totalToOuter.app T) R).f n))
-    (IsSplitEpi.id _) this).isSplitMono_f
-
 variable (k : Type*) [Ring k] [Linear k C] (M : C)
 
 /-- The relative singular cochain sequence `C*(X, A) ⟶ C*(X, B) ⟶ C*(A, B)` of a triple
