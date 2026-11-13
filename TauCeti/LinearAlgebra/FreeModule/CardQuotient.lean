@@ -90,8 +90,9 @@ theorem card_quotient_range_eq_card_quotient_span_det {f : M →ₗ[R] M} (hf : 
 omit [IsPrincipalIdealRing R] [Module.Free R M] [Module.Finite R M] in
 /-- **An endomorphism with vanishing determinant has infinite cokernel.** Over an infinite domain,
 if `det f = 0` then `M ⧸ range f` is infinite. Together with
-`card_quotient_range_eq_card_quotient_span_det`, over an infinite principal ideal domain the
-cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is finite. -/
+`card_quotient_range_eq_card_quotient_span_det`, for a finite free module `M` over an infinite
+principal ideal domain the cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is
+finite. -/
 theorem infinite_quotient_range_of_det_eq_zero [Infinite R] {f : M →ₗ[R] M} (hf : f.det = 0) :
     Infinite (M ⧸ range f) := by
   -- A vanishing determinant is not `1`, so `M` is finite and free.

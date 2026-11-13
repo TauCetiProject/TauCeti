@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
-public import Mathlib.GroupTheory.FiniteAbelian.Basic
-public import Mathlib.LinearAlgebra.Dimension.Localization
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+import Mathlib.GroupTheory.FiniteAbelian.Basic
+import Mathlib.LinearAlgebra.Dimension.Localization
 -- Proof-only: torsion modules have rank zero.
 import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
 
 /-!
-# Injective maps between free abelian groups of equal rank
+# Linear maps between finitely generated abelian groups of equal rank
 
 An injective `ℤ`-linear map `f : M → N` into a finitely generated abelian group of the same
 rank has image of finite index `c`, so `c • y` lies in the image of `f` for every `y : N`.
@@ -43,8 +43,7 @@ variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module.Free ℤ N] [Mo
 
 omit [Module.Free ℤ N] in
 /-- An injective `ℤ`-linear map into a finitely generated abelian group of the same rank
-has an inverse up to multiplication by a nonzero natural number `c`, namely the index of its
-image. -/
+has an inverse up to multiplication by a nonzero natural number `c`. -/
 theorem exists_comp_eq_nsmul_id_of_injective {f : M →ₗ[ℤ] N} (hf : Function.Injective f)
     (hrank : Module.finrank ℤ M = Module.finrank ℤ N) :
     ∃ c : ℕ, c ≠ 0 ∧ ∃ g : N →ₗ[ℤ] M, f ∘ₗ g = c • LinearMap.id ∧ g ∘ₗ f = c • LinearMap.id := by
