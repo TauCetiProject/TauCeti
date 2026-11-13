@@ -7,8 +7,8 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Basic
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
-import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
+import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
 import TauCeti.NumberTheory.LSeries.EulerProduct
 
@@ -18,11 +18,11 @@ import TauCeti.NumberTheory.LSeries.EulerProduct
 On `Re s > 1`, the squared number of divisors has an absolutely convergent Dirichlet series
 with value `ζ(s)^4 / ζ(2s)`. The coefficient is zero at index zero, because `Nat.divisors 0` is
 empty. The quotient-form `LSeriesHasSum` endpoint and the multiplication-form identity are both
-provided. The proof uses the native subpower bound for divisor counts, multiplicativity, and
-Mathlib's geometric-series moment formulas.
+provided. The factor `ζ(2s)` is the Euler correction relating the squared divisor counts to
+the fourth power of the Riemann zeta function: at each prime, the divisor-square series has
+local factor `(1 + X) / (1 - X)³`, rather than the factor `(1 - X)⁻⁴` of `ζ(s)⁴`.
 
-The statement corresponds to `zeta_pow_four_eq` in the PNT+ development. Here the proof
-computes the specialized Euler factors directly, without introducing general complex divisor sums.
+The statement corresponds to `zeta_pow_four_eq` in the PNT+ development.
 
 ## References
 
@@ -39,8 +39,8 @@ namespace TauCeti
 private theorem divisor_sq_summable {s : ℂ} (hs : 1 < s.re) :
     LSeriesSummable (fun n : ℕ ↦ (n.divisors.card : ℂ) ^ 2) s := by
   let ε : ℝ := (s.re - 1) / 4
-  obtain ⟨C, _, hbound⟩ := exists_pos_card_divisors_le_rpow
-    (show 0 < ε by dsimp [ε]; linarith)
+  have hε : 0 < ε := by dsimp [ε]; linarith
+  obtain ⟨C, _, hbound⟩ := exists_pos_card_divisors_le_rpow hε
   apply LSeriesSummable_of_le_const_mul_rpow (x := 1 + 2 * ε)
     (by dsimp [ε]; linarith)
   refine ⟨C ^ 2, fun n _hn ↦ ?_⟩
@@ -53,20 +53,6 @@ private theorem divisor_sq_summable {s : ℂ} (hs : 1 < s.re) :
       rw [mul_pow, ← Real.rpow_mul_natCast (Nat.cast_nonneg n)]
       congr 2
       ring
-
-private theorem hasSum_succ_sq_mul_geometric {x : ℂ} (hx : ‖x‖ < 1) :
-    HasSum (fun k : ℕ ↦ ((k : ℂ) + 1) ^ 2 * x ^ k) ((1 + x) / (1 - x) ^ 3) := by
-  have H := ((hasSum_sq_mul_geometric_of_norm_lt_one hx).add
-    ((hasSum_coe_mul_geometric_of_norm_lt_one hx).mul_left 2)).add
-    (hasSum_geometric_of_norm_lt_one hx)
-  convert H using 1
-  · ext k
-    ring
-  · have hne : 1 - x ≠ 0 := sub_ne_zero.mpr (fun h ↦ by
-      have : x = 1 := h.symm
-      simp only [this, norm_one, lt_self_iff_false] at hx)
-    field_simp
-    ring
 
 private theorem divisor_sq_local {s : ℂ} (hs : 1 < s.re) (p : Nat.Primes) :
     (∑' k : ℕ, _root_.LSeries.term (fun n : ℕ ↦ (n.divisors.card : ℂ) ^ 2) s
@@ -81,7 +67,7 @@ private theorem divisor_sq_local {s : ℂ} (hs : 1 < s.re) (p : Nat.Primes) :
       ArithmeticFunction.sigma_zero_apply_prime_pow p.prop]
     push_cast
     rfl
-  simpa only [hterm] using (hasSum_succ_sq_mul_geometric hx).tsum_eq
+  simpa only [hterm] using (hasSum_succ_sq_mul_geometric_of_norm_lt_one hx).tsum_eq
 
 /-- The squared divisor count has Dirichlet series `ζ(s)^4 / ζ(2s)` on `Re s > 1`,
 including absolute convergence. -/
@@ -106,8 +92,8 @@ theorem LSeriesHasSum_card_divisors_sq {s : ℂ} (hs : 1 < s.re) :
         ((1 - (p : ℂ) ^ (-s))⁻¹) ^ 4 := by
     rw [divisor_sq_local hs]
     have hexp : (p : ℂ) ^ (-(2 * s)) = ((p : ℂ) ^ (-s)) ^ 2 := by
-      rw [show -(2 * s) = -s + -s by ring,
-        Complex.cpow_add _ _ (Nat.cast_ne_zero.mpr p.prop.ne_zero), pow_two]
+      have hneg : -(2 * s) = -s + -s := by ring
+      rw [hneg, Complex.cpow_add _ _ (Nat.cast_ne_zero.mpr p.prop.ne_zero), pow_two]
     have h1 := Complex.one_sub_prime_cpow_ne_zero p.prop hs
     have h2 := Complex.one_sub_prime_cpow_ne_zero p.prop hs2
     rw [hexp] at h2 ⊢
