@@ -30,8 +30,8 @@ every root subgroup is a signed Weyl conjugate of a simple one.
 The representation, lattice, and weight basis are those constructed in
 the full-weight lattice module imported above;
 the assembly follows the Geck-datum construction in
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Geck`. No identification of the resulting group scheme
-with an independently constructed reductive group is asserted here.
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Geck.Basic`. No identification of the resulting group
+scheme with an independently constructed reductive group is asserted here.
 
 The group scheme of this datum over `ℤ` is the **simply connected Chevalley group scheme**
 `G_sc(t)` (`TauCeti.DynkinType.chevalleyGroupScheme`), with its points over a commutative ring
