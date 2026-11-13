@@ -122,6 +122,12 @@ theorem prod_map_letter_map_inr (L : List (X × Bool)) :
   rw [MonoidHom.apply_freeGroup_mk (inr : FreeGroup X →* GX G X), List.map_map]
   exact congrArg List.prod <| List.map_congr_left fun ⟨_, b⟩ _ => by cases b <;> rfl
 
+/-- The product of a word in coefficients is the image in `G[X]` of the product of the
+coefficients. -/
+theorem prod_map_letter_map_inl (L : List G) :
+    ((L.map Sum.inl : List (G ⊕ X × Bool)).map letter).prod = inl L.prod := by
+  simp [Function.comp_def, map_list_prod]
+
 theorem letter_inr (p : X × Bool) : letter (.inr p : G ⊕ X × Bool) = inr (FreeGroup.mk [p]) := by
   simpa using prod_map_letter_map_inr (G := G) [p]
 
@@ -195,6 +201,17 @@ theorem countVar_map_inl (x : X) (L : List G) :
 theorem countVar_map_inr [DecidableEq X] (x : X) (L : List (X × Bool)) :
     countVar x (L.map Sum.inr : List (G ⊕ X × Bool)) = L.countP fun p => p.1 = x := by
   simp [countVar_eq_countP, Function.comp_def]
+
+/-- A word without variable letters is a word in coefficients. -/
+theorem exists_eq_map_inl {l : List (G ⊕ X × Bool)} (h : ∀ x, countVar x l = 0) :
+    ∃ L : List G, l = L.map Sum.inl := by
+  induction l with
+  | nil => exact ⟨[], rfl⟩
+  | cons a l ih =>
+    rcases a with g | ⟨x, b⟩
+    · obtain ⟨L, rfl⟩ := ih fun x => by simpa using h x
+      exact ⟨g :: L, rfl⟩
+    · simpa using h x
 
 end CountVar
 
