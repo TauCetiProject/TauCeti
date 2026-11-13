@@ -46,6 +46,10 @@ public counting equivalence is stated using Mathlib's `DyckWord`.
 ## Main results
 
 * `TauCeti.TreeWalk.isTreeWalk_walkOf`: the walk of a Dyck pattern is a tree walk.
+* `TauCeti.TreeWalk.IsTreeWalk.up_and_down_of_lt_of_sym2_eq`,
+  `TauCeti.TreeWalk.IsTreeWalk.eq_and_eq_of_sym2_eq`: the two steps traversing an unordered edge
+  are an up step and a down step in opposite directions.
+* `TauCeti.TreeWalk.IsTreeWalk.not_sym2_eq_of_lt_lt_lt`: equal-edge step pairs do not interleave.
 * `TauCeti.TreeWalk.closedTreeWalkEquiv`: closed tree walks of length `2 * k` (padded by zeros)
   are in bijection with Dyck words of semilength `k`.
 * `TauCeti.TreeWalk.card_closedTreeWalk`: there are `catalan k` of them.
@@ -600,6 +604,112 @@ theorem isDyckPattern_upSteps : IsDyckPattern k (upSteps k w) where
   eq_false j hj := by
     simp only [upSteps, decide_eq_false_iff_not]
     omega
+
+/-- No step of a tree walk is a self-loop. -/
+theorem ne_succ {i : ℕ} (hi : i < 2 * k) : w i ≠ w (i + 1) := by
+  obtain ⟨u, hu, _, he⟩ := hw.exists_up_edge hi
+  have hle := hw.le_self u hu.le
+  intro h
+  rw [h, Sym2.eq_iff] at he
+  omega
+
+/-- When two steps `i < j < 2 * k` of a tree walk traverse the same unordered edge, the earlier
+step is the up step discovering vertex `i + 1` and the later step returns along the same edge from
+`i + 1` to `w i`. -/
+theorem up_and_down_of_lt_of_sym2_eq {i j : ℕ} (hi : i < 2 * k) (hj : j < 2 * k) (hij : i < j)
+    (he : s(w i, w (i + 1)) = s(w j, w (j + 1))) :
+    w (i + 1) = i + 1 ∧ w j = i + 1 ∧ w (j + 1) = w i := by
+  obtain ⟨u, hu, hu_up, heu⟩ := hw.exists_up_edge hi
+  let S := {x ∈ range (2 * k) | s(w x, w (x + 1)) = s(w i, w (i + 1))}
+  have hpair : ({i, j} : Finset ℕ) = S := by
+    refine eq_of_subset_of_card_le ?_ ?_
+    · intro x hx
+      rcases mem_insert.mp hx with rfl | hx
+      · exact mem_filter.mpr ⟨mem_range.mpr hi, rfl⟩
+      · rw [mem_singleton.mp hx]
+        exact mem_filter.mpr ⟨mem_range.mpr hj, he.symm⟩
+    · rw [hw.card_edge i hi, card_pair hij.ne]
+  have huS : u ∈ ({i, j} : Finset ℕ) := by
+    rw [hpair]
+    refine mem_filter.mpr ⟨mem_range.mpr hu, ?_⟩
+    simpa only [hu_up] using heu.symm
+  have hui : u = i := by
+    rcases mem_insert.mp huS with rfl | huj
+    · rfl
+    · obtain rfl := mem_singleton.mp huj
+      have h1 := hw.le_self i hi.le
+      have h2 := hw.le_self (i + 1) (by omega)
+      rw [Sym2.eq_iff] at heu
+      omega
+  subst u
+  have hnj : ¬ w (j + 1) = j + 1 := by
+    intro hju
+    have h1 := hw.le_self i hi.le
+    rw [hu_up, hju, Sym2.eq_iff] at he
+    omega
+  obtain ⟨_, _, hdj⟩ := hw.step_down hj hnj
+  have hdu := depth_succ_of_le (hw.le_self i hi.le)
+  rw [hu_up, Sym2.eq_iff] at he
+  rcases he with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · rw [← h1, ← h2, hdu] at hdj
+    omega
+  · exact ⟨hu_up, h2.symm, h1.symm⟩
+
+/-- Distinct steps of a tree walk that traverse the same unordered edge traverse it in opposite
+directions. -/
+theorem eq_and_eq_of_sym2_eq {i j : ℕ} (hi : i < 2 * k) (hj : j < 2 * k) (hij : i ≠ j)
+    (he : s(w i, w (i + 1)) = s(w j, w (j + 1))) :
+    w i = w (j + 1) ∧ w (i + 1) = w j := by
+  rcases lt_or_gt_of_ne hij with hlt | hlt
+  · obtain ⟨hi1, hj0, hj1⟩ := hw.up_and_down_of_lt_of_sym2_eq hi hj hlt he
+    exact ⟨hj1.symm, hi1.trans hj0.symm⟩
+  · obtain ⟨hj1, hi0, hi1⟩ := hw.up_and_down_of_lt_of_sym2_eq hj hi hlt he.symm
+    exact ⟨hi0.trans hj1.symm, hi1⟩
+
+/-- Equal-edge step pairs of a tree walk do not interleave. -/
+theorem not_sym2_eq_of_lt_lt_lt {i₁ i₂ j₁ j₂ : ℕ} (h₁ : i₁ < i₂) (h₂ : i₂ < j₁)
+    (h₃ : j₁ < j₂) (h₄ : j₂ < 2 * k)
+    (he₁ : s(w i₁, w (i₁ + 1)) = s(w j₁, w (j₁ + 1))) :
+    s(w i₂, w (i₂ + 1)) ≠ s(w j₂, w (j₂ + 1)) := by
+  intro he₂
+  obtain ⟨hi₁, hj₁, hj₁'⟩ :=
+    hw.up_and_down_of_lt_of_sym2_eq (by omega) (by omega) (h₁.trans h₂) he₁
+  obtain ⟨hi₂, hj₂, _⟩ :=
+    hw.up_and_down_of_lt_of_sym2_eq (by omega) h₄ (h₂.trans h₃) he₂
+  set s := upSteps k w
+  have hw_eq (m : ℕ) (hm : m ≤ 2 * k) : walkOf s m = w m := hw.walkOf_upSteps m hm
+  have hsj₁ : s j₁ = false := by
+    have := hw.le_self i₁ (by omega)
+    simp only [s, upSteps, decide_eq_false_iff_not]
+    omega
+  -- Between `i₁ + 1` and `j₁`, the walk stays in the subtree of `i₁ + 1`, since leaving it by a
+  -- down step before `j₁` would prevent returning to `i₁ + 1` at time `j₁`.
+  have hanc : ∀ m, i₁ + 1 ≤ m → m ≤ i₂ + 1 →
+      ∃ n, (par (walkOf s))^[n] (walkOf s m) = i₁ + 1 := by
+    intro m hm
+    induction m, hm using Nat.le_induction with
+    | base =>
+      intro _
+      exact ⟨0, by simp [hw_eq (i₁ + 1) (by omega), hi₁]⟩
+    | succ m _ ih =>
+      intro hm2
+      obtain ⟨n, hn⟩ := ih (by omega)
+      cases hsm : s m
+      · cases n with
+        | zero =>
+          simp only [Function.iterate_zero, id] at hn
+          exact absurd ⟨0, by simp [hw_eq j₁ (by omega), hj₁]⟩
+            (not_exists_iterate_par_walkOf_eq_of_down s hsm hn (by omega) j₁ (by omega))
+        | succ n =>
+          rw [Function.iterate_succ_apply] at hn
+          exact ⟨n, by rw [walkOf_down s hsm]; exact hn⟩
+      · exact ⟨n + 1, by
+          rw [walkOf_up s hsm, Function.iterate_succ_apply]; simpa [par] using hn⟩
+  obtain ⟨n, hn⟩ := hanc (i₂ + 1) (by omega) le_rfl
+  rw [hw_eq (i₂ + 1) (by omega), hi₂] at hn
+  exact not_exists_iterate_par_walkOf_eq_of_down s hsj₁
+    (by rw [hw_eq j₁ (by omega), hj₁]) (by omega) j₂ (by omega)
+    ⟨n, by rwa [hw_eq j₂ h₄.le, hj₂]⟩
 
 end IsTreeWalk
 
