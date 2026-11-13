@@ -129,7 +129,7 @@ theorem mass_zero : mass (0 : 𝓓^{n}(Ω, F) → V) = 0 := by
   simp [mass]
 
 theorem localMass_add_le : localMass (f + g) U ≤ localMass f U + localMass g U :=
-  localMass_le_iff.2 fun _ hφU hφ => (enorm_add_le _ _).trans <|
+  localMass_le_iff.2 fun _ hφU hφ => (eNorm_add_le _ _).trans <|
     add_le_add (enorm_le_localMass hφU hφ) (enorm_le_localMass hφU hφ)
 
 theorem mass_add_le : mass (f + g) ≤ mass f + mass g := by
@@ -137,7 +137,7 @@ theorem mass_add_le : mass (f + g) ≤ mass f + mass g := by
 
 @[simp]
 theorem localMass_smul [NormedSpace ℝ V] (a : ℝ) : localMass (a • f) U = ‖a‖ₑ * localMass f U := by
-  simp only [localMass, ENNReal.mul_iSup, Pi.smul_apply, enorm_smul]
+  simp only [localMass, ENNReal.mul_iSup, Pi.smul_apply, eNorm_smul]
 
 @[simp]
 theorem mass_smul [NormedSpace ℝ V] (a : ℝ) : mass (a • f) = ‖a‖ₑ * mass f := by
@@ -145,7 +145,7 @@ theorem mass_smul [NormedSpace ℝ V] (a : ℝ) : mass (a • f) = ‖a‖ₑ * 
 
 @[simp]
 theorem localMass_neg : localMass (-f) U = localMass f U := by
-  simp only [localMass, Pi.neg_apply, enorm_neg]
+  simp only [localMass, Pi.neg_apply, eNorm_neg]
 
 @[simp]
 theorem mass_neg : mass (-f) = mass f := by
@@ -202,16 +202,16 @@ theorem enorm_apply_le_localMass_mul (T : 𝓕) (hφU : tsupport φ ⊆ U) :
   have hφ : φ = b • (b⁻¹ • φ) := by rw [smul_smul, mul_inv_cancel₀ hb.ne', one_smul]
   calc ‖T φ‖ₑ = ‖b‖ₑ * ‖T (b⁻¹ • φ)‖ₑ := by
         conv_lhs => rw [hφ]
-        rw [map_smul, enorm_smul]
+        rw [map_smul, eNorm_smul]
     _ ≤ ‖b‖ₑ * localMass T U := by gcongr; exact enorm_le_localMass hψU hψ
     _ = localMass T U * ‖(φ : E →ᵇ F)‖ₑ := by
-        rw [mul_comm, Real.enorm_of_nonneg hb.le, ← ofReal_norm]
+        rw [mul_comm, Real.eNorm_of_nonneg hb.le, ← ofReal_norm]
 
 /-- The mass bound for a test bounded pointwise by `c` and supported in `U`. -/
 theorem enorm_apply_le_localMass_mul_of_forall_enorm_le (T : 𝓕) (hφU : tsupport φ ⊆ U)
     (hφc : ∀ x, ‖φ x‖ₑ ≤ c) : ‖T φ‖ₑ ≤ localMass T U * c := by
   refine (enorm_apply_le_localMass_mul T hφU).trans (mul_le_mul_right ?_ _)
-  rw [BoundedContinuousFunction.enorm_eq_iSup_enorm]
+  rw [BoundedContinuousFunction.eNorm_eq_iSup_eNorm]
   exact iSup_le hφc
 
 /-- **Order-zero operators and local mass.** If a map `L` of test functions does not enlarge
@@ -274,9 +274,9 @@ theorem localMass_add_localMass_le (T : 𝓕) (h : Disjoint U U') :
           (mul_le_of_le_one_left (norm_nonneg _) (hsign _)).trans (hψ.2 x)
     have hTχ : T χ = |T φ| + |T ψ| := by simp [χ]
     calc ‖T φ‖ₑ + ‖T ψ‖ₑ = ‖T χ‖ₑ := by
-          rw [hTχ, Real.enorm_of_nonneg (add_nonneg (abs_nonneg (T φ)) (abs_nonneg (T ψ))),
-            ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _), Real.enorm_eq_ofReal_abs,
-            Real.enorm_eq_ofReal_abs]
+          rw [hTχ, Real.eNorm_of_nonneg (add_nonneg (abs_nonneg (T φ)) (abs_nonneg (T ψ))),
+            ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _), Real.eNorm_eq_ofReal_abs,
+            Real.eNorm_eq_ofReal_abs]
       _ ≤ localMass T (U ∪ U') := enorm_le_localMass hχU hχ
   calc localMass T U + localMass T U'
       ≤ (⨆ (φ : 𝓓^{n}(Ω, F)) (_ : tsupport φ ⊆ U ∧ ∀ x, ‖φ x‖ ≤ 1), ‖T φ‖ₑ) +
@@ -295,7 +295,7 @@ topology of pointwise convergence, the local mass on any set is lower semicontin
 theorem lowerSemicontinuous_localMass (U : Set E) :
     LowerSemicontinuous fun f : 𝓓^{n}(Ω, F) → V => localMass f U :=
   lowerSemicontinuous_biSup fun φ _ => lowerSemicontinuous_iSup fun _ =>
-    (continuous_enorm.comp (continuous_apply φ)).lowerSemicontinuous
+    (continuous_eNorm.comp (continuous_apply φ)).lowerSemicontinuous
 
 /-- **Weak lower semicontinuity of mass.** -/
 theorem lowerSemicontinuous_mass :

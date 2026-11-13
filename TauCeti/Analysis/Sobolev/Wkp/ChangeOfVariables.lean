@@ -515,7 +515,7 @@ private theorem eLpNorm_iteratedFDeriv_comp_le (h : IsChangeOfVariables k U V Φ
           fun j hj1 hji => h.norm_iteratedFDeriv_le j hj1 (hji.trans hi) x hx
     _ = ENNReal.ofReal (max 1 L ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
           fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        rw [← Real.enorm_of_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _),
+        rw [← Real.eNorm_of_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _),
           ← eLpNorm_const_smul]
         congr 1
         funext x
