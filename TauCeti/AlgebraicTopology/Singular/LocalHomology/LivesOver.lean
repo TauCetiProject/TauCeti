@@ -270,8 +270,8 @@ theorem fiberLocalization_id_fundamentalClass (b : M) :
     (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) id b n).hom (o.fundamentalClass hn) =
       (o b).val := by
   rw [fiberLocalization_id]
-  erw [ModuleCat.comp_apply]
-  exact o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn b
+  erw [ModuleCat.comp_apply, ← singularHomologyToLocalHomology_apply]
+  exact o.singularHomologyToLocalHomology_fundamentalClass hn b
 
 include hn in
 /-- **Multiples of the fundamental class.** For the identity of a compact oriented manifold, the

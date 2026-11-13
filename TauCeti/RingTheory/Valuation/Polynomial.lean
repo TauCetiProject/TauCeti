@@ -48,17 +48,16 @@ algebra over a field.
   multiple with all coefficients of value at most `1`, a coefficient equal to `1`, and all
   coefficients of higher degree of value below `1`.
 
-## Roadmap
+## Uses
 
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 0–1 infrastructure: the place-at-infinity
-argument for isogenies in
+The place-at-infinity argument for isogenies in
 `AlgebraicGeometry/EllipticCurve/Isogeny/InfinityPlace.lean` needs exactly this to see that a
 pulled-back affine function of a Weierstrass curve — a polynomial in the pulled-back coordinates —
 stays in the valuation ring at infinity. The statement is about a valuation and a polynomial and
 nothing else, so it is stated here rather than there.
 
-`TauCetiRoadmap/AlgebraicCurves/README.md`, Layer 0: `TauCeti.valuation_aeval_eq_one` is the
-constant-term estimate used in Stichtenoth, Lemma 1.1.7, on the path to existence of places.
+`TauCeti.valuation_aeval_eq_one` is the constant-term estimate used in Stichtenoth, Lemma 1.1.7, on
+the path to existence of places.
 -/
 
 public section

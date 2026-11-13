@@ -66,8 +66,8 @@ theorem tendsto_wassersteinEDist_empiricalMeasure_ae (hp0 : p ≠ 0) (hp : p ≠
   obtain ⟨x, hx⟩ := hasFiniteMoment_def.mp hμ
   -- The `p`-moment of `μ` about `x` is finite.
   have hmom : ∫⁻ y, edist x y ^ p.toReal ∂(μ : Measure X) ≠ ∞ := by
-    simpa only [enorm_eq_self] using
-      (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp0 hp hx.eLpNorm_lt_top).ne
+    simpa only [eNorm_eq_self] using
+      (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp hx.eLpNorm_lt_top).ne
   -- The real-valued `p`-th power of the distance to `x`, whose sample means are the moments.
   set f : X → ℝ := fun y ↦ dist x y ^ p.toReal with hf_def
   have hf : Measurable f := (continuous_const.dist continuous_id).measurable.pow_const _

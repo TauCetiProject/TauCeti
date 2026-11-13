@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Sheaf
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Tensor products of Cartier divisor line bundles
