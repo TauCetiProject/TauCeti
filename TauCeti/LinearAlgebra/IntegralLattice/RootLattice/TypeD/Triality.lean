@@ -185,8 +185,7 @@ theorem checkerboardTriality_pow_three : checkerboardTriality ^ 3 = 1 :=
 theorem discriminantGroupEquiv_checkerboardTriality_checkerboardVectorClass :
     checkerboardTriality.discriminantGroupEquiv (checkerboardVectorClass 4) =
       checkerboardCospinorClass 4 := by
-  rw [← (mk_eq_checkerboardVectorClass_iff ⟨_, checkerboardVector_mem_dualCarrier⟩).2
-      (by simp), Isometry.discriminantGroupEquiv_mk,
+  rw [checkerboardVectorClass_def, Isometry.discriminantGroupEquiv_mk,
     mk_eq_checkerboardCospinorClass_iff, Isometry.coe_dualCarrierEquiv_apply]
   refine mem_checkerboardCarrier_of ![0, -1, -1, 0] (fun i ↦ ?_) ⟨-1, by decide⟩
   fin_cases i <;> norm_num [Fin.ext_iff]
@@ -207,8 +206,7 @@ theorem discriminantGroupEquiv_checkerboardTriality_checkerboardSpinorClass :
 theorem discriminantGroupEquiv_checkerboardTriality_checkerboardCospinorClass :
     checkerboardTriality.discriminantGroupEquiv (checkerboardCospinorClass 4) =
       checkerboardSpinorClass 4 := by
-  rw [← (mk_eq_checkerboardCospinorClass_iff ⟨_, checkerboardCospinor_mem_dualCarrier⟩).2
-      (by simp), Isometry.discriminantGroupEquiv_mk,
+  rw [checkerboardCospinorClass_def, Isometry.discriminantGroupEquiv_mk,
     mk_eq_checkerboardSpinorClass_iff, Isometry.coe_dualCarrierEquiv_apply]
   refine mem_checkerboardCarrier_of 0 (fun i ↦ ?_) ⟨0, by decide⟩
   fin_cases i <;> norm_num [Fin.ext_iff]
