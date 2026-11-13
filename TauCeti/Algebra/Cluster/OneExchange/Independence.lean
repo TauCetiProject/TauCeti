@@ -44,6 +44,18 @@ It is a unit of the ambient monoid, without asserting that it is a coefficient u
 def exchangeProduct (x E : Bˣ) (n : ℕ) : Bˣ :=
   (E * x⁻¹) ^ n * x ^ n
 
+/-- The defining formula for the ordered exchange coefficient. -/
+theorem exchangeProduct_def (x E : Bˣ) (n : ℕ) :
+    exchangeProduct x E n = (E * x⁻¹) ^ n * x ^ n := (rfl)
+
+@[simp]
+theorem exchangeProduct_one_left (E : Bˣ) (n : ℕ) : exchangeProduct 1 E n = E ^ n := by
+  simp [exchangeProduct_def]
+
+@[simp]
+theorem exchangeProduct_one_right (x : Bˣ) (n : ℕ) : exchangeProduct x 1 n = 1 := by
+  simp [exchangeProduct_def]
+
 @[simp]
 theorem exchangeProduct_zero (x E : Bˣ) : exchangeProduct x E 0 = 1 := by
   simp [exchangeProduct]
@@ -66,75 +78,95 @@ theorem exchangeProduct_succ' (x E : Bˣ) (n : ℕ) :
   group
 
 /-- Powers of an exchange have the ordered coefficient `exchangeProduct`. -/
-theorem exchange_pow_eq (x E : Bˣ) (n : ℕ) :
+theorem mul_inv_pow_eq_exchangeProduct_mul_inv_pow (x E : Bˣ) (n : ℕ) :
     (E * x⁻¹) ^ n = exchangeProduct x E n * x⁻¹ ^ n := by
   unfold exchangeProduct
   group
 
 /-- If `E` commutes with `x`, ordered exchange products are ordinary powers of `E`. -/
-theorem exchangeProduct_eq_pow (x E : Bˣ) (h : Commute x E) (n : ℕ) :
+theorem exchangeProduct_eq_pow_of_commute {x E : Bˣ} (h : Commute x E) (n : ℕ) :
     exchangeProduct x E n = E ^ n := by
-  rw [exchangeProduct, (h.symm.inv_right).mul_pow]
+  rw [exchangeProduct_def, (h.symm.inv_right).mul_pow]
   simp [mul_assoc]
-
-/-- Multiplicative maps transport the ordered exchange coefficients. -/
-@[simp]
-theorem map_exchangeProduct {A : Type*} [Monoid A] (x E : Bˣ) (n : ℕ) (f : B →* A) :
-    Units.map f (exchangeProduct x E n) =
-      exchangeProduct (Units.map f x) (Units.map f E) n := by
-  simp [exchangeProduct]
 
 end Units
 
-namespace Subsemiring
+namespace Units
 
-variable {B : Type*} [Semiring B] (C : Subsemiring B) (x E : Bˣ)
+variable {B : Type*} [CommMonoid B]
 
-/-- Ordered exchange products remain in the coefficient subsemiring if inverse
+/-- Ordered exchange products in a commutative monoid are ordinary powers. -/
+@[simp]
+theorem exchangeProduct_eq_pow (x E : Bˣ) (n : ℕ) : exchangeProduct x E n = E ^ n :=
+  exchangeProduct_eq_pow_of_commute (.all x E) n
+
+end Units
+
+namespace Units
+
+variable {B : Type*} [Monoid B]
+
+/-- Multiplicative maps transport the ordered exchange coefficients. -/
+@[simp]
+theorem map_exchangeProduct {A F : Type*} [Monoid A] [FunLike F Bˣ Aˣ]
+    [MonoidHomClass F Bˣ Aˣ] (f : F) (x E : Bˣ) (n : ℕ) :
+    f (exchangeProduct x E n) = exchangeProduct (f x) (f E) n := by
+  simp [exchangeProduct_def]
+
+end Units
+
+namespace SubmonoidClass
+
+variable {B S : Type*} [Monoid B] [SetLike S B] [SubmonoidClass S B] (C : S) (x E : Bˣ)
+
+/-- Ordered exchange products remain in the coefficient submonoid if inverse
 conjugation by the old coordinate preserves it. -/
 theorem exchangeProduct_mem
     (hx : ∀ c ∈ C, (↑x⁻¹ : B) * c * x ∈ C) (hE : (E : B) ∈ C) (n : ℕ) :
     (Units.exchangeProduct x E n : B) ∈ C := by
   induction n with
   | zero => simp
-  | succ n ih =>
-    simpa only [Units.exchangeProduct_succ', Units.val_mul] using C.mul_mem hE (hx _ ih)
+  | succ n ih => simpa only [Units.exchangeProduct_succ', Units.val_mul] using mul_mem hE (hx _ ih)
 
-/-- A skew exchange preserves independence of natural powers, with left coefficients
-in `C`. The numerator need only be a unit in the ambient semiring. -/
-theorem linearIndependent_pow_exchange
+end SubmonoidClass
+
+namespace SubsemiringClass
+
+variable {B S : Type*} [Semiring B] [SetLike S B] [SubsemiringClass S B] (C : S) (x E : Bˣ)
+
+/-- Independence of natural powers of `x` implies independence of natural powers of
+`E * x⁻¹`, with left coefficients in `C`. The numerator need only be a unit in the
+ambient semiring. -/
+theorem linearIndependent_mul_inv_pow
     (hx : ∀ c ∈ C, (↑x⁻¹ : B) * c * x ∈ C) (hE : (E : B) ∈ C)
-    (hli : LinearIndependent C (fun n : ℤ ↦ (↑(x ^ n) : B))) :
+    (hli : LinearIndependent C (fun n : ℕ ↦ (↑(x ^ n) : B))) :
     LinearIndependent C (fun n : ℕ ↦ (↑((E * x⁻¹) ^ n) : B)) := by
   classical
-  let p (n : ℕ) : C := ⟨Units.exchangeProduct x E n, C.exchangeProduct_mem x E hx hE n⟩
-  have hinj : Function.Injective (fun n : ℕ ↦ -(n : ℤ)) := by
-    intro a b hab
-    exact Nat.cast_injective (neg_injective hab)
-  have hi := hli.comp _ hinj
-  apply linearIndependent_iff'ₛ.mpr
-  intro s f g hfg n hn
-  have hsum (c : ℕ → C) :
-      (∑ i ∈ s, c i • (↑((E * x⁻¹) ^ i) : B)) =
-        ∑ i ∈ s, (c i * p i) • (↑(x ^ (-(i : ℤ))) : B) := by
-    apply Finset.sum_congr rfl
-    intro i _
-    simp only [Units.exchange_pow_eq, Units.val_mul, zpow_neg, zpow_natCast,
-      Subsemiring.smul_def, smul_eq_mul, Subsemiring.coe_mul, mul_assoc, inv_pow, p]
-  rw [hsum f, hsum g] at hfg
-  have he := linearIndependent_iff'ₛ.mp hi s (fun i ↦ f i * p i)
-    (fun i ↦ g i * p i) hfg n hn
-  apply Subtype.ext
-  exact (Units.exchangeProduct x E n).isUnit.mul_left_injective
-    (congrArg (fun c : C ↦ (c : B)) he)
+  let p (n : ℕ) : C := ⟨Units.exchangeProduct x E n,
+    SubmonoidClass.exchangeProduct_mem C x E hx hE n⟩
+  have hp (n : ℕ) : IsRightRegular (p n) :=
+    fun _ _ h ↦ Subtype.ext <| (Units.exchangeProduct x E n).isRegular.right
+      (congrArg ((↑) : C → B) h)
+  have hi := ((Units.linearIndependent_zpow_iff x).mpr hli).comp (fun n : ℕ ↦ -(n : ℤ))
+    (neg_injective.comp Nat.cast_injective)
+  have hsmul (c : C) (b : B) : c • b = (c : B) * b := by
+    change (c : B) • b = _
+    rw [smul_eq_mul]
+  have hfactor : (p • ((fun n : ℤ ↦ (↑(x ^ n) : B)) ∘ fun n : ℕ ↦ -(n : ℤ))) =
+      fun n : ℕ ↦ (↑((E * x⁻¹) ^ n) : B) := by
+    funext n
+    rw [Units.mul_inv_pow_eq_exchangeProduct_mul_inv_pow]
+    simp only [Pi.smul_apply', Function.comp_apply, hsmul, p, Units.val_mul,
+      zpow_neg, zpow_natCast, inv_pow]
+  simpa only [hfactor] using hi.smul_of_isRightRegular hp
 
 /-- A skew exchange preserves unique Laurent coefficients. No domain, centrality,
 additive cancellation, or invertibility of the numerator inside `C` is required. -/
-theorem linearIndependent_zpow_exchange
+theorem linearIndependent_mul_inv_zpow
     (hx : ∀ c ∈ C, (↑x⁻¹ : B) * c * x ∈ C) (hE : (E : B) ∈ C)
     (hli : LinearIndependent C (fun n : ℤ ↦ (↑(x ^ n) : B))) :
     LinearIndependent C (fun n : ℤ ↦ (↑((E * x⁻¹) ^ n) : B)) :=
   (Units.linearIndependent_zpow_iff (R := C) _).mpr
-    (C.linearIndependent_pow_exchange x E hx hE hli)
+    (linearIndependent_mul_inv_pow C x E hx hE ((Units.linearIndependent_zpow_iff x).mp hli))
 
-end Subsemiring
+end SubsemiringClass

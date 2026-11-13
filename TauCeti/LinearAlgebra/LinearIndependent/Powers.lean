@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 public import Mathlib.Algebra.Group.Units.Basic
+import Mathlib.Algebra.Module.Equiv.Basic
 import Mathlib.Data.Finset.Order
 
 /-!
@@ -46,15 +47,11 @@ theorem linearIndependent_zpow_iff (x : Bˣ) :
       have := congrArg (fun n : ℕ ↦ (n : ℤ)) hij
       simp only [Int.toNat_of_nonneg (hnonneg _)] at this
       exact Subtype.ext (by omega)
-    let f : B →ₗ[R] B :=
-      { toFun := fun b ↦ b * (x ^ m : Bˣ)
-        map_add' := fun a b ↦ add_mul a b _
-        map_smul' := fun r b ↦ smul_mul_assoc r b _ }
-    have hf : Function.Injective f := (x ^ m).isUnit.mul_left_injective
-    convert (h.comp _ hinj).map_injOn f hf.injOn using 1
+    let e := (x ^ m).mulRightLinearEquiv R
+    convert (h.comp _ hinj).map_injOn e.toLinearMap e.injective.injOn using 1
     ext i
-    simp only [Function.comp_apply, LinearMap.coe_mk, AddHom.coe_mk,
-      ← Units.val_mul, ← zpow_natCast, ← zpow_add, Int.toNat_of_nonneg (hnonneg i),
-      sub_add_cancel, f]
+    simp only [Function.comp_apply, toLinearMap_mulRightLinearEquiv,
+      LinearMap.mulRight_apply, ← Units.val_mul, ← zpow_natCast, ← zpow_add,
+      Int.toNat_of_nonneg (hnonneg i), sub_add_cancel, e]
 
 end Units
