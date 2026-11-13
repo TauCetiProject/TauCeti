@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Homotopy
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 import TauCeti.Algebra.Homology.Homotopy
 
 /-!
@@ -30,11 +31,13 @@ same operators on smooth chains.
 ## Main definitions and results
 
 * `SSet.Subcomplex.IsAffineStable`: the subcomplex is closed under precomposition with affine
-  maps of standard simplices.
+  maps of standard simplices. Intersections of affinely stable subcomplexes are affinely stable.
 * `TauCeti.AffineChain.subcomplexChain`: push affine chains of `Δᵐ` forward along a simplex of an
   affinely stable subcomplex, with values in the chains of the subcomplex.
 * `TauCeti.subcomplexSubdivisionChainMap`: barycentric subdivision as a chain endomorphism of the
   chains of an affinely stable subcomplex, compatible with the inclusion into singular chains.
+* `TauCeti.subcomplexSubdivisionChainMap_pow_f_ι`: iterated subdivision is compatible with the
+  inclusion into singular chains.
 * `TauCeti.subcomplexSubdivisionHomotopy`: the prism operator as a chain homotopy from the identity
   to subdivision on those chains.
 * `TauCeti.homologyMap_subcomplexSubdivisionChainMap`: subdivision induces the identity on their
@@ -69,6 +72,12 @@ class IsAffineStable (S : (TopCat.toSSet.obj X).Subcomplex) : Prop where
     (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) :
     (X.toSSetObjEquiv _).symm ((X.toSSetObjEquiv _ σ).comp (StdSimplex.continuousAffineMapMk v)) ∈
       S.obj (op ⦋k⦌)
+
+/-- The intersection of two affinely stable subcomplexes is affinely stable. -/
+instance (S T : (TopCat.toSSet.obj X).Subcomplex) [S.IsAffineStable] [T.IsAffineStable] :
+    (S ⊓ T).IsAffineStable where
+  comp_affineMapMk_mem hσ v :=
+    ⟨IsAffineStable.comp_affineMapMk_mem hσ.1 v, IsAffineStable.comp_affineMapMk_mem hσ.2 v⟩
 
 end SSet.Subcomplex
 
@@ -114,10 +123,6 @@ lemma subcomplexChain_ι {m k : ℕ} (σ : (S : SSet) _⦋m⦌)
   | single v a => simp [SSet.ι_chainComplexMap_f]
 
 end AffineChain
-
--- The chain inclusion is the coproduct map induced by an injective map of simplices.
-local instance (n : ℕ) : Mono ((SSet.chainComplexMap S.ι R).f n) :=
-  inferInstanceAs (Mono ((sigmaConst.obj R).map (S.ι.app (op ⦋n⦌))))
 
 /-- Barycentric subdivision restricted to the chains of an affinely stable subcomplex, in
 degree `n`. -/
@@ -168,6 +173,20 @@ lemma subcomplexSubdivisionChainMap_ι :
       SSet.chainComplexMap S.ι R ≫ singularSubdivisionChainMap R X := by
   ext n : 1
   simp
+
+/-- Iterated restricted subdivision commutes with the inclusion into singular chains. -/
+@[reassoc]
+lemma subcomplexSubdivisionChainMap_pow_f_ι (m n : ℕ) :
+    (End.of (subcomplexSubdivisionChainMap R S) ^ m).asHom.f n ≫
+        (SSet.chainComplexMap S.ι R).f n =
+      (SSet.chainComplexMap S.ι R).f n ≫
+        (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [HomologicalComplex.pow_f_succ, HomologicalComplex.pow_f_succ, Category.assoc,
+      subcomplexSubdivisionChainMap_f, subcomplexSubdivisionX_ι, reassoc_of% ih,
+      singularSubdivisionChainMap_f]
 
 /-- The prism operator of barycentric subdivision restricted to the chains of an affinely stable
 subcomplex. -/
@@ -240,7 +259,6 @@ lemma subcomplexSubdivisionChainMap_naturality :
   have hι : SSet.chainComplexMap g R ≫ SSet.chainComplexMap T.ι R =
       SSet.chainComplexMap S.ι R ≫ SSet.chainComplexMap (TopCat.toSSet.map f) R := by
     simp only [← Functor.map_comp, hg]
-  have : Mono (SSet.chainComplexMap T.ι R) := HomologicalComplex.mono_of_mono_f _ inferInstance
   apply (cancel_mono (SSet.chainComplexMap T.ι R)).1
   simp only [Category.assoc, subcomplexSubdivisionChainMap_ι, hι, reassoc_of% hι,
     subcomplexSubdivisionChainMap_ι_assoc]
