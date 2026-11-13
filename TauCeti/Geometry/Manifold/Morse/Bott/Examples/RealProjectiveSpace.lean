@@ -68,8 +68,8 @@ so the integral formula cannot be stated with untwisted coefficients.
   relative homology of a band crossing the top level is the reduced homology of `ℝℙᴺ`.
 * `TauCeti.singularHomologySublevelPairProjectiveHyperplaneMomentFunctionIntLinearEquivOfOdd` and
   `TauCeti.isZero_singularHomology_sublevelPair_projectiveHyperplaneMomentFunction_of_even`:
-  it is `ℤ/2` in odd degrees below `N` with integer coefficients, and zero in even positive
-  degrees when `2` is right-regular in the coefficients.
+  it is `ℤ/2` in odd degrees below `N` with integer coefficients, and zero in even degrees
+  when `2` is right-regular in the coefficients.
 * `TauCeti.singularHomologyOneSublevelPairProjectiveHyperplaneMomentFunctionTwoLinearEquiv` and
   `TauCeti.not_nonempty_linearEquiv_int_projectiveHyperplaneMomentFunction_two`:
   on `ℝℙ²` the band crossing the critical circle has `H₁ ≅ ℤ/2`, not `ℤ`.
@@ -313,16 +313,17 @@ def singularHomologySublevelPairProjectiveHyperplaneMomentFunctionIntLinearEquiv
       RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd hk hkN
 
 /-- **Homology of a band crossing the top level in even degrees.** If `2` is right-regular in `S`,
-then for `0 ≤ c < 1 ≤ d` and even `k > 0`, `Hₖ({f ≤ d}, {f ≤ c}; S) = 0`. -/
+then for `0 ≤ c < 1 ≤ d` and even `k`, `Hₖ({f ≤ d}, {f ≤ c}; S) = 0`. -/
 theorem isZero_singularHomology_sublevelPair_projectiveHyperplaneMomentFunction_of_even
     (S : Type) [Ring S] (h2 : IsRightRegular (2 : S)) (hc₀ : 0 ≤ c) (hc₁ : c < 1) (hd : 1 ≤ d)
-    {k : ℕ} (hk : Even k) (hk0 : k ≠ 0) :
+    {k : ℕ} (hk : Even k) :
     IsZero ((sublevelPair (projectiveHyperplaneMomentFunction N) (hc₁.le.trans hd)).singularHomology
       (ModuleCat.of S S) k) := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk0
-  exact (RealProjectiveSpace.isZero_singularHomology_projectivization_of_even (N := N) S h2 hk
-    hk0).of_iso (singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction _ hc₀ hc₁ hd
-      k).symm
+  rcases k with _ | k
+  · exact isZero_singularHomology_zero_sublevelPair_projectiveHyperplaneMomentFunction _ hc₀ _
+  · exact (RealProjectiveSpace.isZero_singularHomology_projectivization_of_even (N := N) S h2 hk
+      k.succ_ne_zero).of_iso
+        (singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction _ hc₀ hc₁ hd k).symm
 
 /-- **The band crossing the critical circle of `ℝℙ²`.** On `ℝℙ²` the critical hyperplane is the
 circle `ℝℙ¹`, and for `0 ≤ c < 1 ≤ d` the band crossing it has `H₁({f ≤ d}, {f ≤ c}; ℤ) ≅ ℤ/2`.
