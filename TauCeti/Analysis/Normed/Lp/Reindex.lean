@@ -30,6 +30,12 @@ More generally, a matrix `w j k` dominated by a summable kernel `a : ℤ → ℝ
 (`lp.exists_hasSum_and_norm_le_of_summable`). With the geometric kernel `a d = r^{|d|}`, `r < 1`,
 this is how an operator that moves the Littlewood–Paley blocks of a function to blocks of nearby
 index, with geometric decay in the distance, is bounded on dyadic sequence spaces.
+
+Similarly, for `0 ≤ r < 1` the **geometric tail sums** `j ↦ ∑_{d ≥ 0} r ^ d f (j + d)` of a
+sequence in `ℓᵖ`, `1 ≤ p`, form a sequence in `ℓᵖ` of norm at most `(1 - r)⁻¹ ‖f‖`
+(`lp.exists_forall_hasSum_pow_smul_add_and_norm_le`): they are an absolutely convergent series of
+shifts. Such sums arise when each dyadic piece interacts with all the pieces of higher index, with
+geometrically decaying weights.
 -/
 
 public section
@@ -170,3 +176,30 @@ theorem lp.exists_hasSum_and_norm_le_of_summable [Fact (1 ≤ p)] [CompleteSpace
     simp [t]
   · calc ‖∑' d, T d‖ ≤ c * ‖x‖ * ∑' d, a d := tsum_of_norm_bounded (ha.hasSum.mul_left _) hT
       _ = _ := by ring
+
+/-- **Geometric tail sums in `ℓᵖ`.** For `1 ≤ p` and `0 ≤ r < 1`, the tail sums
+`j ↦ ∑_{d ≥ 0} r ^ d f (d + j)` of a sequence `f ∈ ℓᵖ` converge and form a sequence in `ℓᵖ` of norm
+at most `(1 - r)⁻¹ ‖f‖`. -/
+theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [NormedSpace ℝ G]
+    [CompleteSpace G] (f : lp (fun _ : ℕ ↦ G) p) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
+    ∃ g : lp (fun _ : ℕ ↦ G) p, (∀ j, HasSum (fun d ↦ r ^ d • f (d + j)) (g j)) ∧
+      ‖g‖ ≤ (1 - r)⁻¹ * ‖f‖ := by
+  have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  have hinj (d : ℕ) : (Set.univ : Set ℕ).InjOn fun j ↦ d + j :=
+    fun _ _ _ _ h ↦ add_left_cancel h
+  -- The shift `T d = (f (d + j))ⱼ`, of norm at most `‖f‖`.
+  set T : ℕ → lp (fun _ : ℕ ↦ G) p := fun d ↦
+    ⟨Set.univ.indicator (f ∘ fun j ↦ d + j), (lp.memℓp f).indicator_comp (hinj d)⟩
+  have hT (d j : ℕ) : T d j = f (d + j) := by simp [T]
+  have hbound (d : ℕ) : ‖r ^ d • T d‖ ≤ ‖f‖ * r ^ d := by
+    rw [norm_smul, Real.norm_of_nonneg (by positivity), mul_comm]
+    exact mul_le_mul_of_nonneg_right
+      (lp.norm_le_of_forall_eq_indicator_comp hp (hinj d) fun _ ↦ rfl) (by positivity)
+  have hgeom := (summable_geometric_of_lt_one hr0 hr1).mul_left ‖f‖
+  have hsum : Summable fun d ↦ r ^ d • T d := Summable.of_norm_bounded hgeom hbound
+  refine ⟨∑' d, r ^ d • T d, fun j ↦ ?_, ?_⟩
+  · have h := Pi.hasSum.1 (hsum.hasSum.map (lp.coeFnAddMonoidHom (fun _ : ℕ ↦ G) p)
+      lp.uniformContinuous_coe.continuous) j
+    simpa [lp.coeFnAddMonoidHom_apply, lp.coeFn_smul, hT] using h
+  · calc ‖∑' d, r ^ d • T d‖ ≤ ∑' d, ‖f‖ * r ^ d := tsum_of_norm_bounded hgeom.hasSum hbound
+      _ = (1 - r)⁻¹ * ‖f‖ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, mul_comm]
