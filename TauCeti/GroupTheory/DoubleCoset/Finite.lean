@@ -146,36 +146,41 @@ both sides are `0`; otherwise every double coset is finite. -/
 theorem sum_card_quotToDoubleCoset (H K : Subgroup G)
     [Fintype (DoubleCoset.Quotient (H : Set G) (K : Set G))] :
     ∑ q, Nat.card (DoubleCoset.quotToDoubleCoset H K q) = Nat.card G := by
+  -- each double coset is the image of `H × K` under `(h, k) ↦ h * q.out * k`
+  have hdc (q : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
+      DoubleCoset.quotToDoubleCoset H K q = Set.image2 (· * q.out * ·) (H : Set G) K := by
+    rw [DoubleCoset.quotToDoubleCoset, DoubleCoset.doubleCoset_eq_image2]
   by_cases hHK : Finite H ∧ Finite K
   · -- every double coset is finite, so the sizes of the fibres of `DoubleCoset.mk H K` add up
     obtain ⟨hH, hK⟩ := hHK
-    have hfin (q : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
-        (DoubleCoset.quotToDoubleCoset H K q).Finite :=
-      ((Set.toFinite (H : Set G)).mul (Set.toFinite {q.out})).mul (Set.toFinite (K : Set G))
     have (q : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
         Finite {a // DoubleCoset.mk H K a = q} := by
-      have := (hfin q).to_subtype
+      have : (DoubleCoset.quotToDoubleCoset H K q).Finite := by
+        rw [hdc]
+        exact (Set.toFinite (H : Set G)).image2 _ (Set.toFinite (K : Set G))
+      have := this.to_subtype
       exact Finite.of_equiv _
         (Equiv.subtypeEquivRight fun a => DoubleCoset.mem_quotToDoubleCoset_iff q a)
     rw [← Nat.card_congr (Equiv.sigmaFiberEquiv (DoubleCoset.mk H K)), Nat.card_sigma]
     exact Fintype.sum_congr _ _ fun q =>
       Nat.card_congr (Equiv.subtypeEquivRight fun a => DoubleCoset.mem_quotToDoubleCoset_iff q a)
   · -- some factor is infinite, hence so is `G` and every double coset
+    rw [not_and_or, not_finite_iff_infinite, not_finite_iff_infinite] at hHK
     have hGi : Infinite G := by
-      rw [not_and_or, not_finite_iff_infinite, not_finite_iff_infinite] at hHK
       rcases hHK with hH | hK
       · exact Infinite.of_injective ((↑) : H → G) Subtype.val_injective
       · exact Infinite.of_injective ((↑) : K → G) Subtype.val_injective
     rw [Nat.card_eq_zero_of_infinite]
     refine Finset.sum_eq_zero fun q _ ↦ ?_
     have : (DoubleCoset.quotToDoubleCoset H K q).Infinite := by
-      rw [DoubleCoset.quotToDoubleCoset, DoubleCoset.doubleCoset]
-      rcases not_and_or.1 hHK with hH | hK
-      · exact Set.infinite_mul.2 (Or.inl ⟨Set.infinite_mul.2 (Or.inl
-          ⟨Set.infinite_coe_iff.1 (not_finite_iff_infinite.1 hH), Set.singleton_nonempty _⟩),
-          ⟨1, K.one_mem⟩⟩)
-      · exact Set.infinite_mul.2 (Or.inr ⟨Set.infinite_coe_iff.1 (not_finite_iff_infinite.1 hK),
-          Set.Nonempty.mul ⟨1, H.one_mem⟩ (Set.singleton_nonempty _)⟩)
+      rw [hdc]
+      rcases hHK with hH | hK
+      · -- right multiplication by `q.out * 1` is injective on the infinite factor `H`
+        exact (Set.infinite_coe_iff.1 hH).image2_left K.one_mem
+          fun _ _ _ _ h ↦ mul_right_cancel (mul_right_cancel h)
+      · -- left multiplication by `1 * q.out` is injective on the infinite factor `K`
+        exact (Set.infinite_coe_iff.1 hK).image2_right H.one_mem
+          fun _ _ _ _ h ↦ mul_left_cancel h
     have := this.to_subtype
     exact Nat.card_eq_zero_of_infinite
 
