@@ -103,6 +103,8 @@ normal closure of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.CoordGroup.subsingleton_iff`: `G_{R(S)}` is trivial exactly when
   evaluation at every solution of `S` in `H` is trivial, for instance when `S` has no solution in
   `H` (`TauCeti.GroupAlgGeom.CoordGroup.subsingleton_of_V_eq_empty`) or `H` is trivial.
+* `TauCeti.GroupAlgGeom.CoordGroup.genericPoint_eq_one_iff`: a coordinate of the generic point
+  of `S` is trivial exactly when it is trivial at every solution of `S` in `H`.
 * `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_id`,
   `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_comp`: a tuple of words mapping one
   algebraic set into another induces a coefficient-preserving homomorphism of coordinate groups
@@ -758,6 +760,16 @@ theorem genericPoint_eq_coeff_comp {g : X → G} (hS : V ι S ⊆ {ι ∘ g}) :
   refine mem_Rad.2 fun v hv => ?_
   obtain rfl := hS hv
   simp
+
+/-- A coordinate of the generic point of `S` is trivial if and only if it is trivial at every
+solution of `S`. -/
+theorem genericPoint_eq_one_iff {x : X} : genericPoint ι S x = 1 ↔ ∀ v ∈ V ι S, v x = 1 := by
+  simp [genericPoint_apply, QuotientGroup.eq_one_iff, mem_Rad]
+
+/-- A coordinate of the generic point of `S` is nontrivial if and only if it is nontrivial at
+some solution of `S`. -/
+theorem genericPoint_ne_one_iff {x : X} : genericPoint ι S x ≠ 1 ↔ ∃ v ∈ V ι S, v x ≠ 1 := by
+  simp [genericPoint_eq_one_iff]
 
 /-- The coordinate group of a system without solutions in `H` is not a `G`-group: its coefficient
 homomorphism is not injective. -/
