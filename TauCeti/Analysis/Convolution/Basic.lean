@@ -70,8 +70,10 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   `g ∈ L^q`, for Hölder conjugate `p` and `q`, is bounded.
 * `MeasureTheory.convolution_lsmul_comp_neg_apply_zero`: convolving with the reflection
   `t ↦ f (-t)` and evaluating at `0` gives the pairing `∫ f • g`.
-* `MeasureTheory.norm_convolution_lsmul_le_integral_norm_mul_norm` and
-  `MeasureTheory.norm_convolution_lsmul_add_sub_le`: the sup bound and the increment bound of the
+* `MeasureTheory.norm_convolution_le_integral_norm_mul_norm`,
+  `MeasureTheory.norm_convolution_lsmul_le_integral_norm_mul_norm` and
+  `MeasureTheory.norm_convolution_lsmul_add_sub_le`: the sup bound (along a bilinear map and
+  along scalar multiplication) and the increment bound of the
   convolution of an `L^∞` function with an integrable kernel.
 * `MeasureTheory.convolution_eq_zero_of_not_completeSpace`: without completeness of the target
   every convolution is the zero function.
@@ -203,18 +205,27 @@ variable {𝕜 G F : Type*} [RCLike 𝕜] [AddGroup G] [MeasurableSpace G] [Meas
   [MeasurableNeg G] {μ : Measure G} [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] {K : G → 𝕜}
 
+omit [NormedSpace ℝ F] in
+/-- **Convolving an `L^∞` function with an integrable kernel** along a bilinear map `L` gives a
+function bounded everywhere by `‖L‖ ‖f‖₁ ‖g‖_∞`. -/
+theorem norm_convolution_le_integral_norm_mul_norm {E' F' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace 𝕜 F']
+    {f : G → E'} (L : E' →L[𝕜] F →L[𝕜] F') (hf : Integrable f μ) (g : Lp F ∞ μ) (x : G) :
+    ‖(f ⋆[L, μ] (g : G → F)) x‖ ≤ ‖L‖ * (∫ y, ‖f y‖ ∂μ) * ‖g‖ := by
+  have hae : ∀ᵐ t ∂μ, ‖g (x - t)‖ ≤ ‖g‖ :=
+    (μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae (p := fun y ↦ ‖g y‖ ≤ ‖g‖)
+      (Lp.ae_norm_le_norm_top g)
+  rw [convolution_def, ← integral_const_mul, ← integral_mul_const]
+  refine norm_integral_le_of_norm_le ((hf.norm.const_mul _).mul_const _) (hae.mono fun t ht ↦ ?_)
+  exact (L.le_opNorm₂ _ _).trans (by gcongr)
+
 /-- **Convolving an `L^∞` function with an integrable kernel** gives a function bounded
 everywhere by `‖K‖₁ ‖g‖_∞`. Compare Mathlib's `MeasureTheory.enorm_convolution_le`, the extended
 form for Hölder conjugate exponents. -/
 theorem norm_convolution_lsmul_le_integral_norm_mul_norm (hK : Integrable K μ) (g : Lp F ∞ μ)
-    (x : G) : ‖(K ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] (g : G → F)) x‖ ≤ (∫ y, ‖K y‖ ∂μ) * ‖g‖ := by
-  have hae : ∀ᵐ t ∂μ, ‖g (x - t)‖ ≤ ‖g‖ :=
-    (μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae (p := fun y ↦ ‖g y‖ ≤ ‖g‖)
-      (Lp.ae_norm_le_norm_top g)
-  rw [convolution_def, ← integral_mul_const]
-  refine norm_integral_le_of_norm_le (hK.norm.mul_const _) (hae.mono fun t ht ↦ ?_)
-  rw [ContinuousLinearMap.lsmul_apply, norm_smul]
-  gcongr
+    (x : G) : ‖(K ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] (g : G → F)) x‖ ≤ (∫ y, ‖K y‖ ∂μ) * ‖g‖ :=
+  (norm_convolution_le_integral_norm_mul_norm _ hK g x).trans
+    (by grw [ContinuousLinearMap.opNorm_lsmul_le, one_mul])
 
 /-- **Increments of the convolution of an `L^∞` function** are controlled by the `L¹` modulus of
 continuity of the kernel: `‖(K ⋆ g) (x + h) - (K ⋆ g) x‖ ≤ ‖K (· + h) - K‖₁ ‖g‖_∞`. -/
