@@ -23,7 +23,7 @@ with time-dependent coefficients `a : ℝ → ℝⁿ → Matrix ι ι ℝ`, `b :
 for `0 < t < T`. In Lean `∂ᵢ∂ⱼu` at `(t, x)` is
 `fderiv ℝ (fderiv ℝ (u t)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)`, `bⁱ ∂ᵢu` is
 `fderiv ℝ (u t) x (b t x)` and `∂ₜu` is `deriv (fun s ↦ u s x) t`, as in
-`TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence` and
+`TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic` and
 `TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.Basic`.
 
 The coefficients are only required to satisfy, for `0 < t < T`,
