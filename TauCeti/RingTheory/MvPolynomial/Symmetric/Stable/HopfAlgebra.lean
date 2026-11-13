@@ -82,16 +82,10 @@ private theorem right_antipode_law
     (Algebra.TensorProduct.lift (.id R _) S fun _ _ => Commute.all _ _).comp
         (Bialgebra.comulAlgHom R _) =
       (Algebra.ofId R _).comp (Bialgebra.counitAlgHom R _) := by
-  have h := left_antipode_law R S hS
-  apply algHom_ext
-  intro n
-  have hn := DFunLike.congr_fun h (DirectSum.of _ (n + 1) (stableEsymm R (n + 1)))
-  simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply, comul_of_stableEsymm,
-    map_sum, Algebra.TensorProduct.lift_tmul, AlgHom.id_apply] at hn ⊢
-  rw [← hn, ← Finset.Nat.sum_antidiagonal_swap]
-  apply sum_congr rfl
-  intro p _
-  exact mul_comm _ _
+  rw [← left_antipode_law R S hS]
+  refine DFunLike.ext _ _ fun x => ?_
+  simpa only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply, AlgHom.convMul_apply] using
+    congr($(mul_comm (WithConv.toConv (.id R _)) (WithConv.toConv S)) x)
 
 /-- The alphabet-splitting bialgebra of symmetric functions is a Hopf algebra, with
 antipode `S(e_n) = (-1)^n h_n`. -/
