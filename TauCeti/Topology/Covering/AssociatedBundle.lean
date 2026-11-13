@@ -238,14 +238,6 @@ theorem characterCore_def (χ : G →* 𝕜ˣ) :
       hp.associatedCore ((Units.map (algebraMap 𝕜 (𝕜 →L[𝕜] 𝕜)).toMonoidHom).comp χ) :=
   (rfl)
 
-/-- The scalar representation induced by a character is trivial exactly when the character is
-trivial. -/
-theorem _root_.MonoidHom.characterRepresentation_eq_one_iff (χ : G →* 𝕜ˣ) :
-    (Units.map (algebraMap 𝕜 (𝕜 →L[𝕜] 𝕜)).toMonoidHom).comp χ = 1 ↔ χ = 1 := by
-  simpa only [MonoidHom.comp_one] using
-    (MonoidHom.cancel_left (f₁ := χ) (f₂ := 1) (Units.map_injective
-      (FaithfulSMul.algebraMap_injective 𝕜 (𝕜 →L[𝕜] 𝕜))))
-
 /-- The transitions of the line bundle of `χ` multiply by the values of `χ`. -/
 @[simp]
 theorem characterCore_coordChange_apply (χ : G →* 𝕜ˣ) (e e' : E) (x : X) (v : 𝕜) :

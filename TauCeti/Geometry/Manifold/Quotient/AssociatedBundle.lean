@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.VectorBundle.Core.Trivial
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Topology.Covering.AssociatedBundle
+import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Smooth and holomorphic bundles associated with representations of a deck group
@@ -112,8 +113,8 @@ instance isContMDiff_characterCore (χ : G →* 𝕜ˣ) :
   rw [characterCore_def]
   infer_instance
 
-/-- A section whose equivariant function upstairs is constant is `C^m` for every regularity,
-since its coordinates in each designated trivialization are constant. -/
+/-- A section whose equivariant function upstairs is constant is `C^m`, for every model of the
+base and every regularity `m`, without any regularity hypothesis on `p`. -/
 theorem contMDiff_section_associatedCore_of_eq_const
     {σ : ∀ x, (hp.associatedCore ρ).Fiber x} {v : F}
     (hv : (hp.associatedSectionEquiv ρ σ : E → F) = Function.const E v) :
@@ -138,7 +139,8 @@ theorem exists_trivialization_baseSet_eq_univ_associatedCore_one :
         (TotalSpace F (hp.associatedCore (1 : G →* (F →L[𝕜] F)ˣ)).Fiber) ∧
         e.baseSet = univ := by
   let Z := hp.associatedCore (1 : G →* (F →L[𝕜] F)ˣ)
-  have hcoord (i j : E) (x : X) (v : F) : Z.coordChange i j x v = v := by
+  have hcoord (i j : E) (x : X) (_ : x ∈ Z.baseSet i ∩ Z.baseSet j) (v : F) :
+      Z.coordChange i j x v = v := by
     simp [Z]
   exact ⟨Z.globalTrivializationOfCoordChangeEqId hcoord, inferInstance,
     Z.globalTrivializationOfCoordChangeEqId_mem_maximalAtlas hcoord,
@@ -352,7 +354,8 @@ theorem eq_zero_of_mdifferentiable_section_characterCore [PreconnectedSpace E] {
   rw [characterCore_def]
   intro σ hσ
   refine hp.eq_zero_of_mdifferentiable_section_associatedCore _ hpd (finrank_self ℂ) ?_ hσ
-  exact fun hρ ↦ hχ (χ.characterRepresentation_eq_one_iff.1 hρ)
+  exact fun hρ ↦ hχ ((MonoidHom.comp_eq_one_iff (Units.map_injective
+    (FaithfulSMul.algebraMap_injective ℂ (ℂ →L[ℂ] ℂ)))).1 hρ)
 
 /-- If `p` is differentiable with compact preconnected complex covering manifold `E`, the
 line bundle of a nontrivial character over `X` has no nonzero `C^m` section when `m ≠ 0`. -/
@@ -404,6 +407,7 @@ theorem exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one [Connecte
           (TotalSpace ℂ (hp.characterCore χ).Fiber) ∧ e.baseSet = univ) ↔ χ = 1 := by
   rw [characterCore_def,
     hp.exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one _ hpd hn]
-  exact χ.characterRepresentation_eq_one_iff
+  exact MonoidHom.comp_eq_one_iff (Units.map_injective
+    (FaithfulSMul.algebraMap_injective ℂ (ℂ →L[ℂ] ℂ)))
 
 end IsQuotientCoveringMap
