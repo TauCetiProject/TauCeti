@@ -324,7 +324,7 @@ theorem finrank_eigenspace_complexVolume_of_bijective_lsmul (hn0 : n ≠ 0) {μ 
   have hn : Even n := hV ▸ even_finrank_of_algEquiv_end _ (AlgEquiv.ofBijective _ h)
   have hS : finrank ℂ S = 2 ^ (n / 2) := by
     rw [finrank_eq_two_pow_of_bijective_lsmul _ h, hV]
-  have : FiniteDimensional ℂ S := Module.finite_of_finrank_pos (by rw [hS]; positivity)
+  have := finite_of_bijective_lsmul _ h
   have hsum := Submodule.finrank_add_eq_of_isCompl (isCompl_eigenspace_complexVolume (E := S) o hQ)
   rw [hS, finrank_eigenspace_complexVolume_neg o hn hn0 1] at hsum
   have hpow : 2 ^ (n / 2) = 2 * 2 ^ (n / 2 - 1) := by
@@ -348,11 +348,7 @@ theorem finrank_eigenspace_complexVolume_eq_mul_finrank_linearMap (hn0 : n ≠ 0
     {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
     finrank ℂ ((Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace μ) =
       2 ^ (n / 2 - 1) * finrank ℂ (S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) := by
-  have hV : finrank ℂ (ℂ ⊗[ℝ] V) = n := by
-    rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
-  have hS : finrank ℂ S = 2 ^ (n / 2) := by
-    rw [finrank_eq_two_pow_of_bijective_lsmul _ h, hV]
-  have : FiniteDimensional ℂ S := Module.finite_of_finrank_pos (by rw [hS]; positivity)
+  have := finite_of_bijective_lsmul _ h
   rw [finrank_eigenspace_eq_finrank_mul_finrank_linearMap_of_bijective_lsmul h,
     finrank_eigenspace_complexVolume_of_bijective_lsmul o hQ h hn0 hμ]
 
