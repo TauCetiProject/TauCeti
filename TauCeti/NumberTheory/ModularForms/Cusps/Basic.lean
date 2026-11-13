@@ -18,7 +18,7 @@ shift matrices; a subgroup `𝒢` of finite relative index in `𝒮ℒ` contains
 power of `T`, and `Subgroup.integerCuspWidth 𝒢` is the least such exponent. The cosets of the
 first `Subgroup.integerCuspWidth 𝒢` powers of `T` are pairwise distinct in `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`, and
 the integer cusp width is a positive integer multiple of the strict width at `∞`.
-At an irregular cusp the negative shift by the projective width lies in the group;
+If the group is irregular at `∞`, the negative shift by the projective width lies in it;
 its slash action gives the weight-parity sign under translation.
 
 ## Main declarations
@@ -99,7 +99,6 @@ lemma ModularForm.slash_T_zpow_apply (k j : ℤ) (g : ℍ → ℂ) (τ : ℍ) :
   rw [_root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     ModularGroup.mapGL_T_zpow_eq_upperRightHom, ModularForm.slash_upperRightHom_apply]
 
-
 /-- A negative translation in the group gives the weight-parity transformation
 law under translation by `h`. -/
 theorem SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem
@@ -150,7 +149,7 @@ lemma Subgroup.exists_pos_nat_mem_strictPeriods [𝒢.IsFiniteRelIndex 𝒮ℒ] 
   rw [QuotientGroup.eq]
   simpa using inv_mem hn_mem
 
-/-- The powers of the coset of `T` acting on the base coset, as statements about
+/-- The powers of the element `T` of `𝒮ℒ` acting on the base coset, as statements about
 cosets: `t ^ n • ⟦1⟧ = ⟦t ^ n⟧` under the explicit action. -/
 private lemma quotientTAction_pow_smul_mk_one (n : ℕ) :
     let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
@@ -160,11 +159,11 @@ private lemma quotientTAction_pow_smul_mk_one (n : ℕ) :
   intro _
   rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
 
-/-- The `MulAction.period` of the coset of `T` acting on the base coset of
-`𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. When some positive power of `T` lies in `𝒢` — in particular whenever
-`𝒢` has finite relative index in `𝒮ℒ`, see `Subgroup.integerCuspWidth_pos` — this is
-the smallest positive integer `n` such that the upper-triangular matrix `[1, n; 0, 1]`
-lies in `𝒢`; otherwise it is `0`. -/
+/-- The `MulAction.period` of the element `T` of `𝒮ℒ` (via `(mapGL ℝ).rangeRestrict`) acting by
+left multiplication on the base coset of `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. When some positive power of `T` lies in
+`𝒢` — in particular whenever `𝒢` has finite relative index in `𝒮ℒ`, see
+`Subgroup.integerCuspWidth_pos` — this is the smallest positive integer `n` such that the
+upper-triangular matrix `[1, n; 0, 1]` lies in `𝒢`; otherwise it is `0`. -/
 def Subgroup.integerCuspWidth (𝒢 : Subgroup (GL (Fin 2) ℝ)) : ℕ :=
   let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
   MulAction.period ((mapGL ℝ).rangeRestrict (ModularGroup.T : SL(2, ℤ)))
@@ -237,7 +236,6 @@ lemma Subgroup.quotient_T_pow_integerCuspWidth_injective :
   exact Fin.ext (hinj (Set.mem_Iio.mpr j₁.isLt) (Set.mem_Iio.mpr j₂.isLt)
     (by simpa only [smul_iterate] using hj))
 
-
 /-- The integer cusp width is a positive integer multiple of the strict width at `∞`. -/
 lemma Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty
     [𝒢.IsFiniteRelIndex 𝒮ℒ] [DiscreteTopology 𝒢.strictPeriods] :
@@ -261,8 +259,8 @@ lemma Subgroup.strictWidthInfty_pos_of_finiteRelIndex [𝒢.IsFiniteRelIndex �
 
 end IntegerCuspWidth
 
-/-- At an irregular cusp the negative translation by the projective width belongs
-to the group. -/
+/-- If `Γ` is irregular at `∞`, the negative translation by the projective width belongs
+to `Γ`. -/
 theorem _root_.Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty
     (Γ : Subgroup (GL (Fin 2) ℝ)) [DiscreteTopology Γ.periods]
     (hΓ : ¬Γ.IsRegularAtInfty) :
