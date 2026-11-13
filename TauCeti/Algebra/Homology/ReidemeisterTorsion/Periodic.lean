@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Two
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Algebra.Homology.Periodic.ModuleCat
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
+import TauCeti.Algebra.Homology.ModuleCat.ToMatrix
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 
 /-!
@@ -390,8 +391,8 @@ theorem parityTorsion_map :
   -- `D` with the transported bases is the scalar extension of `C` along the identity: the
   -- matrices of the differentials agree.
   (map_parityTorsion (RingHom.id F) (e := fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv)
-    ((toMatrix_map_isoApp_d e c 0 1).trans (Matrix.map_id _).symm)
-    ((toMatrix_map_isoApp_d e c 1 0).trans (Matrix.map_id _).symm)).symm
+    ((toMatrix_map_isoApp_d e (c 0) (c 1)).trans (Matrix.map_id _).symm)
+    ((toMatrix_map_isoApp_d e (c 1) (c 0)).trans (Matrix.map_id _).symm)).symm
 
 end Iso
 

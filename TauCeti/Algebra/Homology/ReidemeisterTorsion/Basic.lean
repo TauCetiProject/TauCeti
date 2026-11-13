@@ -14,6 +14,7 @@ import TauCeti.Algebra.BigOperators.Finprod
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
+import TauCeti.Algebra.Homology.ModuleCat.ToMatrix
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
 public import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Alternating.Append
@@ -115,8 +116,6 @@ be compared componentwise along the field homomorphisms between them.
   of the chain basis vectors by units.
 * `HomologicalComplex.reidemeisterTorsion_map`: the torsion is invariant under isomorphisms of
   based complexes.
-* `HomologicalComplex.toMatrix_map_isoApp_d`: transporting bases along an isomorphism of
-  complexes does not change the matrices of the differentials.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det_toMatrix`: the change of the torsion
   under an isomorphism of complexes, in terms of the determinants of its matrices.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_shortExact`: the multiplicativity of the
@@ -140,27 +139,6 @@ noncomputable section
 open CategoryTheory Module
 
 namespace HomologicalComplex
-
-section IsoMatrix
-
-variable {R : Type*} [CommRing R] {ι : Type*} {s : ComplexShape ι}
-  {C D : HomologicalComplex (ModuleCat R) s} (e : C ≅ D)
-  {n : ι → ℕ} (c : ∀ i, Basis (Fin (n i)) R (C.X i))
-
-/-- Transporting bases along an isomorphism of complexes `e : C ≅ D` does not change the matrices
-of the differentials: the matrix of `D.d i j` in the bases transported from `c i` and `c j` is the
-matrix of `C.d i j` in the bases `c i` and `c j`. -/
-theorem toMatrix_map_isoApp_d (i j : ι) :
-    LinearMap.toMatrix ((c i).map (Hom.isoApp e i).toLinearEquiv)
-        ((c j).map (Hom.isoApp e j).toLinearEquiv) (D.d i j).hom =
-      LinearMap.toMatrix (c i) (c j) (C.d i j).hom := by
-  ext k l
-  simp only [LinearMap.toMatrix_apply, Basis.map_repr, Iso.toLinearEquiv_symm, Basis.map_apply,
-    Iso.toLinearEquiv_apply, Hom.isoApp_hom, Hom.comm_apply, LinearEquiv.trans_apply, Iso.symm_hom,
-    Hom.isoApp_inv]
-  rw [← ConcreteCategory.comp_apply, ← comp_f, e.hom_inv_id, id_f, ConcreteCategory.id_apply]
-
-end IsoMatrix
 
 variable {F : Type*} [Field F]
 
@@ -346,11 +324,12 @@ variable {k j : ι} (hd : LinearMap.toMatrix (e k) (e j) (D.d k j).hom =
 /-- The images of the chosen basis of the boundaries `d(Cₖ) ⊆ Cⱼ` under the `φ`-semilinear map
 `semilinearMap φ (c j) (e j)`, as a basis of the boundaries `d(Dₖ) ⊆ Dⱼ`, when the matrix of the
 differential `Dₖ → Dⱼ` in the bases `e` is the image under `φ` of that of `Cₖ → Cⱼ` in the bases
-`c`. These images are boundaries since the semilinear maps intertwine the differentials, they are
-linearly independent since the chosen boundary basis is, and there are as many as the dimension of
-`d(Dₖ)` since the ranks of the differentials agree. -/
+`c`. -/
 def semilinearMapChosenBoundaryBasis :
     Basis (Fin (finrank F (LinearMap.range (C.d k j).hom))) K (LinearMap.range (D.d k j).hom) :=
+  -- The images are boundaries since the semilinear maps intertwine the differentials, they are
+  -- linearly independent since the chosen boundary basis is, and there are as many as the
+  -- dimension of `d(Dₖ)` since the ranks of the differentials agree.
   haveI : Module.Finite K (D.X j) := .of_basis (e j)
   basisOfLinearIndependentOfCardEqFinrank'
     (fun l ↦ ⟨(c j).semilinearMap φ (e j) (chosenBoundaryBasis C c k j l),
@@ -943,7 +922,7 @@ theorem reidemeisterTorsion_map :
   -- `D` with the transported bases is the scalar extension of `C` along the identity: the
   -- matrices of the differentials agree.
   exact (map_reidemeisterTorsion (RingHom.id F) fun i ↦
-    (toMatrix_map_isoApp_d e c (i + 1) i).trans (Matrix.map_id _).symm).symm
+    (toMatrix_map_isoApp_d e (c (i + 1)) (c i)).trans (Matrix.map_id _).symm).symm
 
 /-- The torsion under an isomorphism `e : C ≅ D` of complexes with bases `c i` and `c' i`: if
 `Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`, then

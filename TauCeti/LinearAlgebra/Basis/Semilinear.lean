@@ -23,7 +23,8 @@ maps and to determinants: a linear map `g` whose matrix in the bases `b'` is the
 the matrix of a linear map `f` in the bases `b` is intertwined with `f`, and the determinant in `b'`
 of the image of a family is `σ` of its determinant in `b`. This is how invariants computed from
 matrices, such as the torsion of a based chain complex, are compared along a homomorphism of fields.
-Along a homomorphism of fields it also preserves and reflects linear independence of families.
+Along an injective homomorphism into a domain, for instance any homomorphism from a field to a
+domain, it also preserves and reflects linear independence of families.
 
 When `σ` is invertible, a `σ`-semilinear equivalence `f : M ≃ₛₗ[σ] M'` carries a basis `b` of `M`
 to the basis `f ∘ b` of `M'` (`Module.Basis.mapₛₗ`), and so preserves `finrank`
@@ -39,8 +40,11 @@ carries complex bases to complex bases.
   matrices correspond under `σ`.
 * `Module.Basis.det_comp_semilinearMap`: the determinant of the image of a family is the image of
   its determinant.
-* `Module.Basis.linearIndependent_semilinearMap_comp_iff`: over fields, the image of a family is
-  linearly independent exactly when the family is.
+* `Module.Basis.linearIndependent_semilinearMap_comp_iff_of_injective`: along an injective
+  homomorphism into a domain, the image of a family is linearly independent exactly when the
+  family is.
+* `Module.Basis.linearIndependent_semilinearMap_comp_iff`: the same along a homomorphism from a
+  field to a domain.
 * `Module.Basis.mapₛₗ`: the image of a basis under a semilinear equivalence.
 * `LinearEquiv.finrank_eqₛₗ`: semilinear equivalences along ring isomorphisms preserve `finrank`.
 -/
@@ -118,26 +122,64 @@ theorem det_comp_semilinearMap (b : Basis ι R M) (b' : Basis ι S M') (v : ι �
 
 end CommRing
 
-section Field
+section Domain
 
-variable {ι κ K L M M' : Type*} [Field K] [Field L] (σ : K →+* L)
-  [AddCommGroup M] [Module K M] [AddCommGroup M'] [Module L M'] [Finite ι]
+variable {ι κ R S M M' : Type*} [CommRing R] [CommRing S] [IsDomain S] {σ : R →+* S}
+  [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module S M']
 
-/-- Along a homomorphism of fields `σ`, the image of a family `v` under `semilinearMap σ b b'` is
-linearly independent exactly when `v` is: the coordinates of the image are the images under `σ` of
-the coordinates of `v`, and linear independence of coordinate vectors is unchanged by extending
-scalars along `σ`. -/
-@[simp]
-theorem linearIndependent_semilinearMap_comp_iff (b : Basis ι K M) (b' : Basis ι L M')
-    {v : κ → M} : LinearIndependent L (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent K v := by
+/-- A family `w` whose coordinates in the basis `b` are supported in `t` is linearly independent
+exactly when its coordinate vectors restricted to `t` are. -/
+private theorem linearIndependent_coord_restrict_iff (b : Basis ι R M) (t : Set ι) {w : κ → M}
+    (hw : ∀ k, ↑(b.repr (w k)).support ⊆ t) :
+    LinearIndependent R (fun k (i : t) ↦ b.repr (w k) i) ↔ LinearIndependent R w := by
+  have hsupp {x : M} (hx : x ∈ Submodule.span R (Set.range w)) : ↑(b.repr x).support ⊆ t :=
+    (Finsupp.mem_supported R _).1 <| (Submodule.span_le (p := (Finsupp.supported R R t).comap
+      b.repr.toLinearMap)).2 (Set.range_subset_iff.2 fun k ↦ (Finsupp.mem_supported R _).2 (hw k))
+      hx
+  refine LinearMap.linearIndependent_iff_of_injOn (LinearMap.pi fun i : t ↦ b.coord i)
+    fun x hx y hy h ↦ b.repr.injective <| Finsupp.ext fun i ↦ ?_
+  by_cases hi : i ∈ t
+  · exact congrFun h ⟨i, hi⟩
+  · rw [Finsupp.notMem_support_iff.1 fun h ↦ hi (hsupp hx h),
+      Finsupp.notMem_support_iff.1 fun h ↦ hi (hsupp hy h)]
+
+/-- Along an injective ring homomorphism `σ` into a domain, the image of a family `v` under
+`semilinearMap σ b b'` is linearly independent exactly when `v` is. -/
+theorem linearIndependent_semilinearMap_comp_iff_of_injective (hσ : Function.Injective σ)
+    (b : Basis ι R M) (b' : Basis ι S M') {v : κ → M} :
+    LinearIndependent S (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent R v := by
+  classical
   let := σ.toAlgebra
-  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 σ.injective
-  rw [← b'.equivFun.toLinearMap.linearIndependent_iff (LinearEquiv.ker _),
-    ← b.equivFun.toLinearMap.linearIndependent_iff (LinearEquiv.ker _),
-    ← linearIndependent_algebraMap_comp_iff (R := K) (S := L)]
+  have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hσ
+  rw [linearIndependent_iff_finset_linearIndependent,
+    linearIndependent_iff_finset_linearIndependent]
+  refine forall_congr' fun s ↦ ?_
+  -- The finitely many vectors `v k`, `k ∈ s`, have coordinates supported in a finite set `t`.
+  let t : Finset ι := s.biUnion fun k ↦ (b.repr (v k)).support
+  have hv (k : s) : ↑(b.repr (v k)).support ⊆ (t : Set ι) :=
+    Finset.coe_subset.2 (Finset.subset_biUnion_of_mem (fun k ↦ (b.repr (v k)).support) k.2)
+  have hv' (k : s) : ↑(b'.repr (b.semilinearMap σ b' (v k))).support ⊆ (t : Set ι) :=
+    fun i hi ↦ hv k <| Finsupp.mem_support_iff.2 fun h ↦ Finsupp.mem_support_iff.1 hi (by simp [h])
+  refine (linearIndependent_coord_restrict_iff b' _ hv').symm.trans <|
+    Iff.trans ?_ (linearIndependent_coord_restrict_iff b _ hv)
+  rw [← linearIndependent_algebraMap_comp_iff (R := R) (S := S)]
   congr! 1
   ext k i
   simp [RingHom.algebraMap_toAlgebra]
+
+end Domain
+
+section Field
+
+variable {ι κ K L M M' : Type*} [Field K] [CommRing L] [IsDomain L] (σ : K →+* L)
+  [AddCommGroup M] [Module K M] [AddCommGroup M'] [Module L M']
+
+/-- Along a homomorphism `σ` from a field to a domain, the image of a family `v` under
+`semilinearMap σ b b'` is linearly independent exactly when `v` is. -/
+@[simp]
+theorem linearIndependent_semilinearMap_comp_iff (b : Basis ι K M) (b' : Basis ι L M')
+    {v : κ → M} : LinearIndependent L (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent K v :=
+  linearIndependent_semilinearMap_comp_iff_of_injective σ.injective b b'
 
 end Field
 
