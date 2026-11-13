@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Stable.Embedding
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 public import TauCeti.LinearAlgebra.Orientation.Basic
+import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -123,7 +124,7 @@ theorem mem_unstableSet (v : L) : P v ∈ hX.flow.unstableSet x :=
 /-- The parametrization sends `0` to the critical point: `P 0` is a rest point of the flow lying on
 `W^u(x)`, so its constant backward orbit converges to `x`. -/
 @[simp]
-theorem map_zero : P 0 = x :=
+theorem apply_zero : P 0 = x :=
   Flow.eq_of_mem_unstableSet_of_periodic (P.mem_unstableSet 0) one_ne_zero fun t ↦ by
     simp only [P.flow_apply, smul_zero]
 
@@ -191,52 +192,27 @@ theorem exists_unstableParametrization (hf : IsMorse 𝓘(ℝ, E) f)
     rw [neg_neg, hX.neg_flow hf, Flow.reverse_apply, neg_neg] at h
     exact h.symm
 
-/-- **The flow preserves the tangent spaces of an unstable manifold.** The derivative of the
-time-`t` map of the flow at a point `y` of `W^u(x)` maps the tangent space of `W^u(x)` at `y` onto
-its tangent space at the image point. -/
-theorem map_mfderiv_flow_span_mtangentConeAt_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (t : ℝ) {y : M} (hy : y ∈ hX.flow.unstableSet x) :
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) y)).map
-        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y).toLinearMap =
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) (hX.flow t y)) := by
-  obtain ⟨L, ⟨P⟩⟩ := hX.exists_unstableParametrization hf hx
-  obtain ⟨v, rfl⟩ : y ∈ range P := P.range_eq ▸ hy
-  -- Through `P`, the derivative of the flow is the derivative of `P` after a positive scaling.
-  rw [P.span_mtangentConeAt_eq_range_mfderiv hf]
-  conv_rhs => rw [P.flow_apply, P.span_mtangentConeAt_eq_range_mfderiv hf]
-  ext w
-  simp only [Submodule.mem_map, LinearMap.mem_range, ContinuousLinearMap.coe_coe]
-  constructor
-  · rintro ⟨_, ⟨u, rfl⟩, rfl⟩
-    exact ⟨Real.exp t • u, (P.mfderiv_flow_mfderiv t v u).symm⟩
-  · rintro ⟨u, rfl⟩
-    refine ⟨_, ⟨(Real.exp t)⁻¹ • u, rfl⟩, ?_⟩
-    exact (P.mfderiv_flow_mfderiv t v _).trans (congrArg (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P _)
-      (smul_inv_smul₀ (Real.exp_pos t).ne' u))
-
 /-- The derivative of the time-`t` map of the flow, as an isomorphism from the tangent space of
-`W^u(x)` at `y` to its tangent space at the image point. -/
-noncomputable def unstableTangentFlowEquiv (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (t : ℝ) {y : M} (hy : y ∈ hX.flow.unstableSet x) :
+`W^u(x)` at `y` to its tangent space at the image point
+(`TauCeti.IsAdaptedPseudoGradient.map_mfderiv_flow_span_mtangentConeAt`). -/
+noncomputable def unstableTangentFlowEquiv (x : M) (t : ℝ) (y : M) :
     Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) y) ≃ₗ[ℝ]
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) (hX.flow t y)) :=
   (Submodule.equivMapOfInjective _ (hX.injective_mfderiv_flow t y) _).trans
-    (LinearEquiv.ofEq _ _ (hX.map_mfderiv_flow_span_mtangentConeAt_unstableSet hf hx t hy))
+    (LinearEquiv.ofEq _ _ (hX.map_mfderiv_flow_span_mtangentConeAt
+      (Flow.isInvariant_unstableSet hX.flow x) t y))
 
 /-- The isomorphism `unstableTangentFlowEquiv` is the derivative of the time-`t` map of the flow. -/
 @[simp]
-theorem coe_unstableTangentFlowEquiv_apply (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (t : ℝ) {y : M} (hy : y ∈ hX.flow.unstableSet x)
+theorem coe_unstableTangentFlowEquiv_apply (x : M) (t : ℝ) (y : M)
     (w : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) y)) :
-    (hX.unstableTangentFlowEquiv hf hx t hy w : E) =
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y (w : E) :=
+    (hX.unstableTangentFlowEquiv x t y w : E) = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y (w : E) :=
   (rfl)
 
 namespace UnstableParametrization
 
 variable {hX} {L : Type*} [NormedAddCommGroup L] [NormedSpace ℝ L]
   (P : hX.UnstableParametrization x L) (hf : IsMorse 𝓘(ℝ, E) f)
-  (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
 
 /-- The parameter `invFun P y` of a point `y` of `W^u(x)` is sent to `y`. -/
 private theorem apply_invFun {y : M} (hy : y ∈ hX.flow.unstableSet x) : P (invFun P y) = y :=
@@ -260,6 +236,12 @@ theorem coe_tangentEquiv_apply {y : M} (hy : y ∈ hX.flow.unstableSet x) {v : L
   exact congrArg (fun w ↦ (show E from mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P w u))
     (leftInverse_invFun P.injective v)
 
+/-- The isomorphism `P.tangentEquiv` at `P v` is the derivative of `P` at `v`. -/
+@[simp]
+theorem coe_tangentEquiv_apply_self {v : L} (hy : P v ∈ hX.flow.unstableSet x) (u : L) :
+    (P.tangentEquiv hf hy u : E) = mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P v u :=
+  P.coe_tangentEquiv_apply hf hy rfl u
+
 variable {ι : Type*}
 
 /-- **The orientation of the unstable manifold induced by a parametrization.** An orientation `o`
@@ -280,25 +262,42 @@ theorem orientation_neg (o : Orientation ℝ L ι) {y : M} (hy : y ∈ hX.flow.u
     P.orientation hf (-o) hy = -P.orientation hf o hy :=
   Orientation.map_neg _ o
 
+/-- Scaling the orientation of the parameter space by a unit scales the induced orientation of the
+unstable manifold. -/
+@[simp]
+theorem orientation_units_smul (u : ℝˣ) (o : Orientation ℝ L ι) {y : M}
+    (hy : y ∈ hX.flow.unstableSet x) :
+    P.orientation hf (u • o) hy = u • P.orientation hf o hy :=
+  Orientation.map_units_smul _ u o
+
+/-- Distinct orientations of the parameter space induce distinct orientations of the unstable
+manifold. -/
+@[simp]
+theorem orientation_inj {o o' : Orientation ℝ L ι} {y : M} (hy : y ∈ hX.flow.unstableSet x) :
+    P.orientation hf o hy = P.orientation hf o' hy ↔ o = o' :=
+  (Orientation.map ι (P.tangentEquiv hf hy)).injective.eq_iff
+
 /-- **The induced orientation of the unstable manifold is invariant under the flow.** The
 derivative of the time-`t` map of the flow carries the orientation of the tangent space of `W^u(x)`
 at `y` to its orientation at the image point. Through `P`, this derivative is the derivative of `P`
 after the scaling by the positive number `e^t`, which preserves orientations. -/
+@[simp]
 theorem map_orientation_unstableTangentFlowEquiv [Finite ι] (o : Orientation ℝ L ι) (t : ℝ)
     {y : M} (hy : y ∈ hX.flow.unstableSet x) :
-    Orientation.map ι (hX.unstableTangentFlowEquiv hf hx t hy) (P.orientation hf o hy) =
+    Orientation.map ι (hX.unstableTangentFlowEquiv x t y) (P.orientation hf o hy) =
       P.orientation hf o (Flow.isInvariant_unstableSet hX.flow x t hy) := by
   set u := Units.mk0 (Real.exp t) (Real.exp_pos t).ne'
   obtain ⟨v, rfl⟩ : y ∈ range P := P.range_eq ▸ hy
-  have he : (P.tangentEquiv hf hy).trans (hX.unstableTangentFlowEquiv hf hx t hy) =
+  have he : (P.tangentEquiv hf hy).trans (hX.unstableTangentFlowEquiv x t (P v)) =
       (LinearEquiv.smulOfUnit u).trans
         (P.tangentEquiv hf (Flow.isInvariant_unstableSet hX.flow x t hy)) := by
     ext w
     simp only [LinearEquiv.trans_apply, coe_unstableTangentFlowEquiv_apply,
       P.coe_tangentEquiv_apply hf hy rfl,
-      P.coe_tangentEquiv_apply hf _ (P.flow_apply t v).symm, P.mfderiv_flow_mfderiv]
-    -- Both sides apply `dP_{e^t v}` to `e^t • w`, the scaling read in `L` and in its tangent
-    -- space `TangentSpace 𝓘(ℝ, L) (e^t • v)`, which is `L` itself.
+      P.coe_tangentEquiv_apply hf _ (P.flow_apply t v).symm, P.mfderiv_flow_mfderiv,
+      LinearEquiv.smulOfUnit_apply, u, Units.val_mk0]
+    -- Both sides are `dP_{e^t v} (e^t • w)`. They differ only in the scalar action used: that of
+    -- `L` and that of `TangentSpace 𝓘(ℝ, L) (e^t • v)`, which is definitionally the same.
     rfl
   rw [orientation_def, orientation_def, ← Orientation.map_trans, he, Orientation.map_trans,
     Orientation.map_smulOfUnit_of_pos u (Real.exp_pos t)]
@@ -317,12 +316,12 @@ theorem exists_orientation_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
     ∃ (L : Submodule ℝ E) (P : hX.UnstableParametrization x L) (o : Orientation ℝ L ι),
       P.orientation hf o (hX.self_mem_unstableSet hx) = o₀ ∧
       ∀ (t : ℝ) (y : M) (hy : y ∈ hX.flow.unstableSet x),
-        Orientation.map ι (hX.unstableTangentFlowEquiv hf hx t hy) (P.orientation hf o hy) =
+        Orientation.map ι (hX.unstableTangentFlowEquiv x t y) (P.orientation hf o hy) =
           P.orientation hf o (Flow.isInvariant_unstableSet hX.flow x t hy) := by
   obtain ⟨L, ⟨P⟩⟩ := hX.exists_unstableParametrization hf hx
   set e := P.tangentEquiv hf (hX.self_mem_unstableSet hx)
   refine ⟨L, P, Orientation.map ι e.symm o₀, ?_,
-    fun t y hy ↦ P.map_orientation_unstableTangentFlowEquiv hf hx _ t hy⟩
+    fun t y hy ↦ P.map_orientation_unstableTangentFlowEquiv hf _ t hy⟩
   rw [UnstableParametrization.orientation_def, ← Orientation.map_trans,
     LinearEquiv.symm_trans_self, Orientation.map_refl, Equiv.refl_apply]
 

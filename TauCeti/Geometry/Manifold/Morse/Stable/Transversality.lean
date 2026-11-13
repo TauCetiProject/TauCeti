@@ -166,6 +166,41 @@ theorem mem_mtangentConeAt_of_isInvariant {S : Set M} (hS : IsInvariant hX.flow 
     (Filter.Eventually.of_forall fun t ↦ hS t hy)
   rwa [Flow.map_zero_apply] at h
 
+/-- **The flow carries the tangent spaces of an invariant set onto one another.** For a set `S`
+invariant under the flow, the derivative of the time-`t` map at `y` maps the tangent space of `S` at
+`y` onto its tangent space at the image point. -/
+theorem map_mfderiv_flow_span_mtangentConeAt {S : Set M} (hS : IsInvariant hX.flow S) (t : ℝ)
+    (y : M) :
+    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S y)).map
+        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y).toLinearMap =
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S (hX.flow t y)) := by
+  -- Each time-`s` map sends `S` into itself, so its derivative maps tangent cones of `S`.
+  have hle : ∀ (s : ℝ) (z : M), (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S z)).map
+      (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow s) z).toLinearMap ≤
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S (hX.flow s z)) := fun s z ↦
+    Submodule.map_le_iff_le_comap.2 <| Submodule.span_le.2 fun u hu ↦
+      Submodule.subset_span (R := ℝ) (M := E)
+        (((hX.contMDiff_flow_apply s).mdifferentiableAt (by simp)).hasMFDerivAt
+          |>.hasMFDerivWithinAt.mem_mtangentConeAt
+            (eventually_mem_nhdsWithin.mono fun _ hw ↦ hS s hw) hu)
+  refine le_antisymm (hle t y) ?_
+  -- Conversely, write `y` as the image of `z` under the time-`(-t)` map, which the time-`t` map
+  -- inverts, as do the derivatives.
+  obtain ⟨z, rfl⟩ : ∃ z, y = hX.flow (-t) z :=
+    ⟨hX.flow t y, by rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]⟩
+  have hz : hX.flow t (hX.flow (-t) z) = z := by
+    rw [← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
+  have hid : hX.flow t ∘ hX.flow (-t) = id :=
+    funext fun w ↦ (by rw [← Flow.map_add, add_neg_cancel, Flow.map_zero_apply] :
+      hX.flow t (hX.flow (-t) w) = w)
+  intro w hw
+  rw [hz] at hw
+  have h := mfderiv_comp_apply (I' := 𝓘(ℝ, E)) z
+    ((hX.contMDiff_flow_apply t).mdifferentiableAt (by simp))
+    ((hX.contMDiff_flow_apply (-t)).mdifferentiableAt (by simp)) w
+  rw [hid, mfderiv_id] at h
+  exact Submodule.mem_map.2 ⟨_, hle (-t) z (Submodule.mem_map_of_mem hw), h.symm⟩
+
 /-- The velocity `X y` of the trajectory through a point `y` of `W^u(a) ∩ W^s(b)` is tangent to
 `W^u(a) ∩ W^s(b)`. -/
 theorem mem_span_mtangentConeAt_unstableSet_inter_stableSet

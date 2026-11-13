@@ -55,8 +55,9 @@ at `y`.
   chart.
 * `IsMIntegralCurveAt.mem_mtangentConeAt`: the velocity of an integral curve lies in the tangent
   cone of every set the curve stays in.
-* `TauCeti.mfderiv_apply_mem_mtangentConeAt`: the derivative of a map from a vector space into a
-  set takes values in the tangent cone of that set.
+* `HasMFDerivWithinAt.mem_mtangentConeAt`: a derivative within `t` of a map sending `t` into `s`
+  maps the tangent cone of `t` into that of `s`; `TauCeti.mfderiv_apply_mem_mtangentConeAt` is the
+  form for a map from a vector space into `s`.
 * `TauCeti.image_mtangentConeAt_eq_tangentConeAt`: read in another chart, the tangent cone is
   carried onto the tangent cone in that chart by the derivative of the transition map.
 * `TauCeti.tangentConeAt_preimage_symm_eq`: read in a chart that flattens a set onto a closed
@@ -148,7 +149,59 @@ theorem IsMIntegralCurveAt.mem_mtangentConeAt {E H M : Type*} [NormedAddCommGrou
   rw [TauCeti.mtangentConeAt_def]
   exact this
 
+/-- **Derivatives of maps into a set are tangent to it.** If `g` has derivative `g'` within `t` at
+`a` and sends the points of `t` near `a` into `s`, then `g'` maps the tangent cone of `t` at `a`
+into the tangent cone of `s` at `g a`. -/
+theorem HasMFDerivWithinAt.mem_mtangentConeAt {𝕜 E E' H H' M N : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H] [TopologicalSpace H'] {I : ModelWithCorners 𝕜 E H}
+    {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N]
+    [ChartedSpace H' N] {g : N → M} {t : Set N} {s : Set M} {a : N}
+    {g' : TangentSpace J a →L[𝕜] TangentSpace I (g a)} (hg : HasMFDerivWithinAt J I g t a g')
+    (hst : ∀ᶠ w in 𝓝[t] a, g w ∈ s) {u : E'} (hu : u ∈ TauCeti.mtangentConeAt J t a) :
+    g' u ∈ TauCeti.mtangentConeAt I s (g a) := by
+  -- Read in the preferred extended charts, `g'` is an ordinary derivative within the image `T` of
+  -- `t`. Near the image of `a`, `T` is the subset `D` whose points are sent into the image of `s`.
+  set T := (extChartAt J a).symm ⁻¹' t ∩ range J
+  set D := T ∩ writtenInExtChartAt J I a g ⁻¹' ((extChartAt I (g a)).symm ⁻¹' s ∩ range I)
+  have hD : D ∈ 𝓝[T] extChartAt J a a := by
+    refine inter_mem self_mem_nhdsWithin ?_
+    rw [← map_extChartAt_nhdsWithin, mem_map]
+    filter_upwards [hst,
+      hg.1.preimage_mem_nhdsWithin (extChartAt_source_mem_nhds (I := I) (g a)),
+      nhdsWithin_le_nhds (extChartAt_source_mem_nhds (I := J) a)] with w hws hwsrc hwa
+    refine ⟨?_, mem_range_self _⟩
+    rw [mem_preimage, writtenInExtChartAt, Function.comp_apply, Function.comp_apply,
+      (extChartAt J a).left_inv hwa, (extChartAt I (g a)).left_inv hwsrc]
+    exact hws
+  have hd := (hg.2.mono inter_subset_left).mapsTo_tangent_cone
+    (tangentConeAt_mono_nhds (nhdsWithin_le_iff.2 hD) hu)
+  have hp : writtenInExtChartAt J I a g (extChartAt J a a) = extChartAt I (g a) (g a) := by
+    simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_to_inv]
+  rw [hp] at hd
+  rw [TauCeti.mtangentConeAt_def]
+  -- The casts between tangent spaces and model spaces in `hg` are identities.
+  exact tangentConeAt_mono (image_subset_iff.2 inter_subset_right) hd
+
 namespace TauCeti
+
+section Tangent
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M] {I : ModelWithCorners 𝕜 E H}
+  {s : Set M}
+
+/-- **Derivatives of maps into a set are tangent to it.** If `g` maps a neighbourhood of `a` in a
+vector space `F` into `s` and is differentiable at `a`, then its derivative at `a` takes values in
+the tangent cone of `s` at `g a`. -/
+theorem mfderiv_apply_mem_mtangentConeAt {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {g : F → M} {a : F} (hg : MDifferentiableAt 𝓘(𝕜, F) I g a)
+    (hs : ∀ᶠ w in 𝓝 a, g w ∈ s) (u : F) :
+    mfderiv 𝓘(𝕜, F) I g a u ∈ mtangentConeAt I s (g a) :=
+  hg.hasMFDerivAt.hasMFDerivWithinAt.mem_mtangentConeAt (t := univ)
+    (by rwa [nhdsWithin_univ]) (by simp [tangentConeAt_univ])
+
+end Tangent
 
 section ModelSpace
 
@@ -164,31 +217,6 @@ theorem mtangentConeAt_eq_tangentConeAt_chartAt (s : Set M) (y : M) :
     simp
   rw [mtangentConeAt_def, hs]
   simp
-
-/-- **Derivatives of maps into a set are tangent to it.** If `g` maps a neighbourhood of `a` in a
-vector space `F` into `s` and is differentiable at `a`, then its derivative at `a` takes values in
-the tangent cone of `s` at `g a`. -/
-theorem mfderiv_apply_mem_mtangentConeAt {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {g : F → M} {a : F} (hg : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, E) g a)
-    (hs : ∀ᶠ w in 𝓝 a, g w ∈ s) (u : F) :
-    mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g a u ∈ mtangentConeAt 𝓘(𝕜, E) s (g a) := by
-  rw [mtangentConeAt_eq_tangentConeAt_chartAt]
-  have hsrc : ∀ᶠ w in 𝓝 a, g w ∈ (chartAt E (g a)).source :=
-    hg.continuousAt.preimage_mem_nhds ((chartAt E (g a)).open_source.mem_nhds
-      (mem_chart_source E (g a)))
-  -- Read in the preferred chart at `g a`, the derivative of `g` is an ordinary derivative. It maps
-  -- the tangent cone of a neighbourhood of `a`, all of `F`, into the tangent cone of its image.
-  have hd := (hg.differentiableAt_chartAt_comp.hasFDerivAt.hasFDerivWithinAt
-    (s := {w | g w ∈ s ∧ g w ∈ (chartAt E (g a)).source})).mapsTo_tangent_cone
-    (by rw [tangentConeAt_of_mem_nhds (hs.and hsrc)]; exact mem_univ u)
-  rw [hg.fderiv_chartAt_comp] at hd
-  have hsub : (chartAt E (g a) ∘ g) '' {w | g w ∈ s ∧ g w ∈ (chartAt E (g a)).source} ⊆
-      (chartAt E (g a)).symm ⁻¹' s := by
-    rintro _ ⟨w, hw, rfl⟩
-    rw [mem_preimage, Function.comp_apply, (chartAt E (g a)).left_inv hw.2]
-    exact hw.1
-  -- The canonical identification of the tangent space of `F` at `a` with `F` is the identity.
-  exact tangentConeAt_mono hsub hd
 
 /-- The preferred chart at `y` sends a point `y` of `s` into the chart image of `s`. -/
 private theorem chartAt_self_mem_preimage (hys : y ∈ s) :
