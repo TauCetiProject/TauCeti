@@ -332,7 +332,7 @@ private theorem internalEnergy_map_smul_add_smul_gradient_le_of_hessian [Nontriv
     simp
   have hxS' := hxS.1 hxD
   rw [indicator_of_mem hxD, indicator_of_mem hxD, indicator_of_mem hxD]
-  refine (hS x hxS').2.1.det_mul_apply_div_det_le hU0 hc ha ENNReal.toReal_nonneg ht₀ ht₁
+  refine (hS x hxS').2.1.det_mul_apply_div_det_le hU0 hc ha ENNReal.toReal_nonneg ht₀.le ht₁
     fun h0 hr s hs => ?_
   -- The bound `φ ≤ L` is needed only where the density is positive and `det (H x) = 0`.
   by_cases hrec : recessionConstant U = L
