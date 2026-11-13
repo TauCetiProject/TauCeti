@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Map
-import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 
 /-!
 # Divisor cohomology on the Riemann sphere
@@ -25,15 +25,17 @@ asserted.
 
 ## Main results
 
-* `TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one_sphere`: `H¹(𝒪(D))` is
+All declarations are in the namespace `TauCeti.RiemannSurface`.
+
+* `finiteDimensional_divisorCechCohomology_one_sphere`: `H¹(𝒪(D))` is
   finite-dimensional.
-* `TauCeti.RiemannSurface.finrank_euler_characteristic_sphere`:
+* `finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one_sphere`:
   `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`.
-* `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree` and
-  `TauCeti.RiemannSurface.isZero_divisorCechCohomology_one_sphere_of_neg_one_le_degree`:
+* `finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree` and
+  `isZero_divisorCechCohomology_one_sphere_of_neg_one_le_degree`:
   `h¹(𝒪(D)) = 0` for `deg D ≥ -1`.
-* `TauCeti.RiemannSurface.finrank_divisorSheaf_globalSections_sphere` and
-  `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_sphere`: the closed dimension
+* `finrank_divisorSheaf_globalSections_sphere` and
+  `finrank_divisorCechCohomology_one_sphere`: the closed dimension
   formulas.
 
 ## References
@@ -49,31 +51,14 @@ open TauCeti.AlgebraicGeometry
 
 namespace TauCeti.RiemannSurface
 
-/-- A property of divisors which holds for `0` and is unchanged by adding a point divisor holds
-for every divisor, since the point divisors generate the divisor group. -/
-private theorem weilDivisor_induction_add_ofPoint {X : Type*} {P : WeilDivisor X → Prop}
-    (zero : P 0) (add_ofPoint : ∀ D x, P (D + WeilDivisor.ofPoint x) ↔ P D)
-    (D : WeilDivisor X) : P D := by
-  suffices h : ∀ E ∈ AddSubgroup.closure (WeilDivisor.ofPoint '' Set.univ), ∀ D, P (D + E) ↔ P D by
-    simpa [zero] using h D (WeilDivisor.mem_closure_ofPoint_image_of_support_subset
-      (Set.subset_univ _)) 0
-  intro E hE
-  induction hE using AddSubgroup.closure_induction with
-  | mem _ hx =>
-    obtain ⟨x, -, rfl⟩ := hx
-    exact fun D ↦ add_ofPoint D x
-  | zero => simp
-  | add E F _ _ hE hF => exact fun D ↦ by rw [← add_assoc, hF, hE]
-  | neg E _ hE => exact fun D ↦ by rw [← hE, neg_add_cancel_right]
-
 /-- On `ℙ¹`, `H¹(𝒪(D))` is finite-dimensional and `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`: both hold
 for `D = 0` and are unchanged by a point twist. -/
-private theorem finiteDimensional_and_euler_characteristic_sphere
+private theorem finiteDimensional_divisorCechCohomology_one_and_finrank_sub_sphere
     (D : WeilDivisor (OnePoint ℂ)) :
     FiniteDimensional ℂ (divisorCechCohomology D 1) ∧
       (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
         Module.finrank ℂ (divisorCechCohomology D 1) = WeilDivisor.degree D + 1 := by
-  induction D using weilDivisor_induction_add_ofPoint with
+  induction D using WeilDivisor.induction_add_ofPoint with
   | zero =>
     have := ModuleCat.isZero_iff_subsingleton.1 isZero_divisorCechCohomology_zero_one_sphere
     refine ⟨inferInstance, ?_⟩
@@ -89,13 +74,14 @@ private theorem finiteDimensional_and_euler_characteristic_sphere
 /-- The first cohomology of every divisor sheaf on `ℙ¹` is finite-dimensional. -/
 instance finiteDimensional_divisorCechCohomology_one_sphere (D : WeilDivisor (OnePoint ℂ)) :
     FiniteDimensional ℂ (divisorCechCohomology D 1) :=
-  (finiteDimensional_and_euler_characteristic_sphere D).1
+  (finiteDimensional_divisorCechCohomology_one_and_finrank_sub_sphere D).1
 
 /-- **Riemann–Roch on `ℙ¹`.** `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`. -/
-theorem finrank_euler_characteristic_sphere (D : WeilDivisor (OnePoint ℂ)) :
+theorem finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one_sphere
+    (D : WeilDivisor (OnePoint ℂ)) :
     (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
       Module.finrank ℂ (divisorCechCohomology D 1) = WeilDivisor.degree D + 1 :=
-  (finiteDimensional_and_euler_characteristic_sphere D).2
+  (finiteDimensional_divisorCechCohomology_one_and_finrank_sub_sphere D).2
 
 /-- `h¹(𝒪(D)) = 0` on `ℙ¹` when `deg D ≥ -1`. -/
 theorem finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree
@@ -104,7 +90,7 @@ theorem finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree
   obtain ⟨E, hle, hE⟩ : ∃ E ≤ D, WeilDivisor.degree E = -1 :=
     ⟨D - (WeilDivisor.degree D + 1) • WeilDivisor.ofPoint ∞,
       sub_le_self _ (zsmul_nonneg (WeilDivisor.ofPoint_nonneg _) (by omega)), by simp⟩
-  have h := finrank_euler_characteristic_sphere E
+  have h := finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one_sphere E
   rw [finrank_divisorSheaf_globalSections_of_degree_neg (by omega), hE] at h
   have := finrank_divisorCechCohomology_one_le_of_le hle
   omega
@@ -120,7 +106,7 @@ theorem isZero_divisorCechCohomology_one_sphere_of_neg_one_le_degree
 @[simp]
 theorem finrank_divisorSheaf_globalSections_sphere (D : WeilDivisor (OnePoint ℂ)) :
     Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) = (WeilDivisor.degree D + 1).toNat := by
-  have h := finrank_euler_characteristic_sphere D
+  have h := finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one_sphere D
   rcases le_or_gt 0 (WeilDivisor.degree D) with hD | hD
   · rw [finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree (by omega)] at h
     omega
@@ -131,7 +117,7 @@ theorem finrank_divisorSheaf_globalSections_sphere (D : WeilDivisor (OnePoint �
 @[simp]
 theorem finrank_divisorCechCohomology_one_sphere (D : WeilDivisor (OnePoint ℂ)) :
     Module.finrank ℂ (divisorCechCohomology D 1) = (-WeilDivisor.degree D - 1).toNat := by
-  have h := finrank_euler_characteristic_sphere D
+  have h := finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one_sphere D
   rw [finrank_divisorSheaf_globalSections_sphere] at h
   omega
 

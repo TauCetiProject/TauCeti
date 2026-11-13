@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.FiniteDimensional
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.PointTwist
 public import TauCeti.Topology.Sheaves.Cech.LongExactSequence
 public import TauCeti.Topology.Sheaves.Cech.Skyscraper
-import TauCeti.Analysis.Complex.RiemannSurface.Divisor.FiniteDimensional
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -51,6 +51,20 @@ variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
 structure. In degree zero it identifies with the divisor's global sections. -/
 abbrev divisorCechCohomology (D : WeilDivisor X) (n : ℕ) : ModuleCat.{0} ℂ :=
   (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj (divisorSheaf D).obj
+
+/-- Degree-zero divisor cohomology has the dimension of the divisor's global sections. -/
+@[simp]
+theorem finrank_divisorCechCohomology_zero (D : WeilDivisor X) :
+    Module.finrank ℂ (divisorCechCohomology D 0) =
+      Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) :=
+  (cechCohomologyZeroIso (divisorSheaf D)).toLinearEquiv.finrank_eq.symm
+
+/-- On a compact connected complex curve, degree-zero divisor cohomology is
+finite-dimensional. -/
+instance finiteDimensional_divisorCechCohomology_zero [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X]
+    [CompactSpace X] (D : WeilDivisor X) :
+    FiniteDimensional ℂ (divisorCechCohomology D 0) :=
+  (cechCohomologyZeroIso (divisorSheaf D)).toLinearEquiv.finiteDimensional
 
 variable (D : WeilDivisor X) (x : X)
 
@@ -156,6 +170,7 @@ theorem pointTwistGlobalCoefficient_neg_ofPoint_bijective :
   rw [neg_add_cancel, finrank_divisorSheaf_zero_globalSections, Module.finrank_self]
 
 /-- On a compact connected complex curve `h⁰(𝒪(-[x])) = 0`. -/
+@[simp]
 theorem finrank_divisorSheaf_neg_ofPoint_globalSections :
     Module.finrank ℂ ((divisorSheaf (-WeilDivisor.ofPoint x)).obj.obj (op ⊤)) = 0 := by
   have h₀ := (exact_pointTwist_globalSections_coefficient (-WeilDivisor.ofPoint x) x).finrank_eq_add
