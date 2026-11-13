@@ -25,8 +25,9 @@ for `σ ≥ 0`. Writing `l = exp (Δ / 2)`, the slope is `tanh (Δ / 4)`.
 Combined with a polynomial inequality, this gives the following for `R ≥ 1`, `l ≥ 1`,
 nonnegative `α, β, β'` and arbitrary `α'`. The logarithmic cross ratio of the pairs
 `(R * α + β, α + β)` and `(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R`
-whenever the pairs `(α, β)` and `(α', β')` themselves have cross ratio `α * β' / (β * α')` at most
-`l ^ 2`. This is Birkhoff's theorem in two dimensions.
+whenever `α * β' ≤ l ^ 2 * (β * α')`, that is, for positive `β, α'`, whenever the pairs `(α, β)`
+and `(α', β')` themselves have cross ratio `α * β' / (β * α')` at most `l ^ 2`. This is Birkhoff's
+theorem in two dimensions.
 
 ## Main results
 
@@ -168,15 +169,16 @@ theorem log_birkhoff_cross_ratio_le {α β α' β' R l : ℝ} (hα : 0 ≤ α) (
   linarith [log_one_add_mul_exp_div_add_exp_le hl hσ]
 
 /-- **A one-sided scalar estimate for the half-step contraction of the Schrödinger system.** For
-positive reals `A₂, B₂` and `0 ≤ M` with `exp m * A₂ ≤ A₁ ≤ exp (m + ω) * A₂`,
+a positive real `B₂` and `0 ≤ M` with `exp m * A₂ ≤ A₁ ≤ exp (m + ω) * A₂`,
 `exp (-2M) * B₂ ≤ A₂` and `exp (-2M) * (A₁ - exp m * A₂) ≤ B₁ - exp m * B₂`, the signed difference
 `(log A₁ - log A₂) - (log B₁ - log B₂)` is at most `(1 - exp (-4M)) * ω`. Only this one-sided bound
 is claimed. -/
 theorem log_sub_sub_le_of_bounds {A₁ A₂ B₁ B₂ M m ω : ℝ} (hM0 : 0 ≤ M)
-    (hA₂ : 0 < A₂) (hB₂ : 0 < B₂) (hA₁lo : exp m * A₂ ≤ A₁)
+    (hB₂ : 0 < B₂) (hA₁lo : exp m * A₂ ≤ A₁)
     (hA₁hi : A₁ ≤ exp (m + ω) * A₂) (hB₂A₂ : exp (-(2 * M)) * B₂ ≤ A₂)
     (hBA : exp (-(2 * M)) * (A₁ - exp m * A₂) ≤ B₁ - exp m * B₂) :
     (log A₁ - log A₂) - (log B₁ - log B₂) ≤ (1 - exp (-(4 * M))) * ω := by
+  have hA₂ : 0 < A₂ := lt_of_lt_of_le (mul_pos (exp_pos (-(2 * M))) hB₂) hB₂A₂
   have hA₁ : 0 < A₁ := lt_of_lt_of_le (mul_pos (exp_pos m) hA₂) hA₁lo
   have hB₁ : 0 < B₁ := by
     have := mul_nonneg (exp_pos (-(2 * M))).le (sub_nonneg.2 hA₁lo)

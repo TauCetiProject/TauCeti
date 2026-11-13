@@ -167,7 +167,6 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
   set A₂ := ∫ b, Real.exp (h (a, b) + ψ₂ b) ∂ν
   set B₁ := ∫ b, Real.exp (h (a', b) + ψ₁ b) ∂ν
   set B₂ := ∫ b, Real.exp (h (a', b) + ψ₂ b) ∂ν
-  have hA₂ : 0 < A₂ := integral_exp_pos (hi a hψ₂ hC₂)
   have hB₂ : 0 < B₂ := integral_exp_pos (hi a' hψ₂ hC₂)
   -- `exp m * A₂ ≤ A₁ ≤ exp (m + ω) * A₂`.
   have hA₁lo : Real.exp m * A₂ ≤ A₁ := by
@@ -204,7 +203,7 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
       (sub_nonneg.2 (Real.exp_le_exp.2 (hm b)))
     linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hM (a', b))).1]
   unfold logIntegralExp
-  exact log_sub_sub_le_of_bounds hM0 hA₂ hB₂ hA₁lo hA₁hi hB₂A₂ hBA
+  exact log_sub_sub_le_of_bounds hM0 hB₂ hA₁lo hA₁hi hB₂A₂ hBA
 
 /-- **The half-step contracts oscillations.** If the difference of two potentials on `B` has
 oscillation at most `ω`, then the difference of their log-partition functions on `A` has
