@@ -14,11 +14,8 @@ public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 A family `P : σ → R[X_σ]` of polynomials in finitely many variables is a gradient field
 `Pᵢ = ∂ᵢ Q` exactly when it satisfies the symmetry condition `∂ⱼ Pᵢ = ∂ᵢ Pⱼ`, provided the
-coefficients form a `ℚ`-algebra. The potential `Q` is explicit: when every `Pᵢ` is homogeneous of
-degree `d`, Euler's identity shows that `∂ⱼ (∑ᵢ Xᵢ Pᵢ) = (d + 1) Pⱼ`, and in general `Q` is the
-sum over `d` of `(d + 1)⁻¹ ∑ᵢ Xᵢ Pᵢᵈ`, where `Pᵢᵈ` is the degree-`d` homogeneous component of `Pᵢ`.
-In particular a symmetric family of polynomials of total degree at most `m` has a potential of
-total degree at most `m + 1`.
+coefficients form a `ℚ`-algebra. Moreover a symmetric family of polynomials of total degree at
+most `m` has a potential of total degree at most `m + 1`.
 
 This is the algebraic step in identifying the Sobolev functions whose derivatives of order
 `m + 1` vanish with the polynomials of degree at most `m`: the first derivatives of such a
@@ -27,18 +24,22 @@ potential of degree at most `m` reduces the claim to a function with vanishing g
 
 The argument is the one with homogeneous components and Euler's identity
 (`MvPolynomial.IsHomogeneous.sum_X_mul_pderiv`), the polynomial case of the homotopy formula in
-the proof of the Poincaré lemma for closed differential forms.
+the proof of the Poincaré lemma for closed differential forms. When `Pⱼ` is homogeneous of
+degree `d` and `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` for all `i`, Euler's identity shows that
+`∂ⱼ (∑ᵢ Xᵢ Pᵢ) = (d + 1) Pⱼ`. The proof therefore takes as potential the sum over `d` of
+`(d + 1)⁻¹ ∑ᵢ Xᵢ Pᵢᵈ`, where `Pᵢᵈ` is the degree-`d` homogeneous component of `Pᵢ`.
 
 ## Main results
 
 * `MvPolynomial.homogeneousComponent_pderiv`: partial differentiation lowers homogeneous
   components by one degree.
-* `MvPolynomial.pderiv_sum_X_mul_of_isHomogeneous`: for a symmetric family of homogeneous
-  polynomials of degree `d`, `∂ⱼ (∑ᵢ Xᵢ Pᵢ) = (d + 1) Pⱼ`.
-* `MvPolynomial.exists_pderiv_eq`: a symmetric family of polynomials of total degree at most `m`
-  over a `ℚ`-algebra is the gradient of a polynomial of total degree at most `m + 1`.
-* `MvPolynomial.exists_pderiv_eq_iff`: over a `ℚ`-algebra, a family of polynomials is a gradient
-  if and only if it satisfies the symmetry condition.
+* `MvPolynomial.pderiv_sum_X_mul_of_isHomogeneous`: if `Pⱼ` is homogeneous of degree `d` and
+  `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` for all `i`, then `∂ⱼ (∑ᵢ Xᵢ Pᵢ) = (d + 1) Pⱼ`.
+* `MvPolynomial.exists_pderiv_eq`: a symmetric family of polynomials in finitely many variables
+  of total degree at most `m` over a `ℚ`-algebra is the gradient of a polynomial of total degree
+  at most `m + 1`.
+* `MvPolynomial.exists_pderiv_eq_iff`: over a `ℚ`-algebra, a family of polynomials in finitely
+  many variables is a gradient if and only if it satisfies the symmetry condition.
 -/
 
 public section
@@ -59,14 +60,12 @@ theorem homogeneousComponent_pderiv (d : ℕ) (i : σ) (φ : MvPolynomial σ R) 
   simp only [coeff_homogeneousComponent, coeff_pderiv, map_add, Finsupp.degree_single,
     Nat.add_right_cancel_iff, ite_mul, zero_mul]
 
-/-- **Euler's identity integrates a homogeneous symmetric family.** If every `Pᵢ` is homogeneous
-of degree `d` and `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` for all `i` and `j`, then `∂ⱼ (∑ᵢ Xᵢ Pᵢ) = (d + 1) Pⱼ`. -/
+/-- If `Pⱼ` is homogeneous of degree `d` and `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` for all `i`, then
+`∂ⱼ (∑ᵢ Xᵢ Pᵢ) = (d + 1) Pⱼ`. -/
 theorem pderiv_sum_X_mul_of_isHomogeneous [Fintype σ] {d : ℕ} {P : σ → MvPolynomial σ R}
-    (hP : ∀ i, (P i).IsHomogeneous d) (hsymm : ∀ i j, pderiv j (P i) = pderiv i (P j))
-    (j : σ) :
+    {j : σ} (hP : (P j).IsHomogeneous d) (hsymm : ∀ i, pderiv j (P i) = pderiv i (P j)) :
     pderiv j (∑ i, X i * P i) = (d + 1) • P j := by
-  have hsymm_j : ∀ i, pderiv j (P i) = pderiv i (P j) := fun i ↦ hsymm i j
-  simp_rw [map_sum, pderiv_mul, sum_add_distrib, hsymm_j, (hP j).sum_X_mul_pderiv]
+  simp_rw [map_sum, pderiv_mul, sum_add_distrib, hsymm, hP.sum_X_mul_pderiv]
   rw [sum_eq_single j (fun i _ hi ↦ by rw [pderiv_X_of_ne hi, zero_mul]) (by simp),
     pderiv_X_self, one_mul, add_smul, one_smul, add_comm]
 
@@ -76,9 +75,9 @@ section CommRing
 
 variable {R σ : Type*} [CommRing R] [Algebra ℚ R] [Finite σ]
 
-/-- **Polynomial Poincaré lemma.** Over a `ℚ`-algebra, a family `P` of polynomials of total degree
-at most `m` satisfying the symmetry condition `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` is the gradient of a polynomial of
-total degree at most `m + 1`. -/
+/-- **Polynomial Poincaré lemma.** Over a `ℚ`-algebra, a family `P` of polynomials in finitely
+many variables of total degree at most `m` satisfying the symmetry condition `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` is
+the gradient of a polynomial of total degree at most `m + 1`. -/
 theorem exists_pderiv_eq {m : ℕ} (P : σ → MvPolynomial σ R)
     (hP : ∀ i, P i ∈ restrictTotalDegree σ R m)
     (hsymm : ∀ i j, pderiv j (P i) = pderiv i (P j)) :
@@ -94,8 +93,8 @@ theorem exists_pderiv_eq {m : ℕ} (P : σ → MvPolynomial σ R)
   have hcomponent (d : ℕ) :
       pderiv j (∑ i, X i * homogeneousComponent d (P i)) =
         (d + 1) • homogeneousComponent d (P j) := by
-    refine pderiv_sum_X_mul_of_isHomogeneous (fun i ↦ homogeneousComponent_isHomogeneous d _)
-      (fun i k ↦ ?_) j
+    refine pderiv_sum_X_mul_of_isHomogeneous (homogeneousComponent_isHomogeneous d _)
+      (fun i ↦ ?_)
     rcases d with _ | d
     · simp
     · rw [← homogeneousComponent_pderiv, ← homogeneousComponent_pderiv, hsymm]
