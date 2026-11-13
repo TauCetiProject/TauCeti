@@ -258,9 +258,9 @@ structure IsSerreSystem (H E F : B → L) : Prop where
   lie_E_F_self : ∀ i, ⁅E i, F i⁆ = H i
   /-- `Eᵢ` and `Fⱼ` commute for `i ≠ j`. -/
   lie_E_F_of_ne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0
-  /-- `Eⱼ` is an eigenvector of `ad Hᵢ` of eigenvalue `CMᵢⱼ`. -/
+  /-- `ad Hᵢ` multiplies `Eⱼ` by `CMᵢⱼ`. -/
   lie_H_E : ∀ i j, ⁅H i, E j⁆ = CM i j • E j
-  /-- `Fⱼ` is an eigenvector of `ad Hᵢ` of eigenvalue `-CMᵢⱼ`. -/
+  /-- `ad Hᵢ` multiplies `Fⱼ` by `-CMᵢⱼ`. -/
   lie_H_F : ∀ i j, ⁅H i, F j⁆ = -(CM i j • F j)
   /-- The higher Serre relation on the `E`'s. -/
   ad_pow_lie_E_E : ∀ i j, (ad R L (E i) ^ (-CM i j).toNat) ⁅E i, E j⁆ = 0
@@ -677,8 +677,8 @@ theorem eq_serreLift {h : IsSerreSystem R CM H E F} {g : Matrix.ToLieAlgebra R C
     g = serreLift h :=
   serre_hom_ext (fun i => by rw [hE, serreLift_serreE]) fun i => by rw [hF, serreLift_serreF]
 
-/-- A Serre system whose raising and lowering families generate the ambient Lie algebra presents
-it: the homomorphism it determines is surjective. -/
+/-- A Serre system whose raising and lowering families generate the ambient Lie algebra induces a
+surjective homomorphism from `Matrix.ToLieAlgebra R CM` onto it. -/
 theorem serreLift_surjective (h : IsSerreSystem R CM H E F)
     (hspan : LieSubalgebra.lieSpan R L (Set.range E ∪ Set.range F) = ⊤) :
     Function.Surjective (serreLift h) := by

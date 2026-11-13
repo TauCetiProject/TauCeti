@@ -269,8 +269,9 @@ section Coefficients
 variable {Z : Type*} [AddCommGroup Z] [Module R Z]
 
 variable (R L) in
-/-- The residue cochain with coefficients in a module `Z` with trivial action is a continuous
-2-cocycle. -/
+/-- The residue cochain with coefficients in a module `Z` with trivial action, of an invariant
+symmetric form `Φ`, is a continuous 2-cocycle. Invariance of `Φ` is what makes the residue
+cochain a cocycle. -/
 theorem twoCochainOfBilinearSMulRight_mem_continuousTwoCocycle (Φ : LinearMap.BilinForm R L)
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (z : Z) :
     twoCochainOfBilinearSMulRight R L Φ hΦs z ∈
@@ -551,6 +552,8 @@ noncomputable def residueClassEquiv {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lie
   LinearEquiv.ofBijective (residueClassMap K L Ψ hΨ hΨs)
     ⟨residueClassMap_injective hΨ hΨs hΨ0, residueClassMap_surjective hΨ hΨs hspan⟩
 
+/-- The residue class equivalence `residueClassEquiv` is given by the residue class map
+`residueClassMap`. -/
 @[simp]
 theorem residueClassEquiv_apply {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
