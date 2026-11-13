@@ -33,9 +33,9 @@ group `H` receiving the coefficients through `ι : G →* H`. The system `S ∪ 
 * `TauCeti.GroupAlgGeom.Lift.isCompatible_iff_forall_exists_gHom`: compatibility as extension of
   homomorphisms.
 * `TauCeti.GroupAlgGeom.Lift.IsCompatible.coordGroupMap_injective`: for a compatible system the
-  canonical map of coordinate groups is injective.
-* `TauCeti.GroupAlgGeom.Lift.isCompatible_iff_injective_and_forall_exists_gHom`: [IFT],
-  Proposition 2 as stated there, with both the embedding and the extension of homomorphisms.
+  canonical map of coordinate groups is injective. Together with the previous result this is
+  [IFT], Proposition 2, which characterises compatibility by the embedding and the extension of
+  homomorphisms.
 * `TauCeti.GroupAlgGeom.Lift.existsUnique_gHom_genericPoint_inr_eq`: a solution of `T` at the
   generic point of `S` is the value on `Y` of a unique retraction ([IFT], Lemma 40).
 * `TauCeti.GroupAlgGeom.Lift.genericPoint_inr_mem_V_of_comp_eq_id`: conversely, the values on `Y`
@@ -144,15 +144,6 @@ theorem IsCompatible.coordGroupMap_injective (h : IsCompatible ι S T) :
   obtain ⟨α, hα⟩ := (isSeparatedBy_def _ _).1 (CoordGroup.isSeparatedBy_coeff S) q hq₁
   obtain ⟨α', rfl⟩ := isCompatible_iff_forall_exists_gHom.1 h α
   exact hα (by simp [hq])
-
-/-- A system `T` is compatible with `S` if and only if the coordinate group of `S` embeds
-canonically into the coordinate group of `S ∪ T` and every `G`-homomorphism from the former to
-`H` extends to the latter. -/
-theorem isCompatible_iff_injective_and_forall_exists_gHom : IsCompatible ι S T ↔
-    Function.Injective (coordGroupMap ι S T) ∧ ∀ α : GHom (CoordGroup.coeff ι S) ι,
-      ∃ α' : GHom (CoordGroup.coeff ι (jointSystem S T)) ι, α'.comp (coordGroupMap ι S T) = α :=
-  ⟨fun h => ⟨h.coordGroupMap_injective, isCompatible_iff_forall_exists_gHom.1 h⟩,
-    fun h => isCompatible_iff_forall_exists_gHom.2 h.2⟩
 
 /-! ### Lifts as retractions -/
 
