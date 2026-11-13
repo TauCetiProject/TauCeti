@@ -11,13 +11,16 @@ import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.Analysis.Normed.Ring.UnitBall
 
 /-!
-# Order properties and discrete-ring comparison for rational valuations
+# Order properties, discrete-ring comparison, and norm density for rational valuations
 
 The canonical rational valuation of a commensurable pseudo-uniformiser is defined in
 `LogGauge.Rational`. This file characterizes its real refinement, proves its strict-order and
 unit-power formulas, and compares it with the normalized valuation of a discrete valuation ring.
-It also shows that commensurability passes along a norm-preserving map with dense range into an
-ultrametric ring, such as the inclusion of a ring into its completion.
+It shows that commensurability passes along a norm-preserving map with dense range into an
+ultrametric ring, such as the inclusion of a ring into its completion. Finally, when every
+rational power of `‖ϖ‖` is a norm — in particular when the rational valuation is surjective onto
+`WithTop ℚ` — the norms separate every interval `(r₁, r₂)` with `0 ≤ r₁ < r₂`, so `nnNorm` has
+dense range in `ℝ≥0`.
 -/
 
 public section
@@ -112,4 +115,59 @@ theorem isCommensurable_of_denseRange {S : Type*} [SeminormedRing S] [IsUltramet
     let ⟨a, ha⟩ := IsUltrametricDist.exists_norm_eq_of_denseRange hd hy
     ⟨1, one_pos, a, by rw [pow_one, ← hf, ha]⟩
 
+section DenseNorms
+
+open scoped NNReal
+
+omit [IsUltrametricDist R] [NormMulClass R] in
+/-- **Rational powers of `‖ϖ‖` separate positive intervals.** If every rational power of `‖ϖ‖` is
+attained as the norm of an element of `R`, then for `0 ≤ r₁ < r₂` some element of `R` has norm
+strictly between `r₁` and `r₂`. -/
+theorem exists_lt_norm_lt_of_forall_exists_norm_eq_rpow (ϖ : PseudoUniformizer R)
+    (h : ∀ q : ℚ, ∃ x : R, ‖x‖ = ‖(ϖ.unit : R)‖ ^ (q : ℝ)) {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁)
+    (hr : r₁ < r₂) : ∃ x : R, r₁ < ‖x‖ ∧ ‖x‖ < r₂ := by
+  set r₁' := max r₁ (r₂ / 2)
+  have hr₁_le : r₁ ≤ r₁' := le_max_left r₁ (r₂ / 2)
+  have hr₂ : 0 < r₂ := hr₁.trans_lt hr
+  have hr₁' : 0 < r₁' := lt_max_of_lt_right (half_pos hr₂)
+  have hlt : r₁' < r₂ := max_lt hr (half_lt_self hr₂)
+  obtain ⟨q, hq₁, hq₂⟩ :=
+    exists_rat_btwn (Real.logb_lt_logb_of_base_lt_one ϖ.norm_pos ϖ.norm_lt_one hr₁' hlt)
+  obtain ⟨x, hx⟩ := h q
+  refine ⟨x, hr₁_le.trans_lt ?_, ?_⟩
+  · rw [hx, ← Real.rpow_logb ϖ.norm_pos ϖ.norm_lt_one.ne hr₁']
+    exact Real.rpow_lt_rpow_of_exponent_gt ϖ.norm_pos ϖ.norm_lt_one hq₂
+  · rw [hx, ← Real.rpow_logb ϖ.norm_pos ϖ.norm_lt_one.ne hr₂]
+    exact Real.rpow_lt_rpow_of_exponent_gt ϖ.norm_pos ϖ.norm_lt_one hq₁
+
+omit [IsUltrametricDist R] [NormMulClass R] in
+/-- If every rational power of `‖ϖ‖` is attained as the norm of an element of `R`, then `nnNorm`
+has dense range in `ℝ≥0`. -/
+theorem denseRange_nnNorm_of_forall_exists_norm_eq_rpow (ϖ : PseudoUniformizer R)
+    (h : ∀ q : ℚ, ∃ x : R, ‖x‖ = ‖(ϖ.unit : R)‖ ^ (q : ℝ)) :
+    DenseRange (nnNorm : R → ℝ≥0) :=
+  dense_of_exists_between fun a _ hab ↦
+    let ⟨x, hx₁, hx₂⟩ :=
+      exists_lt_norm_lt_of_forall_exists_norm_eq_rpow ϖ h a.coe_nonneg (NNReal.coe_lt_coe.2 hab)
+    ⟨‖x‖₊, ⟨x, rfl⟩, NNReal.coe_lt_coe.1 hx₁, NNReal.coe_lt_coe.1 hx₂⟩
+
+/-- **A surjective rational valuation gives dense positive norms.** When `ϖ.ratAddValuation hϖ`
+takes every finite rational value, every interval `(r₁, r₂)` with `0 ≤ r₁ < r₂` contains the norm
+of an element of `R`. -/
+theorem exists_lt_norm_lt_of_surjective_ratAddValuation
+    (hs : Function.Surjective (ϖ.ratAddValuation hϖ)) {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁) (hr : r₁ < r₂) :
+    ∃ x : R, r₁ < ‖x‖ ∧ ‖x‖ < r₂ :=
+  exists_lt_norm_lt_of_forall_exists_norm_eq_rpow ϖ
+    (fun q ↦ let ⟨x, hx⟩ := hs q; ⟨x, (ratAddValuation_eq_coe_iff hϖ).1 hx⟩) hr₁ hr
+
+/-- When `ϖ.ratAddValuation hϖ` is surjective, `nnNorm` has dense range in `ℝ≥0`. -/
+theorem denseRange_nnNorm_of_surjective_ratAddValuation
+    (hs : Function.Surjective (ϖ.ratAddValuation hϖ)) :
+    DenseRange (nnNorm : R → ℝ≥0) :=
+  denseRange_nnNorm_of_forall_exists_norm_eq_rpow ϖ
+    fun q ↦ let ⟨x, hx⟩ := hs q; ⟨x, (ratAddValuation_eq_coe_iff hϖ).1 hx⟩
+
+end DenseNorms
+
 end TauCeti.NormedRing.PseudoUniformizer
+
