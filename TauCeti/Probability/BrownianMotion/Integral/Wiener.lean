@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.TimeIntegral
+public import TauCeti.Probability.BrownianMotion.TimeIntegral.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.InnerProductSpace.LinearCombination
