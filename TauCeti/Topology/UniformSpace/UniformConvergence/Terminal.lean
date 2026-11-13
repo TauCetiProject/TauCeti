@@ -44,22 +44,6 @@ namespace TauCeti
 variable {ι X Y : Type*} {l : Filter ι} [l.NeBot]
   [TopologicalSpace X] [PseudoMetricSpace Y]
 
-/-- A time-Lipschitz bound controls displacement under a backward clamp near `b`. -/
-private theorem dist_clamp_le {q : ℝ → Y} {a b L δ t : ℝ}
-    (hL : 0 ≤ L) (hδ : 0 ≤ δ) (hδlength : δ ≤ b - a) (ht : t ≤ b)
-    (hq : ∀ s ∈ Icc a b, ∀ t ∈ Icc a b, dist (q s) (q t) ≤ L * |s - t|) :
-    dist (q t) (q (min t (b - δ))) ≤ L * δ := by
-  by_cases hfar : t ≤ b - δ
-  · simp only [min_eq_left hfar, dist_self]
-    exact mul_nonneg hL hδ
-  · have ht' : t ∈ Icc a b := ⟨by linarith, ht⟩
-    have hs : b - δ ∈ Icc a b := ⟨by linarith, by linarith⟩
-    have hdiff : |t - (b - δ)| ≤ δ := by
-      rw [abs_of_nonneg (by linarith)]
-      linarith
-    simpa only [min_eq_right (le_of_not_ge hfar)] using
-      (hq t ht' (b - δ) hs).trans (mul_le_mul_of_nonneg_left hdiff hL)
-
 /-- Compact-uniform interior convergence extends through the terminal time along the same
 filter. The time-Lipschitz constants and eventual thresholds may depend on
 the compact spatial set; they are only needed on the final interval `[a, b]`. -/
@@ -111,10 +95,10 @@ theorem tendstoUniformlyOn_Iic_of_time_lipschitz
   filter_upwards [hLip, hshiftconv] with k hk hkc z hz
   have hxV : z.2 ∈ V := mem_image_of_mem Prod.snd hz
   have hnear_f : dist (f k z) (f k (shift z)) ≤ L * δ :=
-    dist_clamp_le hL hδ.le hδlength (hKU hz).1 (hk z.2 hxV)
+    dist_apply_min_sub_le hL hδ.le hδlength (hKU hz).1 (hk z.2 hxV)
   have hnear_g : dist (g (shift z)) (g z) ≤ L * δ := by
     rw [dist_comm]
-    exact dist_clamp_le hL hδ.le hδlength (hKU hz).1 (hgLip z.2 hxV)
+    exact dist_apply_min_sub_le hL hδ.le hδlength (hKU hz).1 (hgLip z.2 hxV)
   have hinterior := hkc (shift z) (mem_image_of_mem shift hz)
   have htriangle := dist_triangle (f k z) (f k (shift z)) (g z)
   have htriangle' := dist_triangle (f k (shift z)) (g (shift z)) (g z)
