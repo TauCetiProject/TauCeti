@@ -110,6 +110,7 @@ theorem canonicalFrobenius_add (k m : ℕ) :
 
 /-- The `m`-th iterate of canonical `p ^ k`-Frobenius is canonical `p ^ (k * m)`-Frobenius.
 Powers here use composition of endomorphisms. -/
+@[simp]
 theorem canonicalFrobenius_pow (k m : ℕ) :
     d.canonicalFrobenius k ^ m = d.canonicalFrobenius (k * m) := by
   simp only [canonicalFrobenius_def]
