@@ -16,11 +16,11 @@ cancellative.
 
 public section
 
-namespace IsGCDMonoid
+namespace TauCeti
 
 /-- A nontrivial commutative semiring with GCDs is a domain. -/
-theorem isDomain_of_nontrivial {D : Type*} [CommSemiring D] [IsGCDMonoid D] [Nontrivial D] :
+theorem isDomain_of_isGCDMonoid {D : Type*} [CommSemiring D] [IsGCDMonoid D] [Nontrivial D] :
     IsDomain D :=
   { IsGCDMonoid.isCancelMulZero (α := D) with }
 
-end IsGCDMonoid
+end TauCeti
