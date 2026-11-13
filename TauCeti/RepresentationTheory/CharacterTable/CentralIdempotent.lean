@@ -261,7 +261,7 @@ end Scalar
 
 section Degree
 
-variable [FiniteDimensional k V] [IsAlgClosed k]
+variable [IsAlgClosed k]
 variable [Invertible (Nat.card G : k)] [ρ.IsIrreducible]
 
 /-- **The degree of an irreducible representation is a unit in the base field.** Over an
@@ -276,6 +276,7 @@ theorem _root_.Representation.isUnit_char_one : IsUnit (ρ.character 1) := by
   have : Finite G :=
     TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   have : Fintype G := Fintype.ofFinite G
+  have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
   have h := centralCharacter_characterSumCenter_mul_character_one ρ ρ
   rw [ite_eq_left ⟨_root_.Representation.Equiv.refl ρ⟩, mul_one] at h
   exact isUnit_of_mul_isUnit_right (h ▸ isUnit_of_invertible (Nat.card G : k))
@@ -391,12 +392,14 @@ theorem centralCharacter_primitiveCentralIdempotentCenter_self :
   rw [centralCharacter_primitiveCentralIdempotentCenter,
     ite_eq_left ⟨_root_.Representation.Equiv.refl ρ⟩]
 
+omit [FiniteDimensional k W] in
 open scoped Classical in
 /-- **`e_ρ` is the Wedderburn projector onto the block of `ρ`**: it acts as the identity on `ρ`
 itself and as zero on every irreducible representation not isomorphic to `ρ`. -/
 theorem asAlgebraHom_primitiveCentralIdempotent :
     σ.asAlgebraHom (primitiveCentralIdempotent ρ) =
       if Nonempty (ρ.Equiv σ) then LinearMap.id else 0 := by
+  have : FiniteDimensional k W := σ.asModuleEquiv.finiteDimensional
   rw [← primitiveCentralIdempotentCenter_coe ρ, asAlgebraHom_center σ,
     centralCharacter_primitiveCentralIdempotentCenter ρ σ]
   split <;> simp

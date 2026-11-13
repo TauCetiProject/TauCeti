@@ -106,7 +106,7 @@ end Divisibility
 
 section Dvd
 
-variable [IsAlgClosed k] [CharZero k] [FiniteDimensional k V]
+variable [IsAlgClosed k] [CharZero k]
   (ρ : Representation k G V) [ρ.IsIrreducible]
 
 include ρ in
@@ -122,6 +122,7 @@ theorem _root_.Representation.finrank_dvd_card : finrank k V ∣ Nat.card G := b
   · rw [Nat.card_eq_zero_of_infinite]
     exact dvd_zero _
   let _ : Fintype G := Fintype.ofFinite G
+  have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
   have hcard : (Nat.card G : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have : Invertible (Nat.card G : k) := invertibleOfNonzero hcard
   refine IsIntegral.dvd_of_natCast_mul_eq (k := k) ?_
