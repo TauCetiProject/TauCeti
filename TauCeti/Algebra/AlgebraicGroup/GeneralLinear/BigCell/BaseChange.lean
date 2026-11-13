@@ -91,6 +91,13 @@ noncomputable def blockBigCellBaseChangeMap :
   ((blockBigCellBaseChangeAlgEquiv R S b).toAlgHom.restrictScalars R).comp
     Algebra.TensorProduct.includeRight
 
+/-- The coefficient-change map is the comparison composed with the right tensor inclusion. -/
+theorem blockBigCellBaseChangeMap_def :
+    blockBigCellBaseChangeMap R S b =
+      ((blockBigCellBaseChangeAlgEquiv R S b).toAlgHom.restrictScalars R).comp
+        Algebra.TensorProduct.includeRight :=
+  (rfl)
+
 /-- On arbitrary regular coordinates, scalar extension multiplies the coefficient-change
 map by the tensor's scalar factor. -/
 @[simp]
@@ -112,6 +119,59 @@ theorem blockBigCellBaseChangeMap_algebraMap (p : MvPolynomial (n × n) R) :
   simp only [blockBigCellBaseChangeMap, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
     Algebra.TensorProduct.includeRight_apply, AlgEquiv.coe_toAlgHom,
     blockBigCellBaseChangeAlgEquiv_tmul_algebraMap, one_smul]
+
+/-- The inverse comparison sends coefficient-changed regular coordinates to pure tensors. -/
+@[simp]
+theorem blockBigCellBaseChangeAlgEquiv_symm_baseChangeMap
+    (x : BlockBigCellCoordinateAlgebra R b) :
+    (blockBigCellBaseChangeAlgEquiv R S b).symm (blockBigCellBaseChangeMap R S b x) =
+      1 ⊗ₜ[R] x := by
+  apply (blockBigCellBaseChangeAlgEquiv R S b).injective
+  simp
+
+/-- The inverse comparison restricts to the right tensor inclusion on original coordinates. -/
+@[simp]
+theorem blockBigCellBaseChangeAlgEquiv_symm_comp_baseChangeMap :
+    ((blockBigCellBaseChangeAlgEquiv R S b).symm.toAlgHom.restrictScalars R).comp
+      (blockBigCellBaseChangeMap R S b) = Algebra.TensorProduct.includeRight := by
+  apply AlgHom.ext
+  intro x
+  exact blockBigCellBaseChangeAlgEquiv_symm_baseChangeMap R S b x
+
+/-- The inverse comparison sends a matrix variable to its original pure tensor. -/
+@[simp]
+theorem blockBigCellBaseChangeAlgEquiv_symm_X (ij : n × n) :
+    (blockBigCellBaseChangeAlgEquiv R S b).symm
+      (algebraMap (MvPolynomial (n × n) S) (BlockBigCellCoordinateAlgebra S b)
+        (MvPolynomial.X ij)) =
+      1 ⊗ₜ[R] algebraMap (MvPolynomial (n × n) R) (BlockBigCellCoordinateAlgebra R b)
+        (MvPolynomial.X ij) := by
+  simpa only [MvPolynomial.map_X] using
+    blockBigCellBaseChangeAlgEquiv_symm_algebraMap R S b (MvPolynomial.X ij)
+
+/-- The inverse comparison places a constant in the scalar tensor factor. -/
+@[simp]
+theorem blockBigCellBaseChangeAlgEquiv_symm_C (s : S) :
+    (blockBigCellBaseChangeAlgEquiv R S b).symm
+      (algebraMap (MvPolynomial (n × n) S) (BlockBigCellCoordinateAlgebra S b)
+        (MvPolynomial.C s)) = s ⊗ₜ[R] 1 := by
+  rw [← MvPolynomial.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
+  exact (blockBigCellBaseChangeAlgEquiv R S b).symm.commutes s
+
+/-- The inverse comparison separates a monomial's new coefficient from its original variables. -/
+@[simp]
+theorem blockBigCellBaseChangeAlgEquiv_symm_monomial (m : (n × n) →₀ ℕ) (s : S) :
+    (blockBigCellBaseChangeAlgEquiv R S b).symm
+      (algebraMap (MvPolynomial (n × n) S) (BlockBigCellCoordinateAlgebra S b)
+        (MvPolynomial.monomial m s)) =
+      s ⊗ₜ[R] algebraMap (MvPolynomial (n × n) R) (BlockBigCellCoordinateAlgebra R b)
+        (MvPolynomial.monomial m 1) := by
+  apply (blockBigCellBaseChangeAlgEquiv R S b).injective
+  simp only [AlgEquiv.apply_symm_apply, blockBigCellBaseChangeAlgEquiv_tmul_algebraMap,
+    MvPolynomial.map_monomial, map_one, Algebra.smul_def]
+  rw [IsScalarTower.algebraMap_apply S (MvPolynomial (n × n) S)
+    (BlockBigCellCoordinateAlgebra S b), MvPolynomial.algebraMap_eq,
+    ← map_mul, MvPolynomial.C_mul_monomial, mul_one]
 
 /-- Coefficient change preserves the universal matrix. -/
 @[simp]
@@ -159,6 +219,51 @@ theorem map_blockBigCellUpper_baseChange :
       blockBigCellUpper S b :=
   (map_blockBigCell_factors_baseChange R S b).2.2
 
+/-- Coefficient change preserves each entry of the regular lower LDU factor. -/
+@[simp]
+theorem blockBigCellBaseChangeMap_lower (i j : n) :
+    blockBigCellBaseChangeMap R S b (blockBigCellLower R b i j) =
+      blockBigCellLower S b i j :=
+  congrFun (congrFun (map_blockBigCellLower_baseChange R S b) i) j
+
+/-- Coefficient change preserves each entry of the regular diagonal LDU factor. -/
+@[simp]
+theorem blockBigCellBaseChangeMap_diag (i j : n) :
+    blockBigCellBaseChangeMap R S b (blockBigCellDiag R b i j) =
+      blockBigCellDiag S b i j :=
+  congrFun (congrFun (map_blockBigCellDiag_baseChange R S b) i) j
+
+/-- Coefficient change preserves each entry of the regular upper LDU factor. -/
+@[simp]
+theorem blockBigCellBaseChangeMap_upper (i j : n) :
+    blockBigCellBaseChangeMap R S b (blockBigCellUpper R b i j) =
+      blockBigCellUpper S b i j :=
+  congrFun (congrFun (map_blockBigCellUpper_baseChange R S b) i) j
+
+/-- The inverse comparison recovers each original lower-factor entry as a pure tensor. -/
+@[simp]
+theorem blockBigCellBaseChangeAlgEquiv_symm_lower (i j : n) :
+    (blockBigCellBaseChangeAlgEquiv R S b).symm (blockBigCellLower S b i j) =
+      1 ⊗ₜ[R] blockBigCellLower R b i j := by
+  rw [← blockBigCellBaseChangeMap_lower R S b,
+    blockBigCellBaseChangeAlgEquiv_symm_baseChangeMap]
+
+/-- The inverse comparison recovers each original diagonal-factor entry as a pure tensor. -/
+@[simp]
+theorem blockBigCellBaseChangeAlgEquiv_symm_diag (i j : n) :
+    (blockBigCellBaseChangeAlgEquiv R S b).symm (blockBigCellDiag S b i j) =
+      1 ⊗ₜ[R] blockBigCellDiag R b i j := by
+  rw [← blockBigCellBaseChangeMap_diag R S b,
+    blockBigCellBaseChangeAlgEquiv_symm_baseChangeMap]
+
+/-- The inverse comparison recovers each original upper-factor entry as a pure tensor. -/
+@[simp]
+theorem blockBigCellBaseChangeAlgEquiv_symm_upper (i j : n) :
+    (blockBigCellBaseChangeAlgEquiv R S b).symm (blockBigCellUpper S b i j) =
+      1 ⊗ₜ[R] blockBigCellUpper R b i j := by
+  rw [← blockBigCellBaseChangeMap_upper R S b,
+    blockBigCellBaseChangeAlgEquiv_symm_baseChangeMap]
+
 /-- Changing coefficients along the identity leaves every regular coordinate unchanged. -/
 @[simp]
 theorem blockBigCellBaseChangeMap_self :
@@ -166,18 +271,29 @@ theorem blockBigCellBaseChangeMap_self :
   apply blockBigCell_algHom_ext
   simp
 
-variable (T : Type*) [CommRing T] [Algebra S T] [Algebra R T] [IsScalarTower R S T]
+variable {T : Type*} [CommRing T] [Algebra S T] [Algebra R T] [IsScalarTower R S T]
 
 /-- Successive coefficient changes agree with coefficient change along the composite. -/
-theorem blockBigCellBaseChangeMap_trans :
+@[simp]
+theorem blockBigCellBaseChangeMap_trans (R : Type u) (S : Type v) (T : Type*)
+    [CommRing R] [CommRing S] [CommRing T] [Algebra R S] [Algebra S T] [Algebra R T]
+    [IsScalarTower R S T] (b : n → α) :
     ((blockBigCellBaseChangeMap S T b).restrictScalars R).comp
       (blockBigCellBaseChangeMap R S b) = blockBigCellBaseChangeMap R T b := by
   apply blockBigCell_algHom_ext
   simp only [AlgHom.coe_comp, ← Matrix.map_map, AlgHom.coe_restrictScalars',
     map_blockBigCellMatrix_baseChange]
 
+/-- Successive coefficient changes simplify entrywise to the composite coefficient change. -/
+@[simp]
+theorem blockBigCellBaseChangeMap_baseChangeMap (x : BlockBigCellCoordinateAlgebra R b) :
+    blockBigCellBaseChangeMap S T b (blockBigCellBaseChangeMap R S b x) =
+      blockBigCellBaseChangeMap R T b x :=
+  DFunLike.congr_fun (blockBigCellBaseChangeMap_trans R S T b) x
+
 /-- Evaluating after coefficient extension agrees with evaluating the original coordinates.
 This describes the base-change comparison on arbitrary algebra-valued points. -/
+@[simp]
 theorem blockBigCellEval_comp_baseChangeMap (M : Matrix n n T)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det) :
     ((blockBigCellEval (R := S) M hM).restrictScalars R).comp
@@ -185,5 +301,24 @@ theorem blockBigCellEval_comp_baseChangeMap (M : Matrix n n T)
   apply blockBigCell_algHom_ext
   simp only [AlgHom.coe_comp, ← Matrix.map_map, AlgHom.coe_restrictScalars',
     map_blockBigCellMatrix_baseChange, map_blockBigCellMatrix]
+
+/-- Evaluation of a coefficient-changed regular coordinate is its original evaluation. -/
+@[simp]
+theorem blockBigCellEval_baseChangeMap (M : Matrix n n T)
+    (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det)
+    (x : BlockBigCellCoordinateAlgebra R b) :
+    blockBigCellEval (R := S) M hM (blockBigCellBaseChangeMap R S b x) =
+      blockBigCellEval (R := R) M hM x :=
+  DFunLike.congr_fun (blockBigCellEval_comp_baseChangeMap R S b M hM) x
+
+/-- Restricting a point along coefficient change preserves its represented matrix. -/
+@[simp]
+theorem blockBigCellPointsEquiv_comp_baseChangeMap
+    (f : BlockBigCellCoordinateAlgebra S b →ₐ[S] T) :
+    blockBigCellPointsEquiv R b T ((f.restrictScalars R).comp
+      (blockBigCellBaseChangeMap R S b)) = blockBigCellPointsEquiv S b T f := by
+  apply Subtype.ext
+  simp only [blockBigCellPointsEquiv_apply, AlgHom.coe_comp, ← Matrix.map_map,
+    AlgHom.coe_restrictScalars', map_blockBigCellMatrix_baseChange]
 
 end TauCeti.GeneralLinear
