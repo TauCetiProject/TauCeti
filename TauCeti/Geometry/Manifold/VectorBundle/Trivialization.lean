@@ -16,18 +16,19 @@ import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 Near a point `v₀` of the total space of a fibre bundle, every point can be read in the preferred
 trivialization at the base point `v₀.proj`. For a `C^n` model of the total space, the fibre
-coordinate of such a point in that trivialization is `C^n` at `v₀`. That points near `v₀` lie over
-the base set of the trivialization is the topological fact
+coordinate of such a point in that trivialization is `C^n` at `v₀`, and in the preferred chart at
+`v₀` its derivative is the second projection. That points near `v₀` lie over the base set of the
+trivialization is the topological fact
 `Bundle.TotalSpace.eventually_proj_mem_baseSet_trivializationAt`.
 
 For a vector bundle, the same reading applies to a `C^n` map from a normed space into the total
 space: its fibre part, read through the linear map of the trivialization at the image of the base
 point, is a `C^n` map between normed spaces there. Read in the same way, the inclusion of a fibre
 into the total space is a continuous linear isomorphism onto the model fibre; hence it is `C^n`
-and has injective derivative, whose image is the kernel of the derivative of the projection when
-the fibres are finite-dimensional. Moreover, every atlas trivialization of a `C^n`
-vector bundle is a `C^n` partial diffeomorphism between its source in `TotalSpace F E` and its
-target `e.baseSet ×ˢ univ` in `B × F`, and hence a `C^n` local diffeomorphism in both directions.
+and has injective derivative, whose image is the kernel of the derivative of the projection.
+Moreover, every atlas trivialization of a `C^n` vector bundle is a `C^n` partial diffeomorphism
+between its source in `TotalSpace F E` and its target `e.baseSet ×ˢ univ` in `B × F`, and hence a
+`C^n` local diffeomorphism in both directions.
 Read back through such a trivialization, a `C^n` family of vectors of the model fibre is a `C^n`
 section.
 
@@ -35,15 +36,17 @@ section.
 
 * `Bundle.TotalSpace.contMDiffAt_trivializationAt_snd`: the fibre coordinate in the
   trivialization at `v₀.proj` is `C^n` at `v₀`.
+* `Bundle.TotalSpace.mfderiv_trivializationAt_snd`: in the preferred chart at `v₀`, the derivative
+  of that fibre coordinate is the second projection.
 * `ContMDiffAt.contDiffAt_continuousLinearMapAt_trivializationAt`: a `C^n` map from a normed space
   into the total space of a vector bundle has `C^n` fibre coordinates in the trivialization at the
   base point of its value.
 * `TauCeti.Manifold.contMDiff_totalSpaceMk`, `TauCeti.Manifold.injective_mfderiv_totalSpaceMk`:
   the inclusion of a fibre into the total space of a vector bundle is `C^n` and has injective
   derivative.
-* `TauCeti.Manifold.ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk`: for finite-dimensional
-  fibres, the vertical tangent vectors, those killed by the derivative of the projection, are the
-  derivatives of the inclusion of the fibre.
+* `TauCeti.Manifold.ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk`: the vertical tangent
+  vectors, those killed by the derivative of the projection, are the derivatives of the inclusion
+  of the fibre.
 * `Bundle.Trivialization.toPartialDiffeomorph`, `Bundle.Trivialization.isLocalDiffeomorphAt`,
   `Bundle.Trivialization.isLocalDiffeomorphAt_symm`: an atlas trivialization of a `C^n` vector
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
@@ -69,6 +72,27 @@ theorem contMDiffAt_trivializationAt_snd (v₀ : TotalSpace F E) :
     ContMDiffAt (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) n
       (fun v ↦ (trivializationAt F E v₀.proj v).2) v₀ :=
   (contMDiffAt_totalSpace.1 contMDiffAt_id).2
+
+/-- **The derivative of the fibre coordinate is the second projection.** Tangent vectors at `v₀`
+are read in the preferred chart at `v₀`, as pairs of a base and a fibre coordinate; in these
+coordinates the derivative of the fibre coordinate in the trivialization at `v₀.proj` keeps the
+fibre coordinate. -/
+theorem mfderiv_trivializationAt_snd (v₀ : TotalSpace F E) :
+    mfderiv (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) (fun v ↦ (trivializationAt F E v₀.proj v).2) v₀ =
+      ContinuousLinearMap.snd 𝕜 EB F := by
+  refine HasMFDerivAt.mfderiv
+    ⟨(contMDiffAt_trivializationAt_snd (n := 0) (IB := IB) v₀).continuousAt, ?_⟩
+  -- In the preferred chart at `v₀` the fibre coordinate is the second projection of the model.
+  have hchart : ∀ y ∈ (extChartAt (IB.prod 𝓘(𝕜, F)) v₀).target,
+      writtenInExtChartAt (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) v₀
+        (fun v ↦ (trivializationAt F E v₀.proj v).2) y = y.2 := fun y hy ↦ by
+    simpa [writtenInExtChartAt] using
+      congrArg Prod.snd (FiberBundle.writtenInExtChartAt_trivializationAt hy)
+  have hy := mem_extChartAt_target (I := IB.prod 𝓘(𝕜, F)) v₀
+  refine (hasFDerivAt_snd (𝕜 := 𝕜) (E := EB) (F := F)).hasFDerivWithinAt.congr_of_eventuallyEq
+    ?_ (hchart _ hy)
+  filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hy] with y hy
+  exact hchart y hy
 
 end Bundle.TotalSpace
 
@@ -143,39 +167,50 @@ theorem injective_mfderiv_totalSpaceMk (b : B) (y : E b) :
   exact (e.symmL_continuousLinearMapAt (R := 𝕜) hb w₁).symm.trans
     ((congrArg (e.symmL 𝕜 b) h).trans (e.symmL_continuousLinearMapAt (R := 𝕜) hb w₂))
 
-/-- **The vertical tangent space of a vector bundle with finite-dimensional fibres.** At a point
-`⟨b, y⟩` of the total space, the kernel of the derivative of the projection is the image of the
-derivative of the inclusion of the fibre over `b`. -/
-theorem ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk [FiniteDimensional 𝕜 F] (b : B) (y : E b) :
+/-- **The vertical tangent space of a vector bundle.** At a point `⟨b, y⟩` of the total space,
+the kernel of the derivative of the projection is the image of the derivative of the inclusion of
+the fibre over `b`. -/
+theorem ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk (b : B) (y : E b) :
     (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩).ker =
       (mfderiv 𝓘(𝕜, E b) (IB.prod 𝓘(𝕜, F)) (TotalSpace.mk b : E b → TotalSpace F E) y).range := by
-  have hb : b ∈ (trivializationAt F E b).baseSet := FiberBundle.mem_baseSet_trivializationAt F E b
+  let e := trivializationAt F E b
+  have hb : b ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F E b
   have hπ : MDifferentiableAt (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩ :=
     (Bundle.contMDiff_proj E (n := 1) _).mdifferentiableAt one_ne_zero
   have hι : MDifferentiableAt 𝓘(𝕜, E b) (IB.prod 𝓘(𝕜, F))
       (TotalSpace.mk b : E b → TotalSpace F E) y :=
     ((contMDiff_totalSpaceMk (n := 1) b).mdifferentiable one_ne_zero) y
-  -- The kernel is the model fibre `F`, read in the preferred chart at `⟨b, y⟩`.
-  let ιF : F →ₗ[𝕜] TangentSpace (IB.prod 𝓘(𝕜, F)) (⟨b, y⟩ : TotalSpace F E) :=
-    LinearMap.inr 𝕜 EB F
-  have hker : (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩).ker = ιF.range := by
-    rw [Bundle.mfderiv_proj]
-    exact LinearMap.ker_fst 𝕜 EB F
-  have : FiniteDimensional 𝕜 (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩).ker := by
-    rw [hker]
-    exact LinearMap.finiteDimensional_range _
-  -- The image lies in the kernel since the projection is constant on the fibre, and both have
-  -- the dimension of `F`.
-  refine (Submodule.eq_of_le_of_finrank_eq ?_ ?_).symm
-  · rintro _ ⟨w, rfl⟩
+  have hσ : MDifferentiableAt (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) (fun z : TotalSpace F E ↦ (e z).2)
+      (TotalSpace.mk b y) :=
+    (Bundle.TotalSpace.contMDiffAt_trivializationAt_snd (n := 1) (IB := IB)
+      (TotalSpace.mk' F b y)).mdifferentiableAt one_ne_zero
+  -- The image lies in the kernel since the projection is constant on the fibre.
+  have hle : (mfderiv 𝓘(𝕜, E b) (IB.prod 𝓘(𝕜, F))
+      (TotalSpace.mk b : E b → TotalSpace F E) y).range ≤
+      (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩).ker := by
+    rintro _ ⟨w, rfl⟩
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe,
       ← mfderiv_comp_apply y hπ hι]
     have hfun : (π F E ∘ (TotalSpace.mk b : E b → TotalSpace F E)) = fun _ ↦ b := rfl
     rw [hfun, mfderiv_const]
     rfl
-  · rw [LinearMap.finrank_range_of_inj (injective_mfderiv_totalSpaceMk b y), hker,
-      LinearMap.finrank_range_of_inj (f := ιF) LinearMap.inr_injective]
-    exact ((trivializationAt F E b).continuousLinearEquivAt 𝕜 b hb).toLinearEquiv.finrank_eq
+  refine le_antisymm (fun v hv ↦ ?_) hle
+  -- In the preferred chart at `⟨b, y⟩`, a vector of the kernel has zero base coordinate, and it
+  -- is the image of the vector of `E b` with the same fibre coordinate.
+  refine ⟨e.symmL 𝕜 b (ContinuousLinearMap.snd 𝕜 EB F v), ?_⟩
+  set u := mfderiv 𝓘(𝕜, E b) (IB.prod 𝓘(𝕜, F)) (TotalSpace.mk b : E b → TotalSpace F E) y
+    (e.symmL 𝕜 b (ContinuousLinearMap.snd 𝕜 EB F v))
+  have hu : u ∈ (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F E) ⟨b, y⟩).ker := hle ⟨_, rfl⟩
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, Bundle.mfderiv_proj] at hu hv
+  have hsnd : ContinuousLinearMap.snd 𝕜 EB F u = ContinuousLinearMap.snd 𝕜 EB F v := by
+    have hcomp : (fun z : TotalSpace F E ↦ (e z).2) ∘ (TotalSpace.mk b : E b → TotalSpace F E) =
+        e.continuousLinearMapAt 𝕜 b :=
+      funext fun y' ↦ (e.continuousLinearMapAt_apply_of_mem 𝕜 hb y').symm
+    have h := mfderiv_comp_apply y hσ hι (e.symmL 𝕜 b (ContinuousLinearMap.snd 𝕜 EB F v))
+    rw [hcomp, ContinuousLinearMap.mfderiv_eq,
+      Bundle.TotalSpace.mfderiv_trivializationAt_snd (IB := IB) (TotalSpace.mk' F b y)] at h
+    exact h.symm.trans (e.continuousLinearMapAt_symmL hb _)
+  exact Prod.ext (hu.trans hv.symm) hsnd
 
 end TauCeti.Manifold
 

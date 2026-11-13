@@ -57,11 +57,6 @@ smoothly varying segments interpolate broken geodesics through finitely many nea
 
 ## Main results
 
-* `TauCeti.Manifold.isLocalDiffeomorphOn_prodMk_proj_riemannianExp`,
-  `TauCeti.Manifold.injOn_prodMk_proj_riemannianExp`: `(x, v) ↦ (x, exp_x v)` is an injective
-  local diffeomorphism on the tube of normal balls over `W`.
-* `TauCeti.Manifold.isOpen_setOf_mem_riemannianExp_image_ball`: for open `W`, the pairs `(x, y)`
-  with `x ∈ W` and `y ∈ exp_x '' B(0, r)` form an open subset of `M × M`.
 * `TauCeti.Manifold.contMDiffOn_totalSpaceMk_riemannianLog`: the logarithm is jointly smooth in
   both points.
 * `TauCeti.Manifold.contMDiffAt_riemannianExp_smul_riemannianLog`,
@@ -101,61 +96,6 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {W : Set M} {r : ℝ}
-
-/-- On the tube of tangent vectors of norm less than `r` over a set `W` of points `q` at which the
-tangent ball of radius `r` lies in the domain of `exp_q` and `exp_q` is a local diffeomorphism on
-it, the map `(x, v) ↦ (x, exp_x v)` is a local diffeomorphism. -/
-theorem isLocalDiffeomorphOn_prodMk_proj_riemannianExp
-    (hsub : ∀ q ∈ W, Metric.ball 0 r ⊆ expDomain I M q)
-    (hloc : ∀ q ∈ W,
-      IsLocalDiffeomorphOn 𝓘(ℝ, TangentSpace I q) I ∞ (riemannianExp I M q) (Metric.ball 0 r)) :
-    IsLocalDiffeomorphOn I.tangent (I.prod I) ∞
-      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2))
-      {z | z.proj ∈ W ∧ ‖z.2‖ < r} := by
-  rintro ⟨⟨q, v⟩, hq, hv⟩
-  have hvr : v ∈ Metric.ball 0 r := mem_ball_zero_iff.2 hv
-  exact isLocalDiffeomorphAt_prodMk_proj_riemannianExp (hsub q hq hvr) (hloc q hq ⟨v, hvr⟩)
-
-omit [I.Boundaryless] [T2Space M] in
-/-- On the tube of tangent vectors of norm less than `r` over a set `W` of points `q` at which
-`exp_q` is injective on the tangent ball of radius `r`, the map `(x, v) ↦ (x, exp_x v)` is
-injective. -/
-theorem injOn_prodMk_proj_riemannianExp
-    (hW : ∀ q ∈ W, InjOn (riemannianExp I M q) (Metric.ball 0 r)) :
-    InjOn (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2))
-      {z | z.proj ∈ W ∧ ‖z.2‖ < r} := by
-  rintro ⟨q, v⟩ ⟨hq, hv⟩ ⟨q', v'⟩ ⟨-, hv'⟩ h
-  obtain ⟨rfl, h⟩ := Prod.mk.inj h
-  exact congrArg (TotalSpace.mk q) (hW q hq (mem_ball_zero_iff.2 hv) (mem_ball_zero_iff.2 hv') h)
-
-omit [I.Boundaryless] [T2Space M] in
-/-- The image of the tube of tangent vectors of norm less than `r` over `W` under
-`(x, v) ↦ (x, exp_x v)` consists of the pairs `(x, y)` with `x ∈ W` and `y ∈ exp_x '' B(0, r)`. -/
-theorem image_prodMk_proj_riemannianExp_setOf_norm_lt :
-    (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) ''
-        {z | z.proj ∈ W ∧ ‖z.2‖ < r} =
-      {x : M × M | x.1 ∈ W ∧ x.2 ∈ riemannianExp I M x.1 '' Metric.ball 0 r} := by
-  ext ⟨x, y⟩
-  constructor
-  · rintro ⟨⟨q, v⟩, ⟨hq, hv⟩, h⟩
-    obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
-    exact ⟨hq, v, mem_ball_zero_iff.2 hv, rfl⟩
-  · rintro ⟨hx, v, hv, hy⟩
-    exact ⟨⟨x, v⟩, ⟨hx, mem_ball_zero_iff.1 hv⟩, Prod.ext rfl hy⟩
-
-/-- For an open set `W` of points `q` at which the tangent ball of radius `r` lies in the domain of
-`exp_q` and `exp_q` is a local diffeomorphism on it, the pairs `(x, y)` with `x ∈ W` and
-`y ∈ exp_x '' B(0, r)` form an open subset of `M × M`. -/
-theorem isOpen_setOf_mem_riemannianExp_image_ball (hWo : IsOpen W)
-    (hsub : ∀ q ∈ W, Metric.ball 0 r ⊆ expDomain I M q)
-    (hloc : ∀ q ∈ W,
-      IsLocalDiffeomorphOn 𝓘(ℝ, TangentSpace I q) I ∞ (riemannianExp I M q) (Metric.ball 0 r)) :
-    IsOpen {x : M × M | x.1 ∈ W ∧ x.2 ∈ riemannianExp I M x.1 '' Metric.ball 0 r} := by
-  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-  rw [← image_prodMk_proj_riemannianExp_setOf_norm_lt]
-  exact (isLocalDiffeomorphOn_prodMk_proj_riemannianExp hsub hloc).isLocalHomeomorphOn.isOpen_image
-    (hWo.norm_lt_bundle r)
 
 /-- **The Riemannian logarithm is smooth in both points.** For an open set `W` of points at which
 the tangent ball of radius `r` is a normal domain, the map `(x, y) ↦ (x, log_x y)` to the tangent
