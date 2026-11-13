@@ -200,7 +200,7 @@ theorem productLift_mem (x : N) : (fun j ↦ f j x) ∈ productCarrier G := by
     funext fun j ↦ (LinearMap.pi_apply f x j).symm]
   rw [← DirectSum.sum_support_decompose H.piece x, map_sum]
   apply (productCarrier G).sum_mem
-  intro p hp
+  intro p _
   apply productPiece_le_productCarrier G (p + r)
   exact (mem_productPiece_iff G (p + r) _).mpr fun j ↦
     (hf j).map_mem (DirectSum.decompose H.piece x p).2
@@ -253,7 +253,7 @@ theorem productCarrier_smul_mem (a : S) {x : ∀ j, M j} (hx : x ∈ productCarr
     rw [DirectSum.coeLinearMap_of]
     rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_smul]
     apply (productCarrier G).sum_mem
-    intro q hq
+    intro q _
     apply productPiece_le_productCarrier G (q + p)
     exact (mem_productPiece_iff G (q + p) _).mpr fun j ↦
       SetLike.GradedSMul.smul_mem (B := (G j).piece)

@@ -192,7 +192,7 @@ theorem sin_two_theta_le_of_mem (hT : T.IsSymmetric) (hH : H.IsSymmetric)
         + ‖z‖ ^ 2 * RCLike.re ⟪y, H y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, H z⟫_𝕜
         + (‖z‖ ^ 2 - ‖y‖ ^ 2) * RCLike.re ⟪y, H z⟫_𝕜) = 0 := by
     rw [key, mul_zero]
-  have hstep1 : 4 * (‖y‖ * ‖z‖)
+  have _ : 4 * (‖y‖ * ‖z‖)
       * (‖z‖ ^ 2 * RCLike.re ⟪y, T y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, T z⟫_𝕜)
       ≤ ε * (4 * (‖y‖ ^ 2 * ‖z‖ ^ 2)) := by
     linarith [(abs_le.mp hb1).2, (abs_le.mp hb2).1, key4]
@@ -237,7 +237,7 @@ theorem sin_two_arccos_le (hT : T.IsSymmetric) (hH : H.IsSymmetric)
     {x : E} (hx : ‖x‖ = 1) {μ : ℝ} (hμ : T x + H x = (μ : 𝕜) • x) :
     (b - a) * Real.sin (2 * Real.arccos ‖U.starProjection x‖) ≤ 2 * ε := by
   have hmain := hT.sin_two_theta_le hH hUinv hb ha hε hx hμ
-  set y := U.starProjection x with hy
+  set y := U.starProjection x
   set z := x - y with hzdef
   have hyU : y ∈ U := U.starProjection_apply_mem x
   have hzU : z ∈ Uᗮ := U.sub_starProjection_mem_orthogonal x

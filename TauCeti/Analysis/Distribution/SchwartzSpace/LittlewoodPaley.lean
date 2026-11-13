@@ -159,7 +159,6 @@ private lemma norm_iteratedFDeriv_littlewoodPaleyPiece_le (hm : ContDiffOn ℝ �
     ‖iteratedFDeriv ℝ k (φ.littlewoodPaleyPiece hm j) ξ‖ ≤
       (∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i * (2 / φ.rIn) ^ (k - i)) * A /
         (2 ^ j) ^ k := by
-  have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos _
   have hC : 0 ≤ (∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i * (2 / φ.rIn) ^ (k - i)) *
       A / (2 ^ j) ^ k := by
     have := φ.rIn_pos

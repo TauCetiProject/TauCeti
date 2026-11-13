@@ -79,7 +79,6 @@ theorem exists_not_dvd_holomorphicCoordinateGerm_pow (hx : x ∈ e.source)
   obtain ⟨U, hxU, s, hs⟩ := S.exists_germ_eq f
   let F : X → ℂ := Function.extend Subtype.val s (fun _ => 0)
   let A : ℂ → ℂ := F ∘ e.symm
-  have hF (y : U) : F y = s y := Subtype.val_injective.extend_apply _ _ y
   have hA : AnalyticAt ℂ A (e x) :=
     e.analyticAt_holomorphicSection_extend_comp_symm he x hx U hxU s
   have hfinite : analyticOrderAt A (e x) ≠ ⊤ :=

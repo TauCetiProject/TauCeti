@@ -108,7 +108,7 @@ variable {n : ℕ} [NeZero n]
 /-- The **loop operation** of `n` darts `w`: the product of the `w i`-arrow coordinates of the
 `n` inputs, times the volume class at the head of `w 0`. -/
 noncomputable def zigzagLoopOperation (w : Fin n → G.Dart) :
-    MultilinearMap k (fun _ : Fin n ↦ nonisolatedZigzagQuotient k G)
+    MultilinearMap (RingHom.id k) (fun _ : Fin n ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) :=
   ((MultilinearMap.mkPiAlgebra k (Fin n) k).compLinearMap
     fun i ↦ (zigzagBasis k G hns).coord (.inr (.inl (w i)))).smulRight
@@ -233,10 +233,10 @@ theorem zigzagLoopOperation_cocycle {w : Fin n → G.Dart}
 combination of loop operations with coefficients `c` in arity `n` when `3 ≤ n`, and zero
 otherwise. -/
 private noncomputable def loopOps (c : (Fin n → G.Dart) →₀ k) (m : ℕ) :
-    MultilinearMap k (fun _ : Fin m ↦ nonisolatedZigzagQuotient k G)
+    MultilinearMap (RingHom.id k) (fun _ : Fin m ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) :=
   if h₂ : m = 2 then
-    ((MultilinearMap.ofSubsingletonₗ k k (nonisolatedZigzagQuotient k G)
+    ((MultilinearMap.ofSubsingletonₗ k (RingHom.id k) (nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) (0 : Fin 1) ∘ₗ
         LinearMap.mul k (nonisolatedZigzagQuotient k G)).uncurryLeft).domDomCongr
       (finCongr h₂.symm)
@@ -340,7 +340,7 @@ private theorem stasheffTerm_loopOps_self {p t : ℕ} (h : p + 1 + t ≠ 2) (e :
     (x : ℕ → nonisolatedZigzagQuotient k G) :
     stasheffTerm (loopOps k G hns c) e x p n t = 0 := by
   rcases eq_or_ne n 2 with hn | hn
-  · exact stasheffTerm_eq_zero_of_outer_eq_zero _ _ _ (loopOps_eq_zero c h fun h' ↦ by omega)
+  · exact stasheffTerm_eq_zero_of_outer_eq_zero _ _ _ (loopOps_eq_zero c h fun _ ↦ by omega)
   rw [stasheffTerm_def, evalNat_def,
     loopOps_eq_zero_of_coord c h _ ⟨p, Nat.lt_add_right t (Nat.lt_succ_self p)⟩ fun d ↦ ?_,
     smul_zero]

@@ -17,9 +17,9 @@ import TauCeti.NumberTheory.QuadraticForm.Global.Rank.Three
 /-!
 # Realization of admissible global invariant systems
 
-Every admissible system of local invariants over a number field `K` is the system of a regular
-global quadratic form: a rank `n ≥ 1`, a global discriminant, finite Hasse signs and real
-positive indices satisfying the admissibility conditions are realized by a regular form on
+Every admissible system of local invariants over a number field `K` in any universe is the system
+of a regular global quadratic form: a rank `n ≥ 1`, a global discriminant, finite Hasse signs and
+real positive indices satisfying the admissibility conditions are realized by a regular form on
 `Kⁿ`. Conversely the system of a regular form of positive rank is admissible, so admissibility
 characterizes the systems that arise from forms. Such a form is isometric, at every finite and
 real place, to any prescribed family of local forms realizing the system.
@@ -57,7 +57,7 @@ open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap TauCeti
 
 namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
 
-variable {K : Type} [Field K] [NumberField K]
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- The system complementary to the line `⟨c⟩` in a system `I` whose discriminant is the class
 of `d`: rank `n - 1`, discriminant the class of `c d`, finite Hasse signs `s_v · (c, c d)_v`, and

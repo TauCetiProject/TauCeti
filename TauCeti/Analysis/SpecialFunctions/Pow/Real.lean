@@ -48,6 +48,8 @@ For a positive base `a`, the real powers `(a ^ (n + 1)) ^ B` and `(a ^ n) ^ C` m
 a geometric series.
 For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` costs at most the
 factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` at nearby indices.
+For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`, the form of the
+off-diagonal decay `2 ^ (-M |j - k|)` between dyadic indices `j` and `k`.
 
 A power `x ^ y` of a nonnegative real with exponent `0 ≤ y ≤ 1` is at most `1 + x`, which bounds
 the fractional powers `T ^ (α / 2)` and `√T` of a time horizon uniformly by `1 + T`.
@@ -100,6 +102,11 @@ with the corresponding integral of `q`-th powers.
   for `0 < a`.
 * `Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul`: `b ^ (s x) ≤ b ^ (|s| L) b ^ (s y)` when `1 ≤ b`
   and `|x - y| ≤ L`.
+* `Real.pow_div_pow_pow_eq_rpow_of_le`: `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))` for `0 < x`
+  and `a ≤ b`.
+* `Real.rpow_mul_natCast_le_of_mem_Ico`, `Real.rpow_mul_natCast_le_of_mem_Ico'`:
+  `b ^ (s k) ≤ b ^ (|s| L) b ^ (s j)` and `b ^ (s j) ≤ b ^ (|s| L) b ^ (s k)` when `1 ≤ b` and
+  the natural number `k` lies in the window `j - L ≤ k < j + L`.
 * `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
@@ -125,6 +132,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
   `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
   x ^ 2` into a pointwise power bound on `x`.
+* `Finsupp.prod_pow_rpow`: `(μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k` for `c`
+  nonnegative on `μ.support`.
 -/
 
 public section
@@ -227,6 +236,22 @@ theorem rpow_mul_le_rpow_abs_mul_mul_rpow_mul {b : ℝ} (hb : 1 ≤ b) (s : ℝ)
     rw [abs_mul]
     exact mul_le_mul_of_nonneg_left h (abs_nonneg s)
   linarith
+
+/-- For `1 ≤ b` and a natural number `k` in the window `j - L ≤ k < j + L`, moving the exponent
+of `b ^ (s j)` to `s k` costs at most the factor `b ^ (|s| L)`. -/
+theorem rpow_mul_natCast_le_of_mem_Ico {b : ℝ} (hb : 1 ≤ b) (s : ℝ) {j k L : ℕ}
+    (hk : k ∈ Finset.Ico (j - L) (j + L)) : b ^ (s * k) ≤ b ^ (|s| * L) * b ^ (s * j) := by
+  rw [Finset.mem_Ico] at hk
+  refine rpow_mul_le_rpow_abs_mul_mul_rpow_mul hb s (abs_sub_le_iff.2 ⟨?_, ?_⟩)
+  all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
+
+/-- For `1 ≤ b` and a natural number `k` in the window `j - L ≤ k < j + L`, moving the exponent
+of `b ^ (s k)` to `s j` costs at most the factor `b ^ (|s| L)`. -/
+theorem rpow_mul_natCast_le_of_mem_Ico' {b : ℝ} (hb : 1 ≤ b) (s : ℝ) {j k L : ℕ}
+    (hk : k ∈ Finset.Ico (j - L) (j + L)) : b ^ (s * j) ≤ b ^ (|s| * L) * b ^ (s * k) := by
+  rw [Finset.mem_Ico] at hk
+  refine rpow_mul_le_rpow_abs_mul_mul_rpow_mul hb s (abs_sub_le_iff.2 ⟨?_, ?_⟩)
+  all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
 
 /-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
 `x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/
@@ -349,6 +374,14 @@ theorem rpow_sub_mul_mul_rpow_mul {x : ℝ} (hx : 0 < x) (s a t : ℝ) :
     x ^ ((s - a) * t) * x ^ (a * t) = x ^ (s * t) := by
   rw [← rpow_add hx, ← add_mul, sub_add_cancel]
 
+/-- For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`. -/
+theorem pow_div_pow_pow_eq_rpow_of_le {x : ℝ} (hx : 0 < x) {a b : ℕ} (hab : a ≤ b) (M : ℕ) :
+    (x ^ a / x ^ b) ^ M = x ^ (-(M * |(b : ℝ) - a|)) := by
+  rw [abs_of_nonneg (sub_nonneg.2 (by exact_mod_cast hab)), ← rpow_natCast _ M, ← rpow_natCast x a,
+    ← rpow_natCast x b, ← rpow_sub hx, ← rpow_mul hx.le]
+  congr 1
+  ring
+
 /-- If `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q` with `a, b ≥ 0`, `t > 0` and `q ≥ 0`, then
 `a ^ q ≤ K ^ q * c * t`. -/
 theorem rpow_le_mul_of_mul_le_of_inv_le {a b K c t q : ℝ} (hq : 0 ≤ q)
@@ -411,6 +444,17 @@ theorem Real.rpow_finsum_of_pos {α : Type*} {a : ℝ} (ha : 0 < a) {f : α → 
     (hf : f.HasFiniteSupport) : a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i := by
   rw [finsum_eq_sum f hf, finprod_eq_prod_of_mulSupport_subset _ (s := hf.toFinset)
     fun i hi ↦ hf.mem_toFinset.mpr fun h ↦ hi (by simp [h]), Real.rpow_sum_of_pos ha]
+
+/-- Raising a finitely supported product of natural powers `∏ᵢ cᵢ ^ μᵢ` of nonnegative reals to a
+real exponent `a` raises each base `cᵢ` to `a`. -/
+theorem Finsupp.prod_pow_rpow {σ : Type*} (μ : σ →₀ ℕ) {c : σ → ℝ}
+    (hc : ∀ i ∈ μ.support, 0 ≤ c i) (a : ℝ) :
+    (μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k := by
+  rw [Finsupp.prod, Finsupp.prod,
+    ← Real.finsetProd_rpow _ _ fun i hi ↦ pow_nonneg (hc i hi) _]
+  refine Finset.prod_congr rfl fun i hi ↦ ?_
+  rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul (hc i hi),
+    ← Real.rpow_mul (hc i hi), mul_comm]
 
 /-! ### Two-sided exponential decay -/
 

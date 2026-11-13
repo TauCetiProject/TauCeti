@@ -27,7 +27,8 @@ homology for a connected boundary. The idempotent `I(s)` of a set `s` of pairs h
 and the unit of the summand with `k` strands is the sum of the `I(s)` over the sets of `k` pairs
 (`TauCeti.StrandsAlgebra.matchedSummandOne`). With this unit each summand is an `R`-algebra, and
 over a ring of characteristic two the restricted differential makes it an ungraded differential
-algebra.
+algebra. As an `R`-algebra the matched subalgebra is the product of its summands, compatibly with
+the differentials.
 
 ## Main definitions
 
@@ -40,6 +41,8 @@ algebra.
   `s` of `k` pairs.
 * `TauCeti.StrandsAlgebra.matchedSummandDifferential R M k`: the differential restricted to the
   matched summand.
+* `TauCeti.StrandsAlgebra.matchedSummandAlgEquiv R M`: as an `R`-algebra, the matched subalgebra
+  is the product of its summands.
 
 ## Main results
 
@@ -54,6 +57,8 @@ algebra.
   of its summands.
 * `TauCeti.StrandsAlgebra.isUngradedDGAlgebra_matchedSummandDifferential`: over a ring of
   characteristic two, each matched summand is an ungraded differential algebra.
+* `TauCeti.StrandsAlgebra.matchedSummandAlgEquiv_matchedDifferential`: the decomposition of the
+  matched subalgebra into its summands intertwines the differentials.
 
 ## References
 
@@ -502,6 +507,94 @@ theorem isUngradedDGAlgebra_matchedSummandDifferential [DecidableEq β] {R : Typ
   map_map a := Subtype.ext (by simp [differential_differential])
 
 end Differential
+
+/-! ### The occupancy decomposition of the matched subalgebra -/
+
+section AlgEquiv
+
+variable {M : α → β} [DecidableEq β]
+
+/-- Left multiplication by an element with `k` strands sees only the summand with `k` strands of
+a family of elements, one with each number of strands. -/
+theorem mul_sum_eq_mul_of_mem_strandSummand {k : Fin (Fintype.card α + 1)}
+    {a : StrandsAlgebra R α} (ha : a ∈ strandSummand R α k)
+    {y : Fin (Fintype.card α + 1) → StrandsAlgebra R α}
+    (hy : ∀ j : Fin (Fintype.card α + 1), y j ∈ strandSummand R α j) :
+    a * ∑ j, y j = a * y k := by
+  rw [mul_sum]
+  exact sum_eq_single k (fun j _ hj ↦ mul_eq_zero_of_mem_strandSummand ha (hy j)
+    (Fin.val_injective.ne hj.symm)) (by simp)
+
+/-- An element of the matched subalgebra is the sum of its parts with each number of strands. -/
+theorem sum_matchedSummandOne_mul {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M) :
+    ∑ k : Fin (Fintype.card α + 1), matchedSummandOne R M k * x = x := by
+  rw [Fin.sum_univ_eq_sum_range (fun k ↦ matchedSummandOne R M k * x), ← sum_mul,
+    sum_matchedSummandOne, matchedOne_mul_of_mem_matchedSubalgebra hx]
+
+variable (R M) in
+/-- **The occupancy decomposition of the matched subalgebra.** As an `R`-algebra, the matched
+subalgebra is the product of its summands with `k ≤ Fintype.card α` strands; the component with `k`
+strands of `x` is `TauCeti.StrandsAlgebra.matchedSummandOne R M k * x`. For the matching of a
+pointed matched circle `Z` this is the decomposition `A(Z) = ⊕ᵢ A(Z, i)` of Lipshitz, Ozsváth and
+Thurston as a product of algebras. Its compatibility with the differential is
+`TauCeti.StrandsAlgebra.matchedSummandAlgEquiv_matchedDifferential`. -/
+def matchedSummandAlgEquiv :
+    matchedSubalgebra R M ≃ₐ[R] Π k : Fin (Fintype.card α + 1), matchedSummand R M k where
+  toFun x k := ⟨matchedSummandOne R M k * x, matchedSummandOne_mul_mem x.2⟩
+  invFun y := ⟨∑ k, (y k : StrandsAlgebra R α),
+    sum_mem fun k _ ↦ matchedSummand_le_matchedSubalgebra (k : ℕ) (y k).2⟩
+  left_inv x := Subtype.ext (sum_matchedSummandOne_mul x.2)
+  right_inv y := funext fun k ↦ Subtype.ext <| by
+    -- `dsimp only` projects the values out of the anonymous constructors above.
+    dsimp only
+    rw [mul_sum_eq_mul_of_mem_strandSummand (matchedSummandOne_mem_matchedSummand M k).2
+      fun j ↦ (y j).2.2, matchedSummandOne_mul_of_mem (y k).2]
+  map_mul' x y := funext fun k ↦ Subtype.ext <| by
+    -- Only the part of `y` with `k` strands contributes to `(e_k x) y`.
+    dsimp only
+    rw [Pi.mul_apply, MulMemClass.coe_mul, MulMemClass.coe_mul]
+    have h := mul_sum_eq_mul_of_mem_strandSummand (matchedSummandOne_mul_mem (k := k) x.2).2
+      (y := fun j ↦ matchedSummandOne R M j * y) fun j ↦ (matchedSummandOne_mul_mem y.2).2
+    rw [sum_matchedSummandOne_mul y.2] at h
+    rw [← mul_assoc, h]
+  map_add' x y := funext fun k ↦ Subtype.ext (mul_add _ _ _)
+  commutes' r := funext fun k ↦ Subtype.ext <| by
+    simp [Algebra.algebraMap_eq_smul_one,
+      mul_matchedOne_of_mem_matchedSubalgebra (matchedSummandOne_mem_matchedSummand M k).1]
+
+/-- The component of `x` with `k` strands is `matchedSummandOne R M k * x`. -/
+@[simp]
+theorem coe_matchedSummandAlgEquiv_apply (x : matchedSubalgebra R M)
+    (k : Fin (Fintype.card α + 1)) :
+    (matchedSummandAlgEquiv R M x k : StrandsAlgebra R α) = matchedSummandOne R M k * x :=
+  (rfl)
+
+/-- An element of the matched subalgebra is the sum of its components. -/
+@[simp]
+theorem coe_matchedSummandAlgEquiv_symm_apply
+    (y : Π k : Fin (Fintype.card α + 1), matchedSummand R M k) :
+    ((matchedSummandAlgEquiv R M).symm y : StrandsAlgebra R α) = ∑ k, (y k : StrandsAlgebra R α) :=
+  (rfl)
+
+/-- The occupancy decomposition intertwines the differential of the matched subalgebra with the
+differentials of its summands. -/
+theorem matchedSummandAlgEquiv_matchedDifferential (x : matchedSubalgebra R M)
+    (k : Fin (Fintype.card α + 1)) :
+    matchedSummandAlgEquiv R M (matchedDifferential R M x) k =
+      matchedSummandDifferential R M k (matchedSummandAlgEquiv R M x k) := by
+  refine Subtype.ext ?_
+  rw [coe_matchedSummandAlgEquiv_apply, coe_matchedSummandDifferential,
+    coe_matchedSummandAlgEquiv_apply, coe_matchedDifferential]
+  -- The differential of `x` is the sum of the differentials of its parts, and each of these keeps
+  -- its number of strands.
+  conv_lhs => rw [← sum_matchedSummandOne_mul x.2, map_sum]
+  rw [mul_sum_eq_mul_of_mem_strandSummand (matchedSummandOne_mem_matchedSummand M k).2
+      (y := fun j ↦ differential R α (matchedSummandOne R M j * x))
+      fun j ↦ (differential_mem_matchedSummand (matchedSummandOne_mul_mem x.2)).2,
+    matchedSummandOne_mul_of_mem
+      (differential_mem_matchedSummand (matchedSummandOne_mul_mem x.2))]
+
+end AlgEquiv
 
 end StrandsAlgebra
 

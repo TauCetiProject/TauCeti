@@ -182,11 +182,20 @@ theorem geodesicSegment_subset_setOf_dist_le_dist {p q z w : ℍ}
         ((mem_closure_leftHalfPlane_perpBisector_iff hpq z).mpr hz)
         ((mem_closure_leftHalfPlane_perpBisector_iff hpq w).mpr hw) hu
 
-/-- The two centres lie strictly on opposite sides of their perpendicular bisector, whichever
-orientation of it is chosen: no open half-plane bounded by the bisector contains both. -/
-theorem notMem_leftHalfPlane_of_range_eq_perpBisector {p q : ℍ} {k : PSL(2, ℝ)} (hpq : p ≠ q)
+/-- No open half-plane bounded by the perpendicular bisector of two centres contains both
+centres, whichever orientation of the bisector is chosen. For distinct centres this says that
+they lie strictly on opposite sides of the bisector; at coincident centres the chosen line passes
+through the common centre. -/
+theorem notMem_leftHalfPlane_of_range_eq_perpBisector {p q : ℍ} {k : PSL(2, ℝ)}
     (hk : range (geodesicLine (perpBisector p q)) = range (geodesicLine k))
     (hp : p ∈ leftHalfPlane k) : q ∉ leftHalfPlane k := by
+  rcases eq_or_ne p q with rfl | hpq
+  · -- The arbitrary line through `p` chosen at coincident centres contains `p`.
+    refine absurd ?_ (disjoint_left.mp (disjoint_leftHalfPlane_range_geodesicLine k) hp)
+    rw [← hk]
+    refine ⟨0, ?_⟩
+    rw [geodesicLine_zero, perpBisector_def, dist_self, zero_div, mul_assoc, mul_smul]
+    simp [← geodesicLine_zero]
   rcases exists_eq_mul_dilation_or_eq_mul_pslS_mul_dilation_of_range_eq hk with
     ⟨s, rfl⟩ | ⟨s, rfl⟩
   · rw [leftHalfPlane_mul_dilation, mem_leftHalfPlane_perpBisector_iff hpq, dist_self]

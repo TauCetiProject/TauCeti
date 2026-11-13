@@ -9,21 +9,23 @@ public import TauCeti.Combinatorics.Graph.Serre.Convex
 public import TauCeti.Combinatorics.Graph.Serre.Dist
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.Combinatorics.Quiver.Cast
+public import Mathlib.Data.ZMod.Basic
 
 /-!
 # Automorphisms of Serre graphs
 
 An automorphism of a Serre graph is a pair of bijections of its vertices and darts commuting with
 the source and reversal maps. Automorphisms form a group, `SerreGraph.Aut Γ`, acting on the
-vertices and on the darts. A group action on a Serre graph is then a homomorphism into this
-group, as in Serre's *Trees*.
+vertices, on the darts and on the geometric edges. A group action on a Serre graph is then a
+homomorphism into this group, as in Serre's *Trees*.
 
 Automorphisms preserve reduced paths and distances. In an acyclic graph an automorphism fixing
 two vertices fixes every dart of the reduced path between them, so the fixed vertices of an
 automorphism form a convex set.
 
 The segment carries the automorphism exchanging its two vertices; it maps the edge to its
-reverse, which is the kind of inversion excluded from actions on trees.
+reverse, which is the kind of inversion excluded from actions on trees. It is an involution, so
+the group of order two acts on the segment, `SerreGraph.segmentSwapHom`.
 
 ## References
 
@@ -109,6 +111,24 @@ theorem smul_dart_def (φ : Γ.Aut) (e : Γ.E) : φ • e = φ.equivE e := (rfl)
 @[simp] theorem tgt_smul (φ : Γ.Aut) (e : Γ.E) : Γ.tgt (φ • e) = φ • Γ.tgt e := by
   rw [tgt, rev_smul, src_smul, src_rev]
 
+/-- Automorphisms act on geometric edges. -/
+instance : SMul Γ.Aut Γ.GeomEdge where
+  smul φ := GeomEdge.lift Γ (fun e => Γ.toGeomEdge (φ • e)) fun e => by
+    rw [← rev_smul, toGeomEdge_rev]
+
+@[simp] theorem smul_toGeomEdge (φ : Γ.Aut) (e : Γ.E) :
+    φ • Γ.toGeomEdge e = Γ.toGeomEdge (φ • e) :=
+  GeomEdge.lift_toGeomEdge Γ _ _ e
+
+/-- Automorphisms act on geometric edges. -/
+instance : MulAction Γ.Aut Γ.GeomEdge where
+  one_smul x := by
+    obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective x
+    rw [smul_toGeomEdge, one_smul]
+  mul_smul φ ψ x := by
+    obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective x
+    simp only [smul_toGeomEdge, mul_smul]
+
 /-- The graph morphism underlying an automorphism. -/
 def toHom (φ : Γ.Aut) : Γ.Hom Γ where
   mapV v := φ • v
@@ -176,6 +196,43 @@ def segmentSwap : segment.Aut where
 theorem segmentSwap_smul (e : segment.E) : segmentSwap • e = segment.rev e := by
   rw [Aut.smul_dart_def]
   rfl
+
+/-- Exchanging the vertices of the segment maps the source of a dart to its target. -/
+theorem segmentSwap_smul_src (e : segment.E) : segmentSwap • segment.src e = segment.tgt e := by
+  rw [← Aut.src_smul, segmentSwap_smul, src_rev]
+
+/-- Exchanging the vertices of the segment maps the target of a dart to its source. -/
+theorem segmentSwap_smul_tgt (e : segment.E) : segmentSwap • segment.tgt e = segment.src e := by
+  rw [← Aut.tgt_smul, segmentSwap_smul, tgt_rev]
+
+/-- The exchange automorphism of the segment is an involution. -/
+@[simp] theorem segmentSwap_mul_self : segmentSwap * segmentSwap = 1 := by
+  ext x
+  · obtain ⟨e, rfl⟩ := segment_src_surjective x
+    rw [← Aut.smul_vertex_def, ← Aut.smul_vertex_def, mul_smul, one_smul, segmentSwap_smul_src,
+      segmentSwap_smul_tgt]
+  · rw [← Aut.smul_dart_def, ← Aut.smul_dart_def, mul_smul, one_smul, segmentSwap_smul,
+      segmentSwap_smul, rev_rev]
+
+private theorem zmultiplesHom_segmentSwap_two :
+    zmultiplesHom (Additive segment.Aut) (Additive.ofMul segmentSwap) 2 = 0 := by
+  rw [zmultiplesHom_apply, two_zsmul, ← ofMul_mul, segmentSwap_mul_self, ofMul_one]
+
+/-- The action of the group of order two on the segment in which the generator exchanges the two
+vertices. -/
+def segmentSwapHom : Multiplicative (ZMod 2) →* segment.Aut :=
+  AddMonoidHom.toMultiplicativeLeft (ZMod.lift 2 ⟨_, zmultiplesHom_segmentSwap_two⟩)
+
+@[simp] theorem segmentSwapHom_ofAdd_one :
+    segmentSwapHom (Multiplicative.ofAdd 1) = segmentSwap := by
+  have h := ZMod.lift_coe 2 ⟨_, zmultiplesHom_segmentSwap_two⟩ 1
+  rw [Int.cast_one] at h
+  simpa [segmentSwapHom] using congrArg Additive.toMul h
+
+/-- The generator of the group of order two inverts the edge of the segment. -/
+theorem segmentSwapHom_ofAdd_one_smul (e : segment.E) :
+    segmentSwapHom (Multiplicative.ofAdd 1) • e = segment.rev e := by
+  rw [segmentSwapHom_ofAdd_one, segmentSwap_smul]
 
 end SerreGraph
 end TauCeti

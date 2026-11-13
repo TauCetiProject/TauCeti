@@ -73,6 +73,8 @@ compositions and adjoints classical.
   remainders.
 * `TauCeti.Symbol.exists_asymptoticSum`: every sequence of symbols of orders decreasing to `-∞`
   has an asymptotic sum.
+* `TauCeti.Symbol.exists_forall_of_exists_add`: successive corrections of orders `μ - N` that
+  improve a symbol step by step can be summed to one symbol with every improved property.
 * `TauCeti.ClassicalSymbol.exists_term_eq`: every sequence of homogeneous terms of degrees `m - j`
   is the expansion of a classical symbol of order `m`.
 * `TauCeti.ClassicalSymbol.termsEquiv`: the classical symbols of order `m` modulo the smoothing
@@ -199,7 +201,7 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
     rw [Function.comp_apply, seminormFamily_apply] at h
     exact (Real.le_norm_self _).trans h
   -- The dilated cutoffs satisfy the estimates of order `1` with constants `C t⁻¹`.
-  choose C hC0 hC using fun s s' : List (Fin n) =>
+  choose C _ hC using fun s s' : List (Fin n) =>
     (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).exists_norm_mixedDeriv_cutoff_smul_le χ
       (isCompact_closedBall (0 : CoordinateSpace n) j) s s'
   filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop ((β.sublists'.revzip.map fun s' =>
@@ -571,7 +573,7 @@ private theorem exists_continuous_borelSum_sub (χ : FrequencyCutoff (Coordinate
   rw [hsub]
   refine (norm_mixedDeriv_borelSum_sub_sub_le χ ht (fun j => a j τ) (fun j => a j τ₀) hNj₂ α β x ξ
     (htail₂ τ) (htail₂ τ₀)).trans ?_
-  have hfin : ∑ j ∈ Finset.range N, ε' * w + ∑ j ∈ Finset.Ico N j₂, ε' * w ≤ ε / 4 * w := by
+  have hfin : ∑ _ ∈ Finset.range N, ε' * w + ∑ _ ∈ Finset.Ico N j₂, ε' * w ≤ ε / 4 * w := by
     have hj : (j₂ : ℝ) * ε' ≤ ε / 4 := by
       rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by norm_num)]
       nlinarith
@@ -579,7 +581,7 @@ private theorem exists_continuous_borelSum_sub (χ : FrequencyCutoff (Coordinate
       nsmul_eq_mul, Nat.cast_sub hNj₂]
     calc (N : ℝ) * (ε' * w) + ((j₂ : ℝ) - N) * (ε' * w) = j₂ * ε' * w := by ring
       _ ≤ ε / 4 * w := mul_le_mul_of_nonneg_right hj hw0
-  calc _ ≤ ∑ j ∈ Finset.range N, ε' * w + ∑ j ∈ Finset.Ico N j₂, ε' * w + 4 * (ε / 16) * w := by
+  calc _ ≤ ∑ _ ∈ Finset.range N, ε' * w + ∑ _ ∈ Finset.Ico N j₂, ε' * w + 4 * (ε / 16) * w := by
         gcongr with j hj j hj
         · rw [← hE j τ, ← hE j τ₀]
           exact hτE j hj x hx ξ
@@ -643,6 +645,38 @@ theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto 
   refine ⟨b (), fun N => ?_⟩
   obtain ⟨r, -, hr⟩ := hb N
   exact ⟨r (), hr ()⟩
+
+/-- **Asymptotic summation of successive corrections.** Let `P N` be properties of symbols of
+order `μ` which `b₀` has for `N = 0`, which are stable under changes by symbols of order `μ - N`,
+and which can be improved from `N` to `N + 1` by such a change. Then one symbol has all of them. -/
+theorem exists_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → Prop)
+    {b₀ : Symbol n V W μ} (h₀ : P 0 b₀)
+    (hcongr : ∀ (N : ℕ) b b' (d : Symbol n V W (μ - N)), P N b →
+      b'.coefficient = b.coefficient + d.coefficient → P N b')
+    (hsucc : ∀ (N : ℕ) b, P N b →
+      ∃ d : Symbol n V W (μ - N), P (N + 1) (b + inclusion (by simp) d)) :
+    ∃ b, ∀ N, P N b := by
+  choose d hd using hsucc
+  -- The successive approximations `s N`, with `P N (s N)`, and the corrections `c N` between them.
+  let s : ∀ N, {b : Symbol n V W μ // P N b} := fun N ↦ Nat.rec ⟨b₀, h₀⟩
+    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2), hd N b.1 b.2⟩) N
+  let c : ∀ N : ℕ, Symbol n V W (μ - N) := fun N ↦ d N (s N).1 (s N).2
+  have hs (N : ℕ) :
+      (s N).1.coefficient = b₀.coefficient + ∑ j ∈ Finset.range N, (c j).coefficient := by
+    induction N with
+    | zero => simp [s]
+    | succ N ih =>
+      rw [Finset.sum_range_succ, ← add_assoc, ← ih]
+      simp [s, c]
+  have hm : Antitone fun j : ℕ ↦ μ - j := fun _ _ hij ↦ sub_le_sub_left (Nat.cast_le.2 hij) μ
+  have hm' : Tendsto (fun j : ℕ ↦ μ - j) atTop atBot :=
+    tendsto_atBot_add_const_left atTop μ <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
+  obtain ⟨B, hB⟩ := exists_asymptoticSum hm hm' c
+  refine ⟨b₀ + inclusion (by simp) B, fun N ↦ ?_⟩
+  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hB N
+  refine hcongr N (s N).1 _ r (s N).2 ?_
+  rw [coefficient_add, coefficient_inclusion, ← hr, hs]
+  abel
 
 end Symbol
 

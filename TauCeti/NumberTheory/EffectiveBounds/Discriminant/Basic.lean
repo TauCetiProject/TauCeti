@@ -19,8 +19,8 @@ from above:
 
 `|d_K| ≤ |disc b|`  for every `ℚ`-basis `b` of `𝒪_K`-integers.
 
-This is the elementary upper half of the effective-bounds roadmap (the deep content is the
-matching Minkowski lower bound).
+This is the elementary upper bound; the deeper bound in the other direction is Minkowski's lower
+bound (Mathlib's `NumberField.abs_discr_ge`).
 
 ## Main results
 
@@ -29,7 +29,7 @@ matching Minkowski lower bound).
 
 The remaining declarations are its consumer forms, converting the rational basis-discriminant
 bound into the natural-number and integer-absolute-value shapes that concrete trace-form
-computations (for example the roadmap's `ℚ(i)` worked example) carry:
+computations (for example the discriminant of the basis `{1, i}` of `ℚ(i)`) carry:
 `abs_discr_le_of_basis_isIntegral_of_abs_discr_le`,
 `natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int` and its `_of_natAbs_le`/`_eq_nat` variants,
 and `abs_discr_le_int_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le`.
@@ -37,8 +37,8 @@ and `abs_discr_le_int_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le`.
 The final section evaluates the bound on a quadratic square-root field: for `K = ℚ(x)` with
 `x² = a ∈ ℤ` and `x ∉ ℚ`, the `{1, x}` trace-form discriminant is `4·a`, giving the closed form
 `|d_K| ≤ 4·|a|` (`abs_discr_le_of_sq_intCast`, and its integer form
-`abs_discr_le_int_of_sq_intCast`). This is the tool the roadmap's quadratic worked examples need:
-`ℚ(i)` (`a = -1`) gives `|d_K| ≤ 4`, and `ℚ(√-5)` (`a = -5`) gives `|d_K| ≤ 20`.
+`abs_discr_le_int_of_sq_intCast`). For example, `ℚ(i)` (`a = -1`) gives `|d_K| ≤ 4`, and
+`ℚ(√-5)` (`a = -5`) gives `|d_K| ≤ 20`.
 
 ## Provenance
 

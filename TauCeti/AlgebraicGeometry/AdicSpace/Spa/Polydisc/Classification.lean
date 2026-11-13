@@ -571,7 +571,7 @@ theorem eq_discPoint_iff [IsAlgClosed K] (x : closedPolydisc 1 K) {a : K} (ha : 
       (∀ c : K, η.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) := by
     refine ⟨fun b _ ↦ ?_, fun c ↦ ?_, fun c ↦ ?_⟩ <;>
       simp only [η, discPoint_vle_iff, ← NNReal.coe_le_coe, hG, taylorHom_weightedC,
-        closedDiscGaussValuation_weightedC, coe_nnnorm, sub_self, norm_zero, max_eq_left hr₀.le]
+        closedDiscGaussValuation_weightedC, coe_nnNorm, sub_self, norm_zero, max_eq_left hr₀.le]
     · exact le_max_left _ _
   refine ⟨by rintro rfl; exact hη, fun ⟨hmin, hle, hge⟩ ↦ ?_⟩
   obtain ⟨hmin', hle', hge'⟩ := hη

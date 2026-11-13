@@ -132,7 +132,7 @@ theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   exact ae_pos_gammaMeasure 1 r
 
 /-- A random variable with an exponential law is almost surely positive. -/
-theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
     {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : ∀ᵐ ω ∂P, 0 < X ω :=
   (hX.ae_iff measurableSet_Ioi.mem).2 (ae_pos_expMeasure r)
 

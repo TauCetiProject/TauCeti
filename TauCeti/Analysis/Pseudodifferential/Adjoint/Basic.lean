@@ -16,12 +16,19 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
-# The adjoint of a quantization with compact spatial support
+# The adjoint of a quantization
 
-Let `a` be a symbol of order `m` on `ℝⁿ` (`TauCeti.Symbol n V W m`) with compact spatial support,
-with values in operators between complex Hilbert spaces `V` and `W`. Its left quantization
+Let `a` be a symbol of order `m` on `ℝⁿ` (`TauCeti.Symbol n V W m`) whose estimates hold uniformly
+in the position (`TauCeti.Symbol.IsUniform`), with values in operators between complex Hilbert
+spaces `V` and `W`. Its left quantization
 `Op(a) u (x) = ∫ exp(2πi ⟪ζ, x⟫) a(x, 2πζ) (𝓕 u ζ) dζ` (`TauCeti.quantizeSchwartzValue`) has a
-formal adjoint, which is again a left quantization: for the adjoint symbol
+formal adjoint on Schwartz space: the right quantization `Op_R(a†)` of the pointwise adjoint
+`a(y, ξ)†` (`TauCeti.Symbol.quantizeRightUniformCLM`), with
+
+`∫ ⟪Op(a) u, v⟫ = ∫ ⟪u, Op_R(a†) v⟫`
+
+for all Schwartz functions `u` and `v`. If `a` has moreover compact spatial support, the formal
+adjoint is again a left quantization: for the adjoint symbol
 
 `a*(y, ξ) = (∫ exp(2πi ⟪θ, y⟫) â(θ, ξ - 2πθ) dθ)†`,
 
@@ -39,10 +46,15 @@ support.
   position.
 * `TauCeti.Symbol.spatialDeriv_adjoint`, `TauCeti.Symbol.frequencyDeriv_adjoint`: derivatives
   commute with taking adjoint symbols, `∂ (a*) = (∂ a)*`.
+* `TauCeti.Symbol.integral_inner_quantizeUniformCLM`: for a uniform symbol `a`, `Op_R(a†)` is the
+  formal adjoint of `Op(a)`, and dually `TauCeti.Symbol.integral_inner_quantizeRightUniformCLM`:
+  `Op(c†)` is the formal adjoint of `Op_R(c)`.
 * `TauCeti.Symbol.integral_inner_quantizeSchwartzValue_adjoint`: the quantization of `a*` is the
   formal adjoint of the quantization of `a`, and
   `TauCeti.Symbol.coefficient_eq_adjoint_of_forall_integral_inner_eq`: `a*` is the only symbol, of
   any order, with this property.
+* `TauCeti.Symbol.quantizeUniformCLM_adjoint`: as an operator on Schwartz space, the quantization
+  of `a*` is the right quantization of the pointwise adjoint `a(x, ξ)†`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le`: the decay of
   `â(θ, ξ - sθ)` in `θ`, uniformly for bounded shifts `s`, with the continuity, integrability and
   growth bound of the integrand `exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ)`
@@ -61,12 +73,15 @@ pointwise adjoint `a(y, ξ)†`. The Fourier transform of `x ↦ a(x, ξ)†` at
 formula for `a*` follows from that of `ofRight` by the substitution `θ ↦ -θ`. The order, the
 uniform estimates and the derivative rules are those of `ofRight`.
 
-The adjoint identity is proved on the Fourier side. Plancherel's theorem and the formula
-`𝓕 (Op(a) u) η = ∫ â(η - ζ, 2πζ) û(ζ) dζ`
-(`TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`) give
-`∫ ⟪Op(a) u, v⟫ = ∫∫ ⟪â(η - ζ, 2πζ) û(ζ), v̂(η)⟫ dζ dη`. Expanding `⟪u, Op(a*) v⟫` produces an
-absolutely convergent triple integral over `y`, `η` and `θ`, and integrating out `y` first turns it
-into the same double integral, after the substitution `ζ = η - θ`.
+For a uniform symbol both sides of the adjoint identity equal the absolutely convergent double
+integral `∫∫ exp(-2πi ⟪x, ζ⟫) ⟪a(x, 2πζ) û(ζ), v(x)⟫ dζ dx`. For the left side this is the formula
+for `Op(a) u (x)`. For the right side, Plancherel's theorem gives
+`∫ ⟪u, Op_R(a†) v⟫ = ∫ ⟪û, 𝓕 (Op_R(a†) v)⟫`, and the Fourier transform of `Op_R(a†) v` at `ζ` is
+`∫ exp(-2πi ⟪x, ζ⟫) a(x, 2πζ)† v(x) dx` (`TauCeti.Symbol.fourier_quantizeRightUniformCLM`). The
+integrand is bounded by `C ‖v(x)‖ ⟨2πζ⟩ ^ m ‖û(ζ)‖`, so Fubini's theorem applies. For a symbol with
+compact spatial support, `Op(a*) = Op_R(a†)` on Schwartz space
+(`TauCeti.Symbol.quantizeRightUniformCLM_eq_quantizeUniformCLM_ofRight`), which gives the adjoint
+identity for `a*`.
 
 ## References
 
@@ -200,7 +215,7 @@ theorem HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_fourier_s
 
 end Slice
 
-/-! ### The adjoint symbol -/
+/-! ### The adjoint symbol and the adjoint identity -/
 
 section Adjoint
 
@@ -238,6 +253,13 @@ theorem isUniform_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
     (adjoint a ha).IsUniform :=
   isUniform_ofRight _
 
+/-- As an operator on Schwartz space, the quantization of the adjoint symbol `a*` is the right
+quantization `TauCeti.Symbol.quantizeRightUniformCLM` of the pointwise adjoint `a(x, ξ)†`. -/
+theorem quantizeUniformCLM_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport) :
+    quantizeUniformCLM (adjoint a ha) (isUniform_adjoint a ha) =
+      quantizeRightUniformCLM (a.map adjointRealCLM) (ha.isUniform.map _) :=
+  (quantizeRightUniformCLM_eq_quantizeUniformCLM_ofRight (ha.map _)).symm
+
 /-- A position derivative of the adjoint symbol is the adjoint symbol of the position
 derivative: `∂_{y_j} a* = (∂_{x_j} a)*`. -/
 @[simp]
@@ -260,135 +282,99 @@ theorem frequencyDeriv_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSup
 
 /-! ### The adjoint identity -/
 
-
-/-- The integrand `exp(2πi ⟪η - θ, y⟫) ⟪â(θ, 2π(η - θ)) u(y), v̂(η)⟫` of the triple integral
-giving `∫ ⟪u, Op(a*) v⟫`. -/
-private def adjointIntegrand (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V))
-    (v : 𝓢(CoordinateSpace n, W)) (y η θ : CoordinateSpace n) : ℂ :=
-  (𝐞 ⟪η - θ, y⟫ : ℂ) *
-    inner ℂ (𝓕 (fun x ↦ a.coefficient (x, (2 * π) • (η - θ))) θ (u y)) (𝓕 v η)
-
-/-- The pairing `⟪u(y), Op(a*) v (y)⟫` as an iterated integral. -/
-private theorem HasCompactSpatialSupport.inner_quantizeSchwartzValue_adjoint
-    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V))
-    (v : 𝓢(CoordinateSpace n, W)) (y : CoordinateSpace n) :
-    inner ℂ (u y) (quantizeSchwartzValue (adjoint a ha).coefficient v y) =
-      ∫ η, ∫ θ, adjointIntegrand a u v y η θ := by
-  obtain ⟨C, -, hC⟩ := isUniform_iff.1 (isUniform_adjoint a ha) [] []
-  have hbound : ∀ ξ, ‖(adjoint a ha).coefficient (y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
-    fun ξ ↦ by simpa [mixedDeriv_nil_nil] using hC y ξ
-  rw [quantizeSchwartzValue_def, ← integral_inner (integrable_quantizeSchwartzValue_integrand
-    ((adjoint a ha).continuous_coefficient_slice y).aestronglyMeasurable hbound (𝓕 v))]
-  refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  have hint := ha.integrable_fourierChar_smul_fourier_slice_add_smul (-(2 * π)) y ((2 * π) • η)
-  simp only [neg_smul, ← sub_eq_add_neg] at hint
-  dsimp only
-  rw [Circle.smul_def, inner_smul_right, coefficient_adjoint,
-    ContinuousLinearMap.adjoint_inner_right, ContinuousLinearMap.integral_apply hint]
-  rw [← integral_inner_left (hint.apply_continuousLinearMap (u y)), ← integral_const_mul]
-  refine integral_congr_ae (.of_forall fun θ ↦ ?_)
-  simp only [smul_apply, inner_smul_left, adjointIntegrand, ← mul_assoc,
-    ← Circle.coe_inv_eq_conj, ← Circle.coe_mul, ← AddChar.map_neg_eq_inv, ← AddChar.map_add_eq_mul,
-    ← sub_eq_add_neg, ← inner_sub_left, smul_sub]
+/-- The integrand `exp(-2πi ⟪x, ζ⟫) ⟪a(x, 2πζ) û(ζ), v(x)⟫` of the double integral to which both
+sides of the adjoint identity reduce. -/
+private def pairingIntegrand (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V))
+    (v : 𝓢(CoordinateSpace n, W)) (x ζ : CoordinateSpace n) : ℂ :=
+  (𝐞 (-⟪x, ζ⟫) : ℂ) * inner ℂ (a.coefficient (x, (2 * π) • ζ) (𝓕 u ζ)) (v x)
 
 omit [CompleteSpace V] [CompleteSpace W] in
-/-- The triple integrand is integrable: `â(θ, 2π(η - θ))` decays in `θ` and grows like `⟨η⟩ ^ m`,
-which `u` and `v̂` absorb. -/
-private theorem HasCompactSpatialSupport.integrable_adjointIntegrand
-    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V))
-    (v : 𝓢(CoordinateSpace n, W)) :
-    Integrable (fun q : CoordinateSpace n × (CoordinateSpace n × CoordinateSpace n) ↦
-      adjointIntegrand a u v q.1 q.2.1 q.2.2) (volume.prod (volume.prod volume)) := by
-  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_fourier_slice_add_smul_le (-(2 * π))
-  have hg : Integrable (fun z : CoordinateSpace n × CoordinateSpace n ↦
-      (1 + ‖z.1‖ ^ 2) ^ (m / 2) * ‖𝓕 v z.1‖ * (1 + ‖z.2‖) ^ (-((n : ℝ) + 1)))
-      (volume.prod volume) :=
-    ((𝓕 v).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).mul_prod
-      integrable_one_add_norm_rpow_neg_add_one
-  have hcont : Continuous fun q : CoordinateSpace n × (CoordinateSpace n × CoordinateSpace n) ↦
-      adjointIntegrand a u v q.1 q.2.1 q.2.2 := by
-    have h₁ : Continuous fun q : CoordinateSpace n × (CoordinateSpace n × CoordinateSpace n) ↦
-        (𝐞 ⟪q.2.1 - q.2.2, q.1⟫ : ℂ) :=
+/-- The double integrand is integrable: it is bounded by `C ‖v(x)‖ ⟨2πζ⟩ ^ m ‖û(ζ)‖`. -/
+private lemma integrable_pairingIntegrand {a : Symbol n V W m} (ha : a.IsUniform)
+    (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)) :
+    Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦ pairingIntegrand a u v q.1 q.2)
+      (volume.prod volume) := by
+  obtain ⟨C, -, hC⟩ := ha.exists_bound_coefficient
+  have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
+      pairingIntegrand a u v q.1 q.2 := by
+    have h₁ : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 (-⟪q.1, q.2⟫) : ℂ) :=
       (Real.continuous_fourierChar.comp (by fun_prop)).subtype_val
-    have h₂ : Continuous fun q : CoordinateSpace n × (CoordinateSpace n × CoordinateSpace n) ↦
-        𝓕 (fun x ↦ a.coefficient (x, (2 * π) • (q.2.1 - q.2.2))) q.2.2 :=
-      ha.continuous_fourier_slice_comp (by fun_prop) (by fun_prop)
-    exact h₁.mul ((h₂.clm_apply (u.continuous.comp continuous_fst)).inner
-      ((𝓕 v).continuous.comp (by fun_prop)))
-  refine ((u.integrable.norm.mul_prod hg).const_mul (C * (2 * π) ^ |m|)).mono'
+    have h₂ : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
+        a.coefficient (q.1, (2 * π) • q.2) :=
+      a.contDiff_coefficient.continuous.comp (by fun_prop)
+    exact h₁.mul ((h₂.clm_apply ((𝓕 u).continuous.comp continuous_snd)).inner
+      (v.continuous.comp continuous_fst))
+  refine ((v.integrable.norm.mul_prod
+    ((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) m)).const_mul C).mono'
     hcont.aestronglyMeasurable (.of_forall fun q ↦ ?_)
-  obtain ⟨y, η, θ⟩ := q
-  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m η
-  have hF : ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • (η - θ))) θ‖ ≤
-      C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * ((2 * π) ^ |m| * (1 + ‖η‖ ^ 2) ^ (m / 2))) := by
-    rw [smul_sub, sub_eq_add_neg, ← neg_smul]
-    refine (hC θ _).trans ?_
-    rw [mul_assoc, mul_comm ((1 + ‖(2 * π) • η‖ ^ 2) ^ (m / 2))]
-    gcongr
-  simp only [adjointIntegrand, norm_mul, Circle.norm_coe, one_mul]
-  calc ‖inner ℂ (𝓕 (fun x ↦ a.coefficient (x, (2 * π) • (η - θ))) θ (u y)) (𝓕 v η)‖
-      ≤ ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • (η - θ))) θ‖ * ‖u y‖ * ‖𝓕 v η‖ :=
+  obtain ⟨x, ζ⟩ := q
+  simp only [pairingIntegrand, norm_mul, Circle.norm_coe, one_mul]
+  calc ‖inner ℂ (a.coefficient (x, (2 * π) • ζ) (𝓕 u ζ)) (v x)‖
+      ≤ ‖a.coefficient (x, (2 * π) • ζ)‖ * ‖𝓕 u ζ‖ * ‖v x‖ :=
         (norm_inner_le_norm _ _).trans (by gcongr; exact ContinuousLinearMap.le_opNorm _ _)
-    _ ≤ C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * ((2 * π) ^ |m| * (1 + ‖η‖ ^ 2) ^ (m / 2))) *
-          ‖u y‖ * ‖𝓕 v η‖ := by gcongr
-    _ = C * (2 * π) ^ |m| * (‖u y‖ * ((1 + ‖η‖ ^ 2) ^ (m / 2) * ‖𝓕 v η‖ *
-          (1 + ‖θ‖) ^ (-((n : ℝ) + 1)))) := by ring
-
-/-- Integrating out the position: `∫ exp(2πi ⟪η - θ, y⟫) ⟪B u(y), w⟫ dy = ⟪B û(η - θ), w⟫`. -/
-private theorem integral_adjointIntegrand (u : 𝓢(CoordinateSpace n, V))
-    (v : 𝓢(CoordinateSpace n, W)) (η θ : CoordinateSpace n) :
-    ∫ y, adjointIntegrand a u v y η θ =
-      inner ℂ (𝓕 (fun x ↦ a.coefficient (x, (2 * π) • (η - θ))) θ (𝓕 u (η - θ))) (𝓕 v η) := by
-  set B := 𝓕 (fun x ↦ a.coefficient (x, (2 * π) • (η - θ))) θ
-  have hu : Integrable fun y : CoordinateSpace n ↦ (𝐞 (-⟪y, η - θ⟫) : ℂ) • u y :=
-    u.integrable.norm.mono' ((Real.continuous_fourierChar.comp (by fun_prop)).subtype_val.smul
-      u.continuous).aestronglyMeasurable
-      (.of_forall fun y ↦ by rw [norm_smul, Circle.norm_coe, one_mul])
-  have hfu : 𝓕 u (η - θ) = ∫ y, (𝐞 (-⟪y, η - θ⟫) : ℂ) • u y := by
-    rw [SchwartzMap.fourier_coe, Real.fourier_eq]
-    simp only [Circle.smul_def]
-  rw [hfu, ← ContinuousLinearMap.integral_comp_comm B hu,
-    ← integral_inner_left (B.integrable_comp hu)]
-  refine integral_congr_ae (.of_forall fun y ↦ ?_)
-  simp only [adjointIntegrand]
-  rw [map_smul, inner_smul_left, ← Circle.coe_inv_eq_conj, ← AddChar.map_neg_eq_inv, neg_neg,
-    real_inner_comm]
+    _ ≤ C * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ * ‖v x‖ := by gcongr; exact hC _ _
+    _ = C * (‖v x‖ * ((1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖)) := by ring
 
 omit [CompleteSpace V] in
-/-- The pairing `∫ ⟪Op(a) u, v⟫` on the Fourier side, by Plancherel's theorem and the formula
-`𝓕 (Op(a) u) ξ = ∫ â(ξ - ζ, 2πζ) û(ζ) dζ`. -/
-private theorem HasCompactSpatialSupport.integral_inner_quantizeSchwartzValue_eq
-    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V))
-    (v : 𝓢(CoordinateSpace n, W)) :
-    ∫ x, inner ℂ (quantizeSchwartzValue a.coefficient u x) (v x) =
-      ∫ η, ∫ ζ, inner ℂ (𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (η - ζ) (𝓕 u ζ))
-        (𝓕 v η) := by
-  obtain ⟨C, hC0, hC⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le 0
-  set U : 𝓢(CoordinateSpace n, W) := (ha.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
-    (a.contDiff_quantizeSchwartzValue u)
-  have hU : ⇑U = quantizeSchwartzValue a.coefficient u :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  rw [← hU, ← SchwartzMap.integral_inner_fourier_fourier]
-  refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  have hint : Integrable fun ζ : CoordinateSpace n ↦
-      𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (η - ζ) (𝓕 u ζ) := by
-    refine (((𝓕 u).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).const_mul
-      (C * (2 * π) ^ |m|)).mono' ?_ (.of_forall fun ζ ↦ ?_)
-    · exact ((ha.continuous_fourier_slice_comp (by fun_prop) (by fun_prop)).clm_apply
-        (𝓕 u).continuous).aestronglyMeasurable
-    · have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ
-      have h := hC (η - ζ) ((2 * π) • ζ)
-      rw [pow_zero, one_mul] at h
-      calc ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (η - ζ) (𝓕 u ζ)‖
-          ≤ ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (η - ζ)‖ * ‖𝓕 u ζ‖ :=
-            ContinuousLinearMap.le_opNorm _ _
-        _ ≤ C * ((2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) * ‖𝓕 u ζ‖ := by
-            gcongr
-            exact h.trans (by gcongr)
-        _ = C * (2 * π) ^ |m| * ((1 + ‖ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖) := by ring
-  dsimp only
-  rw [SchwartzMap.fourier_coe, hU, ha.fourier_quantizeSchwartzValue u η,
-    ← integral_inner_left hint]
+/-- The pairing `⟪Op(a) u (x), v(x)⟫` as an integral over the frequency. -/
+private lemma inner_quantizeUniformCLM {a : Symbol n V W m} (ha : a.IsUniform)
+    (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)) (x : CoordinateSpace n) :
+    inner ℂ (quantizeUniformCLM a ha u x) (v x) = ∫ ζ, pairingIntegrand a u v x ζ := by
+  obtain ⟨C, -, hC⟩ := ha.exists_bound_coefficient
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_def, ← integral_inner_left
+    (integrable_quantizeSchwartzValue_integrand
+      (a.continuous_coefficient_slice x).aestronglyMeasurable (hC x) (𝓕 u))]
+  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+  simp only [pairingIntegrand]
+  rw [Circle.smul_def, inner_smul_left, ← Circle.coe_inv_eq_conj,
+    ← AddChar.map_neg_eq_inv, real_inner_comm]
+
+/-- The pairing `⟪û(ζ), 𝓕 (Op_R(a†) v) (ζ)⟫` as an integral over the position. -/
+private lemma inner_fourier_quantizeRightUniformCLM {a : Symbol n V W m} (ha : a.IsUniform)
+    (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)) (ζ : CoordinateSpace n) :
+    inner ℂ (𝓕 u ζ) (𝓕 (quantizeRightUniformCLM (a.map adjointRealCLM) (ha.map _) v) ζ) =
+      ∫ x, pairingIntegrand a u v x ζ := by
+  rw [fourier_quantizeRightUniformCLM, Real.fourier_eq,
+    ← integral_inner ((Real.fourierIntegral_convergent_iff ζ).2
+      ((ha.map _).integrable_coefficient_apply v _))]
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  simp only [pairingIntegrand]
+  rw [Circle.smul_def, inner_smul_right, coefficient_map, adjointRealCLM_apply,
+    ContinuousLinearMap.adjoint_inner_right]
+
+/-- **The formal adjoint of a uniform quantization.** For a symbol `a` of order `m` whose estimates
+are uniform in the position, with values in operators between complex Hilbert spaces, the right
+quantization of the pointwise adjoint `a(y, ξ)†` is the formal adjoint of the quantization of `a`:
+`∫ ⟪Op(a) u, v⟫ = ∫ ⟪u, Op_R(a†) v⟫` for all Schwartz functions `u` and `v`. -/
+theorem integral_inner_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform)
+    (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)) :
+    ∫ x, inner ℂ (quantizeUniformCLM a ha u x) (v x) =
+      ∫ x, inner ℂ (u x) (quantizeRightUniformCLM (a.map adjointRealCLM) (ha.map _) v x) := by
+  rw [← SchwartzMap.integral_inner_fourier_fourier u]
+  simp_rw [inner_quantizeUniformCLM ha u v, inner_fourier_quantizeRightUniformCLM ha u v]
+  exact integral_integral_swap (integrable_pairingIntegrand ha u v)
+
+/-- **The formal adjoint of a uniform right quantization.** For a symbol `c` whose estimates are
+uniform in the position, with values in operators between complex Hilbert spaces, the
+quantization of the pointwise adjoint `c(x, ξ)†` is the formal adjoint of the right quantization
+of `c`: `∫ ⟪Op_R(c) u, v⟫ = ∫ ⟪u, Op(c†) v⟫` for all Schwartz functions `u` and `v`. -/
+theorem integral_inner_quantizeRightUniformCLM (c : Symbol n V W m) (hc : c.IsUniform)
+    (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)) :
+    ∫ x, inner ℂ (quantizeRightUniformCLM c hc u x) (v x) =
+      ∫ x, inner ℂ (u x) (quantizeUniformCLM (c.map adjointRealCLM) (hc.map _) v x) := by
+  have hcc : (c.map adjointRealCLM).map adjointRealCLM = c :=
+    Symbol.ext (funext fun p ↦ by simp [adjointRealCLM_apply])
+  have key := integral_inner_quantizeUniformCLM (c.map adjointRealCLM) (hc.map _) v u
+  simp only [hcc] at key
+  calc ∫ x, inner ℂ (quantizeRightUniformCLM c hc u x) (v x)
+      = ∫ x, (starRingEnd ℂ) (inner ℂ (v x) (quantizeRightUniformCLM c hc u x)) := by
+        simp_rw [inner_conj_symm]
+    _ = (starRingEnd ℂ) (∫ x, inner ℂ (quantizeUniformCLM (c.map adjointRealCLM) (hc.map _) v x)
+          (u x)) := by
+        rw [integral_conj, key]
+    _ = _ := by
+        rw [← integral_conj]
+        simp_rw [inner_conj_symm]
 
 /-- **The adjoint of a quantization.** For a symbol `a` of order `m` with compact spatial support,
 with values in operators between complex Hilbert spaces, the quantization of the adjoint symbol
@@ -399,22 +385,9 @@ theorem integral_inner_quantizeSchwartzValue_adjoint (a : Symbol n V W m)
     (v : 𝓢(CoordinateSpace n, W)) :
     ∫ x, inner ℂ (quantizeSchwartzValue a.coefficient u x) (v x) =
       ∫ x, inner ℂ (u x) (quantizeSchwartzValue (adjoint a ha).coefficient v x) := by
-  have hG := ha.integrable_adjointIntegrand u v
-  simp_rw [ha.inner_quantizeSchwartzValue_adjoint u v, ha.integral_inner_quantizeSchwartzValue_eq]
-  calc ∫ η, ∫ ζ, inner ℂ (𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (η - ζ) (𝓕 u ζ)) (𝓕 v η)
-      = ∫ η, ∫ θ, ∫ y, adjointIntegrand a u v y η θ := by
-        refine integral_congr_ae (.of_forall fun η ↦ ?_)
-        simp only [integral_adjointIntegrand]
-        exact (integral_sub_left_eq_self (fun ζ ↦ inner ℂ
-          (𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (η - ζ) (𝓕 u ζ)) (𝓕 v η)) volume η).symm.trans
-            (by simp only [sub_sub_cancel])
-    _ = ∫ q : CoordinateSpace n × CoordinateSpace n, ∫ y, adjointIntegrand a u v y q.1 q.2 :=
-        (integral_prod _ hG.integral_prod_right).symm
-    _ = ∫ y, ∫ q : CoordinateSpace n × CoordinateSpace n, adjointIntegrand a u v y q.1 q.2 :=
-        (integral_integral_swap (f := fun y (q : CoordinateSpace n × CoordinateSpace n) ↦
-          adjointIntegrand a u v y q.1 q.2) hG).symm
-    _ = ∫ y, ∫ η, ∫ θ, adjointIntegrand a u v y η θ :=
-        integral_congr_ae (hG.prod_right_ae.mono fun y hy ↦ integral_prod _ hy)
+  have h := integral_inner_quantizeUniformCLM a ha.isUniform u v
+  rw [← quantizeUniformCLM_adjoint a ha] at h
+  simpa only [quantizeUniformCLM_apply] using h
 
 /-- **Uniqueness of the adjoint symbol.** A symbol `b`, of any order, whose quantization is the
 formal adjoint of the quantization of `a` on compactly supported Schwartz functions,

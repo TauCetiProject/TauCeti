@@ -101,7 +101,7 @@ private theorem exists_volume_setOf_mul_le_inter_dyadicCube_le {κ : ℝ} (hκ :
           ENNReal.ofReal δ * volume (dyadicCube k m) := by
   set n := Fintype.card ι
   have hn : 0 < √(n : ℝ) := Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
-  obtain ⟨M, μ, ε₀, hM, hμ, hε₀, H⟩ := exists_mul_volume_ball_le_volume_setOf_lt_inter_ball
+  obtain ⟨M, μ, ε₀, _, hμ, hε₀, H⟩ := exists_mul_volume_ball_le_volume_setOf_lt_inter_ball
     (ι := ι) hκ (θ := (8 * √(n : ℝ))⁻¹) (by positivity) (τ := 1 / 2) (by norm_num) (by norm_num)
   set ω₁ := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
   have hω₁ : 0 < ω₁ :=
@@ -138,7 +138,7 @@ private theorem exists_volume_setOf_mul_le_inter_dyadicCube_le {κ : ℝ} (hκ :
     rw [h]
     refine eLpNorm_const_smul_le.trans (mul_le_of_le_one_of_le ?_
       (eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)))
-    rw [Real.enorm_eq_ofReal (by positivity)]
+    rw [Real.eNorm_eq_ofReal (by positivity)]
     exact ENNReal.ofReal_le_one.2 (inv_le_one_of_one_le₀ hs)
   have key := H (u := fun x ↦ s⁻¹ * u x) (f := fun x ↦ s⁻¹ * f x) hR (ha.mono_set hball) hLam
     (continuousOn_const.mul (hcont.mono hcball)) (contDiffOn_const.mul (hu.mono hball))
