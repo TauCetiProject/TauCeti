@@ -12,15 +12,14 @@ import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Convex.Jensen
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.Calculus.Deriv.Shift
-import Mathlib.Analysis.Calculus.LHopital
 
 /-!
 # Jacobi fields in nonpositive sectional curvature
 
 The Jacobi equation and the metric product rule give
-`(⟨DJ, J⟩)' = |DJ|² - ⟨R(J, γ')γ', J⟩`. Consequently the squared norm of a Jacobi
-field is convex along a geodesic through points of nonpositive sectional curvature.
+`(⟨DJ, J⟩)' = |DJ|² - ⟨R(J, γ')γ', J⟩`
+(`IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_self`). Consequently the squared
+norm of a Jacobi field is convex along a geodesic through points of nonpositive sectional curvature.
 There is no orthogonality or constant-speed normalization requirement on the field.
 The statements use derivatives within the parameter set and apply to closed intervals.
 
@@ -35,11 +34,6 @@ Thus no nonzero Jacobi field vanishes twice, the no-conjugate-field input to the
 nonsingularity of the exponential map. More generally, endpoint values determine a Jacobi
 field uniquely. These results need neither completeness nor a constant curvature hypothesis,
 and include constant geodesics and dimensions zero and one.
-
-The same pairing gives the initial growth of a Jacobi field vanishing at `a`:
-`IsJacobiFieldOn.tendsto_norm_div_sub_nhdsGT` shows `|J(t)| / (t - a) → |D_t J(a)|` as `t`
-decreases to `a`, by l'Hôpital's rule applied to `|J|² / (t - a)²`. This needs no curvature
-hypothesis.
 
 ## References
 
@@ -64,63 +58,6 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {V W : ∀ t, TangentSpace I (γ t)} {s : Set ℝ} {a b t : ℝ}
-
-/-- The differentiated metric pairing underlying convexity of Jacobi-field norms:
-`(⟨DJ, J⟩)' = |DJ|² - ⟨R(J, γ')γ', J⟩`. -/
-theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_self
-    (h : IsJacobiFieldOn I γ V s) (ht : t ∈ s) :
-    HasDerivWithinAt
-      (fun r ↦ ⟪alongCurveWithin (leviCivitaConnection I M) γ V s r, V r⟫_ℝ)
-      (‖alongCurveWithin (leviCivitaConnection I M) γ V s t‖ ^ 2 -
-        ⟪(leviCivitaConnection I M).curvatureTensor (γ t) (V t)
-          (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t), V t⟫_ℝ) s t := by
-  have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
-  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.isGeodesicCurveOn.mdifferentiableOn t ht)
-    (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
-    (h.differentiableWithinAt_sectionCoord ht)
-  convert hd using 1
-  rw [h.alongCurveWithin_alongCurveWithin_eq ht, inner_neg_left,
-    real_inner_self_eq_norm_sq]
-  ring
-
-/-- A Jacobi field vanishing at `a` grows at `a⁺` with rate the norm of its initial covariant
-derivative: `|J(t)| / (t - a) → |D_t J(a)|` as `t` decreases to `a`. -/
-theorem IsJacobiFieldOn.tendsto_norm_div_sub_nhdsGT (h : IsJacobiFieldOn I γ V s) (hab : a < b)
-    (hs : Icc a b ⊆ s) (hVa : V a = 0) :
-    Tendsto (fun t ↦ ‖V t‖ / (t - a)) (𝓝[>] a)
-      (𝓝 ‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖) := by
-  have ha : a ∈ s := hs (left_mem_Icc.2 hab.le)
-  have hle : 𝓝[>] a ≤ 𝓝[s \ {a}] a := by
-    rw [← nhdsWithin_Ioc_eq_nhdsGT hab]
-    exact nhdsWithin_mono a fun t ht ↦ ⟨hs (Ioc_subset_Icc_self ht), ht.1.ne'⟩
-  have hslope : Tendsto
-      (fun t ↦ ⟪alongCurveWithin (leviCivitaConnection I M) γ V s t, V t⟫_ℝ / (t - a)) (𝓝[>] a)
-      (𝓝 (‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖ ^ 2)) := by
-    have hd := h.hasDerivWithinAt_inner_alongCurveWithin_self ha
-    simp only [hVa, map_zero, inner_zero_right, sub_zero] at hd
-    refine ((hasDerivWithinAt_iff_tendsto_slope.1 hd).mono_left hle).congr fun t ↦ ?_
-    simp [slope_def_field, hVa]
-  have hsq : Tendsto (fun t ↦ ‖V t‖ ^ 2 / (t - a) ^ 2) (𝓝[>] a)
-      (𝓝 (‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖ ^ 2)) := by
-    refine HasDerivAt.lhopital_zero_right_on_Ioo hab
-      (f' := fun t ↦ 2 * ⟪alongCurveWithin (leviCivitaConnection I M) γ V s t, V t⟫_ℝ)
-      (g' := fun t ↦ 2 * (t - a))
-      (fun t ht ↦ (h.hasDerivWithinAt_norm_sq (hs (Ioo_subset_Icc_self ht))).hasDerivAt
-        (mem_of_superset (Icc_mem_nhds ht.1 ht.2) hs))
-      (fun t _ ↦ by simpa using (hasDerivAt_pow 2 (t - a)).comp_sub_const t a)
-      (fun t ht ↦ mul_ne_zero two_ne_zero (sub_ne_zero.2 ht.1.ne'))
-      ?_ ?_ (hslope.congr fun t ↦ (mul_div_mul_left _ _ two_ne_zero).symm)
-    · have hc := (h.hasDerivWithinAt_norm_sq ha).continuousWithinAt.tendsto
-      rw [hVa, norm_zero, zero_pow two_ne_zero] at hc
-      exact hc.mono_left (hle.trans (nhdsWithin_mono a sdiff_subset))
-    · have hc := (by fun_prop : Continuous fun t : ℝ ↦ (t - a) ^ 2).tendsto a
-      rw [sub_self, zero_pow two_ne_zero] at hc
-      exact hc.mono_left nhdsWithin_le_nhds
-  have hsqrt := hsq.sqrt
-  rw [Real.sqrt_sq (norm_nonneg _)] at hsqrt
-  refine hsqrt.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with t ht
-  rw [← div_pow, Real.sqrt_sq (div_nonneg (norm_nonneg _) (sub_pos.2 ht).le)]
 
 /-- The squared norm of a Jacobi field is convex on a preconnected parameter set if every
 sectional curvature along its geodesic is nonpositive. Curvature is tested only on independent

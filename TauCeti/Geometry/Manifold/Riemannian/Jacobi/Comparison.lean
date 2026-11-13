@@ -68,8 +68,11 @@ origin then gives `norm_le_norm_mfderiv_riemannianExp_of_sectionalCurvature_nonp
   the comparison `ct_κ(b - a) |J(b)|² ≤ ⟨D_t J(b), J(b)⟩` for a Jacobi field vanishing at `a`.
 * `IsJacobiFieldOn.curvatureSine_mul_norm_alongCurveWithin_le_norm`: the Rauch comparison
   `s_κ(b - a) |D_t J(a)| ≤ |J(b)|` under `⟨R(J, γ')γ', J⟩ ≤ κ |J|²`.
-* `IsJacobiFieldOn.rauch_norm_ge_of_sectional_le`: the same bound for a normal Jacobi field
-  along a unit-speed geodesic under an upper sectional curvature bound.
+* `IsJacobiFieldOn.curvatureSine_mul_norm_alongCurveWithin_le_norm_of_sectionalCurvature_le`:
+  the bound `s_{κ c²}(b - a) |D_t J(a)| ≤ |J(b)|` for a normal Jacobi field along a geodesic of
+  speed `c` under an upper sectional curvature bound `κ`.
+* `IsJacobiFieldOn.rauch_norm_ge_of_sectional_le`: its unit-speed form
+  `s_κ(b - a) |D_t J(a)| ≤ |J(b)|`.
 * `norm_le_norm_mfderiv_riemannianExp_of_sectionalCurvature_nonpos`:
   the differential of the exponential map does not decrease norms in nonpositive curvature.
 
@@ -254,7 +257,8 @@ theorem curvatureSine_mul_norm_alongCurveWithin_le_norm
       tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
         (((continuous_sub_right a).tendsto' a 0 (sub_self a)).mono_left nhdsWithin_le_nhds)
         (eventually_mem_nhdsWithin.mono fun t ht ↦ sub_ne_zero.2 ht.ne')
-  have hlim := ((h.tendsto_norm_div_sub_nhdsGT hab hs hVa).pow 2).div (hsine.pow 2) (by simp)
+  have hlim := ((h.tendsto_norm_div_sub_nhdsGT
+    (mem_nhdsGE_iff_exists_Icc_subset.2 ⟨b, hab, hs⟩) hVa).pow 2).div (hsine.pow 2) (by simp)
   rw [one_pow, div_one] at hlim
   have hmono := h.monotoneOn_norm_sq_div_curvatureSine_sq hs hVa hbound hR
   have hle : ‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖ ^ 2 ≤
@@ -269,13 +273,57 @@ theorem curvatureSine_mul_norm_alongCurveWithin_le_norm
     two_ne_zero).1 ?_
   linarith
 
-/-- **Rauch comparison under an upper sectional curvature bound.** Let `γ` be a unit-speed
-geodesic on a preconnected parameter set and `J` a Jacobi field along it with `J(a) = 0` and
-`D_t J(a)` orthogonal to `γ'(a)`. If every plane containing `γ'(t)` has sectional curvature at
-most `κ` for `t ∈ (a, b)`, and `b - a < π / √κ` when `κ > 0`, then
-`s_κ(b - a) |D_t J(a)| ≤ |J(b)|`, with `s_κ` the model sine of curvature `κ`. -/
+/-- **Rauch comparison under an upper sectional curvature bound**, at arbitrary speed. Let `γ`
+be a geodesic and `J` a Jacobi field along it with `J(a) = 0` and `D_t J(a)` orthogonal to `γ'(a)`.
+If every plane containing `γ'(t)` has sectional curvature at most `κ` for `t ∈ (a, b)`, and
+`b - a < π / √(κ c²)` when `κ c² > 0`, where `c = |γ'(a)|`, then
+`s_{κ c²}(b - a) |D_t J(a)| ≤ |J(b)|`, with `s_{κ c²}` the model sine of curvature `κ c²`. -/
+theorem curvatureSine_mul_norm_alongCurveWithin_le_norm_of_sectionalCurvature_le
+    (h : IsJacobiFieldOn I γ V s) (hab : a ≤ b) (hs : Icc a b ⊆ s) (hVa : V a = 0)
+    (hnormal : ⟪alongCurveWithin (leviCivitaConnection I M) γ V s a,
+      curveVelocityWithin I γ s a⟫_ℝ = 0)
+    (hK : ∀ t ∈ Ioo a b, ∀ u : TangentSpace I (γ t),
+      LinearIndependent ℝ ![u, curveVelocityWithin I γ s t] →
+        (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
+          (γ t) u (curveVelocityWithin I γ s t) ≤ κ)
+    (hbound : 0 < κ * ‖curveVelocityWithin I γ s a‖ ^ 2 →
+      b - a < π / √(κ * ‖curveVelocityWithin I γ s a‖ ^ 2)) :
+    curvatureSine (κ * ‖curveVelocityWithin I γ s a‖ ^ 2) (b - a) *
+      ‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖ ≤ ‖V b‖ := by
+  obtain rfl | hab := hab.eq_or_lt
+  · simp [hVa]
+  refine h.curvatureSine_mul_norm_alongCurveWithin_le_norm hab.le hs hVa hbound fun t ht ↦ ?_
+  -- Restrict to the preconnected interval `[a, b]`, where velocities and the covariant
+  -- derivative agree with those on `s`.
+  have hu := uniqueDiffOn_Icc hab
+  have h' := h.mono hu hs
+  have hvel {r : ℝ} (hr : r ∈ Icc a b) :
+      curveVelocityWithin I γ (Icc a b) r = curveVelocityWithin I γ s r :=
+    curveVelocityWithin_subset hs (hu r hr) (h.isGeodesicCurveOn.mdifferentiableOn r (hs hr))
+  have ha : a ∈ Icc a b := left_mem_Icc.2 hab.le
+  have htI : t ∈ Icc a b := Ioo_subset_Icc_self ht
+  have hDa : alongCurveWithin (leviCivitaConnection I M) γ V (Icc a b) a =
+      alongCurveWithin (leviCivitaConnection I M) γ V s a :=
+    h.alongCurveWithin_subset (hu a ha) hs ha
+  have hn := (h'.forall_inner_curveVelocityWithin_eq_zero_iff isPreconnected_Icc ha).2
+    ⟨by simp [hVa], by rw [hDa, hvel ha]; exact hnormal⟩ t htI
+  rw [hvel htI] at hn
+  have hspeed : ‖curveVelocityWithin I γ s t‖ = ‖curveVelocityWithin I γ s a‖ := by
+    rw [← hvel htI, ← hvel ha]
+    exact (h'.isGeodesicCurveOn.norm_curveVelocityWithin_eq isPreconnected_Icc ha htI).symm
+  have hc := ((leviCivitaConnection I M).forall_sectionalCurvature_le_fixed_iff
+    (isMetricCompatible_leviCivitaConnection I) (γ t) _ κ).1 (hK t ht) (V t)
+  rw [Matrix.real_det_gram_fin_two, hn, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq,
+    hspeed] at hc
+  linarith
+
+/-- **Rauch comparison under an upper sectional curvature bound.** Let `γ` be a geodesic with
+`|γ'(a)| = 1` and `J` a Jacobi field along it with `J(a) = 0` and `D_t J(a)` orthogonal to
+`γ'(a)`. If every plane containing `γ'(t)` has sectional curvature at most `κ` for `t ∈ (a, b)`,
+and `b - a < π / √κ` when `κ > 0`, then `s_κ(b - a) |D_t J(a)| ≤ |J(b)|`, with `s_κ` the model
+sine of curvature `κ`. -/
 theorem rauch_norm_ge_of_sectional_le
-    (h : IsJacobiFieldOn I γ V s) (hsc : IsPreconnected s) (hab : a ≤ b) (hs : Icc a b ⊆ s)
+    (h : IsJacobiFieldOn I γ V s) (hab : a ≤ b) (hs : Icc a b ⊆ s)
     (hunit : ‖curveVelocityWithin I γ s a‖ = 1) (hVa : V a = 0)
     (hnormal : ⟪alongCurveWithin (leviCivitaConnection I M) γ V s a,
       curveVelocityWithin I γ s a⟫_ℝ = 0)
@@ -285,18 +333,8 @@ theorem rauch_norm_ge_of_sectional_le
           (γ t) u (curveVelocityWithin I γ s t) ≤ κ)
     (hbound : 0 < κ → b - a < π / √κ) :
     curvatureSine κ (b - a) * ‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖ ≤ ‖V b‖ := by
-  have ha : a ∈ s := hs (left_mem_Icc.2 hab)
-  refine h.curvatureSine_mul_norm_alongCurveWithin_le_norm hab hs hVa hbound fun t ht ↦ ?_
-  have hts : t ∈ s := hs (Ioo_subset_Icc_self ht)
-  have hn := (h.forall_inner_curveVelocityWithin_eq_zero_iff hsc ha).2
-    ⟨by simp [hVa], hnormal⟩ t hts
-  have hspeed : ‖curveVelocityWithin I γ s t‖ = 1 :=
-    (h.isGeodesicCurveOn.norm_curveVelocityWithin_eq hsc ha hts).symm.trans hunit
-  have hc := ((leviCivitaConnection I M).forall_sectionalCurvature_le_fixed_iff
-    (isMetricCompatible_leviCivitaConnection I) (γ t) _ κ).1 (hK t ht) (V t)
-  rw [Matrix.real_det_gram_fin_two, hn, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq,
-    hspeed] at hc
-  simpa using hc
+  simpa [hunit] using h.curvatureSine_mul_norm_alongCurveWithin_le_norm_of_sectionalCurvature_le
+    hab hs hVa hnormal hK (by simpa [hunit] using hbound)
 
 end IsJacobiFieldOn
 
