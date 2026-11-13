@@ -59,9 +59,9 @@ noncomputable def geckSumRootSubgroupPoints (A : Type v) [CommRing A] :
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
       (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
-        (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_eq_neg_one hji)
+        (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_neg_one_le hji.ge)
       (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
-        (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_eq_neg_one hij) A)
+        (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_neg_one_le hij.ge) A)
 
 /-- The sum-root matrix is the image of the integral exponential of the ordered bracket. -/
 @[simp]
@@ -76,9 +76,9 @@ theorem coe_geckSumRootSubgroupPoints (A : Type v) [CommRing A] (a : Multiplicat
           (t.geckCoordinateLattice ht).toAddSubgroup
           (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
           (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
-            (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_eq_neg_one hji)
+            (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_neg_one_le hji.ge)
           (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
-            (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_eq_neg_one hij)
+            (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_neg_one_le hij.ge)
           (t.isNilpotent_geckRepresentation_rootGenerator ht (.inl i)) (CommAlgCat.of ℤ A) a) := by
   simp only [geckSumRootSubgroupPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.subgroupCongr_apply,
@@ -98,9 +98,9 @@ theorem commutatorElement_geckSimpleRaising_eq_sumRoot
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
     (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
-      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_eq_neg_one hji)
+      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_neg_one_le hji.ge)
     (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
-      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_eq_neg_one hij) A a b
+      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_neg_one_le hij.ge) A a b
   apply Subtype.ext
   simpa only [commutatorElement_def, Subgroup.coe_mul, Subgroup.coe_inv,
     coe_geckRootSubgroupPoints, coe_geckSumRootSubgroupPoints,
@@ -128,9 +128,9 @@ theorem geckWeightTorusPoints_conj_geckSumRootSubgroupPoints
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
     (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
-      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_eq_neg_one hji)
+      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_neg_one_le hji.ge)
     (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
-      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_eq_neg_one hij)
+      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_neg_one_le hij.ge)
     (t.isCartanWeightVector_geckCoordinateBasisFin ht)
     (fun k ↦ t.lie_lieBasis_h_rootGenerator ht (.inl i) k)
     (fun k ↦ t.lie_lieBasis_h_rootGenerator ht (.inl j) k) A s u

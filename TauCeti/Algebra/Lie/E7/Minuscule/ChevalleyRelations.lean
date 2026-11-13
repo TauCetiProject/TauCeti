@@ -80,7 +80,8 @@ theorem commute_rootSubgroupPoints_inl_inl {i j : Fin 7} (hij : CartanMatrix.E 7
     Commute (rootSubgroupPoints (.inl i) A s) (rootSubgroupPoints (.inl j) A t) :=
   commute_rootSubgroupPoints_of_lie_eq_zero
     (by simpa only [TauCeti.serreRootGenerator_inl] using
-      TauCeti.lie_serreE_serreE_of_eq_zero ℚ CM (by rw [weightTable_cartanMatrix]; exact hij)) A s t
+      TauCeti.lie_serreE_serreE_of_nonneg ℚ CM (by
+        rw [weightTable_cartanMatrix]; exact hij.ge)) A s t
 
 /-- Negative numbered simple-root subgroups at nonadjacent nodes commute over every
 commutative ring. -/
@@ -89,7 +90,8 @@ theorem commute_rootSubgroupPoints_inr_inr {i j : Fin 7} (hij : CartanMatrix.E 7
     Commute (rootSubgroupPoints (.inr i) A s) (rootSubgroupPoints (.inr j) A t) :=
   commute_rootSubgroupPoints_of_lie_eq_zero
     (by simpa only [TauCeti.serreRootGenerator_inr] using
-      TauCeti.lie_serreF_serreF_of_eq_zero ℚ CM (by rw [weightTable_cartanMatrix]; exact hij)) A s t
+      TauCeti.lie_serreF_serreF_of_nonneg ℚ CM (by
+        rw [weightTable_cartanMatrix]; exact hij.ge)) A s t
 
 /-- A positive and a negative numbered simple-root subgroup at distinct nodes commute over
 every commutative ring. -/

@@ -75,7 +75,7 @@ theorem commute_rootSubgroupPoints_inl_inl {i j : Fin 6} (hij : CartanMatrix.E 6
     Commute (rootSubgroupPoints (.inl i) A s) (rootSubgroupPoints (.inl j) A t) :=
   commute_rootSubgroupPoints_of_lie_eq_zero (by
     simpa only [serreRootGenerator_inl] using
-      lie_serreE_serreE_of_eq_zero ℚ _ ((cartanMatrix_apply i j).trans hij)) A s t
+      lie_serreE_serreE_of_nonneg ℚ _ ((cartanMatrix_apply i j).trans hij).ge) A s t
 
 /-- Negative numbered simple-root subgroups at nonadjacent nodes commute over every commutative
 ring. -/
@@ -84,7 +84,7 @@ theorem commute_rootSubgroupPoints_inr_inr {i j : Fin 6} (hij : CartanMatrix.E 6
     Commute (rootSubgroupPoints (.inr i) A s) (rootSubgroupPoints (.inr j) A t) :=
   commute_rootSubgroupPoints_of_lie_eq_zero (by
     simpa only [serreRootGenerator_inr] using
-      lie_serreF_serreF_of_eq_zero ℚ _ ((cartanMatrix_apply i j).trans hij)) A s t
+      lie_serreF_serreF_of_nonneg ℚ _ ((cartanMatrix_apply i j).trans hij).ge) A s t
 
 /-- Positive and negative numbered simple-root subgroups at distinct nodes commute over every
 commutative ring. -/

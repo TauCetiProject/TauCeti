@@ -67,7 +67,7 @@ theorem commute_rootSubgroupPoints_inl_inl {i j : Fin n} (hij : CM i j = 0)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
     Commute (rootSubgroupPoints n hn (.inl i) A s) (rootSubgroupPoints n hn (.inl j) A t) :=
   commute_rootSubgroupPoints_of_lie_eq_zero
-    (by simpa only [serreRootGenerator_inl] using lie_serreE_serreE_of_eq_zero ℚ CM hij) A s t
+    (by simpa only [serreRootGenerator_inl] using lie_serreE_serreE_of_nonneg ℚ CM hij.ge) A s t
 
 /-- Negative numbered simple-root subgroups at nonadjacent type-`D` nodes commute over every
 commutative ring. -/
@@ -75,7 +75,7 @@ theorem commute_rootSubgroupPoints_inr_inr {i j : Fin n} (hij : CM i j = 0)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
     Commute (rootSubgroupPoints n hn (.inr i) A s) (rootSubgroupPoints n hn (.inr j) A t) :=
   commute_rootSubgroupPoints_of_lie_eq_zero
-    (by simpa only [serreRootGenerator_inr] using lie_serreF_serreF_of_eq_zero ℚ CM hij) A s t
+    (by simpa only [serreRootGenerator_inr] using lie_serreF_serreF_of_nonneg ℚ CM hij.ge) A s t
 
 /-- Positive and negative numbered simple-root subgroups at distinct type-`D` nodes commute over
 every commutative ring. -/
