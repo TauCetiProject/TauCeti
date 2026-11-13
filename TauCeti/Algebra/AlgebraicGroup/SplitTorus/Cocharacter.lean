@@ -43,6 +43,15 @@ the arbitrary-rank case, the **split torus** `T = D(Multiplicative (σ →₀ �
   between the genuine character lattice `X*(T) = σ →₀ ℤ` and cocharacter lattice
   `X_*(T) = Additive (Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ)`. We prove perfectness only
   in finite rank, the case relevant to root data.
+* For a finite-rank split torus over a field `k`, the pairing agrees with the categorical
+  character–cocharacter pairing of its object in the category of groups of multiplicative type:
+  `SplitTorus.toTorusCommHopfAlgCat` and `SplitTorus.toMultiplicativeTypeCommHopfAlgCat` view the
+  standard split torus as such an object, `SplitTorus.cocharacterLatticeEquiv` identifies its
+  categorical cocharacter lattice with the lattice of genuine cocharacters (through the
+  coordinate form `SplitTorus.cocharacterLatticeCoordEquiv`), and
+  `SplitTorus.characterCocharacterPairing_eq_latticePairing` compares the two pairings. The
+  absolute Galois group acts trivially on this cocharacter lattice
+  (`SplitTorus.cocharacterGaloisRepresentation_apply_eq_self`).
 
 This extends the rank-`1` pairing of `DiagonalizableGroup.pairing_ofAdd` to the finite-rank split
 torus.
@@ -65,6 +74,19 @@ torus.
 * `TauCeti.SplitTorus.latticePairing`: the same pairing between `X*(T)` and the genuine
   cocharacter lattice `Additive (Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ)`, perfect in
   finite rank (`instLatticePairingIsPerfPair`).
+* `TauCeti.SplitTorus.toTorusCommHopfAlgCat`,
+  `TauCeti.SplitTorus.toMultiplicativeTypeCommHopfAlgCat`: the standard split torus as an
+  object of the category of tori, respectively of groups of multiplicative type.
+* `TauCeti.SplitTorus.cocharacterLatticeCoordEquiv`, `TauCeti.SplitTorus.cocharacterLatticeEquiv`:
+  the categorical cocharacter lattice of the standard split torus in coordinates `σ → ℤ`, and as
+  the lattice of genuine cocharacters.
+* `TauCeti.SplitTorus.cocharAddEquiv_cocharacterLatticeEquiv_apply`: the coordinates of a
+  cocharacter under this identification are obtained by applying the functional to the standard
+  characters.
+* `TauCeti.SplitTorus.characterCocharacterPairing_eq_latticePairing`: the categorical
+  character–cocharacter pairing agrees with `latticePairing`.
+* `TauCeti.SplitTorus.cocharacterGaloisRepresentation_apply_eq_self`: the absolute Galois
+  group acts trivially on the cocharacter lattice of a standard split torus.
 
 ## References
 
@@ -167,6 +189,8 @@ pairing is the evaluation/dot product `⟨m, v⟩ = ∑ᵢ mᵢ vᵢ`, packaged 
 noncomputable def dotPairing : (σ →₀ ℤ) →ₗ[ℤ] (σ → ℤ) →ₗ[ℤ] ℤ :=
   (Finsupp.llift ℤ ℤ ℤ σ).toLinearMap.flip
 
+/-- The dot-product pairing of a finitely supported `m` with a function `v` is the finite sum
+`∑ᵢ mᵢ vᵢ` over the support of `m`. -/
 @[simp]
 theorem dotPairing_apply (m : σ →₀ ℤ) (v : σ → ℤ) :
     dotPairing m v = m.sum fun i c => c * v i := by
