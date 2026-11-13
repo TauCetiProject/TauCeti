@@ -163,7 +163,7 @@ distinct because they are linearly independent, and every irreducible character 
 theorem nonempty_equiv_conjClasses_irreducibleCharacters :
     Nonempty (ConjClasses G ≃ irreducibleCharacters k G) := by
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   obtain ⟨d, ρ, hirr, hind, -⟩ := exists_irreducible_family_conjClasses k G
   have := hirr
   have hmem : ∀ C, (ρ C).character ∈ irreducibleCharacters k G := fun C => ⟨d C, ρ C, hirr C, rfl⟩
@@ -177,7 +177,7 @@ theorem nonempty_equiv_conjClasses_irreducibleCharacters :
     exact ⟨C, Subtype.ext (_root_.Representation.char_iso e).symm⟩
 
 instance : Finite (irreducibleCharacters k G) :=
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   Finite.of_equiv _ (nonempty_equiv_conjClasses_irreducibleCharacters k G).some
 
 /-- **A group with invertible order has as many irreducible characters as conjugacy classes.** -/
@@ -297,7 +297,7 @@ theorem sum_characterDegree_sq_eq_card :
     ∑ i : Fin (Nat.card (ConjClasses G)), characterDegree k i ^ 2 = Nat.card G := by
   classical
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype (ConjClasses G) := Fintype.ofFinite (ConjClasses G)
   obtain ⟨d, ρ, hirr, hind, hsum⟩ := exists_irreducible_family_conjClasses k G
   have := hirr
@@ -322,7 +322,7 @@ theorem sum_characterDegree_sq_eq_card :
 /-- **The degree of an irreducible character divides the order of the group.** -/
 theorem characterDegree_dvd_card [CharZero k] (i : Fin (Nat.card (ConjClasses G))) :
     characterDegree k i ∣ Nat.card G := by
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   simpa using Representation.finrank_dvd_card (irreducibleRepresentation k i)
 
 end Enumeration
@@ -367,7 +367,7 @@ them as `G` has conjugacy classes, which is the dimension of the space of class 
 are linearly independent. -/
 noncomputable def basisIrreducibleCharacter :
     Module.Basis (Fin (Nat.card (ConjClasses G))) k (ClassFunction k G) :=
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   ClassFunction.basisOfIrreducibleCharacters (irreducibleRepresentation k)
     (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp)
 
@@ -376,7 +376,7 @@ variable {k G}
 @[simp]
 theorem basisIrreducibleCharacter_apply (i : Fin (Nat.card (ConjClasses G))) (g : G) :
     (basisIrreducibleCharacter k G i).1 g = irreducibleCharacter k i g := by
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   rw [basisIrreducibleCharacter, ClassFunction.basisOfIrreducibleCharacters_apply,
     ClassFunction.ofCharacter_apply, character_irreducibleRepresentation]
 
@@ -466,7 +466,7 @@ theorem card_conjClass_mul_sum_characterTable_mul_characterTable_inv (g h : G) :
         ∑ i : Fin (Nat.card (ConjClasses G)),
           characterTable k G i (ConjClasses.mk g) * characterTable k G i (ConjClasses.mk h⁻¹) =
       if IsConj g h then (Nat.card G : k) else 0 := by
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype G := Fintype.ofFinite G
   simpa using ClassFunction.card_conjClass_mul_sum_char_mul_char_inv
     (fun i : Fin (Nat.card (ConjClasses G)) => irreducibleRepresentation k i)
@@ -478,7 +478,7 @@ theorem sum_characterTable_mul_characterTable_inv (g h : G) :
     ∑ i : Fin (Nat.card (ConjClasses G)),
         characterTable k G i (ConjClasses.mk g) * characterTable k G i (ConjClasses.mk h⁻¹) =
       if IsConj g h then (Nat.card G : k) / Nat.card (ConjClasses.mk g).carrier else 0 := by
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype G := Fintype.ofFinite G
   simpa using ClassFunction.sum_char_mul_char_inv
     (fun i : Fin (Nat.card (ConjClasses G)) => irreducibleRepresentation k i)

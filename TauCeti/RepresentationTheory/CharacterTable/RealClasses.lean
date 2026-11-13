@@ -225,7 +225,7 @@ private theorem sum_ite_forall_characterTable_inv_eq_sum_ite_isRealClass
         (if ∀ C : ConjClasses G, characterTable k G i C⁻¹ = characterTable k G i C then
           (1 : k) else 0) =
       ∑ C : ConjClasses G, (if IsRealClass C then (1 : k) else 0) := by
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype G := Fintype.ofFinite G
   calc ∑ i : Fin (Nat.card (ConjClasses G)),
         (if ∀ C : ConjClasses G, characterTable k G i C⁻¹ = characterTable k G i C then
@@ -258,7 +258,7 @@ theorem card_inversionInvariant_eq_card_realClasses :
         ∀ C : ConjClasses G, characterTable k G i C⁻¹ = characterTable k G i C} =
       Nat.card {C : ConjClasses G // IsRealClass C} := by
   classical
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype (ConjClasses G) := Fintype.ofFinite (ConjClasses G)
   refine Nat.cast_injective (R := k) ?_
   rw [natCast_card_subtype _ k, natCast_card_subtype _ k]

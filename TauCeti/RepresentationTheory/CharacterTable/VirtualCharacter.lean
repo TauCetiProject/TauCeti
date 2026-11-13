@@ -304,7 +304,7 @@ natural numbers: the multiplicities with which the irreducibles occur in `V`. -/
 theorem character_eq_sum_nsmul_irreducibleCharacter (V : FDRep k G) :
     V.character = ∑ i, finrank k (Representation.IntertwiningMap V.ρ
       (irreducibleRepresentation k i)) • irreducibleCharacter k i := by
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype G := Fintype.ofFinite G
   funext y
   have hy := ClassFunction.apply_eq_sum_characterPairing_mul_character
@@ -429,7 +429,7 @@ theorem natCard_nsmul_mem_span_irreducibleCharacters (A : Subring k) {f : G → 
     (hf : f ∈ ClassFunction k G) (hfA : ∀ g, f g ∈ A)
     (hA : ∀ (i : Fin (Nat.card (ConjClasses G))) (g : G), irreducibleCharacter k i g ∈ A) :
     Nat.card G • f ∈ Submodule.span A (irreducibleCharacters k G) := by
-  have := finite_of_neZero_natCard k G
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype G := Fintype.ofFinite G
   have hexp : Nat.card G • f =
       ∑ i, (∑ g, irreducibleCharacter k i g * f g⁻¹) • irreducibleCharacter k i := by

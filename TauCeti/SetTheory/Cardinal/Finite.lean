@@ -45,7 +45,7 @@ public section
 namespace TauCeti
 
 /-- A type whose natural cardinality has nonzero cast in an additive monoid with one is finite. -/
-theorem finite_of_neZero_natCard (k : Type*) [AddMonoidWithOne k] (G : Type*)
+theorem finite_of_neZero_natCast_natCard (k : Type*) [AddMonoidWithOne k] (G : Type*)
     [NeZero (Nat.card G : k)] : Finite G :=
   Nat.finite_of_card_ne_zero (NeZero.of_neZero_natCast k).out
 
