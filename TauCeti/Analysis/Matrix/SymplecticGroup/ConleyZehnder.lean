@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.SymplecticGroup.Graph
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.OfReal
+import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
 # The Conley–Zehnder index of a path of symplectic matrices
@@ -225,14 +226,6 @@ theorem conleyZehnderIndex_eq_sum_of_diagonal {A B : GLSymplectic n ℝ} (γ : P
   refine Finset.sum_congr rfl fun j _ => ?_
   ring
 
-/-- `(⌊x⌋ + ⌈x⌉) / 2 = k + 1 / 2` for `x` strictly between the integers `k` and `k + 1`. -/
-private theorem floor_add_ceil_div_two_of_mem_Ioo {x : ℝ} {k : ℤ}
-    (hx : x ∈ Set.Ioo (k : ℝ) (k + 1)) : ((⌊x⌋ + ⌈x⌉ : ℤ) : ℝ) / 2 = k + 1 / 2 := by
-  rw [Int.floor_eq_iff.2 ⟨hx.1.le, hx.2⟩,
-    (Int.ceil_eq_iff (z := k + 1)).2 ⟨by push_cast; linarith [hx.1], by push_cast; exact hx.2.le⟩]
-  push_cast
-  ring
-
 /-- A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ` starting at the identity, whose angles all end
 in `(2 π k, 2 π (k + 1))`, has Conley–Zehnder index `-(2 k + 1) n`. -/
 private theorem conleyZehnderIndex_eq_of_rotation {A B : GLSymplectic n ℝ} (γ : Path A B)
@@ -243,8 +236,9 @@ private theorem conleyZehnderIndex_eq_of_rotation {A B : GLSymplectic n ℝ} (γ
     conleyZehnderIndex γ = -(2 * k + 1) * Fintype.card n := by
   have key (j : n) : (((⌊θ j 1 / (2 * Real.pi)⌋ + ⌈θ j 1 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2 -
       ((⌊θ j 0 / (2 * Real.pi)⌋ + ⌈θ j 0 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2) = k + 1 / 2 := by
-    rw [floor_add_ceil_div_two_of_mem_Ioo (h1 j), h0 j, zero_div, Int.floor_zero, Int.ceil_zero,
-      add_zero, Int.cast_zero, zero_div, sub_zero]
+    rw [floor_add_ceil_of_mem_Ioo (h1 j), h0 j, zero_div, Int.floor_zero, Int.ceil_zero]
+    push_cast
+    ring
   rw [conleyZehnderIndex_eq_sum_of_diagonal γ hθ hγ, Finset.sum_congr rfl fun j _ => key j,
     Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   ring

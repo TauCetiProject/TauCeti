@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
-import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
 # The graph of a loop of symplectic matrices and its Maslov index
@@ -431,37 +430,14 @@ private theorem coe_realOrthonormalize_graphFrameUnit (A : GLSymplectic n ℝ) :
     conjTranspose_graphFrame_mul_graphFrame (mem_iff_mem_symplecticGroup.1 A.2), Matrix.map_map,
     hre, Matrix.map_id]
 
-/-- The real orthonormalization of the graph frame of a symplectic matrix is unitary. -/
+/-- The real orthonormalization of the graph frame of a symplectic matrix is unitary, since the
+Gram matrix `1 + Aᵀ A` of the graph frame is real. -/
 private theorem realOrthonormalize_graphFrameUnit_mem (A : GLSymplectic n ℝ) :
     (realOrthonormalize (graphFrameUnit A) : Matrix (n ⊕ n) (n ⊕ n) ℂ) ∈
-      unitaryGroup (n ⊕ n) ℂ := by
-  have hA := mem_iff_mem_symplecticGroup.1 A.2
-  set M := ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
-  have hP : (1 + Mᵀ * M).PosDef := by
-    simpa only [conjTranspose_eq_transpose_of_trivial] using
-      posDef_one_add_conjTranspose_mul_self M
-  set P := 1 + Mᵀ * M
-  set R := P ^ (-(1 / 2) : ℝ)
-  -- `R` is symmetric, being a nonnegative real matrix, and `R P R = P ^ 0 = 1`.
-  have hR : Rᵀ = R := by
-    have h : IsSelfAdjoint R := IsSelfAdjoint.of_nonneg CFC.rpow_nonneg
-    rwa [IsSelfAdjoint, star_eq_conjTranspose, conjTranspose_eq_transpose_of_trivial] at h
-  have hRPR : R * P * R = 1 := by
-    have h0 : 0 ≤ P := hP.posSemidef.nonneg
-    calc R * P * R = P ^ (-(1 / 2) : ℝ) * P ^ (1 : ℝ) * P ^ (-(1 / 2) : ℝ) := by
-          rw [CFC.rpow_one P h0]
-      _ = P ^ (-(1 / 2) + 1 + -(1 / 2) : ℝ) := by
-          rw [CFC.rpow_add hP.isUnit, CFC.rpow_add hP.isUnit]
-      _ = 1 := by norm_num [CFC.rpow_zero P h0]
-  have hRstar : (R.map ((↑) : ℝ → ℂ))ᴴ = R.map ((↑) : ℝ → ℂ) := by
-    rw [← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
-      conjTranspose_eq_transpose_of_trivial, hR]
-  have h := congrArg Complex.ofRealHom.mapMatrix hRPR
-  rw [map_mul, map_mul, map_one] at h
-  rw [mem_unitaryGroup_iff', star_eq_conjTranspose, coe_realOrthonormalize_graphFrameUnit,
-    conjTranspose_mul, hRstar, Matrix.mul_assoc, ← Matrix.mul_assoc (graphFrame M)ᴴ,
-    conjTranspose_graphFrame_mul_graphFrame hA, ← Matrix.mul_assoc]
-  exact h
+      unitaryGroup (n ⊕ n) ℂ :=
+  realOrthonormalize_mem_unitaryGroup <| by
+    rw [coe_graphFrameUnit]
+    exact conjTranspose_graphFrame_mul_graphFrame (mem_iff_mem_symplecticGroup.1 A.2)
 
 /-- The **unitary frame of the graph** of a symplectic matrix `A`: the real orthonormalization
 `F Re (Fᴴ F) ^ (-1/2)` (`Matrix.GeneralLinearGroup.realOrthonormalize`) of the graph frame `F`.
