@@ -5,15 +5,15 @@ Authors: Chris Birkbeck, Claude
 -/
 module
 
-public import TauCeti.Analysis.Contour.Winding.Number.Circle
+public import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 
 /-!
 # The valence-formula winding values
 
 The generic circular-arc index integrals — `indexIntegral_arc_interval`, `indexIntegral_arc` and
 `windingNumber_circle` — are `circleMap` results rather than model-sector ones and live in
-`TauCeti.Analysis.Contour.Winding.Number.Circle`, which this module re-exports so that imports of
-this path keep working.
+`TauCeti.Analysis.Contour.Winding.Number.Circle.Basic`, which this module re-exports so that
+imports of this path keep working.
 
 What remains here are the two arc values the valence formula names by their points. Their
 *statements* are the generic arc computation at `α = π` and `α = π/3`; the names record the role

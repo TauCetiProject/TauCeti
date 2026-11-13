@@ -13,12 +13,12 @@ public import TauCeti.Probability.RandomMatrix.MomentBounds
 # Leading trace words and expected even moments of Wigner matrices
 
 In a leading cyclic word `w : Fin (2 * m) → Fin n` — a closed walk of length `2 * m` with no
-singleton unordered edge that visits `m + 1` vertices — no step is a self-loop, every unordered
-edge is traversed once as an increasing step `w t < w (t + 1)` and once in reverse, and all `m`
-increasing steps read distinct strictly upper coordinates of the Wigner array. Pairing each
-increasing step with its reverse turns the product of Wigner entries along `w` into the product of
-`n⁻¹ ‖ξ (w t, w (t + 1))‖²` over `m` distinct independent off-diagonal coordinates, whose
-expectation is `(n⁻¹ s) ^ m` whenever every off-diagonal coordinate has second absolute moment `s`.
+singleton unordered edge that visits `m + 1` vertices — pairing each discovery step of
+`TreeWalk.cyclicPath w` with its reverse (`integral_prod_wignerMatrix_apply_leading`) reduces the
+expected product of Wigner entries along `w` to the product of the second absolute moments at its
+`m` discovery steps. Since each discovery step reads an off-diagonal entry whose squared norm has
+expectation `n⁻¹ s`, every leading word contributes `((n : ℂ)⁻¹ * s) ^ m` whenever the off-diagonal
+coordinates have common second absolute moment `s`.
 
 Summing over the `catalan m * n.descFactorial (m + 1)` leading cyclic words and combining with the
 nonleading trace-word bound from `TauCeti.Probability.RandomMatrix.MomentBounds` and the
@@ -72,55 +72,35 @@ theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
       integrable_prod_wignerMatrix_apply (by simpa using hξ) (by simpa using hη) _ _
 
 /-- Along any leading cyclic word `w : Fin (2 * m) → Fin n`, the expected product of Wigner entries
-equals `((n : ℂ)⁻¹ * s) ^ m` whenever the off-diagonal coordinates `ξ` are independent, almost
-everywhere measurable, and have common second absolute moment `s`. Neither centering nor any
-assumption on the diagonal entries `η` is needed, because leading words have no self-loops. -/
+equals `((n : ℂ)⁻¹ * s) ^ m` whenever the off-diagonal coordinates `ξ` are independent, have
+almost-everywhere strongly measurable squared norms, and have common second absolute moment `s`.
+Neither centering nor any assumption on the diagonal entries `η` is needed, because leading words
+have no self-loops. -/
 theorem integral_prod_wignerMatrix_of_leading {m n : ℕ} {s : ℝ}
-    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hξindep : iIndepFun ξ P)
+    (hξ : ∀ ij, AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hξindep : iIndepFun ξ P)
     (hξsq : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) {w : Fin (2 * m) → Fin n}
     (h : ∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t)))
     (hv : #(univ.image w) = m + 1) :
     ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P =
       ((n : ℂ)⁻¹ * s) ^ m := by
-  let U : Finset (Fin (2 * m)) := {t | w t < w (finRotate (2 * m) t)}
-  let idx (t : U) : StrictUpper :=
-    ⟨((w t.1).val, (w (finRotate (2 * m) t.1)).val), Fin.lt_def.mp (mem_filter.mp t.2).2⟩
-  have hidx : Function.Injective idx := by
-    intro t₁ t₂ heq
-    obtain ⟨h1, h2⟩ := Prod.mk.inj (Subtype.mk.inj heq)
-    exact Subtype.ext
-      (TreeWalk.injective_step_of_leading h hv (Prod.ext (Fin.ext h1) (Fin.ext h2)))
-  let g : ℂ → ℂ := fun z ↦ (n : ℂ)⁻¹ * (‖z‖ ^ 2 : ℝ)
-  have hg : Continuous g := by fun_prop
-  have hscale : (Real.sqrt n : ℂ)⁻¹ * (Real.sqrt n : ℂ)⁻¹ = (n : ℂ)⁻¹ := by
-    rw [← Complex.ofReal_inv, ← Complex.ofReal_mul, ← mul_inv,
-      Real.mul_self_sqrt (Nat.cast_nonneg n), Complex.ofReal_inv, Complex.ofReal_natCast]
-  have hprod (ω : Ω) : ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) =
-      ∏ t : U, g (ξ (idx t) ω) := by
-    rw [TreeWalk.prod_eq_prod_filter_lt_finRotate (fun i j ↦ wignerMatrix ξ η n ω i j) h hv,
-      ← U.prod_attach]
-    refine prod_congr rfl fun t _ ↦ ?_
-    have hlt : (w t.1).val < (w (finRotate (2 * m) t.1)).val :=
-      Fin.lt_def.mp (mem_filter.mp t.2).2
-    rw [wignerMatrix_apply_of_lt ξ η ω hlt, wignerMatrix_apply_of_gt ξ η ω hlt]
-    calc ((Real.sqrt n : ℂ)⁻¹ * ξ (idx t) ω) * ((Real.sqrt n : ℂ)⁻¹ * star (ξ (idx t) ω))
-        = ((Real.sqrt n : ℂ)⁻¹ * (Real.sqrt n : ℂ)⁻¹) * (ξ (idx t) ω * star (ξ (idx t) ω)) := by
-            ring
-      _ = g (ξ (idx t) ω) := by
-            rw [hscale, Complex.star_def, Complex.mul_conj, Complex.normSq_eq_norm_sq]
-  simp_rw [hprod]
-  rw [(hξindep.precomp hidx).integral_fun_prod_comp (fun t ↦ hξm (idx t))
-    (fun _ ↦ hg.aestronglyMeasurable)]
-  have hterm (t : U) : ∫ ω, g (ξ (idx t) ω) ∂P = (n : ℂ)⁻¹ * s := by
-    dsimp only [g]
-    rw [integral_const_mul, integral_complex_ofReal, hξsq (idx t)]
-  simp_rw [hterm]
-  rw [prod_const, card_univ, Fintype.card_coe, TreeWalk.card_filter_lt_finRotate h hv]
+  have : NeZero m := ⟨by rintro rfl; simp at hv⟩
+  rw [integral_prod_wignerMatrix_apply_leading hξ hξindep w h hv]
+  have hterm (i : Fin (2 * m)) (hi : i ∈
+      ({i : Fin (2 * m) |
+        TreeWalk.canonicalWalk (TreeWalk.cyclicPath w) i.succ = i.succ} : Finset _)) :
+      ∫ ω, ‖wignerMatrix ξ η n ω (w i) (w (finRotate (2 * m) i))‖ ^ 2 ∂P = (n : ℝ)⁻¹ * s := by
+    have hne : w i ≠ w (finRotate (2 * m) i) := by
+      simpa only [TreeWalk.cyclicPath_castSucc, TreeWalk.cyclicPath_succ] using
+        TreeWalk.ne_of_canonicalWalk_succ_eq (TreeWalk.cyclicPath w) i (mem_filter.mp hi).2
+    simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hne, integral_const_mul, hξsq]
+  rw [prod_congr rfl hterm, prod_const, TreeWalk.card_filter_canonicalWalk_succ_eq,
+    TreeWalk.image_cyclicPath, hv, Nat.add_sub_cancel]
+  simp only [Complex.ofReal_pow, Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_natCast]
 
 /-- For `m ≠ 0`, the sum of expected Wigner entry products over all leading cyclic words of length
 `2 * m` is `(catalan m * n.descFactorial (m + 1)) * ((n : ℂ)⁻¹ * s) ^ m`. -/
 theorem sum_integral_prod_wignerMatrix_leading {m n : ℕ} (hm : m ≠ 0) {s : ℝ}
-    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hξindep : iIndepFun ξ P)
+    (hξ : ∀ ij, AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hξindep : iIndepFun ξ P)
     (hξsq : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
     (∑ w : Fin (2 * m) → Fin n with
       (∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t))) ∧
@@ -128,7 +108,7 @@ theorem sum_integral_prod_wignerMatrix_leading {m n : ℕ} (hm : m ≠ 0) {s : �
       ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P) =
       (catalan m * n.descFactorial (m + 1) : ℕ) * ((n : ℂ)⁻¹ * s) ^ m := by
   rw [sum_congr rfl fun w hw ↦
-    integral_prod_wignerMatrix_of_leading hξm hξindep hξsq (mem_filter.mp hw).2.1
+    integral_prod_wignerMatrix_of_leading hξ hξindep hξsq (mem_filter.mp hw).2.1
       (mem_filter.mp hw).2.2,
     sum_const, nsmul_eq_mul, TreeWalk.card_filter_leading_cyclic_word hm, Fintype.card_fin]
 
@@ -136,8 +116,8 @@ theorem sum_integral_prod_wignerMatrix_leading {m n : ℕ} (hm : m ≠ 0) {s : �
 `s ^ m * catalan m` up to the vertex-collision error `s ^ m * catalan m * (m + 1).choose 2 / n`.
 Neither centering nor any assumption on the diagonal entries is needed. -/
 theorem norm_inv_mul_sum_integral_prod_wignerMatrix_leading_sub_le {m n : ℕ} (hm : m ≠ 0)
-    (hn : n ≠ 0) {s : ℝ} (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hξindep : iIndepFun ξ P)
-    (hξsq : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
+    (hn : n ≠ 0) {s : ℝ} (hξ : ∀ ij, AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hξindep : iIndepFun ξ P) (hξsq : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
     ‖(n : ℂ)⁻¹ * (∑ w : Fin (2 * m) → Fin n with
         (∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t))) ∧
           #(univ.image w) = m + 1,
@@ -164,7 +144,7 @@ theorem norm_inv_mul_sum_integral_prod_wignerMatrix_leading_sub_le {m n : ℕ} (
       (s : ℂ) ^ m * catalan m =
       (((s ^ m * catalan m * ((n.descFactorial (m + 1) : ℝ) - (n : ℝ) ^ (m + 1)) /
         (n : ℝ) ^ (m + 1)) : ℝ) : ℂ) := by
-    rw [sum_integral_prod_wignerMatrix_leading hm hξm hξindep hξsq, mul_pow, inv_pow]
+    rw [sum_integral_prod_wignerMatrix_leading hm hξ hξindep hξsq, mul_pow, inv_pow]
     push_cast
     field_simp [hnc]
     ring
@@ -215,7 +195,7 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le {m n : ℕ} 
     have hlead : ‖(n : ℂ)⁻¹ * L - (s : ℂ) ^ m * catalan m‖ ≤
         s ^ m * catalan m * (m + 1).choose 2 / n :=
       norm_inv_mul_sum_integral_prod_wignerMatrix_leading_sub_le hm hn
-        (fun ij ↦ (hξp ij).aestronglyMeasurable.aemeasurable)
+        (fun ij ↦ (continuous_norm.pow 2).comp_aestronglyMeasurable (hξp ij).aestronglyMeasurable)
         (hindep.precomp (g := Sum.inl) Sum.inl_injective) hξsq
     have hsplit : (n : ℂ)⁻¹ * (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) -
         (s : ℂ) ^ m * catalan m =
