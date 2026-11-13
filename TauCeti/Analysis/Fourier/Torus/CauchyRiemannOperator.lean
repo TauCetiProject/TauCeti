@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Fourier.Torus.ConjWirtinger
 public import TauCeti.Analysis.Fourier.Torus.ContMDiff
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.AddCircle
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The Cauchy-Riemann operator on the trivial line bundle over the square torus
