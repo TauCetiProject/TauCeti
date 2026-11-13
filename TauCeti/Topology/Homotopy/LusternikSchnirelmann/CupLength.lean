@@ -40,8 +40,8 @@ exact sequence of the pair lifts it to `H*(X, Uᵢ)`. The relative cup product o
   product of `n` positive-degree classes is nonzero.
 * `TauCeti.lsCupLength_eq_zero_iff`: the cup length vanishes exactly when every class of positive
   degree vanishes.
-* `TauCeti.lsCupLength_le_one_of_subsingleton`: cohomology concentrated in a single positive degree
-  has cup length at most `1`.
+* `TauCeti.lsCupLength_le_one_of_subsingleton`: if `Hᵖ(X; R)` is a subsingleton in every positive
+  degree `p ≠ N`, the cup length is at most `1`.
 * `TauCeti.IsPositiveDegreeCupProduct.exists_singularCohomologyπ_eq`: a product of `n` classes of
   positive degree comes from the cohomology of `X` relative to the union of any `n` open sets with
   nullhomotopic inclusions.
@@ -196,10 +196,9 @@ theorem lsCupLength_eq_zero_iff :
     natCast_le_lsCupLength_iff one_ne_zero]
   simp
 
-/-- **Cohomology in a single positive degree has cup length at most `1`.** If the cohomology of
-`X` vanishes in every positive degree other than `N`, then every product of two classes of positive
-degree vanishes: if both factors are nonzero they have degree `N`, so the product lies in the
-positive degree `N + N ≠ N`. -/
+/-- **Cohomology in a single positive degree has cup length at most `1`.** If `Hᵖ(X; R)` is a
+subsingleton in every positive degree `p ≠ N`, so that the cohomology of `X` is nonzero in at most
+one positive degree, then `lsCupLength X R ≤ 1`. -/
 theorem lsCupLength_le_one_of_subsingleton {N : ℕ}
     (h : ∀ p, p ≠ 0 → p ≠ N → Subsingleton
       ((TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) p)) :
