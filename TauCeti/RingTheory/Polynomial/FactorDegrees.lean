@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
+import TauCeti.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
 /-!
 # Degrees of polynomial factors modulo a prime
@@ -150,7 +151,7 @@ theorem factorDegrees_eq_singleton_of_irreducible (f : ℤ[X]) (p : ℕ)
 theorem irreducible_map_of_card_factorDegrees_eq_one {f : ℤ[X]} {p : ℕ}
     [Fact p.Prime] (h : (f.factorDegrees p).card = 1) :
     Irreducible (f.map (Int.castRingHom (ZMod p))) :=
-  Polynomial.irreducible_of_card_normalizedFactors_eq_one (by simpa using h)
+  card_normalizedFactors_eq_one_iff.mp (by simpa using h)
 
 /-- The factor degrees of `f` modulo `p` are the singleton `{n}` exactly when the reduction is
 irreducible of degree `n`. -/

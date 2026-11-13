@@ -207,6 +207,19 @@ theorem integral_norm_iteratedFDeriv_comp_left_le (L : F →L[ℝ] G) (f : 𝓢(
     ((f.integrable_norm_iteratedFDeriv k).const_mul ‖L‖)
     (.of_forall fun _ ↦ L.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top))
 
+section Smul
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- Multiplication by a function which is not of temperate growth is the zero map: Mathlib's
+`smulLeftCLM` is defined to be `0` there. -/
+theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemperateGrowth) :
+    smulLeftCLM F g = 0 := by
+  simp [smulLeftCLM, hg]
+
+end Smul
+
 end SchwartzMap
 
 namespace TauCeti

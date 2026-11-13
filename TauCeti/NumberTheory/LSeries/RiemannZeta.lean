@@ -179,7 +179,7 @@ theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemann
     rw [intervalIntegral.integral_of_le one_le_two] at hpos
     exact hpos.trans_le (MeasureTheory.setIntegral_mono_set hgint
       (MeasureTheory.ae_restrict_of_forall_mem measurableSet_Ioi fun t ht ↦ hg₀ t (by
-        simp only [Set.mem_Ioi] at ht; linarith)) Set.Ioc_subset_Ioi_self.eventuallyLE)
+        simp only [Set.mem_Ioi] at ht; linarith)) Set.Ioc_subset_Ioi_self.eventuallySubset)
   have hrep := one_sub_two_cpow_mul_riemannZeta_eq_mul_integral (s := σ) (by simpa using h₀)
     (by exact_mod_cast h₁.ne)
   have h2 : (2 : ℂ) ^ (1 - (σ : ℂ)) = ((2 : ℝ) ^ (1 - σ) : ℝ) := by

@@ -239,7 +239,7 @@ noncomputable def cofreeUnit [Comodule R C P] :
         rw [cofree_coact_eq_cofreeCoact]
         refine LinearMap.ext fun p => ?_
         simp only [LinearMap.comp_apply, cofreeCoact, LinearEquiv.coe_coe]
-        rw [← Comodule.coassoc_apply p, LinearEquiv.symm_apply_apply]
+        rw [Comodule.coassoc_symm_apply]
         rfl }
 
 /-- The underlying linear map of `cofreeUnit P` is the coaction of `P`. -/
