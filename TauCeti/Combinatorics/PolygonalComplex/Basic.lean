@@ -247,6 +247,13 @@ theorem linkDegree_def (e : C.graph.E) :
       Nat.card {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).1 = e} :=
   (rfl)
 
+/-- The degree of a germ `e` at the vertex `v` is the number of darts of the link of `v` starting
+at `e`. -/
+theorem linkDegree_eq_card_of_src_eq {e : C.graph.E} {v : C.graph.V} (h : C.graph.src e = v) :
+    C.linkDegree e = Nat.card {d : (C.vertexLink v).E // ((C.vertexLink v).src d).1 = e} := by
+  subst h
+  rfl
+
 /-- The number of face sides attached along the dart `e`, as the `Nat.card` of the corners whose
 outgoing side is `e`. As with `Nat.card`, this is `0` when there are infinitely many such corners;
 it is the ordinary count when `C.Face` is finite. -/
