@@ -29,8 +29,6 @@ from the diamond operator and is not part of the diagonal slash.
 
 ## Main results
 
-* `TauCeti.map_natDiagGL_d_one_eq_scaleGL`: the rational diagonal representative maps to the real
-  scaling matrix used by `V_d`.
 * `TauCeti.slash_natDiagGL_d_one_eq_smul_levelRaise`: the rational diagonal slash is
   `d ^ (k - 1)` times the degeneracy map.
 * `TauCeti.hasSum_slash_natDiagGL_d_one`: the expansion of the slash at any period `N`, for a
@@ -63,18 +61,6 @@ open scoped MatrixGroups ModularForm Pointwise Manifold
 namespace TauCeti
 
 variable {k : ℤ} {d : ℕ}
-
-/-- The positive rational diagonal matrix `diag(d, 1)` maps to the real scaling matrix used to
-define the degeneracy operator `V_d`. -/
-@[simp]
-lemma map_natDiagGL_d_one_eq_scaleGL [NeZero d] :
-    Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (natDiagGL 2 ![d, 1]) = scaleGL d := by
-  have hd : 0 < d := Nat.pos_of_ne_zero (NeZero.ne d)
-  apply Units.ext
-  ext i j
-  rw [Matrix.GeneralLinearGroup.map_apply, natDiagGL_coe 2 ![d, 1]
-    (fun i ↦ by fin_cases i <;> simp [hd]), coe_scaleGL]
-  fin_cases i <;> fin_cases j <;> simp
 
 /-- Slashing by the rational matrix `diag(d, 1)` is the same as slashing by `scaleGL d`, its
 real image. In particular it rescales the argument by `d` and contributes the arithmetic
