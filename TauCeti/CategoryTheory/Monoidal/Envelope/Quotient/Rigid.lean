@@ -21,8 +21,14 @@ The duals follow `CategoryTheory.Functor.mapHasLeftDual` and
 `CategoryTheory.Functor.mapHasRightDual`, reusing `CategoryTheory.Functor.mapExactPairing` along
 the strong monoidal quotient functor. Their carriers are specified explicitly so that the
 evaluation equations can be used without unfolding the generic dual-transfer constructions.
-The instances use the caller's dual of the underlying object `X.as`, so an individual object
-needs a dual only on the corresponding side; rigidity of the whole source category is unnecessary.
+The per-object dual instances use the caller's dual of the underlying object `X.as`, so they
+need a dual only on the corresponding side, not rigidity of the whole source category.
+
+The right-dual comparison of the quotient functor is the identity. Morphisms from a descended
+right dual can be identified by composing with a mapped evaluation. For a right rigid source,
+the right-dual tensor comparison and unit dual identification descend, as do the tensor and unit
+comparisons of the double-right-dual functor (`μ`, `δ`, `ε`, `η`). These equations supply the
+comparison data for descent of pivotal structures.
 
 This is the rigid structure used in semisimplification of diagram categories by tensor ideals.
 For the Temperley–Lieb setting, see F. M. Goodman and H. Wenzl, *Ideals in the Temperley–Lieb
