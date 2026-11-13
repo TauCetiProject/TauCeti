@@ -34,7 +34,7 @@ It is proved in two steps.
 * **The relative Moser step** treats the case where `ω₀` and `ω₁` agree as full forms at
   `(q₀, 0)`. On a ball around `(q₀, 0)`, which is stable under the fibre scaling
   `(q, n) ↦ (q, t • n)` for `t ∈ [0, 1]`, the relative Poincaré lemma
-  (`Convex.exists_contDiffOn_relative_primitive`) gives a one-form `β` with `dβ = ω₁ - ω₀`,
+  (`IsOpen.exists_contDiffOn_relative_primitive`) gives a one-form `β` with `dβ = ω₁ - ω₀`,
   vanishing as a full covector at every point of the zero section since `ω₁ - ω₀` pulls back to
   zero there. Moser's lemma
   (`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_of_extDeriv_eq`)
@@ -116,8 +116,8 @@ private theorem exists_diffeomorph_fix_zeroSection_of_eq
     ext v
     simpa [sub_eq_zero] using congrArg (· v) (htan q (hρW hq))
   -- A primitive of `ω₁ - ω₀` vanishing along the zero section (the relative Poincaré lemma).
-  obtain ⟨β, hβ, hβ0, hdβ⟩ := (convex_ball (q₀, (0 : N)) ρ).exists_contDiffOn_relative_primitive
-    (k := 1) isOpen_ball hr ((hω₁.mono hρW).sub (hω₀.mono hρW)) hscale hd hzero
+  obtain ⟨β, hβ, hβ0, hdβ⟩ := isOpen_ball.exists_contDiffOn_relative_primitive
+    (k := 1) hr ((hω₁.mono hρW).sub (hω₀.mono hρW)) hscale hd hzero
   -- Moser's lemma for this primitive: the resulting diffeomorphism fixes the zeros of `β`.
   obtain ⟨ψ, hfix, hψ⟩ :=
     exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_of_extDeriv_eq hr isOpen_ball

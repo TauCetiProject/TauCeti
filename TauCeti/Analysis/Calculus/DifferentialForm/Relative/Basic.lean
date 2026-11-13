@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.TangentCone.Prod
 On a product `E × N`, scale only the normal coordinate: `H((q, p), t) = (q, t • p)`.
 Integrating the time contraction of `H*ω` gives `fiberwisePoincareHomotopy ω`.
 This form vanishes as a full ambient tensor at every `(q, 0)`, even if `ω` does not.
-For a closed form on an open convex set stable under this scaling, its exterior derivative is
+For a closed form on an open set stable under this scaling, its exterior derivative is
 `ω - r*ω`, where `r(q, p) = (q, 0)`. Thus vanishing of the restriction of `ω` to the zero
 section suffices to obtain a primitive vanishing there. This is the local product construction
 used to compare symplectic forms relative to a submanifold.
@@ -217,11 +217,43 @@ theorem _root_.Convex.contDiffOn_fiberwisePoincareHomotopy {s : Set (E × N)} (h
     ContDiffOn ℝ r (fiberwisePoincareHomotopy ω) s :=
   hs.contDiffOn_cylinderHomotopy hsu (contDiffOn_fiberScalingPullback hω hscale)
 
+/-- A thickening of the normal segment through a point of an open set stable under scaling the
+normal coordinate is a convex open neighborhood of that point inside the set, still stable under
+that scaling. -/
+private theorem exists_convex_isOpen_subset_of_scaling {s : Set (E × N)} (hso : IsOpen s)
+    (hscale : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, (x.1, t • x.2) ∈ s) {x : E × N} (hx : x ∈ s) :
+    ∃ u ⊆ s, Convex ℝ u ∧ IsOpen u ∧ x ∈ u ∧
+      ∀ y ∈ u, ∀ t ∈ Icc (0 : ℝ) 1, (y.1, t • y.2) ∈ u := by
+  set S := (fun t : ℝ ↦ (x.1, t • x.2)) '' Icc 0 1
+  have hS : S = segment ℝ (x.1, 0) x := by
+    rw [segment_eq_image']
+    exact image_congr fun t _ ↦ by ext <;> simp
+  obtain ⟨δ, hδ, hδs⟩ := (isCompact_Icc.image (by fun_prop)).exists_thickening_subset_open hso
+    (image_subset_iff.2 fun t ht ↦ hscale x hx t ht : S ⊆ s)
+  refine ⟨Metric.thickening δ S, hδs, hS ▸ (convex_segment _ _).thickening δ,
+    Metric.isOpen_thickening, Metric.self_subset_thickening hδ S ⟨1, by simp, by simp⟩,
+    fun y hy t ht ↦ ?_⟩
+  obtain ⟨_, ⟨a, ha, rfl⟩, hya⟩ := Metric.mem_thickening_iff.1 hy
+  refine Metric.mem_thickening_iff.2 ⟨(x.1, (t * a) • x.2),
+    ⟨t * a, ⟨mul_nonneg ht.1 ha.1, (mul_le_of_le_one_left ha.1 ht.2).trans ha.2⟩, rfl⟩, ?_⟩
+  refine lt_of_le_of_lt ?_ hya
+  simp only [Prod.dist_eq, mul_smul, dist_smul₀, Real.norm_eq_abs, abs_of_nonneg ht.1]
+  exact max_le_max le_rfl (mul_le_of_le_one_left dist_nonneg ht.2)
+
+/-- Fiberwise Poincaré integration preserves regularity on an open set stable under scaling the
+normal coordinate. -/
+theorem _root_.IsOpen.contDiffOn_fiberwisePoincareHomotopy {s : Set (E × N)} (hso : IsOpen s)
+    {r : ℕ∞} {ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F}
+    (hω : ContDiffOn ℝ r ω s)
+    (hscale : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, (x.1, t • x.2) ∈ s) :
+    ContDiffOn ℝ r (fiberwisePoincareHomotopy ω) s := fun x hx ↦ by
+  obtain ⟨u, hus, hu, huo, hxu, hscaleu⟩ := exists_convex_isOpen_subset_of_scaling hso hscale hx
+  exact ((hu.contDiffOn_fiberwisePoincareHomotopy huo.uniqueDiffOn (hω.mono hus) hscaleu x
+    hxu).contDiffAt (huo.mem_nhds hxu)).contDiffWithinAt
+
 variable [CompleteSpace F]
 
-/-- The relative Poincaré identity for a closed form: `dKω = ω - r*ω`, where
-`r(q, p) = (q, 0)`. Only the tangential restriction of `ω` occurs in the correction term. -/
-theorem _root_.Convex.extDeriv_fiberwisePoincareHomotopy {s : Set (E × N)} (hs : Convex ℝ s)
+private theorem extDeriv_fiberwisePoincareHomotopy_of_convex {s : Set (E × N)} (hs : Convex ℝ s)
     (hso : IsOpen s) {ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F}
     (hω : ContDiffOn ℝ 1 ω s)
     (hscale : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, (x.1, t • x.2) ∈ s)
@@ -270,11 +302,24 @@ theorem _root_.Convex.extDeriv_fiberwisePoincareHomotopy {s : Set (E × N)} (hs 
       ContinuousLinearMap.inl_apply, one_smul, zero_smul, add_zero]
   rfl
 
+/-- The relative Poincaré identity for a closed form: `dKω = ω - r*ω`, where
+`r(q, p) = (q, 0)`. Only the tangential restriction of `ω` occurs in the correction term. -/
+theorem _root_.IsOpen.extDeriv_fiberwisePoincareHomotopy {s : Set (E × N)} (hso : IsOpen s)
+    {ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F}
+    (hω : ContDiffOn ℝ 1 ω s)
+    (hscale : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, (x.1, t • x.2) ∈ s)
+    (hclosed : ∀ x ∈ s, extDeriv ω x = 0) {x : E × N} (hx : x ∈ s) :
+    extDeriv (fiberwisePoincareHomotopy ω) x = ω x -
+      (ω (x.1, 0)).compContinuousLinearMap
+        ((ContinuousLinearMap.id ℝ E).prodMap (0 : N →L[ℝ] N)) := by
+  obtain ⟨u, hus, hu, huo, hxu, hscaleu⟩ := exists_convex_isOpen_subset_of_scaling hso hscale hx
+  exact extDeriv_fiberwisePoincareHomotopy_of_convex hu huo (hω.mono hus) hscaleu
+    (fun y hy ↦ hclosed y (hus hy)) hxu
+
 /-- If the tangential restriction to the zero section vanishes, fiber scaling gives a
 primitive whose exterior derivative is the original closed form. No ambient vanishing
 of the original form on the zero section is required. -/
-theorem _root_.Convex.extDeriv_fiberwisePoincareHomotopy_eq {s : Set (E × N)}
-    (hs : Convex ℝ s) (hso : IsOpen s)
+theorem _root_.IsOpen.extDeriv_fiberwisePoincareHomotopy_eq {s : Set (E × N)} (hso : IsOpen s)
     {ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F}
     (hω : ContDiffOn ℝ 1 ω s)
     (hscale : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, (x.1, t • x.2) ∈ s)
@@ -283,7 +328,7 @@ theorem _root_.Convex.extDeriv_fiberwisePoincareHomotopy_eq {s : Set (E × N)}
       (ω (q, 0)).compContinuousLinearMap (ContinuousLinearMap.inl ℝ E N) = 0)
     {x : E × N} (hx : x ∈ s) :
     extDeriv (fiberwisePoincareHomotopy ω) x = ω x := by
-  rw [hs.extDeriv_fiberwisePoincareHomotopy hso hω hscale hclosed hx]
+  rw [hso.extDeriv_fiberwisePoincareHomotopy hω hscale hclosed hx]
   have hx0 : (x.1, (0 : N)) ∈ s := by simpa using hscale x hx 0 (by simp)
   have hc : (ω (x.1, 0)).compContinuousLinearMap
       ((ContinuousLinearMap.id ℝ E).prodMap (0 : N →L[ℝ] N)) = 0 := by
@@ -294,12 +339,12 @@ theorem _root_.Convex.extDeriv_fiberwisePoincareHomotopy_eq {s : Set (E × N)}
     exact h
   rw [hc, sub_zero]
 
-/-- **The relative Poincaré lemma on an adapted convex neighborhood.** A closed form of
+/-- **The relative Poincaré lemma on an adapted open neighborhood.** A closed form of
 positive degree whose restriction to the zero section vanishes has a primitive of the same
 regularity, vanishing there as a full ambient tensor. The neighborhood must be stable under
 scaling the normal coordinate towards zero. -/
-theorem _root_.Convex.exists_contDiffOn_relative_primitive {s : Set (E × N)}
-    (hs : Convex ℝ s) (hso : IsOpen s) {r : ℕ∞} (hr : 1 ≤ r)
+theorem _root_.IsOpen.exists_contDiffOn_relative_primitive {s : Set (E × N)}
+    (hso : IsOpen s) {r : ℕ∞} (hr : 1 ≤ r)
     {ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F}
     (hω : ContDiffOn ℝ r ω s)
     (hscale : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, (x.1, t • x.2) ∈ s)
@@ -308,9 +353,9 @@ theorem _root_.Convex.exists_contDiffOn_relative_primitive {s : Set (E × N)}
       (ω (q, 0)).compContinuousLinearMap (ContinuousLinearMap.inl ℝ E N) = 0) :
     ∃ β : E × N → (E × N) [⋀^Fin k]→L[ℝ] F,
       ContDiffOn ℝ r β s ∧ (∀ q : E, β (q, 0) = 0) ∧ ∀ x ∈ s, extDeriv β x = ω x := by
-  refine ⟨fiberwisePoincareHomotopy ω, hs.contDiffOn_fiberwisePoincareHomotopy
-    hso.uniqueDiffOn hω hscale, fiberwisePoincareHomotopy_zeroSection ω, fun x hx ↦ ?_⟩
-  exact hs.extDeriv_fiberwisePoincareHomotopy_eq hso
+  refine ⟨fiberwisePoincareHomotopy ω, hso.contDiffOn_fiberwisePoincareHomotopy hω hscale,
+    fiberwisePoincareHomotopy_zeroSection ω, fun x hx ↦ ?_⟩
+  exact hso.extDeriv_fiberwisePoincareHomotopy_eq
     (hω.of_le (by exact_mod_cast hr)) hscale hclosed hzero hx
 
 end TauCeti
