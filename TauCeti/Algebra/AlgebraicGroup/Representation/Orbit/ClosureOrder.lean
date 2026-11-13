@@ -116,6 +116,22 @@ theorem mk_basePointsRepresentation (g : WithConv (H →ₐ[k] k)) (v : M) :
     (mk (basePointsRepresentation M g v) : VectorOrbit k H M) = mk v :=
   (mk_eq_mk_iff.mpr ⟨g, rfl⟩).symm
 
+/-- Descend a function on vectors that is invariant under the rational points of `G` to a
+function on rational orbits. -/
+def lift {α : Sort*} (f : M → α)
+    (hf : ∀ (g : WithConv (H →ₐ[k] k)) (v : M), f (basePointsRepresentation M g v) = f v) :
+    VectorOrbit k H M → α :=
+  Quotient.lift f (by
+    rintro v _ ⟨g, rfl⟩
+    exact (hf g v).symm)
+
+/-- The value of a lifted function on the orbit of `v` is its value on `v`. -/
+@[simp]
+theorem lift_mk {α : Sort*} (f : M → α)
+    (hf : ∀ (g : WithConv (H →ₐ[k] k)) (v : M), f (basePointsRepresentation M g v) = f v)
+    (v : M) : lift f hf (mk v : VectorOrbit k H M) = f v :=
+  (rfl)
+
 end VectorOrbit
 
 end Conjugacy
@@ -132,12 +148,9 @@ full topological image, including nonclosed points, of the projective orbit morp
 through `(v, 1)`, for any vector `v` of the orbit. -/
 noncomputable def image (O : VectorOrbit k H M) :
     Set (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))) :=
-  Quotient.liftOn O
-    (fun v ↦ Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
+  lift (fun v ↦ Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
       (Module.isUnimodular_mk_one v)))
-    (by
-      rintro v _ ⟨g, rfl⟩
-      exact (range_projectiveOrbitMap_mk_one_basePointsRepresentation g v).symm)
+    range_projectiveOrbitMap_mk_one_basePointsRepresentation O
 
 /-- The image of the orbit of `v` is the image of the projective orbit morphism of `(v, 1)`. -/
 @[simp]
