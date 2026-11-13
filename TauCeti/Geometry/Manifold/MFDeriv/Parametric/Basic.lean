@@ -155,6 +155,26 @@ theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd {f : 𝕜 → 𝕜 → 
   filter_upwards [hnear] with z hz
   simp only [Function.comp_apply, ι, tangentMap, curveVelocity_eq_mfderiv_snd hz]
 
+/-- The second-parameter velocity of a `C²` surface is differentiable as a map into the
+actual tangent bundle along the first parameter. -/
+theorem _root_.ContMDiffAt.mdifferentiableAt_curveVelocity_snd {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 2 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) :
+    MDifferentiableAt 𝓘(𝕜, 𝕜) I.tangent
+      (fun q ↦ TotalSpace.mk' E (f q v) (curveVelocity I (f q) v)) u := by
+  exact ((hf.contMDiffAt_curveVelocity_snd (m := 1) (by norm_num)).comp u
+    (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left v)).contMDiffAt).mdifferentiableAt
+      one_ne_zero
+
+/-- The first-parameter velocity of a `C²` surface is differentiable as a map into the
+actual tangent bundle along the second parameter. -/
+theorem _root_.ContMDiffAt.mdifferentiableAt_curveVelocity_fst {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 2 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) :
+    MDifferentiableAt 𝓘(𝕜, 𝕜) I.tangent
+      (fun r ↦ TotalSpace.mk' E (f u r) (curveVelocity I (fun q ↦ f q r) u)) v :=
+  (hf.comp (v, u) (contMDiff_iff_contDiff.mpr
+    (by fun_prop : ContDiff 𝕜 2 fun z : 𝕜 × 𝕜 ↦ (z.2, z.1))).contMDiffAt)
+  |>.mdifferentiableAt_curveVelocity_snd (f := fun a b ↦ f b a)
+
 /-- **Mixed derivatives on a manifold.** If a family `F : 𝕜 → M → F'` is jointly `C²` at `(t, x)`
 (analytic, over a field other than `ℝ` or `ℂ`), then the parameter derivative at `t` of the
 differential of `F r` at `x`, applied to `v`, is the differential at `x` of the parameter

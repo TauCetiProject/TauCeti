@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 
 /-!
 # Intrinsic map variation of the Floer equation
@@ -171,8 +172,8 @@ end Algebra
 
 omit [FiniteDimensional ℝ E] in
 /-- For a jointly `C²` map family and differentiable coefficient fields, the fixed-coefficient
-Floer operator is differentiable in section coordinates along the parameter curve. -/
-theorem differentiableAt_sectionCoord_floerOperator (ω : SmoothTwoForm I M)
+Floer operator is differentiable as a map into the tangent bundle along the parameter curve. -/
+theorem mdifferentiableAt_floerOperator (ω : SmoothTwoForm I M)
     (J : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
     (Ks Kt : ℝ × ℝ → M → ℝ) {u : ℝ → ℝ × ℝ → M} {q : ℝ} {z : ℝ × ℝ}
     (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (q, z))
@@ -180,8 +181,8 @@ theorem differentiableAt_sectionCoord_floerOperator (ω : SmoothTwoForm I M)
       (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (J z x)) (u q z))
     (hKs : MDiffAt (T% (ω.hamiltonianVectorField (Ks z))) (u q z))
     (hKt : MDiffAt (T% (ω.hamiltonianVectorField (Kt z))) (u q z)) :
-    DifferentiableAt ℝ (sectionCoord (F := E) (fun a ↦ u a z)
-      (fun a ↦ ω.floerOperator J Ks Kt (u a) z) (u q z)) q := by
+    MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent
+      (fun a ↦ TotalSpace.mk' E (u a z) (ω.floerOperator J Ks Kt (u a) z)) q := by
   have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun a ↦ u a z) q := (hu.comp q
     (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
       (by norm_num)
@@ -199,6 +200,7 @@ theorem differentiableAt_sectionCoord_floerOperator (ω : SmoothTwoForm I M)
   have hΔt := hVt.sub_sectionAlong (hKt.comp q hγ)
   have hJΔt := (hJ.comp q hγ).clm_bundle_apply hΔt
   have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u q z)
+  apply (differentiableAt_sectionCoord_iff _ _ hγ hbase).1
   simpa only [floerOperator_def, sectionCoord_add] using!
     (differentiableAt_sectionCoord _ _ hΔs hbase).add
       (differentiableAt_sectionCoord _ _ hJΔt hbase)

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Perturbation.Manifold
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Joint first variation of the intrinsic Floer operator
@@ -68,26 +70,145 @@ theorem floerOperator_add_smul_coefficients (u : ℝ × ℝ → M) (z : ℝ × �
   simp only [floerOperator_def, add_apply, smul_apply, map_sub, smul_sub, smul_add]
   abel
 
+/-- The affine coefficient correction has a derivative at zero even when the perturbation
+fields are only continuous. This difference isolates the part independent of the connection. -/
+private theorem hasDerivAt_sectionCoord_floerOperator_coefficient_difference
+    {u : ℝ → ℝ × ℝ → M} {z : ℝ × ℝ}
+    (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (0, z))
+    (hJ : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (J z x)) (u 0 z))
+    (hY : ContinuousAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (Y z x)) (u 0 z))
+    (hXt : MDiffAt (T% (ω.hamiltonianVectorField (Kt z))) (u 0 z))
+    (hδXs : ContinuousAt (T% (ω.hamiltonianVectorField (δKs z))) (u 0 z))
+    (hδXt : ContinuousAt (T% (ω.hamiltonianVectorField (δKt z))) (u 0 z))
+    (hK : ∀ᶠ r in 𝓝 (0 : ℝ),
+      MDifferentiableAt I 𝓘(ℝ) (Ks z) (u r z) ∧
+      MDifferentiableAt I 𝓘(ℝ) (Kt z) (u r z) ∧
+      MDifferentiableAt I 𝓘(ℝ) (δKs z) (u r z) ∧
+      MDifferentiableAt I 𝓘(ℝ) (δKt z) (u r z)) :
+    HasDerivAt (sectionCoord (F := E) (fun r ↦ u r z) (fun r ↦
+      ω.floerOperator (fun w x ↦ J w x + r • Y w x)
+          (fun w ↦ Ks w + r • δKs w) (fun w ↦ Kt w + r • δKt w) (u r) z -
+        ω.floerOperator J Ks Kt (u r) z) (u 0 z))
+      (Y z (u 0 z) (curveVelocity I (fun t ↦ u 0 (z.1, t)) z.2 -
+          ω.hamiltonianVectorField (Kt z) (u 0 z)) -
+        ω.hamiltonianVectorField (δKs z) (u 0 z) -
+        J z (u 0 z) (ω.hamiltonianVectorField (δKt z) (u 0 z))) 0 := by
+  let γ := fun r ↦ u r z
+  let Vt := fun r ↦ curveVelocity I (fun t ↦ u r (z.1, t)) z.2
+  let W := fun r ↦
+    Y z (γ r) (Vt r - ω.hamiltonianVectorField (Kt z) (γ r)) -
+      ω.hamiltonianVectorField (δKs z) (γ r) -
+      J z (γ r) (ω.hamiltonianVectorField (δKt z) (γ r)) -
+      r • Y z (γ r) (ω.hamiltonianVectorField (δKt z) (γ r))
+  -- Establish only continuity of the correction; none of its coefficient fields is differentiated.
+  have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ 0 :=
+    (hu.comp 0 (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
+      (by norm_num)
+  have ht : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
+      (fun p : ℝ × ℝ ↦ u p.1 (z.1, p.2)) (0, z.2) :=
+    hu.comp (0, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
+      ContDiff ℝ 2 (fun p : ℝ × ℝ ↦ (p.1, (z.1, p.2))))).contMDiffAt
+  have hVt := ht.mdifferentiableAt_curveVelocity_snd (f := fun r t ↦ u r (z.1, t))
+  have hΔt := hVt.sub_sectionAlong (hXt.comp 0 hγ)
+  have hYγ : ContinuousAt (fun r ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (γ r) (Y z (γ r))) 0 :=
+    hY.comp (f := γ) hγ.continuousAt
+  have hδXsγ : ContinuousAt
+      (fun r ↦ TotalSpace.mk' E (γ r) (ω.hamiltonianVectorField (δKs z) (γ r))) 0 :=
+    hδXs.comp (f := γ) hγ.continuousAt
+  have hδXtγ : ContinuousAt
+      (fun r ↦ TotalSpace.mk' E (γ r) (ω.hamiltonianVectorField (δKt z) (γ r))) 0 :=
+    hδXt.comp (f := γ) hγ.continuousAt
+  have hJγ := (hJ.comp 0 hγ).continuousAt
+  have hcoord (V : ∀ r, TangentSpace I (γ r))
+      (hV : ContinuousAt (fun r ↦ TotalSpace.mk' E (γ r) (V r)) 0) :
+      ContinuousAt (sectionCoord (F := E) γ V (γ 0)) 0 := by
+    let e := trivializationAt E (TangentSpace I) (γ 0)
+    have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ 0)
+    refine ((FiberBundle.continuousAt_totalSpace E _).1 hV).2.congr_of_eventuallyEq ?_
+    filter_upwards [hγ.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hbase)] with r hr
+    simpa only [sectionCoord_apply] using e.continuousLinearMapAt_apply_of_mem ℝ hr (V r)
+  have hW : ContinuousAt (sectionCoord (F := E) γ W (γ 0)) 0 := by
+    simpa only [W, sectionCoord_sub, sectionCoord_smul] using!
+      (((hcoord _ (hYγ.clm_bundle_apply hΔt.continuousAt)).sub (hcoord _ hδXsγ)).sub
+        (hcoord _ (hJγ.clm_bundle_apply hδXtγ))).sub
+          (continuousAt_id.smul (hcoord _ (hYγ.clm_bundle_apply hδXtγ)))
+  -- At zero, the derivative of r • W(r) is W(0), using continuity rather than a product rule.
+  have hd := HasFDerivWithinAt.clm_apply_of_eq_zero
+    (ContinuousAt.continuousWithinAt (s := Set.univ)
+      ((ContinuousLinearMap.toSpanSingletonCLE : E ≃L[ℝ] ℝ →L[ℝ] E).continuousAt.comp hW))
+      ((hasDerivAt_id (0 : ℝ)).hasFDerivAt.hasFDerivWithinAt (s := Set.univ)) rfl
+  have hp : HasDerivAt (fun r ↦ r • sectionCoord (F := E) γ W (γ 0) r)
+      (W 0) 0 := by
+    have hd' := hd.hasDerivWithinAt
+    rw [hasDerivWithinAt_univ] at hd'
+    apply hd'.congr_deriv
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.toSpanSingleton_apply,
+      one_smul, Function.comp_apply]
+    rw [ContinuousLinearMap.toSpanSingletonCLE_apply_apply, one_smul]
+    simp
+    -- At its centre the canonical tangent trivialization is the identity on the model fibre.
+    rfl
+  -- Read the exact affine expansion in section coordinates, retaining the mixed term.
+  simp only [W, γ, Vt, zero_smul, sub_zero] at hp
+  refine hp.congr_of_eventuallyEq ?_
+  filter_upwards [hK] with r hr
+  simp only [sectionCoord_apply]
+  rw [ω.floerOperator_add_smul_coefficients J Y Ks Kt δKs δKt
+    (u r) z hr.1 hr.2.1 hr.2.2.1 hr.2.2.2 r]
+  simp [γ]
+
+/-- The simultaneous affine-coefficient Floer operator is differentiable in section coordinates
+at zero. Only continuity of the perturbation directions is needed; no connection is required. -/
+theorem differentiableAt_sectionCoord_floerOperator_add_smul_coefficients
+    {u : ℝ → ℝ × ℝ → M} {z : ℝ × ℝ}
+    (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (0, z))
+    (hJ : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (J z x)) (u 0 z))
+    (hY : ContinuousAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (Y z x)) (u 0 z))
+    (hXs : MDiffAt (T% (ω.hamiltonianVectorField (Ks z))) (u 0 z))
+    (hXt : MDiffAt (T% (ω.hamiltonianVectorField (Kt z))) (u 0 z))
+    (hδXs : ContinuousAt (T% (ω.hamiltonianVectorField (δKs z))) (u 0 z))
+    (hδXt : ContinuousAt (T% (ω.hamiltonianVectorField (δKt z))) (u 0 z))
+    (hK : ∀ᶠ r in 𝓝 (0 : ℝ),
+      MDifferentiableAt I 𝓘(ℝ) (Ks z) (u r z) ∧
+      MDifferentiableAt I 𝓘(ℝ) (Kt z) (u r z) ∧
+      MDifferentiableAt I 𝓘(ℝ) (δKs z) (u r z) ∧
+      MDifferentiableAt I 𝓘(ℝ) (δKt z) (u r z)) :
+    DifferentiableAt ℝ (sectionCoord (F := E) (fun r ↦ u r z) (fun r ↦
+      ω.floerOperator (fun w x ↦ J w x + r • Y w x)
+        (fun w ↦ Ks w + r • δKs w) (fun w ↦ Kt w + r • δKt w) (u r) z) (u 0 z)) 0 := by
+  have hF := differentiableAt_sectionCoord _ _
+    (ω.mdifferentiableAt_floerOperator J Ks Kt hu hJ hXs hXt)
+    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z))
+  have hd := ω.hasDerivAt_sectionCoord_floerOperator_coefficient_difference
+    J Y Ks Kt δKs δKt hu hJ hY hXt hδXs hδXt hK
+  simpa only [sectionCoord_sub, add_sub_cancel] using! hF.add hd.differentiableAt
+
 variable [FiniteDimensional ℝ E]
 
 /-- **Joint intrinsic first variation.** For a jointly `C²` map family, a torsion-free
 connection, and affine paths of the two Hamiltonian coefficients and the endomorphism field,
 the covariant derivative at zero is the map linearization plus the three coefficient
-terms. The coefficient vector fields and endomorphism fields need only be differentiable
-at the base image point. The scalar Hamiltonians must be differentiable along the map
-family near zero, so their Hamiltonian fields respect affine combinations there. -/
+terms. The fixed coefficient fields need only be differentiable at the base image point;
+the perturbation directions need only be continuous there. The scalar Hamiltonians must be
+differentiable along the map family near zero, so their Hamiltonian fields respect affine
+combinations there. -/
 theorem alongCurve_floerOperator_add_smul_coefficients
     (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
     (htor : cov.IsTorsionFree) {u : ℝ → ℝ × ℝ → M} {z : ℝ × ℝ}
     (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (0, z))
     (hJ : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
       (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (J z x)) (u 0 z))
-    (hY : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+    (hY : ContinuousAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
       (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (Y z x)) (u 0 z))
     (hXs : MDiffAt (T% (ω.hamiltonianVectorField (Ks z))) (u 0 z))
     (hXt : MDiffAt (T% (ω.hamiltonianVectorField (Kt z))) (u 0 z))
-    (hδXs : MDiffAt (T% (ω.hamiltonianVectorField (δKs z))) (u 0 z))
-    (hδXt : MDiffAt (T% (ω.hamiltonianVectorField (δKt z))) (u 0 z))
+    (hδXs : ContinuousAt (T% (ω.hamiltonianVectorField (δKs z))) (u 0 z))
+    (hδXt : ContinuousAt (T% (ω.hamiltonianVectorField (δKt z))) (u 0 z))
     (hK : ∀ᶠ r in 𝓝 (0 : ℝ),
       MDifferentiableAt I 𝓘(ℝ) (Ks z) (u r z) ∧
       MDifferentiableAt I 𝓘(ℝ) (Kt z) (u r z) ∧
@@ -103,52 +224,28 @@ theorem alongCurve_floerOperator_add_smul_coefficients
         ω.hamiltonianVectorField (δKs z) (u 0 z) -
         J z (u 0 z) (ω.hamiltonianVectorField (δKt z) (u 0 z)) := by
   let γ := fun r ↦ u r z
-  let Vt := fun r ↦ curveVelocity I (fun t ↦ u r (z.1, t)) z.2
-  let W := fun r ↦
-    Y z (γ r) (Vt r - ω.hamiltonianVectorField (Kt z) (γ r)) -
-      ω.hamiltonianVectorField (δKs z) (γ r) -
-      J z (γ r) (ω.hamiltonianVectorField (δKt z) (γ r)) -
-      r • Y z (γ r) (ω.hamiltonianVectorField (δKt z) (γ r))
-  -- Establish regularity of the fixed operator and the coefficient correction separately.
-  have hF := ω.differentiableAt_sectionCoord_floerOperator J Ks Kt hu hJ hXs hXt
-  have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ 0 :=
-    (hu.comp 0 (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
-      (by norm_num)
-  have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z)
-  -- Only the t-velocity is needed for the coefficient correction.
-  have ht : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
-      (fun p : ℝ × ℝ ↦ u p.1 (z.1, p.2)) (0, z.2) :=
-    hu.comp (0, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
-      ContDiff ℝ 2 (fun p : ℝ × ℝ ↦ (p.1, (z.1, p.2))))).contMDiffAt
-  have hVt := ht.mdifferentiableAt_curveVelocity_snd (f := fun r t ↦ u r (z.1, t))
-  have hJγ := hJ.comp 0 hγ
-  have hYγ := hY.comp 0 hγ
-  have hXtγ := hXt.comp 0 hγ
-  have hδXsγ := hδXs.comp 0 hγ
-  have hδXtγ := hδXt.comp 0 hγ
-  have hΔt := hVt.sub_sectionAlong hXtγ
-  -- The correction W is differentiable in bundle coordinates; only its value at zero
-  -- survives the product rule for r • W(r).
-  have hA := differentiableAt_sectionCoord γ _ (hYγ.clm_bundle_apply hΔt) hbase
-  have hB := differentiableAt_sectionCoord γ _ hδXsγ hbase
-  have hC := differentiableAt_sectionCoord γ _ (hJγ.clm_bundle_apply hδXtγ) hbase
-  have hD := differentiableAt_sectionCoord γ _ (hYγ.clm_bundle_apply hδXtγ) hbase
-  have hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ 0)) 0 := by
-    simpa only [W, sectionCoord_sub, sectionCoord_smul] using!
-      ((hA.sub hB).sub hC).sub (differentiableAt_id.smul hD)
-  -- Use the exact affine expansion, retaining the mixed quadratic term.
-  have heq : (fun r ↦ ω.floerOperator (fun w x ↦ J w x + r • Y w x)
-      (fun w ↦ Ks w + r • δKs w) (fun w ↦ Kt w + r • δKt w) (u r) z) =ᶠ[𝓝 0]
-      (fun r ↦ ω.floerOperator J Ks Kt (u r) z + r • W r) :=
-    hK.mono fun r hr ↦ ω.floerOperator_add_smul_coefficients J Y Ks Kt δKs δKt
-      (u r) z hr.1 hr.2.1 hr.2.2.1 hr.2.2.2 r
-  -- Apply the sum and scalar product rules, then the fixed-coefficient map variation.
-  rw [alongCurve_congr cov γ _ heq,
-    alongCurve_add cov γ _ _ hF
-      (by simpa only [sectionCoord_smul] using! differentiableAt_id.smul hW),
-    alongCurve_smul cov γ W (fun r : ℝ ↦ r) differentiableAt_id hW,
+  let F := fun r ↦ ω.floerOperator J Ks Kt (u r) z
+  let G := fun r ↦ ω.floerOperator (fun w x ↦ J w x + r • Y w x)
+    (fun w ↦ Ks w + r • δKs w) (fun w ↦ Kt w + r • δKt w) (u r) z
+  -- Reuse the regularity API for the sum rule and the ordinary derivative of the correction.
+  have hF := differentiableAt_sectionCoord γ F
+    (ω.mdifferentiableAt_floerOperator J Ks Kt hu hJ hXs hXt)
+    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z))
+  have hG := ω.differentiableAt_sectionCoord_floerOperator_add_smul_coefficients
+    J Y Ks Kt δKs δKt hu hJ hY hXs hXt hδXs hδXt hK
+  have hd := ω.hasDerivAt_sectionCoord_floerOperator_coefficient_difference
+    J Y Ks Kt δKs δKt hu hJ hY hXt hδXs hδXt hK
+  have hsum : G = fun r ↦ F r + (G r - F r) := by funext r; abel
+  have hzero : G 0 - F 0 = 0 := by simp [G, F]
+  -- Name the curve and operators in the goal so the sum rule matches these local abbreviations.
+  -- The difference vanishes at zero, so its Christoffel term vanishes as well.
+  change alongCurve cov γ G 0 = _
+  rw [hsum, alongCurve_add cov γ F (fun r ↦ G r - F r) hF
+    (by simpa only [sectionCoord_sub] using hG.sub hF),
+    ← alongCurveWithin_univ cov γ (fun r ↦ G r - F r) 0,
+    alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero cov γ _ hzero,
+    derivWithin_univ, hd.deriv,
     ω.alongCurve_floerOperator cov htor J Ks Kt hu hJ hXs hXt]
-  simp only [W, γ, Vt, deriv_id'', one_smul, zero_smul, add_zero, sub_zero]
   abel
 
 end TauCeti.SmoothTwoForm

@@ -235,18 +235,4 @@ theorem differentiableAt_sectionCoord_curveVelocity_snd [IsManifold I 2 M]
     (u := v) (v := u) (x := x)
     hx
 
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] in
-/-- The second-parameter velocity of a `C²` surface is differentiable as a map into the
-actual tangent bundle along the first parameter. -/
-theorem mdifferentiableAt_curveVelocity_snd [IsManifold I 2 M]
-    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 2 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) :
-    MDifferentiableAt 𝓘(𝕜, 𝕜) (I.prod 𝓘(𝕜, E))
-      (fun q ↦ TotalSpace.mk' E (f q v) (curveVelocity I (f q) v)) u := by
-  have hγ := (hf.comp u
-    (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left v)).contMDiffAt).mdifferentiableAt
-      (by norm_num)
-  have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (f u v)
-  exact (differentiableAt_sectionCoord_iff _ _ hγ hbase).1
-    (hf.differentiableAt_sectionCoord_curveVelocity_snd hbase)
-
 end ContMDiffAt
