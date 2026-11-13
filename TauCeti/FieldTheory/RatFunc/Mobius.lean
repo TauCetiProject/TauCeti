@@ -94,7 +94,7 @@ include hdet
 /-- The denominator of a linear fractional transformation with invertible coefficients is
 nonzero. -/
 theorem mobiusOf_den_ne_zero : C c * X + C d ≠ 0 := fun h ↦ by
-  obtain ⟨rfl, rfl⟩ := mul_X_add_C_eq_zero_iff.mp h
+  obtain ⟨rfl, rfl⟩ := C_mul_X_add_C_eq_zero_iff.mp h
   exact hdet (by ring)
 
 /-- Clearing the denominator of a linear fractional transformation. -/
@@ -107,7 +107,7 @@ vanishes, `c = d = 0` and both sides are `0`. -/
 theorem sub_mul_mobiusOf_mul_den :
     (C a - C c * mobiusOf a b c d) * (C c * X + C d) = C (a * d - b * c) := by
   by_cases hD : (C c * X + C d : RatFunc K) = 0
-  · obtain ⟨rfl, rfl⟩ := mul_X_add_C_eq_zero_iff.mp hD
+  · obtain ⟨rfl, rfl⟩ := C_mul_X_add_C_eq_zero_iff.mp hD
     simp
   · have h : mobiusOf a b c d * (C c * X + C d) = C a * X + C b := by
       rw [mobiusOf_def]
@@ -149,7 +149,7 @@ theorem transcendental_mobiusOf : Transcendental K (mobiusOf a b c d) := by
 theorem mul_mobiusOf_add_ne_zero (c' d' : K) (hcd' : c' ≠ 0 ∨ d' ≠ 0) :
     C c' * mobiusOf a b c d + C d' ≠ 0 := by
   intro h0
-  apply mul_X_add_C_ne_zero hcd'
+  apply C_mul_X_add_C_ne_zero hcd'
   have hpoly : (Polynomial.C c' * Polynomial.X + Polynomial.C d' : Polynomial K) = 0 :=
     (transcendental_iff.mp (transcendental_mobiusOf hdet)) _
       (by simpa [← algebraMap_eq_C] using h0)

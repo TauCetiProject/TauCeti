@@ -19,7 +19,7 @@ elements of `k(X)`, independently of the place theory of `k(X)`, and that a line
 * `TauCeti.RatFunc.X_sub_C_ne_zero`: `X - a` is nonzero in `k(X)`.
 * `TauCeti.RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero`: `c X ^ a (X - 1) ^ b` is
   nonzero in `k(X)` for `c ≠ 0`.
-* `RatFunc.mul_X_add_C_ne_zero` and `RatFunc.mul_X_add_C_eq_zero_iff`: `c X + d` is nonzero in
+* `RatFunc.C_mul_X_add_C_ne_zero` and `RatFunc.C_mul_X_add_C_eq_zero_iff`: `c X + d` is nonzero in
   `K(X)` when `c` or `d` is, and it vanishes exactly when `c = d = 0`.
 -/
 
@@ -50,7 +50,7 @@ namespace RatFunc
 variable {K : Type*} [CommRing K] [IsDomain K]
 
 /-- A nonzero linear polynomial in `X`, read in `k(X)`, is nonzero. -/
-theorem mul_X_add_C_ne_zero {c d : K} (hcd : c ≠ 0 ∨ d ≠ 0) : C c * X + C d ≠ 0 := by
+theorem C_mul_X_add_C_ne_zero {c d : K} (hcd : c ≠ 0 ∨ d ≠ 0) : C c * X + C d ≠ 0 := by
   have hmap : C c * X + C d =
       algebraMap (Polynomial K) (RatFunc K) (Polynomial.C c * Polynomial.X + Polynomial.C d) := by
     rw [map_add, map_mul, algebraMap_C, algebraMap_C, algebraMap_X]
@@ -63,9 +63,9 @@ theorem mul_X_add_C_ne_zero {c d : K} (hcd : c ≠ 0 ∨ d ≠ 0) : C c * X + C 
   · exact h h0'
 
 /-- A linear polynomial in `X`, read in `k(X)`, vanishes exactly when both coefficients do. -/
-theorem mul_X_add_C_eq_zero_iff {c d : K} : C c * X + C d = 0 ↔ c = 0 ∧ d = 0 := by
+theorem C_mul_X_add_C_eq_zero_iff {c d : K} : C c * X + C d = 0 ↔ c = 0 ∧ d = 0 := by
   refine ⟨fun h ↦ ?_, fun ⟨hc, hd⟩ ↦ by simp [hc, hd]⟩
   by_contra hne
-  exact mul_X_add_C_ne_zero (not_and_or.mp hne) h
+  exact C_mul_X_add_C_ne_zero (not_and_or.mp hne) h
 
 end RatFunc
