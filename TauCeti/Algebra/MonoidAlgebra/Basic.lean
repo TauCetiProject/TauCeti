@@ -28,8 +28,8 @@ none of the further theory built on it.
   `AddMonoidAlgebra.coeff_zero_mul_of_coeff_mem`.
 * The `IsMulCommutative (MonoidAlgebra R M)` instance: the monoid algebra of a commutative
   magma over a commutative semiring is commutative, as a mixin on the existing ring structure.
-* `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
-  when its coefficients lie in `I`, and `TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
+* `MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
+  when its coefficients lie in `I`, and `MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
@@ -93,35 +93,6 @@ theorem single_sub_one_ne_zero [Nontrivial R] {g : G} (hg : g ≠ 1) :
 
 namespace MonoidAlgebra
 
-variable {R : Type*} [CommSemiring R] {M : Type*}
-
-/-- An element of `R[M]` lies in `I • R[M]` exactly when all of its coefficients lie in `I`. -/
-@[to_additive (dont_translate := R I) (attr := simp)
-  _root_.AddMonoidAlgebra.mem_ideal_smul_top_iff
-/-- An element of an additive monoid algebra lies in `I • ⊤` exactly when all of its
-coefficients lie in `I`. -/]
-theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
-    x ∈ I • (⊤ : Submodule R (MonoidAlgebra R M)) ↔ ∀ m, x.coeff m ∈ I := by
-  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · refine Submodule.smul_induction_on hx (fun r hr n _ m ↦ ?_) fun x y hx hy m ↦ ?_
-    · simpa using I.mul_mem_right (n.coeff m) hr
-    · simpa using I.add_mem (hx m) (hy m)
-  · rw [← MonoidAlgebra.sum_coeff_single x, Finsupp.sum]
-    refine Submodule.sum_mem _ fun m _ ↦ ?_
-    simpa [MonoidAlgebra.smul_single'] using
-      Submodule.smul_mem_smul (hx m) (Submodule.mem_top (x := MonoidAlgebra.single m (1 : R)))
-
-/-- Applying a ring homomorphism `f` to the coefficients kills exactly `ker f • R[M]`. -/
-@[to_additive (dont_translate := R S) (attr := simp)
-  _root_.AddMonoidAlgebra.mapRingHom_eq_zero_iff
-/-- Applying a coefficient homomorphism `f` kills exactly the submodule `ker f • ⊤`. -/]
-theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* S)
-    {x : MonoidAlgebra R M} :
-    MonoidAlgebra.mapRingHom M f x = 0 ↔
-      x ∈ RingHom.ker f • (⊤ : Submodule R (MonoidAlgebra R M)) := by
-  rw [mem_ideal_smul_top_iff, ← MonoidAlgebra.coeff_inj]
-  simp [Finsupp.ext_iff, MonoidAlgebra.coeff_mapRingHom]
-
 /-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
 Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/
 theorem isIntegral_of_isMulTorsion {R G : Type*} [CommRing R] [CommMonoid G] (hG : IsMulTorsion G) :
@@ -142,7 +113,35 @@ end TauCeti
 
 namespace MonoidAlgebra
 
-variable {R : Type*} [CommSemiring R] {G : Type*} [Group G]
+variable {R : Type*} [CommSemiring R] {M : Type*}
+
+/-- An element of `R[M]` lies in `I • R[M]` exactly when all of its coefficients lie in `I`. -/
+@[to_additive (dont_translate := R I)
+  _root_.AddMonoidAlgebra.mem_ideal_smul_top_iff
+/-- An element of an additive monoid algebra lies in `I • ⊤` exactly when all of its
+coefficients lie in `I`. -/]
+theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
+    x ∈ I • (⊤ : Submodule R (MonoidAlgebra R M)) ↔ ∀ m, x.coeff m ∈ I := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · refine Submodule.smul_induction_on hx (fun r hr n _ m ↦ ?_) fun x y hx hy m ↦ ?_
+    · simpa using I.mul_mem_right (n.coeff m) hr
+    · simpa using I.add_mem (hx m) (hy m)
+  · rw [← MonoidAlgebra.sum_coeff_single x, Finsupp.sum]
+    refine Submodule.sum_mem _ fun m _ ↦ ?_
+    simpa [MonoidAlgebra.smul_single'] using
+      Submodule.smul_mem_smul (hx m) (Submodule.mem_top (x := MonoidAlgebra.single m (1 : R)))
+
+/-- Applying a ring homomorphism `f` to the coefficients kills exactly `ker f • R[M]`. -/
+@[to_additive (dont_translate := R S)
+/-- Applying a coefficient homomorphism `f` kills exactly the submodule `ker f • ⊤`. -/]
+theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* S)
+    {x : MonoidAlgebra R M} :
+    MonoidAlgebra.mapRingHom M f x = 0 ↔
+      x ∈ RingHom.ker f • (⊤ : Submodule R (MonoidAlgebra R M)) := by
+  rw [mem_ideal_smul_top_iff, ← MonoidAlgebra.coeff_inj]
+  simp [Finsupp.ext_iff, MonoidAlgebra.coeff_mapRingHom]
+
+variable {G : Type*} [Group G]
 
 /-- The coefficient at the identity is symmetric under swapping the factors in a group algebra
 over a commutative semiring. -/
