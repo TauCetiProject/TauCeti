@@ -51,7 +51,7 @@ theorem exists_antitone_castSucc_eq_succ_iff_mem {n : ℕ} (S : Set (Fin n)) :
     congr 1
     ext j
     simp only [c, Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_succ, Fin.val_castSucc]
-    refine ⟨fun ⟨hj, hjS⟩ ↦ ⟨by omega, hjS⟩, fun ⟨hj, hjS⟩ ↦ ⟨?_, hjS⟩⟩
+    refine ⟨fun ⟨_, hjS⟩ ↦ ⟨by omega, hjS⟩, fun ⟨_, hjS⟩ ↦ ⟨?_, hjS⟩⟩
     exact lt_of_le_of_ne (by omega) fun h ↦ hjS (Fin.ext h ▸ hi)
 
 end Fin

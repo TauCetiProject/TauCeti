@@ -106,7 +106,7 @@ private theorem inv_eq_self_of_two_eq_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) (h
     {r : Kˣ} (hr : r ^ 2 = q) {x : Kˣ ⧸ Subgroup.zpowers q} (hx : x ≠ 1)
     (h : -tateUniformization q hq x = tateUniformization q hq x) : x⁻¹ = x := by
   have hc : (r : Kˣ ⧸ Subgroup.zpowers q) ≠ 1 :=
-    mt (QuotientGroup.eq_one_iff r).mp (notMem_zpowers_of_sq_eq hq hr)
+    mt (QuotientGroup.eq_one_iff r).mp (notMem_zpowers_of_sq_eq hq.ne hr)
   have hcc : (r : Kˣ ⧸ Subgroup.zpowers q)⁻¹ = r :=
     QuotientGroup.mk_inv_eq_self_of_sq_mem (by rw [hr]; exact Subgroup.mem_zpowers q)
   -- both first coordinates are roots of the `2`-torsion polynomial, hence `0`
@@ -134,7 +134,7 @@ private theorem inv_eq_self_of_two_ne_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) (h
   set ψ := (tateCurveAt q hq).twoTorsionPolynomial
   set X : Kˣ ⧸ Subgroup.zpowers q → K := fun z ↦ (tateQuotientCoordinates q z).1
   have hneg : (-1 : Kˣ) ∉ Subgroup.zpowers q := by
-    refine notMem_zpowers_of_norm_eq_one hq (by simp) fun h ↦ h2 ?_
+    refine notMem_zpowers_of_norm_eq_one hq.ne (by simp) fun h ↦ h2 ?_
     have h' := congrArg Units.val h
     simp only [Units.val_neg, Units.val_one] at h'
     linear_combination -h'
@@ -145,10 +145,10 @@ private theorem inv_eq_self_of_two_ne_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) (h
   have hc₁ := hc hneg
   have hcc₁ := QuotientGroup.mk_inv_eq_self_of_sq_mem (N := Subgroup.zpowers q) (s := -1)
     (by rw [neg_one_sq]; exact one_mem _)
-  have hc₂ := hc (notMem_zpowers_of_sq_eq hq hr)
+  have hc₂ := hc (notMem_zpowers_of_sq_eq hq.ne hr)
   have hcc₂ := QuotientGroup.mk_inv_eq_self_of_sq_mem (s := r)
     (by rw [hr]; exact Subgroup.mem_zpowers q)
-  have hc₃ := hc (notMem_zpowers_of_sq_eq hq hr')
+  have hc₃ := hc (notMem_zpowers_of_sq_eq hq.ne hr')
   have hcc₃ := QuotientGroup.mk_inv_eq_self_of_sq_mem (s := -r)
     (by rw [hr']; exact Subgroup.mem_zpowers q)
   have hne {a b : Kˣ} (hab : a⁻¹ * b ∉ Subgroup.zpowers q) :
@@ -164,9 +164,9 @@ private theorem inv_eq_self_of_two_ne_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) (h
       tateQuotientCoordinates_fst_ne_of_inv_eq q hq hc₁ hc₃ hcc₃ (hne ?_),
       tateQuotientCoordinates_fst_ne_of_inv_eq q hq hc₂ hc₃ hcc₃ (hne ?_), rfl⟩
     · rw [inv_neg_one, neg_one_mul]
-      exact notMem_zpowers_of_sq_eq hq hr'
+      exact notMem_zpowers_of_sq_eq hq.ne hr'
     · rw [inv_neg_one, neg_one_mul, neg_neg]
-      exact notMem_zpowers_of_sq_eq hq hr
+      exact notMem_zpowers_of_sq_eq hq.ne hr
     · rw [mul_neg, inv_mul_cancel]
       exact hneg
   have hψ : ψ.toPoly ≠ 0 := by
@@ -216,7 +216,7 @@ theorem tateUniformization_injective (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
   have : IsUltrametricDist L :=
     IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun a b ↦
       isNonarchimedean_spectralNorm (K := K) (L := L) a b
-  have : CompleteSpace L := FiniteDimensional.complete K L
+  have : CompleteSpace L := FiniteDimensional.completeSpace K L
   have : RingHomIsometric (algebraMap K L) := ⟨norm_algebraMap' L _⟩
   obtain ⟨r, hr⟩ : ∃ r : L, ((X ^ 2 - C (q : K)).map (algebraMap K L)).eval r = 0 :=
     (SplittingField.splits _).exists_eval_eq_zero (by

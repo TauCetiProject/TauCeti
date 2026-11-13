@@ -20,9 +20,7 @@ coordinates.  Every time permutation preserves the cardinality of that finite vi
 event is exchangeable.  It is not a tail event: changing coordinate zero alone changes the parity
 without changing any coordinate from time one onward.
 
-This completes the strict comparison between the path tail and exchangeable sigma-algebras in
-Layer 2 of the exchangeability roadmap.  Together with `invariants_shift_lt_pathTail`, it gives
-the strict chain
+Together with `invariants_shift_lt_pathTail`, it gives the strict chain
 
 `invariants (shift Bool) < pathTail Bool < exchangeableSigma Bool`
 

@@ -126,6 +126,18 @@ theorem cdf_zero (x : ℝ) : cdf (0 : Measure ℝ) x = if 0 ≤ x then 1 else 0 
     simp only [toRatCDF, hnot, ↓reduceIte, defaultRatCDF, ← not_lt, ite_not, Rat.cast_lt_zero]
   exact hstep.trans (hdirac x)
 
+/-- The cdf of the zero measure is continuous away from zero. -/
+theorem continuousOn_cdf_zero : ContinuousOn (cdf (0 : Measure ℝ)) {0}ᶜ := by
+  intro x hx
+  have h : ∀ᶠ y in 𝓝 x, (0 ≤ y ↔ 0 ≤ x) := by
+    rcases lt_or_gt_of_ne hx with h | h
+    · filter_upwards [Iio_mem_nhds h] with y hy using iff_of_false (not_le.2 hy) (not_le.2 h)
+    · filter_upwards [Ioi_mem_nhds h] with y hy using iff_of_true hy.le h.le
+  refine ContinuousAt.continuousWithinAt
+    ((continuousAt_const (y := cdf (0 : Measure ℝ) x)).congr ?_)
+  filter_upwards [h] with y hy
+  simp only [cdf_zero, hy]
+
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure

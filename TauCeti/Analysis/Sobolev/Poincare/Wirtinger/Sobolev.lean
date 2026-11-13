@@ -111,7 +111,7 @@ theorem eLpNorm_sub_setAverage_le_mul_measure_rpow_of_convex (hΩ : IsOpen Ω)
   have hpt : ∀ᵐ x ∂μ.restrict Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤ c * ‖V x‖ₑ := by
     filter_upwards [ae_restrict_mem hΩ.measurableSet] with x hx
     refine (enorm_sub_setAverage_le_of_convex (μ := μ) hΩ hΩc hb hu hx hS hS₀).trans_eq ?_
-    rw [enorm_eq_self]
+    rw [eNorm_eq_self]
     congr 1
     refine lintegral_congr fun y => ?_
     have hexp : (n : ℝ) * ((n : ℝ)⁻¹ - 1) = 1 - n := by field_simp
@@ -119,8 +119,8 @@ theorem eLpNorm_sub_setAverage_le_mul_measure_rpow_of_convex (hΩ : IsOpen Ω)
   -- The `Lᵖ`-`L^q` bound for the potential, with `κ = 1/n`.
   have hpot := eLpNorm_setLIntegral_enorm_sub_rpow_mul_le (μ := μ) (p := p) (q := q)
     (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ.measurableSet
-    hDm.enorm
-  rw [eLpNorm_enorm _ hDm] at hpot
+    hDm.eNorm
+  rw [eLpNorm_eNorm _ hDm] at hpot
   have hum : AEStronglyMeasurable (fun x => u x - ⨍ y in S, u y ∂μ) (μ.restrict Ω) :=
     (hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).sub aestronglyMeasurable_const
   calc
@@ -146,13 +146,13 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 omit [FiniteDimensional ℝ E] in
 /-- The Sobolev functions whose deviation from their mean over `S` has `L^q` norm at most `C`
 times the `Lᵖ` norm of their gradient form a **closed** subset of `W^{1,p}(Ω)`, for every
-exponent `q` and every `S ⊆ Ω` of finite measure.
+exponent `q` and every `S ⊆ Ω` (for `μ S = ∞` the mean is `0`).
 
 Continuity of the left-hand side on `W^{1,p}(Ω)` is not available in general, but it is lower
 semicontinuous: convergence in `W^{1,p}(Ω)` gives an almost everywhere convergent subsequence of
 values and convergent means, and Fatou's lemma applies. -/
 theorem W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le (hS : S ⊆ (Omega : Set E))
-    (hSfin : mu S ≠ ∞) (q : ℝ≥0∞) (C : ℝ≥0) :
+    (q : ℝ≥0∞) (C : ℝ≥0) :
     IsClosed {u : W1p mu Omega p |
       eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) q (mu.restrict Omega) ≤
         C * ‖W1p.gradient u‖ₑ} := by
@@ -165,10 +165,10 @@ theorem W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le (hS : S ⊆ (Omega : 
       ((map_continuous (W1p.gradientL (mu := mu) (Omega := Omega) (p := p))).tendsto u).comp hvu
   have havg : Tendsto (fun k => ⨍ y in S, W1p.value (v k) y ∂mu) atTop
       (𝓝 (⨍ y in S, W1p.value u y ∂mu)) :=
-    ((W1p.continuous_setAverage_value hS hSfin).tendsto u).comp hvu
+    ((W1p.continuous_setAverage_value hS).tendsto u).comp hvu
   have hbound : Tendsto (fun k => (C : ℝ≥0∞) * ‖W1p.gradient (v k)‖ₑ) atTop
       (𝓝 ((C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ)) :=
-    ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto _).comp hgradient)
+    ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto _).comp hgradient)
       (Or.inr ENNReal.coe_ne_top)
   obtain ⟨ns, hns, hae⟩ :=
     (tendstoInMeasure_of_tendsto_Lp hvalue).exists_seq_tendsto_ae
@@ -202,7 +202,6 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_of_convex [Nontrivi
   have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
   have hpp : ((p.toNNReal : ℝ≥0) : ℝ≥0∞) = p := ENNReal.coe_toNNReal hp
   have hOfin : mu Omega ≠ ∞ := hb.measure_lt_top.ne
-  have hSfin : mu S ≠ ∞ := ne_top_of_le_ne_top hOfin (measure_mono hS)
   set C : ℝ≥0∞ := ENNReal.ofReal (diam (Omega : Set E) ^ finrank ℝ E / finrank ℝ E *
       (((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ) *
         mu.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹))) / mu S *
@@ -212,7 +211,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_of_convex [Nontrivi
   rw [← ENNReal.coe_toNNReal hC]
   -- By Meyers–Serrin it suffices to treat the elements represented by functions smooth on `Ω`.
   refine closure_minimal (fun (w : Wkp mu Omega p 1) hw => ?_)
-    (W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le hS hSfin q C.toNNReal)
+    (W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le hS q C.toNNReal)
     (Wkp.dense_contDiffOn_representatives hp 1 u)
   obtain ⟨f, hf, hwf⟩ := hw
   rw [Wkp.value_one] at hwf
@@ -231,7 +230,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_of_convex [Nontrivi
     rw [havg]
     exact eLpNorm_congr_ae (hwf.mono fun x hx ↦ by simp only [hx])
   have hgradient : ‖W1p.gradient w‖ₑ = eLpNorm (fderiv ℝ f) p (mu.restrict Omega) := by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
       (hcont.aestronglyMeasurable Omega.isOpen.measurableSet) ?_
     filter_upwards [hgrad] with y hy
@@ -318,7 +317,7 @@ theorem W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_eq_ball [Nontrivia
     (f := fun x ↦ W1p.value u x - ⨍ y in Omega, W1p.value u y ∂mu) hq0 ENNReal.coe_ne_top
     ((Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const)
   rw [ENNReal.coe_toReal] at hL
-  rw [hL, laverage_rpow_enorm_rpow_inv_eq hp0 hp (Lp.aestronglyMeasurable _), ← Lp.enorm_def,
+  rw [hL, laverage_rpow_enorm_rpow_inv_eq hp0 hp (Lp.aestronglyMeasurable _), ← Lp.eNorm_def,
     Measure.restrict_apply_univ, hmeas, ENNReal.ofReal_rpow_of_pos hm,
     ENNReal.ofReal_rpow_of_pos hm, ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul,
     ← ENNReal.ofReal_inv_of_pos (by positivity), ← ENNReal.ofReal_inv_of_pos (by positivity)]

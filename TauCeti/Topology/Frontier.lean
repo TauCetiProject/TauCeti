@@ -100,17 +100,20 @@ let alone a holomorphic map.
 
 * `IsPreconnected.inter_frontier_nonempty` — a preconnected set meeting both a set and its
   complement meets the frontier of that set.
+* `IsPreconnected.subset_of_disjoint_frontier` — a preconnected set that meets a set and misses its
+  frontier lies in that set.
 * `TauCeti.frontier_image_subset_image_union_frontier_image` — for a set split into two sides with
   disjoint open images plus a remainder, the frontier of the image of the side lying in that set
   lies on the image of the remainder and on the frontier of the image of the whole.
 * `TauCeti.frontier_inter_closure_eq_frontier_inter_frontier` — the frontier of a set meets the
   closure of a subset exactly where it meets that subset's frontier.
-* `TauCeti.frontier_image_subset_of_closure_subset` — for an open injective map whose image
-  closure adds at most a set `t`, the frontier of an image lies on the image of the frontier,
-  together with `t`.
+* `TauCeti.frontier_image_subset_of_closure_subset` — for an open map whose image closure adds at
+  most a set `t`, the frontier of an image lies on the image of the frontier, together with `t`.
 * `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
   with a set on an open set takes the value `a` at the frontier points of the set in that open
   set where it is continuous.
+* `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
+  frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
 -/
 
 public section
@@ -149,14 +152,27 @@ theorem _root_.IsPreconnected.inter_frontier_nonempty (hS : IsPreconnected S)
   · obtain ⟨x, hxS, hxV⟩ := h₁
     exact h hxS (subset_closure hxV)
 
+/-- A preconnected set that meets `V` and misses its frontier lies in `V`: otherwise it would
+straddle `V` and so meet `frontier V`. -/
+theorem _root_.IsPreconnected.subset_of_disjoint_frontier (hS : IsPreconnected S)
+    (hdisj : Disjoint S (frontier V)) (hmeet : (S ∩ V).Nonempty) : S ⊆ V := by
+  by_contra h
+  obtain ⟨p, hpS, hpf⟩ := hS.inter_frontier_nonempty hmeet (Set.not_subset.mp h)
+  exact hdisj.le_bot ⟨hpS, hpf⟩
+
 /-- **The connected component of a point in the complement of a set `F` stays inside any set
 containing the point whose frontier lies in `F`.** Otherwise the component, being preconnected,
-would meet both the set and its complement, hence its frontier, which lies in `F`. -/
-theorem connectedComponentIn_subset_of_frontier_subset {F : Set X} {x₀ : X} (hx₀F : x₀ ∈ Fᶜ)
-    (hs : x₀ ∈ V) (hfr : frontier V ⊆ F) : connectedComponentIn Fᶜ x₀ ⊆ V := by
+would meet both the set and its complement, hence its frontier, which lies in `F`. No hypothesis
+places the point outside `F`: for a point of `F` the component is empty. -/
+theorem connectedComponentIn_subset_of_frontier_subset {F : Set X} {x₀ : X} (hs : x₀ ∈ V)
+    (hfr : frontier V ⊆ F) : connectedComponentIn Fᶜ x₀ ⊆ V := by
   by_contra h
-  obtain ⟨p, hpC, hpf⟩ := isPreconnected_connectedComponentIn.inter_frontier_nonempty
-    ⟨x₀, mem_connectedComponentIn hx₀F, hs⟩ (Set.not_subset.mp h)
+  have hout := nonempty_of_not_subset h
+  -- the component is nonempty, so `x₀` lies outside `F` and hence in its own component
+  have hx₀ := mem_connectedComponentIn (connectedComponentIn_nonempty_iff.mp
+    (hout.mono sdiff_subset))
+  obtain ⟨p, hpC, hpf⟩ :=
+    isPreconnected_connectedComponentIn.inter_frontier_nonempty ⟨x₀, hx₀, hs⟩ hout
   exact connectedComponentIn_subset _ _ hpC (hfr hpf)
 
 end Straddle
@@ -196,8 +212,7 @@ theorem frontier_image_subset_image_union_frontier_image (hfs : IsOpen (f '' s))
   rcases hpΩ with hpin | hpfr
   · obtain ⟨w, hw, rfl⟩ := hpin
     rcases hcov hw with (hws | hwt) | hwu
-    · exact absurd ⟨mem_image_of_mem f hws, hp⟩
-        (eq_empty_iff_forall_notMem.mp hfs.inter_frontier_eq (f w))
+    · exact (hfs.inter_frontier_eq.subset ⟨mem_image_of_mem f hws, hp⟩).elim
     · obtain ⟨q, hqt, hqs⟩ := mem_closure_iff.mp hp.1 _ hft (mem_image_of_mem f hwt)
       exact absurd hqs (disjoint_right.mp hst hqt)
     · exact Or.inl (mem_image_of_mem f hwu)
@@ -231,13 +246,13 @@ theorem frontier_inter_closure_eq_frontier_inter_frontier (hAV : A ⊆ V) :
 
 end Inside
 
-section OpenInjectiveImage
+section OpenImage
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y} {s : Set X}
   {t : Set Y}
 
 /-- **The frontier of an image lies on the image of the frontier, plus whatever the closure adds.**
-For an open injective `f` whose image closure satisfies `closure (f '' s) ⊆ f '' closure s ∪ t`,
+For an open map `f` whose image closure satisfies `closure (f '' s) ⊆ f '' closure s ∪ t`,
 
 > `frontier (f '' s) ⊆ f '' frontier s ∪ t`.
 
@@ -247,17 +262,18 @@ as `f` sends a divergent sequence somewhere convergent. A consumer supplies `t` 
 closure hypothesis, typically from a compactness statement about the image; it is often a single
 point, but nothing in the argument needs that.
 
-Openness and injectivity are both used, and neither can be dropped: openness keeps the image of
-the interior inside the interior of the image, and injectivity is what turns a difference of
-images into the image of a difference. -/
-theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f) (hfi : Function.Injective f)
+Openness is what the argument uses: it keeps the image of the interior inside the interior of
+the image, and it cannot be dropped, as the inclusion of `[0, 1]` into `ℝ` with `s = univ` and
+`t = ∅` shows. No injectivity is needed, since a difference of images always lies in the image of
+the difference. -/
+theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f)
     (hcl : closure (f '' s) ⊆ f '' closure s ∪ t) :
     frontier (f '' s) ⊆ f '' frontier s ∪ t := by
   refine (Set.sdiff_subset_sdiff hcl (hf.image_interior_subset s)).trans ?_
-  rw [Set.union_sdiff_distrib, ← Set.image_sdiff hfi]
-  exact Set.union_subset_union_right _ Set.sdiff_subset
+  rw [Set.union_sdiff_distrib]
+  exact Set.union_subset_union (Set.subset_image_sdiff f _ _) Set.sdiff_subset
 
-end OpenInjectiveImage
+end OpenImage
 
 section SublevelBetween
 
@@ -314,5 +330,18 @@ theorem eq_of_mem_frontier_of_mem_iff_le (hU : IsOpen U) (hD : ∀ y ∈ U, y �
     exact hyD hy
 
 end DefiningFunction
+
+section Bound
+
+variable {X : Type*} [TopologicalSpace X] [PreconnectedSpace X] [NoncompactSpace X]
+
+/-- A nonempty compact set `K` in a preconnected noncompact space has a nonempty frontier, so a
+bound `M` for the absolute value of a function on `frontier K` is nonnegative. -/
+theorem nonneg_of_forall_abs_le_frontier {K : Set X} (hK : IsCompact K) (hne : K.Nonempty)
+    {f : X → ℝ} {M : ℝ} (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) : 0 ≤ M := by
+  obtain ⟨y, hy⟩ := nonempty_frontier_iff.2 ⟨hne, hK.ne_univ⟩
+  exact (abs_nonneg _).trans (hbdry hy)
+
+end Bound
 
 end TauCeti

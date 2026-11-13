@@ -200,7 +200,7 @@ theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {
   have ha (i) : ContMDiffOn I 𝓘(ℝ) n (a i) e.baseSet := fun y hy ↦ by
     have h := ((degreeOneEquiv α).contMDiff.of_le ENat.LEInfty.out).contMDiffOn.clm_bundle_apply
       (E₂ := Trivial M ℝ) (hF.contMDiffOn i) y hy
-    simpa [a, ← Matrix.vec_single_eq_const] using (contMDiffWithinAt_totalSpace.1 h).2
+    simpa [a, ← Matrix.vec_single_eq_const] using (contMDiffWithinAt_totalSpace_iff.1 h).2
   -- Some member of the frame is not in the kernel of `α_x`.
   obtain ⟨j, hj⟩ : ∃ j, a j x ≠ 0 := by
     by_contra! h
@@ -306,6 +306,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpa
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 2 N]
   {D : Π x : M, Submodule ℝ (TangentSpace I x)} {f : N → M} {n : ℕ∞ω} {k : ℕ}
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Levi form vanishes on horizontal tangent images.** Let `D` be a `C^n` hyperplane field,
 with `1 ≤ n`, and let `f` be horizontal for `D` and of class `C²` at `y`. Then the Levi form
 `L_D (u, v) = -[U, V] mod D` vanishes on any two vectors of the tangent image `df_y(T_y N)`. -/

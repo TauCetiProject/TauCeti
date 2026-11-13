@@ -146,7 +146,7 @@ private theorem tendsto_of_eq_mul_re {G : Type*} [NormedAddCommGroup G] [NormedS
     exact ⟨subset_tsupport _ (left_ne_zero_of_mul (left_ne_zero_of_mul hz)),
       subset_tsupport _ (right_ne_zero_of_mul (left_ne_zero_of_mul hz))⟩
   have hle (m : ℕ) : (m : WithTop ℕ∞) ≤ (⊤ : ℕ∞) := mod_cast le_top
-  refine tendsto_of_tendstoUniformly_iteratedFDeriv hC hCV (fun s ↦ hsuppC (hhz s)) (hsuppC hfg)
+  refine tendsto_of_tendstoUniformly_iteratedFDeriv hC hCV (fun s ↦ hsuppC (hhz s))
     fun k _ ↦ ?_
   -- `f - h s` is `z ↦ Λ z ((g - P s) (L z))`, where `Λ z = (χ₁ ⊗ χ₂)(z) • Re`.
   set Λ : E × D → ℂ →L[ℝ] ℝ := fun z ↦ (χ₁ z.1 * χ₂ z.2) • reCLM

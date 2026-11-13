@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
-import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
-import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+public import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Degree-one forms as sections of the bundle of fibrewise linear maps
@@ -43,8 +44,10 @@ derivative applies.
   statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
   `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
   the cotangent bundle.
-* `ContMDiff.contMDiff_totalSpaceMk_mvfderiv`: the differential of a `C^(n+1)` function is a
-  `C^n` section of the bundle of linear maps, through the exterior derivative of its `0`-form.
+* `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`: the section of a pulled-back one-form
+  evaluates a tangent vector through the differential of the map.
+* `TauCeti.SmoothForm.degreeOneEquiv_mextDerivₗ`: the section of the exterior derivative `df` of a
+  smooth function is its manifold derivative.
 * `ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry`: the differentials of a jointly `C^(n+1)`
   family of functions are jointly `C^n`.
 -/
@@ -214,22 +217,6 @@ theorem isSmoothForm_ofSubsingleton_iff {n : WithTop ℕ∞}
 
 end OnceDifferentiable
 
-/-- **The differential of a `C^(n+1)` function is a `C^n` covector field**: `x ↦ df_x` is a `C^n`
-section of the bundle of linear maps `TangentSpace I x →L[ℝ] F`, which is the cotangent bundle
-when `F = ℝ`. -/
-theorem _root_.ContMDiff.contMDiff_totalSpaceMk_mvfderiv [IsManifold I 2 M] {n : WithTop ℕ∞}
-    {f : M → F} (hf : ContMDiff I 𝓘(ℝ, F) (n + 1) f) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) x (mvfderiv I f x)) := by
-  rw [← isSmoothForm_ofSubsingleton_iff]
-  -- `df`, read as an alternating map of one vector, is the exterior derivative of `f`.
-  have hd : (fun x ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) F (0 : Fin 1)
-      (mvfderiv I f x)) = mextDeriv (RoughForm.ofFunction I f) :=
-    funext fun x ↦ (mextDeriv_ofFunction f x).symm
-  rw [hd, isSmoothForm_def, ← isSmoothBundleForm_def]
-  exact isSmoothBundleForm_mextDeriv _
-    ((isSmoothBundleForm_def _ _).mpr (isSmoothForm_ofFunction_iff.mpr hf).contMDiff) le_rfl
-
 section OnceDifferentiable
 
 variable [IsManifold I 1 M]
@@ -340,8 +327,31 @@ theorem degreeOneEquiv_symm_apply_apply
     (degreeOneEquiv.symm s).1 x v = s x (v 0) :=
   (rfl)
 
+/-- The section of the pullback of a smooth one-form `φ` along `f` evaluates a tangent vector `v`
+at `x` as the section of `φ` evaluates `df_x v` at `f x`. -/
+theorem degreeOneEquiv_mpullback_apply {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' 1 M'] {f : M → M'} (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
+    degreeOneEquiv (mpullback f hf φ) x v = degreeOneEquiv φ (f x) (mfderiv I I' f x v) :=
+  mpullback_apply f hf φ x _
+
 end SmoothForm
 
 end OnceDifferentiable
+
+namespace SmoothForm
+
+variable [IsManifold I 2 M]
+
+/-- The section of the exterior derivative `df` of a smooth function is its differential: at each
+point it is the manifold derivative of the function. -/
+@[simp]
+theorem degreeOneEquiv_mextDerivₗ (f : SmoothForm I M F 0) (x : M) :
+    degreeOneEquiv (mextDerivₗ I 0 f) x = mvfderiv I (fun y ↦ f.1 y 0) x := by
+  ext v
+  rw [degreeOneEquiv_apply_apply_vec, mextDerivₗ_zero_apply]
+
+end SmoothForm
 
 end TauCeti

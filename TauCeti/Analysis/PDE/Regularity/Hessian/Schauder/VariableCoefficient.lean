@@ -150,7 +150,6 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
   let κ : ℝ := (C₀ + 1) * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)
   have hLam : 0 < Lam :=
     hlam.trans_le (by simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _))
-  have hκ : 0 ≤ κ := by positivity
   have hJ : HolderWith J α H := hH.holderWith
   -- Interpolation at scale `r` makes the supremum term absorbable too.
   have hsup (x : E) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M := by

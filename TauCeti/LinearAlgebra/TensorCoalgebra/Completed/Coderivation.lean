@@ -30,7 +30,7 @@ public section
 namespace TauCeti.CompletedTensorWords
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  {G : InternalGrading R M} {q : ℤ}
+  {G : InternalGrading R M ℤ} {q : ℤ}
   {b : TensorWords R M →ₗ[R] TensorWords R M}
 
 /-- Completing a bounded signed coderivation preserves its signed co-Leibniz

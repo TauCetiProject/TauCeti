@@ -69,15 +69,14 @@ The independence step lives on the source space rather than on path space —
 transfers the resulting identity to `pathLaw μ X`. Stating it directly for a path-space measure
 would first need a lemma transferring `iIndepFun` to the coordinate projections.
 
-This discharges the Layer 2 target `hewittSavage_trivial_of_iIndep` of
-`TauCetiRoadmap/Exchangeability/README.md`, and supplies the Layer 2 input the roadmap records for
-the Layer 6 extreme-point corollary (the extreme exchangeable laws are exactly the i.i.d. laws).
+The zero-one law is also an input to the extreme-point corollary of de Finetti's theorem: the
+extreme exchangeable laws are exactly the i.i.d. laws.
 
 ## References
 
 * Edwin Hewitt and Leonard J. Savage, *Symmetric measures on Cartesian products*, Transactions of
   the American Mathematical Society **80** (1955), 470–501, <https://doi.org/10.2307/1992999> — the
-  original theorem, and the source the roadmap names for this target.
+  original theorem.
 * Olav Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 1.
 
 No material is adapted from `cameronfreer/exchangeability`: that formalization does not carry this
