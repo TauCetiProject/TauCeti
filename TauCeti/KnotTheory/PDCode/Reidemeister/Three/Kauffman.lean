@@ -285,12 +285,9 @@ private theorem rawLoopCount_eq (D : PDCode n) (u : Fin n → Bool) :
   rw [stateLoopCount_def, statePerm_def, smoothingChoice_smoothingChoice]
   rfl
 
-include c in
-private theorem rawLoopCount_pos (u : Fin n → Bool) : 1 ≤ rawLoopCount D u := by
+private theorem rawLoopCount_pos (hn : n ≠ 0) (u : Fin n → Bool) : 1 ≤ rawLoopCount D u := by
   rw [rawLoopCount_eq]
-  apply D.one_le_stateLoopCount
-  have hn := (c 0).isLt
-  omega
+  exact D.one_le_stateLoopCount hn _
 
 private theorem exteriorSlots_assemble (q q' : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) :
@@ -351,7 +348,7 @@ private theorem pairingTraversal_loops_lower
   rw [hq, (pairingRepresentative_spec k).1, (pairingRepresentative_spec k).2,
     pairingTraversal_assemble] at hc
   simp only [Bool.false_eq_true, ↓reduceIte] at hc
-  have hp := rawLoopCount_pos D c (assembleState c (pairingRepresentative k) r)
+  have hp := rawLoopCount_pos D (c 0).pos.ne' (assembleState c (pairingRepresentative k) r)
   simp only [rawLoopCount] at hp
   omega
 
