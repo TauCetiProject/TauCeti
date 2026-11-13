@@ -174,4 +174,10 @@ theorem exists_comp_eq_and_isSplitEpi {P M : C} [Projective P] {π : P ⟶ M}
 
 end IsEssentialEpi
 
+/-- Postcomposing with an isomorphism does not change essentiality. -/
+theorem isEssentialEpi_comp_iso_iff {P M M' : C} (f : P ⟶ M) (e : M ≅ M') :
+    IsEssentialEpi (f ≫ e.hom) ↔ IsEssentialEpi f :=
+  ⟨fun h ↦ by simpa using h.comp (isEssentialEpi_of_isIso e.inv),
+    fun h ↦ h.comp (isEssentialEpi_of_isIso e.hom)⟩
+
 end TauCeti
