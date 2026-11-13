@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.Semisimple.Multiplicity
 -- Non-public: the rank criterion for a self-map to be injective is used only inside the proof of
 -- injectivity on a finite-dimensional target; no exported statement mentions a dimension.
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.TensorProduct.Pi
+import Mathlib.LinearAlgebra.DirectSum.Finsupp
 
 /-!
 # An isotypic component is its type tensored with its multiplicity space
@@ -250,57 +250,28 @@ open TauCeti TensorProduct
 variable {k A S M ι : Type*} [Field k] [Ring A] [Algebra k A]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
 variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-variable [Fintype ι]
+variable [IsSimpleModule A S] [IsAlgClosed k] [FiniteDimensional k S]
 
-/-- The coordinates of `b` identify `ι → S` with `S ⊗[k] (S →ₗ[A] M)`: the tuple `v` corresponds
-to the tensor `∑ i, v i ⊗ b i`. -/
-private noncomputable def piTensorEquiv [DecidableEq ι] (b : Basis ι k (S →ₗ[A] M)) :
-    (ι → S) ≃ₗ[k] S ⊗[k] (S →ₗ[A] M) :=
-  (piScalarRight k k S ι).symm ≪≫ₗ TensorProduct.congr (LinearEquiv.refl k S) b.equivFun.symm
-
-/-- Summing the basis maps of the multiplicity space is evaluation, read through `piTensorEquiv`. -/
-private theorem sum_comp_proj_apply_eq_isotypicEval [DecidableEq ι] (b : Basis ι k (S →ₗ[A] M))
-    (v : ι → S) :
-    (∑ i, b i ∘ₗ LinearMap.proj i) v = isotypicEval k (piTensorEquiv b v) := by
-  conv_rhs => rw [← Finset.univ_sum_single v]
-  simp [piTensorEquiv]
-
-variable [IsSimpleModule A S]
-
-private theorem range_sum_comp_proj (b : Basis ι k (S →ₗ[A] M)) :
-    LinearMap.range (∑ i, b i ∘ₗ LinearMap.proj i) = isotypicComponent A M S := by
-  classical
-  rw [← range_isotypicEval k]
-  ext y
-  simp only [LinearMap.mem_range, sum_comp_proj_apply_eq_isotypicEval]
-  exact ⟨fun ⟨v, hv⟩ ↦ ⟨_, hv⟩, fun ⟨x, hx⟩ ↦ ⟨(piTensorEquiv b).symm x, by simpa using hx⟩⟩
-
-variable [IsAlgClosed k] [FiniteDimensional k S]
-
-private theorem injective_sum_comp_proj (b : Basis ι k (S →ₗ[A] M)) :
-    Function.Injective (∑ i, b i ∘ₗ LinearMap.proj i : (ι → S) →ₗ[A] M) := by
-  classical
-  intro v w h
-  rw [sum_comp_proj_apply_eq_isotypicEval, sum_comp_proj_apply_eq_isotypicEval] at h
-  exact (piTensorEquiv b).injective (isotypicEval_injective k h)
-
+open scoped Classical in
 /-- **A basis of the multiplicity space splits the isotypic component into copies of `S`.**  For
 `S` simple and finite-dimensional over the algebraically closed field `k` and a finite basis `b` of
 the multiplicity space `S →ₗ[A] M`, the map `v ↦ ∑ i, b i (v i)` is an isomorphism of `A`-modules
-from `ι → S` onto the `S`-isotypic component of `M`.  This is the explicit form of
-`TauCeti.nonempty_linearEquiv_isotypicComponent`: the copies of `S` are the ranges of the basis
+from `ι → S` onto the `S`-isotypic component of `M`.  This is
+`TauCeti.isotypicComponentTensorEquiv` read through the coordinates of `b`, and the explicit form
+of `TauCeti.nonempty_linearEquiv_isotypicComponent`: the copies of `S` are the ranges of the basis
 maps, and nothing is asked of `M`. -/
-noncomputable def isotypicComponentEquiv (b : Basis ι k (S →ₗ[A] M)) :
+noncomputable def isotypicComponentEquiv [Finite ι] (b : Basis ι k (S →ₗ[A] M)) :
     (ι → S) ≃ₗ[A] isotypicComponent A M S :=
-  (LinearEquiv.ofInjective _ (injective_sum_comp_proj b)).trans
-    (LinearEquiv.ofEq _ _ (range_sum_comp_proj b))
+  (Finsupp.linearEquivFunOnFinite A S ι).symm ≪≫ₗ (finsuppScalarRight k A S ι).symm ≪≫ₗ
+    AlgebraTensorModule.congr (LinearEquiv.refl A S) b.repr.symm ≪≫ₗ
+    isotypicComponentTensorEquiv k
 
 @[simp]
-theorem isotypicComponentEquiv_apply_coe (b : Basis ι k (S →ₗ[A] M)) (v : ι → S) :
+theorem isotypicComponentEquiv_apply_coe [Fintype ι] (b : Basis ι k (S →ₗ[A] M)) (v : ι → S) :
     (b.isotypicComponentEquiv v : M) = ∑ i, b i (v i) := by
-  rw [isotypicComponentEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
-    LinearEquiv.ofInjective_apply]
-  simp
+  classical
+  conv_lhs => rw [← Finset.univ_sum_single v]
+  simp [isotypicComponentEquiv, Finsupp.linearEquivFunOnFinite_symm_single]
 
 end Module.Basis
 

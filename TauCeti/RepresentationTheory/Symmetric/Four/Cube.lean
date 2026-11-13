@@ -43,8 +43,8 @@ Pairing these characters with the rows of the table gives the multiplicities, as
 spaces of intertwiners: `1, 1, 0, 1, 1` in `k[X]` and `1, 0, 1, 2, 1` in `k[Y]`, in the row
 order trivial, sign, `E`, `V₄`, `sgn ⊗ V₄`. The pairings fix the multiplicities, not the copies:
 the two copies of `V₄` in `k[Y]` are only determined by a basis of the two-dimensional space of
-intertwiners `V₄ → k[Y]`. Over an algebraically closed field such a basis splits the
-`V₄`-isotypic component of `k[Y]`, which is six-dimensional, as `V₄ ⊕ V₄` through
+intertwiners `V₄ → k[Y]`. The `V₄`-isotypic component of `k[Y]` is six-dimensional, and over an
+algebraically closed field such a basis splits it as `V₄ ⊕ V₄` through
 `Module.Basis.isotypicComponentEquiv`.
 
 ## Main definitions
@@ -249,14 +249,13 @@ theorem finrank_intertwiningMap_cubeVertexRepresentation {V : Type*} [AddCommGro
         k)) :
     Module.finrank k (ρ.IntertwiningMap (cubeVertexRepresentation k)) =
       (![1, 1, 0, 1, 1] : Fin 5 → ℕ) i := by
-  refine finrank_intertwiningMap_of_character_symmetricGroupFourClassData_rep
-    (fun j ↦ symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
-      (j.cast numClasses_symmetricGroupFourClassData.symm))
-    ![8, 0, 0, 2, 0] _ (fun j ↦ by simpa using hρ j) (fun j ↦ ?_) ?_
+  refine symmetricGroupFourClassData.finrank_intertwiningMap_of_character_rep
+    (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm))
+    (fun j ↦ ![8, 0, 0, 2, 0] (j.cast numClasses_symmetricGroupFourClassData)) _ hρ (fun j ↦ ?_) ?_
   · rw [char_cubeVertexRepresentation_symmetricGroupFourClassData_rep]
     generalize j.cast numClasses_symmetricGroupFourClassData = j
     fin_cases j <;> simp
-  · simp only [symmetricGroupFourCharacterTable_apply]
+  · simp only [symmetricGroupFourCharacterTable_apply, Fintype.card_perm, Fintype.card_fin]
     fin_cases i <;> decide
 
 /-- **The multiplicities in the edge representation** `k[Y] ≃ 1 ⊕ E ⊕ V₄ ⊕ V₄ ⊕ (sgn ⊗ V₄)`: a
@@ -270,14 +269,13 @@ theorem finrank_intertwiningMap_cubeEdgeRepresentation {V : Type*} [AddCommGroup
         k)) :
     Module.finrank k (ρ.IntertwiningMap (cubeEdgeRepresentation k)) =
       (![1, 0, 1, 2, 1] : Fin 5 → ℕ) i := by
-  refine finrank_intertwiningMap_of_character_symmetricGroupFourClassData_rep
-    (fun j ↦ symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
-      (j.cast numClasses_symmetricGroupFourClassData.symm))
-    ![12, 2, 0, 0, 0] _ (fun j ↦ by simpa using hρ j) (fun j ↦ ?_) ?_
+  refine symmetricGroupFourClassData.finrank_intertwiningMap_of_character_rep
+    (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm))
+    (fun j ↦ ![12, 2, 0, 0, 0] (j.cast numClasses_symmetricGroupFourClassData)) _ hρ (fun j ↦ ?_) ?_
   · rw [char_cubeEdgeRepresentation_symmetricGroupFourClassData_rep]
     generalize j.cast numClasses_symmetricGroupFourClassData = j
     fin_cases j <;> simp
-  · simp only [symmetricGroupFourCharacterTable_apply]
+  · simp only [symmetricGroupFourCharacterTable_apply, Fintype.card_perm, Fintype.card_fin]
     fin_cases i <;> decide
 
 variable (k) in
@@ -314,18 +312,29 @@ theorem finrank_linearMap_standardRepresentation_cubeEdgeRepresentation :
   exact finrank_intertwiningMap_standardRepresentation_cubeEdgeRepresentation k
 
 /-- **The `V₄`-isotypic component of `k[Y]` is six-dimensional**: it is the sum of the two copies
-of the standard representation in the edge representation, over an algebraically closed field of
-characteristic zero. -/
-theorem finrank_isotypicComponent_cubeEdgeRepresentation_standardRepresentation
-    [IsAlgClosed k] :
+of the standard representation in the edge representation, over any field of characteristic zero.
+There `V₄` is absolutely irreducible, its intertwiners being the scalars. -/
+theorem finrank_isotypicComponent_cubeEdgeRepresentation_standardRepresentation :
     Module.finrank k (isotypicComponent k[Perm (Fin 4)] (cubeEdgeRepresentation k).asModule
       (standardRepresentation k (Fin 4)).asModule) = 6 := by
   have := isIrreducible_standardRepresentation (k := k) (α := Fin 4) (by decide)
     (Or.inr (by norm_num))
-  rw [finrank_isotypicComponent (k := k),
-    finrank_linearMap_standardRepresentation_cubeEdgeRepresentation k]
-  rw [(Representation.asModuleEquiv _).finrank_eq, finrank_augmentationSubrepresentation]
-  simp
+  have hρ (j) : (standardRepresentation k (Fin 4)).character (symmetricGroupFourClassData.rep j) =
+      symmetricGroupFourCharacterTable
+        ((3 : Fin 5).cast numClasses_symmetricGroupFourClassData.symm) j := by
+    rw [symmetricGroupFourCharacterTable_eq_character, Fin.cast_cast, Fin.cast_eq_self]
+    simp only [Matrix.cons_val]
+  have hend : Module.finrank k
+      (Module.End k[Perm (Fin 4)] (standardRepresentation k (Fin 4)).asModule) = 1 := by
+    rw [← (Representation.IntertwiningMap.equivLinearMapAsModule _ _).finrank_eq]
+    refine symmetricGroupFourClassData.finrank_intertwiningMap_of_character_rep _ _ 1 hρ hρ ?_
+    simp only [symmetricGroupFourCharacterTable_apply, Fintype.card_perm, Fintype.card_fin]
+    decide
+  have h := finrank_isotypicComponent_mul_finrank_end (k := k) (A := k[Perm (Fin 4)])
+    (M := (cubeEdgeRepresentation k).asModule) (S := (standardRepresentation k (Fin 4)).asModule)
+  rw [hend, mul_one, finrank_linearMap_standardRepresentation_cubeEdgeRepresentation k,
+    (Representation.asModuleEquiv _).finrank_eq, finrank_augmentationSubrepresentation] at h
+  simpa using h
 
 end Isotypic
 

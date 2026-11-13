@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.CharacterTwist
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 public import TauCeti.RepresentationTheory.Symmetric.Standard
-import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Character
 import TauCeti.RepresentationTheory.FDRep.Basic
 import TauCeti.RepresentationTheory.Induction.Permutation
 
@@ -43,10 +42,6 @@ vectors of `k[Fin 4]`, and the sign twist of `V₄`, evaluated at the class repr
 * `TauCeti.symmetricGroupFourCharacterTable_eq_character`: the rows of the character table of `S₄`
   are the characters of the trivial, sign, two-dimensional, standard and sign-twisted standard
   representations.
-* `TauCeti.finrank_intertwiningMap_of_character_symmetricGroupFourClassData_rep`: in
-  characteristic zero, the dimension of the space of intertwiners between two representations
-  whose characters take integer values at the class representatives is the pairing of those
-  values.
 
 ## References
 
@@ -198,42 +193,5 @@ theorem symmetricGroupFourCharacterTable_eq_character (i j : SymmetricGroupFourC
     fin_cases j <;> norm_num
 
 end Field
-
-section Multiplicity
-
-variable {k : Type*} [Field k] [CharZero k]
-
-/-- **Hom-dimensions between representations of `S₄` from their characters**: if the characters
-of `ρ` and `σ` take the integer values `a` and `b` at the class representatives
-`1, (01), (01)(23), (012), (0123)` of `TauCeti.symmetricGroupFourClassData`, the space of
-intertwiners from `ρ` to `σ` has dimension `n` as soon as the pairing
-`∑_g b(g) a(g⁻¹)` of these values over `S₄` is `24 n`. -/
-theorem finrank_intertwiningMap_of_character_symmetricGroupFourClassData_rep {V W : Type*}
-    [AddCommGroup V] [Module k V] [FiniteDimensional k V] [AddCommGroup W] [Module k W]
-    [FiniteDimensional k W] {ρ : Representation k (Perm (Fin 4)) V}
-    {σ : Representation k (Perm (Fin 4)) W} (a b : Fin 5 → ℤ) (n : ℕ)
-    (hρ : ∀ j, ρ.character (symmetricGroupFourClassData.rep j) =
-      (a (j.cast numClasses_symmetricGroupFourClassData) : k))
-    (hσ : ∀ j, σ.character (symmetricGroupFourClassData.rep j) =
-      (b (j.cast numClasses_symmetricGroupFourClassData) : k))
-    (hab : ∑ g : Perm (Fin 4),
-      b ((symmetricGroupFourClassData.index g).cast numClasses_symmetricGroupFourClassData) *
-        a ((symmetricGroupFourClassData.index g⁻¹).cast numClasses_symmetricGroupFourClassData) =
-      24 * n) :
-    Module.finrank k (ρ.IntertwiningMap σ) = n := by
-  have hρ' (g : Perm (Fin 4)) := (symmetricGroupFourClassData.character_rep_index ρ g).symm.trans
-    (hρ _)
-  have hσ' (g : Perm (Fin 4)) := (symmetricGroupFourClassData.character_rep_index σ g).symm.trans
-    (hσ _)
-  let : Invertible (Nat.card (Perm (Fin 4)) : k) := invertibleOfNonzero (by
-    rw [Nat.card_perm, Nat.card_fin]; norm_num)
-  apply Nat.cast_injective (R := k)
-  rw [← Representation.card_inv_mul_sum_char_mul_char_eq_finrank]
-  simp_rw [hσ', hρ', ← Int.cast_mul]
-  rw [← Int.cast_sum, hab, Nat.card_perm, Nat.card_fin]
-  push_cast
-  ring
-
-end Multiplicity
 
 end TauCeti

@@ -10,7 +10,6 @@ public import TauCeti.RepresentationTheory.Induction.Character
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour.Basic
 import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Character
 import TauCeti.RepresentationTheory.Induction.Permutation
-import TauCeti.RepresentationTheory.Symmetric.Four.Basic
 
 /-!
 # Young permutation characters on four letters
@@ -221,14 +220,13 @@ theorem finrank_hom_indFDRep_trivial_parts_two_two {k : Type*} [Field k] [CharZe
     Module.finrank k (V ⟶ indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))) =
       (![1, 0, 1, 1, 0] : Fin 5 → ℕ) i := by
   rw [((forget₂HomLinearEquiv V _).symm ≪≫ₗ Rep.homLinearEquiv _ _).finrank_eq]
-  refine finrank_intertwiningMap_of_character_symmetricGroupFourClassData_rep
-    (fun j ↦ symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
-      (j.cast numClasses_symmetricGroupFourClassData.symm))
-    ![6, 2, 2, 0, 0] _ (fun j ↦ by simpa using hV j) (fun j ↦ ?_) ?_
+  refine symmetricGroupFourClassData.finrank_intertwiningMap_of_character_rep
+    (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm))
+    (fun j ↦ ![6, 2, 2, 0, 0] (j.cast numClasses_symmetricGroupFourClassData)) _ hV (fun j ↦ ?_) ?_
   · rw [character_forget₂_obj, character_indFDRep_trivial_parts_two_two μ hμ]
     generalize j.cast numClasses_symmetricGroupFourClassData = j
     fin_cases j <;> simp
-  · simp only [symmetricGroupFourCharacterTable_apply]
+  · simp only [symmetricGroupFourCharacterTable_apply, Fintype.card_perm, Fintype.card_fin]
     fin_cases i <;> decide
 
 /-- The multiplicities in the Young representation of shape `(2,1,1)`, indexed by the certified
@@ -242,14 +240,13 @@ theorem finrank_hom_indFDRep_trivial_parts_two_one_one {k : Type*} [Field k] [Ch
     Module.finrank k (V ⟶ indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))) =
       (![1, 0, 1, 2, 1] : Fin 5 → ℕ) i := by
   rw [((forget₂HomLinearEquiv V _).symm ≪≫ₗ Rep.homLinearEquiv _ _).finrank_eq]
-  refine finrank_intertwiningMap_of_character_symmetricGroupFourClassData_rep
-    (fun j ↦ symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
-      (j.cast numClasses_symmetricGroupFourClassData.symm))
-    ![12, 2, 0, 0, 0] _ (fun j ↦ by simpa using hV j) (fun j ↦ ?_) ?_
+  refine symmetricGroupFourClassData.finrank_intertwiningMap_of_character_rep
+    (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm))
+    (fun j ↦ ![12, 2, 0, 0, 0] (j.cast numClasses_symmetricGroupFourClassData)) _ hV (fun j ↦ ?_) ?_
   · rw [character_forget₂_obj, character_indFDRep_trivial_parts_two_one_one μ hμ]
     generalize j.cast numClasses_symmetricGroupFourClassData = j
     fin_cases j <;> simp
-  · simp only [symmetricGroupFourCharacterTable_apply]
+  · simp only [symmetricGroupFourCharacterTable_apply, Fintype.card_perm, Fintype.card_fin]
     fin_cases i <;> decide
 
 end FDRep
