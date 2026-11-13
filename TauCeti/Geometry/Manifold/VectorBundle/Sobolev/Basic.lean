@@ -44,7 +44,7 @@ A finite bundle atlas `A : TauCeti.FiniteBundleAtlas E M F V` gives chart data
 diffeomorphisms between open sets, carry null sets to null sets
 (`TauCeti.SectionChartData.aeTransition_of_differentiableOn`). The space `W^{k,p}(V)` is
 `TauCeti.SobolevSection A μ p k`; the analogue for bases with boundary is built from the same
-construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
+construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
 
 ## Main definitions
 
@@ -82,6 +82,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
   section whose coordinates its chart data are.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
+* `TauCeti.SectionChartData.chartValueL_ae_eq_smul`: multiplying the chart-`i` components of a
+  tuple by a scalar function multiplies its chart data by that function.
 
 ## References
 
@@ -306,6 +308,18 @@ theorem chartValueL_ae_eq_coord_iff {w : C.SobolevData μ p k} {s : S} {i : Fin 
   refine ⟨fun h j ↦ ?_, C.chartValueL_ae_eq_coord μ p k⟩
   filter_upwards [C.chartValueL_apply_ae μ p k i w, h] with y hy hy'
   rw [← hy', hy, Basis.coord_apply, (finBasis ℝ F).repr_sum_self]
+
+/-- If the chart-`i` components of `w'` are those of `w` multiplied by a function `ψ` on the image
+of chart `i`, almost everywhere, then so are the chart data in chart `i`. -/
+theorem chartValueL_ae_eq_smul {w w' : C.SobolevData μ p k} {i : Fin C.n} {ψ : E → ℝ}
+    (h : ∀ j, (Wkp.value k (w' i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)]
+      fun y ↦ ψ y * Wkp.value k (w i j) y) :
+    C.chartValueL μ p k i w' =ᵐ[μ.restrict (C.image i)]
+      fun y ↦ ψ y • C.chartValueL μ p k i w y := by
+  filter_upwards [C.chartValueL_apply_ae μ p k i w', C.chartValueL_apply_ae μ p k i w,
+    ae_all_iff.2 h] with y hy' hy hj
+  rw [hy', hy, Finset.smul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j, mul_smul]
 
 variable {C μ p k} in
 /-- The components of the chart data of a tuple of Sobolev functions are the values of its
