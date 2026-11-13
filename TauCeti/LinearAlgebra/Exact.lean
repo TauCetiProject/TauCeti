@@ -598,41 +598,50 @@ section LongExact
 open Module
 
 variable {k : Type*} [DivisionRing k] {A B C : ℕ → Type*}
-  [∀ n, AddCommGroup (A n)] [∀ n, Module k (A n)] [∀ n, FiniteDimensional k (A n)]
+  [∀ n, AddCommGroup (A n)] [∀ n, Module k (A n)]
   [∀ n, AddCommGroup (B n)] [∀ n, Module k (B n)]
-  [∀ n, AddCommGroup (C n)] [∀ n, Module k (C n)] [∀ n, FiniteDimensional k (C n)]
+  [∀ n, AddCommGroup (C n)] [∀ n, Module k (C n)]
   {f : ∀ n, A n →ₗ[k] B n} {g : ∀ n, B n →ₗ[k] C n} {δ : ∀ n, C (n + 1) →ₗ[k] A n}
 
 /-- The terms of a long exact sequence `⋯ ⟶ Aₙ ⟶ Bₙ ⟶ Cₙ ⟶ Aₙ₋₁ ⟶ ⋯ ⟶ C₀ ⟶ 0` of vector
 spaces satisfy the truncated Euler relation: the alternating sum through degree `n` of
 `dim Aᵢ - dim Bᵢ + dim Cᵢ` is, up to the sign `(-1)ⁿ`, the dimension of the image of the
-connecting map `Cₙ₊₁ ⟶ Aₙ` that the truncation cuts off. -/
+connecting map `Cₙ₊₁ ⟶ Aₙ` that the truncation cuts off. Only the terms `Aᵢ` and `Cᵢ` through
+degree `n` need be finite-dimensional. -/
 theorem sum_range_neg_one_pow_finrank_eq_of_exact (hfg : ∀ n, Function.Exact (f n) (g n))
     (hgδ : ∀ n, Function.Exact (g (n + 1)) (δ n)) (hδf : ∀ n, Function.Exact (δ n) (f n))
-    (hg : Function.Surjective (g 0)) (n : ℕ) :
+    (hg : Function.Surjective (g 0)) (n : ℕ) (hA : ∀ i ≤ n, FiniteDimensional k (A i))
+    (hC : ∀ i ≤ n, FiniteDimensional k (C i)) :
     ∑ i ∈ Finset.range (n + 1),
         (-1 : ℤ) ^ i * (finrank k (A i) - finrank k (B i) + finrank k (C i)) =
       (-1) ^ n * finrank k (LinearMap.range (δ n)) := by
-  have := fun i ↦ finiteDimensional_of_exact (hfg i)
   -- Rank--nullity at each map, with kernels replaced by images through exactness.
-  have hA (i : ℕ) : finrank k (A i) =
+  have hA' (i : ℕ) (hi : i ≤ n) : finrank k (A i) =
       finrank k (LinearMap.range (δ i)) + finrank k (LinearMap.range (f i)) := by
+    have := hA i hi
     rw [← (f i).finrank_range_add_finrank_ker, (hδf i).linearMap_ker_eq, add_comm]
-  have hB (i : ℕ) : finrank k (B i) =
+  have hB (i : ℕ) (hi : i ≤ n) : finrank k (B i) =
       finrank k (LinearMap.range (f i)) + finrank k (LinearMap.range (g i)) := by
+    have := hA i hi
+    have := hC i hi
+    have := finiteDimensional_of_exact (hfg i)
     rw [← (g i).finrank_range_add_finrank_ker, (hfg i).linearMap_ker_eq, add_comm]
-  have hC (i : ℕ) : finrank k (C (i + 1)) =
+  have hC' (i : ℕ) (hi : i + 1 ≤ n) : finrank k (C (i + 1)) =
       finrank k (LinearMap.range (g (i + 1))) + finrank k (LinearMap.range (δ i)) := by
+    have := hC (i + 1) hi
     rw [← (δ i).finrank_range_add_finrank_ker, (hgδ i).linearMap_ker_eq, add_comm]
   have hC₀ : finrank k (C 0) = finrank k (LinearMap.range (g 0)) := by
     rw [LinearMap.range_eq_top.2 hg, finrank_top]
+  clear hA hC
   induction n with
   | zero =>
-    simp only [zero_add, Finset.sum_range_one, pow_zero, one_mul, hA, hB, hC₀]
+    simp only [zero_add, Finset.sum_range_one, pow_zero, one_mul, hA' 0 le_rfl, hB 0 le_rfl, hC₀]
     push_cast
     ring
   | succ n ih =>
-    rw [Finset.sum_range_succ, ih, hA, hB, hC]
+    rw [Finset.sum_range_succ, ih (fun i hi ↦ hA' i (hi.trans n.le_succ))
+        (fun i hi ↦ hB i (hi.trans n.le_succ)) (fun i hi ↦ hC' i (hi.trans n.le_succ)),
+      hA' (n + 1) le_rfl, hB (n + 1) le_rfl, hC' n le_rfl]
     push_cast
     ring
 
@@ -640,7 +649,8 @@ theorem sum_range_neg_one_pow_finrank_eq_of_exact (hfg : ∀ n, Function.Exact (
 `⋯ ⟶ Aₙ ⟶ Bₙ ⟶ Cₙ ⟶ Aₙ₋₁ ⟶ ⋯ ⟶ C₀ ⟶ 0` of finite-dimensional vector spaces in which only
 finitely many `Aₙ` are nonzero, the alternating sum of `dim Aₙ - dim Bₙ + dim Cₙ` vanishes; its
 summands vanish in all large degrees. -/
-theorem finsum_neg_one_pow_finrank_eq_zero_of_exact (hfg : ∀ n, Function.Exact (f n) (g n))
+theorem finsum_neg_one_pow_finrank_eq_zero_of_exact [∀ n, FiniteDimensional k (A n)]
+    [∀ n, FiniteDimensional k (C n)] (hfg : ∀ n, Function.Exact (f n) (g n))
     (hgδ : ∀ n, Function.Exact (g (n + 1)) (δ n)) (hδf : ∀ n, Function.Exact (δ n) (f n))
     (hg : Function.Surjective (g 0)) (hA : (Function.support fun n ↦ finrank k (A n)).Finite) :
     ∑ᶠ n, (-1 : ℤ) ^ n * (finrank k (A n) - finrank k (B n) + finrank k (C n)) = 0 := by
@@ -648,7 +658,8 @@ theorem finsum_neg_one_pow_finrank_eq_zero_of_exact (hfg : ∀ n, Function.Exact
   have hδ {n : ℕ} (hn : N < n) : finrank k (LinearMap.range (δ n)) = 0 :=
     Nat.eq_zero_of_le_zero <| (Submodule.finrank_le _).trans_eq <|
       by_contra fun h ↦ hn.not_ge (hN h)
-  have hsum := sum_range_neg_one_pow_finrank_eq_of_exact hfg hgδ hδf hg
+  have hsum (n : ℕ) := sum_range_neg_one_pow_finrank_eq_of_exact hfg hgδ hδf hg n
+    (fun _ _ ↦ inferInstance) (fun _ _ ↦ inferInstance)
   rw [finsum_eq_sum_of_support_subset (s := Finset.range (N + 2)), hsum, hδ (by lia),
     Nat.cast_zero, mul_zero]
   -- In a degree `m + 1 ≥ N + 2` the summand is the difference of the truncated sums through
