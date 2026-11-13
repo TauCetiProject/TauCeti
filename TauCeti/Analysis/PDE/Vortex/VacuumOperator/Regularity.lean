@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
