@@ -38,6 +38,9 @@ segments.
 * `TauCeti.GenEq.IsFormallyConsistent.lt_of_isTiedTo_of_sign_eq`,
   `TauCeti.GenEq.IsFormallyConsistent.lt_of_isTiedTo_of_sign_ne`: the tie is strictly increasing
   for dual bases of equal signs and strictly decreasing for dual bases of opposite signs.
+* `TauCeti.GenEq.IsFormallyConsistent.strictMonoOn_tiedBoundary_of_sign_eq`,
+  `TauCeti.GenEq.IsFormallyConsistent.strictAntiOn_tiedBoundary_of_sign_ne`: the same for the
+  function `tiedBoundary μ` on the tied boundaries of `μ`.
 
 ## References
 
@@ -81,6 +84,7 @@ instance (μ : Fin Ω.numBases) (p q : Fin (Ω.numItems + 1)) : Decidable (Ω.Is
 variable {Ω} {μ : Fin Ω.numBases} {p p' q q' : Fin (Ω.numItems + 1)}
 
 /-- A boundary connection is a tie. -/
+@[grind →]
 theorem isTiedTo_of_mem_connections (hc : (p, μ, q) ∈ Ω.connections) : Ω.IsTiedTo μ p q :=
   Or.inl hc
 
@@ -91,7 +95,7 @@ theorem isTiedTo_iff_mem_connections (hp₁ : p ≠ Ω.left μ) (hp₂ : p ≠ �
 
 /-- The initial boundary of `μ` is tied exactly to the initial boundary of `Δ(μ)` when
 `ε(μ) = ε(Δμ)`, and exactly to its terminal boundary otherwise. -/
-@[simp]
+@[simp, grind =]
 theorem isTiedTo_left_iff : Ω.IsTiedTo μ (Ω.left μ) q ↔
     q = if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.left (Ω.dual μ) else Ω.right (Ω.dual μ) := by
   refine ⟨?_, fun h => Or.inr (Or.inl ⟨rfl, h⟩)⟩
@@ -101,7 +105,7 @@ theorem isTiedTo_left_iff : Ω.IsTiedTo μ (Ω.left μ) q ↔
 
 /-- The terminal boundary of `μ` is tied exactly to the terminal boundary of `Δ(μ)` when
 `ε(μ) = ε(Δμ)`, and exactly to its initial boundary otherwise. -/
-@[simp]
+@[simp, grind =]
 theorem isTiedTo_right_iff : Ω.IsTiedTo μ (Ω.right μ) q ↔
     q = if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.right (Ω.dual μ) else Ω.left (Ω.dual μ) := by
   refine ⟨?_, fun h => Or.inr (Or.inr ⟨rfl, h⟩)⟩
@@ -110,11 +114,13 @@ theorem isTiedTo_right_iff : Ω.IsTiedTo μ (Ω.right μ) q ↔
     absurd h (Ω.left_lt_right μ).ne', h]
 
 /-- A tied boundary of `μ` is not to the left of `μ`. -/
+@[grind →]
 theorem IsTiedTo.left_le (h : Ω.IsTiedTo μ p q) : Ω.left μ ≤ p := by
   rcases h with h | ⟨rfl, -⟩ | ⟨rfl, -⟩
   exacts [(Ω.bounds_of_mem_connections _ h).1.le, le_rfl, (Ω.left_lt_right μ).le]
 
 /-- A tied boundary of `μ` is not to the right of `μ`. -/
+@[grind →]
 theorem IsTiedTo.le_right (h : Ω.IsTiedTo μ p q) : p ≤ Ω.right μ := by
   rcases h with h | ⟨rfl, -⟩ | ⟨rfl, -⟩
   exacts [(Ω.bounds_of_mem_connections _ h).2.1.le, (Ω.left_lt_right μ).le, le_rfl]
@@ -126,8 +132,23 @@ theorem IsTiedTo.dual (h : Ω.IsTiedTo μ p q) : Ω.IsTiedTo (Ω.dual μ) q p :=
   · exact Or.inl (Ω.dual_mem_connections _ h)
   all_goals by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ) <;> simp [hs, eq_comm]
 
+/-- The boundary `q` is `Δ(μ)`-tied to `p` exactly when `p` is `μ`-tied to `q`. -/
+theorem isTiedTo_dual_iff : Ω.IsTiedTo (Ω.dual μ) q p ↔ Ω.IsTiedTo μ p q :=
+  ⟨fun h => Ω.dual_involutive μ ▸ h.dual, IsTiedTo.dual⟩
+
+/-- A boundary to which a boundary of `μ` is tied is not to the left of `Δ(μ)`. -/
+@[grind →]
+theorem IsTiedTo.left_dual_le (h : Ω.IsTiedTo μ p q) : Ω.left (Ω.dual μ) ≤ q :=
+  h.dual.left_le
+
+/-- A boundary to which a boundary of `μ` is tied is not to the right of `Δ(μ)`. -/
+@[grind →]
+theorem IsTiedTo.le_right_dual (h : Ω.IsTiedTo μ p q) : q ≤ Ω.right (Ω.dual μ) :=
+  h.dual.le_right
+
 /-- In a formally consistent generalised equation a boundary of `μ` is tied to at most one
 boundary of `Δ(μ)`. -/
+@[grind →]
 theorem IsFormallyConsistent.isTiedTo_unique (hΩ : Ω.IsFormallyConsistent)
     (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p q') : q = q' := by
   rcases h with h | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
@@ -142,35 +163,27 @@ theorem IsFormallyConsistent.isTiedTo_unique (hΩ : Ω.IsFormallyConsistent)
 
 /-- In a formally consistent generalised equation the ties of a base `μ` with `ε(μ) = ε(Δμ)` are
 strictly increasing. -/
+@[grind =>]
 theorem IsFormallyConsistent.lt_of_isTiedTo_of_sign_eq (hΩ : Ω.IsFormallyConsistent)
     (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
     (hp : p < p') : q < q' := by
   have hne : q ≠ q' := fun hq => hp.ne (hΩ.isTiedTo_unique h.dual (hq ▸ h'.dual))
-  have hΔ := Ω.left_lt_right (Ω.dual μ)
-  have hl := h.left_le
-  have hr := h'.le_right
-  have hq := h.dual.le_right
-  have hq' := h'.dual.left_le
   rcases h with h | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rcases h' with h' | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · have h₁ := hΩ.connections_monotone_or_antitone _ h _ h' rfl hp.le
     grind
-  all_goals grind
+  all_goals grind [left_lt_right]
 
 /-- In a formally consistent generalised equation the ties of a base `μ` with `ε(μ) ≠ ε(Δμ)` are
 strictly decreasing. -/
+@[grind =>]
 theorem IsFormallyConsistent.lt_of_isTiedTo_of_sign_ne (hΩ : Ω.IsFormallyConsistent)
     (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) (h : Ω.IsTiedTo μ p q) (h' : Ω.IsTiedTo μ p' q')
     (hp : p < p') : q' < q := by
   have hne : q ≠ q' := fun hq => hp.ne (hΩ.isTiedTo_unique h.dual (hq ▸ h'.dual))
-  have hΔ := Ω.left_lt_right (Ω.dual μ)
-  have hl := h.left_le
-  have hr := h'.le_right
-  have hq := h.dual.left_le
-  have hq' := h'.dual.le_right
   rcases h with h | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rcases h' with h' | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · have h₁ := hΩ.connections_monotone_or_antitone _ h _ h' rfl hp.le
     grind
-  all_goals grind
+  all_goals grind [left_lt_right]
 
 variable (Ω) in
 /-- The boundary of `Δ(μ)` to which the boundary `p` of `μ` is tied; the boundary `p` itself if
@@ -179,7 +192,7 @@ def tiedBoundary (μ : Fin Ω.numBases) (p : Fin (Ω.numItems + 1)) : Fin (Ω.nu
   if h : ∃ q, Ω.IsTiedTo μ p q then Fin.find (Ω.IsTiedTo μ p) h else p
 
 /-- A boundary of `μ` is tied to `tiedBoundary μ p` exactly when it is tied to some boundary. -/
-@[simp]
+@[simp, grind =]
 theorem isTiedTo_tiedBoundary_iff :
     Ω.IsTiedTo μ p (Ω.tiedBoundary μ p) ↔ ∃ q, Ω.IsTiedTo μ p q := by
   refine ⟨fun h => ⟨_, h⟩, fun h => ?_⟩
@@ -192,23 +205,38 @@ theorem tiedBoundary_of_not_exists (h : ¬ ∃ q, Ω.IsTiedTo μ p q) : Ω.tiedB
 
 /-- The initial boundary of `μ` is tied to the initial boundary of `Δ(μ)` when `ε(μ) = ε(Δμ)`, and
 to its terminal boundary otherwise. -/
-@[simp]
+@[simp, grind =]
 theorem tiedBoundary_left : Ω.tiedBoundary μ (Ω.left μ) =
     if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.left (Ω.dual μ) else Ω.right (Ω.dual μ) :=
   isTiedTo_left_iff.1 (isTiedTo_tiedBoundary_iff.2 ⟨_, isTiedTo_left_iff.2 rfl⟩)
 
 /-- The terminal boundary of `μ` is tied to the terminal boundary of `Δ(μ)` when `ε(μ) = ε(Δμ)`,
 and to its initial boundary otherwise. -/
-@[simp]
+@[simp, grind =]
 theorem tiedBoundary_right : Ω.tiedBoundary μ (Ω.right μ) =
     if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.right (Ω.dual μ) else Ω.left (Ω.dual μ) :=
   isTiedTo_right_iff.1 (isTiedTo_tiedBoundary_iff.2 ⟨_, isTiedTo_right_iff.2 rfl⟩)
 
 /-- In a formally consistent generalised equation, `tiedBoundary` is the boundary to which a
 tied boundary is tied. -/
+@[grind =>]
 theorem IsFormallyConsistent.tiedBoundary_eq (hΩ : Ω.IsFormallyConsistent)
     (h : Ω.IsTiedTo μ p q) : Ω.tiedBoundary μ p = q :=
   hΩ.isTiedTo_unique (isTiedTo_tiedBoundary_iff.2 ⟨q, h⟩) h
+
+/-- In a formally consistent generalised equation `tiedBoundary μ` is strictly increasing on the
+tied boundaries of a base `μ` with `ε(μ) = ε(Δμ)`. -/
+theorem IsFormallyConsistent.strictMonoOn_tiedBoundary_of_sign_eq (hΩ : Ω.IsFormallyConsistent)
+    (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) :
+    StrictMonoOn (Ω.tiedBoundary μ) {p | ∃ q, Ω.IsTiedTo μ p q} := fun _ hp _ hp' =>
+  hΩ.lt_of_isTiedTo_of_sign_eq hs (isTiedTo_tiedBoundary_iff.2 hp) (isTiedTo_tiedBoundary_iff.2 hp')
+
+/-- In a formally consistent generalised equation `tiedBoundary μ` is strictly decreasing on the
+tied boundaries of a base `μ` with `ε(μ) ≠ ε(Δμ)`. -/
+theorem IsFormallyConsistent.strictAntiOn_tiedBoundary_of_sign_ne (hΩ : Ω.IsFormallyConsistent)
+    (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) :
+    StrictAntiOn (Ω.tiedBoundary μ) {p | ∃ q, Ω.IsTiedTo μ p q} := fun _ hp _ hp' =>
+  hΩ.lt_of_isTiedTo_of_sign_ne hs (isTiedTo_tiedBoundary_iff.2 hp) (isTiedTo_tiedBoundary_iff.2 hp')
 
 /-! ### Examples -/
 
