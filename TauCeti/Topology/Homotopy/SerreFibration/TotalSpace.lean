@@ -140,19 +140,12 @@ namespace TauCeti
 variable {E : Type u} {B : Type v} {F : Type*} [TopologicalSpace E] [TopologicalSpace B]
   [TopologicalSpace F] {p : E → B}
 
-/-- A locally trivial map is continuous. -/
-private theorem continuous_of_exists_trivialization
-    (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet) : Continuous p :=
-  continuous_iff_continuousAt.2 fun x ↦ by
-    obtain ⟨e, he⟩ := h (p x)
-    exact e.continuousAt_proj (e.mem_source.2 he)
-
 /-- A locally trivial map `p : E → B`, as a morphism of `TopCat` between the lifts of `E` and `B`
 to a common universe. -/
 private noncomputable def uliftHom (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet) :
     _root_.TopCat.of (ULift.{v} E) ⟶ _root_.TopCat.of (ULift.{u} B) :=
-  _root_.TopCat.ofHom ⟨ULift.up ∘ p ∘ ULift.down,
-    continuous_uliftUp.comp ((continuous_of_exists_trivialization h).comp continuous_uliftDown)⟩
+  _root_.TopCat.ofHom ⟨ULift.up ∘ p ∘ ULift.down, continuous_uliftUp.comp
+    ((continuous_of_forall_exists_trivialization h).comp continuous_uliftDown)⟩
 
 /-- The lift of a locally trivial map to a common universe is a Serre fibration. -/
 private theorem mem_serreFibrations_uliftHom (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet) :
@@ -160,7 +153,7 @@ private theorem mem_serreFibrations_uliftHom (h : ∀ b, ∃ e : Trivialization 
   TopCat.mem_serreFibrations_iff_cube.2 fun n ↦
     ((Homeomorph.ulift.symm.hasHomotopyLiftingProperty _).comp
       (hasHomotopyLiftingProperty_cube_of_exists_trivialization h (Fin n))
-      (continuous_of_exists_trivialization h)).comp
+      (continuous_of_forall_exists_trivialization h)).comp
       (Homeomorph.ulift.hasHomotopyLiftingProperty _) Homeomorph.ulift.continuous
 
 /-- The fibre of the lift `uliftHom h` over a point `b` of the base set of a trivialization is
@@ -247,13 +240,6 @@ namespace FiberBundle
 variable {B F : Type*} [TopologicalSpace B] [TopologicalSpace F] {E : B → Type*}
   [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
 
-variable (F E) in
-/-- The projection of a fibre bundle is locally trivial, through the trivializations at the points
-of the base. -/
-private theorem exists_trivialization_proj (b : B) :
-    ∃ e : Trivialization F (TotalSpace.proj : TotalSpace F E → B), b ∈ e.baseSet :=
-  ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩
-
 /-- **The homotopy of the total space of a fibre bundle is bounded by that of the base and of the
 fibre.** If `π_N(B, x.proj)` is trivial and `π_N(F, y)` is trivial at every point `y`, for a finite
 index type `N`, then `π_N(TotalSpace F E, x)` is trivial. -/
@@ -261,13 +247,13 @@ theorem subsingleton_homotopyGroup_totalSpace (x : TotalSpace F E) {N : Type*} [
     (hB : Subsingleton (HomotopyGroup N B x.proj))
     (hF : ∀ y : F, Subsingleton (HomotopyGroup N F y)) :
     Subsingleton (HomotopyGroup N (TotalSpace F E) x) :=
-  TauCeti.subsingleton_homotopyGroup_of_exists_trivialization (exists_trivialization_proj F E) x
-    hB hF
+  TauCeti.subsingleton_homotopyGroup_of_exists_trivialization
+    (exists_trivialization_mem_baseSet F E) x hB hF
 
 /-- **The total space of a fibre bundle with path-connected base and fibre is path-connected.** -/
 instance pathConnectedSpace_totalSpace [PathConnectedSpace B] [PathConnectedSpace F] :
     PathConnectedSpace (TotalSpace F E) :=
-  TauCeti.pathConnectedSpace_of_exists_trivialization (exists_trivialization_proj F E)
+  TauCeti.pathConnectedSpace_of_exists_trivialization (exists_trivialization_mem_baseSet F E)
 
 /-- **The total space of a fibre bundle with `n`-connected base and fibre is `n`-connected.** If
 `π_k(B, b)` is trivial for every `k ≤ n`, and the homotopy groups `π_k` of the model fibre `F` are
@@ -277,13 +263,13 @@ theorem forall_subsingleton_homotopyGroup_totalSpace (b : B) {n : ℕ}
     (hB : ∀ k ≤ n, Subsingleton (π_ k B b)) (hF : ∀ k ≤ n, ∀ y : F, Subsingleton (π_ k F y)) :
     ∀ k ≤ n, ∀ x : TotalSpace F E, Subsingleton (π_ k (TotalSpace F E) x) :=
   TauCeti.forall_subsingleton_homotopyGroup_of_exists_trivialization
-    (exists_trivialization_proj F E) b hB hF
+    (exists_trivialization_mem_baseSet F E) b hB hF
 
 /-- **The total space of a fibre bundle with simply connected base and fibre is simply
 connected.** For instance, for `n ≥ 2` the total space of a fibre bundle with fibre the sphere
 `Sⁿ` over a simply connected base is simply connected. -/
 instance simplyConnectedSpace_totalSpace [SimplyConnectedSpace B] [SimplyConnectedSpace F] :
     SimplyConnectedSpace (TotalSpace F E) :=
-  TauCeti.simplyConnectedSpace_of_exists_trivialization (exists_trivialization_proj F E)
+  TauCeti.simplyConnectedSpace_of_exists_trivialization (exists_trivialization_mem_baseSet F E)
 
 end FiberBundle
