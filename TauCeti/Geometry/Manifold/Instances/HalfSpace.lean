@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
+public import TauCeti.Geometry.Manifold.Boundary.Model
 
 /-!
 # A product half-space model
@@ -21,6 +22,12 @@ manifolds modelled on it, such as the PL inverse theorem `TauCeti.IsPLMap.symm`,
 Restricted to the points of positive height, the model is an open partial homeomorphism
 onto the open half-space in `E × ℝ`. Its inverse turns a chart with values of positive last
 coordinate into a half-space chart missing the boundary.
+
+For `E = Fin n → ℝ` the product half-space is homeomorphic to Mathlib's half-space
+`EuclideanHalfSpace (n + 1)`, by moving the height to coordinate `0`
+(`TauCeti.halfSpaceHomeomorphEuclideanHalfSpace`). Read in the model vector spaces this
+homeomorphism is the restriction of a continuous linear equivalence, so it identifies the two
+models in every regularity class that is invariant under linear changes of coordinates.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 1.
 -/
@@ -116,5 +123,60 @@ noncomputable def halfSpaceInteriorChart :
 /-- The interior chart takes values in the open half-space. -/
 @[simp, mfld_simps] theorem halfSpaceInteriorChart_target :
     (halfSpaceInteriorChart E).target = {q | 0 < q.2} := (rfl)
+
+/-! ### Comparison with `EuclideanHalfSpace` -/
+
+/-- The product half-space `{q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}` is homeomorphic to Mathlib's
+half-space `EuclideanHalfSpace (n + 1)`: the height `q.2` becomes coordinate `0` and the
+tangential coordinates `q.1` become coordinates `1, …, n`. It is the restriction of the
+continuous linear equivalence `q ↦ TauCeti.euclideanFinConsEquiv rfl (q.2, q.1)`. -/
+noncomputable def halfSpaceHomeomorphEuclideanHalfSpace (n : ℕ) :
+    {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} ≃ₜ EuclideanHalfSpace (n + 1) :=
+  ((ContinuousLinearEquiv.prodComm ℝ (Fin n → ℝ) ℝ).trans
+    (euclideanFinConsEquiv rfl)).toHomeomorph.subtype fun q => by simp
+
+variable {n : ℕ}
+
+/-- In ambient coordinates, `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` is
+`q ↦ TauCeti.euclideanFinConsEquiv rfl (q.2, q.1)`. -/
+theorem coe_halfSpaceHomeomorphEuclideanHalfSpace (q : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}) :
+    (halfSpaceHomeomorphEuclideanHalfSpace n q).1 = euclideanFinConsEquiv rfl (q.1.2, q.1.1) :=
+  (rfl)
+
+/-- In ambient coordinates, the inverse of `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` is
+`y ↦ ((TauCeti.euclideanFinConsEquiv rfl).symm y).swap`. -/
+theorem coe_halfSpaceHomeomorphEuclideanHalfSpace_symm (y : EuclideanHalfSpace (n + 1)) :
+    ((halfSpaceHomeomorphEuclideanHalfSpace n).symm y).1 =
+      ((euclideanFinConsEquiv rfl).symm y.1).swap := (rfl)
+
+/-- `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` puts the height in coordinate `0`. -/
+@[simp]
+theorem halfSpaceHomeomorphEuclideanHalfSpace_apply_zero
+    (q : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}) :
+    (halfSpaceHomeomorphEuclideanHalfSpace n q).1 0 = q.1.2 := by
+  simp [coe_halfSpaceHomeomorphEuclideanHalfSpace]
+
+/-- `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` puts the tangential coordinates in
+coordinates `1, …, n`. -/
+@[simp]
+theorem halfSpaceHomeomorphEuclideanHalfSpace_apply_succ
+    (q : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}) (i : Fin n) :
+    (halfSpaceHomeomorphEuclideanHalfSpace n q).1 i.succ = q.1.1 i := by
+  simp [coe_halfSpaceHomeomorphEuclideanHalfSpace]
+
+/-- The inverse of `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` reads the tangential
+coordinates from coordinates `1, …, n`. -/
+@[simp]
+theorem halfSpaceHomeomorphEuclideanHalfSpace_symm_apply_fst (y : EuclideanHalfSpace (n + 1))
+    (i : Fin n) :
+    ((halfSpaceHomeomorphEuclideanHalfSpace n).symm y).1.1 i = y.1 i.succ := by
+  simp [coe_halfSpaceHomeomorphEuclideanHalfSpace_symm]
+
+/-- The inverse of `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` reads the height from
+coordinate `0`. -/
+@[simp]
+theorem halfSpaceHomeomorphEuclideanHalfSpace_symm_apply_snd (y : EuclideanHalfSpace (n + 1)) :
+    ((halfSpaceHomeomorphEuclideanHalfSpace n).symm y).1.2 = y.1 0 := by
+  simp [coe_halfSpaceHomeomorphEuclideanHalfSpace_symm]
 
 end TauCeti
