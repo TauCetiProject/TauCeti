@@ -16,7 +16,8 @@ public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 The height function `h x = ⟪x, v⟫` on the unit sphere `Sⁿ` of an `(n + 1)`-dimensional real inner
 product space has two critical points, the south pole `-v` of index `0` and the north pole `v` of
 index `n`. Milnor's cell attachment theorem therefore builds `Sⁿ` from a `0`-cell by attaching one
-`n`-cell, and this file checks the resulting computation of the homology of the sphere.
+`n`-cell. This file proves the resulting statements about the homology of the sublevels of the
+height.
 
 * Every sublevel `{h ≤ a}` with `-1 ≤ a < 1` is contractible
   (`TauCeti.contractibleSpace_sublevel_sphereHeight`). It misses the north pole, and stereographic
@@ -28,13 +29,15 @@ index `n`. Milnor's cell attachment theorem therefore builds `Sⁿ` from a `0`-c
   (`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso` and
   `TauCeti.isZero_singularHomology_sublevelPair_sphereHeight`): the band contains the single
   critical point `v`, of index `n`.
-* For `-1 ≤ a < 1 ≤ b`, the quotient map `Hₖ₊₁(Sⁿ) = Hₖ₊₁({h ≤ b}) ⟶ Hₖ₊₁({h ≤ b}, {h ≤ a})` is
+* For `-1 ≤ a < 1` and `a ≤ b`, the quotient map `Hₖ₊₁({h ≤ b}) ⟶ Hₖ₊₁({h ≤ b}, {h ≤ a})` is
   an isomorphism (`TauCeti.isIso_singularHomologyπ_sublevelPair_sphereHeight`), since the lower
-  sublevel is contractible. With the previous item, the top homology `Hₙ(Sⁿ)`, `n ≥ 1`, is one
-  copy of the coefficients, carried by the cell at the north pole. For the circle with integer
-  coefficients this reads `H₁(S¹; ℤ) ≅ ℤ` off the height function, in agreement with the
-  computation of the homology of spheres by the Mayer–Vietoris sequence
-  (`TauCeti.reducedSingularHomologySphereIso`).
+  sublevel is contractible. With the previous item, for `-1 < a < 1 < b` and `n ≥ 1` the homology
+  `Hₙ({h ≤ b})` is one copy of the coefficients, carried by the cell at the north pole. For
+  `b ≥ 1` the subspace `{h ≤ b}` is the whole sphere as a set, so this is the cell-structure
+  reading of `Hₙ(Sⁿ)`, and of `H₁(S¹; ℤ) ≅ ℤ` for the circle with integer coefficients; the
+  identification of the homology of `{h ≤ b}` with that of `Sⁿ` is not formalized here. The
+  homology of spheres itself is computed by the Mayer–Vietoris sequence in
+  `TauCeti.reducedSingularHomologySphereIso`.
 * Consequently, the connecting morphism `Hₖ₊₁({h ≤ b}, {h ≤ a}) ⟶ Hₖ({h ≤ a})` vanishes
   (`TauCeti.singularHomologyδ_sublevelPair_sphereHeight_eq_zero`): the top cell is a cycle. For
   the circle, `n = 1`, the cell at the maximum is made of two descending arcs, whose ends are the
@@ -50,8 +53,8 @@ index `n`. Milnor's cell attachment theorem therefore builds `Sⁿ` from a `0`-c
 * `TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`,
   `TauCeti.isZero_singularHomology_sublevelPair_sphereHeight`: the relative homology of the band
   across the maximum.
-* `TauCeti.isIso_singularHomologyπ_sublevelPair_sphereHeight`: the homology of the sphere maps
-  isomorphically to the relative homology of the band across the maximum.
+* `TauCeti.isIso_singularHomologyπ_sublevelPair_sphereHeight`: the homology of an upper sublevel
+  maps isomorphically to the relative homology of the band across the maximum.
 * `TauCeti.singularHomologyδ_sublevelPair_sphereHeight_eq_zero`: the top cell is a cycle.
 
 ## References
@@ -121,8 +124,8 @@ private theorem sphereHeight_eq_one_of_mem_criticalPoints (v : sphere (0 : E) 1)
     linarith [hxab.1]
 
 /-- For `-1 < a < 1 < b`, the relative homology of the sublevel pair `({h ≤ b}, {h ≤ a})` of the
-height is free on the critical points of the level `1` of each index; the only such point is the
-north pole. -/
+height in degree `k` is free on the critical points of level `1` and Morse index `k`; the only
+such point, when `k = n`, is the north pole. -/
 private theorem nonempty_singularHomology_sublevelPair_sphereHeight_iso_sigma
     (v : sphere (0 : E) 1) {a b : ℝ} (ha : -1 < a) (ha' : a < 1) (hb : 1 < b) (k : ℕ) :
     Nonempty ((sublevelPair (sphereHeight v) (ha'.trans hb).le).singularHomology R k ≅
@@ -165,11 +168,12 @@ theorem isZero_singularHomology_sublevelPair_sphereHeight (v : sphere (0 : E) 1)
     exact hk hq.symm⟩
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun q ↦ isEmptyElim q)).of_iso e
 
-/-- **The homology of the sphere is carried by the top cell of the height.** For
+/-- **The homology of an upper sublevel is carried by the top cell of the height.** For
 `-1 ≤ a < 1` and `a ≤ b`, the quotient map `Hₖ₊₁({h ≤ b}) ⟶ Hₖ₊₁({h ≤ b}, {h ≤ a})` is an
-isomorphism, since the lower sublevel is contractible. For `b ≥ 1` the sublevel `{h ≤ b}` is the
-whole sphere, and for `a > -1`, `b > 1` and `k + 1 = n` the target is one copy of the coefficients
-(`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`). -/
+isomorphism, since the lower sublevel is contractible. The source is the homology of the subspace
+`{h ≤ b}`, which is the whole sphere as a set when `b ≥ 1`; its identification with the homology of
+`Sⁿ` is not stated here. For `a > -1`, `b > 1` and `k + 1 = n` the target is one copy of the
+coefficients (`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`). -/
 theorem isIso_singularHomologyπ_sublevelPair_sphereHeight (v : sphere (0 : E) 1) {a b : ℝ}
     (ha : -1 ≤ a) (ha' : a < 1) (hab : a ≤ b) (k : ℕ) :
     IsIso ((sublevelPair (sphereHeight v) hab).singularHomologyπ R (k + 1)) := by
@@ -185,8 +189,9 @@ component of the lower sublevel. -/
 theorem singularHomologyδ_sublevelPair_sphereHeight_eq_zero (v : sphere (0 : E) 1) {a b : ℝ}
     (ha : -1 ≤ a) (ha' : a < 1) (hab : a ≤ b) (k : ℕ) :
     (sublevelPair (sphereHeight v) hab).singularHomologyδ R (k + 1) k = 0 := by
-  have := isIso_singularHomologyπ_sublevelPair_sphereHeight R v ha ha' hab k
-  rw [← cancel_epi ((sublevelPair (sphereHeight v) hab).singularHomologyπ R (k + 1)),
-    TopPair.singularHomologyπ_comp_singularHomologyδ _ R (k + 1) k, comp_zero]
+  have := contractibleSpace_sublevel_sphereHeight v ha ha'
+  -- The subspace of `sublevelPair` is `TopCat.of {x | sphereHeight v x ≤ a}` by definition.
+  have : ContractibleSpace (sublevelPair (sphereHeight v) hab).snd := this
+  exact TopPair.singularHomologyδ_eq_zero_of_contractibleSpace _ R k
 
 end TauCeti

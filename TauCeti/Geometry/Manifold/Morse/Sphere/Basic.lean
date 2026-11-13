@@ -357,9 +357,7 @@ theorem sphereHeight_stereographic_symm_apply (v : sphere (0 : E) 1) (w : (ℝ �
   rw [sphereHeight_apply, stereographicHeight_apply]
   -- The inverse of `stereographic` is `stereoInvFun` by definition.
   change ⟪(stereoInvFun (norm_eq_of_mem_sphere v) w : E), (v : E)⟫ = _
-  rw [stereoInvFun_apply, inner_smul_left, inner_add_left, inner_smul_left, inner_smul_left, hw,
-    hv]
-  simp only [RCLike.conj_to_real]
+  simp only [stereoInvFun_apply, inner_smul_left, inner_add_left, hw, hv, RCLike.conj_to_real]
   field_simp
   ring
 
