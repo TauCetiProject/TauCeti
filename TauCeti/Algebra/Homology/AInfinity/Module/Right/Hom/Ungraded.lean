@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded
+public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded.DG
 
 /-!
 # Morphisms of ungraded `A∞` right modules
