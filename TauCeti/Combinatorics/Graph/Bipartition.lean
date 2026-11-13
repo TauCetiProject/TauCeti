@@ -216,7 +216,7 @@ theorem target_mem {L R : Finset V(G)} (hLR : G.IsBipartition L R) {x y : V(G)}
   hLR.mem_right_of_isLink e.isLink e.source_mem
 
 /-- For a fixed source, the underlying edge determines the target and bipartite arrow. -/
-theorem edge_out_injective {x : V(G)} :
+theorem outgoing_edge_injective {x : V(G)} :
     Function.Injective (fun a : Σ y, G.BipartiteHom L x y ↦ a.2.edge) := by
   rintro ⟨y, a⟩ ⟨z, b⟩ hab
   dsimp only at hab
@@ -225,7 +225,7 @@ theorem edge_out_injective {x : V(G)} :
   exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
 
 /-- For a fixed target, the underlying edge determines the source and bipartite arrow. -/
-theorem edge_in_injective {x : V(G)} :
+theorem incoming_edge_injective {x : V(G)} :
     Function.Injective (fun a : Σ y, G.BipartiteHom L y x ↦ a.2.edge) := by
   rintro ⟨y, a⟩ ⟨z, b⟩ hab
   dsimp only at hab
@@ -239,7 +239,7 @@ noncomputable def outgoingEquiv {L : Finset V(G)} (x : V(G)) (hx : x ∈ L) :
     (Σ y, G.BipartiteHom L x y) ≃ {e : E(G) // G.Inc e x} :=
   Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_left⟩) ⟨by
     intro e f h
-    exact edge_out_injective (congrArg Subtype.val h), by
+    exact outgoing_edge_injective (congrArg Subtype.val h), by
     intro e
     let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
     refine ⟨⟨y, ⟨e.1, e.2.isLink_other, hx⟩⟩, ?_⟩
@@ -259,7 +259,7 @@ noncomputable def incomingEquiv {L R : Finset V(G)} (hLR : G.IsBipartition L R)
     (Σ y, G.BipartiteHom L y x) ≃ {e : E(G) // G.Inc e x} :=
   Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_right⟩) ⟨by
     intro e f h
-    exact edge_in_injective (congrArg Subtype.val h), by
+    exact incoming_edge_injective (congrArg Subtype.val h), by
     intro e
     let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
     refine ⟨⟨y, ⟨e.1, e.2.isLink_other.symm,
