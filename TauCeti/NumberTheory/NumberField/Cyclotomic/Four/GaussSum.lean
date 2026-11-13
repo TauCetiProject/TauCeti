@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.JacobiSum
+public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Basic
 
 import Mathlib.NumberTheory.LegendreSymbol.Complex
 
@@ -30,12 +31,15 @@ It combines `g(χ, ψ) ^ 4 = q J(χ, χ) ^ 2` for any character of order `4`
 (`TauCeti.gaussSum_pow_four_eq_card_mul_jacobiSum_sq`) with `J(χ, χ) = -χ (-1) π`
 (`Ideal.jacobiSum_powerResidueSymbol_four_eq`); and `N P = π σ π`, where the conjugation `σ`
 of `ℤ[i]` is any ring endomorphism cubing the fourth roots of unity
-(`TauCeti.exists_ringHom_apply_eq_pow_three_of_four`).
+(`TauCeti.exists_ringHom_apply_eq_pow_three_of_four`). Conjugating the character identifies the
+Stickelberger element `Φ(π 𝓞 K)` with `π · (σ π) ^ 3` for every primary Gaussian integer `π`.
 
 ## Main results
 
 * `Ideal.gaussSum_powerResidueSymbol_four_pow_four_eq`: `g(χ, ψ) ^ 4 = N P · π ^ 2`.
 * `Ideal.gaussSum_powerResidueSymbol_four_pow_four_eq_pow_three_mul`: `g(χ, ψ) ^ 4 = π ^ 3 σ π`.
+* `TauCeti.IsPrimaryGaussian.stickelbergerPhi_span_singleton_four_eq`: `Φ(π 𝓞 K) = π · (σ π) ^ 3`
+  for a primary element `π` of `ℤ[i]` and complex conjugation `σ`.
 
 ## References
 
@@ -96,6 +100,68 @@ theorem gaussSum_powerResidueSymbol_four_pow_four_eq_pow_three_mul (hπ : P = sp
   ring_nf
 
 end Ideal
+
+namespace TauCeti
+
+open Ideal
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
+
+/-- For a maximal ideal `P = π 𝓞 K` of `ℤ[i]` with `π` primary and a ring-homomorphism-like map
+`σ` cubing the fourth roots of unity, `Φ(P) = π · (σ π) ^ 3`. -/
+private theorem stickelbergerPhi_four_eq_of_isMaximal {P : Ideal (𝓞 K)} [P.IsMaximal] {π : 𝓞 K}
+    (hπ : P = span {π}) (hπ' : IsPrimaryGaussian π)
+    {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
+    (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) :
+    stickelbergerPhi P 4 = π * σ π ^ 3 := by
+  let _ := Ideal.Quotient.field P
+  let _ := Fintype.ofFinite (𝓞 K ⧸ P)
+  have hP : (absNorm P).Coprime 4 := hπ ▸ hπ'.absNorm_span_singleton_coprime_four
+  have hσ_inv : Function.LeftInverse σ σ := apply_apply_eq_self_of_four hσ
+  let ι : K →+* ℂ := Classical.arbitrary _
+  let f : 𝓞 K →+* ℂ := ι.comp (algebraMap (𝓞 K) K)
+  have hf : Function.Injective f := ι.injective.comp RingOfIntegers.coe_injective
+  have hfσ : Function.Injective (f.comp (RingHomClass.toRingHom σ)) := hf.comp hσ_inv.injective
+  have hψ := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive (𝓞 K ⧸ P)
+  -- Conjugation inverts the quartic residue character, identifying `χ_P` with `σ ∘ (· / P)_4`.
+  have hχ : (powerResidueSymbol P 4)⁻¹.ringHomComp f =
+      (powerResidueSymbol P 4).ringHomComp (f.comp (RingHomClass.toRingHom σ)) := by
+    refine MulChar.ext fun u ↦ ?_
+    have hu4 := powerResidueSymbol_pow_eq_one hP u.ne_zero
+    have h4 : powerResidueSymbol P 4 * powerResidueSymbol P 4 ^ 3 = 1 :=
+      MulChar.ext fun v ↦ by
+        rw [MulChar.mul_apply, MulChar.pow_apply_coe, ← pow_succ', MulChar.one_apply_coe,
+          powerResidueSymbol_pow_eq_one hP v.ne_zero]
+    have hinv : (powerResidueSymbol P 4)⁻¹ u = powerResidueSymbol P 4 u ^ 3 := by
+      rw [inv_eq_of_mul_eq_one_right h4, MulChar.pow_apply_coe]
+    simp only [MulChar.ringHomComp_apply, RingHom.comp_apply, RingHom.coe_coe, hinv, hσ _ hu4]
+  apply hf
+  rw [stickelbergerPhi_prime P hP (by decide) hf hψ, hχ,
+    gaussSum_powerResidueSymbol_four_pow_four_eq_pow_three_mul hπ hπ'
+      (σ := RingHomClass.toRingHom σ) hσ hfσ hψ,
+    RingHom.comp_apply, RingHom.coe_coe, map_mul, map_pow, hσ_inv π, mul_comm]
+
+/-- **The Stickelberger element `Φ(π 𝓞 K)` of a primary element of `ℤ[i]`.** If `K = ℚ(i)`, `π` is
+primary in `𝓞 K = ℤ[i]`, and `σ` is a ring-homomorphism-like map on `𝓞 K` cubing the fourth roots
+of unity (that is, complex conjugation), then `Φ(π 𝓞 K) = π · (σ π) ^ 3`. -/
+theorem IsPrimaryGaussian.stickelbergerPhi_span_singleton_four_eq {π : 𝓞 K}
+    (hπ : IsPrimaryGaussian π)
+    {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
+    (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) :
+    stickelbergerPhi (span {π}) 4 = π * σ π ^ 3 := by
+  induction hπ using IsPrimaryGaussian.induction_on_prime with
+  | one =>
+    rw [span_singleton_one, stickelbergerPhi_top, map_one, one_pow, mul_one]
+  | mul p y hp hp_prim hy ih =>
+    have hpmax : (span {p}).IsMaximal :=
+      ((span_singleton_prime hp.ne_zero).mpr hp).isMaximal (by simpa using hp.ne_zero)
+    have hp0 : span {p} ≠ ⊥ := by simpa using hp.ne_zero
+    have hy0 : span {y} ≠ ⊥ := by simpa using hy.ne_zero
+    rw [← span_singleton_mul_span_singleton, stickelbergerPhi_mul hp0 hy0,
+      stickelbergerPhi_four_eq_of_isMaximal rfl hp_prim hσ, ih, map_mul, mul_pow]
+    ring
+
+end TauCeti
 
 section Examples
 

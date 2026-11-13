@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.NumberTheory.SumTwoSquares
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # Basic facts about the Gaussian integers as a ring of integers
@@ -34,23 +35,32 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
   `X² + 1`, the hypothesis of the `GaussianRationals` API, which
   `GaussianRationals.minpoly_eq_X_sq_sub_C` converts to the `X² - C d` form of the
   quadratic-field API;
+* `IsPrimitiveRoot.apply_intCast_add_intCast_mul_toInteger_of_four`: any ring-homomorphism-like
+  map `σ` of `ℤ[i]` cubing the fourth roots of unity sends `a + b i` to `a - b i`;
 * `IsPrimitiveRoot.norm_intCast_add_intCast_mul_toInteger_of_four`: the norm of `a + b i` is
   `a² + b²`;
 * `IsPrimitiveRoot.odd_norm_intCast_add_intCast_mul_toInteger_iff_of_four`: the norm of `a + b i`
   is odd exactly when `a + b` is;
 * `IsPrimitiveRoot.isUnit_intCast_add_intCast_mul_toInteger_iff_of_four`: `a + b i` is a unit
   exactly when `a² + b² = 1`;
+* `TauCeti.finrank_eq_two_of_isCyclotomicExtension_four`: `[K : ℚ] = 2`;
 * `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
 * `TauCeti.exists_gal_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
   fourth root of unity;
-* `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`;
+* `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`,
+  and `TauCeti.apply_apply_eq_self_of_four` records that `σ` is an involution;
 * `TauCeti.exists_natCast_eq_mul_of_mod_four_ne_three`: a split or ramified rational prime is a
   product of conjugate Gaussian integers of absolute norm equal to that prime;
+* `IsPrimitiveRoot.isCoprime_mul_sub_mul_mul_add_mul_of_four`: if `a + b i` and `c + d i` are
+  coprime in `ℤ[i]` with coprime coordinate pairs `(a, b)` and `(c, d)`, then `a d - b c` and
+  `a c + b d` are coprime in `ℤ`;
 * `TauCeti.absNorm_span_natCast_four`: the absolute norm of `q ℤ[i]` is `q²`;
 * `NumberField.RingOfIntegers.natCast_absNorm_span_singleton_of_four`: the absolute norm of
   `x ℤ[i]` is the norm of `x`;
 * `TauCeti.prime_natCast_of_mod_four_eq_three`: a rational prime `q ≡ 3 (mod 4)` stays prime in
-  `ℤ[i]`.
+  `ℤ[i]`, and
+  `TauCeti.idealQuotientMk_span_natCast_pow_eq_idealQuotientMk_apply_of_mod_four_eq_three`
+  identifies the `q`-th power map on `ℤ[i] ⧸ q ℤ[i]` with complex conjugation.
 
 The conjugation argument follows the cubic case in
 [TauCetiProject/TauCeti#21047](https://github.com/TauCetiProject/TauCeti/pull/21047).
@@ -110,6 +120,17 @@ theorem minpoly_toInteger_eq_X_sq_add_one : minpoly ℤ hζ.toInteger = X ^ 2 + 
   rw [← RingOfIntegers.minpoly_coe]
   exact h
 
+omit [NumberField K] in
+/-- Any ring-homomorphism-like map `σ` of `𝓞 K = ℤ[i]` that cubes the fourth roots of unity sends
+`a + b i` to `a - b i`. -/
+theorem apply_intCast_add_intCast_mul_toInteger_of_four
+    {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
+    (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) (a b : ℤ) :
+    σ ((a : 𝓞 K) + b * hζ.toInteger) = (a : 𝓞 K) - b * hζ.toInteger := by
+  have hsq := hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
+  rw [map_add, map_mul, map_intCast, map_intCast, hσ _ hζ.toInteger_isPrimitiveRoot.pow_eq_one]
+  linear_combination ((b : 𝓞 K) * hζ.toInteger) * hsq
+
 variable [IsCyclotomicExtension {4} ℚ K]
 
 private theorem adjoin_toInteger_four : Algebra.adjoin ℚ {(hζ.toInteger : K)} = ⊤ :=
@@ -149,6 +170,13 @@ end IsPrimitiveRoot
 
 namespace TauCeti
 
+/-- The fourth cyclotomic field `ℚ(i)` has degree `2` over `ℚ`. -/
+theorem finrank_eq_two_of_isCyclotomicExtension_four
+    {K : Type*} [Field K] [CharZero K] [IsCyclotomicExtension {4} ℚ K] :
+    Module.finrank ℚ K = 2 := by
+  rw [IsCyclotomicExtension.Rat.finrank 4 K]
+  decide
+
 variable (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
 /-- **`ℤ[i]` is a principal ideal domain.** This is
@@ -180,17 +208,32 @@ theorem exists_gal_apply_eq_pow_three_of_four :
   rfl
 
 /-- If `σ` cubes the fourth roots of unity of `𝓞 K = ℤ[i]`, then the norm of `x` is `x σ(x)`. -/
-theorem intCast_norm_eq_mul_of_four {σ : 𝓞 K →+* 𝓞 K} (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3)
-    (x : 𝓞 K) : (Algebra.norm ℤ x : 𝓞 K) = x * σ x := by
+theorem intCast_norm_eq_mul_of_four
+    {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
+    (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) (x : 𝓞 K) :
+    (Algebra.norm ℤ x : 𝓞 K) = x * σ x := by
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
   have hsq := hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
-  have hi := hσ _ hζ.toInteger_isPrimitiveRoot.pow_eq_one
   obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
-  rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four, map_add, map_mul, map_intCast,
-    map_intCast, hi]
+  rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four,
+    hζ.apply_intCast_add_intCast_mul_toInteger_of_four hσ]
   push_cast
-  linear_combination (-((a : 𝓞 K) * b * hζ.toInteger) - (b : 𝓞 K) ^ 2 * (hζ.toInteger ^ 2 - 1)) *
-    hsq
+  linear_combination (b : 𝓞 K) ^ 2 * hsq
+
+/-- Any ring-homomorphism-like map `σ` of `𝓞 K = ℤ[i]` that cubes the fourth roots of unity is an
+involution. -/
+theorem apply_apply_eq_self_of_four
+    {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
+    (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) (x : 𝓞 K) :
+    σ (σ x) = x := by
+  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
+  have hsub : (a : 𝓞 K) - b * hζ.toInteger = (a : 𝓞 K) + (-b : ℤ) * hζ.toInteger := by
+    push_cast; ring
+  rw [hζ.apply_intCast_add_intCast_mul_toInteger_of_four hσ, hsub,
+    hζ.apply_intCast_add_intCast_mul_toInteger_of_four hσ]
+  push_cast
+  ring
 
 /-- A split or ramified rational prime is a product of conjugate Gaussian integers of absolute
 norm `q`. Here `σ` is any ring homomorphism cubing the fourth roots of unity. -/
@@ -219,6 +262,59 @@ theorem exists_natCast_eq_mul_of_mod_four_ne_three {σ : 𝓞 K →+* 𝓞 K}
 
 end TauCeti
 
+namespace IsPrimitiveRoot
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
+  {ζ : K} (hζ : IsPrimitiveRoot ζ 4)
+
+/-- If `a + b i` and `c + d i` are coprime in `𝓞 K = ℤ[i]` and each has coprime integer
+coordinates (`IsCoprime a b` and `IsCoprime c d`), then the imaginary and real parts
+`a d - b c` and `a c + b d` of `(a - b i) (c + d i)` are coprime in `ℤ`. -/
+theorem isCoprime_mul_sub_mul_mul_add_mul_of_four {a b c d : ℤ}
+    (hab : IsCoprime a b) (hcd : IsCoprime c d)
+    (hcop : IsCoprime ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)
+      ((c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger)) :
+    IsCoprime (a * d - b * c) (a * c + b * d) := by
+  obtain ⟨σ, -, hτ⟩ := TauCeti.exists_gal_apply_eq_pow_three_of_four (K := K)
+  let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
+  set i := hζ.toInteger
+  set π₁ : 𝓞 K := (a : 𝓞 K) + (b : 𝓞 K) * i
+  set π₂ : 𝓞 K := (c : 𝓞 K) + (d : 𝓞 K) * i
+  set m : ℤ := a * c + b * d
+  set k : ℤ := a * d - b * c
+  have hsq : i ^ 2 = -1 := hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
+  have hi_unit : IsUnit i := hζ.toInteger_isPrimitiveRoot.isUnit (by decide)
+  have hτπ₁ : τ π₁ = (a : 𝓞 K) - (b : 𝓞 K) * i :=
+    hζ.apply_intCast_add_intCast_mul_toInteger_of_four hτ a b
+  have hid1 : (c : 𝓞 K) * π₁ - (m : 𝓞 K) = ((b : 𝓞 K) * i) * π₂ := by
+    simp only [π₁, π₂, m]; push_cast; linear_combination (-(b : 𝓞 K) * d) * hsq
+  have hid2 : (a : 𝓞 K) * π₂ - (m : 𝓞 K) = ((d : 𝓞 K) * i) * π₁ := by
+    simp only [π₁, π₂, m]; push_cast; linear_combination (-(b : 𝓞 K) * d) * hsq
+  have hid3 : τ π₁ * π₂ - (m : 𝓞 K) = (k : 𝓞 K) * i := by
+    rw [hτπ₁]; simp only [π₂, m, k]; push_cast; linear_combination (-(b : 𝓞 K) * d) * hsq
+  have hcπ₂ : IsCoprime (c : 𝓞 K) π₂ := by
+    simpa only [π₂, mul_one] using ((isCoprime_mul_unit_right_right hi_unit (c : 𝓞 K) (d : 𝓞 K)).mpr
+      hcd.intCast).mul_add_left_right 1
+  have haπ₁ : IsCoprime (a : 𝓞 K) π₁ := by
+    simpa only [π₁, mul_one] using ((isCoprime_mul_unit_right_right hi_unit (a : 𝓞 K) (b : 𝓞 K)).mpr
+      hab.intCast).mul_add_left_right 1
+  have hmπ₂ : IsCoprime (m : 𝓞 K) π₂ := by
+    obtain ⟨u, v, huv⟩ := hcπ₂.mul_left hcop
+    exact ⟨u, v + u * ((b : 𝓞 K) * i), by linear_combination huv - u * hid1⟩
+  have hmπ₁ : IsCoprime (m : 𝓞 K) π₁ := by
+    obtain ⟨u, v, huv⟩ := haπ₁.mul_left hcop.symm
+    exact ⟨u, v + u * ((d : 𝓞 K) * i), by linear_combination huv - u * hid2⟩
+  have hmτπ₁ : IsCoprime (m : 𝓞 K) (τ π₁) := by
+    simpa only [RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, map_intCast] using
+      hmπ₁.map τ.toRingHom
+  obtain ⟨u, v, huv⟩ := hmτπ₁.mul_right hmπ₂
+  have hki : IsCoprime (m : 𝓞 K) ((k : 𝓞 K) * i) :=
+    ⟨u + v, v, by linear_combination huv - v * hid3⟩
+  exact (RingOfIntegers.isCoprime_intCast.mp
+    ((isCoprime_mul_unit_right_right hi_unit _ _).mp hki)).symm
+
+end IsPrimitiveRoot
+
 namespace TauCeti
 
 open Ideal
@@ -227,8 +323,7 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
 /-- The absolute norm of `q 𝓞 K` is `q²`, since `𝓞 K` has rank two. -/
 theorem absNorm_span_natCast_four (q : ℕ) : absNorm (span {(q : 𝓞 K)}) = q ^ 2 := by
-  rw [absNorm_span_natCast, RingOfIntegers.rank, IsCyclotomicExtension.finrank (n := 4) K
-    (cyclotomic.irreducible_rat (by norm_num)), show Nat.totient 4 = 2 by decide]
+  rw [absNorm_span_natCast, RingOfIntegers.rank, finrank_eq_two_of_isCyclotomicExtension_four]
 
 end TauCeti
 
@@ -282,5 +377,30 @@ theorem prime_natCast_of_mod_four_eq_three {q : ℕ}
     exact (Nat.mul_eq_left (pow_ne_zero 2 hq.ne_zero)).mp hN
   rw [absNorm_eq_one_iff.mp hC1, mul_top] at hC
   exact (span_singleton_prime (by exact_mod_cast hq.ne_zero)).mp (hC ▸ hP.isPrime)
+
+/-- Modulo an inert prime `Q = q 𝓞 K` with `q ≡ 3 (mod 4)`, the `q`-th power map on `𝓞 K ⧸ Q`
+agrees with complex conjugation `σ`. -/
+theorem idealQuotientMk_span_natCast_pow_eq_idealQuotientMk_apply_of_mod_four_eq_three {q : ℕ}
+    (hq : q.Prime) (hq3 : q % 4 = 3)
+    {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
+    (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) (x : 𝓞 K) :
+    (Ideal.Quotient.mk (span {(q : 𝓞 K)}) x) ^ q =
+      Ideal.Quotient.mk (span {(q : 𝓞 K)}) (σ x) := by
+  have : Fact q.Prime := ⟨hq⟩
+  set Q := span {(q : 𝓞 K)}
+  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
+  have hint (c : ℤ) : (c : 𝓞 K ⧸ Q) ^ q = (c : 𝓞 K ⧸ Q) := by
+    let φ : ZMod q →+* 𝓞 K ⧸ Q := ZMod.castHom dvd_rfl (𝓞 K ⧸ Q)
+    have hc : (c : 𝓞 K ⧸ Q) = φ (c : ZMod q) := by simp [φ]
+    rw [hc, ← map_pow, ZMod.pow_card]
+  have hiq : (Ideal.Quotient.mk Q hζ.toInteger) ^ q =
+      Ideal.Quotient.mk Q (σ hζ.toInteger) := by
+    have h4 : (Ideal.Quotient.mk Q hζ.toInteger) ^ 4 = 1 := by
+      rw [← map_pow, hζ.toInteger_isPrimitiveRoot.pow_eq_one, map_one]
+    obtain ⟨k, hk⟩ : ∃ k, q = 4 * k + 3 := ⟨q / 4, by omega⟩
+    rw [hσ _ hζ.toInteger_isPrimitiveRoot.pow_eq_one, map_pow, hk, pow_add, pow_mul, h4,
+      one_pow, one_mul]
+  simp only [map_add, map_mul, map_intCast, add_pow_char, mul_pow, hint, hiq]
 
 end TauCeti
