@@ -96,6 +96,33 @@ theorem val_toWithZeroSubsemiringUnits (a : G) :
     ((G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring) : R) = (a : Rˣ) :=
   (rfl)
 
+/-- The inclusion of subgroup members into the realized unit group is injective. -/
+theorem toWithZeroSubsemiringUnits_injective :
+    Function.Injective G.toWithZeroSubsemiringUnits := fun _ _ h ↦
+  Subtype.ext (Units.ext (by simpa using congrArg Subtype.val (congrArg Units.val h)))
+
+/-- The underlying values of two included subgroup members are equal precisely when the
+members are equal. -/
+@[simp]
+theorem toWithZeroSubsemiringUnits_inj (a b : G) :
+    G.toWithZeroSubsemiringUnits a = G.toWithZeroSubsemiringUnits b ↔ a = b :=
+  (toWithZeroSubsemiringUnits_injective G).eq_iff
+
+/-- The included subgroup members coerce to equal realized elements precisely when the
+members are equal. -/
+@[simp]
+theorem coe_toWithZeroSubsemiringUnits_inj (a b : G) :
+    (G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring) =
+      G.toWithZeroSubsemiringUnits b ↔ a = b := by
+  exact ⟨fun h ↦ toWithZeroSubsemiringUnits_injective G (Units.ext h),
+    congrArg (fun a : G ↦ (G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring))⟩
+
+/-- An included subgroup member is the identity precisely when the member is the identity. -/
+@[simp]
+theorem toWithZeroSubsemiringUnits_eq_one (a : G) :
+    G.toWithZeroSubsemiringUnits a = 1 ↔ a = 1 := by
+  simpa only [← map_one G.toWithZeroSubsemiringUnits] using G.toWithZeroSubsemiringUnits_inj a 1
+
 /-- The value of every nonzero element of the realized subsemiring comes from the subgroup. -/
 theorem exists_val_of_ne_zero {a : G.withZeroSubsemiring} (ha : a ≠ 0) :
     ∃ b : G, ((b : Rˣ) : R) = (a : R) := by
@@ -108,9 +135,67 @@ noncomputable instance [Nontrivial R] : Semifield G.withZeroSubsemiring where
   __ := commGroupWithZeroOfIsUnitOrEqZero fun a ↦
     or_iff_not_imp_right.mpr (fun ha ↦ by
       obtain ⟨b, hb⟩ := G.exists_val_of_ne_zero ha
-      exact ⟨G.toWithZeroSubsemiringUnits b, Subtype.ext hb⟩)
+      exact ⟨G.toWithZeroSubsemiringUnits b,
+        Subtype.ext ((G.val_toWithZeroSubsemiringUnits b).trans hb)⟩)
   nnqsmul := _
   nnqsmul_def _ _ := rfl
+
+/-- The ambient value of a realized inverse unit is an ambient inverse unit. -/
+@[simp]
+theorem val_inv_toWithZeroSubsemiringUnits (a : G) :
+    ((((G.toWithZeroSubsemiringUnits a)⁻¹ : G.withZeroSubsemiringˣ) :
+      G.withZeroSubsemiring) : R) = (((a : Rˣ)⁻¹ : Rˣ) : R) :=
+  G.val_toWithZeroSubsemiringUnits a⁻¹
+
+/-- The ambient value of a division of realized units is a division of ambient units. -/
+@[simp]
+theorem val_div_toWithZeroSubsemiringUnits (a b : G) :
+    (((G.toWithZeroSubsemiringUnits a / G.toWithZeroSubsemiringUnits b :
+      G.withZeroSubsemiringˣ) : G.withZeroSubsemiring) : R) =
+      (((a : Rˣ) / (b : Rˣ) : Rˣ) : R) := by
+  rw [← map_div]
+  exact G.val_toWithZeroSubsemiringUnits (a / b)
+
+/-- The ambient value of an integer power of a realized unit is an ambient integer power. -/
+@[simp]
+theorem val_zpow_toWithZeroSubsemiringUnits (a : G) (n : ℤ) :
+    (((G.toWithZeroSubsemiringUnits a ^ n : G.withZeroSubsemiringˣ) :
+      G.withZeroSubsemiring) : R) = (((a : Rˣ) ^ n : Rˣ) : R) := by
+  rw [← map_zpow]
+  exact G.val_toWithZeroSubsemiringUnits (a ^ n)
+
+/-- Realized inversion agrees with the inverse of the corresponding unit. -/
+private theorem inv_val_toWithZeroSubsemiringUnits [Nontrivial R] (a : G) :
+    (G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring)⁻¹ =
+      ((G.toWithZeroSubsemiringUnits a)⁻¹ : G.withZeroSubsemiringˣ) :=
+  inv_eq_of_mul_eq_one_left (G.toWithZeroSubsemiringUnits a).inv_mul
+
+/-- Ambient inclusion preserves inversion of subgroup members, viewed as ambient units. -/
+@[simp]
+theorem coe_inv_toWithZeroSubsemiringUnits [Nontrivial R] (a : G) :
+    (((G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring)⁻¹ : G.withZeroSubsemiring) : R) =
+      (((a : Rˣ)⁻¹ : Rˣ) : R) := by
+  rw [inv_val_toWithZeroSubsemiringUnits, val_inv_toWithZeroSubsemiringUnits]
+
+/-- Ambient inclusion preserves division of subgroup members, viewed as ambient units. -/
+@[simp]
+theorem coe_div_toWithZeroSubsemiringUnits [Nontrivial R] (a b : G) :
+    (((G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring) /
+      (G.toWithZeroSubsemiringUnits b : G.withZeroSubsemiring) : G.withZeroSubsemiring) : R) =
+      (((a : Rˣ) / (b : Rˣ) : Rˣ) : R) := by
+  rw [div_eq_mul_inv, inv_val_toWithZeroSubsemiringUnits, ← Units.val_mul]
+  have h : G.toWithZeroSubsemiringUnits a * (G.toWithZeroSubsemiringUnits b)⁻¹ =
+      G.toWithZeroSubsemiringUnits a / G.toWithZeroSubsemiringUnits b :=
+    div_eq_mul_inv _ _
+  rw [h, val_div_toWithZeroSubsemiringUnits]
+
+/-- Ambient inclusion preserves integer powers of subgroup members, viewed as ambient units. -/
+@[simp]
+theorem coe_zpow_toWithZeroSubsemiringUnits [Nontrivial R] (a : G) (n : ℤ) :
+    (((G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring) ^ n : G.withZeroSubsemiring) : R) =
+      (((a : Rˣ) ^ n : Rˣ) : R) := by
+  rw [← Units.val_zpow_eq_zpow_val (G.toWithZeroSubsemiringUnits a) n]
+  exact val_zpow_toWithZeroSubsemiringUnits G a n
 
 section AmbientSemifield
 
@@ -140,33 +225,45 @@ end AmbientSemifield
 private def withZeroSubsemiringHom : WithZero G →*₀ G.withZeroSubsemiring :=
   WithZero.lift' ((Units.coeHom _).comp G.toWithZeroSubsemiringUnits)
 
+/-- The inclusion after adjoining zero sends a subgroup member to its unit copy. -/
+@[simp]
+private theorem withZeroSubsemiringHom_coe (a : G) :
+    G.withZeroSubsemiringHom a = G.toWithZeroSubsemiringUnits a := rfl
+
+private theorem withZeroSubsemiringHom_coe_ne_zero [Nontrivial R] (a : G) :
+    G.withZeroSubsemiringHom a ≠ 0 :=
+  Units.ne_zero (G.toWithZeroSubsemiringUnits a)
+
+private noncomputable def withZeroSubsemiringMulEquiv [Nontrivial R] :
+    WithZero G ≃* G.withZeroSubsemiring :=
+  MulEquiv.ofBijective G.withZeroSubsemiringHom
+    ⟨by
+      intro a b h
+      induction a using WithZero.recZeroCoe <;>
+        induction b using WithZero.recZeroCoe
+      · rfl
+      · rename_i b
+        exact absurd h.symm (G.withZeroSubsemiringHom_coe_ne_zero b)
+      · rename_i a
+        exact absurd h (G.withZeroSubsemiringHom_coe_ne_zero a)
+      · rename_i a b
+        exact congrArg WithZero.coe <|
+          Subtype.ext <| Units.ext <| by simpa using congrArg Subtype.val h,
+      by
+        intro a
+        obtain h | ⟨b, hb⟩ := a.property
+        · exact ⟨0, Subtype.ext (by simp [h])⟩
+        · exact ⟨b, Subtype.ext (by simp [hb])⟩⟩
+
+@[simp]
+private theorem withZeroSubsemiringMulEquiv_apply [Nontrivial R] (a : WithZero G) :
+    G.withZeroSubsemiringMulEquiv a = G.withZeroSubsemiringHom a := rfl
+
 /-- Adjoining one zero identifies a subgroup with its realized subsemiring, preserving
 both multiplication and auxiliary addition. -/
 noncomputable def withZeroSubsemiringEquiv [Nontrivial R] :
     WithZero G ≃+* G.withZeroSubsemiring :=
-  { MulEquiv.ofBijective G.withZeroSubsemiringHom.toMonoidHom
-      ⟨by
-        intro a b h
-        change G.withZeroSubsemiringHom a = G.withZeroSubsemiringHom b at h
-        induction a using WithZero.recZeroCoe <;>
-          induction b using WithZero.recZeroCoe
-        · rfl
-        · rename_i b
-          exact False.elim <| (b : Rˣ).ne_zero <| (congrArg Subtype.val h).symm
-        · rename_i a
-          exact False.elim <| (a : Rˣ).ne_zero <| congrArg Subtype.val h
-        · rename_i a b
-          exact congrArg WithZero.coe (Subtype.ext (Units.ext (congrArg Subtype.val h))),
-        by
-          intro a
-          change ∃ b, G.withZeroSubsemiringHom b = a
-          obtain h | ⟨b, hb⟩ := a.property
-          · exact ⟨0, by simpa only [withZeroSubsemiringHom,
-              WithZero.lift'_zero] using Subtype.ext h.symm⟩
-          · exact ⟨b, by simpa only [withZeroSubsemiringHom,
-              WithZero.lift'_coe, MonoidHom.comp_apply, Units.coeHom_apply,
-                MonoidHom.coe_toHomUnits, val_toWithZeroSubsemiringUnits]
-              using Subtype.ext hb⟩⟩ with
+  { G.withZeroSubsemiringMulEquiv with
     map_add' := by
       intro a b
       induction a using WithZero.recZeroCoe <;>
@@ -175,7 +272,7 @@ noncomputable def withZeroSubsemiringEquiv [Nontrivial R] :
       · exact zero_add _ |>.symm
       · exact add_zero _ |>.symm
       · rename_i a b
-        exact Subtype.ext <| by simp [withZeroSubsemiringHom, ← WithZero.coe_add] }
+        exact Subtype.ext <| by simp [← WithZero.coe_add] }
 
 @[simp]
 theorem withZeroSubsemiringEquiv_coe [Nontrivial R] (a : G) :
@@ -186,7 +283,7 @@ theorem withZeroSubsemiringEquiv_coe [Nontrivial R] (a : G) :
 @[simp]
 theorem withZeroSubsemiringEquiv_symm_toWithZeroSubsemiringUnits [Nontrivial R] (a : G) :
     G.withZeroSubsemiringEquiv.symm (G.toWithZeroSubsemiringUnits a) = (a : WithZero G) :=
-  G.withZeroSubsemiringEquiv.symm_apply_apply (a : WithZero G)
+  G.withZeroSubsemiringEquiv.symm_apply_eq.mpr (G.withZeroSubsemiringEquiv_coe a).symm
 
 /-- Nonzero sums in the realized subsemiring cannot cancel to zero. -/
 instance : Subsingleton (AddUnits G.withZeroSubsemiring) := by
@@ -281,7 +378,8 @@ theorem map_mem_withZeroSubsemiring (f : R →+* S)
     {a : R} (ha : a ∈ G.withZeroSubsemiring) : f a ∈ H.withZeroSubsemiring := by
   obtain rfl | ⟨a, rfl⟩ := ha
   · exact Or.inl (map_zero f)
-  · exact Or.inr ⟨G.coefficientSemifieldMap H f hf a, rfl⟩
+  · exact Or.inr ⟨G.coefficientSemifieldMap H f hf a,
+      G.val_coefficientSemifieldMap H f hf a⟩
 
 /-- The induced semiring map between the zero-adjoined realizations. -/
 def withZeroSubsemiringMap (f : R →+* S)
@@ -300,8 +398,9 @@ theorem coe_withZeroSubsemiringMap (f : R →+* S)
 theorem withZeroSubsemiringMap_toWithZeroSubsemiringUnits (f : R →+* S)
     (hf : ∀ a ∈ G, Units.map (f : R →* S) a ∈ H) (a : G) :
     G.withZeroSubsemiringMap H f hf (G.toWithZeroSubsemiringUnits a) =
-      H.toWithZeroSubsemiringUnits (G.coefficientSemifieldMap H f hf a) :=
-  (rfl)
+      H.toWithZeroSubsemiringUnits (G.coefficientSemifieldMap H f hf a) := by
+  ext
+  simp
 
 /-- The comparison with zero adjunction is natural for compatible ambient maps. -/
 theorem withZeroSubsemiringMap_withZeroSubsemiringEquiv [Nontrivial R] [Nontrivial S] (f : R →+* S)
