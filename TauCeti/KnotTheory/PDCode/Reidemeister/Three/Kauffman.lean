@@ -131,7 +131,7 @@ private theorem localFactor_eq (side : Bool) (q : Fin 3 → Bool) :
     simp only [localInternalMatching_def, localSmoothing_eq, smoothingFactors, localVertex_eq] <;>
     revert p <;> decide
 
-private theorem smoothingFactors_isSwapForest (side : Bool) (q : Fin 3 → Bool) :
+private theorem isSwapForest_smoothingFactors (side : Bool) (q : Fin 3 → Bool) :
     (smoothingFactors side q).IsSwapForest := by
   have hq : q = ![q 0, q 1, q 2] := by ext i; fin_cases i <;> simp
   rw [hq]
@@ -194,7 +194,7 @@ private theorem localFactor_orbitCount (side : Bool) (q : Fin 3 → Bool)
     localLift_swapForest_orbitCount D c (localFactor side q)
       (localPairing (pairingIndex side q)) (smoothingFactors side q)
       (exteriorSlots D c (fun i ↦ slotSmoothing (u i)) * outsideEdges D c)
-      (smoothingFactors_isSwapForest side q) (localFactor_eq side q)
+      (isSwapForest_smoothingFactors side q) (localFactor_eq side q)
       (fun p hp ↦ by
         simpa only [pairingTraversal, mul_assoc] using
           pairingTraversal_internal D c h u _ p.2 (smoothingFactors_internal side q p hp))
@@ -375,7 +375,7 @@ private def overWeight {R : Type*} [CommRing R] (a : Rˣ) (b : Bool) : R :=
   if b then ((a⁻¹ : Rˣ) : R) else (a : R)
 
 -- The coefficients of the two nonmatching boundary pairings agree at the Jones loop value.
-private theorem localCoefficient {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
+private theorem overWeight_coefficients_eq {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
     (height : ba = bc → bb = ba) :
     overWeight a ba * overWeight a bb * overWeight a bc +
       overWeight a ba * overWeight a (!bb) * overWeight a bc * jonesDelta a +
@@ -406,8 +406,8 @@ private def pairingValue {R : Type*} [CommRing R] (δ P Q Rv S I : R)
 private def smoothingWeight {R : Type*} [CommRing R] (a : Rˣ) (over raw : Bool) : R :=
   overWeight a (if raw then !over else over)
 
-private theorem localSum {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
-    (height : ba = bc → bb = ba) (P Q Rv S I : R) :
+private theorem sum_smoothingWeight_pairingValue_eq {R : Type*} [CommRing R] (a : Rˣ)
+    (ba bb bc : Bool) (height : ba = bc → bb = ba) (P Q Rv S I : R) :
     (∑ u : Bool, ∑ v : Bool, ∑ t : Bool,
       smoothingWeight a ba u * smoothingWeight a bb v * smoothingWeight a bc t *
         pairingValue (jonesDelta a) P Q Rv S I u v t) =
@@ -415,9 +415,9 @@ private theorem localSum {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
       smoothingWeight a bc u * smoothingWeight a bb v * smoothingWeight a ba t *
         pairingValue (jonesDelta a) S Rv Q P I u v t) := by
   simp only [Fintype.sum_bool, smoothingWeight, pairingValue, Bool.false_eq_true, ↓reduceIte]
-  linear_combination (P - S) * (localCoefficient a ba bb bc height)
+  linear_combination (P - S) * (overWeight_coefficients_eq a ba bb bc height)
 
-private theorem sumCube {R : Type*} [AddCommMonoid R] (f : (Fin 3 → Bool) → R) :
+private theorem sum_pi_fin_three_bool {R : Type*} [AddCommMonoid R] (f : (Fin 3 → Bool) → R) :
     (∑ q : Fin 3 → Bool, f q) = ∑ u : Bool, ∑ v : Bool, ∑ t : Bool, f ![u, v, t] := by
   let e : Bool × Bool × Bool ≃ (Fin 3 → Bool) :=
     (Equiv.prodCongr (Equiv.refl Bool) (piFinTwoEquiv (fun _ ↦ Bool)).symm).trans
@@ -427,18 +427,18 @@ private theorem sumCube {R : Type*} [AddCommMonoid R] (f : (Fin 3 → Bool) → 
   rfl
 
 -- Equality for each fixed exterior state, before summing over the surrounding diagram.
-private theorem localSumFin3 {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
-    (height : ba = bc → bb = ba) (P Q Rv S I : R) :
+private theorem sum_smoothingWeight_pairingValue_fin_three_eq {R : Type*} [CommRing R]
+    (a : Rˣ) (ba bb bc : Bool) (height : ba = bc → bb = ba) (P Q Rv S I : R) :
     (∑ q : Fin 3 → Bool,
       (∏ i, smoothingWeight a (![ba, bb, bc] i) (q i)) *
         pairingValue (jonesDelta a) P Q Rv S I (q 0) (q 1) (q 2)) =
     (∑ q : Fin 3 → Bool,
       (∏ i, smoothingWeight a (![bc, bb, ba] i) (q i)) *
         pairingValue (jonesDelta a) S Rv Q P I (q 0) (q 1) (q 2)) := by
-  rw [sumCube, sumCube]
+  rw [sum_pi_fin_three_bool, sum_pi_fin_three_bool]
   simp only [Fin.prod_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two]
-  exact localSum a ba bb bc height P Q Rv S I
+  exact sum_smoothingWeight_pairingValue_eq a ba bb bc height P Q Rv S I
 
 private theorem stateWeight_smoothingChoice {R : Type*} [CommRing R] (D : PDCode n)
     (a : Rˣ) (u : Fin n → Bool) :
@@ -457,8 +457,8 @@ private theorem kauffmanBracket_raw {R : Type*} [CommRing R] (D : PDCode n) (a :
     fun u ↦ ?_
   rw [stateWeight_smoothingChoice, ← rawLoopCount_eq]
 
-private theorem localLoopValue {R : Type*} [CommRing R] (δ : R) (K : Fin 5 → ℕ)
-    (side : Bool) (q : Fin 3 → Bool) :
+private theorem pow_pairingIndex_add_extraCircle_eq_pairingValue {R : Type*} [CommRing R]
+    (δ : R) (K : Fin 5 → ℕ) (side : Bool) (q : Fin 3 → Bool) :
     δ ^ (K (pairingIndex side q) + extraCircle q) =
       if side then pairingValue δ (δ ^ K 3) (δ ^ K 2) (δ ^ K 1) (δ ^ K 0) (δ ^ K 4)
         (q 0) (q 1) (q 2)
@@ -501,7 +501,8 @@ private theorem kauffmanBracket_split {R : Type*} [CommRing R] (a : Rˣ) (side :
   rw [Finset.mul_sum]
   apply Finset.sum_congr rfl
   intro q _
-  rw [assembleState_prod, rawLoopCount_assemble D c h side q r, localLoopValue]
+  rw [assembleState_prod, rawLoopCount_assemble D c h side q r,
+    pow_pairingIndex_add_extraCircle_eq_pairingValue]
   simp only [overPair_outside D c]
   ring
 
@@ -528,7 +529,8 @@ PD-code and all six acyclic strand height orders. -/
       ![D.overPair (c 0), D.overPair (c 1), D.overPair (c 2)] := by
     funext j
     fin_cases j <;> rfl
-  have hl := localSumFin3 a (D.overPair (c 0)) (D.overPair (c 1)) (D.overPair (c 2))
+  have hl := sum_smoothingWeight_pairingValue_fin_three_eq a (D.overPair (c 0))
+    (D.overPair (c 1)) (D.overPair (c 2))
     ((hasReidemeisterThreeTriangle_iff D c).mp ht).2.2.2
     (jonesDelta a ^ pairingExponent D c r 0) (jonesDelta a ^ pairingExponent D c r 1)
     (jonesDelta a ^ pairingExponent D c r 2) (jonesDelta a ^ pairingExponent D c r 3)
