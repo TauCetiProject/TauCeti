@@ -16,19 +16,22 @@ subsemiring of `LaurentRing (MonoidAlgebra ℤ P) K`. Its elements have nonnegat
 coefficients at every pair consisting of a Laurent exponent and a coefficient monomial.
 This is a condition on the unique finite expansion, rather than on an ambient field order.
 
-The positive subsemiring is the image of the actual coefficient map from
-`LaurentRing (MonoidAlgebra ℕ P) K`. Its coefficient criterion uses the generic
-`MonoidAlgebra.mem_rangeS_mapRingHom_iff`, which reuses `MonoidAlgebra.range_map`.
-Variable maps may identify variables and still preserve
-positivity. Reflection requires injectivity.
+`TauCeti.LaurentRing.natCoeffMap` includes natural-coefficient Laurent polynomials,
+`TauCeti.LaurentRing.positive` is its image subsemiring, and
+`TauCeti.LaurentRing.mem_positive_iff` characterizes membership by coefficient nonnegativity.
+Coefficient-monoid homomorphisms preserve positivity for arbitrary monoids and reflect it
+when injective. Variable renaming preserves positivity for commutative coefficient monoids,
+even when variables collide, and reflects it when the variable map is injective.
 
 This constructs the positive carrier and its transport; it asserts no positivity theorem
 for mutation-generated cluster variables.
 
 ## References
 
+* S. Fomin and A. Zelevinsky, *Cluster algebras I: Foundations*, J. Amer. Math. Soc. 15
+  (2002), Introduction, for the group-ring Laurent setting and positivity conjecture.
 * K. Lee and R. Schiffler, *Positivity for cluster algebras*, Annals of Mathematics 182
-  (2015), §2, Conjecture 2.6, for the coefficientwise meaning of positivity.
+  (2015), §2, Conjecture 2.6, for a later coefficientwise formulation.
 -/
 
 public section
@@ -80,17 +83,12 @@ theorem coeff_natCoeffMap (p : LaurentRing (MonoidAlgebra ℕ P) K) (m : K →�
       MonoidAlgebra.mapRingHom P (Nat.castRingHom ℤ) (p.coeff m) := by
   simp [natCoeffMap_def]
 
-/-- The inclusion is the usual natural-to-integer cast on every coefficient. -/
-theorem coeff_coeff_natCoeffMap (p : LaurentRing (MonoidAlgebra ℕ P) K) (m : K →₀ ℤ) (a : P) :
-    ((natCoeffMap P K p).coeff m).coeff a = ((p.coeff m).coeff a : ℤ) := by
-  simp [natCoeffMap]
-
 /-- The natural-coefficient representative of a positive Laurent polynomial is unique. -/
 theorem natCoeffMap_injective : Function.Injective (natCoeffMap P K) := by
-  intro p q h
-  ext m a
-  have hc := congrArg (fun r : LaurentRing (MonoidAlgebra ℤ P) K ↦ (r.coeff m).coeff a) h
-  simpa only [coeff_coeff_natCoeffMap, Nat.cast_inj] using hc
+  rw [natCoeffMap_def, AddMonoidAlgebra.coe_mapRingHom]
+  apply AddMonoidAlgebra.map_injective
+  rw [AddMonoidHom.coe_ofClass, MonoidAlgebra.coe_mapRingHom]
+  exact MonoidAlgebra.map_injective _ Nat.cast_injective
 
 /-- Equality of included natural-coefficient polynomials reflects equality of representatives. -/
 @[simp]
@@ -106,25 +104,17 @@ theorem natCoeffMap_eq_zero (p : LaurentRing (MonoidAlgebra ℕ P) K) :
 @[simp]
 theorem support_coeff_natCoeffMap (p : LaurentRing (MonoidAlgebra ℕ P) K) :
     (natCoeffMap P K p).coeff.support = p.coeff.support := by
-  classical
-  have hi : Function.Injective (MonoidAlgebra.mapRingHom P (Nat.castRingHom ℤ)) := by
-    rw [MonoidAlgebra.coe_mapRingHom]
-    apply MonoidAlgebra.map_injective
-    exact Nat.cast_injective
-  ext m
-  simp only [Finsupp.mem_support_iff, coeff_natCoeffMap, ne_eq]
-  exact not_congr (map_eq_zero_iff _ hi)
+  rw [natCoeffMap_def, AddMonoidAlgebra.coe_mapRingHom, AddMonoidAlgebra.coeff_map]
+  apply Finsupp.support_mapRange_of_injective
+  rw [AddMonoidHom.coe_ofClass, MonoidAlgebra.coe_mapRingHom]
+  exact MonoidAlgebra.map_injective _ Nat.cast_injective
 
 /-- A Laurent polynomial is positive exactly when it has a unique natural-coefficient
 representative. -/
 theorem mem_positive_iff_existsUnique (p : LaurentRing (MonoidAlgebra ℤ P) K) :
     p ∈ positive P K ↔ ∃! q, natCoeffMap P K q = p := by
-  rw [positive_def, RingHom.mem_rangeS]
-  constructor
-  · rintro ⟨q, hq⟩
-    exact ⟨q, hq, fun y hy ↦ natCoeffMap_injective (hy.trans hq.symm)⟩
-  · rintro ⟨q, hq, _⟩
-    exact ⟨q, hq⟩
+  rw [positive_def]
+  exact RingHom.mem_rangeS.trans natCoeffMap_injective.existsUnique_iff_exists.symm
 
 /-- Positivity is exactly nonnegativity at every Laurent and coefficient-monoid exponent. -/
 theorem mem_positive_iff (p : LaurentRing (MonoidAlgebra ℤ P) K) :
@@ -155,7 +145,8 @@ theorem single_mem_positive_iff (m : K →₀ ℤ) (c : MonoidAlgebra ℤ P) :
   · intro h n a
     by_cases hm : m = n <;> simp [AddMonoidAlgebra.coeff_single, hm, h]
 
-/-- A monomial with one integral coefficient is positive exactly when that integer is. -/
+/-- A monomial with one integral coefficient is positive exactly when that integer is
+nonnegative. -/
 @[simp]
 theorem single_single_mem_positive_iff (m : K →₀ ℤ) (a : P) (r : ℤ) :
     AddMonoidAlgebra.single m (MonoidAlgebra.single a r) ∈ positive P K ↔ 0 ≤ r := by
@@ -271,12 +262,6 @@ theorem rename_equiv_mem_positive_iff {K' : Type*} (e : K ≃ K')
     rename e p ∈ positive P K' ↔ p ∈ positive P K :=
   rename_mem_positive_iff e.injective p
 
-/-- Relabelling variables preserves and reflects the positive subsemiring. -/
-theorem renameEquiv_mem_positive_iff {K' : Type*} (e : K ≃ K')
-    (p : LaurentRing (MonoidAlgebra ℤ P) K) :
-    renameEquiv (MonoidAlgebra ℤ P) e p ∈ positive P K' ↔ p ∈ positive P K := by
-  rw [renameEquiv_apply]
-  exact rename_mem_positive_iff e.injective p
 
 end CommMonoid
 

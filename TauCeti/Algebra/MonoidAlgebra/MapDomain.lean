@@ -25,7 +25,7 @@ induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift` of
 `F ∘ φ`.
 
 The image of an arbitrary coefficient homomorphism is characterized coefficientwise by
-`mem_rangeS_mapRingHom_iff`, using the existing finite-support range criterion.
+`mem_rangeS_mapRingHom_iff`.
 
 ## Main results
 
