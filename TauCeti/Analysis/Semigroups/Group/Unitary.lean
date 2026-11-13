@@ -461,56 +461,16 @@ private theorem one_add_complexGenerator_surjective (hU : U.IsUnitary) :
   rw [hgen]
   simpa only [one_smul, LinearPMap.neg_apply, sub_neg_eq_add] using hx
 
-/-- The domain of the adjoint of the complex generator of a unitary group lies in the domain of
-the generator. It follows from the surjectivity of both `1 - A` and `1 + A`. -/
-private theorem adjoint_domain_le_domain (hU : U.IsUnitary)
-    (hdense : Dense ((U.complexGenerator hU).domain : Set H)) :
-    (U.complexGenerator hU).adjoint.domain ≤ (-U.complexGenerator hU).domain := by
-  intro y hy
-  let ya : (U.complexGenerator hU).adjoint.domain := ⟨y, hy⟩
-  obtain ⟨x, hx⟩ := hU.one_add_complexGenerator_surjective
-    ((y : H) - (U.complexGenerator hU).adjoint ya)
-  have hyx : (y : H) = (x : H) := by
-    apply ext_inner_left ℂ
-    intro w
-    obtain ⟨v, hv⟩ := hU.one_sub_complexGenerator_surjective w
-    rw [← hv]
-    calc
-      ⟪(v : H) - U.complexGenerator hU v, (y : H)⟫_ℂ =
-          ⟪(v : H), (y : H)⟫_ℂ - ⟪U.complexGenerator hU v, (y : H)⟫_ℂ :=
-        inner_sub_left _ _ _
-      _ = ⟪(v : H), (y : H)⟫_ℂ -
-          ⟪(v : H), (U.complexGenerator hU).adjoint ya⟫_ℂ := by
-        rw [(LinearPMap.adjoint_isFormalAdjoint hdense).symm v ya]
-      _ = ⟪(v : H), (y : H) - (U.complexGenerator hU).adjoint ya⟫_ℂ := by
-        rw [inner_sub_right]
-      _ = ⟪(v : H), (x : H) + U.complexGenerator hU x⟫_ℂ := by
-        exact congrArg (fun z : H => ⟪(v : H), z⟫_ℂ) hx.symm
-      _ = ⟪(v : H), (x : H)⟫_ℂ + ⟪(v : H), U.complexGenerator hU x⟫_ℂ :=
-        inner_add_right _ _ _
-      _ = ⟪(v : H), (x : H)⟫_ℂ - ⟪U.complexGenerator hU v, (x : H)⟫_ℂ := by
-        rw [hU.inner_complexGenerator_eq_neg]
-        simp
-      _ = ⟪(v : H) - U.complexGenerator hU v, (x : H)⟫_ℂ := by
-        rw [inner_sub_left]
-  rw [LinearPMap.neg_domain]
-  simpa only [hyx] using x.property
-
 /-- **The infinitesimal generator of a unitary strongly continuous group is skew-adjoint.**
-Its Hilbert-space adjoint is its negative. The reverse inclusion of adjoint domains uses the
-surjectivity of both `1 - A` and `1 + A`, supplied by the resolvents of the forward and reversed
+Its Hilbert-space adjoint is its negative, by the skew-adjointness criterion
+`LinearPMap.IsFormalAdjoint.adjoint_eq_neg_of_surjective`: the generator is skew-symmetric, and the
+surjectivity of both `1 - A` and `1 + A` is supplied by the resolvents of the forward and reversed
 contraction semigroups. -/
 @[simp]
 theorem complexGenerator_adjoint_eq_neg (hU : U.IsUnitary) :
-    (U.complexGenerator hU).adjoint = -U.complexGenerator hU := by
-  have hdense : Dense ((U.complexGenerator hU).domain : Set H) := by
-    rw [U.complexGenerator_domain]
-    exact U.dense_complexDomain hU
-  have hformal := hU.complexGenerator_isFormalAdjoint_neg
-  have hle : -U.complexGenerator hU ≤ (U.complexGenerator hU).adjoint :=
-    hformal.le_adjoint hdense
-  have hdom_le := hU.adjoint_domain_le_domain hdense
-  exact (LinearPMap.eq_of_le_of_domain_eq hle (le_antisymm hle.1 hdom_le)).symm
+    (U.complexGenerator hU).adjoint = -U.complexGenerator hU :=
+  hU.complexGenerator_isFormalAdjoint_neg.adjoint_eq_neg_of_surjective
+    hU.one_sub_complexGenerator_surjective hU.one_add_complexGenerator_surjective
 
 end IsUnitary
 

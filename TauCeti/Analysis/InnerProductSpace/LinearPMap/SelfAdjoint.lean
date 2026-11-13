@@ -65,6 +65,8 @@ linear maps used by the semigroup development.
   the adjoint; `dense_domain_of_adjoint_eq_neg` and `isSelfAdjoint_smul_of_adjoint_eq_neg`: a
   skew-adjoint partial linear map has dense domain, and its multiple by a nonzero purely imaginary
   scalar is self-adjoint.
+* `LinearPMap.IsFormalAdjoint.adjoint_eq_neg_of_surjective`: a skew-symmetric partial linear map
+  whose shifts `1 - G` and `1 + G` are surjective is skew-adjoint.
 
 ## Provenance
 
@@ -391,6 +393,44 @@ theorem isSelfAdjoint_smul_of_adjoint_eq_neg [CompleteSpace E] {G : E →ₗ.[�
   have hconj : (starRingEnd 𝕜) c = -c := RCLike.ext (by simp [hre]) (by simp)
   rw [LinearPMap.isSelfAdjoint_def, adjoint_smul G hc, hG, hconj,
     LinearPMap.smul_neg, LinearPMap.neg_smul, neg_neg]
+
+/-- **A skew-symmetric map with surjective shifts `1 - G` and `1 + G` is skew-adjoint.** If `-G`
+is a formal adjoint of `G` and both `x ↦ x - G x` and `x ↦ x + G x` are surjective, then
+`G† = -G`. The domain of `G` is dense: a vector orthogonal to it is `x - G x` for some `x` in the
+domain, and skew-symmetry then forces `‖x‖ = 0`. -/
+theorem IsFormalAdjoint.adjoint_eq_neg_of_surjective [CompleteSpace E] {G : E →ₗ.[𝕜] E}
+    (hG : G.IsFormalAdjoint (-G)) (hsub : Function.Surjective fun x : G.domain => (x : E) - G x)
+    (hadd : Function.Surjective fun x : G.domain => (x : E) + G x) : G† = -G := by
+  have hdense : Dense (G.domain : Set E) := by
+    rw [Submodule.dense_iff_topologicalClosure_eq_top,
+      Submodule.topologicalClosure_eq_top_iff, Submodule.eq_bot_iff]
+    intro z hz
+    obtain ⟨x, rfl⟩ := hsub z
+    have hxz := (Submodule.mem_orthogonal _ _).mp hz (x : E) x.property
+    have hskew : RCLike.re (inner 𝕜 (x : E) (G x)) = 0 := by
+      have h := congrArg RCLike.re (hG x x)
+      rw [neg_apply, inner_neg_right, _root_.map_neg, inner_re_symm] at h
+      linarith
+    have hx : (x : E) = 0 := by
+      rw [inner_sub_right, sub_eq_zero] at hxz
+      have h : ‖(x : E)‖ ^ 2 = 0 := by rw [← inner_self_eq_norm_sq (𝕜 := 𝕜), hxz, hskew]
+      simpa using h
+    have hx0 : x = 0 := Subtype.ext hx
+    simp [hx0]
+  have hle : -G ≤ G† := hG.le_adjoint hdense
+  refine (eq_of_le_of_domain_eq hle (le_antisymm hle.1 fun y hy => ?_)).symm
+  let ya : G†.domain := ⟨y, hy⟩
+  obtain ⟨x, hx⟩ := hadd ((y : E) - G† ya)
+  have hyx : (y : E) = (x : E) := by
+    refine ext_inner_left 𝕜 fun w => ?_
+    obtain ⟨v, rfl⟩ := hsub w
+    have hvx := hG v x
+    rw [neg_apply, inner_neg_right] at hvx
+    simp only
+    rw [inner_sub_left, (adjoint_isFormalAdjoint hdense).symm v ya, ← inner_sub_right, ← hx,
+      inner_add_right, inner_sub_left, hvx, sub_neg_eq_add]
+  rw [neg_domain]
+  simpa only [hyx] using x.property
 
 
 /-! ## Von Neumann's shifted-surjectivity criterion -/
