@@ -31,7 +31,8 @@ every set of darts, and only the comparison with the path model uses that `T` is
 The group is characterised by its universal property: `TauCeti.GraphOfGroups.π₁Tree.lift` builds a
 homomorphism `π₁(𝔸, T) →* H` from homomorphisms `φ_v : A_v →* H` and elements `h_e ∈ H` that
 satisfy the three relations, and `TauCeti.GraphOfGroups.π₁Tree.homEquiv` states that every
-homomorphism arises in this way from exactly one such family.
+homomorphism arises in this way from exactly one such family. Conjugating such a family by
+elements `g_v ∈ H` attached to the vertices gives `TauCeti.GraphOfGroups.π₁Tree.conjLift`.
 
 ## Main definitions
 
@@ -39,6 +40,8 @@ homomorphism arises in this way from exactly one such family.
 * `TauCeti.GraphOfGroups.π₁Tree.of`: the homomorphism `A_v →* π₁(𝔸, T)`.
 * `TauCeti.GraphOfGroups.π₁Tree.edge`: the element of `π₁(𝔸, T)` given by a dart.
 * `TauCeti.GraphOfGroups.π₁Tree.lift`: the universal property.
+* `TauCeti.GraphOfGroups.π₁Tree.conjLift`: the homomorphism given by a family conjugated by
+  elements attached to the vertices.
 * `TauCeti.GraphOfGroups.π₁Tree.dartWord`: the signed coordinate of a dart in the free group on
   the darts of `O \ T`.
 
@@ -218,6 +221,33 @@ variable (φ : ∀ v, 𝔸.vertexGroup v →* H) (h : Γ.E → H) (hT : ∀ e �
     exact ⟨edge T e, lift_edge ..⟩
 
 end lift
+
+section conjLift
+
+/-- Conjugating a family `(φ_v, h_e)` that satisfies the reversal and edge relations by elements
+`g_v ∈ H` gives a homomorphism `π₁(𝔸, T) →* H` sending `a ∈ A_v` to `g_v φ_v(a) g_v⁻¹` and the dart
+`e` to `g_{src e} h_e g_{tgt e}⁻¹`, as soon as these conjugated dart elements are trivial on `T`. -/
+def conjLift (g : Γ.V → H) (φ : ∀ v, 𝔸.vertexGroup v →* H) (h : Γ.E → H)
+    (hT : ∀ e ∈ T, g (Γ.src e) * h e * (g (Γ.tgt e))⁻¹ = 1) (hrev : ∀ e, h (Γ.rev e) = (h e)⁻¹)
+    (hrel : ∀ e c, h e * φ (Γ.tgt e) (𝔸.ω e c) * (h e)⁻¹ = φ (Γ.src e) (𝔸.α e c)) :
+    π₁Tree 𝔸 T →* H :=
+  lift (fun v => (MulAut.conj (g v)).toMonoidHom.comp (φ v))
+    (fun e => g (Γ.src e) * h e * (g (Γ.tgt e))⁻¹) hT (fun e => by simp [hrev, mul_assoc])
+    (fun e c => by simp [← hrel e c, mul_assoc])
+
+variable (g : Γ.V → H) (φ : ∀ v, 𝔸.vertexGroup v →* H) (h : Γ.E → H)
+  (hT : ∀ e ∈ T, g (Γ.src e) * h e * (g (Γ.tgt e))⁻¹ = 1) (hrev : ∀ e, h (Γ.rev e) = (h e)⁻¹)
+  (hrel : ∀ e c, h e * φ (Γ.tgt e) (𝔸.ω e c) * (h e)⁻¹ = φ (Γ.src e) (𝔸.α e c))
+
+@[simp] theorem conjLift_of (v : Γ.V) (a : 𝔸.vertexGroup v) :
+    conjLift g φ h hT hrev hrel (of T v a) = g v * φ v a * (g v)⁻¹ := by
+  simp [conjLift]
+
+@[simp] theorem conjLift_edge (e : Γ.E) :
+    conjLift g φ h hT hrev hrel (edge T e) = g (Γ.src e) * h e * (g (Γ.tgt e))⁻¹ := by
+  simp [conjLift]
+
+end conjLift
 
 variable (𝔸 T H) in
 /-- Homomorphisms `π₁(𝔸, T) →* H` correspond to families of homomorphisms `φ_v : A_v →* H`

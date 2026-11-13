@@ -26,22 +26,29 @@ darts of `O ∩ T` freely generate a free factor.
 The isomorphism depends on a base vertex `v₀`. Write `g_v ∈ π₁(𝔸, ∅)` for the product of the dart
 generators along the tree path from `v₀` to `v`. The inverse isomorphism sends `a ∈ A_v` to
 `g_v a g_v⁻¹`, the generator of a dart `e` of `π₁(𝔸, T)` to `g_{src e} e g_{tgt e}⁻¹`, and the free
-generator of a dart `e ∈ O ∩ T` to the generator of `e` in `π₁(𝔸, ∅)`.
+generator of a dart `e ∈ O ∩ T` to the generator of `e` in `π₁(𝔸, ∅)`. Conversely, write
+`t_v ∈ F(O ∩ T)` for the product of the signed coordinates of the darts along the same tree path.
+The isomorphism sends `a ∈ A_v` to `t_v⁻¹ a t_v` and the generator of a dart `e` to
+`t_{src e}⁻¹ e t_{tgt e}`; for a dart of `T` this is its signed coordinate in `F(O ∩ T)`.
 
 ## Main definitions
 
+* `TauCeti.GraphOfGroups.π₁Tree.treeWord`: the signed coordinate of a dart in the free group on
+  the positively oriented darts of `T`.
 * `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod`: the isomorphism
   `π₁(𝔸, ∅) ≃* π₁(𝔸, T) ∗ F(O ∩ T)`.
 
 ## Main results
 
+* `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod_of`,
+  `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod_edge`: the isomorphism on the generators.
+* `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod_of_base`,
+  `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod_edge_of_mem`: the base vertex group goes to
+  the first factor, and a positively oriented tree dart to its free generator.
 * `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod_symm_inl_of`,
   `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod_symm_inl_edge`,
   `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod_symm_inr_of`: the inverse isomorphism on the
   generators.
-* `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod_of_base`,
-  `TauCeti.GraphOfGroups.π₁Tree.emptyEquivCoprod_edge_of_mem`: the base vertex group goes to
-  the first factor, and a positively oriented tree dart to its free generator.
 
 ## References
 
@@ -61,53 +68,34 @@ open SerreGraph Monoid.Coprod
 variable {Γ : SerreGraph.{u, v}} (𝔸 : GraphOfGroups.{u, v, w, x} Γ) (v₀ : Γ.V)
   (T : Γ.SpanningTree) {O : Set Γ.E} (hO : Γ.IsOrientation O)
 
-/-! ### Conjugating the defining families -/
-
-section conjLift
-
-variable {𝔸} {H : Type*} [Group H] {S : Set Γ.E}
-
-/-- Conjugating a family `(φ_v, h_e)` that satisfies the reversal and edge relations by elements
-`g_v ∈ H`, as `g_v φ_v g_v⁻¹` and `g_{src e} h_e g_{tgt e}⁻¹`, gives a homomorphism out of
-`π₁(𝔸, S)` as soon as the conjugated dart elements are trivial on `S`. -/
-private def conjLift (g : Γ.V → H) (φ : ∀ v, 𝔸.vertexGroup v →* H) (h : Γ.E → H)
-    (hS : ∀ e ∈ S, g (Γ.src e) * h e * (g (Γ.tgt e))⁻¹ = 1) (hrev : ∀ e, h (Γ.rev e) = (h e)⁻¹)
-    (hrel : ∀ e c, h e * φ (Γ.tgt e) (𝔸.ω e c) * (h e)⁻¹ = φ (Γ.src e) (𝔸.α e c)) :
-    π₁Tree 𝔸 S →* H :=
-  lift (fun v => (MulAut.conj (g v)).toMonoidHom.comp (φ v))
-    (fun e => g (Γ.src e) * h e * (g (Γ.tgt e))⁻¹) hS (fun e => by simp [hrev, mul_assoc])
-    (fun e c => by simp [← hrel e c, mul_assoc])
-
-variable (g : Γ.V → H) (φ : ∀ v, 𝔸.vertexGroup v →* H) (h : Γ.E → H)
-  (hS : ∀ e ∈ S, g (Γ.src e) * h e * (g (Γ.tgt e))⁻¹ = 1) (hrev : ∀ e, h (Γ.rev e) = (h e)⁻¹)
-  (hrel : ∀ e c, h e * φ (Γ.tgt e) (𝔸.ω e c) * (h e)⁻¹ = φ (Γ.src e) (𝔸.α e c))
-
-private theorem conjLift_of (v : Γ.V) (a : 𝔸.vertexGroup v) :
-    conjLift g φ h hS hrev hrel (of S v a) = g v * φ v a * (g v)⁻¹ := by
-  simp [conjLift]
-
-private theorem conjLift_edge (e : Γ.E) :
-    conjLift g φ h hS hrev hrel (edge S e) = g (Γ.src e) * h e * (g (Γ.tgt e))⁻¹ := by
-  simp [conjLift]
-
-end conjLift
-
 /-! ### Coordinates of tree darts -/
 
 variable (O) in
 /-- The signed coordinate of a dart in the free group on the positively oriented darts of the
 spanning tree `T`: the generator `e` if `e ∈ O ∩ T`, the inverse of the generator `rev e` if
 `rev e ∈ O ∩ T`, and `1` for a dart outside `T`. -/
-private noncomputable def treeWord (e : Γ.E) : FreeGroup ↥(O ∩ T.darts) :=
+noncomputable def treeWord (e : Γ.E) : FreeGroup ↥(O ∩ T.darts) :=
   FreeGroup.map (Set.inclusion Set.sdiff_compl.subset) (dartWord O T.dartsᶜ e)
 
-include hO in
-private theorem treeWord_rev (e : Γ.E) : treeWord T O (Γ.rev e) = (treeWord T O e)⁻¹ := by
-  simp [treeWord, dartWord_rev hO]
-
-private theorem treeWord_of_mem {e : Γ.E} (he : e ∈ O ∩ T.darts) :
+@[simp] theorem treeWord_of_mem {e : Γ.E} (he : e ∈ O ∩ T.darts) :
     treeWord T O e = FreeGroup.of ⟨e, he⟩ := by
   simp [treeWord, dartWord_of_mem (show e ∈ O \ T.dartsᶜ from ⟨he.1, not_not_intro he.2⟩)]
+
+@[simp] theorem treeWord_of_rev_mem {e : Γ.E} (he : e ∉ O ∩ T.darts)
+    (hr : Γ.rev e ∈ O ∩ T.darts) : treeWord T O e = (FreeGroup.of ⟨Γ.rev e, hr⟩)⁻¹ := by
+  simp [treeWord, dartWord_of_rev_mem (show e ∉ O \ T.dartsᶜ by simpa using he)
+    (show Γ.rev e ∈ O \ T.dartsᶜ from ⟨hr.1, not_not_intro hr.2⟩)]
+
+/-- A dart outside the spanning tree has trivial coordinate. -/
+@[simp] theorem treeWord_of_notMem {e : Γ.E} (he : e ∉ T.darts) : treeWord T O e = 1 := by
+  have hr : Γ.rev e ∉ T.darts := fun h => he (Γ.rev_rev e ▸ T.rev_mem _ h)
+  simp [treeWord, dartWord_of_notMem (O := O) (T := T.dartsᶜ) (e := e) (by simp [he])
+    (by simp [hr])]
+
+include hO in
+/-- Reversing a dart inverts its coordinate. -/
+@[simp] theorem treeWord_rev (e : Γ.E) : treeWord T O (Γ.rev e) = (treeWord T O e)⁻¹ := by
+  simp [treeWord, dartWord_rev hO]
 
 include hO in
 /-- On a tree dart, a reversal-compatible dart weight is recovered from the coordinate. -/
@@ -150,14 +138,14 @@ private theorem toCoprod_of (v : Γ.V) (a : 𝔸.vertexGroup v) :
       (inr ((T.path v₀ v).weight fun {x y : Γ.V} (d : x ⟶ y) => treeWord T O d.1))⁻¹ *
         inl (of T.darts v a) *
           inr ((T.path v₀ v).weight fun {x y : Γ.V} (d : x ⟶ y) => treeWord T O d.1) := by
-  simp [toCoprod, conjLift_of]
+  simp [toCoprod]
 
 private theorem toCoprod_edge (e : Γ.E) :
     toCoprod 𝔸 v₀ T O (edge ∅ e) =
       (inr ((T.path v₀ (Γ.src e)).weight fun {x y : Γ.V} (d : x ⟶ y) => treeWord T O d.1))⁻¹ *
         inl (edge T.darts e) *
           inr ((T.path v₀ (Γ.tgt e)).weight fun {x y : Γ.V} (d : x ⟶ y) => treeWord T O d.1) := by
-  simp [toCoprod, conjLift_edge]
+  simp [toCoprod]
 
 variable {O}
 
@@ -189,20 +177,20 @@ include hO in
 private theorem ofCoprod_comp_toCoprod :
     (ofCoprod 𝔸 v₀ T O).comp (toCoprod 𝔸 v₀ T O) = MonoidHom.id _ :=
   hom_ext (fun v => MonoidHom.ext fun a => by
-      simp [toCoprod_of, ofCoprod, conjLift_of, lift_weight_treeWord 𝔸 v₀ T hO, mul_assoc])
+      simp [toCoprod_of, ofCoprod, lift_weight_treeWord 𝔸 v₀ T hO, mul_assoc])
     fun e => by
-      simp [toCoprod_edge, ofCoprod, conjLift_edge, lift_weight_treeWord 𝔸 v₀ T hO, mul_assoc]
+      simp [toCoprod_edge, ofCoprod, lift_weight_treeWord 𝔸 v₀ T hO, mul_assoc]
 
 include hO in
 private theorem toCoprod_comp_ofCoprod :
     (toCoprod 𝔸 v₀ T O).comp (ofCoprod 𝔸 v₀ T O) = MonoidHom.id _ :=
   Monoid.Coprod.hom_ext
     (hom_ext (fun v => MonoidHom.ext fun a => by
-        simp [toCoprod_of, ofCoprod, conjLift_of, toCoprod_weight 𝔸 v₀ T hO, mul_assoc])
+        simp [toCoprod_of, ofCoprod, toCoprod_weight 𝔸 v₀ T hO, mul_assoc])
       fun e => by
-        simp [toCoprod_edge, ofCoprod, conjLift_edge, toCoprod_weight 𝔸 v₀ T hO, mul_assoc])
+        simp [toCoprod_edge, ofCoprod, toCoprod_weight 𝔸 v₀ T hO, mul_assoc])
     (FreeGroup.ext_hom _ _ fun x => by
-      simp [ofCoprod, toCoprod_edge_of_mem 𝔸 v₀ T hO x.2.2, treeWord_of_mem T x.2])
+      simp [ofCoprod, toCoprod_edge_of_mem 𝔸 v₀ T hO x.2.2])
 
 /-- Omitting the tree relations adds a free factor: for a spanning tree `T`, a base vertex `v₀`
 and an orientation `O` of `Γ`, the group `π₁(𝔸, ∅)`, presented without the relations `e = 1` for
@@ -213,13 +201,38 @@ noncomputable def emptyEquivCoprod : π₁Tree 𝔸 ∅ ≃* π₁Tree 𝔸 T.da
   MonoidHom.toMulEquiv (toCoprod 𝔸 v₀ T O) (ofCoprod 𝔸 v₀ T O)
     (ofCoprod_comp_toCoprod 𝔸 v₀ T hO) (toCoprod_comp_ofCoprod 𝔸 v₀ T hO)
 
+/-- `emptyEquivCoprod` sends `a ∈ A_v` to `t_v⁻¹ a t_v`, where `t_v ∈ F(O ∩ T)` is the product of
+the coordinates `treeWord` of the darts along the tree path from `v₀` to `v`. -/
+theorem emptyEquivCoprod_of (v : Γ.V) (a : 𝔸.vertexGroup v) :
+    emptyEquivCoprod 𝔸 v₀ T hO (of ∅ v a) =
+      (inr ((T.path v₀ v).weight fun {x y : Γ.V} (d : x ⟶ y) => treeWord T O d.1))⁻¹ *
+        inl (of T.darts v a) *
+          inr ((T.path v₀ v).weight fun {x y : Γ.V} (d : x ⟶ y) => treeWord T O d.1) :=
+  toCoprod_of 𝔸 v₀ T O v a
+
+/-- `emptyEquivCoprod` sends the generator of a dart `e` to `t_{src e}⁻¹ e t_{tgt e}`, where
+`t_v ∈ F(O ∩ T)` is the product of the coordinates `treeWord` of the darts along the tree path
+from `v₀` to `v`. -/
+theorem emptyEquivCoprod_edge (e : Γ.E) :
+    emptyEquivCoprod 𝔸 v₀ T hO (edge ∅ e) =
+      (inr ((T.path v₀ (Γ.src e)).weight fun {x y : Γ.V} (d : x ⟶ y) => treeWord T O d.1))⁻¹ *
+        inl (edge T.darts e) *
+          inr ((T.path v₀ (Γ.tgt e)).weight fun {x y : Γ.V} (d : x ⟶ y) => treeWord T O d.1) :=
+  toCoprod_edge 𝔸 v₀ T O e
+
+/-- `emptyEquivCoprod` sends the generator of a dart of `T` to its coordinate in the free
+factor. -/
+theorem emptyEquivCoprod_edge_eq_inr_treeWord {e : Γ.E} (he : e ∈ T.darts) :
+    emptyEquivCoprod 𝔸 v₀ T hO (edge ∅ e) = inr (treeWord T O e) :=
+  toCoprod_edge_of_mem 𝔸 v₀ T hO he
+
 /-- The inverse of `emptyEquivCoprod` sends `a ∈ A_v` to `g_v a g_v⁻¹`, where `g_v` is the
 product of the dart generators along the tree path from `v₀` to `v`. -/
 @[simp] theorem emptyEquivCoprod_symm_inl_of (v : Γ.V) (a : 𝔸.vertexGroup v) :
     (emptyEquivCoprod 𝔸 v₀ T hO).symm (inl (of T.darts v a)) =
       (T.path v₀ v).weight (fun {x y : Γ.V} (d : x ⟶ y) => edge ∅ d.1) * of ∅ v a *
         ((T.path v₀ v).weight (fun {x y : Γ.V} (d : x ⟶ y) => edge ∅ d.1))⁻¹ := by
-  simp [emptyEquivCoprod, ofCoprod, conjLift_of]
+  simp [emptyEquivCoprod, ofCoprod]
 
 /-- The inverse of `emptyEquivCoprod` sends the generator of a dart `e` of `π₁(𝔸, T)` to
 `g_{src e} e g_{tgt e}⁻¹`, where `g_v` is the product of the dart generators along the tree path
@@ -228,7 +241,7 @@ from `v₀` to `v`. -/
     (emptyEquivCoprod 𝔸 v₀ T hO).symm (inl (edge T.darts e)) =
       (T.path v₀ (Γ.src e)).weight (fun {x y : Γ.V} (d : x ⟶ y) => edge ∅ d.1) * edge ∅ e *
         ((T.path v₀ (Γ.tgt e)).weight (fun {x y : Γ.V} (d : x ⟶ y) => edge ∅ d.1))⁻¹ := by
-  simp [emptyEquivCoprod, ofCoprod, conjLift_edge]
+  simp [emptyEquivCoprod, ofCoprod]
 
 /-- The inverse of `emptyEquivCoprod` sends the free generator of a dart of `O ∩ T` to the
 generator of that dart. -/
@@ -239,11 +252,11 @@ generator of that dart. -/
 /-- `emptyEquivCoprod` sends the vertex group at the base vertex to the first factor. -/
 @[simp] theorem emptyEquivCoprod_of_base (a : 𝔸.vertexGroup v₀) :
     emptyEquivCoprod 𝔸 v₀ T hO (of ∅ v₀ a) = inl (of T.darts v₀ a) := by
-  simp [emptyEquivCoprod, toCoprod_of]
+  simp [emptyEquivCoprod_of]
 
 /-- `emptyEquivCoprod` sends the generator of a dart of `O ∩ T` to its free generator. -/
 @[simp] theorem emptyEquivCoprod_edge_of_mem {e : Γ.E} (he : e ∈ O ∩ T.darts) :
     emptyEquivCoprod 𝔸 v₀ T hO (edge ∅ e) = inr (FreeGroup.of ⟨e, he⟩) := by
-  simp [emptyEquivCoprod, toCoprod_edge_of_mem 𝔸 v₀ T hO he.2, treeWord_of_mem T he]
+  simp [emptyEquivCoprod_edge_eq_inr_treeWord 𝔸 v₀ T hO he.2, he]
 
 end TauCeti.GraphOfGroups.π₁Tree
