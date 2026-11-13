@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.AlgebraicTopology.Cellular.Incidence
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
-public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 
 /-!
 # Cellular incidence numbers as local degrees of attaching maps
@@ -63,6 +61,9 @@ local homology is constant along convex sets in a chart
 * `TauCeti.singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul` and
   `TauCeti.cellularIncidence_eq_inv_cellLocalClass`: **the incidence numbers are local degrees of
   the attaching maps**.
+* `TauCeti.cellularIncidence_eq_zero_of_not_mem_cellFrontier`: the incidence number of an
+  `(n + 1)`-cell `j` on an `n`-cell `i` vanishes when the attaching map of `j` misses a point of
+  the open cell of `i`.
 * `TauCeti.singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass` and
   `TauCeti.singularHomologyπ_singularHomology₀Section_apply_one`: for a `0`-cell, the local class
   is the class of its point, and the class of any other point of the `0`-skeleton is zero.
@@ -560,7 +561,7 @@ lemma singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass {i : 
     singularHomology₀Section R x ≫
         (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
       cellLocalClass C R x hx := by
-  let pt : TopCat.disk.{w} 0 := ULift.up ⟨0, by simp⟩
+  let pt : TopCat.disk.{w} 0 := diskCenter 0
   -- The identification `H₀(D⁰, ∅) ≅ R` sends the class of the point of `D⁰` to `1`.
   have hinv : (singularHomologyDiskBoundaryPairIso R 0).inv =
       singularHomology₀Section R pt ≫ (diskBoundaryPair.{w} 0).singularHomologyπ R 0 := by
