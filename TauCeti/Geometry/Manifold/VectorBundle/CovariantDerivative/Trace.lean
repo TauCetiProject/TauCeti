@@ -94,9 +94,8 @@ private theorem sum_apply_chartDualFrame_cancel
       filter_upwards [hU] with y hy
       exact inner_chartDualFrame x
         (by simpa only [TangentBundle.trivializationAt_baseSet] using hy) i j
-    have h := hcov.mvfderiv_inner_eq (extend E v) (hD i) (hF j)
-    rw [hconst.mvfderiv_eq, mvfderiv_const] at h
-    simp only [extend_apply_self, zero_apply] at h
+    have h := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+      (hD i) (hF j) hconst v
     rw [real_inner_comm]
     linarith
   have hexp (i : Fin (Module.finrank ℝ E)) : b (F i x) (cov (D i) x v) =
