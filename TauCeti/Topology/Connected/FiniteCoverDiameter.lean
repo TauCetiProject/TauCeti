@@ -16,11 +16,11 @@ import Mathlib.Tactic.Linarith
 /-!
 # Oscillation and diameter bounds from finite covers
 
-On a preconnected space, a finite cover with uniformly bounded oscillation bounds the total
-oscillation by the number of covering sets times that bound. The cover sets need not be open.
-A pseudometric consequence converts local intrinsic distance control on the preimages of
-ambient balls into a global intrinsic diameter bound. The map into the ambient space need
-not be continuous.
+For a continuous function on a preconnected space, a finite cover with uniformly bounded
+oscillation bounds the total oscillation by the number of covering sets times that bound.
+The cover sets need not be open. In a preconnected pseudometric space, a finite cover by
+sets of bounded diameter gives the corresponding global distance bound. In particular,
+the covering sets can be preimages of ambient balls under an arbitrary map.
 
 ## References
 
@@ -87,6 +87,22 @@ theorem Continuous.sub_le_nat_card_mul_of_finite_cover
   rw [Nat.card_fin] at hcard
   omega
 
+/-- A finite cover of a preconnected pseudometric space by sets of diameter at most `D`
+bounds every distance by the number of covering sets times `D`. -/
+theorem TauCeti.dist_le_nat_card_mul_of_finite_cover
+    {X ι : Type*} [PseudoMetricSpace X] [PreconnectedSpace X] [Finite ι]
+    (U : ι → Set X) (hcover : ∀ x, ∃ i, x ∈ U i) {D : ℝ}
+    (hlocal : ∀ i, ∀ x ∈ U i, ∀ y ∈ U i, dist x y ≤ D)
+    (x y : X) : dist x y ≤ Nat.card ι * D := by
+  have hosc : ∀ i, ∀ z ∈ U i, ∀ w ∈ U i, |dist x z - dist x w| ≤ D := by
+    intro i z hz w hw
+    have hrev : |dist x z - dist x w| ≤ dist z w := by
+      simpa only [dist_comm] using abs_dist_sub_le z w x
+    exact hrev.trans (hlocal i z hz w hw)
+  have h := Continuous.sub_le_nat_card_mul_of_finite_cover (h := dist x)
+    (continuous_const.dist continuous_id) U hcover hosc x y
+  simpa only [dist_self, sub_zero] using h
+
 /-- If the preimages of the balls `ball (q i) r` cover `X` and any two points in the
 same preimage are within `D` of each other, then any two points of `X` are within
 `Nat.card ι * D`. No continuity of the map `f` is required. -/
@@ -97,14 +113,6 @@ theorem TauCeti.dist_le_nat_card_mul_of_image_ball_cover
     (hcover : ∀ x : X, ∃ i, dist (f x) (q i) < r)
     (hlocal : ∀ i, ∀ x ∈ f ⁻¹' Metric.ball (q i) r,
       ∀ y ∈ f ⁻¹' Metric.ball (q i) r, dist x y ≤ D)
-    (x y : X) : dist x y ≤ Nat.card ι * D := by
-  have hosc : ∀ i, ∀ z ∈ f ⁻¹' Metric.ball (q i) r,
-      ∀ w ∈ f ⁻¹' Metric.ball (q i) r, |dist x z - dist x w| ≤ D := by
-    intro i z hz w hw
-    have hrev : |dist x z - dist x w| ≤ dist z w := by
-      simpa only [dist_comm] using abs_dist_sub_le z w x
-    exact hrev.trans (hlocal i z hz w hw)
-  have h := Continuous.sub_le_nat_card_mul_of_finite_cover (h := dist x)
-    (continuous_const.dist continuous_id) (fun i ↦ f ⁻¹' Metric.ball (q i) r)
-    hcover hosc x y
-  simpa only [dist_self, sub_zero] using h
+    (x y : X) : dist x y ≤ Nat.card ι * D :=
+  TauCeti.dist_le_nat_card_mul_of_finite_cover
+    (fun i ↦ f ⁻¹' Metric.ball (q i) r) hcover hlocal x y
