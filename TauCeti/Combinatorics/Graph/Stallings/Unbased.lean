@@ -53,6 +53,23 @@ original one, so that paths of the two graphs are the same. -/
 @[simp] theorem withBase_withBase (S : StallingsGraph α) (v w : S.graph.V) :
     (S.withBase v).withBase w = S.withBase w := rfl
 
+instance (S : StallingsGraph α) (v : S.graph.V) [Finite S.graph.V] :
+    Finite (S.withBase v).graph.V :=
+  inferInstanceAs (Finite S.graph.V)
+
+instance (S : StallingsGraph α) (v : S.graph.V) [Finite S.graph.E] :
+    Finite (S.withBase v).graph.E :=
+  inferInstanceAs (Finite S.graph.E)
+
+@[simp] theorem word_withBase (S : StallingsGraph α) (v : S.graph.V) {a b : S.graph.V}
+    (p : S.graph.Path a b) : (S.withBase v).word p = S.word p := by
+  -- As for `read_withBase` below, the word lemmas of `S.withBase v` are applied explicitly.
+  induction p with
+  | nil => exact ((S.withBase v).word_nil a).trans (S.word_nil a).symm
+  | cons p e ih =>
+    exact ((S.withBase v).word_cons p e).trans
+      ((congrArg (· ++ _) ih).trans (S.word_cons p e).symm)
+
 @[simp] theorem read_withBase (S : StallingsGraph α) (v : S.graph.V) {a b : S.graph.V}
     (p : S.graph.Path a b) : (S.withBase v).read p = S.read p := by
   -- The path is stated in the quiver of `S.graph`, so `simp` does not rewrite with the reading
@@ -246,6 +263,25 @@ the unbased isomorphism, with the base vertices moved. -/
 @[simp] theorem toIso_toUnbasedIso (f : UnbasedIso S T) (v : S.graph.V) :
     (f.toIso v).toUnbasedIso = f.withBase v (f.vertexEquiv v) := by
   ext <;> rfl
+
+@[simp] theorem word_mapPath (f : UnbasedIso S T) {a b : S.graph.V} (p : S.graph.Path a b) :
+    T.word (f.toGraphHom.toPrefunctor.mapPath p) = S.word p := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp only [Prefunctor.mapPath_cons, word_cons, ih,
+      SerreGraph.Hom.toPrefunctor_map_val, toGraphHom_mapE, map_label]
+
+@[simp] theorem read_mapPath (f : UnbasedIso S T) {a b : S.graph.V} (p : S.graph.Path a b) :
+    T.read (f.toGraphHom.toPrefunctor.mapPath p) = S.read p := by
+  rw [read_eq_mk_word, read_eq_mk_word, word_mapPath]
+
+private theorem isFolded_of_isFolded (f : UnbasedIso S T) (hT : T.IsFolded) : S.IsFolded :=
+  S.isFolded_def.mpr fun e e' hs hl => f.dartEquiv.injective <|
+    T.isFolded_def.mp hT _ _ (by rw [← f.map_src, ← f.map_src, hs]) (by simp [hl])
+
+/-- Isomorphic labelled graphs are folded together. -/
+theorem isFolded_iff (f : UnbasedIso S T) : S.IsFolded ↔ T.IsFolded :=
+  ⟨f.symm.isFolded_of_isFolded, f.isFolded_of_isFolded⟩
 
 /-- An unbased isomorphism identifies the subgroup accepted at a vertex with the subgroup
 accepted at its image. -/

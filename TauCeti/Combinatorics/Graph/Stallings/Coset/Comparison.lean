@@ -169,13 +169,7 @@ theorem nonempty_unique_iso_of_subgroup_eq (hS : S.IsFolded) (hT : T.IsFolded)
 /-- The subgroup graph of the whole free group is the rose with one petal for each letter. -/
 theorem nonempty_iso_rose_subgroupGraph_top (α : Type*) :
     Nonempty (Iso (rose α) (⊤ : Subgroup (FreeGroup α)).subgroupGraph) := by
-  -- Each petal is a reduced closed path at the only vertex.
-  have hcore : (rose α).graph.IsCore (rose α).base :=
-    (SerreGraph.isCore_iff _ _).mpr ⟨fun _ => ⟨.nil⟩, fun e =>
-      ⟨Quiver.Hom.toPath (⟨e, rfl, rfl⟩ : Quiver.Hom (rose α).base (rose α).base),
-        SerreGraph.Path.isReduced_toPath _ _, by
-          rw [SerreGraph.Path.darts_toPath]
-          exact List.mem_singleton_self _⟩⟩
-  simpa [rose_subgroup_top] using nonempty_iso_subgroupGraph (rose_isFolded α) hcore
+  simpa [rose_subgroup_top] using
+    nonempty_iso_subgroupGraph (rose_isFolded α) (SerreGraph.rose_isCore α)
 
 end TauCeti.StallingsGraph

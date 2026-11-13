@@ -395,10 +395,12 @@ in `A`. Its carriers compute to these subtypes so that paths can be lifted throu
 @[simp] theorem subgraph_tgt_val (e : (Γ.subgraph A D hsrc hrev).E) :
     ((Γ.subgraph A D hsrc hrev).tgt e).1 = Γ.tgt e.1 := (rfl)
 
-instance [Finite Γ.V] : Finite (Γ.subgraph A D hsrc hrev).V := inferInstanceAs (Finite A)
-instance [Finite Γ.E] : Finite (Γ.subgraph A D hsrc hrev).E := inferInstanceAs (Finite D)
+instance [Finite A] : Finite (Γ.subgraph A D hsrc hrev).V := inferInstanceAs (Finite A)
+instance [Finite D] : Finite (Γ.subgraph A D hsrc hrev).E := inferInstanceAs (Finite D)
 
-/-- Inclusion of a subgraph into the ambient graph. -/
+/-- Inclusion of a subgraph into the ambient graph. Its vertex map computes to `Subtype.val`, so
+that a path of the subgraph mapped by the inclusion has the ambient endpoints and can be compared
+with paths of `Γ`. -/
 @[expose] def subgraphInclusion : (Γ.subgraph A D hsrc hrev).Hom Γ where
   mapV := Subtype.val
   mapE := Subtype.val

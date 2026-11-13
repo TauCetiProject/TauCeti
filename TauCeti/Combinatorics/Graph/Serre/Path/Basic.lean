@@ -20,8 +20,8 @@ edges. It is the local normal-form condition used for graph path groups and Stal
 The ordered dart list is obtained from Mathlib's `Quiver.Path.weight` in the free monoid;
 its decomposition and mapping lemmas support subgraph and based-core constructions. The paths of
 a restriction `Γ.restrict S hS` are the paths of `Γ` whose darts lie in `S`, a path whose darts lie
-in a subgraph `Γ.subgraph A D hsrc hrev` lifts to it, and a path leaving a vertex set crosses its
-boundary along one of its darts.
+in a subgraph `Γ.subgraph A D hsrc hrev` lifts to it, with the same reducedness, and a path leaving
+a vertex set crosses its boundary along one of its darts.
 -/
 
 public section
@@ -336,6 +336,14 @@ theorem exists_subgraph_path (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, 
     have he : e.1 ∈ D := hp e.1 (by simp)
     obtain ⟨q, rfl⟩ := ih (fun f hf => hp f (by simp [hf])) (e.2.1 ▸ hsrc e.1 he)
     exact ⟨q.cons ⟨⟨e.1, he⟩, Subtype.ext e.2.1, Subtype.ext e.2.2⟩, rfl⟩
+
+/-- A path in a subgraph is reduced exactly when it is reduced in the ambient graph. -/
+@[simp] theorem isReduced_subgraphInclusion_mapPath_iff (A : Set Γ.V) (D : Set Γ.E)
+    (hsrc : ∀ e ∈ D, Γ.src e ∈ A) (hrev : ∀ e ∈ D, Γ.rev e ∈ D)
+    {a b : (Γ.subgraph A D hsrc hrev).V} (q : (Γ.subgraph A D hsrc hrev).Path a b) :
+    Path.IsReduced Γ ((Γ.subgraphInclusion A D hsrc hrev).toPrefunctor.mapPath q) ↔
+      Path.IsReduced (Γ.subgraph A D hsrc hrev) q :=
+  Hom.isReduced_mapPath_iff _ _ (Γ.subgraphInclusion_mapE_injective A D hsrc hrev) q
 
 /-- Traversing a rose petal and then its reverse is a backtrack. -/
 theorem rose_not_isReduced_backtrack {α : Type*} (a : α) :

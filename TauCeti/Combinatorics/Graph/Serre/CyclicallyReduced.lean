@@ -474,6 +474,22 @@ theorem IsCore.cyclicVertices_eq_univ {v : Γ.V} (hΓ : Γ.IsCore v) (hv : v ∈
     have he : e.1 ∈ Γ.cyclicDarts := hΓ.cyclicDarts_eq_univ hv ▸ Set.mem_univ e.1
     exact e.2.2 ▸ Γ.tgt_mem_cyclicVertices he
 
+/-- An acyclic core has no darts: each dart would lie on a nonempty reduced loop. -/
+theorem IsCore.isEmpty_of_isAcyclic {v : Γ.V} (hΓ : Γ.IsCore v) (h : Γ.IsAcyclic) :
+    IsEmpty Γ.E := by
+  refine ⟨fun e => ?_⟩
+  obtain ⟨p, hp, he⟩ := ((Γ.isCore_iff v).mp hΓ).2 e
+  rw [Γ.isAcyclic_iff.mp h v p hp] at he
+  simp at he
+
+/-- An acyclic core consists of its base vertex alone. -/
+theorem IsCore.eq_of_isAcyclic {v : Γ.V} (hΓ : Γ.IsCore v) (h : Γ.IsAcyclic) (a : Γ.V) :
+    a = v := by
+  obtain ⟨p⟩ := ((Γ.isCore_iff v).mp hΓ).1 a
+  cases p with
+  | nil => rfl
+  | cons _ e => exact (hΓ.isEmpty_of_isAcyclic h).elim e.1
+
 /-- If the base vertex of a core is on no cyclically reduced closed path, each dart leaving it
 begins a reduced closed path at the base that returns along the reverse of that dart. -/
 private theorem IsCore.exists_isReduced_head?_getLast? {v : Γ.V} (hΓ : Γ.IsCore v)

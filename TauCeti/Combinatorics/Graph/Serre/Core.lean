@@ -147,8 +147,7 @@ theorem core_isCore : (Γ.core v).IsCore (Γ.coreBase v) := by
   obtain ⟨q, hq⟩ := Γ.exists_core_loop v p hp
   subst p
   refine ⟨q, ?_, ?_⟩
-  · exact ((Γ.coreInclusion v).isReduced_mapPath_iff _
-      (Γ.subgraphInclusion_mapE_injective _ _ _ _) q).mp hp
+  · exact (Γ.isReduced_subgraphInclusion_mapPath_iff _ _ _ _ q).mp hp
   · have hd := Hom.darts_mapPath (Γ.core v) (Γ.coreInclusion v) q
     have hm := Eq.mp (congrArg (fun l => e.1 ∈ l) hd) he
     obtain ⟨f, hf, hfe⟩ := List.mem_map.mp hm
@@ -169,6 +168,13 @@ theorem IsCore.exists_outgoing_ne (hΓ : Γ.IsCore v) (e : Γ.E) (he : Γ.src e 
     · simpa only [Γ.src_rev] using f.2.2
     · have hn := ((Path.isReduced_cons_cons Γ q f (Γ.dart e)).mp hq).2
       simpa only [Γ.dart_val, ne_eq, eq_comm] using hn
+
+/-- The rose is a core at its vertex: each petal is a reduced loop. -/
+theorem rose_isCore (α : Type*) : (rose α).IsCore PUnit.unit :=
+  ⟨fun _ => ⟨.nil⟩, fun e =>
+    ⟨Quiver.Hom.toPath (⟨e, rfl, rfl⟩ : Quiver.Hom (V := (rose α).V) PUnit.unit PUnit.unit),
+      Path.isReduced_toPath _ _,
+      (congrArg (e ∈ ·) (Path.darts_toPath _ _)).mpr (List.mem_singleton_self _)⟩⟩
 
 /-! ### Moving the base vertex -/
 
