@@ -24,10 +24,11 @@ family.
 
 The residue classes modulo `L` give the almost-orthogonal version: if `⟪v i, v j⟫ = 0` whenever
 `i + L ≤ j`, then `‖∑ i ∈ s, v i‖² ≤ L ∑ i ∈ s, ‖v i‖²`
-(`TauCeti.norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero`). For a sequence with summable
+(`TauCeti.norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero`). For a family with summable
 squared norms the series `∑ v i` then converges in a complete space
 (`TauCeti.summable_of_inner_eq_zero`), with `‖∑' i, v i‖² ≤ L ∑' i, ‖v i‖²`
-(`TauCeti.norm_tsum_sq_le_mul_tsum_norm_sq_of_inner_eq_zero`). This is the form in which a
+(`TauCeti.norm_tsum_sq_le_mul_tsum_norm_sq_of_inner_eq_zero`). These are stated for families
+indexed by `ℤ`; the `_nat` versions treat families indexed by `ℕ`. This is the form in which a
 decomposition into pieces with almost disjoint frequency supports, such as Littlewood–Paley
 blocks, is controlled in `L²`.
 
@@ -116,21 +117,22 @@ theorem norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero {v : ℤ → E} {L : ℕ
         simp_rw [norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero (hw _), hsq,
           Finset.sum_fiberwise_of_maps_to hmaps]
 
-/-- The `ℕ`-indexed case of `norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero`. -/
-private theorem norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero_nat {v : ℕ → E} {L : ℕ}
-    (hv : ∀ i j, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) (s : Finset ℕ) :
+/-- The `ℕ`-indexed case of `norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero`: if
+`⟪v i, v j⟫ = 0` for `i, j ∈ s` with `i + L ≤ j`, then `‖∑ i ∈ s, v i‖² ≤ L ∑ i ∈ s, ‖v i‖²`. -/
+theorem norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero_nat {v : ℕ → E} {L : ℕ} {s : Finset ℕ}
+    (hv : ∀ i ∈ s, ∀ j ∈ s, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) :
     ‖∑ i ∈ s, v i‖ ^ 2 ≤ L * ∑ i ∈ s, ‖v i‖ ^ 2 := by
   have h := norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero (𝕜 := 𝕜) (L := L)
     (v := fun i : ℤ ↦ v i.toNat) (s := s.map Nat.castEmbedding) <| by
       simp only [Finset.mem_map, Nat.castEmbedding_apply]
-      rintro _ ⟨i, -, rfl⟩ _ ⟨j, -, rfl⟩ hij
-      exact hv i j (by omega)
+      rintro _ ⟨i, hi, rfl⟩ _ ⟨j, hj, rfl⟩ hij
+      exact hv i hi j hj (by omega)
   simpa using h
 
 /-- **Almost orthogonal series converge.** In a complete space, if `⟪v i, v j⟫ = 0` whenever
 `i + L ≤ j` and the squared norms `‖v i‖²` are summable, then so are the `v i`. -/
-theorem summable_of_inner_eq_zero [CompleteSpace E] {v : ℕ → E} {L : ℕ}
-    (hv : ∀ i j, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) (hsq : Summable fun i ↦ ‖v i‖ ^ 2) :
+theorem summable_of_inner_eq_zero [CompleteSpace E] {v : ℤ → E} {L : ℕ}
+    (hv : ∀ i j : ℤ, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) (hsq : Summable fun i ↦ ‖v i‖ ^ 2) :
     Summable v := by
   refine summable_iff_vanishing_norm.2 fun ε hε ↦ ?_
   obtain ⟨s, hs⟩ := summable_iff_vanishing_norm.1 hsq (ε ^ 2 / (L + 1)) (by positivity)
@@ -138,7 +140,7 @@ theorem summable_of_inner_eq_zero [CompleteSpace E] {v : ℕ → E} {L : ℕ}
   have h := hs t ht
   rw [Real.norm_of_nonneg (Finset.sum_nonneg fun i _ ↦ by positivity)] at h
   refine (pow_lt_pow_iff_left₀ (norm_nonneg _) hε.le two_ne_zero).1
-    ((norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero_nat hv t).trans_lt ?_)
+    ((norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero fun i _ j _ ↦ hv i j).trans_lt ?_)
   calc (L : ℝ) * ∑ i ∈ t, ‖v i‖ ^ 2 ≤ (L + 1) * ∑ i ∈ t, ‖v i‖ ^ 2 := by
         gcongr
         linarith
@@ -147,16 +149,59 @@ theorem summable_of_inner_eq_zero [CompleteSpace E] {v : ℕ → E} {L : ℕ}
 
 /-- **Almost orthogonal series.** If `⟪v i, v j⟫ = 0` whenever `i + L ≤ j` and the squared norms
 `‖v i‖²` are summable, then `‖∑' i, v i‖² ≤ L ∑' i, ‖v i‖²`. -/
-theorem norm_tsum_sq_le_mul_tsum_norm_sq_of_inner_eq_zero {v : ℕ → E} {L : ℕ}
-    (hv : ∀ i j, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) (hsq : Summable fun i ↦ ‖v i‖ ^ 2) :
+theorem norm_tsum_sq_le_mul_tsum_norm_sq_of_inner_eq_zero {v : ℤ → E} {L : ℕ}
+    (hv : ∀ i j : ℤ, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) (hsq : Summable fun i ↦ ‖v i‖ ^ 2) :
     ‖∑' i, v i‖ ^ 2 ≤ L * ∑' i, ‖v i‖ ^ 2 := by
   by_cases h : Summable v
   · refine le_of_tendsto' (h.hasSum.norm.pow 2) fun t ↦
-      (norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero_nat hv t).trans ?_
+      (norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero fun i _ j _ ↦ hv i j).trans ?_
     gcongr
     exact hsq.sum_le_tsum _ fun i _ ↦ by positivity
   · rw [tsum_eq_zero_of_not_summable h, norm_zero, zero_pow two_ne_zero]
     exact mul_nonneg (Nat.cast_nonneg L) (tsum_nonneg fun i ↦ by positivity)
+
+/-- Extending an almost orthogonal `ℕ`-indexed family by zero to `ℤ` keeps it almost orthogonal. -/
+private theorem inner_extend_natCast_eq_zero {v : ℕ → E} {L : ℕ}
+    (hv : ∀ i j, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) (i j : ℤ) (hij : i + L ≤ j) :
+    ⟪Function.extend Nat.cast v 0 i, Function.extend Nat.cast v 0 j⟫_𝕜 = 0 := by
+  by_cases hi : ∃ a : ℕ, (a : ℤ) = i
+  · by_cases hj : ∃ b : ℕ, (b : ℤ) = j
+    · obtain ⟨a, rfl⟩ := hi
+      obtain ⟨b, rfl⟩ := hj
+      rw [Nat.cast_injective.extend_apply, Nat.cast_injective.extend_apply]
+      exact hv a b (by omega)
+    · simp [Function.extend_apply' _ _ _ hj]
+  · simp [Function.extend_apply' _ _ _ hi]
+
+/-- Extending a family by zero to `ℤ` extends its squared norms by zero. -/
+private theorem norm_sq_extend_natCast (v : ℕ → E) :
+    (fun i ↦ ‖Function.extend ((↑) : ℕ → ℤ) v 0 i‖ ^ 2) =
+      Function.extend ((↑) : ℕ → ℤ) (fun i ↦ ‖v i‖ ^ 2) 0 := by
+  funext i
+  by_cases hi : ∃ a : ℕ, (a : ℤ) = i
+  · obtain ⟨a, rfl⟩ := hi
+    rw [Nat.cast_injective.extend_apply, Nat.cast_injective.extend_apply]
+  · simp [Function.extend_apply' _ _ _ hi]
+
+/-- The `ℕ`-indexed case of `summable_of_inner_eq_zero`. -/
+theorem summable_of_inner_eq_zero_nat [CompleteSpace E] {v : ℕ → E} {L : ℕ}
+    (hv : ∀ i j, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) (hsq : Summable fun i ↦ ‖v i‖ ^ 2) :
+    Summable v :=
+  (summable_extend_zero Nat.cast_injective).1 <|
+    summable_of_inner_eq_zero (inner_extend_natCast_eq_zero hv) <| by
+      rw [norm_sq_extend_natCast]
+      exact (summable_extend_zero Nat.cast_injective).2 hsq
+
+/-- The `ℕ`-indexed case of `norm_tsum_sq_le_mul_tsum_norm_sq_of_inner_eq_zero`. -/
+theorem norm_tsum_sq_le_mul_tsum_norm_sq_of_inner_eq_zero_nat {v : ℕ → E} {L : ℕ}
+    (hv : ∀ i j, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) (hsq : Summable fun i ↦ ‖v i‖ ^ 2) :
+    ‖∑' i, v i‖ ^ 2 ≤ L * ∑' i, ‖v i‖ ^ 2 := by
+  have h := norm_tsum_sq_le_mul_tsum_norm_sq_of_inner_eq_zero
+    (inner_extend_natCast_eq_zero hv) <| by
+      rw [norm_sq_extend_natCast]
+      exact (summable_extend_zero Nat.cast_injective).2 hsq
+  rwa [norm_sq_extend_natCast, tsum_extend_zero Nat.cast_injective,
+    tsum_extend_zero Nat.cast_injective] at h
 
 end Seminormed
 

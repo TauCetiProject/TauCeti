@@ -43,8 +43,8 @@ equivalent norms,
 
 with constants depending on `φ` and `s`. The order `0` case is Plancherel's theorem for the blocks:
 the blocks of an `L²` function are square summable in `L²`
-(`TemperedDistribution.exists_sum_norm_sq_littlewoodPaleyBlock_le`), and a tempered distribution
-whose blocks are square-summable `L²` functions is an `L²` function
+(`TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_sum_norm_sq_le`), and a tempered
+distribution whose blocks are square-summable `L²` functions is an `L²` function
 (`TemperedDistribution.exists_eq_and_norm_sq_le_of_littlewoodPaleyBlock_eq`). The localized
 estimate at `p = 2` for `J^s` and `J^{-s}` reduces every order to order `0`. Thus at `p = q = 2`
 the Besov scale is the Sobolev scale, which is how statements proved for Besov spaces (dyadic
@@ -277,7 +277,7 @@ private theorem exists_littlewoodPaleyBlock_eq_and_sum_sq_le :
         ∀ t : Finset ℕ, ∑ j ∈ t, (2 ^ (s * j) * ‖f j‖) ^ 2 ≤ C * ‖w‖ ^ 2 := by
   obtain ⟨C₁, -, hC₁⟩ :=
     exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le (F := H) φ (-s)
-  obtain ⟨C₂, hC₂⟩ := exists_sum_norm_sq_littlewoodPaleyBlock_le (H := H) φ
+  obtain ⟨C₂, -, hC₂⟩ := exists_littlewoodPaleyBlock_eq_and_sum_norm_sq_le (H := H) φ
   refine ⟨C₁ ^ 2 * C₂, fun u w hw ↦ ?_⟩
   obtain ⟨g, hg, hgw⟩ := hC₂ w
   have hu : besselPotential E H (-s) (w : 𝓢'(E, H)) = u :=
@@ -329,14 +329,6 @@ namespace TauCeti.BesovSpace
 
 open TemperedDistribution
 
-/-- The squared `B^s_{2,2}` norm is `∑ⱼ (2^{sj} ‖Δⱼ u‖)²`. -/
-private theorem hasSum_sq (u : BesovSpace H φ s 2 2) :
-    HasSum (fun j : ℕ ↦ (2 ^ (s * j) * ‖u.block j‖) ^ 2) (‖u‖ ^ 2) := by
-  have h := lp.hasSum_norm (p := 2) (by simp) u.weightedBlocks
-  simp only [ENNReal.toReal_ofNat, Real.rpow_two, norm_weightedBlocks_apply,
-    norm_weightedBlocks] at h
-  exact h
-
 variable (φ s) in
 /-- The `H^{s,2}` norm is bounded by a multiple of the `B^s_{2,2}` norm. -/
 private theorem exists_norm_le_of_toDistr_eq :
@@ -344,11 +336,12 @@ private theorem exists_norm_le_of_toDistr_eq :
       v.toDistr = u.toDistr → ‖v‖ ≤ C * ‖u‖ := by
   obtain ⟨C, hC⟩ := exists_besselPotential_eq_and_norm_sq_le (H := H) φ s
   refine ⟨√C, fun u v huv ↦ ?_⟩
-  obtain ⟨w, hw, hwu⟩ := hC u.toDistr u.block (fun j ↦ (u.coe_block j).symm) (hasSum_sq u).summable
+  obtain ⟨w, hw, hwu⟩ :=
+    hC u.toDistr u.block (fun j ↦ (u.coe_block j).symm) (hasSum_norm_sq u).summable
   have hv : v.toLp = w := Lp.toTemperedDistribution_injective <| by
     simp only [← v.bessel_toDistr_eq_toLp, huv, hw]
   rw [← BesselPotentialSpace.norm_toLp_eq, hv, ← Real.sqrt_sq (norm_nonneg u),
-    ← Real.sqrt_mul' _ (sq_nonneg _), ← (hasSum_sq u).tsum_eq]
+    ← Real.sqrt_mul' _ (sq_nonneg _), ← (hasSum_norm_sq u).tsum_eq]
   exact Real.le_sqrt_of_sq_le hwu
 
 variable (φ s) in
@@ -364,9 +357,9 @@ private theorem exists_norm_le_of_toDistr_eq' :
   rw [← BesselPotentialSpace.norm_toLp_eq, ← Real.sqrt_sq (norm_nonneg v.toLp),
     ← Real.sqrt_mul' _ (sq_nonneg _)]
   refine Real.le_sqrt_of_sq_le ?_
-  rw [← (hasSum_sq u).tsum_eq]
+  rw [← (hasSum_norm_sq u).tsum_eq]
   simp_rw [hu] at hfv ⊢
-  exact Summable.tsum_le_of_sum_le ((hasSum_sq u).summable.congr fun j ↦ by rw [hu]) hfv
+  exact Summable.tsum_le_of_sum_le ((hasSum_norm_sq u).summable.congr fun j ↦ by rw [hu]) hfv
 
 variable (H φ s) in
 /-- **`B^s_{2,2} = H^{s,2}` with equivalent norms.** The identity on tempered distributions is an
