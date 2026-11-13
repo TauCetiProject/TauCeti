@@ -126,6 +126,24 @@ theorem ContractionSemigroup.hasGrowthBound_of_nonneg_omega_of_one_le_const
     S.toStronglyContinuousSemigroup.HasGrowthBound ω M :=
   S.hasGrowthBound.mono hω hM
 
+/-! ## Strong continuity from a growth bound -/
+
+/-- Strong continuity at every `t₀` within the nonnegative half-line for a semigroup with a
+growth bound. Unlike `StronglyContinuousSemigroup.realOperator_continuousWithinAt` this needs no
+completeness: the growth bound replaces the Banach--Steinhaus bound on `[0, t₀]`. -/
+theorem StronglyContinuousSemigroup.HasGrowthBound.realOperator_continuousWithinAt
+    {S : StronglyContinuousSemigroup X} {ω M : ℝ} (hb : S.HasGrowthBound ω M) (x : X)
+    (t₀ : ℝ) : ContinuousWithinAt (fun t => S.realOperator t x) (Set.Ici 0) t₀ :=
+  S.realOperator_continuousWithinAt_of_norm_le x
+    fun _ ht htt₀ => hb.norm_le_mul_exp_max_zero_mul_of_le ht htt₀
+
+/-- The real-time orbit of a semigroup with a growth bound is continuous on the nonnegative
+half-line; no completeness is needed. -/
+theorem StronglyContinuousSemigroup.HasGrowthBound.realOperator_continuousOn_Ici
+    {S : StronglyContinuousSemigroup X} {ω M : ℝ} (hb : S.HasGrowthBound ω M) (x : X) :
+    ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Ici 0) :=
+  fun t _ => hb.realOperator_continuousWithinAt x t
+
 variable [CompleteSpace X]
 
 /-! ## Growth Bounds and Exponential Type -/

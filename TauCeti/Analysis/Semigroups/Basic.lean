@@ -341,6 +341,48 @@ private theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt_Ici
   · rw [← S.realOperator_add_apply t₀ (t - t₀) ht₀ (sub_nonneg.mpr ht), add_sub_cancel]
   · rw [sub_self, S.realOperator_zero_apply]
 
+/-- Left continuity of the real-time orbit at `t₀` within `[0, t₀]`, given a positive bound `C`
+on `‖S t‖` for `t ∈ [0, t₀]`: the semigroup law gives `S t x - S t₀ x = S t (x - S (t₀ - t) x)`. -/
+private theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt_Icc
+    (S : StronglyContinuousSemigroup X) (x : X) {t₀ C : ℝ} (hC_pos : 0 < C)
+    (hC_bound : ∀ t : ℝ, 0 ≤ t → t ≤ t₀ → ‖S.realOperator t‖ ≤ C) :
+    ContinuousWithinAt (fun t => S.realOperator t x) (Set.Icc 0 t₀) t₀ := by
+  have h_sc : Filter.Tendsto (fun t => S.realOperator t x) (𝓝 0) (𝓝 x) := by
+    simpa only [S.realOperator_zero_apply] using (S.realOperator_continuousAt_zero x).tendsto
+  rw [ContinuousWithinAt, Metric.tendsto_nhdsWithin_nhds]
+  intro ε hε
+  obtain ⟨δ, hδ_pos, hδ_spec⟩ := Metric.tendsto_nhds_nhds.mp h_sc (ε / C) (div_pos hε hC_pos)
+  refine ⟨δ, hδ_pos, fun t ⟨ht0, htt₀⟩ ht_dist => ?_⟩
+  have h_diff : S.realOperator t x - S.realOperator t₀ x =
+      S.realOperator t (x - S.realOperator (t₀ - t) x) := by
+    rw [map_sub, ← S.realOperator_add_apply t (t₀ - t) ht0 (sub_nonneg.mpr htt₀), add_sub_cancel]
+  rw [dist_eq_norm, h_diff]
+  calc ‖S.realOperator t (x - S.realOperator (t₀ - t) x)‖
+      ≤ ‖S.realOperator t‖ * ‖x - S.realOperator (t₀ - t) x‖ := (S.realOperator t).le_opNorm _
+    _ ≤ C * ‖x - S.realOperator (t₀ - t) x‖ :=
+        mul_le_mul_of_nonneg_right (hC_bound t ht0 htt₀) (norm_nonneg _)
+    _ = C * dist (S.realOperator (t₀ - t) x) x := by rw [dist_comm, dist_eq_norm]
+    _ < C * (ε / C) := by
+        refine mul_lt_mul_of_pos_left (hδ_spec ?_) hC_pos
+        rwa [Real.dist_0_eq_abs, abs_sub_comm, ← Real.dist_eq]
+    _ = ε := mul_div_cancel₀ ε hC_pos.ne'
+
+/-- Strong continuity at every `t₀` within the nonnegative half-line, given a bound on `‖S t‖`
+for `t ∈ [0, t₀]`. This needs no completeness: in
+`StronglyContinuousSemigroup.realOperator_continuousWithinAt` the bound comes from the
+Banach--Steinhaus theorem, while a growth bound supplies it directly
+(`StronglyContinuousSemigroup.HasGrowthBound.realOperator_continuousWithinAt`). -/
+theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt_of_norm_le
+    (S : StronglyContinuousSemigroup X) (x : X) {t₀ C : ℝ}
+    (hC : ∀ t : ℝ, 0 ≤ t → t ≤ t₀ → ‖S.realOperator t‖ ≤ C) :
+    ContinuousWithinAt (fun t => S.realOperator t x) (Set.Ici 0) t₀ := by
+  rcases lt_or_ge t₀ 0 with ht₀ | ht₀
+  · exact continuousWithinAt_of_notMem_closure (by simpa [closure_Ici] using ht₀)
+  rw [← Set.Icc_union_Ici_eq_Ici ht₀]
+  exact (S.realOperator_continuousWithinAt_Icc x (lt_max_of_lt_right one_pos)
+      fun t ht htt₀ => (hC t ht htt₀).trans (le_max_left C 1)).union
+    (S.realOperator_continuousWithinAt_Ici x ht₀)
+
 /-! ## Results requiring completeness
 
 When `X` is complete, pointwise boundedness on `[0, 1]` implies uniform operator-norm
@@ -401,44 +443,15 @@ private theorem StronglyContinuousSemigroup.exists_norm_realOperator_le_of_le_na
             mul_le_mul (hMbound _ htk_nn htk_le) (hC_k_bound ↑k hk_nn le_rfl)
               (norm_nonneg _) (le_of_lt hM_pos)
 
-/-- Left continuity of the real-time orbit at `t₀` within `[0, t₀]`: the semigroup law gives
-`S t x - S t₀ x = S t (x - S (t₀ - t) x)`, and `‖S t‖` is uniformly bounded for `t ∈ [0, t₀]`. -/
-private theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt_Icc
-    (S : StronglyContinuousSemigroup X) (x : X) (t₀ : ℝ) :
-    ContinuousWithinAt (fun t => S.realOperator t x) (Set.Icc 0 t₀) t₀ := by
-  obtain ⟨C, hC_pos, hC_bound⟩ := S.exists_norm_realOperator_le_of_le_natCast ⌈t₀⌉₊
-  have h_sc : Filter.Tendsto (fun t => S.realOperator t x) (𝓝 0) (𝓝 x) := by
-    simpa only [S.realOperator_zero_apply] using (S.realOperator_continuousAt_zero x).tendsto
-  rw [ContinuousWithinAt, Metric.tendsto_nhdsWithin_nhds]
-  intro ε hε
-  obtain ⟨δ, hδ_pos, hδ_spec⟩ := Metric.tendsto_nhds_nhds.mp h_sc (ε / C) (div_pos hε hC_pos)
-  refine ⟨δ, hδ_pos, fun t ⟨ht0, htt₀⟩ ht_dist => ?_⟩
-  have h_diff : S.realOperator t x - S.realOperator t₀ x =
-      S.realOperator t (x - S.realOperator (t₀ - t) x) := by
-    rw [map_sub, ← S.realOperator_add_apply t (t₀ - t) ht0 (sub_nonneg.mpr htt₀), add_sub_cancel]
-  rw [dist_eq_norm, h_diff]
-  calc ‖S.realOperator t (x - S.realOperator (t₀ - t) x)‖
-      ≤ ‖S.realOperator t‖ * ‖x - S.realOperator (t₀ - t) x‖ := (S.realOperator t).le_opNorm _
-    _ ≤ C * ‖x - S.realOperator (t₀ - t) x‖ :=
-        mul_le_mul_of_nonneg_right (hC_bound t ht0 (htt₀.trans (Nat.le_ceil t₀)))
-          (norm_nonneg _)
-    _ = C * dist (S.realOperator (t₀ - t) x) x := by rw [dist_comm, dist_eq_norm]
-    _ < C * (ε / C) := by
-        refine mul_lt_mul_of_pos_left (hδ_spec ?_) hC_pos
-        rwa [Real.dist_0_eq_abs, abs_sub_comm, ← Real.dist_eq]
-    _ = ε := mul_div_cancel₀ ε hC_pos.ne'
-
 /-- Strong continuity at every `t₀` within the nonnegative half-line
 ([EN] Prop. I.5.3, [Linares] Cor. 1). For `t₀ < 0` the statement holds trivially, since `t₀`
 lies outside the closure of the half-line. -/
 theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt
     (S : StronglyContinuousSemigroup X) (x : X) (t₀ : ℝ) :
     ContinuousWithinAt (fun t => S.realOperator t x) (Set.Ici 0) t₀ := by
-  rcases lt_or_ge t₀ 0 with ht₀ | ht₀
-  · exact continuousWithinAt_of_notMem_closure (by simpa [closure_Ici] using ht₀)
-  rw [← Set.Icc_union_Ici_eq_Ici ht₀]
-  exact (S.realOperator_continuousWithinAt_Icc x t₀).union
-    (S.realOperator_continuousWithinAt_Ici x ht₀)
+  obtain ⟨C, -, hC⟩ := S.exists_norm_realOperator_le_of_le_natCast ⌈t₀⌉₊
+  exact S.realOperator_continuousWithinAt_of_norm_le x
+    fun t ht htt₀ => hC t ht (htt₀.trans (Nat.le_ceil t₀))
 
 /-- The real-time orbit of a strongly continuous semigroup is continuous on the
 nonnegative half-line. -/
