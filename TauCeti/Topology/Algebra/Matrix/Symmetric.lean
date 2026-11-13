@@ -14,7 +14,8 @@ public import Mathlib.Topology.Instances.Matrix
 
 The catenation and the reversal of paths of symmetric matrices consist of symmetric matrices
 (`Matrix.isSymm_path_trans`, `Matrix.isSymm_path_symm`), and so does the straight-line path between
-two real symmetric matrices (`Matrix.isSymm_segment`).
+two symmetric matrices with entries in a real topological vector space
+(`Matrix.isSymm_segment`).
 -/
 
 public section
@@ -40,8 +41,9 @@ theorem isSymm_path_symm {α : Type*} [TopologicalSpace α] {S₀ S₁ : Matrix 
   exact hS _
 
 /-- The matrices along the segment between two symmetric matrices are symmetric. -/
-theorem isSymm_segment {S₀ S₁ : Matrix n n ℝ} (hS₀ : S₀.IsSymm) (hS₁ : S₁.IsSymm)
-    (t : I) : (Path.segment S₀ S₁ t).IsSymm := by
+theorem isSymm_segment {α : Type*} [AddCommGroup α] [Module ℝ α] [TopologicalSpace α]
+    [ContinuousAdd α] [ContinuousSMul ℝ α] {S₀ S₁ : Matrix n n α} (hS₀ : S₀.IsSymm)
+    (hS₁ : S₁.IsSymm) (t : I) : (Path.segment S₀ S₁ t).IsSymm := by
   rw [Path.segment_apply, AffineMap.lineMap_apply_module]
   exact (hS₀.smul _).add (hS₁.smul _)
 

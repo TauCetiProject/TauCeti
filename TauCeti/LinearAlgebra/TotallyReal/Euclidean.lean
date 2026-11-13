@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
+import TauCeti.Analysis.Matrix.Cayley
 
 /-!
 # The real subspace of `ℂⁿ` and its images under matrices
@@ -314,19 +315,16 @@ theorem lagrangianChartFrame_mul (S : Matrix n n ℝ) :
   simp [add_mul, mul_sub, smul_smul]
   abel
 
-/-- For a symmetric real matrix `S`, the matrix `S + i` is invertible: its product with `S - i`
-is the positive definite matrix `S² + 1`. -/
+/-- For a symmetric real matrix `S`, the matrix `S + i = i (1 - i S)` is invertible, as `1 - i S`
+is for the Hermitian matrix `S`. -/
 theorem det_lagrangianChartFrame_ne_zero {S : Matrix n n ℝ} (hS : S.IsSymm) :
     S.lagrangianChartFrame.det ≠ 0 := by
-  have hpos : (Sᴴ * S + 1).PosDef :=
-    PosDef.posSemidef_add (posSemidef_conjTranspose_mul_self S) PosDef.one
-  rw [conjTranspose_eq_transpose_of_trivial, hS.eq] at hpos
-  intro h
-  have h' := congrArg Matrix.det (lagrangianChartFrame_mul S)
-  have hdet : ((S * S + 1).map ((↑) : ℝ → ℂ)).det = ((S * S + 1).det : ℂ) :=
-    (RingHom.map_det Complex.ofRealHom _).symm
-  rw [det_mul, h, zero_mul, hdet] at h'
-  exact hpos.det_pos.ne' (by exact_mod_cast h'.symm)
+  have h : S.lagrangianChartFrame = Complex.I • (1 - Complex.I • S.map ((↑) : ℝ → ℂ)) := by
+    rw [lagrangianChartFrame, smul_sub, smul_smul, Complex.I_mul_I, neg_one_smul, sub_neg_eq_add,
+      add_comm]
+  rw [h, det_smul]
+  exact mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero)
+    (isHermitian_iff_isSymm.2 hS).map_ofReal.isUnit_det_one_sub_I_smul.ne_zero
 
 /-- The subspace `{S y + i y | y ∈ ℝⁿ}` of `ℂⁿ`, the image of `ℝⁿ` under `S + i`. For symmetric
 `S` it is a Lagrangian subspace transverse to `ℝⁿ`. -/
@@ -398,12 +396,13 @@ theorem im_inner_eq_zero_of_mem_lagrangianChart {S : Matrix n n ℝ} (hS : S.IsS
   have hw' := mem_lagrangianChart.1 hw
   simp only [PiLp.inner_apply, Complex.im_sum, RCLike.inner_apply, Complex.mul_im,
     Complex.conj_re, Complex.conj_im, hv', hw', Finset.sum_mul, Finset.mul_sum]
-  -- The two double sums agree after swapping the summation and using the symmetry of `S`.
+  -- The two double sums agree by the symmetry of `S`.
   have key : ∑ x, ∑ i, (w x).im * (S x i * (v i).im) =
       ∑ x, ∑ i, S x i * (w i).im * (v x).im := by
-    rw [Finset.sum_comm]
+    have := hS.dotProduct_mulVec_comm (x := fun i ↦ (w i).im) (y := fun i ↦ (v i).im)
+    simp only [dotProduct, mulVec, Finset.mul_sum] at this
+    rw [this]
     refine Finset.sum_congr rfl fun x _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [hS.apply x i]
     ring
   simp only [Finset.sum_add_distrib, key, mul_neg, Finset.sum_neg_distrib, neg_add_cancel]
 
