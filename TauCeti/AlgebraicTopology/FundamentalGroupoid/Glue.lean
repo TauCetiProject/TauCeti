@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.CoverGeneration
 public import TauCeti.Topology.MetricSpace.Lebesgue
-public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.CategoryTheory.Functor.OfSequence
 
 /-!
@@ -87,11 +86,16 @@ private lemma pt_eq_one {N k : ℕ} (hN : N ≠ 0) (hk : N ≤ k) : pt N k = 1 :
 private lemma pt_mono (N : ℕ) : Monotone (pt N) :=
   Set.Icc.monotone_addNSMul _ (by positivity)
 
-private lemma pt_mul {M N k : ℕ} (hM : M ≠ 0) (hk : k ≤ N) : pt (M * N) (M * k) = pt N k := by
-  apply Subtype.ext
-  rw [coe_pt hk, coe_pt (Nat.mul_le_mul_left M hk)]
-  push_cast
-  rw [mul_div_mul_left _ _ (by exact_mod_cast hM)]
+private lemma pt_mul {M N k : ℕ} (hM : M ≠ 0) : pt (M * N) (M * k) = pt N k := by
+  rcases le_or_gt k N with hk | hk
+  · apply Subtype.ext
+    rw [coe_pt hk, coe_pt (Nat.mul_le_mul_left M hk)]
+    push_cast
+    rw [mul_div_mul_left _ _ (by exact_mod_cast hM)]
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · apply Subtype.ext
+    simp [pt, Set.Icc.addNSMul]
+  · rw [pt_eq_one (mul_ne_zero hM hN.ne') (Nat.mul_le_mul_left M hk.le), pt_eq_one hN.ne' hk.le]
 
 private lemma abs_sub_pt_le {N k : ℕ} {t : I} (ht : t ∈ Icc (pt N k) (pt N (k + 1))) :
     |(t : ℝ) - pt N k| ≤ 1 / N :=
@@ -313,12 +317,12 @@ private lemma locVal_congr (i : ι) {x y x' y' : X} (P : Path x y) (Q : Path x' 
   obtain rfl : P = Q := Path.ext (funext h)
   simp
 
-/-- Local values along the images of two paths with the same endpoints in a simply connected
-space agree. -/
-private lemma locVal_eq_of_simplyConnected (i : ι) {Y : Type*} [TopologicalSpace Y]
-    [SimplyConnectedSpace Y] (g : C(Y, X)) (hg : ∀ y, g y ∈ U i) {y₀ y₁ : Y}
-    (α β : Path y₀ y₁) {x₀ x₁ : X} (P Q : Path x₀ x₁) (hPα : ∀ t, P t = g (α t))
-    (hQβ : ∀ t, Q t = g (β t)) (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) :
+/-- Local values along the images of two homotopic paths with the same endpoints agree. -/
+private lemma locVal_eq_of_homotopic (i : ι) {Y : Type*} [TopologicalSpace Y]
+    (g : C(Y, X)) (hg : ∀ y, g y ∈ U i) {y₀ y₁ : Y}
+    (α β : Path y₀ y₁) (hαβ : α.Homotopic β) {x₀ x₁ : X} (P Q : Path x₀ x₁)
+    (hPα : ∀ t, P t = g (α t)) (hQβ : ∀ t, Q t = g (β t)) (hP : ∀ t, P t ∈ U i)
+    (hQ : ∀ t, Q t ∈ U i) :
     locVal hU F hF i P hP = locVal hU F hF i Q hQ := by
   have hx : x₀ = g y₀ := by rw [← P.source, hPα, α.source]
   have hy : x₁ = g y₁ := by rw [← P.target, hPα, α.target]
@@ -335,7 +339,7 @@ private lemma locVal_eq_of_simplyConnected (i : ι) {Y : Type*} [TopologicalSpac
     ext t
     exact Path.codRestrict_coe (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) _ hQ t
   simp only [locVal, hα, hβ,
-    Path.Homotopic.Quotient.eq.2 ((SimplyConnectedSpace.paths_homotopic α β).map g')]
+    Path.Homotopic.Quotient.eq.2 (hαβ.map g')]
 
 private lemma locVal_refl (i : ι) (x : X) (h : ∀ t, Path.refl x t ∈ U i) :
     locVal hU F hF i (Path.refl x) h = 𝟙 _ := by
@@ -486,12 +490,12 @@ private lemma liftN_congr {x y : X} (γ : Path x y) {N N' : ℕ} (hNN' : N = N')
 private lemma liftN_mul {x y : X} (γ : Path x y) {M N : ℕ} (hM : M ≠ 0) (hN : N ≠ 0)
     (h : IsFine U γ N) (h' : IsFine U γ (M * N)) :
     liftN hU F hF γ h' (mul_ne_zero hM hN) = liftN hU F hF γ h hN := by
-  have key : ∀ k (hk : k ≤ N),
+  have key : ∀ k,
       Functor.OfSequence.map (segVal hU F hF γ h') 0 (M * k) (M * k).zero_le =
         eqToHom (by rw [pt_zero, pt_zero]) ≫
           Functor.OfSequence.map (segVal hU F hF γ h) 0 k k.zero_le ≫
-            eqToHom (by rw [pt_mul hM hk]) := by
-    intro k hk
+            eqToHom (by rw [pt_mul hM]) := by
+    intro k
     induction k with
     | zero => simp [Functor.OfSequence.map_id]
     | succ k ih =>
@@ -499,14 +503,14 @@ private lemma liftN_mul {x y : X} (γ : Path x y) {M N : ℕ} (hM : M ≠ 0) (hN
       rw [Functor.OfSequence.map_comp _ 0 (M * k) (M * (k + 1)) (M * k).zero_le
           (Nat.mul_le_mul_left M k.le_succ),
         map_segVal_eq hU F hF γ h' i hi (Nat.mul_le_mul_left M k.le_succ) fun j hj hj' ↦
-          ⟨pt_mul hM (k.le_succ.trans hk) ▸ pt_mono _ hj, pt_mul hM hk ▸ pt_mono _ hj'⟩,
-        ih (by omega), Functor.OfSequence.map_comp _ 0 k (k + 1) k.zero_le k.le_succ,
+          ⟨pt_mul (k := k) hM ▸ pt_mono _ hj, pt_mul (k := k + 1) hM ▸ pt_mono _ hj'⟩,
+        ih, Functor.OfSequence.map_comp _ 0 k (k + 1) k.zero_le k.le_succ,
         Functor.OfSequence.map_le_succ, segVal,
-        pathVal_congr hU F hF _ _ (by rw [pt_mul hM (k.le_succ.trans hk)])
-          (by rw [pt_mul hM hk]) (fun t ↦ by rw [pt_mul hM (k.le_succ.trans hk), pt_mul hM hk]) _
+        pathVal_congr hU F hF _ _ (by rw [pt_mul hM])
+          (by rw [pt_mul hM]) (fun t ↦ by rw [pt_mul hM, pt_mul hM]) _
           (h.subpath_mem k)]
       simp
-  rw [liftN, liftN, key N le_rfl]
+  rw [liftN, liftN, key N]
   simp
 
 /-- The value of a path: its partition value along any sufficiently fine uniform partition. -/
@@ -591,7 +595,6 @@ private lemma pathVal_cell {x y : X} {p q : Path x y} (H : p.Homotopy q) (N l k 
     (h₂ : ∃ i, ∀ t, colSeg H N l (k + 1) t ∈ U i) (h₃ : ∃ i, ∀ t, colSeg H N l k t ∈ U i)
     (h₄ : ∃ i, ∀ t, (H.eval (pt N (l + 1))).subpath (pt N k) (pt N (k + 1)) t ∈ U i) :
     pathVal hU F hF _ h₁ ≫ pathVal hU F hF _ h₂ = pathVal hU F hF _ h₃ ≫ pathVal hU F hF _ h₄ := by
-  have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
   have m₁ : ∀ t, (H.eval (pt N l)).subpath (pt N k) (pt N (k + 1)) t ∈ U i := fun t ↦ by
     simpa [Path.subpath] using hi _ mem_Icc_pt _ (convexComb_mem_Icc_pt N k t)
   have m₂ : ∀ t, colSeg H N l (k + 1) t ∈ U i := fun t ↦
@@ -612,10 +615,12 @@ private lemma pathVal_cell {x y : X} {p q : Path x y} (H : p.Homotopy q) (N l k 
   let g : C(I × I, X) := H.toContinuousMap.comp
     ((ContinuousMap.mk _ (Icc.continuous_convexComb (pt N l) (pt N (l + 1)))).prodMap
       (ContinuousMap.mk _ (Icc.continuous_convexComb (pt N k) (pt N (k + 1)))))
-  refine locVal_eq_of_simplyConnected hU F hF i g
+  refine locVal_eq_of_homotopic hU F hF i g
     (fun z ↦ hi _ (convexComb_mem_Icc_pt N l z.1) _ (convexComb_mem_Icc_pt N k z.2))
     (((Path.refl 0).trans Path.id).prod (Path.id.trans (Path.refl 1)))
-    ((Path.id.trans (Path.refl 1)).prod ((Path.refl 0).trans Path.id)) _ _ (fun t ↦ ?_)
+    ((Path.id.trans (Path.refl 1)).prod ((Path.refl 0).trans Path.id))
+    ⟨Path.Homotopic.prodHomotopy (.trans (.reflTrans _) (.symm <| .transRefl _))
+      (.trans (.transRefl _) (.symm <| .reflTrans _))⟩ _ _ (fun t ↦ ?_)
     (fun t ↦ ?_) _ _ <;>
   · rw [Path.trans_apply]
     split_ifs with h <;> rw [one_div] at h <;> simp [g, colSeg, Path.subpath, Path.trans_apply, h]
