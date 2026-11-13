@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
@@ -14,7 +15,6 @@ public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -23,6 +23,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
@@ -91,8 +92,13 @@ allowing the entire path or loop to be read in one stereographic chart.
   unit spheres is a smooth embedding, at every differentiability order.
 * `TauCeti.contMDiff_unitSphereEquiv_apply`: a smooth family of linear isometries acts smoothly
   on the unit sphere.
+* `Circle.contMDiff_coe`: the inclusion `Circle → ℂ` is smooth.
+* `Circle.instContMDiffSMul`, `Circle.instContMDiffConstSMul`: the circle acts smoothly on every
+  complex normed space by scalar multiplication.
 * `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
   `Circle.exp : ℝ → S¹` is bijective.
+* `TauCeti.mvfderiv_coe_mfderiv_circleExp`: read in `ℂ`, the generator of `t ↦ exp (t i)`, the
+  velocity of `Circle.exp` at `0`, is `i`.
 * `TauCeti.contMDiffAt_circle_arg`: the argument is smooth on the circle away from `-1`.
 * `TauCeti.toSpanSingleton_deriv_comp_circleExp`,
   `TauCeti.toSpanSingleton_deriv_chart_comp_circleExp`: the chain rule for a map of the circle read
@@ -466,6 +472,34 @@ theorem contMDiff_unitSphereEquiv_apply {R : ℝ → E ≃ₗᵢ[ℝ] E}
 
 end TauCeti
 
+/-! ### The circle acting on complex normed spaces -/
+
+namespace Circle
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- The inclusion of the circle in `ℂ` is smooth: `contMDiff_coe_sphere`, stated for the coercion
+`Circle → ℂ`. -/
+theorem contMDiff_coe {n : ℕ∞ω} : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) n fun z : Circle ↦ (z : ℂ) :=
+  contMDiff_coe_sphere
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedSpace ℂ V]
+  [IsScalarTower ℝ ℂ V]
+
+/-- The circle acts smoothly on every complex normed space by scalar multiplication. -/
+instance instContMDiffSMul {n : ℕ∞ω} : ContMDiffSMul (𝓡 1) 𝓘(ℝ, V) n Circle V where
+  contMDiff_smul := by
+    have hsmul : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) n fun p : ℂ × V ↦ p.1 • p.2 := by
+      rw [contMDiff_iff]
+      exact ⟨continuous_smul, fun _ _ ↦ (contDiff_fst.smul contDiff_snd).contDiffOn⟩
+    exact hsmul.comp (contMDiff_coe.prodMap contMDiff_id)
+
+/-- Each element of the circle acts smoothly on every complex normed space. -/
+instance instContMDiffConstSMul {n : ℕ∞ω} : ContMDiffConstSMul 𝓘(ℝ, V) n Circle V :=
+  ⟨fun z ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) z⟩
+
+end Circle
+
 /-! ### The derivative of the circle exponential -/
 
 namespace TauCeti
@@ -505,6 +539,23 @@ theorem surjective_mfderiv_circleExp (t : ℝ) :
     Surjective (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1)) :=
   (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (K := ℝ) (V := ℝ)
     (V₂ := EuclideanSpace ℝ (Fin 1)) (by simp)).mp (injective_mfderiv_circleExp t)
+
+/-- **The generator of the circle exponential.** Read in `ℂ`, the velocity of `Circle.exp` at `0`,
+the generator of the rotations `t ↦ exp (t i)`, is `i`. -/
+theorem mvfderiv_coe_mfderiv_circleExp :
+    mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1 (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ)) =
+      Complex.I := by
+  have hcomp := mvfderiv_comp_apply_of_eq (g := fun z : Circle ↦ (z : ℂ))
+    (f := Circle.exp) 0
+    ((Circle.contMDiff_coe (n := 1)).mdifferentiableAt one_ne_zero)
+    ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero) Circle.exp_zero (1 : ℝ)
+  -- The coercion `Circle → ℂ` is `Subtype.val` through the definition `Circle`, which blocks
+  -- rewriting inside `hcomp`; the composite is read off by transitivity instead.
+  refine hcomp.symm.trans ((mvfderiv_eq_fderiv_apply
+    (fun s : ℝ ↦ ((Circle.exp s : Circle) : ℂ)) 0 (1 : ℝ)).trans ?_)
+  rw [(hasDerivAt_coe_circleExp 0).hasFDerivAt.fderiv]
+  refine (ContinuousLinearMap.toSpanSingleton_apply ℝ _ 1).trans ?_
+  simp
 
 /-- The argument is smooth on the circle away from `-1`. -/
 theorem contMDiffAt_circle_arg {n : WithTop ℕ∞} {z : Circle} (hz : |Complex.arg z| < Real.pi) :

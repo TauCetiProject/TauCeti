@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Circle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
+public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Linear
-import Mathlib.Analysis.Complex.Isometry
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Pullback
+import TauCeti.Analysis.Complex.Circle
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # The rotational moment map of planar central forces
@@ -21,20 +24,26 @@ and angular momentum `L(q, p) = q₁ p₂ - q₂ p₁` (`TauCeti.angularMomentum
 
 This action is the symmetry behind the conservation of angular momentum:
 
-* every rotation is a linear symplectomorphism of `(ℂ × ℂ, ω₀)`
-  (`TauCeti.stdSymplecticForm_circle_smul`) and preserves the angular momentum and every
+* every rotation is a linear symplectomorphism of `(ℂ × ℂ, ω₀)`, and more generally of the
+  phase space `V × V` of any complex vector space (`TauCeti.stdSymplecticForm_circle_smul`),
+  and preserves the angular momentum and every
   central-force Hamiltonian `‖p‖² / (2m) + U(‖q‖)` (`TauCeti.angularMomentum_circle_smul`,
   `TauCeti.centralForceHamiltonian_circle_smul`);
 * the rotation `t ↦ exp (t i) • x` by the angle `t` is the integral curve of the Hamiltonian
-  vector field of `L` through `x` (`TauCeti.hasDerivAt_circleExp_smul`): the Hamiltonian flow of
-  the angular momentum is the rotation of the plane, with period `2π`;
+  vector field of `L` through `x`
+  (`TauCeti.hasDerivAt_circleExp_smul_hamiltonianVectorField_angularMomentum`): the Hamiltonian
+  flow of the angular momentum is the rotation of the plane, with period `2π`;
 * the angular momentum is the **rotational moment map**. For an element `ξ` of the Lie algebra of
   the circle, with image `ι_* ξ ∈ ℂ` under the derivative of the inclusion `ι : Circle → ℂ`, the
   quadratic moment map of the linear action is `μ(x)(ξ) = Im (ι_* ξ) L(x)`
-  (`TauCeti.linearActionMomentMap_circle_apply`). So `x ↦ L(x) Im (ι_* ·)` is a
+  (`TauCeti.stdSymplecticForm_linearActionMomentMap_circle_apply`). So `x ↦ L(x) Im (ι_* ·)` is a
   coadjoint-equivariant group-level moment map (`TauCeti.isEquivariantMomentMap_angularMomentum`),
   and its component along the generator of `t ↦ exp (t i)` is `L` itself
-  (`TauCeti.linearActionMomentMap_circle_apply_mfderiv_circleExp`).
+  (`TauCeti.stdSymplecticForm_linearActionMomentMap_circle_apply_mfderiv_circleExp`).
+* the rotations preserve the punctured phase space `{(q, p) | q ≠ 0}`
+  (`TauCeti.puncturedPhaseSpace`), where singular central potentials are smooth, and the angular
+  momentum restricts to an equivariant moment map there
+  (`TauCeti.isEquivariantMomentMap_angularMomentum_puncturedPhaseSpace`).
 
 The conservation law `{H, L} = 0` for a central-force Hamiltonian `H` is
 `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`.
@@ -44,9 +53,12 @@ The conservation law `{H, L} = 0` for a central-force Hamiltonian `H` is
 * `TauCeti.stdSymplecticForm_circle_smul`: rotations are symplectic.
 * `TauCeti.angularMomentum_circle_smul`, `TauCeti.centralForceHamiltonian_circle_smul`:
   rotations preserve `L` and `H`.
-* `TauCeti.hasDerivAt_circleExp_smul`: the Hamiltonian flow of `L` is the rotation of the plane.
-* `TauCeti.isEquivariantMomentMap_angularMomentum`: the angular momentum is the equivariant
-  moment map of the rotations.
+* `TauCeti.hasDerivAt_circleExp_smul_hamiltonianVectorField_angularMomentum`: the Hamiltonian
+  flow of `L` is the rotation of the plane.
+* `TauCeti.isEquivariantMomentMap_angularMomentum`,
+  `TauCeti.isEquivariantMomentMap_angularMomentum_puncturedPhaseSpace`: the angular momentum is
+  the equivariant moment map of the rotations, on the phase space and on the punctured phase
+  space.
 
 ## References
 
@@ -62,7 +74,7 @@ public section
 noncomputable section
 
 open Complex
-open scoped Manifold InnerProductSpace ComplexConjugate
+open scoped Manifold InnerProductSpace ComplexConjugate ContDiff
 
 namespace TauCeti
 
@@ -74,14 +86,18 @@ theorem angularMomentum_one_I (q p : ℂ) : angularMomentum 1 I (q, p) = (conj q
   ring
 
 /-- **Rotations are symplectic.** Rotating positions and momenta by the same element of the circle
-preserves the standard symplectic form of `ℂ × ℂ`. -/
-theorem stdSymplecticForm_circle_smul (z : Circle) (x y : ℂ × ℂ) :
+preserves the standard symplectic form of the phase space `V × V` of a complex vector space `V`
+with a real inner product. -/
+theorem stdSymplecticForm_circle_smul {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [NormedSpace ℂ V] (z : Circle) (x y : V × V) :
     stdSymplecticForm (z • x) (z • y) = stdSymplecticForm x y := by
-  -- Multiplication by `z` is the rotation `rotation z`, a linear isometry of `ℂ`.
-  have h (a b : ℂ) : ⟪(z : ℂ) * a, (z : ℂ) * b⟫_ℝ = ⟪a, b⟫_ℝ := by
-    simpa only [rotation_apply] using (rotation z).inner_map_map a b
-  simp only [stdSymplecticForm_apply, Circle.smul_def, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
-    h]
+  -- The action of `z` is additive and preserves norms, so it preserves inner products by
+  -- polarization.
+  have h (a b : V) : ⟪(z : ℂ) • a, (z : ℂ) • b⟫_ℝ = ⟪a, b⟫_ℝ := by
+    rw [real_inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two,
+      real_inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two, ← smul_sub]
+    simp only [norm_smul, Circle.norm_coe, one_mul]
+  simp only [stdSymplecticForm_apply, Circle.smul_def, Prod.smul_fst, Prod.smul_snd, h]
 
 /-- Rotations preserve the planar angular momentum. -/
 @[simp]
@@ -111,7 +127,7 @@ private theorem inner_one_smul_I_sub_inner_I_smul_one (z : ℂ) :
 /-- **The Hamiltonian flow of the angular momentum is the rotation of the plane.** The rotation
 `t ↦ exp (t i) • x` of a point of phase space by the angle `t` is the integral curve through `x` of
 the Hamiltonian vector field of the angular momentum. -/
-theorem hasDerivAt_circleExp_smul (x : ℂ × ℂ) (t : ℝ) :
+theorem hasDerivAt_circleExp_smul_hamiltonianVectorField_angularMomentum (x : ℂ × ℂ) (t : ℝ) :
     HasDerivAt (fun s ↦ Circle.exp s • x)
       ((stdSymplecticForm (V := ℂ)).hamiltonianVectorField (angularMomentum 1 I)
         (Circle.exp t • x)) t := by
@@ -126,7 +142,8 @@ theorem hasDerivAt_circleExp_smul (x : ℂ × ℂ) (t : ℝ) :
 circle, the quadratic moment map of the rotation action on `ℂ × ℂ` is the angular momentum
 multiplied by the imaginary part of `ι_* ξ`, the image of `ξ` under the derivative of the inclusion
 `ι : Circle → ℂ`. -/
-theorem linearActionMomentMap_circle_apply (x : ℂ × ℂ) (ξ : GroupLieAlgebra (𝓡 1) Circle) :
+theorem stdSymplecticForm_linearActionMomentMap_circle_apply (x : ℂ × ℂ)
+    (ξ : GroupLieAlgebra (𝓡 1) Circle) :
     stdSymplecticForm.linearActionMomentMap (𝓡 1) Circle x ξ =
       (mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1 ξ).im * angularMomentum 1 I x := by
   obtain ⟨q, p⟩ := x
@@ -140,10 +157,10 @@ theorem linearActionMomentMap_circle_apply (x : ℂ × ℂ) (ξ : GroupLieAlgebr
 /-- **The angular momentum generates the rotations.** Along the generator of `t ↦ exp (t i)`, the
 velocity of `Circle.exp` at `0`, the quadratic moment map of the rotations is the angular
 momentum. -/
-theorem linearActionMomentMap_circle_apply_mfderiv_circleExp (x : ℂ × ℂ) :
+theorem stdSymplecticForm_linearActionMomentMap_circle_apply_mfderiv_circleExp (x : ℂ × ℂ) :
     stdSymplecticForm.linearActionMomentMap (𝓡 1) Circle x
       (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ)) = angularMomentum 1 I x := by
-  refine (linearActionMomentMap_circle_apply x _).trans ?_
+  refine (stdSymplecticForm_linearActionMomentMap_circle_apply x _).trans ?_
   rw [mvfderiv_coe_mfderiv_circleExp, I_im, one_mul]
 
 /-- **The rotational moment map.** The angular momentum is a coadjoint-equivariant group-level
@@ -157,10 +174,57 @@ theorem isEquivariantMomentMap_angularMomentum :
       (imCLM ∘L mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1).toLinearMap) =
       stdSymplecticForm.linearActionMomentMap (𝓡 1) Circle := by
     ext x ξ
-    rw [linearActionMomentMap_circle_apply, LinearMap.smul_apply, smul_eq_mul, mul_comm,
-      ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, imCLM_apply]
+    rw [stdSymplecticForm_linearActionMomentMap_circle_apply, LinearMap.smul_apply, smul_eq_mul,
+      mul_comm, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, imCLM_apply]
   rw [h]
   exact SymplecticForm.isEquivariantMomentMap_linearActionMomentMap (I := 𝓡 1) (G := Circle)
-    stdSymplecticForm fun g u w ↦ stdSymplecticForm_circle_smul g u w
+    stdSymplecticForm fun g u w ↦ stdSymplecticForm_circle_smul (V := ℂ) g u w
+
+/-! ### The rotations of the punctured phase space -/
+
+section PuncturedPhaseSpace
+
+variable {V : Type*} [NormedAddCommGroup V]
+
+/-- The circle acts on the punctured phase space `{(q, p) | q ≠ 0}` by rotating positions and
+momenta alike: a rotation keeps the particle away from the centre of force. -/
+instance [NormedSpace ℂ V] : MulAction Circle (puncturedPhaseSpace V) where
+  smul z x := ⟨z • (x : V × V), mem_puncturedPhaseSpace.2 <| by
+    simpa [Circle.smul_def] using mem_puncturedPhaseSpace.1 x.2⟩
+  one_smul x := Subtype.ext (one_smul Circle (x : V × V))
+  mul_smul z w x := Subtype.ext (mul_smul z w (x : V × V))
+
+@[simp]
+theorem coe_circle_smul_puncturedPhaseSpace [NormedSpace ℂ V] (z : Circle)
+    (x : puncturedPhaseSpace V) : ((z • x : puncturedPhaseSpace V) : V × V) = z • (x : V × V) :=
+  (rfl)
+
+variable [NormedSpace ℝ V] [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] {n : ℕ∞ω}
+
+/-- The circle acts smoothly on the punctured phase space. -/
+instance : ContMDiffSMul (𝓡 1) 𝓘(ℝ, V × V) n Circle (puncturedPhaseSpace V) where
+  contMDiff_smul := (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1 <|
+    (contMDiff_smul (I := 𝓡 1) (I' := 𝓘(ℝ, V × V)) (G := Circle) (M := V × V)).comp
+      (contMDiff_fst.prodMk (contMDiff_subtype_val.comp contMDiff_snd))
+
+/-- Each rotation acts smoothly on the punctured phase space. -/
+instance : ContMDiffConstSMul 𝓘(ℝ, V × V) n Circle (puncturedPhaseSpace V) :=
+  ⟨fun z ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) z⟩
+
+end PuncturedPhaseSpace
+
+/-- **The rotational moment map on the punctured phase space.** On the punctured phase space
+`{(q, p) | q ≠ 0}` of a planar particle, with the standard symplectic form restricted from `ℂ × ℂ`,
+the angular momentum is a coadjoint-equivariant group-level moment map of the rotations:
+`x ↦ L(x) Im (ι_* ·)`, where `ι_* ξ` is the image of `ξ` under the derivative of the inclusion
+`ι : Circle → ℂ`. -/
+theorem isEquivariantMomentMap_angularMomentum_puncturedPhaseSpace :
+    SmoothTwoForm.IsEquivariantMomentMap
+      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace ℂ → ℂ × ℂ) contMDiff_subtype_val
+        (stdSymplecticForm (V := ℂ)).constSmooth) fun x ↦
+      angularMomentum 1 I (x : ℂ × ℂ) •
+        (imCLM ∘L mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1).toLinearMap :=
+  isEquivariantMomentMap_angularMomentum.mpullback contMDiff_subtype_val
+    coe_circle_smul_puncturedPhaseSpace
 
 end TauCeti
