@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Rat
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.Topology.Instances.Real.Lemmas
+import Mathlib.RingTheory.Localization.Module
 import TauCeti.Algebra.Module.ZLattice.DenseSubgroup
 
 /-!
@@ -24,6 +27,10 @@ which approximates the target `θ = 0` with an explicit rate and needs no hypoth
 ## Main results
 
 * `TauCeti.denseRange_mul_sub_intCast`: Kronecker's theorem in density form.
+* `TauCeti.forall_intRelation_eq_zero_of_denseRange_mul_sub_intCast`: the converse of the
+  density form.
+* `TauCeti.forall_intRelation_eq_zero_iff_linearIndependent_cons`: the hypothesis of the
+  theorems, as linear independence of `1, α₁, …, αₙ` over `ℚ`.
 * `TauCeti.kronecker_approximation`: infinitely many integer solutions of
   `|y αᵢ - xᵢ - θᵢ| ≤ ε`.
 * `TauCeti.kronecker_approximation_nat`: infinitely many natural numbers `n` for which
@@ -87,6 +94,61 @@ theorem denseRange_mul_sub_intCast {α : ι → ℝ}
   have hk0 : k = 0 := by simpa using congrArg Prod.snd (hα (-m, k) (by simpa using hrel))
   refine (Pi.basisFun ℝ ι).ext fun j ↦ ?_
   simpa [he, hk0] using hk j
+
+/-- **Kronecker's theorem, converse.** If the points `(y αᵢ - xᵢ)ᵢ`, for `y ∈ ℤ` and `x ∈ ℤ^ι`,
+are dense in `ℝ^ι`, then `1` and the real numbers `αᵢ` satisfy no nontrivial integer relation. -/
+theorem forall_intRelation_eq_zero_of_denseRange_mul_sub_intCast {α : ι → ℝ}
+    (hd : DenseRange fun p : (ι → ℤ) × ℤ ↦ fun i ↦ α i * p.2 - p.1 i) :
+    ∀ x : ℤ × (ι → ℤ), (x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * α i = 0 → x = 0 := by
+  classical
+  rintro ⟨x₀, k⟩ hx
+  let F : (ι → ℤ) × ℤ →+ (ι → ℝ) :=
+    AddMonoidHom.mk' (fun p i ↦ α i * p.2 - p.1 i) fun p q ↦ by
+      ext i
+      simp only [Prod.fst_add, Prod.snd_add, Pi.add_apply, Int.cast_add]
+      ring
+  -- the functional `v ↦ ∑ kᵢ vᵢ` is integer-valued on the range, hence zero
+  let f : Dual ℝ (ι → ℝ) :=
+    { toFun := fun v ↦ ∑ i, (k i : ℝ) * v i
+      map_add' := fun v w ↦ by simp [mul_add, Finset.sum_add_distrib]
+      map_smul' := fun c v ↦ by simp [Finset.mul_sum, mul_left_comm] }
+  have hd' : Dense ((F.range : AddSubgroup (ι → ℝ)) : Set (ι → ℝ)) := by
+    rw [AddMonoidHom.coe_range]; exact hd
+  have hf : f = 0 := AddSubgroup.dense_iff_forall_dual_eq_zero.1 hd' f <| by
+    rintro _ ⟨p, rfl⟩
+    refine ⟨-(x₀ * p.2) - ∑ i, k i * p.1 i, ?_⟩
+    have hsum : ∑ i, (k i : ℝ) * α i = -x₀ := by simp at hx; linarith
+    have : f (F p) = (∑ i, (k i : ℝ) * α i) * p.2 - ∑ i, (k i : ℝ) * p.1 i := by
+      simp only [f, F, LinearMap.coe_mk, AddHom.coe_mk, AddMonoidHom.mk'_apply, mul_sub,
+        Finset.sum_sub_distrib, Finset.sum_mul, mul_assoc]
+    rw [this, hsum]
+    push_cast
+    ring
+  have hk : k = 0 := funext fun j ↦ by
+    have h := LinearMap.congr_fun hf (Pi.single j 1)
+    simp only [f, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.zero_apply] at h
+    rw [Finset.sum_eq_single j (fun i _ hij ↦ by simp [hij]) (by simp)] at h
+    simpa using h
+  subst hk
+  simpa using hx
+
+/-- `1, α₁, …, αₙ` are linearly independent over `ℚ` if and only if they satisfy no nontrivial
+integer relation, the hypothesis of Kronecker's theorem. -/
+theorem forall_intRelation_eq_zero_iff_linearIndependent_cons {n : ℕ} (α : Fin n → ℝ) :
+    (∀ x : ℤ × (Fin n → ℤ), (x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * α i = 0 → x = 0) ↔
+      LinearIndependent ℚ (Fin.cons (1 : ℝ) α : Fin (n + 1) → ℝ) := by
+  rw [← LinearIndependent.iff_fractionRing ℤ ℚ, Fintype.linearIndependent_iff]
+  constructor
+  · intro h g hg i
+    have := h (g 0, fun i ↦ g i.succ) (by
+      simpa [Fin.sum_univ_succ, zsmul_eq_mul] using hg)
+    refine Fin.cases ?_ (fun j ↦ ?_) i
+    · simpa using congrArg Prod.fst this
+    · simpa using congrFun (congrArg Prod.snd this) j
+  · intro h x hx
+    have := h (Fin.cons x.1 x.2) (by
+      simpa [Fin.sum_univ_succ, zsmul_eq_mul] using hx)
+    exact Prod.ext (by simpa using this 0) (funext fun i ↦ by simpa using this i.succ)
 
 /-- **Kronecker's approximation theorem.** If `1` and the real numbers `αᵢ` satisfy no
 nontrivial integer relation, that is, if they are linearly independent over `ℚ`, then for every
