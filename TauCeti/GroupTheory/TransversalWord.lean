@@ -167,6 +167,13 @@ theorem lWord_mem (u : G ⧸ U) (γ : G) : lWord U t u γ ∈ U := by
     rw [← smul_eq_mul, ← MulAction.Quotient.smul_mk, ht, smul_inv_smul, ht]
   rw [lWord_def, mul_assoc, ← QuotientGroup.eq, h]
 
+/-- The factorization of `TauCeti.lWord_mul_lWord` as an identity in `U`. -/
+theorem mk_lWord_mul_mk_lWord (u : G ⧸ U) (γ η : G) :
+    (⟨lWord U t u γ, lWord_mem U t ht u γ⟩ : U) *
+        ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
+      ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ :=
+  Subtype.ext (lWord_mul_lWord U t u γ η)
+
 end IsTransversal
 
 /-- The **difference of two transversals**, `d^{t,t'}_u = (t u)⁻¹ * t' u`. It lies in `U` when both
