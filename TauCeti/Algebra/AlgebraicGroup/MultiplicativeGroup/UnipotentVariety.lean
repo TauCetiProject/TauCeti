@@ -56,21 +56,28 @@ theorem unipotentVarietyIdeal_eq_span :
     have h := hg.apply_groupLike_eq_one (groupLikeT k)
     simpa [sub_eq_zero] using h
 
+/-- Laurent evaluation annihilates the fixed reduced unipotent variety ideal of `𝔾ₘ`
+exactly at the identity unit, over any value algebra. -/
+@[simp]
+theorem unipotentVarietyIdeal_le_ker_laurentEval_iff {A : Type v} [Ring A] [Algebra k A]
+    (u : Aˣ) :
+    HopfAlgebra.unipotentVarietyIdeal k k[T;T⁻¹] ≤ RingHom.ker (laurentEval u) ↔ u = 1 := by
+  rw [unipotentVarietyIdeal_eq_span, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
+  simp only [map_sub, map_one, laurentEval_T, zpow_one, sub_eq_zero]
+  constructor
+  · exact fun h ↦ Units.ext h
+  · rintro rfl
+    rfl
+
 /-- Over any commutative value algebra, the fixed reduced unipotent variety of `𝔾ₘ`
 contains only the identity point. -/
 @[simp]
 theorem unipotentVarietyIdeal_le_ker_iff {A : Type v} [CommRing A] [Algebra k A]
     (g : WithConv (k[T;T⁻¹] →ₐ[k] A)) :
     HopfAlgebra.unipotentVarietyIdeal k k[T;T⁻¹] ≤ RingHom.ker g.ofConv ↔ g = 1 := by
-  rw [unipotentVarietyIdeal_eq_span, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker,
-    map_sub, map_one, sub_eq_zero]
-  constructor
-  · intro h
-    apply (pointsMulEquiv (R := k) (A := A)).injective
-    apply Units.ext
-    simpa using h
-  · rintro rfl
-    simp
+  have h := unipotentVarietyIdeal_le_ker_laurentEval_iff (k := k) (laurentEvalEquiv.symm g.ofConv)
+  rw [laurentEval_laurentEvalEquiv_symm] at h
+  simpa only [← pointsMulEquiv_apply, MulEquiv.map_eq_one_iff] using h
 
 section Equations
 
@@ -125,7 +132,7 @@ theorem radical_contentIdeal_charpoly_paired_eq_unipotentVarietyIdeal :
 
 section Comodules
 
-variable (R : Type*) [CommRing R]
+variable (R : Type*) [CommSemiring R]
 
 /-- The rank-one comodule of the standard character of the multiplicative group. -/
 @[instance_reducible]
@@ -155,12 +162,15 @@ theorem coefficientMatrix_pairedComodule :
       Matrix.diagonal ![T 1, T (-1)] := by
   exact Comodule.coefficientMatrix_ofGroupLike _ _ _
 
-variable {R} [Nontrivial R]
+variable {R : Type*} [CommRing R]
 
 /-- For the native rank-one comodule with character `T`, the unipotence ideal is `(T - 1)`. -/
 theorem unipotenceIdeal_standard :
     letI := standardComodule R
     Comodule.unipotenceIdeal R R[T;T⁻¹] (Fin 1 → R) = Ideal.span {(T 1 - 1 : R[T;T⁻¹])} := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have := Module.subsingleton R R[T;T⁻¹]
+    exact Subsingleton.elim _ _
   let := standardComodule R
   rw [Comodule.unipotenceIdeal_eq_contentIdeal_coefficientMatrix_charpoly (Pi.basisFun R (Fin 1)),
     coefficientMatrix_standardComodule, Module.finrank_fin_fun]
@@ -172,6 +182,9 @@ theorem unipotenceIdeal_paired :
     letI := pairedComodule R
     Comodule.unipotenceIdeal R R[T;T⁻¹] (Fin 2 → R) =
       Ideal.span {((T 1 - 1 : R[T;T⁻¹]) ^ 2)} := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have := Module.subsingleton R R[T;T⁻¹]
+    exact Subsingleton.elim _ _
   let := pairedComodule R
   rw [Comodule.unipotenceIdeal_eq_contentIdeal_coefficientMatrix_charpoly (Pi.basisFun R (Fin 2)),
     coefficientMatrix_pairedComodule, Module.finrank_fin_fun]
@@ -179,22 +192,23 @@ theorem unipotenceIdeal_paired :
 
 end Comodules
 
-/-- The infinitesimal point satisfies the unsaturated equations of the paired representation. -/
+/-- Every infinitesimal unit satisfies the unsaturated equations of the paired representation. -/
 theorem contentIdeal_charpoly_paired_le_ker_laurentEval_dualNumberUnit
-    {R : Type*} [CommRing R] :
+    {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (c : A) :
     ((Matrix.diagonal ![(T 1 : R[T;T⁻¹]), T (-1)]).charpoly -
       (Polynomial.X - 1) ^ 2).contentIdeal ≤
-      RingHom.ker (laurentEval (dualNumberUnit (1 : R))) := by
+      RingHom.ker (laurentEval (dualNumberUnit c)) := by
   rw [contentIdeal_charpoly_paired, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
-  simp [pow_two]
+  rw [map_pow, map_sub, map_one, laurentEval_T, zpow_one, coe_dualNumberUnit,
+    add_sub_cancel_left, pow_two, TrivSqZeroExt.inr_mul_inr]
 
-/-- The infinitesimal point is excluded from the fixed reduced unipotent variety. -/
-theorem not_unipotentVarietyIdeal_le_ker_laurentEval_dualNumberUnit :
+/-- A nonzero infinitesimal parameter gives a point outside the fixed reduced unipotent variety. -/
+theorem not_unipotentVarietyIdeal_le_ker_laurentEval_dualNumberUnit_of_ne_zero
+    {A : Type v} [Ring A] [Algebra k A] {c : A} (hc : c ≠ 0) :
     ¬ HopfAlgebra.unipotentVarietyIdeal k k[T;T⁻¹] ≤
-      RingHom.ker (laurentEval (dualNumberUnit (1 : k))) := by
-  rw [unipotentVarietyIdeal_eq_span, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
-  simp only [map_sub, map_one, laurentEval_T, zpow_one, coe_dualNumberUnit,
-    add_sub_cancel_left]
-  exact DualNumber.eps_ne_zero
+      RingHom.ker (laurentEval (dualNumberUnit c)) := by
+  rw [unipotentVarietyIdeal_le_ker_laurentEval_iff]
+  intro h
+  exact hc (by simpa using congrArg (fun u : (DualNumber A)ˣ ↦ (u : DualNumber A).snd) h)
 
 end TauCeti.MultiplicativeGroup
