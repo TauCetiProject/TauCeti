@@ -175,6 +175,33 @@ private theorem bddAbove_range_of_forall_le {I : Sort*} {f : I → ℝ} {C : ℝ
     (h : ∀ i, f i ≤ C) : BddAbove (range f) :=
   ⟨C, Set.forall_mem_range.2 h⟩
 
+omit [IsFiniteMeasure μ] in
+/-- A test integral is at most a six-fold supremum of uniformly bounded test integrals: each level
+of the iterated supremum is bounded, so each step down is a `le_ciSup`. -/
+private theorem le_iSup_six (K : SymmKernel Ω μ) {P Q R : (Ω → ℝ) → Prop} {C : ℝ}
+    (hf : ∀ u v, P u → Q u → P v → R v → |K.testIntegral μ u v| ≤ C) {u v : Ω → ℝ}
+    (hu : P u) (hu1 : Q u) (hv : P v) (hv1 : R v) :
+    |K.testIntegral μ u v| ≤
+      ⨆ (u) (_ : P u) (_ : Q u) (v) (_ : P v) (_ : R v), |K.testIntegral μ u v| := by
+  have h0 : 0 ≤ max C 0 := le_max_right _ _
+  have h1 (u v) (hu : P u) (hu1 : Q u) (hv : P v) : (⨆ _ : R v, |K.testIntegral μ u v|) ≤ max C 0 :=
+    Real.iSup_le (fun hv1 => (hf u v hu hu1 hv hv1).trans (le_max_left _ _)) h0
+  have h2 (u v) (hu : P u) (hu1 : Q u) :
+      (⨆ (_ : P v) (_ : R v), |K.testIntegral μ u v|) ≤ max C 0 :=
+    Real.iSup_le (h1 u v hu hu1) h0
+  have h3 (u) (hu : P u) (hu1 : Q u) :
+      (⨆ (v) (_ : P v) (_ : R v), |K.testIntegral μ u v|) ≤ max C 0 :=
+    Real.iSup_le (fun v => h2 u v hu hu1) h0
+  have h4 (u) (hu : P u) :
+      (⨆ (_ : Q u) (v) (_ : P v) (_ : R v), |K.testIntegral μ u v|) ≤ max C 0 :=
+    Real.iSup_le (h3 u hu) h0
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le fun u => Real.iSup_le (h4 u) h0) u ?_
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le (h4 u)) hu ?_
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le (h3 u hu)) hu1 ?_
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le fun v => h2 u v hu hu1) v ?_
+  refine le_ciSup_of_le (bddAbove_range_of_forall_le (h1 u v hu hu1)) hv ?_
+  exact le_ciSup (bddAbove_range_of_forall_le (hf u v hu hu1 hv)) hv1
+
 /-- Every rectangle integral is bounded by the cut norm. -/
 theorem abs_rectIntegral_le_cutNorm (K : SymmKernel Ω μ) (S T : Set Ω) :
     |K.rectIntegral μ S T| ≤ cutNorm μ K := by
@@ -438,40 +465,14 @@ theorem cutNorm_eq_iSup_abs_testIntegral (K : SymmKernel Ω μ) :
         (v : Ω → ℝ) (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1),
         |K.testIntegral μ u v| := by
   have h0 : 0 ≤ cutNorm μ K := cutNorm_nonneg μ K
-  -- Each partial supremum, peeling one binder at a time, is bounded by the cut norm.
-  have hv1 : ∀ u v : Ω → ℝ, Measurable u → (∀ x, u x ∈ Icc (0 : ℝ) 1) → Measurable v →
-      (⨆ (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1), |K.testIntegral μ u v|) ≤ cutNorm μ K :=
-    fun _ _ hu hu1 hv => Real.iSup_le (abs_testIntegral_le_cutNorm μ K hu hv hu1) h0
-  have hv : ∀ u v : Ω → ℝ, Measurable u → (∀ x, u x ∈ Icc (0 : ℝ) 1) →
-      (⨆ (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1), |K.testIntegral μ u v|) ≤
-        cutNorm μ K :=
-    fun u v hu hu1 => Real.iSup_le (hv1 u v hu hu1) h0
-  have hV : ∀ u : Ω → ℝ, Measurable u → (∀ x, u x ∈ Icc (0 : ℝ) 1) →
-      (⨆ (v : Ω → ℝ) (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1),
-        |K.testIntegral μ u v|) ≤ cutNorm μ K :=
-    fun u hu hu1 => Real.iSup_le (fun v => hv u v hu hu1) h0
-  have hu1 : ∀ u : Ω → ℝ, Measurable u →
-      (⨆ (_ : ∀ x, u x ∈ Icc (0 : ℝ) 1) (v : Ω → ℝ) (_ : Measurable v)
-        (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1), |K.testIntegral μ u v|) ≤ cutNorm μ K :=
-    fun u hu => Real.iSup_le (hV u hu) h0
-  have hu : ∀ u : Ω → ℝ,
-      (⨆ (_ : Measurable u) (_ : ∀ x, u x ∈ Icc (0 : ℝ) 1) (v : Ω → ℝ) (_ : Measurable v)
-        (_ : ∀ y, v y ∈ Icc (0 : ℝ) 1), |K.testIntegral μ u v|) ≤ cutNorm μ K :=
-    fun u => Real.iSup_le (hu1 u) h0
   have hind : ∀ (A : Set Ω) (x : Ω), A.indicator (1 : Ω → ℝ) x ∈ Icc (0 : ℝ) 1 := fun A x => by
     by_cases hx : x ∈ A <;> simp [hx]
-  refine le_antisymm (cutNorm_le μ fun S hS T hT => ?_) (Real.iSup_le hu h0)
+  refine le_antisymm (cutNorm_le μ fun S hS T hT => ?_) (Real.iSup_le (fun u => Real.iSup_le
+    (fun hu => Real.iSup_le (fun hu1 => Real.iSup_le (fun v => Real.iSup_le (fun hv =>
+      Real.iSup_le (abs_testIntegral_le_cutNorm μ K hu hv hu1) h0) h0) h0) h0) h0) h0)
   rw [← K.testIntegral_indicator_one μ hS hT]
-  have hSm : Measurable (S.indicator (1 : Ω → ℝ)) := measurable_one.indicator hS
-  have hTm : Measurable (T.indicator (1 : Ω → ℝ)) := measurable_one.indicator hT
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le hu) (S.indicator 1) ?_
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le (hu1 _)) hSm ?_
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le (hV _ hSm)) (hind S) ?_
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le fun v => hv _ v hSm (hind S))
-    (T.indicator 1) ?_
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le (hv1 _ _ hSm (hind S))) hTm ?_
-  exact le_ciSup (bddAbove_range_of_forall_le
-    (abs_testIntegral_le_cutNorm μ K hSm hTm (hind S))) (hind T)
+  exact le_iSup_six μ K (fun _ _ hu hu1 hv hv1 => abs_testIntegral_le_cutNorm μ K hu hv hu1 hv1)
+    (measurable_one.indicator hS) (hind S) (measurable_one.indicator hT) (hind T)
 
 /-- The signed cut norm is the iterated supremum over measurable `[-1,1]`-valued test functions. -/
 theorem cutNormSigned_def (K : SymmKernel Ω μ) :
@@ -480,63 +481,14 @@ theorem cutNormSigned_def (K : SymmKernel Ω μ) :
         (v : Ω → ℝ) (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (-1 : ℝ) 1),
         |K.testIntegral μ u v| := (rfl)
 
-/-  The supremum defining `cutNormSigned` has six binders, so bounding it from below at a chosen
-pair of test functions needs the range at each level to be bounded above.  The five private lemmas
-below strip one binder each, all with the same `L¹` bound; they play the role that
-`iSup_right_le_integral_abs` and its siblings play for `cutNorm`. -/
-private theorem iSup_mem_right_le_integral_abs (K : SymmKernel Ω μ) (u v : Ω → ℝ)
-    (hu : Measurable u) (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) (hv : Measurable v) :
-    (⨆ (_ : ∀ y, v y ∈ Icc (-1 : ℝ) 1), |K.testIntegral μ u v|) ≤
-      ∫ p, |K p.1 p.2| ∂(μ.prod μ) :=
-  Real.iSup_le (fun hv1 => K.abs_testIntegral_le_integral_abs μ hu hv hu1 hv1)
-    (integral_abs_nonneg μ K)
-
-private theorem iSup_measurable_right_le_integral_abs (K : SymmKernel Ω μ) (u v : Ω → ℝ)
-    (hu : Measurable u) (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) :
-    (⨆ (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (-1 : ℝ) 1), |K.testIntegral μ u v|) ≤
-      ∫ p, |K p.1 p.2| ∂(μ.prod μ) :=
-  Real.iSup_le (fun hv => iSup_mem_right_le_integral_abs μ K u v hu hu1 hv)
-    (integral_abs_nonneg μ K)
-
-private theorem iSup_fun_right_le_integral_abs (K : SymmKernel Ω μ) (u : Ω → ℝ)
-    (hu : Measurable u) (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) :
-    (⨆ (v : Ω → ℝ) (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (-1 : ℝ) 1),
-      |K.testIntegral μ u v|) ≤ ∫ p, |K p.1 p.2| ∂(μ.prod μ) :=
-  Real.iSup_le (fun v => iSup_measurable_right_le_integral_abs μ K u v hu hu1)
-    (integral_abs_nonneg μ K)
-
-private theorem iSup_mem_left_le_integral_abs (K : SymmKernel Ω μ) (u : Ω → ℝ)
-    (hu : Measurable u) :
-    (⨆ (_ : ∀ x, u x ∈ Icc (-1 : ℝ) 1) (v : Ω → ℝ) (_ : Measurable v)
-      (_ : ∀ y, v y ∈ Icc (-1 : ℝ) 1), |K.testIntegral μ u v|) ≤
-      ∫ p, |K p.1 p.2| ∂(μ.prod μ) :=
-  Real.iSup_le (fun hu1 => iSup_fun_right_le_integral_abs μ K u hu hu1) (integral_abs_nonneg μ K)
-
-private theorem iSup_measurable_left_le_integral_abs (K : SymmKernel Ω μ) (u : Ω → ℝ) :
-    (⨆ (_ : Measurable u) (_ : ∀ x, u x ∈ Icc (-1 : ℝ) 1) (v : Ω → ℝ) (_ : Measurable v)
-      (_ : ∀ y, v y ∈ Icc (-1 : ℝ) 1), |K.testIntegral μ u v|) ≤
-      ∫ p, |K p.1 p.2| ∂(μ.prod μ) :=
-  Real.iSup_le (fun hu => iSup_mem_left_le_integral_abs μ K u hu) (integral_abs_nonneg μ K)
-
 /-- Every `[-1,1]`-test integral is bounded by the signed cut norm.  This is the introduction rule
 for the supremum, mirroring `abs_rectIntegral_le_cutNorm`. -/
 theorem abs_testIntegral_le_cutNormSigned (K : SymmKernel Ω μ) {u v : Ω → ℝ}
     (hu : Measurable u) (hv : Measurable v)
     (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) (hv1 : ∀ y, v y ∈ Icc (-1 : ℝ) 1) :
-    |K.testIntegral μ u v| ≤ cutNormSigned μ K := by
-  rw [cutNormSigned_def]
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le fun u' =>
-    iSup_measurable_left_le_integral_abs μ K u') u ?_
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le fun _ =>
-    iSup_mem_left_le_integral_abs μ K u hu) hu ?_
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le fun _ =>
-    iSup_fun_right_le_integral_abs μ K u hu hu1) hu1 ?_
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le fun v' =>
-    iSup_measurable_right_le_integral_abs μ K u v' hu hu1) v ?_
-  refine le_ciSup_of_le (bddAbove_range_of_forall_le fun _ =>
-    iSup_mem_right_le_integral_abs μ K u v hu hu1 hv) hv ?_
-  exact le_ciSup (bddAbove_range_of_forall_le fun _ =>
-    K.abs_testIntegral_le_integral_abs μ hu hv hu1 hv1) hv1
+    |K.testIntegral μ u v| ≤ cutNormSigned μ K :=
+  le_iSup_six μ K (fun _ _ hu hu1 hv hv1 => K.abs_testIntegral_le_integral_abs μ hu hv hu1 hv1)
+    hu hu1 hv hv1
 
 /-- To prove an upper bound on the signed cut norm, it suffices to prove it for every pair of
 measurable `[-1,1]`-valued test functions.  Nonnegativity of the bound is not a hypothesis: it
