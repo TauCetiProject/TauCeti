@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.BigOperators.Finset.Powerset
-import TauCeti.LinearAlgebra.Span.Basic
+import TauCeti.LinearAlgebra.LinearIndependent.Basic
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Evertse
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
@@ -199,7 +199,7 @@ property. Let `0 < Q ≠ 1`, let the forms `L v` be linearly independent at the 
 the places of `S₀`, let `μ` be positive and nondecreasing below `#ι`, and let `x` be `#ι` vectors
 of `approxModule S₀ L c Q`, linearly independent over `K`, with `|L v i (x l)|_v ≤ μ l * Q ^ c v i`
 at every infinite place. Then there are vectors `y j ∈ x j + span (x l, l < j)`, linearly
-independent, and permutations `σ v` such that for `k + p = #ι` the Plücker vector of every
+independent, and permutations `σ v` such that for all `k` and `p` the Plücker vector of every
 `p`-subfamily of `y` meeting the first `k` indices lies in the approximation domain of the wedge
 forms with exponents `wedgeExponent c σ μ C k p Q`. -/
 theorem exists_plucker_mem_approxDomain_wedgeForms [LinearOrder ι] :
@@ -213,7 +213,7 @@ theorem exists_plucker_mem_approxDomain_wedgeForms [LinearOrder ι] :
       (∀ (v : InfinitePlace K) i l, v (L v.1 i (x l)) ≤ μ l * Q ^ c v.1 i) →
       ∃ (y : Fin (Fintype.card ι) → ι → K) (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι),
         LinearIndependent K y ∧ (∀ j, y j - x j ∈ Submodule.span K (x '' Set.Iio j)) ∧
-        ∀ k p, k + p = Fintype.card ι → ∀ J : Set.powersetCard (Fin (Fintype.card ι)) p,
+        ∀ k p (J : Set.powersetCard (Fin (Fintype.card ι)) p),
           (∃ j ∈ J, (j : ℕ) < k) →
           plucker (y ∘ ofFinEmbEquiv.symm J) ∈
             approxDomain S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c σ μ C k p Q) Q := by
@@ -222,7 +222,7 @@ theorem exists_plucker_mem_approxDomain_wedgeForms [LinearOrder ι] :
     fun S₀ L c Q μ x hLinf hLfin hQ hQ1 hμm hμp hx hxΛ hxinf ↦ ?_⟩
   obtain ⟨y, σ, hylin, hyx, hyint, hinf, hfin⟩ :=
     hE S₀ L c Q μ x hLinf hLfin hQ hμm hμp hx hxΛ hxinf
-  refine ⟨y, σ, hylin, hyx, fun k p hkp J hJ ↦ ?_⟩
+  refine ⟨y, σ, hylin, hyx, fun k p J hJ ↦ ?_⟩
   obtain ⟨j₀, hj₀J, hj₀k⟩ := hJ
   have hp : 0 < p := by
     rw [← Set.powersetCard.card_eq J]
@@ -241,8 +241,11 @@ theorem exists_plucker_mem_approxDomain_wedgeForms [LinearOrder ι] :
       rw [mul_left_comm]
       congr
     · refine mul_pos (by positivity) (mul_pos ?_ (prod_pos fun t _ ↦ hμp _ (Fin.is_lt _)))
-      split_ifs
-      · exact div_pos (hμp _ (by omega)) (hμp _ (by omega))
+      split_ifs with hT
+      · -- A nonempty top block forces `k < #ι`.
+        obtain ⟨t₀, ht₀⟩ := card_pos.1 ((Set.powersetCard.card_eq T).symm ▸ hp)
+        have hk := (hT t₀ ht₀).trans_lt ((σ w.1).symm t₀).is_lt
+        exact div_pos (hμp _ (by omega)) (hμp _ hk)
       · exact one_pos
   · -- At a place of `S₀`: the row bounds pass to the wedges without loss.
     rw [wedgeExponent_finitePlace, Real.rpow_sum_of_pos hQ]

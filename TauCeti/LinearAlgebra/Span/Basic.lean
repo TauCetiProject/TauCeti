@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Tower
-public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.LinearAlgebra.Span.Basic
 public import Mathlib.RingTheory.Ideal.Defs
 import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Data.Fintype.BigOperators
-import Mathlib.LinearAlgebra.LinearIndependent.Basic
 
 /-!
 # Finite spans and singleton spans
@@ -26,10 +24,10 @@ exactly when it sends that vector to a multiple of itself. Finally, a submodule 
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
 subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
 well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
-the spans of initial segments; over any linear order it preserves linear independence. A ring
-homomorphism carries a span over `A` into a span over `B` as soon as it carries the generators
-into the target span and the scalars in `A` to scalars in `B`. Over a scalar extension, the image
-span of a semilinear map is spanned by its values on any spanning family of the domain.
+the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
+as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
+Over a scalar extension, the image span of a semilinear map is spanned by its values on any
+spanning family of the domain.
 -/
 
 public section
@@ -158,34 +156,6 @@ theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
     have hmem := sub_mem (subset_span (R := R) (Set.mem_image_of_mem z hl)) <|
       span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (ih l hl (h l))
     rwa [sub_sub_cancel] at hmem
-
-/-- A unitriangular change of a linearly independent family, where every `z j` is `x j` plus a
-combination of the earlier `x l`, is linearly independent. -/
-theorem _root_.LinearIndependent.of_sub_mem_span_image_Iio {ι : Type*} [LinearOrder ι]
-    {x z : ι → M} (hx : LinearIndependent R x) (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) :
-    LinearIndependent R z := by
-  classical
-  refine linearIndependent_iff'.2 fun s g hg i hi ↦ by_contra fun hgi ↦ ?_
-  -- The last index `j` of `s` with a nonzero coefficient.
-  have hne : (s.filter (g · ≠ 0)).Nonempty := ⟨i, Finset.mem_filter.2 ⟨hi, hgi⟩⟩
-  set j := (s.filter (g · ≠ 0)).max' hne
-  obtain ⟨hjs, hj⟩ := Finset.mem_filter.1 ((s.filter (g · ≠ 0)).max'_mem hne)
-  -- The other terms lie in the span of the `x l` with `l < j`, hence so does `g j • x j`.
-  have hrest : ∑ l ∈ s.erase j, g l • z l ∈ span R (x '' Set.Iio j) := by
-    refine sum_mem fun l hl ↦ ?_
-    rcases (Finset.ne_of_mem_erase hl).lt_or_gt with hlj | hjl
-    · have hle := span_mono (Set.image_mono (Set.Iio_subset_Iio hlj.le)) (h l)
-      exact smul_mem _ _ (by simpa using add_mem hle (subset_span ⟨l, hlj, rfl⟩))
-    · have hgl : g l = 0 := by_contra fun h0 ↦ ((s.filter (g · ≠ 0)).le_max' l
-        (Finset.mem_filter.2 ⟨Finset.mem_of_mem_erase hl, h0⟩)).not_gt hjl
-      simp [hgl]
-  rw [← Finset.add_sum_erase _ _ hjs] at hg
-  have hmem := sub_mem (neg_mem hrest) (smul_mem _ (g j) (h j))
-  rw [← eq_neg_of_add_eq_zero_left hg, smul_sub, sub_sub_cancel] at hmem
-  have hx0 : g j • x j = 0 :=
-    disjoint_def.1 (hx.disjoint_span_image (Set.disjoint_singleton_right.2 (lt_irrefl j)))
-      _ hmem (by simpa using smul_mem _ (g j) (mem_span_singleton_self (x j)))
-  exact hj (hx.smul_left_injective j (by simpa using hx0))
 
 end Unitriangular
 
