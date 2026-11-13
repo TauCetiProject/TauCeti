@@ -100,6 +100,26 @@ theorem mem_boundedHolomorphicSections_iff_extend {W : Opens X} {f : W →ᵇ F}
   mem_boundedHolomorphicSections_iff_of_eqOn fun z =>
     Subtype.val_injective.extend_apply f (fun _ => 0) z
 
+/-- Membership is equivalent to holomorphy on the open submanifold itself. -/
+theorem mem_boundedHolomorphicSections_iff_mdifferentiable {W : Opens X} {f : W →ᵇ F} :
+    f ∈ boundedHolomorphicSections I F W ↔ MDifferentiable I 𝓘(ℂ, F) f := by
+  rw [mem_boundedHolomorphicSections_iff_extend]
+  have hext : (Function.extend Subtype.val f (fun _ => 0)) ∘ (Subtype.val : W → X) = f :=
+    funext (Subtype.val_injective.extend_apply f (fun _ => 0))
+  constructor
+  · intro hf
+    have h : MDifferentiable I 𝓘(ℂ, F)
+        ((Function.extend Subtype.val f (fun _ => 0)) ∘ (Subtype.val : W → X)) := fun z =>
+      (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val _ z).mp
+        (hf.mdifferentiableAt (W.isOpen.mem_nhds z.2))
+    rwa [hext] at h
+  · intro hf z hz
+    rw [← hext] at hf
+    have h : MDifferentiableAt I 𝓘(ℂ, F) (Function.extend Subtype.val f (fun _ => 0)) z :=
+      (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val _
+        (⟨z, hz⟩ : W)).mpr (hf ⟨z, hz⟩)
+    exact h.mdifferentiableWithinAt
+
 /-- On an open subset of a complex normed space, viewed as a manifold over itself, the bounded
 holomorphic maps are those of `TauCeti.boundedHolomorphicFunctions`. -/
 theorem boundedHolomorphicSections_modelWithCornersSelf (U : Opens E) :
@@ -155,6 +175,22 @@ theorem ext {f g : boundedHolomorphicSections I F W} (h : ∀ z, (f : W →ᵇ F
     f = g :=
   Subtype.ext (BoundedContinuousFunction.ext h)
 
+/-- A bounded holomorphic map is holomorphic on its open submanifold. -/
+theorem mdifferentiable (f : boundedHolomorphicSections I F W) :
+    MDifferentiable I 𝓘(ℂ, F) (f : W →ᵇ F) :=
+  mem_boundedHolomorphicSections_iff_mdifferentiable.mp f.property
+
+/-- Bundle a bounded holomorphic map defined on the open submanifold itself. -/
+noncomputable def ofMDifferentiable (g : W → F) (hg : MDifferentiable I 𝓘(ℂ, F) g) (C : ℝ)
+    (hC : ∀ z, ‖g z‖ ≤ C) : boundedHolomorphicSections I F W :=
+  ⟨.ofNormedAddCommGroup g hg.continuous C hC,
+    mem_boundedHolomorphicSections_iff_mdifferentiable.mpr hg⟩
+
+@[simp]
+theorem ofMDifferentiable_apply (g : W → F) (hg : MDifferentiable I 𝓘(ℂ, F) g) (C : ℝ)
+    (hC : ∀ z, ‖g z‖ ≤ C) (z : W) :
+    (ofMDifferentiable g hg C hC : W →ᵇ F) z = g z := (rfl)
+
 /-- Restrict an ambient map, holomorphic on `W` and bounded there by `C`, to an element of
 `H^∞(W, F)`. -/
 noncomputable def of (W : Opens X) (g : X → F) (hg : MDifferentiableOn I 𝓘(ℂ, F) g W) (C : ℝ)
@@ -166,6 +202,11 @@ noncomputable def of (W : Opens X) (g : X → F) (hg : MDifferentiableOn I 𝓘(
 theorem of_apply (g : X → F) (hg : MDifferentiableOn I 𝓘(ℂ, F) g W) (C : ℝ)
     (hC : ∀ z ∈ W, ‖g z‖ ≤ C) (z : W) : (of W g hg C hC : W →ᵇ F) z = g z := (rfl)
 
+/-- An ambient bound is also a bound for the supremum norm. -/
+theorem norm_of_le (g : X → F) (hg : MDifferentiableOn I 𝓘(ℂ, F) g W) {C : ℝ}
+    (hC : ∀ z ∈ W, ‖g z‖ ≤ C) (hC₀ : 0 ≤ C) : ‖of W g hg C hC‖ ≤ C :=
+  (BoundedContinuousFunction.norm_le hC₀).mpr fun z => hC z z.2
+
 /-- The ambient representative obtained by extending by zero. -/
 noncomputable def extend (f : boundedHolomorphicSections I F W) : X → F :=
   Function.extend Subtype.val (f : W →ᵇ F) (fun _ => 0)
@@ -175,15 +216,71 @@ theorem extend_apply (f : boundedHolomorphicSections I F W) (z : W) :
     extend f z = (f : W →ᵇ F) z :=
   Subtype.val_injective.extend_apply _ _ _
 
+/-- The zero extension agrees with the map at every ambient point in `W`. -/
+theorem extend_apply_of_mem (f : boundedHolomorphicSections I F W) {z : X} (hz : z ∈ W) :
+    extend f z = (f : W →ᵇ F) ⟨z, hz⟩ :=
+  extend_apply f ⟨z, hz⟩
+
 /-- The zero extension vanishes off `W`. -/
+@[simp]
 theorem extend_apply_of_notMem (f : boundedHolomorphicSections I F W) {z : X} (hz : z ∉ W) :
     extend f z = 0 :=
   Function.extend_apply' _ _ _ fun ⟨w, hw⟩ => hz (hw ▸ w.property)
+
+/-- Zero extension preserves zero. -/
+@[simp]
+theorem extend_zero : extend (0 : boundedHolomorphicSections I F W) = 0 := by
+  funext z
+  by_cases hz : z ∈ W
+  · simp [extend_apply_of_mem, hz]
+  · simp [extend_apply_of_notMem, hz]
+
+/-- Zero extension preserves addition. -/
+@[simp]
+theorem extend_add (f g : boundedHolomorphicSections I F W) :
+    extend (f + g) = extend f + extend g := by
+  funext z
+  by_cases hz : z ∈ W
+  · simp [extend_apply_of_mem, hz]
+  · simp [extend_apply_of_notMem, hz]
+
+/-- Zero extension preserves negation. -/
+@[simp]
+theorem extend_neg (f : boundedHolomorphicSections I F W) : extend (-f) = -extend f := by
+  funext z
+  by_cases hz : z ∈ W
+  · simp [extend_apply_of_mem, hz]
+  · simp [extend_apply_of_notMem, hz]
+
+/-- Zero extension preserves subtraction. -/
+@[simp]
+theorem extend_sub (f g : boundedHolomorphicSections I F W) :
+    extend (f - g) = extend f - extend g := by
+  funext z
+  by_cases hz : z ∈ W
+  · simp [extend_apply_of_mem, hz]
+  · simp [extend_apply_of_notMem, hz]
+
+/-- Zero extension preserves scalar multiplication. -/
+@[simp]
+theorem extend_smul (c : ℂ) (f : boundedHolomorphicSections I F W) :
+    extend (c • f) = c • extend f := by
+  funext z
+  by_cases hz : z ∈ W
+  · simp [extend_apply_of_mem, hz]
+  · simp [extend_apply_of_notMem, hz]
 
 /-- The zero extension is holomorphic on `W`. -/
 theorem mdifferentiableOn_extend (f : boundedHolomorphicSections I F W) :
     MDifferentiableOn I 𝓘(ℂ, F) (extend f) W :=
   mem_boundedHolomorphicSections_iff_extend.mp f.property
+
+/-- Bundling the zero extension recovers the original map, for any valid bound. -/
+@[simp]
+theorem of_extend (f : boundedHolomorphicSections I F W)
+    (hg : MDifferentiableOn I 𝓘(ℂ, F) (extend f) W) (C : ℝ)
+    (hC : ∀ z ∈ W, ‖extend f z‖ ≤ C) : of W (extend f) hg C hC = f :=
+  ext fun z => by simp
 
 /-- The zero extension is bounded everywhere by the supremum norm. -/
 theorem norm_extend_apply_le (f : boundedHolomorphicSections I F W) (z : X) :
@@ -212,6 +309,16 @@ theorem restrict_of (h : W' ≤ W) (g : X → F) (hg : MDifferentiableOn I 𝓘(
     restrict h (of W g hg C hC) = of W' g (hg.mono h) C fun z hz => hC z (h hz) :=
   ext fun z => by simp
 
+/-- Restriction of an intrinsically defined map is its composition with the inclusion. -/
+@[simp]
+theorem restrict_ofMDifferentiable (h : W' ≤ W) (g : W → F)
+    (hg : MDifferentiable I 𝓘(ℂ, F) g) (C : ℝ) (hC : ∀ z, ‖g z‖ ≤ C) :
+    restrict h (ofMDifferentiable g hg C hC) =
+      ofMDifferentiable (g ∘ Opens.inclusion h)
+        (fun z => (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_inclusion h g z).mp
+          (hg (Opens.inclusion h z))) C (fun z => hC (Opens.inclusion h z)) :=
+  ext fun _ => rfl
+
 /-- Restriction does not increase the supremum norm. -/
 theorem norm_restrict_apply_le (h : W' ≤ W) (f : boundedHolomorphicSections I F W) :
     ‖restrict h f‖ ≤ ‖f‖ :=
@@ -232,6 +339,13 @@ theorem restrict_refl : restrict (I := I) (F := F) (le_refl W) = ContinuousLinea
 theorem restrict_comp_restrict (h : W' ≤ W) (h' : W'' ≤ W') :
     (restrict (I := I) (F := F) h').comp (restrict h) = restrict (h'.trans h) :=
   ContinuousLinearMap.ext fun _ => ext fun _ => rfl
+
+/-- Successive restrictions agree with restriction along the composite inclusion. -/
+@[simp]
+theorem restrict_restrict (h : W' ≤ W) (h' : W'' ≤ W')
+    (f : boundedHolomorphicSections I F W) :
+    restrict h' (restrict h f) = restrict (h'.trans h) f :=
+  ext fun _ => rfl
 
 variable [IsManifold I 1 X]
 
