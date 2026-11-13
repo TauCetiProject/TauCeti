@@ -539,12 +539,12 @@ private theorem mem_range_glueFun_of_pos (hc : 0 < c)
 
 /-- Gluing in the concordance keeps the heights above `1 - c` above `1 - c`, and those below it
 below it. -/
-private theorem lt_snd_glueFun_iff (hc : 0 < c)
-    (hS : IsCylinderFrom S (1 - 2 * c)) (x : S.carrier) :
+private theorem lt_snd_glueFun_iff (hc : 0 < c) (x : S.carrier) :
     1 - c < (glueFun C S hc x).2 ↔ 1 - c < (S.toFun x).2 := by
-  by_cases hx : (S.toFun x).2 ≤ 1 - c
-  · rw [glueFun_of_le C hc hx]
-  · rw [glueFun_of_le_snd C hc hS (by linarith), collarParam, lt_snd_rescale_iff]
+  unfold glueFun
+  split_ifs
+  · rfl
+  · exact lt_snd_rescale_iff C hc _ _
 
 private theorem isImmersionAt_glueFun (hc : 0 < c)
     (hS : IsCylinderFrom S (1 - 2 * c)) (x : S.carrier) :
@@ -595,7 +595,7 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
   -- A point mapped into a slab lies in the matching slab of the surface.
   · rintro (_ | _) y hy
     · have hle : (S.toFun y).2 ≤ 1 - c :=
-        not_lt.1 fun h ↦ (not_lt.2 (le_of_lt hy)) ((lt_snd_glueFun_iff C hc hS y).2 h)
+        not_lt.1 fun h ↦ (not_lt.2 (le_of_lt hy)) ((lt_snd_glueFun_iff C hc y).2 h)
       refine ⟨⟨y, ?_⟩, rfl⟩
       have hy' : (glueFun C S hc y).2 < 1 - c := hy
       rwa [glueFun_of_le C hc hle] at hy'
@@ -647,8 +647,7 @@ private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1 / 2
     exact not_le.2 h₁ hx'
 
 /-- Near height `0` the glued surface is the cylinder over `K₀`. -/
-private theorem exists_pos_range_glueFun_inter_snd_le (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
-    (hS : IsCylinderFrom S (1 - 2 * c)) :
+private theorem exists_pos_range_glueFun_inter_snd_le (hc : 0 < c) (hc₂ : c ≤ 1 / 2) :
     ∃ ε > 0, range (glueFun C S hc) ∩ {p | p.2 ≤ ε} = range K₀ ×ˢ Iic ε := by
   -- Below height `1 / 2 ≤ 1 - c` the new surface is that of `S`.
   obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_snd_le
@@ -658,7 +657,7 @@ private theorem exists_pos_range_glueFun_inter_snd_le (hc : 0 < c) (hc₂ : c �
   constructor
   · rintro ⟨⟨x, rfl⟩, hle⟩
     have hx : (S.toFun x).2 ≤ 1 - c := not_lt.1 fun h' ↦ by
-      linarith [(lt_snd_glueFun_iff C hc hS x).2 h', min_le_right ε (1 / 2)]
+      linarith [(lt_snd_glueFun_iff C hc x).2 h', min_le_right ε (1 / 2)]
     rw [glueFun_of_le C hc hx] at hle hp ⊢
     exact ⟨(hp.1 ⟨mem_range_self x, hle.trans (min_le_left _ _)⟩).1, hle⟩
   · rintro ⟨hK, hle⟩
@@ -681,7 +680,7 @@ private theorem exists_pos_range_glueFun_inter_le_snd (hc : 0 < c)
   constructor
   · rintro ⟨⟨x, rfl⟩, hle⟩
     have hx : 1 - c < (S.toFun x).2 :=
-      (lt_snd_glueFun_iff C hc hS x).1 (by nlinarith)
+      (lt_snd_glueFun_iff C hc x).1 (by nlinarith)
     rw [glueFun_of_le_snd C hc hS (by linarith), collarParam, rescale_apply] at hle ⊢
     refine ⟨((Set.ext_iff.1 h _).1 ⟨mem_range_self _, ?_⟩).1, hle⟩
     simp only [mem_ofPred_eq]
@@ -712,7 +711,7 @@ private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
   isSmoothEmbedding := ⟨isImmersion_iff_forall_isImmersionAt.2 (isImmersionAt_glueFun C hc hS),
     isEmbedding_glueFun C hc hS⟩
   isCompact_preimage_Icc := isCompact_preimage_Icc_glueFun C hc hc₂ hS
-  exists_pos_range_inter_snd_le := exists_pos_range_glueFun_inter_snd_le C hc hc₂ hS
+  exists_pos_range_inter_snd_le := exists_pos_range_glueFun_inter_snd_le C hc hc₂
   exists_pos_range_inter_le_snd := exists_pos_range_glueFun_inter_le_snd C hc hS
 
 variable (S) in
