@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Torsion.Galois
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Torsion.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Galois
 public import TauCeti.RingTheory.RootsOfUnity.PadicTateTwist
 
 /-!
@@ -13,9 +14,9 @@ public import TauCeti.RingTheory.RootsOfUnity.PadicTateTwist
 
 Tate uniformization embeds the Tate twist `ℤ_ℓ(1)` in the Tate module of a Tate curve.
 Its image consists exactly of the compatible torsion points with zero exponent at every
-finite level. The embedding intertwines the Galois actions, and every Galois displacement
-lies in its image: the action on the quotient is trivial. When the coefficient extension
-contains all `ℓ`-power roots of unity, the image has rank one.
+finite level. For continuous `K`-automorphisms of `L`, the embedding intertwines the Galois
+actions, and every displacement lies in its image. When the coefficient extension contains
+all `ℓ`-power roots of unity, the image has rank one.
 
 These statements describe the cyclotomic part of the Tate representation without choosing
 a compatible system of roots of the Tate parameter. They are the filtration used to compute
@@ -44,6 +45,17 @@ def tateCyclotomicMap : PadicTateTwist ℓ L →ₗ[ℤ_[ℓ]]
     TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point) :=
   TateModule.mapLinearMap (tateUnitHom L q hq)
 
+/-- The cyclotomic embedding is the Tate-module map induced by uniformization on units. -/
+theorem tateCyclotomicMap_def :
+    tateCyclotomicMap L q hq ℓ = TateModule.mapLinearMap (tateUnitHom L q hq) :=
+  (rfl)
+
+/-- The cyclotomic embedding is continuous for the inverse-limit topologies. -/
+theorem continuous_tateCyclotomicMap : Continuous (tateCyclotomicMap L q hq ℓ) := by
+  rw [tateCyclotomicMap_def]
+  exact (TateModule.continuous_map (p := ℓ) (tateUnitHom L q hq)).congr
+    fun x ↦ (TateModule.mapLinearMap_apply (tateUnitHom L q hq) x).symm
+
 /-- The cyclotomic map at a torsion level is the roots-of-unity inclusion. -/
 @[simp]
 theorem proj_tateCyclotomicMap (x : PadicTateTwist ℓ L) (n : ℕ) :
@@ -57,21 +69,19 @@ theorem proj_tateCyclotomicMap (x : PadicTateTwist ℓ L) (n : ℕ) :
 omit [Fact ℓ.Prime] in
 /-- On unit torsion, uniformization is the roots-of-unity inclusion. -/
 @[simp]
-theorem levelMap_tateUnitHom (n : ℕ) (ζ : Additive (rootsOfUnity (ℓ ^ n) L)) :
-    TateModule.levelMap (tateUnitHom L q hq) n
-        ((PadicTateTwist.levelAddEquivRootsOfUnity n).symm ζ) =
-      tateRootsOfUnityHom L q hq (ℓ ^ n) ζ := by
+theorem levelMap_tateUnitHom (n : ℕ) (x : TateModuleLevel ℓ (Additive Lˣ) n) :
+    TateModule.levelMap (tateUnitHom L q hq) n x =
+      tateRootsOfUnityHom L q hq (ℓ ^ n) (PadicTateTwist.levelAddEquivRootsOfUnity n x) := by
+  obtain ⟨ζ, rfl⟩ := (PadicTateTwist.levelAddEquivRootsOfUnity n).symm.surjective x
   apply Subtype.ext
   simp only [TateModule.levelMap_apply, PadicTateTwist.coe_levelAddEquivRootsOfUnity_symm,
-    coe_tateRootsOfUnityHom]
+    AddEquiv.apply_symm_apply, coe_tateRootsOfUnityHom]
 
 private theorem tateUnitHom_levelMap_injective (n : ℕ) :
     Injective (TateModule.levelMap (p := ℓ) (tateUnitHom L q hq) n) := by
   intro x y hxy
-  obtain ⟨x, rfl⟩ := (PadicTateTwist.levelAddEquivRootsOfUnity n).symm.surjective x
-  obtain ⟨y, rfl⟩ := (PadicTateTwist.levelAddEquivRootsOfUnity n).symm.surjective y
   rw [levelMap_tateUnitHom, levelMap_tateUnitHom] at hxy
-  exact congrArg (PadicTateTwist.levelAddEquivRootsOfUnity n).symm
+  exact (PadicTateTwist.levelAddEquivRootsOfUnity n).injective
     (tateRootsOfUnityHom_injective L q hq (ℓ ^ n)
       (pow_ne_zero n (Fact.out : ℓ.Prime).ne_zero) hxy)
 
@@ -95,11 +105,11 @@ theorem mem_range_tateCyclotomicMap_iff
   rw [exact_tateRootsOfUnityHom_tateTorsionExponent L q hq (ℓ ^ n) (TateModule.proj n x)]
   constructor
   · rintro ⟨y, hy⟩
-    obtain ⟨ζ, rfl⟩ := (PadicTateTwist.levelAddEquivRootsOfUnity n).symm.surjective y
-    exact ⟨ζ, (levelMap_tateUnitHom L q hq ℓ n ζ).symm.trans hy⟩
+    exact ⟨PadicTateTwist.levelAddEquivRootsOfUnity n y,
+      (levelMap_tateUnitHom L q hq ℓ n y).symm.trans hy⟩
   · rintro ⟨ζ, hζ⟩
-    exact ⟨(PadicTateTwist.levelAddEquivRootsOfUnity n).symm ζ,
-      (levelMap_tateUnitHom L q hq ℓ n ζ).trans hζ⟩
+    refine ⟨(PadicTateTwist.levelAddEquivRootsOfUnity n).symm ζ, ?_⟩
+    simpa only [levelMap_tateUnitHom, AddEquiv.apply_symm_apply] using hζ
 
 /-- With all `ℓ`-power roots of unity present, the cyclotomic submodule has rank one. -/
 theorem finrank_range_tateCyclotomicMap [∀ n, HasEnoughRootsOfUnity L (ℓ ^ n)] :
@@ -128,9 +138,9 @@ theorem tateCyclotomicMap_galoisRepresentation (σ : L ≃ₐ[K] L) (hσ : Conti
     AlgHom.coe_toMonoidHom] using
     PadicTateTwist.coe_tateModuleProj_galoisRepresentation σ x n
 
-/-- Every Galois displacement lies in the cyclotomic submodule, so the induced action on the
-quotient by this submodule is trivial. -/
-theorem galois_sub_mem_range_tateCyclotomicMap (σ : L ≃ₐ[K] L) (hσ : Continuous σ)
+/-- For every continuous `K`-automorphism of `L`, the displacement `σ x - x` lies in the
+range of the cyclotomic embedding. -/
+theorem sub_mem_range_tateCyclotomicMap (σ : L ≃ₐ[K] L) (hσ : Continuous σ)
     (x : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point)) :
     (tateCurveAt q hq).tateModuleGaloisRepresentation ℓ σ x - x ∈
       LinearMap.range (tateCyclotomicMap L q hq ℓ) := by
