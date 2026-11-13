@@ -100,7 +100,7 @@ avoids repetitions in the family. -/
 theorem IsLocallySemialgebraic.locallyFinite_connectedComponentIn
     (hs : IsLocallySemialgebraic s) :
     LocallyFinite (fun C : (_root_.connectedComponentIn s '' s) ↦ (C : Set (σ → ℝ))) := by
-  refine locallyFinite_connectedComponentIn_of_forall_mem_nhds fun x ↦ ?_
+  refine locallyFinite_connectedComponentIn_iff.2 fun x ↦ ?_
   obtain ⟨U, hUo, hxU, -, -, hfin⟩ :=
     (hs.semialgebraicAt x).exists_finite_image_connectedComponentIn (V := univ) univ_mem
   exact ⟨U, hUo.mem_nhds hxU, hfin⟩

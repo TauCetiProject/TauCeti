@@ -7,21 +7,19 @@ module
 
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.Real.Basic
 public import TauCeti.Topology.ConnectedComponents
-import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Components of semianalytic subsets of the real line
 
 The local three-cell normal form gives a finite cover by preconnected semianalytic sets in
-an arbitrarily small interval about every ambient point. Restricting a global connected
-component to this interval selects a subfamily of that cover. Thus each component is
-semianalytic, and the distinct nonempty components form a locally finite family in the
-ambient line, including at frontier points outside the set. Only finitely many components
-meet any compact set.
+an arbitrarily small interval about every ambient point. Hence the distinct nonempty
+components form a locally finite family in the ambient line, including at frontier points
+outside the set. Only finitely many components meet any compact set. Independently of
+semianalyticity of the original set, each real-line component is preconnected and therefore
+semianalytic.
 
-The component selection and finiteness arguments use
-`TauCeti.connectedComponentIn_inter_eq_sUnion` and
-`Set.Finite.image_connectedComponentIn_sUnion`; no closedness or boundedness of the original
+The finiteness arguments use `Set.Finite.image_connectedComponentIn_sUnion` and
+`TauCeti.locallyFinite_connectedComponentIn_iff`; no closedness or boundedness of the original
 set is needed. These results provide the component calculus for one-dimensional local
 semianalytic decompositions.
 
@@ -63,7 +61,7 @@ private theorem real_sign_cell {a x b : ℝ} (hx : x ∈ Ioo a b) (ε : SignType
 /-- Near an ambient point where a subset of the real line is semianalytic, its restriction
 has a finite cover by preconnected semianalytic sets. The interval can be chosen in any
 prescribed neighborhood. Empty sets and centers outside the set are allowed. -/
-theorem SemianalyticAt.exists_finite_isPreconnected_cover {s V : Set ℝ} {x : ℝ}
+theorem SemianalyticAt.exists_Ioo_finite_isPreconnected_cover {s V : Set ℝ} {x : ℝ}
     (hs : SemianalyticAt s x) (hV : V ∈ 𝓝 x) :
     ∃ a b, x ∈ Ioo a b ∧ Ioo a b ⊆ V ∧ ∃ 𝒞 : Set (Set ℝ), 𝒞.Finite ∧
       (∀ t ∈ 𝒞, IsPreconnected t ∧ IsSemianalytic t) ∧ ⋃₀ 𝒞 = s ∩ Ioo a b := by
@@ -78,40 +76,23 @@ theorem SemianalyticAt.exists_finite_isPreconnected_cover {s V : Set ℝ} {x : �
     exact ⟨fun ⟨_, hε, hy, heq⟩ => ⟨(hmem y hy).2 (heq ▸ hε), hy⟩,
       fun ⟨hys, hy⟩ => ⟨_, (hmem y hy).1 hys, hy, rfl⟩⟩
 
-/-- All global connected components have semianalytic intersections with one common small
-interval near a semianalytic real point. An intersection may contain several local pieces. -/
-theorem SemianalyticAt.exists_isSemianalytic_connectedComponentIn_inter {s V : Set ℝ} {x : ℝ}
-    (hs : SemianalyticAt s x) (hV : V ∈ 𝓝 x) :
-    ∃ a b, x ∈ Ioo a b ∧ Ioo a b ⊆ V ∧
-      ∀ y, IsSemianalytic (_root_.connectedComponentIn s y ∩ Ioo a b) := by
-  obtain ⟨a, b, hx, hV, 𝒞, h𝒞, hc, hcover⟩ := hs.exists_finite_isPreconnected_cover hV
-  refine ⟨a, b, hx, hV, fun y => ?_⟩
-  rw [connectedComponentIn_inter_eq_sUnion (fun t ht => (hc t ht).1) hcover, sUnion_eq_biUnion]
-  exact .biUnion (h𝒞.subset (sep_subset _ _)) fun t ht => (hc t ht.1).2
-
 /-- Only finitely many global components meet a sufficiently small interval near an ambient
 semianalytic real point, whether or not that point belongs to the set. -/
-theorem SemianalyticAt.exists_finite_image_connectedComponentIn {s V : Set ℝ} {x : ℝ}
+theorem SemianalyticAt.exists_Ioo_finite_image_connectedComponentIn {s V : Set ℝ} {x : ℝ}
     (hs : SemianalyticAt s x) (hV : V ∈ 𝓝 x) :
     ∃ a b, x ∈ Ioo a b ∧ Ioo a b ⊆ V ∧
       (_root_.connectedComponentIn s '' (s ∩ Ioo a b)).Finite := by
-  obtain ⟨a, b, hx, hV, 𝒞, h𝒞, hc, hcover⟩ := hs.exists_finite_isPreconnected_cover hV
+  obtain ⟨a, b, hx, hV, 𝒞, h𝒞, hc, hcover⟩ := hs.exists_Ioo_finite_isPreconnected_cover hV
   refine ⟨a, b, hx, hV, ?_⟩
   rw [← hcover]
   exact h𝒞.image_connectedComponentIn_sUnion (fun t ht => (hc t ht).1)
     (hcover ▸ inter_subset_left)
 
-/-- Every connected component of a semianalytic subset of the real line is semianalytic,
-including at ambient points outside that component. A point outside the set gives the empty
-component. -/
-theorem IsSemianalytic.connectedComponentIn_real {s : Set ℝ} (hs : IsSemianalytic s) (y : ℝ) :
-    IsSemianalytic (_root_.connectedComponentIn s y) := by
-  refine isSemianalytic_iff.2 fun x => ?_
-  obtain ⟨a, b, hx, _, hc⟩ :=
-    (hs.semianalyticAt x).exists_isSemianalytic_connectedComponentIn_inter (V := univ) univ_mem
-  refine ((hc y).semianalyticAt x).congr ?_
-  filter_upwards [Ioo_mem_nhds hx.1 hx.2] with z hz
-  simp only [mem_inter_iff, hz, and_true]
+/-- Every connected component of any subset of the real line is semianalytic. A point outside
+the set gives the empty component. -/
+theorem isSemianalytic_connectedComponentIn_real (s : Set ℝ) (y : ℝ) :
+    IsSemianalytic (_root_.connectedComponentIn s y) :=
+  isPreconnected_connectedComponentIn.isSemianalytic
 
 /-- The distinct nonempty connected components of a semianalytic subset of the real line
 form a locally finite family in the ambient line. Indexing by distinct sets avoids repetitions
@@ -119,9 +100,9 @@ from different points of the same component. -/
 theorem IsSemianalytic.locallyFinite_connectedComponentIn_real {s : Set ℝ}
     (hs : IsSemianalytic s) :
     LocallyFinite (fun C : (_root_.connectedComponentIn s '' s) => (C : Set ℝ)) := by
-  refine locallyFinite_connectedComponentIn_of_forall_mem_nhds fun x => ?_
+  refine locallyFinite_connectedComponentIn_iff.2 fun x => ?_
   obtain ⟨a, b, hx, _, hfin⟩ :=
-    (hs.semianalyticAt x).exists_finite_image_connectedComponentIn (V := univ) univ_mem
+    (hs.semianalyticAt x).exists_Ioo_finite_image_connectedComponentIn (V := univ) univ_mem
   exact ⟨Ioo a b, Ioo_mem_nhds hx.1 hx.2, hfin⟩
 
 /-- Only finitely many global connected components of a semianalytic subset of the real

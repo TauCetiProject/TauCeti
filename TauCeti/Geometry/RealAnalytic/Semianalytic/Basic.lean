@@ -582,6 +582,14 @@ theorem IsSemialgebraic.isSemianalytic {σ : Type*} [Fintype σ] {s : Set (σ �
     (fun p => (AnalyticOnNhd.eval_mvPolynomial p).isSemianalytic_setOf_eq_zero)
     (fun p => (AnalyticOnNhd.eval_mvPolynomial p).isSemianalytic_setOf_pos) hs
 
+/-- A singleton in a finite-dimensional real normed space is semianalytic. -/
+@[simp]
+theorem isSemianalytic_singleton [FiniteDimensional ℝ E] (a : E) :
+    IsSemianalytic ({a} : Set E) := by
+  let e := (Module.Basis.ofVectorSpace ℝ E).equivFunL
+  simpa only [Set.preimage_singleton, e.injective.eq_iff, ofPred_eq_eq_singleton] using
+    (isSemialgebraic_singleton (e a)).isSemianalytic.preimage (e.analyticOnNhd univ)
+
 /-- **Substituting analytic functions.** The preimage of a semialgebraic set `S ⊆ A → ℝ` under a map
 `c` whose coordinates `c · a` are analytic on `U` is a Boolean combination of analytic sign
 conditions on `U`. -/

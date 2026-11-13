@@ -214,30 +214,44 @@ theorem _root_.Set.Finite.image_connectedComponentIn_sUnion {s : Set X} {𝒞 : 
   have hts : t ⊆ s := (subset_sUnion_of_mem ht).trans hsub
   exact connectedComponentIn_eq ((hc t ht).subset_connectedComponentIn hx hts hy)
 
-/-- If every ambient point has a neighborhood meeting only finitely many components of `s`,
-the distinct nonempty components form a locally finite family. -/
-theorem locallyFinite_connectedComponentIn_of_forall_mem_nhds {s : Set X}
-    (h : ∀ x, ∃ U ∈ 𝓝 x, (connectedComponentIn s '' (s ∩ U)).Finite) :
-    LocallyFinite (fun C : (connectedComponentIn s '' s) ↦ (C : Set X)) := by
-  intro x
-  obtain ⟨U, hU, hfin⟩ := h x
-  refine ⟨U, hU, (hfin.preimage Subtype.val_injective.injOn).subset ?_⟩
-  rintro C ⟨y, hyC, hyU⟩
-  obtain ⟨z, _, hzC⟩ := C.property
-  have hy : y ∈ connectedComponentIn s z := hzC ▸ hyC
-  exact ⟨y, ⟨connectedComponentIn_subset s z hy, hyU⟩,
-    (connectedComponentIn_eq hy).symm.trans hzC⟩
+/-- The distinct nonempty components meeting `U`, viewed as sets, are exactly the components
+of points in `s ∩ U`. -/
+theorem image_val_setOf_connectedComponentIn_inter_nonempty (s U : Set X) :
+    Subtype.val '' {C : connectedComponentIn s '' s | ((C : Set X) ∩ U).Nonempty} =
+      connectedComponentIn s '' (s ∩ U) := by
+  apply Subset.antisymm
+  · rintro _ ⟨C, ⟨y, hyC, hyU⟩, rfl⟩
+    obtain ⟨z, _, hzC⟩ := C.property
+    have hy : y ∈ connectedComponentIn s z := hzC ▸ hyC
+    exact ⟨y, ⟨connectedComponentIn_subset s z hy, hyU⟩,
+      (connectedComponentIn_eq hy).symm.trans hzC⟩
+  · rintro _ ⟨y, ⟨hys, hyU⟩, rfl⟩
+    exact ⟨⟨connectedComponentIn s y, y, hys, rfl⟩,
+      ⟨y, mem_connectedComponentIn hys, hyU⟩, rfl⟩
+
+/-- Finiteness of the distinct component indices meeting `U` is equivalent to finiteness of
+the components of points in `s ∩ U`. -/
+@[simp]
+theorem finite_setOf_connectedComponentIn_inter_nonempty_iff {s U : Set X} :
+    {C : connectedComponentIn s '' s | ((C : Set X) ∩ U).Nonempty}.Finite ↔
+      (connectedComponentIn s '' (s ∩ U)).Finite := by
+  rw [← image_val_setOf_connectedComponentIn_inter_nonempty,
+    finite_image_iff Subtype.val_injective.injOn]
+
+/-- The distinct nonempty components of `s` form a locally finite family exactly when every
+ambient point has a neighborhood meeting only finitely many components. -/
+theorem locallyFinite_connectedComponentIn_iff {s : Set X} :
+    LocallyFinite (fun C : (connectedComponentIn s '' s) ↦ (C : Set X)) ↔
+      ∀ x, ∃ U ∈ 𝓝 x, (connectedComponentIn s '' (s ∩ U)).Finite := by
+  simp only [LocallyFinite, finite_setOf_connectedComponentIn_inter_nonempty_iff]
 
 /-- Only finitely many members of a locally finite family of distinct nonempty connected
 components meet a compact set. -/
 theorem _root_.LocallyFinite.finite_image_connectedComponentIn_inter {s K : Set X}
     (h : LocallyFinite (fun C : (connectedComponentIn s '' s) ↦ (C : Set X)))
     (hK : IsCompact K) : (connectedComponentIn s '' (s ∩ K)).Finite := by
-  have hfin := h.finite_nonempty_inter_compact hK
-  refine (hfin.image (fun C : (connectedComponentIn s '' s) ↦ (C : Set X))).subset ?_
-  rintro C ⟨y, ⟨hys, hyK⟩, rfl⟩
-  exact ⟨⟨connectedComponentIn s y, y, hys, rfl⟩,
-    ⟨y, mem_connectedComponentIn hys, hyK⟩, rfl⟩
+  simpa only [finite_setOf_connectedComponentIn_inter_nonempty_iff] using
+    h.finite_nonempty_inter_compact hK
 
 /-- **The frontier of a connected component of an open set misses the set.** Equivalently,
 `frontier (connectedComponentIn F x) ∩ F = ∅`: the component is clopen in `F`. -/
