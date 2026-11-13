@@ -163,7 +163,7 @@ theorem baseChangeExp_lie (D : LieDerivation ℚ L L) (M : LieSubalgebra ℤ L)
   by_cases hD : IsNilpotent D.toLinearMap
   swap
   · -- A non-nilpotent derivation has nilpotency class zero, so the exponential is the empty sum.
-    simp [baseChangeExp_eq_zero_of_not_isNilpotent M hM hD t]
+    simp [baseChangeExp_eq_zero_of_not_isNilpotent hD M hM t]
   induction x using TensorProduct.inductionOn with
   | tmul a x =>
       induction y using TensorProduct.inductionOn with

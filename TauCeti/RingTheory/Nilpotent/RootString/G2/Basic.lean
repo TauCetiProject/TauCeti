@@ -306,10 +306,10 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul
   -- If `x` or `y` is not nilpotent, its exponential is zero and both sides vanish.
   by_cases hx : IsNilpotent x
   swap
-  · simp [baseChangeExp_eq_zero_of_not_isNilpotent M hMx hx]
+  · simp [baseChangeExp_eq_zero_of_not_isNilpotent hx M hMx]
   by_cases hy : IsNilpotent y
   swap
-  · simp [baseChangeExp_eq_zero_of_not_isNilpotent M hMy hy]
+  · simp [baseChangeExp_eq_zero_of_not_isNilpotent hy M hMy]
   obtain ⟨kx, hkx⟩ := hx
   obtain ⟨ky, hky⟩ := hy
   obtain ⟨kz, hkz⟩ := hz
