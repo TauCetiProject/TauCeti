@@ -81,7 +81,7 @@ inclusion is a `C^n` family of split injections `A x : F' →L[𝕜] F`; adjoini
   operators of constant rank on the model fibre, read through a trivialization, have `C^n` local
   frames.
 * `TauCeti.hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range`: the ranges of a `C^n`
-  fibrewise operator on `E` of constant rank have `C^n` local frames.
+  fibrewise linear map of constant rank between vector bundles have `C^n` local frames.
 * `TauCeti.IsSubbundleFrameOn.contMDiffAt_totalSpace_subbundle`: the canonical inclusion of a
   frame-trivialized `C^n` subbundle into `TotalSpace F E` is `C^n`.
 * `TauCeti.isImmersion_totalSpace_subbundle`, `TauCeti.isSmoothEmbedding_totalSpace_subbundle`:
@@ -556,68 +556,71 @@ variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormed
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
   {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace 𝕜' F]
-  [FiniteDimensional 𝕜' F] {E : B → Type*}
-  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, Module 𝕜' (E x)]
-  [TopologicalSpace (TotalSpace F E)] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
-  [VectorBundle 𝕜 F E] [VectorBundle 𝕜' F E] [ContMDiffVectorBundle n F E IB]
+  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] {E₁ : B → Type*}
+  [∀ x, AddCommMonoid (E₁ x)] [∀ x, Module 𝕜 (E₁ x)] [∀ x, Module 𝕜' (E₁ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [∀ x, TopologicalSpace (E₁ x)] [FiberBundle F₁ E₁]
+  [VectorBundle 𝕜 F₁ E₁] [ContMDiffVectorBundle n F₁ E₁ IB]
+  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [NormedSpace 𝕜' F₂]
+  [FiniteDimensional 𝕜' F₂] {E₂ : B → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜' (E₂ x)]
+  [TopologicalSpace (TotalSpace F₂ E₂)] [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂]
+  [VectorBundle 𝕜' F₂ E₂]
 
-/-- **Local frames from a smooth fibrewise operator of constant rank.** Let `P x` be
-`𝕜'`-linear endomorphisms of the fibres `E x` whose ranges `V x` all have dimension `r`, and such
-that `p ↦ P p.proj p` is a `C^n` self-map of the total space. Then `V` has `C^n` local frames of
-size `r`: near `x₀`, apply `P` to a local frame of `E` and keep a subfamily that is linearly
-independent at `x₀`. Typical examples of `P` are fibrewise orthogonal projections. -/
+/-- **Local frames from a smooth fibrewise linear map of constant rank.** Let `P x` be
+`𝕜'`-linear maps from the fibres `E₁ x` of a `C^n` vector bundle to the fibres `E₂ x` of a
+vector bundle over `𝕜'`, whose ranges `V x` all have dimension `r`, and such that
+`p ↦ P p.proj p` is a `C^n` map of total spaces. Then `V` has `C^n` local frames of size `r`:
+near `x₀`, apply `P` to sections of `E₁` through preimages of a basis of `V x₀`. Typical
+examples of `P` are fibrewise orthogonal projections. -/
 theorem hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range {r : ℕ}
-    {V : Π x, Submodule 𝕜' (E x)} (P : Π x, E x →ₗ[𝕜'] E x)
-    (hP : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
-      (fun p : TotalSpace F E ↦ (⟨p.proj, P p.proj p.2⟩ : TotalSpace F E)))
+    {V : Π x, Submodule 𝕜' (E₂ x)} (P : Π x, E₁ x →ₗ[𝕜'] E₂ x)
+    (hP : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
+      (fun p : TotalSpace F₁ E₁ ↦ (⟨p.proj, P p.proj p.2⟩ : TotalSpace F₂ E₂)))
     (hPV : ∀ x, LinearMap.range (P x) = V x) (hV : ∀ x, finrank 𝕜' (V x) = r) :
-    HasLocalContMDiffSubbundleFrames IB n F (Fin r) V := by
+    HasLocalContMDiffSubbundleFrames IB n F₂ (Fin r) V := by
   refine hasLocalContMDiffSubbundleFrames_iff.mpr fun x₀ ↦ ?_
-  let e := trivializationAt F E x₀
-  have hx₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
-  let b := Module.finBasis 𝕜' F
-  -- Apply `P` to the local frame of `E` read off from `b`.
-  let Y : Fin (finrank 𝕜' F) → Π x, E x := fun j x ↦ P x (e.symm x (b j))
-  have hY (j : Fin (finrank 𝕜' F)) : CMDiff[e.baseSet] n (T% (Y j)) :=
-    hP.comp_contMDiffOn (e.contMDiffOn_section_symm e.open_baseSet subset_rfl contMDiffOn_const)
-  have hspan : Submodule.span 𝕜' (range (Y · x₀)) = V x₀ := by
-    have hY₀ : (Y · x₀) = (P x₀ ∘ₗ e.symmₗ 𝕜' x₀) ∘ b :=
-      funext fun j ↦ by simp [Y, e.symmₗ_apply hx₀]
-    have hsurj : LinearMap.range (e.symmₗ 𝕜' x₀) = ⊤ :=
-      LinearMap.range_eq_top.mpr fun v ↦ ⟨_, e.symmₗ_linearMapAt hx₀ v⟩
-    rw [hY₀, range_comp, ← Submodule.map_span, b.span_eq, Submodule.map_top,
-      LinearMap.range_comp_of_range_eq_top _ hsurj, hPV]
-  -- A subfamily of the `Y j x₀` that is a basis of `V x₀`.
-  obtain ⟨κ, a, ha, hsa, hla⟩ := exists_linearIndependent' 𝕜' (Y · x₀)
-  have : Finite κ := Finite.of_injective a ha
-  let := Fintype.ofFinite κ
-  have hκ : Fintype.card κ = r := by
-    rw [← finrank_span_eq_card hla, hsa, hspan, hV x₀]
-  let k : Fin r → Fin (finrank 𝕜' F) := a ∘ (Fintype.equivFinOfCardEq hκ).symm
-  -- Read in the trivialization, the subfamily stays a basis of `V` near `x₀`.
-  let L := fun x ↦ e.linearMapAt 𝕜' x
-  have hL {x : B} (hx : x ∈ e.baseSet) : Function.Injective (L x) :=
-    fun v w h ↦ by
-      rw [← e.symmₗ_linearMapAt (R := 𝕜') hx v, ← e.symmₗ_linearMapAt (R := 𝕜') hx w]
-      exact congrArg _ h
-  let T : B → Fin r → F := fun x j ↦ L x (Y (k j) x)
-  have hT : ContinuousOn T e.baseSet := by
-    refine continuousOn_pi.mpr fun j ↦ ?_
-    refine (continuous_snd.comp_continuousOn ((e.continuousOn).comp (hY (k j)).continuousOn
-      fun x hx ↦ e.mem_source.mpr hx)).congr fun x hx ↦ ?_
-    simp [T, L, e.coe_linearMapAt_of_mem hx]
-  obtain ⟨U, hUe, hU, hx₀U, hTU⟩ := exists_isOpen_linearIndependent_span_range_eq e.open_baseSet
-    hT (W := fun x ↦ (V x).map (L x))
-    (fun x _ j ↦ Submodule.mem_map_of_mem (hPV x ▸ LinearMap.mem_range_self _ _))
+  let e₁ := trivializationAt F₁ E₁ x₀
+  let e₂ := trivializationAt F₂ E₂ x₀
+  have hx₁ : x₀ ∈ e₁.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
+  have hx₂ : x₀ ∈ e₂.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
+  -- A basis of `V x₀` and preimages of it under `P x₀`.
+  have : FiniteDimensional 𝕜' (E₂ x₀) := (e₂.linearEquivAt 𝕜' x₀ hx₂).symm.finiteDimensional
+  let β := Module.finBasisOfFinrankEq 𝕜' (V x₀) (hV x₀)
+  have hβ (k : Fin r) : (β k : E₂ x₀) ∈ LinearMap.range (P x₀) := by
+    rw [hPV]
+    exact (β k).2
+  choose u hu using fun k ↦ LinearMap.mem_range.mp (hβ k)
+  -- Apply `P` to the sections of `E₁` with constant coordinates `u k` in `e₁`.
+  let Y : Fin r → Π x, E₂ x := fun k x ↦ P x (e₁.symm x (e₁ ⟨x₀, u k⟩).2)
+  have hY (k : Fin r) : CMDiff[e₁.baseSet] n (T% (Y k)) :=
+    hP.comp_contMDiffOn (e₁.contMDiffOn_section_symm e₁.open_baseSet subset_rfl contMDiffOn_const)
+  -- Read through `e₂`, the frame stays a basis of `V` near `x₀`.
+  let L := fun x ↦ e₂.linearMapAt 𝕜' x
+  have hL {x : B} (hx : x ∈ e₂.baseSet) : Function.Injective (L x) := by
+    simp only [L, e₂.linearMapAt_def_of_mem hx, LinearEquiv.coe_coe]
+    exact (e₂.linearEquivAt 𝕜' x hx).injective
+  let T : B → Fin r → F₂ := fun x k ↦ L x (Y k x)
+  have hT : ContinuousOn T (e₁.baseSet ∩ e₂.baseSet) := by
+    refine continuousOn_pi.mpr fun k ↦ ?_
+    refine (continuous_snd.comp_continuousOn ((e₂.continuousOn).comp
+      ((hY k).continuousOn.mono inter_subset_left) fun x hx ↦ e₂.mem_source.mpr hx.2)).congr
+      fun x hx ↦ ?_
+    simp [T, L, e₂.coe_linearMapAt_of_mem hx.2]
+  have hT₀ : LinearIndependent 𝕜' (T x₀) := by
+    have : T x₀ = (L x₀ ∘ₗ (V x₀).subtype) ∘ β :=
+      funext fun k ↦ by simp [T, Y, e₁.symm_apply_apply_mk hx₁, hu]
+    rw [this]
+    exact β.linearIndependent.map' _
+      (LinearMap.ker_eq_bot.mpr ((hL hx₂).comp Subtype.val_injective))
+  obtain ⟨U, hUU₀, hU, hx₀U, hTU⟩ := exists_isOpen_linearIndependent_span_range_eq
+    (e₁.open_baseSet.inter e₂.open_baseSet) hT (W := fun x ↦ (V x).map (L x))
+    (fun x _ k ↦ Submodule.mem_map_of_mem (hPV x ▸ LinearMap.mem_range_self _ _))
     (fun x hx ↦ by
       rw [← hV x]
-      exact (Submodule.equivMapOfInjective _ (hL hx) _).finrank_eq.symm) hx₀
-    ((hla.comp _ (Fintype.equivFinOfCardEq hκ).symm.injective).map' (L x₀)
-      (LinearMap.ker_eq_bot.mpr (hL hx₀)))
-  refine ⟨U, hU, hx₀U, fun j ↦ Y (k j), ⟨fun j ↦ ((hY (k j)).mono hUe).continuousOn,
-    fun {x} hx ↦ (hTU x hx).1.of_comp (L x), fun {x} hx ↦ ?_⟩, fun j ↦ (hY (k j)).mono hUe⟩
-  apply Submodule.map_injective_of_injective (hL (hUe hx))
+      exact (Submodule.equivMapOfInjective _ (hL hx.2) _).finrank_eq.symm) ⟨hx₁, hx₂⟩ hT₀
+  have hUe : U ⊆ e₁.baseSet := hUU₀.trans inter_subset_left
+  refine ⟨U, hU, hx₀U, Y, ⟨fun k ↦ ((hY k).mono hUe).continuousOn,
+    fun {x} hx ↦ (hTU x hx).1.of_comp (L x), fun {x} hx ↦ ?_⟩, fun k ↦ (hY k).mono hUe⟩
+  apply Submodule.map_injective_of_injective (hL (hUU₀ hx).2)
   rw [Submodule.map_span, ← range_comp]
   exact (hTU x hx).2
 

@@ -9,12 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Projection
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.LinearAlgebra.Basis.Fin
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
-import Mathlib.LinearAlgebra.Dimension.OrzechProperty
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
-import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
@@ -33,9 +28,9 @@ smooth complex subbundle `s^⊥` of `V`, with the given fibrewise complex struct
 as smooth bundles (`Bundle.ContMDiffRiemannianMetric.trivialProdOrthogonalSpanDiffeomorph`). The
 inverse sends a vector to its coefficient along `s` and its orthogonal projection onto `s^⊥`.
 
-Near a point, a trivialization of `V` and a basis of the model fibre in which the zeroth coordinate
-of `s` is nonzero give a smooth local frame `σ₀, …, σ_k` of `V`; the orthogonal projections of
-`σ₁, …, σ_k` onto `s^⊥` span it (`Submodule.span_range_starProjection_orthogonal_basis_succ`).
+The orthogonal projections onto the fibres of `s^⊥` form a smooth fibrewise operator on `V` of
+constant rank `k`, so its ranges have smooth local frames
+(`TauCeti.hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range`).
 
 A smooth Hermitian metric exists on a σ-compact base
 (`TauCeti.exists_contMDiffRiemannianMetric_inner_smul_I`), and a nowhere-zero smooth section exists
@@ -54,9 +49,8 @@ form a smooth complex subbundle `s^⊥` of `V`, and
 
 as smooth bundles (`Bundle.ContMDiffRiemannianMetric.trivialProdOrthogonalSpanFamilyDiffeomorph`).
 The inverse sends `v` to its coefficients `⟪s i x, v⟫` and to `v - ∑ i, ⟪s i x, v⟫ • s i x`.
-Near a point, the orthogonal projections of a local frame of `V` read off from a trivialization span
-the complement; a linearly independent subfamily at the point stays linearly independent nearby,
-and has the right size, so it is a local frame of the complement.
+The map `v ↦ v - ∑ i, ⟪s i x, v⟫ • s i x` is a smooth fibrewise operator on `V` with range the
+complement, so the complement has smooth local frames in the same way.
 
 ## References
 
@@ -156,54 +150,12 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalSpan [FiniteDimensional ℂ F
     HasLocalContMDiffSubbundleFrames IB n F (Fin k) (g.orthogonalSpan hI s) := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
-  refine hasLocalContMDiffSubbundleFrames_iff.mpr fun x₀ ↦ ?_
-  let e := trivializationAt F V x₀
-  have hx₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
-  have he (x : B) (hx : x ∈ e.baseSet) (v : V x) :
-      e.continuousLinearEquivAt ℂ x hx v = (e ⟨x, v⟩).2 :=
-    congrFun (e.continuousLinearEquivAt_apply ℂ x hx) v
-  obtain ⟨b, hb⟩ := Module.Basis.exists_repr_zero_ne_zero hk (v := (e ⟨x₀, s x₀⟩).2) (by
-    rw [← he x₀ hx₀]
-    exact (map_ne_zero_iff _ (e.continuousLinearEquivAt ℂ x₀ hx₀).injective).mpr (hne x₀))
-  -- The open set where the zeroth coordinate of `s` stays nonzero.
-  let ℓ : B → ℂ := fun x ↦ b.repr (e ⟨x, s x⟩).2 0
-  have hℓ : ContinuousOn ℓ e.baseSet := fun x hx ↦
-    ((b.coord 0).continuous_of_finiteDimensional.continuousAt.comp
-      ((e.contMDiffAt_section_iff hx).mp (hs x)).continuousAt).continuousWithinAt
-  let U := e.baseSet ∩ ℓ ⁻¹' {0}ᶜ
-  -- The local frame of `V` read off from `b`, and its projections onto `s^⊥`.
-  let σ : Fin (k + 1) → ∀ x, V x := fun i x ↦ e.symm x (b i)
-  have hσ (i : Fin (k + 1)) :
-      ContMDiffOn IB (IB.prod 𝓘(ℝ, F)) n (fun x ↦ TotalSpace.mk' F x (σ i x)) e.baseSet := by
-    intro x hx
-    refine ((e.contMDiffAt_section_iff hx).mpr ?_).contMDiffWithinAt
-    refine (contMDiffAt_const (c := b i)).congr_of_eventuallyEq ?_
-    filter_upwards [e.open_baseSet.mem_nhds hx] with y hy
-    simp [σ, e.apply_mk_symm hy]
-  let Y : Fin k → ∀ x, V x := fun j x ↦ (ℂ ∙ s x)ᗮ.starProjection (σ j.succ x)
-  have hY (j : Fin k) :
-      ContMDiffOn IB (IB.prod 𝓘(ℝ, F)) n (fun x ↦ TotalSpace.mk' F x (Y j x)) U :=
-    (g.contMDiff_starProjection_orthogonal_span_singleton hI s hs hne).comp_contMDiffOn
-      ((hσ j.succ).mono inter_subset_left)
-  -- In the fibre at `x ∈ U`, `σ` is the basis `b` transported by the trivialization.
-  have hspan (x : B) (hx : x ∈ U) :
-      Submodule.span ℂ (range (Y · x)) = g.orthogonalSpan hI s x := by
-    let ex := e.continuousLinearEquivAt ℂ x hx.1
-    have hσx (i : Fin (k + 1)) : σ i x = b.map ex.symm.toLinearEquiv i := by
-      apply ex.injective
-      simp [ex, σ, he, e.apply_mk_symm hx.1]
-    have hbx : (b.map ex.symm.toLinearEquiv).repr (s x) 0 ≠ 0 := by
-      simpa [ex, he] using hx.2
-    rw [orthogonalSpan_eq, ← Submodule.span_range_starProjection_orthogonal_basis_succ _ hbx]
-    simp only [Y, hσx]
-  refine ⟨U, hℓ.isOpen_inter_preimage e.open_baseSet isOpen_compl_singleton,
-    ⟨hx₀, by simpa [ℓ] using hb⟩, Y, ?_, hY⟩
-  exact
-    { continuousOn := fun j ↦ (hY j).continuousOn
-      linearIndependent := fun hx ↦ by
-        rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank, hspan _ hx,
-          g.finrank_orthogonalSpan hI s (hne _) hk, Fintype.card_fin]
-      span_eq := fun hx ↦ hspan _ hx }
+  -- The orthogonal projections onto `s^⊥` form a smooth fibrewise operator with range `s^⊥`.
+  exact hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range
+    (fun x ↦ ((ℂ ∙ s x)ᗮ.starProjection : V x →ₗ[ℂ] V x))
+    (g.contMDiff_starProjection_orthogonal_span_singleton hI s hs hne)
+    (fun x ↦ (Submodule.range_starProjection _).trans (g.orthogonalSpan_eq hI s x).symm)
+    fun x ↦ g.finrank_orthogonalSpan hI s (hne x) hk
 
 variable (hV : HasLocalContMDiffSubbundleFrames IB n F (Fin k) (g.orthogonalSpan hI s))
 

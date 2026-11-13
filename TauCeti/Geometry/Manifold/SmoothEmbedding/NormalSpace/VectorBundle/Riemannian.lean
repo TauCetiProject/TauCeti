@@ -63,8 +63,7 @@ theorem contMDiff_normalRepresentative_normalClass
         (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.2)⟩ :
           TangentBundle J N)) := by
   let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
-  let fn : C^n⟮I, M; J, N⟯ := ⟨f, f.contMDiff⟩
-  have hP := contMDiff_starProjection_orthogonalNormalSpace (f := fn)
+  have hP := contMDiff_starProjection_orthogonalNormalSpace f.contMDiff
     (f.isImmersion.mfderiv_injective hn) hm
   exact ((Pullback.contMDiff_lift fc fc.contMDiff).comp hP).congr fun p =>
     congrArg (TotalSpace.mk (f p.proj))
