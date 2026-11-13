@@ -44,7 +44,7 @@ def finiteCovers : GTopology ι where
       exact Set.sUnion_mono (Set.image_mono hRS)
   identity U := ⟨by simp, {U}, Set.Subset.rfl, Set.finite_singleton U, by simp⟩
   restriction := by
-    rintro U S ⟨hSU, R, hRS, hfin, hR⟩ V hVU
+    rintro U S ⟨_, R, hRS, hfin, hR⟩ V hVU
     refine ⟨?_, (fun W ↦ W ⊓ V) '' R, Set.image_mono hRS, hfin.image _, ?_⟩
     · rintro _ ⟨W, _, rfl⟩
       exact inf_le_right

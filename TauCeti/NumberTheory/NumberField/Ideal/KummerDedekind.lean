@@ -65,8 +65,9 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- **The Kummer–Dedekind count.** When `p` does not divide the conductor exponent of `θ`, the
 primes of `𝓞 K` above `p` are counted by the monic irreducible factors of `minpoly ℤ θ` mod `p`. -/
 theorem ncard_primesOver_eq_card_monicFactorsMod (θ : 𝓞 K) {p : ℕ} [Fact p.Prime]
-    (hp : ¬ p ∣ exponent θ) :
-    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = (monicFactorsMod θ p).card := by
+    (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ) :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = (NumberField.RingOfIntegers.monicFactorsMod θ
+        p).card := by
   rw [← Nat.card_coe_set_eq,
     Nat.card_congr (NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hp)]
   exact Nat.card_eq_finsetCard _
@@ -74,10 +75,10 @@ theorem ncard_primesOver_eq_card_monicFactorsMod (θ : 𝓞 K) {p : ℕ} [Fact p
 /-- The residue degrees of the primes above `p` are the degrees of the distinct monic
 irreducible factors of the minimal polynomial modulo `p`, when Kummer–Dedekind applies. -/
 theorem map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (θ : 𝓞 K)
-    {p : ℕ} [Fact p.Prime] (hp : ¬ p ∣ exponent θ) :
+    {p : ℕ} [Fact p.Prime] (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ) :
     (Finset.univ : Finset ((span {(p : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) =
-      (monicFactorsMod θ p).val.map natDegree := by
+      (NumberField.RingOfIntegers.monicFactorsMod θ p).val.map natDegree := by
   classical
   let e := NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hp
   refine Multiset.map_eq_map_of_bij_of_nodup _ _ Finset.univ.nodup (Finset.nodup _)
@@ -93,13 +94,13 @@ theorem map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (θ : 𝓞 K)
 multiset of factor degrees. The conductor-exponent hypothesis permits the Kummer–Dedekind
 correspondence. -/
 theorem map_inertiaDeg_primesOver_eq_factorDegrees (θ : 𝓞 K) {p : ℕ} [Fact p.Prime]
-    (hp : ¬ p ∣ exponent θ)
+    (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ)
     (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))) :
     (Finset.univ : Finset ((span {(p : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) = (minpoly ℤ θ).factorDegrees p := by
   classical
   rw [map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod θ hp,
-    factorDegrees_def, monicFactorsMod, Multiset.toFinset_val]
+    factorDegrees_def, Multiset.toFinset_val]
   exact congrArg (Multiset.map natDegree) <|
     (UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors
       ((minpoly.monic θ.isIntegral).map _).ne_zero).mp hsq |>.dedup
@@ -117,12 +118,12 @@ factors when `c` is even, since `X² + X = X (X + 1)` over `𝔽₂`, and one wh
 `X² + X + 1` has no root in `𝔽₂`. -/
 theorem card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
     (hmin : minpoly ℤ ω = X ^ 2 - X + C c) :
-    (monicFactorsMod ω 2).card = if 2 ∣ c then 2 else 1 := by
+    (NumberField.RingOfIntegers.monicFactorsMod ω 2).card = if 2 ∣ c then 2 else 1 := by
   classical
   have hmap : (minpoly ℤ ω).map (Int.castRingHom (ZMod 2)) = X ^ 2 + X + C (c : ZMod 2) := by
     rw [hmin, Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X,
       Polynomial.map_C, eq_intCast, sub_eq_add_neg, CharTwo.neg_eq]
-  simp only [monicFactorsMod, hmap]
+  simp only [NumberField.RingOfIntegers.monicFactorsMod, hmap]
   by_cases hc : 2 ∣ c
   · -- `c` is even: `X² + X = (X - 0)(X - 1)`, two distinct linear factors.
     have hc0 : (c : ZMod 2) = 0 := by
@@ -167,7 +168,7 @@ theorem card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c :
 its minimal polynomial is separable modulo `2`. -/
 theorem not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
     (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤) :
-    ¬ 2 ∣ exponent ω := by
+    ¬ 2 ∣ NumberField.RingOfIntegers.exponent ω := by
   have hsq : Squarefree ((minpoly ℤ ω).map (Int.castRingHom (ZMod 2))) := by
     rw [hmin, Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, map_X, map_C]
     refine Separable.squarefree ((separable_def _).mpr ?_)
@@ -186,7 +187,7 @@ theorem not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ
 `ℤ`, and suppose `2` does not divide the conductor exponent of `ω`. Then there are two primes of
 `𝓞 K` above `2` when `c` is even and one when `c` is odd. -/
 theorem ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
-    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hexp : ¬ 2 ∣ exponent ω) :
+    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hexp : ¬ 2 ∣ NumberField.RingOfIntegers.exponent ω) :
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = if 2 ∣ c then 2 else 1 := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   have h := ncard_primesOver_eq_card_monicFactorsMod ω hexp

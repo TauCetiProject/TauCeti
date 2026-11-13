@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.AlgebraMap
 public import TauCeti.LinearAlgebra.Alternating.Derivation
 public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.Topology.Algebra.Module.Alternating.Basic
@@ -619,8 +618,8 @@ theorem typeProjection_compContinuousLinearMap {K : W →L[ℝ] W} {f : W →L[�
     (hf : ∀ w, J (f w) = f (K w)) (ω : V [⋀^Fin k]→L[ℝ] F) :
     K.typeProjection p q (ω.compContinuousLinearMap f) =
       (J.typeProjection p q ω).compContinuousLinearMap f := by
-  have h := LinearMap.congr_fun (Polynomial.aeval_comp_eq_comp_aeval
-    (σ := ContinuousAlternatingMap.compContinuousLinearMapLinear ℂ (N := F) (ι := Fin k) f)
+  have h := LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq
+    (f := ContinuousAlternatingMap.compContinuousLinearMapLinear ℂ (N := F) (ι := Fin k) f)
     (LinearMap.ext fun ω ↦ by simpa using alternatingDerivation_compContinuousLinearMap hf ω)
     (Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q))) ω
   simp only [LinearMap.comp_apply, ContinuousAlternatingMap.compContinuousLinearMapLinear_apply]
@@ -648,11 +647,9 @@ end TypeProjection
 
 section Decomposition
 
-variable [ContinuousConstSMul ℝ F]
-
 section Interior
 
-variable {n : ℕ}
+variable [ContinuousConstSMul ℝ F] {n : ℕ}
 
 /-- Inserting `v` into the derivation of a form. -/
 private lemma interior_alternatingDerivation (J : V →L[ℝ] V) (v : V)
@@ -700,6 +697,8 @@ end Interior
 
 section Nodal
 
+variable [ContinuousConstSMul ℝ F]
+
 /-- The derivation of an almost complex structure on `k`-forms is annihilated by the nodal
 polynomial of the type eigenvalues. -/
 private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : ℕ) :
@@ -740,9 +739,9 @@ private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : 
     set Ω := aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin (n + 1)]→L[ℝ] F)) P ω
     have hint : ∀ v, curryLeftTopologicalLinear ℂ v Ω = 0 := by
       intro v
-      have h₁ := congrArg (fun T ↦ T ω) (Polynomial.aeval_comp_eq_comp_aeval
+      have h₁ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
         (interior_sub_comp_alternatingDerivation (F := F) hJ v).symm P)
-      have h₂ := congrArg (fun T ↦ T ω) (Polynomial.aeval_comp_eq_comp_aeval
+      have h₂ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
         (interior_add_comp_alternatingDerivation (F := F) hJ v).symm P)
       simp only [LinearMap.comp_apply] at h₁ h₂
       rw [hplus] at h₁
@@ -762,6 +761,7 @@ annihilates the derivation induced by `J` on complex-valued `k`-forms. -/
 theorem aeval_alternatingDerivation_eq_zero (hJ : ∀ v, J (J v) = -v) {g : ℂ[X]}
     (hg : ∀ p q, p + q = k → g.eval (((p : ℂ) - q) * I) = 0) :
     aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)) g = 0 := by
+  have := IsScalarTower.continuousConstSMul ℝ ℂ F
   obtain ⟨h, rfl⟩ := nodal_dvd fun pq hpq ↦ hg pq.1 pq.2 (Finset.mem_antidiagonal.1 hpq)
   rw [map_mul, aeval_alternatingDerivation_nodal hJ, zero_mul]
 

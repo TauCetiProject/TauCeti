@@ -110,13 +110,7 @@ theorem manifoldMorseIndex_modelSpace {V : Type*} [NormedAddCommGroup V] [Normed
 /-- A constant function has zero Hessian, hence Morse index `0` at every point. -/
 @[simp]
 theorem manifoldMorseIndex_const (c : ℝ) (x : M) : manifoldMorseIndex I (fun _ : M ↦ c) x = 0 := by
-  rw [manifoldMorseIndex_def]
-  by_cases hE : FiniteDimensional ℝ E
-  swap
-  · exact morseIndex_eq_zero_of_not_finiteDimensional hE
-  rw [morseIndex_def]
-  exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun w ↦ by
-    simp [Function.comp_def, hessianQuadraticForm_apply]
+  simp [manifoldMorseIndex_def, Function.comp_def]
 
 /-- The manifold Morse index is at most the dimension of the model space. -/
 theorem manifoldMorseIndex_le_finrank :

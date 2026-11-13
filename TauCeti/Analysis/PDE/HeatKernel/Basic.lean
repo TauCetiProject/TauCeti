@@ -216,7 +216,7 @@ theorem eLpNorm_heatKernel_le {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 �
     exact_mod_cast ENNReal.toReal_mono hqt hq
   have hpow (x : E) : ‖heatKernel t x‖ₑ ^ q.toReal ≤
       ENNReal.ofReal (c ^ (q.toReal - 1)) * ENNReal.ofReal (heatKernel t x) := by
-    rw [Real.enorm_eq_ofReal (heatKernel_pos ht x).le, ENNReal.ofReal_rpow_of_nonneg
+    rw [Real.eNorm_eq_ofReal (heatKernel_pos ht x).le, ENNReal.ofReal_rpow_of_nonneg
       (heatKernel_pos ht x).le (by positivity), ← ENNReal.ofReal_mul (by positivity)]
     apply ENNReal.ofReal_le_ofReal
     calc (heatKernel t x) ^ q.toReal =
@@ -236,7 +236,7 @@ theorem eLpNorm_heatKernel_le {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 �
             ← ofReal_integral_eq_lintegral_ofReal (integrable_heatKernel ht)
               (Filter.Eventually.of_forall fun x => (heatKernel_pos ht x).le),
             integral_heatKernel ht, ENNReal.ofReal_one, mul_one]
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hqt hm]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hqt hm]
   refine (ENNReal.rpow_le_rpow hint (by positivity)).trans_eq ?_
   rw [ENNReal.ofReal_rpow_of_pos (by positivity), ← rpow_mul hc.le]
   have he : (q.toReal - 1) * (1 / q.toReal) = 1 - 1 / q.toReal := by

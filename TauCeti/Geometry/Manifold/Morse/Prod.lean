@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Analysis.Calculus.Morse.Prod
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -21,6 +22,10 @@ If `f` is a Morse function on `M` and `g` is a Morse function on `N`, the separa
 points are the pairs `(x, y)` of critical points of `f` and `g`, and its Morse index at such a pair
 is the sum of the two indices. This is the classical construction of the standard Morse function
 on a product, for instance on a torus `S¹ × S¹` as the sum of two height functions.
+
+A function `g ∘ Prod.snd` of the second factor alone has critical set `M × crit(g)`, and at a point
+`(x, y)` its Morse index is that of `g` at `y`, with no regularity assumption on `g`. These are the
+critical submanifolds `M × {y}` of the model Morse–Bott functions.
 
 The product chart at `(x, y)` is the product of the preferred charts at `x` and `y`, so all the
 statements reduce to the calculus of separated sums on the model space `E × E'`. The two model

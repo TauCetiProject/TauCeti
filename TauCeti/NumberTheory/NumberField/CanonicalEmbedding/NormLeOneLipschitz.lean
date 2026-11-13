@@ -221,7 +221,7 @@ private theorem isLipschitzParametrizable_image_frontier_paramSet :
       (expMapBasis '' frontier (paramSet K)) := by
   classical
   have hcard : Fintype.card {w : InfinitePlace K // w ≠ w₀} = rank K :=
-    (Fintype.card_congr equivFinRank).symm.trans (Fintype.card_fin _)
+    (Fintype.card_congr (NumberField.Units.equivFinRank K)).symm.trans (Fintype.card_fin _)
   refine .mono ?_ (image_frontier_paramSet_subset K)
   refine .union
     (.image_unitCube_of_contDiffOn hcard (ContDiff.contDiffOn (contDiff_faceMapZero K))) ?_
@@ -316,9 +316,10 @@ theorem isLipschitzParametrizable_frontier_normLeOne :
     simpa using TauCeti.IsLipschitzParametrizable.image_unitCube_of_contDiffOn
       (d := nrComplexPlaces K) (f := id) rfl contDiffOn_id
   -- `rank K + r₂` is the codimension-one dimension: the identity is
-  -- `NumberField.rank_add_nrComplexPlaces_add_one`, transported across `mixedEmbedding.finrank`.
+  -- `NumberField.Units.rank_add_nrComplexPlaces_add_one`, transported across
+  -- `mixedEmbedding.finrank`.
   have hdim : rank K + nrComplexPlaces K = finrank ℝ (mixedSpace K) - 1 := by
-    rw [mixedEmbedding.finrank, ← rank_add_nrComplexPlaces_add_one K]
+    rw [mixedEmbedding.finrank, ← Units.rank_add_nrComplexPlaces_add_one K]
     omega
   rw [← hdim]
   refine .mono (.iUnion fun s ↦ .image_of_locallyLipschitz (contDiff_liftMap K s).locallyLipschitz

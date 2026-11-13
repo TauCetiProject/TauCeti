@@ -92,7 +92,7 @@ theorem isNilpotent_envelopingQuotientRep [IsNoetherian R (U ⧸ J)]
     simp only [LieModule.toEnd_module_end, LieHom.id_apply]
     exact hH
   have hsum := K.isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall hy hK hnilH
-    (K.smul_add_mem_lieSpan_insert hy (1 : R)
+    (K.smul_add_mem_lieSpan_insert (1 : R)
       ((ρ.comp (SemiDirectSum.inl ψ)).mem_range_self x.left))
   simpa only [LieModule.toEnd_module_end, LieHom.id_apply, one_smul,
     LieHom.comp_apply, ← map_add, SemiDirectSum.inr_eq_mk, SemiDirectSum.inl_eq_mk,

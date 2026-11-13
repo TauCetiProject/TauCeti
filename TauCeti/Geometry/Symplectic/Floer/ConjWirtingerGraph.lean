@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Graph
 import TauCeti.LinearAlgebra.Complex.Module
@@ -23,7 +24,10 @@ graph `z ↦ (z, g z)` solves the inhomogeneous equation `\bar∂u = \bar∂g`. 
 (`TauCeti.contDiffOn_conjWirtingerGraphStructure`), and the graph of a real-differentiable `g`
 satisfies `dG(i) = J_g dG(1)` (`TauCeti.fderiv_graph_I_eq_conjWirtingerGraphStructure`), so it is
 `J_g`-holomorphic in the sense of `TauCeti.IsJHolomorphicAt`
-(`TauCeti.isJHolomorphicAt_graph_conjWirtingerGraphAlmostComplex`).
+(`TauCeti.isJHolomorphicAt_graph_conjWirtingerGraphAlmostComplex`). For `g` of class `C¹` on an
+open set, the graph is a weak solution of the homogeneous equation for `J_g` in the sense of
+`TauCeti.IsWeakCauchyRiemannOn`, for every exponent
+(`TauCeti.isWeakCauchyRiemannOn_graph_conjWirtingerGraphStructure`).
 
 ## References
 
@@ -33,7 +37,7 @@ satisfies `dG(i) = J_g dG(1)` (`TauCeti.fderiv_graph_I_eq_conjWirtingerGraphStru
 
 public section
 
-open Complex ComplexConjugate Set
+open Complex ComplexConjugate Set TopologicalSpace
 
 namespace TauCeti
 
@@ -123,5 +127,19 @@ theorem isJHolomorphicAt_graph_conjWirtingerGraphAlmostComplex {g : ℂ → ℂ}
     |>.apply_mul_I_eq_of_apply_I_eq (A := conjWirtingerGraphStructure g (WithLp.toLp 2 (z, g z)))
       (fderiv_graph_I_eq_conjWirtingerGraphStructure hg)
       (conjWirtingerGraphStructure_apply_apply g _) v
+
+/-- **The graph of a `C¹` function is a weak `J_g`-holomorphic curve.** For `g` of class `C¹` on
+an open set `Ω`, the graph `z ↦ (z, g z)` solves the weak homogeneous Cauchy-Riemann equation on
+`Ω` for the graph structure `J_g`, for every exponent, including `p = ∞`. -/
+theorem isWeakCauchyRiemannOn_graph_conjWirtingerGraphStructure {g : ℂ → ℂ} {Ω : Opens ℂ}
+    (p : ENNReal) (hg : ContDiffOn ℝ 1 g Ω) :
+    IsWeakCauchyRiemannOn p Ω (fun _ ↦ conjWirtingerGraphStructure g) (fun _ _ ↦ 0)
+      (fun z ↦ WithLp.toLp 2 (z, g z)) :=
+  isWeakCauchyRiemannOn_of_contDiffOn
+    ((WithLp.prodContinuousLinearEquiv 2 ℝ ℂ ℂ).symm.contDiff.comp_contDiffOn
+      (contDiffOn_id.prodMk hg)) fun z hz ↦ by
+    rw [fderiv_graph_I_eq_conjWirtingerGraphStructure
+      ((hg.contDiffAt (Ω.isOpen.mem_nhds hz)).differentiableAt one_ne_zero),
+      conjWirtingerGraphStructure_apply_apply, add_neg_cancel]
 
 end TauCeti

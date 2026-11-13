@@ -70,7 +70,7 @@ theorem isFreelyIndependentElements_iff_polynomial {a : ι → A} {φ : A →ₗ
     exact h w' (by simpa [w'] using hne) (hfst ▸ halt)
       (by
         simp only [w', List.mem_map]
-        rintro _ ⟨x, hx, rfl⟩
+        rintro _ ⟨x, _, rfl⟩
         exact Polynomial.aeval_mem_adjoin_singleton R (a x.1))
       (by
         simp only [w', List.mem_map]

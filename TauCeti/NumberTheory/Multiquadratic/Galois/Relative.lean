@@ -54,8 +54,7 @@ its Galois group over the quadratic base `ℚ(√d)`, a relative group of exactl
 
 ## Provenance
 
-The multiquadratic Galois group and the subfield/subspace dictionary refined here are migrated,
-with the rest of Layer 0, from
+The multiquadratic Galois group and the subfield/subspace dictionary refined here are migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture. The relative reading
 assembles that dictionary with Mathlib's Galois correspondence

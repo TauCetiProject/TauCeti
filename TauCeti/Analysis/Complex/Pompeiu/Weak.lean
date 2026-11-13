@@ -87,13 +87,13 @@ theorem integrable_prod_sub_inv_smul {f : ℂ → F} (hf : Integrable f) {s : Se
     (measurable_fst.sub measurable_snd).inv.aestronglyMeasurable.smul
       hf.aestronglyMeasurable.comp_snd
   refine ⟨hm, ?_⟩
-  rw [HasFiniteIntegral, lintegral_prod_symm _ hm.enorm]
+  rw [HasFiniteIntegral, lintegral_prod_symm _ hm.eNorm]
   have hC : ENNReal.ofReal (2 * π) + volume s ≠ ∞ := by finiteness
   calc ∫⁻ z, ∫⁻ w in s, ‖(w - z)⁻¹ • f z‖ₑ
       ≤ ∫⁻ z, (ENNReal.ofReal (2 * π) + volume s) * ‖f z‖ₑ := by
         refine lintegral_mono fun z ↦ ?_
-        simp_rw [enorm_smul]
-        rw [lintegral_mul_const' _ _ enorm_ne_top]
+        simp_rw [eNorm_smul]
+        rw [lintegral_mul_const' _ _ eNorm_ne_top]
         gcongr
         exact setLIntegral_enorm_sub_inv_le s z
     _ = (ENNReal.ofReal (2 * π) + volume s) * ∫⁻ z, ‖f z‖ₑ := lintegral_const_mul' _ _ hC
@@ -135,7 +135,6 @@ theorem integral_conjWirtingerDeriv_smul_cauchyTransform [CompleteSpace F] {f : 
   have hπ : (π : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
   have hg : Continuous g := by
     simp only [hg_def, conjWirtingerDeriv_apply, smul_eq_mul, mul_one]
-    have hd := hψ.continuous_fderiv one_ne_zero
     fun_prop
   have hgK (w : ℂ) (hw : w ∉ tsupport ψ) : g w = 0 := by
     simp [hg_def, conjWirtingerDeriv_apply, fderiv_of_notMem_tsupport ℝ hw]
@@ -240,7 +239,7 @@ theorem HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq_cauchyTransfor
     [FiniteDimensional ℂ F] {Ω : Opens ℂ} {u f : ℂ → F}
     (hu : HasWeakConjWirtingerDerivOn volume Ω u f) (hf : Integrable f) :
     ∃ v : ℂ → F, DifferentiableOn ℂ v Ω ∧ u =ᵐ[volume.restrict Ω] cauchyTransform f + v := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   have h := hu.sub (hasWeakConjWirtingerDerivOn_cauchyTransform hf Ω)
   rw [sub_self] at h
   obtain ⟨v, hv, huv⟩ := h.exists_differentiableOn_ae_eq

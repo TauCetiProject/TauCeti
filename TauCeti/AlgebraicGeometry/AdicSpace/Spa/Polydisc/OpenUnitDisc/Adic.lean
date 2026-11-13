@@ -187,11 +187,14 @@ lemma openUnitDiscPreAdicSpace_def (hc : IsPseudoUniformizer c) :
 
 section AdicSpace
 
-variable [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K]
+variable [IsUltrametricDist K] [CompleteSpace K]
 
-/-- The open unit disc is an adic space. -/
+/-- The open unit disc is an adic space. The pseudouniformiser `c` makes `K` a Tate ring, so no
+separate Tate hypothesis is needed. -/
 theorem isAdic_openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) :
     PreAdicSpace.isAdic (openUnitDiscPreAdicSpace c P hc) :=
+  have : IsTateRing K :=
+    IsTateRing.of_isUnit_norm_lt_one hc.isUnit (isPseudoUniformizer_iff_norm_lt_one.mp hc).2
   PreAdicSpace.isAdic_restrict (openUnitDiscOpen c P hc).isOpenEmbedding
     (isAdic_closedPolydiscPreAdicSpace 1 P)
 

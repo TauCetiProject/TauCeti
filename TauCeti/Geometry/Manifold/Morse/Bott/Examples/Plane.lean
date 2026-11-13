@@ -5,141 +5,128 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.OneDimensional
-public import TauCeti.Geometry.Manifold.Morse.Bott.Prod
+public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.Bott.Splitting
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Geometry.Manifold.Morse.Prod
 
 /-!
-# The Morse–Bott examples `y²` and `y⁴`
+# A Morse–Bott and a non-Morse–Bott function on the plane
 
-The functions `(x, y) ↦ y²` and `(x, y) ↦ y⁴` on `M × ℝ` both have the critical slice `M × {0}`,
-since the only critical point of `y ↦ yⁿ` for `2 ≤ n` is `0` (`TauCeti.criticalPoints_pow`). For
-`M = ℝ`, with the product charted-space structure, they are the functions `(x, y) ↦ y²` and
-`(x, y) ↦ y⁴` on the plane, with the critical line `ℝ × {0}`. The general criteria of
-`TauCeti.Geometry.Manifold.Morse.Bott.Prod` decide which of them is Morse–Bott.
+The functions `(x, y) ↦ y²` and `(x, y) ↦ y⁴` on the plane, read as the product manifold `ℝ × ℝ`,
+have the same critical set, the line `ℝ × {0}`. They show that the Morse–Bott condition is a
+condition on the Hessian along the critical set, not on the critical set alone.
 
-* For `y²` the critical slice is a Morse–Bott family (`TauCeti.isMorseBottFamily_sq_comp_snd`).
-  The kernel of the Hessian along it consists of the horizontal vectors
-  (`TauCeti.mem_ker_criticalHessian_sq_comp_snd_iff`); on the plane this is the line spanned by
-  `e₁`. The index is `0` and the coindex is `1`
-  (`TauCeti.manifoldMorseIndex_sq_comp_snd` and `TauCeti.manifoldMorseIndex_neg_sq_comp_snd`), so
-  for every fibre metric the negative normal spaces have dimension `0` and the positive normal
-  spaces have dimension `1` (`TauCeti.finrank_negativeNormalSpace_sq_comp_snd` and
-  `TauCeti.finrank_positiveNormalSpace_sq_comp_snd`).
-* For `y⁴` the critical set is the same slice, but the critical Hessian vanishes along it
-  (`TauCeti.criticalHessian_pow_four_comp_snd`), so its kernel is the whole tangent space, which
-  is larger than the tangent space of the slice. The slice is not a Morse–Bott critical submanifold
-  (`TauCeti.not_isNondegenerateCriticalSubmanifold_pow_four_comp_snd`), and the function is not
-  Morse–Bott at all (`TauCeti.not_isMorseBottFamily_pow_four_comp_snd`).
+* For `y²` the line, embedded by `x ↦ (x, 0)`, is a Morse–Bott critical submanifold and exhibits
+  the function as Morse–Bott (`TauCeti.isMorseBottFamily_snd_sq`). Along the line the kernel of
+  the critical Hessian is the tangent line, the vectors with vanishing second component
+  (`TauCeti.criticalHessian_snd_sq_apply_eq_zero_iff`),
+  and for every fibre metric the negative normal space is zero and the positive normal space is a
+  line (`TauCeti.finrank_negativeNormalSpace_snd_sq` and
+  `TauCeti.finrank_positiveNormalSpace_snd_sq`): the line consists of minima.
+* For `y⁴` the critical Hessian vanishes along the line, so its kernel is the whole plane
+  (`TauCeti.criticalHessian_snd_pow_four`), and no family of smooth embeddings exhibits the
+  function as Morse–Bott (`TauCeti.not_isMorseBottFamily_snd_pow_four`).
+
+Both are instances of the statements about functions `(x, v) ↦ q v` on a product `M × V`: the
+slice `M × {0}` is Morse–Bott exactly when `q` has a nondegenerate critical point at `0`
+(`TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd_iff`), it then exhibits the
+function as Morse–Bott when `0` is the only critical point of `q`
+(`TauCeti.isMorseBottFamily_comp_snd`), and an isolated degenerate critical point of `q` rules out
+every Morse–Bott family (`TauCeti.not_isMorseBottFamily_comp_snd`).
 
 ## References
 
 * R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261.
-* A. Banyaga and D. E. Hurtubise, *A proof of the Morse–Bott lemma*, Expositiones Mathematicae 22
-  (2004), 365–373.
 -/
 
 public section
 
+open Set
 open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+/-- The functions of the plane studied here are functions of the second coordinate. -/
+private theorem snd_pow_eq_comp (m : ℕ) :
+    (fun p : ℝ × ℝ ↦ p.2 ^ m) = (fun y : ℝ ↦ y ^ m) ∘ Prod.snd :=
+  rfl
 
-section Sq
+/-! ### The Morse–Bott function `y²` -/
 
-/-- **`y²` is Morse–Bott on `M × ℝ`.** For a nonempty connected manifold `M` without boundary,
-the slice `M × {0}` is the only piece of a Morse–Bott family for `(x, y) ↦ y²`. -/
-theorem isMorseBottFamily_sq_comp_snd [BoundarylessManifold I M] [ConnectedSpace M]
-    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, ℝ)) n (fun x : M ↦ (x, (0 : ℝ)))) :
-    IsMorseBottFamily (fun _ : Unit ↦ SmoothEmbedding.ofIsSmoothEmbedding _ h)
-      ((fun y : ℝ ↦ y ^ 2) ∘ Prod.snd) :=
-  isMorseBottFamily_comp_snd (by fun_prop) isNondegenerateCriticalPoint_sq
-    (criticalPoints_pow le_rfl).le h
+/-- **`y²` is Morse–Bott on the plane.** The critical set of `(x, y) ↦ y²` is the line `ℝ × {0}`,
+and the embedding `x ↦ (x, 0)` of this line alone exhibits the function as a Morse–Bott
+function. -/
+theorem isMorseBottFamily_snd_sq :
+    IsMorseBottFamily (fun _ : Unit ↦ SmoothEmbedding.ofIsSmoothEmbedding _
+      (isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero (I := 𝓘(ℝ)) (I' := 𝓘(ℝ)) (n := ∞)
+        (M := ℝ) (c := (0 : ℝ)) (by simp))) (fun p : ℝ × ℝ ↦ p.2 ^ 2) :=
+  isMorseBottFamily_comp_snd (by simp) (by fun_prop) (criticalPoints_pow le_rfl)
+    isNondegenerateCriticalPoint_sq
 
-/-- **The Hessian kernel of `y²`.** Along the critical slice of `(x, y) ↦ y²`, the kernel of the
-critical Hessian consists of the horizontal tangent vectors, those with vanishing second
-component. -/
-theorem mem_ker_criticalHessian_sq_comp_snd_iff (x : M) {v : TangentSpace (I.prod 𝓘(ℝ, ℝ)) (x, 0)} :
-    v ∈ (criticalHessian (I.prod 𝓘(ℝ, ℝ)) ((fun y : ℝ ↦ y ^ 2) ∘ Prod.snd) (x, 0)).ker ↔ v.2 = 0 :=
-  mem_ker_criticalHessian_comp_snd_iff isNondegenerateCriticalPoint_sq x
+/-- **The Hessian kernel of `y²` along its critical line is the tangent line.** At every point
+`(x, 0)`, a tangent vector `v` lies in the kernel of the critical Hessian of `(x, y) ↦ y²` exactly
+when its second component vanishes, that is, when `v` is a multiple of `(1, 0)`. -/
+theorem criticalHessian_snd_sq_apply_eq_zero_iff (x : ℝ)
+    (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) ((x, 0) : ℝ × ℝ)) :
+    criticalHessian (𝓘(ℝ).prod 𝓘(ℝ)) (fun p : ℝ × ℝ ↦ p.2 ^ 2) (x, 0) v = 0 ↔ v.2 = 0 := by
+  rw [snd_pow_eq_comp, criticalHessian_comp_snd_apply_eq_zero_iff (by fun_prop)]
+  exact isNondegenerateCriticalPoint_sq.isInvertible.injective.eq_iff' (map_zero _)
 
-variable [FiniteDimensional ℝ E]
+section NormalSpaces
 
-/-- Along the critical slice of `(x, y) ↦ y²` the Morse index is `0`. -/
-theorem manifoldMorseIndex_sq_comp_snd (x : M) :
-    manifoldMorseIndex (I.prod 𝓘(ℝ, ℝ)) ((fun y : ℝ ↦ y ^ 2) ∘ Prod.snd) (x, 0) = 0 := by
-  rw [manifoldMorseIndex_comp_snd, manifoldMorseIndex_modelSpace]
+variable (g : Bundle.RiemannianMetric fun x : ℝ ↦ (SmoothEmbedding.ofIsSmoothEmbedding _
+  (isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero (I := 𝓘(ℝ)) (I' := 𝓘(ℝ)) (n := ∞)
+    (M := ℝ) (c := (0 : ℝ)) (by simp))).NormalSpace x (by simp))
+
+/-- **`y²` has negative normal rank `0`.** Along the critical line of `(x, y) ↦ y²`, the negative
+normal space is zero for every fibre metric: the line consists of minima. -/
+theorem finrank_negativeNormalSpace_snd_sq (x : ℝ) :
+    Module.finrank ℝ ((isMorseBottFamily_snd_sq.isNondegenerateCriticalSubmanifold ()
+      ).toIsCriticalSubmanifold.negativeNormalSpace (by simp) g x) = 0 := by
+  rw [(isMorseBottFamily_snd_sq.isNondegenerateCriticalSubmanifold ()).finrank_negativeNormalSpace,
+    SmoothEmbedding.ofIsSmoothEmbedding_apply, snd_pow_eq_comp, manifoldMorseIndex_comp_snd,
+    manifoldMorseIndex_modelSpace]
   exact morseIndex_real_of_pos (by simp)
 
-/-- Along the critical slice of `(x, y) ↦ y²` the Morse index of the negative `-y²` is `1`. -/
-theorem manifoldMorseIndex_neg_sq_comp_snd (x : M) :
-    manifoldMorseIndex (I.prod 𝓘(ℝ, ℝ)) (-((fun y : ℝ ↦ y ^ 2) ∘ Prod.snd)) (x, 0) = 1 := by
-  have hneg :
-      -((fun y : ℝ ↦ y ^ 2) ∘ Prod.snd) = (fun y : ℝ ↦ -y ^ 2) ∘ (Prod.snd : M × ℝ → ℝ) := by
-    funext p
-    simp
-  rw [hneg, manifoldMorseIndex_comp_snd, manifoldMorseIndex_modelSpace]
+/-- **`y²` has positive normal rank `1`.** Along the critical line of `(x, y) ↦ y²`, the positive
+normal space is a line for every fibre metric. -/
+theorem finrank_positiveNormalSpace_snd_sq (x : ℝ) :
+    Module.finrank ℝ ((isMorseBottFamily_snd_sq.isNondegenerateCriticalSubmanifold ()
+      ).toIsCriticalSubmanifold.positiveNormalSpace (by simp) g x) = 1 := by
+  rw [(isMorseBottFamily_snd_sq.isNondegenerateCriticalSubmanifold ()).finrank_positiveNormalSpace,
+    SmoothEmbedding.ofIsSmoothEmbedding_apply, snd_pow_eq_comp, ← Pi.neg_comp,
+    manifoldMorseIndex_comp_snd, manifoldMorseIndex_modelSpace]
   exact morseIndex_real_of_neg (by simp)
 
-variable [I.Boundaryless] [IsManifold I 2 M] (hn : n ≠ 0)
-  (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, ℝ)) n (fun x : M ↦ (x, (0 : ℝ))))
-  (g : Bundle.RiemannianMetric fun x ↦ (SmoothEmbedding.ofIsSmoothEmbedding _ h).NormalSpace x hn)
+end NormalSpaces
 
-/-- **The negative normal spaces of `y²` have dimension `0`.** For every fibre metric on the
-normal bundle of the critical slice of `(x, y) ↦ y²`, the negative normal spaces are zero. -/
-theorem finrank_negativeNormalSpace_sq_comp_snd (x : M) :
-    Module.finrank ℝ ((SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd
-      isNondegenerateCriticalPoint_sq h).negativeNormalSpace hn g x) = 0 := by
-  rw [(SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd isNondegenerateCriticalPoint_sq
-      h).finrank_negativeNormalSpace hn g x,
-    SmoothEmbedding.ofIsSmoothEmbedding_apply, manifoldMorseIndex_sq_comp_snd]
+/-! ### The non-Morse–Bott function `y⁴` -/
 
-/-- **The positive normal spaces of `y²` have dimension `1`.** For every fibre metric on the
-normal bundle of the critical slice of `(x, y) ↦ y²`, the positive normal spaces are lines. -/
-theorem finrank_positiveNormalSpace_sq_comp_snd (x : M) :
-    Module.finrank ℝ ((SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd
-      isNondegenerateCriticalPoint_sq h).positiveNormalSpace hn g x) = 1 := by
-  rw [(SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd isNondegenerateCriticalPoint_sq
-      h).finrank_positiveNormalSpace hn g x,
-    SmoothEmbedding.ofIsSmoothEmbedding_apply, manifoldMorseIndex_neg_sq_comp_snd]
-
-end Sq
-
-section PowFour
-
-/-- **The Hessian of `y⁴` vanishes along its critical slice.** The critical Hessian of
-`(x, y) ↦ y⁴` at `(x, 0)` is zero, so its kernel is the whole tangent space. -/
-theorem criticalHessian_pow_four_comp_snd (x : M) :
-    criticalHessian (I.prod 𝓘(ℝ, ℝ)) ((fun y : ℝ ↦ y ^ 4) ∘ Prod.snd) (x, 0) = 0 := by
-  ext v w
-  rw [criticalHessian_comp_snd_apply (by fun_prop), fderiv_fderiv_apply_eq_smul_iteratedDeriv]
+/-- **The Hessian of `y⁴` vanishes along its critical line.** At every point `(x, 0)` the critical
+Hessian of `(x, y) ↦ y⁴` is zero, so its kernel is the whole plane. -/
+theorem criticalHessian_snd_pow_four (x : ℝ) :
+    criticalHessian (𝓘(ℝ).prod 𝓘(ℝ)) (fun p : ℝ × ℝ ↦ p.2 ^ 4) (x, 0) = 0 := by
+  refine ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun u ↦ ?_
+  rw [snd_pow_eq_comp, criticalHessian_comp_snd_apply (I := 𝓘(ℝ)) (by fun_prop) x,
+    fderiv_fderiv_apply_eq_smul_iteratedDeriv, iteratedDeriv_pow]
   simp
 
-/-- **The critical slice of `y⁴` is not Morse–Bott.** For nonempty `M`, the slice `M × {0}`, the
-critical set of `(x, y) ↦ y⁴`, is not a Morse–Bott critical submanifold. -/
-theorem not_isNondegenerateCriticalSubmanifold_pow_four_comp_snd [Nonempty M]
-    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, ℝ)) n (fun x : M ↦ (x, (0 : ℝ)))) :
-    ¬(SmoothEmbedding.ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold
-      ((fun y : ℝ ↦ y ^ 4) ∘ Prod.snd) := by
-  simp [SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd_iff]
-
-/-- **`y⁴` is not Morse–Bott on `M × ℝ`.** For nonempty `M`, no family of embeddings exhibits
-`(x, y) ↦ y⁴` as a Morse–Bott function. -/
-theorem not_isMorseBottFamily_pow_four_comp_snd [Nonempty M]
-    {ι : Type*} {E' : ι → Type*} [∀ a, NormedAddCommGroup (E' a)] [∀ a, NormedSpace ℝ (E' a)]
-    {H' : ι → Type*} [∀ a, TopologicalSpace (H' a)] {J : ∀ a, ModelWithCorners ℝ (E' a) (H' a)}
-    {S : ι → Type*} [∀ a, TopologicalSpace (S a)] [∀ a, ChartedSpace (H' a) (S a)]
-    (i : ∀ a, SmoothEmbedding (J a) (I.prod 𝓘(ℝ, ℝ)) n (S a) (M × ℝ)) :
-    ¬IsMorseBottFamily i ((fun y : ℝ ↦ y ^ 4) ∘ Prod.snd) := by
-  refine not_isMorseBottFamily_comp_snd i (y := 0) (by simp [criticalPoints_pow])
-    (Filter.Eventually.of_forall fun z hz ↦ ?_) (by simp)
-  rwa [criticalPoints_pow (by norm_num), Set.mem_singleton_iff] at hz
-
-end PowFour
+/-- **`y⁴` is not Morse–Bott on the plane.** No family of smooth embeddings exhibits
+`(x, y) ↦ y⁴` as a Morse–Bott function: along its critical line `ℝ × {0}` the kernel of the
+critical Hessian is the whole plane, larger than the tangent space of any piece through the
+line. -/
+theorem not_isMorseBottFamily_snd_pow_four {ι : Type*} {E' : ι → Type*}
+    [∀ a, NormedAddCommGroup (E' a)] [∀ a, NormedSpace ℝ (E' a)] {H' : ι → Type*}
+    [∀ a, TopologicalSpace (H' a)] {J : ∀ a, ModelWithCorners ℝ (E' a) (H' a)} {S : ι → Type*}
+    [∀ a, TopologicalSpace (S a)] [∀ a, ChartedSpace (H' a) (S a)] {n : ℕ∞ω}
+    (i : ∀ a, SmoothEmbedding (J a) (𝓘(ℝ).prod 𝓘(ℝ)) n (S a) (ℝ × ℝ)) :
+    ¬IsMorseBottFamily i (fun p : ℝ × ℝ ↦ p.2 ^ 4) := by
+  have hcrit := criticalPoints_pow (m := 4) (by norm_num)
+  refine not_isMorseBottFamily_comp_snd (M := ℝ) (q := fun y : ℝ ↦ y ^ 4) (y := 0)
+    (by simp [hcrit])
+    (Filter.Eventually.of_forall fun z hz ↦ by rwa [hcrit] at hz) (by simp) i
 
 end TauCeti

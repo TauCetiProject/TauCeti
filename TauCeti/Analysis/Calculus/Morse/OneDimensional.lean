@@ -29,12 +29,12 @@ of one variable.
 
 * `TauCeti.hessianOperator_real`: the Hessian operator is multiplication by `f''(t)`.
 * `TauCeti.isNondegenerateCriticalPoint_real_iff`: nondegenerate critical points of a function of
-  one variable.
+  one variable, with the example `TauCeti.isNondegenerateCriticalPoint_sq` of `y ↦ y²` at `0`.
 * `TauCeti.morseIndex_real_of_neg` and `TauCeti.morseIndex_real_of_pos`: the Morse index is `1`
   where the second derivative is negative (a local maximum at a critical point) and `0` where it is
   positive (a local minimum at a critical point).
-* `TauCeti.isNondegenerateCriticalPoint_pow_iff` and `TauCeti.isNondegenerateCriticalPoint_sq`:
-  the only nondegenerate critical point of a power `y ↦ yⁿ` is `0`, for `n = 2`.
+* `TauCeti.isNondegenerateCriticalPoint_pow_iff`: the only nondegenerate critical point of a power
+  `y ↦ yⁿ` is `0`, for `n = 2`.
 -/
 
 public section
@@ -75,6 +75,12 @@ theorem isNondegenerateCriticalPoint_real_iff (hf : ContDiffAt ℝ 2 f t) :
       smul_eq_mul, mul_one] at this
     exact (mul_eq_zero.1 this).resolve_right h
 
+/-- The function `y ↦ y²` has a nondegenerate critical point at `0`. -/
+theorem isNondegenerateCriticalPoint_sq :
+    IsNondegenerateCriticalPoint (fun y : ℝ ↦ y ^ 2) 0 := by
+  rw [isNondegenerateCriticalPoint_real_iff (by fun_prop)]
+  constructor <;> simp [← iteratedDeriv_one]
+
 /-- Where the second derivative is negative, the Morse index of a function of one variable is `1`;
 at a critical point this is a local maximum. -/
 theorem morseIndex_real_of_neg (hneg : iteratedDeriv 2 f t < 0) : morseIndex f t = 1 := by
@@ -106,10 +112,6 @@ theorem isNondegenerateCriticalPoint_pow_iff {n : ℕ} :
   · have h₂ : (n : ℝ) + 1 + 1 ≠ 0 := by positivity
     have h₃ : (n : ℝ) + 1 + 1 + 1 ≠ 0 := by positivity
     simp [h₂, h₃]
-
-/-- `0` is a nondegenerate critical point of `y ↦ y²`: the second derivative is `2` there. -/
-theorem isNondegenerateCriticalPoint_sq : IsNondegenerateCriticalPoint (fun y : ℝ ↦ y ^ 2) 0 :=
-  isNondegenerateCriticalPoint_pow_iff.2 ⟨rfl, rfl⟩
 
 end TauCeti
 

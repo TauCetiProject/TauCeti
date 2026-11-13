@@ -44,14 +44,22 @@ variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 rectangle's rows. -/
 theorem turn_notMem_cIco_second_of_left_eq_left
     (D : GridInitialPentagonRectangleDecomposition a s x z)
-    (hcommon : D.first.left = D.second.left) (hother : D.first.right ≠ D.second.right)
+    (hcommon : D.first.left = D.second.left)
     (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
     s ∉ Grid.cIco D.second.bottom D.second.top := by
-  have hrow := (D.toGridRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left hcommon
-    hother hfirst hsecond).2
   rw [D.toGridRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left hcommon]
-  exact fun hs => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow)
-    D.first_turn_mem hs
+  by_cases hother : D.first.right = D.second.right
+  · -- With both sides in common the second rectangle's rows are those of the first, swapped.
+    have htop : D.second.top = D.first.bottom := by
+      rw [GridRectangleBetween.top_def, GridRectangleBetween.bottom_def, ← hother,
+        D.first.map_right]
+    rw [htop]
+    exact fun hs => Finset.disjoint_left.mp (Grid.disjoint_cIco_swap D.first.top D.first.bottom)
+      hs D.first_turn_mem
+  · have hrow := (D.toGridRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left hcommon
+      hother hfirst hsecond).2
+    exact fun hs => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow)
+      D.first_turn_mem hs
 
 private theorem rightLeftSelfRecut_geometry
     (D : GridInitialPentagonRectangleDecomposition a s x z)
@@ -197,8 +205,7 @@ theorem mem_initialPentagonRectangleInitialSelfPairs_iff_sides
     rw [hEq] at hsecondTop
     rw [hsecondTop, htop,
       ← S.toGridRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left hcommon]
-    exact S.turn_notMem_cIco_second_of_left_eq_left hcommon
-      (Grid.ne_right_of_mem_cIoo hcol).symm hfirst hsecond
+    exact S.turn_notMem_cIco_second_of_left_eq_left hcommon hfirst hsecond
   · rintro ⟨hD, hsource | ⟨hcommon, hone, hturn⟩⟩
     · exact (G.mem_initialPentagonRectangleInitialSelfPairs C D).2 (Or.inl
         ((G.mem_initialPentagonRectangleInitialSelfSources C D).2 ⟨hD, hsource⟩))

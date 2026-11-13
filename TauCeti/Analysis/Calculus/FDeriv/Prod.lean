@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
@@ -65,14 +66,24 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative of the function read on the second component, with no differentiability assumption.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
+  derivative `(σ, τ) ↦ τ • x'`.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
   on a product is the sum of the derivatives of its two slices.
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
   a function in a scalar first or second variable are its derivative applied to `(1, 0)` and
   `(0, 1)`.
+* `TauCeti.norm_deriv_slice_right_le`: the partial derivative in a scalar second variable has
+  norm at most that of the derivative.
+* `ContDiffOn.continuousOn_deriv_slice_right`: the partial derivative in a scalar second variable
+  of a `C¹` map is continuous along every vertical segment inside its open domain.
 * `TauCeti.fderiv_apply_mk_one_zero`: the derivative of a function in a scalar first variable,
   applied to `(1, 0)`, is the derivative of its first-variable slice.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
+* `TauCeti.norm_fderiv_comp_graph_le`: the derivative along a graph has norm at most
+  `‖Df‖ (1 + ‖Du‖)`.
+* `TauCeti.exists_bound_norm_fderiv_comp_graph`: along maps with values in a compact set and
+  uniformly bounded derivatives, the derivatives of `x ↦ f (x, uᵢ x)` are uniformly bounded.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
 * `DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`: the derivative of a graph map from its
@@ -169,6 +180,14 @@ theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
     fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
   simp [← Function.comp_def f Prod.snd, fderiv_comp_snd]
 
+/-- A function `p ↦ x p.2` of a scalar second variable alone, where `x` has derivative `x'` at
+`z.2`, has derivative `(σ, τ) ↦ τ • x'` at `z`. -/
+theorem _root_.HasDerivAt.hasFDerivAt_comp_snd {x : 𝕜 → G} {x' : G} {z : E × 𝕜}
+    (hx : HasDerivAt x x' z.2) :
+    HasFDerivAt (fun p : E × 𝕜 ↦ x p.2) ((ContinuousLinearMap.snd 𝕜 E 𝕜).smulRight x') z := by
+  refine (hx.hasFDerivAt.comp z (hasFDerivAt_snd (p := z))).congr_fderiv ?_
+  ext <;> simp
+
 /-- **The chain rule along a graph.** The derivative of `fun x ↦ f (x, u x)` is the derivative of
 `f` in the first variable plus its derivative in the second variable applied to the derivative
 of `u`. -/
@@ -182,6 +201,38 @@ theorem fderiv_comp_graph_apply {u : E → F} {f : E × F → G} (hu : Different
   rw [h.fderiv, fderiv_slice_right hf, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, ← map_add]
   simp
+
+/-- The derivative of `fun x ↦ f (x, u x)` has norm at most `‖Df‖ (1 + ‖Du‖)`. -/
+theorem norm_fderiv_comp_graph_le {u : E → F} {f : E × F → G} (hu : DifferentiableAt 𝕜 u a)
+    (hf : DifferentiableAt 𝕜 f (a, u a)) :
+    ‖fderiv 𝕜 (fun x ↦ f (x, u x)) a‖ ≤ ‖fderiv 𝕜 f (a, u a)‖ * (1 + ‖fderiv 𝕜 u a‖) := by
+  have h : HasFDerivAt (fun x ↦ f (x, u x))
+      ((fderiv 𝕜 f (a, u a)).comp ((ContinuousLinearMap.id 𝕜 E).prod (fderiv 𝕜 u a))) a :=
+    hf.hasFDerivAt.comp a ((hasFDerivAt_id a).prodMk hu.hasFDerivAt)
+  rw [h.fderiv]
+  refine (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
+  rw [ContinuousLinearMap.opNorm_prod, Prod.norm_def]
+  exact max_le ((ContinuousLinearMap.norm_id_le).trans (le_add_of_nonneg_right (norm_nonneg _)))
+    (le_add_of_nonneg_left zero_le_one)
+
+/-- Along maps `uᵢ` with values in `K` and `‖Duᵢ‖ ≤ M` on a compact set `C`, the derivatives of
+`x ↦ f (x, uᵢ x)` are uniformly bounded on `C`, for `f` of class `C¹` on an open set containing
+`C × K`. -/
+theorem exists_bound_norm_fderiv_comp_graph {ι : Type*} {f : E × F → G} {W : Set (E × F)}
+    {C : Set E} {K : Set F} {u : ι → E → F} {M : ℝ} (hW : IsOpen W) (hf : ContDiffOn 𝕜 1 f W)
+    (hC : IsCompact C) (hK : IsCompact K) (hCKW : C ×ˢ K ⊆ W) (huK : ∀ i, Set.MapsTo (u i) C K)
+    (hdu : ∀ i, ∀ x ∈ C, DifferentiableAt 𝕜 (u i) x)
+    (hM : ∀ i, ∀ x ∈ C, ‖fderiv 𝕜 (u i) x‖ ≤ M) :
+    ∃ B, ∀ i, ∀ x ∈ C, ‖fderiv 𝕜 (fun y ↦ f (y, u i y)) x‖ ≤ B := by
+  obtain ⟨B, hB⟩ := (hC.prod hK).exists_bound_of_continuousOn
+    ((hf.continuousOn_fderiv_of_isOpen hW le_rfl).mono hCKW)
+  refine ⟨B * (1 + M), fun i x hx ↦ ?_⟩
+  have hmem : (x, u i x) ∈ C ×ˢ K := ⟨hx, huK i hx⟩
+  have hB' := hB _ hmem
+  refine (norm_fderiv_comp_graph_le (hdu i x hx) ((hf.differentiableOn one_ne_zero).differentiableAt
+    (hW.mem_nhds (hCKW hmem)))).trans ?_
+  exact mul_le_mul hB' (by linarith [hM i x hx]) (by positivity) ((norm_nonneg _).trans hB')
 
 /-- Along a differentiable graph through a point where the derivative in the second variable
 vanishes, the derivative of a function on a product equals the derivative of its first-variable
@@ -273,6 +324,26 @@ theorem hasDerivAt_slice_right {u : E × 𝕜 → G} {a : E} {t : 𝕜}
     (hu : DifferentiableAt 𝕜 u (a, t)) :
     HasDerivAt (fun t ↦ u (a, t)) (fderiv 𝕜 u (a, t) (0, 1)) t :=
   hu.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right a t)
+
+/-- Where `u` is differentiable, its partial derivative in the second variable has norm at most
+the norm of its derivative. -/
+theorem norm_deriv_slice_right_le {u : E × 𝕜 → G} {a : E} {t : 𝕜}
+    (hu : DifferentiableAt 𝕜 u (a, t)) :
+    ‖deriv (fun t ↦ u (a, t)) t‖ ≤ ‖fderiv 𝕜 u (a, t)‖ := by
+  rw [(hasDerivAt_slice_right hu).deriv]
+  simpa using (fderiv 𝕜 u (a, t)).le_opNorm ((0 : E), (1 : 𝕜))
+
+/-- The partial derivative in the second variable of a map that is `C¹` on an open set `U` is
+continuous on every set `K` with `{a} × K ⊆ U`. -/
+theorem _root_.ContDiffOn.continuousOn_deriv_slice_right {u : E × 𝕜 → G} {U : Set (E × 𝕜)}
+    {a : E} {K : Set 𝕜} (hu : ContDiffOn 𝕜 1 u U) (hU : IsOpen U) (hKU : ∀ t ∈ K, (a, t) ∈ U) :
+    ContinuousOn (deriv fun t ↦ u (a, t)) K := by
+  have h : ContinuousOn (fun t ↦ fderiv 𝕜 u (a, t) ((0 : E), (1 : 𝕜))) K :=
+    ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).comp
+      (continuous_const.prodMk continuous_id).continuousOn hKU).clm_apply continuousOn_const
+  refine h.congr fun t ht ↦ ?_
+  exact (hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero _ (hKU t ht)).differentiableAt
+    (hU.mem_nhds (hKU t ht)))).deriv
 
 /-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(0, 1)`. -/

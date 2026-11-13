@@ -112,7 +112,7 @@ theorem symplecticCupCapAt_eq_comp_contractTensorPair {i j : Fin d} (hij : i ≠
   refine PiTensorProduct.ext <| MultilinearMap.ext fun v => ?_
   -- inserting into the two slots of the restricted input overwrites those slots of the input
   have hfun (x y : Fin n ⊕ Fin n) :
-      (fun a => if h : a ≠ i ∧ a ≠ j then v a else if a = i then Pi.single x (1 : k) else
+      (fun a => if _ : a ≠ i ∧ a ≠ j then v a else if a = i then Pi.single x (1 : k) else
         Pi.single y (1 : k)) =
         Function.update (Function.update v i (Pi.single x 1)) j (Pi.single y 1) := by
     funext a
@@ -272,7 +272,7 @@ theorem isCompl_symplecticHarmonicTensors_iSup_range_symplecticCupCapAt :
   have h := LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix
     (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n))
     (fun p : {p : Fin d × Fin d // p.1 ≠ p.2} => symplecticCupCapAt k n d p.1.1 p.1.2)
-    fun p => isHermitian_toMatrix_symplecticCupCapAt p.2
+    fun _ => isHermitian_toMatrix_symplecticCupCapAt
   simpa only [iInf_subtype, iSup_subtype, iInf_prod, iSup_prod,
     ← symplecticHarmonicTensors_eq_iInf_ker_symplecticCupCapAt] using h
 
