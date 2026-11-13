@@ -98,12 +98,7 @@ private lemma withDensity_apply_le_restrict_apply {ρ : ℝ} (hρ : 1 ≤ volume
       volume.restrict (closedBall (0 : E) ρ) s := by
   rw [withDensity_apply _ hs, restrict_apply hs]
   refine setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall hρ hs ?_
-  -- A symmetric convex set contains the midpoint `0` of `x` and `-x`, so it is star-shaped.
-  rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
-  · exact starConvex_empty 0
-  refine hsc.starConvex ?_
-  simpa using hsc hx (hneg x hx) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2)
-    (by norm_num)
+  exact ((balanced_iff_neg_mem hsc).2 hneg).starConvex
 
 end ClosedBall
 
@@ -165,6 +160,31 @@ private lemma add_mem_preimage_starProjection_iff (V : Submodule ℝ E) (w : V�
   simp only [mem_preimage, map_add, hv, add_zero, Submodule.starProjection_mem_subspace_eq_self,
     mem_closedBall_zero_iff, Submodule.norm_coe]
 
+/-- The Gauss density integrated over the `ε`-ball of `Vᗮ` equals its integral over the slab of the
+points within distance `ε` of `V`, written along `E = Vᗮ ⊕ V`: the density factors, and its
+integral over `V` is one. -/
+private lemma lintegral_closedBall_eq_lintegral_lintegral_indicator (V : Submodule ℝ E) (ε : ℝ) :
+    ∫⁻ w in closedBall (0 : Vᗮ) ε, ENNReal.ofReal (Real.exp (-π * ‖(w : E)‖ ^ 2)) =
+      ∫⁻ w : Vᗮ, ∫⁻ v : V, (Vᗮ.starProjection ⁻¹' closedBall 0 ε).indicator
+        (fun x : E ↦ ENNReal.ofReal (Real.exp (-π * ‖x‖ ^ 2))) (w + v) := by
+  classical
+  set g : E → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (Real.exp (-π * ‖x‖ ^ 2))
+  have hg : Measurable g := by fun_prop
+  have hsplit (w : Vᗮ) (v : V) : g (w + v) = g w * g v := by
+    simp only [g]
+    rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, ← mul_add, norm_add_sq_real,
+      V.inner_left_of_mem_orthogonal v.2 w.2, mul_zero, add_zero]
+  rw [← lintegral_indicator measurableSet_closedBall]
+  refine lintegral_congr fun w ↦ ?_
+  by_cases hw : w ∈ closedBall (0 : Vᗮ) ε
+  · rw [indicator_of_mem hw]
+    simp only [indicator_apply, add_mem_preimage_starProjection_iff, hw, ↓reduceIte, hsplit]
+    rw [lintegral_const_mul _ (f := fun v : V ↦ g v) (hg.comp measurable_subtype_coe)]
+    simp only [g, Submodule.norm_coe, lintegral_ofReal_exp_neg_pi_mul_sq_norm, mul_one]
+  · rw [indicator_of_notMem hw]
+    simp only [indicator_apply, add_mem_preimage_starProjection_iff, hw, ↓reduceIte,
+      lintegral_zero]
+
 /-- The Gauss measure of the slab of points within distance `ε` of `V` is at least
 `exp (-π ε ^ 2)` times the volume of the `ε`-ball of `Vᗮ`: the Gauss density factors along
 `E = Vᗮ ⊕ V`, its integral over `V` is one, and it is at least `exp (-π ε ^ 2)` on the ball. -/
@@ -176,10 +196,6 @@ private lemma mul_volume_closedBall_le_setLIntegral (V : Submodule ℝ E) (ε : 
   have hg : Measurable g := by fun_prop
   have hA : MeasurableSet (Vᗮ.starProjection ⁻¹' closedBall 0 ε) :=
     measurableSet_closedBall.preimage (by fun_prop)
-  have hsplit (w : Vᗮ) (v : V) : g (w + v) = g w * g v := by
-    simp only [g]
-    rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, ← mul_add, norm_add_sq_real,
-      V.inner_left_of_mem_orthogonal v.2 w.2, mul_zero, add_zero]
   calc ENNReal.ofReal (Real.exp (-π * ε ^ 2)) * volume (closedBall (0 : Vᗮ) ε)
       = ∫⁻ _ in closedBall (0 : Vᗮ) ε, ENNReal.ofReal (Real.exp (-π * ε ^ 2)) :=
         (setLIntegral_const _ _).symm
@@ -189,20 +205,30 @@ private lemma mul_volume_closedBall_le_setLIntegral (V : Submodule ℝ E) (ε : 
             pow_le_pow_left₀ (norm_nonneg _) (mem_closedBall_zero_iff.1 hw) 2
           refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 ?_)
           nlinarith [Real.pi_pos]
-    _ = ∫⁻ w : Vᗮ, ∫⁻ v : V, (Vᗮ.starProjection ⁻¹' closedBall 0 ε).indicator g (w + v) := by
-        rw [← lintegral_indicator measurableSet_closedBall]
-        refine lintegral_congr fun w ↦ ?_
-        by_cases hw : w ∈ closedBall (0 : Vᗮ) ε
-        · rw [indicator_of_mem hw]
-          simp only [indicator_apply, add_mem_preimage_starProjection_iff, hw, ↓reduceIte, hsplit]
-          rw [lintegral_const_mul _ (f := fun v : V ↦ g v) (hg.comp measurable_subtype_coe)]
-          simp only [g, Submodule.norm_coe, lintegral_ofReal_exp_neg_pi_mul_sq_norm, mul_one]
-        · rw [indicator_of_notMem hw]
-          simp only [indicator_apply, add_mem_preimage_starProjection_iff, hw, ↓reduceIte,
-            lintegral_zero]
+    _ = ∫⁻ w : Vᗮ, ∫⁻ v : V, (Vᗮ.starProjection ⁻¹' closedBall 0 ε).indicator g (w + v) :=
+        lintegral_closedBall_eq_lintegral_lintegral_indicator V ε
     _ = ∫⁻ x in Vᗮ.starProjection ⁻¹' closedBall 0 ε, g x := by
         rw [← Submodule.lintegral_eq_lintegral_lintegral_add V (hg.indicator hA).aemeasurable,
           lintegral_indicator hA]
+
+/-- **Brunn's principle along `E = Vᗮ ⊕ V`.** Every slice `{v ∈ V | w + v ∈ Q}` of a symmetric
+convex set `Q` parallel to `V` is at most as large as the central one. -/
+private lemma volume_preimage_prodMk_add_le {Q : Set E} (hQ : MeasurableSet Q)
+    (hQc : Convex ℝ Q) (hQneg : ∀ x ∈ Q, -x ∈ Q) (V : Submodule ℝ E) (w : Vᗮ) :
+    volume (Prod.mk w ⁻¹' ((fun p : Vᗮ × V ↦ (p.1 : E) + p.2) ⁻¹' Q)) ≤
+      volume (((↑) : V → E) ⁻¹' Q) := by
+  classical
+  set S : Set (Vᗮ × V) := (fun p ↦ (p.1 : E) + p.2) ⁻¹' Q
+  have hS : MeasurableSet S := hQ.preimage (by fun_prop)
+  have h := Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero
+    (fun _ hθ₀ hθ₁ ↦ hasPrekopaLeindler_volume V hθ₀ hθ₁) hS
+    (hQc.linear_preimage (Vᗮ.subtype.coprod V.subtype)) (fun p hp ↦ by
+      simpa only [S, mem_preimage, Prod.fst_neg, Prod.snd_neg, Submodule.coe_neg, neg_add]
+        using hQneg _ hp) w
+  have h0 : Prod.mk (0 : Vᗮ) ⁻¹' S = ((↑) : V → E) ⁻¹' Q := by
+    ext v
+    simp [S]
+  exact h0 ▸ h
 
 /-- The part of a symmetric convex set `Q` within distance `ε` of `V` has volume at most
 `volume (V ∩ Q)` times the volume of the `ε`-ball of `Vᗮ`: by Brunn's principle, every slice
@@ -214,16 +240,8 @@ private lemma volume_inter_le_mul_volume_closedBall {Q : Set E} (hQ : Measurable
   classical
   set S : Set (Vᗮ × V) := (fun p ↦ (p.1 : E) + p.2) ⁻¹' Q
   have hS : MeasurableSet S := hQ.preimage (by fun_prop)
-  have hslice (w : Vᗮ) : volume (Prod.mk w ⁻¹' S) ≤ volume (((↑) : V → E) ⁻¹' Q) := by
-    have h := Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero
-      (fun _ hθ₀ hθ₁ ↦ hasPrekopaLeindler_volume V hθ₀ hθ₁) hS
-      (hQc.linear_preimage (Vᗮ.subtype.coprod V.subtype)) (fun p hp ↦ by
-        simpa only [S, mem_preimage, Prod.fst_neg, Prod.snd_neg, Submodule.coe_neg, neg_add]
-          using hQneg _ hp) w
-    have h0 : Prod.mk (0 : Vᗮ) ⁻¹' S = ((↑) : V → E) ⁻¹' Q := by
-      ext v
-      simp [S]
-    exact h0 ▸ h
+  have hslice (w : Vᗮ) : volume (Prod.mk w ⁻¹' S) ≤ volume (((↑) : V → E) ⁻¹' Q) :=
+    volume_preimage_prodMk_add_le hQ hQc hQneg V w
   have hAQ : MeasurableSet (Vᗮ.starProjection ⁻¹' closedBall 0 ε ∩ Q) :=
     (measurableSet_closedBall.preimage (by fun_prop)).inter hQ
   rw [← lintegral_indicator_one hAQ,
