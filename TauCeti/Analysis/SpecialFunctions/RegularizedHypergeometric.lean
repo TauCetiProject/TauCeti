@@ -36,6 +36,8 @@ produce the explicit solution of the recurrence of the continued fraction DLMF 8
   derivative.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
+* `Complex.regularizedHGFun_eq_mul_add_mul_of_coeff` — a three-term relation between
+  regularized hypergeometric functions follows from the matching relation between coefficients.
 * `Complex.regularizedHGFun_singleton_eq_mul_add_mul` and
   `Complex.regularizedHGFun_singleton_eq_mul_sub_mul` — the three-term relations
   `𝐌(α, β, z) = β 𝐌(α, β + 1, z) + α z 𝐌(α + 1, β + 2, z)` and
@@ -115,7 +117,7 @@ theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.car
 corresponding relation between their coefficients: if
 `C(a, b; 0) = c C(a₁, b₁; 0)` and `C(a, b; n + 1) = c C(a₁, b₁; n + 1) + d C(a₂, b₂; n)`, then
 `F(a; b; z) = c F(a₁; b₁; z) + d z F(a₂; b₂; z)`. -/
-private theorem regularizedHGFun_eq_mul_add_mul_of_coeff {a b a₁ b₁ a₂ b₂ : Multiset ℂ}
+theorem regularizedHGFun_eq_mul_add_mul_of_coeff {a b a₁ b₁ a₂ b₂ : Multiset ℂ}
     (h : a.card ≤ b.card) (h₁ : a₁.card ≤ b₁.card) (h₂ : a₂.card ≤ b₂.card) {c d : ℂ}
     (h0 : regularizedHGFunCoeff a b 0 = c * regularizedHGFunCoeff a₁ b₁ 0)
     (hs : ∀ n, regularizedHGFunCoeff a b (n + 1) =

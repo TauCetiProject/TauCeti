@@ -10,14 +10,16 @@ public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
 /-!
 # The recurrence of the continued fraction for Tricomi's function
 
-DLMF 8.9.1 expands Tricomi's incomplete Gamma function as the continued fraction
+For `a ∉ {−1, −2, …}`, DLMF 8.9.1 expands Tricomi's incomplete Gamma function as the continued
+fraction
 ```
 Γ(a + 1) e^z γ*(a, z) = 1/(1 − z/(a + 1 + z/(a + 2 − (a + 1) z/(a + 3 + 2z/(a + 4 − ⋯)))))
 ```
 with head `0`, partial denominators `b₁ = 1`, `bₙ = a + n − 1` (`n ≥ 2`) and partial numerators
 `a₁ = 1`, `a₂ = −z`, `a_{2k} = −(a + k − 1) z` (`k ≥ 2`), `a_{2k+1} = k z` (`k ≥ 1`). By
-Pincherle's theorem such a fraction converges to `−f(1) / f(0)` exactly when its three-term
-recurrence `y(n + 1) = bₙ y(n) + aₙ y(n − 1)` has a minimal solution `f` with `f(0) ≠ 0`.
+Pincherle's theorem, when all partial numerators are nonzero, such a fraction converges to
+`−f(1) / f(0)` exactly when its three-term recurrence `y(n + 1) = bₙ y(n) + aₙ y(n − 1)` has a
+minimal solution `f` with `f(0) ≠ 0`.
 
 This file writes down an explicit solution of that recurrence in terms of the regularized Kummer
 function `𝐌(α, β, z) = Complex.regularizedHGFun {α} {β} z`:
@@ -28,24 +30,25 @@ f(2k + 2) = (−1)^{k+1} z^{2k+1} (a + 1)_k k! 𝐌(k + 1, a + 2k + 2, z),
 ```
 where `(a + 1)_{−1}` is read as `1`. Normalizing by `f(0) = 1 / Γ(a + 1)` rather than
 `f(0) = 1` makes the statements hold for every complex `a`, with `f(0) ≠ 0` exactly when
-`a ∉ {−1, −2, …}`. The ratio `−f(1) / f(0)` is
-`Γ(a + 1) 𝐌(1, a + 1, z) = Γ(a + 1) e^z γ*(a, z)`, the value of the fraction. The recurrence
-reduces to the two three-term relations of `𝐌` proved in
+`a ∉ {−1, −2, …}`. The quotient `−f(1) / f(0)`, computed with Lean's convention `x / 0 = 0`,
+is `Γ(a + 1) 𝐌(1, a + 1, z) = Γ(a + 1) e^z γ*(a, z)`, the candidate value of the fraction; this
+file proves neither that `f` is minimal nor that the fraction converges. The recurrence reduces
+to the two three-term relations of `𝐌` proved in
 `TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric`.
 
 ## Main definitions
 
-* `TauCeti.Complex.tricomiContFracPartNum a z n` — the partial numerator `aₙ` of DLMF 8.9.1.
-* `TauCeti.Complex.tricomiContFracPartDen a n` — the partial denominator `bₙ` of DLMF 8.9.1.
-* `TauCeti.Complex.tricomiContFracSolution a z n` — the solution `f(n)` above.
+* `Complex.tricomiContFracPartNum a z n` — the partial numerator `aₙ` of DLMF 8.9.1.
+* `Complex.tricomiContFracPartDen a n` — the partial denominator `bₙ` of DLMF 8.9.1.
+* `Complex.tricomiContFracSolution a z n` — the solution `f(n)` above.
 
 ## Main results
 
-* `TauCeti.Complex.tricomiContFracSolution_add_two` — `f` solves the three-term recurrence
+* `Complex.tricomiContFracSolution_add_two` — `f` solves the three-term recurrence
   `f(n + 2) = b_{n+1} f(n + 1) + a_{n+1} f(n)` of DLMF 8.9.1, for all complex `a` and `z`.
-* `TauCeti.Complex.neg_tricomiContFracSolution_one_div_zero` —
+* `Complex.neg_tricomiContFracSolution_one_div_zero` —
   `−f(1) / f(0) = Γ(a + 1) e^z γ*(a, z)`, where `f(0) ≠ 0` exactly for `a ∉ {−1, −2, …}`
-  (`TauCeti.Complex.tricomiContFracSolution_zero_eq_zero_iff`).
+  (`Complex.tricomiContFracSolution_zero_eq_zero_iff`).
 
 ## References
 
@@ -61,7 +64,7 @@ noncomputable section
 open Complex
 open scoped Nat
 
-namespace TauCeti.Complex
+namespace Complex
 
 /-- The partial numerators of the continued fraction DLMF 8.9.1 for `Γ(a + 1) e^z γ*(a, z)`:
 `a₁ = 1`, `a₂ = −z`, `a_{2k} = −(a + k − 1) z` for `k ≥ 2` and `a_{2k+1} = k z` for `k ≥ 1`.
@@ -259,13 +262,15 @@ theorem tricomiContFracSolution_add_two (a z : ℂ) (n : ℕ) :
         show 2 * (k + 1) + 1 + 1 = 2 * k + 4 by ring, show 2 * (k + 1) + 1 = 2 * k + 3 by ring]
       exact tricomiContFracSolution_add_two_two_mul_add_three a z k
 
-/-- The value `−f(1) / f(0)` of the solution `tricomiContFracSolution` is
-`Γ(a + 1) e^z γ*(a, z)`, the value of the continued fraction DLMF 8.9.1. -/
+/-- The quotient `−f(1) / f(0)` of the solution `tricomiContFracSolution` is
+`Γ(a + 1) e^z γ*(a, z)`, the candidate value of the continued fraction DLMF 8.9.1. Both sides
+vanish when `f(0) = 0`, that is for `a ∈ {−1, −2, …}`; neither convergence of the fraction nor
+minimality of `f` is asserted. -/
 theorem neg_tricomiContFracSolution_one_div_zero (a z : ℂ) :
     -tricomiContFracSolution a z 1 / tricomiContFracSolution a z 0 =
       Gamma (a + 1) * cexp z * tricomiIncompleteGamma a z := by
-  rw [tricomiContFracSolution_one, tricomiContFracSolution_zero, neg_neg, div_inv_eq_mul,
-    tricomiIncompleteGamma_def, ← mul_assoc, mul_assoc _ (cexp z), ← Complex.exp_add,
-    add_neg_cancel, Complex.exp_zero, mul_one, mul_comm]
+  rw [tricomiContFracSolution_one, tricomiContFracSolution_zero, tricomiIncompleteGamma_def,
+    Complex.exp_neg]
+  field_simp
 
-end TauCeti.Complex
+end Complex
