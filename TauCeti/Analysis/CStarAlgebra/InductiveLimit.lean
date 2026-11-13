@@ -9,8 +9,10 @@ public import Mathlib.Algebra.Colimit.DirectLimit
 public import Mathlib.Analysis.CStarAlgebra.Classes
 public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Analysis.CStarAlgebra.Completion
+public import TauCeti.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import TauCeti.Analysis.CStarAlgebra.Quotient
+import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!
 # C⋆-inductive limits
@@ -31,21 +33,29 @@ limit is a unital C⋆-algebra and the canonical maps are unital.
 
 ## Main definitions
 
-* `TauCeti.SeminormedDirectLimit A f`: the algebraic direct limit with its C⋆-seminorm.
+* `TauCeti.SeminormedDirectLimit A f`: the algebraic direct limit with its C⋆-seminorm, identified
+  with `DirectLimit A f` by `TauCeti.SeminormedDirectLimit.starAlgEquiv`.
 * `TauCeti.CStarInductiveLimit A f`: the C⋆-inductive limit, a nonunital C⋆-algebra.
+* `TauCeti.CStarInductiveLimit.coeHom`: the completion map of the algebraic direct limit.
 * `TauCeti.CStarInductiveLimit.of A f i`: the canonical ⋆-homomorphism `A i → lim A`.
 * `TauCeti.CStarInductiveLimit.lift`: the ⋆-homomorphism out of the limit induced by a
   compatible family of ⋆-homomorphisms into a C⋆-algebra.
+* `TauCeti.CStarInductiveLimit.map`: the ⋆-homomorphism between limits induced by a compatible
+  family of ⋆-homomorphisms between directed systems.
 * `TauCeti.CStarInductiveLimit.liftCLM`: the continuous linear map out of the limit induced by a
   compatible, uniformly bounded family of continuous linear maps into a Banach space.
-* `TauCeti.CStarInductiveLimit.ofStarAlgHom`, `TauCeti.CStarInductiveLimit.liftStarAlgHom`: the
-  unital versions of `of` and `lift` for unital directed systems.
+* `TauCeti.CStarInductiveLimit.ofStarAlgHom`, `TauCeti.CStarInductiveLimit.liftStarAlgHom`,
+  `TauCeti.CStarInductiveLimit.mapStarAlgHom`: the unital versions of `of`, `lift` and `map` for
+  unital directed systems.
 
 ## Main statements
 
 * `TauCeti.CStarInductiveLimit.norm_of`: the norm formula `‖of i a‖ = inf_{j ≥ i} ‖f i j a‖`.
-* `TauCeti.CStarInductiveLimit.of_eq_zero_iff`: an element of `A i` dies in the limit exactly when
-  its images in the later stages have arbitrarily small norm.
+* `TauCeti.CStarInductiveLimit.of_eq_zero_iff`, `TauCeti.CStarInductiveLimit.of_eq_of_iff`: two
+  elements of stages have the same image in the limit exactly when their images in the later
+  stages become arbitrarily close.
+* `TauCeti.CStarInductiveLimit.isometry_of`: with injective connecting maps, the canonical maps
+  are isometric.
 * `TauCeti.CStarInductiveLimit.dense_iUnion_range_of`: the images of the stages are dense.
 * `TauCeti.CStarInductiveLimit.hom_ext`: ⋆-homomorphisms out of the limit are determined on the
   stages.
@@ -105,6 +115,19 @@ instance : StarModule ℂ (SeminormedDirectLimit A f) :=
   inferInstanceAs (StarModule ℂ (DirectLimit A f))
 
 variable (A f) in
+/-- The identification of the seminormed type synonym with the algebraic direct limit, as a
+⋆-algebra equivalence. -/
+def starAlgEquiv : SeminormedDirectLimit A f ≃⋆ₐ[ℂ] DirectLimit A f where
+  toFun z := z
+  invFun z := z
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  map_star' _ := rfl
+
+variable (A f) in
 /-- The canonical ⋆-homomorphism from a stage into the algebraic direct limit. -/
 def of (i : ι) : A i →⋆ₙₐ[ℂ] SeminormedDirectLimit A f where
   toFun a := (⟦⟨i, a⟩⟧ : DirectLimit A f)
@@ -113,6 +136,13 @@ def of (i : ι) : A i →⋆ₙₐ[ℂ] SeminormedDirectLimit A f where
   map_add' a b := (DirectLimit.add_def i a b).symm
   map_mul' a b := (DirectLimit.mul_def i a b).symm
   map_star' a := (DirectLimit.star_def i a).symm
+
+/-- Under the identification with the algebraic direct limit, the canonical map of a stage is
+Mathlib's canonical map `DirectLimit.Module.of`. -/
+@[simp]
+theorem starAlgEquiv_of (i : ι) (a : A i) :
+    starAlgEquiv A f (of A f i a) = DirectLimit.Module.of ℂ ι A f i a :=
+  (rfl)
 
 /-- The canonical maps into the algebraic direct limit are compatible with the connecting maps. -/
 @[simp]
@@ -130,26 +160,32 @@ theorem of_eq_of_iff {i j : ι} {a : A i} {b : A j} :
     of A f i a = of A f j b ↔ ∃ k, ∃ hi : i ≤ k, ∃ hj : j ≤ k, f i k hi a = f j k hj b :=
   Quotient.eq
 
-/-- The infimum of the norms of the representatives of `z`. -/
-private def normInf (z : SeminormedDirectLimit A f) : ℝ :=
-  ⨅ p : {p : Σ i, A i // of A f p.1 p.2 = z}, ‖p.1.2‖
+/-- The C⋆-seminorm of the algebraic direct limit: the norm of `z` is the infimum of `‖a‖` over
+the representatives `a ∈ A i` of `z`. -/
+instance : Norm (SeminormedDirectLimit A f) where
+  norm z := ⨅ p : {p : Σ i, A i // of A f p.1 p.2 = z}, ‖p.1.2‖
+
+private instance (z : SeminormedDirectLimit A f) :
+    Nonempty {p : Σ i, A i // of A f p.1 p.2 = z} := by
+  obtain ⟨i, a, h⟩ := exists_of_eq z
+  exact ⟨⟨⟨i, a⟩, h⟩⟩
 
 private theorem bddBelow_norm (z : SeminormedDirectLimit A f) :
     BddBelow (Set.range fun p : {p : Σ i, A i // of A f p.1 p.2 = z} => ‖p.1.2‖) :=
   ⟨0, Set.forall_mem_range.2 fun _ => norm_nonneg _⟩
 
-private theorem normInf_le {z : SeminormedDirectLimit A f} {i : ι} {a : A i}
-    (h : of A f i a = z) : normInf z ≤ ‖a‖ :=
+/-- The norm of an element is at most the norm of each of its representatives. -/
+theorem norm_le_of_of_eq {z : SeminormedDirectLimit A f} {i : ι} {a : A i}
+    (h : of A f i a = z) : ‖z‖ ≤ ‖a‖ :=
   ciInf_le (bddBelow_norm z) ⟨⟨i, a⟩, h⟩
 
-private theorem le_normInf {z : SeminormedDirectLimit A f} {c : ℝ}
-    (h : ∀ i (a : A i), of A f i a = z → c ≤ ‖a‖) : c ≤ normInf z := by
-  obtain ⟨i, a, ha⟩ := exists_of_eq z
-  have : Nonempty {p : Σ i, A i // of A f p.1 p.2 = z} := ⟨⟨⟨i, a⟩, ha⟩⟩
-  exact le_ciInf fun p => h _ _ p.2
+/-- A lower bound for the norms of all representatives of an element bounds its norm. -/
+theorem le_norm_of_forall {z : SeminormedDirectLimit A f} {c : ℝ}
+    (h : ∀ i (a : A i), of A f i a = z → c ≤ ‖a‖) : c ≤ ‖z‖ :=
+  le_ciInf fun p => h _ _ p.2
 
-private theorem normInf_nonneg (z : SeminormedDirectLimit A f) : 0 ≤ normInf z :=
-  le_normInf fun _ _ _ => norm_nonneg _
+private theorem norm_nonneg_aux (z : SeminormedDirectLimit A f) : 0 ≤ ‖z‖ :=
+  le_norm_of_forall fun _ _ _ => norm_nonneg _
 
 /-- Two representatives can be moved to a common stage without increasing their norms. -/
 private theorem exists_common {i j : ι} (a : A i) (b : A j) :
@@ -159,116 +195,64 @@ private theorem exists_common {i j : ι} (a : A i) (b : A j) :
   exact ⟨k, f i k hik a, f j k hjk b, of_f hik a, of_f hjk b,
     NonUnitalStarAlgHom.norm_apply_le _ _, NonUnitalStarAlgHom.norm_apply_le _ _⟩
 
-private theorem normInf_add_le (z w : SeminormedDirectLimit A f) :
-    normInf (z + w) ≤ normInf z + normInf w := by
-  rw [← sub_le_iff_le_add]
-  refine le_normInf fun j b hb => ?_
-  rw [sub_le_comm]
-  refine le_normInf fun i a ha => ?_
-  rw [sub_le_iff_le_add]
-  obtain ⟨k, a', b', ha', hb', hna, hnb⟩ := exists_common (f := f) a b
-  calc normInf (z + w) ≤ ‖b' + a'‖ := normInf_le (by rw [map_add, hb', ha', hb, ha])
-    _ ≤ ‖b'‖ + ‖a'‖ := norm_add_le _ _
-    _ ≤ ‖a‖ + ‖b‖ := by linarith
+private theorem norm_add_le_aux (z w : SeminormedDirectLimit A f) : ‖z + w‖ ≤ ‖z‖ + ‖w‖ :=
+  le_ciInf_add_ciInf fun ⟨⟨i, a⟩, ha⟩ ⟨⟨j, b⟩, hb⟩ => by
+    obtain ⟨k, a', b', ha', hb', hna, hnb⟩ := exists_common (f := f) a b
+    calc ‖z + w‖ ≤ ‖a' + b'‖ := norm_le_of_of_eq (by rw [map_add, ha', hb', ha, hb])
+      _ ≤ ‖a'‖ + ‖b'‖ := norm_add_le _ _
+      _ ≤ ‖a‖ + ‖b‖ := add_le_add hna hnb
 
-private theorem normInf_neg_le (z : SeminormedDirectLimit A f) : normInf (-z) ≤ normInf z :=
-  le_normInf fun _ a ha => (normInf_le (by rw [map_neg, ha])).trans_eq (norm_neg a)
+private theorem norm_neg_le_aux (z : SeminormedDirectLimit A f) : ‖-z‖ ≤ ‖z‖ :=
+  le_norm_of_forall fun _ a ha => (norm_le_of_of_eq (by rw [map_neg, ha])).trans_eq (norm_neg a)
 
-variable (A f) in
-/-- The C⋆-seminorm of the algebraic direct limit: the infimum of `‖a‖` over the representatives
-`a ∈ A i` of an element. -/
-def seminorm : AddGroupSeminorm (SeminormedDirectLimit A f) where
-  toFun := normInf
-  map_zero' := by
-    obtain ⟨i⟩ := ‹Nonempty ι›
-    exact le_antisymm ((normInf_le (map_zero (of A f i))).trans_eq norm_zero) (normInf_nonneg 0)
-  add_le' := normInf_add_le
-  neg' z := le_antisymm (normInf_neg_le z) (by simpa using normInf_neg_le (-z))
-
-private theorem seminorm_apply (z : SeminormedDirectLimit A f) : seminorm A f z = normInf z :=
-  rfl
-
-/-- The seminorm of an element is at most the norm of each of its representatives. -/
-theorem seminorm_le_of_of_eq {z : SeminormedDirectLimit A f} {i : ι} {a : A i}
-    (h : of A f i a = z) : seminorm A f z ≤ ‖a‖ :=
-  normInf_le h
-
-/-- A lower bound for the norms of all representatives of an element bounds its seminorm. -/
-theorem le_seminorm_of_forall {z : SeminormedDirectLimit A f} {c : ℝ}
-    (h : ∀ i (a : A i), of A f i a = z → c ≤ ‖a‖) : c ≤ seminorm A f z :=
-  le_normInf h
-
-/-- The seminorm of the algebraic direct limit is submultiplicative. -/
-theorem seminorm_mul_le (z w : SeminormedDirectLimit A f) :
-    seminorm A f (z * w) ≤ seminorm A f z * seminorm A f w := by
-  obtain ⟨i₀, a₀, ha₀⟩ := exists_of_eq z
-  obtain ⟨j₀, b₀, hb₀⟩ := exists_of_eq w
-  have : Nonempty {p : Σ i, A i // of A f p.1 p.2 = z} := ⟨⟨⟨i₀, a₀⟩, ha₀⟩⟩
-  have : Nonempty {p : Σ i, A i // of A f p.1 p.2 = w} := ⟨⟨⟨j₀, b₀⟩, hb₀⟩⟩
-  have hz : normInf z * normInf w =
-      ⨅ p : {p : Σ i, A i // of A f p.1 p.2 = z}, ‖p.1.2‖ * normInf w :=
-    Real.iInf_mul_of_nonneg (normInf_nonneg w) _
-  simp only [seminorm_apply, hz]
-  refine le_ciInf fun ⟨⟨i, a⟩, ha⟩ => ?_
-  have hw : ‖a‖ * normInf w = ⨅ p : {p : Σ i, A i // of A f p.1 p.2 = w}, ‖a‖ * ‖p.1.2‖ :=
-    Real.mul_iInf_of_nonneg (norm_nonneg _) _
-  rw [hw]
-  refine le_ciInf fun ⟨⟨j, b⟩, hb⟩ => ?_
-  obtain ⟨k, a', b', ha', hb', hna, hnb⟩ := exists_common (f := f) a b
-  calc normInf (z * w) ≤ ‖a' * b'‖ := normInf_le (by rw [map_mul, ha', hb', ha, hb])
-    _ ≤ ‖a'‖ * ‖b'‖ := norm_mul_le _ _
-    _ ≤ ‖a‖ * ‖b‖ := mul_le_mul hna hnb (norm_nonneg _) (norm_nonneg _)
-
-/-- The star operation does not increase the seminorm of the algebraic direct limit. -/
-theorem seminorm_star_le (z : SeminormedDirectLimit A f) :
-    seminorm A f (star z) ≤ seminorm A f z :=
-  le_normInf fun _ a ha => (normInf_le (by rw [map_star, ha])).trans_eq (norm_star a)
-
-/-- Scalar multiplication by `c` multiplies the seminorm of the algebraic direct limit by at most
-`‖c‖`. -/
-theorem seminorm_smul_le (c : ℂ) (z : SeminormedDirectLimit A f) :
-    seminorm A f (c • z) ≤ ‖c‖ * seminorm A f z := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · rw [zero_smul, map_zero, norm_zero, zero_mul]
-  rw [← div_le_iff₀' (norm_pos_iff.2 hc)]
-  refine le_normInf fun i a ha => ?_
-  rw [div_le_iff₀' (norm_pos_iff.2 hc), ← norm_smul]
-  exact normInf_le (by rw [map_smul, ha])
-
-/-- The lower C⋆-inequality for the seminorm of the algebraic direct limit: the square of the
-seminorm of `z` is at most the seminorm of `star z * z`. -/
-theorem seminorm_mul_self_le (z : SeminormedDirectLimit A f) :
-    seminorm A f z * seminorm A f z ≤ seminorm A f (star z * z) := by
-  -- if `z` is represented by `a ∈ A i` and `star z * z` by `b ∈ A j`, then at a common stage `k`
-  -- the image of `b` is `star a' * a'` for the image `a'` of `a`, so `‖b‖ ≥ ‖a'‖ ^ 2`, and `a'`
-  -- represents `z`
-  obtain ⟨i, a, rfl⟩ := exists_of_eq z
-  refine le_normInf fun j b hb => ?_
-  rw [← map_star, ← map_mul] at hb
-  obtain ⟨k, hjk, hik, hk⟩ := of_eq_of_iff.1 hb
-  have hnorm := NonUnitalStarAlgHom.norm_apply_le (f j k hjk) b
-  rw [hk, map_mul, map_star, CStarRing.norm_star_mul_self] at hnorm
-  have hle := normInf_le (of_f (f := f) hik a)
-  exact (mul_self_le_mul_self (normInf_nonneg _) hle).trans hnorm
-
-instance : SeminormedAddCommGroup (SeminormedDirectLimit A f) :=
-  (seminorm A f).toSeminormedAddCommGroup
-
-/-- The norm of the algebraic direct limit is its C⋆-seminorm. -/
-theorem norm_def (z : SeminormedDirectLimit A f) : ‖z‖ = seminorm A f z :=
-  (rfl)
+instance : SeminormedAddCommGroup (SeminormedDirectLimit A f) where
+  __ := AddGroupSeminorm.toSeminormedAddCommGroup
+    { toFun z := ‖z‖
+      map_zero' := by
+        obtain ⟨i⟩ := ‹Nonempty ι›
+        exact le_antisymm ((norm_le_of_of_eq (map_zero (of A f i))).trans_eq norm_zero)
+          (norm_nonneg_aux 0)
+      add_le' := by exact norm_add_le_aux
+      neg' z := by exact le_antisymm (norm_neg_le_aux z) (by simpa using norm_neg_le_aux (-z)) }
+  toNorm := inferInstance
 
 instance : NormedSpace ℂ (SeminormedDirectLimit A f) where
-  __ : Module ℂ (SeminormedDirectLimit A f) := inferInstance
-  norm_smul_le := seminorm_smul_le
+  norm_smul_le c z := by
+    refine (le_ciInf fun ⟨⟨i, a⟩, ha⟩ => ?_).trans_eq
+      (Real.mul_iInf_of_nonneg (norm_nonneg c) _).symm
+    exact (norm_le_of_of_eq (by rw [map_smul, ha])).trans_eq (norm_smul c a)
 
 instance : NonUnitalSeminormedRing (SeminormedDirectLimit A f) where
   __ : SeminormedAddCommGroup (SeminormedDirectLimit A f) := inferInstance
   __ : NonUnitalRing (SeminormedDirectLimit A f) := inferInstance
-  norm_mul_le := seminorm_mul_le
+  norm_mul_le z w := by
+    refine (le_ciInf fun ⟨⟨i, a⟩, ha⟩ => ?_).trans_eq
+      (Real.iInf_mul_of_nonneg (norm_nonneg w) _).symm
+    refine (le_ciInf fun ⟨⟨j, b⟩, hb⟩ => ?_).trans_eq
+      (Real.mul_iInf_of_nonneg (norm_nonneg a) _).symm
+    obtain ⟨k, a', b', ha', hb', hna, hnb⟩ := exists_common (f := f) a b
+    calc ‖z * w‖ ≤ ‖a' * b'‖ := norm_le_of_of_eq (by rw [map_mul, ha', hb', ha, hb])
+      _ ≤ ‖a'‖ * ‖b'‖ := norm_mul_le _ _
+      _ ≤ ‖a‖ * ‖b‖ := mul_le_mul hna hnb (norm_nonneg _) (norm_nonneg _)
 
 instance : NormedStarGroup (SeminormedDirectLimit A f) where
-  norm_star_le := seminorm_star_le
+  norm_star_le z :=
+    le_norm_of_forall fun _ a ha => (norm_le_of_of_eq (by rw [map_star, ha])).trans_eq (norm_star a)
+
+/-- The lower C⋆-inequality for the seminorm of the algebraic direct limit: the square of the
+norm of `z` is at most the norm of `star z * z`. -/
+theorem norm_mul_self_le (z : SeminormedDirectLimit A f) : ‖z‖ * ‖z‖ ≤ ‖star z * z‖ := by
+  -- if `z` is represented by `a ∈ A i` and `star z * z` by `b ∈ A j`, then at a common stage `k`
+  -- the image of `b` is `star a' * a'` for the image `a'` of `a`, so `‖b‖ ≥ ‖a'‖ ^ 2`, and `a'`
+  -- represents `z`
+  obtain ⟨i, a, rfl⟩ := exists_of_eq z
+  refine le_norm_of_forall fun j b hb => ?_
+  rw [← map_star, ← map_mul] at hb
+  obtain ⟨k, hjk, hik, hk⟩ := of_eq_of_iff.1 hb
+  have hnorm := NonUnitalStarAlgHom.norm_apply_le (f j k hjk) b
+  rw [hk, map_mul, map_star, CStarRing.norm_star_mul_self] at hnorm
+  have hle := norm_le_of_of_eq (of_f (f := f) hik a)
+  exact (mul_self_le_mul_self (norm_nonneg _) hle).trans hnorm
 
 /-- The norm of the image of `a ∈ A i` is the infimum of the norms of its images in the later
 stages. -/
@@ -276,8 +260,8 @@ theorem norm_of (i : ι) (a : A i) : ‖of A f i a‖ = ⨅ j : {j // i ≤ j}, 
   have : Nonempty {j // i ≤ j} := ⟨⟨i, le_rfl⟩⟩
   have hbdd : BddBelow (Set.range fun j : {j // i ≤ j} => ‖f i j j.2 a‖) :=
     ⟨0, Set.forall_mem_range.2 fun _ => norm_nonneg _⟩
-  refine le_antisymm (le_ciInf fun j => seminorm_le_of_of_eq (of_f j.2 a)) ?_
-  refine le_seminorm_of_forall fun j b hb => ?_
+  refine le_antisymm (le_ciInf fun j => norm_le_of_of_eq (of_f j.2 a)) ?_
+  refine le_norm_of_forall fun j b hb => ?_
   obtain ⟨k, hjk, hik, hk⟩ := of_eq_of_iff.1 hb
   calc ⨅ j : {j // i ≤ j}, ‖f i j j.2 a‖ ≤ ‖f i k hik a‖ := ciInf_le hbdd ⟨k, hik⟩
     _ = ‖f j k hjk b‖ := by rw [hk]
@@ -295,16 +279,17 @@ def CStarInductiveLimit : Type _ :=
 
 namespace CStarInductiveLimit
 
-/-- The completion of the algebraic direct limit is a C⋆-algebra. -/
-instance : NonUnitalCStarAlgebra (Completion (SeminormedDirectLimit A f)) where
-  toCStarRing := Completion.cstarRing seminorm_mul_self_le
-
-/-- The C⋆-inductive limit is a nonunital C⋆-algebra. -/
+/-- The C⋆-inductive limit is a nonunital C⋆-algebra: the completion of the algebraic direct
+limit satisfies the C⋆-identity because its seminorm does. -/
 instance : NonUnitalCStarAlgebra (CStarInductiveLimit A f) :=
+  letI : NonUnitalCStarAlgebra (Completion (SeminormedDirectLimit A f)) :=
+    { toCStarRing := Completion.cstarRing norm_mul_self_le }
   inferInstanceAs (NonUnitalCStarAlgebra (Completion (SeminormedDirectLimit A f)))
 
-/-- The completion map of the algebraic direct limit as a ⋆-homomorphism. -/
-private def coeHom : SeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A f where
+variable (A f) in
+/-- The completion map of the algebraic direct limit into the C⋆-inductive limit, as a
+⋆-homomorphism. -/
+def coeHom : SeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A f where
   toFun z := (z : Completion (SeminormedDirectLimit A f))
   map_smul' c z := Completion.coe_smul c z
   map_zero' := Completion.coe_zero
@@ -312,24 +297,42 @@ private def coeHom : SeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveL
   map_mul' := Completion.coe_mul'
   map_star' := Completion.coe_star
 
+/-- The completion map `coeHom` is the coercion of the algebraic direct limit into its
+completion, of which `CStarInductiveLimit A f` is a type synonym. -/
 private theorem coeHom_apply (z : SeminormedDirectLimit A f) :
-    coeHom z = (z : Completion (SeminormedDirectLimit A f)) :=
-  rfl
+    coeHom A f z = (z : Completion (SeminormedDirectLimit A f)) :=
+  (rfl)
+
+/-- The completion map preserves the C⋆-seminorm of the algebraic direct limit. -/
+@[simp]
+theorem norm_coeHom (z : SeminormedDirectLimit A f) : ‖coeHom A f z‖ = ‖z‖ :=
+  Completion.norm_coe z
+
+variable (A f) in
+/-- The completion map of the algebraic direct limit has dense range. -/
+theorem denseRange_coeHom : DenseRange (coeHom A f) :=
+  Completion.denseRange_coe
 
 variable (A f) in
 /-- The canonical ⋆-homomorphism from a stage into the C⋆-inductive limit. -/
 def of (i : ι) : A i →⋆ₙₐ[ℂ] CStarInductiveLimit A f :=
-  coeHom.comp (SeminormedDirectLimit.of A f i)
+  (coeHom A f).comp (SeminormedDirectLimit.of A f i)
+
+/-- The canonical map of a stage into the C⋆-inductive limit is the completion map applied to
+the canonical map into the algebraic direct limit. -/
+@[simp]
+theorem coeHom_of (i : ι) (a : A i) : coeHom A f (SeminormedDirectLimit.of A f i a) = of A f i a :=
+  (rfl)
 
 /-- The canonical maps are compatible with the connecting maps. -/
 @[simp]
-theorem of_f {i j : ι} (h : i ≤ j) (a : A i) : of A f j (f i j h a) = of A f i a :=
-  congr_arg coeHom (SeminormedDirectLimit.of_f h a)
+theorem of_f {i j : ι} (h : i ≤ j) (a : A i) : of A f j (f i j h a) = of A f i a := by
+  rw [← coeHom_of, SeminormedDirectLimit.of_f, coeHom_of]
 
 /-- **The norm formula.** The norm of the image of `a ∈ A i` in the C⋆-inductive limit is the
 infimum of the norms of its images in the later stages, which decrease along `ι`. -/
-theorem norm_of (i : ι) (a : A i) : ‖of A f i a‖ = ⨅ j : {j // i ≤ j}, ‖f i j j.2 a‖ :=
-  (Completion.norm_coe _).trans (SeminormedDirectLimit.norm_of i a)
+theorem norm_of (i : ι) (a : A i) : ‖of A f i a‖ = ⨅ j : {j // i ≤ j}, ‖f i j j.2 a‖ := by
+  rw [← coeHom_of, norm_coeHom, SeminormedDirectLimit.norm_of]
 
 /-- An element of a stage dies in the C⋆-inductive limit exactly when its images in the later
 stages have arbitrarily small norm. -/
@@ -337,22 +340,63 @@ theorem of_eq_zero_iff {i : ι} {a : A i} :
     of A f i a = 0 ↔ ∀ ε > 0, ∃ j, ∃ h : i ≤ j, ‖f i j h a‖ < ε := by
   have : Nonempty {j // i ≤ j} := ⟨⟨i, le_rfl⟩⟩
   rw [← norm_eq_zero, norm_of]
-  refine ⟨fun h ε hε => ?_, fun h => le_antisymm ?_ (le_ciInf fun _ => norm_nonneg _)⟩
+  refine ⟨fun h ε hε => ?_, fun h => ?_⟩
   · obtain ⟨j, hj⟩ := exists_lt_of_ciInf_lt (h.trans_lt hε)
     exact ⟨j, j.2, hj⟩
-  · refine le_of_forall_pos_lt_add fun ε hε => ?_
+  · refine ciInf_eq_of_forall_ge_of_forall_gt_exists_lt (fun _ => norm_nonneg _) fun ε hε => ?_
     obtain ⟨j, h, hj⟩ := h ε hε
-    rw [zero_add]
-    exact (ciInf_le ⟨0, Set.forall_mem_range.2 fun _ => norm_nonneg _⟩ ⟨j, h⟩ :
-      ⨅ j : {j // i ≤ j}, ‖f i j j.2 a‖ ≤ _).trans_lt hj
+    exact ⟨⟨j, h⟩, hj⟩
+
+/-- Two elements of stages have the same image in the C⋆-inductive limit exactly when their
+images in the later stages become arbitrarily close. -/
+theorem of_eq_of_iff {i j : ι} {a : A i} {b : A j} :
+    of A f i a = of A f j b ↔
+      ∀ ε > 0, ∃ k, ∃ hi : i ≤ k, ∃ hj : j ≤ k, ‖f i k hi a - f j k hj b‖ < ε := by
+  obtain ⟨k₀, hi₀, hj₀⟩ := exists_ge_ge i j
+  have hmap {k l : ι} (hk : k ≤ l) (hi : i ≤ k) (hj : j ≤ k) :
+      f k l hk (f i k hi a - f j k hj b) = f i l (hi.trans hk) a - f j l (hj.trans hk) b := by
+    rw [map_sub, DirectedSystem.map_map (f := (f · · ·)), DirectedSystem.map_map (f := (f · · ·))]
+  rw [← sub_eq_zero, ← of_f hi₀ a, ← of_f hj₀ b, ← map_sub, of_eq_zero_iff]
+  refine forall₂_congr fun ε _ => ⟨fun ⟨k, hk, h⟩ => ⟨k, hi₀.trans hk, hj₀.trans hk, ?_⟩,
+    fun ⟨k, hi, hj, h⟩ => ?_⟩
+  · rwa [hmap] at h
+  · obtain ⟨l, hkl, hk₀l⟩ := exists_ge_ge k k₀
+    refine ⟨l, hk₀l, ?_⟩
+    rw [hmap, ← hmap hkl hi hj]
+    exact (NonUnitalStarAlgHom.norm_apply_le _ _).trans_lt h
+
+section Injective
+
+variable {i : ι} (hf : ∀ j (h : i ≤ j), Function.Injective (f i j h))
+include hf
+
+/-- If the connecting maps out of `A i` are injective, the canonical map of `A i` into the
+C⋆-inductive limit preserves norms. -/
+theorem norm_of_of_injective (a : A i) : ‖of A f i a‖ = ‖a‖ := by
+  have : Nonempty {j // i ≤ j} := ⟨⟨i, le_rfl⟩⟩
+  rw [norm_of]
+  exact (iInf_congr fun j : {j // i ≤ j} => NonUnitalStarAlgHom.norm_map _ (hf j.1 j.2) a).trans
+    ciInf_const
+
+/-- If the connecting maps out of `A i` are injective, the canonical map of `A i` into the
+C⋆-inductive limit is isometric. -/
+theorem isometry_of : Isometry (of A f i) :=
+  AddMonoidHomClass.isometry_of_norm _ (norm_of_of_injective hf)
+
+/-- If the connecting maps out of `A i` are injective, the canonical map of `A i` into the
+C⋆-inductive limit is injective. -/
+theorem of_injective : Function.Injective (of A f i) :=
+  (isometry_of hf).injective
+
+end Injective
 
 variable (A f) in
 /-- The union of the images of the stages is dense in the C⋆-inductive limit. -/
 theorem dense_iUnion_range_of : Dense (⋃ i, Set.range (of A f i)) := by
-  refine Completion.denseRange_coe.mono ?_
+  refine (denseRange_coeHom A f).mono ?_
   rintro _ ⟨z, rfl⟩
   obtain ⟨i, a, rfl⟩ := SeminormedDirectLimit.exists_of_eq z
-  exact Set.mem_iUnion.2 ⟨i, a, rfl⟩
+  exact Set.mem_iUnion.2 ⟨i, a, coeHom_of i a⟩
 
 /-- To prove a closed property of every element of the C⋆-inductive limit, it suffices to prove
 it on the images of the stages. -/
@@ -397,72 +441,71 @@ theorem hom_ext {B : Type*} [NonUnitalCStarAlgebra B] {φ ψ : CStarInductiveLim
 
 section liftCLM
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   (g : ∀ i, A i →L[ℂ] E) (hg : ∀ i j h a, g j (f i j h a) = g i a) {C : ℝ} (hC : ∀ i, ‖g i‖ ≤ C)
+
+/-- The compatible family `g` induces a linear map on the algebraic direct limit. -/
+private def liftLinearMap : SeminormedDirectLimit A f →ₗ[ℂ] E :=
+  DirectLimit.Module.lift ℂ ι A f (fun i => (g i : A i →ₗ[ℂ] E)) hg
+
+@[simp]
+private theorem liftLinearMap_of (i : ι) (a : A i) :
+    liftLinearMap g hg (SeminormedDirectLimit.of A f i a) = g i a :=
+  DirectLimit.Module.lift_of _ _ a
 
 /-- The compatible family `g` induces a continuous linear map on the algebraic direct limit, with
 norm at most `C`. -/
 private def liftCLMAux : SeminormedDirectLimit A f →L[ℂ] E :=
-  LinearMap.mkContinuous
-    { toFun := DirectLimit.lift f (g · ·) fun i j h a => (hg i j h a).symm
-      map_add' := DirectLimit.lift_add g _
-      map_smul' := DirectLimit.lift_smul g _ } C fun z => by
+  (liftLinearMap g hg).mkContinuous C fun z => by
     obtain ⟨i₀⟩ := ‹Nonempty ι›
-    rcases ((norm_nonneg _).trans (hC i₀)).eq_or_lt with rfl | hC0
-    · obtain ⟨i, a, rfl⟩ := exists_of_eq z
-      rw [zero_mul]
-      exact ((g i).le_of_opNorm_le (hC i) a).trans_eq (zero_mul _)
-    rw [← div_le_iff₀' hC0]
-    refine le_seminorm_of_forall fun i a ha => ?_
-    subst ha
-    exact (div_le_iff₀' hC0).2 ((g i).le_of_opNorm_le (hC i) a)
+    have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC i₀)
+    refine (le_ciInf fun p => ?_).trans_eq (Real.mul_iInf_of_nonneg hC0 _).symm
+    obtain ⟨⟨i, a⟩, rfl⟩ := p
+    rw [liftLinearMap_of]
+    exact (g i).le_of_opNorm_le (hC i) a
+
+@[simp]
+private theorem liftCLMAux_of (i : ι) (a : A i) :
+    liftCLMAux g hg hC (SeminormedDirectLimit.of A f i a) = g i a := by
+  rw [liftCLMAux, LinearMap.mkContinuous_apply, liftLinearMap_of]
+
+variable [CompleteSpace E]
 
 /-- A compatible family of continuous linear maps `g i : A i →L[ℂ] E` into a Banach space, with
 norms uniformly bounded by `C`, induces a continuous linear map out of the C⋆-inductive limit. -/
 def liftCLM : CStarInductiveLimit A f →L[ℂ] E :=
   (liftCLMAux g hg hC).fromCompletion
 
+/-- On the completion map, the induced continuous linear map is `liftCLMAux`, of which it is the
+extension to the completion. -/
+private theorem liftCLM_coeHom (z : SeminormedDirectLimit A f) :
+    liftCLM g hg hC (coeHom A f z) = liftCLMAux g hg hC z :=
+  (liftCLMAux g hg hC).fromCompletion_apply_coe z
+
 /-- The induced continuous linear map extends each `g i`. -/
 @[simp]
-theorem liftCLM_of (i : ι) (a : A i) : liftCLM g hg hC (of A f i a) = g i a :=
-  ((liftCLMAux g hg hC).fromCompletion_apply_coe _).trans rfl
+theorem liftCLM_of (i : ι) (a : A i) : liftCLM g hg hC (of A f i a) = g i a := by
+  rw [← coeHom_of, liftCLM_coeHom, liftCLMAux_of]
 
 /-- The induced continuous linear map has norm at most the uniform bound `C`. -/
 theorem norm_liftCLM_le : ‖liftCLM g hg hC‖ ≤ C := by
   obtain ⟨i₀⟩ := ‹Nonempty ι›
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC i₀)
-  refine ContinuousLinearMap.opNorm_le_bound _ hC0 fun x => ?_
-  induction x using induction_on with
-  | hp => exact isClosed_le (by fun_prop) (by fun_prop)
-  | ih i a =>
-    rw [liftCLM_of]
-    exact ((liftCLMAux g hg hC).le_of_opNorm_le (LinearMap.mkContinuous_norm_le _ hC0 _)
-      (SeminormedDirectLimit.of A f i a)).trans_eq (congrArg (C * ·) (Completion.norm_coe _).symm)
+  -- the operator norm on `CStarInductiveLimit A f →L[ℂ] E` is that of the completion
+  exact (liftCLMAux g hg hC).norm_fromCompletion.trans_le
+    (LinearMap.mkContinuous_norm_le _ ((norm_nonneg _).trans (hC i₀)) _)
 
 end liftCLM
 
 variable {B : Type*} [NonUnitalCStarAlgebra B] (g : ∀ i, A i →⋆ₙₐ[ℂ] B)
   (hg : ∀ i j h a, g j (f i j h a) = g i a)
 
-/-- A ⋆-homomorphism between C⋆-algebras as a continuous linear map of norm at most `1`. -/
-private def toCLM {D : Type*} [NonUnitalCStarAlgebra D] (φ : D →⋆ₙₐ[ℂ] B) : D →L[ℂ] B :=
-  LinearMap.mkContinuous (φ : D →ₗ[ℂ] B) 1 fun a => by
-    simpa using NonUnitalStarAlgHom.norm_apply_le φ a
-
-private theorem toCLM_apply {D : Type*} [NonUnitalCStarAlgebra D] (φ : D →⋆ₙₐ[ℂ] B) (a : D) :
-    toCLM φ a = φ a :=
-  rfl
-
-private theorem norm_toCLM_le {D : Type*} [NonUnitalCStarAlgebra D] (φ : D →⋆ₙₐ[ℂ] B) :
-    ‖toCLM φ‖ ≤ 1 :=
-  LinearMap.mkContinuous_norm_le _ zero_le_one _
-
 /-- **The universal property.** A family of ⋆-homomorphisms `g i : A i → B` into a C⋆-algebra,
 compatible with the connecting maps, induces a ⋆-homomorphism out of the C⋆-inductive limit. Its
 values on the stages are given by `lift_of`, and these determine it by `hom_ext`. -/
 def lift : CStarInductiveLimit A f →⋆ₙₐ[ℂ] B where
-  toFun := liftCLM (fun i => toCLM (g i))
-    (fun i j h a => by simpa only [toCLM_apply] using hg i j h a) fun i => norm_toCLM_le (g i)
+  toFun := liftCLM (fun i => (g i).toContinuousLinearMap)
+    (fun i j h a => by simpa only [NonUnitalStarAlgHom.coe_toContinuousLinearMap] using hg i j h a)
+    fun i => (g i).norm_toContinuousLinearMap_le
   map_smul' := map_smul _
   map_zero' := map_zero _
   map_add' := map_add _
@@ -470,23 +513,40 @@ def lift : CStarInductiveLimit A f →⋆ₙₐ[ℂ] B where
     induction x, y using induction_on₂ with
     | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
     | ih k a b =>
-      rw [← map_mul (of A f k), liftCLM_of, liftCLM_of, liftCLM_of, toCLM_apply, toCLM_apply,
-        toCLM_apply, map_mul]
+      simp only [← map_mul, liftCLM_of, NonUnitalStarAlgHom.coe_toContinuousLinearMap]
   map_star' x := by
     induction x using induction_on with
     | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
     | ih i a =>
-      simp only [← map_star, liftCLM_of, toCLM_apply]
+      simp only [← map_star, liftCLM_of, NonUnitalStarAlgHom.coe_toContinuousLinearMap]
 
 /-- The induced ⋆-homomorphism extends each `g i`. -/
 @[simp]
 theorem lift_of (i : ι) (a : A i) : lift g hg (of A f i a) = g i a :=
-  (liftCLM_of _ _ _ i a).trans (toCLM_apply (g i) a)
+  (liftCLM_of _ _ _ i a).trans (congrFun (g i).coe_toContinuousLinearMap a)
 
 /-- The induced ⋆-homomorphism composed with a canonical map is `g i`. -/
 @[simp]
 theorem lift_comp_of (i : ι) : (lift g hg).comp (of A f i) = g i :=
   NonUnitalStarAlgHom.ext (lift_of g hg i)
+
+/-- A ⋆-homomorphism out of the C⋆-inductive limit is induced by its compositions with the
+canonical maps. -/
+@[simp]
+theorem lift_unique (φ : CStarInductiveLimit A f →⋆ₙₐ[ℂ] B) :
+    lift (fun i => φ.comp (of A f i)) (fun i j h a => by simp) = φ :=
+  hom_ext fun i => lift_comp_of _ _ i
+
+variable (A f) in
+/-- The ⋆-homomorphism induced by the canonical maps is the identity. -/
+@[simp]
+theorem lift_id : lift (of A f) (fun _ _ h a => of_f h a) = NonUnitalStarAlgHom.id ℂ _ :=
+  hom_ext fun i => (lift_comp_of _ _ i).trans (NonUnitalStarAlgHom.id_comp _).symm
+
+/-- Composing the induced ⋆-homomorphism with a ⋆-homomorphism `ψ` induces the composite family. -/
+theorem comp_lift {D : Type*} [NonUnitalCStarAlgebra D] (ψ : B →⋆ₙₐ[ℂ] D) :
+    ψ.comp (lift g hg) = lift (fun i => ψ.comp (g i)) (fun i j h a => by simp [hg]) :=
+  hom_ext fun i => by rw [NonUnitalStarAlgHom.comp_assoc, lift_comp_of, lift_comp_of]
 
 /-- The range of the induced ⋆-homomorphism is the closure of the union of the ranges of the
 `g i`. -/
@@ -505,18 +565,7 @@ that die in the C⋆-inductive limit. -/
 theorem lift_injective_iff :
     Function.Injective (lift g hg) ↔ ∀ i a, g i a = 0 → of A f i a = 0 := by
   refine ⟨fun h i a ha => h (by rw [lift_of, ha, map_zero]), fun h => ?_⟩
-  -- the kernel condition makes `of i` factor contractively through `A i ⧸ ker (g i)`, which
-  -- `g i` embeds isometrically
-  have hnorm (i : ι) (a : A i) : ‖of A f i a‖ ≤ ‖g i a‖ := by
-    let q := TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker (g i)) (of A f i)
-      fun b hb => h i b ((TwoSidedIdeal.mem_ker _).1 hb)
-    calc ‖of A f i a‖ = ‖q (TwoSidedIdeal.Quotient.mk _ a)‖ := by
-          rw [TwoSidedIdeal.Quotient.liftStarAlgHom_mk]
-      _ ≤ ‖TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker (g i)) a‖ :=
-          NonUnitalStarAlgHom.norm_apply_le q _
-      _ = ‖g i a‖ := by
-          rw [← (g i).quotientKerHom_mk a, (g i).isometry_quotientKerHom.norm_map_of_map_zero
-            (map_zero _)]
+  -- the kernel condition makes `of i` dominated in norm by `g i`, so `lift g hg` is isometric
   have hiso : Isometry (lift g hg) := by
     refine AddMonoidHomClass.isometry_of_norm _ fun x => ?_
     induction x using induction_on with
@@ -524,8 +573,50 @@ theorem lift_injective_iff :
     | ih i a =>
       rw [lift_of]
       exact le_antisymm (by simpa using NonUnitalStarAlgHom.norm_apply_le (lift g hg) (of A f i a))
-        (hnorm i a)
+        ((g i).norm_apply_le_norm_apply_of_ker_le (fun b hb => (TwoSidedIdeal.mem_ker _).2
+          (h i b ((TwoSidedIdeal.mem_ker _).1 hb))) a)
   exact hiso.injective
+
+section map
+
+variable {A' : ι → Type*} [∀ i, NonUnitalCStarAlgebra (A' i)] {T' : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
+  {f' : ∀ _ _ h, T' h} [∀ i j (h : i ≤ j), FunLike (T' h) (A' i) (A' j)]
+  [∀ i j (h : i ≤ j), NonUnitalAlgHomClass (T' h) ℂ (A' i) (A' j)]
+  [∀ i j (h : i ≤ j), StarHomClass (T' h) (A' i) (A' j)] [DirectedSystem A' (f' · · ·)]
+  {A'' : ι → Type*} [∀ i, NonUnitalCStarAlgebra (A'' i)] {T'' : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
+  {f'' : ∀ _ _ h, T'' h} [∀ i j (h : i ≤ j), FunLike (T'' h) (A'' i) (A'' j)]
+  [∀ i j (h : i ≤ j), NonUnitalAlgHomClass (T'' h) ℂ (A'' i) (A'' j)]
+  [∀ i j (h : i ≤ j), StarHomClass (T'' h) (A'' i) (A'' j)] [DirectedSystem A'' (f'' · · ·)]
+  (φ : ∀ i, A i →⋆ₙₐ[ℂ] A' i) (hφ : ∀ i j h a, f' i j h (φ i a) = φ j (f i j h a))
+
+/-- A family of ⋆-homomorphisms `φ i : A i → A' i` compatible with the connecting maps induces a
+⋆-homomorphism between the C⋆-inductive limits. -/
+def map : CStarInductiveLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A' f' :=
+  lift (fun i => (of A' f' i).comp (φ i)) fun i j h a => by simp [← hφ]
+
+/-- The induced ⋆-homomorphism between C⋆-inductive limits extends each `φ i`. -/
+@[simp]
+theorem map_of (i : ι) (a : A i) : map φ hφ (of A f i a) = of A' f' i (φ i a) :=
+  lift_of _ _ i a
+
+variable (A f) in
+/-- The identity maps of the stages induce the identity of the C⋆-inductive limit. -/
+@[simp]
+theorem map_id :
+    map (f' := f) (fun i => NonUnitalStarAlgHom.id ℂ (A i)) (fun _ _ _ _ => rfl) =
+      NonUnitalStarAlgHom.id ℂ _ :=
+  hom_ext fun i => NonUnitalStarAlgHom.ext fun a =>
+    map_of (A' := A) (f' := f) _ (fun _ _ _ _ => rfl) i a
+
+/-- The ⋆-homomorphism between C⋆-inductive limits induced by a composite family is the composite
+of the induced ⋆-homomorphisms. -/
+theorem map_comp (ψ : ∀ i, A' i →⋆ₙₐ[ℂ] A'' i)
+    (hψ : ∀ i j h a, f'' i j h (ψ i a) = ψ j (f' i j h a)) :
+    (map ψ hψ).comp (map φ hφ) =
+      map (fun i => (ψ i).comp (φ i)) (fun i j h a => by simp [hφ, hψ]) :=
+  hom_ext fun i => NonUnitalStarAlgHom.ext fun a => by simp
+
+end map
 
 end CStarInductiveLimit
 
@@ -564,21 +655,18 @@ end SeminormedDirectLimit
 
 namespace CStarInductiveLimit
 
-/-- The completion of the algebraic direct limit of unital C⋆-algebras along unital connecting
-maps is a unital C⋆-algebra. -/
-instance : CStarAlgebra (Completion (SeminormedDirectLimit A f)) where
-  toCStarRing := Completion.cstarRing SeminormedDirectLimit.seminorm_mul_self_le
-  norm_smul_le := norm_smul_le
-
 /-- The C⋆-inductive limit of unital C⋆-algebras along unital connecting maps is a unital
 C⋆-algebra. -/
 instance : CStarAlgebra (CStarInductiveLimit A f) :=
+  letI : CStarAlgebra (Completion (SeminormedDirectLimit A f)) :=
+    { toCStarRing := Completion.cstarRing SeminormedDirectLimit.norm_mul_self_le
+      norm_smul_le := norm_smul_le }
   inferInstanceAs (CStarAlgebra (Completion (SeminormedDirectLimit A f)))
 
 /-- The canonical maps of a unital directed system are unital. -/
 @[simp]
 theorem of_one (i : ι) : of A f i 1 = 1 := by
-  rw [of, NonUnitalStarAlgHom.comp_apply, SeminormedDirectLimit.of_one, coeHom_apply]
+  rw [← coeHom_of, SeminormedDirectLimit.of_one, coeHom_apply]
   -- the unit of `CStarInductiveLimit A f` is the unit of the completion, reached through the
   -- `CStarAlgebra` instance rather than syntactically as `Completion`'s `One`
   exact Completion.coe_one _
@@ -602,7 +690,17 @@ def ofStarAlgHom (i : ι) : A i →⋆ₐ[ℂ] CStarInductiveLimit A f where
 
 /-- The unital canonical map agrees with the canonical ⋆-homomorphism. -/
 @[simp]
+theorem coe_ofStarAlgHom (i : ι) : ⇑(ofStarAlgHom A f i) = of A f i :=
+  (rfl)
+
+/-- The unital canonical map agrees with the canonical ⋆-homomorphism. -/
 theorem ofStarAlgHom_apply (i : ι) (a : A i) : ofStarAlgHom A f i a = of A f i a :=
+  (rfl)
+
+/-- The unital canonical map is the canonical ⋆-homomorphism as a nonunital ⋆-homomorphism. -/
+@[simp]
+theorem toNonUnitalStarAlgHom_ofStarAlgHom (i : ι) :
+    (ofStarAlgHom A f i).toNonUnitalStarAlgHom = of A f i :=
   (rfl)
 
 /-- Unital ⋆-homomorphisms out of the C⋆-inductive limit are determined by their compositions
@@ -633,6 +731,12 @@ theorem toNonUnitalStarAlgHom_liftStarAlgHom :
       lift (fun i => (g i).toNonUnitalStarAlgHom) hg :=
   (rfl)
 
+/-- As a function, the unital ⋆-homomorphism induced by `g` is the ⋆-homomorphism induced by
+`g`. -/
+theorem coe_liftStarAlgHom :
+    ⇑(liftStarAlgHom g hg) = lift (fun i => (g i).toNonUnitalStarAlgHom) hg :=
+  (rfl)
+
 /-- The induced unital ⋆-homomorphism extends each `g i`. -/
 @[simp]
 theorem liftStarAlgHom_of (i : ι) (a : A i) : liftStarAlgHom g hg (of A f i a) = g i a :=
@@ -643,6 +747,81 @@ theorem liftStarAlgHom_of (i : ι) (a : A i) : liftStarAlgHom g hg (of A f i a) 
 theorem liftStarAlgHom_comp_ofStarAlgHom (i : ι) :
     (liftStarAlgHom g hg).comp (ofStarAlgHom A f i) = g i :=
   StarAlgHom.ext (liftStarAlgHom_of g hg i)
+
+/-- A unital ⋆-homomorphism out of the C⋆-inductive limit is induced by its compositions with the
+unital canonical maps. -/
+@[simp]
+theorem liftStarAlgHom_unique (φ : CStarInductiveLimit A f →⋆ₐ[ℂ] B) :
+    liftStarAlgHom (fun i => φ.comp (ofStarAlgHom A f i)) (fun i j h a => by simp) = φ :=
+  starAlgHom_ext fun i => liftStarAlgHom_comp_ofStarAlgHom _ _ i
+
+variable (A f) in
+/-- The unital ⋆-homomorphism induced by the unital canonical maps is the identity. -/
+@[simp]
+theorem liftStarAlgHom_id :
+    liftStarAlgHom (ofStarAlgHom A f) (fun _ _ h a => by simp) = StarAlgHom.id ℂ _ :=
+  starAlgHom_ext fun i => (liftStarAlgHom_comp_ofStarAlgHom _ _ i).trans (StarAlgHom.id_comp _).symm
+
+/-- Composing the induced unital ⋆-homomorphism with a unital ⋆-homomorphism `ψ` induces the
+composite family. -/
+theorem comp_liftStarAlgHom {D : Type*} [CStarAlgebra D] (ψ : B →⋆ₐ[ℂ] D) :
+    ψ.comp (liftStarAlgHom g hg) =
+      liftStarAlgHom (fun i => ψ.comp (g i)) (fun i j h a => by simp [hg]) :=
+  starAlgHom_ext fun i => by
+    rw [StarAlgHom.comp_assoc, liftStarAlgHom_comp_ofStarAlgHom, liftStarAlgHom_comp_ofStarAlgHom]
+
+/-- The range of the induced unital ⋆-homomorphism is the closure of the union of the ranges of
+the `g i`. -/
+theorem range_liftStarAlgHom :
+    Set.range (liftStarAlgHom g hg) = closure (⋃ i, Set.range (g i)) :=
+  range_lift (fun i => (g i).toNonUnitalStarAlgHom) hg
+
+/-- The induced unital ⋆-homomorphism is injective exactly when each `g i` kills only elements of
+`A i` that die in the C⋆-inductive limit. -/
+theorem liftStarAlgHom_injective_iff :
+    Function.Injective (liftStarAlgHom g hg) ↔ ∀ i a, g i a = 0 → of A f i a = 0 :=
+  lift_injective_iff (fun i => (g i).toNonUnitalStarAlgHom) hg
+
+section map
+
+variable {A' : ι → Type*} [∀ i, CStarAlgebra (A' i)] {T' : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
+  {f' : ∀ _ _ h, T' h} [∀ i j (h : i ≤ j), FunLike (T' h) (A' i) (A' j)]
+  [∀ i j (h : i ≤ j), AlgHomClass (T' h) ℂ (A' i) (A' j)]
+  [∀ i j (h : i ≤ j), StarHomClass (T' h) (A' i) (A' j)] [DirectedSystem A' (f' · · ·)]
+  {A'' : ι → Type*} [∀ i, CStarAlgebra (A'' i)] {T'' : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
+  {f'' : ∀ _ _ h, T'' h} [∀ i j (h : i ≤ j), FunLike (T'' h) (A'' i) (A'' j)]
+  [∀ i j (h : i ≤ j), AlgHomClass (T'' h) ℂ (A'' i) (A'' j)]
+  [∀ i j (h : i ≤ j), StarHomClass (T'' h) (A'' i) (A'' j)] [DirectedSystem A'' (f'' · · ·)]
+  (φ : ∀ i, A i →⋆ₐ[ℂ] A' i) (hφ : ∀ i j h a, f' i j h (φ i a) = φ j (f i j h a))
+
+/-- A family of unital ⋆-homomorphisms `φ i : A i → A' i` compatible with the connecting maps
+induces a unital ⋆-homomorphism between the C⋆-inductive limits. -/
+def mapStarAlgHom : CStarInductiveLimit A f →⋆ₐ[ℂ] CStarInductiveLimit A' f' :=
+  liftStarAlgHom (fun i => (ofStarAlgHom A' f' i).comp (φ i)) fun i j h a => by simp [← hφ]
+
+/-- The induced unital ⋆-homomorphism between C⋆-inductive limits extends each `φ i`. -/
+@[simp]
+theorem mapStarAlgHom_of (i : ι) (a : A i) : mapStarAlgHom φ hφ (of A f i a) = of A' f' i (φ i a) :=
+  liftStarAlgHom_of _ _ i a
+
+variable (A f) in
+/-- The identity maps of the stages induce the identity of the C⋆-inductive limit. -/
+@[simp]
+theorem mapStarAlgHom_id :
+    mapStarAlgHom (f' := f) (fun i => StarAlgHom.id ℂ (A i)) (fun _ _ _ _ => rfl) =
+      StarAlgHom.id ℂ _ :=
+  starAlgHom_ext fun i => StarAlgHom.ext fun a =>
+    mapStarAlgHom_of (A' := A) (f' := f) _ (fun _ _ _ _ => rfl) i a
+
+/-- The unital ⋆-homomorphism between C⋆-inductive limits induced by a composite family is the
+composite of the induced unital ⋆-homomorphisms. -/
+theorem mapStarAlgHom_comp (ψ : ∀ i, A' i →⋆ₐ[ℂ] A'' i)
+    (hψ : ∀ i j h a, f'' i j h (ψ i a) = ψ j (f' i j h a)) :
+    (mapStarAlgHom ψ hψ).comp (mapStarAlgHom φ hφ) =
+      mapStarAlgHom (fun i => (ψ i).comp (φ i)) (fun i j h a => by simp [hφ, hψ]) :=
+  starAlgHom_ext fun i => StarAlgHom.ext fun a => by simp
+
+end map
 
 end CStarInductiveLimit
 

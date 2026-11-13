@@ -39,6 +39,8 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
   universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients, plus unital counterparts.
 * `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
   `⋆`-algebra homomorphism between C⋆-algebras is closed.
+* `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
+  of another is dominated by it in norm.
 * `NonUnitalStarAlgHom.quotientKerEquivRange`, `NonUnitalStarAlgHom.quotientKerEquivOfSurjective`,
   and `NonUnitalStarAlgHom.surjective_of_denseRange` (plus `StarAlgHom` counterparts): isometric
   first `⋆`-isomorphism theorem and surjectivity from dense range.
@@ -442,6 +444,21 @@ theorem range_quotientKerHom : Set.range φ.quotientKerHom = Set.range φ := by
     exact ⟨a, (φ.quotientKerHom_mk a).symm⟩
   · rintro ⟨a, rfl⟩
     exact ⟨TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a, φ.quotientKerHom_mk a⟩
+
+/-- If every element killed by `φ` is killed by a `⋆`-homomorphism `ψ` between C⋆-algebras, then
+`ψ` is dominated in norm by `φ`: `‖ψ a‖ ≤ ‖φ a‖`. -/
+theorem norm_apply_le_norm_apply_of_ker_le {C : Type*} [NonUnitalCStarAlgebra C]
+    {ψ : A →⋆ₙₐ[ℂ] C} (h : TwoSidedIdeal.ker φ ≤ TwoSidedIdeal.ker ψ) (a : A) :
+    ‖ψ a‖ ≤ ‖φ a‖ := by
+  -- `ψ` factors contractively through `A ⧸ ker φ`, which `φ` embeds isometrically
+  let q := TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker φ) ψ fun b hb =>
+    (TwoSidedIdeal.mem_ker ψ).1 (h hb)
+  calc ‖ψ a‖ = ‖q (TwoSidedIdeal.Quotient.mk _ a)‖ := by
+        rw [TwoSidedIdeal.Quotient.liftStarAlgHom_mk]
+    _ ≤ ‖TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a‖ :=
+        NonUnitalStarAlgHom.norm_apply_le q _
+    _ = ‖φ a‖ := by
+        rw [← φ.quotientKerHom_mk a, φ.isometry_quotientKerHom.norm_map_of_map_zero (map_zero _)]
 
 /-- Every `⋆`-algebra homomorphism between C⋆-algebras has closed range as a subset of `B`. -/
 theorem isClosed_setRange : IsClosed (Set.range φ) := by
