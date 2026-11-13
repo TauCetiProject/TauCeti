@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Cell.CharacteristicHomotopy
-public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCellAttachment
 
 /-!
 # The Morse cells of compact families of charts
@@ -40,12 +39,12 @@ Milnor compares the cells attached by two choices of charts through a homotopy o
 `E : M_{c-ε} ∪_{α₁} D → M_{c-ε} ∪_{α₀} D`. For two compact families of charts `ψ₀` and `ψ₁` with
 common centres, transitions with jointly continuous derivatives near the origin, and a compact
 band `f⁻¹[c - ε, c]` free of critical points below `c`, this file constructs such data over `P`
-(`TauCeti.exists_homotopy_morseFamilyCharacteristicMap_polarFactor`): for each `i`, `h i (p, ·)`
-is the linear isometry of the disc given by the polar factor of the negative block of the
-derivative of the transition `ψ₀ p i ∘ (ψ₁ p i)⁻¹` at the origin, and `K i` is a homotopy over
-`P` from the characteristic maps of `ψ₁` to those of `ψ₀` composed with `h i`, keeping the
-boundary spheres in `M_{c-ε}`. Fed into `TauCeti.fiberwiseCellReattachment`, these data give the
-reattachment map
+(`TauCeti.exists_homotopy_morseFamilyCharacteristicMap_polarFactor`): for each `i`, the polar
+factors `g i p` of the negative blocks of the derivatives of the transitions `ψ₀ p i ∘ (ψ₁ p i)⁻¹`
+at the origin are linear isometries depending continuously on `p`, whose disc maps form the family
+`h i = TauCeti.diskMapFamily (g i)`, and `K i` is a homotopy over `P` from the characteristic maps
+of `ψ₁` to those of `ψ₀` composed with `h i`, keeping the boundary spheres in `M_{c-ε}`. Fed
+into `TauCeti.fiberwiseCellReattachment`, these data give the reattachment map
 
 `E : (P × M_{c-ε}) ∪_{α₁} ⨆ᵢ (P × D^{k i}) → (P × M_{c-ε}) ∪_{α₀} ⨆ᵢ (P × D^{k i})`
 
@@ -104,7 +103,7 @@ and the point of that ball. Over each `p` it is
 `OpenPartialHomeomorph.morseCharacteristicMap` of `ψ p i`. -/
 def morseFamilyCharacteristicMap (i : ι) : C(P × TopCat.disk.{u} (k i), {x | f x ≤ c + ε}) where
   toFun q := (ψ q.1 i).morseCharacteristicMap (hk i) hε (hball q.1 i) (hf q.1 i) q.2
-  continuous_toFun := continuous_induced_rng.2 <|
+  continuous_toFun := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
     ((continuousOn_morseCellMap_family (ψ := fun p ↦ ψ p i) (hk i) (hs i)).comp_continuous
       (continuous_fst.prodMk (continuous_subtype_val.comp (continuous_uliftDown.comp
         continuous_snd))) fun q ↦ ⟨mem_univ _, q.2.down.2⟩).congr fun q ↦
@@ -134,7 +133,7 @@ def morseFamilyAttachingMap (i : ι) :
       continuous_snd))).subtype_mk _
 
 /-- On the boundary spheres, the characteristic maps are the attaching maps. This is the
-compatibility `TauCeti.fiberwiseCellAttachment` and `TauCeti.fiberwiseCellComparison` require. -/
+compatibility `TauCeti.fiberwiseCellComparison` and `TauCeti.fiberwiseCellReattachment` require. -/
 theorem morseFamilyCharacteristicMap_diskBoundaryInclusion (i : ι) (p : P)
     (s : TopCat.diskBoundary.{u} (k i)) :
     morseFamilyCharacteristicMap ψ k hk hε hball hf hs i (p, TopCat.diskBoundaryInclusion (k i) s) =
@@ -172,27 +171,22 @@ theorem morseFamilyAttachingMap_comp_apply (i : ι) (p : P') (s : TopCat.diskBou
 spheres.** Let `χ i` be the characteristic maps of the cells of a family of charts, with
 `0 < ε`, and let `h` be a family over `P` of self-maps of the disc `D^{k i}`. If `K` is a homotopy
 from some family `g'` to `(p, w) ↦ χ i (p, h (p, w))` keeping the boundary spheres in the lower
-sublevel `M_{c-ε}`, then each `h (p, ·)` sends the boundary sphere into itself. This is the form
-of the hypotheses of `TauCeti.fiberwiseCellReattachment`. -/
+sublevel `M_{c-ε}` over a point `p`, then `h (p, ·)` sends the boundary sphere into itself. This
+is the form of the hypotheses of `TauCeti.fiberwiseCellReattachment`. -/
 theorem mapsTo_range_diskBoundaryInclusion_of_homotopy_morseFamilyCharacteristicMap
     (hε : 0 < ε) {i : ι}
     {h : C(P × TopCat.disk.{u} (k i), TopCat.disk.{u} (k i))}
     {g' : C(P × TopCat.disk.{u} (k i), {x | f x ≤ c + ε})}
     (K : g'.Homotopy ((morseFamilyCharacteristicMap ψ k hk hε.le hball hf hs i).comp
       (ContinuousMap.fst.prodMk h)))
-    (hK : ∀ t p (s : TopCat.diskBoundary.{u} (k i)),
-      K (t, (p, TopCat.diskBoundaryInclusion (k i) s)) ∈ {y : {x | f x ≤ c + ε} | f y ≤ c - ε})
-    (p : P) :
+    (p : P) (hK : ∀ t (s : TopCat.diskBoundary.{u} (k i)),
+      K (t, (p, TopCat.diskBoundaryInclusion (k i) s)) ∈ {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :
     MapsTo (fun w ↦ h (p, w)) (range (TopCat.diskBoundaryInclusion (k i)))
-      (range (TopCat.diskBoundaryInclusion (k i))) :=
-  mapsTo_range_diskBoundaryInclusion_of_morseCharacteristicMap_le (hk i) hε
-    (hball p i) (hf p i) (h := TopCat.ofHom (h.comp ((ContinuousMap.const _ p).prodMk
-      (ContinuousMap.id _)))) fun s ↦ by
-    have hKs := hK 1 p s
-    rw [K.apply_one, ContinuousMap.comp_apply, ContinuousMap.prod_eval, ContinuousMap.fst_apply,
-      morseFamilyCharacteristicMap_apply] at hKs
-    -- `hKs` is the goal up to evaluating the `TopCat.ofHom` of `w ↦ h (p, w)`.
-    exact hKs
+      (range (TopCat.diskBoundaryInclusion (k i))) := by
+  rintro _ ⟨s, rfl⟩
+  rw [← OpenPartialHomeomorph.preimage_morseCharacteristicMap_sublevel (hball p i) (hf p i)
+    (hk i) hε]
+  simpa using hK 1 s
 
 end Family
 
@@ -213,10 +207,10 @@ point of that ball. Suppose that on a ball of radius `r i` about the origin the 
 continuous in `p` and `y`, that `f⁻¹[c - ε, c]` is compact and that `f` has no critical point with
 value in `[c - ε, c)`. Let `g i p` be the polar factor of the negative block `ι† (D i p 0) ι` of
 `D i p 0`, where `ι : ℝ^{k i} → ℝⁿ` extends by zero onto the first `k i` coordinates. Then each
-`g i p` is a linear isometry, the disc maps `(p, w) ↦ g i p w` form a continuous family `h i` over
-`P`, and there are homotopies `K i` over `P` from the characteristic maps `χ₁ i` of the charts
-`ψ₁ p i` to `(p, w) ↦ χ₀ i (p, g i p w)` keeping the boundary spheres in the lower sublevel
-`M_{c-ε}`. These are the data of the fiberwise reattachment map
+`g i p` is a linear isometry depending continuously on `p`, and there are homotopies `K i` over
+`P` from the characteristic maps `χ₁ i` of the charts `ψ₁ p i` to `(p, w) ↦ χ₀ i (p, g i p w)`,
+the composite of `χ₀ i` with the disc maps `TauCeti.diskMapFamily (g i)`, keeping the boundary
+spheres in the lower sublevel `M_{c-ε}`. These are the data of the fiberwise reattachment map
 `TauCeti.fiberwiseCellReattachment` between the families of cells of `ψ₁` and of `ψ₀`. -/
 theorem exists_homotopy_morseFamilyCharacteristicMap_polarFactor (hfs : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
     [CompactSpace P] (ψ₀ ψ₁ : P → ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
@@ -244,11 +238,11 @@ theorem exists_homotopy_morseFamilyCharacteristicMap_polarFactor (hfs : ContMDif
       (∀ i p, ⇑(g i p) = (ContinuousLinearMap.adjoint
           (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap ∘L D i p 0 ∘L
             (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap).polarFactor) ∧
-      ∃ (h : ∀ i, C(P × TopCat.disk.{u} (k i), TopCat.disk.{u} (k i)))
-        (_ : ∀ i p w, h i (p, w) = (g i p).diskMap w)
+      ∃ (hgc : ∀ i, Continuous fun p ↦ (g i p :
+          EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i))))
         (K : ∀ i, (morseFamilyCharacteristicMap ψ₁ k hk hε.le hball₁ hf₁ hs₁ i).Homotopy
           ((morseFamilyCharacteristicMap ψ₀ k hk hε.le hball₀ hf₀ hs₀ i).comp
-            (ContinuousMap.fst.prodMk (h i)))),
+            (ContinuousMap.fst.prodMk (diskMapFamily.{u} (g i) (hgc i))))),
         ∀ i t p (s : TopCat.diskBoundary.{u} (k i)),
           K i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) ∈
             {y : {x | f x ≤ c + ε} | f y ≤ c - ε} := by
@@ -257,17 +251,13 @@ theorem exists_homotopy_morseFamilyCharacteristicMap_polarFactor (hfs : ContMDif
       (fun p ↦ ψ₁ p i) (hk i) hε (fun p ↦ hball₀ p i) (fun p ↦ hball₁ p i) (fun p ↦ hf₀ p i)
       (fun p ↦ hf₁ p i) (hs₀ i) (hs₁ i) (fun p ↦ hp p i) (hr i) (fun p ↦ htr p i)
       (fun p ↦ hT p i) (hD i) hcompact hreg
-  -- The polar factors are jointly continuous in the parameter and the point.
-  have hgc' (i : ι) : Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ g i q.1 q.2 :=
-    (((hgc i).comp continuous_fst).clm_apply continuous_snd).congr fun q ↦ by
-      simp only [Function.comp_apply, hg]
-  let h (i : ι) : C(P × TopCat.disk.{u} (k i), TopCat.disk.{u} (k i)) :=
-    ⟨fun q ↦ (g i q.1).diskMap q.2, continuous_induced_rng.2 <| continuous_induced_rng.2 <|
-      ((hgc' i).comp (continuous_fst.prodMk (continuous_subtype_val.comp
-        (continuous_uliftDown.comp continuous_snd)))).congr fun q ↦
-          ((g i q.1).coe_diskMap_apply_down q.2).symm⟩
-  exact ⟨g, hg, h, fun i p w ↦ rfl, fun i ↦ ⟨K i, fun q ↦ hK₀ i q.1 q.2, fun q ↦ hK₁ i q.1 q.2⟩,
-    fun i t p s ↦ hKb i t p s⟩
+  have hgc' (i : ι) : Continuous fun p ↦ (g i p :
+      EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i))) :=
+    (hgc i).congr fun p ↦ DFunLike.coe_injective (hg i p).symm
+  refine ⟨g, hg, hgc', fun i ↦ ⟨K i, fun ⟨p, w⟩ ↦ ?_, fun ⟨p, w⟩ ↦ ?_⟩, hKb⟩
+  · rw [ContinuousMap.toFun_eq_coe, hK₀, morseFamilyCharacteristicMap_apply]
+  · rw [ContinuousMap.toFun_eq_coe, hK₁, ContinuousMap.comp_apply, ContinuousMap.prod_eval,
+      ContinuousMap.fst_apply, diskMapFamily_apply, morseFamilyCharacteristicMap_apply]
 
 end Smooth
 

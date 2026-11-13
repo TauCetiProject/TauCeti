@@ -39,6 +39,8 @@ its disk map is the identity (`TauCeti.TopCat.diskMap_eq_id_of_det_eq_one`); if 
 * `LinearIsometryEquiv.diskMap`, `LinearIsometryEquiv.diskBoundaryMap`: the maps of the disk and of
   its boundary sphere induced by a linear isometry of `ℝⁿ`; the boundary map of `-1` is the
   antipodal map `TauCeti.diskBoundaryNeg` (`LinearIsometryEquiv.diskBoundaryMap_neg`).
+* `TauCeti.diskMapFamily`: the disk maps of a continuous family `g` of linear isometries of `ℝⁿ`
+  over a parameter space `P`, as a single continuous map `P × D^n → D^n`.
 * `TauCeti.TopCat.exists_homotopy_diskMap_id_of_det_eq_one`: for `det g = 1`, the disk map is
   homotopic to the identity through maps of pairs.
 * `TauCeti.TopCat.homotopic_diskBoundaryMap_id_of_det_eq_one`: for `det g = 1`, the boundary map
@@ -141,6 +143,37 @@ theorem diskBoundaryMap_neg :
   exact ULift.ext (Subtype.ext (by simp))
 
 end LinearIsometryEquiv
+
+namespace TauCeti
+
+section Family
+
+variable {n : ℕ} {P : Type*} [TopologicalSpace P]
+  (g : P → EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+  (hg : Continuous fun p ↦ (g p : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)))
+
+/-- The disk maps `(p, w) ↦ g p w` of a family `g` of linear isometries of `ℝⁿ` depending
+continuously on a parameter `p : P`, as a single continuous map `P × D^n → D^n`. Over each `p` it
+is `LinearIsometryEquiv.diskMap (g p)`. -/
+def diskMapFamily : C(P × TopCat.disk.{u} n, TopCat.disk.{u} n) where
+  toFun q := (g q.1).diskMap q.2
+  continuous_toFun := continuous_uliftUp.comp (((hg.comp continuous_fst).clm_apply
+    (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))).subtype_mk _)
+
+@[simp]
+theorem diskMapFamily_apply (p : P) (w : TopCat.disk.{u} n) :
+    diskMapFamily g hg (p, w) = (g p).diskMap w :=
+  (rfl)
+
+/-- Each disk map of the family is a map of pairs `(D^n, ∂D^n) → (D^n, ∂D^n)`. -/
+theorem mapsTo_diskMapFamily_range_diskBoundaryInclusion (p : P) :
+    MapsTo (fun w ↦ diskMapFamily.{u} g hg (p, w)) (range (TopCat.diskBoundaryInclusion n))
+      (range (TopCat.diskBoundaryInclusion n)) :=
+  (g p).mapsTo_diskMap_range_diskBoundaryInclusion
+
+end Family
+
+end TauCeti
 
 namespace TauCeti.TopCat
 
