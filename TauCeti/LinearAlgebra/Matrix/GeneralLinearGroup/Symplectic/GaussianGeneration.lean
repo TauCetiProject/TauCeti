@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Levi
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.UnipotentGeneration
+import TauCeti.LinearAlgebra.Matrix.Pivot
 
 /-!
 # Block Gaussian decomposition in the symplectic group
@@ -21,8 +22,12 @@ invertible factors on this open cell by block Gaussian elimination as
 The two off-diagonal blocks `C A⁻¹` and `A⁻¹B` are symmetric by the symplectic equations, so the
 outer factors are symmetric unipotents and the middle factor is a general-linear Levi element.
 Consequently a subgroup containing the symmetric unipotents and the general-linear Levi subgroup
-contains every symplectic matrix on the open cell. The field-level generation theorems use this
-factorization in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGeneration`.
+contains every symplectic matrix on the open cell.
+
+Over a field, every symplectic matrix can be moved onto the open cell: the symmetric pivot of
+`TauCeti.LinearAlgebra.Matrix.Pivot` gives a symmetric `X` such that `[1 X; 0 1] g` has an
+invertible upper-left block. The field-level generation theorems combine these two steps in
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGeneration`.
 
 ## Main results
 
@@ -31,6 +36,9 @@ factorization in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Tor
 * `TauCeti.GLSymplecticFin.mem_of_isUnit_toBlocks₁₁`: a subgroup containing the symmetric
   unipotents and the general-linear Levi subgroup contains every symplectic matrix whose
   upper-left block is invertible.
+* `TauCeti.GLSymplecticFin.exists_isSymm_isUnit_toBlocks₁₁_upperUnipotent_mul`: over a field, an
+  upper symmetric unipotent moves every symplectic matrix onto the open cell where the upper-left
+  block is invertible.
 
 The generation theorems themselves, `TauCeti.GLSymplecticFin.eq_top_of_root_subgroups` and
 `TauCeti.GLSymplecticFin.eq_top_of_adjacent_of_long`, are in
@@ -126,5 +134,42 @@ theorem mem_of_isUnit_toBlocks₁₁
     exists_gaussian_decomposition_of_isUnit_toBlocks₁₁ g hunit
   rw [hfactor]
   exact H.mul_mem (H.mul_mem (hlower S hS) (hlevi P)) (hupper T hT)
+
+section Field
+
+variable {K : Type u} [Field K]
+
+/-- **An upper symmetric unipotent moves every symplectic matrix over a field onto the open
+cell**: for every `g` there is a symmetric `X` such that the upper-left block of `[1 X; 0 1] g` is
+invertible. -/
+theorem exists_isSymm_isUnit_toBlocks₁₁_upperUnipotent_mul (g : GLSymplecticFin m K) :
+    ∃ (X : Matrix (Fin m) (Fin m) K) (hX : X.IsSymm),
+      IsUnit (((mulEquivGLSymplectic m K (upperUnipotent X hX * g) : GLSymplectic (Fin m) K) :
+        GL (Fin m ⊕ Fin m) K) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K).toBlocks₁₁ := by
+  let M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K :=
+    ((mulEquivGLSymplectic m K g : GLSymplectic (Fin m) K) : GL (Fin m ⊕ Fin m) K)
+  let A := M.toBlocks₁₁
+  let C := M.toBlocks₂₁
+  have hM : M ∈ Matrix.symplecticGroup (Fin m) K := by
+    simpa only [M] using GLSymplectic.mem_iff_mem_symplecticGroup.mp
+      (mulEquivGLSymplectic m K g).property
+  have hker (x : Fin m → K) (hAx : A *ᵥ x = 0) (hCx : C *ᵥ x = 0) : x = 0 := by
+    have hv : M *ᵥ Sum.elim x 0 = M *ᵥ Sum.elim 0 0 := by
+      rw [← M.fromBlocks_toBlocks]
+      simp [Matrix.fromBlocks_mulVec, A, C, hAx, hCx]
+    exact (Sum.elim_eq_iff.mp
+      (Matrix.mulVec_injective_iff_isUnit.mpr
+        (((mulEquivGLSymplectic m K g : GLSymplectic (Fin m) K) :
+          GL (Fin m ⊕ Fin m) K).isUnit) hv)).1
+  have hcomm : Aᵀ * C = Cᵀ * A :=
+    ((SymplecticGroup.fromBlocks_mem_iff).mp (M.fromBlocks_toBlocks ▸ hM)).1
+  obtain ⟨X, hX, hunit⟩ :=
+    exists_isSymm_isUnit_add_mul_of_ker_inter_eq_bot_of_transpose_mul_comm hker hcomm
+  -- Left multiplication by `[1 X; 0 1]` changes the leading block to `A + XC`.
+  refine ⟨X, hX, ?_⟩
+  rw [toBlocks₁₁_upperUnipotent_mul]
+  exact hunit
+
+end Field
 
 end TauCeti.GLSymplecticFin

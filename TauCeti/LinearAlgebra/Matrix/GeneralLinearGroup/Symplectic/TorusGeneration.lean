@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.GaussianGeneration
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RootGeneration
-import TauCeti.LinearAlgebra.Matrix.Pivot
 
 /-!
 # Generating the symplectic group by root subgroups
@@ -24,11 +23,10 @@ diag(a, a⁻¹) = x₊(a) x₋(-a⁻¹) x₊(a) x₊(-1) x₋(1) x₊(-1)
 ```
 
 expresses the corresponding diagonal Levi element as a product of long-root elements. Every
-point of the diagonal torus is a product of these coordinate elements. The open-cell block
-factorization of
-`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.GaussianGeneration` is combined here
-with the symmetric pivot
-(`TauCeti.LinearAlgebra.Matrix.Pivot`), unipotent generation
+point of the diagonal torus is a product of these coordinate elements. The open-cell step and
+block Gaussian factorization of
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.GaussianGeneration` are combined here
+with unipotent generation
 (`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.UnipotentGeneration`), generation of
 the `GL_m` Levi factor from the diagonal torus and difference roots
 (`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Levi`) and the Weyl and
@@ -42,9 +40,6 @@ by the root subgroups, and by the positive and negative simple-root subgroups.
   symplectic group.
 * `TauCeti.GLSymplecticFin.leviHom_diagGL_mem_of_long`: any subgroup containing the opposite
   long-root subgroups contains the entire diagonal Levi subgroup.
-* `TauCeti.GLSymplecticFin.exists_isSymm_isUnit_toBlocks₁₁_upperUnipotent_mul`: over a field, an
-  upper symmetric unipotent moves every symplectic matrix onto the open cell where the upper-left
-  block is invertible.
 * `TauCeti.GLSymplecticFin.eq_top_of_root_subgroups`: all standard root subgroups generate the
   symplectic group over a field.
 * `TauCeti.GLSymplecticFin.eq_top_of_adjacent_of_long`: the positive and negative simple-root
@@ -151,37 +146,6 @@ theorem leviHom_diagGL_mem_of_long
 section Field
 
 variable {K : Type u} [Field K]
-
-/-- **An upper symmetric unipotent moves every symplectic matrix over a field onto the open
-cell**: for every `g` there is a symmetric `X` such that the upper-left block of `[1 X; 0 1] g` is
-invertible. -/
-theorem exists_isSymm_isUnit_toBlocks₁₁_upperUnipotent_mul (g : GLSymplecticFin m K) :
-    ∃ (X : Matrix (Fin m) (Fin m) K) (hX : X.IsSymm),
-      IsUnit (((mulEquivGLSymplectic m K (upperUnipotent X hX * g) : GLSymplectic (Fin m) K) :
-        GL (Fin m ⊕ Fin m) K) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K).toBlocks₁₁ := by
-  let M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K :=
-    ((mulEquivGLSymplectic m K g : GLSymplectic (Fin m) K) : GL (Fin m ⊕ Fin m) K)
-  let A := M.toBlocks₁₁
-  let C := M.toBlocks₂₁
-  have hM : M ∈ Matrix.symplecticGroup (Fin m) K := by
-    simpa only [M] using GLSymplectic.mem_iff_mem_symplecticGroup.mp
-      (mulEquivGLSymplectic m K g).property
-  have hker (x : Fin m → K) (hAx : A *ᵥ x = 0) (hCx : C *ᵥ x = 0) : x = 0 := by
-    have hv : M *ᵥ Sum.elim x 0 = M *ᵥ Sum.elim 0 0 := by
-      rw [← M.fromBlocks_toBlocks]
-      simp [Matrix.fromBlocks_mulVec, A, C, hAx, hCx]
-    exact (Sum.elim_eq_iff.mp
-      (Matrix.mulVec_injective_iff_isUnit.mpr
-        (((mulEquivGLSymplectic m K g : GLSymplectic (Fin m) K) :
-          GL (Fin m ⊕ Fin m) K).isUnit) hv)).1
-  have hcomm : Aᵀ * C = Cᵀ * A :=
-    ((SymplecticGroup.fromBlocks_mem_iff).mp (M.fromBlocks_toBlocks ▸ hM)).1
-  obtain ⟨X, hX, hunit⟩ :=
-    exists_isSymm_isUnit_add_mul_of_ker_inter_eq_bot_of_transpose_mul_comm hker hcomm
-  -- Left multiplication by `[1 X; 0 1]` changes the leading block to `A + XC`.
-  refine ⟨X, hX, ?_⟩
-  rw [toBlocks₁₁_upperUnipotent_mul]
-  exact hunit
 
 /-- **The standard symplectic root subgroups generate the full symplectic group over a field.**
 A subgroup containing every standard root subgroup is the whole group. -/
