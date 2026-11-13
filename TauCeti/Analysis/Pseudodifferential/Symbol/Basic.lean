@@ -439,7 +439,7 @@ theorem IsUniform.sub {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUnifor
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   fun _ _ => ⟨0, le_rfl, fun x ξ => by simp⟩
 
-theorem isUniform_sum {ι : Type*} (s : Finset ι) {a : ι → Symbol n V W m}
+theorem IsUniform.sum {ι : Type*} {s : Finset ι} {a : ι → Symbol n V W m}
     (ha : ∀ i ∈ s, (a i).IsUniform) : (∑ i ∈ s, a i).IsUniform :=
   Finset.sum_induction _ IsUniform (fun _ _ => IsUniform.add) isUniform_zero ha
 

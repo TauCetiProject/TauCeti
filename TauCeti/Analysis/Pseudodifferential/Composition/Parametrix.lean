@@ -197,7 +197,7 @@ theorem exists_isUniformAsymptoticSum_sharpTerm_left {a : Symbol n V W m} (ha : 
     hb₀ ⟨inclusion (by simp) (const (.id ℂ V)), (isUniform_const _).inclusion _, by simp⟩
     (fun _ _ _ d hd ⟨_, hru, hr⟩ h ↦ by
       refine ⟨_, ?_, coefficient_sub_sum_sharpTerm_left_congr d hr h⟩
-      exact hru.sub (isUniform_sum _ fun k _ ↦ (hd.sharpTerm ha k).inclusion _))
+      exact hru.sub (IsUniform.sum fun k _ ↦ (hd.sharpTerm ha k).inclusion _))
     (fun N b hbu ⟨r, hru, hr⟩ ↦ by
       have hR := hru.sub (hbu.sharpTerm ha N)
       -- The term `(r - sharpTerm b a N) (b₀ a - 1)` is uniform of order `-N - 1`.
@@ -206,7 +206,7 @@ theorem exists_isUniformAsymptoticSum_sharpTerm_left {a : Symbol n V W m} (ha : 
         (t := inclusion (by push_cast; linarith) ((r - b.sharpTerm a N).comp s))
         (funext fun p ↦ by simp only [coefficient_inclusion, coefficient_comp, hs])
       refine ⟨_, (hR.comp hb₀).inclusion _, _, ?_, hd⟩
-      exact ((hR.comp hsu).inclusion _).neg.sub (isUniform_sum _
+      exact ((hR.comp hsu).inclusion _).neg.sub (IsUniform.sum
         fun k _ ↦ (((hR.comp hb₀).inclusion _).sharpTerm ha (k + 1)).inclusion _))
   exact ⟨b, hbu, isUniformAsymptoticSum_iff.2 fun N ↦ by simpa using hb N⟩
 
@@ -331,7 +331,7 @@ theorem exists_isUniformAsymptoticSum_sharpTerm_right {a : Symbol n V W m} (ha :
     hb₀ ⟨inclusion (by simp) (const (.id ℂ W)), (isUniform_const _).inclusion _, by simp⟩
     (fun _ _ _ d hd ⟨_, hru, hr⟩ h ↦ by
       refine ⟨_, ?_, coefficient_sub_sum_sharpTerm_right_congr d hr h⟩
-      exact hru.sub (isUniform_sum _ fun k _ ↦ (ha.sharpTerm hd k).inclusion _))
+      exact hru.sub (IsUniform.sum fun k _ ↦ (ha.sharpTerm hd k).inclusion _))
     (fun N b hbu ⟨r, hru, hr⟩ ↦ by
       have hR := hru.sub (ha.sharpTerm hbu N)
       -- The term `(a b₀ - 1) (r - sharpTerm a b N)` is uniform of order `-N - 1`.
@@ -340,7 +340,7 @@ theorem exists_isUniformAsymptoticSum_sharpTerm_right {a : Symbol n V W m} (ha :
         (t := inclusion (by push_cast; linarith) (s.comp (r - a.sharpTerm b N)))
         (funext fun p ↦ by simp only [coefficient_inclusion, coefficient_comp, hs])
       refine ⟨_, (hb₀.comp hR).inclusion _, _, ?_, hd⟩
-      exact ((hsu.comp hR).inclusion _).neg.sub (isUniform_sum _
+      exact ((hsu.comp hR).inclusion _).neg.sub (IsUniform.sum
         fun k _ ↦ (ha.sharpTerm ((hb₀.comp hR).inclusion _) (k + 1)).inclusion _))
   exact ⟨b, hbu, isUniformAsymptoticSum_iff.2 fun N ↦ by simpa using hb N⟩
 
