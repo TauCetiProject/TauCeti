@@ -58,6 +58,20 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   This bound only needs the smaller supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of the input end
   data to be pairwise disjoint and to lie in the disc `‖w‖ ≤ 2 exp (2π)`.
 
+For `R ≥ 1` the truncation `TauCeti.Floer.puncturedSphereTruncation c a R` is the disc
+`‖w‖ ≤ 2 exp (2πR)`, bounded by the circle `s = -R` of the output end, with the discs
+`‖w - c i‖ < ‖a i‖ exp (-2πR) / 2`, bounded by the circles `s = R` of the input ends, removed. If
+the supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of the input end data are pairwise disjoint and lie
+in the disc `‖w‖ ≤ 2 exp (2π)`, it contains the closed annulus of each end between its circles
+`±s = 1` and `±s = R`
+(`TauCeti.Floer.closedBall_sdiff_ball_subset_puncturedSphereTruncation`,
+`TauCeti.Floer.closedBall_zero_sdiff_ball_subset_puncturedSphereTruncation`). Off the boundary
+circles `±s = 1` of these annuli the datum there is that end's datum, as germs
+(`TauCeti.Floer.puncturedSpherePerturbation_eventuallyEq_inputEndPerturbation_of_norm_sub_lt`,
+`TauCeti.Floer.puncturedSpherePerturbation_eventuallyEq_negativePlanePerturbation_of_lt_norm`), and
+between the annuli it vanishes
+(`TauCeti.Floer.puncturedSpherePerturbation_eventuallyEq_zero_of_mem_puncturedSphereTruncation`).
+
 The pair-of-pants datum itself is the case of the inputs `0` and `1` with scales `1` and `-1`
 (`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`), and with one input
 switched off it is the case of the single input end of the other input
@@ -179,6 +193,109 @@ theorem inputEndPerturbation_cylindricalEndLift_apply (hH : Periodic H 1) (ha : 
 
 end InputEnd
 
+section Truncation
+
+/-! ### The truncation -/
+
+variable {ι : Type*} {c a : ι → ℂ}
+
+/-- The truncation at height `R` of the sphere with input ends of centers `c i` and scales `a i`
+and output end at `∞`: the disc `‖w‖ ≤ 2 exp (2πR)`, bounded by the circle `s = -R` of the output
+end, with the discs `‖w - c i‖ < ‖a i‖ exp (-2πR) / 2`, bounded by the circles `s = R` of the input
+ends, removed. -/
+def puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) : Set ℂ :=
+  Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+    ⋃ i, Metric.ball (c i) (‖a i‖ * Real.exp (-(2 * π * R)) / 2)
+
+theorem puncturedSphereTruncation_def (c a : ι → ℂ) (R : ℝ) :
+    puncturedSphereTruncation c a R =
+      Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+        ⋃ i, Metric.ball (c i) (‖a i‖ * Real.exp (-(2 * π * R)) / 2) :=
+  (rfl)
+
+/-- A point lies in the truncation when it lies in the disc bounded by the outer circle and outside
+the discs bounded by the inner circles. -/
+@[simp]
+theorem mem_puncturedSphereTruncation {R : ℝ} {w : ℂ} :
+    w ∈ puncturedSphereTruncation c a R ↔
+      ‖w‖ ≤ 2 * Real.exp (2 * π * R) ∧
+        ∀ i, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖ := by
+  simp [puncturedSphereTruncation, dist_eq_norm]
+
+/-- The truncation is compact: it is a closed disc with open discs removed. -/
+theorem isCompact_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
+    IsCompact (puncturedSphereTruncation c a R) :=
+  (isCompact_closedBall _ _).diff (isOpen_iUnion fun _ ↦ Metric.isOpen_ball)
+
+/-- The truncation is compact in the real coordinates of `ℂ`. -/
+theorem isCompact_preimage_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_puncturedSphereTruncation c a R)
+
+/-- The truncation avoids the center of every input end of nonzero scale. -/
+theorem ne_of_mem_puncturedSphereTruncation {R : ℝ} {w : ℂ}
+    (hw : w ∈ puncturedSphereTruncation c a R) {i : ι} (ha : a i ≠ 0) : w ≠ c i := by
+  rintro rfl
+  have h := (mem_puncturedSphereTruncation.1 hw).2 i
+  rw [sub_self, norm_zero] at h
+  nlinarith [norm_pos_iff.2 ha, Real.exp_pos (-(2 * π * R))]
+
+/-- If the closed support `‖w - c i‖ ≤ ‖a i‖ exp (-2π) / 2` of the input end datum of `i` meets
+those of the other input ends at most on its boundary and lies in the disc `‖w‖ ≤ 2 exp (2π)`,
+then the closed annulus about the center `c i` with radii `‖a i‖ exp (-2πR) / 2` and
+`‖a i‖ exp (-2π) / 2`, bounded by the circles `s = R` and `s = 1` of the input end `i`, lies in the
+truncation, provided `R ≥ 1` or `a i ≠ 0`; in the latter case the annulus is empty unless
+`R ≥ 1`. -/
+theorem closedBall_sdiff_ball_subset_puncturedSphereTruncation {R : ℝ} {i : ι}
+    (hsep : ∀ j, j ≠ i →
+      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖c i - c j‖)
+    (hout : ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π))
+    (hR : 1 ≤ R ∨ a i ≠ 0) :
+    Metric.closedBall (c i) (‖a i‖ * Real.exp (-(2 * π)) / 2) \
+        Metric.ball (c i) (‖a i‖ * Real.exp (-(2 * π * R)) / 2) ⊆
+      puncturedSphereTruncation c a R := by
+  have hπ := Real.pi_pos
+  rintro w ⟨h₂, h₁⟩
+  rw [Metric.mem_closedBall, dist_eq_norm] at h₂
+  rw [Metric.mem_ball, dist_eq_norm, not_lt] at h₁
+  replace hR : 1 ≤ R := hR.elim id fun ha ↦ by
+    have h := Real.exp_le_exp.1 (le_of_mul_le_mul_left (by linarith : ‖a i‖ *
+      Real.exp (-(2 * π * R)) ≤ ‖a i‖ * Real.exp (-(2 * π))) (norm_pos_iff.2 ha))
+    nlinarith
+  have heR (j : ι) : ‖a j‖ * Real.exp (-(2 * π * R)) ≤ ‖a j‖ * Real.exp (-(2 * π)) :=
+    mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (by nlinarith)) (norm_nonneg _)
+  have hR' : Real.exp (2 * π) ≤ Real.exp (2 * π * R) := Real.exp_le_exp.2 (by nlinarith)
+  refine mem_puncturedSphereTruncation.2 ⟨?_, fun j ↦ ?_⟩
+  · linarith [norm_le_norm_add_norm_sub' w (c i)]
+  · rcases eq_or_ne j i with rfl | hji
+    · exact h₁
+    · have := hsep j hji
+      have := norm_sub_le_norm_sub_add_norm_sub (c i) w (c j)
+      rw [norm_sub_rev (c i) w] at this
+      linarith [heR j]
+
+/-- If the closed supports `‖w - c i‖ ≤ ‖a i‖ exp (-2π) / 2` of the input end data lie in the disc
+`‖w‖ ≤ 2 exp (2π)`, then the closed annulus about `0` with radii `2 exp (2π)` and `2 exp (2πR)`,
+bounded by the circles `s = -1` and `s = -R` of the output end, lies in the truncation. It is empty
+unless `R ≥ 1`. -/
+theorem closedBall_zero_sdiff_ball_subset_puncturedSphereTruncation {R : ℝ}
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π)) :
+    Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ Metric.ball 0 (2 * Real.exp (2 * π)) ⊆
+      puncturedSphereTruncation c a R := by
+  rintro w ⟨h₂, h₁⟩
+  rw [mem_closedBall_zero_iff] at h₂
+  rw [mem_ball_zero_iff, not_lt] at h₁
+  refine mem_puncturedSphereTruncation.2 ⟨h₂, fun i ↦ ?_⟩
+  have hR : 1 ≤ R := by
+    have h := Real.exp_le_exp.1 (by linarith : Real.exp (2 * π) ≤ Real.exp (2 * π * R))
+    nlinarith [Real.pi_pos]
+  have heR : ‖a i‖ * Real.exp (-(2 * π * R)) ≤ ‖a i‖ * Real.exp (-(2 * π)) :=
+    mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])) (norm_nonneg _)
+  linarith [norm_sub_norm_le w (c i), hout i]
+
+end Truncation
+
 section Sphere
 
 variable {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
@@ -291,18 +408,24 @@ theorem puncturedSpherePerturbation_eq_inputEndPerturbation
   puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_lt
     (fun j => by nlinarith [norm_nonneg (a j), exp_neg_two_pi_lt_one]) hsep hout hw x
 
-/-- **Near an input end the datum is that end's datum, as germs.** If the discs
-`‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, then near
-every point of the disc of the input `i` the datum is the input end datum of `i`. -/
-theorem puncturedSpherePerturbation_eventuallyEq_inputEndPerturbation
-    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {i : ι} {w : ℂ}
-    (hw : ‖w - c i‖ < ‖a i‖ / 2) :
+/-- **Near an input end the datum is that end's datum, as germs.** Near a point `w` of the open
+disc `‖w‖ < 2 exp (2π)`, where the output datum vanishes, outside the closed supports
+`‖w - c j‖ ≤ ‖a j‖ exp (-2π) / 2` of the input end data of all `j ≠ i`, the datum is the input end
+datum of `i`. -/
+theorem puncturedSpherePerturbation_eventuallyEq_inputEndPerturbation {i : ι} {w : ℂ}
+    (hne : ∀ j, j ≠ i → ‖a j‖ * Real.exp (-(2 * π)) / 2 < ‖w - c j‖)
+    (hw : ‖w‖ < 2 * Real.exp (2 * π)) :
     puncturedSpherePerturbation c a H Hout =ᶠ[𝓝 w] inputEndPerturbation (c i) (a i) (H i) := by
-  filter_upwards [(isOpen_lt (f := fun w' ↦ ‖w' - c i‖) (by fun_prop) continuous_const).mem_nhds hw]
-    with w' hw'
+  have hne' : ∀ᶠ w' in 𝓝 w, ∀ j, j ≠ i → ‖a j‖ * Real.exp (-(2 * π)) / 2 < ‖w' - c j‖ :=
+    Filter.eventually_all.2 fun j ↦ by
+      by_cases hj : j = i
+      · exact Filter.Eventually.of_forall fun _ h ↦ absurd hj h
+      · filter_upwards [(isOpen_lt (g := fun w' ↦ ‖w' - c j‖) continuous_const
+          (by fun_prop)).mem_nhds (hne j hj)] with w' hw' using fun _ ↦ hw'
+  filter_upwards [hne', (isOpen_lt continuous_norm continuous_const).mem_nhds hw] with w' h₁ h₂
   funext x
-  exact puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hw' x
+  exact puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne (fun j hj ↦ (h₁ j hj).le)
+    h₂.le x
 
 /-- **Off the input ends the datum is the output datum, as germs.** Near a point outside the
 closed supports `‖w - c i‖ ≤ ‖a i‖ exp (-2π) / 2` of all the input end data, the datum is the
@@ -327,6 +450,50 @@ theorem puncturedSpherePerturbation_eventuallyEq_zero {w : ℂ}
   funext x
   rw [hw₁]
   exact negativePlanePerturbation_eq_zero_of_norm_le hw₂.le x
+
+/-- **On the support of an input end the datum is that end's datum, as germs.** If the closed
+support `‖w - c i‖ ≤ ‖a i‖ exp (-2π) / 2` of the input end datum of `i` meets those of the other
+input ends at most on its boundary and lies in the disc `‖w‖ ≤ 2 exp (2π)`, then near every point
+of the open support of `i` the datum is the input end datum of `i`. -/
+theorem puncturedSpherePerturbation_eventuallyEq_inputEndPerturbation_of_norm_sub_lt {i : ι}
+    (hsep : ∀ j, j ≠ i →
+      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖c i - c j‖)
+    (hout : ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π)) {w : ℂ}
+    (hw : ‖w - c i‖ < ‖a i‖ * Real.exp (-(2 * π)) / 2) :
+    puncturedSpherePerturbation c a H Hout =ᶠ[𝓝 w] inputEndPerturbation (c i) (a i) (H i) := by
+  refine puncturedSpherePerturbation_eventuallyEq_inputEndPerturbation (fun j hj ↦ ?_)
+    (by linarith [norm_le_norm_add_norm_sub' w (c i)])
+  have := hsep j hj
+  have := norm_sub_le_norm_sub_add_norm_sub (c i) w (c j)
+  rw [norm_sub_rev (c i) w] at this
+  linarith
+
+/-- **Outside the disc `‖w‖ ≤ 2 exp (2π)` the datum is the output datum, as germs**, provided the
+closed supports `‖w - c i‖ ≤ ‖a i‖ exp (-2π) / 2` of the input end data lie in that disc. -/
+theorem puncturedSpherePerturbation_eventuallyEq_negativePlanePerturbation_of_lt_norm
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π)) {w : ℂ}
+    (hw : 2 * Real.exp (2 * π) < ‖w‖) :
+    puncturedSpherePerturbation c a H Hout =ᶠ[𝓝 w] negativePlanePerturbation Hout :=
+  puncturedSpherePerturbation_eventuallyEq_negativePlanePerturbation fun i ↦ by
+    linarith [norm_sub_norm_le w (c i), hout i]
+
+/-- **Between the annuli of the ends the datum vanishes, as germs.** Near a point of the truncation
+which lies neither in the closed annulus about any center `c i` with radii `‖a i‖ exp (-2πR) / 2`
+and `‖a i‖ exp (-2π) / 2` nor in the closed annulus about `0` with radii `2 exp (2π)` and
+`2 exp (2πR)`, the datum vanishes. -/
+theorem puncturedSpherePerturbation_eventuallyEq_zero_of_mem_puncturedSphereTruncation {R : ℝ}
+    {w : ℂ} (hw : w ∈ puncturedSphereTruncation c a R)
+    (hwi : ∀ i, w ∉ Metric.closedBall (c i) (‖a i‖ * Real.exp (-(2 * π)) / 2) \
+      Metric.ball (c i) (‖a i‖ * Real.exp (-(2 * π * R)) / 2))
+    (hwout : w ∉ Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+      Metric.ball 0 (2 * Real.exp (2 * π))) :
+    puncturedSpherePerturbation c a H Hout =ᶠ[𝓝 w] 0 := by
+  have hw' := mem_puncturedSphereTruncation.1 hw
+  refine puncturedSpherePerturbation_eventuallyEq_zero (fun i ↦ ?_) ?_
+  · by_contra! h
+    exact hwi i ⟨mem_closedBall_iff_norm.2 h, fun h' ↦ (mem_ball_iff_norm.1 h').not_ge (hw'.2 i)⟩
+  · by_contra! h
+    exact hwout ⟨mem_closedBall_zero_iff.2 hw'.1, fun h' ↦ (mem_ball_zero_iff.1 h').not_ge h⟩
 
 /-- **The datum on an input end.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and
 lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the part `s > 0` of the input end `i`, the pullback of
@@ -446,16 +613,16 @@ theorem differentiableAt_inputEndPerturbation_domain {H : ℝ → M → ℝ} (hH
   exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
     Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
 
-/-- Off its center, the components of the input end datum of a `C¹` Hamiltonian on a manifold are
-differentiable in the target point. -/
-theorem mdifferentiableAt_inputEndPerturbation_target {H : ℝ → M → ℝ} (hH : Periodic H 1)
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {c a : ℂ} (ha : a ≠ 0) {w : ℂ}
-    (hw : w ≠ c) (x : M) (v : ℂ) :
-    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ inputEndPerturbation c a H w y v) x :=
-  (((contMDiffAt_inputEndPerturbation (n := 1) hH hHs ha hw x).comp
-    (f := fun y : M ↦ ((c, a), (w, y))) x
-    (contMDiffAt_const.prodMk (contMDiffAt_const.prodMk contMDiffAt_id))).clm_apply
-    contMDiffAt_const).mdifferentiableAt one_ne_zero
+/-- The components of the input end datum of a `C¹` Hamiltonian on a manifold are differentiable
+in the target point. -/
+theorem mdifferentiableAt_inputEndPerturbation_target {H : ℝ → M → ℝ}
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (c a w : ℂ) (x : M) (v : ℂ) :
+    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ inputEndPerturbation c a H w y v) x := by
+  have hHt : MDifferentiableAt I 𝓘(ℝ) (H (zero.endCoord ((w - c) / a)).im) x :=
+    (hHs.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiableAt one_ne_zero
+  simp only [inputEndPerturbation_apply, positivePlanePerturbation_def, smul_apply, smul_eq_mul]
+  exact (((differentiableAt_id (x := H (zero.endCoord ((w - c) / a)).im x)).const_mul
+    _).mul_const _).mdifferentiableAt.comp x hHt
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
@@ -542,7 +709,7 @@ end TauCeti.Floer
 namespace TauCeti.SmoothTwoForm
 
 open Floer MeasureTheory
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_affine_injective)
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
@@ -575,12 +742,12 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
     rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
     exact fun h => hw (by simpa [ha] using h)
   rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
-    (realChart_injective fun _ _ h => mul_left_cancel₀ ha (add_left_cancel h)).injOn
+    (realChart_affine_injective ha).injOn
     (fun w _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
     (fun w hw ↦ differentiableAt_inputEndPerturbation_domain hH hHs ha (hc hw) _ 1)
     (fun w hw ↦ differentiableAt_inputEndPerturbation_domain hH hHs ha (hc hw) _ Complex.I)
-    (fun w hw ↦ mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hc hw) _ 1)
-    (fun w hw ↦ mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hc hw) _ Complex.I),
+    (fun w _ ↦ mdifferentiableAt_inputEndPerturbation_target hHs _ _ _ _ 1)
+    (fun w _ ↦ mdifferentiableAt_inputEndPerturbation_target hHs _ _ _ _ Complex.I),
     perturbationPullback_realChart_inputEndPerturbation ha,
     perturbationPullback_realChart_inputEndPerturbation ha,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]

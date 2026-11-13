@@ -83,6 +83,11 @@ apply to all three ends.
   `TauCeti.Floer.image_endChart_inf_endPiece`).
 * `TauCeti.Floer.preimage_truncation_inter_eq_image_endChart`: the part `±s > c` of the end `q`
   in the truncation `S_R` is the image under the end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`.
+* `TauCeti.Floer.endChart_mem_preimage_truncation`,
+  `TauCeti.Floer.image_endChart_endPiece_subset_preimage_truncation`,
+  `TauCeti.Floer.mem_image_endChart_endPiece`, `TauCeti.Floer.disjoint_image_endChart_endPiece`:
+  the end pieces lie in the truncation `S_R`, contain every point of `S_R` with `±s ≥ 1` on their
+  end, and are pairwise disjoint.
 * `TauCeti.Floer.perturbationPullback_endChart_eq_cylindricalEndLift`: the pullback of a
   perturbation along the end chart is the perturbation evaluated on the image of a tangent vector
   under the end lift.
@@ -628,6 +633,52 @@ theorem preimage_truncation_inter_eq_image_endChart (q : Puncture) {c : ℝ} (hc
     · exact hr ▸ hR
     · linarith [endSign_mul_re_endCoord_nonpos hr (by linarith : 0 < q.endSign *
         (q.endCoord (Complex.equivRealProdCLM.symm z)).re)]
+
+/-- The end chart sends the part `0 < ±s ≤ R` of the end `q`, at every angle, into the truncation
+`S_R`. -/
+theorem endChart_mem_preimage_truncation {q : Puncture} {R : ℝ} {z : ℝ × ℝ}
+    (hz₀ : 0 < q.endSign * z.1) (hzR : q.endSign * z.1 ≤ R) :
+    endChart q z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
+  have hS := mem_thricePuncturedSphereReal_iff.1 (endChart_mem_thricePuncturedSphereReal hz₀)
+  refine mem_truncation.2 ⟨hS.1, hS.2, fun r => ?_⟩
+  by_cases hr : q = r
+  · subst hr
+    rwa [re_endCoord_endChart]
+  · have h := endSign_mul_re_endCoord_nonpos hr (w := Complex.equivRealProdCLM.symm (endChart q z))
+      (by rwa [re_endCoord_endChart])
+    linarith
+
+/-- The end pieces lie in the truncation. -/
+theorem image_endChart_endPiece_subset_preimage_truncation (q : Puncture) (R : ℝ) :
+    endChart q '' endPiece q R ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
+  rintro _ ⟨z, hz, rfl⟩
+  obtain ⟨⟨h₁, h₂⟩, -⟩ := mem_endPiece.1 hz
+  exact endChart_mem_preimage_truncation (by linarith) h₂
+
+/-- A point of the truncation on the part `±s ≥ 1` of the end `q` lies in its end piece. -/
+theorem mem_image_endChart_endPiece {R : ℝ} {z : ℝ × ℝ}
+    (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R) {q : Puncture}
+    (hq : 1 ≤ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    z ∈ endChart q '' endPiece q R := by
+  obtain ⟨hz₀, hz₁, hzR⟩ := mem_truncation.1 hz
+  refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
+    mem_endPiece.2 ⟨⟨by simpa using hq, by simpa using hzR q⟩,
+      by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
+  rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+    q.cylindricalEndLift_endCoord (ne_endCenter ⟨hz₀, hz₁⟩ q),
+    ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The end pieces of distinct ends are disjoint. -/
+theorem disjoint_image_endChart_endPiece {R : ℝ} {q r : Puncture} (hqr : q ≠ r) :
+    Disjoint (endChart q '' endPiece q R) (endChart r '' endPiece r R) := by
+  rw [Set.disjoint_left]
+  rintro _ ⟨a, ha, rfl⟩ ⟨b, hb, hab⟩
+  have ha' : 1 ≤ q.endSign * a.1 := (mem_endPiece.1 ha).1.1
+  have hb' : 1 ≤ r.endSign * b.1 := (mem_endPiece.1 hb).1.1
+  have h := congrArg Complex.equivRealProdCLM.symm hab
+  rw [equivRealProdCLM_symm_endChart, equivRealProdCLM_symm_endChart] at h
+  exact cylindricalEndLift_ne_cylindricalEndLift hqr (z := Complex.equivRealProdCLM.symm a)
+    (z' := Complex.equivRealProdCLM.symm b) (by simp; linarith) (by simp; linarith) h.symm
 
 /-- The strip of an end is measurable. -/
 theorem measurableSet_endStrip (q : Puncture) : MeasurableSet (endStrip q) := by

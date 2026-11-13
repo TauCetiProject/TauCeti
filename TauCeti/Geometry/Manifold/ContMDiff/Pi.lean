@@ -19,15 +19,15 @@ records two smoothness results:
   coordinate fiber through `x`, is `C^n` (`TauCeti.contMDiff_update`).
 
 It also records that a family of maps which is a `C^n` map at one index and zero at the others is
-`C^n` at every index (`ContMDiff.pi_single`), as are the uncurried members of such a family of
-two-variable maps (`ContMDiff.uncurry_pi_single`).
+`C^n` at every index (`ContMDiff.piSingle_apply`), as are the uncurried members of such a family of
+two-variable maps (`ContMDiff.uncurry_piSingle_apply`).
 
 ## Main results
 
 * `ContMDiff.piMap`: a finite product of `C^n` maps is `C^n`.
 * `TauCeti.contMDiff_update`: a coordinate insertion is `C^n`.
-* `ContMDiff.pi_single`: the members of `Pi.single i f` are `C^n` when `f` is.
-* `ContMDiff.uncurry_pi_single`: the uncurried members of `Pi.single i f` are `C^n` when
+* `ContMDiff.piSingle_apply`: the members of `Pi.single i f` are `C^n` when `f` is.
+* `ContMDiff.uncurry_piSingle_apply`: the uncurried members of `Pi.single i f` are `C^n` when
   `uncurry f` is.
 -/
 
@@ -52,7 +52,7 @@ theorem ContMDiff.piMap {E' : ι → Type*}
 
 /-- The family which is a `C^n` map `f` at the index `i` and zero at the other indices is `C^n` at
 every index. -/
-theorem ContMDiff.pi_single {κ : Type*} [DecidableEq κ] {E : Type*} [NormedAddCommGroup E]
+theorem ContMDiff.piSingle_apply {κ : Type*} [DecidableEq κ] {E : Type*} [NormedAddCommGroup E]
     [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*}
     [TopologicalSpace M] [ChartedSpace H M] {E' : Type*} [NormedAddCommGroup E']
     [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
@@ -65,15 +65,16 @@ theorem ContMDiff.pi_single {κ : Type*} [DecidableEq κ] {E : Type*} [NormedAdd
 
 /-- If the uncurried map `uncurry f` is `C^n`, then so is the uncurried map at every index of the
 family which is `f` at the index `i` and zero at the other indices. -/
-theorem ContMDiff.uncurry_pi_single {κ : Type*} [DecidableEq κ] {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {X Y : Type*}
+theorem ContMDiff.uncurry_piSingle_apply {κ : Type*} [DecidableEq κ] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
+    {I : ModelWithCorners 𝕜 E H} {X Y : Type*}
     [TopologicalSpace (X × Y)] [ChartedSpace H (X × Y)] {E' : Type*} [NormedAddCommGroup E']
     [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [Zero M'] {f : X → Y → M'}
     (hf : ContMDiff I I' n (uncurry f)) (i j : κ) :
     ContMDiff I I' n (uncurry ((Pi.single i f : κ → X → Y → M') j)) := by
   rw [Pi.apply_single (fun _ ↦ uncurry) (fun _ ↦ rfl) i f j]
-  exact hf.pi_single i j
+  exact hf.piSingle_apply i j
 
 namespace TauCeti
 

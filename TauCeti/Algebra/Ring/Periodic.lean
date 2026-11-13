@@ -16,7 +16,7 @@ function on `ℂ` these are the vectors of the lattice `ℤ + ℤ i`; for the pe
 function on `ℂ` they are the vectors of the lattice `ℤ τ + ℤ`.
 
 The family which is a `c`-periodic function `g` at one index and zero at the others is
-`c`-periodic at every index (`Function.Periodic.pi_single`).
+`c`-periodic at every index (`Function.Periodic.piSingle_apply`).
 -/
 
 public section
@@ -33,7 +33,7 @@ theorem Periodic.int_mul_add_int_mul (h₁ : Periodic f c₁) (h₂ : Periodic f
 
 /-- The family which is a `c`-periodic function `g` at the index `i` and zero at the other indices
 is `c`-periodic at every index. -/
-theorem Periodic.pi_single {ι γ δ : Type*} [DecidableEq ι] [Add γ] [Zero δ] {g : γ → δ} {c : γ}
+theorem Periodic.piSingle_apply {ι γ δ : Type*} [DecidableEq ι] [Add γ] [Zero δ] {g : γ → δ} {c : γ}
     (hg : Periodic g c) (i j : ι) : Periodic ((Pi.single i g : ι → γ → δ) j) c := by
   rcases eq_or_ne j i with rfl | h
   · simpa using hg

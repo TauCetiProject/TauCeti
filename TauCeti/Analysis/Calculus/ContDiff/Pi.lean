@@ -18,9 +18,9 @@ transition maps of product charts of finitely many manifolds are `C^n`.
 ## Main declarations
 
 * `ContDiffOn.piMap`: a finite product of maps `C^n` on sets is `C^n` on the product set.
-* `ContDiff.pi_single`, `ContDiff.uncurry_pi_single`: the family which is a `C^n` map `f` at one
-  index and zero at the others is `C^n` at every index, and so is its uncurried form when `f` is a
-  two-variable map with `C^n` uncurried form.
+* `ContDiff.piSingle_apply`, `ContDiff.uncurry_piSingle_apply`: the family which is a `C^n` map
+  `f` at one index and zero at the others is `C^n` at every index, and so is its uncurried form
+  when `f` is a two-variable map with `C^n` uncurried form.
 
 Replacing one coordinate by a function of the whole argument also preserves smoothness
 (`ContDiff.update_self`). This extends the coordinate-replacement argument in
@@ -58,7 +58,7 @@ theorem ContDiff.update_self {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The family which is a `C^n` map `f` at the index `i` and zero at the other indices is `C^n` at
 every index. -/
-theorem ContDiff.pi_single {𝕜 : Type*} [NontriviallyNormedField 𝕜] {κ : Type*} [DecidableEq κ]
+theorem ContDiff.piSingle_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜] {κ : Type*} [DecidableEq κ]
     {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
     [NormedSpace 𝕜 F] {n : WithTop ℕ∞} {f : E → F} (hf : ContDiff 𝕜 n f) (i j : κ) :
     ContDiff 𝕜 n ((Pi.single i f : κ → E → F) j) := by
@@ -69,10 +69,10 @@ theorem ContDiff.pi_single {𝕜 : Type*} [NontriviallyNormedField 𝕜] {κ : T
 
 /-- If the uncurried map `uncurry f` is `C^n`, then so is the uncurried map at every index of the
 family which is `f` at the index `i` and zero at the other indices. -/
-theorem ContDiff.uncurry_pi_single {𝕜 : Type*} [NontriviallyNormedField 𝕜] {κ : Type*}
+theorem ContDiff.uncurry_piSingle_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜] {κ : Type*}
     [DecidableEq κ] {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {n : WithTop ℕ∞} {f : E → E' → F} (hf : ContDiff 𝕜 n (Function.uncurry f)) (i j : κ) :
     ContDiff 𝕜 n (Function.uncurry ((Pi.single i f : κ → E → E' → F) j)) := by
   rw [Pi.apply_single (fun _ ↦ Function.uncurry) (fun _ ↦ rfl) i f j]
-  exact hf.pi_single i j
+  exact hf.piSingle_apply i j

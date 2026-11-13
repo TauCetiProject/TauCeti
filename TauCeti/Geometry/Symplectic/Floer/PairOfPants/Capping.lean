@@ -372,8 +372,8 @@ theorem contMDiff_negativePlanePerturbation {n : ℕ∞} (hH : Periodic H 1)
       linarith
     rw [← pairOfPantsPerturbation_single_inf]
     exact contMDiffAt_pairOfPantsPerturbation
-      (hH.pi_single inf)
-      (hHs.uncurry_pi_single inf) ⟨w, hw₀, hw₁⟩ x
+      (hH.piSingle_apply inf)
+      (hHs.uncurry_piSingle_apply inf) ⟨w, hw₀, hw₁⟩ x
 
 /-- **The positive plane perturbation is smooth.** For a Hamiltonian of period one which is `C^n`
 on `ℝ × M`, the positive plane perturbation is `C^n` at every point of `(ℂ ∖ {0}) × M`. Off the
@@ -393,8 +393,8 @@ theorem contMDiffAt_positivePlanePerturbation {n : ℕ∞} (hH : Periodic H 1)
   · -- Off it, the point lies in the pair of pants with one nonzero input.
     rw [← pairOfPantsPerturbation_single_zero]
     exact contMDiffAt_pairOfPantsPerturbation
-      (hH.pi_single zero)
-      (hHs.uncurry_pi_single zero) ⟨w, hw, hw₁⟩ x
+      (hH.piSingle_apply zero)
+      (hHs.uncurry_piSingle_apply zero) ⟨w, hw, hw₁⟩ x
 
 /-! ### Capping an input of the pair of pants -/
 
@@ -441,8 +441,8 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
     exact plumbedPerturbation_single_inf_eq_zero hq (by linarith) hp.le p.2
   · -- Off it, the point lies in the plumbed four-punctured sphere.
     exact contMDiffAt_plumbedPerturbation hq
-      ((hHb q).pi_single inf) hHb
-      ((hHbs q).uncurry_pi_single inf) hHbs (by simp) hL
+      ((hHb q).piSingle_apply inf) hHb
+      ((hHbs q).uncurry_piSingle_apply inf) hHbs (by simp) hL
       (mem_plumbedSphere_of_le_norm_sub_endCenter hw hge) x
 
 section VectorSpace
@@ -518,8 +518,8 @@ theorem contMDiffAt_plumbedPerturbation_single_zero {n : ℕ∞} (hHa : ∀ r, P
     exact congrFun hp p.2
   · -- Off it, the point lies in the plumbed four-punctured sphere.
     exact contMDiffAt_plumbedPerturbation (by decide) hHa
-      ((hHa inf).pi_single zero)
-      hHas ((hHas inf).uncurry_pi_single zero) (by simp) hL ⟨⟨hw.1, hw₁⟩, hw.2⟩ x
+      ((hHa inf).piSingle_apply zero)
+      hHas ((hHas inf).uncurry_piSingle_apply zero) (by simp) hL ⟨⟨hw.1, hw₁⟩, hw.2⟩ x
 
 end TauCeti.Floer
 
@@ -544,8 +544,8 @@ theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : 
         (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
   have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (hH.pi_single inf)
-    (hHs.uncurry_pi_single inf)
+    (hH.piSingle_apply inf)
+    (hHs.uncurry_piSingle_apply inf)
     (abs_single_le inf hB) u
   rwa [pairOfPantsPerturbation_single_inf, Fintype.sum_eq_single inf fun r hr => by
     simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
@@ -566,8 +566,8 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
           (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (Bb q) + ∑ r, ENNReal.ofReal (Bb r) := by
   have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq
-    ((hHb q).pi_single inf) hHb
-    ((hHbs q).uncurry_pi_single inf) hHbs
+    ((hHb q).piSingle_apply inf) hHb
+    ((hHbs q).uncurry_piSingle_apply inf) hHbs
     (by simp) hL (abs_single_le inf (hBb q)) hBb u
   rwa [Fintype.sum_eq_single inf fun r hr => by simp [Pi.single_eq_of_ne hr],
     Pi.single_eq_same] at h
@@ -585,8 +585,8 @@ theorem lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le (ω : 
         (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
   have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (hH.pi_single zero)
-    (hHs.uncurry_pi_single zero)
+    (hH.piSingle_apply zero)
+    (hHs.uncurry_piSingle_apply zero)
     (abs_single_le zero hB) u
   rwa [pairOfPantsPerturbation_single_zero, Fintype.sum_eq_single zero fun r hr => by
     simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
@@ -607,8 +607,8 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_zero_le
           (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ∑ r, ENNReal.ofReal (Ba r) + ENNReal.ofReal (Ba inf) := by
   have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (q := zero) (by decide)
-    hHa ((hHa inf).pi_single zero) hHas
-    ((hHas inf).uncurry_pi_single zero)
+    hHa ((hHa inf).piSingle_apply zero) hHas
+    ((hHas inf).uncurry_piSingle_apply zero)
     (by simp) hL hBa (abs_single_le zero (hBa inf)) u
   have hs : ∑ r, ENNReal.ofReal ((Pi.single zero (Ba inf) : Puncture → ℝ) r) =
       ENNReal.ofReal (Ba inf) := by
@@ -669,7 +669,7 @@ theorem integrableOn_hamiltonianCurvature_negativePlanePerturbation_closedBall_s
   rw [← image_endChart_inf_endPiece] at hu ⊢
   rw [← pairOfPantsPerturbation_single_inf, endPiece_def]
   exact ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_image_endChart
-    (hH.pi_single inf) (hHs.uncurry_pi_single inf) hu one_pos
+    (hH.piSingle_apply inf) (hHs.uncurry_piSingle_apply inf) hu one_pos
     fun z h₁ h₂ ↦ endChart_mem_image_endChart_endPiece h₁ h₂
 
 namespace IsNondegenerate
@@ -706,8 +706,8 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall
             (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             z (u z) := by
-  have hHi := hH.pi_single inf
-  have hHsi := hHs.uncurry_pi_single inf
+  have hHi := hH.piSingle_apply inf
+  have hHsi := hHs.uncurry_piSingle_apply inf
   -- On the truncation, this is the energy identity of the pair of pants with zero inputs.
   have hT := hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hHi hHsi
     isOpen_univ (subset_univ _) hu.contMDiffOn hR
@@ -822,7 +822,7 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall_sdiff_b
   rw [← image_endChart_inf_endPiece] at hAV ⊢
   rw [← pairOfPantsPerturbation_single_inf,
     hω.integral_floerEnergyDensity_pairOfPantsPerturbation_image_endChart_endPiece
-      (hH.pi_single inf) (hHs.uncurry_pi_single inf) hVo hu hR inf fun z h₁ h₂ ↦
+      (hH.piSingle_apply inf) (hHs.uncurry_piSingle_apply inf) hVo hu hR inf fun z h₁ h₂ ↦
         hAV (endChart_mem_image_endChart_endPiece h₁ h₂)]
   simp only [Pi.single_eq_same, endSign_inf, neg_mul, one_mul]
   ring
@@ -867,8 +867,8 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
             (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             z (u z) := by
   set P := {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0}
-  have hHi := hH.pi_single zero
-  have hHsi := hHs.uncurry_pi_single zero
+  have hHi := hH.piSingle_apply zero
+  have hHsi := hHs.uncurry_piSingle_apply zero
   have huS : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal :=
     hu.mono fun z hz => (mem_thricePuncturedSphereReal_iff.1 hz).1
   -- On the truncation, this is the energy identity of the pair of pants with one input.

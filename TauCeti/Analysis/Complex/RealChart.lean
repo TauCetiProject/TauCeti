@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
@@ -27,10 +29,15 @@ determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonneg
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and the
 real chart maps the real coordinates of a set onto those of its image
-(`TauCeti.Complex.image_realChart_preimage`); for instance an affine map `w ↦ c + a w` maps closed
-and open discs about `w`, and closed annuli about `w`, onto those about `c + a w`
-(`TauCeti.Complex.image_realChart_affine_closedBall`, `TauCeti.Complex.image_realChart_affine_ball`,
-`TauCeti.Complex.image_realChart_affine_annulus`).
+(`TauCeti.Complex.image_realChart_preimage`). For instance an affine map `w ↦ c + a w` with
+`a ≠ 0` is injective and orientation-preserving in real coordinates
+(`TauCeti.Complex.realChart_affine_injective`,
+`TauCeti.Complex.det_fderiv_realChart_affine_nonneg`), and it maps closed and open discs about
+`w`, and closed annuli about `w`, onto those about `c + a w`
+(`TauCeti.Complex.image_realChart_affine_closedBall`,
+`TauCeti.Complex.image_realChart_affine_ball`,
+`TauCeti.Complex.image_realChart_affine_closedBall_sdiff_ball`). A closed annulus is compact in
+real coordinates (`TauCeti.Complex.isCompact_preimage_closedBall_sdiff_ball`).
 -/
 
 public section
@@ -110,6 +117,16 @@ theorem image_realChart_preimage (f : ℂ → ℂ) (s : Set ℂ) :
     Set.image_preimage_eq _ Complex.equivRealProdCLM.symm.surjective,
     Complex.equivRealProdCLM.image_eq_preimage_symm]
 
+/-- In real coordinates, the affine map `w ↦ c + a w`, for `a ≠ 0`, is injective. -/
+theorem realChart_affine_injective {c a : ℂ} (ha : a ≠ 0) :
+    Function.Injective (realChart (c + a * ·)) :=
+  realChart_injective fun _ _ h ↦ mul_left_cancel₀ ha (add_left_cancel h)
+
+/-- In real coordinates, the affine map `w ↦ c + a w` preserves orientation. -/
+theorem det_fderiv_realChart_affine_nonneg (c a : ℂ) (w : ℝ × ℝ) :
+    0 ≤ (fderiv ℝ (realChart (c + a * ·)) w).det :=
+  det_fderiv_realChart_nonneg (f' := a) (by simpa using ((hasDerivAt_id _).const_mul a).const_add c)
+
 /-- In real coordinates, the affine map `w ↦ c + a w`, for `a ≠ 0`, maps the closed disc about `w`
 of radius `r` onto the closed disc about `c + a w` of radius `‖a‖ r`. -/
 theorem image_realChart_affine_closedBall {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (r : ℝ) :
@@ -133,13 +150,18 @@ theorem image_realChart_affine_ball {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (r : �
 /-- In real coordinates, the affine map `w ↦ c + a w`, for `a ≠ 0`, maps the closed annulus about
 `w` with radii `r₁` and `r₂` onto the closed annulus about `c + a w` with radii `‖a‖ r₁` and
 `‖a‖ r₂`. -/
-theorem image_realChart_affine_annulus {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (r₁ r₂ : ℝ) :
+theorem image_realChart_affine_closedBall_sdiff_ball {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (r₁ r₂ : ℝ) :
     realChart (c + a * ·) '' (Complex.equivRealProdCLM.symm ⁻¹'
         (Metric.closedBall w r₂ \ Metric.ball w r₁)) =
       Complex.equivRealProdCLM.symm ⁻¹'
         (Metric.closedBall (c + a * w) (‖a‖ * r₂) \ Metric.ball (c + a * w) (‖a‖ * r₁)) := by
-  rw [Set.preimage_sdiff, Set.image_sdiff (realChart_injective fun _ _ h ↦
-      mul_left_cancel₀ ha (add_left_cancel h)),
+  rw [Set.preimage_sdiff, Set.image_sdiff (realChart_affine_injective ha),
     image_realChart_affine_closedBall ha, image_realChart_affine_ball ha, Set.preimage_sdiff]
+
+/-- A closed annulus of `ℂ` is compact in real coordinates. -/
+theorem isCompact_preimage_closedBall_sdiff_ball (w : ℂ) (r₁ r₂ : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' (Metric.closedBall w r₂ \ Metric.ball w r₁)) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
 
 end TauCeti.Complex

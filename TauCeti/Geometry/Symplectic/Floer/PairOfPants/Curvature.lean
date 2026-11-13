@@ -143,53 +143,7 @@ namespace TauCeti
 
 namespace Floer
 
-/-! ### The pieces of a truncation of the pair of pants -/
-
-/-- The end chart sends the part `0 < ±s ≤ R` of the end `q`, at every angle, into the truncation
-`S_R`. -/
-private theorem endChart_mem_preimage_truncation {q : Puncture} {R : ℝ} {z : ℝ × ℝ}
-    (hz₀ : 0 < q.endSign * z.1) (hzR : q.endSign * z.1 ≤ R) :
-    endChart q z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
-  have hS := mem_thricePuncturedSphereReal_iff.1 (endChart_mem_thricePuncturedSphereReal hz₀)
-  refine mem_truncation.2 ⟨hS.1, hS.2, fun r => ?_⟩
-  by_cases hr : q = r
-  · subst hr
-    rwa [re_endCoord_endChart]
-  · have h := endSign_mul_re_endCoord_nonpos hr (w := Complex.equivRealProdCLM.symm (endChart q z))
-      (by rwa [re_endCoord_endChart])
-    linarith
-
-/-- The end pieces lie in the truncation. -/
-private theorem image_endPiece_subset (q : Puncture) (R : ℝ) :
-    endChart q '' endPiece q R ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
-  rintro _ ⟨z, hz, rfl⟩
-  obtain ⟨⟨h₁, h₂⟩, -⟩ := mem_endPiece.1 hz
-  exact endChart_mem_preimage_truncation (by linarith) h₂
-
-/-- A point of the truncation on the part `±s ≥ 1` of the end `q` lies in its end piece. -/
-private theorem mem_image_endPiece {R : ℝ} {z : ℝ × ℝ}
-    (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R) {q : Puncture}
-    (hq : 1 ≤ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
-    z ∈ endChart q '' endPiece q R := by
-  obtain ⟨hz₀, hz₁, hzR⟩ := mem_truncation.1 hz
-  refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
-    mem_endPiece.2 ⟨⟨by simpa using hq, by simpa using hzR q⟩,
-      by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
-  rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-    q.cylindricalEndLift_endCoord (ne_endCenter ⟨hz₀, hz₁⟩ q),
-    ContinuousLinearEquiv.apply_symm_apply]
-
-/-- The end pieces of distinct ends are disjoint. -/
-private theorem disjoint_image_endPiece {R : ℝ} {q r : Puncture} (hqr : q ≠ r) :
-    Disjoint (endChart q '' endPiece q R) (endChart r '' endPiece r R) := by
-  rw [Set.disjoint_left]
-  rintro _ ⟨a, ha, rfl⟩ ⟨b, hb, hab⟩
-  have ha' : 1 ≤ q.endSign * a.1 := (mem_endPiece.1 ha).1.1
-  have hb' : 1 ≤ r.endSign * b.1 := (mem_endPiece.1 hb).1.1
-  have h := congrArg Complex.equivRealProdCLM.symm hab
-  rw [equivRealProdCLM_symm_endChart, equivRealProdCLM_symm_endChart] at h
-  exact cylindricalEndLift_ne_cylindricalEndLift hqr (z := Complex.equivRealProdCLM.symm a)
-    (z' := Complex.equivRealProdCLM.symm b) (by simp; linarith) (by simp; linarith) h.symm
+/-! ### The boundary circles of the end pieces -/
 
 /-- **The boundary circle of an end piece.** By periodicity, the integral of the end Hamiltonian
 over the circle `±s = R` may be taken over `[0, 1]` instead of `[-1/2, 1/2]`. -/
@@ -485,7 +439,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation
     (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
     (preimage_truncation_subset_thricePuncturedSphereReal R hz.1) (fun q ↦ ?_) (u z)
   by_contra! h
-  exact hz.2 (mem_iUnion.2 ⟨q, mem_image_endPiece hz.1 h⟩)
+  exact hz.2 (mem_iUnion.2 ⟨q, mem_image_endChart_endPiece hz.1 h⟩)
 
 section Energy
 
@@ -732,8 +686,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   -- The truncation is the disjoint union of its core `C`, where every `±s < 1`, and the three
   -- end pieces.
   have hAm (q : Puncture) : MeasurableSet (A q) := measurableSet_image_endChart_endPiece q R
-  have hAT (q : Puncture) : A q ⊆ T := image_endPiece_subset q R
-  have hAd : Pairwise (Disjoint on A) := fun q r hqr => disjoint_image_endPiece hqr
+  have hAT (q : Puncture) : A q ⊆ T := image_endChart_endPiece_subset_preimage_truncation q R
+  have hAd : Pairwise (Disjoint on A) := fun q r hqr => disjoint_image_endChart_endPiece hqr
   have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f T) :
       ∫ z in T, f z = (∫ z in C, f z) + ∑ q, ∫ z in A q, f z := by
     have hTC : T = C ∪ ⋃ q, A q := (sdiff_union_of_subset (iUnion_subset hAT)).symm
@@ -747,7 +701,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
       ∀ q : Puncture, q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < 1 := by
     intro q
     by_contra! h
-    exact hz.2 (mem_iUnion.2 ⟨q, mem_image_endPiece hz.1 h⟩)
+    exact hz.2 (mem_iUnion.2 ⟨q, mem_image_endChart_endPiece hz.1 h⟩)
   have hCm : MeasurableSet C := hT.isClosed.measurableSet.diff (MeasurableSet.iUnion hAm)
   have hCE : ∫ z in C, ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)

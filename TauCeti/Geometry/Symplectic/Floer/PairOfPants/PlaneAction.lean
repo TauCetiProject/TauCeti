@@ -143,8 +143,8 @@ private theorem hamiltonianCurvature_negativePlanePerturbation_eq_zero (ω : Sym
     have : Real.exp (2 * (2 * π)) ≤ Real.exp (2 * π * R) :=
       Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
     linarith
-  have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (hH.pi_single inf)
-    (hHs.uncurry_pi_single inf)
+  have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (hH.piSingle_apply inf)
+    (hHs.uncurry_piSingle_apply inf)
     ⟨hw₀, hw₁⟩ hs x
   rwa [pairOfPantsPerturbation_single_inf] at h
 
