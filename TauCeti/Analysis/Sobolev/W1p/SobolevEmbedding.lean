@@ -59,6 +59,8 @@ the native Morrey embedding also gives a bounded interior inclusion into `L^∞`
   for finite source exponent `q` and target exponent `s` with `q ≤ s` and `1/q - 1/s < 1/n`.
 * `TauCeti.W1p.exists_lpInftyEmbeddingL_of_isCompact_closure`: the supercritical interior
   inclusion into `L^∞`.
+* `TauCeti.W1p.memLp_value_of_isCompact_closure_of_finrank_le`: for `n ≤ p ≤ ∞`, interior
+  integrability in `L^r(V)` for every finite `r`.
 
 ## References
 
@@ -177,7 +179,7 @@ theorem W1p.exists_lpEmbeddingL_of_eLpNorm_value_le {r : ℝ≥0∞} [Fact (1 �
   -- lets the public norm_toLp law apply without unfolding the representative itself.
   change ‖(hm u).toLp (W1p.value u)‖ ≤ _
   rw [Lp.norm_toLp]
-  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] using
+  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] using
     ENNReal.toReal_mono (by finiteness : C * ‖u‖ₑ ≠ ∞) (hC u)
 
 /-! ### The interior of a domain -/
@@ -221,6 +223,7 @@ theorem W1p.exists_sobolevEmbeddingL_of_isCompact_closure (hpstar : pstar ≠ �
     ae_restrict_of_ae_restrict_of_subset hVW hTW] with x h1 h2 h3
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h1, h2, h3]
 
+omit [FiniteDimensional ℝ E] in
 /-- **The interior Sobolev inequality.** If `V` has compact closure contained in the open set
 `Ω`, `1 ≤ p` and `1/p⋆ + 1/n = 1/p` with `p⋆ < ∞`, then for every `q ≤ p⋆` there is a constant
 `C` with `‖u‖_{L^q(V)} ≤ C ‖u‖_{W^{1,p}(Ω)}` for all `u ∈ W^{1,p}(Ω)`. The full Sobolev norm is
@@ -231,11 +234,18 @@ theorem W1p.exists_eLpNorm_value_le_of_isCompact_closure (hpstar : pstar ≠ ∞
     ∃ C : ℝ≥0, ∀ u : W1p mu Omega p,
       eLpNorm (W1p.value u) q (mu.restrict V) ≤ C * ‖u‖ₑ := by
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
-  obtain ⟨S, hS⟩ := W1p.exists_sobolevEmbeddingL_of_isCompact_closure (mu := mu) (Omega := Omega)
-    (p := p) hpstar hexp hVc hVO
-  exact W1p.exists_eLpNorm_value_le_of_ae_eq
-    (measure_ne_top_of_subset subset_closure hVc.measure_lt_top.ne) hq S hS
+  by_cases hfin : FiniteDimensional ℝ E
+  · obtain ⟨S, hS⟩ := W1p.exists_sobolevEmbeddingL_of_isCompact_closure (mu := mu)
+      (Omega := Omega) (p := p) hpstar hexp hVc hVO
+    exact W1p.exists_eLpNorm_value_le_of_ae_eq
+      (measure_ne_top_of_subset subset_closure hVc.measure_lt_top.ne) hq S hS
+  · -- Without finite dimension `finrank = 0`, so the exponent relation is impossible.
+    rw [Module.finrank_of_infinite_dimensional hfin, Nat.cast_zero, ENNReal.inv_zero,
+      add_top] at hexp
+    have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
+    simp [ENNReal.inv_eq_top.1 hexp.symm] at h1
 
+omit [FiniteDimensional ℝ E] in
 /-- **Interior integrability.** If `V` has compact closure contained in the open set `Ω`, every
 `u ∈ W^{1,p}(Ω)` lies in `L^q(V)` for every `q ≤ p⋆`, where `1/p⋆ + 1/n = 1/p` and `p⋆ < ∞`. -/
 theorem W1p.memLp_value_of_isCompact_closure (hpstar : pstar ≠ ∞)
@@ -261,6 +271,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {q s : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
 
+omit [Nontrivial E] in
 /-- Interior Sobolev embedding with any finite subcritical gain, including when the source
 exponent equals or exceeds the dimension. -/
 theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
@@ -268,6 +279,14 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
     {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
     ∃ C : ℝ≥0, ∀ u : W1p μ Ω (q : ℝ≥0∞),
       eLpNorm (W1p.value u) s (μ.restrict V) ≤ C * ‖u‖ₑ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In a trivial space `finrank = 0`, so the gap condition is impossible.
+    have h0 : (0 : ℝ) ≤ (q : ℝ)⁻¹ - (s : ℝ)⁻¹ := by
+      rw [sub_nonneg]
+      have hq : (1 : ℝ≥0) ≤ q := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ q)
+      exact inv_anti₀ (by positivity) (by exact_mod_cast hqs)
+    simp [Module.finrank_zero_of_subsingleton] at hgap
+    linarith
   obtain ⟨U, hUf, hVU, T, hTrep⟩ :=
     W1p.exists_zeroBoundaryLocalization (μ := μ) (Ω := Ω) (p := (q : ℝ≥0∞))
       ENNReal.coe_ne_top hVc hVΩ
@@ -295,6 +314,7 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
     _ ≤ A * (‖T‖ₑ * ‖u‖ₑ) := by gcongr; exact T.le_opENorm u
     _ = _ := (mul_assoc _ _ _).symm
 
+omit [Nontrivial E] in
 /-- A bounded linear interior Sobolev inclusion for every finite subcritical gain. -/
 theorem W1p.exists_sobolevEmbeddingL_of_subcritical_gain [Fact (1 ≤ (s : ℝ≥0∞))]
     (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ < (finrank ℝ E : ℝ)⁻¹)
@@ -350,5 +370,44 @@ theorem W1p.exists_lpInftyEmbeddingL_of_isCompact_closure
       rw [← ofReal_norm, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal (HolderSpace.norm_toBoundedContinuousFunction_le (H u))
     _ ≤ _ := H.le_opENorm u
+
+section FinrankLE
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+omit [Nontrivial E] in
+/-- **Interior integrability at and above the dimension.** If `n ≤ p ≤ ∞`, where `n` is the
+dimension, and `V` has compact closure contained in the open set `Ω`, every `u ∈ W^{1,p}(Ω)` lies
+in `L^r(V)` for every finite `r`. -/
+theorem W1p.memLp_value_of_isCompact_closure_of_finrank_le (hp : (finrank ℝ E : ℝ≥0∞) ≤ p)
+    {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) (r : ℝ≥0)
+    (u : W1p μ Ω p) : MemLp (W1p.value u) r (μ.restrict V) := by
+  have : IsFiniteMeasure (μ.restrict V) :=
+    isFiniteMeasure_restrict.2 (measure_ne_top_of_subset subset_closure hVc.measure_lt_top.ne)
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- On a trivial space every function is constant.
+    rw [show (W1p.value u : E → ℝ) = fun _ => W1p.value u 0 from
+      funext fun x => congrArg _ (Subsingleton.elim x 0)]
+    exact memLp_const _
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · -- For `p = ∞` the value is bounded, hence in every `L^r(V)`.
+    exact ((Lp.memLp (W1p.value u)).mono_measure
+      (Measure.restrict_mono (subset_closure.trans hVΩ) le_rfl)).mono_exponent le_top
+  lift p to ℝ≥0 using hptop
+  -- The borderline embedding into `L^m(V)`, `m = max p r`, then Hölder's inequality on `V`.
+  set m := max p r
+  have hp1 : (1 : ℝ≥0) ≤ p := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ p)
+  have hn : (0 : ℝ) < finrank ℝ E := by exact_mod_cast finrank_pos
+  have hgap : (p : ℝ)⁻¹ - (m : ℝ)⁻¹ < (finrank ℝ E : ℝ)⁻¹ := by
+    have hm : (0 : ℝ) < m := lt_of_lt_of_le (by exact_mod_cast zero_lt_one.trans_le hp1)
+      (by exact_mod_cast le_max_left p r)
+    have hpn : (p : ℝ)⁻¹ ≤ (finrank ℝ E : ℝ)⁻¹ := inv_anti₀ hn (by exact_mod_cast hp)
+    linarith [inv_pos.2 hm]
+  obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_value_le_of_subcritical_gain (μ := μ) (le_max_left p r)
+    hgap hVc hVΩ
+  exact (memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
+    : MemLp _ m _).mono_exponent (by exact_mod_cast le_max_right p r)
+
+end FinrankLE
 
 end TauCeti

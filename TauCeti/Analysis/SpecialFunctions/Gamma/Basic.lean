@@ -13,7 +13,7 @@ import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
-# Measurability, reciprocal continuity, and ratio asymptotics of the real Gamma function
+# Measurability, reciprocal bounds, and ratio asymptotics of the Gamma function
 
 `Real.Gamma` is smooth away from the nonpositive integers and has a pole at each of them, so it is
 neither continuous nor locally bounded on all of `ℝ`. It is nevertheless Borel measurable, because
@@ -29,6 +29,8 @@ The reciprocal `(Real.Gamma s)⁻¹`, on the other hand, is continuous on all of
 convention `Real.Gamma (-n) = 0` makes it vanish at the poles, matching the zeros of the entire
 function `1 / Γ`. It is bounded on every half-line `[a, ∞)`, which is what uniform estimates for
 series with coefficients `1 / Γ(b + n)`, such as hypergeometric and Bessel series, need.
+For a complex parameter the corresponding estimate is the factorial decay of `1 / Γ(s + n)` on
+the half-plane `1 ≤ Re s`.
 
 Finally, the rising factorial is recorded as a quotient of real Gamma values, and Mathlib's Euler
 limit formula `Real.GammaSeq_tendsto_Gamma` is recast as the asymptotic
@@ -49,6 +51,14 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
+* `Complex.ne_neg_natCast_of_re_pos` — a parameter with positive real part avoids `−ℕ`.
+* `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
+  complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
+* `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
+  specialization giving factorial decay of the reciprocal Gamma function along natural-number
+  shifts on `[1, ∞)`.
+* `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
+  `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
 
 public section
@@ -163,11 +173,7 @@ private theorem isEquivalent_Gamma_natCast_add_one_add_of_pos {s : ℝ} (hs : 0 
     rwa [div_self hΓ] at this
   refine hlim.congr' ?_
   filter_upwards [eventually_ne_atTop 0] with n hn
-  have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
   have hprod := prod_range_add_mul_Gamma hs (n + 1)
-  have hpos : 0 < ∏ j ∈ Finset.range (n + 1), (s + j) :=
-    Finset.prod_pos fun j _ => by positivity
-  have hfac : (0 : ℝ) < n ! := by exact_mod_cast Nat.factorial_pos n
   rw [Pi.div_apply, GammaSeq, show (n : ℝ) + 1 + s = s + ((n + 1 : ℕ) : ℝ) by push_cast; ring,
     ← hprod]
   field_simp
@@ -221,3 +227,89 @@ theorem tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop {a b : ℝ} (hab :
     rw [show (n : ℝ) + 1 + (a - 1) = n + a by ring, show (n : ℝ) + 1 + (b - 1) = n + b by ring]
 
 end Real
+
+namespace Complex
+
+/-- A complex number with positive real part is not a nonpositive integer. -/
+theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
+    b ≠ -(n : ℂ) := by
+  intro h
+  have heq := congrArg re h
+  simp only [neg_re, natCast_re] at heq
+  linarith [n.cast_nonneg (α := ℝ)]
+
+/-- On the half-plane `1 ≤ Re s`, the reciprocal Gamma function decays factorially along
+`s + k`: `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!`. Together with the boundedness of `1 / Γ` on compact
+sets, this gives locally uniform bounds for series with coefficients `1 / Γ(b + k)` as functions
+of a complex parameter `b`. -/
+theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
+    ‖(Gamma (s + k))⁻¹‖ ≤ ‖(Gamma s)⁻¹‖ / k ! := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hk : ((k + 1 : ℕ) : ℝ) ≤ ‖s + k‖ := by
+      refine le_trans ?_ (Complex.re_le_norm _)
+      rw [add_re, natCast_re, Nat.cast_succ]
+      linarith
+    -- `1 / Γ(s + k) = (s + k) / Γ(s + k + 1)`
+    have hrec : ‖(Gamma (s + k))⁻¹‖ = ‖s + k‖ * ‖(Gamma (s + (k + 1 : ℕ)))⁻¹‖ := by
+      rw [one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (s + k), norm_mul, Nat.cast_succ,
+        add_assoc]
+    rw [Nat.factorial_succ, Nat.cast_mul, le_div_iff₀ (by positivity)]
+    calc ‖(Gamma (s + (k + 1 : ℕ)))⁻¹‖ * ((k + 1 : ℕ) * k !)
+        ≤ ‖(Gamma (s + (k + 1 : ℕ)))⁻¹‖ * (‖s + k‖ * k !) := by gcongr
+      _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
+      _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
+
+end Complex
+
+namespace Real
+
+/-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
+`(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real specialization of
+`Complex.norm_inv_Gamma_add_natCast_le`. -/
+theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
+    (Gamma (s + k))⁻¹ ≤ (Gamma s)⁻¹ / k ! := by
+  have hnorm (t : ℝ) (ht : 0 < t) : ‖(Complex.Gamma t)⁻¹‖ = (Gamma t)⁻¹ := by
+    rw [Complex.Gamma_ofReal, norm_inv, Complex.norm_of_nonneg (Gamma_pos_of_pos ht).le]
+  have h := Complex.norm_inv_Gamma_add_natCast_le (s := s) (by simpa using hs) k
+  have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
+  rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
+
+end Real
+
+namespace Complex
+
+open Finset in
+/-- A finite alternating sum of reciprocal Gamma values: for `a ∉ −ℕ`,
+`∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))`. This is the coefficient
+identity behind the expansion of Tricomi's incomplete Gamma function in powers of `−z`
+(DLMF 8.7.1). -/
+theorem sum_range_neg_one_pow_div_factorial_mul_Gamma {a : ℂ} (ha : ∀ n : ℕ, a ≠ -n)
+    (m : ℕ) :
+    ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m - i : ℕ) + 1)) =
+      (-1) ^ m / (m ! * (a + m)) * (Gamma a)⁻¹ := by
+  induction m generalizing a with
+  | zero =>
+    have ha0 : a ≠ 0 := by simpa using ha 0
+    simp [Gamma_add_one a ha0, mul_comm]
+  | succ m ih =>
+    have ha1 : ∀ n : ℕ, a + 1 ≠ -n := fun n h => ha (n + 1) (by push_cast; linear_combination h)
+    have ha0 : a ≠ 0 := by simpa using ha 0
+    have ham : a + (m + 1 : ℕ) ≠ 0 := fun h => ha (m + 1) (by linear_combination h)
+    have hΓ : Gamma a ≠ 0 := Gamma_ne_zero ha
+    rw [sum_range_succ, Nat.sub_self, Nat.cast_zero, add_zero]
+    have hsum : ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m + 1 - i : ℕ) + 1)) =
+        ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + 1 + (m - i : ℕ) + 1)) := by
+      refine sum_congr rfl fun i hi => ?_
+      rw [Nat.sub_add_comm (Nat.lt_succ_iff.1 (mem_range.1 hi))]
+      push_cast
+      ring_nf
+    rw [hsum, ih ha1, Gamma_add_one a ha0, Nat.factorial_succ]
+    push_cast at ham ⊢
+    have hm : (m : ℂ) + 1 ≠ 0 := by norm_cast
+    have ham' : a + 1 + m ≠ 0 := fun h => ham (by linear_combination h)
+    field_simp
+    ring
+
+end Complex

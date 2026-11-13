@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Divisible
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.End.Basic
 -- Baer's criterion for divisible groups, used only in `torusPointMap_surjective_of_injective`.
@@ -192,6 +191,18 @@ theorem torusPointMap_injective [Finite ι] {K : Type*} [Field K] [Infinite K] :
   exact weightChar_injective (K := K) <| MonoidHom.ext fun s => by
     simpa only [weightChar_apply, torusPointMap_apply, LinearMap.comp_apply, LinearMap.coe_single]
       using congrFun (DFunLike.congr_fun h s) i
+
+/-- The dual of a split-injective lattice map is surjective on torus points over every
+commutative ring. -/
+theorem torusPointMap_surjective_of_leftInverse [Finite ι]
+    (ψ : (κ → ℤ) →ₗ[ℤ] (ι → ℤ)) {φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)}
+    (h : ψ ∘ₗ φ = LinearMap.id) : Function.Surjective (torusPointMap (R := R) φ) := by
+  classical
+  let := Fintype.ofFinite ι
+  intro s
+  refine ⟨torusPointMap ψ s, ?_⟩
+  rw [← MonoidHom.comp_apply, ← torusPointMap_comp, h, torusPointMap_id,
+    MonoidHom.id_apply]
 
 /-- **The dual of an injective lattice map is surjective on torus points when the units are
 divisible**, for instance over an algebraically closed field. The units form a divisible, hence

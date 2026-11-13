@@ -47,10 +47,15 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 * `TauCeti.prodThomPair`: the pair `(B × F, B × (F ∖ {0}))`.
 * `TauCeti.prodThomPairMap`: the map of pairs induced by a continuous map of the bases.
 * `TauCeti.prodThomPairFiberMap`: the inclusion of the fibre pair `(F, F ∖ {0})` over a point.
+* `TauCeti.prodThomPairSnd`: the projection onto the fibre pair, a retraction of each fibre
+  inclusion (`TauCeti.prodThomPairFiberMap_comp_prodThomPairSnd`).
+* `TauCeti.complZeroPairIsoProdThomPair`: over a point, the fibre inclusion is an isomorphism of
+  pairs.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
   `n < dim F`.
 * `TauCeti.prodThomPairSingularHomologyIso`: `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`, `r = dim F`.
-* `TauCeti.prodThomPairSingularHomologyIso_hom_naturality`: its naturality in the base.
+* `TauCeti.prodThomPairSingularHomologyIso_hom_naturality`,
+  `TauCeti.prodThomPairSingularHomologyIso_inv_naturality`: its naturality in the base.
 
 ## References
 
@@ -117,18 +122,42 @@ lemma prodThomPairFiberMap_comp_prodThomPairMap (b : B) (g : C(B, B')) :
     prodThomPairFiberMap F b ≫ prodThomPairMap F g = prodThomPairFiberMap F (g b) :=
   TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext <;> rfl)
 
-/-- The projection `(pt × F, pt × (F ∖ {0})) ⟶ (F, F ∖ {0})` of the Thom pair of the product bundle
-over a point onto its fibre pair. -/
-def prodThomPairPUnitSnd :
-    prodThomPair PUnit.{w + 1} F ⟶ TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
+variable (B) in
+/-- The projection `(B × F, B × (F ∖ {0})) ⟶ (F, F ∖ {0})` of the Thom pair of the product bundle
+onto its fibre pair. -/
+def prodThomPairSnd :
+    prodThomPair B F ⟶ TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
   TopPair.ofSubsetMap (TopCat.ofHom ⟨Prod.snd, continuous_snd⟩) fun _ hp ↦ hp
 
-/-- Over a point, the projection to the fibre is a retraction of the fibre inclusion. -/
-theorem prodThomPairPUnitSnd_comp_prodThomPairFiberMap :
-    prodThomPairPUnitSnd F ≫ prodThomPairFiberMap F (PUnit.unit : PUnit.{w + 1}) = 𝟙 _ :=
+@[simp]
+lemma prodThomPairSnd_fst_apply (p : B × F) :
+    TopPair.Hom.fst (prodThomPairSnd B F) p = p.2 :=
+  TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- The projection to the fibre is a retraction of each fibre inclusion. -/
+@[reassoc (attr := simp)]
+lemma prodThomPairFiberMap_comp_prodThomPairSnd (b : B) :
+    prodThomPairFiberMap F b ≫ prodThomPairSnd B F = 𝟙 _ :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦
+    (prodThomPairSnd_fst_apply F _).trans
+      (congrArg Prod.snd (prodThomPairFiberMap_fst_apply F b x)))
+
+/-- Over a point, the projection to the fibre is also a section of the fibre inclusion. -/
+theorem prodThomPairSnd_comp_prodThomPairFiberMap :
+    prodThomPairSnd PUnit.{w + 1} F ≫ prodThomPairFiberMap F (PUnit.unit : PUnit.{w + 1}) = 𝟙 _ :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun p ↦
     (prodThomPairFiberMap_fst_apply F _ _).trans
-      (congrArg (Prod.mk PUnit.unit) (TopPair.ofSubsetMap_fst_apply _ _ p)))
+      (congrArg (Prod.mk PUnit.unit) (prodThomPairSnd_fst_apply F p)))
+
+/-- Over a point, the fibre inclusion is an isomorphism from the pair `(F, F ∖ {0})` onto the Thom
+pair of the product bundle, with inverse the projection to the fibre. -/
+@[expose, simps]
+def complZeroPairIsoProdThomPair :
+    TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) ≅ prodThomPair PUnit.{w + 1} F where
+  hom := prodThomPairFiberMap F PUnit.unit
+  inv := prodThomPairSnd PUnit.{w + 1} F
+  hom_inv_id := prodThomPairFiberMap_comp_prodThomPairSnd F _
+  inv_hom_id := prodThomPairSnd_comp_prodThomPairFiberMap F
 
 end Defs
 
@@ -297,5 +326,17 @@ theorem prodThomPairSingularHomologyIso_hom_naturality (g : C(B, B')) (n m : ℕ
       (TopCat.ofHom (g.prodMap (ContinuousMap.id F))) (fun _ ↦ rfl),
     ← TopPair.singularHomologyMap_comp_assoc (botIso B F).hom, botIso_hom_naturality,
     TopPair.singularHomologyMap_comp_assoc]
+
+/-- The inverse isomorphism `Hₙ(B) ≅ Hₙ₊ᵣ(B × F, B × (F ∖ {0}))` is natural in continuous maps of
+the base. -/
+@[reassoc]
+theorem prodThomPairSingularHomologyIso_inv_naturality (g : C(B, B')) (n m : ℕ)
+    (h : n + finrank ℝ F = m := by lia) :
+    (prodThomPairSingularHomologyIso R B F n m h).inv ≫
+        TopPair.singularHomologyMap (prodThomPairMap F g) R m =
+      ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map (TopCat.ofHom g) ≫
+        (prodThomPairSingularHomologyIso R B' F n m h).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
+  exact prodThomPairSingularHomologyIso_hom_naturality R B F g n m h
 
 end TauCeti

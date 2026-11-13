@@ -189,25 +189,25 @@ theorem Module.End.isReducing_adjoint_iff [FiniteDimensional 𝕜 E] {A : End �
   rw [isReducing_iff_mem_invtSubmodule_adjoint, isReducing_iff_mem_invtSubmodule_adjoint,
     LinearMap.adjoint_adjoint, and_comm]
 
-/-- For an invariant subspace of a symmetric map, applying the complementary projection to
-`A X - X M` is the same as forming the residual of the projected trial map. No isometry or
+/-- For a subspace `U` reducing `A`, applying the orthogonal projection onto `Uᗮ` to the
+residual `A X - X M` gives the residual of the projected trial map. No symmetry, isometry or
 finite-dimensionality hypothesis is needed.
 
 The corresponding DKPS projected-residual statement is in
 `ForTauCeti/Analysis/InnerProductSpace/Residual/AngleEmbedding.lean` (Jon Crall and
-GPT 5.6 High; Kitware, Apache-2.0). The proof uses invariant-projection commutation. -/
-theorem LinearMap.IsSymmetric.sylvester_starProjection_orthogonal_comp
-    {F : Type*} [AddCommGroup F] [Module 𝕜 F] {A : E →ₗ[𝕜] E}
-    (hA : A.IsSymmetric) {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    (hU : U ∈ Module.End.invtSubmodule A) (X : F →ₗ[𝕜] E) (M : F →ₗ[𝕜] F) :
+GPT 5.6 High; Kitware, Apache-2.0). -/
+theorem Submodule.IsReducing.sylvester_starProjection_orthogonal_comp
+    {F : Type*} [AddCommMonoid F] [Module 𝕜 F] {A : E →ₗ[𝕜] E} {U : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] (hU : U.IsReducing A) (X : F →ₗ[𝕜] E) (M : F →ₗ[𝕜] F) :
     A ∘ₗ (Uᗮ.starProjection.toLinearMap ∘ₗ X) -
         (Uᗮ.starProjection.toLinearMap ∘ₗ X) ∘ₗ M =
       Uᗮ.starProjection.toLinearMap ∘ₗ (A ∘ₗ X - X ∘ₗ M) := by
+  -- The projection onto `Uᗮ` commutes with `A`, since `Uᗮ` reduces `A` as well.
+  have hcomm := (Uᗮ.isReducing_iff_commute_starProjection A).mp
+    ((isReducing_orthogonal_iff U A).mpr hU)
   ext x
-  have hU' := hA.orthogonalComplement_mem_invtSubmodule (p := U) hU
-  have hcomm := hA.starProjection_apply_comm hU' (X x)
-  simp only [LinearMap.sub_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, map_sub]
-  rw [hcomm]
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, map_sub,
+    ← _root_.mul_apply_eq_comp, hcomm.eq]
 
 namespace ContinuousLinearMap
 

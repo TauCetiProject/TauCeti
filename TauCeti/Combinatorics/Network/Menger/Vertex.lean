@@ -26,7 +26,8 @@ as some vertex separator has weight, and every packing has at most as many membe
 separator has weight. For `c = 1` the members of a packing are distinct and internally
 vertex-disjoint, which gives the local vertex form of Menger's theorem, also in predicate form: `t`
 stays reachable from `s` after deleting any fewer than `k` vertices other than `s` and `t` exactly
-when there are `k` internally vertex-disjoint `s`–`t` paths. Without the hypothesis that no arrow
+when there are `k` internally vertex-disjoint `s`–`t` paths; the predicate form needs neither
+`s ≠ t` nor the absence of an arrow from `s` to `t`. Without the hypothesis that no arrow
 runs from `s` to `t`, no vertex separator exists, and with `c = 1` a direct arrow could be repeated
 arbitrarily often in a packing.
 
@@ -125,11 +126,11 @@ private theorem exists_paths_vertexSeparator_sum_eq_of_finite [Finite V] [Decida
   obtain rfl : F = ∅ := by
     by_contra hF
     obtain ⟨a, ha⟩ := nonempty_iff_ne_empty.2 hF
-    have hMF : M ≤ ∑ a ∈ F, M := single_le_sum (f := fun _ ↦ M) (fun _ _ ↦ hM) ha
+    have hMF : M ≤ ∑ _ ∈ F, M := single_le_sum (f := fun _ ↦ M) (fun _ _ ↦ hM) ha
     have hX : 0 ≤ ∑ v ∈ X, (c v : ℤ) := by positivity
     omega
   obtain ⟨hs, ht, hX⟩ := isMixedSeparator_empty_iff.1 hXF
-  obtain ⟨k, P, hk, hP, hPv⟩ := f.exists_paths_card_eq_val_card_filter_le
+  obtain ⟨k, P, hk, hP, -, hPv⟩ := f.exists_paths_card_eq_val_card_filter_le
   refine ⟨k, P, X, hP, fun v hvs hvt ↦ ?_, hs, ht, hX, ?_⟩
   · exact_mod_cast (hPv v hvs).trans (hf.le hvs hvt)
   · rw [hval, sum_empty, add_zero] at hk
@@ -213,21 +214,30 @@ theorem exists_paths_vertexSeparator_card_eq [Finite V] (hst : s ≠ t) (hadj : 
   exact ⟨k, P, X, injective_of_pairwise_internallyDisjoint hdisj
     fun i ↦ (P i).exists_mem_vertices_ne_ne hst hadj, hP, hdisj, hs, ht, hX, by simpa using hk⟩
 
-/-- **Menger's theorem for internally vertex-disjoint directed paths, predicate form.** Let `s ≠ t`
-be vertices of an arrow family on a finite vertex type, with no arrow from `s` to `t`. Then `t`
-stays reachable from `s` after deleting any fewer than `k` vertices other than `s` and `t` exactly
-when there are `k` directed `s`–`t` paths pairwise sharing no vertex other than `s` and `t`. -/
-theorem forall_reachableAvoiding_iff_exists_paths [Finite V] (hst : s ≠ t)
-    (hadj : IsEmpty (Q s t)) (k : ℕ) :
+/-- **Menger's theorem for internally vertex-disjoint directed paths, predicate form.** Let `s` and
+`t` be vertices of an arrow family on a finite vertex type. Then `t` stays reachable from `s` after
+deleting any fewer than `k` vertices other than `s` and `t` exactly when there are `k` directed
+`s`–`t` paths pairwise sharing no vertex other than `s` and `t`. For `s = t`, and when there is an
+arrow from `s` to `t`, both sides hold, the paths being the trivial walk or `k` copies of the
+one-arrow path. -/
+theorem forall_reachableAvoiding_iff_exists_paths [Finite V] (k : ℕ) :
     (∀ X : Finset V, s ∉ X → t ∉ X → #X < k → ReachableAvoiding Q (X : Set V) s t) ↔
       ∃ P : Fin k → ArrowWalk Q s t, (∀ i, (P i).IsPath) ∧
         Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
   refine ⟨fun h ↦ ?_, fun ⟨P, _, hP⟩ X hs ht hX ↦ ?_⟩
-  · obtain ⟨m, P, X, -, hP, hdisj, hs, ht, hX, hXm⟩ :=
-      exists_paths_vertexSeparator_card_eq (Q := Q) hst hadj
-    have hkm : k ≤ m := hXm ▸ not_lt.1 fun hlt ↦ hX (h X hs ht hlt)
-    exact ⟨fun i ↦ P (Fin.castLE hkm i), fun i ↦ hP _,
-      fun i j hij ↦ hdisj fun h ↦ hij (Fin.castLE_injective hkm h)⟩
+  · rcases eq_or_ne s t with rfl | hst
+    · exact ⟨fun _ ↦ .nil s, fun _ ↦ ArrowWalk.isPath_nil s, fun _ _ _ ↦
+        ArrowWalk.internallyDisjoint_def.2 fun v hv _ ↦ Or.inl (by simpa using hv)⟩
+    rcases isEmpty_or_nonempty (Q s t) with hadj | hne
+    · obtain ⟨m, P, X, -, hP, hdisj, hs, ht, hX, hXm⟩ :=
+        exists_paths_vertexSeparator_card_eq (Q := Q) hst hadj
+      have hkm : k ≤ m := hXm ▸ not_lt.1 fun hlt ↦ hX (h X hs ht hlt)
+      exact ⟨fun i ↦ P (Fin.castLE hkm i), fun i ↦ hP _,
+        fun i j hij ↦ hdisj fun h ↦ hij (Fin.castLE_injective hkm h)⟩
+    · refine ⟨fun _ ↦ (ArrowWalk.nil s).cons hne.some, fun _ ↦ ?_, fun _ _ _ ↦
+        ArrowWalk.internallyDisjoint_def.2 fun v hv _ ↦ by simpa using hv⟩
+      rw [ArrowWalk.isPath_def]
+      simp [hst]
   · by_contra h
     exact hX.not_ge (by simpa using card_le_card_of_not_reachableAvoiding hP hs ht h)
 

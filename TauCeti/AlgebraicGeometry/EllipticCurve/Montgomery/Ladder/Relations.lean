@@ -78,17 +78,17 @@ theorem coordinates (h : LadderRel N D S n U V) (h₂ : (2 : K) ≠ 0) (hB : B �
   | zero =>
     simp only [zero_nsmul, Nat.zero_add, one_nsmul, Montgomery.coordinates_zero]
     exact ⟨by simp [Pair.ne_zero_iff], by simp, hS, hSP⟩
-  | @bit n U V b h ih =>
+  | @bit n U V b _ ih =>
     obtain ⟨hU, hUP, hV, hVP⟩ := ih
     have hsub : (n + 1) • P - n • P = P := by simp [succ_nsmul]
     have hsum : (n + 1) • P + n • P = (2 * n + 1) • P := by
       simp [add_nsmul, two_mul, add_assoc, add_comm, add_left_comm]
-    have hdiff := diffAdd_cross_eq_zero_of_cross_eq_zero hB hVP hUP
+    have hdiff := diffAdd_cross_eq_zero_of_cross_eq_zero hVP hUP
       (by simpa only [hsub] using hSP)
     have hne := (diffAdd_ne_zero_iff_of_cross_eq_zero h₂ hB hV hU hS hVP hUP
       (by simpa only [hsub] using hSP)).mpr (by simpa only [hsub] using And.intro hP hPT)
-    have hdoubleU := double_coordinates_of_cross_eq_zero hB hD hND hU hUP
-    have hdoubleV := double_coordinates_of_cross_eq_zero hB hD hND hV hVP
+    have hdoubleU := double_coordinates_of_cross_eq_zero hD hND hU hUP
+    have hdoubleV := double_coordinates_of_cross_eq_zero hD hND hV hVP
     rw [hsum] at hdiff
     cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true,
       ↓reduceIte, Nat.add_zero]

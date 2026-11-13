@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.GroupTheory.Perm.List
+public import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # Permutations of `Fin n`
@@ -23,6 +25,11 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
 * `List.formPerm_finRange`, `Fin.formPerm_sort_univ`: the cycle through the points of `Fin n` in
   increasing order is the rotation `finRotate n`, that is `i ↦ i + 1` modulo `n`.
 * `TauCeti.isCycleOn_finRotate`: the rotation `finRotate n` is a single cycle on all of `Fin n`.
+* `Equiv.Perm.eq_one_of_rows`: a permutation of `Fin (m * n)` that fixes every point of each
+  row `finProdFinEquiv (i, ·)` is the identity. Checking one row at a time keeps each
+  `decide +kernel` certificate small.
+* `Equiv.Perm.sum_comp_symm_apply_zero`: summing a function of `σ⁻¹ 0` over all permutations of
+  `Fin (n + 1)` counts each value `n!` times.
 -/
 
 public section
@@ -35,11 +42,9 @@ theorem coe_cycleRange {n : ℕ} (i j : Fin n) :
     (cycleRange i j : ℕ) = if (j : ℕ) < i then (j : ℕ) + 1 else if (j : ℕ) = i then 0 else j := by
   rcases le_or_gt j i with h | h
   · rw [coe_cycleRange_of_le h]
-    have h' : (j : ℕ) ≤ i := h
     simp only [Fin.ext_iff]
     split_ifs <;> omega
   · rw [cycleRange_of_gt h]
-    have h' : (i : ℕ) < j := h
     split_ifs <;> omega
 
 /-- The cycle through the points of `Fin n` in increasing order is the rotation `i ↦ i + 1`
@@ -77,3 +82,27 @@ theorem isCycleOn_finRotate : ∀ {n : ℕ}, (finRotate n).IsCycleOn Set.univ
     simp
 
 end TauCeti
+
+namespace Equiv.Perm
+
+/-- A permutation of `Fin (m * n)` is the identity once it fixes every point of each row
+`finProdFinEquiv (i, ·)`. Splitting a kernel decision over the rows keeps each certificate small. -/
+theorem eq_one_of_rows {m n : ℕ} (p : Equiv.Perm (Fin (m * n)))
+    (h : ∀ i j, p (finProdFinEquiv (i, j)) = finProdFinEquiv (i, j)) : p = 1 := by
+  refine Equiv.ext fun k ↦ ?_
+  obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
+  exact h i j
+
+/-- A product over all permutations of `Fin (n + 1)` of a function of `σ⁻¹ 0` takes each value
+`n!` times. -/
+@[to_additive /-- A sum over all permutations of `Fin (n + 1)` of a function of `σ⁻¹ 0` takes each
+value `n!` times. -/]
+theorem prod_comp_symm_apply_zero {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
+    ∏ σ : Perm (Fin (n + 1)), f (σ.symm 0) = (∏ p, f p) ^ n.factorial := by
+  rw [← Fintype.prod_equiv (Equiv.inv (Perm (Fin (n + 1)))) (fun σ ↦ f (σ 0))
+    (fun σ ↦ f (σ.symm 0)) fun σ ↦ rfl,
+    ← Fintype.prod_equiv (decomposeFin.symm : Fin (n + 1) × Perm (Fin n) ≃ _)
+      (fun pe ↦ f pe.1) (fun σ ↦ f (σ 0)) fun pe ↦ by rw [decomposeFin_symm_apply_zero]]
+  simp [Fintype.prod_prod_type, Finset.prod_const, Fintype.card_perm, Finset.prod_pow]
+
+end Equiv.Perm

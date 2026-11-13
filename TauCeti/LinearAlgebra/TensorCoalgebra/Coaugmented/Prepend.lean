@@ -123,9 +123,13 @@ theorem prepend_subword {n : ℕ} (z : Fin n → M) {a : ℕ} (ha : a < n) (b : 
 /-- Prepending a letter `e` to the block that follows the first `d` letters of a block replaces
 those `d` letters by `e`. -/
 theorem prepend_subword_eq_splice {n : ℕ} (z : Fin n → M) {a b d : ℕ} (hd : 0 < d)
-    (hdb : d ≤ b) (hab : a + b ≤ n) (e : M) :
+    (hdb : d ≤ b) (e : M) :
     prepend R M e (subword R z (a + d) (b - d)) =
       ReducedTensorWords.splice R z a b 0 d e := by
+  by_cases hab : a + b ≤ n
+  swap
+  · rw [subword_eq_zero_of_lt_add R z (by omega), map_zero,
+      ReducedTensorWords.splice_eq_zero_of_length_lt_add R z e (by omega)]
   rw [subword_eq_of_tprod R z (by omega), prepend_of_tprod,
     ReducedTensorWords.splice_eq_of_tprod R z e hd (by omega) hab]
   refine ReducedTensorWords.of_tprod_congr R M _ (by omega) fun i ↦ ?_

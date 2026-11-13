@@ -82,7 +82,6 @@ theorem filter_hasSameSideOverlap_initialPentagonRectangleDecompositions_eq_unio
   -- the same-side terms. Conversely, each family prescribes a shared side and distinct others.
   constructor
   · rintro ⟨hE, hcommon, hsides⟩
-    have hcases := hone hcommon
     grind
   · rintro ((⟨hE, hc, hcol⟩ | ⟨hE, ⟨hc, hcol⟩ | ⟨hc, hcol⟩⟩) | ⟨hE, hc, hcol⟩)
     · exact ⟨hE, E.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_right hc

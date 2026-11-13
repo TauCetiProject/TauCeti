@@ -69,6 +69,17 @@ difference `A_H(γ) - A_H(x)` has no term linear in `ξ = γ - x`: it is
 `∫₀¹ (½ ω(ξ, ξ') + H_t(γ) - H_t(x) - dH_t(x) ξ) dt`
 (`SymplecticForm.hamiltonianAction_sub_hamiltonianAction_eq_integral`).
 
+The action is continuous for uniform `C¹` convergence of loops
+(`SymplecticForm.tendsto_hamiltonianAction`). Uniform convergence of the loops alone, with a bound
+on their speed, still controls differences of actions: loops `x i` and `y i` with a common uniform
+limit have `A_H(x i) - A_H(y i) → 0`
+(`SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`). Consequently, if the two
+boundary loops of maps `u i` on a window `[a, b] × [0, 1]` converge uniformly to the same loop,
+with bounded derivatives along them, then the energy of `u i` over the window tends to zero
+(`SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn`). This is the form of
+convergence that compactness off the bubbling points provides, without convergence of the
+derivatives.
+
 ## Main definitions
 
 * `TauCeti.SymplecticForm.hamiltonianAction`: the Hamiltonian action of a loop.
@@ -84,10 +95,16 @@ difference `A_H(γ) - A_H(x)` has no term linear in `ξ = γ - x`: it is
   `[a, b] × [0, 1]` for a cylindrical perturbation is the change of action.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction`: the action increases along Floer
   solutions.
+* `SymplecticForm.monotoneOn_hamiltonianAction_of_floer`: the action is monotone in `s` along a
+  Floer solution on an open interval of `s`-values.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
   Floer solution on the whole cylinder is the difference of its limiting actions.
 * `SymplecticForm.tendsto_hamiltonianAction`: the action is continuous for uniform `C¹`
   convergence of loops.
+* `SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`: loops of bounded speed with a
+  common uniform limit have asymptotically equal actions.
+* `SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn`: the energy over a
+  window tends to zero when its two boundary loops converge uniformly to the same loop.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`: the energy
   identity of a continuation cylinder over a rectangle.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction_sub_integral`: the action estimate along
@@ -142,6 +159,19 @@ theorem hamiltonianAction_add_const (ω : SymplecticForm V) {H : ℝ → V → �
     ω.hamiltonianAction (fun t y ↦ H t y + c t) x =
       ω.hamiltonianAction H x + ∫ t in (0 : ℝ)..1, c t := by
   rw [hamiltonianAction_def, hamiltonianAction_def, intervalIntegral.integral_add hH hc, add_assoc]
+
+/-- **Reversing time negates the action.** If the loop `x` and the Hamiltonian `H` are
+`1`-periodic, the reversed loop `t ↦ x(-t)` has, for the reversed Hamiltonian
+`(t, y) ↦ -H(-t, y)`, the opposite action. -/
+theorem hamiltonianAction_comp_neg (ω : SymplecticForm V) {H : ℝ → V → ℝ} {x : ℝ → V}
+    (hH : Periodic H 1) (hx : Periodic x 1) :
+    ω.hamiltonianAction (fun t y ↦ -H (-t) y) (fun t ↦ x (-t)) = -ω.hamiltonianAction H x := by
+  have hper : Periodic (fun t ↦ H t (x t)) 1 := fun t ↦ by simp only [hH t, hx t]
+  have h := hper.intervalIntegral_add_eq (-1) 0
+  rw [neg_add_cancel, zero_add] at h
+  simp only [hamiltonianAction_def, ω.loopArea_comp_neg hx, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun t ↦ H t (x t)), neg_zero, h]
+  ring
 
 end Action
 
@@ -346,17 +376,39 @@ theorem hamiltonianAction_le_hamiltonianAction (ω : SymplecticForm V)
   ω.hamiltonianAction_le_hamiltonianAction_of_monotone (H := fun w ↦ H w.2) hJ
     (contDiff_uncurry_cylindrical hH) (fun _ _ _ _ _ ↦ le_rfl) hU hu hab hRU hper hfloer
 
+/-- **The action increases along a Floer solution.** Let `S` be an open interval of `s`-values,
+for instance a half-line `s > a` or `s < a`, and let `u` be a `C²` solution of the Floer equation on
+`S × [0, 1]` with `1`-periodic loops and tame almost complex structures. Then the action
+`A_H(u(s, ·))` of the loop at `s` is monotone in `s ∈ S`. -/
+theorem monotoneOn_hamiltonianAction_of_floer (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} {S : Set ℝ} (hS : IsOpen S) [S.OrdConnected]
+    (hH : ContDiff ℝ 1 (uncurry H)) (hu : ContDiffOn ℝ 2 u (S ×ˢ univ))
+    (hper : ∀ s ∈ S, Periodic (fun t ↦ u (s, t)) 1)
+    (hJ : ∀ z ∈ S ×ˢ Icc 0 1, ω.Tames (J z))
+    (hfloer : ∀ z ∈ S ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    MonotoneOn (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) S := by
+  intro s₁ hs₁ s₂ hs₂ hs
+  have hR : Icc s₁ s₂ ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ Icc 0 1 :=
+    Set.prod_mono (Set.Icc_subset S hs₁ hs₂) le_rfl
+  exact ω.hamiltonianAction_le_hamiltonianAction (fun z hz ↦ hJ z (hR hz)) hH
+    (hS.prod isOpen_univ) hu hs (hR.trans (Set.prod_mono le_rfl (subset_univ _)))
+    (fun s h ↦ by simpa using hper s (Set.Icc_subset S hs₁ hs₂ h) 0) fun z hz ↦ by
+      simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
+
 /-- **The energy of a Floer cylinder.** Let `H` be a `C¹` time-dependent Hamiltonian and let `u`
 be `C²` on an open neighbourhood `U` of `ℝ × [0, 1]`, with `u(s, 1) = u(s, 0)` for all `s`,
-solving the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` there for an almost complex
-structure `J` tamed by `ω`. If the actions of the loops `t ↦ u(s, t)` tend to `A₁` as `s → -∞`
-and to `A₂` as `s → ∞`, then the energy of `u` is `A₂ - A₁`. -/
+solving the Floer equation `∂_s u + J_z (∂_t u - X_{H_t}(u)) = 0` there for almost complex
+structures `J_z` tamed by `ω`, which may depend on the domain point. If the actions of the loops
+`t ↦ u(s, t)` tend to `A₁` as `s → -∞` and to `A₂` as `s → ∞`, then the energy of `u` is
+`A₂ - A₁`. -/
 theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
-    {J : AlmostComplexStructure V} (hJ : ω.Tames J) (hH : ContDiff ℝ 1 (uncurry H))
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z))
+    (hH : ContDiff ℝ 1 (uncurry H))
     (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hRU : (univ : Set ℝ) ×ˢ Icc 0 1 ⊆ U)
     (hper : ∀ s, u (s, 1) = u (s, 0))
     (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
-      J (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0)
+      J z (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0)
     {A₁ A₂ : ℝ}
     (hbot : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atBot (𝓝 A₁))
     (htop : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop (𝓝 A₂)) :
@@ -365,8 +417,7 @@ theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : Sympl
       ENNReal.ofReal (A₂ - A₁) := by
   simpa only [fderiv_cylindrical_apply_stdComplexLineReal, integral_zero, sub_zero] using
     ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral
-      (H := fun w ↦ H w.2) (J := fun _ ↦ J) (fun _ _ ↦ hJ) (contDiff_uncurry_cylindrical hH) hU hu
-      hRU hper hfloer
+      (H := fun w ↦ H w.2) hJ (contDiff_uncurry_cylindrical hH) hU hu hRU hper hfloer
       (by simp only [fderiv_cylindrical_apply_stdComplexLineReal]; exact integrableOn_zero) hbot
       htop
 
@@ -471,6 +522,111 @@ theorem tendsto_hamiltonianAction (ω : SymplecticForm V) (hH : Continuous (uncu
   simpa only [hamiltonianAction_def, loopArea_def] using
     (tendsto_const_nhds.mul (hP.tendsto_intervalIntegral_comp hg1 hPc)).add
       (hP.tendsto_intervalIntegral_comp hg2 hPc)
+
+/-- **Loops of bounded speed with a common uniform limit have asymptotically equal actions.** Let
+`H` be a continuous time-dependent Hamiltonian, and let `x i` and `y i` be closed loops which are
+eventually differentiable at every point of `[0, 1]`, with derivatives continuous there and of
+norm at most `L`. If `x i` and `y i` converge uniformly on `[0, 1]` to the same `x₀`, then
+`A_H(x i) - A_H(y i) → 0`. Unlike `TauCeti.SymplecticForm.tendsto_hamiltonianAction`, this needs
+no convergence of the derivatives, and `x₀` need not be differentiable, so the actions themselves
+need not converge to an action of `x₀`. The symplectic areas are compared by
+`TauCeti.SymplecticForm.abs_loopArea_sub_loopArea_le`. -/
+theorem tendsto_hamiltonianAction_sub_hamiltonianAction (ω : SymplecticForm V)
+    (hH : Continuous (uncurry H)) {y : ι → ℝ → V} {L : ℝ}
+    (hx : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ (x i) t)
+    (hy : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ (y i) t)
+    (hx' : ∀ᶠ i in l, ContinuousOn (deriv (x i)) (Icc 0 1))
+    (hy' : ∀ᶠ i in l, ContinuousOn (deriv (y i)) (Icc 0 1))
+    (hx₁ : ∀ᶠ i in l, x i 1 = x i 0) (hy₁ : ∀ᶠ i in l, y i 1 = y i 0)
+    (hxL : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, ‖deriv (x i) t‖ ≤ L)
+    (hyL : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, ‖deriv (y i) t‖ ≤ L)
+    (hxlim : TendstoUniformlyOn x x₀ l (Icc 0 1)) (hylim : TendstoUniformlyOn y x₀ l (Icc 0 1)) :
+    Tendsto (fun i ↦ ω.hamiltonianAction H (x i) - ω.hamiltonianAction H (y i)) l (𝓝 0) := by
+  set C := ‖ω.toBilinForm.toContinuousBilinearMap‖ * L
+  -- The Hamiltonian terms converge to the same limit.
+  have hcont {z : ι → ℝ → V} (hz : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ (z i) t) :
+      ∀ᶠ i in l, ContinuousOn (z i) (uIcc 0 1) := hz.mono fun i hi ↦ by
+    rw [uIcc_of_le zero_le_one]
+    exact fun t ht ↦ (hi t ht).continuousAt.continuousWithinAt
+  rw [← uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)] at hxlim hylim
+  have hHx := hxlim.tendsto_intervalIntegral_comp (μ := volume) hH (hcont hx)
+  have hHy := hylim.tendsto_intervalIntegral_comp (μ := volume) hH (hcont hy)
+  -- The symplectic areas are eventually within `C (2 ε)` of each other, for every `ε > 0`.
+  have harea : Tendsto (fun i ↦ ω.loopArea (x i) - ω.loopArea (y i)) l (𝓝 0) := by
+    rw [Metric.tendsto_nhds]
+    intro δ hδ
+    set ε := δ / (2 * (|C| + 1)) with hεdef
+    have hε : 0 < ε := div_pos hδ (by positivity)
+    rw [Metric.tendstoUniformlyOn_iff] at hxlim hylim
+    filter_upwards [hx, hy, hx', hy', hx₁, hy₁, hxL, hyL, hxlim ε hε, hylim ε hε] with
+      i hxi hyi hx'i hy'i hx₁i hy₁i hxLi hyLi hxεi hyεi
+    have hxy : ∀ t ∈ Icc (0 : ℝ) 1, ‖x i t - y i t‖ ≤ 2 * ε := fun t ht ↦ by
+      have ht' : t ∈ uIcc (0 : ℝ) 1 := by rwa [uIcc_of_le zero_le_one]
+      have h₁ := hxεi t ht'
+      have h₂ := hyεi t ht'
+      rw [← dist_eq_norm]
+      linarith [dist_triangle_left (x i t) (y i t) (x₀ t)]
+    have hle := ω.abs_loopArea_sub_loopArea_le hxi hyi hx'i hy'i hx₁i hy₁i hxLi hyLi hxy
+    rw [Real.dist_eq, sub_zero]
+    calc |ω.loopArea (x i) - ω.loopArea (y i)| ≤ C * (2 * ε) := hle.trans_eq (by ring)
+      _ ≤ |C| * (2 * ε) := by gcongr; exact le_abs_self C
+      _ < δ := by
+        rw [show |C| * (2 * ε) = δ * (|C| / (|C| + 1)) by rw [hεdef]; field_simp]
+        exact mul_lt_of_lt_one_right hδ ((div_lt_one (by positivity)).2 (lt_add_one _))
+  have h := harea.add (hHx.sub hHy)
+  rw [sub_self, add_zero] at h
+  refine h.congr fun i ↦ ?_
+  rw [hamiltonianAction_def, hamiltonianAction_def]
+  ring
+
+/-- **The energy over a window tends to zero when its two boundary loops converge to the same
+loop.** Let `H` be a `C¹` time-dependent Hamiltonian, and let the maps `u i` be eventually `C²` on
+an open neighbourhood `U` of `[a, b] × [0, 1]`, with `u i (s, 1) = u i (s, 0)` for `s ∈ [a, b]`,
+and with derivatives bounded by `L` along the two boundary loops `s = a` and `s = b`. If the loops
+`t ↦ u i (a, t)` and `t ↦ u i (b, t)` converge uniformly on `[0, 1]` to the same loop, then the
+Floer energy of `u i` over `[a, b] × [0, 1]` for the cylindrical perturbation `K = H_t dt` tends to
+zero.
+
+The energy is the difference of the actions of the two boundary loops
+(`TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub`), and these
+differences tend to zero by
+`TauCeti.SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`.
+Only uniform convergence of the loops and a bound on the derivatives along them are used, which is
+what compactness off the bubbling points provides on the boundary loops of a window avoiding the
+bubbling points. -/
+theorem tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn (ω : SymplecticForm V)
+    (hH : ContDiff ℝ 1 (uncurry H)) {u : ι → ℝ × ℝ → V} {U : Set (ℝ × ℝ)} {a b L : ℝ}
+    (hU : IsOpen U) (hu : ∀ᶠ i in l, ContDiffOn ℝ 2 (u i) U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ᶠ i in l, ∀ s ∈ Icc a b, u i (s, 1) = u i (s, 0))
+    (hL : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ (u i) (a, t)‖ ≤ L ∧ ‖fderiv ℝ (u i) (b, t)‖ ≤ L)
+    (ha : TendstoUniformlyOn (fun i t ↦ u i (a, t)) x₀ l (Icc 0 1))
+    (hb : TendstoUniformlyOn (fun i t ↦ u i (b, t)) x₀ l (Icc 0 1)) :
+    Tendsto (fun i ↦ ∫ z in Icc a b ×ˢ Icc 0 1,
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (u i) z) l (𝓝 0) := by
+  -- The boundary loops are differentiable, with continuous derivatives bounded by `L`.
+  have hslice (s : ℝ) (hsU : ∀ t ∈ Icc (0 : ℝ) 1, (s, t) ∈ U) {f : ℝ × ℝ → V}
+      (hf : ContDiffOn ℝ 2 f U) (hfL : ∀ t ∈ Icc (0 : ℝ) 1, ‖fderiv ℝ f (s, t)‖ ≤ L) :
+      (∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ (fun t ↦ f (s, t)) t) ∧
+        ContinuousOn (deriv fun t ↦ f (s, t)) (Icc 0 1) ∧
+        ∀ t ∈ Icc (0 : ℝ) 1, ‖deriv (fun t ↦ f (s, t)) t‖ ≤ L := by
+    have hd (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : DifferentiableAt ℝ f (s, t) :=
+      (hf.contDiffAt (hU.mem_nhds (hsU t ht))).differentiableAt two_ne_zero
+    exact ⟨fun t ht ↦ (hasDerivAt_slice_right (hd t ht)).differentiableAt,
+      (hf.of_le one_le_two).continuousOn_deriv_slice_right hU hsU,
+      fun t ht ↦ (norm_deriv_slice_right_le (hd t ht)).trans (hfL t ht)⟩
+  have hsa := hu.and hL |>.mono fun i hi ↦
+    hslice a (fun t ht ↦ hRU ⟨⟨le_rfl, hab⟩, ht⟩) hi.1 fun t ht ↦ (hi.2 t ht).1
+  have hsb := hu.and hL |>.mono fun i hi ↦
+    hslice b (fun t ht ↦ hRU ⟨⟨hab, le_rfl⟩, ht⟩) hi.1 fun t ht ↦ (hi.2 t ht).2
+  have h := ω.tendsto_hamiltonianAction_sub_hamiltonianAction hH.continuous
+    (hsb.mono fun _ hi ↦ hi.1) (hsa.mono fun _ hi ↦ hi.1) (hsb.mono fun _ hi ↦ hi.2.1)
+    (hsa.mono fun _ hi ↦ hi.2.1) (hper.mono fun _ hi ↦ hi b ⟨hab, le_rfl⟩)
+    (hper.mono fun _ hi ↦ hi a ⟨le_rfl, hab⟩) (hsb.mono fun _ hi ↦ hi.2.2)
+    (hsa.mono fun _ hi ↦ hi.2.2) hb ha
+  refine h.congr' ?_
+  filter_upwards [hu, hper] with i hui hperi
+  exact (ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH hU hui hab hRU hperi).symm
 
 end Continuity
 

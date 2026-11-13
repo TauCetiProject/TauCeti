@@ -486,6 +486,11 @@ theorem isNullHomologous_iff {C : Cycle} {Ω : Set ℂ} :
     IsNullHomologous C Ω ↔ ∀ z ∉ Ω, windingNumber z C = 0 :=
   Iff.rfl
 
+/-- Enlarging the domain preserves null-homology of a cycle. -/
+theorem IsNullHomologous.mono {C : Cycle} {Ω Ω' : Set ℂ} (hC : IsNullHomologous C Ω)
+    (hΩ : Ω ⊆ Ω') : IsNullHomologous C Ω' :=
+  fun z hz ↦ hC z (fun hzΩ ↦ hz (hΩ hzΩ))
+
 /-- Null-homology of a raw curve bundled as a one-generator cycle is the raw-curve predicate. -/
 theorem isNullHomologous_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ)
     (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) (Ω : Set ℂ) :

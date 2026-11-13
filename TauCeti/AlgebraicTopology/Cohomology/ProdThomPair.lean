@@ -118,9 +118,8 @@ private theorem prodThomPairSingularHomologyIso_inv_comp_singularKronecker_natur
       ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj R).map (TopCat.ofHom g) ≫
         (prodThomPairSingularHomologyIso R B' F 0 (finrank ℝ F)).inv ≫
           (prodThomPair B' F).singularKronecker k _ u := by
-  rw [TopPair.singularKronecker_naturality, Iso.inv_comp_eq,
-    ← prodThomPairSingularHomologyIso_hom_naturality_assoc R B F g 0 (finrank ℝ F),
-    Iso.hom_inv_id_assoc]
+  rw [TopPair.singularKronecker_naturality,
+    prodThomPairSingularHomologyIso_inv_naturality_assoc R B F g 0 (finrank ℝ F)]
 
 variable {B F} in
 /-- The identification `Hʳ(B × F, B × (F ∖ {0}); R, M) ≃ₗ[k] (H₀(B; R) ⟶ M)` is natural in
@@ -151,10 +150,10 @@ theorem singularCohomology_prodThomPair_ext [Linear k (ModuleCat.{w} k)]
   have hc : prodThomPairFiberMap F PUnit.unit ≫ prodThomPairMap F c = prodThomPairFiberMap F b :=
     prodThomPairFiberMap_comp_prodThomPairMap F _ c
   have hb := congrArg (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-    (prodThomPairPUnitSnd F) _) (h b)
+    (prodThomPairSnd PUnit F) _) (h b)
   simp only [← hc, ← ConcreteCategory.comp_apply, ← Category.assoc,
     ← TopPair.singularCohomologyMap_comp,
-    prodThomPairPUnitSnd_comp_prodThomPairFiberMap, Category.id_comp] at hb
+    prodThomPairSnd_comp_prodThomPairFiberMap, Category.id_comp] at hb
   have hb' := congrArg (fun x ↦ (prodThomPairSingularHomologyIso R PUnit F 0 (finrank ℝ F)).inv ≫
     (prodThomPair PUnit F).singularKronecker k _ x) hb
   rw [prodThomPairSingularHomologyIso_inv_comp_singularKronecker_naturality,

@@ -45,7 +45,7 @@ any such `τ` and any embedding `iota` of `L` into `Kˢ`, `decompositionRestrict
 ## Main results
 
 * `AlgHom.isOpen_ker_restrictNormalHom_comp_restrictScalarsHom`: restriction of
-  `Gal(Ω/F)` to `Gal(L/K)` along an embedding of `L` into an algebraic extension `Ω` of `F` has
+  `Gal(Ω/F)` to `Gal(L/K)` along an embedding of `L` into an extension `Ω` of `F` has
   open kernel.
 * `TauCeti.decompositionRestrict_mk`: the class of `τ` goes to the class of the automorphism `σ`
   of `L` with `j ∘ σ = τ ∘ j`, for every `K`-embedding `j : L →ₐ[K] Fᵃˡᵍ`.
@@ -70,20 +70,22 @@ namespace TauCeti
 
 /-! ### Openness of the kernel of restriction -/
 
-/-- Let `Ω/F` be algebraic, `F/K` an extension and `L/K` finite normal. Restriction of
-`Gal(Ω/F)` to `Gal(L/K)` along a `K`-embedding `j : L →ₐ[K] Ω` has open kernel: an automorphism of
-`Ω/F` fixing the images under `j` of a `K`-basis of `L` fixes `j(L)`, and those images generate a
-finite extension of `F`. -/
+/-- Let `F/K` be an extension, `Ω` an extension of `F` and `K`, and `L/K` finite normal.
+Restriction of `Gal(Ω/F)` to `Gal(L/K)` along a `K`-embedding `j : L →ₐ[K] Ω` has open kernel:
+an automorphism of `Ω/F` fixing the images under `j` of a `K`-basis of `L` fixes `j(L)`, and those
+images generate a finite extension of `F`. -/
 theorem _root_.AlgHom.isOpen_ker_restrictNormalHom_comp_restrictScalarsHom
     {K F L Ω : Type*} [Field K] [Field F] [Field L] [Field Ω] [Algebra K F] [Algebra K L]
-    [Algebra F Ω] [Algebra K Ω] [IsScalarTower K F Ω] [Algebra.IsAlgebraic F Ω]
+    [Algebra F Ω] [Algebra K Ω] [IsScalarTower K F Ω]
     [FiniteDimensional K L] [Normal K L] (j : L →ₐ[K] Ω) :
     IsOpen ((j.restrictNormalHom.comp
       (AlgEquiv.restrictScalarsHom K : Gal(Ω/F) →* Gal(Ω/K))).ker : Set Gal(Ω/F)) := by
   let b := Module.finBasis K L
   let E := IntermediateField.adjoin F (Set.range fun i ↦ j (b i))
   have : FiniteDimensional F E := IntermediateField.finiteDimensional_adjoin
-    fun x _ ↦ Algebra.IsIntegral.isIntegral x
+    fun _ ⟨i, hi⟩ ↦ by
+      subst hi
+      exact ((Algebra.IsIntegral.isIntegral (R := K) (b i)).map j).tower_top
   refine Subgroup.isOpen_mono (fun τ hτ ↦ ?_) E.fixingSubgroup_isOpen
   rw [MonoidHom.mem_ker, MonoidHom.comp_apply, AlgHom.restrictNormalHom_eq_iff]
   -- `τ ∘ j` and `j` are `K`-linear maps agreeing on the basis `b`.
@@ -143,14 +145,14 @@ of `τ ∈ G_F` goes to the class of the automorphism `σ` of `L/K` with `j ∘ 
 For a completion `F = K_v` of a number field the image of `G_F` in `Gal(L/K)` is the decomposition
 group of the place of `L` above `v` given by `j`. -/
 def decompositionRestrict [FiniteDimensional K L] :
-    Field.absoluteGaloisGroupAbelianization F →* Abelianization Gal(L/K) :=
+    Field.absoluteGaloisGroupAbelianization F →* Group.Abelianization Gal(L/K) :=
   -- With the discrete topology on `Gal(L/K)^ab`, the restriction is continuous because its
   -- kernel is open, so it factors through the topological abelianization.
-  letI : TopologicalSpace (Abelianization Gal(L/K)) := ⊥
-  haveI : DiscreteTopology (Abelianization Gal(L/K)) := ⟨rfl⟩
+  letI : TopologicalSpace (Group.Abelianization Gal(L/K)) := ⊥
+  haveI : DiscreteTopology (Group.Abelianization Gal(L/K)) := ⟨rfl⟩
   (TopologicalAbelianization.lift
-    ⟨Abelianization.of.comp (restrictAlong IsAlgClosed.lift),
-      (Abelianization.of.comp (restrictAlong IsAlgClosed.lift)).continuous_of_isOpen_ker
+    ⟨Group.Abelianization.of.comp (restrictAlong IsAlgClosed.lift),
+      (Group.Abelianization.of.comp (restrictAlong IsAlgClosed.lift)).continuous_of_isOpen_ker
         (Subgroup.isOpen_mono (fun τ hτ ↦ by
           rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MonoidHom.mem_ker.1 hτ, map_one])
           (isOpen_ker_restrictAlong IsAlgClosed.lift))⟩).toMonoidHom
@@ -160,9 +162,9 @@ variable {K F L} in
 private theorem decompositionRestrict_mk_lift [FiniteDimensional K L]
     (τ : Field.absoluteGaloisGroup F) :
     decompositionRestrict K F L (τ : Field.absoluteGaloisGroupAbelianization F) =
-      Abelianization.of (restrictAlong IsAlgClosed.lift τ) := by
-  let : TopologicalSpace (Abelianization Gal(L/K)) := ⊥
-  have : DiscreteTopology (Abelianization Gal(L/K)) := ⟨rfl⟩
+      Group.Abelianization.of (restrictAlong IsAlgClosed.lift τ) := by
+  let : TopologicalSpace (Group.Abelianization Gal(L/K)) := ⊥
+  have : DiscreteTopology (Group.Abelianization Gal(L/K)) := ⟨rfl⟩
   rw [decompositionRestrict]
   exact TopologicalAbelianization.lift_mk _ τ
 
@@ -174,7 +176,7 @@ variable {K F L} [FiniteDimensional K L]
 theorem decompositionRestrict_mk (j : L →ₐ[K] AlgebraicClosure F)
     (τ : Field.absoluteGaloisGroup F) (σ : Gal(L/K)) (hσ : ∀ y : L, j (σ y) = τ.toRingEquiv (j y)) :
     decompositionRestrict K F L (τ : Field.absoluteGaloisGroupAbelianization F) =
-      Abelianization.of σ := by
+      Group.Abelianization.of σ := by
   -- Two embeddings differ by an automorphism `ρ`, and the restrictions by conjugation by `ρ`.
   obtain ⟨ρ, rfl⟩ := (IsAlgClosed.lift : L →ₐ[K] AlgebraicClosure F).exists_comp_eq_of_normal j
   rw [← (restrictAlong_eq_iff _).2 hσ, restrictAlong_comp]
@@ -185,7 +187,7 @@ theorem decompositionRestrict_mk (j : L →ₐ[K] AlgebraicClosure F)
 theorem decompositionRestrict_mk_eq_restrictNormalHom (j : L →ₐ[K] AlgebraicClosure F)
     (τ : Field.absoluteGaloisGroup F) :
     decompositionRestrict K F L (τ : Field.absoluteGaloisGroupAbelianization F) =
-      Abelianization.of (j.restrictNormalHom (AlgEquiv.restrictScalarsHom K τ)) :=
+      Group.Abelianization.of (j.restrictNormalHom (AlgEquiv.restrictScalarsHom K τ)) :=
   decompositionRestrict_mk j τ _ (restrictAlong_commutes j τ)
 
 /-- **Compatibility with restriction to a normal subextension.** For a `K`-embedding
@@ -193,13 +195,13 @@ theorem decompositionRestrict_mk_eq_restrictNormalHom (j : L →ₐ[K] Algebraic
 to `Gal(M/K)^ab` along `f` is restricting `G_F^ab` to `Gal(M/K)^ab`. -/
 theorem decompositionRestrict_comp {M : Type*} [Field M] [Algebra K M] [FiniteDimensional K M]
     [Normal K M] (f : M →ₐ[K] L) :
-    (Abelianization.map f.restrictNormalHom).comp (decompositionRestrict K F L) =
+    (Group.Abelianization.map f.restrictNormalHom).comp (decompositionRestrict K F L) =
       decompositionRestrict K F M := by
   refine QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun τ ↦ ?_)
   let j : L →ₐ[K] AlgebraicClosure F := IsAlgClosed.lift
   have hσ := restrictAlong_commutes j τ
   simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
-  rw [decompositionRestrict_mk j τ _ hσ, Abelianization.map_of,
+  rw [decompositionRestrict_mk j τ _ hσ, Group.Abelianization.map_of,
     decompositionRestrict_mk (j.comp f) τ (f.restrictNormalHom (restrictAlong j τ)) fun y ↦ by
       rw [AlgHom.comp_apply, AlgHom.comp_apply, f.restrictNormalHom_commutes, hσ]]
 
@@ -213,7 +215,7 @@ theorem decompositionRestrict_mk_eq_restrictNormalHom_absoluteGaloisGroupMap
     (iota : L →ₐ[K] SeparableClosure K) (τ : SeparableClosure K →ₐ[K] SeparableClosure F)
     (σ : Field.absoluteGaloisGroup F) :
     decompositionRestrict K F L (σ : Field.absoluteGaloisGroupAbelianization F) =
-      Abelianization.of (iota.restrictNormalHom
+      Group.Abelianization.of (iota.restrictNormalHom
         (absoluteGaloisGroupMap τ (absoluteGaloisGroupRestrictEquiv F σ))) := by
   refine decompositionRestrict_mk
     ((((separableClosure F (AlgebraicClosure F)).val.restrictScalars K).comp τ).comp iota) σ _

@@ -82,7 +82,7 @@ open Filter Topology ZeroAtInftyContinuousMap
 open scoped ZeroAtInfty
 
 variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
-  [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+  [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
   [TauCeti.NormedRing.IsTate R]
 
 namespace ContinuousLinearMap
@@ -126,8 +126,7 @@ theorem charPowerSeries_matrixCoeff_sum_of_mul_eq_zero {ι : Type*} {s : Finset 
   | empty => simp [matrixCoeff_zero, Matrix.charPowerSeries_zero]
   | insert i s hi ih =>
     have hs : (∑ j ∈ s, u j).IsRowCompact :=
-      Finset.sum_induction u (fun w : C₀(I, R) →L[R] C₀(I, R) ↦ w.IsRowCompact)
-        (fun _ _ ↦ IsRowCompact.add) isRowCompact_zero fun j hj ↦ hu j (by simp [hj])
+      IsRowCompact.sum fun j hj ↦ hu j (by simp [hj])
     have hmul : u i * ∑ j ∈ s, u j = 0 := by
       rw [Finset.mul_sum (R := C₀(I, R) →L[R] C₀(I, R))]
       exact Finset.sum_eq_zero fun j hj ↦ h i (by simp) j (by simp [hj]) fun hij ↦ hi (hij ▸ hj)

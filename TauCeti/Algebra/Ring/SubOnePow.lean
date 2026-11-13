@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Data.Nat.Choose.Sum
+import Mathlib.RingTheory.Polynomial.Quotient
+import TauCeti.Algebra.Ring.GeomSum
 
 /-!
 # The prime `p` divides `(x - 1) ^ p ^ k` when `x ^ p ^ k = 1`
@@ -26,6 +29,10 @@ in a group algebra over the `p`-adic integers, topologically nilpotent.
 * `Nat.Prime.dvd_sub_pow_iff_dvd_pow_sub_pow`: for commuting `x` and `y`,
   `(p : A) ∣ (x - y) ^ p ^ k ↔ (p : A) ∣ x ^ p ^ k - y ^ p ^ k`.
 * `Nat.Prime.dvd_sub_one_pow_of_pow_eq_one`: `(p : A) ∣ (x - 1) ^ p ^ k` when `x ^ p ^ k = 1`.
+* `TauCeti.exists_one_add_pow_pow_eq`: in a commutative ring with `(p : R) = 0`,
+  `(1 + a) ^ p ^ j = 1 + a ^ 2 ^ j * y` for some `y`.
+* `TauCeti.exists_one_add_pow_eq_one_of_natCast_eq_zero`: conversely, if `(p : A) = 0` for some `p`,
+  not necessarily prime, then `(1 + N) ^ p ^ n = 1` for some `n` when `N` is nilpotent.
 -/
 
 public section
@@ -45,3 +52,48 @@ theorem Nat.Prime.dvd_sub_pow_iff_dvd_pow_sub_pow (hp : p.Prime) {x y : A} (h : 
 theorem Nat.Prime.dvd_sub_one_pow_of_pow_eq_one (hp : p.Prime) {x : A} {k : ℕ}
     (hx : x ^ p ^ k = 1) : (p : A) ∣ (x - 1) ^ p ^ k :=
   (hp.dvd_sub_pow_iff_dvd_pow_sub_pow (Commute.one_right x) k).2 (by simp [hx])
+
+namespace TauCeti
+
+section Nilpotent
+
+/-- In a commutative ring in which `p = 0`, `(1 + a) ^ p ^ j` is `1` modulo `a ^ 2 ^ j`. The
+second-order expansion `(1 + b) ^ p = 1 + p * b + b ^ 2 * v` leaves only terms divisible by the
+square of the increment. -/
+theorem exists_one_add_pow_pow_eq {R : Type*} [CommRing R] {p : ℕ} (hp : (p : R) = 0) (a : R)
+    (j : ℕ) : ∃ y : R, (1 + a) ^ p ^ j = 1 + a ^ 2 ^ j * y := by
+  induction j with
+  | zero => exact ⟨1, by simp⟩
+  | succ j ih =>
+    obtain ⟨y, hy⟩ := ih
+    obtain ⟨v, -, hv, -⟩ := exists_one_add_pow_eq_and_geom_sum_eq (a ^ 2 ^ j * y) p
+    refine ⟨y ^ 2 * v, ?_⟩
+    rw [pow_succ, pow_mul, hy, hv, hp, zero_mul, add_zero]
+    ring
+
+/-- If `(p : A) = 0` in a ring `A`, where `p` need not be prime (and may be `0`), then
+`(1 + N) ^ p ^ n = 1` for some `n` whenever `N` is nilpotent. For `p = 0` the conclusion is
+witnessed by `n = 1`, since `(1 + N) ^ 0 = 1`. -/
+theorem exists_one_add_pow_eq_one_of_natCast_eq_zero {A : Type*} [Ring A] {p : ℕ}
+    (hp : (p : A) = 0) {N : A} (hN : IsNilpotent N) : ∃ n : ℕ, (1 + N) ^ p ^ n = 1 := by
+  obtain ⟨m, hm⟩ := hN
+  -- The identity holds in `ℤ[X] ⧸ (p)`, which maps to `A` by sending `X` to `N`.
+  let I : Ideal (Polynomial ℤ) := Ideal.span {(p : Polynomial ℤ)}
+  have hpI : (p : Polynomial ℤ ⧸ I) = 0 := by
+    rw [← map_natCast (Ideal.Quotient.mk I), Ideal.Quotient.eq_zero_iff_mem]
+    exact Ideal.subset_span rfl
+  obtain ⟨y, hy⟩ := exists_one_add_pow_pow_eq hpI (Ideal.Quotient.mk I Polynomial.X) m
+  let Φ : (Polynomial ℤ ⧸ I) →ₐ[ℤ] A := Ideal.Quotient.liftₐ I (Polynomial.aeval N) (by
+    intro f hf
+    obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hf
+    simp [hp])
+  have hΦX : Φ (Ideal.Quotient.mk I Polynomial.X) = N := Polynomial.aeval_X N
+  refine ⟨m, ?_⟩
+  have h := congrArg Φ hy
+  rw [map_pow, map_add, map_one, hΦX, map_add, map_one, map_mul, map_pow, hΦX,
+    pow_eq_zero_of_le (Nat.lt_two_pow_self).le hm, zero_mul, add_zero] at h
+  exact h
+
+end Nilpotent
+
+end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 
 /-!
@@ -34,8 +35,6 @@ Eisenstein series of level `Γ(N)`, as the values of `℘` are in weight two.
 
 ## Main results
 
-* `PeriodPair.countable_lattice`, `PeriodPair.eventually_notMem_lattice`: the lattice is countable
-  and avoided by a punctured neighbourhood of every point.
 * `PeriodPair.weierstrassZeta_bound`: the terms of the series are `O(|l|⁻³)` on balls.
 * `PeriodPair.hasSumLocallyUniformly_weierstrassZeta`, `PeriodPair.hasSum_weierstrassZeta`: the
   series converges locally uniformly to `ζ`.
@@ -65,15 +64,6 @@ open scoped Topology PeriodPair
 namespace PeriodPair
 
 variable (L : PeriodPair)
-
-/-- The lattice of a period pair is countable. -/
-lemma countable_lattice : (L.lattice : Set ℂ).Countable :=
-  countable_of_Lindelof_of_discrete (X := L.lattice)
-
-/-- Every point has a punctured neighbourhood avoiding the lattice. -/
-lemma eventually_notMem_lattice (l₀ : ℂ) : ∀ᶠ u in 𝓝[≠] l₀, u ∉ L.lattice := by
-  filter_upwards [nhdsWithin_le_nhds (L.compl_lattice_sdiff_singleton_mem_nhds l₀),
-    self_mem_nhdsWithin] with u hu hne using fun h ↦ hu ⟨h, hne⟩
 
 /-- The **Weierstrass `ζ` function** of the lattice `Λ` of `L`,
 `ζ(z) = 1 / z + ∑_{l ∈ Λ, l ≠ 0} (1 / (z - l) + 1 / l + z / l²)`. With the convention

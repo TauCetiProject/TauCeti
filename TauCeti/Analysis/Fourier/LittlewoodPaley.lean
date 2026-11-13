@@ -8,15 +8,18 @@ module
 public import TauCeti.Analysis.Fourier.L2Multiplier
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 
 /-!
-# The Littlewood–Paley square function inequality
+# The Littlewood–Paley square function theorem
 
 Let `V` be a real inner product space of finite dimension `n ≥ 1`, let `φ` be a smooth bump
 function on `V`, and let `ψ₀ = φ, ψ₁, ψ₂, …` be the inhomogeneous Littlewood–Paley partition built
@@ -25,15 +28,16 @@ from it (`ContDiffBump.inhomogeneousLittlewoodPaley`). The Littlewood–Paley bl
 
 `S f = (∑ⱼ ‖Δⱼ f‖²)^{1/2}`.
 
-This file proves the square function inequality: for a complex Hilbert space `F` and `1 < p < ∞`
-there is a constant `C`, depending on `φ`, `p` and `F`, with
+This file proves the Littlewood–Paley theorem `‖S f‖_p ≈ ‖f‖_p`: for a complex Hilbert space `F`
+and `1 < p < ∞` there is a constant `C`, depending on `φ`, `p` and `F`, with
 
-`‖S f‖_p ≤ C ‖f‖_p`
+`‖S f‖_p ≤ C ‖f‖_p` and `‖f‖_p ≤ C ‖S f‖_p`
 
-for every `f ∈ L²(V, F)` (`TauCeti.exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le`).
-It is the upper half of the Littlewood–Paley theorem `‖S f‖_p ≈ ‖f‖_p`.
+for every `f ∈ L²(V, F)` (`TauCeti.exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le` and
+`TauCeti.exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow`). Neither side is
+assumed finite, so in particular `f ∈ Lᵖ` exactly when `S f ∈ Lᵖ`.
 
-## The argument
+## The argument for `‖S f‖_p ≤ C ‖f‖_p`
 
 The truncation `f ↦ (Δ₀ f, …, Δₙ f)` is a bounded operator `L²(V, F) → L²(V, ℓ²(F))` and the
 inequality is the Calderón–Zygmund theorem for it, applied uniformly in `n`
@@ -56,6 +60,23 @@ inequality is the Calderón–Zygmund theorem for it, applied uniformly in `n`
 The Calderón–Zygmund constant must not depend on `n`, so the vectors `(Δ₀ f, …, Δₙ f)` are placed
 in the single Hilbert space `ℓ²(ℕ, F)` rather than in `Fⁿ⁺¹`.
 
+## The argument for `‖f‖_p ≤ C ‖S f‖_p`
+
+The reverse inequality follows from the first one at the conjugate exponent `q` by duality
+(`MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`). The pieces
+`ψⱼ` and `ψₖ` have disjoint supports once `|j - k| ≥ L`
+(`ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`), so `∑_{|k - j| < L} ψₖ ψⱼ = ψⱼ`
+(`ContDiffBump.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`), and the blocks are
+self-adjoint. Hence, for `f, g ∈ L²(V, F)`,
+
+`⟪∑_{j ≤ N} Δⱼ f, g⟫ = ∑_{j ≤ N} ∑_{|k - j| < L} ⟪Δⱼ f, Δₖ g⟫`,
+
+which Cauchy–Schwarz for the banded double sum (`ENNReal.tsum_sum_Ico_mul_le`) bounds by
+`2 L ∫ S f · S g`. The partial sums `∑_{j ≤ N} Δⱼ f` converge to `f` in `L²`
+(`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`), and Hölder's
+inequality and the first inequality at the exponent `q` give
+`|⟪f, g⟫| ≤ 2 L C_q ‖S f‖_p ‖g‖_q`.
+
 ## References
 
 * L. Grafakos, *Classical Fourier Analysis*, 3rd ed., Theorem 6.1.2 and Section 5.6
@@ -68,7 +89,8 @@ public section
 
 noncomputable section
 
-open scoped ENNReal NNReal FourierTransform SchwartzMap ContDiff LineDeriv
+open scoped ENNReal NNReal FourierTransform SchwartzMap ContDiff LineDeriv InnerProductSpace
+  Topology
 open FourierTransform MeasureTheory Metric Filter ContinuousLinearMap Module
 
 namespace TauCeti
@@ -303,9 +325,9 @@ private theorem ae_sqFun_eq_integral (n : ℕ) (f : Lp F 2 (volume : Measure V))
   · refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [hjx j]
     exact ((lp.singleContinuousLinearMap ℝ (fun _ : ℕ ↦ F) 2 j).integral_comp_comm
-      ((symbol φ j).integrable_fourierInv_sub_smul f x)).symm
+      ((𝓕⁻ (symbol φ j)).integrable_sub_smul one_le_two (Lp.memLp f) x)).symm
   · exact (lp.singleContinuousLinearMap ℝ (fun _ : ℕ ↦ F) 2 j).integrable_comp
-      ((symbol φ j).integrable_fourierInv_sub_smul f x)
+      ((𝓕⁻ (symbol φ j)).integrable_sub_smul one_le_two (Lp.memLp f) x)
 
 private theorem ae_sqFunAdj_eq_integral (n : ℕ)
     (g : Lp (lp (fun _ : ℕ ↦ F) 2) 2 (volume : Measure V)) :
@@ -315,7 +337,7 @@ private theorem ae_sqFunAdj_eq_integral (n : ℕ)
   have hu : ∀ j, (u j : V → F) =ᵐ[volume] fun z ↦ g z j := fun j ↦
     (lp.evalCLM ℝ (fun _ : ℕ ↦ F) 2 j).coeFn_compLpL g
   have hint : ∀ j x, Integrable (fun z ↦ 𝓕⁻ (symbol φ j) (x - z) • g z j) := fun j x ↦
-    ((symbol φ j).integrable_fourierInv_sub_smul (u j) x).congr
+    ((𝓕⁻ (symbol φ j)).integrable_sub_smul one_le_two (Lp.memLp (u j)) x).congr
       ((hu j).mono fun z hz ↦ by simp [hz])
   filter_upwards [Lp.coeFn_fun_finsetSum (Finset.range (n + 1)) fun j ↦ block φ j (u j),
     ae_all_iff.2 fun j ↦ coeFn_block φ j (u j)] with x hx hjx
@@ -480,14 +502,245 @@ theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le [Nontrivial V]
       ENNReal.tsum_eq_iSup_nat' (tendsto_add_atTop_nat 1)]
   have hmeas : ∀ n, AEMeasurable (G n) := fun n ↦
     (Finset.aemeasurable_fun_sum _ fun j _ ↦
-      (Lp.aestronglyMeasurable _).enorm.pow_const 2).pow_const _
+      (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _
   have hmono : ∀ x, Monotone fun n ↦ G n x := fun x a b hab ↦ ENNReal.rpow_le_rpow
     (Finset.sum_le_sum_of_subset (Finset.range_mono (by omega))) (by norm_num)
   simp_rw [hG]
   rw [eLpNorm_iSup_eq_iSup_eLpNorm hmeas (.of_forall hmono)]
-  refine iSup_le fun n ↦ (eLpNorm_mono_enorm_ae (hmeas n).aestronglyMeasurable ?_).trans (hC n f)
+  refine iSup_le fun n ↦ (eLpNorm_mono_eNorm_ae (hmeas n).aestronglyMeasurable ?_).trans (hC n f)
   -- Pointwise, `G n` is the `ℓ²` norm of `(Δ₀ f, …, Δₙ f)`.
   filter_upwards [coeFn_sqFun φ n f] with x hx
-  rw [hx, enorm_eq_self, lp.enorm_sum_single]
+  rw [hx, eNorm_eq_self, lp.enorm_sum_single]
+
+end TauCeti
+
+/-! ### Littlewood–Paley reconstruction in `L²` -/
+
+namespace MeasureTheory.Lp
+
+open scoped Topology
+
+variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+  [CompleteSpace F]
+
+/-- **Littlewood–Paley reconstruction in `L²`.** The partial sums `∑_{j < N} Δⱼ f` of the
+Littlewood–Paley blocks of `f ∈ L²(V, F)` converge to `f` in `L²`. Each symbol enters as any
+element of `L^∞` almost everywhere equal to the piece `ψⱼ` of the inhomogeneous partition. -/
+theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
+    (φ : ContDiffBump (0 : V)) {m : ℕ → Lp ℂ ∞ (volume : Measure V)}
+    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ))
+    (f : Lp F 2 (volume : Measure V)) :
+    Tendsto (fun N ↦ ∑ j ∈ Finset.range N, fourierMultiplierCLM F (m j) f) atTop (𝓝 f) := by
+  -- The partial sums are the multipliers with the symbols `∑_{j < N} ψⱼ`, which take values in
+  -- `[0, 1]` and tend to `1` at every frequency.
+  have hae : ∀ᵐ ξ ∂(volume : Measure V), ∀ N,
+      (∑ j ∈ Finset.range N, m j) ξ =
+        ∑ j ∈ Finset.range N, (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
+    refine ae_all_iff.2 fun N ↦ ?_
+    filter_upwards [coeFn_fun_finsetSum (Finset.range N) m, ae_all_iff.2 hm] with ξ h₁ h₂
+    rw [h₁]
+    exact Finset.sum_congr rfl fun j _ ↦ h₂ j
+  have h1 : MemLp (fun _ : V ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
+  have h := tendsto_fourierMultiplierCLM_apply (F := F) (l := atTop)
+    (m := fun N ↦ ∑ j ∈ Finset.range N, m j) (m₀ := h1.toLp _) (C := 1) ?_ ?_ f
+  · rw [fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp] at h
+    simpa only [one_smul, id_apply, fourierMultiplierCLM_sum, FunLike.coe_sum,
+      Finset.sum_apply] using h
+  · refine Eventually.of_forall fun N ↦ ?_
+    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
+    refine ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound ?_)
+    filter_upwards [hae] with ξ hξ
+    rw [hξ N]
+    rcases N with _ | N
+    · simp
+    · rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range, Complex.norm_real,
+        Real.norm_of_nonneg φ.nonneg]
+      exact φ.le_one
+  · filter_upwards [hae, h1.coeFn_toLp] with ξ h₁ h₂
+    simp only [h₁, h₂]
+    simpa [Function.comp_def] using (Complex.continuous_ofReal.tendsto _).comp
+      (φ.hasSum_inhomogeneousLittlewoodPaley ξ).tendsto_sum_nat
+
+end MeasureTheory.Lp
+
+namespace TauCeti
+
+variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+
+/-! ### The reverse inequality -/
+
+namespace LittlewoodPaleySquare
+
+variable (φ : ContDiffBump (0 : V)) [MeasurableSpace V] [BorelSpace V] [CompleteSpace F]
+
+/-- If the pieces whose indices differ by at least `L` have disjoint supports, then
+`∑_{|k - j| < L} ψₖ ψⱼ = ψⱼ`, as an identity of symbols in `L^∞`. -/
+private theorem sum_toLp_symbol_smul_toLp_symbol {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : V,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0) (j : ℕ) :
+    ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
+      ((symbol φ k).toLp ∞ volume • (symbol φ j).toLp ∞ volume : Lp ℂ ∞ (volume : Measure V)) =
+      (symbol φ j).toLp ∞ volume := by
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_fun_finsetSum (Finset.Ico (j + 1 - L) (j + L)) fun k ↦
+      ((symbol φ k).toLp ∞ volume • (symbol φ j).toLp ∞ volume : Lp ℂ ∞ (volume : Measure V)),
+    ae_all_iff.2 fun k ↦ Lp.coeFn_lpSMul (r := ∞) ((symbol φ k).toLp ∞ (volume : Measure V))
+      ((symbol φ j).toLp ∞ volume),
+    ae_all_iff.2 fun k ↦ (symbol φ k).coeFn_toLp ∞ (volume : Measure V)] with ξ h₁ h₂ h₃
+  rw [h₁]
+  simp only [h₂, Pi.smul_apply', h₃, symbol_apply, smul_eq_mul, ← Complex.ofReal_mul,
+    ← Complex.ofReal_sum, ← Finset.sum_mul, ← φ.enlargedLittlewoodPaley_apply,
+    φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
+
+/-- The block `Δⱼ f` only sees the blocks of `g` whose indices are within `L` of `j`:
+`⟪Δⱼ f, g⟫ = ∑_{|k - j| < L} ⟪Δⱼ f, Δₖ g⟫`. -/
+private theorem inner_fourierMultiplierCLM_eq_sum {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : V,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0) (j : ℕ)
+    (f g : Lp F 2 (volume : Measure V)) :
+    ⟪Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f, g⟫_ℂ =
+      ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
+        ⟪Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f,
+          Lp.fourierMultiplierCLM F ((symbol φ k).toLp ∞ volume) g⟫_ℂ := by
+  have h : Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f =
+      ∑ k ∈ Finset.Ico (j + 1 - L) (j + L), Lp.fourierMultiplierCLM F ((symbol φ k).toLp ∞ volume)
+        (Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f) := by
+    simp only [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply, ← sum_apply,
+      ← Lp.fourierMultiplierCLM_sum, sum_toLp_symbol_smul_toLp_symbol φ hL]
+  conv_lhs => rw [h]
+  rw [sum_inner]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [← adjoint_inner_right, Lp.adjoint_fourierMultiplierCLM, star_toLp_symbol]
+
+/-- The pairing bound `|⟪∑_{j ≤ N} Δⱼ f, g⟫| ≤ 2 L ∫ S f · S g` for the partial sums of `f`. -/
+private theorem enorm_inner_sum_fourierMultiplierCLM_le {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : V,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0) (N : ℕ)
+    (f g : Lp F 2 (volume : Measure V)) :
+    ‖⟪∑ j ∈ Finset.range (N + 1), Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f,
+      g⟫_ℂ‖ₑ ≤
+      2 * L * ∫⁻ x,
+        (∑' j, ‖Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
+          (∑' k, ‖Lp.fourierMultiplierCLM F ((symbol φ k).toLp ∞ volume) g x‖ₑ ^ 2) ^
+            (2⁻¹ : ℝ) := by
+  set M : ℕ → Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V) :=
+    fun j ↦ Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume)
+  have hmeas : ∀ j k, AEMeasurable (fun x ↦ ‖M j f x‖ₑ * ‖M k g x‖ₑ) :=
+    fun j k ↦ (Lp.aestronglyMeasurable _).eNorm.mul (Lp.aestronglyMeasurable _).eNorm
+  calc ‖⟪∑ j ∈ Finset.range (N + 1), M j f, g⟫_ℂ‖ₑ
+      = ‖∑ j ∈ Finset.range (N + 1), ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
+          ∫ x, ⟪M j f x, M k g x⟫_ℂ‖ₑ := by
+        rw [sum_inner]
+        refine congrArg _ (Finset.sum_congr rfl fun j _ ↦ ?_)
+        rw [inner_fourierMultiplierCLM_eq_sum φ hL]
+        simp only [M, L2.inner_def]
+    _ ≤ ∑ j ∈ Finset.range (N + 1), ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
+          ∫⁻ x, ‖M j f x‖ₑ * ‖M k g x‖ₑ :=
+        (eNorm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ (eNorm_sum_le _ _).trans
+          (Finset.sum_le_sum fun k _ ↦ (eNorm_integral_le_lintegral_eNorm _).trans
+            (lintegral_mono fun x ↦ eNorm_inner_le_eNorm _ _)))
+    _ = ∫⁻ x, ∑ j ∈ Finset.range (N + 1), ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
+          ‖M j f x‖ₑ * ‖M k g x‖ₑ := by
+        rw [lintegral_finsetSum' _ fun j _ ↦ Finset.aemeasurable_fun_sum _ fun k _ ↦ hmeas j k]
+        exact Finset.sum_congr rfl fun j _ ↦
+          (lintegral_finsetSum' _ fun k _ ↦ hmeas j k).symm
+    _ ≤ ∫⁻ x, 2 * L * ((∑' j, ‖M j f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
+          (∑' k, ‖M k g x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) :=
+        lintegral_mono fun x ↦ (sum_le_tsum _).trans (ENNReal.tsum_sum_Ico_mul_le L _ _)
+    _ = _ := lintegral_const_mul' _ _ (by finiteness)
+
+/-- **The pairing bound** behind the reverse inequality: `|⟪f, g⟫| ≤ 2 L ∫ S f · S g`, where `S`
+is the square function and the pieces whose indices differ by at least `L` have disjoint
+supports. -/
+private theorem enorm_inner_le_mul_lintegral {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : V,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    (f g : Lp F 2 (volume : Measure V)) :
+    ‖⟪f, g⟫_ℂ‖ₑ ≤
+      2 * L * ∫⁻ x,
+        (∑' j, ‖Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
+          (∑' k, ‖Lp.fourierMultiplierCLM F ((symbol φ k).toLp ∞ volume) g x‖ₑ ^ 2) ^
+            (2⁻¹ : ℝ) :=
+  le_of_tendsto' ((continuous_eNorm.tendsto _).comp
+    (((Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley φ
+      (fun j ↦ (symbol φ j).coeFn_toLp ∞ volume |>.mono fun ξ h ↦ by rw [h, symbol_apply])
+      f).comp (tendsto_add_atTop_nat 1)).inner tendsto_const_nhds))
+    (enorm_inner_sum_fourierMultiplierCLM_le φ hL · f g)
+
+end LittlewoodPaleySquare
+
+open LittlewoodPaleySquare in
+/-- **The reverse Littlewood–Paley square function inequality.** Let `V` be a real inner product
+space of finite dimension `n ≥ 1`, let `φ` be a smooth bump function on `V`, and let `1 < p < ∞`.
+Let `Δⱼ` be the `L²` Fourier multipliers with the pieces `ψ₀ = φ`,
+`ψⱼ = φ (2^{-j} ·) - φ (2^{1-j} ·)` of the inhomogeneous Littlewood–Paley partition as symbols.
+For every complex Hilbert space `F` there is a constant `C` such that for every `f ∈ L²(V, F)`,
+
+`‖f‖_p ≤ C ‖(∑ⱼ ‖Δⱼ f‖²)^{1/2}‖_p`.
+
+Neither side is assumed finite: in particular `f ∈ Lᵖ` as soon as its square function is. Each
+symbol enters as any element of `L^∞` almost everywhere equal to `ψⱼ`. -/
+theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [Nontrivial V]
+    [MeasurableSpace V] [BorelSpace V] [CompleteSpace F] (φ : ContDiffBump (0 : V))
+    {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    ∃ C : ℝ≥0, ∀ m : ℕ → Lp ℂ (∞ : ℝ≥0∞) (volume : Measure V),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) →
+      ∀ f : Lp F 2 (volume : Measure V),
+        eLpNorm f p volume ≤ C * eLpNorm
+          (fun x ↦ (∑' j, ‖Lp.fourierMultiplierCLM F (m j) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) p volume := by
+  -- The conjugate exponent `q = p / (p - 1)` also lies in `(1, ∞)`.
+  set P := p.toReal
+  have hP : 1 < P := by simpa using (ENNReal.toReal_lt_toReal (by norm_num) hp_top).2 hp
+  set q := ENNReal.ofReal (P / (P - 1))
+  have hq : 1 < q := ENNReal.one_lt_ofReal.2 (by rw [lt_div_iff₀ (by linarith)]; linarith)
+  have : p.HolderConjugate q := by
+    refine ENNReal.HolderConjugate.of_toReal ?_
+    rw [ENNReal.toReal_ofReal (div_nonneg (by linarith) (by linarith))]
+    exact Real.HolderConjugate.conjExponent hP
+  obtain ⟨C, hC⟩ := exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le (F := F) φ hq
+    ENNReal.ofReal_ne_top
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
+  refine ⟨2 * L * C, fun m hm f ↦ ?_⟩
+  have hm' : ∀ j, m j = (symbol φ j).toLp ∞ volume := fun j ↦ Lp.ext <| by
+    filter_upwards [hm j, (symbol φ j).coeFn_toLp ∞ (volume : Measure V)] with ξ h₁ h₂
+    rw [h₁, h₂, symbol_apply]
+  simp_rw [hm']
+  set S : Lp F 2 (volume : Measure V) → V → ℝ≥0∞ := fun f x ↦
+    (∑' j, ‖Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)
+  have hS : ∀ f, AEMeasurable (S f) := fun f ↦
+    (AEMeasurable.tsum fun j ↦ (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _
+  -- By duality, it suffices to bound the pairing of `f` with a bounded `g` of finite-measure
+  -- support, which is an element `G` of `L²`.
+  refine (Lp.aestronglyMeasurable f).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
+    (q' := q) hp_top fun g s hs hgs hg ↦ ?_
+  have hg2 : MemLp g 2 volume := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
+  set G := hg2.toLp g
+  have hGg : (G : V → F) =ᵐ[volume] g := hg2.coeFn_toLp
+  have hpair : ∫ x, ⟪f x, g x⟫_ℂ = ⟪f, G⟫_ℂ := by
+    rw [L2.inner_def]
+    exact integral_congr_ae (hGg.mono fun x hx ↦ by simp only [hx])
+  -- Hölder's inequality and the square function inequality at the exponent `q` for `G`.
+  have hHolder : ∫⁻ x, S f x * S G x ≤ eLpNorm (S f) p volume * eLpNorm (S G) q volume := by
+    have h := eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (μ := volume) (p := p) (q := q)
+      (r := 1) (fun a b : ℝ≥0∞ ↦ a * b) 1 (f := S f) (g := S G)
+      (fun _ _ ↦ ((hS f).mul (hS G)).aestronglyMeasurable)
+      (ae_of_all _ fun x ↦ by simp) zero_lt_one
+    rw [eLpNorm_one_eq_lintegral_eNorm (f := fun x ↦ S f x * S G x)
+      ((hS f).mul (hS G)).aestronglyMeasurable] at h
+    simpa only [eNorm_eq_self, one_mul] using h
+  have hSG : eLpNorm (S G) q volume ≤ C * eLpNorm g q volume := by
+    rw [← eLpNorm_congr_ae hGg]
+    exact hC _ (fun j ↦ (symbol φ j).coeFn_toLp ∞ volume |>.mono fun ξ h ↦ by
+      rw [h, symbol_apply]) G
+  rw [hpair]
+  calc ‖⟪f, G⟫_ℂ‖ₑ ≤ 2 * L * ∫⁻ x, S f x * S G x := enorm_inner_le_mul_lintegral φ hL f G
+    _ ≤ 2 * L * (eLpNorm (S f) p volume * (C * eLpNorm g q volume)) := by
+        gcongr
+        exact hHolder.trans (by gcongr)
+    _ = ↑(2 * L * C) * eLpNorm (S f) p volume * eLpNorm g q volume := by
+        push_cast
+        ring
 
 end TauCeti

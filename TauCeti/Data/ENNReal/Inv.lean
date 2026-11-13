@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.ENNReal.Inv
+public import Mathlib.Algebra.Order.Group.Indicator
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.FieldSimp
 
@@ -17,12 +18,17 @@ For `a ≤ b` in `ℝ≥0∞` the difference `1 - a / b` lies in `[0, 1]`, and i
 integrability exponent, this is the Hölder exponent `1 - n / p` of Morrey's embedding, which is `1`
 for `p = ∞`.
 
-The file also records the absorption step of elliptic estimates: a finite quantity bounded by `b`
-plus half of itself is at most `2 b`.
+The file also records exhaustion of an extended nonnegative function by its positive level sets,
+and the absorption step of elliptic estimates: a finite quantity bounded by `b` plus half of itself
+is at most `2 b`.
 
 ## Main declarations
 
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
+* `ENNReal.one_sub_one_div_toReal_nonneg`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
+  is nonnegative.
+* `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`: for `0 < p ≤ q`, the exponent
+  `1 / p.toReal - 1 / q.toReal` is nonnegative.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
@@ -41,6 +47,28 @@ open scoped ENNReal NNReal
 
 namespace ENNReal
 
+/-- Restricting a nonnegative function to the levels above `1 / (n + 1)` is monotone in `n`. -/
+theorem monotone_indicator_inv_natCast_add_one_le {X : Type*} (f : X → ℝ≥0∞) :
+    Monotone (fun n : ℕ => {x | (n + 1 : ℝ≥0∞)⁻¹ ≤ f x}.indicator f) := by
+  intro m n hmn
+  exact Set.indicator_le_indicator_of_subset
+    (fun x hx => (ENNReal.inv_le_inv.mpr (by exact_mod_cast Nat.add_le_add_right hmn 1)).trans hx)
+    (fun _ => bot_le)
+
+/-- The restrictions to the levels above `1 / (n + 1)` exhaust any nonnegative function. -/
+theorem iSup_indicator_inv_natCast_add_one_le {X : Type*} (f : X → ℝ≥0∞) :
+    (fun x => ⨆ n : ℕ, {x | (n + 1 : ℝ≥0∞)⁻¹ ≤ f x}.indicator f x) = f := by
+  classical
+  funext x
+  apply le_antisymm
+  · exact iSup_le fun n => Set.indicator_le_self _ f x
+  · by_cases hx : f x = 0
+    · simp [hx]
+    obtain ⟨n, hn⟩ := exists_inv_nat_lt hx
+    have hxn : (n + 1 : ℝ≥0∞)⁻¹ ≤ f x :=
+      (ENNReal.inv_le_inv.mpr (le_add_of_nonneg_right zero_le)).trans hn.le
+    exact le_iSup_of_le n (by simp [hxn])
+
 /-- For `a ≤ b`, the difference `1 - a / b` is read in `ℝ` as `1 - a.toReal / b.toReal`. -/
 @[simp]
 theorem toReal_one_sub_div {a b : ℝ≥0∞} (hab : a ≤ b) :
@@ -51,6 +79,22 @@ theorem toReal_one_sub_div {a b : ℝ≥0∞} (hab : a ≤ b) :
 theorem toNNReal_one_sub_div_pos {a b : ℝ≥0∞} (hab : a < b) : 0 < (1 - a / b).toNNReal :=
   toNNReal_pos (tsub_pos_of_lt (div_lt_of_lt_mul (by simpa using hab))).ne'
     (sub_ne_top one_ne_top)
+
+/-- For `1 ≤ p`, the Hölder exponent `1 - 1 / p` is nonnegative (with `p = ∞` giving `1`). -/
+theorem one_sub_one_div_toReal_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 - 1 / p.toReal := by
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · simp
+  · have h1p : (1 : ℝ) ≤ p.toReal := by
+      simpa using ENNReal.toReal_mono hp_top hp
+    exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
+
+/-- For `0 < p ≤ q`, the difference `1 / p - 1 / q` of reciprocal exponents is nonnegative (with
+`1 / ∞` read as `0`). It is the exponent of the measure factor in the inclusion `L^q ⊆ Lᵖ` on a
+finite measure space. -/
+theorem one_div_toReal_sub_one_div_toReal_nonneg {p q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤ q) :
+    0 ≤ 1 / p.toReal - 1 / q.toReal := by
+  simpa only [one_div, toReal_inv, sub_nonneg] using
+    toReal_mono (inv_ne_top.2 hp) (ENNReal.inv_le_inv.2 hpq)
 
 /-- **Absorption**: a finite quantity bounded by `b` plus half of itself is at most `2 b`. -/
 theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a ≤ b + a / 2) :
@@ -117,7 +161,6 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
     ENNReal.ofReal (d ^ n / n) / m * ENNReal.ofReal (n * a) =
       ENNReal.ofReal (a * d ^ n / m.toReal) := by
   have hmpos : 0 < m.toReal := toReal_pos hm₀ hm_top
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 hn
   conv_lhs => rw [← ofReal_toReal hm_top]
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
