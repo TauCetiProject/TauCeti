@@ -24,8 +24,8 @@ This is the chain-level counterpart of Mathlib's `CategoryTheory.Idempotents.Kar
 construction it follows: the idempotents are split at the level of Hom complexes rather than only
 in an underlying category.  Applied to a pretriangulated envelope it is the candidate DG model of
 an idempotent completion, as for perfect derived categories.  Only closed idempotents are split
-here; comparing `H⁰` of the envelope with the idempotent completion of `H⁰`, which requires
-lifting idempotents up to homotopy, is not treated in this file.
+here; `H⁰` of the envelope is compared with the idempotent completion of `H⁰` in
+`TauCeti.CategoryTheory.DG.Karoubi.HomotopyCategory`.
 
 The embedding `X ↦ (X, 1)` is a DG functor which is an isomorphism on every Hom complex, hence
 quasi-fully faithful.  Every object of the envelope is a retract, in the category `Z⁰` of closed
