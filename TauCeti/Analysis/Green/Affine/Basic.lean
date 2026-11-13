@@ -166,27 +166,22 @@ theorem isHomeomorph_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) :
   exact (Homeomorph.addLeft c).isHomeomorph.comp A.toHomeomorph.isHomeomorph
 
 /-- Affine images scale planar area by the absolute real determinant. -/
-theorem volume_affineMap_image (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
-    volume (affineMap A.toContinuousLinearMap c '' s) =
-      ENNReal.ofReal |A.toLinearEquiv.toLinearMap.det| * volume s := by
-  have hf : affineMap A.toContinuousLinearMap c =
-      ⇑(A.toContinuousLinearMap.toAffineMap + AffineMap.const ℝ ℂ c) := by
+theorem volume_affineMap_image (A : ℂ →L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
+    volume (affineMap A c '' s) = ENNReal.ofReal |A.toLinearMap.det| * volume s := by
+  have hf : affineMap A c = ⇑(A.toAffineMap + AffineMap.const ℝ ℂ c) := by
     funext z
     simp
-  have hlin : (A.toContinuousLinearMap.toAffineMap + AffineMap.const ℝ ℂ c).linear =
-      A.toLinearEquiv.toLinearMap := by
+  have hlin : (A.toAffineMap + AffineMap.const ℝ ℂ c).linear = A.toLinearMap := by
     ext z
     simp
   rw [hf, Measure.addHaar_image_affineMap, hlin]
 
 /-- The area measure on an affine image is the pushforward of the absolute determinant density. -/
-theorem map_withDensity_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
-    Measure.map (affineMap A.toContinuousLinearMap c)
-      ((volume.restrict s).withDensity
-        (fun _ ↦ ENNReal.ofReal |A.toLinearEquiv.toLinearMap.det|)) =
-      volume.restrict (affineMap A.toContinuousLinearMap c '' s) := by
-  have he : Measurable (affineMap A.toContinuousLinearMap c) :=
-    (isHomeomorph_affineMap A c).continuous.measurable
+theorem map_withDensity_affineMap (A : ℂ →L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
+    Measure.map (affineMap A c)
+      ((volume.restrict s).withDensity (fun _ ↦ ENNReal.ofReal |A.toLinearMap.det|)) =
+      volume.restrict (affineMap A c '' s) := by
+  have he : Measurable (affineMap A c) := (A.continuous.add continuous_const).measurable
   ext t ht
   rw [Measure.map_apply he ht, withDensity_apply _ (he ht), setLIntegral_const,
     Measure.restrict_apply (he ht), Measure.restrict_apply ht, ← volume_affineMap_image A c _,

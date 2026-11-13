@@ -117,7 +117,8 @@ theorem volume_convexHull_triangle (c p q : ℂ) :
       zero_mul]
   · rw [← affineMap_image_standardTriangle c p q hdet,
       volume_affineMap_image _ _,
-      det_triangleCoordinates]
+      (show (triangleCoordinates c p q hdet).toContinuousLinearMap.toLinearMap.det =
+        triangleDet c p q from det_triangleCoordinates c p q hdet)]
 
 /-- Area integration on an actual triangle agrees with the affine-coordinate integral. -/
 theorem integral_convexHull_triangle (c p q : ℂ) (hdet : triangleDet c p q ≠ 0) (f : ℂ → ℝ) :
