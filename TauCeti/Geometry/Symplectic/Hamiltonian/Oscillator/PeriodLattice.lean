@@ -39,7 +39,7 @@ oscillator read in the `i`-th phase plane `(qᵢ, pᵢ)`. For nonzero masses and
 * At a point at which every `(qᵢ, pᵢ)` is nonzero, the stabilizer of this action, the period
   lattice of the invariant torus through the point, is `⊕ᵢ (2π / νᵢ) ℤ`
   (`TauCeti.hamiltonianFlowStabilizer_oscillatorEnergies`). It does not depend on the torus. For
-  positive masses and frequencies these points are those at which every energy is positive
+  positive masses and nonzero frequencies these points are those at which every energy is positive
   (`TauCeti.oscillatorEnergies_pos_iff`).
 
 The actions of the oscillators are `Iᵢ = Eᵢ / νᵢ` (`TauCeti.oscillatorAction`), so the energies are
@@ -170,12 +170,16 @@ theorem poissonBracket_oscillatorEnergies_eq_zero (m ν : ι → ℝ) (i j : ι)
   · simp [EuclideanSpace.inner_single_left, hij.symm]
 
 omit [Fintype ι] in
-/-- For a positive mass and a positive frequency, the energy `Eᵢ` is positive exactly where the
+/-- For a positive mass and a nonzero frequency, the energy `Eᵢ` is positive exactly where the
 coordinate pair `(qᵢ, pᵢ)` does not vanish. -/
-theorem oscillatorEnergies_pos_iff {i : ι} (hm : 0 < m i) (hν : 0 < ν i) {x : 𝕍 × 𝕍} :
+theorem oscillatorEnergies_pos_iff {i : ι} (hm : 0 < m i) (hν : ν i ≠ 0) {x : 𝕍 × 𝕍} :
     0 < oscillatorEnergies m ν x i ↔ (x.1 i, x.2 i) ≠ 0 := by
-  rw [← oscillatorAction_pos_iff hm hν, oscillatorAction_apply, oscillatorEnergies_apply,
-    div_pos_iff_of_pos_right hν]
+  rw [oscillatorEnergies_apply, oscillatorHamiltonian_apply, Ne, Prod.mk_eq_zero, not_and_or]
+  constructor
+  · intro h
+    by_contra! h0
+    simp [h0.1, h0.2] at h
+  · rintro (hq | hp) <;> positivity
 
 /-! ### Regular points and integrability -/
 
@@ -220,26 +224,6 @@ theorem isRegularPoint_oscillatorEnergies_iff (hm : ∀ i, m i ≠ 0) (hν : ∀
     rw [hd]
     field_simp [hm i, hD i]
 
-omit [Fintype ι] in
-/-- The points at which no phase plane coordinate pair vanishes are dense. -/
-private theorem dense_setOf_forall_ne_zero [Finite ι] :
-    Dense {x : 𝕍 × 𝕍 | ∀ i, (x.1 i, x.2 i) ≠ 0} := by
-  classical
-  have := Fintype.ofFinite ι
-  have hset : {x : 𝕍 × 𝕍 | ∀ i, (x.1 i, x.2 i) ≠ 0} = ⋂ i, {x : 𝕍 × 𝕍 | (x.1 i, x.2 i) ≠ 0} := by
-    ext x
-    simp
-  rw [hset]
-  refine dense_iInter_of_isOpen (fun i ↦ ?_) fun i ↦ ?_
-  · exact isOpen_ne_fun ((coordFst i).continuous.prodMk (coordSnd i).continuous) continuous_const
-  · -- The momentum coordinate `pᵢ` is a surjective linear map, hence open.
-    have hopen : IsOpenMap (coordSnd (ι := ι) i) :=
-      (coordSnd i).isOpenMap fun r ↦ ⟨(0, EuclideanSpace.single i r), by
-        simp [coordSnd_apply]⟩
-    refine ((dense_compl_singleton (0 : ℝ)).preimage hopen).mono fun x hx ↦ ?_
-    simp only [mem_preimage, mem_compl_iff, mem_singleton_iff, coordSnd_apply] at hx
-    simp [hx]
-
 /-- **Uncoupled harmonic oscillators form a completely integrable system.** For nonzero masses
 and frequencies, the energies `Eᵢ` of uncoupled oscillators are a completely integrable system on
 the standard symplectic phase space `V × V`. -/
@@ -247,8 +231,15 @@ theorem isIntegrableSystem_oscillatorEnergies (hm : ∀ i, m i ≠ 0) (hν : ∀
     (stdSymplecticForm (V := 𝕍)).constSmooth.IsIntegrableSystem (oscillatorEnergies m ν) where
   contMDiff := (contDiff_oscillatorEnergies m ν).contMDiff
   poissonBracket_eq_zero := poissonBracket_oscillatorEnergies_eq_zero m ν
-  dense_setOf_isRegularPoint := dense_setOf_forall_ne_zero.mono fun _ hx ↦
-    (isRegularPoint_oscillatorEnergies_iff hm hν).2 hx
+  dense_setOf_isRegularPoint := by
+    -- The points at which every momentum coordinate `pᵢ` is nonzero are dense, and regular.
+    have hp := (dense_pi univ fun _ _ ↦ dense_compl_singleton (0 : ℝ)).preimage
+      (EuclideanSpace.equiv ι ℝ).toHomeomorph.isOpenMap
+    refine (hp.preimage isOpenMap_snd).mono fun x hx ↦
+      (isRegularPoint_oscillatorEnergies_iff hm hν).2 fun i h ↦ ?_
+    simp only [mem_preimage, mem_univ_pi, mem_compl_iff, mem_singleton_iff] at hx
+    simp only [Prod.mk_eq_zero] at h
+    exact hx i h.2
   two_mul_card_eq_finrank := by
     rw [Module.finrank_prod, finrank_euclideanSpace]
     ring
