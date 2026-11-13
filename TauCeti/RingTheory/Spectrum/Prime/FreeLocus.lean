@@ -6,11 +6,14 @@ Authors: Codex
 module
 
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.KrullDimension.Zero
 public import Mathlib.RingTheory.LocalProperties.Reduced
 public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
+import Mathlib.RingTheory.Finiteness.Descent
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.Rank
 import TauCeti.RingTheory.Flat.Pi
 import TauCeti.RingTheory.Ideal.Pure
@@ -35,6 +38,8 @@ basic open set of an idempotent. In particular its support is the basic open set
 `n` factors `R ⧸ (1 - e j)` of rank `0` or `1` pads `M` to constant rank `n`. The rank of a base
 change of a finite flat module is constant when the base change sees the elements cutting out the
 rank loci uniformly.
+If a faithfully flat scalar extension is finite and flat, a constant rank over the primes
+above one base prime descends to that base prime.
 At a maximal ideal `P`, the rank of a finite flat module is the dimension of its reduction modulo
 `P`, the form in which Mathlib's freeness criterion over semilocal rings,
 `Module.free_of_flat_of_finrank_eq`, takes its hypothesis.
@@ -322,3 +327,18 @@ theorem flat_localization_of_comap_mem_freeLocus (q : PrimeSpectrum S)
   exact Flat.trans R B _
 
 end PrimeSpectrum
+
+open TensorProduct in
+/-- If a faithfully flat scalar extension is finite and flat and has rank `r` at every prime
+above `p`, then the base module has rank `r` at `p`. No global constant-rank hypothesis
+is needed. -/
+lemma Module.rankAtStalk_eq_of_rankAtStalk_tensorProduct_eq
+    {A B M : Type*} [CommRing A] [CommRing B] [Algebra A B] [AddCommGroup M] [Module A M]
+    [Module.FaithfullyFlat A B] [Module.Finite B (B ⊗[A] M)] [Module.Flat B (B ⊗[A] M)]
+    (p : PrimeSpectrum A) {r : ℕ}
+    (h : ∀ q : PrimeSpectrum B, q.comap (algebraMap A B) = p →
+      Module.rankAtStalk (B ⊗[A] M) q = r) : Module.rankAtStalk M p = r := by
+  have : Module.Finite A M := Module.Finite.of_finite_tensorProduct_of_faithfullyFlat B
+  have : Module.Flat A M := Module.Flat.of_flat_tensorProduct A M B
+  obtain ⟨q, hq⟩ := PrimeSpectrum.comap_surjective_of_faithfullyFlat (A := A) (B := B) p
+  rw [← hq, ← Module.rankAtStalk_baseChange, h q hq]
