@@ -34,6 +34,14 @@ def partialCorrelationCholeskyEntryFactor (i k : Fin p) (ij : strictLowerTriangl
   (if ij.1.1 = i ∧ ij.1.2 = k then x else 1) *
     (if ij.1.1 = i ∧ ij.1.2 < k then Real.sqrt (1 - x ^ 2) else 1)
 
+/-- A coordinate factor of a Cholesky entry is continuous in the partial correlation. -/
+@[fun_prop]
+theorem continuous_partialCorrelationCholeskyEntryFactor (i k : Fin p)
+    (ij : strictLowerTriangle p) :
+    Continuous (partialCorrelationCholeskyEntryFactor i k ij) := by
+  unfold partialCorrelationCholeskyEntryFactor
+  split_ifs <;> fun_prop
+
 /-- The defining formula for one coordinate factor of a Cholesky entry. -/
 theorem partialCorrelationCholeskyEntryFactor_def (i k : Fin p)
     (ij : strictLowerTriangle p) (x : ℝ) :
@@ -44,17 +52,25 @@ theorem partialCorrelationCholeskyEntryFactor_def (i k : Fin p)
 
 @[simp]
 theorem partialCorrelationCholeskyEntryFactor_of_eq_of_eq (i k : Fin p)
-    (ij : strictLowerTriangle p) (x : ℝ) (h : ij.1.1 = i ∧ ij.1.2 = k) :
+    (ij : strictLowerTriangle p) (x : ℝ) (hi : ij.1.1 = i) (hk : ij.1.2 = k) :
     partialCorrelationCholeskyEntryFactor i k ij x = x := by
-  have hr : ¬(ij.1.1 = i ∧ ij.1.2 < k) := fun h' ↦ (ne_of_lt h'.2) h.2
-  rw [partialCorrelationCholeskyEntryFactor_def, ite_eq_left h, ite_eq_right hr, mul_one]
+  have hr : ¬(ij.1.1 = i ∧ ij.1.2 < k) := fun h ↦ (ne_of_lt h.2) hk
+  rw [partialCorrelationCholeskyEntryFactor_def, ite_eq_left ⟨hi, hk⟩,
+    ite_eq_right hr, mul_one]
 
 @[simp]
 theorem partialCorrelationCholeskyEntryFactor_of_eq_of_lt (i k : Fin p)
-    (ij : strictLowerTriangle p) (x : ℝ) (h : ij.1.1 = i ∧ ij.1.2 < k) :
+    (ij : strictLowerTriangle p) (x : ℝ) (hi : ij.1.1 = i) (hk : ij.1.2 < k) :
     partialCorrelationCholeskyEntryFactor i k ij x = Real.sqrt (1 - x ^ 2) := by
-  have hc : ¬(ij.1.1 = i ∧ ij.1.2 = k) := fun h' ↦ (ne_of_lt h.2) h'.2
-  rw [partialCorrelationCholeskyEntryFactor_def, ite_eq_right hc, ite_eq_left h, one_mul]
+  have hc : ¬(ij.1.1 = i ∧ ij.1.2 = k) := fun h ↦ (ne_of_lt hk) h.2
+  rw [partialCorrelationCholeskyEntryFactor_def, ite_eq_right hc,
+    ite_eq_left ⟨hi, hk⟩, one_mul]
+
+@[simp]
+theorem partialCorrelationCholeskyEntryFactor_self_of_eq (i : Fin p)
+    (ij : strictLowerTriangle p) (x : ℝ) (hi : ij.1.1 = i) :
+    partialCorrelationCholeskyEntryFactor i i ij x = Real.sqrt (1 - x ^ 2) := by
+  exact partialCorrelationCholeskyEntryFactor_of_eq_of_lt i i ij x hi (hi ▸ ij.2)
 
 @[simp]
 theorem partialCorrelationCholeskyEntryFactor_of_not_of_not (i k : Fin p)
@@ -72,10 +88,10 @@ theorem abs_partialCorrelationCholeskyEntryFactor_le_one (i k : Fin p)
     rw [Real.sqrt_le_one]
     nlinarith [sq_nonneg x]
   by_cases hc : ij.1.1 = i ∧ ij.1.2 = k
-  · rw [partialCorrelationCholeskyEntryFactor_of_eq_of_eq i k ij x hc]
+  · rw [partialCorrelationCholeskyEntryFactor_of_eq_of_eq i k ij x hc.1 hc.2]
     exact hx
   by_cases hr : ij.1.1 = i ∧ ij.1.2 < k
-  · rw [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij x hr,
+  · rw [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij x hr.1 hr.2,
       abs_of_nonneg (Real.sqrt_nonneg _)]
     exact hs'
   · rw [partialCorrelationCholeskyEntryFactor_of_not_of_not i k ij x hc hr, abs_one]
@@ -145,17 +161,30 @@ theorem partialCorrelationCholeskyEntryResidualPower_def (i k : Fin p) (n : ℕ)
       if ij.1.1 = i ∧ ij.1.2 < k then (n : ℝ) / 2 else 0 := by
   rw [partialCorrelationCholeskyEntryResidualPower]
 
-@[simp]
 theorem partialCorrelationCholeskyEntryCoordinatePower_apply_self (i k : Fin p) (n : ℕ)
     (hki : k < i) :
     partialCorrelationCholeskyEntryCoordinatePower i k n ⟨(i, k), hki⟩ = n := by
   simp [partialCorrelationCholeskyEntryCoordinatePower_def]
 
 @[simp]
+theorem partialCorrelationCholeskyEntryCoordinatePower_apply_of_eq (i k : Fin p) (n : ℕ)
+    (ij : strictLowerTriangle p) (hij : ij.1 = (i, k)) :
+    partialCorrelationCholeskyEntryCoordinatePower i k n ij = n := by
+  simp [partialCorrelationCholeskyEntryCoordinatePower_def, hij]
+
+@[simp]
 theorem partialCorrelationCholeskyEntryCoordinatePower_apply_of_ne (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) (hij : ij.1 ≠ (i, k)) :
     partialCorrelationCholeskyEntryCoordinatePower i k n ij = 0 := by
   simp [partialCorrelationCholeskyEntryCoordinatePower_def, hij]
+
+/-- The coordinate exponent of one entry is the corresponding singleton function. -/
+theorem partialCorrelationCholeskyEntryCoordinatePower_eq_single (i k : Fin p) (n : ℕ)
+    (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyEntryCoordinatePower i k n ij =
+      Pi.single (M := fun _ : Fin p × Fin p ↦ ℕ) (i, k) n ij.1 := by
+  classical
+  simp [partialCorrelationCholeskyEntryCoordinatePower_def, Pi.single_apply]
 
 /-- A zeroth power contributes no coordinate exponent. -/
 @[simp]
@@ -324,8 +353,8 @@ theorem pow_partialCorrelationCholeskyEntryFactor {x : ℝ} (hx : |x| ≤ 1)
   by_cases hc : ij.1.1 = i ∧ ij.1.2 = k
   · have hpair : ij.1 = (i, k) := Prod.ext hc.1 hc.2
     have hr : ¬(ij.1.1 = i ∧ ij.1.2 < k) := fun h ↦ (ne_of_lt h.2) hc.2
-    simp only [partialCorrelationCholeskyEntryFactor_of_eq_of_eq i k ij x hc,
-      partialCorrelationCholeskyEntryCoordinatePower_def, ite_eq_left hpair,
+    simp only [partialCorrelationCholeskyEntryFactor_of_eq_of_eq i k ij x hc.1 hc.2,
+      partialCorrelationCholeskyEntryCoordinatePower_apply_of_eq i k n ij hpair,
       partialCorrelationCholeskyEntryResidualPower_def, ite_eq_right hr, Real.rpow_zero, mul_one]
   · have hpair : ij.1 ≠ (i, k) := fun h ↦ hc ⟨congrArg Prod.fst h, congrArg Prod.snd h⟩
     by_cases hr : ij.1.1 = i ∧ ij.1.2 < k
@@ -333,12 +362,12 @@ theorem pow_partialCorrelationCholeskyEntryFactor {x : ℝ} (hx : |x| ≤ 1)
           (1 - x ^ 2) ^ ((n : ℝ) / 2) := by
         simpa only [Real.rpow_natCast] using
           (Real.rpow_div_two_eq_sqrt (n : ℝ) hbase).symm
-      simp only [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij x hr, hsqrt,
-        partialCorrelationCholeskyEntryCoordinatePower_def, ite_eq_right hpair, pow_zero,
+      simp only [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij x hr.1 hr.2, hsqrt,
+        partialCorrelationCholeskyEntryCoordinatePower_apply_of_ne i k n ij hpair, pow_zero,
         partialCorrelationCholeskyEntryResidualPower_def, ite_eq_left hr, one_mul]
     · simp only [partialCorrelationCholeskyEntryFactor_of_not_of_not i k ij x hc hr,
         one_pow,
-        partialCorrelationCholeskyEntryCoordinatePower_def, ite_eq_right hpair, pow_zero,
+        partialCorrelationCholeskyEntryCoordinatePower_apply_of_ne i k n ij hpair, pow_zero,
         partialCorrelationCholeskyEntryResidualPower_def, ite_eq_right hr, Real.rpow_zero, one_mul]
 
 /-- On the closed partial-correlation cube, a natural power of a lower-triangular Cholesky entry

@@ -162,7 +162,7 @@ theorem integral_pow_partialCorrelationCholesky_pi_betaMeasure
     have hcoord (ij : strictLowerTriangle p) :
         Pi.single (M := fun _ : Fin p × Fin p ↦ ℕ) (i, k) n ij.1 =
           partialCorrelationCholeskyEntryCoordinatePower i k n ij := by
-      simp [Pi.single_apply, partialCorrelationCholeskyEntryCoordinatePower_def]
+      exact (partialCorrelationCholeskyEntryCoordinatePower_eq_single i k n ij).symm
     have hintegral :
         (∫ z, partialCorrelationCholesky z i k ^ n
           ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x))) =

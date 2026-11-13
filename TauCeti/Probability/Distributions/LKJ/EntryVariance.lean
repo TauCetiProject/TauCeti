@@ -93,7 +93,7 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
   · by_cases he : ij.1.2 = k
     · simpa [hr, he, a] using hsq
     · by_cases hl : ij.1.2 < k
-      · simp_rw [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij _ ⟨hr, hl⟩]
+      · simp_rw [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij _ hr hl]
         simp only [hr, true_and, he, ↓reduceIte, hl, one_mul]
         rw [integral_congr_ae ((coordinate_ae_abs_le_one (η := η) ij).mono
           fun x hx ↦ Real.sq_sqrt (sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).mpr hx))),
@@ -265,8 +265,13 @@ private theorem integral_cholesky_mul_zero (hη : 0 < η) {i j : Fin p} (hji : j
     (fun ij x ↦ partialCorrelationCholeskyEntryFactor i k ij x *
       partialCorrelationCholeskyEntryFactor j k ij x)]
   apply Finset.prod_eq_zero (Finset.mem_univ (⟨(i, k), hki⟩ : strictLowerTriangle p))
-  simp only [partialCorrelationCholeskyEntryFactor_def, hji.ne', true_and, and_self,
-    lt_self_iff_false, ↓reduceIte, mul_one, false_and]
+  have hik (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor i k ⟨(i, k), hki⟩ x = x := by
+    simp
+  have hjk (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor j k ⟨(i, k), hki⟩ x = 1 :=
+    partialCorrelationCholeskyEntryFactor_of_row_ne j k ⟨(i, k), hki⟩ hji.ne' x
+  simp_rw [hik, hjk, mul_one]
   simpa using integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
     (r := 0) (lkjPartialCorrelationShape_pos hη ⟨(i, k), hki⟩)
     (by simpa using lkjPartialCorrelationShape_pos hη ⟨(i, k), hki⟩) 1
@@ -298,8 +303,20 @@ private theorem integral_cholesky_cross_zero (hη : 0 < η) {i j k l : Fin p}
       (partialCorrelationCholeskyEntryFactor i l ij x *
         partialCorrelationCholeskyEntryFactor j l ij x))]
   apply Finset.prod_eq_zero (Finset.mem_univ (⟨(i, k), hki⟩ : strictLowerTriangle p))
-  simp only [partialCorrelationCholeskyEntryFactor_def, hji.ne', hkl.ne, hkl, true_and, and_self,
-    lt_self_iff_false, ↓reduceIte, mul_one, false_and, one_mul]
+  have hik (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor i k ⟨(i, k), hki⟩ x = x := by
+    simp
+  have hjk (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor j k ⟨(i, k), hki⟩ x = 1 :=
+    partialCorrelationCholeskyEntryFactor_of_row_ne j k ⟨(i, k), hki⟩ hji.ne' x
+  have hil (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor i l ⟨(i, k), hki⟩ x =
+        Real.sqrt (1 - x ^ 2) :=
+    partialCorrelationCholeskyEntryFactor_of_eq_of_lt i l ⟨(i, k), hki⟩ x rfl hkl
+  have hjl (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor j l ⟨(i, k), hki⟩ x = 1 :=
+    partialCorrelationCholeskyEntryFactor_of_row_ne j l ⟨(i, k), hki⟩ hji.ne' x
+  simp_rw [hik, hjk, hil, hjl, mul_one]
   simpa only [pow_one, Real.sqrt_eq_rpow, Nat.not_even_one, ↓reduceIte] using
     integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
       (r := 1 / 2) (lkjPartialCorrelationShape_pos hη ⟨(i, k), hki⟩)
