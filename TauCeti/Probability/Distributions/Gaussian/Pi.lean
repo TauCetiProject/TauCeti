@@ -46,9 +46,8 @@ open scoped ENNReal
 
 namespace ProbabilityTheory
 
-/-- A finite product of Gaussian measures is Gaussian. The characteristic function of the
-product is the product of the factors' characteristic functions, and the mean and variance
-of a linear form split over its restrictions to the factors. -/
+/-- A finite product of Gaussian measures on second-countable real normed Borel spaces
+is Gaussian. -/
 instance isGaussian_pi {ι : Type*} [Fintype ι] {E : ι → Type*}
     [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)] [∀ i, MeasurableSpace (E i)]
     [∀ i, BorelSpace (E i)] [∀ i, SecondCountableTopology (E i)]

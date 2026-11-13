@@ -20,14 +20,11 @@ factor, pair it with each remaining factor, and multiply the lower moment by the
 The remaining factors may carry arbitrary affine shifts, and the positions indexing them need
 not be distinct. Empty products and singular positive-semidefinite covariances are allowed.
 
-The scalar step uses `integral_sub_mul_eq_mul_integral_deriv_gaussianReal`. Coordinatewise
-Fubini on the standard Gaussian product and the covariance square-root representation give the
-coordinate recurrence for multivariate Gaussians. Pushing a Gaussian measure on a real normed
-space forward to the joint law of finitely many linear observables, which is the multivariate
-Gaussian with its own mean and covariance matrix, gives the linear-observable recurrence.
-The imported `ProbabilityTheory.IsGaussian.integrable_prod_dual` and
-`ProbabilityTheory.isGaussian_pi` supply integrability of the finite products appearing in
-these identities.
+Iterating the centered recurrence yields the Wick–Isserlis pairing expansion for higher
+Gaussian mixed moments. Keeping affine shifts on the remaining factors also supports
+noncentered and partially centered products, with matching recurrences for linear observables
+of `IsGaussian` measures, coordinates of `multivariateGaussian` laws, and random vectors with
+those laws via `HasLaw`.
 
 ## Main results
 
@@ -36,16 +33,18 @@ these identities.
 * `TauCeti.Probability.integral_dual_mul_prod_pi_gaussianReal`: the recurrence for affine forms
   of independent standard Gaussians.
 * `TauCeti.Probability.integral_sub_mul_prod_add_multivariateGaussian`: the coordinate
-  recurrence for a multivariate Gaussian, with centered and raw specializations.
+  recurrence for a multivariate Gaussian, with centered and zero-mean raw specializations.
 * `ProbabilityTheory.IsGaussian.integral_sub_dual_mul_prod_dual`: the recurrence for linear
   observables of a Gaussian measure, with the centered specialization
   `ProbabilityTheory.IsGaussian.integral_sub_dual_mul_prod_sub_dual`.
 * `ProbabilityTheory.HasLaw.integral_sub_mul_prod_add_multivariateGaussian`: the coordinate
-  recurrence for a random vector with a multivariate Gaussian law, with centered and raw
-  specializations.
+  recurrence for a random vector with a multivariate Gaussian law, with centered and zero-mean
+  raw specializations.
 
 ## References
 
+* Scalar Gaussian integration by parts:
+  `TauCeti.Probability.integral_sub_mul_eq_mul_integral_deriv_gaussianReal`.
 * L. Isserlis, *On a formula for the product-moment coefficient of any order of a normal
   frequency distribution in any number of variables*, Biometrika 12 (1918), 134–139.
 -/
@@ -58,20 +57,6 @@ open MeasureTheory ProbabilityTheory Finset
 open scoped MatrixOrder NNReal
 
 namespace TauCeti.Probability
-
-section Integrable
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-
-/-- The integration-by-parts integrands of this file, an affine observable times a finite
-product of affine observables, are integrable under a Gaussian measure. -/
-private theorem integrable_dual_add_mul_prod (μ : Measure E) [IsGaussian μ] {ι : Type*}
-    (s : Finset ι) (L₀ : StrongDual ℝ E) (c₀ : ℝ) (L : ι → StrongDual ℝ E) (c : ι → ℝ) :
-    Integrable (fun x ↦ (L₀ x + c₀) * ∏ i ∈ s, (L i x + c i)) μ := by
-  simpa [Finset.prod_insertNone] using
-    IsGaussian.integrable_prod_dual μ s.insertNone (fun i ↦ i.elim L₀ L) (fun i ↦ i.elim c₀ c)
-
-end Integrable
 
 variable {ι κ : Type*} [DecidableEq ι]
 
@@ -95,8 +80,10 @@ theorem integral_sub_mul_prod_affine_gaussianReal (m : ℝ) (v : ℝ≥0)
     funext fun x ↦ (hder x).deriv
   rw [integral_sub_mul_eq_mul_integral_deriv_gaussianReal m v _
     (fun x ↦ (hder x).differentiableAt)
-    (by simpa [L, sub_eq_add_neg] using
-      integrable_dual_add_mul_prod (gaussianReal m v) s (ContinuousLinearMap.id ℝ ℝ) (-m) L b)
+    (by
+      simpa [L, sub_eq_add_neg] using
+        IsGaussian.integrable_dual_add_mul_prod (gaussianReal m v) s
+          (ContinuousLinearMap.id ℝ ℝ) (-m) L b)
     (by rw [hdf]; exact integrable_finsetSum s fun i _ ↦ (hint _).const_mul _), hdf,
     integral_finsetSum _ (fun i _ ↦ (hint _).const_mul _)]
   simp_rw [integral_const_mul]
@@ -116,7 +103,7 @@ theorem integral_eval_mul_prod_pi_gaussianReal (s : Finset ι)
   have hint (t : Finset ι) : Integrable (fun x ↦ ∏ i ∈ t, (L i x + c i)) μ :=
     IsGaussian.integrable_prod_dual μ t L c
   have hfull : Integrable (fun x ↦ x k * ∏ i ∈ s, (L i x + c i)) μ := by
-    simpa using integrable_dual_add_mul_prod μ s (ContinuousLinearMap.proj k) 0 L c
+    simpa using IsGaussian.integrable_dual_add_mul_prod μ s (ContinuousLinearMap.proj k) 0 L c
   -- Resampling one coordinate makes each affine form affine in the new scalar value.
   have hslice (i : ι) (x : κ → ℝ) (y : ℝ) :
       L i (Function.update x k y) + c i =
@@ -171,7 +158,7 @@ theorem integral_dual_mul_prod_pi_gaussianReal (s : Finset ι)
     simp [hs, mul_comm]
   have hint (k : κ) : Integrable (fun x ↦ x k * ∏ i ∈ s, (L i x + c i))
       (Measure.pi (fun _ : κ ↦ gaussianReal 0 1)) := by
-    simpa using integrable_dual_add_mul_prod _ s (ContinuousLinearMap.proj k) 0 L c
+    simpa using IsGaussian.integrable_dual_add_mul_prod _ s (ContinuousLinearMap.proj k) 0 L c
   have hfun : (fun x ↦ L₀ x * ∏ i ∈ s, (L i x + c i)) =
       fun x ↦ ∑ k, L₀ (Pi.single k 1) * (x k * ∏ i ∈ s, (L i x + c i)) := by
     funext x
