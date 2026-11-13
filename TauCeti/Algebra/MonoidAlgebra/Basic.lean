@@ -29,7 +29,8 @@ none of the further theory built on it.
 * The `IsMulCommutative (MonoidAlgebra R M)` instance: the monoid algebra of a commutative
   magma over a commutative semiring is commutative, as a mixin on the existing ring structure.
 * `MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
-  when its coefficients lie in `I`, and `MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
+  when its coefficients lie in the two-sided ideal `I`, and
+  `MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
@@ -113,14 +114,17 @@ end TauCeti
 
 namespace MonoidAlgebra
 
-variable {R : Type*} [CommSemiring R] {M : Type*}
+section CoefficientIdeal
 
-/-- An element of `R[M]` lies in `I • R[M]` exactly when all of its coefficients lie in `I`. -/
+variable {R : Type*} [Semiring R] {M : Type*}
+
+/-- For a two-sided ideal `I`, an element of `R[M]` lies in `I • R[M]` exactly when all of its
+coefficients lie in `I`. -/
 @[to_additive (dont_translate := R I)
   _root_.AddMonoidAlgebra.mem_ideal_smul_top_iff
-/-- An element of an additive monoid algebra lies in `I • ⊤` exactly when all of its
-coefficients lie in `I`. -/]
-theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
+/-- For a two-sided ideal `I`, an element of an additive monoid algebra lies in `I • ⊤`
+exactly when all of its coefficients lie in `I`. -/]
+theorem mem_ideal_smul_top_iff {I : Ideal R} [I.IsTwoSided] {x : MonoidAlgebra R M} :
     x ∈ I • (⊤ : Submodule R (MonoidAlgebra R M)) ↔ ∀ m, x.coeff m ∈ I := by
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · refine Submodule.smul_induction_on hx (fun r hr n _ m ↦ ?_) fun x y hx hy m ↦ ?_
@@ -141,6 +145,9 @@ theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* 
   rw [mem_ideal_smul_top_iff, ← MonoidAlgebra.coeff_inj]
   simp [Finsupp.ext_iff, MonoidAlgebra.coeff_mapRingHom]
 
+end CoefficientIdeal
+
+variable {R : Type*} [CommSemiring R] {M : Type*}
 variable {G : Type*} [Group G]
 
 /-- The coefficient at the identity is symmetric under swapping the factors in a group algebra

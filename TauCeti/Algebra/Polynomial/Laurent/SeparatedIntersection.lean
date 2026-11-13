@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Regular
-public import Mathlib.Algebra.Regular.Pow
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!

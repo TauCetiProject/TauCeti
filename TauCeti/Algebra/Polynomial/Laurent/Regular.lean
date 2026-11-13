@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Laurent.Coeff
-public import Mathlib.Algebra.Polynomial.Monic
 import TauCeti.Algebra.MonoidAlgebra.Degree
 import Mathlib.Algebra.Ring.Regular
 
