@@ -99,7 +99,8 @@ theorem _root_.Subgroup.subtype_comp_subgroupOfEquivOfLe {A B : Subgroup G} (h :
 on a type with a scalar action of `G` agree on elements with the same image in `G`: both are
 restrictions of the action of `G`. This is the compatibility of actions under which
 `TauCeti.DiscreteCoind.transIso` identifies `Coind_U^G (Coind_{V ⊓ U}^U M)` with
-`Coind_V^G M`. -/
+`Coind_V^G M` when `V ≤ U` (for general `U` and `V` the right-hand side is `Coind_{V ⊓ U}^G M`).
+The lemma itself holds for all `U` and `V`. -/
 theorem _root_.Subgroup.subgroupOf_smul_eq (U V : Subgroup G)
     (M : Type*) [SMul G M] (v : V.subgroupOf U) (w : V) (a : M)
     (h : ((v : U) : G) = (w : G)) : w • a = v • a := by
