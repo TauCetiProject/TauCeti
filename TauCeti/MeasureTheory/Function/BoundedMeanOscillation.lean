@@ -575,7 +575,9 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     bmoSeminorm (fun x => f (t • x)) μ = bmoSeminorm f μ := by
   refine bmoSeminorm_comp_of_map_eq_smul (e := MeasurableEquiv.smul₀ t ht)
     (Measure.map_addHaar_smul μ ht) (by simp [ht]) ENNReal.ofReal_ne_top
-    (fun c r => ⟨t • c, ‖t‖ * r, (preimage_smul_ball_smul_norm c (norm_pos_iff.2 ht) r).symm⟩)
+    (fun c r => ⟨t • c, ‖t‖ * r, by
+      rw [MeasurableEquiv.coe_smul₀]
+      exact (preimage_smul_ball_smul_norm c (norm_pos_iff.2 ht) r).symm⟩)
     (fun c' r' => ⟨t⁻¹ • c', ‖t⁻¹‖ * r', ?_⟩) f
   rw [MeasurableEquiv.coe_smul₀, Set.preimage_smul₀ ht, smul_ball (inv_ne_zero ht)]
 

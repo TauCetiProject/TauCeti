@@ -352,7 +352,9 @@ theorem maximalFunction_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpac
     maximalFunction μ (fun y => f (t • y)) x = maximalFunction μ f (t • x) :=
   maximalFunction_comp_of_map_eq_smul (e := MeasurableEquiv.smul₀ t ht)
     (Measure.map_addHaar_smul μ ht) (by simp [ht]) ENNReal.ofReal_ne_top (norm_pos_iff.2 ht)
-    (fun x r => preimage_smul_ball_smul_norm x (norm_pos_iff.2 ht) r) f x
+    (fun x r => by
+      rw [MeasurableEquiv.coe_smul₀]; exact preimage_smul_ball_smul_norm x (norm_pos_iff.2 ht) r)
+    f x
 
 end Invariance
 
