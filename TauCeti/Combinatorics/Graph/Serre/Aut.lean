@@ -29,6 +29,8 @@ dart of the reduced path between them, so the fixed vertices of an automorphism 
 The segment carries the automorphism exchanging its two vertices; it maps the edge to its
 reverse, which is the kind of inversion excluded from actions on trees. It is an involution, so
 the group of order two acts on the segment, `SerreGraph.segmentSwapHom`.
+An inversion admits no invariant morphism of Serre graphs, so in particular no morphism out of
+the segment is invariant under the exchange of its two vertices.
 
 ## References
 
@@ -213,6 +215,16 @@ theorem mul_smulPath (φ ψ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
     (φ.smulPath p).length = p.length :=
   Prefunctor.length_mapPath φ.toHom.toPrefunctor p
 
+/-- A morphism of Serre graphs invariant under an automorphism forces that automorphism to map no
+dart to its reverse. -/
+theorem smul_ne_rev_of_comp_toHom_eq {Δ : SerreGraph} (f : Γ.Hom Δ) (φ : Γ.Aut)
+    (h : Hom.comp f φ.toHom = f) (e : Γ.E) : φ • e ≠ Γ.rev e := by
+  intro he
+  have h₁ : f.mapE (φ • e) = f.mapE e := by
+    simpa using congrArg (fun k : Γ.Hom Δ => k.mapE e) h
+  rw [he, f.map_rev] at h₁
+  exact Δ.rev_ne _ h₁
+
 /-- Automorphisms preserve distances. -/
 @[simp] theorem dist_smul (φ : Γ.Aut) (a b : Γ.V) : Γ.dist (φ • a) (φ • b) = Γ.dist a b := by
   -- Each automorphism maps paths to paths of the same length, and so does its inverse.
@@ -278,6 +290,11 @@ theorem isConvex_fixedBy (h : Γ.IsAcyclic) (φ : Γ.Aut) :
 
 end Aut
 
+/-- The trivial action of a monoid on a Serre graph maps no dart to its reverse. -/
+theorem one_apply_smul_ne_rev (M : Type*) [MulOneClass M] (g : M) (e : Γ.E) :
+    (1 : M →* Γ.Aut) g • e ≠ Γ.rev e := by
+  simpa using (Γ.rev_ne e).symm
+
 /-- The automorphism of the segment exchanging its two vertices. -/
 def segmentSwap : segment.Aut where
   equivV := Function.Involutive.toPerm not Bool.not_not
@@ -326,6 +343,11 @@ def segmentSwapHom : Multiplicative (ZMod 2) →* segment.Aut :=
 theorem segmentSwapHom_ofAdd_one_smul (e : segment.E) :
     segmentSwapHom (Multiplicative.ofAdd 1) • e = segment.rev e := by
   rw [segmentSwapHom_ofAdd_one, segmentSwap_smul]
+
+/-- No morphism out of the segment is invariant under the exchange of its two vertices. -/
+theorem segment_comp_segmentSwap_toHom_ne {Δ : SerreGraph} (f : segment.Hom Δ) :
+    Hom.comp f segmentSwap.toHom ≠ f := fun h =>
+  Aut.smul_ne_rev_of_comp_toHom_eq f segmentSwap h true (segmentSwap_smul true)
 
 end SerreGraph
 end TauCeti
