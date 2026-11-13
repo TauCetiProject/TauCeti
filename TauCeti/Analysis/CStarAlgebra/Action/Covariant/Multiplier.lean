@@ -20,9 +20,9 @@ A *covariant multiplier homomorphism* of `(A, G, α)` into a C⋆-algebra `B` co
 `u_r π(a) = π(α_r(a)) u_r`; on a topological group `r ↦ b u_r` follows by taking adjoints.
 For a measure `μ` finite on compacts, `f : C_c(G, A)` integrates strictly to `integratedMultiplier`
 acting by `b ↦ ∫ r, (π(f r) u_r).fst b ∂μ` and `b ↦ ∫ r, (π(f r) u_r).snd b ∂μ`. Nondegenerate
-representations of `B` send `integratedMultiplier` to `integratedOperator`, so
-`DoubleCentralizer.eq_iff_forall_multiplierExtension_eq` transfers convolution multiplicativity,
-star preservation, functoriality, and `eq_of_integratedMultiplier_eq`, while peak functions yield
+representations of `B` send `integratedMultiplier` to `integratedOperator`, transferring
+convolution multiplicativity, star preservation, functoriality, `eq_of_integratedMultiplier_eq`,
+and `norm_integratedStarAlgHom_le_fullSeminorm`, while peak functions yield
 `topologicalClosure_span_integratedMultiplier` and `dense_span_integratedMultiplier_iff`.
 
 ## References
@@ -537,16 +537,24 @@ def integratedStarAlgHom : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] 𝓜(ℂ, 
 theorem integratedStarAlgHom_apply (f : ConvolutionAlgebra α μ) :
     M.integratedStarAlgHom μ f = M.integratedMultiplier μ f.ofConv := (rfl)
 
-/-- The integrated ⋆-homomorphism is contractive for the L¹ norm on `ConvolutionAlgebra α μ`. -/
-theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
-    ‖M.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
-  simpa [ConvolutionAlgebra.norm_eq_integral_norm] using M.norm_integratedMultiplier_le μ f.ofConv
-
 theorem multiplierExtension_integratedStarAlgHom {H : Type*} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : ρ.IsNondegenerate) (f : ConvolutionAlgebra α μ) :
     ρ.multiplierExtension hρ (M.integratedStarAlgHom μ f) =
       (M.toCovariantRepresentation hρ).integratedStarAlgHom μ f := by simp
+
+/-- The integrated ⋆-homomorphism is contractive for the L¹ norm on `ConvolutionAlgebra α μ`. -/
+theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
+    ‖M.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
+  simpa [ConvolutionAlgebra.norm_eq_integral_norm] using M.norm_integratedMultiplier_le μ f.ofConv
+
+/-- `M.integratedStarAlgHom μ` is bounded by `ConvolutionAlgebra.fullSeminorm`. -/
+theorem norm_integratedStarAlgHom_le_fullSeminorm (f : ConvolutionAlgebra α μ) :
+    ‖M.integratedStarAlgHom μ f‖ ≤ ConvolutionAlgebra.fullSeminorm α μ f :=
+  DoubleCentralizer.norm_le_iff_forall_isNondegenerate.2 fun _ _ _ _ _ hρ =>
+    (congrArg norm (M.multiplierExtension_integratedStarAlgHom μ hρ f)).trans_le <|
+      ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm
+        (M.toCovariantRepresentation hρ) f
 
 theorem extendToMultiplier_integratedStarAlgHom {ψ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)}
     (hψ : ψ.IsMultiplierNondegenerate) (f : ConvolutionAlgebra α μ) :

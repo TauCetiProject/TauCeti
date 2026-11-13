@@ -120,19 +120,11 @@ open FullCrossedProduct
 
 variable (M : CovariantMultiplierHom α B)
 
-/-- `M.integratedStarAlgHom μ` is bounded by `ConvolutionAlgebra.fullSeminorm`. -/
-theorem norm_integratedStarAlgHom_le_fullSeminorm (f : ConvolutionAlgebra α μ) :
-    ‖M.integratedStarAlgHom μ f‖ ≤ ConvolutionAlgebra.fullSeminorm α μ f :=
-  DoubleCentralizer.norm_le_iff_forall_isNondegenerate.2 fun _ _ _ _ _ hρ =>
-    (congrArg norm (M.multiplierExtension_integratedStarAlgHom μ hρ f)).trans_le <|
-      ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm
-        (M.toCovariantRepresentation hρ) f
-
 variable (μ) in
 /-- Continuous extension of `M.integratedStarAlgHom μ` to `FullCrossedProduct α μ →⋆ₙₐ[ℂ] 𝓜(ℂ, B)`.
 -/
 def integratedFull : FullCrossedProduct α μ →⋆ₙₐ[ℂ] 𝓜(ℂ, B) :=
-  FullCrossedProduct.lift (M.integratedStarAlgHom μ) M.norm_integratedStarAlgHom_le_fullSeminorm
+  FullCrossedProduct.lift (M.integratedStarAlgHom μ) (M.norm_integratedStarAlgHom_le_fullSeminorm μ)
 
 @[simp]
 theorem integratedFull_of (f : ConvolutionAlgebra α μ) :
