@@ -345,6 +345,17 @@ theorem isUnit_of (g : G) : IsUnit (of g : twistedMonoidAlgebra k G α) := by
 
 end Group
 
+section Ring
+
+variable {R : Type*} [CommRing R] (β : G → G → Rˣ) [IsFactorSet β]
+
+/-- With ring coefficients, the twisted monoid algebra is a ring. -/
+noncomputable instance : Ring (twistedMonoidAlgebra R G β) :=
+  -- Specify the ambient type: inference cannot recover it through the ring-to-semiring map.
+  Subalgebra.toRing (A := Module.End R (G →₀ R)) _
+
+end Ring
+
 variable (k G α)
 
 /-- The twisted translations form a basis of `k_α[G]` indexed by `G`: the twisted monoid algebra is
