@@ -43,7 +43,7 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
 * `TauCeti.mem_borderedInterior_iff_im_pos`: a point is in the interior exactly when one, or any,
   chart of the maximal atlas sends it to a point of positive imaginary part.
 * `TauCeti.im_eq_zero_iff_notMem_borderedInterior`: a chart of the maximal atlas is real exactly
-  at the boundary points of its source; `TauCeti.conj_apply_eq_of_notMem_borderedInterior`
+  at the boundary points of its source; `TauCeti.conj_apply_eq_iff_notMem_borderedInterior`
   restates this as invariance under complex conjugation.
 * `TauCeti.subtypeRestr_trans_upperHalfPlaneChart_mem_maximalAtlas`: a bordered holomorphic chart
   of a Riemann surface with boundary, restricted to the interior and read in `ℂ`, is a holomorphic
@@ -144,14 +144,14 @@ theorem im_eq_zero_iff_notMem_borderedInterior {e : OpenPartialHomeomorph M Clos
   rw [mem_borderedInterior_iff_im_pos he hx, not_lt]
   exact ⟨le_of_eq, fun h ↦ le_antisymm h (e x).property⟩
 
-/-- A chart of the maximal atlas is fixed by complex conjugation at the boundary points of its
-source. -/
-theorem conj_apply_eq_of_notMem_borderedInterior
+/-- A chart of the maximal atlas is fixed by complex conjugation exactly at the boundary points of
+its source. -/
+theorem conj_apply_eq_iff_notMem_borderedInterior
     {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
     (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M)
-    {x : M} (hx : x ∈ e.source) (hA : x ∉ borderedInterior M) :
-    conj (e x : ℂ) = e x :=
-  conj_eq_iff_im.2 ((im_eq_zero_iff_notMem_borderedInterior he hx).2 hA)
+    {x : M} (hx : x ∈ e.source) :
+    conj (e x : ℂ) = e x ↔ x ∉ borderedInterior M :=
+  conj_eq_iff_im.trans (im_eq_zero_iff_notMem_borderedInterior he hx)
 
 /-- The interior of a `C^1` manifold modelled on the closed upper half-plane is a charted space
 modelled on `ℂ`: the chart at `x` restricts the chart of `M` at `x` to the interior and reads it

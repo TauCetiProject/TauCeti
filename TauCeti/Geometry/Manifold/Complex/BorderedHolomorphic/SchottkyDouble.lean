@@ -138,7 +138,7 @@ private theorem doubleChartFun_inr (he : e ∈ IsManifold.maximalAtlas closedUpp
     {x : M} (hx : x ∈ e.source) : doubleChartFun e (DoubleAlong.inr _ x) = conj (e x : ℂ) := by
   by_cases hA : x ∈ (borderedInterior M : Set M)ᶜ
   · rw [← DoubleAlong.inl_coe_eq_inr _ ⟨x, hA⟩, doubleChartFun_inl,
-      conj_apply_eq_of_notMem_borderedInterior he hx hA]
+      (conj_apply_eq_iff_notMem_borderedInterior he hx).2 hA]
   · have : DoubleAlong.inr _ x ∉ range (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) := by
       rintro ⟨y, hy⟩
       have h := (DoubleAlong.inl_eq_inr_iff _).1 hy
@@ -177,11 +177,11 @@ private theorem continuousOn_doubleChartFun
   refine ContinuousOn.piecewise ?_ (hc.mono inter_subset_left)
     ((continuous_conj.comp_continuousOn hc).mono inter_subset_left)
   rintro z ⟨hz, hfr⟩
-  obtain ⟨x, hA, rfl⟩ :=
-    DoubleAlong.frontier_range_inl_subset _ (borderedInterior M).isOpen.isClosed_compl hfr
+  have hcl := (borderedInterior M).isOpen.isClosed_compl
+  obtain ⟨x, hA, rfl⟩ := (DoubleAlong.frontier_range_inl _ hcl).subset hfr
   rw [mem_preimage, DoubleAlong.fold_inl] at hz
   simp only [DoubleAlong.fold_inl]
-  exact (conj_apply_eq_of_notMem_borderedInterior he hz hA).symm
+  exact ((conj_apply_eq_iff_notMem_borderedInterior he hz).2 (hcl.frontier_subset hA)).symm
 
 open Classical in
 /-- The inverse of the doubled chart is continuous on its target: its two pieces agree on the real
@@ -410,6 +410,18 @@ private theorem doubleChart_symm_trans_mem_contDiffGroupoid
     (ClosedUpperHalfPlane.schwarzDouble_mem_contDiffGroupoid hpr hmem)
     (doubleChart_symm_trans_eqOnSource he he' hpr)
 
+/-- The doubled chart of a chart of the bordered holomorphic maximal atlas of `M` is a chart of
+the holomorphic maximal atlas of the double. -/
+theorem doubleChart_mem_maximalAtlas {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ borderedHolomorphicGroupoid.maximalAtlas M) :
+    doubleChart e (StructureGroupoid.maximalAtlas_mono
+        (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans
+          (contDiffGroupoid_le ENat.LEInfty.out)) he) ∈
+      IsManifold.maximalAtlas 𝓘(ℂ) ω (SchottkyDouble M) := by
+  rintro _ ⟨e', he', rfl⟩
+  exact ⟨doubleChart_symm_trans_mem_contDiffGroupoid _ _ (he e' he').1,
+    doubleChart_symm_trans_mem_contDiffGroupoid _ _ (he e' he').2⟩
+
 section holomorphic
 
 variable [HasGroupoid M borderedHolomorphicGroupoid]
@@ -425,21 +437,6 @@ instance instHasGroupoid : HasGroupoid (SchottkyDouble M) (contDiffGroupoid ω �
 /-- **The Schottky double is a Riemann surface without boundary.** -/
 instance instIsManifold : IsManifold 𝓘(ℂ) ω (SchottkyDouble M) :=
   IsManifold.mk' _ _ _
-
-/-- The doubled chart of a chart of the bordered holomorphic maximal atlas of `M` is a chart of
-the holomorphic maximal atlas of the double. -/
-theorem doubleChart_mem_maximalAtlas {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
-    (he : e ∈ borderedHolomorphicGroupoid.maximalAtlas M) :
-    doubleChart e (StructureGroupoid.maximalAtlas_mono
-        (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans
-          (contDiffGroupoid_le ENat.LEInfty.out)) he) ∈
-      IsManifold.maximalAtlas 𝓘(ℂ) ω (SchottkyDouble M) := by
-  rintro _ ⟨e', he', rfl⟩
-  have hb' := borderedHolomorphicGroupoid.subset_maximalAtlas he'
-  exact ⟨doubleChart_symm_trans_mem_contDiffGroupoid _ _
-      (borderedHolomorphicGroupoid.compatible_of_mem_maximalAtlas he hb'),
-    doubleChart_symm_trans_mem_contDiffGroupoid _ _
-      (borderedHolomorphicGroupoid.compatible_of_mem_maximalAtlas hb' he)⟩
 
 end holomorphic
 
