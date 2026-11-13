@@ -202,10 +202,12 @@ private theorem hasFDerivAt_fieldL (f : CkHolderSpace k α E F) (j : Fin k) (x :
       (curryLeftL E F j (fieldL j.succ (toJet f) x)) x :=
   (equivSubtype f).2 j x
 
+/-- The `C^{k,α}` norm makes the space of bounded `C^{k,α}` maps a normed additive group. -/
 instance instNormedAddCommGroup : NormedAddCommGroup (CkHolderSpace k α E F) := by
   unfold CkHolderSpace
   infer_instance
 
+/-- The space of bounded `C^{k,α}` maps is a real normed space. -/
 instance instNormedSpace : NormedSpace ℝ (CkHolderSpace k α E F) := by
   unfold CkHolderSpace
   infer_instance
@@ -292,10 +294,12 @@ theorem toFun_injective : Function.Injective (toFun (k := k) (α := α) (E := E)
       HolderSpace.toBoundedContinuousFunction_apply,
       HolderSpace.toBoundedContinuousFunction_apply] at this
 
+/-- A bounded `C^{k,α}` map is coerced to its underlying function. -/
 instance instFunLike : FunLike (CkHolderSpace k α E F) E F where
   coe := toFun
   coe_injective := toFun_injective
 
+/-- The field `toFun` is the coercion to a function. -/
 @[simp]
 theorem toFun_eq_coe (f : CkHolderSpace k α E F) : f.toFun = ⇑f :=
   (rfl)
@@ -512,6 +516,7 @@ def iteratedFDerivL (i : Fin (k + 1)) :
     CkHolderSpace k α E F →L[ℝ] (E →ᵇ (E [×i]→L[ℝ] F)) :=
   (fieldL i).comp toJetL
 
+/-- The linear map `iteratedFDerivL i` sends a map to its `i`-th derivative field. -/
 @[simp]
 theorem iteratedFDerivL_apply (i : Fin (k + 1)) (f : CkHolderSpace k α E F) :
     iteratedFDerivL i f = f.iteratedFDeriv i := by
@@ -521,6 +526,8 @@ theorem iteratedFDerivL_apply (i : Fin (k + 1)) (f : CkHolderSpace k α E F) :
 def iteratedFDerivHolderL : CkHolderSpace k α E F →L[ℝ] HolderSpace α E (E [×k]→L[ℝ] F) :=
   (WithLp.sndL 1 ℝ _ _).comp toJetL
 
+/-- The linear map `iteratedFDerivHolderL` sends a map to its `k`-th derivative field in the
+bounded Hölder space. -/
 @[simp]
 theorem iteratedFDerivHolderL_apply (f : CkHolderSpace k α E F) :
     iteratedFDerivHolderL f = f.iteratedFDerivHolder := by
@@ -540,36 +547,44 @@ theorem norm_iteratedFDerivHolderL_le_one :
     rw [iteratedFDerivHolderL_apply, one_mul]
     exact norm_iteratedFDerivHolder_le f
 
+/-- Each derivative field of the zero map is zero. -/
 @[simp]
 theorem iteratedFDeriv_zero (i : Fin (k + 1)) :
     (0 : CkHolderSpace k α E F).iteratedFDeriv i = 0 := by
   simpa only [iteratedFDerivL_apply] using (iteratedFDerivL (α := α) (E := E) (F := F) i).map_zero
 
+/-- Each derivative field is additive. -/
 @[simp]
 theorem iteratedFDeriv_add (f g : CkHolderSpace k α E F) (i : Fin (k + 1)) :
     (f + g).iteratedFDeriv i = f.iteratedFDeriv i + g.iteratedFDeriv i := by
   simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_add f g
 
+/-- Each derivative field commutes with scalar multiplication. -/
 @[simp]
 theorem iteratedFDeriv_smul (c : ℝ) (f : CkHolderSpace k α E F) (i : Fin (k + 1)) :
     (c • f).iteratedFDeriv i = c • f.iteratedFDeriv i := by
   simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_smul c f
 
+/-- The `k`-th derivative field of the zero map, in the bounded Hölder space, is zero. -/
 @[simp]
 theorem iteratedFDerivHolder_zero : (0 : CkHolderSpace k α E F).iteratedFDerivHolder = 0 := by
   simpa only [iteratedFDerivHolderL_apply] using
     (iteratedFDerivHolderL (k := k) (α := α) (E := E) (F := F)).map_zero
 
+/-- The `k`-th derivative field, in the bounded Hölder space, is additive. -/
 @[simp]
 theorem iteratedFDerivHolder_add (f g : CkHolderSpace k α E F) :
     (f + g).iteratedFDerivHolder = f.iteratedFDerivHolder + g.iteratedFDerivHolder := by
   simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_add f g
 
+/-- The `k`-th derivative field, in the bounded Hölder space, commutes with scalar
+multiplication. -/
 @[simp]
 theorem iteratedFDerivHolder_smul (c : ℝ) (f : CkHolderSpace k α E F) :
     (c • f).iteratedFDerivHolder = c • f.iteratedFDerivHolder := by
   simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_smul c f
 
+/-- The underlying function of the zero map is zero. -/
 @[simp]
 theorem coe_zero : ⇑(0 : CkHolderSpace k α E F) = 0 := by
   ext x
@@ -577,6 +592,7 @@ theorem coe_zero : ⇑(0 : CkHolderSpace k α E F) = 0 := by
     FunLike.coe_zero]
   simp
 
+/-- The underlying function of a sum is the sum of the underlying functions. -/
 @[simp]
 theorem coe_add (f g : CkHolderSpace k α E F) : ⇑(f + g) = f + g := by
   ext x
@@ -584,6 +600,8 @@ theorem coe_add (f g : CkHolderSpace k α E F) : ⇑(f + g) = f + g := by
     _root_.add_apply]
   simp
 
+/-- The underlying function of a scalar multiple is the scalar multiple of the underlying
+function. -/
 @[simp]
 theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • ⇑f := by
   ext x
@@ -672,6 +690,7 @@ def ofContDiff (f : E → F) (hf : ContDiff ℝ k f)
     (hholder : MemHolder α (_root_.iteratedFDeriv ℝ k f)) : CkHolderSpace k α E F :=
   mk (jetOf f hf hbdd hholder) (isJetGraph_jetOf f hf hbdd hholder)
 
+/-- The underlying function of `ofContDiff f` is `f`. -/
 @[simp]
 theorem coe_ofContDiff (f : E → F) (hf : ContDiff ℝ k f)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ C)
