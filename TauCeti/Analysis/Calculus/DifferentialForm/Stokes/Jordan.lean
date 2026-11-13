@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Green.Jordan
+public import TauCeti.Analysis.Normed.Module.Alternating.Complex
 
 /-!
 # Stokes' formula for one-forms on Jordan domains
@@ -57,17 +58,8 @@ theorem integral_oneForm_jordan {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ} {γ 
   have h := Green.green_ac_jordan hab hγ hclosed hinj hU hregion hP hQ
   have hcirc : Green.circulationFun P Q γ = fun t ↦ ω (γ t) fun _ ↦ deriv γ t := by
     funext t
-    let L := (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1)).symm (ω (γ t))
-    have hv : deriv γ t = (deriv γ t).re • (1 : ℂ) + (deriv γ t).im • Complex.I := by
-      simpa only [Complex.real_smul, mul_one] using (Complex.re_add_im (deriv γ t)).symm
-    -- Evaluating `ω (γ t)` on the constant family is evaluating its linear representative `L`.
-    have hL : (ω (γ t) fun _ ↦ deriv γ t) = L (deriv γ t) := by
-      rw [← (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1)).apply_symm_apply (ω (γ t)),
-        ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-    rw [hL, hv, map_add, map_smul, map_smul]
-    simp only [L, ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, smul_eq_mul,
-      Green.circulationFun, P, Q]
-    ring
+    rw [ContinuousAlternatingMap.apply_const_complex]
+    simp [Green.circulationFun, P, Q, mul_comm]
   have hcurl (z : ℂ) (hz : z ∈ U) : Green.curl P Q z = extDeriv ω z ![1, Complex.I] :=
     (extDeriv_apply_pair_of_differentiableAt
       (((hω z hz).contDiffAt (hU.mem_nhds hz)).differentiableAt one_ne_zero) 1 Complex.I).symm
