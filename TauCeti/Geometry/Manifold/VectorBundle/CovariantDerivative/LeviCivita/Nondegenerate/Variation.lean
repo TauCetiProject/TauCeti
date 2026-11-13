@@ -329,13 +329,6 @@ theorem two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection
     (fun y v w ↦ by simpa only [metric_apply] using g.hasDerivAt_apply_apply_comp hd y v w) hY v w
   simpa only [metric_apply] using h
 
-/-- The difference tensor `∇ˢ - ∇ᵗ` evaluated on `u` and `v` is `∇ˢ_v U - ∇ᵗ_v U` for the
-extension `U` of `u`. -/
-private theorem difference_apply_apply_eq_extend (s : ℝ) (y : M) (u v : TangentSpace I y) :
-    (cov s).difference (cov t) y u v = cov s (extend E u) y v - cov t (extend E u) y v := by
-  rw [CovariantDerivative.difference_apply_eq_extend]
-  rfl
-
 /-- **The difference tensors of a family of Levi-Civita connections vary differentiably.** Let
 `g` be a smooth family of nondegenerate metrics parametrized by `P`, let `c` be a parameter curve
 which is `C²` at `t`, and let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for every `s`. Then for
@@ -351,7 +344,7 @@ theorem differentiableAt_difference_of_isLeviCivitaConnection
     (g.differentiableAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov
       (mdifferentiableAt_extend I E u) v) (cov t (extend E u) y v)
   exact h.congr_of_eventuallyEq (Eventually.of_forall fun s ↦
-    difference_apply_apply_eq_extend s y u v)
+    congrArg (fun A ↦ A v) ((cov s).difference_apply_eq_extend (cov t) y u))
 
 /-- **The variation of the Levi-Civita connection as a tensor.** Let `g` be a smooth family of
 nondegenerate metrics parametrized by `P`, let `c` be a parameter curve which is `C²` at `t`, and
@@ -382,7 +375,7 @@ theorem two_mul_apply_deriv_difference_eq_derivBilinearTensor
   have heq : deriv (fun s ↦ (cov s).difference (cov t) y) t u v =
       deriv (fun s ↦ cov s (extend E u) y v) t :=
     hdu.unique (hext.congr_of_eventuallyEq (Eventually.of_forall fun s ↦
-      difference_apply_apply_eq_extend s y u v))
+      congrArg (fun A ↦ A v) ((cov s).difference_apply_eq_extend (cov t) y u)))
   rw [heq]
   simpa only [extend_apply_self] using
     g.two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection hc hcov
