@@ -18,7 +18,7 @@ public import TauCeti.Topology.CWComplex.Classical.WedgeCircles
 /-!
 # One-dimensional CW complexes are aspherical
 
-A path-connected CW complex `X` with no cells of dimension at least `2`, that is a connected
+A connected CW complex `X` with no cells of dimension at least `2`, that is a connected
 graph, is aspherical (`TauCeti.isAspherical_of_forall_isEmpty_cell`). In particular a wedge of
 circles indexed by `S` is a `K(F, 1)` for the free group `F` on `S`
 (`TauCeti.WedgeSum.isEilenbergMacLaneSpaceOne_circle`), with no finiteness hypothesis on `S`.
@@ -40,7 +40,7 @@ circles satisfies (`TauCeti.WedgeSum.instSemilocallySimplyConnectedSpaceCircle`)
 
 ## Main results
 
-* `TauCeti.isAspherical_of_forall_isEmpty_cell`: a path-connected, semilocally simply connected
+* `TauCeti.isAspherical_of_forall_isEmpty_cell`: a connected, semilocally simply connected
   CW complex with no cells of dimension at least `2` is aspherical.
 * `TauCeti.WedgeSum.isEilenbergMacLaneSpaceOne_circle`: a wedge of circles is a `K(F, 1)` for the
   free group on its circles.
@@ -63,14 +63,16 @@ universe u v w
 
 namespace TauCeti
 
-/-- **A connected graph is aspherical.** A path-connected, semilocally simply connected Hausdorff
+/-- **A connected graph is aspherical.** A connected, semilocally simply connected Hausdorff
 space with a CW structure having no cells of dimension at least `2` has trivial homotopy groups in
 every dimension at least `2`. Its universal cover is a simply connected CW complex with no cells of
 dimension at least `2`, so it has no homology in those degrees and, by the Hurewicz theorem, no
 homotopy. -/
 theorem isAspherical_of_forall_isEmpty_cell {X : Type} [TopologicalSpace X] [T2Space X]
-    [CWComplex (univ : Set X)] [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    [CWComplex (univ : Set X)] [ConnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (h : ∀ n, IsEmpty (cell (univ : Set X) (n + 2))) (x : X) : IsAspherical X x := by
+  -- a connected CW complex is locally path-connected, hence path-connected
+  have : PathConnectedSpace X := PathConnectedSpace.of_locallyPathConnectedSpace
   have hp := UniversalCover.isCoveringMap x
   let := cwComplexPreimage (univ : Set X) hp
   have := hp.t2Space
