@@ -50,11 +50,7 @@ theorem memLp_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) {p : ℝ≥0∞} (
 theorem memLp_sq_sub_time (hB : IsPreBrownianReal B P) (t : ℝ≥0) {p : ℝ≥0∞} (hp : p ≠ ∞) :
     MemLp (fun ω => B t ω ^ 2 - (t : ℝ)) p P := by
   have := hB.isGaussianProcess.isProbabilityMeasure
-  have h := hB.memLp_eval t (p := p * 2) (by finiteness)
-  have hsquare : MemLp (fun ω => B t ω ^ 2) p P := by
-    simpa [ENNReal.mul_div_cancel_right, Real.rpow_two, Real.norm_eq_abs, sq_abs] using
-      h.norm_rpow_div 2
-  exact hsquare.sub (memLp_const (t : ℝ))
+  exact (hB.memLp_pow_eval t 2 hp).sub (memLp_const (t : ℝ))
 
 end ProbabilityTheory.IsPreBrownianReal
 
