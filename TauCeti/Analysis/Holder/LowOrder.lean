@@ -66,7 +66,8 @@ variable {k : ℕ} {α : ℝ≥0} {E : Type u} {F : Type v}
 
 /-- A bounded `C^{0,α}` map as an element of the bounded Hölder space. -/
 private def toHolderSpace (f : CkHolderSpace 0 α E F) : HolderSpace α E F :=
-  HolderSpace.compLeftL (continuousMultilinearCurryFin0 ℝ E F : (E [×0]→L[ℝ] F) →L[ℝ] F)
+  HolderSpace.compLeftL
+    (continuousMultilinearCurryFin0 ℝ E F).toLinearIsometry.toContinuousLinearMap
     f.iteratedFDerivHolder
 
 /-- An element of the bounded Hölder space as a bounded `C^{0,α}` map. -/
@@ -88,7 +89,7 @@ private theorem coe_ofHolderSpace (g : HolderSpace α E F) : ⇑(ofHolderSpace g
   rw [ofHolderSpace, coe_ofContDiff]
 
 private theorem norm_toHolderSpace (f : CkHolderSpace 0 α E F) : ‖toHolderSpace f‖ = ‖f‖ := by
-  rw [toHolderSpace, HolderSpace.norm_compLeftL_linearIsometryEquiv, HolderSpace.norm_def,
+  rw [toHolderSpace, HolderSpace.norm_compLeftL_linearIsometry, HolderSpace.norm_def,
     toBoundedContinuousFunction_iteratedFDerivHolder, coe_iteratedFDeriv, norm_eq,
     Fin.sum_univ_one]
   rfl
@@ -121,7 +122,7 @@ theorem coe_equivHolderSpace_symm (g : HolderSpace α E F) :
 /-- The derivative of a bounded `C^{1,α}` map, as an element of the bounded Hölder space. -/
 private def fderivHolder (f : CkHolderSpace 1 α E F) : HolderSpace α E (E →L[ℝ] F) :=
   HolderSpace.compLeftL
-    (continuousMultilinearCurryFin1 ℝ E F : (E [×1]→L[ℝ] F) →L[ℝ] E →L[ℝ] F)
+    (continuousMultilinearCurryFin1 ℝ E F).toLinearIsometry.toContinuousLinearMap
     f.iteratedFDerivHolder
 
 private theorem fderivHolder_apply (f : CkHolderSpace 1 α E F) (x : E) :
@@ -133,7 +134,7 @@ private theorem fderivHolder_apply (f : CkHolderSpace 1 α E F) (x : E) :
 derivative field and the Hölder seminorm of the first iterated derivative. -/
 private theorem norm_fderivHolder (f : CkHolderSpace 1 α E F) :
     ‖fderivHolder f‖ = ‖f.iteratedFDeriv 1‖ + nnHolderNorm α (_root_.iteratedFDeriv ℝ 1 f) := by
-  rw [fderivHolder, HolderSpace.norm_compLeftL_linearIsometryEquiv, HolderSpace.norm_def,
+  rw [fderivHolder, HolderSpace.norm_compLeftL_linearIsometry, HolderSpace.norm_def,
     toBoundedContinuousFunction_iteratedFDerivHolder, coe_iteratedFDeriv]
   rfl
 
@@ -243,7 +244,7 @@ bounded Hölder space. -/
 private def secondFDerivHolder (f : CkHolderSpace 2 α E F) :
     HolderSpace α E (E →L[ℝ] E →L[ℝ] F) :=
   HolderSpace.compLeftL
-    (continuousMultilinearCurryFin2 ℝ E F : (E [×2]→L[ℝ] F) →L[ℝ] E →L[ℝ] E →L[ℝ] F)
+    (continuousMultilinearCurryFin2 ℝ E F).toLinearIsometry.toContinuousLinearMap
     f.iteratedFDerivHolder
 
 private theorem secondFDerivHolder_apply (f : CkHolderSpace 2 α E F) (x : E) :
@@ -256,7 +257,7 @@ the second derivative field and the Hölder seminorm of the second iterated deri
 private theorem norm_secondFDerivHolder (f : CkHolderSpace 2 α E F) :
     ‖secondFDerivHolder f‖ =
       ‖f.iteratedFDeriv 2‖ + nnHolderNorm α (_root_.iteratedFDeriv ℝ 2 f) := by
-  rw [secondFDerivHolder, HolderSpace.norm_compLeftL_linearIsometryEquiv, HolderSpace.norm_def,
+  rw [secondFDerivHolder, HolderSpace.norm_compLeftL_linearIsometry, HolderSpace.norm_def,
     toBoundedContinuousFunction_iteratedFDerivHolder, coe_iteratedFDeriv]
   rfl
 

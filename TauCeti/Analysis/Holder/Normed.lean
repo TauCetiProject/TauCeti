@@ -38,7 +38,7 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
   at most `max 1 (K ^ α)`.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
-  norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry equivalence.
+  norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
 
 ## References
 
@@ -620,18 +620,19 @@ theorem compLeftL_apply (g : Y →L[ℝ] Y') (f : HolderSpace α X Y) (x : X) :
 theorem norm_compLeftL_le (g : Y →L[ℝ] Y') : ‖compLeftL (α := α) (X := X) g‖ ≤ ‖g‖ :=
   LinearMap.mkContinuous_norm_le _ (norm_nonneg g) _
 
-/-- Postcomposition with a linear isometry equivalence preserves the Hölder-space norm. -/
-theorem norm_compLeftL_linearIsometryEquiv (e : Y ≃ₗᵢ[ℝ] Y') (f : HolderSpace α X Y) :
-    ‖compLeftL (e : Y →L[ℝ] Y') f‖ = ‖f‖ := by
-  refine le_antisymm (((compLeftL _).le_opNorm f).trans (mul_le_of_le_one_left (norm_nonneg f)
-    ((norm_compLeftL_le _).trans e.toLinearIsometry.norm_toContinuousLinearMap_le))) ?_
-  calc ‖f‖ = ‖compLeftL (e.symm : Y' →L[ℝ] Y) (compLeftL (e : Y →L[ℝ] Y') f)‖ := by
-        congr 1
-        ext x
-        simp
-    _ ≤ ‖compLeftL (e : Y →L[ℝ] Y') f‖ :=
-      ((compLeftL _).le_opNorm _).trans (mul_le_of_le_one_left (norm_nonneg _)
-        ((norm_compLeftL_le _).trans e.symm.toLinearIsometry.norm_toContinuousLinearMap_le))
+/-- Postcomposition with a linear isometry preserves the Hölder-space norm. -/
+theorem norm_compLeftL_linearIsometry (e : Y →ₗᵢ[ℝ] Y') (f : HolderSpace α X Y) :
+    ‖compLeftL e.toContinuousLinearMap f‖ = ‖f‖ := by
+  have hcoe : ((compLeftL e.toContinuousLinearMap f).toBoundedContinuousFunction : X → Y') =
+      e ∘ f.toBoundedContinuousFunction := by
+    ext x
+    simp
+  have hsup : ‖(compLeftL e.toContinuousLinearMap f).toBoundedContinuousFunction‖ =
+      ‖f.toBoundedContinuousFunction‖ := by
+    simp only [BoundedContinuousFunction.norm_eq_iSup_norm, hcoe, Function.comp_apply,
+      LinearIsometry.norm_map]
+  rw [norm_def, norm_def, hsup, hcoe, nnHolderNorm, nnHolderNorm, eHolderNorm, eHolderNorm]
+  simp only [HolderWith, Function.comp_apply, LinearIsometry.edist_map]
 
 end compLeft
 
