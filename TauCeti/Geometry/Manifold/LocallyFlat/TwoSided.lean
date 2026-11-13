@@ -329,6 +329,30 @@ private theorem injective_glue (hcA : IsCollar (sideRestrict f A) cA)
     obtain ⟨rfl, hd⟩ := Prod.mk.inj (hcB.isOpenEmbedding.injective (Subtype.ext hxy))
     rw [← negBall_depth hs.le, ← negBall_depth ht.le, hd]
 
+/-- The image of a set `S` under the glued map is cut out by the open sets `O` and `O'` of `M`
+that contain the images of `S` at nonnegative and at nonpositive depth, and are exhausted by the
+images of the sides. -/
+private theorem image_glue_eq (hcA : IsCollar (sideRestrict f A) cA)
+    (hcB : IsCollar (sideRestrict f B) cB) {S : Set (N × ball (0 : ℝ) 1)} {O O' : Set M}
+    (hmemA : ∀ p, p ∈ A ∪ range f → p ∈ O → p ∈ glue cA cB '' S)
+    (hmemB : ∀ p, p ∈ B ∪ range f → p ∈ O' → p ∈ glue cA cB '' S)
+    (hO_of : ∀ x s, (x, s) ∈ S → 0 ≤ (s : ℝ) → glue cA cB (x, s) ∈ O)
+    (hO'_of : ∀ x s, (x, s) ∈ S → (s : ℝ) ≤ 0 → glue cA cB (x, s) ∈ O') :
+    glue cA cB '' S = O ∩ A ∪ O' ∩ B ∪ O ∩ O' ∩ (A ∪ B ∪ range f) := by
+  refine Subset.antisymm ?_ ?_
+  · rintro _ ⟨⟨x, s⟩, hxs, rfl⟩
+    rcases lt_trichotomy (s : ℝ) 0 with hs | hs | hs
+    · exact Or.inl (Or.inr ⟨hO'_of x s hxs hs.le, glue_mem_right hcB x hs⟩)
+    · exact Or.inr ⟨⟨hO_of x s hxs hs.ge, hO'_of x s hxs hs.le⟩,
+        Or.inr ⟨x, (glue_of_coe_eq_zero hcA x hs).symm⟩⟩
+    · exact Or.inl (Or.inl ⟨hO_of x s hxs hs.le, glue_mem_left hcA x hs⟩)
+  · rintro p ((⟨hpO, hpA⟩ | ⟨hpO', hpB⟩) | ⟨⟨hpO, hpO'⟩, (hpA | hpB) | hpR⟩)
+    · exact hmemA p (Or.inl hpA) hpO
+    · exact hmemB p (Or.inl hpB) hpO'
+    · exact hmemA p (Or.inl hpA) hpO
+    · exact hmemB p (Or.inl hpB) hpO'
+    · exact hmemA p (Or.inr hpR) hpO
+
 /-- The glued map is open. The image of an open set `S` is relatively open in `A ∪ f(N)` and in
 `B ∪ f(N)`, cut out by open sets `O` and `O'` of `M` that contain the same points of `f(N)`. It
 is therefore the union of `O ∩ A`, `O' ∩ B` and `O ∩ O' ∩ (A ∪ B ∪ f(N))`. -/
@@ -362,20 +386,7 @@ private theorem isOpenMap_glue (hcA : IsCollar (sideRestrict f A) cA)
     have hglue : glue cA cB (x, s) = cB (x, depth s) := by
       simpa only [negBall_depth hs] using glue_negBall hcA hcB (x, depth s)
     rwa [mem_preimage, ← hglue] at hmem
-  have himage : glue cA cB '' S = O ∩ A ∪ O' ∩ B ∪ O ∩ O' ∩ (A ∪ B ∪ range f) := by
-    refine Subset.antisymm ?_ ?_
-    · rintro _ ⟨⟨x, s⟩, hxs, rfl⟩
-      rcases lt_trichotomy (s : ℝ) 0 with hs | hs | hs
-      · exact Or.inl (Or.inr ⟨hO'_of x s hxs hs.le, glue_mem_right hcB x hs⟩)
-      · exact Or.inr ⟨⟨hO_of x s hxs hs.ge, hO'_of x s hxs hs.le⟩,
-          Or.inr ⟨x, (glue_of_coe_eq_zero hcA x hs).symm⟩⟩
-      · exact Or.inl (Or.inl ⟨hO_of x s hxs hs.le, glue_mem_left hcA x hs⟩)
-    · rintro p ((⟨hpO, hpA⟩ | ⟨hpO', hpB⟩) | ⟨⟨hpO, hpO'⟩, (hpA | hpB) | hpR⟩)
-      · exact hmemA p (Or.inl hpA) hpO
-      · exact hmemB p (Or.inl hpB) hpO'
-      · exact hmemA p (Or.inl hpA) hpO
-      · exact hmemB p (Or.inl hpB) hpO'
-      · exact hmemA p (Or.inr hpR) hpO
+  have himage := image_glue_eq hcA hcB hmemA hmemB hO_of hO'_of
   rw [himage]
   exact ((hO.inter hA).union (hO'.inter hB)).union ((hO.inter hO').inter hW)
 
