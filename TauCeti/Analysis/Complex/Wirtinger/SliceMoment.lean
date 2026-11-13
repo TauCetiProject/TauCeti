@@ -284,35 +284,6 @@ section Density
 
 variable (ν μ : V →L⋆[ℂ] ℂ) (w : ℂ)
 
-/-- A point of `V × ℂ` is its base part plus the real and imaginary parts of its fibre part along
-`∂_x` and `∂_y`. -/
-private theorem prod_eq_add_smul_add_smul (x : V) (ζ : ℂ) :
-    ((x, ζ) : V × ℂ) = (x, 0) + ζ.re • ((0 : V), (1 : ℂ)) + ζ.im • ((0 : V), I) := by
-  ext
-  · simp
-  · simp [re_add_im]
-
-/-- The value of a two-form on `((x, ζ), ∂_x)` through its value on `((x, 0), ∂_x)` and the slice
-density `τ(∂_x, ∂_y)`. -/
-private theorem apply_prod_one (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (x : V) (ζ : ℂ) :
-    τ ![(x, ζ), (0, 1)] = τ ![(x, 0), (0, 1)] - ζ.im * τ ![(0, 1), (0, I)] := by
-  have h₁ : τ ![((0 : V), (1 : ℂ)), (0, 1)] = 0 := τ.map_eq_zero_of_eq _ (i := 0) (j := 1) rfl
-    (by decide)
-  rw [prod_eq_add_smul_add_smul, τ.vecCons_add, τ.vecCons_add, τ.vecCons_smul, τ.vecCons_smul, h₁,
-    τ.map_vecCons_swap ((0 : V), (1 : ℂ)) ((0 : V), I)]
-  simp only [smul_eq_mul]
-  ring
-
-/-- The value of a two-form on `((x, ζ), ∂_y)` through its value on `((x, 0), ∂_y)` and the slice
-density `τ(∂_x, ∂_y)`. -/
-private theorem apply_prod_I (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (x : V) (ζ : ℂ) :
-    τ ![(x, ζ), (0, I)] = τ ![(x, 0), (0, I)] + ζ.re * τ ![(0, 1), (0, I)] := by
-  have h₁ : τ ![((0 : V), I), (0, I)] = 0 := τ.map_eq_zero_of_eq _ (i := 0) (j := 1) rfl
-    (by decide)
-  rw [prod_eq_add_smul_add_smul, τ.vecCons_add, τ.vecCons_add, τ.vecCons_smul, τ.vecCons_smul, h₁]
-  simp only [smul_eq_mul]
-  ring
-
 /-- The **defect density** of a two-form `τ` at the fibre point `w`, in the base direction `v`:
 
 `δ(τ)(v) = τ(H_v, ∂_x) + i τ(H_v, ∂_y) + i (τ(H_{iv}, ∂_x) + i τ(H_{iv}, ∂_y))`,
@@ -344,14 +315,20 @@ theorem sliceDefectDensity_eq (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V)
         2 * I * (ν v * w + μ v * conj w) * τ ![(0, 1), (0, I)] := by
   rw [sliceDefectDensity_def, normalLift_I_smul, normalLift_apply]
   set a := ν v * w + μ v * conj w
-  rw [apply_prod_one τ v (-a), apply_prod_I τ v (-a), apply_prod_one τ (I • v) (I * a),
-    apply_prod_I τ (I • v) (I * a)]
-  simp only [neg_re, neg_im, I_mul_re, I_mul_im]
+  rw [τ.apply_prod_one v (-a), τ.apply_prod_I v (-a), τ.apply_prod_one (I • v) (I * a),
+    τ.apply_prod_I (I • v) (I * a)]
+  simp only [neg_re, neg_im, I_mul_re, I_mul_im, smul_eq_mul]
   conv_rhs => rw [← re_add_im a]
   push_cast
   linear_combination ((a.im : ℂ) * τ ![(0, 1), (0, I)] + τ ![(I • v, 0), (0, I)]) * I_sq
 
+/-- The defect density of the zero form vanishes. -/
+@[simp]
+theorem sliceDefectDensity_zero (v : V) : sliceDefectDensity ν μ w 0 v = 0 := by
+  simp [sliceDefectDensity_def]
+
 /-- The defect density is additive in the two-form. -/
+@[simp]
 theorem sliceDefectDensity_add (τ σ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
     sliceDefectDensity ν μ w (τ + σ) v =
       sliceDefectDensity ν μ w τ v + sliceDefectDensity ν μ w σ v := by
@@ -360,11 +337,27 @@ theorem sliceDefectDensity_add (τ σ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v 
   ring
 
 /-- The defect density is real homogeneous in the two-form. -/
+@[simp]
 theorem sliceDefectDensity_smul (c : ℝ) (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
     sliceDefectDensity ν μ w (c • τ) v = c * sliceDefectDensity ν μ w τ v := by
   simp only [sliceDefectDensity_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   push_cast
   ring
+
+/-- The defect density changes sign with the two-form. -/
+@[simp]
+theorem sliceDefectDensity_neg (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
+    sliceDefectDensity ν μ w (-τ) v = -sliceDefectDensity ν μ w τ v := by
+  simp only [sliceDefectDensity_def, ContinuousAlternatingMap.neg_apply]
+  push_cast
+  ring
+
+/-- The defect density is subtractive in the two-form. -/
+@[simp]
+theorem sliceDefectDensity_sub (τ σ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
+    sliceDefectDensity ν μ w (τ - σ) v =
+      sliceDefectDensity ν μ w τ v - sliceDefectDensity ν μ w σ v := by
+  rw [sub_eq_add_neg, sliceDefectDensity_add, sliceDefectDensity_neg, sub_eq_add_neg]
 
 /-- The defect density changes sign when the two-form is pulled back by the normal structure:
 `δ(J_N^* τ) = -δ(τ)`. -/
@@ -402,8 +395,8 @@ theorem sliceDefectDensity_smul_sub_compContinuousLinearMap (τ : (V × ℂ) [�
     sliceDefectDensity ν μ w
         ((2 : ℝ)⁻¹ • (τ - τ.compContinuousLinearMap (normalStructure ν μ w))) v =
       sliceDefectDensity ν μ w τ v := by
-  rw [sliceDefectDensity_smul, sub_eq_add_neg, sliceDefectDensity_add, ← neg_one_smul ℝ,
-    sliceDefectDensity_smul, sliceDefectDensity_compContinuousLinearMap_normalStructure]
+  rw [sliceDefectDensity_smul, sliceDefectDensity_sub,
+    sliceDefectDensity_compContinuousLinearMap_normalStructure]
   push_cast
   ring
 
@@ -417,8 +410,7 @@ theorem norm_sliceDefectDensity_le (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v
       rw [Prod.norm_def, norm_zero, hy, max_eq_right zero_le_one]
     rw [norm_real, Real.norm_eq_abs]
     refine (τ.le_opNorm _).trans ?_
-    rw [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero,
-      h0y, mul_one]
+    simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, h0y, mul_one]
     gcongr
     exact (norm_normalLift_le ν μ w u).trans_eq (by rw [hu])
   have hIv : ‖I • v‖ = ‖v‖ := by rw [norm_smul, norm_I, one_mul]

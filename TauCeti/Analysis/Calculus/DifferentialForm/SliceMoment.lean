@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Moments of the normal slices of a closed two-form
@@ -47,6 +48,10 @@ The derivative formula comes from differentiating under the integral sign and th
 `dT = 0`, which trades the base derivative of the slice density for fibre derivatives of the
 mixed components `T(v, ∂_x)` and `T(v, ∂_y)`; integrating these by parts over the fibre moves
 the derivatives onto `g`, and the compact support in the fibre leaves no boundary term.
+
+For any real two-form `τ` on `E × ℂ`, the values `τ((x, ζ), ∂_x)` and `τ((x, ζ), ∂_y)` reduce to
+those at the horizontal vector `(x, 0)` plus a multiple of the slice density `τ(∂_x, ∂_y)`
+(`ContinuousAlternatingMap.apply_prod_one`, `ContinuousAlternatingMap.apply_prod_I`).
 
 ## References
 
@@ -240,4 +245,46 @@ theorem fderiv_sliceMoment_pow_apply (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
     smul_eq_mul, real_smul]
   ring
 
+/-! ### Two-forms on a fibre direction -/
+
+section Decomposition
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+
+/-- A point of `E × ℂ` is its base part plus the real and imaginary parts of its fibre part along
+`∂_x` and `∂_y`. -/
+theorem prod_eq_add_smul_add_smul (x : E) (ζ : ℂ) :
+    ((x, ζ) : E × ℂ) = (x, 0) + ζ.re • ((0 : E), (1 : ℂ)) + ζ.im • ((0 : E), I) := by
+  ext
+  · simp
+  · simp [re_add_im]
+
+end Decomposition
+
 end TauCeti
+
+namespace ContinuousAlternatingMap
+
+variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+
+/-- The value of a two-form on `((x, ζ), ∂_x)` through its value on `((x, 0), ∂_x)` and the slice
+density `τ(∂_x, ∂_y)`. -/
+theorem apply_prod_one (τ : (E × ℂ) [⋀^Fin 2]→L[ℝ] F) (x : E) (ζ : ℂ) :
+    τ ![(x, ζ), (0, 1)] = τ ![(x, 0), (0, 1)] - ζ.im • τ ![(0, 1), (0, I)] := by
+  have h₁ : τ ![((0 : E), (1 : ℂ)), (0, 1)] = 0 := τ.map_eq_zero_of_eq _ (i := 0) (j := 1) rfl
+    (by decide)
+  rw [TauCeti.prod_eq_add_smul_add_smul, τ.vecCons_add, τ.vecCons_add, τ.vecCons_smul,
+    τ.vecCons_smul, h₁, τ.map_vecCons_swap ((0 : E), (1 : ℂ)) ((0 : E), I), smul_neg, smul_zero,
+    add_zero, ← sub_eq_add_neg]
+
+/-- The value of a two-form on `((x, ζ), ∂_y)` through its value on `((x, 0), ∂_y)` and the slice
+density `τ(∂_x, ∂_y)`. -/
+theorem apply_prod_I (τ : (E × ℂ) [⋀^Fin 2]→L[ℝ] F) (x : E) (ζ : ℂ) :
+    τ ![(x, ζ), (0, I)] = τ ![(x, 0), (0, I)] + ζ.re • τ ![(0, 1), (0, I)] := by
+  have h₁ : τ ![((0 : E), I), (0, I)] = 0 := τ.map_eq_zero_of_eq _ (i := 0) (j := 1) rfl
+    (by decide)
+  rw [TauCeti.prod_eq_add_smul_add_smul, τ.vecCons_add, τ.vecCons_add, τ.vecCons_smul,
+    τ.vecCons_smul, h₁, smul_zero, add_zero]
+
+end ContinuousAlternatingMap

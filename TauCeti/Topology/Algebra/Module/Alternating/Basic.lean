@@ -126,9 +126,9 @@ theorem map_vecCons_vecCons_neg {n : ℕ} (f : M [⋀^Fin (n + 2)]→L[R] N) (x 
     f (Matrix.vecCons x (Matrix.vecCons (-y) v)) = -f (Matrix.vecCons x (Matrix.vecCons y v)) := by
   have h (z : M) : Matrix.vecCons x (Matrix.vecCons z v) =
       Function.update (Matrix.vecCons x (Matrix.vecCons y v)) 1 z := by
-    simp only [Matrix.vecCons]
-    rw [← Fin.update_cons_zero (α := fun _ ↦ M) y v z, Fin.cons_update, Fin.succ_zero_eq_one]
-  rw [h (-y), ← neg_one_smul R y, map_update_smul, neg_one_smul, ← h]
+    ext i
+    refine Fin.cases ?_ (Fin.cases ?_ fun j ↦ ?_) i <;> simp [Function.update, Fin.succ_succ_ne_one]
+  simpa [← h] using f.toAlternatingMap.map_update_neg (Matrix.vecCons x (Matrix.vecCons y v)) 1 y
 
 end Neg
 
