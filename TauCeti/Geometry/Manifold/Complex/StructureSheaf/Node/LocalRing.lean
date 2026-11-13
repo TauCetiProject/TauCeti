@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 import Mathlib.Algebra.Category.Ring.FilteredColimits
 import Mathlib.RingTheory.Finiteness.Prod
+import Mathlib.RingTheory.LocalRing.Pullback
 
 /-!
 # The local ring of a node
@@ -293,16 +294,9 @@ theorem map_fst_ker_snd : (RingHom.ker π₂).map π₁ = maximalIdeal A := by
 
 /-- Germs supported on the second branch restrict onto its whole maximal ideal. -/
 @[simp]
-theorem map_snd_ker_fst : (RingHom.ker π₁).map π₂ = maximalIdeal B := by
-  ext b
-  rw [Ideal.mem_map_iff_of_surjective _ snd_surjective]
-  constructor
-  · rintro ⟨s, hs, rfl⟩
-    exact (maximalIdeal_comap π₂).ge (le_maximalIdeal (RingHom.ker_ne_top π₁) hs)
-  · intro hb
-    have hb₀ : holomorphicStructureSheaf.eval J Y q b = 0 := by
-      simpa only [maximalIdeal_stalk, RingHom.mem_ker] using hb
-    exact ⟨mk 0 b (by simpa using hb₀.symm), by simp, by simp⟩
+theorem map_snd_ker_fst : (RingHom.ker π₁).map π₂ = maximalIdeal B :=
+  ((holomorphicStructureSheaf.eval I X p).map_pullbackSnd_ker_pullbackFst_eq
+    (holomorphicStructureSheaf.eval J Y q)).trans (maximalIdeal_stalk J Y q).symm
 
 /-- Membership in a power of the node maximal ideal is detected on both branches. -/
 theorem mem_maximalIdeal_pow_iff (s : N) (n : ℕ) :
@@ -332,12 +326,6 @@ theorem mem_maximalIdeal_pow_iff (s : N) (n : ℕ) :
       (Ideal.pow_right_mono (le_maximalIdeal (RingHom.ker_ne_top π₂)) n hu)
       (Ideal.pow_right_mono (le_maximalIdeal (RingHom.ker_ne_top π₁)) n hv)
 
-/-- A node germ vanishes to second order exactly when each of its two branch germs does. -/
-theorem mem_maximalIdeal_sq_iff (s : N) :
-    s ∈ maximalIdeal N ^ 2 ↔
-      π₁ s ∈ maximalIdeal A ^ 2 ∧ π₂ s ∈ maximalIdeal B ^ 2 :=
-  mem_maximalIdeal_pow_iff s 2
-
 end Ideals
 
 variable (I J p q) in
@@ -345,6 +333,18 @@ variable (I J p q) in
 def residueFieldEquiv : ResidueField (nodeLocalRing I J p q) ≃+* ℂ :=
   (Ideal.quotEquivOfEq maximalIdeal_eq_ker_eval).trans
     ((eval I J p q).quotientKerEquivOfSurjective eval_surjective)
+
+/-- Evaluation on the residue field and its inverse form an inverse pair of ring maps. -/
+instance residueFieldEquiv_ringHomInvPair :
+    RingHomInvPair (RingHomClass.toRingHom (residueFieldEquiv I J p q))
+      (RingHomClass.toRingHom (residueFieldEquiv I J p q).symm) :=
+  RingHomInvPair.of_ringEquiv (residueFieldEquiv I J p q)
+
+/-- The inverse residue-field comparison and evaluation form an inverse pair of ring maps. -/
+instance residueFieldEquiv_symm_ringHomInvPair :
+    RingHomInvPair (RingHomClass.toRingHom (residueFieldEquiv I J p q).symm)
+      (RingHomClass.toRingHom (residueFieldEquiv I J p q)) :=
+  RingHomInvPair.of_ringEquiv_symm (residueFieldEquiv I J p q)
 
 /-- The residue-field comparison sends the residue of a germ to its value at the node. -/
 @[simp]

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Node.LocalRing
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Cotangent
 import TauCeti.LinearAlgebra.Basis.Semilinear
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # The cotangent space of an analytic node
@@ -113,14 +114,11 @@ private theorem cotangentMap_smul (c : ResidueField N) (v : CotangentSpace N) :
       LinearEquiv.map_smulₛₗ]
     simp [IsLocalRing.ResidueField.algebraMap_eq]
 
-attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
-
 /-- Differentiation identifies the cotangent space of the node ring with the two branch
 cotangent model spaces, semilinearly along evaluation on the residue field. -/
 def cotangentEquiv :
-    LinearEquiv (RingHomClass.toRingHom (residueFieldEquiv 𝓘(ℂ, E) 𝓘(ℂ, F) p q))
-      (σ' := RingHomClass.toRingHom (residueFieldEquiv 𝓘(ℂ, E) 𝓘(ℂ, F) p q).symm)
-      (CotangentSpace N) (StrongDual ℂ E × StrongDual ℂ F) :=
+    CotangentSpace N ≃ₛₗ[RingHomClass.toRingHom (residueFieldEquiv 𝓘(ℂ, E) 𝓘(ℂ, F) p q)]
+      (StrongDual ℂ E × StrongDual ℂ F) :=
   LinearEquiv.ofBijective
     (σ₂₁ := RingHomClass.toRingHom (residueFieldEquiv 𝓘(ℂ, E) 𝓘(ℂ, F) p q).symm)
     { toFun := cotangentMap hp hq he he'
@@ -131,7 +129,7 @@ def cotangentEquiv :
       intro v hv
       obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ v
       apply (Ideal.toCotangent_eq_zero _ s).2
-      rw [mem_maximalIdeal_sq_iff]
+      rw [mem_maximalIdeal_pow_iff]
       simp only [LinearMap.coe_mk, AddHom.coe_mk] at hv
       rw [cotangentMap_toBranchCotangent] at hv
       have h₁ := (e.holomorphicCotangentEquiv p hp he).map_eq_zero_iff.mp
@@ -166,9 +164,16 @@ theorem cotangentEquiv_symm_apply (ℓ : StrongDual ℂ E × StrongDual ℂ F) :
   simp
 
 include hp hq he he' in
+/-- Local branch charts make the node cotangent space finite-dimensional over its residue field. -/
+theorem finiteDimensional_cotangentSpace_of_mem_maximalAtlas :
+    FiniteDimensional (ResidueField N) (CotangentSpace N) :=
+  Module.Finite.of_surjective (cotangentEquiv hp hq he he').symm.toLinearMap
+    (cotangentEquiv hp hq he he').symm.surjective
+
+include hp hq he he' in
 /-- The embedding dimension of the branch-pair ring is the sum of the dimensions of the
 branches. In particular, two curve branches give embedding dimension two. -/
-theorem finrank_cotangentSpace :
+theorem finrank_cotangentSpace_of_mem_maximalAtlas :
     Module.finrank (ResidueField N) (CotangentSpace N) =
       Module.finrank ℂ E + Module.finrank ℂ F := by
   rw [(cotangentEquiv hp hq he he').finrank_eqₛₗ, Module.finrank_prod,
@@ -178,14 +183,24 @@ section Manifolds
 
 variable [IsManifold 𝓘(ℂ, E) 1 X] [IsManifold 𝓘(ℂ, F) 1 Y]
 
+/-- The cotangent space at a node of finite-dimensional complex manifolds is finite-dimensional. -/
+instance finiteDimensional_cotangentSpace :
+    FiniteDimensional (ResidueField N) (CotangentSpace N) := by
+  let : IsManifold 𝓘(ℂ, E) ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  let : IsManifold 𝓘(ℂ, F) ω Y := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  exact finiteDimensional_cotangentSpace_of_mem_maximalAtlas
+    (mem_chart_source E p) (mem_chart_source F q)
+    (chart_mem_maximalAtlas p (I := 𝓘(ℂ, E)) (n := ω))
+    (chart_mem_maximalAtlas q (I := 𝓘(ℂ, F)) (n := ω))
+
 /-- The embedding dimension at a node of complex manifolds is the sum of their dimensions. -/
 @[simp]
-theorem finrank_cotangentSpace_nodeLocalRing :
+theorem finrank_cotangentSpace :
     Module.finrank (ResidueField N) (CotangentSpace N) =
       Module.finrank ℂ E + Module.finrank ℂ F := by
   let : IsManifold 𝓘(ℂ, E) ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
   let : IsManifold 𝓘(ℂ, F) ω Y := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  exact finrank_cotangentSpace (mem_chart_source E p) (mem_chart_source F q)
+  exact finrank_cotangentSpace_of_mem_maximalAtlas (mem_chart_source E p) (mem_chart_source F q)
     (chart_mem_maximalAtlas p (I := 𝓘(ℂ, E)) (n := ω))
     (chart_mem_maximalAtlas q (I := 𝓘(ℂ, F)) (n := ω))
 
