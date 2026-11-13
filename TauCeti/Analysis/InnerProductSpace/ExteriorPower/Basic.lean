@@ -58,8 +58,7 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `exteriorPower.norm_ιMulti_comp_linearIsometry`, `exteriorPower.norm_ιMulti_comp_perm`,
   `exteriorPower.norm_ιMulti_update_smul`: the volume of a frame is invariant under linear
   isometries and reorderings, and scales by `|c|` when one vector is multiplied by `c`.
-* `Orthonormal.norm_ιMulti`, `exteriorPower.norm_ιMulti_zero`: orthonormal frames, the empty
-  frame among them, have volume one.
+* `Orthonormal.norm_ιMulti`: orthonormal frames, the empty frame among them, have volume one.
 * `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
   `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`,
   and `ContinuousLinearMap.norm_gradientWedge_le`: `‖p₁ ∧ p₂‖ ≤ ‖P‖ ^ 2`.
@@ -218,6 +217,7 @@ theorem norm_ιMulti_update_smul (v : Fin n → E) (i : Fin n) (c : ℝ) :
   rw [AlternatingMap.map_update_smul, Function.update_eq_self, norm_smul, Real.norm_eq_abs]
 
 /-- An orthonormal frame spans a parallelepiped of volume one: `‖v₁ ∧ ⋯ ∧ vₙ‖ = 1`. -/
+@[simp]
 theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ v) :
     ‖ιMulti ℝ n v‖ = 1 := by
   have hgram : Matrix.gram ℝ v = 1 := by
@@ -225,11 +225,6 @@ theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ 
     simp [Matrix.gram, Matrix.one_apply, orthonormal_iff_ite.1 hv]
   rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq, hgram,
     Matrix.det_one, one_pow]
-
-/-- The empty frame, whose wedge is the generator `1` of `⋀⁰ E`, has volume one. -/
-@[simp]
-theorem norm_ιMulti_zero (v : Fin 0 → E) : ‖ιMulti ℝ 0 v‖ = 1 :=
-  Orthonormal.norm_ιMulti ⟨finZeroElim, fun i ↦ i.elim0⟩
 
 end exteriorPower
 
