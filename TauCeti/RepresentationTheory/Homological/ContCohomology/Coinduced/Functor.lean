@@ -232,11 +232,7 @@ theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
 
 private noncomputable def coindCounitApp (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
     (coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U).obj A ⟶ (𝟭 _).obj A :=
-  ObjectProperty.homMk
-    (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
-      TopRep.ofHom (coindCounit R G U A))
+  ObjectProperty.homMk (TopRep.ofHom (coindCounit R G U A))
 
 -- The explicit universes in `coindCounitApp.{u, v, w}` and `coindCounitNatTrans.{u, v, w}` below
 -- fix `w`, which the arguments determine only through `max v w`. Without them, elaborating these
@@ -248,8 +244,7 @@ private theorem coindCounitApp_naturality {A B : SmoothDiscreteTopRep.{u, v, max
         coindCounitApp.{u, v, w} R G U B =
       coindCounitApp.{u, v, w} R G U A ≫ (𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U)).map f := by
   ext a
-  -- Both composites send `a` to `f (a 1)` by definition: the transports in `coindCounitApp` are
-  -- identities, and the counit evaluates at `1`.
+  -- Both composites send `a` to `f (a 1)` by definition: the counit evaluates at `1`.
   rfl
 
 /-- Evaluation at `1`, natural in the smooth discrete coefficient representation. -/
