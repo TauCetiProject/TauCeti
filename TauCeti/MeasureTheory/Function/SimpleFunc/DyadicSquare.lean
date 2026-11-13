@@ -6,20 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.SimpleFunc
-public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # Bounded dyadic approximations of the square
 
-`TauCeti.dyadicSquareApprox k` rounds the absolute value down on the mesh `2⁻ᵏ`,
-squares it, and discards values outside `[0, 2ᵏ)`. These finite Borel simple functions
-increase pointwise to the square. The expanding cutoff is essential: a fixed value
-window would not approximate an unbounded random variable.
+For `|x| < 2ᵏ`, `TauCeti.dyadicSquareApprox k` rounds `|x|` down on the mesh `2⁻ᵏ`
+and squares the result, taking values in `[0, 2^(2k))`. It vanishes when `|x| ≥ 2ᵏ`.
+These finite Borel simple functions increase pointwise to the square. The expanding cutoff
+is essential: a fixed value window would not approximate an unbounded random variable.
 
-For an L⁴ random variable the approximations converge in L². This gives explicit bounded
-simple heights for elementary stochastic integrands with squared random heights.
+Whenever the square belongs to Lᵖ for finite `p`, the approximations converge in Lᵖ.
+In particular, an L⁴ random variable gives L² convergence and explicit bounded simple
+heights for elementary stochastic integrands with squared random heights.
 -/
 
 public section
@@ -32,7 +33,9 @@ open scoped Topology ENNReal
 namespace TauCeti
 
 /-- The dyadic square approximation with mesh `2⁻ᵏ` and absolute-value cutoff `2ᵏ`.
-The half-open cells include their lower endpoint and exclude their upper endpoint. -/
+It assigns `((j : ℝ) / 2 ^ k) ^ 2` when `|x| ∈ [j / 2^k, (j + 1) / 2^k)`
+for `j < 2^(2*k)`, and zero when `|x| ≥ 2^k`. The half-open endpoint convention
+applies to the magnitude `|x|`, not to the signed input `x`. -/
 def dyadicSquareApprox (k : ℕ) : SimpleFunc ℝ ℝ :=
   ∑ j ∈ Finset.range (2 ^ (2 * k)),
     (SimpleFunc.const ℝ (((j : ℝ) / 2 ^ k) ^ 2)).restrict
@@ -61,6 +64,7 @@ private theorem mem_dyadicCell_iff (k j : ℕ) (x : ℝ) :
     lt_div_iff₀ (by positivity : (0 : ℝ) < 2 ^ k)]
 
 /-- Below the cutoff the approximation is the square of the lower dyadic rounding. -/
+@[grind =]
 theorem dyadicSquareApprox_of_abs_lt {k : ℕ} {x : ℝ} (hx : |x| < 2 ^ k) :
     dyadicSquareApprox k x = ((⌊|x| * 2 ^ k⌋₊ : ℝ) / 2 ^ k) ^ 2 := by
   rw [dyadicSquareApprox_apply]
@@ -77,6 +81,7 @@ theorem dyadicSquareApprox_of_abs_lt {k : ℕ} {x : ℝ} (hx : |x| < 2 ^ k) :
   · simp [hfloor]
 
 /-- At and beyond the cutoff all cells vanish. In particular the cutoff is excluded. -/
+@[grind =]
 theorem dyadicSquareApprox_of_le_abs {k : ℕ} {x : ℝ} (hx : 2 ^ k ≤ |x|) :
     dyadicSquareApprox k x = 0 := by
   rw [dyadicSquareApprox_apply]
@@ -156,9 +161,31 @@ theorem dyadicSquareApprox_lt_pow (k : ℕ) (x : ℝ) :
 
 /-- The approximation vanishes at zero. -/
 @[simp]
-theorem dyadicSquareApprox_zero (k : ℕ) : dyadicSquareApprox k 0 = 0 := by
+theorem dyadicSquareApprox_apply_zero (k : ℕ) : dyadicSquareApprox k 0 = 0 := by
   exact le_antisymm (by simpa using dyadicSquareApprox_le_sq k 0)
     (dyadicSquareApprox_nonneg k 0)
+
+/-- The coarsest approximation is identically zero. -/
+@[simp]
+theorem dyadicSquareApprox_zero : dyadicSquareApprox 0 = 0 := by
+  ext x
+  simp [dyadicSquareApprox_apply]
+
+/-- The approximation depends only on the magnitude of its argument. -/
+@[simp]
+theorem dyadicSquareApprox_abs (k : ℕ) (x : ℝ) :
+    dyadicSquareApprox k |x| = dyadicSquareApprox k x := by
+  simp only [dyadicSquareApprox_apply, abs_abs]
+
+/-- Dyadic square approximation is even. -/
+@[simp]
+theorem dyadicSquareApprox_neg (k : ℕ) (x : ℝ) :
+    dyadicSquareApprox k (-x) = dyadicSquareApprox k x := by
+  simp only [dyadicSquareApprox_apply, abs_neg]
+
+grind_pattern dyadicSquareApprox_nonneg => dyadicSquareApprox k x
+grind_pattern dyadicSquareApprox_le_sq => dyadicSquareApprox k x
+grind_pattern dyadicSquareApprox_lt_pow => dyadicSquareApprox k x
 
 end TauCeti
 
@@ -166,40 +193,32 @@ namespace MeasureTheory.MemLp
 
 open TauCeti
 
-/-- For an L⁴ random variable, the explicit bounded dyadic square approximations converge
-in L². No finiteness assumption on the measure is needed. -/
+/-- Dyadic square approximation preserves Lᵖ membership of the square, even when only
+the square, rather than the original function, is a.e. measurable. -/
+theorem dyadicSquareApprox {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {p : ℝ≥0∞} {f : Ω → ℝ} (hf : MemLp (fun ω ↦ f ω ^ 2) p μ) (k : ℕ) :
+    MemLp (fun ω ↦ TauCeti.dyadicSquareApprox k (f ω)) p μ := by
+  have hm := (TauCeti.dyadicSquareApprox k).measurable.comp_aemeasurable
+    (Real.continuous_sqrt.comp_aestronglyMeasurable hf.aestronglyMeasurable).aemeasurable
+  refine hf.mono (by simpa only [Function.comp_def, Real.sqrt_sq_eq_abs,
+    dyadicSquareApprox_abs] using hm.aestronglyMeasurable) ?_
+  exact Eventually.of_forall fun ω ↦ by
+    simpa only [Real.norm_eq_abs, abs_of_nonneg (dyadicSquareApprox_nonneg k (f ω)),
+      abs_sq] using dyadicSquareApprox_le_sq k (f ω)
+
+/-- If the square belongs to Lᵖ for a finite exponent, its explicit bounded dyadic
+approximations converge in Lᵖ. No finiteness assumption on the measure is needed. -/
 theorem tendsto_eLpNorm_dyadicSquareApprox_sub_sq {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} {f : Ω → ℝ} (hf : MemLp f 4 μ) :
-    Tendsto (fun k ↦ eLpNorm (fun ω ↦ dyadicSquareApprox k (f ω) - f ω ^ 2) 2 μ)
+    {μ : Measure Ω} {p : ℝ≥0∞} {f : Ω → ℝ} (hf : MemLp (fun ω ↦ f ω ^ 2) p μ)
+    (hp : p ≠ ∞) :
+    Tendsto (fun k ↦ eLpNorm (fun ω ↦ TauCeti.dyadicSquareApprox k (f ω) - f ω ^ 2) p μ)
       atTop (𝓝 0) := by
-  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by norm_num [Real.holderTriple_iff])
-  have hsq : MemLp (fun ω ↦ f ω ^ 2) 2 μ := by
-    simpa only [pow_two, Pi.mul_def] using hf.mul hf
-  have hbound (k : ℕ) (ω : Ω) :
-      ‖dyadicSquareApprox k (f ω) - f ω ^ 2‖ ≤ f ω ^ 2 := by
-    rw [Real.norm_eq_abs, abs_of_nonpos (sub_nonpos.mpr (dyadicSquareApprox_le_sq _ _))]
-    linarith [dyadicSquareApprox_nonneg k (f ω)]
-  have hmem (k : ℕ) : MemLp (fun ω ↦ dyadicSquareApprox k (f ω) - f ω ^ 2) 2 μ :=
-    hsq.mono (((dyadicSquareApprox k).measurable.comp_aemeasurable
-      hf.aestronglyMeasurable.aemeasurable).aestronglyMeasurable.sub
-        hsq.aestronglyMeasurable) (Eventually.of_forall fun ω ↦ by
-          simpa only [Real.norm_eq_abs, abs_sq] using hbound k ω)
-  have hlim := tendsto_integral_of_dominated_convergence
-    (f := fun _ : Ω ↦ (0 : ℝ)) (bound := fun ω ↦ (f ω ^ 2) ^ 2)
-    (fun k ↦ (hmem k).integrable_sq.aestronglyMeasurable) hsq.integrable_sq
-    (fun k ↦ Eventually.of_forall fun ω ↦ by
-      simpa only [Real.norm_eq_abs, abs_pow, sq_abs] using
-        pow_le_pow_left₀ (norm_nonneg _) (hbound k ω) 2)
-    (Eventually.of_forall fun ω ↦ by
-      have h := ((tendsto_dyadicSquareApprox (f ω)).sub
-        (tendsto_const_nhds (x := f ω ^ 2))).pow 2
-      rw [sub_self, zero_pow two_ne_zero] at h
-      exact h)
-  have hnorm := ENNReal.continuous_ofReal.continuousAt.tendsto.comp hlim.sqrt
-  simp only [integral_zero, Real.sqrt_zero, ENNReal.ofReal_zero] at hnorm
-  convert hnorm using 1
-  ext k
-  rw [(hmem k).eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top]
-  simp [Real.sqrt_eq_rpow, Real.norm_eq_abs]
+  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) hp
+    (Eventually.of_forall fun k ↦ (hf.dyadicSquareApprox k).aestronglyMeasurable) hf
+    (Eventually.of_forall fun k ↦ Eventually.of_forall fun ω ↦ ?_)
+    (Eventually.of_forall fun ω ↦ tendsto_dyadicSquareApprox (f ω))
+  simp only [ENNReal.coe_one, one_mul, enorm_le_iff_norm_le, Real.norm_eq_abs, abs_sq]
+  rw [abs_of_nonpos (sub_nonpos.mpr (dyadicSquareApprox_le_sq _ _))]
+  linarith [dyadicSquareApprox_nonneg k (f ω)]
 
 end MeasureTheory.MemLp
