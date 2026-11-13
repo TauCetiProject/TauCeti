@@ -6,9 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Basic
+public import Mathlib.LinearAlgebra.Basis.Prod
+public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
+import Mathlib.Tactic.Module
 import TauCeti.Algebra.Ring.NegOnePow
+import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 /-!
 # The signed Lie algebra of the norm-two shell of an even lattice
