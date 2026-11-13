@@ -31,6 +31,14 @@ namespace TauCeti.Probability
 variable {Ω : Type*} {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {X a Y : Ω → ℝ} {μ : ℝ} {v : ℝ≥0} {K : ℝ}
 
+/-- The centered Gaussian exponential normalized by half its variance has mean one. -/
+theorem integral_exp_mul_sub_gaussianReal (b : ℝ) (v : ℝ≥0) :
+    ∫ y, exp (b * y - (v : ℝ) * b ^ 2 / 2) ∂gaussianReal 0 v = 1 := by
+  simp_rw [exp_sub, integral_div]
+  have h : (∫ y, exp (b * y) ∂gaussianReal 0 v) = exp ((v : ℝ) * b ^ 2 / 2) := by
+    simpa [mgf] using congrFun (mgf_fun_id_gaussianReal (μ := 0) (v := v)) b
+  rw [h, div_self (ne_of_gt (exp_pos _))]
+
 /-- A bounded known coefficient in a Gaussian exponential can be multiplied by any
 integrable known variable without losing integrability. -/
 theorem integrable_mul_exp_of_indep_gaussian (hm : m ≤ mΩ) (hX : Measurable[m] X)
