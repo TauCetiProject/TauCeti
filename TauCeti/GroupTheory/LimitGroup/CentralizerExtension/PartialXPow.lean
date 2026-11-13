@@ -114,6 +114,11 @@ variable {S}
 theorem conj_mem_iff (g : P) {x : P} : g * x * g⁻¹ ∈ S.dom ↔ x ∈ S.dom :=
   ⟨fun h ↦ by simpa [mul_assoc] using S.conj_mem g⁻¹ h, S.conj_mem g⟩
 
+/-- An element is in the domain exactly when its inverse is. -/
+@[simp]
+protected theorem inv_mem_iff {x : P} : x⁻¹ ∈ S.dom ↔ x ∈ S.dom :=
+  ⟨fun h ↦ by simpa using S.inv_mem h, S.inv_mem⟩
+
 /-- The domain is closed under natural powers. -/
 protected theorem pow_mem {x : P} (hx : x ∈ S.dom) (n : ℕ) : x ^ n ∈ S.dom := by
   induction n with
@@ -122,15 +127,34 @@ protected theorem pow_mem {x : P} (hx : x ∈ S.dom) (n : ℕ) : x ^ n ∈ S.dom
 
 /-- The domain is closed under integer powers. -/
 protected theorem zpow_mem {x : P} (hx : x ∈ S.dom) (n : ℤ) : x ^ n ∈ S.dom := by
-  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg n
-  · simpa using S.pow_mem hx n
-  · simpa using S.inv_mem (S.pow_mem hx n)
+  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg n <;> simpa using S.pow_mem hx n
 
 variable (S) in
 /-- The `t`-th power of the identity is the identity. -/
 @[simp]
 theorem xpow_one : S.xpow 1 = 1 := by
   simpa using S.xpow_mul (Commute.one_left (1 : P))
+
+variable (S) in
+/-- The `t`-th power of an inverse is the inverse of the `t`-th power. -/
+@[simp]
+theorem xpow_inv (x : P) : S.xpow x⁻¹ = (S.xpow x)⁻¹ :=
+  eq_inv_of_mul_eq_one_right <| by
+    rw [← S.xpow_mul (Commute.refl x).inv_right, mul_inv_cancel, xpow_one]
+
+variable (S) in
+/-- The `t`-th power of a natural power is the natural power of the `t`-th power. -/
+@[simp]
+theorem xpow_pow (x : P) (n : ℕ) : S.xpow (x ^ n) = S.xpow x ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, S.xpow_mul ((Commute.refl x).pow_left n), ih, pow_succ]
+
+variable (S) in
+/-- The `t`-th power of an integer power is the integer power of the `t`-th power. -/
+@[simp]
+theorem xpow_zpow (x : P) (n : ℤ) : S.xpow (x ^ n) = S.xpow x ^ n := by
+  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg n <;> simp
 
 variable (S) in
 /-- An element commutes with its `t`-th power. -/
@@ -294,6 +318,28 @@ theorem map_dom {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) :
 theorem map_xpow_apply {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) (x : P) :
     (S.map e).xpow (e x) = e (S.xpow x) := by
   simp [map]
+
+/-- Transport along the identity is the identity. -/
+@[simp]
+theorem map_refl (S : PartialXPow P) : S.map (MulEquiv.refl P) = S := by
+  ext <;> simp [map]
+
+/-- Transport along a composite of isomorphisms is the composite of the transports. -/
+theorem map_map {Q R : Type*} [Group Q] [Group R] (S : PartialXPow P) (e : P ≃* Q)
+    (f : Q ≃* R) : (S.map e).map f = S.map (e.trans f) := by
+  ext <;> simp [map]
+
+/-- Transport along an isomorphism and back is the identity. -/
+@[simp]
+theorem map_symm_map {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) :
+    (S.map e).map e.symm = S := by
+  rw [map_map, MulEquiv.self_trans_symm, map_refl]
+
+/-- Transport along the inverse of an isomorphism and back is the identity. -/
+@[simp]
+theorem map_map_symm {Q : Type*} [Group Q] (S : PartialXPow Q) (e : P ≃* Q) :
+    (S.map e.symm).map e = S := by
+  rw [map_map, MulEquiv.symm_trans_self, map_refl]
 
 /-- An isomorphism carries the top elements of a partial exponentiation exactly to the top
 elements of the transported one. -/
