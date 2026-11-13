@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
-# The regularized hypergeometric function `₀F₁`
+# The regularized hypergeometric series, `₀F₁` and Kummer's function
 
 Mathlib defines the regularized hypergeometric function `Complex.regularizedHGFun a b` as the sum
 of its power series. This file records that series as a `HasSum` statement and develops the
@@ -24,6 +24,10 @@ For real `b` and real `y` the value is real, given by the real series `∑ yⁿ 
 it is jointly continuous in `(b, y)` and has derivative `₀F₁(; b + 1; y)` in `y`.
 Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a hypothesis on `b`.
 
+For the regularized Kummer function `𝐌(α, β, z) = ₁F₁(α; β; z) / Γ(β)`, the case `a = {α}`,
+`b = {β}`, the file proves two three-term relations, valid for all complex parameters, which
+produce the explicit solution of the recurrence of the continued fraction DLMF 8.9.1.
+
 ## Main results
 
 * `Complex.hasSum_regularizedHGFun` — the power series of `regularizedHGFun a b` converges to it
@@ -32,6 +36,10 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   derivative.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
+* `Complex.regularizedHGFun_singleton_eq_mul_add_mul` and
+  `Complex.regularizedHGFun_singleton_eq_mul_sub_mul` — the three-term relations
+  `𝐌(α, β, z) = β 𝐌(α, β + 1, z) + α z 𝐌(α + 1, β + 2, z)` and
+  `𝐌(α, β, z) = β 𝐌(α + 1, β + 1, z) − (β − α) z 𝐌(α + 1, β + 2, z)`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
@@ -102,6 +110,71 @@ theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.car
     rw [norm_mul, norm_mul, norm_pow, norm_pow, Complex.norm_real,
       Real.norm_of_nonneg (by positivity)]
     gcongr
+
+/-- A three-term relation between regularized hypergeometric functions follows from the
+corresponding relation between their coefficients: if
+`C(a, b; 0) = c C(a₁, b₁; 0)` and `C(a, b; n + 1) = c C(a₁, b₁; n + 1) + d C(a₂, b₂; n)`, then
+`F(a; b; z) = c F(a₁; b₁; z) + d z F(a₂; b₂; z)`. -/
+private theorem regularizedHGFun_eq_mul_add_mul_of_coeff {a b a₁ b₁ a₂ b₂ : Multiset ℂ}
+    (h : a.card ≤ b.card) (h₁ : a₁.card ≤ b₁.card) (h₂ : a₂.card ≤ b₂.card) {c d : ℂ}
+    (h0 : regularizedHGFunCoeff a b 0 = c * regularizedHGFunCoeff a₁ b₁ 0)
+    (hs : ∀ n, regularizedHGFunCoeff a b (n + 1) =
+      c * regularizedHGFunCoeff a₁ b₁ (n + 1) + d * regularizedHGFunCoeff a₂ b₂ n) (z : ℂ) :
+    regularizedHGFun a b z = c * regularizedHGFun a₁ b₁ z + d * z * regularizedHGFun a₂ b₂ z := by
+  have hF := (hasSum_nat_add_iff' 1).mpr (hasSum_regularizedHGFun h z)
+  have hF₁ := (hasSum_nat_add_iff' 1).mpr (hasSum_regularizedHGFun h₁ z)
+  have hF₂ := hasSum_regularizedHGFun h₂ z
+  simp only [Finset.range_one, Finset.sum_singleton, pow_zero, mul_one] at hF hF₁
+  have := hF.unique (((hF₁.mul_left c).add (hF₂.mul_left (d * z))).congr_fun fun n => by
+    rw [hs, pow_succ]
+    ring)
+  linear_combination this + h0
+
+/-- The coefficients of the regularized Kummer function `𝐌(α, β, z) = ₁F₁(α; β; z) / Γ(β)` are
+`(α)ₙ / (n! Γ(β + n))`. -/
+theorem regularizedHGFunCoeff_singleton_singleton (α β : ℂ) (n : ℕ) :
+    regularizedHGFunCoeff {α} {β} n = (ascPochhammer ℂ n).eval α / (n ! * Gamma (β + n)) := by
+  simp [regularizedHGFunCoeff]
+
+/-- A three-term relation of the regularized Kummer function, for all complex parameters:
+`𝐌(α, β, z) = β 𝐌(α, β + 1, z) + α z 𝐌(α + 1, β + 2, z)`. For `α = 0` it is the case
+`1 / Γ(β) = β / Γ(β + 1)` of the Gamma recurrence. -/
+theorem regularizedHGFun_singleton_eq_mul_add_mul (α β z : ℂ) :
+    regularizedHGFun {α} {β} z =
+      β * regularizedHGFun {α} {β + 1} z + α * z * regularizedHGFun {α + 1} {β + 2} z := by
+  refine regularizedHGFun_eq_mul_add_mul_of_coeff (by simp) (by simp) (by simp) ?_ (fun n => ?_) z
+  · simpa [regularizedHGFunCoeff_singleton_singleton] using
+      one_div_Gamma_eq_self_mul_one_div_Gamma_add_one β
+  · have hP : (ascPochhammer ℂ (n + 1)).eval α = α * (ascPochhammer ℂ n).eval (α + 1) := by
+      simp [ascPochhammer_succ_left]
+    have hG := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (β + (n + 1))
+    simp only [regularizedHGFunCoeff_singleton_singleton, hP, Nat.factorial_succ, div_eq_mul_inv,
+      mul_inv]
+    push_cast
+    rw [show β + 1 + (n + 1) = β + (n + 1) + 1 by ring, show β + 2 + n = β + (n + 1) + 1 by ring,
+      hG]
+    field_simp
+
+/-- A three-term relation of the regularized Kummer function, for all complex parameters:
+`𝐌(α, β, z) = β 𝐌(α + 1, β + 1, z) − (β − α) z 𝐌(α + 1, β + 2, z)`. -/
+theorem regularizedHGFun_singleton_eq_mul_sub_mul (α β z : ℂ) :
+    regularizedHGFun {α} {β} z =
+      β * regularizedHGFun {α + 1} {β + 1} z -
+        (β - α) * z * regularizedHGFun {α + 1} {β + 2} z := by
+  rw [sub_eq_add_neg, ← neg_mul, ← neg_mul]
+  refine regularizedHGFun_eq_mul_add_mul_of_coeff (by simp) (by simp) (by simp) ?_ (fun n => ?_) z
+  · simpa [regularizedHGFunCoeff_singleton_singleton] using
+      one_div_Gamma_eq_self_mul_one_div_Gamma_add_one β
+  · have hP : (ascPochhammer ℂ (n + 1)).eval α = α * (ascPochhammer ℂ n).eval (α + 1) := by
+      simp [ascPochhammer_succ_left]
+    have hG := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (β + (n + 1))
+    simp only [regularizedHGFunCoeff_singleton_singleton, hP, ascPochhammer_succ_eval,
+      Nat.factorial_succ, div_eq_mul_inv, mul_inv]
+    push_cast
+    rw [show β + 1 + (n + 1) = β + (n + 1) + 1 by ring, show β + 2 + n = β + (n + 1) + 1 by ring,
+      hG]
+    field_simp
+    ring
 
 /-- The coefficients of the Kummer function `𝐌(1, b, z) = ₁F₁(1; b; z) / Γ(b)` are
 `1 / Γ(b + n)`. -/
