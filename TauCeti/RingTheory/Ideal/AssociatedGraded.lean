@@ -611,37 +611,20 @@ theorem mvPolynomialHom_homogeneousComponent (ha : ∀ i, a i ∈ I)
     mvPolynomialHom I ha (homogeneousComponent ν P) =
       DirectSum.of I.GradedPiece ν (mvPolynomialHom I ha P ν) := by
   obtain ⟨F, rfl⟩ := MvPolynomial.map_surjective _ Ideal.Quotient.mk_surjective P
-  have hmap (μ : ℕ) : homogeneousComponent μ (F.map (Ideal.Quotient.mk I)) =
-      (homogeneousComponent μ F).map (Ideal.Quotient.mk I) := by
-    ext e
-    simp only [coeff_map, coeff_homogeneousComponent]
-    split_ifs <;> simp
-  rw [hmap]
-  by_cases hν : ν ≤ F.totalDegree
-  · rw [mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _)]
-    conv_rhs => rw [← sum_homogeneousComponent F]
-    rw [map_sum, map_sum, DirectSum.sum_apply, Finset.sum_eq_single ν]
-    · rw [mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _),
-        mk_apply, DirectSum.of_eq_same]
-    · intro μ _ hμ
-      rw [mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _),
-        mk_apply, DirectSum.of_eq_of_ne _ _ _ (Ne.symm hμ)]
-    · simp only [Finset.mem_range]
-      omega
-  · rw [homogeneousComponent_eq_zero ν F (by omega)]
-    simp only [map_zero]
-    conv_rhs => rw [← sum_homogeneousComponent F]
-    simp only [map_sum, DirectSum.sum_apply]
-    have hzero (μ : ℕ) (hμ : μ ∈ Finset.range (F.totalDegree + 1)) :
-        mvPolynomialHom I ha ((homogeneousComponent μ F).map (Ideal.Quotient.mk I)) ν = 0 := by
-      rw [mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _),
-        mk_apply, DirectSum.of_eq_of_ne]
-      simp only [Finset.mem_range] at hμ
-      omega
-    symm
-    apply Finset.sum_eq_zero
-    intro μ hμ
-    rw [hzero μ hμ, map_zero]
+  rw [← map_homogeneousComponent,
+    mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _), mk_apply]
+  conv_rhs => rw [← sum_homogeneousComponent F]
+  rw [map_sum, map_sum, DirectSum.sum_apply]
+  congr 1
+  rw [Finset.sum_eq_single ν]
+  · rw [mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _),
+      mk_apply, DirectSum.of_eq_same]
+  · intro μ _ hμ
+    rw [mvPolynomialHom_map_of_isHomogeneous ha (homogeneousComponent_isHomogeneous _ _),
+      mk_apply, DirectSum.of_eq_of_ne _ _ _ (Ne.symm hμ)]
+  · intro hν
+    rw [homogeneousComponent_eq_zero ν F (by simp only [Finset.mem_range] at hν; omega)]
+    simp
 
 /-- A homogeneous polynomial maps into the summand of the same degree. -/
 theorem mvPolynomialHom_of_isHomogeneous (ha : ∀ i, a i ∈ I) {ν : ℕ}

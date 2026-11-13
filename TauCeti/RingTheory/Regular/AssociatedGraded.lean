@@ -157,7 +157,7 @@ private theorem coeff_mem_of_eval_mem_pow_succ_aux :
     intro ν F
     refine coeff_mem_of_eval_mem_pow_succ_of_castSucc (ih h.1) fun y hy ↦ ?_
     rw [← Ideal.Quotient.eq_zero_iff_mem] at hy ⊢
-    exact hx (by beta_reduce; rwa [mul_zero, ← map_mul])
+    exact hx.mul_left_eq_zero_iff.mp (by rwa [← map_mul])
 
 /-- **A weakly regular sequence is quasi-regular.** If `rs` is weakly regular on `R` and `F` is a
 homogeneous polynomial of degree `ν` whose value at `rs` lies in `(rs)ᵛ⁺¹`, then every coefficient
@@ -181,21 +181,13 @@ theorem mvPolynomialHom_injective {rs : List R} (h : IsWeaklyRegular R rs) {I : 
   -- Reading off degree `ν`, the `ν`-th homogeneous component of `F` has value in `Iᵛ⁺¹`.
   have hcomp (ν : ℕ) :
       (homogeneousComponent ν F).eval (fun i : Fin rs.length ↦ rs[i]) ∈ I ^ (ν + 1) := by
-    by_cases hν : ν ≤ F.totalDegree
-    · have := DFunLike.congr_fun hP ν
-      rw [← sum_homogeneousComponent F, map_sum, map_sum, DirectSum.zero_apply,
-        DirectSum.sum_apply, Finset.sum_eq_single ν] at this
-      · rwa [AssociatedGraded.mvPolynomialHom_map_of_isHomogeneous ha
-          (homogeneousComponent_isHomogeneous _ _), AssociatedGraded.mk_apply,
-          DirectSum.of_eq_same, gradedPiece_mk_eq_zero_iff] at this
-      · intro μ _ hμ
-        rw [AssociatedGraded.mvPolynomialHom_map_of_isHomogeneous ha
-          (homogeneousComponent_isHomogeneous _ _), AssociatedGraded.mk_apply,
-          DirectSum.of_eq_of_ne _ _ _ (Ne.symm hμ)]
-      · simp only [Finset.mem_range]
-        omega
-    · rw [homogeneousComponent_eq_zero _ _ (by omega), map_zero]
-      exact zero_mem _
+    have hν := AssociatedGraded.mvPolynomialHom_homogeneousComponent ha ν
+      (F.map (Ideal.Quotient.mk I))
+    rw [← map_homogeneousComponent,
+      AssociatedGraded.mvPolynomialHom_map_of_isHomogeneous ha
+        (homogeneousComponent_isHomogeneous _ _), hP, DirectSum.zero_apply, map_zero,
+      AssociatedGraded.mk_eq_zero_iff] at hν
+    exact hν
   have hle : ofList rs ≤ I := span_le.mpr fun r hr ↦ by
     obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hr
     exact ha ⟨i, hi⟩
@@ -230,13 +222,38 @@ theorem associatedGradedEquiv_def {rs : List R} (h : IsWeaklyRegular R rs) {I : 
   (rfl)
 
 /-- `associatedGradedEquiv` is `Ideal.AssociatedGraded.mvPolynomialHom`. -/
-@[simp]
 theorem associatedGradedEquiv_apply {rs : List R} (h : IsWeaklyRegular R rs) {I : Ideal R}
     (hI : ofList rs = I) (P : MvPolynomial (Fin rs.length) (R ⧸ I)) :
     h.associatedGradedEquiv hI P = AssociatedGraded.mvPolynomialHom I
       (fun i ↦ by rw [← hI]; exact subset_span (List.getElem_mem _) :
         ∀ i : Fin rs.length, rs[i] ∈ I) P :=
   (rfl)
+
+/-- The comparison sends each variable to the degree-one class of its generator. -/
+@[simp]
+theorem associatedGradedEquiv_X {rs : List R} (h : IsWeaklyRegular R rs) {I : Ideal R}
+    (hI : ofList rs = I) (i : Fin rs.length) :
+    h.associatedGradedEquiv hI (X i) = AssociatedGraded.mk I 1
+      ⟨rs[(i : ℕ)], by rw [pow_one, ← hI]; exact subset_span (List.getElem_mem _)⟩ := by
+  rw [associatedGradedEquiv_apply, AssociatedGraded.mvPolynomialHom_X]
+  simp
+
+/-- The comparison sends constants to their degree-zero scalar classes. -/
+@[simp]
+theorem associatedGradedEquiv_C {rs : List R} (h : IsWeaklyRegular R rs) {I : Ideal R}
+    (hI : ofList rs = I) (c : R ⧸ I) :
+    h.associatedGradedEquiv hI (C c) = algebraMap (R ⧸ I) I.AssociatedGraded c :=
+  (h.associatedGradedEquiv hI).commutes c
+
+/-- The comparison sends a reduced homogeneous form to the class of its value. -/
+theorem associatedGradedEquiv_map_of_isHomogeneous {rs : List R}
+    (h : IsWeaklyRegular R rs) {I : Ideal R} (hI : ofList rs = I) {ν : ℕ}
+    {F : MvPolynomial (Fin rs.length) R} (hF : F.IsHomogeneous ν) :
+    h.associatedGradedEquiv hI (F.map (Ideal.Quotient.mk I)) = AssociatedGraded.mk I ν
+      ⟨F.eval (fun i : Fin rs.length ↦ rs[(i : ℕ)]), hF.eval_mem_pow
+        (fun i : Fin rs.length ↦ by rw [← hI]; exact subset_span (List.getElem_mem _))⟩ := by
+  rw [associatedGradedEquiv_apply, AssociatedGraded.mvPolynomialHom_map_of_isHomogeneous _ hF]
+  simp
 
 /-- The comparison isomorphism preserves homogeneous components. -/
 theorem associatedGradedEquiv_homogeneousComponent {rs : List R} (h : IsWeaklyRegular R rs)

@@ -261,6 +261,14 @@ section CommSemiring
 
 variable [CommSemiring R]
 
+/-- Changing coefficients commutes with taking a homogeneous component. -/
+theorem map_homogeneousComponent {S : Type*} [CommSemiring S] (f : R →+* S)
+    (n : ℕ) (p : MvPolynomial σ R) :
+    (homogeneousComponent n p).map f = homogeneousComponent n (p.map f) := by
+  ext e
+  simp only [coeff_map, coeff_homogeneousComponent]
+  split_ifs <;> simp
+
 /-- The homogeneous component in the total degree of a nonzero polynomial is nonzero. -/
 theorem homogeneousComponent_totalDegree_ne_zero (p : MvPolynomial σ R) (hp : p ≠ 0) :
     homogeneousComponent p.totalDegree p ≠ 0 := by
