@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Uniqueness
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Convex.Jensen
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -67,14 +66,9 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_self
       (‖alongCurveWithin (leviCivitaConnection I M) γ V s t‖ ^ 2 -
         ⟪(leviCivitaConnection I M).curvatureTensor (γ t) (V t)
           (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t), V t⟫_ℝ) s t := by
-  have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
-  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.isGeodesicCurveOn.mdifferentiableOn t ht)
-    (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
-    (h.differentiableWithinAt_sectionCoord ht)
-  convert hd using 1
-  rw [h.alongCurveWithin_alongCurveWithin_eq ht, inner_neg_left,
-    real_inner_self_eq_norm_sq]
-  ring
+  simpa only [real_inner_self_eq_norm_sq] using
+    h.hasDerivWithinAt_inner_alongCurveWithin ht
+      ((h.contMDiffOn t ht).mdifferentiableWithinAt (by norm_num))
 
 /-- The squared norm of a Jacobi field is convex on a preconnected parameter set if every
 sectional curvature along its geodesic is nonpositive. Curvature is tested only on independent
