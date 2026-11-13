@@ -241,8 +241,8 @@ lemma iSupIndep_iInf_eigenspace {ι : Type*} (f : ι → Module.End K V) :
 /-- **Summands of a spanning family with distinct joint scalars are joint eigenspaces.** If the
 `W j` span `V`, every `W j` consists of joint eigenvectors of the family `f` with eigenvalues
 `g j`, and `g` is injective, then the joint eigenspace of `f` for `g k` is exactly `W k`. This is
-the joint form of `Module.End.eigenspace_eq_of_iSup_eq_top`: the scalars of a single operator
-need not separate the summands, only those of the whole family. -/
+the joint form of the eigenspace case (`n = 1`) of `Module.End.genEigenspace_eq_of_iSup_eq_top`:
+the scalars of a single operator need not separate the summands, only those of the whole family. -/
 theorem iInf_eigenspace_eq_of_iSup_eq_top {ι κ : Type*} (f : ι → Module.End K V)
     {W : κ → Submodule K V} {g : κ → ι → K} (hW : ∀ j, W j ≤ ⨅ i, (f i).eigenspace (g j i))
     (htop : ⨆ j, W j = ⊤) (hg : Function.Injective g) (k : κ) :

@@ -152,21 +152,25 @@ section Differentiable
 variable [IsContMDiffRiemannianBundle I 1 F V]
 
 omit [IsContMDiffRiemannianBundle I n F V] in
-/-- Fiberwise Gram–Schmidt preserves differentiability at a linearly independent family. -/
-theorem MDifferentiableAt.gramSchmidt_bundle
-    (hv : ∀ i, MDiffAt (T% (v i)) x)
-    (hli : LinearIndependent ℝ (fun i ↦ v i x)) (j : ι) :
+/-- Fiberwise Gram–Schmidt is differentiable at every point where the input sections up to and
+including the index are differentiable and the input vectors strictly before the index are linearly
+independent. The input vector at the index itself may lie in their span. -/
+theorem MDifferentiableAt.gramSchmidt_bundle (j : ι)
+    (hv : ∀ i ≤ j, MDiffAt (T% (v i)) x)
+    (hli : LinearIndepOn ℝ (fun i ↦ v i x) (Set.Iio j)) :
     MDiffAt (T% (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j)) x := by
   classical
   induction j using WellFoundedLT.induction with
   | ind j ih =>
-    have hg (i : ι) (hi : i < j) := ih i hi
+    have hg (i : ι) (hi : i < j) :=
+      ih i hi (fun k hk ↦ hv k (hk.trans hi.le)) (hli.mono (Set.Iio_subset_Iio hi.le))
     have hc (i : ι) (hi : i < j) :
         MDiffAt (fun y ↦ inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i) (v j y) /
           inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i)
             (gramSchmidt ℝ (fun k ↦ v k y) i)) x :=
-      ((hg i hi).inner_bundle (hv j)).div ((hg i hi).inner_bundle (hg i hi))
-        (inner_self_ne_zero.mpr (gramSchmidt_ne_zero i hli))
+      ((hg i hi).inner_bundle (hv j le_rfl)).div ((hg i hi).inner_bundle (hg i hi))
+        (inner_self_ne_zero.mpr (gramSchmidt_ne_zero_coe i
+          (hli.mono (Set.Iic_subset_Iio.2 hi)).linearIndependent))
     have hformula : (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j) =
         v j - ∑ i ∈ Finset.Iio j,
           (fun y ↦ inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i) (v j y) /
@@ -176,7 +180,7 @@ theorem MDifferentiableAt.gramSchmidt_bundle
       funext y
       simp only [Pi.sub_apply, Finset.sum_apply, real_inner_self_eq_norm_sq]
       exact eq_sub_of_add_eq (gramSchmidt_def'' ℝ (fun i ↦ v i y) j).symm
-    have hs := mdifferentiableAt_sub_section (hv j) (MDifferentiableAt.sum_section fun i hi ↦
+    have hs := mdifferentiableAt_sub_section (hv j le_rfl) (MDifferentiableAt.sum_section fun i hi ↦
       (hc i (Finset.mem_Iio.mp hi)).smul_section (hg i (Finset.mem_Iio.mp hi)))
     apply hs.congr_of_eventuallyEq
     apply Filter.Eventually.of_forall
