@@ -208,41 +208,6 @@ theorem powSaturated_comap_subtype_closure_iff :
     exact ⟨fun hx' => (SetLike.ext_iff.mp h x).mp (Submonoid.mem_inf.mpr ⟨hx', hx⟩),
       fun hx' => s.le_powSaturation hx'⟩
 
-/-- The canonical multiplicative equivalence identifying the saturation of `s` inside
-`Subgroup.closure (s : Set G)` with the saturation of the pullback of `s` to
-`Subgroup.closure (s : Set G)`. -/
-@[to_additive /-- The canonical additive equivalence identifying the saturation of `s` inside
-`AddSubgroup.closure (s : Set G)` with the saturation of the pullback of `s` to
-`AddSubgroup.closure (s : Set G)`. -/]
-def powSaturationInfClosureEquiv :
-    ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid) ≃*
-      ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation where
-  toFun x := ⟨⟨x.1, x.2.2⟩, by rw [powSaturation_comap]; exact x.2.1⟩
-  invFun z := ⟨z.1.1, Submonoid.mem_inf.mpr
-    ⟨(SetLike.ext_iff.mp (s.powSaturation_comap (Subgroup.closure (s : Set G)).subtype) z.1).mp
-      z.2, z.1.2⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-
-/-- `powSaturationInfClosureEquiv` preserves the underlying element of the ambient group. -/
-@[to_additive (attr := simp) /-- `nsmulSaturationInfClosureEquiv` preserves the underlying element
-of the ambient additive group. -/]
-theorem coe_coe_powSaturationInfClosureEquiv_apply
-    (x : ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid)) :
-    (((s.powSaturationInfClosureEquiv x :
-        ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation) :
-      Subgroup.closure (s : Set G)) : G) = x :=
-  (rfl)
-
-/-- `powSaturationInfClosureEquiv.symm` preserves the underlying element of the ambient group. -/
-@[to_additive (attr := simp) /-- `nsmulSaturationInfClosureEquiv.symm` preserves the underlying
-element of the ambient additive group. -/]
-theorem coe_powSaturationInfClosureEquiv_symm_apply
-    (z : ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation) :
-    (s.powSaturationInfClosureEquiv.symm z : G) = z :=
-  (rfl)
-
 /-- The canonical inclusion of the saturation of `s` inside `Subgroup.closure (s : Set G)` into
 `Subgroup.closure (s : Set G)`. -/
 @[to_additive AddSubmonoid.nsmulSaturationInfClosureToGroupClosure
@@ -272,6 +237,55 @@ theorem powSaturationInfClosureToGroupClosure_injective :
   ((s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid).subtype.injective_codRestrict
     _ _).mpr Subtype.val_injective
 
+/-- The range of `powSaturationInfClosureToGroupClosure` inside `Subgroup.closure (s : Set G)` is
+the saturation of the pullback of `s` to `Subgroup.closure (s : Set G)`. -/
+@[to_additive (attr := simp) AddSubmonoid.mrange_nsmulSaturationInfClosureToGroupClosure
+/-- The range of `nsmulSaturationInfClosureToGroupClosure` inside `AddSubgroup.closure (s : Set G)`
+is the saturation of the pullback of `s` to `AddSubgroup.closure (s : Set G)`. -/]
+theorem mrange_powSaturationInfClosureToGroupClosure :
+    MonoidHom.mrange s.powSaturationInfClosureToGroupClosure =
+      (s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation := by
+  ext ⟨x, hx⟩
+  rw [powSaturation_comap, mem_comap, Subgroup.coe_subtype]
+  exact ⟨fun ⟨y, hy⟩ => (congrArg Subtype.val hy) ▸ y.2.1,
+    fun hx' => ⟨⟨x, mem_inf.mpr ⟨hx', hx⟩⟩, rfl⟩⟩
+
+/-- The canonical multiplicative equivalence identifying the saturation of `s` inside
+`Subgroup.closure (s : Set G)` with the saturation of the pullback of `s` to
+`Subgroup.closure (s : Set G)`. -/
+@[to_additive /-- The canonical additive equivalence identifying the saturation of `s` inside
+`AddSubgroup.closure (s : Set G)` with the saturation of the pullback of `s` to
+`AddSubgroup.closure (s : Set G)`. -/]
+def powSaturationInfClosureEquiv :
+    ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid) ≃*
+      ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation where
+  toFun x := ⟨s.powSaturationInfClosureToGroupClosure x, by rw [powSaturation_comap]; exact x.2.1⟩
+  invFun z := ⟨z.1.1, Submonoid.mem_inf.mpr
+    ⟨(SetLike.ext_iff.mp (s.powSaturation_comap (Subgroup.closure (s : Set G)).subtype) z.1).mp
+      z.2, z.1.2⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+
+/-- `powSaturationInfClosureEquiv` agrees with `powSaturationInfClosureToGroupClosure` inside
+`Subgroup.closure (s : Set G)`. -/
+@[to_additive (attr := simp)
+/-- `nsmulSaturationInfClosureEquiv` agrees with `nsmulSaturationInfClosureToGroupClosure` inside
+`AddSubgroup.closure (s : Set G)`. -/]
+theorem coe_powSaturationInfClosureEquiv_apply
+    (x : ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid)) :
+    (s.powSaturationInfClosureEquiv x : Subgroup.closure (s : Set G)) =
+      s.powSaturationInfClosureToGroupClosure x :=
+  (rfl)
+
+/-- `powSaturationInfClosureEquiv.symm` preserves the underlying element of the ambient group. -/
+@[to_additive (attr := simp) /-- `nsmulSaturationInfClosureEquiv.symm` preserves the underlying
+element of the ambient additive group. -/]
+theorem coe_powSaturationInfClosureEquiv_symm_apply
+    (z : ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation) :
+    (s.powSaturationInfClosureEquiv.symm z : G) = z :=
+  (rfl)
+
 /-- Applying `powSaturationInfClosureToGroupClosure` to `powSaturationInfClosureEquiv.symm z`
 recovers the underlying element of `Subgroup.closure (s : Set G)`. -/
 @[to_additive (attr := simp)
@@ -281,6 +295,18 @@ recovers the underlying element of `AddSubgroup.closure (s : Set G)`. -/]
 theorem powSaturationInfClosureToGroupClosure_powSaturationInfClosureEquiv_symm_apply
     (z : ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation) :
     s.powSaturationInfClosureToGroupClosure (s.powSaturationInfClosureEquiv.symm z) = z :=
+  (rfl)
+
+/-- `s.powSaturationInfClosureEquiv.symm` recovers `x` from
+`s.powSaturationInfClosureToGroupClosure x`. -/
+@[to_additive (attr := simp)
+/-- `s.nsmulSaturationInfClosureEquiv.symm` recovers `x` from
+`s.nsmulSaturationInfClosureToGroupClosure x`. -/]
+theorem powSaturationInfClosureEquiv_symm_apply_mk
+    (x : ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid))
+    (hx : s.powSaturationInfClosureToGroupClosure x ∈
+      (s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation) :
+    s.powSaturationInfClosureEquiv.symm ⟨s.powSaturationInfClosureToGroupClosure x, hx⟩ = x :=
   (rfl)
 
 end Group
@@ -308,6 +334,18 @@ theorem nsmulSaturationInfClosureToGroupClosure_inclusion_apply (s : S) :
     S.nsmulSaturationInfClosureToGroupClosure
       (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) s) =
       S.toGroupClosure s := by
+  ext
+  simp
+
+/-- `nsmulSaturationInfClosureEquiv` maps an element coming from `S` to the inclusion of
+`S.toGroupClosureEquiv s` into the saturation of the pullback of `S` to
+`AddSubgroup.closure (S : Set G)`. -/
+@[simp]
+theorem nsmulSaturationInfClosureEquiv_inclusion_apply (s : S) :
+    S.nsmulSaturationInfClosureEquiv
+        (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) s) =
+      inclusion (S.comap (AddSubgroup.closure (S : Set G)).subtype).le_nsmulSaturation
+        (S.toGroupClosureEquiv s) := by
   ext
   simp
 

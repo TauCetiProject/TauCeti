@@ -122,6 +122,14 @@ theorem groupClosureToFractionRing_mapDomain_toGroupClosure (f : AddMonoidAlgebr
   rw [← mapDomainRingHom_apply (R := R) S.toGroupClosure]
   exact IsLocalization.map_eq (fun _ hx => mrange_of_le_nonZeroDivisors hx) f
 
+/-- Composing `groupClosureToFractionRing` with `mapDomainRingHom R S.toGroupClosure` recovers
+`algebraMap (R[S]) K`. -/
+@[simp]
+theorem groupClosureToFractionRing_comp_mapDomainRingHom_toGroupClosure :
+    (groupClosureToFractionRing S R K).comp (mapDomainRingHom R S.toGroupClosure) =
+      algebraMap (AddMonoidAlgebra R S) K :=
+  RingHom.ext (groupClosureToFractionRing_mapDomain_toGroupClosure S R K)
+
 /-- `groupClosureToFractionRing` maps a monomial in `S` to its image under `algebraMap (R[S]) K`. -/
 @[simp]
 theorem groupClosureToFractionRing_single_toGroupClosure (s : S) (r : R) :
@@ -149,16 +157,6 @@ theorem groupClosureToFractionRing_single_sub_toGroupClosure (a b : S) (r : R) :
     ← groupClosureToFractionRing_single_toGroupClosure S R K a r, ← map_mul, single_mul_single,
     sub_add_cancel, mul_one]
 
-/-- `groupClosureToFractionRing` is injective. -/
-theorem groupClosureToFractionRing_injective :
-    Function.Injective (groupClosureToFractionRing S R K) := by
-  let := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  refine (S.isLocalization_addMonoidAlgebra_groupClosure R).injective_of_map_algebraMap_zero _ _
-    fun a ha => ?_
-  rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply,
-    groupClosureToFractionRing_mapDomain_toGroupClosure] at ha
-  rw [(map_eq_zero_iff _ (IsFractionRing.injective (AddMonoidAlgebra R S) K)).mp ha, map_zero]
-
 /-- For any commutative ring `R`, any fraction ring `K` of `R[S]` is also a fraction ring of
 `R[AddSubgroup.closure (S : Set G)]` along `groupClosureToFractionRing`. -/
 theorem isFractionRing_groupClosure :
@@ -175,5 +173,12 @@ theorem isFractionRing_groupClosure :
   have := S.isLocalization_addMonoidAlgebra_groupClosure R
   exact IsFractionRing.isFractionRing_of_isLocalization (MonoidHom.mrange (of R S))
     (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K mrange_of_le_nonZeroDivisors
+
+/-- `groupClosureToFractionRing` is injective. -/
+theorem groupClosureToFractionRing_injective :
+    Function.Injective (groupClosureToFractionRing S R K) := by
+  let := (groupClosureToFractionRing S R K).toAlgebra
+  have := isFractionRing_groupClosure S R K
+  exact IsFractionRing.injective (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K
 
 end AddMonoidAlgebra

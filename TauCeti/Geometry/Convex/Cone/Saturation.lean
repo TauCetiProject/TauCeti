@@ -234,8 +234,7 @@ theorem FG.mem_nsmulSaturation_iff_forall_nonneg_of_mem_closure {S : AddSubmonoi
     x ∈ S.nsmulSaturation ↔
       ∀ m : AddSubgroup.closure (S : Set G) →+ ℤ,
         (∀ s : S, 0 ≤ m (S.toGroupClosure s)) → 0 ≤ m ⟨x, hx⟩ := by
-  have := hS.moduleFinite_addSubgroupClosure
-  have : Module.Free ℤ (AddSubgroup.closure (S : Set G)) := Module.free_of_finite_type_torsion_free'
+  have := hS.addSubgroupClosure
   have hiff := hS.comap_subtype_closure.mem_nsmulSaturation_iff_forall_nonneg (x := ⟨x, hx⟩)
   rw [nsmulSaturation_comap, mem_comap, AddSubgroup.coe_subtype] at hiff
   refine hiff.trans ⟨fun h m hm => h m fun y hy => ?_, fun h m hm => ?_⟩
