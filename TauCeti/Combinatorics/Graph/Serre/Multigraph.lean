@@ -300,8 +300,26 @@ variable {Γ} in
     Γ.endpointGraph O ≤ Γ.endpointGraph O' :=
   ⟨subset_rfl, fun _ _ _ hl => ⟨h hl.1, hl.2⟩⟩
 
+variable {Γ} in
+/-- The multigraph of the darts in `O` is a subgraph of that of the darts in `O'` exactly when
+`O ⊆ O'`. -/
+@[simp, grind =] theorem endpointGraph_le_endpointGraph_iff {O O' : Set Γ.E} :
+    Γ.endpointGraph O ≤ Γ.endpointGraph O' ↔ O ⊆ O' :=
+  ⟨fun h => by simpa using h.edgeSet_mono, endpointGraph_mono⟩
+
+variable {Γ} in
+/-- Distinct dart sets give distinct multigraphs. -/
+theorem endpointGraph_injective : Function.Injective Γ.endpointGraph :=
+  fun _ _ h => by simpa using congrArg Graph.edgeSet h
+
+variable {Γ} in
+/-- Two dart sets give the same multigraph exactly when they are equal. -/
+@[simp, grind =] theorem endpointGraph_inj {O O' : Set Γ.E} :
+    Γ.endpointGraph O = Γ.endpointGraph O' ↔ O = O' :=
+  endpointGraph_injective.eq_iff
+
 /-- Without darts, the multigraph has no edges. -/
-@[simp] theorem endpointGraph_empty : Γ.endpointGraph ∅ = Graph.noEdge Set.univ Γ.E :=
+theorem endpointGraph_empty : Γ.endpointGraph ∅ = Graph.noEdge Set.univ Γ.E :=
   Graph.ext rfl fun _ _ _ => by simp
 
 /-- Restricting the multigraph of the darts in `O` to a set `F` of edges gives the multigraph of
