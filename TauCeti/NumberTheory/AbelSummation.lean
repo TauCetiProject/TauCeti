@@ -387,7 +387,7 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
       (𝓝 (κ / (τ + 1))) := by
   have hτ1 : 0 < τ + 1 := by linarith
   have hI := (isLittleO_integral_rpow_sub_one_mul hτ
-    (fun x _ ↦ intervalIntegrable_sum_Icc_sub_mul c κ x)
+    (E := fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n - κ * t)
     ((isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mpr
       (by simpa [div_eq_mul_inv, mul_comm] using h))).tendsto_div_nhds_zero
   have hpow : Tendsto (fun x : ℝ ↦ (x ^ (τ + 1))⁻¹) atTop (𝓝 0) :=

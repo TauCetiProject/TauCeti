@@ -187,12 +187,16 @@ theorem natCast_cpow_ofReal_mul {n : ℕ} (hn : n ≠ 0) (c : ℝ) (s : ℂ) :
   push_cast
   ring_nf
 
-/-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a
-positive `r` and a base whose argument lies in the sector `(-(r * π), r * π]`.  The intermediate
+/-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a base whose
+argument lies in the sector `(-(r * π), r * π]` (which forces `r` to be positive).  The intermediate
 argument `arg u / r` then lies in `(-π, π]`, so the principal branch is not crossed. -/
-theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
+theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ}
     (harg : u.arg ∈ Set.Ioc (-(r * Real.pi)) (r * Real.pi)) :
     (u ^ ((r⁻¹ : ℝ) : ℂ)) ^ (r : ℂ) = u := by
+  have hr : 0 < r := by
+    have := harg.1.trans_le harg.2
+    by_contra h
+    nlinarith [Real.pi_pos]
   rw [← Complex.cpow_mul]
   · norm_num [hr.ne']
   · simp only [Complex.mul_im, Complex.log_im, ofReal_re, ofReal_im, mul_zero, zero_add]

@@ -148,7 +148,7 @@ theorem exists_differentiableOn_injOn_cpow_eq_of_sector
     intro z hz
     have harg := abs_le.mp (abs_arg_le_of_sector hβ.1 hsector hrays z hz)
     have hπβ := mul_pos Real.pi_pos hβ.1
-    exact cpow_inv_cpow_of_arg_mem_Ioc hβ.1 ⟨by linarith [harg.1], by linarith [harg.2]⟩
+    exact cpow_inv_cpow_of_arg_mem_Ioc ⟨by linarith [harg.1], by linarith [harg.2]⟩
   have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := injOn_I_mul_cpow_inv hinj hpow
   -- Reflect the straightened map, then undo its quarter-turn.
   obtain ⟨F, hd, hi, hF, hconj⟩ :=

@@ -58,13 +58,11 @@ theorem mgf_le_exp_of_ae_le [IsProbabilityMeasure μ] {X : Ω → ℝ} {b t : �
     mgf X μ t ≤ exp ((∫ ω, X ω ^ 2 ∂μ) * t ^ 2 / (2 * (1 - t * b / 3))) := by
   have hXi : Integrable X μ := hX.integrable one_le_two
   have hX2 : Integrable (fun ω ↦ X ω ^ 2) μ := hX.integrable_sq
-  have hb0 : 0 ≤ b := by simpa [hmean] using integral_mono_ae hXi (integrable_const b) hb
   set k : ℝ := t ^ 2 / (2 * (1 - t * b / 3))
   -- Pointwise, `exp (t X) ≤ 1 + t X + k X²` by `Real.exp_le_one_add_add_sq_div_of_le`.
   have hpt : ∀ᵐ ω ∂μ, exp (t * X ω) ≤ 1 + t * X ω + k * X ω ^ 2 := by
     filter_upwards [hb] with ω hω
-    have := exp_le_one_add_add_sq_div_of_le (mul_le_mul_of_nonneg_left hω ht)
-      (mul_nonneg ht hb0) htb
+    have := exp_le_one_add_add_sq_div_of_le (mul_le_mul_of_nonneg_left hω ht) htb
     convert this using 2
     ring
   have hint₁ : Integrable (fun ω ↦ 1 + t * X ω) μ := (integrable_const 1).add (hXi.const_mul t)

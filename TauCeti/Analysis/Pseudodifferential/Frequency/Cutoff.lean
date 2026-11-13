@@ -187,10 +187,12 @@ theorem exists_bound_iteratedFDeriv [ProperSpace E] (k : ℕ) :
   exact χ.iteratedFDeriv_eq_zero_of_two_le_norm hk (by simpa using hξ : 2 < ‖ξ‖).le
 
 /-- The dilated cutoff `ξ ↦ χ (t⁻¹ • ξ)` vanishes on the closed ball of radius `t`. -/
-theorem apply_inv_smul_eq_zero {t : ℝ} (ht : 0 < t) {ξ : E} (hξ : ‖ξ‖ ≤ t) : χ (t⁻¹ • ξ) = 0 :=
-  χ.apply_eq_zero_of_norm_le_one <| by
-    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le)]
-    exact inv_mul_le_one_of_le₀ hξ ht.le
+theorem apply_inv_smul_eq_zero {t : ℝ} {ξ : E} (hξ : ‖ξ‖ ≤ t) : χ (t⁻¹ • ξ) = 0 := by
+  rcases ((norm_nonneg ξ).trans hξ).eq_or_lt with rfl | ht
+  · simp
+  refine χ.apply_eq_zero_of_norm_le_one ?_
+  rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le)]
+  exact inv_mul_le_one_of_le₀ hξ ht.le
 
 /-- The dilated cutoff `ξ ↦ χ (t⁻¹ • ξ)` equals `1` outside the open ball of radius `2 * t`. -/
 theorem apply_inv_smul_eq_one {t : ℝ} (ht : 0 < t) {ξ : E} (hξ : 2 * t ≤ ‖ξ‖) :
@@ -201,11 +203,13 @@ theorem apply_inv_smul_eq_one {t : ℝ} (ht : 0 < t) {ξ : E} (hξ : 2 * t ≤ �
 
 /-- Every iterated derivative of the dilated cutoff `ξ ↦ χ (t⁻¹ • ξ)` vanishes on the closed ball
 of radius `t`. -/
-theorem iteratedFDeriv_comp_inv_smul_eq_zero (k : ℕ) {t : ℝ} (ht : 0 < t) {ξ : E}
+theorem iteratedFDeriv_comp_inv_smul_eq_zero (k : ℕ) {t : ℝ} {ξ : E}
     (hξ : ‖ξ‖ ≤ t) : iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ = 0 := by
   rw [iteratedFDeriv_comp_const_smul _ χ.contDiff]
   dsimp only
   rw [χ.iteratedFDeriv_eq_zero_of_norm_le_one k, smul_zero]
+  rcases ((norm_nonneg ξ).trans hξ).eq_or_lt with rfl | ht
+  · simp
   rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le)]
   exact inv_mul_le_one_of_le₀ hξ ht.le
 

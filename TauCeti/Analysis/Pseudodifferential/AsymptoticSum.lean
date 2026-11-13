@@ -133,7 +133,7 @@ theorem exists_norm_mixedDeriv_cutoff_smul_le (χ : FrequencyCutoff (CoordinateS
   · -- Below radius `t` the dilated cutoff vanishes to infinite order.
     refine (norm_mixedDeriv_comp_snd_smul_le hχ a.contDiff_coefficient α β x ξ).trans
       (le_of_eq_of_le (Finset.sum_eq_zero fun i _ => ?_) (by positivity))
-    rw [χ.iteratedFDeriv_comp_inv_smul_eq_zero i ht0 hξ, norm_zero, mul_zero, zero_mul]
+    rw [χ.iteratedFDeriv_comp_inv_smul_eq_zero i hξ, norm_zero, mul_zero, zero_mul]
   -- `‖D^i χ(· / t) ξ‖ ≤ B i ⟨ξ⟩ ^ (-i)` is `‖D^i χ(· / t) ξ‖ ⟨ξ⟩ ^ i ≤ B i`
   have hB' (i : ℕ) : ‖iteratedFDeriv ℝ i (fun η => χ (t⁻¹ • η)) ξ‖ *
       (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) ≤ B i := by
@@ -240,8 +240,8 @@ private theorem borelSum_eq_sum (χ : FrequencyCutoff (CoordinateSpace n)) {t : 
   rw [Finset.coe_range, Set.mem_Iio]
   by_contra hjJ
   have hJj : (J : ℝ) ≤ j := by exact_mod_cast not_lt.1 hjJ
-  have htj : 0 < t j := by linarith [ht j, (Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
-  exact hj (by simp only [χ.apply_inv_smul_eq_zero htj (by linarith [ht j]), zero_smul])
+  exact hj (by
+    simp only [χ.apply_inv_smul_eq_zero (t := t j) (ξ := p.2) (by linarith [ht j]), zero_smul])
 
 /-- Near a point with `‖ξ‖ < J`, the Borel sum is the finite sum of its first `J` terms. -/
 private theorem borelSum_eventuallyEq (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℕ → ℝ}

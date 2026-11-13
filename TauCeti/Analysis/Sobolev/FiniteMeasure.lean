@@ -177,7 +177,7 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivi
 The power `R ^ (1 - n δ)` is the one dictated by scaling, so the remaining constant depends only
 on `n`, `δ` and the normalization of `μ`. -/
 theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial E]
-    (hp : p ≠ ∞) {x₀ : E} {R : ℝ} (hR : 0 < R) (hOmega : (Omega : Set E) = ball x₀ R)
+    {x₀ : E} {R : ℝ} (hR : 0 < R) (hOmega : (Omega : Set E) = ball x₀ R)
     {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ} (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ)
     (hδn : δ < (finrank ℝ E : ℝ)⁻¹) {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤
@@ -195,7 +195,8 @@ theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial 
   have hmeas : mu Omega = ENNReal.ofReal (R ^ n * ω) := by
     rw [hOmega, Measure.addHaar_ball_of_pos mu x₀ hR, ← ofReal_measureReal measure_ball_lt_top.ne,
       ← ENNReal.ofReal_mul (by positivity)]
-  refine (W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hp
+  refine (W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
+    (ne_top_of_le_ne_top ENNReal.coe_ne_top hpq)
     (hmeas ▸ ENNReal.ofReal_ne_top) hpq hδ hδn hu).trans_eq ?_
   rw [hmeas, ENNReal.ofReal_rpow_of_nonneg (by positivity) he,
     ← ENNReal.ofReal_mul (mul_nonneg (by positivity) (Real.rpow_nonneg (div_nonneg h1δ he) _))]

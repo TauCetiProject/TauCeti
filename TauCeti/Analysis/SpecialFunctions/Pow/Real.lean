@@ -98,8 +98,7 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_div_two_sq`: `(x ^ (s / 2)) ^ 2 = x ^ s` for `0 ≤ x`.
 * `Real.rpow_one_div_natCast_sub_le_iff`: `x ^ (1 / (d - i)) ≤ y ↔ x ≤ y ^ (d - i)` for `i < d`
   and nonnegative `x`, `y`.
-* `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x` and
-  `n ≠ 0`.
+* `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.pow_succ_rpow_mul_pow_rpow`: `(a ^ (n + 1)) ^ B * (a ^ n) ^ C = a ^ B * (a ^ (B + C)) ^ n`
   for `0 < a`.
@@ -132,8 +131,7 @@ with the corresponding integral of `q`-th powers.
   `S + 1 ≤ 0`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
-* `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
-  `f`.
+* `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a`.
 * `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
   `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
   x ^ 2` into a pointwise power bound on `x`.
@@ -207,9 +205,12 @@ theorem rpow_one_div_natCast_sub_le_iff {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y
   rw [← Nat.cast_sub h.le, one_div,
     rpow_inv_le_iff_of_pos hx hy (by exact_mod_cast Nat.sub_pos_of_lt h), rpow_natCast]
 
-/-- For `n ≠ 0` and nonnegative `x`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)`. -/
-theorem rpow_one_sub_inv_natCast_pow {x : ℝ} (hx : 0 ≤ x) {n : ℕ} (hn : n ≠ 0) :
+/-- For nonnegative `x`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)`. -/
+theorem rpow_one_sub_inv_natCast_pow {x : ℝ} (hx : 0 ≤ x) {n : ℕ} :
     (x ^ (1 - (n : ℝ)⁻¹)) ^ n = x ^ (n - 1) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  have hn : n ≠ 0 := hn.ne'
   rw [← rpow_mul_natCast hx, sub_mul, inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), one_mul,
     ← Nat.cast_pred (Nat.pos_of_ne_zero hn), rpow_natCast]
 
@@ -456,9 +457,21 @@ theorem Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow {α : Type*} (g :
     {f : α → ℝ} (hf : f.HasFiniteSupport) : (fun i ↦ g i ^ f i).HasFiniteMulSupport :=
   hf.subset fun i hi h ↦ hi (by simp [h])
 
-/-- A positive real raised to a finitely supported sum is the product of the powers. -/
-theorem Real.rpow_finsum_of_pos {α : Type*} {a : ℝ} (ha : 0 < a) {f : α → ℝ}
-    (hf : f.HasFiniteSupport) : a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i := by
+/-- A positive real raised to a finsum is the finprod of the powers. When the support is infinite,
+both sides are junk values: `a ^ 0 = 1` and the empty `finprod`. -/
+theorem Real.rpow_finsum_of_pos {α : Type*} {a : ℝ} (ha : 0 < a) {f : α → ℝ} :
+    a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i := by
+  by_cases hf : f.HasFiniteSupport
+  swap
+  · rw [finsum_of_infinite_support hf, Real.rpow_zero]
+    rcases eq_or_ne a 1 with rfl | ha1
+    · simp
+    rw [finprod_of_infinite_mulSupport]
+    intro h
+    refine hf (h.subset fun i (hi : f i ≠ 0) h1 ↦ ?_)
+    have h2 := congrArg Real.log h1
+    rw [Real.log_rpow ha, Real.log_one] at h2
+    exact hi ((mul_eq_zero.1 h2).resolve_right (Real.log_ne_zero_of_pos_of_ne_one ha ha1))
   rw [finsum_eq_sum f hf, finprod_eq_prod_of_mulSupport_subset _ (s := hf.toFinset)
     fun i hi ↦ hf.mem_toFinset.mpr fun h ↦ hi (by simp [h]), Real.rpow_sum_of_pos ha]
 
