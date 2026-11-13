@@ -18,8 +18,9 @@ difference is the original process minus its initial value. In particular the pa
 predictable on the original filtration; no moment bounds or usual conditions are needed.
 
 This decomposition identifies the finite-horizon derivative signed measure with the difference
-of two random Stieltjes measures. Fixed-set evaluations are measurable in the sigma algebra at
-the horizon by the deterministic measurable-family theorem. This supplies signed finite-variation
+of two random Stieltjes measures. More generally, for adapted processes valued in a complete
+normed group with right-continuous BV paths on a finite horizon, fixed-set evaluations of the
+derivative vector measure are strongly measurable at the horizon. This supplies finite-variation
 integrators without assuming that the original path is increasing or globally BV.
 The open initial endpoint excludes an initial atom.
 
@@ -106,19 +107,36 @@ theorem exists_stieltjesFunction_sub (hX : StronglyAdapted ℱ X)
     dsimp [p, q]
     ring
 
-/-- Every fixed-set evaluation of the finite-horizon signed Stieltjes measure of an adapted
-process with continuous BV paths on that horizon is measurable at the horizon. No moments or
-path regularity outside the horizon are required. -/
-theorem measurable_vectorMeasureIcc_apply
-    {R : Type*} [LinearOrder R] [TopologicalSpace R] [OrderTopology R]
-    [CompactIccSpace R] [MeasurableSpace R] [BorelSpace R]
-    [SecondCountableTopology R] [DenselyOrdered R]
-    {ℱ : Filtration R m} {X : R → Ω → ℝ} (hX : StronglyAdapted ℱ X)
-    {a b : R} (hab : a ≤ b) (hc : ∀ ω, ContinuousOn (fun t => X t ω) (Icc a b))
+section VectorMeasure
+
+variable {R : Type*} [LinearOrder R] [TopologicalSpace R] [OrderTopology R]
+  [CompactIccSpace R] [MeasurableSpace R] [BorelSpace R]
+  [SecondCountableTopology R] [DenselyOrdered R]
+  {E : Type*} [NormedAddCommGroup E] [CompleteSpace E]
+  {ℱ : Filtration R m} {X : R → Ω → E} {a b : R}
+
+/-- Every fixed-set evaluation of the finite-horizon Stieltjes vector measure of an adapted
+process with right-continuous BV paths on that horizon is strongly measurable at the horizon.
+No moments or path regularity outside the horizon are required. -/
+theorem stronglyMeasurable_vectorMeasureIcc_apply (hX : StronglyAdapted ℱ X)
+    (hab : a ≤ b)
+    (hfr : ∀ ω, ∀ t ∈ Icc a b, ContinuousWithinAt (fun u => X u ω) (Icc t b) t)
     (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set R) :
-    Measurable[ℱ b] (fun ω => (hv ω).vectorMeasureIcc hab s) := by
+    StronglyMeasurable[ℱ b] (fun ω => (hv ω).vectorMeasureIcc hab s) := by
   let : MeasurableSpace Ω := ℱ b
-  exact BoundedVariationOn.measurable_vectorMeasureIcc_apply hab
-    (fun _ ht => (hX.stronglyMeasurable_le ht.2).measurable) hc hv s
+  exact BoundedVariationOn.stronglyMeasurable_vectorMeasureIcc_apply hab
+    (fun _ ht => hX.stronglyMeasurable_le ht.2) hfr hv s
+
+/-- Every fixed-set evaluation of the finite-horizon Stieltjes vector measure of an adapted
+process with right-continuous BV paths on that horizon is measurable at the horizon.
+No moments or path regularity outside the horizon are required. -/
+theorem measurable_vectorMeasureIcc_apply [MeasurableSpace E] [BorelSpace E]
+    (hX : StronglyAdapted ℱ X) (hab : a ≤ b)
+    (hfr : ∀ ω, ∀ t ∈ Icc a b, ContinuousWithinAt (fun u => X u ω) (Icc t b) t)
+    (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set R) :
+    Measurable[ℱ b] (fun ω => (hv ω).vectorMeasureIcc hab s) :=
+  (hX.stronglyMeasurable_vectorMeasureIcc_apply hab hfr hv s).measurable
+
+end VectorMeasure
 
 end MeasureTheory.StronglyAdapted
