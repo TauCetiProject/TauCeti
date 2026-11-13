@@ -9,13 +9,13 @@ public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
-# Descent through a surjective submersion
+# Immersions descended through a surjective submersion
 
 A map out of the target of a surjective submersion is smooth exactly when its composite with
-the submersion is smooth. Local sections prove this without any continuity assumption on the
-descended map. If the composite kills precisely the vertical tangent vectors of the submersion,
-the descended map is an immersion. These criteria apply to smooth quotients with positive
-dimensional fibres, including quotients removing the excess in composition of correspondences.
+the submersion is smooth (`Manifold.IsSubmersion.contMDiff_comp_iff`). If moreover the composite
+kills precisely the vertical tangent vectors of the submersion, the descended map is an
+immersion. This criterion applies to smooth quotients with positive dimensional fibres,
+including quotients removing the excess in composition of correspondences.
 
 ## References
 
@@ -27,34 +27,6 @@ public section
 
 open Function Filter Set Manifold
 open scoped Manifold ContDiff Topology
-
-namespace Manifold.IsSubmersion
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E F G H H' H'' M N P : Type*}
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
-  {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H']
-  {J : ModelWithCorners 𝕜 F H'} [TopologicalSpace N] [ChartedSpace H' N]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [TopologicalSpace H'']
-  {K : ModelWithCorners 𝕜 G H''} [TopologicalSpace P] [ChartedSpace H'' P]
-  {m n : ℕ∞ω} {q : M → N} {f : N → P}
-
-/-- Smoothness descends through a surjective submersion from a boundaryless manifold.
-No continuity assumption on the descended map is needed. -/
-theorem contMDiff_comp_iff (hq : IsSubmersion I J n q) (hsurj : Surjective q) (hm : m ≤ n) :
-    ContMDiff I K m (f ∘ q) ↔ ContMDiff J K m f := by
-  refine ⟨fun hf y ↦ ?_, fun hf ↦ hf.comp (hq.contMDiff.of_le hm)⟩
-  obtain ⟨x, rfl⟩ := hsurj y
-  obtain ⟨U, hU, hxU, s, -, hs, hqs⟩ := (hq.isSubmersionAt x).exists_contMDiffOn_section
-  have hcomp : ContMDiffAt J K m ((f ∘ q) ∘ s) (q x) :=
-    (hf (s (q x))).comp (q x) ((hs.contMDiffAt (hU.mem_nhds hxU)).of_le hm)
-  have heq : (f ∘ q) ∘ s =ᶠ[𝓝 (q x)] f :=
-    eventually_of_mem (hU.mem_nhds hxU) fun z hz ↦ congrArg f (hqs z hz)
-  exact hcomp.congr_of_eventuallyEq heq.symm
-
-end Manifold.IsSubmersion
 
 namespace Manifold.IsSubmersion
 
