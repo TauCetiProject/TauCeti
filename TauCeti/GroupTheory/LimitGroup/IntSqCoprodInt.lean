@@ -41,8 +41,9 @@ conjugate in `ℤ² ∗ ℤ`.
   of the factor `ℤ²` is not cyclic.
 * `TauCeti.LimitGroup.IntSqCoprodInt.not_isConj_inl_of_ne`: distinct elements of the factor `ℤ²`,
   such as `(1, 0)` and `(0, 1)`, are not conjugate.
-* `TauCeti.LimitGroup.IntSqCoprodInt.V_singleton_commutator_inl`: over `ℤ² ∗ ℤ`, the solutions of
-  the equation `[x, v] = 1` for a nontrivial `v ∈ ℤ²` are exactly the elements of `ℤ²`.
+* `TauCeti.LimitGroup.IntSqCoprodInt.V_singleton_commutatorElement_inl`: over `ℤ² ∗ ℤ`, the
+  solutions of the equation `[x, v] = 1` for a nontrivial `v ∈ ℤ²` are exactly the points whose
+  `x`-coordinate lies in `ℤ²`.
 
 ## Implementation notes
 
@@ -262,15 +263,15 @@ theorem not_isConj_inl_of_ne {u v : Multiplicative (ℤ × ℤ)} (h : u ≠ v) :
     ¬IsConj (inl u : IntSqCoprodInt) (inl v) := by
   simpa
 
-/-- Over `ℤ² ∗ ℤ`, the solutions of the equation `[x, v] = 1` in one variable `x`, for a nontrivial
-`v` in the factor `ℤ²` such as `(1, 0)`, are exactly the elements of `ℤ²`. -/
-theorem V_singleton_commutator_inl {v : Multiplicative (ℤ × ℤ)} (hv : v ≠ 1) :
+/-- Over `ℤ² ∗ ℤ`, the solutions of the commutator equation `[x, v] = 1`, for a nontrivial `v` in
+the factor `ℤ²` such as `(1, 0)`, are exactly the points whose `x`-coordinate lies in `ℤ²`. -/
+theorem V_singleton_commutatorElement_inl {X : Type*} (x : X) {v : Multiplicative (ℤ × ℤ)}
+    (hv : v ≠ 1) :
     GroupAlgGeom.V (.id IntSqCoprodInt)
-        {⁅(inr (FreeGroup.of ()) : GroupAlgGeom.GX IntSqCoprodInt Unit), inl (inl v)⁆} =
-      {x | x () ∈ (inl : Multiplicative (ℤ × ℤ) →* IntSqCoprodInt).range} := by
-  ext x
-  simp [← centralizer_inl_eq_range_inl hv, mem_centralizer_singleton_iff,
-    commutatorElement_eq_one_iff_mul_comm]
+        {⁅(inr (FreeGroup.of x) : GroupAlgGeom.GX IntSqCoprodInt X), inl (inl v)⁆} =
+      {u | u x ∈ (inl : Multiplicative (ℤ × ℤ) →* IntSqCoprodInt).range} := by
+  rw [GroupAlgGeom.V_singleton_commutatorElement, MonoidHom.id_apply,
+    centralizer_inl_eq_range_inl hv]
 
 end IntSqCoprodInt
 
