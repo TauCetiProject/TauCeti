@@ -204,7 +204,7 @@ noncomputable def ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A
   grading := G
   m := AInfinity.desuspension G F
   m_zero := AInfinity.desuspension_zero G F
-  m_degree _ hn := AInfinity.isHomogeneous_desuspension hF hn
+  m_degree _ _ := AInfinity.isHomogeneous_desuspension hF
   taylor := F
   taylor_isSuspension := AInfinity.isSuspension_desuspension G F
   bar_square_zero := hsq

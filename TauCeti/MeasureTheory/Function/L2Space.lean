@@ -21,7 +21,9 @@ The pointwise inner product of two square-integrable functions with values in an
 space is integrable. Mathlib states this for elements of `L²` (`MeasureTheory.L2.integrable_inner`);
 this file gives the form for functions satisfying `MemLp f 2 μ`, which is how second-moment
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
-form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
+form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
+squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
+integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
@@ -81,6 +83,15 @@ theorem MemLp.integrable_inner_toEuclideanLin {ι : Type*} [Fintype ι] [Decidab
     Integrable (fun x ↦ ⟪B.toEuclideanLin (f x), f x⟫_𝕜) μ :=
   (hf.continuousLinearMap_comp (LinearMap.toContinuousLinearMap B.toEuclideanLin)).integrable_inner
     hf
+
+/-- The weighted squared norm `V² ‖g‖²` of a square-integrable function `g` against an
+essentially bounded measurable weight `V` is integrable. -/
+theorem MemLp.integrable_sq_mul_norm_sq {F : Type*} [NormedAddCommGroup F] {g : α → F}
+    (hg : MemLp g 2 μ) {V : α → ℝ} (hV : AEStronglyMeasurable V μ) {C : ℝ}
+    (hVC : ∀ᵐ x ∂μ, V x ^ 2 ≤ C) :
+    Integrable (fun x ↦ V x ^ 2 * ‖g x‖ ^ 2) μ :=
+  hg.norm.integrable_sq.bdd_mul (hV.pow 2)
+    (hVC.mono fun _ hx ↦ (Real.norm_of_nonneg (sq_nonneg _)).trans_le hx)
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/

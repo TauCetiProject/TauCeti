@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Erf
+public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Distributions.Gaussian.Basic

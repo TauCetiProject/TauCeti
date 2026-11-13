@@ -37,6 +37,7 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
 * `TauCeti.homogeneousCyclotomic_zero`, `_one`, `_two`, `_three`, `_six`, `_prime`,
   `_prime_pow`: closed forms, including `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` and
   `Φ_{p ^ (e + 1)}(a, b) = Φ_p(a ^ p ^ e, b ^ p ^ e)` for a prime `p`.
+* `TauCeti.ne_zero_of_dvd_homogeneousCyclotomic`: a nonunit divides `Φ_n(a, b)` only if `n ≠ 0`.
 * `TauCeti.homogeneousCyclotomic_comm`: `Φ_n(b, a) = Φ_n(a, b)` for `n ≠ 1`.
 * `TauCeti.homogeneousCyclotomic_one_anticomm`: `Φ_1(b, a) = -Φ_1(a, b)`.
 * `TauCeti.homogeneousCyclotomic_zero_right`, `TauCeti.homogeneousCyclotomic_zero_left`:
@@ -135,6 +136,12 @@ theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
 @[simp]
 theorem homogeneousCyclotomic_zero (a b : R) : homogeneousCyclotomic 0 a b = 1 := by
   simp [homogeneousCyclotomic_def]
+
+/-- A nonunit dividing `Φ_n(a, b)` forces `n ≠ 0`, since `Φ_0(a, b) = 1`. -/
+theorem ne_zero_of_dvd_homogeneousCyclotomic {d a b : R} {n : ℕ} (hd : ¬IsUnit d)
+    (h : d ∣ homogeneousCyclotomic n a b) : n ≠ 0 := by
+  rintro rfl
+  exact hd (isUnit_of_dvd_one (by simpa only [homogeneousCyclotomic_zero] using h))
 
 /-- `Φ_1(a, b) = a - b`. -/
 @[simp]

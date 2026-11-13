@@ -45,9 +45,12 @@ the position and the frequency.
   The coefficients of the terms only depend on the coefficients of the two symbols
   (`TauCeti.Symbol.coefficient_sharpTerm_congr`) and depend linearly on each of them, also for
   linear combinations of symbols of different orders
-  (`TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left` and its companions). For a constant symbol
+  (`TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left` and its companions), and near a point
+  only on their values near that point
+  (`TauCeti.Symbol.coefficient_sharpTerm_of_eq_smul_of_eventuallyEq`). For a constant symbol
   only the pointwise composition survives (`TauCeti.Symbol.const_sharpTerm_succ`,
-  `TauCeti.Symbol.sharpTerm_const_succ`).
+  `TauCeti.Symbol.sharpTerm_const_succ`), and on the right this holds for every symbol that does
+  not depend on the position (`TauCeti.Symbol.sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero`).
 * `TauCeti.Symbol.sharpRemainder a b hb N`: the remainder `a # b - ∑_{k < N} sharpTerm a b k`, a
   symbol of order `m' + m - N`.
 * `TauCeti.Symbol.sharp_eq_sum_sharpTerm_add_sharpRemainder`: **the composition expansion**
@@ -199,6 +202,29 @@ theorem coefficient_sharpTerm_congr {μ μ' : ℝ} {a : Symbol n W U m'} {a' : S
   funext ⟨x, ξ⟩
   simp only [coefficient_sharpTerm, ha, hb]
 
+/-- **Locality of the composition expansion.** Let `ψ` be a function of the position, `a'` a
+symbol with `a'(x, ξ) = ψ(x) a(x, ξ)`, and `b'` a symbol which agrees with `b` at all positions
+near the support of `ψ`. Then every term of the expansion of `a' # b'` is `ψ(x)` times the
+corresponding term of `a # b`. -/
+theorem coefficient_sharpTerm_of_eq_smul_of_eventuallyEq {μ μ' : ℝ} {ψ : CoordinateSpace n → ℂ}
+    {a : Symbol n W U m'} {a' : Symbol n W U μ'} {b : Symbol n V W m} {b' : Symbol n V W μ}
+    (ha : ∀ x ξ, a'.coefficient (x, ξ) = ψ x • a.coefficient (x, ξ))
+    (hb : ∀ᶠ x in nhdsSet (tsupport ψ), ∀ ξ, b'.coefficient (x, ξ) = b.coefficient (x, ξ))
+    (k : ℕ) (x ξ : CoordinateSpace n) :
+    (a'.sharpTerm b' k).coefficient (x, ξ) = ψ x • (a.sharpTerm b k).coefficient (x, ξ) := by
+  -- The frequency derivatives of `a'` at `x` are `ψ x` times those of `a`.
+  have hfreq (w : List (Fin n)) :
+      mixedDeriv [] w a'.coefficient x ξ = ψ x • mixedDeriv [] w a.coefficient x ξ := by
+    have h : (fun η ↦ a'.coefficient (x, η)) = ψ x • fun η ↦ a.coefficient (x, η) :=
+      funext fun η ↦ ha x η
+    simp only [mixedDeriv_def, coordinateDeriv_nil, h, coordinateDeriv_const_smul, Pi.smul_apply]
+  simp only [coefficient_sharpTerm, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun w _ ↦ ?_
+  rw [hfreq, ContinuousLinearMap.smul_comp, smul_comm (ψ x)]
+  by_cases hx : x ∈ tsupport ψ
+  · rw [mixedDeriv_congr_of_eventually (nhds_le_nhdsSet hx hb)]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
 /-- The terms of the composition expansion are linear in the first symbol: a linear relation
 `a₀ = ∑ᵢ cᵢ aᵢ` between the coefficients of symbols `aᵢ` of possibly different orders gives the
 same relation `sharpTerm a₀ b k = ∑ᵢ cᵢ sharpTerm aᵢ b k` between the coefficients of the terms. -/
@@ -278,22 +304,24 @@ theorem const_sharpTerm_succ (T : W →L[ℂ] U) (b : Symbol n V W m) (k : ℕ) 
   simp only [h, ContinuousLinearMap.zero_comp, Finset.sum_const_zero, smul_zero, coefficient_zero,
     Pi.zero_apply]
 
+/-- Only the pointwise composition survives in the composition expansion of a symbol on the right
+that does not depend on the position: its later terms vanish. -/
+theorem sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero {b : Symbol n V W m}
+    (hb : ∀ j, spatialDeriv j b = 0) (a : Symbol n W U m') (k : ℕ) :
+    a.sharpTerm b (k + 1) = 0 := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp [coefficient_sharpTerm_succ, coefficient_sharpTerm, hb]
+
 /-- Only the pointwise composition survives in the composition expansion of a constant symbol on
 the right: its later terms vanish. -/
 @[simp]
 theorem sharpTerm_const_succ (a : Symbol n W U m') (T : V →L[ℂ] W) (k : ℕ) :
-    a.sharpTerm (const T) (k + 1) = 0 := by
-  ext1
-  funext ⟨x, ξ⟩
-  have hT : (const T : Symbol n V W 0).coefficient = fun p ↦ (fun _ ↦ T) p.2 :=
-    funext (coefficient_const T)
-  have h (w : Fin (k + 1) → Fin n) :
-      mixedDeriv (List.ofFn w) [] (const T : Symbol n V W 0).coefficient x ξ = 0 := by
-    rw [hT]
-    exact mixedDeriv_comp_snd (fun _ ↦ T) (α := List.ofFn w) (by simp) [] x ξ
-  rw [coefficient_sharpTerm]
-  simp only [h, ContinuousLinearMap.comp_zero, Finset.sum_const_zero, smul_zero, coefficient_zero,
-    Pi.zero_apply]
+    a.sharpTerm (const T) (k + 1) = 0 :=
+  sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero (fun j ↦ by
+    ext1
+    funext ⟨x, ξ⟩
+    simp [coefficient_const, coordinateDeriv_const _ (List.cons_ne_nil j [])]) a k
 
 /-- **Leibniz rule in the position** for the terms of the composition expansion. -/
 theorem spatialDeriv_sharpTerm (l : Fin n) (a : Symbol n W U m') (b : Symbol n V W m) (k : ℕ) :

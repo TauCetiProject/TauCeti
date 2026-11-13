@@ -214,6 +214,14 @@ theorem hamiltonianVectorField_const (σ : SmoothTwoForm I M) (c : ℝ) :
   funext x
   simp [hamiltonianVectorField_def, mvfderiv_const]
 
+/-- Adding a constant to a Hamiltonian does not change its Hamiltonian vector field. No
+differentiability is needed: `f` and `f + c` are differentiable at the same points. -/
+@[simp]
+theorem hamiltonianVectorField_add_const (σ : SmoothTwoForm I M) (f : M → ℝ) (c : ℝ) :
+    σ.hamiltonianVectorField (fun x ↦ f x + c) = σ.hamiltonianVectorField f := by
+  funext x
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_add_const]
+
 /-- The Hamiltonian vector field vanishes at every point near which the Hamiltonian is constant,
 for instance outside the topological support of the Hamiltonian. -/
 theorem hamiltonianVectorField_eq_zero_of_eventuallyEq {x : M} {c : ℝ}
@@ -487,6 +495,18 @@ theorem poissonBracket_const_right (σ : SmoothTwoForm I M) (f : M → ℝ) (c :
     σ.poissonBracket f (fun _ ↦ c) x = 0 := by
   rw [poissonBracket_def, hamiltonianVectorField_const, ← SmoothForm.bilinFormAt_apply,
     Pi.zero_apply, map_zero]
+
+/-- Adding a constant to the first Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_left (σ : SmoothTwoForm I M) (f : M → ℝ) (c : ℝ) (g : M → ℝ)
+    (x : M) : σ.poissonBracket (fun y ↦ f y + c) g x = σ.poissonBracket f g x := by
+  rw [poissonBracket_def, poissonBracket_def, hamiltonianVectorField_add_const]
+
+/-- Adding a constant to the second Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_right (σ : SmoothTwoForm I M) (f g : M → ℝ) (c : ℝ) (x : M) :
+    σ.poissonBracket f (fun y ↦ g y + c) x = σ.poissonBracket f g x := by
+  rw [poissonBracket_def, poissonBracket_def, hamiltonianVectorField_add_const]
 
 /-- The Poisson bracket is additive in its first argument on differentiable functions. -/
 theorem poissonBracket_add_left {k : M → ℝ} {x : M}

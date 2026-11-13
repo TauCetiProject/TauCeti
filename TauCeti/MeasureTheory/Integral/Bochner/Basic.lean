@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -27,6 +28,11 @@ for set and probability integrals.
 
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
+
+## Bounded multipliers
+
+* `MeasureTheory.norm_integral_smul_le_of_support_subset`: a multiplier `g` bounded by `K` on a
+  set containing the support of an integrable `f` gives `‖∫ g • f‖ ≤ K ∫ ‖f‖`.
 
 ## Differences of integrals
 
@@ -182,6 +188,17 @@ theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
     ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) := by
   simpa only [AddMonoidHom.coe_toRealLinearMap] using
     (T.toRealLinearMap hT).integral_comp_comm hf
+
+/-- The integral of `g • f`, for a multiplier bounded by `K` on a set containing the support of
+the integrable function `f`, is at most `K ∫ ‖f‖`. -/
+theorem MeasureTheory.norm_integral_smul_le_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [NormedSpace ℝ E] [MeasurableSpace α]
+    {μ : Measure α} {f : α → E} {g : α → 𝕜} {s : Set α} {K : ℝ} (hf : Integrable f μ)
+    (hsupp : Function.support f ⊆ s) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
+    ‖∫ x, g x • f x ∂μ‖ ≤ K * ∫ x, ‖f x‖ ∂μ := by
+  rw [← integral_const_mul]
+  exact norm_integral_le_of_norm_le (hf.norm.const_mul K)
+    (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
 
 namespace Multiset
 

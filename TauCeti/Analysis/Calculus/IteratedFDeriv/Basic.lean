@@ -20,7 +20,11 @@ two-variable currying isometry used to identify continuous multilinear second de
 curried bilinear maps, and the corresponding exact comparison for differences of second
 derivatives, which transfers Hölder bounds between the two forms of the second derivative.
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
-`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`).
+`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Bounded derivatives up
+to a finite order have a common bound
+(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
+common bound is nonnegative and bounds the function itself
+(`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`).
 -/
 
 public section
@@ -114,6 +118,23 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
       (fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x i
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
+
+/-- Bounded derivatives up to order `N` have a common bound. -/
+theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}
+    (hbd : ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
+    ∃ G, ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ G := by
+  choose C hC using fun n ↦ (em (n ≤ N)).elim (fun hn ↦ (hbd n hn).imp fun _ h _ ↦ h)
+    fun hn ↦ ⟨0, fun h ↦ absurd h hn⟩
+  exact ⟨∑ n ∈ Finset.range (N + 1), max (C n) 0, fun n hn x ↦ (hC n hn x).trans
+    ((le_max_left _ _).trans (Finset.single_le_sum (f := fun n ↦ max (C n) 0)
+      (fun _ _ ↦ le_max_right _ _) (Finset.mem_range.2 (by omega))))⟩
+
+/-- A bound `G` on the derivatives of `f` of order at most `N` is nonnegative and bounds `f`. -/
+theorem nonneg_and_norm_le_of_norm_iteratedFDeriv_le {f : E → F} {N : ℕ} {G : ℝ}
+    (hfG : ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ G) :
+    0 ≤ G ∧ ∀ x, ‖f x‖ ≤ G :=
+  have hf (x : E) : ‖f x‖ ≤ G := by simpa using hfG 0 (Nat.zero_le _) x
+  ⟨(norm_nonneg _).trans (hf 0), hf⟩
 
 /-- Where a function `ζ` equals one on a neighbourhood of `x`, every iterated derivative of `ζ * u`
 at `x` is that of `u`. -/
