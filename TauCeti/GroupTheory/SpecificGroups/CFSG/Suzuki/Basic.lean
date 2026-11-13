@@ -104,10 +104,6 @@ namespace TauCeti.SuzukiLieIndex
 
 variable (d : SuzukiLieIndex)
 
--- The construction below follows the `SuzukiReeIndex.halfFrobenius` and
--- `ValidLieTypeIndex.steinberg` target signatures in
--- `TauCetiRoadmap/CFSGStatement/Suggested.lean`.
-
 /-- **The half-Frobenius of a Suzuki index**: the special isogeny of its ambient group. -/
 noncomputable def halfFrobenius :
     d.toRankTwoBLieIndex.AmbientGroup →* d.toRankTwoBLieIndex.AmbientGroup :=
@@ -276,10 +272,7 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
               SuzukiReeIndex.exponent d.toSuzukiReeIndex i))) :=
   d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
     (x := fun j t => d.toRankTwoBLieIndex.simpleRootSubgroup j t)
-    (fun j t => d.halfFrobenius_simpleRootSubgroup j t)
-    (fun j t => (d.halfFrobenius_halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup j t)).trans
-      (d.toRankTwoBLieIndex.primeFrobenius_simpleRootSubgroup j t))
-    i u
+    (fun j t => d.halfFrobenius_simpleRootSubgroup j t) i u
 
 /-! ## The finite-group candidate -/
 

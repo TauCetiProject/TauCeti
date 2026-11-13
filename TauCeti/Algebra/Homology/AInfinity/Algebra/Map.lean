@@ -67,7 +67,7 @@ noncomputable def map (𝒜 : AInfinityAlgebra R A) (e : A ≃ₗ[R] B) : AInfin
       simpa using (𝒜.m_degree n hn).map_mem d (fun i ↦ e.symm (x i))
         fun i ↦ (InternalGrading.mem_map_piece_iff _ _ _ _).1 (hx i))
     _ (AInfinity.isSuspension_suspensionTaylor _ _)
-    (fun n hn d x hx ↦ e.symm.injective <| by
+    (fun n _ d x hx ↦ e.symm.injective <| by
       rw [← LinearEquiv.coe_coe, AInfinity.map_stasheffSum _ d x e.symm.toLinearMap 𝒜.m
         (fun k y ↦ by simp), map_zero]
       exact 𝒜.stasheff n d _ fun i hi ↦ (InternalGrading.mem_map_piece_iff _ _ _ _).1 (hx i hi))
@@ -106,7 +106,8 @@ private theorem m_mem_range (n : ℕ) (x : Fin n → A) :
 
 /-- The operations of the pullback: `mₙ(a₁, …, aₙ)` is the preimage under `f` of
 `mₙ(f a₁, …, f aₙ)`. -/
-private noncomputable def comapOperation (n : ℕ) : MultilinearMap R (fun _ : Fin n ↦ A) A :=
+private noncomputable def comapOperation (n : ℕ) : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦
+    A) A :=
   (LinearEquiv.ofInjective f hf).symm.toLinearMap.compMultilinearMap
     (((ℬ.m n).compLinearMap fun _ ↦ f).codRestrict _ (m_mem_range ℬ f hm n))
 
@@ -127,7 +128,7 @@ noncomputable def comap : AInfinityAlgebra R A :=
       rw [apply_comapOperation]
       exact (ℬ.m_degree n hn).map_mem d (fun i ↦ f (x i)) fun i ↦ (hG _ _).2 (hx i))
     _ (AInfinity.isSuspension_suspensionTaylor _ _)
-    (fun n hn d x hx ↦ hf <| by
+    (fun n _ d x hx ↦ hf <| by
       rw [AInfinity.map_stasheffSum _ d x f ℬ.m (apply_comapOperation ℬ f hf hm), map_zero]
       exact ℬ.stasheff n d _ fun i hi ↦ (hG _ _).2 (hx i hi))
 

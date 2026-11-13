@@ -533,7 +533,6 @@ private theorem pairParam_injective : Function.Injective pairParam := by
   have h1 := (hsupp i).1 (Or.inl rfl)
   have h2 := (hsupp j).1 (Or.inr rfl)
   have h3 := (hsupp i').2 (Or.inl rfl)
-  have hlt : i.val < j.val := hij
   have hlt' : i'.val < j'.val := hij'
   simp only [Fin.ext_iff] at h1 h2 h3
   have hi : i = i' := Fin.ext (by omega)

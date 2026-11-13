@@ -71,11 +71,16 @@ theorem manifoldMorseIndex_scalar_comp_add_manifoldMorseIndex_eq_finrank
     (h : IsManifoldNondegenerateCriticalPoint I f x)
     (hφ : ContDiffAt ℝ 2 φ (f x)) (hφ' : deriv φ (f x) < 0) :
     manifoldMorseIndex I (φ ∘ f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
-  rw [isManifoldNondegenerateCriticalPoint_iff] at h
-  rw [manifoldMorseIndex_def, manifoldMorseIndex_def, Function.comp_assoc]
-  apply h.morseIndex_scalar_comp_add_morseIndex_eq_finrank
-  · simpa using hφ
-  · simpa using hφ'
+  by_cases hE : FiniteDimensional ℝ E
+  · rw [isManifoldNondegenerateCriticalPoint_iff] at h
+    rw [manifoldMorseIndex_def, manifoldMorseIndex_def, Function.comp_assoc]
+    apply h.morseIndex_scalar_comp_add_morseIndex_eq_finrank
+    · simpa using hφ
+    · simpa using hφ'
+  · have h0 : Module.finrank ℝ E = 0 := Module.finrank_of_not_finite (by simpa using hE)
+    have h1 := manifoldMorseIndex_le_finrank (I := I) (f := φ ∘ f) (x := x)
+    have h2 := manifoldMorseIndex_le_finrank (I := I) (f := f) (x := x)
+    omega
 
 end IsManifoldNondegenerateCriticalPoint
 
@@ -151,8 +156,7 @@ namespace IsManifoldNondegenerateCriticalPoint
 /-- At a nondegenerate critical point, taking the reciprocal of one plus the function
 complements its index, provided the denominator is nonzero. -/
 theorem manifoldMorseIndex_inv_one_add_add_manifoldMorseIndex_eq_finrank
-    (h : IsManifoldNondegenerateCriticalPoint I f x)
-    (hf : 1 + f x ≠ 0) :
+    (h : IsManifoldNondegenerateCriticalPoint I f x) (hf : 1 + f x ≠ 0) :
     manifoldMorseIndex I (fun y ↦ (1 + f y)⁻¹) x + manifoldMorseIndex I f x =
       Module.finrank ℝ E := by
   apply h.manifoldMorseIndex_scalar_comp_add_manifoldMorseIndex_eq_finrank

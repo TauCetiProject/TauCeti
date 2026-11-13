@@ -297,8 +297,8 @@ theorem classifyingSpaceFirstHomologyAddEquiv_map_wedgeCirclesHomotopyEquivClass
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (wedgeCirclesHomotopyEquivClassifyingSpace S).toFun)) 1).hom
           (hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle))) (base _)
-            (Additive.ofMul (Abelianization.of a)))) =
-      Additive.ofMul (Abelianization.of (circleFundamentalGroupMulEquiv S a)) := by
+            (Additive.ofMul (Group.Abelianization.of a)))) =
+      Additive.ofMul (Group.Abelianization.of (circleFundamentalGroupMulEquiv S a)) := by
   rw [classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEquiv _
       (wedgeCirclesClassifyingSpaceBasepointPath S),
     classifyingSpaceFundamentalGroupMulEquiv_map_wedgeCirclesHomotopyEquivClassifyingSpace]
@@ -315,7 +315,7 @@ theorem _root_.FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomolo
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (wedgeCirclesHomotopyEquivClassifyingSpace S).toFun)) 1).hom
           (hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle))) (base _)
-            (Additive.ofMul (Abelianization.of a)))) =
+            (Additive.ofMul (Group.Abelianization.of a)))) =
       groupHomology.H1π (Rep.trivial ℤ (FreeGroup S) ℤ)
         ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (FreeGroup S) ℤ)).inv
           (Finsupp.single (circleFundamentalGroupMulEquiv S a) 1)) := by
@@ -332,7 +332,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expL
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (wedgeCirclesHomotopyEquivClassifyingSpace S).toFun)) 1).hom
           (hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle))) (base _)
-            (Additive.ofMul (Abelianization.of
+            (Additive.ofMul (Group.Abelianization.of
               (mapOfEq (incl (fun _ : S ↦ (1 : Circle)) i) (incl_apply_self i)
                 (fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))))))) =
       groupHomology.H1π (Rep.trivial ℤ (FreeGroup S) ℤ)
