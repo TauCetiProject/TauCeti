@@ -72,7 +72,7 @@ theorem IsPoissonRandomMeasure.acceptance_univ_prod_smul [SFinite Q] {r : ℝ≥
 
 /-- Bernoulli colour selection splits a scaled ground intensity into scales `r*p` and
 `r*(1-p)`, including both endpoint parameters and scale zero. -/
-theorem IsPoissonRandomMeasure.acceptance_color_smul_bernoulliMeasure
+theorem IsPoissonRandomMeasure.acceptance_univ_prod_singleton_smul_of_bernoulliMeasure
     {M : Ω → Measure (X × Bool)} {r : ℝ≥0} {p : unitInterval}
     (h : IsPoissonRandomMeasure P M
       (((r : ℝ≥0∞) • Λ).prod (bernoulliMeasure true false p))) (b : Bool) :

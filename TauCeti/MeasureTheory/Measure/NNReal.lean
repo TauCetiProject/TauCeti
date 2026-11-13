@@ -15,8 +15,7 @@ under the inclusion into `ℝ` is Lebesgue measure restricted to `[0,∞)`. It i
 finite and atomless; in particular, counting `(0,t]` or `[0,t]` gives the same length.
 
 This explicit reference measure is useful for intensities of temporal random measures,
-without installing a global `MeasureSpace ℝ≥0` instance. A general measure on the half-line
-is locally finite whenever all closed initial intervals have finite mass.
+without installing a global `MeasureSpace ℝ≥0` instance.
 -/
 
 public section
@@ -100,9 +99,3 @@ theorem nnvolume_Ico (s t : ℝ≥0) : nnvolume (Ico s t) = ((t - s : ℝ≥0) :
   simp [ENNReal.ofReal_sub]
 
 end TauCeti
-
-/-- A measure on the nonnegative half-line is locally finite if every closed initial interval
-has finite mass. -/
-theorem MeasureTheory.Measure.isLocallyFiniteMeasure_of_Iic_lt_top (μ : Measure ℝ≥0)
-    (hfin : ∀ t : ℝ≥0, μ (Iic t) < ∞) : IsLocallyFiniteMeasure μ :=
-  ⟨fun t ↦ ⟨Iic (t + 1), Iic_mem_nhds (lt_add_one t), hfin (t + 1)⟩⟩

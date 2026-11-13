@@ -23,6 +23,7 @@ almost surely for a random measure.
 
 * `MeasureTheory.measure_Iic_lt_top`
 * `MeasureTheory.measure_Ici_lt_top`
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top`
 -/
 
 public section
@@ -31,6 +32,18 @@ open Set
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- A measure on a linearly ordered space is locally finite if every closed initial interval
+has finite mass and strict lower rays are open. -/
+theorem Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [ClosedIciTopology α] [MeasurableSpace α] (μ : Measure α)
+    (hfin : ∀ t : α, μ (Iic t) < ∞) : IsLocallyFiniteMeasure μ := by
+  refine ⟨fun t ↦ ?_⟩
+  by_cases ht : ∃ u, t < u
+  · obtain ⟨u, hu⟩ := ht
+    exact ⟨Iic u, Iic_mem_nhds hu, hfin u⟩
+  · exact ⟨Iic t, Filter.mem_of_superset Filter.univ_mem
+      (fun u _ ↦ le_of_not_gt (fun hu ↦ ht ⟨u, hu⟩)), hfin t⟩
 
 variable {α : Type*} [Preorder α] [TopologicalSpace α] [CompactIccSpace α]
   {m : MeasurableSpace α} {μ : Measure α} [IsLocallyFiniteMeasure μ] {a : α}
