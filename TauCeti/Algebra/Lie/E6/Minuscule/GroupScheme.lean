@@ -87,9 +87,7 @@ noncomputable def definingIdeal :
   TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-    (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-      rw [TauCeti.serreKostantForm_def]
-      exact hu) hv)
+    weightTable.rep_kostantForm_mem_lattice
     weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight
 
 /-- The defining ideal is the ideal supplied by the generic Kostant toral-closure construction. -/
@@ -98,9 +96,7 @@ theorem definingIdeal_def :
       TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-        (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-          rw [TauCeti.serreKostantForm_def]
-          exact hu) hv)
+        weightTable.rep_kostantForm_mem_lattice
         weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight := by
   rw [definingIdeal]
 
@@ -110,9 +106,7 @@ noncomputable abbrev groupScheme : Grp (Over (Spec (CommRingCat.of ℤ))) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-    (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-      rw [TauCeti.serreKostantForm_def]
-      exact hu) hv)
+    weightTable.rep_kostantForm_mem_lattice
     weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight
 
 /-- The quotient-spectrum presentation of the type-`E₆` minuscule carrier. -/
@@ -126,9 +120,7 @@ noncomputable def carrierι : groupScheme ⟶ TauCeti.GeneralLinear.groupScheme 
   TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-    (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-      rw [TauCeti.serreKostantForm_def]
-      exact hu) hv)
+    weightTable.rep_kostantForm_mem_lattice
     weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight
 
 /-- The carrier inclusion is the generic Kostant toral-closure inclusion. -/
@@ -136,9 +128,7 @@ theorem carrierι_def :
     carrierι = TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι
       (TauCeti.serreRootGenerator weightTable.cartanMatrix)
       (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-      (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-        rw [TauCeti.serreKostantForm_def]
-        exact hu) hv)
+      weightTable.rep_kostantForm_mem_lattice
       weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight := by
   rw [carrierι]
 
@@ -154,9 +144,7 @@ noncomputable def rootSubgroup (k : Fin 6 ⊕ Fin 6) :
   TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToToral
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-    (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-      rw [TauCeti.serreKostantForm_def]
-      exact hu) hv)
+    weightTable.rep_kostantForm_mem_lattice
     weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight k
 
 /-- The root subgroup is the one supplied by the generic Kostant toral-closure construction. -/
@@ -165,9 +153,7 @@ theorem rootSubgroup_def (k : Fin 6 ⊕ Fin 6) :
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToToral
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-        (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-          rw [TauCeti.serreKostantForm_def]
-          exact hu) hv)
+        weightTable.rep_kostantForm_mem_lattice
         weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight k := by
   rw [rootSubgroup]
 
@@ -179,9 +165,7 @@ theorem rootSubgroup_comp_carrierι (k : Fin 6 ⊕ Fin 6) :
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroup
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-        (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-          rw [TauCeti.serreKostantForm_def]
-          exact hu) hv) k
+        weightTable.rep_kostantForm_mem_lattice k
         (weightTable.isNilpotent_rep_serreRootGenerator k) 𝓑 := by
   rw [rootSubgroup, carrierι]
   exact TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToToral_comp_ι
@@ -192,9 +176,7 @@ noncomputable def weightTorus : SplitTorus.groupScheme ℤ (Fin 6) ⟶ groupSche
   TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToToral
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-    (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-      rw [TauCeti.serreKostantForm_def]
-      exact hu) hv)
+    weightTable.rep_kostantForm_mem_lattice
     weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight
 
 /-- The weight torus is the one supplied by the generic Kostant toral-closure construction. -/
@@ -203,9 +185,7 @@ theorem weightTorus_def :
       TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToToral
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-        (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-          rw [TauCeti.serreKostantForm_def]
-          exact hu) hv)
+        weightTable.rep_kostantForm_mem_lattice
         weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight := by
   rw [weightTorus]
 
@@ -246,9 +226,7 @@ noncomputable def points (A : Type v) [CommRing A] :
   TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-    (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-      rw [TauCeti.serreKostantForm_def]
-      exact hu) hv)
+    weightTable.rep_kostantForm_mem_lattice
     weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight A
 
 /-- The carrier points are exactly the invertible matrices cut out by the defining Hopf ideal. -/
@@ -276,9 +254,8 @@ noncomputable def rootSubgroupPoints (k : Fin 6 ⊕ Fin 6) (A : Type v) [CommRin
   TauCeti.UniversalEnvelopingAlgebra.kostantToralRootSubgroupPoints
       (TauCeti.serreRootGenerator weightTable.cartanMatrix)
       (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-      (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-        rw [TauCeti.serreKostantForm_def]
-        exact hu) hv) weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight k A
+      weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
+      weightTable.weight k A
 
 /-- A numbered root-subgroup point is its represented divided-power exponential matrix. -/
 @[simp]
@@ -288,9 +265,8 @@ theorem coe_rootSubgroupPoints (k : Fin 6 ⊕ Fin 6) (A : Type v) [CommRing A]
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-        (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-          rw [TauCeti.serreKostantForm_def]
-          exact hu) hv) k (weightTable.isNilpotent_rep_serreRootGenerator k) 𝓑
+        weightTable.rep_kostantForm_mem_lattice k
+        (weightTable.isNilpotent_rep_serreRootGenerator k) 𝓑
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u) := by
   exact TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints
     _ _ _ _ _ _ _ _ k A u
@@ -339,9 +315,8 @@ noncomputable def weightTorusPoints (A : Type v) [CommRing A] :
   TauCeti.UniversalEnvelopingAlgebra.kostantToralWeightTorusPoints
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-    (fun _ hu _ hv ↦ weightTable.rep_serreKostantForm_mem_lattice (by
-      rw [TauCeti.serreKostantForm_def]
-      exact hu) hv) weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight A
+    weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
+    weightTable.weight A
 
 /-- A minuscule weight-torus point is the diagonal matrix obtained by evaluating each weight. -/
 @[simp]

@@ -84,12 +84,8 @@ def bounded [HasZeroMorphisms C] : ObjectProperty (CochainComplex C ℤ) :=
 /-- A cochain complex is bounded iff it is strictly bounded below by some `a` and strictly bounded
 above by some `b`. -/
 lemma bounded_iff [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
-    CochainComplex.bounded C K ↔ ∃ a b : ℤ, K.IsStrictlyGE a ∧ K.IsStrictlyLE b := by
-  constructor
-  · rintro ⟨⟨a, ha⟩, b, hb⟩
-    exact ⟨a, b, ha, hb⟩
-  · rintro ⟨a, b, ha, hb⟩
-    exact ⟨⟨a, ha⟩, b, hb⟩
+    CochainComplex.bounded C K ↔ ∃ a b : ℤ, K.IsStrictlyGE a ∧ K.IsStrictlyLE b :=
+  exists_and_exists_comm
 
 /-- A cochain complex is bounded exactly when it vanishes outside a finite set of degrees. -/
 lemma bounded_iff_exists_finset_isZero_X [HasZeroMorphisms C] (K : CochainComplex C ℤ) :

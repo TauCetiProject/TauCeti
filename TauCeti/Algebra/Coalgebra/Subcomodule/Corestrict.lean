@@ -119,16 +119,8 @@ theorem weightComponent_mem_of_corestrict_eq_ofWeights
         if wt b = g then Pi.single b (v b) else 0 := by
       have hsingle : Pi.single b (v b) = v b • Pi.single b (1 : R) := by
         simp [← Pi.single_smul]
-      rw [hsingle, map_smul]
-      by_cases hb : wt b = g
-      · rw [ite_eq_left hb, Comodule.weightProj_of_mem]
-        rw [← hb, ← Pi.basisFun_apply]
-        exact Comodule.basis_mem_weightSpace_ofWeights _ _ b
-      · rw [ite_eq_right hb, Comodule.weightProj_of_mem_of_ne]
-        · simp
-        · exact Ne.symm hb
-        · rw [← Pi.basisFun_apply]
-          exact Comodule.basis_mem_weightSpace_ofWeights _ _ b
+      rw [hsingle, map_smul, ← Pi.basisFun_apply, Comodule.weightProj_basis_ofWeights]
+      split_ifs <;> simp
     simp_rw [hterm]
     ext a
     simp only [Finset.sum_apply, Pi.zero_apply, ite_apply, Pi.single_apply]

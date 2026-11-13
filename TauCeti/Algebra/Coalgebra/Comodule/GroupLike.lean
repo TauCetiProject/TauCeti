@@ -41,6 +41,8 @@ spaces, while this one builds a comodule from a basis equipped with a prescribed
 * `TauCeti.Comodule.coefficientMatrix_ofGroupLike`: the coefficient matrix of a group-like basis
   is diagonal.
 * `TauCeti.Comodule.basis_mem_weightSpace_ofWeights`: the `x`-th basis vector has weight `wt x`.
+* `TauCeti.Comodule.weightProj_basis_ofWeights`: weight projection of a basis vector, for
+  arbitrary weights.
 * `TauCeti.Comodule.weightProj_ofWeights_eq`: for distinct weights, weight projection extracts
   the corresponding basis coordinate.
 
@@ -144,6 +146,19 @@ theorem basis_mem_weightSpace_ofWeights (b : Module.Basis η R M) (wt : η → G
   rw [mem_weightSpace]
   exact ofWeights_coact_basis b wt x
 
+/-- Projection to a weight sends a basis vector to itself when its weight is that weight, and to
+zero otherwise. The weights need not be distinct. -/
+theorem weightProj_basis_ofWeights [DecidableEq G] (b : Module.Basis η R M) (wt : η → G) (g : G)
+    (x : η) :
+    letI : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+    weightProj R G M g (b x) = if wt x = g then b x else 0 := by
+  let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+  by_cases h : wt x = g
+  · rw [ite_eq_left h, ← h, weightProj_of_mem]
+    exact basis_mem_weightSpace_ofWeights b wt x
+  · rw [ite_eq_right h, weightProj_of_mem_of_ne (Ne.symm h)]
+    exact basis_mem_weightSpace_ofWeights b wt x
+
 /-- In a basis with pairwise distinct weights, projection to the weight of a basis vector
 extracts exactly that basis coordinate. -/
 @[simp]
@@ -155,13 +170,10 @@ theorem weightProj_ofWeights_eq (b : Module.Basis η R M) (wt : η → G)
   let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
   conv_lhs => rw [← b.linearCombination_repr m]
   rw [Finsupp.linearCombination_apply, map_finsuppSum, Finsupp.sum, Finset.sum_eq_single x]
-  · rw [map_smul, weightProj_of_mem]
-    exact basis_mem_weightSpace_ofWeights b wt x
+  · rw [map_smul, weightProj_basis_ofWeights, ite_eq_left rfl]
   · intro y _ hyx
-    rw [map_smul, weightProj_of_mem_of_ne]
-    · simp
-    · exact fun h ↦ hyx (hwt h).symm
-    · exact basis_mem_weightSpace_ofWeights b wt y
+    rw [map_smul, weightProj_basis_ofWeights, ite_eq_right fun h ↦ hyx (hwt h),
+      smul_zero]
   · intro hx
     have hx' : b.repr m x = 0 := by simpa [Finsupp.mem_support_iff] using hx
     rw [hx', zero_smul, map_zero]
