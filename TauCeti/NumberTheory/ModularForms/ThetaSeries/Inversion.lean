@@ -27,6 +27,11 @@ under the inversion `S : τ ↦ -1/τ`:
 * for integral `L` and `γ ∈ L^∨`, splitting the dual sum into the cosets of `L` gives the
   vector-valued law `θ_γ(-1/τ) = (covol L)⁻¹ (-i)^k τ^k ∑_{δ ∈ L^∨/L} e(b_L(γ, δ)) θ_δ(τ)`.
 
+Read for `L^∨` through `(L^∨)^∨ = L` and `covol L^∨ = (covol L)⁻¹`, the scalar law becomes
+`Θ_{L^∨} ∣[k] S = (-i)^k (covol L) Θ_L`. Composing the two laws gives
+`Θ_L ∣[k] (S S) = (-1)^k Θ_L`, the scalar by which `S S = -I` acts in weight `k`
+(`ModularForm.slash_neg_one`); this checks the constant `(-i)^k (covol L)⁻¹` of the law.
+
 No integrality is needed for the first two statements. The phase `e(+⟪v, m⟫)` is the one produced
 by Poisson summation with Mathlib's Fourier transform; since `θ_δ = θ_{-δ}`, the vector-valued law
 also holds with the opposite phase (`ZLattice.IsIntegral.sum_discriminantPairingChar_neg`).
@@ -35,6 +40,8 @@ also holds with the opposite phase (`ZLattice.IsIntegral.sum_discriminantPairing
 
 * `ZLattice.thetaCoset_S_smul`: the inversion law at a general translate.
 * `ZLattice.thetaSeries_S_smul`, `ZLattice.thetaSeries_slash_S`: the scalar inversion law.
+* `ZLattice.thetaSeries_dual_slash_S`: the scalar inversion law of the dual lattice.
+* `ZLattice.thetaSeries_slash_S_mul_S`: inverting twice multiplies `Θ_L` by `(-1)^k`.
 * `ZLattice.IsUnimodular.thetaSeries_slash_S`: the scalar inversion law of a unimodular lattice.
 * `ZLattice.IsIntegral.thetaCoset_S_smul`, `ZLattice.IsIntegral.thetaCoset_slash_S`: the
   vector-valued inversion law, pointwise and in slash form.
@@ -116,6 +123,31 @@ theorem thetaSeries_slash_S (hk : finrank ℝ E = 2 * k) :
   rw [ModularForm.SL_slash_apply, thetaSeries_S_smul L hk, ModularGroup.denom_S, Pi.smul_apply,
     smul_eq_mul, zpow_neg, zpow_natCast]
   field_simp
+
+/-- **The inversion law of the dual lattice in slash form**: if `dim E = 2k`, then in weight
+`k`, `Θ_{L^∨} ∣[k] S = (-i)^k (covol L) Θ_L`. This is the inversion law of `L^∨`, read through
+`(L^∨)^∨ = L` and `covol L^∨ = (covol L)⁻¹`. -/
+theorem thetaSeries_dual_slash_S (hk : finrank ℝ E = 2 * k) :
+    thetaSeries (dual L) ∣[(k : ℤ)] ModularGroup.S =
+      ((-I) ^ k * (covolume L : ℂ)) • thetaSeries L := by
+  rw [thetaSeries_slash_S (dual L) hk, covolume_dual, dual_dual, ofReal_inv, inv_inv]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Inverting twice**: if `dim E = 2k`, then in weight `k`, `Θ_L ∣[k] (S S) = (-1)^k Θ_L`.
+The two inversion laws `Θ_L ∣[k] S = (-i)^k (covol L)⁻¹ Θ_{L^∨}` and
+`Θ_{L^∨} ∣[k] S = (-i)^k (covol L) Θ_L` compose to this scalar, which agrees with the action
+`ModularForm.slash_neg_one` of `S S = -I` in weight `k`. In odd weight it is `-1`, not `1`. -/
+theorem thetaSeries_slash_S_mul_S (hk : finrank ℝ E = 2 * k) :
+    thetaSeries L ∣[(k : ℤ)] (ModularGroup.S * ModularGroup.S) =
+      (-1 : ℂ) ^ k • thetaSeries L := by
+  -- The statement involves no measure; the inversion laws use the Borel volume.
+  borelize E
+  have hc : (covolume L : ℂ) ≠ 0 := ofReal_ne_zero.mpr (covolume_ne_zero L MeasureTheory.volume)
+  rw [SlashAction.slash_mul, thetaSeries_slash_S L hk, ModularForm.SL_smul_slash,
+    thetaSeries_dual_slash_S L hk, smul_smul]
+  congr 1
+  rw [mul_mul_mul_comm, ← mul_pow, inv_mul_cancel₀ hc, mul_one]
+  simp
 
 omit [MeasurableSpace E] [BorelSpace E] in
 variable {L} in
