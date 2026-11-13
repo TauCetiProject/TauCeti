@@ -331,13 +331,6 @@ theorem refl_equiv (E : GradedExactStructure C) :
     (GradedExactEquiv.refl E).equiv = CategoryTheory.Equivalence.refl :=
   (rfl)
 
-/-- The shift-commutation isomorphism of the identity graded exact equivalence. -/
-@[simp]
-theorem refl_commShift (E : GradedExactStructure C) :
-    HEq (GradedExactEquiv.refl E).commShift
-      (Functor.rightUnitor E.shift.functor ≪≫ (Functor.leftUnitor E.shift.functor).symm) :=
-  (HEq.rfl)
-
 /-- The inverse of a graded exact equivalence is a graded exact equivalence. -/
 protected def symm (h : GradedExactEquiv E E') : GradedExactEquiv E' E :=
   haveI : h.equiv.symm.functor.Additive := inferInstanceAs h.equiv.inverse.Additive
@@ -367,28 +360,6 @@ protected def symm (h : GradedExactEquiv E E') : GradedExactEquiv E' E :=
 theorem symm_equiv (h : GradedExactEquiv E E') : h.symm.equiv = h.equiv.symm :=
   (rfl)
 
-/-- The shift-commutation isomorphism of the inverse of a graded exact equivalence. -/
-@[simp]
-theorem symm_commShift (h : GradedExactEquiv E E') :
-    HEq h.symm.commShift
-      ((Functor.leftUnitor (E'.shift.functor ⋙ h.equiv.inverse)).symm ≪≫
-        Functor.isoWhiskerRight h.equiv.counitIso.symm
-          (E'.shift.functor ⋙ h.equiv.inverse) ≪≫
-        Functor.associator h.equiv.inverse h.equiv.functor
-          (E'.shift.functor ⋙ h.equiv.inverse) ≪≫
-        Functor.isoWhiskerLeft h.equiv.inverse
-          (Functor.associator h.equiv.functor E'.shift.functor h.equiv.inverse).symm ≪≫
-        Functor.isoWhiskerLeft h.equiv.inverse
-          (Functor.isoWhiskerRight h.commShift.symm h.equiv.inverse) ≪≫
-        Functor.isoWhiskerLeft h.equiv.inverse
-          (Functor.associator E.shift.functor h.equiv.functor h.equiv.inverse) ≪≫
-        (Functor.associator h.equiv.inverse E.shift.functor
-          (h.equiv.functor ⋙ h.equiv.inverse)).symm ≪≫
-        Functor.isoWhiskerLeft (h.equiv.inverse ⋙ E.shift.functor) h.equiv.unitIso.symm ≪≫
-        Functor.associator h.equiv.inverse E.shift.functor (𝟭 C) ≪≫
-        Functor.isoWhiskerLeft h.equiv.inverse (Functor.rightUnitor E.shift.functor)) :=
-  (HEq.rfl)
-
 /-- A composite of graded exact equivalences is a graded exact equivalence, for the composed
 commutation isomorphism. -/
 protected def trans (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'') :
@@ -405,16 +376,6 @@ protected def trans (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'') :
 theorem trans_equiv (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'') :
     (h.trans h').equiv = h.equiv.trans h'.equiv :=
   (rfl)
-
-/-- The shift-commutation isomorphism of a composite graded exact equivalence. -/
-@[simp]
-theorem trans_commShift (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'') :
-    HEq (h.trans h').commShift
-      ((Functor.associator _ _ _).symm ≪≫
-        Functor.isoWhiskerRight h.commShift h'.equiv.functor ≪≫
-        Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft h.equiv.functor h'.commShift ≪≫
-        (Functor.associator _ _ _).symm) :=
-  (HEq.rfl)
 
 end GradedExactEquiv
 
