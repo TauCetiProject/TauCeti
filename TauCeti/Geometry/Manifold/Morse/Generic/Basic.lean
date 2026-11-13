@@ -86,7 +86,7 @@ variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] {n : ℕ∞}
 `c`, cut off by the bump function `β`: the function `y ↦ g y - a (β y • extChartAt I c y)`. -/
 private noncomputable def bumpPerturbation {c : M} (β : SmoothBumpFunction I c)
     (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) (a : E →L[ℝ] ℝ) : C^n⟮I, M; 𝓘(ℝ), ℝ⟯ :=
-  g - ContMDiffMap.bumpCovector β a
+  g - β.bumpCovector a
 
 omit [I.Boundaryless] [IsManifold I n M] in
 private theorem bumpPerturbation_apply {c : M} (β : SmoothBumpFunction I c)
@@ -99,8 +99,8 @@ omit [I.Boundaryless] in
 topology. -/
 private theorem continuous_bumpPerturbation {c : M} (β : SmoothBumpFunction I c)
     (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) : Continuous (bumpPerturbation β g) :=
-  continuous_const.sub ((ContMDiffMap.bumpCovectorCLM (n := n) β).continuous.congr
-    (ContMDiffMap.bumpCovectorCLM_apply β))
+  continuous_const.sub ((β.bumpCovectorCLM (n := n)).continuous.congr
+    β.bumpCovectorCLM_apply)
 
 omit [I.Boundaryless] [IsManifold I n M] in
 /-- The difference between the bump perturbation and the function itself is supported in the
@@ -109,11 +109,11 @@ private theorem tsupport_bumpPerturbation_sub_subset {c : M} (β : SmoothBumpFun
     (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) (a : E →L[ℝ] ℝ) :
     tsupport (fun y ↦ bumpPerturbation β g a y - g y) ⊆ tsupport β := by
   have hdiff : (fun y ↦ bumpPerturbation β g a y - g y) =
-      -ContMDiffMap.bumpCovector (n := n) β a := by
+      -β.bumpCovector (n := n) a := by
     ext y
     simp [bumpPerturbation]
   rw [hdiff, tsupport_neg]
-  exact ContMDiffMap.tsupport_bumpCovector_subset β a
+  exact β.tsupport_bumpCovector_subset a
 
 /-- One local perturbation, with its support confined to a prescribed neighbourhood. -/
 private theorem exists_isOpen_forall_exists_isManifoldNondegenerateCriticalPoint (hn : 2 ≤ n)

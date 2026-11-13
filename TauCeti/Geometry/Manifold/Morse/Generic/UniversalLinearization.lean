@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Fredholm.Parametric
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Covector
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 import TauCeti.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The universal linearization of the differential at a critical point
@@ -35,7 +35,8 @@ transversality argument runs on.
 * It is **surjective**, already on the function directions `h`, for every `f` and `x` and every
   `n ≥ 1` (`TauCeti.surjective_criticalHessian_coprod_mvfderivCLM`): every covector is the
   derivative at `x` of a function supported near `x`, chosen linearly and continuously in the
-  covector by `ContMDiffMap.bumpCovectorCLM`. So the universal zero set is cut out transversally.
+  covector by `SmoothBumpFunction.bumpCovectorCLM`. This is the linear ingredient of the
+  transversality of the universal differential to the zero section.
 * The projection of its kernel to the parameter space `C^n(M, ℝ)`, the native parameter
   projection `ContinuousLinearMap.parameterProj`, is **surjective exactly when `x` is a
   nondegenerate critical point of `f`**, for `n ≥ 2` and `M` without boundary
@@ -70,9 +71,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [T2Space M] {n : ℕ∞} [IsManifold I n M]
 
-/-- **The universal differential is transverse to the zero section.** For `1 ≤ n`, the
-linearization `(v, h) ↦ Hess_x f (v) + dh_x` of the universal differential is onto, already on the
-function directions. -/
+/-- **The universal linearization is onto.** For `1 ≤ n`, the linear map
+`(v, h) ↦ Hess_x f (v) + dh_x` is onto, already on the function directions. Once it is identified
+with the derivative of a sufficiently regular universal differential, this is transversality of
+that section to the zero section. -/
 theorem surjective_criticalHessian_coprod_mvfderivCLM (hn : 1 ≤ (n : ℕ∞ω)) (f : M → ℝ) (x : M) :
     Surjective ((criticalHessian I f x).coprod (ContMDiffMap.mvfderivCLM (F := ℝ) hn x)) :=
   fun ξ ↦
@@ -107,11 +109,7 @@ theorem surjective_parameterProj_criticalHessian_mvfderivCLM_iff (hn : 2 ≤ n)
     (f.contMDiff.of_le (WithTop.coe_le_coe.2 hn)).contMDiffAt
   -- The critical Hessian maps `TangentSpace I x`, which is `E`, to its dual, of the same
   -- dimension, so it is invertible exactly when it is onto.
-  have hdim : Module.finrank ℝ E = Module.finrank ℝ (E →L[ℝ] ℝ) :=
-    ContinuousLinearMap.dual_finrank_eq.symm
-  refine ⟨fun hs ↦ ⟨hf, mem_criticalPoints.1 hx, ?_⟩, fun ⟨_, _, hinv⟩ ↦ hinv.surjective⟩
-  exact isInvertible_of_injective_of_finrank_eq (U := E) _ hdim
-    ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
-      (f := (criticalHessian I f x : E →L[ℝ] E →L[ℝ] ℝ).toLinearMap)).2 hs)
+  exact ⟨fun hs ↦ ⟨hf, mem_criticalPoints.1 hx, isInvertible_of_surjective (E := E) hs⟩,
+    fun ⟨_, _, hinv⟩ ↦ hinv.surjective⟩
 
 end TauCeti
