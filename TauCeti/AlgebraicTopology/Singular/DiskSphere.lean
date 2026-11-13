@@ -84,10 +84,7 @@ lemma diskBoundary_singularHomologyMap_zero_isIso {n : ℕ} (hn : 2 ≤ n) :
 /-- The degree-zero relative homology of a positive-dimensional disk and its boundary vanishes. -/
 lemma isZero_singularHomology_diskBoundaryPair_zero {n : ℕ} (hn : 1 ≤ n) :
     IsZero ((diskBoundaryPair n).singularHomology R 0) := by
-  have : Nonempty (diskBoundaryPair.{w} n).snd := by
-    -- Unfolding `TopCat.diskBoundary` exposes its metric-sphere carrier.
-    change Nonempty (ULift (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1))
-    exact ⟨⟨EuclideanSpace.single ⟨0, hn⟩ 1, by simp⟩⟩
+  have : Nonempty (diskBoundaryPair.{w} n).snd := nonempty_diskBoundary_iff.2 (by omega)
   exact TopPair.isZero_singularHomology_zero _ R
 
 section HigherDegrees
@@ -259,10 +256,6 @@ private def complDiskCenterHomeomorph :
 induces isomorphisms on relative singular homology. -/
 theorem isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter (k : ℕ) :
     IsIso (TopPair.singularHomologyMap (diskBoundaryPairToComplDiskCenter.{w} n) R k) := by
-  have hfst (m : ℕ) : IsIso (SSet.homologyMap
-      (TopCat.toSSet.map (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{w} n))) R m) := by
-    have : IsIso (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{w} n)) := IsIso.id _
-    infer_instance
   -- The subspace map is the inclusion of the boundary sphere into the punctured disk, a homotopy
   -- equivalence by radial projection.
   let e := (Homeomorph.ulift.{w} (X := Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :
@@ -276,13 +269,9 @@ theorem isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter (k : ℕ) :
     apply Subtype.ext
     exact (StarConvex.coe_sphereHomotopyEquiv_apply _ _ _ _).trans
       (TopCat.coe_diskBoundaryInclusion_apply_down n s).symm
-  have hsnd (m : ℕ) : IsIso (SSet.homologyMap
-      (TopCat.toSSet.map (TopPair.Hom.snd (diskBoundaryPairToComplDiskCenter.{w} n))) R m) := by
-    have := (e.singularHomologyIso R m).isIso_hom
-    rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, he] at this
-    exact this
-  exact TopPair.isIso_singularHomologyMap_of_isIso R _ k (hfst k) (hsnd k) (fun m _ ↦ hfst m)
-    fun m _ ↦ hsnd m
+  exact TopPair.isIso_singularHomologyMap_of_homotopyEquiv
+    (diskBoundaryPairToComplDiskCenter.{w} n) (.refl (TopCat.disk.{w} n)) e
+    (diskBoundaryPairToComplDiskCenter_fst n) he.symm R k
 
 end PuncturedDisk
 

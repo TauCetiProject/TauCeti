@@ -154,7 +154,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_hold
   -- Points of `K` at distance less than `δ` lie in one half ball.
   have hloc : ∀ x ∈ K, ∀ y ∈ K, dist x y < δ' → dist (iteratedFDeriv ℝ 2 u x)
       (iteratedFDeriv ℝ 2 u y) ≤ ((∑ z ∈ t, C z) * (M + N) : ℝ≥0) * dist x y ^ (α : ℝ) := by
-    intro x hx y hy hxy
+    intro x hx y _ hxy
     obtain ⟨⟨z, hzt⟩, hz⟩ := hδK x hx
     have hzK := htK z hzt
     have hsub : ball z (R z) ⊆ Ω := ball_subset_closedBall.trans (hRΩ z hzK)

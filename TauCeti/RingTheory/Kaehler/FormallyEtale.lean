@@ -51,6 +51,9 @@ the common zero locus `T ⧸ (aᵢ)` of such elements is then étale over `R`
   carries a basis to a basis;
 * `TauCeti.etale_aeval_of_basis`: a smooth algebra is étale over the polynomial ring on elements
   whose differentials form a basis of its differentials;
+* `Module.Basis.etale_aeval_localization_away_det`: after inverting the determinant of the
+  differentials of finitely many elements in a basis of the differentials of a smooth algebra, it is
+  étale over the polynomial ring on those elements;
 * `Module.Basis.etale_quotient_span_range`: the common zero locus of such elements is étale over
   the base.
 
@@ -175,6 +178,30 @@ end TauCeti
 namespace Module.Basis
 
 open KaehlerDifferential MvPolynomial
+
+/-- If `W₁` is smooth over `A` and `d` is the determinant of the differentials `d aᵢ` in a basis
+of `Ω[W₁⁄A]`, then after inverting `d` the map `A[Xᵢ] → W₁[1/d]` given by `Xᵢ ↦ aᵢ` is étale. -/
+theorem etale_aeval_localization_away_det {A W₁ : Type*} [CommRing A] [CommRing W₁]
+    [Algebra A W₁] [Algebra.Smooth A W₁] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (bW₁ : Basis ι W₁ Ω[W₁⁄A]) (a : ι → W₁) (d : W₁)
+    (hd : d = bW₁.det fun i ↦ D A W₁ (a i)) :
+    (MvPolynomial.aeval (R := A)
+      fun i ↦ algebraMap W₁ (Localization.Away d) (a i)).toRingHom.Etale := by
+  subst hd
+  set d := bW₁.det fun i ↦ D A W₁ (a i)
+  -- The differentials of the `aᵢ` form a basis of `Ω[W'⁄A]`: their determinant in the basis
+  -- induced by `bW₁` is the unit `d`.
+  let bW' := TauCeti.kaehlerBasisOfFormallyEtale A W₁ (Localization.Away d) bW₁
+  have hdet : bW'.det (fun i ↦ D A (Localization.Away d) (algebraMap W₁ _ (a i))) =
+      algebraMap W₁ (Localization.Away d) d := by
+    rw [← TauCeti.kaehlerBasisOfFormallyEtale_det_map]
+    congr 1
+    ext i
+    simp
+  obtain ⟨hli, hspan⟩ := bW'.is_basis_iff_det.mpr
+    (hdet ▸ IsLocalization.Away.algebraMap_isUnit d)
+  have : Algebra.Smooth A (Localization.Away d) := .comp A W₁ _
+  exact TauCeti.etale_aeval_of_basis _ (.mk hli hspan.ge) fun i ↦ by simp
 
 /-- **The common zero locus of étale coordinates is étale over the base.** If `W` is smooth over
 `A` and the differentials of `x : ι → W` form a basis of `Ω[W⁄A]`, then `W ⧸ (x)` is étale over
