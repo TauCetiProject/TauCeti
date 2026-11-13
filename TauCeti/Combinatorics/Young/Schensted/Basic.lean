@@ -769,6 +769,55 @@ theorem rowInsertIndex_appendToRow {x k : α} {s : ℕ} {rows : List (List α)} 
 
 /-! ### Insertion preserves tableaux -/
 
+/-- The column step of row insertion when the bumped letter `y` is the largest of its row: if
+`upper` sits on top of `lower`, every entry of `lower` is at most `y`, and `x` replaces `y` in the
+column `j` of `upper`, then the new upper row sits on top of `lower` with `y` appended. -/
+private theorem isRowAbove_set_append_of_forall_le {x y : α} {upper lower : List α} {j : ℕ}
+    (h : upper.IsRowAbove lower) (hj : j < upper.length) (hUj : upper[j] = y)
+    (hpre : ∀ (i : ℕ) (hi : i < j), upper[i] ≤ x) (hxy : x < y) (hle : ∀ z ∈ lower, z ≤ y) :
+    (upper.set j x).IsRowAbove (lower ++ [y]) := by
+  -- every entry of `lower` is at most `y`, so `lower` ends strictly before column `j`
+  have hlen : lower.length ≤ j := by
+    by_contra hcon
+    have := h.getElem_lt j hj (by omega)
+    exact absurd (hle _ (getElem_mem (by omega))) (not_le.mpr (hUj ▸ this))
+  refine ⟨by simp; omega, fun c hu hl => ?_⟩
+  simp only [length_append, length_cons, length_nil] at hl
+  rw [getElem_set]
+  by_cases hc : c < lower.length
+  · rw [getElem_append_left hc, ite_eq_right (by omega)]
+    exact h.getElem_lt c (by simpa using hu) hc
+  · have hc' : c = lower.length := by omega
+    subst hc'
+    rw [getElem_append_right (by omega)]
+    simp only [Nat.sub_self, getElem_cons_zero]
+    split_ifs with hjc
+    · exact hxy
+    · exact (hpre _ (by omega)).trans_lt hxy
+
+/-- The column step of row insertion when the bumped letter `y` bumps in turn: if `upper` sits on
+top of `lower`, `x` replaces `y` in the column `j` of `upper`, and `y` replaces a larger letter in
+the column `j'` of `lower`, then the new upper row sits on top of the new lower row. -/
+private theorem isRowAbove_set_set {x y : α} {upper lower : List α} {j j' : ℕ}
+    (h : upper.IsRowAbove lower) (hj : j < upper.length) (hUj : upper[j] = y)
+    (hpre : ∀ (i : ℕ) (hi : i < j), upper[i] ≤ x) (hxy : x < y)
+    (hj' : j' < lower.length) (hpre' : ∀ (i : ℕ) (hi : i < j'), lower[i] ≤ y) :
+    (upper.set j x).IsRowAbove (lower.set j' y) := by
+  -- the first entry of `lower` exceeding `y` is weakly left of column `j`
+  have hjj : j' ≤ j := by
+    by_contra hcon
+    have := h.getElem_lt j hj (by omega)
+    exact absurd (hpre' j (by omega)) (not_le.mpr (hUj ▸ this))
+  refine ⟨by simpa using h.length_le, fun c hu hl => ?_⟩
+  simp only [List.length_set] at hu hl
+  rw [getElem_set, getElem_set]
+  split_ifs with h1 h2 h2
+  · exact hxy
+  · subst h1
+    exact hxy.trans (hUj ▸ h.getElem_lt _ hj hl)
+  · exact (hpre c (by omega)).trans_lt hxy
+  · exact h.getElem_lt c hu hl
+
 /-- The column step of row insertion: if `upper` sits on top of `lower` and inserting `x` into
 `upper` bumps `y`, then the new upper row sits on top of the result of inserting `y` into
 `lower`. The bumped letter lands weakly to the left of the column it left. -/
@@ -782,42 +831,11 @@ private theorem isRowAbove_rowBump {x y : α} {upper lower : List α}
   | none =>
     have hle := (rowBump_snd_eq_none_iff y lower).mp hlow
     rw [rowBump_of_forall_le y lower hle]
-    -- every entry of `lower` is at most `y`, so `lower` ends strictly before column `j`
-    have hlen : lower.length ≤ j := by
-      by_contra hcon
-      have := h.getElem_lt j hj (by omega)
-      exact absurd (hle _ (getElem_mem (by omega))) (not_le.mpr (hUj ▸ this))
-    refine ⟨by simp; omega, fun c hu hl => ?_⟩
-    simp only [length_append, length_cons, length_nil] at hl
-    rw [getElem_set]
-    by_cases hc : c < lower.length
-    · rw [getElem_append_left hc, ite_eq_right (by omega)]
-      exact h.getElem_lt c (by simpa using hu) hc
-    · have hc' : c = lower.length := by omega
-      subst hc'
-      rw [getElem_append_right (by omega)]
-      simp only [Nat.sub_self, getElem_cons_zero]
-      split_ifs with hjc
-      · exact hxy
-      · exact (hpre _ (by omega)).trans_lt hxy
+    exact isRowAbove_set_append_of_forall_le h hj hUj hpre hxy hle
   | some w =>
-    obtain ⟨j', hj', hL', _, hpre', hyw⟩ :=
-      exists_set_of_rowBump_snd_eq_some hlow
+    obtain ⟨j', hj', hL', -, hpre', -⟩ := exists_set_of_rowBump_snd_eq_some hlow
     rw [hL']
-    -- the first entry of `lower` exceeding `y` is weakly left of column `j`
-    have hjj : j' ≤ j := by
-      by_contra hcon
-      have := h.getElem_lt j hj (by omega)
-      exact absurd (hpre' j (by omega)) (not_le.mpr (hUj ▸ this))
-    refine ⟨by simpa using h.length_le, fun c hu hl => ?_⟩
-    simp only [List.length_set] at hu hl
-    rw [getElem_set, getElem_set]
-    split_ifs with h1 h2 h2
-    · exact hxy
-    · subst h1
-      exact hxy.trans (hUj ▸ h.getElem_lt _ hj hl)
-    · exact (hpre c (by omega)).trans_lt hxy
-    · exact h.getElem_lt c hu hl
+    exact isRowAbove_set_set h hj hUj hpre hxy hj' hpre'
 
 /-- **Row insertion preserves tableaux.** -/
 theorem _root_.List.IsTableauRows.rowInsert {rows : List (List α)} (h : rows.IsTableauRows)
