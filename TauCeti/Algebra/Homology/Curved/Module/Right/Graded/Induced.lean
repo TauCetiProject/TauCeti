@@ -182,7 +182,7 @@ private theorem scalarTower (N : GradedModuleCat.{uN} (OppPiece 𝒜)) (h : IsCu
   · exact smul_assoc r a z.val.2
 
 private noncomputable def grading (N : GradedModuleCat.{uN} (OppPiece 𝒜)) :
-    InternalGrading R (InducedCarrier d N) :=
+    InternalGrading R (InducedCarrier d N) ℤ :=
   (N.grading.prod (N.shiftObj 1).grading).map (valEquiv (d := d)).symm
 
 private theorem mem_grading_piece_iff (N : GradedModuleCat.{uN} (OppPiece 𝒜))

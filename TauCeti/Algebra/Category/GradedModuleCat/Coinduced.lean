@@ -125,7 +125,7 @@ private theorem coinducedSingleEquiv_apply (x : ⨁ p, coinducedSinglePiece 𝒜
       DirectSum.coeLinearMap (coinducedSinglePiece 𝒜 V) x :=
   LinearEquiv.ofInjective_apply _ _
 
-private def coinducedSingleGrading : InternalGrading k (coinducedSingleCarrier 𝒜 V) :=
+private def coinducedSingleGrading : InternalGrading k (coinducedSingleCarrier 𝒜 V) ℤ :=
   (InternalGrading.ofDecomposition
     (DirectSum.summand k (fun p : ℤ ↦ coinducedSinglePiece 𝒜 V p))).map (coinducedSingleEquiv 𝒜 V)
 
