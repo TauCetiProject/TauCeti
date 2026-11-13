@@ -140,6 +140,28 @@ theorem limMap_surjective_of_subsingleton_limOne
   obtain ⟨y, hy⟩ := productMap_surjective hg (z : H.Product)
   exact mem_range_limMap_of_subsingleton_limOne hfg z y hy
 
+/-- If `lim¹ K` vanishes, a levelwise exact sequence `K → F → G → H` remains exact
+at `lim G`. No levelwise injectivity or surjectivity assumptions are needed. -/
+theorem exact_limMap_of_subsingleton_limOne {K : ModuleTower.{v} R} {i : K ⟶ F}
+    (hif : ∀ n, Function.Exact (i.app (op n)).hom (f.app (op n)).hom)
+    (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
+    [Subsingleton K.limOne] : Function.Exact (limMap f) (limMap g) := by
+  refine Function.Exact.of_comp_of_mem_range ?_ fun y hy ↦ ?_
+  · rw [← LinearMap.coe_comp, LinearMap.coe_zero_iff, ← limMap_comp, comp_eq_zero_of_exact hfg,
+      limMap_zero]
+  obtain ⟨x, hx⟩ := (exact_productMap hfg (y : G.Product)).mp
+    (by rw [← coe_limMap_apply, hy, Submodule.coe_zero])
+  exact mem_range_limMap_of_subsingleton_limOne hif y x hx
+
+/-- In a levelwise exact sequence `K → F → G → H`, vanishing of `lim¹ K` and `lim H`
+makes `lim F → lim G` surjective. -/
+theorem limMap_surjective_of_exact_of_subsingleton {K : ModuleTower.{v} R} {i : K ⟶ F}
+    (hif : ∀ n, Function.Exact (i.app (op n)).hom (f.app (op n)).hom)
+    (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
+    [Subsingleton K.limOne] [Subsingleton H.lim] : Function.Surjective (limMap f) := by
+  intro y
+  exact (exact_limMap_of_subsingleton_limOne hif hfg y).mp (Subsingleton.elim _ _)
+
 end Lim
 
 section LimOne

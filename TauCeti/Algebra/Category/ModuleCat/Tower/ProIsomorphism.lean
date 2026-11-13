@@ -18,9 +18,10 @@ on inverse limits. More generally, in a levelwise exact sequence `K → F → G 
 pro-zero error towers `K` and `C` can both be discarded when taking the limit.
 
 The cokernel error disappears because its limit vanishes. Compatible target elements can
-therefore be lifted levelwise. The kernel error disappears in two ways: its limit vanishes,
-giving uniqueness, and its first derived limit vanishes, allowing the levelwise lifts to
-be corrected into a compatible family. No surjectivity of the transitions is required.
+therefore be lifted levelwise. The eventually-zero transitions of `K` kill lifted components
+of any compatible family in the kernel, giving uniqueness. Vanishing of its first derived
+limit allows the levelwise lifts to be corrected into a compatible family. No surjectivity
+of the transitions is required.
 
 This is useful in cohomology and completion comparisons: replacing a module sheaf by its
 quotient by parameter-power torsion can produce pro-zero errors on both sides of the
@@ -46,6 +47,24 @@ universe v u
 
 variable {R : Type u} [Ring R] {K F G C : ModuleTower.{v} R}
 
+/-- In a levelwise exact sequence `K → F → G`, a pro-zero tower `K` makes
+`lim F → lim G` injective, without requiring `K → F` to be levelwise injective. -/
+theorem limMap_injective_of_exact_of_isProZero (i : K ⟶ F) (f : F ⟶ G)
+    (hif : ∀ n, Function.Exact (i.app (op n)).hom (f.app (op n)).hom)
+    (hK : K.IsProZero) : Function.Injective (limMap f) := by
+  refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
+  -- Every component lifts from `K` at a later level whose transition kills it.
+  apply Subtype.ext
+  funext n
+  obtain ⟨m, hnm, hm⟩ := K.isProZero_iff_exists_transitionOfLE_eq_zero.mp hK n
+  have hxm : (f.app (op m)).hom ((x : F.Product) m) = 0 := by
+    simpa only [coe_limMap_apply, productMap_apply, Submodule.coe_zero, Pi.zero_apply] using
+      congrArg (fun y : G.lim ↦ (y : G.Product) m) hx
+  obtain ⟨z, hz⟩ := (hif m _).mp hxm
+  rw [Submodule.coe_zero, Pi.zero_apply, ← F.transitionOfLE_coe_lim x hnm, ← hz,
+    ← LinearMap.comp_apply, ← app_comp_transitionOfLE, LinearMap.comp_apply, hm,
+    LinearMap.zero_apply, map_zero]
+
 /-- Pro-zero error towers in a levelwise exact sequence `K → F → G → C` do not affect
 the inverse limit. No levelwise injectivity or surjectivity assumptions are needed. -/
 theorem limMap_bijective_of_exact_of_isProZero (i : K ⟶ F) (f : F ⟶ G) (g : G ⟶ C)
@@ -55,24 +74,8 @@ theorem limMap_bijective_of_exact_of_isProZero (i : K ⟶ F) (f : F ⟶ G) (g : 
   let : Subsingleton C.lim :=
     Submodule.subsingleton_iff_eq_bot.mpr (lim_eq_bot_of_isProZero hC)
   let : Subsingleton K.limOne := subsingleton_limOne_of_isProZero hK
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦ ?_⟩
-  · -- Every component lifts from `K` at a later level whose transition kills it.
-    apply Subtype.ext
-    funext n
-    obtain ⟨m, hnm, hm⟩ := K.isProZero_iff_exists_transitionOfLE_eq_zero.mp hK n
-    have hxm : (f.app (op m)).hom ((x : F.Product) m) = 0 := by
-      simpa only [coe_limMap_apply, productMap_apply, Submodule.coe_zero, Pi.zero_apply] using
-        congrArg (fun y : G.lim ↦ (y : G.Product) m) hx
-    obtain ⟨z, hz⟩ := (hif m _).mp hxm
-    rw [Submodule.coe_zero, Pi.zero_apply, ← F.transitionOfLE_coe_lim x hnm, ← hz,
-      ← LinearMap.comp_apply, ← app_comp_transitionOfLE, LinearMap.comp_apply, hm,
-      LinearMap.zero_apply, map_zero]
-  -- The cokernel error vanishes, so the compatible family `y` lifts to a family `b`.
-  have hy : productMap g (y : G.Product) = 0 := by
-    simpa only [coe_limMap_apply, Submodule.coe_zero] using
-      congrArg Subtype.val (Subsingleton.elim (limMap g y) 0)
-  obtain ⟨b, hb⟩ := (exact_productMap hfg (y : G.Product)).mp hy
-  exact mem_range_limMap_of_subsingleton_limOne hif y b hb
+  exact ⟨limMap_injective_of_exact_of_isProZero i f hif hK,
+    limMap_surjective_of_exact_of_subsingleton hif hfg⟩
 
 /-- A pro-isomorphism of towers, meaning a map with pro-zero kernel and cokernel, is
 bijective on inverse limits. In particular, no levelwise monomorphism assumption is needed. -/
@@ -116,7 +119,7 @@ theorem limEquivOfProIsomorphism_symm_limMap_apply (f : F ⟶ G)
 
 /-- The inverse equivalence lifts every target component through the original map. -/
 @[simp]
-theorem app_coe_limEquivOfProIsomorphism_symm (f : F ⟶ G)
+theorem app_coe_limEquivOfProIsomorphism_symm_apply (f : F ⟶ G)
     (hf : Functor.proIsomorphisms ℕᵒᵖ (ModuleCat.{v} R) f) (y : G.lim) (n : ℕ) :
     (f.app (op n)).hom (((limEquivOfProIsomorphism f hf).symm y : F.Product) n) =
       (y : G.Product) n := by
