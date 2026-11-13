@@ -42,6 +42,8 @@ against exactly this metric.
   `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
   metric `ω(·, J ·)`, the symplectic form is bounded by it, `|ω(v, w)| ≤ ‖v‖ ‖w‖`.
+* `TauCeti.SymplecticForm.compatible_of_apply_apply_eq_inner`: an almost complex structure whose
+  metric `ω(·, J ·)` is the inner product of `V` is `ω`-compatible.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` determines a metric `g(v, w) = ω(v, J w)`.
@@ -218,6 +220,12 @@ lemma invariant_of_apply_apply_eq_inner
     _ = -ω w v := by simp
     _ = ω v w := ω.neg_eq _ _
 
+/-- If the associated metric `ω(·, J ·)` is the inner product, then `J` represents `ω` through
+the inner product: `⟪J v, w⟫ = ω v w`. -/
+lemma inner_apply_eq_of_apply_apply_eq_inner
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w : V) : ⟪J v, w⟫ = ω v w := by
+  rw [← hg, (ω.invariant_of_apply_apply_eq_inner hg).apply]
+
 /-- The almost complex structure preserves a norm when its squared norm is the diagonal
 `ω(v, J v)`. Only equality on the diagonal is needed. -/
 lemma norm_apply_eq_norm_of_apply_apply_self_eq_inner
@@ -238,6 +246,15 @@ theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w 
   have hJ := ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v => hg v v) w
   rw [hω, abs_neg, ← hJ]
   exact abs_real_inner_le_norm v (J w)
+
+/-- An almost complex structure whose associated metric `ω(·, J ·)` is the inner product is
+`ω`-compatible. -/
+lemma compatible_of_apply_apply_eq_inner {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) : ω.Compatible J :=
+  .of_tames (ω.invariant_of_apply_apply_eq_inner hg) fun v hv ↦ by
+    rw [hg]
+    exact real_inner_self_pos.2 hv
 
 end InnerProductSpace
 
