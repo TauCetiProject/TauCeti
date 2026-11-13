@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Point
 
 /-!
 # The Leray–Hirsch map
@@ -25,6 +26,7 @@ fibre.
 
 * `TopCat.lerayHirsch`: the Leray–Hirsch map, characterized on summands by
   `TopCat.lerayHirsch_lof`.
+* `TopCat.lerayHirsch_bijective_of_isEmpty`: the Leray–Hirsch map over an empty base.
 
 ## References
 
@@ -71,5 +73,17 @@ lemma lerayHirsch_lof (d q : ℕ) (h : d + q = n) (i : ι d)
       E.singularCup k (λ_ _).inv (λ_ _).hom q d n (by omega)
         (TopCat.singularCohomologyMap p q a) (e d i) := by
   simp [lerayHirsch]
+
+/-- The Leray–Hirsch map over an empty base is bijective: its source and target vanish. -/
+lemma lerayHirsch_bijective_of_isEmpty [IsEmpty B] : Function.Bijective (lerayHirsch p n e) := by
+  have : IsEmpty E := Function.isEmpty p
+  have := ModuleCat.subsingleton_of_isZero
+    (TauCeti.isZero_singularCohomology_of_isEmpty (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) E n)
+  have (j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1) :=
+    ModuleCat.subsingleton_of_isZero
+      (TauCeti.isZero_singularCohomology_of_isEmpty (𝟙_ (ModuleCat.{w} k)) k
+        (𝟙_ (ModuleCat.{w} k)) B j.1.1.2)
+  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 end TopCat

@@ -410,12 +410,9 @@ def singularCochainComplexShortComplexMap {P P' : TopPair.{w}} (f : P ⟶ P') :
   τ₂ := TopCat.singularCochainComplexMap (Hom.fst f)
   τ₃ := TopCat.singularCochainComplexMap (Hom.snd f)
   comm₁₂ := by
-    have h := congrArg (fun φ ↦ (TauCeti.ChainComplex.linearYonedaFunctor k M).map φ.op)
-      (((SSetPair.chainComplexFunctorπ C).app R).naturality (toSSetPair.map f))
-    simp only [op_comp, Functor.map_comp] at h
     rw [singularCochainComplexMap_eq, singularCochainComplexMap_fst_eq,
       singularCochainComplexShortComplex_f_eq]
-    exact h.symm
+    exact (SSetPair.cochainComplexπ_naturality _ k M (toSSetPair.map f)).symm
   comm₂₃ := by
     rw [← TopCat.singularCochainComplexMap_comp, ← TopCat.singularCochainComplexMap_comp, Hom.w]
 

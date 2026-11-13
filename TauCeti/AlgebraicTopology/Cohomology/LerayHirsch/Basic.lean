@@ -11,7 +11,6 @@ public import TauCeti.Algebra.DirectSum.Prod
 public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Defs
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Cup
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Module
-public import TauCeti.AlgebraicTopology.Cohomology.Point
 
 /-!
 # The Leray–Hirsch map and its Mayer–Vietoris gluing step
@@ -33,8 +32,9 @@ Leray–Hirsch map of the restriction of `p` over `U ∪ V`. By induction over a
 by open sets over which `p` is trivial, starting from the empty set
 (`TopCat.lerayHirschRestrict_empty_bijective`) and ending with `B`
 (`TopCat.lerayHirschRestrict_univ_bijective_iff`), this step is meant to reduce the bijectivity of
-the Leray–Hirsch map to the product case `TopCat.lerayHirsch_fst_bijective` (in
-`TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Product`).
+the Leray–Hirsch map to the trivial case, the projection `U × F ⟶ U` with classes restricting to a
+basis of the cohomology of every fibre (`TopCat.lerayHirsch_fst_bijective_of_fibrewise_basis`, in
+`TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.FibrewiseBasis`).
 
 The proof of the gluing step is the five lemma. The Mayer–Vietoris sequences of the cover
 `{U, V}` of `U ∪ V` (one for each summand of the source) and of the cover `{p⁻¹ U, p⁻¹ V}` of
@@ -55,9 +55,8 @@ by applying this to the restriction of `p` over `U ∪ V`.
   `B`, with the restricted classes, natural in the subset
   (`TopCat.lerayHirschRestrict_lof_inclusion`, `TopCat.lerayHirschRestrict_lof_subtypeVal`,
   `TopCat.lerayHirschRestrict_restrictPreimage_bijective_iff`).
-* `TopCat.lerayHirsch_bijective_of_isEmpty`, `TopCat.lerayHirschRestrict_empty_bijective`,
-  `TopCat.lerayHirschRestrict_univ_bijective_iff`: the Leray–Hirsch map over an empty base, over
-  the empty set and over all of `B`.
+* `TopCat.lerayHirschRestrict_empty_bijective`, `TopCat.lerayHirschRestrict_univ_bijective_iff`:
+  the Leray–Hirsch map over the empty set and over all of `B`.
 * `TopCat.lerayHirsch_bijective_of_union_eq_univ` and
   `TopCat.lerayHirschRestrict_union_bijective`: the Mayer–Vietoris gluing step.
 
@@ -252,24 +251,11 @@ lemma lerayHirschRestrict_univ_bijective_iff (m : ℕ) :
   exact lerayHirsch_bijective_iff_of_isIso (ofHom (ContinuousMap.subtypeVal _))
     (ofHom (ContinuousMap.subtypeVal _)) (by ext; rfl) fun _ _ _ ↦ rfl
 
-/-- The Leray–Hirsch map over an empty base is bijective: its source and target vanish. -/
-lemma lerayHirsch_bijective_of_isEmpty [IsEmpty B] (m : ℕ) :
-    Function.Bijective (lerayHirsch p m e) := by
-  have : IsEmpty E := Function.isEmpty p
-  have := ModuleCat.subsingleton_of_isZero
-    (TauCeti.isZero_singularCohomology_of_isEmpty (𝟙_ (ModuleCat.{w} k)) k
-      (𝟙_ (ModuleCat.{w} k)) E m)
-  have (j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = m}, ι pq.1.1) :=
-    ModuleCat.subsingleton_of_isZero
-      (TauCeti.isZero_singularCohomology_of_isEmpty (𝟙_ (ModuleCat.{w} k)) k
-        (𝟙_ (ModuleCat.{w} k)) B j.1.1.2)
-  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-
 /-- The Leray–Hirsch map over the empty subset of `B` is bijective: its source and target vanish.
 This is the base case of an induction over finite open covers of `B`. -/
 lemma lerayHirschRestrict_empty_bijective (m : ℕ) :
     Function.Bijective (lerayHirschRestrict p e ∅ m) :=
-  lerayHirsch_bijective_of_isEmpty _ _ m
+  lerayHirsch_bijective_of_isEmpty _ m _
 
 end Restrict
 
