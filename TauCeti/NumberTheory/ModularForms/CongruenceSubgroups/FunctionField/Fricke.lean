@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionFiel
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Weighted
 import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.Extension
+import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Degree
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Separation
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
@@ -312,8 +313,8 @@ theorem forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff_l
     (∀ a : Fin 2 → ZMod 2, a ≠ 0 →
       unop (modularFunctionActionZMod 2 g) (frickeMeromorphicFunction a) =
         frickeMeromorphicFunction a) ↔ g = 1 := by
-  rw [forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff,
-    show (-1 : SL(2, ZMod 2)) = 1 by ext i j; simp [ZMod.neg_eq_self_mod_two], or_self]
+  have hneg : (-1 : SL(2, ZMod 2)) = 1 := by ext i j; simp [ZMod.neg_eq_self_mod_two]
+  rw [forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff, hneg, or_self]
 
 /-- An automorphism of the function field of `X(N)` in the image of `SL(2, ℤ/Nℤ)` fixing every
 Fricke function `f_a`, `a ≠ 0`, is the identity. -/
@@ -338,11 +339,9 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_top :
   set H := (modularFunctionActionZMod N).range.unop
   set M := MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient
   set S := frickeMeromorphicFunction '' {a : Fin 2 → ZMod N | a ≠ 0}
-  -- By Artin's theorem the function field is a finite Galois extension of the fixed field `ℂ(j)`.
-  have : FiniteDimensional (IntermediateField.fixedField H) M :=
-    inferInstanceAs (FiniteDimensional (FixedPoints.subfield H M) M)
-  have : IsGalois (IntermediateField.fixedField H) M :=
-    inferInstanceAs (IsGalois (FixedPoints.subfield H M) M)
+  -- `H` is finite, being the image of `SL(2, ℤ/Nℤ)`, so by Artin's theorem the function field is
+  -- a finite Galois extension of the fixed field `ℂ(j)` (the instances
+  -- `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField`).
   -- Every automorphism over `ℂ(j)` comes from `H`, so only the identity fixes all the `f_a`.
   have hfix :
       (IntermediateField.adjoin (IntermediateField.fixedField H) S).fixingSubgroup = ⊥ := by
@@ -351,7 +350,8 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_top :
     have hτ : (τ : M ≃ₐ[ℂ] M) = 1 := eq_one_of_mem_range_of_forall_frickeMeromorphicFunction τ.2
       fun a ha ↦ (IntermediateField.mem_fixingSubgroup_iff _ _).mp hσ _
         (IntermediateField.subset_adjoin _ _ ⟨a, ha, rfl⟩)
-    rw [show τ = 1 from Subtype.ext hτ]
+    have hτ' : τ = 1 := Subtype.ext hτ
+    rw [hτ']
     exact map_one _
   -- By the Galois correspondence `ℂ(j)(f_a : a ≠ 0)` is everything.
   have htop := IntermediateField.restrictScalars_adjoin ℂ (IntermediateField.fixedField H) S
