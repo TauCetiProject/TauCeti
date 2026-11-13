@@ -56,19 +56,21 @@ theorem card_mul_finrank_quotient_add_le {k : Type*} [Field k] [Algebra k A]
       finrank k (A ⧸ T) + Fintype.card κ * finrank k (A ⧸ W) := by
   classical
   -- Replace `T` by the space `T'` of `U`-combinations of the `x`, which is no larger a quotient.
-  let T' : Submodule k A :=
-    { carrier := {t | ∃ a : ι → A, (∀ i, a i ∈ U) ∧ ∑ i, a i * x i = t}
-      add_mem' := by
-        rintro _ _ ⟨a, ha, rfl⟩ ⟨b, hb, rfl⟩
-        exact ⟨a + b, fun i ↦ U.add_mem (ha i) (hb i), by simp [add_mul, Finset.sum_add_distrib]⟩
-      zero_mem' := ⟨0, fun _ ↦ U.zero_mem, by simp⟩
-      smul_mem' := by
-        rintro c _ ⟨a, ha, rfl⟩
-        exact ⟨c • a, fun i ↦ U.smul_mem c (ha i), by simp [Finset.smul_sum]⟩ }
-  have hT' : ∀ t ∈ T', ∃ a : ι → A, (∀ i, a i ∈ U) ∧ ∑ i, a i * x i = t := fun t ht ↦ ht
-  have hTT' : T ≤ T' := fun t ht ↦ hT t ht
+  let f : (ι → A) →ₗ[k] A := LinearMap.lsum k (fun _ : ι ↦ A) k fun i ↦ LinearMap.mulRight k (x i)
+  have hf (a : ι → A) : f a = ∑ i, a i * x i := by simp [f]
+  let T' : Submodule k A := (Submodule.pi Set.univ fun _ ↦ U).map f
+  have hmem : ∀ a : ι → A, (∀ i, a i ∈ U) → ∑ i, a i * x i ∈ T' := fun a ha ↦
+    mem_map.2 ⟨a, mem_pi.2 fun i _ ↦ ha i, hf a⟩
+  have hT' : ∀ t ∈ T', ∃ a : ι → A, (∀ i, a i ∈ U) ∧ ∑ i, a i * x i = t := fun t ht ↦ by
+    obtain ⟨a, ha, rfl⟩ := mem_map.1 ht
+    exact ⟨a, fun i ↦ mem_pi.1 ha i trivial, (hf a).symm⟩
+  have hTT' : T ≤ T' := fun t ht ↦ by
+    obtain ⟨a, ha, rfl⟩ := hT t ht
+    exact hmem a ha
   have hUT' : ∀ u ∈ U, ∀ i, u * x i ∈ T' := fun u hu i ↦ by
-    refine ⟨Pi.single i u, fun j ↦ ?_, by simp [Pi.single_apply, ite_mul]⟩
+    have hs : ∑ j, (Pi.single i u : ι → A) j * x j = u * x i := by
+      simp [Pi.single_apply, ite_mul]
+    refine hs ▸ hmem _ fun j ↦ ?_
     by_cases h : j = i
     · subst h; simpa using hu
     · simp [h]
