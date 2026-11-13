@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Symplectic.Complex.Radial
+import TauCeti.Analysis.InnerProductSpace.Radial
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!

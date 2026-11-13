@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Radial
+public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Geometry.Symplectic.Complex.Line
+import TauCeti.Analysis.Calculus.FDeriv.RadialField
 
 /-!
 # Radial maps of the complex line and the standard area form
 
 A *radial map* of the complex line is a map `x ↦ g(‖x‖²) • x` for a real function `g`. Where `g`
 is differentiable at `s = ‖z‖²`, its derivative at `z` is `v ↦ g(s) v + 2 g'(s) ⟪z, v⟫ z`
-(`TauCeti.hasFDerivAt_smul_self_of_hasDerivAt_sq_norm`, for any real inner product space). This
-derivative scales the standard area form `ω(v, w) = v.re * w.im - v.im * w.re`
+(the case `x₀ = 0` of `HasDerivAt.hasFDerivAt_smul_sub_norm_sq`, for any real inner product
+space). This derivative scales the standard area form `ω(v, w) = v.re * w.im - v.im * w.re`
 (`TauCeti.stdComplexSymplecticForm`) by the constant factor
 
 `g(s) (g(s) + 2 s g'(s))`
@@ -59,10 +60,13 @@ theorem stdComplexSymplecticForm_fderiv_smul_self {g : ℝ → ℝ} {g' : ℝ} {
     stdComplexSymplecticForm (fderiv ℝ (fun x : ℂ ↦ g (‖x‖ ^ 2) • x) z v)
         (fderiv ℝ (fun x : ℂ ↦ g (‖x‖ ^ 2) • x) z w) =
       g (‖z‖ ^ 2) * (g (‖z‖ ^ 2) + 2 * ‖z‖ ^ 2 * g') * stdComplexSymplecticForm v w := by
-  rw [(hasFDerivAt_smul_self_of_hasDerivAt_sq_norm hg).fderiv]
+  have hd := (sub_zero z ▸ hg).hasFDerivAt_smul_sub_norm_sq 0 z
+  simp only [sub_zero] at hd
+  rw [hd.fderiv]
   simp only [add_apply, smul_apply, ContinuousLinearMap.id_apply,
-    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, smul_smul]
-  refine (stdComplexSymplecticForm_smul_add_inner_smul _ _ z v w).trans ?_
+    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, nsmul_eq_mul, Nat.cast_ofNat,
+    smul_eq_mul, ← mul_assoc]
+  refine (stdComplexSymplecticForm_smul_add_inner_smul _ (g' * 2) z v w).trans ?_
   ring
 
 end TauCeti
