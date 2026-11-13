@@ -19,7 +19,8 @@ is the segment, and for an empty type it consists of two isolated vertices. Its 
 correspond to the elements of `α` (`parallelGraphGeomEdgeEquiv`).
 
 The graph is connected exactly when `α` is nonempty, and then its underlying multigraph has one
-component; when `α` is empty it has two. For `a ≠ b` the closed path `parallelLoop a b`, which
+component; when `α` is empty it has two. In that multigraph the one-edge walks along distinct
+parallel edges remain distinct. For `a ≠ b` the closed path `parallelLoop a b`, which
 crosses the edge `a` and comes back along the edge `b`, is reduced and nonempty; for `a = b` it
 backtracks and reduces to the empty path. Hence the graph is acyclic exactly when `α` has at
 most one element, and a tree exactly when `α` has exactly one element: multiple edges are
@@ -148,6 +149,13 @@ def parallelDart (a : α) : Quiver.Hom (V := (parallelGraph α).V) false true :=
 @[simp] theorem parallelDart_val (a : α) : (parallelDart a).1 = (a, false) :=
   dart_val _ _
 
+/-- Distinct edges give distinct arrows from `false` to `true`. -/
+theorem parallelDart_injective : Function.Injective (parallelDart (α := α)) := fun a b h => by
+  simpa using congrArg (fun e => e.1.1) h
+
+@[simp] theorem parallelDart_inj {a b : α} : parallelDart a = parallelDart b ↔ a = b :=
+  parallelDart_injective.eq_iff
+
 /-- A graph of parallel edges is preconnected exactly when it has an edge. -/
 @[simp] theorem parallelGraph_preconnected_iff : (parallelGraph α).Preconnected ↔ Nonempty α := by
   refine ⟨fun h => ?_, fun ⟨a⟩ => ?_⟩
@@ -188,6 +196,16 @@ along the edge `a`. -/
 
 @[simp] theorem length_parallelLoop (a b : α) : (parallelLoop a b).length = 2 :=
   (Path.length_darts _ _).symm.trans (congrArg List.length (darts_parallelLoop a b))
+
+/-- The closed path `parallelLoop a b` is not the empty path. -/
+@[simp] theorem parallelLoop_ne_nil (a b : α) : parallelLoop a b ≠ Quiver.Path.nil := by
+  simp [parallelLoop_def]
+
+/-- The closed path `parallelLoop a b` determines the edges `a` and `b`. -/
+@[simp] theorem parallelLoop_inj {a b c d : α} :
+    parallelLoop a b = parallelLoop c d ↔ a = c ∧ b = d := by
+  refine ⟨fun h => ?_, fun ⟨hac, hbd⟩ => hac ▸ hbd ▸ rfl⟩
+  simpa using congrArg (Path.darts (parallelGraph α)) h
 
 /-- Crossing one edge and returning along another is reduced exactly when the two edges are
 distinct. -/
@@ -250,6 +268,14 @@ component. -/
     (parallelGraph α).toGraph.componentCount = 1 := by
   rw [Graph.componentCount_eq_one_iff, connected_toGraph_iff, parallelGraph_connected_iff]
   infer_instance
+
+/-- In the underlying multigraph, the one-edge walks along two parallel edges are equal exactly
+when the edges are: forgetting directions keeps parallel edges distinct. -/
+theorem toWalk_toPath_parallelDart_inj {a b : α} :
+    Path.toWalk (parallelGraph α) (parallelDart a).toPath =
+      Path.toWalk (parallelGraph α) (parallelDart b).toPath ↔ a = b := by
+  refine ⟨fun h => ?_, fun h => h ▸ rfl⟩
+  simpa using congrArg Graph.Walk.edges h
 
 end SerreGraph
 end TauCeti
