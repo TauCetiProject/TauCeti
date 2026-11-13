@@ -56,6 +56,9 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
   form pairs the `c`-eigenspace of `x` only with its `-c`-eigenspace.
 * `LinearMap.BilinForm.lieInvariant.nondegenerate_of_isIrreducible`: a nonzero invariant form on
   an irreducible module is nondegenerate.
+* `LinearMap.BilinForm.lieInvariant.apply_ne_zero_of_eigenspace_neg_le`: on an irreducible
+  module, a nonzero invariant form pairs an eigenvector of a diagonalizable element nontrivially
+  with any vector spanning the opposite eigenspace.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
   the Killing form, is an invariant symmetric form on the Lie algebra.
 * `TauCeti.LieModule.invariantForms_le_maxTrivSubmodule`: invariant symmetric forms lie in the
@@ -143,14 +146,10 @@ theorem nondegenerate_of_isIrreducible [_root_.LieModule.IsIrreducible R L M]
   -- the left kernel of an invariant form is a Lie submodule, hence zero or everything
   have hleft (Ψ : LinearMap.BilinForm R M) (hΨ : Ψ.lieInvariant L) (hΨ0 : Ψ ≠ 0) :
       Ψ.SeparatingLeft := by
-    let N : LieSubmodule R L M :=
-      { LinearMap.ker Ψ with
-        lie_mem := fun {x y} hy ↦ by
-          ext z
-          simp [hΨ x y z, LinearMap.mem_ker.mp hy] }
+    let N := LieAlgebra.InvariantForm.orthogonal (LinearMap.flip Ψ)
+      (TauCeti.LieAlgebra.lieInvariant_flip hΨ) ⊤
     have hmem {y : M} : y ∈ N ↔ ∀ z, Ψ y z = 0 := by
-      rw [← LieSubmodule.mem_toSubmodule]
-      simp [N, LinearMap.ext_iff]
+      simp [N, LieAlgebra.InvariantForm.mem_orthogonal]
     rcases eq_bot_or_eq_top N with hN | hN
     · intro y hy
       simpa [hN] using hmem.mpr hy
@@ -160,6 +159,29 @@ theorem nondegenerate_of_isIrreducible [_root_.LieModule.IsIrreducible R L M]
     (hleft (LinearMap.flip Φ) (TauCeti.LieAlgebra.lieInvariant_flip hΦ) fun h ↦ ?_)⟩
   exact hΦ0 (LinearMap.ext fun y ↦ LinearMap.ext fun z ↦ by
     simpa using LinearMap.congr_fun₂ h z y)
+
+/-- **A nonzero invariant form pairs an eigenvector with its opposite eigenspace.** Let `x` act
+diagonalizably on an irreducible module `M` and let `u ≠ 0` be an eigenvector of eigenvalue `c`.
+An invariant form pairs the `c`-eigenspace only with the `-c`-eigenspace, so if that eigenspace
+lies on the line through `w` and `Φ` is nonzero, then `Φ u w ≠ 0`. -/
+theorem apply_ne_zero_of_eigenspace_neg_le [NoZeroDivisors R]
+    [_root_.LieModule.IsIrreducible R L M]
+    (hΦ : Φ.lieInvariant L) (hΦ0 : Φ ≠ 0) {x : L} {c : R} {u w : M} (hu0 : u ≠ 0)
+    (hu : ⁅x, u⁆ = c • u) (htop : ⨆ μ, (LieModule.toEnd R L M x).eigenspace μ = ⊤)
+    (hw : (LieModule.toEnd R L M x).eigenspace (-c) ≤ R ∙ w) : Φ u w ≠ 0 := by
+  intro huw
+  refine hu0 ((hΦ.nondegenerate_of_isIrreducible hΦ0).1 u fun y ↦ ?_)
+  have hy : y ∈ ⨆ μ, (LieModule.toEnd R L M x).eigenspace μ := htop ▸ Submodule.mem_top
+  induction hy using Submodule.iSup_induction' with
+  | mem μ y hy =>
+    by_cases hμ : μ = -c
+    · subst hμ
+      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp (hw hy)
+      simp [huw]
+    · exact hΦ.apply_eq_zero_of_mem_eigenspace_of_add_ne_zero
+        (Module.End.mem_eigenspace_iff.mpr hu) hy fun h' ↦ hμ (by linear_combination h')
+  | zero => simp
+  | add y z _ _ hy hz => simp [hy, hz]
 
 end Module
 

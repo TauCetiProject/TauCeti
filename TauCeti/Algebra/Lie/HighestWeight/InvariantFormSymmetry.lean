@@ -81,20 +81,6 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
   {b : (rootSystem H).Base} {lam : Dual K H}
 
-/-! ### The pairing with the sum of the positive coroots -/
-
-/-- A dominant integral weight takes on the sum of the positive coroots the natural number which is
-the sum of its integer pairings with the positive coroots. -/
-private theorem exists_nat_apply_twoWeylVector_flip (hlam : IsDominantIntegral b lam) :
-    ∃ m : ℕ, lam (twoWeylVector (rootSystem H).flip b.flip) = m ∧
-      ∑ i ∈ posRootsFinset (rootSystem H) b, coweightPairing lam i = m := by
-  set n := ∑ i ∈ posRootsFinset (rootSystem H) b, coweightPairing lam i
-  have hn : 0 ≤ n := Finset.sum_nonneg fun i hi ↦
-    hlam.coweightPairing_nonneg_of_mem_posRoots ((mem_posRootsFinset _ b i).mp hi)
-  refine ⟨n.toNat, ?_, Int.toNat_of_nonneg hn |>.symm⟩
-  rw [twoWeylVector_flip_eq_sum_coroot, map_sum, ← Int.cast_natCast, Int.toNat_of_nonneg hn]
-  simp only [n, Int.cast_sum, intCast_coweightPairing hlam.isIntegralWeight]
-
 /-! ### The top eigenspace of the sum of the positive coroots -/
 
 variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] {v : M}
@@ -151,29 +137,6 @@ private theorem eigenspace_twoWeylVector_flip_le (hv : IsHighestWeightVector b l
 
 /-! ### Pairing the top and bottom eigenspaces -/
 
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [FiniteDimensional K M] in
-/-- **A nonzero invariant form pairs an eigenvector with its opposite eigenspace.** Let `x` act
-diagonalizably on `M` and let `u ≠ 0` be an eigenvector of eigenvalue `c`. An invariant form pairs
-the `c`-eigenspace only with the `-c`-eigenspace, so if that eigenspace lies on the line through
-`w` and `Φ` is nonzero, then `Φ u w ≠ 0`. -/
-private theorem apply_ne_zero_of_eigenspace_neg_le {Φ : LinearMap.BilinForm K M}
-    (hΦ : Φ.lieInvariant L) (hΦ0 : Φ ≠ 0) {x : L} {c : K} {u w : M} (hu0 : u ≠ 0)
-    (hu : ⁅x, u⁆ = c • u) (htop : ⨆ μ, (toEnd K L M x).eigenspace μ = ⊤)
-    (hw : (toEnd K L M x).eigenspace (-c) ≤ K ∙ w) : Φ u w ≠ 0 := by
-  intro huw
-  refine hu0 ((hΦ.nondegenerate_of_isIrreducible hΦ0).1 u fun y ↦ ?_)
-  have hy : y ∈ ⨆ μ, (toEnd K L M x).eigenspace μ := htop ▸ Submodule.mem_top
-  induction hy using Submodule.iSup_induction' with
-  | mem μ y hy =>
-    by_cases hμ : μ = -c
-    · subst hμ
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp (hw hy)
-      simp [huw]
-    · exact hΦ.apply_eq_zero_of_mem_eigenspace_of_add_ne_zero
-        (Module.End.mem_eigenspace_iff.mpr hu) hy fun h' ↦ hμ (by linear_combination h')
-  | zero => simp
-  | add y z _ _ hy hz => simp [hy, hz]
-
 /-- **The principal lowering element pairs the highest weight vector nontrivially.** For the
 lowering element `F` of the principal `sl₂` triple, every nonzero invariant form takes a nonzero
 value at `(v, F ^ m • v)`, where `m = ⟨λ, 2ρ^∨⟩`. When there is no root, `m = 0` and any `F`
@@ -196,13 +159,13 @@ private theorem exists_apply_pow_toEnd_ne_zero (hv : IsHighestWeightVector b lam
     subst hm0
     refine ⟨0, fun Φ hΦ hΦ0 ↦ ?_⟩
     rw [pow_zero, one_apply_eq_self]
-    refine apply_ne_zero_of_eigenspace_neg_le hΦ hΦ0 hv.ne_zero hvx ?_ (by simpa using htopE)
+    refine hΦ.apply_ne_zero_of_eigenspace_neg_le hΦ0 hv.ne_zero hvx ?_ (by simpa using htopE)
     refine eq_top_iff.mpr (le_iSup_of_le 0 fun y _ ↦ ?_)
     simp [hx]
   · obtain ⟨e, F, t, he, -⟩ := exists_isSl2Triple_twoWeylVector_flip b
     have hP : t.HasPrimitiveVectorWith v (m : K) :=
       ⟨hv.ne_zero, hvx, hv.lie_eq_zero_of_mem_positiveNilradical he⟩
-    refine ⟨F, fun Φ hΦ hΦ0 ↦ apply_ne_zero_of_eigenspace_neg_le hΦ hΦ0 hv.ne_zero hvx
+    refine ⟨F, fun Φ hΦ hΦ0 ↦ hΦ.apply_ne_zero_of_eigenspace_neg_le hΦ0 hv.ne_zero hvx
       (iSup_eigenspace_toEnd_eq_top t) ?_⟩
     -- the bottom eigenspace is a line, as the top one is, and it contains `F ^ m • v`
     set w := (toEnd K L M F ^ m) v
@@ -231,7 +194,7 @@ theorem invariantForm_flip_eq_tits_sign_smul (hv : IsHighestWeightVector b lam v
     {Φ : LinearMap.BilinForm K M} (hΦ : Φ.lieInvariant L) :
     LinearMap.flip Φ =
       (-1 : K) ^ (∑ i ∈ posRootsFinset (rootSystem H) b, coweightPairing lam i) • Φ := by
-  obtain ⟨m, hm, hsum⟩ := exists_nat_apply_twoWeylVector_flip hv.isDominantIntegral
+  obtain ⟨m, hm, hsum⟩ := hv.isDominantIntegral.exists_nat_apply_twoWeylVector_flip
   obtain ⟨F, hF⟩ := exists_apply_pow_toEnd_ne_zero hv hm
   rw [hsum, zpow_natCast]
   set w := (toEnd K L M F ^ m) v
@@ -254,7 +217,7 @@ theorem invariantForm_isSymm_iff_tits_sign (hv : IsHighestWeightVector b lam v)
     {Φ : LinearMap.BilinForm K M} (hΦ : Φ.lieInvariant L) (hΦ0 : Φ ≠ 0) :
     Φ.IsSymm ↔
       (-1 : ℤˣ) ^ (∑ i ∈ posRootsFinset (rootSystem H) b, coweightPairing lam i) = 1 := by
-  obtain ⟨m, -, hsum⟩ := exists_nat_apply_twoWeylVector_flip hv.isDominantIntegral
+  obtain ⟨m, -, hsum⟩ := hv.isDominantIntegral.exists_nat_apply_twoWeylVector_flip
   have hswap (y z : M) : Φ z y = (-1 : K) ^ m * Φ y z := by
     simpa [hsum] using LinearMap.congr_fun₂ (invariantForm_flip_eq_tits_sign_smul hv hΦ) y z
   rw [hsum, zpow_natCast, neg_one_pow_eq_one_iff_even (by decide)]
@@ -273,7 +236,7 @@ theorem invariantForm_isAlt_iff_tits_sign (hv : IsHighestWeightVector b lam v)
     {Φ : LinearMap.BilinForm K M} (hΦ : Φ.lieInvariant L) (hΦ0 : Φ ≠ 0) :
     Φ.IsAlt ↔
       (-1 : ℤˣ) ^ (∑ i ∈ posRootsFinset (rootSystem H) b, coweightPairing lam i) = -1 := by
-  obtain ⟨m, -, hsum⟩ := exists_nat_apply_twoWeylVector_flip hv.isDominantIntegral
+  obtain ⟨m, -, hsum⟩ := hv.isDominantIntegral.exists_nat_apply_twoWeylVector_flip
   have hswap (y z : M) : Φ z y = (-1 : K) ^ m * Φ y z := by
     simpa [hsum] using LinearMap.congr_fun₂ (invariantForm_flip_eq_tits_sign_smul hv hΦ) y z
   rw [hsum, zpow_natCast, neg_one_pow_eq_neg_one_iff_odd (by decide)]
