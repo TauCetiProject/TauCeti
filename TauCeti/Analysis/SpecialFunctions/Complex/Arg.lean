@@ -22,10 +22,12 @@ their quotient is the difference of their arguments. It also records that every
 complex number is rotated onto the nonpositive real axis by the square of a unit complex number,
 and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by a punctured ball about its
-vertex, is the image of an open rectangle in polar coordinates. Finally, the argument is smooth on
-the slit plane, where its derivative is the imaginary part of that of the logarithm, and although it
-jumps across the negative real axis, a smooth `2π`-periodic function of the argument is smooth on
-the whole punctured plane: near the negative real axis it is computed from the argument of `-z`.
+vertex, is the image of an open rectangle in polar coordinates. On the slit plane `|arg z| < π`,
+and the exponential maps the horizontal strip `|im x| < π` into the slit plane. Finally, the
+argument is smooth on the slit plane, where its derivative is the imaginary part of that of the
+logarithm, and although it jumps across the negative real axis, a smooth `2π`-periodic function of
+the argument is smooth on the whole punctured plane: near the negative real axis it is computed
+from the argument of `-z`.
 Since the argument is continuous on the slit plane and blind to positive real scaling,
 `arg (f x) → arg Q` as soon as some positive real multiple of `f x` tends to `Q ∈ slitPlane`.
 
@@ -46,6 +48,8 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 * `Complex.arg_neg_exp_of_div_pi_ne`: if `φ / π` is not an integer, then
   `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
+* `Complex.abs_arg_lt_pi_of_mem_slitPlane`: on the slit plane, `|arg z| < π`.
+* `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
@@ -176,6 +180,16 @@ theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
     simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
       contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
   exact (hp.pow m).contDiffWithinAt
+
+/-- On the slit plane the argument lies strictly between `-π` and `π`. -/
+theorem abs_arg_lt_pi_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) : |arg z| < π :=
+  abs_lt.2 ⟨neg_pi_lt_arg z, lt_of_le_of_ne (arg_le_pi z) (slitPlane_arg_ne_pi hz)⟩
+
+/-- The exponential of a point of the horizontal strip `|im x| < π` lies in the slit plane. -/
+theorem exp_mem_slitPlane_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : exp x ∈ slitPlane := by
+  obtain ⟨h₁, h₂⟩ := abs_lt.1 hx
+  rw [exp_mem_slitPlane, (toIocMod_eq_self _).2 ⟨h₁, by linarith [pi_pos]⟩]
+  exact h₂.ne
 
 /-- The argument is smooth on the slit plane, where it is the imaginary part of the principal
 logarithm. -/

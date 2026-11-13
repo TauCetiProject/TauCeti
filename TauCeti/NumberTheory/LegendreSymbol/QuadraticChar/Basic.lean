@@ -20,7 +20,7 @@ quadratic character sums to zero against any nonzero dilation, and the quadratic
 ## Main results
 
 * `TauCeti.sum_comp_mul_sq`: `∑ₜ g(a t²) = ∑ᵤ (1 + χ(a u)) • g(u)` for `a ≠ 0`.
-* `TauCeti.sum_quadraticChar_mul`: `∑ᵤ χ(a u) = 0` for `a ≠ 0`.
+* `TauCeti.sum_quadraticChar_mul`: `∑ᵤ χ(a u) = 0`.
 * `TauCeti.sum_quadraticChar_mul_sub`: the quadratic Jacobi sum `∑ᵤ χ(u (c - u))`.
 -/
 
@@ -46,9 +46,11 @@ theorem sum_comp_mul_sq {M : Type*} [AddCommGroup M] (hF : ringChar F ≠ 2) {a 
   refine Fintype.sum_bijective (a * ·) (mulLeft_bijective₀ a ha) _ _ fun s ↦ ?_
   rw [← mul_assoc, ← sq, map_mul, quadraticChar_sq_one' ha, one_mul, add_comm (1 : ℤ)]
 
-/-- The quadratic character sums to zero against any nonzero dilation. -/
-theorem sum_quadraticChar_mul (hF : ringChar F ≠ 2) {a : F} (ha : a ≠ 0) :
+/-- The quadratic character sums to zero against any dilation. -/
+theorem sum_quadraticChar_mul (hF : ringChar F ≠ 2) (a : F) :
     ∑ u : F, quadraticChar F (a * u) = 0 := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
   rw [Fintype.sum_bijective (a * ·) (mulLeft_bijective₀ a ha) _ (quadraticChar F) fun _ ↦ rfl,
     quadraticChar_sum_zero hF]
 

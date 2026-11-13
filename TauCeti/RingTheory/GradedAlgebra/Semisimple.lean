@@ -14,8 +14,9 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 # Semisimple degree-zero parts of graded algebras
 
 This file gives a criterion for the degree-zero part of a graded algebra to be semisimple. If it
-is spanned over a field by a complete family of orthogonal idempotents, it is a quotient of a
-finite product of copies of the field and hence is semisimple.
+is spanned over a commutative semisimple ring `k` (for instance a field) by a complete family of
+orthogonal idempotents, it is a quotient of a finite product of copies of `k` and hence is
+semisimple.
 
 ## Main results
 
@@ -27,10 +28,11 @@ public section
 
 namespace TauCeti
 
-universe uk uA uI
+universe uι uk uA uI
 
-variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} {I : Type uI} {e : I → A} [Fintype I]
+variable {ι : Type uι} [AddMonoid ι] {k : Type uk} [CommRing k] [IsSemisimpleRing k]
+  {A : Type uA} [Ring A] [Algebra k A] {𝒜 : ι → Submodule k A}
+  {I : Type uI} {e : I → A} [Fintype I]
   (hcomplete : CompleteOrthogonalIdempotents e) (he₀ : ∀ i, e i ∈ 𝒜 0)
   (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e))
 
