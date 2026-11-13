@@ -348,49 +348,89 @@ section Coordinates
 variable [NormedSpace ℂ E] [IsScalarTower ℝ ℂ E] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
   [VectorBundle ℝ F V] [VectorBundle ℂ F V]
 
-/-- At a point `x` of the chart at `x₀` where `j` reads as multiplication by `i` in the tangent
-coordinates at `x₀`, the `(0,1)`-part of a one-form read in these coordinates and the trivialization
-of `V` at `y₀` is the complex antilinear part of its reading. -/
+/-- Outside the chart at `x₀` a reading in the tangent coordinates at `x₀` vanishes, so it can
+only be multiplication by `i` if the model space is trivial. -/
+private theorem subsingleton_of_inTangentCoordinates_eq {x₀ x : M}
+    (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E)
+    (hx : x ∉ (chartAt H x₀).source) : Subsingleton E := by
+  have hx' : x ∉ (trivializationAt E (TangentSpace I) x₀).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet]
+  have h (v : E) : v = 0 := by
+    have h := DFunLike.congr_fun hj v
+    simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id_eq,
+      ContinuousLinearMap.comp_apply, Trivialization.symmL_apply_of_notMem _ hx', map_zero,
+      smul_apply, ContinuousLinearMap.id_apply] at h
+    exact (smul_eq_zero.1 h.symm).resolve_left Complex.I_ne_zero
+  exact ⟨fun v w ↦ (h v).trans (h w).symm⟩
+
+/-- Where `j` reads as multiplication by `i` in the tangent coordinates at `x₀`, it maps the
+inverse tangent coordinates of `v` to those of `i • v`. -/
+private theorem toEndomorphism_symmL_of_inTangentCoordinates_eq {x₀ x : M}
+    (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E)
+    (hx : x ∈ (chartAt H x₀).source) (v : E) :
+    j.toEndomorphism x ((trivializationAt E (TangentSpace I) x₀).symmL ℝ x v) =
+      (trivializationAt E (TangentSpace I) x₀).symmL ℝ x (Complex.I • v) := by
+  have h := DFunLike.congr_fun hj v
+  simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id_eq,
+    ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply] at h
+  rw [← h, Trivialization.symmL_continuousLinearMapAt]
+  rwa [TangentBundle.trivializationAt_baseSet]
+
+/-- At a point `x` where `j` reads as multiplication by `i` in the tangent coordinates at `x₀`, the
+`(0,1)`-part of a one-form read in these coordinates and the trivialization of `V` at `y₀` is the
+complex antilinear part of its reading. -/
 theorem inCoordinates_zeroOnePart {x₀ x : M} (y₀ : M)
     (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
       Complex.I • ContinuousLinearMap.id ℝ E)
-    (hx : x ∈ (chartAt H x₀).source) (η : TangentSpace I x →L[ℝ] V x) :
+    (η : TangentSpace I x →L[ℝ] V x) :
     ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x (j.zeroOnePart η) =
       ContinuousLinearMap.complexAntilinearPartL
         (ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x η) := by
-  have hJ (v : E) : j.toEndomorphism x ((trivializationAt E (TangentSpace I) x₀).symmL ℝ x v) =
-      (trivializationAt E (TangentSpace I) x₀).symmL ℝ x (Complex.I • v) := by
-    have h := DFunLike.congr_fun hj v
-    simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id_eq,
-      ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply] at h
-    rw [← h, Trivialization.symmL_continuousLinearMapAt]
-    rwa [TangentBundle.trivializationAt_baseSet]
-  ext v
-  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.complexAntilinearPartL_apply_apply, zeroOnePart_apply]
-  rw [hJ, map_smul, map_add,
-    Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_smul]
+  by_cases hx : x ∈ (chartAt H x₀).source
+  · ext v
+    simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.complexAntilinearPartL_apply_apply, zeroOnePart_apply]
+    rw [toEndomorphism_symmL_of_inTangentCoordinates_eq hj hx, map_smul, map_add,
+      Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_smul]
+  · have := subsingleton_of_inTangentCoordinates_eq hj hx
+    exact Subsingleton.elim _ _
 
-/-- At a point `x` of the chart at `x₀` and of the base set of the trivialization of `V` at `y₀`,
-where `j` reads as multiplication by `i` in the tangent coordinates at `x₀`, a one-form is a
-`(0,1)`-form exactly when its reading in these coordinates is complex antilinear. -/
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] [IsScalarTower ℝ ℂ F] in
+/-- At a point `x` of the base set of the trivialization of `V` at `y₀`, where `j` reads as
+multiplication by `i` in the tangent coordinates at `x₀`, a one-form is a `(0,1)`-form exactly when
+its reading in these coordinates is complex antilinear. -/
 theorem isZeroOneForm_iff_inCoordinates {x₀ x y₀ : M}
     (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
       Complex.I • ContinuousLinearMap.id ℝ E)
-    (hx : x ∈ (chartAt H x₀).source) (hy : x ∈ (trivializationAt F V y₀).baseSet)
-    {η : TangentSpace I x →L[ℝ] V x} :
+    (hy : x ∈ (trivializationAt F V y₀).baseSet) {η : TangentSpace I x →L[ℝ] V x} :
     j.IsZeroOneForm η ↔ ∀ v,
       ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x η (Complex.I • v) =
         -(Complex.I • ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x η v) := by
-  rw [← ContinuousLinearMap.complexAntilinearPartL_eq_self_iff,
-    ← inCoordinates_zeroOnePart y₀ hj hx, ← zeroOnePart_eq_self_iff]
-  refine ⟨fun h ↦ by rw [h], fun h ↦ ?_⟩
-  -- The reading at `x` is injective: both trivializations are isomorphisms at `x`.
-  have hx' : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by
-    rwa [TangentBundle.trivializationAt_baseSet]
-  rw [ContinuousLinearMap.inCoordinates_eq hx' hy,
-    ContinuousLinearMap.inCoordinates_eq hx' hy] at h
-  exact (ContinuousLinearEquiv.arrowCongrEquiv _ _).injective h
+  by_cases hx : x ∈ (chartAt H x₀).source
+  · have hx' : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by
+      rwa [TangentBundle.trivializationAt_baseSet]
+    -- The tangent coordinates at `x` are onto and the trivialization of `V` is injective at `x`.
+    have hS : Function.Surjective ((trivializationAt E (TangentSpace I) x₀).symmL ℝ x) :=
+      fun w ↦ ⟨_, Trivialization.symmL_continuousLinearMapAt _ hx' w⟩
+    have hT : Function.Injective ((trivializationAt F V y₀).continuousLinearMapAt ℝ x) :=
+      Function.LeftInverse.injective (g := (trivializationAt F V y₀).symmL ℝ x)
+        (Trivialization.symmL_continuousLinearMapAt _ hy)
+    simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
+    rw [isZeroOneForm_iff, hS.forall]
+    refine forall_congr' fun v ↦ ?_
+    have hTI (u : V x) : -(Complex.I • (trivializationAt F V y₀).continuousLinearMapAt ℝ x u) =
+        (trivializationAt F V y₀).continuousLinearMapAt ℝ x (-(Complex.I • u)) := by
+      rw [Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_neg,
+        map_smul]
+    rw [← toEndomorphism_symmL_of_inTangentCoordinates_eq hj hx, hTI, hT.eq_iff]
+  · have := subsingleton_of_inTangentCoordinates_eq hj hx
+    have h0 (w : TangentSpace I x) : w = 0 := Subsingleton.elim (α := E) w 0
+    refine iff_of_true (fun v ↦ ?_) fun v ↦ ?_
+    · rw [h0 (j x v), h0 v, map_zero, smul_zero, neg_zero]
+    · rw [Subsingleton.elim v 0, smul_zero, map_zero, smul_zero, neg_zero]
 
 end Coordinates
 

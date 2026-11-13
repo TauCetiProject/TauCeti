@@ -547,18 +547,17 @@ theorem chartValueL_constMapData_ae (L : F →L[ℝ] F) (w : C.SobolevData μ p 
   exact Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
 
 variable {C μ p k} in
-/-- If the chart data of `w` in chart `i` are the readings of a section `s`, and a fibrewise map `Ψ`
-of sections is read in every chart as the linear map `L` of the model fibre, then the chart data of
-`constMapData L w` are the readings of `Ψ s`. -/
-theorem chartValueL_constMapData_ae_coord {L : F →L[ℝ] F} {Ψ : S → S}
-    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
-    {w : C.SobolevData μ p k} {i : Fin C.n} {s : S}
+/-- If the chart data of `w` in chart `i` are the readings of a section `s`, and the reading of a
+section `s'` in chart `i` is that of `s` followed by the linear map `L` of the model fibre, then the
+chart data of `constMapData L w` in chart `i` are the readings of `s'`. -/
+theorem chartValueL_constMapData_ae_coord {L : F →L[ℝ] F} {w : C.SobolevData μ p k}
+    {i : Fin C.n} {s s' : S} (hs' : ∀ y ∈ C.image i, C.coord i s' y = L (C.coord i s y))
     (hw : C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s) :
     C.chartValueL μ p k i (constMapData C μ p k L w) =ᵐ[μ.restrict (C.image i)]
-      C.coord i (Ψ s) := by
+      C.coord i s' := by
   filter_upwards [chartValueL_constMapData_ae C μ p k L w i, hw,
     ae_restrict_mem (C.image i).isOpen.measurableSet] with y h hsy hy
-  rw [h, hsy, hΨ i s y hy]
+  rw [h, hsy, hs' y hy]
 
 variable {C} in
 /-- A fibrewise map `Ψ` of sections whose chart readings are a constant linear map `L` of the model
@@ -570,7 +569,7 @@ def constMapL (L : F →L[ℝ] F) (Ψ : S → S)
   ((constMapData C μ p k L).comp (C.sobolevSections μ p k).subtypeL).codRestrict _ fun w ↦ by
     obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.2
     exact (C.mem_sobolevSections_iff μ p k).2
-      ⟨Ψ s, fun i ↦ chartValueL_constMapData_ae_coord hΨ (hs i)⟩
+      ⟨Ψ s, fun i ↦ chartValueL_constMapData_ae_coord (hΨ i s) (hs i)⟩
 
 variable {C} in
 /-- The components of `constMapL μ p k L Ψ hΨ w` are those of `constMapData C μ p k L w`. -/
@@ -599,7 +598,7 @@ theorem chartValueL_constMapL_ae_coord {L : F →L[ℝ] F} {Ψ : S → S}
     (hw : C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s) :
     C.chartValueL μ p k i (constMapL μ p k L Ψ hΨ w) =ᵐ[μ.restrict (C.image i)]
       C.coord i (Ψ s) :=
-  chartValueL_constMapData_ae_coord hΨ hw
+  chartValueL_constMapData_ae_coord (hΨ i s) hw
 
 variable {C} in
 /-- Forgetting the highest derivative commutes with a constant fibre map. -/

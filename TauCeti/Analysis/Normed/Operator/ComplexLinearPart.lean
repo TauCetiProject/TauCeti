@@ -39,8 +39,9 @@ parts depend continuously on `Ψ` (`ContinuousLinearMap.continuous_complexLinear
 operators has continuous families of complex-linear and complex-antilinear parts. For real
 structures on `E` and `F` given separately and compatible with the complex ones, the
 complex-antilinear part is a continuous real-linear operator on `E →L[ℝ] F`
-(`ContinuousLinearMap.complexAntilinearPartL`) whose fixed points are the complex-antilinear maps
-(`ContinuousLinearMap.complexAntilinearPartL_eq_self_iff`).
+(`ContinuousLinearMap.complexAntilinearPartL`), an idempotent operator whose fixed points are the
+complex-antilinear maps (`ContinuousLinearMap.complexAntilinearPartL_eq_self_iff`) and whose kernel
+consists of the complex-linear maps (`ContinuousLinearMap.complexAntilinearPartL_eq_zero_iff`).
 
 For a real-linear map `Ψ` between complex inner product spaces preserving the standard
 symplectic form `Im ⟪·, ·⟫`, the complex-linear part `P` and the complex-antilinear part `A`
@@ -75,7 +76,8 @@ symplectic map is moved into place by complex-linear automorphisms in
   part.
 * `ContinuousLinearMap.complexAntilinearPartL`: the complex-antilinear part as a continuous
   real-linear operator on real-linear maps, for arbitrary compatible real structures, with
-  `ContinuousLinearMap.complexAntilinearPartL_eq_self_iff`.
+  `ContinuousLinearMap.complexAntilinearPartL_eq_self_iff` and
+  `ContinuousLinearMap.complexAntilinearPartL_eq_zero_iff`.
 * `ContinuousLinearMap.norm_sq_complexLinearPart_apply`: the norm identity for a linear map
   preserving `Im ⟪·, ·⟫`.
 * `ContinuousLinearMap.complexLinearPartEquiv`: the complex-linear part of such a map, as a
@@ -450,5 +452,26 @@ theorem complexAntilinearPartL_apply_I_smul (Ψ : E →L[ℝ] F) (v : E) :
     complexAntilinearPartL Ψ (Complex.I • v) = -(Complex.I • complexAntilinearPartL Ψ v) :=
   (toLinearMap_complexAntilinearPartL Ψ ▸ TauCeti.complexAntilinearPart_isComplexAntilinear
     Complex.toLinearMap_I_comp_toLinearMap_I Complex.toLinearMap_I_comp_toLinearMap_I _).apply v
+
+/-- `ContinuousLinearMap.complexAntilinearPartL` is idempotent. -/
+@[simp]
+theorem complexAntilinearPartL_complexAntilinearPartL (Ψ : E →L[ℝ] F) :
+    complexAntilinearPartL (complexAntilinearPartL Ψ) = complexAntilinearPartL Ψ :=
+  complexAntilinearPartL_eq_self_iff.2 (complexAntilinearPartL_apply_I_smul Ψ)
+
+/-- A real-linear map is in the kernel of `ContinuousLinearMap.complexAntilinearPartL` exactly when
+it is complex linear. -/
+theorem complexAntilinearPartL_eq_zero_iff {Ψ : E →L[ℝ] F} :
+    complexAntilinearPartL Ψ = 0 ↔ ∀ v, Ψ (Complex.I • v) = Complex.I • Ψ v := by
+  rw [← coe_inj, toLinearMap_complexAntilinearPartL, ContinuousLinearMap.toLinearMap_zero,
+    ← TauCeti.isComplexLinear_iff_complexAntilinearPart_eq_zero
+      Complex.toLinearMap_I_comp_toLinearMap_I]
+  exact ⟨fun h v ↦ h.apply v, fun h ↦ TauCeti.isComplexLinear_of_apply h⟩
+
+/-- The complex-antilinear part of a complex-linear map vanishes. -/
+@[simp]
+theorem complexAntilinearPartL_restrictScalars (f : E →L[ℂ] F) :
+    complexAntilinearPartL (f.restrictScalars ℝ) = 0 :=
+  complexAntilinearPartL_eq_zero_iff.2 fun v ↦ by simp
 
 end ContinuousLinearMap
