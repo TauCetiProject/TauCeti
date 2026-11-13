@@ -223,7 +223,7 @@ theorem IsLowestDominant.card_filter_roots_map_norm_lt_le (hl : IsLowestDominant
     (hr : 0 < r) (he : IsUnit e) (hf : (e : PowerSeries K) * P = f) :
     ((P.map (algebraMap K L)).roots.filter (‖·‖ < r)).card ≤ l := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  exact (hl.map_polynomial hr he hf).card_filter_roots_norm_lt_le hr
+  exact (hl.map_polynomial hr he hf).card_filter_roots_norm_lt_le
 
 /-- **Zeros in the open disc, split case.** Let `f = e * P` over an ultrametric normed field `K`,
 with `e` a unit of the ring of series restricted at `r > 0`, and let `l` be the lowest dominant
@@ -244,7 +244,7 @@ theorem IsDistinguished.card_filter_roots_map_norm_le_le (hd : IsDistinguished r
     (hr : 0 < r) (he : IsUnit e) (hf : (e : PowerSeries K) * P = f) :
     ((P.map (algebraMap K L)).roots.filter (‖·‖ ≤ r)).card ≤ d := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  exact (hd.map_polynomial hr he hf).card_filter_roots_norm_le_le hr
+  exact (hd.map_polynomial hr he hf).card_filter_roots_norm_le_le
 
 /-- **Zeros in the closed disc, split case.** Let `f = e * P` over an ultrametric normed field `K`,
 with `e` a unit of the ring of series restricted at `r > 0`, and let `d` be the distinguished

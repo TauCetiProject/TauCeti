@@ -63,6 +63,8 @@ Conversely, the chart expression of every element lies in the local Sobolev clas
 
 * `TauCeti.FiniteBundleAtlas.aeTransition_halfSectionChartData`: chart transitions preserve null
   sets.
+* `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_halfImage`: the interiors of the chart images
+  have finite measure.
 * `TauCeti.BorderedSobolevSection.instCompleteSpace`: completeness.
 * `TauCeti.BorderedSobolevSection.norm_ofContMDiffSection_le`,
   `TauCeti.BorderedSobolevSection.ofContMDiffSection_injective`: the norm bound and injectivity of
@@ -176,6 +178,20 @@ theorem halfSectionChartData_coord_ae_eq (i : Fin A.n) (s : ∀ x, V x) :
       A.halfCoord i s := by
   filter_upwards [ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z hz
   exact A.halfSectionChartData_coord_of_mem s hz
+
+/-- The interior of the image of chart `i` has finite Lebesgue measure, since it lies in the
+compact image of the closure of the chart domain. -/
+instance isFiniteMeasure_restrict_halfImage (i : Fin A.n) :
+    IsFiniteMeasure (volume.restrict (A.halfImage i : Set ℂ)) :=
+  isFiniteMeasure_restrict.2
+    ((measure_mono (A.halfImage_subset_extChartAt_image_closure_dom i)).trans_lt
+      (A.isCompact_extChartAt_image_closure_dom i).measure_lt_top).ne
+
+/-- The image of chart `i` in the chart data `A.halfSectionChartData` has finite Lebesgue
+measure. -/
+instance isFiniteMeasure_restrict_halfSectionChartData_image (i : Fin A.halfSectionChartData.n) :
+    IsFiniteMeasure (volume.restrict (A.halfSectionChartData.image i : Set ℂ)) :=
+  A.isFiniteMeasure_restrict_halfImage i
 
 end FiniteBundleAtlas
 
