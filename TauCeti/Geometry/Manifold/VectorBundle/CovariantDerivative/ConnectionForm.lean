@@ -84,7 +84,7 @@ theorem contMDiffAt_connectionForm {x : M} (hx : x ∈ u) (j l : ι) :
     intro y hy
     apply ContMDiffAt.contMDiffWithinAt
     exact (e.contMDiffAt_symmL hy).clm_bundle_apply (by
-      rw [contMDiffAt_section]
+      rw [contMDiffAt_section_iff]
       exact contMDiffAt_const)
   have hd : CMDiff[u ∩ e.baseSet] 1
       (T% (fun y ↦ cov (s j) y (e.symmL ℝ y (v 0)))) :=

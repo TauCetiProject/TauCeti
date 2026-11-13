@@ -195,16 +195,16 @@ level `A^U` of a layer and a character `χ'` of its abelianized Galois group, re
 inflation to `U` of the class `a' ∪ δχ'` of the character formula is the class of the carry cocycle
 of `ψ` and of `a'`, read as an invariant `a` of `U` in `M`. -/
 theorem explicitInfl2_artinCharacterCup (a' : F.level L.ground)
-    (χ' : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (χ' : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
     (ψ : Additive L.ground.toSubgroup →+ AddCircle (1 : ℚ))
     (hψ : IsOpen (ψ.ker : Set (Additive L.ground.toSubgroup)))
     (hψχ : ∀ u : L.ground.toSubgroup,
-      ψ (.ofMul u) = χ' (.ofMul (Abelianization.of (u : L.Gal))))
+      ψ (.ofMul u) = χ' (.ofMul (Group.Abelianization.of (u : L.Gal))))
     (a : H0 L.ground.toSubgroup M) (ha : e a = a') :
     L.explicitInfl2 e he (L.artinCharacterCup F a' χ') =
       (characterCarryCocycle ψ hψ a : H2 L.ground.toSubgroup M) := by
   -- `ψ` is `χ'` read on `U` through `U → U ⧸ V`.
-  have hψ' : ψ = (χ'.comp Abelianization.of.toAdditive).comp
+  have hψ' : ψ = (χ'.comp Group.Abelianization.of.toAdditive).comp
       (QuotientGroup.mk' L.relativeTop : L.ground.toSubgroup →* L.Gal).toAdditive :=
     AddMonoidHom.ext fun u ↦ hψχ u.toMul
   rw [← LinearEquiv.apply_symm_apply (L.groundLevelEquiv F) a',

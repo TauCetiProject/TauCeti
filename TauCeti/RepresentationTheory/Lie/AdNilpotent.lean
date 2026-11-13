@@ -178,7 +178,7 @@ theorem isNilpotent_toEnd_of_isNilpotent_ad_of_isCompl_radical (S : LieSubalgebr
     have hr' : r = (1 : K) • (r + s) + -s := by rw [one_smul, add_neg_cancel_right]
     rw [had, hr']
     exact H.isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall hxH hH (had _ ▸ hx)
-      (H.smul_add_mem_lieSpan_insert hxH 1 (neg_mem (LieSubalgebra.subset_lieSpan
+      (H.smul_add_mem_lieSpan_insert 1 (neg_mem (LieSubalgebra.subset_lieSpan
         (Set.mem_insert s _))))
   have hrN : r ∈ LieAlgebra.nilradical K L :=
     LieAlgebra.mem_nilradical_of_mem_radical_of_isNilpotent_ad hr hrL

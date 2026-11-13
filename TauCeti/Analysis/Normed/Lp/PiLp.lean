@@ -29,6 +29,7 @@ in the slot `f i`, and the vectors so obtained are those whose coordinates outsi
 coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the
 vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
+Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
 
 ## Source
 
@@ -102,6 +103,15 @@ theorem norm_toLp_comp_equiv {E : Type*} [SeminormedAddCommGroup E] {κ : Type*}
     exact e.iSup_congr fun _ ↦ rfl
   · simp only [norm_eq_sum hp]
     exact congrArg (· ^ _) (Fintype.sum_equiv e _ _ fun _ ↦ rfl)
+
+/-- Over an index type with at most one element, a vector of `Lᵖ`, `p ≥ 1`, has the norm of
+each of its coordinates. -/
+theorem norm_apply_eq_norm [Fact (1 ≤ p)] [Subsingleton ι] (x : PiLp p E) (i : ι) :
+    ‖x i‖ = ‖x‖ := by
+  classical
+  have hx : PiLp.single p i (x i) = x :=
+    PiLp.ext fun j ↦ by obtain rfl := Subsingleton.elim i j; simp
+  rw [← hx, norm_single, hx]
 
 section Constant
 

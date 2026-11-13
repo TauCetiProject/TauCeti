@@ -144,7 +144,6 @@ theorem count_slopeMultiset_of_isFiniteFace (d : FiniteSlopeData ℝ) {σ : ℝ}
   classical
   have hl := (d.heights_ne_top_iff (n := l)).mp hf.left_ne_top
   have hu := (d.heights_ne_top_iff (n := u)).mp hf.right_ne_top
-  have hlu := hf.left_le_right
   rw [count_slopeMultiset, ← Nat.card_Ico]
   refine Finset.card_bij (fun i _ ↦ d.start + i) (fun i hi ↦ ?_)
     (fun i _ j _ hij ↦ Fin.ext (by simpa using hij)) (fun n hn ↦ ?_)

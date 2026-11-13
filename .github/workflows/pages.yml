@@ -96,9 +96,7 @@ jobs:
   # publication failures are reported separately.
   build-data:
     # Data and publication must not wait behind the hosted build backlog.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     env:
       REFRESH_SITE_DATA: ${{ github.event_name != 'push' }}
     outputs:
@@ -134,10 +132,10 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the retained generated set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b0d0a33c94de44d8b8747880127725ae26b9084b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e20ce63fce91710739716d84b03da63037ad6e2b
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b0d0a33c94de44d8b8747880127725ae26b9084b
+          tools-ref: e20ce63fce91710739716d84b03da63037ad6e2b
           project-directory: .
       - name: Restore the last published data assets
         id: retained-data
@@ -518,9 +516,7 @@ jobs:
     # this job wants from build-data is the artifact, and it copes with that being absent.
     needs: build-data
     if: ${{ !cancelled() }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     env:
       # Preserve the four-worker setting of the previous hosted build shape.
       LEAN_NUM_THREADS: "4"
@@ -560,10 +556,10 @@ jobs:
       # checkout above already carries the committed fallbacks, so the site still builds and
       # deploys, and report-data-freshness is what makes the run red about it.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b0d0a33c94de44d8b8747880127725ae26b9084b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e20ce63fce91710739716d84b03da63037ad6e2b
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b0d0a33c94de44d8b8747880127725ae26b9084b
+          tools-ref: e20ce63fce91710739716d84b03da63037ad6e2b
           project-directory: .
       - name: Lay down the generated data
         id: site-data
@@ -813,9 +809,7 @@ jobs:
     # an unexplained skip must not authorize publishing an old site over the live one. And
     # `!cancelled()`, so cancelling the run stops here rather than deploying on the way out.
     if: ${{ !cancelled() && needs.build-site.result == 'failure' }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     outputs:
       # Which cached site was republished. report-data-freshness compares it against this run's
       # own key, because "the site could not be built" and "the site built and then the upload
@@ -902,9 +896,7 @@ jobs:
     # Skipped only when neither produced anything, which is the case where there is genuinely
     # nothing to publish.
     if: ${{ !cancelled() && (needs.build-site.result == 'success' || needs.fallback-site.result == 'success') }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -940,9 +932,7 @@ jobs:
     # there is anything worth reporting is a question for the step, which can see the deploy result.
     # It is not a question the `if:` has the information to answer.
     if: always()
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Report what is serving stale data
         env:
@@ -1029,9 +1019,7 @@ jobs:
     if: ${{ !cancelled()
         && needs.build-site.result == 'success' && needs.deploy.result == 'success'
         && needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main' }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:

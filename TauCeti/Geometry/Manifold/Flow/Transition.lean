@@ -96,8 +96,8 @@ theorem flowHittingTime_add_flowHittingTime_eventuallyEq :
   have hcont : ContinuousAt
       (fun z ↦ flowHittingTime v g T p z +
         flowHittingTime v g' T' (flowOf v T p) (flowTransition v g T p z)) p :=
-    (continuousAt_flowHittingTime hv hT hg hgv).add
-      ((continuousAt_flowHittingTime hv hT' hg' hg'v).comp_of_eq hh (flowTransition_self ..))
+    continuousAt_flowHittingTime.add
+      (continuousAt_flowHittingTime.comp_of_eq hh (flowTransition_self ..))
   have hh' : Tendsto (flowTransition v g T p) (𝓝 p) (𝓝 (flowOf v T p)) := by
     simpa only [flowTransition_self] using hh.tendsto
   refine eventuallyEq_flowHittingTime hv hTT' (hflow ▸ hg') (hflow ▸ hg'v) hcont
