@@ -218,9 +218,8 @@ theorem isUsed_point_iff {j : Fin m} :
     refine ⟨H, hH, fun hH0 => hK (by simp [hH0]), t⁻¹ * s, fun y hy => ?_⟩
     obtain ⟨z, hz, hzy⟩ := mem_map.mp (hs (mem_map_of_mem _ hy))
     refine mem_map.mpr ⟨z, hz, ?_⟩
-    simp only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] at hzy ⊢
-    rw [show y = t⁻¹ * (t * y * t⁻¹) * t by group, ← hzy]
-    group
+    simp only [MulEquiv.coe_toMonoidHom] at hzy ⊢
+    rw [map_mul, MulAut.mul_apply, hzy, map_inv, MulAut.inv_apply_self]
   · rintro ⟨H, hH, hH0, s, hs⟩
     refine ⟨(H.map (MulAut.conj 1).toMonoidHom).subgroupOf _, ⟨H, hH, 1, rfl⟩,
       fun hK => hH0 ?_, s, ?_⟩
