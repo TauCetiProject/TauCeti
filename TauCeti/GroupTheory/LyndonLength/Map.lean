@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Order
+public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.Algebra.Order.Group.PiLex
 public import TauCeti.Algebra.Order.Group.PiLex
 public import TauCeti.Algebra.Order.Monoid.Submonoid
@@ -21,10 +22,11 @@ injective `φ`. For injective `φ` the length function `l` is regular exactly wh
 `l` is free exactly when `φ ∘ l` is free and all its Gromov products lie in the image of `φ`.
 
 In the other direction, a Lyndon length function `l : G → Λ` all of whose values lie in a subgroup
-`S` of `Λ` is a Lyndon length function with values in `S` (`TauCeti.LyndonLength.codRestrict`). It
-is regular exactly when `l` is, and free exactly when `l` is free and all Gromov products of `l`
-lie in `S`. The last condition cannot be dropped: (L4) asks for the Gromov products to lie in the
-value group, and a Gromov product is only half of an element of `S`.
+`S` of `Λ` (of any type of subgroups, such as a submodule) is a Lyndon length function with values
+in `S` (`TauCeti.LyndonLength.codRestrict`). It is regular exactly when `l` is, and free exactly
+when `l` is free and all Gromov products of `l` lie in `S`. The last condition cannot be dropped:
+(L4) asks for the Gromov products to lie in the value group, and a Gromov product is only half of
+an element of `S`.
 
 These two operations are how a length function with values in a large ordered group, such as the
 additive group of `ℤ[t]`, becomes one with values in a small one, such as `ℤⁿ` with the
@@ -32,10 +34,10 @@ lexicographic order: a finitely generated group whose length function takes valu
 all its lengths in the subgroup of polynomials of bounded degree, which is `ℤⁿ` ordered
 lexicographically.
 
-As an example, the length function `k ↦ (0, …, 0, |k|, 0, …, 0)` on a linearly ordered abelian
-group `Λ`, with values in a lexicographic power of `Λ`, is free and regular. For `Λ = ℤ` and
-`Lex (Fin 3 → ℤ)` this is the length function `k ↦ (0, 0, |k|)` on `ℤ`, whose values lie in a
-single convex subgroup of `ℤ³`.
+As an example, the length function `k ↦ (0, …, 0, |k|, 0, …, 0)` on a factor of a lexicographic
+product of linearly ordered abelian groups, with values in that product, is free and regular. For
+`Lex (Fin 3 → ℤ)` this is the length function `k ↦ (0, 0, |k|)` on `ℤ`, whose values lie in a single
+convex subgroup of `ℤ³`.
 
 ## Main definitions
 
@@ -52,11 +54,13 @@ single convex subgroup of `ℤ³`.
   freeness under change of value group along an injective homomorphism.
 * `TauCeti.LyndonLength.map_codRestrict`: `l.codRestrict S h` composed with the inclusion
   `AddSubmonoidClass.orderedSubtype S` of `S` is `l`.
+* `TauCeti.LyndonLength.coe_eq_gromovProduct_codRestrict_iff`: the Gromov products of the
+  restriction to a subgroup are those of `l`.
 * `TauCeti.LyndonLength.isRegular_codRestrict_iff`, `TauCeti.LyndonLength.isFree_codRestrict_iff`:
   regularity and freeness of the restriction to a subgroup.
 * `TauCeti.LyndonLength.isFree_map_absLength_singleOrderAddMonoidHom`,
   `TauCeti.LyndonLength.isRegular_map_absLength_singleOrderAddMonoidHom`: the absolute value in
-  one coordinate of a lexicographic power is free and regular.
+  one coordinate of a lexicographic product is free and regular.
 
 ## References
 
@@ -74,8 +78,9 @@ namespace TauCeti
 
 namespace LyndonLength
 
-variable {G H Λ Λ' Λ'' : Type*} [Group G] [Group H] [AddCommGroup Λ] [LinearOrder Λ]
-  [AddCommGroup Λ'] [LinearOrder Λ'] [AddCommGroup Λ''] [LinearOrder Λ'']
+variable {G H Λ Λ' Λ'' A : Type*} [Group G] [Group H] [AddCommGroup Λ] [LinearOrder Λ]
+  [AddCommGroup Λ'] [LinearOrder Λ'] [AddCommGroup Λ''] [LinearOrder Λ''] [SetLike A Λ]
+  [AddSubgroupClass A Λ]
 
 /-! ### Composition with a homomorphism of ordered groups -/
 
@@ -111,14 +116,14 @@ section codRestrict
 
 /-- A Lyndon length function all of whose values lie in a subgroup `S` of the value group, as a
 Lyndon length function with values in `S`. -/
-def codRestrict (l : LyndonLength G Λ) (S : AddSubgroup Λ) (h : ∀ g, l g ∈ S) :
+def codRestrict (l : LyndonLength G Λ) (S : A) (h : ∀ g, l g ∈ S) :
     LyndonLength G S where
   toFun g := ⟨l g, h g⟩
   map_one' := Subtype.ext l.map_one'
   map_inv' g := Subtype.ext (l.map_inv' g)
   eq_of_lt' g f k hlt := Subtype.ext (l.eq_of_lt' g f k hlt)
 
-variable {l : LyndonLength G Λ} {S : AddSubgroup Λ} {h : ∀ g, l g ∈ S}
+variable {l : LyndonLength G Λ} {S : A} {h : ∀ g, l g ∈ S}
 
 @[simp]
 theorem coe_codRestrict_apply (g : G) : (l.codRestrict S h g : Λ) = l g :=
@@ -194,11 +199,20 @@ theorem isFree_iff_isFree_map_and_mem_range (hφ : Function.Injective φ) :
     obtain ⟨c, rfl⟩ := hc g f c' hc'
     exact ⟨c, (l.coe_map_eq_gromovProduct_map_iff hφ).1 hc'⟩
 
-variable {S : AddSubgroup Λ} {h : ∀ g, l g ∈ S}
+variable {S : A} {h : ∀ g, l g ∈ S}
 
 theorem comap_codRestrict (ψ : H →* G) :
     (l.codRestrict S h).comap ψ = (l.comap ψ).codRestrict S fun g => by simpa using h (ψ g) :=
   ext fun _ => Subtype.ext (by simp)
+
+/-- An element `c` of `S` is the Gromov product `c(g, f)` of `l.codRestrict S h` exactly when it is
+that of `l`. -/
+theorem coe_eq_gromovProduct_codRestrict_iff {c : S} :
+    (c : DivisibleHull S) = (l.codRestrict S h).gromovProduct g f ↔
+      ((c : Λ) : DivisibleHull Λ) = l.gromovProduct g f := by
+  simpa only [map_codRestrict, AddSubmonoidClass.coe_orderedSubtype] using
+    (coe_map_eq_gromovProduct_map_iff (l.codRestrict S h)
+      (AddSubmonoidClass.orderedSubtype_injective S)).symm
 
 /-- A Lyndon length function with values in a subgroup `S` is regular as a length function with
 values in `S` exactly when it is regular. -/
@@ -223,24 +237,26 @@ theorem IsFree.codRestrict (hl : l.IsFree) (h : ∀ g, l g ∈ S)
     (l.codRestrict S h).IsFree :=
   isFree_codRestrict_iff.2 ⟨hl, hc⟩
 
-/-! ### Example: the absolute value in one coordinate of a lexicographic power -/
+/-! ### Example: the absolute value in one coordinate of a lexicographic product -/
 
 section Lex
 
-variable {ι : Type*} [LinearOrder ι] [WellFoundedLT ι] (i : ι)
+variable {ι : Type*} (α : ι → Type*) [LinearOrder ι] [DecidableEq ι] [WellFoundedLT ι]
+  [∀ j, AddCommGroup (α j)] [∀ j, LinearOrder (α j)] [∀ j, IsOrderedAddMonoid (α j)] (i : ι)
 
-/-- The length function `a ↦ (0, …, 0, |a|, 0, …, 0)` on a linearly ordered abelian group `Λ`,
-with values in the lexicographic power `Lex (ι → Λ)` and with `|a|` in the coordinate `i`, is
-free. For `Λ = ℤ` and `i = 2` in `Lex (Fin 3 → ℤ)` this is `k ↦ (0, 0, |k|)`. -/
+/-- The length function `a ↦ (0, …, 0, |a|, 0, …, 0)` on the factor `α i` of a family of linearly
+ordered abelian groups, with values in the lexicographic product `Lex (∀ j, α j)` and with `|a|` in
+the coordinate `i`, is free. For `α = fun _ => ℤ` and `i = 2` in `Lex (Fin 3 → ℤ)` this is
+`k ↦ (0, 0, |k|)`. -/
 theorem isFree_map_absLength_singleOrderAddMonoidHom :
-    ((absLength Λ).map (Pi.Lex.singleOrderAddMonoidHom (fun _ : ι => Λ) i)).IsFree :=
+    ((absLength (α i)).map (Pi.Lex.singleOrderAddMonoidHom α i)).IsFree :=
   isFree_absLength.map (Pi.Lex.singleOrderAddMonoidHom_injective i)
 
-/-- The length function `a ↦ (0, …, 0, |a|, 0, …, 0)` on a linearly ordered abelian group `Λ`,
-with values in the lexicographic power `Lex (ι → Λ)` and with `|a|` in the coordinate `i`, is
-regular. -/
+/-- The length function `a ↦ (0, …, 0, |a|, 0, …, 0)` on the factor `α i` of a family of linearly
+ordered abelian groups, with values in the lexicographic product `Lex (∀ j, α j)` and with `|a|` in
+the coordinate `i`, is regular. -/
 theorem isRegular_map_absLength_singleOrderAddMonoidHom :
-    ((absLength Λ).map (Pi.Lex.singleOrderAddMonoidHom (fun _ : ι => Λ) i)).IsRegular :=
+    ((absLength (α i)).map (Pi.Lex.singleOrderAddMonoidHom α i)).IsRegular :=
   isRegular_absLength.map _
 
 end Lex

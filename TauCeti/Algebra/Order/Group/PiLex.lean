@@ -36,7 +36,7 @@ public section
 
 namespace Pi
 
-variable {ι : Type*} {α : ι → Type*} [LinearOrder ι]
+variable {ι : Type*} {α : ι → Type*} [LinearOrder ι] [DecidableEq ι]
 
 section One
 
