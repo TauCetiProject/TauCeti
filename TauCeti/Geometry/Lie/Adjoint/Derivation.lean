@@ -35,6 +35,8 @@ automatically an interior point.
 
 * `TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph`:
   the inverse tangent identification intertwines the adjoint actions.
+* `TauCeti.Lie.tangentToLeftInvariantDerivation_tangentAd`: the left-invariant derivation of a
+  tangent vector intertwines the adjoint actions.
 -/
 
 public section
@@ -104,6 +106,15 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomo
     (leftInvariantDerivationLieEquivGroupLieAlgebra_Ad g
       ((leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
         (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).symm a)).symm
+
+/-- The left-invariant derivation of a tangent vector intertwines the tangent and derivation adjoint
+actions. -/
+theorem tangentToLeftInvariantDerivation_tangentAd (g : G) (ξ : GroupLieAlgebra I G) :
+    tangentToLeftInvariantDerivation (tangentAd (I := I) g ξ) =
+      Ad (I := I) g (tangentToLeftInvariantDerivation ξ) := by
+  simp only [← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)), Ad_apply,
+    LieEquiv.apply_symm_apply]
 
 /-- The canonical isometric identification with the model space intertwines the derivation and
 tangent adjoint actions. -/

@@ -110,10 +110,9 @@ theorem adjointRepresentation_apply_mem_groupLieSubalgebraOfSubgroup {K : Subgro
     (hg : g ∈ Subgroup.normalizer (K : Set G)) {ξ : GroupLieAlgebra I G}
     (hξ : ξ ∈ groupLieSubalgebraOfSubgroup (I := I) K) :
     adjointRepresentation ℝ I G g ξ ∈ groupLieSubalgebraOfSubgroup (I := I) K := by
-  obtain ⟨D, hD, rfl⟩ := (LieSubalgebra.mem_map _ _ _).1 hξ
-  refine (LieSubalgebra.mem_map _ _ _).2 ⟨Ad (I := I) g D, Ad_mem_lieSubalgebraOfSubgroup hg hD, ?_⟩
-  rw [LieEquiv.coe_toLieHom, leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
-    adjointRepresentation_apply, tangentAd_apply]
+  rw [mem_groupLieSubalgebraOfSubgroup_iff] at hξ ⊢
+  rw [adjointRepresentation_apply, ← tangentAd_apply, tangentToLeftInvariantDerivation_tangentAd]
+  exact Ad_mem_lieSubalgebraOfSubgroup hg hξ
 
 /-- The Lie algebra of a normal subgroup is a subrepresentation of the adjoint representation, in
 the form consumed by `Representation.quotient` and `Representation.subrepresentation`. -/
@@ -129,12 +128,9 @@ theorem groupLieSubalgebraOfSubgroup_le_comap_adjointRepresentation {N : Subgrou
 theorem adjointRepresentation_apply_sub_mem_groupLieSubalgebraOfSubgroup {N : Subgroup G}
     [N.Normal] (hN : IsClosed (N : Set G)) {n : G} (hn : n ∈ N) (ξ : GroupLieAlgebra I G) :
     adjointRepresentation ℝ I G n ξ - ξ ∈ groupLieSubalgebraOfSubgroup (I := I) N := by
-  obtain ⟨D, rfl⟩ := (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).surjective ξ
-  refine (LieSubalgebra.mem_map _ _ _).2
-    ⟨Ad (I := I) n D - D, Ad_sub_mem_lieSubalgebraOfSubgroup hN hn D, ?_⟩
-  rw [LieEquiv.coe_toLieHom, map_sub, leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
-    adjointRepresentation_apply, tangentAd_apply]
+  rw [mem_groupLieSubalgebraOfSubgroup_iff, map_sub, adjointRepresentation_apply,
+    ← tangentAd_apply, tangentToLeftInvariantDerivation_tangentAd]
+  exact Ad_sub_mem_lieSubalgebraOfSubgroup hN hn _
 
 namespace EmbeddedLieSubgroupData
 
@@ -151,17 +147,17 @@ theorem range_groupLieAlgebraMap_subtype (d : EmbeddedLieSubgroupData I K E') :
   let _ : ChartedSpace E' K := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   dsimp only
+  -- Local names for the evaluation-at-the-identity equivalences of `K` and `G`.
   let eK := leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E')) (G := K)
     (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E')) (n := ∞) (by simp) (1 : K))
+  let eG := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
   have hmap (D : LeftInvariantDerivation 𝓘(ℝ, E') K) :
-      K.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I (eK D) =
-        leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-          (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-          (d.lieMapSubtypeVal D) := by
+      K.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I (eK D) = eG (d.lieMapSubtypeVal D) := by
     rw [d.lieMapSubtypeVal_apply, leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
       MonoidHom.groupLieAlgebraMap_apply, Subgroup.coe_subtype,
       mfderiv_congr (funext fun k ↦ d.subtypeVal_apply k)]
-    -- `eK` is a local name for the same evaluation-at-the-identity equivalence of `K`.
+    -- `eK` and `eG` unfold to the evaluation-at-the-identity equivalences of `K` and `G`.
     rfl
   ext ξ
   constructor

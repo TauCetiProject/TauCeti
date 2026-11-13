@@ -25,8 +25,9 @@ file supplies the pointwise data of the second stage, for **level data supplied 
   `TauCeti.residualMomentMap : Z → (𝔤 ⧸ 𝔫)*`, characterized by `⟨μ_res z, [ξ]⟩ = ⟨μ (i z), ξ⟩`.
 * If `G` acts on `Z` compatibly with `i`, the residual map is equivariant for the dual action of
   `G ⧸ N` on `(𝔤 ⧸ 𝔫)*` (`TauCeti.residualMomentMap_smul`); in particular it is invariant under
-  `N` (`TauCeti.residualMomentMap_smul_of_mem`). This dual action is the coadjoint action of
-  `G ⧸ N` once `𝔤 ⧸ 𝔫` is identified with its Lie algebra.
+  `N` (`TauCeti.residualMomentMap_smul_of_mem`). This dual action is expected to become the
+  coadjoint action of `G ⧸ N` once the quotient Lie group and the identification
+  `Lie(G ⧸ N) ≃ 𝔤 ⧸ 𝔫` are available.
 * The components of the residual map satisfy the moment map equation pulled back to `Z`:
   `d⟨μ_res, [ξ]⟩ = i^* (ι_{ξ_M} σ)`
   (`TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_residualMomentMap_apply_mk`). This is the equation
@@ -142,19 +143,20 @@ variable {E' H' E₀ H₀ : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] 
   {σ : SmoothTwoForm I' M} {a : InfinitesimalAction (GroupLieAlgebra I G) I' M}
 
 /-- **The moment map equation of the residual moment map along the level.** If `μ` is a moment map
-for `σ` and the generated vector fields `ξ_M`, and `i : Z → M` is smooth, then the component of
-the residual moment map along the class of `ξ` has derivative `v ↦ σ(ξ_M (i z), di v)`: it is
-`i^* (ι_{ξ_M} σ) = d⟨μ ∘ i, ξ⟩`. -/
-theorem mvfderiv_residualMomentMap_apply_mk (h : σ.IsMomentMap a μ) (hi' : ContMDiff I₀ I' ∞ i)
+for `σ` and the generated vector fields `ξ_M`, and `i : Z → M` is differentiable at `z`, then the
+component of the residual moment map along the class of `ξ` has derivative
+`v ↦ σ(ξ_M (i z), di v)` at `z`: it is `i^* (ι_{ξ_M} σ) = d⟨μ ∘ i, ξ⟩`. -/
+theorem mvfderiv_residualMomentMap_apply_mk (h : σ.IsMomentMap a μ)
     (hi : ∀ z, μ (i z) ∈ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualAnnihilator)
-    (ξ : GroupLieAlgebra I G) (z : Z) (v : TangentSpace I₀ z) :
+    (ξ : GroupLieAlgebra I G) {z : Z} (hi' : MDifferentiableAt I₀ I' i z)
+    (v : TangentSpace I₀ z) :
     mvfderiv I₀ (fun z ↦ residualMomentMap μ N i hi z (Submodule.Quotient.mk ξ)) z v =
       SmoothBundleForm.eval₂ σ (i z) (a ξ (i z)) (mfderiv I₀ I' i z v) := by
   have hcomp : (fun z ↦ residualMomentMap μ N i hi z (Submodule.Quotient.mk ξ)) =
       (fun x ↦ μ x ξ) ∘ i :=
     funext fun z ↦ residualMomentMap_apply_mk hi z ξ
   rw [hcomp, mvfderiv_comp_apply z (((h.contMDiff ξ) (i z)).mdifferentiableAt (by simp))
-    ((hi' z).mdifferentiableAt (by simp)),
+    hi',
     isHamiltonianVectorField_iff.1 (h.isHamiltonianVectorField ξ)]
 
 end SmoothTwoForm.IsMomentMap
