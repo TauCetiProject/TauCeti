@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
 public import TauCeti.Data.Finsupp.Order
-import Mathlib.Data.Finsupp.Interval
 
 /-!
 # Weights of finitely supported functions
@@ -303,14 +302,12 @@ theorem injOn_weight_vecCons_one (B : ℕ) :
   exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
 
 /-- The weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` of two-variable exponents is
-finite: it lies in the box `Iic (N, N)`. -/
+finite. It is empty when `B = 0`; otherwise both weights are nonzero. -/
 theorem finite_weightedStrip (B N : ℕ) :
     {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ weight ![1, B] μ < N}.Finite := by
-  refine (Set.finite_Iic (equivFunOnFinite.symm fun _ : Fin 2 ↦ N)).subset
-    fun μ ⟨h0, h1⟩ ↦ ?_
-  rw [weight_vecCons_one] at h1
-  -- Both entries are at most `N`: `μ 1 ≤ B * μ 1` because `B > μ 0 ≥ 0`.
-  have := Nat.le_mul_of_pos_left (μ 1) ((Nat.zero_le _).trans_lt h0)
-  refine Fin.forall_fin_two.mpr ⟨?_, ?_⟩ <;> simp <;> omega
+  rcases B.eq_zero_or_pos with rfl | hB
+  · simp
+  · exact (finite_of_nat_weight_lt ![1, B] (Fin.forall_fin_two.2 ⟨one_ne_zero, hB.ne'⟩) N).subset
+      fun _ h ↦ h.2
 
 end Finsupp
