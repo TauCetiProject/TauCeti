@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Coboundary
-import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.FormalGroup.Hom.Defect
 import TauCeti.RingTheory.FormalGroup.Obstruction
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -54,12 +53,13 @@ first-order deformations of `F`; these results confine the obstructions to the `
 
 ## Main results
 
-* `FormalGroup.homDefect_𝔾ₐ_pow_prime_pow`: in characteristic `p`, the coboundary of
-  `g ^ (p ^ m)` is the `p ^ m`-th power of the coboundary of `g`.
+* `FormalGroup.homogeneousComponent_homDefect_𝔾ₐ_eq_neg_coeff_subst_nsmulSeries`: in
+  characteristic `p`, the degree-`pᵏ` part of a coboundary vanishing below degree `pᵏ` is
+  `-c C_(pᵏ)`, for `c` the coefficient of `X^(pᵏ)` in `g([p]_F(X))`.
 * `FormalGroup.homogeneousComponent_homDefect_𝔾ₐ_eq_zero`: a coboundary vanishing below degree
-  `pⁱ`, `i < h`, also vanishes in degree `pⁱ`.
-* `FormalGroup.IsSymmetricCocycle.exists_succ_le_order_sub_homDefect_𝔾ₐ`: outside the degrees
-  `pⁱ`, `0 < i < h`, the leading term of a symmetric 2-cocycle is that of a coboundary.
+  `pⁱ`, where `[p]_F` has order greater than `pⁱ`, also vanishes in degree `pⁱ`.
+* `FormalGroup.IsSymmetricCocycle.exists_succ_le_order_sub_homDefect_𝔾ₐ`: in the nonzero degrees
+  outside `pⁱ`, `0 < i < h`, the leading term of a symmetric 2-cocycle is that of a coboundary.
 * `FormalGroup.IsSymmetricCocycle.exists_eq_homDefect_𝔾ₐ`: a symmetric 2-cocycle vanishing to
   order greater than `pⁱ` for every `0 < i < h`, and without constant term, is a coboundary.
 
@@ -79,53 +79,42 @@ namespace FormalGroup
 
 variable {R : Type*} [CommRing R] {F : FormalGroup R} {p h : ℕ}
 
-/-- **Frobenius on coboundaries.** If `p` is a prime with `p = 0` in `R`, the coboundary of
-`g ^ (p ^ m)` is the `p ^ m`-th power of the coboundary of `g`, since `x ↦ x ^ (p ^ m)` is
-additive. -/
-theorem homDefect_𝔾ₐ_pow_prime_pow (hp : p.Prime) (hpR : (p : R) = 0) (g : PowerSeries R)
-    (m : ℕ) : F.homDefect 𝔾ₐ (g ^ p ^ m) = F.homDefect 𝔾ₐ g ^ p ^ m := by
-  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hpS : (p : MvPowerSeries (Fin 2) R) = 0 := by
-    rw [← map_natCast (MvPowerSeries.C (σ := Fin 2) (R := R)), hpR, map_zero]
-  have hfrob (x y : MvPowerSeries (Fin 2) R) : (x + y) ^ p ^ m = x ^ p ^ m + y ^ p ^ m := by
-    obtain ⟨r, hr⟩ := exists_add_pow_prime_pow_eq hp x y m
-    rw [hr, hpS]
-    ring
-  rw [homDefect_𝔾ₐ, homDefect_𝔾ₐ, PowerSeries.subst_pow hF,
-    PowerSeries.subst_pow (PowerSeries.HasSubst.X _),
-    PowerSeries.subst_pow (PowerSeries.HasSubst.X _)]
-  set a := PowerSeries.subst F.toPowerSeries g
-  set b := PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) g
-  set c := PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) g
-  have ha : a ^ p ^ m = (a - b - c) ^ p ^ m + b ^ p ^ m + c ^ p ^ m := by
-    rw [← hfrob, ← hfrob]
-    congr 1
-    ring
-  rw [ha]
-  ring
-
 variable [F.IsComm]
 
+/-- **The degree-`pᵏ` part of a coboundary.** Let `p` be a prime with `p = 0` in `R`. If the
+coboundary `g(F(X, Y)) - g(X) - g(Y)` of a power series `g` vanishes below degree `pᵏ`, its
+degree-`pᵏ` part is `-c C_(pᵏ)`, where `c` is the coefficient of `X^(pᵏ)` in `g([p]_F(X))`. -/
+theorem homogeneousComponent_homDefect_𝔾ₐ_eq_neg_coeff_subst_nsmulSeries (hp : p.Prime)
+    (hpR : (p : R) = 0) {g : PowerSeries R} {k : ℕ}
+    (hgk : ((p ^ k : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order) :
+    homogeneousComponent (p ^ k) (F.homDefect 𝔾ₐ g) =
+      ↑((-PowerSeries.coeff (p ^ k) (PowerSeries.subst (F.nsmulSeries p) g)) •
+        TauCeti.lazardCocycle (p ^ k) R) := by
+  -- the coboundary has no constant term, so neither has `g`
+  have hg : PowerSeries.constantCoeff g = 0 := by
+    simpa using one_le_order_iff_constCoeff_eq_zero.mp
+      ((Nat.one_le_cast.mpr (Nat.one_le_pow _ _ hp.pos)).trans hgk)
+  rw [homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hgk,
+    nsmulSeries_𝔾ₐ_eq_zero hpR, PowerSeries.subst_zero, zero_sub, map_neg]
+
 /-- **Coboundaries vanish in the degrees `pⁱ` below the height.** Let `p` be a prime and let
-`[p]_F` have order at least `pʰ`, so that `p = 0` in `R` when `h ≠ 0`. If the coboundary
-`g(F(X, Y)) - g(X) - g(Y)` of a series `g` without constant term vanishes below degree `pⁱ` with
-`i < h`, it also vanishes in degree `pⁱ`. In particular no coboundary has leading term `c C_(pⁱ)`
-with `c ≠ 0`. -/
-theorem homogeneousComponent_homDefect_𝔾ₐ_eq_zero (hp : p.Prime)
-    (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order) {i : ℕ} (hi : i < h)
-    {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
+`[p]_F` have order greater than `pⁱ`, so that `p = 0` in `R`. If the coboundary
+`g(F(X, Y)) - g(X) - g(Y)` of a power series `g` vanishes below degree `pⁱ`, it also vanishes in
+degree `pⁱ`. In particular no coboundary has leading term `c C_(pⁱ)` with `c ≠ 0`. -/
+theorem homogeneousComponent_homDefect_𝔾ₐ_eq_zero (hp : p.Prime) {i : ℕ}
+    (hF : ((p ^ i : ℕ) : ℕ∞) < (F.nsmulSeries p).order) {g : PowerSeries R}
     (hgi : ((p ^ i : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order) :
     homogeneousComponent (p ^ i) (F.homDefect 𝔾ₐ g) = 0 := by
-  have hpR : (p : R) = 0 := F.natCast_eq_zero_of_two_le_order_nsmulSeries
-    ((Nat.cast_le.mpr (Nat.one_lt_pow (by omega) hp.one_lt)).trans hF)
-  have hp0 : (p : PowerSeries R) = 0 := by rw [← map_natCast PowerSeries.C, hpR, map_zero]
-  have hlt : ((p ^ i : ℕ) : ℕ∞) < (F.nsmulSeries p).order :=
-    (Nat.cast_lt.mpr (Nat.pow_lt_pow_right hp.one_lt hi)).trans_le hF
+  have hpR : (p : R) = 0 := F.natCast_eq_zero_of_two_le_order_nsmulSeries <| by
+    have h1 : ((1 : ℕ) : ℕ∞) ≤ ((p ^ i : ℕ) : ℕ∞) := Nat.cast_le.mpr (Nat.one_le_pow _ _ hp.pos)
+    simpa [one_add_one_eq_two] using Order.add_one_le_of_lt (h1.trans_lt hF)
+  have hg : PowerSeries.constantCoeff g = 0 := by
+    simpa using one_le_order_iff_constCoeff_eq_zero.mp
+      ((Nat.one_le_cast.mpr (Nat.one_le_pow _ _ hp.pos)).trans hgi)
   -- the leading coefficient is minus that of `X^(pⁱ)` in `g([p]_F(X))`, which vanishes
-  rw [homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hgi, nsmulSeries_𝔾ₐ, hp0,
-    zero_mul, PowerSeries.subst_zero, zero_sub, map_neg,
-    PowerSeries.coeff_subst_eq_mul (F.constantCoeff_nsmulSeries p) hg hlt.le,
-    PowerSeries.coeff_of_lt_order _ hlt]
+  rw [homogeneousComponent_homDefect_𝔾ₐ_eq_neg_coeff_subst_nsmulSeries hp hpR hgi,
+    PowerSeries.coeff_subst_eq_mul (F.constantCoeff_nsmulSeries p) hg hF.le,
+    PowerSeries.coeff_of_lt_order _ hF]
   simp
 
 /-- If the coboundary of `g = X + ⋯` vanishes below degree `pʰ`, then the coboundary of
@@ -139,9 +128,8 @@ private theorem homogeneousComponent_homDefect_𝔾ₐ_pow (hp : p.Prime) (hpR :
       homogeneousComponent (p ^ (h + m)) (F.homDefect 𝔾ₐ (g ^ p ^ m)) =
         ↑((-PowerSeries.coeff (p ^ h) (F.nsmulSeries p) ^ p ^ m) •
           TauCeti.lazardCocycle (p ^ (h + m)) R) := by
-  have hp0 : (p : PowerSeries R) = 0 := by rw [← map_natCast PowerSeries.C, hpR, map_zero]
   have hord : ((p ^ (h + m) : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ (g ^ p ^ m)).order := by
-    rw [homDefect_𝔾ₐ_pow_prime_pow hp hpR]
+    rw [F.homDefect_𝔾ₐ_pow_prime_pow hp hpR]
     calc ((p ^ (h + m) : ℕ) : ℕ∞) = p ^ m • ((p ^ h : ℕ) : ℕ∞) := by
           rw [nsmul_eq_mul, pow_add]
           push_cast
@@ -149,21 +137,16 @@ private theorem homogeneousComponent_homDefect_𝔾ₐ_pow (hp : p.Prime) (hpR :
       _ ≤ p ^ m • (F.homDefect 𝔾ₐ g).order := nsmul_le_nsmul_right hgh _
       _ ≤ _ := le_order_pow _
   refine ⟨hord, ?_⟩
-  have he₀ : PowerSeries.constantCoeff (g ^ p ^ m) = 0 := by
-    rw [map_pow, hg₀, zero_pow (pow_ne_zero _ hp.ne_zero)]
   -- `y = g([p]_F(X))` vanishes below degree `pʰ`, with coefficient `v` of `X^(pʰ)`
   set y := PowerSeries.subst (F.nsmulSeries p) g
   have hy : PowerSeries.coeff (p ^ h) y = PowerSeries.coeff (p ^ h) (F.nsmulSeries p) := by
     rw [PowerSeries.coeff_subst_eq_mul (F.constantCoeff_nsmulSeries p) hg₀ hF, hg₁]
     simp
-  have hyo : ((p ^ h : ℕ) : ℕ∞) ≤ PowerSeries.order y := PowerSeries.nat_le_order _ _ fun i hi ↦ by
-    have hi' : ((i : ℕ) : ℕ∞) < (F.nsmulSeries p).order := (Nat.cast_lt.mpr hi).trans_le hF
-    rw [PowerSeries.coeff_subst_eq_mul (F.constantCoeff_nsmulSeries p) hg₀ hi'.le,
-      PowerSeries.coeff_of_lt_order _ hi', mul_zero]
-  rw [homogeneousComponent_homDefect_eq_smul_lazardCocycle he₀ hp hpR hord, nsmulSeries_𝔾ₐ, hp0,
-    zero_mul, PowerSeries.subst_zero, zero_sub, map_neg,
+  have hyo : ((p ^ h : ℕ) : ℕ∞) ≤ PowerSeries.order y :=
+    hF.trans (PowerSeries.le_order_subst_right' (F.constantCoeff_nsmulSeries p) hg₀)
+  rw [homogeneousComponent_homDefect_𝔾ₐ_eq_neg_coeff_subst_nsmulSeries hp hpR hord,
     PowerSeries.subst_pow (.of_constantCoeff_zero' (F.constantCoeff_nsmulSeries p)), pow_add,
-    PowerSeries.coeff_mul_pow_of_le_order hyo, hy]
+    PowerSeries.coeff_pow_mul_of_le_order hyo, hy]
 
 /-- **Leading terms of symmetric 2-cocycles outside the degrees `pⁱ`, `0 < i < h`.** Let `p` be a
 prime with `p = 0` in `R`, and let `[p]_F` have order at least `pʰ` and a unit coefficient of
@@ -200,20 +183,15 @@ theorem IsSymmetricCocycle.exists_succ_le_order_sub_homDefect_𝔾ₐ (hp : p.Pr
       by_contra hlt
       exact hn k hk (by omega) rfl
     obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hkh
-    have h𝔾ₐ : (𝔾ₐ (R := R)).nsmulSeries p = 0 := by
-      rw [nsmulSeries_𝔾ₐ, ← map_natCast PowerSeries.C, hpR, map_zero, zero_mul]
     obtain ⟨g₀, hg₀, hg₁, hgh⟩ := exists_le_order_homDefect_of_le_order_nsmulSeries (G := 𝔾ₐ) hp hF
-      (by rw [h𝔾ₐ, PowerSeries.order_zero]; exact le_top)
+      (by rw [nsmulSeries_𝔾ₐ_eq_zero hpR, PowerSeries.order_zero]; exact le_top)
     obtain ⟨hord, hcomp⟩ := homogeneousComponent_homDefect_𝔾ₐ_pow hp hpR hF hg₀ hg₁ hgh m
     have hu := hv.pow (p ^ m)
     refine ⟨(-c * ↑hu.unit⁻¹) • g₀ ^ p ^ m, ?_, ?_, hclose _ ?_ ?_⟩
     · simp [hg₀, hp.ne_zero]
     · rw [pow_add, Nat.mul_div_cancel_left _ (pow_pos hp.pos h)]
-      calc ((p ^ m : ℕ) : ℕ∞) = p ^ m • (1 : ℕ∞) := by simp
-        _ ≤ p ^ m • g₀.order :=
-          nsmul_le_nsmul_right (PowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr hg₀) _
-        _ ≤ (g₀ ^ p ^ m).order := PowerSeries.le_order_pow _ _
-        _ ≤ _ := PowerSeries.le_order_smul
+      exact (PowerSeries.le_order_pow_of_constantCoeff_eq_zero (p ^ m) hg₀).trans
+        PowerSeries.le_order_smul
     · rw [homDefect_𝔾ₐ_smul]
       exact hord.trans le_order_smul
     · rw [homDefect_𝔾ₐ_smul, map_smul, hcomp, ← MvPolynomial.coe_smul, smul_smul, neg_mul,
@@ -240,8 +218,7 @@ private theorem IsSymmetricCocycle.exists_succ_le_order_sub_homDefect_𝔾ₐ_ad
     (hv : IsUnit (PowerSeries.coeff (p ^ h) (F.nsmulSeries p)))
     {Γ : MvPowerSeries (Fin 2) R} (hΓ : F.IsSymmetricCocycle Γ)
     (hΓh : ∀ i, 0 < i → i < h → ((p ^ i : ℕ) : ℕ∞) < Γ.order) {n : ℕ} (hn : n ≠ 0)
-    {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
-    (hgn : (n : ℕ∞) ≤ (Γ - F.homDefect 𝔾ₐ g).order) :
+    {g : PowerSeries R} (hgn : (n : ℕ∞) ≤ (Γ - F.homDefect 𝔾ₐ g).order) :
     ∃ e : PowerSeries R, PowerSeries.constantCoeff e = 0 ∧ ((n / p ^ h : ℕ) : ℕ∞) ≤ e.order ∧
       ((n + 1 : ℕ) : ℕ∞) ≤ (Γ - F.homDefect 𝔾ₐ (g + e)).order := by
   by_cases hpow : ∃ i, 0 < i ∧ i < h ∧ n = p ^ i
@@ -252,7 +229,8 @@ private theorem IsSymmetricCocycle.exists_succ_le_order_sub_homDefect_𝔾ₐ_ad
     rw [_root_.add_zero]
     refine succ_le_order_of_homogeneousComponent_eq_zero hgn ?_
     rw [map_sub, homogeneousComponent_of_lt_order_eq_zero (hΓh i hi₀ hih),
-      homogeneousComponent_homDefect_𝔾ₐ_eq_zero hp hF hih hg hδ, sub_zero]
+      homogeneousComponent_homDefect_𝔾ₐ_eq_zero hp
+        ((Nat.cast_lt.mpr (Nat.pow_lt_pow_right hp.one_lt hih)).trans_le hF) hδ, sub_zero]
   · push Not at hpow
     obtain ⟨e, he₀, he, hlt⟩ := (hΓ.sub (F.isSymmetricCocycle_homDefect_𝔾ₐ g)
       ).exists_succ_le_order_sub_homDefect_𝔾ₐ hp hpR hF hv hn hpow hgn
@@ -277,8 +255,8 @@ theorem IsSymmetricCocycle.exists_eq_homDefect_𝔾ₐ (hp : p.Prime) (hpR : (p 
     (hΓh : ∀ i, 0 < i → i < h → ((p ^ i : ℕ) : ℕ∞) < Γ.order) :
     ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧ Γ = F.homDefect 𝔾ₐ g := by
   choose! e he using fun (n : ℕ) (g : PowerSeries R) (hn : n ≠ 0)
-    (hg : PowerSeries.constantCoeff g = 0) (hgn : (n : ℕ∞) ≤ (Γ - F.homDefect 𝔾ₐ g).order) ↦
-    hΓ.exists_succ_le_order_sub_homDefect_𝔾ₐ_add hp hpR hF hv hΓh hn hg hgn
+    (hgn : (n : ℕ∞) ≤ (Γ - F.homDefect 𝔾ₐ g).order) ↦
+    hΓ.exists_succ_le_order_sub_homDefect_𝔾ₐ_add hp hpR hF hv hΓh hn hgn
   -- the approximations: `Γ - δ(approx e n)` vanishes below degree `n + 1`
   have key (n : ℕ) : PowerSeries.constantCoeff (approx e n) = 0 ∧
       ((n + 1 : ℕ) : ℕ∞) ≤ (Γ - F.homDefect 𝔾ₐ (approx e n)).order := by
@@ -288,14 +266,14 @@ theorem IsSymmetricCocycle.exists_eq_homDefect_𝔾ₐ (hp : p.Prime) (hpR : (p 
         one_le_order_iff_constCoeff_eq_zero]
       exact ⟨map_zero _, hΓ₀⟩
     | succ n ih =>
-      obtain ⟨he₀, -, hlt⟩ := he (n + 1) (approx e n) n.succ_ne_zero ih.1 ih.2
+      obtain ⟨he₀, -, hlt⟩ := he (n + 1) (approx e n) n.succ_ne_zero ih.2
       exact ⟨by rw [approx, map_add, ih.1, he₀, _root_.add_zero], hlt⟩
   -- the corrections after step `a` vanish below degree `a / pʰ`
   have hstab (a k : ℕ) : ((a / p ^ h : ℕ) : ℕ∞) ≤ (approx e (a + k) - approx e a).order := by
     induction k with
     | zero => simp
     | succ k ih =>
-      have hk := (he (a + k + 1) (approx e (a + k)) (by omega) (key _).1 (key _).2).2.1
+      have hk := (he (a + k + 1) (approx e (a + k)) (by omega) (key _).2).2.1
       rw [show approx e (a + (k + 1)) - approx e a =
         e (a + k + 1) (approx e (a + k)) + (approx e (a + k) - approx e a) by
           rw [← add_assoc, approx]

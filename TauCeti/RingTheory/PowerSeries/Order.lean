@@ -40,7 +40,7 @@ of `X ^ n` in `f`.
 
 * `PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero`: `X ^ k * f` has order `k` when `f` has
   nonzero constant coefficient.
-* `PowerSeries.coeff_mul_pow_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
+* `PowerSeries.coeff_pow_mul_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
   `(coeff n f) ^ k` when `f` has order at least `n`.
 
 ## Provenance
@@ -129,7 +129,7 @@ end Ring
 
 /-- If `f` has order at least `n`, the coefficient of `X ^ (n * k)` in `f ^ k` is the `k`-th
 power of the coefficient of `X ^ n` in `f`. -/
-theorem coeff_mul_pow_of_le_order {f : R⟦X⟧} {n : ℕ} (hn : n ≤ f.order) (k : ℕ) :
+theorem coeff_pow_mul_of_le_order {f : R⟦X⟧} {n : ℕ} (hn : n ≤ f.order) (k : ℕ) :
     coeff (n * k) (f ^ k) = coeff n f ^ k := by
   obtain ⟨u, rfl⟩ := X_pow_dvd_iff.mpr fun m hm ↦
     coeff_of_lt_order m ((Nat.cast_lt.mpr hm).trans_le hn)
