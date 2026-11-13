@@ -216,7 +216,10 @@ end Integral
 section Residue
 
 variable (k F) [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [FiniteDimensional F F']
+
+section IsIntegral
+
+variable [Algebra.IsIntegral F F']
 
 /-- If `g (y)` vanishes at a place `P'` of `F' / k'` over `P` at which `y` is integral, then the
 residue of `y` at `P'` is a root of the reduction of `g` over the residue field `F_P`. -/
@@ -324,10 +327,15 @@ theorem map_residue_eq_of_valuation_lt_one {P : Place k F} {P' : Place k' F'}
   have hy := mem_integers_of_valuation_integersEval_lt_one k F P' hg₁ hv₁
   rw [← minpoly_residue_eq k F P' hy hg₁ hirr₁ hv₁, minpoly_residue_eq k F P' hy hg₂ hirr₂ hv₂]
 
-/-- **The relative degree bound of Kummer's theorem** (Stichtenoth, Theorem 3.3.7): a place `P'`
-over `P` at which a polynomial `g` with irreducible reduction `γ` vanishes has relative degree at
-least `deg γ`, because `γ` is associated to the minimal polynomial of the residue of `y` at `P'`,
-and so has the same degree. -/
+end IsIntegral
+
+variable {k F} [FiniteDimensional F F']
+
+/-- **The relative degree bound of Kummer's theorem** (Stichtenoth, Theorem 3.3.7): let `P'` be a
+place over `P` at which `y` is integral, and let `g` be a polynomial over `𝒪_P` with irreducible
+reduction `γ` such that `g (y)` vanishes at `P'`. Then `P'` has relative degree at least `deg γ`,
+because `γ` is associated to the minimal polynomial of the residue of `y` at `P'`, and so has the
+same degree. -/
 theorem natDegree_map_residue_le_relativeDegree {P : Place k F} {P' : Place k' F'}
     (hres : P'.restrict k F = P) {y : F'} (hy : y ∈ P'.integers) {g : P.integers[X]}
     (hirr : Irreducible (g.map (IsLocalRing.residue P.integers)))
@@ -497,17 +505,13 @@ theorem splits_map_residue_of_forall_relativeDegree_eq_one (hF : IsFunctionField
     (h : ∀ P' : Place k' F', P'.restrict k F = P → relativeDegree k F P' = 1) :
     (φ.map (IsLocalRing.residue P.integers)).Splits := by
   -- By Kummer's theorem each irreducible factor of the reduction has degree at most the relative
-  -- degree of some place over `P`. Replace the factor by its monic associate and lift it.
+  -- degree of some place over `P`. Lift the factor to `𝒪_P`.
   refine Splits.of_forall_irreducible_dvd_natDegree_le_one fun γ hγ hdvd ↦ ?_
-  have hmonic := monic_mul_leadingCoeff_inv hγ.ne_zero
-  have hlc : γ.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hγ.ne_zero
-  have hassoc : Associated γ (γ * C γ.leadingCoeff⁻¹) :=
-    associated_mul_unit_right γ _ (isUnit_C.mpr (inv_ne_zero hlc).isUnit)
-  obtain ⟨g, -, hgmap⟩ := P.exists_monic_map_residue_eq hmonic
+  obtain ⟨g, rfl⟩ := Polynomial.map_surjective (IsLocalRing.residue P.integers)
+    IsLocalRing.residue_surjective γ
   obtain ⟨P', hP', -, hdeg⟩ := exists_restrict_eq_of_irreducible_map_residue (k' := k') hF P y
-    hmin (hgmap ▸ hassoc.irreducible hγ) (hgmap ▸ hassoc.symm.dvd.trans hdvd)
-  rw [hgmap, natDegree_mul_leadingCoeff_inv _ hγ.ne_zero, h P' hP'] at hdeg
-  exact hdeg
+    hmin hγ hdvd
+  rwa [h P' hP'] at hdeg
 
 /-- **Kummer's theorem at a rational place of split separable reduction.**  Let `y : F'` be a
 root of a monic `φ` over the valuation ring of a rational place `P` of `F / k`, whose image in

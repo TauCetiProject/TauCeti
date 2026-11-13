@@ -89,8 +89,6 @@ order of the decomposition group, and the decomposition field — is in
   whole Galois group, which acts trivially on its residues, and it is the only place above its
   restriction.
 * `TauCeti.Place.inertiaField_smul`: conjugate places have conjugate inertia fields.
-* `TauCeti.Place.map_restrictScalarsHom_inertiaSubgroup`: the inertia group over an intermediate
-  field `E` is the part of the inertia group over `F` fixing `E`.
 * `TauCeti.Place.ramificationIdx_mul_finInsepDegree_restrict_eq_relIndex` and
   `TauCeti.Place.le_inertiaField_iff`: in an intermediate field `E`, the product of the
   ramification index and the inseparable residue degree of `P ∩ E` over `F` is the index of
@@ -598,44 +596,6 @@ theorem inertiaField_smul (σ : F' ≃ₐ[F] F') :
   refine ⟨_, h, ?_⟩
   simp [mul_assoc]
 
-omit [Algebra k F] [IsScalarTower k F F'] in
-/-- **The inertia group over an intermediate field**: the inertia group of `P` over an intermediate
-field `E`, read as automorphisms over `F`, is the part of the inertia group of `P` over `F` that
-fixes `E` pointwise. -/
-theorem map_restrictScalarsHom_inertiaSubgroup (E : IntermediateField F F') :
-    ((P.integers.inertiaSubgroup E).map (P.integers.decompositionSubgroup E).subtype).map
-        (AlgEquiv.restrictScalarsHom F) =
-      E.fixingSubgroup ⊓
-        (P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype := by
-  let f : (F' ≃ₐ[E] F') →* (F' ≃ₐ[F] F') := AlgEquiv.restrictScalarsHom F
-  -- Elements of the decomposition groups over `E` and over `F` acting alike on `F'` are inertial
-  -- together, since inertia is read on residues.
-  have hiff {g₁ : P.integers.decompositionSubgroup E} {g₂ : P.integers.decompositionSubgroup F}
-      (h : ∀ x, (g₁ : F' ≃ₐ[E] F') x = (g₂ : F' ≃ₐ[F] F') x) :
-      g₁ ∈ P.integers.inertiaSubgroup E ↔ g₂ ∈ P.integers.inertiaSubgroup F := by
-    have hx (x : P.integers) : g₁ • x = g₂ • x := Subtype.ext <| by
-      rw [ValuationSubring.coe_decompositionSubgroup_smul,
-        ValuationSubring.coe_decompositionSubgroup_smul, h]
-    simp only [ValuationSubring.mem_inertiaSubgroup_iff, hx]
-  ext σ
-  rw [Subgroup.mem_inf]
-  constructor
-  · rintro ⟨_, ⟨g, hg, rfl⟩, rfl⟩
-    have hZ : f g ∈ P.integers.decompositionSubgroup F :=
-      (ValuationSubring.restrictScalars_mem_decompositionSubgroup_iff (K := F)
-          P.integers E _).mpr g.2
-    exact ⟨(IntermediateField.mem_fixingSubgroup_iff _ _).mpr
-      fun x hx ↦ (g : F' ≃ₐ[E] F').commutes ⟨x, hx⟩, ⟨f g, hZ⟩, (hiff fun _ ↦ rfl).mp hg, rfl⟩
-  · rintro ⟨hE, g, hg, rfl⟩
-    let τ := E.fixingSubgroupEquiv ⟨g, hE⟩
-    have hτ (x : F') : τ x = (g : F' ≃ₐ[F] F') x :=
-      congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨g, hE⟩) x
-    have hτg : τ.restrictScalars F = g := AlgEquiv.ext hτ
-    have hZ : τ ∈ P.integers.decompositionSubgroup E :=
-      (ValuationSubring.restrictScalars_mem_decompositionSubgroup_iff (K := F)
-          P.integers E τ).mp (hτg ▸ g.2)
-    exact ⟨τ, ⟨⟨τ, hZ⟩, (hiff hτ).mpr hg, rfl⟩, AlgEquiv.ext hτ⟩
-
 variable [FiniteDimensional F F']
 
 /-- An automorphism of `F'` over the inertia field of `P`, read as an automorphism over `F`, fixes
@@ -658,7 +618,7 @@ theorem decompositionSubgroup_inertiaField_eq_top :
   simp only [Subgroup.mem_top, iff_true]
   obtain ⟨g, -, hg⟩ := exists_mem_inertiaSubgroup_coe_eq_restrictScalars F P τ
   exact (ValuationSubring.restrictScalars_mem_decompositionSubgroup_iff (K := F)
-      P.integers _ τ).mp (hg ▸ g.2)
+      P.integers τ).mp (hg ▸ g.2)
 
 variable [IsGalois F F']
 
@@ -685,7 +645,7 @@ theorem ramificationIdx_mul_finInsepDegree_restrict_eq_relIndex
         Subgroup (F' ≃ₐ[F] F')) =
       ramificationIdx E P *
         Field.finInsepDegree (P.restrict k E).ResidueField P.ResidueField := by
-    rw [← map_restrictScalarsHom_inertiaSubgroup,
+    rw [← ValuationSubring.map_restrictScalarsHom_inertiaSubgroup,
       Subgroup.card_map_of_injective (AlgEquiv.restrictScalarsHom_injective F),
       Subgroup.card_map_of_injective (Subgroup.subtype_injective _),
       card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree E P]
@@ -772,7 +732,7 @@ theorem map_restrictScalarsHom_fixingSubgroup_inertiaField (E : IntermediateFiel
     (inertiaField E Q).fixingSubgroup.map (AlgEquiv.restrictScalarsHom F) =
       E.fixingSubgroup ⊓ (inertiaField F Q).fixingSubgroup := by
   rw [fixingSubgroup_inertiaField, fixingSubgroup_inertiaField,
-    map_restrictScalarsHom_inertiaSubgroup]
+    ValuationSubring.map_restrictScalarsHom_inertiaSubgroup]
 
 variable [IsGalois F F'] [Algebra.IsSeparable (Q.restrict k F).ResidueField Q.ResidueField]
 
