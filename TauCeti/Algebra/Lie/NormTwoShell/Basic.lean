@@ -115,9 +115,8 @@ theorem equivProd_cartan (h : I → ℤ) : equivProd B (cartan B h) = (h, 0) := 
   simp [cartan]
 
 /-- The Cartan embedding is injective. -/
-theorem cartan_injective : Function.Injective (cartan B) := by
-  intro v w h
-  simpa only [equivProd_cartan] using congrArg (fun x ↦ (equivProd B x).1) h
+theorem cartan_injective : Function.Injective (cartan B) :=
+  (equivProd B).symm.injective.comp LinearMap.inl_injective
 
 @[simp]
 theorem equivProd_root (a : B.normTwoShell) :
@@ -415,11 +414,8 @@ theorem rootBracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a b : B.
     rw [rootBracket_of_mem hm, rootBracket_of_mem hm', hsign, Units.neg_smul, hroot]
   by_cases hz : (a : I → ℤ) + b = 0
   · have hb : (b : I → ℤ) = -a := eq_neg_of_add_eq_zero_right hz
-    have hp : (a : I → ℤ) ⬝ᵥ B *ᵥ b = -2 := by
-      rw [hb, mulVec_neg, dotProduct_neg, mem_normTwoShell.mp a.2]
     have hsign : (B.orderedSignForm b a).negOnePow = (B.orderedSignForm a b).negOnePow := by
-      rw [Int.negOnePow_eq_iff, Int.even_iff]
-      omega
+      simp only [hb, map_neg, LinearMap.neg_apply]
     have hcartan : cartan B b = -cartan B a := by rw [hb, map_neg]
     rw [rootBracket_of_add_eq_zero hz, rootBracket_of_add_eq_zero (by rwa [add_comm]), hsign,
       hcartan, smul_neg]
@@ -443,12 +439,9 @@ protected theorem lie_skew (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x y : 
 /-- **The bracket is alternating**, for a symmetric `B` with even diagonal. -/
 protected theorem lie_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x : ShellLieAlgebra B) :
     ⁅x, x⁆ = 0 := by
-  have h := ShellLieAlgebra.lie_skew hB hdiag x x
-  refine (basis B).repr.injective (Finsupp.ext fun i ↦ ?_)
-  have hi := congr((basis B).repr $h i)
-  simp only [map_neg, Finsupp.neg_apply] at hi
-  simp only [map_zero, Finsupp.coe_zero, Pi.zero_apply]
-  omega
+  have hz : (2 : ℤ) • ⁅x, x⁆ = 0 := by
+    simpa only [two_smul] using eq_neg_iff_add_eq_zero.mp (ShellLieAlgebra.lie_skew hB hdiag x x)
+  exact ((basis B).smul_eq_zero.mp hz).resolve_left (by decide)
 
 /-! ### The Jacobi identity -/
 
