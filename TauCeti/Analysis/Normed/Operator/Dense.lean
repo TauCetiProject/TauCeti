@@ -25,9 +25,7 @@ dense span converges strongly everywhere to a continuous semilinear map
 (`ContinuousLinearMap.exists_tendsto_apply_of_dense`,
 `ContinuousLinearMap.exists_tendsto_apply_of_dense_span`). These rest on the estimate
 `ContinuousLinearMap.norm_sub_apply_le_of_norm_le`, which moves the point at which a difference of
-two bounded operators is evaluated to a nearby point of the dense subset. We also record that
-evaluating a point-continuous operator family along a dense-range map preserves the closed span of
-all operator ranges (`ContinuousLinearMap.topologicalClosure_span_iUnion_range_comp_eq`).
+two bounded operators is evaluated to a nearby point of the dense subset.
 
 For series, the same kind of estimate shows that if the finite partial sums `∑ i ∈ s, T i` of a
 family of operators into a complete space are uniformly bounded, then the vectors `x` for which
@@ -176,22 +174,5 @@ theorem exists_tendsto_apply_of_dense_span {Y' : Type*} [NormedAddCommGroup Y']
   | smul c _ _ hu =>
     rcases hu with ⟨u', hu'⟩
     exact ⟨σ₁₂ c • u', (hu'.const_smul (σ₁₂ c)).congr fun _ => (map_smulₛₗ _ _ _).symm⟩
-
-omit [RingHomIsometric σ₁₂] in
-/-- Restricting a point-continuous family of continuous semilinear maps `L : α → X →SL[σ₁₂] Y` to a
-dense range `Set.range g` generates the same closed `𝕜₂`-span in `Y`. -/
-theorem topologicalClosure_span_iUnion_range_comp_eq {α ι : Type*} [TopologicalSpace α]
-    {g : ι → α} (hg : DenseRange g) {L : α → X →SL[σ₁₂] Y}
-    (hL : ∀ x, Continuous fun a => L a x) :
-    (Submodule.span 𝕜₂ (⋃ i, Set.range (L (g i)))).topologicalClosure =
-      (Submodule.span 𝕜₂ (⋃ a, Set.range (L a))).topologicalClosure := by
-  set S := Submodule.span 𝕜₂ (⋃ i, Set.range (L (g i)))
-  refine le_antisymm (Submodule.topologicalClosure_mono <| Submodule.span_mono <|
-    Set.iUnion_subset fun i => Set.subset_iUnion (fun a => Set.range (L a)) (g i))
-    (Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_) S.isClosed_topologicalClosure)
-  rintro _ ⟨_, ⟨a, rfl⟩, x, rfl⟩
-  refine (S.isClosed_topologicalClosure.preimage (hL x)).closure_subset_iff.2 ?_ (hg a)
-  rintro _ ⟨i, rfl⟩
-  exact Submodule.le_topologicalClosure S (Submodule.subset_span (Set.mem_iUnion.2 ⟨i, x, rfl⟩))
 
 end ContinuousLinearMap

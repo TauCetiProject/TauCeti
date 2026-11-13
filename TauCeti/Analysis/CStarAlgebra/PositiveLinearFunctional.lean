@@ -43,12 +43,16 @@ These are Mathlib's `ContinuousLinearMap.monotone_iff_tendsto_nhds_opNorm` and
 `WeakDual.ext_nonneg` shows that a functional on a C⋆-algebra is determined by its values on
 nonnegative elements, since these span the algebra.
 
-## Norm-attaining states and positive functionals
+## Spectral and norm-attaining states and positive functionals
 
-On a nontrivial unital C⋆-algebra, every `0 ≤ a` admits a state taking `‖a‖ ^ n` on each `a ^ n`
-(`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`,
-`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_eq_norm`), constructed by extending
-a character on the generated commutative C⋆-subalgebra via Hahn–Banach. Pulling back along the
+On a unital C⋆-algebra, every spectral value `z ∈ spectrum ℂ a` of a normal element `a` admits a
+state evaluating `star a ^ m * a ^ n` to `star z ^ m * z ^ n`; see
+`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum`.
+This is constructed by extending a character on the generated commutative C⋆-subalgebra via
+Hahn–Banach.
+Specializing to `0 ≤ a` on a nontrivial unital C⋆-algebra gives a state taking `‖a‖ ^ n` on each
+`a ^ n` (`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`,
+`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_eq_norm`). Pulling back along the
 isometric inclusion into `𝓜(ℂ, A)` yields a norm-one positive continuous linear functional on any
 nontrivial (possibly nonunital) C⋆-algebra `A` satisfying `ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`
 (`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
@@ -125,7 +129,37 @@ namespace TauCeti.CStarAlgebra
 
 section Unital
 
-variable {M : Type*} [CStarAlgebra M] [PartialOrder M] [StarOrderedRing M] [Nontrivial M]
+variable {M : Type*} [CStarAlgebra M] [PartialOrder M] [StarOrderedRing M]
+
+/-- On a unital C⋆-algebra, every spectral value `z ∈ spectrum ℂ a` of a normal element `a` admits
+a state `ω` satisfying `ω (star a ^ m * a ^ n) = star z ^ m * z ^ n` for all `m n : ℕ`. -/
+theorem exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum {a : M}
+    [IsStarNormal a] {z : ℂ} (hz : z ∈ spectrum ℂ a) :
+    ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧
+      ∀ m n : ℕ, ω (star a ^ m * a ^ n) = star z ^ m * z ^ n := by
+  have : Nontrivial M :=
+    nontrivial_of_ne (1 : M) 0 fun h10 => hz ⟨⟨_, 0, by simp [h10], by simp [h10]⟩, rfl⟩
+  set S := StarAlgebra.elemental ℂ a
+  have : IsClosed (S : Set M) := StarAlgebra.elemental.isClosed ℂ a
+  have haS : a ∈ S := StarAlgebra.elemental.self_mem ℂ a
+  let x : S := ⟨a, haS⟩
+  have hzS : z ∈ spectrum ℂ x := by
+    rw [StarSubalgebra.spectrum_eq]
+    exact spectrum.algebraMap_mem ℂ hz
+  obtain ⟨χ, hχa⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1 hzS
+  obtain ⟨g, hg_ext, hg_norm⟩ := exists_extension_norm_eq S.toSubmodule
+    ((WeakDual.CharacterSpace.toAlgHom χ).toContinuousLinearMap : StrongDual ℂ S.toSubmodule)
+  replace hg_norm : ‖g‖ = 1 := hg_norm.trans (AlgHom.toContinuousLinearMap_norm _)
+  have hg_one : g 1 = 1 := (hg_ext ⟨1, S.one_mem⟩).trans (map_one χ)
+  refine ⟨{ __ := g
+            monotone' := ContinuousLinearMap.monotone_iff_opNorm_eq_map_one.2
+              (by simp [hg_norm, hg_one]) }, hg_one, hg_norm, fun m n => ?_⟩
+  have hx : (⟨star a ^ m * a ^ n, (star x ^ m * x ^ n).prop⟩ : S) = star x ^ m * x ^ n := by
+    ext; simp [x]
+  exact (hg_ext ⟨star a ^ m * a ^ n, (star x ^ m * x ^ n).prop⟩).trans <|
+    (congrArg χ hx).trans (by simp [map_star, hχa])
+
+variable [Nontrivial M]
 
 /-- On a nontrivial unital C⋆-algebra, every nonnegative element `a` admits a state `ω` satisfying
 `ω (a ^ n) = ‖a‖ ^ n` for every `n : ℕ`. -/
@@ -133,21 +167,10 @@ theorem exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow {a : M} (ha : 0
     ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧
       ∀ n : ℕ, ω (a ^ n) = (‖a‖ : ℂ) ^ n := by
   have : IsStarNormal a := ha.isSelfAdjoint.isStarNormal
-  set S := StarAlgebra.elemental ℂ a
-  have : IsClosed (S : Set M) := StarAlgebra.elemental.isClosed ℂ a
-  have haS : a ∈ S := StarAlgebra.elemental.self_mem ℂ a
-  have hz : (‖a‖ : ℂ) ∈ spectrum ℂ (⟨a, haS⟩ : S) := by
-    rw [StarSubalgebra.spectrum_eq]
-    exact spectrum.algebraMap_mem ℂ (_root_.CStarAlgebra.norm_mem_spectrum_of_nonneg a ha)
-  obtain ⟨χ, hχa⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1 hz
-  obtain ⟨g, hg_ext, hg_norm⟩ := exists_extension_norm_eq S.toSubmodule
-    ((WeakDual.CharacterSpace.toAlgHom χ).toContinuousLinearMap : StrongDual ℂ S.toSubmodule)
-  replace hg_norm : ‖g‖ = 1 := hg_norm.trans (AlgHom.toContinuousLinearMap_norm _)
-  have hg_one : g 1 = 1 := (hg_ext ⟨1, S.one_mem⟩).trans (map_one χ)
-  refine ⟨{ __ := g
-            monotone' := ContinuousLinearMap.monotone_iff_opNorm_eq_map_one.2
-              (by simp [hg_norm, hg_one]) }, hg_one, hg_norm, fun n => ?_⟩
-  exact (hg_ext ⟨a ^ n, S.pow_mem haS n⟩).trans ((map_pow χ (⟨a, haS⟩ : S) n).trans (by rw [hχa]))
+  obtain ⟨ω, h1, hn, hp⟩ :=
+    exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum
+      (_root_.CStarAlgebra.norm_mem_spectrum_of_nonneg a ha)
+  exact ⟨ω, h1, hn, fun n => by simpa using hp 0 n⟩
 
 /-- On a nontrivial unital C⋆-algebra, every nonnegative element `a` admits a state `ω` with
 `ω a = ‖a‖`. -/

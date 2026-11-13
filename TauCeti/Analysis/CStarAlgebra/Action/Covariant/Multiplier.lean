@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Comap
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Representation.GNS
 import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Intertwiner
@@ -38,7 +37,8 @@ subspace of `B` as `π` (`topologicalClosure_span_integratedMultiplier`,
 
 ## References
 
-* Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2, Proposition 2.39 and Corollary 2.40.
+* Dana Williams, *Crossed Products of C*-Algebras*, Proposition 2.39, Proposition 2.40, and
+  Section 2.6 (Theorem 2.61).
 -/
 
 public section
@@ -107,10 +107,11 @@ theorem norm_group_le_one (M : CovariantMultiplierHom α B) (r : G) :
   · have := not_nontrivial_iff_subsingleton.1 h
     simp [Subsingleton.elim (M.group r : 𝓜(ℂ, B)) 0]
 
-/-- On a topological group, strict right continuity `r ↦ b u_r` follows from strict left
-continuity by taking stars and inverting the group variable. -/
+/-- On a topological group, `M.group` is strictly continuous on the right:
+`r ↦ (M.group r : 𝓜(ℂ, B)).snd b` is norm continuous for every `b : B`. -/
 theorem continuous_group_snd [IsTopologicalGroup G] (M : CovariantMultiplierHom α B) (b : B) :
     Continuous fun r => (M.group r : 𝓜(ℂ, B)).snd b := by
+  -- Deduce right strict continuity from left strict continuity via adjoints and group inversion.
   have heq (r : G) :
       (M.group r : 𝓜(ℂ, B)).snd b = star ((M.group r⁻¹ : 𝓜(ℂ, B)).fst (star b)) := by
     rw [map_inv, ← Unitary.star_eq_inv, Unitary.coe_star, DoubleCentralizer.star_fst, star_star,
@@ -171,6 +172,25 @@ theorem coe_map_group (M : CovariantMultiplierHom α B) {ψ : B →⋆ₙₐ[ℂ
     (hψ : ψ.IsMultiplierNondegenerate) (r : G) :
     ((M.map hψ).group r : 𝓜(ℂ, C)) = ψ.extendToMultiplier hψ (M.group r) := (rfl)
 
+/-- Pushing forward along the canonical inclusion `B →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` recovers `M`. -/
+@[simp]
+theorem map_coeHom (M : CovariantMultiplierHom α B)
+    (h : (DoubleCentralizer.coeHom (𝕜 := ℂ) : B →⋆ₙₐ[ℂ] 𝓜(ℂ, B)).IsMultiplierNondegenerate) :
+    M.map h = M :=
+  ext (NonUnitalStarAlgHom.ext fun _ => by simp) (MonoidHom.ext fun _ => Subtype.ext <| by simp)
+
+/-- Successive pushforwards agree with pushforward along the composite multiplier homomorphism. -/
+@[simp]
+theorem map_map {D : Type*} [NonUnitalCStarAlgebra D] (M : CovariantMultiplierHom α B)
+    {ψ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)} (hψ : ψ.IsMultiplierNondegenerate)
+    {θ : C →⋆ₙₐ[ℂ] 𝓜(ℂ, D)} (hθ : θ.IsMultiplierNondegenerate) :
+    (M.map hψ).map hθ = M.map (hθ.extendToMultiplier_comp hψ) :=
+  ext
+    (NonUnitalStarAlgHom.ext fun a => DFunLike.congr_fun
+      (NonUnitalStarAlgHom.extendToMultiplier_comp hθ hψ).symm (M.coefficient a))
+    (MonoidHom.ext fun r => Subtype.ext <| DFunLike.congr_fun
+      (NonUnitalStarAlgHom.extendToMultiplier_comp hθ hψ).symm (M.group r : 𝓜(ℂ, B)))
+
 /-- Pushing forward along `ψ` and then applying a nondegenerate representation `π` of `C` agrees
 with applying the composite nondegenerate representation `(π.multiplierExtension hπ) ∘ ψ`. -/
 @[simp]
@@ -181,10 +201,10 @@ theorem toCovariantRepresentation_map (M : CovariantMultiplierHom α B) {ψ : B 
       M.toCovariantRepresentation (hπ.multiplierExtension_comp hψ) :=
   CovariantRepresentation.ext
     (NonUnitalStarAlgHom.ext fun a => DFunLike.congr_fun
-      (NonUnitalStarAlgHom.multiplierExtension_comp_extendToMultiplier hπ hψ).symm
+      (NonUnitalStarAlgHom.multiplierExtension_comp hπ hψ).symm
       (M.coefficient a))
     (DFunLike.ext _ _ fun r => DFunLike.congr_fun
-      (NonUnitalStarAlgHom.multiplierExtension_comp_extendToMultiplier hπ hψ).symm
+      (NonUnitalStarAlgHom.multiplierExtension_comp hπ hψ).symm
       (M.group r : 𝓜(ℂ, B)))
 
 /-- Pull back a covariant multiplier homomorphism along an equivariant coefficient map. -/
@@ -205,6 +225,27 @@ theorem comap_coefficient {A' : Type*} [NonUnitalCStarAlgebra A'] {α' : CStarAc
 @[simp]
 theorem comap_group {A' : Type*} [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'}
     (M : CovariantMultiplierHom α B) (φ : Hom α' α) : (M.comap φ).group = M.group := (rfl)
+
+/-- Pullback along the identity equivariant homomorphism recovers `M`. -/
+@[simp]
+theorem comap_id (M : CovariantMultiplierHom α B) : M.comap (Hom.id α) = M :=
+  ext (NonUnitalStarAlgHom.ext fun _ => by simp) rfl
+
+/-- Successive pullbacks agree with pullback along the composite equivariant homomorphism. -/
+@[simp]
+theorem comap_comp {A' A'' : Type*} [NonUnitalCStarAlgebra A'] [NonUnitalCStarAlgebra A'']
+    {α' : CStarAction G A'} {α'' : CStarAction G A''}
+    (M : CovariantMultiplierHom α B) (φ : Hom α' α) (θ : Hom α'' α') :
+    (M.comap φ).comap θ = M.comap (φ.comp θ) :=
+  ext (NonUnitalStarAlgHom.ext fun _ => by simp) rfl
+
+/-- Pushforward along a nondegenerate multiplier homomorphism commutes with pullback along an
+equivariant coefficient homomorphism. -/
+theorem map_comap {A' : Type*} [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'}
+    (M : CovariantMultiplierHom α B) (φ : Hom α' α) {ψ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)}
+    (hψ : ψ.IsMultiplierNondegenerate) :
+    (M.comap φ).map hψ = (M.map hψ).comap φ :=
+  ext rfl rfl
 
 @[simp]
 theorem toCovariantRepresentation_comap {A' : Type*} [NonUnitalCStarAlgebra A']
@@ -240,11 +281,12 @@ theorem continuous_integrand_fst (f : C_c(G, A)) (b : B) :
     ((map_continuous M.coefficient).comp f.continuous))).clm_apply (M.continuous_group_fst b)
 
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
-/-- The right centralizer integrand `r ↦ (π(f r) u_r).snd b` is norm continuous in `B`, rewritten
-using covariance so that the norm-continuous coefficient map acts on the outside. -/
+/-- The right centralizer integrand `r ↦ (M.coefficient (f r) * M.group r).snd b` is norm
+continuous in `B`. -/
 @[fun_prop]
 theorem continuous_integrand_snd (f : C_c(G, A)) (b : B) :
     Continuous fun r => (M.coefficient (f r) * M.group r).snd b := by
+  -- Rewrite using covariance so that the norm-continuous coefficient map acts on the outside.
   simp_rw [M.coefficient_mul_group, DoubleCentralizer.mul_snd, mul_apply_eq_comp]
   exact ((DoubleCentralizer.continuous_toProd.snd.comp ((map_continuous M.coefficient).comp
     (α.continuous_apply continuous_inv f.continuous)))).clm_apply (M.continuous_group_snd b)
@@ -377,9 +419,20 @@ theorem extendToMultiplier_integratedMultiplier {ψ : B →⋆ₙₐ[ℂ] 𝓜(�
     (hψ : ψ.IsMultiplierNondegenerate) (f : C_c(G, A)) :
     ψ.extendToMultiplier hψ (M.integratedMultiplier μ f) = (M.map hψ).integratedMultiplier μ f := by
   refine DoubleCentralizer.eq_iff_forall_multiplierExtension_eq.2 fun H _ _ _ π hπ => ?_
-  rw [← StarAlgHom.comp_apply, ← NonUnitalStarAlgHom.multiplierExtension_comp_extendToMultiplier,
+  rw [← StarAlgHom.comp_apply, ← NonUnitalStarAlgHom.multiplierExtension_comp,
     M.multiplierExtension_integratedMultiplier, (M.map hψ).multiplierExtension_integratedMultiplier,
     M.toCovariantRepresentation_map]
+
+/-- Pullback of a covariant multiplier homomorphism along an equivariant coefficient map commutes
+with strict Bochner integration. -/
+@[simp]
+theorem integratedMultiplier_comap [LocallyCompactSpace G] {A' : Type*}
+    [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'} (φ : Hom α' α)
+    (f : ConvolutionAlgebra α' μ) :
+    (M.comap φ).integratedMultiplier μ f.ofConv =
+      M.integratedMultiplier μ (φ.convolutionMap μ f).ofConv :=
+  DoubleCentralizer.eq_iff_forall_multiplierExtension_eq.2 fun _ _ _ _ ρ hρ => by
+    simpa using (M.toCovariantRepresentation hρ).integratedOperator_comap φ μ f
 
 /-- Left multiplication of `f` by `a : A` becomes left multiplication by `M.coefficient a`. -/
 @[simp]
@@ -413,8 +466,8 @@ section PeakApproximation
 variable [LocallyCompactSpace G] [R1Space G] [μ.IsOpenPosMeasure]
 
 /-- Peak-function approximation at any group element `r₀ : G`: every vector
-`(π a * u_{r₀}).fst b` in `B` can be approximated in norm within `ε > 0` by
-`(M.integratedMultiplier μ f).fst b` for a scalar peak multiple `f = φ • a : C_c(G, A)`. -/
+`(M.coefficient a * M.group r₀).fst b` in `B` can be approximated in norm within `ε > 0` by
+`(M.integratedMultiplier μ f).fst b` for some `f : C_c(G, A)`. -/
 theorem exists_norm_integratedMultiplier_fst_sub_le (r₀ : G) (a : A) (b : B) {ε : ℝ}
     (hε : 0 < ε) :
     ∃ f : C_c(G, A),
@@ -426,29 +479,14 @@ theorem exists_norm_integratedMultiplier_fst_sub_le (r₀ : G) (a : A) (b : B) {
       (ge_mem_nhds (by simpa [ψ] using hε))
   obtain ⟨φ, hφ0, hφU, hφ1⟩ := exists_nonneg_tsupport_subset_integral_eq_one μ hU
   let f : C_c(G, A) := φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ a)
-  refine ⟨f, ?_⟩
-  have hφi : Integrable φ μ := φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport
-  have hae := hφi.coeFn_toL1
-  have hnorm : ‖hφi.toL1 φ‖ = 1 := by
-    rw [L1.norm_eq_integral_norm, ← hφ1]
-    exact integral_congr_ae (hae.mono fun r hr =>
-      (congrArg norm hr).trans (Real.norm_of_nonneg (hφ0 r)))
-  have hf_int : (M.integratedMultiplier μ f).fst b = ∫ r, (hφi.toL1 φ) r • ψ r ∂μ := by
+  have hf_int : (M.integratedMultiplier μ f).fst b = ∫ r, φ r • ψ r ∂μ := by
     rw [integratedMultiplier_fst_apply]
-    refine integral_congr_ae (hae.mono fun r hr => ?_)
+    refine integral_congr_ae (.of_forall fun r => ?_)
     have hfr : f r = (φ r : ℂ) • a := by simp [f, CompactlySupportedContinuousMap.compLeft_apply]
-    dsimp only [ψ]
-    rw [hfr, map_smul, smul_mul_assoc, DoubleCentralizer.smul_fst, smul_apply, hr]
-    simp
-  have haesm : AEStronglyMeasurable (fun r => (hφi.toL1 φ) r • ψ r) μ :=
-    ((((map_continuous φ).smul hψ).integrable_of_hasCompactSupport
-      φ.hasCompactSupport.smul_right).aestronglyMeasurable).congr
-        (hae.mono fun r hr => by dsimp only [Pi.smul_apply']; rw [hr])
-  have hbound := norm_integral_smul_sub_le (𝕜 := ℝ) (f := hφi.toL1 φ) (U := tsupport φ)
-    (φ := ψ) (y := ψ r₀) ((integral_congr_ae hae).trans hφ1)
-    (hae.mono fun r hr hrU => hr.trans (image_eq_zero_of_notMem_tsupport hrU))
-    haesm (.of_forall fun r hr => hφU hr)
-  rwa [← hf_int, hnorm, mul_one] at hbound
+    dsimp only
+    rw [hfr, map_smul]
+    simp [ψ]
+  exact ⟨f, hf_int ▸ φ.norm_integral_smul_sub_le hφ0 hφ1 hψ fun r hr => hφU hr⟩
 
 /-- The integrated multipliers on `C_c(G, A)` generate the exact same closed essential subspace of
 `B` as `M.coefficient`. -/
@@ -572,11 +610,13 @@ theorem extendToMultiplier_integratedStarAlgHom {ψ : B →⋆ₙₐ[ℂ] 𝓜(�
     ψ.extendToMultiplier hψ (M.integratedStarAlgHom μ f) =
       (M.map hψ).integratedStarAlgHom μ f := by simp
 
+/-- Pullback of a covariant multiplier homomorphism along an equivariant coefficient map composes
+`integratedStarAlgHom` with the induced convolution homomorphism. -/
+@[simp]
 theorem integratedStarAlgHom_comap {A' : Type*} [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'}
-    (φ : Hom α' α) (f : ConvolutionAlgebra α' μ) :
-    (M.comap φ).integratedStarAlgHom μ f = M.integratedStarAlgHom μ (φ.convolutionMap μ f) :=
-  DoubleCentralizer.eq_iff_forall_multiplierExtension_eq.2 fun _ _ _ _ ρ hρ => by
-    simpa using (M.toCovariantRepresentation hρ).integratedOperator_comap φ μ f
+    (φ : Hom α' α) :
+    (M.comap φ).integratedStarAlgHom μ = (M.integratedStarAlgHom μ).comp (φ.convolutionMap μ) :=
+  NonUnitalStarAlgHom.ext fun _ => by simp
 
 /-- Nondegenerate covariant multiplier homomorphisms are uniquely determined by their integrated
 ⋆-homomorphisms on `ConvolutionAlgebra α μ`. -/

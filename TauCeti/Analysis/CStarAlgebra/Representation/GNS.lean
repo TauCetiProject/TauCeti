@@ -5,23 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
+public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
+import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 
 /-!
-# Multiplier extensions of GNS representations and norm recovery
+# Norm recovery and point separation by nondegenerate representations
 
-For every positive linear functional `f` on a possibly nonunital C⋆-algebra `A`, the multiplier
-extension of Mathlib's GNS representation `f.gnsNonUnitalStarAlgHom`
-(`PositiveLinearMap.isNondegenerate_gnsNonUnitalStarAlgHom`) acts on classes `[b]` as `[m.fst b]`
-(`PositiveLinearMap.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS`).
-
-Applying the GNS representation to a norm-attaining positive functional on `a * star a`
+Applying the GNS representation (`PositiveLinearMap.isNondegenerate_gnsNonUnitalStarAlgHom`) to a
+norm-attaining positive functional on `a * star a`
 (`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`) shows that
-nondegenerate representations in `A`'s universe recover norms in `A` and `𝓜(ℂ, A)`
-(`TauCeti.CStarAlgebra.norm_le_iff_forall_isNondegenerate`,
-`DoubleCentralizer.norm_le_iff_forall_isNondegenerate`) and separate points of `𝓜(ℂ, A)`
-(`DoubleCentralizer.eq_iff_forall_multiplierExtension_eq`).
+nondegenerate representations on Hilbert spaces in `A`'s universe recover norms and separate points
+in both `A` (`TauCeti.CStarAlgebra.norm_le_iff_forall_isNondegenerate`,
+`TauCeti.CStarAlgebra.eq_iff_forall_isNondegenerate`) and `𝓜(ℂ, A)`
+(`DoubleCentralizer.norm_le_iff_forall_isNondegenerate`,
+`DoubleCentralizer.eq_iff_forall_multiplierExtension_eq`).
 
 ## References
 
@@ -34,33 +32,7 @@ public section
 
 noncomputable section
 
-open Filter Topology
 open scoped CStarAlgebra ComplexOrder MultiplierAlgebra
-
-namespace PositiveLinearMap
-
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  (f : A →ₚ[ℂ] ℂ)
-
-/-- The multiplier extension of the GNS representation sends `f.toGNS b` to `f.toGNS (m.fst b)`. -/
-theorem multiplierExtension_gnsNonUnitalStarAlgHom_toGNS (m : 𝓜(ℂ, A)) (b : A) :
-    f.gnsNonUnitalStarAlgHom.multiplierExtension f.isNondegenerate_gnsNonUnitalStarAlgHom m
-      (f.toGNS b) = f.toGNS (m.fst b) := by
-  have hl := CStarAlgebra.increasingApproximateUnit A
-  have := hl.neBot
-  have hcont : Continuous fun x : A => f.toGNS (m.fst x) := by fun_prop
-  exact tendsto_nhds_unique (f.gnsNonUnitalStarAlgHom.tendsto_multiplierExtension_apply
-    f.isNondegenerate_gnsNonUnitalStarAlgHom hl m (f.toGNS b))
-    (((hcont.tendsto b).comp (hl.tendsto_mul_right b)).congr fun e => by
-      simp [DoubleCentralizer.fst_mul])
-
-@[simp]
-theorem multiplierExtension_gnsNonUnitalStarAlgHom_apply_coe (m : 𝓜(ℂ, A)) (b : A) :
-    f.gnsNonUnitalStarAlgHom.multiplierExtension f.isNondegenerate_gnsNonUnitalStarAlgHom m
-      (f.toPreGNS b : f.GNS) = (f.toPreGNS (m.fst b) : f.GNS) := by
-  simpa only [toGNS_apply] using f.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS m b
-
-end PositiveLinearMap
 
 namespace TauCeti.CStarAlgebra
 
@@ -68,18 +40,19 @@ universe w
 
 variable {A : Type w} [NonUnitalCStarAlgebra A]
 
-/-- The norm of an element `a : A` of a possibly nonunital C⋆-algebra is bounded by `c ≥ 0` if and
-only if `‖ρ a‖ ≤ c` for every nondegenerate representation `ρ` on a Hilbert space in the same
+/-- The norm of an element `a : A` of a possibly nonunital C⋆-algebra is bounded by `c` if and only
+if `‖ρ a‖ ≤ c` for every nondegenerate representation `ρ` on a Hilbert space in the same
 universe. -/
-theorem norm_le_iff_forall_isNondegenerate {a : A} {c : ℝ} (hc : 0 ≤ c) :
+theorem norm_le_iff_forall_isNondegenerate {a : A} {c : ℝ} :
     ‖a‖ ≤ c ↔ ∀ (H : Type w) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
       (ρ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)), ρ.IsNondegenerate → ‖ρ a‖ ≤ c := by
   refine ⟨fun h H _ _ _ ρ _ => (NonUnitalStarAlgHom.norm_apply_le ρ a).trans h, fun h => ?_⟩
-  rcases eq_or_ne a 0 with rfl | ha0
-  · simp [hc]
-  have : Nontrivial A := ⟨a, 0, ha0⟩
   let := _root_.CStarAlgebra.spectralOrder A
   have := _root_.CStarAlgebra.spectralOrderedRing A
+  rcases eq_or_ne a 0 with rfl | ha0
+  · let f0 : A →ₚ[ℂ] ℂ := { toLinearMap := 0, monotone' := monotone_const }
+    simpa using h f0.GNS _ f0.isNondegenerate_gnsNonUnitalStarAlgHom
+  have : Nontrivial A := ⟨a, 0, ha0⟩
   have hx_nonneg : 0 ≤ a * star a := by simp
   have hx_norm : ‖a * star a‖ = ‖a‖ ^ 2 := by rw [CStarRing.norm_self_mul_star, sq]
   obtain ⟨ω, -, hω1, hω2⟩ := exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq hx_nonneg
@@ -94,6 +67,16 @@ theorem norm_le_iff_forall_isNondegenerate {a : A} {c : ℝ} (hc : 0 ≤ c) :
   exact ((f.gnsNonUnitalStarAlgHom a).le_opNorm _).trans <| mul_le_mul_of_nonneg_right
     (h f.GNS f.gnsNonUnitalStarAlgHom f.isNondegenerate_gnsNonUnitalStarAlgHom) (norm_nonneg _)
 
+/-- Two elements in a possibly nonunital C⋆-algebra `A` are equal if and only if they agree under
+every nondegenerate Hilbert-space representation of `A` in the same universe. -/
+theorem eq_iff_forall_isNondegenerate {a b : A} :
+    a = b ↔ ∀ (H : Type w) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+      (ρ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)), ρ.IsNondegenerate → ρ a = ρ b := by
+  refine ⟨fun h _ _ _ _ _ _ => h ▸ rfl, fun h => ?_⟩
+  rw [← sub_eq_zero, ← norm_le_zero_iff]
+  refine norm_le_iff_forall_isNondegenerate.2 fun H _ _ _ ρ hρ => ?_
+  rw [map_sub, h H ρ hρ, sub_self, norm_zero]
+
 end TauCeti.CStarAlgebra
 
 namespace DoubleCentralizer
@@ -102,20 +85,22 @@ universe w
 
 variable {A : Type w} [NonUnitalCStarAlgebra A]
 
-/-- The norm of a multiplier `m : 𝓜(ℂ, A)` is bounded by `c ≥ 0` if and only if
+/-- The norm of a multiplier `m : 𝓜(ℂ, A)` is bounded by `c` if and only if
 `‖ρ.multiplierExtension hρ m‖ ≤ c` for every nondegenerate representation `ρ` of `A` on a Hilbert
 space in the same universe. -/
-theorem norm_le_iff_forall_isNondegenerate {m : 𝓜(ℂ, A)} {c : ℝ} (hc : 0 ≤ c) :
+theorem norm_le_iff_forall_isNondegenerate {m : 𝓜(ℂ, A)} {c : ℝ} :
     ‖m‖ ≤ c ↔ ∀ (H : Type w) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
       (ρ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hρ : ρ.IsNondegenerate),
         ‖ρ.multiplierExtension hρ m‖ ≤ c := by
   refine ⟨fun h H _ _ _ ρ hρ =>
     (NonUnitalStarAlgHom.norm_apply_le (ρ.multiplierExtension hρ).toNonUnitalStarAlgHom m).trans h,
     fun h => ?_⟩
+  have hc : 0 ≤ c := by
+    simpa using (TauCeti.CStarAlgebra.norm_le_iff_forall_isNondegenerate (a := (0 : A))).2
+      fun H _ _ _ ρ hρ => by simpa using (norm_nonneg _).trans (h H ρ hρ)
   rw [← norm_fst]
   refine m.fst.opNorm_le_bound hc fun a => ?_
-  refine (TauCeti.CStarAlgebra.norm_le_iff_forall_isNondegenerate
-    (mul_nonneg hc (norm_nonneg a))).2 fun H _ _ _ ρ hρ => ?_
+  refine TauCeti.CStarAlgebra.norm_le_iff_forall_isNondegenerate.2 fun H _ _ _ ρ hρ => ?_
   rw [← ρ.multiplierExtension_mul_eq_fst hρ]
   exact (norm_mul_le _ _).trans <|
     mul_le_mul (h H ρ hρ) (NonUnitalStarAlgHom.norm_apply_le ρ a) (norm_nonneg _) hc
@@ -128,7 +113,7 @@ theorem eq_iff_forall_multiplierExtension_eq {m n : 𝓜(ℂ, A)} :
         ρ.multiplierExtension hρ m = ρ.multiplierExtension hρ n := by
   refine ⟨fun h _ _ _ _ _ _ => h ▸ rfl, fun h => ?_⟩
   rw [← sub_eq_zero, ← norm_le_zero_iff]
-  refine (norm_le_iff_forall_isNondegenerate le_rfl).2 fun H _ _ _ ρ hρ => ?_
+  refine norm_le_iff_forall_isNondegenerate.2 fun H _ _ _ ρ hρ => ?_
   rw [map_sub, h H ρ hρ, sub_self, norm_zero]
 
 end DoubleCentralizer

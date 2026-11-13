@@ -7,23 +7,23 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-public import Mathlib.Analysis.Normed.Operator.Completeness
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 import TauCeti.Analysis.Normed.Operator.Dense
+import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Nondegenerate representations and their extension to multipliers
 
 A representation `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` of a possibly nonunital C⋆-algebra on a Hilbert
 space is *nondegenerate* when the vectors `π a ξ` span a dense subspace of `H`. Equivalently, no
-nonzero vector is annihilated by every `π a`, and `π e ξ → ξ` along an increasing approximate
-unit.
+nonzero vector is annihilated by every `π a`, and `π e ξ → ξ` along any eventually norm-bounded left
+approximate unit `e`.
 
 A nondegenerate representation extends uniquely to a unital star-algebra homomorphism
 `π' := π.multiplierExtension hπ : 𝓜(ℂ, A) →⋆ₐ[ℂ] (H →L[ℂ] H)` of the multiplier algebra. It is
-characterized by `π' m * π a = π (m * a)`, and it is the strong limit of `π (m * e)` along an
-increasing approximate unit `e`. This extension is how covariant pairs `(π, U)` with unitary
-multipliers `U_s` are obtained from nondegenerate representations of crossed products.
+characterized by `π' m * π a = π (m * a)`, and it is the strong limit of `π (m * e)` along any
+eventually norm-bounded left approximate unit `e`. This extension is how covariant pairs `(π, U)`
+with unitary multipliers `U_s` are obtained from nondegenerate representations of crossed products.
 
 ## Main declarations
 
@@ -32,7 +32,7 @@ multipliers `U_s` are obtained from nondegenerate representations of crossed pro
 * `NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero`: nondegeneracy means that no
   nonzero vector is killed by the whole representation.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_tendsto`: nondegeneracy means that the representation
-  of an increasing approximate unit converges strongly to the identity.
+  of an eventually norm-bounded left approximate unit converges strongly to the identity.
 * `NonUnitalStarAlgHom.topologicalClosure_span_range_comp_eq`,
   `NonUnitalStarAlgHom.isNondegenerate_iff_dense_span_comp`: nondegeneracy can be checked on any
   dense subset of `A`.
@@ -87,15 +87,14 @@ theorem isNondegenerate_of_map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆�
     (hρ : ρ 1 = 1) : ρ.IsNondegenerate := fun ξ =>
   subset_closure <| Submodule.subset_span <| Set.mem_iUnion.2 ⟨1, ξ, by simp [hρ]⟩
 
-/-- For a nondegenerate representation, the vectors `π (m * e) ξ` converge along an increasing
-approximate unit, and the limit is a bounded operator `T` with `T * π a = π (m * a)`. -/
-private theorem exists_tendsto [PartialOrder A] {l : Filter A} (hπ : π.IsNondegenerate)
-    (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) :
+/-- For a nondegenerate representation, the vectors `π (m * e) ξ` converge along any eventually
+norm-bounded net `e` with `e * a → a`, and the limit is a bounded operator `T` with
+`T * π a = π (m * a)`. -/
+private theorem exists_tendsto {l : Filter A} [l.NeBot] {C : ℝ} (hπ : π.IsNondegenerate)
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (m : 𝓜(ℂ, A)) :
     ∃ T : H →L[ℂ] H, (∀ a, T * π a = π (m.fst a)) ∧
-      ∀ ξ, Tendsto (fun e => π (m.fst e) ξ) l (𝓝 (T ξ)) := by
-  have := hl.neBot
-  exact m.exists_clm_tendsto_fst (K := 1) (L := ⇑π) hl.eventually_norm hl.tendsto_mul_right
-    (fun _ => by fun_prop) (map_mul π)
+      ∀ ξ, Tendsto (fun e => π (m.fst e) ξ) l (𝓝 (T ξ)) :=
+  m.exists_clm_tendsto_fst (K := 1) (L := ⇑π) hC hl (fun _ => by fun_prop) (map_mul π)
     (fun a => by simpa only [one_mul] using norm_apply_le π a) hπ
 
 /-- A nondegenerate representation admits, for each multiplier `m`, an operator `T` with
@@ -104,7 +103,9 @@ private theorem exists_mul_eq (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) :
     ∃ T : H →L[ℂ] H, ∀ a, T * π a = π (m.fst a) := by
   let := CStarAlgebra.spectralOrder A
   have := CStarAlgebra.spectralOrderedRing A
-  obtain ⟨T, hT, -⟩ := exists_tendsto hπ (CStarAlgebra.increasingApproximateUnit A) m
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  obtain ⟨T, hT, -⟩ := exists_tendsto hπ hl.eventually_norm hl.tendsto_mul_right m
   exact ⟨T, hT⟩
 
 /-- The operator `π' m` determined by `π' m * π a = π (m * a)`. -/
@@ -174,12 +175,12 @@ theorem eq_multiplierExtension_of_apply_coe {F : Type*} [FunLike F 𝓜(ℂ, A) 
   refine (eq_multiplierExtension_iff hπ).2 fun a => ?_
   rw [← hψ, ← map_mul, DoubleCentralizer.mul_coe_eq_coe_fst, hψ]
 
-/-- Along an increasing approximate unit `e`, the operators `π (m * e)` converge strongly to the
-multiplier extension `π' m`. -/
-theorem tendsto_multiplierExtension_apply [PartialOrder A] {l : Filter A}
-    (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) (ξ : H) :
+/-- Along any eventually norm-bounded net `e` with `e * a → a` for all `a : A`, the operators
+`π (m * e)` converge strongly to the multiplier extension `π' m`. -/
+theorem tendsto_multiplierExtension_apply {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (m : 𝓜(ℂ, A)) (ξ : H) :
     Tendsto (fun e => π (m.fst e) ξ) l (𝓝 (π.multiplierExtension hπ m ξ)) := by
-  obtain ⟨T, hT, hlim⟩ := exists_tendsto hπ hl m
+  obtain ⟨T, hT, hlim⟩ := exists_tendsto hπ hC hl m
   rw [← (eq_multiplierExtension_iff hπ).2 hT]
   exact hlim ξ
 
@@ -198,16 +199,14 @@ theorem continuous_multiplierExtension_apply {X : Type*} [TopologicalSpace X]
   simp only [multiplierExtension_apply_apply]
   fun_prop
 
-/-- A representation is nondegenerate exactly when the representation of an increasing
-approximate unit converges strongly to the identity. -/
-theorem isNondegenerate_iff_tendsto [PartialOrder A] {l : Filter A}
-    (hl : l.IsIncreasingApproximateUnit) :
-    π.IsNondegenerate ↔ ∀ ξ, Tendsto (fun e => π e ξ) l (𝓝 ξ) := by
-  refine ⟨fun hπ ξ => by simpa using tendsto_multiplierExtension_apply hπ hl 1 ξ,
-    fun h ξ => ?_⟩
-  have := hl.neBot
-  exact mem_closure_of_tendsto (h ξ) <| .of_forall fun e =>
-    Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, ξ, rfl⟩
+/-- Along any eventually norm-bounded net `e` with `e * a → a` for all `a : A`, a representation is
+nondegenerate exactly when `π e` converges strongly to the identity. -/
+theorem isNondegenerate_iff_tendsto {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) :
+    π.IsNondegenerate ↔ ∀ ξ, Tendsto (fun e => π e ξ) l (𝓝 ξ) :=
+  ⟨fun hπ ξ => by simpa using tendsto_multiplierExtension_apply hπ hC hl 1 ξ,
+    fun h ξ => mem_closure_of_tendsto (h ξ) <| .of_forall fun e =>
+      Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, ξ, rfl⟩⟩
 
 /-- A representation is nondegenerate exactly when no nonzero vector is annihilated by every
 operator of the representation. -/
@@ -217,7 +216,9 @@ theorem isNondegenerate_iff_forall_apply_eq_zero :
   · let := CStarAlgebra.spectralOrder A
     have := CStarAlgebra.spectralOrderedRing A
     have hl := CStarAlgebra.increasingApproximateUnit A
-    exact tendsto_nhds_unique ((isNondegenerate_iff_tendsto hl).1 hπ ξ) (by simp [h])
+    have := hl.neBot
+    exact tendsto_nhds_unique
+      ((isNondegenerate_iff_tendsto hl.eventually_norm hl.tendsto_mul_right).1 hπ ξ) (by simp [h])
   · rw [IsNondegenerate, Submodule.dense_iff_topologicalClosure_eq_top,
       Submodule.topologicalClosure_eq_top_iff, Submodule.eq_bot_iff]
     refine fun ξ hξ => h ξ fun a => ext_inner_left ℂ fun v => ?_
@@ -237,8 +238,8 @@ theorem topologicalClosure_span_range_comp_eq {H : Type*} [NormedAddCommGroup H]
     (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
     (Submodule.span ℂ (⋃ i, Set.range (π (g i)))).topologicalClosure =
       (Submodule.span ℂ (⋃ a, Set.range (π a))).topologicalClosure :=
-  ContinuousLinearMap.topologicalClosure_span_iUnion_range_comp_eq (L := ⇑π) hg fun _ => by
-    fun_prop
+  hg.topologicalClosure_span_iUnion_range_comp_eq (R := ℂ) (L := fun a => ⇑(π a)) fun _ =>
+    by fun_prop
 
 /-- For any `g : ι → A` with dense range, a Hilbert-space representation
 `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` is nondegenerate if and only if the vectors `π (g i) ξ` span a dense

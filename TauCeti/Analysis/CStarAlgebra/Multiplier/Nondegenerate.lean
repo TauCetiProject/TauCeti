@@ -7,20 +7,26 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import TauCeti.Analysis.Normed.Operator.Dense
+import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Nondegenerate homomorphisms into multiplier algebras
 
 A nonunital ⋆-homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` between C⋆-algebras is *nondegenerate*
-(`NonUnitalStarAlgHom.IsMultiplierNondegenerate`) when the elements `(φ a).fst b` span a dense
-subspace of `B`, or equivalently `(φ e).fst b → b` along an increasing approximate unit `e` of `A`
-(`NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_tendsto_fst`).
+(`NonUnitalStarAlgHom.IsMultiplierNondegenerate`) when the elements `(φ a).fst b` — or equivalently
+`(φ a).snd b` (`NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_dense_snd`) — span a dense
+subspace of `B`. Along any eventually norm-bounded left or right approximate unit `e` of `A`, this
+is equivalent to `(φ e).fst b → b` or `(φ e).snd b → b` in norm
+(`NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_tendsto_fst`,
+`NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_tendsto_snd`).
 
 Every nondegenerate `φ` extends uniquely to a unital ⋆-homomorphism
 `φ' := φ.extendToMultiplier hφ : 𝓜(ℂ, A) →⋆ₐ[ℂ] 𝓜(ℂ, B)`, characterized by
-`φ' m * φ a = φ (m.fst a)` (`extendToMultiplier_mul_eq_fst`, `eq_extendToMultiplier_of_apply_coe`).
-Norm-bounded strictly continuous families remain strictly continuous under `φ'`
-(`continuous_extendToMultiplier_fst_apply`), and nondegenerate multiplier homomorphisms compose with
+`φ' m * φ a = φ (m.fst a)` or `φ a * φ' m = φ (m.snd a)` (`extendToMultiplier_mul_eq_fst`,
+`mul_extendToMultiplier_eq_snd`, `eq_extendToMultiplier_iff`, `eq_extendToMultiplier_iff_snd`,
+`eq_extendToMultiplier_of_apply_coe`). Norm-bounded left- or right-strictly continuous families
+remain left- or right-strictly continuous under `φ'` (`continuous_extendToMultiplier_fst_apply`,
+`continuous_extendToMultiplier_snd_apply`), and nondegenerate multiplier homomorphisms compose with
 one another and with nondegenerate Hilbert-space representations (`extendToMultiplier_comp`,
 `multiplierExtension_comp`).
 
@@ -55,6 +61,30 @@ theorem isMultiplierNondegenerate_iff_dense :
     φ.IsMultiplierNondegenerate ↔ Dense (Submodule.span ℂ (⋃ a, Set.range (φ a).fst) : Set B) :=
   Iff.rfl
 
+/-- Nondegeneracy of `φ` is equivalent to density of the span of `(φ a).snd b` in `B`. -/
+theorem isMultiplierNondegenerate_iff_dense_snd :
+    φ.IsMultiplierNondegenerate ↔ Dense (Submodule.span ℂ (⋃ a, Set.range (φ a).snd) : Set B) := by
+  have hcl {L₁ L₂ : A → B → B} (hswap : ∀ a b, star (L₂ a b) = L₁ (star a) (star b))
+      (hd : Dense (Submodule.span ℂ (⋃ a, Set.range (L₂ a)) : Set B)) :
+      Dense (Submodule.span ℂ (⋃ a, Set.range (L₁ a)) : Set B) := by
+    set S₁ := Submodule.span ℂ (⋃ a, Set.range (L₁ a))
+    have hmem : (Submodule.span ℂ (⋃ a, Set.range (L₂ a)) : Set B) ⊆
+        star ⁻¹' closure (S₁ : Set B) := fun z hz => subset_closure <| by
+      induction hz using Submodule.span_induction with
+      | mem _ hx =>
+        obtain ⟨a, y, rfl⟩ := Set.mem_iUnion.1 hx
+        exact Submodule.subset_span <| Set.mem_iUnion.2 ⟨star a, star y, (hswap a y).symm⟩
+      | zero => simp
+      | add _ _ _ _ hu hv => simpa only [SetLike.mem_coe, star_add] using S₁.add_mem hu hv
+      | smul c _ _ hu => simpa only [SetLike.mem_coe, star_smul] using S₁.smul_mem (star c) hu
+    refine fun b => ?_
+    simpa only [Set.mem_preimage, star_star] using
+      (isClosed_closure.preimage continuous_star).closure_subset_iff.2 hmem (hd (star b))
+  exact ⟨hcl (L₁ := fun a => ⇑(φ a).snd) (L₂ := fun a => ⇑(φ a).fst) fun a b => by
+      simp [map_star],
+    hcl (L₁ := fun a => ⇑(φ a).fst) (L₂ := fun a => ⇑(φ a).snd) fun a b => by
+      simp [map_star]⟩
+
 /-- Bounded operators on `B` agreeing after every `(φ a).fst` are equal when `φ` is
 nondegenerate. -/
 theorem IsMultiplierNondegenerate.clm_ext (hφ : φ.IsMultiplierNondegenerate) {S T : B →L[ℂ] B}
@@ -81,6 +111,7 @@ theorem isMultiplierNondegenerate_of_map_one {D : Type*} [CStarAlgebra D]
   subset_closure <| Submodule.subset_span <| Set.mem_iUnion.2 ⟨1, b, by simp [hψ]⟩
 
 /-- The canonical inclusion `A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)` is nondegenerate. -/
+@[simp]
 theorem isMultiplierNondegenerate_coeHom :
     (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)).IsMultiplierNondegenerate := by
   let := CStarAlgebra.spectralOrder A
@@ -90,13 +121,12 @@ theorem isMultiplierNondegenerate_coeHom :
   refine fun b => mem_closure_of_tendsto (hl.tendsto_mul_right b) <| .of_forall fun e => ?_
   exact Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, b, by simp⟩
 
-private theorem exists_tendsto_fst [PartialOrder A] {l : Filter A}
-    (hφ : φ.IsMultiplierNondegenerate) (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) :
+private theorem exists_tendsto_fst {l : Filter A} [l.NeBot] {C : ℝ}
+    (hφ : φ.IsMultiplierNondegenerate) (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
+    (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (m : 𝓜(ℂ, A)) :
     ∃ T : B →L[ℂ] B, (∀ a, T * (φ a).fst = (φ (m.fst a)).fst) ∧
-      ∀ b, Tendsto (fun e => (φ (m.fst e)).fst b) l (𝓝 (T b)) := by
-  have := hl.neBot
-  exact m.exists_clm_tendsto_fst (K := 1) (L := fun a => (φ a).fst) hl.eventually_norm
-    hl.tendsto_mul_right (fun _ => by fun_prop)
+      ∀ b, Tendsto (fun e => (φ (m.fst e)).fst b) l (𝓝 (T b)) :=
+  m.exists_clm_tendsto_fst (K := 1) (L := fun a => (φ a).fst) hC hl (fun _ => by fun_prop)
     (fun a b => by rw [map_mul, DoubleCentralizer.mul_fst])
     (fun a => by simpa only [DoubleCentralizer.norm_fst, one_mul] using norm_apply_le φ a) hφ
 
@@ -104,7 +134,9 @@ private theorem exists_clm_mul_eq (hφ : φ.IsMultiplierNondegenerate) (m : 𝓜
     ∃ T : B →L[ℂ] B, ∀ a, T * (φ a).fst = (φ (m.fst a)).fst := by
   let := CStarAlgebra.spectralOrder A
   have := CStarAlgebra.spectralOrderedRing A
-  obtain ⟨T, hT, -⟩ := exists_tendsto_fst hφ (CStarAlgebra.increasingApproximateUnit A) m
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  obtain ⟨T, hT, -⟩ := exists_tendsto_fst hφ hl.eventually_norm hl.tendsto_mul_right m
   exact ⟨T, hT⟩
 
 private def extensionCLM (hφ : φ.IsMultiplierNondegenerate) (m : 𝓜(ℂ, A)) : B →L[ℂ] B :=
@@ -211,6 +243,12 @@ theorem eq_extendToMultiplier_iff {m : 𝓜(ℂ, A)} {n : 𝓜(ℂ, B)} :
     n = φ.extendToMultiplier hφ m ↔ ∀ a, n * φ a = φ (m.fst a) :=
   ⟨fun h a => h ▸ extendToMultiplier_mul_eq_fst hφ m a, eq_extensionMultiplier hφ⟩
 
+/-- A multiplier equals `φ' m` if and only if it satisfies `φ a * n = φ (m.snd a)` for all `a`. -/
+theorem eq_extendToMultiplier_iff_snd {m : 𝓜(ℂ, A)} {n : 𝓜(ℂ, B)} :
+    n = φ.extendToMultiplier hφ m ↔ ∀ a, φ a * n = φ (m.snd a) :=
+  ⟨fun h a => h ▸ mul_extendToMultiplier_eq_snd hφ m a,
+    fun h => hφ.ext_mul_left fun a => (h a).trans (mul_extendToMultiplier_eq_snd hφ m a).symm⟩
+
 /-- The multiplier extension restricts to `φ` on `A`. -/
 @[simp]
 theorem extendToMultiplier_coe (a : A) : φ.extendToMultiplier hφ (a : 𝓜(ℂ, A)) = φ a :=
@@ -226,20 +264,35 @@ theorem eq_extendToMultiplier_of_apply_coe {F : Type*} [FunLike F 𝓜(ℂ, A) �
 
 /-- Extending the canonical inclusion `A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)` gives the identity on `𝓜(ℂ, A)`. -/
 @[simp]
-theorem extendToMultiplier_coeHom :
-    (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)).extendToMultiplier
-      isMultiplierNondegenerate_coeHom = StarAlgHom.id ℂ 𝓜(ℂ, A) :=
-  StarAlgHom.ext <| congrFun (eq_extendToMultiplier_of_apply_coe isMultiplierNondegenerate_coeHom
+theorem extendToMultiplier_coeHom
+    (h : (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)).IsMultiplierNondegenerate) :
+    (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)).extendToMultiplier h =
+      StarAlgHom.id ℂ 𝓜(ℂ, A) :=
+  StarAlgHom.ext <| congrFun (eq_extendToMultiplier_of_apply_coe h
     (StarAlgHom.id ℂ 𝓜(ℂ, A)) fun _ => rfl).symm
 
-/-- Along an increasing approximate unit `e`, `(φ (m.fst e)).fst b` converges in norm to
-`(φ.extendToMultiplier hφ m).fst b`. -/
-theorem tendsto_extendToMultiplier_fst [PartialOrder A] {l : Filter A}
-    (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) (b : B) :
+/-- Along any eventually norm-bounded net `e` with `e * a → a` for all `a : A`,
+`(φ (m.fst e)).fst b` converges in norm to `(φ.extendToMultiplier hφ m).fst b`. -/
+theorem tendsto_extendToMultiplier_fst {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (m : 𝓜(ℂ, A)) (b : B) :
     Tendsto (fun e => (φ (m.fst e)).fst b) l (𝓝 ((φ.extendToMultiplier hφ m).fst b)) := by
-  obtain ⟨T, hT, hlim⟩ := exists_tendsto_fst hφ hl m
+  obtain ⟨T, hT, hlim⟩ := exists_tendsto_fst hφ hC hl m
   exact (hφ.clm_ext fun a => (hT a).trans
     (congrArg (fun x : 𝓜(ℂ, B) => x.fst) (extendToMultiplier_mul_eq_fst hφ m a)).symm) ▸ hlim b
+
+/-- Along any eventually norm-bounded net `e` with `a * e → a` for all `a : A`,
+`(φ (m.snd e)).snd b` converges in norm to `(φ.extendToMultiplier hφ m).snd b`. -/
+theorem tendsto_extendToMultiplier_snd {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) (m : 𝓜(ℂ, A)) (b : B) :
+    Tendsto (fun e => (φ (m.snd e)).snd b) l (𝓝 ((φ.extendToMultiplier hφ m).snd b)) := by
+  have : (map star l).NeBot := map_neBot
+  have hC' : ∀ᶠ e in map star l, ‖e‖ ≤ C :=
+    eventually_map.2 (hC.mono fun e he => (norm_star e).trans_le he)
+  have hl' (a : A) : Tendsto (· * a) (map star l) (𝓝 a) :=
+    tendsto_map'_iff.2 <| by simpa [Function.comp_def, star_mul] using (hl (star a)).star
+  have hlim :=
+    (tendsto_map'_iff.1 (tendsto_extendToMultiplier_fst hφ hC' hl' (star m) (star b))).star
+  simpa [Function.comp_def, map_star] using hlim
 
 /-- Norm-bounded left-strictly continuous families in `𝓜(ℂ, A)` map to left-strictly continuous
 families in `𝓜(ℂ, B)` under `extendToMultiplier`. -/
@@ -255,15 +308,39 @@ theorem continuous_extendToMultiplier_fst_apply {X : Type*} [TopologicalSpace X]
     simp only [extendToMultiplier_fst_apply]
     fun_prop
 
-/-- A ⋆-homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is nondegenerate if and only if `(φ e).fst b → b`
-in norm for every `b : B` along an increasing approximate unit `e` of `A`. -/
-theorem isMultiplierNondegenerate_iff_tendsto_fst [PartialOrder A] {l : Filter A}
-    (hl : l.IsIncreasingApproximateUnit) :
-    φ.IsMultiplierNondegenerate ↔ ∀ b, Tendsto (fun e => (φ e).fst b) l (𝓝 b) := by
-  refine ⟨fun hφ b => by simpa using tendsto_extendToMultiplier_fst hφ hl 1 b, fun h b => ?_⟩
-  have := hl.neBot
-  exact mem_closure_of_tendsto (h b) <| .of_forall fun e =>
-    Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, b, rfl⟩
+/-- Norm-bounded right-strictly continuous families in `𝓜(ℂ, A)` map to right-strictly continuous
+families in `𝓜(ℂ, B)` under `extendToMultiplier`. -/
+theorem continuous_extendToMultiplier_snd_apply {X : Type*} [TopologicalSpace X]
+    {u : X → 𝓜(ℂ, A)} (hu : ∀ a, Continuous fun x => (u x).snd a) {K : ℝ}
+    (hK : ∀ x, ‖u x‖ ≤ K) (b : B) :
+    Continuous fun x => (φ.extendToMultiplier hφ (u x)).snd b := by
+  have hu' (a : A) : Continuous fun x => (star (u x)).fst a := by
+    simp only [DoubleCentralizer.star_fst]
+    exact continuous_star.comp (hu (star a))
+  have hK' (x : X) : ‖star (u x)‖ ≤ K := (norm_star _).trans_le (hK x)
+  simpa [Function.comp_def, map_star] using
+    continuous_star.comp (continuous_extendToMultiplier_fst_apply hφ hu' hK' (star b))
+
+/-- Along any eventually norm-bounded net `e` with `e * a → a` for all `a : A`, a ⋆-homomorphism
+`φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is nondegenerate if and only if `(φ e).fst b → b` in norm for every
+`b : B`. -/
+theorem isMultiplierNondegenerate_iff_tendsto_fst {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) :
+    φ.IsMultiplierNondegenerate ↔ ∀ b, Tendsto (fun e => (φ e).fst b) l (𝓝 b) :=
+  ⟨fun hφ b => by simpa using tendsto_extendToMultiplier_fst hφ hC hl 1 b,
+    fun h b => mem_closure_of_tendsto (h b) <| .of_forall fun e =>
+      Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, b, rfl⟩⟩
+
+/-- Along any eventually norm-bounded net `e` with `a * e → a` for all `a : A`, a ⋆-homomorphism
+`φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is nondegenerate if and only if `(φ e).snd b → b` in norm for every
+`b : B`. -/
+theorem isMultiplierNondegenerate_iff_tendsto_snd {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) :
+    φ.IsMultiplierNondegenerate ↔ ∀ b, Tendsto (fun e => (φ e).snd b) l (𝓝 b) :=
+  ⟨fun hφ b => by simpa using tendsto_extendToMultiplier_snd hφ hC hl 1 b,
+    fun h => isMultiplierNondegenerate_iff_dense_snd.2 fun b =>
+      mem_closure_of_tendsto (h b) <| .of_forall fun e =>
+        Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, b, rfl⟩⟩
 
 section Composition
 
@@ -328,7 +405,7 @@ theorem IsNondegenerate.multiplierExtension_comp {H : Type*} [NormedAddCommGroup
 /-- The Hilbert-space multiplier extension of `(π.multiplierExtension hπ) ∘ φ` factors through
 `φ.extendToMultiplier hφ`. -/
 @[simp]
-theorem multiplierExtension_comp_extendToMultiplier {H : Type*} [NormedAddCommGroup H]
+theorem multiplierExtension_comp {H : Type*} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] {π : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hπ : π.IsNondegenerate) (hφ : φ.IsMultiplierNondegenerate) :
     ((π.multiplierExtension hπ).toNonUnitalStarAlgHom.comp φ).multiplierExtension
@@ -349,8 +426,8 @@ theorem topologicalClosure_span_fst_comp_eq {B : Type*} [NonUnitalCStarAlgebra B
     (hg : DenseRange g) (φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)) :
     (Submodule.span ℂ (⋃ i, Set.range (φ (g i)).fst)).topologicalClosure =
       (Submodule.span ℂ (⋃ a, Set.range (φ a).fst)).topologicalClosure :=
-  ContinuousLinearMap.topologicalClosure_span_iUnion_range_comp_eq (L := fun a => (φ a).fst) hg
-    fun _ => by fun_prop
+  hg.topologicalClosure_span_iUnion_range_comp_eq (R := ℂ) (L := fun a => ⇑(φ a).fst) fun _ =>
+    by fun_prop
 
 /-- For any `g : ι → A` with dense range, a multiplier homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is
 nondegenerate if and only if the elements `(φ (g i)).fst b` span a dense subspace of `B`. -/
