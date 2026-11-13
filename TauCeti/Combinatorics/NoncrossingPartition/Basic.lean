@@ -352,28 +352,19 @@ private theorem IsNoncrossing.false_of_mem_union (hP : P.IsNoncrossing) {i j : �
     right
     rcases hp with rfl | rfl <;> rcases hq with rfl | rfl <;> exact ⟨‹_›, ‹_›⟩
 
-/-- A position of `s` lies in the union of the parts through `i` and `j` exactly when its part is
-one of the two. -/
-private theorem mem_union_part_iff {i j x : α} (hx : x ∈ s) (hi : i ∈ s) (hj : j ∈ s) :
-    x ∈ P.part i ∪ P.part j ↔ P.part x = P.part i ∨ P.part x = P.part j := by
-  rw [mem_union, P.mem_part_iff_part_eq_part hx hi, P.mem_part_iff_part_eq_part hx hj]
-
 /-- Merging the parts through two adjacent positions `i ≤ j` of a noncrossing partition `P` keeps
 it noncrossing: a partition `Q` whose classes are those of a key identifying two positions exactly
 when they lie in a common part of `P` or both lie in the union of the parts through `i` and `j`
 is noncrossing. -/
 private theorem IsNoncrossing.of_key_merge (hP : P.IsNoncrossing) {i j : α} (hi : i ∈ s)
     (hj : j ∈ s) (hij : i ≤ j) (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) {Q : Finpartition s}
-    {key : α → Finset α} (hQ : ∀ {x y}, y ∈ Q.part x ↔ x ∈ s ∧ y ∈ s ∧ key x = key y)
-    (hkey : ∀ {x y}, x ∈ s → y ∈ s → (key x = key y ↔
-      P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j)) :
+    (hQ : ∀ {x y}, y ∈ Q.part x ↔ x ∈ s ∧ y ∈ s ∧
+      (P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j)) :
     Q.IsNoncrossing := by
   refine isNoncrossing_iff_part.2 fun a ha b hb c hc d hd hab hbc hcd => ?_
   obtain ⟨-, hcs, hac⟩ := hQ.1 hc
   obtain ⟨-, hds, hbd⟩ := hQ.1 hd
-  rw [hkey ha hcs] at hac
-  rw [hkey hb hds] at hbd
-  refine (Q.mem_part_iff_part_eq_part ha hb).1 (hQ.2 ⟨hb, ha, (hkey hb ha).2 ?_⟩)
+  refine (Q.mem_part_iff_part_eq_part ha hb).1 (hQ.2 ⟨hb, ha, ?_⟩)
   -- Unless `a` and `b` both lie in the merged part, each of the pairs `a, c` and `b, d` lies in a
   -- part of `P` or in the merged part; a crossing would cross `P` or the merged part.
   by_cases habM : b ∈ P.part i ∪ P.part j ∧ a ∈ P.part i ∪ P.part j
@@ -382,7 +373,7 @@ private theorem IsNoncrossing.of_key_merge (hP : P.IsNoncrossing) {i j : α} (hi
   · exact Or.inl (hP.part_eq_part ha hb hac hbd hab hbc hcd).symm
   · have haM : a ∉ P.part i ∪ P.part j := fun haM => habM ⟨hbM, haM⟩
     refine (hP.false_of_mem_union hi hj hij hadj hbM hdM hcs ?_ ?_ hbc hcd (Or.inl hab)).elim
-    · rwa [mem_union_part_iff hcs hi hj, ← hac, ← mem_union_part_iff ha hi hj]
+    · rwa [P.mem_union_part_iff hi hj, ← hac, ← P.mem_union_part_iff hi hj]
     · exact P.mem_part_iff_part_eq_part ha hcs |>.2 hac
   · have hbM : b ∉ P.part i ∪ P.part j := fun hbM => habM ⟨hbM, haM⟩
     exact (hP.false_of_mem_union hi hj hij hadj haM hcM hb hbM
@@ -405,29 +396,30 @@ theorem IsNoncrossing.exists_part_eq_union (hP : P.IsNoncrossing) {i j : α} (hi
   -- Label each position by its part, relabelling the part through `j` as the part through `i`.
   let key : α → Finset α := fun x => if P.part x = P.part j then P.part i else P.part x
   let Q := ofSetSetoid (Setoid.ker key) s
-  have hkey : ∀ {x y}, x ∈ s → y ∈ s → (key x = key y ↔
-      P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j) := by
-    intro x y hx hy
-    rw [mem_union_part_iff hx hi hj, mem_union_part_iff hy hi hj]
+  have hkey : ∀ {x y}, key x = key y ↔
+      P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j := by
+    intro x y
+    rw [P.mem_union_part_iff hi hj, P.mem_union_part_iff hi hj]
     simp only [key]
     split_ifs <;> grind
-  have hQ : ∀ {x y}, y ∈ Q.part x ↔ x ∈ s ∧ y ∈ s ∧ key x = key y := fun {x y} => by
+  have hQ : ∀ {x y}, y ∈ Q.part x ↔ x ∈ s ∧ y ∈ s ∧
+      (P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j) := fun {x y} => by
     rw [mem_part_ofSetSetoid_iff_rel, Setoid.ker_def]
-  refine ⟨Q, hP.of_key_merge hi hj hij hadj hQ hkey, ?_, ?_⟩
+    exact and_congr_right fun _ => and_congr_right fun _ => hkey
+  refine ⟨Q, hP.of_key_merge hi hj hij hadj hQ, ?_, ?_⟩
   · refine fun B hB => ?_
     obtain ⟨x, hx⟩ := P.nonempty_of_mem_parts hB
     refine ⟨Q.part x, Q.part_mem.2 (P.le hB hx), fun y hy => hQ.2 ⟨P.le hB hx, P.le hB hy, ?_⟩⟩
-    exact (hkey (P.le hB hx) (P.le hB hy)).2
-      (Or.inl ((P.part_eq_of_mem hB hx).trans (P.part_eq_of_mem hB hy).symm))
+    exact Or.inl ((P.part_eq_of_mem hB hx).trans (P.part_eq_of_mem hB hy).symm)
   · ext x
     rw [hQ]
     refine ⟨fun ⟨_, hx, h⟩ => ?_, fun h => ?_⟩
-    · rcases (hkey hi hx).1 h with h | ⟨-, h⟩
+    · rcases h with h | ⟨-, h⟩
       · exact mem_union_left _ (h ▸ P.mem_part_self.2 hx)
       · exact h
     · have hxs : x ∈ s := by
         rcases mem_union.1 h with h | h <;> exact P.part_subset _ h
-      exact ⟨hi, hxs, (hkey hi hxs).2 (Or.inr ⟨mem_union_left _ (P.mem_part_self.2 hi), h⟩)⟩
+      exact ⟨hi, hxs, Or.inr ⟨mem_union_left _ (P.mem_part_self.2 hi), h⟩⟩
 
 /-- The partition with one pair part `{i, j}` and singletons elsewhere is noncrossing. -/
 theorem isNoncrossing_pairPartition {i j : α} (hij : {i, j} ⊆ s) :
