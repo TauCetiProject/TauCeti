@@ -150,9 +150,11 @@ theorem matrixMutation_neg (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
 /-- Mutation commutes with injective restriction and relabelling of the rows and columns, along
 maps compatible with the mutable embeddings. -/
 theorem matrixMutation_submatrix [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'}
-    {f : I' → I} {g : K' → K} (hf : Function.Injective f) (hg : Function.Injective g)
+    {f : I' → I} {g : K' → K} (hf : Function.Injective f)
     (h : ∀ k, f (row' k) = row (g k)) (B : Matrix I K ℤ) (k : K') :
     matrixMutation row' (B.submatrix f g) k = (matrixMutation row B (g k)).submatrix f g := by
+  have hg : Function.Injective g := fun _ _ hk ↦
+    row'.injective (hf (by rw [h, h, hk]))
   ext i j
   have hi : i = row' k ↔ f i = row (g k) := by rw [← h, hf.eq_iff]
   simp only [matrixMutation_apply, submatrix_apply, h, hi, hg.eq_iff]
@@ -162,7 +164,7 @@ matrix is the mutation of the principal block as a square matrix. -/
 theorem matrixMutation_refl_submatrix_row (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
     matrixMutation (Function.Embedding.refl K) (B.submatrix row id) k =
       (matrixMutation row B k).submatrix row id :=
-  matrixMutation_submatrix row.injective Function.injective_id (fun _ ↦ rfl) B k
+  matrixMutation_submatrix row.injective (fun _ ↦ rfl) B k
 
 end matrixMutation
 
@@ -286,14 +288,15 @@ theorem mutation_involutive (k : K) :
 /-- Mutation of exchange matrices commutes with injective restriction and relabelling of the
 rows and columns. -/
 theorem submatrix_mutation [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'} {f : I' → I}
-    {g : K' → K} (hf : Function.Injective f) (hg : Function.Injective g)
+    {g : K' → K} (hf : Function.Injective f)
     (h : ∀ k, f (row' k) = row (g k)) (k : K') :
     (B.mutation (g k)).submatrix f g h = (B.submatrix f g h).mutation k := by
   ext : 1
-  · simp [matrixMutation_submatrix hf hg h]
+  · simp [matrixMutation_submatrix hf h]
   · simp
 
 /-- Mutation commutes with passage to the principal block. -/
+@[simp]
 theorem principal_mutation (k : K) : (B.mutation k).principal = B.principal.mutation k := by
   ext : 1 <;> simp [matrixMutation_refl_submatrix_row]
 
@@ -303,7 +306,7 @@ theorem mutation_reindex [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'} (e
     (reindex eI eK h B).mutation (eK k) = reindex eI eK h (B.mutation k) := by
   have h' (k : K') : eI.symm (row' k) = row (eK.symm k) := by simp [Equiv.symm_apply_eq, h]
   ext : 1
-  · simp [matrixMutation_submatrix eI.symm.injective eK.symm.injective h']
+  · simp [matrixMutation_submatrix eI.symm.injective h']
   · simp
 
 section sum
