@@ -16,9 +16,8 @@ import TauCeti.Algebra.CharP.Invertible
 Homogeneous elements of `TauCeti.SignedSym G`, not just its generators, obey the Koszul
 commutation rule. Passing to `TauCeti.parityGrading` extends these identities to elements of pure
 parity across multiple integer degrees: even-parity elements lie in the center of `SignedSym G`
-over any commutative ring (in particular `SignedSym G` is commutative whenever all odd-degree
-pieces vanish), and every element of odd parity has square zero when `2` is invertible in the
-coefficient ring. These identities allow the signed symmetric algebra to serve as a receiving
+over any commutative ring, and every element of odd parity has square zero when `2` is invertible
+in the coefficient ring. These identities allow the signed symmetric algebra to serve as a receiving
 supercommutative algebra in universal properties and tensor comparisons.
 
 The proof uses `TauCeti.SignedSym.homogeneous_induction` from the grading API.
@@ -143,17 +142,5 @@ theorem generator_mem_center_of_mem_parityGrading_zero {x : V}
 theorem generator_sq_eq_zero_of_mem_parityGrading_one [Invertible (2 : R)] {x : V}
     (hx : x ∈ parityGrading G.piece 1) : generator G x ^ 2 = 0 :=
   sq_eq_zero_of_mem_parityGrading_one G (generator_mem_parityGrading G hx)
-
-/-- When all odd-degree pieces of `V` vanish, `SignedSym G` is commutative over any commutative
-ring. -/
-theorem mul_comm_of_odd_piece_eq_bot (hG : ∀ p, Odd p → G.piece p = ⊥)
-    (a b : SignedSym G) : a * b = b * a :=
-  (Subalgebra.mem_center_iff.mp
-    (SignedSym.induction G (P := (· ∈ Subalgebra.center R (SignedSym G)))
-      (algebraMap_mem _)
-      (fun x => generator_mem_center_of_mem_parityGrading_zero G
-        (mem_parityGrading_zero_of_odd_eq_bot hG x))
-      (fun _ _ => mul_mem)
-      (fun _ _ => add_mem) a) b).symm
 
 end TauCeti.SignedSym

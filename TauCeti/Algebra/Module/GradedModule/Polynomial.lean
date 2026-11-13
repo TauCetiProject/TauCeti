@@ -385,9 +385,7 @@ variable (k : Type*) [CommSemiring k]
 /-- The grading of the polynomial ring `k[X]` placing the monomial `X ^ n` in degree `-n`, so that
 multiplication by `X` lowers degree by one. -/
 noncomputable def negDegreeGrading : InternalGrading k k[X] :=
-  InternalGrading.map
-    ⟨AddMonoidAlgebra.gradeBy k ⇑(-Nat.castAddMonoidHom ℤ), AddMonoidAlgebra.gradeBy.isInternal _⟩
-    (toFinsuppIsoLinear k).symm
+  ⟨AddMonoidAlgebra.gradeBy k ⇑(-Nat.castAddMonoidHom ℤ), AddMonoidAlgebra.gradeBy.isInternal _⟩
 
 variable {k}
 
@@ -396,8 +394,8 @@ has `-n = p`. -/
 @[simp]
 theorem mem_negDegreeGrading_piece {p : ℤ} {x : k[X]} :
     x ∈ (negDegreeGrading k).piece p ↔ ∀ n, x.coeff n ≠ 0 → -(n : ℤ) = p := by
-  rw [negDegreeGrading, InternalGrading.mem_map_piece_iff]
-  simp [toFinsupp_apply]
+  rw [negDegreeGrading]
+  simp
 
 /-- Multiplication by `X` lowers the degree of `negDegreeGrading` by one. -/
 theorem X_smul_mem_negDegreeGrading_piece {p : ℤ} {x : k[X]}

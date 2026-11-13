@@ -64,8 +64,6 @@ a vector field therefore takes values in `E`, so that its differentiability can 
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The Lie algebra and the tangent space at `1`".
 * The proofs of `contMDiff_mulInvariantVectorField_modelSpace` and
   `contMDiff_mulInvariantVectorField_infty` adapt Sébastien Gouëzel's proof of Mathlib's
   `contMDiff_mulInvariantVectorField`.
