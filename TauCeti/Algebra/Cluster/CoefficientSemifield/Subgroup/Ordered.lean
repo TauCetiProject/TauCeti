@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Cluster.CoefficientSemifield.Subgroup.Basic
 public import Mathlib.Algebra.Ring.Subring.Units
-public import Mathlib.Algebra.Order.Field.Basic
 
 /-!
 # Positive units as a coefficient semifield
@@ -30,7 +29,7 @@ instance isAddClosed_posSubgroup : (posSubgroup F).IsAddClosed where
     exact ⟨⟨Units.mk0 _ h.ne', h⟩, rfl⟩
 
 /-- Adjoining zero to the positive units gives precisely the nonnegative elements. -/
-@[simp↓]
+@[simp high]
 theorem mem_withZeroSubsemiring_posSubgroup (a : F) :
     a ∈ (posSubgroup F).withZeroSubsemiring ↔ 0 ≤ a := by
   rw [Subgroup.mem_withZeroSubsemiring]
@@ -42,5 +41,11 @@ theorem mem_withZeroSubsemiring_posSubgroup (a : F) :
     obtain rfl | h := eq_or_lt_of_le ha
     · exact Or.inl rfl
     · exact Or.inr ⟨⟨Units.mk0 a h.ne', h⟩, rfl⟩
+
+/-- Every element of the zero-adjoined positive units is nonnegative. -/
+@[simp]
+theorem coe_nonneg_withZeroSubsemiring_posSubgroup (a : (posSubgroup F).withZeroSubsemiring) :
+    0 ≤ (a : F) :=
+  (mem_withZeroSubsemiring_posSubgroup (a : F)).mp a.property
 
 end Units

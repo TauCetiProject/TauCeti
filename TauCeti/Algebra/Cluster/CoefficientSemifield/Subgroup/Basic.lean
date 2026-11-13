@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Cluster.CoefficientSemifield.Hom
 public import Mathlib.Algebra.Ring.Subsemiring.Basic
 public import Mathlib.Algebra.Group.Subgroup.Basic
+public import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 public import Mathlib.Algebra.Ring.WithZero
 
 /-!
@@ -86,14 +87,9 @@ theorem mem_withZeroSubsemiring (r : R) :
   Iff.rfl
 
 /-- The inclusion of the subgroup into the units of its realized subsemiring. -/
-def toWithZeroSubsemiringUnits : G →* G.withZeroSubsemiringˣ where
-  toFun a := {
-    val := ⟨((a : Rˣ) : R), Or.inr ⟨a, rfl⟩⟩
-    inv := ⟨((a⁻¹ : G) : Rˣ), Or.inr ⟨a⁻¹, rfl⟩⟩
-    val_inv := Subtype.ext ((a : Rˣ).val_inv)
-    inv_val := Subtype.ext ((a : Rˣ).inv_val) }
-  map_one' := Units.ext (Subtype.ext rfl)
-  map_mul' _ _ := Units.ext (Subtype.ext rfl)
+def toWithZeroSubsemiringUnits : G →* G.withZeroSubsemiringˣ :=
+  (((Units.coeHom R).comp G.subtype).codRestrict G.withZeroSubsemiring
+    fun a ↦ Or.inr ⟨a, rfl⟩).toHomUnits
 
 @[simp]
 theorem val_toWithZeroSubsemiringUnits (a : G) :
@@ -116,6 +112,30 @@ noncomputable instance [Nontrivial R] : Semifield G.withZeroSubsemiring where
   nnqsmul := _
   nnqsmul_def _ _ := rfl
 
+section AmbientSemifield
+
+variable {F : Type*} [Semifield F] (P : Subgroup Fˣ) [P.IsAddClosed]
+
+/-- Coercion from a realized semifield preserves inversion. -/
+@[simp, norm_cast]
+theorem coe_inv_withZeroSubsemiring (a : P.withZeroSubsemiring) :
+    ((a⁻¹ : P.withZeroSubsemiring) : F) = (a : F)⁻¹ :=
+  map_inv₀ P.withZeroSubsemiring.subtype a
+
+/-- Coercion from a realized semifield preserves division. -/
+@[simp, norm_cast]
+theorem coe_div_withZeroSubsemiring (a b : P.withZeroSubsemiring) :
+    ((a / b : P.withZeroSubsemiring) : F) = (a : F) / (b : F) :=
+  map_div₀ P.withZeroSubsemiring.subtype a b
+
+/-- Coercion from a realized semifield preserves integer powers. -/
+@[simp, norm_cast]
+theorem coe_zpow_withZeroSubsemiring (a : P.withZeroSubsemiring) (n : ℤ) :
+    ((a ^ n : P.withZeroSubsemiring) : F) = (a : F) ^ n :=
+  map_zpow₀ P.withZeroSubsemiring.subtype a n
+
+end AmbientSemifield
+
 /-- The inclusion after adjoining zero, as a multiplicative map. -/
 private def withZeroSubsemiringHom : WithZero G →*₀ G.withZeroSubsemiring :=
   WithZero.lift' ((Units.coeHom _).comp G.toWithZeroSubsemiringUnits)
@@ -127,6 +147,7 @@ noncomputable def withZeroSubsemiringEquiv [Nontrivial R] :
   { MulEquiv.ofBijective G.withZeroSubsemiringHom.toMonoidHom
       ⟨by
         intro a b h
+        change G.withZeroSubsemiringHom a = G.withZeroSubsemiringHom b at h
         induction a using WithZero.recZeroCoe <;>
           induction b using WithZero.recZeroCoe
         · rfl
@@ -138,9 +159,14 @@ noncomputable def withZeroSubsemiringEquiv [Nontrivial R] :
           exact congrArg WithZero.coe (Subtype.ext (Units.ext (congrArg Subtype.val h))),
         by
           intro a
+          change ∃ b, G.withZeroSubsemiringHom b = a
           obtain h | ⟨b, hb⟩ := a.property
-          · exact ⟨0, Subtype.ext h.symm⟩
-          · exact ⟨b, Subtype.ext hb⟩⟩ with
+          · exact ⟨0, by simpa only [withZeroSubsemiringHom,
+              WithZero.lift'_zero] using Subtype.ext h.symm⟩
+          · exact ⟨b, by simpa only [withZeroSubsemiringHom,
+              WithZero.lift'_coe, MonoidHom.comp_apply, Units.coeHom_apply,
+                MonoidHom.coe_toHomUnits, val_toWithZeroSubsemiringUnits]
+              using Subtype.ext hb⟩⟩ with
     map_add' := by
       intro a b
       induction a using WithZero.recZeroCoe <;>
@@ -149,35 +175,24 @@ noncomputable def withZeroSubsemiringEquiv [Nontrivial R] :
       · exact zero_add _ |>.symm
       · exact add_zero _ |>.symm
       · rename_i a b
-        exact Subtype.ext (G.val_add a b) }
+        exact Subtype.ext <| by simp [withZeroSubsemiringHom, ← WithZero.coe_add] }
 
 @[simp]
 theorem withZeroSubsemiringEquiv_coe [Nontrivial R] (a : G) :
     G.withZeroSubsemiringEquiv (a : WithZero G) = G.toWithZeroSubsemiringUnits a :=
   (rfl)
 
-/-- The comparison identifies zero with the ambient zero. -/
-@[simp]
-theorem withZeroSubsemiringEquiv_zero [Nontrivial R] :
-    G.withZeroSubsemiringEquiv 0 = 0 :=
-  (rfl)
-
 /-- The inverse comparison sends an included subgroup member to its nonzero copy. -/
 @[simp]
-theorem withZeroSubsemiringEquiv_symm_unit [Nontrivial R] (a : G) :
+theorem withZeroSubsemiringEquiv_symm_toWithZeroSubsemiringUnits [Nontrivial R] (a : G) :
     G.withZeroSubsemiringEquiv.symm (G.toWithZeroSubsemiringUnits a) = (a : WithZero G) :=
   G.withZeroSubsemiringEquiv.symm_apply_apply (a : WithZero G)
 
-/-- The inverse comparison sends the ambient zero to the adjoined zero. -/
-@[simp]
-theorem withZeroSubsemiringEquiv_symm_zero [Nontrivial R] :
-    G.withZeroSubsemiringEquiv.symm 0 = 0 :=
-  G.withZeroSubsemiringEquiv.symm_apply_apply 0
-
 /-- Nonzero sums in the realized subsemiring cannot cancel to zero. -/
-instance [Nontrivial R] : Subsingleton (AddUnits G.withZeroSubsemiring) := by
+instance : Subsingleton (AddUnits G.withZeroSubsemiring) := by
   refine subsingleton_of_forall_eq 0 fun u ↦ AddUnits.ext ?_
   by_contra hu
+  have : Nontrivial R := ⟨u.val.val, 0, fun h ↦ hu (Subtype.ext h)⟩
   obtain ⟨a, ha⟩ := G.exists_val_of_ne_zero hu
   have hb : (↑(-u) : G.withZeroSubsemiring) ≠ 0 := by
     intro h
@@ -194,8 +209,8 @@ instance [Nontrivial R] : Subsingleton (AddUnits G.withZeroSubsemiring) := by
 theorem toWithZeroSubsemiringUnits_add [Nontrivial R] (a b : G) :
     G.toWithZeroSubsemiringUnits (a + b) =
       G.toWithZeroSubsemiringUnits a + G.toWithZeroSubsemiringUnits b := by
-  apply Units.ext
-  exact Subtype.ext (G.val_add a b)
+  ext
+  simp
 
 /-- The image of an addition-closed unit subgroup under a semiring map is addition-closed. -/
 instance isAddClosed_map (f : R →+* S) :
@@ -247,7 +262,14 @@ def coefficientSemifieldMap (f : R →+* S)
       using hf a a.property
   map_add' a b := Subtype.ext <| Units.ext <| by simp [val_add, map_add]
 
+/-- The unit-level inclusion of a coefficient-semifield restriction. -/
 @[simp]
+theorem coe_coefficientSemifieldMap (f : R →+* S)
+    (hf : ∀ a ∈ G, Units.map (f : R →* S) a ∈ H) (a : G) :
+    ((G.coefficientSemifieldMap H f hf a : H) : Sˣ) = Units.map (f : R →* S) (a : Rˣ) :=
+  (rfl)
+
+/-- The value-level inclusion of a coefficient-semifield restriction. -/
 theorem val_coefficientSemifieldMap (f : R →+* S)
     (hf : ∀ a ∈ G, Units.map (f : R →* S) a ∈ H) (a : G) :
     (((G.coefficientSemifieldMap H f hf a : H) : Sˣ) : S) = f (a : Rˣ) :=
@@ -275,21 +297,19 @@ theorem coe_withZeroSubsemiringMap (f : R →+* S)
 
 /-- The two induced maps agree on subgroup members. -/
 @[simp]
-theorem withZeroSubsemiringMap_unit (f : R →+* S)
+theorem withZeroSubsemiringMap_toWithZeroSubsemiringUnits (f : R →+* S)
     (hf : ∀ a ∈ G, Units.map (f : R →* S) a ∈ H) (a : G) :
     G.withZeroSubsemiringMap H f hf (G.toWithZeroSubsemiringUnits a) =
       H.toWithZeroSubsemiringUnits (G.coefficientSemifieldMap H f hf a) :=
   (rfl)
 
 /-- The comparison with zero adjunction is natural for compatible ambient maps. -/
-theorem withZeroSubsemiringEquiv_natural [Nontrivial R] [Nontrivial S] (f : R →+* S)
+theorem withZeroSubsemiringMap_withZeroSubsemiringEquiv [Nontrivial R] [Nontrivial S] (f : R →+* S)
     (hf : ∀ a ∈ G, Units.map (f : R →* S) a ∈ H) (a : WithZero G) :
     G.withZeroSubsemiringMap H f hf (G.withZeroSubsemiringEquiv a) =
       H.withZeroSubsemiringEquiv
         (WithZero.map' (G.coefficientSemifieldMap H f hf).toMonoidHom a) := by
-  induction a using WithZero.recZeroCoe with
-  | zero => exact map_zero _
-  | coe a => rfl
+  induction a using WithZero.recZeroCoe <;> simp
 
 /-- Restricting an identity ambient map gives the identity on coefficients. -/
 @[simp]
@@ -305,7 +325,7 @@ theorem withZeroSubsemiringMap_id :
     G.withZeroSubsemiringMap G (RingHom.id R) (by simp) =
       RingHom.id _ := by
   ext a
-  rfl
+  simp
 
 variable (K : Subgroup Tˣ) [K.IsAddClosed]
 
@@ -313,22 +333,22 @@ variable (K : Subgroup Tˣ) [K.IsAddClosed]
 theorem coefficientSemifieldMap_comp (f : R →+* S) (g : S →+* T)
     (hf : ∀ a ∈ G, Units.map (f : R →* S) a ∈ H)
     (hg : ∀ b ∈ H, Units.map (g : S →* T) b ∈ K)
-    {hgf : ∀ a ∈ G, Units.map ((g.comp f : R →+* T) : R →* T) a ∈ K} :
+    (hgf : ∀ a ∈ G, Units.map ((g.comp f : R →+* T) : R →* T) a ∈ K :=
+      fun a ha ↦ hg _ (hf a ha)) :
     G.coefficientSemifieldMap K (g.comp f) hgf =
       (H.coefficientSemifieldMap K g hg).comp (G.coefficientSemifieldMap H f hf) := by
   ext a
-  simp only [CoefficientSemifieldHom.comp_apply, val_coefficientSemifieldMap]
-  exact (val_coefficientSemifieldMap G K (g.comp f) hgf a).trans
-    (RingHom.comp_apply g f _)
+  simp
 
 /-- Restrictions to the realized subsemirings respect composition. -/
 theorem withZeroSubsemiringMap_comp (f : R →+* S) (g : S →+* T)
     (hf : ∀ a ∈ G, Units.map (f : R →* S) a ∈ H)
     (hg : ∀ b ∈ H, Units.map (g : S →* T) b ∈ K)
-    {hgf : ∀ a ∈ G, Units.map ((g.comp f : R →+* T) : R →* T) a ∈ K} :
+    (hgf : ∀ a ∈ G, Units.map ((g.comp f : R →+* T) : R →* T) a ∈ K :=
+      fun a ha ↦ hg _ (hf a ha)) :
     G.withZeroSubsemiringMap K (g.comp f) hgf =
       (H.withZeroSubsemiringMap K g hg).comp (G.withZeroSubsemiringMap H f hf) := by
   ext a
-  rfl
+  simp
 
 end Subgroup
