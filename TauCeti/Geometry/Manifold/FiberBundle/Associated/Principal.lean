@@ -13,25 +13,20 @@ public import TauCeti.Topology.FiberBundle.Associated.Principal
 /-!
 # Smooth principal and transitivity structures on associated bundles
 
-This file upgrades the topological results of `TauCeti.Topology.FiberBundle.Associated.Principal`
-to `C^n` manifolds using the charts through the fibre (`TauCeti.ManifoldTotalSpace`):
+This file upgrades `TauCeti.Topology.FiberBundle.Associated.Principal` to `C^n` manifolds using the
+charts through the fibre (`TauCeti.ManifoldTotalSpace`):
 
-* **Smooth transitivity of associated bundles (`assocDiffeomorph`)**: when a principal `G`-bundle
-  `P` acts continuously on a group `H` on the left commuting with right multiplication on `H`, and
-  `H` in turn acts on `F` compatibly (`IsScalarTower G H F`), the canonical homeomorphism
-  `(P ×_G H) ×_H F ≃ₜ P ×_G F` preserves fibre coordinates in preferred trivializations and is
-  therefore a `C^n` diffeomorphism of `ManifoldTotalSpace`s.
-* **Smooth comparison along an equivariant map (`diffeomorphOfEquivariant`)**: a `C^n`
-  `ρ`-equivariant map `φ : P → Q` of principal bundles over `B` induces a `C^n` diffeomorphism
-  `P ×_G F ≃ₘ^n Q ×_H F` whenever `G` acts on `F` through `ρ`, `H` is a `C^n` Lie group, and `H`
-  acts `C^n`-smoothly on `F`.
+* **Smooth transitivity (`assocDiffeomorph`)**: `(P ×_G H) ×_H F ≃ₘ^n P ×_G F` under
+  `[IsScalarTower G H F]`.
+* **Smooth equivariant comparison (`diffeomorphOfEquivariant`)**: `P ×_G F ≃ₘ^n Q ×_H F` along a
+  `C^n` `ρ`-equivariant map `φ : P → Q` of principal bundles when `H` is a `C^n` Lie group acting
+  `C^n`-smoothly on `F` and `G` acts on `F` through `ρ`.
 
 ## References
 
-* S. Kobayashi, K. Nomizu, *Foundations of Differential Geometry I*, Interscience, 1963,
-  Chapter I, §5, Proposition 5.5.
+* S. Kobayashi, K. Nomizu, *Foundations of Differential Geometry I*, Interscience, 1963, Ch. I, §5.
 * I. Kolář, P. W. Michor, J. Slovák, *Natural Operations in Differential Geometry*, Springer, 1993,
-  §10.7 and §10.12.
+  §§10.7 and 10.12.
 -/
 
 public section
@@ -43,44 +38,41 @@ open scoped Manifold ContDiff Topology
 
 namespace TauCeti.AssociatedBundle
 
-/-! ### Smooth transitivity `(P ×_G H) ×_H F ≃ₘ^n P ×_G F` -/
+variable {n : ℕ∞ω} {𝕜 B G H F M : Type*} [NontriviallyNormedField 𝕜]
+  {EB HB EF HF EM HM EG HG EH HH : Type*}
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup EF] [NormedSpace 𝕜 EF] [TopologicalSpace HF]
+  {IF : ModelWithCorners 𝕜 EF HF} [TopologicalSpace F] [ChartedSpace HF F]
+  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] [TopologicalSpace HM]
+  {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  [NormedAddCommGroup EG] [NormedSpace 𝕜 EG] [TopologicalSpace HG] {IG : ModelWithCorners 𝕜 EG HG}
+  [NormedAddCommGroup EH] [NormedSpace 𝕜 EH] [TopologicalSpace HH] {IH : ModelWithCorners 𝕜 EH HH}
+  [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
+  {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
+  [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
 
 section Transitivity
 
-variable {n : ℕ∞ω} {𝕜 B G H F M : Type*} [NontriviallyNormedField 𝕜]
-  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
-  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
-  {EF : Type*} [NormedAddCommGroup EF] [NormedSpace 𝕜 EF] {HF : Type*} [TopologicalSpace HF]
-  {IF : ModelWithCorners 𝕜 EF HF} [TopologicalSpace F] [ChartedSpace HF F]
-  {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] {HM : Type*} [TopologicalSpace HM]
-  {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
-  [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
-  [MulAction G H] [ContinuousSMul G H] [SMulCommClass G Hᵐᵒᵖ H]
-  [MulAction H F] [ContinuousSMul H F] [MulAction G F] [ContinuousSMul G F]
-  [IsScalarTower G H F]
-  {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
-  [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
+variable [MulAction G H] [ContinuousSMul G H] [SMulCommClass G Hᵐᵒᵖ H]
+  [MulAction H F] [ContinuousSMul H F] [MulAction G F] [ContinuousSMul G F] [IsScalarTower G H F]
 
 /-- A family in `(P ×_G H) ×_H F` is `C^n` within a set at a point if and only if its image under
 `assocHomeomorph` in `P ×_G F` is `C^n` there. -/
 theorem contMDiffWithinAt_assocHomeomorph_iff
-    {q : M → TotalSpace F (AssociatedBundle H (AssociatedBundle G P H) F)}
-    {s : Set M} {x₀ : M} :
+    {q : M → TotalSpace F (AssociatedBundle H (AssociatedBundle G P H) F)} {s : Set M} {x₀ : M} :
     ContMDiffWithinAt IM (IB.prod IF) n
         (fun x ↦ ManifoldTotalSpace.homeomorph F _ (q x)) s x₀ ↔
       ContMDiffWithinAt IM (IB.prod IF) n
         (fun x ↦ ManifoldTotalSpace.homeomorph F _ (assocHomeomorph (q x))) s x₀ := by
   simp only [assocHomeomorph_apply, ManifoldTotalSpace.contMDiffWithinAt_iff]
-  refine and_congr_right fun hbase ↦ ?_
-  apply Filter.EventuallyEq.contMDiffWithinAt_iff
-  · filter_upwards [hbase.continuousWithinAt
-      ((trivializationAt G P (q x₀).proj).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt G P (q x₀).proj))] with x hx
-    exact trivializationAt_assocEquiv_snd hx _
-  · exact trivializationAt_assocEquiv_snd (mem_baseSet_trivializationAt G P (q x₀).proj) _
+  refine and_congr_right fun hbase ↦ Filter.EventuallyEq.contMDiffWithinAt_iff ?_
+    (trivializationAt_assocEquiv_snd (mem_baseSet_trivializationAt G P (q x₀).proj) _)
+  filter_upwards [hbase.continuousWithinAt ((trivializationAt G P (q x₀).proj).open_baseSet.mem_nhds
+    (mem_baseSet_trivializationAt G P (q x₀).proj))] with x hx
+  exact trivializationAt_assocEquiv_snd hx _
 
-/-- A family in `(P ×_G H) ×_H F` is `C^n` if and only if its image under `assocHomeomorph` in
-`P ×_G F` is `C^n`. -/
+/-- A family in `(P ×_G H) ×_H F` is `C^n` if and only if its image under `assocHomeomorph` is. -/
 theorem contMDiff_assocHomeomorph_iff
     {q : M → TotalSpace F (AssociatedBundle H (AssociatedBundle G P H) F)} :
     ContMDiff IM (IB.prod IF) n (fun x ↦ ManifoldTotalSpace.homeomorph F _ (q x)) ↔
@@ -96,12 +88,8 @@ def assocDiffeomorph :
       ≃ₘ^n⟮IB.prod IF, IB.prod IF⟯ ManifoldTotalSpace F (AssociatedBundle G P F) where
   toFun := ManifoldTotalSpace.fiberwiseMap fun b ↦ assocEquiv b
   invFun := ManifoldTotalSpace.fiberwiseMap fun b ↦ (assocEquiv b).symm
-  left_inv z := by
-    obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective z
-    simp
-  right_inv z := by
-    obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective z
-    simp
+  left_inv z := by obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective z; simp
+  right_inv z := by obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective z; simp
   contMDiff_toFun := by
     change ContMDiff (IB.prod IF) (IB.prod IF) n
       (ManifoldTotalSpace.fiberwiseMap fun b ↦ assocEquiv b)
@@ -119,9 +107,8 @@ def assocDiffeomorph :
       (ManifoldTotalSpace.fiberwiseMap fun b ↦ (assocEquiv b).symm)
     have hid : ContMDiff (IB.prod IF) (IB.prod IF) n
         (fun y : ManifoldTotalSpace F (AssociatedBundle G P F) ↦
-          ManifoldTotalSpace.homeomorph F _
-            (assocHomeomorph (H := H)
-              ((assocHomeomorph (H := H)).symm ((ManifoldTotalSpace.homeomorph F _).symm y)))) :=
+          ManifoldTotalSpace.homeomorph F _ (assocHomeomorph
+            ((assocHomeomorph (H := H)).symm ((ManifoldTotalSpace.homeomorph F _).symm y)))) :=
       (contMDiff_id (I := IB.prod IF)).congr fun y ↦ by
         rw [Homeomorph.apply_symm_apply, Homeomorph.apply_symm_apply]; rfl
     refine ((contMDiff_assocHomeomorph_iff (IB := IB) (IF := IF)).mpr hid).congr fun y ↦ ?_
@@ -129,24 +116,19 @@ def assocDiffeomorph :
     rw [ManifoldTotalSpace.fiberwiseMap_homeomorph, Homeomorph.symm_apply_apply,
       assocHomeomorph_symm_apply]
 
-@[simp]
-theorem assocDiffeomorph_apply
+@[simp] theorem assocDiffeomorph_apply
     (z : TotalSpace F (AssociatedBundle H (AssociatedBundle G P H) F)) :
     assocDiffeomorph (n := n) (IB := IB) (IF := IF) (G := G) (P := P) (H := H) (F := F)
         (ManifoldTotalSpace.homeomorph F _ z) =
       ManifoldTotalSpace.homeomorph F _ (assocHomeomorph z) := by
-  rw [assocHomeomorph_apply]
-  exact ManifoldTotalSpace.fiberwiseMap_homeomorph _ z
+  rw [assocHomeomorph_apply]; exact ManifoldTotalSpace.fiberwiseMap_homeomorph _ z
 
-@[simp]
-theorem assocDiffeomorph_symm_apply (z : TotalSpace F (AssociatedBundle G P F)) :
+@[simp] theorem assocDiffeomorph_symm_apply (z : TotalSpace F (AssociatedBundle G P F)) :
     (assocDiffeomorph (n := n) (IB := IB) (IF := IF) (G := G) (P := P) (H := H) (F := F)).symm
         (ManifoldTotalSpace.homeomorph F _ z) =
       ManifoldTotalSpace.homeomorph F _ (assocHomeomorph.symm z) := by
-  rw [assocHomeomorph_symm_apply]
-  exact ManifoldTotalSpace.fiberwiseMap_homeomorph _ z
+  rw [assocHomeomorph_symm_apply]; exact ManifoldTotalSpace.fiberwiseMap_homeomorph _ z
 
-@[simp]
 theorem assocDiffeomorph_mk {b : B} (p : P b) (h : H) (v : F) :
     assocDiffeomorph (n := n) (IB := IB) (IF := IF) (G := G) (P := P) (H := H) (F := F)
         (ManifoldTotalSpace.homeomorph F _ ⟨b, mk H (mk G p h) v⟩) =
@@ -155,24 +137,33 @@ theorem assocDiffeomorph_mk {b : B} (p : P b) (h : H) (v : F) :
 
 end Transitivity
 
-/-! ### Smooth comparison of associated bundles along an equivariant principal bundle map -/
-
 section EquivariantComparison
 
-variable {n : ℕ∞ω} {𝕜 B G H F : Type*} [NontriviallyNormedField 𝕜]
-  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
-  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
-  {EG : Type*} [NormedAddCommGroup EG] [NormedSpace 𝕜 EG] {HG : Type*} [TopologicalSpace HG]
-  {IG : ModelWithCorners 𝕜 EG HG} [Group G] [TopologicalSpace G] [ChartedSpace HG G]
-  {EH : Type*} [NormedAddCommGroup EH] [NormedSpace 𝕜 EH] {HH : Type*} [TopologicalSpace HH]
-  {IH : ModelWithCorners 𝕜 EH HH} [Group H] [TopologicalSpace H] [ChartedSpace HH H]
-  {EF : Type*} [NormedAddCommGroup EF] [NormedSpace 𝕜 EF] {HF : Type*} [TopologicalSpace HF]
-  {IF : ModelWithCorners 𝕜 EF HF} [TopologicalSpace F] [ChartedSpace HF F]
-  [MulAction G F] [ContinuousSMul G F] [MulAction H F] [ContinuousSMul H F]
-  {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
-  [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
+variable [ChartedSpace HG G] [ChartedSpace HH H]
   {Q : B → Type*} [TopologicalSpace (TotalSpace H Q)] [∀ b, TopologicalSpace (Q b)]
-  [FiberBundle H Q] [∀ b, MulAction Hᵐᵒᵖ (Q b)] [PrincipalBundle H Q]
+  [FiberBundle H Q]
+
+omit [Group H] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
+private theorem contMDiffAt_section_comp [∀ b, Nonempty (P b)] {φ : ∀ b, P b → Q b}
+    (hφc : ContMDiff (IB.prod IG) (IB.prod IH) n
+      (fun x : ManifoldTotalSpace G P ↦ ManifoldTotalSpace.homeomorph H Q
+        ⟨((ManifoldTotalSpace.homeomorph G P).symm x).proj,
+          φ _ ((ManifoldTotalSpace.homeomorph G P).symm x).2⟩))
+    {f : M → B} {x₀ : M} (hf : ContMDiffAt IM IB n f x₀) :
+    ContMDiffAt IM (IB.prod IH) n
+      (fun y ↦ ManifoldTotalSpace.homeomorph H Q
+        ⟨f y, φ (f y) ((trivializationAt G P (f x₀)).symm (f y) 1)⟩) x₀ := by
+  have hbase : ContMDiffAt IB (IB.prod IH) n
+      (fun b ↦ ManifoldTotalSpace.homeomorph H Q
+        ⟨b, φ b ((trivializationAt G P (f x₀)).symm b 1)⟩) (f x₀) :=
+    (hφc.contMDiffAt.comp (f x₀)
+      (ManifoldTotalSpace.contMDiffAt_totalSpaceMk_trivializationAt_symm
+        (f x₀) 1)).congr_of_eventuallyEq
+      (.of_forall fun _ ↦ by dsimp only [Function.comp_def]; rw [Homeomorph.symm_apply_apply])
+  exact hbase.comp x₀ hf
+
+variable [MulAction G F] [ContinuousSMul G F] [MulAction H F] [ContinuousSMul H F]
+  [∀ b, MulAction Hᵐᵒᵖ (Q b)] [PrincipalBundle H Q]
 
 /-- **Smooth comparison of associated bundles along an equivariant map.** If `φ : ∀ b, P b → Q b` is
 a `C^n` `ρ`-equivariant map of principal bundles over `B`, `G` acts on `F` through `ρ`, `H` is a
@@ -182,21 +173,16 @@ def diffeomorphOfEquivariant [LieGroup IH n H] [ContMDiffSMul IH IF n H F]
     (ρ : G →* H) (φ : ∀ b, P b → Q b)
     (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
     (hφc : ContMDiff (IB.prod IG) (IB.prod IH) n
-      (fun x : ManifoldTotalSpace G P ↦
-        ManifoldTotalSpace.homeomorph H Q
-          ⟨((ManifoldTotalSpace.homeomorph G P).symm x).proj,
-            φ _ ((ManifoldTotalSpace.homeomorph G P).symm x).2⟩))
+      (fun x : ManifoldTotalSpace G P ↦ ManifoldTotalSpace.homeomorph H Q
+        ⟨((ManifoldTotalSpace.homeomorph G P).symm x).proj,
+          φ _ ((ManifoldTotalSpace.homeomorph G P).symm x).2⟩))
     (hF : ∀ (g : G) (v : F), g • v = ρ g • v) :
     ManifoldTotalSpace F (AssociatedBundle G P F) ≃ₘ^n⟮IB.prod IF, IB.prod IF⟯
       ManifoldTotalSpace F (AssociatedBundle H Q F) where
   toFun := ManifoldTotalSpace.fiberwiseMap fun b ↦ equivOfEquivariant ρ φ hφ hF b
   invFun := ManifoldTotalSpace.fiberwiseMap fun b ↦ (equivOfEquivariant ρ φ hφ hF b).symm
-  left_inv z := by
-    obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective z
-    simp
-  right_inv z := by
-    obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective z
-    simp
+  left_inv z := by obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective z; simp
+  right_inv z := by obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective z; simp
   contMDiff_toFun := by
     change ContMDiff (IB.prod IF) (IB.prod IF) n
       (ManifoldTotalSpace.fiberwiseMap fun b ↦ equivOfEquivariant ρ φ hφ hF b)
@@ -204,127 +190,80 @@ def diffeomorphOfEquivariant [LieGroup IH n H] [ContMDiffSMul IH IF n H F]
     intro x₀
     let b₀ := ((ManifoldTotalSpace.homeomorph F (AssociatedBundle G P F)).symm x₀).proj
     let eP := trivializationAt G P b₀
-    have hbP₀ : b₀ ∈ eP.baseSet := mem_baseSet_trivializationAt G P b₀
-    let σ : ∀ b, P b := fun b ↦ eP.symm b 1
-    have hσ : ContMDiffAt IB (IB.prod IG) n
-        (fun b ↦ ManifoldTotalSpace.homeomorph G P ⟨b, σ b⟩) b₀ :=
-      ManifoldTotalSpace.contMDiffAt_totalSpaceMk_trivializationAt_symm b₀ 1
-    have hφσ_base : ContMDiffAt IB (IB.prod IH) n
-        (fun b ↦ ManifoldTotalSpace.homeomorph H Q ⟨b, φ b (σ b)⟩) b₀ :=
-      (hφc.contMDiffAt.comp b₀ hσ).congr_of_eventuallyEq
-        (.of_forall fun b ↦ by dsimp only [Function.comp_def]; rw [Homeomorph.symm_apply_apply])
     have hπ := ManifoldTotalSpace.contMDiff_proj n F (AssociatedBundle G P F) IB IF x₀
-    have hφσ := hφσ_base.comp x₀ hπ
-    have hv := ManifoldTotalSpace.contMDiffAt_trivializationAt_snd n IB IF x₀
-    refine (hφσ.totalSpaceMk_associatedBundleMk hv).congr_of_eventuallyEq ?_
-    filter_upwards [hπ.continuousAt.preimage_mem_nhds (eP.open_baseSet.mem_nhds hbP₀)] with y hy
+    refine ((contMDiffAt_section_comp hφc hπ).totalSpaceMk_associatedBundleMk
+      (ManifoldTotalSpace.contMDiffAt_trivializationAt_snd n IB IF x₀)).congr_of_eventuallyEq ?_
+    filter_upwards [hπ.continuousAt.preimage_mem_nhds
+      (eP.open_baseSet.mem_nhds (mem_baseSet_trivializationAt G P b₀))] with y hy
     obtain ⟨⟨b, z⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective y
     have hbP : b ∈ eP.baseSet := by simpa using hy
+    obtain ⟨v, rfl⟩ := (mk_bijective (G := G) (P := P) (F := F) (eP.symm b 1)).surjective z
     rw [ManifoldTotalSpace.fiberwiseMap_homeomorph]
-    change _ = ManifoldTotalSpace.homeomorph F _
-      ⟨((ManifoldTotalSpace.homeomorph F _).symm (ManifoldTotalSpace.homeomorph F _ ⟨b, z⟩)).proj,
-        mk H (φ _ (σ _)) _⟩
-    rw [Homeomorph.symm_apply_apply]
-    change ManifoldTotalSpace.homeomorph F _ ⟨b, equivOfEquivariant ρ φ hφ hF b z⟩ =
-      ManifoldTotalSpace.homeomorph F _ ⟨b, mk H (φ b (σ b)) (trivializationAt F _ b₀ ⟨b, z⟩).2⟩
-    apply congrArg (fun w ↦ ManifoldTotalSpace.homeomorph F _ ⟨b, w⟩)
-    obtain ⟨v, rfl⟩ := (mk_bijective (G := G) (P := P) (F := F) (σ b)).surjective z
-    have hσ1 : (eP ⟨b, σ b⟩).2 = 1 := congrArg Prod.snd (eP.apply_mk_symm hbP 1)
-    rw [equivOfEquivariant_mk, trivializationAt_mk_snd hbP, hσ1, one_smul]
+    dsimp only [Function.comp_def]; rw [Homeomorph.symm_apply_apply]
+    exact congrArg (fun w ↦ ManifoldTotalSpace.homeomorph F _ ⟨b, w⟩) <| by
+      rw [equivOfEquivariant_mk, trivializationAt_mk_snd hbP,
+        congrArg Prod.snd (eP.apply_mk_symm hbP 1), one_smul]
   contMDiff_invFun := by
     change ContMDiff (IB.prod IF) (IB.prod IF) n
       (ManifoldTotalSpace.fiberwiseMap fun b ↦ (equivOfEquivariant ρ φ hφ hF b).symm)
     have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
     intro x₀
     let b₀ := ((ManifoldTotalSpace.homeomorph F (AssociatedBundle H Q F)).symm x₀).proj
-    let eP := trivializationAt G P b₀
-    let eQ := trivializationAt H Q b₀
-    have hbP₀ : b₀ ∈ eP.baseSet := mem_baseSet_trivializationAt G P b₀
-    have hbQ₀ : b₀ ∈ eQ.baseSet := mem_baseSet_trivializationAt H Q b₀
-    let σ : ∀ b, P b := fun b ↦ eP.symm b 1
-    have hσ : ContMDiffAt IB (IB.prod IG) n
-        (fun b ↦ ManifoldTotalSpace.homeomorph G P ⟨b, σ b⟩) b₀ :=
-      ManifoldTotalSpace.contMDiffAt_totalSpaceMk_trivializationAt_symm b₀ 1
-    have hφσ_base : ContMDiffAt IB (IB.prod IH) n
-        (fun b ↦ ManifoldTotalSpace.homeomorph H Q ⟨b, φ b (σ b)⟩) b₀ :=
-      (hφc.contMDiffAt.comp b₀ hσ).congr_of_eventuallyEq
-        (.of_forall fun b ↦ by dsimp only [Function.comp_def]; rw [Homeomorph.symm_apply_apply])
+    let eP := trivializationAt G P b₀; let eQ := trivializationAt H Q b₀
     have hπ := ManifoldTotalSpace.contMDiff_proj n F (AssociatedBundle H Q F) IB IF x₀
-    have hφσ := hφσ_base.comp x₀ hπ
-    have hq_inv : ContMDiffAt (IB.prod IF) IH n
-        (fun y : ManifoldTotalSpace F (AssociatedBundle H Q F) ↦
-          ((eQ ⟨((ManifoldTotalSpace.homeomorph F _).symm y).proj,
-            φ _ (σ ((ManifoldTotalSpace.homeomorph F _).symm y).proj)⟩).2)⁻¹) x₀ :=
-      (ManifoldTotalSpace.contMDiffAt_iff.1 hφσ).2.inv
-    have hv := ManifoldTotalSpace.contMDiffAt_trivializationAt_snd n IB IF x₀
     have hf_eq : ManifoldTotalSpace.fiberwiseMap (fun b ↦ (equivOfEquivariant ρ φ hφ hF b).symm) =
-        fun y : ManifoldTotalSpace F (AssociatedBundle H Q F) ↦
-          ManifoldTotalSpace.homeomorph F _
-            ⟨((ManifoldTotalSpace.homeomorph F _).symm y).proj,
-              (equivOfEquivariant ρ φ hφ hF _).symm
-                ((ManifoldTotalSpace.homeomorph F _).symm y).2⟩ := by
-      funext y
-      obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective y
+        fun y : ManifoldTotalSpace F (AssociatedBundle H Q F) ↦ ManifoldTotalSpace.homeomorph F _
+          ⟨((ManifoldTotalSpace.homeomorph F _).symm y).proj,
+            (equivOfEquivariant ρ φ hφ hF _).symm
+              ((ManifoldTotalSpace.homeomorph F _).symm y).2⟩ := by
+      funext y; obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective y
       rw [ManifoldTotalSpace.fiberwiseMap_homeomorph, Homeomorph.symm_apply_apply]
     rw [hf_eq, ManifoldTotalSpace.contMDiffAt_iff]
-    refine ⟨hπ, (hq_inv.smul hv).congr_of_eventuallyEq ?_⟩
+    refine ⟨hπ, ((ManifoldTotalSpace.contMDiffAt_iff.1
+      (contMDiffAt_section_comp hφc hπ)).2.inv.smul
+      (ManifoldTotalSpace.contMDiffAt_trivializationAt_snd n IB IF x₀)).congr_of_eventuallyEq ?_⟩
     filter_upwards [hπ.continuousAt.preimage_mem_nhds
-      ((eP.open_baseSet.inter eQ.open_baseSet).mem_nhds ⟨hbP₀, hbQ₀⟩)] with y ⟨hyP, hyQ⟩
+      ((eP.open_baseSet.inter eQ.open_baseSet).mem_nhds
+        ⟨mem_baseSet_trivializationAt G P b₀, mem_baseSet_trivializationAt H Q b₀⟩)]
+      with y ⟨hyP, hyQ⟩
     obtain ⟨⟨b, z⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph F _).surjective y
     have hbP : b ∈ eP.baseSet := by simpa using hyP
     have hbQ : b ∈ eQ.baseSet := by simpa using hyQ
-    change (trivializationAt F _ b₀
-        ⟨((ManifoldTotalSpace.homeomorph F _).symm (ManifoldTotalSpace.homeomorph F _ ⟨b, z⟩)).proj,
-          (equivOfEquivariant ρ φ hφ hF _).symm
-            ((ManifoldTotalSpace.homeomorph F _).symm
-              (ManifoldTotalSpace.homeomorph F _ ⟨b, z⟩)).2⟩).2 =
-      ((eQ ⟨((ManifoldTotalSpace.homeomorph F _).symm
-          (ManifoldTotalSpace.homeomorph F _ ⟨b, z⟩)).proj, _⟩).2)⁻¹ •
-        (trivializationAt F _ b₀
-          ((ManifoldTotalSpace.homeomorph F _).symm
-            (ManifoldTotalSpace.homeomorph F _ ⟨b, z⟩))).2
-    rw [Homeomorph.symm_apply_apply]
-    change (trivializationAt F _ b₀ ⟨b, (equivOfEquivariant ρ φ hφ hF b).symm z⟩).2 =
-      (eQ ⟨b, φ b (σ b)⟩).2⁻¹ • (trivializationAt F _ b₀ ⟨b, z⟩).2
-    obtain ⟨v, rfl⟩ := (mk_bijective (G := H) (P := Q) (F := F) (φ b (σ b))).surjective z
-    have hσ1 : (eP ⟨b, σ b⟩).2 = 1 := congrArg Prod.snd (eP.apply_mk_symm hbP 1)
-    rw [equivOfEquivariant_symm_mk, trivializationAt_mk_snd hbP, hσ1, one_smul,
-      trivializationAt_mk_snd hbQ, inv_smul_smul]
+    obtain ⟨v, rfl⟩ := (mk_bijective (G := H) (P := Q) (F := F) (φ b (eP.symm b 1))).surjective z
+    rw [Pi.smul_apply', Homeomorph.symm_apply_apply]
+    dsimp only [TotalSpace.proj, b₀]
+    rw [equivOfEquivariant_symm_mk, trivializationAt_mk_snd hbP,
+      congrArg Prod.snd (eP.apply_mk_symm hbP 1), one_smul, trivializationAt_mk_snd hbQ,
+      inv_smul_smul]
 
 section
 
-variable [LieGroup IH n H] [ContMDiffSMul IH IF n H F]
-  (ρ : G →* H) (φ : ∀ b, P b → Q b)
+variable [LieGroup IH n H] [ContMDiffSMul IH IF n H F] (ρ : G →* H) (φ : ∀ b, P b → Q b)
   (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
   (hφc : ContMDiff (IB.prod IG) (IB.prod IH) n
-    (fun x : ManifoldTotalSpace G P ↦
-      ManifoldTotalSpace.homeomorph H Q
-        ⟨((ManifoldTotalSpace.homeomorph G P).symm x).proj,
-          φ _ ((ManifoldTotalSpace.homeomorph G P).symm x).2⟩))
+    (fun x : ManifoldTotalSpace G P ↦ ManifoldTotalSpace.homeomorph H Q
+      ⟨((ManifoldTotalSpace.homeomorph G P).symm x).proj,
+        φ _ ((ManifoldTotalSpace.homeomorph G P).symm x).2⟩))
   (hF : ∀ (g : G) (v : F), g • v = ρ g • v)
 
-@[simp]
-theorem diffeomorphOfEquivariant_apply (z : TotalSpace F (AssociatedBundle G P F)) :
+@[simp] theorem diffeomorphOfEquivariant_apply (z : TotalSpace F (AssociatedBundle G P F)) :
     diffeomorphOfEquivariant (IB := IB) (IG := IG) (IH := IH) (IF := IF) ρ φ hφ hφc hF
         (ManifoldTotalSpace.homeomorph F _ z) =
       ManifoldTotalSpace.homeomorph F _ ⟨z.proj, equivOfEquivariant ρ φ hφ hF z.proj z.2⟩ :=
   ManifoldTotalSpace.fiberwiseMap_homeomorph _ z
 
-@[simp]
-theorem diffeomorphOfEquivariant_symm_apply (z : TotalSpace F (AssociatedBundle H Q F)) :
+@[simp] theorem diffeomorphOfEquivariant_symm_apply (z : TotalSpace F (AssociatedBundle H Q F)) :
     (diffeomorphOfEquivariant (IB := IB) (IG := IG) (IH := IH) (IF := IF) ρ φ hφ hφc hF).symm
         (ManifoldTotalSpace.homeomorph F _ z) =
       ManifoldTotalSpace.homeomorph F _ ⟨z.proj, (equivOfEquivariant ρ φ hφ hF z.proj).symm z.2⟩ :=
   ManifoldTotalSpace.fiberwiseMap_homeomorph _ z
 
-@[simp]
 theorem diffeomorphOfEquivariant_mk {b : B} (p : P b) (v : F) :
     diffeomorphOfEquivariant (IB := IB) (IG := IG) (IH := IH) (IF := IF) ρ φ hφ hφc hF
         (ManifoldTotalSpace.homeomorph F _ ⟨b, mk G p v⟩) =
       ManifoldTotalSpace.homeomorph F _ ⟨b, mk H (φ b p) v⟩ := by
   rw [diffeomorphOfEquivariant_apply, equivOfEquivariant_mk]
 
-@[simp]
 theorem diffeomorphOfEquivariant_symm_mk {b : B} (p : P b) (v : F) :
     (diffeomorphOfEquivariant (IB := IB) (IG := IG) (IH := IH) (IF := IF) ρ φ hφ hφc hF).symm
         (ManifoldTotalSpace.homeomorph F _ ⟨b, mk H (φ b p) v⟩) =

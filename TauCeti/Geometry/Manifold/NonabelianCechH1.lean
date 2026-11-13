@@ -318,77 +318,62 @@ end NonabelianCechH1
 
 section Map
 
-variable {EH : Type*} [NormedAddCommGroup EH] [NormedSpace 𝕜 EH] {HH : Type*} [TopologicalSpace HH]
+variable {EH HH EK HK : Type*} [NormedAddCommGroup EH] [NormedSpace 𝕜 EH] [TopologicalSpace HH]
   {IH : ModelWithCorners 𝕜 EH HH} {H : Type*} [Group H] [TopologicalSpace H] [ChartedSpace HH H]
-  {EK : Type*} [NormedAddCommGroup EK] [NormedSpace 𝕜 EK] {HK : Type*} [TopologicalSpace HK]
-  {IK : ModelWithCorners 𝕜 EK HK} {K : Type*} [Group K] [TopologicalSpace K] [ChartedSpace HK K]
-  {U : ι → Set B} {V : κ → Set B}
+  [NormedAddCommGroup EK] [NormedSpace 𝕜 EK] [TopologicalSpace HK] {IK : ModelWithCorners 𝕜 EK HK}
+  {K : Type*} [Group K] [TopologicalSpace K] [ChartedSpace HK K] {U : ι → Set B} {V : κ → Set B}
 
 /-- Pushing a `C^n` cocycle forward along a `C^n` group homomorphism yields a `C^n` cocycle. -/
 theorem IsContMDiffGroupCocycle.map {c : ι → ι → B → G} (hc : IsContMDiffGroupCocycle IB IG n U c)
     (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
-    IsContMDiffGroupCocycle IB IH n U fun i j b ↦ ρ (c i j b) where
-  mul_eq i j k b hb := by rw [← map_mul, hc.mul_eq i j k b hb]
-  contMDiffOn i j := hρ.comp_contMDiffOn (hc.contMDiffOn i j)
+    IsContMDiffGroupCocycle IB IH n U fun i j b ↦ ρ (c i j b) :=
+  ⟨fun i j k b hb ↦ by rw [← map_mul, hc.mul_eq i j k b hb],
+    fun i j ↦ hρ.comp_contMDiffOn (hc.contMDiffOn i j)⟩
 
-/-- Pairing a `G`-valued `C^n` cocycle and an `H`-valued `C^n` cocycle on the same cover yields a
-`(G × H)`-valued `C^n` cocycle. -/
+/-- Pairing a `G`-cocycle and an `H`-cocycle on the same cover yields a `(G × H)`-cocycle. -/
 theorem IsContMDiffGroupCocycle.prod {c : ι → ι → B → G} {d : ι → ι → B → H}
     (hc : IsContMDiffGroupCocycle IB IG n U c) (hd : IsContMDiffGroupCocycle IB IH n U d) :
-    IsContMDiffGroupCocycle IB (IG.prod IH) n U fun i j b ↦ (c i j b, d i j b) where
-  mul_eq i j k b hb := Prod.ext (hc.mul_eq i j k b hb) (hd.mul_eq i j k b hb)
-  contMDiffOn i j := (hc.contMDiffOn i j).prodMk (hd.contMDiffOn i j)
+    IsContMDiffGroupCocycle IB (IG.prod IH) n U fun i j b ↦ (c i j b, d i j b) :=
+  ⟨fun i j k b hb ↦ Prod.ext (hc.mul_eq i j k b hb) (hd.mul_eq i j k b hb),
+    fun i j ↦ (hc.contMDiffOn i j).prodMk (hd.contMDiffOn i j)⟩
 
-/-- Pushing `C^n`-cohomologous families forward along a `C^n` group homomorphism preserves
-cohomology, through the pushed-forward `0`-cochain. -/
+/-- Pushing `C^n`-cohomologous families forward along a `C^n` homomorphism preserves cohomology. -/
 theorem IsContMDiffCohomologous.map {c c' : ι → ι → B → G}
     (h : IsContMDiffCohomologous IB IG n U c c') (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
     IsContMDiffCohomologous IB IH n U (fun i j b ↦ ρ (c i j b)) fun i j b ↦ ρ (c' i j b) := by
   obtain ⟨k, hk, hcc'⟩ := h
-  refine ⟨fun i b ↦ ρ (k i b), fun i ↦ hρ.comp_contMDiffOn (hk i), fun i j b hb ↦ ?_⟩
-  dsimp only
-  rw [hcc' i j b hb, map_mul, map_mul, map_inv]
+  exact ⟨fun i b ↦ ρ (k i b), fun i ↦ hρ.comp_contMDiffOn (hk i),
+    fun i j b hb ↦ by simp only [hcc' i j b hb, map_mul, map_inv]⟩
 
 namespace NonabelianCechH1
 
 variable [LieGroup IG n G]
 
-/-- The **pushforward** of nonabelian Čech `H¹` along a `C^n` group homomorphism `ρ : G →* H`:
-it sends the class of a cocycle `c` to the class of `ρ ∘ c`. -/
+/-- The **pushforward** of nonabelian Čech `H¹` along a `C^n` group homomorphism `ρ : G →* H`,
+sending `[c]` to `[ρ ∘ c]`. -/
 def map [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
     NonabelianCechH1 IB IG n G U → NonabelianCechH1 IB IH n H U :=
   Quotient.map (fun c ↦ ⟨fun i j b ↦ ρ (c.1 i j b), c.2.map ρ hρ⟩) fun _ _ h ↦ h.map ρ hρ
 
-@[simp]
-theorem map_mk [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) (c : ι → ι → B → G)
-    (hc : IsContMDiffGroupCocycle IB IG n U c) :
-    map ρ hρ (mk c hc) = mk (fun i j b ↦ ρ (c i j b)) (hc.map ρ hρ) :=
-  (rfl)
+@[simp] theorem map_mk [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ)
+    (c : ι → ι → B → G) (hc : IsContMDiffGroupCocycle IB IG n U c) :
+    map ρ hρ (mk c hc) = mk (fun i j b ↦ ρ (c i j b)) (hc.map ρ hρ) := (rfl)
 
-/-- Pushforward along a group homomorphism preserves the base point. -/
-@[simp]
-theorem map_one [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
+@[simp] theorem map_one [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
     map ρ hρ (1 : NonabelianCechH1 IB IG n G U) = 1 :=
-  mk_eq_mk_iff.2 <| IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ _root_.map_one ρ
+  mk_eq_mk_iff.2 <| .of_eqOn fun _ _ _ _ ↦ _root_.map_one ρ
 
-/-- Pushforward along the identity homomorphism is the identity. -/
-@[simp]
-theorem map_id (x : NonabelianCechH1 IB IG n G U) :
-    map (MonoidHom.id G) contMDiff_id x = x :=
-  ind (fun _ _ ↦ rfl) x
+@[simp] theorem map_id (x : NonabelianCechH1 IB IG n G U) :
+    map (MonoidHom.id G) contMDiff_id x = x := ind (fun _ _ ↦ rfl) x
 
-/-- Pushforward along group homomorphisms is functorial under composition. -/
-@[simp]
-theorem map_map [LieGroup IH n H] [LieGroup IK n K] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ)
+@[simp] theorem map_map [LieGroup IH n H] [LieGroup IK n K] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ)
     (σ : H →* K) (hσ : ContMDiff IH IK n σ) (x : NonabelianCechH1 IB IG n G U) :
-    map σ hσ (map ρ hρ x) = map (σ.comp ρ) (hσ.comp hρ) x :=
-  ind (fun _ _ ↦ rfl) x
+    map σ hσ (map ρ hρ x) = map (σ.comp ρ) (hσ.comp hρ) x := ind (fun _ _ ↦ rfl) x
 
 /-- Pushforward along a group homomorphism commutes with cover refinement. -/
 theorem refine_map [LieGroup IH n H] (τ : κ → ι) (hτ : ∀ k, V k ⊆ U (τ k)) (ρ : G →* H)
     (hρ : ContMDiff IG IH n ρ) (x : NonabelianCechH1 IB IG n G U) :
-    refine τ hτ (map ρ hρ x) = map ρ hρ (refine τ hτ x) :=
-  ind (fun _ _ ↦ rfl) x
+    refine τ hτ (map ρ hρ x) = map ρ hρ (refine τ hτ x) := ind (fun _ _ ↦ rfl) x
 
 end NonabelianCechH1
 
@@ -398,50 +383,36 @@ end Map
 
 section CommGroup
 
-variable {EA : Type*} [NormedAddCommGroup EA] [NormedSpace 𝕜 EA] {HA : Type*} [TopologicalSpace HA]
-  {IA : ModelWithCorners 𝕜 EA HA} {A : Type*} [CommGroup A] [TopologicalSpace A]
-  [ChartedSpace HA A]
-  {EA' : Type*} [NormedAddCommGroup EA'] [NormedSpace 𝕜 EA'] {HA' : Type*} [TopologicalSpace HA']
+variable {EA HA EA' HA' : Type*} [NormedAddCommGroup EA] [NormedSpace 𝕜 EA] [TopologicalSpace HA]
+  {IA : ModelWithCorners 𝕜 EA HA} {A : Type*} [CommGroup A] [TopologicalSpace A] [ChartedSpace HA A]
+  [NormedAddCommGroup EA'] [NormedSpace 𝕜 EA'] [TopologicalSpace HA']
   {IA' : ModelWithCorners 𝕜 EA' HA'} {A' : Type*} [CommGroup A'] [TopologicalSpace A']
-  [ChartedSpace HA' A']
-  {U : ι → Set B} {V : κ → Set B}
+  [ChartedSpace HA' A'] {U : ι → Set B} {V : κ → Set B}
 
-/-- For a commutative group with `C^n` multiplication, the pointwise product of two `C^n` cocycles
-is a `C^n` cocycle. -/
 theorem IsContMDiffGroupCocycle.mul [ContMDiffMul IA n A] {c d : ι → ι → B → A}
     (hc : IsContMDiffGroupCocycle IB IA n U c) (hd : IsContMDiffGroupCocycle IB IA n U d) :
-    IsContMDiffGroupCocycle IB IA n U fun i j b ↦ c i j b * d i j b where
-  mul_eq i j k b hb := by rw [mul_mul_mul_comm, hc.mul_eq i j k b hb, hd.mul_eq i j k b hb]
-  contMDiffOn i j := (hc.contMDiffOn i j).mul (hd.contMDiffOn i j)
+    IsContMDiffGroupCocycle IB IA n U fun i j b ↦ c i j b * d i j b :=
+  ⟨fun i j k b hb ↦ by rw [mul_mul_mul_comm, hc.mul_eq i j k b hb, hd.mul_eq i j k b hb],
+    fun i j ↦ (hc.contMDiffOn i j).mul (hd.contMDiffOn i j)⟩
 
-/-- For a commutative `C^n` Lie group, the pointwise inverse of a `C^n` cocycle is a `C^n`
-cocycle. -/
 theorem IsContMDiffGroupCocycle.inv [LieGroup IA n A] {c : ι → ι → B → A}
     (hc : IsContMDiffGroupCocycle IB IA n U c) :
     IsContMDiffGroupCocycle IB IA n U fun i j b ↦ (c i j b)⁻¹ :=
   hc.map invMonoidHom (contMDiff_inv IA n)
 
-/-- For a commutative `C^n` Lie group, the `k`-th pointwise power of a `C^n` cocycle is a `C^n`
-cocycle. -/
 theorem IsContMDiffGroupCocycle.zpow [LieGroup IA n A] {c : ι → ι → B → A}
     (hc : IsContMDiffGroupCocycle IB IA n U c) (k : ℤ) :
     IsContMDiffGroupCocycle IB IA n U fun i j b ↦ c i j b ^ k :=
   hc.map (zpowGroupHom k) (contMDiff_zpow k)
 
-/-- For a commutative group with `C^n` multiplication, pointwise multiplication preserves
-`C^n`-cohomologous families. -/
 theorem IsContMDiffCohomologous.mul [ContMDiffMul IA n A] {c c' d d' : ι → ι → B → A}
     (hc : IsContMDiffCohomologous IB IA n U c c') (hd : IsContMDiffCohomologous IB IA n U d d') :
     IsContMDiffCohomologous IB IA n U (fun i j b ↦ c i j b * d i j b)
       fun i j b ↦ c' i j b * d' i j b := by
-  obtain ⟨h, hh, hcc'⟩ := hc
-  obtain ⟨k, hk, hdd'⟩ := hd
-  refine ⟨fun i b ↦ h i b * k i b, fun i ↦ (hh i).mul (hk i), fun i j b hb ↦ ?_⟩
-  dsimp only
-  rw [hcc' i j b hb, hdd' i j b hb]
-  simp only [mul_inv_rev, mul_assoc, mul_left_comm, mul_comm]
+  obtain ⟨h, hh, hcc'⟩ := hc; obtain ⟨k, hk, hdd'⟩ := hd
+  exact ⟨fun i b ↦ h i b * k i b, fun i ↦ (hh i).mul (hk i), fun i j b hb ↦ by
+    simp only [hcc' i j b hb, hdd' i j b hb, mul_inv_rev, mul_assoc, mul_left_comm, mul_comm]⟩
 
-/-- For a commutative `C^n` Lie group, pointwise inversion preserves `C^n`-cohomologous families. -/
 theorem IsContMDiffCohomologous.inv [LieGroup IA n A] {c c' : ι → ι → B → A}
     (hc : IsContMDiffCohomologous IB IA n U c c') :
     IsContMDiffCohomologous IB IA n U (fun i j b ↦ (c i j b)⁻¹) fun i j b ↦ (c' i j b)⁻¹ :=
@@ -451,124 +422,79 @@ namespace NonabelianCechH1
 
 variable [LieGroup IA n A]
 
-/-- When the coefficient Lie group `A` is commutative, pointwise multiplication and inversion of
-cocycles equip `NonabelianCechH1 IB IA n A U` with a `CommGroup` structure whose identity is its
-base point `1`. -/
+/-- When `A` is commutative, pointwise multiplication and inversion of cocycles equip
+`NonabelianCechH1 IB IA n A U` with a `CommGroup` structure extending `1`. -/
 instance instCommGroup : CommGroup (NonabelianCechH1 IB IA n A U) where
   mul x y :=
-    lift (fun c hc ↦
-      lift (fun d hd ↦ mk (fun i j b ↦ c i j b * d i j b) (hc.mul hd))
+    lift (fun c hc ↦ lift (fun d hd ↦ mk (fun i j b ↦ c i j b * d i j b) (hc.mul hd))
         (fun _ _ _ _ hd ↦ mk_eq_mk_iff.2 ((IsContMDiffCohomologous.refl c).mul hd)) y)
       (fun _ _ _ _ hc ↦ by
-        induction y using ind with | mk d hd =>
-        exact mk_eq_mk_iff.2 (hc.mul (.refl d))) x
+        induction y using ind with | mk d _ => exact mk_eq_mk_iff.2 (hc.mul (.refl d))) x
   one := 1
   inv := map invMonoidHom (contMDiff_inv IA n)
-  mul_assoc x y z := by
-    induction x using ind with | mk c hc =>
-    induction y using ind with | mk d hd =>
-    induction z using ind with | mk e he =>
-    exact mk_eq_mk_iff.2 (IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ mul_assoc _ _ _)
-  one_mul x := by
-    induction x using ind with | mk c hc =>
-    exact mk_eq_mk_iff.2 (IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ one_mul _)
-  mul_one x := by
-    induction x using ind with | mk c hc =>
-    exact mk_eq_mk_iff.2 (IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ mul_one _)
-  inv_mul_cancel x := by
-    induction x using ind with | mk c hc =>
-    exact mk_eq_mk_iff.2 (IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ inv_mul_cancel _)
-  mul_comm x y := by
-    induction x using ind with | mk c hc =>
-    induction y using ind with | mk d hd =>
-    exact mk_eq_mk_iff.2 (IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ mul_comm _ _)
+  mul_assoc x y z := by exact ind (fun _ _ ↦ ind (fun _ _ ↦ ind (fun _ _ ↦
+    mk_eq_mk_iff.2 (.of_eqOn fun _ _ _ _ ↦ mul_assoc _ _ _)) z) y) x
+  one_mul := by exact ind fun _ _ ↦ mk_eq_mk_iff.2 (.of_eqOn fun _ _ _ _ ↦ one_mul _)
+  mul_one := by exact ind fun _ _ ↦ mk_eq_mk_iff.2 (.of_eqOn fun _ _ _ _ ↦ mul_one _)
+  inv_mul_cancel := by exact ind fun _ _ ↦ mk_eq_mk_iff.2 (.of_eqOn fun _ _ _ _ ↦ inv_mul_cancel _)
+  mul_comm x y := by exact ind (fun _ _ ↦ ind (fun _ _ ↦
+    mk_eq_mk_iff.2 (.of_eqOn fun _ _ _ _ ↦ mul_comm _ _)) y) x
 
-@[simp]
-theorem mk_mul_mk (c d : ι → ι → B → A) (hc : IsContMDiffGroupCocycle IB IA n U c)
+@[simp] theorem mk_mul_mk (c d : ι → ι → B → A) (hc : IsContMDiffGroupCocycle IB IA n U c)
     (hd : IsContMDiffGroupCocycle IB IA n U d) :
-    mk c hc * mk d hd = mk (fun i j b ↦ c i j b * d i j b) (hc.mul hd) :=
-  (rfl)
+    mk c hc * mk d hd = mk (fun i j b ↦ c i j b * d i j b) (hc.mul hd) := (rfl)
 
-@[simp]
-theorem inv_mk (c : ι → ι → B → A) (hc : IsContMDiffGroupCocycle IB IA n U c) :
-    (mk c hc)⁻¹ = mk (fun i j b ↦ (c i j b)⁻¹) hc.inv :=
-  (rfl)
+@[simp] theorem inv_mk (c : ι → ι → B → A) (hc : IsContMDiffGroupCocycle IB IA n U c) :
+    (mk c hc)⁻¹ = mk (fun i j b ↦ (c i j b)⁻¹) hc.inv := (rfl)
 
-@[simp]
-theorem zpow_mk (c : ι → ι → B → A) (hc : IsContMDiffGroupCocycle IB IA n U c) (k : ℤ) :
+@[simp] theorem zpow_mk (c : ι → ι → B → A) (hc : IsContMDiffGroupCocycle IB IA n U c) (k : ℤ) :
     mk c hc ^ k = mk (fun i j b ↦ c i j b ^ k) (hc.zpow k) := by
-  have hnat : ∀ m : ℕ, mk c hc ^ (m : ℤ) = mk (fun i j b ↦ c i j b ^ (m : ℤ)) (hc.zpow m) := by
-    intro m
+  have hnat (m : ℕ) : mk c hc ^ (m : ℤ) = mk (fun i j b ↦ c i j b ^ (m : ℤ)) (hc.zpow m) := by
     induction m with
-    | zero =>
-      exact mk_eq_mk_iff.2 (IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ (zpow_zero _).symm)
+    | zero => exact mk_eq_mk_iff.2 (.of_eqOn fun _ _ _ _ ↦ (zpow_zero _).symm)
     | succ m ih =>
       rw [Nat.cast_succ, zpow_add_one, ih, mk_mul_mk]
-      exact mk_eq_mk_iff.2 (IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ (zpow_add_one _ _).symm)
+      exact mk_eq_mk_iff.2 (.of_eqOn fun _ _ _ _ ↦ (zpow_add_one _ _).symm)
   cases k with
   | ofNat m => exact hnat m
   | negSucc m =>
     rw [zpow_negSucc, ← zpow_natCast, hnat (m + 1), inv_mk]
-    exact mk_eq_mk_iff.2 (IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ by
-      rw [zpow_negSucc, zpow_natCast])
+    exact mk_eq_mk_iff.2 (.of_eqOn fun _ _ _ _ ↦ by rw [zpow_negSucc, zpow_natCast])
 
-/-- Pushforward along a `C^n` homomorphism between commutative Lie groups is a group homomorphism
-on Čech `H¹`. -/
+/-- Pushforward along a `C^n` homomorphism of commutative Lie groups is a group homomorphism. -/
 def mapMonoidHom [LieGroup IA' n A'] (ρ : A →* A') (hρ : ContMDiff IA IA' n ρ) :
     NonabelianCechH1 IB IA n A U →* NonabelianCechH1 IB IA' n A' U where
   toFun := map ρ hρ
   map_one' := map_one ρ hρ
-  map_mul' x y := by
-    induction x using ind with | mk c hc =>
-    induction y using ind with | mk d hd =>
-    rw [mk_mul_mk, map_mk, map_mk, map_mk, mk_mul_mk]
-    exact mk_eq_mk_iff.2 (IsContMDiffCohomologous.of_eqOn fun _ _ _ _ ↦ map_mul ρ _ _)
+  map_mul' := by exact ind fun _ _ ↦ ind fun _ _ ↦
+    mk_eq_mk_iff.2 (.of_eqOn fun _ _ _ _ ↦ map_mul ρ _ _)
 
-@[simp]
-theorem coe_mapMonoidHom [LieGroup IA' n A'] (ρ : A →* A') (hρ : ContMDiff IA IA' n ρ) :
+@[simp] theorem coe_mapMonoidHom [LieGroup IA' n A'] (ρ : A →* A') (hρ : ContMDiff IA IA' n ρ) :
     ⇑(mapMonoidHom ρ hρ : NonabelianCechH1 IB IA n A U →* NonabelianCechH1 IB IA' n A' U) =
-      map ρ hρ :=
-  (rfl)
+      map ρ hρ := (rfl)
 
-/-- For commutative Lie groups, pushforward along `invMonoidHom` is inversion in Čech `H¹`. -/
-@[simp]
-theorem map_invMonoidHom (x : NonabelianCechH1 IB IA n A U) :
-    map (invMonoidHom : A →* A) (contMDiff_inv IA n) x = x⁻¹ :=
-  (rfl)
+@[simp] theorem map_invMonoidHom (x : NonabelianCechH1 IB IA n A U) :
+    map (invMonoidHom : A →* A) (contMDiff_inv IA n) x = x⁻¹ := (rfl)
 
-/-- For commutative Lie groups, pushforward along `zpowGroupHom k` is the `k`-th power in
-Čech `H¹`. -/
-@[simp]
-theorem map_zpowGroupHom (k : ℤ) (x : NonabelianCechH1 IB IA n A U) :
+@[simp] theorem map_zpowGroupHom (k : ℤ) (x : NonabelianCechH1 IB IA n A U) :
     map (zpowGroupHom k : A →* A) (contMDiff_zpow k) x = x ^ k :=
   ind (fun c hc ↦ (zpow_mk c hc k).symm) x
 
-/-- For a commutative Lie group `A`, pushing a paired `(A × A)`-cocycle `(c, d)` forward along the
-multiplication homomorphism `mulMonoidHom : A × A →* A` yields the product `mk c hc * mk d hd` in
-Čech `H¹`. -/
-@[simp]
-theorem map_mulMonoidHom_mk (c d : ι → ι → B → A) (hc : IsContMDiffGroupCocycle IB IA n U c)
+@[simp] theorem map_mulMonoidHom_mk (c d : ι → ι → B → A) (hc : IsContMDiffGroupCocycle IB IA n U c)
     (hd : IsContMDiffGroupCocycle IB IA n U d) :
     map (mulMonoidHom : A × A →* A) (contMDiff_mul IA n)
-        (mk (fun i j b ↦ (c i j b, d i j b)) (hc.prod hd)) =
-      mk c hc * mk d hd :=
-  (rfl)
+        (mk (fun i j b ↦ (c i j b, d i j b)) (hc.prod hd)) = mk c hc * mk d hd := (rfl)
 
 /-- For a commutative Lie group, the cover refinement map is a group homomorphism on Čech `H¹`. -/
 def refineMonoidHom (τ : κ → ι) (hτ : ∀ k, V k ⊆ U (τ k)) :
     NonabelianCechH1 IB IA n A U →* NonabelianCechH1 IB IA n A V where
   toFun := refine τ hτ
   map_one' := refine_one τ hτ
-  map_mul' x y := by
-    induction x using ind with | mk c hc =>
-    induction y using ind with | mk d hd =>
-    exact (rfl)
+  map_mul' := by exact ind fun _ _ ↦ ind fun _ _ ↦ rfl
 
-@[simp]
-theorem coe_refineMonoidHom (τ : κ → ι) (hτ : ∀ k, V k ⊆ U (τ k)) :
+@[simp] theorem coe_refineMonoidHom (τ : κ → ι) (hτ : ∀ k, V k ⊆ U (τ k)) :
     ⇑(refineMonoidHom τ hτ : NonabelianCechH1 IB IA n A U →* NonabelianCechH1 IB IA n A V) =
-      refine τ hτ :=
-  (rfl)
+      refine τ hτ := (rfl)
 
 end NonabelianCechH1
 
