@@ -60,7 +60,9 @@ S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Norm
 (3) 18 (1964), 449–474, §1, for the definition of semianalytic sets.
 
 E. Bierstone and P. D. Milman, *Semianalytic and subanalytic sets*, Publications Mathématiques de
-l'IHÉS 67 (1988), 5–42, §2, for the normal form with a single equation in each conjunct.
+l'IHÉS 67 (1988), 5–42, §2, for the normal form as a union of intersections of sets `{f = 0}` and
+`{f > 0}`. The form with a single equation in each conjunct follows by replacing the equations of a
+conjunct by the sum of their squares.
 -/
 
 public section
