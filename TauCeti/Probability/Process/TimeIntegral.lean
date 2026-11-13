@@ -53,8 +53,9 @@ theorem IsStronglyProgressive.integral_Ioc_kernel (hH : IsStronglyProgressive F 
   let κ : Kernel Ω ι := ⟨fun ω ↦ (μ ω).restrict (Ioc a T), hμ T⟩
   have : IsSFiniteKernel κ := hκ T
   let η : Kernel (Iic T × Ω) ι := κ.prodMkLeft (Iic T)
-  have hG : StronglyMeasurable (fun p : (Iic T × Ω) × ι ↦
-      (Iic (p.1.1 : ι)).indicator (fun s ↦ H (min s T) p.1.2) p.2) := by
+  have hG : StronglyMeasurable
+      ({p : (Iic T × Ω) × ι | p.2 ≤ (p.1.1 : ι)}.indicator
+        (fun p ↦ H (min p.2 T) p.1.2)) := by
     have hinput : Measurable (fun p : (Iic T × Ω) × ι ↦
         (⟨min p.2 T, min_le_right _ _⟩, p.1.2) : (Iic T × Ω) × ι → Iic T × Ω) :=
       ((measurable_snd.min measurable_const).subtype_mk).prodMk measurable_fst.snd
@@ -64,6 +65,12 @@ theorem IsStronglyProgressive.integral_Ioc_kernel (hH : IsStronglyProgressive F 
   convert hm using 1
   ext p
   simp only [η, Kernel.prodMkLeft_apply, κ, Kernel.coe_mk]
+  have heq (s : ι) :
+      {p : (Iic T × Ω) × ι | p.2 ≤ (p.1.1 : ι)}.indicator
+          (fun p ↦ H (min p.2 T) p.1.2) (p, s) =
+        (Iic (p.1 : ι)).indicator (fun s ↦ H (min s T) p.2) s :=
+    Set.indicator_eq_indicator (by simp) rfl
+  simp_rw [heq]
   rw [integral_indicator measurableSet_Iic, Measure.restrict_restrict measurableSet_Iic,
     Iic_inter_Ioc_of_le p.1.prop]
   exact setIntegral_congr_fun measurableSet_Ioc fun s hs ↦ by
@@ -73,8 +80,14 @@ theorem IsStronglyProgressive.integral_Ioc_kernel (hH : IsStronglyProgressive F 
 No pathwise or expected integrability is required for this measurability assertion. -/
 theorem IsStronglyProgressive.integral_Ioc (hH : IsStronglyProgressive F H)
     (μ : Measure ι) [SFinite μ] (a : ι) :
-    IsStronglyProgressive F (fun t ω => ∫ s in Ioc a t, H s ω ∂μ) :=
-  hH.integral_Ioc_kernel (fun _ ↦ μ) a (fun _ ↦ measurable_const)
-    (fun _ ↦ Kernel.const.instIsSFiniteKernel)
+    IsStronglyProgressive F (fun t ω => ∫ s in Ioc a t, H s ω ∂μ) := by
+  refine hH.integral_Ioc_kernel (fun _ ↦ μ) a (fun _ ↦ measurable_const) fun T ↦ ?_
+  let : MeasurableSpace Ω := F T
+  have heq : (⟨fun _ ↦ μ.restrict (Ioc a T), measurable_const⟩ : Kernel Ω ι) =
+      Kernel.const Ω (μ.restrict (Ioc a T)) := by
+    ext
+    simp
+  rw [heq]
+  infer_instance
 
 end MeasureTheory

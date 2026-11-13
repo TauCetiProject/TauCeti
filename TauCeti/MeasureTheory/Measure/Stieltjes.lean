@@ -96,23 +96,25 @@ theorem nullSingletonClass_measure_of_continuous (f : StieltjesFunction R)
     rw [f.measure_singleton, hf.continuousAt.continuousWithinAt.leftLim_eq, sub_self,
       ENNReal.ofReal_zero]⟩
 
-/-- Integration of a locally integrable Banach-valued function against a continuous
-Stieltjes function has a continuous accumulated integral. No bound on the total mass or
-integrability beyond each finite horizon is required. -/
+/-- Integration of a locally integrable Banach-valued function against a Stieltjes function
+continuous on `(a,∞)` has a continuous accumulated integral. Jumps at or before `a` are allowed;
+no bound on the total mass or integrability beyond each finite horizon is required. -/
 theorem continuous_setIntegral_Ioc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (f : StieltjesFunction R) (hf : Continuous f) {H : R → E} (a : R)
+    (f : StieltjesFunction R) (a : R) (hf : ContinuousOn f (Ioi a)) {H : R → E}
     (hH : ∀ T, IntegrableOn H (Ioc a T) f.measure) :
     Continuous (fun t ↦ ∫ u in Ioc a t, H u ∂f.measure) := by
-  have := f.nullSingletonClass_measure_of_continuous hf
-  refine continuous_iff_continuousAt.2 fun t ↦ ?_
-  by_cases ht : ∃ T, t < T
-  · obtain ⟨T, ht⟩ := ht
-    exact ((hH T).continuousOn_integral_Ioc t ht.le).continuousAt (Iic_mem_nhds ht)
-  · have htop : Iic t = univ := by
-      ext u
-      simp only [mem_Iic, mem_univ, iff_true]
-      exact le_of_not_gt (fun hu ↦ ht ⟨u, hu⟩)
-    exact ((hH t).continuousOn_integral_Ioc t le_rfl).continuousAt (by rw [htop]; exact univ_mem)
+  have : NullSingletonClass (f.measure.restrict (Ioi a)) := ⟨fun t ↦ by
+    rw [Measure.restrict_apply (measurableSet_singleton t)]
+    by_cases ht : t ∈ Ioi a
+    · rw [singleton_inter_of_mem ht, f.measure_singleton,
+        (isOpen_Ioi.continuousOn_iff.mp hf ht).continuousWithinAt.leftLim_eq,
+        sub_self, ENNReal.ofReal_zero]
+    · rw [singleton_inter_of_notMem ht, measure_empty]⟩
+  have hi : ∀ T, IntegrableOn H (Ioc a T) (f.measure.restrict (Ioi a)) := by
+    intro T
+    simpa only [IntegrableOn, Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self] using hH T
+  simpa only [Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self] using
+    MeasureTheory.continuous_integral_Ioc hi
 
 /-- The Stieltjes measure restricted to `(a,b]` is a measurable family if evaluations inside
 `[a,b]` are measurable. No uniform bound on the random interval mass is required. -/

@@ -17,7 +17,7 @@ right-continuous process preserves strong progressivity on the original filtrati
 The assertion concerns ordinary pathwise Bochner integrals, including their zero value
 for nonintegrable sections; it requires no moment bounds or usual conditions.
 
-When the increasing paths are continuous and the integrand is pathwise locally integrable,
+When the increasing paths are continuous after `a` and the integrand is pathwise locally integrable,
 the accumulated integral has continuous paths. For almost-sure hypotheses, a predictable
 indistinguishable representative is selected on the raw filtration. This gives measurable
 continuous finite-variation terms for stochastic change-of-variables formulas without
@@ -25,7 +25,7 @@ requiring the signed integrand to be nonnegative or continuous.
 
 The increasing paths are supplied as native `StieltjesFunction`s. The interval `(a,t]`
 excludes an initial atom and retains terminal jumps. Continuity of the integral requires
-continuity of the integrator; the progressivity result permits jumps.
+continuity of the integrator only on `(a,∞)`; the progressivity result permits jumps everywhere.
 
 ## References
 
@@ -67,23 +67,23 @@ variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {P : Measure Ω} {f : Ω → StieltjesFunction ℝ≥0} {H : ℝ≥0 → Ω → E}
 
-/-- With everywhere-continuous increasing paths and pathwise local integrability, the
+/-- With every increasing path continuous after `a` and pathwise local integrability, the
 actual accumulated Stieltjes integral is predictable on the original filtration. -/
 theorem isStronglyPredictable_setIntegral_stieltjesFunction
     (hH : IsStronglyProgressive ℱ H) (hf : Adapted ℱ (fun t ω ↦ f ω t))
-    (hc : ∀ ω, Continuous (f ω)) (a : ℝ≥0)
+    (a : ℝ≥0) (hc : ∀ ω, ContinuousOn (f ω) (Ioi a))
     (hi : ∀ ω T, IntegrableOn (H · ω) (Ioc a T) (f ω).measure) :
     IsStronglyPredictable ℱ (fun t ω ↦ ∫ u in Ioc a t, H u ω ∂(f ω).measure) := by
   exact (hH.setIntegral_stieltjesFunction hf a).stronglyAdapted.isStronglyPredictable_of_continuous
-    (fun ω ↦ (f ω).continuous_setIntegral_Ioc (hc ω) a (hi ω))
+    (fun ω ↦ (f ω).continuous_setIntegral_Ioc a (hc ω) (hi ω))
 
-/-- Under almost-sure continuity and pathwise local integrability, an accumulated Stieltjes
-integral admits a predictable, almost-surely continuous indistinguishable representative.
+/-- Under almost-sure continuity after `a` and pathwise local integrability, an accumulated
+Stieltjes integral admits a predictable, almost-surely continuous indistinguishable representative.
 No completeness, right continuity, or moment hypothesis is imposed on the raw basis. -/
 theorem exists_isStronglyPredictable_setIntegral_stieltjesFunction
     [IsCompletelyMetrizableSpace E]
     (hH : IsStronglyProgressive ℱ H) (hf : Adapted ℱ (fun t ω ↦ f ω t))
-    (hc : ∀ᵐ ω ∂P, Continuous (f ω)) (a : ℝ≥0)
+    (a : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (f ω) (Ioi a))
     (hi : ∀ᵐ ω ∂P, ∀ T, IntegrableOn (H · ω) (Ioc a T) (f ω).measure) :
     ∃ I : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ I ∧
       (∀ᵐ ω ∂P, Continuous (I · ω)) ∧
@@ -91,13 +91,8 @@ theorem exists_isStronglyPredictable_setIntegral_stieltjesFunction
   have hcont : ∀ᵐ ω ∂P,
       Continuous (fun t ↦ ∫ u in Ioc a t, H u ω ∂(f ω).measure) := by
     filter_upwards [hc, hi] with ω hc hi
-    exact (f ω).continuous_setIntegral_Ioc hc a hi
-  have ha := (hH.setIntegral_stieltjesFunction hf a).stronglyAdapted
-  obtain ⟨I, hI, heq⟩ :=
-    ha.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
-      (hcont.mono fun _ h ↦ h.isLeftContinuous)
-  refine ⟨I, hI, ?_, heq⟩
-  filter_upwards [hcont, heq] with ω hω heqω
-  exact hω.congr (fun t ↦ (heqω t).symm)
+    exact (f ω).continuous_setIntegral_Ioc a hc hi
+  exact StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_continuous
+    (hH.setIntegral_stieltjesFunction hf a).stronglyAdapted hcont
 
 end MeasureTheory.IsStronglyProgressive
