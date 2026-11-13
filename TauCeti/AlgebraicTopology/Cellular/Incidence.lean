@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.DirectSum.Finsupp
 public import Mathlib.LinearAlgebra.Basis.Defs
-public import TauCeti.Algebra.Category.ModuleCat.Products
 
 /-!
 # Cellular incidence coefficients
@@ -62,15 +61,17 @@ open scoped Classical in
 of its characteristic disk pair. -/
 def cellularChainBasis (n : ℕ) :
     Module.Basis (cell C n) R (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R) :=
-  .ofRepr ((cellularChainGroupIso C (ModuleCat.of R R) n).toLinearEquiv.trans
-    (coprodLinearEquivFinsupp (ModuleCat.of R R) (cell C n)))
+  .ofRepr ((cellularChainGroupIso C (ModuleCat.of R R) n ≪≫
+    ModuleCat.coprodIsoDirectSum _).toLinearEquiv.trans
+      (finsuppLEquivDirectSum R R (cell C n)).symm)
 
 open scoped Classical in
 /-- The cellular basis coordinates are the coproduct coordinates of the characteristic cells. -/
 lemma cellularChainBasis_repr (n : ℕ) :
     (cellularChainBasis C R n).repr =
-      (cellularChainGroupIso C (ModuleCat.of R R) n).toLinearEquiv.trans
-        (coprodLinearEquivFinsupp (ModuleCat.of R R) (cell C n)) := (rfl)
+      (cellularChainGroupIso C (ModuleCat.of R R) n ≪≫
+        ModuleCat.coprodIsoDirectSum _).toLinearEquiv.trans
+          (finsuppLEquivDirectSum R R (cell C n)).symm := (rfl)
 
 /-- A cellular basis vector is the image of `1` in its cell's coproduct summand. -/
 @[simp]
@@ -81,8 +82,11 @@ lemma cellularChainBasis_apply (n : ℕ) (j : cell C n) :
   classical
   apply (cellularChainBasis C R n).repr.injective
   rw [Module.Basis.repr_self, cellularChainBasis_repr]
-  rw [LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, Iso.inv_hom_id_apply,
-    coprodLinearEquivFinsupp_ι_apply]
+  rw [LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, Iso.trans_hom,
+    ModuleCat.comp_apply]
+  simp only [Iso.inv_hom_id_apply,
+    ModuleCat.ι_coprodIsoDirectSum_hom_apply (fun _ : cell C n ↦ ModuleCat.of R R) j,
+    finsuppLEquivDirectSum_symm_lof]
 
 /-- The boundary column of an `(n + 1)`-cell, with finite support on the `n`-cells. -/
 def cellularBoundaryColumn (n : ℕ) (j : cell C (n + 1)) : cell C n →₀ R :=

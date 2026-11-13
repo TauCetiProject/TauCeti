@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Products
 
 /-!
 # Simplicial chains with varying coefficients
@@ -36,9 +35,9 @@ along a linear map applies it to the coefficient functions
 
 ## Implementation notes
 
-The equivalence `SSet.chainsLinearEquivFinsupp` is the identification of a coproduct of copies of
-a module in `ModuleCat` with finitely supported functions (`TauCeti.coprodLinearEquivFinsupp`),
-through Mathlib's `ModuleCat.coprodIsoDirectSum` and `finsuppLEquivDirectSum`. The simplicial chain
+The equivalence `SSet.chainsLinearEquivFinsupp` composes Mathlib's identification of a coproduct
+in `ModuleCat` with a direct sum (`ModuleCat.coprodIsoDirectSum`) with the equivalence between
+direct sums and finitely supported functions (`finsuppLEquivDirectSum`). The simplicial chain
 complex and its description as a coproduct come from Mathlib's
 `Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic` (Joël Riou and Andrew Yang).
 -/
@@ -144,7 +143,8 @@ equivalence sending the chain of a simplex `σ` with coefficient `v` to the func
 `σ` with value `v`. -/
 def chainsLinearEquivFinsupp :
     (X.chainComplex (ModuleCat.of k V)).X n ≃ₗ[k] (X _⦋n⦌ →₀ V) :=
-  TauCeti.coprodLinearEquivFinsupp (ModuleCat.of k V) (X _⦋n⦌)
+  (ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ ModuleCat.of k V).toLinearEquiv.trans
+    (finsuppLEquivDirectSum k V (X _⦋n⦌)).symm
 
 /-- The chain of a simplex `σ` with coefficient `v` is the function supported at `σ` with value
 `v`. -/
@@ -152,8 +152,8 @@ def chainsLinearEquivFinsupp :
 theorem chainsLinearEquivFinsupp_ιChainComplex (σ : X _⦋n⦌) (v : V) :
     X.chainsLinearEquivFinsupp V n (X.ιChainComplex (R := ModuleCat.of k V) σ v) =
       Finsupp.single σ v := by
-  classical
-  rw [chainsLinearEquivFinsupp, ιChainComplex, TauCeti.coprodLinearEquivFinsupp_ι_apply]
+  rw [chainsLinearEquivFinsupp, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, ιChainComplex,
+    ModuleCat.ι_coprodIsoDirectSum_hom_apply, finsuppLEquivDirectSum_symm_lof]
 
 /-- The function supported at a simplex `σ` with value `v` is the chain of `σ` with coefficient
 `v`. -/
