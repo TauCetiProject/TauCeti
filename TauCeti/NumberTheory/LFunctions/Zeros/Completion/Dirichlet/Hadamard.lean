@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 public import TauCeti.Analysis.Complex.Hadamard.OrderOne
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv
@@ -90,7 +91,7 @@ theorem summable_norm_dirichletData_entireCompletion_partialFraction (hne : χ �
   (dirichletData_entireCompletion_orderLE_one χ hχ
     hne).summable_norm_divisor_mul_one_div_sub_add_one_div
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ hne) hs
+    (dirichletData_entireCompletion_zero_ne_zero χ hχ hne) (by norm_num) hs
 
 /-- The partial-fraction series of a nonprincipal primitive Dirichlet entire completion converges
 locally uniformly off its zeros to `Λ₀'/Λ₀ - B(χ)`. -/
