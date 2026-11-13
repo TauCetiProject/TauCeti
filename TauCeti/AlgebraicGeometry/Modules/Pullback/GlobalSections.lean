@@ -30,7 +30,8 @@ Through the extension/restriction-of-scalars adjunction, a morphism `φ^* N ⟶ 
 `Spec S` gives an `R`-linear map of global sections `Γ(N) ⟶ Γ(N')`
 (`moduleSpecΓPullbackAdjoint`); when `N` is quasicoherent, a square of such morphisms commutes
 exactly when the induced square of global sections does
-(`moduleSpecΓPullbackAdjoint_naturality_iff`).
+(`moduleSpecΓPullbackAdjoint_naturality_iff`), also after further restriction of scalars along a
+ring map into `R` (`restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff`).
 
 The construction uses `tildeFunctorCompPullbackIso`, the tilde/global-sections adjunction,
 and the extension/restriction-of-scalars adjunction. The characteristic equation identifies
@@ -214,6 +215,25 @@ lemma moduleSpecΓPullbackAdjoint_naturality_iff {N₁ N₂ : (Spec R).Modules}
     _ ↔ moduleSpecΓFunctor.map (e₁ ≫ g') =
         moduleSpecΓFunctor.map ((pullback (Spec.map φ)).map g ≫ e₂) := cancel_epi _
     _ ↔ _ := (moduleSpecΓFunctor_map_bijective _ _).1.eq_iff.trans eq_comm
+
+/-- `moduleSpecΓPullbackAdjoint_naturality_iff` after further restriction of scalars along
+`f : A →+* R` and `f' = φ ∘ f`: the restricted square of global sections still commutes exactly
+when the square of module maps does. -/
+lemma restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff {A : Type u} [CommRing A]
+    (f : A →+* R) (f' : A →+* S) (hf : f' = φ.hom.comp f)
+    {N₁ N₂ : (Spec R).Modules} {N₁' N₂' : (Spec S).Modules} [hN₁ : N₁.IsQuasicoherent]
+    (e₁ : (pullback (Spec.map φ)).obj N₁ ⟶ N₁') (e₂ : (pullback (Spec.map φ)).obj N₂ ⟶ N₂')
+    (g : N₁ ⟶ N₂) (g' : N₁' ⟶ N₂') :
+    ((ModuleCat.restrictScalars f).map (moduleSpecΓPullbackAdjoint φ e₁) ≫
+          (ModuleCat.restrictScalarsComp'App f φ.hom f' hf _).inv) ≫
+          (ModuleCat.restrictScalars f').map (moduleSpecΓFunctor.map g') =
+        (ModuleCat.restrictScalars f).map (moduleSpecΓFunctor.map g) ≫
+          (ModuleCat.restrictScalars f).map (moduleSpecΓPullbackAdjoint φ e₂) ≫
+          (ModuleCat.restrictScalarsComp'App f φ.hom f' hf _).inv ↔
+      (pullback (Spec.map φ)).map g ≫ e₂ = e₁ ≫ g' := by
+  rw [Category.assoc, ← ModuleCat.restrictScalarsComp'App_inv_naturality, ← Functor.map_comp_assoc,
+    ← Functor.map_comp_assoc, cancel_mono, (ModuleCat.restrictScalars f).map_injective.eq_iff,
+    moduleSpecΓPullbackAdjoint_naturality_iff]
 
 variable {φ}
 

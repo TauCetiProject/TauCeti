@@ -64,25 +64,6 @@ namespace TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule
 
 noncomputable section
 
-/-- `moduleSpecΓPullbackAdjoint_naturality_iff` after further restriction of scalars along
-`f : A →+* S` and `f' = ψ ∘ f`: the restricted square of global sections still commutes exactly
-when the square of module maps does. -/
-private lemma restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff {A : Type u} [CommRing A]
-    {S T : CommRingCat.{u}} (ψ : S ⟶ T) (f : A →+* S) (f' : A →+* T) (hf : f' = ψ.hom.comp f)
-    {N₁ N₂ : (Spec S).Modules} {N₁' N₂' : (Spec T).Modules} [hN₁ : N₁.IsQuasicoherent]
-    (e₁ : (Scheme.Modules.pullback (Spec.map ψ)).obj N₁ ⟶ N₁')
-    (e₂ : (Scheme.Modules.pullback (Spec.map ψ)).obj N₂ ⟶ N₂') (g : N₁ ⟶ N₂) (g' : N₁' ⟶ N₂') :
-    ((ModuleCat.restrictScalars f).map (ψ.moduleSpecΓPullbackAdjoint e₁) ≫
-          (ModuleCat.restrictScalarsComp'App f ψ.hom f' hf _).inv) ≫
-          (ModuleCat.restrictScalars f').map (moduleSpecΓFunctor.map g') =
-        (ModuleCat.restrictScalars f).map (moduleSpecΓFunctor.map g) ≫
-          (ModuleCat.restrictScalars f).map (ψ.moduleSpecΓPullbackAdjoint e₂) ≫
-          (ModuleCat.restrictScalarsComp'App f ψ.hom f' hf _).inv ↔
-      (Scheme.Modules.pullback (Spec.map ψ)).map g ≫ e₂ = e₁ ≫ g' := by
-  rw [Category.assoc, ← ModuleCat.restrictScalarsComp'App_inv_naturality, ← Functor.map_comp_assoc,
-    ← Functor.map_comp_assoc, cancel_mono, (ModuleCat.restrictScalars f).map_injective.eq_iff,
-    ψ.moduleSpecΓPullbackAdjoint_naturality_iff]
-
 /-! ### The tower of global sections -/
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
@@ -110,7 +91,7 @@ def sectionsTower : CoherentFormalModule (spf I) ⥤ ModuleTower.{u} R where
     (fun n ↦ (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1)))).map
       (moduleSpecΓFunctor.map (f.app n))) fun n ↦ by
     rw [Functor.ofOpSequence_map_homOfLE_succ, Functor.ofOpSequence_map_homOfLE_succ]
-    exact (restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff _ _ _ _
+    exact (CommRingCat.Hom.restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff _ _ _ _
       (hN₁ := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj (n + 1)))
       (M.transitionIso n).hom (N.transitionIso n).hom (f.app (n + 1)) (f.app n)).2 (f.naturality n)
   -- `simp` cannot see through `NatTrans.ofOpSequence` here, whose components are only
@@ -219,7 +200,7 @@ instance : (sectionsTower I).Full where
     refine ⟨{ app := f, naturality := fun n ↦ ?_ }, NatTrans.ext (funext fun n ↦ hτ n.unop)⟩
     have h := τ.naturality (homOfLE (Nat.le_succ n)).op
     simp only [sectionsTower, Functor.ofOpSequence_map_homOfLE_succ, ← hτ] at h
-    exact (restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff _ _ _ _
+    exact (CommRingCat.Hom.restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff _ _ _ _
       (hN₁ := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj (n + 1)))
       (M.transitionIso n).hom (N.transitionIso n).hom (f (n + 1)) (f n)).1 h
 
