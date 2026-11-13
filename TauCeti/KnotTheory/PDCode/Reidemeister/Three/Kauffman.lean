@@ -115,15 +115,9 @@ private theorem localFactor_eq (side : Bool) (q : Fin 3 → Bool) :
   have hq : q = ![q 0, q 1, q 2] := by ext i; fin_cases i <;> simp
   rw [hq]
   generalize q 0 = x, q 1 = y, q 2 = z
-  have hf (p : Fin 3 × Fin 4) : reidemeisterThreeSlots p =
-      ![![(1, 0), (0, 2), (1, 2), (0, 0)],
-        ![(2, 0), (0, 1), (2, 2), (0, 3)],
-        ![(2, 3), (1, 1), (2, 1), (1, 3)]] p.1 p.2 :=
+  have hf (p : Fin 3 × Fin 4) : reidemeisterThreeSlots p = _ :=
     reidemeisterThreeSlots_apply p.1 p.2
-  have hi (p : Fin 3 × Fin 4) : reidemeisterThreeSlots⁻¹ p =
-      ![![(0, 3), (1, 1), (0, 1), (1, 3)],
-        ![(0, 0), (2, 1), (0, 2), (2, 3)],
-        ![(1, 0), (2, 2), (1, 2), (2, 0)]] p.1 p.2 :=
+  have hi (p : Fin 3 × Fin 4) : reidemeisterThreeSlots⁻¹ p = _ :=
     reidemeisterThreeSlots_symm_apply p.1 p.2
   cases side <;> cases x <;> cases y <;> cases z <;>
     apply Equiv.ext <;> intro p <;>
