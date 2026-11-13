@@ -143,8 +143,8 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
       rw [h0, eLpNormWkp_zero_fun]
       exact zero_le
     have hA₀ : ‖A‖ₑ ≠ 0 := by
-      rw [enorm_eq_nnnorm]; exact ENNReal.coe_ne_zero.2 (nnnorm_ne_zero_iff.2 hA)
-    have hA_top : ‖A‖ₑ ≠ ⊤ := enorm_ne_top
+      rw [eNorm_eq_nnNorm]; exact ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hA)
+    have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
     rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
     gcongr ?_ + ?_
     · exact MeasureTheory.eLpNorm_clm_comp_le A
@@ -156,6 +156,6 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
       gcongr
       have hle : ‖ContinuousLinearMap.compL ℝ ℂ F G A‖ ≤ ‖A‖ :=
         ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun B => A.opNorm_comp_le B
-      exact enorm_le_iff_norm_le.2 hle
+      exact eNorm_le_iff_norm_le.2 hle
 
 end TauCeti

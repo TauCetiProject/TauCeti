@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
+public import TauCeti.Topology.ConnectedComponents
 import TauCeti.Geometry.Manifold.Morse.Bott.Lemma
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Topology.Connected.Basic
@@ -61,7 +62,11 @@ Morse–Bott family of zero-dimensional pieces is Morse
 Morse function, each included as a point, form a Morse–Bott family
 (`TauCeti.IsMorse.exists_isMorseBottFamily`). At the other extreme, a constant function on a
 nonempty connected manifold without boundary is Morse–Bott with the whole manifold as its only
-critical submanifold (`TauCeti.isMorseBottFamily_const`).
+critical submanifold (`TauCeti.isMorseBottFamily_const`). Without connectedness, on a locally
+connected manifold without boundary, a constant function is Morse–Bott with one critical
+submanifold for each connected component, embedded as an open subset
+(`TauCeti.isMorseBottFamily_ofOpens_const`). Each of these pieces has full dimension, so its
+normal spaces are zero (`TauCeti.SmoothEmbedding.subsingleton_normalSpace_ofOpens`).
 
 ## References
 
@@ -355,5 +360,44 @@ theorem isMorseBottFamily_const [IsManifold I n M] [BoundarylessManifold I M] [C
       PreconnectedSpace.connectedComponent_eq_univ]
   · rw [hcrit]
     exact subset_iUnion_of_subset () hrange.ge
+
+/-- **A constant function is Morse–Bott, with one piece for each connected component.** On a
+locally connected manifold without boundary, the inclusions of the connected components, each an
+open subset, exhibit a constant function as a Morse–Bott function. Every point is critical, so the
+critical set is the whole manifold and its connected components are those of the manifold. No
+compactness or connectedness is assumed. -/
+theorem isMorseBottFamily_ofOpens_const [IsManifold I n M] [BoundarylessManifold I M]
+    [LocallyConnectedSpace M] (hn : n ≠ 0) (c : ℝ) :
+    IsMorseBottFamily
+      (fun C : ConnectedComponents M ↦ SmoothEmbedding.ofOpens (I := I) (n := n) C.opens)
+      (fun _ ↦ c) := by
+  have hcrit : criticalPoints I (fun _ : M ↦ c) = univ :=
+    eq_univ_of_forall fun _ ↦ mem_criticalPoints.2 (mvfderiv_const c)
+  have hrange (C : ConnectedComponents M) :
+      range (SmoothEmbedding.ofOpens (I := I) (n := n) C.opens) = C.opens := by
+    rw [SmoothEmbedding.coe_ofOpens, Subtype.range_coe]
+  have hmem (x : M) : x ∈ ((ConnectedComponents.mk x).opens : Set M) :=
+    ConnectedComponents.mem_opens.2 rfl
+  refine ⟨contMDiff_const,
+    fun C ↦ SmoothEmbedding.isNondegenerateCriticalSubmanifold_ofOpens_const hn C.opens c,
+    fun C ↦ ?_, fun _ ↦ inferInstance, fun C x ↦ ?_, fun C D h ↦ ?_, ?_, fun x ↦ ?_⟩
+  · obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
+    exact ⟨⟨x, hmem x⟩⟩
+  · have hx : ConnectedComponents.mk (x : M) = C := ConnectedComponents.mem_opens.1 x.2
+    rw [hrange, hcrit, connectedComponentIn_univ, SmoothEmbedding.ofOpens_apply,
+      ← ConnectedComponents.coe_opens_mk, hx]
+  · -- A component is recovered from any of its points.
+    obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
+    have h' : ((ConnectedComponents.mk x).opens : Set M) = D.opens := by
+      simpa only [hrange] using h
+    have hx : x ∈ (D.opens : Set M) := h' ▸ hmem x
+    exact ConnectedComponents.mem_opens.1 hx
+  · rw [hcrit]
+    exact fun x _ ↦ mem_iUnion.2 ⟨ConnectedComponents.mk x, by rw [hrange]; exact hmem x⟩
+  · -- The component of `x` is a neighbourhood of `x` meeting no other component.
+    refine ⟨_, (ConnectedComponents.mk x).opens.isOpen.mem_nhds (hmem x),
+      (finite_singleton (ConnectedComponents.mk x)).subset fun C ⟨y, hyC, hyx⟩ ↦ ?_⟩
+    simp only [hrange, SetLike.mem_coe, ConnectedComponents.mem_opens] at hyC hyx
+    exact hyC.symm.trans hyx
 
 end TauCeti

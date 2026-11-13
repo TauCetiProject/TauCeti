@@ -405,10 +405,9 @@ private lemma truncated_integral_spec_arc (hH : 1 < H) (hnorm : ‖w‖ = 1)
       -(Real.pi : ℂ) * Complex.I - ((2 * Real.arcsin (ε / 2) : ℝ) : ℂ) * Complex.I := by
   obtain ⟨hδ0, hδl, hδr, h2sin⟩ := arcExcisionHalfWidth_spec ht₀ hε hεl hεr
   set δ := fdBoundaryArcExcisionHalfWidth ε with hδ_def
-  have hw0 : w ≠ 0 := fun h ↦ by rw [h, norm_zero] at hnorm; norm_num at hnorm
   obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := w⁻¹)
-    (inv_ne_zero hw0) (by linarith [ht₀.1]) hδ0 (by linarith [ht₀.2])
-    (fun t ht htw ↦ slit_branch_arc hH hnorm him (fdBoundary_ne_arc hH hre ht₀ hw
+    (by linarith [ht₀.1]) hδ0 (by linarith [ht₀.2])
+    (fun t _ htw ↦ slit_branch_arc hH hnorm him (fdBoundary_ne_arc hH hre ht₀ hw
       fun h ↦ htw (by rw [h]; exact ⟨by linarith, by linarith⟩)))
     (fun s hs ↦ lt_norm_sub_arc_of_far_left ht₀ hw hδ0 h2sin hε₁ hs)
     (fun s hs ↦ lt_norm_sub_arc_of_far_right ht₀ hw hδ0 h2sin hε₂ hεc hs)
