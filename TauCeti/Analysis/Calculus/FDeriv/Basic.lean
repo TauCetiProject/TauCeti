@@ -21,6 +21,8 @@ scalar functions recover both functions as differentiable.
 
 * `TauCeti.differentiableAt_of_fderiv_ne_zero`: a function is differentiable wherever its
   derivative does not vanish.
+* `TauCeti.differentiableAt_of_fderiv_surjective`: a function is differentiable wherever its
+  derivative is surjective.
 * `TauCeti.differentiableAt_and_of_differentiableAt_comb`: if two combinations `a F + b G` and
   `c F + d G` with `a d - b c ≠ 0` are differentiable at a point, so are `F` and `G`.
 -/
@@ -36,6 +38,16 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
 theorem differentiableAt_of_fderiv_ne_zero (h : fderiv 𝕜 f x ≠ 0) : DifferentiableAt 𝕜 f x := by
   by_contra hnd
   exact h (fderiv_zero_of_not_differentiableAt hnd)
+
+/-- A function is differentiable wherever its totalized derivative is surjective. -/
+theorem differentiableAt_of_fderiv_surjective (h : Function.Surjective (fderiv 𝕜 f x)) :
+    DifferentiableAt 𝕜 f x := by
+  rcases subsingleton_or_nontrivial F with hF | hF
+  · exact Subsingleton.elim (fun _ ↦ f x) f ▸ differentiableAt_const (f x)
+  contrapose h
+  rw [fderiv_zero_of_not_differentiableAt h]
+  obtain ⟨v, hv⟩ := exists_ne (0 : F)
+  exact fun hs ↦ hv (by simpa using (hs v).choose_spec.symm)
 
 /-- If two combinations `a F + b G` and `c F + d G` with `a d - b c ≠ 0` are differentiable at a
 point, then so are `F` and `G`: they are recovered by inverting the coefficient matrix. -/

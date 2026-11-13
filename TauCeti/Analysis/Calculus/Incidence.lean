@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.GlobalParametric
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 
 /-!
 # Incidence equations and transverse parameters
@@ -19,9 +20,9 @@ agrees with slice transversality: the linearization is the difference of the sou
 derivative of `F` and the derivative of `j`.
 
 These equations express transversality to a map, without requiring its image to be
-closed or embedded. If the sum of the source `Module.finrank`s is smaller than the
-target `Module.finrank`, regularity implies disjointness of the two images. This
-inequality applies only to finite-dimensional targets.
+closed or embedded. If the sources `E` and `W` are finite-dimensional and the sum of their
+`Module.finrank`s is smaller than the target `Module.finrank`, regularity implies
+disjointness of the two images. This inequality applies only to finite-dimensional targets.
 
 The construction uses `TauCeti.IsRegularParameter` for the parametrized zero equation.
 For the classical transversality criterion, see Lee, *Introduction to Smooth Manifolds*,
@@ -58,6 +59,7 @@ theorem incidenceEquation_apply (F : E × P → V) (j : W → V) (z : (E × W) �
   (rfl)
 
 /-- A zero of the incidence equation is an equality of the two maps. -/
+@[grind =]
 theorem incidenceEquation_eq_zero {F : E × P → V} {j : W → V} {z : (E × W) × P} :
     incidenceEquation F j z = 0 ↔ F (z.1.1, z.2) = j z.1.2 := by
   simp only [incidenceEquation_apply, sub_eq_zero]
@@ -129,6 +131,71 @@ theorem _root_.DifferentiableAt.incidenceEquation
     DifferentiableAt 𝕜 (incidenceEquation F j) ((x, y), p) :=
   (hF.hasFDerivAt.incidenceEquation hj.hasFDerivAt).differentiableAt
 
+/-- The incidence equation is differentiable when its two maps are differentiable. -/
+@[fun_prop]
+theorem _root_.Differentiable.incidenceEquation {F : E × P → V} {j : W → V}
+    (hF : Differentiable 𝕜 F) (hj : Differentiable 𝕜 j) :
+    Differentiable 𝕜 (incidenceEquation F j) :=
+  fun _ ↦ (hF _).incidenceEquation (hj _)
+
+/-- The incidence equation is differentiable at a point exactly when the family and the map
+are differentiable at the corresponding points. -/
+@[simp]
+theorem differentiableAt_incidenceEquation_iff {F : E × P → V} {j : W → V}
+    {z : (E × W) × P} :
+    DifferentiableAt 𝕜 (incidenceEquation F j) z ↔
+      DifferentiableAt 𝕜 F (z.1.1, z.2) ∧ DifferentiableAt 𝕜 j z.1.2 := by
+  obtain ⟨⟨x, y⟩, p⟩ := z
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ h.1.incidenceEquation h.2⟩
+  · have hF : F = fun q ↦ incidenceEquation F j ((q.1, y), q.2) + j y := by
+      funext q
+      simp
+    rw [hF]
+    exact (h.comp (f := fun q : E × P ↦ ((q.1, y), q.2)) (x, p) (by fun_prop)).add_const _
+  · have hj : j = fun w ↦ F (x, p) - incidenceEquation F j ((x, w), p) := by
+      funext w
+      simp
+    rw [hj]
+    exact (h.comp (f := fun w : W ↦ ((x, w), p)) y (by fun_prop)).const_sub _
+
+/-- The incidence equation is differentiable exactly when its two maps are differentiable. -/
+@[simp]
+theorem differentiable_incidenceEquation_iff {F : E × P → V} {j : W → V} :
+    Differentiable 𝕜 (incidenceEquation F j) ↔ Differentiable 𝕜 F ∧ Differentiable 𝕜 j :=
+  ⟨fun h ↦ ⟨fun z ↦ (differentiableAt_incidenceEquation_iff.1 (h ((z.1, 0), z.2))).1,
+    fun y ↦ (differentiableAt_incidenceEquation_iff.1 (h ((0, y), 0))).2⟩,
+    fun h ↦ h.1.incidenceEquation h.2⟩
+
+/-- The incidence equation has differentiability order `n` at a point exactly when the family
+and the map have that order at the corresponding points. -/
+@[simp]
+theorem contDiffAt_incidenceEquation_iff {n : ℕ∞ω} {F : E × P → V} {j : W → V}
+    {z : (E × W) × P} :
+    ContDiffAt 𝕜 n (incidenceEquation F j) z ↔
+      ContDiffAt 𝕜 n F (z.1.1, z.2) ∧ ContDiffAt 𝕜 n j z.1.2 := by
+  obtain ⟨⟨x, y⟩, p⟩ := z
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ h.1.incidenceEquation h.2⟩
+  · have hF : F = fun q ↦ incidenceEquation F j ((q.1, y), q.2) + j y := by
+      funext q
+      simp
+    rw [hF]
+    exact (h.comp (f := fun q : E × P ↦ ((q.1, y), q.2)) (x, p) (by fun_prop)).add
+      contDiffAt_const
+  · have hj : j = fun w ↦ F (x, p) - incidenceEquation F j ((x, w), p) := by
+      funext w
+      simp
+    rw [hj]
+    exact contDiffAt_const.sub (h.comp (f := fun w : W ↦ ((x, w), p)) y (by fun_prop))
+
+/-- The incidence equation has differentiability order `n` exactly when its two maps do. -/
+@[simp]
+theorem contDiff_incidenceEquation_iff {n : ℕ∞ω} {F : E × P → V} {j : W → V} :
+    ContDiff 𝕜 n (incidenceEquation F j) ↔ ContDiff 𝕜 n F ∧ ContDiff 𝕜 n j := by
+  simp only [contDiff_iff_contDiffAt]
+  exact ⟨fun h ↦ ⟨fun z ↦ (contDiffAt_incidenceEquation_iff.1 (h ((z.1, 0), z.2))).1,
+    fun y ↦ (contDiffAt_incidenceEquation_iff.1 (h ((0, y), 0))).2⟩,
+    fun h ↦ fun z ↦ (h.1 _).incidenceEquation (h.2 _)⟩
+
 /-- The full derivative of the incidence equation, including the parameter direction. -/
 theorem fderiv_incidenceEquation_apply
     {F : E × P → V} {j : W → V} {x : E} {y : W} {p : P}
@@ -186,12 +253,22 @@ theorem isRegularIncidenceParameter_iff {F : E × P → V} {j : W → V} {p : P}
     IsRegularIncidenceParameter F j p ↔ IsRegularParameter (incidenceEquation F j) 0 p :=
   (Iff.rfl)
 
+/-- At an incidence point of a regular slice, the family and the map are differentiable. -/
+theorem IsRegularIncidenceParameter.differentiableAt
+    {F : E × P → V} {j : W → V} {p : P} {x : E} {y : W}
+    (h : IsRegularIncidenceParameter F j p) (hxy : F (x, p) = j y) :
+    DifferentiableAt ℝ F (x, p) ∧ DifferentiableAt ℝ j y := by
+  have hs := (isRegularParameter_iff.1 (isRegularIncidenceParameter_iff.1 h)) (x, y)
+    (incidenceEquation_eq_zero.2 hxy)
+  rw [ContinuousLinearMap.coe_comp] at hs
+  exact differentiableAt_incidenceEquation_iff.1 (differentiableAt_of_fderiv_surjective hs.of_comp)
+
 /-- At an incidence point, regularity gives surjectivity of the source linearization. -/
 theorem IsRegularIncidenceParameter.surjective
     {F : E × P → V} {j : W → V} {p : P} {x : E} {y : W}
-    (h : IsRegularIncidenceParameter F j p) (hxy : F (x, p) = j y)
-    (hF : DifferentiableAt ℝ F (x, p)) (hj : DifferentiableAt ℝ j y) :
+    (h : IsRegularIncidenceParameter F j p) (hxy : F (x, p) = j y) :
     Surjective (((fderiv ℝ F (x, p)).comp (.inl ℝ E P)).coprod (-fderiv ℝ j y)) := by
+  obtain ⟨hF, hj⟩ := h.differentiableAt hxy
   rw [← fderiv_incidenceEquation_comp_inl hF hj]
   exact (isRegularParameter_iff.1 (isRegularIncidenceParameter_iff.1 h)) (x, y)
     (incidenceEquation_eq_zero.2 hxy)
@@ -221,9 +298,10 @@ theorem isRegularIncidenceParameter_of_disjoint_range
   have heq := incidenceEquation_eq_zero.1 hxy
   exact (Set.disjoint_left.1 h ⟨x, rfl⟩ ⟨y, heq.symm⟩).elim
 
-/-- When the sum of the source `Module.finrank`s is below the target `Module.finrank`,
-a regular slice has no incidence points. This inequality applies only to finite-dimensional
-targets. No differentiability hypotheses are needed for this implication. -/
+/-- When the sources `E` and `W` are finite-dimensional and the sum of their
+`Module.finrank`s is below the target `Module.finrank`, a regular slice has no incidence
+points. This inequality applies only to finite-dimensional targets. No differentiability
+hypotheses are needed for this implication. -/
 theorem IsRegularIncidenceParameter.disjoint_range [FiniteDimensional ℝ E]
     [FiniteDimensional ℝ W] {F : E × P → V} {j : W → V} {p : P}
     (h : IsRegularIncidenceParameter F j p)
@@ -238,32 +316,25 @@ theorem IsRegularIncidenceParameter.disjoint_range [FiniteDimensional ℝ E]
   rw [Module.finrank_prod] at hd
   exact (not_le_of_gt hdim) hd
 
-/-- When the sum of the source `Module.finrank`s is below the target `Module.finrank`,
-regular incidence is equivalent to avoidance. The inequality requires a finite-dimensional
-target. -/
+/-- When the sources `E` and `W` are finite-dimensional and the sum of their
+`Module.finrank`s is below the target `Module.finrank`, regular incidence is equivalent to
+avoidance. The inequality requires a finite-dimensional target. -/
 theorem isRegularIncidenceParameter_iff_disjoint_range [FiniteDimensional ℝ E]
     [FiniteDimensional ℝ W] {F : E × P → V} {j : W → V} {p : P}
     (hdim : Module.finrank ℝ E + Module.finrank ℝ W < Module.finrank ℝ V) :
     IsRegularIncidenceParameter F j p ↔ Disjoint (range fun x ↦ F (x, p)) (range j) :=
   ⟨fun h ↦ h.disjoint_range hdim, isRegularIncidenceParameter_of_disjoint_range⟩
 
-/-- Surjectivity of the derivative of `j` alone suffices for transverse incidence.
-This includes the identity map, even for a singular source slice. -/
+/-- When `F` is differentiable at every incidence point, surjectivity of the derivative of `j`
+there suffices for transverse incidence, without any rank condition on the source derivative
+of `F`. This includes the identity map, even for a singular source slice. -/
 theorem isRegularIncidenceParameter_of_surjective_fderiv
     {F : E × P → V} {j : W → V} {p : P}
     (hF : ∀ x y, F (x, p) = j y → DifferentiableAt ℝ F (x, p))
     (hs : ∀ x y, F (x, p) = j y → Surjective (fderiv ℝ j y)) :
     IsRegularIncidenceParameter F j p := by
-  have hj (x : E) (y : W) (hxy : F (x, p) = j y) : DifferentiableAt ℝ j y := by
-    by_contra hn
-    have hjconst : j = fun _ ↦ (0 : V) := by
-      funext w
-      obtain ⟨v, hv⟩ := hs x y hxy (j w)
-      simpa [fderiv_zero_of_not_differentiableAt hn] using hv.symm
-    apply hn
-    rw [hjconst]
-    exact differentiableAt_const 0
-  rw [isRegularIncidenceParameter_iff_surjective hF hj]
+  rw [isRegularIncidenceParameter_iff_surjective hF
+    fun _ y hxy ↦ differentiableAt_of_fderiv_surjective (hs _ y hxy)]
   intro x y hxy v
   obtain ⟨w, hw⟩ := hs x y hxy (-v)
   exact ⟨(0, w), by simp [hw, ← Prod.zero_eq_mk]⟩
@@ -276,6 +347,28 @@ theorem isRegularIncidenceParameter_id {F : E × P → V} {p : P}
     (fun x _ _ ↦ hF x)
   intro _ y _
   simpa using (Function.surjective_id : Surjective (id : V → V))
+
+/-- Incidence with a constant map is the level equation at that constant. -/
+@[simp]
+theorem isRegularIncidenceParameter_const {F : E × P → V} {c : V} {p : P} :
+    IsRegularIncidenceParameter F (fun _ : W ↦ c) p ↔ IsRegularParameter F c p := by
+  refine ⟨fun h ↦ isRegularParameter_iff.2 fun x hx v ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨⟨u, _⟩, hu⟩ := h.surjective (y := 0) hx v
+    exact ⟨u, by simpa using hu⟩
+  · have hF (x : E) (_ : W) (hx : F (x, p) = c) : DifferentiableAt ℝ F (x, p) := by
+      have hs := isRegularParameter_iff.1 h x hx
+      rw [ContinuousLinearMap.coe_comp] at hs
+      exact differentiableAt_of_fderiv_surjective hs.of_comp
+    refine (isRegularIncidenceParameter_iff_surjective hF
+      fun _ _ _ ↦ differentiableAt_const c).2 fun x _ hx v ↦ ?_
+    obtain ⟨u, hu⟩ := isRegularParameter_iff.1 h x hx v
+    exact ⟨(u, 0), by simpa using hu⟩
+
+/-- Incidence with the zero map is the zero level equation. -/
+@[simp]
+theorem isRegularIncidenceParameter_zero {F : E × P → V} {p : P} :
+    IsRegularIncidenceParameter F (0 : W → V) p ↔ IsRegularParameter F 0 p :=
+  isRegularIncidenceParameter_const
 
 end Regular
 
