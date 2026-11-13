@@ -725,6 +725,10 @@ theorem contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf {m n : ℕ∞} (hn 
     rfl
   rw [Function.comp_apply, hpt]
   simp only [tangentMapWithin, mfderivWithin_of_isOpen hW hu, hcurry]
+  -- `mfderiv_prod_right` types `inr` into `TangentSpace 𝓘(ℝ, ℝ) u × TangentSpace I x`, which is
+  -- `TangentSpace (𝓘(ℝ, ℝ).prod I) (u, x)` only up to unfolding `TangentSpace`, so
+  -- `ContinuousLinearMap.comp_apply` and `inr_apply` do not rewrite here. The goal is the
+  -- definitional equality `(D.comp (inr ℝ _ _)) v = D (0, v)` inside `TotalSpace.mk'`.
   rfl
 
 variable (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
