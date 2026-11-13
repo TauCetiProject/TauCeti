@@ -33,6 +33,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   a remainder in `[0, 1)`.
 * `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
   its fractional part `Int.fract t`.
+* `TauCeti.eq_floor_or_mem_Ioo`: an element is an integer or lies strictly between two consecutive
+  integers.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
@@ -58,6 +60,14 @@ theorem exists_eq_natCast_add_of_mem_Ico {R : Type*} [Ring R] [LinearOrder R]
 theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrder R]
     [FloorRing R] {f : R → β} (hf : Function.Periodic f 1) (t : R) : f (Int.fract t) = f t := by
   simpa [Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
+
+/-- An element of a floor ring is its own floor or lies strictly between its floor and the next
+integer. -/
+theorem eq_floor_or_mem_Ioo {R : Type*} [Ring R] [LinearOrder R] [FloorRing R] (t : R) :
+    t = ⌊t⌋ ∨ t ∈ Set.Ioo (⌊t⌋ : R) (⌊t⌋ + 1) := by
+  rcases (Int.floor_le t).eq_or_lt with h | h
+  · exact Or.inl h.symm
+  · exact Or.inr ⟨h, Int.lt_floor_add_one t⟩
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K] {δ : K}
 
