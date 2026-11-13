@@ -122,8 +122,8 @@ private theorem enorm_fderiv_min_infDist_ae_eq {s : Set E} (hs : s.Nonempty) {r 
     rw [hmin.fderiv_eq_zero, indicator_of_notMem
       (fun h : x ∈ thickening r s \ closure s => h.2 hcl)]
     -- The `ENorm` instance on the derivative is reached through a different instance path than
-    -- the one `enorm_zero` is stated for, so the lemma is applied at the explicit type.
-    exact (enorm_eq_zero (a := (0 : E →L[ℝ] ℝ))).2 rfl
+    -- the one `eNorm_zero` is stated for, so the lemma is applied at the explicit type.
+    exact (eNorm_eq_zero (a := (0 : E →L[ℝ] ℝ))).2 rfl
   by_cases hr : r ≤ infDist x s
   · -- Far from `s` the truncated distance attains its maximum.
     have hmax : IsLocalMax (fun y => min (infDist y s) r) x :=
@@ -133,7 +133,7 @@ private theorem enorm_fderiv_min_infDist_ae_eq {s : Set E} (hs : s.Nonempty) {r 
       exact not_lt.2 hr
     rw [hmax.fderiv_eq_zero, indicator_of_notMem
       (fun h : x ∈ thickening r s \ closure s => hth h.1)]
-    exact (enorm_eq_zero (a := (0 : E →L[ℝ] ℝ))).2 rfl
+    exact (eNorm_eq_zero (a := (0 : E →L[ℝ] ℝ))).2 rfl
   -- On the shell the truncated distance is the distance near `x`.
   replace hr := not_le.1 hr
   have hloc : (fun y => min (infDist y s) r) =ᶠ[𝓝 x] (infDist · s) := by
