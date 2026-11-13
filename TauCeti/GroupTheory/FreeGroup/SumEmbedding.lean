@@ -54,7 +54,7 @@ private def shiftAction : Multiplicative ℤ →* MulAut (FreeGroup (α × ℤ))
   map_mul' m n := by
     rw [MulAut.mul_def, freeGroupCongr_trans]
     congr 1
-    ext ⟨x, z⟩ <;> simp [add_left_comm, add_comm]
+    ext ⟨x, z⟩ <;> simp [add_comm]
 
 private theorem shiftAction_ofAdd_of (n : ℤ) (x : α) (m : ℤ) :
     shiftAction α (Multiplicative.ofAdd n) (of (x, m)) = of (x, m + n) := by
