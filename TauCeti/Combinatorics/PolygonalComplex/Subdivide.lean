@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Subdivide
 public import TauCeti.Combinatorics.PolygonalComplex.Examples
-public import TauCeti.Logic.Equiv.Fin.Sigma
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Subdividing an edge of a polygonal complex
@@ -150,7 +150,7 @@ is replaced by the path replacing `e`, which has a second letter when `e` is `a`
 theorem ofFn_subdivideSide (f : C.Face) :
     List.ofFn (C.subdivideSide a f) = (List.ofFn (C.side f)).flatMap fun e =>
       if e = a ∨ e = C.graph.rev a then [.inl e, C.graph.subdivideLast a e] else [.inl e] := by
-  refine (List.ofFn_sum (n := fun i => C.subdivideLen a (C.side f i)) _).trans ?_
+  refine (List.ofFn_sum (m := fun i => C.subdivideLen a (C.side f i)) _).trans ?_
   rw [List.flatMap_def, List.map_ofFn]
   refine congrArg List.flatten (congrArg List.ofFn (funext fun i => ?_))
   simp only [subdivideSide_apply, subdivideBlock]
@@ -162,13 +162,13 @@ private theorem finRotate_subdivideSides_of_lt (f : C.Face) (i : Fin (C.sides f)
     (j : Fin (C.subdivideLen a (C.side f i))) (hj : (j : ℕ) + 1 < C.subdivideLen a (C.side f i)) :
     finRotate (C.subdivideSides a f) (finSigmaFinEquiv ⟨i, j⟩) =
       finSigmaFinEquiv ⟨i, ⟨j + 1, hj⟩⟩ :=
-  Fin.finRotate_finSigmaFinEquiv_of_lt (n := fun i => C.subdivideLen a (C.side f i)) i j hj
+  Fin.finRotate_finSigmaFinEquiv_of_lt (m := fun i => C.subdivideLen a (C.side f i)) i j hj
 
 private theorem finRotate_subdivideSides_of_eq (f : C.Face) (i : Fin (C.sides f))
     (j : Fin (C.subdivideLen a (C.side f i))) (hj : (j : ℕ) + 1 = C.subdivideLen a (C.side f i)) :
     finRotate (C.subdivideSides a f) (finSigmaFinEquiv ⟨i, j⟩) =
       finSigmaFinEquiv ⟨finRotate _ i, ⟨0, C.subdivideLen_pos a _⟩⟩ :=
-  Fin.finRotate_finSigmaFinEquiv_of_eq (n := fun i => C.subdivideLen a (C.side f i)) i j hj _ rfl
+  Fin.finRotate_finSigmaFinEquiv_of_eq (m := fun i => C.subdivideLen a (C.side f i)) i j hj _ rfl
 
 /-- The sides of a subdivided face form a closed dart sequence. -/
 theorem tgt_subdivideSide (f : C.Face) (k : Fin (C.subdivideSides a f)) :
@@ -279,11 +279,11 @@ theorem subdivideLastCorner_injective : Function.Injective (C.subdivideLastCorne
 
 variable {C a} in
 /-- The first and the last corner on a side not attached along the subdivided edge coincide. -/
-theorem subdivideLastCorner_eq_subdivideFirstCorner {c : C.Corner}
-    (h : ¬(C.outgoing c = a ∨ C.outgoing c = C.graph.rev a)) :
+theorem subdivideLastCorner_eq_subdivideFirstCorner_of_ne {c : C.Corner} (h : C.outgoing c ≠ a)
+    (h' : C.outgoing c ≠ C.graph.rev a) :
     C.subdivideLastCorner a c = C.subdivideFirstCorner a c := by
-  rw [outgoing_def] at h
-  simp [subdivideLastCorner, subdivideFirstCorner, C.subdivideLen_of_not a h]
+  rw [outgoing_def] at h h'
+  simp [subdivideLastCorner, subdivideFirstCorner, C.subdivideLen_of_not a (not_or.2 ⟨h, h'⟩)]
 
 /-- Every corner of the subdivision is the first or the last corner on the side on which it
 lies. -/
@@ -344,7 +344,8 @@ theorem eq_subdivideFirstCorner_of_outgoing_eq_inl {c : (C.subdivide a).Corner} 
         C.outgoing (C.subdivideOriginCorner a c) = C.graph.rev a
     · rw [hc, outgoing_subdivideLastCorner, SerreGraph.subdivideLast_of_eq_or_eq hc'] at h
       exact absurd h (by simp)
-    · exact hc.trans (subdivideLastCorner_eq_subdivideFirstCorner hc')
+    · obtain ⟨h₁, h₂⟩ := not_or.1 hc'
+      exact hc.trans (subdivideLastCorner_eq_subdivideFirstCorner_of_ne h₁ h₂)
 
 variable {C a} in
 /-- A corner of the subdivision whose side starts at the new vertex is a last corner. -/
@@ -379,7 +380,7 @@ theorem eq_of_subdivideOriginCorner_eq_of_outgoing_eq {c c' : (C.subdivide a).Co
 variable {C a} in
 /-- On a side attached along the subdivided edge, the corner following the first corner is the
 last corner. -/
-theorem nextCorner_subdivideFirstCorner {c : C.Corner}
+theorem nextCorner_subdivideFirstCorner_of_eq_or_eq {c : C.Corner}
     (h : C.outgoing c = a ∨ C.outgoing c = C.graph.rev a) :
     (C.subdivide a).nextCorner (C.subdivideFirstCorner a c) = C.subdivideLastCorner a c := by
   rw [outgoing_def] at h
@@ -400,10 +401,11 @@ path replacing the incoming dart of `c`. -/
 variable {C a} in
 /-- On a side attached along the subdivided edge, the side ending at the last corner is attached
 along the initial half of its dart. -/
-theorem incoming_subdivideLastCorner {c : C.Corner}
+theorem incoming_subdivideLastCorner_of_eq_or_eq {c : C.Corner}
     (h : C.outgoing c = a ∨ C.outgoing c = C.graph.rev a) :
     (C.subdivide a).incoming (C.subdivideLastCorner a c) = .inl (C.outgoing c) := by
-  rw [← nextCorner_subdivideFirstCorner h, incoming_nextCorner, outgoing_subdivideFirstCorner]
+  rw [← nextCorner_subdivideFirstCorner_of_eq_or_eq h, incoming_nextCorner,
+    outgoing_subdivideFirstCorner]
 
 /-- The first corner on the side of `c` sits at the vertex of `c`. -/
 @[simp] theorem cornerVertex_subdivideFirstCorner (c : C.Corner) :
@@ -412,7 +414,7 @@ theorem incoming_subdivideLastCorner {c : C.Corner}
 
 variable {C a} in
 /-- On a side attached along the subdivided edge, the last corner sits at the new vertex. -/
-theorem cornerVertex_subdivideLastCorner {c : C.Corner}
+theorem cornerVertex_subdivideLastCorner_of_eq_or_eq {c : C.Corner}
     (h : C.outgoing c = a ∨ C.outgoing c = C.graph.rev a) :
     (C.subdivide a).cornerVertex (C.subdivideLastCorner a c) = none := by
   rw [← src_outgoing, outgoing_subdivideLastCorner, SerreGraph.subdivideLast_of_eq_or_eq h,
@@ -607,7 +609,7 @@ the subdivided edge. -/
 theorem nonempty_vertexLink_subdivide_path {c : C.Corner}
     (h : C.outgoing c = a ∨ C.outgoing c = C.graph.rev a) :
     Nonempty (((C.subdivide a).vertexLink none).Path ⟨.inr true, rfl⟩ ⟨.inr false, rfl⟩) := by
-  have hin := incoming_subdivideLastCorner h
+  have hin := incoming_subdivideLastCorner_of_eq_or_eq h
   rcases h with h | h
   · exact (C.subdivide a).nonempty_vertexLink_path_of_corner (C.subdivideLastCorner a c)
       (a := ⟨.inr true, rfl⟩) (b := ⟨.inr false, rfl⟩) (by simp [h]) (by simp [hin, h])
