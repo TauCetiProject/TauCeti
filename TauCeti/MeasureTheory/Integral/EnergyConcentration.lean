@@ -110,7 +110,7 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
         fun _ _ ↦ (hint i).mono_set inter_subset_right).symm
     _ ≤ ∫ y in Ω, e i y ∂μ :=
       setIntegral_mono_set (hint i) (ae_restrict_of_forall_mem hΩ (he i))
-        (iUnion₂_subset fun _ _ ↦ inter_subset_right).eventuallyLE
+        (iUnion₂_subset fun _ _ ↦ inter_subset_right).eventuallySubset
     _ ≤ E := hE i
 
 /-- **Concentration without the area term.** Let `e i ≥ 0` be integrable densities on a measurable
@@ -136,7 +136,7 @@ theorem eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball {�
     _ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ :=
       setIntegral_mono_set ((hint i).mono_set inter_subset_right)
         (ae_restrict_of_forall_mem (measurableSet_ball.inter hΩ) fun y hy ↦ he i y hy.2)
-        (inter_subset_inter_left _ (ball_subset_ball hρ.2.le)).eventuallyLE
+        (inter_subset_inter_left _ (ball_subset_ball hρ.2.le)).eventuallySubset
 
 /-- **Finitely many blow-up points.** Let `g k` be functions continuous on a measurable set `Ω`,
 and let `e k ≥ 0` be densities on `Ω` with `∫_Ω e k ≤ E`. Suppose that energy at least `δ > 0`

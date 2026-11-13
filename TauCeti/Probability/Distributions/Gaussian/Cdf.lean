@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Erf
+public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Distributions.Gaussian.Basic
@@ -18,9 +18,6 @@ import TauCeti.Probability.Cdf.Density
 This file computes `ProbabilityTheory.cdf (gaussianReal m v)` in closed form.  For a nonzero
 variance the answer is `(1 + erf ((x - m) / √(2 * v))) / 2`, and at the singular boundary
 `v = 0` the law is a Dirac mass, with the step-function cdf.
-
-These are the Gaussian entries of the closed-form cdf target of
-`TauCetiRoadmap/StandardDistributions/README.md`, Layer 2.
 
 The computation goes through the interval integral of `gaussianPDFReal`, which is an affine
 change of variables away from the integral defining `TauCeti.Real.erf`; the improper integral

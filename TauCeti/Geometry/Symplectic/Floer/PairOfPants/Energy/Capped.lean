@@ -60,8 +60,10 @@ regularity required only near that support. For a finite-energy solution with ta
 structures it gives the lower area bound `-2 (B₀ + B₁ + B_∞) ≤ ∫ u^* ω`
 (`SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation`).
 These statements retain explicit integrability hypotheses on the energy and curvature. This is
-the energy bound, uniform in `R` for a fixed area, under which compactness of the comparison
-family is to be proved.
+the energy bound, uniform in `R` for a fixed area, from which compactness of the comparison family
+over compact windows of `R` in the plane chart follows (in the namespace `SymplecticForm`,
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison`).
+Compactness near the pole `∞` and along the long-neck end `R → ∞` is still to be proved.
 
 ## Main results
 

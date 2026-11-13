@@ -73,9 +73,9 @@ theorem absolutelyContinuousOnInterval_variationOnFromTo
   have hcontrol {s u : ℝ} (hs : s ∈ uIcc a b) (hu : u ∈ uIcc a b) (hsu : s ≤ u) :
       edist (variationOnFromTo γ (uIcc a b) a s) (variationOnFromTo γ (uIcc a b) a u) ≤
         ∫⁻ t in uIoc s u, TauCeti.metricDerivative γ t := by
-    rw [edist_comm, edist_eq_enorm_sub,
+    rw [edist_comm, eDist_eq_eNorm_sub,
       variationOnFromTo.sub_right hBV.locallyBoundedVariationOn left_mem_uIcc hu hs,
-      variationOnFromTo.eq_of_le _ _ hsu, Real.enorm_eq_ofReal ENNReal.toReal_nonneg,
+      variationOnFromTo.eq_of_le _ _ hsu, Real.eNorm_eq_ofReal ENNReal.toReal_nonneg,
       ENNReal.ofReal_toReal ((eVariationOn.mono _ inter_subset_left).trans_lt hBV.lt_top).ne]
     refine (eVariationOn.mono _ inter_subset_right).trans ?_
     simpa only [uIcc_of_le hsu] using
@@ -118,7 +118,7 @@ theorem eVariationOn_eq_lintegral_metricDerivative (hγ : AbsolutelyContinuousOn
       ∫⁻ t in uIoc a b, ‖deriv V t‖ₑ = ∫⁻ t in uIoc a b, ENNReal.ofReal (deriv V t) := by
         apply lintegral_congr_ae
         filter_upwards [hnonneg'] with t ht
-        exact Real.enorm_eq_ofReal ht
+        exact Real.eNorm_eq_ofReal ht
       _ = ENNReal.ofReal (∫ t in a..b, deriv V t) := by
         rw [← ofReal_integral_eq_lintegral_ofReal hV.intervalIntegrable_deriv.def' hnonneg',
           uIoc_of_le hab, ← intervalIntegral.integral_of_le hab]
@@ -155,7 +155,7 @@ theorem integral_norm_deriv_eq_eVariationOn_toReal
     ∫ t in a..b, ‖deriv γ t‖ = ∫ t in uIoc a b, ‖deriv γ t‖ := by
       rw [uIoc_of_le hab, intervalIntegral.integral_of_le hab]
     _ = (∫⁻ t in uIoc a b, ‖deriv γ t‖ₑ).toReal :=
-      integral_norm_eq_lintegral_enorm
+      integral_norm_eq_lintegral_eNorm
         hγ.intervalIntegrable_deriv_of_finiteDimensional.def'.aestronglyMeasurable
     _ = (eVariationOn γ (uIcc a b)).toReal :=
       congrArg ENNReal.toReal hγ.eVariationOn_eq_lintegral_enorm_deriv.symm

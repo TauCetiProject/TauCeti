@@ -518,23 +518,28 @@ private theorem eq_one_or_eq_neg_one_of_isPinLift_one {z : Matrix (Fin 2) (Fin 2
   -- The entries of the two generator equations and of orthogonality.
   have e1 : (a * d - b * c) * (a * a - b * b) = 1 := by
     have := congrFun (congrFun h1 0) 0
-    simp [pinE1, pinVec_eq, det_fin_two, vecMul, dotProduct, Fin.sum_univ_two] at this
+    simp [pinE1, pinVec_eq, det_fin_two, Function.swap, Matrix.vecHead,
+      Matrix.vecTail] at this
     linear_combination this
   have e2 : (a * d - b * c) * (2 * (a * b)) = 0 := by
     have := congrFun (congrFun h2 0) 0
-    simp [pinE2, pinVec_eq, det_fin_two, vecMul, dotProduct, Fin.sum_univ_two, -mul_eq_zero]
-      at this
+    simp [pinE2, pinVec_eq, det_fin_two, Function.swap, Matrix.vecHead,
+      Matrix.vecTail, -mul_eq_zero] at this
     linear_combination this
   have e3 : (a * d - b * c) * (a * d + b * c) = 1 := by
     have := congrFun (congrFun h2 0) 1
-    simp [pinE2, pinVec_eq, det_fin_two, vecMul, dotProduct, Fin.sum_univ_two] at this
+    simp [pinE2, pinVec_eq, det_fin_two, Function.swap, Matrix.vecHead,
+      Matrix.vecTail] at this
     linear_combination this
   have o1 : a * a + c * c = 1 := by
     simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun hzz 0) 0
   have o2 : a * a + b * b = 1 := by
-    simpa [vecMul, dotProduct, Fin.sum_univ_two] using congrFun (congrFun hzz' 0) 0
+    simpa [dotProduct, Function.swap, Matrix.vecHead, Matrix.vecTail, Fin.sum_univ_two] using
+      congrFun (congrFun hzz' 0) 0
   have o3 : a * c + b * d = 0 := by
-    simpa [vecMul, dotProduct, Fin.sum_univ_two, -mul_eq_zero] using congrFun (congrFun hzz' 0) 1
+    simpa [dotProduct, Function.swap, Matrix.vecHead, Matrix.vecTail, Fin.sum_univ_two,
+      -mul_eq_zero] using
+      congrFun (congrFun hzz' 0) 1
   have o4 : b * b + d * d = 1 := by
     simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun hzz 1) 1
   have o5 : a * b + c * d = 0 := by
