@@ -15,6 +15,11 @@ A uniform bound on parameter-power torsion in a cokernel controls the induced fi
 an inclusion. For a complex, bounds on power torsion in its homology and in the last map's
 range give a bound in the preceding cokernel. These statements require no finiteness or
 regularity assumptions and are independent of completion.
+
+## References
+
+* [Stacks Project, Lemma 52.12.7](https://stacks.math.columbia.edu/tag/0EII),
+  for the bounded-torsion filtration shift and the three-term complex cokernel bound.
 -/
 
 public section
@@ -22,6 +27,8 @@ public section
 open scoped Pointwise
 
 namespace LinearMap
+
+section
 
 variable {R : Type*} [CommRing R] {r : R} {k l : ℕ}
   {M N P : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -48,6 +55,12 @@ theorem comap_span_singleton_pow_smul_le_of_bounded_torsion (f : M →ₗ[R] N)
   obtain ⟨z, hz⟩ := hq
   refine ⟨z, Submodule.mem_top, hf ?_⟩
   rw [map_smul, hz, smul_smul, ← pow_add, hy]
+
+end
+
+variable {R : Type*} [Ring R] {r : R} {k l : ℕ}
+  {M N P : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup P] [Module R P]
 
 /-- A power-torsion bound on the range of a linear map gives the same bound on its source
 modulo its kernel. -/
@@ -77,6 +90,7 @@ theorem pow_smul_eq_zero_coker_of_bounded_torsion_homology (g : M →ₗ[R] N)
     exact LinearMap.congr_fun hgh z
   rw [pow_add, mul_smul]
   apply hH _ (by simpa only [mem_ker, map_smul] using hhy)
-  exact ⟨n, by simpa only [smul_comm (r ^ n) (r ^ l)] using g.range.smul_mem (r ^ l) hn⟩
+  refine ⟨n, ?_⟩
+  simpa only [← mul_smul, ← pow_add, Nat.add_comm] using g.range.smul_mem (r ^ l) hn
 
 end LinearMap

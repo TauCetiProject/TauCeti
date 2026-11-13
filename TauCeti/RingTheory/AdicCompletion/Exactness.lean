@@ -32,7 +32,10 @@ and middle exactness as the canonical kernel comparison over the completed ring.
 
 The compatible-residue model of `AdicCompletion` and its residue evaluations are due to
 Kenny Lau. Judith Ludwig and Christian Merten refactored the construction and supplied its
-completed-ring module structure and functorial maps. The finite-level exactness results are those of
+completed-ring module structure and functorial maps. The filtration-shift proofs adapt their
+`AdicCompletion.map_injective` and `AdicCompletion.map_exact` in
+`Mathlib.RingTheory.AdicCompletion.Exactness`, isolating the uniform shift from the Noetherian
+Artin–Rees input. The finite-level exactness results are those of
 `TauCeti.RingTheory.QuotSMulTop`; no new completion carrier is introduced.
 -/
 
@@ -107,7 +110,7 @@ theorem map_exact_of_comap_pow_smul_le {k : ℕ}
       (Submodule.Quotient.mk (b (n + k)))).mp
         (by simpa using congrArg (fun z ↦ z.val (n + k)) hz)
     obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ a
-    exact ⟨a, ha⟩
+    exact ⟨a, by simpa only [Ideal.mapQSMulTop_mk, SModEq.def] using ha⟩
   choose a ha using hpre
   have hle (n : ℕ) : (I ^ (n + k) • ⊤ : Submodule R N) ≤ I ^ n • ⊤ :=
     Submodule.smul_mono_left (Ideal.pow_le_pow_right (Nat.le_add_right n k))
@@ -120,7 +123,8 @@ theorem map_exact_of_comap_pow_smul_le {k : ℕ}
       SModEq.mono (Submodule.smul_mono_left (Ideal.pow_le_pow_right (by lia))) (ha (n + 1))
     exact (ha n).trans ((b.property (by lia)).trans hs.symm)
   · ext n
-    exact (SModEq.mono (hle n) (ha n)).trans (b.property (Nat.le_add_right n k)).symm
+    simpa [SModEq.def] using
+      (SModEq.mono (hle n) (ha n)).trans (b.property (Nat.le_add_right n k)).symm
 
 /-- A short exact sequence whose last term is `r`-torsion-free remains injective on the left
 after `(r)`-adic completion. The modules need not be finite. -/
