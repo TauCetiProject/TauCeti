@@ -360,8 +360,8 @@ private theorem realProjPlane_singularHomologyδ_eq
   let q : (ℤ ⧸ LinearMap.range g.hom) ≃ₗ[ℤ] ZMod 2 :=
     (LinearMap.cokerEquivOfComp _ _ hcomp).symm ≪≫ₗ
       Submodule.quotEquivOfEq _ _ hrange ≪≫ₗ ι.hom.quotKerEquivOfSurjective hsurj ≪≫ₗ ψ
-  simpa only [Nat.cast_ofNat] using
-    ModuleCat.eq_natCast_smul_id_or_eq_neg_natCast_smul_id g (n := 2) q.toEquiv
+  simpa only [Nat.cast_ofNat] using ModuleCat.eq_natCast_smul_id_or_eq_neg_natCast_smul_id g
+    ((Nat.card_congr q.toEquiv).trans (Nat.card_zmod 2))
 
 /-! ### The first differential and the second page -/
 
@@ -490,7 +490,9 @@ theorem nonempty_realProjPlaneMorseSpectralSequence_page_three_X_neg_two_one_iso
     simp
   have hrange : LinearMap.range ((2 : ℤ) • 𝟙 (ModuleCat.of ℤ ℤ)).hom =
       Ideal.span {((2 : ℕ) : ℤ)} := by
-    rw [ModuleCat.range_hom_smul_id_eq_span, Nat.cast_ofNat]
+    -- The underlying linear map of `2 • 𝟙 _` is `LinearMap.mul ℤ ℤ 2` by definition.
+    rw [Nat.cast_ofNat]
+    exact Ideal.range_mul' 2
   exact ⟨(realProjPlaneMorseSpectralSequence.iso 2 3 (-2, 1)).symm ≪≫
     K.homologyIsoSc' (-4, 2) (-2, 1) (0, 0) (ComplexShape.prev_eq' _ (by decide))
       (ComplexShape.next_eq' _ (by decide)) ≪≫
