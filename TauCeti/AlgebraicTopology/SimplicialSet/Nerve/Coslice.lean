@@ -81,11 +81,11 @@ lemma underEquiv_symm_map_coe {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : Composa
   refine (nerve.totalArrow_map _ _ _ _ _).trans
     ((key _ _ _ (SimplexCategory.vertexJoin_map_zero f)
       (SimplexCategory.vertexJoin_map_succ f 0)).trans
-        ((ComposableArrows.underEquiv_symm_apply_coe_totalArrow_zero_succ x s _).trans ?_))
+        ((ComposableArrows.totalArrow_underEquiv_symm_apply_coe_zero_succ x s _).trans ?_))
   -- Both first arrows are the structure arrow of the vertex f 0 of s.
   exact (congrArg (fun a : Under x ↦ (⟨x, a.right, a.hom⟩ : Quiver.Total C))
     (nerve.map_obj f s 0)).symm.trans
-      (ComposableArrows.underEquiv_symm_apply_coe_totalArrow_zero_succ x _ 0).symm
+      (ComposableArrows.totalArrow_underEquiv_symm_apply_coe_zero_succ x _ 0).symm
 
 /-- The cone `Δ[0] ⋆ Δ[n] ⟶ nerve C` on a string of arrows under x: the string of n + 1 arrows
 prepending the structure arrow of its first object, read through `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/

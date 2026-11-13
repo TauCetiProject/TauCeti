@@ -67,7 +67,7 @@ lemma underEquiv_symm_apply_coe {n : ℕ} (s : ComposableArrows (Under x) n) :
 
 /-- The arrow from the initial vertex x to a shifted vertex of the corresponding string is the
 structure arrow of the object of s at that vertex. -/
-lemma underEquiv_symm_apply_coe_totalArrow_zero_succ {n : ℕ} (s : ComposableArrows (Under x) n)
+lemma totalArrow_underEquiv_symm_apply_coe_zero_succ {n : ℕ} (s : ComposableArrows (Under x) n)
     (j : Fin (n + 1)) :
     ((underEquiv x n).symm s).1.totalArrow 0 j.succ (Fin.zero_le _) =
       ⟨x, (s.obj j).right, (s.obj j).hom⟩ :=
@@ -80,7 +80,7 @@ arrow. -/
 lemma underEquiv_symm_mk₀_coe (a : Under x) :
     ((underEquiv x 0).symm (mk₀ a)).1 = mk₁ a.hom :=
   ext_succ_of_totalArrow ((precomp_δ₀ _ _).trans (ext₀ rfl))
-    ((underEquiv_symm_apply_coe_totalArrow_zero_succ x _ 0).trans (by simp [totalArrow_def, mk₀]))
+    ((totalArrow_underEquiv_symm_apply_coe_zero_succ x _ 0).trans (by simp [totalArrow_def, mk₀]))
 
 /-- The underlying objects are the old objects after the initial vertex. -/
 @[simp]
