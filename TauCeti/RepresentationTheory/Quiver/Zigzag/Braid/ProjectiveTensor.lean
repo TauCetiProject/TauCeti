@@ -337,8 +337,7 @@ theorem zigzagBraidProjectiveUnitTensorIso_hom_tmul (j : V) (x : zigzagGradedBim
       GradedModuleCat.bimoduleModuleTensorMap Γ Γ (zigzagGradedBimoduleUnitIso k G).inv (𝟙 _) ≫
         (GradedModuleCat.bimoduleModuleTensorLeftUnitor.{w} Γ (P j)).hom := by
     simp only [zigzagBraidProjectiveUnitTensorIso, Iso.trans_hom, Iso.app_hom,
-      Functor.mapIso_hom, GradedModuleCat.bimoduleModuleTensor_map_app, eqToHom_refl,
-      Category.id_comp, Category.comp_id, Iso.symm_hom]
+      Functor.mapIso_hom, GradedModuleCat.bimoduleModuleTensor_map_app, Iso.symm_hom]
   simp only [h, GradedModuleCat.hom_comp, LinearMap.comp_apply,
     GradedModuleCat.bimoduleModuleTensorMap_tmul, GradedModuleCat.hom_id, LinearMap.id_apply,
     GradedModuleCat.bimoduleModuleTensorLeftUnitor_hom]

@@ -74,21 +74,14 @@ noncomputable def inducedCoact : N →ₗ[R] N ⊗[R] C :=
     ((Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N))
     ((SMulMemClass.subtype N).rTensor C) (subtype_rTensor_injective N) (coact_mem_range N)
 
-/-- The induced coaction, included back into `M ⊗ C`, is the ambient coaction. -/
-@[simp]
-theorem subtype_rTensor_inducedCoact (n : N) :
-    (SMulMemClass.subtype N).rTensor C (N.inducedCoact n) =
-      Comodule.coact (R := R) (C := C) (M := M) n :=
-  LinearMap.codRestrictOfInjective_comp_apply
-    ((Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N))
-    ((SMulMemClass.subtype N).rTensor C) (subtype_rTensor_injective N) (coact_mem_range N) n
-
 /-- The induced coaction included into the ambient tensor product, as an equality of linear maps. -/
 @[simp]
 theorem subtype_rTensor_comp_inducedCoact : (SMulMemClass.subtype N).rTensor C ∘ₗ N.inducedCoact =
       (Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N) := by
   ext n
-  exact subtype_rTensor_inducedCoact N n
+  exact LinearMap.codRestrictOfInjective_comp_apply
+    ((Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N))
+    ((SMulMemClass.subtype N).rTensor C) (subtype_rTensor_injective N) (coact_mem_range N) n
 
 /-- The subtype of a subcomodule carries the inherited right-comodule structure. -/
 noncomputable instance instComodule : Comodule R C N :=
@@ -106,7 +99,8 @@ theorem induced_coact :
 theorem subtype_rTensor_coact (n : N) :
     (SMulMemClass.subtype N).rTensor C (Comodule.coact (R := R) (C := C) (M := N) n) =
       Comodule.coact (R := R) (C := C) (M := M) n := by
-  rw [induced_coact, subtype_rTensor_inducedCoact]
+  rw [induced_coact]
+  exact LinearMap.congr_fun (subtype_rTensor_comp_inducedCoact N) n
 
 /-- A vector of a subcomodule whose inherited coaction is `v ↦ v ⊗ 1` is fixed by the ambient
 coaction too. -/
