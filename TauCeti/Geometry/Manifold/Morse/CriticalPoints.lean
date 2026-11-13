@@ -575,6 +575,18 @@ theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK :
     (hf.contMDiff.of_le (by simp)) hK
     fun _ hx ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx.1
 
+omit [IsManifold I 1 M] in
+/-- If only finitely many critical points lie in `S`, then only finitely many pairs of an index `m`
+and a critical point of index `m` in `S` exist. -/
+theorem finite_sigma_criticalPoints_inter {S : Set M} (hS : (criticalPoints I f ∩ S).Finite) :
+    Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ S | manifoldMorseIndex I f x = m}) :=
+  have := hS.to_subtype
+  .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ S)))
+    fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
+      cases Subtype.ext_iff.1 hxy
+      cases hx.2.symm.trans hy.2
+      rfl
+
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/
 theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
