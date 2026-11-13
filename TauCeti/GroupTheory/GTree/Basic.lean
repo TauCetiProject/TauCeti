@@ -502,10 +502,10 @@ theorem sameDeformationSpace_iff_forall_isEllipticSubgroup :
 variable (G) in
 /-- The one-vertex `G`-tree, with the trivial action. -/
 def point : GTree.{u, v} G where
-  toSerreGraph := SerreGraph.point
+  toSerreGraph := SerreGraph.noEdge PUnit
   isTree := single_vertex_isTree
   action := 1
-  action_smul_ne_rev _ e := e.elim
+  action_smul_ne_rev _ e := isEmptyElim e
 
 instance : Subsingleton (point.{u, v} G).V :=
   inferInstanceAs (Subsingleton PUnit)
