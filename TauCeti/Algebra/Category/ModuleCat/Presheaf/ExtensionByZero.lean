@@ -178,6 +178,16 @@ private def functor : PresheafOfModules.{v} ((Over.forget U).op ⋙ R) ⥤ Presh
     refine PresheafOfModules.hom_ext fun V ↦ ?_
     by_cases h : V.unop ≤ U <;> simp [mapApp, h]
 
+@[simp]
+private lemma functor_obj_obj (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) (V : Pᵒᵖ) :
+    ((functor R U).obj F).obj V = obj R U F V :=
+  rfl
+
+@[simp]
+private lemma functor_map_app {F G : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)}
+    (α : F ⟶ G) (V : Pᵒᵖ) : ((functor R U).map α).app V = mapApp R U α V :=
+  rfl
+
 /-- Evaluating the extension below `U` is naturally isomorphic to evaluating the original
 presheaf. -/
 private def evaluationIso {V : P} (h : V ≤ U) :
@@ -248,23 +258,37 @@ private def extendHom {F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)}
               (congrArg (G.map f).hom (extendApp_hom_apply R U α hV x).symm))))
     · simp [map, extendApp, hV]
 
+/-- Hom-set equivalence between extension by zero and restriction to the lower interval. -/
+private def homEquiv (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R))
+    (G : PresheafOfModules.{v} R) :
+    ((functor R U).obj F ⟶ G) ≃
+      (F ⟶ (PresheafOfModules.pushforward (F := Over.forget U)
+        (𝟙 ((Over.forget U).op ⋙ R))).obj G) where
+  toFun := restrictHom R U
+  invFun := extendHom R U
+  left_inv α := PresheafOfModules.hom_ext fun V ↦ by
+    by_cases h : V.unop ≤ U
+    · exact (dite_eq_left h).trans ((objIso R U F h).hom_inv_id_assoc (α.app V))
+    · exact (isZero_obj R U F h).eq_of_src _ _
+  right_inv α := PresheafOfModules.hom_ext fun V ↦
+    (congrArg ((restrictObjIso R U F V).inv ≫ ·)
+      (dite_eq_left (leOfHom V.unop.hom))).trans
+      ((restrictObjIso R U F V).inv_hom_id_assoc (α.app V))
+
+@[simp]
+private lemma homEquiv_symm_apply_app {F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)}
+    {G : PresheafOfModules.{v} R}
+    (α : F ⟶ (PresheafOfModules.pushforward (F := Over.forget U)
+      (𝟙 ((Over.forget U).op ⋙ R))).obj G)
+    (V : Pᵒᵖ) : ((homEquiv R U F G).symm α).app V = extendApp R U α V :=
+  rfl
+
 /-- Extension by zero is left adjoint to restriction to the lower interval. -/
 private def adjunction : functor R U ⊣
     PresheafOfModules.pushforward (F := Over.forget U) (𝟙 ((Over.forget U).op ⋙ R)) :=
   Adjunction.mkOfHomEquiv
-    { homEquiv F G :=
-        { toFun := restrictHom R U
-          invFun := extendHom R U
-          left_inv α := PresheafOfModules.hom_ext fun V ↦ by
-            by_cases h : V.unop ≤ U
-            · exact (dite_eq_left h).trans ((objIso R U F h).hom_inv_id_assoc (α.app V))
-            · exact (isZero_obj R U F h).eq_of_src _ _
-          right_inv α := PresheafOfModules.hom_ext fun V ↦
-            (congrArg ((restrictObjIso R U F V).inv ≫ ·)
-              (dite_eq_left (leOfHom V.unop.hom))).trans
-              ((restrictObjIso R U F V).inv_hom_id_assoc (α.app V)) }
+    { homEquiv := homEquiv R U
       homEquiv_naturality_left_symm {F F' G} α β := PresheafOfModules.hom_ext fun V ↦ by
-        change extendApp R U (α ≫ β) V = mapApp R U α V ≫ extendApp R U β V
         by_cases h : V.unop ≤ U
         · let βV : _ ⟶ G.obj V := β.app (op (Over.mk (homOfLE h)))
           have hαβ : extendApp R U (α ≫ β) V = (objIso R U F h).hom ≫ α.app _ ≫ βV :=
