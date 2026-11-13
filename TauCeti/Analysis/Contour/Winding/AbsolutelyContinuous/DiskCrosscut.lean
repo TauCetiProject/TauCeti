@@ -199,7 +199,7 @@ theorem image_arcLoop (hab : a ≤ b) (hb : c b = circleMap z₀ r α) :
   have hb1 : b ≤ b + 1 := le_add_of_nonneg_right zero_le_one
   let f : ℝ →ᵃ[ℝ] ℝ := (AffineMap.lineMap α β).comp ((AffineMap.id ℝ ℝ) - AffineMap.const ℝ ℝ b)
   have hf : ∀ s, f s = α + (s - b) * (β - α) := fun s => by
-    simp only [f, AffineMap.coe_comp, Function.comp_apply, AffineMap.coe_sub, AffineMap.coe_id,
+    simp only [f, AffineMap.coe_comp, Function.comp_apply, FunLike.coe_sub, AffineMap.coe_id,
       AffineMap.coe_const, Pi.sub_apply, id_eq, Function.const_apply, AffineMap.lineMap_apply_ring']
     ring
   have hcircle : (fun s => circleMap z₀ r (α + (s - b) * (β - α))) = circleMap z₀ r ∘ f := by
