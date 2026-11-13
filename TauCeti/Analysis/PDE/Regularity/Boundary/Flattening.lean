@@ -8,9 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
 public import TauCeti.Analysis.PDE.Regularity.Boundary.Flat
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Analysis.Sobolev.W1p.Localization
 
 /-!
 # Local `H²` regularity near a boundary portion that can be flattened
@@ -47,7 +45,8 @@ by `L` (`TauCeti.Wkp.IsChangeOfVariables.lipschitzOnWith_fderiv`). The transform
 bounded lower-order coefficients and right-hand side in `L²`. The function `u ∘ Φ` vanishes on
 the flat boundary portion: for a smooth `ψ` supported in `U'`, take a smooth `χ` supported in `U`
 and equal to one on `Φ(supp ψ)`; then `χ u ∈ H¹₀(Ω)`, its restriction lies in `H¹₀(Ω ∩ U)`,
-precomposition with `Φ` keeps it in `H¹₀(H ∩ U')`, and multiplying by `ψ` gives `ψ (u ∘ Φ)`. The
+precomposition with `Φ` keeps it in `H¹₀(H ∩ U')`, and multiplying by `ψ` gives `ψ (u ∘ Φ)`
+(`TauCeti.W1p.exists_w1p0_value_ae_eq_mul_value_compL`). The
 flat-boundary theorem (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo`)
 puts `u ∘ Φ` in `W^{2,2}` near the preimage of `V`, and precomposition with the `C²` map `Ψ`
 (`TauCeti.Wkp.compL`) carries this back to `u` on `Ω ∩ V`.
@@ -73,60 +72,6 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega H U U' V : Opens (EuclideanSpace ℝ ι)}
   {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L L' c₀ c₁ : ℝ}
-
-omit [DecidableEq ι] in
-/-- Zero boundary values on `∂Ω ∩ U` are carried to the flat side: if `χ u ∈ H¹₀(Ω)` for every
-smooth `χ` compactly supported in `U`, then `ψ (u ∘ Φ) ∈ H¹₀(H ∩ U')` for every smooth `ψ`
-compactly supported in `U'`. -/
-private theorem exists_w1p0_value_ae_eq_mul_value_compL
-    (hΦc : ContinuousOn Φ U') (hΦU : MapsTo Φ U' U)
-    (hΦ₁ : Wkp.IsChangeOfVariables 1 (H ⊓ U') (Omega ⊓ U) Φ L c₀)
-    (hΨ : ContinuousOn Ψ (Omega ⊓ U)) (hΨmaps : MapsTo Ψ (Omega ⊓ U) (H ⊓ U'))
-    (hΨΦ : LeftInvOn Ψ Φ (H ⊓ U')) {u : W1p mu Omega 2}
-    (hu0 : ∀ χ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ χ → HasCompactSupport χ →
-      tsupport χ ⊆ U → ∃ v : W1p0 mu Omega 2,
-        W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => χ x * W1p.value u x)
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hψU : tsupport ψ ⊆ U') :
-    ∃ v : W1p0 mu (H ⊓ U') 2, W1p.value (v : W1p mu (H ⊓ U') 2) =ᵐ[mu.restrict (H ⊓ U')]
-      fun x => ψ x * W1p.value (W1p.compL Φ ENNReal.ofNat_ne_top hΦ₁.differentiableOn
-        hΦ₁.injOn hΦ₁.mapsTo hΦ₁.norm_fderiv_le hΦ₁.pos hΦ₁.le_abs_det
-        (W1p.restrictL (inf_le_left : Omega ⊓ U ≤ Omega) u)) x := by
-  have hp : (2 : ENNReal) ≠ ⊤ := ENNReal.ofNat_ne_top
-  -- A cutoff `χ`, supported in `U`, equal to one on the compact set `Φ(supp ψ)`.
-  have hK : IsCompact (Φ '' tsupport ψ) :=
-    hψc.isCompact.image_of_continuousOn (hΦc.mono hψU)
-  obtain ⟨χ, -, hχ, -, hχ1, hχc, hχs, -⟩ :=
-    hK.exists_contDiff_cutoff_with_bounds U.isOpen (hΦU.mono_left hψU).image_subset
-  -- `χ u ∈ H¹₀(Ω)` restricts to `H¹₀(Ω ∩ U)`, and precomposition with `Φ` keeps it in `H¹₀`.
-  obtain ⟨w, hw⟩ := hu0 χ hχ hχc hχs
-  have hw0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport χ → W1p.value (w : W1p mu Omega 2) x = 0 := by
-    filter_upwards [hw] with x hx hxχ
-    rw [hx, image_eq_zero_of_notMem_tsupport hxχ, zero_mul]
-  have hw' := W1p.compL_mem_w1p0Submodule_of_leftInvOn Φ hp hΦ₁.differentiableOn hΦ₁.injOn
-    hΦ₁.mapsTo hΦ₁.norm_fderiv_le hΦ₁.pos hΦ₁.le_abs_det hΨ hΨmaps hΨΦ
-    (W1p.restrictL_mem_w1p0Submodule_of_isCompact hχc hχs w.2 hw0)
-  -- Multiplying by `ψ` keeps zero boundary values.
-  obtain ⟨M, hM, hψM, hgM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
-  refine ⟨⟨_, W1p.contDiffSMul_mem_w1p0Submodule hψ hM (fun x _ => hψM x) (fun x _ => hgM x) hw'⟩,
-    ?_⟩
-  have hΩU : ((Omega ⊓ U : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) ⊆ Omega :=
-    fun _ hx => hx.1
-  filter_upwards [W1p.value_contDiffSMul_ae hψ hM (fun x _ => hψM x) (fun x _ => hgM x)
-      (W1p.compL Φ hp hΦ₁.differentiableOn hΦ₁.injOn hΦ₁.mapsTo hΦ₁.norm_fderiv_le hΦ₁.pos
-        hΦ₁.le_abs_det (W1p.restrictL inf_le_left (w : W1p mu Omega 2))),
-    W1p.value_compL_ae Φ hp hΦ₁.differentiableOn hΦ₁.injOn hΦ₁.mapsTo hΦ₁.norm_fderiv_le hΦ₁.pos
-      hΦ₁.le_abs_det (W1p.restrictL inf_le_left (w : W1p mu Omega 2)),
-    W1p.value_compL_ae Φ hp hΦ₁.differentiableOn hΦ₁.injOn hΦ₁.mapsTo hΦ₁.norm_fderiv_le hΦ₁.pos
-      hΦ₁.le_abs_det (W1p.restrictL inf_le_left u),
-    hΦ₁.ae_comp (W1p.value_restrictL_ae inf_le_left (w : W1p mu Omega 2)),
-    hΦ₁.ae_comp (W1p.value_restrictL_ae inf_le_left u),
-    hΦ₁.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩU hw)] with x h1 h2 h3 h4 h5 h6
-  rw [h1, h2, h3, h4, h5, h6, smul_eq_mul]
-  -- On `supp ψ`, the cutoff `χ ∘ Φ` is one.
-  by_cases hx : x ∈ tsupport ψ
-  · rw [show χ (Φ x) = 1 from interior_subset (hχ1 (mem_image_of_mem Φ hx)), one_mul]
-  · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul, zero_mul]
 
 /-- **Local `H²` regularity near a boundary portion flattened by a `C²` change of variables.** Let
 `ν ≠ 0`, and let `H` be an open set mapped into itself by every translation orthogonal to `ν`, as
@@ -198,7 +143,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_isChangeOfVariable
   -- `‖v‖ ≤ L' ‖DΦ(x) v‖` on `Ω₁'`, since `DΨ(Φ x)` inverts `DΦ(x)`.
   have hinv : ∀ x ∈ (Ω₁' : Set (EuclideanSpace ℝ ι)), ∀ v, ‖v‖ ≤ L' * ‖fderiv ℝ Φ x v‖ :=
     fun _ hx => norm_le_mul_norm_fderiv_apply_of_leftInvOn hΦ₁.differentiableOn hΦ₁.mapsTo
-      hΨ₁.differentiableOn hΨΦ₁ hΨ₁.norm_fderiv_le hx
+      hΨ₁.differentiableOn hΨΦ₁ hx (hΨ₁.norm_fderiv_le _ (hΦ₁.mapsTo hx))
   have hΩ₁' : (Ω₁' : Set (EuclideanSpace ℝ ι)) ∩ U' = Ω₁' := inter_eq_left.2 fun _ hx => hx.2
   -- The transformed principal coefficient is uniformly elliptic on `Ω₁'`. The constants of
   -- `UniformlyEllipticOn.pullbackPrincipal` need a nonempty index type, which `ν ≠ 0` provides,
@@ -241,9 +186,10 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_isChangeOfVariable
   -- The flat-boundary theorem puts `u ∘ Φ` in `W^{2,2}(Ω₁' ∩ V')`.
   obtain ⟨W', hW'⟩ := ha'.exists_lowerOrder_eq_restrictL_of_mapsTo (mu := mu) hν hH
     (by rw [hΩ₁']; rfl) hK' hb' hc' hu'
-    (fun ψ hψ hψc hψU => exists_w1p0_value_ae_eq_mul_value_compL
-      hΦ.differentiableOn.continuousOn hΦ.mapsTo (hΦ₁.mono (by norm_num))
-      hΨ₁.differentiableOn.continuousOn hΨ₁.mapsTo hΨΦ₁ hu0 hψ hψc hψU)
+    (fun ψ hψ hψc hψU => W1p.exists_w1p0_value_ae_eq_mul_value_compL hp
+      hΦ₁.differentiableOn hΦ₁.injOn hΦ₁.mapsTo hΦ₁.norm_fderiv_le hΦ₁.pos hΦ₁.le_abs_det
+      hΦ.differentiableOn.continuousOn hΦ.mapsTo hΨ₁.differentiableOn.continuousOn hΨ₁.mapsTo
+      hΨΦ₁ hu0 hψ hψc hψU)
     (hKV.of_isClosed_subset isClosed_closure hclV')
     (hclV'.trans (hΨ.mapsTo.mono_left hVU).image_subset)
   -- Precomposition with `Ψ` carries it back to `Ω ∩ V`.

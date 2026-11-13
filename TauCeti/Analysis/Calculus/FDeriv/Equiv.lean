@@ -141,17 +141,17 @@ theorem fderiv_comp_fderiv_eq_id_of_leftInvOn (hΦ : DifferentiableOn 𝕜 Φ U)
   exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id y)
 
 /-- **A lower bound for the derivative of a map with a left inverse.** Under the hypotheses of
-`TauCeti.fderiv_comp_fderiv_eq_id_of_leftInvOn`, if `‖DΨ‖ ≤ L'` on `V`, then
-`‖v‖ ≤ L' ‖DΦ(y) v‖` for every `y ∈ U` and every `v`. -/
+`TauCeti.fderiv_comp_fderiv_eq_id_of_leftInvOn`, if `y ∈ U` and `‖DΨ(Φ y)‖ ≤ L'`, then
+`‖v‖ ≤ L' ‖DΦ(y) v‖` for every `v`. -/
 theorem norm_le_mul_norm_fderiv_apply_of_leftInvOn (hΦ : DifferentiableOn 𝕜 Φ U)
-    (hmaps : MapsTo Φ U V) (hΨ : DifferentiableOn 𝕜 Ψ V) (hΨΦ : LeftInvOn Ψ Φ U) {L' : ℝ}
-    (hL' : ∀ z ∈ (V : Set F), ‖fderiv 𝕜 Ψ z‖ ≤ L') {y : E} (hy : y ∈ (U : Set E)) (v : E) :
+    (hmaps : MapsTo Φ U V) (hΨ : DifferentiableOn 𝕜 Ψ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : E}
+    (hy : y ∈ (U : Set E)) {L' : ℝ} (hL' : ‖fderiv 𝕜 Ψ (Φ y)‖ ≤ L') (v : E) :
     ‖v‖ ≤ L' * ‖fderiv 𝕜 Φ y v‖ :=
   calc ‖v‖ = ‖fderiv 𝕜 Ψ (Φ y) (fderiv 𝕜 Φ y v)‖ := by
         rw [← ContinuousLinearMap.comp_apply,
           fderiv_comp_fderiv_eq_id_of_leftInvOn hΦ hmaps hΨ hΨΦ hy, ContinuousLinearMap.id_apply]
     _ ≤ L' * ‖fderiv 𝕜 Φ y v‖ := ((fderiv 𝕜 Ψ (Φ y)).le_opNorm _).trans
-        (mul_le_mul_of_nonneg_right (hL' _ (hmaps hy)) (norm_nonneg _))
+        (mul_le_mul_of_nonneg_right hL' (norm_nonneg _))
 
 end TauCeti
 

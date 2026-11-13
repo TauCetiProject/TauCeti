@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.Analysis.Matrix.Normed
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
-import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
@@ -44,8 +43,6 @@ The normed structure on matrices is Mathlib's `L∞` operator norm, available th
 * `ContinuousLinearMap.contDiff_det`: the determinant of a continuous linear endomorphism
   of a normed space is smooth over a complete field (it is the constant `1` in infinite
   dimension).
-* `ContinuousLinearMap.exists_lipschitzOnWith_det_closedBall`: over `ℝ`, it is Lipschitz on
-  every closed ball of a finite-dimensional space.
 * `Matrix.differentiable_det`: the determinant is differentiable at every matrix.
 * `Matrix.fderiv_det_eq_sum_updateRow`: its differential is the sum of row replacements.
 * `Matrix.fderiv_det_updateRow`: the row-replacement formula for a field with one row fixed.
@@ -249,13 +246,5 @@ theorem contDiff_det {r : ℕ∞ω} :
     funext f
     exact (congrArg Matrix.det (hL f)).trans (LinearMap.det_toMatrix b _)
   exact hfun ▸ h
-
-/-- The determinant of an endomorphism of a finite-dimensional real normed space is Lipschitz on
-every closed ball, since it is smooth and closed balls are compact and convex. -/
-theorem exists_lipschitzOnWith_det_closedBall {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] (r : ℝ) :
-    ∃ K, LipschitzOnWith K (fun f : E →L[ℝ] E ↦ f.det) (Metric.closedBall 0 r) :=
-  (contDiff_det (𝕜 := ℝ) (E := E) (r := 1)).contDiffOn.exists_lipschitzOnWith one_ne_zero
-    (convex_closedBall 0 r) (isCompact_closedBall 0 r)
 
 end ContinuousLinearMap
