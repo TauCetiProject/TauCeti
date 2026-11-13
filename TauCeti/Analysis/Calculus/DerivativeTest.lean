@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.DerivativeTest
 public import TauCeti.Analysis.Calculus.Taylor.Integral
 
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Topology.Instances.Sign
 
 /-!
 # Necessary and strict derivative tests
@@ -22,7 +23,10 @@ It also strengthens the conclusion of Mathlib's sufficient second-derivative tes
 point `x₀` with `deriv (deriv f) x₀ > 0` the function has a *strict* local minimum,
 `f x₀ < f x` for `x ≠ x₀` near `x₀`, and dually for `deriv (deriv f) x₀ < 0`. Strictness is what
 the stability of an equilibrium at a minimum of the energy needs. This goes through a strict
-version of Mathlib's first-derivative test `isLocalMin_of_sign_deriv`.
+version of Mathlib's first-derivative test `isLocalMin_of_sign_deriv`. When `deriv f` is continuous
+on an order-connected set `I` and vanishes nowhere on `I \ {α}`, connectedness propagates the local
+sign of `deriv f` to all of `I`, yielding global strict antitonicity to the left of `α` and strict
+monotonicity to the right of `α`.
 
 It also records the one-sided first-derivative tests at an endpoint: a function with a local
 maximum on `Iic a` at `a` (a maximum *from the left*) has nonnegative left derivative there, and
@@ -43,6 +47,9 @@ step of Hopf's boundary-point lemma.
   derivative just to the right of `x₀`.
 * `TauCeti.eventually_lt_of_deriv_deriv_pos`, `TauCeti.eventually_gt_of_deriv_deriv_neg`: the
   strict second-derivative tests.
+* `TauCeti.sign_deriv_eq_sign_sub`, `TauCeti.strictAntiOn_Iic_of_deriv_ne_zero`,
+  `TauCeti.strictMonoOn_Ici_of_deriv_ne_zero`: global sign of `deriv f` and strict monotonicity on
+  each side of a unique nondegenerate critical point on an order-connected set.
 * `TauCeti.deriv_deriv_nonpos_of_isLocalMax`: the local-maximum version.
 * `TauCeti.deriv_deriv_nonneg_of_isLocalMin`: the local-minimum version.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
@@ -171,6 +178,57 @@ local maximum of `f`. -/
 theorem eventually_gt_of_deriv_deriv_neg {f : ℝ → ℝ} {x₀ : ℝ} (hf : deriv (deriv f) x₀ < 0)
     (hd : deriv f x₀ = 0) (hc : ContinuousAt f x₀) : ∀ᶠ x in 𝓝[≠] x₀, f x < f x₀ := by
   simpa using eventually_lt_of_deriv_deriv_pos (f := (-f ·)) (by simpa) (by simpa) hc.neg
+
+/-- **Global sign of `deriv f` around a unique critical point.** On an order-connected set `I`, if
+`deriv f` is continuous on `I`, vanishes at `α ∈ I` with `0 < deriv (deriv f) α`, and vanishes
+nowhere else on `I`, then `deriv f t` has the sign of `t - α` at every `t ∈ I`. -/
+theorem sign_deriv_eq_sign_sub {f : ℝ → ℝ} {I : Set ℝ} {α t : ℝ} (hord : Set.OrdConnected I)
+    (hα : α ∈ I) (hf' : ContinuousOn (deriv f) I) (hfα : deriv f α = 0)
+    (hf'' : 0 < deriv (deriv f) α) (hne : ∀ u ∈ I, u ≠ α → deriv f u ≠ 0) (ht : t ∈ I) :
+    SignType.sign (deriv f t) = SignType.sign (t - α) := by
+  have hloc := eventually_nhdsWithin_sign_eq_of_deriv_pos hf'' hfα
+  rcases lt_trichotomy t α with hlt | rfl | hgt
+  · obtain ⟨u, hu_sign, htu, huα⟩ :=
+      ((eventually_nhdsWithin_of_eventually_nhds hloc).and (Ioo_mem_nhdsLT hlt)).exists
+    have huI : u ∈ I ∩ Set.Iio α := ⟨hord.out ht hα ⟨htu.le, huα.le⟩, huα⟩
+    have hconn : IsPreconnected (I ∩ Set.Iio α) := (hord.inter Set.ordConnected_Iio).isPreconnected
+    rw [hconn.sign_eq_of_continuousOn (hf'.mono Set.inter_subset_left)
+      (fun z hz => hne z hz.1 hz.2.ne) ⟨ht, hlt⟩ huI, hu_sign,
+      sign_neg (sub_neg.mpr huα), sign_neg (sub_neg.mpr hlt)]
+  · simp [hfα]
+  · obtain ⟨u, hu_sign, hαu, hut⟩ :=
+      ((eventually_nhdsWithin_of_eventually_nhds hloc).and (Ioo_mem_nhdsGT hgt)).exists
+    have huI : u ∈ I ∩ Set.Ioi α := ⟨hord.out hα ht ⟨hαu.le, hut.le⟩, hαu⟩
+    have hconn : IsPreconnected (I ∩ Set.Ioi α) := (hord.inter Set.ordConnected_Ioi).isPreconnected
+    rw [hconn.sign_eq_of_continuousOn (hf'.mono Set.inter_subset_left)
+      (fun z hz => hne z hz.1 hz.2.ne') ⟨ht, hgt⟩ huI, hu_sign,
+      sign_pos (sub_pos.mpr hαu), sign_pos (sub_pos.mpr hgt)]
+
+/-- On an order-connected set `I`, a continuous function `f` with continuous derivative vanishing
+only at `α ∈ I` and satisfying `0 < deriv (deriv f) α` is strictly decreasing on `I ∩ (-∞, α]`. -/
+theorem strictAntiOn_Iic_of_deriv_ne_zero {f : ℝ → ℝ} {I : Set ℝ} {α : ℝ}
+    (hord : Set.OrdConnected I) (hα : α ∈ I) (hf : ContinuousOn f I)
+    (hf' : ContinuousOn (deriv f) I) (hfα : deriv f α = 0) (hf'' : 0 < deriv (deriv f) α)
+    (hne : ∀ u ∈ I, u ≠ α → deriv f u ≠ 0) :
+    StrictAntiOn f (I ∩ Set.Iic α) := by
+  refine strictAntiOn_of_deriv_neg (hord.convex.inter (convex_Iic α))
+    (hf.mono Set.inter_subset_left) fun t ht => ?_
+  rw [interior_inter, interior_Iic] at ht
+  have hsign := sign_deriv_eq_sign_sub hord hα hf' hfα hf'' hne (interior_subset ht.1)
+  rwa [sign_neg (sub_neg.mpr ht.2), sign_eq_neg_one_iff] at hsign
+
+/-- On an order-connected set `I`, a continuous function `f` with continuous derivative vanishing
+only at `α ∈ I` and satisfying `0 < deriv (deriv f) α` is strictly increasing on `I ∩ [α, ∞)`. -/
+theorem strictMonoOn_Ici_of_deriv_ne_zero {f : ℝ → ℝ} {I : Set ℝ} {α : ℝ}
+    (hord : Set.OrdConnected I) (hα : α ∈ I) (hf : ContinuousOn f I)
+    (hf' : ContinuousOn (deriv f) I) (hfα : deriv f α = 0) (hf'' : 0 < deriv (deriv f) α)
+    (hne : ∀ u ∈ I, u ≠ α → deriv f u ≠ 0) :
+    StrictMonoOn f (I ∩ Set.Ici α) := by
+  refine strictMonoOn_of_deriv_pos (hord.convex.inter (convex_Ici α))
+    (hf.mono Set.inter_subset_left) fun t ht => ?_
+  rw [interior_inter, interior_Ici] at ht
+  have hsign := sign_deriv_eq_sign_sub hord hα hf' hfα hf'' hne (interior_subset ht.1)
+  rwa [sign_pos (sub_pos.mpr ht.2), sign_eq_one_iff] at hsign
 
 section NormedSpace
 
