@@ -289,6 +289,15 @@ private theorem eventually_add_sigPos_le {l : Filter ℝ} {h : ℝ → ℝ} {D :
   filter_upwards [eventually_add_sigNeg_le (V := fun t ↦ -V t) hsymm' hh hpos hrem'] with t ht
   simpa [hQ, hΓ] using ht
 
+/-- The positive and negative indices of a symmetric form and the dimension of its kernel add up
+to the dimension of the space. -/
+theorem sigPos_add_sigNeg_add_finrank_ker {B : E →L[ℝ] E →L[ℝ] ℝ}
+    (hB : B.toBilinForm.IsSymm) :
+    sigPos B.toBilinForm.toQuadraticMap + sigNeg B.toBilinForm.toQuadraticMap +
+      Module.finrank ℝ B.ker = Module.finrank ℝ E := by
+  have h := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := B.toBilinForm.toQuadraticMap)
+  rwa [LinearMap.BilinForm.radical_toQuadraticMap _ hB, ker_toBilinForm] at h
+
 /-- At a regular crossing, eventually along `l` the negative index of `V t` is that of `V t₀`
 plus that of the crossing form, and `V t` has trivial radical: the two lower bounds add up to the
 dimension of the space. -/
@@ -302,8 +311,7 @@ private theorem eventually_sigNeg_eq_and_radical_eq_bot {l : Filter ℝ} {h : �
   filter_upwards [eventually_add_sigNeg_le hsymm hh hpos hrem,
     eventually_add_sigPos_le hsymm hh hpos hrem] with t hneg hpos
   have h₁ := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := (V t).toBilinForm.toQuadraticMap)
-  have h₀ := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := (V t₀).toBilinForm.toQuadraticMap)
-  rw [LinearMap.BilinForm.radical_toQuadraticMap _ hsymm, ker_toBilinForm] at h₀
+  have h₀ := sigPos_add_sigNeg_add_finrank_ker hsymm
   have hΓ := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _ hreg
   have hrad : Module.finrank ℝ (V t).toBilinForm.toQuadraticMap.radical = 0 := by omega
   exact ⟨by omega, Submodule.finrank_eq_zero.1 hrad⟩
@@ -364,15 +372,6 @@ theorem eventually_sigNeg_eq_add_sigPos_crossingForm {V' : E →L[ℝ] E →L[�
     ∀ᶠ t in 𝓝[<] t₀, sigNeg (V t).toBilinForm.toQuadraticMap =
       sigNeg (V t₀).toBilinForm.toQuadraticMap + sigPos (crossingForm (V t₀) V') :=
   (eventually_nhdsLT_sigNeg_eq_and_radical_eq_bot hsymm hV hreg).mono fun _ ht ↦ ht.1
-
-/-- The positive and negative indices of a symmetric form and the dimension of its kernel add up
-to the dimension of the space. -/
-theorem sigPos_add_sigNeg_add_finrank_ker {B : E →L[ℝ] E →L[ℝ] ℝ}
-    (hB : B.toBilinForm.IsSymm) :
-    sigPos B.toBilinForm.toQuadraticMap + sigNeg B.toBilinForm.toQuadraticMap +
-      Module.finrank ℝ B.ker = Module.finrank ℝ E := by
-  have h := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := B.toBilinForm.toQuadraticMap)
-  rwa [LinearMap.BilinForm.radical_toQuadraticMap _ hB, ker_toBilinForm] at h
 
 /-- **The signature just after a regular crossing.** Let `V` be a path of continuous bilinear
 forms, symmetric at `t₀` and with right derivative `V'` there, whose crossing form at `t₀` is

@@ -100,10 +100,10 @@ theorem maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley {U V : unita
     zero_lt_one (continuousOn_toContinuousLinearMap₂' hAc)
     (fun t ht ↦ isSymm_toBilinForm_toContinuousLinearMap₂' (hA t ht).isSymm)
     (fun t ht hnt ↦ hasDerivWithinAt_toContinuousLinearMap₂' (hd t ht (not_not.1 fun h ↦
-      hnt ((nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff _).2 h))))
+      hnt ((nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff_det_ne_zero _).2 h))))
     (fun t ht hnt ↦ (crossingFormIsometryEquiv (hA t ht).isSymm (A' t)).nondegenerate_iff.2
       (hreg t ht (not_not.1 fun h ↦
-        hnt ((nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff _).2 h))))
+        hnt ((nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff_det_ne_zero _).2 h))))
   have hΓ (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
       (sigPos (ContinuousLinearMap.crossingForm (A t).toContinuousLinearMap₂'
           (A' t).toContinuousLinearMap₂') : ℤ) -

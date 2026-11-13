@@ -725,10 +725,8 @@ than its polar form, and it is the bilinear form, not the polar form `2 • B`, 
 nondegenerate here. -/
 theorem BilinForm.Nondegenerate.toQuadraticMap [Invertible (2 : R)] {B : LinearMap.BilinForm R M}
     (hB : B.Nondegenerate) (hflip : LinearMap.flip B = B) :
-    (BilinMap.toQuadraticMap B).Nondegenerate := by
-  rw [← QuadraticMap.nondegenerate_associated_iff,
-    QuadraticMap.associated_left_inverse' R hflip]
-  exact hB
+    (BilinMap.toQuadraticMap B).Nondegenerate :=
+  (nondegenerate_toQuadraticMap_iff (BilinForm.isSymm_iff_flip.2 hflip)).2 hB
 
 end LinearMap
 
