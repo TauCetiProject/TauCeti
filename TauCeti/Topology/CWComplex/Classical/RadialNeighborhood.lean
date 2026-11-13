@@ -44,6 +44,10 @@ Hatcher's neighborhood `N_ε(A)` with every `ε` equal to `2⁻¹`.
 * `Topology.RelCWComplex.Subcomplex.radialNeighborhood`: the radial neighborhood of a subcomplex.
 * `Topology.RelCWComplex.Subcomplex.radialDeformation`: the deformation of the radial
   neighborhood onto the subcomplex.
+* `Topology.RelCWComplex.Subcomplex.radialNeighborhoodRetraction`,
+  `Topology.RelCWComplex.Subcomplex.radialNeighborhoodDeformation`: the resulting retraction of
+  the radial neighborhood onto the subcomplex, and the homotopy rel the subcomplex from the
+  identity to it.
 
 ## Main results
 
@@ -334,6 +338,7 @@ lemma radialNeighborhood_top : (⊤ : Subcomplex C).radialNeighborhood = C :=
   (radialNeighborhood_subset_complex ⊤).antisymm (subset_radialNeighborhood (⊤ : Subcomplex C))
 
 /-- The radial neighborhood of a subcomplex is empty exactly when the subcomplex is. -/
+@[simp]
 lemma radialNeighborhood_eq_empty_iff : A.radialNeighborhood = ∅ ↔ (A : Set X) = ∅ := by
   refine ⟨fun h ↦ subset_empty_iff.1 (h ▸ subset_radialNeighborhood A), fun h ↦ ?_⟩
   refine eq_empty_of_forall_notMem fun x hx ↦ forall_mem_complex_of_map
@@ -349,6 +354,12 @@ lemma radialNeighborhood_eq_empty_iff : A.radialNeighborhood = ∅ ↔ (A : Set 
 lemma radialNeighborhood_bot_of_base_eq_empty (hD : D = ∅) :
     (⊥ : Subcomplex C).radialNeighborhood = ∅ :=
   radialNeighborhood_eq_empty_iff ⊥ |>.2 (coe_bot.trans hD)
+
+/-- For a CW complex, the radial neighborhood of the bottom subcomplex is empty. -/
+@[simp]
+lemma radialNeighborhood_bot {C : Set X} [RelCWComplex C ∅] :
+    (⊥ : Subcomplex C).radialNeighborhood = ∅ :=
+  radialNeighborhood_bot_of_base_eq_empty rfl
 
 /-! ### Openness -/
 
@@ -754,28 +765,58 @@ lemma continuousOn_radialDeformation :
     ((continuous_subtype_val.comp continuous_snd).continuousOn.congr fun p _ ↦
       radialDeformation_of_mem A _ (A.base_subset p.2.2))
 
+private lemma continuous_radialDeformation_radialNeighborhood :
+    Continuous fun p : I × A.radialNeighborhood ↦ A.radialDeformation p.1 p.2 :=
+  (continuousOn_radialDeformation A).comp_continuous
+    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+    fun p ↦ ⟨mem_univ _, p.2.2⟩
+
+/-- The **radial retraction** of the radial neighborhood of `A` onto `A`: the radial deformation
+`Topology.RelCWComplex.Subcomplex.radialDeformation` at time `1`. -/
+def radialNeighborhoodRetraction : C(A.radialNeighborhood, A) where
+  toFun x := ⟨A.radialDeformation 1 x, radialDeformation_one_mem A x.2⟩
+  continuous_toFun := ((continuous_radialDeformation_radialNeighborhood A).comp
+    (continuous_const.prodMk continuous_id)).subtype_mk _
+
+@[simp]
+lemma coe_radialNeighborhoodRetraction_apply (x : A.radialNeighborhood) :
+    (A.radialNeighborhoodRetraction x : X) = A.radialDeformation 1 x :=
+  (rfl)
+
+/-- The radial retraction fixes the points of `A`. -/
+@[simp]
+lemma radialNeighborhoodRetraction_inclusion (a : A) :
+    A.radialNeighborhoodRetraction (Set.inclusion (subset_radialNeighborhood A) a) = a :=
+  Subtype.ext (radialDeformation_of_mem A 1 a.2)
+
+/-- The radial deformation `Topology.RelCWComplex.Subcomplex.radialDeformation`, as a homotopy
+rel `A` from the identity of the radial neighborhood to the radial retraction
+`Topology.RelCWComplex.Subcomplex.radialNeighborhoodRetraction` followed by the inclusion. -/
+def radialNeighborhoodDeformation :
+    (ContinuousMap.id A.radialNeighborhood).HomotopyRel
+      ((ContinuousMap.inclusion (subset_radialNeighborhood A)).comp
+        A.radialNeighborhoodRetraction) {x | (x : X) ∈ A} where
+  toFun p := ⟨A.radialDeformation p.1 p.2, radialDeformation_mem A p.1 p.2.2⟩
+  continuous_toFun := (continuous_radialDeformation_radialNeighborhood A).subtype_mk _
+  map_zero_left x := Subtype.ext (radialDeformation_zero A x)
+  map_one_left _ := rfl
+  prop' t _ hx := Subtype.ext (radialDeformation_of_mem A t hx)
+
+@[simp]
+lemma coe_radialNeighborhoodDeformation_apply (p : I × A.radialNeighborhood) :
+    (A.radialNeighborhoodDeformation p : X) = A.radialDeformation p.1 p.2 :=
+  (rfl)
+
 /-- **A subcomplex is a strong deformation retract of its radial neighborhood** (Hatcher,
-Proposition A.5). An explicit deformation is
-`Topology.RelCWComplex.Subcomplex.radialDeformation`. -/
+Proposition A.5). Explicit witnesses are
+`Topology.RelCWComplex.Subcomplex.radialNeighborhoodRetraction` and
+`Topology.RelCWComplex.Subcomplex.radialNeighborhoodDeformation`. -/
 theorem exists_strong_deformation_retraction_radialNeighborhood :
     ∃ r : C(A.radialNeighborhood, A),
       (∀ a, r (ContinuousMap.inclusion (subset_radialNeighborhood A) a) = a) ∧
       Nonempty (((ContinuousMap.inclusion (subset_radialNeighborhood A)).comp r).HomotopyRel
-        (.id A.radialNeighborhood) {x | (x : X) ∈ A}) := by
-  have hcont : Continuous fun p : I × A.radialNeighborhood ↦ radialDeformation A p.1 p.2 :=
-    (continuousOn_radialDeformation A).comp_continuous
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
-      fun p ↦ ⟨mem_univ _, p.2.2⟩
-  let r : C(A.radialNeighborhood, A) :=
-    ⟨fun x ↦ ⟨radialDeformation A 1 x, radialDeformation_one_mem A x.2⟩,
-      (hcont.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩
-  refine ⟨r, fun a ↦ Subtype.ext (radialDeformation_of_mem A 1 a.2),
-    ⟨ContinuousMap.HomotopyRel.symm ?_⟩⟩
-  exact
-    { toFun := fun p ↦ ⟨radialDeformation A p.1 p.2, radialDeformation_mem A p.1 p.2.2⟩
-      continuous_toFun := hcont.subtype_mk _
-      map_zero_left := fun x ↦ Subtype.ext (radialDeformation_zero A x)
-      map_one_left := fun _ ↦ rfl
-      prop' := fun t x hx ↦ Subtype.ext (radialDeformation_of_mem A t hx) }
+        (.id A.radialNeighborhood) {x | (x : X) ∈ A}) :=
+  ⟨A.radialNeighborhoodRetraction, radialNeighborhoodRetraction_inclusion A,
+    ⟨A.radialNeighborhoodDeformation.symm⟩⟩
 
 end Topology.RelCWComplex.Subcomplex
