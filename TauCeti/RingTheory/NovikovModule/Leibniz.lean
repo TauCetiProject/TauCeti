@@ -138,33 +138,6 @@ theorem kernelMap_kernelProduct_eq_add
     kernelProduct_add h₁ h₁fin hk₂ hk₂fin hk hkfin, kernelProduct_smul h₂ h₂fin _ hk₂ hk₂fin,
     LinearMap.add_apply, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.smul_apply]
 
-section Sign
-
-variable {R H ι₁ : Type*} [Ring R] [AddGroup H] [Finite ι₁] {N : H →+ ℝ}
-  {P₁ : ι₁ → Type*} [∀ i, AddTorsor H (P₁ i)] {F₁ : (Σ i, P₁ i) → ℝ}
-  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h) (r₁ : ∀ i, P₁ i)
-
-/-- If degrees change by even amounts within each orbit, then on the coordinates of a combination
-of degree `e` the sign of the degree of a reference generator is the sign `(-1)^e`: the
-coordinate in an orbit vanishes unless the orbit has generators of degree `e`, which all have the
-parity of its reference generator. -/
-theorem negOnePowCast_smul_coordinates_of_mem_gradeBy {d : (Σ i, P₁ i) → ℤ}
-    (hd : ∀ i (h : H) (p : P₁ i), Even (d ⟨i, h +ᵥ p⟩ - d ⟨i, p⟩)) {e : ℤ} {a : NovikovModule R F₁}
-    (ha : a ∈ gradeBy R F₁ d e) (i : ι₁) :
-    negOnePowCast R (d ⟨i, r₁ i⟩) • coordinates hF₁ r₁ a i =
-      negOnePowCast R e • coordinates hF₁ r₁ a i := by
-  by_cases h₀ : coordinates hF₁ r₁ a i = 0
-  · rw [h₀, smul_zero, smul_zero]
-  obtain ⟨h, hh⟩ : ∃ h, (coordinates hF₁ r₁ a i).coeff h ≠ 0 := by
-    by_contra! hc
-    exact h₀ (NovikovSeries.ext hc)
-  rw [coordinates_coeff] at hh
-  have hde := mem_gradeBy_iff.1 ha _ hh
-  rw [← hde, ← sub_add_cancel (d ⟨i, h +ᵥ r₁ i⟩) (d ⟨i, r₁ i⟩), negOnePowCast_add,
-    negOnePowCast_even (hd i h (r₁ i)), one_mul]
-
-end Sign
-
 section Matrix
 
 variable {R H ι₁ ι₂ ι₀ : Type*} [CommRing R] [AddCommGroup H] {N : H →+ ℝ}
@@ -200,35 +173,14 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_eq_add
         negOnePowCast R e • novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a
           (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) := by
   refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
-  rw [map_add, map_smul, Pi.add_apply, Pi.smul_apply]
-  simp only [coordinates_novikovMapOfMatrix, coordinates_novikovProductOfMatrix]
+  rw [map_add, map_smul, Pi.add_apply, Pi.smul_apply,
+    coordinates_novikovMapOfMatrix_novikovProductOfMatrix,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right]
   have hs := negOnePowCast_smul_coordinates_of_mem_gradeBy hF₁ r₁ hd₁ ha
-  set x := coordinates hF₁ r₁ a
-  set y := coordinates hF₂ r₂ b
-  -- Each of the three sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the
-  -- three sums over `k` of the Leibniz identity.
-  have h₀ : ∑ k, (∑ i, ∑ j, x i * y j * Q i j k) * D₀ k l =
-      ∑ i, ∑ j, x i * y j * ∑ k, Q i j k * D₀ k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-  have h₁ : ∑ k, ∑ j, (∑ i, x i * D₁ i k) * y j * Q k j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₁ i k * Q k j l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    rw [Finset.sum_comm]
-    refine (Finset.sum_congr rfl fun j _ => Finset.sum_comm).trans ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
-      Finset.sum_congr rfl fun k _ => by ring
-  have h₂ : ∑ i, ∑ j, (x i * ∑ m, y m * D₂ m j) * Q i j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₂ j k * Q i k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
   -- Termwise, this is the Leibniz identity, with the sign of the orbit of `i` replaced by the
   -- sign of the degree of `a` on its nonzero coordinates.
-  rw [h₀, h₁, h₂, Finset.smul_sum, ← Finset.sum_add_distrib]
+  rw [Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun j _ => ?_

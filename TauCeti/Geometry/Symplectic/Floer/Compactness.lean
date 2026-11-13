@@ -81,7 +81,17 @@ and the subsequence can be chosen so that its parameters also converge in `C`. T
 compactness statement needed for the one-parameter families of Floer data `J_p`, `X_p`
 (continuation, associativity, comparison) whose boundary counts give chain homotopies. It reduces
 to the unparametrized statement by adjoining the parameter to the target as a constant coordinate,
-which leaves the energy density unchanged.
+which leaves the energy density unchanged. The same reduction gives the mean-value inequality with
+a threshold uniform over the window
+(`TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_parametric`).
+
+With the Floer energy, for families `K_p` of `C³` perturbations and `C²` families `J_p(z, x)` of
+`ω`-tame structures over a compact window `C`, the statement is
+`TauCeti.SymplecticForm.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`.
+The taming constants of `J_p` and the sizes of `X_{K_{s,p}}` are uniform over `C × D × K`
+(`TauCeti.SymplecticForm.exists_forall_norm_fderiv_stdComplexLineReal_sq_le`), so the
+comparison of the two energies holds with constants independent of `p`. The statement for a single
+datum is the case of a constant family over a one-point window.
 
 The limit is only shown to be continuous; its regularity, the rescaled bubbles at the points of
 `Z` (spheres for the structure `J(z, ·)` frozen at the bubbling point), and breaking along
@@ -153,7 +163,7 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
     have hmono : ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 ≤
         ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 :=
       setIntegral_mono_set hint (ae_restrict_of_forall_mem measurableSet_ball
-        fun _ _ ↦ sq_nonneg _) (ball_subset_ball hρr.le).eventuallyLE
+        fun _ _ ↦ sq_nonneg _) (ball_subset_ball hρr.le).eventuallySubset
     have hπ : π * ρ ^ 2 ≤ π * r ^ 2 := by gcongr
     have h := hmean (u := fun w ↦ WithLp.toLp 2 (w, u w)) hρ
       (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_id.prodMk (hu.mono
@@ -342,6 +352,74 @@ private theorem contDiffOn_parameterX {X : P → ℂ × V → ℂ →L[ℝ] V} {
   unfold parameterX
   exact contDiffOn_const.clm_comp (contDiffOn_const.clm_comp hX')
 
+/-- The point `((p, 0), x)` of `(P × P) × V` adjoining the parameter `p` to the target point
+`x`. -/
+private noncomputable def parameterLift (a : P × V) : WithLp 2 (WithLp 2 (P × P) × V) :=
+  WithLp.toLp 2 (WithLp.toLp 2 (a.1, 0), a.2)
+
+/-- The data adjoining the parameter satisfy the hypotheses of the theorems for a single datum,
+on `D` and the compact image of `C × K` under `parameterLift`. -/
+private theorem parameterData {J : P → ℂ × V → V →L[ℝ] V} {X : P → ℂ × V → ℂ →L[ℝ] V}
+    {W : Set (P × (ℂ × V))} {C : Set P} {D : Set ℂ} {K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 (uncurry J) W) (hX : ContDiffOn ℝ 2 (uncurry X) W)
+    (hC : IsCompact C) (hK : IsCompact K) (hCDKW : C ×ˢ (D ×ˢ K) ⊆ W)
+    (hJsq : ∀ p ∈ C, ∀ z ∈ D, ∀ x ∈ K, ∀ v, J p (z, x) (J p (z, x) v) = -v) :
+    IsOpen (parameterPoint ⁻¹' W) ∧ ContDiffOn ℝ 2 (parameterJ J) (parameterPoint ⁻¹' W) ∧
+      ContDiffOn ℝ 2 (parameterX X) (parameterPoint ⁻¹' W) ∧
+      IsCompact (parameterLift '' (C ×ˢ K)) ∧
+      D ×ˢ (parameterLift '' (C ×ˢ K)) ⊆ parameterPoint ⁻¹' W ∧
+      ∀ z ∈ D, ∀ y ∈ parameterLift '' (C ×ˢ K), ∀ ζ,
+        parameterJ J (z, y) (parameterJ J (z, y) ζ) = -ζ := by
+  refine ⟨hW.preimage (parameterPoint (P := P) (V := V)).continuous, contDiffOn_parameterJ hJ,
+    contDiffOn_parameterX hX, (hC.prod hK).image (by unfold parameterLift; fun_prop), ?_, ?_⟩
+  · rintro ⟨z, _⟩ ⟨hz, ⟨a, x⟩, ⟨ha, hx⟩, rfl⟩
+    exact hCDKW (by simpa [parameterLift] using ⟨ha, hz, hx⟩)
+  · rintro z hz _ ⟨⟨a, x⟩, ⟨ha, hx⟩, rfl⟩ ζ
+    simp [parameterLift, WithLp.ext_iff, Prod.ext_iff, parameterStructure_parameterStructure,
+      hJsq a ha z hz x hx]
+
+/-- **The mean-value inequality over a compact parameter window.** Let `J_p` and `X_p` depend on
+a parameter `p` in a real inner product space `P`, jointly `C²` on an open set
+`W ⊆ P × (ℂ × V)` containing `C × D × K` for compact `C ⊆ P`, `D ⊆ ℂ` and `K ⊆ V`, with
+`J_p(z, x)² = -1` on `C × D × K`. There is a threshold `δ > 0` with the following property, for
+every parameter `p ∈ C`. Let `u` be `C³` on an open disc `B_r(z₀) ⊆ D`, with `∂ₛu` continuous up
+to the boundary, and on the disc let it solve `∂ₜu - X_p(z, u) i = J_p(z, u)(∂ₛu - X_p(z, u) 1)`
+with image in `K`. If `π r² + ∫_{B_r(z₀)} ‖∂ₛu‖² < δ`, then
+`π r² ‖∂ₛu(z₀)‖² ≤ 7 π r² + 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
+theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_parametric
+    {J : P → ℂ × V → V →L[ℝ] V} {X : P → ℂ × V → ℂ →L[ℝ] V} {W : Set (P × (ℂ × V))}
+    {C : Set P} {D : Set ℂ} {K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 (uncurry J) W) (hX : ContDiffOn ℝ 2 (uncurry X) W)
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hCDKW : C ×ˢ (D ×ˢ K) ⊆ W)
+    (hJsq : ∀ p ∈ C, ∀ z ∈ D, ∀ x ∈ K, ∀ v, J p (z, x) (J p (z, x) v) = -v) :
+    ∃ δ > 0, ∀ ⦃p : P⦄ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, p ∈ C → 0 ≤ r → ball z₀ r ⊆ D →
+      ContDiffOn ℝ 3 u (ball z₀ r) → ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y I - X p (y, u y) I =
+        J p (y, u y) (fderiv ℝ u y 1 - X p (y, u y) 1)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      π * r ^ 2 + ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤
+        7 * π * r ^ 2 + 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  -- Apply the mean-value inequality to the solution `z ↦ ((p, 0), u z)` with values in the
+  -- compact image of `C × K`.
+  obtain ⟨hW', hJ', hX', hK', hDKW', hJsq'⟩ := parameterData hW hJ hX hC hK hCDKW hJsq
+  obtain ⟨δ, hδ, hmean⟩ :=
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy hW' hJ' hX' hD hK' hDKW'
+      hJsq'
+  refine ⟨δ, hδ, fun p u z₀ r hp hr hrD hu hu' hCR huK hE ↦ ?_⟩
+  -- The constant parameter coordinate does not change the energy density.
+  have hint : ∫ y in ball z₀ r,
+      ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u w)) y 1‖ ^ 2 =
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+    simp only [fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd]
+  have h := hmean (u := fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, 0), u w)) hr hrD
+    (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk hu))
+    (((WithLp.prod_continuous_toLp 2 (WithLp 2 (P × P)) V).comp_continuousOn
+      ((continuousOn_const (c := 0)).prodMk hu')).congr fun y _ ↦ by simp)
+    (fun y hy ↦ by simp [WithLp.ext_iff, hCR y hy])
+    (fun y hy ↦ ⟨(p, u y), ⟨hp, huK y hy⟩, rfl⟩) (by rwa [hint])
+  rwa [hint, fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd] at h
+
 /-- **Floer solutions over a compact parameter window converge off finitely many bubbling
 points.** Let `J_p` and `X_p` depend on a parameter `p` in a real inner product space `P`, jointly
 `C²` on an open set `W ⊆ P × (ℂ × V)` containing `C × D × K` for compact `C ⊆ P`, `D ⊆ ℂ` and
@@ -376,39 +454,25 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
   -- Apply the compactness theorem to the solutions `z ↦ ((p, 0), u z)` with values in the compact
-  -- image `K'` of `C × K`.
-  set ι : P × V → WithLp 2 (WithLp 2 (P × P) × V) :=
-    fun a ↦ WithLp.toLp 2 (WithLp.toLp 2 (a.1, 0), a.2) with hι
-  have hιc : Continuous ι := by fun_prop
-  obtain ⟨δ, hδ, hconv⟩ := exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
-    (hW.preimage (parameterPoint (P := P) (V := V)).continuous) (contDiffOn_parameterJ hJ)
-    (contDiffOn_parameterX hX)
-    hD ((hC.prod hK).image hιc) (by
-      rintro ⟨z, _⟩ ⟨hz, ⟨a, x⟩, ⟨ha, hx⟩, rfl⟩
-      exact hCDKW (by simpa [hι] using ⟨ha, hz, hx⟩))
-    (by
-      rintro z hz _ ⟨⟨a, x⟩, ⟨ha, hx⟩, rfl⟩ ζ
-      simp [hι, WithLp.ext_iff, Prod.ext_iff, parameterStructure_parameterStructure,
-        hJsq a ha z hz x hx])
+  -- image of `C × K`.
+  obtain ⟨hW', hJ', hX', hK', hDKW', hJsq'⟩ := parameterData hW hJ hX hC hK hCDKW hJsq
+  obtain ⟨δ, hδ, hconv⟩ :=
+    exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hW' hJ' hX' hD hK' hDKW' hJsq'
   refine ⟨δ, hδ, fun Ω p u E hΩ hΩD hpC hu hCR huK hint hE ↦ ?_⟩
   obtain ⟨p₀, hp₀, ψ, hψ, hlim⟩ := hC.tendsto_subseq hpC
   set g : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
     fun k w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p (ψ k), 0), u (ψ k) w) with hg
-  have hdiff : ∀ k, ∀ y ∈ Ω, DifferentiableAt ℝ (u k) y := fun k y hy ↦
-    ((hu k).differentiableOn (by norm_num)).differentiableAt (hΩ.mem_nhds hy)
   -- The constant parameter coordinate does not change the energy density.
   have hnorm : ∀ k, ∀ y ∈ Ω,
-      ‖fderiv ℝ (g k) y 1‖ ^ 2 = ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 := fun k y hy ↦ by
-    rw [norm_fderiv_toLp_prodMk_apply_sq (differentiableAt_const _) (hdiff _ y hy)]
-    simp
+      ‖fderiv ℝ (g k) y 1‖ ^ 2 = ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 := fun k y _ ↦ by
+    simp [hg]
   have hint' : ∀ k, ∀ S ⊆ Ω, MeasurableSet S →
       ∫ y in S, ‖fderiv ℝ (g k) y 1‖ ^ 2 = ∫ y in S, ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 :=
     fun k S hSΩ hS ↦ setIntegral_congr_fun hS fun y hy ↦ hnorm k y (hSΩ hy)
   obtain ⟨φ, Z, w, hφ, hZΩ, hcard, hconc, hbd, hwcont, hwK, hwlim⟩ := hconv hΩ hΩD
     (u := g) (fun k ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu (ψ k))))
     (fun k y hy ↦ by
-      simp [hg, fderiv_toLp_prodMk_apply (differentiableAt_const _) (hdiff _ y hy),
-        WithLp.ext_iff, hCR (ψ k) y hy])
+      simp [hg, WithLp.ext_iff, hCR (ψ k) y hy])
     (fun k y hy ↦ ⟨(p (ψ k), u (ψ k) y), ⟨hpC _, huK _ hy⟩, rfl⟩)
     (fun k ↦ (hint (ψ k)).congr_fun (fun y hy ↦ (hnorm k y hy).symm) hΩ.measurableSet)
     (fun k ↦ (hint' k Ω subset_rfl hΩ.measurableSet).trans_le (hE (ψ k)))
@@ -420,7 +484,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     exact ⟨M, fun n y hy ↦ (norm_fderiv_le_norm_fderiv_toLp_prodMk_right
       (differentiableAt_const _)).trans (hM n y hy)⟩
   · obtain ⟨⟨a, x⟩, ⟨-, hx⟩, hax⟩ := hwK hz
-    simpa [← hax, hι] using hx
+    simpa [← hax, parameterLift] using hx
   · simpa [Function.comp_def, g] using
       (WithLp.sndL 2 ℝ _ V).uniformContinuous.comp_tendstoLocallyUniformlyOn hwlim
 
@@ -454,36 +518,42 @@ theorem fderiv_comp_equivRealProdCLM_I_sub (ω : SymplecticForm V) {u : ℝ × �
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
     equivRealProdCLM_I] using h'
 
-/-- **The energy density bounds the derivative uniformly on a compact window.** Let `J(z, x)` be
-continuous and tamed by `ω`, and `X_{K_s}(z, x)` continuous, on `D × K` for compact `D ⊆ ℝ × ℝ`
-and `K ⊆ V`. There are constants `A, B ≥ 0` such that every solution `u` of the Floer equation
-for `J(z, u)` at a point `z ∈ D` with `u(z) ∈ K` satisfies
-`‖∂ₛu(z)‖² ≤ A ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t}) + B`. -/
+/-- **The energy density bounds the derivative uniformly over a compact parameter window.** Let
+`J_p(z, x)` be continuous and tamed by `ω`, and `X_{K_{s,p}}(z, x)` continuous, for `(p, z, x)` in
+`C × D × K` with compact `C ⊆ P`, `D ⊆ ℝ × ℝ` and `K ⊆ V`. There are constants `A, B ≥ 0` such
+that for every `p ∈ C`, every solution `u` of the Floer equation for `K_p` and `J_p(z, u)` at a
+point `z ∈ D` with `u(z) ∈ K` satisfies
+`‖∂ₛu(z)‖² ≤ A ω(∂ₛu - X_{K_{s,p}}, ∂ₜu - X_{K_{t,p}}) + B`. -/
 theorem exists_forall_norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
-    {D : Set (ℝ × ℝ)} {K : Set V} (hD : IsCompact D) (hK : IsCompact K)
-    (hJ : ContinuousOn
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (D ×ˢ K))
-    (hX : ContinuousOn (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianVectorField (Ks p.1) p.2) (D ×ˢ K))
-    (hJt : ∀ z ∈ D, ∀ x ∈ K, ω.Tames (J z x)) :
-    ∃ A ≥ 0, ∃ B ≥ 0, ∀ ⦃u : ℝ × ℝ → V⦄ ⦃z : ℝ × ℝ⦄, z ∈ D → u z ∈ K →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) →
-      ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤ A * ω.floerEnergyDensity Ks Kt u z + B := by
-  set Jc : (ℝ × ℝ) × V → V →L[ℝ] V := fun p ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap
-  have hDK : IsCompact (D ×ˢ K) := hD.prod hK
-  -- A uniform taming constant for `J`, and a bound for `X_{K_s}`, on `D × K`.
-  obtain ⟨c, hc, hJc⟩ := hDK.exists_pos_forall_mul_norm_sq_le
-    (b := fun p ↦ ((ContinuousLinearMap.compL ℝ V V ℝ).flip (Jc p)).comp
+    {P : Type*} [TopologicalSpace P] {Ks Kt : P → ℝ × ℝ → V → ℝ}
+    {J : P → ℝ × ℝ → V → AlmostComplexStructure V} {C : Set P} {D : Set (ℝ × ℝ)} {K : Set V}
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K)
+    (hJ : ContinuousOn (fun q : P × ((ℝ × ℝ) × V) ↦
+      (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) (C ×ˢ (D ×ˢ K)))
+    (hX : ContinuousOn (fun q : P × ((ℝ × ℝ) × V) ↦
+      ω.hamiltonianVectorField (Ks q.1 q.2.1) q.2.2) (C ×ˢ (D ×ˢ K)))
+    (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ x ∈ K, ω.Tames (J p z x)) :
+    ∃ A ≥ 0, ∃ B ≥ 0, ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → V⦄ ⦃z : ℝ × ℝ⦄, p ∈ C → z ∈ D → u z ∈ K →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u z))
+        (ω.perturbedFDeriv (Ks p) (Kt p) u z : ℝ × ℝ →ₗ[ℝ] V) →
+      ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤
+        A * ω.floerEnergyDensity (Ks p) (Kt p) u z + B := by
+  set Jc : P × ((ℝ × ℝ) × V) → V →L[ℝ] V :=
+    fun q ↦ (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap
+  have hCDK : IsCompact (C ×ˢ (D ×ˢ K)) := hC.prod (hD.prod hK)
+  -- A uniform taming constant for `J`, and a bound for `X_{K_s}`, on `C × D × K`.
+  obtain ⟨c, hc, hJc⟩ := hCDK.exists_pos_forall_mul_norm_sq_le
+    (b := fun q ↦ ((ContinuousLinearMap.compL ℝ V V ℝ).flip (Jc q)).comp
       ω.toBilinForm.toContinuousBilinearMap)
     (((ContinuousLinearMap.compL ℝ V V ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
       continuousOn_const)
-    (fun p hp v hv ↦ by simpa [Jc] using hJt p.1 hp.1 p.2 hp.2 v hv)
-  obtain ⟨B, hB⟩ := hDK.exists_bound_of_continuousOn hX
-  refine ⟨2 / c, by positivity, 2 * B ^ 2, by positivity, fun u z hz hu h ↦ ?_⟩
-  have hp : (z, u z) ∈ D ×ˢ K := ⟨hz, hu⟩
-  refine (ω.norm_fderiv_stdComplexLineReal_sq_le hc (fun v ↦ by simpa [Jc] using hJc _ hp v)
+    (fun q hq v hv ↦ by simpa [Jc] using hJt q.1 hq.1 q.2.1 hq.2.1 q.2.2 hq.2.2 v hv)
+  obtain ⟨B, hB⟩ := hCDK.exists_bound_of_continuousOn hX
+  refine ⟨2 / c, by positivity, 2 * B ^ 2, by positivity, fun p u z hp hz hu h ↦ ?_⟩
+  have hq : (p, (z, u z)) ∈ C ×ˢ (D ×ˢ K) := ⟨hp, hz, hu⟩
+  refine (ω.norm_fderiv_stdComplexLineReal_sq_le hc (fun v ↦ by simpa [Jc] using hJc _ hq v)
     h).trans ?_
-  have hXB : ‖ω.hamiltonianVectorField (Ks z) (u z)‖ ≤ B := by simpa using hB _ hp
+  have hXB : ‖ω.hamiltonianVectorField (Ks p z) (u z)‖ ≤ B := by simpa using hB _ hq
   gcongr
 
 /-- If `‖∂ₛu‖² ≤ A e + B` on an open set `Ω` of finite measure, where `e` is the Floer energy
@@ -525,40 +595,48 @@ private theorem setIntegral_norm_fderiv_stdComplexLineReal_sq_le (ω : Symplecti
     _ ≤ (A + B + 1) * (volume.real S + ∫ z in S, ω.floerEnergyDensity Ks Kt u z) := by
         nlinarith [mul_nonneg hA0 hm0, mul_nonneg hB0 hint0]
 
-/-- `TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset` for solutions
-of the Floer equation `(du - X_K)^{0,1} = 0` on the domain `ℝ × ℝ`, read through the complex
-coordinate `equivRealProdCLM`; the energy is `∫ ‖∂ₛu‖²`. -/
-private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm
-    (ω : SymplecticForm V) {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {K : Set V}
+/-- `TauCeti.Floer.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset` for
+solutions of the Floer equations `(du - X_{K_p})^{0,1} = 0` on the domain `ℝ × ℝ`, read through the
+complex coordinate `equivRealProdCLM`; the energy is `∫ ‖∂ₛu‖²`. -/
+private theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm
+    (ω : SymplecticForm V) {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
+    {Ks Kt : P → ℝ × ℝ → V → ℝ} {J : P → ℝ × ℝ → V → AlmostComplexStructure V}
+    {W : Set (P × ((ℝ × ℝ) × V))} {C : Set P} {D : Set (ℝ × ℝ)} {K : Set V}
     (hW : IsOpen W) (hX : ContDiffOn ℝ 2
-      (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt p.1 p.2) W)
+      (fun q : P × ((ℝ × ℝ) × V) ↦ ω.hamiltonianOneForm (Ks q.1) (Kt q.1) q.2.1 q.2.2) W)
     (hJ : ContDiffOn ℝ 2
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
-    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W) :
-    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃E : ℝ⦄, IsOpen Ω → Ω ⊆ D →
-      (∀ k, ContDiffOn ℝ 3 (u k) Ω) →
-      (∀ k, ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
-        (ω.perturbedFDeriv Ks Kt (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (fun q : P × ((ℝ × ℝ) × V) ↦ (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W)
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hCDKW : C ×ˢ (D ×ˢ K) ⊆ W) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃p : ℕ → P⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃E : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, p k ∈ C) → (∀ k, ContDiffOn ℝ 3 (u k) Ω) →
+      (∀ k, ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (p k) z (u k z))
+        (ω.perturbedFDeriv (Ks (p k)) (Kt (p k)) (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
       (∀ k, MapsTo (u k) Ω K) →
       (∀ k, IntegrableOn (fun z ↦ ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2) Ω) →
       (∀ k, ∫ z in Ω, ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2 ≤ E) →
-      ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono φ ∧ ↑Z ⊆ Ω ∧
+      ∃ (φ : ℕ → ℕ) (p₀ : P) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono φ ∧ p₀ ∈ C ∧
+        Tendsto (fun n ↦ p (φ n)) atTop (𝓝 p₀) ∧ ↑Z ⊆ Ω ∧
         (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
           δ ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u (φ n)) y stdComplexLineReal‖ ^ 2) ∧
-        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
-          ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
+        (∀ C', IsCompact C' → C' ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ C', ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
   classical
   set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
-  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2)
-  have hg {n : WithTop ℕ∞} : ContDiff ℝ n g := (e.contDiff.comp contDiff_fst).prodMk contDiff_snd
-  obtain ⟨δ, hδ, hconv⟩ := Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
+  set g : P × (ℂ × V) → P × ((ℝ × ℝ) × V) := fun q ↦ (q.1, (e q.2.1, q.2.2))
+  have hg {n : WithTop ℕ∞} : ContDiff ℝ n g :=
+    contDiff_fst.prodMk ((e.contDiff.comp (contDiff_fst.comp contDiff_snd)).prodMk
+      (contDiff_snd.comp contDiff_snd))
+  obtain ⟨δ, hδ, hconv⟩ :=
+    Floer.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
+    (J := fun p q ↦ (J p (e q.1) q.2).toLinearMap.toContinuousLinearMap)
+    (X := fun p q ↦ ω.hamiltonianOneForm (Ks p) (Kt p) (e q.1) q.2 ∘L (e : ℂ →L[ℝ] ℝ × ℝ))
     (hW.preimage (hg (n := 0)).continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage g W))
     ((hX.comp hg.contDiffOn (mapsTo_preimage g W)).clm_comp
       (contDiffOn_const (c := (e : ℂ →L[ℝ] ℝ × ℝ))))
-    (e.toHomeomorph.isCompact_preimage.2 hD) hK (fun q hq ↦ hDKW ⟨hq.1, hq.2⟩)
-    (fun y _ x _ v ↦ by simp)
+    hC (e.toHomeomorph.isCompact_preimage.2 hD) hK (fun q hq ↦ hCDKW ⟨hq.1, hq.2.1, hq.2.2⟩)
+    (fun _ _ _ _ _ _ v ↦ by simp)
   -- `e` preserves volume, and in the coordinate `e` the density `‖∂ₛu‖²` is `‖∂ₛ(u ∘ e)‖²`.
   have hint_iff (w : ℝ × ℝ → V) (S : Set (ℝ × ℝ)) :
       IntegrableOn (fun y ↦ ‖fderiv ℝ (w ∘ e) y 1‖ ^ 2) (e ⁻¹' S) ↔
@@ -574,12 +652,12 @@ private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of
     exact Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
       equivRealProdCLM.toHomeomorph.measurableEmbedding
       (fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) S
-  refine ⟨δ, hδ, fun Ω u E hΩ hΩD hu hfl huK hint hE ↦ ?_⟩
-  obtain ⟨φ, Z', v', hφ, hZ'Ω, -, hconc', hbd', hvc', hvK', hlim'⟩ :=
-    hconv (Ω := e ⁻¹' Ω) (u := fun k ↦ u k ∘ e) (E := E)
-      (hΩ.preimage e.continuous) (preimage_mono hΩD)
+  refine ⟨δ, hδ, fun Ω p u E hΩ hΩD hpC hu hfl huK hint hE ↦ ?_⟩
+  obtain ⟨φ, p₀, Z', v', hφ, hp₀, hplim, hZ'Ω, -, hconc', hbd', hvc', hvK', hlim'⟩ :=
+    hconv (Ω := e ⁻¹' Ω) (p := p) (u := fun k ↦ u k ∘ e) (E := E)
+      (hΩ.preimage e.continuous) (preimage_mono hΩD) hpC
       (fun k ↦ (hu k).comp e.contDiff.contDiffOn (mapsTo_preimage _ _))
-      (fun k y hy ↦ by simpa [he, g] using ω.fderiv_comp_equivRealProdCLM_I_sub (hfl k (e y) hy))
+      (fun k y hy ↦ by simpa [he] using ω.fderiv_comp_equivRealProdCLM_I_sub (hfl k (e y) hy))
       (fun k y hy ↦ huK k hy)
       (fun k ↦ (hint_iff (u k) Ω).2 (hint k)) (fun k ↦ (hint_eq (u k) Ω).trans_le (hE k))
   -- The bubbling set and the limit in the original coordinates.
@@ -590,7 +668,7 @@ private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of
     rw [← hpreZ]
     simpa using hy
   have hu_symm (k : ℕ) : (u k ∘ e) ∘ e.symm = u k := funext fun z ↦ by simp
-  refine ⟨φ, Z, v' ∘ e.symm, hφ, ?_, fun z hz ε hε ↦ ?_, fun C hC hCZ ↦ ?_,
+  refine ⟨φ, p₀, Z, v' ∘ e.symm, hφ, hp₀, hplim, ?_, fun z hz ε hε ↦ ?_, fun C' hC' hC'Z ↦ ?_,
     hvc'.comp e.symm.continuous.continuousOn hsymm, fun y hy ↦ hvK' (hsymm hy), ?_⟩
   · rw [hZ_def, Finset.coe_image]
     exact image_subset_iff.2 hZ'Ω
@@ -602,9 +680,9 @@ private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of
     rw [← hint_eq]
     exact hn.trans (setIntegral_mono_set
       ((hint_iff _ _).2 ((hint (φ n)).mono_set inter_subset_right))
-      (Eventually.of_forall fun _ ↦ by positivity) hsub.eventuallyLE)
-  · obtain ⟨M', hM'⟩ := hbd' (e ⁻¹' C) (e.toHomeomorph.isCompact_preimage.2 hC)
-      (hpreZ ▸ preimage_mono hCZ)
+      (Eventually.of_forall fun _ ↦ by positivity) hsub.eventuallySubset)
+  · obtain ⟨M', hM'⟩ := hbd' (e ⁻¹' C') (e.toHomeomorph.isCompact_preimage.2 hC')
+      (hpreZ ▸ preimage_mono hC'Z)
     refine ⟨M' * ‖(e.symm : ℝ × ℝ →L[ℝ] ℂ)‖, fun n y hy ↦ ?_⟩
     have hd := e.symm.comp_right_fderiv (f := u (φ n) ∘ e) (x := y)
     rw [hu_symm] at hd
@@ -612,6 +690,94 @@ private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of
     exact (opNorm_comp_le _ _).trans
       (mul_le_mul_of_nonneg_right (hM' n _ (by simpa using hy)) (norm_nonneg _))
   · simpa only [hu_symm] using hlim'.comp e.symm hsymm e.symm.continuous.continuousOn
+
+/-- **Floer solutions over a compact parameter window converge off finitely many bubbling
+points.** Let `K_p = K_{s,p} ds + K_{t,p} dt` and `J_p(z, x)` depend on a parameter `p` in a real
+inner product space `P`, jointly `C³` and `C²` respectively on an open set
+`W ⊆ P × ((ℝ × ℝ) × V)` containing `C × D × K` for compact `C ⊆ P`, `D ⊆ ℝ × ℝ` and `K ⊆ V`, with
+`J_p(z, x)` tamed by `ω` on `C × D × K`. There is a threshold `δ > 0` with the following property.
+Let `uₖ` be `C³` solutions of the Floer equation `(du - X_{K_{pₖ}})^{0,1} = 0` for `J_{pₖ}(z, u)` on
+an open set `Ω ⊆ D`, for parameters `pₖ ∈ C`, with image in `K` and Floer energy
+`∫_Ω ω(∂ₛuₖ - X_{K_{s,pₖ}}, ∂ₜuₖ - X_{K_{t,pₖ}}) ≤ E`. Then there are a subsequence `φ`, a limit
+parameter `p₀ ∈ C` of `p_{φ n}`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`, and a continuous
+`v : Ω \ Z → K` such that along `φ` every disc about a point of `Z` eventually carries Floer energy
+at least `δ`, the differentials are uniformly bounded on every compact subset of `Ω \ Z`, and
+`u_{φ n} → v` locally uniformly on `Ω \ Z`. -/
+theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
+    (ω : SymplecticForm V) {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
+    {Ks Kt : P → ℝ × ℝ → V → ℝ} {J : P → ℝ × ℝ → V → AlmostComplexStructure V}
+    {W : Set (P × ((ℝ × ℝ) × V))} {C : Set P} {D : Set (ℝ × ℝ)} {K : Set V}
+    (hW : IsOpen W) (hKs : ContDiffOn ℝ 3 (fun q : P × ((ℝ × ℝ) × V) ↦ Ks q.1 q.2.1 q.2.2) W)
+    (hKt : ContDiffOn ℝ 3 (fun q : P × ((ℝ × ℝ) × V) ↦ Kt q.1 q.2.1 q.2.2) W)
+    (hJ : ContDiffOn ℝ 2
+      (fun q : P × ((ℝ × ℝ) × V) ↦ (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W)
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hCDKW : C ×ˢ (D ×ˢ K) ⊆ W)
+    (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ x ∈ K, ω.Tames (J p z x)) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃p : ℕ → P⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃E : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, p k ∈ C) → (∀ k, ContDiffOn ℝ 3 (u k) Ω) →
+      (∀ k, ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (p k) z (u k z))
+        (ω.perturbedFDeriv (Ks (p k)) (Kt (p k)) (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, IntegrableOn (ω.floerEnergyDensity (Ks (p k)) (Kt (p k)) (u k)) Ω) →
+      (∀ k, ∫ z in Ω, ω.floerEnergyDensity (Ks (p k)) (Kt (p k)) (u k) z ≤ E) →
+      ∃ (φ : ℕ → ℕ) (p₀ : P) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono φ ∧ p₀ ∈ C ∧
+        Tendsto (fun n ↦ p (φ n)) atTop (𝓝 p₀) ∧ ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω,
+          ω.floerEnergyDensity (Ks (p (φ n))) (Kt (p (φ n))) (u (φ n)) y) ∧
+        (∀ C', IsCompact C' → C' ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ C', ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
+  have hX := ω.contDiffOn_hamiltonianOneForm (n := 2) hW hKs hKt
+  obtain ⟨A, hA0, B, hB0, hpt⟩ :=
+    ω.exists_forall_norm_fderiv_stdComplexLineReal_sq_le (Ks := Ks) (Kt := Kt) hC hD hK
+      (hJ.continuousOn.mono hCDKW)
+      ((hX.continuousOn.mono hCDKW).clm_apply (continuousOn_const (c := stdComplexLineReal))
+        |>.congr fun _ _ ↦ by simp)
+      hJt
+  obtain ⟨δ₀, hδ₀, hconv⟩ :=
+    ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm hW hX hJ hC hD
+      hK hCDKW
+  have hC₀0 : 0 < A + B + 1 := by positivity
+  refine ⟨δ₀ / (2 * (A + B + 1)), by positivity, fun Ω p u E hΩ hΩD hpC hu hfl huK hint hE ↦ ?_⟩
+  have hΩm : MeasurableSet Ω := hΩ.measurableSet
+  have hΩfin : volume Ω ≠ ⊤ := ((measure_mono hΩD).trans_lt hD.measure_lt_top).ne
+  -- On `Ω`, the energy density `f k` is nonnegative and bounds `‖∂ₛuₖ‖²` up to a constant.
+  set f : ℕ → ℝ × ℝ → ℝ := fun k ↦ ω.floerEnergyDensity (Ks (p k)) (Kt (p k)) (u k) with hf_def
+  have hf0 (k : ℕ) : ∀ z ∈ Ω, 0 ≤ f k z := fun z hz ↦
+    ω.floerEnergyDensity_nonneg (hJt _ (hpC k) z (hΩD hz) _ (huK k hz)) (hfl k z hz)
+  have hgle (k : ℕ) : ∀ z ∈ Ω, ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2 ≤ A * f k z + B :=
+    fun z hz ↦ hpt (hpC k) (hΩD hz) (huK k hz) (hfl k z hz)
+  have hgint (k : ℕ) := ω.integrableOn_norm_fderiv_stdComplexLineReal_sq hΩ hΩfin
+    ((hu k).of_le (by norm_num)) (hint k) (hgle k)
+  have hgS (k : ℕ) {S : Set (ℝ × ℝ)} (hS : MeasurableSet S) (hSΩ : S ⊆ Ω) :=
+    ω.setIntegral_norm_fderiv_stdComplexLineReal_sq_le hS
+      (ne_top_of_le_ne_top hΩfin (measure_mono hSΩ)) hA0 hB0 ((hgint k).mono_set hSΩ)
+      ((hint k).mono_set hSΩ) (fun z hz ↦ hf0 k z (hSΩ hz)) fun z hz ↦ hgle k z (hSΩ hz)
+  obtain ⟨φ, p₀, Z, v, hφ, hp₀, hplim, hZΩ, hconc', hbd, hvc, hvK, hlim⟩ :=
+    hconv hΩ hΩD hpC hu hfl huK hgint fun k ↦ (hgS k hΩm le_rfl).trans
+      (mul_le_mul_of_nonneg_left (add_le_add (measureReal_mono hΩD hD.measure_lt_top.ne) (hE k))
+        hC₀0.le)
+  -- Energy `δ₀` of `∂ₛu` concentrating at a point gives Floer energy `δ₀ / (2 (A + B + 1))`
+  -- there, since small discs have small area.
+  have hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
+      δ₀ / (2 * (A + B + 1)) ≤ ∫ y in ball z ε ∩ Ω, f (φ n) y := by
+    intro z hz ε hε
+    refine eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball
+      (δ := δ₀ / (A + B + 1))
+      hΩm (by rw [Measure.volume_eq_prod]; exact measure_singleton _)
+      ⟨1, one_pos, measure_ball_lt_top.ne⟩ (fun n ↦ hf0 (φ n))
+      (fun n ↦ hint (φ n)) ?_ hε fun ρ hρ ↦ ?_
+    · rw [mul_comm, ← div_div]
+      exact half_lt_self (by positivity)
+    filter_upwards [hconc' z hz ρ hρ] with n hn
+    have h := hgS (φ n) (S := ball z ρ ∩ Ω) (measurableSet_ball.inter hΩm) inter_subset_right
+    rw [div_le_iff₀ hC₀0]
+    simp only [hf_def] at h ⊢
+    linarith
+  exact ⟨φ, p₀, Z, v, hφ, hp₀, hplim, hZΩ, card_mul_le_of_forall_eventually_le_setIntegral_ball hΩm
+    (fun n ↦ hf0 (φ n)) (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hconc, hconc, hbd, hvc, hvK,
+    hlim⟩
 
 /-- **Floer solutions of bounded energy converge off finitely many bubbling points.** Let
 `K = K_s ds + K_t dt` be `C³` and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing
@@ -645,53 +811,15 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset (ω : Symp
           ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
-  have hX := ω.contDiffOn_hamiltonianOneForm (n := 2) hW hKs hKt
-  obtain ⟨A, hA0, B, hB0, hpt⟩ :=
-    ω.exists_forall_norm_fderiv_stdComplexLineReal_sq_le (Ks := Ks) (Kt := Kt) hD hK
-    (hJ.continuousOn.mono hDKW)
-    ((hX.continuousOn.mono hDKW).clm_apply (continuousOn_const (c := stdComplexLineReal)) |>.congr
-      fun p _ ↦ by simp)
-    hJt
-  obtain ⟨δ₀, hδ₀, hconv⟩ :=
-    ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm hW hX hJ hD hK hDKW
-  have hC₀0 : 0 < A + B + 1 := by positivity
-  refine ⟨δ₀ / (2 * (A + B + 1)), by positivity, fun Ω u E hΩ hΩD hu hfl huK hint hE ↦ ?_⟩
-  have hΩm : MeasurableSet Ω := hΩ.measurableSet
-  have hΩfin : volume Ω ≠ ⊤ := ((measure_mono hΩD).trans_lt hD.measure_lt_top).ne
-  -- On `Ω`, the energy density `f k` is nonnegative and bounds `‖∂ₛuₖ‖²` up to a constant.
-  set f : ℕ → ℝ × ℝ → ℝ := fun k ↦ ω.floerEnergyDensity Ks Kt (u k) with hf_def
-  have hf0 (k : ℕ) : ∀ z ∈ Ω, 0 ≤ f k z := fun z hz ↦
-    ω.floerEnergyDensity_nonneg (hJt z (hΩD hz) _ (huK k hz)) (hfl k z hz)
-  have hgle (k : ℕ) : ∀ z ∈ Ω, ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2 ≤ A * f k z + B :=
-    fun z hz ↦ hpt (hΩD hz) (huK k hz) (hfl k z hz)
-  have hgint (k : ℕ) := ω.integrableOn_norm_fderiv_stdComplexLineReal_sq hΩ hΩfin
-    ((hu k).of_le (by norm_num)) (hint k) (hgle k)
-  have hgS (k : ℕ) {S : Set (ℝ × ℝ)} (hS : MeasurableSet S) (hSΩ : S ⊆ Ω) :=
-    ω.setIntegral_norm_fderiv_stdComplexLineReal_sq_le hS
-      (ne_top_of_le_ne_top hΩfin (measure_mono hSΩ)) hA0 hB0 ((hgint k).mono_set hSΩ)
-      ((hint k).mono_set hSΩ) (fun z hz ↦ hf0 k z (hSΩ hz)) fun z hz ↦ hgle k z (hSΩ hz)
-  obtain ⟨φ, Z, v, hφ, hZΩ, hconc', hbd, hvc, hvK, hlim⟩ :=
-    hconv hΩ hΩD hu hfl huK hgint fun k ↦ (hgS k hΩm le_rfl).trans (mul_le_mul_of_nonneg_left
-      (add_le_add (measureReal_mono hΩD hD.measure_lt_top.ne) (hE k)) hC₀0.le)
-  -- Energy `δ₀` of `∂ₛu` concentrating at a point gives Floer energy `δ₀ / (2 (A + B + 1))`
-  -- there, since small discs have small area.
-  have hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
-      δ₀ / (2 * (A + B + 1)) ≤ ∫ y in ball z ε ∩ Ω, f (φ n) y := by
-    intro z hz ε hε
-    refine eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball
-      (δ := δ₀ / (A + B + 1))
-      hΩm (by rw [Measure.volume_eq_prod]; exact measure_singleton _)
-      ⟨1, one_pos, measure_ball_lt_top.ne⟩ (fun n ↦ hf0 (φ n))
-      (fun n ↦ hint (φ n)) ?_ hε fun ρ hρ ↦ ?_
-    · rw [mul_comm, ← div_div]
-      exact half_lt_self (by positivity)
-    filter_upwards [hconc' z hz ρ hρ] with n hn
-    have h := hgS (φ n) (S := ball z ρ ∩ Ω) (measurableSet_ball.inter hΩm) inter_subset_right
-    rw [div_le_iff₀ hC₀0]
-    simp only [hf_def] at h ⊢
-    linarith
-  exact ⟨φ, Z, v, hφ, hZΩ, card_mul_le_of_forall_eventually_le_setIntegral_ball hΩm
-    (fun n ↦ hf0 (φ n)) (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hconc, hconc, hbd, hvc, hvK,
-    hlim⟩
+  -- The case of the constant family over the one-point window `{0} ⊆ ℝ`.
+  obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
+    (Ks := fun _ : ℝ ↦ Ks) (Kt := fun _ ↦ Kt) (J := fun _ ↦ J) (W := univ ×ˢ W) (C := {0})
+    (isOpen_univ.prod hW) (hKs.comp contDiffOn_snd fun _ hq ↦ hq.2)
+    (hKt.comp contDiffOn_snd fun _ hq ↦ hq.2) (hJ.comp contDiffOn_snd fun _ hq ↦ hq.2)
+    isCompact_singleton hD hK (prod_mono (subset_univ _) hDKW) fun _ _ ↦ hJt
+  refine ⟨δ, hδ, fun Ω u E hΩ hΩD hu hfl huK hint hE ↦ ?_⟩
+  obtain ⟨φ, -, Z, v, hφ, -, -, h⟩ :=
+    hconv (p := fun _ ↦ 0) hΩ hΩD (fun _ ↦ rfl) hu hfl huK hint hE
+  exact ⟨φ, Z, v, hφ, h⟩
 
 end TauCeti.SymplecticForm

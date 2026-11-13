@@ -56,8 +56,8 @@ private theorem integrable_of_nonneg_localMartingale [SigmaFiniteFiltration P �
     ae_nonneg_stoppedProcess_indicator hpos (hM.localSeq n) u
   have hbound : ∀ n, eLpNorm (Y n t) 1 P ≤ ENNReal.ofReal (∫ ω, M ⊥ ω ∂P) := by
     intro n
-    rw [eLpNorm_one_eq_lintegral_enorm ((hY n).integrable t).aestronglyMeasurable,
-      ← ofReal_integral_norm_eq_lintegral_enorm ((hY n).integrable t)]
+    rw [eLpNorm_one_eq_lintegral_eNorm ((hY n).integrable t).aestronglyMeasurable,
+      ← ofReal_integral_norm_eq_lintegral_eNorm ((hY n).integrable t)]
     apply ENNReal.ofReal_le_ofReal
     calc
       ∫ ω, ‖Y n t ω‖ ∂P = ∫ ω, Y n t ω ∂P := by

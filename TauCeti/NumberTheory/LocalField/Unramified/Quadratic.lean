@@ -103,9 +103,11 @@ private theorem residue_notMem_range_of_isUnit_discrim
     linear_combination hroot - this
   refine coe_notMem_range_of_isUnit_discrim hω ?_
   rcases mul_eq_zero.mp hfac with h | h
-  · exact ⟨s, by rw [← coe_algebraMap_integerRing, ← sub_eq_zero.mp h]⟩
+  · exact ⟨s, by
+      rw [← Valuation.HasExtension.val_algebraMap (vA := valuation L), ← sub_eq_zero.mp h]⟩
   · refine ⟨((-(s - T) : 𝒪[K]) : K), ?_⟩
-    rw [← coe_algebraMap_integerRing, map_neg, ← eq_neg_of_add_eq_zero_left h]
+    rw [← Valuation.HasExtension.val_algebraMap (vA := valuation L), map_neg,
+      ← eq_neg_of_add_eq_zero_left h]
 
 /-- **An element of unit discriminant forces an unramified extension.** If `ω ∈ 𝒪[L]` has
 discriminant `Tr(ω)² - 4 N(ω)` a unit of `𝒪[K]`, then the quadratic extension `L/K` is

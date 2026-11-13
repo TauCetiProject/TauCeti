@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Data
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 
 /-!
 # The analytic Euler product of an ideal arithmetic function
@@ -100,9 +101,10 @@ theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K)) {s : 
     logDeriv (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s =
       Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1) := by
   have h0 := P.natCast_absNorm_ne_zero
-  have hderiv := (((hasDerivAt_neg s).const_cpow (Or.inl h0)).const_sub 1).deriv
   have hpow : (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl h0)
-  rw [logDeriv_apply, hderiv, Complex.cpow_neg]
+  have h := Complex.logDeriv_one_sub_mul_cpow_neg h0 1 s
+  simp only [one_mul] at h
+  rw [h, Complex.cpow_neg]
   by_cases hsub : (Ideal.absNorm P.asIdeal : ℂ) ^ s - 1 = 0
   · simp [sub_eq_zero.mp hsub]
   · field_simp
@@ -312,7 +314,7 @@ theorem localPowerSeries_radius_data (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ}
   dsimp
   constructor
   · exact D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ
-  · rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
+  · rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe]
     exact P.norm_absNorm_cpow_neg_lt (by simpa using hs)
 
 /-- **Convergence of the finite Euler product.** Where the local Euler factors over a finite set

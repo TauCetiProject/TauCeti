@@ -54,9 +54,8 @@ an arbitrary `σ` performs an arbitrary composite of such flips in one step.
 
 ## References
 
-This file supplies the doubled-quiver identification which the orientation-independence clause of
-Layer 4 of `TauCetiRoadmap/ZigzagPreprojective/README.md` needs; see Crawley-Boevey, *Quiver
-algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1.
+* Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson problem*,
+  Section 1.
 -/
 
 public section
