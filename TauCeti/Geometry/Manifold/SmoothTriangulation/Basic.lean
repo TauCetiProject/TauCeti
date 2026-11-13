@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 import Mathlib.Analysis.Calculus.TangentCone.Real
+import TauCeti.Analysis.Convex.SecantEstimate
 import TauCeti.Analysis.Convex.StdSimplex
 import TauCeti.Data.Finsupp.MapDomain
 
@@ -114,6 +115,45 @@ theorem isSimplexImmersion_iff {σ : Finset ι} {g : StandardSimplex σ → M} :
             ∀ v : σ → ℝ, ∑ a, v a = 0 → F' v = 0 → v = 0 :=
   Iff.rfl
 
+/-- The coordinates of the point of a closed coordinate simplex that corresponds to a finite
+barycentric coordinate vector `t` are the weights of `t`. -/
+theorem _root_.Finset.coe_standardSimplexHomeomorph_symm {σ : Finset ι}
+    (t : Convexity.StdSimplex ℝ σ) :
+    (fun a : σ => ((Finset.standardSimplexHomeomorph σ).symm t).1 a) = ⇑t.weights :=
+  funext fun a => by simp [Finsupp.mapDomain_apply_of_injective Subtype.val_injective]
+
+/-- A linear map that agrees in barycentric coordinates with a map of simplices carries the weight
+vectors of the simplex of `τ` to those of the simplex of `σ`. -/
+theorem mapsTo_range_weights_of_linear {κ : Type*} {τ : Finset κ} {σ : Finset ι}
+    {φ : StandardSimplex τ → StandardSimplex σ} (L : (τ → ℝ) →ₗ[ℝ] (σ → ℝ))
+    (hφ : ∀ x : StandardSimplex τ, (fun a : σ => (φ x).1 a) = L fun a : τ => x.1 a) :
+    MapsTo L (range fun t : Convexity.StdSimplex ℝ τ => ⇑t.weights)
+      (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) := by
+  rintro _ ⟨t, rfl⟩
+  refine ⟨Finset.standardSimplexHomeomorph σ (φ ((Finset.standardSimplexHomeomorph τ).symm t)),
+    ?_⟩
+  dsimp only
+  rw [← Finset.coe_standardSimplexHomeomorph_symm t, ← hφ]
+  exact funext fun b => Finset.standardSimplexHomeomorph_weights σ _ b
+
+/-- A linear map carrying the weight vectors of the simplex of `τ` into those of the simplex of
+`σ` preserves coordinate sums. -/
+theorem sum_apply_eq_of_mapsTo {κ : Type*} {τ : Finset κ} {σ : Finset ι}
+    (L : (τ → ℝ) →ₗ[ℝ] (σ → ℝ))
+    (hmaps : MapsTo L (range fun t : Convexity.StdSimplex ℝ τ => ⇑t.weights)
+      (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)) (v : τ → ℝ) :
+    ∑ b, L v b = ∑ a, v a := by
+  classical
+  have hvert (a : τ) : ∑ b, L (Pi.single a 1) b = 1 := by
+    obtain ⟨s, hs⟩ := hmaps (x := Pi.single a 1) ⟨.single a, by
+      dsimp only
+      rw [Convexity.StdSimplex.weights_single, Finsupp.single_eq_pi_single]⟩
+    rw [← hs, Convexity.StdSimplex.total_of_fintype]
+  conv_lhs => rw [pi_eq_sum_univ' v]
+  simp_rw [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+  rw [Finset.sum_comm]
+  simp_rw [← Finset.mul_sum, hvert, mul_one]
+
 namespace IsSimplexImmersion
 
 variable {σ : Finset ι} {g : StandardSimplex σ → M}
@@ -139,12 +179,8 @@ theorem comp_of_contMDiffOn (h : IsSimplexImmersion I n g) {φ : M → N} {s : S
   obtain ⟨F, hFg, hF, hF'⟩ := h
   -- `F` maps the simplex onto the image of `g`.
   have hFrange (t : Convexity.StdSimplex ℝ σ) : F t.weights ∈ range g := by
-    let x := (Finset.standardSimplexHomeomorph σ).symm t
-    have ht : (⇑t.weights : σ → ℝ) = fun a : σ => x.1 a := by
-      conv_lhs => rw [← (Finset.standardSimplexHomeomorph σ).apply_symm_apply t]
-      exact funext fun a => Finset.standardSimplexHomeomorph_weights σ x a
-    rw [ht, hFg]
-    exact mem_range_self x
+    rw [← Finset.coe_standardSimplexHomeomorph_symm t, hFg]
+    exact mem_range_self _
   have hmaps : MapsTo F (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) s := by
     rintro _ ⟨t, rfl⟩
     exact hgs (hFrange t)
@@ -171,30 +207,8 @@ theorem comp_linear {κ : Type*} {τ : Finset κ} (h : IsSimplexImmersion I n g)
     IsSimplexImmersion I n (g ∘ φ) := by
   classical
   obtain ⟨F, hFg, hF, hF'⟩ := h
-  -- `L` maps the simplex of `τ` into the simplex of `σ`, as `φ` does.
-  have hmaps : MapsTo L (range fun t : Convexity.StdSimplex ℝ τ => ⇑t.weights)
-      (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) := by
-    rintro _ ⟨t, rfl⟩
-    let x := (Finset.standardSimplexHomeomorph τ).symm t
-    have ht : (⇑t.weights : τ → ℝ) = fun a : τ => x.1 a := by
-      conv_lhs => rw [← (Finset.standardSimplexHomeomorph τ).apply_symm_apply t]
-      exact funext fun a => Finset.standardSimplexHomeomorph_weights τ x a
-    refine ⟨Finset.standardSimplexHomeomorph σ (φ x), ?_⟩
-    dsimp only
-    rw [ht, ← hφ]
-    exact funext fun b => Finset.standardSimplexHomeomorph_weights σ (φ x) b
-  -- So `L` preserves coordinate sums: it sends every vertex of the simplex of `τ` to a point of
-  -- coordinate sum one.
-  have hsum (v : τ → ℝ) : ∑ b, L v b = ∑ a, v a := by
-    have hvert (a : τ) : ∑ b, L (Pi.single a 1) b = 1 := by
-      obtain ⟨s, hs⟩ := hmaps (x := Pi.single a 1) ⟨.single a, by
-        dsimp only
-        rw [Convexity.StdSimplex.weights_single, Finsupp.single_eq_pi_single]⟩
-      rw [← hs, Convexity.StdSimplex.total_of_fintype]
-    conv_lhs => rw [pi_eq_sum_univ' v]
-    simp_rw [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
-    rw [Finset.sum_comm]
-    simp_rw [← Finset.mul_sum, hvert, mul_one]
+  have hmaps := mapsTo_range_weights_of_linear L hφ
+  have hsum := sum_apply_eq_of_mapsTo L hmaps
   -- The domain of `L` is finite dimensional, so `L` is continuous.
   let L' : (τ → ℝ) →L[ℝ] (σ → ℝ) := L.toContinuousLinearMap
   refine ⟨F ∘ L', fun x => by rw [comp_apply, LinearMap.coe_toContinuousLinearMap', ← hφ, hFg,
@@ -315,6 +329,29 @@ private theorem eq_zero_of_coordOne_eq_zero {σ : Finset (Fin 2)} {v : σ → �
       (by simp)] at hv
 
 
+/-- The within-derivative of `projIcc` composed with the barycentric coordinate at the vertex `1` is
+injective on the directions of every face of the standard one-simplex. -/
+private theorem eq_zero_of_mfderivWithin_projIcc_comp_coordOne {σ : Finset (Fin 2)}
+    (t : Convexity.StdSimplex ℝ σ) {v : σ → ℝ} (hv : ∑ a, v a = 0)
+    (hv0 : ((mfderivWithin 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) (Icc 0 1)
+      (coordOne σ t.weights)).comp (coordOne σ)) v = 0) : v = 0 := by
+  have hz := coordOne_weights_mem_Icc t
+  refine eq_zero_of_coordOne_eq_zero hv ?_
+  -- The tangent spaces of `ℝ` are `ℝ` itself, and their unit vector is `1 : ℝ`.
+  have hsmul : coordOne σ v • (1 : TangentSpace 𝓘(ℝ) (coordOne σ t.weights)) =
+      coordOne σ v :=
+    mul_one (M := ℝ) _
+  have hv0' : mfderivWithin 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) (Icc 0 1)
+      (coordOne σ t.weights) (coordOne σ v • 1) = 0 := by
+    rw [hsmul]
+    exact hv0
+  rw [map_smul, mfderivWithin_projIcc_one hz] at hv0'
+  refine (smul_eq_zero.mp hv0').resolve_right fun h1 => ?_
+  -- The unit tangent vector of the interval is nonzero, since its image in `ℝ` is `1`.
+  have h := mfderiv_subtypeVal_Icc_one (projIcc 0 1 zero_le_one (coordOne σ t.weights))
+  rw [h1, map_zero] at h
+  exact zero_ne_one (α := ℝ) h
+
 /-- The standard one-simplex, realized as the unit interval through its second barycentric
 coordinate, is a `Cⁿ` triangulation of the unit interval for every `n`. -/
 theorem isSmoothTriangulation_realizationOneSimplexHomeomorphUnitInterval :
@@ -336,21 +373,7 @@ theorem isSmoothTriangulation_realizationOneSimplexHomeomorphUnitInterval :
       (coordOne σ.1 t.weights)).comp (coordOne σ.1),
       hp.hasMFDerivWithinAt.comp _ (coordOne σ.1).hasMFDerivWithinAt
         (by rintro _ ⟨t, rfl⟩; exact coordOne_weights_mem_Icc t), fun v hv hv0 => ?_⟩
-    refine eq_zero_of_coordOne_eq_zero hv ?_
-    -- The tangent spaces of `ℝ` are `ℝ` itself, and their unit vector is `1 : ℝ`.
-    have hsmul : coordOne σ.1 v • (1 : TangentSpace 𝓘(ℝ) (coordOne σ.1 t.weights)) =
-        coordOne σ.1 v :=
-      mul_one (M := ℝ) _
-    have hv0' : mfderivWithin 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) (Icc 0 1)
-        (coordOne σ.1 t.weights) (coordOne σ.1 v • 1) = 0 := by
-      rw [hsmul]
-      exact hv0
-    rw [map_smul, mfderivWithin_projIcc_one hz] at hv0'
-    refine (smul_eq_zero.mp hv0').resolve_right fun h1 => ?_
-    -- The unit tangent vector of the interval is nonzero, since its image in `ℝ` is `1`.
-    have h := mfderiv_subtypeVal_Icc_one (projIcc 0 1 zero_le_one (coordOne σ.1 t.weights))
-    rw [h1, map_zero] at h
-    exact zero_ne_one (α := ℝ) h
+    exact eq_zero_of_mfderivWithin_projIcc_comp_coordOne t hv hv0
 
 /-- Squaring, as a self-homeomorphism of the unit interval. -/
 private def sqHomeomorph : unitInterval ≃ₜ unitInterval where
@@ -383,6 +406,16 @@ private theorem eqOn_sq_of_trans_sqHomeomorph {σ : Face (⊤ : AbstractSimplici
   simp only [comp_apply, h, Homeomorph.trans_apply]
   simp [sqHomeomorph, ← hi₁, Finsupp.mapDomain_apply_of_injective Subtype.val_injective t.weights]
 
+/-- The square of a coordinate has zero derivative at a point where that coordinate vanishes. -/
+private theorem hasFDerivWithinAt_sq_apply_of_eq_zero {α : Type*} [Finite α] (i : α)
+    (S : Set (α → ℝ)) {x : α → ℝ} (hx : x i = 0) :
+    HasFDerivWithinAt (fun y : α → ℝ => (y i) ^ 2) (0 : (α → ℝ) →L[ℝ] ℝ) S x := by
+  have := Fintype.ofFinite α
+  have hsq := ((ContinuousLinearMap.proj (R := ℝ) i).hasFDerivAt (x := x)).mul
+    ((ContinuousLinearMap.proj (R := ℝ) i).hasFDerivAt (x := x))
+  simp only [ContinuousLinearMap.proj_apply, hx, zero_smul, add_zero] at hsq
+  exact hsq.hasFDerivWithinAt.congr (fun y _ => sq _) (sq _)
+
 /-- Smoothness of a triangulating homeomorphism on every simplex does not make it a smooth
 triangulation: following the standard triangulation of the unit interval by the analytic
 homeomorphism `t ↦ t ^ 2`, whose derivative vanishes at `0`, gives a homeomorphism that is not a
@@ -406,35 +439,24 @@ theorem exists_contMDiff_not_isSmoothTriangulation_trans :
     eqOn_sq_of_trans_sqHomeomorph hFg i₁ rfl
   -- Its derivative at the vertex `i₀` is zero within the simplex.
   have hzero : HasFDerivWithinAt (Subtype.val ∘ F) (0 : (σ.1 → ℝ) →L[ℝ] ℝ) S t₀.weights := by
-    have hsq := ((ContinuousLinearMap.proj (R := ℝ) i₁).hasFDerivAt (x := ⇑t₀.weights)).mul
-      ((ContinuousLinearMap.proj (R := ℝ) i₁).hasFDerivAt (x := ⇑t₀.weights))
     have hi : t₀.weights i₁ = 0 := by simp [t₀, i₀, i₁]
-    simp only [ContinuousLinearMap.proj_apply, hi, zero_smul, add_zero] at hsq
-    have hsq' : HasFDerivWithinAt (fun y : σ.1 → ℝ => (y i₁) ^ 2) (0 : (σ.1 → ℝ) →L[ℝ] ℝ) S
-        t₀.weights :=
-      hsq.hasFDerivWithinAt.congr (fun y _ => sq _) (sq _)
-    exact hsq'.congr hformula.symm (hformula ⟨t₀, rfl⟩).symm
+    exact (hasFDerivWithinAt_sq_apply_of_eq_zero i₁ S hi).congr hformula.symm
+      (hformula ⟨t₀, rfl⟩).symm
   -- The derivative supplied by `hT`, read in `ℝ`, is a second derivative there.
   -- Typed into `ℝ` rather than a tangent space of `ℝ`, so that `ℝ`'s own instances are used.
   let L : (σ.1 → ℝ) →L[ℝ] ℝ := (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val (F t₀.weights)).comp F'
   have hG : HasFDerivWithinAt (Subtype.val ∘ F) L S t₀.weights :=
     ((((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := 1)) (F t₀.weights)).mdifferentiableAt
       one_ne_zero).hasMFDerivAt.comp_hasMFDerivWithinAt _ hFt₀).hasFDerivWithinAt
-  -- The edge direction from `i₀` to `i₁` is tangent to the simplex at `i₀`, so both derivatives
-  -- agree on it.
-  have hseg : segment ℝ (⇑t₀.weights) (⇑t₁.weights) ⊆ S :=
-    (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ σ.1).segment_subset ⟨t₀, rfl⟩
-      ⟨t₁, rfl⟩
-  have hcone : ⇑t₁.weights - ⇑t₀.weights ∈ tangentConeAt ℝ S t₀.weights :=
-    mem_tangentConeAt_of_segment_subset hseg
-  have hv : L (⇑t₁.weights - ⇑t₀.weights) = 0 :=
-    hG.unique_on hzero hcone
-  have hF'v : F' (⇑t₁.weights - ⇑t₀.weights) = 0 :=
-    (isImmersionOfComplement_subtypeVal_Icc (n := 1)).mfderiv_injective one_ne_zero _
-      (hv.trans (map_zero _).symm)
+  -- The edge direction from `i₀` to `i₁` has coordinate sum zero, so both derivatives agree on it.
   have hsum : ∑ a, (⇑t₁.weights - ⇑t₀.weights) a = 0 := by
     simp only [Pi.sub_apply, Finset.sum_sub_distrib, Convexity.StdSimplex.total_of_fintype,
       sub_self]
+  have hv : L (⇑t₁.weights - ⇑t₀.weights) = 0 :=
+    hG.apply_eq_of_sum_eq_zero hzero ⟨t₀, rfl⟩ hsum
+  have hF'v : F' (⇑t₁.weights - ⇑t₀.weights) = 0 :=
+    (isImmersionOfComplement_subtypeVal_Icc (n := 1)).mfderiv_injective one_ne_zero _
+      (hv.trans (map_zero _).symm)
   have := congrFun (hinj _ hsum hF'v) i₁
   simp [t₀, t₁, i₀, i₁] at this
 
