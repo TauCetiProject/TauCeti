@@ -88,16 +88,6 @@ theorem prod_range_cyclotomic_prime_pow_comp_X_add_one (n : ℕ) :
   | zero => simp
   | succ n ih => rw [prod_range_succ, ih, mul_comm, cyclotomic_prime_pow_comp_X_add_one_mul]
 
-/-- `Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. For `m = p ^ i` and `n = p ^ j` with
-`i ≤ j`, this says that `ξ_i` divides `ω_j`. -/
-theorem cyclotomic_comp_X_add_one_dvd {R : Type*} [Ring R] {m n : ℕ} (h : m ∣ n) :
-    (cyclotomic m R).comp (X + 1) ∣ (1 + X) ^ n - 1 := by
-  have hZ : (cyclotomic m ℤ).comp (X + 1) ∣ (1 + X : ℤ[X]) ^ n - 1 := by
-    simpa [add_comm (1 : ℤ[X]) X] using
-      _root_.map_dvd (compRingHom (X + 1 : ℤ[X]))
-        ((cyclotomic.dvd_X_pow_sub_one m ℤ).trans (dvd_pow_sub_one_of_dvd h))
-  simpa [Polynomial.map_comp] using _root_.map_dvd (mapRingHom (Int.castRingHom R)) hZ
-
 /-- The constant coefficient of `ξ_{n+1}` is `p`. -/
 @[simp]
 theorem coeff_zero_cyclotomic_prime_pow_comp_X_add_one (n : ℕ) :
