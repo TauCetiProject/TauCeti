@@ -230,6 +230,19 @@ theorem rootSubgroupPoints_mem_positivePoints (A : Type v) [CommRing A] {γ : Fi
     (u : Multiplicative A) : D.rootSubgroupPoints γ A u ∈ D.positivePoints A :=
   (D.positivePoints_le_iff.mp le_rfl) γ hγ u
 
+/-- The positive point subgroup is the join of the positive root subgroup ranges. -/
+theorem positivePoints_eq_iSup (A : Type v) [CommRing A] :
+    D.positivePoints A =
+      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        (D.rootSubgroupPoints γ A).range := by
+  apply le_antisymm
+  · apply D.positivePoints_le_iff.mpr
+    intro γ hγ u
+    exact le_iSup₂ (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ hγ ⟨u, rfl⟩
+  · refine iSup_le fun γ => iSup_le fun hγ => ?_
+    rintro _ ⟨u, rfl⟩
+    exact D.rootSubgroupPoints_mem_positivePoints A hγ u
+
 /-- The positive point subgroup is nilpotent over every commutative ring. -/
 theorem isNilpotent_positivePoints (A : Type v) [CommRing A] :
     Group.IsNilpotent (D.positivePoints A) := by
