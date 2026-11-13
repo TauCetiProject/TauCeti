@@ -43,7 +43,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
   `d ∣ N` correspond to the characters modulo `d`.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
-  at naturals prime to the new level.
+  at naturals prime to the new level, and
+  `DirichletCharacter.changeLevel_ringHomComp_intCast_apply`: the value of a lifted integer-valued
+  character at an integer prime to the new level.
 * `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
   to its level and congruent to `1` modulo a multiple of its conductor.
 * `DirichletCharacter.conductor_dvd_iff_forall_odd`: conversely, the conductor divides `d`, which
@@ -58,6 +60,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
   `DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five`.
+* `DirichletCharacter.ext_of_level_four`, `DirichletCharacter.ext_of_level_eight`: a character of
+  level four is determined by its value at `3`, and one of level eight by its values at `3`
+  and `5`.
 * `DirichletCharacter.sum_mul_eq_zero_of_forall_units`: coefficient extraction by orthogonality; a
   combination of symmetrised character sums that vanishes on every pair of units has vanishing
   coefficients against every pair of character multiplicities.
@@ -142,6 +147,27 @@ theorem conductor_eq_eight_of_apply_one_ne_apply_five {R : Type*} [CommMonoidWit
     chi.conductor = 8 :=
   conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 3) Nat.prime_two chi
     isCoprime_one_left ⟨5, -3, by norm_num⟩ (by norm_num) hdist
+
+/-- Two characters of level four agreeing at `3` are equal. -/
+theorem ext_of_level_four {R : Type*} [CommMonoidWithZero R] {χ ψ : DirichletCharacter R 4}
+    (h3 : χ 3 = ψ 3) : χ = ψ := by
+  refine MulChar.ext fun u ↦ ?_
+  rcases (by decide : ∀ u : (ZMod 4)ˣ, (u : ZMod 4) = 1 ∨ (u : ZMod 4) = 3) u with h | h <;>
+    rw [h]
+  · simp
+  · exact h3
+
+/-- Two characters of level eight agreeing at `3` and at `5` are equal. -/
+theorem ext_of_level_eight {R : Type*} [CommMonoidWithZero R]
+    {χ ψ : DirichletCharacter R 8} (h3 : χ 3 = ψ 3) (h5 : χ 5 = ψ 5) :
+    χ = ψ := by
+  refine MulChar.ext fun u ↦ ?_
+  rcases (by decide : ∀ u : (ZMod 8)ˣ, (u : ZMod 8) = 1 ∨ (u : ZMod 8) = 3 ∨
+    (u : ZMod 8) = 5 ∨ (u : ZMod 8) = 3 * 5) u with h | h | h | h <;> rw [h]
+  · simp
+  · exact h3
+  · exact h5
+  · rw [map_mul, map_mul, h3, h5]
 
 /-- **Character separation within a coset.** If `χ` does not factor through `d ∣ N`, then every
 unit `u` has a partner `u'` with the same reduction modulo `d` but a different character value —
@@ -262,6 +288,12 @@ prime to the new level. -/
 theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
+
+/-- The value of a lifted integer-valued character at an integer coprime to the level. -/
+theorem changeLevel_ringHomComp_intCast_apply {R : Type*} [CommRing R] {d N : ℕ} (h : d ∣ N)
+    (ψ : DirichletCharacter ℤ d) {n : ℤ} (hn : IsCoprime n N) :
+    changeLevel h (ψ.ringHomComp (Int.castRingHom R)) n = ψ n := by
+  rw [changeLevel_eq_cast_of_dvd' _ h hn, MulChar.ringHomComp_apply, eq_intCast]
 
 /-- The product character at the least common multiple of the levels is the pointwise product
 on natural numbers, including the nonunits. -/
