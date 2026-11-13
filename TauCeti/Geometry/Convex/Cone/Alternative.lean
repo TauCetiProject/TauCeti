@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Data.Matrix.DotProduct
 public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Int.Cast.Lemmas
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.RingTheory.Localization.FractionRing
@@ -50,6 +52,8 @@ lemmas of Heegaard Floer theory.
 * `TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos`: Tucker's theorem for a
   finite family in a free `ℤ`-module.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
+* `Matrix.exists_forall_vecMul_pos_iff`: an integral covector is positive on every column
+  exactly when the nonnegative kernel over a linearly ordered ring is trivial.
 * `Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
   `ι → K`.
 
@@ -279,3 +283,51 @@ theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
 end Int
 
 end TauCeti
+
+namespace Matrix
+
+variable {m n : Type*} [Fintype m] [Fintype n]
+
+/-- An integer matrix has a covector strictly positive on every column exactly when its kernel
+over a linearly ordered ring contains no nonzero nonnegative vector. -/
+theorem exists_forall_vecMul_pos_iff (R : Type*) [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] (A : Matrix m n ℤ) :
+    (∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) ↔
+      ∀ x : n → R, 0 ≤ x → A.map (Int.castRingHom R) *ᵥ x = 0 → x = 0 := by
+  constructor
+  · rintro ⟨h, hh⟩ x hx hAx
+    have hhR : ∀ j, 0 < ((fun i => (h i : R)) ᵥ* A.map (Int.castRingHom R)) j := by
+      intro j
+      simpa only [← Int.coe_castRingHom, RingHom.map_vecMul, Function.comp_def] using
+        (Int.cast_pos.mpr (hh j) : (0 : R) < ((h ᵥ* A) j : R))
+    apply (TauCeti.dotProduct_eq_zero_iff_of_pos hhR hx).mp
+    rw [← dotProduct_mulVec, hAx, dotProduct_zero]
+  · intro hA
+    classical
+    obtain ⟨c, f, hc, _, hcf⟩ :=
+      TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos
+        (fun j => fun i => A i j)
+    have hcA : A *ᵥ (fun j => (c j : ℤ)) = 0 := by
+      ext i
+      simpa [mulVec, dotProduct, Finset.sum_apply, nsmul_eq_mul, mul_comm] using congrFun hc i
+    have hcR : A.map (Int.castRingHom R) *ᵥ (fun j => (c j : R)) = 0 := by
+      ext i
+      have hi := congrFun hcA i
+      simpa only [RingHom.map_mulVec, Function.comp_def, Int.coe_castRingHom,
+        Int.cast_natCast, Pi.zero_apply, Int.cast_zero] using congrArg (Int.castRingHom R) hi
+    have hc0 : c = 0 := by
+      have hz := hA (fun j => (c j : R)) (fun _ => Nat.cast_nonneg _) hcR
+      ext j
+      simpa only [Pi.zero_apply, Nat.cast_eq_zero] using congrFun hz j
+    let h : m → ℤ := fun i => f (Pi.single i 1)
+    have hf (v : m → ℤ) : f v = h ⬝ᵥ v := by
+      conv_lhs => rw [pi_eq_sum_univ' v]
+      simp only [map_sum, dotProduct, h]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [map_zsmul]
+      simp only [zsmul_eq_mul, Int.cast_id]
+      exact mul_comm _ _
+    refine ⟨h, fun j => ?_⟩
+    simpa only [hc0, Pi.zero_apply, Nat.cast_zero, zero_add, hf, vecMul] using hcf j
+
+end Matrix
