@@ -37,10 +37,11 @@ group `H` receiving the coefficients through `ι : G →* H`. The system `S ∪ 
   [IFT], Proposition 2, which characterises compatibility by the embedding and the extension of
   homomorphisms.
 * `TauCeti.GroupAlgGeom.Lift.existsUnique_gHom_genericPoint_inr_eq`: a solution of `T` at the
-  generic point of `S` is the value on `Y` of a unique retraction ([IFT], Lemma 40).
+  generic point of `S` is the value on `Y` of a unique left inverse of `coordGroupMap`
+  ([IFT], Lemma 40).
 * `TauCeti.GroupAlgGeom.Lift.genericPoint_inr_mem_V_of_comp_eq_id`: conversely, the values on `Y`
-  of a retraction solve `T` at the generic point of `S`.
-* `TauCeti.GroupAlgGeom.Lift.hasLift_iff_exists_gHom`: lifts as retractions of coordinate groups
+  of a left inverse of `coordGroupMap` solve `T` at the generic point of `S`.
+* `TauCeti.GroupAlgGeom.Lift.hasLift_iff_exists_gHom`: lifts as left inverses of `coordGroupMap`
   ([IFT], Proposition 3).
 
 ## References
@@ -113,10 +114,38 @@ theorem coordGroupMap_genericPoint (x : X) : coordGroupMap ι S T (CoordGroup.ge
     CoordGroup.genericPoint ι (jointSystem S T) (Sum.inl x) := by
   simp [CoordGroup.genericPoint_apply]
 
+/-! ### Extensions along the canonical map -/
+
+/-- A `G`-homomorphism `ρ` out of the coordinate group of `S ∪ T` restricts along `coordGroupMap`
+to a `G`-homomorphism `φ` out of the coordinate group of `S` exactly when `ρ` and `φ` agree on the
+`X`-coordinates of the generic points. -/
+theorem comp_coordGroupMap_eq_iff {K : Type*} [Group K] {κ : G →* K}
+    {ρ : GHom (CoordGroup.coeff ι (jointSystem S T)) κ} {φ : GHom (CoordGroup.coeff ι S) κ} :
+    ρ.comp (coordGroupMap ι S T) = φ ↔
+      ∀ x, ρ (CoordGroup.genericPoint ι (jointSystem S T) (Sum.inl x)) =
+        φ (CoordGroup.genericPoint ι S x) :=
+  ⟨fun h x => by simpa using DFunLike.congr_fun h (CoordGroup.genericPoint ι S x),
+    fun h => CoordGroup.gHom_ext fun x => by simpa [CoordGroup.genericPoint_apply] using h x⟩
+
+/-- If a `G`-homomorphism `ρ` out of the coordinate group of `S ∪ T` restricts along
+`coordGroupMap` to `φ`, then the image under `φ` of the generic point of `S`, together with the
+values of `ρ` on the variables `Y`, is a solution of `T`. -/
+theorem genericPoint_inr_mem_V_of_comp_eq {K : Type*} [Group K] {κ : G →* K}
+    {ρ : GHom (CoordGroup.coeff ι (jointSystem S T)) κ} {φ : GHom (CoordGroup.coeff ι S) κ}
+    (hρ : ρ.comp (coordGroupMap ι S T) = φ) : Sum.elim (φ ∘ CoordGroup.genericPoint ι S)
+      (fun y => ρ (CoordGroup.genericPoint ι (jointSystem S T) (Sum.inr y))) ∈ V κ T := by
+  -- The point is the image under `ρ` of the generic point of `S ∪ T`.
+  have h : Sum.elim (φ ∘ CoordGroup.genericPoint ι S)
+      (fun y => ρ (CoordGroup.genericPoint ι (jointSystem S T) (Sum.inr y))) =
+        ρ ∘ CoordGroup.genericPoint ι (jointSystem S T) :=
+    funext <| Sum.forall.2 ⟨fun x => (comp_coordGroupMap_eq_iff.1 hρ x).symm, fun _ => rfl⟩
+  rw [h]
+  exact (mem_V_jointSystem.1 (ρ.comp_mem_V (CoordGroup.genericPoint_mem_V _))).2
+
 /-! ### Compatibility -/
 
 /-- A system `T` is compatible with `S` if and only if every `G`-homomorphism from the coordinate
-group of `S` to `H` extends to the coordinate group of `S ∪ T`. -/
+group of `S` to `H` extends along `coordGroupMap` to the coordinate group of `S ∪ T`. -/
 theorem isCompatible_iff_forall_exists_gHom : IsCompatible ι S T ↔
     ∀ α : GHom (CoordGroup.coeff ι S) ι, ∃ α' : GHom (CoordGroup.coeff ι (jointSystem S T)) ι,
       α'.comp (coordGroupMap ι S T) = α := by
@@ -125,18 +154,15 @@ theorem isCompatible_iff_forall_exists_gHom : IsCompatible ι S T ↔
   · -- Extend the solution of `S` corresponding to `α` and evaluate there.
     obtain ⟨w, hw⟩ := h _ (CoordGroup.homEquiv ι S α).2
     exact ⟨CoordGroup.evalGHom _ (mem_V_jointSystem.2 ⟨by simp, hw⟩),
-      CoordGroup.gHom_ext fun x => by simp⟩
-  · -- The solution of `S ∪ T` corresponding to an extension of evaluation at `v` lies over `v`.
+      comp_coordGroupMap_eq_iff.2 fun x => by simp [CoordGroup.genericPoint_apply]⟩
+  · -- An extension of evaluation at `v` gives a solution of `T` over `v`.
     obtain ⟨α', hα'⟩ := h (CoordGroup.evalGHom v hv)
-    have hu : (CoordGroup.homEquiv ι _ α' : X ⊕ Y → H) ∘ Sum.inl = v := funext fun x => by
-      simpa [CoordGroup.genericPoint_apply] using
-        DFunLike.congr_fun hα' (CoordGroup.genericPoint ι S x)
-    refine ⟨(CoordGroup.homEquiv ι _ α' : X ⊕ Y → H) ∘ Sum.inr, ?_⟩
-    rw [← hu, Sum.elim_comp_inl_inr]
-    exact (mem_V_jointSystem.1 (CoordGroup.homEquiv ι _ α').2).2
+    have hT := genericPoint_inr_mem_V_of_comp_eq hα'
+    rw [CoordGroup.evalGHom_comp_genericPoint] at hT
+    exact ⟨_, hT⟩
 
-/-- If `T` is compatible with `S`, the coordinate group of `S` embeds canonically into the
-coordinate group of `S ∪ T`. -/
+/-- If `T` is compatible with `S`, the canonical map `coordGroupMap` from the coordinate group of
+`S` to the coordinate group of `S ∪ T` is injective. -/
 theorem IsCompatible.coordGroupMap_injective (h : IsCompatible ι S T) :
     Function.Injective (coordGroupMap ι S T) := by
   -- A nontrivial element of the kernel would survive some `α`, which extends along the map.
@@ -148,18 +174,18 @@ theorem IsCompatible.coordGroupMap_injective (h : IsCompatible ι S T) :
 /-! ### Lifts as retractions -/
 
 /-- A `G`-homomorphism `ρ` from the coordinate group of `S ∪ T` to the coordinate group of `S` is a
-left inverse of the canonical map exactly when it sends the `X`-coordinates of the generic point
-of `S ∪ T` to the generic point of `S`. -/
+left inverse of `coordGroupMap` exactly when it sends the `X`-coordinates of the generic point of
+`S ∪ T` to the generic point of `S`. -/
 theorem comp_coordGroupMap_eq_id_iff
     {ρ : GHom (CoordGroup.coeff ι (jointSystem S T)) (CoordGroup.coeff ι S)} :
     ρ.comp (coordGroupMap ι S T) = GHom.id _ ↔
       ∀ x, ρ (CoordGroup.genericPoint ι (jointSystem S T) (Sum.inl x)) =
-        CoordGroup.genericPoint ι S x :=
-  ⟨fun h x => by simpa using DFunLike.congr_fun h (CoordGroup.genericPoint ι S x),
-    fun h => CoordGroup.gHom_ext fun x => by simpa [CoordGroup.genericPoint_apply] using h x⟩
+        CoordGroup.genericPoint ι S x := by
+  simp [comp_coordGroupMap_eq_iff]
 
-/-- A solution `w` of `T` at the generic point of `S` gives a unique retraction of the
-coordinate group of `S ∪ T` onto the coordinate group of `S` with value `w` on the variables `Y`. -/
+/-- A solution `w` of `T` at the generic point of `S` is the value on the variables `Y` of a
+unique `G`-homomorphism from the coordinate group of `S ∪ T` to the coordinate group of `S` that is
+a left inverse of `coordGroupMap`. -/
 theorem existsUnique_gHom_genericPoint_inr_eq {w : Y → CoordGroup ι S}
     (hw : Sum.elim (CoordGroup.genericPoint ι S) w ∈ V (CoordGroup.coeff ι S) T) :
     ∃! ρ : GHom (CoordGroup.coeff ι (jointSystem S T)) (CoordGroup.coeff ι S),
@@ -186,23 +212,18 @@ theorem existsUnique_gHom_genericPoint_inr_eq {w : Y → CoordGroup ι S}
   · simpa [CoordGroup.genericPoint_apply] using comp_coordGroupMap_eq_id_iff.1 hρ x
   · simpa [CoordGroup.genericPoint_apply] using hρw y
 
-/-- The values on the variables `Y` of a retraction of the coordinate group of `S ∪ T` onto the
-coordinate group of `S` form a solution of `T` at the generic point of `S`. -/
+/-- If a `G`-homomorphism `ρ` from the coordinate group of `S ∪ T` to the coordinate group of `S` is
+a left inverse of `coordGroupMap`, its values on the variables `Y` form a solution of `T` at the
+generic point of `S`. -/
 theorem genericPoint_inr_mem_V_of_comp_eq_id
     {ρ : GHom (CoordGroup.coeff ι (jointSystem S T)) (CoordGroup.coeff ι S)}
     (hρ : ρ.comp (coordGroupMap ι S T) = GHom.id _) : Sum.elim (CoordGroup.genericPoint ι S)
       (fun y => ρ (CoordGroup.genericPoint ι (jointSystem S T) (Sum.inr y))) ∈
         V (CoordGroup.coeff ι S) T := by
-  -- The point is the image under `ρ` of the generic point of `S ∪ T`.
-  have h : Sum.elim (CoordGroup.genericPoint ι S)
-      (fun y => ρ (CoordGroup.genericPoint ι (jointSystem S T) (Sum.inr y))) =
-        ρ ∘ CoordGroup.genericPoint ι (jointSystem S T) :=
-    funext <| Sum.forall.2 ⟨fun x => (comp_coordGroupMap_eq_id_iff.1 hρ x).symm, fun _ => rfl⟩
-  rw [h]
-  exact (mem_V_jointSystem.1 (ρ.comp_mem_V (CoordGroup.genericPoint_mem_V _))).2
+  simpa using genericPoint_inr_mem_V_of_comp_eq hρ
 
-/-- A system `T` admits an `S`-lift if and only if the coordinate group of `S` is a retract of
-the coordinate group of `S ∪ T` by a `G`-homomorphism. -/
+/-- A system `T` admits an `S`-lift if and only if the canonical map `coordGroupMap` from the
+coordinate group of `S` to the coordinate group of `S ∪ T` has a left inverse `G`-homomorphism. -/
 theorem hasLift_iff_exists_gHom : HasLift ι S T ↔
     ∃ ρ : GHom (CoordGroup.coeff ι (jointSystem S T)) (CoordGroup.coeff ι S),
       ρ.comp (coordGroupMap ι S T) = GHom.id _ := by
