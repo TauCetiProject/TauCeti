@@ -391,6 +391,7 @@ theorem point_apply (k : Fin Ω.numItems) : U.point k = FreeGroup.mk (U.word k) 
 
 /-- Evaluating a word in the items and the letters of `A` at the point of a solution is
 substituting the words of the items and reducing. -/
+@[simp]
 theorem eval_point_mk (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
     EqIneqSystem.eval U.point FreeGroup.of (FreeGroup.mk w) =
       FreeGroup.mk (substituteVars U.word w) := by
@@ -412,6 +413,13 @@ theorem substituteVars_word_ne_nil {w : List ((Fin Ω.numItems ⊕ A) × Bool)} 
     cases s <;> simp [U.word_ne_nil c, FreeGroup.invRev]
   · rw [FreeGroup.substituteVars_cons]
     simp
+
+/-- In a solution, the substituted word of a word in the items and the letters of `A` is empty
+exactly when the word is empty. -/
+@[simp]
+theorem substituteVars_word_eq_nil_iff {w : List ((Fin Ω.numItems ⊕ A) × Bool)} :
+    substituteVars U.word w = [] ↔ w = [] :=
+  ⟨not_imp_not.1 U.substituteVars_word_ne_nil, fun h => h ▸ FreeGroup.substituteVars_nil _⟩
 
 /-- The solution given by a tuple of nonempty reduced words which is a point of `Ω*` in `F(A)` and
 makes both sides of every equation reduced as written. -/

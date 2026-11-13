@@ -58,6 +58,8 @@ spanned by `V_{ij}` at an occurrence `r_{ij} = x ^ ε`.
 * `TauCeti.GenEq.finite_setOf_isPartitionTable`, `TauCeti.GenEq.card_cancellationFamily_le`:
   there are finitely many partition tables, at most `(2 (|S| + |A|) + 1) ^ |S|` with `|S|`
   letters in `Z` (Lemma 13(1)).
+* `TauCeti.GenEq.systemSize_le`: a system of words of total length `N` has size
+  `|S| ≤ (N - 1) N`.
 * `TauCeti.GenEq.length_wordMap_le`: the word maps have length at most the number of items
   (Lemma 14(2)), which is at most `|S|` for a partition table
   (`TauCeti.GenEq.IsPartitionTable.numItems_ofEntries_le`).
@@ -521,6 +523,17 @@ abbrev Occurrence {α : Type*} (r : List (List α)) : Type :=
 length of the words of a partition table. -/
 def systemSize {α : Type*} (r : List (List α)) : ℕ :=
   (r.map fun w => (w.length - 1) * w.length).sum
+
+/-- The size of a system of words is `∑ (l_i - 1) l_i`, for the lengths `l_i` of its words. -/
+theorem systemSize_def {α : Type*} (r : List (List α)) :
+    systemSize r = (r.map fun w => (w.length - 1) * w.length).sum := (rfl)
+
+/-- A system of words of total length `N` has size at most `(N - 1) N`. -/
+theorem systemSize_le {α : Type*} (r : List (List α)) :
+    systemSize r ≤ ((r.map List.length).sum - 1) * (r.map List.length).sum := by
+  rw [systemSize_def, ← List.sum_map_mul_left]
+  exact List.sum_le_sum fun w hw => Nat.mul_le_mul_right _
+    (Nat.sub_le_sub_right (List.le_sum_of_mem (List.mem_map_of_mem hw)) 1)
 
 /-- Summing `l_i - 1` over the occurrences of a system of words gives its size. -/
 theorem sum_occurrence_length_sub_one {α : Type*} (r : List (List α)) :
