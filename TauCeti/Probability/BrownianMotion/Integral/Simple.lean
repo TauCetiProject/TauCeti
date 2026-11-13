@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.L2
-public import TauCeti.Probability.Finance.SimpleStrategy.Energy
+public import TauCeti.Probability.Finance.SimpleStrategy.Basic
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
@@ -15,9 +16,9 @@ import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
 The predictable L² integral agrees with finite-grid gains for random left-endpoint-measurable
 holdings. Unlike the defining rectangle formula, the holdings need not take finitely many
-values or be bounded. The one-interval result only requires square integrability of the
-actual time-product integrand, so it also covers empty intervals without moment assumptions
-on their unused heights.
+values or be bounded. Both results only require square integrability of the actual
+predictable time-product integrand, so they also cover empty intervals and intervals beyond
+the horizon without moment assumptions on their unused heights.
 
 These identities connect completion in predictable L² with elementary stochastic integrals.
 They concern terminal L² values and almost-everywhere equality at each fixed observation time,
@@ -90,38 +91,14 @@ theorem coeFn_l2Integral_indicator_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   let H (a : Ω → ℝ) (p : ℝ≥0 × Ω) := (Ioc s t).indicator (fun _ ↦ a p.2) p.1
   let D (ω : Ω) := W (max s (min t T)) ω - W s ω
-  -- A one-interval simple holding supplies literal predictable measurability.
-  have hpred (a : Ω → ℝ) (ha : StronglyMeasurable[ℱ s] a) :
-      StronglyMeasurable[ℱ.predictable] (H a) := by
-    have hm := Finance.isStronglyPredictable_simpleHolding
-      (ℱ := ℱ) (τ := fun j ↦ if j = 0 then s else t) (n := 1) (a := fun _ ↦ a)
-      (by
-        intro j hj
-        have hj0 : j = 0 := by omega
-        subst j
-        exact ha)
-    have heq : Function.uncurry
-        (Finance.simpleHolding (fun j ↦ if j = 0 then s else t) 1 (fun _ ↦ a)) = H a := by
-      ext p
-      simp [Function.uncurry, Finance.simpleHolding_def, H]
-    rwa [IsStronglyPredictable, heq] at hm
-  have hmem (a : Ω → ℝ) (ha : StronglyMeasurable[ℱ s] a) (haLp : MemLp a 2 P) :
-      MemLp (H a) 2 (ℱ.predictableMeasure P T) := by
-    apply (ℱ.memLp_predictableMeasure_iff P (hpred a ha) T 2).2
-    convert (haLp.comp_snd (timeMeasure T)).indicator
-      ((measurableSet_Ioc (a := s) (b := t)).prod MeasurableSet.univ).nullMeasurableSet
-      using 1
-    ext p
-    by_cases hp : p.1 ∈ Ioc s t <;> simp [H, hp]
   let : MeasurableSpace Ω := ℱ s
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have hgm (g : SimpleFunc Ω ℝ) : MemLp (H g) 2 (ℱ.predictableMeasure P T) :=
-    hmem g g.stronglyMeasurable
-      (memLp_of_memLp_trim (ℱ.le s) (g.memLp_of_isFiniteMeasure 2 (P.trim (ℱ.le s))))
   -- Approximate the height, but dominate the errors by the actual interval integrand.
   let g (n : ℕ) : SimpleFunc Ω ℝ :=
     SimpleFunc.approxOn ξ hξ.measurable univ 0 (mem_univ _) n
-  have hgmem (n : ℕ) : MemLp (H (g n)) 2 (ℱ.predictableMeasure P T) := hgm (g n)
+  have hgmem (n : ℕ) : MemLp (H (g n)) 2 (ℱ.predictableMeasure P T) :=
+    ℱ.memLp_indicator_Ioc_predictableMeasure T s t (g n).stronglyMeasurable
+      (memLp_of_memLp_trim (ℱ.le s) ((g n).memLp_of_isFiniteMeasure 2 (P.trim (ℱ.le s))))
   have hlim : ∀ ω, Tendsto (fun n ↦ g n ω) atTop (𝓝 (ξ ω)) := fun ω ↦
     SimpleFunc.tendsto_approxOn hξ.measurable (mem_univ _) (by simp)
   have henergy : Tendsto (fun n ↦ eLpNorm (H (g n) - H ξ) 2
@@ -153,14 +130,15 @@ theorem coeFn_l2Integral_indicator_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
       (Eventually.of_forall fun ω ↦ (hlim ω).mul_const (D ω)))
 
 /-- The completed integral of a simple holding is its finite-grid gains at the observation
-time. The grid may have repeated dates, need not start at zero, and may extend past `T`. -/
+time. Only the actual predictable integrand must be square integrable. The grid may have
+repeated dates, need not start at zero, and may extend past `T`. -/
 theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
     {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
     (hτ : MonotoneOn τ (Iic n))
     (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (haLp : ∀ j < n, MemLp (a j) 2 P) (T : ℝ≥0) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    hW.l2Integral T ((Finance.memLp_simpleHolding_predictableMeasure ha haLp T).toLp _) =ᵐ[P]
+    (T : ℝ≥0)
+    (hH : MemLp (Function.uncurry (Finance.simpleHolding τ n a)) 2 (ℱ.predictableMeasure P T)) :
+    hW.l2Integral T (hH.toLp _) =ᵐ[P]
       Finance.simpleGains τ n a W T := by
   classical
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
@@ -168,31 +146,21 @@ theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
   have hmem (j : ℕ) (hj : j ∈ Finset.range n) :
       MemLp (fun p : ℝ≥0 × Ω ↦ (Ioc (τ j) (τ (j + 1))).indicator
         (fun _ ↦ a j p.2) p.1) 2 (ℱ.predictableMeasure P T) := by
-    have hm := Finance.memLp_simpleHolding_predictableMeasure
-      (ℱ := ℱ) (τ := fun k ↦ if k = 0 then τ j else τ (j + 1)) (n := 1)
-      (a := fun _ ↦ a j)
-      (by
-        intro k hk
-        have hk0 : k = 0 := by omega
-        subst k
-        exact ha j (Finset.mem_range.mp hj))
-      (by intro _ _; exact haLp j (Finset.mem_range.mp hj)) T
-    have heq : Function.uncurry
-        (Finance.simpleHolding (fun k ↦ if k = 0 then τ j else τ (j + 1)) 1 (fun _ ↦ a j)) =
-        fun p : ℝ≥0 × Ω ↦ (Ioc (τ j) (τ (j + 1))).indicator (fun _ ↦ a j p.2) p.1 := by
-      ext p
-      simp [Function.uncurry, Finance.simpleHolding_def]
-    rwa [heq] at hm
-  have hin : (Finance.memLp_simpleHolding_predictableMeasure ha haLp T).toLp _ =
-      ∑ j : Finset.range n, (hmem j.1 j.2).toLp _ := by
-    apply Lp.ext
-    filter_upwards [(Finance.memLp_simpleHolding_predictableMeasure ha haLp T).coeFn_toLp,
-      Lp.coeFn_fun_finsetSum Finset.univ (fun j : Finset.range n ↦ (hmem j.1 j.2).toLp _),
-      ae_all_iff.2 (fun j : Finset.range n ↦ (hmem j.1 j.2).coeFn_toLp)] with p hp hsum hj
-    rw [hp, hsum]
-    simp only [hj, Function.uncurry, Finance.simpleHolding_def]
-    exact (Finset.sum_coe_sort (Finset.range n)
-      (fun j ↦ (Ioc (τ j) (τ (j + 1))).indicator (fun _ ↦ a j p.2) p.1)).symm
+    convert hH.indicator (measurableSet_predictable_Ioc_prod (τ j) (τ (j + 1))
+      (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet using 1
+    ext p
+    by_cases hp : p.1 ∈ Ioc (τ j) (τ (j + 1))
+    · simp [hp, Function.uncurry, Finance.simpleHolding_of_mem_Ioc hτ
+        (Finset.mem_range.mp hj) hp]
+    · simp [hp]
+  have hin : hH.toLp _ = ∑ j : Finset.range n, (hmem j.1 j.2).toLp _ :=
+    (MemLp.toLp_congr hH
+      (memLp_finsetSum Finset.univ fun (j : Finset.range n) _ ↦ hmem j.1 j.2)
+      (.of_forall fun (p : ℝ≥0 × Ω) ↦ by
+        simpa only [Function.uncurry, Finance.simpleHolding_def] using
+          (Finset.sum_coe_sort (Finset.range n)
+            (fun j ↦ (Ioc (τ j) (τ (j + 1))).indicator (fun _ ↦ a j p.2) p.1)).symm)).trans
+      (MemLp.toLp_finsetSum _ fun (j : Finset.range n) ↦ hmem j.1 j.2)
   rw [hin, map_sum]
   filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ
     (fun j : Finset.range n ↦ hW.l2Integral T ((hmem j.1 j.2).toLp _)),

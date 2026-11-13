@@ -45,6 +45,37 @@ public section
 open MeasureTheory ProbabilityTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
 
+/-- A height known at the left endpoint, extended by zero outside `(s,t]`, is predictable. -/
+theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable
+    {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s t : ι) {a : Ω → E}
+    (ha : StronglyMeasurable[ℱ s] a) :
+    StronglyMeasurable[ℱ.predictable]
+      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ a p.2) p.1) := by
+  classical
+  let : MeasurableSpace Ω := ℱ s
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  let g (n : ℕ) : SimpleFunc (ι × Ω) E :=
+    { toFun := fun p ↦ (Ioc s t).indicator (fun _ ↦ ha.approx n p.2) p.1
+      measurableSet_fiber' := fun c ↦ by
+        have hI := measurableSet_predictable_Ioc_prod s t ((ha.approx n).measurableSet_fiber c)
+        by_cases hc : c = 0
+        · convert hI.union (measurableSet_predictable_Ioc_prod s t
+            (𝓕 := ℱ) MeasurableSet.univ).compl using 1
+          ext p
+          by_cases hp : p.1 ∈ Ioc s t <;> simp [hp, hc]
+        · convert hI using 1
+          ext p
+          by_cases hp : p.1 ∈ Ioc s t <;> simp [hp, Ne.symm hc]
+      finite_range' := ((ha.approx n).finite_range.insert 0).subset <| by
+        rintro _ ⟨p, rfl⟩
+        by_cases hp : p.1 ∈ Ioc s t <;> simp [hp] }
+  refine ⟨g, fun p ↦ ?_⟩
+  by_cases hp : p.1 ∈ Ioc s t
+  · simpa only [g, SimpleFunc.coe_mk, indicator_of_mem hp] using ha.tendsto_approx p.2
+  · simpa only [g, SimpleFunc.coe_mk, indicator_of_notMem hp] using
+      (tendsto_const_nhds : Tendsto (fun _ : ℕ ↦ (0 : E)) atTop (𝓝 0))
+
 section Arithmetic
 
 variable {ι Ω E : Type*} {m : MeasurableSpace Ω} [Preorder ι] [OrderBot ι]
