@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -189,10 +190,12 @@ theorem eLpNorm_le_of_weakDerivChainLe_iteratedGradient {S T : Set ℂ} {C : ℝ
     simpa only [LinearIsometry.eLpNorm_comp] using h.eLpNorm_le
   | succ n ih =>
     rcases Nat.lt_or_eq_of_le hji with hji | rfl
-    · have hc := h.weakFDeriv ((hGf j le_rfl (by omega)).clm_comp L.toContinuousLinearMap)
-        ((hGg j le_rfl (by omega)).clm_comp L.toContinuousLinearMap)
-      let L' : IteratedGradient ℂ (j + 1) →ₗᵢ[ℝ] (ℂ →L[ℝ] F) := LinearIsometry.postcomp L
-      exact ih (j + 1) L' hc (fun i hji hi => hGf i (by omega) (by omega))
+    · have hf := (hGf j le_rfl (by omega)).clm_comp L.toContinuousLinearMap
+      have hg := (hGg j le_rfl (by omega)).clm_comp L.toContinuousLinearMap
+      simp only [LinearIsometry.coe_toContinuousLinearMap,
+        ← LinearIsometry.postcomp_eq_comp (σ₁₃ := RingHom.id ℝ)] at hf hg
+      exact ih (j + 1) (LinearIsometry.postcomp L) (h.weakFDeriv hf hg)
+        (fun i hji hi => hGf i (by omega) (by omega))
         (fun i hji hi => hGg i (by omega) (by omega)) (by omega) (by omega)
     · simpa only [LinearIsometry.eLpNorm_comp] using h.eLpNorm_le
 

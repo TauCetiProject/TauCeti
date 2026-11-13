@@ -22,20 +22,20 @@ limit in `MemWkpLoc p U k`. Boundedness and convergence are expressed through th
 spaces `TauCeti.Wkp` on the open upper halves `TopologicalSpace.Opens.upperHalf W`, as in the
 interior statement `TauCeti.exists_subseq_memWkpLoc_tendsto_wkp`.
 
-The proof reduces to the interior statement on one open set. The reflection hull
-`TopologicalSpace.Opens.reflectionHull V` of an open set `V` consists of the points of `V` in the
+The proof reduces to the interior statement on one open set. The reflection core
+`TopologicalSpace.Opens.reflectionCore V` of an open set `V` consists of the points of `V` in the
 open upper half-plane together with the points `z` of `V` whose vertical segment
-`{z.re + c * z.im * I | -1 ≤ c ≤ 1}` lies in `V`. It is open, contains
-`V ∩ {0 ≤ im}`, and is stable under the normal dilations below the real axis, so the order-`k + 1`
-higher reflection `TauCeti.planarReflection (higherReflectionCoeff (k + 1))` extends a map in
-`W^{k+1,p}_loc` of its closed upper half to a map in `W^{k+1,p}_loc` of the hull, with every
+`{z.re + c * z.im * I | -1 ≤ c ≤ 1}` lies in `V`. It is open, lies between `V ∩ {0 ≤ im}` and
+`V`, and is stable under the normal dilations below the real axis, so the order-`k + 1` higher
+reflection `TauCeti.planarReflection (higherReflectionCoeff (k + 1))` extends a map in
+`W^{k+1,p}_loc` of its closed upper half to a map in `W^{k+1,p}_loc` of the core, with every
 derivative bounded by `TauCeti.higherReflectionBound (k + 1) p` times the corresponding derivative
 of the original map (`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_bound`). Each
-relatively compact open subset of the hull of `Ω` lies, with its closure, in the hull of a
+relatively compact open subset of the core of `Ω` lies, with its closure, in the core of a
 relatively compact open subset `V` of `Ω`, so the reflected sequence is bounded in `W^{k+1,p}` on
-every relatively compact open subset of the hull of `Ω`. The interior statement on the hull then
+every relatively compact open subset of the core of `Ω`. The interior statement on the core then
 gives the subsequence and the limit. Finally, the upper half of every relatively compact open
-subset of `Ω` is relatively compact in the hull, and there the reflected functions are the
+subset of `Ω` is relatively compact in the core, and there the reflected functions are the
 original ones.
 
 ## Main declarations
@@ -68,32 +68,32 @@ variable {p : ℝ≥0∞} {k : ℕ}
 
 variable [Fact (1 ≤ p)]
 
-/-- **The reflection of one Sobolev function is bounded on the reflection hull.** If `u` is
+/-- **The reflection of one Sobolev function is bounded on the reflection core.** If `u` is
 represented by `v` in `W^{k+1,p}` on the upper half of `V`, then on every open `W` whose closure is
-compact and contained in the reflection hull of `V`, the order-`k + 1` higher reflection of `u` is
+compact and contained in the reflection core of `V`, the order-`k + 1` higher reflection of `u` is
 represented by an element of `W^{k+1,p}(W)` of norm at most
 `(k + 2) * higherReflectionBound (k + 1) p * ‖v‖`. -/
 private theorem exists_wkp_planarReflection_norm_le_of_wkp {V W : Opens ℂ} {u : ℂ → ℝ}
     (v : Wkp volume V.upperHalf p (k + 1))
     (hv : Wkp.value (k + 1) v =ᵐ[volume.restrict (V.upperHalf : Set ℂ)] u)
-    (hWc : IsCompact (closure (W : Set ℂ))) (hWV : closure (W : Set ℂ) ⊆ V.reflectionHull) :
+    (hWc : IsCompact (closure (W : Set ℂ))) (hWV : closure (W : Set ℂ) ⊆ V.reflectionCore) :
     ∃ w : Wkp volume W p (k + 1), ENNReal.ofReal ‖w‖ ≤
         ((k : ℝ≥0∞) + 2) * (higherReflectionBound (k + 1) p * ENNReal.ofReal ‖v‖) ∧
       Wkp.value (k + 1) w =ᵐ[volume.restrict W]
         planarReflection (higherReflectionCoeff (k + 1)) u := by
   have hp : 1 ≤ p := Fact.out
   set C := higherReflectionBound (k + 1) p
-  set H := V.reflectionHull
+  set H := V.reflectionCore
   set T : Set ℂ := (H : Set ℂ) ∩ {z | 0 ≤ z.im}
   obtain ⟨G, h0, hG, -, hGn, -⟩ := Wkp.exists_iteratedGradient_chain k v
   -- Up to the real axis, which is null, `V ∩ {0 ≤ im}` is the upper half of `V`.
   have hVae : (V : Set ℂ) ∩ {z | 0 ≤ z.im} =ᵐ[volume] (V.upperHalf : Set ℂ) := by
     rw [Opens.coe_upperHalf]
     exact ae_eq_set_inter .rfl (Complex.setOf_le_im_ae_eq 0)
-  have hTH : T ⊆ (V : Set ℂ) ∩ {z | 0 ≤ z.im} := inter_subset_inter_left _ V.reflectionHull_le
+  have hTH : T ⊆ (V : Set ℂ) ∩ {z | 0 ≤ z.im} := inter_subset_inter_left _ V.reflectionCore_le
   have hint : Opens.interior T ≤ V.upperHalf :=
     (Opens.interior_inter_setOf_im_nonneg_eq_upperHalf H).le.trans
-      (Opens.upperHalf_mono V.reflectionHull_le)
+      (Opens.upperHalf_mono V.reflectionCore_le)
   have hT : MemWkpLoc p T (k + 1) u := by
     refine ((Wkp.memWkpLoc_value_of_ae_le (Opens.interior_inter_setOf_im_nonneg_eq_upperHalf V)
       hVae.subset v).congr_ae ?_).mono hTH
@@ -101,11 +101,13 @@ private theorem exists_wkp_planarReflection_norm_le_of_wkp {V W : Opens ℂ} {u 
     exact hv
   -- Reflect, and compare the iterated gradients of the reflection with those of `v`.
   obtain ⟨hrefl, hchain⟩ := hT.planarReflection_higherReflectionCoeff_bound (Ω := H) hp
-    fun z hz hz0 j => Opens.imDilation_higherReflectionNode_mem_reflectionHull j hz hz0
+    fun z hz hz0 j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz hz0.le
   obtain ⟨hrp, Gf, hf0, hfG, hfGp⟩ := (memWkpLoc_succ_iff_exists_iteratedGradient k).1 hrefl
   have h0' := h0.congr_ae hv
   have hc := hchain.weakFDeriv (Df := fun z => innerSL ℝ (Gf 0 z))
     (Dg := fun z => innerSL ℝ (G 0 z)) (by rw [Opens.interior_coe]; exact hf0) (h0'.mono hint)
+  simp only [← InnerProductSpace.toContinuousLinearMap_toDualMap,
+    LinearIsometry.coe_toContinuousLinearMap] at hc
   have hbd := eLpNorm_le_of_weakDerivChainLe_iteratedGradient k 0
     (InnerProductSpace.toDualMap ℝ ℂ) Gf G hc
     (fun i _ hi => by rw [Opens.interior_coe]; exact hfG i (by omega))
@@ -141,20 +143,20 @@ private theorem exists_wkp_planarReflection_norm_le_of_wkp {V W : Opens ℂ} {u 
         push_cast
         ring
 
-/-- **The reflected sequence is bounded on the reflection hull.** If the `u m` are bounded in
+/-- **The reflected sequence is bounded on the reflection core.** If the `u m` are bounded in
 `W^{k+1,p}` on the upper half of every relatively compact open subset of `Ω`, then their order
 `k + 1` higher reflections are bounded in `W^{k+1,p}` on every relatively compact open subset of the
-reflection hull of `Ω`. -/
+reflection core of `Ω`. -/
 private theorem exists_wkp_planarReflection_norm_le {Ω : Opens ℂ} {u : ℕ → ℂ → ℝ}
     (hu : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
       ∃ R : ℝ, ∀ m, ∃ v : Wkp volume W.upperHalf p (k + 1),
         ‖v‖ ≤ R ∧ Wkp.value (k + 1) v =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] u m)
     {W : Opens ℂ} (hWc : IsCompact (closure (W : Set ℂ)))
-    (hWΩ : closure (W : Set ℂ) ⊆ Ω.reflectionHull) :
+    (hWΩ : closure (W : Set ℂ) ⊆ Ω.reflectionCore) :
     ∃ R : ℝ, ∀ m, ∃ v : Wkp volume W p (k + 1), ‖v‖ ≤ R ∧
       Wkp.value (k + 1) v =ᵐ[volume.restrict W]
         planarReflection (higherReflectionCoeff (k + 1)) (u m) := by
-  obtain ⟨V, hVc, hVΩ, hWV⟩ := Opens.exists_closure_subset_reflectionHull hWc hWΩ
+  obtain ⟨V, hVc, hVΩ, hWV⟩ := Opens.exists_isCompact_closure_subset_reflectionCore hWc hWΩ
   obtain ⟨R, hR⟩ := hu V hVc hVΩ
   have hne : ((k : ℝ≥0∞) + 2) * (higherReflectionBound (k + 1) p * ENNReal.ofReal R) ≠ ⊤ :=
     ENNReal.mul_ne_top (by simp) (ENNReal.mul_ne_top (higherReflectionBound_ne_top _ _)
@@ -188,13 +190,13 @@ theorem exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp {u : ℕ → �
           (∀ j, Wkp.value k (y j) =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] u (φ j)) →
           Wkp.value k w =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] v →
           Tendsto y atTop (𝓝 w) := by
-  obtain ⟨φ, hφ, v, hv, hlim⟩ := exists_subseq_memWkpLoc_tendsto_wkp (Ω := Ω.reflectionHull)
+  obtain ⟨φ, hφ, v, hv, hlim⟩ := exists_subseq_memWkpLoc_tendsto_wkp (Ω := Ω.reflectionCore)
     (u := fun m => planarReflection (higherReflectionCoeff (k + 1)) (u m))
     fun W hWc hWΩ => exists_wkp_planarReflection_norm_le hu hWc hWΩ
-  refine ⟨φ, hφ, v, hv.mono Ω.inter_setOf_im_nonneg_subset_reflectionHull,
+  refine ⟨φ, hφ, v, hv.mono Ω.inter_setOf_im_nonneg_subset_reflectionCore,
     fun W hWc hWΩ y w hy hw => ?_⟩
   refine hlim W.upperHalf (Opens.isCompact_closure_upperHalf hWc)
-    (Opens.closure_upperHalf_subset_reflectionHull hWΩ) y w (fun j => (hy j).trans ?_) hw
+    (Opens.closure_upperHalf_subset_reflectionCore hWΩ) y w (fun j => (hy j).trans ?_) hw
   filter_upwards [ae_restrict_mem W.upperHalf.isOpen.measurableSet] with z hz
   exact (planarReflection_of_nonneg _ _ (Opens.mem_upperHalf.1 hz).2.le).symm
 
@@ -219,16 +221,16 @@ theorem _root_.Module.Basis.exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendst
           Wkp.value k w =ᵐ[volume.restrict (W.upperHalf : Set ℂ)]
             (fun z => b.repr (v z) i) →
           Tendsto y atTop (𝓝 w) := by
-  obtain ⟨φ, hφ, v, hv, hlim⟩ := b.exists_subseq_memWkpLoc_tendsto_wkp (Ω := Ω.reflectionHull)
+  obtain ⟨φ, hφ, v, hv, hlim⟩ := b.exists_subseq_memWkpLoc_tendsto_wkp (Ω := Ω.reflectionCore)
     (u := fun m => planarReflection (higherReflectionCoeff (k + 1)) (u m))
     fun W hWc hWΩ i => by
-      simpa only [← Module.Basis.coord_apply, LinearMap.map_planarReflection] using
+      simpa only [← Module.Basis.coord_apply, map_planarReflection] using
         exists_wkp_planarReflection_norm_le (u := fun m z => b.repr (u m z) i)
           (fun W' hW'c hW'Ω => hu W' hW'c hW'Ω i) hWc hWΩ
-  refine ⟨φ, hφ, v, hv.mono Ω.inter_setOf_im_nonneg_subset_reflectionHull,
+  refine ⟨φ, hφ, v, hv.mono Ω.inter_setOf_im_nonneg_subset_reflectionCore,
     fun W hWc hWΩ i y w hy hw => ?_⟩
   refine hlim W.upperHalf (Opens.isCompact_closure_upperHalf hWc)
-    (Opens.closure_upperHalf_subset_reflectionHull hWΩ) i y w (fun j => (hy j).trans ?_) hw
+    (Opens.closure_upperHalf_subset_reflectionCore hWΩ) i y w (fun j => (hy j).trans ?_) hw
   filter_upwards [ae_restrict_mem W.upperHalf.isOpen.measurableSet] with z hz
   simp [planarReflection_of_nonneg _ _ (Opens.mem_upperHalf.1 hz).2.le]
 
