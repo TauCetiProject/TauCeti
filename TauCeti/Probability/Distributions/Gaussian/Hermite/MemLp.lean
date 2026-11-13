@@ -15,14 +15,13 @@ public import TauCeti.RingTheory.Polynomial.Hermite.Real
 
 This file specializes the generic Gaussian/polynomial `L²` membership of
 `TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp` to the probabilists' Hermite
-polynomials `Polynomial.hermite n`.  The Hermite statement `memLp_hermite_gaussianReal` is target
-**A3′** of the `OrthogonalL2Bases` roadmap: the variance-general `L²` membership of the normalized
-Hermite polynomials `Hₙ / √(n!)` under `gaussianReal 0 v`, the membership the Gaussian Hermite
-Hilbert-basis construction consumes for its `MemLp` obligations.
+polynomials `Polynomial.hermite n`.  The Hermite statement `memLp_hermite_gaussianReal` is the
+variance-general `L²` membership of the normalized Hermite polynomials `Hₙ / √(n!)` under
+`gaussianReal 0 v`.
 
-The scalar-generic cast to `[RCLike 𝕜]` (needed because the roadmap's bases are stated over
-`Lp 𝕜 2 μ` uniformly for `𝕜 = ℝ` and `𝕜 = ℂ`) reuses Mathlib's `MemLp.ofReal`, rewriting the
-`algebraMap ℝ 𝕜` cast to `RCLike.ofReal`.
+The scalar-generic cast to `[RCLike 𝕜]` (so that the statement serves `Lp 𝕜 2 μ` uniformly for
+`𝕜 = ℝ` and `𝕜 = ℂ`) reuses Mathlib's `MemLp.ofReal`, rewriting the `algebraMap ℝ 𝕜` cast to
+`RCLike.ofReal`.
 
 The `Polynomial` evaluation API and `MemLp.ofReal` are consumed, not re-derived.
 -/
@@ -39,8 +38,8 @@ open scoped NNReal ENNReal
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- **Target A3′ (variance-general `L²` membership).** The normalized probabilists' Hermite
-polynomial `Hₙ / √(n!)`, cast into `𝕜`, is square-integrable against every centred real Gaussian
+/-- **Variance-general `L²` membership.** The normalized probabilists' Hermite polynomial
+`Hₙ / √(n!)`, cast into `𝕜`, is square-integrable against every centred real Gaussian
 `gaussianReal 0 v`.  Immediate from `memLp_two_eval_gaussianReal` (Hermite is a polynomial) and the
 scalar cast `MemLp.ofReal`. -/
 theorem memLp_hermite_gaussianReal (n : ℕ) (v : ℝ≥0) :
