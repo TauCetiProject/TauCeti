@@ -23,7 +23,10 @@ slice `x ↦ F (x, p)` is transverse to `j` when, at every incidence pair `(x, y
 `V`, equivalently when `(u, v) ↦ d_x F(x, p) u - dj(y) v` is surjective. Writing the incidence
 equation as `TauCeti.incidenceEquation F j ((x, y), p) = F (x, p) - j y` puts the spatial pair
 `(x, y) : E × W` in the first factor and the parameter `p : P` in the second, matching
-`TauCeti.IsRegularParameter` and `TauCeti.IsRegularParameterOn`.
+`TauCeti.IsRegularParameter` and `TauCeti.IsRegularParameterOn` (and the finite-dimensional
+Morse--Sard level-set theorems `TauCeti.addHaar_setOf_not_isRegularParameterOn_eq_zero` and
+`TauCeti.dense_setOf_isRegularParameterOn` in
+`TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional`).
 
 This file builds the derivative, invariance, dimension-counting, and measure-theoretic generic
 parameter API for `TauCeti.incidenceEquation`:
@@ -31,29 +34,37 @@ parameter API for `TauCeti.incidenceEquation`:
 * `TauCeti.incidenceEquation`: the map `((x, y), p) ↦ F (x, p) - j y` on `(E × W) × P`.
 * `TauCeti.IsRegularIncidenceParameter` and `TauCeti.IsRegularIncidenceParameterOn`: regularity of
   a parameter `p` for `incidenceEquation F j` at level `0`, globally or on a subset
-  `U ⊆ (E × W) × P`.
+  `U ⊆ (E × W) × P`, with cover-gluing lemmas `TauCeti.isRegularIncidenceParameterOn_union` and
+  `TauCeti.isRegularIncidenceParameterOn_iUnion`.
 * `TauCeti.isRegularIncidenceParameterOn_iff_coprod` and
   `TauCeti.isRegularIncidenceParameterOn_iff_range_sup_eq_top`: slice-transversality criteria in
   terms of `(fderiv ℝ (fun x' ↦ F (x', p)) x).coprod (-fderiv ℝ j y)` and the span of the two
   derivative ranges, assuming differentiability only along the incidence locus in `U`.
-* `TauCeti.surjective_fderiv_incidenceEquation_iff`: universal transversality at `((x, y), p)` is
-  surjectivity of `(fderiv ℝ F (x, p)).coprod (-fderiv ℝ j y)`.
-* `TauCeti.IsRegularIncidenceParameterOn.of_maps`: functoriality under maps on `E`, `W`, and `V`
-  whose derivatives at incidence points are surjective on the sources and surjective/injective on
-  the target, giving invariance under continuous linear equivalences
-  (`TauCeti.isRegularIncidenceParameter_comp_equiv_iff`).
-* `TauCeti.disjoint_range_of_isRegularIncidenceParameter`: when
-  `finrank ℝ E + finrank ℝ W < finrank ℝ V`, a regular incidence parameter avoids `range j`
-  entirely (requiring neither differentiability of `F`, `j` nor finite-dimensionality of `V`).
+* `TauCeti.surjective_fderiv_incidenceEquation_iff` and
+  `TauCeti.surjective_fderiv_incidenceEquation_iff_range_sup_eq_top`: universal transversality at
+  `((x, y), p)` in terms of `(fderiv ℝ F (x, p)).coprod (-fderiv ℝ j y)` and the span of the two
+  derivative ranges.
+* `TauCeti.IsRegularIncidenceParameterOn.of_maps`: transfers localized regularity along maps on
+  `E`, `W`, `P`, and `V` when the target map reflects incidence equalities and the maps on `E`,
+  `W`, and `V` have surjective derivatives at incidence points in `U'`.
+* `TauCeti.isRegularIncidenceParameter_comp_equiv_iff`: unconditional invariance of
+  `TauCeti.IsRegularIncidenceParameter` under continuous linear equivalences on `E`, `W`, `P`, and
+  `V` (requiring no differentiability hypotheses on `F` or `j`).
+* `TauCeti.disjoint_range_of_isRegularIncidenceParameter` and
+  `TauCeti.disjoint_range_of_isRegularIncidenceParameter_of_not_finiteDimensional`:
+  dimension-counting avoidance when `finrank ℝ E + finrank ℝ W < finrank ℝ V` or when `V` is
+  infinite-dimensional, requiring no differentiability of `F` or `j`.
 * `TauCeti.addHaar_setOf_not_isRegularIncidenceParameterOn_eq_zero` and
   `TauCeti.addHaar_setOf_not_isRegularIncidenceParameter`: in finite dimensions, under universal
   transversality and `C^n` smoothness above the Morse--Sard threshold
   `finrank ℝ E + finrank ℝ W - finrank ℝ V + 1 ≤ n`, almost every parameter for additive Haar
   measure has a transverse slice, with countable-family corollaries
-  `TauCeti.ae_forall_isRegularIncidenceParameterOn` and
+  `TauCeti.ae_forall_isRegularIncidenceParameterOn`,
+  `TauCeti.dense_setOf_forall_isRegularIncidenceParameterOn`, and
   `TauCeti.ae_forall_disjoint_range_of_finrank_lt`.
-* Concrete witnesses for the quadratic family `(x, p) ↦ x ^ 2 + p` on `ℝ`, characterizing regular
-  parameters against the origin (`p ≠ 0`) and against the identity (`∀ p, True`).
+* `TauCeti.isRegularIncidenceParameter_sq_add_zero_iff`: characterizes regular parameters of the
+  quadratic family `(x, p) ↦ x ^ 2 + p` on `ℝ` against the origin (`p ≠ 0`), accompanied by
+  concrete point-evaluation and identity-target examples.
 
 ## References
 
@@ -81,14 +92,19 @@ def incidenceEquation {E W P V : Type*} [Sub V] (F : E × P → V) (j : W → V)
     (E × W) × P → V :=
   fun z ↦ F (z.1.1, z.2) - j z.1.2
 
-/-- Characteristic unfolding of `TauCeti.incidenceEquation` at an arbitrary triple `z`. -/
-theorem incidenceEquation_def {E W P V : Type*} [Sub V] (F : E × P → V) (j : W → V)
+/-- Function-level unfolding of `TauCeti.incidenceEquation F j`. -/
+theorem incidenceEquation_def {E W P V : Type*} [Sub V] (F : E × P → V) (j : W → V) :
+    incidenceEquation F j = fun z ↦ F (z.1.1, z.2) - j z.1.2 :=
+  (rfl)
+
+/-- Pointwise evaluation of `TauCeti.incidenceEquation` at an arbitrary triple `z`. -/
+@[simp, grind =]
+theorem incidenceEquation_apply {E W P V : Type*} [Sub V] (F : E × P → V) (j : W → V)
     (z : (E × W) × P) :
     incidenceEquation F j z = F (z.1.1, z.2) - j z.1.2 :=
   (rfl)
 
 /-- Evaluation of `TauCeti.incidenceEquation` at `(xy, p)`. -/
-@[simp]
 theorem incidenceEquation_pair {E W P V : Type*} [Sub V] (F : E × P → V) (j : W → V)
     (xy : E × W) (p : P) :
     incidenceEquation F j (xy, p) = F (xy.1, p) - j xy.2 :=
@@ -100,10 +116,10 @@ theorem incidenceEquation_mk {E W P V : Type*} [Sub V] (F : E × P → V) (j : W
     incidenceEquation F j ((x, y), p) = F (x, p) - j y :=
   (rfl)
 
-/-- The incidence equation vanishes at `((x, y), p)` precisely at an incidence `F (x, p) = j y`. -/
+/-- The incidence equation vanishes at `z` precisely at an incidence `F (z.1.1, z.2) = j z.1.2`. -/
 theorem incidenceEquation_eq_zero_iff {E W P V : Type*} [AddGroup V] {F : E × P → V} {j : W → V}
-    {x : E} {y : W} {p : P} :
-    incidenceEquation F j ((x, y), p) = 0 ↔ F (x, p) = j y :=
+    {z : (E × W) × P} :
+    incidenceEquation F j z = 0 ↔ F (z.1.1, z.2) = j z.1.2 :=
   sub_eq_zero
 
 end Algebraic
@@ -123,7 +139,15 @@ is surjective. -/
 def IsRegularIncidenceParameter (F : E × P → V) (j : W → V) (p : P) : Prop :=
   IsRegularParameter (incidenceEquation F j) 0 p
 
-/-- Unfolding `TauCeti.IsRegularIncidenceParameter` to `TauCeti.IsRegularParameter`. -/
+/-- Defining equivalence of `TauCeti.IsRegularIncidenceParameter` as regularity of `p` at level `0`
+for `TauCeti.incidenceEquation F j`. -/
+theorem isRegularIncidenceParameter_def {F : E × P → V} {j : W → V} {p : P} :
+    IsRegularIncidenceParameter F j p ↔ IsRegularParameter (incidenceEquation F j) 0 p :=
+  (Iff.rfl)
+
+/-- A parameter `p` is a regular incidence parameter if and only if the partial linearization of
+`TauCeti.incidenceEquation F j` along `E × W` is surjective at every incidence pair `xy` with
+`F (xy.1, p) = j xy.2`. -/
 theorem isRegularIncidenceParameter_iff {F : E × P → V} {j : W → V} {p : P} :
     IsRegularIncidenceParameter F j p ↔
       ∀ xy : E × W, F (xy.1, p) = j xy.2 →
@@ -139,7 +163,17 @@ def IsRegularIncidenceParameterOn (F : E × P → V) (j : W → V)
     (U : Set ((E × W) × P)) (p : P) : Prop :=
   IsRegularParameterOn (incidenceEquation F j) U 0 p
 
-/-- Unfolding `TauCeti.IsRegularIncidenceParameterOn` to `TauCeti.IsRegularParameterOn`. -/
+/-- Defining equivalence of `TauCeti.IsRegularIncidenceParameterOn` as subset-localized regularity
+of `p` at level `0` for `TauCeti.incidenceEquation F j`. -/
+theorem isRegularIncidenceParameterOn_def {F : E × P → V} {j : W → V}
+    {U : Set ((E × W) × P)} {p : P} :
+    IsRegularIncidenceParameterOn F j U p ↔
+      IsRegularParameterOn (incidenceEquation F j) U 0 p :=
+  (Iff.rfl)
+
+/-- A parameter `p` is regular on `U` if and only if the partial linearization of
+`TauCeti.incidenceEquation F j` along `E × W` is surjective at every incidence pair `xy` with
+`(xy, p) ∈ U` and `F (xy.1, p) = j xy.2`. -/
 theorem isRegularIncidenceParameterOn_iff {F : E × P → V} {j : W → V}
     {U : Set ((E × W) × P)} {p : P} :
     IsRegularIncidenceParameterOn F j U p ↔
@@ -161,6 +195,25 @@ theorem isRegularIncidenceParameterOn_univ {F : E × P → V} {j : W → V} {p :
 theorem isRegularIncidenceParameterOn_empty (F : E × P → V) (j : W → V) (p : P) :
     IsRegularIncidenceParameterOn F j ∅ p :=
   isRegularParameterOn_iff.2 fun _ h ↦ False.elim h
+
+/-- Incidence regularity on a binary union holds if and only if it holds on each piece. -/
+@[simp]
+theorem isRegularIncidenceParameterOn_union {F : E × P → V} {j : W → V}
+    {U U' : Set ((E × W) × P)} {p : P} :
+    IsRegularIncidenceParameterOn F j (U ∪ U') p ↔
+      IsRegularIncidenceParameterOn F j U p ∧ IsRegularIncidenceParameterOn F j U' p := by
+  simp only [isRegularIncidenceParameterOn_iff, mem_union]
+  exact ⟨fun h ↦ ⟨fun xy hU ↦ h xy (.inl hU), fun xy hU' ↦ h xy (.inr hU')⟩,
+    fun ⟨h, h'⟩ xy hUU' ↦ hUU'.elim (h xy) (h' xy)⟩
+
+/-- Incidence regularity on an indexed union holds if and only if it holds on each member. -/
+@[simp]
+theorem isRegularIncidenceParameterOn_iUnion {ι : Sort*} {F : E × P → V} {j : W → V}
+    {U : ι → Set ((E × W) × P)} {p : P} :
+    IsRegularIncidenceParameterOn F j (⋃ i, U i) p ↔
+      ∀ i, IsRegularIncidenceParameterOn F j (U i) p := by
+  simp only [isRegularIncidenceParameterOn_iff, mem_iUnion, forall_exists_index]
+  exact ⟨fun h i xy hU ↦ h xy i hU, fun h xy i hU ↦ h i xy hU⟩
 
 /-- Incidence regularity on a set is inherited by subsets. -/
 theorem IsRegularIncidenceParameterOn.mono {F : E × P → V} {j : W → V}
@@ -229,7 +282,7 @@ theorem fderiv_incidenceEquation_apply {F : E × P → V} {j : W → V} {x : E} 
     fderiv ℝ (incidenceEquation F j) ((x, y), p) ((u, v), q) =
       fderiv ℝ F (x, p) (u, q) - fderiv ℝ j y v := by
   rw [(hasFDerivAt_incidenceEquation hF.hasFDerivAt hj.hasFDerivAt).fderiv]
-  rfl
+  simp
 
 omit [NormedAddCommGroup P] [NormedSpace ℝ P] in
 /-- Fréchet derivative of the fixed-parameter map `xy ↦ incidenceEquation F j (xy, p)` at `(x, y)`:
@@ -248,6 +301,16 @@ theorem hasFDerivAt_incidenceEquation_slice {F : E × P → V} {j : W → V}
     HasFDerivAt.comp (x, y) hj hasFDerivAt_snd
   refine (h1.sub h2).congr_fderiv (ContinuousLinearMap.ext fun ⟨u, v⟩ ↦ ?_)
   simp [sub_eq_add_neg]
+
+omit [NormedAddCommGroup P] [NormedSpace ℝ P] in
+/-- Fréchet derivative of the fixed-parameter map `xy ↦ incidenceEquation F j (xy, p)` at `(x, y)`
+when the slice `x' ↦ F (x', p)` is differentiable at `x` and `j` is differentiable at `y`. -/
+theorem fderiv_incidenceEquation_slice {F : E × P → V} {j : W → V}
+    {x : E} {y : W} {p : P}
+    (hFx : DifferentiableAt ℝ (fun x' ↦ F (x', p)) x) (hj : DifferentiableAt ℝ j y) :
+    fderiv ℝ (fun xy : E × W ↦ incidenceEquation F j (xy, p)) (x, y) =
+      (fderiv ℝ (fun x' ↦ F (x', p)) x).coprod (-fderiv ℝ j y) :=
+  (hasFDerivAt_incidenceEquation_slice hFx.hasFDerivAt hj.hasFDerivAt).fderiv
 
 /-- When `F` is jointly differentiable at `(x, p)` and `j` is differentiable at `y`, restricting
 the total derivative `fderiv ℝ (incidenceEquation F j) ((x, y), p)` to `E × W` along
@@ -284,10 +347,10 @@ theorem contDiff_incidenceEquation {F : E × P → V} {j : W → V} {n : ℕ∞�
   contDiff_iff_contDiffAt.2 fun z ↦
     contDiffAt_incidenceEquation (hF.contDiffAt (x := (z.1.1, z.2))) (hj.contDiffAt (x := z.1.2))
 
-/-- **Universal transversality criterion.** When `F` is differentiable at `(x, p)` and `j` is
-differentiable at `y`, the total derivative of `TauCeti.incidenceEquation F j` at `((x, y), p)` is
-surjective if and only if `(fderiv ℝ F (x, p)).coprod (-fderiv ℝ j y)` is surjective (i.e., the
-family `F` as a map on `E × P` is transverse to `j` at `((x, p), y)`). -/
+/-- **Universal transversality criterion (coproduct form).** When `F` is differentiable at `(x, p)`
+and `j` is differentiable at `y`, the total derivative of `TauCeti.incidenceEquation F j` at
+`((x, y), p)` is surjective if and only if `(fderiv ℝ F (x, p)).coprod (-fderiv ℝ j y)` is
+surjective (i.e., the family `F` as a map on `E × P` is transverse to `j` at `((x, p), y)`). -/
 theorem surjective_fderiv_incidenceEquation_iff {F : E × P → V} {j : W → V}
     {x : E} {y : W} {p : P}
     (hF : DifferentiableAt ℝ F (x, p)) (hj : DifferentiableAt ℝ j y) :
@@ -302,6 +365,18 @@ theorem surjective_fderiv_incidenceEquation_iff {F : E × P → V} {j : W → V}
     obtain ⟨⟨⟨u, q⟩, v⟩, hw⟩ := hsurj w
     refine ⟨((u, v), q), ?_⟩
     simpa [fderiv_incidenceEquation_apply hF hj, sub_eq_add_neg] using hw
+
+/-- **Universal transversality criterion (subspace-sum form).** When `F` is differentiable at
+`(x, p)` and `j` is differentiable at `y`, the total derivative of `TauCeti.incidenceEquation F j`
+at `((x, y), p)` is surjective if and only if the ranges of `fderiv ℝ F (x, p)` and `fderiv ℝ j y`
+together span `V`. -/
+theorem surjective_fderiv_incidenceEquation_iff_range_sup_eq_top {F : E × P → V} {j : W → V}
+    {x : E} {y : W} {p : P}
+    (hF : DifferentiableAt ℝ F (x, p)) (hj : DifferentiableAt ℝ j y) :
+    Surjective (fderiv ℝ (incidenceEquation F j) ((x, y), p)) ↔
+      (fderiv ℝ F (x, p)).range ⊔ (fderiv ℝ j y).range = ⊤ :=
+  (surjective_fderiv_incidenceEquation_iff hF hj).trans
+    (ContinuousLinearMap.surjective_coprod_neg_iff _ _)
 
 /-- Universal transversality at `((x, y), p)` holds automatically whenever the parameter derivative
 `q ↦ fderiv ℝ F (x, p) (0, q)` is already surjective. -/
@@ -348,7 +423,10 @@ theorem isRegularIncidenceParameterOn_iff_range_sup_eq_top {F : E × P → V} {j
   refine forall₂_congr fun x y ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
   exact ContinuousLinearMap.surjective_coprod_neg_iff _ _
 
-/-- **Global slice-transversality criterion (coproduct form).** -/
+/-- **Global slice-transversality criterion (coproduct form).** Assuming differentiability of `F`
+and `j` at incidence points, `p` is a regular incidence parameter if and only if
+`(fderiv ℝ (fun x' ↦ F (x', p)) x).coprod (-fderiv ℝ j y)` is surjective whenever
+`F (x, p) = j y`. -/
 theorem isRegularIncidenceParameter_iff_coprod {F : E × P → V} {j : W → V} {p : P}
     (hF : ∀ x y, F (x, p) = j y → DifferentiableAt ℝ F (x, p))
     (hj : ∀ x y, F (x, p) = j y → DifferentiableAt ℝ j y) :
@@ -359,7 +437,10 @@ theorem isRegularIncidenceParameter_iff_coprod {F : E × P → V} {j : W → V} 
     isRegularIncidenceParameterOn_iff_coprod (fun x y _ ↦ hF x y) (fun x y _ ↦ hj x y)]
   simp
 
-/-- **Global slice-transversality criterion (subspace-sum form).** -/
+/-- **Global slice-transversality criterion (subspace-sum form).** Assuming differentiability of
+`F` and `j` at incidence points, `p` is a regular incidence parameter if and only if the ranges of
+`fderiv ℝ (fun x' ↦ F (x', p)) x` and `fderiv ℝ j y` together span `V` whenever
+`F (x, p) = j y`. -/
 theorem isRegularIncidenceParameter_iff_range_sup_eq_top {F : E × P → V} {j : W → V} {p : P}
     (hF : ∀ x y, F (x, p) = j y → DifferentiableAt ℝ F (x, p))
     (hj : ∀ x y, F (x, p) = j y → DifferentiableAt ℝ j y) :
@@ -385,10 +466,12 @@ variable {E E' W W' P P' V V' : Type*}
   [NormedAddCommGroup V'] [NormedSpace ℝ V']
 
 /-- **Nonlinear coordinate-change transfer for `IsRegularIncidenceParameterOn`.** Suppose
-`φ : E' → E`, `ψ : W' → W`, `τ : P' → P`, and `χ : V → V'` satisfy:
-* `χ` reflects incidence equalities (`χ (F (φ x', τ p')) = χ (j (ψ y')) → F (...) = j (...)`),
-* at each incidence point `((x', y'), p') ∈ U'`, `φ`, `ψ`, and `χ` have surjective derivatives,
-  and `((φ x', ψ y'), τ p') ∈ U`.
+`φ : E' → E`, `ψ : W' → W`, `τ : P' → P`, and `χ : V → V'` satisfy, at each incidence point
+`((x', y'), p') ∈ U'` with `χ (F (φ x', τ p')) = χ (j (ψ y'))`:
+* `((φ x', ψ y'), τ p') ∈ U` and `F (φ x', τ p') = j (ψ y')` (`χ` reflects incidence equalities),
+* `F`, `j`, `φ`, `ψ`, `τ`, and `χ` are differentiable at `(φ x', τ p')`, `ψ y'`, `x'`, `y'`, `p'`,
+  and `j (ψ y')` respectively,
+* `φ`, `ψ`, and `χ` have surjective derivatives at `x'`, `y'`, and `j (ψ y')`.
 
 Then regularity of `τ p'` on `U` transfers to regularity of `p'` on `U'` for the composed system
 `z ↦ χ (F (φ z.1, τ z.2))` against `χ ∘ j ∘ ψ`. This is the local chart-transfer step for
@@ -407,7 +490,8 @@ theorem IsRegularIncidenceParameterOn.of_maps {F : E × P → V} {j : W → V}
       DifferentiableAt ℝ φ x' ∧ Surjective (fderiv ℝ φ x'))
     (hψ : ∀ x' y', ((x', y'), p') ∈ U' → F (φ x', τ p') = j (ψ y') →
       DifferentiableAt ℝ ψ y' ∧ Surjective (fderiv ℝ ψ y'))
-    (hτ : DifferentiableAt ℝ τ p')
+    (hτ : ∀ x' y', ((x', y'), p') ∈ U' → F (φ x', τ p') = j (ψ y') →
+      DifferentiableAt ℝ τ p')
     (hχ : ∀ x' y', ((x', y'), p') ∈ U' → F (φ x', τ p') = j (ψ y') →
       DifferentiableAt ℝ χ (j (ψ y')) ∧ Surjective (fderiv ℝ χ (j (ψ y')))) :
     IsRegularIncidenceParameterOn
@@ -419,7 +503,7 @@ theorem IsRegularIncidenceParameterOn.of_maps {F : E × P → V} {j : W → V}
     have hχd : DifferentiableAt ℝ χ (F (φ x', τ p')) := hEq.symm ▸ (hχ x' y' hU' hEq).1
     have hpair : DifferentiableAt ℝ (fun z : E' × P' ↦ (φ z.1, τ z.2)) (x', p') :=
       ((hφ x' y' hU' hEq).1.comp (x', p') differentiableAt_fst).prodMk
-        (hτ.comp (x', p') differentiableAt_snd)
+        ((hτ x' y' hU' hEq).comp (x', p') differentiableAt_snd)
     exact hχd.comp (x', p') ((hF x' y' hU' hEq).comp (x', p') hpair)
   have hj' : ∀ x' y', ((x', y'), p') ∈ U' → χ (F (φ x', τ p')) = χ (j (ψ y')) →
       DifferentiableAt ℝ (fun w ↦ χ (j (ψ w))) y' := by
@@ -513,7 +597,10 @@ variable {E W P V : Type*}
 /-- **Dimension-counting avoidance on a set `U`.** When `E` and `W` are finite-dimensional and
 `finrank ℝ E + finrank ℝ W < finrank ℝ V`, no continuous linear map `E × W →L[ℝ] V` can be
 surjective, so a parameter `p` that is regular on `U` admits no incidence points in `U` at all.
-Neither differentiability of `F`, `j` nor `[FiniteDimensional ℝ V]` is required. -/
+No differentiability of `F` or `j` is required, and `[FiniteDimensional ℝ V]` is omitted as a
+typeclass hypothesis (note that `0 < finrank ℝ V` already forces `V` to be finite-dimensional; see
+`TauCeti.disjoint_range_of_isRegularIncidenceParameter_of_not_finiteDimensional` when `V` is
+infinite-dimensional). -/
 theorem ne_of_isRegularIncidenceParameterOn_of_finrank_lt
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ W]
     {F : E × P → V} {j : W → V} {U : Set ((E × W) × P)} {p : P}
@@ -653,59 +740,67 @@ end FiniteDimensionalGeneric
 
 section CountableFamily
 
-variable {ι E P V : Type*} [Countable ι]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {ι P : Type*} [Countable ι]
   [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
-  [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {W : ι → Type*} [∀ i, NormedAddCommGroup (W i)] [∀ i, NormedSpace ℝ (W i)]
-  [∀ i, FiniteDimensional ℝ (W i)]
+  {E W V : ι → Type*}
+  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)] [∀ i, FiniteDimensional ℝ (E i)]
+  [∀ i, NormedAddCommGroup (W i)] [∀ i, NormedSpace ℝ (W i)] [∀ i, FiniteDimensional ℝ (W i)]
+  [∀ i, NormedAddCommGroup (V i)] [∀ i, NormedSpace ℝ (V i)] [∀ i, FiniteDimensional ℝ (V i)]
 
-/-- **Simultaneous generic transversality to a countable family of maps.** Almost every parameter
-`p` is simultaneously regular on `U i` against `j i : W i → V` for all `i : ι`. -/
+/-- **Simultaneous generic transversality for a countable family of incidence problems.** Almost
+every parameter `p : P` (for additive Haar measure) is simultaneously regular on `U i` for
+`F i : E i × P → V i` against `j i : W i → V i` for all `i : ι`. -/
 theorem ae_forall_isRegularIncidenceParameterOn
     [MeasurableSpace P] [BorelSpace P] (μ : Measure P) [IsAddHaarMeasure μ]
-    {F : E × P → V} {j : ∀ i, W i → V} {U : ∀ i, Set ((E × W i) × P)} {n : ι → ℕ∞ω}
-    (hF : ∀ i, ∀ z ∈ U i, incidenceEquation F (j i) z = 0 → ContDiffAt ℝ (n i) F (z.1.1, z.2))
-    (hj : ∀ i, ∀ z ∈ U i, incidenceEquation F (j i) z = 0 → ContDiffAt ℝ (n i) (j i) z.1.2)
-    (htotal : ∀ i, ∀ z ∈ U i, incidenceEquation F (j i) z = 0 →
-      Surjective (fderiv ℝ (incidenceEquation F (j i)) z))
-    (hn : ∀ i, ((finrank ℝ E + finrank ℝ (W i) - finrank ℝ V + 1 : ℕ) : ℕ∞ω) ≤ n i) :
-    ∀ᵐ p ∂μ, ∀ i, IsRegularIncidenceParameterOn F (j i) (U i) p :=
+    {F : ∀ i, E i × P → V i} {j : ∀ i, W i → V i}
+    {U : ∀ i, Set ((E i × W i) × P)} {n : ι → ℕ∞ω}
+    (hF : ∀ i, ∀ z ∈ U i, incidenceEquation (F i) (j i) z = 0 →
+      ContDiffAt ℝ (n i) (F i) (z.1.1, z.2))
+    (hj : ∀ i, ∀ z ∈ U i, incidenceEquation (F i) (j i) z = 0 →
+      ContDiffAt ℝ (n i) (j i) z.1.2)
+    (htotal : ∀ i, ∀ z ∈ U i, incidenceEquation (F i) (j i) z = 0 →
+      Surjective (fderiv ℝ (incidenceEquation (F i) (j i)) z))
+    (hn : ∀ i, ((finrank ℝ (E i) + finrank ℝ (W i) - finrank ℝ (V i) + 1 : ℕ) : ℕ∞ω) ≤ n i) :
+    ∀ᵐ p ∂μ, ∀ i, IsRegularIncidenceParameterOn (F i) (j i) (U i) p :=
   ae_all_iff.2 fun i ↦
     ae_isRegularIncidenceParameterOn μ (hF i) (hj i) (htotal i) (hn i)
 
-/-- Parameters simultaneously regular on `U i` against a countable family `j i : W i → V` are
-dense in `P`. -/
+/-- Parameters simultaneously regular on `U i` for `F i : E i × P → V i` against a countable family
+`j i : W i → V i` are dense in `P`. -/
 theorem dense_setOf_forall_isRegularIncidenceParameterOn
-    {F : E × P → V} {j : ∀ i, W i → V} {U : ∀ i, Set ((E × W i) × P)} {n : ι → ℕ∞ω}
-    (hF : ∀ i, ∀ z ∈ U i, incidenceEquation F (j i) z = 0 → ContDiffAt ℝ (n i) F (z.1.1, z.2))
-    (hj : ∀ i, ∀ z ∈ U i, incidenceEquation F (j i) z = 0 → ContDiffAt ℝ (n i) (j i) z.1.2)
-    (htotal : ∀ i, ∀ z ∈ U i, incidenceEquation F (j i) z = 0 →
-      Surjective (fderiv ℝ (incidenceEquation F (j i)) z))
-    (hn : ∀ i, ((finrank ℝ E + finrank ℝ (W i) - finrank ℝ V + 1 : ℕ) : ℕ∞ω) ≤ n i) :
-    Dense {p | ∀ i, IsRegularIncidenceParameterOn F (j i) (U i) p} := by
+    {F : ∀ i, E i × P → V i} {j : ∀ i, W i → V i}
+    {U : ∀ i, Set ((E i × W i) × P)} {n : ι → ℕ∞ω}
+    (hF : ∀ i, ∀ z ∈ U i, incidenceEquation (F i) (j i) z = 0 →
+      ContDiffAt ℝ (n i) (F i) (z.1.1, z.2))
+    (hj : ∀ i, ∀ z ∈ U i, incidenceEquation (F i) (j i) z = 0 →
+      ContDiffAt ℝ (n i) (j i) z.1.2)
+    (htotal : ∀ i, ∀ z ∈ U i, incidenceEquation (F i) (j i) z = 0 →
+      Surjective (fderiv ℝ (incidenceEquation (F i) (j i)) z))
+    (hn : ∀ i, ((finrank ℝ (E i) + finrank ℝ (W i) - finrank ℝ (V i) + 1 : ℕ) : ℕ∞ω) ≤ n i) :
+    Dense {p | ∀ i, IsRegularIncidenceParameterOn (F i) (j i) (U i) p} := by
   borelize P
   exact Measure.dense_of_ae (μ := (addHaar : Measure P))
     (ae_forall_isRegularIncidenceParameterOn addHaar hF hj htotal hn)
 
 /-- **Simultaneous generic avoidance of a countable family of low-dimensional targets.** When
-`finrank ℝ E + finrank ℝ (W i) < finrank ℝ V` for every `i`, almost every parameter gives a slice
-whose image misses `range (j i)` for all `i`. Notice that `n = 1` already meets the Morse--Sard
-threshold `finrank ℝ E + finrank ℝ (W i) - finrank ℝ V + 1 = 1`. -/
+`finrank ℝ (E i) + finrank ℝ (W i) < finrank ℝ (V i)` for every `i`, almost every parameter `p`
+gives slices `x ↦ F i (x, p)` whose images miss `range (j i)` for all `i`. Notice that `1 ≤ n i`
+already meets the Morse--Sard threshold
+`finrank ℝ (E i) + finrank ℝ (W i) - finrank ℝ (V i) + 1 = 1`. -/
 theorem ae_forall_disjoint_range_of_finrank_lt
     [MeasurableSpace P] [BorelSpace P] (μ : Measure P) [IsAddHaarMeasure μ]
-    {F : E × P → V} {j : ∀ i, W i → V} {n : ℕ∞ω} (hn : 1 ≤ n)
-    (hF : ∀ i z, incidenceEquation F (j i) z = 0 → ContDiffAt ℝ n F (z.1.1, z.2))
-    (hj : ∀ i z, incidenceEquation F (j i) z = 0 → ContDiffAt ℝ n (j i) z.1.2)
-    (htotal : ∀ i z, incidenceEquation F (j i) z = 0 →
-      Surjective (fderiv ℝ (incidenceEquation F (j i)) z))
-    (hdim : ∀ i, finrank ℝ E + finrank ℝ (W i) < finrank ℝ V) :
-    ∀ᵐ p ∂μ, ∀ i, Disjoint (range fun x ↦ F (x, p)) (range (j i)) := by
-  have hae := ae_forall_isRegularIncidenceParameterOn (U := fun _ ↦ univ) (n := fun _ ↦ n) μ
+    {F : ∀ i, E i × P → V i} {j : ∀ i, W i → V i} {n : ι → ℕ∞ω} (hn : ∀ i, 1 ≤ n i)
+    (hF : ∀ i z, incidenceEquation (F i) (j i) z = 0 → ContDiffAt ℝ (n i) (F i) (z.1.1, z.2))
+    (hj : ∀ i z, incidenceEquation (F i) (j i) z = 0 → ContDiffAt ℝ (n i) (j i) z.1.2)
+    (htotal : ∀ i z, incidenceEquation (F i) (j i) z = 0 →
+      Surjective (fderiv ℝ (incidenceEquation (F i) (j i)) z))
+    (hdim : ∀ i, finrank ℝ (E i) + finrank ℝ (W i) < finrank ℝ (V i)) :
+    ∀ᵐ p ∂μ, ∀ i, Disjoint (range fun x ↦ F i (x, p)) (range (j i)) := by
+  have hae := ae_forall_isRegularIncidenceParameterOn (U := fun _ ↦ univ) (n := n) μ
     (fun i z _ ↦ hF i z) (fun i z _ ↦ hj i z) (fun i z _ ↦ htotal i z) fun i ↦ by
-      have hsub : finrank ℝ E + finrank ℝ (W i) - finrank ℝ V = 0 :=
+      have hsub : finrank ℝ (E i) + finrank ℝ (W i) - finrank ℝ (V i) = 0 :=
         Nat.sub_eq_zero_of_le (hdim i).le
-      simpa [hsub] using hn
+      simpa [hsub] using hn i
   filter_upwards [hae] with p hp i
   exact disjoint_range_of_isRegularIncidenceParameter (hdim i)
     (isRegularIncidenceParameterOn_univ.1 (hp i))
@@ -754,28 +849,27 @@ theorem isRegularIncidenceParameter_sq_add_zero_iff (p : ℝ) :
       zero_apply, add_zero]
     exact mul_div_cancel₀ w h2x
 
-/-- At `p = 0`, the quadratic family `(x, p) ↦ x ^ 2 + p` fails incidence regularity against `0`. -/
-theorem not_isRegularIncidenceParameter_sq_add_zero_zero :
+-- At `p = 0`, the quadratic family `(x, p) ↦ x ^ 2 + p` fails incidence regularity against `0`.
+example :
     ¬ IsRegularIncidenceParameter (fun z : ℝ × ℝ ↦ z.1 ^ 2 + z.2) (fun _ : Unit ↦ (0 : ℝ)) 0 := by
   simp [isRegularIncidenceParameter_sq_add_zero_iff]
 
-/-- At `p = -1`, the quadratic family `(x, p) ↦ x ^ 2 + p` has a nonempty regular fibre `{ -1, 1 }`
-against `0`. -/
-theorem isRegularIncidenceParameter_sq_add_zero_neg_one :
+-- At `p = -1`, the quadratic family `(x, p) ↦ x ^ 2 + p` has a nonempty regular fibre `{-1, 1}`
+-- against `0`.
+example :
     IsRegularIncidenceParameter (fun z : ℝ × ℝ ↦ z.1 ^ 2 + z.2)
       (fun _ : Unit ↦ (0 : ℝ)) (-1) := by
   simp [isRegularIncidenceParameter_sq_add_zero_iff]
 
-/-- At `p = 1`, the quadratic family `(x, p) ↦ x ^ 2 + p` is regular against `0` (with empty
-fibre). -/
-theorem isRegularIncidenceParameter_sq_add_zero_one :
+-- At `p = 1`, the quadratic family `(x, p) ↦ x ^ 2 + p` is regular against `0` (with empty fibre).
+example :
     IsRegularIncidenceParameter (fun z : ℝ × ℝ ↦ z.1 ^ 2 + z.2)
       (fun _ : Unit ↦ (0 : ℝ)) 1 := by
   simp [isRegularIncidenceParameter_sq_add_zero_iff]
 
-/-- Against `id : ℝ → ℝ`, every parameter `p : ℝ` of the quadratic family `(x, p) ↦ x ^ 2 + p` is
-regular because `fderiv ℝ id y = id` already spans `ℝ`. -/
-theorem isRegularIncidenceParameter_sq_add_id (p : ℝ) :
+-- Against `id : ℝ → ℝ`, every parameter `p : ℝ` of the quadratic family `(x, p) ↦ x ^ 2 + p` is
+-- regular because `fderiv ℝ id y = id` already spans `ℝ`.
+example (p : ℝ) :
     IsRegularIncidenceParameter (fun z : ℝ × ℝ ↦ z.1 ^ 2 + z.2) (id : ℝ → ℝ) p := by
   have hF : ContDiff ℝ ∞ (fun z : ℝ × ℝ ↦ z.1 ^ 2 + z.2) :=
     (contDiff_fst.pow 2).add contDiff_snd
