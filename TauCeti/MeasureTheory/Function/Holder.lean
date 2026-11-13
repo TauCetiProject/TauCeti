@@ -25,6 +25,8 @@ integration-by-parts arguments:
   integral of the product.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
+* `TauCeti.tendsto_lintegral_enorm_mul`: if `X i → 0` in `L^a` and `g ∈ L^b` with
+  `1/a + 1/b = 1`, then `∫⁻ ‖X i‖ ‖g‖ → 0`.
 -/
 
 public section
@@ -108,5 +110,25 @@ theorem enorm_integral_smul_le {α 𝕜 F : Type*} [MeasurableSpace α]
       simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (· • ·) 1
         continuous_smul.comp_aestronglyMeasurable₂
         (.of_forall fun _ => by simpa using eNorm_smul_le) zero_lt_one
+
+open Filter in
+open scoped Topology in
+/-- **Hölder's inequality along a filter**: if `X i → 0` in `L^a` and `‖g‖_b < ∞` with
+`1/a + 1/b = 1`, then `∫⁻ ‖X i‖ ‖g‖ → 0`. -/
+theorem tendsto_lintegral_enorm_mul {ι α E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] [NormedAddCommGroup F] {a b : ℝ≥0∞} [ENNReal.HolderTriple a b 1]
+    {l : Filter ι} {X : ι → α → E} {g : α → F} (hg : eLpNorm g b μ ≠ ⊤)
+    (hX : Tendsto (fun i => eLpNorm (X i) a μ) l (𝓝 0)) :
+    Tendsto (fun i => ∫⁻ x, ‖X i x‖ₑ * ‖g x‖ₑ ∂μ) l (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa using ENNReal.Tendsto.mul_const hX (Or.inr hg)) (fun _ => by simp) fun i => ?_
+  calc ∫⁻ x, ‖X i x‖ₑ * ‖g x‖ₑ ∂μ = ∫⁻ x, ‖‖X i x‖ * ‖g x‖‖ₑ ∂μ := by
+        simp only [eNorm_mul, eNorm_norm]
+    _ ≤ eLpNorm (fun x => ‖X i x‖ * ‖g x‖) 1 μ := lintegral_eNorm_le_eLpNorm_one
+    _ ≤ 1 * eLpNorm (X i) a μ * eLpNorm g b μ :=
+        eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (fun (x : E) (y : F) => ‖x‖ * ‖y‖) 1
+          (fun hf hg => hf.norm.mul hg.norm) (Eventually.of_forall fun _ => by simp [eNorm_mul])
+          one_pos
+    _ = eLpNorm (X i) a μ * eLpNorm g b μ := by rw [one_mul]
 
 end TauCeti

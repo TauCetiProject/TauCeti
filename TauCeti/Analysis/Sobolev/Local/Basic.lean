@@ -32,6 +32,8 @@ This file supplies restriction to arbitrary subsets, linearity, continuous-linea
 pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
 supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
+application of local `Lᵖ` or continuous operator families to local `L^q` fields by Hölder's
+inequality (`TauCeti.MemLpLoc.clm_apply`, `TauCeti.MemLpLoc.continuousOn_clm_apply`),
 pairing, decreasing the integrability exponent, and decreasing the derivative order. On an open
 set, local `Lᵖ` membership is detected on the open subsets with compact closure inside it.
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension.
@@ -248,6 +250,23 @@ theorem MemLpLoc.locallyIntegrableOn_clm_apply {A : ℂ → F →L[ℝ] G} {w : 
     (fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin _ (hA K hK hc)
       (hw K hK hc))
     (ENNReal.one_le_inv.2 hpq) hU
+
+/-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
+applied to a locally `L^q` field is locally `Lʳ` when `1/p + 1/q ≤ 1/r`. -/
+theorem MemLpLoc.clm_apply {r : ENNReal} {A : ℂ → F →L[ℝ] G} {w : ℂ → F} (hA : MemLpLoc p U A)
+    (hw : MemLpLoc q U w) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) : MemLpLoc r U (fun z => A z (w z)) := by
+  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
+  refine memLpLoc_iff.2 fun K hKU hK => ?_
+  have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
+  have hm := (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin (p⁻¹ + q⁻¹)⁻¹
+    (memLpLoc_iff.1 hA K hKU hK) (memLpLoc_iff.1 hw K hKU hK)
+  exact hm.mono_exponent (ENNReal.inv_le_inv.1 (by rwa [inv_inv]))
+
+/-- A field of continuous linear maps continuous on `U`, applied to a locally `Lᵖ` field, is
+locally `Lᵖ`, since the continuous factor is bounded on every compact subset of `U`. -/
+theorem MemLpLoc.continuousOn_clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F} (hw : MemLpLoc p U w)
+    (hA : ContinuousOn A U) : MemLpLoc p U (fun z => A z (w z)) :=
+  (hA.memLpLoc (p := ⊤)).clm_apply hw (by simp)
 
 open TauCeti.MeasureTheory in
 /-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with
