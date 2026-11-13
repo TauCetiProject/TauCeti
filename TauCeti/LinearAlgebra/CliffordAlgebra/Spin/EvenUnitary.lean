@@ -47,7 +47,8 @@ the vectors with `q(v) = ±1`, while the `spinGroup` compared with here is Mathl
   by the reverse-norm equation.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_mul_self` and
   `CliffordAlgebra.evenUnitaryGroup.self_mul_reverse` give its two norm equations.
-* `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse.
+* `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse,
+  and `CliffordAlgebra.reverseEven_evenUnitaryGroupEvenPart` states it in the even subalgebra.
 * `CliffordAlgebra.evenUnitaryGroup.neg_one_mem`: the scalar `-1` is even unitary, and
   `CliffordAlgebra.evenUnitaryGroup.negOne` is the corresponding element.
 * `QuadraticMap.Isometry.evenUnitaryGroupMap` is the homomorphism induced by a quadratic isometry,
@@ -406,6 +407,13 @@ theorem evenUnitaryGroupEvenPart_mul_reverseEven (x : evenUnitaryGroup Q) :
   simpa only [Subalgebra.coe_mul, Subalgebra.coe_one, coe_reverseEven_apply,
     coe_evenUnitaryGroupEvenPart] using evenUnitaryGroup.self_mul_reverse Q x
 
+/-- Reversal inverts the even part of an even unitary element. -/
+@[simp]
+theorem reverseEven_evenUnitaryGroupEvenPart (x : evenUnitaryGroup Q) :
+    reverseEven Q (evenUnitaryGroupEvenPart Q x) = evenUnitaryGroupEvenPart Q x⁻¹ :=
+  left_inv_eq_right_inv (reverseEven_evenUnitaryGroupEvenPart_mul_self Q x)
+    (by rw [← map_mul, mul_inv_cancel, map_one])
+
 section Transport
 
 variable {A : Type w} [Semiring A] [Algebra R A] [StarMul A]
@@ -548,9 +556,9 @@ theorem spinGroupToEven_mul_reverseEven (x : spinGroup Q) :
 /-- Reversal inverts the even part of a Spin element. -/
 @[simp]
 theorem reverseEven_spinGroupToEven (x : spinGroup Q) :
-    reverseEven Q (spinGroupToEven Q x) = spinGroupToEven Q x⁻¹ :=
-  left_inv_eq_right_inv (reverseEven_spinGroupToEven_mul_self Q x)
-    (by rw [← map_mul, mul_inv_cancel, map_one])
+    reverseEven Q (spinGroupToEven Q x) = spinGroupToEven Q x⁻¹ := by
+  rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply, reverseEven_evenUnitaryGroupEvenPart,
+    ← map_inv, evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
 
 /-- The canonical map from Spin to the even unitary carrier is injective. -/
 theorem spinGroupToEvenUnitary_injective :
@@ -596,18 +604,10 @@ theorem rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
     rightIotaEven Q e (s • m) =
       spinGroupToEven Q s * rightIotaEven Q e m *
         conjugateNegativeIotaEven Q e he (reverseEven Q (spinGroupToEven Q s)) := by
-  rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
   apply Subtype.ext
   rw [coe_rightIotaEven, spinGroup_smul_apply, ι_spinVectorAction_apply]
   simp only [Subalgebra.coe_mul, coe_rightIotaEven, coe_conjugateNegativeIotaEven]
-  rw [coe_evenUnitaryGroupEvenPart, coe_reverseEven_apply,
-    coe_evenUnitaryGroupEvenPart, coe_spinGroupToEvenUnitary_apply]
-  -- All terms now lie in the ambient Clifford algebra; this exposes associativity and the
-  -- cancellation `ι(e) * -ι(e) = 1` used below.
-  change ((s : CliffordAlgebra Q) * ι Q m * star (s : CliffordAlgebra Q)) * ι Q e =
-    (s : CliffordAlgebra Q) * (ι Q m * ι Q e) *
-      ((-ι Q e * reverse (s : CliffordAlgebra Q)) * ι Q e)
-  rw [reverse_eq_star_of_mem_even ⟨(s : CliffordAlgebra Q), spinGroup.mem_even s.2⟩]
+  rw [coe_reverseEven_apply, reverse_eq_star_of_mem_even, coe_spinGroupToEven_apply]
   symm
   calc
     (s : CliffordAlgebra Q) * (ι Q m * ι Q e) *
