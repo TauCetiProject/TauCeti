@@ -20,9 +20,6 @@ underlying submodule. When the coalgebra morphism has a linear retraction, for i
 an equivalence, this gives an order isomorphism between the subcomodule lattices before and after
 corestriction.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap: changing coordinate
-coalgebras must preserve the invariant subspaces of their comodules.
-
 ## Main declarations
 
 * `TauCeti.Subcomodule.corestrict`: corestrict a subcomodule along a coalgebra morphism.

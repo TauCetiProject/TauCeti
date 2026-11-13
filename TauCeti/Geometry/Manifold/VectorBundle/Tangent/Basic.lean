@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-public import TauCeti.Geometry.Manifold.Instances.Icc
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -44,6 +45,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 
 * `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the inverse of the extended
   chart at `x` maps its target into the base set of the canonical trivialization at `x`.
+* `TangentBundle.chartFrame`: the canonical tangent trivialization of the intrinsic chart source
+  at its centre, which covers the whole source.
 * `TangentBundle.mdifferentiableAt_trivializationAt_symm_apply` and
   `TangentBundle.trivializationAt_symm_apply_self`: a vector field with constant coordinates in
   the canonical trivialization at `x` is differentiable at `x` and takes the value `u` there.
@@ -52,8 +55,11 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
   inverse act as the identity on the fibre over `x`.
+* `TauCeti.Manifold.extend_eq_trivializationAt_symm`: the extension of a tangent vector `w` at `x`
+  is the vector field with constant coordinates `w` in the canonical trivialization at `x`.
 * `TauCeti.Manifold.inTangentCoordinates_eq_self_of_eq`: a field of linear maps read in the tangent
-  coordinates of a point with the same base points is unchanged.
+  coordinates of a point with the same base points is unchanged, and
+  `TauCeti.Manifold.inCoordinates_tangentSpace_self` is the same statement for a single map.
 * `TauCeti.Manifold.localFrame_trivializationAt_self`: consequently its local frame at `x` is the
   chosen basis of the model space.
 * `TauCeti.Manifold.inverse_mfderiv_extChartAt`: the inverse of the differential of an extended
@@ -107,8 +113,6 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.tangentSpaceProdEquiv_mfderiv_prodMap_id` and
   `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id`: the differential of `(x, t) ↦ (x, φ t)` on
   `M × 𝕜` multiplies the `𝕜`-component by `φ' t`, so it is invertible where `φ' t ≠ 0`.
-* `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc`: the differential of the
-  inclusion `M × [a, b] → M × ℝ` is invertible, also at the boundary.
 * `TauCeti.Manifold.tangentCoordChange_prod`: the tangent coordinate change of a product is the
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
@@ -119,6 +123,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.symmL_trivializationAt_sumInl` and
   `TauCeti.Manifold.symmL_trivializationAt_sumInr`: so are its inverse tangent-bundle
   trivializations.
+* `TauCeti.Manifold.tangentEndomorphismOfModel`: a `Cⁿ` field of continuous linear maps on a
+  normed space is a `Cⁿ` section of the tangent endomorphism bundle of the model manifold.
 -/
 
 public section
@@ -166,21 +172,11 @@ theorem trivializationAt_chartSource_baseSet [IsManifold I 1 M] (x : M) :
     OpenPartialHomeomorph.subtypeRestr_source, Set.mem_preimage, Set.mem_univ, iff_true]
   exact y.property
 
-/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
-`x` is differentiable at `x`. -/
-theorem mdifferentiableAt_trivializationAt_symm_apply [IsManifold I 1 M] (x : M) (u : E) :
-    MDiffAt (T% (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
-      Π y : M, TangentSpace I y)) x := by
-  have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt' x
-  have hext : (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
-      Π y : M, TangentSpace I y) =
-      FiberBundle.extend E ((trivializationAt E (TangentSpace I) x).symm x u) := by
-    funext y
-    simp only [FiberBundle.extend, Bundle.Trivialization.apply_mk_symm _ hx]
-  have h := FiberBundle.mdifferentiableAt_extend (I := I) E
-    ((trivializationAt E (TangentSpace I) x).symm x u)
-  rwa [← hext] at h
+/-- The tangent frame of the intrinsic chart source at its centre; it covers the whole source
+(`TangentBundle.trivializationAt_chartSource_baseSet`). -/
+abbrev chartFrame [IsManifold I 1 M] (x : M) :=
+  trivializationAt E (TangentSpace I : TauCeti.chartSource (H := H) x → Type _)
+    (⟨x, mem_chart_source H x⟩ : TauCeti.chartSource (H := H) x)
 
 /-- The second component of the chart of a tangent bundle at `q`, read at a point with base point
 in the chart source.  Together with `TangentBundle.coe_chartAt_fst` this describes the
@@ -250,6 +246,25 @@ theorem _root_.TangentBundle.trivializationAt_symm_apply_self (x : M) (u : E) :
     (FiberBundle.mem_baseSet_trivializationAt' x) u]
   exact symmL_trivializationAt_self x u
 
+/-- The extension `FiberBundle.extend E w` of a tangent vector `w` at `x` is the vector field with
+constant coordinates `w` in the canonical trivialization of the tangent bundle at `x`. -/
+theorem extend_eq_trivializationAt_symm {x : M} (w : TangentSpace I x) :
+    FiberBundle.extend E w = fun y ↦ (trivializationAt E (TangentSpace I) x).symm y w := by
+  have hw : (trivializationAt E (TangentSpace I) x ⟨x, w⟩).2 = w := by
+    rw [← (trivializationAt E (TangentSpace I) x).continuousLinearMapAt_apply_of_mem (R := 𝕜)
+      (FiberBundle.mem_baseSet_trivializationAt' x)]
+    exact continuousLinearMapAt_trivializationAt_self x w
+  funext y
+  simp only [FiberBundle.extend, hw]
+
+/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
+`x` is differentiable at `x`. -/
+theorem _root_.TangentBundle.mdifferentiableAt_trivializationAt_symm_apply (x : M) (u : E) :
+    MDiffAt (T% (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
+      Π y : M, TangentSpace I y)) x := by
+  have h := FiberBundle.mdifferentiableAt_extend (I := I) (V := TangentSpace I) (x := x) E u
+  rwa [extend_eq_trivializationAt_symm (I := I) (x := x) u] at h
+
 /-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
 tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
 theorem inTangentCoordinates_eq_self_of_eq {E' H' M' N : Type*} [NormedAddCommGroup E']
@@ -270,6 +285,19 @@ theorem inTangentCoordinates_eq_self_of_eq {E' H' M' N : Type*} [NormedAddCommGr
   -- `TangentSpace I (f x)` rather than `E`; it is applied by definition.
   exact congrArg (ϕ x) ((tangentBundleCore I M).coordChange_self (achart H (f x)) (f x)
     (mem_chart_source H (f x)) v)
+
+/-- A linear map between tangent spaces, read in the canonical trivializations at its own base
+points, is unchanged. -/
+@[simp]
+theorem inCoordinates_tangentSpace_self {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M'] (x : M) (y : M')
+    (ϕ : TangentSpace I x →L[𝕜] TangentSpace I' y) :
+    ContinuousLinearMap.inCoordinates E (TangentSpace I) E' (TangentSpace I') x x y y ϕ = ϕ := by
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+    symmL_trivializationAt_self]
+  exact continuousLinearMapAt_trivializationAt_self y (ϕ v)
 
 /-- The differential of the extended chart at `x₀`, at a point `x` of its source, is inverted by
 the inverse of the canonical tangent-bundle trivialization at `x₀`.  This is the inverse form of
@@ -295,15 +323,8 @@ theorem mfderiv_extChartAt_extend {y : M} (w : TangentSpace I x)
     mfderiv I 𝓘(𝕜, E) (extChartAt I x) y (FiberBundle.extend E w y) = w := by
   set t := trivializationAt E (TangentSpace I) x
   have hyt : y ∈ t.baseSet := by simpa [t] using hy
-  -- `FiberBundle.extend E w` is the inverse trivialization at `x` applied to the coordinate of `w`.
-  have hext : FiberBundle.extend E w y = t.symmL 𝕜 y (t ⟨x, w⟩).2 := by
-    rw [Trivialization.symmL_apply (R := 𝕜) t hyt]
-    rfl
-  rw [← TangentBundle.continuousLinearMapAt_trivializationAt hy, hext]
-  exact (t.continuousLinearMapAt_symmL hyt _).trans
-    ((t.continuousLinearMapAt_apply_of_mem (R := 𝕜)
-      (FiberBundle.mem_baseSet_trivializationAt' x) w).symm.trans
-      (continuousLinearMapAt_trivializationAt_self x w))
+  rw [← TangentBundle.continuousLinearMapAt_trivializationAt hy, extend_eq_trivializationAt_symm]
+  exact (congrArg _ (t.symmL_apply (R := 𝕜) hyt w).symm).trans (t.continuousLinearMapAt_symmL hyt w)
 
 variable [I.Boundaryless] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : M → F}
 
@@ -662,14 +683,6 @@ section BasePoint
 
 variable [IsManifold I 1 M]
 
-private theorem localFrame_apply_eq_symmL {ι : Type*} (b : Basis ι 𝕜 E)
-    (e : Trivialization E (TotalSpace.proj : TangentBundle I M → M)) [MemTrivializationAtlas e]
-    {x : M} (hx : x ∈ e.baseSet) (i : ι) :
-    e.localFrame b i x = e.symmL 𝕜 x (b i) := by
-  rw [Bundle.Trivialization.localFrame_apply_of_mem_baseSet _ _ hx,
-    Bundle.Trivialization.basisAt, Basis.map_apply,
-    Bundle.Trivialization.linearEquivAt_symm_apply, ← e.symmL_apply (R := 𝕜) hx]
-
 /-- Over its own base point, the local frame attached to the canonical trivialization at `x` is
 the given basis of the model space. -/
 @[simp]
@@ -677,7 +690,7 @@ theorem localFrame_trivializationAt_self {ι : Type*} (b : Basis ι 𝕜 E) (x :
     (trivializationAt E (TangentSpace I) x).localFrame b i x = b i := by
   have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
     mem_baseSet_trivializationAt E (TangentSpace I) x
-  rw [localFrame_apply_eq_symmL b _ hx]
+  rw [← TauCeti.Manifold.symmL_basis_eq_localFrame b hx (i := i)]
   exact symmL_trivializationAt_self (I := I) x (b i)
 
 end BasePoint
@@ -919,9 +932,9 @@ theorem contMDiffAt_restrictOpenTangentSpaceBilinear [IsManifold I 1 M] {n : ℕ
       x := by
   -- Pull ambient `C^n` regularity back along the inclusion and compare the inherited and ambient
   -- tangent-bundle coordinates on a common neighbourhood of `x`.
-  rw [contMDiffAt_section]
+  rw [contMDiffAt_section_iff]
   have h := hb.comp x (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
-  rw [contMDiffAt_totalSpace] at h
+  rw [contMDiffAt_totalSpace_iff] at h
   apply h.2.congr_of_eventuallyEq
   filter_upwards [
     (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
@@ -1250,22 +1263,25 @@ theorem symmL_trivializationAt_sumInr {y z : M'} :
 
 end Sum
 
-end TauCeti.Manifold
+section ModelSpace
 
-namespace TauCeti.Manifold
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V] {n : WithTop ℕ∞}
 
-variable
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {a b : ℝ} [Fact (a < b)]
+/-- A `Cⁿ` field of continuous linear maps on a normed space, as a `Cⁿ` section of the tangent
+endomorphism bundle of the model manifold. -/
+def tangentEndomorphismOfModel (A : V → V →L[𝕜] V) (hA : ContDiff 𝕜 n A) :
+    ContMDiffSection 𝓘(𝕜, V) (V →L[𝕜] V) n
+      (fun x : V ↦ TangentSpace 𝓘(𝕜, V) x →L[𝕜] TangentSpace 𝓘(𝕜, V) x) :=
+  ⟨A, by
+    intro x
+    rw [contMDiffAt_hom_bundle]
+    refine ⟨contMDiffAt_id, ?_⟩
+    simpa only [inCoordinates_tangent_bundle_core_model_space] using hA.contMDiff x⟩
 
-/-- The differential of the inclusion `M × [a, b] → M × ℝ` is invertible, also at the boundary. -/
-theorem isInvertible_mfderiv_prodMap_id_subtypeVal_Icc (p : M × Icc a b) :
-    (mfderiv (I.prod (𝓡∂ 1)) (I.prod 𝓘(ℝ)) (Prod.map id Subtype.val : M × Icc a b → M × ℝ)
-      p).IsInvertible :=
-  isInvertible_mfderiv_prodMap mdifferentiableAt_id
-    ((contMDiff_subtypeVal_Icc (n := 1)).mdifferentiableAt one_ne_zero)
-    (by rw [mfderiv_id]; exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩)
-    (TauCeti.isInvertible_mfderiv_subtypeVal_Icc p.2)
+@[simp]
+theorem tangentEndomorphismOfModel_apply (A : V → V →L[𝕜] V) (hA : ContDiff 𝕜 n A) (x : V) :
+    tangentEndomorphismOfModel A hA x = A x := (rfl)
+
+end ModelSpace
 
 end TauCeti.Manifold

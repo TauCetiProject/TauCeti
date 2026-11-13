@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.MeasureTheory.Function.Holder
+public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -14,6 +16,13 @@ public import TauCeti.MeasureTheory.Function.Lp.Restriction
 Continuous bilinear maps send convergent pairs of `Lp` classes at Hölder exponents to convergent
 products. On finite-measure subsets, this gives convergence in the `L¹` distance of arbitrary
 almost-everywhere representatives.
+
+Hölder multiplication also preserves compactness. If `V : X → L^q` is a compact operator and
+`ι : X → L^s` is a bounded operator with the same values, then for `a ∈ L^p` with `p < ∞` and
+`1/p + 1/s = 1/q` the operator `u ↦ B(a, ι u) : X → L^q` is compact, although `ι` itself need not
+be. For a simple function `a`, which lies in `L^∞`, the operator factors through `V`. Simple
+functions are dense in `L^p`, the operator depends continuously on `a`, and compact operators form
+a closed set.
 -/
 
 public section
@@ -35,6 +44,44 @@ theorem holderL_ae_eq_of_measure_le {E F G H : Type*} [MeasurableSpace E]
     B.holderL μ p q r a c =ᵐ[ν] fun x => B (f x) (g x) := by
   filter_upwards [(B.coeFn_holder (r := r) a c).filter_mono (ae_mono hν), ha, hc] with x h₁ h₂ h₃
   exact h₁.trans (congrArg₂ (fun u v => B u v) h₂ h₃)
+
+/-- **Hölder multiplication preserves compactness.** Let `V : X → L^q` be a compact operator and
+`ι : X → L^s` a bounded operator with the same values. For `a ∈ L^p` with `p < ∞` and
+`1/p + 1/s = 1/q`, the operator `u ↦ B(a, ι u) : X → L^q` is compact.
+
+The operator `ι` need only be bounded, not compact: in the application to Sobolev spaces it is a
+subcritical Sobolev embedding (Morrey's embedding into `L^∞` when `q = p`), while `V` is the
+Rellich--Kondrachov embedding. -/
+theorem isCompactOperator_holderL_comp_of_ae_eq {α 𝕜 X E F G : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G] {p s q : ENNReal}
+    [Fact (1 ≤ p)] [Fact (1 ≤ s)] [Fact (1 ≤ q)] [ENNReal.HolderTriple p s q]
+    (B : E →L[𝕜] F →L[𝕜] G) (hp : p ≠ ∞) {V : X →L[𝕜] Lp F q μ} (hV : IsCompactOperator V)
+    (ι : X →L[𝕜] Lp F s μ) (hι : ∀ u, ι u =ᵐ[μ] V u) (a : Lp E p μ) :
+    IsCompactOperator ((B.holderL μ p s q a).comp ι) := by
+  -- The operator depends continuously and linearly on the multiplier.
+  let Φ : Lp E p μ →L[𝕜] X →L[𝕜] Lp G q μ :=
+    ((ContinuousLinearMap.compL 𝕜 X (Lp F s μ) (Lp G q μ)).flip ι).comp (B.holderL μ p s q)
+  have hΦ (b : Lp E p μ) : Φ b = (B.holderL μ p s q b).comp ι := by
+    simp only [Φ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+      ContinuousLinearMap.compL_apply]
+  rw [← hΦ]
+  refine (Lp.simpleFunc.denseRange hp).induction_on a
+    (isClosed_setOfPred_isCompactOperator.preimage Φ.continuous) fun f => ?_
+  -- A simple multiplier lies in `L^∞`, so the operator factors through `V`.
+  let g : Lp E ∞ μ := (SimpleFunc.memLp_top (Lp.simpleFunc.toSimpleFunc f) μ).toLp _
+  have hfac : Φ f = (B.holderL μ ∞ q q g).comp V := by
+    ext u : 1
+    apply Lp.ext
+    filter_upwards [B.coeFn_holder (r := q) (f : Lp E p μ) (ι u),
+      B.coeFn_holder (r := q) g (V u), hι u, Lp.simpleFunc.toSimpleFunc_eq_toFun f,
+      MemLp.coeFn_toLp (SimpleFunc.memLp_top (Lp.simpleFunc.toSimpleFunc f) μ)]
+      with x h₁ h₂ h₃ h₄ h₅
+    simp only [hΦ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂,
+      h₃, g, h₅, h₄]
+  rw [hfac]
+  exact hV.clm_comp (B.holderL μ ∞ q q g)
 
 end ContinuousLinearMap
 

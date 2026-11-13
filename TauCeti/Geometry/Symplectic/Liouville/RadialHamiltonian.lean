@@ -286,7 +286,7 @@ theorem liouvilleRadialCoordinate_eq_of_isMIntegralCurve (h : IsLiouvilleComplet
     have hnotW : ∀ w ∈ Metric.ball u ε, γ w ∉ W := fun w hw ↦
       (h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt (hrR w hw))
     have heq := (hγ.isMIntegralCurveOn (Metric.ball u ε)).apply_eq_of_mvfderiv_apply_eq_zero
-      Metric.isOpen_ball (convex_ball u ε).isPreconnected
+      (convex_ball u ε).isPreconnected
       (fun w hw ↦ (h.contMDiffAt_liouvilleRadialCoordinate hZ (hnotW w hw)).mdifferentiableAt
         (by simp))
       (fun w hw ↦ by

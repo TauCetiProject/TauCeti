@@ -146,7 +146,7 @@ theorem _root_.AnalyticOnNhd.zeroCount_le_finsum_divisor {K : Set 𝕜}
     (zeroCount f U S : ℤ) ≤ ∑ᶠ z, MeromorphicOn.divisor f K z := by
   have hfin : (K ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f K z).toNat)).Finite :=
     zeroCount_support_finite <|
-      hf.meromorphicOn.divisor_finite_inter_support_of_isCompact hK subset_rfl subset_rfl
+      MeromorphicOn.divisor_finite_inter_support_of_isCompact hK subset_rfl subset_rfl
   rw [← divisorCount_self, divisorCount_eq_zeroCount fun z _ ↦
     MeromorphicOn.AnalyticOnNhd.divisor_nonneg hf z]
   exact_mod_cast zeroCount_le_zeroCount_of_subset hf.meromorphicOn hS subset_rfl hfin
@@ -185,5 +185,32 @@ theorem zeroCount_eq_iff_divisor_eq_zero (hRS : R ⊆ S)
   exact forall₂_congr fun z hz ↦ by
     have := hnonneg z hz
     omega
+
+/-- The zero counts of pairwise disjoint subregions of `S` add up to at most the zero count of
+`S`, provided `S` has finitely many points of positive multiplicity. -/
+theorem sum_zeroCount_le {Rs : List (Set 𝕜)} (hdisj : Rs.Pairwise Disjoint)
+    (hsub : ∀ R ∈ Rs, R ⊆ S)
+    (hS : (S ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite) :
+    (Rs.map (zeroCount f U)).sum ≤ zeroCount f U S := by
+  induction Rs generalizing S with
+  | nil => simp
+  | cons R Rs ih =>
+    rw [List.pairwise_cons] at hdisj
+    have hRS : R ⊆ S := hsub R List.mem_cons_self
+    rw [List.map_cons, List.sum_cons, ← zeroCount_add_sdiff hRS hS]
+    refine Nat.add_le_add_left (ih hdisj.2 (fun T hT ↦ ?_) ?_) _
+    · exact subset_sdiff.2 ⟨hsub T (List.mem_cons_of_mem _ hT), (hdisj.1 T hT).symm⟩
+    · exact hS.subset fun z hz ↦ ⟨hz.1.1, hz.2⟩
+
+/-- If the divisor vanishes on the frontier of a region, then the region and its interior have
+the same zero count. -/
+theorem zeroCount_interior (hfr : ∀ z ∈ frontier R, MeromorphicOn.divisor f U z = 0) :
+    zeroCount f U (interior R) = zeroCount f U R := by
+  have hsupp : interior R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat) =
+      R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat) := by
+    refine subset_antisymm (inter_subset_inter_left _ interior_subset) ?_
+    refine fun z ⟨hz, hz₀⟩ ↦ ⟨by_contra fun hint ↦ hz₀ ?_, hz₀⟩
+    simp [hfr z ⟨subset_closure hz, hint⟩]
+  rw [zeroCount_def, zeroCount_def, ← finsum_mem_inter_support, hsupp, finsum_mem_inter_support]
 
 end TauCeti

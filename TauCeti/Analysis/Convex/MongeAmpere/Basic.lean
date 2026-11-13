@@ -243,7 +243,7 @@ def mongeAmpereMeasure (μ : Measure E) (f : E → EReal) : Measure E :=
     Measure.ofMeasurable
       (fun s _ => μ (subgradientImage (innerₗ E) f (s ∩ interior {x | f x ≠ ⊤})))
       (by simp) fun g hg hd => by
-        obtain ⟨hf, hbot, ν, _, hμ⟩ := h
+        obtain ⟨hf, _, ν, _, hμ⟩ := h
         simp only [iUnion_inter, subgradientImage_iUnion]
         exact measure_iUnion₀
           (fun i j hij => hμ (aedisjoint_subgradientImage ν f
@@ -363,8 +363,8 @@ theorem mongeAmpereMeasure_ite_apply (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) 
     {s : Set E} (hs : MeasurableSet s) :
     mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) s =
       μ (⋃ x ∈ s ∩ Ω, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'}) := by
-  rw [mongeAmpereMeasure_apply μ (convex_epigraph_ite hu) ite_ne_bot hμ hs, setOf_ite_ne_top,
-    hΩ.interior_eq]
+  rw [mongeAmpereMeasure_apply μ (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot hμ hs,
+    setOf_ite_ne_top, hΩ.interior_eq]
   congr 1
   ext y
   simp only [mem_subgradientImage_iff, mem_iUnion, exists_prop]
@@ -589,7 +589,8 @@ theorem mongeAmpereMeasure_ite_eq_withDensity_det {Ω : Set E} [DecidablePred (�
     rw [hD]
     exact fun x hx =>
       ((hd₂ x hx).differentiableAt (hΩ.mem_nhds hx)).congr_of_eventuallyEq (hG x hx)
-  rw [mongeAmpereMeasure_eq_withDensity_det μ (convex_epigraph_ite hu) ite_ne_bot hdF hdG, hD]
+  rw [mongeAmpereMeasure_eq_withDensity_det μ (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot
+    hdF hdG, hD]
   ext s hs
   rw [withDensity_apply _ hs, withDensity_apply _ hs, Measure.restrict_restrict hs]
   exact setLIntegral_congr_fun (hs.inter hΩ.measurableSet) fun x hx => by

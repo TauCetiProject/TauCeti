@@ -48,13 +48,8 @@ and the same maps on sections over every open subset, up to the induced identifi
 preimages. -/
 theorem ext_of_app {α β : X ⟶ Y} (w : α.base = β.base)
     (h : ∀ U, α.c.app (op U) ≫ X.presheaf.map (eqToHom congr((Opens.map $w.symm).obj U)).op =
-      β.c.app (op U)) : α = β := by
-  obtain ⟨αb, αc⟩ := α
-  obtain ⟨βb, βc⟩ := β
-  dsimp at w
-  subst w
-  congr
-  exact TopCat.Presheaf.ext fun U ↦ by simpa using h U
+      β.c.app (op U)) : α = β :=
+  PresheafedSpace.ext α β w <| TopCat.Presheaf.ext fun U ↦ by simpa using h U
 
 /-- **A morphism of presheafed spaces which is surjective on points and a monomorphism on
 sections is an epimorphism.** -/

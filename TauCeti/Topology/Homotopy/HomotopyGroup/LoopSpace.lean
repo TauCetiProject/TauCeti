@@ -50,8 +50,13 @@ concatenation in the matching direction.
   `π_M (Ω^ N X x) const ≃* π_(M ⊕ N) X x`.**
 * `HomotopyGroup.piLoopSpaceMulEquiv`, `HomotopyGroup.pathLoopSpaceMulEquiv`: its `π_n` forms,
   the latter for Mathlib's loop space `Ω X x`.
+* `HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph`: the shift sends the class of
+  a family of loops `γ` to the class of the cube `GenLoop.genLoopLoopHomeomorph x _ γ`, whose last
+  coordinate is the loop parameter.
 * `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`: its degree-one form
-  `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space.
+  `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space. It sends the
+  class of a double loop `β` to the class of its square `GenLoop.fromDoubleLoop β`
+  (`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk`).
 * `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`: the path components of the double loop space
   `Ω (Ω X x) (Path.refl x)` are the elements of `π₂(X, x)`.
 
@@ -87,6 +92,12 @@ theorem congrEquiv_mk (e : M ≃ N) (p : Ω^ M X x) :
 theorem congrEquiv_symm_mk (e : M ≃ N) (q : Ω^ N X x) :
     (congrEquiv e).symm (⟦q⟧ : HomotopyGroup N X x) = ⟦_root_.GenLoop.congr x e.symm q⟧ :=
   by rw [congrEquiv.eq_1]; rfl
+
+/-- Reindexing the cube directions sends the trivial class to the trivial class. -/
+theorem congrEquiv_const (e : M ≃ N) :
+    congrEquiv e (⟦_root_.GenLoop.const⟧ : HomotopyGroup M X x) = ⟦_root_.GenLoop.const⟧ := by
+  rw [congrEquiv_mk]
+  exact congrArg _ (_root_.GenLoop.ext _ _ fun _ => rfl)
 
 /-- Reindexing the cube directions commutes with the maps induced by based continuous maps. -/
 @[simp]
@@ -214,6 +225,14 @@ theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk [IsEmpty N] {Y :
     homotopyGroupEquivZerothHomotopyOfIsEmpty N y (map f hf (⟦p⟧ : HomotopyGroup N X x)) =
       ZerothHomotopy.mk (f (p 0)) := by
   rw [map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
+
+/-- **Classes of zero-dimensional generalized loops are path components.** Two such loops have
+the same class exactly when their values are joined by a path. -/
+theorem mk_eq_mk_iff_joined [IsEmpty N] {p q : Ω^ N X x} :
+    (⟦p⟧ : HomotopyGroup N X x) = ⟦q⟧ ↔ Joined (p 0) (q 0) := by
+  refine (homotopyGroupEquivZerothHomotopyOfIsEmpty N x).apply_eq_iff_eq.symm.trans ?_
+  rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk]
+  exact ⟨Quotient.exact, fun h ↦ ZerothHomotopy.sound h.somePath⟩
 
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the
@@ -405,6 +424,21 @@ theorem pathLoopSpaceMulEquiv_symm_mk (m : ℕ) (q : Ω^ (Fin (m + 2)) X x) :
       (piLoopSpaceMulEquiv_symm_mk m 1 q)).trans <|
       (homeomorphMulEquivOfEq_apply _ _ _).trans (map_mk _ _ _)
 
+/-- `pathLoopSpaceMulEquiv` sends the class of a family of loops `γ` to the class of the cube
+`GenLoop.genLoopLoopHomeomorph x (m + 1) γ`, whose last coordinate is the loop parameter. -/
+theorem pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph (m : ℕ)
+    (γ : Ω^ (Fin (m + 1)) (Ω X x) (Path.refl x)) :
+    pathLoopSpaceMulEquiv m (⟦γ⟧ : π_ (m + 1) (Ω X x) (Path.refl x)) =
+      ⟦GenLoop.genLoopLoopHomeomorph x (m + 1) γ⟧ := by
+  rw [pathLoopSpaceMulEquiv_mk]
+  congr 1
+  ext z
+  simp only [GenLoop.congr_apply, GenLoop.genLoopGenLoopEquiv_apply,
+    GenLoop.map_apply, ContinuousMap.coe_mk, GenLoop.homeomorphOfUnique_symm_apply,
+    finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, GenLoop.genLoopLoopHomeomorph_apply]
+  -- `Fin.castSucc` is `Fin.castAdd 1`, and `Fin.natAdd` sends the point of `Fin 1` to `Fin.last`
+  rw [Fin.castSucc, Subsingleton.elim (default : Fin 1) (Fin.last 0), Fin.natAdd_last]
+
 /-- **The fundamental group of the loop space is the second homotopy group**:
 `π₁(Ω X x, refl x) ≃* π₂(X, x)`, the case `m = 0` of `pathLoopSpaceMulEquiv` read through
 `pi1MulEquivFundamentalGroup`. A loop of loops `s ↦ γ_s` at the constant loop is the square
@@ -417,6 +451,41 @@ theorem fundamentalGroupLoopSpaceMulEquiv_apply (a : FundamentalGroup (Ω X x) (
     fundamentalGroupLoopSpaceMulEquiv a =
       pathLoopSpaceMulEquiv 0 (pi1MulEquivFundamentalGroup.symm a) :=
   by rw [fundamentalGroupLoopSpaceMulEquiv.eq_1]; rfl
+
+/-- The square `(s, t) ↦ β s t` of a double loop `β`, a loop at the constant loop in the loop
+space `Ω X x`. It sends the boundary of the square to `x`, and it represents the image of the
+class of `β` under `fundamentalGroupLoopSpaceMulEquiv`
+(`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk`). -/
+def _root_.GenLoop.fromDoubleLoop (β : Ω (Ω X x) (Path.refl x)) : Ω^ (Fin 2) X x where
+  val := ⟨fun z => β (z 0) (z 1),
+    (Path.continuous_uncurry_iff.2 β.continuous).comp
+      (((continuous_apply 0).prodMk (continuous_apply 1) :
+        Continuous fun z : I^(Fin 2) => (z 0, z 1)))⟩
+  property := by
+    rintro z ⟨i, hi | hi⟩ <;> fin_cases i <;> simp_all
+
+@[simp]
+theorem _root_.GenLoop.fromDoubleLoop_apply (β : Ω (Ω X x) (Path.refl x)) (z : I^(Fin 2)) :
+    GenLoop.fromDoubleLoop β z = β (z 0) (z 1) :=
+  (rfl)
+
+/-- `fundamentalGroupLoopSpaceMulEquiv` sends the class of a double loop to the class of its
+square. -/
+@[simp]
+theorem fundamentalGroupLoopSpaceMulEquiv_fromPath_mk (β : Ω (Ω X x) (Path.refl x)) :
+    fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk β)) =
+      ⟦GenLoop.fromDoubleLoop β⟧ := by
+  -- `pi1MulEquivFundamentalGroup` is a quotient map, so its inverse is computed on
+  -- representatives
+  have h : pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk β)) =
+      ⟦(genLoopEquivOfUnique (Fin 1)).symm β⟧ := rfl
+  rw [fundamentalGroupLoopSpaceMulEquiv_apply, h,
+    pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
+  refine congrArg _ (GenLoop.ext _ _ fun z => ?_)
+  rw [GenLoop.fromDoubleLoop_apply, GenLoop.genLoopLoopHomeomorph_apply,
+    GenLoop.genLoopEquivOfUnique_symm_apply]
+  -- the cube coordinates `Fin.castSucc default` and `Fin.last 1` are `0` and `1`
+  simp only [Nat.reduceAdd, Fin.default_eq_zero, Fin.isValue, Fin.castSucc_zero, Fin.reduceLast]
 
 section Natural
 

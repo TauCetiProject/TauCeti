@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.Contour.Winding.Number.Circle
+import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 import TauCeti.Topology.MetricSpace.EBall
 
 /-!
@@ -85,6 +85,20 @@ theorem circleLaurentCoeff_congr {f g : ℂ → E} {c : ℂ} {R : ℝ} (hR : 0 �
 @[simp] theorem circleLaurentCoeff_smul (a : ℂ) (f : ℂ → E) (c : ℂ) (R : ℝ) (n : ℤ) :
     circleLaurentCoeff (fun z => a • f z) c R n = a • circleLaurentCoeff f c R n := by
   simp only [circleLaurentCoeff_def, smul_comm _ a, circleIntegral.integral_smul]
+
+/-- Multiplying a function by `(z - c) ^ m` shifts its coefficients by `m`: the coefficient of
+degree `n` of `(z - c) ^ m • f z` is the coefficient of degree `n - m` of `f`. -/
+theorem circleLaurentCoeff_sub_zpow_smul_apply (f : ℂ → E) (c : ℂ) (R : ℝ) (m n : ℤ) :
+    circleLaurentCoeff (fun z => (z - c) ^ m • f z) c R n = circleLaurentCoeff f c R (n - m) := by
+  rcases eq_or_ne R 0 with (rfl | hR)
+  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero]
+  simp only [circleLaurentCoeff_def, circleIntegral]
+  congr 1
+  refine intervalIntegral.integral_congr fun θ _ => ?_
+  have hz : circleMap c R θ - c ≠ 0 := sub_ne_zero.2 (circleMap_ne_center hR)
+  simp only [smul_smul, ← zpow_add₀ hz]
+  congr 3
+  ring
 
 /-- Extracting coefficients is additive for functions integrable on the circle. -/
 theorem circleLaurentCoeff_add {f g : ℂ → E} {c : ℂ} {R : ℝ}

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -32,7 +33,9 @@ products with a scalar function (`TauCeti.norm_coordinateDeriv_smul_le`). It is 
 homogeneous in `f`. Smoothness is preserved, also jointly in an additional parameter
 (`ContDiff.coordinateDeriv_snd`, `ContDiff.coordinateDeriv_fst`). For a smooth function of two
 variables, iterated coordinate derivatives in the two variables commute
-(`TauCeti.coordinateDeriv_coordinateDeriv_comm`), by the symmetry of second derivatives.
+(`TauCeti.coordinateDeriv_coordinateDeriv_comm`), and so do two coordinate derivatives of a `C²`
+function of one variable (`TauCeti.coordinateDeriv_pair_comm`), by the symmetry of second
+derivatives.
 
 For a function `a(x, ξ)` of a position and a frequency, `TauCeti.mixedDeriv α β a x ξ` is the
 mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)`, taking the frequency derivatives first. It is linear in
@@ -59,7 +62,7 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   derivatives.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
-  commute.
+  commute; `TauCeti.coordinateDeriv_pair_comm`: so do two partial derivatives in one variable.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
 * `TauCeti.mixedDeriv_eq_iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_map_mixedDirection`:
   mixed derivatives are the iterated directional derivatives `TauCeti.iteratedFDerivAlong` along
@@ -261,14 +264,17 @@ theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     coordinateDeriv_eq_iteratedFDeriv α hf, coordinateDeriv_eq_iteratedFDeriv α hg,
     iteratedFDeriv_add_apply hf.contDiffAt hg.contDiffAt, add_apply]
 
-theorem coordinateDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommClass ℝ R A]
-    [ContinuousConstSMul R A] (α : List (Fin n)) {f : CoordinateSpace n → A}
-    (hf : ContDiff ℝ α.length f) (c : R) :
+/-- Scalar multiples commute with coordinate derivatives, with no smoothness assumption. -/
+@[simp]
+theorem coordinateDeriv_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
+    [SMulCommClass ℝ 𝕜 A] (α : List (Fin n)) (f : CoordinateSpace n → A) (c : 𝕜) :
     coordinateDeriv α (c • f) = c • coordinateDeriv α f := by
-  funext x
-  rw [Pi.smul_apply, coordinateDeriv_eq_iteratedFDeriv α (f := c • f) (hf.const_smul c),
-    coordinateDeriv_eq_iteratedFDeriv α hf, iteratedFDeriv_const_smul_apply hf.contDiffAt,
-    smul_apply]
+  induction α generalizing f with
+  | nil => rfl
+  | cons j js ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih, Pi.smul_apply, coordinateDeriv_cons]
+    simp only [fderiv_const_smul_field, Pi.smul_apply, smul_apply]
 
 @[simp]
 theorem coordinateDeriv_neg (α : List (Fin n)) (f : CoordinateSpace n → A) :
@@ -334,6 +340,17 @@ theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :
   rw [coordinateDeriv_eq_iteratedFDeriv _ contDiff_const,
     iteratedFDeriv_const_of_ne (n := (j :: js).length) (List.length_pos_of_ne_nil hα).ne',
     Pi.zero_apply, Pi.zero_apply, zero_apply]
+
+/-- Two coordinate derivatives of a `C²` function commute, by the symmetry of its second
+derivative. -/
+theorem coordinateDeriv_pair_comm {f : CoordinateSpace n → A} (hf : ContDiff ℝ 2 f)
+    (j l : Fin n) (x : CoordinateSpace n) :
+    coordinateDeriv [j, l] f x = coordinateDeriv [l, j] f x := by
+  have h (i : Fin n) : coordinateDeriv [i] f = fun y ↦ fderiv ℝ f y (EuclideanSpace.single i 1) :=
+    funext fun y ↦ coordinateDeriv_cons i [] f y
+  simpa [coordinateDeriv_cons, h, iteratedFDerivAlong_cons] using
+    congrFun (iteratedFDerivAlong_swap (𝕜 := ℝ) hf (EuclideanSpace.single j 1)
+      (EuclideanSpace.single l 1) [] le_rfl) x
 
 /-- Partial coordinate derivatives in the second variable, along a word of length `k`, of a `C^N`
 function of two variables are jointly `C^m` whenever `m + k ≤ N`. -/
@@ -708,18 +725,17 @@ theorem mixedDeriv_add (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b) (α �
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _)
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _), Pi.add_apply]
 
-theorem mixedDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommClass ℝ R A]
-    [ContinuousConstSMul R A] (ha : ContDiff ℝ ∞ a) (c : R) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
+/-- Scalar multiples commute with mixed derivatives, with no smoothness assumption. -/
+@[simp]
+theorem mixedDeriv_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
+    [SMulCommClass ℝ 𝕜 A] (c : 𝕜) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (c • a) x ξ = c • mixedDeriv α β a x ξ := by
   have h : (fun y => coordinateDeriv β (fun η => (c • a) (y, η)) ξ) =
       c • fun y => coordinateDeriv β (fun η => a (y, η)) ξ := by
     funext y
-    exact congrFun
-      (coordinateDeriv_const_smul β (contDiff_infty.1 (ha.comp (contDiff_prodMk_right y)) _) c) ξ
+    exact congrFun (coordinateDeriv_const_smul β (fun η => a (y, η)) c) ξ
   simp only [mixedDeriv_def]
-  rw [h, coordinateDeriv_const_smul α
-    (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _), Pi.smul_apply]
+  rw [h, coordinateDeriv_const_smul α, Pi.smul_apply]
 
 @[simp]
 theorem mixedDeriv_neg (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
@@ -736,7 +752,7 @@ theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (0 : CoordinateSpace n × CoordinateSpace n → A) x ξ = 0 := by
   have h : (fun y => coordinateDeriv β (fun η => (0 : CoordinateSpace n × CoordinateSpace n → A)
       (y, η)) ξ) = 0 := by
-    funext y
+    funext _
     exact congrFun (coordinateDeriv_zero β) ξ
   rw [mixedDeriv_def, h, coordinateDeriv_zero, Pi.zero_apply]
 
@@ -808,12 +824,12 @@ theorem norm_mixedDeriv_add_le (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ 
   rw [mixedDeriv_add ha hb, add_mul]
   exact (norm_add_le _ _).trans (add_le_add haC hbD)
 
-/-- A bound `C * w` on a mixed derivative of smooth `a` gives the bound `(‖c‖ * C) * w` on the
+/-- A bound `C * w` on a mixed derivative of `a` gives the bound `(‖c‖ * C) * w` on the
 mixed derivative of `c • a`. -/
 theorem norm_mixedDeriv_smul_le {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
-    [SMulCommClass ℝ 𝕜 A] (ha : ContDiff ℝ ∞ a) (c : 𝕜) (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) :
+    [SMulCommClass ℝ 𝕜 A] (c : 𝕜) (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) :
     ‖mixedDeriv α β (c • a) x ξ‖ ≤ (‖c‖ * C) * w := by
-  rw [mixedDeriv_const_smul ha, norm_smul, mul_assoc]
+  rw [mixedDeriv_const_smul, norm_smul, mul_assoc]
   exact mul_le_mul_of_nonneg_left haC (norm_nonneg c)
 
 end Linear
@@ -1023,10 +1039,7 @@ theorem norm_mixedDeriv_comp_snd_smul_le (hψ : ContDiff ℝ ∞ ψ) (ha : ContD
   have hpos (η : CoordinateSpace n) :
       coordinateDeriv α (fun y => ψ η • a (y, η)) x =
         ψ η • coordinateDeriv α (fun y => a (y, η)) x := by
-    have h := coordinateDeriv_const_smul α (f := fun y => a (y, η))
-      ((ha.comp (contDiff_id.prodMk (contDiff_const (c := η)))).of_le
-        (by exact_mod_cast le_top)) (ψ η)
-    exact congrFun h x
+    exact congrFun (coordinateDeriv_const_smul α (fun y => a (y, η)) (ψ η)) x
   rw [mixedDeriv_eq_coordinateDeriv_snd hf]
   simp only [hpos]
   refine (norm_coordinateDeriv_smul_le β (hψ.of_le (by exact_mod_cast le_top))

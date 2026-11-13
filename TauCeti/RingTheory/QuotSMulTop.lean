@@ -44,6 +44,7 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 ## Main results
 
 * `QuotSMulTop.mk_smul_mk`: `[r] • [m] = [r • m]` in `M ⧸ x M`.
+* `QuotSMulTop.subsingleton_of_isUnit`: `M ⧸ x M` is trivial for a unit `x`.
 * `Ideal.mapQSMulTop_id` and `Ideal.mapQSMulTop_comp`: reduction modulo `I` is functorial.
 * `Ideal.mapQSMulTop_surjective` and `Ideal.mapQSMulTop_exact`: reduction modulo `I` preserves
   surjectivity and exactness at the middle of `M → N → P → 0`.
@@ -120,6 +121,10 @@ theorem mk_smul_mk {x : R} (r : R) (m : M) :
     Ideal.Quotient.mk (Ideal.span {x}) r • (Submodule.Quotient.mk m : QuotSMulTop x M) =
       Submodule.Quotient.mk (r • m) :=
   rfl
+
+/-- Modulo a unit, every module is trivial: `x • ⊤ = ⊤` for a unit `x`. -/
+theorem subsingleton_of_isUnit {x : R} (hx : IsUnit x) : Subsingleton (QuotSMulTop x M) :=
+  Submodule.Quotient.subsingleton_iff.2 (Submodule.smul_eq_self_of_isUnit hx)
 
 /-- `Ideal.mapQSMulTop (x) f` is Mathlib's `QuotSMulTop.map x f`, up to the identification of
 `(x) • ⊤` with `x • ⊤`. -/

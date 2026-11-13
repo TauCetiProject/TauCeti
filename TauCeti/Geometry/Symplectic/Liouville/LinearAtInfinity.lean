@@ -183,7 +183,7 @@ private theorem sInf_le_iff (h : IsLiouvilleCompletion ω α W)
       by_contra hn
       refine h.flowOf_notMem hZ (fun hx ↦ hn ?_) ht0
         ((h.isCompleteVectorField hZ).mem_flowDomain _ _) ht
-      rw [neg_zero, h.flowOf_zero hZ]
+      rw [neg_zero, flowOf_zero Z]
       exact interior_subset hx
   have hclosed : IsClosed S := by
     refine (isClosed_le continuous_const continuous_id).inter (h.isClosed.preimage ?_)
@@ -202,7 +202,7 @@ theorem liouvilleRadialCoordinate_le_exp_iff (h : IsLiouvilleCompletion ω α W)
 theorem liouvilleRadialCoordinate_eq_one_iff (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) : liouvilleRadialCoordinate Z W x = 1 ↔ x ∈ W := by
   rw [← (one_le_liouvilleRadialCoordinate Z W x).ge_iff_eq', ← Real.exp_zero,
-    h.liouvilleRadialCoordinate_le_exp_iff hZ le_rfl, neg_zero, h.flowOf_zero hZ]
+    h.liouvilleRadialCoordinate_le_exp_iff hZ le_rfl, neg_zero, flowOf_zero Z]
 
 /-- The radial coordinate is greater than `1` exactly outside the Liouville domain. -/
 theorem one_lt_liouvilleRadialCoordinate_iff (h : IsLiouvilleCompletion ω α W)
@@ -293,7 +293,7 @@ theorem liouvilleRadialCoordinate_flowOf_of_notMem (h : IsLiouvilleCompletion ω
       (fun hi ↦ hx (interior_subset hi)) ht
   · have := h.liouvilleRadialCoordinate_flowOf_of_notMem_interior hZ
       (fun hi ↦ htx (interior_subset hi)) (neg_nonneg.2 ht.le)
-    rw [h.flowOf_flowOf hZ, neg_add_cancel, h.flowOf_zero hZ] at this
+    rw [h.flowOf_flowOf hZ, neg_add_cancel, flowOf_zero Z] at this
     rw [this, ← mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_mul]
 
 /-- The Liouville flow `ψ_t` keeps a point `x` of the cylindrical end outside the Liouville domain
@@ -322,7 +322,7 @@ theorem flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier (h : IsLiouvilleCo
     flowOf Z (-Real.log (liouvilleRadialCoordinate Z W x)) x ∈ frontier W := by
   obtain ⟨y, hy, s, hs, rfl⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
   rwa [h.liouvilleRadialCoordinate_flowOf hZ hy hs, Real.log_exp, h.flowOf_flowOf hZ,
-    neg_add_cancel, h.flowOf_zero hZ]
+    neg_add_cancel, flowOf_zero Z]
 
 /-- For `c ≥ 1`, the sublevel set `{r ≤ c}` of the radial coordinate is the preimage of the
 Liouville domain under the backward Liouville flow for time `log c`. -/

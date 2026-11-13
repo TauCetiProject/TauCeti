@@ -126,14 +126,13 @@ theorem poles_y (hF : IsFunctionField k F) :
 /-- `[F : k(x)] = 2` at a place of degree one: the degree of the pole divisor of `x`. -/
 theorem finrank_adjoin_x_eq_two (hF : IsFunctionField k F) (hP : P.degree = 1) :
     Module.finrank k⟮x⟯ F = 2 := by
-  rw [finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF (n := 2) two_ne_zero h.ord_x h.ord_x_nonneg,
+  rw [finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF (n := 2) h.ord_x h.ord_x_nonneg,
     hP, mul_one]
 
 /-- `[F : k(y)] = 3` at a place of degree one: the degree of the pole divisor of `y`. -/
 theorem finrank_adjoin_y_eq_three (hF : IsFunctionField k F) (hP : P.degree = 1) :
     Module.finrank k⟮y⟯ F = 3 := by
-  rw [finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF (n := 3) three_ne_zero h.ord_y
-    h.ord_y_nonneg, hP, mul_one]
+  rw [finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF (n := 3) h.ord_y h.ord_y_nonneg, hP, mul_one]
 
 /-- **Weierstrass coordinates generate the function field**: `F = k(x, y)`, because
 `[F : k(x, y)]` divides both `[F : k(x)] = 2` and `[F : k(y)] = 3`. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.PadicInt
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.RankOne
 
 /-!

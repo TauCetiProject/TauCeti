@@ -24,7 +24,7 @@ estimate, this allows both endpoint values to be nonzero.
 The analytic step is the usual fundamental-theorem-of-calculus proof of the Poincaré
 inequality (see L. C. Evans, *Partial Differential Equations*, Chapter 5), followed by
 Cauchy–Schwarz. It uses Mathlib's
-`enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` and
+`eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` and
 `TauCeti.rpow_lintegral_le_measure_univ_rpow_mul`. The additional endpoint estimate comes from
 the bounded-below property of the injective subtraction map on the product of the subspaces.
 -/
@@ -51,16 +51,14 @@ theorem norm_sub_sq_le_integral_norm_deriv_sq {v : ℝ → V} {a b t : ℝ}
     rw [← restrict_Ioo_eq_restrict_Icc]
     filter_upwards [self_mem_ae_restrict measurableSet_Ioo] with r hr
     exact derivWithin_of_mem_nhds (Icc_mem_nhds hr.1 hr.2)
-  have hm : AEMeasurable (fun r ↦ ‖deriv v r‖ₑ) (volume.restrict (Icc a b)) :=
-    (hd.enorm.aemeasurable measurableSet_Icc).congr (heq.fun_comp enorm)
   have hFTC : ‖v t - v a‖ₑ ≤ ∫⁻ r in Icc a b, ‖deriv v r‖ₑ :=
-    (enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc
+    (eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc
       (hv.mono (Icc_subset_Icc_right ht.2)) ht.1).trans
       (lintegral_mono_set (Icc_subset_Icc_right ht.2))
   have hHolder : (∫⁻ r in Icc a b, ‖deriv v r‖ₑ) ^ 2 ≤
       ENNReal.ofReal (b - a) * ∫⁻ r in Icc a b, ‖deriv v r‖ₑ ^ 2 := by
     have h := rpow_lintegral_le_measure_univ_rpow_mul
-      (μ := volume.restrict (Icc a b)) hm
+      (μ := volume.restrict (Icc a b)) (u := fun r ↦ ‖deriv v r‖ₑ)
       (r := 2) (by norm_num)
     norm_num at h
     exact h

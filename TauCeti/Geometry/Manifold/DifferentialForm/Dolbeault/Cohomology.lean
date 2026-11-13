@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Complex
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Holomorphic
+import TauCeti.Geometry.Manifold.Complex.Compact
 
 /-!
 # Functoriality and degree zero of Dolbeault cohomology
@@ -41,6 +42,8 @@ holomorphic functions `M → F` when the model `E` is finite-dimensional and `F`
   forms of type `(p,0)`.
 * `TauCeti.dolbeaultCohomology.zeroZeroEquiv`: `H^(0,0)_∂bar(M; F)` is the space of holomorphic
   functions `M → F`.
+* `TauCeti.dolbeaultCohomology.zeroZeroEquivOfCompactSpace`: on a compact connected complex
+  manifold, `H^(0,0)_∂bar(M; F)` is `F`, the space of constants.
 
 ## Implementation notes
 
@@ -116,6 +119,34 @@ theorem zeroZeroEquiv_mk (φ : closedForms E M F 0 0) (x : M) :
   rw [zeroZeroEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply, ← mkZeroEquiv_apply,
     LinearEquiv.symm_apply_apply, kerDelBarZeroEquiv_apply]
   rfl
+
+section CompactSpace
+
+variable [CompactSpace M] [PreconnectedSpace M] [Nonempty M]
+
+variable (E M F) in
+/-- **`H^(0,0)` of a compact connected complex manifold is the space of constants.** The
+holomorphic functions on a compact connected complex manifold with finite-dimensional model are
+constant, so evaluation identifies `H^(0,0)_∂bar(M; F)` with `F`. -/
+def zeroZeroEquivOfCompactSpace : dolbeaultCohomology E M F 0 0 ≃ₗ[ℂ] F :=
+  zeroZeroEquiv E M F ≪≫ₗ holomorphicEquivOfCompactSpace 𝓘(ℂ, E) M
+
+/-- The constant corresponding to the class of a `∂bar`-closed function on a compact connected
+complex manifold is the value of that function at any point. This is not a `simp` lemma, since the
+point `x` is free on the right. -/
+theorem zeroZeroEquivOfCompactSpace_mk (φ : closedForms E M F 0 0) (x : M) :
+    zeroZeroEquivOfCompactSpace E M F (mk 0 0 φ) = φ.1.1.1 x 0 := by
+  rw [← zeroZeroEquiv_mk, zeroZeroEquivOfCompactSpace, LinearEquiv.trans_apply,
+    holomorphicEquivOfCompactSpace_apply _ x]
+
+/-- The class corresponding to a vector `c` is the class of the constant function `c`. -/
+@[simp]
+theorem zeroZeroEquiv_zeroZeroEquivOfCompactSpace_symm_apply (c : F) (x : M) :
+    zeroZeroEquiv E M F ((zeroZeroEquivOfCompactSpace E M F).symm c) x = c := by
+  rw [zeroZeroEquivOfCompactSpace, LinearEquiv.symm_trans_apply, LinearEquiv.apply_symm_apply,
+    holomorphicEquivOfCompactSpace_symm_apply]
+
+end CompactSpace
 
 end dolbeaultCohomology
 

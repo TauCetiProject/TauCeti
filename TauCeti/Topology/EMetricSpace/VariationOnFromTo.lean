@@ -51,6 +51,48 @@ protected theorem comp_eq_of_antitoneOn (f : α → E) {t : Set β} (φ : β →
   · rw [variationOnFromTo.eq_of_ge _ _ h, variationOnFromTo.eq_of_ge _ _ (hφ hy hx h),
       eVariationOn.comp_inter_Icc_eq_of_antitoneOn f φ hφ hy hx]
 
+/-- For a function of bounded variation on `s`, two cumulative variations from the same base point
+differ by at most the total variation on `s`. The base point and the two endpoints are arbitrary. -/
+protected theorem abs_sub_le_eVariationOn {f : α → E} {s : Set α}
+    (hf : BoundedVariationOn f s) {a x y : α} :
+    |variationOnFromTo f s a x - variationOnFromTo f s a y| ≤ (eVariationOn f s).toReal := by
+  -- every cumulative variation from `a` lies between minus the variation on the part of `s` below
+  -- `a` and the variation on the part above `a`, and these two variations add up to at most the
+  -- total
+  have hLR : (eVariationOn f (s ∩ Iic a)).toReal + (eVariationOn f (s ∩ Ici a)).toReal ≤
+      (eVariationOn f s).toReal := by
+    rw [← ENNReal.toReal_add (hf.mono inter_subset_left) (hf.mono inter_subset_left)]
+    exact ENNReal.toReal_mono hf <| (eVariationOn.add_le_union f (s := s ∩ Iic a)
+      (t := s ∩ Ici a) fun _ hu _ hv ↦ hu.2.trans hv.2).trans <|
+        eVariationOn.mono f (union_subset inter_subset_left inter_subset_left)
+  have hmem (z : α) : -(eVariationOn f (s ∩ Iic a)).toReal ≤ variationOnFromTo f s a z ∧
+      variationOnFromTo f s a z ≤ (eVariationOn f (s ∩ Ici a)).toReal := by
+    rcases le_total a z with h | h
+    · rw [variationOnFromTo.eq_of_le f s h]
+      exact ⟨(neg_nonpos.2 ENNReal.toReal_nonneg).trans ENNReal.toReal_nonneg,
+        ENNReal.toReal_mono (hf.mono inter_subset_left)
+          (eVariationOn.mono f (inter_subset_inter_right s Icc_subset_Ici_self))⟩
+    · rw [variationOnFromTo.eq_of_ge f s h]
+      exact ⟨neg_le_neg (ENNReal.toReal_mono (hf.mono inter_subset_left)
+          (eVariationOn.mono f (inter_subset_inter_right s Icc_subset_Iic_self))),
+        (neg_nonpos.2 ENNReal.toReal_nonneg).trans ENNReal.toReal_nonneg⟩
+  obtain ⟨hx₁, hx₂⟩ := hmem x
+  obtain ⟨hy₁, hy₂⟩ := hmem y
+  rw [abs_le]
+  constructor <;> linarith
+
+/-- The extended diameter of the set of cumulative variations from any base point is at most the
+total variation on `s`. -/
+protected theorem ediam_image_le (f : α → E) {s : Set α} (a : α) :
+    Metric.ediam (variationOnFromTo f s a '' s) ≤ eVariationOn f s := by
+  by_cases hf : BoundedVariationOn f s
+  swap
+  · rw [BoundedVariationOn, not_ne_iff] at hf
+    exact hf ▸ le_top
+  refine Metric.ediam_image_le_iff.2 fun x _ y _ ↦ ?_
+  rw [edist_dist, Real.dist_eq, ← ENNReal.ofReal_toReal hf]
+  exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_sub_le_eVariationOn hf)
+
 end variationOnFromTo
 
 namespace LocallyBoundedVariationOn
@@ -104,11 +146,11 @@ theorem continuousWithinAt_variationOnFromTo_iff
     simp only [ContinuousWithinAt, tendsto_iff_edist_tendsto_0] at h ⊢
     apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h (by simp)
     filter_upwards [self_mem_nhdsWithin] with y hy
-    rw [edist_eq_enorm_sub, variationOnFromTo.sub_right hf ha hy hx]
+    rw [eDist_eq_eNorm_sub, variationOnFromTo.sub_right hf ha hy hx]
     rcases le_total x y with hxy | hyx
-    · simpa [variationOnFromTo.eq_of_le _ _ hxy, Real.enorm_toReal (hf x y hx hy)] using
+    · simpa [variationOnFromTo.eq_of_le _ _ hxy, Real.eNorm_toReal (hf x y hx hy)] using
         eVariationOn.edist_le f (s := s ∩ Icc x y) ⟨hy, hxy, le_rfl⟩ ⟨hx, le_rfl, hxy⟩
-    · simpa [variationOnFromTo.eq_of_ge _ _ hyx, Real.enorm_toReal (hf y x hy hx)] using
+    · simpa [variationOnFromTo.eq_of_ge _ _ hyx, Real.eNorm_toReal (hf y x hy hx)] using
         eVariationOn.edist_le f (s := s ∩ Icc y x) ⟨hy, le_rfl, hyx⟩ ⟨hx, hyx, le_rfl⟩
   · intro h
     apply continuousWithinAt_iff_continuous_left'_right'.mpr

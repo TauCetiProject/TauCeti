@@ -13,9 +13,8 @@ import Mathlib.Analysis.Complex.RemovableSingularity
 
 For `f : ℂ → ℂ` with a **simple pole** at `z₀` (`meromorphicOrderAt f z₀ = −1`), the residue
 `TauCeti.Contour.residue f z₀` is the elementary limit `lim_{z→z₀} (z − z₀) · f z` — the textbook
-recipe for computing residues at simple poles, which the roadmap names as the defining property of
-the simple-pole residue. This file records that limit and its converse: the residue *equals* the
-limit whenever `f` is meromorphic at `z₀` and the limit exists.
+recipe for computing residues at simple poles. This file records that limit and its converse: the
+residue *equals* the limit whenever `f` is meromorphic at `z₀` and the limit exists.
 
 The order-`(−1)` Laurent coefficient of `f` at a simple pole is the trailing coefficient
 `meromorphicTrailingCoeffAt f z₀` (via
@@ -42,7 +41,9 @@ direction one uses in practice to read off a residue.
   neighbourhood of `z₀` and `(z − z₀) · f z` converges, then `f` is meromorphic at `z₀`, so the
   converse applies without a separate meromorphy hypothesis.
 * `TauCeti.Contour.neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul` — a punctured limit of
-  `(z − z₀) · f z` forces the pole to be at worst simple.
+  `(z − z₀) · f z` forces `−1 ≤ meromorphicOrderAt f z₀`, with no meromorphy hypothesis: if `f` is
+  not meromorphic at `z₀` the order is `0` by convention. When `MeromorphicAt f z₀` holds, this
+  says the pole is at worst simple.
 * `TauCeti.Contour.residue_sub_inv` — `residue (fun z => (z − z₀)⁻¹) z₀ = 1`, and
   `TauCeti.Contour.residue_const_mul_sub_inv` — `residue (fun z => c · (z − z₀)⁻¹) z₀ = c`: the
   elementary simple-pole residues, read off from the converse rule.
@@ -103,13 +104,21 @@ private theorem neg_one_le_of_zero_le_one_add {x : WithTop ℤ} (h : 0 ≤ 1 + x
     rw [hc1, WithTop.coe_le_coe]
     omega
 
-/-- **A punctured limit of `(z − z₀) · f z` forces the pole to be at worst simple.** If that
-product converges, the order of `(z − z₀) · f z` is nonnegative, hence the order of `f` is at
-least `−1` — the hypothesis the Hungerbühler–Wasem half-residue theorem consumes. The same limit
-also computes the residue, via `residue_eq_of_tendsto_sub_mul`. -/
-theorem neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
+/-- **A punctured limit of `(z − z₀) · f z` bounds the order of `f` below by `−1`.** If that
+product converges, the order of `(z − z₀) · f z` is nonnegative, hence `−1 ≤ meromorphicOrderAt f
+z₀` — the hypothesis the Hungerbühler–Wasem half-residue theorem consumes. No meromorphy of `f` is
+assumed: when `f` is not meromorphic at `z₀` its order is `0` by convention, so the bound holds
+there by that convention alone. Only when `MeromorphicAt f z₀` does it say the pole is at worst
+simple, and only then does the same limit compute the residue, via
+`residue_eq_of_tendsto_sub_mul`. -/
+theorem neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul {L : ℂ}
     (h : Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 L)) :
     ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f z₀ := by
+  -- a function that is not meromorphic has order `0` by convention
+  by_cases hf : MeromorphicAt f z₀
+  swap
+  · rw [meromorphicOrderAt_of_not_meromorphicAt hf]
+    exact_mod_cast (by norm_num : (-1 : ℤ) ≤ 0)
   have hg : MeromorphicAt (fun z : ℂ => (z - z₀) * f z) z₀ :=
     ((analyticAt_id.sub analyticAt_const).meromorphicAt).mul hf
   have hgnn : 0 ≤ meromorphicOrderAt (fun z => (z - z₀) * f z) z₀ :=
@@ -153,7 +162,7 @@ theorem residue_eq_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
     (h : Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 L)) :
     residue f z₀ = L := by
   exact tendsto_nhds_unique
-    (tendsto_sub_mul_nhds_residue hf (neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul hf h)) h
+    (tendsto_sub_mul_nhds_residue hf (neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul h)) h
 
 /-- The reciprocal `(· − z₀)⁻¹` of the simple factor `(· − z₀)` is meromorphic at `z₀`. -/
 theorem meromorphicAt_sub_inv (z₀ : ℂ) : MeromorphicAt (fun z => (z - z₀)⁻¹) z₀ :=

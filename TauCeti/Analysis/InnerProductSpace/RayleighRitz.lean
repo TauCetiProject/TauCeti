@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Compression
+public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
+public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
 
 /-!
@@ -145,14 +147,14 @@ theorem sq_frobenius_sylvester_eq_sq_frobenius_sylvester_compression_add [Finite
     norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _ horth,
     AddMonoidHomClass.isometry_iff_norm _ |>.1 hX]
 
-variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
-
 /-- **Minimality of the Ritz residual.** For an isometric trial map `X`, the compression
 `X† A X` is the best model operator: the Ritz residual is smallest among all residuals
 `A X - X M` in every unitarily invariant seminorm. -/
 theorem map_sylvester_compression_le_map_sylvester (N : UnitarilyInvariantSeminorm 𝕜 F E)
     (hX : Isometry X) (M : F →L[𝕜] F) :
     N (A.sylvester (A.compression X) X) ≤ N (A.sylvester M X) := by
+  have : CompleteSpace (X : F →ₗ[𝕜] E).range :=
+    hX.isUniformInducing.isComplete_range.completeSpace_coe
   rw [← starProjection_orthogonal_range_comp_sylvester A hX M]
   exact N.map_starProjection_comp_le _ _
 
@@ -174,8 +176,8 @@ Kitware, Apache-2.0); the proof here uses the accepted continuous-map theorem. -
 theorem adjoint_comp_ritzResidual_eq_zero (A : E →ₗ[𝕜] E)
     (X : F →ₗᵢ[𝕜] E) : X.toLinearMap.adjoint ∘ₗ (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ
       (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) = 0 := by
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   have h := ContinuousLinearMap.adjoint_comp_sylvester_compression
     A.toContinuousLinearMap (X := X.toContinuousLinearMap) X.isometry
   simpa only [ContinuousLinearMap.compression_def, ContinuousLinearMap.sylvester_apply,
@@ -183,5 +185,75 @@ theorem adjoint_comp_ritzResidual_eq_zero (A : E →ₗ[𝕜] E)
     ← ContinuousLinearMap.adjoint_toLinearMap, LinearIsometry.toLinearMap_toContinuousLinearMap,
     LinearMap.coe_toContinuousLinearMap, ContinuousLinearMap.toLinearMap_zero] using congrArg
       ContinuousLinearMap.toLinearMap h
+
+/-- **Galerkin orthogonality, pointwise.** The Ritz residual of `v` is orthogonal to every vector
+`X u` of the trial space. -/
+@[simp]
+theorem inner_map_ritzResidual_eq_zero (A : E →ₗ[𝕜] E) (X : F →ₗᵢ[𝕜] E) (u v : F) :
+    ⟪X u, A (X v) - X (X.toLinearMap.adjoint (A (X v)))⟫_𝕜 = 0 := by
+  have h : ⟪X.toLinearMap u,
+      (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) v⟫_𝕜 =
+      0 := by
+    rw [← LinearMap.adjoint_inner_right, ← LinearMap.comp_apply,
+      adjoint_comp_ritzResidual_eq_zero]
+    simp
+  simpa using h
+
+/-- For a subspace `U` reducing `A`, the real part of the pairing of the `i`-th left singular
+vector of `Uᗮ.starProjection ∘ X` with the Ritz residual of the matching right singular vector is
+the corresponding singular value times the difference of the two displayed quadratic forms: that
+of `A` at the left singular vector, and that of `Xᴴ A X` at the right singular vector. -/
+theorem _root_.Submodule.IsReducing.re_inner_leftSingularVector_ritzResidual
+    {A : E →ₗ[𝕜] E} {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U.IsReducing A)
+    (X : F →ₗ[𝕜] E) (i : Fin (finrank 𝕜 F)) :
+    RCLike.re ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X) i,
+        (A ∘ₗ X - X ∘ₗ (X.adjoint ∘ₗ A ∘ₗ X))
+          (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X) i)⟫_𝕜 =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X).singularValues i *
+        (RCLike.re ⟪A (LinearMap.leftSingularVector
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X) i),
+          LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X) i⟫_𝕜 -
+          RCLike.re ⟪(X.adjoint ∘ₗ A ∘ₗ X)
+            (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X) i),
+            LinearMap.rightSingularBasis
+              (Uᗮ.starProjection.toLinearMap ∘ₗ X) i⟫_𝕜) := by
+  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X)
+  let M := (X.adjoint ∘ₗ A ∘ₗ X)
+  let R := (A ∘ₗ X - X ∘ₗ (X.adjoint ∘ₗ A ∘ₗ X))
+  let σ := S.singularValues i
+  let v := LinearMap.rightSingularBasis S i
+  let y := LinearMap.leftSingularVector S i
+  have hSv : S v = ((σ : ℝ) : 𝕜) • y := by
+    simpa [S, σ, v, y] using LinearMap.apply_rightSingularBasis S i
+  have hSadj : S.adjoint y = ((σ : ℝ) : 𝕜) • v := by
+    simpa only [S, σ, v, y] using LinearMap.adjoint_leftSingularVector S i
+  have hyUperp : y ∈ Uᗮ := by
+    dsimp [y]
+    rw [LinearMap.leftSingularVector_def]
+    exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
+  have hSyl := LinearMap.congr_fun (hU.sylvester_starProjection_orthogonal_comp X M) v
+  have hright :
+      ⟪y, Uᗮ.starProjection.toLinearMap (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜 := by
+    -- Expand composition so the projection can move across the inner product.
+    change ⟪y, Uᗮ.starProjection (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜
+    rw [← Uᗮ.inner_starProjection_left_eq_right,
+      Submodule.starProjection_eq_self_iff.mpr hyUperp]
+  have hsyl' : A (S v) - S (M v) = Uᗮ.starProjection.toLinearMap (R v) := by
+    simpa [S, M, R] using hSyl
+  have hSM : ⟪y, S (M v)⟫_𝕜 = ⟪S.adjoint y, M v⟫_𝕜 :=
+    (LinearMap.adjoint_inner_left S (M v) y).symm
+  have hpairComplex :
+      ⟪y, R v⟫_𝕜 = (((σ : ℝ) : 𝕜) * (⟪y, A y⟫_𝕜 - ⟪v, M v⟫_𝕜)) := by
+    calc
+      ⟪y, R v⟫_𝕜 = ⟪y, A (S v) - S (M v)⟫_𝕜 := by rw [hsyl', hright]
+      _ = (((σ : ℝ) : 𝕜) * ⟪y, A y⟫_𝕜) - (((σ : ℝ) : 𝕜) * ⟪v, M v⟫_𝕜) := by
+        rw [inner_sub_right, hSv, map_smul, inner_smul_right, hSM, hSadj, inner_smul_left,
+          RCLike.conj_ofReal]
+      _ = _ := by ring
+  have hAy : RCLike.re ⟪y, A y⟫_𝕜 = RCLike.re ⟪A y, y⟫_𝕜 := by
+    rw [← inner_conj_symm, RCLike.conj_re]
+  have hMv : RCLike.re ⟪v, M v⟫_𝕜 = RCLike.re ⟪M v, v⟫_𝕜 := by
+    rw [← inner_conj_symm, RCLike.conj_re]
+  rw [hpairComplex, RCLike.re_ofReal_mul, map_sub, hAy, hMv]
 
 end LinearMap

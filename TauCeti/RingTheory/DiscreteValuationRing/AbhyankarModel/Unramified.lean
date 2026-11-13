@@ -64,7 +64,7 @@ theorem map_maximalIdeal_abhyankarModelKummerHom :
   have hn := mul_ne_zero he.neZero_natCast.out hd
   have := standardTameCover_isLocalRing ((mem_maximalIdeal π).mpr hπ.not_isUnit) hn
   have hmax := (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn)
-    ).eq_span_singleton_of_isMaximal (monic_X_pow_sub_C π hn)
+    ).eq_span_singleton_of_isMaximal
       (by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]) AdjoinRoot.adjoinRoot_eq_top
       (maximalIdeal (standardTameCover A π (e * d)))
   rw [hmax]

@@ -18,6 +18,7 @@ An unordered closed interval is a neighbourhood of each of its points other than
 Each point of the open interval between two endpoints that avoids a closed set is interior to a
 closed subinterval whose interior avoids that set.
 A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
+An open set containing a closed interval contains an open interval around it.
 Every nonempty closed unbounded order-connected set in a conditionally complete linear order is
 a left half-line, a right half-line, or the whole space.
 
@@ -41,6 +42,8 @@ A path that starts in an open set and leaves it has a first exit time.
   as `δ → 0⁺`.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
   a closed interval contained in `Ioo a b`.
+* `IsOpen.exists_Ioo_subset_of_uIcc_subset` — an open set containing `[[a, b]]` contains an open
+  interval around it.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
   order-connected sets.
 * `ContinuousOn.apply_ne_apply_of_injOn_Ico` — a continuous function injective on `[a, b)` takes
@@ -102,6 +105,23 @@ theorem _root_.IsCompact.exists_Icc_between {α : Type*} [LinearOrder α] [Topol
   obtain ⟨d, hMd, hdb⟩ := exists_between (hKs hMK).2
   exact ⟨c, d, fun x hx ↦ ⟨hcm.trans_le (hm hx), (hM hx).trans_lt hMd⟩,
     fun x hx ↦ ⟨hac.trans_le hx.1, hx.2.trans_lt hdb⟩⟩
+
+/-- An open set `s` containing the unordered closed interval `[[a, b]]` contains an open interval
+`Ioo c d` around `[[a, b]]`. -/
+theorem _root_.IsOpen.exists_Ioo_subset_of_uIcc_subset {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [NoMinOrder α] [NoMaxOrder α] {s : Set α}
+    (hs : IsOpen s) {a b : α} (h : uIcc a b ⊆ s) :
+    ∃ c d, uIcc a b ⊆ Ioo c d ∧ Ioo c d ⊆ s := by
+  obtain ⟨c, hc, hcs⟩ := exists_Ioc_subset_of_mem_nhds
+    (hs.mem_nhds (h ⟨le_rfl, inf_le_sup⟩)) (exists_lt (a ⊓ b))
+  obtain ⟨d, hd, hds⟩ := exists_Ico_subset_of_mem_nhds
+    (hs.mem_nhds (h ⟨inf_le_sup, le_rfl⟩)) (exists_gt (a ⊔ b))
+  refine ⟨c, d, fun u hu ↦ ⟨hc.trans_le hu.1, hu.2.trans_lt hd⟩, fun u hu ↦ ?_⟩
+  rcases le_or_gt u (a ⊓ b) with hu₁ | hu₁
+  · exact hcs ⟨hu.1, hu₁⟩
+  rcases le_or_gt (a ⊔ b) u with hu₂ | hu₂
+  · exact hds ⟨hu₂, hu.2⟩
+  exact h ⟨hu₁.le, hu₂.le⟩
 
 /-- A nonempty closed order-connected set which is not bounded on both sides is a right
 half-line, a left half-line, or the whole space. -/
@@ -226,7 +246,6 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
   have ha : a ∈ Ico a b := ⟨le_rfl, hab⟩
   intro hab'
   obtain ⟨m, hm⟩ := exists_between hab
-  have hfm : f m ≠ f a := fun h ↦ hm.1.ne' (hinj ⟨hm.1.le, hm.2⟩ ha h)
   -- A value strictly between `f a` and `f m` would be attained on both `[a, m]` and `[m, b]`.
   obtain ⟨v, hv, hva, hvm⟩ : ∃ v ∈ uIcc (f a) (f m), v ≠ f a ∧ v ≠ f m := by
     obtain ⟨m', hm'⟩ := exists_between hm.1
