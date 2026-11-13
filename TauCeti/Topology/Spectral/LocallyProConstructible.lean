@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Spectral.LocallySpectral
 public import TauCeti.Topology.Spectral.ProConstructible
-import Mathlib.Topology.LocalAtTarget
 
 /-!
 # Locally pro-constructible subsets
@@ -58,6 +57,22 @@ theorem IsLocallyProConstructible.isProConstructible_preimage
     (hs : IsLocallyProConstructible s) {U : Set X} (hU : IsOpen U) [SpectralSpace U] :
     IsProConstructible ((Subtype.val : U → X) ⁻¹' s) :=
   hs U hU inferInstance
+
+/-- Pullback along an open embedding preserves local pro-constructibility. -/
+theorem IsLocallyProConstructible.preimage_of_isOpenEmbedding {f : X → Y} {s : Set Y}
+    (hs : IsLocallyProConstructible s) (hf : IsOpenEmbedding f) :
+    IsLocallyProConstructible (f ⁻¹' s) := by
+  intro U hU hUs
+  have := hUs
+  let g : U → Y := f ∘ Subtype.val
+  have hg : IsOpenEmbedding g := hf.comp hU.isOpenEmbedding_subtypeVal
+  let h := hg.isEmbedding.toHomeomorph
+  have : CompactSpace (range g) := h.compactSpace
+  have : SpectralSpace (range g) := h.symm.isOpenEmbedding.spectralSpace
+  have htrace := hs.isProConstructible_preimage hg.isOpen_range
+  convert htrace.preimage h.isOpenEmbedding.isSpectralMap using 1
+  ext x
+  simp [h, g]
 
 /-- On a quasiseparated space, a pro-constructible subset is locally pro-constructible. -/
 theorem IsProConstructible.isLocallyProConstructible [QuasiSeparatedSpace X]
@@ -154,11 +169,12 @@ theorem IsLocallyProConstructible.of_isOpenCover {ι : Type*} {U : ι → Opens 
       .inclusion _ ((hWo x).preimage continuous_subtype_val)
     have he : IsOpenEmbedding (e x) :=
       .inclusion _ ((hWo x).preimage continuous_subtype_val)
-    let e := hg.isEmbedding.toHomeomorph
-    have : CompactSpace (range (g x)) := e.compactSpace
-    have : SpectralSpace (range (g x)) := e.symm.isOpenEmbedding.spectralSpace
-    have htrace := (hs (i x)).isProConstructible_preimage hg.isOpen_range
-    exact (htrace.preimage e.isOpenEmbedding.isSpectralMap).image he.isSpectralMap
+    have hW : IsProConstructible ((Subtype.val : W x → X) ⁻¹' s) := by
+      convert isLocallyProConstructible_iff_isProConstructible.mp
+        ((hs (i x)).preimage_of_isOpenEmbedding hg) using 1
+      ext y
+      simp [g]
+    exact hW.image he.isSpectralMap
   obtain ⟨T, hT⟩ := (isCompact_iff_compactSpace.mpr hVs.toCompactSpace).elim_finite_subcover
     W hWo (fun x hx ↦ mem_iUnion.mpr ⟨⟨x, hx⟩, hxW ⟨x, hx⟩⟩)
   have heq : (Subtype.val : V → X) ⁻¹' s =
@@ -169,11 +185,18 @@ theorem IsLocallyProConstructible.of_isOpenCover {ι : Type*} {U : ι → Opens 
       obtain ⟨x, hxT, hyW⟩ := mem_iUnion₂.mp (hT y.2)
       exact mem_iUnion₂.mpr ⟨x, hxT, ⟨⟨y.1, hyW⟩, hy, Subtype.ext rfl⟩⟩
     · intro hy
-      obtain ⟨x, -, z, hz, hzy⟩ := mem_iUnion₂.mp hy
-      have : e x z ∈ (Subtype.val : V → X) ⁻¹' s := hz
-      exact hzy ▸ this
+      obtain ⟨x, -, z, hz, rfl⟩ := mem_iUnion₂.mp hy
+      simpa [e] using hz
   rw [heq]
   exact T.finite_toSet.isProConstructible_biUnion fun x _ ↦ himage x
+
+/-- Local pro-constructibility is equivalent to local pro-constructibility on an open cover. -/
+theorem IsLocallyProConstructible.iff_of_isOpenCover {ι : Type*} {U : ι → Opens X}
+    (hU : IsOpenCover U) :
+    IsLocallyProConstructible s ↔
+      ∀ i, IsLocallyProConstructible ((Subtype.val : U i → X) ⁻¹' s) :=
+  ⟨fun hs i ↦ hs.preimage_of_isOpenEmbedding (U i).isOpen.isOpenEmbedding_subtypeVal,
+    of_isOpenCover hU⟩
 
 /-- Pro-constructible traces on a quasiseparated open cover imply local pro-constructibility. -/
 theorem IsLocallyProConstructible.of_isOpenCover_of_isProConstructible
