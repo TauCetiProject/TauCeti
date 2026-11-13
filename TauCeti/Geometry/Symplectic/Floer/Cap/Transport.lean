@@ -47,14 +47,14 @@ of `γ₁`: transport a cap along the seam, which gives a cap of `F.basepointPat
 glue the based homotopy of loops `F.conjLoopHom` from this loop to `γ₁`. This is
 `TauCeti.Floer.RawCap.transportAlong F` on raw caps and
 `TauCeti.Floer.SphericalCapClass.transportAlong F` on cap classes. On cap classes it commutes with
-recapping (`TauCeti.Floer.SphericalCapClass.transportAlong_vadd`) and, for a contractible loop on a
-path-connected space, it is a bijection
-(`TauCeti.Floer.SphericalCapClass.transportAlong_bijective`): the cap classes lift uniquely along
-paths of loops. When the seam stays at `x`, transport along `F` is gluing the homotopy of loops
-`F.loopPath` backwards (`TauCeti.Floer.SphericalCapClass.transportAlong_of_forall_eq`), so the
-constant homotopy transports every cap class to itself
-(`TauCeti.Floer.SphericalCapClass.transportAlong_refl`). Measured against a cap class `q₁` of the
-output, a cylinder `F` with input cap class `q₀` has the class `q₁ -ᵥ transportAlong F q₀` in `Γ`.
+recapping (`TauCeti.Floer.SphericalCapClass.transportAlong_vadd`) and, on a path-connected space,
+it is a bijection (`TauCeti.Floer.SphericalCapClass.transportAlong_bijective`): the cap classes
+lift uniquely along paths of loops. When the seam stays at `x`, transport along `F` is gluing the
+homotopy of loops `F.loopPath` backwards
+(`TauCeti.Floer.SphericalCapClass.transportAlong_of_forall_eq`), so the constant homotopy
+transports every cap class to itself (`TauCeti.Floer.SphericalCapClass.transportAlong_refl`).
+Measured against a cap class `q₁` of the output, a cylinder `F` with input cap class `q₀` has the
+class `q₁ -ᵥ transportAlong F q₀` in `Γ`.
 
 ## Main definitions
 
@@ -376,12 +376,31 @@ theorem transportAlong_vadd (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g
     transportAlong F (g +ᵥ q) = g +ᵥ transportAlong F q := by
   rw [transportAlong, Function.comp_apply, Function.comp_apply, transport_vadd, glue_vadd]
 
-/-- **Transport of the cap classes of a contractible loop along a free homotopy of loops is a
-bijection**: this is path lifting of the cap classes along paths of loops. -/
-theorem transportAlong_bijective [Nonempty (RawCap γ₀)]
-    (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1) :
-    Function.Bijective (transportAlong (ω := ω) (c := c) F) :=
-  (glueEquiv (inv F.conjLoopHom)).bijective.comp (transport_bijective F.basepointPath)
+/-- **Transport of cap classes along a free homotopy of loops is a bijection**: this is path
+lifting of the cap classes along paths of loops. When `γ₀` is not contractible, neither is `γ₁`,
+and both sets of cap classes are empty. -/
+theorem transportAlong_bijective (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1) :
+    Function.Bijective (transportAlong (ω := ω) (c := c) F) := by
+  by_cases h : Nonempty (RawCap γ₀)
+  · exact (glueEquiv (inv F.conjLoopHom)).bijective.comp (transport_bijective F.basepointPath)
+  have : IsEmpty (RawCap γ₀) := not_nonempty_iff.1 h
+  -- a cap of `γ₁` glued to `F.conjLoopHom` caps `F.basepointPath.conjLoop γ₀`, so `γ₀` would be
+  -- null-homotopic
+  have : IsEmpty (RawCap γ₁) := ⟨fun D => h <| RawCap.nonempty_iff.2 <| by
+    have hD := Path.Homotopic.Quotient.eq.2 (RawCap.nonempty_iff.1 ⟨F.conjLoopHom ≫ D⟩)
+    rw [Path.conjLoop_apply, Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_trans,
+      Path.Homotopic.Quotient.mk_symm, Path.Homotopic.Quotient.mk_refl] at hD
+    rw [← Path.Homotopic.Quotient.eq, Path.Homotopic.Quotient.mk_refl]
+    set P := Path.Homotopic.Quotient.mk F.basepointPath
+    calc Path.Homotopic.Quotient.mk γ₀
+        = P.trans ((P.symm.trans ((Path.Homotopic.Quotient.mk γ₀).trans P)).trans P.symm) := by
+          simp only [← Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_symm,
+            Path.Homotopic.Quotient.refl_trans]
+          rw [Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_symm,
+            Path.Homotopic.Quotient.trans_refl]
+      _ = Path.Homotopic.Quotient.refl x := by simp [hD]⟩
+  exact ⟨fun q => isEmptyElim (induction_on (motive := fun _ => False) q isEmptyElim),
+    fun q => isEmptyElim (induction_on (motive := fun _ => False) q isEmptyElim)⟩
 
 end SphericalCapClass
 

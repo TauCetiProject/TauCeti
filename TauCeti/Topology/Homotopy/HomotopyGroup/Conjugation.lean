@@ -48,11 +48,11 @@ from a loop `γ₀` at `x` to a loop `γ₁` at `y`, is a `ContinuousMap.Homotop
 for the property `g 0 = g 1`; it is a cylinder whose seam, the path `F.basepointPath` traced by
 the base points of its loops, runs from `x` to `y`. Conjugating the loop of `F` at time `a` by the
 tail of the seam from time `a` gives a path of loops at `y` from
-`F.basepointPath.conjLoop γ₀` to `(Path.refl y).conjLoop γ₁`, and the reparametrization
-`Path.conjLoopReflPath γ₁` ends it at `γ₁`. Its class is the morphism `F.conjLoopHom` of the
-fundamental groupoid of `Ω X y`. When the seam stays at `x`, `F` is already a homotopy of loops at
-`x`, `F.loopPath`, and `F.conjLoopHom` is its class up to these identifications
-(`ContinuousMap.HomotopyWith.conjLoopHom_eq_eqToHom_comp`).
+`F.basepointPath.conjLoop γ₀` to `(Path.refl y).conjLoop γ₁`, and the reverse of the
+reparametrization `Path.conjLoopReflPath γ₁` ends it at `γ₁`. Its class is the morphism
+`F.conjLoopHom` of the fundamental groupoid of `Ω X y`. When the seam stays at `x`, `F` is
+already a homotopy of loops at `x`, `F.loopPath`, and `F.conjLoopHom` is its class up to these
+identifications (`ContinuousMap.HomotopyWith.conjLoopHom_eq_eqToHom_comp`).
 
 ## Main definitions
 
