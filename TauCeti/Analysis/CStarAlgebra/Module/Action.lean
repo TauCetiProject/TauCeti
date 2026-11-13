@@ -17,8 +17,9 @@ then associativity of the left `A`-action gives the usual right-action law.
 The structures here are reducible non-instances, preserving the caller's existing `SMul A E`.
 Install them locally, for example with `letI := CStarModule.module A E` when `A` is unital,
 to use the ordinary module laws. For nonunital coefficients, use `distribSMul`,
-`smulWithZero`, and `semigroupAction`, together with `add_smul`. Keeping these structures
-explicit avoids a typeclass-search cycle through the action required by `CStarModule` itself.
+`smulWithZero`, and `semigroupAction`, together with `add_smul`, `neg_smul`, `sub_smul`,
+and `sum_smul`. Keeping these structures explicit avoids a typeclass-search cycle through
+the action required by `CStarModule` itself.
 Neither completeness nor the analytic C⋆-algebra axioms are needed for these algebraic laws.
 
 ## References
@@ -74,6 +75,25 @@ protected theorem add_smul (a b : A) (x : E) : (a + b) • x = a • x + b • x
   intro y
   simp [add_mul]
 
+/-- Negating a coefficient negates its action, without requiring a unit. -/
+protected theorem neg_smul (a : A) (x : E) : (-a) • x = -(a • x) := by
+  apply eq_neg_of_add_eq_zero_left
+  rw [← CStarModule.add_smul, neg_add_cancel]
+  exact (smulWithZero A E).zero_smul x
+
+/-- The action preserves coefficient subtraction, without requiring a unit. -/
+protected theorem sub_smul (a b : A) (x : E) : (a - b) • x = a • x - b • x := by
+  rw [sub_eq_add_neg, CStarModule.add_smul, CStarModule.neg_smul, sub_eq_add_neg]
+
+/-- Finite sums of coefficients act by the sum of their actions, without requiring a unit. -/
+protected theorem sum_smul {ι : Type*} (s : Finset ι) (a : ι → A) (x : E) :
+    (∑ i ∈ s, a i) • x = ∑ i ∈ s, a i • x := by
+  let f : A →+ E :=
+    { toFun := (· • x)
+      map_zero' := (smulWithZero A E).zero_smul x
+      map_add' := fun a b => CStarModule.add_smul a b x }
+  exact map_sum f a s
+
 variable (A E)
 
 /-- Complex scaling of a coefficient agrees with successive actions on the module. -/
@@ -83,7 +103,9 @@ theorem isScalarTower [IsScalarTower ℂ A A] : IsScalarTower ℂ A E where
     intro y
     simp [smul_mul_assoc]
 
-/-- The coefficient action commutes with complex scaling of vectors. -/
+/-- The coefficient action commutes with complex scaling of vectors.
+After installing this class locally, `letI := SMulCommClass.symm ℂ A E` supplies the
+reverse class for consumers such as linear action maps and pointwise submodule actions. -/
 theorem smulCommClass [SMulCommClass ℂ A A] : SMulCommClass ℂ A E where
   smul_comm c a x := by
     apply ext_inner_left (A := A)
