@@ -43,6 +43,7 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   product rule.
 * `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
   classical Laplacian.
+* `TestFunction.integrable_laplacian`: the Laplacian of a test function is integrable.
 -/
 
 public section
@@ -221,5 +222,13 @@ theorem laplacianCLM_apply (φ : 𝓓(Ω, F)) (x : E) :
     fderiv_clm_apply ((φ.contDiff.fderiv_right (by simp)).differentiable one_ne_zero x)
       (differentiableAt_const _)]
   simp
+
+open InnerProductSpace Laplacian MeasureTheory in
+/-- The Laplacian of a test function on `Ω` is integrable for every measure against which test
+functions on `Ω` are integrable, namely those with `LocallyIntegrableOn 1 Ω μ`. -/
+theorem integrable_laplacian [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
+    (H : LocallyIntegrableOn (fun _ : E ↦ (1 : ℝ)) Ω μ) (φ : 𝓓(Ω, F)) :
+    Integrable (Δ (φ : E → F)) μ := by
+  simpa only [← funext (laplacianCLM_apply φ)] using (laplacianCLM ℝ E 𝓓(Ω, F) φ).integrable H
 
 end TestFunction

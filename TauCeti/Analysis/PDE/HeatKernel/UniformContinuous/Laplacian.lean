@@ -10,9 +10,11 @@ public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.Semigroups.Resolvent.Identity
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.MeasureTheory.Integral.BoundedContinuousFunction
 import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
@@ -79,51 +81,19 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- The Laplacian of a test function is integrable. -/
-private theorem integrable_laplacian_testFunction (φ : 𝓓(⊤, ℝ)) :
-    Integrable (Δ (φ : E → ℝ)) :=
-  (φ.contDiff.of_le (by simp)).continuous_laplacian.integrable_of_hasCompactSupport
-    φ.hasCompactSupport.laplacian
-
-/-- A test function is integrable. -/
-private theorem integrable_testFunction (φ : 𝓓(⊤, ℝ)) : Integrable (φ : E → ℝ) :=
-  φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport
-
-omit [CompleteSpace F] in
-/-- The product of an integrable function with a bounded continuous function is integrable. -/
-private theorem integrable_smul {ψ : E → ℝ} (hψ : Integrable ψ) (u : E →ᵇ F) :
-    Integrable fun x ↦ ψ x • u x :=
-  hψ.smul_bdd ‖u‖ u.continuous.aestronglyMeasurable (ae_of_all _ u.norm_coe_le_norm)
-
-omit [CompleteSpace F] in
-/-- Pairing with an integrable function is continuous on bounded continuous functions with the
-supremum norm. -/
-private theorem continuous_integral_smul {ψ : E → ℝ} (hψ : Integrable ψ) :
-    Continuous fun u : E →ᵇ F ↦ ∫ x, ψ x • u x := by
-  refine continuous_iff_continuousAt.2 fun u₀ ↦ continuousAt_of_dominated
-    (Eventually.of_forall fun u ↦ (integrable_smul hψ u).aestronglyMeasurable) ?_
-    (hψ.norm.mul_const (‖u₀‖ + 1))
-    (ae_of_all _ fun x ↦ (continuous_const.smul (continuous_eval_const x)).continuousAt)
-  filter_upwards [ball_mem_nhds u₀ one_pos] with u hu
-  refine ae_of_all _ fun x ↦ ?_
-  rw [norm_smul]
-  have hu' : ‖u‖ ≤ ‖u₀‖ + 1 := by
-    have := norm_le_norm_add_norm_sub' u u₀
-    rw [← dist_eq_norm] at this
-    linarith [mem_ball.1 hu]
-  exact mul_le_mul_of_nonneg_left ((u.norm_coe_le_norm x).trans hu') (norm_nonneg _)
-
 omit [CompleteSpace F] in
 /-- The pairs `(f, g)` of bounded uniformly continuous functions with `Δ f = g` in the sense of
 distributions form a closed set. -/
 private theorem isClosed_setOf_forall_integral_laplacian_smul_eq :
     IsClosed {p : uniformContinuousSubmodule ℝ E F × uniformContinuousSubmodule ℝ E F |
       ∀ φ : 𝓓(⊤, ℝ), ∫ x, Δ (φ : E → ℝ) x • p.1.val x = ∫ x, (φ : E → ℝ) x • p.2.val x} := by
+  have H : LocallyIntegrableOn (fun _ : E ↦ (1 : ℝ)) (⊤ : Opens E) :=
+    (locallyIntegrable_const 1).locallyIntegrableOn _
   simp only [ofPred_forall]
   exact isClosed_iInter fun φ ↦ isClosed_eq
-    ((continuous_integral_smul (integrable_laplacian_testFunction φ)).comp
+    ((continuous_integral_smul_boundedContinuousFunction (φ.integrable_laplacian H)).comp
       (continuous_subtype_val.comp continuous_fst))
-    ((continuous_integral_smul (integrable_testFunction φ)).comp
+    ((continuous_integral_smul_boundedContinuousFunction (φ.integrable H)).comp
       (continuous_subtype_val.comp continuous_snd))
 
 /-- **The heat generator is a restriction of the distributional Laplacian.** If `f` lies in the
@@ -223,13 +193,6 @@ theorem eq_zero_of_forall_integral_laplacian_smul_eq_smul {w : E →ᵇ F} {c : 
   simp only [hmoll _ (φ _).contDiff_normed (φ _).hasCompactSupport_normed, Pi.zero_apply] at hlim
   simpa using tendsto_nhds_unique hlim tendsto_const_nhds
 
-omit [CompleteSpace F] in
-/-- `∫ ψ • (u - v) = ∫ ψ • u - ∫ ψ • v` for integrable `ψ` and bounded continuous `u, v`. -/
-private theorem integral_smul_sub {ψ : E → ℝ} (hψ : Integrable ψ) (u v : E →ᵇ F) :
-    ∫ x, ψ x • (u - v) x = (∫ x, ψ x • u x) - ∫ x, ψ x • v x := by
-  simp only [sub_apply, smul_sub]
-  exact integral_sub (integrable_smul hψ u) (integrable_smul hψ v)
-
 /-- **The heat generator on `BUC` is the distributional Laplacian.** For bounded uniformly
 continuous `f` and `g`, `f` lies in the domain of the generator `A` of the heat semigroup with
 `A f = g` if and only if `Δ f = g` in the sense of distributions:
@@ -246,13 +209,20 @@ theorem mem_graph_generator_heatSemigroupBUC_iff {f g : uniformContinuousSubmodu
     rw [LinearPMap.apply_resolvent h1, one_smul]
   have hh' := integral_laplacian_smul_eq_of_mem_graph_generator_heatSemigroupBUC
     (A.mem_graph ⟨h, hh⟩)
+  -- Pairing with an integrable `ψ` is additive in the bounded continuous function.
+  have integral_smul_sub {ψ : E → ℝ} (hψ : Integrable ψ) (u v : E →ᵇ F) :
+      ∫ x, ψ x • (u - v) x = (∫ x, ψ x • u x) - ∫ x, ψ x • v x := by
+    simp only [sub_apply, smul_sub]
+    exact integral_sub (hψ.smul_boundedContinuousFunction u) (hψ.smul_boundedContinuousFunction v)
   -- `w = f - h` satisfies `Δw = w` in the sense of distributions.
   have hw : (f - h).val = 0 := by
     refine eq_zero_of_forall_integral_laplacian_smul_eq_smul one_pos fun φ ↦ ?_
-    rw [one_smul, Submodule.coe_sub, integral_smul_sub (integrable_laplacian_testFunction φ),
-      integral_smul_sub (integrable_testFunction φ), hfg φ, hh' φ, hAh, Submodule.coe_sub,
-      Submodule.coe_sub, integral_smul_sub (integrable_testFunction φ),
-      integral_smul_sub (integrable_testFunction φ)]
+    have H : LocallyIntegrableOn (fun _ : E ↦ (1 : ℝ)) (⊤ : Opens E) :=
+      (locallyIntegrable_const 1).locallyIntegrableOn _
+    have hφ : Integrable (φ : E → ℝ) := φ.integrable H
+    rw [one_smul, Submodule.coe_sub, integral_smul_sub (φ.integrable_laplacian H),
+      integral_smul_sub hφ, hfg φ, hh' φ, hAh, Submodule.coe_sub, Submodule.coe_sub,
+      integral_smul_sub hφ, integral_smul_sub hφ]
     abel
   have hfh : f = h := sub_eq_zero.1 (Subtype.ext hw)
   refine (LinearPMap.mem_graph_iff _).mpr ⟨⟨h, hh⟩, hfh.symm, ?_⟩
