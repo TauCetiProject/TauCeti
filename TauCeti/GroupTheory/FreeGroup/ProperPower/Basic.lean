@@ -12,10 +12,10 @@ public import TauCeti.GroupTheory.ProperPower
 /-!
 # Proper powers in free groups
 
-Free generators and commutators of distinct generators are not proper powers. The latter
-is detected by the integer Heisenberg group: the commutator has central coordinate one. The same
-holds for the commutator `a⁻¹ b⁻¹ a b` in the convention of surface groups, a conjugate of
-`⁅a, b⁆ = a b a⁻¹ b⁻¹`.
+Free generators and commutators of distinct generators are not proper powers; in particular, a
+free generator is not a square. For the commutator this is detected by the integer Heisenberg
+group, in which the commutator has central coordinate one. The same holds for the commutator
+`a⁻¹ b⁻¹ a b` in the convention of surface groups, a conjugate of `⁅a, b⁆ = a b a⁻¹ b⁻¹`.
 -/
 
 public section
@@ -43,6 +43,10 @@ theorem exists_monoidHom_apply_eq_ofAdd_one (a : α) :
   obtain ⟨f, hf⟩ := exists_monoidHom_apply_eq_ofAdd_one a
   intro h
   exact Group.not_isProperPower_ofAdd_one (by simpa [hf] using Group.IsProperPower.map f h)
+
+/-- A free generator is not a square. -/
+@[simp] theorem not_isSquare_of (a : α) : ¬IsSquare (of a) := fun ⟨r, hr⟩ =>
+  not_isProperPower_of a (hr ▸ sq r ▸ Group.isProperPower_pow r le_rfl)
 
 /-- If a generator of a free group is the `m`-th power of some element, then `m = ±1`. -/
 theorem natAbs_eq_one_of_of_eq_zpow {a : α} {r : FreeGroup α} {m : ℤ} (h : of a = r ^ m) :
