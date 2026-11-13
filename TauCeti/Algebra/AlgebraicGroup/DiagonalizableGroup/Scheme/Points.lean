@@ -527,6 +527,17 @@ theorem powEndGroupSchemeMap_def (n : ℤ) :
         (ULift.up (Multiplicative.ofAdd n)) := by
   rfl
 
+/-- Over a nontrivial base ring, distinct exponents give distinct power endomorphisms of the
+multiplicative group scheme. -/
+theorem powEndGroupSchemeMap_injective [Nontrivial R] :
+    Function.Injective (powEndGroupSchemeMap (R := R)) := by
+  intro m n h
+  have h' := groupSchemeMap_injective R
+    (by simpa only [powEndGroupSchemeMap_def, characterGroupSchemeMap_def] using h)
+  simp only [FGCommGrpCat.hom_ext_iff, FGCommGrpCat.hom_hom_ofHom,
+    EmbeddingLike.apply_eq_iff_eq] at h'
+  rwa [ULift.up_inj, EmbeddingLike.apply_eq_iff_eq] at h'
+
 /-- The scheme-level `n`-th power endomorphism raises every scheme-valued point to the
 ordinary integer power `n`. -/
 @[simp high]

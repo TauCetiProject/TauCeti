@@ -271,6 +271,15 @@ instance schemeFunctor_faithful [Nontrivial R] :
   unfold schemeFunctor
   infer_instance
 
+/-- Over a nontrivial base ring, distinct homomorphisms of character groups induce distinct
+morphisms of diagonalizable group schemes. -/
+theorem groupSchemeMap_injective [Nontrivial R] {G H : FGCommGrpCat.{u}} :
+    Function.Injective (groupSchemeMap R (G := G) (H := H)) := by
+  intro f g h
+  apply Quiver.Hom.op_inj
+  apply (schemeFunctor R).map_injective
+  rw [schemeFunctor_map, schemeFunctor_map, Quiver.Hom.unop_op, Quiver.Hom.unop_op, h]
+
 /-- The diagonalizable group-scheme functor is full when the prime spectrum of the base is
 connected. -/
 instance schemeFunctor_full [ConnectedSpace (PrimeSpectrum R)] :
