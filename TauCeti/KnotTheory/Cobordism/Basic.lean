@@ -5,11 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.Data.ENat.Lattice
 public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
@@ -132,7 +127,8 @@ inequality also needs the genus of the stacked surface, which is not computed.
 ## References
 
 * C. Livingston, *A survey of classical knot concordance*, in *Handbook of Knot Theory* (2005),
-  Section 2, for knot cobordisms in `S³ × [0, 1]` and the four-ball genus.
+  Section 1 for the annulus in `S³ × [0, 1]` that defines concordance and Section 9.5 for the
+  four-ball genus (the survey does not treat cobordisms of higher genus).
 * S. Baader, *Scissor equivalence for torus links*, Bull. Lond. Math. Soc. 44 (2012), 1068–1078,
   for the cobordism distance of oriented links, of which the distance here is the unoriented
   variant.
@@ -143,7 +139,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicTopology Manifold Metric Module Set
+open Manifold Metric Module Set
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -632,8 +628,8 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
 private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
     (hS : IsCylinderFrom S (1 - 2 * c)) :
     IsCompact {x | (glueFun C S hc x).2 ∈ Icc (0 : ℝ) 1} := by
-  -- Gluing in `C` only moves the points of `S` above height `1 - c`, and keeps those above
-  -- height `1` fixed, so a point of the new surface over `[0, 1]` lies over `[0, 1]` in `S`.
+  -- Gluing in `C` only changes the points of `S` above height `1 - c`, and keeps their heights
+  -- above `1` above `1`, so a point of the new surface over `[0, 1]` lies over `[0, 1]` in `S`.
   refine S.isCompact_preimage_Icc.of_isClosed_subset (isClosed_Icc.preimage
     (continuous_snd.comp (isEmbedding_glueFun C hc hS).continuous)) fun x hx ↦ ?_
   by_cases hle : (S.toFun x).2 ≤ 1 - c
@@ -875,7 +871,7 @@ theorem cobordismDistance_def :
 theorem cobordismDistance_le_genus (S : KnotCobordism K₀ K₁) : cobordismDistance K₀ K₁ ≤ S.genus :=
   iInf_le _ S
 
-/-- A lower bound for the cobordism distance is a lower bound for the genus of every knot
+/-- A number is at most the cobordism distance exactly when it is at most the genus of every knot
 cobordism. -/
 @[simp]
 theorem le_cobordismDistance_iff {m : ℕ∞} :
