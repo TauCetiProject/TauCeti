@@ -30,6 +30,7 @@ It also records the source, target, forward map and inverse map of Mathlib's com
   diffeomorphism defined everywhere, for any `n`.
 * `PartialDiffeomorph.left_inv`, `PartialDiffeomorph.right_inv`: a partial diffeomorphism and its
   inverse undo each other on the source and on the target.
+* `PartialDiffeomorph.symm_symm`: the inverse of the inverse is the partial diffeomorphism.
 * `PartialDiffeomorph.trans_source`, `PartialDiffeomorph.trans_target`,
   `PartialDiffeomorph.coe_trans`, `PartialDiffeomorph.coe_trans_symm`: the composition of partial
   diffeomorphisms, computed componentwise.
@@ -88,6 +89,11 @@ theorem left_inv (Φ : PartialDiffeomorph I J M N n) {x : M} (hx : x ∈ Φ.sour
 theorem right_inv (Φ : PartialDiffeomorph I J M N n) {y : N} (hy : y ∈ Φ.target) :
     Φ (Φ.symm y) = y :=
   Φ.toPartialEquiv.right_inv hy
+
+/-- The inverse of the inverse of a partial diffeomorphism is the partial diffeomorphism. -/
+@[simp, mfld_simps]
+theorem symm_symm (Φ : PartialDiffeomorph I J M N n) : Φ.symm.symm = Φ :=
+  (rfl)
 
 section Trans
 

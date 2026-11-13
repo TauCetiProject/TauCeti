@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
-public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
+public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
-import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
@@ -30,13 +28,11 @@ The pushforward is a continuous linear map for the LF topologies
 (`PartialDiffeomorph.pushforwardTestFunction`). It is the composite of three continuous linear
 maps: composition with `Φ⁻¹`, which is the pullback `TestFunction.pullbackCLM` of test forms of
 degree zero along `Φ⁻¹`, multiplication by the Jacobian `|det D(Φ⁻¹)|`, which is smooth on the
-target of `Φ` only (`TestFunction.smulLeftCLMOfContDiffOn`), and extension from `Ω ∩ target` to
-`Ω`.
+target of `Φ` only (`TestFunction.smulLeftCLMOfContDiffOn`, with
+`PartialDiffeomorph.contDiffOn_abs_det_fderiv_symm`), and extension from `Ω ∩ target` to `Ω`.
 
 ## Main declarations
 
-* `PartialDiffeomorph.contDiffOn_abs_det_fderiv_symm`: the Jacobian `|det D(Φ⁻¹)|` is smooth on
-  the target.
 * `PartialDiffeomorph.pushforwardTestFunction`: the pushforward `φ ↦ |det D(Φ⁻¹)| (φ ∘ Φ⁻¹)` of
   test densities, as a continuous linear map `𝓓(V, G) →L[ℝ] 𝓓(Ω, G)`.
 * `PartialDiffeomorph.pushforwardTestFunction_apply_of_mem_target`,
@@ -44,8 +40,14 @@ target of `Φ` only (`TestFunction.smulLeftCLMOfContDiffOn`), and extension from
 * `PartialDiffeomorph.pushforwardTestFunction_apply_apply`: `(Φ_* φ) (Φ x) = |det DΦ(x)|⁻¹ φ x`.
 * `PartialDiffeomorph.tsupport_pushforwardTestFunction_subset`: `supp Φ_* φ ⊆ Φ '' supp φ`.
 * `PartialDiffeomorph.pushforwardTestFunction_trans`: functoriality, `(Ψ ∘ Φ)_* = Ψ_* ∘ Φ_*`.
-* `PartialDiffeomorph.pushforwardTestFunction_pushforwardTestFunction_symm`:
-  `Φ_* ∘ (Φ⁻¹)_* = id` on test functions on a subset of the target.
+* `PartialDiffeomorph.pushforwardTestFunction_pushforwardTestFunction_symm`,
+  `PartialDiffeomorph.pushforwardTestFunction_symm_pushforwardTestFunction`:
+  `Φ_* ∘ (Φ⁻¹)_* = id` on test functions on a subset of the target, and `(Φ⁻¹)_* ∘ Φ_* = id`.
+* `PartialDiffeomorph.pushforwardTestFunction_monoCLM`,
+  `PartialDiffeomorph.monoCLM_pushforwardTestFunction`: compatibility with extending test
+  functions to larger open sets.
+* `PartialDiffeomorph.pushforwardTestFunction_smulLeftCLMOfContDiffOn`:
+  `Φ_* ((g ∘ Φ) φ) = g Φ_* φ` for `g` smooth on `Ω`.
 * `ContinuousLinearEquiv.pushforwardTestFunction_toPartialDiffeomorph`: for a linear automorphism
   `e`, `e_* φ = |det e|⁻¹ (φ ∘ e⁻¹)`.
 
@@ -67,24 +69,6 @@ namespace PartialDiffeomorph
 variable {E G G' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G']
   {Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E ∞} {V Ω : Opens E}
-
-/-! ### The Jacobian of the inverse -/
-
-/-- The Jacobians of `Φ` and of its inverse at corresponding points are reciprocal. -/
-private theorem abs_det_fderiv_symm_apply {x : E} (hx : x ∈ Φ.source) :
-    |(fderiv ℝ Φ.symm (Φ x)).det| = |(fderiv ℝ Φ x).det|⁻¹ := by
-  rw [← abs_inv, eq_inv_of_mul_eq_one_left (Φ.det_fderiv_symm_mul_det_fderiv (by simp) hx)]
-
-/-- The Jacobian `|det D(Φ⁻¹)|` of the inverse of a partial diffeomorphism is smooth on the
-target. -/
-theorem contDiffOn_abs_det_fderiv_symm (Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E ∞) :
-    ContDiffOn ℝ ∞ (fun y ↦ |(fderiv ℝ Φ.symm y).det|) Φ.target := by
-  have hΨ : ContDiffOn ℝ ∞ Φ.symm Φ.target := contMDiffOn_iff_contDiffOn.1 Φ.symm.contMDiffOn
-  have hD := hΨ.fderiv_of_isOpen (m := ∞) Φ.open_target (by simp)
-  intro y hy
-  have hne := right_ne_zero_of_mul_eq_one (Φ.det_fderiv_mul_det_fderiv_symm (by simp) hy)
-  exact (contDiffAt_abs hne).comp_contDiffWithinAt y
-    ((ContinuousLinearMap.contDiff_det.comp_contDiffOn hD) y hy)
 
 /-! ### Composition with the inverse -/
 
@@ -148,7 +132,8 @@ the source of `Φ` and `Φ '' V ⊆ Ω`, a test function `φ` on `V` gives the t
 `φ dx` pushed forward along `Φ`, and its transpose is the pullback of distributions along `Φ`. -/
 def pushforwardTestFunction (Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E ∞)
     (hV : (V : Set E) ⊆ Φ.source) (hVΩ : MapsTo Φ V Ω) : 𝓓(V, G) →L[ℝ] 𝓓(Ω, G) :=
-  monoCLM ℝ ∘L smulLeftCLMOfContDiffOn (Φ.contDiffOn_abs_det_fderiv_symm.mono inter_subset_right) ∘L
+  monoCLM ℝ ∘L smulLeftCLMOfContDiffOn
+    ((Φ.contDiffOn_abs_det_fderiv_symm (m := ⊤) (by simp)).mono inter_subset_right) ∘L
     compSymmCLM Φ hV hVΩ
 
 variable {hV : (V : Set E) ⊆ Φ.source} {hVΩ : MapsTo Φ V Ω}
@@ -166,6 +151,7 @@ theorem pushforwardTestFunction_apply_of_mem_target (φ : 𝓓(V, G)) {y : E} (h
   rw [pushforwardTestFunction_apply, compSymmCLM_apply_of_mem_target hV hVΩ φ hy]
 
 /-- Off the target, the pushforward vanishes. -/
+@[simp]
 theorem pushforwardTestFunction_apply_of_notMem_target (φ : 𝓓(V, G)) {y : E}
     (hy : y ∉ Φ.target) : Φ.pushforwardTestFunction hV hVΩ φ y = 0 := by
   rw [pushforwardTestFunction_apply, compSymmCLM_apply_of_notMem_target hV hVΩ φ hy, smul_zero]
@@ -176,7 +162,7 @@ theorem pushforwardTestFunction_apply_of_notMem_target (φ : 𝓓(V, G)) {y : E}
 theorem pushforwardTestFunction_apply_apply (φ : 𝓓(V, G)) {x : E} (hx : x ∈ Φ.source) :
     Φ.pushforwardTestFunction hV hVΩ φ (Φ x) = |(fderiv ℝ Φ x).det|⁻¹ • φ x := by
   rw [pushforwardTestFunction_apply_of_mem_target φ (Φ.map_source hx), Φ.left_inv hx,
-    abs_det_fderiv_symm_apply hx]
+    Φ.det_fderiv_symm_apply (by simp) hx, abs_inv]
 
 /-- **Support of a pushforward.** The pushforward of `φ` is supported in `Φ '' supp φ`. -/
 theorem tsupport_pushforwardTestFunction_subset (φ : 𝓓(V, G)) :
@@ -244,6 +230,51 @@ theorem pushforwardTestFunction_pushforwardTestFunction_symm (hΩ : (Ω : Set E)
       Φ.det_fderiv_mul_det_fderiv_symm (by simp) hy, abs_one, one_smul]
   · rw [pushforwardTestFunction_apply_of_notMem_target _ hy, eq_comm]
     exact image_eq_zero_of_notMem_tsupport fun h ↦ hy (hΩ (φ.tsupport_subset h))
+
+/-- Pushing forward along `Φ` and then along `Φ⁻¹` gives back a test function on `V`, when `Φ`
+maps `V` into a subset `Ω` of the target that `Φ⁻¹` maps back into `V`. -/
+@[simp]
+theorem pushforwardTestFunction_symm_pushforwardTestFunction (hΩ : (Ω : Set E) ⊆ Φ.symm.source)
+    (hΩV : MapsTo Φ.symm Ω V) (φ : 𝓓(V, G)) :
+    Φ.symm.pushforwardTestFunction hΩ hΩV (Φ.pushforwardTestFunction hV hVΩ φ) = φ :=
+  Φ.symm.pushforwardTestFunction_pushforwardTestFunction_symm hV hVΩ φ
+
+/-- Extending a test function from `V' ≤ V` to `V` and then pushing it forward is pushing it
+forward from `V'`. -/
+theorem pushforwardTestFunction_monoCLM {V' : Opens E} (hV'V : V' ≤ V) (φ : 𝓓(V', G)) :
+    Φ.pushforwardTestFunction hV hVΩ (monoCLM ℝ φ) =
+      Φ.pushforwardTestFunction ((show (V' : Set E) ⊆ V from hV'V).trans hV)
+        (hVΩ.mono_left hV'V) φ := by
+  ext y
+  by_cases hy : y ∈ Φ.target
+  · simp [pushforwardTestFunction_apply_of_mem_target _ hy, monoCLM_apply, hV'V]
+  · simp [hy]
+
+/-- Pushing a test function forward to `Ω` and extending it to `Ω' ≥ Ω` is pushing it forward to
+`Ω'`. -/
+theorem monoCLM_pushforwardTestFunction {Ω' : Opens E} (hΩΩ' : Ω ≤ Ω') (φ : 𝓓(V, G)) :
+    (monoCLM ℝ (Φ.pushforwardTestFunction hV hVΩ φ) : 𝓓(Ω', G)) =
+      Φ.pushforwardTestFunction hV (hVΩ.mono_right (show (Ω : Set E) ⊆ Ω' from hΩΩ')) φ := by
+  ext y
+  rw [monoCLM_apply, ite_eq_left ⟨le_rfl, hΩΩ'⟩]
+  by_cases hy : y ∈ Φ.target
+  · rw [pushforwardTestFunction_apply_of_mem_target _ hy,
+      pushforwardTestFunction_apply_of_mem_target _ hy]
+  · rw [pushforwardTestFunction_apply_of_notMem_target _ hy,
+      pushforwardTestFunction_apply_of_notMem_target _ hy]
+
+/-- The pushforward intertwines multiplication by `g ∘ Φ` with multiplication by `g`, for `g`
+smooth on `Ω`: `Φ_* ((g ∘ Φ) φ) = g Φ_* φ`. -/
+theorem pushforwardTestFunction_smulLeftCLMOfContDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ ∞ g Ω)
+    (φ : 𝓓(V, G)) :
+    Φ.pushforwardTestFunction hV hVΩ (smulLeftCLMOfContDiffOn
+        (hg.comp ((contMDiffOn_iff_contDiffOn.1 Φ.contMDiffOn).mono hV) hVΩ) φ) =
+      smulLeftCLMOfContDiffOn hg (Φ.pushforwardTestFunction hV hVΩ φ) := by
+  ext y
+  by_cases hy : y ∈ Φ.target
+  · simp only [pushforwardTestFunction_apply_of_mem_target _ hy, smulLeftCLMOfContDiffOn_apply,
+      Function.comp_apply, Φ.right_inv hy, smul_comm |(fderiv ℝ Φ.symm y).det| (g y)]
+  · simp [hy]
 
 /-- For a linear automorphism `e` of `E`, the pushforward of test densities is
 `φ ↦ |det e|⁻¹ (φ ∘ e⁻¹)`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.LinearEquiv
+public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.TestFunction.PartialDiffeomorph
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -28,9 +29,10 @@ extends the pullback of functions to all distributions; this is how a distributi
 read in a chart, and how its readings in two charts are compared. On the point mass at `Φ x` the
 pullback is `|det DΦ(x)|⁻¹` times the point mass at `x`. Pullback is contravariantly functorial,
 `(Ψ ∘ Φ)^* = Φ^* ∘ Ψ^*`, and is undone by the pullback along `Φ⁻¹` when `Ω` is contained in the
-target of `Φ` and `Φ⁻¹` maps `Ω` into `V`. On `V`, the support of `Φ^* T` lies in the preimage
-under `Φ` of the support of `T`. For a linear automorphism the pullback is the linear change of
-variables `Distribution.compCLMOfContinuousLinearEquiv`.
+target of `Φ` and `Φ⁻¹` maps `Ω` into `V`. It commutes with restriction to smaller open sets. On
+`V`, the support of `Φ^* T` lies in the preimage under `Φ` of the support of `T`. For a linear
+automorphism the pullback is the linear change of variables
+`Distribution.compCLMOfContinuousLinearEquiv`.
 
 ## Main declarations
 
@@ -40,7 +42,9 @@ variables `Distribution.compCLMOfContinuousLinearEquiv`.
   integrable function `f` to that of `f ∘ Φ`, for any additive Haar measure.
 * `Distribution.compCLMOfPartialDiffeomorph_delta`: `Φ^* δ_{Φ x} = |det DΦ(x)|⁻¹ δ_x`.
 * `Distribution.compCLMOfPartialDiffeomorph_trans`,
-  `Distribution.compCLMOfPartialDiffeomorph_symm_compCLMOfPartialDiffeomorph`: functoriality.
+  `Distribution.compCLMOfPartialDiffeomorph_symm_compCLMOfPartialDiffeomorph`,
+  `Distribution.compCLMOfPartialDiffeomorph_compCLMOfPartialDiffeomorph_symm`: functoriality.
+* `Distribution.restrictCLM_compCLMOfPartialDiffeomorph`: pulling back commutes with restriction.
 * `Distribution.inter_dsupport_compCLMOfPartialDiffeomorph_subset`: `supp Φ^* T ⊆ Φ⁻¹ (supp T)`
   on `V`.
 * `Distribution.compCLMOfPartialDiffeomorph_toPartialDiffeomorph`: for a linear automorphism the
@@ -110,6 +114,27 @@ theorem compCLMOfPartialDiffeomorph_symm_compCLMOfPartialDiffeomorph
   ext φ
   simp
 
+/-- Pulling back along `Φ⁻¹` and then along `Φ` gives back a distribution on `V`, when `Φ` maps
+`V` into a subset `Ω` of the target that `Φ⁻¹` maps back into `V`. -/
+@[simp]
+theorem compCLMOfPartialDiffeomorph_compCLMOfPartialDiffeomorph_symm
+    (hΩ : (Ω : Set E) ⊆ Φ.symm.source) (hΩV : MapsTo Φ.symm Ω V) (T : 𝓓'(V, F)) :
+    compCLMOfPartialDiffeomorph Φ hV hVΩ (compCLMOfPartialDiffeomorph Φ.symm hΩ hΩV T) = T := by
+  ext φ
+  simp
+
+/-- **Restriction.** Pulling back to `V` and restricting to `V' ≤ V` is restricting to an open
+`Ω' ≤ Ω` into which `Φ` maps `V'`, and pulling back to `V'`. -/
+theorem restrictCLM_compCLMOfPartialDiffeomorph {V' Ω' : Opens E} (hV'V : V' ≤ V)
+    (hΩ'Ω : Ω' ≤ Ω) (hV'Ω' : MapsTo Φ V' Ω') (T : 𝓓'(Ω, F)) :
+    (restrictCLM (compCLMOfPartialDiffeomorph Φ hV hVΩ T) : 𝓓'(V', F)) =
+      compCLMOfPartialDiffeomorph Φ ((show (V' : Set E) ⊆ V from hV'V).trans hV) hV'Ω'
+        (restrictCLM T) := by
+  ext φ
+  rw [restrictCLM_apply, compCLMOfPartialDiffeomorph_apply, compCLMOfPartialDiffeomorph_apply,
+    restrictCLM_apply, PartialDiffeomorph.pushforwardTestFunction_monoCLM hV'V,
+    PartialDiffeomorph.monoCLM_pushforwardTestFunction hΩ'Ω]
+
 /-- **Support of a pullback.** On `V`, the support of the pullback `Φ^* T` lies in the preimage
 under `Φ` of the support of `T`. -/
 theorem inter_dsupport_compCLMOfPartialDiffeomorph_subset (T : 𝓓'(Ω, F)) :
@@ -176,6 +201,7 @@ theorem compCLMOfPartialDiffeomorph_ofFun [MeasurableSpace E] [BorelSpace E] {F 
 
 /-- The complex-linear extension of the pullback `Φ^* T` of a complex distribution pairs a complex
 test function `φ` with `T` through the pushforward of `φ`. -/
+@[simp]
 theorem complexPairing_compCLMOfPartialDiffeomorph {hV : (V : Set E) ⊆ Φ.source}
     {hVΩ : MapsTo Φ V Ω} (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(V, ℂ)) :
     (compCLMOfPartialDiffeomorph Φ hV hVΩ T).complexPairing φ =
