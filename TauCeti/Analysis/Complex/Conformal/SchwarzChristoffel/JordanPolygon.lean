@@ -95,7 +95,6 @@ private theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_eqOn {
     hfH.congr hform, fun i => ?_⟩
   · exact deriv_ne_zero_of_injOn hfd isOpen_upperHalfPlaneSet hfH.injOn z₀.im_pos
   -- both sides are limits at the prevertex `a i` from the upper half-plane
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot (a i)
   have hsum : -1 < ∑ l with a l = a i, e l := by
     rw [Finset.sum_eq_single_of_mem i (by simp) fun l hl hli =>
       absurd (ha (Finset.mem_filter.mp hl).2) hli]

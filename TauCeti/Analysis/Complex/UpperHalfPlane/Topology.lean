@@ -92,8 +92,9 @@ open Bornology Complex Filter Metric Set Topology UpperHalfPlane
 namespace Real
 
 /-- Every real point is in the closure of the open upper half-plane, so limits along the
-half-plane at a real point are well posed. -/
-theorem nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
+half-plane at a real point are well posed. An instance, so that `tendsto_nhds_unique` and its
+relatives apply along the half-plane at a real point directly. -/
+instance nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
     (𝓝[upperHalfPlaneSet] ((x : ℂ))).NeBot :=
   mem_closure_iff_nhdsWithin_neBot.mp (by simp [upperHalfPlaneSet])
 
@@ -111,7 +112,6 @@ theorem mem_closedBall_and_eq_of_tendsto {Y : Type*} [TopologicalSpace Y] [T2Spa
     (hf : ∀ z ∈ upperHalfPlaneSet, f z = G (h z))
     (hfw : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 w)) :
     h x ∈ closedBall (0 : ℂ) 1 ∧ G (h x) = w := by
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have hev : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (x : ℂ), h z ∈ closedBall (0 : ℂ) 1 :=
     eventually_nhdsWithin_of_forall hmaps
   have hmem : h x ∈ closedBall (0 : ℂ) 1 := isClosed_closedBall.mem_of_tendsto hh.tendsto hev
