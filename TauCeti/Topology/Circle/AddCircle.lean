@@ -45,6 +45,8 @@ amount, and the short secants `(q τ, q (τ + w))` of a loop `q` stay near the d
 * `AddCircle.exists_forall_eq_add_pos` — a continuous family of maps of the circle, the identity
   at time `0` and without fixed points at small positive times, moves every point forward by a
   small continuous amount at some arbitrarily small nonzero time.
+* `ContinuousMap.secant_ne_zero` — a short forward secant of an injective loop is nonzero
+  when its defining function has no zeros off the diagonal.
 * `ContinuousMap.exists_pos_forall_secant_mem` — the short secants `(q τ, q (τ + w))` of a loop
   `q` lie in any given open neighborhood of the diagonal.
 * `TauCeti.circleProdHomeomorphUnitAddTorus_apply`,
@@ -212,6 +214,17 @@ theorem exists_pos_forall_secant_mem (q : C(AddCircle T, X)) {U : Set (X × X)}
         |>.continuousAt.preimage_mem_nhds (hU.mem_nhds (by simpa using hdiag (q τ))))
   obtain ⟨δ, hδ, hsub⟩ := Metric.eventually_nhds_iff.mp hnear
   exact ⟨δ, hδ, fun w hw τ ↦ hsub (by rwa [Real.dist_eq, sub_zero]) τ (mem_univ τ)⟩
+
+/-- A secant of an injective loop with a step in `(0, 1)` is nonzero if `S` has no zeros
+off the diagonal in the neighborhood containing the pair. -/
+theorem secant_ne_zero (q : C(AddCircle (1 : ℝ), X)) (hq : Function.Injective q)
+    {S : C(X × X, ℂ)} {U : Set (X × X)} (hzero : ∀ x y, (x, y) ∈ U → S (x, y) = 0 → x = y)
+    {w : ℝ} (hw : w ∈ Ioo 0 1) {τ : AddCircle (1 : ℝ)} (hU : (q τ, q (τ + w)) ∈ U) :
+    S (q τ, q (τ + w)) ≠ 0 := by
+  intro h
+  have hw0 : ((w : ℝ) : AddCircle (1 : ℝ)) = 0 := by
+    simpa using (hq (hzero _ _ hU h)).symm
+  exact hw.1.ne' ((AddCircle.coe_eq_zero_iff_of_mem_Ico ⟨hw.1.le, hw.2⟩).1 hw0)
 
 end ContinuousMap
 
