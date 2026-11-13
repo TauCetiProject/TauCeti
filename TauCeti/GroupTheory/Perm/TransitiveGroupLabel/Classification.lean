@@ -365,7 +365,7 @@ theorem TransitiveGroupLabel.eq_of_four {j k : TransitiveGroupIndex 4}
       omega
 
 /-- A subgroup of order four of the symmetric group on four points that is not killed by squaring
-is cyclic and carries the label `4T1`. -/
+carries the label `4T1`. -/
 theorem _root_.Subgroup.transitiveGroupLabel_four_zero_of_exists_sq_ne_one
     (G : Subgroup (Perm (Fin 4))) (hG : Nat.card G = 4) (hcyc : ∃ g ∈ G, g ^ 2 ≠ 1) :
     TransitiveGroupLabel (⟨0, by simp⟩ : TransitiveGroupIndex 4) G := by
@@ -420,8 +420,8 @@ private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgrou
     exact (Set.ext_iff.1 (alternatingGroup.coe_kleinFour_of_card_eq_four (by simp)) _).2
       (Or.inr hcycle)
 
-/-- A subgroup of the symmetric group on four points of order `8`, `12` or `24` carries a label:
-`4T3`, `4T4` or `4T5` respectively. -/
+/-- A subgroup of the symmetric group on four points of order `8`, `12` or `24` carries a
+label. -/
 theorem _root_.Subgroup.exists_transitiveGroupLabel_four_of_natCard_eq
     (G : Subgroup (Perm (Fin 4)))
     (hG : Nat.card G = 8 ∨ Nat.card G = 12 ∨ Nat.card G = 24) :
