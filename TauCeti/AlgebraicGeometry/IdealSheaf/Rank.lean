@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
+public import TauCeti.Algebra.BigOperators.Finprod
 public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Rank
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Stalk
@@ -95,15 +96,6 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
-private theorem finsum_comp_eq_of_injective {α β M : Type*} [AddCommMonoid M]
-    {g : α → β} (hg : Function.Injective g) (F : β → M)
-    (hF : ∀ x ∉ Set.range g, F x = 0) : (∑ᶠ y, F (g y)) = ∑ᶠ x, F x := by
-  rw [← finsum_mem_range (f := F) hg]
-  exact finsum_congr fun x ↦ by
-    by_cases hx : x ∈ Set.range g
-    · simp only [hx, finsum_true]
-    · simp only [hx, finsum_false, hF x hx]
-
 /-- The rank of a closed subscheme finite over a field is the sum over the ambient scheme of
 local quotient lengths times compatible residue degrees. Stalk ideals off the image are the unit
 ideal, so those points contribute zero. -/
@@ -114,11 +106,11 @@ theorem finrank_eq_finsum_of_isClosedImmersion {K : Type u} [Field K] {Z Y S : S
       (Module.length (Y.presheaf.stalk y) (Y.presheaf.stalk y ⧸ i.ker.stalkIdeal y)).toNat := by
   rw [h.finrank_eq_finsum_residueDegree_mul_length s]
   simp_rw [hf, i.length_stalk_of_isClosedImmersion]
-  apply finsum_comp_eq_of_injective i.isClosedEmbedding.injective
+  apply TauCeti.finsum_comp_eq_of_injective i.isClosedEmbedding.injective
     (fun y : Y ↦ f.residueDegree y *
       (Module.length (Y.presheaf.stalk y) (Y.presheaf.stalk y ⧸ i.ker.stalkIdeal y)).toNat)
   intro y hy
-  simp [i.ker_stalkIdeal_eq_top_of_notMem_range hy]
+  simp [i.stalkIdeal_ker_eq_top_of_notMem_range hy]
 
 /-- A closed subscheme finite over `K` has rank equal to the residue-degree-weighted sum of
 its local quotient lengths on the ambient `K`-scheme. -/

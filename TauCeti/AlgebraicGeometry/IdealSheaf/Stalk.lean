@@ -312,7 +312,7 @@ namespace AlgebraicGeometry.Scheme.Hom
 universe u
 
 /-- The stalk of the kernel ideal sheaf of a closed immersion is the unit ideal off its image. -/
-theorem ker_stalkIdeal_eq_top_of_notMem_range {X Y : Scheme.{u}} (f : X ⟶ Y)
+theorem stalkIdeal_ker_eq_top_of_notMem_range {X Y : Scheme.{u}} (f : X ⟶ Y)
     [IsClosedImmersion f] {y : Y} (hy : y ∉ Set.range f) : f.ker.stalkIdeal y = ⊤ := by
   by_contra h
   apply hy
