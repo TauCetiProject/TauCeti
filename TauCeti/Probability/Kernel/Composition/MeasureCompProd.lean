@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
@@ -17,7 +18,9 @@ information carried by the points of the source. It can when `κ` itself factors
 that case is the main content of this file. It is the base-side counterpart of Mathlib's
 `MeasureTheory.Measure.compProd_map`, which pushes the kernel side forward instead.
 
-Restricting the base, by contrast, always commutes with the composition-product.
+Restricting the base, by contrast, always commutes with the composition-product, and restricting
+`μ ⊗ₘ κ` to a measurable set before projecting onto the first coordinate weights `μ` by the
+kernel masses of the vertical sections.
 
 ## Main statements
 
@@ -25,6 +28,8 @@ Restricting the base, by contrast, always commutes with the composition-product.
   `κ : Kernel Y Z`, `(μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ`.
 * `MeasureTheory.Measure.compProd_restrict_left` — restricting the base to `s` restricts the
   composition-product to `s ×ˢ univ`.
+* `MeasureTheory.Measure.map_fst_restrict_compProd_eq_withDensity` — restricting `μ ⊗ₘ κ` to `A`
+  and projecting onto the first coordinate gives `μ.withDensity (fun x ↦ κ x (Prod.mk x ⁻¹' A))`.
 -/
 
 public section
@@ -62,5 +67,27 @@ theorem compProd_restrict_left (μ : Measure W) [SFinite μ] (κ : Kernel W Z)
   · simp [compProd_of_not_isSFiniteKernel _ _ hκ]
   rw [compProd, compProd, ← Kernel.restrict_const hs, ← Kernel.restrict_apply _ (hs.prod .univ),
     Kernel.compProd_restrict_left]
+
+/-- Restricting a composition-product `μ ⊗ₘ κ` to a measurable set `A` and projecting onto the
+first coordinate weights the base measure `μ` by the kernel masses of the sections of `A`.
+This generalizes the product-measure identity `map_fst_restrict_prod_eq_withDensity` to
+location-dependent s-finite kernels. -/
+theorem map_fst_restrict_compProd_eq_withDensity (μ : Measure W) [SFinite μ]
+    (κ : Kernel W Z) [IsSFiniteKernel κ] {A : Set (W × Z)} (hA : MeasurableSet A) :
+    ((μ ⊗ₘ κ).restrict A).map Prod.fst = μ.withDensity (fun x ↦ κ x (Prod.mk x ⁻¹' A)) := by
+  ext s hs
+  rw [map_apply measurable_fst hs, restrict_apply (hs.preimage measurable_fst),
+    compProd_apply ((hs.preimage measurable_fst).inter hA),
+    withDensity_apply _ hs, ← lintegral_indicator hs]
+  refine lintegral_congr fun x ↦ ?_
+  by_cases hx : x ∈ s <;> simp [Set.preimage_preimage, hx]
+
+/-- Restricting `μ ⊗ₘ κ` to `univ ×ˢ B` and projecting onto the first coordinate weights `μ`
+by the kernel mass `κ · B`. -/
+@[simp]
+theorem map_fst_restrict_univ_prod_compProd_eq_withDensity (μ : Measure W) [SFinite μ]
+    (κ : Kernel W Z) [IsSFiniteKernel κ] {B : Set Z} (hB : MeasurableSet B) :
+    ((μ ⊗ₘ κ).restrict (Set.univ ×ˢ B)).map Prod.fst = μ.withDensity (fun x ↦ κ x B) := by
+  simpa using map_fst_restrict_compProd_eq_withDensity μ κ (MeasurableSet.univ.prod hB)
 
 end MeasureTheory.Measure

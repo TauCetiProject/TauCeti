@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.PointProcess.Marking.Optional
+import TauCeti.Probability.RandomMeasure.Determination
 
 /-!
 # Independent marking of countable occurrence tuples
@@ -129,5 +130,32 @@ theorem tupleMarking_of_isEmpty {ι : Type*} [Countable ι] [IsEmpty ι] (x : ι
     κ.tupleMarking ι x = Measure.dirac 0 := by
   simpa only [optionalTupleMarking_some] using
     optionalTupleMarking_of_isEmpty κ (fun i => some (x i))
+
+/-- Optional tuple marking coincides with ordinary tuple marking restricted to the subtype of
+present indices. No assumption on the ground measurable space is required. -/
+theorem optionalTupleMarking_eq_tupleMarking {ι : Type*} [Countable ι] (x : ι → Option X) :
+    κ.optionalTupleMarking ι x =
+      κ.tupleMarking {i : ι // (x i).isSome} (fun j => (x j.1).get j.2) := by
+  simpa only [Measure.map_id] using
+    Measure.map_eq_of_laplaceFunctional_eq (P := κ.optionalTupleMarking ι x)
+      (Q := κ.tupleMarking {i : ι // (x i).isSome} (fun j => (x j.1).get j.2))
+      measurable_id.aemeasurable measurable_id.aemeasurable fun f hf => by
+        rw [Measure.laplaceFunctional_def, Measure.laplaceFunctional_def]
+        simp only [id_eq, lintegral_expNeg_optionalTupleMarking κ x hf,
+          lintegral_expNeg_tupleMarking κ _ hf]
+        classical
+        let g : ι → ℝ≥0∞ :=
+          fun i => (x i).elim 1 (fun a => ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)
+        have hsub : (∏' j : {i : ι // (x i).isSome},
+              ∫⁻ e, (ENNReal.expNeg (f ((x j.1).get j.2, e)) : ℝ≥0∞) ∂κ ((x j.1).get j.2)) =
+            ∏' j : ({i : ι | (x i).isSome = true} : Set ι), g j.1 :=
+          tprod_congr fun j => by
+            dsimp only [g]
+            conv_rhs => rw [← Option.some_get j.2]
+            rfl
+        symm
+        rw [hsub, tprod_subtype {i : ι | (x i).isSome = true} g]
+        refine tprod_congr fun i => ?_
+        cases hx : x i <;> simp [g, hx]
 
 end ProbabilityTheory.Kernel

@@ -82,3 +82,22 @@ theorem Measurable.exists_occurrence_enumeration_of_isFiniteMeasureOnCompacts
     (fun a n => by
       have := hfinite a
       exact (isCompact_compactCovering X n).measure_ne_top)
+
+/-- An almost-everywhere measurable family of measures that are almost surely integer-valued and
+almost surely finite on each set of a countable measurable cover admits a measurable occurrence
+enumeration that recovers the family almost everywhere. -/
+theorem AEMeasurable.exists_ae_occurrence_enumeration_of_cover
+    {α X : Type*} [MeasurableSpace α] [MeasurableSpace X] [StandardBorelSpace X]
+    {P : Measure α} {μ : α → Measure X} (hm : AEMeasurable μ P)
+    (hint : ∀ᵐ a ∂P, (μ a).IsIntegerValued) (s : ℕ → Set X)
+    (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = univ)
+    (hfinite : ∀ n, ∀ᵐ a ∂P, μ a (s n) ≠ ∞) :
+    ∃ e : α → ℕ → Option X, Measurable e ∧
+      ∀ᵐ a ∂P, μ a = Measure.sum (fun n => (e a n).elim 0 Measure.dirac) := by
+  obtain ⟨μ', hμ', hrange, hae⟩ := hm.exists_ae_eq_range_subset
+    (t := {ν : Measure X | ν.IsIntegerValued ∧ ∀ n, ν (s n) ≠ ∞})
+    (hint.and (ae_all_iff.2 hfinite)) ⟨0, by simp⟩
+  obtain ⟨e, he, heq⟩ := hμ'.exists_occurrence_enumeration_of_cover
+    (fun a => (hrange (mem_range_self a)).1) s hs hcover
+    (fun a n => (hrange (mem_range_self a)).2 n)
+  exact ⟨e, he, hae.mono fun a ha => ha.trans (heq a)⟩

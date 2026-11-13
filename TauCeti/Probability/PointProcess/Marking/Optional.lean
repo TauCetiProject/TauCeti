@@ -11,6 +11,8 @@ public import Mathlib.Probability.Kernel.Composition.Prod
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.MeasurableSpace.Option
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+import Mathlib.Probability.Kernel.MeasurableLIntegral
 
 /-!
 # Independent marking of optional occurrence sequences
@@ -248,5 +250,50 @@ theorem optionalTupleMarking_deterministic {ι : Type*} [Countable ι] {g : X �
       Measure.dirac_prod_dirac, Measure.map_dirac' Measure.measurable_dirac]
   simp only [optionalTupleMarking_apply, hc, Measure.infinitePi_dirac,
     Measure.map_dirac' hs]
+
+/-- Exponential-integral form of the Laplace functional of optional tuple marking, expressed as an
+integral against the ground counting measure of the present occurrences. -/
+theorem lintegral_expNeg_optionalTupleMarking_eq_expNeg_lintegral {ι : Type*} [Countable ι]
+    (x : ι → Option X) {f : X × E → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ μ, (ENNReal.expNeg (∫⁻ p, f p ∂μ) : ℝ≥0∞) ∂κ.optionalTupleMarking ι x =
+      (ENNReal.expNeg (∫⁻ a,
+        (-ENNReal.log (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal
+        ∂Measure.sum (fun i => (x i).elim 0 Measure.dirac)) : ℝ≥0∞) := by
+  let g : X → ℝ≥0∞ := fun a =>
+    (-ENNReal.log (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal
+  have hg : Measurable g := by fun_prop
+  have hle (a : X) : ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a ≤ 1 := by
+    calc ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a
+        ≤ ∫⁻ _, (1 : ℝ≥0∞) ∂κ a :=
+          lintegral_mono fun e => ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one _)
+      _ = 1 := by simp
+  rw [lintegral_expNeg_optionalTupleMarking κ x hf, lintegral_sum_measure, ENNReal.coe_expNeg_tsum]
+  refine tprod_congr fun i => ?_
+  cases x i with
+  | none => simp
+  | some a =>
+    simpa only [Option.elim_some, lintegral_dirac' _ hg, g] using
+      (ENNReal.coe_expNeg_toENNReal_neg_log (hle a)).symm
+
+/-- Under optional tuple marking, the ground projection on any measurable set almost surely equals
+the counting-measure mass of the present entries. No assumption on the ground measurable space is
+required. -/
+theorem ae_map_fst_apply_optionalTupleMarking {ι : Type*} [Countable ι]
+    (x : ι → Option X) {A : Set X} (hA : MeasurableSet A) :
+    ∀ᵐ μ ∂κ.optionalTupleMarking ι x,
+      μ.map Prod.fst A = (Measure.sum fun i => (x i).elim 0 Measure.dirac) A := by
+  have hm : Measurable (fun μ : Measure (X × E) => μ.map Prod.fst A) :=
+    (Measure.measurable_coe hA).comp (Measure.measurable_map _ measurable_fst)
+  have hmap : (κ.optionalTupleMarking ι x).map (fun μ => μ.map Prod.fst A) =
+      Measure.dirac ((Measure.sum fun i => (x i).elim 0 Measure.dirac) A) := by
+    rw [show (fun μ : Measure (X × E) => μ.map Prod.fst A) =
+        (fun ν : Measure X => ν A) ∘ (fun μ => μ.map Prod.fst) from rfl,
+      ← Measure.map_map (Measure.measurable_coe hA) (Measure.measurable_map _ measurable_fst),
+      map_map_fst_optionalTupleMarking, Measure.map_dirac' (Measure.measurable_coe hA)]
+  have hmem : ∀ᵐ y ∂(κ.optionalTupleMarking ι x).map (fun μ => μ.map Prod.fst A),
+      y = (Measure.sum fun i => (x i).elim 0 Measure.dirac) A := by
+    rw [hmap]
+    simp
+  exact (ae_map_iff hm.aemeasurable (measurableSet_singleton _)).1 hmem
 
 end ProbabilityTheory.Kernel
