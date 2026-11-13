@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds
 import TauCeti.Algebra.Ring.Periodic
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.Geometry.Manifold.ContMDiff.Pi
 
 /-!
 # The energy identity on spheres with moving input ends
@@ -50,17 +50,21 @@ The proof cuts the truncation into a closed annulus about each center, on which 
 input end's datum alone, and a closed annulus at the outer circle, on which it is the output datum
 (`TauCeti.Floer.closedBall_sdiff_ball_subset_puncturedSphereTruncation` and
 `TauCeti.Floer.closedBall_zero_sdiff_ball_subset_puncturedSphereTruncation`). On the remaining
-core the datum vanishes nearby, so the energy minus the area plus the integrated curvature may be
-computed over the annuli alone
+core the datum vanishes nearby
+(`TauCeti.Floer.puncturedSpherePerturbation_eventuallyEq_zero_of_mem_puncturedSphereTruncation`),
+so the curvature is integrable over the truncation
+(`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_truncation`)
+and the energy minus the area plus the integrated curvature may be computed over the annuli alone
 (`TauCeti.SmoothTwoForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`). The affine
 chart `w ↦ c i + a i w` carries the positive plane datum, the pair-of-pants datum whose only
 nonzero Hamiltonian is the one at the input `0`, to the input end datum of `i`
 (`TauCeti.Floer.perturbationPullback_realChart_inputEndPerturbation`), and the output datum is
 the pair-of-pants datum whose only nonzero Hamiltonian is the one at the output. Since the energy
-density, the area density and the curvature are two-forms, the identity on each
-annulus is the energy identity over an end of the pair of pants
-(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_image_endChart`), whose boundary terms
-on the angular sides cancel by periodicity and vanish with the cutoff on the circle `±s = 1`.
+density, the area density and the curvature are two-forms, the identity on each annulus is the
+energy identity over an end piece of the pair of pants
+(`IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_image_endPiece` in
+`SmoothTwoForm`), whose boundary terms on the angular sides cancel by periodicity and vanish with
+the cutoff on the circle `±s = 1`.
 
 ## References
 
@@ -76,7 +80,8 @@ public section
 
 open Set Real Function MeasureTheory Filter TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective
+  image_realChart_affine_annulus)
 open scoped Topology Manifold
 
 namespace TauCeti
@@ -109,6 +114,20 @@ theorem isCompact_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
     IsCompact (puncturedSphereTruncation c a R) :=
   (isCompact_closedBall _ _).diff (isOpen_iUnion fun _ ↦ Metric.isOpen_ball)
 
+/-- The truncation is compact in the real coordinates of `ℂ`. -/
+theorem isCompact_preimage_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_puncturedSphereTruncation c a R)
+
+/-- The truncation avoids the center of every input end of nonzero scale. -/
+theorem ne_of_mem_puncturedSphereTruncation {c a : ι → ℂ} {R : ℝ} {w : ℂ}
+    (hw : w ∈ puncturedSphereTruncation c a R) {i : ι} (ha : a i ≠ 0) : w ≠ c i := by
+  rintro rfl
+  have h := (mem_puncturedSphereTruncation.1 hw).2 i
+  rw [sub_self, norm_zero] at h
+  nlinarith [norm_pos_iff.2 ha, Real.exp_pos (-(2 * π * R))]
+
 /-- If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and lie in the disc
 `‖w‖ ≤ 2 exp (2π)`, then for `R ≥ 1` the closed annulus about the center `c i` with radii
 `‖a i‖ exp (-2πR) / 2` and `‖a i‖ exp (-2π) / 2`, bounded by the circles `s = R` and `s = 1` of the
@@ -138,45 +157,105 @@ theorem closedBall_sdiff_ball_subset_puncturedSphereTruncation {c a : ι → ℂ
       rw [norm_sub_rev (c i) w] at this
       linarith [he i, heR j]
 
-/-- If the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the disc `‖w‖ ≤ 2 exp (2π)`, then for `R ≥ 0` the
-closed annulus about `0` with radii `2 exp (2π)` and `2 exp (2πR)`, bounded by the circles `s = -1`
-and `s = -R` of the output end, lies in the truncation. -/
+/-- If the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the disc `‖w‖ ≤ 2 exp (2π)`, then the closed
+annulus about `0` with radii `2 exp (2π)` and `2 exp (2πR)`, bounded by the circles `s = -1` and
+`s = -R` of the output end, lies in the truncation. It is empty unless `R ≥ 1`. -/
 theorem closedBall_zero_sdiff_ball_subset_puncturedSphereTruncation {c a : ι → ℂ} {R : ℝ}
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) (hR : 0 ≤ R) :
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) :
     Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ Metric.ball 0 (2 * Real.exp (2 * π)) ⊆
       puncturedSphereTruncation c a R := by
   rintro w ⟨h₂, h₁⟩
   rw [mem_closedBall_zero_iff] at h₂
   rw [mem_ball_zero_iff, not_lt] at h₁
   refine mem_puncturedSphereTruncation.2 ⟨h₂, fun i ↦ ?_⟩
+  have hR : 1 ≤ R := by
+    have h := Real.exp_le_exp.1 (by linarith : Real.exp (2 * π) ≤ Real.exp (2 * π * R))
+    nlinarith [Real.pi_pos]
   have heR : ‖a i‖ * Real.exp (-(2 * π * R)) ≤ ‖a i‖ :=
     mul_le_of_le_one_right (norm_nonneg _)
       (Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos]))
   linarith [norm_sub_norm_le w (c i), hout i]
 
-/-- The affine chart `w ↦ c + a w` maps the closed annulus about `0` with radii `r₁` and `r₂` onto
-the closed annulus about `c` with radii `‖a‖ r₁` and `‖a‖ r₂`. -/
-private theorem image_realChart_affine_annulus {c a : ℂ} (ha : a ≠ 0) (r₁ r₂ : ℝ) :
-    realChart (c + a * ·) '' (Complex.equivRealProdCLM.symm ⁻¹'
-        (Metric.closedBall 0 r₂ \ Metric.ball 0 r₁)) =
+/-- **Between the annuli of the ends the datum vanishes, as germs.** Near a point of the truncation
+which lies neither in the closed annulus about any center `c i` with radii `‖a i‖ exp (-2πR) / 2`
+and `‖a i‖ exp (-2π) / 2` nor in the closed annulus about `0` with radii `2 exp (2π)` and
+`2 exp (2πR)`, the datum vanishes. -/
+theorem puncturedSpherePerturbation_eventuallyEq_zero_of_mem_puncturedSphereTruncation
+    [Fintype ι] {M : Type*} {c a : ι → ℂ} {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ} {R : ℝ} {w : ℂ}
+    (hw : w ∈ puncturedSphereTruncation c a R)
+    (hwi : ∀ i, w ∉ Metric.closedBall (c i) (‖a i‖ * Real.exp (-(2 * π)) / 2) \
+      Metric.ball (c i) (‖a i‖ * Real.exp (-(2 * π * R)) / 2))
+    (hwout : w ∉ Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+      Metric.ball 0 (2 * Real.exp (2 * π))) :
+    puncturedSpherePerturbation c a H Hout =ᶠ[𝓝 w] 0 := by
+  have hw' := mem_puncturedSphereTruncation.1 hw
+  refine puncturedSpherePerturbation_eventuallyEq_zero (fun i ↦ ?_) ?_
+  · by_contra! h
+    exact hwi i ⟨mem_closedBall_iff_norm.2 h, fun h' ↦ (mem_ball_iff_norm.1 h').not_ge (hw'.2 i)⟩
+  · by_contra! h
+    exact hwout ⟨mem_closedBall_zero_iff.2 hw'.1, fun h' ↦ (mem_ball_zero_iff.1 h').not_ge h⟩
+
+/-- The end chart of `0` maps the part `1 ≤ s ≤ R` of the end, over one period, onto the closed
+annulus about `0` with radii `exp (-2πR) / 2` and `exp (-2π) / 2`. -/
+private theorem image_endChart_zero_endPiece (R : ℝ) :
+    endChart zero '' ({s | 1 ≤ zero.endSign * s ∧ zero.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2)) =
       Complex.equivRealProdCLM.symm ⁻¹'
-        (Metric.closedBall c (‖a‖ * r₂) \ Metric.ball c (‖a‖ * r₁)) := by
-  have ha' : 0 < ‖a‖ := norm_pos_iff.2 ha
-  ext z
-  simp only [mem_image, mem_preimage, Set.mem_sdiff, Metric.mem_closedBall, Metric.mem_ball,
-    dist_eq_norm, not_lt, sub_zero, realChart_apply]
-  constructor
-  · rintro ⟨y, ⟨h₂, h₁⟩, rfl⟩
-    rw [ContinuousLinearEquiv.symm_apply_apply, add_sub_cancel_left, norm_mul]
-    exact ⟨by gcongr, by gcongr⟩
-  · rintro ⟨h₂, h₁⟩
-    refine ⟨Complex.equivRealProdCLM ((Complex.equivRealProdCLM.symm z - c) / a), ⟨?_, ?_⟩, ?_⟩
-    · rw [ContinuousLinearEquiv.symm_apply_apply, norm_div, div_le_iff₀ ha']
-      linarith
-    · rw [ContinuousLinearEquiv.symm_apply_apply, norm_div, le_div_iff₀ ha']
-      linarith
-    · rw [ContinuousLinearEquiv.symm_apply_apply, mul_div_cancel₀ _ ha, add_sub_cancel,
-        ContinuousLinearEquiv.apply_symm_apply]
+        (Metric.closedBall 0 (Real.exp (-(2 * π)) / 2) \
+          Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)) := by
+  have hpiece : {s | 1 ≤ zero.endSign * s ∧ zero.endSign * s ≤ R} ×ˢ Ico (-1 / 2 : ℝ) (1 / 2) =
+      Icc 1 R ×ˢ Ico (-1 / 2) (1 / 2) := by
+    ext ⟨s, t⟩
+    simp
+  rw [hpiece, image_endChart_Icc_prod_Ico, endCenter_zero, endScale_zero]
+  norm_num
+  ring_nf
+
+/-- The end chart of `∞` maps the part `-R ≤ s ≤ -1` of the end, over one period, onto the closed
+annulus about `0` with radii `2 exp (2π)` and `2 exp (2πR)`. -/
+private theorem image_endChart_inf_endPiece (R : ℝ) :
+    endChart inf '' ({s | 1 ≤ inf.endSign * s ∧ inf.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2)) =
+      Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+          Metric.ball 0 (2 * Real.exp (2 * π))) := by
+  have hpiece : {s | 1 ≤ inf.endSign * s ∧ inf.endSign * s ≤ R} ×ˢ Ico (-1 / 2 : ℝ) (1 / 2) =
+      Icc (-R) (-1) ×ˢ Ico (-1 / 2) (1 / 2) := by
+    ext ⟨s, t⟩
+    simp only [mem_prod, mem_Icc, mem_ofPred_eq, endSign_inf, neg_one_mul]
+    constructor <;> rintro ⟨⟨h₁, h₂⟩, h₃⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h₃⟩
+  rw [hpiece, image_endChart_Icc_prod_Ico, endCenter_inf, endScale_inf]
+  norm_num
+
+/-- The affine chart `w ↦ c + a w` maps the image of the part `1 ≤ s ≤ R` of the end at `0` of the
+pair of pants onto the closed annulus about `c` with radii `‖a‖ exp (-2πR) / 2` and
+`‖a‖ exp (-2π) / 2`. -/
+private theorem image_realChart_affine_image_endChart_zero {c a : ℂ} (ha : a ≠ 0) (R : ℝ) :
+    realChart (c + a * ·) '' (endChart zero ''
+        ({s | 1 ≤ zero.endSign * s ∧ zero.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2))) =
+      Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall c (‖a‖ * Real.exp (-(2 * π)) / 2) \
+          Metric.ball c (‖a‖ * Real.exp (-(2 * π * R)) / 2)) := by
+  rw [image_endChart_zero_endPiece, image_realChart_affine_annulus ha, mul_div_assoc, mul_div_assoc]
+
+/-- The end chart of `q` maps every point of the part `1 ≤ ±s ≤ R` of the end into the image of
+the end piece `1 ≤ ±s ≤ R`, `t ∈ [-1/2, 1/2)`, by periodicity in `t`. -/
+private theorem endChart_mem_image_endPiece {q : Puncture} {R : ℝ} {z : ℝ × ℝ}
+    (h₁ : 1 ≤ q.endSign * z.1) (h₂ : q.endSign * z.1 ≤ R) :
+    endChart q z ∈
+      endChart q '' ({s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2)) := by
+  have hS := mem_thricePuncturedSphereReal_iff.1
+    (endChart_mem_thricePuncturedSphereReal (q := q) (z := z) (by linarith))
+  refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm (endChart q z))),
+    ⟨⟨?_, ?_⟩, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
+  · simpa [re_endCoord_endChart] using h₁
+  · simpa [re_endCoord_endChart] using h₂
+  · rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+      q.cylindricalEndLift_endCoord (ne_endCenter hS q), ContinuousLinearEquiv.apply_symm_apply]
+
+/-- A closed annulus of `ℂ` is compact in real coordinates. -/
+private theorem isCompact_preimage_closedBall_sdiff_ball (w : ℂ) (r₁ r₂ : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' (Metric.closedBall w r₂ \ Metric.ball w r₁)) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
 
 end Floer
 
@@ -191,15 +270,105 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 section Annuli
 
-variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
+variable {ω : SmoothTwoForm I M}
+
+/-- **The curvature is integrable over an annulus of an input end, for a manifold target.** Let `K`
+be the input end datum with center `c` and nonzero scale `a` of a period-one `C¹` Hamiltonian `H`,
+and let `u` be continuous on the closed annulus `A` about `c` with radii `‖a‖ exp (-2πR) / 2` and
+`‖a‖ exp (-2π) / 2`, the image of the part `1 ≤ s ≤ R` of the end. Then the curvature along `u` is
+integrable over `A`: the affine chart `w ↦ c + a w` carries it to the curvature of the positive
+plane datum over the part `1 ≤ s ≤ R` of the end at `0` of the pair of pants. -/
+private theorem integrableOn_hamiltonianCurvature_inputEndPerturbation_annulus
+    (ω : SmoothTwoForm I M) {H : ℝ → M → ℝ} (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {c a : ℂ} (ha : a ≠ 0)
+    {u : ℝ × ℝ → M} {R : ℝ}
+    (hu : ContinuousOn u (Complex.equivRealProdCLM.symm ⁻¹'
+      (Metric.closedBall c (‖a‖ * Real.exp (-(2 * π)) / 2) \
+        Metric.ball c (‖a‖ * Real.exp (-(2 * π * R)) / 2)))) :
+    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z))
+      (Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall c (‖a‖ * Real.exp (-(2 * π)) / 2) \
+          Metric.ball c (‖a‖ * Real.exp (-(2 * π * R)) / 2))) := by
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  set g := realChart (c + a * ·)
+  set A₀ := endChart zero ''
+    ({s | 1 ≤ zero.endSign * s ∧ zero.endSign * s ≤ R} ×ˢ Ico (-1 / 2 : ℝ) (1 / 2)) with hA₀
+  set A := Complex.equivRealProdCLM.symm ⁻¹'
+    (Metric.closedBall c (‖a‖ * Real.exp (-(2 * π)) / 2) \
+      Metric.ball c (‖a‖ * Real.exp (-(2 * π * R)) / 2))
+  have hgA : g '' A₀ = A := image_realChart_affine_image_endChart_zero ha R
+  have hA₀m : MeasurableSet A₀ := by
+    rw [hA₀, image_endChart_zero_endPiece]
+    exact (isCompact_preimage_closedBall_sdiff_ball _ _ _).isClosed.measurableSet
+  -- The chart `g` is affine and holomorphic, hence injective and orientation preserving, and it
+  -- maps `A₀` off the center `c`.
+  have hgd (w : ℝ × ℝ) : HasDerivAt (c + a * ·) a (Complex.equivRealProdCLM.symm w) := by
+    simpa using ((hasDerivAt_id _).const_mul a).const_add c
+  have hg : ContDiff ℝ 2 g := contDiff_realChart (by fun_prop)
+  have hgc {w : ℝ × ℝ} (hw : w ∈ A₀) : Complex.equivRealProdCLM.symm (g w) ≠ c := by
+    obtain ⟨ζ, hζ, rfl⟩ := hw
+    have hS := mem_thricePuncturedSphereReal_iff.1
+      (endChart_mem_thricePuncturedSphereReal (q := zero) (z := ζ) (by linarith [hζ.1.1]))
+    simp only [g, realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+    exact fun h ↦ hS.1 (by simp [ha] at h)
+  have htgt {w : ℝ × ℝ} (hw : w ∈ A₀) (v : ℂ) :=
+    mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hgc hw) (u (g w)) v
+  have hdom {w : ℝ × ℝ} (hw : w ∈ A₀) (v : ℂ) :=
+    differentiableAt_inputEndPerturbation_domain hH hHs ha (hgc hw) (u (g w)) v
+  -- In the coordinates of the end, the curvature along `u ∘ g` is integrable.
+  have hR₀ := ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_image_endChart
+    (hH.pi_single zero) (hHs.uncurry_pi_single zero)
+    (hu.comp hg.continuous.continuousOn (mapsTo_preimage g A)) (q := zero) one_pos (b := R)
+    fun z h₁ h₂ ↦ by
+      rw [mem_preimage, ← hgA]
+      exact mem_image_of_mem g (endChart_mem_image_endPiece h₁ h₂)
+  -- Integrability transfers along the chart `g`.
+  rw [← hgA, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hA₀m
+    (fun w _ ↦ (hg.differentiable (by norm_num) w).hasFDerivAt.hasFDerivWithinAt)
+    (realChart_injective fun _ _ h ↦ mul_left_cancel₀ ha (add_left_cancel h)).injOn]
+  refine hR₀.congr_fun (fun w hw ↦ ?_) hA₀m
+  rw [abs_of_nonneg (TauCeti.Complex.det_fderiv_realChart_nonneg (hgd w)), smul_eq_mul,
+    ← ω.hamiltonianCurvature_perturbationPullback hg.contDiffAt (hdom hw 1) (hdom hw Complex.I)
+      (htgt hw 1) (htgt hw Complex.I),
+    perturbationPullback_realChart_inputEndPerturbation ha,
+    perturbationPullback_realChart_inputEndPerturbation ha,
+    equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
+    pairOfPantsPerturbation_single_zero]
+  simp only [Function.comp_apply]
+
+/-- **The curvature is integrable over the annulus of the output end, for a manifold target.** Let
+`K` be the negative plane datum of a period-one `C¹` Hamiltonian `H`, and let `u` be continuous on
+the closed annulus `A` about `0` with radii `2 exp (2π)` and `2 exp (2πR)`, the image of the part
+`-R ≤ s ≤ -1` of the end at `∞`. Then the curvature along `u` is integrable over `A`. -/
+private theorem integrableOn_hamiltonianCurvature_negativePlanePerturbation_annulus
+    (ω : SmoothTwoForm I M) {H : ℝ → M → ℝ} (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {u : ℝ × ℝ → M} {R : ℝ}
+    (hu : ContinuousOn u (Complex.equivRealProdCLM.symm ⁻¹'
+      (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ Metric.ball 0 (2 * Real.exp (2 * π))))) :
+    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z))
+      (Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+          Metric.ball 0 (2 * Real.exp (2 * π)))) := by
+  rw [← image_endChart_inf_endPiece] at hu ⊢
+  rw [← pairOfPantsPerturbation_single_inf]
+  exact ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_image_endChart
+    (hH.pi_single inf) (hHs.uncurry_pi_single inf) hu one_pos
+    fun z h₁ h₂ ↦ endChart_mem_image_endPiece h₁ h₂
+
+variable [FiniteDimensional ℝ E]
 
 /-- **The energy identity on an annulus of an input end, for a manifold target.** Let `K` be the
 input end datum with center `c` and nonzero scale `a` of a period-one `C¹` Hamiltonian `H`, and let
 `u` be `C¹` on an open set containing the closed annulus `A` about `c` with radii
 `‖a‖ exp (-2πR) / 2` and `‖a‖ exp (-2π) / 2`, the image of the part `1 ≤ s ≤ R` of the end. Then
-the curvature along `u` is integrable over `A`, and the Floer energy over `A` is the area plus
-`β(R - 1)` times the integral of `H` along the inner boundary circle, minus the integrated
-curvature. -/
+the Floer energy over `A` is the area plus `β(R - 1)` times the integral of `H` along the inner
+boundary circle, minus the integrated curvature. -/
 private theorem IsNondegenerate.integral_floerEnergyDensity_inputEndPerturbation_annulus
     (hω : ω.IsNondegenerate) {H : ℝ → M → ℝ} (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {c a : ℂ} (ha : a ≠ 0)
@@ -208,13 +377,6 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_inputEndPerturbation
       (Metric.closedBall c (‖a‖ * Real.exp (-(2 * π)) / 2) \
         Metric.ball c (‖a‖ * Real.exp (-(2 * π * R)) / 2)) ⊆ V)
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u V) :
-    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-        (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z))
-      (Complex.equivRealProdCLM.symm ⁻¹'
-        (Metric.closedBall c (‖a‖ * Real.exp (-(2 * π)) / 2) \
-          Metric.ball c (‖a‖ * Real.exp (-(2 * π * R)) / 2))) ∧
     ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
         (Metric.closedBall c (‖a‖ * Real.exp (-(2 * π)) / 2) \
           Metric.ball c (‖a‖ * Real.exp (-(2 * π * R)) / 2)), ω.floerEnergyDensity
@@ -233,40 +395,17 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_inputEndPerturbation
           (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  -- The part `1 ≤ s ≤ R` of the end at `0` of the pair of pants is an annulus `A₀`, which the
-  -- affine chart `g` maps onto the annulus `A` about `c`.
-  have hA₀ : endChart zero '' (Icc 1 R ×ˢ Ico (-1 / 2 : ℝ) (1 / 2)) =
-      Complex.equivRealProdCLM.symm ⁻¹'
-        (Metric.closedBall 0 (Real.exp (-(2 * π)) / 2) \
-          Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)) := by
-    rw [image_endChart_Icc_prod_Ico, endCenter_zero, endScale_zero]
-    norm_num
-    ring_nf
-  have hA : Complex.equivRealProdCLM.symm ⁻¹'
-      (Metric.closedBall c (‖a‖ * Real.exp (-(2 * π)) / 2) \
-        Metric.ball c (‖a‖ * Real.exp (-(2 * π * R)) / 2)) =
-      realChart (c + a * ·) '' (endChart zero '' (Icc 1 R ×ˢ Ico (-1 / 2 : ℝ) (1 / 2))) := by
-    rw [hA₀, image_realChart_affine_annulus ha, mul_div_assoc, mul_div_assoc]
-  -- The pullback of the datum along the affine chart is the positive plane datum, the
-  -- pair-of-pants datum whose only nonzero Hamiltonian is `H` at the input `0`.
-  have hpull (v : ℝ × ℝ) : perturbationPullback (realChart (c + a * ·))
-      (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
-      fun w x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm w) x
-        (Complex.equivRealProdCLM.symm v) := by
-    rw [perturbationPullback_realChart_inputEndPerturbation ha, pairOfPantsPerturbation_single_zero]
+  -- The affine chart `g` maps the part `A₀` of the end at `0` of the pair of pants onto the
+  -- annulus `A` about `c`.
   set g := realChart (c + a * ·)
-  set A₀ := endChart zero '' (Icc 1 R ×ˢ Ico (-1 / 2 : ℝ) (1 / 2))
-  set A := Complex.equivRealProdCLM.symm ⁻¹'
-    (Metric.closedBall c (‖a‖ * Real.exp (-(2 * π)) / 2) \
-      Metric.ball c (‖a‖ * Real.exp (-(2 * π * R)) / 2))
-  have hA₀c : IsCompact A₀ := by
-    rw [hA₀]
-    exact Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
-  have hA₀m : MeasurableSet A₀ := hA₀c.isClosed.measurableSet
-  -- The chart `g` is affine and holomorphic, hence injective and orientation preserving.
+  set A₀ := endChart zero ''
+    ({s | 1 ≤ zero.endSign * s ∧ zero.endSign * s ≤ R} ×ˢ Ico (-1 / 2 : ℝ) (1 / 2)) with hA₀
+  have hgA : g '' A₀ = _ := image_realChart_affine_image_endChart_zero ha R
+  have hA₀m : MeasurableSet A₀ := by
+    rw [hA₀, image_endChart_zero_endPiece]
+    exact (isCompact_preimage_closedBall_sdiff_ball _ _ _).isClosed.measurableSet
+  -- The chart `g` is affine and holomorphic, hence injective and orientation preserving, and it
+  -- maps `A₀` off the center `c`.
   have hgd (w : ℝ × ℝ) : HasDerivAt (c + a * ·) a (Complex.equivRealProdCLM.symm w) := by
     simpa using ((hasDerivAt_id _).const_mul a).const_add c
   have hg : ContDiff ℝ 2 g := contDiff_realChart (by fun_prop)
@@ -275,90 +414,48 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_inputEndPerturbation
   have hgdet (w : ℝ × ℝ) : 0 ≤ (fderiv ℝ g w).det :=
     TauCeti.Complex.det_fderiv_realChart_nonneg (hgd w)
   have hgdiff (w : ℝ × ℝ) : DifferentiableAt ℝ g w := hg.differentiable (by norm_num) w
-  -- Points of `A₀` lie in the pair of pants, and `g` maps them into `A`, off the center `c`.
-  have hA₀S {w : ℝ × ℝ} (hw : w ∈ A₀) : w ∈ thricePuncturedSphereReal := by
-    obtain ⟨ζ, hζ, rfl⟩ := hw
-    exact endChart_mem_thricePuncturedSphereReal (by simp; linarith [hζ.1.1])
-  have hgA {w : ℝ × ℝ} (hw : w ∈ A₀) : g w ∈ A := by
-    rw [hA]
-    exact mem_image_of_mem g hw
   have hgc {w : ℝ × ℝ} (hw : w ∈ A₀) : Complex.equivRealProdCLM.symm (g w) ≠ c := by
+    obtain ⟨ζ, hζ, rfl⟩ := hw
+    have hS := mem_thricePuncturedSphereReal_iff.1
+      (endChart_mem_thricePuncturedSphereReal (q := zero) (z := ζ) (by linarith [hζ.1.1]))
     simp only [g, realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
-    exact fun h ↦ (mem_thricePuncturedSphereReal_iff.1 (hA₀S hw)).1 (by simpa [ha] using h)
+    exact fun h ↦ hS.1 (by simp [ha] at h)
   have hud {w : ℝ × ℝ} (hw : w ∈ A₀) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (g w) :=
-    (hu.contMDiffAt (hVo.mem_nhds (hAV (hgA hw)))).mdifferentiableAt one_ne_zero
+    (hu.contMDiffAt (hVo.mem_nhds (hAV (hgA.subset (mem_image_of_mem g hw))))).mdifferentiableAt
+      one_ne_zero
   have htgt {w : ℝ × ℝ} (hw : w ∈ A₀) (v : ℂ) :=
     mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hgc hw) (u (g w)) v
   have hdom {w : ℝ × ℝ} (hw : w ∈ A₀) (v : ℂ) :=
     differentiableAt_inputEndPerturbation_domain hH hHs ha (hgc hw) (u (g w)) v
-  have hH' := hH.pi_single zero
-  have hHs' := contMDiff_uncurry_pi_single hHs zero
   -- The reparametrized map is `C¹` on the preimage of `V`.
-  have hgV : IsOpen (g ⁻¹' V) := hVo.preimage hg.continuous
   have hug : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ g) (g ⁻¹' V) :=
     hu.comp (hg.of_le (by norm_num)).contMDiff.contMDiffOn (mapsTo_preimage _ _)
-  have hA₀V {z : ℝ × ℝ} (hz : z.1 ∈ Icc 1 R) : endChart zero z ∈ g ⁻¹' V := by
-    have h := endChart_mem_preimage_closedBall_sdiff_ball zero hz
-    rw [← image_endChart_Icc_prod_Ico] at h
-    exact hAV (hgA h)
-  -- In the coordinates of the end, the curvature and the energy density are integrable.
-  have hpiece : Icc 1 R ×ˢ Ico (-1 / 2 : ℝ) (1 / 2) =
-      {s : ℝ | 1 ≤ zero.endSign * s ∧ zero.endSign * s ≤ R} ×ˢ Ico (-1 / 2 : ℝ) (1 / 2) := by
-    ext ⟨s, t⟩
-    simp
-  have hR₀ : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm z) x
-        Complex.I) z ((u ∘ g) z)) A₀ := by
-    have h := ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_image_endChart hH' hHs'
-      hug.continuousOn (q := zero) one_pos (b := R) fun z h₁ h₂ ↦
-        hA₀V ⟨by simpa using h₁, by simpa using h₂⟩
-    rwa [← hpiece] at h
-  have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
-    (contMDiffAt_pairOfPantsPerturbation (n := 1) hH' hHs')
-  have hE₀ := hω.integrableOn_floerEnergyDensity (hgV.inter isOpen_thricePuncturedSphereReal)
-    (hug.mono inter_subset_left) ((hKp 1).mono (prod_mono inter_subset_right subset_rfl))
-    ((hKp Complex.I).mono (prod_mono inter_subset_right subset_rfl)) hA₀c
-    (fun w hw ↦ ⟨by obtain ⟨ζ, hζ, rfl⟩ := hw; exact hA₀V hζ.1, hA₀S hw⟩) hR₀
-  refine ⟨?_, ?_⟩
-  · -- Integrability transfers along the chart `g`.
-    rw [hA, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hA₀m
-      (fun w _ ↦ (hgdiff w).hasFDerivAt.hasFDerivWithinAt) hginj]
-    refine hR₀.congr_fun (fun w hw ↦ ?_) hA₀m
-    rw [abs_of_nonneg (hgdet w), smul_eq_mul, ← ω.hamiltonianCurvature_perturbationPullback
-      hg.contDiffAt (hdom hw 1) (hdom hw Complex.I) (htgt hw 1) (htgt hw Complex.I), hpull, hpull,
-      equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
-    simp only [Function.comp_apply]
-  · -- Change variables along `g`, in each of the three integrals, to the pair of pants.
-    rw [hA, ω.integral_eval₂_mfderiv_stdComplexLine_image hA₀m hginj (fun w _ ↦ hgdiff w)
-        (fun w _ ↦ hgdet w) (fun w hw ↦ hud hw),
-      ω.integral_floerEnergyDensity_image hA₀m hginj (fun w _ ↦ hgdiff w) (fun w _ ↦ hgdet w)
-        (fun w hw ↦ hud hw) (fun w hw ↦ htgt hw 1) (fun w hw ↦ htgt hw _),
-      ω.integral_hamiltonianCurvature_image hA₀m hginj (fun w _ ↦ hg.contDiffAt)
-        (fun w _ ↦ hgdet w) (fun w hw ↦ hdom hw 1) (fun w hw ↦ hdom hw _)
-        (fun w hw ↦ htgt hw 1) (fun w hw ↦ htgt hw _),
-      hpull, hpull, equivRealProdCLM_symm_stdComplexLineReal,
-      equivRealProdCLM_symm_stdComplexLineImag]
-    rw [hω.integral_floerEnergyDensity_image_endChart hH' hHs' hgV hug hR
-      (by norm_num) (by simp; linarith) (fun z hz ↦ hA₀V hz) hE₀]
-    -- The boundary term on the circle `s = 1` vanishes with the cutoff, and the one on `s = R`
-    -- is an integral over a period.
-    have hper : Periodic (fun t : ℝ ↦ H t (u (Complex.equivRealProdCLM
-        (c + a * zero.cylindricalEndLift (↑R + ↑t * Complex.I))))) 1 := fun t ↦ by
-      simp only [zero.periodic_cylindricalEndLift R t, hH t]
-    have hloop (t : ℝ) : (u ∘ g) (endChart zero (R, t)) =
-        u (Complex.equivRealProdCLM (c + a * zero.cylindricalEndLift (↑R + ↑t * Complex.I))) := by
-      simp [g, realChart_apply, endChart_mk]
-    simp only [Pi.single_eq_same, endSign_zero, one_mul, sub_self, smoothTransition.zero,
-      zero_mul, intervalIntegral.integral_zero, sub_zero, intervalIntegral.integral_const_mul,
-      hloop, hper.intervalIntegral_neg_div_two_eq, A₀, Function.comp_apply]
+  -- Change variables along `g`, in each of the three integrals, to the pair of pants, where the
+  -- pullback of the datum is the positive plane datum, the pair-of-pants datum whose only nonzero
+  -- Hamiltonian is `H` at the input `0`.
+  rw [← hgA, ω.integral_eval₂_mfderiv_stdComplexLine_image hA₀m hginj (fun w _ ↦ hgdiff w)
+      (fun w _ ↦ hgdet w) (fun w hw ↦ hud hw),
+    ω.integral_floerEnergyDensity_image hA₀m hginj (fun w _ ↦ hgdiff w) (fun w _ ↦ hgdet w)
+      (fun w hw ↦ hud hw) (fun w hw ↦ htgt hw 1) (fun w hw ↦ htgt hw _),
+    ω.integral_hamiltonianCurvature_image hA₀m hginj (fun w _ ↦ hg.contDiffAt)
+      (fun w _ ↦ hgdet w) (fun w hw ↦ hdom hw 1) (fun w hw ↦ hdom hw _)
+      (fun w hw ↦ htgt hw 1) (fun w hw ↦ htgt hw _),
+    perturbationPullback_realChart_inputEndPerturbation ha,
+    perturbationPullback_realChart_inputEndPerturbation ha,
+    equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
+    ← pairOfPantsPerturbation_single_zero,
+    hω.integral_floerEnergyDensity_pairOfPantsPerturbation_image_endPiece (hH.pi_single zero)
+      (hHs.uncurry_pi_single zero) (hVo.preimage hg.continuous) hug hR zero fun z h₁ h₂ ↦
+        hAV (hgA.subset (mem_image_of_mem g (endChart_mem_image_endPiece h₁ h₂)))]
+  simp only [Pi.single_eq_same, endSign_zero, one_mul, Function.comp_apply, g, A₀, realChart_apply,
+    ContinuousLinearEquiv.symm_apply_apply]
 
 /-- **The energy identity on the annulus of the output end, for a manifold target.** Let `K` be the
 negative plane datum of a period-one `C¹` Hamiltonian `H`, and let `u` be `C¹` on an open set
 containing the closed annulus `A` about `0` with radii `2 exp (2π)` and `2 exp (2πR)`, the image of
-the part `-R ≤ s ≤ -1` of the end at `∞`. Then the curvature along `u` is integrable over `A`, and
-the Floer energy over `A` is the area, minus `β(R - 1)` times the integral of `H` along the outer
-boundary circle, minus the integrated curvature. -/
+the part `-R ≤ s ≤ -1` of the end at `∞`. Then the Floer energy over `A` is the area, minus
+`β(R - 1)` times the integral of `H` along the outer boundary circle, minus the integrated
+curvature. -/
 private theorem IsNondegenerate.integral_floerEnergyDensity_negativePlanePerturbation_annulus
     (hω : ω.IsNondegenerate) {H : ℝ → M → ℝ} (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {u : ℝ × ℝ → M} {R : ℝ}
@@ -366,12 +463,6 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_negativePlanePerturb
     (hAV : Complex.equivRealProdCLM.symm ⁻¹'
       (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ Metric.ball 0 (2 * Real.exp (2 * π))) ⊆ V)
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u V) :
-    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-        (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z))
-      (Complex.equivRealProdCLM.symm ⁻¹'
-        (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ Metric.ball 0 (2 * Real.exp (2 * π)))) ∧
     ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
         (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ Metric.ball 0 (2 * Real.exp (2 * π))),
         ω.floerEnergyDensity
@@ -389,59 +480,14 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_negativePlanePerturb
           (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  -- The annulus is the part `-R ≤ s ≤ -1` of the end at `∞` of the pair of pants.
-  have hA : endChart inf '' (Icc (-R) (-1) ×ˢ Ico (-1 / 2 : ℝ) (1 / 2)) =
-      Complex.equivRealProdCLM.symm ⁻¹'
-        (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
-          Metric.ball 0 (2 * Real.exp (2 * π))) := by
-    rw [image_endChart_Icc_prod_Ico, endCenter_inf, endScale_inf]
-    norm_num
-  have hAV' {z : ℝ × ℝ} (hz : z.1 ∈ Icc (-R) (-1)) : endChart inf z ∈ V := by
-    have h := endChart_mem_preimage_closedBall_sdiff_ball inf hz
-    rw [← image_endChart_Icc_prod_Ico, hA] at h
-    exact hAV h
-  rw [← hA, ← pairOfPantsPerturbation_single_inf]
-  set A := endChart inf '' (Icc (-R) (-1) ×ˢ Ico (-1 / 2 : ℝ) (1 / 2))
-  have hAc : IsCompact A := by
-    rw [hA]
-    exact Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
-  have hH' := hH.pi_single inf
-  have hHs' := contMDiff_uncurry_pi_single hHs inf
-  have hAS {w : ℝ × ℝ} (hw : w ∈ A) : w ∈ thricePuncturedSphereReal := by
-    obtain ⟨ζ, hζ, rfl⟩ := hw
-    exact endChart_mem_thricePuncturedSphereReal (by simp; linarith [hζ.1.2])
-  -- The curvature and the energy density are integrable over the annulus.
-  have hpiece : Icc (-R) (-1) ×ˢ Ico (-1 / 2 : ℝ) (1 / 2) =
-      {s : ℝ | 1 ≤ inf.endSign * s ∧ inf.endSign * s ≤ R} ×ˢ Ico (-1 / 2 : ℝ) (1 / 2) := by
-    ext ⟨s, t⟩
-    simp only [mem_prod, mem_Icc, mem_ofPred_eq, endSign_inf, neg_one_mul]
-    constructor <;> rintro ⟨⟨h₁, h₂⟩, h₃⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h₃⟩
-  have hRA : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsPerturbation (Pi.single inf H) (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation (Pi.single inf H) (Complex.equivRealProdCLM.symm z) x
-        Complex.I) z (u z)) A := by
-    have h := ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_image_endChart hH' hHs'
-      hu.continuousOn (q := inf) one_pos (b := R) fun z h₁ h₂ ↦ hAV'
-        ⟨by simp at h₂; linarith, by simp at h₁; linarith⟩
-    rwa [← hpiece] at h
-  have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
-    (contMDiffAt_pairOfPantsPerturbation (n := 1) hH' hHs')
-  have hEA := hω.integrableOn_floerEnergyDensity (hVo.inter isOpen_thricePuncturedSphereReal)
-    (hu.mono inter_subset_left) ((hKp 1).mono (prod_mono inter_subset_right subset_rfl))
-    ((hKp Complex.I).mono (prod_mono inter_subset_right subset_rfl)) hAc
-    (fun w hw ↦ ⟨by obtain ⟨ζ, hζ, rfl⟩ := hw; exact hAV' hζ.1, hAS hw⟩) hRA
-  refine ⟨hRA, ?_⟩
-  rw [hω.integral_floerEnergyDensity_image_endChart hH' hHs' hVo hu (by linarith)
-    (by simp; linarith) (by norm_num) (fun z hz ↦ hAV' hz) hEA]
-  -- The boundary term on the circle `s = -1` vanishes with the cutoff, and the one on `s = -R`
-  -- is an integral over a period.
-  have hper : Periodic (fun t : ℝ ↦ H t (u (Complex.equivRealProdCLM
-      (inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) 1 := fun t ↦ by
-    simp only [inf.periodic_cylindricalEndLift (-R) t, hH t]
-  simp only [Pi.single_eq_same, endSign_inf, neg_mul, one_mul, neg_neg, sub_self,
-    smoothTransition.zero, zero_mul, intervalIntegral.integral_zero, zero_sub,
-    intervalIntegral.integral_const_mul, endChart_mk, hper.intervalIntegral_neg_div_two_eq]
+  -- The annulus is the part `-R ≤ s ≤ -1` of the end at `∞` of the pair of pants, and the datum is
+  -- the pair-of-pants datum whose only nonzero Hamiltonian is `H` at the output.
+  rw [← image_endChart_inf_endPiece] at hAV ⊢
+  rw [← pairOfPantsPerturbation_single_inf,
+    hω.integral_floerEnergyDensity_pairOfPantsPerturbation_image_endPiece (hH.pi_single inf)
+      (hHs.uncurry_pi_single inf) hVo hu hR inf fun z h₁ h₂ ↦
+        hAV (endChart_mem_image_endPiece h₁ h₂)]
+  simp only [Pi.single_eq_same, endSign_inf, neg_mul, one_mul]
   ring
 
 end Annuli
@@ -450,9 +496,83 @@ end Annuli
 
 section Sphere
 
-open Floer
-
 variable {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
+
+/-- **The curvature is integrable over the truncated sphere with moving input ends, for a manifold
+target.** Let the input ends have centers `c i`, nonzero scales `a i` and period-one `C¹`
+Hamiltonians `H i`, and let the output end have a period-one `C¹` Hamiltonian `Hout`. Assume that
+the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`.
+Along a map `u` which is continuous on the truncation `T_R`, `R ≥ 1`, the curvature of
+`TauCeti.Floer.puncturedSpherePerturbation c a H Hout` is integrable over `T_R`: on the annulus of
+each end it is the curvature of that end's datum, and elsewhere it vanishes. -/
+theorem integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_truncation
+    (ω : SmoothTwoForm I M) (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {u : ℝ × ℝ → M} {R : ℝ} (hR : 1 ≤ R)
+    (hu : ContinuousOn u (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R)) :
+    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+          Complex.I) z (u z))
+      (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) := by
+  have hai (i : ι) : ‖a i‖ * Real.exp (-(2 * π)) < ‖a i‖ :=
+    mul_lt_of_lt_one_right (norm_pos_iff.2 (ha i))
+      (Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos]))
+  set K := puncturedSpherePerturbation c a H Hout
+  set T := Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R
+  -- The annulus `A i` about the center `c i`, on which the datum is that of the input end `i`, and
+  -- the annulus `Aout` at the outer circle, on which it is the output datum. They lie in `T`.
+  set A : ι → Set (ℝ × ℝ) := fun i ↦ Complex.equivRealProdCLM.symm ⁻¹'
+    (Metric.closedBall (c i) (‖a i‖ * Real.exp (-(2 * π)) / 2) \
+      Metric.ball (c i) (‖a i‖ * Real.exp (-(2 * π * R)) / 2))
+  set Aout := Complex.equivRealProdCLM.symm ⁻¹'
+    (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ Metric.ball 0 (2 * Real.exp (2 * π)))
+  have hAT (i : ι) : A i ⊆ T :=
+    preimage_mono (closedBall_sdiff_ball_subset_puncturedSphereTruncation hsep hout hR i)
+  have hAoutT : Aout ⊆ T :=
+    preimage_mono (closedBall_zero_sdiff_ball_subset_puncturedSphereTruncation hout)
+  -- On each annulus the datum is that of a single end, and off the annuli it vanishes.
+  have hKi (i : ι) {z : ℝ × ℝ} (hz : z ∈ A i) :
+      K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] inputEndPerturbation (c i) (a i) (H i) :=
+    puncturedSpherePerturbation_eventuallyEq_inputEndPerturbation hsep hout
+      (by linarith [mem_closedBall_iff_norm.1 hz.1, hai i])
+  have hKout {z : ℝ × ℝ} (hz : z ∈ Aout) :
+      K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] negativePlanePerturbation Hout :=
+    puncturedSpherePerturbation_eventuallyEq_negativePlanePerturbation fun i ↦ by
+      linarith [norm_sub_norm_le (Complex.equivRealProdCLM.symm z) (c i),
+        not_lt.1 fun h ↦ hz.2 (mem_ball_zero_iff.2 h), hout i, hai i]
+  have hK0 {z : ℝ × ℝ} (hz : z ∈ T \ (Aout ∪ ⋃ i, A i)) :
+      K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] 0 :=
+    puncturedSpherePerturbation_eventuallyEq_zero_of_mem_puncturedSphereTruncation hz.1
+      (fun i h ↦ hz.2 (Or.inr (mem_iUnion.2 ⟨i, h⟩))) fun h ↦ hz.2 (Or.inl h)
+  -- Germs of the datum give germs of its components, hence the same curvature.
+  have hev {K' : ℂ → M → ℂ →L[ℝ] ℝ} {z : ℝ × ℝ}
+      (h : K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] K') (v : ℂ) :
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v) =ᶠ[𝓝 z]
+        fun z x ↦ K' (Complex.equivRealProdCLM.symm z) x v :=
+    (h.comp_tendsto (Complex.equivRealProdCLM.symm.continuous.tendsto z)).fun_comp fun k x ↦ k x v
+  have hRK {K' : ℂ → M → ℂ →L[ℝ] ℝ} {z : ℝ × ℝ}
+      (h : K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] K') :=
+    congrFun (ω.hamiltonianCurvature_congr_of_eventuallyEq (hev h 1) (hev h Complex.I)) (u z)
+  have hAm (i : ι) : MeasurableSet (A i) :=
+    (isCompact_preimage_closedBall_sdiff_ball _ _ _).isClosed.measurableSet
+  have hAoutm : MeasurableSet Aout :=
+    (isCompact_preimage_closedBall_sdiff_ball _ _ _).isClosed.measurableSet
+  -- The curvature is integrable over the annuli, and vanishes off them.
+  have hB : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) (Aout ∪ ⋃ i, A i) :=
+    ((integrableOn_hamiltonianCurvature_negativePlanePerturbation_annulus ω hHout hHouts
+      (hu.mono hAoutT)).congr_fun (fun z hz ↦ (hRK (hKout hz)).symm) hAoutm).union
+    (integrableOn_finite_iUnion.2 fun i ↦
+      (integrableOn_hamiltonianCurvature_inputEndPerturbation_annulus ω (hH i) (hHs i) (ha i)
+        (hu.mono (hAT i))).congr_fun (fun z hz ↦ (hRK (hKi i hz)).symm) (hAm i))
+  refine hB.of_forall_sdiff_eq_zero
+    (isCompact_preimage_puncturedSphereTruncation c a R).isClosed.measurableSet fun z hz ↦ ?_
+  rw [hRK (hK0 hz)]
+  simp
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
@@ -501,9 +621,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation_
               Complex.I) z (u z) := by
   classical
   have hπ := Real.pi_pos
-  have he : Real.exp (-(2 * π)) < 1 := Real.exp_lt_one_iff.2 (by linarith)
   have hai (i : ι) : ‖a i‖ * Real.exp (-(2 * π)) < ‖a i‖ :=
-    mul_lt_of_lt_one_right (norm_pos_iff.2 (ha i)) he
+    mul_lt_of_lt_one_right (norm_pos_iff.2 (ha i)) (Real.exp_lt_one_iff.2 (by linarith))
   set K := puncturedSpherePerturbation c a H Hout
   set T := Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R
   -- The annulus `A i` about the center `c i`, on which the datum is that of the input end `i`, and
@@ -516,7 +635,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation_
   have hAT (i : ι) : A i ⊆ T :=
     preimage_mono (closedBall_sdiff_ball_subset_puncturedSphereTruncation hsep hout hR i)
   have hAoutT : Aout ⊆ T :=
-    preimage_mono (closedBall_zero_sdiff_ball_subset_puncturedSphereTruncation hout (by linarith))
+    preimage_mono (closedBall_zero_sdiff_ball_subset_puncturedSphereTruncation hout)
   have hBT : Aout ∪ ⋃ i, A i ⊆ T := union_subset hAoutT (iUnion_subset hAT)
   -- The closed discs bounded by the circles `s = 1` of the input ends are pairwise disjoint and lie
   -- in the open disc bounded by the circle `s = -1` of the output end, so the annuli are disjoint.
@@ -529,107 +648,53 @@ theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation_
     linarith [hsep hij, hai i, hai j]
   have hAoutd : Disjoint Aout (⋃ i, A i) := disjoint_iUnion_right.2 fun i ↦
     (disjoint_sdiff_left.mono_right (sdiff_subset.trans (hball i))).preimage _
-  have hmemA {i : ι} {z : ℝ × ℝ} : z ∈ A i ↔
-      ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖Complex.equivRealProdCLM.symm z - c i‖ ∧
-        ‖Complex.equivRealProdCLM.symm z - c i‖ ≤ ‖a i‖ * Real.exp (-(2 * π)) / 2 := by
-    simp only [A, mem_preimage, Set.mem_sdiff, Metric.mem_closedBall, Metric.mem_ball,
-      dist_eq_norm, not_lt]
-    exact and_comm
-  have hmemAout {z : ℝ × ℝ} : z ∈ Aout ↔ 2 * Real.exp (2 * π) ≤ ‖Complex.equivRealProdCLM.symm z‖ ∧
-      ‖Complex.equivRealProdCLM.symm z‖ ≤ 2 * Real.exp (2 * π * R) := by
-    simp only [Aout, mem_preimage, Set.mem_sdiff, Metric.mem_closedBall, Metric.mem_ball,
-      dist_zero_right, not_lt]
-    exact and_comm
-  have hcl {w : ℂ} {r₁ r₂ : ℝ} :
-      MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹'
-        (Metric.closedBall w r₂ \ Metric.ball w r₁)) :=
-    (Metric.isClosed_closedBall.sdiff Metric.isOpen_ball).measurableSet.preimage
-      Complex.equivRealProdCLM.symm.continuous.measurable
-  have hAm (i : ι) : MeasurableSet (A i) := hcl
-  have hAoutm : MeasurableSet Aout := hcl
-  have hTc : IsCompact T := Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-    (isCompact_puncturedSphereTruncation c a R)
+  have hAm (i : ι) : MeasurableSet (A i) :=
+    (isCompact_preimage_closedBall_sdiff_ball _ _ _).isClosed.measurableSet
+  have hTc : IsCompact T := isCompact_preimage_puncturedSphereTruncation c a R
   -- On each annulus the datum is that of a single end, and off the annuli it vanishes.
   have hKi (i : ι) {z : ℝ × ℝ} (hz : z ∈ A i) :
       K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] inputEndPerturbation (c i) (a i) (H i) :=
     puncturedSpherePerturbation_eventuallyEq_inputEndPerturbation hsep hout
-      (by linarith [(hmemA.1 hz).2, hai i])
+      (by linarith [mem_closedBall_iff_norm.1 hz.1, hai i])
   have hKout {z : ℝ × ℝ} (hz : z ∈ Aout) :
       K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] negativePlanePerturbation Hout :=
     puncturedSpherePerturbation_eventuallyEq_negativePlanePerturbation fun i ↦ by
-      linarith [norm_sub_norm_le (Complex.equivRealProdCLM.symm z) (c i), (hmemAout.1 hz).1,
-        hout i, hai i]
+      linarith [norm_sub_norm_le (Complex.equivRealProdCLM.symm z) (c i),
+        not_lt.1 fun h ↦ hz.2 (mem_ball_zero_iff.2 h), hout i, hai i]
   have hK0 {z : ℝ × ℝ} (hz : z ∈ T \ (Aout ∪ ⋃ i, A i)) :
-      K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] 0 := by
-    obtain ⟨hzT, hzA⟩ := hz
-    have hzT' := mem_puncturedSphereTruncation.1 hzT
-    refine puncturedSpherePerturbation_eventuallyEq_zero (fun i ↦ ?_) ?_
-    · by_contra! h
-      exact hzA (Or.inr (mem_iUnion.2 ⟨i, hmemA.2 ⟨hzT'.2 i, h⟩⟩))
-    · by_contra! h
-      exact hzA (Or.inl (hmemAout.2 ⟨h, hzT'.1⟩))
+      K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] 0 :=
+    puncturedSpherePerturbation_eventuallyEq_zero_of_mem_puncturedSphereTruncation hz.1
+      (fun i h ↦ hz.2 (Or.inr (mem_iUnion.2 ⟨i, h⟩))) fun h ↦ hz.2 (Or.inl h)
   -- Germs of the datum give germs of its components, hence the same energy density and curvature.
   have hev {K' : ℂ → M → ℂ →L[ℝ] ℝ} {z : ℝ × ℝ}
       (h : K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] K') (v : ℂ) :
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v) =ᶠ[𝓝 z]
         fun z x ↦ K' (Complex.equivRealProdCLM.symm z) x v :=
-    ((Complex.equivRealProdCLM.symm.continuous.tendsto z).eventually h).mono fun z' hz' ↦ by
-      simp only [hz']
+    (h.comp_tendsto (Complex.equivRealProdCLM.symm.continuous.tendsto z)).fun_comp fun k x ↦ k x v
   have hEK {K' : ℂ → M → ℂ →L[ℝ] ℝ} {z : ℝ × ℝ}
       (h : K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] K') :
       ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
         ω.floerEnergyDensity (fun z x ↦ K' (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K' (Complex.equivRealProdCLM.symm z) x Complex.I) u z :=
-    ω.floerEnergyDensity_congr_perturbation u (hev h 1).self_of_nhds
-      (hev h Complex.I).self_of_nhds
+    ω.floerEnergyDensity_congr_perturbation u (hev h 1).self_of_nhds (hev h Complex.I).self_of_nhds
   have hRK {K' : ℂ → M → ℂ →L[ℝ] ℝ} {z : ℝ × ℝ}
       (h : K =ᶠ[𝓝 (Complex.equivRealProdCLM.symm z)] K') :=
     congrFun (ω.hamiltonianCurvature_congr_of_eventuallyEq (hev h 1) (hev h Complex.I)) (u z)
-  -- The annulus identities, with the integrability of the curvature.
-  have hIi (i : ι) := hω.integral_floerEnergyDensity_inputEndPerturbation_annulus (hH i) (hHs i)
-    (ha i) hR hVo ((hAT i).trans hTV) hu
-  have hIout := hω.integral_floerEnergyDensity_negativePlanePerturbation_annulus hHout hHouts hR hVo
-    (hAoutT.trans hTV) hu
-  -- Integrability over the truncation.
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hVo hu
-    stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  replace harea := (harea.mono hTV).integrableOn_compact (μ := volume) hTc
-  have hRT : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) T := by
-    have hRC : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-        (T \ (Aout ∪ ⋃ i, A i)) :=
-      integrableOn_zero.congr_fun (fun z hz ↦ by rw [hRK (hK0 hz)]; simp)
-        (hTc.isClosed.measurableSet.diff (hAoutm.union (MeasurableSet.iUnion hAm)))
-    refine (hRC.union ((hIout.1.congr_fun (fun z hz ↦ (hRK (hKout hz)).symm) hAoutm).union
-      (integrableOn_finite_iUnion.2 fun i ↦ (hIi i).1.congr_fun
-        (fun z hz ↦ (hRK (hKi i hz)).symm) (hAm i)))).mono_set fun z hz ↦ ?_
-    by_cases h : z ∈ Aout ∪ ⋃ i, A i
-    · exact Or.inr h
-    · exact Or.inl ⟨hz, h⟩
-  -- The datum is `C¹` off the centers.
-  set U := V ∩ ⋂ i, {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ c i}
-  have hUo : IsOpen U := hVo.inter (isOpen_iInter_of_finite fun i ↦
-    isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
-  have hTU : T ⊆ U := fun z hz ↦ ⟨hTV hz, mem_iInter.2 fun i h ↦ by
-    have := (mem_puncturedSphereTruncation.1 hz).2 i
-    rw [h, sub_self, norm_zero] at this
-    nlinarith [norm_pos_iff.2 (ha i), Real.exp_pos (-(2 * π * R))]⟩
+  -- Integrability over the truncation. The datum is `C¹` off the centers, so near `T`.
+  have harea := ω.integrableOn_eval₂_mfderiv hVo hu hTc hTV stdComplexLineReal stdComplexLineImag
+  have hRT := integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_truncation ω hH hHs
+    hHout hHouts ha hsep hout hR (hu.continuousOn.mono hTV)
+  set U := V ∩ {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}
+  have hUo : IsOpen U := hVo.inter (by
+    simp only [Set.ofPred_forall]
+    exact isOpen_iInter_of_finite fun i ↦
+      isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
+  have hTU : T ⊆ U := fun z hz ↦ ⟨hTV hz, fun i ↦ ne_of_mem_puncturedSphereTruncation hz (ha i)⟩
   have hKs (v : ℂ) : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
-      (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v) (U ×ˢ univ) := by
-    rintro ⟨z, x⟩ ⟨hz, -⟩
-    have h := contMDiffAt_puncturedSpherePerturbation (n := 1) hH hHs hHout hHouts ha
-      (w := Complex.equivRealProdCLM.symm z) (fun i ↦ mem_iInter.1 hz.2 i) x
-    have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I)) 1
-        (fun p : (ℝ × ℝ) × M ↦ ((c, a), (Complex.equivRealProdCLM.symm p.1, p.2))) (z, x) :=
-      contMDiffAt_const.prodMk
-        ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _
-          contMDiffAt_fst).prodMk contMDiffAt_snd)
-    exact ((h.comp (z, x) hφ).clm_apply contMDiffAt_const).contMDiffWithinAt
+      (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v) (U ×ˢ univ) :=
+    (contMDiffOn_uncurry_puncturedSpherePerturbation_apply (n := 1) hH hHs hHout hHouts ha
+      v).mono (prod_mono inter_subset_right subset_rfl)
   have hET := hω.integrableOn_floerEnergyDensity hUo (hu.mono inter_subset_left) (hKs 1)
     (hKs Complex.I) hTc hTU hRT
   -- Off the annuli the datum vanishes, so the energy minus the area plus the integrated curvature
@@ -658,7 +723,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation_
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
     rw [setIntegral_congr_fun (hAm i) fun z hz ↦ hEK (hKi i hz),
       setIntegral_congr_fun (hAm i) fun z hz ↦ hRK (hKi i hz)]
-    exact (hIi i).2
+    exact hω.integral_floerEnergyDensity_inputEndPerturbation_annulus (hH i) (hHs i) (ha i) hR hVo
+      ((hAT i).trans hTV) hu
   have hEout : ∫ z in Aout, ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
@@ -670,9 +736,12 @@ theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation_
         ∫ z in Aout, ω.hamiltonianCurvature
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
+    have hAoutm : MeasurableSet Aout :=
+      (isCompact_preimage_closedBall_sdiff_ball _ _ _).isClosed.measurableSet
     rw [setIntegral_congr_fun hAoutm fun z hz ↦ hEK (hKout hz),
       setIntegral_congr_fun hAoutm fun z hz ↦ hRK (hKout hz)]
-    exact hIout.2
+    exact hω.integral_floerEnergyDensity_negativePlanePerturbation_annulus hHout hHouts hR hVo
+      (hAoutT.trans hTV) hu
   rw [hsplit _ hET, hsplit _ harea, hsplit _ hRT, hEout, Finset.sum_congr rfl fun i _ ↦ hEi i,
     Finset.sum_sub_distrib, Finset.sum_add_distrib, ← Finset.mul_sum] at hcore
   linear_combination hcore
@@ -759,10 +828,8 @@ theorem IsNondegenerate.neg_sum_add_le_integral_add_of_puncturedSpherePerturbati
             (c i + a i * zero.cylindricalEndLift (↑R + ↑t * Complex.I))))) -
           ∫ t in (0 : ℝ)..1, Hout t (u (Complex.equivRealProdCLM
             (inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) := by
-  have hTm : MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) :=
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_puncturedSphereTruncation c a R)).isClosed.measurableSet
-  have hE := setIntegral_nonneg (μ := volume) hTm fun z hz ↦
+  have hE := setIntegral_nonneg (μ := volume)
+    (isCompact_preimage_puncturedSphereTruncation c a R).isClosed.measurableSet fun z hz ↦
     floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
   have h := (abs_le.1
     (hω.abs_integral_floerEnergyDensity_puncturedSpherePerturbation_truncation_sub_le hH hHs hHout

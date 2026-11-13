@@ -46,7 +46,10 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
 * it is `C^n` jointly in the centers, the scales, the domain point and the target point, away
   from the punctures (`TauCeti.Floer.contMDiffAt_puncturedSpherePerturbation`), so it is a smooth
   family over any smooth path of configurations; for a fixed configuration and a normed target,
-  `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_prod` is the form in real coordinates;
+  `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_prod` is the form in real coordinates,
+  and for a fixed configuration and a manifold target the components of the datum in real
+  coordinates are `C^n` off the centers
+  (`TauCeti.Floer.contMDiffOn_uncurry_puncturedSpherePerturbation_apply`);
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`),
@@ -454,16 +457,6 @@ theorem mdifferentiableAt_inputEndPerturbation_target {H : ℝ → M → ℝ} (h
     (contMDiffAt_const.prodMk (contMDiffAt_const.prodMk contMDiffAt_id))).clm_apply
     contMDiffAt_const).mdifferentiableAt one_ne_zero
 
-/-- A family of Hamiltonians which is a `C^n` Hamiltonian `H` at the index `i` and zero at the
-other indices is `C^n` at every index. -/
-theorem contMDiff_uncurry_pi_single {ι : Type*} [DecidableEq ι] {n : ℕ∞} {H : ℝ → M → ℝ}
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry H)) (i j : ι) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry ((Pi.single i H : ι → ℝ → M → ℝ) j)) := by
-  rcases eq_or_ne j i with rfl | h
-  · simpa using hHs
-  · rw [Pi.single_eq_of_ne h]
-    exact contMDiff_const
-
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
 /-- **The datum is smooth in the configuration.** For period-one Hamiltonians of class `C^n` on
@@ -488,6 +481,29 @@ theorem contMDiffAt_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Period
     (hL.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd
   exact (contMDiffAt_inputEndPerturbation (hH i) (hHs i) (ha i) (hw i) x).comp ((c, a), (w, x))
     hev
+
+/-- **The components of the datum are smooth off the centers.** In the real coordinates
+`z = (s, t)` of the domain, for period-one Hamiltonians of class `C^n` and nonzero scales, the
+component `(z, x) ↦ K(z)(x)(v)` of the datum is `C^n` jointly in the domain point and the target
+point at every domain point other than the centers. -/
+theorem contMDiffOn_uncurry_puncturedSpherePerturbation_apply {n : ℕ∞}
+    (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry Hout)) {c a : ι → ℂ}
+    (ha : ∀ i, a i ≠ 0) (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦
+        puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x v)
+      ({z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have h := contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts ha
+    (w := Complex.equivRealProdCLM.symm z) hz x
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun p : (ℝ × ℝ) × M ↦ ((c, a), (Complex.equivRealProdCLM.symm p.1, p.2))) (z, x) :=
+    contMDiffAt_const.prodMk
+      ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _
+        contMDiffAt_fst).prodMk contMDiffAt_snd)
+  exact ((h.comp (z, x) hφ).clm_apply contMDiffAt_const).contMDiffWithinAt
 
 end Smooth
 

@@ -23,7 +23,10 @@ A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ �
 determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonnegative
 (`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`), and a map
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
-The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`).
+The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and the
+real chart maps the real coordinates of a set onto those of its image
+(`TauCeti.Complex.image_realChart_preimage`); for instance an affine map `w ↦ c + a w` maps closed
+annuli about `0` onto closed annuli about `c` (`TauCeti.Complex.image_realChart_affine_annulus`).
 -/
 
 public section
@@ -93,5 +96,43 @@ theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff
 theorem realChart_injective {f : ℂ → ℂ} (hf : Function.Injective f) :
     Function.Injective (realChart f) :=
   Complex.equivRealProdCLM.injective.comp (hf.comp Complex.equivRealProdCLM.symm.injective)
+
+/-- The real chart of `f` maps the real coordinates of a set `s` onto the real coordinates of
+`f '' s`. -/
+theorem image_realChart_preimage (f : ℂ → ℂ) (s : Set ℂ) :
+    realChart f '' (Complex.equivRealProdCLM.symm ⁻¹' s) =
+      Complex.equivRealProdCLM.symm ⁻¹' (f '' s) := by
+  ext z
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨_, hy, (equivRealProdCLM_symm_realChart f y).symm⟩
+  · rintro ⟨w, hw, hwz⟩
+    refine ⟨Complex.equivRealProdCLM w,
+      by rwa [Set.mem_preimage, ContinuousLinearEquiv.symm_apply_apply], ?_⟩
+    rw [realChart_equivRealProdCLM, hwz, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- In real coordinates, the affine map `w ↦ c + a w`, for `a ≠ 0`, maps the closed annulus about
+`0` with radii `r₁` and `r₂` onto the closed annulus about `c` with radii `‖a‖ r₁` and `‖a‖ r₂`. -/
+theorem image_realChart_affine_annulus {c a : ℂ} (ha : a ≠ 0) (r₁ r₂ : ℝ) :
+    realChart (c + a * ·) '' (Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall 0 r₂ \ Metric.ball 0 r₁)) =
+      Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall c (‖a‖ * r₂) \ Metric.ball c (‖a‖ * r₁)) := by
+  have ha' : 0 < ‖a‖ := norm_pos_iff.2 ha
+  rw [image_realChart_preimage]
+  congr 1
+  ext w
+  simp only [Set.mem_image, Set.mem_sdiff, Metric.mem_closedBall, Metric.mem_ball, dist_eq_norm,
+    not_lt, sub_zero]
+  constructor
+  · rintro ⟨y, ⟨h₂, h₁⟩, rfl⟩
+    rw [add_sub_cancel_left, norm_mul]
+    exact ⟨by gcongr, by gcongr⟩
+  · rintro ⟨h₂, h₁⟩
+    refine ⟨(w - c) / a, ⟨?_, ?_⟩, by rw [mul_div_cancel₀ _ ha, add_sub_cancel]⟩
+    · rw [norm_div, div_le_iff₀ ha']
+      linarith
+    · rw [norm_div, le_div_iff₀ ha']
+      linarith
 
 end TauCeti.Complex
