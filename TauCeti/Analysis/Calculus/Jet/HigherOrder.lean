@@ -151,6 +151,7 @@ theorem truncate_truncate {k l : ℕ} (hlk : l ≤ k) (hkr : k ≤ r) {x : E} (j
     truncate hlk (truncate hkr j) = truncate (hlk.trans hkr) j :=
   Quotient.inductionOn' j fun _ ↦ rfl
 
+/-- Every jet of order `k ≤ r` lifts to a jet of order `r`: the jet of any representing section. -/
 theorem truncate_surjective {k : ℕ} (hkr : k ≤ r) (x : E) :
     Function.Surjective (truncate hkr : JetAt 𝕜 F r x → JetAt 𝕜 F k x) := by
   intro j
@@ -197,21 +198,24 @@ theorem map_mk {x : E'} (h : E' → E) (g : E' × F → G) (s : E → F)
   dsimp only [map, mk, Quotient.mk'', Quotient.lift_mk]
   exact dite_eq_left ⟨hh, hg⟩
 
-/-- Outside the smooth case, `map` is the jet of a constant section. -/
-private theorem map_mk_of_not {x : E'} {h : E' → E} {g : E' × F → G} {s : E → F}
-    (hs : ContDiffAt 𝕜 ∞ s (h x))
-    (hsm : ¬(ContDiffAt 𝕜 ∞ h x ∧ ContDiffAt 𝕜 ∞ g (x, s (h x)))) :
-    map h g (mk s hs : JetAt 𝕜 F r (h x)) = mk (fun _ ↦ g (x, s (h x))) contDiffAt_const := by
+/-- Outside the smooth case, `map h g j` is the jet of the constant section `g (x, value j)`: all
+its coordinates of positive order vanish. -/
+theorem map_of_not_contDiffAt {x : E'} {h : E' → E} {g : E' × F → G} (j : JetAt 𝕜 F r (h x))
+    (hsm : ¬(ContDiffAt 𝕜 ∞ h x ∧ ContDiffAt 𝕜 ∞ g (x, value j))) :
+    map h g j = mk (fun _ ↦ g (x, value j)) contDiffAt_const := by
+  obtain ⟨s, hs, rfl⟩ := exists_section j
   dsimp only [map, mk, Quotient.mk'', Quotient.lift_mk]
   exact dite_eq_right hsm
 
+/-- The value of a transformed jet is the transformed value. This holds unconditionally, also
+when `h` or `g` fails to be smooth, by the convention in `map`. -/
 @[simp]
 theorem value_map {x : E'} (h : E' → E) (g : E' × F → G) (j : JetAt 𝕜 F r (h x)) :
     value (map h g j) = g (x, value j) := by
   obtain ⟨s, hs, rfl⟩ := exists_section j
   by_cases hsm : ContDiffAt 𝕜 ∞ h x ∧ ContDiffAt 𝕜 ∞ g (x, s (h x))
   · rw [map_mk h g s hs hsm.1 hsm.2, value_mk, value_mk]
-  · rw [map_mk_of_not hs hsm, value_mk, value_mk]
+  · rw [map_of_not_contDiffAt _ hsm, value_mk, value_mk]
 
 /-- Coordinate changes commute with truncation. -/
 theorem truncate_map {k : ℕ} (hkr : k ≤ r) {x : E'} (h : E' → E) (g : E' × F → G)
@@ -220,7 +224,8 @@ theorem truncate_map {k : ℕ} (hkr : k ≤ r) {x : E'} (h : E' → E) (g : E' �
   obtain ⟨s, hs, rfl⟩ := exists_section j
   by_cases hsm : ContDiffAt 𝕜 ∞ h x ∧ ContDiffAt 𝕜 ∞ g (x, s (h x))
   · rw [map_mk h g s hs hsm.1 hsm.2, truncate_mk, truncate_mk, map_mk h g s hs hsm.1 hsm.2]
-  · rw [map_mk_of_not hs hsm, truncate_mk, truncate_mk, map_mk_of_not hs hsm]
+  · rw [map_of_not_contDiffAt _ hsm, truncate_mk, truncate_mk, map_of_not_contDiffAt _ hsm]
+    rfl
 
 /-- The identity coordinate change induces the identity on jets. -/
 @[simp]
