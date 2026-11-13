@@ -218,7 +218,7 @@ theorem logTranslationMulAction_smul_mk_of_exp_two_pi_I_div_eq {ζ : rootsOfUnit
     letI := logTranslationMulAction P l
     ζ • (Quotient.mk _ (z, e) : AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) =
       Quotient.mk _ (ζ • z, e + (m : ℂ)⁻¹ • P (rootsOfUnityBall.powMap m r z) l) := by
-  rw [logTranslationMulAction_smul_mk_of_exp_eq P l hζ, div_div_cancel_left' two_pi_I_ne_zero]
+  rw [logTranslationMulAction_smul_mk_of_exp_eq P l hζ, div_div_cancel_left₀ two_pi_I_ne_zero]
 
 /-! ### The logarithmic gauge -/
 
