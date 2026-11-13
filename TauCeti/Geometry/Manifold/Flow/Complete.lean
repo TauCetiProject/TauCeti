@@ -233,7 +233,7 @@ theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
     hf.continuous.continuousAt.preimage_mem_nhds
       (Icc_mem_nhds (sub_one_lt (f y)) (lt_add_one (f y)))⟩⟩
   have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
   have hγ := isMIntegralCurveOn_maximalIntegralCurve (v := v) (x := x) hv
   -- The mean value inequality on the interval of existence bounds the change of `f`.
