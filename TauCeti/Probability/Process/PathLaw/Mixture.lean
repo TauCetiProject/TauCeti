@@ -19,9 +19,9 @@ measure. It is useful independently of any representation theorem: draw a probab
 then draw an i.i.d. path from it.
 
 This file supplies evaluation on measurable events, the point-mass and zero cases, the total mass
-and preservation of probability measures, additivity and homogeneity in the mixing measure, and
-compatibility with coordinatewise measurable pushforwards. The symmetry and uniqueness properties of
-the mixture belong in `TauCeti.Probability.DeFinetti.Barycenter`.
+and preservation of finite and probability measures, additivity and homogeneity in the mixing
+measure, and compatibility with coordinatewise measurable pushforwards. The symmetry and uniqueness
+properties of the mixture belong in `TauCeti.Probability.DeFinetti.Barycenter`.
 
 ## References
 
@@ -96,6 +96,19 @@ theorem deFinettiBarycenter_univ (π : Measure (ProbabilityMeasure α)) :
 theorem isProbabilityMeasure_deFinettiBarycenter_iff (π : Measure (ProbabilityMeasure α)) :
     IsProbabilityMeasure (deFinettiBarycenter π) ↔ IsProbabilityMeasure π :=
   ⟨fun h => ⟨by rw [← deFinettiBarycenter_univ]; exact h.measure_univ⟩, fun _ => inferInstance⟩
+
+/-- The barycenter of a finite mixing law is a finite measure, since it has the same total mass
+as the mixing law. -/
+instance isFiniteMeasure_deFinettiBarycenter (π : Measure (ProbabilityMeasure α))
+    [IsFiniteMeasure π] : IsFiniteMeasure (deFinettiBarycenter π) :=
+  ⟨by rw [deFinettiBarycenter_univ]; exact measure_lt_top π _⟩
+
+/-- The barycenter of a mixing law is a finite measure if and only if the mixing law is. -/
+@[simp]
+theorem isFiniteMeasure_deFinettiBarycenter_iff (π : Measure (ProbabilityMeasure α)) :
+    IsFiniteMeasure (deFinettiBarycenter π) ↔ IsFiniteMeasure π :=
+  ⟨fun h => ⟨by rw [← deFinettiBarycenter_univ]; exact h.measure_univ_lt_top⟩,
+    fun _ => inferInstance⟩
 
 /-- **The zero mixing law has the zero barycenter.** -/
 @[simp]
