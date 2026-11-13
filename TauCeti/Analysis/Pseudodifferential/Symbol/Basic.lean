@@ -311,6 +311,13 @@ theorem exists_bound_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace 
   obtain ⟨C, hC, hCK⟩ := a.exists_bound K hK [] []
   exact ⟨C, hC, fun x hx ξ ↦ by simpa [mixedDeriv_nil_nil] using hCK x hx ξ⟩
 
+/-- A symbol whose estimates hold uniformly in the position is bounded by `C ⟨ξ⟩ ^ m` at every
+position. -/
+theorem IsUniform.exists_bound_coefficient {a : Symbol n V W m} (ha : a.IsUniform) :
+    ∃ C, 0 ≤ C ∧ ∀ x ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, hC, hCa⟩ := ha [] []
+  exact ⟨C, hC, fun x ξ ↦ by simpa [mixedDeriv_nil_nil] using hCa x ξ⟩
+
 /-- A growth bound for the frequency slice `ξ ↦ a(x, ξ)` of a symbol at a single position `x`. -/
 theorem exists_bound_coefficient_slice (a : Symbol n V W m) (x : CoordinateSpace n) :
     ∃ C, 0 ≤ C ∧ ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
@@ -427,6 +434,10 @@ theorem IsUniform.smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) : (c �
 
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   fun _ _ => ⟨0, le_rfl, fun x ξ => by simp⟩
+
+theorem IsUniform.sum {ι : Type*} {s : Finset ι} {a : ι → Symbol n V W m}
+    (ha : ∀ i ∈ s, (a i).IsUniform) : (∑ i ∈ s, a i).IsUniform :=
+  Finset.sum_induction _ IsUniform (fun _ _ => IsUniform.add) isUniform_zero ha
 
 theorem hasCompactSpatialSupport_zero : (0 : Symbol n V W m).HasCompactSpatialSupport :=
   ⟨∅, isCompact_empty, fun _ _ _ => rfl⟩
