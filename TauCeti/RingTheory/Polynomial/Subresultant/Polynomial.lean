@@ -108,6 +108,17 @@ theorem subresultantCoeffMatrix_apply_eq_coeff [Semiring R]
     simp [subresultantCoeffMatrix, coeff_X_pow_mul_of_natDegree_le hm,
       coeff_X_pow_mul_of_natDegree_le hn]
 
+/-- The coefficient matrix reads only the coefficients of the left input up to its formal bound. -/
+theorem subresultantCoeffMatrix_congr_left [Semiring R] {p p' q : R[X]} {m n j k : ℕ}
+    (h : ∀ i ≤ m, p.coeff i = p'.coeff i) :
+    subresultantCoeffMatrix p q m n j k = subresultantCoeffMatrix p' q m n j k := by
+  ext i l
+  induction l using Fin.addCases with
+  | left l => simp
+  | right l =>
+    simp only [subresultantCoeffMatrix_natAdd]
+    split_ifs <;> first | rfl | exact h _ (by omega)
+
 /-- A subresultant coefficient matrix replaces the row of degree `j` of the principal
 matrix by the row of degree `k`. -/
 theorem subresultantCoeffMatrix_eq_updateRow [Semiring R]

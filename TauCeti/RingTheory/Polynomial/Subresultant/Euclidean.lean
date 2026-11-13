@@ -112,17 +112,6 @@ private theorem subresultantCoeffMatrix_add_mul {p q a : R[X]} {m n j : ℕ}
         Fin.addCases_left, ofFn_single, hpoly]
       rw [mul_add, mul_assoc, add_comm]
 
-/-- The coefficient matrix reads only the coefficients of the left input up to its formal bound. -/
-private theorem subresultantCoeffMatrix_congr_left {p p' q : R[X]} {m n j k : ℕ}
-    (h : ∀ i ≤ m, p.coeff i = p'.coeff i) :
-    subresultantCoeffMatrix p q m n j k = subresultantCoeffMatrix p' q m n j k := by
-  ext i l
-  induction l using Fin.addCases with
-  | left l => simp
-  | right l =>
-    simp only [subresultantCoeffMatrix_natAdd]
-    split_ifs <;> first | rfl | exact h _ (by omega)
-
 /-- Adding a multiple of the right input preserves every fixed-bound coefficient minor.
 The multiplier's degree plus the right bound must not exceed the left bound; the left input
 needs no degree bound, as only its coefficients up to the left bound are read. -/
