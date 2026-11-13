@@ -24,8 +24,11 @@ linear equivalence `e.continuousLinearEquivAt 𝕜 b`, with inverse its symmetri
 `Bundle.Trivialization.homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt`).
 
 More generally, any linear trivialization sends a vector over its base set to a nonzero vector
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). Over the base
-set, its fibrewise linear inverse `e.symmₗ R b` is the inverse of the fibrewise linear equivalence
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`), and likewise
+for its inverse over the base set (`Bundle.Trivialization.symm_apply_ne_zero_iff`); both commute
+with scalar multiplication over the base set (`Bundle.Trivialization.snd_apply_mk_smul`,
+`Bundle.Trivialization.symm_apply_smul`). Over the base set, its fibrewise linear inverse
+`e.symmₗ R b` is the inverse of the fibrewise linear equivalence
 (`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
 (`Bundle.Trivialization.symmₗ_injective`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
@@ -89,6 +92,26 @@ vector is nonzero. -/
 theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
     (e v).2 ≠ 0 ↔ v.2 ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
+
+include R in
+/-- Over its base set, the inverse of a linear trivialization sends a vector of the model fibre to
+a nonzero vector exactly when the vector is nonzero. -/
+theorem symm_apply_ne_zero_iff {b : B} (hb : b ∈ e.baseSet) {w : F} :
+    e.symm b w ≠ 0 ↔ w ≠ 0 := by
+  simpa only [linearEquivAt_symm_apply] using (e.linearEquivAt R b hb).symm.map_ne_zero_iff
+
+variable {R} in
+/-- Over its base set, a linear trivialization commutes with scalar multiplication in the fibre. -/
+theorem snd_apply_mk_smul {b : B} (hb : b ∈ e.baseSet) (c : R) (v : E b) :
+    (e ⟨b, c • v⟩).2 = c • (e ⟨b, v⟩).2 := by
+  simpa only [linearEquivAt_apply] using (e.linearEquivAt R b hb).map_smul c v
+
+variable {R} in
+/-- Over its base set, the inverse of a linear trivialization commutes with scalar
+multiplication. -/
+theorem symm_apply_smul {b : B} (hb : b ∈ e.baseSet) (c : R) (w : F) :
+    e.symm b (c • w) = c • e.symm b w := by
+  simpa only [linearEquivAt_symm_apply] using (e.linearEquivAt R b hb).symm.map_smul c w
 
 /-- Over the base set, the fibrewise linear inverse of a linear trivialization is the inverse of
 its fibrewise linear equivalence. -/
