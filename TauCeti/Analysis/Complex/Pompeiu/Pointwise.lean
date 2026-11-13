@@ -157,9 +157,7 @@ theorem continuous_cauchyTransform_of_norm_le (hf : AEStronglyMeasurable f volum
 
 /-- **Continuity of the Cauchy transform of supercritical data.** For a Hölder conjugate pair with
 `q < 2`, that is `p > 2`, the Cauchy transform of `Lᵖ` data supported in a closed disc is
-continuous on the whole plane. For `p < ∞` the data are approximated in `Lᵖ` by bounded data on
-the disc, whose transforms are continuous, and the pointwise bound
-`TauCeti.norm_cauchyTransform_le` makes the approximation uniform on every disc. -/
+continuous on the whole plane. -/
 theorem continuous_cauchyTransform_of_memLp [p.HolderConjugate q] (hq : q < 2)
     (hf : MemLp f p volume) (hs : support f ⊆ closedBall c r) :
     Continuous (cauchyTransform f) := by
@@ -186,10 +184,7 @@ theorem continuous_cauchyTransform_of_memLp [p.HolderConjugate q] (hq : q < 2)
         (norm_indicator_le_norm_self (g n) z).trans ((g n).norm_coe_le_norm z))
   have hfh (n : ℕ) : eLpNorm (f - h n) p volume ≤ ENNReal.ofReal (1 / (n + 1)) := by
     have : f - h n = (closedBall c r).indicator (f - ⇑(g n)) := by
-      ext z
-      by_cases hz : z ∈ closedBall c r
-      · simp [h, hz]
-      · simp [h, hz, notMem_support.1 fun h' ↦ hz (hs h')]
+      rw [indicator_sub', indicator_eq_self.2 hs]
     rw [this]
     exact (eLpNorm_indicator_le _ measurableSet_closedBall.nullMeasurableSet).trans (hgf n)
   -- the approximations converge uniformly on every disc about `c`

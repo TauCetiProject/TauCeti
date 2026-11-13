@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Pompeiu.Weak
 public import TauCeti.Analysis.Complex.Wirtinger.Beurling.Cauchy
 public import TauCeti.Analysis.Complex.Wirtinger.Lp
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -46,6 +47,9 @@ Consequences:
   (`TauCeti.eLpNorm_cauchyTransform_add_eLpNorm_wirtingerPartsCLM_beurlingLp_le`), and membership
   of `T f` in the local Sobolev class `W^{1,p}_loc` on every subset of the plane
   (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`);
+* the weak derivative for data in a finite-dimensional complex normed space, by transport along a
+  complex-linear equivalence with a Euclidean space
+  (`TauCeti.exists_hasWeakFDerivOn_cauchyTransform_of_memLp`);
 * continuity in parameters of the derivative term: for a family of data depending continuously
   on a parameter in `Lᵖ`, the fields `w ↦ wirtingerPartsCLM (B f w) (f w)` depend continuously on
   it in `Lᵖ(ℂ)` (`TauCeti.continuous_toLp_wirtingerPartsCLM_beurlingLp`). The function term is
@@ -279,5 +283,46 @@ theorem continuous_toLp_wirtingerPartsCLM_beurlingLp (hp : 1 < p) (hp_top : p �
       (fun y ↦ ((hf y).sub (hf x)).aestronglyMeasurable) hB h)
 
 end Weak
+
+/-! ### Finite-dimensional complex normed spaces -/
+
+section FiniteDimensional
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
+  {p : ℝ≥0∞}
+
+/-- **The weak derivative of the Cauchy transform of `Lᵖ` data in a finite-dimensional space.**
+For `1 < p < ∞` and `f ∈ Lᵖ(ℂ)` with values in a finite-dimensional complex normed space,
+supported in a closed disc, there is `b ∈ Lᵖ(ℂ)` such that on every open set the Cauchy transform
+`T f` has the weak derivative `z ↦ wirtingerPartsCLM (b z) (f z)`, that is
+`v ↦ v • b z + conj v • f z`. -/
+theorem exists_hasWeakFDerivOn_cauchyTransform_of_memLp (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    {f : ℂ → F} (hf : MemLp f p volume) {c : ℂ} {r : ℝ} (hs : support f ⊆ closedBall c r) :
+    ∃ b : ℂ → F, MemLp b p volume ∧ ∀ U : Opens ℂ,
+      HasWeakFDerivOn volume U (cauchyTransform f) fun z ↦ wirtingerPartsCLM (b z) (f z) := by
+  -- transport `TauCeti.hasWeakFDerivOn_cauchyTransform_of_memLp` along a complex-linear
+  -- equivalence with a Euclidean space; `b` is the transported Beurling transform of `f`
+  have := FiniteDimensional.completeSpace ℂ F
+  have : Fact (1 ≤ p) := ⟨hp.le⟩
+  let e : F ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ F)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  have hf' : MemLp (fun z ↦ e (f z)) p volume := e.toContinuousLinearMap.comp_memLp' hf
+  have hs' : support (fun z ↦ e (f z)) ⊆ closedBall c r :=
+    (support_comp_subset e.map_zero f).trans hs
+  have hT : (fun w ↦ (e.symm : _ →L[ℂ] F).restrictScalars ℝ
+      (cauchyTransform (fun z ↦ e (f z)) w)) = cauchyTransform f := by
+    ext w
+    simp only [ContinuousLinearMap.coe_restrictScalars', ContinuousLinearEquiv.coe_coe,
+      cauchyTransform_apply, map_smul, ← e.symm.integral_comp_comm, e.symm_apply_apply]
+  refine ⟨fun z ↦ e.symm (beurlingLp p hp hp_top (hf'.toLp _) z),
+    e.symm.toContinuousLinearMap.comp_memLp' (Lp.memLp _), fun U ↦ ?_⟩
+  have hD := (hasWeakFDerivOn_cauchyTransform_of_memLp hp hp_top hf' hs' U).clm_comp
+    ((e.symm : _ →L[ℂ] F).restrictScalars ℝ)
+  rw [hT] at hD
+  convert hD using 2 with z
+  ext v
+  simp
+
+end FiniteDimensional
 
 end TauCeti

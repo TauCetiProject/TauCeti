@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
 import Mathlib.Analysis.Normed.Ring.Units
+import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.MetricSpace.Contracting
-import TauCeti.Analysis.Complex.Pompeiu.Holder.Basic
 public import TauCeti.Analysis.Complex.Pompeiu.Pointwise
 import TauCeti.Analysis.Complex.Pompeiu.Weak
 import TauCeti.MeasureTheory.Function.RankOne
@@ -76,7 +76,9 @@ open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
+section CauchyIntegralEquation
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-! ### The Cauchy integral equation -/
 
@@ -110,17 +112,6 @@ private theorem cauchySource_sub {c : ℂ} {r : ℝ} (D : ℂ → E →L[ℂ] E)
       ContinuousLinearMap.sub_comp, smul_sub]
   · simp [cauchySource_of_notMem D _ hz]
 
-private theorem norm_cauchySource_le {c : ℂ} {r M B : ℝ} {D : ℂ → E →L[ℂ] E} (hM : 0 ≤ M)
-    (hB : 0 ≤ B) (hD : ∀ z ∈ closedBall c r, ‖D z‖ ≤ M) {Ψ : C(closedBall c r, E →L[ℂ] E)}
-    (hΨ : ∀ x, ‖Ψ x‖ ≤ B) (z : ℂ) : ‖cauchySource D Ψ z‖ ≤ 2⁻¹ * (B * M) := by
-  by_cases hz : z ∈ closedBall c r
-  · rw [cauchySource_of_mem D Ψ hz, norm_smul, norm_inv, Complex.norm_ofNat]
-    gcongr
-    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (mul_le_mul (hΨ _) (hD z hz) (norm_nonneg _) hB)
-  · rw [cauchySource_of_notMem D Ψ hz, norm_zero]
-    positivity
-
 private theorem aestronglyMeasurable_cauchySource {c : ℂ} {r : ℝ} {D : ℂ → E →L[ℂ] E}
     (hD : AEStronglyMeasurable D (volume.restrict (closedBall c r)))
     (Ψ : C(closedBall c r, E →L[ℂ] E)) : AEStronglyMeasurable (cauchySource D Ψ) volume := by
@@ -135,96 +126,16 @@ private theorem aestronglyMeasurable_cauchySource {c : ℂ} {r : ℝ} {D : ℂ �
   exact ((ContinuousLinearMap.compL ℂ E E E).aestronglyMeasurable_comp₂
     (he.aestronglyMeasurable measurableSet_closedBall) hD).const_smul (2 : ℂ)⁻¹
 
-private theorem integrable_cauchySource {c : ℂ} {r M : ℝ} {D : ℂ → E →L[ℂ] E} (hM : 0 ≤ M)
-    (hD : AEStronglyMeasurable D (volume.restrict (closedBall c r)))
-    (hDM : ∀ z ∈ closedBall c r, ‖D z‖ ≤ M) (Ψ : C(closedBall c r, E →L[ℂ] E)) :
-    Integrable (cauchySource D Ψ) :=
-  (Measure.integrableOn_of_bounded measure_closedBall_lt_top.ne
-    (aestronglyMeasurable_cauchySource hD Ψ)
-    (ae_of_all _ (norm_cauchySource_le hM (by positivity) hDM (Ψ.norm_coe_le_norm))))
-    |>.integrable_of_forall_notMem_eq_zero
-    fun _ hz ↦ cauchySource_of_notMem D Ψ hz
+/-- **The Cauchy integral equation with an `Lᵖ` coefficient.** Let `E` be a complex Banach space,
+let `p, q` be Hölder conjugate with `q < 2`, that is `p > 2`, and let `D` be a measurable field of
+complex-linear maps of `E` on the closed disc of radius `r ≤ R` about `c`, bounded there by a
+function `G ∈ Lᵖ` with `π⁻¹ ‖K_{2R}‖_{L^q} ‖G‖_{Lᵖ} ≤ 1/2`, where `K_{2R}` is the reciprocal kernel
+truncated at `2R`. Then there is `g ∈ Lᵖ`, vanishing off the disc, whose Cauchy transform `T g` is
+continuous and satisfies `g = ½ (1 + T g) D` on the disc, with `‖T g‖ < 1` there.
 
-/-- **The Cauchy integral equation of the similarity principle.** On a closed disc of radius `r`
-on which a measurable field `D` of complex-linear maps is bounded by `M`, with `2 r M ≤ 1/4`,
-there is an integrable `g`, vanishing off the disc, whose Cauchy transform is continuous and
-satisfies `g = ½ (1 + T g) D` on the disc, with `‖T g‖ < 1` there. So `Ψ = 1 + T g` is a
-continuous family of invertible maps on the disc solving `bar∂Ψ = ½ Ψ D`. It is the fixed point
-of the contraction `Ψ ↦ 1 + T (½ Ψ D)` of the continuous maps on the disc. -/
-private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ → E →L[ℂ] E} {c : ℂ}
-    {r M : ℝ} (hr : 0 ≤ r) (hM : 0 ≤ M) (hrM : 2 * r * M ≤ 4⁻¹)
-    (hD : AEStronglyMeasurable D (volume.restrict (closedBall c r)))
-    (hDM : ∀ z ∈ closedBall c r, ‖D z‖ ≤ M) :
-    ∃ g : ℂ → E →L[ℂ] E, Integrable g ∧ Continuous (cauchyTransform g) ∧
-      (∀ z ∈ closedBall c r, g z = (2 : ℂ)⁻¹ • (1 + cauchyTransform g z).comp (D z)) ∧
-      ∀ z ∈ closedBall c r, ‖cauchyTransform g z‖ < 1 := by
-  have := FiniteDimensional.completeSpace ℂ E
-  have hmeas := aestronglyMeasurable_cauchySource hD
-  have hsupp := support_cauchySource_subset (c := c) (r := r) D
-  have hbd (Ψ : C(closedBall c r, E →L[ℂ] E)) :=
-    norm_cauchySource_le hM (by positivity) hDM (Ψ.norm_coe_le_norm)
-  have hcont (Ψ : C(closedBall c r, E →L[ℂ] E)) :
-      Continuous (cauchyTransform (cauchySource D Ψ)) :=
-    continuous_cauchyTransform_of_norm_le (hmeas Ψ) (hsupp Ψ) (ae_of_all _ (hbd Ψ))
-  -- the Cauchy transform of the source is small on the disc
-  have hT (Ψ : C(closedBall c r, E →L[ℂ] E)) {B : ℝ} (hB : 0 ≤ B) (hΨ : ∀ x, ‖Ψ x‖ ≤ B) (w : ℂ)
-      (hw : w ∈ closedBall c r) : ‖cauchyTransform (cauchySource D Ψ) w‖ ≤ 2 * r * M * B := by
-    rw [cauchyTransform_apply]
-    refine (norm_pi_inv_smul_integral_sub_inv_smul_le hr hr (hsupp Ψ)
-      (norm_cauchySource_le hM hB hDM hΨ) hw).trans (le_of_eq (by ring))
-  -- and depends linearly on `Ψ`
-  have hlin (Ψ Ψ' : C(closedBall c r, E →L[ℂ] E)) (w : ℂ) :
-      cauchyTransform (cauchySource D Ψ) w - cauchyTransform (cauchySource D Ψ') w =
-        cauchyTransform (cauchySource D (Ψ - Ψ')) w := by
-    have hLp (Φ : C(closedBall c r, E →L[ℂ] E)) : MemLp (cauchySource D Φ) ∞ volume :=
-      memLp_top_of_bound (hmeas Φ) _ (ae_of_all _ (hbd Φ))
-    rw [cauchySource_sub, cauchyTransform_sub_of_memLp (p := ∞) (q := 1) (by norm_num) (hLp Ψ)
-      (hsupp Ψ) (hLp Ψ') (hsupp Ψ'), Pi.sub_apply]
-  let op (Ψ : C(closedBall c r, E →L[ℂ] E)) : C(closedBall c r, E →L[ℂ] E) :=
-    ⟨fun w ↦ 1 + cauchyTransform (cauchySource D Ψ) w,
-      (continuous_const.add (hcont Ψ)).comp continuous_subtype_val⟩
-  have hop : ContractingWith (2 * r * M).toNNReal op := by
-    refine ⟨by rw [Real.toNNReal_lt_one]; linarith, LipschitzWith.of_dist_le_mul fun Ψ Ψ' ↦ ?_⟩
-    rw [Real.coe_toNNReal _ (by positivity)]
-    refine (ContinuousMap.dist_le (by positivity)).2 fun w ↦ ?_
-    simp only [op, ContinuousMap.coe_mk, dist_eq_norm, add_sub_add_left_eq_sub, hlin]
-    refine hT _ dist_nonneg (fun x ↦ ?_) w w.2
-    rw [ContinuousMap.sub_apply, ← dist_eq_norm]
-    exact ContinuousMap.dist_apply_le_dist x
-  set Ψ₀ := ContractingWith.fixedPoint op hop
-  set g := cauchySource D Ψ₀ with hg
-  have hfix : op Ψ₀ = Ψ₀ := ContractingWith.fixedPoint_isFixedPt hop
-  have hΨ₀ (z : ℂ) (hz : z ∈ closedBall c r) : Ψ₀ ⟨z, hz⟩ = 1 + cauchyTransform g z := by
-    rw [← hfix]
-    simp only [op, ContinuousMap.coe_mk, hg]
-  have hnorm : ‖Ψ₀‖ ≤ 4 / 3 := by
-    have h1 : ‖Ψ₀‖ ≤ 1 + 4⁻¹ * ‖Ψ₀‖ := by
-      refine (ContinuousMap.norm_le _ (by positivity)).2 fun w ↦ ?_
-      rw [hΨ₀ w w.2]
-      calc ‖1 + cauchyTransform g w‖ ≤ ‖(1 : E →L[ℂ] E)‖ + ‖cauchyTransform g w‖ :=
-            norm_add_le _ _
-        _ ≤ 1 + 2 * r * M * ‖Ψ₀‖ :=
-          add_le_add ContinuousLinearMap.norm_id_le
-            (hT _ (by positivity) Ψ₀.norm_coe_le_norm w w.2)
-        _ ≤ 1 + 4⁻¹ * ‖Ψ₀‖ := by gcongr
-    linarith
-  refine ⟨g, integrable_cauchySource hM hD hDM Ψ₀, hcont Ψ₀, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · rw [hg, cauchySource_of_mem D Ψ₀ hz, hΨ₀ z hz]
-  · calc ‖cauchyTransform g z‖ ≤ 2 * r * M * ‖Ψ₀‖ :=
-          hT _ (by positivity) Ψ₀.norm_coe_le_norm z hz
-      _ ≤ 4⁻¹ * (4 / 3) := by gcongr
-      _ < 1 := by norm_num
-
-/-- **The Cauchy integral equation with an `Lᵖ` coefficient.** Let `p, q` be Hölder conjugate with
-`q < 2`, that is `p > 2`, and let `D` be a measurable field of complex-linear maps on the closed
-disc of radius `r ≤ R` about `c`, bounded there by a function `G ∈ Lᵖ` with
-`π⁻¹ ‖K_{2R}‖_{L^q} ‖G‖_{Lᵖ} ≤ 1/2`, where `K_{2R}` is the reciprocal kernel truncated at `2R`.
-Then there is `g ∈ Lᵖ`, vanishing off the disc, whose Cauchy transform is continuous and satisfies
-`g = ½ (1 + T g) D` on the disc, with `‖T g‖ < 1` there. So `Ψ = 1 + T g` is a continuous family
-of invertible maps on the disc solving `bar∂Ψ = ½ Ψ D`. It is the fixed point of the contraction
-`Ψ ↦ 1 + T (½ Ψ D)` of the continuous maps on the disc; the smallness of `‖G‖_{Lᵖ}` replaces the
-smallness of `r` times a uniform bound in the bounded case. -/
-theorem exists_cauchyTransform_eq_of_memLp [FiniteDimensional ℂ E] {p q : ℝ≥0∞}
+In the similarity principle, `Ψ = 1 + T g` is then a continuous family of invertible maps on the
+disc with `bar∂Ψ = ½ Ψ D` on its interior. -/
+theorem exists_cauchyTransform_eq_of_memLp [CompleteSpace E] {p q : ℝ≥0∞}
     [p.HolderConjugate q] (hq : q < 2) {D : ℂ → E →L[ℂ] E} {G : ℂ → ℝ} {c : ℂ} {r R : ℝ}
     (hrR : r ≤ R) (hD : AEStronglyMeasurable D (volume.restrict (closedBall c r)))
     (hG : MemLp G p volume) (hDG : ∀ z ∈ closedBall c r, ‖D z‖ ≤ G z)
@@ -234,7 +145,8 @@ theorem exists_cauchyTransform_eq_of_memLp [FiniteDimensional ℂ E] {p q : ℝ�
       Continuous (cauchyTransform g) ∧
       (∀ z ∈ closedBall c r, g z = (2 : ℂ)⁻¹ • (1 + cauchyTransform g z).comp (D z)) ∧
       ∀ z ∈ closedBall c r, ‖cauchyTransform g z‖ < 1 := by
-  have := FiniteDimensional.completeSpace ℂ E
+  -- `Ψ = 1 + T g` is the fixed point of the contraction `Ψ ↦ 1 + T (½ Ψ D)` of the continuous
+  -- maps on the disc; the smallness of `‖G‖_{Lᵖ}` makes it a contraction
   have hmeas := aestronglyMeasurable_cauchySource hD
   have hsupp := support_cauchySource_subset (c := c) (r := r) D
   have hsuppR (Ψ : C(closedBall c r, E →L[ℂ] E)) : support (cauchySource D Ψ) ⊆ closedBall c R :=
@@ -307,6 +219,42 @@ theorem exists_cauchyTransform_eq_of_memLp [FiniteDimensional ℂ E] {p q : ℝ�
       _ ≤ 4⁻¹ * (4 / 3) := by gcongr
       _ < 1 := by norm_num
 
+/-- **The Cauchy integral equation with a bounded coefficient**, the case `p = ∞` of
+`TauCeti.exists_cauchyTransform_eq_of_memLp`: on a closed disc of radius `r` on which a measurable
+field `D` of complex-linear maps is bounded by `M`, with `2 r M ≤ 1/4`, there is an integrable `g`
+whose Cauchy transform is continuous and satisfies `g = ½ (1 + T g) D` on the disc, with
+`‖T g‖ < 1` there. -/
+private theorem exists_cauchyTransform_eq [CompleteSpace E] {D : ℂ → E →L[ℂ] E} {c : ℂ}
+    {r M : ℝ} (hr : 0 ≤ r) (hM : 0 ≤ M) (hrM : 2 * r * M ≤ 4⁻¹)
+    (hD : AEStronglyMeasurable D (volume.restrict (closedBall c r)))
+    (hDM : ∀ z ∈ closedBall c r, ‖D z‖ ≤ M) :
+    ∃ g : ℂ → E →L[ℂ] E, Integrable g ∧ Continuous (cauchyTransform g) ∧
+      (∀ z ∈ closedBall c r, g z = (2 : ℂ)⁻¹ • (1 + cauchyTransform g z).comp (D z)) ∧
+      ∀ z ∈ closedBall c r, ‖cauchyTransform g z‖ < 1 := by
+  -- the `L¹` norm of the kernel truncated at `2 r` is `4 π r`
+  have hK : (eLpNorm (truncatedCauchyKernel (r + r)) 1 volume).toReal = 2 * Real.pi * (r + r) := by
+    rw [eLpNorm_one_eq_lintegral_eNorm, ← ofReal_integral_norm_eq_lintegral_eNorm
+      (integrable_truncatedCauchyKernel _), integral_norm_truncatedCauchyKernel (by positivity),
+      ENNReal.toReal_ofReal (by positivity)]
+    exact (measurable_truncatedCauchyKernel _).aestronglyMeasurable
+  have hMtop : (eLpNorm (fun _ : ℂ ↦ M) ∞ volume).toReal ≤ M :=
+    ENNReal.toReal_le_of_le_ofReal hM <| (eLpNorm_exponent_top aestronglyMeasurable_const).trans_le
+      (eLpNormEssSup_le_of_ae_bound (ae_of_all _ fun _ ↦ (Real.norm_of_nonneg hM).le))
+  have hsmall : Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (r + r)) 1 volume).toReal *
+      (eLpNorm (fun _ : ℂ ↦ M) ∞ volume).toReal ≤ 2⁻¹ := by
+    rw [hK]
+    calc Real.pi⁻¹ * (2 * Real.pi * (r + r)) * (eLpNorm (fun _ : ℂ ↦ M) ∞ volume).toReal
+        ≤ Real.pi⁻¹ * (2 * Real.pi * (r + r)) * M := by gcongr
+      _ = 2 * (2 * r * M) := by field_simp; ring
+      _ ≤ 2⁻¹ := by linarith
+  obtain ⟨g, hgp, hgs, hTg, hgeq, hTg1⟩ := exists_cauchyTransform_eq_of_memLp (p := ∞) (q := 1)
+    (by norm_num) le_rfl hD (memLp_top_const M) hDM hsmall
+  have : IsFiniteMeasure (volume.restrict (closedBall c r)) :=
+    ⟨by simpa using measure_closedBall_lt_top⟩
+  have hg : Integrable g := (integrableOn_iff_integrable_of_support_subset (ε' := E →L[ℂ] E)
+    hgs).1 ((hgp.restrict (closedBall c r)).integrable le_top)
+  exact ⟨g, hg, hTg, hgeq, hTg1⟩
+
 /-! ### The similarity principle -/
 
 /-- A small enough radius for the contraction: `2 r M ≤ 1/4` for `r = min R (8 (M + 1))⁻¹`. -/
@@ -332,6 +280,10 @@ private theorem conjWirtingerDeriv_add_eq_zero {ξ : ℂ → E} {C : E →L[ℝ]
   simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one, smul_apply,
     ContinuousLinearMap.comp_apply, hD, hC, add_apply, one_apply_eq_self, map_neg, map_smul]
   module
+
+end CauchyIntegralEquation
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
 
 /-- **The similarity principle** on a complex inner product space, for a solution of class `C¹`
 on an open set with a measurable, locally bounded coefficient: the factorization on a disc. -/
@@ -364,18 +316,14 @@ private theorem exists_similarity_of_contDiffOn_of_innerProductSpace [FiniteDime
       ((hRΩ (hsub hz)).1.trans (le_max_left _ _)))
   set Ψ : ℂ → E →L[ℂ] E := fun z ↦ 1 + cauchyTransform g z with hΨ
   have hunit (z : ℂ) (hz : z ∈ ball z₀ r) : IsUnit (Ψ z) := by
-    by_contra h
-    refine nonunits.subset_compl_ball h ?_
-    rw [mem_ball_iff_norm, hΨ, add_sub_cancel_left]
-    exact hTg1 z (ball_subset_closedBall hz)
+    simpa [hΨ] using isUnit_one_sub_of_norm_lt_one (x := -cauchyTransform g z)
+      (by simpa using hTg1 z (ball_subset_closedBall hz))
   refine ⟨r, hr, hball, fun z ↦ Ring.inverse (Ψ z), fun z ↦ Ψ z (ξ z),
     fun z hz ↦ ?_, fun z hz ↦ ?_, ?_, fun z hz ↦ ?_⟩
   · have hc := NormedRing.inverse_continuousAt (hunit z hz).unit
     rw [IsUnit.unit_spec] at hc
     exact (hc.comp (continuous_const.add hTg).continuousAt).continuousWithinAt
-  · beta_reduce
-    rw [← (hunit z hz).unit_spec, Ring.inverse_unit]
-    exact Units.isUnit _
+  · exact (hunit z hz).ringInverse
   · -- `Ψ ξ` is weakly holomorphic on the disc, hence holomorphic
     let D : Opens ℂ := ⟨ball z₀ r, isOpen_ball⟩
     have hξD : ContDiffOn ℝ 1 ξ D := hξ.mono hball
