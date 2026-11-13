@@ -236,9 +236,13 @@ variable {A : Type*} [Category A] [HasCoproducts.{0} A] [Abelian A] (R : A) {c d
 
 /-- The homeomorphism from `ℝℙᴺ` to its whole sublevel `{f ≤ d}`, for `1 ≤ d`. -/
 private def homeomorphTopSublevel (hd : 1 ≤ d) :
-    ℙ ℝ (Fin (N + 1) → ℝ) ≃ₜ {x | projectiveHyperplaneMomentFunction N x ≤ d} :=
-  (Homeomorph.Set.univ _).symm.trans (Homeomorph.setCongr (eq_univ_of_forall fun x ↦
-    (projectiveHyperplaneMomentFunction_le_one x).trans hd).symm)
+    ℙ ℝ (Fin (N + 1) → ℝ) ≃ₜ {x | projectiveHyperplaneMomentFunction N x ≤ d} where
+  toFun x := ⟨x, (projectiveHyperplaneMomentFunction_le_one x).trans hd⟩
+  invFun := Subtype.val
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := continuous_subtype_val
 
 /-- **A band crossing the top level in positive degrees.** For `0 ≤ c < 1 ≤ d`, the lower sublevel
 `{f ≤ c}` is contractible, so in every positive degree the relative homology of the band
@@ -255,6 +259,9 @@ def singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction (hc₀ : 0
     contractibleSpace_sublevel_projectiveHyperplaneMomentFunction hc₀ hc₁
   ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).mapIso
       (TopCat.isoOfHomeo (homeomorphTopSublevel hd)) ≪≫
+    -- The source of `singularHomologyπ` is the homology of the singular simplicial set of
+    -- `{f ≤ d}`, which agrees with the target of the first factor only up to unfolding
+    -- `singularHomologyFunctor` and `TopPair.toSSetPair`; so the morphism is left implicit.
     @asIso _ _ _ _ _ (TopPair.isIso_singularHomologyπ_of_contractibleSpace _ R k)
 
 /-- The forward map of `singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction` is
@@ -267,17 +274,25 @@ theorem singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction_hom (h
           (TopCat.ofHom ⟨fun x ↦ ⟨x, (projectiveHyperplaneMomentFunction_le_one x).trans hd⟩,
             by fun_prop⟩) ≫
         (sublevelPair (projectiveHyperplaneMomentFunction N) (hc₁.le.trans hd)).singularHomologyπ
-          R (k + 1) :=
-  (rfl)
+          R (k + 1) := by
+  dsimp only [singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction, Iso.trans_hom,
+    Functor.mapIso_hom, asIso_hom, TopCat.isoOfHomeo_hom]
+  -- `homeomorphTopSublevel hd` is defined with the inclusion `x ↦ ⟨x, _⟩` as its forward map.
+  rfl
 
-/-- **A band crossing the top level in degree zero.** For `0 ≤ c ≤ d` with `1 ≤ d`, the zeroth
-relative homology of the band `({f ≤ d}, {f ≤ c})` vanishes, since `ℝℙᴺ` is path-connected and
-`{f ≤ c}` contains the minimum `[e_N]`. -/
+/-- **A band in degree zero.** For `0 ≤ c ≤ d`, the zeroth relative homology of the band
+`({f ≤ d}, {f ≤ c})` vanishes, since `{f ≤ d}` is path-connected (contractible for `d < 1`, and
+all of `ℝℙᴺ` for `1 ≤ d`) and `{f ≤ c}` contains the minimum `[e_N]`. -/
 theorem isZero_singularHomology_zero_sublevelPair_projectiveHyperplaneMomentFunction
-    (hc₀ : 0 ≤ c) (hd : 1 ≤ d) (hcd : c ≤ d) :
+    (hc₀ : 0 ≤ c) (hcd : c ≤ d) :
     IsZero ((sublevelPair (projectiveHyperplaneMomentFunction N) hcd).singularHomology R 0) :=
-  have : PathConnectedSpace (sublevelPair (projectiveHyperplaneMomentFunction N) hcd).fst :=
-    (homeomorphTopSublevel hd).surjective.pathConnectedSpace (homeomorphTopSublevel hd).continuous
+  have : PathConnectedSpace (sublevelPair (projectiveHyperplaneMomentFunction N) hcd).fst := by
+    rcases lt_or_ge d 1 with hd | hd
+    · have := contractibleSpace_sublevel_projectiveHyperplaneMomentFunction (N := N)
+        (hc₀.trans hcd) hd
+      exact inferInstanceAs (PathConnectedSpace {x | projectiveHyperplaneMomentFunction N x ≤ d})
+    · exact (homeomorphTopSublevel hd).surjective.pathConnectedSpace
+        (homeomorphTopSublevel hd).continuous
   have : Nonempty (sublevelPair (projectiveHyperplaneMomentFunction N) hcd).snd :=
     ⟨⟨mk ℝ (Pi.single (Fin.last N) 1) (by simp), by
       rw [mem_ofPred_eq, projectiveHyperplaneMomentFunction_def,
