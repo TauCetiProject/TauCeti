@@ -94,15 +94,15 @@ theorem induction {P : ParitySignedSym G → Prop}
   | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
   | add a b ha hb => simpa only [map_add] using add _ _ ha hb
 
-variable {A : Type w} [Ring A] [Algebra R A]
-
 /-- Algebra maps from the parity presentation are determined on generators. -/
 @[ext 1200]
-theorem hom_ext {f g : ParitySignedSym G →ₐ[R] A}
+theorem hom_ext {A : Type w} [Semiring A] [Algebra R A] {f g : ParitySignedSym G →ₐ[R] A}
     (h : ∀ x, f (generator G x) = g (generator G x)) : f = g := by
   apply RingQuot.ringQuot_ext'
   apply TensorAlgebra.hom_ext
   exact LinearMap.ext h
+
+variable {A : Type w} [Ring A] [Algebra R A]
 
 /-- Extend a linear map whose homogeneous images satisfy the parity sign rule. -/
 def lift (f : V →ₗ[R] A)
