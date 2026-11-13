@@ -35,10 +35,8 @@ This is the comparison of Keller–Vossieck's Example 2.3, specialized to an abe
 
 ## Main results
 
-* `CategoryTheory.GorensteinProjective.toSingularityCategoryCommShift_hom_app_one` and
-  `CategoryTheory.GorensteinProjective.toSingularityCategory_map_stableConflationTriangle_mor₃`: the
-  commutation with the shift in degree one, and the image of the third morphism of a stable
-  conflation triangle.
+* `CategoryTheory.GorensteinProjective.toSingularityCategory_commShiftIso_one_hom_app`: the
+  commutation with the shift in degree one.
 * `CategoryTheory.GorensteinProjective.toSingularityCategory_isTriangulated`: Chen's functor is a
   triangle functor.
 
@@ -79,14 +77,25 @@ private theorem shortExact_suspensionShortComplex (A : GorensteinProjective C) :
 
 variable (C) in
 /-- The comparison `F(ΣA) ⟶ F(A)⟦1⟧`: the connecting morphism of the suspension presentation of
-`A`, in the singularity category. -/
+`A`, in the singularity category. Here `F(X)` is `X` placed in degree zero. -/
 noncomputable def toSingularityCategoryFunctorSuspensionMap (A : GorensteinProjective C) :
-    (toSingularityCategoryFunctor C).obj ((hF).suspensionObj A) ⟶
-      ((toSingularityCategoryFunctor C).obj A)⟦(1 : ℤ)⟧ :=
+    (SingularityCategory.Q C).obj
+        ((DerivedCategory.Bounded.singleFunctor C 0).obj ((hF).suspensionObj A).obj) ⟶
+      ((SingularityCategory.Q C).obj
+        ((DerivedCategory.Bounded.singleFunctor C 0).obj A.obj))⟦(1 : ℤ)⟧ :=
   (SingularityCategory.Q C).map (shortExact_suspensionShortComplex A).boundedSingleTriangle.mor₃ ≫
     ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _
 
-theorem isIso_toSingularityCategoryFunctorSuspensionMap (A : GorensteinProjective C) :
+/-- The comparison `F(ΣA) ⟶ F(A)⟦1⟧` is the image in the singularity category of the connecting
+morphism of the triangle of the suspension presentation of `A` in `Dᵇ(C)`. -/
+theorem toSingularityCategoryFunctorSuspensionMap_def (A : GorensteinProjective C) :
+    toSingularityCategoryFunctorSuspensionMap C A =
+      (SingularityCategory.Q C).map ((exactStructure_conflation_iff _).1
+          ((hF).suspensionPresentation A).conflation).boundedSingleTriangle.mor₃ ≫
+        ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _ :=
+  (rfl)
+
+instance isIso_toSingularityCategoryFunctorSuspensionMap (A : GorensteinProjective C) :
     IsIso (toSingularityCategoryFunctorSuspensionMap C A) := by
   have hT := (SingularityCategory.Q C).map_distinguished _
     (shortExact_suspensionShortComplex A).boundedSingleTriangle_distinguished
@@ -95,13 +104,15 @@ theorem isIso_toSingularityCategoryFunctorSuspensionMap (A : GorensteinProjectiv
   exact (Triangle.isZero₂_iff_isIso₃ _ hT).1 (SingularityCategory.isZero_Q_obj_singleFunctor_obj hI)
 
 /-- The comparison `F(ΣA) ⟶ F(A)⟦1⟧` is natural. -/
+@[reassoc]
 theorem toSingularityCategoryFunctorSuspensionMap_naturality {A B : GorensteinProjective C}
     (f : A ⟶ B) :
-    (toSingularityCategoryFunctor C).map
-        (((hF).suspensionPresentation A).cokernelMap ((hF).suspensionPresentation B) f) ≫
+    (SingularityCategory.Q C).map ((DerivedCategory.Bounded.singleFunctor C 0).map
+        (((hF).suspensionPresentation A).cokernelMap ((hF).suspensionPresentation B) f).hom) ≫
       toSingularityCategoryFunctorSuspensionMap C B =
         toSingularityCategoryFunctorSuspensionMap C A ≫
-          ((toSingularityCategoryFunctor C).map f)⟦(1 : ℤ)⟧' := by
+          ((SingularityCategory.Q C).map ((DerivedCategory.Bounded.singleFunctor C 0).map
+            f.hom))⟦(1 : ℤ)⟧' := by
   let φ : suspensionShortComplex A ⟶ suspensionShortComplex B :=
     { τ₁ := f.hom
       τ₂ := (((hF).suspensionPresentation A).middleMap ((hF).suspensionPresentation B) f).hom
@@ -111,37 +122,10 @@ theorem toSingularityCategoryFunctorSuspensionMap_naturality {A B : GorensteinPr
       comm₂₃ := congrArg (·.hom)
         (((hF).suspensionPresentation A).p_comp_cokernelMap
           ((hF).suspensionPresentation B) f).symm }
-  have h := (SingularityCategory.Q C).congr_map
+  simpa [toSingularityCategoryFunctorSuspensionMap, φ] using (SingularityCategory.Q C).congr_map
     (ShortComplex.ShortExact.boundedSingleTriangle_mor₃_naturality φ
-      (shortExact_suspensionShortComplex A) (shortExact_suspensionShortComplex B))
-  simp only [Functor.map_comp] at h
-  -- Chen's functor on `C` is, by definition, `Q` applied to the bounded single functor.
-  calc _ = (SingularityCategory.Q C).map ((DerivedCategory.Bounded.singleFunctor C 0).map φ.τ₃) ≫
-        (SingularityCategory.Q C).map
-          (shortExact_suspensionShortComplex B).boundedSingleTriangle.mor₃ ≫
-        ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _ := rfl
-    _ = (SingularityCategory.Q C).map
-          (shortExact_suspensionShortComplex A).boundedSingleTriangle.mor₃ ≫
-        (SingularityCategory.Q C).map
-          (((DerivedCategory.Bounded.singleFunctor C 0).map φ.τ₁)⟦(1 : ℤ)⟧') ≫
-        ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _ := (reassoc_of% h) _
-    _ = _ := by rw [Functor.commShiftIso_hom_naturality, ← Category.assoc]; rfl
-
-/-- The comparison `F(ΣA) ⟶ F(A)⟦1⟧`, between objects of the stable category. -/
-private noncomputable def suspensionIsoAux (A : GorensteinProjective C) :
-    (toSingularityCategory C).obj ((exactStructure C).projectiveStableFunctor.obj
-        ((hF).suspensionObj A)) ≅
-      ((toSingularityCategory C).obj ((exactStructure C).projectiveStableFunctor.obj A))⟦(1 : ℤ)⟧ :=
-  @asIso _ _ _ _ (toSingularityCategoryFunctorSuspensionMap C A)
-    (isIso_toSingularityCategoryFunctorSuspensionMap A)
-
-private theorem suspensionIsoAux_hom_naturality {A B : GorensteinProjective C} (f : A ⟶ B) :
-    (toSingularityCategory C).map ((exactStructure C).projectiveStableFunctor.map
-        (((hF).suspensionPresentation A).cokernelMap ((hF).suspensionPresentation B) f)) ≫
-      (suspensionIsoAux B).hom = (suspensionIsoAux A).hom ≫
-        ((toSingularityCategory C).map
-          ((exactStructure C).projectiveStableFunctor.map f))⟦(1 : ℤ)⟧' :=
-  toSingularityCategoryFunctorSuspensionMap_naturality f
+      (shortExact_suspensionShortComplex A) (shortExact_suspensionShortComplex B)) =≫
+    ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _
 
 variable (C) in
 /-- **Chen's functor intertwines the stable suspension with the shift**: `F(ΣX) ≅ F(X)⟦1⟧`,
@@ -151,17 +135,17 @@ noncomputable def stableSuspensionCompToSingularityCategoryIso :
       toSingularityCategory C ⋙ shiftFunctor (SingularityCategory C) (1 : ℤ) :=
   CategoryTheory.Quotient.natIsoLift _ (NatIso.ofComponents
     (fun A ↦ eqToIso (congrArg (toSingularityCategory C).obj
-        ((hF).stableSuspension_obj_projectiveStableFunctor_obj A)) ≪≫ suspensionIsoAux A)
+        ((hF).stableSuspension_obj_projectiveStableFunctor_obj A)) ≪≫
+      -- The comparison is typed at objects placed in degree zero, which are these objects of the
+      -- stable category only after unfolding Chen's functor; the instance is passed explicitly.
+      @asIso _ _ _ _ (toSingularityCategoryFunctorSuspensionMap C A)
+        (isIso_toSingularityCategoryFunctorSuspensionMap A))
     (fun {A B} f ↦ by
-      -- The quotient functor followed by the stable suspension is the map on cokernels.
-      change (toSingularityCategory C).map ((hF).stableSuspension.map
-          ((exactStructure C).projectiveStableFunctor.map f)) ≫ _ =
-        _ ≫ ((toSingularityCategory C).map
-          ((exactStructure C).projectiveStableFunctor.map f))⟦(1 : ℤ)⟧'
-      rw [(hF).stableSuspension_map_projectiveStableFunctor_map, Functor.map_comp,
-        Functor.map_comp, eqToHom_map, eqToHom_map]
-      simp only [Iso.trans_hom, eqToIso.hom, Category.assoc, eqToHom_trans_assoc,
-        eqToHom_refl, Category.id_comp, suspensionIsoAux_hom_naturality]))
+      simp only [Functor.comp_map, (hF).stableSuspension_map_projectiveStableFunctor_map,
+        Functor.map_comp, eqToHom_map, Iso.trans_hom, eqToIso.hom, Category.assoc,
+        eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+      -- Chen's functor on the class of a morphism is that morphism placed in degree zero.
+      exact eqToHom _ ≫= toSingularityCategoryFunctorSuspensionMap_naturality f))
 
 /-- On the image of a Gorenstein-projective object `A`, the comparison is the connecting morphism
 `F(ΣA) ⟶ F(A)⟦1⟧` of its suspension presentation. -/
@@ -171,7 +155,18 @@ theorem stableSuspensionCompToSingularityCategoryIso_hom_app (A : GorensteinProj
       ((exactStructure C).projectiveStableFunctor.obj A) =
         eqToHom (congrArg (toSingularityCategory C).obj
           ((hF).stableSuspension_obj_projectiveStableFunctor_obj A)) ≫
-        toSingularityCategoryFunctorSuspensionMap C A :=
+          toSingularityCategoryFunctorSuspensionMap C A :=
+  (rfl)
+
+/-- On the image of a Gorenstein-projective object `A`, the inverse comparison is the inverse of
+the connecting morphism `F(ΣA) ⟶ F(A)⟦1⟧` of its suspension presentation. -/
+@[simp]
+theorem stableSuspensionCompToSingularityCategoryIso_inv_app (A : GorensteinProjective C) :
+    (stableSuspensionCompToSingularityCategoryIso C).inv.app
+      ((exactStructure C).projectiveStableFunctor.obj A) =
+        inv (toSingularityCategoryFunctorSuspensionMap C A) ≫
+          eqToHom (congrArg (toSingularityCategory C).obj
+            ((hF).stableSuspension_obj_projectiveStableFunctor_obj A)).symm :=
   (rfl)
 
 variable (C) in
@@ -185,7 +180,7 @@ noncomputable def toSingularityCategoryCommShift :
 
 /-- In degree one, the commutation of Chen's functor with the shifts is the identification
 `Σ ≅ ⟦1⟧` of the stable category followed by the comparison `F ∘ Σ ≅ ⟦1⟧ ∘ F`. -/
-theorem toSingularityCategoryCommShift_hom_app_one
+theorem toSingularityCategory_commShiftIso_one_hom_app
     (X : (exactStructure C).ProjectiveStableCategory) :
     letI := (hF).stableHasShift
     letI := toSingularityCategoryCommShift C
@@ -194,19 +189,19 @@ theorem toSingularityCategoryCommShift_hom_app_one
         (stableSuspensionCompToSingularityCategoryIso C).hom.app X := by
   let := (hF).stableHasShift
   let := toSingularityCategoryCommShift C
-  rw [(hF).commShiftOfIntertwiningStableSuspensionShift_iso_one (toSingularityCategory C)
+  simp [(hF).commShiftOfIntertwiningStableSuspensionShift_iso_one (toSingularityCategory C)
     (stableSuspensionCompToSingularityCategoryIso C)]
-  rfl
 
 /-- In the singularity category, the connecting morphism of a short exact sequence
-`X ↣ Y ↠ Z` of Gorenstein-projective objects is its connecting map `Z ⟶ ΣX` followed by the
-comparison `F(ΣX) ≅ F(X)⟦1⟧`. -/
-theorem Q_map_boundedSingleTriangle_mor₃ {S : ShortComplex (GorensteinProjective C)}
-    (hS : (exactStructure C).Conflation S) :
+`X ↣ Y ↠ Z` of Gorenstein-projective objects, followed by the commutation of `Q` with the shift,
+is its connecting map `Z ⟶ ΣX` followed by the comparison `F(ΣX) ⟶ F(X)⟦1⟧`. -/
+private theorem Q_map_boundedSingleTriangle_mor₃_comp_commShiftIso_one_hom_app
+    {S : ShortComplex (GorensteinProjective C)} (hS : (exactStructure C).Conflation S) :
     (SingularityCategory.Q C).map
         ((exactStructure_conflation_iff S).1 hS).boundedSingleTriangle.mor₃ ≫
       ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _ =
-        (toSingularityCategoryFunctor C).map ((hF).connectingMap hS) ≫
+        (SingularityCategory.Q C).map
+            ((DerivedCategory.Bounded.singleFunctor C 0).map ((hF).connectingMap hS).hom) ≫
           toSingularityCategoryFunctorSuspensionMap C S.X₁ := by
   let φ : S.map (isGorensteinProjective C).ι ⟶ suspensionShortComplex S.X₁ :=
     { τ₁ := 𝟙 _
@@ -216,24 +211,16 @@ theorem Q_map_boundedSingleTriangle_mor₃ {S : ShortComplex (GorensteinProjecti
         rw [Category.id_comp]
         exact (congrArg (·.hom) ((hF).f_comp_connectingMiddleMap hS)).symm
       comm₂₃ := congrArg (·.hom) ((hF).g_comp_connectingMap hS).symm }
-  have h := ShortComplex.ShortExact.boundedSingleTriangle_mor₃_naturality φ
-    ((exactStructure_conflation_iff S).1 hS) (shortExact_suspensionShortComplex S.X₁)
-  -- Chen's functor on `C` is, by definition, `Q` applied to the bounded single functor.
-  calc _ = (SingularityCategory.Q C).map
-        (((exactStructure_conflation_iff S).1 hS).boundedSingleTriangle.mor₃ ≫
-          ((DerivedCategory.Bounded.singleFunctor C 0).map φ.τ₁)⟦(1 : ℤ)⟧') ≫
-        ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _ := by simp [φ]
-    _ = (SingularityCategory.Q C).map ((DerivedCategory.Bounded.singleFunctor C 0).map φ.τ₃ ≫
-        (shortExact_suspensionShortComplex S.X₁).boundedSingleTriangle.mor₃) ≫
-        ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _ := by rw [h]; rfl
-    _ = _ := by rw [Functor.map_comp, Category.assoc]; rfl
+  simpa [toSingularityCategoryFunctorSuspensionMap, φ] using ((SingularityCategory.Q C).congr_map
+    (ShortComplex.ShortExact.boundedSingleTriangle_mor₃_naturality φ
+      ((exactStructure_conflation_iff S).1 hS) (shortExact_suspensionShortComplex S.X₁)) =≫
+    ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _).symm
 
-/-- **The third morphism of a stable conflation triangle.** For a conflation `S` of
-Gorenstein-projective objects, the third morphism of its stable conflation triangle
+/-- In the singularity category, the image under Chen's functor of the third morphism
+`Z ⟶ ΣX ≅ X⟦1⟧` of the stable conflation triangle of a conflation `S`
 (`ExactStructure.IsFrobenius.stableConflationTriangle_eq_mk`), followed by the commutation of
-Chen's functor with the shift, is sent to the connecting morphism of the triangle of `S` in
-`Dᵇ(C)`. -/
-theorem toSingularityCategory_map_stableConflationTriangle_mor₃
+Chen's functor with the shift, is the connecting morphism of the triangle of `S` in `Dᵇ(C)`. -/
+private theorem toSingularityCategory_map_connectingMap_comp_commShiftIso_one_hom_app
     {S : ShortComplex (GorensteinProjective C)} (hS : (exactStructure C).Conflation S) :
     letI := (hF).stableHasShift
     letI := toSingularityCategoryCommShift C
@@ -249,26 +236,18 @@ theorem toSingularityCategory_map_stableConflationTriangle_mor₃
         ((SingularityCategory.Q C).commShiftIso (1 : ℤ)).hom.app _ := by
   let := (hF).stableHasShift
   let := toSingularityCategoryCommShift C
-  -- The shift identification `Σ ≅ ⟦1⟧` cancels, and the comparison on `ΣX₁` is the connecting
-  -- morphism of the suspension presentation of `X₁`.
-  have k₁ : (toSingularityCategory C).map
-      ((hF).stableShiftFunctorOneIso.inv.app
-        ((exactStructure C).projectiveStableFunctor.obj S.X₁)) ≫
-        (toSingularityCategory C).map ((hF).stableShiftFunctorOneIso.hom.app
-          ((exactStructure C).projectiveStableFunctor.obj S.X₁)) = 𝟙 _ := by
-    rw [← Functor.map_comp, Iso.inv_hom_id_app, CategoryTheory.Functor.map_id]
-  have k₂ : (toSingularityCategory C).map
+  -- The comparison on `ΣX₁` is the connecting morphism of the suspension presentation of `X₁`.
+  have k : (toSingularityCategory C).map
       (eqToHom ((hF).stableSuspension_obj_projectiveStableFunctor_obj S.X₁).symm) ≫
         (stableSuspensionCompToSingularityCategoryIso C).hom.app
           ((exactStructure C).projectiveStableFunctor.obj S.X₁) =
       toSingularityCategoryFunctorSuspensionMap C S.X₁ := by
     rw [stableSuspensionCompToSingularityCategoryIso_hom_app, eqToHom_map]
-    exact eqToHom_trans_assoc _ _ _ |>.trans
-      (by simp only [eqToHom_refl]; exact Category.id_comp _)
-  rw [toSingularityCategoryCommShift_hom_app_one, Functor.map_comp, Functor.map_comp,
-    Category.assoc, Category.assoc, reassoc_of% k₁, k₂,
-    toSingularityCategory_map_projectiveStableFunctor_map]
-  exact (Q_map_boundedSingleTriangle_mor₃ hS).symm
+    exact (eqToHom_trans_assoc _ _ _).trans (Category.id_comp _)
+  -- The shift identification `Σ ≅ ⟦1⟧` cancels.
+  rw [toSingularityCategory_commShiftIso_one_hom_app, Functor.map_comp, Functor.map_comp,
+    Category.assoc, Category.assoc, Iso.inv_hom_id_app_map_assoc, k]
+  exact (Q_map_boundedSingleTriangle_mor₃_comp_commShiftIso_one_hom_app hS).symm
 
 /-- **Chen's functor is a triangle functor**: `F : stable(Gproj C) ⥤ D_sg(C)` sends Happel's
 distinguished triangles to distinguished triangles. -/
@@ -292,14 +271,15 @@ theorem toSingularityCategory_isTriangulated :
     ((exactStructure_conflation_iff S).1 hS).boundedSingleTriangle_distinguished) _
     ((toSingularityCategory C).mapTriangle.mapIso e ≪≫ ?_)
   rw [(hF).stableConflationTriangle_eq_mk]
+  -- Chen's functor agrees with `Q` on objects and morphisms of `C` only definitionally, so the
+  -- identity comparisons are checked by `comp_id` and `id_comp` up to that identification.
   refine Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_
   · exact (Category.comp_id _).trans ((toSingularityCategory_map_projectiveStableFunctor_map
       S.f).trans (Category.id_comp _).symm)
   · exact (Category.comp_id _).trans ((toSingularityCategory_map_projectiveStableFunctor_map
       S.g).trans (Category.id_comp _).symm)
-  · exact (congrArg (fun x ↦ _ ≫ x) (CategoryTheory.Functor.map_id
-      (shiftFunctor (SingularityCategory C) (1 : ℤ)) _)).trans
-        ((Category.comp_id _).trans ((toSingularityCategory_map_stableConflationTriangle_mor₃
-          hS).trans (Category.id_comp _).symm))
+  · exact (_ ≫= Functor.map_id _ _).trans ((Category.comp_id _).trans
+      ((toSingularityCategory_map_connectingMap_comp_commShiftIso_one_hom_app hS).trans
+        (Category.id_comp _).symm))
 
 end CategoryTheory.GorensteinProjective

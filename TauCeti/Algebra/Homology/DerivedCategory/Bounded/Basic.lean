@@ -51,6 +51,11 @@ variable {A}
     (singleFunctors A).functor n = singleFunctor A n :=
   rfl
 
+/-- The bounded single functor is the derived single functor on underlying morphisms. -/
+@[simp] lemma singleFunctor_map_hom (n : ℤ) {X Y : A} (f : X ⟶ Y) :
+    ((singleFunctor A n).map f).hom = (DerivedCategory.singleFunctor A n).map f :=
+  rfl
+
 /-- The bounded single functors are additive, as the derived single functors are. -/
 instance (n : ℤ) : (singleFunctor A n).Additive where
   map_add {_ _ f g} :=
@@ -99,17 +104,8 @@ lemma _root_.CategoryTheory.ShortComplex.ShortExact.boundedSingleTriangle_mor₃
   simp only [ShortComplex.ShortExact.singleTriangle_mor₃,
     ShortComplex.ShortExact.singleTriangle.map_hom₁,
     ShortComplex.ShortExact.singleTriangle.map_hom₃] at h
-  have k := (DerivedCategory.Bounded.ι.commShiftIso (1 : ℤ)).inv.naturality
-    ((DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₁)
-  simp only [Functor.comp_map] at k
-  simp only [Functor.map_comp, ShortComplex.ShortExact.boundedSingleTriangle_mor₃]
-  -- Both sides are composites in `D(A)`, where they agree by the naturality of `singleδ`.
-  calc _ = (DerivedCategory.singleFunctor A 0).map φ.τ₃ ≫ h₂.singleδ ≫
-        (DerivedCategory.Bounded.ι.commShiftIso (1 : ℤ)).inv.app
-          ((DerivedCategory.Bounded.singleFunctor A 0).obj S₂.X₁) := rfl
-    _ = h₁.singleδ ≫ ((DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₁).hom⟦(1 : ℤ)⟧' ≫
-        (DerivedCategory.Bounded.ι.commShiftIso (1 : ℤ)).inv.app
-          ((DerivedCategory.Bounded.singleFunctor A 0).obj S₂.X₁) := ((reassoc_of% h) _).symm
-    _ = _ := (congrArg (h₁.singleδ ≫ ·) k).trans (Category.assoc _ _ _).symm
+  simpa [← reassoc_of% h] using
+    h₁.singleδ ≫= DerivedCategory.Bounded.ι.commShiftIso_inv_naturality
+      ((DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₁) (1 : ℤ)
 
 end TauCeti
