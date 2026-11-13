@@ -49,7 +49,7 @@ the domain of the empty word empty also over the trivial group, where `succ 0 = 
 
 The discreteness of `Λ` is Mathlib's `SuccOrder` on a linearly ordered additive commutative group,
 and the position `β + 1` is written `Order.succ β`. Since translations commute with `succ`, this is
-`β + succ 0` (`Order.succ_eq_add_succ_zero`), so `succ 0` is the least positive element when
+`β + succ 0` (`TauCeti.Order.succ_eq_add_succ_zero`), so `succ 0` is the least positive element when
 there is one. The instance `One Λ` is not used, because it need not be that element: on
 `Lex (Fin n → ℤ)` it is the constant function `1`. For `Λ = ℤ`, `Order.succ_eq_add_one` rewrites
 `Order.succ β` to `β + 1`.
@@ -168,6 +168,20 @@ theorem length_eq_zero_iff : w.length = 0 ↔ w = empty Λ X := by
 
 end Preorder
 
+section PartialOrder
+
+variable [Zero Λ] [PartialOrder Λ] {w : InfWord Λ X}
+
+@[simp]
+theorem length_pos_iff : 0 < w.length ↔ w ≠ empty Λ X :=
+  w.length_nonneg.lt_iff_ne'.trans (not_congr length_eq_zero_iff)
+
+@[simp]
+theorem length_nonpos_iff : w.length ≤ 0 ↔ w = empty Λ X :=
+  w.length_nonneg.ge_iff_eq'.trans length_eq_zero_iff
+
+end PartialOrder
+
 section LinearOrder
 
 variable [Zero Λ] [LinearOrder Λ]
@@ -200,6 +214,14 @@ theorem ofFun_of_nonpos {α : Λ} (f : Λ → X × Bool) (h : α ≤ 0) : ofFun 
 @[simp]
 theorem ofFun_zero (f : Λ → X × Bool) : ofFun 0 f = empty Λ X :=
   ofFun_of_nonpos f le_rfl
+
+@[simp]
+theorem ofFun_max_zero (α : Λ) (f : Λ → X × Bool) : ofFun (max α 0) f = ofFun α f :=
+  ext (by simp) fun _ _ _ => by grind
+
+@[simp]
+theorem ofFun_zero_max (α : Λ) (f : Λ → X × Bool) : ofFun (max 0 α) f = ofFun α f := by
+  rw [max_comm, ofFun_max_zero]
 
 /-- The word `ofFun α f` only depends on the values of `f` on its domain `{β | 0 < β ≤ α}`. -/
 theorem ofFun_congr {α : Λ} {f g : Λ → X × Bool} (h : ∀ β, 0 < β → β ≤ α → f β = g β) :
@@ -243,6 +265,14 @@ theorem take_of_length_le (w : InfWord Λ X) {β : Λ} (h : w.length ≤ β) : w
 @[simp]
 theorem take_length (w : InfWord Λ X) : w.take w.length = w :=
   w.take_of_length_le le_rfl
+
+@[simp]
+theorem take_max_zero (w : InfWord Λ X) (β : Λ) : w.take (max β 0) = w.take β :=
+  ext (by simp; grind) fun _ _ _ => by grind
+
+@[simp]
+theorem take_zero_max (w : InfWord Λ X) (β : Λ) : w.take (max 0 β) = w.take β := by
+  rw [max_comm, take_max_zero]
 
 @[simp]
 theorem take_empty (β : Λ) : (empty Λ X).take β = empty Λ X := by
@@ -298,7 +328,6 @@ section LinearOrder
 
 variable [Zero Λ] [LinearOrder Λ] [SuccOrder Λ] {w : InfWord Λ X} {α : Λ}
 
-@[simp]
 theorem isReduced_ofFun_iff {f : Λ → X × Bool} : (ofFun α f).IsReduced ↔
     ∀ β, 0 < β → β < α → f (Order.succ β) ≠ Prod.map id not (f β) := by
   refine forall_congr' fun β => forall_congr' fun h0 => ?_
@@ -308,8 +337,9 @@ theorem isReduced_ofFun_iff {f : Λ → X × Bool} : (ofFun α f).IsReduced ↔
     grind
 
 /-- The constant word `x^α`, with the letter `x` at every position of `[1, α]`, is reduced. -/
+@[simp]
 theorem isReduced_ofFun_const (α : Λ) (x : X × Bool) : (ofFun α fun _ => x).IsReduced := by
-  simp [Prod.ext_iff]
+  simp [isReduced_ofFun_iff, Prod.ext_iff]
 
 theorem IsReduced.take (h : w.IsReduced) (β : Λ) : (w.take β).IsReduced := by
   intro γ h0 hγ
@@ -466,6 +496,14 @@ theorem drop_length (w : InfWord Λ X) : w.drop w.length = empty Λ X :=
   w.drop_of_length_le le_rfl
 
 @[simp]
+theorem drop_max_zero (w : InfWord Λ X) (β : Λ) : w.drop (max β 0) = w.drop β :=
+  ext (by simp; grind) fun _ _ _ => by grind
+
+@[simp]
+theorem drop_zero_max (w : InfWord Λ X) (β : Λ) : w.drop (max 0 β) = w.drop β := by
+  rw [max_comm, drop_max_zero]
+
+@[simp]
 theorem drop_empty (β : Λ) : (empty Λ X).drop β = empty Λ X := by
   simp [← length_eq_zero_iff]
 
@@ -568,7 +606,6 @@ theorem inv_eq_empty_iff : w⁻¹ = empty Λ X ↔ w = empty Λ X := by
 
 /-- The inverse of `ofFun α f` reads the inverses of the letters of `f` backwards:
 `(ofFun α f)⁻¹(γ) = f(α + 1 - γ)⁻¹`. -/
-@[simp]
 theorem inv_ofFun (α : Λ) (f : Λ → X × Bool) :
     (ofFun α f)⁻¹ = ofFun α fun γ => Prod.map id not (f (Order.succ α - γ)) :=
   ext (by simp) fun _ _ _ => by
@@ -586,7 +623,6 @@ theorem inv_append (u v : InfWord Λ X) : (u ++ v)⁻¹ = v⁻¹ ++ u⁻¹ := by
 
 /-- Inversion turns the initial segment of length `β` into the final segment of `w⁻¹` of the same
 length. -/
-@[simp]
 theorem inv_take (w : InfWord Λ X) (β : Λ) : (w.take β)⁻¹ = w⁻¹.drop (w.length - β) := by
   refine ext (by simp; grind) fun γ h0 hγ => ?_
   simp only [length_inv, length_take] at hγ
@@ -598,7 +634,6 @@ theorem inv_take (w : InfWord Λ X) (β : Λ) : (w.take β)⁻¹ = w⁻¹.drop (
 
 /-- Inversion turns the final segment `w.drop β` into the initial segment of `w⁻¹` of the same
 length. -/
-@[simp]
 theorem inv_drop (w : InfWord Λ X) (β : Λ) : (w.drop β)⁻¹ = w⁻¹.take (w.length - β) := by
   rw [inv_eq_iff_eq_inv, inv_take, inv_inv, length_inv, sub_sub_cancel]
 

@@ -21,7 +21,9 @@ least positive element when `n ≥ 2`.
 
 public section
 
-namespace Order
+namespace TauCeti.Order
+
+open _root_.Order
 
 variable {α : Type*} [AddGroup α] [PartialOrder α] [AddLeftMono α] [SuccOrder α]
 
@@ -33,4 +35,4 @@ theorem add_succ (a b : α) : a + succ b = succ (a + b) :=
 theorem succ_eq_add_succ_zero (a : α) : succ a = a + succ 0 := by
   rw [add_succ, add_zero]
 
-end Order
+end TauCeti.Order
