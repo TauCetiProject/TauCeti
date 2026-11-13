@@ -58,6 +58,9 @@ normal closure of `x ^ n` when `n ≠ 1`.
   coordinate group of `[x, g] = 1` correspond to the centralizer of `ι g`; over a free group `F`
   with a free generator `a`, those from the coordinate group of `[x, a] = 1` to `F` correspond to
   the powers of `a`.
+* `TauCeti.GroupAlgGeom.CoordGroup.homOfVSubset`: the surjection `G_{R(T)} →* G_{R(S)}` induced by
+  the identity on the variables when `V_H(S) ⊆ V_H(T)`, an isomorphism when the solution sets are
+  equal.
 
 ## Main results
 
@@ -281,6 +284,13 @@ theorem singleton_comp_eq_V (g : X → G) :
     simpa only [Function.comp_apply, map_mul, map_inv, eval_inl, eval_inr_of,
       mul_inv_eq_one] using hx
 
+/-- If a coefficient becomes trivial in `H`, every point is a solution of the equation with that
+constant. -/
+theorem V_singleton_inl_eq_univ {g : G} (hg : ι g = 1) :
+    V ι ({inl g} : Set (GX G X)) = Set.univ := by
+  ext v
+  simp [hg]
+
 /-- If some coefficient remains nontrivial in `H`, an equation with that constant has no
 solutions. -/
 theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
@@ -367,6 +377,12 @@ theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
 @[simp]
 theorem I_iUnion {κ : Sort*} (Y : κ → Set (X → H)) : I ι (⋃ k, Y k) = ⨅ k, I ι (Y k) :=
   SetLike.coe_injective ((lowerPolar_iUnion _ Y).trans (coe_iInf (S := fun k => I ι (Y k))).symm)
+
+/-- Conjugating an equation does not change its solutions. -/
+@[simp]
+theorem V_singleton_conj (u w : GX G X) : V ι {u * w * u⁻¹} = V ι {w} := by
+  ext v
+  simp
 
 /-- A system and its normal closure have the same solutions. -/
 @[simp]
@@ -461,6 +477,11 @@ theorem V_Rad (S : Set (GX G X)) : V ι (Rad ι S : Set (GX G X)) = V ι S :=
 @[simp]
 theorem Rad_Rad (S : Set (GX G X)) : Rad ι (Rad ι S : Set (GX G X)) = Rad ι S := by
   rw [Rad_def, V_Rad, Rad_def]
+
+/-- Conjugating an equation does not change its radical. -/
+@[simp]
+theorem Rad_singleton_conj (u w : GX G X) : Rad ι {u * w * u⁻¹} = Rad ι {w} := by
+  rw [Rad_def, V_singleton_conj, Rad_def]
 
 @[simp]
 theorem Rad_normalClosure (S : Set (GX G X)) :
@@ -994,6 +1015,66 @@ theorem CoordGroup.evalGHom_comp_toCoordGroup (hv : v ∈ V ι S) :
     (evalGHom v hv).comp (SystemGroup.toCoordGroup ι S) = SystemGroup.evalGHom v hv := by
   ext
   simp
+
+/-! ### Systems in the same variables with nested solution sets -/
+
+namespace CoordGroup
+
+/-- If every solution of `S` in `H` is a solution of `T`, the identity on the variables induces a
+`G`-homomorphism `G_{R(T)} → G_{R(S)}` of coordinate groups. -/
+def homOfVSubset (h : V ι S ⊆ V ι T) : GHom (coeff ι T) (coeff ι S) :=
+  homOfMapsToWordMap ι S T (fun x => inr (FreeGroup.of x)) <|
+    (mapsToWordMap_iff ι S T _).2 fun v hv => by simpa only [wordMap_id] using h hv
+
+@[simp]
+theorem homOfVSubset_mk (h : V ι S ⊆ V ι T) (w : GX G X) :
+    homOfVSubset h (w : CoordGroup ι T) = (w : CoordGroup ι S) := by
+  rw [homOfVSubset, homOfMapsToWordMap_mk, eval_inl_inr_of, MonoidHom.id_apply]
+
+/-- The homomorphism induced by the identity on the variables is surjective. -/
+theorem homOfVSubset_surjective (h : V ι S ⊆ V ι T) : Function.Surjective (homOfVSubset h) := by
+  intro q
+  obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
+  exact ⟨w, homOfVSubset_mk h w⟩
+
+/-- When `S` and `T` have the same solutions in `H`, the homomorphism induced by the identity on
+the variables is injective, so it is an isomorphism `G_{R(T)} ≅ G_{R(S)}`. -/
+theorem homOfVSubset_injective (h : V ι S ⊆ V ι T) (h' : V ι T ⊆ V ι S) :
+    Function.Injective (homOfVSubset h) := by
+  refine (injective_iff_map_eq_one _).2 fun q hq => ?_
+  obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
+  rw [homOfVSubset_mk, QuotientGroup.eq_one_iff, mem_Rad] at hq
+  exact (QuotientGroup.eq_one_iff w).2 (mem_Rad.2 fun v hv => hq v (h' hv))
+
+/-- A system compared with itself gives the identity homomorphism. -/
+@[simp]
+theorem homOfVSubset_refl : homOfVSubset (subset_refl (V ι S)) = GHom.id (coeff ι S) := by
+  ext
+  simp
+
+/-- The homomorphisms induced by the identity on the variables compose, in the opposite order. -/
+@[simp]
+theorem homOfVSubset_comp {U : Set (GX G X)} (h : V ι S ⊆ V ι T) (h' : V ι T ⊆ V ι U) :
+    (homOfVSubset h).comp (homOfVSubset h') = homOfVSubset (h.trans h') := by
+  ext
+  simp
+
+/-- A solution of `S` given by a `G`-homomorphism `G_{R(S)} → H` is the same solution of `T`. -/
+@[simp]
+theorem homEquiv_comp_homOfVSubset (h : V ι S ⊆ V ι T) (φ : GHom (coeff ι S) ι) :
+    (homEquiv ι T (φ.comp (homOfVSubset h)) : X → H) = homEquiv ι S φ := by
+  ext
+  simp
+
+/-- Evaluation at a solution of `S` factors through the homomorphism `G_{R(T)} → G_{R(S)}`
+induced by the identity on the variables. -/
+@[simp]
+theorem evalGHom_comp_homOfVSubset (h : V ι S ⊆ V ι T) (hv : v ∈ V ι S) :
+    (evalGHom v hv).comp (homOfVSubset h) = evalGHom v (h hv) := by
+  ext
+  simp
+
+end CoordGroup
 
 /-! ### The radical is not the normal closure -/
 

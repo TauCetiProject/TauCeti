@@ -17,7 +17,11 @@ couple, `TauCeti.CompatibleCouple.lebesgue`, inside the common ambient space `L�
 `Lᵖ` and Lorentz spaces (Bergh–Löfström, Chapter 5). Its intersection is `L^{p₀} ∩ L^{p₁}`, the
 pairs of functions agreeing almost everywhere (`TauCeti.CompatibleCouple.mem_lebesgue_inter_iff`),
 and its sum is `L^{p₀} + L^{p₁}`, in which two decompositions agree exactly when their sums agree
-almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_iff`).
+almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_iff`). At the
+exponents `1` and `∞` the couple has the same decompositions as `TauCeti.CompatibleCouple.l1Linfty`,
+so the embedding of its sum space into `L¹ + L^∞` is a surjective isometry
+(`TauCeti.CompatibleCouple.lebesgue_one_top_sumSpaceEmbed_surjective`,
+`TauCeti.CompatibleCouple.norm_lebesgue_one_top_sumSpaceEmbed`).
 
 For `p₀ ≤ p ≤ p₁` the space `Lᵖ` is an intermediate space of the couple: there are continuous
 injections
@@ -83,6 +87,34 @@ theorem lebesgue_fstToSum_add_sndToSum_eq_iff {f₀ g₀ : Lp E p₀ μ} {f₁ g
     ← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, map_add, sumSpaceEmbed_fstToSum,
     sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
   exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_add_iff 𝕜
+
+/-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions: the embedding of
+the sum space of the former into `L¹ + L^∞` sends `g + h` to `g + h`. -/
+theorem lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum (g : Lp E 1 μ) (h : Lp E ∞ μ) :
+    (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed
+        ((lebesgue 𝕜 E μ 1 ∞).fstToSum g + (lebesgue 𝕜 E μ 1 ∞).sndToSum h) =
+      (l1Linfty 𝕜 E μ).fstToSum g + (l1Linfty 𝕜 E μ).sndToSum h := by
+  rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀,
+    lebesgue_embed₁, L1AddLinfty.ofLp_eq_fstToSum, L1AddLinfty.ofLp_eq_sndToSum]
+
+/-- The embedding of the sum space of the Lebesgue couple `(L¹, L^∞)` into `L¹ + L^∞` is
+surjective. -/
+theorem lebesgue_one_top_sumSpaceEmbed_surjective :
+    Function.Surjective (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed := fun u => by
+  obtain ⟨g, h, hgh⟩ := (l1Linfty 𝕜 E μ).exists_fstToSum_add_sndToSum_eq u
+  exact ⟨_, (lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum g h).trans hgh⟩
+
+/-- The embedding of the sum space of the Lebesgue couple `(L¹, L^∞)` into `L¹ + L^∞` is
+norm-preserving. -/
+theorem norm_lebesgue_one_top_sumSpaceEmbed (v : (lebesgue 𝕜 E μ 1 ∞).SumSpace) :
+    ‖(lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v‖ = ‖v‖ := by
+  refine le_antisymm ((lebesgue 𝕜 E μ 1 ∞).le_norm_sumSpace_iff.2 fun g h hgh => ?_)
+    ((l1Linfty 𝕜 E μ).le_norm_sumSpace_iff.2 fun g h hgh => ?_)
+  · rw [← hgh, lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum]
+    exact norm_fstToSum_add_sndToSum_le _ g h
+  · rw [← (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed_injective
+      ((lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum g h).trans hgh)]
+    exact norm_fstToSum_add_sndToSum_le _ g h
 
 section Intermediate
 
