@@ -50,6 +50,10 @@ transversals.
   homotopic.
 * `TauCeti.GraphOfGroups.π₁.normalWordEquiv`: `π₁(𝔸, a)` is in bijection with the normal words of
   closed paths at `a`.
+* `TauCeti.GraphOfGroups.AlternatingPath.IsReduced.edgePath_normalForm` and
+  `TauCeti.GraphOfGroups.AlternatingPath.IsReduced.eq_single_of_homotopic_ofVertex`: normalizing a
+  reduced alternating path preserves its underlying edge path, so no reduced closed alternating
+  path containing a dart is homotopic to a vertex group letter or to the empty path.
 * `TauCeti.GraphOfGroups.Path.ofVertex_homotopic_nil_iff`: a nontrivial vertex group element is
   not homotopic to the empty path.
 * `TauCeti.GraphOfGroups.π₁.vertexHom_injective`: the vertex group `A_b` embeds in `π₁(𝔸, a)`
@@ -777,6 +781,102 @@ theorem vertexHom_injective (p : 𝔸.Path ⟨a⟩ ⟨b⟩) : Function.Injective
   rw [← mk_nil, mk_eq_mk_iff, Path.ofVertex_homotopic_nil_iff]
 
 end π₁
+
+/-! ### Reduced alternating paths and Britton's lemma -/
+
+namespace AlternatingPath
+
+variable {𝔸} {a : Γ.V}
+
+@[simp] theorem edgePath_toPath_setLast {b : Γ.V} (p : 𝔸.AlternatingPath a b)
+    (g : 𝔸.vertexGroup b) : (p.setLast g).toPath.edgePath = p.toPath.edgePath := by
+  cases p <;> simp
+
+private theorem isReduced_normalForm_aux (d : 𝔸.Transversal) :
+    ∀ {b : Γ.V} (p : 𝔸.AlternatingPath a b), p.IsReduced →
+      (∀ {c : Γ.V} (e : b ⟶ c), (normalForm d p.toPath).toAlternatingPath.Cancels e ↔
+        p.Cancels e) ∧
+      (normalForm d p.toPath).toPath.edgePath = p.toPath.edgePath
+  | _, .single g, _ => ⟨fun _ => by simp, by simp⟩
+  | _, .cons p e₀ g, hp => by
+    obtain ⟨ihc, ihe⟩ := isReduced_normalForm_aux d p hp.1
+    have hnc : ¬ (normalForm d p.toPath).toAlternatingPath.Cancels e₀ := ihc e₀ |>.not.mpr hp.2
+    refine ⟨fun e => ?_, ?_⟩
+    · simp only [toPath_cons, normalForm_cons, NormalWord.appendLetter_dart,
+        NormalWord.appendLetter_vertex, NormalWord.toAlternatingPath_mulLast,
+        NormalWord.toAlternatingPath_appendDart, appendDart_of_not_cancels d hnc, last_cons,
+        setLast_cons, cancels_cons_iff]
+      refine and_congr_right fun he => ?_
+      have hmem : 𝔸.ωArrow e₀ (d.edgePart e₀ (normalForm d p.toPath).1.last) ∈
+          (𝔸.αArrow e).range :=
+        𝔸.range_ωArrow_eq_range_αArrow e₀ e he ▸ ⟨_, rfl⟩
+      exact (𝔸.αArrow e).range.mul_mem_cancel_left hmem
+    · simp only [toPath_cons, normalForm_cons, NormalWord.appendLetter_dart,
+        NormalWord.appendLetter_vertex, NormalWord.toPath_def, NormalWord.toAlternatingPath_mulLast,
+        edgePath_toPath_setLast, NormalWord.toAlternatingPath_appendDart,
+        appendDart_of_not_cancels d hnc, Path.edgePath_cons_vertex, Path.edgePath_cons_dart]
+      exact congrArg (·.cons e₀) ihe
+
+/-- Normalizing a reduced alternating path does not change whether a subsequent dart creates a
+backtracking. -/
+theorem IsReduced.cancels_normalForm_iff {b c : Γ.V} {p : 𝔸.AlternatingPath a b} (hp : p.IsReduced)
+    (d : 𝔸.Transversal) (e : b ⟶ c) :
+    (normalForm d p.toPath).toAlternatingPath.Cancels e ↔ p.Cancels e :=
+  (isReduced_normalForm_aux d p hp).1 e
+
+/-- Normalizing a reduced alternating path preserves its underlying edge path. -/
+theorem IsReduced.edgePath_normalForm {b : Γ.V} {p : 𝔸.AlternatingPath a b} (hp : p.IsReduced)
+    (d : 𝔸.Transversal) : (normalForm d p.toPath).toPath.edgePath = p.toPath.edgePath :=
+  (isReduced_normalForm_aux d p hp).2
+
+/-- **Britton's lemma for graphs of groups**: a reduced closed alternating path homotopic to a
+single vertex group letter `g` has length zero and equals `single g`. -/
+theorem IsReduced.eq_single_of_homotopic_ofVertex {p : 𝔸.AlternatingPath a a} (hp : p.IsReduced)
+    {g : 𝔸.vertexGroup a} (h : p.toPath.Homotopic (Path.ofVertex g)) : p = .single g := by
+  have hedge := hp.edgePath_normalForm default
+  rw [(normalForm_eq_normalForm_iff default).mpr h, normalForm_ofVertex] at hedge
+  cases p with
+  | single g' => exact congrArg single (Path.ofVertex_homotopic_ofVertex_iff.mp h)
+  | cons q e h' => simp at hedge
+
+/-- A reduced closed alternating path homotopic to the empty path equals `single 1`. -/
+theorem IsReduced.eq_single_one_of_homotopic_nil {p : 𝔸.AlternatingPath a a} (hp : p.IsReduced)
+    (h : p.toPath.Homotopic Quiver.Path.nil) : p = .single 1 :=
+  hp.eq_single_of_homotopic_ofVertex (h.trans Path.Homotopic.ofVertex_one.symm)
+
+/-- No reduced closed alternating path containing a dart is homotopic to a vertex group letter. -/
+theorem IsReduced.not_homotopic_ofVertex_cons {b : Γ.V} {p : 𝔸.AlternatingPath a b}
+    {e : b ⟶ a} {h' g : 𝔸.vertexGroup a} (hp : (cons p e h').IsReduced) :
+    ¬ (cons p e h').toPath.Homotopic (Path.ofVertex g) :=
+  fun h => nomatch hp.eq_single_of_homotopic_ofVertex h
+
+/-- No reduced closed alternating path containing a dart is homotopic to the empty path. -/
+theorem IsReduced.not_homotopic_nil_cons {b : Γ.V} {p : 𝔸.AlternatingPath a b}
+    {e : b ⟶ a} {h' : 𝔸.vertexGroup a} (hp : (cons p e h').IsReduced) :
+    ¬ (cons p e h').toPath.Homotopic Quiver.Path.nil :=
+  fun h => nomatch hp.eq_single_one_of_homotopic_nil h
+
+end AlternatingPath
+
+variable {𝔸} in
+/-- Two `𝔸`-paths from `a` to `b` differ on the right by an element of `A_b` up to homotopy if and
+only if their normal forms agree up to the final vertex group element. -/
+theorem exists_homotopic_cons_vertex_iff_setLast_eq (d : 𝔸.Transversal) {a b : Γ.V}
+    {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} :
+    (∃ g : 𝔸.vertexGroup b, p.Homotopic (q.cons (Letter.vertex g))) ↔
+      (normalForm d p).toAlternatingPath.setLast 1 =
+        (normalForm d q).toAlternatingPath.setLast 1 := by
+  refine ⟨fun ⟨g, hg⟩ => ?_, fun h => ?_⟩
+  · rw [(normalForm_eq_normalForm_iff d).mpr hg]
+    simp
+  · refine ⟨((normalForm d q).toAlternatingPath.last)⁻¹ * (normalForm d p).toAlternatingPath.last,
+      (normalForm_eq_normalForm_iff d).mp (NormalWord.ext ?_)⟩
+    calc (normalForm d p).toAlternatingPath
+        = ((normalForm d p).toAlternatingPath.setLast 1).setLast
+            (normalForm d p).toAlternatingPath.last := by simp
+      _ = ((normalForm d q).toAlternatingPath.setLast 1).setLast
+            (normalForm d p).toAlternatingPath.last := by rw [h]
+      _ = (normalForm d (q.cons (Letter.vertex _))).toAlternatingPath := by simp
 
 end GraphOfGroups
 
