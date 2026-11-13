@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Process.Adapted
+public import TauCeti.Probability.Process.Filtration.Comp
 import TauCeti.Probability.Independence.Filtration
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
@@ -29,6 +30,10 @@ produce a new Brownian motion.
 
 * `TauCeti.Probability.IsFilteredPreBrownianReal`: a pre-Brownian motion relative to a
   filtration.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift` and
+  `TauCeti.Probability.IsFilteredPreBrownianReal.shift`: deterministic time shifts have full
+  future increment path independent of `ℱ s` and remain filtered pre-Brownian relative to
+  `ℱ.comp (monotone_id.const_add s)`.
 * `ProbabilityTheory.IsPreBrownianReal.isFilteredPreBrownianReal_natural`: the natural
   filtration.
 * `ProbabilityTheory.IsPreBrownianReal.hasLaw_sub_of_le`: for `s ≤ t`, the increment
@@ -87,6 +92,32 @@ theorem indepFun_eval_of_measurable_zero {P : Measure Ω} {ℱ : Filtration ℝ�
   refine h.congr ?_ Filter.EventuallyEq.rfl
   filter_upwards [hW.eval_zero_ae_eq_zero] with ω hω
   simp [hω]
+
+/-- At a deterministic time `s`, the entire shifted increment process `t ↦ W (s + t) - W s`
+is independent of `ℱ s`. -/
+theorem indep_shift {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+    (hW : IsFilteredPreBrownianReal ℱ W P) (s : ℝ≥0) :
+    Indep (.comap (fun ω t ↦ W (s + t) ω - W s ω) inferInstance) (ℱ s) P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  exact hW.adapted.indep_comap_shift_sub hW.indep_sub s
+
+/-- Shifting time by `s` and recentering at `W s` produces a filtered pre-Brownian motion
+relative to the shifted filtration `ℱ.comp (monotone_id.const_add s)`. -/
+theorem shift {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+    (hW : IsFilteredPreBrownianReal ℱ W P) (s : ℝ≥0) :
+    IsFilteredPreBrownianReal (ℱ.comp (monotone_id.const_add s))
+      (fun t ω ↦ W (s + t) ω - W s ω) P where
+  toIsPreBrownianReal := hW.toIsPreBrownianReal.shift s
+  adapted t := by
+    rw [Filtration.measurable_comp_iff]
+    exact (hW.adapted (s + t)).sub ((hW.adapted s).mono (ℱ.mono le_self_add) le_rfl)
+  indep_sub u v huv := by
+    rw [Filtration.comp_apply]
+    dsimp only [id_eq]
+    have heq : ((fun ω ↦ W (s + v) ω - W s ω) - fun ω ↦ W (s + u) ω - W s ω) =
+        W (s + v) - W (s + u) := funext fun ω ↦ sub_sub_sub_cancel_right _ _ _
+    rw [heq]
+    exact hW.indep_sub (add_le_add_right huv s)
 
 end IsFilteredPreBrownianReal
 

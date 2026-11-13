@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.Topology.Order.Cadlag
 import TauCeti.Probability.HasLaw
+import TauCeti.Probability.Independence.Basic
 import TauCeti.Probability.Process.StoppedValue
 import TauCeti.Probability.Process.StoppingApproximation
 
@@ -30,11 +30,6 @@ in a pseudo-metrizable Borel space, on arbitrary raw filtrations.
 
 ## Main declarations
 
-* `ProbabilityTheory.HasLaw.cond_of_restrict`: a scalar-multiple law `P S • ν` under `P.restrict S`
-  normalizes to law `ν` under `ProbabilityTheory.cond P S` when `0 < P S < ∞`.
-* `ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict` and
-  `ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict_inter`: restricted laws on every event
-  of a sub-σ-algebra imply independence from that sub-σ-algebra.
 * `MeasureTheory.IsStoppingTime.hasLaw_restrict_stoppedValue_of_countable_range`,
   `MeasureTheory.IsStoppingTime.hasLaw_stoppedValue_of_countable_range`, and
   `MeasureTheory.IsStoppingTime.indep_stoppedValue_of_countable_range`: law and independence at
@@ -54,77 +49,6 @@ public section
 
 open Filter MeasureTheory Set
 open scoped ENNReal NNReal Topology
-
-namespace ProbabilityTheory
-
-section Restrict
-
-variable {Ω β : Type*} [MeasurableSpace β]
-
-/-- A scalar-multiple law `P S • ν` under `P.restrict S` normalizes to law `ν` under the
-conditional probability measure `ProbabilityTheory.cond P S` whenever `S` has positive finite
-measure. -/
-theorem HasLaw.cond_of_restrict [MeasurableSpace Ω] {P : Measure Ω} {ν : Measure β} {Z : Ω → β}
-    {S : Set Ω} (h : HasLaw Z (P S • ν) (P.restrict S)) (hS₀ : P S ≠ 0) (hSₜ : P S ≠ ∞) :
-    HasLaw Z ν (ProbabilityTheory.cond P S) := by
-  rw [ProbabilityTheory.cond]
-  refine ⟨h.aemeasurable.smul_measure _, ?_⟩
-  rw [Measure.map_smul _ h.aemeasurable, h.map_eq, smul_smul, ENNReal.inv_mul_cancel hS₀ hSₜ,
-    one_smul]
-
-/-- Intersecting the restriction set with an almost-surely holding event does not alter a
-restricted scalar-multiple law. -/
-theorem HasLaw.of_restrict_inter_of_ae_mem [MeasurableSpace Ω] {P : Measure Ω} {ν : Measure β}
-    {Z : Ω → β} {A F : Set Ω} (h : HasLaw Z (P (A ∩ F) • ν) (P.restrict (A ∩ F)))
-    (hF : ∀ᵐ ω ∂P, ω ∈ F) :
-    HasLaw Z (P A • ν) (P.restrict A) := by
-  have heq : (A ∩ F : Set Ω) =ᵐ[P] A := by
-    filter_upwards [hF] with ω hω
-    exact and_iff_left hω
-  simpa only [Measure.restrict_congr_set heq, measure_congr heq] using h
-
-/-- Under a probability measure, a restricted scalar-multiple law on an almost-surely holding
-event gives the unconditional law. -/
-theorem HasLaw.of_restrict_of_ae_mem [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
-    {ν : Measure β} {Z : Ω → β} {F : Set Ω} (h : HasLaw Z (P F • ν) (P.restrict F))
-    (hF : ∀ᵐ ω ∂P, ω ∈ F) :
-    HasLaw Z ν P := by
-  have huniv : HasLaw Z (P (univ ∩ F) • ν) (P.restrict (univ ∩ F)) := by simpa using h
-  simpa using huniv.of_restrict_inter_of_ae_mem hF
-
-/-- If restricting `P` to every event `A` of a sub-σ-algebra `m` gives `Z` the law `P A • ν`,
-then `Z` is independent of `m`. Measurability of `Z` in the ambient σ-algebra is not required
-beyond the almost-everywhere measurability carried by `HasLaw`. -/
-theorem indep_comap_of_forall_hasLaw_restrict {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
-    {ν : Measure β} {Z : Ω → β} (hm : m ≤ mΩ) (hZ : HasLaw Z ν P)
-    (h : ∀ A, MeasurableSet[m] A → HasLaw Z (P A • ν) (P.restrict A)) :
-    Indep (.comap Z inferInstance) m P := by
-  rw [Indep_iff]
-  rintro _ A ⟨C, hC, rfl⟩ hA
-  have hZA := h A hA
-  calc
-    P (Z ⁻¹' C ∩ A) = P.restrict A (Z ⁻¹' C) := (Measure.restrict_apply' (hm A hA)).symm
-    _ = Measure.map Z (P.restrict A) C :=
-      (Measure.map_apply_of_aemeasurable hZA.aemeasurable hC).symm
-    _ = (P A • ν) C := by rw [hZA.map_eq]
-    _ = ν C * P A := by simp [mul_comm]
-    _ = Measure.map Z P C * P A := by rw [hZ.map_eq]
-    _ = P (Z ⁻¹' C) * P A := by rw [Measure.map_apply_of_aemeasurable hZ.aemeasurable hC]
-
-/-- Under a probability measure, restricted scalar-multiple laws on `A ∩ F` for every `m`-event
-`A` and an almost-surely holding event `F` imply that `Z` is independent of `m`. -/
-theorem indep_comap_of_forall_hasLaw_restrict_inter {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
-    [IsProbabilityMeasure P] {ν : Measure β} {Z : Ω → β} {F : Set Ω} (hm : m ≤ mΩ)
-    (hF : ∀ᵐ ω ∂P, ω ∈ F)
-    (h : ∀ A, MeasurableSet[m] A → HasLaw Z (P (A ∩ F) • ν) (P.restrict (A ∩ F))) :
-    Indep (.comap Z inferInstance) m P :=
-  have hall (A : Set Ω) (hA : MeasurableSet[m] A) : HasLaw Z (P A • ν) (P.restrict A) :=
-    (h A hA).of_restrict_inter_of_ae_mem hF
-  indep_comap_of_forall_hasLaw_restrict hm (by simpa using hall univ .univ) hall
-
-end Restrict
-
-end ProbabilityTheory
 
 namespace MeasureTheory.IsStoppingTime
 

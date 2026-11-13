@@ -47,6 +47,10 @@ Nonnegative random variables whose real coercions have a common law are identica
 ## Main results
 
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
+* `ProbabilityTheory.HasLaw.cond_of_restrict`,
+  `ProbabilityTheory.HasLaw.of_restrict_inter_of_ae_mem`, and
+  `ProbabilityTheory.HasLaw.of_restrict_of_ae_mem` — normalizing a scalar-multiple restricted law
+  under conditional probability and removing almost-surely holding events from the restriction;
 * `ProbabilityTheory.HasLaw.aemeasurable_of_ae_eq_comp` — a map almost everywhere equal to an
   a.e. measurable map composed with a random variable of the right law is a.e. measurable;
 * `ProbabilityTheory.HasLaw.measure_singleton_le` — the law of `T` gives `{T x}` at least the
@@ -102,6 +106,45 @@ theorem _root_.ProbabilityTheory.HasLaw.cond (hT : HasLaw T ν μ) {s : Set Y}
     ← Measure.restrict_map_of_aemeasurable hT.aemeasurable hs,
     ← Measure.map_apply_of_aemeasurable hT.aemeasurable hs, hT.map_eq,
     ProbabilityTheory.cond]
+
+section Restrict
+
+open Set
+open scoped ENNReal
+
+/-- A scalar-multiple law `P S • ν` under `P.restrict S` normalizes to law `ν` under the
+conditional probability measure `ProbabilityTheory.cond P S` whenever `S` has positive finite
+measure. -/
+theorem _root_.ProbabilityTheory.HasLaw.cond_of_restrict {Ω β : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace β] {P : Measure Ω} {ν : Measure β} {Z : Ω → β} {S : Set Ω}
+    (h : HasLaw Z (P S • ν) (P.restrict S)) (hS₀ : P S ≠ 0) (hSₜ : P S ≠ ∞) :
+    HasLaw Z ν (ProbabilityTheory.cond P S) := by
+  rw [ProbabilityTheory.cond]
+  refine ⟨h.aemeasurable.smul_measure _, ?_⟩
+  rw [Measure.map_smul _ h.aemeasurable, h.map_eq, smul_smul, ENNReal.inv_mul_cancel hS₀ hSₜ,
+    one_smul]
+
+/-- Intersecting the restriction set with an almost-surely holding event does not alter a
+restricted scalar-multiple law. -/
+theorem _root_.ProbabilityTheory.HasLaw.of_restrict_inter_of_ae_mem {Ω β : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace β] {P : Measure Ω} {ν : Measure β} {Z : Ω → β}
+    {A F : Set Ω} (h : HasLaw Z (P (A ∩ F) • ν) (P.restrict (A ∩ F))) (hF : ∀ᵐ ω ∂P, ω ∈ F) :
+    HasLaw Z (P A • ν) (P.restrict A) := by
+  have heq : (A ∩ F : Set Ω) =ᵐ[P] A := by
+    filter_upwards [hF] with ω hω
+    exact and_iff_left hω
+  simpa only [Measure.restrict_congr_set heq, measure_congr heq] using h
+
+/-- Under a probability measure, a restricted scalar-multiple law on an almost-surely holding
+event gives the unconditional law. -/
+theorem _root_.ProbabilityTheory.HasLaw.of_restrict_of_ae_mem {Ω β : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace β] {P : Measure Ω} [IsProbabilityMeasure P] {ν : Measure β} {Z : Ω → β}
+    {F : Set Ω} (h : HasLaw Z (P F • ν) (P.restrict F)) (hF : ∀ᵐ ω ∂P, ω ∈ F) :
+    HasLaw Z ν P := by
+  have huniv : HasLaw Z (P (univ ∩ F) • ν) (P.restrict (univ ∩ F)) := by simpa using h
+  simpa using huniv.of_restrict_inter_of_ae_mem hF
+
+end Restrict
 
 /-- Nonnegative random variables whose real coercions have the same law are identically
 distributed, even when defined on different measure spaces. -/
@@ -315,26 +358,18 @@ theorem _root_.ProbabilityTheory.HasLaw.of_ae_tendsto {ι Ω E : Type*} [Measura
     (hX : ∀ᶠ i in l, HasLaw (X i) ν μ) (hY : AEMeasurable Y μ)
     (hlim : ∀ᵐ ω ∂μ, Tendsto (fun i ↦ X i ω) l (𝓝 (Y ω))) :
     HasLaw Y ν μ := by
-  obtain ⟨u, hu⟩ := l.exists_seq_tendsto
-  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 (hu.eventually hX)
   refine ⟨hY, ext_of_forall_lintegral_eq_of_IsFiniteMeasure fun f ↦ ?_⟩
-  rw [lintegral_map' f.continuous.measurable.coe_nnreal_ennreal.aemeasurable hY]
-  have hstep (n : ℕ) : ∫⁻ ω, (f (X (u (n + N)) ω) : ℝ≥0∞) ∂μ = ∫⁻ x, (f x : ℝ≥0∞) ∂ν :=
-    (hN (n + N) (Nat.le_add_left N n)).lintegral_comp
-      f.continuous.measurable.coe_nnreal_ennreal.aemeasurable
-  have hmeas (n : ℕ) : AEMeasurable (fun ω ↦ (f (X (u (n + N)) ω) : ℝ≥0∞)) μ :=
-    f.continuous.measurable.coe_nnreal_ennreal.comp_aemeasurable
-      (hN (n + N) (Nat.le_add_left N n)).aemeasurable
-  have hbound (n : ℕ) : ∀ᵐ ω ∂μ, (f (X (u (n + N)) ω) : ℝ≥0∞) ≤ edist 0 f :=
-    Eventually.of_forall fun ω ↦ f.apply_le_edist_zero _
-  have hconv : ∀ᵐ ω ∂μ,
-      Tendsto (fun n ↦ (f (X (u (n + N)) ω) : ℝ≥0∞)) atTop (𝓝 (f (Y ω) : ℝ≥0∞)) := by
-    filter_upwards [hlim] with ω hω
-    exact (ENNReal.continuous_coe.tendsto _).comp
-      ((f.continuous.tendsto (Y ω)).comp ((hω.comp hu).comp (tendsto_add_atTop_nat N)))
-  have htend := tendsto_lintegral_of_dominated_convergence' (fun _ ↦ edist 0 f) hmeas hbound
-    (by simpa using ENNReal.mul_ne_top (edist_ne_top 0 f) (measure_ne_top μ Set.univ)) hconv
-  exact tendsto_nhds_unique htend (tendsto_const_nhds.congr fun n ↦ (hstep n).symm)
+  have hf_meas : Measurable fun x ↦ (f x : ℝ≥0∞) := f.continuous.measurable.coe_nnreal_ennreal
+  rw [lintegral_map' hf_meas.aemeasurable hY]
+  have htend := tendsto_lintegral_filter_of_dominated_convergence' (fun _ ↦ edist 0 f)
+    (hX.mono fun _ hi ↦ hf_meas.comp_aemeasurable hi.aemeasurable)
+    (Eventually.of_forall fun _ ↦ Eventually.of_forall fun _ ↦ f.apply_le_edist_zero _)
+    (by simpa using ENNReal.mul_ne_top (edist_ne_top 0 f) (measure_ne_top μ Set.univ))
+    (hlim.mono fun _ hω ↦
+      (ENNReal.continuous_coe.tendsto _).comp ((f.continuous.tendsto _).comp hω))
+  have hconst : Tendsto (fun i ↦ ∫⁻ ω, (f (X i ω) : ℝ≥0∞) ∂μ) l (𝓝 (∫⁻ x, (f x : ℝ≥0∞) ∂ν)) :=
+    tendsto_const_nhds.congr' (hX.mono fun _ hi ↦ (hi.lintegral_comp hf_meas.aemeasurable).symm)
+  exact tendsto_nhds_unique htend hconst
 
 /-- In a pseudo-metrizable Borel space, almost-everywhere measurability of the limit is automatic,
 so an almost-sure limit of random variables eventually sharing a law retains that law. -/

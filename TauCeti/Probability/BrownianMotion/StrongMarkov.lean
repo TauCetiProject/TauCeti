@@ -9,9 +9,8 @@ public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.Topology.Order.Cadlag
 public import TauCeti.Probability.BrownianMotion.UsualFiltration
-public import TauCeti.Probability.Process.Filtration.Comp
 import TauCeti.Probability.HasLaw
-import TauCeti.Probability.Independence.Filtration
+import TauCeti.Probability.Independence.Basic
 import TauCeti.Probability.Independence.Stopping
 import TauCeti.Probability.Process.StoppedValue
 import TauCeti.Probability.Process.StoppingApproximation
@@ -27,8 +26,9 @@ measures increments elapsed after `τ`, vanishing identically on `{τ = ⊤}`.
 When `B` has almost surely right-continuous paths, restricting `P` to `A ∩ {τ ≠ ⊤}` for any event
 `A` in the stopping σ-algebra gives `B^{(τ)}` the path-space law `P (A ∩ {τ ≠ ⊤}) • P.map B`.
 Conditioning on `A ∩ {τ ≠ ⊤}` when that event has positive probability yields a pre-Brownian (and,
-under path continuity, Brownian) motion. When `τ` is almost surely finite, `B^{(τ)}` is a
-Brownian motion under `P` whose entire sample path is independent of `hτ.measurableSpace`.
+under almost-sure path continuity, Brownian) motion. When `τ` is almost surely finite, `B^{(τ)}` is
+pre-Brownian under right continuity and a Brownian motion under almost-sure path continuity; under
+right continuity its entire sample path is independent of `hτ.measurableSpace`.
 
 Because upward dyadic ceiling approximations remain stopping times on raw filtrations, every result
 holds directly for stopping times of `ℱ`, and passes immediately to stopping times of the
@@ -37,9 +37,6 @@ right-continuous hull `ℱ.rightCont` (including open-set hitting times) via
 
 ## Main declarations
 
-* `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift` and
-  `TauCeti.Probability.IsFilteredPreBrownianReal.shift`: deterministic time shifts are independent
-  of `ℱ s` and remain filtered pre-Brownian on `ℱ.comp (monotone_id.const_add s)`.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.hasLaw_restrict_shift_of_countable_range`,
   `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_shift_of_countable_range`, and
   `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift_of_countable_range`: restart at
@@ -47,14 +44,18 @@ right-continuous hull `ℱ.rightCont` (including open-set hitting times) via
 * `TauCeti.Probability.IsFilteredPreBrownianReal.hasLaw_restrict_shift` and
   `TauCeti.Probability.IsFilteredPreBrownianReal.hasLaw_restrict_shift_rightCont`: restricted
   full-path laws on `A ∩ {τ ≠ ⊤}` for `ℱ`- and `ℱ.rightCont`-stopping times.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_cond_shift` and
+* `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_cond_shift`,
+  `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_cond_shift`,
+  `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_cond_shift_rightCont`, and
   `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_cond_shift_rightCont`: conditional
-  Brownian motion on positive-probability events `A ∩ {τ ≠ ⊤}`.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_shift_stoppingTime`,
+  pre-Brownian and Brownian motion on positive-probability events `A ∩ {τ ≠ ⊤}`.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_shift_stoppingTime`,
+  `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_shift_stoppingTime`,
   `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift_stoppingTime`,
+  `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_shift_stoppingTime_rightCont`,
   `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_shift_stoppingTime_rightCont`, and
   `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift_stoppingTime_rightCont`: the strong
-  Markov restart law and independence on `ℱ` and on `ℱ.rightCont`.
+  Markov restart laws and independence on `ℱ` and on `ℱ.rightCont`.
 * `ProbabilityTheory.IsBrownianReal.shift_stoppingTime_natural`,
   `ProbabilityTheory.IsBrownianReal.indep_shift_stoppingTime_natural`,
   `ProbabilityTheory.IsBrownianReal.shift_stoppingTime_rightCont_natural`, and
@@ -77,39 +78,6 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {B : ℝ≥0 → Ω → ℝ} {τ : Ω → WithTop ℝ≥0}
-
-/-! ### Deterministic time shifts -/
-
-/-- At a deterministic time `s`, the entire shifted increment process `t ↦ B (s + t) - B s`
-is independent of `ℱ s`. -/
-theorem indep_shift (hB : IsFilteredPreBrownianReal ℱ B P) (s : ℝ≥0) :
-    Indep (.comap (fun ω t ↦ B (s + t) ω - B s ω) inferInstance) (ℱ s) P := by
-  have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  exact hB.adapted.indep_comap_shift_sub hB.indep_sub s
-
-/-- Shifting time by `s` and recentering at `B s` produces a filtered pre-Brownian motion
-relative to the shifted filtration `ℱ.comp (monotone_id.const_add s)`. -/
-theorem shift (hB : IsFilteredPreBrownianReal ℱ B P) (s : ℝ≥0) :
-    IsFilteredPreBrownianReal (ℱ.comp (monotone_id.const_add s))
-      (fun t ω ↦ B (s + t) ω - B s ω) P where
-  toIsPreBrownianReal := hB.toIsPreBrownianReal.shift s
-  adapted t := by
-    rw [Filtration.measurable_comp_iff]
-    exact (hB.adapted (s + t)).sub ((hB.adapted s).mono (ℱ.mono le_self_add) le_rfl)
-  indep_sub u v huv := by
-    rw [Filtration.comp_apply]
-    dsimp only [id_eq]
-    have heq : ((fun ω ↦ B (s + v) ω - B s ω) - fun ω ↦ B (s + u) ω - B s ω) =
-        B (s + v) - B (s + u) := funext fun ω ↦ sub_sub_sub_cancel_right _ _ _
-    rw [heq]
-    exact hB.indep_sub (add_le_add_right huv s)
-
-/-- If paths are almost surely right-continuous at each fixed time, the entire shifted increment
-process `t ↦ B (s + t) - B s` is independent of the right-continuous slice `ℱ.rightCont s`. -/
-theorem indep_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
-    (hrc : ∀ t, ∀ᵐ ω ∂P, ContinuousWithinAt (B · ω) (Ioi t) t) (s : ℝ≥0) :
-    Indep (.comap (fun ω t ↦ B (s + t) ω - B s ω) inferInstance) (ℱ.rightCont s) P :=
-  (hB.rightCont hrc).indep_shift s
 
 /-! ### Countable-range stopping times -/
 
