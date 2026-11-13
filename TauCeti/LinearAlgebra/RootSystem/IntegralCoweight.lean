@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
 import TauCeti.LinearAlgebra.RootSystem.Flip
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
 import Mathlib.Algebra.Module.Submodule.Union
 
@@ -151,7 +152,7 @@ end Existence
 
 variable {ι R M N : Type*} [Finite ι] [CommRing R] [CharZero R] [IsDomain R] [AddCommGroup M]
   [AddCommGroup N] [Module R M] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic]
-  [P.flip.IsReduced]
+  [P.IsReduced]
 
 /-- **A dominant integral coweight is the only dominant one in its Weyl orbit.** Fix a base `b`.
 If every simple root of `b` takes a natural value at the coweight `x`, and also at its image under
@@ -164,12 +165,11 @@ theorem Base.coweightEquiv_apply_eq_self_of_forall_exists_nat_root' (b : P.Base)
     (hwx : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i ((w : P.Aut).coweightEquiv x) = n) :
     (w : P.Aut).coweightEquiv x = x := by
   -- `w` acts on coweights as the inverse of `autFlip P w` acts on the weights of `P.flip`
-  let w' : P.flip.weylGroup :=
-    ⟨_, Equiv.map_weylGroup_autFlip (P := P) ▸ Subgroup.mem_map_of_mem _ w.2⟩
-  have hw' (y : N) : w' • y = (w : P.Aut).coweightEquiv.symm y := by
-    -- Mathlib's action of an automorphism on weights is `weightHom` by definition
-    change Equiv.weightHom P.flip (Equiv.autFlip P w) y = _
-    rw [Equiv.weightHom_apply, Equiv.weightEquiv_autFlip]
+  -- the uniqueness of dominant integral weights is applied to `P.flip`, which is reduced as `P` is
+  have := P.flip_isReduced
+  let w' : P.flip.weylGroup := ⟨_, Equiv.autFlip_mem_weylGroup_iff.mpr w.2⟩
+  have hw' (y : N) : w' • y = (w : P.Aut).coweightEquiv.symm y :=
+    Equiv.autFlip_smul_coweight _ y
   -- `(w x, x)` is a pair of dominant integral weights of `P.flip` related by `w'`
   have h := TauCeti.weylGroup_smul_eq_self_of_dominantIntegral (P := P.flip) (b := b.flip)
     (w := w') hwx (by rwa [hw', LinearEquiv.symm_apply_apply])

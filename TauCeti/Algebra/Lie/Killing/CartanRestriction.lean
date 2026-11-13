@@ -261,15 +261,6 @@ theorem map_dualMap_killingSymmetricEquiv (p : SymmetricAlgebra K L) :
   congr 2
   exact LinearMap.ext fun x ↦ (cartanEquivDual_killingCartanProjection H x).symm
 
-omit [IsKilling K L] [H.IsCartanSubalgebra] in
-/-- Evaluating a polynomial function on `L` at a point `z` of `H` is evaluating its restriction to
-`H` at `z`. -/
-theorem lift_eval_comp_map_dualMap_incl (z : H) :
-    (SymmetricAlgebra.lift (Dual.eval K H z)).comp
-        (SymmetricAlgebra.map K H.incl.toLinearMap.dualMap) =
-      SymmetricAlgebra.lift (Dual.eval K L (z : L)) :=
-  SymmetricAlgebra.algHom_ext (LinearMap.ext fun φ ↦ by simp)
-
 /-- Through the Killing duality `H ≃ H*`, evaluating a polynomial function on `H*` at the weight
 `κ(z, ·)` dual to `z ∈ H` is evaluating the corresponding polynomial function on `H` at `z`. -/
 theorem lift_eval_comp_map_cartanEquivDual (z : H) :
@@ -280,14 +271,22 @@ theorem lift_eval_comp_map_cartanEquivDual (z : H) :
   SymmetricAlgebra.algHom_ext (LinearMap.ext fun h ↦ by
     simpa using LinearMap.trace_mul_comm K (toEnd K H L h) (toEnd K H L z))
 
+/-- Applied form of `TauCeti.lift_eval_comp_map_cartanEquivDual`. -/
+theorem lift_eval_map_cartanEquivDual (z : H) (p : SymmetricAlgebra K H) :
+    SymmetricAlgebra.lift (Dual.eval K H z)
+        (SymmetricAlgebra.map K (cartanEquivDual H).toLinearMap p) =
+      SymmetricAlgebra.lift (cartanEquivDual H z) p :=
+  AlgHom.congr_fun (lift_eval_comp_map_cartanEquivDual H z) p
+
 /-- **Evaluation at a point of `H`.** Evaluating the polynomial function on `L` that corresponds to
 `p ∈ S(L)` under the Killing form at a point `z ∈ H` gives the value of the restriction
 `lieCartanRestriction H p` at the weight `κ(z, ·)` dual to `z`. -/
 theorem lift_eval_killingSymmetricEquiv (z : H) (p : SymmetricAlgebra K L) :
     SymmetricAlgebra.lift (Dual.eval K L (z : L)) (killingSymmetricEquiv K L p) =
       SymmetricAlgebra.lift (cartanEquivDual H z) (lieCartanRestriction H p) := by
-  rw [← lift_eval_comp_map_dualMap_incl, AlgHom.comp_apply, map_dualMap_killingSymmetricEquiv,
-    ← AlgHom.comp_apply, lift_eval_comp_map_cartanEquivDual]
+  -- evaluating at `z ∈ L` is evaluating the restriction to `H` at `z ∈ H`
+  refine (SymmetricAlgebra.lift_eval_map_dualMap K H.incl.toLinearMap z _).symm.trans ?_
+  rw [map_dualMap_killingSymmetricEquiv, lift_eval_map_cartanEquivDual]
 
 /-- **The restriction, read on the weights.** Viewing `S(L)` as the polynomial functions on `L*`
 and `S(H)` as the polynomial functions on the weights `H*`, the value of `lieCartanRestriction H p`

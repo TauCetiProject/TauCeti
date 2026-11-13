@@ -28,7 +28,7 @@ dominant one in its Weyl orbit
 their number is the number of dominant neutral elements.
 
 By Kostant's conjugacy theorem, triples whose nilpositive elements are `Int(L)`-conjugate have
-`Int(L)`-conjugate neutral elements (`IsSl2Triple.mem_orbit_of_mem_orbit`). Hence every
+`Int(L)`-conjugate neutral elements (`IsSl2Triple.h_mem_orbit_of_e_mem_orbit`). Hence every
 nonzero `ad`-nilpotent element `e` determines a unique dominant neutral element: the neutral
 element of a triple whose nilpositive element is conjugate to `e`. Its simple-root values, the
 labels `RootPairing.Base.weightedDynkinDiagram`, are the weighted Dynkin diagram of the orbit of
@@ -43,8 +43,9 @@ addressed here.
   `TauCeti.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: distinct dominant neutral elements
   have distinct orbits, so there are exactly as many orbits of neutral elements as dominant
   neutral elements.
-* `RootPairing.Base.eq_of_isSl2Triple_of_mem_orbit`: the dominant neutral element of a triple
-  depends only on the `Int(L)`-orbit of its nilpositive element.
+* `RootPairing.Base.eq_of_isSl2Triple_of_e_mem_orbit_of_mem_dominantNeutralElements`: the
+  dominant neutral element of a triple depends only on the `Int(L)`-orbit of its nilpositive
+  element.
 * `TauCeti.existsUnique_mem_dominantNeutralElements_isSl2Triple_smul`: a nonzero `ad`-nilpotent
   element has exactly one dominant neutral element.
 
@@ -90,11 +91,11 @@ theorem injOn_orbit_dominantNeutralElements :
 /-- **The dominant neutral element is an invariant of a nilpotent orbit.** If `(h, e, f)` and
 `(h', e', f')` are `sl₂` triples whose neutral elements are dominant for `b`, and `e'` is conjugate
 to `e` under `Int(L)`, then `h = h'`. -/
-theorem eq_of_isSl2Triple_of_mem_orbit {h h' : H} (hh : h ∈ b.dominantNeutralElements)
-    (hh' : h' ∈ b.dominantNeutralElements) {e f e' f' : L} (t : IsSl2Triple (h : L) e f)
-    (t' : IsSl2Triple (h' : L) e' f') (he : e' ∈ MulAction.orbit (intLieAlgebra K L) e) :
-    h = h' := by
-  obtain ⟨g, hg⟩ := t.mem_orbit_of_mem_orbit t' he
+theorem eq_of_isSl2Triple_of_e_mem_orbit_of_mem_dominantNeutralElements {h h' : H}
+    (hh : h ∈ b.dominantNeutralElements) (hh' : h' ∈ b.dominantNeutralElements) {e f e' f' : L}
+    (t : IsSl2Triple (h : L) e f) (t' : IsSl2Triple (h' : L) e' f')
+    (he : e' ∈ MulAction.orbit (intLieAlgebra K L) e) : h = h' := by
+  obtain ⟨g, hg⟩ := t.h_mem_orbit_of_e_mem_orbit t' he
   exact b.eq_of_smul_eq_of_mem_dominantNeutralElements hh hh' g.2 hg
 
 end RootPairing.Base
@@ -123,7 +124,8 @@ theorem existsUnique_mem_dominantNeutralElements_isSl2Triple_smul (b : (rootSyst
   obtain ⟨g, hg, h, hh, f, t⟩ :=
     exists_mem_intLieAlgebra_isSl2Triple_smul_of_isNilpotent_ad b he he0
   refine ⟨h, ⟨hh, g, hg, f, t⟩, fun h' ⟨hh', g', hg', f', t'⟩ ↦
-    (b.eq_of_isSl2Triple_of_mem_orbit hh hh' t t' ⟨⟨g' * g⁻¹, mul_mem hg' (inv_mem hg)⟩, ?_⟩).symm⟩
+    (b.eq_of_isSl2Triple_of_e_mem_orbit_of_mem_dominantNeutralElements hh hh' t t'
+      ⟨⟨g' * g⁻¹, mul_mem hg' (inv_mem hg)⟩, ?_⟩).symm⟩
   dsimp only
   rw [Subgroup.mk_smul, mul_smul, inv_smul_smul]
 
