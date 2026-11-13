@@ -50,7 +50,7 @@ variable {n : ℕ} {x z : GridState n}
 rectangle's terminal side. The row containing the remaining corner selects whether the recut
 rectangles share their initial or terminal side. -/
 theorem IsRecutOfLeftEqRight.recut_geometry {D E : GridRectangleDecomposition x z}
-    (hdata : D.IsRecutOfLeftEqRight E) (hone : D.HasOneCommonSide) :
+    (hdata : D.IsRecutOfLeftEqRight E) :
     (D.first.bottom ∈ Grid.cIoo D.second.bottom D.first.top ∧
         E.first.left = D.second.left ∧ E.first.right = D.first.left ∧
           E.second.left = D.second.left ∧ E.second.right = D.first.right ∧
@@ -62,10 +62,11 @@ theorem IsRecutOfLeftEqRight.recut_geometry {D E : GridRectangleDecomposition x 
             E.first.bottom = D.second.bottom ∧ E.first.top = D.first.top ∧
               E.second.bottom = D.first.bottom ∧ E.second.top = D.second.bottom) := by
   have hcommon := hdata.side_eq
-  have hother : D.first.right ≠ D.second.left := fun h =>
-    D.sideColumns_ne_of_hasOneCommonSide hone (by
-      rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon, h,
-        Finset.pair_comm])
+  have hother : D.first.right ≠ D.second.left := fun h => by
+    have hbot : D.second.bottom = D.first.bottom := by
+      rw [D.second.bottom_def, D.first.bottom_def, ← h, D.first.map_right]
+    rcases hdata.recut_branch with ⟨hrow, -⟩ | ⟨hrow, -⟩ <;> rw [hbot] at hrow <;>
+      exact Grid.left_notMem_cIoo _ _ hrow
   obtain ⟨hEfirstBottom, hEsecondBottom⟩ := hdata.recut_sides
   have hsecondLeft_ne_firstLeft : D.second.left ≠ D.first.left := fun h =>
     D.second.left_ne_right (h.trans hcommon)
@@ -97,7 +98,7 @@ theorem IsRecutOfLeftEqRight.recut_geometry {D E : GridRectangleDecomposition x 
 rectangle's initial side. The row containing the remaining corner selects whether the recut
 rectangles share their terminal or initial side. -/
 theorem IsRecutOfRightEqLeft.recut_geometry {D E : GridRectangleDecomposition x z}
-    (hdata : D.IsRecutOfRightEqLeft E) (hone : D.HasOneCommonSide) :
+    (hdata : D.IsRecutOfRightEqLeft E) :
     (D.first.top ∈ Grid.cIoo D.first.bottom D.second.top ∧
         E.first.left = D.first.right ∧ E.first.right = D.second.right ∧
           E.second.left = D.first.left ∧ E.second.right = D.second.right ∧
@@ -109,10 +110,11 @@ theorem IsRecutOfRightEqLeft.recut_geometry {D E : GridRectangleDecomposition x 
             E.first.bottom = D.first.bottom ∧ E.first.top = D.second.top ∧
               E.second.bottom = D.second.top ∧ E.second.top = D.first.top) := by
   have hcommon := hdata.side_eq
-  have hother : D.first.left ≠ D.second.right := fun h =>
-    D.sideColumns_ne_of_hasOneCommonSide hone (by
-      rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon, h,
-        Finset.pair_comm])
+  have hother : D.first.left ≠ D.second.right := fun h => by
+    have htop : D.second.top = D.first.top := by
+      rw [D.second.top_def, D.first.top_def, ← h, D.first.map_left]
+    rcases hdata.recut_branch with ⟨hrow, -⟩ | ⟨hrow, -⟩ <;> rw [htop] at hrow <;>
+      exact Grid.ne_right_of_mem_cIoo hrow rfl
   obtain ⟨hEfirstTop, hEsecondTop⟩ := hdata.recut_sides
   have hsecondRight_ne_firstRight : D.second.right ≠ D.first.right := by
     rw [hcommon]
@@ -158,7 +160,7 @@ theorem recut_geometry_of_left_eq_right (D : GridRectangleDecomposition x z)
           E.second.left = D.first.left ∧ E.second.right = D.first.right ∧
             E.first.bottom = D.second.bottom ∧ E.first.top = D.first.top ∧
               E.second.bottom = D.first.bottom ∧ E.second.top = D.second.bottom) :=
-  (D.isRecutOfLeftEqRight_recut hcommon hone hfirst hsecond).recut_geometry hone
+  (D.isRecutOfLeftEqRight_recut hcommon hone hfirst hsecond).recut_geometry
 
 /-- The complete geometry of the canonical recut when the first rectangle's terminal side is the
 second rectangle's initial side. The row containing the remaining corner selects whether the
@@ -177,6 +179,6 @@ theorem recut_geometry_of_right_eq_left (D : GridRectangleDecomposition x z)
           E.second.left = D.first.left ∧ E.second.right = D.first.right ∧
             E.first.bottom = D.first.bottom ∧ E.first.top = D.second.top ∧
               E.second.bottom = D.second.top ∧ E.second.top = D.first.top) :=
-  (D.isRecutOfRightEqLeft_recut hcommon hone hfirst hsecond).recut_geometry hone
+  (D.isRecutOfRightEqLeft_recut hcommon hone hfirst hsecond).recut_geometry
 
 end TauCeti.GridRectangleDecomposition
