@@ -11,20 +11,22 @@ import TauCeti.Analysis.Calculus.FDeriv.AlmostComplexType
 import TauCeti.Data.Finset.Sort
 
 /-!
-# The Dolbeault differential of `(0,q)`-forms on a complex vector space
+# Dolbeault differentiation on a complex vector space
 
 On a complex vector space, the Dolbeault differential of a smooth function is its conjugate
-Wirtinger derivative. More generally, on a smooth `(0,q)`-form `η` it is the alternating sum
-`∂bar η(v₀, …, v_q) = ∑ i, (-1)^i ∂bar(η(v₀, …, v_q without vᵢ))(vᵢ)` of the conjugate
-Wirtinger derivatives of its evaluations on constant vectors. The real derivative of `η` splits
-into its complex-linear and conjugate-linear parts; alternatizing them gives the components of
-`dη` of types `(1,q)` and `(0,q+1)`, and the latter is `∂bar η`. For `q = 1` this reads
+Wirtinger derivative. On an arbitrary smooth `k`-form `η` it is the alternating sum
+`∂bar η(v₀, …, v_k) = ∑ i, (-1)^i ∂bar(η(v₀, …, v_k without vᵢ))(vᵢ)` of the conjugate
+Wirtinger derivatives of its evaluations on constant vectors. For a form of pure type `(p,q)`,
+the real derivative splits into complex-linear and conjugate-linear parts; alternatizing them
+gives the components of `dη` of types `(p+1,q)` and `(p,q+1)`. Additivity and the type
+decomposition give the same formula without a type hypothesis. This allows the coordinate
+calculus to be applied to mixed types as well as purely antiholomorphic forms. In degree one,
 `∂bar η(v,w) = ∂bar(η(w))(v) - ∂bar(η(v))(w)`.
 
 On `ι → ℂ` for a linearly ordered finite `ι`, the coefficients `SmoothForm.conjCoeff` of a form
 are its values on increasing families of coordinate vectors. Those of `∂bar η` are obtained from
 those of `η` by the coordinate operator `TauCeti.delBarCoeff` of the coordinate
-Dolbeault–Grothendieck lemma (`SmoothForm.IsOfType.conjCoeff_delBar`). Forms of type `(0,k)`
+Dolbeault–Grothendieck lemma (`SmoothForm.conjCoeff_delBar`). Forms of type `(0,k)`
 correspond exactly to their families of smooth coefficients: they are determined by their
 coefficients (`SmoothForm.IsOfType.ext_conjCoeff`), and every family of smooth coefficients is
 that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_eq`).
@@ -33,10 +35,12 @@ that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_
 
 * `TauCeti.SmoothForm.delBar_apply_eq_conjWirtingerDeriv`: `∂bar` of a function.
 * `TauCeti.SmoothForm.IsOfType.apply_modelSpace`: the type equation of a form at a point.
-* `TauCeti.SmoothForm.IsOfType.delBar_apply`: `∂bar` of a `(0,q)`-form on a complex vector space.
+* `TauCeti.SmoothForm.delBar_eq_alternatizeUncurryFin`: `∂bar` as alternation of the
+  conjugate-linear derivative.
+* `TauCeti.SmoothForm.delBar_apply`: evaluation of `∂bar` of an arbitrary smooth form.
 * `TauCeti.SmoothForm.conjCoeff`: the coefficients of a form on `ι → ℂ`.
-* `TauCeti.SmoothForm.IsOfType.conjCoeff_delBar`: the coefficients of `∂bar` of a `(0,q)`-form
-  are those of the coordinate operator `TauCeti.delBarCoeff`.
+* `TauCeti.SmoothForm.conjCoeff_delBar`: coordinate evaluation intertwines `∂bar` with
+  `TauCeti.delBarCoeff`.
 * `TauCeti.SmoothForm.IsOfType.apply_eq_of_conjCoeff_eq`,
   `TauCeti.SmoothForm.IsOfType.ext_conjCoeff`: `(0,k)`-forms are determined by their
   coefficients.
@@ -85,33 +89,28 @@ theorem IsOfType.apply_modelSpace {k p q : ℕ} {φ : SmoothForm 𝓘(ℝ, E) E 
   -- The manifold tangent and coefficient fibres here are the underlying model spaces.
   convert h using 1
 
-section TypeZeroQ
+section ModelSpace
 
-variable {q : ℕ} {η : SmoothForm 𝓘(ℝ, E) E F q}
+variable {k : ℕ}
 
-/-- **`∂bar` of a `(0,q)`-form on a complex vector space.** On a smooth form `η` of type `(0,q)`,
-`∂bar η (v₀, …, v_q) = ∑ i, (-1)^i ∂bar(η(v₀, …, v_q without vᵢ))(vᵢ)`, where the conjugate
-Wirtinger derivatives are taken of the evaluations of `η` on constant tangent vectors. -/
-theorem IsOfType.delBar_apply (hη : η.IsOfType (ofComplexManifold E E) 0 q) (z : E)
-    (v : Fin (q + 1) → E) :
-    ((ofComplexManifold E E).delBar η).1 z v =
-      ∑ i : Fin (q + 1), (-1 : ℂ) ^ (i : ℕ) •
-        conjWirtingerDeriv (fun y ↦ η.1 y (i.removeNth v)) z (v i) := by
-  let Θ : E → E [⋀^Fin q]→L[ℝ] F := η.1
+/-- On a form of pure type, `∂bar` is the alternation of the conjugate-linear part of the
+real derivative of its coefficient field. -/
+private theorem delBar_eq_alternatizeUncurryFin_of_isOfType {p q : ℕ}
+    {η : SmoothForm 𝓘(ℝ, E) E F k} (hη : η.IsOfType (ofComplexManifold E E) p q) (z : E) :
+    ((ofComplexManifold E E).delBar η).1 z =
+      ContinuousAlternatingMap.alternatizeUncurryFin (E := E) (F := F) ((2 : ℂ)⁻¹ •
+        (fderiv ℝ (η.1 : E → E [⋀^Fin k]→L[ℝ] F) z +
+          I • (fderiv ℝ (η.1 : E → E [⋀^Fin k]→L[ℝ] F) z) ∘L
+            (I • ContinuousLinearMap.id ℝ E))) := by
+  let Θ : E → E [⋀^Fin k]→L[ℝ] F := η.1
   let Jm : E →L[ℝ] E := I • ContinuousLinearMap.id ℝ E
-  let L : E →L[ℝ] E [⋀^Fin q]→L[ℝ] F := fderiv ℝ Θ z
-  -- Express tangent-fibre evaluations through the model-space field `Θ`.
-  change ((ofComplexManifold E E).delBar η).1 z v =
-    ∑ i : Fin (q + 1), (-1 : ℂ) ^ (i : ℕ) •
-      conjWirtingerDeriv (fun y ↦ Θ y (i.removeNth v)) z (v i)
-  have hdz : DifferentiableAt ℝ Θ z :=
-    (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
+  let L : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F := fderiv ℝ Θ z
   have hJm (w : E) : Jm (Jm w) = -w := by simp [Jm, smul_smul]
-  -- The derivative of the family `Θ` of `(0,q)`-forms consists of `(0,q)`-forms.
-  have htype (w : E) : (L w).IsOfType Jm 0 q := by
+  -- The derivative of a family of forms of type `(p,q)` still has that type.
+  have htype (w : E) : (L w).IsOfType Jm p q := by
     simpa only [fderivWithin_univ] using ContinuousAlternatingMap.isOfType_fderivWithin (Θ := Θ)
       (J := Jm) uniqueDiffWithinAt_univ (mem_univ z) (Eventually.of_forall hη.apply_modelSpace) w
-  have hflat : (mextDerivₗ 𝓘(ℝ, E) q η).1 z = extDeriv Θ z := by
+  have hflat : (mextDerivₗ 𝓘(ℝ, E) k η).1 z = extDeriv Θ z := by
     have h := mextDeriv_eq_extDeriv η.1 z
     rw [← mextDerivₗ_apply] at h
     -- Only the model tangent and trivial coefficient fibres differ in this comparison.
@@ -120,26 +119,75 @@ theorem IsOfType.delBar_apply (hη : η.IsOfType (ofComplexManifold E E) 0 q) (z
   have hδ : ((ofComplexManifold E E).delBar η).1 z =
       ContinuousAlternatingMap.alternatizeUncurryFin ((2 : ℂ)⁻¹ • (L + I • L ∘L Jm)) := by
     rw [hη.delBar_eq, coe_typeProjection]
-    refine (congrArg (fun A : E →L[ℝ] E ↦ A.typeProjection 0 (q + 1)
-      ((mextDerivₗ 𝓘(ℝ, E) q η).1 z)) (toEndomorphism_ofComplexManifold (E := E) z)).trans ?_
+    refine (congrArg (fun A : E →L[ℝ] E ↦ A.typeProjection p (q + 1)
+      ((mextDerivₗ 𝓘(ℝ, E) k η).1 z)) (toEndomorphism_ofComplexManifold (E := E) z)).trans ?_
     rw [hflat]
     exact ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_right hJm htype
-  rw [hδ]
-  -- Evaluation now takes place entirely in `E`, rather than its opaque tangent-space synonym.
-  change (ContinuousAlternatingMap.alternatizeUncurryFin ((2 : ℂ)⁻¹ • (L + I • L ∘L Jm)) :
-    E [⋀^Fin (q + 1)]→L[ℝ] F) v = _
+  exact hδ
+
+/-- **The Dolbeault differential on a complex vector space.** On any smooth form, `∂bar` is
+obtained by alternatizing the conjugate-linear part of the real derivative of its coefficient
+field. No purity-of-type assumption is required. -/
+theorem delBar_eq_alternatizeUncurryFin (η : SmoothForm 𝓘(ℝ, E) E F k) (z : E) :
+    ((ofComplexManifold E E).delBar η).1 z =
+      ContinuousAlternatingMap.alternatizeUncurryFin (E := E) (F := F) ((2 : ℂ)⁻¹ •
+        (fderiv ℝ (η.1 : E → E [⋀^Fin k]→L[ℝ] F) z +
+          I • (fderiv ℝ (η.1 : E → E [⋀^Fin k]→L[ℝ] F) z) ∘L
+            (I • ContinuousLinearMap.id ℝ E))) := by
+  let field : SmoothForm 𝓘(ℝ, E) E F k → E → E [⋀^Fin k]→L[ℝ] F := fun φ y ↦ φ.1 y
+  let C (Φ : E → E [⋀^Fin k]→L[ℝ] F) :=
+    ContinuousAlternatingMap.alternatizeUncurryFin ((2 : ℂ)⁻¹ •
+      (fderiv ℝ Φ z + I • (fderiv ℝ Φ z) ∘L (I • ContinuousLinearMap.id ℝ E)))
+  let A : SmoothForm 𝓘(ℝ, E) E F k →+ E [⋀^Fin (k + 1)]→L[ℝ] F :=
+    { toFun φ := ((ofComplexManifold E E).delBar φ).1 z
+      map_zero' := by simp; rfl
+      map_add' φ ψ := by simp; rfl }
+  let B : SmoothForm 𝓘(ℝ, E) E F k →+ E [⋀^Fin (k + 1)]→L[ℝ] F :=
+    { toFun φ := C (field φ)
+      map_zero' := by
+        have hzero : field 0 = fun _ ↦ 0 := rfl
+        simp only [hzero, C, fderiv_const_apply, ContinuousLinearMap.zero_comp, smul_zero, add_zero]
+        exact map_zero (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F)
+      map_add' φ ψ := by
+        have hφ : DifferentiableAt ℝ (field φ) z :=
+          (isSmoothForm_modelSpace_iff.1 φ.isSmoothForm).differentiable (by simp) z
+        have hψ : DifferentiableAt ℝ (field ψ) z :=
+          (isSmoothForm_modelSpace_iff.1 ψ.isSmoothForm).differentiable (by simp) z
+        have hadd : field (φ + ψ) = field φ + field ψ := rfl
+        simp only [hadd, C, fderiv_add hφ hψ, ContinuousLinearMap.add_comp, smul_add,
+          ContinuousAlternatingMap.alternatizeUncurryFin_add]
+        abel }
+  exact (ofComplexManifold E E).map_eq_of_forall_isOfType (f := A) (g := B)
+    (fun _ _ _ _ hφ ↦ delBar_eq_alternatizeUncurryFin_of_isOfType hφ z) η
+
+/-- **Evaluation of `∂bar` on a complex vector space.** For an arbitrary smooth `k`-form `η`,
+`∂bar η(v₀, …, v_k) = ∑ i, (-1)^i ∂bar(η(v₀, …, v_k without vᵢ))(vᵢ)`, using evaluations on
+constant tangent vectors and the conjugate Wirtinger derivative. -/
+theorem delBar_apply (η : SmoothForm 𝓘(ℝ, E) E F k) (z : E) (v : Fin (k + 1) → E) :
+    ((ofComplexManifold E E).delBar η).1 z v =
+      ∑ i : Fin (k + 1), (-1 : ℂ) ^ (i : ℕ) •
+        conjWirtingerDeriv (fun y ↦ η.1 y (i.removeNth v)) z (v i) := by
+  let Θ : E → E [⋀^Fin k]→L[ℝ] F := η.1
+  have hdz : DifferentiableAt ℝ Θ z :=
+    (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
+  rw [delBar_eq_alternatizeUncurryFin]
+  -- Evaluate in the model fibre `E`; the tangent-space synonym prevents rewriting otherwise.
+  change (ContinuousAlternatingMap.alternatizeUncurryFin ((2 : ℂ)⁻¹ •
+    (fderiv ℝ Θ z + I • (fderiv ℝ Θ z) ∘L (I • ContinuousLinearMap.id ℝ E))) :
+      E [⋀^Fin (k + 1)]→L[ℝ] F) v =
+    ∑ i : Fin (k + 1), (-1 : ℂ) ^ (i : ℕ) •
+      conjWirtingerDeriv (fun y ↦ Θ y (i.removeNth v)) z (v i)
   rw [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [conjWirtingerDeriv_apply, fderiv_continuousAlternatingMap_apply_const_apply hdz,
     fderiv_continuousAlternatingMap_apply_const_apply hdz]
-  simp only [Jm, smul_apply, _root_.add_apply, ContinuousLinearMap.comp_apply,
+  simp only [smul_apply, _root_.add_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.id_apply]
   norm_cast
 
-/-- On a smooth `(0,1)`-form the Dolbeault differential is the alternating conjugate Wirtinger
+/-- On a smooth one-form the Dolbeault differential is the alternating conjugate Wirtinger
 derivative of its evaluations on constant tangent vectors. -/
-theorem IsOfType.delBar_apply_pair {η : SmoothForm 𝓘(ℝ, E) E F 1}
-    (hη : η.IsOfType (ofComplexManifold E E) 0 1) (z v w : E) :
+theorem delBar_apply_pair (η : SmoothForm 𝓘(ℝ, E) E F 1) (z v w : E) :
     ((ofComplexManifold E E).delBar η).1 z ![v, w] =
       conjWirtingerDeriv (fun y ↦ η.1 y ![w]) z v -
         conjWirtingerDeriv (fun y ↦ η.1 y ![v]) z w := by
@@ -149,11 +197,11 @@ theorem IsOfType.delBar_apply_pair {η : SmoothForm 𝓘(ℝ, E) E F 1}
   change ((ofComplexManifold E E).delBar η).1 z (![v, w] : Fin 2 → E) =
     conjWirtingerDeriv (fun y ↦ η.1 y (![w] : Fin 1 → E)) z v -
       conjWirtingerDeriv (fun y ↦ η.1 y (![v] : Fin 1 → E)) z w
-  rw [hη.delBar_apply z ![v, w], Fin.sum_univ_two, h0, h1]
+  rw [delBar_apply η z ![v, w], Fin.sum_univ_two, h0, h1]
   simp only [Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_one_smul,
     Matrix.cons_val_zero, Matrix.cons_val_one, sub_eq_add_neg]
 
-end TypeZeroQ
+end ModelSpace
 
 section Coefficients
 
@@ -189,15 +237,15 @@ theorem contDiff_conjCoeff (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F
   · rw [φ.conjCoeff_of_card_ne h]
     exact contDiff_const
 
-/-- **The coefficients of `∂bar` of a `(0,q)`-form.** The coefficients of `∂bar η` are given by
-the coordinate operator `TauCeti.delBarCoeff` applied to the coefficients of `η`. -/
-theorem IsOfType.conjCoeff_delBar {q : ℕ} {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F q}
-    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 q) :
+/-- Coordinate evaluation intertwines the Dolbeault differential of an arbitrary smooth form
+with `TauCeti.delBarCoeff`. For forms of type `(0,q)` these evaluations are the coefficients in
+the antiholomorphic coordinate coframe. -/
+theorem conjCoeff_delBar {q : ℕ} (η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F q) :
     ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).conjCoeff = delBarCoeff η.conjCoeff := by
   ext I z
   by_cases hI : #I = q + 1
   · let e := I.orderEmbOfFin hI
-    rw [conjCoeff_of_card_eq _ hI, hη.delBar_apply, delBarCoeff_def]
+    rw [conjCoeff_of_card_eq _ hI, delBar_apply, delBarCoeff_def]
     conv_rhs => rw [← Finset.sum_coe_sort I, ← (I.orderIsoOfFin hI).toEquiv.sum_comp]
     refine Finset.sum_congr rfl fun a _ ↦ ?_
     have hcard : #(I.erase (e a)) = q := by
