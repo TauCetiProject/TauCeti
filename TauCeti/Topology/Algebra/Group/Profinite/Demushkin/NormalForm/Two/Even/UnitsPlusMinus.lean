@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Exact
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ElementaryAutomorphism
@@ -17,11 +18,14 @@ import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Labute.RelatorCharacte
 /-!
 # Labute's normal form for the dyadic Demushkin groups of even rank with image `{±1} × U^(f)`
 
-Let `G` be a Demushkin group at `p = 2` of even rank `n ≥ 4` whose canonical character has image
-`V^(f) = {±1} × U^(f)` for a finite `f ≥ 2`. Labute's Theorem 6 says that `G` is presented on
-`n` generators by the single relator `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, the
-normal-form word `TauCeti.demushkinWordTwoEven 0 f n`; in particular two such groups with the same
-rank and the same `f` are topologically isomorphic. This file proves that theorem, from the exact
+Let `G` be a Demushkin group at `p = 2` of even rank `n` whose canonical character has image
+`V^(f) = {±1} × U^(f)` for a finite `f ≥ 2`. Then `n ≥ 4`, since this image is not procyclic and
+so does not occur at rank two
+(`TauCeti.IsDemushkin.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two`), and
+Labute's Theorem 6 says that `G` is presented on `n` generators by the single relator
+`x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, the normal-form word
+`TauCeti.demushkinWordTwoEven 0 f n`; in particular two such groups with the same rank and the same
+`f` are topologically isomorphic. This file proves that theorem, from the exact
 normal form of the dyadic relators of even rank
 (`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Exact`), the values of
 the canonical character forced by that normal form, the symplectic transvection pair
@@ -40,7 +44,7 @@ character value at `x₂`, and the constrained successive approximation of
   normal-form relator `x₁^{2+α} (x₁, x₂) x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq`:
   **Labute's Theorem 6, relator form**: a relator of `F` presenting a Demushkin group of even rank
-  `n ≥ 4` whose canonical character has image `{±1} × U^(f)` is carried to
+  `n` whose canonical character has image `{±1} × U^(f)` is carried to
   `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` by a continuous automorphism of `F`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq`
   and its intrinsic form
@@ -49,7 +53,7 @@ character value at `x₂`, and the constrained successive approximation of
   `⟨x₁, …, x_n ∣ x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)⟩` on `n = demushkinRank hG`
   generators.
 * `TauCeti.IsDemushkin.nonempty_continuousMulEquiv_of_even_demushkinRank_of_range_eq_unitsPlusMinus`
-  is **uniqueness**: two Demushkin groups at `p = 2` of the same even rank `n ≥ 4` whose canonical
+  is **uniqueness**: two Demushkin groups at `p = 2` of the same even rank whose canonical
   characters have the same image `{±1} × U^(f)` are topologically isomorphic.
 
 ## References
@@ -550,16 +554,26 @@ private theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_isCro
 /-! ### Labute's Theorem 6 -/
 
 /-- **Labute's normal form for the dyadic Demushkin groups of even rank with image `{±1} × U^(f)`**
-(Labute, Theorem 6). Let `r ∈ Φ(F)` be a relator of the free pro-`2` group on an even number
-`n ≥ 4` of generators presenting a Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` whose canonical character
-has image `V^(f) = {±1} × U^(f)` for a finite `f ≥ 2`. Then a continuous automorphism of `F`
-carries `r` to `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
+(Labute, Theorem 6). Let `r` be a relator of the free pro-`2` group on an even number `n` of
+generators presenting a Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` whose canonical character has image
+`V^(f) = {±1} × U^(f)` for a finite `f ≥ 2` (such a relator automatically lies in `Φ(F)`, and
+`n ≥ 4`). Then a continuous automorphism of `F` carries `r` to
+`x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
 theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq
-    {r : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
-    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) (hn : Even n) (hn3 : 3 < n) {f : ℕ}
-    (hf : 2 ≤ f) (hA : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
+    {r : freeProP 2 (Fin n)} (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) (hn : Even n)
+    {f : ℕ} (hf : 2 ≤ f) (hA : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
       e r = demushkinWordTwoEven 0 f n (freeProPGen 2 n) := by
+  have hr := hG.mem_proPFrattini_of_presentedProP_singleton
+  -- The image `{±1} × U^(f)` is not procyclic, so it does not occur at rank two, and `n ≥ 4`.
+  have hn3 : 3 < n := by
+    have hn0 : 0 < n := by simpa using hG.card_pos_presentedProP
+    have hrank : demushkinRank hG = n := by
+      simpa using demushkinRank_presentedProP (Set.singleton_subset_iff.2 hr) hG
+    by_contra hn3
+    obtain ⟨k, hk⟩ := hn
+    exact hG.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two
+      (hrank.trans (by omega)) hA
   -- Step 0: `q(G) = 2`, because `-1 ∉ 1 + 4ℤ_2` is a value of the canonical character.
   have hq : demushkinQ hG = 2 := by
     by_contra hq
@@ -601,19 +615,16 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq
   exact ⟨e₀.trans e₃, by rw [ContinuousMulEquiv.trans_apply, he₀]; exact he₃⟩
 
 /-- **Labute's normal form for a one-relator dyadic Demushkin group of even rank with image
-`{±1} × U^(f)`.** Let `r` be a relator of the free pro-`2` group on an even number `n ≥ 4`
+`{±1} × U^(f)`.** Let `r` be a relator of the free pro-`2` group on an even number `n`
 of generators presenting a Demushkin group whose canonical character has image `V^(f)`, `f ≥ 2`
 finite. Then `⟨x₁, …, x_n ∣ r⟩` is topologically isomorphic to
 `⟨x₁, …, x_n ∣ x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)⟩`. -/
 theorem exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq
-    {r : freeProP 2 (Fin n)}
-    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) (hn : Even n) (hn3 : 3 < n) {f : ℕ}
-    (hf : 2 ≤ f) (hA : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
+    {r : freeProP 2 (Fin n)} (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) (hn : Even n)
+    {f : ℕ} (hf : 2 ≤ f) (hA : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
     Nonempty (presentedProP 2 (Fin n) {r} ≃ₜ*
       presentedProP 2 (Fin n) {demushkinWordTwoEven 0 f n (freeProPGen 2 n)}) := by
-  obtain ⟨e, he⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq
-      hG.mem_proPFrattini_of_presentedProP_singleton hG hn hn3 hf hA
+  obtain ⟨e, he⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hG hn hf hA
   exact ⟨presentedProP.congrSingleton e he⟩
 
 end freeProP
@@ -622,13 +633,13 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
   [TotallyDisconnectedSpace G]
 
 /-- **Labute's normal form for a dyadic Demushkin group of even rank with image `{±1} × U^(f)`,
-intrinsic form** (Labute, Theorem 6). A Demushkin group `G` at `p = 2` of even rank `n ≥ 4` whose
+intrinsic form** (Labute, Theorem 6). A Demushkin group `G` at `p = 2` of even rank `n` whose
 canonical character has image `V^(f) = {±1} × U^(f)` for a finite `f ≥ 2` is topologically
 isomorphic to `⟨x₁, …, x_n ∣ x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)⟩` on
 `n = demushkinRank hG` generators. -/
 theorem IsDemushkin.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq
-    (hG : IsDemushkin 2 G) (hn : Even (demushkinRank hG)) (hn3 : 3 < demushkinRank hG) {f : ℕ}
-    (hf : 2 ≤ f) (hA : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
+    (hG : IsDemushkin 2 G) (hn : Even (demushkinRank hG)) {f : ℕ} (hf : 2 ≤ f)
+    (hA : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
     Nonempty (G ≃ₜ* presentedProP 2 (Fin (demushkinRank hG))
       {demushkinWordTwoEven 0 f (demushkinRank hG) (freeProPGen 2 (demushkinRank hG))}) := by
   obtain ⟨r, hr, ⟨e⟩⟩ := hG.exists_mem_proPFrattini_continuousMulEquiv_presentedProP_fin
@@ -639,27 +650,23 @@ theorem IsDemushkin.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven
   have hA' : (demushkinCharacter hG').toMonoidHom.range = unitsPlusMinus f := by
     rw [range_demushkinCharacter_of_equiv hG hG' e.symm, hA]
   obtain ⟨e'⟩ :=
-    freeProP.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq hG' hn
-      hn3 hf hA'
+    freeProP.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq hG' hn hf hA'
   exact ⟨e.symm.trans e'⟩
 
 /-- **Uniqueness of the dyadic Demushkin groups of even rank with image `{±1} × U^(f)`** (Labute,
-Theorem 6). Two Demushkin groups at `p = 2` of the same even rank `n ≥ 4` whose canonical
-characters have the same image `V^(f) = {±1} × U^(f)`, `f ≥ 2` finite, are topologically
-isomorphic. -/
+Theorem 6). Two Demushkin groups at `p = 2` of the same even rank whose canonical characters have
+the same image `V^(f) = {±1} × U^(f)`, `f ≥ 2` finite, are topologically isomorphic. -/
 theorem IsDemushkin.nonempty_continuousMulEquiv_of_even_demushkinRank_of_range_eq_unitsPlusMinus
     {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
     [TotallyDisconnectedSpace H] (hG : IsDemushkin 2 G) (hH : IsDemushkin 2 H)
-    (hn : demushkinRank hG = demushkinRank hH) (heven : Even (demushkinRank hG))
-    (hn3 : 3 < demushkinRank hG) {f : ℕ} (hf : 2 ≤ f)
-    (hA : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f)
+    (hn : demushkinRank hG = demushkinRank hH) (heven : Even (demushkinRank hG)) {f : ℕ}
+    (hf : 2 ≤ f) (hA : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f)
     (hB : (demushkinCharacter hH).toMonoidHom.range = unitsPlusMinus f) :
     Nonempty (G ≃ₜ* H) := by
   obtain ⟨e⟩ :=
-    hG.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq heven hn3 hf hA
+    hG.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq heven hf hA
   obtain ⟨e'⟩ :=
-    hH.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq (hn ▸ heven)
-      (hn ▸ hn3) hf hB
+    hH.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq (hn ▸ heven) hf hB
   rw [hn] at e
   exact ⟨e.trans e'.symm⟩
 
