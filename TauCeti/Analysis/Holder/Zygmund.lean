@@ -204,7 +204,10 @@ private theorem norm_iteratedFDeriv_smoothBlock_le (n₀ j m : ℕ)
     (fun n _ ↦ (kernel φ (j + n₀)).exists_integrable_norm_iteratedFDeriv_add_le n)
     (Lp.aestronglyMeasurable g) (Lp.ae_norm_le_norm_top g) (by exact_mod_cast le_top),
     mul_comm (∫ y, _), ← integral_norm_iteratedFDeriv_kernel]
-  exact norm_convolution_le_integral_norm_mul_norm L hL hK g x
+  refine (norm_convolution_le_integral_norm_mul_norm L hK g x).trans ?_
+  rw [mul_assoc]
+  exact mul_le_of_le_one_left (by positivity)
+    (opNorm_le_bound₂ L zero_le_one fun A b ↦ by rw [one_mul]; exact hL A b)
 
 /-- The constant `2^{n₀ m} ‖D^m K₀‖₁`, which bounds the `m`-th derivatives of the smoothing of a
 block `Δⱼ u` at scale `2^{j + n₀}` by `2^{jm} ‖Δⱼ u‖_∞` times itself. -/
@@ -587,8 +590,8 @@ def toCkHolderSpace (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
       obtain ⟨-, -, hbd, hH⟩ := ckRepr_spec φ k hα0 hα1 u
       rw [LinearMap.coe_mk, AddHom.coe_mk]
       refine (CkHolderSpace.norm_le_of_norm_iteratedFDeriv_le_of_holderWith
-        (mul_nonneg (ckConst (F := F) φ k hα0 hα1).coe_nonneg (norm_nonneg u))
-        (fun i hi x ↦ ?_) (by rw [coe_ckHolderRepr]; exact hH)).trans (le_of_eq ?_)
+        (M := ckConst (F := F) φ k hα0 hα1 * ‖u‖) (fun i hi x ↦ ?_)
+        (by rw [coe_ckHolderRepr]; exact hH)).trans (le_of_eq ?_)
       · rw [coe_ckHolderRepr]
         exact hbd i hi x
       · push_cast

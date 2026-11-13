@@ -397,8 +397,9 @@ theorem holderWith_iteratedFDeriv_of_le (f : CkHolderSpace k α E F) (hα : α �
 /-- The `C^{k,α}` norm is at most `(k + 1) M + K` when every derivative through order `k` is
 bounded by `M` and the `k`-th derivative is `α`-Hölder with constant `K`. -/
 theorem norm_le_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpace k α E F} {M : ℝ}
-    {K : ℝ≥0} (hM0 : 0 ≤ M) (hM : ∀ i ≤ k, ∀ x, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ M)
+    {K : ℝ≥0} (hM : ∀ i ≤ k, ∀ x, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ M)
     (hK : HolderWith K α (_root_.iteratedFDeriv ℝ k f)) : ‖f‖ ≤ (k + 1) * M + K := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 k.zero_le 0)
   rw [norm_eq]
   gcongr
   · calc ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ ≤ ∑ _i : Fin (k + 1), M :=
