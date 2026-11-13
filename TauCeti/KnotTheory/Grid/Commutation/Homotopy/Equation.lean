@@ -80,7 +80,7 @@ theorem mem_sameSidePentagonPartners_or_mem_mixedSidePentagonPartners {x z : Gri
     (G.hasMixedSideOverlap_of_mem_unpairedHexagonComposites C hzx hF)
   -- The counted commutation pentagons are the counted pentagons of both turn-side kinds.
   have hpair : (⟨m, P, Q⟩ : GridPentagonPairDecomposition _ _ _ _ x z) ∈
-      G.pentagonPairDecompositions C x z := by
+      G.pentagonPairDecompositions C C.reverse x z := by
     rw [mem_pentagonPairDecompositions]
     constructor
     · cases P <;> simpa using hP

@@ -33,37 +33,6 @@ Proposition 3.2 (arXiv:math/0610559). The geometric input is the weighted recut 
 
 public section
 
-namespace TauCeti.GridPentagonPairDecomposition
-
-variable {n : ℕ} {a a' s t : Fin n} {x z : GridState n}
-
-/-- The recut of a pair of pentagons at the same column turning on the same side does not have
-the replaced grid line as a common side column, whatever the turn rows of the two pentagons.
-
-The separate column `a'` and equality `ha'` allow application to a reverse commutation using
-`ColumnCommutationData.reverse_column`: its column is propositionally, but not definitionally,
-equal to the forward column across module boundaries. -/
-theorem finRotate_notMem_commonSideColumns_of_isRecut
-    {D : GridPentagonPairDecomposition a s a' t x z} (ha' : a' = a)
-    (hside : D.first.isLeft = D.second.isLeft) {E : GridRectangleDecomposition x z}
-    (h : D.toRectangleDecomposition.IsRecut E) : finRotate n a ∉ E.commonSideColumns := by
-  subst ha'
-  rcases D with ⟨m, P | P, Q | Q⟩
-  · have hcommon := h.isRecutOfRightEqRight (by
-      simp only [toRectangleDecomposition,
-        GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq, Q.right_eq])
-    simpa only [toRectangleDecomposition, GridCommutationPentagonBetween.toGridRectangleBetween_inl,
-      P.right_eq] using hcommon.first_right_notMem_commonSideColumns
-  · simp at hside
-  · simp at hside
-  · have hcommon := h.isRecutOfLeftEqLeft (by
-      simp only [toRectangleDecomposition,
-        GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq, Q.left_eq])
-    simpa only [toRectangleDecomposition, GridCommutationPentagonBetween.toGridRectangleBetween_inr,
-      P.left_eq] using hcommon.first_left_notMem_commonSideColumns
-
-end TauCeti.GridPentagonPairDecomposition
-
 namespace TauCeti.GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
@@ -75,19 +44,19 @@ local notation "b" => finRotate n C.column
 replaced grid line. This includes both terminal--terminal and initial--initial pairs. -/
 noncomputable def sameSidePentagonPairs (x z : GridState n) :
     Finset (GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :=
-  (G.pentagonPairDecompositions C x z).filter fun D => D.first.isLeft = D.second.isLeft
+  (G.pentagonPairDecompositions C C.reverse x z).filter fun D => D.first.isLeft = D.second.isLeft
 
 /-- A same-side pair is counted and has equal turn-side indicators. -/
 @[simp]
 theorem mem_sameSidePentagonPairs {x z : GridState n}
     (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :
     D ∈ G.sameSidePentagonPairs C x z ↔
-      D ∈ G.pentagonPairDecompositions C x z ∧ D.first.isLeft = D.second.isLeft := by
+      D ∈ G.pentagonPairDecompositions C C.reverse x z ∧ D.first.isLeft = D.second.isLeft := by
   simp only [sameSidePentagonPairs, Finset.mem_filter]
 
 /-- Every same-side pair is a term of the full round-trip coefficient sum. -/
 theorem sameSidePentagonPairs_subset (x z : GridState n) :
-    G.sameSidePentagonPairs C x z ⊆ G.pentagonPairDecompositions C x z :=
+    G.sameSidePentagonPairs C x z ⊆ G.pentagonPairDecompositions C C.reverse x z :=
   fun D hD => ((G.mem_sameSidePentagonPairs C D).mp hD).1
 
 private theorem terminal_pair_target_eq_source {x y z : GridState n}
@@ -113,9 +82,9 @@ private theorem existsUnique_sameSidePartner (R : Type*) [CommSemiring R]
     ∃! F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.unpairedHexagonComposites C x z ∧
         D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R D := by
+        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C C.reverse R D := by
   obtain ⟨hD, hside⟩ := (G.mem_sameSidePentagonPairs C D).mp hD
-  obtain ⟨hP, hQ⟩ := (G.mem_pentagonPairDecompositions C D).mp hD
+  obtain ⟨hP, hQ⟩ := (G.mem_pentagonPairDecompositions C C.reverse D).mp hD
   rcases D with ⟨m, P, Q⟩
   cases P with
   | inl P =>
@@ -170,7 +139,7 @@ theorem sameSidePentagonPartners_subset (x z : GridState n) :
 image have equal total polynomial weight over every commutative semiring. -/
 theorem sum_pentagonPairWeight_sameSide_eq_sum_partners
     (R : Type*) [CommSemiring R] {x z : GridState n} (hzx : z ≠ x) :
-    ∑ D ∈ G.sameSidePentagonPairs C x z, G.pentagonPairWeight C R D =
+    ∑ D ∈ G.sameSidePentagonPairs C x z, G.pentagonPairWeight C C.reverse R D =
       ∑ F ∈ G.sameSidePentagonPartners C x z, G.hexagonCompositeWeight C R F := by
   have hunpaired {F} (hF : F ∈ G.sameSidePentagonPartners C x z) :=
     ((G.mem_unpairedHexagonComposites C F).mp (G.sameSidePentagonPartners_subset C x z hF)).1
@@ -180,13 +149,13 @@ theorem sum_pentagonPairWeight_sameSide_eq_sum_partners
     (fun F hF => ((G.mem_sameSidePentagonPartners C F).mp hF).2)
   · obtain ⟨F, ⟨hF, hrecut, hw⟩, -⟩ := G.existsUnique_sameSidePartner C R hzx D hD
     exact ⟨F, (G.mem_sameSidePentagonPartners C F).mpr ⟨hF, D, hD, hrecut⟩, hrecut, hw.symm⟩
-  · obtain ⟨hfD, hsD⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
+  · obtain ⟨hfD, hsD⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C C.reverse
       (G.sameSidePentagonPairs_subset C x z hD)
-    obtain ⟨hfE, hsE⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
+    obtain ⟨hfE, hsE⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C C.reverse
       (G.sameSidePentagonPairs_subset C x z hE)
     apply GridPentagonPairDecomposition.toRectangleDecomposition_injective
     exact hDF.eq_of_isRecut hEF hfD hsD hfE hsE
-  · obtain ⟨hf, hs⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
+  · obtain ⟨hf, hs⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C C.reverse
       (G.sameSidePentagonPairs_subset C x z hD)
     exact G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
       (hunpaired hF) (hunpaired hF')
@@ -199,15 +168,15 @@ unpaired composites and mixed-side pentagon pairs have equal total weight. -/
 theorem sum_unpaired_eq_sum_pentagonPairs_iff_sdiff_sameSide
     (R : Type*) [CommSemiring R] [IsCancelAdd R] {x z : GridState n} (hzx : z ≠ x) :
     (∑ F ∈ G.unpairedHexagonComposites C x z, G.hexagonCompositeWeight C R F) =
-        ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D ↔
+        ∑ D ∈ G.pentagonPairDecompositions C C.reverse x z, G.pentagonPairWeight C C.reverse R D ↔
       (∑ F ∈ G.unpairedHexagonComposites C x z \ G.sameSidePentagonPartners C x z,
           G.hexagonCompositeWeight C R F) =
-        ∑ D ∈ G.pentagonPairDecompositions C x z \ G.sameSidePentagonPairs C x z,
-          G.pentagonPairWeight C R D := by
+        ∑ D ∈ G.pentagonPairDecompositions C C.reverse x z \ G.sameSidePentagonPairs C x z,
+          G.pentagonPairWeight C C.reverse R D := by
   rw [← Finset.sum_sdiff (G.sameSidePentagonPartners_subset C x z)
       (f := G.hexagonCompositeWeight C R),
     ← Finset.sum_sdiff (G.sameSidePentagonPairs_subset C x z)
-      (f := G.pentagonPairWeight C R),
+      (f := G.pentagonPairWeight C C.reverse R),
     G.sum_pentagonPairWeight_sameSide_eq_sum_partners C R hzx]
   exact add_right_cancel_iff
 
@@ -224,8 +193,8 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_sdiff_sameSide
       ∀ x z : GridState n, z ≠ x →
         (∑ F ∈ G.unpairedHexagonComposites C x z \ G.sameSidePentagonPartners C x z,
             G.hexagonCompositeWeight C R F) =
-          ∑ D ∈ G.pentagonPairDecompositions C x z \ G.sameSidePentagonPairs C x z,
-            G.pentagonPairWeight C R D := by
+          ∑ D ∈ G.pentagonPairDecompositions C C.reverse x z \ G.sameSidePentagonPairs C x z,
+            G.pentagonPairWeight C C.reverse R D := by
   have : IsCancelAdd R := isCancelAdd_of_charTwo R
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired C R]
   simp only [G.sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_add C R,

@@ -68,7 +68,10 @@ namespace GridDiagram
 namespace IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
-  (C : ColumnTurn n)
+
+section
+
+variable (C : ColumnTurn n)
 
 local notation "a" => C.column
 local notation "b" => finRotate n C.column
@@ -150,21 +153,26 @@ theorem tau_swapColumns_mem_Icc_of_homotopy
     rw [hΨ, tau_swapColumns_swapColumns hG K C, sub_neg_eq_add] at h₂
     exact ⟨by linarith, h₁⟩
 
+end
+
 /-- **The crossing change inequality for `τ`.** Let the segments of the columns `a` and
 `b = finRotate n a` of a knot grid `G` interleave with `O_a` on the arc of column `b`. Then
 `τ(G) - 1 ≤ τ(G') ≤ τ(G)` for `G' = G.swapColumns a b`, over every commutative ring of
 characteristic two. -/
-theorem tau_swapColumns_mem_Icc (h : G.ColumnsInterleaving a b) (hO : G.O a ∈ G.columnArc b) :
-    (hG.swapColumns a b).tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K) :=
-  hG.tau_swapColumns_mem_Icc_of_homotopy (C := C.withTurnRow (G.O a)) h hO rfl
-    ⟨G.crossingChangeHomotopy K (C.withTurnRow (G.O a)) (G.X b),
+theorem tau_swapColumns_mem_Icc {a : Fin n}
+    (h : G.ColumnsInterleaving a (finRotate n a)) (hO : G.O a ∈ G.columnArc (finRotate n a)) :
+    (hG.swapColumns a (finRotate n a)).tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K) := by
+  let C : ColumnTurn n := ⟨a, G.O a, h.ne⟩
+  exact hG.tau_swapColumns_mem_Icc_of_homotopy (C := C) h hO rfl
+    ⟨G.crossingChangeHomotopy K C (G.X (finRotate n a)),
       unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc K h hO rfl rfl⟩
-    ⟨(G').crossingChangeHomotopy K ((C.withTurnRow (G.O a)).withTurnRow (G.X b)) (G.O a),
+    ⟨(G.swapColumns a (finRotate n a)).crossingChangeHomotopy K
+        (C.withTurnRow (G.X (finRotate n a))) (G.O a),
       unblockedDifferential_crossingChangeHomotopy_add_eq_of_notMem_columnArc K
         ((columnsInterleaving_swapColumns G _ _).mpr h.symm)
         (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)
-        (by simp [swapColumns_X, GridState.swapColumns_apply])
-        (by simp [swapColumns_O, GridState.swapColumns_apply])⟩
+        (by simp [C, swapColumns_X, GridState.swapColumns_apply])
+        (by simp [C, swapColumns_O, GridState.swapColumns_apply])⟩
 
 end IsKnot
 

@@ -56,6 +56,55 @@ Proposition 3.2 (arXiv:math/0610559).
 
 public section
 
+/-! ### The replaced grid line as a common side -/
+
+namespace TauCeti.GridPentagonPairDecomposition
+
+variable {n : ℕ} {a a' s t : Fin n} {x z : GridState n}
+
+/-- The replaced grid line is a common side of the two rectangles of a pair of pentagons at the
+same column, whatever their turn rows: the terminal side of a terminal-side pentagon and the
+initial side of an initial-side one.
+
+The separate column `a'` and equality `ha'` allow application to a reverse commutation using
+`ColumnCommutationData.reverse_column`: its column is propositionally, but not definitionally,
+equal to the forward column across module boundaries. -/
+theorem finRotate_mem_commonSideColumns (D : GridPentagonPairDecomposition a s a' t x z)
+    (ha' : a' = a) : finRotate n a ∈ D.toRectangleDecomposition.commonSideColumns := by
+  subst ha'
+  rcases D with ⟨m, P | P, Q | Q⟩
+  · simp [P.right_eq, Q.right_eq]
+  · simp [P.right_eq, Q.left_eq]
+  · simp [P.left_eq, Q.right_eq]
+  · simp [P.left_eq, Q.left_eq]
+
+/-- The recut of a pair of pentagons at the same column turning on the same side does not have
+the replaced grid line as a common side column, whatever the turn rows of the two pentagons.
+
+The separate column `a'` and equality `ha'` allow application to a reverse commutation using
+`ColumnCommutationData.reverse_column`: its column is propositionally, but not definitionally,
+equal to the forward column across module boundaries. -/
+theorem finRotate_notMem_commonSideColumns_of_isRecut
+    {D : GridPentagonPairDecomposition a s a' t x z} (ha' : a' = a)
+    (hside : D.first.isLeft = D.second.isLeft) {E : GridRectangleDecomposition x z}
+    (h : D.toRectangleDecomposition.IsRecut E) : finRotate n a ∉ E.commonSideColumns := by
+  subst ha'
+  rcases D with ⟨m, P | P, Q | Q⟩
+  · have hcommon := h.isRecutOfRightEqRight (by
+      simp only [toRectangleDecomposition,
+        GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq, Q.right_eq])
+    simpa only [toRectangleDecomposition, GridCommutationPentagonBetween.toGridRectangleBetween_inl,
+      P.right_eq] using hcommon.first_right_notMem_commonSideColumns
+  · simp at hside
+  · simp at hside
+  · have hcommon := h.isRecutOfLeftEqLeft (by
+      simp only [toRectangleDecomposition,
+        GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq, Q.left_eq])
+    simpa only [toRectangleDecomposition, GridCommutationPentagonBetween.toGridRectangleBetween_inr,
+      P.left_eq] using hcommon.first_left_notMem_commonSideColumns
+
+end TauCeti.GridPentagonPairDecomposition
+
 namespace TauCeti.GridHexagonCompositeDecomposition
 
 variable {n : ℕ} {a s s' : Fin n}
