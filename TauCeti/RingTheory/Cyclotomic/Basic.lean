@@ -527,15 +527,15 @@ theorem reduce_neg (p : ℕ) (r : ZMod p) (x : Cyclotomic e) :
   simp [reduce_eq_sum, coeff_neg]
 
 /-- Reduction at an `e`-th primitive root in a prime field is a ring homomorphism. -/
-noncomputable def reduceRingHom (p : ℕ) [Fact p.Prime] [NeZero e] (r : ZMod p)
-    (hr : IsPrimitiveRoot r e) : Cyclotomic e →+* ZMod p :=
+noncomputable def reduceRingHom (p : ℕ) [Fact p.Prime] [NeZero e]
+    (r : ZMod p) (hr : IsPrimitiveRoot r e) : Cyclotomic e →+* ZMod p :=
   evalRingHom (Int.castRingHom (ZMod p)) r (hr.eval₂_cyclotomic _)
 
 -- Not `@[simp]`: `reduce p r` is multiplicative only when `r` is a root of the cyclotomic
 -- polynomial, so it has no `simp` API of its own, and rewriting `reduceRingHom` to it would stop
 -- `simp` from using `map_mul` and `map_add`.
-theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e] (r : ZMod p)
-    (hr : IsPrimitiveRoot r e) (x : Cyclotomic e) :
+theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e]
+    (r : ZMod p) (hr : IsPrimitiveRoot r e) (x : Cyclotomic e) :
     reduceRingHom p r hr x = reduce p r x := by
   rw [reduceRingHom, evalRingHom_eq_evalCoeffs, reduce]
 

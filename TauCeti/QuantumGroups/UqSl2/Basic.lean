@@ -284,6 +284,7 @@ namespace GeneratorTuple
 variable {A : Type*} [Ring A] [Algebra ℂ A]
 
 /-- The function on generator names underlying a generator tuple. -/
+@[simp]
 def toFun (x : GeneratorTuple q A) : Generator → A
   | .e => x.e
   | .f => x.f
