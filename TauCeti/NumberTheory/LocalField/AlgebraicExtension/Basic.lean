@@ -491,7 +491,7 @@ instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerR
   have := ι.valuativeExtension
   have hmap : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) = algebraMap 𝒪[L] 𝒪[M] := by
     ext x
-    rw [TauCeti.coe_algebraMap_integerRing]
+    rw [Valuation.HasExtension.val_algebraMap]
     rfl
   have hlocal : IsLocalHom (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) :=
     hmap.symm ▸ (inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M]))

@@ -43,7 +43,7 @@ theorem map_internalEdges_union (h : G.Compatible H) [Fintype E(h.union)] (S : F
   simp only [mem_map, mem_internalEdges, mem_subtype, Function.Embedding.subtype_apply,
     mem_union, Subtype.exists]
   constructor
-  · rintro ⟨e, he, ⟨x, hx, hxS, y, hy, hyS, hxy⟩, rfl⟩
+  · rintro ⟨e, _, ⟨x, _, hxS, y, _, hyS, hxy⟩, rfl⟩
     rcases h.union_isLink.mp hxy with hxy | hxy
     · exact Or.inl ⟨e, hxy.edge_mem, ⟨x, hxy.left_mem, hxS, y, hxy.right_mem, hyS, hxy⟩, Eq.refl _⟩
     · exact Or.inr ⟨e, hxy.edge_mem, ⟨x, hxy.left_mem, hxS, y, hxy.right_mem, hyS, hxy⟩, Eq.refl _⟩
@@ -68,7 +68,7 @@ theorem map_incidentEdges_union (h : G.Compatible H) [Fintype E(h.union)] (S : F
   simp only [mem_map, mem_incidentEdges, mem_subtype, Function.Embedding.subtype_apply,
     mem_union, Subtype.exists]
   constructor
-  · rintro ⟨e, he, ⟨x, hx, hxS, hex⟩, rfl⟩
+  · rintro ⟨e, _, ⟨x, _, hxS, hex⟩, rfl⟩
     rcases h.union_inc_iff.mp hex with hex | hex
     · exact Or.inl ⟨e, hex.edge_mem, ⟨x, hex.vertex_mem, hxS, hex⟩, Eq.refl _⟩
     · exact Or.inr ⟨e, hex.edge_mem, ⟨x, hex.vertex_mem, hxS, hex⟩, Eq.refl _⟩

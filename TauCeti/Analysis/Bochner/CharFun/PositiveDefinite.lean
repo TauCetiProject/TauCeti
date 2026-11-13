@@ -17,9 +17,9 @@ Tau Ceti's generic positive-definite-function predicate. If the involution on an
 negation, then Mathlib's characteristic function `MeasureTheory.charFun μ` of a finite measure is
 `TauCeti.IsPositiveDefinite`.
 
-Together with Mathlib's continuity theorem for characteristic functions, this gives the "finite
-measure's Fourier transform is continuous positive-definite" bridge lemma requested in Part C of
-the `OneParameterSemigroups` roadmap, before the harder converse direction of Bochner's theorem.
+Together with Mathlib's continuity theorem for characteristic functions, this shows that the
+characteristic function of a finite measure is continuous and positive definite, the easy
+direction of Bochner's theorem.
 
 ## Main declarations
 

@@ -33,10 +33,11 @@ computed here as well.
 These equations are the explicit `F₄` input for the root-datum special-isogeny construction, the
 last of the three beside the type `B₂` case of
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/B/SpecialMap.lean` and the same-shape
-`G₂` implementation proposed in
+`G₂` implementation of
+`TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/G2/SpecialMap.lean` from
 [Tau Ceti PR #4116](https://github.com/TauCetiProject/TauCeti/pull/4116).
-They do not yet construct a group-scheme morphism; Layer 9 of the reductive-groups roadmap requires
-that later lift, together with its action on root subgroups, before the Suzuki--Ree lane can use it.
+They do not construct a group-scheme morphism: that is a lift of these data, together with its
+action on root subgroups.
 
 ## Main definitions
 

@@ -111,7 +111,7 @@ theorem graph_restrict [Module R F] {A : E →ₗ.[R] F} {U : Submodule R E} {V 
   ext ⟨x, y⟩
   simp only [mem_graph_iff, Submodule.mem_comap, LinearMap.prodMap_apply, Submodule.subtype_apply,
     Subtype.exists, mem_restrict_domain, Subtype.ext_iff, coe_restrict_apply]
-  exact ⟨fun ⟨z, hzU, hz, hzx, hzy⟩ ↦ ⟨z, hz, hzx, hzy⟩,
+  exact ⟨fun ⟨z, _, hz, hzx, hzy⟩ ↦ ⟨z, hz, hzx, hzy⟩,
     fun ⟨z, hz, hzx, hzy⟩ ↦ ⟨z, hzx ▸ x.2, hz, hzx, hzy⟩⟩
 
 end LinearPMap

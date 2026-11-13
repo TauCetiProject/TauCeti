@@ -66,7 +66,6 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_
   set ρ := max R 0
   set Ω := ball (0 : E) (ρ + 1)
   set S := Ω ∩ (closedBall (0 : E) ρ)ᶜ
-  have hρ : 0 ≤ ρ := le_max_right R 0
   have hSΩ : S ⊆ Ω := inter_subset_left
   have hS : MeasurableSet S := measurableSet_ball.inter measurableSet_closedBall.compl
   have hρR : R ≤ ρ := le_max_left R 0
@@ -99,8 +98,8 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_
       (hu.continuous.norm.pow 2) hn
   have hQ₀ : ∀ᵐ z ∂μ, 0 ≤ P z * ‖u z‖ ^ 2 := hP₀.mono fun z h ↦ mul_nonneg h (by positivity)
   -- Inside `Ω`, the Poincaré inequality relative to `S`.
-  have hΩ := setIntegral_norm_sq_le_of_convex (μ := μ) isOpen_ball (convex_ball 0 (ρ + 1))
-    isBounded_ball hu hS hSΩ hS₀
+  have hΩ := setIntegral_norm_sq_le_of_convex (μ := μ) (convex_ball 0 (ρ + 1))
+    isBounded_ball hu hSΩ hS₀
   have hDΩ : ∫ z in Ω, ‖fderiv ℝ u z‖ ^ 2 ∂μ ≤ ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ :=
     setIntegral_le_integral hD (ae_of_all _ fun _ ↦ by positivity)
   -- Where `P ≥ a`, the potential term controls `‖u‖²`.
@@ -110,7 +109,7 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_
     exact setIntegral_mono_on_ae (hI.integrableOn.const_mul a) hQ.integrableOn hT
       (haT.mono fun z h hz ↦ mul_le_mul_of_nonneg_right (h hz) (by positivity))
   have hYS := (hpot hS haS).trans (setIntegral_mono_set hQ.integrableOn (ae_restrict_of_ae hQ₀)
-    hSΩ.eventuallyLE)
+    hSΩ.eventuallySubset)
   have hYC := hpot measurableSet_ball.compl haΩ
   have hQΩ : 0 ≤ ∫ z in Ω, P z * ‖u z‖ ^ 2 ∂μ := integral_nonneg_of_ae (ae_restrict_of_ae hQ₀)
   have hQC : 0 ≤ ∫ z in Ωᶜ, P z * ‖u z‖ ^ 2 ∂μ := integral_nonneg_of_ae (ae_restrict_of_ae hQ₀)

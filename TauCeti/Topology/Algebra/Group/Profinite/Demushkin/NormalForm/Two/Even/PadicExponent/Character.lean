@@ -100,7 +100,7 @@ noncomputable def orientationTwoEvenPadic :
   presentedProP.lift (freeProP.lift isProP_units_padicInt_two
       fun i : Fin n ↦ if (i : ℕ) = 1 then v else if (i : ℕ) = 3 then u else 1) fun r hr ↦ by
     rw [Set.mem_singleton_iff.mp hr]
-    refine map_demushkinWordTwoEvenPadic_eq_one _ α q n _ isProP_units_padicInt_two _ ?_ ?_ <;>
+    refine map_demushkinWordTwoEvenPadic_eq_one _ α q n _ _ ?_ ?_ <;>
       rw [freeProP.lift_freeProPGen] <;> split_ifs <;> simp_all
 
 /-- The value of the orientation on the generators. -/
@@ -190,16 +190,20 @@ theorem hasPrescriptionProperty_orientationTwoEvenPadic_two (hv : (v : ℤ_[2]) 
 
 variable {α q n}
 
-/-- **Uniqueness of the canonical character**: for `α` even, `n ≥ 2` even and `q` even whenever
+/-- **Uniqueness of the canonical character**: for `α` even, `n` even and `q` even whenever
 the factor `x₃^q` is present (`2 < n`), a character with the prescription property is the
 orientation with marked values its own values `χ(x₂)` and `χ(x₄)`. -/
 theorem eq_orientationTwoEvenPadic_of_hasPrescriptionProperty (hα : 2 ∣ α) (hq : 2 < n → 2 ∣ q)
-    (hn : Even n) (hn₁ : 1 < n)
+    (hn : Even n)
     {χ : presentedProP 2 (Fin n)
       {demushkinWordTwoEvenPadic (isProP_freeProP 2 (Fin n)) α q n (freeProPGen 2 n)} →ₜ* ℤ_[2]ˣ}
     (hχ : HasPrescriptionProperty χ) :
     χ = orientationTwoEvenPadic α q n (χ (presentedProPGen 2 n _ 1))
       (χ (presentedProPGen 2 n _ 3)) := by
+  obtain rfl | hn₁ : n = 0 ∨ 1 < n := by
+    obtain ⟨k, hk⟩ := hn
+    omega
+  · exact presentedProP.hom_ext_of fun i ↦ i.elim0
   obtain ⟨-, -, h⟩ :=
     (hasPrescriptionProperty_presentedProP_demushkinWordTwoEvenPadic_iff α q χ hα hq hn hn₁).1 hχ
   refine presentedProP.hom_ext_of fun i ↦ ?_
@@ -274,7 +278,7 @@ theorem range_eq_unitsPlusMinus_of_hasPrescriptionProperty_demushkinWordTwoEvenP
       (by omega)).1 hχ
   replace h₃ := h₃ (by omega)
   push_cast at h₃
-  have h := eq_orientationTwoEvenPadic_of_hasPrescriptionProperty hα₂ hq₂ hn (by omega) hχ
+  have h := eq_orientationTwoEvenPadic_of_hasPrescriptionProperty hα₂ hq₂ hn hχ
   have hr := range_orientationTwoEvenPadic α (2 ^ f) n (χ (presentedProPGen 2 n _ 1))
     (χ (presentedProPGen 2 n _ 3)) hn₃
   rw [← h] at hr
@@ -307,7 +311,7 @@ theorem range_eq_of_hasPrescriptionProperty_demushkinWordTwoEvenPadic_of_not_dvd
     hαg' ((neg_mem_unitsPrincipal_iff_of_val_mul_one_add_eq_neg_one h₁).mp h)
   have hu : χ (presentedProPGen 2 n _ 3) ∈ unitsPrincipal 2 (g + 1) :=
     (mem_unitsPrincipal_iff_of_val_mul_one_sub_eq_one h₃).mpr (by exact_mod_cast hqg)
-  have h := eq_orientationTwoEvenPadic_of_hasPrescriptionProperty hα₂ (fun _ ↦ hq) hn (by omega) hχ
+  have h := eq_orientationTwoEvenPadic_of_hasPrescriptionProperty hα₂ (fun _ ↦ hq) hn hχ
   have hr := range_orientationTwoEvenPadic α q n (χ (presentedProPGen 2 n _ 1))
     (χ (presentedProPGen 2 n _ 3)) hn₃
   rw [← h] at hr
@@ -327,7 +331,7 @@ theorem range_eq_zpowers_neg_one_of_hasPrescriptionProperty_demushkinWordTwoEven
     (hasPrescriptionProperty_presentedProP_demushkinWordTwoEvenPadic_iff 0 q χ (dvd_zero 2) hq₂ hn
       hn₁).1 hχ
   have hv : χ (presentedProPGen 2 n _ 1) = -1 := Units.ext (by simpa using h₁)
-  have h := eq_orientationTwoEvenPadic_of_hasPrescriptionProperty (dvd_zero 2) hq₂ hn hn₁ hχ
+  have h := eq_orientationTwoEvenPadic_of_hasPrescriptionProperty (dvd_zero 2) hq₂ hn hχ
   rw [hv] at h
   rcases le_or_gt 4 n with hn₄ | hn₄
   · obtain rfl : q = 0 := hq (by omega)
@@ -348,7 +352,7 @@ theorem range_eq_topologicalClosure_zpowers_of_hasPrescriptionProperty_demushkin
     (hχ : HasPrescriptionProperty χ) :
     χ.toMonoidHom.range = (Subgroup.zpowers (χ (presentedProPGen 2 2 _ 1))).topologicalClosure := by
   have h := eq_orientationTwoEvenPadic_of_hasPrescriptionProperty hα
-    (fun h ↦ absurd h (by norm_num)) even_two one_lt_two hχ
+    (fun h ↦ absurd h (by norm_num)) even_two hχ
   conv_lhs => rw [h]
   exact range_orientationTwoEvenPadic_of_le_three α q 2 _ _ one_lt_two (by norm_num)
 

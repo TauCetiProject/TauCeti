@@ -264,8 +264,7 @@ theorem IsIsotropicEmbedding.comp_subtype_val [IsManifold J ∞ N]
     (h : hσ.IsIsotropicEmbedding J f) (U : Opens N) :
     hσ.IsIsotropicEmbedding J (f ∘ (Subtype.val : U → N)) :=
   (isIsotropicEmbedding_iff_of_isSmoothEmbedding (h.isSmoothEmbedding.comp_subtypeVal U)).2 <|
-    h.isIsotropicMap.comp_subtype_val U fun _ _ ↦
-      h.isImmersion.contMDiff.mdifferentiableAt (by simp)
+    h.isIsotropicMap.comp_subtype_val U
 
 /-- Restricting a coisotropic embedding to an open subset of its source gives a coisotropic
 embedding. -/
@@ -273,8 +272,7 @@ theorem IsCoisotropicEmbedding.comp_subtype_val [IsManifold J ∞ N]
     (h : hσ.IsCoisotropicEmbedding J f) (U : Opens N) :
     hσ.IsCoisotropicEmbedding J (f ∘ (Subtype.val : U → N)) :=
   (isCoisotropicEmbedding_iff_of_isSmoothEmbedding (h.isSmoothEmbedding.comp_subtypeVal U)).2 <|
-    h.isCoisotropicMap.comp_subtype_val U fun _ _ ↦
-      h.isImmersion.contMDiff.mdifferentiableAt (by simp)
+    h.isCoisotropicMap.comp_subtype_val U
 
 variable {U : Opens M} {g : N → U}
 
@@ -287,13 +285,11 @@ theorem isIsotropicEmbedding_subtype_val_comp_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hg := TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.1 h.isSmoothEmbedding
     exact (isIsotropicEmbedding_iff_of_isSmoothEmbedding hg).2 <|
-      (hσ.isIsotropicMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).1
-        h.isIsotropicMap
+      hσ.isIsotropicMap_subtype_val_comp_iff.1 h.isIsotropicMap
   · have hg := h.isSmoothEmbedding
     exact (isIsotropicEmbedding_iff_of_isSmoothEmbedding
       (TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.2 hg)).2 <|
-      (hσ.isIsotropicMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).2
-        h.isIsotropicMap
+      hσ.isIsotropicMap_subtype_val_comp_iff.2 h.isIsotropicMap
 
 /-- A map into an open submanifold is a coisotropic embedding for the restricted form exactly when
 its composition with the inclusion is a coisotropic embedding. -/
@@ -304,13 +300,11 @@ theorem isCoisotropicEmbedding_subtype_val_comp_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hg := TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.1 h.isSmoothEmbedding
     exact (isCoisotropicEmbedding_iff_of_isSmoothEmbedding hg).2 <|
-      (hσ.isCoisotropicMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).1
-        h.isCoisotropicMap
+      hσ.isCoisotropicMap_subtype_val_comp_iff.1 h.isCoisotropicMap
   · have hg := h.isSmoothEmbedding
     exact (isCoisotropicEmbedding_iff_of_isSmoothEmbedding
       (TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.2 hg)).2 <|
-      (hσ.isCoisotropicMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).2
-        h.isCoisotropicMap
+      hσ.isCoisotropicMap_subtype_val_comp_iff.2 h.isCoisotropicMap
 
 end Opens
 

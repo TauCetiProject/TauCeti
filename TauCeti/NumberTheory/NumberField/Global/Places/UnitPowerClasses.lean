@@ -104,7 +104,7 @@ theorem prod_card_unitPowerClasses (n : ℕ) [HasEnoughRootsOfUnity K n]
     (∏ v ∈ T, Nat.card ((v.adicCompletionIntegers K)ˣ ⧸
       (powMonoidHom n : (v.adicCompletionIntegers K)ˣ →* _).range)) = n ^ T.card := by
   calc
-    _ = ∏ v ∈ T, n := Finset.prod_congr rfl fun v hv ↦
+    _ = ∏ _ ∈ T, n := Finset.prod_congr rfl fun v hv ↦
       v.card_unitPowerClasses_adicCompletion_of_hasEnoughRootsOfUnity (hT v hv)
     _ = n ^ T.card := by simp
 

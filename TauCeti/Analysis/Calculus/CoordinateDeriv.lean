@@ -752,7 +752,7 @@ theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (0 : CoordinateSpace n × CoordinateSpace n → A) x ξ = 0 := by
   have h : (fun y => coordinateDeriv β (fun η => (0 : CoordinateSpace n × CoordinateSpace n → A)
       (y, η)) ξ) = 0 := by
-    funext y
+    funext _
     exact congrFun (coordinateDeriv_zero β) ξ
   rw [mixedDeriv_def, h, coordinateDeriv_zero, Pi.zero_apply]
 

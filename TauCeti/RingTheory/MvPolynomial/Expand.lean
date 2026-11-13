@@ -61,10 +61,6 @@ providing the coefficient congruence for Hazewinkel's functional equation.
 
 ## Provenance
 
-Roadmap: EllipticCurves, the Layers 0-1 target *Function-field foundations and isogenies*
-(`TauCetiRoadmap/EllipticCurves/README.md:1096`), through the support module
-`RingTheory/IntegralClosure/NormalizationFinite`.
-
 All three results are the multivariate form of the univariate argument in Stacks, Lemma 10.161.13
 (tag 032O), whose proof records only "`R′[x^{1/q}]` is finite over `R[x]`" for the first two. The
 third is the coefficient half of the details that lemma omits: "There exists a finite purely

@@ -94,7 +94,7 @@ theorem existsUnique_residueExtensionLift
     (hc : (c : twoCochain K C TZ) ∈ continuousTwoCocycle K C TZ) :
     ∃! F : ofTwoCocycle cΦ →ₗ⁅K⁆ ofTwoCocycle c,
       (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj cΦ := by
-  obtain ⟨z, f, N, hN, F, -, hF⟩ := exists_residueExtensionLift hΦ hΦs hspan c hc
+  obtain ⟨z, f, N, _, F, -, hF⟩ := exists_residueExtensionLift hΦ hΦs hspan c hc
   have hproj : (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj cΦ := by
     apply LieHom.ext
     intro v

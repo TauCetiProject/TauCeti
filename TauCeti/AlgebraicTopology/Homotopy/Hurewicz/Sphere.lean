@@ -107,7 +107,7 @@ private abbrev diskInterior : Set (TopCat.disk.{0} (n + 1)) :=
 north pole. -/
 private lemma bijOn_diskToSphere :
     BijOn (diskToSphere n) (diskInterior n) {sphereNorthPole (n + 1)}ᶜ := by
-  refine ⟨fun _ hz ↦ hz, fun z hz w hw h ↦ ?_, fun y hy ↦ ?_⟩
+  refine ⟨fun _ hz ↦ hz, fun z hz w _ h ↦ ?_, fun y hy ↦ ?_⟩
   · rw [diskToSphere_apply, diskToSphere_apply, closedBallToSphere_eq_closedBallToSphere_iff] at h
     rcases h with h | ⟨h, -⟩
     · exact ULift.ext h
@@ -122,9 +122,6 @@ private lemma bijOn_diskToSphere :
 /-- On the interior of the disk the collapse map is an open embedding. -/
 private lemma isOpenEmbedding_diskToSphere_domRestrict :
     IsOpenEmbedding ((diskInterior n).domRestrict (diskToSphere n)) := by
-  have : CompactSpace (TopCat.disk.{0} (n + 1)) :=
-    (Homeomorph.ulift.{0}
-      (X := closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).symm.compactSpace
   refine ⟨IsEmbedding.subtypeVal.comp (g := Subtype.val) (f := ({sphereNorthPole (n + 1)}ᶜ :
     Set (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)).restrictPreimage (diskToSphere n))
       (IsClosedEmbedding.of_continuous_injective_isClosedMap

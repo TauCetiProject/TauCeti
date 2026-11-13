@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Disk.Annulus
 public import TauCeti.Geometry.Manifold.Morse.Cell.Map
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 public import TauCeti.Topology.Homotopy.RetractionTrack
@@ -14,7 +15,8 @@ public import TauCeti.Topology.Homotopy.RetractionTrack
 
 For a normalized Morse chart with characteristic disc of radius `√ε`, parametrize its
 negative-coordinate annulus between radii `d * √ε` and `√ε`, where `d ∈ [0,1]`. The radial
-parameter `s ∈ [0,1]` corresponds to radius `(d + (1-d)*s) * √ε`. The annulus lies in
+parameter `s ∈ [0,1]` corresponds to radius `(d + (1-d)*s) * √ε`, via the annulus point
+`TauCeti.TopCat.annulusPoint` of the unit disc. The annulus lies in
 `{f ≤ c - ε*d²}`, its inner circle has value `c - ε*d²`, and its outer circle is the
 existing attaching map at level `c - ε`.
 
@@ -42,31 +44,16 @@ namespace OpenPartialHomeomorph
 
 variable {M : Type u} [TopologicalSpace M] {n k : ℕ} {f : M → ℝ} {c ε : ℝ}
 
-private theorem norm_morseAnnulusPoint (d s : I) (θ : TopCat.diskBoundary.{u} k) :
-    ‖(unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) •
-      (θ.down : EuclideanSpace ℝ (Fin k))‖ =
-      (unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) := by
-  rw [norm_smul_of_nonneg (unitInterval.symm _).property.1,
-    mem_sphere_zero_iff_norm.mp θ.down.property, mul_one]
-
-private theorem morseAnnulusRadius_eq (d s : I) :
-    (unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) =
-      (d : ℝ) + (1 - d) * s := by
-  simp only [unitInterval.coe_symm_eq, Set.Icc.coe_mul]
-  ring
-
 private theorem apply_morseCellMap_annulusPoint
     (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n)
     (hε : 0 ≤ ε) (hball : closedBall 0 √ε ⊆ ψ.target)
     (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
     (d s : I) (θ : TopCat.diskBoundary.{u} k) :
-    f (ψ.morseCellMap hk ε
-      ((unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) •
-        (θ.down : EuclideanSpace ℝ (Fin k)))) =
+    f (ψ.morseCellMap hk ε (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 s θ).down.1) =
       c - ε * ((d : ℝ) + (1 - d) * s) ^ 2 := by
   rw [ψ.apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε
-    (by rw [norm_morseAnnulusPoint]; exact (unitInterval.symm _).property.2),
-    norm_morseAnnulusPoint, morseAnnulusRadius_eq]
+    (mem_closedBall_zero_iff.1 (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 s θ).down.2),
+    TauCeti.TopCat.norm_annulusPoint]
 
 /-- The negative-coordinate annulus of a Morse characteristic disc, with normalized inner
 radius `d`. Its radial coordinate runs from `d` to `1`. -/
@@ -74,9 +61,7 @@ def morseAnnulusMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) 
     (hε : 0 ≤ ε) (hball : closedBall 0 √ε ⊆ ψ.target)
     (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
     (d : I) : C(I × TopCat.diskBoundary.{u} k, {x : M | f x ≤ c - ε * (d : ℝ) ^ 2}) where
-  toFun p := ⟨ψ.morseCellMap hk ε
-    ((unitInterval.symm (unitInterval.symm d * unitInterval.symm p.1) : ℝ) •
-      (p.2.down : EuclideanSpace ℝ (Fin k))), by
+  toFun p := ⟨ψ.morseCellMap hk ε (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 p.1 p.2).down.1, by
         simp only [mem_ofPred_eq]
         rw [apply_morseCellMap_annulusPoint ψ hk hε hball hf]
         have hds : (d : ℝ) ≤ (d : ℝ) + (1 - d) * p.1 := by
@@ -85,10 +70,10 @@ def morseAnnulusMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) 
           (pow_le_pow_left₀ d.property.1 hds 2) hε) c⟩
   continuous_toFun := by
     apply Continuous.subtype_mk
-    apply (ψ.continuousOn_morseCellMap hball hk).comp_continuous (by fun_prop)
-    intro p
-    rw [mem_closedBall_zero_iff, norm_morseAnnulusPoint]
-    exact (unitInterval.symm _).property.2
+    exact (ψ.continuousOn_morseCellMap hball hk).comp_continuous
+      (continuous_subtype_val.comp (continuous_uliftDown.comp
+        (TauCeti.TopCat.continuous_annulusPoint d.2.1 d.2.2)))
+      fun p ↦ (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 p.1 p.2).down.2
 
 /-- Coordinates of the parametrized annulus, read through the existing Morse cell map. -/
 theorem coe_morseAnnulusMap_apply
@@ -97,9 +82,7 @@ theorem coe_morseAnnulusMap_apply
     (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
     (d s : I) (θ : TopCat.diskBoundary.{u} k) :
     (ψ.morseAnnulusMap hk hε hball hf d (s, θ) : M) =
-      ψ.morseCellMap hk ε
-        ((unitInterval.symm (unitInterval.symm d * unitInterval.symm s) : ℝ) •
-          (θ.down : EuclideanSpace ℝ (Fin k))) :=
+      ψ.morseCellMap hk ε (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 s θ).down.1 :=
   (rfl)
 
 /-- The inner seam is the small negative-coordinate circle. -/
@@ -122,9 +105,7 @@ theorem coe_morseAnnulusMap_one
     (d : I) (θ : TopCat.diskBoundary.{u} k) :
     (ψ.morseAnnulusMap hk hε hball hf d (1, θ) : M) =
       (ψ.morseAttachingMap hk hε hball hf θ : M) := by
-  simpa only [coe_morseAnnulusMap_apply, unitInterval.symm_one, mul_zero,
-    unitInterval.symm_zero, Set.Icc.coe_one, one_smul] using
-    (coe_morseAttachingMap_apply hball hf hk hε θ).symm
+  simpa [coe_morseAnnulusMap_apply] using (coe_morseAttachingMap_apply hball hf hk hε θ).symm
 
 /-- The function decreases quadratically with the actual radial coordinate of the annulus. -/
 theorem apply_morseAnnulusMap
