@@ -63,7 +63,7 @@ scalar towers. Consequently:
   `TauCeti.irreducibleMorphismValuation_snd_eq_one_iff`: an entry of the valuation is one exactly
   when the class of one irreducible morphism generates over the corresponding residue ring;
   `TauCeti.irreducibleMorphismValuation_eq_one_one_of_forall_sub_smul_mem` gives the valuation
-  `(1, 1)` when it already generates over the base ring.
+  `(1, 1)` when it already generates over a ring of scalars acting linearly on the category.
 * `TauCeti.finrank_residue_mul_irreducibleMorphismValuation_fst` and
   `TauCeti.finrank_residueOp_mul_irreducibleMorphismValuation_snd`: **the tower law**
   `dim_k F_Y · a = dim_k Irr(X, Y) = dim_k F_X · b` over a field.
@@ -208,12 +208,13 @@ theorem irreducibleMorphismValuation_snd_eq_one_iff :
     simpa using neg_mem ha
 
 variable {X Y} in
-/-- **The valuation is `(1, 1)` when one irreducible morphism spans over the base**: if every
+/-- **The valuation is `(1, 1)` when one irreducible morphism spans over scalars**: if every
 radical morphism `X ⟶ Y` is, modulo the square of the radical, a scalar multiple of one
-irreducible `f : X ⟶ Y`, then both entries of the valuation are one. -/
-theorem irreducibleMorphismValuation_eq_one_one_of_forall_sub_smul_mem {f : X ⟶ Y}
-    (hf : IsIrreducibleMorphism f)
-    (h : ∀ u ∈ jacobsonRadical X Y, ∃ c : k, u - c • f ∈ jacobsonRadicalSq X Y) :
+irreducible `f : X ⟶ Y`, for any ring `A` acting linearly on the category, then both entries of
+the valuation are one. -/
+theorem irreducibleMorphismValuation_eq_one_one_of_forall_sub_smul_mem {A : Type*} [Ring A]
+    [Linear A C] {f : X ⟶ Y} (hf : IsIrreducibleMorphism f)
+    (h : ∀ u ∈ jacobsonRadical X Y, ∃ c : A, u - c • f ∈ jacobsonRadicalSq X Y) :
     irreducibleMorphismValuation k X Y = (1, 1) :=
   Prod.ext
     ((irreducibleMorphismValuation_fst_eq_one_iff k X Y).2 ⟨f, hf, fun u hu =>
