@@ -10,9 +10,9 @@ public import TauCeti.Analysis.Contour.PolarPart.Decomposition
 /-!
 # Decomposition at finitely many simple poles
 
-A meromorphic function whose poles in a finite set `S` have order at most one splits, away from
-`S`, as a function holomorphic on the ambient open set plus the sum of its elementary principal
-parts
+A function differentiable on `U \ S` whose meromorphic germs at the points of `S` have poles
+of order at most one splits, away from `S`, as a function differentiable on `U` plus the sum
+of its elementary principal parts
 
 `∑ s ∈ S, residue f s / (z - s)`.
 
@@ -91,7 +91,7 @@ theorem f_eq_analyticRemainder_add_residue_div
 
 end PolarPartDecomposition
 
-/-- **Simple-pole decomposition.** Let `U` be open and `S` finite. If `f` is differentiable on
+/-- **Simple-pole decomposition.** Let `U` be any set and `S` finite. If `f` is differentiable on
 `U \ S`, meromorphic at every point of `S`, and has at most a simple pole there, then there is a
 function `g` differentiable throughout `U` such that, away from `S`,
 
@@ -99,13 +99,13 @@ function `g` differentiable throughout `U` such that, away from `S`,
 
 Points of `S` where `f` is analytic are allowed: their residue terms are zero. -/
 theorem exists_simplePoleDecomposition {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
-    (hU : IsOpen U) (hf : DifferentiableOn ℂ f (U \ (↑S : Set ℂ)))
+    (hf : DifferentiableOn ℂ f (U \ (↑S : Set ℂ)))
     (hmero : ∀ s ∈ S, MeromorphicAt f s)
     (horder : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     ∃ g : ℂ → ℂ, DifferentiableOn ℂ g U ∧
       ∀ z ∈ U \ (↑S : Set ℂ),
         f z = g z + ∑ s ∈ S, residue f s / (z - s) := by
-  let decomp := PolarPartDecomposition.ofMeromorphic hU hf hmero
+  let decomp := PolarPartDecomposition.ofMeromorphic hf hmero
   refine ⟨decomp.analyticRemainder, decomp.analyticRemainder_differentiableOn, fun z hz => ?_⟩
   refine decomp.f_eq_analyticRemainder_add_residue_div (z := z) ?_ hz
   intro s
