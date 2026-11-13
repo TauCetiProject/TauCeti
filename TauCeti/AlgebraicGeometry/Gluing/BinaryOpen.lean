@@ -112,22 +112,37 @@ theorem supOpenCoverTrans_w {i j : (U.supOpenCover W).I₀} (hij : i ⟶ j) :
     · exact S.homOfLE_homOfLE inf_le_left le_sup_left
     · exact S.homOfLE_homOfLE inf_le_right le_sup_right
 
+private theorem supOpenCover_directed_of_hom_right {i j : (U.supOpenCover W).I₀} (h : i ⟶ j)
+    (x : ↥(pullback ((U.supOpenCover W).f i) ((U.supOpenCover W).f j))) :
+    ∃ (k : (U.supOpenCover W).I₀) (gi : k ⟶ i) (gj : k ⟶ j) (y : ↥((U.supOpenCover W).X k)),
+      (pullback.lift (U.supOpenCoverTrans W gi) (U.supOpenCoverTrans W gj)
+        ((U.supOpenCoverTrans_w W gi).trans (U.supOpenCoverTrans_w W gj).symm)).base y = x := by
+  have : IsOpenImmersion ((U.supOpenCover W).f j) := (U.supOpenCover W).map_prop j
+  refine ⟨i, 𝟙 i, h, (pullback.fst ((U.supOpenCover W).f i) ((U.supOpenCover W).f j)).base x,
+    (pullback.fst ((U.supOpenCover W).f i) ((U.supOpenCover W).f j)).isOpenEmbedding.injective ?_⟩
+  rw [← Scheme.Hom.comp_apply, pullback.lift_fst]; rfl
+
+private theorem supOpenCover_directed_of_hom_left {i j : (U.supOpenCover W).I₀} (h : j ⟶ i)
+    (x : ↥(pullback ((U.supOpenCover W).f i) ((U.supOpenCover W).f j))) :
+    ∃ (k : (U.supOpenCover W).I₀) (gi : k ⟶ i) (gj : k ⟶ j) (y : ↥((U.supOpenCover W).X k)),
+      (pullback.lift (U.supOpenCoverTrans W gi) (U.supOpenCoverTrans W gj)
+        ((U.supOpenCoverTrans_w W gi).trans (U.supOpenCoverTrans_w W gj).symm)).base y = x := by
+  have : IsOpenImmersion ((U.supOpenCover W).f i) := (U.supOpenCover W).map_prop i
+  refine ⟨j, h, 𝟙 j, (pullback.snd ((U.supOpenCover W).f i) ((U.supOpenCover W).f j)).base x,
+    (pullback.snd ((U.supOpenCover W).f i) ((U.supOpenCover W).f j)).isOpenEmbedding.injective ?_⟩
+  rw [← Scheme.Hom.comp_apply, pullback.lift_snd]; rfl
+
 instance : (U.supOpenCover W).LocallyDirected where
   trans hij := U.supOpenCoverTrans W hij
   trans_id _ := rfl
   trans_comp {i j k} hij hjk := by
     cases hij with
-    | id =>
-      rw [WidePushoutShape.hom_id, Category.id_comp]
-      exact (Category.id_comp _).symm
+    | id => rw [WidePushoutShape.hom_id, Category.id_comp]; exact (Category.id_comp _).symm
     | init a =>
-      cases hjk
-      rw [WidePushoutShape.hom_id, Category.comp_id]
-      exact (Category.comp_id _).symm
+      cases hjk; rw [WidePushoutShape.hom_id, Category.comp_id]; exact (Category.comp_id _).symm
   w hij := U.supOpenCoverTrans_w W hij
   property_trans _ := inferInstance
   directed {i j} x := by
-    have : IsOpenImmersion ((U.supOpenCover W).f i) := (U.supOpenCover W).map_prop i
     have : IsOpenImmersion ((U.supOpenCover W).f j) := (U.supOpenCover W).map_prop j
     have hcond :
         ((U.supOpenCover W).f i).base
@@ -139,71 +154,44 @@ instance : (U.supOpenCover W).LocallyDirected where
           (g := (U.supOpenCover W).f j)).base x)
     cases i with
     | none =>
-      refine ⟨none, 𝟙 _, match j with | none => 𝟙 _ | some b => .init b,
-        (pullback.fst ((U.supOpenCover W).f none) ((U.supOpenCover W).f j)).base x, ?_⟩
-      apply (pullback.fst ((U.supOpenCover W).f none)
-        ((U.supOpenCover W).f j)).isOpenEmbedding.injective
-      rw [← Scheme.Hom.comp_apply, pullback.lift_fst]
-      rfl
+      cases j with
+      | none => exact supOpenCover_directed_of_hom_right U W (𝟙 _) x
+      | some b => exact supOpenCover_directed_of_hom_right U W (WidePushoutShape.Hom.init b) x
     | some a =>
       cases j with
-      | none =>
-        refine ⟨none, .init a, 𝟙 _,
-          (pullback.snd ((U.supOpenCover W).f (some a)) ((U.supOpenCover W).f none)).base x, ?_⟩
-        apply (pullback.snd ((U.supOpenCover W).f (some a))
-          ((U.supOpenCover W).f none)).isOpenEmbedding.injective
-        rw [← Scheme.Hom.comp_apply, pullback.lift_snd]
-        rfl
+      | none => exact supOpenCover_directed_of_hom_left U W (WidePushoutShape.Hom.init a) x
       | some b =>
-        rcases a with ⟨a⟩
-        rcases b with ⟨b⟩
-        cases a <;> cases b
-        · refine ⟨some ⟨.left⟩, 𝟙 _, 𝟙 _,
-            (pullback.fst ((U.supOpenCover W).f (some ⟨.left⟩))
-              ((U.supOpenCover W).f (some ⟨.left⟩))).base x, ?_⟩
-          apply (pullback.fst ((U.supOpenCover W).f (some ⟨.left⟩))
-            ((U.supOpenCover W).f (some ⟨.left⟩))).isOpenEmbedding.injective
-          rw [← Scheme.Hom.comp_apply, pullback.lift_fst]
-          rfl
+        rcases a with ⟨_ | _⟩ <;> rcases b with ⟨_ | _⟩
+        · exact supOpenCover_directed_of_hom_right U W (𝟙 _) x
         · let u : ↥U := (pullback.fst ((U.supOpenCover W).f (some ⟨.left⟩))
             ((U.supOpenCover W).f (some ⟨.right⟩))).base x
           let w : ↥W := (pullback.snd ((U.supOpenCover W).f (some ⟨.left⟩))
             ((U.supOpenCover W).f (some ⟨.right⟩))).base x
-          have huw : u.1 = w.1 :=
-            (Scheme.homOfLE_apply (X := S) (U := U) (V := U ⊔ W) le_sup_left u).symm.trans
-              ((congrArg Subtype.val hcond).trans
-                (Scheme.homOfLE_apply (X := S) (U := W) (V := U ⊔ W) le_sup_right w))
+          have huw : u.1 = w.1 := (Scheme.homOfLE_apply le_sup_left u).symm.trans
+            ((congrArg Subtype.val hcond).trans (Scheme.homOfLE_apply le_sup_right w))
           let y₀ : ↥(U ⊓ W) := ⟨u.1, u.2, huw ▸ w.2⟩
-          refine ⟨none, WidePushoutShape.Hom.init (j := ULift.up WalkingPair.left),
-            WidePushoutShape.Hom.init (j := ULift.up WalkingPair.right),
-            id (α := ↥((U.supOpenCover W).X none)) y₀, ?_⟩
-          apply (pullback.fst ((U.supOpenCover W).f (some ⟨.left⟩))
-            ((U.supOpenCover W).f (some ⟨.right⟩))).isOpenEmbedding.injective
+          refine ⟨none, WidePushoutShape.Hom.init (ULift.up WalkingPair.left),
+            WidePushoutShape.Hom.init (ULift.up WalkingPair.right),
+            id (α := ↥((U.supOpenCover W).X none)) y₀,
+            (pullback.fst ((U.supOpenCover W).f (some ⟨.left⟩))
+              ((U.supOpenCover W).f (some ⟨.right⟩))).isOpenEmbedding.injective ?_⟩
           rw [← Scheme.Hom.comp_apply, pullback.lift_fst]
-          exact Subtype.ext (Scheme.homOfLE_apply (X := S) (U := U ⊓ W) (V := U) inf_le_left y₀)
+          exact Subtype.ext (Scheme.homOfLE_apply inf_le_left y₀)
         · let w : ↥W := (pullback.fst ((U.supOpenCover W).f (some ⟨.right⟩))
             ((U.supOpenCover W).f (some ⟨.left⟩))).base x
           let u : ↥U := (pullback.snd ((U.supOpenCover W).f (some ⟨.right⟩))
             ((U.supOpenCover W).f (some ⟨.left⟩))).base x
-          have hwu : w.1 = u.1 :=
-            (Scheme.homOfLE_apply (X := S) (U := W) (V := U ⊔ W) le_sup_right w).symm.trans
-              ((congrArg Subtype.val hcond).trans
-                (Scheme.homOfLE_apply (X := S) (U := U) (V := U ⊔ W) le_sup_left u))
+          have hwu : w.1 = u.1 := (Scheme.homOfLE_apply le_sup_right w).symm.trans
+            ((congrArg Subtype.val hcond).trans (Scheme.homOfLE_apply le_sup_left u))
           let y₀ : ↥(U ⊓ W) := ⟨w.1, hwu ▸ u.2, w.2⟩
-          refine ⟨none, WidePushoutShape.Hom.init (j := ULift.up WalkingPair.right),
-            WidePushoutShape.Hom.init (j := ULift.up WalkingPair.left),
-            id (α := ↥((U.supOpenCover W).X none)) y₀, ?_⟩
-          apply (pullback.fst ((U.supOpenCover W).f (some ⟨.right⟩))
-            ((U.supOpenCover W).f (some ⟨.left⟩))).isOpenEmbedding.injective
-          rw [← Scheme.Hom.comp_apply, pullback.lift_fst]
-          exact Subtype.ext (Scheme.homOfLE_apply (X := S) (U := U ⊓ W) (V := W) inf_le_right y₀)
-        · refine ⟨some ⟨.right⟩, 𝟙 _, 𝟙 _,
+          refine ⟨none, WidePushoutShape.Hom.init (ULift.up WalkingPair.right),
+            WidePushoutShape.Hom.init (ULift.up WalkingPair.left),
+            id (α := ↥((U.supOpenCover W).X none)) y₀,
             (pullback.fst ((U.supOpenCover W).f (some ⟨.right⟩))
-              ((U.supOpenCover W).f (some ⟨.right⟩))).base x, ?_⟩
-          apply (pullback.fst ((U.supOpenCover W).f (some ⟨.right⟩))
-            ((U.supOpenCover W).f (some ⟨.right⟩))).isOpenEmbedding.injective
+              ((U.supOpenCover W).f (some ⟨.left⟩))).isOpenEmbedding.injective ?_⟩
           rw [← Scheme.Hom.comp_apply, pullback.lift_fst]
-          rfl
+          exact Subtype.ext (Scheme.homOfLE_apply inf_le_right y₀)
+        · exact supOpenCover_directed_of_hom_right U W (𝟙 _) x
 
 @[simp]
 theorem supOpenCover_trans_init_left :
@@ -217,27 +205,23 @@ theorem supOpenCover_trans_init_right :
 `W`. -/
 def supPullbackOpenCover {Y : Scheme.{u}} (p : Y ⟶ (U ⊔ W).toScheme) : Y.OpenCover where
   I₀ := ULift.{u} WalkingPair
-  X
-    | ⟨.left⟩ => pullback p (S.homOfLE le_sup_left)
-    | ⟨.right⟩ => pullback p (S.homOfLE le_sup_right)
-  f
-    | ⟨.left⟩ => pullback.fst p (S.homOfLE le_sup_left)
-    | ⟨.right⟩ => pullback.fst p (S.homOfLE le_sup_right)
+  X j := match j.down with
+    | .left => pullback p (S.homOfLE le_sup_left)
+    | .right => pullback p (S.homOfLE le_sup_right)
+  f j := match j.down with
+    | .left => pullback.fst p (S.homOfLE le_sup_left)
+    | .right => pullback.fst p (S.homOfLE le_sup_right)
   mem₀ := by
     rw [presieve₀_mem_precoverage_iff]
     refine ⟨fun y ↦ ?_, fun ⟨b⟩ ↦ by cases b <;> infer_instance⟩
     rcases (p.base y).2 with hyU | hyW
-    · let u : U.toScheme := (⟨(p.base y).1, hyU⟩ : ↥U)
-      have hu : p.base y = (S.homOfLE (U := U) (V := U ⊔ W) le_sup_left).base u :=
-        Subtype.ext (Scheme.homOfLE_apply le_sup_left u).symm
-      obtain ⟨z, hz, -⟩ :=
-        Scheme.Pullback.exists_preimage_pullback (f := p) (g := S.homOfLE le_sup_left) y u hu
+    · obtain ⟨z, hz, -⟩ := Scheme.Pullback.exists_preimage_pullback (f := p)
+        (g := S.homOfLE le_sup_left) y (⟨(p.base y).1, hyU⟩ : ↥U)
+        (Subtype.ext (Scheme.homOfLE_apply le_sup_left ⟨(p.base y).1, hyU⟩).symm)
       exact ⟨⟨.left⟩, z, hz⟩
-    · let w : W.toScheme := (⟨(p.base y).1, hyW⟩ : ↥W)
-      have hw : p.base y = (S.homOfLE (U := W) (V := U ⊔ W) le_sup_right).base w :=
-        Subtype.ext (Scheme.homOfLE_apply le_sup_right w).symm
-      obtain ⟨z, hz, -⟩ :=
-        Scheme.Pullback.exists_preimage_pullback (f := p) (g := S.homOfLE le_sup_right) y w hw
+    · obtain ⟨z, hz, -⟩ := Scheme.Pullback.exists_preimage_pullback (f := p)
+        (g := S.homOfLE le_sup_right) y (⟨(p.base y).1, hyW⟩ : ↥W)
+        (Subtype.ext (Scheme.homOfLE_apply le_sup_right ⟨(p.base y).1, hyW⟩).symm)
       exact ⟨⟨.right⟩, z, hz⟩
 
 /-- Two morphisms into any scheme `Z` from a scheme `p : Y ⟶ (U ⊔ W).toScheme` over `U ⊔ W` are
@@ -248,10 +232,7 @@ theorem hom_ext_of_sup {Y Z : Scheme.{u}} (p : Y ⟶ (U ⊔ W).toScheme) (g₁ g
     (hW : pullback.fst p (S.homOfLE le_sup_right) ≫ g₁ =
       pullback.fst p (S.homOfLE le_sup_right) ≫ g₂) :
     g₁ = g₂ :=
-  Cover.hom_ext (supPullbackOpenCover U W p) g₁ g₂ fun ⟨b⟩ ↦ by
-    cases b
-    · exact hU
-    · exact hW
+  Cover.hom_ext (supPullbackOpenCover U W p) g₁ g₂ fun ⟨b⟩ ↦ by cases b; exacts [hU, hW]
 
 end AlgebraicGeometry.Scheme.Opens
 
@@ -292,11 +273,8 @@ theorem iso_inv_snd :
 /-- The underlying `Scheme.Cover.RelativeGluingData` over `U.supOpenCover W`. -/
 def toRelativeGluingData : (U.supOpenCover W).RelativeGluingData where
   functor :=
-    WidePushoutShape.wideSpan
-      (pullback D.leftHom (S.homOfLE inf_le_left))
-      (fun j ↦ match j.down with
-        | .left => D.left
-        | .right => D.right)
+    WidePushoutShape.wideSpan (pullback D.leftHom (S.homOfLE inf_le_left))
+      (fun j ↦ match j.down with | .left => D.left | .right => D.right)
       (fun j ↦ match j.down with
         | .left => pullback.fst D.leftHom (S.homOfLE inf_le_left)
         | .right => D.iso.hom ≫ pullback.fst D.rightHom (S.homOfLE inf_le_right))
@@ -311,88 +289,40 @@ def toRelativeGluingData : (U.supOpenCover W).RelativeGluingData where
           rw [WidePushoutShape.hom_id, CategoryTheory.Functor.map_id,
             CategoryTheory.Functor.map_id, Category.id_comp, Category.comp_id]
         | init a =>
-          rcases a with ⟨a⟩
-          cases a
-          · dsimp [Scheme.Cover.functorOfLocallyDirected]
-            exact pullback.condition
-          · dsimp [Scheme.Cover.functorOfLocallyDirected]
-            rw [Category.assoc, pullback.condition, D.iso_hom_snd_assoc] }
+          rcases a with ⟨_ | _⟩ <;> dsimp [Scheme.Cover.functorOfLocallyDirected]
+          · exact pullback.condition
+          · rw [Category.assoc, pullback.condition, D.iso_hom_snd_assoc] }
   equifibered {i j} f := by
     cases f with
     | id =>
       rw [WidePushoutShape.hom_id, CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
       exact IsPullback.of_horiz_isIso ⟨by rw [Category.id_comp, Category.comp_id]⟩
     | init a =>
-      rcases a with ⟨a⟩
-      cases a
-      · dsimp [Scheme.Cover.functorOfLocallyDirected]
-        exact IsPullback.of_hasPullback D.leftHom (S.homOfLE (U := U ⊓ W) (V := U) inf_le_left)
-      · dsimp [Scheme.Cover.functorOfLocallyDirected]
-        have hpb :
-            IsPullback
-              (pullback.fst D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right))
-              (pullback.snd D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right))
-              D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right) :=
-          IsPullback.of_hasPullback D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right)
-        have hiso :
-            IsPullback D.iso.hom
-              (pullback.snd D.leftHom (S.homOfLE (U := U ⊓ W) (V := U) inf_le_left))
-              (pullback.snd D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right)) (𝟙 _) :=
+      rcases a with ⟨_ | _⟩ <;> dsimp [Scheme.Cover.functorOfLocallyDirected]
+      · exact IsPullback.of_hasPullback D.leftHom (S.homOfLE inf_le_left)
+      · have hiso : IsPullback D.iso.hom (pullback.snd D.leftHom (S.homOfLE inf_le_left))
+            (pullback.snd D.rightHom (S.homOfLE inf_le_right)) (𝟙 _) :=
           IsPullback.of_horiz_isIso ⟨by rw [Category.comp_id, D.iso_hom_snd]⟩
-        simpa using hiso.paste_horiz hpb
-
-@[simp]
-private theorem toRelativeGluingData_functor_obj_none :
-    D.toRelativeGluingData.functor.obj none =
-      pullback D.leftHom (S.homOfLE (U := U ⊓ W) (V := U) inf_le_left) :=
-  rfl
-
-@[simp]
-private theorem toRelativeGluingData_functor_obj_left :
-    D.toRelativeGluingData.functor.obj (some ⟨.left⟩) = D.left :=
-  rfl
-
-@[simp]
-private theorem toRelativeGluingData_functor_obj_right :
-    D.toRelativeGluingData.functor.obj (some ⟨.right⟩) = D.right :=
-  rfl
-
-@[simp]
-private theorem toRelativeGluingData_functor_map_init_left :
-    D.toRelativeGluingData.functor.map (WidePushoutShape.Hom.init ⟨.left⟩) =
-      pullback.fst D.leftHom (S.homOfLE (U := U ⊓ W) (V := U) inf_le_left) :=
-  rfl
-
-@[simp]
-private theorem toRelativeGluingData_functor_map_init_right :
-    D.toRelativeGluingData.functor.map (WidePushoutShape.Hom.init ⟨.right⟩) =
-      D.iso.hom ≫ pullback.fst D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right) :=
-  rfl
+        simpa using hiso.paste_horiz (IsPullback.of_hasPullback D.rightHom (S.homOfLE inf_le_right))
 
 /-- The scheme over `(U ⊔ W).toScheme` obtained by gluing `D.left` and `D.right` along `D.iso`. -/
-abbrev glued : Scheme.{u} :=
-  D.toRelativeGluingData.glued
+abbrev glued : Scheme.{u} := D.toRelativeGluingData.glued
 
 /-- The structure morphism from the glued scheme to `(U ⊔ W).toScheme`. -/
-def toBase : D.glued ⟶ (U ⊔ W).toScheme :=
-  D.toRelativeGluingData.toBase
+def toBase : D.glued ⟶ (U ⊔ W).toScheme := D.toRelativeGluingData.toBase
 
 /-- The canonical open immersion `D.left ⟶ D.glued`. -/
-def ιLeft : D.left ⟶ D.glued :=
-  colimit.ι D.toRelativeGluingData.functor (some ⟨.left⟩)
+def ιLeft : D.left ⟶ D.glued := colimit.ι D.toRelativeGluingData.functor (some ⟨.left⟩)
 
 /-- The canonical open immersion `D.right ⟶ D.glued`. -/
-def ιRight : D.right ⟶ D.glued :=
-  colimit.ι D.toRelativeGluingData.functor (some ⟨.right⟩)
+def ιRight : D.right ⟶ D.glued := colimit.ι D.toRelativeGluingData.functor (some ⟨.right⟩)
 
 /-- The inclusion of `D.left` into `D.glued` is the pullback of `D.toBase` over `U`. -/
-theorem isPullback_left :
-    IsPullback D.leftHom D.ιLeft (S.homOfLE le_sup_left) D.toBase :=
+theorem isPullback_left : IsPullback D.leftHom D.ιLeft (S.homOfLE le_sup_left) D.toBase :=
   D.toRelativeGluingData.isPullback_natTrans_ι_toBase (some ⟨.left⟩)
 
 /-- The inclusion of `D.right` into `D.glued` is the pullback of `D.toBase` over `W`. -/
-theorem isPullback_right :
-    IsPullback D.rightHom D.ιRight (S.homOfLE le_sup_right) D.toBase :=
+theorem isPullback_right : IsPullback D.rightHom D.ιRight (S.homOfLE le_sup_right) D.toBase :=
   D.toRelativeGluingData.isPullback_natTrans_ι_toBase (some ⟨.right⟩)
 
 instance : IsOpenImmersion D.ιLeft :=
@@ -415,10 +345,8 @@ theorem fst_ιLeft :
       D.iso.hom ≫
         pullback.fst D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right) ≫ D.ιRight := by
   rw [← Category.assoc]
-  exact (colimit.w D.toRelativeGluingData.functor
-    (WidePushoutShape.Hom.init (ULift.up WalkingPair.left))).trans
-    (colimit.w D.toRelativeGluingData.functor
-      (WidePushoutShape.Hom.init (ULift.up WalkingPair.right))).symm
+  exact (colimit.w D.toRelativeGluingData.functor (WidePushoutShape.Hom.init ⟨.left⟩)).trans
+    (colimit.w D.toRelativeGluingData.functor (WidePushoutShape.Hom.init ⟨.right⟩)).symm
 
 /-- Universal morphism out of `D.glued` induced by morphisms from `D.left` and `D.right` that
 agree along `D.iso` on `(U ⊓ W).toScheme`. -/
@@ -429,29 +357,24 @@ def desc {Z : Scheme.{u}} (fL : D.left ⟶ Z) (fR : D.right ⟶ Z)
   colimit.desc D.toRelativeGluingData.functor <|
     WidePushoutShape.mkCocone (F := D.toRelativeGluingData.functor)
       (pullback.fst D.leftHom (S.homOfLE (U := U ⊓ W) (V := U) inf_le_left) ≫ fL)
+      (fun ⟨b⟩ ↦ match b with | .left => fL | .right => fR)
       (fun ⟨b⟩ ↦ match b with
-        | .left => fL
-        | .right => fR)
-      (fun ⟨b⟩ ↦ by
-        cases b
-        · rfl
-        · exact (Category.assoc D.iso.hom
-            (pullback.fst D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right)) fR).trans
-            h.symm)
+        | .left => rfl
+        | .right => (Category.assoc D.iso.hom _ fR).trans h.symm)
 
 @[reassoc (attr := simp)]
 theorem ιLeft_desc {Z : Scheme.{u}} (fL : D.left ⟶ Z) (fR : D.right ⟶ Z)
     (h : pullback.fst D.leftHom (S.homOfLE (U := U ⊓ W) (V := U) inf_le_left) ≫ fL =
       D.iso.hom ≫ pullback.fst D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right) ≫ fR) :
     D.ιLeft ≫ D.desc fL fR h = fL :=
-  colimit.ι_desc (F := D.toRelativeGluingData.functor) _ (some (ULift.up WalkingPair.left))
+  colimit.ι_desc (F := D.toRelativeGluingData.functor) _ (some ⟨.left⟩)
 
 @[reassoc (attr := simp)]
 theorem ιRight_desc {Z : Scheme.{u}} (fL : D.left ⟶ Z) (fR : D.right ⟶ Z)
     (h : pullback.fst D.leftHom (S.homOfLE (U := U ⊓ W) (V := U) inf_le_left) ≫ fL =
       D.iso.hom ≫ pullback.fst D.rightHom (S.homOfLE (U := U ⊓ W) (V := W) inf_le_right) ≫ fR) :
     D.ιRight ≫ D.desc fL fR h = fR :=
-  colimit.ι_desc (F := D.toRelativeGluingData.functor) _ (some (ULift.up WalkingPair.right))
+  colimit.ι_desc (F := D.toRelativeGluingData.functor) _ (some ⟨.right⟩)
 
 /-- Morphisms out of `D.glued` are uniquely determined by their restrictions to `D.left` and
 `D.right`. -/
@@ -459,20 +382,12 @@ theorem ιRight_desc {Z : Scheme.{u}} (fL : D.left ⟶ Z) (fR : D.right ⟶ Z)
 theorem hom_ext {Z : Scheme.{u}} {g₁ g₂ : D.glued ⟶ Z}
     (hL : D.ιLeft ≫ g₁ = D.ιLeft ≫ g₂) (hR : D.ιRight ≫ g₁ = D.ιRight ≫ g₂) :
     g₁ = g₂ := by
-  apply colimit.hom_ext
-  intro j
-  cases j with
-  | none =>
-    rw [← colimit.w_assoc D.toRelativeGluingData.functor (WidePushoutShape.Hom.init ⟨.left⟩),
-      ← colimit.w_assoc D.toRelativeGluingData.functor (WidePushoutShape.Hom.init ⟨.left⟩),
-      toRelativeGluingData_functor_map_init_left]
-    exact congrArg
-      (pullback.fst D.leftHom (S.homOfLE (U := U ⊓ W) (V := U) inf_le_left) ≫ ·) hL
-  | some a =>
-    rcases a with ⟨a⟩
-    cases a
-    · exact hL
-    · exact hR
+  apply colimit.hom_ext; rintro (_ | ⟨_ | _⟩)
+  · rw [← colimit.w_assoc D.toRelativeGluingData.functor (WidePushoutShape.Hom.init ⟨.left⟩),
+      ← colimit.w_assoc D.toRelativeGluingData.functor (WidePushoutShape.Hom.init ⟨.left⟩)]
+    exact congrArg (D.toRelativeGluingData.functor.map (WidePushoutShape.Hom.init ⟨.left⟩) ≫ ·) hL
+  · exact hL
+  · exact hR
 
 /-- The canonical isomorphism `pullback D.toBase (S.homOfLE le_sup_left) ≅ D.left` over `U`. -/
 def pullbackLeftIso : pullback D.toBase (S.homOfLE le_sup_left) ≅ D.left :=
