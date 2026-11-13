@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Basic
-public import Mathlib.Algebra.Group.Irreducible.Defs
+public import TauCeti.Algebra.Group.Irreducible.Defs
 
 /-!
 # Irreducible polynomials over a nontrivial ring
@@ -20,10 +20,6 @@ public section
 open Polynomial
 
 namespace Irreducible
-
-/-- A monoid with an irreducible element is nontrivial, since `1` is not irreducible. -/
-theorem nontrivial {M : Type*} [Monoid M] {p : M} (hp : Irreducible p) : Nontrivial M :=
-  nontrivial_of_ne p 1 hp.ne_one
 
 /-- If `D[X]` has an irreducible element then `D` is not the zero ring. -/
 theorem nontrivial_coeff {D : Type*} [Semiring D] {q : D[X]} (hq : Irreducible q) :
