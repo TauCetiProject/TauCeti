@@ -36,8 +36,8 @@ onto `E` and `E` is injective as a retract of an injective module.
 * `LinearMap.exists_isInjectiveEnvelope_submodule`: an embedding into an injective module restricts
   to an injective envelope inside that module.
 * `TauCeti.exists_isInjectiveEnvelope`: every module has an injective envelope.
-* `TauCeti.injective_of_maximal_isEssential`: a maximal essential extension of a submodule inside
-  an injective module is injective.
+* `TauCeti.moduleInjective_of_maximal_isEssential`: a maximal essential extension of a submodule
+  inside an injective module is injective.
 
 ## References
 
@@ -56,7 +56,7 @@ variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
 
 /-- A maximal essential extension `E` of a submodule `N` inside an injective module `Q` is
 injective (Lam, §3D). -/
-theorem injective_of_maximal_isEssential [Module.Injective R Q] {N E : Submodule R Q}
+theorem moduleInjective_of_maximal_isEssential [Module.Injective R Q] {N E : Submodule R Q}
     (hE : Maximal (fun P : Submodule R Q => N ≤ P ∧ IsEssential (N.comap P.subtype)) E) :
     Module.Injective R E := by
   -- Zorn's lemma gives `K` maximal among the submodules disjoint from `E`.
@@ -91,7 +91,8 @@ theorem injective_of_maximal_isEssential [Module.Injective R Q] {N E : Submodule
   -- So `Q → Q ⧸ K → E` retracts `Q` onto `E`, and `E` is injective.
   let ρ : Q →ₗ[R] E := (φ ∘ₗ K.mkQ).codRestrict E fun q => hφE ▸ ⟨K.mkQ q, rfl⟩
   have hρ (e : E) : ρ (E.subtype e) = e := Subtype.ext
-    (by simp only [ρ, LinearMap.codRestrict_apply, LinearMap.comp_apply]; exact hφj e)
+    (by simpa only [ρ, j, LinearMap.codRestrict_apply, LinearMap.comp_apply,
+      Submodule.subtype_apply] using hφj e)
   exact Module.Injective.of_leftInverse ‹_› E.subtype ρ hρ
 
 /-- **Injective envelopes inside an injective module.** Every embedding into an injective module
@@ -110,7 +111,7 @@ theorem _root_.LinearMap.exists_isInjectiveEnvelope_submodule [Module.Injective 
         isEssential_comap_subtype_sSup hc.directedOn fun P hP => (hcS hP).2⟩,
         fun z hz => le_sSup hz⟩)
     N ⟨le_rfl, by rw [Submodule.comap_subtype_self]; exact isEssential_top⟩
-  have hEinj : Module.Injective R E := injective_of_maximal_isEssential hE
+  have hEinj : Module.Injective R E := moduleInjective_of_maximal_isEssential hE
   refine ⟨E, hE.prop.1, hEinj, (LinearMap.injective_codRestrict_iff _).mpr hi, ?_⟩
   rw [LinearMap.range_codRestrict]
   exact hE.prop.2
