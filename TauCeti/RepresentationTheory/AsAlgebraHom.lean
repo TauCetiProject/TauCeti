@@ -54,6 +54,8 @@ divisors whose additive group has no `2`-torsion.
   monoid the action of `x` is `∑ g, x g • ρ g`.
 * `Representation.Equiv.conjAlgEquiv_asAlgebraHom`: an equivalence of representations conjugates
   the action of the monoid algebra.
+* `Representation.asAlgebraHom_directSum`: the monoid algebra acts on a direct sum summand by
+  summand.
 * `Representation.asAlgebraHom_quotient_mk`: the action on a quotient representation is induced
   by the action on the representation.
 * `Representation.asAlgebraHom_eq_zero_of_mul_single_eq_neg`: with doubling injective on `V`, an
@@ -162,6 +164,17 @@ theorem Equiv.conjAlgEquiv_asAlgebraHom {W : Type*} [AddCommMonoid W] [Module k 
     LinearEquiv.symm_apply_apply]
   rw [Representation.Equiv.toLinearEquiv_apply]
   exact e.toIntertwiningMap.apply_asAlgebraHom x v
+
+/-- **The monoid algebra acts on a direct sum summand by summand.** The linear extension of the
+direct-sum representation to `k[G]` is the direct sum of the linear extensions of the
+summands. -/
+theorem asAlgebraHom_directSum {ι : Type*} {W : ι → Type*} [∀ i, AddCommMonoid (W i)]
+    [∀ i, Module k (W i)] (ρ : ∀ i, Representation k G (W i)) (r : MonoidAlgebra k G) :
+    asAlgebraHom (directSum ρ) r = DirectSum.lmap fun i ↦ asAlgebraHom (ρ i) r := by
+  induction r using MonoidAlgebra.induction_linear with
+  | zero => ext; simp
+  | add r s hr hs => ext; simp [hr, hs]
+  | single g t => ext; simp [asAlgebraHom_single, directSum_apply, DirectSum.smul_apply]
 
 end Representation
 
