@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.Normed.Group.Completion
 import Mathlib.Algebra.Algebra.Bilinear
 import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
@@ -20,7 +21,7 @@ public import TauCeti.Topology.MetricSpace.Ultra.Completion
 import TauCeti.Data.Int.MulPred
 
 /-!
-# Bounded bilinear maps and infinite sums in ultrametric normed modules
+# Bounded bilinear maps and infinite sums in normed modules
 
 A map bounded by a product of norms takes two cofinite-null families to a cofinite-null family
 on the product index. In a complete ultrametric target this gives summability; when the map is
@@ -57,6 +58,10 @@ absolutely, and over a complete ultrametric normed field whenever both series co
 a field the Cauchy product of two convergent bilateral series converges to the product of their
 sums, its moments `∑ n h(n)` and `∑ (n (n - 1) / 2) h(n)` obey the Leibniz rule, and multipliers
 of norm at most one preserve summability.
+
+Without any ultrametric or completeness hypothesis, if `f : ℕ → E →L[𝕜] F` and `g : ℕ → E` are
+norm-summable with sums `A` and `v`, then their operator-evaluation Cauchy products sum to `A v`
+(`HasSum.clm_apply_antidiagonal`, `HasSum.clm_apply_range`).
 -/
 
 public section
@@ -461,5 +466,57 @@ theorem summable_mul_of_norm_le_one {R ι : Type*} [SeminormedRing R] [IsUltrame
   exact (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (hc i))
 
 end TauCeti
+
+section OperatorCauchyProduct
+
+open Filter Topology
+open scoped BigOperators
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The antidiagonal Cauchy product of a norm-summable sequence of continuous linear maps and a
+norm-summable sequence of vectors sums to the limit operator applied to the limit vector. Neither
+space needs to be complete. -/
+theorem HasSum.clm_apply_antidiagonal
+    {f : ℕ → E →L[𝕜] F} {g : ℕ → E} {A : E →L[𝕜] F} {v : E}
+    (hf : HasSum f A) (hg : HasSum g v)
+    (hfn : Summable fun n ↦ ‖f n‖) (hgn : Summable fun n ↦ ‖g n‖) :
+    HasSum (fun n ↦ ∑ kl ∈ Finset.antidiagonal n, f kl.1 (g kl.2)) (A v) := by
+  have hprod_norm : Summable fun p : ℕ × ℕ ↦ ‖f p.1 (g p.2)‖ :=
+    .of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun p ↦ (f p.1).le_opNorm (g p.2))
+      (hfn.mul_of_nonneg hgn (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _))
+  have hAv : HasSum (fun p : ℕ × ℕ ↦ f p.1 (g p.2)) (A v) := by
+    apply hasSum_of_subseq_of_summable hprod_norm tendsto_finsetProd_atTop
+    rw [← prod_atTop_atTop_eq]
+    have hfg := Tendsto.prodMap hf hg
+    rw [← nhds_prod_eq] at hfg
+    convert!
+      ((isBoundedBilinearMap_apply (𝕜 := 𝕜) (E := E) (F := F)).continuous.continuousAt
+        (x := (A, v))).tendsto.comp hfg with p
+    rw [Finset.sum_product]
+    simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd, map_sum, sum_apply]
+    exact Finset.sum_comm
+  have hsigma : HasSum (fun x : Σ n : ℕ, Finset.antidiagonal n ↦ f x.2.1.1 (g x.2.1.2)) (A v) :=
+    Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.mpr hAv
+  convert hsigma.sigma fun _ ↦ hasSum_fintype _ using 1
+  ext n
+  exact (Finset.sum_finset_coe (fun kl : ℕ × ℕ ↦ f kl.1 (g kl.2)) (Finset.antidiagonal n)).symm
+
+/-- The `Finset.range (n + 1)` Cauchy product `∑_{k=0}^n f_{n-k}(g_k)` of a norm-summable sequence
+of continuous linear maps and a norm-summable sequence of vectors sums to `A v`. Neither space
+needs to be complete. -/
+theorem HasSum.clm_apply_range
+    {f : ℕ → E →L[𝕜] F} {g : ℕ → E} {A : E →L[𝕜] F} {v : E}
+    (hf : HasSum f A) (hg : HasSum g v)
+    (hfn : Summable fun n ↦ ‖f n‖) (hgn : Summable fun n ↦ ‖g n‖) :
+    HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), f (n - k) (g k)) (A v) := by
+  refine (hf.clm_apply_antidiagonal hg hfn hgn).congr_fun fun n ↦ ?_
+  rw [← Finset.Nat.sum_antidiagonal_swap]
+  simp only [Prod.fst_swap, Prod.snd_swap]
+  exact (Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun k m ↦ f m (g k)) n).symm
+
+end OperatorCauchyProduct
 
 end

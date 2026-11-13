@@ -158,6 +158,13 @@ def solutionSpace : Submodule ℂ (holomorphicFunctions U) where
   smul_mem' c f hf := (hf.const_smul c).congr (fun z hz ↦ by
     simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩])
 
+/-- Shortcut additive-group instance on `E.solutionSpace`, avoiding expensive ring-instance
+backtracking on `holomorphicFunctions U`. -/
+instance instAddCommGroupSolutionSpace : AddCommGroup E.solutionSpace :=
+  letI : AddCommGroup (holomorphicFunctions U) :=
+    AddSubgroupClass.toAddCommGroup (holomorphicFunctions U)
+  Submodule.addCommGroup E.solutionSpace
+
 /-- Membership in the solution subspace is the scalar equation for the zero extension. -/
 @[simp]
 theorem mem_solutionSpace (f : holomorphicFunctions U) :

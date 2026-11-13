@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Constructions
+public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
+import Mathlib.Analysis.Normed.Operator.Mul
+import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import TauCeti.Analysis.Normed.Module.InfiniteSum
 
 /-!
-# Analytic constructions: products and finite sums
+# Analytic constructions: products, finite sums, and one-variable Cauchy products
 
 Mathlib's `AnalyticAt.curry_right` says that a function analytic at `p` on a product has an
 analytic slice `y ↦ f (p.1, y)` at `p.2`. Since the analytic locus is open, the same holds for the
@@ -19,6 +23,11 @@ Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analy
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`).
+
+In one variable, pointwise evaluation `z ↦ A z (v z)` of a continuous-linear-map-valued series on a
+vector-valued series and multiplication `f * g` in a normed algebra admit the explicit
+Cauchy-product formal power series on the same ball (`HasFPowerSeriesOnBall.clm_apply`,
+`HasFPowerSeriesOnBall.mul`).
 -/
 
 public section
@@ -94,3 +103,82 @@ theorem Finset.hasFPowerSeriesOnBall_sum {ι : Type*} {f : ι → E → F}
   exact I.hasFPowerSeriesWithinOnBall_sum hr h
 
 end FinsetSum
+
+section CauchyProduct
+
+open scoped BigOperators ENNReal NNReal
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Pointwise evaluation `z ↦ A z (v z)` of a continuous-linear-map-valued function `A` and a
+vector-valued function `v` admitting one-variable power series `p` and `q` on `Metric.eball z₀ r`
+admits the Cauchy-product power series on `Metric.eball z₀ r`. -/
+theorem HasFPowerSeriesOnBall.clm_apply
+    {A : 𝕜 → E →L[𝕜] F} {v : 𝕜 → E}
+    {p : FormalMultilinearSeries 𝕜 𝕜 (E →L[𝕜] F)} {q : FormalMultilinearSeries 𝕜 𝕜 E}
+    {z₀ : 𝕜} {r : ℝ≥0∞}
+    (hA : HasFPowerSeriesOnBall A p z₀ r) (hv : HasFPowerSeriesOnBall v q z₀ r) :
+    HasFPowerSeriesOnBall (fun z ↦ A z (v z))
+      (TauCeti.mkPiRingSeries 𝕜 fun n ↦ ∑ k ∈ Finset.range (n + 1), p.coeff (n - k) (q.coeff k))
+      z₀ r := by
+  refine ⟨ENNReal.le_of_forall_nnreal_lt fun R hRr ↦ ?_, hA.r_pos, fun {y} hy ↦ ?_⟩
+  · have hsumA : Summable fun n ↦ ‖p.coeff n‖ * (R : ℝ) ^ n := by
+      simpa only [FormalMultilinearSeries.norm_apply_eq_norm_coef] using
+        p.summable_norm_mul_pow (hRr.trans_le hA.r_le)
+    have hsumv : Summable fun n ↦ ‖q.coeff n‖ * (R : ℝ) ^ n := by
+      simpa only [FormalMultilinearSeries.norm_apply_eq_norm_coef] using
+        q.summable_norm_mul_pow (hRr.trans_le hv.r_le)
+    have hconv := summable_sum_mul_range_of_summable_mul
+      (f := fun k ↦ ‖q.coeff k‖ * (R : ℝ) ^ k) (g := fun m ↦ ‖p.coeff m‖ * (R : ℝ) ^ m)
+      (hsumv.mul_of_nonneg hsumA (fun _ ↦ by positivity) (fun _ ↦ by positivity))
+    apply FormalMultilinearSeries.le_radius_of_summable_norm
+    refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun n ↦ ?_) hconv
+    rw [TauCeti.norm_mkPiRingSeries]
+    calc
+      ‖∑ k ∈ Finset.range (n + 1), p.coeff (n - k) (q.coeff k)‖ * (R : ℝ) ^ n
+          ≤ ∑ k ∈ Finset.range (n + 1), ‖p.coeff (n - k) (q.coeff k)‖ * (R : ℝ) ^ n := by
+            rw [← Finset.sum_mul]
+            gcongr
+            exact norm_sum_le _ _
+      _ ≤ ∑ k ∈ Finset.range (n + 1),
+            (‖q.coeff k‖ * (R : ℝ) ^ k) * (‖p.coeff (n - k)‖ * (R : ℝ) ^ (n - k)) := by
+            refine Finset.sum_le_sum fun k hk ↦ ?_
+            have hkn : k + (n - k) = n :=
+              Nat.add_sub_of_le (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
+            calc
+              ‖p.coeff (n - k) (q.coeff k)‖ * (R : ℝ) ^ n
+                  ≤ (‖p.coeff (n - k)‖ * ‖q.coeff k‖) * (R : ℝ) ^ (k + (n - k)) := by
+                    rw [hkn]
+                    gcongr
+                    exact (p.coeff (n - k)).le_opNorm (q.coeff k)
+              _ = (‖q.coeff k‖ * (R : ℝ) ^ k) * (‖p.coeff (n - k)‖ * (R : ℝ) ^ (n - k)) := by
+                    rw [pow_add]
+                    ring
+  · have hyA := Metric.eball_subset_eball hA.r_le hy
+    have hyv := Metric.eball_subset_eball hv.r_le hy
+    have hprod := (hA.hasSum hy).clm_apply_range (hv.hasSum hy)
+      (p.summable_norm_apply hyA) (q.summable_norm_apply hyv)
+    refine hprod.congr_fun fun n ↦ ?_
+    rw [TauCeti.mkPiRingSeries_apply, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    have hkn : k + (n - k) = n := Nat.add_sub_of_le (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
+    simp only [FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_apply,
+      map_smul, smul_smul]
+    rw [← pow_add, hkn]
+
+/-- The product of two functions from `𝕜` into a normed `𝕜`-algebra admitting formal power series
+`p` and `q` on `Metric.eball z₀ r` admits the Cauchy-product power series on `Metric.eball z₀ r`. -/
+@[to_fun]
+theorem HasFPowerSeriesOnBall.mul
+    {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
+    {f g : 𝕜 → A} {p q : FormalMultilinearSeries 𝕜 𝕜 A} {z₀ : 𝕜} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f p z₀ r) (hg : HasFPowerSeriesOnBall g q z₀ r) :
+    HasFPowerSeriesOnBall (f * g)
+      (TauCeti.mkPiRingSeries 𝕜 fun n ↦ ∑ k ∈ Finset.range (n + 1), p.coeff (n - k) * q.coeff k)
+      z₀ r := by
+  simpa [Pi.mul_def] using
+    ((ContinuousLinearMap.mul 𝕜 A).comp_hasFPowerSeriesOnBall hf).clm_apply hg
+
+end CauchyProduct
