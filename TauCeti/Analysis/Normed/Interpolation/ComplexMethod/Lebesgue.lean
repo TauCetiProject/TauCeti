@@ -402,7 +402,7 @@ private def innerCLM (r : ℝ≥0∞) [Fact (1 ≤ r)] {ψ : α → E} (h₁ : M
         rw [hx, Pi.smul_apply, inner_smul_right] }
     (eLpNorm ψ r.conjExponent μ).toReal fun f => by
       simp only [LinearMap.coe_mk, AddHom.coe_mk]
-      rw [Lp.norm_def, ← ENNReal.toReal_mul, ← toReal_enorm]
+      rw [Lp.norm_def, ← ENNReal.toReal_mul, ← toReal_eNorm]
       exact ENNReal.toReal_mono (ENNReal.mul_ne_top
         (memLp_conjExponent (r := r) h₁ htop).eLpNorm_ne_top (Lp.eLpNorm_ne_top f))
         enorm_integral_inner_le
@@ -558,7 +558,7 @@ private theorem norm_sum_levelCoeff_mul_integral_le {P : ℂ → ℂ} {z : ℂ} 
   have htest : eLpNorm (testFamily P g r z) t.conjExponent μ ≤ 1 :=
     (eLpNorm_le_eLpNorm_rpow hPz hmeas hq
       (ae_of_all _ (norm_testFamily_le P g hr z))).trans (ENNReal.rpow_le_one hrn hPz)
-  rw [← toReal_enorm, Lp.norm_def]
+  rw [← toReal_eNorm, Lp.norm_def]
   refine ENNReal.toReal_mono (Lp.eLpNorm_ne_top f)
     ((enorm_integral_inner_le (p := t.conjExponent) (q := t) (u := testFamily P g r z)).trans ?_)
   simpa using mul_le_mul_of_nonneg_right htest (zero_le : 0 ≤ eLpNorm f t μ)
