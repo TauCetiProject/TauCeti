@@ -90,4 +90,9 @@ theorem IsCombinatorialManifold.link_eq_bot_iff (h : IsCombinatorialManifold K n
     (hσ : σ ∈ K) : link K σ = ⊥ ↔ σ.card = n + 1 :=
   h.isPure.link_eq_bot_iff hσ
 
+/-- A face of a combinatorial `n`-manifold with nonvoid link has at most `n` vertices. -/
+theorem IsCombinatorialManifold.card_le_of_link_ne_bot (h : IsCombinatorialManifold K n)
+    (hσ : σ ∈ K) (hne : link K σ ≠ ⊥) : σ.card ≤ n :=
+  h.isPure.card_le_of_link_ne_bot hσ hne
+
 end PreAbstractSimplicialComplex

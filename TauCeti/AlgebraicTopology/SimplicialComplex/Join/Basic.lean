@@ -170,23 +170,15 @@ theorem bot_join [DecidableEq α] [DecidableEq β] :
     obtain ⟨hne, hL, hR⟩ := mem_join_iff.mp hτ
     have hleft : τ.toLeft = ∅ := hL.resolve_right False.elim
     have hdisj : τ.toRight.image Sum.inr = τ := by
-      ext x
-      cases x with
-      | inl a => simp [← Finset.mem_toLeft, hleft]
-      | inr b => simp
-    have hRne : τ.toRight ≠ ∅ := by
-      rintro h
-      exact hne.ne_empty (by rw [← hdisj, h, Finset.image_empty])
+      change τ.toRight.image (Embedding.inr : β ↪ α ⊕ β) = τ
+      rw [← Finset.map_eq_image, ← Finset.empty_disjSum, ← hleft, Finset.toLeft_disjSum_toRight]
+    have hRne : τ.toRight ≠ ∅ := fun h =>
+      hne.ne_empty (by rw [← hdisj, h, Finset.image_empty])
     exact mem_map_iff.mpr ⟨τ.toRight, hR.resolve_left hRne, hdisj⟩
   · rintro ⟨t, ht, rfl⟩
-    have htl : (t.image (Sum.inr : β → α ⊕ β)).toLeft = ∅ := by
-      ext a
-      simp
-    have htr : (t.image (Sum.inr : β → α ⊕ β)).toRight = t := by
-      ext b
-      simp
-    exact mem_join_iff.mpr ⟨(L.isRelLowerSet_faces ht).1.image _, Or.inl htl,
-      Or.inr (htr.symm ▸ ht)⟩
+    change t.image (Embedding.inr : β ↪ α ⊕ β) ∈ _
+    rw [← Finset.map_eq_image]
+    exact map_inr_mem_join ht
 
 /-- Joining the void precomplex on the right embeds the left factor via `Sum.inl`. -/
 @[simp]

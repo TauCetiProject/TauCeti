@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
 public import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Data.Finset.Union
 
 /-!
 # Basic abstract simplicial complex API
@@ -154,6 +155,22 @@ to say that a vertex is *unused* by a complex, as needed when a construction adj
 vertex. -/
 theorem notMem_of_singleton_notMem (hv : ({v} : Finset ι) ∉ K) (hσ : σ ∈ K) : v ∉ σ :=
   fun h => hv (singleton_mem_of_mem hσ h)
+
+/-- The finite set of all vertices occurring in faces of a finite-face precomplex. -/
+noncomputable def faceUnion [DecidableEq ι] (hK : K.faces.Finite) : Finset ι :=
+  hK.toFinset.biUnion id
+
+/-- A vertex belongs to `faceUnion hK` if and only if it lies in some face of `K`. -/
+@[simp]
+theorem mem_faceUnion [DecidableEq ι] (hK : K.faces.Finite) :
+    v ∈ faceUnion hK ↔ ∃ σ ∈ K, v ∈ σ := by
+  simp only [faceUnion, Finset.mem_biUnion, Set.Finite.mem_toFinset, id_eq]
+  rfl
+
+/-- Every face of a finite-face precomplex is contained in `faceUnion hK`. -/
+theorem subset_faceUnion [DecidableEq ι] (hK : K.faces.Finite) (hσ : σ ∈ K) :
+    σ ⊆ faceUnion hK :=
+  Finset.subset_biUnion_of_mem id (hK.mem_toFinset.mpr hσ)
 
 end PreAbstractSimplicialComplex
 

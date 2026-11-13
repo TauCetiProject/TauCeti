@@ -76,21 +76,19 @@ theorem IsCombinatorialSphere.of_map {κ : Type*} [DecidableEq κ] (f : ι → �
     IsCombinatorialSphere P n := by
   obtain ⟨W, hW, he⟩ := isCombinatorialSphere_iff.mp h
   have hfin : P.faces.Finite := (finite_faces_map_iff_of_injective f hf).mp h.finite_faces
-  let U : Finset ι := hfin.toFinset.biUnion id
-  have hsubU : ∀ τ ∈ P, τ ⊆ U := fun τ hτ =>
-    Finset.subset_biUnion_of_mem id (hfin.mem_toFinset.mpr hτ)
+  let U : Finset ι := faceUnion hfin
   obtain ⟨τ₀, hτ₀, hτ₀card⟩ := exists_face_card_eq_of_dimension_eq h.dimension_eq
   obtain ⟨σ₀, hσ₀, rfl⟩ := mem_map_iff.mp hτ₀
   have hσ₀card : σ₀.card = n + 1 := by
     rwa [Finset.card_image_of_injective σ₀ hf] at hτ₀card
-  have hσ₀U : σ₀ ⊆ U := hsubU σ₀ hσ₀
+  have hσ₀U : σ₀ ⊆ U := subset_faceUnion hfin hσ₀
   have hUcard : n + 2 ≤ U.card := by
     by_contra hlt
     have hle : U.card ≤ σ₀.card := by omega
     have hUeq : σ₀ = U := Finset.eq_of_subset_of_card_le hσ₀U hle
     have hPeq : P = simplex U := by
       refine SetLike.ext fun ρ => ⟨fun hρ => mem_simplex.mpr ⟨(P.isRelLowerSet_faces hρ).1,
-        hsubU ρ hρ⟩, fun hρ => ?_⟩
+        subset_faceUnion hfin hρ⟩, fun hρ => ?_⟩
       obtain ⟨hne, hρU⟩ := mem_simplex.mp hρ
       exact (P.isRelLowerSet_faces (hUeq ▸ hσ₀)).2 hρU hne
     have hball : IsCombinatorialBall (P.map f) n := by

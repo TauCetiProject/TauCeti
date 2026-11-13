@@ -62,25 +62,6 @@ theorem map_point (f : α → β) (v : α) : (point v).map f = point (f v) := by
   · rintro rfl
     exact ⟨{v}, mem_point.mpr rfl, by simp⟩
 
-/-- An injective vertex map commutes with deletion: a face contains the image of `σ` exactly when
-its unique preimage face contains `σ`. -/
-@[simp]
-theorem map_deletion (f : α → β) (hf : Function.Injective f) (K : PreAbstractSimplicialComplex α)
-    (σ : Finset α) : (deletion K σ).map f = deletion (K.map f) (σ.image f) := by
-  refine SetLike.ext fun ω => ?_
-  constructor
-  · intro hω
-    obtain ⟨ρ, hρ, rfl⟩ := mem_map_iff.mp hω
-    obtain ⟨hρK, hσρ⟩ := mem_deletion.mp hρ
-    refine mem_deletion.mpr ⟨mem_map_iff.mpr ⟨ρ, hρK, rfl⟩, fun h => hσρ ?_⟩
-    exact (Finset.image_subset_image_iff hf).mp h
-  · intro hω
-    obtain ⟨hωK, hσρ⟩ := mem_deletion.mp hω
-    obtain ⟨ρ, hρK, hρω⟩ := mem_map_iff.mp hωK
-    subst ω
-    refine mem_map_iff.mpr ⟨ρ, mem_deletion.mpr ⟨hρK, fun h => hσρ ?_⟩, rfl⟩
-    exact Finset.image_subset_image h
-
 namespace IsFreePair
 
 variable {σ τ : Finset α}
@@ -134,7 +115,7 @@ theorem map (h : ElementaryCollapsesTo K L) (f : α → β) (hf : Function.Injec
   have hL : L = deletion K σ := SetLike.ext fun ω =>
     (hmem ω).trans <| (mem_deletion_of_isFreePair K hfree).symm.trans mem_deletion.symm
   subst L
-  exact of_isFreePair (hfree.map f hf) (map_deletion f hf K σ)
+  exact of_isFreePair (hfree.map f hf) (map_deletion f hf)
 
 private theorem exists_of_map_left {P : _root_.PreAbstractSimplicialComplex β}
     {f : α → β} (hf : Function.Injective f) (h : ElementaryCollapsesTo (K.map f) P) :
@@ -151,7 +132,7 @@ private theorem exists_of_map_left {P : _root_.PreAbstractSimplicialComplex β}
   subst τ'
   have hfree' : IsFreePair K σ τ :=
     (IsFreePair.map_iff_of_injective f hf).mp hfree
-  exact ⟨deletion K σ, (map_deletion f hf K σ).symm, of_isFreePair hfree' rfl⟩
+  exact ⟨deletion K σ, (map_deletion f hf).symm, of_isFreePair hfree' rfl⟩
 
 /-- An injective relabeling preserves and reflects an elementary collapse. -/
 theorem map_iff_of_injective (f : α → β) (hf : Function.Injective f) :

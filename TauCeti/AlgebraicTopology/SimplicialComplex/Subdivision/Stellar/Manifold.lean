@@ -11,13 +11,12 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Li
 # Combinatorial manifolds under stellar subdivision
 
 The link API for a stellar subdivision already transports the sphere-or-ball condition at every
-old vertex. This file packages that calculation into the corresponding manifold preservation
-step, leaving the link of the new vertex as an explicit hypothesis. The hypothesis is the exact
-remaining local calculation: once it is supplied, every vertex link in the subdivision has the
-required type.
+old vertex. This file packages that calculation into the corresponding forward manifold
+preservation step (leaving the link of the new vertex as an explicit hypothesis) as well as the
+unconditional backward reflection `IsCombinatorialManifold.of_stellarSubdivision`.
 
-The new-vertex link calculation is kept separate because its proof is the geometric
-boundary-of-a-closed-star argument.
+The forward new-vertex link calculation is kept separate because its proof uses higher-face links
+and the join decomposition of closed-star boundaries (`CombinatorialManifold.Link`).
 -/
 
 public section
@@ -55,5 +54,26 @@ theorem IsCombinatorialManifold.stellarSubdivision_succ
   · simpa [hwv] using hnew
   · exact hK.isCombinatorialSphere_or_isCombinatorialBall_link_stellarSubdivision
       (notMem_link_of_notMem hvK) hwv hw
+
+/-- Backward invariance of combinatorial manifolds along a stellar move: if starring `σ ∈ K` at a
+fresh vertex `v` yields a combinatorial `n`-manifold, then `K` was already a combinatorial
+`n`-manifold. -/
+theorem IsCombinatorialManifold.of_stellarSubdivision
+    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
+    (hsub : IsCombinatorialManifold (stellarSubdivision K σ v) n) :
+    IsCombinatorialManifold K n := by
+  cases n with
+  | zero =>
+      refine isCombinatorialManifold_zero_iff.mpr fun w hw => ?_
+      obtain ⟨u, hu, he⟩ := exists_singleton_mem_stellarSubdivision_stellarEquivalent_link hσ hv hw
+      exact dimension_eq_bot_iff.mp
+        (by rw [← he.dimension_eq, isCombinatorialManifold_zero_iff.mp hsub hu, dimension_bot])
+  | succ m =>
+      refine isCombinatorialManifold_succ_iff.mpr fun w hw => ?_
+      obtain ⟨u, hu, he⟩ := exists_singleton_mem_stellarSubdivision_stellarEquivalent_link hσ hv hw
+      have her := he.stellarEquivalentUpToRelabeling
+      exact (isCombinatorialManifold_succ_iff.mp hsub hu).imp
+        (IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling her)
+        (IsCombinatorialBall.of_stellarEquivalentUpToRelabeling her)
 
 end PreAbstractSimplicialComplex

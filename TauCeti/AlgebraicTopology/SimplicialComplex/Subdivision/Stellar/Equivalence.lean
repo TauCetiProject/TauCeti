@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Basic
+import Mathlib.Logic.Equiv.Fintype
+import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
 
 /-!
 # Stellar equivalence of simplicial complexes
@@ -374,57 +376,16 @@ private theorem embedFinsetInr_apply_of_mem {α : Type*} [DecidableEq α] {S : F
     embedFinsetInr S e x = Sum.inr (e ⟨x, hx⟩) :=
   embedFinsetInrFun_of_mem e hx
 
-private def restrictFinset {α : Type*} [DecidableEq α] (S : Finset α)
-    (A : PreAbstractSimplicialComplex α) : PreAbstractSimplicialComplex S where
-  faces := {σ | σ.image Subtype.val ∈ A.faces}
-  isRelLowerSet_faces := fun {_} hσ =>
-    ⟨Finset.image_nonempty.mp (A.isRelLowerSet_faces hσ).1,
-      fun {_} hτσ hτ =>
-        (A.isRelLowerSet_faces hσ).2 (Finset.image_subset_image hτσ) (hτ.image _)⟩
-
-@[simp]
-private theorem mem_restrictFinset_iff {α : Type*} [DecidableEq α] {S : Finset α}
-    {A : PreAbstractSimplicialComplex α} {σ : Finset S} :
-    σ ∈ restrictFinset S A ↔ σ.image Subtype.val ∈ A :=
-  Iff.rfl
-
-private theorem map_val_restrictFinset {α : Type*} [DecidableEq α] {S : Finset α}
-    {A : PreAbstractSimplicialComplex α} (hS : ∀ τ ∈ A, τ ⊆ S) :
-    (restrictFinset S A).map Subtype.val = A := by
-  refine SetLike.ext fun τ => ⟨?_, fun hτ => ?_⟩
-  · rintro ⟨σ, hσ, rfl⟩
-    exact hσ
-  · have heq : (τ.subtype (· ∈ S)).image Subtype.val = τ := by
-      simpa only [Finset.map_eq_image, Function.Embedding.coe_subtype] using
-        Finset.subtype_map_of_mem fun x hx => hS τ hτ hx
-    exact mem_map_iff.mpr ⟨τ.subtype (· ∈ S), mem_restrictFinset_iff.mpr (heq.symm ▸ hτ), heq⟩
-
-private theorem map_inclusion_restrictFinset {α : Type*} [DecidableEq α] {S₁ S₂ : Finset α}
-    {A : PreAbstractSimplicialComplex α} (h₁ : ∀ τ ∈ A, τ ⊆ S₁) (h₁₂ : (S₁ : Set α) ⊆ S₂) :
-    (restrictFinset S₁ A).map (Set.inclusion h₁₂) = restrictFinset S₂ A := by
-  rw [← map_inj_of_injective Subtype.val Subtype.val_injective, map_map, Set.val_comp_inclusion]
-  exact (map_val_restrictFinset h₁).trans
-    (map_val_restrictFinset fun τ hτ => (h₁ τ hτ).trans (Finset.coe_subset.mp h₁₂)).symm
-
-private noncomputable def faceUnion {α : Type*} [DecidableEq α]
-    {A : PreAbstractSimplicialComplex α} (hA : A.faces.Finite) : Finset α :=
-  hA.toFinset.biUnion id
-
-private theorem subset_faceUnion {α : Type*} [DecidableEq α]
-    {A : PreAbstractSimplicialComplex α} (hA : A.faces.Finite) (τ : Finset α) (hτ : τ ∈ A) :
-    τ ⊆ faceUnion hA :=
-  Finset.subset_biUnion_of_mem id (hA.mem_toFinset.mpr hτ)
-
-private theorem exists_restrictFinset_stellarEquivalent {α : Type*} [DecidableEq α]
+private theorem exists_restrict_stellarEquivalent {α : Type*} [DecidableEq α]
     {A B : PreAbstractSimplicialComplex α} (h : StellarEquivalent A B) (hA : A.faces.Finite) :
     ∃ S : Finset α, (∀ τ ∈ A, τ ⊆ S) ∧ (∀ τ ∈ B, τ ⊆ S) ∧
-      StellarEquivalent (restrictFinset S A) (restrictFinset S B) := by
+      StellarEquivalent (A.restrict (S : Set α)) (B.restrict (S : Set α)) := by
   induction h with
   | rel X Y hm =>
       obtain ⟨σ, v, hσ, hv, rfl⟩ := hm
       let S : Finset α := insert v (faceUnion hA)
       have hXS : ∀ τ ∈ X, τ ⊆ S :=
-        fun τ hτ => (subset_faceUnion hA τ hτ).trans (Finset.subset_insert _ _)
+        fun _ hτ => (subset_faceUnion hA hτ).trans (Finset.subset_insert _ _)
       have hYS : ∀ τ ∈ stellarSubdivision X σ v, τ ⊆ S := by
         intro τ hτ
         rcases mem_stellarSubdivision_iff.mp hτ with ⟨-, hτX, -⟩ | ⟨hvτ, -, hτX⟩
@@ -432,24 +393,27 @@ private theorem exists_restrictFinset_stellarEquivalent {α : Type*} [DecidableE
         · rw [← Finset.insert_erase hvτ]
           exact Finset.insert_subset (Finset.mem_insert_self _ _)
             (Finset.subset_union_left.trans (hXS _ hτX))
-      let σ' : Finset S := σ.subtype (· ∈ S)
+      let σ' : Finset (S : Set α) := σ.subtype (· ∈ (S : Set α))
       have hσ' : σ'.image Subtype.val = σ := by
         simpa only [σ', Finset.map_eq_image, Function.Embedding.coe_subtype] using
-          Finset.subtype_map_of_mem fun x hx => hXS σ hσ hx
-      let v' : S := ⟨v, Finset.mem_insert_self _ _⟩
-      have hσ'mem : σ' ∈ restrictFinset S X := by
-        rw [mem_restrictFinset_iff, hσ']
+          Finset.subtype_map_of_mem fun x hx => Finset.mem_coe.mpr (hXS σ hσ hx)
+      let v' : (S : Set α) := ⟨v, Finset.mem_insert_self _ _⟩
+      have hσ'mem : σ' ∈ X.restrict (S : Set α) := by
+        rw [mem_restrict_iff, hσ']
         exact hσ
-      have hv'not : ({v'} : Finset S) ∉ restrictFinset S X := by
-        rw [mem_restrictFinset_iff, Finset.image_singleton]
+      have hv'not : ({v'} : Finset (S : Set α)) ∉ X.restrict (S : Set α) := by
+        rw [mem_restrict_iff, Finset.image_singleton]
         exact hv
-      have hsub : restrictFinset S (stellarSubdivision X σ v) =
-          stellarSubdivision (restrictFinset S X) σ' v' := by
-        rw [← map_inj_of_injective Subtype.val Subtype.val_injective, map_val_restrictFinset hYS,
-          map_stellarSubdivision Subtype.val Subtype.val_injective, map_val_restrictFinset hXS, hσ']
+      have hsub : (stellarSubdivision X σ v).restrict (S : Set α) =
+          stellarSubdivision (X.restrict (S : Set α)) σ' v' := by
+        rw [← map_inj_of_injective Subtype.val Subtype.val_injective,
+          map_val_restrict (fun τ hτ => Finset.coe_subset.mpr (hYS τ hτ)),
+          map_stellarSubdivision Subtype.val Subtype.val_injective,
+          map_val_restrict (fun τ hτ => Finset.coe_subset.mpr (hXS τ hτ)), hσ']
       exact ⟨S, hXS, hYS, hsub ▸ stellarEquivalent_stellarSubdivision hσ'mem hv'not⟩
   | refl X =>
-      exact ⟨faceUnion hA, subset_faceUnion hA, subset_faceUnion hA, .refl _⟩
+      exact ⟨faceUnion hA, fun _ hτ => subset_faceUnion hA hτ,
+        fun _ hτ => subset_faceUnion hA hτ, .refl _⟩
   | symm X Y hXY ih =>
       have hX : X.faces.Finite := (StellarEquivalent.finite_faces_iff hXY).mpr hA
       obtain ⟨S, hXS, hYS, he⟩ := ih hX
@@ -461,11 +425,13 @@ private theorem exists_restrictFinset_stellarEquivalent {α : Type*} [DecidableE
       let S : Finset α := S₁ ∪ S₂
       have h₁ : (S₁ : Set α) ⊆ S := Finset.coe_subset.mpr Finset.subset_union_left
       have h₂ : (S₂ : Set α) ⊆ S := Finset.coe_subset.mpr Finset.subset_union_right
-      have he₁' : StellarEquivalent (restrictFinset S X) (restrictFinset S Y) := by
-        rw [← map_inclusion_restrictFinset hXS₁ h₁, ← map_inclusion_restrictFinset hYS₁ h₁]
+      have he₁' : StellarEquivalent (X.restrict (S : Set α)) (Y.restrict (S : Set α)) := by
+        rw [← map_inclusion_restrict (fun τ hτ => Finset.coe_subset.mpr (hXS₁ τ hτ)) h₁,
+          ← map_inclusion_restrict (fun τ hτ => Finset.coe_subset.mpr (hYS₁ τ hτ)) h₁]
         exact he₁.map (Set.inclusion h₁) (Set.inclusion_injective h₁)
-      have he₂' : StellarEquivalent (restrictFinset S Y) (restrictFinset S Z) := by
-        rw [← map_inclusion_restrictFinset hYS₂ h₂, ← map_inclusion_restrictFinset hZS₂ h₂]
+      have he₂' : StellarEquivalent (Y.restrict (S : Set α)) (Z.restrict (S : Set α)) := by
+        rw [← map_inclusion_restrict (fun τ hτ => Finset.coe_subset.mpr (hYS₂ τ hτ)) h₂,
+          ← map_inclusion_restrict (fun τ hτ => Finset.coe_subset.mpr (hZS₂ τ hτ)) h₂]
         exact he₂.map (Set.inclusion h₂) (Set.inclusion_injective h₂)
       exact ⟨S, fun τ hτ => (hXS₁ τ hτ).trans Finset.subset_union_left,
         fun τ hτ => (hZS₂ τ hτ).trans Finset.subset_union_right, he₁'.trans he₂'⟩
@@ -473,34 +439,10 @@ private theorem exists_restrictFinset_stellarEquivalent {α : Type*} [DecidableE
 private theorem exists_map_eq_of_finite {δ : Type*} [Finite δ]
     (C : PreAbstractSimplicialComplex δ) (j₁ j₂ : δ ↪ ℕ) :
     ∃ p₁ p₂ : ℕ ↪ ℕ, (C.map j₁).map p₁ = (C.map j₂).map p₂ := by
-  classical
-  let _ := Fintype.ofFinite δ
-  let idx := Fintype.equivFin δ
-  let ext (j : δ ↪ ℕ) : ℕ → ℕ :=
-    Function.extend j (fun d => (idx d).1) (fun n => Fintype.card δ + n)
-  have hext_inj (j : δ ↪ ℕ) : Function.Injective (ext j) := by
-    intro x y hxy
-    by_cases hx : ∃ d, j d = x
-    · obtain ⟨d₁, rfl⟩ := hx
-      by_cases hy : ∃ d, j d = y
-      · obtain ⟨d₂, rfl⟩ := hy
-        simp only [ext, j.injective.extend_apply] at hxy
-        exact congrArg j (idx.injective (Fin.ext hxy))
-      · simp only [ext, j.injective.extend_apply, Function.extend_apply' _ _ _ hy] at hxy
-        have := (idx d₁).isLt
-        omega
-    · by_cases hy : ∃ d, j d = y
-      · obtain ⟨d₂, rfl⟩ := hy
-        simp only [ext, j.injective.extend_apply, Function.extend_apply' _ _ _ hx] at hxy
-        have := (idx d₂).isLt
-        omega
-      · simp only [ext, Function.extend_apply' _ _ _ hx, Function.extend_apply' _ _ _ hy] at hxy
-        omega
-  refine ⟨⟨ext j₁, hext_inj j₁⟩, ⟨ext j₂, hext_inj j₂⟩, ?_⟩
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair j₁ j₂ j₁.injective j₂.injective
+  refine ⟨σ.toEmbedding, .refl ℕ, ?_⟩
   rw [map_map, map_map]
-  refine congrArg C.map (funext fun d => ?_)
-  simp only [Function.comp_apply, Function.Embedding.coeFn_mk, ext,
-    j₁.injective.extend_apply, j₂.injective.extend_apply]
+  exact congrArg C.map (funext hσ)
 
 private def SingleNatEquiv (N₁ N₂ : PreAbstractSimplicialComplex ℕ) : Prop :=
   ∃ f g : ℕ ↪ ℕ, StellarEquivalent (N₁.map f) (N₂.map g)
@@ -516,15 +458,18 @@ private theorem SingleNatEquiv.trans {N₁ N₂ N₃ : PreAbstractSimplicialComp
   obtain ⟨f₁, g₁, he₁⟩ := h₁
   obtain ⟨f₂, g₂, he₂⟩ := h₂
   let U := faceUnion hN₂
-  let sub : U ↪ ℕ := Function.Embedding.subtype (· ∈ U)
-  obtain ⟨p₁, p₂, hp⟩ := exists_map_eq_of_finite (restrictFinset U N₂) (sub.trans g₁) (sub.trans f₂)
+  let sub : (U : Set ℕ) ↪ ℕ := Function.Embedding.subtype (· ∈ (U : Set ℕ))
+  have hU : ∀ τ ∈ N₂, (τ : Set ℕ) ⊆ U :=
+    fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hN₂ hτ)
+  obtain ⟨p₁, p₂, hp⟩ := exists_map_eq_of_finite (N₂.restrict (U : Set ℕ))
+    (sub.trans g₁) (sub.trans f₂)
   have hmid : (N₂.map g₁).map p₁ = (N₂.map f₂).map p₂ := by
-    have h₁' : (restrictFinset U N₂).map (sub.trans g₁) = N₂.map g₁ := by
+    have h₁' : (N₂.restrict (U : Set ℕ)).map (sub.trans g₁) = N₂.map g₁ := by
       rw [Function.Embedding.coe_trans, ← map_map]
-      exact congrArg (·.map g₁) (map_val_restrictFinset (subset_faceUnion hN₂))
-    have h₂' : (restrictFinset U N₂).map (sub.trans f₂) = N₂.map f₂ := by
+      exact congrArg (·.map g₁) (map_val_restrict hU)
+    have h₂' : (N₂.restrict (U : Set ℕ)).map (sub.trans f₂) = N₂.map f₂ := by
       rw [Function.Embedding.coe_trans, ← map_map]
-      exact congrArg (·.map f₂) (map_val_restrictFinset (subset_faceUnion hN₂))
+      exact congrArg (·.map f₂) (map_val_restrict hU)
     rwa [h₁', h₂'] at hp
   refine ⟨f₁.trans p₁, g₂.trans p₂, ?_⟩
   have hL : (N₁.map f₁).map p₁ = N₁.map (f₁.trans p₁) := map_map _ _
@@ -532,13 +477,13 @@ private theorem SingleNatEquiv.trans {N₁ N₂ N₃ : PreAbstractSimplicialComp
   rw [← hL, ← hR]
   exact (he₁.map p₁ p₁.injective).trans (hmid ▸ he₂.map p₂ p₂.injective)
 
-private noncomputable def natEmbed {α : Type*} (S : Finset α) : S ↪ ℕ :=
-  (Fintype.equivFin S).toEmbedding.trans ⟨Fin.val, Fin.val_injective⟩
+private noncomputable def natEmbed {α : Type*} (S : Finset α) : (S : Set α) ↪ ℕ :=
+  (Fintype.equivFin (S : Set α)).toEmbedding.trans ⟨Fin.val, Fin.val_injective⟩
 
 private noncomputable def toNatModel {α : Type*} [DecidableEq α]
     {A : PreAbstractSimplicialComplex α} (hA : A.faces.Finite) :
     PreAbstractSimplicialComplex ℕ :=
-  (restrictFinset (faceUnion hA) A).map (natEmbed (faceUnion hA))
+  (A.restrict (faceUnion hA : Set α)).map (natEmbed (faceUnion hA))
 
 private theorem finite_faces_toNatModel {α : Type*} [DecidableEq α]
     {A : PreAbstractSimplicialComplex α} (hA : A.faces.Finite) :
@@ -548,24 +493,27 @@ private theorem finite_faces_toNatModel {α : Type*} [DecidableEq α]
 
 private theorem singleNatEquiv_toNatModel_of_map {α β : Type*} [DecidableEq α] [DecidableEq β]
     {A : PreAbstractSimplicialComplex α} (hA : A.faces.Finite) {f : α → β}
-    (hf : Function.Injective f) {S : Finset β} (hS : ∀ τ ∈ A.map f, τ ⊆ S) (j : S ↪ ℕ) :
-    SingleNatEquiv (toNatModel hA) ((restrictFinset S (A.map f)).map j) := by
-  let fU : faceUnion hA ↪ S :=
+    (hf : Function.Injective f) {S : Finset β} (hS : ∀ τ ∈ A.map f, τ ⊆ S)
+    (j : (S : Set β) ↪ ℕ) :
+    SingleNatEquiv (toNatModel hA) (((A.map f).restrict (S : Set β)).map j) := by
+  let fU : (faceUnion hA : Set α) ↪ (S : Set β) :=
     { toFun := fun x => ⟨f x.1, by
-        obtain ⟨τ, hτ, hxτ⟩ := Finset.mem_biUnion.mp x.2
-        exact hS (τ.image f) (mem_map_iff.mpr ⟨τ, hA.mem_toFinset.mp hτ, rfl⟩)
+        obtain ⟨τ, hτ, hxτ⟩ := (mem_faceUnion hA).mp x.2
+        exact hS (τ.image f) (mem_map_iff.mpr ⟨τ, hτ, rfl⟩)
           (Finset.mem_image_of_mem f hxτ)⟩
       inj' := fun x y hxy => Subtype.ext (hf (congrArg Subtype.val hxy)) }
-  have hmap : (restrictFinset (faceUnion hA) A).map fU = restrictFinset S (A.map f) := by
+  have hmap : (A.restrict (faceUnion hA : Set α)).map fU = (A.map f).restrict (S : Set β) := by
     rw [← map_inj_of_injective Subtype.val Subtype.val_injective, map_map,
-      map_val_restrictFinset hS]
-    have hcoe : (Subtype.val : S → β) ∘ fU = f ∘ Subtype.val := rfl
-    rw [hcoe, ← map_map, map_val_restrictFinset (subset_faceUnion hA)]
-  obtain ⟨p₁, p₂, hp⟩ := exists_map_eq_of_finite (restrictFinset (faceUnion hA) A)
+      map_val_restrict (fun τ hτ => Finset.coe_subset.mpr (hS τ hτ))]
+    have hcoe : (Subtype.val : ↑(S : Set β) → β) ∘ ⇑fU = f ∘ Subtype.val :=
+      funext fun _ => rfl
+    rw [hcoe, ← map_map,
+      map_val_restrict (fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hA hτ))]
+  obtain ⟨p₁, p₂, hp⟩ := exists_map_eq_of_finite (A.restrict (faceUnion hA : Set α))
     (natEmbed (faceUnion hA)) (fU.trans j)
   refine ⟨p₁, p₂, ?_⟩
-  have hR : ((restrictFinset (faceUnion hA) A).map (fU.trans j)).map p₂ =
-      ((restrictFinset S (A.map f)).map j).map p₂ := by
+  have hR : ((A.restrict (faceUnion hA : Set α)).map (fU.trans j)).map p₂ =
+      (((A.map f).restrict (S : Set β)).map j).map p₂ := by
     rw [Function.Embedding.coe_trans, ← map_map, hmap]
   rw [toNatModel, hp, hR]
 
@@ -581,17 +529,17 @@ private theorem singleNatEquiv_toNatModel {α : Type*} [DecidableEq α]
       have hY : Y.faces.Finite :=
         (finite_faces_map_iff_of_injective g g.injective).mp
           (he.finite_faces_iff.mp ((finite_faces_map_iff_of_injective f f.injective).mpr hX))
-      obtain ⟨S, hXS, hYS, heS⟩ := exists_restrictFinset_stellarEquivalent he
+      obtain ⟨S, hXS, hYS, heS⟩ := exists_restrict_stellarEquivalent he
         ((finite_faces_map_iff_of_injective f f.injective).mpr hX)
-      have hmid : SingleNatEquiv ((restrictFinset S (X.map f)).map (natEmbed S))
-          ((restrictFinset S (Y.map g)).map (natEmbed S)) :=
+      have hmid : SingleNatEquiv (((X.map f).restrict (S : Set _)).map (natEmbed S))
+          (((Y.map g).restrict (S : Set _)).map (natEmbed S)) :=
         ⟨Function.Embedding.refl ℕ, Function.Embedding.refl ℕ, by
           simpa only [Function.Embedding.coe_refl, map_id] using
             heS.map (natEmbed S) (natEmbed S).injective⟩
-      have hmidFin : ((restrictFinset S (X.map f)).map (natEmbed S)).faces.Finite := by
+      have hmidFin : (((X.map f).restrict (S : Set _)).map (natEmbed S)).faces.Finite := by
         rw [finite_faces_map_iff_of_injective _ (natEmbed S).injective]
         exact Set.toFinite _
-      have hmidFin' : ((restrictFinset S (Y.map g)).map (natEmbed S)).faces.Finite := by
+      have hmidFin' : (((Y.map g).restrict (S : Set _)).map (natEmbed S)).faces.Finite := by
         rw [finite_faces_map_iff_of_injective _ (natEmbed S).injective]
         exact Set.toFinite _
       exact (singleNatEquiv_toNatModel_of_map hX f.injective hXS (natEmbed S)).trans hmidFin
@@ -619,17 +567,21 @@ private theorem exists_common_relabeling_of_singleNatEquiv {α : Type*} [Decidab
   let f := embedFinsetInr (faceUnion hA) ((natEmbed (faceUnion hA)).trans p₁)
   let g := embedFinsetInr (faceUnion hB) ((natEmbed (faceUnion hB)).trans p₂)
   have hfmap : A.map f = ((toNatModel hA).map p₁).map Sum.inr := by
-    conv_lhs => rw [← map_val_restrictFinset (subset_faceUnion hA)]
+    conv_lhs =>
+      rw [← map_val_restrict (s := (faceUnion hA : Set α))
+        (fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hA hτ))]
     rw [toNatModel, map_map, map_map, map_map]
-    refine congrArg (restrictFinset (faceUnion hA) A).map (funext fun x => ?_)
+    refine congrArg (A.restrict (faceUnion hA : Set α)).map (funext fun x => ?_)
     simp only [Function.comp_apply, f, embedFinsetInr_apply_of_mem _ x.2,
-      Function.Embedding.coe_trans]
+      Function.Embedding.coe_trans, Subtype.eta]
   have hgmap : B.map g = ((toNatModel hB).map p₂).map Sum.inr := by
-    conv_lhs => rw [← map_val_restrictFinset (subset_faceUnion hB)]
+    conv_lhs =>
+      rw [← map_val_restrict (s := (faceUnion hB : Set α))
+        (fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hB hτ))]
     rw [toNatModel, map_map, map_map, map_map]
-    refine congrArg (restrictFinset (faceUnion hB) B).map (funext fun x => ?_)
+    refine congrArg (B.restrict (faceUnion hB : Set α)).map (funext fun x => ?_)
     simp only [Function.comp_apply, g, embedFinsetInr_apply_of_mem _ x.2,
-      Function.Embedding.coe_trans]
+      Function.Embedding.coe_trans, Subtype.eta]
   refine ⟨f, g, ?_⟩
   rw [hfmap, hgmap]
   exact he.map Sum.inr Sum.inr_injective
@@ -649,10 +601,10 @@ theorem of_map {κ : Type*} [DecidableEq κ] (hfin : K.faces.Finite) (f : ι →
   have hKf : (K.map f).faces.Finite := (finite_faces_map_iff_of_injective f hf).mpr hfin
   have hLf : (L.map f).faces.Finite := h.finite_faces_iff.mp hKf
   have hL : L.faces.Finite := (finite_faces_map_iff_of_injective f hf).mp hLf
-  have h₁ := singleNatEquiv_toNatModel_of_map hfin hf (subset_faceUnion hKf)
+  have h₁ := singleNatEquiv_toNatModel_of_map hfin hf (fun _ hτ => subset_faceUnion hKf hτ)
     (natEmbed (faceUnion hKf))
   have h₂ := singleNatEquiv_toNatModel h hKf
-  have h₃ := (singleNatEquiv_toNatModel_of_map hL hf (subset_faceUnion hLf)
+  have h₃ := (singleNatEquiv_toNatModel_of_map hL hf (fun _ hτ => subset_faceUnion hLf hτ)
     (natEmbed (faceUnion hLf))).symm
   obtain ⟨a, b, he⟩ := exists_common_relabeling_of_singleNatEquiv hfin hL
     ((h₁.trans (finite_faces_toNatModel hKf) h₂).trans (finite_faces_toNatModel hLf) h₃)
@@ -670,20 +622,10 @@ end StellarEquivalentUpToRelabeling
 private theorem exists_common_relabeling_finset_of_card_eq {V W : Finset ι}
     (h : V.card = W.card) :
     ∃ f g : ι ↪ ι ⊕ ℕ, V.image f = W.image g := by
-  let b : V ≃ W := Fintype.equivOfCardEq (by simp [h])
-  let eW := StellarEquivalentUpToRelabeling.natEmbed W
-  let eV := b.toEmbedding.trans eW
-  refine ⟨StellarEquivalentUpToRelabeling.embedFinsetInr V eV,
-    StellarEquivalentUpToRelabeling.embedFinsetInr W eW, ?_⟩
-  ext z
-  simp only [Finset.mem_image]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    refine ⟨(b ⟨x, hx⟩).1, (b ⟨x, hx⟩).2, ?_⟩
-    simp [eV, hx, (b ⟨x, hx⟩).2]
-  · rintro ⟨y, hy, rfl⟩
-    refine ⟨(b.symm ⟨y, hy⟩).1, (b.symm ⟨y, hy⟩).2, ?_⟩
-    simp [eV, hy, (b.symm ⟨y, hy⟩).2]
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_map_finset_eq V W h
+  refine ⟨σ.toEmbedding.trans .inl, .inl, ?_⟩
+  rw [← hσ, Finset.map_eq_image, Finset.image_image]
+  rfl
 
 /-- Two simplices on vertex sets of the same cardinality are intrinsically stellar equivalent. -/
 theorem stellarEquivalentUpToRelabeling_simplex_of_card_eq {V W : Finset ι}

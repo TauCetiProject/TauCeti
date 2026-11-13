@@ -226,6 +226,14 @@ theorem isCombinatorialManifold_succ_iff :
       IsCombinatorialSphere (link K {v}) n ∨ IsCombinatorialBall (link K {v}) n :=
   Iff.rfl
 
+/-- The void precomplex is vacuously a combinatorial `n`-manifold in every dimension. -/
+@[simp]
+theorem isCombinatorialManifold_bot :
+    IsCombinatorialManifold (⊥ : PreAbstractSimplicialComplex ι) n := by
+  cases n with
+  | zero => exact isCombinatorialManifold_zero_iff.mpr fun _ hv => hv.elim
+  | succ _ => exact isCombinatorialManifold_succ_iff.mpr fun _ hv => hv.elim
+
 /-- The standard `n`-simplex is a combinatorial `n`-manifold. -/
 theorem isCombinatorialManifold_simplex (hV : V.card = n + 1) :
     IsCombinatorialManifold (simplex V) n := by
