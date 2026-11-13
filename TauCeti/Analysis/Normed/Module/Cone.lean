@@ -25,6 +25,11 @@ shifts have `‖v i‖` comparable to `‖η‖`, where the decay of the coeffic
 Fourier coefficients of a smooth function, this shows that rapid decay of a localized Fourier
 transform in a cone survives multiplication of the cutoff by a smooth function.
 
+Rapid decay in a cone also survives multiplication by a function of polynomial growth in other
+variables: if `g` decays rapidly on a cone around `a ζ₀ ≠ 0`, then `g (a ζ) h (b ζ)` decays rapidly
+on the cone of those `ζ` with `a ζ` in that cone and `‖b ζ‖ < c ‖a ζ‖`. This is how the localized
+Fourier transform of a tensor product inherits the decay of one of its factors.
+
 ## Main results
 
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
@@ -32,6 +37,9 @@ transform in a cone survives multiplication of the cutoff by a smooth function.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
   superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
   coefficients.
+* `TauCeti.exists_cone_decay_mul`: if `g` decays rapidly on an open cone around `a ζ₀ ≠ 0` and `h`
+  grows at most polynomially, then `ζ ↦ g (a ζ) * h (b ζ)` decays rapidly on an open cone around
+  `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
 
 ## References
 
@@ -159,5 +167,53 @@ theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [Norme
         _ = D * ((1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖) := by ring
   rw [le_div_iff₀ hp] at hbound
   linarith
+
+/-- **Rapid decay of a product on a cone.** If `g` decays rapidly on an open cone `Γ` containing
+`a ζ₀ ≠ 0` and `h` grows at most polynomially, then `ζ ↦ g (a ζ) * h (b ζ)` decays rapidly on an
+open cone containing `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`. The cone is that of the `ζ` with
+`a ζ ∈ Γ` and `‖b ζ‖ < c ‖a ζ‖`, on which `‖ζ‖` and `‖b ζ‖` are at most `(1 + c) ‖a ζ‖`. -/
+theorem exists_cone_decay_mul {X A B 𝕜 : Type*} [NormedField 𝕜] [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B]
+    [NormedSpace ℝ B]
+    (a : X →L[ℝ] A) (b : X →L[ℝ] B) (hab : ∀ ζ, ‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖) {Γ : Set A}
+    (hΓ : IsOpen Γ) (hcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ, t • ξ ∈ Γ) {ζ₀ : X} (hζ₀ : a ζ₀ ∈ Γ)
+    (ha₀ : a ζ₀ ≠ 0) {g : A → 𝕜} {h : B → 𝕜}
+    (hg : ∀ N : ℕ, ∃ C, ∀ ξ ∈ Γ, (1 + ‖ξ‖) ^ N * ‖g ξ‖ ≤ C)
+    (hh : ∃ (C : ℝ) (k : ℕ), ∀ η, ‖h η‖ ≤ C * (1 + ‖η‖) ^ k) :
+    ∃ Γ' : Set X, IsOpen Γ' ∧ ζ₀ ∈ Γ' ∧ (∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ', t • ζ ∈ Γ') ∧
+      ∀ N : ℕ, ∃ C, ∀ ζ ∈ Γ', (1 + ‖ζ‖) ^ N * ‖g (a ζ) * h (b ζ)‖ ≤ C := by
+  obtain ⟨C₀, k, hC₀⟩ := hh
+  have hC₀' : 0 ≤ C₀ := by simpa using (norm_nonneg _).trans (hC₀ 0)
+  have ha₀' : 0 < ‖a ζ₀‖ := norm_pos_iff.2 ha₀
+  set c := ‖b ζ₀‖ / ‖a ζ₀‖ + 1 with hc_def
+  have hc : 0 < c := by positivity
+  refine ⟨a ⁻¹' Γ ∩ {ζ | ‖b ζ‖ < c * ‖a ζ‖},
+    (hΓ.preimage a.continuous).inter (isOpen_lt (by fun_prop) (by fun_prop)), ⟨hζ₀, ?_⟩, ?_,
+    fun N ↦ ?_⟩
+  · have : c * ‖a ζ₀‖ = ‖b ζ₀‖ + ‖a ζ₀‖ := by
+      rw [hc_def, add_mul, div_mul_cancel₀ _ ha₀'.ne', one_mul]
+    simp only [mem_ofPred_eq, this]
+    linarith
+  · rintro t ht ζ ⟨h₁, h₂⟩
+    refine ⟨by simpa using hcone t ht _ h₁, ?_⟩
+    simp only [mem_ofPred_eq, map_smul, norm_smul, Real.norm_of_nonneg ht.le]
+    rw [mul_left_comm]
+    exact mul_lt_mul_of_pos_left h₂ ht
+  · obtain ⟨C, hC⟩ := hg (N + k)
+    refine ⟨(1 + c) ^ (N + k) * C₀ * C, fun ζ ⟨h₁, h₂⟩ ↦ ?_⟩
+    have h₂' : ‖b ζ‖ ≤ c * ‖a ζ‖ := h₂.le
+    have hr : 0 ≤ ‖a ζ‖ := norm_nonneg _
+    have hζ : 1 + ‖ζ‖ ≤ (1 + c) * (1 + ‖a ζ‖) := by nlinarith [hab ζ]
+    have hb : 1 + ‖b ζ‖ ≤ (1 + c) * (1 + ‖a ζ‖) := by nlinarith
+    have hh' : ‖h (b ζ)‖ ≤ C₀ * ((1 + c) * (1 + ‖a ζ‖)) ^ k :=
+      (hC₀ _).trans (by gcongr)
+    calc (1 + ‖ζ‖) ^ N * ‖g (a ζ) * h (b ζ)‖
+        = (1 + ‖ζ‖) ^ N * ‖h (b ζ)‖ * ‖g (a ζ)‖ := by rw [norm_mul]; ring
+      _ ≤ ((1 + c) * (1 + ‖a ζ‖)) ^ N * (C₀ * ((1 + c) * (1 + ‖a ζ‖)) ^ k) * ‖g (a ζ)‖ := by
+          gcongr
+      _ = (1 + c) ^ (N + k) * C₀ * ((1 + ‖a ζ‖) ^ (N + k) * ‖g (a ζ)‖) := by
+          rw [mul_pow, mul_pow, pow_add, pow_add]
+          ring
+      _ ≤ (1 + c) ^ (N + k) * C₀ * C := by gcongr; exact hC _ h₁
 
 end TauCeti

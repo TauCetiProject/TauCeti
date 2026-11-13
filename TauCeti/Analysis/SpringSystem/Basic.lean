@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Analysis.InnerProductSpace.NormPow
 
 /-!
 # The exact force and potential of a linear spring
@@ -45,6 +48,11 @@ positive rest length.
 * `TauCeti.norm_springForce`: Hooke's law, `‖F‖ = |κ| |‖w‖ - ℓ₀|` away from zero length.
 * `TauCeti.hasFDerivAt_springPotential`, `TauCeti.hasGradientAt_springPotential`: in an inner
   product space, away from `w = 0`, the force is the gradient of the potential in `w`.
+* `TauCeti.hasFDerivAt_springForce`: away from `w = 0`, the derivative of the force, the stiffness
+  of the spring.
+* `TauCeti.hasFDerivAt_springForce_norm`, `TauCeti.hasFDerivAt_springForce_add_sub`: at rest, the
+  force linearizes to `κ` times the orthogonal projection onto the rest direction, so two
+  particles displaced by `uᵢ` and `uⱼ` feel `κ P_v (uⱼ - uᵢ)` to first order.
 -/
 
 public section
@@ -119,13 +127,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 potential in the relative vector `w` is `v ↦ ⟪springForce κ ℓ₀ w, v⟫`. -/
 theorem hasFDerivAt_springPotential (κ ℓ₀ : ℝ) {w : F} (hw : w ≠ 0) :
     HasFDerivAt (springPotential κ ℓ₀) (innerSL ℝ (springForce κ ℓ₀ w)) w := by
-  have hn : HasFDerivAt (fun x : F ↦ ‖x‖) (‖w‖⁻¹ • innerSL ℝ w) w := by
-    have h := (hasStrictFDerivAt_norm_sq w).hasFDerivAt.sqrt (by positivity)
-    simp only [Real.sqrt_sq (norm_nonneg _)] at h
-    convert h using 1
-    ext v
-    simp
-    field_simp
+  have hn := hasFDerivAt_norm_of_ne hw
   rw [show springPotential κ ℓ₀ = fun x : F ↦ κ / 2 * (‖x‖ - ℓ₀) ^ 2 from
     funext (springPotential_def κ ℓ₀)]
   refine (((hn.sub_const ℓ₀).pow 2).const_mul (κ / 2)).congr_fderiv ?_
@@ -141,6 +143,53 @@ theorem hasGradientAt_springPotential [CompleteSpace F] (κ ℓ₀ : ℝ) {w : F
   convert hasFDerivAt_springPotential κ ℓ₀ hw using 1
   ext v
   simp
+
+/-- **The stiffness of a spring.** Away from `w = 0`, the force is differentiable in the relative
+vector `w`, with derivative `h ↦ (κ (‖w‖ - ℓ₀) / ‖w‖) h + (κ ℓ₀ ⟪w, h⟫ / ‖w‖³) w`: the tension
+rescales the displacement `h`, and the change `⟪w, h⟫ / ‖w‖` of the length acts along `w`. -/
+theorem hasFDerivAt_springForce (κ ℓ₀ : ℝ) {w : F} (hw : w ≠ 0) :
+    HasFDerivAt (springForce κ ℓ₀)
+      ((κ * (‖w‖ - ℓ₀) / ‖w‖) • ContinuousLinearMap.id ℝ F +
+        ((κ * ℓ₀ / ‖w‖ ^ 3) • innerSL ℝ w).smulRight w) w := by
+  have hw' : ‖w‖ ≠ 0 := norm_ne_zero_iff.2 hw
+  have hn := hasFDerivAt_norm_of_ne hw
+  have hc : HasFDerivAt (fun x : F ↦ κ * (‖x‖ - ℓ₀) / ‖x‖)
+      ((κ * ℓ₀ / ‖w‖ ^ 3) • innerSL ℝ w) w := by
+    simp_rw [div_eq_mul_inv]
+    refine (((hn.sub_const ℓ₀).const_mul κ).mul
+      ((hasDerivAt_inv hw').comp_hasFDerivAt w hn)).congr_fderiv ?_
+    ext h
+    simp
+    field_simp
+    ring
+  exact hc.smul (hasFDerivAt_id w)
+
+/-- **The linearization of a spring at rest.** At a relative vector `v ≠ 0` of the rest length
+`‖v‖`, the derivative of the force is `κ` times the orthogonal projection onto the line `ℝ ∙ v`:
+to first order, only the stretching along the spring is felt. -/
+theorem hasFDerivAt_springForce_norm (κ : ℝ) {v : F} (hv : v ≠ 0) :
+    HasFDerivAt (springForce κ ‖v‖) (κ • (ℝ ∙ v).starProjection) v := by
+  refine (hasFDerivAt_springForce κ ‖v‖ hv).congr_fderiv ?_
+  ext h
+  simp [Submodule.starProjection_singleton, smul_smul]
+  field_simp
+
+/-- **The linearized pair force.** Two particles joined by a spring of stiffness `κ` rest at the
+relative vector `v ≠ 0`, at its rest length `‖v‖`. When they are displaced by `uᵢ` and `uⱼ`, the
+force `springForce κ ‖v‖ (v + uⱼ - uᵢ)` on the first particle has derivative
+`(uᵢ, uⱼ) ↦ κ P_v (uⱼ - uᵢ)` at `0`, where `P_v` is the orthogonal projection onto `ℝ ∙ v`. The
+second particle feels the opposite force (`TauCeti.springForce_neg`). -/
+theorem hasFDerivAt_springForce_add_sub (κ : ℝ) {v : F} (hv : v ≠ 0) :
+    HasFDerivAt (fun u : F × F ↦ springForce κ ‖v‖ (v + u.2 - u.1))
+      (κ • (ℝ ∙ v).starProjection ∘L
+        (ContinuousLinearMap.snd ℝ F F - ContinuousLinearMap.fst ℝ F F)) 0 := by
+  have hd : HasFDerivAt (fun u : F × F ↦ v + u.2 - u.1)
+      (ContinuousLinearMap.snd ℝ F F - ContinuousLinearMap.fst ℝ F F) 0 :=
+    (hasFDerivAt_snd.const_add v).sub hasFDerivAt_fst
+  have hs : HasFDerivAt (springForce κ ‖v‖) (κ • (ℝ ∙ v).starProjection)
+      (v + (0 : F × F).2 - (0 : F × F).1) := by
+    simpa using hasFDerivAt_springForce_norm κ hv
+  simpa [ContinuousLinearMap.smul_comp, smul_sub, Function.comp_def] using hs.comp (0 : F × F) hd
 
 end InnerProductSpace
 

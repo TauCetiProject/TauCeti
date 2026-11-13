@@ -5,8 +5,12 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 public import Mathlib.Data.Nat.Factorial.NatCast
+
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Powers
 
 /-!
 # Global PBW symmetrization and its filtered surjectivity
@@ -175,6 +179,47 @@ theorem map_wordFiltration_pbwSymmetrizationMap (k : ℕ) :
   · intro a ha
     obtain ⟨p, hp, he⟩ := exists_pbwSymmetrizationMap_eq_of_mem R L ha
     exact ⟨p, hp, he⟩
+
+/-- Symmetrization sends the preceding word-filtration step of the symmetric algebra into the
+preceding PBW step. -/
+theorem pbwSymmetrizationMap_mem_pbwFiltrationPrevious {k : ℕ} {p : SymmetricAlgebra R L}
+    (hp : p ∈ TauCeti.Algebra.wordFiltrationPrevious (SymmetricAlgebra.ι R L) k) :
+    pbwSymmetrizationMap R L p ∈ pbwFiltrationPrevious R L k := by
+  cases k with
+  | zero =>
+    rw [TauCeti.Algebra.wordFiltrationPrevious_zero, Submodule.mem_bot] at hp
+    simp [hp]
+  | succ k =>
+    rw [TauCeti.Algebra.wordFiltrationPrevious_succ] at hp
+    simpa only [pbwFiltrationPrevious_succ] using pbwSymmetrizationMap_mem_pbwFiltration R L hp
+
+/-- The PBW filtration is spanned by powers of canonical generators of bounded exponent. -/
+theorem pbwFiltration_le_span_pow (j : ℕ) :
+    pbwFiltration R L j ≤
+      Submodule.span R {y : U | ∃ (x : L) (a : ℕ), a ≤ j ∧ y = ι x ^ a} := by
+  rw [← map_wordFiltration_pbwSymmetrizationMap R L j,
+    TauCeti.Algebra.wordFiltration_eq_iSup_pow, Submodule.map_iSup]
+  refine iSup_le fun i => ?_
+  have h : LinearMap.range (SymmetricAlgebra.ι R L) ^ (i : ℕ) =
+      Submodule.span R (Set.range fun x : L => SymmetricAlgebra.ι R L x ^ (i : ℕ)) :=
+    (TauCeti.SymmetricAlgebra.span_range_ι_pow R L i
+      (IsUnit.natCast_factorial_of_algebra ℚ i)).symm
+  rw [h, Submodule.map_span]
+  refine Submodule.span_mono ?_
+  rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
+  exact ⟨x, i, i.2, pbwSymmetrizationMap_ι_pow R L x i⟩
+
+/-- Symmetrization is natural for Lie algebra homomorphisms. -/
+theorem map_pbwSymmetrizationMap {M : Type*} [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M)
+    (p : SymmetricAlgebra R L) :
+    UniversalEnvelopingAlgebra.map R f (pbwSymmetrizationMap R L p) =
+      pbwSymmetrizationMap R M (SymmetricAlgebra.map R f.toLinearMap p) := by
+  have h : (UniversalEnvelopingAlgebra.map R f).toLinearMap ∘ₗ pbwSymmetrizationMap R L =
+      pbwSymmetrizationMap R M ∘ₗ (SymmetricAlgebra.map R f.toLinearMap).toLinearMap := by
+    apply TauCeti.SymmetricAlgebra.linearMap_ext_ι_pow R L
+    intro x n
+    simp [pbwSymmetrizationMap_ι_pow, map_pow]
+  exact LinearMap.congr_fun h p
 
 /-- Global symmetrization is surjective over every commutative rational algebra. -/
 theorem pbwSymmetrizationMap_surjective : Function.Surjective (pbwSymmetrizationMap R L) := by

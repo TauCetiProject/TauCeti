@@ -162,8 +162,6 @@ theorem pullbackDifferential_add_invariantDifferential (f g : Hom W₁ W₂) :
     simp only [ofIsogeny_add_ofIsogeny φ ψ h, ← hχ, pullbackDifferential_ofIsogeny,
       pullbackDifferential_invariantDifferential, hχP]
     exact Point.inv_smul_derivation_xCoord_add (KaehlerDifferential.D F W₁.FunctionField)
-      (CoordinatePullback.tautologicalPoint_ne_zero _)
-      (CoordinatePullback.tautologicalPoint_ne_zero _) h
       (fun _ ↦ evalEval_polynomialY_tautologicalPoint_ne_zero φ)
       (fun _ ↦ evalEval_polynomialY_tautologicalPoint_ne_zero ψ) hu
 

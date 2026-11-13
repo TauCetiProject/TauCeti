@@ -70,8 +70,8 @@ theorem affineToricChartι_prodCone_comp_fst_algebraicMap
             simpa only [LinearMap.coe_fst, Submodule.prod_coe] using
               (Set.mapsTo_fst_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))) ≫
         Phi.affineToricChartι sigma := by
-  convert affineToricChartι_comp_algebraicMap_of_leastCone_eq (FanHom.fst Phi Psi)
-    (Phi.prodCone Psi sigma tau) sigma (fst_leastCone_prodCone sigma tau)
+  convert affineToricChartι_comp_algebraicMap_of_mapsTo (FanHom.fst Phi Psi)
+    (Phi.prodCone Psi sigma tau) sigma
     (fun _ hx ↦ by simpa only [FanHom.fst_realMap, LinearMap.fst_apply] using hx.1) using 3
   simp only [FanHom.fst_latticeMap, FanHom.fst_realMap]
 
@@ -89,8 +89,8 @@ theorem affineToricChartι_prodCone_comp_snd_algebraicMap
             simpa only [LinearMap.coe_snd, Submodule.prod_coe] using
               (Set.mapsTo_snd_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))) ≫
         Psi.affineToricChartι tau := by
-  convert affineToricChartι_comp_algebraicMap_of_leastCone_eq (FanHom.snd Phi Psi)
-    (Phi.prodCone Psi sigma tau) tau (snd_leastCone_prodCone sigma tau)
+  convert affineToricChartι_comp_algebraicMap_of_mapsTo (FanHom.snd Phi Psi)
+    (Phi.prodCone Psi sigma tau) tau
     (fun _ hx ↦ by simpa only [FanHom.snd_realMap, LinearMap.snd_apply] using hx.2) using 3
   simp only [FanHom.snd_latticeMap, FanHom.snd_realMap]
 

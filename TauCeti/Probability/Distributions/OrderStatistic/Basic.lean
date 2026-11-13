@@ -8,7 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
-public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
 public import TauCeti.Probability.Distributions.OrderStatistic.Independent
 public import TauCeti.Probability.Distributions.Uniform.Basic
 public import TauCeti.Probability.Quantile
@@ -79,7 +79,7 @@ theorem cdf_map_orderStatistic_pi_eq_regularizedIncompleteBeta [IsProbabilityMea
       regularizedIncompleteBeta ((k : ℝ) + 1) ((n : ℝ) - k) (cdf μ t) := by
   rw [cdf_map_orderStatistic_pi_eq_poissonBinomial, poissonBinomialMeasure_const,
     Fintype.card_fin, ← Set.Ici_add_one_eq_Ioi, Set.Ici,
-    binomial_tail_eq_regularizedIncompleteBeta (by omega)]
+    binomial_tail_eq_regularizedIncompleteBeta]
   congr 1 <;> push_cast <;> ring
 
 /-- **The law of an order statistic.** If the `n` coordinates are independent with common law
@@ -92,7 +92,7 @@ theorem cdf_map_orderStatistic_pi [IsProbabilityMeasure μ] (k : Fin n) (t : ℝ
       ∑ j ∈ Finset.Icc ((k : ℕ) + 1) n,
         (n.choose j : ℝ) * cdf μ t ^ j * (1 - cdf μ t) ^ (n - j) := by
   have h := sum_Icc_choose_mul_pow_eq_regularizedIncompleteBeta (m := (k : ℕ) + 1) (n := n)
-    (by omega) ⟨cdf μ t, cdf_nonneg μ t, cdf_le_one μ t⟩
+    ⟨cdf μ t, cdf_nonneg μ t, cdf_le_one μ t⟩
   rw [cdf_map_orderStatistic_pi_eq_regularizedIncompleteBeta, h]
   congr 1 <;> push_cast <;> ring
 

@@ -53,6 +53,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
 * `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
   over an interval is a difference of arctangents.
+* `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
+  `b ≥ 0`.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
@@ -140,7 +142,6 @@ theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGr
     [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hA : 0 ≤ A) (hh : 0 < h) (hht : h < t')
     (hα : α < 2) (hg : ∀ᵐ s, s ∈ Ioc 0 (t' - h) → ‖g s‖ ≤ A * h * (t' - s) ^ ((α - 4) / 2)) :
     ‖∫ s in 0..t' - h, g s‖ ≤ 2 / (2 - α) * A * h ^ (α / 2) := by
-  have h2α : 0 < 2 - α := by linarith
   have hcont : ContinuousOn (fun s => (t' - s) ^ ((α - 4) / 2)) [[0, t' - h]] :=
     fun s hs => by
       rw [uIcc_of_le (by linarith)] at hs
@@ -443,6 +444,26 @@ theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
   simp_rw [← neg_sub _ t, neg_sq, add_comm _ (η ^ 2)]
   rw [intervalIntegral.integral_comp_sub_right (fun x => η / (η ^ 2 + x ^ 2)),
     integral_div_sq_add_sq]
+
+open Set intervalIntegral in
+/-- The reciprocal-square kernel has an elementary integral on each nonnegative interval:
+`∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and `b ≥ 0`. -/
+theorem integral_one_div_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b) :
+    ∫ t : ℝ in 0..b, 1 / (a + t) ^ 2 = a⁻¹ - (a + b)⁻¹ := by
+  have hd (t : ℝ) (ht : t ∈ uIcc 0 b) :
+      HasDerivAt (fun u : ℝ ↦ -(a + u)⁻¹) (1 / (a + t) ^ 2) t := by
+    rw [uIcc_of_le hb] at ht
+    have h := (((hasDerivAt_id t).const_add a).inv
+      (by linarith [ht.1] : a + t ≠ 0)).neg
+    convert h using 1
+    · ext u
+      rfl
+    · simp [neg_div]
+  have hc : ContinuousOn (fun t : ℝ ↦ 1 / (a + t) ^ 2) (Icc 0 b) :=
+    continuousOn_const.div ((continuousOn_const.add continuousOn_id).pow 2)
+      (fun t ht ↦ pow_ne_zero _ (by linarith [ht.1] : a + t ≠ 0))
+  simpa [sub_eq_add_neg, add_comm] using integral_eq_sub_of_hasDerivAt hd
+    (hc.intervalIntegrable_of_Icc hb)
 
 /-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
 Fourier character `exp (n θ i)` over `[-π, π]`. -/

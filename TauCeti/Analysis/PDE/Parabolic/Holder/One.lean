@@ -237,7 +237,7 @@ private theorem eHolderNorm_timeSlice_le (f : ParabolicC1HolderSpace α E F a b)
   have hm := (timeSliceL f x).memHolder
   rw [HolderSpace.coe_toBoundedContinuousFunction, coe_timeSliceL] at hm
   rw [← hm.coe_nnHolderNorm_eq_eHolderNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe,
-    coe_nnnorm]
+    coe_nnNorm]
   have h := (timeSliceL f x).nnHolderNorm_le
   rw [HolderSpace.coe_toBoundedContinuousFunction, coe_timeSliceL] at h
   exact h.trans (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x)
@@ -253,7 +253,7 @@ the norm. -/
 theorem timeEHolderNorm_le_nnnorm (f : ParabolicC1HolderSpace α E F a b) :
     timeEHolderNorm ((1 + α) / 2) (f : slab (E := E) a b → F) ≤ ‖f‖₊ := by
   refine f.timeEHolderNorm_le_nnnorm_timeSliceL.trans ?_
-  rw [ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm, norm_eq]
+  rw [ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm, norm_eq]
   linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f)]
 
 /-- In particular the temporal seminorm is finite. -/
@@ -449,11 +449,11 @@ private theorem eHolderNorm_le (hα : α ≤ 1) (f : ParabolicC1HolderSpace α E
         (f : slab (E := E) a b → F)]
       refine spaceEHolderNorm_one_le_of_hasFDerivAt
         (w' := ParabolicC2HolderSpace.timeExtension hab (spatialFDerivL f))
-        (fun t ht y ↦ ?_) fun y t ht ↦ ?_
+        (fun t ht y ↦ ?_) fun y t _ ↦ ?_
       · simpa [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab ht] using
           f.hasSpatialFDerivAt ⟨t, ht⟩ y
       · simpa only [ParabolicC2HolderSpace.timeExtension_def,
-          HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm] using
+          HolderSpace.toBoundedContinuousFunction_apply, coe_nnNorm] using
           (spatialFDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
     · -- The slab is empty.
       exact spaceEHolderNorm_le_iff.2 fun t ↦ absurd (t.2.1.trans t.2.2) hab.not_ge

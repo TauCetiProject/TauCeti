@@ -76,7 +76,7 @@ noncomputable def globalFlow (v : (x : M) → TangentSpace I x)
   map_add' t₁ t₂ x := by
     rw [add_comm, maximalIntegralCurve_add hv (hcomplete.mem_maximalIntegralCurveInterval _ _)
       (hcomplete.mem_maximalIntegralCurveInterval _ _)]
-  map_zero' x := maximalIntegralCurve_zero (hcomplete.mem_maximalIntegralCurveInterval x 0)
+  map_zero' x := maximalIntegralCurve_zero
 
 variable (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
   (hcomplete : IsCompleteVectorField v)

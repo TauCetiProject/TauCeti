@@ -118,7 +118,6 @@ theorem isSemialgebraic_preimage_toLp_ball [Fintype σ] (x : EuclideanSpace ℝ 
   convert (isSemialgebraic_eval_pos (C r)).inter
     (isSemialgebraic_eval_lt (∑ i, (X i - C (x i)) ^ 2) (C r ^ 2)) using 1
   ext y
-  have hS : 0 ≤ ∑ i, (y i - x i) ^ 2 := Finset.sum_nonneg fun i _ => sq_nonneg _
   simp only [mem_preimage, Metric.mem_ball, EuclideanSpace.dist_eq,
     Real.dist_eq, sq_abs, mem_inter_iff, mem_ofPred_eq, eval_C, map_sum, map_pow, map_sub, eval_X]
   refine ⟨fun h => ?_, fun ⟨hr, h⟩ => (Real.sqrt_lt' hr).2 h⟩
