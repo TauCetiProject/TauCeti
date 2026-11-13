@@ -164,7 +164,7 @@ points of their orbits at the times `s j a` converge to `z j`. If `w a` records 
 on regular levels `c i` strictly between `f r` and `f p`, then the records `w a` converge to a
 record of the broken trajectory: the point of `w a` on the level `c i` converges to the point where
 the component crossing that level meets it. -/
-theorem exists_tendsto_mem_morseBrokenTrajectoryRecords (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem exists_tendsto_mem_morseBrokenTrajectoryRecords
     {p r : M} {c : ι → ℝ} (hreg : ∀ i y, f y = c i → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
     (hc : ∀ i, c i ∈ Ioo (f r) (f p)) {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
     (hx0 : x 0 = p) (hxk : x (Fin.last k) = r) (hxc : ∀ j, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (x j) = 0)
@@ -185,7 +185,7 @@ theorem exists_tendsto_mem_morseBrokenTrajectoryRecords (hf : MDifferentiable �
     -- time `t a i - s j a`.
     have hshift : ∀ a, hX.flow (t a i - s j a) (hX.flow (s j a) (u a)) = w a i := fun a ↦ by
       rw [← Flow.map_add, sub_add_cancel, ht]
-    obtain ⟨σ, hσ, hlimσ⟩ := hX.exists_tendsto_flow_of_tendsto hf (hz j) hlo hhi (hlim j)
+    obtain ⟨σ, hσ, hlimσ⟩ := hX.exists_tendsto_flow_of_tendsto (hz j) hlo hhi (hlim j)
       (s := fun a ↦ t a i - s j a) fun a ↦ by rw [hshift]; exact hwc a i
     exact ⟨j, σ, hσ, hlimσ.congr hshift⟩
   choose j σ hσ hlimσ using key
@@ -195,20 +195,20 @@ theorem exists_tendsto_mem_morseBrokenTrajectoryRecords (hf : MDifferentiable �
 /-- **The records of unbroken trajectories form a copy of a level slice.** Reading off the point on
 the level `c i₀` identifies the records of trajectories from `p` to `r` on levels strictly between
 `f r` and `f p` with the level slice `W^u(p) ∩ W^s(r) ∩ {f = c i₀}`. -/
-theorem exists_homeomorph_morseTrajectoryRecords (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p r : M}
-    (hpr : p ≠ r) {c : ι → ℝ} (hc : ∀ i, c i ∈ Ioo (f r) (f p)) (i₀ : ι) :
+theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : ι → ℝ}
+    (hc : ∀ i, c i ∈ Ioo (f r) (f p)) (i₀ : ι) :
     ∃ Φ : hX.morseTrajectoryRecords p r c ≃ₜ
         ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet r ∩ {y | f y = c i₀}),
       ∀ w, (Φ w : M) = (w : ι → M) i₀ := by
   set S := hX.flow.unstableSet p ∩ hX.flow.stableSet r ∩ {y | f y = c i₀}
   -- The orbit of each point of the slice meets the level `c i` at a unique time `τ i y`.
   have hτ (i : ι) (y : S) : ∃! t, f (hX.flow t y) = c i :=
-    hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hpr y.2.1 (hc i).1 (hc i).2
+    hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr y.2.1 (hc i).1 (hc i).2
   choose τ hτ' using fun i y ↦ (hτ i y).exists
   -- The points on the other levels depend continuously on the point of the level `c i₀`.
   have hg : Continuous fun (y : S) i ↦ hX.flow (τ i y) (y : M) := by
     refine continuous_pi fun i ↦ continuous_iff_continuousAt.2 fun y ↦ ?_
-    obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto hf y.2.1 (hc i).1 (hc i).2
+    obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto y.2.1 (hc i).1 (hc i).2
       (continuous_subtype_val.tendsto y) (s := τ i) (hτ' i)
     rwa [(hτ i y).unique hσ (hτ' i y)] at hlim
   -- The point on the level `c i₀` is the point itself.
@@ -237,13 +237,13 @@ theorem exists_homeomorph_morseTrajectoryRecords (hf : MDifferentiable 𝓘(ℝ,
 nonempty family of levels strictly between `f r` and `f p`, the records of trajectories from `p` to
 `r` are homeomorphic to the quotient of `W^u(p) ∩ W^s(r)` by the orbits of the flow. -/
 theorem exists_homeomorph_morseTrajectoryRecords_orbitQuotient [Nonempty ι]
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p r : M} (hpr : p ≠ r) {c : ι → ℝ}
+    {p r : M} (hpr : p ≠ r) {c : ι → ℝ}
     (hc : ∀ i, c i ∈ Ioo (f r) (f p)) :
     Nonempty
       (hX.morseTrajectoryRecords p r c ≃ₜ Quotient (Flow.connectingOrbitSetoid hX.flow p r)) := by
   obtain ⟨i₀⟩ := ‹Nonempty ι›
-  obtain ⟨Φ, -⟩ := hX.exists_homeomorph_morseTrajectoryRecords hf hpr hc i₀
-  obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hf hpr (hc i₀)
+  obtain ⟨Φ, -⟩ := hX.exists_homeomorph_morseTrajectoryRecords hpr hc i₀
+  obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hpr (hc i₀)
   exact ⟨Φ.trans e.symm⟩
 
 namespace IsMorseSmale
@@ -291,7 +291,6 @@ theorem closure_morseTrajectoryRecords_subset [Countable ι] (h : hX.IsMorseSmal
     (hreg : ∀ i y, f y = c i → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
     (hc : ∀ i, c i ∈ Ioo (f r) (f p)) :
     closure (hX.morseTrajectoryRecords p r c) ⊆ hX.morseBrokenTrajectoryRecords p r c := by
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   have := Manifold.metrizableSpace 𝓘(ℝ, E) M
   intro w hw
   obtain ⟨v, hv, hvw⟩ := mem_closure_iff_seq_limit.1 hw
@@ -301,7 +300,7 @@ theorem closure_morseTrajectoryRecords_subset [Countable ι] (h : hX.IsMorseSmal
   obtain ⟨k, x, z, s, n, hn, hx0, hxk, hxc, hxi, hz, -, hzlim⟩ :=
     h.exists_subseq_tendsto_broken hf y hy
   obtain ⟨w₀, hw₀, hlim⟩ :=
-    hX.exists_tendsto_mem_morseBrokenTrajectoryRecords hdf hreg hc hx0 hxk hxc
+    hX.exists_tendsto_mem_morseBrokenTrajectoryRecords hreg hc hx0 hxk hxc
     (fun j he ↦ (hxi (Fin.castSucc_lt_succ (i := j))).ne (congrArg _ he.symm)) hz hzlim
     (w := v ∘ n) fun a ↦ hvy (n a)
   rwa [tendsto_nhds_unique (hvw.comp hn.tendsto_atTop) hlim]
