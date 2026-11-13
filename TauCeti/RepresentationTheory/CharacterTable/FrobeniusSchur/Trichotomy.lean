@@ -46,26 +46,34 @@ case), and `0` when it carries no nonzero invariant form at all (the complex cas
 invariant form of the first two cases is automatically nondegenerate, by
 `TauCeti.Representation.IsInvariantForm.nondegenerate`.
 
-Characteristic zero does three jobs, and nothing else: it moves the counting identities from
-equations in `k` to equations of natural numbers, it keeps a form from being symmetric and
-alternating at once, and it supplies `Invertible (Nat.card G : k)` in the statements that do not
-assume it.  Averaging characters produces identities in `k` and nothing more, so the two
-counting identities are stated first in that form, needing only an invertible `|G|`
-(`TauCeti.Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self_cast` and
-`TauCeti.Representation.finrank_invariantForms_cast`); in characteristic `p` they are identities
-of residues, and it is the injectivity of `ℕ → k` that turns them into equalities of dimensions.
+Currying identifies the invariant forms with the invariant functionals on the tensor square
+`V ⊗ V`, so `Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self` counts them as
+the invariants of `V ⊗ V`, as natural numbers and with no finiteness assumption on `V`, whenever
+`|G|` is invertible.
+
+Characteristic zero does three jobs, and nothing else: it moves the splitting of that count over
+the two squares from an equation in `k` to an equation of natural numbers, it keeps a form from
+being symmetric and alternating at once, and it supplies `Invertible (Nat.card G : k)` in the
+statements that do not assume it.  Averaging characters produces identities in `k` and nothing
+more, so the splitting is stated first in that form, needing only an invertible `|G|`
+(`TauCeti.Representation.finrank_invariantForms_cast`); in characteristic `p` it is an identity of
+residues, and it is the injectivity of `ℕ → k` that turns it into an equality of dimensions.
 
 Three ingredients come from earlier modules and are only applied here.  The invariant forms
-themselves, the symmetric and the alternating ones among them, and their identification with the
-intertwiners into the dual are in `TauCeti/RepresentationTheory/InvariantForm.lean`; the dictionary
-turning a functional on either square into a form is `TauCeti.BilinForm.ofSymmetricSquareDual` and
+themselves and the symmetric and the alternating ones among them are in
+`TauCeti/RepresentationTheory/InvariantForm.lean`; the dictionary turning a functional on either
+square into a form is `TauCeti.BilinForm.ofSymmetricSquareDual` and
 `TauCeti.BilinForm.ofExteriorSquareDual`, in `TauCeti/LinearAlgebra/BilinearForm/Squares.lean`; and
 the invariants of a dual representation, with their count, are in
 `TauCeti/RepresentationTheory/Dual.lean`.  What this file adds is that the dictionary carries
-invariants to invariant forms, and the counting that follows.
+invariants to invariant forms, that currying does the same for the tensor square, and the
+counting that follows.
 
 ## Main results
 
+* `Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self`: **the invariant forms
+  are as many as the invariants of the tensor square**, whenever `|G|` is invertible, via
+  `Representation.map_lcurry_eq_invariantForms`.
 * `TauCeti.Representation.finrank_invariantForms`: **the invariant forms are as many as the
   invariants of the two squares together**, as an identity in `k` whenever `|G|` is invertible
   (`TauCeti.Representation.finrank_invariantForms_cast`) and as natural numbers in characteristic
@@ -96,14 +104,16 @@ alternating forms lift to functionals via
 `TauCeti/LinearAlgebra/BilinearForm/Squares.lean`. The injectivity lemmas
 `TauCeti.BilinForm.ofSymmetricSquareDual_injective` and
 `TauCeti.BilinForm.ofExteriorSquareDual_injective` then give `G`-invariance of those functionals.
-These identifications hold over any commutative ring, with no finiteness assumption.  The two
-dimension counts need `k` to be a field in which `|G|` is invertible; they equate `finrank`s, so on
-an infinite-dimensional invariant space both sides are `0` by convention.
+These identifications, and the one for the tensor square, hold over any commutative ring, with no
+finiteness assumption.  The three dimension counts read off them need `k` to be a field in which
+`|G|` is invertible; they equate `finrank`s, so on an infinite-dimensional invariant space both
+sides are `0` by convention.
 
-What connects the submodule of invariant forms to the character machinery is
-`TauCeti.Representation.invariantFormsEquivIntertwiningMapDual`: an equivalence with a space of
-intertwiners is the shape Mathlib's
-`Representation.card_inv_mul_sum_char_mul_char_eq_finrank` counts.
+What connects the submodule of invariant forms to the character machinery is currying:
+`Representation.map_lcurry_eq_invariantForms` identifies it with the invariant functionals on
+`V ⊗ V`, `TauCeti.Representation.finrank_invariants_dual` counts those as the invariants of
+`V ⊗ V`, and Mathlib's `Representation.card_inv_mul_sum_char_eq_finrank` counts the invariants of
+`V ⊗ V` by characters.
 
 The dimension lemmas used below are stated for an abstract module and applied with that module
 supplied explicitly.  The reason is mechanical: the `AddCommMonoid` structure on a space of
@@ -208,6 +218,61 @@ theorem map_ofExteriorSquareDual_eq_alternatingInvariantForms (ρ : Representati
 
 end ExteriorSquare
 
+end Representation
+
+end TauCeti
+
+/-! ### Invariant forms from invariant functionals on the tensor square -/
+
+namespace Representation
+
+open TauCeti.Representation
+
+section TensorSquare
+
+variable [CommRing k] [Group G] [AddCommMonoid V] [Module k V]
+
+/-- Over any commutative ring, currying (`TensorProduct.lcurry`) maps the invariant functionals on
+the tensor square onto the invariant forms: a functional `ψ` on `V ⊗ V` is invariant exactly when
+the form `(x, y) ↦ ψ (x ⊗ y)` is. -/
+theorem map_lcurry_eq_invariantForms (ρ : Representation k G V) :
+    Submodule.map (TensorProduct.lcurry (RingHom.id k) V V k) (ρ.tprod ρ).dual.invariants =
+      invariantForms ρ := by
+  refine le_antisymm (Submodule.map_le_iff_le_comap.mpr fun ψ hψ => ?_) fun B hB => ?_
+  · refine mem_invariantForms.mpr (isInvariantForm_iff.mpr fun g x y => ?_)
+    simp only [TensorProduct.lcurry_apply]
+    rw [← TensorProduct.map_tmul, ← tprod_apply, apply_of_mem_invariants_dual hψ]
+  · refine ⟨TensorProduct.lift.equiv (RingHom.id k) V V k B,
+      mem_invariants_dual_iff.mpr fun g u => ?_, ?_⟩
+    · have hext : TensorProduct.lift.equiv (RingHom.id k) V V k B ∘ₗ (ρ.tprod ρ) g =
+          TensorProduct.lift.equiv (RingHom.id k) V V k B :=
+        TensorProduct.ext' fun x y => by
+          simpa using (mem_invariantForms.mp hB).apply g x y
+      exact LinearMap.congr_fun hext u
+    · exact (TensorProduct.lift.equiv (RingHom.id k) V V k).symm_apply_apply B
+
+end TensorSquare
+
+/-- **The invariant forms are as many as the invariants of the tensor square**, whenever `|G|` is
+invertible in `k`: currying identifies the invariant forms with the invariant functionals on
+`V ⊗ V` (`Representation.map_lcurry_eq_invariantForms`), and a representation and its dual have
+equally many invariants (`TauCeti.Representation.finrank_invariants_dual`).  When those spaces are
+infinite-dimensional both `finrank`s are `0`, by convention. -/
+theorem finrank_invariantForms_eq_finrank_invariants_tprod_self [Field k] [Group G]
+    [AddCommGroup V] [Module k V] [Invertible (Nat.card G : k)] (ρ : Representation k G V) :
+    finrank k (invariantForms ρ) = finrank k (ρ.tprod ρ).invariants := by
+  rw [← map_lcurry_eq_invariantForms ρ]
+  exact (LinearEquiv.finrank_map_eq (TensorProduct.lift.equiv (RingHom.id k) V V k).symm _).trans
+    (finrank_invariants_dual _)
+
+end Representation
+
+namespace TauCeti
+
+namespace Representation
+
+open _root_.LinearMap (BilinForm)
+
 /-! ### Counting the invariant forms -/
 
 section Counting
@@ -220,27 +285,9 @@ section Invertible
 variable [Invertible (Nat.card G : k)]
 
 omit [Finite G] in
-/-- **The invariant forms are as many as the invariants of the tensor square**, as an identity in
-`k`: the invariant forms are the intertwiners `ρ → ρ.dual`, and the character sum counting those is
-the character sum counting the invariants of `ρ ⊗ ρ`, read along `g⁻¹` instead of `g`.
-
-In characteristic `p` this is an identity of residues only. -/
-theorem finrank_invariantForms_eq_finrank_invariants_tprod_self_cast (ρ : Representation k G V) :
-    (finrank k (invariantForms ρ) : k) =
-      (finrank k (Representation.tprod ρ ρ).invariants : k) := by
-  have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h => Invertible.ne_zero (Nat.card G : k) (by simp [h])
-  have : Fintype G := Fintype.ofFinite G
-  rw [(invariantFormsEquivIntertwiningMapDual ρ).finrank_eq,
-    ← Representation.card_inv_mul_sum_char_mul_char_eq_finrank,
-    ← Representation.card_inv_mul_sum_char_eq_finrank]
-  refine congrArg _ ?_
-  simp only [Representation.char_dual, Representation.char_tensor, Pi.mul_apply]
-  exact Fintype.sum_equiv (Equiv.inv G) _ _ fun _ => rfl
-
-omit [Finite G] in
 /-- **The invariant forms are as many as the invariants of the two squares together**, as an
-identity in `k`: they are as many as the invariants of the tensor square, and
+identity in `k`: they are as many as the invariants of the tensor square
+(`Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self`), and
 `TauCeti.Representation.finrank_invariants_tprod_self_cast` splits that count in two.
 
 In characteristic `p` this is an identity of residues only; see
@@ -249,7 +296,7 @@ theorem finrank_invariantForms_cast (ρ : Representation k G V) :
     (finrank k (invariantForms ρ) : k) =
       (finrank k (ρ.symmetricPower 2).invariants : k) +
         (finrank k (ρ.exteriorPower 2).invariants : k) := by
-  rw [finrank_invariantForms_eq_finrank_invariants_tprod_self_cast,
+  rw [ρ.finrank_invariantForms_eq_finrank_invariants_tprod_self,
     finrank_invariants_tprod_self_cast]
 
 omit [FiniteDimensional k V] [Finite G] in
