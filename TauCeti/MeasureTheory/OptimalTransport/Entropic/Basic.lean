@@ -678,7 +678,10 @@ theorem entropicTransportCost_eq_ofReal_of_eq_withDensity [IsProbabilityMeasure 
   have hnonneg := hπ.kantorovichDualValue_add_sub_nonneg_of_eq_withDensity
     (φ := fun x ↦ φ x / ε + Real.log Z) (ψ := fun y ↦ ψ y / ε) hπR
     ((hφ.div_const _).add_const _) (hψ.div_const _) hφ' (hψi.div_const _)
-  have hdual := kantorovichDualValue_div_add_const (ψ := ψ) (ν := ν) hφi (ε : ℝ) (Real.log Z)
+  have hdual : kantorovichDualValue μ ν (fun x ↦ φ x / ε + Real.log Z) (fun y ↦ ψ y / ε) =
+      kantorovichDualValue μ ν φ ψ / ε + Real.log Z := by
+    rw [kantorovichDualValue_add_const_left (hφi.div_const _), kantorovichDualValue_div,
+      probReal_univ, one_mul]
   simp only [probReal_univ, add_sub_cancel_right, hdual] at hnonneg
   rw [entropicTransportCost_eq_mul_schroedingerValue_add hc hc_top hε, hZ_def,
     schroedingerValue_eq_ofReal_of_eq_withDensity (φ := fun x ↦ φ x / ε + Real.log Z)

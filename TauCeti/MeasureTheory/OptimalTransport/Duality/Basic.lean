@@ -45,8 +45,10 @@ nor its integral needs to be finite or measurable.
 * `TauCeti.DualFeasible.add_const_sub_const` and
   `TauCeti.kantorovichDualValue_add_const_sub_const` — feasibility and value are unchanged by
   the usual opposite additive shifts when the marginals have equal finite mass;
-* `TauCeti.kantorovichDualValue_div_add_const` — dividing both potentials by `a` and shifting the
-  first by `L` divides the value by `a` and shifts it by `L`, for a probability first marginal.
+* `TauCeti.kantorovichDualValue_div` — dividing both potentials by `a` divides the value by `a`;
+* `TauCeti.kantorovichDualValue_add_const_left` and
+  `TauCeti.kantorovichDualValue_add_const_right` — shifting one potential by a constant `L` shifts
+  the value by `L` times the mass of the corresponding finite marginal.
 
 ## References
 
@@ -189,14 +191,28 @@ theorem kantorovichDualValue_add_const_sub_const [IsFiniteMeasure μ]
   rw [hmassReal]
   ring
 
-/-- Dividing both potentials by `a` and then shifting the first by a constant `L` divides the dual
-value by `a` and shifts it by `L`, when the first marginal is a probability measure. -/
-theorem kantorovichDualValue_div_add_const [IsProbabilityMeasure μ] (hφ : Integrable φ μ)
-    (a L : ℝ) :
-    kantorovichDualValue μ ν (fun x ↦ φ x / a + L) (fun y ↦ ψ y / a) =
-      kantorovichDualValue μ ν φ ψ / a + L := by
-  simp only [kantorovichDualValue_def, integral_add (hφ.div_const _) (integrable_const _),
-    integral_div, integral_const, probReal_univ, smul_eq_mul, one_mul]
+/-- Dividing both potentials by `a` divides the dual value by `a`. -/
+theorem kantorovichDualValue_div (a : ℝ) :
+    kantorovichDualValue μ ν (fun x ↦ φ x / a) (fun y ↦ ψ y / a) =
+      kantorovichDualValue μ ν φ ψ / a := by
+  simp only [kantorovichDualValue_def, integral_div, add_div]
+
+/-- Adding a constant `L` to an integrable first potential adds `μ.real univ * L` to the dual
+value, when the first marginal is finite. -/
+theorem kantorovichDualValue_add_const_left [IsFiniteMeasure μ] (hφ : Integrable φ μ) (L : ℝ) :
+    kantorovichDualValue μ ν (fun x ↦ φ x + L) ψ =
+      kantorovichDualValue μ ν φ ψ + μ.real Set.univ * L := by
+  rw [kantorovichDualValue_def, kantorovichDualValue_def, integral_add hφ (integrable_const L),
+    integral_const, smul_eq_mul]
+  ring
+
+/-- Adding a constant `L` to an integrable second potential adds `ν.real univ * L` to the dual
+value, when the second marginal is finite. -/
+theorem kantorovichDualValue_add_const_right [IsFiniteMeasure ν] (hψ : Integrable ψ ν) (L : ℝ) :
+    kantorovichDualValue μ ν φ (fun y ↦ ψ y + L) =
+      kantorovichDualValue μ ν φ ψ + ν.real Set.univ * L := by
+  rw [kantorovichDualValue_def, kantorovichDualValue_def, integral_add hψ (integrable_const L),
+    integral_const, smul_eq_mul]
   ring
 
 /-- Against any coupling of the two marginals, the dual value is the integral of the split sum
