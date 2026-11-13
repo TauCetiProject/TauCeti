@@ -448,6 +448,6 @@ theorem monotoneOn_setIntegral_ball_inter_normalHalfSpace_norm_sub_sq
     (hf.mono_measure (Measure.restrict_mono (hsub.trans hsubR) le_rfl))
     (⨍ y in ball x₀ s' ∩ (normalHalfSpace (E := E) a : Set _), f y).fst).trans ?_
   exact setIntegral_mono_set (hf.integrableOn_norm_sub_sq_of_subset hsubR hfin' _)
-    (ae_of_all _ fun _ => sq_nonneg _) hsub.eventuallyLE
+    (ae_of_all _ fun _ => sq_nonneg _) (ae_of_all _ hsub)
 
 end TauCeti
