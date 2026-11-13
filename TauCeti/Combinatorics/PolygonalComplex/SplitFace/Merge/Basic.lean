@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PolygonalComplex.Iso
 public import TauCeti.Combinatorics.PolygonalComplex.SplitFace.Basic
 import Mathlib.Logic.Equiv.Option
 import Mathlib.SetTheory.Cardinal.NatCard
@@ -25,15 +26,20 @@ The one-skeleton of `C.mergeFaces h` is `C.graph.deleteEdge d`. Its faces are th
 other than `g₁` and `g₂`, together with `none` for the merged face `X Y`. The side occurrences of
 `C` are those of the merged complex and the two occurrences of `d`
 (`PolygonalComplex.mergeFacesCornerEquiv`), so the remaining darts keep their side counts and link
-degrees. The move removes one edge and one face, so the Euler characteristic is unchanged.
+degrees. Away from the two corners where `X` and `Y` meet, the
+corners of the merged face keep both of their sides (`PolygonalComplex.coe_incoming_mergeFaces`).
+The move removes one edge and one face, so the Euler characteristic is unchanged, and it does not
+change orientability: in an orientation of `C` the faces `g₁` and `g₂` are oriented alike, since
+they traverse `d` in opposite directions, and the merged face takes their common orientation.
 
 Merging undoes splitting. The two new faces `a₀ ⋯ aₚ₋₁ d` and `d⁻¹ aₚ ⋯ aₙ₋₁` of `C.splitFace f p`
-can be merged (`PolygonalComplex.isMergeable_splitFace`), and merging them gives back `C`: the
-vertices are the same, and the darts, faces and side occurrences of the result correspond to those
-of `C` compatibly with sources, reversals, numbers of sides, positions and attaching darts.
-Conversely, when `Y` is nonempty, splitting the merged face of `C.mergeFaces h` at the corner where
-`Y` starts gives back `C` in the same sense. When `Y` is empty the pair `X d`, `d⁻¹` is not of the
-form produced by a split, whose second face always has at least two sides.
+can be merged (`PolygonalComplex.isMergeable_splitFace`), and merging them gives back `C` up to an
+isomorphism of polygonal complexes which is the identity on vertices and keeps the orientation and
+the starting point of every face (`PolygonalComplex.mergeFacesSplitFaceIso`). Conversely, when `Y`
+is nonempty, splitting the merged face of `C.mergeFaces h` at the corner where `Y` starts gives
+back `C` in the same sense (`PolygonalComplex.splitFaceMergeFacesIso`). When `Y` is empty the pair
+`X d`, `d⁻¹` is not of the form produced by a split, whose second face always has at least two
+sides.
 
 ## Main definitions
 
@@ -42,25 +48,28 @@ form produced by a split, whose second face always has at least two sides.
 * `TauCeti.PolygonalComplex.mergeFaces`: the complex obtained by merging two faces.
 * `TauCeti.PolygonalComplex.mergeFacesCornerEquiv`: the side occurrences of `C` are those of the
   merged complex and the two occurrences of the deleted edge.
-* `TauCeti.PolygonalComplex.mergeFacesSplitFaceCornerEquiv`,
-  `TauCeti.PolygonalComplex.splitFaceMergeFacesCornerEquiv`: the side occurrences of a merged split
-  face and of a split merged face are those of the original complex.
+* `TauCeti.PolygonalComplex.mergeFacesSplitFaceIso`,
+  `TauCeti.PolygonalComplex.splitFaceMergeFacesIso`: merging the two faces of a split face, and
+  splitting a merged face, give back the original complex up to isomorphism. Their side
+  bijections are `TauCeti.PolygonalComplex.mergeFacesSplitFaceCornerEquiv` and
+  `TauCeti.PolygonalComplex.splitFaceMergeFacesCornerEquiv`.
 
 ## Main results
 
 * `TauCeti.PolygonalComplex.sideCount_mergeFaces`, `TauCeti.PolygonalComplex.linkDegree_mergeFaces`:
   the remaining darts keep their side counts and link degrees.
+* `TauCeti.PolygonalComplex.mergeFacesCornerOrigin_prevCorner`,
+  `TauCeti.PolygonalComplex.coe_incoming_mergeFaces`: away from the two corners where `X` and `Y`
+  meet, the corners of the merged face are those of `g₁` and `g₂`.
 * `TauCeti.PolygonalComplex.eulerChar_mergeFaces`: the Euler characteristic is unchanged.
+* `TauCeti.PolygonalComplex.isOrientable_mergeFaces_iff`: orientability is unchanged.
 * `TauCeti.PolygonalComplex.isMergeable_splitFace`: the two new faces of a split face can be merged.
-* `TauCeti.PolygonalComplex.outgoing_mergeFacesSplitFaceCornerEquiv`: merging the two faces of a
-  split face gives back the original complex.
-* `TauCeti.PolygonalComplex.outgoing_splitFaceMergeFacesCornerEquiv`: splitting a merged face gives
-  back the original complex.
 
 ## References
 
 * J. Gallier, D. Xu, *A Guide to the Classification Theorem for Compact Surfaces*, Springer, 2013,
-  Chapter 6, Definition 6.3, operation (P2), and its inverse (P2)⁻¹ before Lemma 6.1.
+  Chapter 6, Definition 6.3, operation (P2), its inverse (P2)⁻¹ before Lemma 6.1, and the
+  invariance of orientability and of the Euler characteristic after Definition 6.4.
 -/
 
 public section
@@ -385,6 +394,71 @@ noncomputable def mergeFacesCornerEquiv : (C.mergeFaces h).Corner ⊕ Bool ≃ C
       cond b (C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩ :=
   (rfl)
 
+/-- A corner of the merged complex sits at the vertex of the corner of `C` it comes from. -/
+@[simp] theorem cornerVertex_mergeFaces (c : (C.mergeFaces h).Corner) :
+    (C.mergeFaces h).cornerVertex c = C.cornerVertex (C.mergeFacesCornerOrigin g₁ g₂ c) := by
+  rw [← src_outgoing, ← src_outgoing, ← coe_outgoing_mergeFaces h c]
+
+/-- Away from the two corners where `X` and `Y` meet, the corner preceding a corner of the merged
+complex comes from the corner preceding the corner of `C` it comes from. These two corners are the
+first corner `⟨g₁, 0⟩` of `X` and the corner `nextCorner ⟨g₂, 0⟩` of `g₂ = d⁻¹ Y` following
+`d⁻¹`. -/
+theorem mergeFacesCornerOrigin_prevCorner (c : (C.mergeFaces h).Corner)
+    (h₁ : C.mergeFacesCornerOrigin g₁ g₂ c ≠ ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)
+    (h₂ : C.mergeFacesCornerOrigin g₁ g₂ c ≠ C.nextCorner ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩) :
+    C.mergeFacesCornerOrigin g₁ g₂ ((C.mergeFaces h).prevCorner c) =
+      C.prevCorner (C.mergeFacesCornerOrigin g₁ g₂ c) := by
+  obtain ⟨_ | g, k⟩ := c
+  · have := C.sides_pos g₁
+    have hN : (C.mergeFaces h).sides none = C.sides g₁ + C.sides g₂ - 2 := rfl
+    have hk : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.2
+    by_cases hk1 : (k : ℕ) < C.sides g₁ - 1
+    · rw [mergeFacesCornerOrigin_none_of_lt hk1] at h₁ ⊢
+      have hk0 : (k : ℕ) ≠ 0 := fun h0 => h₁ (Sigma.ext rfl (heq_of_eq (Fin.ext h0)))
+      rw [(C.mergeFaces h).prevCorner_mk_of_ne_zero (i := ⟨k - 1, by omega⟩) hk0 rfl,
+        mergeFacesCornerOrigin_none_of_lt (by dsimp only; omega),
+        C.prevCorner_mk_of_ne_zero (i := ⟨k - 1, by omega⟩) hk0 rfl]
+    · rw [mergeFacesCornerOrigin_none_of_not_lt hk1] at h₂ ⊢
+      have hk2 : C.sides g₁ ≤ k := by
+        by_contra hlt
+        rw [nextCorner_def] at h₂
+        refine h₂ (Sigma.ext rfl (heq_of_eq (Fin.ext ?_)))
+        have h0 := Fin.coe_finRotate_eq_ite (⟨0, C.sides_pos g₂⟩ : Fin (C.sides g₂))
+        dsimp only at h0 ⊢
+        split_ifs at h0 <;> omega
+      rw [(C.mergeFaces h).prevCorner_mk_of_ne_zero (i := ⟨k - 1, by omega⟩) (by omega) rfl,
+        mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega),
+        C.prevCorner_mk_of_ne_zero (i := ⟨k + 1 - C.sides g₁, by omega⟩) (by dsimp only; omega)
+          (by dsimp only; omega)]
+      exact Sigma.ext rfl (heq_of_eq (Fin.ext (by dsimp only; omega)))
+  · rw [prevCorner_def, prevCorner_def, mergeFacesCornerOrigin_some, mergeFacesCornerOrigin_some]
+
+/-- Away from the two corners where `X` and `Y` meet, a corner of the merged complex has the
+incoming side of the corner of `C` it comes from. -/
+theorem coe_incoming_mergeFaces (c : (C.mergeFaces h).Corner)
+    (h₁ : C.mergeFacesCornerOrigin g₁ g₂ c ≠ ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)
+    (h₂ : C.mergeFacesCornerOrigin g₁ g₂ c ≠ C.nextCorner ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩) :
+    ((C.mergeFaces h).incoming c).1 = C.incoming (C.mergeFacesCornerOrigin g₁ g₂ c) := by
+  rw [(C.mergeFaces h).incoming_eq_outgoing_prevCorner c, coe_outgoing_mergeFaces,
+    mergeFacesCornerOrigin_prevCorner h c h₁ h₂,
+    ← C.incoming_eq_outgoing_prevCorner (C.mergeFacesCornerOrigin g₁ g₂ c)]
+
+/-- Two sides of the merged complex are attached along the same dart exactly when the sides of `C`
+they come from are. -/
+theorem outgoing_mergeFaces_eq_outgoing_iff {c c' : (C.mergeFaces h).Corner} :
+    (C.mergeFaces h).outgoing c' = (C.mergeFaces h).outgoing c ↔
+      C.outgoing (C.mergeFacesCornerOrigin g₁ g₂ c') =
+        C.outgoing (C.mergeFacesCornerOrigin g₁ g₂ c) := by
+  rw [Subtype.ext_iff, coe_outgoing_mergeFaces, coe_outgoing_mergeFaces]
+
+/-- Two sides of the merged complex are attached along mutually reverse darts exactly when the
+sides of `C` they come from are. -/
+theorem outgoing_mergeFaces_eq_rev_iff {c c' : (C.mergeFaces h).Corner} :
+    (C.mergeFaces h).outgoing c' = (C.mergeFaces h).graph.rev ((C.mergeFaces h).outgoing c) ↔
+      C.outgoing (C.mergeFacesCornerOrigin g₁ g₂ c') =
+        C.graph.rev (C.outgoing (C.mergeFacesCornerOrigin g₁ g₂ c)) := by
+  rw [Subtype.ext_iff, coe_outgoing_mergeFaces, ← coe_outgoing_mergeFaces h c]
+
 /-! ### Side counts, link degrees and the Euler characteristic -/
 
 /-- The side occurrences of `C.mergeFaces h` attached along a remaining dart `e` are those of `C`
@@ -441,6 +515,89 @@ theorem card_face_mergeFaces_add_one [Finite C.Face] :
     ← card_face_mergeFaces_add_one h]
   push_cast
   ring
+
+/-! ### Orientability -/
+
+variable {h} in
+/-- Merging two faces of an orientable complex gives an orientable complex: the merged face takes
+the common orientation of the two faces, which are oriented alike since they traverse `d` in
+opposite directions. -/
+theorem IsOrientable.mergeFaces (hC : C.IsOrientable) : (C.mergeFaces h).IsOrientable := by
+  obtain ⟨σ, hσ⟩ := C.isOrientable_iff_forall_outgoing.1 hC
+  have hD : C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩ ≠ ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩ :=
+    fun he => h.ne (by simpa using congrArg Sigma.fst he)
+  have hs : σ g₁ = σ g₂ := by
+    have := (hσ _ _ hD).2 (h.outgoing_eq.trans (by rw [incoming_eq_outgoing_prevCorner]))
+    rwa [prevCorner_fst] at this
+  have hσ' (c : (C.mergeFaces h).Corner) :
+      Option.elim c.1 (σ g₁) (fun g => σ g.1) = σ (C.mergeFacesCornerOrigin g₁ g₂ c).1 := by
+    obtain ⟨_ | g, k⟩ := c
+    · rcases mergeFacesCornerOrigin_none_fst k with h' | h' <;> simp [h', hs]
+    · rfl
+  refine (C.mergeFaces h).isOrientable_iff_forall_outgoing.2
+    ⟨fun g => Option.elim g (σ g₁) (fun g => σ g.1), fun c c' hne => ?_⟩
+  dsimp only
+  rw [hσ' c, hσ' c', outgoing_mergeFaces_eq_outgoing_iff, outgoing_mergeFaces_eq_rev_iff]
+  exact hσ _ _ fun he => hne (mergeFacesCornerOrigin_injective h.ne he)
+
+omit h in
+/-- Two distinct side occurrences of `C`, one of them along the edge of `d`, are not attached
+along the same dart: they would be the occurrences `d` and `d⁻¹`. -/
+private theorem IsMergeable.outgoing_ne_of_toGeomEdge_eq (h : C.IsMergeable g₁ g₂) {c c' : C.Corner}
+    (hne : c ≠ c') (hc : C.graph.toGeomEdge (C.outgoing c) =
+      C.graph.toGeomEdge (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)) :
+    C.outgoing c' ≠ C.outgoing c := by
+  intro he
+  have hd : C.outgoing (C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) ≠
+      C.outgoing ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩ := by
+    rw [h.outgoing_eq, ← incoming_eq_outgoing_prevCorner]
+    exact (C.graph.rev_ne _).symm
+  rcases h.eq_or_eq_of_toGeomEdge_eq c hc with rfl | rfl <;>
+    rcases h.eq_or_eq_of_toGeomEdge_eq c' ((congrArg C.graph.toGeomEdge he).trans hc) with rfl | rfl
+  exacts [hne rfl, hd he.symm, hd he, hne rfl]
+
+omit h in
+/-- A side occurrence of `C` off the edge of `d` is a side occurrence of the merged complex. -/
+private theorem IsMergeable.exists_mergeFacesCornerOrigin_eq (h : C.IsMergeable g₁ g₂)
+    {c : C.Corner} (hc : C.graph.toGeomEdge (C.outgoing c) ≠
+      C.graph.toGeomEdge (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)) :
+    ∃ x, C.mergeFacesCornerOrigin g₁ g₂ x = c :=
+  PolygonalComplex.exists_mergeFacesCornerOrigin_eq
+    (fun he => hc (by rw [he, incoming_eq_outgoing_prevCorner]))
+    fun he => hc (by rw [he, h.outgoing_eq, SerreGraph.toGeomEdge_rev])
+
+variable {h} in
+/-- If the complex obtained by merging two faces is orientable, so is the original complex: the two
+faces take the orientation of the merged face. -/
+theorem IsOrientable.of_mergeFaces (hM : (C.mergeFaces h).IsOrientable) : C.IsOrientable := by
+  classical
+  obtain ⟨σ', hσ'⟩ := (C.mergeFaces h).isOrientable_iff_forall_outgoing.1 hM
+  let σ : C.Face → Bool := fun g => if hg : g ≠ g₁ ∧ g ≠ g₂ then σ' (some ⟨g, hg⟩) else σ' none
+  have hσ (c : (C.mergeFaces h).Corner) : σ (C.mergeFacesCornerOrigin g₁ g₂ c).1 = σ' c.1 := by
+    obtain ⟨_ | g, k⟩ := c
+    · rcases mergeFacesCornerOrigin_none_fst k with h' | h' <;> simp [σ, h']
+    · simp [σ, g.2]
+  have hσd {c : C.Corner} (hc : C.graph.toGeomEdge (C.outgoing c) =
+      C.graph.toGeomEdge (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)) : σ c.1 = σ' none := by
+    rcases h.eq_or_eq_of_toGeomEdge_eq c hc with rfl | rfl <;> simp [σ]
+  refine C.isOrientable_iff_forall_outgoing.2 ⟨σ, fun c c' hne => ?_⟩
+  by_cases hc : C.graph.toGeomEdge (C.outgoing c) =
+    C.graph.toGeomEdge (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)
+  · exact ⟨fun he => absurd he (h.outgoing_ne_of_toGeomEdge_eq hne hc),
+      fun he => by rw [hσd hc, hσd (by rw [he, SerreGraph.toGeomEdge_rev, hc])]⟩
+  obtain ⟨x, rfl⟩ := h.exists_mergeFacesCornerOrigin_eq hc
+  refine ⟨fun he => ?_, fun he => ?_⟩
+  · obtain ⟨x', rfl⟩ := h.exists_mergeFacesCornerOrigin_eq (by rwa [he])
+    rw [hσ, hσ]
+    exact (hσ' x x' fun hx => hne (congrArg _ hx)).1 ((outgoing_mergeFaces_eq_outgoing_iff h).2 he)
+  · obtain ⟨x', rfl⟩ :=
+      h.exists_mergeFacesCornerOrigin_eq (by rwa [he, SerreGraph.toGeomEdge_rev])
+    rw [hσ, hσ]
+    exact (hσ' x x' fun hx => hne (congrArg _ hx)).2 ((outgoing_mergeFaces_eq_rev_iff h).2 he)
+
+/-- Merging two faces does not change orientability. -/
+@[simp] theorem isOrientable_mergeFaces_iff : (C.mergeFaces h).IsOrientable ↔ C.IsOrientable :=
+  ⟨IsOrientable.of_mergeFaces, fun hC => hC.mergeFaces⟩
 
 /-! ### Merging the two faces of a split face -/
 
@@ -553,6 +710,57 @@ theorem outgoing_mergeFacesSplitFaceCornerEquiv
     rfl
   · cases g <;> simp at hg
 
+/-- A corner which lies on the face of `c'`, at the position following that of `c` along a face with
+the same number of sides as the face of `c'`, is the corner following `c'` when `c'` is at the
+position of `c`. -/
+private theorem eq_nextCorner_of_coe_snd {D E : PolygonalComplex.{u, v, w}} {c : D.Corner}
+    {c' x : E.Corner} (hfst : x.1 = c'.1) (hs : E.sides c'.1 = D.sides c.1)
+    (hx : (x.2 : ℕ) = (D.nextCorner c).2) (hc' : (c'.2 : ℕ) = c.2) : x = E.nextCorner c' := by
+  obtain ⟨g, k⟩ := c'
+  obtain ⟨g', k'⟩ := x
+  obtain rfl : g' = g := hfst
+  rw [nextCorner_def]
+  refine Sigma.ext rfl (heq_of_eq (Fin.ext ?_))
+  rw [nextCorner_def] at hx
+  have h₁ := Fin.coe_finRotate_eq_ite c.2
+  have h₂ := Fin.coe_finRotate_eq_ite k
+  dsimp only at hx hc' hs ⊢
+  split_ifs at h₁ h₂ <;> omega
+
+/-- Merging the two faces of a split face gives back `C`: the isomorphism keeps the orientation and
+the starting point of every face, and is the identity on vertices. -/
+noncomputable def mergeFacesSplitFaceIso :
+    ((C.splitFace f p).mergeFaces (C.isMergeable_splitFace f p)).Iso C where
+  graph := C.graph.deleteEdgeAddEdgeIso (C.incoming_splitFace_inr_true_zero f p)
+  faceEquiv := C.mergeFacesSplitFaceFaceEquiv f p
+  flip _ := false
+  sideEquiv := C.mergeFacesSplitFaceCornerEquiv f p
+  sideEquiv_apply_fst _ := rfl
+  sideEquiv_nextCorner c := eq_nextCorner_of_coe_snd (by simp)
+    (C.sides_mergeFacesSplitFaceFaceEquiv f p c.1) (coe_mergeFacesSplitFaceCornerEquiv_snd _ _ _ _)
+    (coe_mergeFacesSplitFaceCornerEquiv_snd _ _ _ _)
+  outgoing_sideEquiv c := by
+    rw [Bool.cond_false, SerreGraph.deleteEdgeAddEdgeIso_equivE]
+    exact C.outgoing_mergeFacesSplitFaceCornerEquiv f p c
+
+@[simp] theorem mergeFacesSplitFaceIso_graph :
+    (C.mergeFacesSplitFaceIso f p).graph =
+      C.graph.deleteEdgeAddEdgeIso (C.incoming_splitFace_inr_true_zero f p) :=
+  (rfl)
+
+@[simp] theorem mergeFacesSplitFaceIso_faceEquiv :
+    (C.mergeFacesSplitFaceIso f p).faceEquiv = C.mergeFacesSplitFaceFaceEquiv f p :=
+  (rfl)
+
+@[simp] theorem mergeFacesSplitFaceIso_flip
+    (g : ((C.splitFace f p).mergeFaces (C.isMergeable_splitFace f p)).Face) :
+    (C.mergeFacesSplitFaceIso f p).flip g = false :=
+  (rfl)
+
+@[simp] theorem mergeFacesSplitFaceIso_sideEquiv :
+    (C.mergeFacesSplitFaceIso f p).sideEquiv = C.mergeFacesSplitFaceCornerEquiv f p :=
+  (rfl)
+
 /-! ### Splitting a merged face -/
 
 variable {C} (h₂ : 1 < C.sides g₂)
@@ -640,7 +848,7 @@ private theorem src_side_one_eq (h : C.IsMergeable g₁ g₂) (h₂ : 1 < C.side
 
 /-- The side of the merged face at the position where `Y` starts is the second side of `g₂`, which
 starts at the source of `d`. -/
-private theorem src_mergeFacesSide_sides_sub_one :
+theorem src_mergeFacesSide_sides_sub_one :
     C.graph.src ((C.mergeFaces h).side none
       ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).1 =
         C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
@@ -651,7 +859,7 @@ private theorem src_mergeFacesSide_sides_sub_one :
   exact congrArg (fun j => C.graph.src (C.side g₂ j)) (Fin.ext (by dsimp only; omega))
 
 /-- The side of the merged face at the position `0` starts at the target of `d`. -/
-private theorem src_mergeFacesSide_zero :
+theorem src_mergeFacesSide_zero :
     C.graph.src ((C.mergeFaces h).side none ⟨0, (C.mergeFaces h).sides_pos none⟩).1 =
       C.graph.tgt (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := C.sides_pos g₁
@@ -740,6 +948,44 @@ theorem outgoing_splitFaceMergeFacesCornerEquiv
     rfl
   · exact outgoing_splitFaceMergeFacesCornerEquiv_inr_false h h₂ k
   · exact outgoing_splitFaceMergeFacesCornerEquiv_inr_true h h₂ k
+
+/-- Splitting the merged face `X Y` of `C.mergeFaces h` at the corner where `Y` starts gives back
+`C`: the isomorphism keeps the orientation and the starting point of every face, and is the identity
+on vertices. -/
+noncomputable def splitFaceMergeFacesIso :
+    ((C.mergeFaces h).splitFace none
+      ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).Iso C where
+  graph := C.graph.addEdgeDeleteEdgeIso (src_mergeFacesSide_sides_sub_one h h₂)
+    (src_mergeFacesSide_zero h)
+  faceEquiv := C.splitFaceMergeFacesFaceEquiv h h₂
+  flip _ := false
+  sideEquiv := C.splitFaceMergeFacesCornerEquiv h h₂
+  sideEquiv_apply_fst _ := rfl
+  sideEquiv_nextCorner c := eq_nextCorner_of_coe_snd (by simp)
+    (C.sides_splitFaceMergeFacesFaceEquiv h h₂ c.1) (coe_splitFaceMergeFacesCornerEquiv_snd _ _ _)
+    (coe_splitFaceMergeFacesCornerEquiv_snd _ _ _)
+  outgoing_sideEquiv c := by
+    rw [Bool.cond_false, SerreGraph.addEdgeDeleteEdgeIso_equivE]
+    exact outgoing_splitFaceMergeFacesCornerEquiv h h₂ c
+
+@[simp] theorem splitFaceMergeFacesIso_graph :
+    (C.splitFaceMergeFacesIso h h₂).graph = C.graph.addEdgeDeleteEdgeIso
+      (src_mergeFacesSide_sides_sub_one h h₂) (src_mergeFacesSide_zero h) :=
+  (rfl)
+
+@[simp] theorem splitFaceMergeFacesIso_faceEquiv :
+    (C.splitFaceMergeFacesIso h h₂).faceEquiv = C.splitFaceMergeFacesFaceEquiv h h₂ :=
+  (rfl)
+
+@[simp] theorem splitFaceMergeFacesIso_flip
+    (g : ((C.mergeFaces h).splitFace none
+      ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).Face) :
+    (C.splitFaceMergeFacesIso h h₂).flip g = false :=
+  (rfl)
+
+@[simp] theorem splitFaceMergeFacesIso_sideEquiv :
+    (C.splitFaceMergeFacesIso h h₂).sideEquiv = C.splitFaceMergeFacesCornerEquiv h h₂ :=
+  (rfl)
 
 end PolygonalComplex
 
