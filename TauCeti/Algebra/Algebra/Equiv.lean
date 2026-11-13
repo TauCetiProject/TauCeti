@@ -78,6 +78,6 @@ theorem ne_one_of_apply_eq_neg [Ring A] [Algebra R A] (σ : A ≃ₐ[R] A)
 /-- An automorphism fixing the nonzero element `e` negates `x / e` exactly when it negates `x`. -/
 theorem apply_div_eq_neg_iff [DivisionRing A] [Algebra R A] (σ : A ≃ₐ[R] A) {x e : A}
     (he : e ≠ 0) (hσe : σ e = e) : σ (x / e) = -(x / e) ↔ σ x = -x := by
-  rw [map_div₀, hσe, ← neg_div, div_left_inj' he]
+  rw [map_div₀, hσe, ← neg_div, div_left_inj₀ he]
 
 end AlgEquiv

@@ -129,19 +129,9 @@ theorem infiniteArtinAt_layer (w : InfinitePlace K)
         (localGroundEquiv w.Completion V (Additive.ofMul x)) =
       Additive.ofMul (Group.Abelianization.of ((galOfOpenNormalEquiv V).symm
         (absoluteGaloisGroupRestrictEquiv w.Completion σ :
-          AbsoluteGaloisGroup w.Completion ⧸ V.toSubgroup))) := by
-  have hmem : (absoluteGaloisGroupRestrictEquiv w.Completion σ : AbsoluteGaloisGroup w.Completion)
-      ∈ (ofOpenNormal V).ground := by
-    simp
-  have hsymm : (galOfOpenNormalEquiv V).symm
-      (absoluteGaloisGroupRestrictEquiv w.Completion σ :
-        AbsoluteGaloisGroup w.Completion ⧸ V.toSubgroup) =
-      ((⟨_, hmem⟩ : (ofOpenNormal V).ground) : (ofOpenNormal V).Gal) := by
-    rw [MulEquiv.symm_apply_eq, galOfOpenNormalEquiv_mk]
-  rw [← groundEquivOfOpenNormal_unitsLevelEquiv w.Completion V x,
-    ← ClassFormation.abelianizationRestrict_absoluteArtinMap,
-    (infiniteClassFormation w).absoluteArtinMap_eq_of_mk_eq_fieldArtinMap x σ hσ,
-    abelianizationRestrict_mk V ⟨_, hmem⟩, hsymm]
+          AbsoluteGaloisGroup w.Completion ⧸ V.toSubgroup))) :=
+  artinMap_localGroundEquiv_of_mk_eq_fieldArtinMap w.Completion (infiniteClassFormation w) V x σ
+    hσ
 
 /-- **The archimedean character formula** `χ(Art_w x) = inv_w(x ∪ δχ)`. If `σ` represents
 `Art_w(x)`, then for every character `χ` of the abelianized Galois group of a layer
@@ -168,8 +158,8 @@ private theorem artinMap_eq_zero_of_infiniteArtinAt_eq_one (w : InfinitePlace K)
     (hx : infiniteArtinAt w x = 1) :
     (infiniteClassFormation w).artinMap (ofOpenNormal V)
       (localGroundEquiv w.Completion V (Additive.ofMul x)) = 0 := by
-  rw [infiniteArtinAt_layer w V x 1 (by rw [hx, QuotientGroup.mk_one]), map_one,
-    QuotientGroup.mk_one, map_one, map_one, ofMul_one]
+  simp only [infiniteArtinAt_layer w V x 1 (by rw [hx, QuotientGroup.mk_one]), map_one,
+    QuotientGroup.mk_one, ofMul_one]
 
 /-- **The archimedean Artin map is trivial at a complex place**: the absolute Galois group of
 `K_w ≅ ℂ` is trivial. -/
@@ -294,7 +284,7 @@ end Real
 
 section Norm
 
-open scoped NumberField.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable {L : Type} [Field L] [Algebra K L]
 

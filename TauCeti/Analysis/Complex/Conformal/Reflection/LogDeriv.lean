@@ -264,7 +264,7 @@ theorem differentiableOn_logDeriv_deriv_lineSchwarzReflection (hb : b ≠ 0) (h�
   have hginj : InjOn (schwarzReflection g) Ω := by
     refine injOn_schwarzReflection_of_symmetric hΩ (fun z hz => hside z hz.1 hz.2)
       (fun z hz hz0 => (hline z hz hz0).ge) fun z hz w hw hzw => hinj hz hw ?_
-    simpa [hg, div_left_inj' hb] using hzw
+    simpa [hg, div_left_inj₀ hb] using hzw
   have hFinj : InjOn F Ω := fun z hz w hw hzw => hginj hz hw <| by
     simpa [hFg, hb] using hzw
   have hd' : DifferentiableOn ℂ (deriv F) Ω := hd.deriv hΩopen
