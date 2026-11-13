@@ -29,12 +29,14 @@ Strong deformation retractions of subsets also transport along homeomorphisms
 A homotopy from the identity that fixes a subset `S` at all times and ends in `S` gives a strong
 deformation retraction onto `S` (`TauCeti.exists_strong_deformation_retraction_of_homotopy`).
 
-A deformation retraction in the weak sense of `B` onto `A ⊆ B` is a deformation of `B` within
-itself, starting at the identity, ending inside `A`, and keeping `A` inside `A` at all times. The
-inclusion of `A` is then a homotopy equivalence
-(`ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction`). Unlike a strong deformation
-retraction, the deformation need not fix `A`, which allows straight-line deformations that slide
-points of `A` within `A`.
+A deformation retraction — a map `i : Y → Z` with a continuous left inverse `r : Z → Y` such that
+`i ∘ r` is homotopic to the identity — exhibits `i` as a homotopy equivalence `Y ≃ₕ Z`
+(`ContinuousMap.HomotopyEquiv.ofDeformationRetraction`). More generally, a deformation retraction in
+the weak sense of `B` onto `A ⊆ B` is a deformation of `B` within itself, starting at the identity,
+ending inside `A`, and keeping `A` inside `A` at all times; the inclusion of `A` is then a homotopy
+equivalence (`ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction`). Unlike a strong
+deformation retraction, the deformation need not fix `A`, which allows straight-line deformations
+that slide points of `A` within `A`.
 
 Deformations of an open piece extend by the identity. Let `j : Y → X` be an open embedding. A
 continuous family of self-maps of `Y` which fixes the points of `j ⁻¹' V`, for an open
@@ -169,6 +171,51 @@ end Homeomorph
 namespace ContinuousMap.HomotopyEquiv
 
 open scoped unitInterval
+
+/-- **A deformation retraction gives a homotopy equivalence.** If `r : C(Z, Y)` is a left inverse
+of `i : C(Y, Z)` and `i ∘ r` is homotopic to the identity of `Z`, then `i` is a homotopy
+equivalence `Y ≃ₕ Z` with homotopy inverse `r`. -/
+def ofDeformationRetraction {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) : Y ≃ₕ Z where
+  toFun := i
+  invFun := r
+  left_inv :=
+    have h : r.comp i = ContinuousMap.id Y := ContinuousMap.ext hri
+    h ▸ ContinuousMap.Homotopic.refl _
+  right_inv := hir
+
+/-- The forward continuous map of `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` is `i`. -/
+@[simp]
+theorem ofDeformationRetraction_toFun {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) :
+    (ofDeformationRetraction i r hri hir).toFun = i :=
+  (rfl)
+
+/-- The inverse continuous map of `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` is `r`. -/
+@[simp]
+theorem ofDeformationRetraction_invFun {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) :
+    (ofDeformationRetraction i r hri hir).invFun = r :=
+  (rfl)
+
+/-- `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` acts on points as `i`. -/
+theorem ofDeformationRetraction_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) (y : Y) :
+    ofDeformationRetraction i r hri hir y = i y :=
+  (rfl)
+
+/-- The homotopy inverse of `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` acts on points
+as `r`. -/
+@[simp]
+theorem ofDeformationRetraction_symm_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) (z : Z) :
+    (ofDeformationRetraction i r hri hir).symm z = r z :=
+  (rfl)
 
 variable {X : Type*} [TopologicalSpace X] {A B : Set X}
 

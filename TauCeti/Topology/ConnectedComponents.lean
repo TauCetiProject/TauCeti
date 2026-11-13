@@ -77,6 +77,8 @@ space by them.
   pairwise disjoint closed connected sets has exactly as many connected components as sets.
 * `TauCeti.connectedComponentIn_eq_of_natCard_eq_two`: if a set with exactly two connected
   components is split into two disjoint nonempty open sets, these are its components.
+* `IsPreconnected.connectedComponentIn_union_eq_left`: a preconnected open set `u`, separated by a
+  disjoint open set `v`, is a connected component of `u ∪ v`.
 -/
 
 public section
@@ -687,5 +689,14 @@ theorem connectedComponentIn_eq_of_natCard_eq_two {s u v : Set X}
   have hzx := (hc _ (hne z hz hzs)).trans (hc _ (hne x hx hxs)).symm
   rw [ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq] at hzx
   exact hzx ▸ mem_connectedComponentIn hzs
+
+/-- A preconnected open set `u`, disjoint from an open set `v`, is a connected component of
+`u ∪ v`: it is the component in `u ∪ v` of each of its points. -/
+theorem _root_.IsPreconnected.connectedComponentIn_union_eq_left {u v : Set X}
+    (hu' : IsPreconnected u) (hu : IsOpen u) (hv : IsOpen v) (huv : Disjoint u v) {x : X}
+    (hx : x ∈ u) : connectedComponentIn (u ∪ v) x = u :=
+  (isPreconnected_connectedComponentIn.subset_left_of_subset_union hu hv huv
+      (connectedComponentIn_subset _ x) ⟨x, mem_connectedComponentIn (Or.inl hx), hx⟩).antisymm
+    (hu'.subset_connectedComponentIn hx subset_union_left)
 
 end TauCeti

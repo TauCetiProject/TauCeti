@@ -193,7 +193,7 @@ theorem windingNumber_ellipse_zero {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     (by simpa only [zero_add] using (periodic_circleMap 0 (a + b) 0).symm)
     (ellipse_closed a b)]
   · exact Contour.windingNumber_circleMap_eq_one_of_dist_lt (by simpa using hR)
-  intro t ht
+  intro t _
   rw [dist_eq_norm, dist_zero_right, norm_circleMap_zero, abs_of_pos hR]
   have hre : (ellipse a b t - circleMap 0 (a + b) t).re = -b * Real.cos t := by
     rw [ellipse_apply]

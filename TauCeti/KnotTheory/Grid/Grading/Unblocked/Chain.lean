@@ -38,9 +38,8 @@ not among that file's dependencies.
 
 With that convention the two records of `Unblocked.lean` say exactly that **the unblocked grid
 differential has bidegree `(-1, 0)`**: it drops the `O`-Maslov grading by one and preserves the
-Alexander grading. That is the convention the roadmap asks to be fixed once and for all before any
-grid homology is stated, and it is what makes `GC⁻` a bigraded complex rather than merely a module
-carrying a differential.
+Alexander grading. This is the convention for differentials used throughout this library, and it
+is what makes `GC⁻` a bigraded complex rather than merely a module carrying a differential.
 
 The homogeneous piece `OddComponentGridDiagram.bigradedChainMinusPiece` is a submodule over the
 coefficient ring `R` only, not over `R[V₀, …, V_{n-1}]`: the variables move the bidegree. It
@@ -98,11 +97,7 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and
-`∂² = 0`", whose unblocked complex `GC⁻` this bigrades, and its standing convention "Mind the
-bigrading bookkeeping", which asks to "fix once whether differentials drop Maslov by 1 and preserve
-Alexander (unblocked)". The conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
-and Links*, Chapter 4.
+The conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.
 -/
 
 public section
@@ -610,7 +605,7 @@ theorem iSupIndep_alexanderChainMinusPiece (R : Type*) [CommSemiring R] :
 /-- **The Alexander grading of `GC⁻`**: the unblocked grid chain module is the internal direct sum
 of its Alexander pieces, as a module over the coefficient ring `R`. -/
 def alexanderChainMinusGrading (R : Type*) [CommRing R] :
-    InternalGrading R (GridChainMinus R n) where
+    InternalGrading R (GridChainMinus R n) ℤ where
   piece := G.alexanderChainMinusPiece R
   isInternal := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
     (G.iSupIndep_alexanderChainMinusPiece R) (G.iSup_alexanderChainMinusPiece_eq_top R)
