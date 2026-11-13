@@ -416,7 +416,7 @@ omit [CompleteSpace K] in
 private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
     (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
   intro I _
-  let φ := renameEquiv (R := K) e
+  let φ := renameAlgEquiv (R := K) e
   let J := I.comap φ.toAlgHom
   have : Algebra.IsIntegral K (washnitzerAlgebra σ K ⧸ J) :=
     Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I φ.toAlgHom le_rfl)
