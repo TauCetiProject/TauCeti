@@ -62,7 +62,7 @@ private theorem comp_circleExp (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) n Circ
   exact ⟨(contMDiff_iff_contDiff.1 (K.contMDiff.comp contMDiff_circleExp)).of_le hn,
     fun t ↦ by simp only [comp_apply, Circle.periodic_exp t],
     fun s t hst ↦ Circle.exp_eq_exp.1 (K.isEmbedding.injective hst), fun t ↦
-    (deriv_comp_circleExp_ne_zero_and_range_mfderiv (K.contMDiff.of_le hn)
+    (deriv_comp_circleExp_ne_zero_and_range_mfderiv
       (K.isImmersion.mfderiv_injective hn0) t).1⟩
 
 /-- **Inscribed polygons of a smooth knot are eventually simple.** For a `C^n` embedding
