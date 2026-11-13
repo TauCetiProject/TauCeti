@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
-public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.Analysis.Normed.Group.Bounded
@@ -29,10 +28,6 @@ compact support. A weighted squared defect `c z * ‖fderiv w z e₁ + A z (fder
 integrable when it vanishes off a compact set on which `c` and `A` are continuous, so they need
 not be continuous elsewhere.
 
-A squared directional derivative `‖fderiv 𝕜 u z e‖ ^ 2` dominated by `A f + B` for an integrable
-energy density `f` is integrable on an open set of finite measure when `u` is `C¹` there, and its
-integral over a set `S` of finite measure is at most `(A + B + 1)(μ S + ∫_S f)`.
-
 On a Euclidean product `ℝ × V`, the derivative of such a function in a fixed direction is also
 integrable on the product of a half-line with `V`.
 
@@ -46,9 +41,6 @@ integrable on the product of a half-line with `V`.
   `TauCeti.integrable_norm_fderiv_sq_add`, `TauCeti.integrable_cutoff_sq_mul_norm_fderiv_sq`,
   `TauCeti.integrable_mul_norm_defect_sq`: integrability of the derivative energy densities
   in two directions.
-* `TauCeti.integrableOn_norm_fderiv_apply_sq_of_le`,
-  `TauCeti.setIntegral_norm_fderiv_apply_sq_le`: a squared directional derivative dominated by an
-  energy density is integrable, with integral bounded by the energy.
 * `TauCeti.integrable_fderiv_apply_prod`: the directional derivative of a compactly supported
   `C¹` function on `ℝ × V` is integrable on the product of `Ioi a` with `V`.
 -/
@@ -139,46 +131,6 @@ theorem integrable_mul_norm_defect_sq (e₁ e₂ : E) {w : E → F} {c : E → �
       (hA.clm_apply (hdw.clm_apply continuousOn_const))).norm.pow 2)).integrableOn_compact hS
 
 end Energy
-
-section Domination
-
-variable [MeasurableSpace E] {μ : Measure E}
-
-/-- If `‖fderiv 𝕜 u z e‖ ^ 2 ≤ A f z + B` on an open set `Ω` of finite measure, where `f` is
-integrable on `Ω` and `u` is `C¹` on `Ω`, then `‖fderiv 𝕜 u z e‖ ^ 2` is integrable on `Ω`. -/
-theorem integrableOn_norm_fderiv_apply_sq_of_le [OpensMeasurableSpace E] {u : E → F}
-    {f : E → ℝ} {Ω : Set E} {e : E} {A B : ℝ} (hΩ : IsOpen Ω) (hΩfin : μ Ω ≠ ⊤)
-    (hu : ContDiffOn 𝕜 1 u Ω) (hint : IntegrableOn f Ω μ)
-    (hle : ∀ z ∈ Ω, ‖fderiv 𝕜 u z e‖ ^ 2 ≤ A * f z + B) :
-    IntegrableOn (fun z ↦ ‖fderiv 𝕜 u z e‖ ^ 2) Ω μ :=
-  Integrable.mono' ((hint.const_mul A).fun_add (integrableOn_const (C := B) hΩfin))
-    ((((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
-      continuousOn_const).norm.pow 2).aestronglyMeasurable hΩ.measurableSet)
-    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦ by
-      rw [Real.norm_of_nonneg (by positivity)]
-      exact hle z hz)
-
-/-- If `‖fderiv 𝕜 u z e‖ ^ 2 ≤ A f z + B` on a measurable set `S` of finite measure, with
-`A, B ≥ 0` and `f ≥ 0` integrable on `S`, then
-`∫_S ‖fderiv 𝕜 u z e‖ ^ 2 ≤ (A + B + 1)(μ S + ∫_S f)`. -/
-theorem setIntegral_norm_fderiv_apply_sq_le {u : E → F} {f : E → ℝ} {S : Set E} {e : E}
-    {A B : ℝ} (hS : MeasurableSet S) (hSfin : μ S ≠ ⊤) (hA0 : 0 ≤ A) (hB0 : 0 ≤ B)
-    (hgint : IntegrableOn (fun z ↦ ‖fderiv 𝕜 u z e‖ ^ 2) S μ) (hint : IntegrableOn f S μ)
-    (hf0 : ∀ z ∈ S, 0 ≤ f z) (hle : ∀ z ∈ S, ‖fderiv 𝕜 u z e‖ ^ 2 ≤ A * f z + B) :
-    ∫ z in S, ‖fderiv 𝕜 u z e‖ ^ 2 ∂μ ≤ (A + B + 1) * (μ.real S + ∫ z in S, f z ∂μ) := by
-  have hint0 : 0 ≤ ∫ z in S, f z ∂μ := setIntegral_nonneg hS hf0
-  have hm0 : 0 ≤ μ.real S := measureReal_nonneg
-  calc ∫ z in S, ‖fderiv 𝕜 u z e‖ ^ 2 ∂μ
-      ≤ ∫ z in S, (A * f z + B) ∂μ :=
-        setIntegral_mono_on hgint ((hint.const_mul A).fun_add (integrableOn_const (C := B) hSfin))
-          hS hle
-    _ = A * (∫ z in S, f z ∂μ) + B * μ.real S := by
-        rw [integral_add (hint.const_mul A) (integrableOn_const hSfin), integral_const_mul,
-          setIntegral_const, smul_eq_mul, mul_comm (μ.real S)]
-    _ ≤ (A + B + 1) * (μ.real S + ∫ z in S, f z ∂μ) := by
-        nlinarith [mul_nonneg hA0 hm0, mul_nonneg hB0 hint0]
-
-end Domination
 section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]

@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Geometry.Symplectic.Floer.Graph
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
@@ -660,10 +659,13 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_of
     fun Ω p u f E hΩ hΩD hpC hu hfl huK hf0 hgle hint hE ↦ ?_⟩
   have hΩm : MeasurableSet Ω := hΩ.measurableSet
   have hΩfin : volume Ω ≠ ⊤ := ((measure_mono hΩD).trans_lt hD.measure_lt_top).ne
-  have hgint (k : ℕ) := integrableOn_norm_fderiv_apply_sq_of_le hΩ hΩfin
-    ((hu k).of_le (by norm_num)) (hint k) (hgle k)
+  have hgint (k : ℕ) := integrableOn_of_le_mul_add
+    (g := fun z ↦ ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2) hΩm hΩfin
+    ((((hu k).continuousOn_fderiv_of_isOpen hΩ (by norm_num)).clm_apply
+      continuousOn_const).norm.pow 2 |>.aestronglyMeasurable hΩm) (hint k)
+    (fun _ _ ↦ by positivity) (hgle k)
   have hgS (k : ℕ) {S : Set (ℝ × ℝ)} (hS : MeasurableSet S) (hSΩ : S ⊆ Ω) :=
-    setIntegral_norm_fderiv_apply_sq_le hS
+    setIntegral_le_mul_measureReal_add_setIntegral_of_le hS
       (ne_top_of_le_ne_top hΩfin (measure_mono hSΩ)) hA0 hB0 ((hgint k).mono_set hSΩ)
       ((hint k).mono_set hSΩ) (fun z hz ↦ hf0 k z (hSΩ hz)) fun z hz ↦ hgle k z (hSΩ hz)
   obtain ⟨φ, p₀, Z, v, hφ, hp₀, hplim, hZΩ, hconc', hbd, hvc, hvK, hlim⟩ :=
