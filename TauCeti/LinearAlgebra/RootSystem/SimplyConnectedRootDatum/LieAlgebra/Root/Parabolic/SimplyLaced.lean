@@ -133,20 +133,9 @@ theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton (hs : t.IsS
     Subgroup.normalizer
       (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
-  let N : Subgroup (LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) := Subgroup.normalizer
-    (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
-      (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _)
-  have hx := range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil hs i A
-  have hn := kostantWeylGL_mem_normalizer_posRoots_diff_singleton ρ M hM hnil i A
-  have hy : (chevalleyRootSubgroup ρ M hM hnil
-      ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
-        (t.simpleIndex ht i)) A).range ≤ N := by
-    rw [← map_range_chevalleyRootSubgroup_conj_kostantWeylGL ρ M hM hnil i
-      (t.simpleIndex ht i) A]
-    rintro g ⟨x, hx', rfl⟩
-    simp only [MonoidHom.coe_ofClass, MulAut.conj_apply]
-    exact N.mul_mem (N.mul_mem hn (hx hx')) (N.inv_mem hn)
-  exact (Subgroup.closure_le _).mpr (Set.union_subset hx hy)
+  exact closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_le_normalizer
+    ρ M hM hnil i A
+    (range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil hs i A)
 
 /-- Every positive element in a simply-laced type is a punctured-positive element followed by
 an element of the chosen simple root group. No uniqueness of the factors is asserted. -/
@@ -158,14 +147,9 @@ theorem mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul (hs : t.IsSimpl
     ∃ q ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
       (chevalleyRootSubgroup ρ M hM hnil γ A).range),
       ∃ u, g = q * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A u := by
-  have hnorm := range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil hs i A
-  conv_lhs => rw [posRoots_eq_diff_union_simpleIndex i, iSup_union, iSup_singleton]
-  rw [← SetLike.mem_coe, Subgroup.coe_mul_of_right_le_normalizer_left _ _ hnorm]
-  constructor
-  · rintro ⟨q, hq, x, ⟨u, rfl⟩, heq⟩
-    exact ⟨q, hq, u, heq.symm⟩
-  · rintro ⟨q, hq, u, rfl⟩
-    exact ⟨q, hq, _, ⟨u, rfl⟩, rfl⟩
+  exact mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul_of_le_normalizer
+    ρ M hM hnil i A
+    (range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil hs i A) g
 
 end
 
