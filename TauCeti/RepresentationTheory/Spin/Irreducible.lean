@@ -11,6 +11,10 @@ public import TauCeti.RepresentationTheory.Irreducible
 import Mathlib.RingTheory.SimpleModule.Basic
 -- Private: the span theorem is used only to pass from group invariance to even-Clifford invariance.
 import TauCeti.LinearAlgebra.CliffordAlgebra.ReflectionLift
+-- Private: the generation of the exterior endomorphism algebra by creation and contraction, and
+-- the naturality of contraction, are used only inside proofs.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorAlgebra.End
 
 /-!
 # Invariant subspaces and intertwiners for the spinor and half-spin actions
@@ -271,7 +275,8 @@ private theorem intertwines_even_of_intertwines_spinGroup {K : Type u} [Field K]
 
 Nothing here needs an even dimension, a nondegenerate form, or an invertible `2`: the Fock action
 is onto `Module.End K S` for every polarization whose isotropic summand is finite-dimensional, and
-a vector space is a simple module over its own endomorphism ring. -/
+a vector space is a simple module over its own endomorphism ring. The invariant-subspace
+dichotomy needs no finiteness of the isotropic summand at all. -/
 
 section Simple
 
@@ -289,14 +294,120 @@ theorem exists_spinAction_eq {s : ExteriorAlgebra K P.W} (hs : s ≠ 0)
   obtain ⟨x, rfl⟩ := spinAction_surjective P f
   exact ⟨x, hf⟩
 
+end Simple
+
+section Invariant
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+
+/-- Every multivector lies in the exterior algebra of a finite-dimensional subspace of `W`. -/
+private theorem exists_finiteDimensional_range_map_subtype (s : ExteriorAlgebra K P.W) :
+    ∃ W₀ : Submodule K P.W, FiniteDimensional K W₀ ∧
+      s ∈ (ExteriorAlgebra.map W₀.subtype).range := by
+  have hmono : ∀ {W₀ W₁ : Submodule K P.W}, W₀ ≤ W₁ →
+      (ExteriorAlgebra.map W₀.subtype).range ≤ (ExteriorAlgebra.map W₁.subtype).range := by
+    intro W₀ W₁ h
+    rintro _ ⟨a, rfl⟩
+    refine ⟨ExteriorAlgebra.map (Submodule.inclusion h) a, ?_⟩
+    change ExteriorAlgebra.map W₁.subtype (ExteriorAlgebra.map (Submodule.inclusion h) a) = _
+    rw [← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map]
+    rfl
+  induction s using ExteriorAlgebra.induction with
+  | algebraMap r => exact ⟨⊥, inferInstance, Subalgebra.algebraMap_mem _ r⟩
+  | ι m =>
+    refine ⟨Submodule.span K {m}, inferInstance,
+      ⟨ExteriorAlgebra.ι K ⟨m, Submodule.mem_span_singleton_self m⟩, ?_⟩⟩
+    simp
+  | mul a b ha hb =>
+    obtain ⟨W₀, h₀, ha⟩ := ha
+    obtain ⟨W₁, h₁, hb⟩ := hb
+    exact ⟨W₀ ⊔ W₁, inferInstance,
+      Subalgebra.mul_mem _ (hmono le_sup_left ha) (hmono le_sup_right hb)⟩
+  | add a b ha hb =>
+    obtain ⟨W₀, h₀, ha⟩ := ha
+    obtain ⟨W₁, h₁, hb⟩ := hb
+    exact ⟨W₀ ⊔ W₁, inferInstance,
+      Subalgebra.add_mem _ (hmono le_sup_left ha) (hmono le_sup_right hb)⟩
+
+/-- A nonzero spinor is carried to `1` by some Clifford element, with no finiteness assumption on
+`W`: it lies in the exterior algebra of a finite-dimensional `W₀`, where creation and contraction
+operators generate every endomorphism, and these operators extend from `W₀` to `W`. -/
+private theorem exists_spinAction_eq_one (s : ExteriorAlgebra K P.W) (hs : s ≠ 0) :
+    ∃ x : CliffordAlgebra Q, spinAction Q P x s = 1 := by
+  obtain ⟨W₀, hW₀, s₀, rfl⟩ := exists_finiteDimensional_range_map_subtype P s
+  have hs₀ : s₀ ≠ 0 := by rintro rfl; exact hs (map_zero _)
+  obtain ⟨g, hg⟩ := IsSimpleModule.toSpanSingleton_surjective
+    (Module.End K (ExteriorAlgebra K W₀)) hs₀ 1
+  rw [LinearMap.toSpanSingleton_apply, Module.End.smul_def] at hg
+  have key : ∀ g ∈ Algebra.adjoin K
+      (Set.range (fun x : W₀ ↦
+        (LinearMap.mulLeft K (ExteriorAlgebra.ι K x) : Module.End K (ExteriorAlgebra K W₀))) ∪
+       Set.range (fun d : Module.Dual K W₀ ↦
+        (CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm K W₀)) d :
+          Module.End K (ExteriorAlgebra K W₀)))),
+      ∃ x : CliffordAlgebra Q, ∀ t, spinAction Q P x (ExteriorAlgebra.map W₀.subtype t) =
+      ExteriorAlgebra.map W₀.subtype (g t) := by
+    intro g hg
+    induction hg using Algebra.adjoin_induction with
+    | mem g hg =>
+      rcases hg with ⟨y, rfl⟩ | ⟨d, rfl⟩
+      · refine ⟨CliffordAlgebra.ι Q ((W₀.subtype y : P.W) : V), fun t => ?_⟩
+        rw [spinAction_ι_wedge]
+        simp [map_mul]
+      · obtain ⟨d', hd'⟩ := LinearMap.exists_extend (p := W₀) d
+        obtain ⟨y, hy⟩ := P.pairingEquiv.surjective d'
+        refine ⟨CliffordAlgebra.ι Q (y : V), fun t => ?_⟩
+        rw [spinAction_ι_contract, hy, ExteriorAlgebra.contractLeft_map]
+        simp [hd']
+    | algebraMap r => exact ⟨algebraMap K _ r, fun t => by simp⟩
+    | add a b _ _ ha hb =>
+      obtain ⟨x, hx⟩ := ha
+      obtain ⟨y, hy⟩ := hb
+      exact ⟨x + y, fun t => by simp [hx, hy]⟩
+    | mul a b _ _ ha hb =>
+      obtain ⟨x, hx⟩ := ha
+      obtain ⟨y, hy⟩ := hb
+      exact ⟨x * y, fun t => by simp [hx, hy]⟩
+  obtain ⟨x, hx⟩ := key g (by rw [ExteriorAlgebra.creation_contraction_adjoin_eq_top]; trivial)
+  refine ⟨x, ?_⟩
+  change spinAction Q P x (ExteriorAlgebra.map W₀.subtype s₀) = 1
+  rw [hx, hg, map_one]
+
+/-- Left multiplication by a multivector is the Fock action of some Clifford element. -/
+private theorem exists_spinAction_eq_mul (a : ExteriorAlgebra K P.W) :
+    ∃ y : CliffordAlgebra Q, ∀ b, spinAction Q P y b = a * b := by
+  induction a using ExteriorAlgebra.induction with
+  | algebraMap r => exact ⟨algebraMap K _ r, fun b => by simp [Algebra.smul_def]⟩
+  | ι m => exact ⟨CliffordAlgebra.ι Q (m : V), fun b => spinAction_ι_wedge P m b⟩
+  | mul a b ha hb =>
+    obtain ⟨x, hx⟩ := ha
+    obtain ⟨y, hy⟩ := hb
+    exact ⟨x * y, fun c => by simp [hx, hy, mul_assoc]⟩
+  | add a b ha hb =>
+    obtain ⟨x, hx⟩ := ha
+    obtain ⟨y, hy⟩ := hb
+    exact ⟨x + y, fun c => by simp [hx, hy, add_mul]⟩
+
 /-- **The invariant-subspace dichotomy for the spinor module**: a submodule of `S = ⋀·W`
 invariant under every Clifford element is `⊥` or the whole of `S`. The spinor module is nonzero,
-so this is its simplicity statement for the Clifford action. -/
+so this is its simplicity statement for the Clifford action. No finiteness of `W` is needed. -/
 theorem eq_bot_or_eq_top_of_map_spinAction_le (N : Submodule K (ExteriorAlgebra K P.W))
     (hN : ∀ x : CliffordAlgebra Q, N.map (spinAction Q P x) ≤ N) : N = ⊥ ∨ N = ⊤ := by
-  exact eq_bot_or_eq_top_of_surjective_action (spinAction Q P) (spinAction_surjective P) N hN
+  by_cases h0 : N = ⊥
+  · exact Or.inl h0
+  right
+  obtain ⟨s, hsN, hs0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h0
+  obtain ⟨x₀, hx₀⟩ := exists_spinAction_eq_one P s hs0
+  have h1 : (1 : ExteriorAlgebra K P.W) ∈ N := by
+    rw [← hx₀]; exact hN x₀ (Submodule.mem_map_of_mem hsN)
+  rw [eq_top_iff]
+  intro t _
+  obtain ⟨y, hy⟩ := exists_spinAction_eq_mul P t
+  have := hN y (Submodule.mem_map_of_mem h1)
+  rwa [hy, mul_one] at this
 
-end Simple
+end Invariant
 
 /-! ### Consequences of the even structure theorem -/
 
