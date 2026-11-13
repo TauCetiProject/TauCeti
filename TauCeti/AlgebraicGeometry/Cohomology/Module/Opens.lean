@@ -394,6 +394,7 @@ def cohomologyOnTopBaseLinearEquiv (n : ℕ) :
       (cohomologyOnTopLinearEquiv M n).map_smul (baseRingToGlobalSections R X r) x
 
 /-- The base-linear terminal-open comparison is the canonical comparison on cohomology. -/
+@[simp]
 lemma cohomologyOnTopBaseLinearEquiv_apply (n : ℕ) (x : cohomologyOn M n ⊤) :
     cohomologyOnTopBaseLinearEquiv M R n x = (cohomologyOnTopIso M n).hom x :=
   (rfl)
