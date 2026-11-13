@@ -53,7 +53,7 @@ theorem eulerianPolynomial_succ (r : ℕ) :
 @[simp] theorem eulerianPolynomial_two : eulerianPolynomial 2 = 1 + X := by
   simp [eulerianPolynomial_succ]
 
-/-- Evaluation at the pole is a factorial, so the reduced factor cannot cancel the pole. -/
+/-- Evaluating `eulerianPolynomial r` at `1` gives `r!`. -/
 @[simp] theorem eulerianPolynomial_eval_one (r : ℕ) :
     (eulerianPolynomial r).eval 1 = (r.factorial : ℤ) := by
   induction r with
