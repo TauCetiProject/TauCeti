@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -41,6 +42,13 @@ coefficient term plays the role of the perturbation `ε` in the iteration lemma
 inhomogeneity. For `a = 1` and `A = 1` the coefficient term vanishes and the estimate is the one
 behind `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_gradient`.
 
+Keeping the local deviation `θ(x) = ‖a(x) - A‖` in place of its supremum `ε` gives the sharper
+
+`∫_B ‖∇u - ∇w‖² ≤ (2 / λ²) (∫_B θ² ‖∇u‖² + ∫_B ‖G - c‖²)`,
+
+whose coefficient term is small when `θ` is small in mean and `∇u` is slightly more than square
+integrable. This is the comparison step for coefficients of vanishing mean oscillation.
+
 The coefficient oscillation is measured in the operator norm of the attached bilinear forms
 `TauCeti.PDE.matrixBilinearForm`, as in the Lipschitz hypothesis of whole-space `H²` regularity.
 
@@ -52,18 +60,24 @@ to both sides, `u` solves the frozen equation
 
 `-∂ᵢ(Aⁱʲ ∂ⱼu) = -div (G - c + (A - a) ∇u)` on `B`,
 
-whose field is square integrable with norm at most `‖G - c‖_{L²(B)} + ε ‖∇u‖_{L²(B)}`. The
-energy estimate for the replacement relative to the elliptic matrix `A`
-(`TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sub_le`) bounds `λ ‖∇(u - w)‖_{L²(B)}` by
-the norm of that field.
+whose field is square integrable with norm at most `‖G - c‖_{L²(B)} + ‖θ ∇u‖_{L²(B)}`, and
+`‖θ ∇u‖_{L²(B)} ≤ ε ‖∇u‖_{L²(B)}`. The energy estimate for the replacement relative to the
+elliptic matrix `A` (`TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sub_le`) bounds
+`λ ‖∇(u - w)‖_{L²(B)}` by the norm of that field.
 
 ## Main declarations
 
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le`: the comparison estimate
   for a frozen elliptic matrix `A` with `‖a - A‖ ≤ ε` on `B`.
+* `TauCeti.PDE.UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le`: its squared form with the
+  coefficient term weighted by the local deviation `‖a(x) - A‖²`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`: on an
   open set inside a ball `B(x₀, r)`, the replacement frozen at `x₀` exists and its error is
   `O(r^α)` for `α`-Hölder coefficients and data.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le`: the squared
+  form of this estimate on a ball `B(x₀, r)`,
+  `∫_{B_r} ‖∇u - ∇w‖² ≤ 2 (1 + ω) r^{2α} ([a]_α² ∫_{B_r} ‖∇u‖² + [G]_α² r^{n+1}) / λ²`, where `ω`
+  is the volume of the unit ball.
 
 ## References
 
@@ -87,15 +101,11 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure]
 
-/-- **Comparison with the frozen problem.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G`
-weakly on `Ω`, tested against test functions, let `B ⊆ Ω` be open, and let `A` be a constant
-matrix, uniformly elliptic with lower constant `λ`, with `‖a(x) - A‖ ≤ ε` for `x ∈ B` in the
-operator norm of the attached bilinear forms. If `w ∈ H¹(B)` has the boundary values of `u`,
-`u - w ∈ H¹₀(B)`, and solves the frozen problem `-∂ᵢ(Aⁱʲ ∂ⱼw) = 0` weakly on `B`, then for every
-constant `c` with `G - c ∈ L²(B)`
-
-`λ ‖∇(u - w)‖_{L²(B)} ≤ ε ‖∇u‖_{L²(B)} + ‖G - c‖_{L²(B)}`. -/
-theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
+/-- The common step of the frozen comparison estimates. Since constants have zero divergence and
+`-∂ᵢ((A - a)ⁱʲ ∂ⱼu)` may be added to both sides, `u` solves the frozen equation
+`-∂ᵢ(Aⁱʲ ∂ⱼu) = -div (G - c + (A - a) ∇u)` on `B`, so the energy distance between `u` and the
+replacement is at most the sum of the `L²(B)` norms of the two parts of the field. -/
+private theorem UniformlyEllipticOn.exists_memLp_mul_norm_gradient_restrictL_sub_le
     {Omega B : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ} {lam Lam : ℝ}
     (hA : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) (fun _ => A) lam Lam)
     (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
@@ -108,8 +118,9 @@ theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
     {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B))
     {w : W1p mu B 2} (huw : W1p.restrictL hB u - w ∈ w1p0Submodule mu B 2)
     (hw : ∀ v : W1p0 mu B 2, energyFormH1 (fun _ => A) 0 0 w (v : W1p mu B 2) = 0) :
-    lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤
-      ε * ‖W1p.gradient (W1p.restrictL hB u)‖ + ‖hGc.toLp‖ := by
+    ∃ hD : MemLp (fun x => toEuclideanCLM (n := ι) (𝕜 := ℝ) (A - a x)
+        (W1p.gradient (W1p.restrictL hB u) x)) 2 (mu.restrict B),
+      lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤ ‖hGc.toLp‖ + ‖hD.toLp‖ := by
   have hBm := B.isOpen.measurableSet
   -- The coefficients are bounded on `B`, by `‖A‖ + |ε|`.
   have hbd : ∀ x ∈ (B : Set (EuclideanSpace ℝ ι)), ∀ η ξ : EuclideanSpace ℝ ι,
@@ -156,15 +167,117 @@ theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
       Pi.zero_apply, inner_zero_left, zero_mul, add_zero, hx, D, matrixBilinearForm_apply]
     rw [real_inner_comm, inner_toEuclideanCLM, sub_mulVec, dotProduct_sub]
     ring
-  calc lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤ ‖hGc.toLp + hD.toLp‖ :=
-        hA.mul_norm_gradient_sub_le aestronglyMeasurable_const huw hw hF
-    _ ≤ ‖hGc.toLp‖ + ‖hD.toLp‖ := norm_add_le _ _
-    _ ≤ ‖hGc.toLp‖ + ε * ‖W1p.gradient (W1p.restrictL hB u)‖ := by
-        gcongr
-        refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-        filter_upwards [hD.coeFn_toLp, hDbd] with x hx hxbd
-        rwa [hx]
-    _ = ε * ‖W1p.gradient (W1p.restrictL hB u)‖ + ‖hGc.toLp‖ := add_comm _ _
+  exact ⟨hD, (hA.mul_norm_gradient_sub_le aestronglyMeasurable_const huw hw hF).trans
+    (norm_add_le _ _)⟩
+
+/-- **Comparison with the frozen problem.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G`
+weakly on `Ω`, tested against test functions, let `B ⊆ Ω` be open, and let `A` be a constant
+matrix, uniformly elliptic with lower constant `λ`, with `‖a(x) - A‖ ≤ ε` for `x ∈ B` in the
+operator norm of the attached bilinear forms. If `w ∈ H¹(B)` has the boundary values of `u`,
+`u - w ∈ H¹₀(B)`, and solves the frozen problem `-∂ᵢ(Aⁱʲ ∂ⱼw) = 0` weakly on `B`, then for every
+constant `c` with `G - c ∈ L²(B)`
+
+`λ ‖∇(u - w)‖_{L²(B)} ≤ ε ‖∇u‖_{L²(B)} + ‖G - c‖_{L²(B)}`. -/
+theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
+    {Omega B : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ} {lam Lam : ℝ}
+    (hA : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) (fun _ => A) lam Lam)
+    (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : AEStronglyMeasurable a (mu.restrict B)) {ε : ℝ}
+    (haA : ∀ x ∈ (B : Set (EuclideanSpace ℝ ι)),
+      ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ ε)
+    {u : W1p mu Omega 2} {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu)
+    {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B))
+    {w : W1p mu B 2} (huw : W1p.restrictL hB u - w ∈ w1p0Submodule mu B 2)
+    (hw : ∀ v : W1p0 mu B 2, energyFormH1 (fun _ => A) 0 0 w (v : W1p mu B 2) = 0) :
+    lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤
+      ε * ‖W1p.gradient (W1p.restrictL hB u)‖ + ‖hGc.toLp‖ := by
+  obtain ⟨hD, hest⟩ := hA.exists_memLp_mul_norm_gradient_restrictL_sub_le hB ha haA hu hGc huw hw
+  have hDn : ‖hD.toLp‖ ≤ ε * ‖W1p.gradient (W1p.restrictL hB u)‖ := by
+    refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+    filter_upwards [hD.coeFn_toLp, ae_restrict_mem B.isOpen.measurableSet] with x hx hxB
+    rw [hx]
+    refine (norm_toEuclideanCLM_apply_le _ _).trans ?_
+    gcongr
+    rw [matrixBilinearForm_sub]
+    exact (norm_sub_rev (matrixBilinearForm A) (matrixBilinearForm (a x))).trans_le (haA x hxB)
+  linarith
+
+/-- **Comparison with the frozen problem, with a variable coefficient deviation.** Let
+`u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly on `Ω`, tested against test functions, let
+`B ⊆ Ω` be open, and let `A` be a constant matrix, uniformly elliptic with lower constant `λ`, such
+that the deviation `θ(x) = ‖a(x) - A‖`, in the operator norm of the attached bilinear forms, is
+bounded on `B`. If `w ∈ H¹(B)` has the boundary values of `u`, `u - w ∈ H¹₀(B)`, and solves the
+frozen problem `-∂ᵢ(Aⁱʲ ∂ⱼw) = 0` weakly on `B`, then for every constant `c` with `G - c ∈ L²(B)`
+
+`∫_B ‖∇u - ∇w‖² ≤ (2 / λ²) (∫_B θ² ‖∇u‖² + ∫_B ‖G - c‖²)`.
+
+Unlike `UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le`, the coefficient term weighs `‖∇u‖²`
+by the local deviation `θ²` rather than by its supremum, so it is small whenever `θ` is small in
+mean and `∇u` is slightly more than square integrable. This is the form needed for coefficients of
+vanishing mean oscillation. -/
+theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
+    {Omega B : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ} {lam Lam : ℝ}
+    (hA : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) (fun _ => A) lam Lam)
+    (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : AEStronglyMeasurable a (mu.restrict B)) {ε : ℝ}
+    (haA : ∀ x ∈ (B : Set (EuclideanSpace ℝ ι)),
+      ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ ε)
+    {u : W1p mu Omega 2} {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu)
+    {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B))
+    {w : W1p mu B 2} (huw : W1p.restrictL hB u - w ∈ w1p0Submodule mu B 2)
+    (hw : ∀ v : W1p0 mu B 2, energyFormH1 (fun _ => A) 0 0 w (v : W1p mu B 2) = 0) :
+    ∫ x in B, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ∂mu ≤
+      2 / lam ^ 2 * ((∫ x in B, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ^ 2 *
+        ‖W1p.gradient u x‖ ^ 2 ∂mu) + ∫ x in B, ‖G x - c‖ ^ 2 ∂mu) := by
+  have hBm := B.isOpen.measurableSet
+  have hlam : 0 < lam := hA.pos
+  obtain ⟨hD, hest⟩ := hA.exists_memLp_mul_norm_gradient_restrictL_sub_le hB ha haA hu hGc huw hw
+  set θ : EuclideanSpace ℝ ι → ℝ := fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
+  have hgrad := W1p.gradient_restrictL_ae hB u
+  -- The two parts of the field, measured in `L²(B)`.
+  have hG2 : ‖hGc.toLp‖ ^ 2 = ∫ x in B, ‖G x - c‖ ^ 2 ∂mu := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [hGc.coeFn_toLp] with x hx
+    rw [hx]
+  -- Pointwise, `‖(A - a) ∇u‖ ≤ θ ‖∇u‖`, and `θ ≤ ε` on `B`.
+  have hDx : ∀ᵐ x ∂mu.restrict B,
+      ‖(hD.toLp : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x‖ ^ 2 ≤
+        θ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 := by
+    filter_upwards [hD.coeFn_toLp, hgrad] with x hx hxg
+    rw [hx, ← hxg, ← mul_pow]
+    gcongr
+    refine (norm_toEuclideanCLM_apply_le _ _).trans_eq ?_
+    rw [matrixBilinearForm_sub, norm_sub_rev (matrixBilinearForm A)]
+  have hθm : AEStronglyMeasurable
+      (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) (mu.restrict B) := by
+    have h : Continuous fun M : Matrix ι ι ℝ => matrixBilinearForm (M - A) :=
+      continuous_matrixBilinearForm.comp (continuous_sub_right A)
+    simpa only [matrixBilinearForm_sub] using
+      (Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ)
+        h).comp_aestronglyMeasurable ha
+  have hθb : ∀ᵐ x ∂mu.restrict B, ‖θ x ^ 2‖ ≤ ε ^ 2 := by
+    filter_upwards [ae_restrict_mem hBm] with x hxB
+    rw [Real.norm_of_nonneg (sq_nonneg _)]
+    exact pow_le_pow_left₀
+      (norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A)) (haA x hxB) 2
+  have hgradB : MemLp (fun x => (W1p.gradient u x : EuclideanSpace ℝ ι)) 2 (mu.restrict B) :=
+    (Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono hB le_rfl)
+  have hD2 : ‖hD.toLp‖ ^ 2 ≤ ∫ x in B, θ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    exact integral_mono_ae ((Lp.memLp hD.toLp).integrable_norm_pow two_ne_zero)
+      ((hgradB.integrable_norm_pow two_ne_zero).bdd_mul (hθm.pow 2) hθb) hDx
+  -- Square the energy estimate `λ ‖∇(u - w)‖ ≤ ‖G - c‖ + ‖(A - a) ∇u‖`.
+  rw [W1p.setIntegral_norm_gradient_sub_sq_eq hB u w, div_mul_eq_mul_div,
+    le_div_iff₀ (by positivity)]
+  calc _ = (lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖) ^ 2 := by ring
+    _ ≤ (‖hGc.toLp‖ + ‖hD.toLp‖) ^ 2 := pow_le_pow_left₀ (by positivity) hest 2
+    _ ≤ 2 * (‖hGc.toLp‖ ^ 2 + ‖hD.toLp‖ ^ 2) := add_sq_le
+    _ ≤ _ := by linarith
 
 /-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly
 on `Ω ⊆ ℝ^{n+1}`, tested against test functions, let `B ⊆ Ω` be open with `B ⊆ B(x₀, r)`, and let
@@ -226,7 +339,7 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
       (fun _ _ => by simp) (fun _ _ => le_rfl) hBr (by simpa using hA.pos) 0 (W1p.restrictL hB u)
   have hw0 : ∀ v : W1p0 volume B 2,
       energyFormH1 (fun _ => a x₀) 0 0 w (v : W1p volume B 2) = 0 := fun v => by
-    rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
+    rw [hw v, zero_apply]
   have hsub : W1p.restrictL hB u - w ∈ w1p0Submodule volume B 2 := by
     have hwu :=
       (ClosedSubmodule.mem_toSubmodule_iff (w - W1p.restrictL hB u)
@@ -248,6 +361,80 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
         gcongr
     _ = r ^ (α : ℝ) * (Ka * ‖W1p.gradient (W1p.restrictL hB u)‖ +
           KG * √(volume.real (B : Set (EuclideanSpace ℝ (Fin (n + 1)))))) := by ring
+
+/-- Squaring the energy estimate `λ E ≤ t (K_a X + K_G Y)` of a frozen replacement, with
+`X² = Φ` and `Y² = ω V`. -/
+private theorem sq_le_of_mul_le_mul_add_mul {lam t E X Y Ka KG ω V Φ : ℝ} (hlam : 0 < lam)
+    (hE : 0 ≤ E) (hω : 0 ≤ ω) (hV : 0 ≤ V) (hest : lam * E ≤ t * (Ka * X + KG * Y))
+    (hXΦ : X ^ 2 = Φ) (hYV : Y ^ 2 = ω * V) :
+    E ^ 2 ≤ 2 * (1 + ω) * (t ^ 2 * (Ka ^ 2 * Φ + KG ^ 2 * V) / lam ^ 2) := by
+  have h1 : (lam * E) ^ 2 ≤ (t * (Ka * X + KG * Y)) ^ 2 := pow_le_pow_left₀ (by positivity) hest 2
+  have h2 : (t * (Ka * X + KG * Y)) ^ 2 ≤ 2 * t ^ 2 * (Ka ^ 2 * X ^ 2 + KG ^ 2 * Y ^ 2) := by
+    nlinarith [sq_nonneg (Ka * X - KG * Y), sq_nonneg t]
+  have h3 : Ka ^ 2 * X ^ 2 + KG ^ 2 * Y ^ 2 ≤ (1 + ω) * (Ka ^ 2 * Φ + KG ^ 2 * V) := by
+    rw [hXΦ, hYV]
+    have : 0 ≤ Ka ^ 2 * X ^ 2 * ω := by positivity
+    have : 0 ≤ KG ^ 2 * V := by positivity
+    rw [← hXΦ]
+    linarith
+  have h4 := mul_le_mul_of_nonneg_left h3 (by positivity : (0 : ℝ) ≤ 2 * t ^ 2)
+  rw [mul_div_assoc', le_div_iff₀ (by positivity), mul_comm, ← mul_pow]
+  linarith
+
+/-- **The frozen replacement on a ball, squared.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G`
+weakly on `Ω ⊆ ℝ^{n+1}`, let `ball x₀ r ⊆ Ω`, let `a(x₀)` be uniformly elliptic with lower
+constant `λ`, and let `a` and `G` be `α`-Hölder on `ball x₀ r` with constants `K_a` and `K_G`.
+Then there is `w ∈ H¹(B_r)` solving the homogeneous problem `-∂ᵢ(a(x₀)ⁱʲ ∂ⱼw) = 0` frozen at `x₀`
+weakly on `B_r` with
+`∫_{B_r} ‖∇u - ∇w‖² ≤ 2 (1 + ω) r^{2α} (K_a² ∫_{B_r} ‖∇u‖² + K_G² r^{n+1}) / λ²`, where `ω` is the
+volume of the unit ball. The proof takes for `w` the frozen replacement of
+`UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`, which has the
+boundary values of `u`; that boundary condition is not part of the conclusion. -/
+theorem UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le {n : ℕ}
+    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {u : W1p volume Omega 2}
+    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    {s : Set (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {r : ℝ}
+    {α Ka KG : ℝ≥0} {lam Lam : ℝ} (h : UniformlyEllipticOn s a lam Lam) (hx₀ : x₀ ∈ s)
+    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ r))
+    (hGK : HolderOnWith KG α G (ball x₀ r))
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    (hball : ball x₀ r ⊆ Omega) (hr : 0 < r) :
+    ∃ w : W1p volume (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
+      (∀ v : W1p0 volume (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
+        energyFormH1 (fun _ => a x₀) 0 0 w (v : W1p volume _ 2) = 0) ∧
+      ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ≤
+        2 * (1 + volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) *
+          (r ^ (2 * (α : ℝ)) * ((Ka : ℝ) ^ 2 * (∫ x in ball x₀ r, ‖W1p.gradient u x‖ ^ 2) +
+            (KG : ℝ) ^ 2 * r ^ ((n : ℝ) + 1)) / lam ^ 2) := by
+  set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
+  have hω : 0 ≤ ω := measureReal_nonneg
+  have hB : (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) ≤ Omega := hball
+  obtain ⟨w, -, hw0, hest⟩ := h.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le hx₀ hα
+    haK hGK hB subset_rfl hu
+  refine ⟨w, hw0, ?_⟩
+  have hE := W1p.setIntegral_norm_gradient_sub_sq_eq hB u w
+  simp only [Opens.coe_mk] at hE
+  rw [hE]
+  -- The squared norm of the gradient of `u|_{B_r}` is the `L²(B_r)` mass of `∇u`.
+  have hX : ‖W1p.gradient (W1p.restrictL hB u)‖ ^ 2 = ∫ x in ball x₀ r, ‖W1p.gradient u x‖ ^ 2 := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.gradient_restrictL_ae hB u] with x hx
+    rw [hx]
+  simp only [Opens.coe_mk] at hest
+  have hY : √(volume.real (ball x₀ r)) ^ 2 = ω * r ^ ((n : ℝ) + 1) := by
+    rw [Real.sq_sqrt measureReal_nonneg]
+    rw [(volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).addHaar_real_ball_of_pos x₀ hr,
+      finrank_euclideanSpace_fin, mul_comm, ← Real.rpow_natCast]
+    push_cast
+    rfl
+  have hr2 : (r ^ (α : ℝ)) ^ 2 = r ^ (2 * (α : ℝ)) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hr.le]
+    ring_nf
+  rw [← hr2]
+  exact sq_le_of_mul_le_mul_add_mul h.pos (norm_nonneg _) hω (by positivity) hest hX hY
 
 end PDE
 

@@ -11,9 +11,9 @@ public import TauCeti.Analysis.Semigroups.Resolvent.Identity
 public import TauCeti.Topology.ContinuousMap.Bounded.Real
 
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Basic
-import TauCeti.Geometry.Lie.Adjoint.OperatorExponential
+import TauCeti.Analysis.Normed.Operator.Mul
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The multiplication semigroup on bounded continuous functions
@@ -76,7 +76,7 @@ theorem StronglyContinuousSemigroup.ofMultiplication_apply (m : α →ᵇ ℝ) (
       ContinuousLinearMap.mul ℝ (α →ᵇ ℝ)
         (m.expNegMul (t : ℝ)) := by
   rw [ofMultiplication, ofBounded_apply, BoundedContinuousFunction.expNegMul_def, ← map_smul,
-    TauCeti.Lie.exp_mulLeft]
+    TauCeti.exp_mulLeft]
 
 /-- The multiplication semigroup at time `t` acts on `f` by multiplication with `e^{-t·m}`. -/
 theorem StronglyContinuousSemigroup.ofMultiplication_apply_apply (m : α →ᵇ ℝ) (t : ℝ≥0)

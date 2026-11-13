@@ -45,7 +45,8 @@ sheaf cohomology and canonical invariants of `X_F` with their function-field cou
   Cl(F)`) to `TauCeti.canonicalClass` and has Euler-characteristic degree `2g - 2`, `g` global
   sections, and one-dimensional `H¹`. When `Ω_{X_F/k}` is invertible — in particular whenever
   `X_F` is smooth over `k` (`twoChartModel.smoothOfRelativeDimension_one`,
-  `twoChartModel.isInvertible_relativeDifferentials`) — `[Ω_{X_F/k}]` also
+  `twoChartModel.isInvertible_relativeDifferentials`), as it always is over a perfect field
+  (`twoChartModel.smoothOfRelativeDimension_one_of_perfectField`) — `[Ω_{X_F/k}]` also
   maps to `TauCeti.canonicalClass` and satisfies `deg Ω_{X_F/k} = 2g - 2`,
   `dim_k H⁰(X_F, Ω_{X_F/k}) = g`, and `dim_k H¹(X_F, Ω_{X_F/k}) = 1`.
 
@@ -393,13 +394,13 @@ theorem finrank_cohomology_one_sheaf_eq_dim_sub (hxt : Transcendental k x)
       Divisor.dim (W - equivDivisor hxt D) := by
   let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
   let _ := isNoetherian (hF := hF) (hx := hx) hxt
-  obtain ⟨ω, -, hω, hgreat⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hW
+  obtain ⟨ω, -, -, hgreat⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hW
   have := SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField
     (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
     (isFunctionField_functionField hxt) D
   rw [← Subspace.dual_finrank_eq,
     (cohomologyOneDualEquivWeilDifferentialFiltration hxt D).finrank_eq,
-    ← dim_sub_eq_finrank_weilDifferentialFiltration hF hk hω hgreat]
+    ← dim_sub_eq_finrank_weilDifferentialFiltration hF hk hgreat]
 
 /-- **Serre duality on `X_F`, in dimensions**: for every divisor `K` on `X_F` whose image in `F`
 represents `canonicalClass hF hk`, `dim_k H¹(X_F, 𝒪(D)) = dim_k H⁰(X_F, 𝒪(K - D))`. -/
@@ -453,7 +454,7 @@ the Weil divisor on `X_F` corresponding to `(ω)`. For every Weil divisor `D` on
 with underlying function `f ∈ F` pairs with the class of `a ∈ A_F` to `ω(f · a)`
 (`twoChartModel.cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne`). -/
 noncomputable def cohomologyOneDualEquivCohomologyZero (hxt : Transcendental k x)
-    (hk : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0)
+    (hk : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     {K : SchemeWeilDivisor (twoChartModel hF hx)}
     (hK : IsGreatest {E : Divisor k F | ω ∈ weilDifferentialFiltration E} (equivDivisor hxt K))
     (D : SchemeWeilDivisor (twoChartModel hF hx)) :
@@ -466,8 +467,6 @@ noncomputable def cohomologyOneDualEquivCohomologyZero (hxt : Transcendental k x
   SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero (valuativeCriterion_existence hF hx)
     (coheight_le_one hxt) (isFunctionField_functionField hxt)
     (isIntegrallyClosedIn_functionField hxt hk)
-    ((map_ne_zero_iff (repartitionDualFunctionFieldEquiv hxt).symm
-      (repartitionDualFunctionFieldEquiv hxt).symm.injective).mpr hω)
     ((isGreatest_weilDifferentialFiltration_repartitionDualEquivOfRingEquiv_iff
       (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
       (id (functionFieldEquiv hxt).commutes)
@@ -481,7 +480,7 @@ with the cohomology class of a repartition `a ∈ A_F` to `ω(f · a)`, where `f
 attached to `s` by `cohomologyZeroEquivRiemannRochSpace`. -/
 theorem cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne
     (hxt : Transcendental k x) (hk : IsIntegrallyClosedIn k F)
-    {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0)
+    {ω : Module.Dual k ↥(repartitionSpace k F)}
     {K : SchemeWeilDivisor (twoChartModel hF hx)}
     (hK : IsGreatest {E : Divisor k F | ω ∈ weilDifferentialFiltration E} (equivDivisor hxt K))
     (D : SchemeWeilDivisor (twoChartModel hF hx)) :
@@ -489,7 +488,7 @@ theorem cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyO
     haveI := isNoetherian (hF := hF) (hx := hx) hxt
     ∀ (s : Scheme.Modules.Cohomology (SchemeWeilDivisor.sheaf (K - D)) 0)
       (a : ↥(repartitionSpace k F)),
-      (cohomologyOneDualEquivCohomologyZero hxt hk hω hK D).symm s
+      (cohomologyOneDualEquivCohomologyZero hxt hk hK D).symm s
           (repartitionToCohomologyOne hxt D a) =
         ω (repartitionMul hF (cohomologyZeroEquivRiemannRochSpace hxt (K - D) s : F) a) := by
   let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt

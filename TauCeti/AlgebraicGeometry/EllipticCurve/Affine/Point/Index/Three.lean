@@ -13,7 +13,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 -- Proof-only: the coordinates of a solution in `(ϖ)` on the normal form at `IV*`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: lifting roots of a quadratic with unit discriminant.
-import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
+import TauCeti.RingTheory.Henselian.Basic
 -- Proof-only: divisibility and the derivative of a quadratic.
 import TauCeti.Algebra.QuadraticDiscriminant
 -- Proof-only: index three from a covering by three cosets.
@@ -178,7 +178,7 @@ private theorem two_nsmul_notMem_of_isTateTerminal_IVStar {ϖ : v.valuationSubri
     {hxy : W.Nonsingular x y} (hP : Point.some _ _ hxy ∉ W.nonsingularReduction v) :
     2 • Point.some _ _ hxy ∉ W.nonsingularReduction v := by
   obtain ⟨⟨A₁, hA₁⟩, ⟨A₂, hA₂⟩, ⟨A₃, h₃⟩, ⟨A₄, hA₄⟩, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
-  obtain ⟨-, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar v hϖ h
+  obtain ⟨-, m₃, _, _⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar v hϖ h
   obtain ⟨hp, hb⟩ := IsTateTerminal.prime_and_not_dvd_of_IVStar
     (hϖ ▸ (maximalIdeal.isMaximal _).isPrime) h h₃ h₆
   obtain ⟨X, Y, rfl, rfl, hY⟩ :=
@@ -195,7 +195,7 @@ private theorem two_nsmul_notMem_of_isTateTerminal_IVStar {ϖ : v.valuationSubri
     ring
   -- the slope is `ϖ N / D`, where the numerator `3 x² + 2 a₂ x + a₄ − a₁ y` is `ϖ³ N`
   refine two_nsmul_notMem_of_slope_mem v
-    ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * A₂, by rw [hA₂]; ring⟩) m₃ m₄ m₆
+    ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * A₂, by rw [hA₂]; ring⟩) m₃
     ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * X, by ring⟩)
     ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * Y, by ring⟩)
     (ℓ := ϖ * ((3 * ϖ * X ^ 2 + 2 * ϖ * A₂ * X + A₄ - A₁ * Y) * ↑hDu.unit⁻¹))
@@ -292,9 +292,11 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IVStar
   -- lift the root of the residue quadratic by Hensel's lemma
   obtain ⟨t, ht⟩ := hroot
   obtain ⟨t₀, rfl⟩ := residue_surjective t
-  obtain ⟨Y, hY, -, hu⟩ := TauCeti.HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant
-    ((TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).2 hb)
-    ((residue_eq_zero_iff _).1 (by simpa using ht))
+  obtain ⟨Y, hY₀, -, hu⟩ := TauCeti.HenselianRing.exists_quadratic_root_of_isUnit_discrim
+    (I := maximalIdeal v.valuationSubring) (b := A₃) (c := -A₆)
+    (by simpa using (TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).2 hb)
+    ((residue_eq_zero_iff _).1 (by simpa [sub_eq_add_neg] using ht))
+  have hY : Y ^ 2 + A₃ * Y - A₆ = 0 := by linear_combination hY₀
   have hY' : ¬ ϖ ∣ 2 * Y + A₃ := (TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).1 hu
   have hns : (integralModel v.valuationSubring W).toAffine.Nonsingular 0 (ϖ ^ 2 * Y) := by
     rw [nonsingular_iff']

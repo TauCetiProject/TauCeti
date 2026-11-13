@@ -260,7 +260,6 @@ private theorem fromTower_comp_toTower : (fromTower q).comp (toTower q) = AlgHom
   hom_ext (by simp [fromTower, toTower, towerTuple])
     (by simp [fromTower, toTower, towerTuple, fromLowerBorel])
     (by simp [fromTower, toTower, towerTuple, fromLowerBorel])
-    (by simp [fromTower, toTower, towerTuple, fromLowerBorel])
 
 private theorem toTower_comp_fromLowerBorel :
     (toTower q).comp (fromLowerBorel q) = OreExtension.CAlgHom := by

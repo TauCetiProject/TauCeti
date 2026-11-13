@@ -168,7 +168,7 @@ private theorem terminal_pair_hexagon {x y z : GridState n}
     dsimp only [D]
     rw [P.right_eq]
     exact hcol
-  obtain ⟨hfr, hsl, hfb, hft, hsb, hst⟩ :=
+  obtain ⟨_, _, _, _, hsb, hst⟩ :=
     D.recut_geometry_of_right_eq_right_of_mem_cIoo hcommon hcol' hp hq
   have hsb' : E.second.bottom = Q.bottom := hsb
   have hst' : E.second.top = P.top := hst
@@ -528,7 +528,7 @@ theorem recutTerminalPentagonPair_mem_unpairedHexagonComposites {x y z : GridSta
     simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr] at hF
     exact G.terminal_pair_ne_composite C P Q hrow htop F
       ((T.toRectangleDecomposition.existsUnique_isRecut hTone
-        hrecut.isEmpty_first hrecut.isEmpty_second).unique hF (hrecut.symm hone hp hq))
+        hrecut.isEmpty_first hrecut.isEmpty_second).unique hF (hrecut.symm hp hq))
 
 /-! ### The complementary branch -/
 
@@ -620,12 +620,10 @@ private theorem recutTerminalPentagonPairHexagonRectangle_rectangle_not_column
       (G.recutTerminalPentagonPairHexagonRectangle C P Q hcol hp hq).rectangle.right = Q.left :=
     hright
   have hcolumn := ((GridRectangle.mem_coveredSquares _ _).mp hmem).1
-  simp only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, hleft', hright'] at hcolumn
+  rw [GridRectangleBetween.mem_coveredColumns, hleft', hright'] at hcolumn
   intro h
   rw [h] at hcolumn
-  exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol) hcolumn
-    (Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol))
+  exact (Grid.notMem_cIco_of_mem_cIoo_finRotate hcol).1 hcolumn
 
 /-- The recut of a counted terminal-side pentagon pair is a counted hexagon--rectangle
 composite for this order of the initial columns. -/
@@ -726,7 +724,7 @@ theorem recutTerminalPentagonPairHexagonRectangle_mem_unpairedHexagonComposites
     simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl] at hF
     exact G.terminal_pair_ne_composite C P Q hrow htop F
       ((T.toRectangleDecomposition.existsUnique_isRecut hTone
-        hrecut.isEmpty_first hrecut.isEmpty_second).unique hF (hrecut.symm hone hp hq))
+        hrecut.isEmpty_first hrecut.isEmpty_second).unique hF (hrecut.symm hp hq))
 
 /-! ### The matching -/
 

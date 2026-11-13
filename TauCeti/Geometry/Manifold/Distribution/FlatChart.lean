@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
+public import TauCeti.Geometry.Manifold.Distribution.Horizontal
 public import TauCeti.Geometry.Manifold.Distribution.Transverse
 public import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.LinearAlgebra.Projection.ProdEquiv
 
 /-!
@@ -40,10 +42,15 @@ transverse to the vertical factor at the base point, so
 ## Main results
 
 * `TauCeti.IsInvolutiveDistribution.exists_flatChart`: the local Frobenius theorem.
+* `TauCeti.IsInvolutiveDistribution.exists_flatChart_extend`: flat extended coordinates with
+  open source and injective differential.
+* `TauCeti.IsInvolutiveDistribution.exists_flatChart_eventually_sub_mem`: a horizontal
+  differentiable map stays locally in a single affine slice of a Frobenius chart.
 
 ## References
 
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Theorem 19.12.
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
+  Theorem 19.12 and Proposition 19.16 (local containment in a slice).
 * S. Lang, *Fundamentals of Differential Geometry*, Springer GTM 191 (1999), Chapter VI, §1.
 -/
 
@@ -165,7 +172,7 @@ private theorem exists_flat_coordinates {F₁ F₂ : Type u} [NormedAddCommGroup
       _ ≤ (m : ℕ∞ω) + 1 + 1 := by gcongr; simp
   have h2n' : minSmoothness ℝ 2 ≤ n := by rwa [minSmoothness_of_isRCLikeNormedField]
   have : IsManifold I (minSmoothness ℝ 2) M := .of_le h2n'
-  have : CompleteSpace (F₁ × F₂) := FiniteDimensional.complete ℝ _
+  have : CompleteSpace (F₁ × F₂) := FiniteDimensional.completeSpace ℝ _
   let Φ := Ψ.symm
   -- The distribution read in the coordinates of `Ψ`.
   let DP : F₁ × F₂ → Submodule ℝ (F₁ × F₂) := fun q ↦
@@ -199,7 +206,7 @@ theorem IsInvolutiveDistribution.exists_flatChart [FiniteDimensional ℝ E] [IsM
     ∃ (e : OpenPartialHomeomorph M H) (W : Submodule ℝ E),
       e ∈ IsManifold.maximalAtlas I m M ∧ x ∈ e.source ∧ finrank ℝ W = k ∧
         ∀ y ∈ e.source, (D y).map (mfderiv I 𝓘(ℝ, E) (I ∘ e) y).toLinearMap = W := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   obtain ⟨m', rfl⟩ : ∃ m' : ℕ∞, m = m' + 1 := ⟨m - 1, (tsub_add_cancel_of_le hm).symm⟩
   have hcast : ((m' + 1 : ℕ∞) : ℕ∞ω) = (m' : ℕ∞ω) + 1 := by norm_cast
   rw [hcast] at hmn hD ⊢
@@ -250,5 +257,70 @@ theorem IsInvolutiveDistribution.exists_flatChart [FiniteDimensional ℝ E] [IsM
   rw [hderiv]
   exact (Submodule.map_comp _ _ (D y)).trans ((congrArg _ (Submodule.map_comp _ _ (D y))).trans
     ((congrArg _ hL).trans (Submodule.map_ker_snd_prodEquivOfIsCompl W T hT)))
+
+
+/-- An involutive `C^m` distribution admits extended flat coordinates near each interior point,
+for `1 ≤ m` and ambient regularity `n ≥ m + 1`. The coordinate source is open, its differential
+is injective there, and it carries the distribution onto a fixed rank-`k` subspace. -/
+theorem IsInvolutiveDistribution.exists_flatChart_extend [FiniteDimensional ℝ E]
+    [IsManifold I 1 M] {m : ℕ∞} (hm : 1 ≤ m) {n : ℕ∞ω}
+    (hmn : (m : ℕ∞ω) + 1 ≤ n) [IsManifold I n M]
+    {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
+    (hinv : IsInvolutiveDistribution I D) (hD : IsContMDiffDistribution I m k D)
+    {x : M} (hx : I.IsInteriorPoint x) :
+    ∃ (Φ : PartialEquiv M E) (W : Submodule ℝ E),
+      IsOpen Φ.source ∧ x ∈ Φ.source ∧ finrank ℝ W = k ∧
+        ContMDiffOn I 𝓘(ℝ, E) m Φ Φ.source ∧
+        (∀ z ∈ Φ.source, (D z).map (mfderiv I 𝓘(ℝ, E) Φ z).toLinearMap = W) ∧
+        ∀ z ∈ Φ.source, Function.Injective (mfderiv I 𝓘(ℝ, E) Φ z) := by
+  let _ : IsManifold I (m : ℕ∞ω) M := .of_le (le_self_add.trans hmn)
+  obtain ⟨e, W, he, hxe, hdim, hflat⟩ := hinv.exists_flatChart hm hmn hD hx
+  let Φ := e.extend I
+  refine ⟨Φ, W, e.isOpen_extend_source, ?_, hdim, ?_, ?_, ?_⟩
+  · simpa only [Φ, e.extend_source] using hxe
+  · simpa only [Φ, e.extend_coe, e.extend_source] using e.contMDiffOn_extend he
+  · intro z hz
+    rw [show (Φ : M → E) = I ∘ e from e.extend_coe]
+    exact hflat z (by simpa only [Φ, e.extend_source] using hz)
+  · intro z hz
+    exact (isInvertible_mfderiv_extend
+      (IsManifold.maximalAtlas_subset_of_le
+        (show (1 : ℕ∞ω) ≤ m from by exact_mod_cast hm) he)
+      (by simpa only [Φ, e.extend_source] using hz)).injective
+
+section Horizontal
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+  {D : ∀ z : M, Submodule ℝ (TangentSpace I z)} {f : N → M}
+
+/-- A Frobenius chart near an interior image point of a horizontal differentiable map puts
+that map locally in the affine slice parallel to the flattened distribution. -/
+theorem IsInvolutiveDistribution.exists_flatChart_eventually_sub_mem [FiniteDimensional ℝ E]
+    [IsManifold I 1 M] {m : ℕ∞} (hm : 1 ≤ m) {n : ℕ∞ω}
+    (hmn : (m : ℕ∞ω) + 1 ≤ n) [IsManifold I n M]
+    (hinv : IsInvolutiveDistribution I D) {k : ℕ} (hD : IsContMDiffDistribution I m k D)
+    (hf : IsHorizontalMap J D f) {s : Set N} (hfd : MDifferentiableOn J I f s)
+    (hs : IsOpen s) {x : N} (hxs : x ∈ s) (hx : I.IsInteriorPoint (f x)) :
+    ∃ (e : OpenPartialHomeomorph M H) (W : Submodule ℝ E),
+      e ∈ IsManifold.maximalAtlas I m M ∧ f x ∈ e.source ∧ Module.finrank ℝ W = k ∧
+        (∀ z ∈ e.source, (D z).map (mfderiv I 𝓘(ℝ, E) (I ∘ e) z).toLinearMap = W) ∧
+        ∀ᶠ y in 𝓝 x, f y ∈ e.source ∧ (I ∘ e) (f y) - (I ∘ e) (f x) ∈ W := by
+  obtain ⟨e, W, he, hxsrc, hdim, hflat⟩ := hinv.exists_flatChart hm hmn hD hx
+  refine ⟨e, W, he, hxsrc, hdim, hflat, ?_⟩
+  have hm0 : (m : ℕ∞ω) ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one (by exact_mod_cast hm))
+  have hDp (z : M) (hz : z ∈ e.source) :
+      (D z).map (mvfderiv I (I ∘ e) z).toLinearMap ≤ W := by
+    rw [(D z).map_mvfderiv_eq_map_mfderiv (I := I) (x := z) (I ∘ e)]
+    exact (hflat z hz).le
+  have hconst := hf.eventually_sub_mem hfd hs
+    ((e.contMDiffOn_extend he).mdifferentiableOn hm0) e.open_source W.isClosed_of_finiteDimensional
+    hDp hxs hxsrc
+  have hfc : ContinuousAt f x := hfd.continuousOn.continuousAt (hs.mem_nhds hxs)
+  filter_upwards [hconst, hfc (e.open_source.mem_nhds hxsrc)] with y hy hys
+  exact ⟨hys, hy⟩
+
+end Horizontal
 
 end TauCeti

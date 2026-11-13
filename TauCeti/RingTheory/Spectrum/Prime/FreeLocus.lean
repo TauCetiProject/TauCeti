@@ -58,6 +58,10 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
   most `n` is a direct factor of a module of constant rank `n`.
 * `Module.finrank_quotient_tensorProduct_eq_rankAtStalk`: the rank of a finite flat module at a
   maximal ideal `P` is the dimension of its reduction modulo `P`.
+* `TauCeti.Module.finrank_eq_of_rankAtStalk_eq`: a free module of constant rank `n` over a
+  nontrivial ring has `Module.finrank` equal to `n`.
+* `TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq`: a finite flat module of constant rank
+  `n` whose base change to a nontrivial ring is free has a base change of `Module.finrank` `n`.
 * `TauCeti.Module.exists_rankAtStalk_tensorProduct_eq`: a finite flat module whose rank is
   constant on the primes under a base change acquires constant rank after that base change.
 
@@ -111,7 +115,8 @@ theorem iInter_freeLocus_subquotient_subset_freeLocus (N : ℕ → Submodule R M
   let L : ℕ → Submodule Rp (LocalizedModule S M) := fun j ↦ (N j).localized S
   have hL : Monotone L := fun _ _ hij ↦
     (Submodule.localized'gi Rp S (LocalizedModule.mkLinearMap S M)).gc.monotone_l (hN hij)
-  refine Module.Free.of_filtration L hL (by simp [L, h0])
+  have hL0 : L 0 = ⊥ := by simp [L, h0]
+  refine Module.Free.of_filtration L hL (by rw [hL0]; infer_instance)
     (by simp only [L]; rw [← Submodule.localized'_iSup, htop, Submodule.localized'_top])
     fun j ↦ ?_
   -- Localize the subquotient through the localization of `N (j + 1)`.
@@ -278,6 +283,23 @@ theorem exists_rankAtStalk_tensorProduct_eq {R T' M : Type*} [CommRing R] [CommR
       rw [rankAtStalk_baseChange, Pi.natCast_apply, h q₀ q, Nat.cast_id]⟩
   · exact ⟨0, funext fun q ↦ (hne ⟨q⟩).elim⟩
 
+/-- A free module of constant rank `n` over a nontrivial ring has `Module.finrank` equal to `n`. -/
+theorem finrank_eq_of_rankAtStalk_eq {R M : Type*} [CommRing R] [Nontrivial R] [AddCommGroup M]
+    [Module R M] [Module.Free R M] {n : ℕ} (h : rankAtStalk (R := R) M = n) :
+    Module.finrank R M = n := by
+  obtain ⟨p⟩ : Nonempty (PrimeSpectrum R) := inferInstance
+  simpa [rankAtStalk_eq_finrank_of_free] using congrFun h p
+
+open scoped TensorProduct in
+/-- If a finite flat module `M` has constant rank `n` and its base change to a nontrivial ring `T`
+is free, then that base change has `Module.finrank` equal to `n`. -/
+theorem finrank_tensorProduct_eq_of_rankAtStalk_eq {R T M : Type*} [CommRing R] [CommRing T]
+    [Algebra R T] [Nontrivial T] [AddCommGroup M] [Module R M] [Module.Flat R M]
+    [Module.Finite R M] [Module.Free T (T ⊗[R] M)] {n : ℕ} (h : rankAtStalk (R := R) M = n) :
+    Module.finrank T (T ⊗[R] M) = n :=
+  finrank_eq_of_rankAtStalk_eq <| funext fun p ↦ by
+    rw [rankAtStalk_baseChange, h, Pi.natCast_apply, Pi.natCast_apply]
+
 end TauCeti.Module
 
 namespace PrimeSpectrum
@@ -321,3 +343,29 @@ theorem flat_localization_of_comap_mem_freeLocus (q : PrimeSpectrum S)
   exact Flat.trans R B _
 
 end PrimeSpectrum
+
+namespace Ideal
+
+/-- A finitely presented flat module over a ring with preconnected spectrum vanishes if its fibre
+at one prime ideal vanishes, since its rank is locally constant. -/
+theorem subsingleton_of_subsingleton_fiber {R M : Type*} [CommRing R]
+    [PreconnectedSpace (PrimeSpectrum R)] [AddCommGroup M] [Module R M]
+    [Module.FinitePresentation R M] [Module.Flat R M] (p : Ideal R) [p.IsPrime]
+    (h : Subsingleton (p.Fiber M)) : Subsingleton M := by
+  have hrank_identity : Module.rankAtStalk (R := R) M
+      ⟨p, inferInstance⟩ = 0 := by
+    rw [Module.rankAtStalk_eq]
+    exact Module.finrank_zero_of_subsingleton
+  have hrank : Module.rankAtStalk (R := R) M = 0 := by
+    apply funext
+    intro q
+    simp only [Pi.zero_apply]
+    calc
+      Module.rankAtStalk M q =
+          Module.rankAtStalk M ⟨p, inferInstance⟩ :=
+        IsLocallyConstant.apply_eq_of_preconnectedSpace
+          (Module.isLocallyConstant_rankAtStalk (R := R) (M := M)) _ _
+      _ = 0 := hrank_identity
+  exact (Module.rankAtStalk_eq_zero_iff_subsingleton (R := R) (M := M)).mp hrank
+
+end Ideal

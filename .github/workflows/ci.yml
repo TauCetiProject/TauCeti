@@ -33,7 +33,9 @@ env:
 jobs:
   # Infrastructure regression suites run separately in infrastructure-tests.yml.
   build:
-    runs-on: ubuntu-latest
+    # Publish fresh dot-notation context before library execution. GitHub's hosted
+    # pool can queue this serialized publisher behind hours of ordinary PR work.
+    runs-on: ubuntu-24.04
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
     # Neither output reveals the secret's value or whether it is set, and neither is trusted
     # there: `staged` only decides whether that job runs at all, and `reported-toolchain` is
@@ -68,10 +70,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+          tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
@@ -114,8 +116,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
@@ -153,6 +158,22 @@ jobs:
         with:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-path }}
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
+
+      # Main checks from fresh parsing; only PRs consume cached parsing context.
+      # Generate and publish before any candidate Lean code executes. Bump the v1 key
+      # in both workflows to abandon a bad cache snapshot.
+      - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
+        run: |
+          rm -rf .ci-dot-notation-context
+          python3 scripts/lint-dot-notation.py --context-cache ".ci-dot-notation-context/context.json"
+
+      - name: Save main's dot-notation parsing context
+        if: github.ref_name == github.event.repository.default_branch
+        continue-on-error: true
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .ci-dot-notation-context
+          key: dot-notation-context-v1-${{ hashFiles('scripts/lean_source.py') }}-${{ github.sha }}
 
       # --- Lake artifact-cache restore (dormant until configured) --------------------
       # Restore TauCeti's OWN oleans before building, exactly as pr-build.yml does. Without
@@ -203,28 +224,25 @@ jobs:
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
         run: bash scripts/lake-cache-get.sh .
 
-      - name: Save verified Lake archive records before building
-        run: python3 scripts/lake_cache_reuse.py snapshot . "$RUNNER_TEMP/lake-cache-reuse.json"
-
       - name: Audit import headers against the complete source inventory
         run: python3 scripts/check-imports.py
 
       # Temporary workaround; remove after adopting lean4#15868.
-      - name: Restore cached module archives
-        env:
-          LAKE_NO_CACHE: "true"
-        run: python3 scripts/bulk-unpack-cache.py
-
-      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
-      # The build globs every TauCeti/ module directly, so nothing depends on a root that
-      # re-exports the library.
       - name: Build
         env:
           # Restore only from the locally-populated $LAKE_CACHE_DIR the earlier fetch step filled;
           # never let the build itself reach a remote cache service. Same rule as the
           # sandboxed build in pr-build.yml and as the publish step below.
           LAKE_NO_CACHE: "true"
-        run: lake build
+          S3_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT }}
+          S3_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT }}
+        run: |
+          lake_build_flags=()
+          if [ -n "$S3_ARTIFACT_ENDPOINT" ] && [ -n "$S3_REVISION_ENDPOINT" ]; then
+            export LAKE_ARTIFACT_CACHE=true LAKE_RESTORE_ARTIFACTS=true
+            lake_build_flags+=(--rehash -o .lake/outputs.jsonl)
+          fi
+          lake build "${lake_build_flags[@]}"
 
       # The same shared checks as trusted PR builds, compiled from merged main's sources.
       - name: Shared ownership and axiom audits
@@ -267,9 +285,6 @@ jobs:
         env:
           LAKE_NO_CACHE: "true"
         run: bash scripts/lint-env.sh
-
-      - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
-        run: python3 scripts/lint-dot-notation.py
 
       # Source style lint. The wrapper validates one complete TauCeti/** source list, applies
       # Mathlib's copyright/Authors checks directly (the empty TauCeti.lean root is exempt), and
@@ -351,20 +366,9 @@ jobs:
           LAKE_NO_CACHE: "true"
           LAKE_CACHE_DIR: ${{ github.workspace }}/.lake/cache
           PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
-          LAKE_CACHE_FULL_PUBLICATION: ${{ vars.LAKE_CACHE_FULL_PUBLICATION }}
         run: |
-          # Pack the already-built oleans into the local Lake cache (no recompile, since the
-          # health-check build above left matching traces), emit the root-package
-          # input->output mappings. The key-free planner keeps the FULL map and stages
-          # new archives plus availability-check misses, reusing only matching downloaded
-          # records saved before the build. The isolated publisher SHA-256 checks inherited bytes.
-          lake build >/dev/null
-          python3 scripts/lake_cache_reuse.py reconnect . "$RUNNER_TEMP/lake-cache-reuse.json"
-          # Hash the linked archives themselves, ignoring any old .ltar.hash sidecars.
-          lake build --no-build --rehash -o .lake/outputs.jsonl
-          echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
-          python3 scripts/lake_cache_publish.py stage . "$RUNNER_TEMP/lake-cache-staging" \
-            --index "$RUNNER_TEMP/lake-cache-reuse.json"
+          lake cache stage .lake/outputs.jsonl .lake/publication-stage
+          python3 scripts/lake_cache_publish.py stage .lake/publication-stage "$RUNNER_TEMP/lake-cache-staging"
           # The isolated publisher never configures the workspace, so it cannot derive
           # the toolchain and platform halves of the upload scope. It supplies them from the sparse pin
           # instead, which is right only while the package config keeps the two assumptions

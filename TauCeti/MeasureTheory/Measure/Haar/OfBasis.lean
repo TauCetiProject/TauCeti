@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The additive Haar measure of the standard basis
@@ -19,6 +20,10 @@ by the inverse absolute determinant.
 ## Main results
 
 * `Module.Basis.addHaar_basisFun` — the additive Haar measure of `Pi.basisFun ℝ ι` is `volume`.
+* `Module.Basis.addHaar_singleton`, `Module.Basis.addHaar_finTwoProd` — the additive Haar measures
+  of the standard bases of `ℝ` and `ℝ × ℝ` are `volume`.
+* `Module.Basis.addHaar_eq_dirac` — the additive Haar measure of a basis indexed by an empty type
+  is the Dirac mass at `0`.
 -/
 
 public section
@@ -33,28 +38,50 @@ theorem addHaar_basisFun (ι : Type*) [Fintype ι] :
     (Pi.basisFun ℝ ι).addHaar = (volume : Measure (ι → ℝ)) := by
   rw [addHaar_def, parallelepiped_basisFun, addHaarMeasure_eq_volume_pi]
 
-/-- The normalized Haar measure of a basis indexed by an empty type has total mass one. -/
+/-- The additive Haar measure attached to the standard basis of `ℝ`, indexed by any type with
+exactly one element, is Lebesgue measure.
+
+The `Fintype ι` instance is a separate argument, rather than the one derived from `Unique ι`, so
+that the lemma rewrites `addHaar` whatever finiteness instance it carries (e.g. `Fin.fintype 1`). -/
 @[simp]
-theorem addHaar_univ_of_isEmpty {V ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+theorem addHaar_singleton {ι : Type*} [Fintype ι] [Unique ι] :
+    (Basis.singleton ι ℝ).addHaar = volume := by
+  -- `addHaar` depends on the `Fintype` instance only up to `Subsingleton (Fintype ι)`.
+  obtain rfl : ‹Fintype ι› = Unique.fintype := Subsingleton.elim _ _
+  rw [← OrthonormalBasis.toBasis_singleton]
+  exact OrthonormalBasis.addHaar_eq_volume _
+
+/-- The additive Haar measure attached to the standard basis `((1, 0), (0, 1))` of `ℝ × ℝ` is
+Lebesgue measure. -/
+theorem addHaar_finTwoProd : (Basis.finTwoProd ℝ).addHaar = volume := by
+  have h : ((Basis.singleton (Fin 1) ℝ).prod (Basis.singleton (Fin 1) ℝ)).reindex
+      finSumFinEquiv = Basis.finTwoProd ℝ :=
+    Basis.eq_of_apply_eq (Fin.forall_fin_two.2 ⟨rfl, rfl⟩)
+  rw [← h, addHaar_reindex, prod_addHaar, addHaar_singleton, Measure.volume_eq_prod]
+
+/-- The normalized Haar measure of a basis indexed by an empty type is the Dirac mass at the
+origin of the (zero) space. -/
+@[simp]
+theorem addHaar_eq_dirac {V ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] [Fintype ι] [IsEmpty ι]
-    (b : Basis ι ℝ V) : b.addHaar Set.univ = 1 := by
+    (b : Basis ι ℝ V) : b.addHaar = Measure.dirac 0 := by
   have : Subsingleton V := b.equivFun.injective.subsingleton
-  have hp : _root_.parallelepiped b = (Set.univ : Set V) := by
-    ext y
-    rw [mem_parallelepiped_iff]
-    simp only [Finset.univ_eq_empty, Finset.sum_empty, Set.mem_univ, iff_true]
-    exact ⟨fun _ ↦ 0, by simp, Subsingleton.elim _ _⟩
-  rw [← hp]
-  exact b.addHaar_self
+  have hp : _root_.parallelepiped b = Set.univ := Set.Nonempty.eq_univ
+    ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, by simp, Subsingleton.elim _ _⟩⟩
+  ext s -
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  · rw [hs.eq_univ, Measure.dirac_apply_of_mem (Set.mem_univ 0), ← hp, addHaar_self]
 
 section ChangeBasis
 
-variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [Fintype ι] [DecidableEq ι]
 
 /-- A change of basis rescales its normalized Haar measure by the inverse absolute determinant. -/
 theorem addHaar_eq_smul_of_basis (b b' : Basis ι ℝ E) :
     b'.addHaar = ENNReal.ofReal |(b.det b')⁻¹| • b.addHaar := by
+  have := b.finiteDimensional_of_finite
   let e : E ≃ₗ[ℝ] E := b.equiv b' (Equiv.refl ι)
   have hmap : b.map e = b' := by
     ext i

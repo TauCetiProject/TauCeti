@@ -48,8 +48,7 @@ private noncomputable def spinThreeExteriorBasis
     Basis (Fin 2) K (ExteriorAlgebra K P.W) :=
   b.ExteriorAlgebra.reindex spinThreeIndexEquiv
 
-private noncomputable def spinThreeEquivMatrix
-    [NeZero (2 : K)] [FiniteDimensional K V]
+private noncomputable def spinThreeEquivMatrix [NeZero (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (hV : finrank K V = 3) :
     ↥(CliffordAlgebra.even Q) ≃ₐ[K] Matrix (Fin 2) (Fin 2) K :=
@@ -203,7 +202,7 @@ private theorem finTwo_eq_vacuum_or_occupied (i : Fin 2) :
     rfl
 
 private theorem spinThreeEquivMatrix_positiveRoot
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) :
@@ -230,7 +229,7 @@ private theorem spinThreeEquivMatrix_positiveRoot
       spinAction_positiveRoot_singleton P b z hcoord
 
 private theorem spinThreeEquivMatrix_negativeRoot
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) :
@@ -257,6 +256,50 @@ private theorem spinThreeEquivMatrix_negativeRoot
     simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
       spinThreeExteriorBasis_vacuum, spinThreeExteriorBasis_occupied,
       coe_evenBivector, Fin.last_zero] using h
+
+/-- The matrix model of the Spin group sends the positive root lift to the corresponding
+elementary transvection. -/
+private theorem spinThreeHom_positiveRootLift
+    [NeZero (2 : K)] [Invertible (2 : K)]
+    (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
+    (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
+    (hV : finrank K V = 3) (c : K) :
+    spinThreeHom hV (spinThreeEquivMatrix P b hV) (positiveRootLift P b z hz c) =
+      (⟨occupiedIndex, vacuumIndex, vacuumIndex_ne_occupiedIndex.symm, c⟩ :
+        Matrix.TransvectionStruct (Fin 2) K).toSpecialLinearGroup := by
+  apply Subtype.ext
+  -- The target is an `SL₂` subtype; compare its underlying matrices through the opaque map.
+  change spinThreeEquivMatrix P b hV (spinGroupToEven Q (positiveRootLift P b z hz c)) =
+    Matrix.transvection occupiedIndex vacuumIndex c
+  have heven : spinGroupToEven Q (positiveRootLift P b z hz c) =
+      1 + c • evenBivector (Q := Q) (b 0 : V) (z : V) := by
+    apply Subtype.ext
+    simpa only [coe_spinGroupToEven_apply, evenBivector, Fin.isValue, SetLike.mk_smul_mk,
+      AddMemClass.coe_add, OneMemClass.coe_one] using coe_positiveRootLift P b z hz c
+  rw [heven, map_add, map_one, map_smul, spinThreeEquivMatrix_positiveRoot P b z hz hcoord hV]
+  simp only [Matrix.smul_single, smul_eq_mul, mul_one, Matrix.transvection]
+
+/-- The matrix model of the Spin group sends the negative root lift to the corresponding
+elementary transvection. -/
+private theorem spinThreeHom_negativeRootLift
+    [NeZero (2 : K)] [Invertible (2 : K)]
+    (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
+    (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
+    (hV : finrank K V = 3) (c : K) :
+    spinThreeHom hV (spinThreeEquivMatrix P b hV) (negativeRootLift P b z hz c) =
+      (⟨vacuumIndex, occupiedIndex, vacuumIndex_ne_occupiedIndex, c⟩ :
+        Matrix.TransvectionStruct (Fin 2) K).toSpecialLinearGroup := by
+  apply Subtype.ext
+  -- The target is an `SL₂` subtype; compare its underlying matrices through the opaque map.
+  change spinThreeEquivMatrix P b hV (spinGroupToEven Q (negativeRootLift P b z hz c)) =
+    Matrix.transvection vacuumIndex occupiedIndex c
+  have heven : spinGroupToEven Q (negativeRootLift P b z hz c) =
+      1 + c • evenBivector (Q := Q) (z : V) (P.dualVector b 0 : V) := by
+    apply Subtype.ext
+    simpa only [coe_spinGroupToEven_apply, evenBivector, Fin.isValue, SetLike.mk_smul_mk,
+      AddMemClass.coe_add, OneMemClass.coe_one] using coe_negativeRootLift P b z hz c
+  rw [heven, map_add, map_one, map_smul, spinThreeEquivMatrix_negativeRoot P b z hz hcoord hV]
+  simp only [Matrix.smul_single, smul_eq_mul, mul_one, Matrix.transvection]
 
 /-- For a three-dimensional quadratic space with polarization data over a field with `2 ≠ 0`,
 there is an equivalence from its Spin group to `SL₂` under which the spin representation is the
@@ -286,41 +329,6 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
       e.injective (congrArg Subtype.val hxy)
     rw [← coe_spinGroupToEven_apply Q x, ← coe_spinGroupToEven_apply Q y]
     exact congrArg Subtype.val heven
-  -- `e` on a root-direction element `1 + c • x`, stated once: `map_add` and `map_smul` need the
-  -- slow `AddHomClass` and `MulActionHomClass` searches on `e`, which the two root cases below
-  -- would otherwise each repeat (0.3 s each).
-  have he (c : K) (x : CliffordAlgebra.even Q) : e (1 + c • x) = 1 + c • e x := by
-    rw [map_add, map_one, map_smul]
-  have hpositive (c : K) :
-      f (positiveRootLift P b z hz c) =
-        (⟨occupiedIndex, vacuumIndex, vacuumIndex_ne_occupiedIndex.symm, c⟩ :
-          Matrix.TransvectionStruct (Fin 2) K).toSpecialLinearGroup := by
-    apply Subtype.ext
-    -- The target is an `SL₂` subtype; compare its underlying matrices through the opaque map.
-    change e (spinGroupToEven Q (positiveRootLift P b z hz c)) =
-      Matrix.transvection occupiedIndex vacuumIndex c
-    have heven : spinGroupToEven Q (positiveRootLift P b z hz c) =
-        1 + c • evenBivector (Q := Q) (b 0 : V) (z : V) := by
-      apply Subtype.ext
-      simpa only [coe_spinGroupToEven_apply, evenBivector, Fin.isValue, SetLike.mk_smul_mk,
-        AddMemClass.coe_add, OneMemClass.coe_one] using coe_positiveRootLift P b z hz c
-    rw [heven, he, spinThreeEquivMatrix_positiveRoot P b z hz hzcoord hV]
-    simp only [Matrix.smul_single, smul_eq_mul, mul_one, Matrix.transvection]
-  have hnegative (c : K) :
-      f (negativeRootLift P b z hz c) =
-        (⟨vacuumIndex, occupiedIndex, vacuumIndex_ne_occupiedIndex, c⟩ :
-          Matrix.TransvectionStruct (Fin 2) K).toSpecialLinearGroup := by
-    apply Subtype.ext
-    -- The target is an `SL₂` subtype; compare its underlying matrices through the opaque map.
-    change e (spinGroupToEven Q (negativeRootLift P b z hz c)) =
-      Matrix.transvection vacuumIndex occupiedIndex c
-    have heven : spinGroupToEven Q (negativeRootLift P b z hz c) =
-        1 + c • evenBivector (Q := Q) (z : V) (P.dualVector b 0 : V) := by
-      apply Subtype.ext
-      simpa only [coe_spinGroupToEven_apply, evenBivector, Fin.isValue, SetLike.mk_smul_mk,
-        AddMemClass.coe_add, OneMemClass.coe_one] using coe_negativeRootLift P b z hz c
-    rw [heven, he, spinThreeEquivMatrix_negativeRoot P b z hz hzcoord hV]
-    simp only [Matrix.smul_single, smul_eq_mul, mul_one, Matrix.transvection]
   -- The two lifted root directions contain every elementary transvection and hence all of `SL₂`.
   have hf_surj : Function.Surjective f := by
     intro g
@@ -329,8 +337,10 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
       rcases finTwo_eq_vacuum_or_occupied i with rfl | rfl <;>
         rcases finTwo_eq_vacuum_or_occupied j with rfl | rfl
       · exact (hij rfl).elim
-      · exact ⟨negativeRootLift P b z hz c, hnegative c⟩
-      · exact ⟨positiveRootLift P b z hz c, hpositive c⟩
+      · exact ⟨negativeRootLift P b z hz c,
+          spinThreeHom_negativeRootLift P b z hz hzcoord hV c⟩
+      · exact ⟨positiveRootLift P b z hz c,
+          spinThreeHom_positiveRootLift P b z hz hzcoord hV c⟩
       · exact (hij rfl).elim
     · rintro _ _ ⟨x, rfl⟩ ⟨y, rfl⟩
       exact ⟨x * y, map_mul f x y⟩

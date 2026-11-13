@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
 # The Herbrand function and the upper numbering
@@ -88,6 +89,13 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
   decreases, and each `G^v` is normal.
 * `TauCeti.LocalFieldsRamification.exists_forall_upperRamificationGroup_natCast_eq_bot`:
   `G^n = 1` for every large enough natural number `n`.
+* `TauCeti.LocalFieldsRamification.herbrand_eq_of_vle_iff`,
+  `TauCeti.LocalFieldsRamification.inverseHerbrand_eq_of_vle_iff`,
+  `TauCeti.LocalFieldsRamification.comap_algAutCongr_upperRamificationGroup_of_vle_iff`,
+  `TauCeti.LocalFieldsRamification.map_algAutCongr_upperRamificationGroup`, and
+  `TauCeti.LocalFieldsRamification.map_autCongr_upperRamificationGroup`: invariance of `φ` and `ψ`
+  and transport of the upper filtration along valuation-preserving or base-continuous ring
+  equivalences and `K`-algebra equivalences.
 
 ## References
 
@@ -349,11 +357,15 @@ theorem coe_herbrand_sub_coe_herbrand_of_forall_eq {a b : RamificationIndexDomai
   exact herbrandReal_sub_of_forall_eq K L (Subtype.coe_le_coe.2 hab) h
 
 /-- The Herbrand function is the identity as long as the lower ramification filtration is
-constant from `0` through `u`. -/
-theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain} (hu : 0 ≤ (u : ℝ))
+constant from `0` through `u`. For `u ≤ 0` the hypothesis is vacuous and the conclusion is
+`herbrand_of_coe_le_zero`. -/
+theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain}
     (h : ∀ t : ℝ, 0 < t → t ≤ u →
       lowerRamificationGroupReal K L t = lowerRamificationGroup K L 0) :
     herbrand K L u = u := by
+  by_cases hu : (u : ℝ) ≤ 0
+  · exact herbrand_of_coe_le_zero K L hu
+  replace hu : 0 ≤ (u : ℝ) := le_of_not_ge hu
   apply Subtype.ext
   rw [coe_herbrand]
   have hcard : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
@@ -374,6 +386,17 @@ theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain} (hu : 0 ≤ 
 theorem inverseHerbrand_of_coe_le_zero {v : RamificationIndexDomain} (hv : (v : ℝ) ≤ 0) :
     inverseHerbrand K L v = v :=
   (herbrandOrderIso K L).symm_apply_eq.2 (herbrand_of_coe_le_zero K L hv).symm
+
+variable {K L} in
+/-- If the inverse Herbrand function sends `u` to `-1`, then `u = -1`. -/
+theorem coe_eq_neg_one_of_inverseHerbrand_eq_neg_one {u : RamificationIndexDomain}
+    (hinverse : inverseHerbrand K L u = ⟨(-1 : ℝ), le_rfl⟩) : (u : ℝ) = -1 := by
+  have hinverse_neg_one :
+      inverseHerbrand K L ⟨(-1 : ℝ), le_rfl⟩ = ⟨(-1 : ℝ), le_rfl⟩ :=
+    inverseHerbrand_of_coe_le_zero K L (by norm_num)
+  have hu_eq : u = ⟨(-1 : ℝ), le_rfl⟩ :=
+    (inverseHerbrand_strictMono K L).injective <| hinverse.trans hinverse_neg_one.symm
+  exact congrArg Subtype.val hu_eq
 
 omit [IsGalois K L] in
 private theorem herbrandReal_of_mem_Icc (n : ℕ) {u : ℝ} (h₁ : (n : ℝ) ≤ u) (h₂ : u ≤ n + 1) :
@@ -664,5 +687,133 @@ theorem exists_forall_upperRamificationGroup_natCast_eq_bot :
   refine ⟨N, fun n hn ↦ ?_⟩
   rw [upperRamificationGroup_natCast]
   exact hN _ (hn.trans (self_le_psiNat K L n))
+
+/-! ### Transport along ring and algebra equivalences -/
+
+section Transport
+
+section RingEquiv
+
+variable {K L} {K' L' : Type*}
+  [Field K'] [ValuativeRel K'] [TopologicalSpace K'] [IsNonarchimedeanLocalField K']
+  [Field L'] [ValuativeRel L'] [TopologicalSpace L'] [IsNonarchimedeanLocalField L']
+  [Algebra K' L'] [ValuativeExtension K' L'] [Module.Finite K' L'] [IsGalois K' L']
+
+/-- **Invariance of the Herbrand function under a valuation-preserving ring isomorphism.** -/
+theorem herbrand_eq_of_vle_iff
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (u : RamificationIndexDomain) :
+    herbrand K L u = herbrand K' L' u := by
+  have hcard (i : ℤ) :
+      Nat.card (lowerRamificationGroup K L i) = Nat.card (lowerRamificationGroup K' L' i) := by
+    rw [← map_algAutCongr_lowerRamificationGroup_of_vle_iff e he eL heL i]
+    exact Nat.card_congr
+      ((e.algAutCongr eL heL).subgroupMap (lowerRamificationGroup K L i)).toEquiv
+  apply Subtype.ext
+  rw [coe_herbrand, coe_herbrand]
+  congr 1 with t
+  rw [lowerRamificationGroupReal_def, lowerRamificationGroupReal_def, hcard, hcard]
+
+/-- **Invariance of the inverse Herbrand function under a valuation-preserving ring
+isomorphism.** -/
+theorem inverseHerbrand_eq_of_vle_iff
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (v : RamificationIndexDomain) :
+    inverseHerbrand K L v = inverseHerbrand K' L' v := by
+  apply (herbrand_strictMono K' L').injective
+  rw [herbrand_inverseHerbrand, ← herbrand_eq_of_vle_iff e he eL heL, herbrand_inverseHerbrand]
+
+/-- **Transport of upper ramification groups along a valuation-preserving ring isomorphism.** -/
+theorem comap_algAutCongr_upperRamificationGroup_of_vle_iff
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (v : RamificationIndexDomain) :
+    (upperRamificationGroup K' L' v).comap (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      upperRamificationGroup K L v := by
+  rw [upperRamificationGroup_def, upperRamificationGroup_def,
+    ← inverseHerbrand_eq_of_vle_iff e he eL heL v, lowerRamificationGroupReal_def,
+    lowerRamificationGroupReal_def, comap_algAutCongr_lowerRamificationGroup_of_vle_iff e he eL heL]
+
+/-- Image form of `comap_algAutCongr_upperRamificationGroup_of_vle_iff`. -/
+theorem map_algAutCongr_upperRamificationGroup_of_vle_iff
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (v : RamificationIndexDomain) :
+    (upperRamificationGroup K L v).map (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      upperRamificationGroup K' L' v := by
+  rw [← comap_algAutCongr_upperRamificationGroup_of_vle_iff e he eL heL v,
+    Subgroup.map_comap_eq_self_of_surjective (e.algAutCongr eL heL).surjective]
+
+/-- **Invariance of the Herbrand function under a base-continuous ring isomorphism.** -/
+theorem herbrand_eq_of_ringEquiv (e : K ≃+* K') (he : Continuous e)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (u : RamificationIndexDomain) :
+    herbrand K L u = herbrand K' L' u :=
+  herbrand_eq_of_vle_iff e (e.toRingHom.map_vle_map_iff_of_continuous he) eL heL u
+
+/-- **Invariance of the inverse Herbrand function under a base-continuous ring isomorphism.** -/
+theorem inverseHerbrand_eq_of_ringEquiv (e : K ≃+* K') (he : Continuous e)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (v : RamificationIndexDomain) :
+    inverseHerbrand K L v = inverseHerbrand K' L' v :=
+  inverseHerbrand_eq_of_vle_iff e (e.toRingHom.map_vle_map_iff_of_continuous he) eL heL v
+
+/-- **Transport of upper ramification groups along a base-continuous ring isomorphism.** -/
+theorem comap_algAutCongr_upperRamificationGroup (e : K ≃+* K') (he : Continuous e)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (v : RamificationIndexDomain) :
+    (upperRamificationGroup K' L' v).comap (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      upperRamificationGroup K L v :=
+  comap_algAutCongr_upperRamificationGroup_of_vle_iff e
+    (e.toRingHom.map_vle_map_iff_of_continuous he) eL heL v
+
+/-- Image form of `comap_algAutCongr_upperRamificationGroup`. -/
+theorem map_algAutCongr_upperRamificationGroup (e : K ≃+* K') (he : Continuous e)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (v : RamificationIndexDomain) :
+    (upperRamificationGroup K L v).map (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      upperRamificationGroup K' L' v :=
+  map_algAutCongr_upperRamificationGroup_of_vle_iff e
+    (e.toRingHom.map_vle_map_iff_of_continuous he) eL heL v
+
+end RingEquiv
+
+section AlgEquiv
+
+variable {K L} {L' : Type*}
+  [Field L'] [ValuativeRel L'] [TopologicalSpace L'] [IsNonarchimedeanLocalField L']
+  [Algebra K L'] [ValuativeExtension K L'] [Module.Finite K L'] [IsGalois K L']
+
+/-- **Invariance of the Herbrand function along a `K`-algebra isomorphism `φ : L ≃ₐ[K] L'`.** -/
+theorem herbrand_eq_of_algEquiv (φ : L ≃ₐ[K] L') (u : RamificationIndexDomain) :
+    herbrand K L u = herbrand K L' u :=
+  herbrand_eq_of_ringEquiv (RingEquiv.refl K) continuous_id (φ : L ≃+* L') φ.commutes u
+
+/-- **Invariance of the inverse Herbrand function along a `K`-algebra isomorphism
+`φ : L ≃ₐ[K] L'`.** -/
+theorem inverseHerbrand_eq_of_algEquiv (φ : L ≃ₐ[K] L') (v : RamificationIndexDomain) :
+    inverseHerbrand K L v = inverseHerbrand K L' v :=
+  inverseHerbrand_eq_of_ringEquiv (RingEquiv.refl K) continuous_id (φ : L ≃+* L') φ.commutes v
+
+/-- **Transport of upper ramification groups along a `K`-algebra isomorphism `φ : L ≃ₐ[K] L'`.** -/
+theorem comap_autCongr_upperRamificationGroup (φ : L ≃ₐ[K] L') (v : RamificationIndexDomain) :
+    (upperRamificationGroup K L' v).comap (AlgEquiv.autCongr φ : (L ≃ₐ[K] L) →* (L' ≃ₐ[K] L')) =
+      upperRamificationGroup K L v := by
+  rw [← RingEquiv.algAutCongr_refl_toRingEquiv φ φ.commutes]
+  exact comap_algAutCongr_upperRamificationGroup (RingEquiv.refl K) continuous_id
+    (φ : L ≃+* L') φ.commutes v
+
+/-- Image form of `comap_autCongr_upperRamificationGroup`. -/
+theorem map_autCongr_upperRamificationGroup (φ : L ≃ₐ[K] L') (v : RamificationIndexDomain) :
+    (upperRamificationGroup K L v).map (AlgEquiv.autCongr φ : (L ≃ₐ[K] L) →* (L' ≃ₐ[K] L')) =
+      upperRamificationGroup K L' v := by
+  rw [← comap_autCongr_upperRamificationGroup φ v,
+    Subgroup.map_comap_eq_self_of_surjective (AlgEquiv.autCongr φ).surjective]
+
+end AlgEquiv
+
+end Transport
 
 end TauCeti.LocalFieldsRamification

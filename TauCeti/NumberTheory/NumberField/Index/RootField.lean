@@ -61,7 +61,7 @@ noncomputable def rootIntegralPrimitiveElement (hβ : β ∈ (minpoly ℚ (θ : 
   ⟨⟨⟨β, mem_fixedField_stabilizer β⟩, by
       rw [mem_integralClosure_iff,
         ← isIntegral_algebraMap_iff (A := fixedField (stabilizer (M ≃ₐ[ℚ] M) β)) (B := M)]
-      exact isIntegral_of_mem_rootSet hβ⟩,
+      exact isIntegral_of_aeval_eq_zero (aeval_eq_zero_of_mem_rootSet hβ)⟩,
     adjoin_eq_top_of_fixedField_stabilizer β⟩
 
 variable (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M)
@@ -77,19 +77,17 @@ is `minpoly ℤ θ`. -/
 @[simp]
 theorem minpoly_rootIntegralPrimitiveElement :
     minpoly ℤ (rootIntegralPrimitiveElement hβ).1 = minpoly ℤ θ := by
-  set E := fixedField (stabilizer (M ≃ₐ[ℚ] M) β)
-  have h : minpoly ℚ ((rootIntegralPrimitiveElement hβ).1 : E) = minpoly ℚ (θ : K) := by
-    rw [← minpoly.algebraMap_eq (algebraMap E M).injective]
-    exact minpoly_rat_eq_of_mem_rootSet hβ
-  rw [_root_.NumberField.RingOfIntegers.minpoly_rat_coe,
-    _root_.NumberField.RingOfIntegers.minpoly_rat_coe] at h
-  exact Polynomial.map_injective _ (algebraMap ℤ ℚ).injective_int h
+  rw [← _root_.NumberField.RingOfIntegers.minpoly_coe]
+  refine minpoly_int_eq_of_aeval_eq_zero ?_
+  rw [← aeval_algebraMap_eq_zero_iff M, IntermediateField.algebraMap_apply,
+    coe_coe_rootIntegralPrimitiveElement]
+  exact aeval_eq_zero_of_mem_rootSet hβ
 
 /-- If `minpoly ℤ θ` is squarefree modulo `p`, then `p` does not divide the conductor exponent
 of a root of `minpoly ℚ θ` in its own field. -/
 theorem not_dvd_exponent_rootIntegralPrimitiveElement {p : ℕ} [Fact p.Prime]
     (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))) :
-    ¬ p ∣ RingOfIntegers.exponent (rootIntegralPrimitiveElement hβ).1 := fun h =>
+    ¬ p ∣ NumberField.RingOfIntegers.exponent (rootIntegralPrimitiveElement hβ).1 := fun h =>
   (rootIntegralPrimitiveElement hβ).not_dvd_index_of_squarefree_map
     (by rwa [minpoly_rootIntegralPrimitiveElement])
     (h.trans (rootIntegralPrimitiveElement hβ).exponent_dvd_index)
@@ -97,9 +95,9 @@ theorem not_dvd_exponent_rootIntegralPrimitiveElement {p : ℕ} [Fact p.Prime]
 /-- The monic irreducible factors modulo `p` of the minimal polynomial of a root are those of
 `minpoly ℤ θ`. -/
 theorem monicFactorsMod_rootIntegralPrimitiveElement (p : ℕ) [Fact p.Prime] :
-    RingOfIntegers.monicFactorsMod (rootIntegralPrimitiveElement hβ).1 p =
-      RingOfIntegers.monicFactorsMod θ p := by
-  simp only [RingOfIntegers.monicFactorsMod, minpoly_rootIntegralPrimitiveElement]
+    NumberField.RingOfIntegers.monicFactorsMod (rootIntegralPrimitiveElement hβ).1 p =
+      NumberField.RingOfIntegers.monicFactorsMod θ p := by
+  simp only [NumberField.RingOfIntegers.monicFactorsMod, minpoly_rootIntegralPrimitiveElement]
 
 variable {p : ℕ} [Fact p.Prime]
 
@@ -117,12 +115,12 @@ theorem ramificationIdx_eq_one_of_liesOver_span
   have h := NumberField.Ideal.ramificationIdx_primesOverSpanEquivMonicFactorsMod_symm_apply' hexp hφ
   rw [hφ'] at h
   rw [h, minpoly_rootIntegralPrimitiveElement]
-  rw [monicFactorsMod_rootIntegralPrimitiveElement, RingOfIntegers.monicFactorsMod,
+  rw [monicFactorsMod_rootIntegralPrimitiveElement, NumberField.RingOfIntegers.monicFactorsMod,
     Multiset.mem_toFinset] at hφ
   have hf0 : (minpoly ℤ θ).map (Int.castRingHom (ZMod p)) ≠ 0 :=
     ((minpoly.monic θ.isIntegral).map _).ne_zero
   rw [UniqueFactorizationMonoid.multiplicity_eq_count_normalizedFactors
-    (UniqueFactorizationMonoid.irreducible_of_normalized_factor _ hφ) hf0,
+    (UniqueFactorizationMonoid.irreducible_of_normalized_factor _ hφ),
     UniqueFactorizationMonoid.normalize_normalized_factor _ hφ]
   exact Multiset.count_eq_one_of_mem
     ((UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hf0).mp hsq) hφ

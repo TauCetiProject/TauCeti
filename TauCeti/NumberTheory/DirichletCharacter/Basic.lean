@@ -43,7 +43,11 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
   `d ∣ N` correspond to the characters modulo `d`.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
-  at naturals prime to the new level.
+  at naturals prime to the new level, and
+  `DirichletCharacter.changeLevel_ringHomComp_intCast_apply`: the value of a lifted integer-valued
+  character at an integer prime to the new level.
+* `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
+  at the integers prime to the level agree at every integer.
 * `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
   to its level and congruent to `1` modulo a multiple of its conductor.
 * `DirichletCharacter.conductor_dvd_iff_forall_odd`: conversely, the conductor divides `d`, which
@@ -58,6 +62,12 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
   `DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five`.
+* `DirichletCharacter.ext_of_level_four`, `DirichletCharacter.ext_of_level_eight`: a character of
+  level four is determined by its value at `3`, and one of level eight by its values at `3`
+  and `5`.
+* `DirichletCharacter.sum_mul_eq_zero_of_forall_units`: coefficient extraction by orthogonality; a
+  combination of symmetrised character sums that vanishes on every pair of units has vanishing
+  coefficients against every pair of character multiplicities.
 
 ## Provenance
 
@@ -87,8 +97,11 @@ namespace DirichletCharacter
 
 /-- A nonprincipal Dirichlet character sums to zero over a full period. -/
 theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
-    [NeZero N] (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
+    (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
     ∑ n ∈ Finset.range N, χ n = 0 := by
+  rcases N.eq_zero_or_pos with rfl | hN
+  · simp
+  have : NeZero N := ⟨hN.ne'⟩
   calc
     _ = ∑ a : ZMod N, χ a := by
       exact Finset.sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
@@ -137,6 +150,27 @@ theorem conductor_eq_eight_of_apply_one_ne_apply_five {R : Type*} [CommMonoidWit
   conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 3) Nat.prime_two chi
     isCoprime_one_left ⟨5, -3, by norm_num⟩ (by norm_num) hdist
 
+/-- Two characters of level four agreeing at `3` are equal. -/
+theorem ext_of_level_four {R : Type*} [CommMonoidWithZero R] {χ ψ : DirichletCharacter R 4}
+    (h3 : χ 3 = ψ 3) : χ = ψ := by
+  refine MulChar.ext fun u ↦ ?_
+  rcases (by decide : ∀ u : (ZMod 4)ˣ, (u : ZMod 4) = 1 ∨ (u : ZMod 4) = 3) u with h | h <;>
+    rw [h]
+  · simp
+  · exact h3
+
+/-- Two characters of level eight agreeing at `3` and at `5` are equal. -/
+theorem ext_of_level_eight {R : Type*} [CommMonoidWithZero R]
+    {χ ψ : DirichletCharacter R 8} (h3 : χ 3 = ψ 3) (h5 : χ 5 = ψ 5) :
+    χ = ψ := by
+  refine MulChar.ext fun u ↦ ?_
+  rcases (by decide : ∀ u : (ZMod 8)ˣ, (u : ZMod 8) = 1 ∨ (u : ZMod 8) = 3 ∨
+    (u : ZMod 8) = 5 ∨ (u : ZMod 8) = 3 * 5) u with h | h | h | h <;> rw [h]
+  · simp
+  · exact h3
+  · exact h5
+  · rw [map_mul, map_mul, h3, h5]
+
 /-- **Character separation within a coset.** If `χ` does not factor through `d ∣ N`, then every
 unit `u` has a partner `u'` with the same reduction modulo `d` but a different character value —
 so the character cannot be read off the reduction alone. -/
@@ -170,11 +204,17 @@ theorem factorsThrough_gcd_of_changeLevel_factorsThrough {R : Type*} [CommMonoid
 This is `factorsThrough_gcd_of_changeLevel_factorsThrough` at the gcd
 `gcd (N, L N / p) = gcd (p, L) · (N / p) = N / p`. -/
 theorem factorsThrough_div_of_changeLevel_factorsThrough {R : Type*} [CommMonoidWithZero R]
-    {N p L : ℕ} [NeZero N] [NeZero L] (hpN : p ∣ N) (hpL : Nat.Coprime p L)
+    {N p L : ℕ} (hpN : p ∣ N) (hpL : Nat.Coprime p L)
     {ψ : DirichletCharacter R N}
     (hfac : (changeLevel (Nat.dvd_mul_left N L) ψ).FactorsThrough (L * N / p)) :
     ψ.FactorsThrough (N / p) := by
-  have : NeZero (L * N) := ⟨mul_ne_zero (NeZero.ne L) (NeZero.ne N)⟩
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · simpa using FactorsThrough.same_level ψ
+  rcases Nat.eq_zero_or_pos L with rfl | hL
+  · rw [Nat.coprime_zero_right] at hpL
+    subst hpL
+    simpa using FactorsThrough.same_level ψ
+  have : NeZero (L * N) := ⟨(Nat.mul_pos hL hN).ne'⟩
   have hgcd : Nat.gcd N (L * N / p) = N / p := by
     rw [Nat.mul_div_assoc L hpN]
     calc Nat.gcd N (L * (N / p)) = Nat.gcd (p * (N / p)) (L * (N / p)) := by
@@ -251,6 +291,25 @@ theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n :
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
 
+/-- The value of a lifted integer-valued character at an integer coprime to the level. -/
+theorem changeLevel_ringHomComp_intCast_apply {R : Type*} [CommRing R] {d N : ℕ} (h : d ∣ N)
+    (ψ : DirichletCharacter ℤ d) {n : ℤ} (hn : IsCoprime n N) :
+    changeLevel h (ψ.ringHomComp (Int.castRingHom R)) n = ψ n := by
+  rw [changeLevel_eq_cast_of_dvd' _ h hn, MulChar.ringHomComp_apply, eq_intCast]
+
+/-- Two Dirichlet characters of equal levels that agree at the integers prime to the level agree
+at every integer, since both vanish at the others. The levels are equal natural numbers, not
+necessarily the same expression, so characters indexed by different formulas for one level can be
+compared. -/
+theorem apply_intCast_eq_of_forall_isCoprime {R : Type*} [CommMonoidWithZero R] {N M : ℕ}
+    {χ : DirichletCharacter R N} {ψ : DirichletCharacter R M} (hNM : N = M)
+    (h : ∀ n : ℤ, IsCoprime n N → χ n = ψ n) (n : ℤ) : χ n = ψ n := by
+  by_cases hn : IsCoprime n N
+  · exact h n hn
+  · subst hNM
+    rw [χ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm]),
+      ψ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm])]
+
 /-- The product character at the least common multiple of the levels is the pointwise product
 on natural numbers, including the nonunits. -/
 @[simp] theorem mul_natCast {R : Type*} [CommMonoidWithZero R] {M N : ℕ}
@@ -326,5 +385,60 @@ value at `-1` of its lift to any multiple level. -/
 theorem even_changeLevel_iff {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter S d) : (changeLevel h χ).Even ↔ χ.Even := by
   rw [Even, Even, changeLevel_apply_neg_one]
+
+/-- If a combination of the symmetrised character sums `psi i x + phi i x` vanishes against every
+pair of units, then the coefficients of the combination vanish against every pair of
+multiplicities `(if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0`. This extracts the
+`χ ⊗ χ'`-coefficient by orthogonality of the Dirichlet characters. -/
+theorem sum_mul_eq_zero_of_forall_units {R : Type*} [CommRing R] [IsDomain R] [CharZero R]
+    {N : ℕ} [NeZero N] {ι : Type*} {s : Finset ι} [DecidableEq (DirichletCharacter R N)]
+    {psi phi : ι → DirichletCharacter R N} {g : ι → R}
+    (hunits : ∀ x y : (ZMod N)ˣ,
+      ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0)
+    (χ χ' : DirichletCharacter R N) :
+    ∑ i ∈ s, g i * (((if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0) *
+      ((if psi i = χ' then 1 else 0) + if phi i = χ' then 1 else 0)) = 0 := by
+  classical
+  -- The multiplicity `ε i χ` of `χ` in the pair `(psi i, phi i)`.
+  let ε (i : ι) (χ : DirichletCharacter R N) : R :=
+    (if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0
+  -- Orthogonality of the characters: `∑ₓ χ⁻¹(x) ψ(x)` is `#(ZMod N)ˣ` if `ψ = χ` and `0` otherwise.
+  have horth (χ ψ : DirichletCharacter R N) :
+      ∑ x, χ⁻¹ x * ψ x = if ψ = χ then (Fintype.card (ZMod N)ˣ : R) else 0 := by
+    simp_rw [← MulChar.mul_apply]
+    split_ifs with hψ
+    · rw [hψ, inv_mul_cancel, MulChar.sum_one_eq_card_units]
+    · exact MulChar.sum_eq_zero_of_ne_one (inv_mul_eq_one.not.mpr (Ne.symm hψ))
+  have hc : (Fintype.card (ZMod N)ˣ : R) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hε (i : ι) (χ : DirichletCharacter R N) :
+      ∑ x, χ⁻¹ x * (psi i x + phi i x) = Fintype.card (ZMod N)ˣ * ε i χ := by
+    simp only [mul_add, Finset.sum_add_distrib, horth, ε]
+    split_ifs <;> ring
+  -- Summing against `χ⁻¹ ⊗ χ'⁻¹` extracts the coefficient of `χ ⊗ χ'`.
+  have hcoeff (χ χ' : DirichletCharacter R N) : ∑ i ∈ s, g i * (ε i χ * ε i χ') = 0 := by
+    have hsum' : ∑ x, ∑ y, χ⁻¹ x * χ'⁻¹ y *
+        ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0 := by
+      refine Finset.sum_eq_zero fun x _ ↦ Finset.sum_eq_zero fun y _ ↦ ?_
+      by_cases hx : IsUnit x
+      · by_cases hy : IsUnit y
+        · simpa using mul_eq_zero_of_right (χ⁻¹ x * χ'⁻¹ y) (hunits hx.unit hy.unit)
+        · simp [MulChar.map_nonunit χ'⁻¹ hy]
+      · simp [MulChar.map_nonunit χ⁻¹ hx]
+    have key : ∑ i ∈ s, g i * ((∑ x, χ⁻¹ x * (psi i x + phi i x)) *
+        ∑ y, χ'⁻¹ y * (psi i y + phi i y)) = 0 := by
+      rw [← hsum']
+      simp_rw [Finset.sum_mul_sum, Finset.mul_sum]
+      rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun x _ ↦ ?_
+      rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+      ring
+    have key' : (Fintype.card (ZMod N)ˣ : R) ^ 2 * ∑ i ∈ s, g i * (ε i χ * ε i χ') = 0 := by
+      rw [← key, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [hε, hε]
+      ring
+    exact (mul_eq_zero.mp key').resolve_left (pow_ne_zero 2 hc)
+  exact hcoeff χ χ'
 
 end DirichletCharacter

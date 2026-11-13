@@ -15,8 +15,9 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 The mapping torus of `φ ^ k` maps naturally to the mapping torus of `φ` by
 `[t, x] ↦ [k * t, x]`. The map intertwines the suspension flows with time multiplied by `k`
-and covers multiplication by `k` on the base circle. For `k ≠ 0` it is a surjective local
-diffeomorphism. Negative iterates reverse time; the zero iterate collapses the time direction.
+and covers multiplication by `k` on the base circle. It is continuous for every `k`, and for
+`k ≠ 0` it is a surjective local diffeomorphism. Negative iterates reverse time; the zero
+iterate collapses the time direction.
 
 These comparisons relate periodic trajectories of an iterate to trajectories of the original
 diffeomorphism, without choosing a representative for points in either mapping torus.
@@ -57,6 +58,12 @@ theorem iterateMap_comp_uncurry_mk :
     iterateMap φ k ∘ uncurry (mk (φ ^ k)) =
       uncurry (mk φ) ∘ fun p : ℝ × M ↦ ((k : ℝ) * p.1, p.2) :=
   funext fun p ↦ iterateMap_mk φ k p.1 p.2
+
+/-- The iterate map is continuous, for every iterate. -/
+theorem continuous_iterateMap : Continuous (iterateMap φ k) :=
+  continuous_orbitRelQuotientLift_iff.2 <| (continuous_uncurry_mk φ).comp
+    ((continuous_const.mul (Cover.continuous_ofProd_symm (φ ^ k)).fst).prodMk
+      (Cover.continuous_ofProd_symm (φ ^ k)).snd)
 
 /-- The iterate map covers multiplication by `k` on the unit-period base circle. -/
 @[simp]

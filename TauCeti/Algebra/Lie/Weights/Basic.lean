@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+import Mathlib.Algebra.CharZero.Infinite
+import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Submodule.Finrank
 
 /-!
@@ -26,9 +29,13 @@ weight-space theory. The transport and finrank identities hold over any commutat
   corresponding weight space.
 * `LieModule.isTriangularizable_of_iSup_genWeightSpace_eq_top`: a module spanned by its
   generalized weight spaces is triangularizable, over any commutative ring and without finiteness.
+* `LieModuleHom.isTriangularizable_of_surjective`: triangularizability passes to the image of a
+  surjective Lie-module homomorphism.
 * `LieModule.genWeightSpaceOf_eq_iSup_genWeightSpace`: for a finite-dimensional triangularizable
   module, a generalized eigenspace of one element is the sum of the generalized weight spaces of
   the weights taking that eigenvalue there.
+* `LieModule.genWeightSpace_le_posFittingComp_of_ne_zero`: a generalized weight space of a nonzero
+  weight lies in the positive Fitting component.
 * `LieModuleEquiv.finrank_weightSpace_eq`: equivalent Lie modules have weight spaces of equal
   dimension.
 * `LieSubmodule.toSubmodule_map_weightSpace_incl`: inclusion identifies a submodule's weight space
@@ -39,8 +46,21 @@ weight-space theory. The transport and finrank identities hold over any commutat
   generalized weight space with its intersection with the ambient generalized weight space.
 * `LieSubmodule.finrank_inf_genWeightSpace`: that intersection has the dimension of the
   submodule's generalized weight space.
+* `TauCeti.toSubmodule_rootSpace_eq_of_isZero`: the root space of a zero weight is the Cartan
+  subalgebra.
+* `LinearMap.map_lie_eq_of_forall_mem_rootSpace`, `LinearMap.involutive_of_forall_mem_rootSpace`:
+  a linear map respects the bracket, respectively is an involution, as soon as it does so on root
+  spaces.
+* `LinearMap.map_lie_eq_of_isZero_of_isNonZero`: bracket compatibility on a zero-weight vector
+  and a root vector.
 * `TauCeti.Weight.coe_neg_eq_add_of_coe_eq_add`: reading a vanishing sum of four weights as an
   equation between opposite pair sums.
+* `LieSubalgebra.exists_forall_root_apply_ne_zero`: some element of a Cartan subalgebra is nonzero
+  under every root.
+* `LieSubalgebra.span_rootVectors_eq_top`: root vectors bracketed with a point at which no root
+  vanishes, together with a basis of the Cartan subalgebra, span the Lie algebra.
+* `LieSubalgebra.exists_nonzero_rootVectors`: a nonzero vector in each root space, with a
+  nilpotency degree of its adjoint action.
 * `LieModuleHom.exists_mem_weight_of_injective`: if the weights of `N` lie in a set of linear
   forms, then so do the weights of any module embedding in `N`.
 
@@ -153,6 +173,24 @@ theorem isTriangularizable_of_iSup_genWeightSpace_eq_top
   exact (Module.End.mem_maxGenEigenspace _ _ _).mpr
     ((mem_genWeightSpaceOf M (χ x) x m).mp (genWeightSpace_le_genWeightSpaceOf M x χ hm))
 
+omit [LieRing.IsNilpotent L] in
+/-- **Triangularizability passes to quotients.** The image of a triangularizable Lie module under a
+surjective Lie-module homomorphism is triangularizable. -/
+theorem _root_.LieModuleHom.isTriangularizable_of_surjective {M₂ : Type*} [AddCommGroup M₂]
+    [Module R M₂] [LieRingModule L M₂] [LieModule R L M₂] [IsTriangularizable R L M]
+    (f : M →ₗ⁅R,L⁆ M₂) (hf : Function.Surjective f) : IsTriangularizable R L M₂ := by
+  refine ⟨fun x ↦ top_unique fun p _ ↦ ?_⟩
+  obtain ⟨n, rfl⟩ := hf p
+  have hn : n ∈ ⨆ φ, (toEnd R L M x).maxGenEigenspace φ := by
+    rw [IsTriangularizable.maxGenEigenspace_eq_top]; trivial
+  have hle : (⨆ φ, (toEnd R L M x).maxGenEigenspace φ).map f.toLinearMap ≤
+      ⨆ φ, (toEnd R L M₂ x).maxGenEigenspace φ := by
+    rw [Submodule.map_iSup]
+    refine iSup_mono fun φ ↦ ?_
+    exact Module.End.map_genEigenspace_le f.toLinearMap
+      (LinearMap.ext fun m ↦ (f.map_lie x m).symm) φ ⊤
+  exact hle (Submodule.mem_map_of_mem hn)
+
 end Triangularizable
 
 section Field
@@ -176,6 +214,31 @@ theorem genWeightSpaceOf_eq_iSup_genWeightSpace (μ : K) (x : L) :
     exact hdisj.eq_bot.le.trans bot_le
 
 end Field
+
+section Fitting
+
+variable {K L M : Type*} [Field K] [LieRing L] [LieAlgebra K L] [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+
+/-- **A nonzero generalized weight space lies in the positive Fitting component.** If a nilpotent
+Lie algebra acts on a finite-dimensional module and `χ ≠ 0`, some `z` has `χ z ≠ 0`, so `z` acts
+invertibly on the `χ`-weight space, which therefore lies in the image of every power of `z`. -/
+theorem genWeightSpace_le_posFittingComp_of_ne_zero {χ : L → K} (hχ : χ ≠ 0) :
+    genWeightSpace M χ ≤ posFittingComp K L M := by
+  obtain ⟨z, hz⟩ := Function.ne_iff.mp hχ
+  replace hz : χ z ≠ 0 := hz
+  have hunit : IsUnit (toEnd K L (genWeightSpace M χ) z) := by
+    simpa using (isNilpotent_toEnd_sub_algebraMap M χ z).isUnit_add_left_of_commute
+      ((isUnit_iff_ne_zero.mpr hz).map (algebraMap K (Module.End K (genWeightSpace M χ))))
+      (Algebra.commutes _ _).symm
+  intro x hx
+  refine posFittingCompOf_le_posFittingComp K L M z ?_
+  rw [mem_posFittingCompOf]
+  intro k
+  obtain ⟨n, hn⟩ := (Module.End.isUnit_iff _ |>.mp (hunit.pow k)).2 ⟨x, hx⟩
+  exact ⟨n, by rw [← LieSubmodule.coe_toEnd_pow, hn]⟩
+
+end Fitting
 
 end LieModule
 
@@ -253,6 +316,23 @@ theorem finrank_inf_genWeightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
 
 end LieSubmodule
 
+namespace LieModule.Weight
+
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+
+/-- Consecutive weights on an ascending string differ by its step root. -/
+theorem coe_eq_add_of_coe_eq_add_natCast_smul_succ
+    (δ : Weight K H L) {α β γ : Weight K H L} {n : ℕ}
+    (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K))
+    (hδ : (δ : H → K) = (β : H → K) + ((n + 1 : ℕ) : K) • (α : H → K)) :
+    (δ : H → K) = (α : H → K) + γ := by
+  rw [hδ, hγ]
+  push_cast
+  module
+
+end LieModule.Weight
+
 namespace TauCeti
 
 open LieAlgebra LieModule LieAlgebra.IsKilling
@@ -271,7 +351,145 @@ theorem Weight.coe_neg_eq_add_of_coe_eq_add {μ : Weight K H L} {a b c d : H →
   simp only [Weight.coe_neg, hμ, Pi.add_apply, Pi.neg_apply, Pi.zero_apply] at hy ⊢
   linear_combination -hy
 
+omit [LieAlgebra.IsKilling K L] [LieModule.IsTriangularizable K H L] in
+/-- The root space of a zero weight is the Cartan subalgebra. -/
+theorem toSubmodule_rootSpace_eq_of_isZero {χ : Weight K H L} (hχ : χ.IsZero) :
+    (rootSpace H χ).toSubmodule = H.toSubmodule := by
+  -- `Weight.IsZero` is the vanishing of the coercion, but only up to unfolding the definition.
+  have hχcoe : (χ : H → K) = 0 := hχ
+  simp only [hχcoe, rootSpace_zero_eq K L H]
+  simp
+
+omit [LieAlgebra.IsKilling K L] in
+/-- A linear map from `L` to a Lie algebra respects the bracket as soon as it does so on every
+pair of root vectors, since the root spaces span `L`. -/
+theorem _root_.LinearMap.map_lie_eq_of_forall_mem_rootSpace {M : Type*} [LieRing M]
+    [LieAlgebra K M] (f : L →ₗ[K] M)
+    (h : ∀ (χ₁ χ₂ : Weight K H L) (v : L), v ∈ rootSpace H χ₁ → ∀ w : L, w ∈ rootSpace H χ₂ →
+      f ⁅v, w⁆ = ⁅f v, f w⁆) (v w : L) : f ⁅v, w⁆ = ⁅f v, f w⁆ := by
+  have htop : ⨆ χ : Weight K H L, (rootSpace H χ).toSubmodule = ⊤ :=
+    LieSubmodule.iSup_toSubmodule_eq_top.mpr (iSup_genWeightSpace_eq_top' K H L)
+  -- Extend from weight vectors by linearity in each argument.
+  have hright : ∀ (χ₁ : Weight K H L) (v : L), v ∈ rootSpace H χ₁ → ∀ w : L,
+      f ⁅v, w⁆ = ⁅f v, f w⁆ := by
+    intro χ₁ v hv w
+    have hle : (⊤ : Submodule K L) ≤
+        LinearMap.eqLocus (f.comp (LieAlgebra.ad K L v)) ((LieAlgebra.ad K M (f v)).comp f) := by
+      rw [← htop]
+      exact iSup_le fun χ₂ u hu ↦ h χ₁ χ₂ v hv u hu
+    exact hle trivial
+  have hle : (⊤ : Submodule K L) ≤
+      LinearMap.eqLocus (f.comp (LieAlgebra.ad K L w)) ((LieAlgebra.ad K M (f w)).comp f) := by
+    rw [← htop]
+    exact iSup_le fun χ₁ u hu ↦ LinearMap.map_lie_swap (hright χ₁ u hu w)
+  exact LinearMap.map_lie_swap (hle trivial)
+
+omit [LieAlgebra.IsKilling K L] in
+/-- A linear map of `L` that squares to the identity on each root space is an involution. -/
+theorem _root_.LinearMap.involutive_of_forall_mem_rootSpace (f : L →ₗ[K] L)
+    (h : ∀ (χ : Weight K H L) (v : L), v ∈ rootSpace H χ → f (f v) = v) :
+    Function.Involutive f := by
+  have htop : ⨆ χ : Weight K H L, (rootSpace H χ).toSubmodule = ⊤ :=
+    LieSubmodule.iSup_toSubmodule_eq_top.mpr (iSup_genWeightSpace_eq_top' K H L)
+  intro v
+  have hle : (⊤ : Submodule K L) ≤ LinearMap.eqLocus (f.comp f) LinearMap.id := by
+    rw [← htop]
+    exact iSup_le fun χ u hu ↦ h χ u hu
+  exact hle trivial
+
+/-- A linear map that negates the Cartan subalgebra and sends each nonzero root space into its
+opposite root space respects the bracket of a zero-weight vector with a root vector: a Cartan
+element brackets with a weight vector through its weight. -/
+theorem _root_.LinearMap.map_lie_eq_of_isZero_of_isNonZero [PerfectField K] (ω : L →ₗ[K] L)
+    (hzero : ∀ χ : Weight K H L, χ.IsZero → ∀ v : L, v ∈ rootSpace H χ → ω v = -v)
+    (hωmem : ∀ χ : Weight K H L, χ.IsNonZero → ∀ v : L, v ∈ rootSpace H χ →
+      ω v ∈ rootSpace H (-χ))
+    {χ₁ χ₂ : Weight K H L} (hχ₁ : χ₁.IsZero) (hχ₂ : χ₂.IsNonZero) {v : L}
+    (hv : v ∈ rootSpace H χ₁) {w : L} (hw : w ∈ rootSpace H χ₂) :
+    ω ⁅v, w⁆ = ⁅ω v, ω w⁆ := by
+  have hvH : v ∈ H := by
+    have := toSubmodule_rootSpace_eq_of_isZero (K := K) (L := L) (H := H) hχ₁
+    exact (SetLike.ext_iff.mp this v).mp hv
+  have hlie : ⁅v, w⁆ = (χ₂ : H → K) ⟨v, hvH⟩ • w :=
+    lie_eq_smul_of_mem_rootSpace hw ⟨v, hvH⟩
+  have hstep : ⁅v, ω w⁆ = ((-χ₂ : Weight K H L) : H → K) ⟨v, hvH⟩ • ω w :=
+    lie_eq_smul_of_mem_rootSpace (hωmem χ₂ hχ₂ w hw) ⟨v, hvH⟩
+  rw [hlie, map_smul, hzero χ₁ hχ₁ v hv, neg_lie, hstep]
+  simp
+
 end TauCeti
+
+namespace LieSubalgebra
+
+open LieAlgebra LieAlgebra.IsKilling LieModule
+
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+
+variable (H : LieSubalgebra K L)
+
+variable [CharZero K] [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
+  [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+
+/-- The root vectors bracketed with a point at which no root vanishes, together with a basis of the
+Cartan subalgebra, span `L`. -/
+theorem span_rootVectors_eq_top {κ : Type*} [Finite κ]
+    (e : H.root → L) (he : ∀ α, e α ∈ rootSpace H α.1) (he0 : ∀ α, e α ≠ 0) (h₀ : H)
+    (hh₀ : ∀ α ∈ H.root, (α : H → K) h₀ ≠ 0) (bH : Module.Basis κ K H) :
+    Submodule.span K (Set.range (Sum.elim (fun α ↦ ⁅e α, (h₀ : L)⁆) fun j ↦ (bH j : L))) = ⊤ := by
+  have := Fintype.ofFinite κ
+  rw [eq_top_iff, ← LieSubmodule.top_toSubmodule (R := K) (L := H) (M := L),
+    ← iSup_genWeightSpace_eq_top' K H L,
+    LieSubmodule.iSup_toSubmodule, iSup_le_iff]
+  intro χ z hz
+  rw [LieSubmodule.mem_toSubmodule] at hz
+  by_cases hχ : χ.IsZero
+  · -- `rootSpace H χ` is by definition the weight space `genWeightSpace L χ`.
+    have hzH : z ∈ rootSpace H 0 := by rwa [← (Weight.coe_eq_zero_iff χ).mpr hχ]
+    rw [rootSpace_zero_eq K L H, LieSubalgebra.mem_toLieSubmodule] at hzH
+    lift z to H using hzH
+    rw [← bH.sum_repr z, AddSubmonoidClass.coe_finsetSum]
+    exact Submodule.sum_mem _ fun j _ ↦
+      Submodule.smul_mem _ _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩)
+  · set α : H.root := ⟨χ, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hχ⟩⟩
+    obtain ⟨r, hr⟩ := (finrank_eq_one_iff_of_ne_zero' (⟨e α, he α⟩ : rootSpace H χ)
+      (by simpa [Subtype.ext_iff] using he0 α)).mp (finrank_rootSpace_eq_one χ hχ) ⟨z, hz⟩
+    have hz' : z = r • e α := by simpa [Subtype.ext_iff] using hr.symm
+    have hbr : ⁅e α, (h₀ : L)⁆ = -(χ h₀) • e α := by
+      rw [← lie_skew, ← LieSubalgebra.coe_bracket_of_module,
+        lie_eq_smul_of_mem_rootSpace (he α) h₀, neg_smul]
+    have hχh₀ : χ h₀ ≠ 0 := hh₀ α α.2
+    have he' : e α = (-(χ h₀))⁻¹ • ⁅e α, (h₀ : L)⁆ := by
+      rw [hbr, smul_smul, inv_mul_cancel₀ (neg_ne_zero.mpr hχh₀), one_smul]
+    rw [hz', he']
+    exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
+      (Submodule.subset_span ⟨Sum.inl α, rfl⟩))
+
+omit [LieAlgebra.IsKilling K L] in
+/-- A nonzero root vector in each root space, with a nilpotency degree of its adjoint action. -/
+theorem exists_nonzero_rootVectors :
+    ∃ (e : H.root → L), (∀ α, e α ∈ rootSpace H α.1) ∧ (∀ α, e α ≠ 0) ∧
+      ∃ n : H.root → ℕ, ∀ α, ad K L (e α) ^ n α = 0 := by
+  have hα0 (α : H.root) : α.1.IsNonZero := (Finset.mem_filter.mp α.2).2
+  choose e he he0 using fun α : H.root ↦ α.1.exists_ne_zero
+  have hnil (α : H.root) : IsNilpotent (ad K L (e α)) :=
+    isNilpotent_ad_of_mem_rootSpace H (fun h ↦ hα0 α ((Weight.coe_eq_zero_iff _).mp h)) (he α)
+  choose n hn using hnil
+  exact ⟨e, he, he0, n, hn⟩
+
+omit [CharZero K] [LieAlgebra.IsKilling K L] [IsTriangularizable K H L] in
+/-- **A generic element of a Cartan subalgebra avoids every root hyperplane.** Since the root set
+is finite and each root is a nonzero linear functional, finite hyperplane avoidance over the
+infinite field `K` supplies one `h : H` on which every root is nonzero. -/
+theorem exists_forall_root_apply_ne_zero [Infinite K]
+    [LieModule.LinearWeights K H L] :
+    ∃ h : H, ∀ α ∈ H.root, (α : H → K) h ≠ 0 := by
+  let f : H.root → Module.Dual K H := fun α ↦ (α.1 : H →ₗ[K] K)
+  obtain ⟨h, hh⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists f fun α ↦ by
+    simpa [f] using DFunLike.ne_iff.mp
+      (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root α))
+  exact ⟨h, fun α hα ↦ hh ⟨α, hα⟩⟩
+
+end LieSubalgebra
 
 namespace LieModuleHom
 

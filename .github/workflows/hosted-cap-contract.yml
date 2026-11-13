@@ -1,0 +1,30 @@
+name: Hosted concurrency contract
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/hosted-cap-contract.yml
+      - .github/workflows/pick-runner.yml
+      - .github/workflows/pr-build.yml
+      - .github/workflows/nightly-verify.yml
+      - scripts/test_pick_runner.py
+
+permissions:
+  contents: read
+
+jobs:
+  native-queue:
+    # Three jobs enter one group together. All three must complete: the default
+    # one-pending behavior would cancel one. This uses GitHub-hosted capacity.
+    strategy:
+      fail-fast: false
+      matrix:
+        entrant: [1, 2, 3]
+    concurrency:
+      group: hosted-cap-contract-${{ github.run_id }}
+      queue: max
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: echo 'Native concurrency queue accepted entrant ${{ matrix.entrant }}'

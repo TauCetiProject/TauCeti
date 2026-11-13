@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 public import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
-# A priori estimates for maps approximating linear maps
+# A priori estimates and straightening for maps approximating linear maps
 
 An estimate controlling a vector by its image under a continuous linear map and an auxiliary
 additive map persists under a nonlinear approximation, with a loss proportional to the
@@ -21,15 +24,68 @@ Mathlib's local surjectivity and injectivity theorems also locate a unique zero 
 approximating a linear equivalence on a closed ball:
 `ApproximatesLinearOn.exists_eq_zero_of_two_mul_norm_le`.
 
-A map on a convex set whose derivative stays close to a linear map `A` with a left inverse `P`
-is injective there, with injective derivative: `P` of the map approximates the identity
-(`Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le`).
+A map on a convex set `S` with a derivative within `S` that stays close to a linear map `A`
+admitting a continuous linear left inverse `P` is injective on `S`, and that derivative is
+injective at every point of `S`: `P` of the map approximates the identity
+(`Convex.injOn_and_injective_of_norm_hasFDerivWithin_sub_le`).
+
+By the mean value inequality, a map on a convex set whose derivative stays within `c` of `L`
+approximates `L` with constant `c` (`Convex.approximatesLinearOn_of_nnnorm_fderiv_sub_le`).
+
+Maps approximating a linear equivalence `L` on one ball with one constant below `‖L⁻¹‖⁻¹` have
+targets containing one common ball around any point near their values at the centre
+(`TauCeti.exists_ball_subset_toOpenPartialHomeomorph_target`).
+
+If the derivative of a function `g` is approximated by a bilinear map `L` near `x`, a critical point
+`y` of `g` near `x` has a value within `(‖L‖ + κ) * (2 * ρ) * ρ` of that at `x`
+(`ApproximatesLinearOn.norm_sub_le_of_fderiv_eq_zero`).
+
+When `f` approximates a continuous linear map `L` on `s` up to `δ` and `M` is a continuous linear
+operator in the opposite direction, the map `h x = x + M (f x - L x)` approximates the identity up
+to `δ ‖M‖` (`ApproximatesLinearOn.id_add_comp_sub`). When `δ ‖M‖ < 1`, `h` is bi-Lipschitz on `s`
+with a `(1 - δ ‖M‖)⁻¹`-Lipschitz left inverse on `h '' s`
+(`ApproximatesLinearOn.exists_lipschitzOnWith_leftInvOn_id_add_comp_sub`), and when `M` is a right
+inverse of `L` (`Function.RightInverse.preimage_id_add_comp_sub`,
+`Function.RightInverse.image_id_add_comp_sub_inter_preimage`) this left inverse carries the linear
+slices `h '' s ∩ L ⁻¹' {y}` onto the fibres `s ∩ f ⁻¹' {y}`
+(`ApproximatesLinearOn.exists_lipschitzOnWith_eq_image_inter_preimage`).
+
+A map `Φ` on a product `E × F` which vanishes on the zero section near `(a, 0)` and has, at
+`(a, 0)`, a strict derivative injective on the fibre directions `{0} × F`, with `F`
+finite-dimensional, has no other zeros near `(a, 0)`
+(`HasStrictFDerivAt.eventually_apply_eq_zero_iff_snd_eq_zero`): near `(a, 0)` the map
+approximates its derivative, and the derivative is bounded below on the fibre directions.
+Applied to the derivative of a function, this says that a critical zero section with
+nondegenerate normal Hessian is isolated among critical points, as for a Morse–Bott critical
+submanifold.
 -/
 
 public section
 
-open Set
+open Filter Function Set Topology
 open scoped NNReal Pointwise
+
+namespace Function.RightInverse
+
+/-- If `M` is a right inverse of an additive homomorphism `L`, then preimages under `f` agree with
+preimages of `L`-preimages under the straightening map `x ↦ x + M (f x - L x)`. -/
+theorem preimage_id_add_comp_sub {E F 𝓕 : Type*} [AddMonoid E] [AddCommGroup F] [FunLike 𝓕 E F]
+    [AddMonoidHomClass 𝓕 E F] {L : 𝓕} {M : F → E} (hM : RightInverse M L) (f : E → F)
+    (u : Set F) :
+    f ⁻¹' u = (fun x ↦ x + M (f x - L x)) ⁻¹' (L ⁻¹' u) := by
+  ext x
+  simp [map_add, hM (f x - L x), add_sub_cancel]
+
+/-- If `M` is a right inverse of an additive homomorphism `L`, then the straightening map
+`h x = x + M (f x - L x)` maps `s ∩ f ⁻¹' u` onto `h '' s ∩ L ⁻¹' u`. -/
+theorem image_id_add_comp_sub_inter_preimage {E F 𝓕 : Type*} [AddMonoid E] [AddCommGroup F]
+    [FunLike 𝓕 E F] [AddMonoidHomClass 𝓕 E F] {L : 𝓕} {M : F → E} (hM : RightInverse M L)
+    (s : Set E) (f : E → F) (u : Set F) :
+    (fun x ↦ x + M (f x - L x)) '' (s ∩ f ⁻¹' u) =
+      (fun x ↦ x + M (f x - L x)) '' s ∩ L ⁻¹' u := by
+  rw [hM.preimage_id_add_comp_sub f u, image_inter_preimage]
+
+end Function.RightInverse
 
 namespace ApproximatesLinearOn
 
@@ -50,12 +106,10 @@ theorem one_sub_mul_norm_sub_le {f : E → F} {f' : E →L[𝕜] F} {s : Set E} 
     {x : E} (hx : x ∈ s) {y : E} (hy : y ∈ s) :
     (1 - C * (ε : ℝ)) * ‖x - y‖ ≤ C * ‖f x - f y‖ + ‖P x - P y‖ := by
   have hestxy := hest (x - y) (sub_mem_sub hx hy)
-  have hnorm : ‖f' (x - y)‖ ≤ ‖f x - f y‖ + (ε : ℝ) * ‖x - y‖ :=
-    (norm_le_norm_add_norm_sub (f x - f y) _).trans
-      (add_le_add le_rfl (hf x hx y hy))
-  have hmul := mul_le_mul_of_nonneg_left hnorm hC
   rw [map_sub P x y] at hestxy
-  nlinarith
+  have hnorm : ‖f' (x - y)‖ ≤ ‖f x - f y‖ + (ε : ℝ) * ‖x - y‖ :=
+    (norm_le_norm_add_norm_sub (f x - f y) _).trans (by gcongr; exact hf x hx y hy)
+  linarith [mul_le_mul_of_nonneg_left hnorm hC]
 
 /-- A map approximating a linear equivalence `f'` on a closed ball around `b`, with constant at most
 `(2 * C)⁻¹` for a bound `C` on `‖f'⁻¹‖`, has a zero within `2 * C * ‖f b‖` of `b` as soon as that
@@ -63,16 +117,22 @@ radius fits in the ball, and this zero is the only zero of the map in the ball. 
 theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : E ≃L[𝕜] F}
     {b : E} {r : ℝ} {c : ℝ≥0}
     (hf : ApproximatesLinearOn f (f' : E →L[𝕜] F) (Metric.closedBall b r) c) {C : ℝ}
-    (hC : 0 < C) (hf' : ‖(f'.symm : F →L[𝕜] E)‖ ≤ C) (hc : 2 * C * c ≤ 1)
+    (hf' : ‖(f'.symm : F →L[𝕜] E)‖ ≤ C) (hc : 2 * C * c ≤ 1)
     (hr : 2 * C * ‖f b‖ ≤ r) :
     ∃ a ∈ Metric.closedBall b (2 * C * ‖f b‖), f a = 0 ∧
       ∀ z ∈ Metric.closedBall b r, f z = 0 → z = a := by
   have hbound (v : F) : ‖f'.symm v‖ ≤ C * ‖v‖ :=
     ((f'.symm : F →L[𝕜] E).le_opNorm v).trans (mul_le_mul_of_nonneg_right hf' (norm_nonneg v))
+  rcases ((norm_nonneg _).trans hf').eq_or_lt with hC | hC
+  · -- `C = 0`: `f'.symm = 0`, so `E` and `F` are trivial.
+    subst hC
+    have hE : Subsingleton E := subsingleton_of_forall_eq 0 fun x ↦ by simpa using hbound (f' x)
+    have hF : Subsingleton F := f'.symm.injective.subsingleton
+    exact ⟨b, by simp, Subsingleton.elim _ _, fun z _ _ ↦ Subsingleton.elim _ _⟩
   -- A right inverse of `f'` with the bound `C` in place of `‖f'⁻¹‖`, which may vanish.
   let R : (f' : E →L[𝕜] F).NonlinearRightInverse :=
     { toFun := f'.symm
-      nnnorm := ⟨C, hC.le⟩
+      nnNorm := ⟨C, hC.le⟩
       bound' := hbound
       right_inv' := f'.apply_symm_apply }
   have hsub := Metric.closedBall_subset_closedBall (x := b) hr
@@ -82,50 +142,216 @@ theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : 
     nlinarith [norm_nonneg (f b)]
   obtain ⟨a, ha, hfa⟩ := (hf.mono_set hsub).surjOn_closedBall_of_nonlinearRightInverse R
     (by positivity) le_rfl hzero
-  have hinj : InjOn f (Metric.closedBall b r) := by
-    apply hf.injOn
-    rcases f'.subsingleton_or_nnnorm_symm_pos with hE | hpos
-    · exact Or.inl hE
-    right
-    refine (NNReal.lt_inv_iff_mul_lt hpos.ne').2 ?_
-    rw [← NNReal.coe_lt_coe]
-    push_cast
-    have hmul := mul_le_mul_of_nonneg_left hf' c.coe_nonneg
-    nlinarith
+  have hinj : InjOn f (Metric.closedBall b r) :=
+    hf.injOn <| f'.subsingleton_or_nnNorm_symm_pos.imp id fun hpos ↦ by
+      -- `c * ‖f'⁻¹‖ ≤ c * C ≤ 1 / 2`.
+      rw [NNReal.lt_inv_iff_mul_lt hpos.ne', ← NNReal.coe_lt_coe]
+      push_cast
+      linarith [mul_le_mul_of_nonneg_left hf' c.coe_nonneg]
   exact ⟨a, ha, hfa, fun z hz hfz ↦ hinj hz (hsub ha) (hfz.trans hfa.symm)⟩
+
+open Metric in
+/-- If `fderiv 𝕜 g` is `κ`-approximated by `L` on a set containing the closed ball of radius `ρ`
+about `x`, `g` is differentiable on that ball, and `g` has a critical point `y` in the ball, then
+`g` changes by at most `(‖L‖ + κ) * (2 * ρ) * ρ` between `x` and `y`. -/
+theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜]
+    {g : E → F} {L : E →L[𝕜] E →L[𝕜] F} {s : Set E}
+    {κ : ℝ≥0} (happrox : ApproximatesLinearOn (fderiv 𝕜 g) L s κ) {x y : E} {ρ : ℝ}
+    (hg : ∀ w ∈ closedBall x ρ, DifferentiableAt 𝕜 g w) (hsub : closedBall x ρ ⊆ s)
+    (hy : y ∈ closedBall x ρ) (hy0 : fderiv 𝕜 g y = 0) :
+    ‖g y - g x‖ ≤ (‖L‖ + κ) * (2 * ρ) * ρ := by
+  have hρ : 0 ≤ ρ := dist_nonneg.trans (mem_closedBall.1 hy)
+  have hbound : ∀ w ∈ closedBall x ρ, ‖fderiv 𝕜 g w‖ ≤ (‖L‖ + κ) * (2 * ρ) := fun w hw ↦ by
+    have hlip := happrox.lipschitzWith.dist_le_mul ⟨w, hsub hw⟩ ⟨y, hsub hy⟩
+    simp only [domRestrict_apply, hy0, dist_zero_right, Subtype.dist_eq] at hlip
+    calc ‖fderiv 𝕜 g w‖ ≤ (‖L‖ + κ) * dist w y := hlip
+      _ ≤ (‖L‖ + κ) * (2 * ρ) := by
+        gcongr
+        linarith [dist_triangle_right w y x, mem_closedBall.1 hw, mem_closedBall.1 hy]
+  let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  have hval := (convex_closedBall x ρ).norm_image_sub_le_of_norm_fderiv_le hg hbound
+    (mem_closedBall_self hρ) hy
+  calc ‖g y - g x‖ ≤ (‖L‖ + κ) * (2 * ρ) * ‖y - x‖ := hval
+    _ ≤ (‖L‖ + κ) * (2 * ρ) * ρ := by gcongr; exact mem_closedBall_iff_norm.1 hy
+
+/-! ### Straightening a map along a continuous linear operator -/
+
+section Straightening
+
+variable {f : E → F} {L : E →L[𝕜] F} {M : F →L[𝕜] E} {s : Set E} {δ : ℝ≥0}
+
+/-- If `f` approximates `L` on `s` up to `δ`, then `x ↦ x + M (f x - L x)` approximates the
+identity on `s` up to `δ ‖M‖`. -/
+theorem id_add_comp_sub (hf : ApproximatesLinearOn f L s δ) (M : F →L[𝕜] E) :
+    ApproximatesLinearOn (fun x ↦ x + M (f x - L x)) (ContinuousLinearMap.id 𝕜 E) s
+      (δ * ‖M‖₊) := by
+  refine LipschitzOnWith.approximatesLinearOn ?_
+  have h : (fun x ↦ x + M (f x - L x)) - ⇑(ContinuousLinearMap.id 𝕜 E) = M ∘ (f - ⇑L) := by
+    ext x
+    simp
+  rw [h, mul_comm]
+  exact M.lipschitzWith.comp_lipschitzOnWith hf.lipschitzOnWith
+
+/-- If `f` approximates `L` on `s` up to `δ`, then `x ↦ x + M (f x - L x)` is
+`(1 + δ ‖M‖)`-Lipschitz on `s`. -/
+theorem lipschitzOnWith_id_add_comp_sub (hf : ApproximatesLinearOn f L s δ) (M : F →L[𝕜] E) :
+    LipschitzOnWith (1 + δ * ‖M‖₊) (fun x ↦ x + M (f x - L x)) s := by
+  refine lipschitzOnWith_iff_restrict.2 ((hf.id_add_comp_sub M).lipschitzWith.weaken ?_)
+  gcongr
+  rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
+  exact ContinuousLinearMap.norm_id_le
+
+/-- If `f` approximates `L` on `s` up to `δ` and `δ ‖M‖ < 1`, then `x ↦ x + M (f x - L x)` expands
+distances on `s` by at least the factor `1 - δ ‖M‖`. -/
+theorem antilipschitzWith_id_add_comp_sub (hf : ApproximatesLinearOn f L s δ)
+    (hδ : δ * ‖M‖₊ < 1) :
+    AntilipschitzWith (1 - δ * ‖M‖₊)⁻¹ (s.domRestrict fun x ↦ x + M (f x - L x)) := by
+  cases subsingleton_or_nontrivial E
+  · exact AntilipschitzWith.of_subsingleton
+  have hf' : ApproximatesLinearOn (fun x ↦ x + M (f x - L x))
+      (ContinuousLinearEquiv.refl 𝕜 E : E →L[𝕜] E) s (δ * ‖M‖₊) := hf.id_add_comp_sub M
+  simpa using hf'.antilipschitzWith (Or.inr (by simpa using hδ))
+
+/-- If `f` approximates `L` on `s` up to `δ` and `δ ‖M‖ < 1`, then `x ↦ x + M (f x - L x)` is
+injective on `s`. -/
+theorem injOn_id_add_comp_sub (hf : ApproximatesLinearOn f L s δ) (hδ : δ * ‖M‖₊ < 1) :
+    InjOn (fun x ↦ x + M (f x - L x)) s :=
+  injOn_iff_injective.2 (hf.antilipschitzWith_id_add_comp_sub hδ).injective
+
+/-- If `f` approximates `L` on `s` up to `δ` and `δ ‖M‖ < 1`, then the map
+`h x = x + M (f x - L x)` admits a `(1 - δ ‖M‖)⁻¹`-Lipschitz left inverse on `h '' s`. -/
+theorem exists_lipschitzOnWith_leftInvOn_id_add_comp_sub (hf : ApproximatesLinearOn f L s δ)
+    (hδ : δ * ‖M‖₊ < 1) :
+    ∃ g : E → E, LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g ((fun x ↦ x + M (f x - L x)) '' s) ∧
+      LeftInvOn g (fun x ↦ x + M (f x - L x)) s :=
+  ⟨invFunOn (fun x ↦ x + M (f x - L x)) s,
+    lipschitzOnWith_iff_restrict.2 ((hf.antilipschitzWith_id_add_comp_sub hδ).to_rightInvOn'
+      (surjOn_image _ s).mapsTo_invFunOn (surjOn_image _ s).rightInvOn_invFunOn),
+    (hf.injOn_id_add_comp_sub hδ).leftInvOn_invFunOn⟩
+
+/-- If `f` is approximated on `s` up to `δ` by a continuous linear map `L` with a continuous linear
+right inverse `M` satisfying `δ ‖M‖ < 1`, then there are a set `t` and a `(1 - δ ‖M‖)⁻¹`-Lipschitz
+map `g` on `t` that maps each linear slice `t ∩ L ⁻¹' {y}` onto the fibre `s ∩ f ⁻¹' {y}`. -/
+theorem exists_lipschitzOnWith_eq_image_inter_preimage (hf : ApproximatesLinearOn f L s δ)
+    (hM : RightInverse M L) (hδ : δ * ‖M‖₊ < 1) :
+    ∃ (t : Set E) (g : E → E), LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g t ∧
+      ∀ y, s ∩ f ⁻¹' {y} = g '' (t ∩ L ⁻¹' {y}) := by
+  obtain ⟨g, hlip, hg⟩ := hf.exists_lipschitzOnWith_leftInvOn_id_add_comp_sub hδ
+  refine ⟨(fun x ↦ x + M (f x - L x)) '' s, g, hlip, fun y ↦ ?_⟩
+  rw [← hM.image_id_add_comp_sub_inter_preimage, hg.image_image' inter_subset_left]
+
+end Straightening
 
 end ApproximatesLinearOn
 
-/-- **A map whose derivative is close to an injective linear map is injective on a convex set.**
-If `P` is a left inverse of `A` and the derivative of `h` stays within `1 / (2 ‖P‖)` of `A` on a
-convex set `S`, then `h` is injective on `S`, and its derivative is injective there. -/
-theorem Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le {E F : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {S : Set E} (hS : Convex ℝ S) {h : E → F} {h' : E → E →L[ℝ] F} {A : E →L[ℝ] F}
-    {P : F →L[ℝ] E} (hPA : Function.LeftInverse P A) (hh : ∀ u ∈ S, HasFDerivAt h (h' u) u)
+/-- **A map with a derivative within a convex set close to a linear map admitting a continuous
+linear left inverse is injective there.**
+If `P` is a continuous linear left inverse of `A` and a derivative `h'` of `h` within a convex set
+`S` satisfies `‖P‖ * ‖h' u - A‖ ≤ 1 / 2` on `S`, then `h` is injective on `S`, and `h' u` is
+injective for every `u ∈ S`. -/
+theorem Convex.injOn_and_injective_of_norm_hasFDerivWithin_sub_le {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {S : Set E} (hS : Convex ℝ S) {h : E → F} {h' : E → E →L[𝕜] F} {A : E →L[𝕜] F}
+    {P : F →L[𝕜] E} (hPA : Function.LeftInverse P A)
+    (hh : ∀ u ∈ S, HasFDerivWithinAt h (h' u) S u)
     (hh' : ∀ u ∈ S, ‖P‖ * ‖h' u - A‖ ≤ 1 / 2) :
     InjOn h S ∧ ∀ u ∈ S, Function.Injective (h' u) := by
-  have hPA' : P.comp A = ContinuousLinearMap.id ℝ E := ContinuousLinearMap.ext hPA
+  have hPA' : P.comp A = ContinuousLinearMap.id 𝕜 E := ContinuousLinearMap.ext hPA
   -- `P ∘ h'` is within `1 / 2` of the identity.
-  have hclose (u) (hu : u ∈ S) : ‖P.comp (h' u) - ContinuousLinearMap.id ℝ E‖ ≤ 1 / 2 := by
+  have hclose (u) (hu : u ∈ S) : ‖P.comp (h' u) - ContinuousLinearMap.id 𝕜 E‖ ≤ 1 / 2 := by
     rw [← hPA', ← ContinuousLinearMap.comp_sub]
     exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (hh' u hu)
   refine ⟨?_, fun u hu => (injective_iff_map_eq_zero _).2 fun w hw => ?_⟩
   · -- `P ∘ h` approximates the identity with constant `1 / 2`, so it is injective on `S`.
     have happ : ApproximatesLinearOn (fun v => P (h v))
-        (ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) S (1 / 2) := by
+        (ContinuousLinearEquiv.refl 𝕜 E : E →L[𝕜] E) S (1 / 2) := by
       intro x hx y hy
       simpa using hS.norm_image_sub_le_of_norm_hasFDerivWithin_le' (f := fun v => P (h v))
-        (fun v hv => (P.hasFDerivAt.comp v (hh v hv)).hasFDerivWithinAt)
+        (fun v hv => P.hasFDerivAt.comp_hasFDerivWithinAt v (hh v hv))
         (fun v hv => (hclose v hv).trans_eq (by simp)) hy hx
-    refine InjOn.of_comp (g := ⇑P) (happ.injOn ?_)
-    rcases subsingleton_or_nontrivial E with hE | hE
-    · exact Or.inl hE
-    · refine Or.inr ?_
-      simpa [ContinuousLinearMap.nnnorm_id] using NNReal.half_lt_self one_ne_zero
-  · have h1 := ((P.comp (h' u) - ContinuousLinearMap.id ℝ _).le_opNorm w).trans
-      (mul_le_mul_of_nonneg_right (hclose u hu) (norm_nonneg w))
-    have hw' : (P.comp (h' u) - ContinuousLinearMap.id ℝ E) w = -w := by simp [hw]
+    refine InjOn.of_comp (g := ⇑P) <| happ.injOn <|
+      (subsingleton_or_nontrivial E).imp id fun (_ : Nontrivial E) ↦ ?_
+    simpa [ContinuousLinearMap.nnNorm_id] using NNReal.half_lt_self one_ne_zero
+  · -- `P ∘ h' u - id` sends `w` to `-w` and has norm at most `1 / 2`, so `w = 0`.
+    have h1 := (P.comp (h' u) - ContinuousLinearMap.id 𝕜 E).le_of_opNorm_le (hclose u hu) w
+    have hw' : (P.comp (h' u) - ContinuousLinearMap.id 𝕜 E) w = -w := by simp [hw]
     rw [hw', norm_neg] at h1
     have : ‖w‖ = 0 := by linarith [norm_nonneg w]
     exact norm_eq_zero.1 this
+
+/-- On a convex set on which every derivative of `f` is within `c` of `L` in norm, the map `f`
+approximates `L` with constant `c`. This is the converse of
+`ApproximatesLinearOn.norm_sub_le_of_hasFDerivAt`, by the mean value inequality. -/
+theorem Convex.approximatesLinearOn_of_nnnorm_fderiv_sub_le {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {L : E →L[𝕜] F}
+    {s : Set E} {c : ℝ≥0} (hs : Convex ℝ s) (hd : ∀ x ∈ s, DifferentiableAt 𝕜 f x)
+    (hb : ∀ x ∈ s, ‖fderiv 𝕜 f x - L‖₊ ≤ c) :
+    ApproximatesLinearOn f L s c :=
+  fun _ hx _ hy ↦ hs.norm_image_sub_le_of_norm_fderiv_le' hd (fun z hz ↦ hb z hz) hy hx
+
+/-- **The zeros of a map vanishing on the zero section, near the zero section.** Let `Φ` be
+strictly differentiable at `(a, 0)` with derivative `D`, and let `Φ (b, 0) = 0` for every `b` near
+`a`. If `F` is finite-dimensional and `v ↦ D (0, v)` is injective, then near `(a, 0)` the zeros of
+`Φ` are exactly the points of the zero section. -/
+theorem HasStrictFDerivAt.eventually_apply_eq_zero_iff_snd_eq_zero {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {E F G : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {Φ : E × F → G} {D : E × F →L[𝕜] G} {a : E}
+    (hΦ : HasStrictFDerivAt Φ D (a, 0)) (hzero : ∀ᶠ b in 𝓝 a, Φ (b, 0) = 0)
+    (hD : Function.Injective (D ∘L ContinuousLinearMap.inr 𝕜 E F)) :
+    ∀ᶠ z in 𝓝 (a, (0 : F)), Φ z = 0 ↔ z.2 = 0 := by
+  -- `D` is bounded below on the fibre directions, by `K⁻¹`.
+  obtain ⟨K, hK, hKD⟩ :=
+    (D ∘L ContinuousLinearMap.inr 𝕜 E F).toLinearMap.injective_iff_antilipschitz.1 hD
+  obtain ⟨s, hs, hΦs⟩ := hΦ.approximates_deriv_on_nhds (c := (2 * K)⁻¹) (.inr (by positivity))
+  -- The projection `z ↦ (z.1, 0)` onto the zero section fixes `(a, 0)`.
+  have hπ : Tendsto (fun z : E × F ↦ (z.1, (0 : F))) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
+    (continuous_fst.prodMk continuous_const).tendsto' _ _ rfl
+  filter_upwards [hs, hπ.eventually hs, (continuous_fst.tendsto' _ _ rfl).eventually hzero]
+    with z hzs hzs' hz0
+  refine ⟨fun hz ↦ ?_, fun hz ↦ by rwa [← Prod.mk.eta (p := z), hz]⟩
+  -- Compare `z` with its projection `(z.1, 0)`, which differs from it by `(0, z.2)`.
+  have happ := hΦs z hzs (z.1, 0) hzs'
+  have hsub : z - (z.1, 0) = ContinuousLinearMap.inr 𝕜 E F z.2 := by ext <;> simp
+  have hnorm : ‖ContinuousLinearMap.inr 𝕜 E F z.2‖ = ‖z.2‖ := by simp
+  rw [hz, hz0, sub_zero, zero_sub, norm_neg, hsub, hnorm] at happ
+  have hbound := ContinuousLinearMap.bound_of_antilipschitz _ hKD z.2
+  have hhalf : (K : ℝ) * ((2 * K : ℝ≥0)⁻¹ * ‖z.2‖) = ‖z.2‖ / 2 := by
+    push_cast
+    field_simp
+  have hle := hbound.trans (mul_le_mul_of_nonneg_left happ K.coe_nonneg)
+  rw [hhalf] at hle
+  exact norm_le_zero_iff.1 (by linarith)
+
+namespace TauCeti
+
+open Metric
+
+/-- For the maps approximating `L` on `ball x₀ r` with a constant `c` below `‖L⁻¹‖⁻¹`, there is
+one radius `ρ > 0` such that the target of each of their partial homeomorphisms contains
+`ball y₀ ρ` as soon as its value at `x₀` lies in that ball. -/
+theorem exists_ball_subset_toOpenPartialHomeomorph_target {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {L : E ≃L[𝕜] F} {x₀ : E} {r : ℝ} (hr : 0 < r)
+    {c : ℝ≥0} (hc : Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) (y₀ : F) :
+    ∃ ρ > 0, ∀ (g : E → F) (hga : ApproximatesLinearOn g (L : E →L[𝕜] F) (ball x₀ r) c),
+      dist (g x₀) y₀ < ρ →
+        ball y₀ ρ ⊆ (hga.toOpenPartialHomeomorph g (ball x₀ r) hc isOpen_ball).target := by
+  by_cases hE : Subsingleton E
+  · have hF : Subsingleton F := L.symm.toEquiv.subsingleton
+    refine ⟨1, one_pos, fun g hga _ y _ ↦ ?_⟩
+    rw [Subsingleton.elim y (g x₀), ApproximatesLinearOn.toOpenPartialHomeomorph_target]
+    exact mem_image_of_mem g (mem_ball_self hr)
+  have hpos : (0 : ℝ) < ((‖(L.symm : F →L[𝕜] E)‖₊⁻¹ : ℝ≥0) : ℝ) - c :=
+    sub_pos.2 (NNReal.coe_lt_coe.2 (hc.resolve_left hE))
+  refine ⟨(((‖(L.symm : F →L[𝕜] E)‖₊⁻¹ : ℝ≥0) : ℝ) - c) * (r / 2) / 2, by positivity,
+    fun g hga hg y hy ↦ ?_⟩
+  refine hga.closedBall_subset_target hc isOpen_ball (b := x₀) (ε := r / 2) (by positivity)
+    (closedBall_subset_ball (by linarith)) (mem_closedBall.2 ?_)
+  rw [mem_ball] at hy
+  linarith [dist_triangle_right y (g x₀) y₀]
+
+end TauCeti

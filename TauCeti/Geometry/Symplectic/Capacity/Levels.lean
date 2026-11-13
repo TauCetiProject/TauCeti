@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
+import TauCeti.Analysis.Calculus.Deriv.Const
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 
 /-!
 # Short closed characteristics on the levels of an energy function
@@ -81,63 +81,30 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [FiniteDimensional ℝ E] {σ : SmoothTwoForm I M} {W : Set M} {F : M → ℝ} {a b τ : ℝ}
 
-/-- **Orbits of `φ ∘ F`.** A `T`-periodic orbit `γ` of `X_{φ ∘ F}` whose loop is contractible in
-`W` is constant as soon as, writing `c = φ'(F (γ 0))`, the level of `γ 0` carries no closed
-characteristic contractible in `W` of period at most `T |c|` when `c ≠ 0`. Indeed `F` is constant
-along `γ`, and along its level `X_{φ ∘ F} = c X_F`: if `c = 0` then the field vanishes along `γ`,
-so `γ` is constant, and otherwise `t ↦ γ (t / c)` is such a closed characteristic. -/
-private theorem IsNondegenerate.eq_of_isMIntegralCurve_comp (hσ : σ.IsNondegenerate)
-    (hF : MDifferentiable I 𝓘(ℝ) F) {φ : ℝ → ℝ} (hφ : Differentiable ℝ φ) {T : ℝ} (hT : 0 < T)
-    {γ : ℝ → M} (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (φ ∘ F)))
-    {g : C(AddCircle T, W)} (hg : g.Nullhomotopic) (hgγ : ∀ t : ℝ, (g t : M) = γ t)
-    (horb : deriv φ (F (γ 0)) ≠ 0 → ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F (F (γ 0))
-      (T * |deriv φ (F (γ 0))|)) :
-    ∀ t, γ t = γ 0 := by
-  set c := deriv φ (F (γ 0))
-  have hX (x : M) :
-      σ.hamiltonianVectorField (φ ∘ F) x = deriv φ (F x) • σ.hamiltonianVectorField F x :=
-    hamiltonianVectorField_comp (hφ _) (hF x)
-  -- `F` is constant along `γ`, since `dF(X_{φ ∘ F}) = φ'(F) dF(X_F) = 0`.
-  have hlev (t : ℝ) : F (γ t) = F (γ 0) :=
-    (hγ.isMIntegralCurveOn univ).apply_eq_of_mvfderiv_apply_eq_zero isOpen_univ
-      isPreconnected_univ (fun u _ ↦ hF _) (fun u _ ↦ by
-        rw [hX, map_smul,
-          (hσ.isHamiltonianVectorField_hamiltonianVectorField F).mvfderiv_apply_self, smul_zero])
-      (mem_univ 0) (mem_univ t)
-  have hXγ (t : ℝ) :
-      σ.hamiltonianVectorField (φ ∘ F) (γ t) = c • σ.hamiltonianVectorField F (γ t) := by
-    rw [hX, hlev]
-  by_cases hc : c = 0
-  · exact fun t ↦ hγ.apply_eq_of_forall_eq_zero (fun u ↦ by rw [hXγ, hc, zero_smul]) 0 t
-  -- Otherwise `t ↦ γ (t / c)` is a closed characteristic of period `T |c|`, which is excluded.
-  by_contra hne
-  have hγc : IsMIntegralCurve γ (c⁻¹⁻¹ • σ.hamiltonianVectorField F) := fun t ↦ by
-    rw [inv_inv, Pi.smul_apply, ← hXγ]
-    exact hγ t
-  have h := hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul hT
-    (inv_ne_zero hc) hγc (not_forall.1 hne) hlev ⟨g, hg, hgγ⟩
-  rw [abs_inv, div_inv_eq_mul] at h
-  exact horb hc h
-
 /-- **Admissibility of `μ ∘ F`.** Let `F` be smooth with `{F ≤ b}` compact and contained in the
 interiors of `W` and of `M`, taking values below `a < b` somewhere and above `b` somewhere in the
-interior of `W`. Let `μ ≥ 0` be smooth and nonincreasing, constant on `(-∞, a]` and zero on
-`[b, ∞)`, with `|μ'| ≤ τ` everywhere and `μ' = 0` outside `(a, b)`. If no level `F⁻¹(s)`,
-`s ∈ (a, b)`, carries a nonconstant `T`-periodic orbit of `X_F` with `T ≤ τ` whose loop is
-contractible in `W`, then `μ ∘ F` is `HZ°`-admissible for `W`. -/
+interior of `W`. Let `μ` be smooth and nonincreasing, constant on `(-∞, a]` and zero on
+`[b, ∞)` (so `μ ≥ 0` and `μ' = 0` outside `(a, b)`), with `|μ'| ≤ τ` everywhere. If no
+level `F⁻¹(s)`, `s ∈ (a, b)`, carries a nonconstant `T`-periodic orbit of `X_F` with `T ≤ τ`
+whose loop is contractible in `W`, then `μ ∘ F` is `HZ°`-admissible for `W`. -/
 theorem IsNondegenerate.isContractibleHZAdmissible_comp (hσ : σ.IsNondegenerate)
     (hF : ContMDiff I 𝓘(ℝ) ∞ F) (hcpt : IsCompact {x | F x ≤ b})
     (hW : {x | F x ≤ b} ⊆ interior W) (hM : {x | F x ≤ b} ⊆ I.interior M)
     (ha : ∃ x, F x < a) (hb : ∃ x ∈ interior W, b < F x) {μ : ℝ → ℝ} (hμ : ContDiff ℝ ∞ μ)
-    (hanti : Antitone μ) (hnn : ∀ r, 0 ≤ μ r) (hhigh : ∀ r, b ≤ r → μ r = 0)
+    (hanti : Antitone μ) (hhigh : ∀ r, b ≤ r → μ r = 0)
     (hlow : ∀ r ≤ a, μ r = μ a) (habs : ∀ r, |deriv μ r| ≤ τ)
-    (hzero : ∀ r ∉ Ioo a b, deriv μ r = 0)
     (horb : ∀ s ∈ Ioo a b, ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F s τ) :
     σ.IsContractibleHZAdmissible W (μ ∘ F) := by
   have hle (r : ℝ) : μ r ≤ μ a := by
     rcases le_total r a with h | h
     · exact (hlow r h).le
     · exact hanti h
+  have hnn (r : ℝ) : 0 ≤ μ r := by
+    rcases le_total r b with h | h
+    · simpa only [hhigh b le_rfl] using hanti h
+    · exact (hhigh r h).ge
+  -- `μ` is constant off `(a, b)`, so `μ'` vanishes there.
+  have hzero := deriv_eq_zero_of_not_mem_Ioo hlow hhigh
   obtain ⟨x₀, hx₀⟩ := ha
   have hFc : Continuous F := hF.continuous
   -- The support of `μ ∘ F` lies in `{F ≤ b}`, since `μ` vanishes on `[b, ∞)`.
@@ -181,7 +148,7 @@ theorem IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity (hσ : σ.IsNon
   refine le_of_forall_lt_imp_le_of_dense fun e he ↦ ?_
   have hvτ : e.toReal < τ * (b - a) := ENNReal.toReal_lt_of_lt_ofReal he
   rw [← ENNReal.ofReal_toReal he.ne_top]
-  obtain ⟨μ, hμ, hanti, hnn, hhigh, hlow, habs, hzero⟩ :=
+  obtain ⟨μ, hμ, hanti, -, hhigh, hlow, habs, -⟩ :=
     exists_contDiff_antitone_cutoff_abs_deriv_le hab ENNReal.toReal_nonneg hvτ
   set v := e.toReal
   have hle (r : ℝ) : μ r ≤ v := by
@@ -193,8 +160,8 @@ theorem IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity (hσ : σ.IsNon
   have hsup : ⨆ x, (μ ∘ F) x = v :=
     ciSup_eq_of_forall_le_of_forall_lt_exists_gt (fun x ↦ hle _) fun w hw ↦
       ⟨x₀, by simpa [hlow _ hx₀.le] using hw⟩
-  have hadm := hσ.isContractibleHZAdmissible_comp hF hcpt hW hM ⟨x₀, hx₀⟩ hb hμ hanti hnn hhigh
-    (fun r hr ↦ by rw [hlow r hr, hlow a le_rfl]) habs hzero horb
+  have hadm := hσ.isContractibleHZAdmissible_comp hF hcpt hW hM ⟨x₀, hx₀⟩ hb hμ hanti hhigh
+    (fun r hr ↦ by rw [hlow r hr, hlow a le_rfl]) habs horb
   calc ENNReal.ofReal v = ENNReal.ofReal (⨆ x, (μ ∘ F) x) := by rw [hsup]
     _ ≤ _ := hadm.ofReal_iSup_le_contractibleHZCapacity
 

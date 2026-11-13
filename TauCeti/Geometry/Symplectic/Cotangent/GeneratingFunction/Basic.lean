@@ -214,9 +214,8 @@ theorem cotangentLiouvilleForm_cotangentGeneratingSource_sub
         (fderiv ℝ (cotangentGeneratingSource S) x) -
       (cotangentLiouvilleForm (cotangentGeneratingTarget S x)).compContinuousLinearMap
         (fderiv ℝ (cotangentGeneratingTarget S) x) =
-      differentialOneForm S x := by
+      differentialOneForm ℝ S x := by
   ext v
-  rw [eq_const_of_subsingleton v 0, ← Function.const_def]
   simp only [ContinuousAlternatingMap.sub_apply, compContinuousLinearMap_apply,
     cotangentLiouvilleForm_apply, Function.comp_apply, fderiv_cotangentGeneratingSource_apply hS,
     fderiv_cotangentGeneratingTarget_apply hS, cotangentGeneratingSource_snd_apply,
@@ -405,14 +404,19 @@ theorem eventuallyEq_cotangentGeneratingBranch {g : V × StrongDual ℝ V → V 
     g =ᶠ[𝓝 (cotangentGeneratingSource S x₀)] cotangentGeneratingBranch hS hM :=
   (hasStrictFDerivAt_sourceDerivEquiv hS hM).localInverse_unique hg
 
-/-- If `S` is `C^(n+1)` at `x₀` with `n ≠ 0`, the branch is `C^n` at `(q₀, ∂_q S(x₀))`. -/
-theorem contDiffAt_cotangentGeneratingBranch {n : WithTop ℕ∞} (hSn : ContDiffAt ℝ (n + 1) S x₀)
-    (hn : n ≠ 0) :
+/-- If `S` is `C^(n+1)` at `x₀`, the branch is `C^n` at `(q₀, ∂_q S(x₀))`. -/
+theorem contDiffAt_cotangentGeneratingBranch {n : WithTop ℕ∞} (hSn : ContDiffAt ℝ (n + 1) S x₀) :
     ContDiffAt ℝ n (cotangentGeneratingBranch hS hM) (cotangentGeneratingSource S x₀) := by
-  have h : ContDiffAt ℝ n (cotangentGeneratingSource S) x₀ :=
-    contDiffAt_cotangentGeneratingSource hSn
-  -- Mathlib's `C^n` local inverse is the strict-derivative local inverse defining the branch.
-  exact h.to_localInverse (hasStrictFDerivAt_sourceDerivEquiv hS hM).hasFDerivAt hn
+  have hf := (hasStrictFDerivAt_sourceDerivEquiv hS hM).hasFDerivAt
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- `hS` makes the source projection `C¹`, hence the branch `C¹` and in particular `C⁰`.
+    have h : ContDiffAt ℝ 1 (cotangentGeneratingSource S) x₀ :=
+      contDiffAt_cotangentGeneratingSource (n := 1) (by norm_num; exact hS)
+    exact (h.to_localInverse hf one_ne_zero).of_le zero_le
+  · have h : ContDiffAt ℝ n (cotangentGeneratingSource S) x₀ :=
+      contDiffAt_cotangentGeneratingSource hSn
+    -- Mathlib's `C^n` local inverse is the strict-derivative local inverse defining the branch.
+    exact h.to_localInverse hf hn
 
 @[simp]
 theorem cotangentGeneratedMap_cotangentGeneratingSource :
@@ -428,14 +432,13 @@ theorem eventually_cotangentGeneratedMap_cotangentGeneratingSource :
   filter_upwards [eventually_cotangentGeneratingBranch_cotangentGeneratingSource hS hM] with x hx
   rw [cotangentGeneratedMap_def, Function.comp_apply, hx]
 
-/-- If `S` is `C^(n+1)` at `x₀` with `n ≠ 0`, the generated map is `C^n` at `(q₀, ∂_q S(x₀))`. -/
-theorem contDiffAt_cotangentGeneratedMap {n : WithTop ℕ∞} (hSn : ContDiffAt ℝ (n + 1) S x₀)
-    (hn : n ≠ 0) :
+/-- If `S` is `C^(n+1)` at `x₀`, the generated map is `C^n` at `(q₀, ∂_q S(x₀))`. -/
+theorem contDiffAt_cotangentGeneratedMap {n : WithTop ℕ∞} (hSn : ContDiffAt ℝ (n + 1) S x₀) :
     ContDiffAt ℝ n (cotangentGeneratedMap hS hM) (cotangentGeneratingSource S x₀) := by
   have h : ContDiffAt ℝ n (cotangentGeneratingTarget S) x₀ :=
     contDiffAt_cotangentGeneratingTarget hSn
   rw [cotangentGeneratedMap_def]
-  refine ContDiffAt.comp _ ?_ (contDiffAt_cotangentGeneratingBranch hS hM hSn hn)
+  refine ContDiffAt.comp _ ?_ (contDiffAt_cotangentGeneratingBranch hS hM hSn)
   rwa [cotangentGeneratingBranch_cotangentGeneratingSource]
 
 /-- The two main identities at the source point of `x`, where the branch has derivative inverse to
@@ -455,7 +458,7 @@ private theorem generatedMap_identities {x : V × W} (hSx : ContDiffAt ℝ 2 S x
         (cotangentLiouvilleForm
           (cotangentGeneratedMap hS hM (cotangentGeneratingSource S x))).compContinuousLinearMap
           (fderiv ℝ (cotangentGeneratedMap hS hM) (cotangentGeneratingSource S x)) =
-      differentialOneForm (S ∘ cotangentGeneratingBranch hS hM)
+      differentialOneForm ℝ (S ∘ cotangentGeneratingBranch hS hM)
         (cotangentGeneratingSource S x) := by
   have hd := (hSx.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
   have hφ : fderiv ℝ (cotangentGeneratedMap hS hM) (cotangentGeneratingSource S x) =
@@ -480,11 +483,10 @@ private theorem generatedMap_identities {x : V × W} (hSx : ContDiffAt ℝ 2 S x
     simp only [← Function.comp_apply (f := ⇑(fderiv ℝ (cotangentGeneratingSource S) x)), hsource,
       id]
   · -- Compose the exactness of the relation at `x` with the inverse of the source derivative.
-    have hdS : differentialOneForm (S ∘ cotangentGeneratingBranch hS hM)
-        (cotangentGeneratingSource S x) = (differentialOneForm S x).compContinuousLinearMap
+    have hdS : differentialOneForm ℝ (S ∘ cotangentGeneratingBranch hS hM)
+        (cotangentGeneratingSource S x) = (differentialOneForm ℝ S x).compContinuousLinearMap
           (e.symm : V × StrongDual ℝ V →L[ℝ] V × W) := by
       ext v
-      rw [eq_const_of_subsingleton v 0, ← Function.const_def]
       rw [differentialOneForm_apply, hSb, compContinuousLinearMap_apply]
       simp [Function.comp_def]
     rw [hdS, ← cotangentLiouvilleForm_cotangentGeneratingSource_sub hd]
@@ -539,7 +541,7 @@ theorem eventually_cotangentLiouvilleForm_sub_cotangentGeneratedMap :
       cotangentLiouvilleForm y - (cotangentLiouvilleForm
           (cotangentGeneratedMap hS hM y)).compContinuousLinearMap
           (fderiv ℝ (cotangentGeneratedMap hS hM) y) =
-        differentialOneForm (S ∘ cotangentGeneratingBranch hS hM) y := by
+        differentialOneForm ℝ (S ∘ cotangentGeneratingBranch hS hM) y := by
   filter_upwards [eventually_hasFDerivAt_cotangentGeneratingBranch hS hM] with y hy
   obtain ⟨x, e, rfl, hSx, he, hb, hx⟩ := hy
   exact (generatedMap_identities hS hM hSx e he hb hx).2
@@ -548,13 +550,14 @@ theorem eventually_cotangentLiouvilleForm_sub_cotangentGeneratedMap :
 the derivative of the map generated by `S` is invertible: it preserves the nondegenerate form `ω`,
 so it is injective, and the invertible mixed Hessian `W ≃ V'` makes source and target of the same
 dimension. -/
-theorem eventually_isInvertible_fderiv_cotangentGeneratedMap [FiniteDimensional ℝ V]
-    [FiniteDimensional ℝ W] :
+theorem eventually_isInvertible_fderiv_cotangentGeneratedMap [FiniteDimensional ℝ V] :
     ∀ᶠ y in 𝓝 (cotangentGeneratingSource S x₀),
       (fderiv ℝ (cotangentGeneratedMap hS hM) y).IsInvertible := by
-  have hW : Module.finrank ℝ W = Module.finrank ℝ V := by
-    obtain ⟨e, -⟩ := hM
-    exact e.toLinearEquiv.finrank_eq.trans ContinuousLinearMap.dual_finrank_eq
+  obtain ⟨e, -⟩ := id hM
+  -- The invertible mixed Hessian `W ≃ V'` makes `W` finite-dimensional.
+  have : FiniteDimensional ℝ W := Module.Finite.equiv e.toLinearEquiv.symm
+  have hW : Module.finrank ℝ W = Module.finrank ℝ V :=
+    e.toLinearEquiv.finrank_eq.trans ContinuousLinearMap.dual_finrank_eq
   have hdim : Module.finrank ℝ (V × StrongDual ℝ V) = Module.finrank ℝ (W × StrongDual ℝ W) := by
     simp only [Module.finrank_prod, ContinuousLinearMap.dual_finrank_eq, hW]
   filter_upwards [eventually_strongDualCotangentSymplecticForm_fderiv_cotangentGeneratedMap hS hM]

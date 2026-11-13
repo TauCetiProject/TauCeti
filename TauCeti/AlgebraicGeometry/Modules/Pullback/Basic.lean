@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.CategoryTheory.Adjunction.Mates
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
@@ -71,7 +71,9 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackIso` identifies the restriction of `f^* M` to
   an open `W ⊆ f⁻¹ V` with the pullback of `M|_V` along `f.resLE V W e`, naturally in `M`;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
-  isomorphism exactly when its pullbacks to the members of an open cover are;
+  isomorphism exactly when its pullbacks to the members of an open cover are, and
+  `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover_opensRange` the same for open
+  immersions whose images cover the scheme;
 * `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
   `f⁻¹ V`, with `pullbackOverUnitIso` and `pullbackOverObjIso` comparing it with the structure
   sheaves and with the pullback of `𝒪_Y`-modules;
@@ -503,8 +505,7 @@ theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
     (hU : TopologicalSpace.IsOpenCover U) {A B : X.Modules} (φ : A ⟶ B) :
     IsIso φ ↔ ∀ i, IsIso ((pullback (U i).ι).map φ) := by
   refine ⟨fun _ _ ↦ inferInstance, fun h ↦ ?_⟩
-  refine SheafOfModules.isIso_of_coversTop ((_root_.Opens.coversTop_iff _ U).mpr hU) φ
-    fun i ↦ ?_
+  refine SheafOfModules.isIso_of_coversTop ((_root_.Opens.coversTop_iff _ U).mpr hU) fun i ↦ ?_
   -- Pullback along `(U i).ι` is restriction to `U i`, which is restriction to the slice at `U i`
   -- followed by an equivalence of categories.
   have : IsIso ((restrictFunctor (U i).ι).map φ) :=
@@ -512,6 +513,19 @@ theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
   have : IsIso ((overEquiv (U i)).functor.map (φ.over (U i))) :=
     (NatIso.isIso_map_iff (overFunctorEquiv (U i)) φ).mpr this
   exact isIso_of_reflects_iso (φ.over (U i)) (overEquiv (U i)).functor
+
+/-- A morphism of modules is an isomorphism exactly when its pullbacks along a family of open
+immersions whose images cover the scheme are isomorphisms. -/
+theorem isIso_iff_of_isOpenCover_opensRange {ι : Type*} {U : ι → Scheme.{u}} (f : ∀ i, U i ⟶ X)
+    [∀ i, IsOpenImmersion (f i)] (hf : TopologicalSpace.IsOpenCover fun i ↦ (f i).opensRange)
+    {A B : X.Modules} (φ : A ⟶ B) : IsIso φ ↔ ∀ i, IsIso ((pullback (f i)).map φ) := by
+  refine ⟨fun _ _ ↦ inferInstance, fun h ↦ (isIso_iff_of_isOpenCover hf φ).mpr fun i ↦ ?_⟩
+  -- The inclusion of the image of `f i` is `f i` precomposed with an isomorphism.
+  have : IsIso ((pullback (f i) ⋙ pullback (f i).isoOpensRange.inv).map φ) := by
+    rw [Functor.comp_map]
+    infer_instance
+  exact (NatIso.isIso_map_iff (pullbackComp _ _ ≪≫
+    pullbackCongr (f i).isoOpensRange_inv_comp) φ).mp this
 
 /-- Monomorphisms of module sheaves can be checked after pullback to an open cover. -/
 theorem mono_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}

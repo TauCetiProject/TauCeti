@@ -11,6 +11,7 @@ import TauCeti.NumberTheory.ModularForms.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.ModularGroup
 import TauCeti.NumberTheory.ModularForms.Primitive
+import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
 # Integrals along geodesics between cusps, and their additivity
@@ -77,7 +78,7 @@ public section
 open Complex Filter MeasureTheory Set Topology Matrix Matrix.GeneralLinearGroup
   Matrix.SpecialLinearGroup ModularGroup OnePoint
 open UpperHalfPlane hiding I
-open scoped Manifold MatrixGroups ModularForm
+open scoped Manifold MatrixGroups ModularForm ComplexConjugate
 
 namespace TauCeti
 
@@ -344,7 +345,8 @@ theorem cuspIntegral_symm (F : ℍ → ℂ) (a b : OnePoint ℚ) :
     cuspIntegral F b a = -cuspIntegral F a b := by
   rcases eq_or_ne a b with rfl | hab
   · simp
-  obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hab
+  obtain ⟨g, hg, rfl, rfl⟩ := OnePoint.exists_smul_zero_infty_eq hab
+  replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   have h₀ : (g * mapGL ℚ S) • ((0 : ℚ) : OnePoint ℚ) = g • ∞ := by
     rw [mul_smul, mapGL_S_smul_zero]
   have hinf : (g * mapGL ℚ S) • (∞ : OnePoint ℚ) = g • ((0 : ℚ) : OnePoint ℚ) := by
@@ -360,7 +362,8 @@ theorem cuspIntegral_slash (F : ℍ → ℂ) {γ : GL (Fin 2) ℚ}
     cuspIntegral (F ∣[(2 : ℤ)] γ) a b = cuspIntegral F (γ • a) (γ • b) := by
   rcases eq_or_ne a b with rfl | hab
   · simp
-  obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hab
+  obtain ⟨g, hg, rfl, rfl⟩ := OnePoint.exists_smul_zero_infty_eq hab
+  replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   have hγg : 0 < ((γ * g : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
     rw [Units.val_mul, Matrix.det_mul]
     exact mul_pos hγ hg
@@ -374,7 +377,8 @@ theorem cuspIntegral_smul (c : ℂ) (F : ℍ → ℂ) (a b : OnePoint ℚ) :
     cuspIntegral (c • F) a b = c * cuspIntegral F a b := by
   rcases eq_or_ne a b with rfl | hab
   · simp
-  obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hab
+  obtain ⟨g, hg, rfl, rfl⟩ := OnePoint.exists_smul_zero_infty_eq hab
+  replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   rw [cuspIntegral_smul_zero_smul_infty _ hg, cuspIntegral_smul_zero_smul_infty _ hg,
     geodesicIntegral_smul hg]
 
@@ -383,31 +387,66 @@ theorem cuspIntegral_smul (c : ℂ) (F : ℍ → ℂ) (a b : OnePoint ℚ) :
 theorem cuspIntegral_zero (a b : OnePoint ℚ) : cuspIntegral (0 : ℍ → ℂ) a b = 0 := by
   simpa only [zero_smul, zero_mul] using cuspIntegral_smul 0 (0 : ℍ → ℂ) a b
 
+/-- Every rational matrix `g` can be replaced by one of positive determinant with the same
+cusps `g • 0` and `g • ∞`, namely `g` itself or `g * diag(-1, 1)`, and integrability of the
+restriction of `F ∣[2] g` to the imaginary axis is preserved, because `diag(-1, 1)` acts on it as
+complex conjugation. -/
+private lemma exists_pos_det (g : GL (Fin 2) ℚ) :
+    ∃ g' : GL (Fin 2) ℚ, 0 < (g' : Matrix (Fin 2) (Fin 2) ℚ).det ∧
+      g' • ((0 : ℚ) : OnePoint ℚ) = g • ((0 : ℚ) : OnePoint ℚ) ∧ g' • (∞ : OnePoint ℚ) = g • ∞ ∧
+      ∀ F : ℍ → ℂ, IntegrableOn (resToImagAxis (F ∣[(2 : ℤ)] g)) (Ioi 0) →
+        IntegrableOn (resToImagAxis (F ∣[(2 : ℤ)] g')) (Ioi 0) := by
+  by_cases hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det
+  · exact ⟨g, hg, rfl, rfl, fun _ h ↦ h⟩
+  let D : GL (Fin 2) ℚ := .mkOfDetNeZero !![-1, 0; 0, 1] (by simp)
+  have hD : (D : Matrix (Fin 2) (Fin 2) ℚ) = !![-1, 0; 0, 1] := rfl
+  have hD0 : D • ((0 : ℚ) : OnePoint ℚ) = ((0 : ℚ) : OnePoint ℚ) := by
+    rw [OnePoint.smul_some_eq_ite]
+    simp [hD]
+  have hDinf : D • (∞ : OnePoint ℚ) = ∞ := by
+    rw [OnePoint.smul_infty_eq_self_iff]
+    simp [hD]
+  refine ⟨g * D, ?_, by rw [mul_smul, hD0], by rw [mul_smul, hDinf], fun F hF ↦ ?_⟩
+  · have hne : (g : Matrix (Fin 2) (Fin 2) ℚ).det ≠ 0 := by
+      simpa using g.det.ne_zero
+    rw [Units.val_mul, Matrix.det_mul, hD]
+    simp only [det_fin_two_of, mul_one, mul_zero, sub_zero, mul_neg, Left.neg_pos_iff]
+    exact lt_of_le_of_ne (not_lt.mp hg) hne
+  · have h : resToImagAxis (F ∣[(2 : ℤ)] (g * D)) =
+        fun t ↦ conj (resToImagAxis (F ∣[(2 : ℤ)] g) t) := by
+      funext t
+      rw [SlashAction.slash_mul, resToImagAxis_slash_of_map_eq_J _ _ hD]
+    rw [h]
+    exact (Complex.conjCLE.integrable_comp_iff).2 hF
+
 /-- The integral between the cusps `g • 0` and `g • ∞` is additive in the integrand when both
-integrands are integrable along the geodesic `g`. -/
+integrands are integrable along the geodesic `g`. The matrix `g` may have negative determinant:
+the integrals only depend on the cusps, which `g * diag(-1, 1)` has as well. -/
 theorem cuspIntegral_add {F G : ℍ → ℂ} {g : GL (Fin 2) ℚ}
-    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det)
     (hF : IntegrableOn (resToImagAxis (F ∣[(2 : ℤ)] g)) (Ioi 0))
     (hG : IntegrableOn (resToImagAxis (G ∣[(2 : ℤ)] g)) (Ioi 0)) :
     cuspIntegral (F + G) (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) =
       cuspIntegral F (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) +
         cuspIntegral G (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) := by
-  rw [cuspIntegral_smul_zero_smul_infty _ hg, cuspIntegral_smul_zero_smul_infty _ hg,
-    cuspIntegral_smul_zero_smul_infty _ hg, geodesicIntegral_add g hF hG]
+  obtain ⟨g', hg, h₀, hinf, hint⟩ := exists_pos_det g
+  rw [← h₀, ← hinf, cuspIntegral_smul_zero_smul_infty _ hg, cuspIntegral_smul_zero_smul_infty _ hg,
+    cuspIntegral_smul_zero_smul_infty _ hg, geodesicIntegral_add g' (hint _ hF) (hint _ hG)]
 
 /-- The integral between the cusps `g • 0` and `g • ∞` commutes with finite sums of integrands
-that are integrable along the geodesic `g`. -/
+that are integrable along the geodesic `g`. The matrix `g` may have negative determinant, as for
+`TauCeti.cuspIntegral_add`. -/
 theorem cuspIntegral_sum {ι : Type*} (s : Finset ι) {F : ι → ℍ → ℂ} {g : GL (Fin 2) ℚ}
-    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det)
     (hF : ∀ i ∈ s, IntegrableOn (resToImagAxis (F i ∣[(2 : ℤ)] g)) (Ioi 0)) :
     cuspIntegral (∑ i ∈ s, F i) (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) =
       ∑ i ∈ s, cuspIntegral (F i) (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) := by
-  have hres : resToImagAxis ((∑ i ∈ s, F i) ∣[(2 : ℤ)] g) =
-      ∑ i ∈ s, resToImagAxis (F i ∣[(2 : ℤ)] g) := by
+  obtain ⟨g', hg, h₀, hinf, hint⟩ := exists_pos_det g
+  rw [← h₀, ← hinf]
+  have hres : resToImagAxis ((∑ i ∈ s, F i) ∣[(2 : ℤ)] g') =
+      ∑ i ∈ s, resToImagAxis (F i ∣[(2 : ℤ)] g') := by
     funext t
     rcases le_or_gt t 0 with ht | ht <;> simp [resToImagAxis_of_pos, resToImagAxis_of_nonpos, ht]
   simp only [cuspIntegral_smul_zero_smul_infty _ hg, geodesicIntegral_def, hres, Finset.sum_apply]
-  rw [integral_finsetSum s hF, Finset.mul_sum]
+  rw [integral_finsetSum s fun i hi ↦ hint (F i) (hF i hi), Finset.mul_sum]
 
 /-- **The values of a primitive at the cusps.** Under the hypotheses of
 `TauCeti.cuspIntegral_add_adjacent`, a primitive `Φ` of `F` has a value `V x` at each cusp `x`,
@@ -432,7 +471,8 @@ private theorem exists_cuspValue {F : ℍ → ℂ} {Φ : ℂ → ℂ} (hΦ : ∀
   refine ⟨V, hV, fun x y ↦ ?_⟩
   rcases eq_or_ne x y with rfl | hxy
   · simp
-  obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hxy
+  obtain ⟨g, hg, rfl, rfl⟩ := OnePoint.exists_smul_zero_infty_eq hxy
+  replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   rw [cuspIntegral_smul_zero_smul_infty F hg, geodesicIntegral_eq_axisLimit_sub hΦ hint hg,
     hV g hg, hV _ (det_mul_mapGL_S_pos hg), mul_smul, mapGL_S_smul_infty]
 

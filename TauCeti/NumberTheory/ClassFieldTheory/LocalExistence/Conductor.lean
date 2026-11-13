@@ -73,7 +73,7 @@ theorem conductorExponent_localClassField_le_iff [CharZero K] (N : LocalNormSubg
 prime to the residue characteristic `p` is at most `n` exactly when `U(K,n) ⊆ N`. This holds in
 every characteristic. -/
 theorem conductorExponent_localClassFieldPrimeToResidueCharacteristic_le_iff
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) {n : ℕ} :
+    (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) {n : ℕ} :
     conductorExponent K (classField K (localClassFieldPrimeToResidueCharacteristic p N).1.1) ≤
         n ↔
       unitFiltration K n ≤ N.1.1.toSubgroup := by
@@ -105,7 +105,7 @@ theorem conductorExponent_localClassField_unitFiltrationSupZpowers_le_iff [CharZ
     conductorExponent K (classField K (localClassField (unitFiltrationSupZpowers hϖ n)).1) ≤ m ↔
       unitFiltration K m ≤ unitFiltration K n := by
   rw [conductorExponent_localClassField_le_iff, unitFiltrationSupZpowers_toSubgroup,
-    unitFiltration_le_unitFiltration_sup_zpowers_iff hϖ]
+    unitFiltration_le_unitFiltration_sup_zpowers_iff (by simp [hϖ])]
 
 /-- **The class field of `U(K,n) · ϖ ^ ℤ` has conductor exponent `n`.** The exception `n = 1`
 with a residue field of two elements is genuine: there `U(K,1) · ϖ ^ ℤ = Kˣ`

@@ -94,7 +94,7 @@ private theorem integrableOn_pow_mul_studentTPDFReal_Ioi_iff (hν : 0 < ν) (hq 
     have h_g_eq : ∀ z : ℝ, 0 < z → |2 * z / ν| • g (z ^ 2 / ν) =
         studentTPDFReal ν z * z ^ q := by
       intro z hz
-      simpa [g] using abs_deriv_smul_studentTPDFReal hν q hz
+      simpa [g] using abs_deriv_smul_studentTPDFReal (ν := ν) q hz
     have h_g_eq' : EqOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν))
         (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
       intro z hz

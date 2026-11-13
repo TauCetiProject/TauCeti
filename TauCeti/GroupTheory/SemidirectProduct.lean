@@ -14,6 +14,8 @@ Let `H` and `K` be subgroups of a group `G` with `K ≤ Subgroup.normalizer H`. 
 carries the external semidirect product `H ⋊ K` into `G` (`SemidirectProduct.monoidHomSubgroup`),
 and its image is the join `H ⊔ K`. The corresponding elementwise normal form of `H ⊔ K` is
 `Subgroup.mem_sup_of_right_le_normalizer_left` in `TauCeti.Algebra.Group.Subgroup.Pointwise`.
+An invariant normal subgroup of the first factor is normal in the full semidirect product
+(`Subgroup.normal_map_inl`).
 
 ## Main results
 
@@ -21,6 +23,8 @@ and its image is the join `H ⊔ K`. The corresponding elementwise normal form o
   images of its components.
 * `SemidirectProduct.range_monoidHomSubgroup`: the range of the semidirect-product
   multiplication homomorphism is `H ⊔ K`.
+* `SemidirectProduct.ker_rightHom_sup_range_inr`: the kernel of the projection to the acting group
+  and the acting group generate the semidirect product.
 * `SemidirectProduct.mem_ker_monoidHomSubgroup_iff`: its kernel consists of antidiagonal pairs.
 * `SemidirectProduct.ker_monoidHomSubgroup_le_ker_lift_iff`: an external lift kills this kernel
   exactly when the two maps agree on the intersection.
@@ -29,6 +33,23 @@ and its image is the join `H ⊔ K`. The corresponding elementwise normal form o
 public section
 
 variable {G : Type*} [Group G] {H K : Subgroup G}
+
+namespace Subgroup
+
+open SemidirectProduct
+
+/-- A normal subgroup of the first factor remains normal in the semidirect product if the
+acting group preserves it. -/
+theorem normal_map_inl {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N}
+    (S : Subgroup N) [S.Normal] (hS : ∀ q n, n ∈ S → φ q n ∈ S) :
+    (S.map (inl : N →* N ⋊[φ] Q)).Normal := by
+  constructor
+  rintro _ ⟨n, hn, rfl⟩ x
+  refine ⟨x.left * φ x.right n * x.left⁻¹,
+    ‹S.Normal›.conj_mem _ (hS _ _ hn) _, ?_⟩
+  ext <;> simp [mul_assoc]
+
+end Subgroup
 
 namespace SemidirectProduct
 
@@ -54,6 +75,15 @@ theorem range_monoidHomSubgroup (hLE : K ≤ Subgroup.normalizer (H : Set G)) :
   rintro _ ⟨x, rfl⟩
   rw [monoidHomSubgroup_apply]
   exact Subgroup.mul_mem_sup x.left.2 x.right.2
+
+/-- The kernel of the projection of a semidirect product to the acting group, together with the
+image of the acting group, generates the semidirect product. -/
+@[simp]
+theorem ker_rightHom_sup_range_inr {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} :
+    (rightHom : N ⋊[φ] Q →* Q).ker ⊔ (inr : Q →* N ⋊[φ] Q).range = ⊤ := by
+  refine top_unique fun x _ ↦ ?_
+  rw [← inl_left_mul_inr_right x]
+  exact Subgroup.mul_mem_sup (by rw [← range_inl_eq_ker_rightHom]; exact ⟨_, rfl⟩) ⟨_, rfl⟩
 
 variable {D : Type*} [Group D]
 variable (hLE : K ≤ Subgroup.normalizer (H : Set G))

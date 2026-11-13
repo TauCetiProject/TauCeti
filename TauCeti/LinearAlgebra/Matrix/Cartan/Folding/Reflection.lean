@@ -44,6 +44,11 @@ def foldedCoroot (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
     (funCongrLeft ℤ ℤ σ).toLinearMap.fixedSubmodule :=
   B.foldingScale σ O • σ.permutationFixedBasis O
 
+/-- A normalized folded simple coroot scales the orbit indicator basis vector by `foldingScale`. -/
+theorem foldedCoroot_def (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    B.foldedCoroot σ O = B.foldingScale σ O • σ.permutationFixedBasis O :=
+  (rfl)
+
 /-- The ambient coordinate formula for a normalized folded coroot. -/
 theorem coe_foldedCoroot (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
     (B.foldedCoroot σ O : I → ℤ) =

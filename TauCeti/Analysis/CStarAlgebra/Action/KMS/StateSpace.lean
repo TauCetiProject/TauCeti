@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Normed.Module.WeakDual
+public import TauCeti.Analysis.CStarAlgebra.State.Space
 import TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
@@ -25,10 +26,10 @@ and is preserved under pointwise limits, it gives the following.
 * `IsKMSState.of_tendsto`: a pointwise limit of β-KMS states is a β-KMS state as soon as it
   has norm one. The norm condition cannot be dropped for nonunital `A`, where states may
   converge weak-* to `0`. In set form this is `closure_kmsStates_inter_subset`.
-* `convex_kmsStates`: `K_β` is convex. No identity element is needed, because the norm of a
-  positive functional is its limit along an approximate unit.
+* `kmsStates_subset_stateSpace`: β-KMS states are states, so `convex_kmsStates`, the convexity
+  of `K_β`, follows from that of the state space, with no identity element needed.
 * For unital `A`, `K_β` is weak-* closed, `isClosed_kmsStates`, and weak-* compact,
-  `isCompact_kmsStates`, by the Banach--Alaoglu theorem.
+  `isCompact_kmsStates`, as a closed subset of the weak-* compact state space.
 
 ## References
 
@@ -91,6 +92,11 @@ theorem mem_kmsStates_iff_forall_isEntireAnalytic {φ : WeakDual ℂ A} :
     · simpa using hφ
     · simp
 
+/-- β-KMS states are states. -/
+theorem kmsStates_subset_stateSpace : α.kmsStates β ⊆ stateSpace A := by
+  rintro _ ⟨ω, hω, rfl⟩
+  simpa using hω.norm_eq_one
+
 omit [PartialOrder A] [StarOrderedRing A] in
 /-- The functionals satisfying the analytic KMS identity form a weak-* closed set. -/
 private theorem isClosed_setOf_apply_mul_entireExtension_eq (α : CStarAction (Multiplicative ℝ) A)
@@ -118,16 +124,11 @@ theorem closure_kmsStates_inter_subset :
 /-- **Convexity of `K_β`.** Convex combinations of β-KMS states are β-KMS states. -/
 theorem convex_kmsStates : Convex ℝ (α.kmsStates β) := by
   intro φ hφ ψ hψ s t hs ht hst
+  -- positivity and norm one are those of a convex combination of states
+  obtain ⟨hpos, hnorm⟩ := mem_stateSpace_iff.1 <| convex_stateSpace
+    (kmsStates_subset_stateSpace hφ) (kmsStates_subset_stateSpace hψ) hs ht hst
   rw [mem_kmsStates_iff_forall_isEntireAnalytic] at hφ hψ ⊢
-  have hpos (a : A) (ha : 0 ≤ a) : 0 ≤ (s • φ + t • ψ) a := by
-    simpa using add_nonneg (smul_nonneg hs (hφ.1 a ha)) (smul_nonneg ht (hψ.1 a ha))
-  refine ⟨hpos, ?_, fun a ha b hb => by simp [hφ.2.2 a ha b hb, hψ.2.2 a ha b hb]⟩
-  -- the norm of a positive functional is its limit along an approximate unit
-  have h := ((tendsto_approximateUnit_norm_of_map_nonneg hφ.1).const_smul s).add
-    ((tendsto_approximateUnit_norm_of_map_nonneg hψ.1).const_smul t)
-  simp only [hφ.2.1, hψ.2.1, ofReal_one, ← add_smul, hst, one_smul] at h
-  exact_mod_cast tendsto_nhds_unique (tendsto_approximateUnit_norm_of_map_nonneg hpos)
-    (h.congr fun e => by simp)
+  exact ⟨hpos, hnorm, fun a ha b hb => by simp [hφ.2.2 a ha b hb, hψ.2.2 a ha b hb]⟩
 
 section Unital
 
@@ -136,18 +137,18 @@ variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
 /-- For unital `B`, the set `K_β` of β-KMS states is weak-* closed. -/
 theorem isClosed_kmsStates : IsClosed (α.kmsStates β) := by
-  refine closure_subset_iff_isClosed.mp fun φ hφ => closure_kmsStates_inter_subset ⟨hφ, ?_⟩
-  have hsub : α.kmsStates β ⊆ {φ | (∀ a, 0 ≤ a → 0 ≤ φ a) ∧ φ 1 = 1} := fun ψ hψ => by
-    obtain ⟨hpos, h1, -⟩ := mem_kmsStates_iff_forall_isEntireAnalytic.mp hψ
-    exact ⟨hpos, by rw [← norm_toStrongDual_eq_map_one_of_map_nonneg hpos, h1, ofReal_one]⟩
-  obtain ⟨hpos, h1⟩ := closure_minimal hsub (isClosed_setOf_map_nonneg.inter
-    (isClosed_eq (eval_continuous 1) continuous_const)) hφ
-  exact_mod_cast (norm_toStrongDual_eq_map_one_of_map_nonneg hpos).trans h1
+  -- `K_β` is the set of states satisfying the analytic KMS identity
+  have h : α.kmsStates β = stateSpace B ∩ {φ | ∀ a, α.IsEntireAnalytic a →
+      ∀ b, α.IsEntireAnalytic b → φ (a * α.entireExtension b (β * I)) = φ (b * a)} :=
+    Set.ext fun _ => by
+      rw [mem_kmsStates_iff_forall_isEntireAnalytic, mem_inter_iff, mem_stateSpace_iff, and_assoc,
+        mem_ofPred_eq]
+  rw [h]
+  exact isClosed_stateSpace.inter (isClosed_setOf_apply_mul_entireExtension_eq α β)
 
 /-- **Weak-* compactness of `K_β`.** For unital `B`, the set of β-KMS states is weak-* compact. -/
-theorem isCompact_kmsStates : IsCompact (α.kmsStates β) := by
-  refine (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset isClosed_kmsStates fun φ hφ => ?_
-  simp [(mem_kmsStates_iff_forall_isEntireAnalytic.mp hφ).2.1]
+theorem isCompact_kmsStates : IsCompact (α.kmsStates β) :=
+  isCompact_stateSpace.of_isClosed_subset isClosed_kmsStates kmsStates_subset_stateSpace
 
 end Unital
 

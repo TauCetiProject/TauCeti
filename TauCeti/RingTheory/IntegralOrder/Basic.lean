@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.MulOpposite
 public import Mathlib.Algebra.Module.Lattice
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
 public import TauCeti.RingTheory.Trace.Regular
+import TauCeti.RingTheory.IntegralClosure.TensorProduct
 
 /-!
 # Orders in finite-dimensional algebras
@@ -38,6 +40,7 @@ whose regular trace form vanishes, although the conclusion holds there via the r
 ## Main results
 
 * `TauCeti.IntegralOrder.isOrder_iff`: `Λ` is an order iff it is finite over `R` and spans `E`.
+* `TauCeti.IntegralOrder.isOrder_op_iff`: `Λᵒᵖ` is an order in `Eᵐᵒᵖ` iff `Λ` is an order in `E`.
 * `TauCeti.IntegralOrder.IsOrder.isIntegral`: every element of an order is integral over `R`.
 * `TauCeti.IntegralOrder.IsOrder.le_integralClosure`: in a commutative algebra, every order lies in
   the integral closure of `R`.
@@ -119,6 +122,17 @@ theorem of_le (h : IsOrder F Λ) (hle : Λ ≤ Γ) [Module.Finite R Γ] : IsOrde
 
 end IsOrder
 
+/-- **Opposite orders.** `Λᵒᵖ` is an `R`-order in `Eᵐᵒᵖ` exactly when `Λ` is an `R`-order in `E`. -/
+theorem isOrder_op_iff {Λ : Subalgebra R E} : IsOrder F Λ.op ↔ IsOrder F Λ := by
+  have hspan : span F (Λ.op : Set Eᵐᵒᵖ) =
+      (span F (Λ : Set E)).map ((MulOpposite.opLinearEquiv F : E ≃ₗ[F] Eᵐᵒᵖ) : E →ₗ[F] Eᵐᵒᵖ) := by
+    rw [Submodule.map_span]
+    congr 1
+    ext x
+    simp [← MulOpposite.unop_inj]
+  rw [isOrder_iff, isOrder_iff, hspan, Submodule.map_eq_top_iff,
+    Module.Finite.equiv_iff Λ.linearEquivOp]
+
 omit [Algebra F E] [Algebra R E] [IsScalarTower R F E] in
 /-- The image of `R` is an `R`-order in `F`. -/
 theorem isOrder_bot : IsOrder F (⊥ : Subalgebra R F) := by
@@ -185,18 +199,12 @@ theorem isOrder_of_isIntegral [IsIntegrallyClosed R] [IsNoetherianRing R]
 
 /-- **Integral closures are orders.** The integral closure of an integrally closed noetherian domain
 `R` in a finite separable extension `L` of its fraction field `F` is an `R`-order in `L`. -/
-theorem integralClosure_isOrder [IsDomain R] [IsIntegrallyClosed R] [IsNoetherianRing R]
+theorem integralClosure_isOrder [IsIntegrallyClosed R] [IsNoetherianRing R]
     (L : Type*) [Field L] [Algebra F L] [Algebra R L] [IsScalarTower R F L] [FiniteDimensional F L]
     [Algebra.IsSeparable F L] : IsOrder F (integralClosure R L) := by
-  refine isOrder_iff.2 ⟨IsIntegralClosure.finite R F L (integralClosure R L),
-    eq_top_iff.2 fun x _ => ?_⟩
-  -- some nonzero `y : R` makes `y • x` integral, and then `x = y⁻¹ • (y • x)`
-  obtain ⟨y, hy, hyx⟩ := exists_integral_multiples R F (L := L) {x}
-  have hy' : algebraMap R F y ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective R F)).2 hy
-  have hmem : y • x ∈ span F (integralClosure R L : Set L) :=
-    subset_span (hyx x (Finset.mem_singleton_self x))
-  convert smul_mem _ (algebraMap R F y)⁻¹ hmem using 1
-  rw [← algebraMap_smul F y x, smul_smul, inv_mul_cancel₀ hy', one_smul]
+  have := IsDomain.of_faithfulSMul R F
+  exact isOrder_iff.2 ⟨IsIntegralClosure.finite R F L (integralClosure R L),
+    span_integralClosure_eq_top⟩
 
 end Integral
 

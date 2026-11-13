@@ -113,7 +113,7 @@ generate the right coset `Γ₁' x`, then `∑ᵢ [aᵢ · x] = m • T_D [x]`.
 Covering is not a hypothesis: a right coset named by no member forces `m = 0`, and then both sides
 vanish. This is the shape in which the products `aᵢ bⱼ` of two families of representatives arrive
 once they are grouped by the double coset they lie in. -/
-theorem sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk {ι : Type*} [Fintype ι]
+theorem sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk {ι : Type*} [Finite ι]
     (a : ι → GL (Fin 2) ℚ) (m : ℕ)
     (hmem : ∀ i, a i ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)))
     (hcard : ∀ x ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)),
@@ -185,7 +185,7 @@ matrices are integral, `HeckeRing.GLn.mem_intEntries_of_cover` —
 This is Shimura's computation in §3.4 on the way to Proposition 3.37, on the symbol side. No
 invariance hypothesis appears, in contrast to the slash sums: the classes in the coinvariants are
 already invariant, which is what `heckeSymbol_mk_eq_sum_of_rightCosets` records. -/
-theorem heckeSymbol_heckeSymbol_mk_eq_sum_of_rightCosets [Fintype ι] [Fintype κ]
+theorem heckeSymbol_heckeSymbol_mk_eq_sum_of_rightCosets [Finite ι] [Finite κ]
     (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
     heckeSymbol Γ₁ Γ₂ D₁ hD₁ (heckeSymbol Γ₂ Γ₃ D₂ hD₂ (Coinvariants.mk _ x)) =
       ∑ i, ∑ j, (Coinvariants.mk _ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R]
@@ -291,8 +291,8 @@ theorem heckeSymbol_comp_heckeSymbol_eq_sum_nsmul :
             (rightCosetRep_mem D₂ hD₂ (map_mapGL_le_intEntries 2 Γ₃) q.2)⟩ x),
     ← Finset.sum_attach (Finset.univ.image (pairCoset D₁ D₂))]
   refine Finset.sum_congr rfl fun D _ ↦ ?_
-  exact sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk Γ₁ Γ₃ D.1
-    (mem_intEntries_of_mem_image_pairCoset Γ₁ Γ₂ Γ₃ D₁ D₂ hD₁ hD₂ D.2) _ _
+  convert sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk (ι := {q // pairCoset D₁ D₂ q = D.1})
+    Γ₁ Γ₃ D.1 (mem_intEntries_of_mem_image_pairCoset Γ₁ Γ₂ Γ₃ D₁ D₂ hD₁ hD₂ D.2) _ _
     (fun i ↦ pairCoset_eq_iff.mp i.2)
     (fun _ hx ↦ card_pairs_pairCoset_rightCoset_eq_multiplicity hx) x
 
@@ -363,8 +363,6 @@ representatives meet each of its right cosets once (`HeckeRing.GL2.op_smul_eq_of
 so the single-coset composition law applies. -/
 theorem heckeTSymbol_mul_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.Coprime n) :
     heckeTSymbol R w N (m * n) = heckeTSymbol R w N m * heckeTSymbol R w N n := by
-  have hm := Nat.pos_of_neZero m
-  have hn := Nat.pos_of_neZero n
   have hmem {p : ℕ} (v) : rightCosetRep (diagCosetGamma1 N p) v ∈
       doubleCoset (natDiagGL 2 ![1, p]) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) :=
     doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL ▸ rightCosetRep_mem_doubleCoset _ v
@@ -375,11 +373,11 @@ theorem heckeTSymbol_mul_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.C
     (op_rightCosetRep_smul_injective _) (doubleCoset_eq_iUnion_rightCosetRep _)
     (op_rightCosetRep_smul_injective _) (diagCosetGamma1 N (m * n)) ?_ ?_).symm
   · simp only [doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL]
-    exact doubleCoset_natDiagGL_mul_of_coprime hm hn hmn
+    exact doubleCoset_natDiagGL_mul_of_coprime hmn
   · rintro ⟨i, j⟩ ⟨k, l⟩ h
     -- the right coset of a product determines that of the second factor, then of the first
     obtain rfl : j = l := op_rightCosetRep_smul_injective _
-      (op_smul_eq_of_op_mul_smul_eq hm hn hmn (hmem i) (hmem k) (hmem j) (hmem l) h)
+      (op_smul_eq_of_op_mul_smul_eq hmn (hmem i) (hmem k) (hmem j) (hmem l) h)
     refine Prod.ext (op_rightCosetRep_smul_injective _ ?_) rfl
     rw [rightCoset_eq_iff] at h ⊢
     simpa only [_root_.mul_inv_rev, mul_assoc, mul_inv_cancel_left] using h

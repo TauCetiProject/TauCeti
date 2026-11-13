@@ -32,14 +32,14 @@ public section
 
 open Function
 
-namespace TauCeti
+namespace IsLocalHomeomorph
 
 /-- **A local homeomorphism from a compact path-connected space to a simply connected space is
 bijective.** Both spaces are Hausdorff. -/
-theorem _root_.IsLocalHomeomorph.bijective_of_compactSpace {M N : Type*} [TopologicalSpace M]
+theorem bijective_of_compactSpace {M N : Type*} [TopologicalSpace M]
     [TopologicalSpace N] [CompactSpace M] [PathConnectedSpace M] [T2Space M] [T2Space N]
     [SimplyConnectedSpace N] {f : M → N} (hf : IsLocalHomeomorph f) : Bijective f := by
   have hcov : IsCoveringMap f := isLocalHomeomorph_iff_isCoveringMap.mp hf
   exact ⟨hcov.injective, hcov.surjective⟩
 
-end TauCeti
+end IsLocalHomeomorph

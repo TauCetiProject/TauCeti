@@ -21,8 +21,8 @@ are non-interleaving when each pair of endpoints lies on one side of the other c
 pair. The row version is the same definition after reading, in each row, the unique columns
 containing the `O` and `X` markings.
 
-The predicates are intentionally just the combinatorial hypotheses. The pentagon-counting maps
-and chain homotopies for commutation invariance are later Lane G.5 targets.
+The predicates are intentionally just the combinatorial hypotheses. The pentagon-counting maps and
+chain homotopies for commutation invariance are built on them elsewhere.
 
 ## Main definitions
 
@@ -48,10 +48,8 @@ and chain homotopies for commutation invariance are later Lane G.5 targets.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.5,
-"Invariance over `𝔽₂`. Grid moves = commutation + (de)stabilization." It isolates the
-non-interleaving condition for row and column commutations in the grid homology construction of
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+This file isolates the non-interleaving condition for row and column commutations in the grid
+homology construction of Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
 
 @[expose] public section

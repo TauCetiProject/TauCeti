@@ -18,13 +18,10 @@ public import TauCeti.MeasureTheory.Integral.ComapSubtype
 
 For a measurable set `s : Set α`, the subtype inclusion `(↑) : s → α` is a measurable embedding
 that pushes the pullback measure `μ.comap ((↑) : s → α)` forward to `μ.restrict s`
-(`MeasureTheory.map_comap_subtype_coe`). This file develops the resulting `Lᵖ` dictionary between
-the subtype measure `μ.comap (↑)`, the restricted measure `μ.restrict s`, and the ambient measure
-`μ`:
+(`MeasureTheory.map_comap_subtype_coe`). The `eLpNorm` and `MemLp` dictionary between the subtype
+measure `μ.comap (↑)`, the restricted measure `μ.restrict s`, and the ambient measure `μ` is in
+`TauCeti.MeasureTheory.Integral.ComapSubtype`; this file adds the `Lᵖ`-space level:
 
-* `AEStronglyMeasurable`, `eLpNorm`, and `MemLp` on `μ.restrict s` agree with those of `f ∘ (↑)`
-  on `μ.comap (↑)`, and agree with the ambient versions on `μ` whenever `f =ᵐ[μ.restrict sᶜ] 0`
-  (giving subset independence across any two measurable carriers outside which `f` vanishes).
 * Precomposition with `(↑) : s → α` is a surjective linear isometry
   `MeasureTheory.Lp.comapSubtypeEquivₗᵢ : Lp E p (μ.restrict s) ≃ₗᵢ[𝕜] Lp E p (μ.comap (↑))`
   (requiring no nonemptiness assumption on `s`).
@@ -46,9 +43,6 @@ the subtype measure `μ.comap (↑)`, the restricted measure `μ.restrict s`, an
 
 ## Main statements
 
-* `MeasureTheory.eLpNorm_comp_subtypeVal_comap_of_ae_restrict_compl_eq_zero`,
-  `MeasureTheory.memLp_iff_comap_subtypeVal_of_ae_restrict_compl_eq_zero`: ambient agreement of
-  `eLpNorm` and `MemLp` when `f =ᵐ[μ.restrict sᶜ] 0`.
 * `MeasureTheory.Lp.restrictComapCLM_extendByZeroComapₗᵢ`,
   `MeasureTheory.Lp.extendByZeroComapₗᵢ_restrictComapCLM_of_ae_restrict_compl_eq_zero`,
   `MeasureTheory.Lp.mem_range_extendByZeroComapₗᵢ_iff`: the retraction-section relationship and
@@ -68,62 +62,6 @@ open Filter Set
 open scoped ENNReal
 
 namespace MeasureTheory
-
-section Seminorm
-
-variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {s t : Set α} {p : ℝ≥0∞}
-
-/-- If `f` vanishes `μ.restrict sᶜ`-almost everywhere outside a measurable set `s`, then `f` is
-almost everywhere strongly measurable on `α` if and only if `f ∘ (↑)` is on `s`. -/
-theorem aestronglyMeasurable_iff_comap_subtypeVal_of_ae_restrict_compl_eq_zero {β : Type*}
-    [Zero β] [TopologicalSpace β] {f : α → β}
-    (hs : MeasurableSet s) (hf : f =ᵐ[μ.restrict sᶜ] 0) :
-    AEStronglyMeasurable f μ ↔
-      AEStronglyMeasurable (f ∘ ((↑) : s → α)) (μ.comap ((↑) : s → α)) :=
-  (aestronglyMeasurable_congr (indicator_ae_eq_of_restrict_compl_ae_eq_zero hs hf)).symm.trans <|
-    (aestronglyMeasurable_indicator_iff hs).trans
-      (aestronglyMeasurable_restrict_iff_comap_subtypeVal hs)
-
-/-- The `Lᵖ` seminorm of `f ∘ (↑)` against `μ.comap (↑)` on a measurable set `s` equals the `Lᵖ`
-seminorm of `f` against `μ.restrict s`. -/
-theorem eLpNorm_comp_subtypeVal_comap {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε]
-    {f : α → ε} (hs : MeasurableSet s) :
-    eLpNorm (f ∘ ((↑) : s → α)) p (μ.comap ((↑) : s → α)) = eLpNorm f p (μ.restrict s) := by
-  rw [← (MeasurableEmbedding.subtype_coe hs).eLpNorm_map_measure, map_comap_subtype_coe hs]
-
-/-- **Ambient agreement of `Lᵖ` seminorms.** If `f` vanishes `μ.restrict sᶜ`-almost everywhere
-outside a measurable set `s`, the `Lᵖ` seminorm of `f ∘ (↑)` on `s` equals the ambient `Lᵖ`
-seminorm of `f`. -/
-theorem eLpNorm_comp_subtypeVal_comap_of_ae_restrict_compl_eq_zero {ε : Type*}
-    [TopologicalSpace ε] [ESeminormedAddMonoid ε] {f : α → ε}
-    (hs : MeasurableSet s) (hf : f =ᵐ[μ.restrict sᶜ] 0) :
-    eLpNorm (f ∘ ((↑) : s → α)) p (μ.comap ((↑) : s → α)) = eLpNorm f p μ :=
-  (eLpNorm_comp_subtypeVal_comap hs).trans <|
-    (eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet).symm.trans
-      (eLpNorm_congr_ae (indicator_ae_eq_of_restrict_compl_ae_eq_zero hs hf))
-
-/-- **Subset independence of `Lᵖ` seminorms.** If `f` vanishes almost everywhere outside each of two
-measurable sets `s` and `t`, its subtype `Lᵖ` seminorms on `s` and on `t` agree. -/
-theorem eLpNorm_comp_subtypeVal_comap_eq_of_ae_restrict_compl_eq_zero {ε : Type*}
-    [TopologicalSpace ε] [ESeminormedAddMonoid ε] {f : α → ε}
-    (hs : MeasurableSet s) (ht : MeasurableSet t)
-    (hfs : f =ᵐ[μ.restrict sᶜ] 0) (hft : f =ᵐ[μ.restrict tᶜ] 0) :
-    eLpNorm (f ∘ ((↑) : s → α)) p (μ.comap ((↑) : s → α)) =
-      eLpNorm (f ∘ ((↑) : t → α)) p (μ.comap ((↑) : t → α)) :=
-  (eLpNorm_comp_subtypeVal_comap_of_ae_restrict_compl_eq_zero hs hfs).trans
-    (eLpNorm_comp_subtypeVal_comap_of_ae_restrict_compl_eq_zero ht hft).symm
-
-/-- If `f` vanishes `μ.restrict sᶜ`-almost everywhere outside a measurable set `s`, then `f`
-belongs to `MemLp` on `α` if and only if `f ∘ (↑)` belongs to `MemLp` on `s`. -/
-theorem memLp_iff_comap_subtypeVal_of_ae_restrict_compl_eq_zero {ε : Type*}
-    [TopologicalSpace ε] [ESeminormedAddMonoid ε] {f : α → ε}
-    (hs : MeasurableSet s) (hf : f =ᵐ[μ.restrict sᶜ] 0) :
-    MemLp f p μ ↔ MemLp (f ∘ ((↑) : s → α)) p (μ.comap ((↑) : s → α)) :=
-  (memLp_congr_ae (indicator_ae_eq_of_restrict_compl_ae_eq_zero hs hf)).symm.trans <|
-    (memLp_indicator_iff_restrict hs.nullMeasurableSet).trans
-      (memLp_restrict_iff_comap_subtypeVal hs)
-
-end Seminorm
 
 namespace Lp
 
@@ -304,10 +242,10 @@ theorem mem_range_extendByZeroComapₗᵢ_iff (hs : MeasurableSet s) {f : Lp E p
 /-- `restrictComapCLM` is norm-nonincreasing. -/
 theorem norm_restrictComapCLM_apply_le (hs : MeasurableSet s) (f : Lp E p μ) :
     ‖restrictComapCLM 𝕜 μ p hs f‖ ≤ ‖f‖ := by
-  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (coeFn_restrictComapCLM (𝕜 := 𝕜) hs f),
-    eLpNorm_comp_subtypeVal_comap hs]
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (coeFn_restrictComapCLM (𝕜 := 𝕜) hs f)]
   exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top f)
-    (eLpNorm_mono_measure (⇑f) Measure.restrict_le_self)
+    ((eLpNorm_comp_subtypeVal hs _ p).le.trans
+      (eLpNorm_mono_measure (⇑f) Measure.restrict_le_self))
 
 /-- `restrictComapCLM` has operator norm at most `1`. -/
 theorem norm_restrictComapCLM_le {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' E]

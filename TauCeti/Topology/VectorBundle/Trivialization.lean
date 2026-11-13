@@ -24,17 +24,28 @@ linear equivalence `e.continuousLinearEquivAt 𝕜 b`, with inverse its symmetri
 `Bundle.Trivialization.homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt`).
 
 More generally, any linear trivialization sends a vector over its base set to a nonzero vector
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). For two linear
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). Over the base
+set, its fibrewise linear inverse `e.symmₗ R b` is the inverse of the fibrewise linear equivalence
+(`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
+(`Bundle.Trivialization.symmₗ_injective`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
 of the first followed by the coordinate change from the first to the second
-(`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`).
+(`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). Linear coordinate changes
+satisfy the identity and cocycle laws over the relevant base sets
+(`Bundle.Trivialization.coordChangeL_same_apply`,
+`Bundle.Trivialization.coordChangeL_coordChangeL_apply`), and send the coordinate of a point in
+the first trivialization to its coordinate in the second
+(`Bundle.Trivialization.coordChangeL_apply_snd`). Convergence in the total space of a vector bundle
+is convergence of base points and of fibre coordinates in any linear trivialization over the limit
+point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`).
 
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). We also record
-the product trivialization's fibrewise inverse (`Bundle.Trivialization.prod_symm_apply'`), the
-preferred trivialization of a direct-sum fibre bundle (`FiberBundle.trivializationAt_prod`), and
-scalar restriction of linear trivializations and coordinate changes
-(`Bundle.Trivialization.isLinear_restrictScalars`,
-`Bundle.Trivialization.restrictScalars_coordChangeL`).
+We also record the product trivialization's fibrewise inverse
+(`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
+bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear trivializations
+and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
+`Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
+fields has the same continuous linear map at every point over either field
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
 -/
 
 public section
@@ -42,6 +53,7 @@ public section
 noncomputable section
 
 open Bundle
+open scoped Topology
 
 namespace Bundle.Trivialization
 
@@ -80,6 +92,17 @@ theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
     (e v).2 ≠ 0 ↔ v.2 ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
 
+/-- Over the base set, the fibrewise linear inverse of a linear trivialization is the inverse of
+its fibrewise linear equivalence. -/
+theorem coe_linearEquivAt_symm {b : B} (hb : b ∈ e.baseSet) :
+    ((e.linearEquivAt R b hb).symm : F →ₗ[R] E b) = e.symmₗ R b :=
+  LinearMap.ext fun u ↦ by rw [LinearEquiv.coe_coe, linearEquivAt_symm_apply, symmₗ_apply e hb]
+
+/-- Over the base set, the fibrewise linear inverse of a linear trivialization is injective. -/
+theorem symmₗ_injective {b : B} (hb : b ∈ e.baseSet) : Function.Injective (e.symmₗ R b) := by
+  rw [← e.coe_linearEquivAt_symm R hb, LinearEquiv.coe_coe]
+  exact (e.linearEquivAt R b hb).symm.injective
+
 end Linear
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {F : Type*} [NormedAddCommGroup F]
@@ -101,6 +124,22 @@ theorem homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt (he : e.baseSet 
   rw [Homeomorph.symm_apply_eq, homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
   exact congrArg (TotalSpace.mk' F w.proj) (ContinuousLinearEquiv.apply_symm_apply _ _).symm
 
+/-- **Convergence in a vector bundle, read in a linear trivialization.** Vectors `ξ i` over points
+`x i` converge in the total space to a vector `ξ₀` over a point `x₀` of the base set of `e`
+exactly when `x i → x₀` and the fibre coordinates `e (x i) (ξ i)` converge to those of `ξ₀`. -/
+theorem tendsto_mk_nhds_mk_iff {ι : Type*} {l : Filter ι} {x : ι → B} {x₀ : B}
+    {ξ : ∀ i, E (x i)} {ξ₀ : E x₀} (hx₀ : x₀ ∈ e.baseSet) :
+    Filter.Tendsto (fun i ↦ TotalSpace.mk' F (x i) (ξ i)) l (𝓝 (TotalSpace.mk' F x₀ ξ₀)) ↔
+      Filter.Tendsto x l (𝓝 x₀) ∧ Filter.Tendsto (fun i ↦ e.continuousLinearMapAt 𝕜 (x i) (ξ i))
+        l (𝓝 (e.continuousLinearMapAt 𝕜 x₀ ξ₀)) := by
+  rw [e.tendsto_nhds_iff (e.mem_source.2 hx₀)]
+  refine and_congr_right fun hx ↦ ?_
+  -- Eventually `x i` lies in the base set, where the fibre coordinate is `continuousLinearMapAt`.
+  have hb : ∀ᶠ i in l, x i ∈ e.baseSet := hx (e.open_baseSet.mem_nhds hx₀)
+  rw [e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx₀]
+  exact Filter.tendsto_congr' (hb.mono fun i hi ↦
+    (e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hi _).symm)
+
 variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
 
 /-- **The fibre equivalences of two trivializations differ by the coordinate change**: for linear
@@ -112,6 +151,34 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
   rw [← comp_continuousLinearEquivAt_eq_coord_change e e' ⟨hb, hb'⟩]
   ext x
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
+
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+/-- The coordinate change from a linear trivialization to itself is the identity over its base
+set. -/
+@[simp]
+theorem coordChangeL_same_apply (hb : b ∈ e.baseSet) (v : F) : e.coordChangeL 𝕜 e b v = v := by
+  rw [e.coordChangeL_apply' e ⟨hb, hb⟩]
+  exact e.coordChange_same_apply hb v
+
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+/-- **Cocycle law for linear coordinate changes**: over the intersection of three base sets, the
+coordinate change from `e` to `e'` followed by the one from `e'` to `e''` is the coordinate change
+from `e` to `e''`. -/
+@[simp]
+theorem coordChangeL_coordChangeL_apply (e'' : Trivialization F (π F E)) [e''.IsLinear 𝕜]
+    (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) (hb'' : b ∈ e''.baseSet) (v : F) :
+    e'.coordChangeL 𝕜 e'' b (e.coordChangeL 𝕜 e' b v) = e.coordChangeL 𝕜 e'' b v := by
+  rw [e'.coordChangeL_apply' e'' ⟨hb', hb''⟩, e.coordChangeL_apply' e' ⟨hb, hb'⟩,
+    e.coordChangeL_apply' e'' ⟨hb, hb''⟩]
+  exact e.coordChange_coordChange e' e'' hb hb' v
+
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+/-- The linear coordinate change from `e` to `e'` sends the coordinate of a point in `e` to its
+coordinate in `e'`. -/
+theorem coordChangeL_apply_snd {p : TotalSpace F E} (hb : p.proj ∈ e.baseSet)
+    (hb' : p.proj ∈ e'.baseSet) : e.coordChangeL 𝕜 e' p.proj (e p).2 = (e' p).2 := by
+  rw [e.coordChangeL_apply' e' ⟨hb, hb'⟩]
+  exact e.coordChange_apply_snd e' hb
 
 end Bundle.Trivialization
 
@@ -160,8 +227,23 @@ theorem restrictScalars_coordChangeL (𝕜' 𝕜 : Type*)
     [IsScalarTower 𝕜' 𝕜 F] [TopologicalSpace (TotalSpace F E)]
     [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)]
     (e e' : Trivialization F (π F E)) [e.IsLinear 𝕜'] [e'.IsLinear 𝕜'] [e.IsLinear 𝕜]
-    [e'.IsLinear 𝕜] {b : B} (hb : b ∈ e.baseSet ∩ e'.baseSet) :
+    [e'.IsLinear 𝕜] {b : B} :
     (e.coordChangeL 𝕜 e' b : F →L[𝕜] F).restrictScalars 𝕜' = e.coordChangeL 𝕜' e' b := by
-  ext v; simp [Trivialization.coordChangeL_apply' e e' hb]
+  by_cases hb : b ∈ e.baseSet ∩ e'.baseSet
+  · ext v; simp [Trivialization.coordChangeL_apply' e e' hb]
+  · ext v; simp [Trivialization.coordChangeL, hb]
+
+/-- A trivialization that is linear over both `𝕜'` and `𝕜` has the same continuous linear map at
+every point over either field. In particular the `𝕜'`-linear map of a trivialization of a
+`VectorBundle 𝕜 F E`, restricted to `𝕜'` by `VectorBundle.restrictScalars`, is `𝕜`-linear. -/
+theorem coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt (𝕜' 𝕜 : Type*)
+    [NontriviallyNormedField 𝕜'] [NontriviallyNormedField 𝕜] {F : Type*} {E : B → Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [∀ x, AddCommMonoid (E x)]
+    [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+    [∀ x, TopologicalSpace (E x)] [FiberBundle F E] (e : Trivialization F (π F E))
+    [e.IsLinear 𝕜'] [e.IsLinear 𝕜] (b : B) :
+    ⇑(e.continuousLinearMapAt 𝕜' b) = e.continuousLinearMapAt 𝕜 b := by
+  ext v
+  simp only [continuousLinearMapAt_apply, coe_linearMapAt]
 
 end Bundle.Trivialization

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Almost.Finiteness
+import TauCeti.RingTheory.Almost.Finiteness.Approximation
+import TauCeti.RingTheory.Almost.Finiteness.Presentation
 import TauCeti.RingTheory.Almost.ValuationRing
 import TauCeti.NumberTheory.Padics.Complex.MaximalIdeal
 import Mathlib.LinearAlgebra.Dimension.Constructions
@@ -24,7 +25,14 @@ These examples test `TauCeti.Almost.BasicSetup.AlmostFG`, `UniformlyAlmostFG` an
 * the uniform bound `0` holds for `V ⧸ m` in every setup but not for `ℤ ⧸ 2` classically;
 * through the almost isomorphism `m → V`, the ideal `m` of every setup is almost finitely
   generated; for a valuation domain with non-finitely-generated maximal ideal, such as
-  `𝓞_ℂ_[p]`, it has uniform bound `1` although it is not a finitely generated module.
+  `𝓞_ℂ_[p]`, it has uniform bound `1` although it is not a finitely generated module;
+* the epsilon criterion shows that the same maximal ideal is almost finitely presented,
+  although it is not finitely presented. Multiplication by `ε` gives its finite approximation;
+* invariance under almost isomorphisms shows that `m` is almost finitely presented for every
+  setup, and the kernel criterion shows the same for `V ⧸ m`;
+* extensions of almost finitely presented modules, such as products, are almost finitely
+  presented, and in the classical setup this recovers the extension property of finitely
+  presented modules.
 
 ## References
 
@@ -117,9 +125,80 @@ example : ¬ (classical ℤ).UniformlyAlmostFG (ZMod 2) 0 := by
 example : S.AlmostFG S.ideal :=
   (S.isAlmostIso_subtype).almostFG_iff.mpr (almostFG_of_finite S)
 
+-- By the same almost isomorphism, `m` is almost finitely presented for every setup.
+example : S.AlmostFP S.ideal :=
+  (S.isAlmostIso_subtype).almostFP_iff.mpr (almostFP_of_finitePresentation S)
+
+-- `V ⧸ m` is almost finitely presented by the kernel criterion: the kernel of `V → V ⧸ m` is `m`,
+-- which is almost finitely generated.
+example : S.AlmostFP (V ⧸ S.ideal) := by
+  refine (almostFP_of_finitePresentation S (N := V)).of_surjective S.ideal.mkQ
+    S.ideal.mkQ_surjective ?_
+  rw [Submodule.ker_mkQ]
+  exact (S.isAlmostIso_subtype).almostFG_iff.mpr (almostFG_of_finite S)
+
+/-! ### Extensions -/
+
+section Extension
+
+variable {M N P : Type*} [AddCommGroup M] [Module V M] [AddCommGroup N] [Module V N]
+  [AddCommGroup P] [Module V P]
+
+-- A product sits in the split exact sequence `0 → M → M × P → P → 0`.
+example (hM : S.AlmostFP M) (hP : S.AlmostFP P) : S.AlmostFP (M × P) :=
+  hM.extension hP LinearMap.inl_injective Function.Exact.inl_snd Prod.snd_surjective
+
+-- In particular `m × V` is almost finitely presented for every setup.
+example : S.AlmostFP (S.ideal × V) :=
+  ((S.isAlmostIso_subtype).almostFP_iff.mpr (almostFP_of_finitePresentation S)).extension
+    (almostFP_of_finitePresentation S) LinearMap.inl_injective Function.Exact.inl_snd
+    Prod.snd_surjective
+
+-- In the classical setup, the extension property recovers that of finitely presented modules.
+example [Module.FinitePresentation V M] [Module.FinitePresentation V P] {f : M →ₗ[V] N}
+    {g : N →ₗ[V] P} (hf : Function.Injective f) (hfg : Function.Exact f g)
+    (hg : Function.Surjective g) : Module.FinitePresentation V N := by
+  rw [← almostFP_classical_iff]
+  exact (almostFP_of_finitePresentation _).extension (almostFP_of_finitePresentation _) hf hfg hg
+
+-- Classically, a surjection from a finitely generated module onto a finitely presented module has
+-- finitely generated kernel.
+example [Module.Finite V M] [Module.FinitePresentation V N] (l : M →ₗ[V] N)
+    (hl : Function.Surjective l) : Module.Finite V (LinearMap.ker l) := by
+  rw [← almostFG_classical_iff]
+  exact (almostFP_of_finitePresentation _).almostFG_ker (almostFG_of_finite _) l hl
+
+end Extension
+
 section ValuationRing
 
 variable {O : Type*} [CommRing O] [IsDomain O] [ValuationRing O] (h : ¬ (maximalIdeal O).FG)
+
+-- Multiplication by `ε` maps `O` to its maximal ideal, with kernel and cokernel killed by `ε`.
+-- Thus this non-finitely-generated module is nevertheless almost finitely presented.
+example : (ofValuationRing h).AlmostFP (ofValuationRing h).ideal ∧
+    ¬ Module.FinitePresentation O (ofValuationRing h).ideal := by
+  constructor
+  · rw [almostFP_iff_forall_mem_exists_finitePresentation
+      (isFilteredPrincipal_of_preValuationRing _)]
+    intro ε hε
+    let f := LinearMap.toSpanSingleton O (ofValuationRing h).ideal ⟨ε, hε⟩
+    refine ⟨O, inferInstance, inferInstance, inferInstance, f, ?_, ?_⟩
+    · apply Module.mem_annihilator.mpr
+      rintro ⟨x, hx⟩
+      apply Subtype.ext
+      simpa [f, mul_comm] using congrArg Subtype.val (LinearMap.mem_ker.mp hx)
+    · apply Module.mem_annihilator.mpr
+      intro x
+      obtain ⟨x, rfl⟩ := (LinearMap.range f).mkQ_surjective x
+      rw [← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+      refine ⟨(x : O), ?_⟩
+      apply Subtype.ext
+      simp [f, mul_comm]
+  · intro hfp
+    have hnot : ¬ Module.Finite O (ofValuationRing h).ideal := by
+      rwa [Module.Finite.iff_fg, ofValuationRing_ideal]
+    exact hnot inferInstance
 
 -- For a valuation domain whose maximal ideal `m` is not finitely generated, `m` has uniform
 -- bound `1`, like `O`, but it is not a finitely generated `O`-module.

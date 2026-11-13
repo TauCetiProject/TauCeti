@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+public import Mathlib.AlgebraicGeometry.Limits
+import Mathlib.RingTheory.RingHom.FinitePresentation
 
 /-!
-# Cancellation for morphisms locally of finite presentation
+# Morphisms locally of finite presentation
 
 Let `f : X ⟶ Y` and `g : Y ⟶ Z` be morphisms of schemes. If `f ≫ g` is locally of finite
 presentation and `g` is locally of finite type, then `f` is locally of finite presentation
@@ -24,6 +26,9 @@ which needs no hypothesis on `g`; for finite presentation the hypothesis on `g` 
 * `AlgebraicGeometry.locallyOfFinitePresentation_of_comp`: if `f ≫ g` is locally of finite
   presentation and `g` is locally of finite type, then `f` is locally of finite presentation.
 
+* `CommRingCat.locallyOfFinitePresentation_terminal_from_Spec_iff`: finite presentation over
+  the terminal scheme for an affine scheme is equivalent to finite presentation over `ℤ`.
+
 ## References
 
 * The Stacks Project, [Tag 02FV](https://stacks.math.columbia.edu/tag/02FV).
@@ -31,7 +36,7 @@ which needs no hypothesis on `g`; for finite presentation the hypothesis on `g` 
 
 public section
 
-open CategoryTheory
+open CategoryTheory TopologicalSpace
 
 universe u
 
@@ -43,40 +48,51 @@ of finite presentation. -/
 theorem locallyOfFinitePresentation_of_comp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     [hfg : LocallyOfFinitePresentation (f ≫ g)] [hg : LocallyOfFiniteType g] :
     LocallyOfFinitePresentation f := by
-  -- the locality instances of the two properties, from their affine-local descriptions
-  have : IsZariskiLocalAtTarget @LocallyOfFinitePresentation.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.FinitePresentation)
-  have : IsZariskiLocalAtSource @LocallyOfFinitePresentation.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.FinitePresentation)
-  have : IsZariskiLocalAtTarget @LocallyOfFiniteType.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.FiniteType)
-  -- reduce to `Z`, then `Y`, then `X` affine
-  wlog hZ : IsAffine Z generalizing X Y Z
-  · rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := @LocallyOfFinitePresentation) _
-      (g.iSup_preimage_eq_top (iSup_affineOpens_eq_top Z))]
-    intro U
-    have H := IsZariskiLocalAtTarget.restrict hfg U.1
-    rw [morphismRestrict_comp] at H
-    exact this _ (g ∣_ U.1) (hfg := H) (hg := IsZariskiLocalAtTarget.restrict hg U.1) inferInstance
-  wlog hY : IsAffine Y generalizing X Y
-  · rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := @LocallyOfFinitePresentation) _
-      (iSup_affineOpens_eq_top Y)]
-    intro U
-    have H := IsZariskiLocalAtSource.comp (P := @LocallyOfFinitePresentation) hfg (f ⁻¹ᵁ U.1).ι
-    rw [← morphismRestrict_ι_assoc] at H
-    have hU : LocallyOfFiniteType U.1.ι := locallyOfFiniteType_of_isOpenImmersion _
-    exact this _ (U.1.ι ≫ g) (hfg := H) (hg := locallyOfFiniteType_comp _ _) inferInstance
-  wlog hX : IsAffine X generalizing X
-  · rw [IsZariskiLocalAtSource.iff_of_iSup_eq_top (P := @LocallyOfFinitePresentation) _
-      (iSup_affineOpens_eq_top X)]
-    intro U
-    have H := IsZariskiLocalAtSource.comp (P := @LocallyOfFinitePresentation) hfg U.1.ι
-    rw [← Category.assoc] at H
-    exact this _ (hfg := H) inferInstance
-  -- on affine schemes this is `RingHom.FinitePresentation.of_comp_finiteType`
-  rw [HasRingHomProperty.iff_of_isAffine (P := @LocallyOfFinitePresentation)] at hfg ⊢
-  rw [HasRingHomProperty.iff_of_isAffine (P := @LocallyOfFiniteType)] at hg
-  rw [Scheme.Hom.comp_appTop, CommRingCat.hom_comp] at hfg
-  exact hfg.of_comp_finiteType _ hg
+  -- check on an affine open `V ∋ x` of `X` mapping into affine opens `U` of `Y` and `W` of `Z`
+  rw [HasRingHomProperty.iff_exists_appLE (P := @LocallyOfFinitePresentation)
+    (RingHom.StableUnderComposition.stableUnderCompositionWithLocalizationAway
+      RingHom.finitePresentation_stableUnderComposition
+      RingHom.finitePresentation_holdsForLocalizationAway).left]
+  intro x
+  obtain ⟨W, hW, hxW, -⟩ :=
+    Opens.isBasis_iff_nbhd.mp Z.isBasis_affineOpens (Opens.mem_top (g (f x)))
+  obtain ⟨U, hU, hxU, hUW⟩ := Opens.isBasis_iff_nbhd.mp Y.isBasis_affineOpens (U := g ⁻¹ᵁ W) hxW
+  obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens (U := f ⁻¹ᵁ U) hxU
+  refine ⟨⟨U, hU⟩, ⟨V, hV⟩, hxV, hVU, ?_⟩
+  -- there this is `RingHom.FinitePresentation.of_comp_finiteType`
+  have H : (g.appLE W U hUW ≫ f.appLE U V hVU).hom.FinitePresentation := by
+    rw [Scheme.Hom.appLE_comp_appLE]
+    exact HasRingHomProperty.appLE _ _ hfg ⟨W, hW⟩ ⟨V, hV⟩ _
+  exact H.of_comp_finiteType _ (HasRingHomProperty.appLE _ g hg ⟨W, hW⟩ ⟨U, hU⟩ hUW)
 
 end AlgebraicGeometry
+
+open AlgebraicGeometry CategoryTheory.Limits
+
+namespace CommRingCat
+
+/-- The spectrum of a ring `R` is locally of finite presentation over the terminal scheme
+`Spec ℤ` if and only if `R` is of finite presentation over `ℤ`. -/
+@[simp]
+lemma locallyOfFinitePresentation_terminal_from_Spec_iff (R : CommRingCat.{u}) :
+    LocallyOfFinitePresentation (terminal.from (Spec R)) ↔ Algebra.FinitePresentation ℤ R := by
+  let g : CommRingCat.of (ULift.{u} ℤ) ⟶ R :=
+    CommRingCat.ofHom ((algebraMap ℤ R).comp ULift.ringEquiv.toRingHom)
+  have : MorphismProperty.RespectsIso @LocallyOfFinitePresentation :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
+  have := isIso_of_isTerminal specULiftZIsTerminal.{u} terminalIsTerminal (terminal.from _)
+  rw [← terminal.comp_from (Spec.map g),
+    MorphismProperty.cancel_right_of_respectsIso (P := @LocallyOfFinitePresentation),
+    LocallyOfFinitePresentation.SpecMap_iff, ← RingHom.finitePresentation_algebraMap]
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp (.of_bijective ULift.ringEquiv.bijective)⟩
+  have : algebraMap ℤ R = g.hom.comp ULift.ringEquiv.symm.toRingHom := by
+    ext; simp [g]
+  rw [this]
+  exact h.comp (.of_bijective ULift.ringEquiv.symm.bijective)
+
+instance (R : CommRingCat.{u}) [Algebra.FiniteType ℤ R] :
+    LocallyOfFinitePresentation (terminal.from (Spec R)) :=
+  (locallyOfFinitePresentation_terminal_from_Spec_iff R).mpr
+    (Algebra.FinitePresentation.of_finiteType.mp inferInstance)
+
+end CommRingCat

@@ -60,8 +60,9 @@ theorem coeff_principalPart_succ_eq_residue {φ : meromorphicGerms ℂ a} {f : �
   rw [principalPart_eq_sum_coeff hh.hasFPowerSeriesAt hφh, finsetSum_coeff, Finset.sum_eq_single N,
     coeff_C_mul_X_pow, Nat.add_sub_cancel_left, FormalMultilinearSeries.coeff_ofScalars,
     Contour.residue_eq_of_eventuallyEq_zpow_smul (n := -((N + 1 : ℕ) : ℤ)) (by omega) hh]
-  · simp only [↓reduceIte]
-    congr <;> omega
+  · have hidx : (-1 - -((N + 1 : ℕ) : ℤ)).toNat = N := by omega
+    simp only [↓reduceIte]
+    rw [hidx, smul_eq_mul, inv_mul_eq_div]
   · filter_upwards [self_mem_nhdsWithin] with z hz
     have hza : z - a ≠ 0 := sub_ne_zero.2 hz
     rw [zpow_neg, zpow_natCast, smul_eq_mul, smul_eq_mul, pow_succ]
@@ -96,14 +97,7 @@ theorem coeff_principalPart_succ_eq_circleIntegral {φ : meromorphicGerms ℂ a}
   have han {z : ℂ} (hz : z ∈ Metric.closedBall a ρ) (hza : z ≠ a) :
       AnalyticAt ℂ (fun z ↦ (z - a) ^ k * f z) z :=
     hεF ((Metric.mem_closedBall.1 hz).trans_lt hρε) hza
-  rw [Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hρ {a} (fun z hz ↦ ?_)
-    (by simpa using Metric.mem_ball_self (x := a) hρ) (fun z hz hneg ↦ ?_), Finset.sum_singleton,
-    ← mul_assoc, inv_mul_cancel₀ two_pi_I_ne_zero, one_mul,
-    coeff_principalPart_succ_eq_residue hφ k]
-  · rcases eq_or_ne z a with rfl | hza
-    · exact hF
-    · exact (han hz hza).meromorphicAt
-  · by_contra hza
-    exact (han hz (by simpa using hza)).meromorphicOrderAt_nonneg.not_gt hneg
+  rw [Contour.circleIntegral_eq_residue (Metric.mem_ball_self hρ) hF fun _ ↦ han, ← mul_assoc,
+    inv_mul_cancel₀ two_pi_I_ne_zero, one_mul, coeff_principalPart_succ_eq_residue hφ k]
 
 end TauCeti.meromorphicGerms

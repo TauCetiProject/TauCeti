@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.SerreConstruction
+public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Presentation.Basic
 import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Quotient
@@ -43,7 +44,7 @@ relators rather than about the geometry behind them. Accordingly no statement be
 system: `TauCeti.serreH`, `TauCeti.serreE` and `TauCeti.serreF` are named after the free generators
 `Hᵢ`, `Eᵢ`, `Fᵢ` they are the images of, and reading them as a coroot and a pair of simple root
 vectors of a split semisimple Lie algebra needs the identification of the presented algebra with
-one, which is not proved here (see the Roadmap section below).
+one, which is not proved here (see the Applications section below).
 
 ## Main definitions
 
@@ -80,18 +81,15 @@ one, which is not proved here (see the Roadmap section below).
 * `TauCeti.lieSpan_serreE_union_serreF_eq_top`: the raising and lowering generators alone generate
   the presented algebra.
 
-## Roadmap
+## Applications
 
-This is a prerequisite for the Chevalley--Demazure construction, Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which builds the split reductive group scheme over `ℤ`
-of a pinned root datum from a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra of
-the corresponding split semisimple Lie algebra. The Serre presentation of the pinned Cartan matrix
-is the explicit carrier of that Lie algebra, and the generators named here are the ones a Chevalley
-basis of it starts from. Consumed in turn by milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`. The presentation theorem identifying the presented algebra
-with a concrete split semisimple Lie algebra is a separate target, Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`; it consumes `TauCeti.serreLift`
-to build its comparison map, and is not begun here.
+The Chevalley--Demazure construction builds the split reductive group scheme over `ℤ` of a pinned
+root datum from a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra of the
+corresponding split semisimple Lie algebra. The Serre presentation of the pinned Cartan matrix is
+the explicit carrier of that Lie algebra, and the generators named here are the ones a Chevalley
+basis of it starts from. The presentation theorem identifying the presented algebra with a concrete
+split semisimple Lie algebra uses `TauCeti.serreLift` to build its comparison map, and is not
+proved here.
 
 ## References
 
@@ -279,6 +277,54 @@ theorem isSerreSystem_serre :
   lie_H_F := lie_serreH_serreF R CM
   ad_pow_lie_E_E := ad_pow_lie_serreE_serreE R CM
   ad_pow_lie_F_F := ad_pow_lie_serreF_serreF R CM
+
+/-! ### Cartan weights and simple `sl₂` triples -/
+
+section CartanWeights
+
+variable {R CM} {H E F : B → L}
+
+omit [DecidableEq B] in
+/-- A nonzero Cartan generator at a diagonal entry two forms an `sl₂` triple with its
+raising and lowering generators. -/
+theorem IsSerreSystem.isSl2Triple (hs : IsSerreSystem R CM H E F) {i : B}
+    (hii : CM i i = 2) (hH : H i ≠ 0) : IsSl2Triple (H i) (E i) (F i) where
+  h_ne_zero := hH
+  lie_e_f := hs.lie_E_F_self i
+  lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i
+  lie_h_f_nsmul := by simpa [hii, two_smul] using hs.lie_H_F i i
+
+omit [DecidableEq B] in
+/-- The raising weight relation with the Cartan entry read in the base ring. -/
+theorem IsSerreSystem.lie_H_E_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
+    ⁅H i, E j⁆ = (CM i j : R) • E j := by
+  simpa only [Int.cast_smul_eq_zsmul] using hs.lie_H_E i j
+
+omit [DecidableEq B] in
+/-- The lowering weight relation with the negative Cartan entry read in the base ring. -/
+theorem IsSerreSystem.lie_H_F_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
+    ⁅H i, F j⁆ = -(CM i j : R) • F j := by
+  simpa only [neg_smul, Int.cast_smul_eq_zsmul] using hs.lie_H_F i j
+
+omit [DecidableEq B] in
+/-- In a torsion-free Serre system, a zero Cartan generator forces every raising generator
+with a nonzero Cartan entry in its row to vanish. -/
+theorem IsSerreSystem.E_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
+    E j = 0 := by
+  apply (IsAddTorsionFree.zsmul_eq_zero_iff_right hij).mp
+  simpa [hH] using (hs.lie_H_E i j).symm
+
+omit [DecidableEq B] in
+/-- In a torsion-free Serre system, a zero Cartan generator forces every lowering generator
+with a nonzero Cartan entry in its row to vanish. -/
+theorem IsSerreSystem.F_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
+    F j = 0 := by
+  apply (IsAddTorsionFree.zsmul_eq_zero_iff_right hij).mp
+  simpa [hH] using (hs.lie_H_F i j).symm
+
+end CartanWeights
 
 /-! ### Orthogonal generators commute
 
@@ -492,20 +538,6 @@ theorem IsSerreSystem.lie_lie_F_F_E_of_ne (h : IsSerreSystem R CM H E F) {i j : 
   simp only [neg_lie, lie_neg, neg_neg, smul_neg] at hswap
   exact neg_eq_iff_eq_neg.mp hswap
 
-omit [DecidableEq B] in
-/-- The higher raising Serre relation at an entry equal to `-1` is a double bracket. -/
-theorem IsSerreSystem.lie_E_lie_E_E_eq_zero_of_eq_neg_one
-    (h : IsSerreSystem R CM H E F) {i j : B} (hij : CM i j = -1) :
-    ⁅E i, ⁅E i, E j⁆⁆ = 0 := by
-  simpa [hij] using h.ad_pow_lie_E_E i j
-
-omit [DecidableEq B] in
-/-- The higher lowering Serre relation at an entry equal to `-1` is a double bracket. -/
-theorem IsSerreSystem.lie_F_lie_F_F_eq_zero_of_eq_neg_one
-    (h : IsSerreSystem R CM H E F) {i j : B} (hij : CM i j = -1) :
-    ⁅F i, ⁅F i, F j⁆⁆ = 0 := by
-  simpa [hij] using h.ad_pow_lie_F_F i j
-
 end NestedBrackets
 
 /-! ### The universal property -/
@@ -617,9 +649,10 @@ theorem linearIndependent_serreH (h : IsSerreSystem R CM H E F)
 /-- Two homomorphisms out of `Matrix.ToLieAlgebra R CM` agreeing on the generators are equal. -/
 @[ext]
 theorem serre_hom_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
-    (hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i))
     (hE : ∀ i, g₁ (serreE R CM i) = g₂ (serreE R CM i))
     (hF : ∀ i, g₁ (serreF R CM i) = g₂ (serreF R CM i)) : g₁ = g₂ := by
+  have hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i) := fun i => by
+    rw [← lie_serreE_serreF_self, LieHom.map_lie, LieHom.map_lie, hE, hF]
   have hcomp : g₁.comp (serreMk R CM) = g₂.comp (serreMk R CM) := by
     refine FreeLieAlgebra.hom_ext fun g => ?_
     cases g with
@@ -632,19 +665,17 @@ theorem serre_hom_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
 /-- Two equivalences out of `Matrix.ToLieAlgebra R CM` agreeing on the generators are equal. -/
 @[ext]
 theorem serre_equiv_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM ≃ₗ⁅R⁆ L}
-    (hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i))
     (hE : ∀ i, g₁ (serreE R CM i) = g₂ (serreE R CM i))
     (hF : ∀ i, g₁ (serreF R CM i) = g₂ (serreF R CM i)) : g₁ = g₂ :=
   LieEquiv.ext fun x =>
-    DFunLike.congr_fun (serre_hom_ext (g₁ := g₁.toLieHom) (g₂ := g₂.toLieHom) hH hE hF) x
+    DFunLike.congr_fun (serre_hom_ext (g₁ := g₁.toLieHom) (g₂ := g₂.toLieHom) hE hF) x
 
 /-- `TauCeti.serreLift` is the unique homomorphism sending the generators to a given Serre
 system. -/
 theorem eq_serreLift {h : IsSerreSystem R CM H E F} {g : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
-    (hH : ∀ i, g (serreH R CM i) = H i) (hE : ∀ i, g (serreE R CM i) = E i)
-    (hF : ∀ i, g (serreF R CM i) = F i) : g = serreLift h :=
-  serre_hom_ext (fun i => by rw [hH, serreLift_serreH]) (fun i => by rw [hE, serreLift_serreE])
-    fun i => by rw [hF, serreLift_serreF]
+    (hE : ∀ i, g (serreE R CM i) = E i) (hF : ∀ i, g (serreF R CM i) = F i) :
+    g = serreLift h :=
+  serre_hom_ext (fun i => by rw [hE, serreLift_serreE]) fun i => by rw [hF, serreLift_serreF]
 
 /-- A Serre system whose raising and lowering families generate the ambient Lie algebra presents
 it: the homomorphism it determines is surjective. -/
@@ -663,7 +694,7 @@ identity. -/
 @[simp]
 theorem serreLift_eq_id :
     serreLift (isSerreSystem_serre R CM) = LieHom.id :=
-  serre_hom_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+  serre_hom_ext (fun i => by simp) fun i => by simp
 
 /-- The generators `TauCeti.serreH`, `TauCeti.serreE` and `TauCeti.serreF` generate
 `Matrix.ToLieAlgebra R CM` as a Lie subalgebra. -/

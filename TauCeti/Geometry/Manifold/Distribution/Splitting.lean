@@ -44,65 +44,18 @@ section Splitting
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
 
-/-- A `C^m` involutive distribution on a finite-dimensional normed space admits linear product
-coordinates at any chosen point in which its fibre is the horizontal subspace.
-
-The horizontal factor is the fibre itself, transported to the model vector space, and the vertical
-factor is a complementary subspace. The returned distribution is the pullback by the corresponding
-continuous linear equivalence, with tangent fibres canonically identified with the product model
-space. It retains the original rank, regularity, and involutivity. -/
-theorem IsContMDiffDistribution.exists_splitCoordinates {m : ℕ∞ω} {k : ℕ}
-    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)}
-    (hD : IsContMDiffDistribution 𝓘(𝕜, E) m k D)
-    (hinv : IsInvolutiveDistribution 𝓘(𝕜, E) D) (p : E) :
-    ∃ (T : Submodule 𝕜 E) (hT : IsCompl (distributionModelFiber D p) T),
-      let e : (distributionModelFiber D p × T) ≃L[𝕜] E :=
-        (Submodule.prodEquivOfIsCompl (distributionModelFiber D p) T hT).toContinuousLinearEquiv
-      let Dt : (q : distributionModelFiber D p × T) →
-          Submodule 𝕜 (TangentSpace 𝓘(𝕜, distributionModelFiber D p × T) q) := fun q ↦
+/-- In splitting coordinates, the pulled-back distribution has fibre `⊤ × ⊥` at the image of the
+base point `p`. -/
+private lemma distributionModelFiber_comap_prodEquivOfIsCompl
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} (p : E) (T : Submodule 𝕜 E)
+    (hT : IsCompl (distributionModelFiber D p) T) :
+    let e : (distributionModelFiber D p × T) ≃L[𝕜] E :=
+      (Submodule.prodEquivOfIsCompl (distributionModelFiber D p) T hT).toContinuousLinearEquiv
+    distributionModelFiber (fun q : distributionModelFiber D p × T ↦
         (D (e.toDiffeomorph q)).comap
           (mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
-            e.toDiffeomorph q).toLinearMap
-      let D' : distributionModelFiber D p × T →
-          Submodule 𝕜 (distributionModelFiber D p × T) := fun q ↦
-        distributionModelFiber Dt q
-      Module.finrank 𝕜 (distributionModelFiber D p) = k ∧
-        IsContMDiffDistribution 𝓘(𝕜, distributionModelFiber D p × T) m k D' ∧
-        IsInvolutiveDistribution 𝓘(𝕜, distributionModelFiber D p × T) D' ∧
-        D' (e.symm p) = Submodule.prod ⊤ ⊥ := by
-  let _ : CompleteSpace E := FiniteDimensional.complete 𝕜 _
-  obtain ⟨T, hT⟩ := (distributionModelFiber D p).exists_isCompl
-  refine ⟨T, hT, ?_⟩
-  let _ : CompleteSpace (distributionModelFiber D p) := FiniteDimensional.complete 𝕜 _
-  let _ : CompleteSpace T := FiniteDimensional.complete 𝕜 _
-  let e : (distributionModelFiber D p × T) ≃L[𝕜] E :=
-    (Submodule.prodEquivOfIsCompl (distributionModelFiber D p) T hT).toContinuousLinearEquiv
-  let Dt : (q : distributionModelFiber D p × T) →
-      Submodule 𝕜 (TangentSpace 𝓘(𝕜, distributionModelFiber D p × T) q) := fun q ↦
-    (D (e.toDiffeomorph q)).comap
-      (mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
-        e.toDiffeomorph q).toLinearMap
-  let D' : distributionModelFiber D p × T →
-      Submodule 𝕜 (distributionModelFiber D p × T) := fun q ↦
-    distributionModelFiber Dt q
-  have hD'eq : D' = Dt := by
-    funext q
-    exact distributionModelFiber_eq q
-  let eω := e.toContDiffDiffeomorph ω
-  have hcoe : ⇑eω = ⇑e.toDiffeomorph :=
-    (e.coe_toContDiffDiffeomorph ω).trans e.coe_toDiffeomorph.symm
-  have hsmooth : IsContMDiffDistribution 𝓘(𝕜, distributionModelFiber D p × T) m k D' := by
-    rw [hD'eq]
-    simp only [Dt]
-    exact hcoe ▸ hD.comap_mfderiv eω (by simp)
-  have hinv' : IsInvolutiveDistribution 𝓘(𝕜, distributionModelFiber D p × T) D' := by
-    rw [hD'eq]
-    simp only [Dt]
-    exact hcoe ▸ (eω.isInvolutiveDistribution_comap_mfderiv_iff le_top D).2 hinv
-  have hfinrank : Module.finrank 𝕜 (distributionModelFiber D p) = k := by
-    exact (congrArg (fun S : Submodule 𝕜 E => Module.finrank 𝕜 S)
-      (distributionModelFiber_eq p)).trans (hD.finrank_eq p)
-  refine ⟨hfinrank, hsmooth, hinv', ?_⟩
+            e.toDiffeomorph q).toLinearMap) (e.symm p) = Submodule.prod ⊤ ⊥ := by
+  intro e
   ext q
   rw [mem_distributionModelFiber]
   simp only [Submodule.mem_comap, Submodule.mem_prod, Submodule.mem_top, true_and,
@@ -133,6 +86,67 @@ theorem IsContMDiffDistribution.exists_splitCoordinates {m : ℕ∞ω} {k : ℕ}
     LinearEquiv.symm_apply_apply] using
     (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero
       (distributionModelFiber D p) T hT (x := e q)).symm
+
+/-- A `C^m` involutive distribution on a finite-dimensional normed space admits linear product
+coordinates at any chosen point in which its fibre is the horizontal subspace.
+
+The horizontal factor is the fibre itself, transported to the model vector space, and the vertical
+factor is a complementary subspace. The returned distribution is the pullback by the corresponding
+continuous linear equivalence, with tangent fibres canonically identified with the product model
+space. It retains the original rank, regularity, and involutivity. -/
+theorem IsContMDiffDistribution.exists_splitCoordinates {m : ℕ∞ω} {k : ℕ}
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)}
+    (hD : IsContMDiffDistribution 𝓘(𝕜, E) m k D)
+    (hinv : IsInvolutiveDistribution 𝓘(𝕜, E) D) (p : E) :
+    ∃ (T : Submodule 𝕜 E) (hT : IsCompl (distributionModelFiber D p) T),
+      let e : (distributionModelFiber D p × T) ≃L[𝕜] E :=
+        (Submodule.prodEquivOfIsCompl (distributionModelFiber D p) T hT).toContinuousLinearEquiv
+      let Dt : (q : distributionModelFiber D p × T) →
+          Submodule 𝕜 (TangentSpace 𝓘(𝕜, distributionModelFiber D p × T) q) := fun q ↦
+        (D (e.toDiffeomorph q)).comap
+          (mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
+            e.toDiffeomorph q).toLinearMap
+      let D' : distributionModelFiber D p × T →
+          Submodule 𝕜 (distributionModelFiber D p × T) := fun q ↦
+        distributionModelFiber Dt q
+      Module.finrank 𝕜 (distributionModelFiber D p) = k ∧
+        IsContMDiffDistribution 𝓘(𝕜, distributionModelFiber D p × T) m k D' ∧
+        IsInvolutiveDistribution 𝓘(𝕜, distributionModelFiber D p × T) D' ∧
+        D' (e.symm p) = Submodule.prod ⊤ ⊥ := by
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 _
+  obtain ⟨T, hT⟩ := (distributionModelFiber D p).exists_isCompl
+  refine ⟨T, hT, ?_⟩
+  let _ : CompleteSpace (distributionModelFiber D p) := FiniteDimensional.completeSpace 𝕜 _
+  let _ : CompleteSpace T := FiniteDimensional.completeSpace 𝕜 _
+  let e : (distributionModelFiber D p × T) ≃L[𝕜] E :=
+    (Submodule.prodEquivOfIsCompl (distributionModelFiber D p) T hT).toContinuousLinearEquiv
+  let Dt : (q : distributionModelFiber D p × T) →
+      Submodule 𝕜 (TangentSpace 𝓘(𝕜, distributionModelFiber D p × T) q) := fun q ↦
+    (D (e.toDiffeomorph q)).comap
+      (mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
+        e.toDiffeomorph q).toLinearMap
+  let D' : distributionModelFiber D p × T →
+      Submodule 𝕜 (distributionModelFiber D p × T) := fun q ↦
+    distributionModelFiber Dt q
+  have hD'eq : D' = Dt := by
+    funext q
+    exact distributionModelFiber_eq q
+  let eω := e.toContDiffDiffeomorph ω
+  have hcoe : ⇑eω = ⇑e.toDiffeomorph :=
+    (e.coe_toContDiffDiffeomorph ω).trans e.coe_toDiffeomorph.symm
+  have hsmooth : IsContMDiffDistribution 𝓘(𝕜, distributionModelFiber D p × T) m k D' := by
+    rw [hD'eq]
+    simp only [Dt]
+    exact hcoe ▸ hD.comap_mfderiv eω (by simp)
+  have hinv' : IsInvolutiveDistribution 𝓘(𝕜, distributionModelFiber D p × T) D' := by
+    rw [hD'eq]
+    simp only [Dt]
+    exact hcoe ▸ (eω.isInvolutiveDistribution_comap_mfderiv_iff le_top D).2 hinv
+  have hfinrank : Module.finrank 𝕜 (distributionModelFiber D p) = k := by
+    exact (congrArg (fun S : Submodule 𝕜 E => Module.finrank 𝕜 S)
+      (distributionModelFiber_eq p)).trans (hD.finrank_eq p)
+  refine ⟨hfinrank, hsmooth, hinv', ?_⟩
+  exact distributionModelFiber_comap_prodEquivOfIsCompl p T hT
 
 end Splitting
 

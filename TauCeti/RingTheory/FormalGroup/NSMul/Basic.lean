@@ -55,6 +55,9 @@ off the invariant differential.
 ## Main results
 
 * `FormalGroup.nsmulSeries_succ`: `[n + 1]_F(T) = F([n]_F(T), T)`.
+* `FormalGroup.coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul`: if `[n](T)` agrees
+  with the inverse below degree `k`, adding `T` retains the coefficient of their difference
+  in degree `k`.
 * `FormalGroup.nsmulSeries_add`: `[m + n]_F(T) = F([m]_F(T), [n]_F(T))`.
 * `FormalGroup.nsmulSeries_mul`: `[m n]_F(T) = [m]_F([n]_F(T))`.
 * `FormalGroup.subst_nsmulSeries`: `[n]_F(x) = n • x` for every power-series point `x` of `F`.
@@ -62,6 +65,8 @@ off the invariant differential.
   `[n]_F(F(X, Y)) = F([n]_F(X), [n]_F(Y))`.
 * `FormalGroup.nsmulSeries_𝔾ₐ` and `FormalGroup.nsmulSeries_𝔾ₘ`: `[n](T) = n T` on the additive
   formal group law and `[n](T) = (1 + T) ^ n - 1` on the multiplicative one.
+* `FormalGroup.nsmulSeries_𝔾ₐ_eq_zero`: `[n](T) = 0` on the additive formal group law when
+  `n = 0` in `R`.
 * `FormalGroup.subst_nsmulSeries_invariantDifferential_mul_derivative`:
   `P([n]_F(T)) · [n]_F'(T) = n · P(T)`.
 * `FormalGroup.coeff_one_nsmulSeries`: `[n]_F(T) = n T + ⋯`.
@@ -140,6 +145,17 @@ theorem hasSubst_nsmulSeries_X (n : ℕ) : HasSubst ![F.nsmulSeries n, PowerSeri
     · exact F.constantCoeff_nsmulSeries n
     · exact PowerSeries.constantCoeff_X
 
+/-- If `[n]_F(T) = i(T) + Tᵏ s(T)` with `k ≠ 0`, then `[n + 1]_F` vanishes below degree
+`k` and has coefficient `s(0)` in degree `k`. No commutativity hypothesis on `F` is needed. -/
+theorem coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul {n k m : ℕ}
+    {s : PowerSeries R} (h : F.nsmulSeries n = F.addInvX + PowerSeries.X ^ k * s)
+    (hk : k ≠ 0) (hm : m ≤ k) :
+    PowerSeries.coeff m (F.nsmulSeries (n + 1)) =
+      if m = k then PowerSeries.constantCoeff s else 0 := by
+  rw [nsmulSeries_succ, h,
+    F.coeff_subst_add_X_pow_mul_X F.constantCoeff_addInvX s hk hm,
+    F.subst_addInvX_X_eq_zero, map_zero, _root_.zero_add]
+
 /-- `[m n]_F(T) = [m]_F([n]_F(T))`: multiplication by `m n` is the composite of multiplication by
 `m` and by `n`. -/
 theorem nsmulSeries_mul (m n : ℕ) :
@@ -217,6 +233,10 @@ theorem nsmulSeries_𝔾ₐ (n : ℕ) :
     have ha := (𝔾ₐ (R := R)).hasSubst_nsmulSeries_X n
     rw [nsmulSeries_succ, 𝔾ₐ_toPowerSeries, subst_add ha, subst_X ha, subst_X ha]
     simp [ih, add_mul]
+
+/-- Multiplication by `n` on the additive formal group law vanishes when `n = 0` in `R`. -/
+theorem nsmulSeries_𝔾ₐ_eq_zero {n : ℕ} (hn : (n : R) = 0) : (𝔾ₐ (R := R)).nsmulSeries n = 0 := by
+  rw [nsmulSeries_𝔾ₐ, ← map_natCast PowerSeries.C, hn, map_zero, zero_mul]
 
 /-- Multiplication by `n` on the multiplicative formal group law `X + Y + X Y` is
 `[n](T) = (1 + T) ^ n - 1`. -/

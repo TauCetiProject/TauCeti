@@ -185,7 +185,7 @@ theorem map_baseChangeHopfIdeal_weightTorusIntegralDefiningIdeal :
   refine CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective
     (baseChangeCoordinateIso R).symm
     (_root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ R
+      (MonoidAlgebra.scalarTensorBialgEquiv ℤ R
         (G := SplitTorus.characterGroup (Fin 7))))
     weightTorusIntegralCoordinateMap_surjective
     (weightTorusToBaseChangeCoordinateMap_surjective R) ?_

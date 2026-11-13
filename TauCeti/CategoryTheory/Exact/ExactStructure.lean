@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+public import Mathlib.CategoryTheory.Limits.Shapes.RegularMono
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 
 /-!
@@ -50,12 +51,6 @@ pullbacks in the ambient category.
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69,
   <https://arxiv.org/abs/0811.1480>. Definition 2.1 and Remarks 2.2--2.8 give the axioms used
   here.
-* `TauCetiRoadmap/GrothendieckEulerForms/Suggested.lean`, the human-authored roadmap
-  formalization, fixes the design followed here: the `ConflationClass`/`ExactStructure`
-  split, the E0/E0op, E1/E1op, E2/E2op fields, and the derived inflation and deflation
-  predicates are its. This file replaces its bespoke `PushoutWitness` and `PullbackWitness`
-  by Mathlib's property-specific pushout and pullback classes, and its pair of composable
-  morphisms by a `CategoryTheory.ShortComplex`.
 -/
 
 public section
@@ -140,6 +135,18 @@ theorem IsDeflation.epi {E : ConflationClass C} {Y Z : C} {p : Y ⟶ Z}
   obtain ⟨X, i, zero, hS⟩ := hp
   exact (E.isKernelCokernelPair (ShortComplex.mk i p zero) hS).epi_g
 
+/-- A deflation is a regular epimorphism, since it is a cokernel. -/
+theorem IsDeflation.isRegularEpi {E : ConflationClass C} {X Y : C} {p : X ⟶ Y}
+    (hp : E.IsDeflation p) : IsRegularEpi p := by
+  obtain ⟨K, k, h, hc⟩ := (E.isDeflation_iff p).1 hp
+  exact ⟨⟨Cofork.IsColimit.regularEpi (E.isKernelCokernelPair _ hc).gIsCokernel⟩⟩
+
+/-- An inflation is a regular monomorphism, since it is a kernel. -/
+theorem IsInflation.isRegularMono {E : ConflationClass C} {X Y : C} {i : X ⟶ Y}
+    (hi : E.IsInflation i) : IsRegularMono i := by
+  obtain ⟨Q, q, h, hc⟩ := (E.isInflation_iff i).1 hi
+  exact ⟨⟨Fork.IsLimit.regularMono (E.isKernelCokernelPair _ hc).fIsKernel⟩⟩
+
 /-- An isomorphism of short complexes transports the property of being a conflation. -/
 theorem conflation_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e : S ≅ T)
     (hS : E.Conflation S) : E.Conflation T :=
@@ -149,6 +156,13 @@ theorem conflation_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e : S 
 theorem conflation_iff_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e : S ≅ T) :
     E.Conflation S ↔ E.Conflation T :=
   E.Conflation.prop_iff_of_iso e
+
+/-- Precomposing the inflation of a conflation with an isomorphism onto its first object gives a
+conflation. -/
+theorem conflation_iso_hom_comp (E : ConflationClass C) {S : ShortComplex C} {M : C}
+    (e : M ≅ S.X₁) (hS : E.Conflation S) :
+    E.Conflation (ShortComplex.mk (e.hom ≫ S.f) S.g (by simp)) :=
+  E.conflation_of_iso (ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _) (by simp) (by simp)) hS
 
 /-- The negation of an inflation is an inflation: negating the source of a conflation is an
 isomorphism of short complexes. -/
@@ -214,8 +228,7 @@ witnessing conflation transports along the isomorphism. -/
 instance (E : ConflationClass C) : E.inflations.RespectsIso := by
   apply MorphismProperty.RespectsIso.mk
   · rintro X Y Z e i ⟨W, p, zero, hS⟩
-    refine ⟨W, p, by simp [zero], E.conflation_of_iso (S := ShortComplex.mk i p zero)
-      (ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _) (by simp) (by simp)) hS⟩
+    exact ⟨W, p, by simp [zero], E.conflation_iso_hom_comp (S := ShortComplex.mk i p zero) e hS⟩
   · rintro X Y Z e i ⟨W, p, zero, hS⟩
     refine ⟨W, e.inv ≫ p, by simp [zero], E.conflation_of_iso (S := ShortComplex.mk i p zero)
       (ShortComplex.isoMk (Iso.refl _) e (Iso.refl _) (by simp) (by simp)) hS⟩

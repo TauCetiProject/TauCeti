@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.AddPolynomial
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 
 /-!
 # Points reducing to the singular point
@@ -93,6 +94,7 @@ are the affine points `(x, y)` with `x, y ∈ 𝔪`, since the singular point of
 public section
 
 open IsLocalRing Polynomial
+open TauCeti.IsLocalRing (isUnit_iff_not_dvd)
 
 namespace WeierstrassCurve
 
@@ -206,7 +208,7 @@ theorem exists_associated_sq_Δ_of_isSingular (W : WeierstrassCurve R) {x y : R}
   set W' := VariableChange.mk 1 x 0 y • W
   have hX := hs.evalEval_polynomialX_mem_maximalIdeal
   have hY := hs.evalEval_polynomialY_mem_maximalIdeal
-  have h₆ : W'.a₆ = 0 := variableChange_translate_a₆_of_equation W h
+  have h₆ : W'.a₆ = 0 := (variableChange_translate_a₆ W x y).trans (neg_eq_zero.mpr h)
   have h₃ : W'.a₃ ∈ maximalIdeal R := variableChange_translate_a₃ W x y ▸ hY
   have h₄ : W'.a₄ ∈ maximalIdeal R :=
     variableChange_translate_a₄ W x y ▸ (maximalIdeal R).neg_mem hX
@@ -292,16 +294,20 @@ theorem nonsingularReduction_eq_top_of_forall_mem_maximalIdeal_not_equation
     h x y hxy.1 hxy.2 hE
 
 /-- **At a nonsplit node with `Δ` not a unit times a square, every point has nonsingular
-reduction**: `E₀(F) = W(F)`. Here `c₄` of the integral model is a unit, its node polynomial
-(`WeierstrassCurve.nodePolynomial`) does not split over the residue field, so the singular point
-of the reduced curve, if any, is a node without rational tangent directions, and the discriminant
-of the integral model is not associated to a square. For a discrete valuation, on a minimal
+reduction**: `E₀(F) = W(F)`. Here the node polynomial (`WeierstrassCurve.nodePolynomial`) of the
+integral model does not split over the residue field (so `c₄` is a unit, since the node polynomial
+is constant otherwise), so the singular point of the reduced curve, if any, is a node without
+rational tangent directions, and the discriminant of the integral model is not associated to a
+square. For a discrete valuation, on a minimal
 equation, this is nonsplit multiplicative reduction of type `Iₙ` with `n` odd. -/
 theorem nonsingularReduction_eq_top_of_not_splits
-    (hc₄ : residue _ (integralModel v.valuationSubring W).c₄ ≠ 0)
     (hn : ¬ ((integralModel v.valuationSubring W).nodePolynomial.map (residue _)).Splits)
     (hΔ : ∀ m : v.valuationSubring, ¬ Associated (m ^ 2) (integralModel v.valuationSubring W).Δ) :
     W.nonsingularReduction v = ⊤ :=
+  have hc₄ : residue _ (integralModel v.valuationSubring W).c₄ ≠ 0 := fun h ↦ hn <| by
+    rw [nodePolynomial_map_eq_quadratic, map_mul, h]
+    simp only [map_zero, mul_zero, zero_mul, zero_add]
+    exact Splits.C _
   nonsingularReduction_eq_top_of_forall_not_isSingular v fun _ _ hE hs ↦
     have ⟨m, hm⟩ := exists_associated_sq_Δ_of_isSingular _ hE hs hc₄ hn
     hΔ m hm
@@ -453,14 +459,13 @@ theorem exists_chord_of_add_notMem_nonsingularReduction
     linear_combination -hd
 
 /-- **Twice a point whose tangent slope lies in `𝔪` has singular reduction.** Here the reduction is
-singular at the origin and `a₂ ∈ 𝔪` as well. If `(x, y)` has integral coordinates in `𝔪` and the
+singular at the origin, with `a₃ ∈ 𝔪` and `a₂ ∈ 𝔪` (`a₄` and `a₆` then lie in `𝔪` too, by the
+slope and curve equations). If `(x, y)` has integral coordinates in `𝔪` and the
 tangent there has slope `ℓ ∈ 𝔪`, that is `ℓ (2 y + a₁ x + a₃) = 3 x² + 2 a₂ x + a₄ − a₁ y` with
 `2 y + a₁ x + a₃ ≠ 0`, then both coordinates of twice the point lie in `𝔪`. -/
 theorem two_nsmul_notMem_of_slope_mem
     (h₂ : (integralModel v.valuationSubring W).a₂ ∈ maximalIdeal v.valuationSubring)
     (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
-    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
-    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
     {x y ℓ : v.valuationSubring} {hxy : W.Nonsingular x y}
     (hx : x ∈ maximalIdeal v.valuationSubring) (hy : y ∈ maximalIdeal v.valuationSubring)
     (hℓ : ℓ ∈ maximalIdeal v.valuationSubring)
@@ -472,6 +477,23 @@ theorem two_nsmul_notMem_of_slope_mem
           (integralModel v.valuationSubring W).a₁ * y) :
     2 • Point.some _ _ hxy ∉ W.nonsingularReduction v := by
   set Wo := integralModel v.valuationSubring W
+  have h₄ : Wo.a₄ ∈ maximalIdeal v.valuationSubring := by
+    have : Wo.a₄ = ℓ * (2 * y + Wo.a₁ * x + Wo.a₃) - 3 * x ^ 2 - 2 * Wo.a₂ * x + Wo.a₁ * y := by
+      linear_combination -hslope
+    rw [this]
+    exact add_mem (sub_mem (sub_mem (Ideal.mul_mem_right _ _ hℓ)
+      (Ideal.mul_mem_left _ _ (Ideal.pow_mem_of_mem _ hx 2 two_pos)))
+      (Ideal.mul_mem_left _ _ hx)) (Ideal.mul_mem_left _ _ hy)
+  have h₆ : Wo.a₆ ∈ maximalIdeal v.valuationSubring := by
+    have hE := (Wo.toAffine.equation_iff x y).1 ((equation_integralModel_iff v).2 hxy.left)
+    have : Wo.a₆ = y ^ 2 + Wo.a₁ * x * y + Wo.a₃ * y - x ^ 3 - Wo.a₂ * x ^ 2 - Wo.a₄ * x := by
+      linear_combination -hE
+    rw [this]
+    exact sub_mem (sub_mem (sub_mem (add_mem (add_mem (Ideal.pow_mem_of_mem _ hy 2 two_pos)
+      (Ideal.mul_mem_left _ _ hy)) (Ideal.mul_mem_left _ _ hy))
+      (Ideal.pow_mem_of_mem _ hx 3 three_pos))
+      (Ideal.mul_mem_left _ _ (Ideal.pow_mem_of_mem _ hx 2 two_pos)))
+      (Ideal.mul_mem_left _ _ hx)
   have hy' : (y : F) ≠ W.negY x y := by
     rw [← coe_negY_integralModel, Ne, Subtype.coe_inj]
     intro h
@@ -500,6 +522,39 @@ theorem two_nsmul_notMem_of_slope_mem
     hslopeF, ← coe_addX_integralModel, ← coe_addY_integralModel]
   exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 hx₃,
     (Valuation.mem_maximalIdeal_iff (v := v)).1 hy₃⟩
+
+omit [IsIntegral v.valuationSubring W] in
+/-- The chord from `(ϖ X₁, ϖ² Y₁)`, with `X₁` a non-multiple of `ϖ`, to `(ϖ² X₂, ϖ² Y₂)` is not
+vertical and its slope is a multiple of `ϖ` in the valuation ring: it is
+`ϖ (Y₁ − Y₂) / (X₁ − ϖ X₂)`, and `X₁ − ϖ X₂` is a unit. -/
+theorem exists_slope_eq_dvd_of_not_dvd {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) (hϖ₀ : ϖ ≠ 0)
+    {X₁ Y₁ X₂ Y₂ : v.valuationSubring} (hX₁ : ¬ ϖ ∣ X₁) :
+    ∃ L : v.valuationSubring, ϖ ∣ L ∧
+      ¬(((ϖ * X₁ : v.valuationSubring) : F) = ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ∧
+        ((ϖ ^ 2 * Y₁ : v.valuationSubring) : F) =
+          W.negY ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F)) ∧
+      W.slope ((ϖ * X₁ : v.valuationSubring) : F) ((ϖ ^ 2 * X₂ : v.valuationSubring) : F)
+        ((ϖ ^ 2 * Y₁ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F) = L := by
+  -- `x₁ − x₂ = ϖ u` with `u = X₁ − ϖ X₂` a unit
+  have hu : IsUnit (X₁ - ϖ * X₂) := (isUnit_iff_not_dvd hϖ).2 fun hd ↦
+    hX₁ (by simpa using dvd_add hd (dvd_mul_right ϖ X₂))
+  obtain ⟨i, hi⟩ := hu.exists_right_inv
+  have hi' : ((X₁ - ϖ * X₂ : v.valuationSubring) : F) * (i : F) = 1 := by
+    exact_mod_cast congrArg ((↑) : v.valuationSubring → F) hi
+  have hx : ((ϖ * X₁ : v.valuationSubring) : F) ≠ ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) :=
+    fun he ↦ mul_ne_zero hϖ₀ hu.ne_zero (Subtype.val_injective (by
+      push_cast at he ⊢
+      linear_combination he))
+  have hxy : ¬(((ϖ * X₁ : v.valuationSubring) : F) = ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ∧
+      ((ϖ ^ 2 * Y₁ : v.valuationSubring) : F) =
+        W.negY ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F)) :=
+    fun hn ↦ hx hn.1
+  -- the slope is `L = ϖ (Y₁ − Y₂) / u`
+  refine ⟨ϖ * ((Y₁ - Y₂) * i), dvd_mul_right _ _, hxy, ?_⟩
+  rw [slope_of_X_ne hx, div_eq_iff (sub_ne_zero.2 hx)]
+  push_cast at hi' ⊢
+  linear_combination (-(ϖ : F) ^ 2 * ((Y₁ : F) - Y₂)) * hi'
 
 end Affine
 

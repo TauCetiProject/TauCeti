@@ -63,11 +63,8 @@ roots, and there the two simple reflections commute
 
 ## References
 
-This file implements “The Coxeter matrix of a base” in Layer 2 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signature
-`coxeterMatrixOfBase` in that roadmap's `Suggested.lean`. The classification of rank-two
-crystallographic configurations behind it is Bourbaki, *Lie Groups and Lie Algebras*, Chapters
-4--6, Ch. VI, §1.3.
+The classification of rank-two crystallographic configurations behind this file is Bourbaki,
+*Lie Groups and Lie Algebras*, Chapters 4--6, Ch. VI, §1.3.
 -/
 
 public section
@@ -126,12 +123,11 @@ lemma two_le_coxeterOrder {c : ℤ} (hc : c ∈ ({0, 1, 2, 3} : Set ℤ)) : 2 �
   simp only [mem_insert_iff, mem_singleton_iff] at this
   omega
 
-/-- The dihedral values are all at most `6`; in particular none of them is `0`, so no entry of the
-Coxeter matrix of a base is infinite. -/
-lemma coxeterOrder_le_six {c : ℤ} (hc : c ∈ ({0, 1, 2, 3} : Set ℤ)) : coxeterOrder c ≤ 6 := by
-  have := coxeterOrder_mem hc
-  simp only [mem_insert_iff, mem_singleton_iff] at this
-  omega
+/-- The Coxeter order is at most `6`: the dihedral values are at most `6`, and the fallback value
+`0` for an integer outside `{0, 1, 2, 3, 4}` is too. -/
+lemma coxeterOrder_le_six (c : ℤ) : coxeterOrder c ≤ 6 := by
+  unfold coxeterOrder
+  split_ifs <;> omega
 
 /-- The products with at most one edge, namely `0` (no edge) and `1` (a single edge), are exactly
 those of Coxeter order at most `3`. -/
@@ -141,10 +137,9 @@ lemma coxeterOrder_le_three_iff {c : ℤ} (hc : c ∈ ({0, 1, 2, 3} : Set ℤ)) 
   rcases hc with rfl | rfl | rfl | rfl <;> simp
 
 /-- The product `0` is the only one of Coxeter order `2`. -/
-lemma coxeterOrder_eq_two_iff {c : ℤ} (hc : c ∈ ({0, 1, 2, 3} : Set ℤ)) :
-    coxeterOrder c = 2 ↔ c = 0 := by
-  simp only [mem_insert_iff, mem_singleton_iff] at hc
-  rcases hc with rfl | rfl | rfl | rfl <;> simp
+lemma coxeterOrder_eq_two_iff {c : ℤ} : coxeterOrder c = 2 ↔ c = 0 := by
+  unfold coxeterOrder
+  split_ifs <;> simp_all
 
 /-! ## The Coxeter matrix of a generalized Cartan matrix -/
 
@@ -184,12 +179,12 @@ lemma coxeterMatrixOfCartanMatrix_apply {B : Type*} (A : Matrix B B ℤ) (hdiag 
 
 /-- **Two distinct nodes carry the Coxeter entry `2` exactly when the Cartan entry between them
 vanishes**, provided the zero pattern of the Cartan matrix is symmetric: the product of the two
-entries then vanishes exactly when the first of them does. -/
+entries then vanishes exactly when the first of them does. On the diagonal both sides fail. -/
 lemma coxeterMatrixOfCartanMatrix_apply_eq_two_iff {B : Type*} (A : Matrix B B ℤ)
     (hdiag : ∀ i, A i i = 2) (hmem : ∀ i j, i ≠ j → A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ))
-    (hsymm : ∀ i j, A i j = 0 → A j i = 0) {i j : B} (hij : i ≠ j) :
+    (hsymm : ∀ i j, A i j = 0 → A j i = 0) {i j : B} :
     coxeterMatrixOfCartanMatrix A hdiag hmem i j = 2 ↔ A i j = 0 := by
-  rw [coxeterMatrixOfCartanMatrix_apply, coxeterOrder_eq_two_iff (hmem i j hij), mul_eq_zero]
+  rw [coxeterMatrixOfCartanMatrix_apply, coxeterOrder_eq_two_iff, mul_eq_zero]
   exact or_iff_left_iff_imp.mpr (hsymm j i)
 
 end OfCartanMatrix
@@ -302,21 +297,15 @@ lemma coxeterMatrixOfBase_ne_zero (i j : b.support) : coxeterMatrixOfBase P b i 
 
 /-- Every entry of the Coxeter matrix of a base is at most `6`, the order attained by the `G₂`
 configuration. -/
-lemma coxeterMatrixOfBase_le_six (i j : b.support) : coxeterMatrixOfBase P b i j ≤ 6 := by
-  rcases eq_or_ne i j with rfl | hij
-  · simp
-  · exact coxeterOrder_le_six (cartanMatrix_mul_cartanMatrix_mem_of_ne P b hij)
+lemma coxeterMatrixOfBase_le_six (i j : b.support) : coxeterMatrixOfBase P b i j ≤ 6 :=
+  (coxeterMatrixOfBase_apply P b i j).trans_le (coxeterOrder_le_six _)
 
 /-- **Two simple roots carry the Coxeter entry `2` exactly when they are orthogonal.** On the
 diagonal both sides fail: the entry there is `1`, and no root is orthogonal to itself. -/
 theorem coxeterMatrixOfBase_eq_two_iff (i j : b.support) :
     coxeterMatrixOfBase P b i j = 2 ↔ P.IsOrthogonal (i : ι) (j : ι) := by
-  rcases eq_or_ne i j with rfl | hij
-  · rw [← cartanMatrix_mul_cartanMatrix_eq_zero_iff_isOrthogonal P b]
-    simp
-  · rw [coxeterMatrixOfBase_apply,
-      coxeterOrder_eq_two_iff (cartanMatrix_mul_cartanMatrix_mem_of_ne P b hij),
-      cartanMatrix_mul_cartanMatrix_eq_zero_iff_isOrthogonal]
+  rw [coxeterMatrixOfBase_apply, coxeterOrder_eq_two_iff,
+    cartanMatrix_mul_cartanMatrix_eq_zero_iff_isOrthogonal]
 
 /-- **The Cartan matrix of a base is simply laced exactly when the Coxeter matrix of that base has
 all entries at most `3`**, that is, exactly when no two simple roots are joined by a multiple

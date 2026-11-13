@@ -81,128 +81,6 @@ universe u
 
 variable {K : Type u} [Field K] [NumberField K]
 
-private abbrev FractionalOrderIdeal (O : NumberFieldOrder K) :=
-  FractionalIdeal (nonZeroDivisors O.toSubalgebra) K
-
-private noncomputable def integerBasis (O : NumberFieldOrder K) :=
-  Module.Free.chooseBasis ℤ (1 : FractionalOrderIdeal O)
-
-private noncomputable def rationalBasis (O : NumberFieldOrder K) :
-    Module.Basis (Module.Free.ChooseBasisIndex ℤ (1 : FractionalOrderIdeal O)) ℚ K := by
-  let b := O.integerBasis
-  refine Module.Basis.mk ?_ (O.span_rat_range_basis one_ne_zero b).ge
-  exact (LinearIndependent.iff_fractionRing ℤ ℚ).mp
-    (b.linearIndependent.map'
-      ((((1 : FractionalOrderIdeal O) : Submodule O.toSubalgebra K).restrictScalars ℤ).subtype)
-      (Submodule.ker_subtype _))
-
-private theorem range_rationalBasis (O : NumberFieldOrder K) :
-    Set.range O.rationalBasis = Set.range fun i ↦ (O.integerBasis i : K) := by
-  rw [rationalBasis, Module.Basis.coe_mk]
-
-private theorem restrictScalars_one_eq_span_integerBasis (O : NumberFieldOrder K) :
-    ((1 : Submodule O.toSubalgebra K).restrictScalars ℤ) =
-      Submodule.span ℤ (Set.range O.rationalBasis) := by
-  apply SetLike.coe_injective
-  rw [O.range_rationalBasis, O.span_int_range_basis, Submodule.coe_restrictScalars,
-    ← FractionalIdeal.coe_one, FractionalIdeal.coeToSet_coeToSubmodule]
-
-private theorem traceDual_restrictScalars_eq_span (O : NumberFieldOrder K) :
-    (Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K)).restrictScalars ℤ =
-      Submodule.span ℤ (Set.range O.rationalBasis.traceDual) := by
-  exact Submodule.traceDual_span_of_basis ℤ (1 : Submodule O.toSubalgebra K)
-    O.rationalBasis (O.restrictScalars_one_eq_span_integerBasis)
-
-private theorem traceDual_fg (O : NumberFieldOrder K) :
-    (Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K)).FG := by
-  rw [← Submodule.FG.restrictScalars_iff (R := ℤ), O.traceDual_restrictScalars_eq_span]
-  exact Submodule.fg_span (Set.finite_range _)
-
-/-- The trace dual (or complementary module) of an order `O`:
-the fractional ideal of `x : K` such that `Tr_{K/ℚ}(xy)` is an integer for every `y ∈ O`. -/
-def traceDual (O : NumberFieldOrder K) :
-    FractionalIdeal (nonZeroDivisors O.toSubalgebra) K :=
-  ⟨Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K),
-    FractionalIdeal.isFractional_of_fg O.traceDual_fg⟩
-
-@[simp]
-theorem coe_traceDual (O : NumberFieldOrder K) :
-    (O.traceDual : Submodule O.toSubalgebra K) =
-      Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K) :=
-  (rfl)
-
-/-- Membership in the trace dual means that the trace pairing against every element of the order
-is integral. -/
-@[simp]
-theorem mem_traceDual_iff (O : NumberFieldOrder K) (x : K) :
-    x ∈ O.traceDual ↔
-      ∀ y : O.toSubalgebra,
-        Algebra.trace ℚ K (x * y) ∈ (algebraMap ℤ ℚ).range := by
-  rw [← FractionalIdeal.mem_coe, O.coe_traceDual, Submodule.mem_traceDual]
-  constructor
-  · intro h y
-    simpa [Algebra.traceForm_apply] using h (y : K) (Submodule.mem_one.mpr ⟨y, rfl⟩)
-  · intro h y hy
-    obtain ⟨z, rfl⟩ := Submodule.mem_one.mp hy
-    simpa [Algebra.traceForm_apply] using h z
-
-/-- The order, viewed as the unit fractional ideal, is contained in its trace dual. -/
-theorem one_le_traceDual (O : NumberFieldOrder K) :
-    (1 : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) ≤ O.traceDual := by
-  intro x hx
-  obtain ⟨a, rfl⟩ := (FractionalIdeal.mem_one_iff _).mp hx
-  rw [O.mem_traceDual_iff]
-  intro y
-  have htr : IsIntegral ℤ (Algebra.trace ℚ K ((a * y : O.toSubalgebra) : K)) :=
-    Algebra.isIntegral_trace (R := ℤ) (L := ℚ) (F := K) (O.isIntegral (a * y))
-  simpa using IsIntegrallyClosed.isIntegral_iff.mp htr
-
-/-- The unit element belongs to the trace dual of every number-field order. -/
-theorem one_mem_traceDual (O : NumberFieldOrder K) : (1 : K) ∈ O.traceDual :=
-  O.one_le_traceDual (FractionalIdeal.one_mem_one _)
-
-/-- The trace dual of an order is nonzero. -/
-theorem traceDual_ne_zero (O : NumberFieldOrder K) : O.traceDual ≠ 0 := by
-  intro h
-  have := O.one_mem_traceDual
-  rw [h, FractionalIdeal.mem_zero_iff] at this
-  exact one_ne_zero this
-
-/-- Taking the trace dual twice recovers the original order. -/
-theorem traceDual_traceDual (O : NumberFieldOrder K) :
-    Submodule.traceDual ℤ ℚ (O.traceDual : Submodule O.toSubalgebra K) =
-      (1 : Submodule O.toSubalgebra K) := by
-  rw [O.coe_traceDual]
-  apply Submodule.restrictScalars_injective ℤ
-  rw [Submodule.traceDual_span_of_basis ℤ
-      (Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K))
-      O.rationalBasis.traceDual O.traceDual_restrictScalars_eq_span,
-    Module.Basis.traceDual_traceDual, ← O.restrictScalars_one_eq_span_integerBasis]
-
-/-- The multiplier ring of the trace dual is the order itself. Thus the trace dual is always a
-proper fractional ideal, whether or not it is invertible. -/
-@[simp]
-theorem multiplierRing_traceDual (O : NumberFieldOrder K) :
-    O.multiplierRing O.traceDual = O.toSubalgebra.toSubring := by
-  apply le_antisymm ?_ (O.order_le_multiplierRing O.traceDual)
-  intro x hx
-  have hx' : x ∈ Submodule.traceDual ℤ ℚ
-      (O.traceDual : Submodule O.toSubalgebra K) := by
-    rw [Submodule.mem_traceDual]
-    intro y hy
-    have hxy : x * y ∈ O.traceDual := (O.mem_multiplierRing_iff O.traceDual x).mp hx y hy
-    simpa [Algebra.traceForm_apply] using (O.mem_traceDual_iff (x * y)).mp hxy 1
-  rw [O.traceDual_traceDual] at hx'
-  obtain ⟨z, rfl⟩ := Submodule.mem_one.mp hx'
-  exact z.property
-
-/-- The trace dual is a proper fractional ideal. -/
-@[simp]
-theorem isProperFractionalIdeal_traceDual (O : NumberFieldOrder K) :
-    O.IsProperFractionalIdeal O.traceDual := by
-  rw [O.isProperFractionalIdeal_def]
-  exact O.multiplierRing_traceDual
-
 /-! ### The trace dual of a fractional ideal -/
 
 variable (O : NumberFieldOrder K)
@@ -247,6 +125,90 @@ private theorem traceDual_traceDual_of_ne_zero
   rw [Submodule.traceDual_span_of_basis ℤ _ b.traceDual hb,
     Module.Basis.traceDual_traceDual, hI']
 
+variable {O}
+
+/-- The trace dual (or complementary module) of an order `O`:
+the fractional ideal of `x : K` such that `Tr_{K/ℚ}(xy)` is an integer for every `y ∈ O`. -/
+def traceDual (O : NumberFieldOrder K) :
+    FractionalIdeal (nonZeroDivisors O.toSubalgebra) K :=
+  ⟨Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K), by
+    simpa only [FractionalIdeal.coeToSubmodule_one] using
+      O.isFractional_traceDual (I := 1) one_ne_zero⟩
+
+@[simp]
+theorem coe_traceDual (O : NumberFieldOrder K) :
+    (O.traceDual : Submodule O.toSubalgebra K) =
+      Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K) :=
+  (rfl)
+
+/-- Membership in the trace dual means that the trace pairing against every element of the order
+is integral. -/
+@[simp]
+theorem mem_traceDual_iff (O : NumberFieldOrder K) (x : K) :
+    x ∈ O.traceDual ↔
+      ∀ y : O.toSubalgebra,
+        Algebra.trace ℚ K (x * y) ∈ (algebraMap ℤ ℚ).range := by
+  rw [← FractionalIdeal.mem_coeToSubmodule, O.coe_traceDual, Submodule.mem_traceDual]
+  constructor
+  · intro h y
+    simpa [Algebra.traceForm_apply] using h (y : K) (Submodule.mem_one.mpr ⟨y, rfl⟩)
+  · intro h y hy
+    obtain ⟨z, rfl⟩ := Submodule.mem_one.mp hy
+    simpa [Algebra.traceForm_apply] using h z
+
+/-- The order, viewed as the unit fractional ideal, is contained in its trace dual. -/
+theorem one_le_traceDual (O : NumberFieldOrder K) :
+    (1 : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) ≤ O.traceDual := by
+  intro x hx
+  obtain ⟨a, rfl⟩ := (FractionalIdeal.mem_one_iff _).mp hx
+  rw [O.mem_traceDual_iff]
+  intro y
+  have htr : IsIntegral ℤ (Algebra.trace ℚ K ((a * y : O.toSubalgebra) : K)) :=
+    Algebra.isIntegral_trace (R := ℤ) (L := ℚ) (F := K) (O.isIntegral (a * y))
+  simpa using IsIntegrallyClosed.isIntegral_iff.mp htr
+
+/-- The unit element belongs to the trace dual of every number-field order. -/
+theorem one_mem_traceDual (O : NumberFieldOrder K) : (1 : K) ∈ O.traceDual :=
+  O.one_le_traceDual (FractionalIdeal.one_mem_one _)
+
+/-- The trace dual of an order is nonzero. -/
+theorem traceDual_ne_zero (O : NumberFieldOrder K) : O.traceDual ≠ 0 := by
+  intro h
+  have := O.one_mem_traceDual
+  rw [h, FractionalIdeal.mem_zero_iff] at this
+  exact one_ne_zero this
+
+/-- Taking the trace dual twice recovers the original order. -/
+theorem traceDual_traceDual (O : NumberFieldOrder K) :
+    Submodule.traceDual ℤ ℚ (O.traceDual : Submodule O.toSubalgebra K) =
+      (1 : Submodule O.toSubalgebra K) := by
+  simpa only [O.coe_traceDual, FractionalIdeal.coeToSubmodule_one] using
+    O.traceDual_traceDual_of_ne_zero (I := 1) one_ne_zero
+
+/-- The multiplier ring of the trace dual is the order itself. Thus the trace dual is always a
+proper fractional ideal, whether or not it is invertible. -/
+@[simp]
+theorem multiplierRing_traceDual (O : NumberFieldOrder K) :
+    O.multiplierRing O.traceDual = O.toSubalgebra.toSubring := by
+  apply le_antisymm ?_ (O.order_le_multiplierRing O.traceDual)
+  intro x hx
+  have hx' : x ∈ Submodule.traceDual ℤ ℚ
+      (O.traceDual : Submodule O.toSubalgebra K) := by
+    rw [Submodule.mem_traceDual]
+    intro y hy
+    have hxy : x * y ∈ O.traceDual := (O.mem_multiplierRing_iff O.traceDual x).mp hx y hy
+    simpa [Algebra.traceForm_apply] using (O.mem_traceDual_iff (x * y)).mp hxy 1
+  rw [O.traceDual_traceDual] at hx'
+  obtain ⟨z, rfl⟩ := Submodule.mem_one.mp hx'
+  exact z.property
+
+/-- The trace dual is a proper fractional ideal. -/
+@[simp]
+theorem isProperFractionalIdeal_traceDual (O : NumberFieldOrder K) :
+    O.IsProperFractionalIdeal O.traceDual := by
+  rw [O.isProperFractionalIdeal_def]
+  exact O.multiplierRing_traceDual
+
 /-- The trace dual `Iᵛ = {x ∈ K | Tr_{K/ℚ}(x I) ⊆ ℤ}` of a fractional ideal `I` of an order, as a
 fractional ideal. For `I = 0` the trace dual is all of `K`, which is not fractional, and the
 junk value `0` is used instead. -/
@@ -269,7 +231,7 @@ theorem coe_dual {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
 with the elements of `I` have integral trace. -/
 theorem mem_dual {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) {x : K} :
     x ∈ O.dual I ↔ ∀ y ∈ I, Algebra.trace ℚ K (x * y) ∈ (algebraMap ℤ ℚ).range := by
-  simp only [← FractionalIdeal.mem_coe, coe_dual hI, Submodule.mem_traceDual,
+  simp only [← FractionalIdeal.mem_coeToSubmodule, coe_dual hI, Submodule.mem_traceDual,
     Algebra.traceForm_apply]
 
 variable (O) in
@@ -280,7 +242,7 @@ theorem dual_zero : O.dual 0 = 0 := by
 
 /-- The trace dual of a nonzero fractional ideal is nonzero. -/
 theorem dual_ne_zero {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) : O.dual I ≠ 0 := by
-  rw [ne_eq, ← FractionalIdeal.coeToSubmodule_inj, coe_dual hI, FractionalIdeal.coe_zero]
+  rw [ne_eq, ← FractionalIdeal.coeToSubmodule_inj, coe_dual hI, FractionalIdeal.coeToSubmodule_zero]
   exact O.traceDual_ne_bot hI
 
 /-- The trace dual of a fractional ideal vanishes exactly when the ideal does. -/
@@ -312,7 +274,7 @@ theorem dual_injective : Function.Injective O.dual :=
 theorem dual_one_eq_traceDual (O : NumberFieldOrder K) : O.dual 1 = O.traceDual := by
   apply FractionalIdeal.coeToSubmodule_injective
   exact (coe_dual one_ne_zero).trans (by
-    rw [FractionalIdeal.coe_one]
+    rw [FractionalIdeal.coeToSubmodule_one]
     exact O.coe_traceDual.symm)
 
 /-! ### Proper ideals and the trace dual -/
@@ -341,8 +303,8 @@ theorem mem_multiplierRing_iff_mem_dual {I : FractionalIdeal O.toSubalgebra⁰ K
     rw [← Submodule.le_div_iff_mul_le, Submodule.span_singleton_le_iff_mem,
       Submodule.mem_div_iff_forall_mul_mem, O.mem_multiplierRing_iff]
     simp [J]
-  rw [← hmul, ← hdual, ← FractionalIdeal.mem_coe, coe_dual (mul_dual_ne_zero hI),
-    FractionalIdeal.coe_mul, coe_dual hI]
+  rw [← hmul, ← hdual, ← FractionalIdeal.mem_coeToSubmodule, coe_dual (mul_dual_ne_zero hI),
+    FractionalIdeal.coeToSubmodule_mul, coe_dual hI]
 
 /-- **A fractional ideal `I` is proper exactly when `I Iᵛ = Oᵛ`.** -/
 theorem isProperFractionalIdeal_iff_mul_dual_eq_dual_one
@@ -436,7 +398,7 @@ theorem traceDual_eq_spanSingleton_of_toSubalgebra_eq_adjoin {x : K}
     traceForm_dualSubmodule_adjoin ℤ ℚ htop hxint]
   ext y
   rw [Submodule.mem_smul_pointwise_iff_exists, Submodule.restrictScalars_mem,
-    FractionalIdeal.mem_coe, FractionalIdeal.mem_spanSingleton, ← hx]
+    FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.mem_spanSingleton, ← hx]
   exact ⟨fun ⟨b, hb, hby⟩ ↦ ⟨⟨b, hb⟩, by simp [← hby, Subalgebra.smul_def, mul_comm]⟩,
     fun ⟨b, hby⟩ ↦ ⟨b, b.2, by simp [← hby, Subalgebra.smul_def, mul_comm]⟩⟩
 

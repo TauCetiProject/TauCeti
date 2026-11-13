@@ -139,7 +139,7 @@ theorem mem_adjoin_of_finrank_adjoin_le_genus (hF : IsFunctionField k F)
     exact mem_adjoin_of_mem_riemannRochSpace_sub_one_zsmul_poles hF hex hx hdeg h
   have hu' : u ∈ k⟮x⟯ := by
     have h := mul_mem_riemannRochSpace_add (one_mem_riemannRochSpace_iff.mpr
-      (Divisor.isEffective_poles hF (Units.mk0 z hz0)).zero_le) hu
+      (Divisor.poles_nonneg hF (Units.mk0 z hz0))) hu
     rw [one_mul, add_sub_cancel] at h
     exact mem_adjoin_of_mem_riemannRochSpace_sub_one_zsmul_poles hF hex hx hdeg h
   have : z = z * u / u := by field_simp
@@ -206,7 +206,7 @@ theorem
     fun _ ↦ hhyp.isSeparable_of_finrank_adjoin_eq_two hex⟩, ?_⟩
   rintro ⟨hg, ⟨A, hA, hdim⟩, hsep⟩
   obtain ⟨x, hx, hdeg⟩ :=
-    exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim
+    exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex hA hdim
   exact ⟨hg, x, hx, hdeg, hsep x hdeg⟩
 
 end TauCeti

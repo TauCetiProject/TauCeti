@@ -15,33 +15,47 @@ import Mathlib.Tactic.Ring
 
 A linear fractional transformation `t ↦ (a * t + b) / (c * t + d)` over a field `𝕜` is
 determined by its coefficient matrix `!![a, b; c, d]`, and the determinant `a * d - b * c`
-controls how it separates points. This file records the algebraic identity behind that: if the
-transformation fixes `w`, then it scales the displacement `t - w` by
-`(a * d - b * c) / ((c * t + d) * (c * w + d))`.
+controls how it separates points. This file records the algebraic identity behind that: the
+transformation carries the displacement `t - w` to the displacement of the images scaled by
+`(a * d - b * c) / ((c * t + d) * (c * w + d))`, and in particular, if it fixes `w`, it scales
+the displacement `t - w` by that factor.
 
 This is the computation that linearizes a linear fractional transformation at a fixed point.
-Over `ℂ` it is what turns a Möbius transformation of the upper half-plane fixing a point into a
-rotation of the disc coordinate centred there, in
+Over `ℂ` it is what turns a Möbius transformation of the upper half-plane into a rotation between
+the disc coordinates centred at a point and at its image, in
 `TauCeti/Analysis/Complex/UpperHalfPlane/DiscCoordinate.lean`.
 
 ## Main results
 
+* `TauCeti.moebius_sub_moebius`: the difference formula for a linear fractional transformation.
 * `TauCeti.moebius_sub_of_fixed`: the difference formula for a linear fractional
   transformation at a fixed point.
 * `TauCeti.crossRatio_comp_eq_of_sub_eq_div`: maps with factorized differences preserve
   cross-ratios.
+* `TauCeti.div_sub_inv_sub_div_sq_eq_div_sub_sub_div`: the partial-fraction identity for a pole
+  under the inversion `w ↦ p - w⁻¹`.
 * `TauCeti.siegel_identity`: Siegel's three-term identity for linear factors `x - θᵢ y`,
   divided by `(θ₁ - θ₀) (x - θ₂ y)`.
 * `TauCeti.ne_one_of_mul_sub_mul_eq`, `TauCeti.div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq`:
   the quotient `t = (x - θ₀ y) / (x - θ₂ y)`, a linear fractional function of `x / y`, is not
   `1` when `θ₀ ≠ θ₂` and `y ≠ 0`, and the inverse transformation recovers
   `x / y = (θ₀ - t θ₂) / (1 - t)`. These are used in the reduction of Thue equations to unit
-  equations, in `TauCeti/NumberTheory/UnitEquation/Thue.lean`.
+  equations, in `TauCeti/NumberTheory/UnitEquation/Thue/Basic.lean`.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- **The Möbius difference formula**: if both denominators are nonzero, then
+`(a * t + b) / (c * t + d) - (a * w + b) / (c * w + d) =
+(a * d - b * c) * (t - w) / ((c * t + d) * (c * w + d))`. -/
+theorem moebius_sub_moebius {𝕜 : Type*} [Field 𝕜] {a b c d w t : 𝕜} (hj : c * w + d ≠ 0)
+    (hjt : c * t + d ≠ 0) :
+    (a * t + b) / (c * t + d) - (a * w + b) / (c * w + d) =
+      (a * d - b * c) * (t - w) / ((c * t + d) * (c * w + d)) := by
+  rw [div_sub_div _ _ hjt hj]
+  ring
 
 /-- The Möbius difference formula at a fixed point: if `w` is fixed, in the cleared form
 `a * w + b = w * (c * w + d)`, and both denominators are nonzero, then
@@ -50,8 +64,7 @@ theorem moebius_sub_of_fixed {𝕜 : Type*} [Field 𝕜] {a b c d w t : 𝕜}
     (hw : a * w + b = w * (c * w + d)) (hj : c * w + d ≠ 0) (hjt : c * t + d ≠ 0) :
     (a * t + b) / (c * t + d) - w =
       (a * d - b * c) * (t - w) / ((c * t + d) * (c * w + d)) := by
-  rw [div_sub' hjt, div_eq_div_iff hjt (mul_ne_zero hjt hj)]
-  linear_combination (c * t + d) ^ 2 * hw
+  rw [← moebius_sub_moebius hj hjt, (div_eq_iff hj).mpr hw]
 
 /-- **Maps with factorized difference quotients preserve cross-ratios.** If
 `φ s - φ t = κ * (s - t) / (d s * d t)` for all `s` and `t` in `S`, with `κ` and the values of `d`
@@ -95,5 +108,22 @@ theorem div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq {F : Type*} [Field F] {θ�
     x / y = (θ₀ - t * θ₂) / (1 - t) := by
   rw [div_eq_div_iff hy (sub_ne_zero.2 (ne_one_of_mul_sub_mul_eq h hy ht).symm)]
   linear_combination -ht
+
+/-- The partial-fraction step in the inversion `w ↦ p - w⁻¹`: the pole `a` of a function at
+`p - z⁻¹`, rescaled by `z ^ 2`, splits into the poles at `-(a - p)⁻¹` and `0`. -/
+theorem div_sub_inv_sub_div_sq_eq_div_sub_sub_div {𝕜 : Type*} [Field 𝕜] (e : 𝕜) {a p : 𝕜}
+    (hap : a ≠ p) {z : 𝕜} (hz0 : z ≠ 0) (hden : p - z⁻¹ - a ≠ 0) :
+    e / (p - z⁻¹ - a) / z ^ 2 = e / (z - -(a - p)⁻¹) - e / z := by
+  have hgap : a - p ≠ 0 := sub_ne_zero.mpr hap
+  have hw : z - -(a - p)⁻¹ ≠ 0 := by
+    intro h
+    apply hden
+    have hz : z = -(a - p)⁻¹ := sub_eq_zero.mp h
+    rw [hz, inv_neg, inv_inv]
+    ring
+  rw [div_div, div_sub_div _ _ hw hz0,
+    div_eq_div_iff (mul_ne_zero hden (pow_ne_zero 2 hz0)) (mul_ne_zero hw hz0)]
+  field_simp
+  ring
 
 end TauCeti

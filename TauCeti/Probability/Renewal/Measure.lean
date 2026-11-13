@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Moments
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.Probability.Independence.InfinitePi
 
 /-!
@@ -85,9 +87,17 @@ def renewalMeasure (μ : Measure α) : Measure α :=
 theorem renewalMeasure_def (μ : Measure α) :
     μ.renewalMeasure = Measure.sum μ.convolutionPower := (rfl)
 
-theorem renewalMeasure_apply (μ : Measure α) {s : Set α} (hs : MeasurableSet s) :
+theorem renewalMeasure_apply (μ : Measure α) {s : Set α} :
     μ.renewalMeasure s = ∑' n, μ.convolutionPower n s := by
-  rw [renewalMeasure_def, MeasureTheory.Measure.sum_apply _ hs]
+  rw [renewalMeasure_def, MeasureTheory.Measure.sum_apply_of_countable]
+
+/-- A measurable additive homomorphism transports the renewal measure to the renewal measure
+of the transported increment law. -/
+theorem map_renewalMeasure {β : Type*} [MeasurableSpace β] [AddMonoid β]
+    [MeasurableAdd₂ α] [MeasurableAdd₂ β] (μ : Measure α) [SFinite μ]
+    (f : α →+ β) (hf : Measurable f) :
+    μ.renewalMeasure.map f = (μ.map f).renewalMeasure := by
+  simp only [renewalMeasure_def, map_sum hf.aemeasurable, map_convolutionPower μ f hf]
 
 /-- Each convolution power is dominated by the renewal measure. -/
 theorem convolutionPower_le_renewalMeasure (μ : Measure α) (n : ℕ) :
@@ -127,7 +137,7 @@ theorem renewalMeasure_eq_dirac_add_conv [MeasurableAdd₂ α] (μ : Measure α)
     μ.renewalMeasure = dirac 0 + μ ∗ μ.renewalMeasure := by
   ext s hs
   rw [conv_renewalMeasure, _root_.add_apply, MeasureTheory.Measure.sum_apply _ hs,
-    renewalMeasure_apply _ hs,
+    renewalMeasure_apply _,
     tsum_eq_zero_add' CompleteLattice.summable, convolutionPower_zero]
 
 end RenewalMeasure
@@ -166,6 +176,35 @@ theorem renewalMeasure_Iic [SFinite μ] (t : ℝ≥0) :
 theorem monotone_renewalFunction : Monotone μ.renewalFunction :=
   fun _ _ h ↦ measure_mono (Iic_subset_Iic.2 h)
 
+/-- The real increment of the renewal function between ordered times is its renewal mass.
+The artificial arrival at zero is excluded, and genuine zero-time arrivals cancel. -/
+theorem toReal_renewalFunction_sub [SFinite μ] [IsLocallyFiniteMeasure μ.renewalMeasure]
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    (μ.renewalFunction t).toReal - (μ.renewalFunction s).toReal =
+      μ.renewalMeasure.real (Ioc s t) := by
+  have hmass (v : ℝ≥0) : μ.renewalMeasure.real (Iic v) =
+      1 + (μ.renewalFunction v).toReal := by
+    have hfinite : μ.renewalFunction v < ∞ := by
+      have h := measure_Iic_lt_top (μ := μ.renewalMeasure) (a := v)
+      rw [renewalMeasure_Iic] at h
+      exact (ENNReal.add_lt_top.1 h).2
+    simp [measureReal_def, renewalMeasure_Iic, ENNReal.toReal_add, hfinite.ne]
+  have hset : Iic t \ Iic s = Ioc s t := by
+    ext x
+    simp [and_comm]
+  have he := measureReal_sdiff (μ := μ.renewalMeasure)
+    (Iic_subset_Iic.2 hst) measurableSet_Iic measure_Iic_lt_top.ne
+  rw [hset, hmass, hmass] at he
+  linarith
+
+/-- The real increment of the renewal function over a window is its renewal mass.
+The artificial arrival at zero is excluded, and genuine zero-time arrivals cancel. -/
+theorem toReal_renewalFunction_add_sub [SFinite μ] [IsLocallyFiniteMeasure μ.renewalMeasure]
+    (t u : ℝ≥0) :
+    (μ.renewalFunction (t + u)).toReal - (μ.renewalFunction t).toReal =
+      μ.renewalMeasure.real (Ioc t (t + u)) :=
+  μ.toReal_renewalFunction_sub le_self_add
+
 end RenewalFunction
 
 end MeasureTheory.Measure
@@ -202,7 +241,6 @@ time `t` is the renewal function of the increment law. -/
 theorem integral_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t : ℝ≥0) :
     ∫ ω, (renewalCountNat T t ω : ℝ) ∂P = ((P.map (T 0)).renewalFunction t).toReal := by
-  have hm := measurable_renewalCountNat hT t
   rw [integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall fun ω ↦ by positivity)
     (by fun_prop), ← lintegral_renewalCount hindep hid t]
   congr 1
@@ -231,6 +269,13 @@ theorem renewalFunction_lt_top (hμ : μ {0} < 1) (t : ℝ≥0) : μ.renewalFunc
   rw [← hmap 0, ← TauCeti.Probability.lintegral_renewalCount hindep hid t]
   simpa using TauCeti.Probability.lintegral_renewalCount_pow_lt_top hT hindep hid hzero t 1
 
+/-- The real-valued renewal function is nondecreasing for a probability law not concentrated
+at zero. -/
+theorem monotone_toReal_renewalFunction (hμ : μ {0} < 1) :
+    Monotone (fun t ↦ (μ.renewalFunction t).toReal) :=
+  fun _ t h ↦ ENNReal.toReal_mono (μ.renewalFunction_lt_top hμ t).ne
+    (μ.monotone_renewalFunction h)
+
 /-- The renewal measure of a probability measure on `ℝ≥0` other than the point mass at zero is
 finite on every bounded interval `[0, t]`. -/
 theorem renewalMeasure_Iic_lt_top (hμ : μ {0} < 1) (t : ℝ≥0) : μ.renewalMeasure (Iic t) < ∞ := by
@@ -243,10 +288,20 @@ theorem isLocallyFiniteMeasure_renewalMeasure (hμ : μ {0} < 1) :
     IsLocallyFiniteMeasure μ.renewalMeasure :=
   ⟨fun t ↦ ⟨Iic (t + 1), Iic_mem_nhds (lt_add_one t), renewalMeasure_Iic_lt_top μ hμ _⟩⟩
 
-/-- **Right continuity of the renewal function**, for a probability measure on `ℝ≥0` other than
-the point mass at zero. -/
-theorem continuousWithinAt_renewalFunction_Ici (hμ : μ {0} < 1) (t : ℝ≥0) :
+/-- **Right continuity of the renewal function** of a probability measure on `ℝ≥0`. For the point
+mass at zero the renewal function is constantly infinite. -/
+theorem continuousWithinAt_renewalFunction_Ici (t : ℝ≥0) :
     ContinuousWithinAt μ.renewalFunction (Ici t) t := by
+  by_cases hμ : μ {0} < 1
+  swap
+  · -- the point mass at zero has infinite renewal function, which is constant
+    have hdirac : μ = dirac 0 :=
+      eq_dirac_of_measure_singleton_eq_one (le_antisymm prob_le_one (not_lt.1 hμ))
+    have hinf : μ.renewalFunction = fun _ ↦ ∞ := by
+      funext u
+      simp [renewalFunction_eq_tsum, hdirac]
+    rw [hinf]
+    exact continuousWithinAt_const
   have hf : μ.renewalFunction = (μ ∗ μ.renewalMeasure) ∘ Iic :=
     funext fun t ↦ renewalFunction_def μ t
   have hinter : ⋂ r > t, Iic r = Iic t := by

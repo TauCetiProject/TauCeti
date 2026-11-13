@@ -28,6 +28,9 @@ The resultant with `1 - t X` at a degree bound `n` for `f` is the value at `t` o
 `reflect n f`, and the multiplicativity `Res(f₁ * f₂, g) = Res(f₁, g) * Res(f₂, g)` holds for
 arbitrary valid degree bounds, the bounds adding. These are the identities behind Coleman's
 spectral transform, whose rank is a specified degree bound rather than an actual degree.
+Reversing both arguments at their degree bounds changes the resultant only by the sign
+`(-1) ^ (m * n)`, with no degree hypothesis: the reversals permute the rows of the Sylvester
+matrix and the columns within each of its two blocks.
 
 Resultants taken at the actual degrees commute with any coefficient map preserving both
 degrees, the form of base change used when comparing a resultant with its specializations.
@@ -46,10 +49,16 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
   arbitrary degree bounds.
+* `Polynomial.resultant_prod_left_of_monic`: multiplicativity in a finite product of monic left
+  arguments, at the actual degrees.
+* `Polynomial.resultant_reflect`: reversing both arguments at their degree bounds multiplies the
+  resultant by `(-1) ^ (m * n)`.
 * `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
   coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
+* `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
+  the coefficients of index at most `m` and `n`.
 * `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
   at `a` is a unit.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
@@ -93,6 +102,41 @@ theorem sylvester_apply_of_le (f g : S[X]) {n m : ℕ} (i x : Fin (n + m))
   · exact propext (by omega)
   · congr 1; omega
 
+/-- The permutation of `Fin (m + n)` reversing each of the blocks `Fin m` and `Fin n`. -/
+private def blockRevPerm (m n : ℕ) : Equiv.Perm (Fin (m + n)) :=
+  finSumFinEquiv.symm.trans ((Equiv.sumCongr Fin.revPerm Fin.revPerm).trans finSumFinEquiv)
+
+/-- Reversing both polynomials at their degree bounds reverses the rows of the Sylvester matrix
+and the columns within each of its two blocks. -/
+private theorem sylvester_reflect (f g : S[X]) (m n : ℕ) :
+    sylvester (f.reflect m) (g.reflect n) m n =
+      (sylvester f g m n).submatrix Fin.revPerm (blockRevPerm m n) := by
+  ext i j
+  have hi := i.isLt
+  induction j using Fin.addCases with
+  | left j =>
+    simp only [sylvester, blockRevPerm, Matrix.submatrix_apply, Matrix.of_apply,
+      Equiv.trans_apply, finSumFinEquiv_symm_apply_castAdd, Equiv.sumCongr_apply, Sum.map_inl,
+      finSumFinEquiv_apply_left, Fin.addCases_left, Fin.revPerm_apply, Set.mem_Icc, Fin.val_rev,
+      coeff_reflect]
+    have hj := j.isLt
+    by_cases h : (j : ℕ) ≤ i ∧ (i : ℕ) ≤ j + n
+    · rw [ite_eq_left h, ite_eq_left (by omega), revAt_le (by omega)]
+      congr 1
+      omega
+    · rw [ite_eq_right h, ite_eq_right (by omega)]
+  | right j =>
+    simp only [sylvester, blockRevPerm, Matrix.submatrix_apply, Matrix.of_apply,
+      Equiv.trans_apply, finSumFinEquiv_symm_apply_natAdd, Equiv.sumCongr_apply, Sum.map_inr,
+      finSumFinEquiv_apply_right, Fin.addCases_right, Fin.revPerm_apply, Set.mem_Icc,
+      Fin.val_rev, coeff_reflect]
+    have hj := j.isLt
+    by_cases h : (j : ℕ) ≤ i ∧ (i : ℕ) ≤ j + m
+    · rw [ite_eq_left h, ite_eq_left (by omega), revAt_le (by omega)]
+      congr 1
+      omega
+    · rw [ite_eq_right h, ite_eq_right (by omega)]
+
 end Sylvester
 
 variable {R : Type*} [CommRing R]
@@ -118,6 +162,16 @@ theorem resultant_mul_left_of_natDegree_le {f₁ f₂ g : R[X]} {m₁ m₂ n : �
     resultant_mul_left _ _ _ _ hg, resultant_add_left_deg _ _ _ _ _ le_rfl,
     resultant_add_left_deg _ _ _ _ _ le_rfl]
   ring
+
+/-- `Res(∏ fᵢ, g) = ∏ Res(fᵢ, g)` for a finite product of monic polynomials, the resultants being
+taken at the actual degrees. -/
+theorem resultant_prod_left_of_monic {ι : Type*} (s : Finset ι) {f : ι → R[X]}
+    (hf : ∀ i ∈ s, (f i).Monic) (g : R[X]) :
+    (∏ i ∈ s, f i).resultant g = ∏ i ∈ s, (f i).resultant g := by
+  nontriviality R
+  refine resultant_prod_left s f g _ ?_ le_rfl
+  rw [Finset.prod_congr rfl fun i hi ↦ (hf i hi).leadingCoeff, Finset.prod_const_one]
+  exact one_ne_zero
 
 /-- The resultant of `f` with the linear polynomial `1 - t X`, at the degree bound `n` for `f`, is
 the value at `t` of the reversal of `f` in degree `n`. When `f = ∏ (X - αᵢ)` has degree `n`, both
@@ -173,6 +227,33 @@ theorem resultant_map_of_natDegree_eq {S : Type*} [CommRing S] (φ : R →+* S) 
     (f.map φ).resultant (g.map φ) = φ (f.resultant g) := by
   rw [hf, hg, resultant_map_map]
 
+/-- The resultant of the reversals is the resultant up to the sign of the permutation of the
+Sylvester matrix that the reversals induce. -/
+private theorem resultant_reflect_eq_sign_mul (f g : R[X]) (m n : ℕ) :
+    resultant (f.reflect m) (g.reflect n) m n =
+      ((Equiv.Perm.sign (blockRevPerm m n) * Equiv.Perm.sign (Fin.revPerm (n := m + n)) : ℤˣ) :
+        R) * resultant f g m n := by
+  have h := Matrix.det_permute' (blockRevPerm m n) ((sylvester f g m n).submatrix Fin.revPerm id)
+  rw [Matrix.submatrix_submatrix, Matrix.det_permute] at h
+  rw [resultant, sylvester_reflect, resultant, Units.val_mul, Int.cast_mul, mul_assoc]
+  exact h
+
+/-- **Resultant of reversals.** Reversing both arguments of a resultant at their degree bounds
+multiplies it by `(-1) ^ (m * n)`. No degree hypothesis is needed: only the coefficients in
+degrees at most the bounds enter the Sylvester matrix, and the reversals permute its rows and
+columns. For instance `Res(1 - a X, 1 - b X) = b - a = -Res(X - a, X - b)` at the bounds
+`m = n = 1`. -/
+theorem resultant_reflect (f g : R[X]) (m n : ℕ) :
+    resultant (f.reflect m) (g.reflect n) m n = (-1) ^ (m * n) * resultant f g m n := by
+  -- the sign does not depend on the polynomials; `f = X ^ m` and `g = 1` over `ℤ` compute it
+  have hsign : ((Equiv.Perm.sign (blockRevPerm m n) *
+      Equiv.Perm.sign (Fin.revPerm (n := m + n)) : ℤˣ) : ℤ) = (-1) ^ (m * n) := by
+    have h := resultant_reflect_eq_sign_mul (X ^ m : ℤ[X]) 1 m n
+    rw [reflect_monomial, revAt_le le_rfl, Nat.sub_self, pow_zero, ← C_1, reflect_C,
+      resultant_C_left, resultant_C_right] at h
+    simpa using h.symm
+  rw [resultant_reflect_eq_sign_mul, hsign, Int.cast_pow, Int.cast_neg, Int.cast_one]
+
 end Polynomial
 
 namespace TauCeti
@@ -221,5 +302,25 @@ theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g
     rwa [← isUnit_resultant_iff_isCoprime (hg.map _),
       ← (hg.map _).resultant_of_le (natDegree_map_le (f := Ideal.Quotient.mk I) (p := h)),
       hg.natDegree_map, resultant_map_map] at hgh
+
+/-- The resultant with degree bounds `m` and `n` only involves the coefficients of index at most
+`m` of the first polynomial and at most `n` of the second. -/
+theorem resultant_congr_of_coeff_eq {f f' g g' : R[X]} {m n : ℕ}
+    (hf : ∀ i ≤ m, f.coeff i = f'.coeff i) (hg : ∀ i ≤ n, g.coeff i = g'.coeff i) :
+    resultant f g m n = resultant f' g' m n := by
+  rw [resultant, resultant]
+  congr 1
+  ext i j
+  induction j using Fin.addCases with
+  | left j =>
+    simp only [sylvester, Matrix.of_apply, Fin.addCases_left]
+    split_ifs with h
+    · exact hg _ (by simp only [Set.mem_Icc] at h; omega)
+    · rfl
+  | right j =>
+    simp only [sylvester, Matrix.of_apply, Fin.addCases_right]
+    split_ifs with h
+    · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
+    · rfl
 
 end Polynomial

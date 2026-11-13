@@ -104,7 +104,9 @@ theorem Intertwines.comp_cfc_cayley_eq (h : A.Intertwines B X) (hA : IsSelfAdjoi
   have := hA.isStarNormal_cayley
   have := hB.isStarNormal_cayley
   exact X.comp_cfc_eq_cfc_comp hU
-    (X.comp_star_eq_star_comp_of_mem_unitary hA.cayley_mem_unitary hB.cayley_mem_unitary hU) f
+    (X.comp_star_eq_star_comp_of_mul_star_self_of_star_mul_self
+      (Unitary.mul_star_self_of_mem hA.cayley_mem_unitary)
+      (Unitary.star_mul_self_of_mem hB.cayley_mem_unitary) hU) f
 
 end Intertwining
 

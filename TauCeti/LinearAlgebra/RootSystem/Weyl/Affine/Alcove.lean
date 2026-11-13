@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine.Basic
 import Mathlib.Data.Int.Interval
 import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
 import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
-import TauCeti.LinearAlgebra.RootSystem.Lowering
 
 /-!
 # The affine Weyl group acts simply transitively on the alcoves
@@ -59,6 +58,8 @@ chambers.
   fundamental alcove under the affine Weyl group cover the coweight space.
 * `RootPairing.exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove`: a point lying on no affine
   root hyperplane is carried into the open fundamental alcove.
+* `RootPairing.eq_zero_of_mem_corootSpan_of_mem_closedFundamentalAlcove`: the only point of the
+  coroot lattice in the closed fundamental alcove is `0`.
 * `RootPairing.exists_mem_affineWeylGroup_preimage_fundamentalAlcove_eq`: **the affine Weyl group
   is transitive on the alcoves**: the alcove of a point lying on no affine root hyperplane, the set
   of points lying on no such hyperplane and on the same side of each of them, is the preimage of
@@ -226,13 +227,13 @@ private lemma isAffinePos_wallPerm_highestRoot {p : ι × ℤ} (hp₁ : p ≠ (b
     (hp₂ : p ≠ (P.reflectionPerm b.highestRoot b.highestRoot, -1)) :
     IsAffinePos b (wallPerm P b.highestRoot 1 p) ↔ IsAffinePos b p := by
   obtain ⟨j, k⟩ := p
-  simp only [wallPerm, mul_one, IsAffinePos, TauCeti.height_reflectionPerm P b b.highestRoot j]
+  simp only [wallPerm, mul_one, IsAffinePos, b.height_reflectionPerm b.highestRoot j]
   have hθ : 0 < b.height b.highestRoot := b.isPos_highestRoot
   have hlo := b.neg_height_highestRoot_le_height j
   have hhi := b.height_le_height_highestRoot j
   have hlo' := b.neg_height_highestRoot_le_height (P.reflectionPerm b.highestRoot j)
   have hhi' := b.height_le_height_highestRoot (P.reflectionPerm b.highestRoot j)
-  rw [TauCeti.height_reflectionPerm P b b.highestRoot j] at hlo' hhi'
+  rw [b.height_reflectionPerm b.highestRoot j] at hlo' hhi'
   have h₀ := b.height_ne_zero j
   have htop' : b.height j = b.height b.highestRoot → k ≠ 1 := fun h hk ↦ hp₁ <| by
     rw [hk, not_ne_iff.mp fun hne ↦ (b.height_lt_height_highestRoot hne).ne h]
@@ -317,6 +318,20 @@ theorem exists_mem_affineWeylGroup_preimage_fundamentalAlcove_eq {x : N}
         P.root'_apply_ne_intCast_of_mem_affineWeylGroup hf (fun j k ↦ (hy j k).2) j k⟩
 
 end Transitivity
+
+/-- **The only point of the coroot lattice in the closed fundamental alcove is `0`.** -/
+theorem eq_zero_of_mem_corootSpan_of_mem_closedFundamentalAlcove {v : N}
+    (hv : v ∈ P.corootSpan ℤ) (hv' : v ∈ closedFundamentalAlcove P b) : v = 0 := by
+  -- Every root takes a value in `[-1, 1]` on the closed alcove, and a minuscule element of the
+  -- coroot lattice vanishes.
+  refine P.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two hv fun j ↦ ?_
+  obtain ⟨hsimple, hθ⟩ := (mem_closedFundamentalAlcove P b).mp hv'
+  let := P.indexNeg
+  have h₁ := (root'_le_root'_highestRoot hsimple j).trans hθ
+  have h₂ := (root'_le_root'_highestRoot hsimple (-j)).trans hθ
+  simp only [root', root_neg_index, map_neg, LinearMap.neg_apply] at h₂
+  rw [abs_lt]
+  constructor <;> linarith
 
 /-! ### Freeness and simple transitivity -/
 

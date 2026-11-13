@@ -17,7 +17,9 @@ matching Mathlib's instance for its cohomological counterpart `groupCohomology.c
 
 It also records how the map on first homology induced by a group homomorphism `f : H →* G` reads
 through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coefficients: it is
-`Abelianization.map f` tensored with the coefficients.
+`Group.Abelianization.map f` tensored with the coefficients. With trivial coefficients, the
+vanishing
+of group homology is also transported along isomorphisms of groups.
 
 ## Main results
 
@@ -26,7 +28,9 @@ through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coef
 * `TauCeti.groupHomology.map_mkH1OfIsTrivial`: with trivial coefficients, the map on `H₁` induced
   by `f : H →* G` and `φ : A ⟶ Res(f)(B)` sends the class of `x ⊗ a` to that of `f x ⊗ φ a`.
 * `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`: with trivial coefficients, change of group
-  and a coefficient map act as `Abelianization.map f ⊗ φ`.
+  and a coefficient map act as `Group.Abelianization.map f ⊗ φ`.
+* `MulEquiv.subsingleton_groupHomology`: vanishing of group homology
+  with trivial coefficients is invariant under group isomorphisms.
 * `Rep.chainsMap_inclusion_comp_chainsMap_subtype`: the maps of inhomogeneous
   chains induced by inclusions of subgroups `S ≤ T ≤ G` compose.
 * `Rep.map_inclusion_comp_map_subtype`: so do the induced maps on homology.
@@ -73,13 +77,13 @@ variable {H : Type u} [Group H] (f : H →* G)
 `φ : A ⟶ Res(f)(B)` sends the class of `x ⊗ a` to the class of `f x ⊗ φ a`. -/
 @[simp]
 theorem map_mkH1OfIsTrivial {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.IsTrivial]
-    (φ : A ⟶ Rep.res f B) (x : Additive (Abelianization H)) (a : A) :
+    (φ : A ⟶ Rep.res f B) (x : Additive (Group.Abelianization H)) (a : A) :
     map f φ 1 (mkH1OfIsTrivial A x a) =
-      mkH1OfIsTrivial B ((Abelianization.map f).toAdditive x) (φ.hom a) := by
-  obtain ⟨h, rfl⟩ : ∃ h : H, Additive.ofMul (Abelianization.of h) = x :=
+      mkH1OfIsTrivial B ((Group.Abelianization.map f).toAdditive x) (φ.hom a) := by
+  obtain ⟨h, rfl⟩ : ∃ h : H, Additive.ofMul (Group.Abelianization.of h) = x :=
     QuotientGroup.mk'_surjective _ x.toMul
   rw [mkH1OfIsTrivial_apply, H1π_comp_map_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
-    Abelianization.map_of, mkH1OfIsTrivial_apply]
+    Group.Abelianization.map_of, mkH1OfIsTrivial_apply]
   congr 1
   apply Subtype.ext
   rw [coe_mapCycles₁, cycles₁IsoOfIsTrivial_inv_apply, cycles₁IsoOfIsTrivial_inv_apply]
@@ -91,17 +95,25 @@ tensor the coefficients is natural in both the group and the coefficient module.
 theorem H1AddEquivOfIsTrivial_map {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.IsTrivial]
     (f : H →* G) (φ : A ⟶ Rep.res f B) (y : H1 A) :
     H1AddEquivOfIsTrivial B (map f φ 1 y) =
-      TensorProduct.map (AddMonoidHom.toIntLinearMap (Abelianization.map f).toAdditive)
+      TensorProduct.map (AddMonoidHom.toIntLinearMap (Group.Abelianization.map f).toAdditive)
         φ.hom.toLinearMap (H1AddEquivOfIsTrivial A y) := by
   obtain ⟨t, rfl⟩ := (H1AddEquivOfIsTrivial A).symm.surjective y
   rw [AddEquiv.apply_symm_apply]
   induction t using TensorProduct.inductionOn with
   | tmul x a =>
-    obtain ⟨h, rfl⟩ : ∃ h : H, Additive.ofMul (Abelianization.of h) = x :=
+    obtain ⟨h, rfl⟩ : ∃ h : H, Additive.ofMul (Group.Abelianization.of h) = x :=
       QuotientGroup.mk'_surjective _ x.toMul
     rw [H1AddEquivOfIsTrivial_symm_tmul, ← mkH1OfIsTrivial_apply, map_mkH1OfIsTrivial]
     simpa using H1AddEquivOfIsTrivial_single B (f h) (φ.hom a)
   | add t t' ht ht' => rw [map_add, map_add, map_add, ht, ht', map_add]
+
+/-- Group homology with trivial coefficients is invariant under isomorphisms of groups: if it
+vanishes in degree `n` for `H`, then it vanishes in degree `n` for every group `G ≃* H`. -/
+theorem _root_.MulEquiv.subsingleton_groupHomology (e : G ≃* H) {n : ℕ}
+    [Subsingleton (groupHomology (Rep.trivial R H R) n)] :
+    Subsingleton (groupHomology (Rep.trivial R G R) n) :=
+  (mapIso (A := Rep.trivial R G R) (B := Rep.trivial R H R) e (LinearEquiv.refl R R)
+    (fun _ ↦ by ext; simp) n).toLinearEquiv.toEquiv.subsingleton
 
 end IsTrivial
 

@@ -265,17 +265,17 @@ theorem conjMap_comp_resLE {U' V' : Subgroup G} (hU'U : U' ≤ U) (hV'V : V' ≤
 /-- **Conjugation by an element of the subgroup is trivial**: for `g ∈ U`, conjugation
 `(g)_* : Hⁿ(U, M) ⟶ Hⁿ(gUg⁻¹, M) = Hⁿ(U, M)` is the identity. This is the triviality of inner
 automorphisms on continuous cohomology, `map_eq_id_of_inner`, for the group `U`. -/
-theorem conjMap_eq_id_of_mem [ContinuousSMul U M] [LocallyCompactSpace U] {g : G} (hg : g ∈ U)
+theorem conjMap_eq_id_of_mem [LocallyCompactSpace U] {g : G} (hg : g ∈ U)
     (hU : U = U.map (MulAut.conj g).toMonoidHom) (n : ℕ) :
     conjMap U U M g hU n = 𝟙 _ :=
   map_eq_id_of_inner (⟨g, hg⟩ : U) (conjHom U U g hU) (fun u => Subtype.ext (by simp))
-    (conjPair U U M g hU) (conjPair_hom_apply U U M g hU)
-    (ofDiscreteModule_isSmoothDiscrete ℤ U M) n
+    (conjPair U U M g hU) (conjPair_hom_apply U U M g hU) n
 
 section ContinuousAction
 
 variable [ContinuousSMul G M]
 
+omit [ContinuousSMul G M] in
 /-- **Restriction from `G` followed by conjugation is restriction**: for `V = gUg⁻¹`, restricting a
 class of `Hⁿ(G, M)` to `U` and conjugating by `g` gives its restriction to `V`, because conjugation
 by `g` acts trivially on `Hⁿ(G, M)`. -/
@@ -287,19 +287,7 @@ theorem res_comp_conjMap [LocallyCompactSpace G] (g : G)
       res V (ofDiscreteModule ℤ G M) n := by
   -- Insert the inner compatible pair `(x ↦ g⁻¹ x g, m ↦ g • m)` of `G`, which induces the
   -- identity.
-  let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g⁻¹)
-  have hc (x : G) : c x = g⁻¹ * x * g := by simp [c]
-  let B : TopRep.res (c : G →* G) (ofDiscreteModule ℤ G M) ⟶ ofDiscreteModule ℤ G M :=
-    ofDiscreteModulePair (c : G →* G) (DistribSMul.toAddMonoidHom M g).toIntLinearMap
-      fun x m => by
-        have hx : (c : G →* G) x = g⁻¹ * x * g := hc x
-        simp only [AddMonoidHom.coe_toIntLinearMap, DistribSMul.toAddMonoidHom_apply, hx,
-          smul_smul]
-        congr 1
-        group
-  have hBm (m : M) : B.hom m = g • m := ofDiscreteModulePair_hom_apply _ _ _ m
-  have hB : _root_.ContinuousCohomology.map c B n = 𝟙 _ :=
-    map_eq_id_of_inner g c hc B hBm (ofDiscreteModule_isSmoothDiscrete ℤ G M) n
+  obtain ⟨c, B, hc, hBm, hB⟩ := exists_map_eq_id_conj_smul M g n
   have hφ : (ContinuousMonoidHom.subgroupSubtype U).comp (conjHom U V g hVU) =
       c.comp (ContinuousMonoidHom.subgroupSubtype V) :=
     ContinuousMonoidHom.ext fun v => by simp [hc]

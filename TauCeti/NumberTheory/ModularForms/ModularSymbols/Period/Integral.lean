@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.MeasureTheory.Integral.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
-import TauCeti.NumberTheory.ModularForms.Cusps.ModularGroup
+import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
 # The period integral of a cusp form against a binary form
@@ -197,7 +197,7 @@ theorem periodIntegrand_slash_apply {k : ℤ} (hk : k = w + 2) (f : ℍ → ℂ)
   -- homogeneity: `P(aτ + b, cτ + d) = (cτ + d) ^ w · P(g • τ, 1)`
   have hP : aeval ![num g' τ, denom g' τ] (P : MvPolynomial (Fin 2) R) =
       denom g' τ ^ w * aeval ![((g' • τ : ℍ) : ℂ), 1] (P : MvPolynomial (Fin 2) R) := by
-    have h := ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul ![((g' • τ : ℍ) : ℂ), 1]
+    have h := ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul_of_algebra ![((g' • τ : ℍ) : ℂ), 1]
       (denom g' τ)
     rw [smul_eq_mul] at h
     rw [← h]
@@ -376,7 +376,8 @@ theorem cuspIntegral_mul_sub_pow [Γ.IsArithmetic] [CuspFormClass F Γ k] (f : F
         (w.choose j : ℂ) * (-τ) ^ (w - j) * cuspIntegral (fun z ↦ f z * (z : ℂ) ^ j) α β := by
   rcases eq_or_ne α β with rfl | hαβ
   · simp
-  obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hαβ
+  obtain ⟨g, hg, rfl, rfl⟩ := OnePoint.exists_smul_zero_infty_eq hαβ
+  replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   set c : ℕ → ℂ := fun j ↦ (w.choose j : ℂ) * (-τ) ^ (w - j) with hc
   -- each term is the period integrand of a multiple of the monomial `X₀ʲ X₁ʷ⁻ʲ`
   have hint (j : ℕ) (hj : j ∈ Finset.range (w + 1)) :
@@ -397,7 +398,7 @@ theorem cuspIntegral_mul_sub_pow [Γ.IsArithmetic] [CuspFormClass F Γ k] (f : F
     simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, hc, sub_eq_add_neg, add_pow,
       Finset.mul_sum]
     exact Finset.sum_congr rfl fun j _ ↦ by ring
-  rw [hsum, cuspIntegral_sum _ hg hint]
+  rw [hsum, cuspIntegral_sum _ hint]
   exact Finset.sum_congr rfl fun j _ ↦ cuspIntegral_smul _ _ _ _
 
 end CommSemiring
@@ -496,7 +497,7 @@ theorem periodIntegrand_adjugate_slash {k : ℤ} (hk : k = w + 2) (f : ℍ → �
     fin_cases i <;>
       simp [adjugate_fin_two, num, denom, mulVec, dotProduct, Fin.sum_univ_two, hent] <;> ring
   rw [periodIntegrand_slash_apply hk f _ hg τ, periodIntegrand_apply, coe_binaryFormRep_apply,
-    aeval_linearSubst, ← hg', hvec, ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul,
+    aeval_linearSubst, ← hg', hvec, ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul_of_algebra,
     smul_eq_mul, _root_.zpow_neg, zpow_natCast]
   field_simp
 

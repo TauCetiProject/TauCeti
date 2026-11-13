@@ -123,11 +123,11 @@ theorem fractionalIdeal_reflected_mul (hf : f.discrim = D) (hprim : f.IsPrimitiv
       linear_combination -(f.a : QuadraticAlgebra ℚ (D : ℚ) 0) * h1 -
         (v : QuadraticAlgebra ℚ (D : ℚ) 0) * f.a * hdiff +
         (w : QuadraticAlgebra ℚ (D : ℚ) 0) * hprod
-    rw [key, ← mem_coe]
-    exact sub_mem (add_mem (zsmul_mem (mem_coe.mpr (mul_mem_mul hα' hα)) _)
-      (zsmul_mem (sub_mem (mem_coe.mpr (mul_mem_mul hβ' hα))
-        (mem_coe.mpr (mul_mem_mul hα' hβ))) _))
-      (zsmul_mem (mem_coe.mpr (mul_mem_mul hβ' hβ)) _)
+    rw [key, ← mem_coeToSubmodule]
+    exact sub_mem (add_mem (zsmul_mem (mem_coeToSubmodule.mpr (mul_mem_mul hα' hα)) _)
+      (zsmul_mem (sub_mem (mem_coeToSubmodule.mpr (mul_mem_mul hβ' hα))
+        (mem_coeToSubmodule.mpr (mul_mem_mul hα' hβ))) _))
+      (zsmul_mem (mem_coeToSubmodule.mpr (mul_mem_mul hβ' hβ)) _)
 
 /-- The invertible ideals of a primitive form and of its opposite multiply to the principal
 ideal `(a)`. -/
@@ -244,13 +244,13 @@ end PosDef
 
 section Narrow
 
-variable (hD : D % 4 = 0 ∨ D % 4 = 1) (hpos : 0 < D)
+variable (hD : D % 4 = 0 ∨ D % 4 = 1)
 
 /-- **The opposite form represents the inverse narrow class.** -/
 theorem properClassToNarrowPic_mk_eq_inv_of_eq_reflected {f g : primitiveForms D}
     (hg : (g : BinaryQuadraticForm ℤ) = (f : BinaryQuadraticForm ℤ).reflected) :
-    properClassToNarrowPic D hD hpos (Quotient.mk'' g) =
-      (properClassToNarrowPic D hD hpos (Quotient.mk'' f))⁻¹ := by
+    properClassToNarrowPic D hD (Quotient.mk'' g) =
+      (properClassToNarrowPic D hD (Quotient.mk'' f))⁻¹ := by
   obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.2
   obtain ⟨g, hgm⟩ := g
   simp only at hg

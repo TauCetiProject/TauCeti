@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.EssSup
+public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Topology.EMetricSpace.Weak
@@ -67,6 +68,9 @@ rearrangement, which gives the case `p = ∞`.
 * `TauCeti.lintegral_rpow_schwarzRearrangement`, `TauCeti.eLpNorm_schwarzRearrangement`,
   `TauCeti.memLp_schwarzRearrangement_iff`: equality of integrals of powers and of `Lᵖ`
   seminorms, and preservation of every `Lᵖ` class.
+* `MeasureTheory.Integrable.ae_schwarzRearrangement_ofReal_ne_top`,
+  `MeasureTheory.Integrable.toReal_schwarzRearrangement`: almost-everywhere finiteness and
+  integrability of the real-valued rearrangement of the positive part of an integrable function.
 * `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
   rearrangement inequality.
 * `TauCeti.schwarzRearrangement_add_const`: rearrangement commutes with adding a constant.
@@ -252,6 +256,34 @@ theorem schwarzRearrangement_le_essSup (f : E → ℝ≥0∞) (x : E) :
   schwarzRearrangement_apply_zero μ f ▸
     schwarzRearrangement_le_of_norm_le μ f (by simp : ‖(0 : E)‖ ≤ ‖x‖)
 
+/-- **`L^∞` contraction of Schwarz rearrangement.** The extended distance between two Schwarz
+rearrangements is bounded everywhere by the essential supremum of the distance between the two
+functions. No measurability hypothesis is needed, and the measure is arbitrary. -/
+theorem edist_schwarzRearrangement_le_essSup (f g : E → ℝ≥0∞) (x : E) :
+    edist (schwarzRearrangement μ f x) (schwarzRearrangement μ g x) ≤
+      essSup (fun y ↦ edist (f y) (g y)) μ := by
+  set c := essSup (fun y ↦ edist (f y) (g y)) μ
+  have h := ENNReal.ae_le_essSup (μ := μ) fun y ↦ edist (f y) (g y)
+  -- If `f ≤ g + c` almost everywhere, then `f* ≤ g* + c`, by comparing superlevel sets.
+  have key : ∀ f g : E → ℝ≥0∞, (∀ᵐ y ∂μ, f y ≤ g y + c) →
+      schwarzRearrangement μ f x ≤ schwarzRearrangement μ g x + c := fun f g hfg ↦ by
+    refine le_of_forall_lt fun t ht ↦ ?_
+    rcases lt_or_ge t c with htc | hct
+    · exact htc.trans_le le_add_self
+    · rw [lt_schwarzRearrangement_iff μ] at ht
+      have hc : c ≠ ∞ := by
+        rintro hc
+        rw [hc, top_le_iff] at hct
+        subst hct
+        simp at ht
+      have hlt (u : ℝ≥0∞) : t < u + c ↔ t - c < u := (ENNReal.sub_lt_iff_lt_right hc hct).symm
+      rw [hlt]
+      exact (lt_schwarzRearrangement_iff μ).2 (ht.trans_le (measure_mono_ae (hfg.mono fun y hy hty ↦
+        (hlt (g y)).1 (hty.trans_le hy))))
+  exact (ENNReal.edist_le_iff_le_add_right _ _ _).2
+    ⟨key f g (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).1),
+      key g f (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).2)⟩
+
 end Measure
 
 section AddHaar
@@ -326,6 +358,35 @@ theorem lintegral_schwarzRearrangement (hf : AEMeasurable f μ) :
     ∫⁻ x, schwarzRearrangement μ f x ∂μ = ∫⁻ x, f x ∂μ := by
   simpa using lintegral_rpow_schwarzRearrangement μ hf one_pos
 
+variable {μ}
+
+/-- The extended integral of the Schwarz rearrangement of the positive part of an integrable
+real function is finite. -/
+theorem _root_.MeasureTheory.Integrable.lintegral_schwarzRearrangement_ofReal_ne_top
+    {u : E → ℝ} (hu : Integrable u μ) :
+    (∫⁻ x, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ∂μ) ≠ ∞ := by
+  rw [lintegral_schwarzRearrangement μ hu.aemeasurable.ennreal_ofReal]
+  exact hu.lintegral_lt_top.ne
+
+/-- The Schwarz rearrangement of the positive part of an integrable real function is finite
+almost everywhere. -/
+theorem _root_.MeasureTheory.Integrable.ae_schwarzRearrangement_ofReal_ne_top
+    {u : E → ℝ} (hu : Integrable u μ) :
+    ∀ᵐ x ∂μ, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞ :=
+  (ae_lt_top (measurable_schwarzRearrangement μ _)
+    hu.lintegral_schwarzRearrangement_ofReal_ne_top).mono fun _ hx ↦ hx.ne
+
+/-- The real-valued Schwarz rearrangement of the positive part of an integrable function is
+integrable. The extended rearrangement is finite almost everywhere, so taking `toReal` changes
+only its values on a null set. -/
+theorem _root_.MeasureTheory.Integrable.toReal_schwarzRearrangement {u : E → ℝ}
+    (hu : Integrable u μ) :
+    Integrable (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal) μ := by
+  exact integrable_toReal_of_lintegral_ne_top (measurable_schwarzRearrangement μ _).aemeasurable
+    hu.lintegral_schwarzRearrangement_ofReal_ne_top
+
+variable (μ)
+
 /-- The Schwarz rearrangement has the same `Lᵖ` seminorm as `f`, for every exponent
 `p ∈ [0, ∞]`. -/
 @[simp]
@@ -338,10 +399,10 @@ theorem eLpNorm_schwarzRearrangement (hf : AEMeasurable f μ) (p : ℝ≥0∞) :
   · rw [eLpNorm_exponent_zero hg, eLpNorm_exponent_zero hf']
   rcases eq_or_ne p ∞ with rfl | hptop
   · rw [eLpNorm_exponent_top hg, eLpNorm_exponent_top hf']
-    simp only [eLpNormEssSup_eq_essSup_enorm, enorm_eq_self, essSup_schwarzRearrangement]
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hg,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hf']
-  simp only [enorm_eq_self]
+    simp only [eLpNormEssSup_eq_essSup_eNorm, eNorm_eq_self, essSup_schwarzRearrangement]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hg,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf']
+  simp only [eNorm_eq_self]
   rw [lintegral_rpow_schwarzRearrangement μ hf (ENNReal.toReal_pos hp0 hptop)]
 
 /-- The Schwarz rearrangement of an a.e.-measurable function lies in `Lᵖ` exactly when the function
@@ -479,8 +540,7 @@ theorem lintegral_sub_rpow_schwarzRearrangement_le {f g : E → ℝ≥0∞} (hf 
   set G := hg.mk g
   have hF : Measurable F := hf.measurable_mk
   have hG : Measurable G := hg.measurable_mk
-  have hF' := measurable_schwarzRearrangement μ F
-  have hG' := measurable_schwarzRearrangement μ G
+  have _ := measurable_schwarzRearrangement μ G
   -- Write the power as a mixture of the hinges `f - g - r`, each of which contracts.
   simp_rw [rpow_eq_lintegral_mul_sub hp]
   rw [lintegral_lintegral_swap (by fun_prop)]
@@ -511,24 +571,6 @@ theorem lintegral_edist_rpow_schwarzRearrangement_le {f g : E → ℝ≥0∞} (h
   exact add_le_add (lintegral_sub_rpow_schwarzRearrangement_le μ hf hg hp)
     (lintegral_sub_rpow_schwarzRearrangement_le μ hg hf hp)
 
-/-- **`L^∞` contraction of Schwarz rearrangement.** The extended distance between two Schwarz
-rearrangements is bounded everywhere by the essential supremum of the distance between the two
-functions. No measurability hypothesis is needed. -/
-theorem edist_schwarzRearrangement_le_essSup (f g : E → ℝ≥0∞) (x : E) :
-    edist (schwarzRearrangement μ f x) (schwarzRearrangement μ g x) ≤
-      essSup (fun y ↦ edist (f y) (g y)) μ := by
-  set c := essSup (fun y ↦ edist (f y) (g y)) μ
-  have h := ENNReal.ae_le_essSup (μ := μ) fun y ↦ edist (f y) (g y)
-  have hfg : schwarzRearrangement μ f ≤ fun x ↦ schwarzRearrangement μ g x + c := by
-    rw [← schwarzRearrangement_add_const]
-    exact schwarzRearrangement_mono_ae μ
-      (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).1)
-  have hgf : schwarzRearrangement μ g ≤ fun x ↦ schwarzRearrangement μ f x + c := by
-    rw [← schwarzRearrangement_add_const]
-    exact schwarzRearrangement_mono_ae μ
-      (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).2)
-  exact (ENNReal.edist_le_iff_le_add_right _ _ _).2 ⟨hfg x, hgf x⟩
-
 /-- **`Lᵖ` contraction of Schwarz rearrangement.** For every exponent `1 ≤ p ≤ ∞`, the `Lᵖ`
 seminorm of the extended distance between two nonnegative functions can only decrease under
 Schwarz rearrangement. -/
@@ -545,14 +587,14 @@ theorem eLpNorm_edist_schwarzRearrangement_le {f g : E → ℝ≥0∞} (hf : AEM
   have hg' := (measurable_schwarzRearrangement μ g).aemeasurable (μ := μ)
   rcases eq_or_ne p ∞ with rfl | hptop
   · rw [eLpNorm_exponent_top (hmeas hf' hg'), eLpNorm_exponent_top (hmeas hf hg),
-      eLpNormEssSup_eq_essSup_enorm, eLpNormEssSup_eq_essSup_enorm]
-    simp only [enorm_eq_self]
+      eLpNormEssSup_eq_essSup_eNorm, eLpNormEssSup_eq_essSup_eNorm]
+    simp only [eNorm_eq_self]
     exact essSup_le_of_ae_le _
       (.of_forall (edist_schwarzRearrangement_le_essSup μ f g))
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop (hmeas hf' hg'),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop (hmeas hf hg)]
-  simp only [enorm_eq_self]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop (hmeas hf' hg'),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop (hmeas hf hg)]
+  simp only [eNorm_eq_self]
   exact ENNReal.rpow_le_rpow (lintegral_edist_rpow_schwarzRearrangement_le μ hf hg
     (by simpa using ENNReal.toReal_mono hptop hp)) (by positivity)
 

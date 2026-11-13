@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.Subgroup
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Character
 public import Mathlib.Data.Fintype.Sets
 public import Mathlib.NumberTheory.MulChar.Duality
+import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Basic
 
 /-!
@@ -98,7 +99,7 @@ theorem primeDiscriminantCharAtLevel_apply_int (P : s) (n : ℤ)
 /-- A lifted prime-discriminant character is quadratic. -/
 theorem isQuadratic_primeDiscriminantCharAtLevel (P : s) :
     (primeDiscriminantCharAtLevel s hs P).IsQuadratic :=
-  isQuadratic_changeLevel (isQuadratic_primeDiscriminantChar P (hs P P.property)) _
+  (isQuadratic_primeDiscriminantChar P (hs P P.property)).changeLevel _
 
 /-- A lifted prime-discriminant character squares to the trivial character. -/
 @[simp] theorem primeDiscriminantCharAtLevel_sq (P : s) :

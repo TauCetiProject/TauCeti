@@ -9,15 +9,18 @@ public import Mathlib.Algebra.Lie.Killing
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Lie.Killing.Basic
 
 /-!
 # A Lie algebra with nondegenerate Killing form is perfect
 
-A finite-dimensional Lie algebra `L` whose Killing form `κ` is nondegenerate satisfies
-`⁅L, L⁆ = L`. The proof is a two-line use of the invariance `κ ⁅x, y⁆ z = κ x ⁅y, z⁆`: a linear
-form vanishing on the derived ideal is `κ x` for a unique `x`, and then `κ ⁅x, y⁆ z = κ x ⁅y, z⁆`
-vanishes for all `z`, so `x` is central; a central element of a Killing algebra is zero, so the
-form is zero and the derived ideal was already everything.
+A Lie algebra `L` whose Killing form `κ` is nondegenerate satisfies `⁅L, L⁆ = L`; no
+finite-dimensionality hypothesis is needed, since a Killing Lie algebra is automatically
+finite-dimensional (`TauCeti.finite_of_isKilling`). The proof is a two-line use of the
+invariance `κ ⁅x, y⁆ z = κ x ⁅y, z⁆`: a linear form vanishing on the derived ideal is `κ x` for a
+unique `x`, and then `κ ⁅x, y⁆ z = κ x ⁅y, z⁆` vanishes for all `z`, so `x` is central; a central
+element of a Killing algebra is zero, so the form is zero and the derived ideal was already
+everything.
 
 The statement is recorded here in the form its consumers use: an action of `L` that composes to
 zero is itself zero (`TauCeti.isTrivial_of_derivedSeries_one_eq_top_of_lie_lie_eq_zero`), which is
@@ -49,16 +52,14 @@ open LieAlgebra LieModule Module
 
 section Killing
 
-variable (K L : Type*) [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [LieAlgebra.IsKilling K L]
+variable (K L : Type*) [Field K] [LieRing L] [LieAlgebra K L] [LieAlgebra.IsKilling K L]
 
 /-- **A Lie algebra with nondegenerate Killing form is perfect**: `⁅L, L⁆ = L`.
 
-A linear form killing the derived ideal is `κ x` for some `x`, by nondegeneracy of the Killing
-form on a finite-dimensional space. Invariance turns `κ x ⁅y, z⁆ = 0` into `κ ⁅x, y⁆ z = 0` for
-all `z`, so `⁅x, y⁆ = 0` for every `y`; then `ad x = 0`, so `κ x` vanishes identically and `x = 0`.
-The linear form was therefore zero, which contradicts the properness of the derived ideal. -/
+No finite-dimensionality hypothesis is needed, since a Killing Lie algebra is finite-dimensional
+(`TauCeti.finite_of_isKilling`). -/
 theorem derivedSeries_one_eq_top_of_isKilling : derivedSeries K L 1 = ⊤ := by
+  have := finite_of_isKilling (R := K) (L := L)
   by_contra hne
   have hlt : (derivedSeries K L 1).toSubmodule < ⊤ := by
     refine lt_of_le_of_ne le_top fun hcon ↦ hne ?_
@@ -93,7 +94,7 @@ end Killing
 section Perfect
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
-variable {M : Type*} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+variable {M : Type*} [AddCommGroup M] [LieRingModule L M]
 
 /-- **Over a perfect Lie algebra an action that composes to zero is zero.** Each bracket `⁅y, z⁆`
 acts as a composite of two actions by the Leibniz rule, hence by zero, and the brackets span a
@@ -109,13 +110,15 @@ theorem isTrivial_of_derivedSeries_one_eq_top_of_lie_lie_eq_zero (hL : derivedSe
   have hx : x ∈ Submodule.span K {b | ∃ y z : L, ⁅y, z⁆ = b} := by
     rw [← hspan]
     exact hL ▸ LieSubmodule.mem_top x
-  induction hx using Submodule.span_induction with
-  | mem u hu =>
-    obtain ⟨y, z, rfl⟩ := hu
-    exact hbracket y z
+  -- Induct on the span of the brackets; only `smul_lie` in `L` is used, so `M` needs no
+  -- compatible `K`-module structure.
+  induction hx using Submodule.closure_induction with
   | zero => rw [zero_lie]
   | add u v _ _ hu hv => rw [add_lie, hu, hv, add_zero]
-  | smul t u _ hu => rw [smul_lie, hu, smul_zero]
+  | smul_mem t u hu =>
+    obtain ⟨y, z, rfl⟩ := hu
+    rw [← smul_lie]
+    exact hbracket (t • y) z
 
 end Perfect
 

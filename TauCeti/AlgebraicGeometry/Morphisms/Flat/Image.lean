@@ -39,14 +39,14 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
 /-- Let `R` be a Bezout domain with an injective map to a field `K`, let `g : X ⟶ Spec R`, and
 let `f : Y ⟶ X` be quasi-compact with `f ≫ g` factoring through `Spec K`. Then the
 scheme-theoretic image of `f` is flat over `R`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.flat_imageι_comp {R K : Type u} [CommRing R]
+theorem flat_imageι_comp {R K : Type u} [CommRing R]
     [IsDomain R] [IsBezout R] [Field K] [Algebra R K] [FaithfulSMul R K]
     {X Y : Scheme.{u}} (f : Y ⟶ X) [QuasiCompact f] (g : X ⟶ Spec (.of R))
     (toK : Y ⟶ Spec (.of K))
@@ -97,4 +97,4 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.flat_imageι_comp {R K : Type u} [Co
   rw [map_zero, ← hunit.mul_left_eq_zero, ← map_mul]
   exact (congrArg ψ ha).trans (map_zero ψ)
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom

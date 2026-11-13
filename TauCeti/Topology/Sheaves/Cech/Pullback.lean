@@ -17,7 +17,9 @@ For a continuous map `f : X ⟶ Y` and a morphism of presheaves `α : P ⟶ f_* 
 complex of `Q` for the inverse-image family. It uses the native tuple complex,
 including repeated indices and empty intersections. No covering condition is needed.
 
-The map commutes with actual refinement functions and with coefficient morphisms.
+The map commutes with actual refinement functions, with the homotopies between the maps
+induced by two refinement functions, and with coefficient morphisms, and it is an isomorphism when
+the coefficient morphism is (`TopCat.Hom.isIso_cechComplexPullback`).
 Consequently, restriction to an open subspace can be performed before or after a
 refinement. `TopologicalSpace.Opens.cechComplexRestrict` is this restriction map, with the
 presheaf on the subspace obtained by evaluating on its open subsets regarded as opens of the
@@ -42,19 +44,13 @@ variable {A : Type v} [Category.{w} A] [Preadditive A] [HasProducts.{u} A]
 
 namespace TopCat.Hom
 
-/-- Inverse image preserves the finite intersections occurring in a Čech term. -/
-private theorem preimageProduct (n : ℕ) (a : Fin (n + 1) → ι) :
-    Nonempty ((∏ᶜ fun j ↦ (Opens.map f).obj (U (a j))) ⟶
-      (Opens.map f).obj (∏ᶜ fun j ↦ U (a j))) :=
-  ⟨inv (piComparison (Opens.map f) (fun j ↦ U (a j)))⟩
-
 /-- The map of tuple Čech complexes induced by a continuous map and a morphism
 `P ⟶ f_* Q`. The inverse-image family has the same index type as the original family. -/
 def cechComplexPullback (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q) :
     (cechComplexFunctor U).obj P ⟶
       (cechComplexFunctor (fun i ↦ (Opens.map f).obj (U i))).obj Q :=
   (cechComplexFunctor U).map α ≫
-    (cechComplexCompIso (Opens.map f) U Q (preimageProduct f U)).inv
+    (cechComplexCompIso (Opens.map f) U Q (fun _ _ ↦ inferInstance)).inv
 
 /-- The pullback map is characterized by the coefficient map and the canonical comparison
 between inverse images of intersections and intersections of inverse images. -/
@@ -62,7 +58,7 @@ between inverse images of intersections and intersections of inverse images. -/
 private theorem cechComplexPullback_comp_comparison
     (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q) :
     cechComplexPullback f U α ≫
-        (cechComplexCompIso (Opens.map f) U Q (preimageProduct f U)).hom =
+        (cechComplexCompIso (Opens.map f) U Q (fun _ _ ↦ inferInstance)).hom =
       (cechComplexFunctor U).map α := by
   simp [cechComplexPullback]
 
@@ -76,11 +72,11 @@ theorem cechComplexPullback_f_π
         Pi.π (fun b : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ (Opens.map f).obj (U (b j))))) a =
       Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) ≫
         Q.map (inv (piComparison (Opens.map f) (fun j ↦ U (a j)))).op := by
-  let e := cechComplexCompIso (Opens.map f) U Q (preimageProduct f U)
+  let e := cechComplexCompIso (Opens.map f) U Q (fun _ _ ↦ inferInstance)
   have ht : (cechComplexPullback f U α).f n ≫ e.hom.f n =
       ((cechComplexFunctor U).map α).f n :=
     congrArg (fun z ↦ z.f n) (cechComplexPullback_comp_comparison f U α)
-  have hπ := cechComplexCompIso_hom_f_π (Opens.map f) U Q (preimageProduct f U) n a
+  have hπ := cechComplexCompIso_hom_f_π (Opens.map f) U Q (fun _ _ ↦ inferInstance) n a
   -- The tuple projections use native Čech term wrappers. Composing their equations as terms
   -- avoids unfolding these wrappers during rewriting.
   have hl := (Category.assoc _ _ _).trans
@@ -94,6 +90,12 @@ theorem cechComplexPullback_f_π
   exact ((Category.assoc _ _ _).trans <| (Pi.π _ a ≫=
     ((Category.assoc _ _ _).trans ((α.app _ ≫= hc).trans (Category.comp_id _))))).symm
 
+/-- Pullback along an isomorphism of coefficients is an isomorphism of Čech complexes. -/
+instance isIso_cechComplexPullback (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q) [IsIso α] :
+    IsIso (cechComplexPullback f U α) := by
+  rw [cechComplexPullback]
+  infer_instance
+
 /-- Pullback commutes with every actual refinement, not just with its induced cohomology map. -/
 @[reassoc]
 theorem cechComplexMap_comp_cechComplexPullback {κ : Type u} {V : κ → Opens Y}
@@ -104,13 +106,34 @@ theorem cechComplexMap_comp_cechComplexPullback {κ : Type u} {V : κ → Opens 
         (⟨φ.f, fun i ↦ (Opens.map f).map (φ.φ i)⟩ :
           FormalCoproduct.mk _ (fun i ↦ (Opens.map f).obj (U i)) ⟶
             FormalCoproduct.mk _ (fun i ↦ (Opens.map f).obj (V i))) := by
-  rw [← cancel_mono (cechComplexCompIso (Opens.map f) U Q (preimageProduct f U)).hom]
+  rw [← cancel_mono (cechComplexCompIso (Opens.map f) U Q (fun _ _ ↦ inferInstance)).hom]
   simp only [Category.assoc, cechComplexPullback_comp_comparison]
   have h := cechComplexMap_comp_cechComplexCompIso_hom (Opens.map f) U Q
-    (preimageProduct f U) φ (preimageProduct f V)
+    (fun _ _ ↦ inferInstance) φ (fun _ _ ↦ inferInstance)
   exact (cechComplexMap_naturality P α φ).symm.trans <|
     ((cechComplexPullback_comp_comparison f V α =≫ _).symm.trans <|
       (Category.assoc _ _ _).trans (cechComplexPullback f V α ≫= h.symm))
+
+/-- Pullback carries the homotopy between the maps induced by two actual refinements
+(`TauCeti.CategoryTheory.cechComplexMapHomotopy`) to the homotopy between the maps induced by the
+inverse-image refinements. -/
+@[reassoc]
+theorem cechComplexPullback_f_comp_cechComplexMapHomotopy_hom {κ : Type u} {V : κ → Opens Y}
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q) (i j : ℕ) :
+    (cechComplexPullback f V α).f i ≫
+        (cechComplexMapHomotopy Q
+          (⟨φ.f, fun i ↦ (Opens.map f).map (φ.φ i)⟩ :
+            FormalCoproduct.mk _ (fun i ↦ (Opens.map f).obj (U i)) ⟶
+              FormalCoproduct.mk _ (fun i ↦ (Opens.map f).obj (V i)))
+          ⟨ψ.f, fun i ↦ (Opens.map f).map (ψ.φ i)⟩).hom i j =
+      (cechComplexMapHomotopy P φ ψ).hom i j ≫ (cechComplexPullback f U α).f j := by
+  rw [← cancel_mono ((cechComplexCompIso (Opens.map f) U Q (fun _ _ ↦ inferInstance)).hom.f j),
+    Category.assoc, Category.assoc,
+    cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom _ _ _ _ _ _ (fun _ _ ↦ inferInstance),
+    ← Category.assoc, ← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f,
+    cechComplexPullback_comp_comparison, cechComplexPullback_comp_comparison]
+  exact cechComplexMapHomotopy_hom_naturality P α φ ψ i j
 
 /-- A commutative square of coefficient maps induces a commutative square of pullback maps. -/
 @[reassoc]
@@ -122,7 +145,7 @@ theorem cechComplexPullback_naturality {P' : Y.Presheaf A} {Q' : X.Presheaf A}
     (cechComplexFunctor U).map β ≫ cechComplexPullback f U α' =
       cechComplexPullback f U α ≫
         (cechComplexFunctor (fun i ↦ (Opens.map f).obj (U i))).map γ := by
-  rw [← cancel_mono (cechComplexCompIso (Opens.map f) U Q' (preimageProduct f U)).hom]
+  rw [← cancel_mono (cechComplexCompIso (Opens.map f) U Q' (fun _ _ ↦ inferInstance)).hom]
   simp only [Category.assoc, cechComplexPullback_comp_comparison,
     cechComplexFunctor_map_comp_cechComplexCompIso_hom,
     cechComplexPullback_comp_comparison_assoc]
@@ -182,6 +205,21 @@ theorem cechComplexMap_comp_cechComplexRestrict (W : Opens X) (U : ι → Opens 
               FormalCoproduct.mk _ (fun i ↦ (Opens.map W.inclusion').obj (V i))) :=
   cechComplexMap_comp_cechComplexPullback W.inclusion' U φ _
 
+/-- Restricting a cover commutes with the homotopy between the maps induced by two actual
+refinements. -/
+@[reassoc]
+theorem cechComplexRestrict_f_comp_cechComplexMapHomotopy_hom (W : Opens X) (U : ι → Opens X)
+    (P : X.Presheaf A) {κ : Type u} {V : κ → Opens X}
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (i j : ℕ) :
+    (cechComplexRestrict W V P).f i ≫
+        (cechComplexMapHomotopy (W.isOpenEmbedding.isOpenMap.functor.op ⋙ P)
+          (⟨φ.f, fun i ↦ (Opens.map W.inclusion').map (φ.φ i)⟩ :
+            FormalCoproduct.mk _ (fun i ↦ (Opens.map W.inclusion').obj (U i)) ⟶
+              FormalCoproduct.mk _ (fun i ↦ (Opens.map W.inclusion').obj (V i)))
+          ⟨ψ.f, fun i ↦ (Opens.map W.inclusion').map (ψ.φ i)⟩).hom i j =
+      (cechComplexMapHomotopy P φ ψ).hom i j ≫ (cechComplexRestrict W U P).f j :=
+  cechComplexPullback_f_comp_cechComplexMapHomotopy_hom W.inclusion' U φ ψ _ i j
+
 end TopologicalSpace.Opens
 
 namespace TopCat.Hom
@@ -195,10 +233,10 @@ theorem cechAugmentation_comp_cechComplexPullback
     cechAugmentation U isTerminalTop P ≫ cechComplexPullback f U α =
       (CochainComplex.single₀ A).map (α.app (op ⊤)) ≫
         cechAugmentation (fun i ↦ (Opens.map f).obj (U i)) isTerminalTop Q := by
-  rw [← cancel_mono (cechComplexCompIso (Opens.map f) U Q (preimageProduct f U)).hom]
+  rw [← cancel_mono (cechComplexCompIso (Opens.map f) U Q (fun _ _ ↦ inferInstance)).hom]
   simp only [Category.assoc, cechComplexPullback_comp_comparison]
   have h := cechAugmentation_comp_cechComplexCompIso_hom (Opens.map f) U Q
-    (preimageProduct f U) isTerminalTop isTerminalTop
+    (fun _ _ ↦ inferInstance) isTerminalTop isTerminalTop
   exact (cechAugmentation_naturality U isTerminalTop P α).trans <|
     (((CochainComplex.single₀ A).map (α.app (op ⊤)) ≫= h.symm).trans
       (Category.assoc _ _ _).symm)

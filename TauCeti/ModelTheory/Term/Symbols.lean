@@ -75,6 +75,22 @@ theorem functionsIn_subst_subset (t : L.Term α) (f : α → L.Term β) :
     refine (ih i).trans (Set.union_subset_union_left _ ?_)
     exact Set.subset_union_of_subset_right (Set.subset_iUnion (fun i => (ts i).functionsIn) i) _
 
+/-- Two substitutions either give a term the same image, or they differ at a variable whose
+substituted term has all its function symbols in the image of the term. -/
+theorem subst_eq_or_exists_functionsIn_subset (t : L.Term α) (f g : α → L.Term β) :
+    t.subst f = t.subst g ∨ ∃ a, f a ≠ g a ∧ (f a).functionsIn ⊆ (t.subst f).functionsIn := by
+  induction t with
+  | var a => exact (em (f a = g a)).imp id fun h => ⟨a, h, subset_rfl⟩
+  | func F ts ih =>
+    by_cases h : ∀ i, (ts i).subst f = (ts i).subst g
+    · exact .inl (by simp only [subst, h])
+    · obtain ⟨i, hi⟩ := not_forall.1 h
+      obtain ⟨a, hfa, ha⟩ := (ih i).resolve_left hi
+      refine .inr ⟨a, hfa, ha.trans ?_⟩
+      simp only [subst, functionsIn_func]
+      exact (Set.subset_iUnion (fun i => ((ts i).subst f).functionsIn) i).trans
+        Set.subset_union_right
+
 /-- A language map sends the occurring function symbols to their images. -/
 @[simp]
 theorem functionsIn_onTerm (t : L.Term α) {L' : FirstOrder.Language.{u', v'}} (g : L →ᴸ L') :

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Invariant forms along root strings
@@ -13,14 +15,24 @@ public import Mathlib.LinearAlgebra.RootSystem.Chain
 This file records how an invariant bilinear form changes between consecutive roots in a root
 string. It also shows that any integer-valued length function symmetrizing the Cartan integers is
 quadratic along integral root relations. The results are the root-system calculation behind the
-integrality of Chevalley structure constants.
+integrality of Chevalley structure constants. For symmetric integer Cartan pairings, a root sum
+`γ = α + β` has pairing `⟨α, β^∨⟩ = -1`, and `α + γ` is not a root; these consequences require
+no finiteness or spanning assumption.
 
 ## Main results
 
 * `RootPairing.length_of_root_eq_add_zsmul`: a symmetrizing integer-valued length function is
   quadratic along integral root relations `γ = β + n • α`.
+* `RootPairing.pairing_eq_neg_one_of_root_eq_add`: with symmetric integer pairings, roots whose
+  sum is a root pair to `-1`.
+* `RootPairing.pairing_eq_one_of_root_eq_add`: a summand pairs to `1` with the root sum.
+* `RootPairing.root_add_notMem_of_root_eq_add`: a root sum cannot be extended to another root.
 * `RootPairing.chainBotCoeff_comm_of_root_add_mem`: `chainBotCoeff` is symmetric when the sum of
   two roots is a root.
+* `RootPairing.chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two`: the reverse
+  of a root string with bottom coefficient zero and top coefficient two has top coefficient one.
+* `RootPairing.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero`:
+  orthogonal roots whose sum is a root have one string step in each direction.
 * `RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero`: orthogonal roots
   whose sum is a root have equal squared length under any invariant form.
 * `RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq`: along a root string,
@@ -30,6 +42,7 @@ integrality of Chevalley structure constants.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Chapter VI, §1.
 -/
 
 public section
@@ -42,7 +55,27 @@ namespace RootPairing
 
 section
 
-variable {I M N : Type*} [AddCommGroup M] [Module ℤ M] [AddCommGroup N] [Module ℤ N]
+variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- The string through orthogonal roots with a root as their sum has precisely one step
+in each direction. -/
+theorem chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
+    (P : RootPairing I R M N) [P.IsCrystallographic] [P.IsReduced] {α β : I}
+    (h : P.root α + P.root β ∈ Set.range P.root) (horth : P.pairingIn ℤ β α = 0) :
+    P.chainBotCoeff α β = 1 ∧ P.chainTopCoeff α β = 1 := by
+  have hli := P.linearIndependent_of_add_mem_range_root' h
+  have hdiff := P.chainBotCoeff_sub_chainTopCoeff hli
+  have hbound := P.chainBotCoeff_add_chainTopCoeff_le_three (i := α) (j := β)
+  have hpos := P.one_le_chainTopCoeff_of_root_add_mem h
+  rw [horth] at hdiff
+  omega
+
+end
+
+section
+
+variable {I M N : Type*} [AddCommGroup M] [AddCommGroup N]
 
 /-- A symmetrizing integer-valued length function is quadratic along integral root relations. -/
 theorem length_of_root_eq_add_zsmul (P : RootPairing I ℤ M N)
@@ -51,83 +84,97 @@ theorem length_of_root_eq_add_zsmul (P : RootPairing I ℤ M N)
     (α β γ : I) (n : ℤ) (h : P.root γ = P.root β + n • P.root α) :
     length γ = length β + n * length α * P.pairing β α + n ^ 2 * length α := by
   have hpair (j : I) : P.pairing γ j = P.pairing β j + n * P.pairing α j := by
-    have hj := P.pairing_eq_add_of_root_eq_smul_add_smul (i := β) (j := j) (k := γ) (l := α)
-      (x := Int.castRingHom ℤ 1) (y := Int.castRingHom ℤ n)
-      (by simpa only [Int.coe_castRingHom, Int.cast_smul_eq_zsmul, one_zsmul] using h)
-    simpa only [Int.coe_castRingHom, Int.cast_smul_eq_zsmul, one_zsmul, smul_eq_mul,
-      Int.cast_id, one_mul] using hj
-  have htwo :
-      2 * length γ = 2 * (length β + n * length α * P.pairing β α + n ^ 2 * length α) := by
-    calc
-      2 * length γ = length γ * P.pairing γ γ := by rw [P.pairing_same]; ring
-      _ = length γ * (P.pairing β γ + n * P.pairing α γ) := by rw [hpair γ]
-      _ = length γ * P.pairing β γ + n * (length γ * P.pairing α γ) := by ring
-      _ = length β * P.pairing γ β + n * (length α * P.pairing γ α) := by
-        rw [hsym γ β, hsym γ α]
-      _ = length β * (P.pairing β β + n * P.pairing α β) +
-          n * (length α * (P.pairing β α + n * P.pairing α α)) := by
-        rw [hpair β, hpair α]
-      _ = 2 * (length β + n * length α * P.pairing β α + n ^ 2 * length α) := by
-        rw [P.pairing_same, P.pairing_same]
-        linear_combination -n * hsym α β
-  exact mul_left_cancel₀ (by norm_num : (2 : ℤ) ≠ 0) htwo
+    simpa using P.pairing_eq_add_of_root_eq_smul_add_smul (j := j) (x := 1) (y := n)
+      (by simpa using h)
+  -- Expand `2 * length γ = length γ * ⟨γ, γ^∨⟩` along `γ = β + n • α`, moving each `length`
+  -- across a pairing with `hsym`.
+  refine mul_left_cancel₀ (two_ne_zero (α := ℤ)) ?_
+  linear_combination -length γ * P.pairing_same γ + length γ * hpair γ + hsym γ β +
+    n * hsym γ α + length β * hpair β + n * length α * hpair α + length β * P.pairing_same β +
+    n ^ 2 * length α * P.pairing_same α - n * hsym α β
 
 variable {P : RootPairing I ℤ M N}
 
-/-- Distinct non-opposite roots of equal positive length have Cartan pairing `-1`, `0`, or `1`
-when that pairing has absolute value at most two. -/
-theorem pairing_mem_neg_one_zero_one_of_length_eq
-    [Finite I] [Module.IsTorsionFree ℤ M]
+section SymmetricPairing
+
+variable (hcomm : ∀ i j, P.pairing i j = P.pairing j i) {α β γ : I}
+
+include hcomm
+
+/-- With symmetric integer pairings, roots whose sum is a root have Cartan pairing `-1`. -/
+theorem pairing_eq_neg_one_of_root_eq_add (hγ : P.root γ = P.root α + P.root β) :
+    P.pairing α β = -1 := by
+  have hlen := P.length_of_root_eq_add_zsmul (fun _ ↦ 1)
+    (by simpa only [one_mul] using fun i j ↦ hcomm j i) β α γ 1
+    (by simpa only [one_zsmul] using hγ)
+  norm_num at hlen
+  omega
+
+/-- With symmetric integer pairings, a summand pairs to `1` with the root sum `γ = α + β`. -/
+theorem pairing_eq_one_of_root_eq_add (hγ : P.root γ = P.root α + P.root β) :
+    P.pairing α γ = 1 := by
+  have h₁ := pairing_eq_neg_one_of_root_eq_add hcomm hγ
+  have h₂ := pairing_eq_add_of_root_eq_add (l := α) hγ
+  rw [hcomm γ α, hcomm β α] at h₂
+  simp only [pairing_same] at h₂
+  omega
+
+/-- With symmetric integer pairings, a root sum `γ = α + β` cannot be extended to `α + γ`. -/
+theorem root_add_notMem_of_root_eq_add (hγ : P.root γ = P.root α + P.root β) :
+    P.root α + P.root γ ∉ Set.range P.root := by
+  rintro ⟨δ, hδ⟩
+  have h₁ := pairing_eq_one_of_root_eq_add hcomm hγ
+  have h₂ := pairing_eq_neg_one_of_root_eq_add hcomm hδ
+  omega
+
+end SymmetricPairing
+
+/-- Distinct non-opposite roots of equal nonzero length in a finite integral root pairing have
+Cartan pairing `-1`, `0`, or `1`. -/
+theorem pairing_mem_neg_one_zero_one_of_length_eq [Finite I]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
-    (α β : I) (hpair : |P.pairing β α| ≤ 2)
-    (hαpos : 0 < length α) (hαβ : length α = length β) (hne : β ≠ α)
+    (α β : I) (hα : length α ≠ 0) (hαβ : length α = length β) (hne : β ≠ α)
     (hneg : P.root β ≠ -P.root α) :
     P.pairing β α ∈ ({-1, 0, 1} : Set ℤ) := by
-  have hsym' : P.pairing β α = P.pairing α β := by
-    have h := hsym α β
-    rw [← hαβ] at h
-    nlinarith
-  have hne_two : P.pairing β α ≠ 2 := by
-    intro htwo
-    have : β = α := (P.pairing_two_two_iff β α).mp ⟨htwo, hsym'.symm.trans htwo⟩
-    exact hne this
-  have hne_neg_two : P.pairing β α ≠ -2 := by
-    intro htwo
-    have : P.root β = -P.root α :=
-      (P.pairing_neg_two_neg_two_iff β α).mp ⟨htwo, hsym'.symm.trans htwo⟩
-    exact hneg this
+  have : Module.IsReflexive ℤ M := .of_isPerfPair P.toLinearMap
+  have hsym' : P.pairing β α = P.pairing α β := mul_left_cancel₀ hα (by rw [hsym, hαβ])
+  have h₂ : P.pairing β α ≠ 2 := fun h ↦ hne ((P.pairing_two_two_iff β α).mp ⟨h, hsym' ▸ h⟩)
+  have h₂' : P.pairing β α ≠ -2 := fun h ↦
+    hneg ((P.pairing_neg_two_neg_two_iff β α).mp ⟨h, hsym' ▸ h⟩)
+  -- The Coxeter weight `⟨β, α^∨⟩ ⟨α, β^∨⟩` of a finite root pairing is at most four.
+  have hpi (i j : I) : P.pairingIn ℤ i j = P.pairing i j := by
+    simpa using P.algebraMap_pairingIn ℤ i j
+  have hw := P.coxeterWeightIn_le_four ℤ β α
+  rw [coxeterWeightIn, hpi, hpi, ← hsym'] at hw
+  have : -2 ≤ P.pairing β α := by nlinarith
+  have : P.pairing β α ≤ 2 := by nlinarith
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-  have hbounds : -2 ≤ P.pairing β α ∧ P.pairing β α ≤ 2 := abs_le.mp hpair
   omega
 
 /-- An equal-length root string through non-opposite roots has no term two or more steps
 in the positive direction when the resulting root has length less than three times theirs. -/
-theorem not_root_eq_add_nsmul_of_length_eq_of_two_le
-    [Finite I] [Module.IsTorsionFree ℤ M]
+theorem not_root_eq_add_nsmul_of_length_eq_of_two_le [Finite I]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
-    (α β γ : I) (n : ℕ) (hpair : |P.pairing β α| ≤ 2)
+    (α β γ : I) (n : ℕ)
     (hαpos : 0 < length α) (hαβ : length α = length β)
     (hγ : length γ < 3 * length α)
     (hneg : P.root β ≠ -P.root α) (hn : 2 ≤ n)
     (h : P.root γ = P.root β + (n : ℤ) • P.root α) : False := by
-  have hquad : 0 ≤ (n : ℤ) ^ 2 - n - 2 := by nlinarith
-  have hne_or_eq : β = α ∨ β ≠ α := eq_or_ne β α
-  have hp : P.pairing β α ∈ ({-1, 0, 1, 2} : Set ℤ) := by
-    rcases hne_or_eq with hsame | hne
-    · subst β
-      simp
-    · have hp' := P.pairing_mem_neg_one_zero_one_of_length_eq length hsym α β
-        hpair hαpos hαβ hne hneg
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp' ⊢
-      rcases hp' with hp' | hp' | hp' <;> simp [hp']
+  have hp : -1 ≤ P.pairing β α := by
+    rcases eq_or_ne β α with rfl | hne
+    · simp
+    · have := P.pairing_mem_neg_one_zero_one_of_length_eq length hsym α β hαpos.ne' hαβ hne hneg
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at this
+      omega
   have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ n h
   rw [← hαβ] at hlen
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
-  rcases hp with hp | hp | hp | hp <;>
-    rw [hp] at hlen <;>
-    nlinarith [mul_nonneg hquad (le_of_lt hαpos)]
+  have hn' : (2 : ℤ) ≤ n := by exact_mod_cast hn
+  -- `length γ = length α * (1 + n ⟨β, α^∨⟩ + n²) ≥ length α * (n² - n + 1) ≥ 3 * length α`.
+  nlinarith [mul_nonneg (mul_nonneg hαpos.le (sub_nonneg.2 hn')) (by positivity : (0 : ℤ) ≤ n + 1),
+    mul_nonneg (mul_nonneg hαpos.le (by positivity : (0 : ℤ) ≤ n))
+      (by omega : (0 : ℤ) ≤ P.pairing β α + 1)]
 
 /-- If two roots of length one add to a root of length two, their Cartan pairing is zero. -/
 theorem pairing_eq_zero_of_short_add_short_eq_long
@@ -150,79 +197,35 @@ theorem n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_lon
     (hγ : length γ = 1 ∨ length γ = 2) (hn : 0 < n)
     (h : P.root γ = P.root β + (n : ℤ) • P.root α) :
     n = 1 ∧ P.pairing β α = -1 ∧ length γ = 1 := by
-  have hsym' : 2 * P.pairing β α = P.pairing α β := by
-    have hs := hsym α β
-    rw [hα, hβ, one_mul] at hs
-    exact hs
-  have hp : P.pairing β α ∈ ({-1, 0, 1} : Set ℤ) := by
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    have hb := abs_le.mp hpair
-    omega
+  have hsym' := hsym α β
   have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ n h
+  rw [hα, hβ] at hsym' hlen
+  -- `2 * ⟨β, α^∨⟩ = ⟨α, β^∨⟩` and `|⟨α, β^∨⟩| ≤ 2` leave three values for `⟨β, α^∨⟩`.
+  have hp : P.pairing β α = -1 ∨ P.pairing β α = 0 ∨ P.pairing β α = 1 := by
+    have := abs_le.mp hpair
+    omega
   have hn' : (1 : ℤ) ≤ n := by exact_mod_cast hn
-  have hnle : n ≤ 1 := by
-    rcases hγ with hγ | hγ <;>
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp <;>
-      rcases hp with hp | hp | hp <;>
-      rw [hα, hβ, hγ, hp] at hlen <;>
-      norm_num at hlen <;>
-      nlinarith [sq_nonneg ((n : ℤ) - 1)]
-  have hn_eq : n = 1 := by omega
-  subst n
-  have hlen' := P.length_of_root_eq_add_zsmul length hsym α β γ 1 (by simpa using h)
-  constructor
-  · rfl
-  rcases hγ with hγ | hγ
-  · rw [hα, hβ, hγ] at hlen'
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
-    rcases hp with hp | hp | hp
-    · exact ⟨hp, hγ⟩
-    · rw [hp] at hlen'
-      norm_num at hlen'
-    · rw [hp] at hlen'
-      norm_num at hlen'
-  · rw [hα, hβ, hγ] at hlen'
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
-    rcases hp with hp | hp | hp <;> rw [hp] at hlen' <;> norm_num at hlen'
+  rcases hγ with hγ | hγ <;> rcases hp with hp | hp | hp <;> rw [hγ, hp] at hlen
+  all_goals first
+    | exact ⟨by exact_mod_cast (show (n : ℤ) = 1 by nlinarith), hp, hγ⟩
+    | omega
+    | nlinarith
 
-/-- If two roots of length one add to a root of length two, and every root at the next positive
-string position has length one or two, their descending chain coefficient is one. -/
+/-- If two roots of length one add to a root of length two, their descending chain coefficient
+is one. -/
 theorem chainBotCoeff_eq_one_of_short_add_short_eq_long
-    [Finite I] [P.IsCrystallographic] [P.IsReduced]
+    [Finite I] [P.IsReduced]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I)
-    (hlength : ∀ δ, P.root δ = P.root β + (2 : ℤ) • P.root α →
-      length δ = 1 ∨ length δ = 2)
     (hα : length α = 1) (hβ : length β = 1) (hγ : length γ = 2)
     (h : P.root γ = P.root β + P.root α) : P.chainBotCoeff α β = 1 := by
   have hrange : P.root α + P.root β ∈ Set.range P.root := by
     refine ⟨γ, ?_⟩
     rw [h, add_comm]
-  have hlin := P.linearIndependent_of_add_mem_range_root' hrange
-  have htop_ge := P.one_le_chainTopCoeff_of_root_add_mem hrange
   have hp := P.pairing_eq_zero_of_short_add_short_eq_long length hsym α β γ hα hβ hγ h
-  have htop_le : P.chainTopCoeff α β ≤ 1 := by
-    by_contra hnot
-    have htwo : 2 ≤ P.chainTopCoeff α β := by omega
-    have hrange2 := (P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hlin).2 htwo
-    obtain ⟨δ, hδ⟩ := hrange2
-    have hδ' : P.root δ = P.root β + (2 : ℤ) • P.root α := by
-      simpa only [two_nsmul, two_zsmul] using hδ
-    have hδlen := P.length_of_root_eq_add_zsmul length hsym α β δ 2 hδ'
-    have hδlen' : length δ = 5 := by
-      rw [hα, hβ, hp] at hδlen
-      norm_num at hδlen ⊢
-      exact hδlen
-    rcases hlength δ hδ' with hδshort | hδlong <;> omega
-  have htop : P.chainTopCoeff α β = 1 := by omega
-  have hpIn : P.pairingIn ℤ β α = 0 := by
-    simpa using (P.algebraMap_pairingIn ℤ β α).trans hp
-  have hdiff := P.chainBotCoeff_sub_chainTopCoeff hlin
-  rw [htop] at hdiff
-  norm_num at hdiff
-  rw [hpIn] at hdiff
-  omega
+  exact (P.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero hrange
+    (by simpa using (P.algebraMap_pairingIn ℤ β α).trans hp)).1
 
 /-- If adding twice a length-one root to a length-two root gives a root, the endpoint has length
 two and the two Cartan pairings are `-2` and `-1`. -/
@@ -244,7 +247,7 @@ theorem pairings_of_long_add_two_short
 /-- A two-step root string from a length-two root in a length-one direction has a length-one
 midpoint, and its chain coefficients are zero, two, one, and one. -/
 theorem exists_short_midpoint_of_long_add_two_short
-    [Finite I] [Module.IsTorsionFree ℤ M] [P.IsCrystallographic] [P.IsReduced]
+    [Finite I] [P.IsReduced]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I)
@@ -253,6 +256,7 @@ theorem exists_short_midpoint_of_long_add_two_short
     ∃ δ : I, P.root δ = P.root β + P.root α ∧ length δ = 1 ∧
       P.chainBotCoeff α β = 0 ∧ P.chainTopCoeff α β = 2 ∧
       P.chainBotCoeff α δ = 1 ∧ P.chainTopCoeff α δ = 1 := by
+  have : Module.IsReflexive ℤ M := .of_isPerfPair P.toLinearMap
   obtain ⟨hp, hp', _⟩ := P.pairings_of_long_add_two_short length hsym
     α β γ hα hβ hγ h
   have hne : α ≠ β := by
@@ -267,11 +271,7 @@ theorem exists_short_midpoint_of_long_add_two_short
     IsReduced.linearIndependent P hne hneg
   have htop_ge : 2 ≤ P.chainTopCoeff α β := by
     rw [← P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hlin]
-    refine ⟨γ, ?_⟩
-    have hcast : (2 : ℕ) • P.root α = (2 : ℤ) • P.root α := by
-      simp only [two_nsmul, two_zsmul]
-    rw [hcast]
-    exact h
+    exact ⟨γ, by simpa only [two_nsmul, two_zsmul] using h⟩
   have hpIn : P.pairingIn ℤ β α = -2 := by
     simpa using (P.algebraMap_pairingIn ℤ β α).trans hp
   have hdiff := P.chainBotCoeff_sub_chainTopCoeff hlin
@@ -294,21 +294,27 @@ theorem exists_short_midpoint_of_long_add_two_short
   have hδtop := P.chainTopCoeff_of_add hlin hδ
   exact ⟨δ, hδ, hδshort, hbot, htop, by omega, by omega⟩
 
-/-- A root edge whose source and target have the same positive length has no descending root
-when every possible predecessor has length at most two. -/
+/-- A root edge from a root of positive length whose source and target have the same length has no
+descending root when every possible predecessor has length at most two. -/
 theorem chainBotCoeff_eq_zero_of_add_of_length_eq
-    [Finite I] [P.IsCrystallographic]
+    [Finite I]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (hαpos : 0 < length α)
     (hminus : ∀ δ, P.root δ = P.root β + (-1 : ℤ) • P.root α → length δ ≤ 2)
-    (hβpos : 0 < length β) (hβγ : length β = length γ)
+    (hβγ : length β = length γ)
     (h : P.root γ = P.root β + P.root α) : P.chainBotCoeff α β = 0 := by
   have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ 1 (by simpa only [one_zsmul] using h)
   have hpair : P.pairing β α = -1 := by
     rw [← hβγ] at hlen
     norm_num at hlen
     nlinarith
+  have hβpos : 0 < length β := by
+    have hpi (i j : I) : P.pairingIn ℤ i j = P.pairing i j := by
+      simpa using P.algebraMap_pairingIn ℤ i j
+    have hneg : P.pairing α β < 0 := by
+      simpa only [hpi] using (P.pairingIn_lt_zero_iff ℤ (i := β) (j := α)).mp (by simp [hpi, hpair])
+    nlinarith [hsym α β]
   rw [P.chainBotCoeff_eq_zero_iff]
   right
   rintro ⟨δ, hδ⟩
@@ -319,6 +325,22 @@ theorem chainBotCoeff_eq_zero_of_add_of_length_eq
   rw [hpair] at hδlen
   norm_num at hδlen
   nlinarith [hβpos]
+
+end
+
+section
+
+variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing I R M N} [P.IsCrystallographic]
+
+/-- The root string through `j` in direction `i` has no descending root exactly when the string
+through `i` in direction `j` has none. -/
+theorem chainBotCoeff_eq_zero_comm {i j : I} :
+    P.chainBotCoeff i j = 0 ↔ P.chainBotCoeff j i = 0 := by
+  rw [P.chainBotCoeff_eq_zero_iff, P.chainBotCoeff_eq_zero_iff,
+    LinearIndependent.pair_symm_iff, ← P.neg_mem_range_root_iff (x := P.root i - P.root j),
+    neg_sub]
 
 end
 
@@ -345,21 +367,65 @@ theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
   have htop_le : P.chainTopCoeff i j ≤ 3 := by omega
   have htop'_le : P.chainTopCoeff j i ≤ 3 := by omega
   have hbot : 1 ≤ P.chainBotCoeff i j ↔ 1 ≤ P.chainBotCoeff j i := by
-    rw [← P.root_sub_nsmul_mem_range_iff_le_chainBotCoeff hij,
-      ← P.root_sub_nsmul_mem_range_iff_le_chainBotCoeff hji]
-    simp only [one_smul]
-    constructor
-    · intro h
-      have hn := (P.neg_mem_range_root_iff (x := P.root j - P.root i)).2 h
-      simpa only [neg_sub] using hn
-    · intro h
-      have hn := (P.neg_mem_range_root_iff (x := P.root i - P.root j)).2 h
-      simpa only [neg_sub] using hn
+    rw [Nat.one_le_iff_ne_zero, Nat.one_le_iff_ne_zero, Ne, Ne, P.chainBotCoeff_eq_zero_comm]
   have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed i j
   have hpq := P.chainBotCoeff_sub_chainTopCoeff hij
   have hpq' := P.chainBotCoeff_sub_chainTopCoeff hji
   simp only [mem_insert_iff, mem_singleton_iff, Prod.mk.injEq] at hpair
   rcases hpair with h | h | h | h | h | h | h | h | h | h | h | h | h <;>
+    rcases h with ⟨h, h'⟩ <;> omega
+
+omit [P.IsReduced] in
+/-- If the `i`-string through `j` starts at `j` and has two further roots, the reverse
+`j`-string through `i` has top coefficient one. -/
+theorem chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two {i j : I}
+    (hbot : P.chainBotCoeff i j = 0) (htop : P.chainTopCoeff i j = 2) :
+    P.chainTopCoeff j i = 1 := by
+  have hli : LinearIndependent R ![P.root i, P.root j] := by
+    by_contra h
+    have := P.chainTopCoeff_of_not_linearIndependent h
+    omega
+  have hli' := LinearIndependent.pair_symm_iff.mp hli
+  have hbot' : P.chainBotCoeff j i = 0 := P.chainBotCoeff_eq_zero_comm.mp hbot
+  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystallographic i j
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have hw : P.coxeterWeightIn ℤ i j ≠ 4 :=
+    (P.linearIndependent_iff_coxeterWeightIn_ne_four ℤ).mp hli
+  have hp := P.chainBotCoeff_sub_chainTopCoeff hli
+  have hp' := P.chainTopCoeff_sub_chainBotCoeff hli'
+  unfold coxeterWeightIn at hw
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hpair
+  rw [hbot, htop] at hp
+  rw [hbot'] at hp'
+  rcases hpair with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
+    rcases h with ⟨h, h'⟩ <;> simp only [h, h'] at hw <;> omega
+
+/-- The possible root-string coefficients of two roots whose sum is a root: either the top
+coefficient is one more than the bottom one, or one of four explicit exceptional configurations
+occurs. -/
+theorem chainCoeff_cases_of_root_add_mem {i j : I}
+    (hadd : P.root i + P.root j ∈ range P.root) :
+    P.chainTopCoeff i j = P.chainBotCoeff i j + 1 ∨
+      (P.chainBotCoeff i j = 0 ∧ P.chainTopCoeff i j = 2 ∧ P.chainTopCoeff j i = 1) ∨
+      (P.chainBotCoeff i j = 0 ∧ P.chainTopCoeff i j = 3 ∧ P.chainTopCoeff j i = 1) ∨
+      (P.chainBotCoeff i j = 1 ∧ P.chainTopCoeff i j = 1 ∧ P.chainTopCoeff j i = 1) ∨
+      (P.chainBotCoeff i j = 2 ∧ P.chainTopCoeff i j = 1 ∧ P.chainTopCoeff j i = 1) := by
+  have hij := P.linearIndependent_of_add_mem_range_root' hadd
+  have hji := P.linearIndependent_of_add_mem_range_root' (i := j) (j := i)
+    (by simpa [add_comm] using hadd)
+  have hbot := P.chainBotCoeff_comm_of_root_add_mem hadd
+  have htop := P.one_le_chainTopCoeff_of_root_add_mem hadd
+  have htop' := P.one_le_chainTopCoeff_of_root_add_mem (i := j) (j := i)
+    (by simpa [add_comm] using hadd)
+  have hlen := P.chainBotCoeff_add_chainTopCoeff_le_three (i := i) (j := j)
+  have hlen' := P.chainBotCoeff_add_chainTopCoeff_le_three (i := j) (j := i)
+  have hpq := P.chainBotCoeff_sub_chainTopCoeff hij
+  have hpq' := P.chainBotCoeff_sub_chainTopCoeff hji
+  obtain ⟨hne, hne'⟩ := (IsReduced.linearIndependent_iff (P := P)).mp hij
+  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' i j
+    (fun h ↦ hne (P.root.injective h)) hne'
+  simp only [mem_insert_iff, mem_singleton_iff, Prod.mk.injEq] at hpair
+  rcases hpair with h | h | h | h | h | h | h | h | h | h | h <;>
     rcases h with ⟨h, h'⟩ <;> omega
 
 /-- Two orthogonal roots whose sum is a root have the same squared length in every invariant
@@ -369,42 +435,15 @@ theorem InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
     (hk : P.root k = P.root i + P.root j) (hij₀ : P.pairing i j = 0) :
     B.form (P.root i) (P.root i) = B.form (P.root j) (P.root j) := by
   -- Step 1: Establish orthogonality and compute pairings with the sum root k.
-  have hadd : P.root i + P.root j ∈ range P.root := ⟨k, hk⟩
-  have hlin := P.linearIndependent_of_add_mem_range_root' hadd
   have hji₀ : P.pairing j i = 0 := (P.pairing_eq_zero_iff' (i := i) (j := j)).mp hij₀
   have hki : P.pairing k i = 2 := by
-    rw [← P.root_coroot'_eq_pairing, hk, map_add, P.root_coroot'_eq_pairing,
-      P.root_coroot'_eq_pairing, hji₀, P.pairing_same, add_zero]
+    rw [pairing_eq_add_of_root_eq_add hk, hji₀, P.pairing_same, add_zero]
   have hkj : P.pairing k j = 2 := by
-    rw [← P.root_coroot'_eq_pairing, hk, map_add, P.root_coroot'_eq_pairing,
-      P.root_coroot'_eq_pairing, hij₀, P.pairing_same, zero_add]
+    rw [pairing_eq_add_of_root_eq_add hk, hij₀, P.pairing_same, zero_add]
   -- Step 2: Verify that i and j are distinct from ±k to apply the pairing classification.
-  have hik : P.root i ≠ P.root k := by
-    intro h
-    have hj₀ : P.root j = 0 := by
-      calc
-        P.root j = (P.root i + P.root j) - P.root i := by abel
-        _ = P.root k - P.root i := by rw [hk]
-        _ = 0 := sub_eq_zero.mpr h.symm
-    exact P.ne_zero j hj₀
-  have hjk : P.root j ≠ P.root k := by
-    intro h
-    have hi₀ : P.root i = 0 := by
-      calc
-        P.root i = (P.root i + P.root j) - P.root j := by abel
-        _ = P.root k - P.root j := by rw [hk]
-        _ = 0 := sub_eq_zero.mpr h.symm
-    exact P.ne_zero i hi₀
-  have hik' : P.root i ≠ -P.root k := by
-    intro h
-    have hrel : (2 : R) • P.root i + (1 : R) • P.root j = 0 := by
-      rw [one_smul, two_smul, add_assoc, ← hk, h, neg_add_cancel]
-    exact one_ne_zero (hlin.eq_zero_of_pair hrel).2
-  have hjk' : P.root j ≠ -P.root k := by
-    intro h
-    have hrel : (1 : R) • P.root i + (2 : R) • P.root j = 0 := by
-      rw [one_smul, two_smul, ← add_assoc, ← hk, h, add_neg_cancel]
-    exact one_ne_zero (hlin.eq_zero_of_pair hrel).1
+  obtain ⟨hik, hik'⟩ := P.root_ne_and_root_ne_neg_of_root_eq_add hk
+  obtain ⟨hjk, hjk'⟩ := P.root_ne_and_root_ne_neg_of_root_eq_add (i := j) (j := i) (k := k)
+    (by rw [hk, add_comm])
   -- Step 3: Classify integer pairings `⟨i, k⟩` and `⟨j, k⟩` using `P.pairingIn_pairingIn_mem_set`.
   have hkiℤ : P.pairingIn ℤ k i = 2 := by
     apply FaithfulSMul.algebraMap_injective ℤ R
@@ -453,67 +492,20 @@ theorem InvariantForm.chainTopCoeff_mul_apply_root_self_eq
   have hji := P.linearIndependent_of_add_mem_range_root' (i := j) (j := i)
     (by simpa [add_comm] using hadd)
   have hbot := P.chainBotCoeff_comm_of_root_add_mem hadd
-  have htop := P.one_le_chainTopCoeff_of_root_add_mem hadd
-  have htop' := P.one_le_chainTopCoeff_of_root_add_mem (i := j) (j := i)
-    (by simpa [add_comm] using hadd)
-  have hlen := P.chainBotCoeff_add_chainTopCoeff_le_three (i := i) (j := j)
-  have hlen' := P.chainBotCoeff_add_chainTopCoeff_le_three (i := j) (j := i)
-  have hpq := P.chainBotCoeff_sub_chainTopCoeff hij
-  have hpq' := P.chainBotCoeff_sub_chainTopCoeff hji
-  -- Step 2: Distinctness of roots `i` and `±j` from linear independence.
-  have hne : i ≠ j := by
-    intro h
-    subst j
-    exact one_ne_zero (hij.eq_zero_of_pair' (s := 1) (t := 1) rfl).1
-  have hne' : P.root i ≠ -P.root j := by
-    intro h
-    exact one_ne_zero (hij.eq_zero_of_pair' (s := 1) (t := -1) (by simpa using h)).1
-  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' i j
-    (fun h ↦ hne (P.root.injective h)) hne'
-  -- Step 3: Bilinear expansion of `B(k, k) = B(i + j, i + j)` and invariant-form swap relation.
-  have hsym : B.form (P.root j) (P.root i) = B.form (P.root i) (P.root j) := by
-    simpa only [RingHom.id_apply] using B.symm.eq (P.root j) (P.root i)
-  have hform :
-      B.form (P.root k) (P.root k) =
-        B.form (P.root i) (P.root i) + 2 * B.form (P.root i) (P.root j) +
-          B.form (P.root j) (P.root j) := by
-    rw [hk]
-    simp only [map_add, LinearMap.add_apply]
-    rw [hsym]
-    ring
-  have hcross :
-      2 * B.form (P.root i) (P.root j) =
-        P.pairing j i * B.form (P.root i) (P.root i) := by
-    rw [← hsym]
-    exact B.two_mul_apply_root_root j i
+  -- Step 2: Bilinear expansion of `B(k, k) = B(i + j, i + j)` and invariant-form swap relation.
   have hpqR : P.pairing j i =
       (P.chainBotCoeff i j : R) - P.chainTopCoeff i j := by
-    rw [← P.algebraMap_pairingIn ℤ, ← hpq]
-    push_cast
-    rfl
+    rw [← P.algebraMap_pairingIn ℤ, ← P.chainBotCoeff_sub_chainTopCoeff hij]
+    simp
   have hpqR' : P.pairing i j =
       (P.chainBotCoeff j i : R) - P.chainTopCoeff j i := by
-    rw [← P.algebraMap_pairingIn ℤ, ← hpq']
-    push_cast
-    rfl
+    rw [← P.algebraMap_pairingIn ℤ, ← P.chainBotCoeff_sub_chainTopCoeff hji]
+    simp
   have hlength := B.pairing_mul_eq_pairing_mul_swap i j
   rw [hpqR, hpqR', ← hbot] at hlength
-  rw [hform, hcross, hpqR]
-  simp only [mem_insert_iff, mem_singleton_iff, Prod.mk.injEq] at hpair
-  -- Step 4: Case analysis on the root-pairing possibilities from the rank-2 classification.
-  have hcases :
-      P.chainTopCoeff i j = P.chainBotCoeff i j + 1 ∨
-      (P.chainBotCoeff i j = 0 ∧ P.chainTopCoeff i j = 2 ∧
-        P.chainTopCoeff j i = 1) ∨
-      (P.chainBotCoeff i j = 0 ∧ P.chainTopCoeff i j = 3 ∧
-        P.chainTopCoeff j i = 1) ∨
-      (P.chainBotCoeff i j = 1 ∧ P.chainTopCoeff i j = 1 ∧
-        P.chainTopCoeff j i = 1) ∨
-      (P.chainBotCoeff i j = 2 ∧ P.chainTopCoeff i j = 1 ∧
-        P.chainTopCoeff j i = 1) := by
-    rcases hpair with h | h | h | h | h | h | h | h | h | h | h <;>
-      rcases h with ⟨h, h'⟩ <;> omega
-  rcases hcases with h | ⟨hp, hq, hq'⟩ | ⟨hp, hq, hq'⟩ |
+  rw [hk, B.form_root_add_root_self i j, hpqR]
+  -- Step 3: Case analysis on the root-pairing possibilities from the rank-2 classification.
+  rcases P.chainCoeff_cases_of_root_add_mem hadd with h | ⟨hp, hq, hq'⟩ | ⟨hp, hq, hq'⟩ |
       ⟨hp, hq, hq'⟩ | ⟨hp, hq, hq'⟩
   · rw [h]
     push_cast

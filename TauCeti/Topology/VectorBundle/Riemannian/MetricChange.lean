@@ -139,8 +139,7 @@ private theorem continuous_sqrt_continuousLinearMapOfBilin_inner :
     (h.continuous_inner_bilinearComp_orthonormalFrame e c)
     fun y ↦ (h.isStrictlyPositive_inner_bilinearComp _).nonneg).congr fun y ↦ ?_
   ext w
-  simp [ContinuousLinearMap.sqrt_continuousLinearMapOfBilin_bilinearComp _
-    (h.isStrictlyPositive_continuousLinearMapOfBilin_inner y).nonneg]
+  simp [ContinuousLinearMap.sqrt_continuousLinearMapOfBilin_bilinearComp]
 
 /-- The **metric change homeomorphism** of a second continuous Riemannian metric `h`: the
 homeomorphism of the total space applying in each fibre the metric change transport of `h`, a

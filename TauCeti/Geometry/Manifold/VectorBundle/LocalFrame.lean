@@ -8,8 +8,11 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.LinearAlgebra.Matrix.Basis
+public import Mathlib.LinearAlgebra.Trace
+import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Local frames: duality with the coefficient functionals, and testing hom-bundle sections
@@ -30,15 +33,23 @@ out of a finite-dimensional space is recovered from its values on a basis by
 constructions of connections produce smoothness of the vector fields `∇_X σ` one direction `X` at
 a time.
 
+Finally, in a bundle with model fibre `𝕜`, over the base set of a trivialization any two vectors
+`v ≠ 0` and `w` of a fibre satisfy `w = c • v` for the ratio `c` of their coordinates in the
+trivialization.
+
 ## Main results
 
 * `TauCeti.Manifold.localFrameCoeff_basisAt`: the coefficient functionals are dual to the basis
   `e.basisAt b hx` of the fibre at a point of `e.baseSet`.
 * `TauCeti.Manifold.localFrameCoeff_localFrame`: the same duality, stated for the frame sections
   themselves.
+* `TauCeti.Manifold.trace_eq_sum_localFrameCoeff`: over the base set, the trace of a fibre
+  endomorphism is the sum of its diagonal local-frame coefficients.
 * `TauCeti.Manifold.symmL_basis_eq_localFrame` and
   `TauCeti.Manifold.continuousLinearMapAt_localFrame`: a trivialization transports basis vectors
   to its local frame and reads those frame vectors back as basis vectors.
+* `Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame`: a fibre vector is the sum of
+  the local-frame vectors weighted by the coordinates of its reading in `e`.
 * `TauCeti.Manifold.basisAt_apply`: the basis `e.basisAt b hx` is the continuous inverse of `e`
   applied to `b`.
 * `TauCeti.Manifold.contMDiffOn_symm_baseSet`: the section with constant coordinates in a
@@ -48,8 +59,18 @@ a time.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
   maps, possibly along a base map, is `C^n` once its evaluations on a local frame of the source
   bundle are.
+* `Bundle.Trivialization.span_range_localFrame_map`: the image of a local frame under a linear
+  map spans the range of that map at every point of the base set.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
   the local frame of a trivialization agrees with a family of globally smooth sections.
+* `Bundle.Trivialization.contMDiff_mul_localFrameCoeff`: the local-frame coefficients of a `C^n`
+  section, multiplied by a `C^n` function supported in the base set, are globally `C^n`.
+* `Bundle.Trivialization.coordRatio`, `Bundle.Trivialization.eq_coordRatio_smul`,
+  `Bundle.Trivialization.coordRatio_eq_of_eq_smul`: in a bundle with model fibre `𝕜`, over the
+  base set of a trivialization, every vector is the multiple of a nonzero vector by their ratio
+  read in the trivialization.
+  `Bundle.Trivialization.coordRatio_self` and `Bundle.Trivialization.coordRatio_smul_right` are
+  its simp normal forms.
 -/
 
 public section
@@ -90,7 +111,42 @@ theorem localFrameCoeff_basisAt [DecidableEq ι] (hx : x ∈ e.baseSet) (i j : �
     e.localFrameCoeff I b i x (e.basisAt b hx j) = if i = j then 1 else 0 := by
   rw [← e.localFrame_apply_of_mem_baseSet b hx, localFrameCoeff_localFrame b hx]
 
+/-- If the coefficient of a section in the frame of `e` agrees near `x` with a scalar map `g` that
+has derivative `A` at `x`, then the derivative of the coefficient at `x` is `A`. -/
+theorem mvfderiv_localFrameCoeff_apply {σ : Π x : M, V x} {g : M → 𝕜}
+    {A : TangentSpace I x →L[𝕜] 𝕜} (hg : HasMFDerivAt I 𝓘(𝕜, 𝕜) g x A) (i : ι)
+    (hcoeff : (fun z ↦ e.localFrameCoeff I b i z (σ z)) =ᶠ[𝓝 x] g) (v : TangentSpace I x) :
+    mvfderiv I (LinearMap.piApply (e.localFrameCoeff I b i) σ) x v = A v := by
+  have h := (hg.congr_of_eventuallyEq hcoeff).mfderiv
+  rw [mvfderiv_apply_eq_mfderiv_apply, LinearMap.piApply_apply, h]
+  -- `tangentSpaceCast` and `fromTangentSpace` are the identity of the model space `𝕜`, so the
+  -- two sides are definitionally equal.
+  rfl
+
+variable (I) in
+/-- Over the base set of a trivialization, the trace of a fibre endomorphism is the sum of its
+diagonal coefficients in the local frame. -/
+theorem trace_eq_sum_localFrameCoeff [Fintype ι] (hx : x ∈ e.baseSet) (B : V x →ₗ[𝕜] V x) :
+    LinearMap.trace 𝕜 (V x) B = ∑ i, e.localFrameCoeff I b i x (B (e.localFrame b i x)) := by
+  classical
+  rw [LinearMap.trace_eq_matrix_trace 𝕜 (e.basisAt b hx)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Matrix.diag_apply, LinearMap.toMatrix_apply, e.localFrame_apply_of_mem_baseSet b hx]
+  have h := e.localFrameCoeff_apply_of_mem_baseSet (I := I) b hx
+    (FiberBundle.extend F (B (e.basisAt b hx i))) i
+  rwa [FiberBundle.extend_apply_self, eq_comm] at h
+
 end
+
+/-- Over the base set of a trivialization, the image of its local frame under a linear map
+spans the range of that map. No regularity or injectivity of the map is required. -/
+theorem _root_.Bundle.Trivialization.span_range_localFrame_map
+    (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M)) [MemTrivializationAtlas e]
+    (b : Basis ι 𝕜 F) {W : Type*} [AddCommGroup W] [Module 𝕜 W]
+    (A : V x →ₗ[𝕜] W) (hx : x ∈ e.baseSet) :
+    Submodule.span 𝕜 (Set.range (fun i ↦ A (e.localFrame b i x))) = A.range := by
+  simp_rw [e.localFrame_apply_of_mem_baseSet b hx]
+  rw [Set.range_comp', ← Submodule.map_span, (e.basisAt b hx).span_eq, Submodule.map_top]
 
 /-- The continuous inverse of a trivialization transports a model-fibre basis vector to the
 corresponding local-frame vector. -/
@@ -111,6 +167,17 @@ vector. -/
 theorem continuousLinearMapAt_localFrame (hx : x ∈ e.baseSet) (i : ι) :
     e.continuousLinearMapAt 𝕜 x (e.localFrame b i x) = b i := by
   rw [← symmL_basis_eq_localFrame b hx i, e.continuousLinearMapAt_symmL hx]
+
+/-- A vector of the fibre over a point of the base set of a trivialization `e` is the sum of the
+local-frame vectors weighted by the coordinates of its reading in `e`. -/
+theorem _root_.Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame [Fintype ι]
+    (hx : x ∈ e.baseSet) (v : V x) :
+    v = ∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • e.localFrame b i x := by
+  calc
+    v = e.symmL 𝕜 x (e.continuousLinearMapAt 𝕜 x v) := (e.symmL_continuousLinearMapAt hx v).symm
+    _ = e.symmL 𝕜 x (∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • b i) := by
+      rw [b.sum_repr]
+    _ = _ := by simp only [map_sum, map_smul, symmL_basis_eq_localFrame b hx]
 
 /-- The section with constant coordinates `v` in a trivialization `e` is `C^n` on the base set of
 `e`. -/
@@ -217,5 +284,91 @@ theorem exists_contMDiff_eventuallyEq_localFrame
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
     simp [hy]
+
+/-- The coefficients of a `C^n` section in the local frame of a trivialization `e`, multiplied by a
+`C^n` function `ρ` supported in `e.baseSet`, are globally `C^n`. Only regularity on `e.baseSet`
+is needed. -/
+theorem contMDiff_mul_localFrameCoeff
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+    [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
+    [FiberBundle G W] [VectorBundle 𝕜 G W] {n : ℕ∞ω} [ContMDiffVectorBundle 1 G W I]
+    [ContMDiffVectorBundle n G W I]
+    {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι 𝕜 G)
+    {ρ : M → 𝕜} (hρ_diff : CMDiff[e.baseSet] n ρ) (hρ : tsupport ρ ⊆ e.baseSet)
+    {s : Π y : M, W y} (hs : CMDiff[e.baseSet] n (T% s)) (i : ι) :
+    CMDiff n (fun y ↦ ρ y * e.localFrameCoeff I b i y (s y)) := by
+  refine contMDiff_of_tsupport fun y hy ↦ ?_
+  have hy : y ∈ e.baseSet := hρ (tsupport_mul_subset_left hy)
+  have hnhds : e.baseSet ∈ nhds y := e.open_baseSet.mem_nhds hy
+  exact (hρ_diff.contMDiffAt hnhds).mul
+    (contMDiffAt_localFrameCoeff b hy (hs.contMDiffAt hnhds) i)
+
+/-! ### Ratios of vectors in a line bundle -/
+
+section LineBundle
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : Type*} [TopologicalSpace B]
+  {L : B → Type*} [TopologicalSpace (TotalSpace 𝕜 L)] [∀ x, TopologicalSpace (L x)]
+  [∀ x, AddCommMonoid (L x)] [∀ x, Module 𝕜 (L x)] [FiberBundle 𝕜 L]
+  (e : Trivialization 𝕜 (π 𝕜 L)) [e.IsLinear 𝕜] {x : B}
+
+/-- In a bundle with model fibre `𝕜`, the ratio `w / v` of two vectors of a fibre, read in a
+trivialization `e`. Over `e.baseSet` it is the scalar `c` with `w = c • v`, for `v ≠ 0`. -/
+def coordRatio (v w : L x) : 𝕜 :=
+  e.continuousLinearMapAt 𝕜 x w / e.continuousLinearMapAt 𝕜 x v
+
+/-- The defining equation of `Bundle.Trivialization.coordRatio`. -/
+theorem coordRatio_def (v w : L x) :
+    e.coordRatio v w = e.continuousLinearMapAt 𝕜 x w / e.continuousLinearMapAt 𝕜 x v :=
+  (rfl)
+
+/-- The ratio of a vector to `0`, read in a trivialization, is `0`. -/
+@[simp]
+theorem coordRatio_zero_left (w : L x) : e.coordRatio 0 w = 0 := by
+  rw [coordRatio_def, map_zero, div_zero]
+
+/-- The ratio of `0` to a vector, read in a trivialization, is `0`. -/
+@[simp]
+theorem coordRatio_zero_right (v : L x) : e.coordRatio v 0 = 0 := by
+  rw [coordRatio_def, map_zero, zero_div]
+
+/-- The ratio read in a trivialization is linear in its second argument: scaling `w` by `c`
+scales its ratio to `v` by `c`. -/
+@[simp]
+theorem coordRatio_smul_right (v w : L x) (c : 𝕜) :
+    e.coordRatio v (c • w) = c * e.coordRatio v w := by
+  rw [coordRatio_def, coordRatio_def, map_smul, smul_eq_mul, mul_div_assoc]
+
+/-- Over the base set of a trivialization of a bundle with model fibre `𝕜`, the ratio of a
+nonzero vector to itself, read in the trivialization, is `1`. -/
+@[simp]
+theorem coordRatio_self (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) : e.coordRatio v v = 1 := by
+  have hv' : e.continuousLinearMapAt 𝕜 x v ≠ 0 := fun h ↦
+    hv (by rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hx v, h, map_zero])
+  rw [coordRatio_def, div_self hv']
+
+/-- Over the base set of a trivialization of a bundle with model fibre `𝕜`, every vector `w` is
+the multiple of a nonzero vector `v` by their ratio read in the trivialization. -/
+theorem eq_coordRatio_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) (w : L x) :
+    w = e.coordRatio v w • v := by
+  have hinj : Function.Injective (e.continuousLinearMapAt 𝕜 x) := fun a b hab ↦ by
+    rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hx a, hab,
+      e.symmL_continuousLinearMapAt (R := 𝕜) hx b]
+  have hv' : e.continuousLinearMapAt 𝕜 x v ≠ 0 := fun h ↦ hv (hinj (h.trans (map_zero _).symm))
+  apply hinj
+  rw [map_smul, coordRatio_def, smul_eq_mul, div_mul_cancel₀ _ hv']
+
+/-- Over the base set of a trivialization of a bundle with model fibre `𝕜`, the ratio of
+`w = c • v` to a nonzero vector `v`, read in the trivialization, is `c`. -/
+theorem coordRatio_eq_of_eq_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) {w : L x} {c : 𝕜}
+    (hw : w = c • v) : e.coordRatio v w = c := by
+  rw [hw, coordRatio_smul_right, coordRatio_self e hx hv, mul_one]
+
+end LineBundle
 
 end Bundle.Trivialization

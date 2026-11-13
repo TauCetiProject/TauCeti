@@ -42,7 +42,7 @@ open MeasureTheory
 namespace TauCeti.Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-  [StandardBorelSpace α] [Nonempty α]
+  [StandardBorelSpace α]
   {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ × ℕ → Ω → α} {e f : ℕ → ℕ}
 
 /-- The row strips along `f` admit a directing law measurable in the block selected by `e` and

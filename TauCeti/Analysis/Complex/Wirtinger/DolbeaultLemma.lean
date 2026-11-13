@@ -9,10 +9,10 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Order.IsLUB
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
+import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
 
@@ -65,25 +65,6 @@ namespace TauCeti
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {n : ℕ∞}
 
-/-- Gluing step: if near each point of `U` the function `G` is a global `Cⁿ` function with
-`\bar∂ = f` there plus a holomorphic function, then `G` is `Cⁿ` on `U` with `\bar∂ G = f`. -/
-private theorem contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add {G f : ℂ → W}
-    {U : Set ℂ} (hn : 1 ≤ n)
-    (hG : ∀ z ∈ U, ∃ V : Set ℂ, IsOpen V ∧ z ∈ V ∧ ∃ a K : ℂ → W, ContDiff ℝ n a ∧
-      (∀ w ∈ V, conjWirtingerDeriv a w 1 = f w) ∧ DifferentiableOn ℂ K V ∧ EqOn G (a + K) V) :
-    ContDiffOn ℝ n G U ∧ ∀ z ∈ U, conjWirtingerDeriv G z 1 = f z := by
-  refine ⟨contDiffOn_of_locally_contDiffOn fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · obtain ⟨V, hV, hzV, a, K, ha, -, hK, hGK⟩ := hG z hz
-    exact ⟨V, hV, hzV, ((ha.contDiffOn.add ((hK.contDiffOn hV).restrict_scalars ℝ)).congr
-      hGK).mono inter_subset_right⟩
-  · obtain ⟨V, hV, hzV, a, K, ha, haf, hK, hGK⟩ := hG z hz
-    have hKz := hK.differentiableAt (hV.mem_nhds hzV)
-    have haz : DifferentiableAt ℝ a z :=
-      ha.differentiable (by exact_mod_cast (zero_lt_one.trans_le hn).ne') z
-    rw [(hGK.eventuallyEq_of_mem (hV.mem_nhds hzV)).conjWirtingerDeriv_eq,
-      conjWirtingerDeriv_add haz (hKz.restrictScalars ℝ), hKz.conjWirtingerDeriv_eq_zero,
-      add_zero, haf z hzV]
-
 /-- **The Dolbeault lemma on a disc.** Let `f` be `Cⁿ`, `n ≥ 1`, on the open disc `eball c R`
 of radius `R ≤ ∞`. Then there is a function `g`, `Cⁿ` on the disc, with `\bar∂ g = f` on the
 disc. -/
@@ -129,35 +110,22 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball {f : ℂ → 
       ∀ z ∈ closedBall c (r k), ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k :=
     (hdiff k).exists_differentiable_norm_sub_lt (hrs k) (by positivity)
   choose P hP hP_lt using happrox
-  set e : ℕ → ℂ → W := fun k ↦ h (k + 1) - h k - P k
-  have he_le {m k : ℕ} (hmk : m ≤ k) {z : ℂ} (hz : z ∈ ball c (r m)) :
-      ‖e k z‖ ≤ (1 / 2 : ℝ) ^ k :=
-    (hP_lt k z (closedBall_subset_closedBall (hr_mono.monotone hmk)
-      (ball_subset_closedBall hz))).le
-  have hsumm (m : ℕ) : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
-    (summable_nat_add_iff m).2 summable_geometric_two
   -- On `ball c (r m)`, the limit is `h m` plus a holomorphic function.
-  set G : ℂ → W := fun z ↦ h 0 z + ∑' k, e k z
+  set G : ℂ → W := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z
   have hkey (m : ℕ) : ∃ K : ℂ → W, DifferentiableOn ℂ K (ball c (r m)) ∧
-      EqOn G (h m + K) (ball c (r m)) := by
-    refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, P k z, ?_, fun z hz ↦ ?_⟩
-    · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦ (hP k).differentiableOn)
-      refine differentiableOn_tsum_of_summable_norm (hsumm m) (fun k ↦ ?_) isOpen_ball
-        fun k z hz ↦ he_le (Nat.le_add_left m k) hz
-      exact ((hdiff (k + m)).sub (hP (k + m)).differentiableOn).mono (ball_subset_ball
-        ((hr_mono.monotone (Nat.le_add_left m k)).trans (hrs (k + m)).le))
-    · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
-        .of_norm_bounded (hsumm m) fun k ↦ he_le (Nat.le_add_left m k) hz
-      have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, P k z := by
-        simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
-      simp only [G, Pi.add_apply, ← hs.sum_add_tsum_nat_add m, htel]
-      abel
+      EqOn G (h m + K) (ball c (r m)) :=
+    exists_differentiableOn_eqOn_add_tsum hr_mono.monotone hP
+      (fun k ↦ (hdiff k).mono (ball_subset_ball (hrs k).le)) hP_lt m
   -- Every point of the disc lies in some `ball c (r m)`, where `\bar∂ (h m) = f`.
-  refine ⟨G, contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add hn fun z hz ↦ ?_⟩
-  obtain ⟨m, hm⟩ := (hu_lim.eventually (lt_mem_nhds hz)).exists
-  obtain ⟨K, hK, hGK⟩ := hkey m
-  exact ⟨ball c (r m), isOpen_ball, (hball m).symm ▸ hm, h m, K, hh m,
-    fun w hw ↦ hh_eq m w (ball_subset_closedBall (ball_subset_ball (hrs m).le hw)), hK, hGK⟩
+  have hglue := contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add (G := G)
+    (n := n) (U := eball c R) (v := fun _ : Unit ↦ (1 : ℂ)) (f := fun _ ↦ f) (by exact_mod_cast hn)
+    fun z hz ↦ by
+      obtain ⟨m, hm⟩ := (hu_lim.eventually (lt_mem_nhds hz)).exists
+      obtain ⟨K, hK, hGK⟩ := hkey m
+      exact ⟨ball c (r m), isOpen_ball, (hball m).symm ▸ hm, h m, K, (hh m).contDiffOn,
+        fun w hw _ ↦ hh_eq m w (ball_subset_closedBall (ball_subset_ball (hrs m).le hw)),
+        hK.contDiffOn isOpen_ball, hGK⟩
+  exact ⟨G, hglue.1, fun z hz ↦ hglue.2 z hz ()⟩
 
 /-- **The Dolbeault lemma on a disc of real radius.** If `f` is `Cⁿ`, `n ≥ 1`, on `ball c R`,
 there is a function `g`, `Cⁿ` on `ball c R`, with `\bar∂ g = f` there. -/

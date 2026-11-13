@@ -7,16 +7,31 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Topology.MetricSpace.Lipschitz
+public import TauCeti.Analysis.Calculus.ContDiff.Convolution
+
+import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Convolution.Holder
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Uniform approximation by normalized bumps
 
 Convolution with normalized smooth bumps whose radii tend to zero converges uniformly to
-any uniformly continuous Banach-valued function. For uniformly continuous functions, this
+any uniformly continuous Banach-valued function, and uniformly on a set `s` to a function that is
+uniformly continuous on a neighbourhood of `s`. For uniformly continuous functions, this
 upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
-Normalized-bump convolution also preserves a function's Lipschitz constant.
+Normalized-bump convolution also preserves a uniform bound on a function
+(`ContDiffBump.norm_normed_convolution_le`) and its Lipschitz constant, since it averages the
+differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
+
+Integrals against the mollifications of a uniformly continuous function converge, along any filter
+of bump indices with radii tending to zero, to the integral against the function
+(`ContDiffBump.tendsto_integral_normed_convolution_smul`).
+
+Along an arbitrary filter of bump indices, convolution with normalized bumps also converges
+uniformly on a neighbourhood filter of a point of continuity of the function.
 
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
 `closedBall 0 ρ.rOut + tsupport g`, and provides the standard shrinking sequence of bumps
@@ -28,7 +43,7 @@ normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_m
 public section
 
 open ContinuousLinearMap MeasureTheory Filter Metric
-open scoped Convolution Topology Pointwise NNReal
+open scoped Convolution Topology Pointwise NNReal ContDiff
 
 namespace ContDiffBump
 
@@ -68,6 +83,24 @@ theorem tendsto_rOut_shrinking (hR : 0 < R) :
     Tendsto (fun n : ℕ => (shrinking hR n : ContDiffBump c).rOut) atTop (𝓝 0) := by
   simp only [rOut_shrinking]
   exact tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+
+/-- On a relatively compact open subdomain, a shrinking sequence of normalized bump kernels
+has every translated support inside the ambient open domain. -/
+theorem exists_seq_sub_tsupport_subset {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {W Ω : TopologicalSpace.Opens E}
+    (hWc : IsCompact (closure (W : Set E))) (hWΩ : closure (W : Set E) ⊆ Ω) :
+    ∃ φ : ℕ → ContDiffBump (0 : E),
+      Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) ∧
+      ∀ n x, x ∈ (W : Set E) → ∀ y ∈ tsupport ((φ n).normed μ), x - y ∈ Ω := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hWc.exists_cthickening_subset_open Ω.isOpen hWΩ
+  refine ⟨shrinking hδ, tendsto_rOut_shrinking hδ, ?_⟩
+  intro n x hx y hy
+  rw [(shrinking hδ n).tsupport_normed_eq, mem_closedBall, dist_zero_right,
+    rOut_shrinking] at hy
+  refine hδΩ (mem_cthickening_of_dist_le _ x δ _ (subset_closure hx) ?_)
+  rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+  exact hy.trans (div_le_self hδ.le (by simp))
 
 /-- `ContDiffBump.shrinking hR n` is `ContDiffBump.shrinking hR 0` rescaled by the factor `n + 1`,
 so all the bumps of the sequence are rescalings of one kernel. -/
@@ -133,21 +166,169 @@ theorem integral_shrinking_normed_mul {R : ℝ} (hR : 0 < R) (n : ℕ) (f : G �
         simp only [g, smul_eq_mul, integral_mul_const]
         field_simp
 
+/-- Normalized bumps of shrinking radius approximate a function uniformly on a set `s` when the
+function is uniformly continuous on a `δ`-neighbourhood of `s`. Only the values on that
+neighbourhood matter, so the function need not be continuous elsewhere. -/
+theorem tendstoUniformlyOn_normed_convolution {ι : Type*} {l : Filter ι}
+    {ρ : ι → ContDiffBump (0 : G)} (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0)) {s : Set G}
+    {δ : ℝ} (hδ : 0 < δ) (hg : UniformContinuousOn g (thickening δ s))
+    (hmg : AEStronglyMeasurable g μ) :
+    TendstoUniformlyOn (fun i => (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] g) g l s := by
+  refine Metric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
+  obtain ⟨η, hη, hgη⟩ := Metric.uniformContinuousOn_iff.1 hg (ε / 2) (by positivity)
+  filter_upwards [hρ.eventually (gt_mem_nhds (lt_min hη hδ))] with i hi x hx
+  rw [dist_comm]
+  refine ((ρ i).dist_normed_convolution_le (μ := μ) hmg fun y hy => ?_).trans_lt
+    (half_lt_self hε)
+  have hyx : dist y x < min η δ := (mem_ball.1 hy).trans hi
+  exact (hgη y (mem_thickening_iff.2 ⟨x, hx, hyx.trans_le (min_le_right _ _)⟩) x
+    (self_subset_thickening hδ s hx) (hyx.trans_le (min_le_left _ _))).le
+
 /-- Normalized bumps of shrinking radius approximate a uniformly continuous function
 uniformly on the whole space. -/
 theorem tendstoUniformly_normed_convolution {ι : Type*} {l : Filter ι}
     {ρ : ι → ContDiffBump (0 : G)} (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0))
     (hg : UniformContinuous g) :
-    TendstoUniformly (fun i => (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] g) g l := by
-  refine Metric.tendstoUniformly_iff.2 fun ε hε => ?_
-  obtain ⟨δ, hδ, hgδ⟩ := Metric.uniformContinuous_iff.1 hg (ε / 2) (by positivity)
-  filter_upwards [hρ.eventually (gt_mem_nhds hδ)] with i hi x
-  rw [dist_comm]
-  refine ((ρ i).dist_normed_convolution_le (μ := μ) hg.continuous.aestronglyMeasurable
-    (fun y hy => (hgδ ((mem_ball.1 hy).trans hi)).le)).trans_lt ?_
-  exact half_lt_self hε
+    TendstoUniformly (fun i => (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] g) g l :=
+  tendstoUniformlyOn_univ.1 <| tendstoUniformlyOn_normed_convolution hρ one_pos
+    hg.uniformContinuousOn hg.continuous.aestronglyMeasurable
+
+/-- As normalized bumps shrink to `0`, integrals against the mollifications of a uniformly
+continuous function `g` converge to the integral against `g`: `∫ (ρᵢ ⋆ g) w → ∫ g w` whenever `w`
+and `g w` are integrable. -/
+theorem tendsto_integral_normed_convolution_smul {H : Type*} [NormedAddCommGroup H]
+    [NormedSpace ℝ H] [SMul F H] [IsBoundedSMul F H] (hg : UniformContinuous g) {ι : Type*}
+    {l : Filter ι} {ρ : ι → ContDiffBump (0 : G)}
+    (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0)) {w : G → H} (hw : Integrable w μ)
+    (hgw : Integrable (fun x => g x • w x) μ) :
+    Tendsto (fun i => ∫ x, ((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] g) x • w x ∂μ) l
+      (𝓝 (∫ x, g x • w x ∂μ)) :=
+  (tendstoUniformly_normed_convolution (μ := μ) hρ hg).tendsto_integral_smul_of_integrable
+    (Eventually.of_forall fun i =>
+      ((ρ i).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) (ρ i).contDiff_normed
+        hg.continuous.locallyIntegrable (n := ⊤)).continuous.aestronglyMeasurable.smul hw.1)
+    hw hgw
+
+/-- Normalized bumps of radius tending to zero along a filter approximate a function that is
+continuous at `x` uniformly on a neighbourhood filter of `x`. This upgrades Mathlib's joint
+convergence `ContDiffBump.convolution_tendsto_right` to the form needed for limit theorems of
+derivatives such as `hasFDerivAt_of_tendstoUniformlyOnFilter`. -/
+theorem tendstoUniformlyOnFilter_normed_convolution {ι : Type*} {l : Filter ι} {x : G}
+    {ρ : ι → ContDiffBump (0 : G)} (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0))
+    (hgm : AEStronglyMeasurable g μ) (hgx : ContinuousAt g x) :
+    TendstoUniformlyOnFilter (fun i => (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] g) g l (𝓝 x) := by
+  have hconv : Tendsto (fun p : ι × G => ((ρ p.1).normed μ ⋆[lsmul ℝ ℝ, μ] g) p.2)
+      (l ×ˢ 𝓝 x) (𝓝 (g x)) :=
+    ContDiffBump.convolution_tendsto_right (hρ.comp tendsto_fst)
+      (Eventually.of_forall fun _ => hgm) (hgx.tendsto.comp tendsto_snd) tendsto_snd
+  have hdist : Tendsto (fun p : ι × G =>
+      dist (((ρ p.1).normed μ ⋆[lsmul ℝ ℝ, μ] g) p.2) (g p.2)) (l ×ˢ 𝓝 x) (𝓝 0) := by
+    simpa only [dist_self, Function.comp_apply] using hconv.dist (hgx.tendsto.comp tendsto_snd)
+  rw [Metric.tendstoUniformlyOnFilter_iff]
+  intro ε hε
+  simpa only [dist_comm] using (tendsto_order.1 hdist).2 ε hε
+
+/-- Mollifying a locally integrable function with values in `[a, b]` by a normalized bump keeps
+its values in `[a, b]`. -/
+theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ} {a b : ℝ}
+    (hw : LocallyIntegrable w μ) (hwab : ∀ x, w x ∈ Set.Icc a b) (x : G) :
+    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] w) x ∈ Set.Icc a b := by
+  have hexists := (φ.hasCompactSupport_normed (μ := μ)).convolutionExists_left
+    (lsmul ℝ ℝ) φ.continuous_normed hw x
+  exact ⟨le_convolution_lsmul_of_forall_le (μ := μ) φ.support_normed_eq.subset
+    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).1,
+    convolution_lsmul_le_of_forall_le (μ := μ) φ.support_normed_eq.subset
+    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).2⟩
+
+open Set in
+/-- Mollifying a function that is continuous on a ball by bumps with radii tending to `0`
+converges uniformly on the half-radius ball, along any filter of parameters. -/
+theorem tendstoUniformlyOn_convolution_indicator_ball {ι : Type*} {l : Filter ι} {x : G}
+    {r : ℝ} (hr : 0 < r) {V : G → F}
+    (hVc : ContinuousOn V (ball x r))
+    {phi : ι → ContDiffBump (0 : G)} (hphi : Tendsto (fun n => (phi n).rOut) l (𝓝 0)) :
+    TendstoUniformlyOn (fun n => (ball x r).indicator V ⋆[
+      (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ)
+      ((ball x r).indicator V) l (ball x (r / 2)) := by
+  let Fn := fun n => (ball x r).indicator V ⋆[
+    (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ
+  -- Continuity on the ball makes the truncation measurable.
+  have hVm : AEStronglyMeasurable ((ball x r).indicator V) μ :=
+    (aestronglyMeasurable_indicator_iff measurableSet_ball).2
+      (hVc.aestronglyMeasurable measurableSet_ball)
+  -- The mollifications converge locally uniformly throughout the larger ball.
+  have hlocal : TendstoLocallyUniformlyOn Fn ((ball x r).indicator V) l (ball x r) := by
+    rw [isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto]
+    intro y hy
+    have hcont : ContinuousAt ((ball x r).indicator V) y :=
+      (hVc.congr fun z hz => indicator_of_mem hz V).continuousAt (isOpen_ball.mem_nhds hy)
+    have hconv : Tendsto (fun p : ι × G => Fn p.1 p.2) (l ×ˢ 𝓝 y)
+        (𝓝 (((ball x r).indicator V) y)) := by
+      simp only [Fn, convolution_flip]
+      exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
+        (Eventually.of_forall fun _ => hVm) (hcont.tendsto.comp tendsto_snd) tendsto_snd
+    apply tendsto_uniformity_iff_dist_tendsto_zero.2
+    simpa only [dist_self, Function.comp_apply] using
+      (hcont.tendsto.comp tendsto_snd).dist hconv
+  have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
+  exact ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
+    (isCompact_closedBall x (r / 2))).1 (hlocal.mono hsub)).mono ball_subset_closedBall
 
 end ContDiffBump
+
+/-- Every available Fréchet derivative of compactly supported finite-regularity data commutes
+with normalized-bump convolution. -/
+theorem HasCompactSupport.iteratedFDeriv_normed_convolution
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {f : E → F} {N : ℕ∞} {k : ℕ}
+    (hfc : HasCompactSupport f) (hf : ContDiff ℝ N f) (ρ : ContDiffBump (0 : E))
+    (hk : k ≤ N) :
+    iteratedFDeriv ℝ k (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f) =
+      ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ k f := by
+  have hL : (compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) F F).comp
+      (lsmul ℝ ℝ) = lsmul ℝ ℝ := by
+    ext a m
+    simp
+  rw [← hL]
+  exact hfc.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
+    ρ.continuous_normed.locallyIntegrable hf hk
+
+/-- Convolution with a nonnegative normalized bump averages the differences of translates: if
+`dist (g (x - t)) (g (y - t)) ≤ B` for every `t`, then the convolutions at `x` and `y` are within
+`B` of each other. -/
+theorem ContDiffBump.dist_normed_convolution_le_of_dist_sub_le {G F : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G]
+    [BorelSpace G] {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {g : G → F} (hg : Continuous g) (ρ : ContDiffBump (0 : G)) {x y : G} {B : ℝ}
+    (hB : ∀ t, dist (g (x - t)) (g (y - t)) ≤ B) :
+    dist ((ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x) ((ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) y) ≤ B := by
+  have hi : ConvolutionExists (ρ.normed μ) g (lsmul ℝ ℝ) μ :=
+    ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right
+      (lsmul ℝ ℝ) ρ.integrable_normed.locallyIntegrable hg
+  rw [dist_eq_norm, convolution_def, convolution_def, ← integral_sub (hi x).integrable
+    (hi y).integrable]
+  calc
+    ‖∫ t, lsmul ℝ ℝ (ρ.normed μ t) (g (x - t)) -
+        lsmul ℝ ℝ (ρ.normed μ t) (g (y - t)) ∂μ‖
+      ≤ ∫ t, ρ.normed μ t * B ∂μ := by
+        apply norm_integral_le_of_norm_le (ρ.integrable_normed.mul_const _)
+        filter_upwards with t
+        simp only [lsmul_apply, ← smul_sub, norm_smul,
+          Real.norm_of_nonneg (ρ.nonneg_normed t)]
+        exact mul_le_mul_of_nonneg_left (by simpa only [dist_eq_norm] using hB t)
+          (ρ.nonneg_normed t)
+    _ = B := by rw [integral_mul_const, ρ.integral_normed, one_mul]
+
+/-- Convolution with a nonnegative normalized bump preserves a uniform bound on the norm. -/
+theorem ContDiffBump.norm_normed_convolution_le {G F : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G] [BorelSpace G]
+    {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {g : G → F} (ρ : ContDiffBump (0 : G)) {M : ℝ} (hM : ∀ x, ‖g x‖ ≤ M) (x : G) :
+    ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x‖ ≤ M := by
+  simpa only [convolution_def, lsmul_apply, Real.norm_of_nonneg (ρ.nonneg_normed _),
+    ρ.integral_normed, one_mul] using
+    TauCeti.norm_integral_kernel_smul_sub_le (μ := μ) ρ.integrable_normed hM x
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
 including for Banach-valued functions. -/
@@ -156,22 +337,6 @@ theorem LipschitzWith.normed_convolution {G F : Type*} [NormedAddCommGroup G]
     {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
     {g : G → F} {K : ℝ≥0} (hg : LipschitzWith K g)
     (ρ : ContDiffBump (0 : G)) :
-    LipschitzWith K (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) := by
-  have hi : ConvolutionExists (ρ.normed μ) g (lsmul ℝ ℝ) μ :=
-    ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right
-      (lsmul ℝ ℝ) ρ.integrable_normed.locallyIntegrable hg.continuous
-  refine LipschitzWith.of_dist_le_mul fun x y => ?_
-  rw [dist_eq_norm, convolution_def, convolution_def, ← integral_sub (hi x).integrable
-    (hi y).integrable]
-  calc
-    ‖∫ t, lsmul ℝ ℝ (ρ.normed μ t) (g (x - t)) -
-        lsmul ℝ ℝ (ρ.normed μ t) (g (y - t)) ∂μ‖
-      ≤ ∫ t, ρ.normed μ t * (K * dist x y) ∂μ := by
-        apply norm_integral_le_of_norm_le (ρ.integrable_normed.mul_const _)
-        filter_upwards with t
-        simp only [lsmul_apply, ← smul_sub, norm_smul,
-          Real.norm_of_nonneg (ρ.nonneg_normed t)]
-        exact mul_le_mul_of_nonneg_left
-          (by simpa only [dist_eq_norm, sub_sub_sub_cancel_right] using
-            hg.dist_le_mul (x - t) (y - t)) (ρ.nonneg_normed t)
-    _ = K * dist x y := by rw [integral_mul_const, ρ.integral_normed, one_mul]
+    LipschitzWith K (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) :=
+  LipschitzWith.of_dist_le_mul fun x y ↦ ρ.dist_normed_convolution_le_of_dist_sub_le hg.continuous
+    fun t ↦ by simpa only [dist_sub_right] using hg.dist_le_mul (x - t) (y - t)

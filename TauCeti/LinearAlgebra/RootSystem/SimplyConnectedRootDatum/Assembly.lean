@@ -132,6 +132,14 @@ def simplyConnectedBase (t : DynkinType) (ht : t.Valid) :
 @[simp] theorem simplyConnectedRootDatum_G2 (ht : G2.Valid) :
     G2.simplyConnectedRootDatum ht = g2SimplyConnectedRootDatum := (rfl)
 
+/-- A root-sum equation in the assembled G₂ datum is equivalent to its coordinate equation. -/
+theorem g2_root_add_iff {ht : G2.Valid} (i j k : Fin G2.numRoots) :
+    (G2.simplyConnectedRootDatum ht).root k =
+        (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j ↔
+      g2Root k = g2Root i + g2Root j := by
+  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
+    rank, numRoots]
+
 -- A base is indexed by its datum, so each base equation explicitly transports along the
 -- corresponding datum equation instead of exposing either dispatcher's implementation.
 @[simp] theorem simplyConnectedBase_A (n : ℕ) (ht : (A n).Valid) :
@@ -322,59 +330,50 @@ private theorem simpleIndex_E8 (ht : E8.Valid) (i : Fin 8) :
 @[simp] theorem root_simpleIndex (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) =
       fun k => t.cartanMatrix i k := by
-  -- As above, these type annotations expose the concrete rank carried by the dependent motive;
-  -- all substantive reductions use named branch and family equations.
+  -- As above, the case split leaves `i` in the dependent motive; `dsimp` exposes its concrete
+  -- rank, the branch equations rewrite the dispatcher, and each family's row lemma closes it.
   cases t with
   | A n =>
-    change Fin n at i
-    rw [simplyConnectedRootDatum_A, simpleIndex_A, cartanMatrix_A]
-    change (typeASimplyConnectedRootDatum n).root (typeASimpleIndex n i) =
-      fun k => CartanMatrix.A n i k
-    rw [root_typeASimpleIndex]
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_A, simpleIndex_A, cartanMatrix_A]
+    exact root_typeASimpleIndex _
   | B n =>
-    change Fin n at i
-    rw [simplyConnectedRootDatum_B, simpleIndex_B, cartanMatrix_B]
-    change (typeBSimplyConnectedRootDatum n).root (typeBSimpleIndex n i) =
-      fun k => CartanMatrix.B n i k
-    rw [root_typeBSimpleIndex]
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_B, simpleIndex_B, cartanMatrix_B]
+    exact root_typeBSimpleIndex _
   | C n =>
-    change Fin n at i
-    rw [simplyConnectedRootDatum_C, simpleIndex_C, cartanMatrix_C]
-    change (typeCSimplyConnectedRootDatum n).root (typeCSimpleIndex n i) =
-      fun k => CartanMatrix.C n i k
-    rw [root_typeCSimpleIndex]
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_C, simpleIndex_C, cartanMatrix_C]
+    exact root_typeCSimpleIndex _
   | D n =>
-    change Fin n at i
-    rw [simplyConnectedRootDatum_D, simpleIndex_D, cartanMatrix_D]
-    change (typeDSimplyConnectedRootDatum n (valid_D.mp ht)).root
-      (typeDSimpleIndex n (valid_D.mp ht) i) = fun k => CartanMatrix.D n i k
-    rw [root_typeDSimpleIndex]
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_D, simpleIndex_D, cartanMatrix_D]
+    exact root_typeDSimpleIndex _ _
   | E6 =>
-    change Fin 6 at i
-    rw [simplyConnectedRootDatum_E6, simpleIndex_E6, cartanMatrix_E6]
-    change e6SimplyConnectedRootDatum.root (e6SimpleIndex i) = CartanMatrix.E 6 i
-    rw [e6SimplyConnectedRootDatum_root, root_e6SimpleIndex]
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_E6, simpleIndex_E6, cartanMatrix_E6,
+      e6SimplyConnectedRootDatum_root]
+    exact root_e6SimpleIndex _
   | E7 =>
-    change Fin 7 at i
-    rw [simplyConnectedRootDatum_E7, simpleIndex_E7, cartanMatrix_E7]
-    change e7SimplyConnectedRootDatum.root (e7SimpleIndex i) = CartanMatrix.E 7 i
-    rw [e7SimplyConnectedRootDatum_root, root_e7SimpleIndex]
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_E7, simpleIndex_E7, cartanMatrix_E7,
+      e7SimplyConnectedRootDatum_root]
+    exact root_e7SimpleIndex _
   | E8 =>
-    change Fin 8 at i
-    rw [simplyConnectedRootDatum_E8, simpleIndex_E8, cartanMatrix_E8]
-    change e8SimplyConnectedRootDatum.root (e8SimpleIndex i) = CartanMatrix.E 8 i
-    rw [e8SimplyConnectedRootDatum_root, root_e8SimpleIndex]
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_E8, simpleIndex_E8, cartanMatrix_E8,
+      e8SimplyConnectedRootDatum_root]
+    exact root_e8SimpleIndex _
   | F4 =>
-    change Fin 4 at i
-    rw [simplyConnectedRootDatum_F4, simpleIndex_F4, cartanMatrix_F4]
-    change f4SimplyConnectedRootDatum.root (Fin.castAdd 44 i) = CartanMatrix.F₄ i
-    rw [f4SimplyConnectedRootDatum_root, f4Root_castAdd]
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_F4, simpleIndex_F4, cartanMatrix_F4,
+      f4SimplyConnectedRootDatum_root]
+    exact f4Root_castAdd _
   | G2 =>
-    change Fin 2 at i
-    rw [simplyConnectedRootDatum_G2, simpleIndex_G2, cartanMatrix_G2]
-    change g2SimplyConnectedRootDatum.root (Fin.castAdd 10 i) =
-      fun k => CartanMatrix.G₂.transpose i k
-    rw [g2SimplyConnectedRootDatum_root, g2Root_castAdd]
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_G2, simpleIndex_G2, cartanMatrix_G2,
+      g2SimplyConnectedRootDatum_root]
+    exact g2Root_castAdd _
 
 /-- The pinned base is supported exactly on the first `t.rank` root indices. -/
 @[simp] theorem mem_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid)
@@ -491,8 +490,11 @@ coroot is a standard basis vector, so the dot product picks out one entry. -/
   rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum,
     root_simpleIndex, coroot_simpleIndex, dotProduct_single, mul_one]
 
-/-- The integral form of `TauCeti.DynkinType.pairing_simpleIndex`. -/
-@[simp] theorem pairingIn_simpleIndex (t : DynkinType) (ht : t.Valid) (i j : Fin t.rank) :
+/-- The integral form of `TauCeti.DynkinType.pairing_simpleIndex`.
+
+The priority makes this specialized rule fire before `RootPairing.pairingIn_eq_pairing` when
+`TauCeti.LinearAlgebra.RootSystem.PairingInvariance` is also imported. -/
+@[simp 1100] theorem pairingIn_simpleIndex (t : DynkinType) (ht : t.Valid) (i j : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).pairingIn ℤ (t.simpleIndex ht i) (t.simpleIndex ht j) =
       t.cartanMatrix i j := by
   simpa using (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ (t.simpleIndex ht i)

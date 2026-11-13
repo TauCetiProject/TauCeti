@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.Normed.Group.NullSubmodule
 public import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
 import Mathlib.Analysis.Complex.Order
+import TauCeti.Algebra.Star.Basic
 
 /-!
 # Algebraic GNS representations
@@ -128,7 +129,7 @@ theorem toLinearMap_ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOr
 
 variable (φ : StarPositiveFunctional A)
 
-variable [StarModule ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+variable [StarModule ℂ A] [IsScalarTower ℂ A A]
 
 /-- Positivity implies conjugate symmetry of the associated sesquilinear form. -/
 theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a) := by
@@ -136,7 +137,7 @@ theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a)
   have hsum := him (a + b)
   have hI := him (a + Complex.I • b)
   simp [add_mul, mul_add, him] at hsum
-  simp [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, him] at hI
+  simp [add_mul, mul_add, smul_mul_assoc, mul_smul_comm_of_starModule, him] at hI
   rw [Complex.ext_iff]
   simp only [Complex.star_def, Complex.conj_re, Complex.conj_im]
   constructor <;> linarith
@@ -225,6 +226,18 @@ theorem mem_nullSubmodule_iff_apply_star_mul_self_eq_zero (a : A) :
     rw [← sq_eq_zero_iff, norm_sq_eq_re_inner (𝕜 := ℂ), φ.inner_toPreGNS, h]
     simp
 
+/-- A positive functional with trivial GNS null space detects zero by a single square. -/
+@[simp]
+theorem apply_star_mul_self_eq_zero_iff_of_nullSubmodule_eq_bot
+    (hφ : φ.nullSubmodule = ⊥) (a : A) : φ (star a * a) = 0 ↔ a = 0 := by
+  rw [← φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero, hφ, Submodule.mem_bot]
+
+/-- A positive functional with trivial GNS null space is strictly positive on nonzero squares. -/
+theorem apply_star_mul_self_pos_of_nullSubmodule_eq_bot
+    (hφ : φ.nullSubmodule = ⊥) {a : A} (ha : a ≠ 0) : 0 < φ (star a * a) :=
+  (φ.square_nonneg a).lt_of_ne' fun hz =>
+    ha ((φ.apply_star_mul_self_eq_zero_iff_of_nullSubmodule_eq_bot hφ a).mp hz)
+
 /-- Membership in the null space is vanishing of all pairings. -/
 theorem mem_nullSubmodule (a : A) : a ∈ φ.nullSubmodule ↔ ∀ b, φ (star b * a) = 0 := by
   rw [φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero,
@@ -258,6 +271,18 @@ theorem classMap_eq_classMap_iff (a b : A) :
   rw [← sub_eq_zero, ← map_sub]
   rw [φ.classMap_apply, φ.mem_nullSubmodule_iff_norm_eq_zero]
   exact SeparationQuotient.mk_eq_zero_iff
+
+/-- The GNS class map is injective exactly when its null space is trivial. -/
+theorem classMap_injective_iff : Function.Injective φ.classMap ↔ φ.nullSubmodule = ⊥ := by
+  constructor
+  · intro hφ
+    apply eq_bot_iff.mpr
+    intro a ha
+    have h : φ.classMap a = φ.classMap 0 :=
+      (φ.classMap_eq_classMap_iff a 0).mpr (by simpa using ha)
+    simpa only [Submodule.mem_bot] using hφ h
+  · intro hφ a b h
+    exact sub_eq_zero.mp (by simpa [hφ] using (φ.classMap_eq_classMap_iff a b).mp h)
 
 /-- Linear maps out of the GNS space are determined by their values on algebra classes. -/
 @[ext]
@@ -302,7 +327,7 @@ def leftMul (a : A) : Module.End ℂ φ.GNS where
     obtain ⟨b, rfl⟩ := φ.classMap_surjective x
     -- On representatives, the quotient lift computes to multiplication.
     change φ.classMap (a * (r • b)) = r • φ.classMap (a * b)
-    simp [mul_smul_comm]
+    simp [mul_smul_comm_of_starModule]
 
 /-- Left multiplication acts on classes by the original multiplication. -/
 @[simp]
@@ -405,6 +430,15 @@ theorem leftMul_cyclicVector (a : A) :
 theorem representation_cyclicVector (a : A) :
     φ.representation a φ.cyclicVector = φ.classMap a := by
   simp [cyclicVector_def]
+
+/-- An injective GNS class map gives a faithful algebraic representation.
+No boundedness of the representing endomorphisms is asserted. -/
+theorem representation_injective_of_classMap_injective
+    (hφ : Function.Injective φ.classMap) : Function.Injective φ.representation := by
+  intro a b hab
+  apply hφ
+  simpa only [φ.representation_cyclicVector] using
+    congrArg (fun T : Module.End ℂ φ.GNS => T φ.cyclicVector) hab
 
 /-- The orbit of the canonical vector consists of every vector of the algebraic GNS space. -/
 theorem representation_cyclicVector_surjective :

@@ -37,8 +37,7 @@ which therefore gives `fundamentalLattice t ht i` a basis of weight vectors.
 * `TauCeti.DynkinType.representation_mem_fundamentalLattice`: its stability under the Kostant form.
 * `TauCeti.DynkinType.fundamentalLattice_eq_span_loweringWord`: its description by lowering words.
 * `TauCeti.DynkinType.instIsLatticeFundamentalLattice`: it is a full lattice in `L(ϖᵢ)`.
-* `TauCeti.DynkinType.mem_iSup_jointWeightSpace_of_mem_fundamentalLattice`: it lies in the span of
-  the integral weight spaces.
+* `TauCeti.DynkinType.iSup_jointWeightSpace_eq_top`: the integral weight spaces span it.
 
 ## References
 
@@ -86,6 +85,23 @@ theorem representation_mem_fundamentalLattice {i : Fin t.rank}
   exact (t.lieBasis ht).representation_mem_highestWeightLattice _
     (by rwa [← t.kostantForm_def ht]) hx
 
+/-- Each simple raising or lowering operator preserves the fundamental lattice. -/
+theorem lie_rootGenerator_mem_fundamentalLattice (i : Fin t.rank)
+    (j : Fin t.rank ⊕ Fin t.rank) {x : t.fundamentalModule ht i}
+    (hx : x ∈ t.fundamentalLattice ht i) :
+    ⁅(t.lieBasis ht).rootGenerator j, x⁆ ∈ t.fundamentalLattice ht i := by
+  have hj := t.dividedPower_mem_kostantForm ht j 1
+  rw [Associative.dividedPower_one] at hj
+  simpa only [representation_ι_apply] using
+    t.representation_mem_fundamentalLattice ht hj hx
+
+/-- The first lowering of the highest weight vector belongs to the fundamental lattice. -/
+theorem lie_lieBasis_f_fundamentalModuleGenerator_mem_fundamentalLattice (i : Fin t.rank) :
+    ⁅(t.lieBasis ht).f i, t.fundamentalModuleGenerator ht i⁆ ∈ t.fundamentalLattice ht i := by
+  simpa only [LieAlgebra.Basis.rootGenerator_inr] using
+    t.lie_rootGenerator_mem_fundamentalLattice ht i (.inr i)
+      (t.fundamentalModuleGenerator_mem_fundamentalLattice ht i)
+
 /-- `v⁺ᵢ` is a weight vector of weight `Pi.single i 1 = (δᵢⱼ)ⱼ` for the Cartan generators `hⱼ`:
 in the coordinates `μ ↦ (μ(hⱼ))ⱼ`, the fundamental weight `ϖᵢ` is the `i`-th standard basis
 vector. -/
@@ -119,14 +135,16 @@ instance instIsLatticeFundamentalLattice (i : Fin t.rank) :
   exact (t.lieBasis ht).isLattice_highestWeightLattice _
     (t.isDominantIntegral_fundamentalWeight ht i)
 
-/-- **The fundamental lattice lies in the span of the integral weight spaces** of the Cartan
-generators. With finite generation and stability under the Kostant form, this is what
-`TauCeti.UniversalEnvelopingAlgebra.kostantWeightBasis` needs to give the fundamental lattice a
-basis of weight vectors. -/
-theorem mem_iSup_jointWeightSpace_of_mem_fundamentalLattice {i : Fin t.rank}
-    {x : t.fundamentalModule ht i} (hx : x ∈ t.fundamentalLattice ht i) :
-    x ∈ ⨆ μ : Fin t.rank → ℤ, jointWeightSpace (t.lieBasis ht).h
-      (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i)) μ := by
+/-- **The integral weight spaces of the Cartan generators span `L(ϖᵢ)`**, since they contain the
+fundamental lattice, which spans it. With finite generation and stability under the Kostant form of
+the lattice, this is what `TauCeti.UniversalEnvelopingAlgebra.kostantWeightBasis` needs to give the
+fundamental lattice a basis of weight vectors. -/
+@[simp]
+theorem iSup_jointWeightSpace_eq_top (i : Fin t.rank) :
+    (⨆ μ : Fin t.rank → ℤ, jointWeightSpace (t.lieBasis ht).h
+      (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i)) μ) = ⊤ := by
+  rw [eq_top_iff, ← Submodule.IsLattice.span_eq_top (A := ℚ) (M := t.fundamentalLattice ht i)]
+  refine Submodule.span_le.2 fun x hx => ?_
   rw [fundamentalLattice] at hx
   exact (t.lieBasis ht).mem_iSup_jointWeightSpace_of_mem_highestWeightLattice _
     (t.isDominantIntegral_fundamentalWeight ht i).isIntegralWeight hx

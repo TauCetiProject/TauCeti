@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.Algebra.MonoidAlgebra.CharacterTwist
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
 /-!
@@ -44,6 +45,8 @@ representation need neither.
   `Representation.tprodOfLinearCharacterEquivCharTwist`: the tensor product of `ρ` with
   `ofLinearCharacter χ` **is** the twist, on either side, along `TensorProduct.lid` and
   `TensorProduct.rid`.
+* `Representation.IntertwiningMap.charTwistLinearEquiv`: the intertwining maps between two
+  representations are the intertwining maps between their twists by a common linear character.
 
 ## Main results
 
@@ -55,10 +58,14 @@ representation need neither.
   `Representation.rid_tprod_ofLinearCharacter_apply`: `TensorProduct.lid` and `TensorProduct.rid`
   carry the action of `(ofLinearCharacter χ) ⊗ ρ` and of `ρ ⊗ (ofLinearCharacter χ)` to the action
   of `ρ` rescaled by `χ`.
+* `Representation.comp_charTwist_eq_charTwist_comp_iff`: a linear map intertwines two
+  representations exactly when it intertwines their twists by a common character.
 * `Representation.isIrreducible_charTwist_iff`: **the twist of an irreducible representation is
   irreducible**, and conversely.
 * `Representation.char_charTwist`: the trace character of the twist is `χ` times the character
   of `ρ`.
+* `Representation.asAlgebraHom_charTwist`: on the group algebra, the twist acts through the
+  algebra automorphism `MonoidAlgebra.charTwist χ` of `k[G]`.
 
 ## References
 
@@ -119,6 +126,12 @@ theorem charTwist_trivial (χ : G →* kˣ) :
     charTwist χ (trivial k G k) = ofLinearCharacter χ :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by
     simp [ofLinearCharacter_apply, smul_eq_mul]
+
+/-- On the group algebra, the twist of `ρ` by `χ` acts through the twist of `k[G]` by `χ`: an
+element `x : k[G]` acts on `charTwist χ ρ` as `MonoidAlgebra.charTwist χ x` acts on `ρ`. -/
+theorem asAlgebraHom_charTwist (χ : G →* kˣ) (ρ : Representation k G V) :
+    (charTwist χ ρ).asAlgebraHom = ρ.asAlgebraHom.comp (MonoidAlgebra.charTwist χ).toAlgHom :=
+  MonoidAlgebra.algHom_ext (fun g ↦ by simp) (AlgHom.ext fun a ↦ by simp)
 
 /-- A submodule stable under `ρ` is stable under any twist of `ρ`. -/
 theorem charTwist_apply_mem_of_apply_mem {χ : G →* kˣ} {ρ : Representation k G V}
@@ -234,6 +247,45 @@ right. -/
 theorem tprodOfLinearCharacterEquivCharTwist_symm_apply (v : V) :
     (tprodOfLinearCharacterEquivCharTwist χ ρ).symm v = v ⊗ₜ[k] (1 : k) :=
   (rfl)
+
+variable {W : Type*} [AddCommMonoid W] [Module k W] {ρ} {σ : Representation k G W}
+
+/-- **A common twist does not change which linear maps intertwine**: a linear map intertwines
+`charTwist χ ρ g` with `charTwist χ σ g` exactly when it intertwines `ρ g` with `σ g`, the unit
+`χ g` occurring on both sides. -/
+theorem comp_charTwist_eq_charTwist_comp_iff (f : V →ₗ[k] W) (g : G) :
+    f ∘ₗ charTwist χ ρ g = charTwist χ σ g ∘ₗ f ↔ f ∘ₗ ρ g = σ g ∘ₗ f := by
+  refine ⟨fun hf => LinearMap.ext fun v => ?_, fun hf => LinearMap.ext fun v => ?_⟩
+  · have h := congr(((χ g)⁻¹ : kˣ) • $hf v)
+    simpa [charTwist_apply_apply, ← Units.smul_def] using h
+  · simpa [charTwist_apply_apply] using congr((χ g : k) • $hf v)
+
+namespace IntertwiningMap
+
+/-- **Intertwining maps are unchanged by a common twist**: a linear map intertwines `ρ` and `σ`
+exactly when it intertwines `charTwist χ ρ` and `charTwist χ σ`
+(`Representation.comp_charTwist_eq_charTwist_comp_iff`), so the two spaces of intertwining maps
+are identified, keeping the underlying linear map. -/
+def charTwistLinearEquiv :
+    IntertwiningMap ρ σ ≃ₗ[k] IntertwiningMap (charTwist χ ρ) (charTwist χ σ) where
+  toFun f := ⟨f.toLinearMap, fun g => (comp_charTwist_eq_charTwist_comp_iff χ _ g).mpr (f.2 g)⟩
+  invFun f := ⟨f.toLinearMap, fun g => (comp_charTwist_eq_charTwist_comp_iff χ _ g).mp (f.2 g)⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coe_charTwistLinearEquiv (f : IntertwiningMap ρ σ) :
+    ⇑(charTwistLinearEquiv χ f) = ⇑f :=
+  (rfl)
+
+@[simp]
+theorem coe_charTwistLinearEquiv_symm (f : IntertwiningMap (charTwist χ ρ) (charTwist χ σ)) :
+    ⇑((charTwistLinearEquiv χ).symm f) = ⇑f :=
+  (rfl)
+
+end IntertwiningMap
 
 end CommSemiring
 

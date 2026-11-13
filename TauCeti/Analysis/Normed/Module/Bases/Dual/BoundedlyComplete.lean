@@ -43,14 +43,14 @@ theorem isShrinking_of_isBoundedlyComplete_dualBasis
   intro f
   have hbound : BddAbove (range fun n ↦
       ‖∑ i ∈ Finset.range n, f (b i) • b.dualBasis i‖) := by
-    refine ⟨‖f‖ * b.nnnormProjBound, ?_⟩
+    refine ⟨‖f‖ * b.nnNormProjBound, ?_⟩
     rintro _ ⟨n, rfl⟩
     dsimp only
     rw [← Submodule.norm_coe]
     simp only [Submodule.coe_sum, Submodule.coe_smul_of_tower,
       b.coe_dualBasis_apply, ← b.comp_proj_eq_sum]
     exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (mul_le_mul_of_nonneg_left (b.norm_proj_le_nnnormProjBound n) (norm_nonneg f))
+      (mul_le_mul_of_nonneg_left (b.norm_proj_le_nnNormProjBound n) (norm_nonneg f))
   obtain ⟨g, hg⟩ := b.dualBasis.isBoundedlyComplete_iff.mp hb _ hbound
   have hgf : (g : StrongDual 𝕜 E) = f := by
     have heval (i : ℕ) : (g : StrongDual 𝕜 E) (b i) = f (b i) := by
@@ -86,7 +86,7 @@ theorem IsShrinking.isBoundedlyComplete_dualBasis [ProperSpace 𝕜]
     filter_upwards [eventually_gt_atTop i] with n hn
     symm
     simpa only [IsShrinking.dualBasis_coord_apply] using
-      hb.dualBasis.coord_sum_range a hn
+      hb.dualBasis.coord_sum a (Finset.mem_range.2 hn)
   simpa only [IsShrinking.dualBasis_coord_apply, WeakDual.toStrongDual_apply] using
     eq_of_nhds_neBot (hc.clusterPt.mono ht)
 

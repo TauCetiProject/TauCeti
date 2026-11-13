@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Symplectic.Complex.Complexification
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -66,6 +67,8 @@ on a vector of type `(1,0)` and one of type `(0,1)`; on parts of real tangent ve
   tensor vanishing is equivalent to pointwise vanishing in the model-space instances.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_const`: a constant almost complex structure on
   a vector space has vanishing Nijenhuis tensor.
+* `TauCeti.AlmostComplexStructure.nijenhuis_constSmooth`: the same for the constant structure
+  `AlmostComplexStructure.constSmooth` of a pointwise almost complex structure.
 
 ## Conventions
 
@@ -117,7 +120,7 @@ private lemma nijenhuisAux_apply_left (X Y : Π x : M, TangentSpace I x) :
 lemmas. -/
 private lemma mdifferentiableAt_apply_field {X : Π x : M, TangentSpace I x}
     (hX : MDiffAt (T% X) x) : MDiffAt (T% (fun y ↦ J y (X y))) x :=
-  J.mdifferentiableAt_apply mdifferentiableAt_id hX
+  J.mdifferentiableAt_apply hX
 
 section Complete
 
@@ -162,7 +165,7 @@ variable [FiniteDimensional ℝ E]
 bilinear map on `T_x M` whose value on the values at `x` of differentiable vector fields `X` and
 `Y` is `[JX, JY] - [X, Y] - J[JX, Y] - J[X, JY]` at `x` (`nijenhuis_apply`). -/
 def nijenhuis (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x :=
-  have := FiniteDimensional.complete ℝ E
+  have := FiniteDimensional.completeSpace ℝ E
   TensorialAt.mkHom₂ (J.nijenhuisAux · · x) x
     (fun Y _ ↦ J.nijenhuisAux_tensorial₁ Y) (fun X _ ↦ J.nijenhuisAux_tensorial₂ X)
 
@@ -224,7 +227,7 @@ theorem nijenhuis_self (v : TangentSpace I x) : J.nijenhuis x v v = 0 := by
 @[simp]
 theorem nijenhuis_apply_left (v w : TangentSpace I x) :
     J.nijenhuis x (J x v) w = -J x (J.nijenhuis x v w) := by
-  have := FiniteDimensional.complete ℝ E
+  have := FiniteDimensional.completeSpace ℝ E
   have hJX := J.mdifferentiableAt_apply_field (mdifferentiableAt_extend I E v)
   conv_lhs => rw [← extend_apply_self E v, ← extend_apply_self E w]
   rw [J.nijenhuis_apply_eq_nijenhuisAux hJX (mdifferentiableAt_extend ..),
@@ -411,20 +414,8 @@ theorem nijenhuis_apply_eq_fderivWithin_inChart (v w : TangentSpace I x) :
   have hs : UniqueDiffWithinAt ℝ (Set.range I) (extChartAt I x x) :=
     I.uniqueDiffOn _ (Set.mem_range_self _)
   -- The vector fields with constant coordinates `v` and `w` near `x`, and their images under `J`.
-  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  have hext (u : E) : (fun y ↦ e.symm y u : Π y : M, TangentSpace I y) =
-      FiberBundle.extend E (e.symm x u) := by
-    funext y
-    simp only [FiberBundle.extend, e, Bundle.Trivialization.apply_mk_symm _ hx]
-  have hmdiff (u : E) : MDiffAt (T% (fun y ↦ e.symm y u : Π y : M, TangentSpace I y)) x := by
-    have h := mdifferentiableAt_extend (I := I) E (e.symm x u)
-    rwa [← hext] at h
-  have hself (u : E) : e.symm x u = u := by
-    have h := VectorField.mpullbackWithin_extChartAt_symm_self (I := I)
-      (fun y ↦ e.symm y u : Π y : M, TangentSpace I y) x
-    rw [(mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq x u).eq_of_nhdsWithin
-      (Set.mem_range_self _)] at h
-    exact h.symm
+  have hmdiff := TangentBundle.mdifferentiableAt_trivializationAt_symm_apply (I := I) x
+  have hself := TangentBundle.trivializationAt_symm_apply_self (I := I) x
   -- Lie brackets at `x` are Lie brackets of the pullbacks to the model space.
   have hbr {V W : Π y : M, TangentSpace I y} {V' W' : E → E}
       (hV : VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (Set.range I)
@@ -549,6 +540,22 @@ theorem SmoothAlmostComplexStructure.nijenhuis_const (Jc : V →L[ℝ] V) (hJc :
     simp
   ext v w
   exact key v w
+
+/-- The constant smooth almost complex structure defined by a pointwise almost complex structure on
+a vector space is integrable. -/
+@[simp]
+theorem AlmostComplexStructure.nijenhuis_constSmooth (J : AlmostComplexStructure V) :
+    J.constSmooth.nijenhuis = 0 := by
+  -- `constSmooth` is `SmoothAlmostComplexStructure.const` by definition, but its body is not
+  -- exposed outside its module, so the equation is proved pointwise.
+  have h : J.constSmooth = SmoothAlmostComplexStructure.const
+      (LinearMap.toContinuousLinearMap J.toLinearMap) J.apply_apply := by
+    ext x v
+    exact (J.constSmooth_apply x v).trans
+      (SmoothAlmostComplexStructure.const_apply (LinearMap.toContinuousLinearMap J.toLinearMap)
+        J.apply_apply x v).symm
+  rw [h]
+  exact funext <| SmoothAlmostComplexStructure.nijenhuis_const _ _
 
 end Const
 

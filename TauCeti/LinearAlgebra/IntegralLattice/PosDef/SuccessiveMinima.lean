@@ -181,66 +181,84 @@ theorem IsPosSemidef.successiveMinimum_le_integralNorm_of_linearIndependent (hL 
   have := Int.toNat_of_nonneg (hL.integralNorm_nonneg z)
   omega
 
+/-- Greedy step: if `x` is a family of `m` independent lattice vectors, each of norm at most that
+of every vector outside their rational span, then some `w` extends it so that `Fin.snoc x w` is
+independent, `w` attains the `m`-th successive minimum, and the extended family keeps the same
+invariant. -/
+private theorem IsPosSemidef.exists_snoc_integralNorm_eq_successiveMinimum
+    (hL : L.IsPosSemidef) {m : ℕ} (hm : m < Module.finrank ℤ L) (x : Fin m → L)
+    (hx : LinearIndependent ℤ x)
+    (hmin : ∀ y : L, (y : V) ∉ Submodule.span ℚ (Set.range (fun j ↦ (x j : V))) →
+      ∀ j, L.integralNorm (x j) ≤ L.integralNorm y) :
+    ∃ w : L, LinearIndependent ℤ (Fin.snoc x w : Fin (m + 1) → L) ∧
+      L.integralNorm w = L.successiveMinimum ⟨m, hm⟩ ∧
+      ∀ y : L, (y : V) ∉ Submodule.span ℚ
+          (Set.range (fun j ↦ ((Fin.snoc x w : Fin (m + 1) → L) j : V))) →
+        ∀ j, L.integralNorm ((Fin.snoc x w : Fin (m + 1) → L) j) ≤ L.integralNorm y := by
+  let S := Submodule.span ℚ (Set.range (fun j ↦ (x j : V)))
+  obtain ⟨y, hybound, hy⟩ := L.exists_integralNorm_le_successiveMinimum_not_mem_span ⟨m, hm⟩ x
+  obtain ⟨w, hwmin⟩ := exists_minimalFor_of_wellFoundedLT
+    (fun y : L ↦ (y : V) ∉ S) (fun y ↦ (L.integralNorm y).toNat) ⟨y, hy⟩
+  have hw := hwmin.1
+  have hleast (y : L) (hy : (y : V) ∉ S) : L.integralNorm w ≤ L.integralNorm y := by
+    have hle := hwmin.le hy
+    have hwcast := Int.toNat_of_nonneg (hL.integralNorm_nonneg w)
+    have hycast := Int.toNat_of_nonneg (hL.integralNorm_nonneg y)
+    omega
+  have hcw : L.integralNorm w = ((L.integralNorm w).toNat : ℤ) :=
+    (Int.toNat_of_nonneg (hL.integralNorm_nonneg w)).symm
+  have hsnoc : LinearIndependent ℤ (Fin.snoc x w : Fin (m + 1) → L) := by
+    have h := (hx.map' L.carrier.subtype
+      (Submodule.ker_subtype _)).finSnoc_of_notMem_span_over hw
+    have h' : LinearIndependent ℤ (L.carrier.subtype ∘ Fin.snoc x w) := by
+      simpa only [Fin.comp_snoc, Submodule.subtype_apply] using h
+    exact h'.of_comp L.carrier.subtype
+  have hcw' : L.integralNorm w = L.successiveMinimum ⟨m, hm⟩ := by
+    apply le_antisymm ((hleast y hy).trans hybound)
+    have hle := L.successiveMinimum_le_of_linearIndependent ⟨m, hm⟩ hsnoc
+      (c := (L.integralNorm w).toNat) (fun j ↦ Fin.lastCases (by simp)
+        (fun k ↦ by simpa using (hmin w hw k).trans hcw.le) j)
+    rw [hcw]
+    exact_mod_cast hle
+  refine ⟨w, hsnoc, hcw', fun y hy j ↦ ?_⟩
+  have hsub : S ≤ Submodule.span ℚ
+      (Set.range (fun j ↦ ((Fin.snoc x w : Fin (m + 1) → L) j : V))) := by
+    apply Submodule.span_mono
+    rintro z ⟨k, rfl⟩
+    exact ⟨k.castSucc, by simp⟩
+  have hyS : (y : V) ∉ S := fun h ↦ hy (hsub h)
+  exact Fin.lastCases (by simpa using hleast y hyS) (fun k ↦ by simpa using hmin y hyS k) j
+
+/-- Greedy construction of `m` independent vectors realising the first `m` successive minima,
+each at most every vector outside the span of the chosen ones. -/
+theorem IsPosSemidef.exists_linearIndependent_fin_integralNorm_eq_successiveMinimum_of_le
+    (hL : L.IsPosSemidef) (m : ℕ)
+    (hm : m ≤ Module.finrank ℤ L) :
+    ∃ x : Fin m → L, LinearIndependent ℤ x ∧
+      (∀ j, L.integralNorm (x j) = L.successiveMinimum ⟨j.val, j.isLt.trans_le hm⟩) ∧
+      (∀ y : L, (y : V) ∉ Submodule.span ℚ (Set.range (fun j ↦ (x j : V))) →
+        ∀ j, L.integralNorm (x j) ≤ L.integralNorm y) := by
+  induction m with
+  | zero => exact ⟨Fin.elim0, linearIndependent_empty_type, by simp, by simp⟩
+  | succ m ih =>
+    have hm' : m < Module.finrank ℤ L := by omega
+    obtain ⟨x, hx, hnorm, hmin⟩ := ih (by omega)
+    obtain ⟨w, hsnoc, hw, hwmin⟩ :=
+      hL.exists_snoc_integralNorm_eq_successiveMinimum hm' x hx hmin
+    refine ⟨Fin.snoc x w, hsnoc, fun j ↦ ?_, hwmin⟩
+    induction j using Fin.lastCases with
+    | last => simpa using hw
+    | cast k => simpa using hnorm k
+
 /-- A positive semidefinite lattice admits independent vectors attaining all successive minima
 simultaneously. These vectors are not asserted to be an integral basis. -/
 theorem IsPosSemidef.exists_linearIndependent_integralNorm_eq_successiveMinimum
     (hL : L.IsPosSemidef) :
     ∃ x : Fin (Module.finrank ℤ L) → L,
       LinearIndependent ℤ x ∧ ∀ i, L.integralNorm (x i) = L.successiveMinimum i := by
-  -- Greedily take a least-norm vector outside the rational span. The extra invariant says
-  -- that every selected vector has norm at most every vector outside the current span.
-  have haux (m : ℕ) (hm : m ≤ Module.finrank ℤ L) :
-      ∃ x : Fin m → L, LinearIndependent ℤ x ∧
-        (∀ j, L.integralNorm (x j) = L.successiveMinimum ⟨j.val, j.isLt.trans_le hm⟩) ∧
-        (∀ y : L, (y : V) ∉ Submodule.span ℚ (Set.range (fun j ↦ (x j : V))) →
-          ∀ j, L.integralNorm (x j) ≤ L.integralNorm y) := by
-    induction m with
-    | zero => exact ⟨Fin.elim0, linearIndependent_empty_type, by simp, by simp⟩
-    | succ m ih =>
-      have hm' : m < Module.finrank ℤ L := by omega
-      obtain ⟨x, hx, hnorm, hmin⟩ := ih (by omega)
-      let S := Submodule.span ℚ (Set.range (fun j ↦ (x j : V)))
-      obtain ⟨y, -, hy⟩ := L.exists_integralNorm_le_successiveMinimum_not_mem_span ⟨m, hm'⟩ x
-      obtain ⟨w, hwmin⟩ := exists_minimalFor_of_wellFoundedLT
-        (fun y : L ↦ (y : V) ∉ S) (fun y ↦ (L.integralNorm y).toNat) ⟨y, hy⟩
-      have hw := hwmin.1
-      have hleast (y : L) (hy : (y : V) ∉ S) : L.integralNorm w ≤ L.integralNorm y := by
-        have hle := hwmin.le hy
-        have hwcast := Int.toNat_of_nonneg (hL.integralNorm_nonneg w)
-        have hycast := Int.toNat_of_nonneg (hL.integralNorm_nonneg y)
-        exact hwcast ▸ hycast ▸ Int.ofNat_le.mpr hle
-      have hcw : L.integralNorm w = ((L.integralNorm w).toNat : ℤ) :=
-        (Int.toNat_of_nonneg (hL.integralNorm_nonneg w)).symm
-      have hsnoc : LinearIndependent ℤ (Fin.snoc x w) := by
-        have h := (hx.map' L.carrier.subtype
-          (Submodule.ker_subtype _)).finSnoc_of_notMem_span_over hw
-        have h' : LinearIndependent ℤ (L.carrier.subtype ∘ Fin.snoc x w) := by
-          simpa only [Fin.comp_snoc, Submodule.subtype_apply] using h
-        exact h'.of_comp L.carrier.subtype
-      have hcw' : L.integralNorm w = L.successiveMinimum ⟨m, hm'⟩ := by
-        obtain ⟨y, hybound, hy⟩ :=
-          L.exists_integralNorm_le_successiveMinimum_not_mem_span ⟨m, hm'⟩ x
-        apply le_antisymm ((hleast y hy).trans hybound)
-        have hle := L.successiveMinimum_le_of_linearIndependent ⟨m, hm'⟩ hsnoc
-          (c := (L.integralNorm w).toNat) (fun j ↦ Fin.lastCases (by simp)
-            (fun k ↦ by simpa using (hmin w hw k).trans hcw.le) j)
-        rw [hcw]
-        exact_mod_cast hle
-      refine ⟨Fin.snoc x w, hsnoc, ?_, ?_⟩
-      · intro j
-        induction j using Fin.lastCases with
-        | last => simpa using hcw'
-        | cast k => simpa using hnorm k
-      · intro y hy j
-        have hsub : S ≤ Submodule.span ℚ
-            (Set.range (L.carrier.subtype ∘ (Fin.snoc x w : Fin (m + 1) → L))) := by
-          apply Submodule.span_mono
-          rintro z ⟨k, rfl⟩
-          exact ⟨k.castSucc, by simp⟩
-        have hyS : (y : V) ∉ S := fun h ↦ hy (hsub h)
-        exact Fin.lastCases (by simpa using hleast y hyS)
-          (fun k ↦ by simpa using hmin y hyS k) j
-  obtain ⟨x, hx, hnorm, -⟩ := haux (Module.finrank ℤ L) le_rfl
+  obtain ⟨x, hx, hnorm, -⟩ :=
+    hL.exists_linearIndependent_fin_integralNorm_eq_successiveMinimum_of_le
+      (Module.finrank ℤ L) le_rfl
   exact ⟨x, hx, hnorm⟩
 
 /-- Every successive minimum of a positive semidefinite lattice is the norm of a nonzero vector.

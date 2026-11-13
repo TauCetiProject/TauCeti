@@ -106,13 +106,12 @@ private theorem exists_growth_ladder (hF : IsFunctionField k F) :
     ?_, ?_, ?_⟩
   · have h := Divisor.degree_poles hF (Units.mk0 x hx0) hx
     rwa [Units.val_mk0, hnrank] at h
-  · exact Finset.sum_nonneg fun i _ ↦
-      WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c i))
+  · exact Finset.sum_nonneg fun i _ ↦ Divisor.poles_nonneg hF (c i)
   · intro l
     have hC : ∀ i, Divisor.poles hF (c i) ≤ ∑ j : Fin n, Divisor.poles hF (c j) :=
       fun i ↦ Finset.single_le_sum
         (f := fun j : Fin n ↦ Divisor.poles hF (c j))
-        (fun j _ ↦ WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c j)))
+        (fun j _ ↦ Divisor.poles_nonneg hF (c j))
         (Finset.mem_univ i)
     have hli : LinearIndependent k⟮x⟯ fun i ↦ (c i : F) := by
       have hfun : (fun i ↦ (c i : F)) = ⇑u := funext hcval
@@ -161,8 +160,7 @@ theorem Divisor.bddAbove_range_degree_sub_dim (hF : IsFunctionField k F) :
   -- Choose `l` large enough that `L(l • B - A⁺)` is nonzero.
   obtain ⟨l, hlge⟩ : ∃ l : ℕ, Divisor.degree C + Divisor.degree A⁺ ≤ (l : ℤ) :=
     ⟨(Divisor.degree C + Divisor.degree A⁺).toNat, Int.self_le_toNat _⟩
-  have hposA : (0 : Divisor k F) ≤ A⁺ :=
-    WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_posPart A)
+  have hposA : (0 : Divisor k F) ≤ A⁺ := posPart_nonneg A
   have hdrop := Divisor.dim_le_dim_add_degree_sub hF (sub_le_self (l • B) hposA)
   rw [Divisor.degree_sub, hdeg l] at hdrop
   have hbig : (l : ℤ) + 1 ≤ (n : ℤ) * (l + 1) :=

@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+public import TauCeti.Analysis.PDE.Vortex.Garding
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
 
 /-!
-# Exterior coercivity of the plane-vortex adjoint
+# Exterior coercivity of the plane-vortex operator and its adjoint
 
 For an actual plane vortex with `|α| → 1`, the formal adjoint of the gauge-fixed operator has
 an exterior `L²` lower bound at every mass strictly below `1/2`. The radius depends on the
@@ -20,7 +20,25 @@ The proof uses the Weitzenböck formula at a vortex
 (`gaugeFixedOperator_gaugeFixedAdjoint_of_equation_eq_zero`). The magnetic first-order terms
 complete to covariant-gradient squares, while the two potentials are
 `P = |α|²/4` and `1/8 + P/2`. Integrating the squared-norm Bochner identity eliminates the
-Laplacian. These are classical test-field estimates; they do not assert a completed Fredholm
+Laplacian.
+
+The gauge-fixed operator `L_x` itself satisfies the same kind of exterior bound, at every mass
+below `1/2`, once the covariant derivative `∇₁ α` also tends to zero at infinity. At a vortex the
+potential of its Weitzenböck formula (`integral_norm_sq_gaugeFixedOperator`) is
+`P |ξ|² + (3 P / 2 - 1 / 8) |ζ|²`, with both coefficients tending to `1/4`, plus a zeroth-order
+coupling of the connection and section parts through `∇₁ α`, which has no sign. This gives the
+energy identity
+`‖L_x y‖₂² = ‖∇ξ‖₂² + ‖∇_a ζ‖₂² + ∫ P |ξ|² + ∫ (3 P / 2 - 1 / 8) |ζ|² + 2 ∫ ⟪ξ, K ζ⟫`
+(`integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero`), which reduces to
+`‖L₀ y‖₂² = ‖∇y‖₂² + ‖y‖₂² / 4` at the vacuum. Where `|K| = |∇₁ α|` is small the coupling is
+absorbed by the potentials; the exterior bound
+(`exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`) is the Gårding inequality
+`exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le` for variations vanishing
+on its disc.
+Together, the exterior bounds for `L_x` and `L_x*` are the estimates at infinity behind the
+Fredholm property of `L_x` at a vortex.
+
+These are classical test-field estimates; they do not assert a completed Fredholm
 realization or a uniform inverse over the noncompact vortex moduli space.
 
 ## References
@@ -144,5 +162,65 @@ theorem exists_exterior_integral_norm_sq_gaugeFixedAdjoint_ge
       hmass.le ?_⟩
   intro z hz
   exact (hR z (lt_of_not_ge fun h ↦ hz (hzero z h))).le
+
+/-! ### The gauge-fixed operator -/
+
+section Operator
+
+variable {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+
+/-- **The energy identity for `L_x` at a vortex.** For a compactly supported `C²` variation
+`y = (ξ, ζ)` supported where the vortex equation holds, with `P = p² + q² = |α|² / 4`,
+`‖L_x y‖₂² = ‖∇ξ‖₂² + ‖∇_a ζ‖₂² + ∫ P |ξ|² + ∫ (3 P / 2 - 1 / 8) |ζ|² + 2 ∫ ⟪ξ, K ζ⟫`,
+where `K` is multiplication by `i conj (∇₁ α)`, written in real coordinates. It is the
+Weitzenböck formula `integral_norm_sq_gaugeFixedOperator` with the potential simplified by
+`gaugeFixedPotential_eq_of_equation_eq_zero`. At the vacuum it is the identity
+`‖L₀ y‖₂² = ‖∇y‖₂² + ‖y‖₂² / 4`. -/
+theorem integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero
+    (hx : ContDiff ℝ 1 x) (hy : ContDiff ℝ 2 y) (hc : HasCompactSupport y)
+    (hsol : ∀ z, y z ≠ 0 → equation x z = 0) :
+    ∫ z, ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ =
+      (∫ z, gaugeFixedGradientDensity x y z ∂μ) +
+        ∫ z, ((x z 2 ^ 2 + x z 3 ^ 2) * (y z 0 ^ 2 + y z 1 ^ 2) +
+          (3 * (x z 2 ^ 2 + x z 3 ^ 2) / 2 - 1 / 8) * (y z 2 ^ 2 + y z 3 ^ 2) +
+          2 * ((covariantDerivative x z 1).im * (y z 0 * y z 2 + y z 1 * y z 3) +
+            (covariantDerivative x z 1).re * (y z 1 * y z 2 - y z 0 * y z 3))) ∂μ := by
+  rw [integral_norm_sq_gaugeFixedOperator hx hy hc]
+  congr 1
+  refine integral_congr_ae (.of_forall fun z ↦ ?_)
+  by_cases hz : y z = 0
+  · simp [gaugeFixedPotential_def, hz]
+  · exact gaugeFixedPotential_eq_of_equation_eq_zero (hx.differentiable one_ne_zero z)
+      (hsol z hz) (y z)
+
+/-- **Exterior coercivity of the gauge-fixed vortex operator.** For an actual vortex with
+`|α| → 1` and `∇₁ α → 0` at infinity, and `0 < c < 1/2`, there is a radius `R > 0`, depending
+only on the vortex and `c`, such that `c² ∫|y|² ≤ ∫|L_x y|²` for every compactly supported `C²`
+variation `y` vanishing on the closed disc of radius `R` about the origin. This is the Gårding
+inequality `exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le` at mass `c²`,
+whose compact remainder vanishes for such variations. -/
+theorem exists_exterior_integral_norm_sq_gaugeFixedOperator_ge
+    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
+    {c : ℝ} (hc : 0 < c) (hc' : c < 1 / 2) :
+    ∃ R > 0, ∀ y : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 y →
+      HasCompactSupport y → (∀ z, ‖z‖ ≤ R → y z = 0) →
+      c ^ 2 * (∫ z, ‖y z‖ ^ 2 ∂μ) ≤ ∫ z, ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ := by
+  have hc2 : c ^ 2 < 1 / 4 := by nlinarith
+  obtain ⟨R, hR, K, hK⟩ :=
+    exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le (μ := μ) hx hsol hlim
+      hcov hc2
+  refine ⟨R, hR, fun y hy hyc hzero ↦ ?_⟩
+  have hB : ∫ z in Metric.closedBall 0 R, ‖y z‖ ^ 2 ∂μ = 0 :=
+    setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ by
+      simp [hzero z (by simpa using Metric.mem_closedBall.mp hz)]
+  have hG : 0 ≤ ∫ z, gaugeFixedGradientDensity x y z ∂μ :=
+    integral_nonneg (gaugeFixedGradientDensity_nonneg x y)
+  have h := hK y hy hyc
+  rw [hB, mul_zero, add_zero] at h
+  linarith
+
+end Operator
 
 end TauCeti.Vortex

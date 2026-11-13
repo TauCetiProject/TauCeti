@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Transcendental.Baker.Delta
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Matrix
+import TauCeti.Algebra.Polynomial.Lifts
 import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.Subring.Basic
@@ -48,6 +49,8 @@ of the matrix (`Subring.mul_waldschmidtInterpolationMatrix_mem`).
 * `Subring.mul_waldschmidtOperatorEntry_mem`: `c d ^ T e γ_P ∈ A`, for denominators `c` of the
   operator, `d` of the coefficients `βᵢ` and `e` of the exponential factor.
 * `Subring.mul_waldschmidtEntry_mem`: for the iterated derivatives, `d ^ T e γ ∈ A`.
+* `Subring.mul_waldschmidtOperatorEntry_prod_aeval_X_mem`: denominators of the entries of a
+  separated row `∏ᵢ Qᵢ(zᵢ)`, in terms of the denominators of the operator and of the factors `Qᵢ`.
 * `Subring.pow_mul_waldschmidtOperatorEntry_multichoose_mem`: for the operators `Δ(∂/∂z₀; k) ^ l`
   built from Baker's binomial polynomial, `L ^ T d ^ T e γ ∈ A`.
 * `Subring.mul_waldschmidtInterpolationMatrix_mem`: a common denominator of all the entries of
@@ -103,8 +106,8 @@ theorem mul_waldschmidtOperatorEntry_mem {α b : Fin (n + 1) → K} {t : ℤ} {s
   · exact mul_mem (hP k hk) (pow_mul_eval_mem (coeff_iterate_pderiv_mem hF 0 k)
       ((totalDegree_iterate_pderiv_le 0 k F).trans ((Nat.sub_le _ _).trans hFT)) hd
       (mul_waldschmidtPoint_mem A hd hb s))
-  · rw [iterate_pderiv_eq_zero_of_totalDegree_lt (hFT.trans_lt hk), map_zero, mul_zero,
-      mul_zero]
+  · rw [iterate_pderiv_eq_zero_of_degreeOf_lt
+      ((degreeOf_le_totalDegree F 0).trans_lt (hFT.trans_lt hk)), map_zero, mul_zero, mul_zero]
     exact zero_mem A
 
 /-- **Denominators of the derivative entries.** For the iterated derivatives `∂^σ/∂z₀^σ`, the
@@ -122,6 +125,33 @@ theorem mul_waldschmidtEntry_mem {α b : Fin (n + 1) → K} {t : ℤ} {s : Fin (
     Polynomial.eval_monomial, one_mul, mul_one]
   exact mul_mem (natCast_mem A _) (pow_mem (intCast_mem A _) _)
 
+/-- **Denominators of the entries of a separated row.** Let `x = s · y`. Suppose that `u` clears
+the denominators of the derivatives of the operator, `u P⁽ᵏ⁾(t) ∈ A`, and `c` those of the Hasse
+derivatives of the first factor, `c Q₀^{[k]}(x₀) ∈ A`, for `k ≤ deg Q₀`; that `dᵢ Qᵢ(xᵢ) ∈ A` for
+the other factors; and that `e` clears the denominator of the exponential factor
+`α₁^(t s₁) ⋯ αₘ^(t sₘ)`. Then `u c (∏ᵢ dᵢ) e γ_P ∈ A` for the entry `γ_P` of the operator
+`P(∂/∂z₀)` on the row `∏ᵢ Qᵢ(zᵢ)`. -/
+theorem mul_waldschmidtOperatorEntry_prod_aeval_X_mem {α b : Fin (n + 1) → K} {t : ℤ}
+    {s : Fin (n + 1) → ℤ} {Q : Fin (n + 1) → Polynomial K} {P : Polynomial K} {u c e : K}
+    {d : Fin n → K}
+    (hP : ∀ k ≤ (Q 0).natDegree, u * (Polynomial.derivative^[k] P).eval (t : K) ∈ A)
+    (hQ₀ : ∀ k ≤ (Q 0).natDegree,
+      c * (Polynomial.hasseDeriv k (Q 0)).eval (waldschmidtPoint b s 0) ∈ A)
+    (hQ : ∀ i : Fin n, d i * (Q i.succ).eval (waldschmidtPoint b s i.succ) ∈ A)
+    (he : e * ∏ j, α j ^ (t * s j) ∈ A) :
+    u * c * (∏ i, d i) * e *
+      waldschmidtOperatorEntry α b t s (∏ i, Polynomial.aeval (X i) (Q i)) P ∈ A := by
+  have h (x y z : K) : u * c * (∏ i, d i) * e * (x * y * z) =
+      u * c * x * ((∏ i, d i) * y) * (e * z) := by ring
+  rw [waldschmidtOperatorEntry_prod_aeval_X, h, mul_sum, ← prod_mul_distrib]
+  refine mul_mem (mul_mem (sum_mem fun k _ ↦ ?_) (prod_mem fun i _ ↦ hQ i)) he
+  rcases le_or_gt k (Q 0).natDegree with hk | hk
+  · rw [mul_mul_mul_comm]
+    exact mul_mem (hP k hk) (hQ₀ k hk)
+  · rw [Polynomial.hasseDeriv_eq_zero_of_lt_natDegree _ _ hk, Polynomial.eval_zero, mul_zero,
+      mul_zero]
+    exact zero_mem A
+
 /-- **Denominators of Baker's operator entries.** Let `L` be an integer divisible by each of
 `1, …, k`. For the operator `Δ(∂/∂z₀; k) ^ l`, the `l`-th power of Baker's binomial polynomial
 `Δ(X; k) = (X + 1) ⋯ (X + k) / k!`, the number `L ^ T` clears the denominators of the operator,
@@ -135,13 +165,8 @@ theorem pow_mul_waldschmidtOperatorEntry_multichoose_mem [CharZero K] {α b : Fi
     (L : K) ^ T * d ^ T * e * waldschmidtOperatorEntry α b t s F
       ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) k ^ l).map (algebraMap ℚ K)) ∈ A := by
   refine mul_waldschmidtOperatorEntry_mem A hF hFT hd hb (fun κ hκ ↦ ?_) he
-  obtain ⟨z, hz⟩ := pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast hL l κ t
-  have hz' : (L : K) ^ κ * algebraMap ℚ K ((Polynomial.hasseDeriv κ
-      (Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) k ^ l)).eval (t : ℚ)) = z := by
-    rw [← map_intCast (algebraMap ℚ K) z, hz, map_mul, (algebraMap ℚ K).map_pow, map_intCast]
-  rw [Polynomial.hasseDeriv_map, Polynomial.eval_map, ← map_intCast (algebraMap ℚ K) t,
-    Polynomial.eval₂_at_apply, ← Nat.sub_add_cancel hκ, pow_add, mul_assoc, hz']
-  exact mul_mem (pow_mem (intCast_mem A _) _) (intCast_mem A _)
+  exact pow_mul_eval_hasseDeriv_map_mem A
+    (pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast hL l κ t) hκ
 
 /-- **A common denominator of the interpolation matrix.** Let the rows have polynomials `F r`
 with coefficients in `A` and total degree at most `T` and exponents `|t r| ≤ T₁`, let the columns

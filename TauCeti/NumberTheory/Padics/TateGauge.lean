@@ -78,8 +78,7 @@ theorem tateGauge_subring_sq_values_and_not_mul :
       (p : ℝ)⁻¹ := by
     have hone : tateGauge (PadicInt.subring p) (ϖ.unit ^ 2) p 1 = 1 := by
       have h := tateGauge_unitClosedBall_eq_rpow (ϖ.pow 2 (by omega)) hp₁ (1 : ℚ_[p])
-      rw [norm_one, zpowCeil_one (ϖ.pow 2 (by omega)).norm_pos
-        (ϖ.pow 2 (by omega)).norm_lt_one, Real.one_rpow] at h
+      rw [norm_one, zpowCeil_one, Real.one_rpow] at h
       simpa only [← hball, NormedRing.PseudoUniformizer.pow_unit] using h
     have h := tateGauge_zpow_mul (A₀ := PadicInt.subring p)
       (ϖ := ϖ.unit ^ 2) (zero_lt_one.trans hp₁) 1 (1 : ℚ_[p])

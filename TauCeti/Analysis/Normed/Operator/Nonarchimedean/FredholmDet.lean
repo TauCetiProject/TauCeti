@@ -110,8 +110,9 @@ theorem fredholmDet_indicatorCLM_comp (S : Finset I) (u : C₀(I, R) →L[R] C�
 
 end Defs
 
-variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 
+variable [NormOneClass R] in
 /-- **The Fredholm series at a scalar.** For row-compact `u` and any `a : R`, the value
 `H_u(a)` of the Fredholm series of `u` is the Fredholm determinant of `a • u`. -/
 theorem IsRowCompact.fredholmDet_smul {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
@@ -128,8 +129,14 @@ in operator norm to `w₀`, and all of them have entries bounded by a common nul
 theorem tendsto_fredholmDet_of_tendsto {α : Type*} {l : Filter α}
     {w : α → C₀(I, R) →L[R] C₀(I, R)} {w₀ : C₀(I, R) →L[R] C₀(I, R)} {r : I → ℝ}
     (hr : Tendsto r cofinite (𝓝 0)) (hw : ∀ a i j, ‖(w a).matrixCoeff i j‖ ≤ r i)
-    (hw₀ : ∀ i j, ‖w₀.matrixCoeff i j‖ ≤ r i) (h : Tendsto (fun a ↦ ‖w a - w₀‖) l (𝓝 0)) :
+    (h : Tendsto (fun a ↦ ‖w a - w₀‖) l (𝓝 0)) :
     Tendsto (fun a ↦ (w a).fredholmDet) l (𝓝 w₀.fredholmDet) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · simp
+  -- the entries of the limit are bounded by `r` as well
+  have hw₀ : ∀ i j, ‖w₀.matrixCoeff i j‖ ≤ r i := fun i j ↦
+    le_of_tendsto' (((tendstoUniformly_matrixCoeff_of_tendsto h).tendsto_at (i, j)).norm)
+      (fun a ↦ hw a i j)
   have hG :=
     TauCeti.tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpNorm_of_le
       hr hw hw₀ h one_pos
@@ -143,7 +150,7 @@ theorem tendsto_fredholmDet_of_tendsto {α : Type*} {l : Filter α}
   exact PowerSeries.norm_evalAt_le_gaussNorm
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted ((hent.sub hent₀).isRestricted 1)) (by simp)
 
-omit [NormOneClass R] [CompleteSpace R] in
+omit [CompleteSpace R] in
 /-- The entries of `u + v - u x` in row `i` are bounded by
 `max (max (rᵢ(u)) (rᵢ(v))) (rᵢ(u) ‖v‖)` whenever the entries of `x` are bounded by `‖v‖`. -/
 private theorem norm_matrixCoeff_add_sub_mul_le (u v x : C₀(I, R) →L[R] C₀(I, R))
@@ -161,7 +168,7 @@ private theorem norm_matrixCoeff_add_sub_mul_le (u v x : C₀(I, R) →L[R] C₀
   exact (norm_mul_le _ _).trans (mul_le_mul (u.norm_matrixCoeff_le_rowNorm i k) (hx k j)
     (norm_nonneg _) (u.rowNorm_nonneg i))
 
-omit [DecidableEq I] [NormOneClass R] [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
+omit [DecidableEq I] [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
 /-- The output truncation of `u + v - u v` built from the truncations `u_S = π_S ∘ u` and
 `v_S = π_S ∘ v` is `π_S ∘ (u + v - u v_S)`. -/
 private theorem indicatorCLM_comp_add_sub_mul (S : Set I) (u v : C₀(I, R) →L[R] C₀(I, R)) :
@@ -170,7 +177,7 @@ private theorem indicatorCLM_comp_add_sub_mul (S : Set I) (u v : C₀(I, R) →L
       (indicatorCLM R S).comp (u + v - u * (indicatorCLM R S).comp v) := by
   simp [mul_def, comp_add, comp_sub, comp_assoc]
 
-omit [NormOneClass R] [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
+omit [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
 /-- **Multiplicativity for output truncations.** For a finite set `S`, the identity
 `det (1 - (u_S + v_S - u_S v_S)) = det (1 - u_S) det (1 - v_S)` for `u_S = π_S ∘ u` and
 `v_S = π_S ∘ v` is the finite identity `det ((1 - A) (1 - B)) = det (1 - A) det (1 - B)` for the
@@ -212,7 +219,7 @@ theorem IsRowCompact.fredholmDet_add_sub_mul {u v : C₀(I, R) →L[R] C₀(I, R
   have htend {x : C₀(I, R) →L[R] C₀(I, R)} (hx : x.IsRowCompact) :
       Tendsto (fun S ↦ ((P S).comp x).fredholmDet) atTop (𝓝 x.fredholmDet) :=
     tendsto_fredholmDet_of_tendsto hx.tendsto_rowNorm (fun S i j ↦ (hP S x i j).trans
-      (x.norm_matrixCoeff_le_rowNorm i j)) x.norm_matrixCoeff_le_rowNorm (htrunc hx)
+      (x.norm_matrixCoeff_le_rowNorm i j)) (htrunc hx)
   -- The truncations of `u + v - u v` share the null row majorant `r`, by the ultrametric
   -- inequality and `‖(u x)ᵢⱼ‖ ≤ rᵢ(u) ‖v‖` whenever the entries of `x` are bounded by `‖v‖`.
   let r : I → ℝ := fun i ↦ max (max (u.rowNorm i) (v.rowNorm i)) (u.rowNorm i * ‖v‖)
@@ -220,7 +227,6 @@ theorem IsRowCompact.fredholmDet_add_sub_mul {u v : C₀(I, R) →L[R] C₀(I, R
     simpa [r] using (hu.tendsto_rowNorm.max hv.tendsto_rowNorm).max
       (hu.tendsto_rowNorm.mul_const ‖v‖)
   have hdet := tendsto_fredholmDet_of_tendsto hr (fun (S : Finset I) i j ↦ ?_)
-    (norm_matrixCoeff_add_sub_mul_le u v v v.norm_matrixCoeff_le)
     (by
       -- The scoped operator ring is named explicitly: its continuity instances are not found on
       -- `C₀(I, R) →L[R] C₀(I, R)` without it.

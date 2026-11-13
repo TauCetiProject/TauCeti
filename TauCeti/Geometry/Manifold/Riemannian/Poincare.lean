@@ -50,6 +50,8 @@ different constants on the two components has vanishing gradient but is not equa
   on a neighbourhood `V` by the `Lᵖ` norm of `∇u` over all of `M`.
 * `TauCeti.Manifold.exists_eLpNorm_sub_average_le_mul_eLpNorm_mgradient`: the Poincaré–Wirtinger
   inequality on a closed connected Riemannian manifold.
+* `TauCeti.Manifold.exists_integral_sq_sub_average_le_mul_integral_norm_sq_mgradient`: its `L²`
+  case in integral form, `∫ (u - ⨍ u)² dV ≤ C ∫ ‖∇u‖² dV`.
 
 ## References
 
@@ -111,9 +113,9 @@ theorem exists_isOpen_eLpNorm_restrict_sub_le_mul_eLpNorm_mgradient [LindelofSpa
   have hv : ContDiffOn ℝ 1 (fun y ↦ u (φ.symm y)) B :=
     (hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn.mono hrt
   rw [← ENNReal.ofReal_eq_coe_nnreal]
-  refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) (zero_lt_one.trans_le hp).ne' hp'
+  refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) hp'
     (hu.continuous.sub continuous_const).aestronglyMeasurable ?_
-  simp only [enorm_norm]
+  simp only [eNorm_norm]
   -- The density and the derivative comparisons on `B` contribute the factor
   -- `2 ρ(c) · C₁ ^ q · (ρ(c) / 2)⁻¹ = 4 C₁ ^ q`.
   have hscal : ENNReal.ofReal (2 * ρ c) * (ENNReal.ofReal (K ^ q) *
@@ -142,8 +144,8 @@ theorem exists_isOpen_eLpNorm_restrict_sub_le_mul_eLpNorm_mgradient [LindelofSpa
     _ ≤ ENNReal.ofReal (2 * ρ c) *
           (ENNReal.ofReal (K ^ q) * ∫⁻ y in B, ‖fderiv ℝ (fun y ↦ u (φ.symm y)) y‖ₑ ^ q ∂μ) := by
         gcongr
-        exact lintegral_enorm_sub_setAverage_rpow_le_of_convex isOpen_ball (convex_ball _ _)
-          isBounded_ball hv subset_rfl (measure_ball_pos μ _ hr).ne' hq
+        exact lintegral_enorm_sub_setAverage_rpow_le_of_convex (convex_ball _ _) isBounded_ball
+          hv subset_rfl (measure_ball_pos μ _ hr).ne' hq
     _ ≤ ENNReal.ofReal (2 * ρ c) * (ENNReal.ofReal (K ^ q) *
           ∫⁻ y in B, ENNReal.ofReal C₁ ^ q * ‖mgradient I u (φ.symm y)‖ₑ ^ q ∂μ) := by
         gcongr ENNReal.ofReal (2 * ρ c) * (ENNReal.ofReal (K ^ q) * ?_)
@@ -189,5 +191,33 @@ theorem exists_eLpNorm_sub_average_le_mul_eLpNorm_mgradient [CompactSpace M]
   calc _ ≤ 2 * eLpNorm (fun x ↦ u x - b) p (riemannianVolume I M) := hmean
     _ ≤ 2 * (K * eLpNorm (fun x ↦ ‖mgradient I u x‖) p (riemannianVolume I M)) := by gcongr
     _ = _ := by push_cast; ring
+
+/-- **The `L²` Poincaré–Wirtinger inequality in integral form.** On a compact connected manifold
+without boundary with a continuous Riemannian metric, there is a constant `C` such that
+`∫ (u - ⨍ u)² dV ≤ C ∫ ‖∇u‖² dV` for every `C¹` function `u`. -/
+theorem exists_integral_sq_sub_average_le_mul_integral_norm_sq_mgradient [CompactSpace M]
+    [PreconnectedSpace M] :
+    ∃ C : ℝ≥0, ∀ u : M → ℝ, ContMDiff I 𝓘(ℝ) 1 u →
+      ∫ x, (u x - ⨍ y, u y ∂riemannianVolume I M) ^ 2 ∂riemannianVolume I M ≤
+        C * ∫ x, ‖mgradient I u x‖ ^ 2 ∂riemannianVolume I M := by
+  obtain ⟨C, hC⟩ := exists_eLpNorm_sub_average_le_mul_eLpNorm_mgradient (I := I) (M := M)
+    one_le_two ENNReal.ofNat_ne_top
+  refine ⟨C ^ 2, fun u hu ↦ ?_⟩
+  -- For a continuous `f`, the square of `‖f‖_{L²}` is `∫ f²`.
+  have hsq {f : M → ℝ} (hf : Continuous f) :
+      (eLpNorm f 2 (riemannianVolume I M)).toReal ^ 2 = ∫ x, f x ^ 2 ∂riemannianVolume I M := by
+    rw [(hf.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
+        ).eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
+      ENNReal.toReal_ofReal (by positivity), ← Real.rpow_natCast,
+      ← Real.rpow_mul (integral_nonneg fun x ↦ by positivity)]
+    simp
+  have hg : Continuous fun x ↦ ‖mgradient I u x‖ := continuous_norm_mgradient hu
+  have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
+    (hg.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)).eLpNorm_ne_top)
+    (hC u hu)
+  rw [ENNReal.toReal_mul, ENNReal.coe_toReal] at h
+  rw [← hsq (f := fun x ↦ u x - ⨍ y, u y ∂riemannianVolume I M)
+    (hu.continuous.sub continuous_const), ← hsq hg, NNReal.coe_pow, ← mul_pow]
+  gcongr
 
 end TauCeti.Manifold

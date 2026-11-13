@@ -51,6 +51,7 @@ symplectic coordinate Hopf algebra and group scheme live in
 * `TauCeti.GLSymplectic`: the symplectic matrices as a subgroup of `GL (l ⊕ l) R`.
 * `TauCeti.GLSymplectic.mem_iff` and `TauCeti.GLSymplectic.mem_iff'`: the two standard forms of
   the defining condition, `M J Mᵀ = J` and `Mᵀ J M = J`.
+* `TauCeti.GLSymplectic.star_mem`: the subgroup is closed under transposition.
 * `TauCeti.GLSymplectic.ofSymplecticGroup`: Mathlib's symplectic group, read into the general
   linear group as a monoid homomorphism.
 * `TauCeti.GLSymplectic.mulEquivSymplecticGroup`: the group identification with
@@ -135,6 +136,14 @@ theorem mem_iff' {M : GL (l ⊕ l) R} :
       (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R) = J l R :=
   SymplecticGroup.mem_iff'
 
+/-- The symplectic subgroup is closed under transposition, written `star` on the units of a
+matrix ring over a ring with trivial star. -/
+theorem star_mem [StarRing R] [TrivialStar R] {M : GL (l ⊕ l) R} (hM : M ∈ GLSymplectic l R) :
+    star M ∈ GLSymplectic l R := by
+  rw [mem_iff_mem_symplecticGroup, Units.coe_star, star_eq_conjTranspose,
+    conjTranspose_eq_transpose_of_trivial]
+  exact SymplecticGroup.transpose_mem (mem_iff_mem_symplecticGroup.1 hM)
+
 variable (l R)
 
 /-- Mathlib's symplectic group, read into the general linear group: `MonoidHom.toHomUnits` of the
@@ -154,6 +163,19 @@ theorem coe_ofSymplecticGroup (S : Matrix.symplecticGroup l R) :
 theorem ofSymplecticGroup_mem (S : Matrix.symplecticGroup l R) :
     ofSymplecticGroup l R S ∈ GLSymplectic l R := by
   simpa only [mem_iff_mem_symplecticGroup, coe_ofSymplecticGroup] using S.2
+
+/-- The canonical inclusion of the matrix symplectic group has range `GLSymplectic`. -/
+@[simp]
+theorem range_ofSymplecticGroup :
+    (ofSymplecticGroup l R).range = GLSymplectic l R := by
+  ext A
+  rw [MonoidHom.mem_range, mem_iff_mem_symplecticGroup]
+  constructor
+  · rintro ⟨X, rfl⟩
+    simpa only [coe_ofSymplecticGroup] using X.property
+  · intro hA
+    exact ⟨⟨(A : Matrix (l ⊕ l) (l ⊕ l) R), hA⟩,
+      Units.ext (coe_ofSymplecticGroup l R _)⟩
 
 /-- **The symplectic subgroup of the general linear group is Mathlib's symplectic group.** The
 two carriers agree because a symplectic matrix is invertible in Mathlib's symplectic group, so the
@@ -227,6 +249,18 @@ theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
   simp
 
 end Map
+
+/-- The inverse algebraic equivalence sends a symplectic matrix to its canonical unit. -/
+@[simp]
+theorem coe_mulEquivSymplecticGroup_symm_apply (A : Matrix.symplecticGroup l R) :
+    ((mulEquivSymplecticGroup l R).symm A : GL (l ⊕ l) R) =
+      ofSymplecticGroup l R A := by
+  apply Units.ext
+  have h := coe_mulEquivSymplecticGroup l R
+    ((mulEquivSymplecticGroup l R).symm A)
+  rw [MulEquiv.apply_symm_apply] at h
+  simpa only [coe_ofSymplecticGroup] using h.symm
+
 
 end GLSymplectic
 
@@ -334,46 +368,6 @@ theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
     w ⬝ᵥ (JFin m R *ᵥ u) = -(u ⬝ᵥ (JFin m R *ᵥ w)) := by
   rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
     Matrix.vecMul_neg, dotProduct_neg, neg_neg]
-
-section CommRing
-
-variable {m R}
-
-/-- A nonzero vector has nonzero pairing with some vector in the standard symplectic space. -/
-theorem exists_dotProduct_JFin_mulVec_ne_zero {x : Fin (m + m) → R} (hx : x ≠ 0) :
-    ∃ z, z ⬝ᵥ (JFin m R *ᵥ x) ≠ 0 := by
-  have hJx : JFin m R *ᵥ x ≠ 0 := by
-    intro h
-    have hh := congrArg (fun v => JFin m R *ᵥ v) h
-    rw [mulVec_mulVec, JFin_mul_self] at hh
-    simp only [neg_mulVec, one_mulVec, mulVec_zero, neg_eq_zero] at hh
-    exact hx hh
-  obtain ⟨i, hi⟩ := Function.ne_iff.mp hJx
-  exact ⟨Pi.single i 1, by simpa using hi⟩
-
-/-- **The standard alternating form is nondegenerate**: a vector pairing trivially with every
-vector is zero. -/
-theorem eq_zero_of_forall_dotProduct_JFin_mulVec_eq_zero {x : Fin (m + m) → R}
-    (h : ∀ z, z ⬝ᵥ (JFin m R *ᵥ x) = 0) : x = 0 := by
-  by_contra hx
-  obtain ⟨z, hz⟩ := exists_dotProduct_JFin_mulVec_ne_zero hx
-  exact hz (h z)
-
-/-- Two nonzero vectors have a common vector pairing nontrivially with both, over any
-commutative ring. In particular, this includes the field with two elements. -/
-theorem exists_dotProduct_JFin_mulVec_ne_zero_pair {x y : Fin (m + m) → R}
-    (hx : x ≠ 0) (hy : y ≠ 0) :
-    ∃ z, z ⬝ᵥ (JFin m R *ᵥ x) ≠ 0 ∧ z ⬝ᵥ (JFin m R *ᵥ y) ≠ 0 := by
-  obtain ⟨v, hv⟩ := exists_dotProduct_JFin_mulVec_ne_zero hx
-  obtain ⟨w, hw⟩ := exists_dotProduct_JFin_mulVec_ne_zero hy
-  by_cases hvy : v ⬝ᵥ (JFin m R *ᵥ y) = 0
-  · by_cases hwx : w ⬝ᵥ (JFin m R *ᵥ x) = 0
-    · exact ⟨v + w, by simpa [add_dotProduct, hwx] using hv,
-        by simpa [add_dotProduct, hvy] using hw⟩
-    · exact ⟨w, hwx, hw⟩
-  · exact ⟨v, hv, hvy⟩
-
-end CommRing
 
 /-- The transported alternating form is a unit, with inverse its negative. -/
 theorem isUnit_JFin : IsUnit (JFin m R) :=

@@ -110,7 +110,7 @@ theorem map_tschirnhausPolynomial {f : R[X]} (hf : f.Monic) (T : R[X]) (φ : R �
   simp only [← coe_mapRingHom]
   rw [← resultant_map_map]
   have hC : (mapRingHom φ).comp C = C.comp φ := RingHom.ext fun a ↦ by simp
-  congr 1 <;> simp [Polynomial.map_map, hC]
+  congr 1 <;> simp [map_map, hC]
 
 /-- The Tschirnhaus transform commutes with an injective base change, without requiring `f` to
 be monic. -/
@@ -124,9 +124,9 @@ theorem map_tschirnhausPolynomial_of_injective (f T : R[X]) (φ : R →+* S)
   rw [← resultant_map_map]
   have hC : (mapRingHom φ).comp C = C.comp φ := RingHom.ext fun a ↦ by simp
   have hfmap : (f.map C).map (mapRingHom φ) = (f.map φ).map C := by
-    simp [Polynomial.map_map, hC]
+    simp [map_map, hC]
   have hgmap : (C X - T.map C : R[X][X]).map (mapRingHom φ) =
-      C X - (T.map φ).map C := by simp [Polynomial.map_map, hC]
+      C X - (T.map φ).map C := by simp [map_map, hC]
   rw [hfmap, hgmap]
   congr 1
   · simp [natDegree_map_eq_of_injective C_injective,
@@ -178,7 +178,7 @@ theorem isRoot_tschirnhausPolynomial [IsDomain R] {f : R[X]} (hf : f ≠ 0) {a :
     (algebraMap (FractionRing R) M).injective.comp (IsFractionRing.injective R _)
   have hf' : f.map φ ≠ 0 := (Polynomial.map_ne_zero_iff hφ).mpr hf
   have hs : (f.map φ).Splits := by
-    rw [← Polynomial.map_map]
+    rw [← map_map]
     exact SplittingField.splits _
   have hmem : φ (T.eval a) ∈ (tschirnhausPolynomial (f.map φ) (T.map φ)).roots := by
     rw [roots_tschirnhausPolynomial hs]
@@ -240,7 +240,7 @@ theorem tschirnhausPolynomial_X (f : R[X]) : tschirnhausPolynomial f X = f := by
     rw [show (C X - X : R[X][X]) = -(X - C X) by ring, natDegree_neg,
       natDegree_X_sub_C]
   -- Rewrite the mapped right input explicitly, since its default degree bound depends on it.
-  rw [tschirnhausPolynomial, Polynomial.map_X]
+  rw [tschirnhausPolynomial, map_X]
   rw [hdeg, resultant_C_sub_X_right _ _ _ le_rfl]
   simp [eval_map]
 
@@ -250,7 +250,7 @@ theorem tschirnhausPolynomial_C (f : R[X]) (c : R) :
     tschirnhausPolynomial f (C c) = (X - C c) ^ f.natDegree := by
   -- The second polynomial is constant in the outer variable, so `resultant_C_zero_right`
   -- applies with its outer degree explicitly rewritten to zero.
-  rw [tschirnhausPolynomial, Polynomial.map_C, ← C_sub]
+  rw [tschirnhausPolynomial, map_C, ← C_sub]
   simp only [natDegree_C]
   rw [resultant_C_zero_right]
   simp [natDegree_map_eq_of_injective C_injective]
@@ -298,8 +298,8 @@ theorem Monic.coe_tschirnhausRootMap {f : K[X]} (hf : f.Monic) (T : K[X]) (x : f
     (hf.tschirnhausRootMap T x : L) = aeval (x : L) T :=
   Set.MapsTo.val_restrict_apply _ _
 
-/-- Every root of the Tschirnhaus transform of a monic polynomial is the image of a root of the
-original polynomial. -/
+/-- If the monic polynomial `f` splits in the domain `L`, then every root in `L` of its Tschirnhaus
+transform is the image of a root of `f` in `L`. -/
 theorem Monic.tschirnhausRootMap_surjective {f : K[X]} (hf : f.Monic)
     (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
     Function.Surjective (hf.tschirnhausRootMap (L := L) T) := by

@@ -16,7 +16,7 @@ import TauCeti.Analysis.Analytic.Inverse
 /-!
 # Simple roots depend analytically on the coefficients
 
-`TauCeti.Sym.coeffEquiv` presents the `n`-th symmetric power of an algebraically closed field as
+`Sym.coeffEquiv` presents the `n`-th symmetric power of an algebraically closed field as
 the affine space `Fin n → K` of coefficient tuples, and
 `TauCeti/Analysis/Polynomial/SymmetricPower.lean` proves that presentation a *homeomorphism*: the
 roots of a monic polynomial depend continuously on its coefficients. This file upgrades continuity
@@ -58,12 +58,12 @@ ordered lift of the (unordered) inverse chart, not analyticity of a preferred ro
 * `TauCeti.Polynomial.exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C`: a monic polynomial with `n`
   distinct roots has an analytic ordered parametrization of its roots on a neighbourhood of its
   coefficient tuple.
-* `TauCeti.Sym.exists_analyticAt_coeffEquiv_symm_eq_ofFn`: the same statement read through the
+* `Sym.exists_analyticAt_coeffEquiv_symm_eq_ofFn`: the same statement read through the
   elementary symmetric chart, as an analytic ordered lift of the inverse chart.
-* `TauCeti.Sym.exists_analyticAt_coeffEquiv_ofFn_localInverse`: **the coefficient map of an
+* `Sym.exists_analyticAt_coeffEquiv_ofFn_localInverse`: **the coefficient map of an
   ordered tuple is a local analytic isomorphism** at every tuple of pairwise distinct points, the
   ordered lift being a two-sided local inverse there.
-* `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm`: **a coordinate change acts analytically
+* `Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm`: **a coordinate change acts analytically
   on the elementary symmetric coordinates at multiplicity-free points**. A map `φ` of the
   underlying field induces a map of coefficient tuples, sending the coefficients of a polynomial to
   those of the polynomial whose roots are the `φ`-images of its roots; it is analytic at every
@@ -72,15 +72,15 @@ ordered lift of the (unordered) inverse chart, not analyticity of a preferred ro
 Following Ozsváth--Szabó
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1), a holomorphic coordinate on the
 surface identifies a neighbourhood in `Sym^g(Σ)` with an open subset of `Sym^g(ℂ)`
-(`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`), and
-`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` says that changing that coordinate acts
+(`Sym.isOpenEmbedding_coeffEquiv_comp_map`), and
+`Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` says that changing that coordinate acts
 analytically on the elementary symmetric coordinates of one such patch, at multiplicity-free
 tuples. That is the analytic ingredient for the transition maps of the atlas of
 `TauCeti/Geometry/Manifold/SymmetricPower.lean`. A chart there splits a tuple into the factors
 lying in `k` disjoint patches, of degrees `m 1, …, m k`, and regroups the resulting blocks of
 coefficients along a bijection `(Σ i, Fin (m i)) ≃ Fin n`; the general blockwise assembly is in
 `TauCeti/Analysis/Polynomial/RootSum/Family.lean`. The diagonal, where points collide, is covered
-over `ℂ` by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
+over `ℂ` by `Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
 `TauCeti/Analysis/Polynomial/RootSum.lean`.
 
 Everything is stated over a complete nontrivially normed field, so it covers the real as well as
@@ -175,6 +175,8 @@ end SimpleRoot
 
 end Polynomial
 
+end TauCeti
+
 namespace Sym
 
 section AlgClosed
@@ -182,14 +184,14 @@ section AlgClosed
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [IsAlgClosed 𝕜] {n : ℕ}
 
 /-- The inverse elementary symmetric chart admits an analytic ordered lift at every
-multiplicity-free coefficient tuple: near such a tuple the unordered root tuple is `ofFn` of an
+multiplicity-free coefficient tuple: near such a tuple the unordered root tuple is `Sym.ofFn` of an
 analytic ordered tuple. -/
 theorem exists_analyticAt_coeffEquiv_symm_eq_ofFn {c₀ z : Fin n → 𝕜} (hz : Function.Injective z)
-    (hc₀ : (coeffEquiv 𝕜 n).symm c₀ = ofFn z) :
+    (hc₀ : (coeffEquiv 𝕜 n).symm c₀ = Sym.ofFn z) :
     ∃ Ψ : (Fin n → 𝕜) → (Fin n → 𝕜), Ψ c₀ = z ∧ AnalyticAt 𝕜 Ψ c₀ ∧
-      ∀ᶠ c in 𝓝 c₀, (coeffEquiv 𝕜 n).symm c = ofFn (Ψ c) := by
+      ∀ᶠ c in 𝓝 c₀, (coeffEquiv 𝕜 n).symm c = Sym.ofFn (Ψ c) := by
   obtain ⟨Ψ, hΨ₀, hΨa, hΨ⟩ :=
-    Polynomial.exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C hz
+    TauCeti.Polynomial.exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C hz
       (((toMonic_coeffEquiv_symm c₀).symm.trans (by rw [hc₀])).trans (toMonic_ofFn z))
   refine ⟨Ψ, hΨ₀, hΨa, ?_⟩
   filter_upwards [hΨ] with c hc
@@ -205,30 +207,31 @@ as its ordered lift up to a permutation, and the permutation is forced to be the
 each `Ψ i` stays near `z i` while the `z i` are distinct. -/
 theorem exists_analyticAt_coeffEquiv_ofFn_localInverse {z : Fin n → 𝕜}
     (hz : Function.Injective z) :
-    ∃ Ψ : (Fin n → 𝕜) → (Fin n → 𝕜), Ψ (coeffEquiv 𝕜 n (ofFn z)) = z ∧
-      AnalyticAt 𝕜 Ψ (coeffEquiv 𝕜 n (ofFn z)) ∧
-      (∀ᶠ w in 𝓝 z, Ψ (coeffEquiv 𝕜 n (ofFn w)) = w) ∧
-      (∀ᶠ c in 𝓝 (coeffEquiv 𝕜 n (ofFn z)), coeffEquiv 𝕜 n (ofFn (Ψ c)) = c) := by
+    ∃ Ψ : (Fin n → 𝕜) → (Fin n → 𝕜), Ψ (coeffEquiv 𝕜 n (Sym.ofFn z)) = z ∧
+      AnalyticAt 𝕜 Ψ (coeffEquiv 𝕜 n (Sym.ofFn z)) ∧
+      (∀ᶠ w in 𝓝 z, Ψ (coeffEquiv 𝕜 n (Sym.ofFn w)) = w) ∧
+      (∀ᶠ c in 𝓝 (coeffEquiv 𝕜 n (Sym.ofFn z)), coeffEquiv 𝕜 n (Sym.ofFn (Ψ c)) = c) := by
   obtain ⟨Ψ, hΨ₀, hΨa, hΨ⟩ :=
-    exists_analyticAt_coeffEquiv_symm_eq_ofFn hz (Equiv.symm_apply_apply (coeffEquiv 𝕜 n) (ofFn z))
-  have hσ : ContinuousAt (fun w : Fin n → 𝕜 => coeffEquiv 𝕜 n (ofFn w)) z :=
+    exists_analyticAt_coeffEquiv_symm_eq_ofFn hz
+      (Equiv.symm_apply_apply (coeffEquiv 𝕜 n) (Sym.ofFn z))
+  have hσ : ContinuousAt (fun w : Fin n → 𝕜 => coeffEquiv 𝕜 n (Sym.ofFn w)) z :=
     (analyticAt_coeffEquiv_ofFn z).continuousAt
   refine ⟨Ψ, hΨ₀, hΨa, ?_, ?_⟩
   · -- Each `Ψ i` of a nearby coefficient tuple is one of the nearby roots, and proximity to the
     -- distinct `z i` forces it to be the `i`-th one.
-    have hmem : ∀ᶠ w in 𝓝 z, ∀ i, ∃ j, w j = Ψ (coeffEquiv 𝕜 n (ofFn w)) i := by
+    have hmem : ∀ᶠ w in 𝓝 z, ∀ i, ∃ j, w j = Ψ (coeffEquiv 𝕜 n (Sym.ofFn w)) i := by
       filter_upwards [hσ.eventually hΨ] with w hw i
       rw [Equiv.symm_apply_apply] at hw
-      have hmem : Ψ (coeffEquiv 𝕜 n (ofFn w)) i ∈ ofFn (Ψ (coeffEquiv 𝕜 n (ofFn w))) :=
-        mem_ofFn.2 ⟨i, rfl⟩
+      have hmem : Ψ (coeffEquiv 𝕜 n (Sym.ofFn w)) i ∈ Sym.ofFn (Ψ (coeffEquiv 𝕜 n (Sym.ofFn w))) :=
+        Sym.mem_ofFn.2 ⟨i, rfl⟩
       rw [← hw] at hmem
-      exact mem_ofFn.1 hmem
+      exact Sym.mem_ofFn.1 hmem
     have hne : ∀ᶠ w in 𝓝 z,
-        ∀ i j : Fin n, i ≠ j → Ψ (coeffEquiv 𝕜 n (ofFn w)) i ≠ w j := by
+        ∀ i j : Fin n, i ≠ j → Ψ (coeffEquiv 𝕜 n (Sym.ofFn w)) i ≠ w j := by
       simp only [eventually_all]
       intro i j hij
-      have hΨi : ContinuousAt (fun w : Fin n → 𝕜 => Ψ (coeffEquiv 𝕜 n (ofFn w)) i) z :=
-        ContinuousAt.comp' (f := fun w : Fin n → 𝕜 => coeffEquiv 𝕜 n (ofFn w))
+      have hΨi : ContinuousAt (fun w : Fin n → 𝕜 => Ψ (coeffEquiv 𝕜 n (Sym.ofFn w)) i) z :=
+        ContinuousAt.comp' (f := fun w : Fin n → 𝕜 => coeffEquiv 𝕜 n (Sym.ofFn w))
           (analyticAt_pi_iff.1 hΨa i).continuousAt hσ
       exact (hΨi.ne_iff_eventually_ne (continuousAt_apply j z)).1
         (by simpa only [hΨ₀] using hz.ne hij)
@@ -250,12 +253,12 @@ each of which `φ` is analytic.
 Read on `Sym^g(Σ)`, `φ` is a change of holomorphic coordinate on the surface, so this is the
 analytic ingredient, at multiplicity-free tuples, for the holomorphy of the transition maps of the
 elementary symmetric atlas of `TauCeti/Geometry/Manifold/SymmetricPower.lean`: it treats one
-coordinate patch (`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`), and assembling the patches a
+coordinate patch (`Sym.isOpenEmbedding_coeffEquiv_comp_map`), and assembling the patches a
 chart there decomposes a tuple into is not done. -/
 theorem analyticAt_coeffEquiv_map_coeffEquiv_symm {φ : 𝕜 → 𝕜} {c₀ z : Fin n → 𝕜}
-    (hz : Function.Injective z) (hc₀ : (coeffEquiv 𝕜 n).symm c₀ = ofFn z)
+    (hz : Function.Injective z) (hc₀ : (coeffEquiv 𝕜 n).symm c₀ = Sym.ofFn z)
     (hφ : ∀ i, AnalyticAt 𝕜 φ (z i)) :
-    AnalyticAt 𝕜 (fun c => coeffEquiv 𝕜 n (_root_.Sym.map φ ((coeffEquiv 𝕜 n).symm c))) c₀ := by
+    AnalyticAt 𝕜 (fun c => coeffEquiv 𝕜 n (Sym.map φ ((coeffEquiv 𝕜 n).symm c))) c₀ := by
   obtain ⟨Ψ, hΨ₀, hΨa, hΨ⟩ := exists_analyticAt_coeffEquiv_symm_eq_ofFn hz hc₀
   have hcomp : AnalyticAt 𝕜 (fun c => fun i => φ (Ψ c i)) c₀ := by
     refine AnalyticAt.pi fun i => ?_
@@ -266,11 +269,9 @@ theorem analyticAt_coeffEquiv_map_coeffEquiv_symm {φ : 𝕜 → 𝕜} {c₀ z :
     exact AnalyticAt.comp (f := fun c => Ψ c i) hφ' hi
   refine AnalyticAt.congr ((analyticAt_coeffEquiv_ofFn _).comp hcomp) ?_
   filter_upwards [hΨ] with c hc
-  rw [hc, map_ofFn]
+  rw [hc, Sym.map_ofFn]
   rfl
 
 end AlgClosed
 
 end Sym
-
-end TauCeti

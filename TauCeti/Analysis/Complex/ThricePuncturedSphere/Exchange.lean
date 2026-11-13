@@ -1,0 +1,210 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+
+/-!
+# The exchange of the finite punctures in end coordinates
+
+The holomorphic involution `σ(w) = 1 - w` of the thrice-punctured sphere `S = ℂ ∖ {0, 1}`
+(`TauCeti.ThricePuncturedSphere.mob01`) exchanges the two finite punctures and fixes `∞`. This file
+records how it acts on the cylindrical end coordinates of `S`.
+
+On the two input ends `σ` is exact: it carries the end lift of `0` to the end lift of `1` and back
+(`Puncture.one_sub_cylindricalEndLift_zero`, `Puncture.one_sub_cylindricalEndLift_one`), so it
+exchanges the end coordinates of `0` and `1` (`Puncture.endCoord_zero_one_sub`,
+`Puncture.endCoord_one_one_sub`). Since `dσ = -1`, it exchanges the angular forms up to sign
+(`Puncture.endAngularForm_zero_one_sub`, `Puncture.endAngularForm_one_one_sub`).
+
+At `∞` the end lift `φ_∞(z) = 2 exp (-2πz)` is centred at `0`, not at the fixed point `1/2` of
+`σ`. The part of `σ` that acts on this end is the half turn `w ↦ -w`, which is a half-period
+rotation of the cylinder: `φ_∞(z + i/2) = -φ_∞(z)`
+(`Puncture.cylindricalEndLift_inf_add_I_div_two`). It preserves the longitudinal coordinate
+(`Puncture.re_endCoord_inf_neg`), shifts the angular coordinate by `1/2` modulo `1`
+(`Puncture.exists_endCoord_inf_neg`), and reverses the angular form
+(`Puncture.endAngularForm_inf_neg`). The remaining translation by `1` moves the centre of the
+output end; it is absorbed by the input-exchange family of Floer perturbation data. The domain
+of the member of that family whose output end is recentred at `c` is truncated by
+`TauCeti.ThricePuncturedSphere.exchangeTruncation c R`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`,
+bounded by the circle `s = -R` of the recentred output end, with the parts `s > R` of the two input
+ends removed. It is a compact subset of `S`
+(`TauCeti.ThricePuncturedSphere.isCompact_exchangeTruncation`,
+`TauCeti.ThricePuncturedSphere.exchangeTruncation_subset`), and for `c = 0` it is the truncation
+`S_R` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_zero`). These truncations increase with
+`R` and exhaust `S` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_mono`,
+`TauCeti.ThricePuncturedSphere.iUnion_exchangeTruncation`).
+
+## References
+
+* M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
+  ETH Zürich (1995), on the graded commutativity of the pair-of-pants product.
+-/
+
+public section
+
+open Real
+
+namespace TauCeti.ThricePuncturedSphere.Puncture
+
+/-- The exchange `w ↦ 1 - w` carries the end lift of `0` to the end lift of `1`. -/
+theorem one_sub_cylindricalEndLift_zero (z : ℂ) :
+    1 - zero.cylindricalEndLift z = one.cylindricalEndLift z := by
+  simp
+
+/-- The exchange `w ↦ 1 - w` carries the end lift of `1` to the end lift of `0`. -/
+theorem one_sub_cylindricalEndLift_one (z : ℂ) :
+    1 - one.cylindricalEndLift z = zero.cylindricalEndLift z := by
+  simp
+
+/-- The half-period rotation of the end at `∞` is the half turn `w ↦ -w` of the plane. -/
+theorem cylindricalEndLift_inf_add_I_div_two (z : ℂ) :
+    inf.cylindricalEndLift (z + Complex.I / 2) = -inf.cylindricalEndLift z := by
+  have h : -(2 * (π : ℂ)) * (z + Complex.I / 2) = -(2 * π) * z + -(π * Complex.I) := by ring
+  simp only [cylindricalEndLift_inf, h, Complex.exp_add, Complex.exp_neg, Complex.exp_pi_mul_I]
+  ring
+
+/-- In end coordinates the exchange `w ↦ 1 - w` turns the end at `1` into the end at `0`. -/
+theorem endCoord_zero_one_sub (w : ℂ) : zero.endCoord (1 - w) = one.endCoord w := by
+  simp only [endCoord_def, endCenter_zero, endCenter_one, endScale_zero, endScale_one]
+  congr 3
+  ring
+
+/-- In end coordinates the exchange `w ↦ 1 - w` turns the end at `0` into the end at `1`. -/
+theorem endCoord_one_one_sub (w : ℂ) : one.endCoord (1 - w) = zero.endCoord w := by
+  simpa using (endCoord_zero_one_sub (1 - w)).symm
+
+/-- The exchange `w ↦ 1 - w` reverses the angular forms of the two finite ends, since its
+derivative is `-1`: `σ^* dt_0 = dt_1`. -/
+theorem endAngularForm_zero_one_sub (w : ℂ) :
+    zero.endAngularForm (1 - w) = -one.endAngularForm w := by
+  ext v
+  have h : -(2 * (π : ℂ) * (1 - w - zero.endCenter)) = -(-(2 * π * (w - one.endCenter))) := by
+    simp only [endCenter_zero, endCenter_one]
+    ring
+  rw [endAngularForm_apply, h, neg_apply, endAngularForm_apply]
+  simp
+
+/-- The exchange `w ↦ 1 - w` reverses the angular forms of the two finite ends, since its
+derivative is `-1`: `σ^* dt_1 = dt_0`. -/
+theorem endAngularForm_one_one_sub (w : ℂ) :
+    one.endAngularForm (1 - w) = -zero.endAngularForm w := by
+  rw [← neg_neg (one.endAngularForm (1 - w)), ← endAngularForm_zero_one_sub, sub_sub_cancel]
+
+/-- The half turn `w ↦ -w` reverses the angular form of the end at `∞`. -/
+theorem endAngularForm_inf_neg (w : ℂ) : inf.endAngularForm (-w) = -inf.endAngularForm w := by
+  ext v
+  simp [endAngularForm_apply]
+
+/-- The half turn `w ↦ -w` preserves the longitudinal coordinate of the end at `∞`. -/
+@[simp]
+theorem re_endCoord_inf_neg (w : ℂ) : (inf.endCoord (-w)).re = (inf.endCoord w).re := by
+  simp [re_endCoord, neg_div]
+
+/-- The half turn `w ↦ -w` rotates the end at `∞` by half a period: away from its centre it adds
+`1/2` to the angular coordinate, modulo `1`. -/
+theorem exists_endCoord_inf_neg {w : ℂ} (hw : w ≠ 0) :
+    ∃ k : ℤ, inf.endCoord (-w) = inf.endCoord w + (1 / 2 + k) * Complex.I := by
+  have hw' : w ≠ inf.endCenter := by simpa using hw
+  obtain ⟨k, hk⟩ := inf.exists_endCoord_cylindricalEndLift (inf.endCoord w + Complex.I / 2)
+  refine ⟨k, ?_⟩
+  rw [cylindricalEndLift_inf_add_I_div_two, inf.cylindricalEndLift_endCoord hw'] at hk
+  rw [hk]
+  ring
+
+/-- Away from the centre of the end at `∞`, a function of period one takes the same value at the
+angular coordinate of `w` as at the angular coordinate of `-w` shifted by `1/2`. -/
+theorem apply_im_endCoord_inf_neg_add_half {α : Type*} {f : ℝ → α} (hf : Function.Periodic f 1)
+    {w : ℂ} (hw : w ≠ 0) : f ((inf.endCoord (-w)).im + 1 / 2) = f (inf.endCoord w).im := by
+  obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
+  have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
+    simp [hk]
+    ring
+  rw [him]
+  simpa using hf.int_mul (k + 1) (inf.endCoord w).im
+
+end TauCeti.ThricePuncturedSphere.Puncture
+
+namespace TauCeti.ThricePuncturedSphere
+
+open Puncture
+
+/-- A point at distance at least `r + 1/2` from a real number `c` within distance `r` of both
+inputs `0` and `1` is at distance at least `1/2` from both inputs. -/
+theorem half_le_norm_of_le_norm_sub {c r : ℝ} (h₀ : |c| ≤ r) (h₁ : |c - 1| ≤ r) {w : ℂ}
+    (hw : r + 1 / 2 ≤ ‖w - c‖) : 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ := by
+  have hc₁ : ‖(c : ℂ) - 1‖ = |c - 1| := by
+    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+  have hw₀ := norm_sub_le w (c : ℂ)
+  have hw₁ := norm_sub_le (w - 1) ((c : ℂ) - 1)
+  rw [Complex.norm_real, Real.norm_eq_abs] at hw₀
+  rw [sub_sub_sub_cancel_right, hc₁] at hw₁
+  constructor <;> linarith
+
+/-- The truncation of the thrice-punctured sphere `S = ℂ ∖ {0, 1}` with its output end recentred
+at `c`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`, bounded by the circle `s = -R` of the end at `∞`
+translated by `c`, with the open discs of radius `exp (-2πR) / 2` about `0` and `1`, the parts
+`s > R` of the two input ends, removed. -/
+noncomputable def exchangeTruncation (c R : ℝ) : Set ℂ :=
+  {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖} ∩ {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖} ∩
+    Metric.closedBall (c : ℂ) (2 * Real.exp (2 * π * R))
+
+@[simp]
+theorem mem_exchangeTruncation {c R : ℝ} {w : ℂ} :
+    w ∈ exchangeTruncation c R ↔ Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ ∧
+      Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ ∧ ‖w - c‖ ≤ 2 * Real.exp (2 * π * R) := by
+  simp [exchangeTruncation, dist_eq_norm, and_assoc]
+
+/-- Without recentring, the truncation is the truncation `S_R` of the thrice-punctured sphere. -/
+@[simp]
+theorem exchangeTruncation_zero (R : ℝ) : exchangeTruncation 0 R = truncation R := by
+  rw [truncation_eq, exchangeTruncation, Complex.ofReal_zero]
+
+/-- The truncation with recentred output end is closed. -/
+theorem isClosed_exchangeTruncation (c R : ℝ) : IsClosed (exchangeTruncation c R) :=
+  ((isClosed_le continuous_const continuous_norm).inter (isClosed_le continuous_const
+    (continuous_norm.comp (continuous_id.sub continuous_const)))).inter Metric.isClosed_closedBall
+
+/-- The truncation with recentred output end is compact. -/
+theorem isCompact_exchangeTruncation (c R : ℝ) : IsCompact (exchangeTruncation c R) :=
+  Metric.isCompact_of_isClosed_isBounded (isClosed_exchangeTruncation c R)
+    (Metric.isBounded_closedBall.subset Set.inter_subset_right)
+
+/-- The truncation with recentred output end lies in the thrice-punctured sphere
+`S = ℂ ∖ {0, 1}`. -/
+theorem exchangeTruncation_subset (c R : ℝ) : exchangeTruncation c R ⊆ {w | w ≠ 0 ∧ w ≠ 1} := by
+  intro w hw
+  obtain ⟨h₀, h₁, -⟩ := mem_exchangeTruncation.1 hw
+  have hr : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
+  exact ⟨fun h ↦ by simp [h] at h₀; linarith, fun h ↦ by simp [h] at h₁; linarith⟩
+
+/-- The truncations with recentred output end increase with the cutoff. -/
+theorem exchangeTruncation_mono (c : ℝ) : Monotone (exchangeTruncation c) := by
+  intro R R' hRR' w hw
+  obtain ⟨h₀, h₁, hc⟩ := mem_exchangeTruncation.1 hw
+  have hπ : 2 * π * R ≤ 2 * π * R' := by gcongr
+  have hin : Real.exp (-(2 * π * R')) ≤ Real.exp (-(2 * π * R)) := Real.exp_le_exp.2 (by linarith)
+  have hout : Real.exp (2 * π * R) ≤ Real.exp (2 * π * R') := Real.exp_le_exp.2 hπ
+  exact mem_exchangeTruncation.2 ⟨by linarith, by linarith, by linarith⟩
+
+/-- The truncations with recentred output end exhaust the thrice-punctured sphere
+`S = ℂ ∖ {0, 1}`. -/
+theorem iUnion_exchangeTruncation (c : ℝ) :
+    ⋃ R, exchangeTruncation c R = {w : ℂ | w ≠ 0 ∧ w ≠ 1} := by
+  refine Set.Subset.antisymm (Set.iUnion_subset (exchangeTruncation_subset c)) ?_
+  rintro w ⟨h₀, h₁⟩
+  have hR : Filter.Tendsto (fun R : ℝ ↦ 2 * π * R) Filter.atTop Filter.atTop :=
+    Filter.tendsto_id.const_mul_atTop (by positivity)
+  have hin : Filter.Tendsto (fun R : ℝ ↦ Real.exp (-(2 * π * R)) / 2) Filter.atTop
+      (nhds 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp hR).div_const 2
+  have hout := ((Real.tendsto_exp_atTop.comp hR).const_mul_atTop two_pos).eventually_ge_atTop
+    ‖w - c‖
+  obtain ⟨R, hR₀, hR₁, hRc⟩ := ((hin.eventually (ge_mem_nhds (norm_pos_iff.2 h₀))).and
+    ((hin.eventually (ge_mem_nhds (norm_pos_iff.2 (sub_ne_zero.2 h₁)))).and hout)).exists
+  exact Set.mem_iUnion.2 ⟨R, mem_exchangeTruncation.2 ⟨hR₀, hR₁, hRc⟩⟩
+
+end TauCeti.ThricePuncturedSphere

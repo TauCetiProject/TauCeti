@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 import TauCeti.Topology.Homotopy.AddCircle
 
@@ -67,6 +68,8 @@ monotone in `W`.
   along the level.
 * `TauCeti.SmoothTwoForm.HasContractibleClosedCharacteristic.comp`: closed characteristics of
   `F⁻¹(c)` are closed characteristics of the level `φ(c)` of `φ ∘ F` when `φ'(c) ≠ 0`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.eq_of_isMIntegralCurve_comp`: a contractible periodic
+  orbit of `φ ∘ F` is constant when its level carries no short closed characteristic of `F`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence_smul_iff`: the property
   is conformally invariant.
 * `TauCeti.SmoothTwoForm.HasContractibleAlmostExistence.exists_hasContractibleClosedCharacteristic`:
@@ -208,17 +211,57 @@ theorem HasContractibleClosedCharacteristic.of_hamiltonianVectorField_eq_smul
   rw [Pi.smul_apply, hX _ (hlev t), inv_smul_smul₀ ha]
   exact hγ t
 
-/-- **Closed characteristics under reparametrization of the energy.** If `φ` is differentiable at
-`c` with `φ'(c) ≠ 0` and `F` is differentiable along `F⁻¹(c)`, then a closed characteristic of
+/-- **Closed characteristics under reparametrization of the energy.** If `φ'(c) ≠ 0` (so `φ` is
+differentiable at `c`) and `F` is differentiable along `F⁻¹(c)`, then a closed characteristic of
 `F⁻¹(c)` contractible in `W` is one of the level `φ(c)` of `φ ∘ F`, since
 `X_{φ ∘ F} = φ'(c) X_F` along `F⁻¹(c)`. -/
 theorem HasContractibleClosedCharacteristic.comp
     (h : σ.HasContractibleClosedCharacteristic W F c) {φ : ℝ → ℝ}
-    (hφ : DifferentiableAt ℝ φ c) (hφ' : deriv φ c ≠ 0)
-    (hF : ∀ x, F x = c → MDifferentiableAt I 𝓘(ℝ) F x) :
+    (hφ' : deriv φ c ≠ 0) (hF : ∀ x, F x = c → MDifferentiableAt I 𝓘(ℝ) F x) :
     σ.HasContractibleClosedCharacteristic W (φ ∘ F) (φ c) :=
   h.of_hamiltonianVectorField_eq_smul hφ' (fun x hx ↦ by simp [hx]) fun x hx ↦ by
-    rw [hamiltonianVectorField_comp (hx ▸ hφ) (hF x hx), hx]
+    rw [hamiltonianVectorField_comp (hx ▸ differentiableAt_of_deriv_ne_zero hφ')
+      (hF x hx), hx]
+
+/-- **Orbits of `φ ∘ F`.** Let `σ` be nondegenerate on a manifold modelled on a
+finite-dimensional space, `F` differentiable and `φ : ℝ → ℝ` differentiable. A `T`-periodic orbit
+`γ` of `X_{φ ∘ F}` whose loop is contractible in `W` is constant as soon as, writing
+`c = φ'(F (γ 0))`, the level of `γ 0` carries no closed characteristic contractible in `W` of period
+at most `T |c|` when `c ≠ 0`. -/
+theorem IsNondegenerate.eq_of_isMIntegralCurve_comp [FiniteDimensional ℝ E]
+    (hσ : σ.IsNondegenerate) (hF : MDifferentiable I 𝓘(ℝ) F) {φ : ℝ → ℝ}
+    (hφ : Differentiable ℝ φ) {T : ℝ} (hT : 0 < T) {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (φ ∘ F)))
+    {g : C(AddCircle T, W)} (hg : g.Nullhomotopic) (hgγ : ∀ t : ℝ, (g t : M) = γ t)
+    (horb : deriv φ (F (γ 0)) ≠ 0 → ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F (F (γ 0))
+      (T * |deriv φ (F (γ 0))|)) :
+    ∀ t, γ t = γ 0 := by
+  set c := deriv φ (F (γ 0))
+  have hX (x : M) :
+      σ.hamiltonianVectorField (φ ∘ F) x = deriv φ (F x) • σ.hamiltonianVectorField F x :=
+    hamiltonianVectorField_comp (hφ _) (hF x)
+  -- `F` is constant along `γ`, since `dF(X_{φ ∘ F}) = φ'(F) dF(X_F) = 0`.
+  have hlev (t : ℝ) : F (γ t) = F (γ 0) :=
+    (hγ.isMIntegralCurveOn univ).apply_eq_of_mvfderiv_apply_eq_zero
+      isPreconnected_univ (fun u _ ↦ hF _) (fun u _ ↦ by
+        rw [hX, map_smul,
+          (hσ.isHamiltonianVectorField_hamiltonianVectorField F).mvfderiv_apply_self, smul_zero])
+      (mem_univ 0) (mem_univ t)
+  -- Along the level of `γ 0`, `X_{φ ∘ F} = c X_F`; if `c = 0` the field vanishes along `γ`.
+  have hXγ (t : ℝ) :
+      σ.hamiltonianVectorField (φ ∘ F) (γ t) = c • σ.hamiltonianVectorField F (γ t) := by
+    rw [hX, hlev]
+  by_cases hc : c = 0
+  · exact fun t ↦ hγ.apply_eq_of_forall_eq_zero (fun u ↦ by rw [hXγ, hc, zero_smul]) 0 t
+  -- Otherwise `t ↦ γ (t / c)` is a closed characteristic of period `T |c|`, which is excluded.
+  by_contra hne
+  have hγc : IsMIntegralCurve γ (c⁻¹⁻¹ • σ.hamiltonianVectorField F) := fun t ↦ by
+    rw [inv_inv, Pi.smul_apply, ← hXγ]
+    exact hγ t
+  have h := hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul hT
+    (inv_ne_zero hc) hγc (not_forall.1 hne) hlev ⟨g, hg, hgγ⟩
+  rw [abs_inv, div_inv_eq_mul] at h
+  exact horb hc h
 
 /-- **Conformal invariance of closed characteristics.** For a nondegenerate form on a
 finite-dimensional manifold and `a ≠ 0`, the closed characteristics contractible in `W` of `aσ`

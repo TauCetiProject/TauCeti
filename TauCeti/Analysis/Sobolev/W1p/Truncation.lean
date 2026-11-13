@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.LevelSet
 
-import Mathlib.MeasureTheory.Function.UnifTight
+public import TauCeti.MeasureTheory.Function.UnifTight
 
 /-!
 # Continuity of positive truncation
@@ -26,6 +26,10 @@ Dirichlet boundary data, as needed in weak comparison arguments.
   condition.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_le`: a boundary bound `u ≤ k` on `∂Ω`, expressed
   by `(u - k)⁺ ∈ W^{1,p}_0(Ω)`, persists at every higher level.
+* `TauCeti.W1p.norm_posPartAbove_le`: truncation does not increase the Sobolev norm.
+* `TauCeti.W1p0.posPart`: the positive part as a map of `W^{1,p}_0(Ω)` to itself, with its value
+  `TauCeti.W1p0.valueL_posPart`, continuity `TauCeti.W1p0.continuous_posPart` and norm bound
+  `TauCeti.W1p0.norm_posPart_le`.
 
 The corresponding positive-part results are the special case `k = 0`.
 -/
@@ -36,7 +40,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Filter MeasureTheory Set TopologicalSpace
+open Filter _root_.MeasureTheory Set TopologicalSpace
 open scoped ENNReal Topology
 
 variable {E : Type*} [NormedAddCommGroup E]
@@ -151,24 +155,12 @@ theorem W1p.continuous_posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) :
     hvitali.2.1.ae_mono (fun n ↦ (Lp.memLp (g n)).aestronglyMeasurable) fun n ↦
       (hnorm n).mono fun x hx ↦ by
         simpa only [ofReal_norm] using ENNReal.ofReal_le_ofReal hx
-  have hut : UnifTight (fun n x ↦ g n x) p (mu.restrict Omega) := by
-    intro ε hε
-    obtain ⟨s, hs, hfinite, hbound⟩ := hvitali.2.2.exists_measurableSet_indicator hε.ne'
-    refine ⟨s, hfinite.ne, fun n ↦ (eLpNorm_mono_ae
-      ((Lp.memLp (g n)).aestronglyMeasurable.indicator hs.compl) ?_).trans (hbound n)⟩
-    filter_upwards [hnorm n] with x hx
-    by_cases hxs : x ∈ sᶜ
-    · simpa only [Set.indicator_of_mem hxs] using hx
-    · simp only [Set.indicator_of_notMem hxs, norm_zero, le_refl]
+  have hut : UnifTight (fun n x ↦ g n x) p (mu.restrict Omega) :=
+    hvitali.2.2.ae_mono (fun n ↦ (Lp.memLp (g n)).aestronglyMeasurable) fun n ↦
+      (hnorm n).mono fun x hx ↦ by
+        simpa only [ofReal_norm] using ENNReal.ofReal_le_ofReal hx
   -- The only discontinuity of the jet truncation disappears on Sobolev level sets.
-  have hzero : ∀ᵐ x ∂mu.restrict Omega,
-      ((u : Sobolev1JetLp mu Omega p) x).fst = k →
-        ((u : Sobolev1JetLp mu Omega p) x).snd = 0 := by
-    filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u,
-      W1p.gradient_ae_eq_zero_on_level_set hp u k] with x hv hg hz
-    intro hx
-    rw [← hg]
-    exact hz (hv.trans hx)
+  have hzero := W1p.snd_ae_eq_zero_of_fst_eq hp u k
   apply (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).mpr
   apply tendsto_Lp_of_tendsto_ae (Fact.out : 1 ≤ p) hp
     (fun n ↦ (Lp.memLp (g n)).aestronglyMeasurable)
@@ -185,6 +177,17 @@ theorem W1p.continuous_posPart (hp : p ≠ ∞) :
     Continuous (W1p.posPart (mu := mu) (Omega := Omega) hp) := by
   exact (W1p.continuous_posPartAbove (mu := mu) (Omega := Omega) hp (le_refl 0)).congr
     (W1p.posPartAbove_zero hp)
+
+/-- Truncation above a nonnegative level does not increase the Sobolev norm. -/
+theorem W1p.norm_posPartAbove_le (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
+    ‖W1p.posPartAbove hp hk u‖ ≤ ‖u‖ :=
+  Lp.norm_le_norm_of_ae_le ((posPartAbove_coe_ae hp hk u).mono fun _ hx ↦
+    hx ▸ norm_posPartAboveJet_le hk _)
+
+/-- Taking the positive part does not increase the Sobolev norm. -/
+theorem W1p.norm_posPart_le (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    ‖W1p.posPart hp u‖ ≤ ‖u‖ := by
+  simpa only [W1p.posPartAbove_zero] using W1p.norm_posPartAbove_le hp (le_refl 0) u
 
 /-- Truncation above a nonnegative level preserves the homogeneous Dirichlet boundary
 condition. -/
@@ -217,5 +220,33 @@ theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (h
   have h := W1p.posPartAbove_mem_w1p0Submodule hp (sub_nonneg.2 hkl) hu
   rw [W1p.posPartAbove_posPartAbove] at h
   simpa only [add_sub_cancel] using h
+
+/-! ### The positive part on `W^{1,p}_0(Ω)` -/
+
+/-- **The positive part on `W^{1,p}_0(Ω)`**: for `1 ≤ p < ∞`, the positive part `u⁺` of a
+zero-boundary Sobolev function again has zero boundary values
+(`TauCeti.W1p.posPart_mem_w1p0Submodule`). -/
+def W1p0.posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) : W1p0 mu Omega p :=
+  ⟨W1p.posPart hp u, W1p.posPart_mem_w1p0Submodule hp u.2⟩
+
+@[simp]
+theorem W1p0.coe_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
+    (W1p0.posPart hp u : W1p mu Omega p) = W1p.posPart hp u :=
+  (rfl)
+
+/-- The value of `u⁺` is the `Lᵖ` positive part of the value of `u`. -/
+theorem W1p0.valueL_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
+    W1p0.valueL (W1p0.posPart hp u) = Lp.posPart (W1p0.valueL u) := by
+  simp only [W1p0.valueL_apply, W1p0.coe_posPart, W1p.value_posPart]
+
+/-- Taking the positive part is continuous on `W^{1,p}_0(Ω)` for finite exponents. -/
+theorem W1p0.continuous_posPart (hp : p ≠ ∞) :
+    Continuous (W1p0.posPart (mu := mu) (Omega := Omega) hp) :=
+  ((W1p.continuous_posPart hp).comp continuous_subtype_val).subtype_mk _
+
+/-- Taking the positive part does not increase the norm of `W^{1,p}_0(Ω)`. -/
+theorem W1p0.norm_posPart_le (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
+    ‖W1p0.posPart hp u‖ ≤ ‖u‖ :=
+  W1p.norm_posPart_le hp (u : W1p mu Omega p)
 
 end TauCeti

@@ -243,9 +243,33 @@ theorem hasDerivAt_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
   field_simp
   ring
 
-/-- The pre-Schwarzian of the inverse Cayley transform is `2 / (1 - ζ)`. -/
-theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} (hζ : ζ ≠ 1) :
+/-- The inverse Cayley transform tends to infinity as the disc variable tends to its pole `1`. -/
+theorem tendsto_I_mul_one_add_div_one_sub_nhdsNE_one :
+    Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[≠] 1) (cobounded ℂ) := by
+  have hzero : Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[≠] 1) (𝓝[≠] 0) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · simpa using (tendsto_const_nhds.sub (tendsto_id.mono_left nhdsWithin_le_nhds) :
+        Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[≠] 1) (𝓝 (1 - 1)))
+    · exact eventually_nhdsWithin_of_forall fun ζ hζ => sub_ne_zero.mpr (Ne.symm hζ)
+  refine ((tendsto_sub_const_cobounded I).comp
+    ((tendsto_mul_left_cobounded (mul_ne_zero two_ne_zero I_ne_zero)).comp
+      (tendsto_inv₀_nhdsNE_zero.comp hzero))).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with ζ hζ
+  have hne : 1 - ζ ≠ 0 := sub_ne_zero.mpr (Ne.symm hζ)
+  dsimp only [Function.comp_def]
+  field_simp
+  ring
+
+/-- The pre-Schwarzian of the inverse Cayley transform is `2 / (1 - ζ)` (at its pole `ζ = 1` both
+sides are `0` by convention). -/
+theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} :
     logDeriv (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) ζ = 2 / (1 - ζ) := by
+  rcases eq_or_ne ζ 1 with rfl | hζ
+  · -- at the pole the map is not differentiable, so its derivative is `0` by convention
+    have hnd : ¬ DifferentiableAt ℂ (fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) 1 := fun hd ↦
+      not_continuousAt_of_tendsto tendsto_I_mul_one_add_div_one_sub_nhdsNE_one
+        nhdsWithin_le_nhds (disjoint_nhds_cobounded _) hd.continuousAt
+    simp [logDeriv_apply, deriv_zero_of_not_differentiableAt hnd]
   have heq : (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) =ᶠ[𝓝 ζ]
       fun ξ => 2 * I / (1 - ξ) ^ 2 :=
     eventuallyEq_of_mem (isOpen_ne.mem_nhds hζ) fun _ hξ =>
@@ -274,30 +298,13 @@ theorem tendsto_sub_I_div_add_I_cobounded :
   field_simp
   ring
 
-/-- The inverse Cayley transform tends to infinity as the disc variable tends to its pole `1`. -/
-theorem tendsto_I_mul_one_add_div_one_sub_nhdsNE_one :
-    Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[≠] 1) (cobounded ℂ) := by
-  have hzero : Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[≠] 1) (𝓝[≠] 0) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-    · simpa using (tendsto_const_nhds.sub (tendsto_id.mono_left nhdsWithin_le_nhds) :
-        Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[≠] 1) (𝓝 (1 - 1)))
-    · exact eventually_nhdsWithin_of_forall fun ζ hζ => sub_ne_zero.mpr (Ne.symm hζ)
-  refine ((tendsto_sub_const_cobounded I).comp
-    ((tendsto_mul_left_cobounded (mul_ne_zero two_ne_zero I_ne_zero)).comp
-      (tendsto_inv₀_nhdsNE_zero.comp hzero))).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with ζ hζ
-  have hne : 1 - ζ ≠ 0 := sub_ne_zero.mpr (Ne.symm hζ)
-  dsimp only [Function.comp_def]
-  field_simp
-  ring
-
 /-- The inverse Cayley transform tends to infinity within the upper half-plane as the disc
 variable tends to the omitted boundary point `1`. -/
 theorem tendsto_I_mul_one_add_div_one_sub_nhdsWithin_one :
     Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[ball 0 1] 1)
       (cobounded ℂ ⊓ 𝓟 UpperHalfPlane.upperHalfPlaneSet) :=
   tendsto_inf.mpr ⟨tendsto_I_mul_one_add_div_one_sub_nhdsNE_one.mono_left
-      (nhdsWithin_mono _ fun _ hζ => ne_of_mem_ball_of_norm_eq_one hζ norm_one),
+      (nhdsWithin_mono _ fun _ hζ => ne_of_mem_of_not_mem hζ (by simp)),
     tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun _ hζ =>
       bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hζ)⟩
 

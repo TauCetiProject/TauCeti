@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.Topology.Metrizable.Urysohn
+import TauCeti.MeasureTheory.Group.Arithmetic
 
 /-!
 # Almost everywhere strong measurability
@@ -34,10 +36,14 @@ of translations.
   measurability.
 - `MeasureTheory.AEStronglyMeasurable.comp_prod_sub`: a measurable family of translations
   preserves a.e. strong measurability for the product measure.
+- `MeasureTheory.aestronglyMeasurable_uncurry_sum_indicator`: a function of two variables that is
+  piecewise in the first variable on a finite measurable family, with a.e. strongly measurable
+  slices, is a.e. strongly measurable for the product measure.
 
 The antitone σ-algebra results hold for a codomain in any second-countable conditionally complete
-linear order with the order topology and Borel σ-algebra (`ℝ` qualifies). The witness σ-algebras
-`m N` need not be related to the measure's ambient σ-algebra `m₀`.
+linear order with the order topology (`ℝ` qualifies); no σ-algebra on the codomain is needed, since
+a.e. strong measurability is topological. The witness σ-algebras `m N` need not be related to the
+measure's ambient σ-algebra `m₀`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/SigmaAlgebraHelpers.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`); the two a.e.-limit lemmas
@@ -59,8 +65,7 @@ namespace TauCeti
 namespace MeasureTheory
 
 variable {β : Type*} [ConditionallyCompleteLinearOrder β] [TopologicalSpace β] [OrderTopology β]
-  [SecondCountableTopology β] [TopologicalSpace.PseudoMetrizableSpace β] [MeasurableSpace β]
-  [BorelSpace β]
+  [SecondCountableTopology β]
 
 /-- `AEStronglyMeasurable` for the infimum of an antitone sequence of σ-algebras.
 
@@ -72,6 +77,7 @@ lemma aestronglyMeasurable_iInf_of_antitone
     {m : ℕ → MeasurableSpace α} (h_anti : Antitone m) (f : α → β)
     (hf : ∀ N, @MeasureTheory.AEStronglyMeasurable α β _ (m N) m₀ f μ) :
     @MeasureTheory.AEStronglyMeasurable α β _ (⨅ N, m N) m₀ f μ := by
+  borelize β
   -- Step 1: Extract strongly measurable representatives for each N
   let g : ℕ → α → β := fun N => (hf N).mk f
   have hg_sm : ∀ N, @MeasureTheory.StronglyMeasurable α β _ (m N) (g N) :=
@@ -124,6 +130,7 @@ lemma aestronglyMeasurable_of_tendsto_ae'
     {f : ℕ → α → β} {g : α → β} (hf : ∀ n, @MeasureTheory.AEStronglyMeasurable α β _ m m₀ (f n) μ)
     (hlim : ∀ᵐ x ∂μ, Filter.Tendsto (fun n => f n x) Filter.atTop (nhds (g x))) :
     @MeasureTheory.AEStronglyMeasurable α β _ m m₀ g μ := by
+  borelize β
   -- Strongly measurable representatives of the `f n`.
   let f' : ℕ → α → β := fun n => (hf n).mk (f n)
   have hf'_sm : ∀ n, @MeasureTheory.StronglyMeasurable α β _ m (f' n) :=
@@ -190,14 +197,15 @@ theorem AEStronglyMeasurable.comp_aemeasurable_of_map_absolutelyContinuous
 /-- A measurable family of translations preserves a.e. strong measurability for the product
 measure when the measure on the translated variable is right invariant. -/
 theorem AEStronglyMeasurable.comp_prod_sub
-    {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableAdd G] [MeasurableSub₂ G]
+    {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableSub₂ G]
     {ν : Measure G} [ν.IsAddRightInvariant] {k : G → F} {c : α → G}
     (hk : AEStronglyMeasurable k ν) (hc : AEMeasurable c μ) :
     AEStronglyMeasurable (fun p : α × G ↦ k (p.2 - c p.1)) (μ.prod ν) := by
+  have : MeasurableAdd G := TauCeti.measurableAdd_of_measurableSub
   have hm : Measurable (fun p : α × G ↦ p.2 - hc.mk c p.1) :=
     measurable_snd.sub (hc.measurable_mk.comp measurable_fst)
   have hq : QuasiMeasurePreserving (fun p : α × G ↦ p.2 - hc.mk c p.1) (μ.prod ν) ν := by
-    refine ⟨hm, Measure.AbsolutelyContinuous.mk fun s hs hs0 ↦ ?_⟩
+    refine ⟨hm.aemeasurable, Measure.AbsolutelyContinuous.mk fun s hs hs0 ↦ ?_⟩
     rw [Measure.map_apply hm hs]
     apply Measure.measure_prod_null_of_ae_null (hm hs)
     exact Eventually.of_forall fun t ↦
@@ -206,5 +214,22 @@ theorem AEStronglyMeasurable.comp_prod_sub
   filter_upwards [Measure.quasiMeasurePreserving_fst.ae_eq_comp hc.ae_eq_mk] with p hp
   simp only [Function.comp_def] at hp ⊢
   rw [hp]
+
+/-- A function of two variables that is piecewise in the first variable, equal to `L i y` on the
+measurable set `P i` of a finite family, is almost everywhere strongly measurable for the product
+measure when every slice `L i` is. -/
+theorem aestronglyMeasurable_uncurry_sum_indicator {ι M : Type*} [Fintype ι]
+    [TopologicalSpace M] [AddCommMonoid M] [ContinuousAdd M] {P : ι → Set α}
+    (hP : ∀ i, MeasurableSet (P i)) {L : ι → β → M} (hL : ∀ i, AEStronglyMeasurable (L i) ν) :
+    AEStronglyMeasurable (Function.uncurry fun x y ↦ ∑ i, (P i).indicator (fun _ ↦ L i y) x)
+      (μ.prod ν) := by
+  refine Finset.aestronglyMeasurable_fun_sum _ fun i _ ↦ ?_
+  have : (fun z : α × β ↦ (P i).indicator (fun _ ↦ L i z.2) z.1) =
+      (P i ×ˢ Set.univ).indicator fun z ↦ L i z.2 := by
+    ext1 z
+    by_cases hz : z.1 ∈ P i <;> simp [hz, Set.indicator]
+  simpa only [Function.uncurry_def, this, Function.comp_def] using
+    ((hL i).comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_snd (μ := μ))).indicator
+      ((hP i).prod .univ)
 
 end MeasureTheory

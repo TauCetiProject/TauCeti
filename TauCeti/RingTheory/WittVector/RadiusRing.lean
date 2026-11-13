@@ -397,7 +397,7 @@ private theorem gaussDegree_eq_of_approx {x : RadiusRing p hv hϖ hϖ' hρ} {k l
       _ ≤ max ‖X - ι (teichmuller p ϖ ^ k * z)‖ ‖X - ι (teichmuller p ϖ ^ l * y)‖ :=
           IsUltrametricDist.norm_sub_le_max _ _
       _ < ‖X‖ := max_lt hz' hy'
-  have h := gaussDegree_eq_of_gaussValuation_sub_lt hv hρ.1 hρ.2 hlt
+  have h := gaussDegree_eq_of_gaussValuation_sub_lt hv hρ.2 hlt
   have := hv.isDomain
   rwa [← map_pow, ← map_pow, gaussDegree_teichmuller_mul hv hρ.2 (pow_ne_zero k hϖ),
     gaussDegree_teichmuller_mul hv hρ.2 (pow_ne_zero l hϖ), eq_comm] at h
@@ -503,7 +503,7 @@ theorem degree_mul {x y : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0) (hy : y �
       exact mul_lt_mul_of_pos_right hz hY
   rw [degree_eq_gaussDegree p hv hϖ hϖ' hρ hzw, degree_eq_gaussDegree p hv hϖ hϖ' hρ hz,
     degree_eq_gaussDegree p hv hϖ hϖ' hρ hw,
-    gaussDegree_mul hv hρ.1 hρ.2 (ne_zero_of_norm_sub_lt p hv hϖ hϖ' hρ hz)
+    gaussDegree_mul hv hρ.2 (ne_zero_of_norm_sub_lt p hv hϖ hϖ' hρ hz)
       (ne_zero_of_norm_sub_lt p hv hϖ hϖ' hρ hw)]
 
 /-- Units of `A^r` have degree `0`. -/
@@ -583,6 +583,37 @@ private theorem teichmuller_mul_teichSum_sub (m d : ℕ) (t a g : ℕ → O)
   simp only [mul_assoc]
   ring
 
+/-- An element of `A^r` within `ε B`, `ε ≤ 1`, of a Teichmüller sum whose weighted coefficients are
+at most `B` has norm at most `B`. -/
+private theorem nnnorm_le_of_nnnorm_sub_teichSum_le {X : RadiusRing p hv hϖ hϖ' hρ} {a : ℕ → O}
+    {n : ℕ} {ε B : ℝ≥0} (hε1 : ε ≤ 1) (ha : ∀ l, v (algebraMap O K (a l)) * ρ ^ l ≤ B)
+    (hX : ‖X - ι (teichSum p a n)‖₊ ≤ ε * B) : ‖X‖₊ ≤ B := by
+  rw [← sub_add_cancel X (ι (teichSum p a n))]
+  refine (IsUltrametricDist.nnNorm_add_le_max _ _).trans
+    (max_le (hX.trans (mul_le_of_le_one_left' hε1)) ?_)
+  rw [nnnorm_algebraMap_radiusRing]
+  exact gaussValuation_teichSum_le hρ.2 ha
+
+/-- The coefficients `gₗ = a_{m + d} t_{l - d}` (zero for `l < d`) of
+`[a_{m + d}] pᵈ ∑_{l ≤ m} [tₗ] pˡ` have weighted size at most `v(t_m) M`. -/
+private theorem shiftCoeff_mul_pow_le {m d : ℕ} {t a : ℕ → O} {M : ℝ≥0}
+    (ht : ∀ l, v (algebraMap O K (t l)) * ρ ^ l ≤ v (algebraMap O K (t m)) * ρ ^ m)
+    (ha : ∀ l, v (algebraMap O K (a l)) * ρ ^ l ≤ M) (l : ℕ) :
+    v (algebraMap O K (if d ≤ l then a (m + d) * t (l - d) else 0)) * ρ ^ l ≤
+      v (algebraMap O K (t m)) * M := by
+  by_cases hl : d ≤ l
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hl
+    calc _ = v (algebraMap O K (a (m + d))) * ρ ^ d * (v (algebraMap O K (t k)) * ρ ^ k) := by
+          simp only [hl, ↓reduceIte, Nat.add_sub_cancel_left, map_mul, pow_add]
+          ring
+      _ ≤ v (algebraMap O K (a (m + d))) * ρ ^ d * (v (algebraMap O K (t m)) * ρ ^ m) :=
+          mul_le_mul' le_rfl (ht k)
+      _ = v (algebraMap O K (t m)) * (v (algebraMap O K (a (m + d))) * ρ ^ (m + d)) := by
+          rw [pow_add]
+          ring
+      _ ≤ _ := mul_le_mul' le_rfl (ha _)
+  · simp [hl]
+
 /-- **One step of Kedlaya's division.** Let `X` be within `ε L` of `∑_{l ≤ m} [tₗ] pˡ`, whose
 weighted coefficients are at most `L = v(t_m) ρᵐ`, and let `Y` be within `ε M` of
 `∑_{l ≤ m + d} [aₗ] pˡ`, whose weighted coefficients are at most `M`. Subtracting
@@ -611,30 +642,15 @@ private theorem exists_division_step {X Y : RadiusRing p hv hϖ hϖ' hρ} {m d :
   have hca (l : ℕ) : w (c * a l) * ρ ^ l ≤ w c * M := by
     simp only [w, map_mul, mul_assoc]
     exact mul_le_mul' le_rfl (ha l)
-  have hg (l : ℕ) : w (g l) * ρ ^ l ≤ w c * M := by
-    by_cases hl : d ≤ l
-    · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hl
-      calc w (g (d + k)) * ρ ^ (d + k) = w α * ρ ^ d * (w (t k) * ρ ^ k) := by
-            simp only [g, w, hl, ↓reduceIte, Nat.add_sub_cancel_left, map_mul, pow_add]
-            ring
-        _ ≤ w α * ρ ^ d * (w c * ρ ^ m) := mul_le_mul' le_rfl (ht k)
-        _ ≤ w c * M := hαM ▸ mul_le_mul' le_rfl (ha _)
-    · simp [g, w, hl]
+  have hg (l : ℕ) : w (g l) * ρ ^ l ≤ w c * M := shiftCoeff_mul_pow_le ht ha l
   have hb (l : ℕ) : w (b l) * ρ ^ l ≤ w c * M :=
     (v.comap (algebraMap O K)).map_sub_mul_le (hca l) (hg l)
   have hQ : ‖ι (teichmuller p α * (p : 𝕎 O) ^ d)‖₊ = w α * ρ ^ d := by
     rw [nnnorm_algebraMap_radiusRing, gaussValuation_teichmuller_mul_pow]
-  have hT : ‖ι (teichSum p t (m + 1))‖₊ ≤ w c * ρ ^ m := by
-    rw [nnnorm_algebraMap_radiusRing]
-    exact gaussValuation_teichSum_le hρ.2 ht
-  have hXL : ‖X‖₊ ≤ w c * ρ ^ m :=
-    calc ‖X‖₊ = ‖(X - ι (teichSum p t (m + 1))) + ι (teichSum p t (m + 1))‖₊ := by
-          rw [sub_add_cancel]
-      _ ≤ _ := IsUltrametricDist.nnnorm_add_le_max _ _
-      _ ≤ w c * ρ ^ m := max_le (hX.trans (mul_le_of_le_one_left' hε1)) hT
+  have hXL : ‖X‖₊ ≤ w c * ρ ^ m := nnnorm_le_of_nnnorm_sub_teichSum_le p hv hϖ hϖ' hρ hε1 ht hX
   refine ⟨b, hb, ?_, ?_⟩
   · calc ‖ι (teichmuller p α * (p : 𝕎 O) ^ d) * X‖₊ = w α * ρ ^ d * ‖X‖₊ := by
-          rw [nnnorm_mul, hQ]
+          rw [nnNorm_mul, hQ]
       _ ≤ w α * ρ ^ d * (w c * ρ ^ m) := mul_le_mul' le_rfl hXL
       _ ≤ w c * M := hαM ▸ mul_le_mul' le_rfl (ha _)
   -- The carries `E` of `∑ ([c aₗ] - [gₗ]) pˡ - ∑ [c aₗ - gₗ] pˡ` are at most `ρ v(c) M`.
@@ -650,14 +666,14 @@ private theorem exists_division_step {X Y : RadiusRing p hv hϖ hϖ' hρ} {m d :
     rw [map_sub, ← hid]
     ring
   rw [hdecomp]
-  refine (IsUltrametricDist.nnnorm_add_le_max _ _).trans (max_le
+  refine (IsUltrametricDist.nnNorm_add_le_max _ _).trans (max_le
     ((IsUltrametricDist.nnnorm_sub_le_max _ _).trans
     (max_le ?_ ?_)) (hE.trans (mul_le_mul' hε le_rfl)))
-  · rw [nnnorm_mul, nnnorm_algebraMap_radiusRing, gaussValuation_teichmuller, mul_left_comm]
+  · rw [nnNorm_mul, nnnorm_algebraMap_radiusRing, gaussValuation_teichmuller, mul_left_comm]
     exact mul_le_mul' le_rfl hY
   · calc ‖ι (teichmuller p α * (p : 𝕎 O) ^ d) * (X - ι (teichSum p t (m + 1)))‖₊
         ≤ w α * ρ ^ d * (ε * (w c * ρ ^ m)) := by
-          rw [nnnorm_mul, hQ]
+          rw [nnNorm_mul, hQ]
           exact mul_le_mul' le_rfl hX
       _ = ε * (w α * ρ ^ d * (w c * ρ ^ m)) := by ring
       _ ≤ ε * (w c * M) := mul_le_mul' le_rfl (hαM ▸ mul_le_mul' le_rfl (ha _))
@@ -690,8 +706,8 @@ private theorem exists_division {X : RadiusRing p hv hϖ hϖ' hρ} {m : ℕ} {t 
       rw [map_mul, map_mul, mul_assoc]
     refine ⟨b * t m, ι (teichmuller p b) * Q₁ + Q, a', mul_ne_zero hb hc, ?_, hbc ▸ ha', ?_⟩
     · rw [hbc, add_mul, mul_assoc]
-      refine (IsUltrametricDist.nnnorm_add_le_max _ _).trans (max_le ?_ hQ)
-      rw [nnnorm_mul, nnnorm_algebraMap_radiusRing, gaussValuation_teichmuller]
+      refine (IsUltrametricDist.nnNorm_add_le_max _ _).trans (max_le ?_ hQ)
+      rw [nnNorm_mul, nnnorm_algebraMap_radiusRing, gaussValuation_teichmuller]
       exact mul_le_mul' le_rfl hQ₁
     · have h : ι (teichmuller p (b * t m)) * Y - (ι (teichmuller p b) * Q₁ + Q) * X -
           ι (teichSum p a' m) = ι (teichmuller p b) * (ι (teichmuller p (t m)) * Y - Q₁ * X) -
@@ -723,8 +739,8 @@ private theorem exists_teichSum_degree {x : RadiusRing p hv hϖ hϖ' hρ} (hx : 
   refine ⟨k, y.teichmullerCoeff, fun h ↦ hL0.ne' (by simp [L, h]),
     fun l ↦ (le_gaussValuation hv hρ.2 y l).trans hL.le, ?_⟩
   have h₁ : ‖ι (teichmuller p ϖ ^ k) * x - ι y‖₊ < L := by
-    rw [← hL, ← nnnorm_algebraMap_radiusRing p hv hϖ hϖ' hρ, ← NNReal.coe_lt_coe, coe_nnnorm,
-      coe_nnnorm, ← IsUltrametricDist.norm_eq_of_norm_sub_lt_left hy]
+    rw [← hL, ← nnnorm_algebraMap_radiusRing p hv hϖ hϖ' hρ, ← NNReal.coe_lt_coe, coe_nnNorm,
+      coe_nnNorm, ← IsUltrametricDist.norm_eq_of_norm_sub_lt_left hy]
     exact hy
   -- The Teichmüller expansion of `y` beyond its degree `m` is smaller than `L`.
   have h₂ : gaussValuation p hv ρ hρ.2 (y - teichSum p y.teichmullerCoeff (m + 1)) < L := by
@@ -750,7 +766,7 @@ private theorem exists_teichSum_degree {x : RadiusRing p hv hϖ hϖ' hρ} (hx : 
       = ‖(ι (teichmuller p ϖ ^ k) * x - ι y) +
           ι (y - teichSum p y.teichmullerCoeff (m + 1))‖₊ := by
         rw [map_sub, sub_add_sub_cancel]
-    _ ≤ _ := IsUltrametricDist.nnnorm_add_le_max _ _
+    _ ≤ _ := IsUltrametricDist.nnNorm_add_le_max _ _
     _ < L := max_lt h₁ (by rwa [nnnorm_algebraMap_radiusRing])
 
 /-- Every nonzero `y ∈ A^r`, multiplied by a suitable power of `[ϖ]`, is within `ε` times its norm
@@ -766,7 +782,7 @@ private theorem exists_teichSum_approx {y : RadiusRing p hv hϖ hϖ' hρ} (hy : 
     (ε := ε) (by exact_mod_cast hε0)
   set M := ‖ι (teichmuller p ϖ ^ j) * y‖₊
   replace hy' : ‖ι (teichmuller p ϖ ^ j) * y - ι y'‖₊ < ε * M := by
-    rwa [← NNReal.coe_lt_coe, NNReal.coe_mul, coe_nnnorm, coe_nnnorm]
+    rwa [← NNReal.coe_lt_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm]
   have hM0 : 0 < M := pos_of_mul_pos_right (lt_of_le_of_lt zero_le hy') zero_le
   have hy'M : gaussValuation p hv ρ hρ.2 y' ≤ M := by
     rw [← nnnorm_algebraMap_radiusRing p hv hϖ hϖ' hρ, ← sub_sub_cancel
@@ -783,7 +799,19 @@ private theorem exists_teichSum_approx {y : RadiusRing p hv hϖ hϖ' hρ} (hy : 
     exact ((mul_le_of_le_one_right' (gaussValuation_le_one hv hρ.2 w)).trans
       (pow_le_pow_of_le_one zero_le hρ.2.le (by omega))).trans hN.le
   rw [← sub_add_sub_cancel _ (ι y'), ← map_sub]
-  exact (IsUltrametricDist.nnnorm_add_le_max _ _).trans (max_le hy'.le hw')
+  exact (IsUltrametricDist.nnNorm_add_le_max _ _).trans (max_le hy'.le hw')
+
+/-- An element of `A^r` closer to a Teichmüller sum of length `m` than its own norm has degree
+less than `m`. -/
+private theorem degree_lt_of_nnnorm_sub_teichSum_lt {W : RadiusRing p hv hϖ hϖ' hρ} {a : ℕ → O}
+    {m : ℕ} (h : ‖W - ι (teichSum p a m)‖₊ < ‖W‖₊) : degree p hv hϖ hϖ' hρ W < m := by
+  have hH : teichSum p a m ≠ 0 := by
+    rintro hH
+    rw [hH, map_zero, sub_zero] at h
+    exact lt_irrefl _ h
+  rw [← degree_eq_of_norm_sub_lt p hv hϖ hϖ' hρ (by exact_mod_cast h), degree_algebraMap]
+  rw [teichSum] at hH ⊢
+  exact gaussDegree_sum_range_teichmuller_mul_pow_lt hv hρ.2 hH
 
 /-- **Kedlaya, Lemma 2.8.** For `x ≠ 0` there is `ε < 1` such that every `y ∈ A^r` can be
 written `y = z x + w` with `‖w‖ ≤ ‖y‖`, where `w` has smaller degree than `x` unless
@@ -809,7 +837,7 @@ private theorem exists_lt_one_forall_exists_eq_mul_add {x : RadiusRing p hv hϖ 
   set M := ‖ι (teichmuller p ϖ ^ j) * y‖₊ with hM
   -- Run the division steps down to a Teichmüller sum of length `m`, and divide by the unit
   -- `e = [b] [ϖ]ʲ`.
-  obtain ⟨b, Q, a, hb, hQ, ha, hW⟩ := exists_division p hv hϖ hϖ' hρ (le_max_left _ _) hε1.le hc
+  obtain ⟨b, Q, a, hb, _, ha, hW⟩ := exists_division p hv hϖ hϖ' hρ (le_max_left _ _) hε1.le hc
     ht hXε N _ M a₀ ha₀ hY
   set e := ι (teichmuller p b) * ι (teichmuller p ϖ ^ j) with he_def
   have he : IsUnit e := (isUnit_algebraMap_teichmuller p hv hϖ hϖ' hρ hb).mul (by
@@ -818,17 +846,13 @@ private theorem exists_lt_one_forall_exists_eq_mul_add {x : RadiusRing p hv hϖ 
   obtain ⟨e', he'⟩ := he.exists_left_inv
   set W := ι (teichmuller p b) * (ι (teichmuller p ϖ ^ j) * y) - Q * (ι (teichmuller p ϖ ^ k) * x)
   have hey : ‖e‖₊ * ‖y‖₊ = v (algebraMap O K b) * M := by
-    rw [he_def, hM, nnnorm_mul, nnnorm_mul (ι (teichmuller p ϖ ^ j)), nnnorm_algebraMap_radiusRing,
+    rw [he_def, hM, nnNorm_mul, nnNorm_mul (ι (teichmuller p ϖ ^ j)), nnnorm_algebraMap_radiusRing,
       gaussValuation_teichmuller, mul_assoc]
   have heW : ‖e‖₊ * ‖e' * W‖₊ = ‖W‖₊ := by
-    rw [← nnnorm_mul, ← mul_assoc, mul_comm e e', he', one_mul]
-  have he0 : 0 < ‖e‖₊ := nnnorm_pos.mpr he.ne_zero
-  have hWM : ‖W‖₊ ≤ v (algebraMap O K b) * M := by
-    rw [← sub_add_cancel W (ι (teichSum p a m))]
-    refine (IsUltrametricDist.nnnorm_add_le_max _ _).trans (max_le
-      (hW.trans (mul_le_of_le_one_left' hε1.le)) ?_)
-    rw [nnnorm_algebraMap_radiusRing]
-    exact gaussValuation_teichSum_le hρ.2 ha
+    rw [← nnNorm_mul, ← mul_assoc, mul_comm e e', he', one_mul]
+  have he0 : 0 < ‖e‖₊ := nnNorm_pos.mpr he.ne_zero
+  have hWM : ‖W‖₊ ≤ v (algebraMap O K b) * M :=
+    nnnorm_le_of_nnnorm_sub_teichSum_le p hv hϖ hϖ' hρ hε1.le ha hW
   refine ⟨e' * Q * ι (teichmuller p ϖ ^ k), e' * W, by linear_combination (-y) * he', ?_, ?_⟩
   · exact le_of_mul_le_mul_left (heW ▸ hey ▸ hWM) he0
   · intro hlt
@@ -837,19 +861,13 @@ private theorem exists_lt_one_forall_exists_eq_mul_add {x : RadiusRing p hv hϖ 
       refine hW.trans_lt ?_
       rw [← hey, ← heW, mul_left_comm]
       exact mul_lt_mul_of_pos_left hlt he0
-    have hH : teichSum p a m ≠ 0 := by
-      rintro h
-      rw [h, map_zero, sub_zero] at hWlt
-      exact lt_irrefl _ hWlt
     have he'W : e' * W ≠ 0 := by
       rintro h
-      rw [h, nnnorm_zero] at hlt
+      rw [h, nnNorm_zero] at hlt
       exact not_lt_zero hlt
     rw [degree_mul p hv hϖ hϖ' hρ (left_ne_zero_of_mul he'W) (right_ne_zero_of_mul he'W),
-      degree_eq_zero_of_isUnit p hv hϖ hϖ' hρ (IsUnit.of_mul_eq_one e he'), zero_add,
-      ← degree_eq_of_norm_sub_lt p hv hϖ hϖ' hρ (by exact_mod_cast hWlt), degree_algebraMap]
-    rw [teichSum] at hH ⊢
-    exact gaussDegree_sum_range_teichmuller_mul_pow_lt hv hρ.1 hρ.2 hH
+      degree_eq_zero_of_isUnit p hv hϖ hϖ' hρ (IsUnit.of_mul_eq_one e he'), zero_add]
+    exact degree_lt_of_nnnorm_sub_teichSum_lt p hv hϖ hϖ' hρ hWlt
 
 /-- **Euclidean division in `A^r`** (Kedlaya, Proposition 2.9). For `x ≠ 0`, every `y ∈ A^r` can be
 written `y = z x + w` with `‖w‖ ≤ ‖y‖` and either `w = 0` or `w` of smaller degree than `x`. -/
@@ -863,7 +881,7 @@ theorem exists_eq_mul_add {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0)
     (w = 0 ∨ degree p hv hϖ hϖ' hρ w < degree p hv hϖ hϖ' hρ x)}
   have hS : S ⊆ (Ideal.span (({x} : Finset (RadiusRing p hv hϖ hϖ' hρ)) :
       Set (RadiusRing p hv hϖ hϖ' hρ)) : Set (RadiusRing p hv hϖ hϖ' hρ)) := by
-    refine TauCeti.subset_idealSpan_of_approx ε.2 hε1 fun y hy ↦ ?_
+    refine TauCeti.subset_idealSpan_of_approx hε1 fun y hy ↦ ?_
     obtain ⟨z, w, rfl, hw, hdeg⟩ := hdiv y
     have hw' : ‖w‖ ≤ ‖z * x + w‖ := by exact_mod_cast hw
     have hwS : w ∈ S := fun ⟨z', w', h, hw'', hdeg'⟩ ↦

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.Analysis.SpecialFunctions.Artanh
-public import TauCeti.MeasureTheory.Integral.ExpDecay
+public import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The Haagerup–Zsidó kernel
@@ -241,7 +241,6 @@ theorem abs_realKernel_le (t : ℝ) : |realKernel t| ≤ π / (2 * (1 + t ^ 2)) 
     have hsq : 1 ≤ t ^ 2 := by
       rw [← sq_abs]
       exact one_le_pow₀ h1
-    have ht2 : 0 < t ^ 2 := by positivity
     calc |Real.sin t| / 2 * weightLaplaceTransform t
         = |Real.sin t| * weightLaplaceTransform t / 2 := by ring
       _ ≤ π / (2 * t ^ 2) / 2 := by gcongr
@@ -255,6 +254,12 @@ theorem integrable_realKernel : Integrable realKernel := by
     measurable_realKernel.aestronglyMeasurable (Filter.Eventually.of_forall fun t ↦ ?_)
   rw [Real.norm_eq_abs, ← div_eq_mul_inv, div_div]
   exact abs_realKernel_le t
+
+/-- The real Haagerup–Zsidó kernel times a sine is integrable. -/
+theorem integrable_realKernel_mul_sin (x : ℝ) :
+    Integrable fun t ↦ realKernel t * Real.sin (x * t) :=
+  integrable_realKernel.mul_bdd (c := 1) (by fun_prop)
+    (.of_forall fun t ↦ by simpa using Real.abs_sin_le_one _)
 
 /-- The Haagerup–Zsidó kernel is integrable on `ℝ`. -/
 theorem integrable_reciprocalKernel : Integrable reciprocalKernel := by

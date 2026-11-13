@@ -107,6 +107,30 @@ private abbrev IsRelationModuleMapOfPresentation
             MonoidHom.mem_ker, hφ]
           exact MonoidHom.mem_ker.mp r.2⟩
 
+/-- On the relation module, the equivariant map induced by `β` is the map of abelianizations
+induced by `φ`. -/
+private lemma relationModuleToAbelianizationProPEquivariant_toMonoidHom
+    (β : MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g
+      →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Additive ↑(padicCompletionUnits p L))
+    (hβ_apply : IsRelationModuleMapOfPresentation p K L hg j φ hφ β)
+    (hRV : (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker ≤
+      (galoisSubgroup K L j).toSubgroup.comap φ.toMonoidHom) :
+    letI := freeProfiniteGroup.presentationClassModuleAction p (g := g)
+      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
+    letI := galoisClassModuleAction p K L j
+    (relationModuleToAbelianizationProPEquivariant p K L hg β j).toMonoidHom =
+      abelianizationProPMap p φ.toMonoidHom φ.continuous hRV := by
+  apply MonoidHom.ext
+  intro x
+  obtain ⟨r, rfl⟩ := abelianizationProPMk_surjective p (freeProfiniteGroup ι)
+    (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker x
+  -- Expose the map application hidden by `toMonoidHom` so its application lemmas rewrite.
+  change relationModuleToAbelianizationProPEquivariant p K L hg β j
+      (abelianizationProPMk p (freeProfiniteGroup ι) _ r) = _
+  rw [relationModuleToAbelianizationProPEquivariant_apply,
+    relationModuleToAbelianizationProP_apply, abelianizationProPMap_mk]
+  exact hβ_apply r
+
 private theorem explicitCoeff2_contCohomologyClass_of_presentation
     (hd : Dense (Subgroup.closure (Set.range g) : Set (L ≃ₐ[K] L)))
     (β : MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g
@@ -122,14 +146,7 @@ private theorem explicitCoeff2_contCohomologyClass_of_presentation
         (continuous_relationModuleToAbelianizationProPEquivariant p K L hg β j)))
         (freeProfiniteGroup.presentationProfiniteExtension p hd).contCohomologyClass =
       (galoisClassModuleExtension p K L j).contCohomologyClass := by
-  let R := (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker
-  let V := (galoisSubgroup K L j).toSubgroup
-  have hRV : R ≤ V.comap φ.toMonoidHom := by
-    intro r hr
-    -- Expose membership in the abbreviations `R` and `V` so the kernel lemmas apply.
-    change φ r ∈ (galoisSubgroup K L j).toSubgroup
-    rw [galoisSubgroup_toSubgroup, ← j.ker_restrictNormalHom, MonoidHom.mem_ker]
-    simpa [R] using (hφ r).trans (MonoidHom.mem_ker.mp hr)
+  have hRV := presentation_ker_le_comap K L j φ hφ
   let _ := freeProfiniteGroup.presentationClassModuleAction p hd
   have := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
   let _ := galoisClassModuleAction p K L j
@@ -153,16 +170,8 @@ private theorem explicitCoeff2_contCohomologyClass_of_presentation
       _ = X.toGroupExtension.rightHom (QuotientGroup.mk f) := by
         simp [X]
   let k := relationModuleToAbelianizationProPEquivariant p K L hg β j
-  have hk_map : k.toMonoidHom = abelianizationProPMap p φ.toMonoidHom φ.continuous hRV := by
-    apply MonoidHom.ext
-    intro x
-    obtain ⟨r, rfl⟩ := abelianizationProPMk_surjective p (freeProfiniteGroup ι) R x
-    -- Expose the map applications hidden by `k` and `R` so their application lemmas rewrite.
-    change relationModuleToAbelianizationProPEquivariant p K L hg β j
-        (abelianizationProPMk p (freeProfiniteGroup ι) R r) = _
-    rw [relationModuleToAbelianizationProPEquivariant_apply,
-      relationModuleToAbelianizationProP_apply, abelianizationProPMap_mk]
-    exact hβ_apply r
+  have hk_map := relationModuleToAbelianizationProPEquivariant_toMonoidHom p K L hg j φ hφ
+    β hβ_apply hRV
   have hinl : ψ.toMonoidHom.comp X.toGroupExtension.inl =
       Y.toGroupExtension.inl.comp k.toMonoidHom := by
     rw [hk_map]

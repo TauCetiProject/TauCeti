@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.RingTheory.Localization.Integer
 import Mathlib.Algebra.Order.Star.Rat
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 
 /-!
 # Positive definiteness over the rationals
@@ -39,6 +40,10 @@ ring without zero divisors is positive definite exactly when its single entry is
   more generally over any linearly ordered field with the star order.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
   form `Bᴴ * B` is positive definite.
+* `Matrix.PosDef.trivialStar`: over a linearly ordered field, a positive definite matrix on a
+  nonempty index type forces the star to be trivial.
+* `Matrix.PosDef.exists_sq_le_of_dotProduct_mulVec_le`: for a positive definite matrix `S`, the
+  vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have uniformly bounded coordinates.
 -/
 
 public section
@@ -158,7 +163,7 @@ theorem posDef_map_intCast_iff {A : Matrix n n ℤ} :
 
 /-- **A rational matrix is positive definite exactly when its cast to `ℝ` is**, and more generally
 its cast to any linearly ordered field `K` whose order is the star order of the trivial star. -/
-theorem posDef_map_ratCast_iff {K : Type*} [Field K] [LinearOrder K] [StarRing K] [TrivialStar K]
+theorem posDef_map_ratCast_iff {K : Type*} [Field K] [LinearOrder K] [StarRing K]
     [StarOrderedRing K] [Finite n] {A : Matrix n n ℚ} :
     (A.map (Rat.cast : ℚ → K)).PosDef ↔ A.PosDef := by
   classical
@@ -201,3 +206,59 @@ theorem posDef_conjTranspose_mul_self_of_isUnit {m : Type*} [Fintype m] [Fintype
 end Matrix
 
 end TauCeti
+
+namespace Matrix.PosDef
+
+section TrivialStar
+
+variable {B K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [StarRing K]
+
+/-- **A positive definite matrix on a nonempty index type forces the star of `K` to be trivial.**
+This supplies the `TrivialStar K` instance, so that the ordinary quadratic-form results over a
+linearly ordered commutative ring apply to such a matrix. -/
+theorem trivialStar [Nonempty B] {S : Matrix B B K} (hS : S.PosDef) : TrivialStar K := by
+  classical
+  -- If `s ≠ star s`, the vector supported at one index with entry `s - star s` has a
+  -- nonpositive quadratic form, contradicting positive definiteness.
+  obtain ⟨k₀⟩ := ‹Nonempty B›
+  exact ⟨fun s ↦ by
+    by_contra hne
+    have ht : s - star s ≠ 0 := sub_ne_zero.mpr (Ne.symm hne)
+    have h := hS.2 (x := Finsupp.single k₀ (s - star s)) (Finsupp.single_ne_zero.mpr ht)
+    have hpos : 0 < S k₀ k₀ := hS.diag_pos
+    have htt : 0 < (s - star s) * (s - star s) := mul_self_pos.mpr ht
+    rw [Finsupp.sum_single_index (by simp), Finsupp.sum_single_index (by simp)] at h
+    simp only [star_sub, star_star] at h
+    nlinarith [mul_pos htt hpos]⟩
+
+end TrivialStar
+
+variable {B K : Type*} [Fintype B] [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [StarRing K]
+
+/-- **A positive definite quadratic inequality bounds every coordinate.** For a positive definite
+matrix `S` and a linear functional `w`, the vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have squared
+coordinates bounded independently of `c`. -/
+theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) (w : B → K) :
+    ∃ M : K, ∀ c : B → K, c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w → ∀ k, c k ^ 2 ≤ M := by
+  classical
+  rcases isEmpty_or_nonempty B with hB | hB
+  · exact ⟨0, fun _ _ k ↦ isEmptyElim k⟩
+  have := hS.trivialStar
+  set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S
+  have hFapply : ∀ u v : B → K, F u v = u ⬝ᵥ S *ᵥ v := fun u v ↦ Matrix.toBilin'_apply' S u v
+  have hnonneg : ∀ u : B → K, 0 ≤ F u u := fun u ↦ by
+    simpa [hFapply] using hS.posSemidef.dotProduct_mulVec_nonneg u
+  have hsymmB : F.IsSymm := Matrix.isSymm_toBilin'_iff_isSymm.mpr hS.isHermitian.isSymm
+  have hsymm : LinearMap.IsSymm F := LinearMap.BilinForm.isSymm_iff.mp hsymmB
+  have hsurj := Matrix.mulVec_surjective_iff_isUnit.mpr hS.isUnit
+  obtain ⟨z, hz⟩ := hsurj w
+  choose u hu using fun k : B ↦ hsurj (Pi.single k 1)
+  refine ⟨F z z * ∑ k, F (u k) (u k), fun c hc k ↦ ?_⟩
+  have hle : F c c ≤ F c z := by rwa [hFapply, hFapply, hz]
+  calc c k ^ 2 = F c (u k) ^ 2 := by rw [hFapply, hu, dotProduct_single_one]
+    _ ≤ F z z * F (u k) (u k) := F.apply_sq_le_mul_of_apply_le_apply hnonneg hsymm hle _
+    _ ≤ F z z * ∑ k, F (u k) (u k) := mul_le_mul_of_nonneg_left
+        (Finset.single_le_sum (fun j _ ↦ hnonneg (u j)) (Finset.mem_univ k)) (hnonneg z)
+
+end Matrix.PosDef

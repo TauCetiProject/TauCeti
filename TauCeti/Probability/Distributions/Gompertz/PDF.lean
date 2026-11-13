@@ -135,8 +135,8 @@ private lemma injOn_gompertzTransform (hη : 0 < η) (hb : 0 < b) :
     InjOn (fun e : ℝ => log (1 + e / η) / b) (Ioi 0) := by
   intro e he f hf hef
   have hp (y : ℝ) (hy : 0 < y) : 0 < 1 + y / η := by positivity
-  have hh := (log_injOn_pos (hp e he) (hp f hf)) ((div_left_inj' hb.ne').mp hef)
-  exact (div_left_inj' hη.ne').mp (by linarith)
+  have hh := (log_injOn_pos (hp e he) (hp f hf)) ((div_left_inj₀ hb.ne').mp hef)
+  exact (div_left_inj₀ hη.ne').mp (by linarith)
 
 private lemma hasDerivAt_gompertzTransform (hη : 0 < η) (b : ℝ) {e : ℝ} (he : 0 < e) :
     HasDerivAt (fun y : ℝ => log (1 + y / η) / b) ((η + e)⁻¹ / b) e := by
@@ -167,7 +167,7 @@ theorem gompertzMeasure_eq_withDensity (η b : ℝ) :
     have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
       (s := Ioi (0 : ℝ)) (φ := fun e : ℝ => log (1 + e / η) / b)
       (φ' := fun e => (η + e)⁻¹ / b) (f := gompertzPDF η b)
-      measurableSet_Ioi (by fun_prop)
+      measurableSet_Ioi
       (fun e he => (hasDerivAt_gompertzTransform hη b he).hasDerivWithinAt)
       (injOn_gompertzTransform hη hb)
     have hw : (fun e : ℝ => ENNReal.ofReal |(η + e)⁻¹ / b| *

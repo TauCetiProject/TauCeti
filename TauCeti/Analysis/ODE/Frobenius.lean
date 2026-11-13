@@ -10,8 +10,10 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.ODE.ExistUnique
 public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
+public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Analysis.Calculus.ParametricIntegral
 public import TauCeti.Analysis.ODE.SmoothParameter
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The local Frobenius theorem
@@ -36,6 +38,8 @@ connected Lie subgroup.
 ## Main definitions and results
 
 * `TauCeti.IsFrobeniusIntegrableAt f p`: the Frobenius integrability condition at `p`.
+* `TauCeti.isFrobeniusIntegrableAt_neg_clm_apply`: vanishing of the coordinate curvature expression
+  of `Γ : E → F →L[𝕜] E →L[𝕜] F` at `(z, w)` implies Frobenius integrability of `p ↦ -Γ p.1 p.2`.
 * `TauCeti.isFrobeniusIntegrableAt_of_eventually_hasFDerivAt`: the condition holds along the
   graph of every solution.
 * `TauCeti.isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm`: the condition for a second-order
@@ -109,14 +113,48 @@ theorem _root_.Filter.EventuallyEq.isFrobeniusIntegrableAt_iff {f g : E × F →
     IsFrobeniusIntegrableAt f p ↔ IsFrobeniusIntegrableAt g p := by
   simp only [IsFrobeniusIntegrableAt, h.fderiv_eq, h.eq_of_nhds]
 
+/-- For a differentiable bilinear-map-valued field `Γ : E → F →L[𝕜] E →L[𝕜] F`, vanishing of the
+curvature expression `dΓ(a)(w, c) - dΓ(c)(w, a) + Γ(Γ(w, c), a) - Γ(Γ(w, a), c)` at `(z, w)`
+implies Frobenius integrability of `p ↦ -Γ p.1 p.2` at `(z, w)`. This connects flat connections in
+local trivializations (`D u z = -Γ z (u z)`) to the total differential equation interface. -/
+theorem isFrobeniusIntegrableAt_neg_clm_apply
+    {Γ : E → F →L[𝕜] E →L[𝕜] F} {z : E} (w : F)
+    (hΓ : DifferentiableAt 𝕜 Γ z)
+    (hcurv : ∀ a c : E,
+      fderiv 𝕜 Γ z a w c - fderiv 𝕜 Γ z c w a +
+        Γ z (Γ z w c) a - Γ z (Γ z w a) c = 0) :
+    IsFrobeniusIntegrableAt (fun p : E × F ↦ -Γ p.1 p.2) (z, w) := by
+  have hf_deriv : HasFDerivAt (fun p : E × F ↦ -Γ p.1 p.2)
+      (-((Γ z).comp (ContinuousLinearMap.snd 𝕜 E F) +
+        ((fderiv 𝕜 Γ z).comp (ContinuousLinearMap.fst 𝕜 E F)).flip w)) (z, w) :=
+    ((hΓ.hasFDerivAt.comp (z, w) hasFDerivAt_fst).clm_apply hasFDerivAt_snd).neg
+  rw [isFrobeniusIntegrableAt_iff, hf_deriv.fderiv]
+  intro a c
+  have heval (ξ η : E) :
+      ((-((Γ z).comp (ContinuousLinearMap.snd 𝕜 E F) +
+        ((fderiv 𝕜 Γ z).comp (ContinuousLinearMap.fst 𝕜 E F)).flip w)) (ξ, (-Γ z w) ξ)) η =
+        -fderiv 𝕜 Γ z ξ w η + Γ z (Γ z w ξ) η := by
+    simp only [neg_apply, add_apply, ContinuousLinearMap.flip_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
+      map_neg]
+    abel
+  dsimp only
+  rw [heval a c, heval c a, ← sub_eq_zero]
+  convert neg_eq_zero.2 (hcurv a c) using 1
+  abel
+
 /-- **The Frobenius integrability condition is necessary.** If `u` solves the total differential
-equation `D u y = f (y, u y)` near `x` and `f` is differentiable at `(x, u x)`, then `f` satisfies
-the Frobenius integrability condition at `(x, u x)`: the condition is the symmetry of the second
-derivative of `u` at `x`. -/
+equation `D u y = f (y, u y)` near `x`, then `f` satisfies the Frobenius integrability condition at
+`(x, u x)`: the condition is the symmetry of the second derivative of `u` at `x` (if `f` is not
+differentiable at `(x, u x)`, then `fderiv 𝕜 f (x, u x)` is zero and the condition is trivial). -/
 theorem isFrobeniusIntegrableAt_of_eventually_hasFDerivAt [IsRCLikeNormedField 𝕜]
     {f : E × F → E →L[𝕜] F} {u : E → F} {x : E}
-    (hu : ∀ᶠ y in 𝓝 x, HasFDerivAt u (f (y, u y)) y) (hf : DifferentiableAt 𝕜 f (x, u x)) :
+    (hu : ∀ᶠ y in 𝓝 x, HasFDerivAt u (f (y, u y)) y) :
     IsFrobeniusIntegrableAt f (x, u x) := by
+  by_cases hf : DifferentiableAt 𝕜 f (x, u x)
+  swap
+  · intro v w
+    simp [fderiv_zero_of_not_differentiableAt hf]
   intro v w
   have hgraph : HasFDerivAt (fun y ↦ (y, u y))
       ((ContinuousLinearMap.id 𝕜 E).prod (f (x, u x))) x :=
@@ -129,6 +167,77 @@ section Real
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The derivative in `s` at `s = 0` of the point `x₀ + t • (z + s • w)` of the ray from `x₀` in the
+direction `z + s • w`. -/
+private theorem hasDerivAt_ray_direction (x₀ z w : E) (t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ x₀ + t • (z + s • w)) (t • w) 0 := by
+  simpa using ((((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z).const_smul t).const_add x₀
+
+/-- The derivative in `s` at `s = 0` of `α` along the ray from `x₀` in the direction `z + s • w`,
+at time `t`. -/
+private theorem hasDerivAt_apply_ray_direction_self {α : E → F} {x₀ z : E} (w : E) {t : ℝ}
+    (hα : DifferentiableAt ℝ α (x₀ + t • z)) :
+    HasDerivAt (fun s : ℝ ↦ α (x₀ + t • (z + s • w))) (fderiv ℝ α (x₀ + t • z) (t • w)) 0 := by
+  have hd : HasFDerivAt α (fderiv ℝ α (x₀ + t • z)) (x₀ + t • (z + (0 : ℝ) • w)) := by
+    rw [zero_smul, add_zero]
+    exact hα.hasFDerivAt
+  exact hd.comp_hasDerivAt (0 : ℝ) (hasDerivAt_ray_direction x₀ z w t)
+
+/-- The derivative in `s` at `s = 0` of the field `g (y, α y)` applied to the direction `z + s • w`,
+evaluated at the point `x₀ + τ • (z + s • w)` of the ray in that direction. -/
+private theorem hasDerivAt_apply_ray_direction {g : E × F → E →L[ℝ] F} (hg : ContDiff ℝ 1 g)
+    {α : E → F} {x₀ z : E} (w : E) {τ : ℝ} (hα : DifferentiableAt ℝ α (x₀ + τ • z)) :
+    HasDerivAt (fun s : ℝ ↦
+      g (x₀ + τ • (z + s • w), α (x₀ + τ • (z + s • w))) (z + s • w))
+      (fderiv ℝ g (x₀ + τ • z, α (x₀ + τ • z)) (τ • w, τ • fderiv ℝ α (x₀ + τ • z) w) z +
+        g (x₀ + τ • z, α (x₀ + τ • z)) w) 0 := by
+  have hgP := (hg.differentiable one_ne_zero (x₀ + τ • (z + (0 : ℝ) • w),
+    α (x₀ + τ • (z + (0 : ℝ) • w)))).hasFDerivAt.comp_hasDerivAt (0 : ℝ)
+    ((hasDerivAt_ray_direction x₀ z w τ).prodMk (hasDerivAt_apply_ray_direction_self w hα))
+  have hdir : HasDerivAt (fun s : ℝ ↦ z + s • w) w 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z
+  refine (hgP.clm_apply hdir).congr_deriv ?_
+  simp [map_smul]
+
+/-- The derivative in time of `α` along the ray from `x₀` in the direction `z + s • w` is the field
+`g (y, α y)` applied to the direction, at every time `τ ≠ 0` at which the ray lies in the open set
+`U` where `α` is `C¹` and solves the radial equation. -/
+private theorem hasDerivAt_apply_ray_of_radial {g : E × F → E →L[ℝ] F} {α : E → F} {U : Set E}
+    (hU : IsOpen U) (hα : ContDiffOn ℝ 1 α U) {x₀ : E}
+    (hrad : ∀ y ∈ U, fderiv ℝ α y (y - x₀) = g (y, α y) (y - x₀)) {z : E} (w : E) {s τ : ℝ}
+    (hτ : τ ≠ 0) (hmem : x₀ + τ • (z + s • w) ∈ U) :
+    HasDerivAt (fun τ : ℝ ↦ α (x₀ + τ • (z + s • w)))
+      (g (x₀ + τ • (z + s • w), α (x₀ + τ • (z + s • w))) (z + s • w)) τ := by
+  have hray : HasDerivAt (fun τ : ℝ ↦ x₀ + τ • (z + s • w)) (z + s • w) τ := by
+    simpa using ((hasDerivAt_id τ).smul_const (z + s • w)).const_add x₀
+  have hd := ((hα.contDiffAt (hU.mem_nhds hmem)).differentiableAt one_ne_zero).hasFDerivAt
+  refine (hd.comp_hasDerivAt τ hray).congr_deriv ?_
+  -- The radial equation at the point, divided by `τ ≠ 0`.
+  have h := hrad _ hmem
+  simp only [add_sub_cancel_left, map_smul] at h
+  exact smul_right_injective F hτ h
+
+/-- The integrand in the integral formula for `t • fderiv α (x₀ + t • z) w` below is continuous on
+the open set of times at which the ray from `x₀` in the direction `z` lies in `U`. -/
+private theorem continuousOn_fderiv_apply_add_apply_ray {g : E × F → E →L[ℝ] F}
+    (hg : ContDiff ℝ 1 g) {α : E → F} {U : Set E} (hU : IsOpen U) (hα : ContDiffOn ℝ 1 α U)
+    (x₀ z w : E) :
+    ContinuousOn (fun τ : ℝ ↦ fderiv ℝ g (x₀ + τ • z, α (x₀ + τ • z))
+      (τ • w, τ • fderiv ℝ α (x₀ + τ • z) w) z + g (x₀ + τ • z, α (x₀ + τ • z)) w)
+      {τ : ℝ | x₀ + τ • z ∈ U} := by
+  have hDα : ContinuousOn (fun τ : ℝ ↦ fderiv ℝ α (x₀ + τ • z)) {τ : ℝ | x₀ + τ • z ∈ U} :=
+    (hα.continuousOn_fderiv_of_isOpen hU le_rfl).comp (by fun_prop) fun _ hτ ↦ hτ
+  have hα' : ContinuousOn (fun τ : ℝ ↦ α (x₀ + τ • z)) {τ : ℝ | x₀ + τ • z ∈ U} :=
+    hα.continuousOn.comp (by fun_prop) fun _ hτ ↦ hτ
+  have hgraph : ContinuousOn (fun τ : ℝ ↦ (x₀ + τ • z, α (x₀ + τ • z)))
+      {τ : ℝ | x₀ + τ • z ∈ U} :=
+    (continuous_const.add (continuous_id.smul continuous_const)).continuousOn.prodMk hα'
+  exact (((hg.continuous_fderiv one_ne_zero).comp_continuousOn hgraph).clm_apply
+    ((continuous_id.smul continuous_const).continuousOn.prodMk
+      (continuousOn_id.smul (hDα.clm_apply continuousOn_const)))).clm_apply
+    continuousOn_const |>.add ((hg.continuous.comp_continuousOn hgraph).clm_apply
+      continuousOn_const)
 
 /-- **The variational equation along a ray, integrated.** Let `α` be `C¹` on an open set `U` and
 solve the total differential equation `D α y = g (y, α y)` in the radial direction `y - x₀` at
@@ -165,14 +274,8 @@ private theorem smul_fderiv_apply_eq_intervalIntegral [CompleteSpace F] {g : E �
     have hst (τ : ℝ) (hτ : τ ∈ Icc 0 t) : (s, τ) ∈ P ⁻¹' U := hs τ ⟨hτ.1, hτ.2.trans ht.2⟩
     have hderiv (τ : ℝ) (hτ : τ ∈ Ioo 0 t) : HasDerivAt (fun τ ↦ α (P (s, τ))) (G (s, τ)) τ := by
       have hmem : P (s, τ) ∈ U := hst τ (Ioo_subset_Icc_self hτ)
-      have hray : HasDerivAt (fun τ : ℝ ↦ P (s, τ)) (z + s • w) τ := by
-        simpa [hP] using ((hasDerivAt_id τ).smul_const (z + s • w)).const_add x₀
-      have hd := ((hα.contDiffAt (hU.mem_nhds hmem)).differentiableAt one_ne_zero).hasFDerivAt
-      refine (hd.comp_hasDerivAt τ hray).congr_deriv ?_
-      -- The radial equation at `P (s, τ)`, divided by `τ ≠ 0`.
-      have h := hrad _ hmem
-      simp only [hP, add_sub_cancel_left, map_smul] at h
-      simpa [hG, hP] using smul_right_injective F hτ.1.ne' h
+      simpa only [hG, hP] using hasDerivAt_apply_ray_of_radial hU hα hrad (z := z) w hτ.1.ne'
+        (by simpa only [hP] using hmem)
     have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le ht.1
       (hαV.continuousOn.comp (hslice s).continuousOn hst) hderiv
       ((hGV.continuousOn.comp (hslice s).continuousOn
@@ -185,14 +288,8 @@ private theorem smul_fderiv_apply_eq_intervalIntegral [CompleteSpace F] {g : E �
       rintro ⟨s, τ⟩ ⟨rfl, hτ⟩
       rw [uIcc_of_le ht.1] at hτ
       exact hV0 τ ⟨hτ.1, hτ.2.trans ht.2⟩)
-  have hL : HasDerivAt (fun s : ℝ ↦ α (x₀ + t • (z + s • w))) (fderiv ℝ α (x₀ + t • z) (t • w))
-      0 := by
-    have hd : HasFDerivAt α (fderiv ℝ α (x₀ + t • z)) (x₀ + t • (z + (0 : ℝ) • w)) := by
-      rw [zero_smul, add_zero]
-      exact ((hα.contDiffAt (hU.mem_nhds (hseg t ht))).differentiableAt one_ne_zero).hasFDerivAt
-    have hray : HasDerivAt (fun s : ℝ ↦ x₀ + t • (z + s • w)) (t • w) 0 := by
-      simpa using ((((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z).const_smul t).const_add x₀
-    exact hd.comp_hasDerivAt (0 : ℝ) hray
+  have hL := hasDerivAt_apply_ray_direction_self (α := α) (x₀ := x₀) w (t := t)
+    ((hα.contDiffAt (hU.mem_nhds (hseg t ht))).differentiableAt one_ne_zero)
   rw [← map_smul, hL.unique ((hR.const_add (α x₀)).congr_of_eventuallyEq hint)]
   -- Identify the partial derivative of `G` in `s`.
   refine intervalIntegral.integral_congr fun τ hτ ↦ ?_
@@ -203,23 +300,10 @@ private theorem smul_fderiv_apply_eq_intervalIntegral [CompleteSpace F] {g : E �
     ((hGV.differentiableOn one_ne_zero _ hmem).differentiableAt
       (hV.mem_nhds hmem)).hasFDerivAt.comp_hasDerivAt (0 : ℝ)
       ((hasDerivAt_id (0 : ℝ)).prodMk (hasDerivAt_const (0 : ℝ) τ))
-  have hray : HasDerivAt (fun s : ℝ ↦ P (s, τ)) (τ • w) 0 := by
-    simpa [hP] using ((((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z).const_smul τ).const_add
-      x₀
-  have hP0 : P (0, τ) = x₀ + τ • z := by simp [hP]
-  have hdα := ((hα.contDiffAt (hU.mem_nhds hmem')).differentiableAt one_ne_zero).hasFDerivAt
-  rw [← hP0] at hdα
-  have h2 : HasDerivAt (fun s : ℝ ↦ G (s, τ))
-      (fderiv ℝ g (x₀ + τ • z, α (x₀ + τ • z)) (τ • w, τ • fderiv ℝ α (x₀ + τ • z) w) z +
-        g (x₀ + τ • z, α (x₀ + τ • z)) w) 0 := by
-    have hgP := (hg.differentiable one_ne_zero (P (0, τ), α (P (0, τ)))).hasFDerivAt.comp_hasDerivAt
-      (0 : ℝ) (hray.prodMk (hdα.comp_hasDerivAt (0 : ℝ) hray))
-    have hdir : HasDerivAt (fun s : ℝ ↦ z + s • w) w 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z
-    rw [hG]
-    refine (hgP.clm_apply hdir).congr_deriv ?_
-    simp [hP0, map_smul]
-  exact h1.unique h2
+  have h2 := hasDerivAt_apply_ray_direction hg w
+    ((hα.contDiffAt (hU.mem_nhds hmem')).differentiableAt one_ne_zero)
+  refine h1.unique ?_
+  simpa only [hG, hP] using h2
 
 /-- **The defect of a radial solution along a ray.** Let `α` be `C¹` on an open set `U` and solve
 the total differential equation `D α y = g (y, α y)` in the radial direction `y - x₀` on `U`, and
@@ -239,21 +323,7 @@ private theorem hasDerivWithinAt_smul_radialDefect [CompleteSpace F] {g : E × F
   have hmem : x₀ + t • z ∈ U := hseg t (Ico_subset_Icc_self ht)
   have hT : IsOpen {τ : ℝ | x₀ + τ • z ∈ U} := hU.preimage (by fun_prop)
   -- The integrand of `smul_fderiv_apply_eq_intervalIntegral` is continuous near `[0, 1]`.
-  have hφ : ContinuousOn (fun τ : ℝ ↦ fderiv ℝ g (x₀ + τ • z, α (x₀ + τ • z))
-      (τ • w, τ • fderiv ℝ α (x₀ + τ • z) w) z + g (x₀ + τ • z, α (x₀ + τ • z)) w)
-      {τ : ℝ | x₀ + τ • z ∈ U} := by
-    have hDα : ContinuousOn (fun τ : ℝ ↦ fderiv ℝ α (x₀ + τ • z)) {τ : ℝ | x₀ + τ • z ∈ U} :=
-      (hα.continuousOn_fderiv_of_isOpen hU le_rfl).comp (by fun_prop) fun _ hτ ↦ hτ
-    have hα' : ContinuousOn (fun τ : ℝ ↦ α (x₀ + τ • z)) {τ : ℝ | x₀ + τ • z ∈ U} :=
-      hα.continuousOn.comp (by fun_prop) fun _ hτ ↦ hτ
-    have hgraph : ContinuousOn (fun τ : ℝ ↦ (x₀ + τ • z, α (x₀ + τ • z)))
-        {τ : ℝ | x₀ + τ • z ∈ U} :=
-      (continuous_const.add (continuous_id.smul continuous_const)).continuousOn.prodMk hα'
-    exact (((hg.continuous_fderiv one_ne_zero).comp_continuousOn hgraph).clm_apply
-      ((continuous_id.smul continuous_const).continuousOn.prodMk
-        (continuousOn_id.smul (hDα.clm_apply continuousOn_const)))).clm_apply
-      continuousOn_const |>.add ((hg.continuous.comp_continuousOn hgraph).clm_apply
-        continuousOn_const)
+  have hφ := continuousOn_fderiv_apply_add_apply_ray hg hU hα x₀ z w
   have h1 : HasDerivWithinAt (fun s : ℝ ↦ s • fderiv ℝ α (x₀ + s • z) w)
       (fderiv ℝ g (x₀ + t • z, α (x₀ + t • z)) (t • w, t • fderiv ℝ α (x₀ + t • z) w) z +
         g (x₀ + t • z, α (x₀ + t • z)) w) (Ici t) t := by
@@ -444,19 +514,23 @@ private theorem rayFamily_smul_apply_one {g : E × F → E →L[ℝ] F} {K : ℝ
 /-- **The Frobenius condition for a second-order system.** Let `f` describe a second-order
 equation `D²φ(y) = B(y, φ y, Dφ y)` as the first-order system `D(φ, α) = f(y, φ, α)` for the value
 and the differential, so that `(f p u).1 = α u` and `(f p u).2 v = B(p)(u, v)` is symmetric. Let
-`φ` be `C²` at `y` with value `c`, differential `α` and second derivative `B(y, c, α)` at `y`, and
-let `f` be differentiable at `(y, c, α)`. If, along `φ`, the derivatives at `y` of
+`φ` be `C²` at `y` with value `c`, differential `α` and second derivative `B(y, c, α)` at `y`.
+If, along `φ`, the derivatives at `y` of
 `z ↦ B(z, φ z, Dφ z)(u, v)` are symmetric in the direction of differentiation and the second slot,
 then `f` satisfies the Frobenius integrability condition at `(y, c, α)`. -/
 theorem isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm
     {f : E × F × (E →L[ℝ] F) → E →L[ℝ] F × (E →L[ℝ] F)}
     (hfst : ∀ p u, (f p u).1 = p.2.2 u) (hsnd : ∀ p u v, (f p u).2 v = (f p v).2 u)
-    {y : E} {q : F × (E →L[ℝ] F)} (hf : DifferentiableAt ℝ f (y, q)) {φ : E → F}
+    {y : E} {q : F × (E →L[ℝ] F)} {φ : E → F}
     (hφ : ContDiffAt ℝ 2 φ y) (hφy : φ y = q.1)
     (hDφ : fderiv ℝ φ y = q.2) (hD2φ : ∀ u v, fderiv ℝ (fderiv ℝ φ) y u v = (f (y, q) u).2 v)
     (h : ∀ u v w, fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 v) y w =
       fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 w) y v) :
     IsFrobeniusIntegrableAt f (y, q) := by
+  by_cases hf : DifferentiableAt ℝ f (y, q)
+  swap
+  · intro v w
+    simp [fderiv_zero_of_not_differentiableAt hf]
   set p : E × F × (E →L[ℝ] F) := (y, q)
   -- The components of the derivative of `f` are the derivatives of the components of `f`.
   have hevfst (d : E × F × (E →L[ℝ] F)) (a : E) :
@@ -619,8 +693,8 @@ private theorem exists_radial_solution_family [FiniteDimensional ℝ E] [FiniteD
           DifferentiableAt ℝ (fun x ↦ α (x, q.2)) (x₀ + t • q.1) →
             fderiv ℝ (fun x ↦ α (x, q.2)) (x₀ + t • q.1) q.1 =
               g (x₀ + t • q.1, α (x₀ + t • q.1, q.2)) q.1 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
-  let _ : CompleteSpace F := FiniteDimensional.complete ℝ F
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  let _ : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
   obtain ⟨c, r, hr, hc1, hc01, hcont, hc⟩ := exists_rayFamily_of_initial hg x₀ y₀
   let α : E × F → F := fun q ↦ (c (q.1 - x₀, q.2) 1).2
   let V : Set (E × F) :=
@@ -685,7 +759,7 @@ private theorem eventually_hasFDerivAt_of_radial_solution_family
     (hgint : ∀ᶠ p in 𝓝 (x₀, y₀), IsFrobeniusIntegrableAt g p ∧ g p = f p) :
     ∀ᶠ p in 𝓝 (x₀, y₀),
       HasFDerivAt (fun x ↦ α (x, p.2)) (f (p.1, α p)) p.1 := by
-  let _ : CompleteSpace F := FiniteDimensional.complete ℝ F
+  let _ : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
   -- Choose one product ball where the family is `C¹`, integrability holds, and `g = f`.
   obtain ⟨V, hV, hαV⟩ := (hαsmooth.of_le le_add_self).contDiffOn le_rfl (by simp)
   have hgraph : Tendsto (fun p : E × F ↦ (p.1, α p)) (𝓝 (x₀, y₀)) (𝓝 (x₀, y₀)) := by
@@ -740,11 +814,7 @@ private theorem eventually_hasFDerivAt_of_radial_solution_family
   rw [← (hU (p.1, p.2) hpball).2.2, ← hfd]
   exact (hsliceDiff p.2 hpy p.1 hpx).hasFDerivAt
 
-/-- **A smooth local family of Frobenius solutions.** Under the hypotheses of the local
-Frobenius theorem, the solutions through `(x₀, y)` for `y` near `y₀` can be chosen to depend
-smoothly on both `x` and `y` on one open neighbourhood. The value at `x₀` is the parameter `y`,
-and every nearby fixed-parameter slice solves the total differential equation. -/
-theorem exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt
+private theorem exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt_aux
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] {n : ℕ∞}
     {f : E × F → E →L[ℝ] F} {s : Set (E × F)} {x₀ : E} {y₀ : F}
     (hf : ContDiffOn ℝ (n + 1) f s) (hs : s ∈ 𝓝 (x₀, y₀))
@@ -775,6 +845,76 @@ theorem exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt
     exact hYsub hy.2
   · intro p hp
     exact hWsub hp.1.2
+
+end FiniteDimensional
+
+section FiniteDimensionalPolymorphic
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **A smooth local family of Frobenius solutions.** Under the hypotheses of the local
+Frobenius theorem, the solutions through `(x₀, y)` for `y` near `y₀` can be chosen to depend
+smoothly on both `x` and `y` on one open neighbourhood. The value at `x₀` is the parameter `y`,
+and every nearby fixed-parameter slice solves the total differential equation. -/
+theorem exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] {n : ℕ∞}
+    {f : E × F → E →L[ℝ] F} {s : Set (E × F)} {x₀ : E} {y₀ : F}
+    (hf : ContDiffOn ℝ (n + 1) f s) (hs : s ∈ 𝓝 (x₀, y₀))
+    (hint : ∀ᶠ p in 𝓝 (x₀, y₀), IsFrobeniusIntegrableAt f p) :
+    ∃ (u : E × F → F) (U : Set (E × F)),
+      IsOpen U ∧ (x₀, y₀) ∈ U ∧ ContDiffOn ℝ (n + 1) u U ∧
+      u (x₀, y₀) = y₀ ∧
+      (∀ y, (x₀, y) ∈ U → u (x₀, y) = y) ∧
+      ∀ p ∈ U,
+        HasFDerivAt (fun x ↦ u (x, p.2)) (f (p.1, u p)) p.1 := by
+  let E₀ : Type := Fin (Module.finrank ℝ E) → ℝ
+  let F₀ : Type := Fin (Module.finrank ℝ F) → ℝ
+  let κE : E ≃L[ℝ] E₀ := (Module.finBasis ℝ E).equivFun.toContinuousLinearEquiv
+  let κF : F ≃L[ℝ] F₀ := (Module.finBasis ℝ F).equivFun.toContinuousLinearEquiv
+  let κP : (E × F) ≃L[ℝ] (E₀ × F₀) := κE.prodCongr κF
+  let κL : (E →L[ℝ] F) ≃L[ℝ] (E₀ →L[ℝ] F₀) := κE.arrowCongr κF
+  let f₀ : E₀ × F₀ → E₀ →L[ℝ] F₀ := fun q ↦ κL (f (κP.symm q))
+  let s₀ : Set (E₀ × F₀) := κP.symm ⁻¹' s
+  have hf₀ : ContDiffOn ℝ (n + 1) f₀ s₀ :=
+    κL.contDiff.comp_contDiffOn (hf.comp κP.symm.contDiff.contDiffOn (mapsTo_preimage _ _))
+  have hs₀ : s₀ ∈ 𝓝 (κE x₀, κF y₀) :=
+    κP.symm.continuousAt.preimage_mem_nhds (by simpa [κP] using hs)
+  have hint₀ : ∀ᶠ q in 𝓝 (κE x₀, κF y₀), IsFrobeniusIntegrableAt f₀ q := by
+    obtain ⟨O, hOsub, hOopen, hpO⟩ := mem_nhds_iff.1 (Filter.inter_mem hs hint)
+    have hO₀ : κP.symm ⁻¹' O ∈ 𝓝 (κE x₀, κF y₀) :=
+      κP.symm.continuousAt.preimage_mem_nhds (by simpa [κP] using hOopen.mem_nhds hpO)
+    filter_upwards [hO₀] with q hq
+    have hfp : DifferentiableAt ℝ f (κP.symm q) :=
+      (((hf.mono fun _ hp ↦ (hOsub hp).1).contDiffAt
+        (hOopen.mem_nhds hq)).differentiableAt (by simp))
+    have hf₀_q : HasFDerivAt f₀
+        (κL.toContinuousLinearMap.comp
+          ((fderiv ℝ f (κP.symm q)).comp κP.symm.toContinuousLinearMap)) q :=
+      κL.hasFDerivAt.comp q (hfp.hasFDerivAt.comp q κP.symm.hasFDerivAt)
+    rw [isFrobeniusIntegrableAt_iff]
+    intro v₀ w₀
+    rw [hf₀_q.fderiv]
+    simp only [f₀, κP, κL, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodCongr_apply,
+      ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_apply_apply]
+    exact congrArg κF ((isFrobeniusIntegrableAt_iff.1 (hOsub hq).2) (κE.symm v₀) (κE.symm w₀))
+  obtain ⟨u₀, U₀, hU₀open, hq₀U₀, hu₀smooth, hu₀_base, hu₀_init, hu₀_sol⟩ :=
+    exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt_aux hf₀ hs₀ hint₀
+  let u : E × F → F := fun p ↦ κF.symm (u₀ (κP p))
+  let U : Set (E × F) := κP ⁻¹' U₀
+  refine ⟨u, U, hU₀open.preimage κP.continuous, hq₀U₀,
+    κF.symm.contDiff.comp_contDiffOn (hu₀smooth.comp κP.contDiff.contDiffOn (mapsTo_preimage _ _)),
+    by simp [u, κP, hu₀_base], fun y hy ↦ by simp [u, κP, hu₀_init (κF y) hy], fun p hp ↦ ?_⟩
+  have hsol_p : HasFDerivAt (fun z₀ ↦ u₀ (z₀, κF p.2)) (f₀ (κE p.1, u₀ (κP p))) (κE p.1) :=
+    hu₀_sol (κP p) hp
+  have hcomp : HasFDerivAt (fun x ↦ u (x, p.2))
+      (κF.symm.toContinuousLinearMap.comp
+        ((f₀ (κE p.1, u₀ (κP p))).comp κE.toContinuousLinearMap)) p.1 :=
+    κF.symm.hasFDerivAt.comp p.1 (hsol_p.comp p.1 κE.hasFDerivAt)
+  refine hcomp.congr_fderiv ?_
+  ext v
+  simp [u, f₀, κP, κL]
 
 /-- **The local Frobenius theorem.** Let `E` and `F` be finite-dimensional real normed spaces and
 let `f : E × F → (E →L[ℝ] F)` be `C^(n+1)` near `(x₀, y₀)`, for instance `C¹`. If `f` satisfies the
@@ -846,44 +986,15 @@ theorem exists_frobenius_flat_coordinate [FiniteDimensional ℝ E] [FiniteDimens
   let A : (E × F) ≃L[ℝ] (E × F) :=
     (ContinuousLinearEquiv.refl ℝ E).skewProd (ContinuousLinearEquiv.refl ℝ F) (f (x₀, y₀))
   have hΦOn : ContDiffOn ℝ (n + 1) Φ U := contDiffOn_fst.prodMk husmoothOn
-  have hΦsmooth : ContDiffAt ℝ (n + 1) Φ (x₀, y₀) := hΦOn.contDiffAt (hU.mem_nhds hp₀U)
   have hΦ : HasFDerivAt Φ (A : (E × F) →L[ℝ] (E × F)) (x₀, y₀) := by
     simpa only [Φ, A] using
       hasFDerivAt_graph_of_solution_family hu₀ husmooth huinit' husol'
-  have hΦ₀ : Φ (x₀, y₀) = (x₀, y₀) := by simp [Φ, hu₀]
-  -- The derivative of `Φ` stays invertible on an open neighbourhood `V` of the base point.
-  let V : Set (E × F) := U ∩ fderiv ℝ Φ ⁻¹' range ((↑) : ((E × F) ≃L[ℝ] (E × F)) → _)
-  have hV : IsOpen V :=
-    (hΦOn.continuousOn_fderiv_of_isOpen hU (by simp)).isOpen_inter_preimage hU
-      ContinuousLinearEquiv.isOpen
-  have hp₀V : (x₀, y₀) ∈ V := ⟨hp₀U, A, hΦ.fderiv.symm⟩
-  let e₀ : OpenPartialHomeomorph (E × F) (E × F) :=
-    hΦsmooth.toOpenPartialHomeomorph Φ hΦ (by simp)
-  have he₀fun : (e₀ : E × F → E × F) = Φ := hΦsmooth.toOpenPartialHomeomorph_coe hΦ (by simp)
-  let e : OpenPartialHomeomorph (E × F) (E × F) := e₀.restrOpen V hV
-  have hefun : (e : E × F → E × F) = Φ := (e₀.coe_restrOpen hV).trans he₀fun
-  have hesourceV : e.source ⊆ V := fun p hp ↦ by
-    rw [e₀.restrOpen_source] at hp
-    exact hp.2
-  have hesource : (x₀, y₀) ∈ e.source := by
-    rw [e₀.restrOpen_source]
-    exact ⟨hΦsmooth.mem_toOpenPartialHomeomorph_source hΦ (by simp), hp₀V⟩
-  have heOn : ContDiffOn ℝ (n + 1) e e.source := by
-    rw [hefun]
-    exact hΦOn.mono fun p hp ↦ (hesourceV hp).1
-  refine ⟨u, e, hu₀, huinit', hefun, hesource, heOn, fun z hz ↦ ?_, fun p hp ↦ ?_⟩
-  · -- At every point of the target the inverse function theorem applies.
-    have hq := e.map_target hz
-    have hqV := hesourceV hq
-    obtain ⟨L, hL⟩ := hqV.2
-    have hd : ContDiffAt ℝ (n + 1) e (e.symm z) := heOn.contDiffAt (e.open_source.mem_nhds hq)
-    refine (e.contDiffAt_symm hz (f₀' := L) ?_ hd).contDiffWithinAt
-    have hdiff := hd.differentiableAt (by simp)
-    rw [hefun] at hdiff ⊢
-    exact hL ▸ hdiff.hasFDerivAt
-  · have hp' := husol p (hesourceV hp).1
-    rw [hefun]
-    simpa only [id_eq] using (hasFDerivAt_id p.1).prodMk hp'
+  obtain ⟨e, hefun, hesource, hesourceU, hesymm⟩ :=
+    TauCeti.ContDiffOn.exists_openPartialHomeomorph hΦOn hU hp₀U (by simp) hΦ.fderiv.symm
+  have heOn : ContDiffOn ℝ (n + 1) e e.source := hefun ▸ hΦOn.mono hesourceU
+  refine ⟨u, e, hu₀, huinit', hefun, hesource, heOn, hesymm, fun p hp ↦ ?_⟩
+  rw [hefun]
+  simpa only [id_eq] using (hasFDerivAt_id p.1).prodMk (husol p (hesourceU hp))
 
 /-- **The Frobenius theorem for total differential equations.** Let `E` and `F` be
 finite-dimensional real normed spaces and let `f : E × F → (E →L[ℝ] F)` be `C^(n+1)` near `p₀`,
@@ -898,17 +1009,14 @@ theorem eventually_exists_hasFDerivAt_iff_eventually_isFrobeniusIntegrableAt
       ∀ᶠ p in 𝓝 p₀, IsFrobeniusIntegrableAt f p := by
   constructor
   · intro h
-    filter_upwards [h, eventually_mem_nhds_iff.2 hs] with p ⟨u, hu₀, hu⟩ hsp
-    have hfp : DifferentiableAt ℝ f (p.1, u p.1) := by
-      rw [hu₀]
-      exact (hf.contDiffAt hsp).differentiableAt (by simp)
-    simpa [hu₀] using isFrobeniusIntegrableAt_of_eventually_hasFDerivAt hu hfp
+    filter_upwards [h, eventually_mem_nhds_iff.2 hs] with p ⟨u, hu₀, hu⟩ _
+    simpa [hu₀] using isFrobeniusIntegrableAt_of_eventually_hasFDerivAt hu
   · intro h
     filter_upwards [h.eventually_nhds, eventually_mem_nhds_iff.2 hs] with p hp hsp
     obtain ⟨u, hu₀, -, hu⟩ := exists_eventually_hasFDerivAt_of_isFrobeniusIntegrableAt hf
       (x₀ := p.1) (y₀ := p.2) hsp hp
     exact ⟨u, hu₀, hu⟩
 
-end FiniteDimensional
+end FiniteDimensionalPolymorphic
 
 end TauCeti

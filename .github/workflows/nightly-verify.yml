@@ -67,11 +67,11 @@ jobs:
     # through the ordinary picker: its GitHub fallback cannot finish this workload.
     # Workflow concurrency above bounds this exception to one source verification at a time;
     # the reference job still selects ordinary shared build capacity below.
+    # Full clean builds retain their twelve-hour budget on the existing CI pool.
+    # The PR class excludes staging-only and queue-control reservations.
     runs-on:
-      # Match the current build priority so old default-priority queues cannot starve it.
-      # A run-specific label prevents another queued job taking its ephemeral runner.
-      - nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1
-      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
     # Namespace runners support longer jobs; allow headroom for source growth and audits.
     timeout-minutes: 720
     outputs:
@@ -102,10 +102,10 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: fresh
 
       - name: Resolve the commit under test
@@ -123,8 +123,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
@@ -216,7 +219,15 @@ jobs:
     needs: [verify, pick-reference-runner]
     if: ${{ !cancelled() && needs.verify.outputs.build == 'success'
             && needs.verify.outputs.manifest_upload == 'success' && github.repository == 'TauCetiProject/TauCeti' }}
-    runs-on: ${{ fromJSON(needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-reference-runner.outputs.runner || '"ubuntu-24.04"') }}
+    # Nineteen native concurrency groups cap all hosted bulk builds across
+    # workflows, leaving one of the organization's 20 slots for small jobs and
+    # roadmap merge builds. Waiting here consumes no runner. Other pools retain
+    # their existing concurrency; failed pickers share conservative slot zero.
+    concurrency:
+      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), fromJSON(needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && !contains(needs.pick-reference-runner.outputs.runner, 'nscloud-') && !contains(needs.pick-reference-runner.outputs.runner, 'namespace-features:') && needs.pick-reference-runner.outputs.runner || '"ubuntu-24.04"')) && format('tauceti-hosted-bulk-{0}', needs.pick-reference-runner.outputs.hosted-slot || '0') || format('unlimited-reference-{0}', github.run_id) }}
+      queue: max
+      cancel-in-progress: false
+    runs-on: ${{ fromJSON(needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && !contains(needs.pick-reference-runner.outputs.runner, 'nscloud-') && !contains(needs.pick-reference-runner.outputs.runner, 'namespace-features:') && needs.pick-reference-runner.outputs.runner || '"ubuntu-24.04"') }}
     timeout-minutes: 240
     outputs:
       compare: ${{ steps.compare.outputs.status }}
@@ -242,10 +253,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: fresh
 
       # Pin the reference workspace to the SAME commit, by SHA rather than by branch: main advances
@@ -328,46 +339,10 @@ jobs:
           # is load-bearing, and scripts/test_bwrap_pin.py checks it is still present and still
           # runs before anything that touches a candidate `.lake`.
           deb="bubblewrap_${BWRAP_VER}_amd64.deb"
-          if ! curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb \
-             && ! curl -sSL --fail "https://security.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb; then
-            echo "::error::bubblewrap ${BWRAP_VER} is gone from the Ubuntu pool. The sandbox cannot be installed, so no PR can build until the pin is moved."
-            printf '%s\n' \
-              '' \
-              "WHAT HAPPENED: BWRAP_VER is pinned to ${BWRAP_VER} from noble's release pocket," \
-              'which Ubuntu does not rewrite for the life of the release. Reaching this is' \
-              'unexpected: an archive outage, a runner image no longer on 24.04, or 24.04 gone' \
-              'end of life.' \
-              '' \
-              'HOW TO FIX IT. Take the version from a RELEASE pocket, never from -updates,' \
-              '-security or a development suite: those are superseded and deleted, so a pin' \
-              'to one expires and brings every required build down with it.' \
-              '' \
-              '  suite=noble        # or the release pocket of whatever image CI runs on' \
-              '  curl -s "https://archive.ubuntu.com/ubuntu/dists/$suite/main/binary-amd64/Packages.gz" \' \
-              "    | gunzip | awk '/^Package: bubblewrap\$/{f=1} f&&/^Version:/{print \$2; exit}'" \
-              '' \
-              'Download it and take both hashes:' \
-              '' \
-              '  curl -sSLO "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_${ver}_amd64.deb"' \
-              '  sha256sum "bubblewrap_${ver}_amd64.deb"   # BWRAP_DEB_SHA256' \
-              '  sudo dpkg -i "bubblewrap_${ver}_amd64.deb"' \
-              '  sha256sum /usr/bin/bwrap                  # BWRAP_SHA256' \
-              '' \
-              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all five of' \
-              '.github/workflows/{pr-build,pr-profile,nightly-verify,shadow-audits,warm-dependencies}.yml. They must agree;' \
-              'scripts/test_bwrap_pin.py fails if they do not.' \
-              '' \
-              'ON VERSIONS: 0.12.0 or newer is safe on its own. Below that, the' \
-              '"Normalise ... .lake" step is what keeps it safe, because earlier bubblewrap' \
-              'follows a symlink in a candidate checkout while creating the sandbox mount point' \
-              '(GHSA-pxhw-h44j-8pfx). If you pin below 0.12.0, check that step still runs before' \
-              'anything else touches .lake. Keep the step either way: the trusted-phase callers' \
-              'follow the symlink themselves and no bubblewrap version fixes that.' \
-              '' >&2
-            exit 1
-          fi
+          # The pinned tools bundle this exact Ubuntu package; no archive DNS is needed.
+          cp "$RUNNER_TEMP/tauceti-shared-scripts/vendor/$deb" bwrap.deb
           if ! echo "${BWRAP_DEB_SHA256}  bwrap.deb" | sha256sum -c -; then
-            echo "::error::bubblewrap ${BWRAP_VER} downloaded but does not match BWRAP_DEB_SHA256. Ubuntu does not rewrite published packages, so either the pin is wrong or the download was tampered with. Re-derive the hashes rather than relaxing this check."
+            echo "::error::Bundled bubblewrap ${BWRAP_VER} does not match BWRAP_DEB_SHA256; refusing to install it. Update the bundled package and both pins together."
             exit 1
           fi
           sudo dpkg -i bwrap.deb >/dev/null
@@ -456,8 +431,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none

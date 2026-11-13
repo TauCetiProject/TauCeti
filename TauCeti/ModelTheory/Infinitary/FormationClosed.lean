@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.Fragment
+public import TauCeti.ModelTheory.Infinitary.NegationClosed
 public import TauCeti.ModelTheory.Infinitary.Symbols
 import Mathlib.ModelTheory.Encoding
 import TauCeti.ModelTheory.Basic
@@ -50,6 +50,9 @@ distinct.
   `FirstOrder.Language.Fragment.FormationClosed.ex_mem`,
   `FirstOrder.Language.Fragment.FormationClosed.alls_mem` and their companions: the derived
   connectives and quantifier closures of members are members.
+* `FirstOrder.Language.Fragment.FormationClosed.negationClosed` and
+  `FirstOrder.Language.Fragment.negationClosure_le_formationClosure`: a formation-closed fragment
+  is negation-closed, so the negation closure lies below the formation closure.
 * `FirstOrder.Language.Fragment.formationClosure_le_iff`: leastness of the formation closure.
 * `FirstOrder.Language.Fragment.formationClosure_countable`: over a language with countably many
   function and relation symbols, a countable set has a countable formation closure.
@@ -151,6 +154,10 @@ theorem not_mem_iff {φ : L.BoundedFormulaω Empty n} :
       (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
   hA.imp_mem_iff.trans (and_iff_left (hA.bot_mem n))
 
+/-- A formation-closed fragment is negation-closed. -/
+theorem negationClosed : A.NegationClosed :=
+  ⟨hA.not_mem_iff.2⟩
+
 /-- `⊤` is a member of a formation-closed fragment at every arity. -/
 @[simp]
 theorem top_mem (n : ℕ) : (⟨n, ⊤⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
@@ -171,6 +178,14 @@ theorem inf_mem {φ ψ : L.BoundedFormulaω Empty n}
     (hψ : (⟨n, ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
     (⟨n, φ ⊓ ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
   hA.inf_mem_iff.2 ⟨hφ, hψ⟩
+
+/-- A finite conjunction of members of a formation-closed fragment is a member. -/
+theorem foldr_inf_mem (l : List (L.BoundedFormulaω Empty n))
+    (h : ∀ φ ∈ l, (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
+    (⟨n, l.foldr (· ⊓ ·) ⊤⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  induction l with
+  | nil => exact hA.top_mem n
+  | cons φ l ih => exact hA.inf_mem (h φ (by simp)) (ih fun ψ hψ => h ψ (by simp [hψ]))
 
 /-- A disjunction belongs to a formation-closed fragment exactly when both disjuncts do. -/
 @[simp]
@@ -232,6 +247,14 @@ theorem exs_mem {φ : L.BoundedFormulaω Empty n}
   induction n with
   | zero => rwa [exs_zero]
   | succ n ih => rw [exs_succ]; exact ih (hA.ex_mem h)
+
+/-- Existentially quantifying the last positions of a member leaves a member. -/
+theorem exsLast_mem {k : ℕ} {φ : L.BoundedFormulaω Empty (n + k)}
+    (h : (⟨n + k, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
+    (⟨n, φ.exsLast⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  induction k with
+  | zero => simpa only [exsLast_zero, Nat.add_zero] using h
+  | succ k ih => simpa only [exsLast_succ] using ih (hA.ex_mem h)
 
 /-- Weakening a member of a formation-closed fragment to more bound positions gives a member. -/
 theorem castLE_mem {m : ℕ} {φ : L.BoundedFormulaω Empty m} (hmn : m ≤ n)
@@ -359,6 +382,12 @@ theorem formationClosure_mono {S T : Set (Σ n, L.BoundedFormulaω Empty n)} (h 
 theorem generated_le_formationClosure (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
     generated S ≤ formationClosure S :=
   generated_le_iff.2 (subset_formationClosure S)
+
+/-- The negation closure of `S` lies below its formation closure. -/
+theorem negationClosure_le_formationClosure (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
+    negationClosure S ≤ formationClosure S :=
+  (negationClosure_le_iff (formationClosed_formationClosure S).negationClosed).2
+    (subset_formationClosure S)
 
 /-- A formation-closed fragment is its own formation closure. -/
 theorem FormationClosed.formationClosure_eq {A : Fragment L} (hA : A.FormationClosed) :

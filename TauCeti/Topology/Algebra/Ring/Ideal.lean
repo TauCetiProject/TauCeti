@@ -68,10 +68,14 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   homomorphisms out of `R ⧸ I` are determined by their composites with the quotient map.
 * `ContinuousAlgHom.continuous_quotientKerAlgEquivOfSurjective`: the algebraic first isomorphism
   `A ⧸ ker f ≃ B` induced by a continuous surjective algebra homomorphism is continuous.
+* `RingHom.denseRange_quotientMap`: a ring homomorphism with dense range induces a map with
+  dense range on quotients by an ideal and its extension.
 * `RingHom.isHomeomorph_kerLift`: the map `R ⧸ ker f →+* S` induced by `f` is a homeomorphism when
   `f` is a quotient map. `IsHomeomorph.homeomorph` bundles that as
   `R ⧸ ker f ≃ₜ S`, and the map bundled is the ring homomorphism `RingHom.kerLift`, so the ring
   structure comes along with it and needs no transport of its own.
+* `IsOpenQuotientMap.isTopologicalRing`: the target of an open quotient ring homomorphism out of a
+  topological ring is a topological ring.
 
 ## References
 
@@ -213,6 +217,22 @@ theorem continuous_quotientKerAlgEquivOfSurjective (f : A →A[R] B)
 
 end ContinuousAlgHom
 
+namespace RingHom
+
+/-- A homomorphism with dense range induces a map with dense range on ideal quotients. -/
+theorem denseRange_quotientMap {A B : Type*} [CommRing A] [CommRing B]
+    [TopologicalSpace B] (f : A →+* B) (hd : DenseRange f)
+    (I : Ideal A) :
+    DenseRange (Ideal.quotientMap (I.map f) f Ideal.le_comap_map) := by
+  have h : DenseRange (fun a : A ↦ Ideal.Quotient.mk (I.map f) (f a)) :=
+    (Ideal.Quotient.mk_surjective (I := I.map f)).denseRange.comp hd
+      continuous_quotient_mk'
+  refine Dense.mono ?_ h
+  rintro _ ⟨a, rfl⟩
+  exact ⟨Ideal.Quotient.mk I a, Ideal.quotientMap_mk⟩
+
+end RingHom
+
 section FirstIsomorphism
 
 open Topology
@@ -245,3 +265,32 @@ theorem isHomeomorph_kerLift (hq : IsQuotientMap (f : R → S)) : IsHomeomorph (
 end RingHom
 
 end FirstIsomorphism
+
+section OpenQuotient
+
+open Topology
+
+/-- **An open quotient of a topological ring is a topological ring.** If `π : R → B` is a (not
+necessarily unital) ring homomorphism that is an open quotient map and `R` is a topological ring,
+then addition, multiplication and negation on `B` are continuous, because their composites with the
+quotient map `π × π` (resp. `π`) are continuous. -/
+theorem IsOpenQuotientMap.isTopologicalRing {F R B : Type*} [NonUnitalNonAssocRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] [NonUnitalNonAssocRing B] [TopologicalSpace B]
+    [FunLike F R B] [NonUnitalRingHomClass F R B] {π : F}
+    (hπ : IsOpenQuotientMap π) : IsTopologicalRing B := by
+  have h2 := hπ.prodMap hπ
+  have hadd : Continuous fun p : B × B ↦ p.1 + p.2 := by
+    rw [← h2.continuous_comp_iff]
+    exact hπ.continuous.comp (continuous_fst.add continuous_snd) |>.congr fun p ↦ by simp
+  have hmul : Continuous fun p : B × B ↦ p.1 * p.2 := by
+    rw [← h2.continuous_comp_iff]
+    exact hπ.continuous.comp (continuous_fst.mul continuous_snd) |>.congr fun p ↦ by simp
+  have hneg : Continuous fun b : B ↦ -b := by
+    rw [← hπ.continuous_comp_iff]
+    exact hπ.continuous.comp continuous_neg |>.congr fun p ↦ by simp
+  have : ContinuousAdd B := ⟨hadd⟩
+  have : ContinuousMul B := ⟨hmul⟩
+  have : ContinuousNeg B := ⟨hneg⟩
+  exact {}
+
+end OpenQuotient

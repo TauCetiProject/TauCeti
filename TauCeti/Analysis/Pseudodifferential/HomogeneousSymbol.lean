@@ -10,8 +10,11 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
+public import TauCeti.Analysis.Calculus.CoordinateDeriv
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -33,7 +36,8 @@ The file develops:
 
 * the module structure on homogeneous symbols of a fixed degree, over every scalar ring acting
   on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
-  composition `HomogeneousSymbol.comp`, which adds degrees;
+  composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
+  `HomogeneousSymbol.id` of degree `0` as its unit;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
@@ -43,8 +47,11 @@ The file develops:
   rule for `HomogeneousSymbol.comp`;
 * the growth bound `HomogeneousSymbol.exists_norm_coefficient_le`: on a compact set of positions,
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
-  applied to the iterated derivatives above it bounds `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖` by
-  `C ‖ξ‖ ^ (m - |β|)`;
+  applied to the iterated derivatives above it bounds the mixed derivatives on `ℝⁿ × ℝⁿ`:
+  `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency
+  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`); for positive degree it makes a homogeneous
+  symbol, with its value `0` at the zero frequency, continuous on all of `X × E`
+  (`HomogeneousSymbol.continuous_coefficient`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
@@ -58,6 +65,9 @@ The file develops:
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`);
 * on an inner product space, the symbol `HomogeneousSymbol.normRpow`, which is `‖ξ‖ ^ m` times
   the identity and is homogeneous of every real degree `m`.
+* between Hilbert spaces, the pointwise adjoint `HomogeneousSymbol.adjoint`,
+  `(x, ξ) ↦ a (x, ξ)†`, of the same degree; it reverses composition
+  (`HomogeneousSymbol.adjoint_comp`).
 
 Higher derivatives are full Fréchet derivatives on `X × E`; a derivative in `j` position
 directions `u` and `l` frequency directions `w` is the iterated derivative evaluated on
@@ -106,6 +116,12 @@ theorem ext_of_ne_zero {a b : HomogeneousSymbol X E V W m}
   rcases eq_or_ne ξ 0 with rfl | hξ
   · simp
   · exact h x ξ hξ
+
+/-- Rescaling the frequency by `t > 0` rescales the norm of a homogeneous symbol of degree `m` by
+`t ^ m`. -/
+theorem norm_homogeneous (a : HomogeneousSymbol X E V W m) (x : X) (ξ : E) {t : ℝ} (ht : 0 < t) :
+    ‖a.coefficient (x, t • ξ)‖ = t ^ m * ‖a.coefficient (x, ξ)‖ := by
+  rw [a.homogeneous x ξ t ht, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg ht.le m)]
 
 section Regularity
 
@@ -218,6 +234,11 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
     { toFun := coefficient, map_zero' := coefficient_zero, map_add' := coefficient_add }
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → HomogeneousSymbol X E V W m) :
+    (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient :=
+  map_sum (AddMonoidHom.mk' coefficient coefficient_add) f s
+
 /-! ### Changing the degree -/
 
 /-- Transport a homogeneous symbol along an equality of degrees, for instance to identify the
@@ -242,6 +263,14 @@ theorem castDegree_castDegree {m'' : ℝ} (h : m = m') (h' : m' = m'')
     (a : HomogeneousSymbol X E V W m) :
     (a.castDegree h).castDegree h' = a.castDegree (h.trans h') :=
   (rfl)
+
+/-- In a family `a i` of homogeneous symbols whose degrees depend on the index, the coefficient of
+`a i` depends only on the value of `i`, although the types of `a i` and `a i'` differ. -/
+theorem coefficient_congr_index {ι : Type*} {d : ι → ℝ}
+    (a : (i : ι) → HomogeneousSymbol X E V W (d i)) {i i' : ι} (h : i = i') :
+    (a i).coefficient = (a i').coefficient := by
+  subst h
+  rfl
 
 /-! Transport along an equality of degrees commutes with the vector space operations. -/
 
@@ -363,6 +392,32 @@ theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] {m'
     (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm :=
   (rfl)
 
+variable (X E V) in
+/-- The identity homogeneous symbol of degree `0`: the identity of `V` at every nonzero
+frequency, and zero at the zero frequency by the convention of `HomogeneousSymbol`. It is the
+unit for `HomogeneousSymbol.comp`. -/
+noncomputable def id : HomogeneousSymbol X E V V 0 :=
+  mk' (fun _ ↦ ContinuousLinearMap.id ℂ V) contDiffOn_const fun _ _ _ _ _ ↦ by simp
+
+@[simp]
+theorem coefficient_id {x : X} {ξ : E} (hξ : ξ ≠ 0) :
+    (id X E V).coefficient (x, ξ) = ContinuousLinearMap.id ℂ V :=
+  coefficient_mk'_of_ne_zero _ _ _ hξ
+
+/-- Composing with the identity symbol on the right does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem comp_id (b : HomogeneousSymbol X E V W m) :
+    b.comp (id X E V) = b.castDegree (add_zero m).symm :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
+
+/-- Composing with the identity symbol on the left does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem id_comp (a : HomogeneousSymbol X E V W m) :
+    (id X E W).comp a = a.castDegree (zero_add m).symm :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
+
 /-! ### Pullback in the position -/
 
 section CompPosition
@@ -436,8 +491,7 @@ variable (a : HomogeneousSymbol X E V W m)
 
 /-- Differentiating the homogeneity relation: the derivative at `(x, t • ξ)` in the direction
 `(u, t • w)` is `t ^ m` times the derivative at `(x, ξ)` in the direction `(u, w)`. -/
-theorem fderiv_coefficient_smul {x : X} {ξ : E} (hξ : ξ ≠ 0) {t : ℝ} (ht : 0 < t) (u : X)
-    (w : E) :
+theorem fderiv_coefficient_smul {x : X} {ξ : E} {t : ℝ} (ht : 0 < t) (u : X) (w : E) :
     fderiv ℝ a.coefficient (x, t • ξ) (u, t • w) =
       t ^ m • fderiv ℝ a.coefficient (x, ξ) (u, w) := by
   -- Differentiate `a ∘ L = t ^ m • a` for the linear map `L (x, ξ) = (x, t • ξ)`.
@@ -448,10 +502,18 @@ theorem fderiv_coefficient_smul {x : X} {ξ : E} (hξ : ξ ≠ 0) {t : ℝ} (ht 
     funext p
     simp [hL, a.homogeneous p.1 p.2 t ht]
   have key := congrArg (fun g ↦ fderiv ℝ g (x, ξ) (u, w)) hcomp
-  have hd : DifferentiableAt ℝ a.coefficient (L (x, ξ)) :=
-    a.differentiableAt_coefficient (p := (x, t • ξ)) (smul_ne_zero ht.ne' hξ)
-  rw [fderiv_comp _ hd L.differentiableAt, L.fderiv,
-    fderiv_const_smul (a.differentiableAt_coefficient (p := (x, ξ)) hξ)] at key
+  -- At the zero frequency the coefficient need not be differentiable; then both sides vanish.
+  by_cases hdiff : DifferentiableAt ℝ a.coefficient (x, ξ)
+  swap
+  · have hξ : ξ = 0 := by
+      by_contra hξ
+      exact hdiff (a.differentiableAt_coefficient (p := (x, ξ)) hξ)
+    simp [hξ, fderiv_zero_of_not_differentiableAt (hξ ▸ hdiff)]
+  have hd : DifferentiableAt ℝ a.coefficient (L (x, ξ)) := by
+    rcases eq_or_ne ξ 0 with hξ | hξ
+    · simpa [hL, hξ] using hdiff
+    · exact a.differentiableAt_coefficient (p := (x, t • ξ)) (smul_ne_zero ht.ne' hξ)
+  rw [fderiv_comp _ hd L.differentiableAt, L.fderiv, fderiv_const_smul hdiff] at key
   simpa [hL] using key
 
 /-- Every directional derivative of a homogeneous symbol is smooth away from the zero
@@ -465,23 +527,27 @@ theorem contDiffOn_fderiv_coefficient_apply (q : X × E) :
 same degree. -/
 noncomputable def spatialDeriv (v : X) : HomogeneousSymbol X E V W m :=
   mk' (fun p ↦ fderiv ℝ a.coefficient p (v, 0)) (a.contDiffOn_fderiv_coefficient_apply (v, 0))
-    fun x ξ hξ t ht ↦ by simpa using a.fderiv_coefficient_smul hξ ht v 0
+    fun x ξ _ t ht ↦ by simpa using a.fderiv_coefficient_smul (x := x) (ξ := ξ) ht v 0
 
 /-- The derivative of a homogeneous symbol of degree `m` in the frequency direction `w`; it is
 homogeneous of degree `m - 1`. -/
 noncomputable def frequencyDeriv (w : E) : HomogeneousSymbol X E V W (m - 1) :=
   mk' (fun p ↦ fderiv ℝ a.coefficient p (0, w)) (a.contDiffOn_fderiv_coefficient_apply (0, w))
-    fun x ξ hξ t ht ↦ by
-      have h := a.fderiv_coefficient_smul (x := x) hξ ht 0 w
+    fun x ξ _ t ht ↦ by
+      have h := a.fderiv_coefficient_smul (x := x) (ξ := ξ) ht 0 w
       have h0 : ((0 : X), t • w) = t • ((0 : X), w) := by simp
       rw [h0, ContinuousLinearMap.map_smul] at h
       simp [Real.rpow_sub_one ht.ne', div_eq_inv_mul, mul_smul, ← h, ht.ne']
 
-/-- At a nonzero frequency, the spatial derivative is the derivative of the coefficient in the
-direction `(v, 0)`. -/
-theorem coefficient_spatialDeriv_eq_fderiv (v : X) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
-    (a.spatialDeriv v).coefficient (x, ξ) = fderiv ℝ a.coefficient (x, ξ) (v, 0) :=
-  coefficient_mk'_of_ne_zero _ _ _ hξ
+/-- The spatial derivative is the derivative of the coefficient in the direction `(v, 0)`. At the
+zero frequency both sides vanish, since the coefficient is zero along `ξ = 0`. -/
+theorem coefficient_spatialDeriv_eq_fderiv (v : X) {x : X} {ξ : E} :
+    (a.spatialDeriv v).coefficient (x, ξ) = fderiv ℝ a.coefficient (x, ξ) (v, 0) := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · by_cases hd : DifferentiableAt ℝ a.coefficient (x, 0)
+    · simpa using congrArg (fun L ↦ L v) (fderiv_slice_left hd)
+    · simp [fderiv_zero_of_not_differentiableAt hd]
+  · exact coefficient_mk'_of_ne_zero _ _ _ hξ
 
 /-- At a nonzero frequency, the frequency derivative is the derivative of the coefficient in the
 direction `(0, w)`. -/
@@ -489,16 +555,16 @@ theorem coefficient_frequencyDeriv_eq_fderiv (w : E) {x : X} {ξ : E} (hξ : ξ 
     (a.frequencyDeriv w).coefficient (x, ξ) = fderiv ℝ a.coefficient (x, ξ) (0, w) :=
   coefficient_mk'_of_ne_zero _ _ _ hξ
 
-/-- At a nonzero frequency, the spatial derivative is the partial derivative in the position. -/
+/-- The spatial derivative is the partial derivative in the position. At the zero frequency both
+sides vanish, since the coefficient is zero along `ξ = 0`. -/
 @[simp]
-theorem coefficient_spatialDeriv (v : X) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
+theorem coefficient_spatialDeriv (v : X) {x : X} {ξ : E} :
     (a.spatialDeriv v).coefficient (x, ξ) = fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x v := by
-  have h : HasFDerivAt (fun y ↦ a.coefficient (y, ξ))
-      ((fderiv ℝ a.coefficient (x, ξ)).comp (ContinuousLinearMap.inl ℝ X E)) x :=
-    (a.differentiableAt_coefficient (p := (x, ξ)) hξ).hasFDerivAt.comp x
-      (hasFDerivAt_prodMk_left x ξ)
-  rw [coefficient_spatialDeriv_eq_fderiv _ _ hξ, h.fderiv]
-  simp
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · simp
+  rw [coefficient_spatialDeriv_eq_fderiv _ _,
+    fderiv_slice_left (a.differentiableAt_coefficient (p := (x, ξ)) hξ)]
+  rfl
 
 /-- At a nonzero frequency, the frequency derivative is the partial derivative in the
 frequency. -/
@@ -518,7 +584,7 @@ theorem coefficient_frequencyDeriv (w : E) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
 theorem add_spatialDeriv (b : HomogeneousSymbol X E V W m) (v : X) :
     (a + b).spatialDeriv v = a.spatialDeriv v + b.spatialDeriv v :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ,
+    simp [coefficient_spatialDeriv_eq_fderiv _ _,
       fderiv_add (a.differentiableAt_coefficient (p := (x, ξ)) hξ)
         (b.differentiableAt_coefficient (p := (x, ξ)) hξ)]
 
@@ -527,39 +593,39 @@ theorem smul_spatialDeriv {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
     [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (c : R) (v : X) :
     (c • a).spatialDeriv v = c • a.spatialDeriv v :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ,
+    simp [coefficient_spatialDeriv_eq_fderiv _ _,
       fderiv_const_smul (a.differentiableAt_coefficient (p := (x, ξ)) hξ)]
 
 @[simp]
 theorem neg_spatialDeriv (v : X) : (-a).spatialDeriv v = -a.spatialDeriv v :=
-  ext_of_ne_zero fun x ξ hξ ↦ by simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ, fderiv_neg]
+  ext_of_ne_zero fun x ξ _ ↦ by simp [coefficient_spatialDeriv_eq_fderiv _ _, fderiv_neg]
 
 @[simp]
 theorem sub_spatialDeriv (b : HomogeneousSymbol X E V W m) (v : X) :
     (a - b).spatialDeriv v = a.spatialDeriv v - b.spatialDeriv v :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ,
+    simp [coefficient_spatialDeriv_eq_fderiv _ _,
       fderiv_sub (a.differentiableAt_coefficient (p := (x, ξ)) hξ)
         (b.differentiableAt_coefficient (p := (x, ξ)) hξ)]
 
 @[simp]
 theorem zero_spatialDeriv (v : X) : (0 : HomogeneousSymbol X E V W m).spatialDeriv v = 0 :=
-  ext_of_ne_zero fun x ξ hξ ↦ by simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ]
+  ext_of_ne_zero fun x ξ _ ↦ by simp [coefficient_spatialDeriv_eq_fderiv _ _]
 
 @[simp]
 theorem spatialDeriv_add (v v' : X) :
     a.spatialDeriv (v + v') = a.spatialDeriv v + a.spatialDeriv v' :=
-  ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ, ← map_add]
+  ext_of_ne_zero fun x ξ _ ↦ by
+    simp [coefficient_spatialDeriv_eq_fderiv _ _, ← map_add]
 
 @[simp]
 theorem spatialDeriv_smul (c : ℝ) (v : X) : a.spatialDeriv (c • v) = c • a.spatialDeriv v :=
-  ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ, ← map_smul]
+  ext_of_ne_zero fun x ξ _ ↦ by
+    simp [coefficient_spatialDeriv_eq_fderiv _ _, ← map_smul]
 
 @[simp]
 theorem spatialDeriv_zero : a.spatialDeriv 0 = 0 :=
-  ext_of_ne_zero fun x ξ hξ ↦ by simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ, Prod.mk_zero_zero]
+  ext_of_ne_zero fun x ξ _ ↦ by simp [coefficient_spatialDeriv_eq_fderiv _ _, Prod.mk_zero_zero]
 
 @[simp]
 theorem add_frequencyDeriv (b : HomogeneousSymbol X E V W m) (w : E) :
@@ -647,7 +713,7 @@ theorem fderiv_coefficient_comp {p : X × E} (hp : p.2 ≠ 0) (q : X × E) :
 theorem spatialDeriv_comp (v : X) :
     (b.comp a).spatialDeriv v = (b.spatialDeriv v).comp a + b.comp (a.spatialDeriv v) :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ, fderiv_coefficient_comp b a (p := (x, ξ)) hξ]
+    simp [coefficient_spatialDeriv_eq_fderiv _ _, fderiv_coefficient_comp b a (p := (x, ξ)) hξ]
 
 /-- The product rule for the frequency derivative of a composition. The degrees `m' - 1 + m`
 and `m' + (m - 1)` of the two terms are transported to the degree `m' + m - 1` of the left side,
@@ -688,6 +754,27 @@ theorem exists_norm_coefficient_le [ProperSpace E] {K : Set X} (hK : IsCompact K
   exact mul_le_mul_of_nonneg_right ((hC (x, _) (mk_mem_prod hx hs)).trans (le_max_left _ _))
     (by positivity)
 
+/-- **Continuity at the zero frequency.** A homogeneous symbol of positive degree on a proper
+frequency space is bounded by `C ‖ξ‖ ^ m` near each position, so it tends to its value `0` at the
+zero frequency. It is therefore continuous on all of `X × E`, for a weakly locally compact (for
+instance finite-dimensional) space of positions. -/
+theorem continuous_coefficient [ProperSpace E] [WeaklyLocallyCompactSpace X] (hm : 0 < m) :
+    Continuous a.coefficient := by
+  refine continuous_iff_continuousAt.2 fun ⟨x, ξ⟩ ↦ ?_
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · obtain ⟨K, hK, hKx⟩ := exists_compact_mem_nhds x
+    obtain ⟨C, -, hC⟩ := a.exists_norm_coefficient_le hK
+    have hlim : Tendsto (fun q : X × E ↦ C * ‖q.2‖ ^ m) (𝓝 (x, 0)) (𝓝 0) := by
+      have hcont : Continuous fun q : X × E ↦ C * ‖q.2‖ ^ m :=
+        continuous_const.mul ((continuous_norm.comp continuous_snd).rpow_const
+          fun _ ↦ Or.inr hm.le)
+      simpa [Real.zero_rpow hm.ne'] using hcont.tendsto (x, 0)
+    rw [ContinuousAt, a.zero_covector]
+    refine squeeze_zero_norm' ?_ hlim
+    filter_upwards [prod_mem_nhds hKx univ_mem] with q hq
+    exact hC q.1 hq.1 q.2
+  · exact (a.contDiffAt_coefficient hξ).continuousAt
+
 /-- For a frequency cutoff `χ`, the cut-off term `χ(ξ) • a(x, ξ)` is smooth on the whole space,
 including the zero frequency. -/
 theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
@@ -705,6 +792,68 @@ theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
 
 end Growth
 
+/-! ### Growth of the mixed derivatives -/
+
+section MixedDeriv
+
+variable {n : ℕ}
+
+/-- The iterated frequency derivative `∂_ξ^β a`, a homogeneous symbol of degree `m - |β|`. -/
+private noncomputable def iterFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m) :
+    (β : List (Fin n)) → HomogeneousSymbol X (CoordinateSpace n) V W (m - β.length)
+  | [] => a.castDegree (by simp)
+  | j :: js => ((iterFrequencyDeriv a js).frequencyDeriv (EuclideanSpace.single j 1)).castDegree
+      (by simp only [List.length_cons]; push_cast; ring)
+
+/-- The iterated spatial derivative `∂_x^α a`, a homogeneous symbol of the same degree. -/
+private noncomputable def iterSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m) :
+    List (Fin n) → HomogeneousSymbol (CoordinateSpace n) E V W m
+  | [] => a
+  | j :: js => (iterSpatialDeriv a js).spatialDeriv (EuclideanSpace.single j 1)
+
+private theorem coefficient_iterFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m)
+    (β : List (Fin n)) (x : X) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (iterFrequencyDeriv a β).coefficient (x, ξ) =
+      coordinateDeriv β (fun η => a.coefficient (x, η)) ξ := by
+  induction β generalizing ξ with
+  | nil => simp [iterFrequencyDeriv]
+  | cons j js ih =>
+    -- The two sides are derivatives of functions that agree on the open set of nonzero
+    -- frequencies.
+    have h : (fun η => (iterFrequencyDeriv a js).coefficient (x, η)) =ᶠ[𝓝 ξ]
+        coordinateDeriv js (fun η => a.coefficient (x, η)) :=
+      eventually_of_mem (isOpen_ne.mem_nhds hξ) fun η hη => ih hη
+    rw [iterFrequencyDeriv, coefficient_castDegree, coefficient_frequencyDeriv _ _ hξ,
+      coordinateDeriv_cons, h.fderiv_eq]
+
+private theorem coefficient_iterSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m)
+    (α : List (Fin n)) (x : CoordinateSpace n) {ξ : E} :
+    (iterSpatialDeriv a α).coefficient (x, ξ) =
+      coordinateDeriv α (fun y => a.coefficient (y, ξ)) x := by
+  induction α generalizing x with
+  | nil => simp [iterSpatialDeriv]
+  | cons j js ih =>
+    rw [iterSpatialDeriv, coefficient_spatialDeriv _ _, coordinateDeriv_cons, funext ih]
+
+/-- **Growth of the mixed derivatives of a homogeneous symbol.** On a compact set of positions,
+the mixed derivatives of a homogeneous symbol of degree `m` satisfy
+`‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency. -/
+theorem exists_norm_mixedDeriv_le
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ξ ≠ 0 →
+      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * ‖ξ‖ ^ (m - β.length) := by
+  obtain ⟨C, hC, hCK⟩ := (iterSpatialDeriv (iterFrequencyDeriv a β) α).exists_norm_coefficient_le hK
+  refine ⟨C, hC, fun x hx ξ hξ => ?_⟩
+  have h : (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
+      mixedDeriv α β a.coefficient x ξ := by
+    rw [coefficient_iterSpatialDeriv _ _ _, mixedDeriv_def]
+    exact congrArg (coordinateDeriv α · x)
+      (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
+  exact h ▸ hCK x hx ξ
+
+end MixedDeriv
+
 /-! ### Estimates for the higher derivatives -/
 
 section IteratedDeriv
@@ -718,8 +867,7 @@ theorem iteratedFDeriv_coefficient_smul_frequency {x : X} {ξ : E} (hξ : ξ ≠
     (ht : 0 < t) (k : ℕ) (v : Fin k → X × E) :
     iteratedFDeriv ℝ k a.coefficient (x, t • ξ) (fun i ↦ ((v i).1, t • (v i).2)) =
       t ^ m • iteratedFDeriv ℝ k a.coefficient (x, ξ) v :=
-  iteratedFDeriv_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
-    (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) (mod_cast le_top) hξ ht v
+  iteratedFDeriv_smul_snd_of_smul_snd_eq (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) hξ ht v
 
 /-- The derivative of a homogeneous symbol of degree `m` in `j` position directions and `l`
 frequency directions is homogeneous of degree `m - l` in the frequency. -/
@@ -730,8 +878,7 @@ theorem iteratedFDeriv_coefficient_smul_frequency_append {x : X} {ξ : E} (hξ :
       t ^ (m - l) •
         iteratedFDeriv ℝ (j + l) a.coefficient (x, ξ)
           (Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i))) :=
-  iteratedFDeriv_append_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
-    (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) (mod_cast le_top) hξ ht u w
+  iteratedFDeriv_append_smul_snd_of_smul_snd_eq (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) hξ ht u w
 
 /-- On a proper frequency space, the derivatives of a homogeneous symbol of degree `m` in `j`
 position directions and `l` frequency directions are bounded by `C ‖ξ‖ ^ (m - l)` for positions
@@ -844,6 +991,72 @@ theorem normRpow_comp_normRpow (m m' : ℝ) :
   ext_of_ne_zero fun x ξ hξ ↦ by
     ext v
     simp [hξ, Real.rpow_add (norm_pos_iff.mpr hξ), mul_smul, smul_comm (‖ξ‖ ^ m)]
+
+end HomogeneousSymbol
+
+/-! ### Pointwise adjoints -/
+
+namespace HomogeneousSymbol
+
+variable {X E : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] {U V W : Type*} [NormedAddCommGroup U] [InnerProductSpace ℂ U]
+  [CompleteSpace U] [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m m' : ℝ}
+
+/-- The pointwise adjoint `(x, ξ) ↦ a (x, ξ)†` of a homogeneous symbol between Hilbert spaces.
+Since positive homogeneity only involves real scalars, it is a homogeneous symbol of the same
+degree. -/
+noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m where
+  coefficient := ContinuousLinearMap.adjointRealCLM ∘ a.coefficient
+  zero_covector x := by simp
+  contDiffOn_coefficient :=
+    ContinuousLinearMap.adjointRealCLM.contDiff.comp_contDiffOn a.contDiffOn_coefficient
+  homogeneous x ξ t ht := by
+    rw [Function.comp_apply, a.homogeneous x ξ t ht, map_smul, Function.comp_apply]
+
+@[simp]
+theorem coefficient_adjoint (a : HomogeneousSymbol X E V W m) (p : X × E) :
+    a.adjoint.coefficient p = ContinuousLinearMap.adjoint (a.coefficient p) :=
+  ContinuousLinearMap.adjointRealCLM_apply _
+
+@[simp]
+theorem adjoint_adjoint (a : HomogeneousSymbol X E V W m) : a.adjoint.adjoint = a := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_zero : (0 : HomogeneousSymbol X E V W m).adjoint = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_add (a b : HomogeneousSymbol X E V W m) :
+    (a + b).adjoint = a.adjoint + b.adjoint := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_neg (a : HomogeneousSymbol X E V W m) : (-a).adjoint = -a.adjoint := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_sub (a b : HomogeneousSymbol X E V W m) :
+    (a - b).adjoint = a.adjoint - b.adjoint := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_castDegree (h : m = m') (a : HomogeneousSymbol X E V W m) :
+    (a.castDegree h).adjoint = a.adjoint.castDegree h :=
+  (rfl)
+
+/-- The adjoint of a composition is the composition of the adjoints in the reverse order, up to
+transport of the degree. -/
+@[simp]
+theorem adjoint_comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (b.comp a).adjoint = (a.adjoint.comp b.adjoint).castDegree (add_comm m m') := by
+  ext1; funext p; simp [ContinuousLinearMap.adjoint_comp]
+
+variable (X E V) in
+@[simp]
+theorem adjoint_id : (id X E V).adjoint = id X E V :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ, ContinuousLinearMap.adjoint_id]
 
 end HomogeneousSymbol
 

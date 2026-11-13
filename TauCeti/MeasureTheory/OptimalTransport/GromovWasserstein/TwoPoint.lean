@@ -61,7 +61,7 @@ theorem eLpNorm_twoPointKernel_edist (a b : ℝ) {p : ℝ≥0∞} (hp : p ≠ 0)
     by_cases hq : q.1 = q.2 <;> simp [twoPointKernel, hq]
   rw [h, eLpNorm_indicator_const' (Set.toFinite _).measurableSet.nullMeasurableSet
     (by rw [Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal]; norm_num) hp,
-    enorm_eq_self, Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal, ENNReal.inv_rpow,
+    eNorm_eq_self, Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal, ENNReal.inv_rpow,
     ← ENNReal.rpow_neg]
   simp [edist_dist, Real.dist_eq, neg_div, mul_comm]
 
@@ -83,7 +83,7 @@ private theorem gromovWassersteinEDist_twoPoint_dirac (a : ℝ) {p : ℝ≥0∞}
     gromovWassersteinEDist p (Measure.uniformOfFinset (.univ : Finset (Fin 2))) (twoPointKernel a)
       (Measure.dirac ()) (fun _ : Unit × Unit ↦ (0 : ℝ)) =
       (2 : ℝ≥0∞) ^ (-1 / p.toReal) * ENNReal.ofReal |a| := by
-  rw [gromovWassersteinEDist_dirac_right () _ (measurable_of_countable _).aestronglyMeasurable]
+  rw [gromovWassersteinEDist_dirac_right () _]
   simpa [twoPointKernel] using eLpNorm_twoPointKernel_edist a 0 hp
 
 /-- The exact GW distance between uniform two-point kernels, including the infinite exponent.

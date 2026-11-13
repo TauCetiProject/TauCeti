@@ -71,7 +71,7 @@ indices `p^j m` with `m` prime to `p`, where the divisor sum is the `min` sum ab
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups
 
@@ -154,7 +154,7 @@ theorem qExpansion_coeff_prime_pow_mul_heckeRingHomCharSpace_heckeTGeneratorRecG
     rw [heckeTGeneratorRecGamma0_one]
     exact qExpansion_coeff_prime_pow_mul_heckeRingHomCharSpace_heckeTGeneratorGamma0 hp hpN F hpm j
   | more r ih1 ih2 =>
-    rw [heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k χ hp.pos hpN F r,
+    rw [heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k χ hpN F r,
       Submodule.coe_sub, Submodule.coe_smul,
       ← TauCeti.ModularForm.qExpansionLinearMap_apply one_pos
         (TauCeti.one_mem_strictPeriods_Gamma1_map _), map_sub, map_smul,

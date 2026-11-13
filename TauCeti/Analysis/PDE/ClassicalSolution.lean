@@ -9,9 +9,11 @@ public import TauCeti.Analysis.PDE.DirichletProblem
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.PDE.WeakLaplacian
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Classical solutions of the Dirichlet problem are weak solutions
@@ -64,7 +66,7 @@ namespace TauCeti
 
 namespace PDE
 
-open InnerProductSpace Laplacian MeasureTheory Metric Set Filter TopologicalSpace
+open InnerProductSpace Laplacian _root_.MeasureTheory Metric Set Filter TopologicalSpace
 open scoped Distributions Gradient InnerProductSpace ENNReal Topology
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
@@ -79,48 +81,11 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul [DecidableEq
     (hu : W1p.value u =ᵐ[mu.restrict Omega] w)
     (hΔ : MemLp (Δ w) 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
     energyFormH1 (fun _ => 1) 0 0 u (v : W1p mu Omega 2) =
-      ∫ x in Omega, -Δ w x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  have hO : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
-  have h1 := uniformlyEllipticOn_const_one_one (n := ι) (Omega : Set (EuclideanSpace ℝ ι))
-  have hcoeff := memLp_energyIntegrand_of_bounds (mu := mu) (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) h1.upper_nonneg aestronglyMeasurable_const aestronglyMeasurable_const
-    aestronglyMeasurable_const (fun _x hx eta xi => h1.upper_bound hx eta xi) (fun _ _ => by simp)
-    (fun _ _ => by simp)
-  have hf := hΔ.neg.coeFn_toLp
-  refine ((forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff
-    (hΔ.neg.toLp _) u).2 (fun φ => ?_) v).trans (integral_congr_ae ?_)
-  · -- Against a test function: `∫ ⟪∇φ, ∇u⟫ = -∫ Δφ u = -∫ Δφ w = -∫ φ Δw`.
-    have hgrad : energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
-        ∫ x, ⟪∇ (φ : EuclideanSpace ℝ ι → ℝ) x, W1p.gradient u x⟫_ℝ ∂mu := by
-      rw [energyFormH1_zero_zero_eq_setIntegral]
-      refine (integral_congr_ae ?_).trans
-        (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_)
-      · filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-        rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
-        exact ((EuclideanSpace.inner_eq_star_dotProduct _ _).trans (dotProduct_comm _ _)).symm
-      · have hφ : fderiv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x = 0 :=
-          fderiv_of_notMem_tsupport ℝ fun hx' => hx (φ.tsupport_subset hx')
-        simp [gradient, hφ]
-    have hval : ∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • W1p.value u x ∂mu =
-        ∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • w x ∂mu := by
-      refine integral_congr_ae ?_
-      filter_upwards [(ae_restrict_iff' hO).1 hu] with x hx
-      by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-      · rw [hx hxΩ]
-      · rw [image_eq_zero_of_notMem_tsupport fun h' =>
-          hxΩ (φ.tsupport_subset (tsupport_laplacian_subset _ h'))]
-        simp
-    rw [hgrad, ← neg_neg (∫ x, ⟪_, _⟫_ℝ ∂mu),
-      ← (W1p.hasWeakFDerivOn u).integral_laplacian_smul_eq_neg_integral_inner φ, hval,
-      hw.integral_laplacian_smul_eq_integral_smul_laplacian φ, ← integral_neg,
-      ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_]
-    · refine integral_congr_ae ?_
-      filter_upwards [ae_restrict_of_ae_restrict_of_subset subset_rfl hf] with x hx
-      rw [hx, Pi.neg_apply, smul_eq_mul]
-      ring
-    · simp [φ.zero_on_compl hx]
-  · filter_upwards [hf] with x hx
-    rw [hx, Pi.neg_apply]
+      ∫ x in Omega, -Δ w x * W1p.value (v : W1p mu Omega 2) x ∂mu :=
+  energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_smul_eq hu hΔ.neg
+    (fun φ => by
+      rw [hw.integral_laplacian_smul_eq_integral_smul_laplacian φ, ← integral_neg]
+      simp only [Pi.neg_apply, smul_neg, neg_neg]) v
 
 /-- **The energy of a classical solution above a positive level.** Let `w` be of class `C²` on a
 bounded open set `Ω`, continuous on its closure, zero on its frontier, with `|w| ≤ S` on `Ω` and
@@ -139,7 +104,7 @@ private theorem setLIntegral_enorm_gradient_sq_le
   have hO := Omega.isOpen
   have h2 : (2 : ℝ≥0∞) ≠ ∞ := ENNReal.ofNat_ne_top
   -- A neighbourhood `V` of the superlevel set, compactly contained in `Ω`.
-  obtain ⟨K, hK, hUK, hKO⟩ := exists_isCompact_inter_preimage_Ici_subset_subset hO hb hwc hw0 hε
+  obtain ⟨K, hK, hUK, hKO⟩ := exists_isCompact_inter_preimage_Ici_subset_subset hb hwc hw0 hε
   obtain ⟨V', hV'o, hKV, hVO', hL⟩ := exists_open_between_and_isCompact_closure hK hO hKO
   set V : Opens (EuclideanSpace ℝ ι) := ⟨V', hV'o⟩
   have hVL : (V : Set (EuclideanSpace ℝ ι)) ⊆ closure V' := subset_closure
@@ -176,37 +141,50 @@ private theorem setLIntegral_enorm_gradient_sq_le
         indicator_of_notMem (s := A) (f := fun x => ‖∇ w x‖ ^ 2) fun h => hx h.2,
         WithLp.ofLp_zero, zero_dotProduct]
   -- The forcing side is at most `S ∫_Ω |Δw|`, because `0 ≤ (w - ε)⁺ ≤ |w| ≤ S` on `Ω`.
-  have hbound : ∀ᵐ x ∂mu.restrict V,
-      ‖-Δ w x * W1p.value (W1p.posPartAbove h2 hε.le U) x‖ ≤ S * |Δ w x| := by
-    filter_upwards [W1p.value_posPartAbove_ae h2 hε.le U, hUv, ae_restrict_mem hV]
-      with x hPx hUx hxV
-    rw [Real.norm_eq_abs, abs_mul, abs_neg, hPx, hUx, abs_of_nonneg (le_max_right (w x - ε) 0),
-      mul_comm]
-    exact mul_le_mul_of_nonneg_right
-      (max_le (by linarith [le_abs_self (w x), hS x (hVO hxV)]) hS0) (abs_nonneg _)
-  have hΔV : IntegrableOn (fun x => S * |Δ w x|) V mu := ((hΔ.mono_set hVO).abs).const_mul S
-  have hright : ∫ x in V, -Δ w x * W1p.value (W1p.posPartAbove h2 hε.le U) x ∂mu ≤
-      S * ∫ x in Omega, |Δ w x| ∂mu := by
-    calc _ ≤ ∫ x in V, S * |Δ w x| ∂mu :=
-          integral_mono_ae (hΔV.mono' ((hΔ.mono_set hVO).aestronglyMeasurable.neg.mul
-            (Lp.aestronglyMeasurable _)) hbound) hΔV
-            (hbound.mono fun x hx => (le_abs_self _).trans hx)
-      _ = S * ∫ x in V, |Δ w x| ∂mu := integral_const_mul S _
-      _ ≤ S * ∫ x in Omega, |Δ w x| ∂mu :=
-          mul_le_mul_of_nonneg_left (setIntegral_mono_set hΔ.abs
-            (ae_of_all _ fun _ => abs_nonneg _) hVO.eventuallyLE) hS0
+  have hright := setIntegral_mul_le_mul_setIntegral_abs (f := -Δ w)
+    (g := W1p.value (W1p.posPartAbove h2 hε.le U)) hVO hΔ.neg hS0 (by
+      filter_upwards [W1p.value_posPartAbove_ae h2 hε.le U, hUv, ae_restrict_mem hV]
+        with x hPx hUx hxV
+      rw [hPx, hUx, abs_of_nonneg (le_max_right (w x - ε) 0)]
+      exact max_le (by linarith [le_abs_self (w x), hS x (hVO hxV)]) hS0)
+  simp only [Pi.neg_apply, abs_neg] at hright
   -- Back to the Lebesgue integral of `‖∇w‖ₑ²`.
   have hintA : IntegrableOn (fun x => ‖∇ w x‖ ^ 2) A mu := by
     refine ((W1p.integrable_norm_gradient_sq U).mono_measure
       (Measure.restrict_mono hAV le_rfl)).congr ?_
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hAV hUg] with x hx
     rw [hx]
-  calc ∫⁻ x in A, ‖∇ w x‖ₑ ^ 2 ∂mu = ENNReal.ofReal (∫ x in A, ‖∇ w x‖ ^ 2 ∂mu) := by
-        rw [ofReal_integral_eq_lintegral_ofReal hintA (ae_of_all _ fun _ => by positivity)]
-        refine lintegral_congr fun x => ?_
-        rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    _ ≤ ENNReal.ofReal (S * ∫ x in Omega, |Δ w x| ∂mu) :=
-        ENNReal.ofReal_le_ofReal (hleft ▸ hgreen ▸ hright)
+  exact MeasureTheory.setLIntegral_enorm_sq_le_ofReal hintA (hleft ▸ hgreen ▸ hright)
+
+/-- **The energy of a classical solution above a positive level of `|w|`.** Under the hypotheses of
+`setLIntegral_enorm_gradient_sq_le`, for `ε > 0`, `∫_{Ω ∩ {ε < |w|}} ‖∇w‖² ≤ 2 S ∫_Ω |Δw|`. -/
+private theorem setLIntegral_enorm_gradient_sq_le_level
+    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι))) (hw : ContDiffOn ℝ 2 w Omega)
+    (hwc : ContinuousOn w (closure (Omega : Set (EuclideanSpace ℝ ι))))
+    (hw0 : ∀ x ∈ frontier (Omega : Set (EuclideanSpace ℝ ι)), w x = 0)
+    (hΔ1 : IntegrableOn (Δ w) Omega mu) {S : ℝ}
+    (hS : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), |w x| ≤ S) (hS0 : 0 ≤ S) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∫⁻ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ {x | ε < |w x|}, ‖∇ w x‖ₑ ^ 2 ∂mu ≤
+      ENNReal.ofReal (S * ∫ x in Omega, |Δ w x| ∂mu) +
+        ENNReal.ofReal (S * ∫ x in Omega, |Δ w x| ∂mu) := by
+  have hsplit : (Omega : Set (EuclideanSpace ℝ ι)) ∩ {x | ε < |w x|} =
+      ((Omega : Set (EuclideanSpace ℝ ι)) ∩ w ⁻¹' Ioi ε) ∪
+        ((Omega : Set (EuclideanSpace ℝ ι)) ∩ (-w) ⁻¹' Ioi ε) := by
+    ext x
+    simp only [mem_inter_iff, mem_ofPred_eq, mem_union, mem_preimage, mem_Ioi, Pi.neg_apply,
+      lt_abs]
+    tauto
+  have hneg := setLIntegral_enorm_gradient_sq_le (w := -w) hb hw.neg hwc.neg
+    (fun x hx => by simp [hw0 x hx]) (by rw [laplacian_neg]; exact hΔ1.neg)
+    (fun x hx => by simpa using hS x hx) hS0 hε
+  have hgneg (x : EuclideanSpace ℝ ι) : ‖∇ (-w) x‖ₑ = ‖∇ w x‖ₑ := by
+    rw [← ofReal_norm, ← ofReal_norm, norm_gradient_eq_norm_fderiv,
+      norm_gradient_eq_norm_fderiv, fderiv_neg, norm_neg]
+  simp only [hgneg, laplacian_neg, Pi.neg_apply, abs_neg] at hneg
+  rw [hsplit]
+  exact (lintegral_union_le _ _ _).trans (add_le_add
+    (setLIntegral_enorm_gradient_sq_le hb hw hwc hw0 hΔ1 hS hS0 hε) hneg)
 
 /-- **The Dirichlet energy of a classical solution is finite.** Under the hypotheses of
 `setLIntegral_enorm_gradient_sq_le`, `∫_Ω ‖∇w‖² ≤ 2 S ∫_Ω |Δw|`: the bound above each level `ε > 0`
@@ -223,26 +201,6 @@ private theorem setLIntegral_enorm_gradient_sq_le_add
         ENNReal.ofReal (S * ∫ x in Omega, |Δ w x| ∂mu) := by
   have hO := Omega.isOpen
   set C := ENNReal.ofReal (S * ∫ x in Omega, |Δ w x| ∂mu)
-  -- The energy above each level `ε > 0` of `|w|`, from the truncations of `w` and of `-w`.
-  have hlevel (ε : ℝ) (hε : 0 < ε) :
-      ∫⁻ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ {x | ε < |w x|}, ‖∇ w x‖ₑ ^ 2 ∂mu ≤ C + C := by
-    have hsplit : (Omega : Set (EuclideanSpace ℝ ι)) ∩ {x | ε < |w x|} =
-        ((Omega : Set (EuclideanSpace ℝ ι)) ∩ w ⁻¹' Ioi ε) ∪
-          ((Omega : Set (EuclideanSpace ℝ ι)) ∩ (-w) ⁻¹' Ioi ε) := by
-      ext x
-      simp only [mem_inter_iff, mem_ofPred_eq, mem_union, mem_preimage, mem_Ioi, Pi.neg_apply,
-        lt_abs]
-      tauto
-    have hneg := setLIntegral_enorm_gradient_sq_le (w := -w) hb hw.neg hwc.neg
-      (fun x hx => by simp [hw0 x hx]) (by rw [laplacian_neg]; exact hΔ1.neg)
-      (fun x hx => by simpa using hS x hx) hS0 hε
-    have hgneg (x : EuclideanSpace ℝ ι) : ‖∇ (-w) x‖ₑ = ‖∇ w x‖ₑ := by
-      rw [← ofReal_norm, ← ofReal_norm, norm_gradient_eq_norm_fderiv,
-        norm_gradient_eq_norm_fderiv, fderiv_neg, norm_neg]
-    simp only [hgneg, laplacian_neg, Pi.neg_apply, abs_neg] at hneg
-    rw [hsplit]
-    exact (lintegral_union_le _ _ _).trans (add_le_add
-      (setLIntegral_enorm_gradient_sq_le hb hw hwc hw0 hΔ1 hS hS0 hε) hneg)
   -- Letting `ε → 0`, the energy on the set where `w ≠ 0`.
   have hnz : ∫⁻ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ {x | w x ≠ 0}, ‖∇ w x‖ₑ ^ 2 ∂mu ≤
       C + C := by
@@ -254,7 +212,8 @@ private theorem setLIntegral_enorm_gradient_sq_le_add
       obtain ⟨n, hn⟩ := exists_nat_one_div_lt (abs_pos.2 hx0)
       exact ⟨n, hx, hn⟩
     rw [hU, setLIntegral_iUnion_of_directed]
-    · exact iSup_le fun n => hlevel _ Nat.one_div_pos_of_nat
+    · exact iSup_le fun n => setLIntegral_enorm_gradient_sq_le_level hb hw hwc hw0 hΔ1 hS hS0
+        Nat.one_div_pos_of_nat
     · refine Monotone.directed_le fun n m hnm x hx => ⟨hx.1, ?_⟩
       simp only [mem_ofPred_eq] at hx ⊢
       exact lt_of_le_of_lt (Nat.one_div_le_one_div hnm) hx.2
@@ -307,7 +266,7 @@ theorem exists_isWeakSolutionDirichlet_laplacian_of_contDiffOn
     refine lt_of_le_of_lt (le_of_eq (lintegral_congr fun x => ?_))
       ((setLIntegral_enorm_gradient_sq_le_add hb hw hwc hw0 hΔ1 hS (le_max_right S₀ 0)).trans_lt
         (ENNReal.add_lt_top.2 ⟨ENNReal.ofReal_lt_top, ENNReal.ofReal_lt_top⟩))
-    rw [enorm_pow, enorm_norm]
+    rw [eNorm_pow, eNorm_norm]
   have hv : MemLp w 2 (mu.restrict Omega) :=
     MemLp.of_bound (hw.continuousOn.aestronglyMeasurable hOm) (max S₀ 0)
       ((ae_restrict_iff' hOm).2 (ae_of_all _ fun x hx => by rw [Real.norm_eq_abs]; exact hS x hx))

@@ -77,13 +77,12 @@ theorem map_dirichletNormalize_sum_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
     (Measure.pi fun i ↦ gammaMeasure (a i) r).map
         (fun x ↦ (dirichletNormalize x, ∑ i, x i)) =
       (dirichletMeasure a).prod (gammaMeasure (∑ i, a i) r) := by
-  have hA : 0 < ∑ i, a i := Finset.sum_pos (fun i _ ↦ ha i) Finset.univ_nonempty
   let _ i := isProbabilityMeasure_gammaMeasure (ha i) one_pos
   let _ i := isProbabilityMeasure_gammaMeasure (ha i) hr
   have hscale : (Measure.pi fun i ↦ gammaMeasure (a i) 1).map
       (fun x i ↦ r⁻¹ * x i) = Measure.pi fun i ↦ gammaMeasure (a i) r := by
     rw [Measure.pi_map_pi (fun _ ↦ (measurable_const_mul r⁻¹).aemeasurable)]
-    simp_rw [gammaMeasure_map_const_mul (ha _) one_pos (inv_pos.mpr hr), one_div, inv_inv]
+    simp_rw [gammaMeasure_map_const_mul (inv_pos.mpr hr), one_div, inv_inv]
   have hcomm : (fun x : ι → ℝ ↦ (dirichletNormalize (fun i ↦ r⁻¹ * x i),
       ∑ i, r⁻¹ * x i)) =
       (Prod.map id (r⁻¹ * ·)) ∘ (fun x ↦ (dirichletNormalize x, ∑ i, x i)) := by
@@ -99,7 +98,7 @@ theorem map_dirichletNormalize_sum_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
         map_dirichletNormalize_sum_pi_gammaMeasure_one ha]
     _ = _ := by
       rw [← Measure.map_prod_map _ _ measurable_id (measurable_const_mul r⁻¹), Measure.map_id,
-        gammaMeasure_map_const_mul hA one_pos (inv_pos.mpr hr)]
+        gammaMeasure_map_const_mul (inv_pos.mpr hr)]
       simp
 
 /-- Normalizing independent Gamma coordinates gives a Dirichlet law at every common positive
@@ -138,12 +137,19 @@ theorem hasLaw_dirichletNormalize_gammaMeasure_of_iIndepFun (ha : ∀ i, 0 < a i
     ⟨measurable_dirichletNormalize.aemeasurable, map_dirichletNormalize_pi_gammaMeasure ha hr⟩
   exact hmap.fun_comp (h_ind.hasLaw_pi hX)
 
+omit [Nonempty ι] in
 /-- The normalized vector of independent Gamma random variables is independent of their total.
-This includes a one-coordinate family, whose normalized vector is constant. -/
+This includes a one-coordinate family, whose normalized vector is constant, and an empty family,
+whose normalized vector is constant as well. -/
 theorem indepFun_dirichletNormalize_sum_of_hasLaw_gammaMeasure (ha : ∀ i, 0 < a i) (hr : 0 < r)
     (h_ind : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (gammaMeasure (a i) r) P) :
     IndepFun (fun ω ↦ dirichletNormalize (fun i ↦ X i ω)) (fun ω ↦ ∑ i, X i ω) P := by
-  let _ : IsProbabilityMeasure P := h_ind.isProbabilityMeasure
+  have : IsProbabilityMeasure P := h_ind.isProbabilityMeasure
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · have hconst : (fun ω ↦ dirichletNormalize (fun i ↦ X i ω)) =
+        fun _ ↦ (0 : EuclideanSpace ℝ ι) := funext fun _ ↦ Subsingleton.elim _ _
+    rw [hconst]
+    exact indepFun_const_left _ _
   have hsum : HasLaw (fun ω ↦ ∑ i, X i ω) (gammaMeasure (∑ i, a i) r) P :=
     h_ind.hasLaw_sum_gammaMeasure hr Finset.univ_nonempty
       (fun i _ ↦ ha i) (fun i _ ↦ hX i)

@@ -215,9 +215,6 @@ theorem exists_norm_mul_norm_symm_eq_banachMazurDist [LocallyCompactSpace 𝕜]
     ∃ T : E ≃L[𝕜] F,
       ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ = banachMazurDist 𝕜 E F := by
   obtain ⟨T₀⟩ := h
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · -- On the zero space every operator has norm `0`, so every equivalence attains the value `0`.
-    exact ⟨T₀, by simp [banachMazurDist_def, ContinuousLinearMap.opNorm_subsingleton]⟩
   -- Minimize `‖A‖ * ‖B‖` over the compact set of mutually inverse pairs `(A, B)` with
   -- `‖A‖ ≤ 1` and `‖B‖ ≤ ‖c‖ * P`; every equivalence with `‖T‖ * ‖T⁻¹‖ ≤ ‖T₀‖ * ‖T₀⁻¹‖` rescales
   -- into this set.

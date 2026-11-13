@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fourier.Hardy.Hankel
-public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
+public import TauCeti.Analysis.Fourier.Hardy.Hankel.Basic
+public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 
 /-!
 # Compact Hankel operators and Toeplitz semicommutators of continuous symbols
@@ -19,6 +19,8 @@ is built.
 
 ## Main results
 
+* `TauCeti.isCompactOperator_span_hardyBasis_starProjection`: orthogonal projection onto
+  `ℂ ∙ hardyBasis m` is compact on `HardySpace`.
 * `TauCeti.hasFiniteRange_hankel_fourierLp`: the Hankel operator of a Fourier monomial has
   finite rank.
 * `TauCeti.isCompactOperator_hankel_toLp`: the Hankel operator of a continuous symbol is compact.
@@ -49,6 +51,11 @@ open MeasureTheory
 open scoped ENNReal
 
 namespace TauCeti
+
+/-- Orthogonal projection onto `ℂ ∙ hardyBasis m` is a compact operator on `HardySpace`. -/
+theorem isCompactOperator_span_hardyBasis_starProjection (m : ℕ) :
+    IsCompactOperator ((ℂ ∙ hardyBasis m).starProjection : HardySpace →L[ℂ] HardySpace) :=
+  (hasFiniteRange_span_hardyBasis_starProjection m).isCompactOperator
 
 /-- The Hankel operator of the monomial `e_n` kills each Hardy basis vector `e_k` with
 `n + k ≥ 0`, since the product `e_(n+k)` already lies in Hardy space. -/

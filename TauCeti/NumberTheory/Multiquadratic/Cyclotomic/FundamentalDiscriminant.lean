@@ -103,7 +103,7 @@ theorem exists_mem_sq_eq_of_isPrimeDiscriminant (hN : 0 < N) (hζ : IsPrimitiveR
     (hmem : ζ ∈ F) {P : ℤ} (hP : IsPrimeDiscriminant P) (hdvd : P.natAbs ∣ N) :
     ∃ x ∈ F, x ^ 2 = (P : L) := by
   obtain ⟨x, hxF, hx⟩ := exists_mem_sq_eq_primeDiscriminantRadicand hN hζ hmem hP hdvd
-  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand hP with h | h
+  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand P with h | h
   · exact ⟨x, hxF, by rw [hx, ← h]⟩
   · refine ⟨2 * x, mul_mem (ofNat_mem F 2) hxF, ?_⟩
     rw [mul_pow, hx]
@@ -252,7 +252,7 @@ private theorem coe_genusFieldRootOfPrimeDiscriminant
   rw [SubmonoidClass.coe_pow, coe_genusFieldRootOfPrimeDiscriminant, mul_pow, genusFieldRoot_sq,
     SubringClass.coe_intCast]
   unfold genusFieldRootScale
-  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand hP with h | h
+  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand (P : ℤ) with h | h
   · have h4 : ¬ ((P : ℤ) = 4 * primeDiscriminantRadicand P) := by
       intro h4
       have : primeDiscriminantRadicand P = 0 := by linarith
