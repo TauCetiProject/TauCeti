@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
 public import TauCeti.Topology.JordanCurve.Basic
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Concat
-import TauCeti.Analysis.Contour.Winding.Number.Circle
+import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 import TauCeti.Analysis.Contour.Winding.Number.Reparam
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Circle
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
