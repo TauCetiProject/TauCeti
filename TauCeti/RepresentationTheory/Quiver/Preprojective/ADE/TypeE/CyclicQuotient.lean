@@ -195,7 +195,7 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan
         Int.cast_pow, Int.cast_neg, Int.cast_one, eTurn]
     have hlow : w * eTurn k n c ^ (h + 1) ∈ eSpan k n ^ (t + h + 1) := by
       rw [show t + h + 1 = t + (h + 1) by omega, pow_add]
-      exact Submodule.mul_mem_mul hw (Submodule.pow_mem_pow _ (eTurn_mem_eSpan k hn c) _)
+      exact Submodule.mul_mem_mul hw (Submodule.pow_mem_pow _ (eTurn_mem_eSpan k c) _)
     rw [hz, mul_assoc, mul_mem_commutatorSubmodule_comm, mul_smul_comm, smul_mul_assoc, mul_assoc,
       mul_assoc, heX, hYX, mul_smul_comm]
     exact zsmul_mem (zsmul_mem (hspan _ _ hlow) _) ε
@@ -236,7 +236,7 @@ private theorem mem_commutatorSubmodule_of_mem_eSpan_six_pow (h2 : IsUnit (2 : k
       (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E 6)))) := by
   have hn : 4 ≤ 6 := by norm_num
   have hsum : eTurn k 6 0 + eTurn k 6 1 = -eTurn k 6 2 :=
-    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k hn)
+    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k)
   refine mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three h2 h3 (eTurn_zero_sq k hn)
     (eTurn_one_pow_three k hn) ?_ ?_ ?_ (eTurn_pow_mem_commutatorSubmodule k hn 1 two_pos) ?_ hw
   · rw [hsum, neg_pow, eTurn_two_pow k (n := 6) hn, mul_zero]
@@ -328,7 +328,7 @@ private theorem mem_commutatorSubmodule_of_mem_eSpan_seven_pow (h2 : IsUnit (2 :
       (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E 7)))) := by
   have hn : 4 ≤ 7 := by norm_num
   have hsum : eTurn k 7 0 + eTurn k 7 1 = -eTurn k 7 2 :=
-    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k hn)
+    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k)
   have hpow {j : ℕ} (hj : 0 < j) : (eTurn k 7 0 + eTurn k 7 1) ^ j ∈ commutatorSubmodule k
       (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E 7)))) := by
     rw [hsum, neg_pow]
@@ -422,7 +422,7 @@ private theorem mem_commutatorSubmodule_of_mem_eSpan_eight_pow (h2 : IsUnit (2 :
       (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E 8)))) := by
   have hn : 4 ≤ 8 := by norm_num
   have hsum : eTurn k 8 0 + eTurn k 8 1 = -eTurn k 8 2 :=
-    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k hn)
+    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k)
   -- The powers of `x + y = -z` are sums of commutators since the long arm ends.
   have hpow {j : ℕ} (hj : 0 < j) : (eTurn k 8 0 + eTurn k 8 1) ^ j ∈ commutatorSubmodule k
       (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E 8)))) := by

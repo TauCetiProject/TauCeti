@@ -29,6 +29,8 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   induce the same scalar action on a module.
 * `TauCeti.map_negOnePowCast_smul`: additive homomorphisms commute with the ground-ring signs.
 * `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
+* `TauCeti.neg_one_pow_mul_eq_zsmul`: multiplying by a sign `(-1) ^ r` in a ring is the integer
+  sign acting by `zsmul`.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
   `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity identities behind the sign cancellations
@@ -127,6 +129,16 @@ theorem negOnePow_smul_negOnePow_smul (e : ℤ) (a : A) : e.negOnePow • e.negO
   rw [smul_smul, Int.units_mul_self, one_smul]
 
 end NegOnePowSMul
+
+section NegOnePowMul
+
+variable {A : Type uA} [Ring A]
+
+/-- A sign `(-1) ^ r` in a ring multiplies as the integer sign `(-1 : ℤ) ^ r` acting by `zsmul`. -/
+theorem neg_one_pow_mul_eq_zsmul (r : ℕ) (a : A) : (-1) ^ r * a = ((-1 : ℤ) ^ r) • a := by
+  simp [zsmul_eq_mul]
+
+end NegOnePowMul
 
 section Parity
 

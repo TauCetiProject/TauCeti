@@ -13,6 +13,8 @@ public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
+-- Proof-only: signs act on the signless algebra by `zsmul`.
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Path reduction in the type-`D` preprojective algebra
@@ -136,11 +138,11 @@ include hn hG
 
 omit hn in
 /-- The relation at a vertex `v`, summed over a set `S` of vertices containing its neighbours. -/
-private theorem sum_fork_relation (v : ℕ) (hv : v < n) (S : Finset ℕ)
+private theorem sum_fork_relation (v : ℕ) (S : Finset ℕ)
     (hnbr : ∀ w < n, w ∉ S → ¬(v + 1 = w ∧ w ≤ c ∨ w + 1 = v ∧ v ≤ c ∨ v = c ∧ c < w ∨
       w = c ∧ c < v)) :
     ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 :=
-  sum_signlessArrow_mul_signlessArrow_of_subset k G hv S fun w hw hadj =>
+  sum_signlessArrow_mul_signlessArrow_of_forall_adj_mem k G v S fun _ w hw hadj =>
     by_contra fun hwS => hnbr w hw hwS (hG _ _ hadj)
 
 omit hn in
@@ -156,6 +158,7 @@ private theorem forkUp_self_eq_zero : forkUp k G c c = 0 := by
   simp only [forkUp, Nat.sub_self, Nat.zero_sub]
   exact signlessArrow_fork_eq_zero k hG (by omega)
 
+omit hn in
 /-- **The ladder relations of the long arm.** At every vertex of the long arm other than the
 branch node, the backtrack away from the branch node cancels the backtrack towards it. -/
 private theorem forkDown_mul_forkUp_add (w : ℕ) :
@@ -163,7 +166,7 @@ private theorem forkDown_mul_forkUp_add (w : ℕ) :
   by_cases hw : w + 1 ≤ c
   · -- The rung `w + 1` is the vertex `v = c - (w + 1)`, with neighbours `v - 1` and `v + 1`.
     obtain ⟨v, rfl⟩ : ∃ v, c = v + (w + 1) := ⟨c - (w + 1), by omega⟩
-    have h := sum_fork_relation k hG v (by omega) {v - 1, v + 1}
+    have h := sum_fork_relation k hG v {v - 1, v + 1}
       (fun u _ hu => by simp only [Finset.mem_insert, Finset.mem_singleton] at hu; omega)
     rw [Finset.sum_pair (by omega)] at h
     have hrung : v + (w + 1) - (w + 1) = v := by omega
@@ -178,9 +181,9 @@ private theorem forkDown_mul_forkUp_add (w : ℕ) :
 
 omit hn in
 /-- **The relation at a leaf**: the backtrack from a leaf `l` vanishes. -/
-private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) (hln : l < n) :
+private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) :
     signlessArrow k G c l * signlessArrow k G l c = 0 := by
-  have h := sum_fork_relation k hG l hln {c}
+  have h := sum_fork_relation k hG l {c}
     (fun u _ hu => by simp only [Finset.mem_singleton] at hu; omega)
   rwa [Finset.sum_singleton] at h
 
@@ -188,16 +191,16 @@ private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) (hln
 the two leaves sum to zero. -/
 private theorem forkDown_mul_forkUp_add_forkTurn :
     forkDown k G c 0 * forkUp k G c 0 + (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) = 0 := by
-  have h := sum_fork_relation k hG c (by omega) {c - 1, c + 1, c + 2}
+  have h := sum_fork_relation k hG c {c - 1, c + 1, c + 2}
     (fun u hu hu' => by simp only [Finset.mem_insert, Finset.mem_singleton] at hu'; omega)
   rwa [Finset.sum_insert (by simp; omega), Finset.sum_pair (by omega)] at h
 
 omit hn in
 /-- The backtracks into the leaves square to zero. -/
-private theorem forkTurn_mul_self {l : ℕ} (hl : c < l) (hln : l < n) :
+private theorem forkTurn_mul_self {l : ℕ} (hl : c < l) :
     forkTurn k G c l * forkTurn k G c l = 0 := by
   rw [forkTurn, mul_assoc, ← mul_assoc (signlessArrow k G c l),
-    signlessArrow_mul_signlessArrow_leaf k hG hl hln, zero_mul, mul_zero]
+    signlessArrow_mul_signlessArrow_leaf k hG hl, zero_mul, mul_zero]
 
 /-- The backtrack into the long arm is minus the sum of the backtracks into the leaves; in
 particular it lies in their span. -/
@@ -217,13 +220,13 @@ private theorem forkTurn_add_pow_eq_zero :
     (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (c + 1) = 0 := by
   -- The backtrack into the long arm is nilpotent, since the long arm has `c` rungs.
   have hq : (forkDown k G c 0 * forkUp k G c 0) ^ (c + 1) = 0 :=
-    pow_d_mul_u_eq_zero (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG)
+    pow_d_mul_u_eq_zero (forkDown_mul_forkUp_add k hG) (forkUp_self_eq_zero k hG)
   rw [forkTurn_add_eq_neg_forkDown_mul_forkUp k hn hG, neg_pow, hq, mul_zero]
 
 /-- The first long-arm arrow kills the `c`-th power of the sum of the leaf backtracks. -/
 private theorem forkUp_mul_forkTurn_add_pow_eq_zero (hc : 0 < c) :
     forkUp k G c 0 * (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ c = 0 := by
-  have hrel (r : ℕ) := forkDown_mul_forkUp_add k hn hG r
+  have hrel (r : ℕ) := forkDown_mul_forkUp_add k hG r
   have hshift : (forkDown k G c 1 * forkUp k G c 1) ^ c = 0 := by
     have h := pow_d_mul_u_eq_zero
       (u := fun r => forkUp k G c (r + 1)) (d := fun r => forkDown k G c (r + 1))
@@ -239,8 +242,8 @@ private theorem forkUp_mul_forkTurn_add_pow_eq_zero (hc : 0 < c) :
 /-- **Every product of `c + 2` backtracks into the leaves vanishes.** -/
 private theorem forkSpan_pow_eq_bot {t : ℕ} (ht : c + 2 ≤ t) : forkSpan k G c ^ t = ⊥ := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le ht
-  rw [pow_add, forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega) (by omega))
-    (forkTurn_mul_self k hG (by omega) (by omega))
+  rw [pow_add, forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega))
+    (forkTurn_mul_self k hG (by omega))
     (forkTurn_add_pow_eq_zero k hn hG), Submodule.bot_mul]
 
 /-! ### Normal forms of paths -/
@@ -251,6 +254,7 @@ private theorem one_mem_forkSpan_pow_zero : 1 ∈ forkSpan k G c ^ 0 := by
   rw [pow_zero]
   exact Submodule.one_le.1 le_rfl
 
+omit hn in
 /-- One more arrow after a valley word on the long arm. -/
 private theorem forkNormalForm_cons_valley {i₀ j j' L : ℕ}
     {E z : signlessPreprojectiveAlgebra k (DoubledQuiver G)}
@@ -268,7 +272,7 @@ private theorem forkNormalForm_cons_valley {i₀ j j' L : ℕ}
     have hz : signlessArrow k G j j' *
         (ε • (ladderValley (forkUp k G c) (forkDown k G c) (m + 1) s r * E)) =
         (ε * (-1) ^ r) • (ladderValley (forkUp k G c) (forkDown k G c) m (s + 1) r * E) := by
-      rw [harr, mul_smul_comm, ← mul_assoc, d_mul_ladderValley (forkDown_mul_forkUp_add k hn hG),
+      rw [harr, mul_smul_comm, ← mul_assoc, d_mul_ladderValley (forkDown_mul_forkUp_add k hG),
         mul_assoc, neg_one_pow_mul_eq_zsmul, mul_smul]
     rw [hz]
     rcases Nat.eq_zero_or_pos m with rfl | hm'
@@ -316,7 +320,7 @@ private theorem forkNormalForm_cons_arm {i₀ j j' L : ℕ}
         (Submodule.mul_mem_mul (forkDown_mul_forkUp_mem_forkSpan k hn hG) hw)
     · have hj'r : c - j' = r := by omega
       rw [hr, harr, hj'r, ← mul_assoc, ← mul_assoc,
-        d_mul_ladderValley_zero_zero (forkDown_mul_forkUp_add k hn hG), neg_one_pow_mul_eq_zsmul]
+        d_mul_ladderValley_zero_zero (forkDown_mul_forkUp_add k hG), neg_one_pow_mul_eq_zsmul]
       simp only [smul_mul_assoc, mul_smul_comm, mul_assoc]
   · -- A step away from the branch node extends the climb.
     have harr : signlessArrow k G j j' = forkUp k G c (c - j) := by
@@ -360,7 +364,7 @@ private theorem forkNormalForm_cons {i₀ j j' L : ℕ}
     (h : ForkNormalForm k G c i₀ j L E z) :
     ForkNormalForm k G c i₀ j' (L + 1) E (signlessArrow k G j j' * z) := by
   rcases h with h | h | h | ⟨rfl, hj, rfl, rfl⟩
-  · exact forkNormalForm_cons_valley k hn hG hadj h
+  · exact forkNormalForm_cons_valley k hG hadj h
   · exact forkNormalForm_cons_arm k hn hG hadj h
   · exact forkNormalForm_cons_leaf k hn hjn hadj h
   · -- The first step from a leaf goes to the branch node.
