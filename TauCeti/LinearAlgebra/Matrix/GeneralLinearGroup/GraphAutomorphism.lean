@@ -104,6 +104,28 @@ theorem typeAGraphConjugator_apply (r : ℕ) (i j : Fin (r + 1)) :
     rw [← Fin.rev_eq_iff, eq_comm]
   simp only [Fin.revPerm_apply, diagGL_apply, coe_typeAGraphSign, h]
 
+/-- The signed reversal matrix reverses coordinates and applies alternating signs. -/
+theorem coe_typeAGraphConjugator_mulVec (r : ℕ) (w : Fin (r + 1) → A) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A) *ᵥ w =
+      fun i : Fin (r + 1) ↦ (-1 : A) ^ (i : ℕ) * w i.rev := by
+  ext i
+  simp [mulVec, dotProduct, typeAGraphConjugator_apply, ite_mul]
+
+/-- The bilinear pairing for the signed reversal form in arbitrary dimension. -/
+theorem dotProduct_typeAGraphConjugator_mulVec (r : ℕ) (v w : Fin (r + 1) → A) :
+    v ⬝ᵥ ((typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A) *ᵥ w) =
+      ∑ i : Fin (r + 1), (-1 : A) ^ (i : ℕ) * (v i * w i.rev) := by
+  rw [coe_typeAGraphConjugator_mulVec]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [← mul_assoc, ← ((Commute.neg_one_left (v i)).pow_left (i : ℕ)).eq, mul_assoc]
+
+/-- The bilinear pairing for the signed reversal form in dimension three. -/
+theorem dotProduct_typeAGraphConjugator_two_mulVec (v w : Fin 3 → A) :
+    v ⬝ᵥ ((typeAGraphConjugator 2 A : Matrix (Fin 3) (Fin 3) A) *ᵥ w) =
+      v 0 * w 2 - v 1 * w 1 + v 2 * w 0 := by
+  simp [dotProduct_typeAGraphConjugator_mulVec, Fin.sum_univ_three, sub_eq_add_neg]
+
 /-- The transpose of the signed reversal matrix is `(-1) ^ r` times the matrix: the form of Gram
 matrix `Q` is symmetric for even `r` and skew-symmetric for odd `r`. -/
 theorem transpose_typeAGraphConjugator (r : ℕ) :

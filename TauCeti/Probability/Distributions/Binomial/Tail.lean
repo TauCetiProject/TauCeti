@@ -171,7 +171,6 @@ theorem binomial_cumulative_eq_regularizedIncompleteBeta (hmn : m ≤ n) (p : un
   rcases hmn.eq_or_lt with rfl | hmn
   · have hsupport : {k : ℕ | k ≤ m} =ᵐ[Bin(m, p)] Set.univ := by
       filter_upwards [ae_le_of_hasLaw_binomial (P := Bin(m, p)) HasLaw.id] with k hk
-      apply propext
       exact iff_true_intro hk
     rw [measureReal_congr hsupport, probReal_univ, sub_self,
       regularizedIncompleteBeta_zero_left (by positivity)
