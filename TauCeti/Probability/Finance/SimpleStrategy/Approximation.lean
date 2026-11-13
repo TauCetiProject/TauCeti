@@ -187,7 +187,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
 /-- A predictable process with finite pathwise square energy on a finite horizon has bounded
 finite-grid approximations converging in square energy on almost every sample path.
 The original process need not have a finite expected square energy. -/
-theorem exists_seq_simpleHolding_tendsto_ae_energy
+theorem exists_seq_simpleHolding_ae_tendsto_lintegral_eNorm_sub_sq
     (hH : IsStronglyPredictable ℱ H) (T : ℝ≥0)
     (hH₂ : ∀ᵐ ω ∂P, MemLp (fun t ↦ H t ω) 2 (TauCeti.Probability.timeMeasure T)) :
     ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
@@ -239,7 +239,9 @@ theorem exists_seq_simpleHolding_tendsto_ae_energy
   have htrunc : ∀ᵐ ω ∂P, Tendsto
       (fun m ↦ ∫⁻ t, ‖K m t ω - H t ω‖ₑ ^ 2 ∂ν) atTop (𝓝 0) := by
     filter_upwards [hH₂] with ω hω
-    exact hω.tendsto_lintegral_enorm_sub_truncation
+    simpa only [Function.comp_def, K, ENNReal.toReal_ofNat, ENNReal.rpow_two] using
+      (hω.tendsto_lintegral_eNorm_ite_sub_rpow (by norm_num) (by norm_num)).comp
+        tendsto_natCast_atTop_atTop
   -- The square error is at most twice each of the two square errors.
   refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, ?_⟩
   filter_upwards [hELim, htrunc] with ω hEω hKω
