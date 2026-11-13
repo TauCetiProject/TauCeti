@@ -43,7 +43,7 @@ theorem exists_isOpen_zero_locus_subset_curve_image_of_open
     hρ.comp_contMDiff contMDiff_subtype_val (fun p ↦ p.property)
   have hregU : IsRegularValue I 𝓘(ℝ) fρ 0 := by
     rw [isRegularValue_iff]
-    intro p hp
+    intro p _
     rw [isRegularPoint_iff]
     change Surjective (mfderiv I 𝓘(ℝ) (ρ ∘ (Subtype.val : U → M)) p)
     rw [mfderiv_comp p
