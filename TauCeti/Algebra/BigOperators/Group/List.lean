@@ -11,6 +11,11 @@ public import Mathlib.GroupTheory.Submonoid.Center
 /-!
 # Products along lists in a noncommutative monoid
 
+Along a nonempty list `x :: l` forming a chain for a relation `r`, attach a set `V y` to each
+entry `y`. If every entry `y` has `f y ∈ V y`, and multiplying `f y` onto `V z` lands in `V y`
+whenever `z` is an entry of `l` with `r y z`, then the product of the `f y` along the list lies in
+the set `V x` attached to its first entry.
+
 `List.prod_map_mul` splits the product of a list of pairwise products `f i * g i` into the product
 of the `f i` times the product of the `g i`, in a commutative monoid. The same splitting holds in
 any monoid as soon as the second factors are central, since each `g i` can then be moved past the
@@ -20,6 +25,8 @@ entries whose relative order differs has commuting images.
 
 ## Main results
 
+* `List.prod_map_mem_of_isChain`: along a nonempty `r`-chain `x :: l`, the product of the `f y`
+  lies in `V x`, when each `f y` lies in `V y` and `f y * V z ⊆ V y` for entries with `r y z`.
 * `List.prod_map_mul_of_mem_center`: `∏ (f i * g i) = (∏ f i) * (∏ g i)` along a list, when
   `g i` lies in the center for every entry `i` of the list.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
@@ -30,6 +37,29 @@ entries whose relative order differs has commuting images.
 public section
 
 namespace List
+
+section IsChain
+
+variable {ι M : Type*} [MulOneClass M]
+
+/-- **Induction along a chain.** Let `x :: l` be a chain for a relation `r`, and attach a set
+`V y` to each entry `y`. If every entry `y` has `f y ∈ V y`, and multiplying `f y` onto an element
+of `V z` lands in `V y` whenever `z` is an entry of `l` with `r y z`, then the product of the `f y`
+along `x :: l` lies in `V x`. -/
+theorem prod_map_mem_of_isChain {r : ι → ι → Prop} (f : ι → M) (V : ι → Set M) {x : ι}
+    {l : List ι} (hl : (x :: l).IsChain r) (hbase : ∀ y ∈ x :: l, f y ∈ V y)
+    (hstep : ∀ ⦃y z⦄, y ∈ x :: l → z ∈ l → r y z → ∀ q ∈ V z, f y * q ∈ V y) :
+    ((x :: l).map f).prod ∈ V x := by
+  induction l generalizing x with
+  | nil => simpa using hbase x mem_cons_self
+  | cons z l ih =>
+    rw [isChain_cons_cons] at hl
+    rw [map_cons, prod_cons]
+    exact hstep mem_cons_self mem_cons_self hl.1 _
+      (ih hl.2 (fun y hy ↦ hbase y (.tail _ hy))
+        fun _ _ hy hw hyw ↦ hstep (.tail _ hy) (.tail _ hw) hyw)
+
+end IsChain
 
 variable {ι M : Type*} [Monoid M]
 
