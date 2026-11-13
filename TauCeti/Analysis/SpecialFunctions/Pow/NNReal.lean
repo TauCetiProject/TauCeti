@@ -74,9 +74,6 @@ closed intervals for a reciprocal radius parameter `α / r`.
 
 On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every positive exponent `a`.
 
-For a positive exponent `r`, the `ℓʳ` norm `(∑' i, gᵢ ^ r) ^ (1 / r)` of an `ℝ≥0∞`-valued family of
-functions commutes with restriction to a set: restricting each `gᵢ` restricts the norm.
-
 ## Main declarations
 
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
@@ -111,8 +108,6 @@ functions commutes with restriction to a set: restricting each `gᵢ` restricts 
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
 * `TauCeti.tendsto_const_mul_nnnorm_rpow_nhds_zero`: `c * ‖x‖₊ ^ a → 0` as `x → 0` for `0 < a`.
-* `TauCeti.rpow_tsum_indicator_rpow`: the `ℓʳ` norm of a family restricted to a set is the
-  restriction of its `ℓʳ` norm.
 -/
 
 public section
@@ -452,15 +447,5 @@ theorem tendsto_const_mul_nnnorm_rpow_nhds_zero {E : Type*} [SeminormedAddGroup 
   have h : Continuous fun x : E ↦ c * ‖x‖₊ ^ a :=
     continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnNorm)
   simpa [NNReal.zero_rpow ha.ne'] using h.tendsto 0
-
-/-- For `0 < r`, the `ℓʳ` norm of a family restricted to a set is the restriction of its `ℓʳ`
-norm. -/
-theorem rpow_tsum_indicator_rpow {α κ : Type*} (s : Set α) (g : κ → α → ℝ≥0∞) {r : ℝ}
-    (hr : 0 < r) (x : α) :
-    (∑' i, s.indicator (g i) x ^ r) ^ (1 / r) =
-      s.indicator (fun y => (∑' i, g i y ^ r) ^ (1 / r)) x := by
-  by_cases hx : x ∈ s
-  · simp only [Set.indicator_of_mem hx]
-  · simp [Set.indicator_of_notMem hx, ENNReal.zero_rpow_of_pos hr, hr]
 
 end TauCeti

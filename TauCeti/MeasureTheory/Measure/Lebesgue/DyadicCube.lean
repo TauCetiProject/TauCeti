@@ -48,7 +48,7 @@ Mathlib's differentiation theorem along closed balls with moving centres.
 * `TauCeti.volume_dyadicCube`, `TauCeti.volume_dyadicCube_add_one`: a cube of level `k` has
   volume `(2ᵏ)ⁿ`, so its parent is `2ⁿ` times larger.
 * `TauCeti.volume_closedBall_dyadicCube_le`: the closed ball around the centre of a cube whose
-  radius is `c` times half its side has at most `cⁿ` times the volume of the cube.
+  radius is `c ≥ 0` times half its side has at most `cⁿ` times the volume of the cube.
 * `TauCeti.exists_forall_lt_of_mul_volume_dyadicCube_lt`: in positive dimension, the dyadic cubes
   `Q` with `δ |Q| < a`, for `δ ≠ 0` and `a` finite, have bounded level.
 * `TauCeti.exists_subset_pairwiseDisjoint_forall_dyadicCube_subset`: in a family of dyadic cubes
@@ -274,7 +274,8 @@ theorem volume_dyadicCube (k : ℤ) (m : ι → ℤ) :
   simp [dyadicCube_eq_pi, Real.volume_pi_Ico, add_one_mul, ENNReal.ofReal_pow, zpow_nonneg]
 
 /-- The closed ball around the centre of a dyadic cube of level `k` whose radius is `c` times half
-the side of the cube has at most `cⁿ` times the volume of the cube. -/
+the side of the cube has at most `ENNReal.ofReal c ^ n` times the volume of the cube; for `c < 0`
+the ball is empty. -/
 theorem volume_closedBall_dyadicCube_le (c : ℝ) (k : ℤ) (m : ι → ℤ) :
     volume (closedBall (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (c * (2 ^ k / 2))) ≤
       ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube k m) := by

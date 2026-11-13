@@ -11,6 +11,7 @@ import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 import TauCeti.MeasureTheory.Integral.Marcinkiewicz.General
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # The vector-valued maximal inequality below the diagonal
@@ -29,7 +30,7 @@ This file proves the remaining case `1 < p < r`. With `r = 2` it is the square-f
 `‖(∑' i, (M fᵢ) ^ 2) ^ (1 / 2)‖_p ≤ C ‖(∑' i, ‖fᵢ‖ ^ 2) ^ (1 / 2)‖_p` for `1 < p < 2`, the range
 in which Littlewood–Paley theory needs it below `L²`.
 
-The statements are on `ℝⁿ = ι → ℝ`, `n ≥ 1`, with Lebesgue measure and balls taken in the sup
+The statements are on `ℝⁿ = ι → ℝ` with Lebesgue measure and balls taken in the sup
 distance, where the Calderón–Zygmund decomposition (`TauCeti.calderonZygmundCubes`) runs on dyadic
 cubes.
 
@@ -89,9 +90,8 @@ variable {ι κ : Type*} [Fintype ι] [Countable κ]
 
 section Average
 
-/-- The family `g` averaged over the Calderón–Zygmund cubes of `G` at height `t`: on each cube
-`Q` the function `g i` is replaced by its average over `Q`, and off the cubes it is left
-unchanged. -/
+/-- The function `g` averaged over the Calderón–Zygmund cubes of `G` at height `t`: on each cube
+`Q` it is replaced by its average over `Q`, and off the cubes it is left unchanged. -/
 private noncomputable def cubeAverage (G : (ι → ℝ) → ℝ≥0∞) (t : ℝ≥0∞) (g : (ι → ℝ) → ℝ≥0∞) :
     (ι → ℝ) → ℝ≥0∞ :=
   fun x => (⋃ q ∈ calderonZygmundCubes G t, dyadicCube q.1 q.2)ᶜ.indicator g x +
@@ -396,6 +396,11 @@ section Main
 
 variable {F : Type*} [ENorm F] {f : κ → (ι → ℝ) → F} {r : ℝ}
 
+/-- For `0 < r`, raising to the power `r` commutes with restriction to a set. -/
+private theorem indicator_rpow_apply {α : Type*} {V : Set α} {g : α → ℝ≥0∞} {r : ℝ}
+    (hr : 0 < r) (x : α) : V.indicator (fun y => g y ^ r) x = V.indicator g x ^ r :=
+  congrFun (indicator_comp_of_zero (g := fun a : ℝ≥0∞ => a ^ r) (ENNReal.zero_rpow_of_pos hr)) x
+
 /-- The part of a measurable family on a measurable set `V`, through the diagonal `Lʳ` bound and
 Chebyshev's inequality: the `ℓʳ` norm of its maximal functions reaches `t / 2` on a set of measure
 at most `2 ^ r cᵣ 4ⁿ t ^ (-r) ∫_V G ^ r`, where `G` is the `ℓʳ` norm of the family. -/
@@ -406,40 +411,20 @@ private theorem volume_half_rpow_le_setLIntegral {g : κ → (ι → ℝ) → �
         ∑' i, maximalFunction volume (V.indicator (g i)) x ^ r} ≤
       2 ^ r * (ENNReal.ofReal (2 * r * 2 ^ (r - 1) / (r - 1)) * 4 ^ Fintype.card ι) *
         ENNReal.ofReal (t ^ (-r)) * ∫⁻ x in V, ((∑' i, g i x ^ r) ^ (1 / r)) ^ r := by
-  set G : (ι → ℝ) → ℝ≥0∞ := fun y => (∑' i, g i y ^ r) ^ (1 / r)
-  set cr := ENNReal.ofReal (2 * r * 2 ^ (r - 1) / (r - 1)) * 4 ^ Fintype.card ι
-  set T := ENNReal.ofReal t
-  set S := {x | (T / 2) ^ r ≤ ∑' i, maximalFunction volume (V.indicator (g i)) x ^ r}
   have hr0 : 0 < r := by linarith
-  have hT2 : T / 2 ≠ 0 := (ENNReal.div_pos (ENNReal.ofReal_pos.2 ht).ne' (by norm_num)).ne'
-  have hT2' : T / 2 ≠ ∞ := ENNReal.div_ne_top ENNReal.ofReal_ne_top (by norm_num)
-  have hpow (x : ι → ℝ) : ∑' i, V.indicator (g i) x ^ r = V.indicator (fun y => G y ^ r) x := by
-    calc ∑' i, V.indicator (g i) x ^ r = ((∑' i, V.indicator (g i) x ^ r) ^ (1 / r)) ^ r := by
-          rw [one_div, ENNReal.rpow_inv_rpow hr0.ne']
-      _ = V.indicator G x ^ r := by rw [rpow_tsum_indicator_rpow V g hr0]
-      _ = V.indicator (fun y => G y ^ r) x :=
-          congrFun (indicator_comp_of_zero (g := fun a : ℝ≥0∞ => a ^ r)
-            (ENNReal.zero_rpow_of_pos hr0)).symm x
-  have hTr : (T / 2) ^ r ≠ 0 := (ENNReal.rpow_pos (pos_iff_ne_zero.2 hT2) hT2').ne'
-  have hTr' : (T / 2) ^ r ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hr0.le hT2'
-  have hTrinv : ((T / 2) ^ r)⁻¹ = 2 ^ r * ENNReal.ofReal (t ^ (-r)) := by
-    rw [ENNReal.div_rpow_of_nonneg _ _ hr0.le, ENNReal.inv_div
-      (.inl (ENNReal.rpow_ne_top_of_nonneg hr0.le ENNReal.ofNat_ne_top))
-      (.inl (ENNReal.rpow_pos (by norm_num) ENNReal.ofNat_ne_top).ne'), div_eq_mul_inv,
-      ← ENNReal.rpow_neg, ENNReal.ofReal_rpow_of_pos ht]
-  calc volume S = ((T / 2) ^ r)⁻¹ * ((T / 2) ^ r * volume S) := by
-        rw [← mul_assoc, ENNReal.inv_mul_cancel hTr hTr', one_mul]
-    _ ≤ ((T / 2) ^ r)⁻¹ * (cr * ∫⁻ x, ∑' i, V.indicator (g i) x ^ r) :=
-        mul_le_mul_right
-          (mul_volume_le_tsum_maximalFunction_rpow (fun i => (hg i).indicator hV) hr _) _
-    _ = 2 ^ r * cr * ENNReal.ofReal (t ^ (-r)) * ∫⁻ x in V, G x ^ r := by
-        rw [lintegral_congr hpow, lintegral_indicator hV, hTrinv]
-        ring
-
-variable [Nonempty ι]
+  have hpow (x : ι → ℝ) : ∑' i, V.indicator (g i) x ^ r =
+      V.indicator (fun y => ((∑' i, g i y ^ r) ^ (1 / r)) ^ r) x := by
+    simp only [one_div, ENNReal.rpow_inv_rpow hr0.ne', indicator_tsum_apply,
+      indicator_rpow_apply hr0]
+  have h := ENNReal.le_two_rpow_mul_inv_rpow_mul (ENNReal.ofReal_pos.2 ht).ne' ENNReal.ofReal_ne_top
+    (mul_volume_le_tsum_maximalFunction_rpow (fun i => (hg i).indicator hV) hr
+      ((ENNReal.ofReal t / 2) ^ r))
+  rw [lintegral_congr hpow, lintegral_indicator hV, ← ENNReal.rpow_neg,
+    ENNReal.ofReal_rpow_of_pos ht] at h
+  exact h.trans_eq (by ring)
 
 /-- **The vector-valued maximal inequality of Fefferman and Stein**, weak type `(1, 1)`: for
-`1 < r` and a countable family `f` on `ℝⁿ = ι → ℝ`, `n ≥ 1`, with balls taken in the sup distance,
+`1 < r` and a countable family `f` on `ℝⁿ = ι → ℝ`, with balls taken in the sup distance,
 
 `t · |{(∑' i, (M fᵢ) ^ r) ^ (1 / r) > t}| ≤ C ∫⁻ (∑' i, ‖fᵢ‖ₑ ^ r) ^ (1 / r)`,
 
@@ -455,6 +440,20 @@ theorem mul_volume_lt_rpow_tsum_maximalFunction_rpow_le
   have hint : ∫⁻ x, (∑' i, ‖f i x‖ₑ ^ r) ^ (1 / r) = ∫⁻ x, (∑' i, g i x ^ r) ^ (1 / r) :=
     lintegral_congr_ae (by filter_upwards [hfg] with x hx; simp only [hx])
   simp only [hM, hint]
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- In dimension zero every function is constant, so it is its own maximal function.
+    have hM0 (i : κ) (x : ι → ℝ) : maximalFunction volume (g i) x = g i x := by
+      rw [show g i = fun _ => g i x from funext fun y => congrArg (g i) (Subsingleton.elim y x),
+        maximalFunction_const, eNorm_eq_self]
+    simp only [hM0]
+    calc t * volume {x : ι → ℝ | t < (∑' i, g i x ^ r) ^ (1 / r)}
+        ≤ t * volume {x : ι → ℝ | t ≤ (∑' i, g i x ^ r) ^ (1 / r)} := by
+          gcongr
+          exact le_of_lt
+      _ ≤ ∫⁻ x, (∑' i, g i x ^ r) ^ (1 / r) :=
+          mul_meas_ge_le_lintegral₀ ((Measurable.tsum fun i => (hg i).pow_const r).pow_const _
+            ).aemeasurable t
+      _ ≤ _ := le_mul_of_one_le_left' (by simp [Fintype.card_eq_zero])
   set n := Fintype.card ι
   have h3 : (3 : ℝ≥0∞) ^ n ≠ 0 := pow_ne_zero _ (by norm_num)
   have h3' : (3 : ℝ≥0∞) ^ n ≠ ∞ := ENNReal.pow_ne_top (by norm_num)
@@ -488,26 +487,18 @@ private theorem volume_lt_half_le_setLIntegral {g : κ → (ι → ℝ) → ℝ�
       2 * (3 ^ Fintype.card ι * (2 ^ Fintype.card ι + ENNReal.ofReal (2 * r * 2 ^ (r - 1) /
         (r - 1)) * 4 ^ Fintype.card ι * (2 ^ Fintype.card ι) ^ (r - 1))) *
         ENNReal.ofReal (t ^ (-1 : ℝ)) * ∫⁻ x in V, (∑' i, g i x ^ r) ^ (1 / r) := by
-  set T := ENNReal.ofReal t
-  set S := {x | T / 2 < (∑' i, maximalFunction volume (V.indicator (g i)) x ^ r) ^ (1 / r)}
-  have hT2 : T / 2 ≠ 0 := (ENNReal.div_pos (ENNReal.ofReal_pos.2 ht).ne' (by norm_num)).ne'
-  have hT2' : T / 2 ≠ ∞ := ENNReal.div_ne_top ENNReal.ofReal_ne_top (by norm_num)
-  have hTinv : (T / 2)⁻¹ = 2 * ENNReal.ofReal (t ^ (-1 : ℝ)) := by
-    rw [ENNReal.inv_div (.inl ENNReal.ofNat_ne_top) (.inl two_ne_zero), div_eq_mul_inv,
-      Real.rpow_neg_one, ENNReal.ofReal_inv_of_pos ht]
+  have hr0 : 0 < r := by linarith
   have h := mul_volume_lt_rpow_tsum_maximalFunction_rpow_le
-    (fun i => ((hg i).indicator hV).eNorm.aemeasurable) hr (T / 2)
-  simp only [eNorm_eq_self, rpow_tsum_indicator_rpow V g (by linarith : 0 < r),
-    lintegral_indicator hV] at h
-  calc volume S = (T / 2)⁻¹ * (T / 2 * volume S) := by
-        rw [← mul_assoc, ENNReal.inv_mul_cancel hT2 hT2', one_mul]
-    _ ≤ (T / 2)⁻¹ * (3 ^ Fintype.card ι * (2 ^ Fintype.card ι +
-          ENNReal.ofReal (2 * r * 2 ^ (r - 1) / (r - 1)) * 4 ^ Fintype.card ι *
-            (2 ^ Fintype.card ι) ^ (r - 1)) * ∫⁻ x in V, (∑' i, g i x ^ r) ^ (1 / r)) :=
-        mul_le_mul_right h _
-    _ = _ := by
-        rw [hTinv]
-        ring
+    (fun i => ((hg i).indicator hV).eNorm.aemeasurable) hr (ENNReal.ofReal t / 2)
+  -- The `ℓʳ` norm of the family restricted to `V` is the restriction of its `ℓʳ` norm.
+  simp only [eNorm_eq_self, ← indicator_rpow_apply hr0, ← indicator_tsum_apply,
+    ← indicator_rpow_apply (one_div_pos.2 hr0), lintegral_indicator hV] at h
+  rw [← ENNReal.rpow_one (ENNReal.ofReal t / 2)] at h
+  have h' := ENNReal.le_two_rpow_mul_inv_rpow_mul (ENNReal.ofReal_pos.2 ht).ne'
+    ENNReal.ofReal_ne_top h
+  simp only [ENNReal.rpow_one] at h'
+  rw [Real.rpow_neg_one, ENNReal.ofReal_inv_of_pos ht]
+  exact h'.trans_eq (by ring)
 
 /-- The distributional estimate behind the strong type `(p, p)` bound for `1 < p < r`: at each
 height `t`, only the part of `g` whose `ℓʳ` norm exceeds `t` contributes through the weak type
@@ -558,7 +549,7 @@ private theorem volume_lt_rpow_tsum_maximalFunction_rpow_le {g : κ → (ι → 
       (volume_half_rpow_le_setLIntegral hg hr hU.compl ht)))
 
 /-- **The vector-valued maximal inequality of Fefferman and Stein** for `1 < p < r`: on
-`ℝⁿ = ι → ℝ`, `n ≥ 1`, with balls taken in the sup distance, the `ℓʳ`-valued maximal function is
+`ℝⁿ = ι → ℝ`, with balls taken in the sup distance, the `ℓʳ`-valued maximal function is
 bounded on `Lᵖ(ℓʳ)`,
 
 `∫⁻ (∑' i, (M fᵢ) ^ r) ^ (p / r) ≤ C * ∫⁻ (∑' i, ‖fᵢ‖ₑ ^ r) ^ (p / r)`,

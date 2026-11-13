@@ -289,8 +289,9 @@ theorem mul_volume_biUnion_calderonZygmundCubes_le :
   exact tsum_le_tsum fun q =>
     (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.2).le
 
-/-- The union of the balls `c B_Q` around the Calderón–Zygmund cubes `Q` of `g` at height `t` has
-measure at most `cⁿ / t` times the integral of `g`. -/
+/-- The closed balls around the centres of the Calderón–Zygmund cubes `Q` of `g` at height `t`,
+of radius `c` times half the side of `Q`, have a union whose measure times `t` is at most
+`ENNReal.ofReal c ^ n` times the integral of `g`. -/
 theorem mul_volume_biUnion_closedBall_calderonZygmundCubes_le (c : ℝ) (g : (ι → ℝ) → ℝ≥0∞)
     (t : ℝ≥0∞) :
     t * volume (⋃ q ∈ calderonZygmundCubes g t,
