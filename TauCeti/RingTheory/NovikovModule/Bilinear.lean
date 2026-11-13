@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.KernelMap
+public import TauCeti.RingTheory.NovikovModule.MapOfMatrix
 public import TauCeti.RingTheory.NovikovSeries.Topology
 public import Mathlib.Algebra.BigOperators.Finprod
 
@@ -71,6 +72,13 @@ the product is linear in the kernel (`NovikovModule.kernelProduct_add`,
 `NovikovModule.kernelProduct_smul`). Hence a Leibniz rule
 `d (a ⋆ b) = d a ⋆ b ± a ⋆ d b` for differentials given by kernels follows from the corresponding
 identity between kernels, which is what counting the ends of one-dimensional moduli spaces gives.
+For the product of a matrix composed with the map of a matrix
+(`TauCeti.RingTheory.NovikovModule.MapOfMatrix`), on either input, on both inputs or on the
+output, the reference coordinates are given by the corresponding products of the matrices
+(`NovikovModule.coordinates_novikovMapOfMatrix_novikovProductOfMatrix`,
+`NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left`,
+`NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`,
+`NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix`).
 
 ## Main definitions
 
@@ -112,6 +120,11 @@ identity between kernels, which is what counting the ends of one-dimensional mod
   a matrix.
 * `TauCeti.NovikovModule.eq_novikovProductOfMatrix`: every Novikov-bilinear map is the product of a
   matrix.
+* `TauCeti.NovikovModule.coordinates_novikovMapOfMatrix_novikovProductOfMatrix`,
+  `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left`,
+  `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`,
+  `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix`:
+  the matrix formulas for a map of a matrix composed with a product of a matrix, on either side.
 
 ## References
 
@@ -983,6 +996,104 @@ theorem eq_novikovProductOfMatrix (B :
 end ProductBasis
 
 end OfMatrix
+
+section MapOfMatrix
+
+variable {R H ι₁ ι₂ ι₀ ι₃ : Type*} [CommSemiring R] [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*} {P₃ : ι₃ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  [∀ m, AddTorsor H (P₃ m)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ} {F₃ : (Σ m, P₃ m) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (hF₃ : ∀ m h (p : P₃ m), F₃ ⟨m, h +ᵥ p⟩ = F₃ ⟨m, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k) (r₃ : ∀ m, P₃ m)
+  [Fintype ι₁] [Fintype ι₂]
+
+/-- **The matrix formula for a map after a product.** In reference coordinates, the image of
+`a ⋆ b` under the map of a matrix `D` is `∑ᵢ ∑ⱼ aᵢ bⱼ ∑ₖ Qᵢⱼₖ Dₖₗ`. -/
+theorem coordinates_novikovMapOfMatrix_novikovProductOfMatrix [Fintype ι₀] [Finite ι₃]
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (D : Matrix ι₀ ι₃ (NovikovSeries R H N))
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) (l : ι₃) :
+    coordinates hF₃ r₃
+        (novikovMapOfMatrix hF₀ hF₃ r₀ r₃ D (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a b))
+        l =
+      ∑ i, ∑ j, coordinates hF₁ r₁ a i * coordinates hF₂ r₂ b j * ∑ k, Q i j k * D k l := by
+  simp only [coordinates_novikovMapOfMatrix, coordinates_novikovProductOfMatrix, Finset.sum_mul,
+    Finset.mul_sum, mul_assoc]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
+
+/-- **The matrix formula for a product after a map in the first input.** In reference coordinates,
+the product of the image of `a` under the map of a matrix `D` with `b` is
+`∑ᵢ ∑ⱼ aᵢ bⱼ ∑ₖ Dᵢₖ Qₖⱼₗ`. -/
+theorem coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left [Finite ι₀] [Fintype ι₃]
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (D : Matrix ι₃ ι₁ (NovikovSeries R H N))
+    (a : NovikovModule R F₃) (b : NovikovModule R F₂) (l : ι₀) :
+    coordinates hF₀ r₀
+        (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q (novikovMapOfMatrix hF₃ hF₁ r₃ r₁ D a) b)
+        l =
+      ∑ i, ∑ j, coordinates hF₃ r₃ a i * coordinates hF₂ r₂ b j * ∑ k, D i k * Q k j l := by
+  simp only [coordinates_novikovMapOfMatrix, coordinates_novikovProductOfMatrix, Finset.sum_mul,
+    Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine (Finset.sum_congr rfl fun j _ => Finset.sum_comm).trans ?_
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
+    Finset.sum_congr rfl fun k _ => by ring
+
+/-- **The matrix formula for a product after a map in the second input.** In reference
+coordinates, the product of `a` with the image of `b` under the map of a matrix `D` is
+`∑ᵢ ∑ⱼ aᵢ bⱼ ∑ₖ Dⱼₖ Qᵢₖₗ`. -/
+theorem coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right [Finite ι₀] [Fintype ι₃]
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (D : Matrix ι₃ ι₂ (NovikovSeries R H N))
+    (a : NovikovModule R F₁) (b : NovikovModule R F₃) (l : ι₀) :
+    coordinates hF₀ r₀
+        (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a (novikovMapOfMatrix hF₃ hF₂ r₃ r₂ D b))
+        l =
+      ∑ i, ∑ j, coordinates hF₁ r₁ a i * coordinates hF₃ r₃ b j * ∑ k, D j k * Q i k l := by
+  simp only [coordinates_novikovMapOfMatrix, coordinates_novikovProductOfMatrix, Finset.sum_mul,
+    Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+
+/-- **The matrix formula for a product after maps in both inputs.** In reference coordinates, the
+product of the images of `a` and `b` under the maps of matrices `D` and `D'` is
+`∑ᵢ ∑ⱼ aᵢ bⱼ ∑ₛ ∑ₜ Dᵢₛ D'ⱼₜ Qₛₜₗ`. -/
+theorem coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix {ι₄ : Type*}
+    {P₄ : ι₄ → Type*} [∀ t, AddTorsor H (P₄ t)] {F₄ : (Σ t, P₄ t) → ℝ}
+    (hF₄ : ∀ t h (p : P₄ t), F₄ ⟨t, h +ᵥ p⟩ = F₄ ⟨t, p⟩ - N h) (r₄ : ∀ t, P₄ t) [Finite ι₀]
+    [Fintype ι₃] [Fintype ι₄] (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+    (D : Matrix ι₃ ι₁ (NovikovSeries R H N)) (D' : Matrix ι₄ ι₂ (NovikovSeries R H N))
+    (a : NovikovModule R F₃) (b : NovikovModule R F₄) (l : ι₀) :
+    coordinates hF₀ r₀ (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q
+        (novikovMapOfMatrix hF₃ hF₁ r₃ r₁ D a) (novikovMapOfMatrix hF₄ hF₂ r₄ r₂ D' b)) l =
+      ∑ i, ∑ j, coordinates hF₃ r₃ a i * coordinates hF₄ r₄ b j *
+        ∑ s, ∑ t, D i s * D' j t * Q s t l := by
+  rw [coordinates_novikovProductOfMatrix]
+  simp only [coordinates_novikovMapOfMatrix]
+  set x := coordinates hF₃ r₃ a
+  set y := coordinates hF₄ r₄ b
+  -- Expand both sides into sums over `(i, j, s, t)` of the same products, and reorder the sums.
+  calc ∑ s, ∑ t, (∑ i, x i * D i s) * (∑ j, y j * D' j t) * Q s t l
+      = ∑ s, ∑ t, ∑ i, ∑ j, x i * y j * (D i s * D' j t * Q s t l) := by
+        refine Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun t _ => ?_
+        rw [Finset.sum_mul_sum, Finset.sum_mul]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        rw [Finset.sum_mul]
+        exact Finset.sum_congr rfl fun j _ => by ring
+    _ = ∑ s, ∑ i, ∑ t, ∑ j, x i * y j * (D i s * D' j t * Q s t l) :=
+        Finset.sum_congr rfl fun s _ => Finset.sum_comm
+    _ = ∑ i, ∑ s, ∑ t, ∑ j, x i * y j * (D i s * D' j t * Q s t l) := Finset.sum_comm
+    _ = ∑ i, ∑ s, ∑ j, ∑ t, x i * y j * (D i s * D' j t * Q s t l) :=
+        Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun s _ => Finset.sum_comm
+    _ = ∑ i, ∑ j, ∑ s, ∑ t, x i * y j * (D i s * D' j t * Q s t l) :=
+        Finset.sum_congr rfl fun i _ => Finset.sum_comm
+    _ = _ := by simp only [Finset.mul_sum]
+
+end MapOfMatrix
 
 end NovikovModule
 

@@ -65,7 +65,7 @@ theorem integral_visitCount_succ_markovChainLaw_dirac (κ : Kernel α α) [IsMar
   rw [integral_visitCount (fun i (ω : ℕ → α) => ω (i + 1))
     (fun i => measurable_pi_apply (i + 1))]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   simp only [Measure.real, Measure.markovChainLaw_setOf_apply_eq_comp,
     Measure.dirac_bind (κ ^ (i + 1)).measurable]
 

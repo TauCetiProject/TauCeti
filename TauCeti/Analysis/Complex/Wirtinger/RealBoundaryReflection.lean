@@ -268,7 +268,7 @@ private theorem realPart_smul_halfPairing (h : HasWeakConjWirtingerDerivRealBoun
     (ψ : 𝓓(Ω, ℝ)) (c : ℂ) (hc : ∀ x : ℝ, ψ (x : ℂ) * c.im = 0) :
     ℜ (c • halfPairing ξ η ψ) = 0 := by
   have hξ := h.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
-  have hη := h.2.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
+  have _ := h.2.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
   have key := h.2.2.2 (smulTest ψ c) fun x ↦ by simpa [smulTest_apply] using hc x
   have h1 : ∫ z in {z : ℂ | 0 ≤ z.im},
       (lineDeriv ℝ (smulTest ψ c : ℂ → ℂ) z 1 + I * lineDeriv ℝ (smulTest ψ c : ℂ → ℂ) z I) •

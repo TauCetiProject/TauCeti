@@ -12,13 +12,12 @@ public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.SimpleModule.IsAlgClosed
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
--- Non-public: used only inside proofs.  The matrix units produce the square-zero element that
--- rules out a block of size at least two, a one-by-one matrix ring collapses to its base ring, and
--- an equivalence of rings carries the Jacobson radical onto the Jacobson radical and so descends
--- to the quotients.
-import Mathlib.Data.Matrix.Basis
+-- Non-public: used only inside proofs.  A reduced matrix ring has at most one index, a
+-- one-by-one matrix ring collapses to its base ring, and an equivalence of rings carries the
+-- Jacobson radical onto the Jacobson radical and so descends to the quotients.
 import Mathlib.LinearAlgebra.Matrix.Unique
 import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.Nilpotent.Reduced
 
 /-!
 # Basic algebras
@@ -28,10 +27,10 @@ finite product of division rings.  The definition states this as the quotient be
 *reduced*, which says the same thing (`TauCeti.isBasic_iff_pi_divisionRing`): Artin--Wedderburn
 writes a semisimple ring as a finite product of matrix algebras over division rings, one block for
 each simple module, and a matrix algebra of size at least two is never reduced, the matrix unit
-`Eᵢⱼ` with `i ≠ j` being nonzero and square-zero.  So over a semisimple ring reducedness says
-exactly that **every block has size one**, that is, that the ring is a product of division rings
-rather than of matrix algebras over them; equivalently, that no indecomposable projective is
-repeated in a decomposition of the regular module.
+`Eᵢⱼ` with `i ≠ j` being nonzero and square-zero (`Matrix.isReduced_iff_subsingleton`).  So over
+a semisimple ring reducedness says exactly that **every block has size one**, that is, that the
+ring is a product of division rings rather than of matrix algebras over them; equivalently, that no
+indecomposable projective is repeated in a decomposition of the regular module.
 
 That reformulation is the main result.  Its ring-level form,
 `TauCeti.isReduced_iff_pi_divisionRing`, holds for an arbitrary semisimple ring and mentions no
@@ -58,8 +57,6 @@ algebra of a finite acyclic quiver is basic (`TauCeti.PathAlgebra.isBasic`).
 
 * `TauCeti.isBasic_def`: unfolding lemma for `TauCeti.IsBasic`.
 * `RingEquiv.isBasic_iff`: basicness is invariant under a ring equivalence.
-* `TauCeti.Matrix.isReduced_iff_subsingleton`: a matrix ring over a nonzero reduced semiring is
-  reduced exactly when it has at most one index.
 * `TauCeti.isReduced_iff_pi_divisionRing`: a semisimple ring is reduced if and only if it is a
   finite product of division rings.
 * `TauCeti.isBasic_iff_pi_divisionRing`: a ring is basic if and only if its quotient by the
@@ -77,9 +74,9 @@ algebra of a finite acyclic quiver is basic (`TauCeti.PathAlgebra.isBasic`).
 Mathlib's `Matrix.uniqueRingEquiv` fixes the `Fintype` structure on the one-element index type to
 the one manufactured from `Unique`, so its type does not match a matrix ring formed with a `Fintype`
 structure coming from elsewhere -- the two are equal but not definitionally so, and the
-multiplication of a matrix ring depends on which one is used.  Both uses below therefore rewrite
-along `Subsingleton.elim` first; the index types in question are a `Fin`-indexed one, as produced by
-Artin--Wedderburn, and one carrying a `Fintype` hypothesis.
+multiplication of a matrix ring depends on which one is used.  The proof of
+`TauCeti.isReduced_iff_pi_divisionRing` therefore rewrites the `Fin.fintype` structure of a
+one-element Artin--Wedderburn block along `Subsingleton.elim` first.
 
 `TauCeti.IsBasic` keeps its body private; `TauCeti.isBasic_def` is the unfolding lemma through which
 importing modules use the definition.
@@ -95,9 +92,6 @@ of a semiprimary ring by its radical semisimple.
 
 ## References
 
-This implements the `IsBasic` target of the "Basic algebras and Morita reduction" item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, together with the companion
-lemma named there: a semisimple ring is a product of division rings if and only if it is reduced.
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras I*, CUP (2006), Ch. I.6. The lifted idempotents of a basic algebra over an
 algebraically closed field are the vertices of its bound-quiver presentation, ibid. Ch. II.3.
@@ -109,52 +103,6 @@ namespace TauCeti
 
 universe u v w
 
-/-! ### Reduced products and reduced matrix rings -/
-
-open scoped Classical in
-/-- **A factor of a reduced product is reduced.**  The witness is `Pi.single`: a nilpotent element
-of one factor extends by zero to a nilpotent element of the product. -/
-theorem isReduced_of_isReduced_pi {ι : Type w} {R : ι → Type u} [∀ i, MonoidWithZero (R i)]
-    [IsReduced (∀ i, R i)] (i : ι) : IsReduced (R i) where
-  eq_zero y hy := by
-    obtain ⟨n, hn⟩ := hy
-    have hx : (Pi.single i y : ∀ j, R j) ^ (n + 1) = 0 := by
-      funext j
-      rcases eq_or_ne i j with rfl | hj
-      · simp [Pi.single_eq_same, pow_succ, hn]
-      · simp [Pi.single_eq_of_ne (Ne.symm hj), zero_pow]
-    simpa using congrFun (IsReduced.eq_zero _ ⟨n + 1, hx⟩) i
-
-/-- **A matrix ring of size at least two is never reduced.**  For `i ≠ j` the matrix unit `Eᵢⱼ` is
-nonzero and squares to zero, so a reduced matrix ring over a nonzero semiring has at most one
-index. -/
-theorem Matrix.subsingleton_of_isReduced {m : Type w} {A : Type u} [DecidableEq m] [Fintype m]
-    [Semiring A] [Nontrivial A] [IsReduced (Matrix m m A)] : Subsingleton m := by
-  refine ⟨fun i j => by_contra fun hij => ?_⟩
-  have hji : j ≠ i := Ne.symm hij
-  have hsq : (_root_.Matrix.single i j 1 : Matrix m m A) ^ 2 = 0 := by
-    rw [pow_two]; simp [hji]
-  have h0 : (_root_.Matrix.single i j 1 : Matrix m m A) = 0 := IsReduced.eq_zero _ ⟨2, hsq⟩
-  have h1 := congrFun (congrFun h0 i) j
-  simp at h1
-
-/-- **A matrix ring over a nonzero reduced semiring is reduced exactly in size at most one.**  In
-one direction this is `TauCeti.Matrix.subsingleton_of_isReduced`; in the other, a matrix ring on an
-empty index is the zero ring, and on a one-element index it is the base semiring. -/
-@[simp]
-theorem Matrix.isReduced_iff_subsingleton {m : Type w} {A : Type u} [DecidableEq m]
-    [inst : Fintype m] [Semiring A] [Nontrivial A] [IsReduced A] :
-    IsReduced (Matrix m m A) ↔ Subsingleton m := by
-  refine ⟨fun _ => Matrix.subsingleton_of_isReduced (A := A), fun hm => ?_⟩
-  rcases isEmpty_or_nonempty m with hempty | ⟨⟨i⟩⟩
-  · exact ⟨fun x _ => funext fun i => (hempty.false i).elim⟩
-  · have : Unique m := uniqueOfSubsingleton i
-    let e : Matrix m m A ≃+* A := by
-      have he : inst = Unique.fintype := Subsingleton.elim _ _
-      rw [he]
-      exact _root_.Matrix.uniqueRingEquiv
-    exact isReduced_of_injective e e.injective
-
 /-! ### Reduced semisimple rings are products of division rings -/
 
 /-- **A semisimple ring is reduced exactly when it is a finite product of division rings.**  Read
@@ -164,22 +112,17 @@ having no nonzero nilpotent element. -/
 theorem isReduced_iff_pi_divisionRing (R : Type u) [Ring R] [IsSemisimpleRing R] :
     IsReduced R ↔ ∃ (n : ℕ) (D : Fin n → Type u) (_ : ∀ i, DivisionRing (D i)),
       Nonempty (R ≃+* ∀ i, D i) := by
-  refine ⟨fun _ => ?_, fun ⟨n, D, hD, ⟨e⟩⟩ => isReduced_of_injective (e : R ≃+* ∀ i, D i)
-    e.injective⟩
+  refine ⟨fun _ => ?_, fun ⟨n, D, hD, ⟨e⟩⟩ => isReduced_of_injective e e.injective⟩
   obtain ⟨n, D, d, hD, hd, ⟨e⟩⟩ := IsSemisimpleRing.exists_ringEquiv_pi_matrix_divisionRing R
-  have hpi : IsReduced (∀ i, Matrix (Fin (d i)) (Fin (d i)) (D i)) :=
-    isReduced_of_injective (e.symm : (∀ i, Matrix (Fin (d i)) (Fin (d i)) (D i)) ≃+* R)
-      e.symm.injective
-  have huniq : ∀ i, Unique (Fin (d i)) := fun i => by
-    have hfac : IsReduced (Matrix (Fin (d i)) (Fin (d i)) (D i)) :=
-      isReduced_of_isReduced_pi (R := fun j => Matrix (Fin (d j)) (Fin (d j)) (D j)) i
-    have hsub : Subsingleton (Fin (d i)) := Matrix.subsingleton_of_isReduced (A := D i)
-    exact uniqueOfSubsingleton (⟨0, (hd i).pos⟩ : Fin (d i))
+  -- Every Wedderburn block of a reduced ring has size one.
+  have hsub : ∀ i, Subsingleton (Fin (d i)) := by
+    simpa only [isReduced_pi_iff, Matrix.isReduced_iff_subsingleton] using
+      isReduced_of_injective e.symm e.symm.injective
   refine ⟨n, D, hD, ⟨e.trans <| RingEquiv.piCongrRight fun i => ?_⟩⟩
-  have hu := huniq i
-  have he : Fin.fintype (d i) = Unique.fintype := Subsingleton.elim _ _
-  rw [he]
-  exact _root_.Matrix.uniqueRingEquiv
+  have : Unique (Fin (d i)) := uniqueOfSubsingleton ⟨0, (hd i).pos⟩
+  -- Replace `Fin.fintype` by the `Fintype` structure `Matrix.uniqueRingEquiv` is stated for.
+  rw [show Fin.fintype (d i) = Unique.fintype from Subsingleton.elim _ _]
+  exact Matrix.uniqueRingEquiv
 
 /-! ### Basic algebras -/
 
@@ -207,9 +150,9 @@ theorem _root_.RingEquiv.isBasic_iff {A : Type v} {B : Type w} [Ring A] [Ring B]
       (Ideal.map_le_iff_le_comap.mpr (Ring.le_comap_jacobson (e : A →+* B)))
   let q : (A ⧸ Ring.jacobson A) ≃+* (B ⧸ Ring.jacobson B) :=
     Ideal.quotientEquiv _ _ e hmap
-  refine and_congr q.isSemisimpleRing_iff ⟨fun _ => ?_, fun _ => ?_⟩
-  · exact isReduced_of_injective q.symm q.symm.injective
-  · exact isReduced_of_injective q q.injective
+  exact and_congr q.isSemisimpleRing_iff
+    ⟨fun _ => isReduced_of_injective q.symm q.symm.injective,
+      fun _ => isReduced_of_injective q q.injective⟩
 
 /-- **A ring is basic exactly when its quotient by the Jacobson radical is a finite product of
 division rings.**  This is `TauCeti.isReduced_iff_pi_divisionRing`, read at that quotient; the
@@ -219,8 +162,7 @@ theorem isBasic_iff_pi_divisionRing (A : Type v) [Ring A] :
     IsBasic A ↔ ∃ (n : ℕ) (D : Fin n → Type v) (_ : ∀ i, DivisionRing (D i)),
       Nonempty ((A ⧸ Ring.jacobson A) ≃+* ∀ i, D i) := by
   refine ⟨fun ⟨_, h⟩ => (isReduced_iff_pi_divisionRing _).mp h, fun ⟨n, D, _, ⟨e⟩⟩ => ?_⟩
-  have := e.symm.isSemisimpleRing
-  exact ⟨this, isReduced_of_injective e e.injective⟩
+  exact ⟨e.symm.isSemisimpleRing, isReduced_of_injective e e.injective⟩
 
 /-- **A ring with semisimple quotient by its Jacobson radical is basic exactly when that quotient
 is reduced.**  The semisimplicity half of `TauCeti.IsBasic` is then automatic and only reducedness
@@ -252,11 +194,9 @@ theorem IsBasic.exists_completeOrthogonalIdempotents {k : Type w} {A : Type v} [
   obtain ⟨n, d, hd, ⟨σ⟩⟩ :=
     IsSemisimpleRing.exists_algEquiv_pi_matrix_of_isAlgClosed k (A ⧸ Ring.jacobson A)
   -- Every Wedderburn block of a basic algebra has size one.
-  have : IsReduced (Π i, Matrix (Fin (d i)) (Fin (d i)) k) :=
-    isReduced_of_injective σ.symm σ.symm.injective
-  have hsub (i : Fin n) : Subsingleton (Fin (d i)) :=
-    have := isReduced_of_isReduced_pi (R := fun i => Matrix (Fin (d i)) (Fin (d i)) k) i
-    Matrix.subsingleton_of_isReduced (A := k)
+  have hsub : ∀ i, Subsingleton (Fin (d i)) := by
+    simpa only [isReduced_pi_iff, Matrix.isReduced_iff_subsingleton] using
+      isReduced_of_injective σ.symm σ.symm.injective
   -- The block units span `A ⧸ J`; lift them along the nilpotent radical.
   let ē : Fin n → A ⧸ Ring.jacobson A := fun i => σ.symm (Pi.single i 1)
   have hē : CompleteOrthogonalIdempotents ē :=
