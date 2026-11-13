@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Meromorphic.NormalForm
+public import TauCeti.Analysis.Meromorphic.Identity
 public import TauCeti.NumberTheory.LFunctions.GammaFactor.Order
-public import TauCeti.NumberTheory.LFunctions.Data.Growth
+public import TauCeti.NumberTheory.LFunctions.Data.Comparison
 public import Mathlib.NumberTheory.LSeries.Deriv
+public import Mathlib.NumberTheory.LSeries.Injectivity
 
 /-!
 # Removing the conductor and gamma factors from a completed L-function
@@ -25,8 +26,8 @@ is analytic at every point of nonnegative order, and its order is the order of t
 completion minus that of the gamma factor. It agrees with the raw product away from
 the recorded poles, and recovers the completion as a punctured germ everywhere.
 These statements do not require a functional equation or a Dirichlet series.
-With meromorphic continuation, Dirichlet agreement and average absolute coefficient growth,
-it agrees with the Dirichlet series throughout `Re s > 1`, including any gamma poles there.
+With meromorphic continuation and Dirichlet agreement, it agrees with the Dirichlet series
+throughout `Re s > 1`, including any gamma poles there.
 
 ## References
 
@@ -252,31 +253,63 @@ as a punctured germ at every point, including the poles. -/
 theorem HasMeromorphicContinuation.completed_eventuallyEq_mul_continuedL (s : ℂ) :
     d.completed =ᶠ[𝓝[≠] s]
       fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (z / 2) * d.gammaFactor z * d.continuedL z := by
-  filter_upwards [d.eventually_ne_zero_gammaFactor s] with z hzγ
+  filter_upwards [d.eventually_gammaFactor_ne_zero s] with z hzγ
   exact h.completed_eq_mul_continuedL hzγ
 
-/-- An analytic function with the same punctured germ has the repaired value. -/
+/-- A continuous function with the same punctured germ has the repaired value. -/
 theorem HasMeromorphicContinuation.continuedL_eq_of_eventuallyEq {g : ℂ → ℂ} {s : ℂ}
-    (hg : AnalyticAt ℂ g s) (heq : d.continuedL =ᶠ[𝓝[≠] s] g) :
+    (hg : ContinuousAt g s) (heq : d.continuedL =ᶠ[𝓝[≠] s] g) :
     d.continuedL s = g s := by
+  have hga := ((h.meromorphic_continuedL s).congr heq).analyticAt hg
   have ha := h.analyticAt_continuedL
-    (by rw [meromorphicOrderAt_congr heq]; exact hg.meromorphicOrderAt_nonneg)
-  exact ((ha.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hg.continuousAt).mp
-    heq).eq_of_nhds
+    (by rw [meromorphicOrderAt_congr heq]; exact hga.meromorphicOrderAt_nonneg)
+  exact ((ha.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hg).mp heq).eq_of_nhds
 
 omit h in
-/-- With meromorphic continuation and absolute convergence on the right half-plane,
-removing the conductor and gamma factors recovers the Dirichlet series, even at a
-cancelled gamma pole. -/
+/-- With meromorphic continuation and Dirichlet agreement, removing the conductor and gamma
+factors recovers the Dirichlet series, even at a cancelled gamma pole. -/
 theorem HasDirichletAgreement.continuedL_eq_LSeries (hD : d.HasDirichletAgreement)
-    (hc : d.HasMeromorphicContinuation) (hg : d.HasAverageCoefficientGrowth)
-    {s : ℂ} (hs : 1 < s.re) :
+    (hc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
     d.continuedL s = LSeries d.coeff s := by
-  have ha := LSeries_analyticOnNhd d.coeff s
-    ((hasAverageCoefficientGrowth_iff_abscissaOfAbsConv_le.mp hg).trans_lt
-      (by exact_mod_cast hs))
-  apply hc.continuedL_eq_of_eventuallyEq ha
-  filter_upwards [hc.completed_eventuallyEq_mul_continuedL s, d.eventually_ne_zero_gammaFactor s,
+  have ha : AnalyticAt ℂ (LSeries d.coeff) s := by
+    by_cases hσ : LSeries.abscissaOfAbsConv d.coeff < s.re
+    · exact LSeries_analyticOnNhd d.coeff s hσ
+    by_cases htop : LSeries.abscissaOfAbsConv d.coeff = ⊤
+    · rw [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top htop]
+      exact analyticAt_const
+    -- A finite abscissa above this point would force the completion to vanish on a strip,
+    -- hence everywhere as a meromorphic germ, contradicting the first coefficient.
+    obtain ⟨t, ht1, hts⟩ := exists_between hs
+    have hz : d.completed =ᶠ[𝓝[≠] (t : ℂ)] 0 := by
+      filter_upwards [nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds
+        (Ioo_mem_nhds ht1 hts))] with z hz
+      rw [Pi.zero_apply, hD.completed_eq z hz.1,
+        LSeries.eq_zero_of_not_LSeriesSummable d.coeff z (fun hsum ↦
+          (not_lt.mp hσ).not_gt (hsum.abscissaOfAbsConv_le.trans_lt
+            (by exact_mod_cast hz.2))), mul_zero]
+    have hz' (z : ℂ) : d.completed =ᶠ[𝓝[≠] z] 0 :=
+      hc.meromorphic.meromorphicOn.eventuallyEq_of_isPreconnected (MeromorphicOn.const 0)
+        isPreconnected_univ (Set.mem_univ _) (Set.mem_univ _) hz
+    obtain ⟨r, hσr, _⟩ := EReal.exists_between_coe_real (lt_top_iff_ne_top.mpr htop)
+    have hzero : (fun x : ℝ ↦ LSeries d.coeff x) =ᶠ[atTop] 0 := by
+      filter_upwards [eventually_gt_atTop (max 1 r)] with x hx
+      have hx1 : 1 < (x : ℂ).re := lt_of_le_of_lt (le_max_left _ _) hx
+      have hσx : LSeries.abscissaOfAbsConv d.coeff < (x : ℂ).re :=
+        hσr.trans (by exact_mod_cast (lt_of_le_of_lt (le_max_right _ _) hx))
+      have hax := (LSeries_analyticOnNhd d.coeff (x : ℂ) hσx).continuousAt
+      apply ((hax.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE continuousAt_const).mp
+        ?_).eq_of_nhds
+      filter_upwards [hz' x, d.eventually_gammaFactor_ne_zero x,
+        nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds
+          (Ioi_mem_nhds hx1))] with z hz hzγ hzre
+      have hmul := (hD.completed_eq z hzre).symm.trans hz
+      exact (mul_eq_zero.mp hmul).resolve_left
+        (mul_ne_zero (d.conductor_cpow_ne_zero _) hzγ)
+    have hcoeff := tendsto_nhds_unique (LSeries.tendsto_atTop (lt_top_iff_ne_top.mpr htop))
+      (tendsto_const_nhds.congr' hzero.symm)
+    exact False.elim (one_ne_zero (hD.coeff_one.symm.trans hcoeff))
+  apply hc.continuedL_eq_of_eventuallyEq ha.continuousAt
+  filter_upwards [hc.completed_eventuallyEq_mul_continuedL s, d.eventually_gammaFactor_ne_zero s,
     nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs))]
     with z hz hzγ hzre
   have hN := d.conductor_cpow_ne_zero (z / 2)

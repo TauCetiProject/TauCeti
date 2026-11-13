@@ -117,7 +117,7 @@ theorem meromorphicOrderAt_gammaFactor_ne_top (s : ℂ) :
   exact WithTop.coe_ne_top
 
 /-- The gamma factor is nonzero on a punctured neighbourhood of every point. -/
-theorem eventually_ne_zero_gammaFactor (s : ℂ) :
+theorem eventually_gammaFactor_ne_zero (s : ℂ) :
     ∀ᶠ z in 𝓝[≠] s, d.gammaFactor z ≠ 0 :=
   (meromorphicOrderAt_ne_top_iff_eventually_ne_zero (d.meromorphic_gammaFactor s)).mp
     (d.meromorphicOrderAt_gammaFactor_ne_top s)
