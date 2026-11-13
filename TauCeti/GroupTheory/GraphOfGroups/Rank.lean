@@ -163,40 +163,34 @@ universe v w x
 variable {α : Type v} (𝔸 : GraphOfGroups.{0, v, w, x} (SerreGraph.rose α))
   [∀ a, Subsingleton (𝔸.vertexGroup a)] (T : (SerreGraph.rose α).SpanningTree)
 
-/-- The positive darts of a rose outside its maximal tree are its petals: the maximal tree of
-a rose has no darts. -/
-private def rosePetalEquiv :
-    ↥({e : (SerreGraph.rose α).E | e.2 = true} \ T.darts) ≃ α where
-  toFun e := e.1.1
-  invFun a := ⟨(a, true), rfl, by
-    rw [Subsingleton.elim T (SerreGraph.roseTree α), SerreGraph.roseTree_darts]
-    exact Set.notMem_empty _⟩
-  left_inv := by
-    rintro ⟨⟨a, b⟩, hb, -⟩
-    obtain rfl : b = true := hb
-    rfl
-  right_inv _ := rfl
-
 /-- A graph of groups with trivial vertex groups over the rose with petals `α` has fundamental
 group, relative to its maximal tree, free on the petals: the positive dart `(a, true)` of the
 petal `a` corresponds to the generator `a`. For the rose with `n` petals this is the free group
-of rank `n`. -/
+of rank `n`. Under the tree presentation it agrees with the free basis of the fundamental group
+of the rose itself, `SerreGraph.roseGraphPresentationEquivFreeGroup`. -/
 noncomputable def roseEquivFreeGroup : π₁Tree 𝔸 T.darts ≃* FreeGroup α :=
-  (equivFreeGroup 𝔸 (SerreGraph.rose_isOrientation α) T.rev_mem).trans
-    (FreeGroup.freeGroupCongr (rosePetalEquiv T))
+  -- The maximal tree of a rose has no darts, so it kills the same darts as the empty set.
+  ((SerreGraph.GraphPresentation.equivTreePresentation T.darts 𝔸).symm.trans
+    (PresentedGroup.equivOfNormalClosureEq (by
+      rw [Subsingleton.elim T (SerreGraph.roseTree α), SerreGraph.roseTree_darts]))).trans
+    (SerreGraph.roseGraphPresentationEquivFreeGroup α)
+
+/-- A dart of the rose goes to the image of its generator in the presentation of the rose by its
+darts. -/
+private theorem roseEquivFreeGroup_edge (e : (SerreGraph.rose α).E) :
+    roseEquivFreeGroup 𝔸 T (edge T.darts e) =
+      SerreGraph.roseGraphPresentationEquivFreeGroup α (PresentedGroup.of e) := by
+  simp only [roseEquivFreeGroup, MulEquiv.trans_apply,
+    SerreGraph.GraphPresentation.equivTreePresentation_symm_edge]
+  exact congrArg _ (PresentedGroup.equivOfNormalClosureEq_mk _ _)
 
 @[simp] theorem roseEquivFreeGroup_edge_true (a : α) :
     roseEquivFreeGroup 𝔸 T (edge T.darts (a, true)) = FreeGroup.of a :=
-  -- The positive dart of the petal `a` is `(rosePetalEquiv T).symm a` by definition.
-  (congrArg (FreeGroup.freeGroupCongr (rosePetalEquiv T)) (equivFreeGroup_edge (𝔸 := 𝔸)
-    (SerreGraph.rose_isOrientation α) T.rev_mem ((rosePetalEquiv T).symm a).2)).trans (by simp)
+  (roseEquivFreeGroup_edge 𝔸 T _).trans (SerreGraph.roseGraphPresentationEquivFreeGroup_of_true a)
 
 @[simp] theorem roseEquivFreeGroup_edge_false (a : α) :
     roseEquivFreeGroup 𝔸 T (edge T.darts (a, false)) = (FreeGroup.of a)⁻¹ :=
-  -- The dart `(a, false)` is the reverse of `(a, true)` by definition of the rose.
-  (congrArg (roseEquivFreeGroup 𝔸 T)
-    (edge_rev (𝔸 := 𝔸) (T := T.darts) ((a, true) : (SerreGraph.rose α).E))).trans
-    (by rw [map_inv, roseEquivFreeGroup_edge_true])
+  (roseEquivFreeGroup_edge 𝔸 T _).trans (SerreGraph.roseGraphPresentationEquivFreeGroup_of_false a)
 
 @[simp] theorem roseEquivFreeGroup_symm_of (a : α) :
     (roseEquivFreeGroup 𝔸 T).symm (FreeGroup.of a) = edge T.darts (a, true) := by
