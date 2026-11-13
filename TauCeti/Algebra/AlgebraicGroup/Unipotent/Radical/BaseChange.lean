@@ -71,9 +71,7 @@ namespace smoothUnipotentCommHopfAlgProperty
 variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} {I : HopfIdeal k H}
 
-/-- Base change of a closed subgroup with smooth unipotent quotient again has smooth unipotent
-quotient: the quotient by the base-changed Hopf ideal is the base change of the original
-quotient. -/
+/-- Scalar extension preserves smooth unipotence of the quotient by a Hopf ideal. -/
 theorem quotient_baseChangeHopfIdeal
     (hI : smoothUnipotentCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.quotient H I)) :
     smoothUnipotentCommHopfAlgProperty K
@@ -93,9 +91,7 @@ variable {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
 /-- **Triviality of normal smooth unipotent closed subgroups descends along a field extension.**
 If every normal smooth unipotent closed subgroup of the base change of `H` to `K` is trivial, then
-so is every normal smooth unipotent closed subgroup of `H`. Base change preserves normality and
-smooth unipotence of the quotient, and faithfully flat base change reflects equality of Hopf
-ideals.
+so is every normal smooth unipotent closed subgroup of `H`.
 
 The conclusion is stated contravariantly: the subgroup's defining Hopf ideal is the augmentation
 ideal. -/
