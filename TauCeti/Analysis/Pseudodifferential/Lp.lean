@@ -250,8 +250,8 @@ theorem quantizeLp_comp_adjoint_eq_zero {m' : ℝ} {a : Symbol n V W m} {b : Sym
   rw [quantizeLp_eq_integralOperatorLp (ae_of_all _ hA₁) (ae_of_all _ hA₂),
     quantizeLp_eq_integralOperatorLp (ae_of_all _ hB₁) (ae_of_all _ hB₂),
     integralOperatorLp_comp_adjoint _ (ae_of_all _ hA₁) (ae_of_all _ hA₂) _ (ae_of_all _ hB₁)
-      (ae_of_all _ hB₂) (A := 0) (B := 0) (by simp [hzero, enorm_eq_nnnorm])
-      (by simp [hzero, enorm_eq_nnnorm])]
+      (ae_of_all _ hB₂) (A := 0) (B := 0) (by simp [hzero, eNorm_eq_nnNorm])
+      (by simp [hzero, eNorm_eq_nnNorm])]
   refine ContinuousLinearMap.ext fun u ↦ integralOperatorLp_eq_iff.2 ?_
   simp only [hzero, zero_apply, integral_zero]
   exact (Lp.coeFn_zero W 2 volume).symm

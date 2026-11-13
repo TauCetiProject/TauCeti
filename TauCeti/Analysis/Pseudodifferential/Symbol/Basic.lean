@@ -1349,35 +1349,6 @@ theorem isSmoothing_ofBoundedFrequencySupport
     (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport f hf R hR, rfl⟩
 
-/-- A uniform symbol vanishing at every frequency of norm at least `R` is a uniform symbol of every
-order `m'`: on the ball of radius `R` the weights of the two orders are comparable. -/
-theorem IsUniform.ofBoundedFrequencySupport {a : Symbol n V W m} (ha : a.IsUniform) (R : ℝ)
-    (hR : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
-    (ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R hR :
-      Symbol n V W m').IsUniform := by
-  refine isUniform_iff.2 fun α β => ?_
-  obtain ⟨C, hC0, hC⟩ := isUniform_iff.1 ha α β
-  refine ⟨C * (1 + R ^ 2) ^ (|m - m'| / 2), by positivity, fun x ξ => ?_⟩
-  rw [coefficient_ofBoundedFrequencySupport]
-  rcases le_or_gt ‖ξ‖ R with hξ | hξ
-  · have hw : 1 ≤ 1 + ‖ξ‖ ^ 2 := by nlinarith [sq_nonneg ‖ξ‖]
-    -- `⟨ξ⟩ ^ (m - |β|) = ⟨ξ⟩ ^ (m - m') ⟨ξ⟩ ^ (m' - |β|)` and `⟨ξ⟩ ^ (m - m') ≤ ⟨R⟩ ^ |m - m'|`
-    have hsplit : (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) =
-        (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
-      rw [← Real.rpow_add (by positivity)]
-      ring_nf
-    have hR' : (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) ≤ (1 + R ^ 2) ^ (|m - m'| / 2) :=
-      (Real.rpow_le_rpow_of_exponent_le hw (by linarith [le_abs_self (m - m')])).trans
-        (Real.rpow_le_rpow (by positivity)
-          (by gcongr) (by positivity))
-    calc ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC x ξ
-      _ ≤ C * ((1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2)) := by
-        rw [hsplit]
-        gcongr
-      _ = C * (1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by ring
-  · rw [mixedDeriv_eq_zero_of_lt_norm hR hξ, norm_zero]
-    exact mul_nonneg (by positivity) (rpow_weight_pos ξ _).le
-
 /-- A symbol vanishing at every frequency of norm at least `R` is smoothing. -/
 theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
     (ha : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
