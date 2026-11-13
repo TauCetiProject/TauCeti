@@ -50,12 +50,11 @@ theorem exists_algHom_complex_norm_eq (F : Type*) [NormedField F] [NormedAlgebra
     conv_rhs => rw [← hx]
     rw [norm_algebraMap']
   · obtain ⟨e⟩ := h
-    let N : AbsoluteValue ℂ ℝ := (NormedField.toAbsoluteValue F).comp (f := e.symm.toRingHom)
-      e.symm.injective
     have hN (z : ℂ) : ‖e.symm z‖ = ‖z‖ := by
-      refine N.eq_norm_of_apply_ofReal (fun r ↦ ?_) z
-      change ‖e.symm r‖ = |r|
-      rw [← Complex.coe_algebraMap, e.symm.commutes, norm_algebraMap', Real.norm_eq_abs]
+      refine ((NormedField.toAbsoluteValue F).comp (f := (e.symm : ℂ →+* F))
+        (RingHom.injective _)).eq_norm_of_apply_ofReal (fun r ↦ ?_) z
+      rw [AbsoluteValue.comp_apply, NormedField.toAbsoluteValue_apply, RingHom.coe_coe,
+        ← Complex.coe_algebraMap, e.symm.commutes, norm_algebraMap', Real.norm_eq_abs]
     exact ⟨e, fun x ↦ by rw [← hN, AlgEquiv.coe_toAlgHom, e.symm_apply_apply]⟩
 
 end NormedAlgebra.Real

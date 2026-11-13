@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Normed.Unbundled.IsPowMulUnique
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Absolute values on `ℂ` extending the absolute value of `ℝ`
 
 An absolute value on `ℂ` whose restriction to `ℝ` is the usual absolute value is the complex
-norm. No continuity is assumed. Writing `z = re z + im z * I` with `N I = 1` bounds `N` by twice the
-norm; multiplicativity applied to the powers of `z` removes the factor `2`, and
-`z * conj z = ‖z‖ ^ 2` gives the reverse inequality.
+norm. No continuity is assumed. Such an absolute value is a multiplicative `ℝ`-algebra norm on `ℂ`,
+and these are unique over the complete field `ℝ` by `MulAlgebraNorm.unique`.
 
 This is what turns an `ℝ`-algebra isomorphism of a normed field with `ℂ`, as produced by the
 Gelfand–Mazur theorem, into an isometry.
@@ -33,31 +33,15 @@ namespace AbsoluteValue
 norm. -/
 theorem eq_norm_of_apply_ofReal (N : AbsoluteValue ℂ ℝ) (h : ∀ r : ℝ, N r = |r|) (z : ℂ) :
     N z = ‖z‖ := by
-  have hI : N Complex.I = 1 := by
-    refine (pow_left_inj₀ (N.nonneg _) zero_le_one two_ne_zero).mp ?_
-    rw [one_pow, sq, ← map_mul, Complex.I_mul_I, map_neg_eq_map, map_one]
-  have hle_two (z : ℂ) : N z ≤ 2 * ‖z‖ := by
-    calc N z = N (z.re + z.im * Complex.I) := by rw [Complex.re_add_im]
-      _ ≤ N z.re + N (z.im * Complex.I) := N.add_le _ _
-      _ = |z.re| + |z.im| := by rw [map_mul, hI, mul_one, h, h]
-      _ ≤ 2 * ‖z‖ := by linarith [Complex.abs_re_le_norm z, Complex.abs_im_le_norm z]
-  have hle (z : ℂ) : N z ≤ ‖z‖ := by
-    rcases eq_or_ne z 0 with rfl | hz
-    · simp
-    have hz' : 0 < ‖z‖ := norm_pos_iff.mpr hz
-    have hdiv : N z / ‖z‖ ≤ 1 := Real.le_one_of_forall_pow_le_mul_rpow (C := 2) (s := 0)
-      fun n ↦ by
-        rw [div_pow, ← map_pow, ← norm_pow, Real.rpow_zero, mul_one,
-          div_le_iff₀ (norm_pos_iff.mpr (pow_ne_zero n hz))]
-        exact hle_two _
-    rwa [div_le_one hz'] at hdiv
-  refine (hle z).antisymm ?_
-  rcases eq_or_ne z 0 with rfl | hz
-  · simp
-  have hconj : N z * N ((starRingEnd ℂ) z) = ‖z‖ * ‖z‖ := by
-    rw [← map_mul, Complex.mul_conj, h, Complex.normSq_eq_norm_sq, abs_of_nonneg (by positivity),
-      sq]
-  have hconj_le : N ((starRingEnd ℂ) z) ≤ ‖z‖ := (hle _).trans_eq (Complex.norm_conj z)
-  nlinarith [norm_pos_iff.mpr hz, N.nonneg z]
+  let f : MulAlgebraNorm ℝ ℂ :=
+    { toFun := N
+      map_zero' := N.map_zero
+      add_le' := N.add_le
+      neg' := N.map_neg
+      map_one' := N.map_one
+      map_mul' := N.map_mul
+      eq_zero_of_map_eq_zero' _ := N.eq_zero.mp
+      smul' r x := by rw [Complex.real_smul, map_mul, h, Real.norm_eq_abs] }
+  exact congr($(MulAlgebraNorm.unique f (NormedAlgebra.toMulAlgebraNorm ℝ ℂ)) z)
 
 end AbsoluteValue
