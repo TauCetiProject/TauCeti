@@ -168,7 +168,6 @@ theorem add_const (hL : hσ.IsExactLagrangianMap J θ f h) (c : ℝ) :
   ⟨hL.isLagrangianMap, hL.contMDiff_primitive.add contMDiff_const, by
     rw [hL.mpullback_eq]
     exact funext fun x ↦ (mextDeriv_ofFunction_eq_of_eventuallyEq_add_const
-      (hL.contMDiff_primitive.mdifferentiableAt (by simp))
       (Filter.Eventually.of_forall fun _ ↦ rfl)).symm⟩
 
 /-- **Primitives differ by a constant on a connected source.** Two primitives of the same exact
