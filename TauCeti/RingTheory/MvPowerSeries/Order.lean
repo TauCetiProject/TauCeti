@@ -34,9 +34,11 @@ finite sums of these polynomial components
 (`MvPowerSeries.truncTotal_eq_sum_homogeneousComponentPolynomial`) and absorb larger truncations
 (`MvPowerSeries.truncTotal_truncTotal_coe`), and the lowest-degree component of `f(a)` is that
 polynomial evaluated at the linear parts of the `a i`
-(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`). Homogeneous components and total-degree
-truncations also commute with variable renaming (`MvPowerSeries.rename_homogeneousComponent`,
-`MvPowerSeries.rename_homogeneousComponentPolynomial`, `MvPowerSeries.rename_truncTotal`).
+(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`). In degree one no order hypothesis is
+needed, since a constant term contributes nothing (`MvPowerSeries.homogeneousComponent_one_subst`).
+Homogeneous components and total-degree truncations also commute with variable renaming
+(`MvPowerSeries.rename_homogeneousComponent`, `MvPowerSeries.rename_homogeneousComponentPolynomial`,
+`MvPowerSeries.rename_truncTotal`).
 
 Products and powers of close series are close: the order of `x y - x' y'` is bounded through
 those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x` and `y` have
@@ -60,15 +62,17 @@ A common lower bound on the orders of two series bounds the orders of their sum 
 `g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of `f - g` for
 `n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
 The degree-zero component of a series is its constant term
-(`MvPowerSeries.homogeneousComponent_zero`), over a nontrivial semiring every coordinate variable
-has order one (`MvPowerSeries.order_X`), and over a nontrivial semiring without zero divisors
-`weightedOrder` and `order` multiply by `n` on `n`-th powers (`MvPowerSeries.weightedOrder_pow`,
-`MvPowerSeries.order_pow`).
+(`MvPowerSeries.homogeneousComponent_zero`), a constant series has no component in positive degree
+(`MvPowerSeries.homogeneousComponent_C_of_ne_zero`), over a nontrivial semiring every coordinate
+variable has order one (`MvPowerSeries.order_X`), and over a nontrivial semiring without zero
+divisors `weightedOrder` and `order` multiply by `n` on `n`-th powers
+(`MvPowerSeries.weightedOrder_pow`, `MvPowerSeries.order_pow`).
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
-`X + Y` in order at least two, and over a commutative ring the linear part of `f(x, y)` is the
-sum of the linear parts of `x` and `y` (`MvPowerSeries.homogeneousComponent_one_subst_pair`).
+`X + Y` in order at least two. Over a commutative ring, whatever the constant coefficient of `f`,
+the linear part of `f(x, y)` is the sum of the linear parts of `x` and `y` whenever `x` and `y`
+have zero constant coefficient (`MvPowerSeries.homogeneousComponent_one_subst_pair`).
 -/
 
 public section
@@ -213,6 +217,15 @@ theorem homogeneousComponent_zero (f : MvPowerSeries σ R) :
   · rw [h, coeff_zero_eq_constantCoeff_apply]
   · rfl
 
+/-- A constant series has no homogeneous component in positive degree. -/
+@[simp]
+theorem homogeneousComponent_C_of_ne_zero {p : ℕ} (hp : p ≠ 0) (r : R) :
+    homogeneousComponent p (C r : MvPowerSeries σ R) = 0 := by
+  classical
+  ext d
+  rw [coeff_homogeneousComponent, coeff_C, map_zero]
+  split_ifs with hd h0 <;> simp_all
+
 end Components
 
 section Products
@@ -300,6 +313,21 @@ theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ
     · rw [← homogeneousComponent_degree_prod_pow ha₀, coeff_homogeneousComponent,
         ite_eq_right (hd ▸ he), smul_zero]
     · rw [zero_smul]
+
+/-- **The linear part of a substitution.** If the series `a i` have zero constant coefficient, the
+linear part of `f(a)` is the linear part of `f` evaluated at the linear parts of the `a i`; the
+constant term of `f` contributes nothing in degree one. -/
+theorem homogeneousComponent_one_subst (f : MvPowerSeries σ R) {a : σ → MvPowerSeries τ S}
+    (ha : HasSubst a) (ha₀ : ∀ i, constantCoeff (a i) = 0) :
+    homogeneousComponent 1 (f.subst a) =
+      (homogeneousComponent 1 f).subst fun i ↦ homogeneousComponent 1 (a i) := by
+  have hg : 1 ≤ (f - C (constantCoeff f)).order :=
+    one_le_order_iff_constCoeff_eq_zero.mpr (by simp)
+  have hf : f = (f - C (constantCoeff f)) + C (constantCoeff f) := by simp
+  rw [hf, subst_add ha, ← MvPolynomial.coe_C, subst_coe, MvPolynomial.aeval_C, algebraMap_apply,
+    map_add, homogeneousComponent_C_of_ne_zero one_ne_zero, add_zero,
+    homogeneousComponent_subst_of_le_order (by exact_mod_cast hg) ha ha₀, MvPolynomial.coe_C,
+    map_add, homogeneousComponent_C_of_ne_zero one_ne_zero, add_zero]
 
 end Subst
 
@@ -666,29 +694,8 @@ theorem homogeneousComponent_one_subst_pair
   have hxy : HasSubst ![x, y] := hasSubst_of_constantCoeff_zero fun i ↦ by
     fin_cases i <;> simp [hx, hy]
   have hl := hxy.homogeneousComponent_one
-  -- Split off the constant term of `f`, which contributes nothing in degree one.
-  set g : MvPowerSeries (Fin 2) R := f - C (constantCoeff f) with hg
-  have hg₀ : g.constantCoeff = 0 := by simp [hg]
-  have hgX : coeff (single 0 1) g = 1 := by
-    simp [hg, coeff_C, hX, Finsupp.single_eq_zero]
-  have hgY : coeff (single 1 1) g = 1 := by
-    simp [hg, coeff_C, hY, Finsupp.single_eq_zero]
-  have hf : f = g + C (constantCoeff f) := by simp [hg]
-  have hC : homogeneousComponent 1
-      (algebraMap R (MvPowerSeries τ S) (constantCoeff f)) = 0 := by
-    ext d
-    rw [coeff_homogeneousComponent]
-    split_ifs with hd
-    · have hd0 : d ≠ 0 := by rintro rfl; simp at hd
-      rw [algebraMap_apply]
-      exact coeff_C_of_ne_zero hd0 _
-    · simp
-  rw [hf, subst_add hxy, ← MvPolynomial.coe_C, subst_coe, MvPolynomial.aeval_C, map_add, hC,
-    add_zero,
-    homogeneousComponent_subst_of_le_order
-      (by simpa using one_le_order_iff_constCoeff_eq_zero.mpr hg₀) hxy
-      (fun i ↦ by fin_cases i <;> simp [hx, hy]),
-    homogeneousComponent_one_eq_X_add_X hgX hgY, subst_add hl, subst_X hl, subst_X hl]
+  rw [homogeneousComponent_one_subst f hxy (fun i ↦ by fin_cases i <;> simp [hx, hy]),
+    homogeneousComponent_one_eq_X_add_X hX hY, subst_add hl, subst_X hl, subst_X hl]
   simp
 
 end CommRing
