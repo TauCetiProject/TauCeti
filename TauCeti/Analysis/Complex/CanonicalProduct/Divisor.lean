@@ -104,12 +104,6 @@ theorem divisorProductOne_eq_tprod (f : ℂ → ℂ) (z : ℂ) :
 theorem divisorProductOne_zero (f : ℂ → ℂ) : divisorProductOne f 0 = 1 := by
   simp [divisorProductOne_def]
 
-/-- A point where a function is analytic and nonzero is off the support of its divisor on any
-set. -/
-theorem _root_.AnalyticAt.notMem_divisor_support_of_ne_zero {f : ℂ → ℂ} {U : Set ℂ} {z : ℂ}
-    (hf : AnalyticAt ℂ f z) (hz : f z ≠ 0) : z ∉ (MeromorphicOn.divisor f U).support :=
-  Function.notMem_support.mpr (hf.divisor_apply_eq_zero hz)
-
 /-- The genus-one product of a function with zero whole-plane divisor is `1`. -/
 theorem divisorProductOne_eq_one_of_divisor_eq_zero {f : ℂ → ℂ}
     (hf : MeromorphicOn.divisor f Set.univ = 0) : divisorProductOne f = fun _ ↦ 1 := by
@@ -133,8 +127,7 @@ theorem divisorProductOne_one_sub :
     rw [MeromorphicOn.divisor_eq_analyticOrderNatAt ha.meromorphicOn (ha 1 trivial)
       (Set.mem_univ 1), analyticOrderNatAt,
       (ha 1 trivial).analyticOrderAt_eq_one_of_zero_deriv_ne_zero (by simp) (by
-        rw [deriv_const_sub, deriv_id'']; norm_num)]
-    rfl
+        rw [deriv_const_sub, deriv_id'']; norm_num), ENat.toNat_one, Nat.cast_one]
   rw [divisorProductOne_eq_tprod, tprod_eq_mulSingle 1 fun ρ hρ ↦ ?_, h1]
   · simp
   · rw [AnalyticAt.divisor_apply_eq_zero (ha ρ trivial) (sub_ne_zero.mpr (Ne.symm hρ))]

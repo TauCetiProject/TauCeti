@@ -27,6 +27,7 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
   reads `analyticOrderNatAt f z`.
 * `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
+* `AnalyticAt.notMem_divisor_support_of_ne_zero` — such a point is off the divisor support.
 * `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
   norm sublevel over a proper normed field.
 * `AnalyticOnNhd.tsum_divisor_subtype_le_sum_closedBall` — a support-subset multiplicity sum
@@ -121,6 +122,13 @@ theorem AnalyticAt.divisor_apply_eq_zero {𝕜 E : Type*} [NontriviallyNormedFie
         hf.analyticOrderAt_eq_zero.mpr hfz, ENat.toNat_zero, Nat.cast_zero]
     · simp [hz]
   · exact MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm
+
+/-- A point where a function is analytic and nonzero is off the support of its divisor on any
+set. -/
+theorem AnalyticAt.notMem_divisor_support_of_ne_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
+    (hf : AnalyticAt 𝕜 f z) (hfz : f z ≠ 0) : z ∉ (MeromorphicOn.divisor f U).support :=
+  Function.notMem_support.mpr (hf.divisor_apply_eq_zero hfz)
 
 /-- Equal divisors determine equal meromorphic orders at a point where both orders are finite.
 The two functions may take values in different normed spaces over the same field. -/

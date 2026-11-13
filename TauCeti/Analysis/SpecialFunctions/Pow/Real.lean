@@ -27,6 +27,8 @@ The square root of a natural power of a nonnegative real is the real power with 
 `√(x ^ n) = x ^ (n / 2)`. This is the form in which a determinant `det (c • G) = c ^ n det G` of
 an `n × n` matrix contributes to a volume density `√(det G)`.
 
+In particular `x ^ (3 / 2) = x * √x`.
+
 A real power of a nonnegative base can also be written as a power of its square:
 `(x ^ 2) ^ (s / 2) = x ^ s`, and as the square of a power: `(x ^ (s / 2)) ^ 2 = x ^ s`.
 
@@ -189,6 +191,11 @@ theorem sqrt_pow_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √(x ^ n) = x ^ (
 exponent: `√x ^ n = x ^ (n / 2)`. -/
 theorem pow_sqrt_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √x ^ n = x ^ ((n : ℝ) / 2) := by
   rw [← rpow_natCast, ← rpow_div_two_eq_sqrt _ hx]
+
+/-- The power `x ^ (3 / 2)` of a nonnegative real is `x * √x`. -/
+theorem rpow_three_div_two_eq_mul_sqrt {x : ℝ} (hx : 0 ≤ x) : x ^ (3 / 2 : ℝ) = x * √x := by
+  rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add' hx (by norm_num), rpow_one,
+    ← sqrt_eq_rpow]
 
 /-- For a nonnegative real number `a`, taking the real power `s / 2` of `a ^ 2` gives `a ^ s`. -/
 @[simp]

@@ -172,8 +172,7 @@ private theorem norm_finsum_sub_tsum_le (hf : Differentiable ℂ f) (hf0 : f 0 �
   have hρ0 : (ρ : ℂ) ≠ 0 := fun h ↦ h0 (h ▸ ρ.property)
   have hzρ : z ≠ ρ := fun h ↦ hzS (h ▸ ρ.property)
   rw [norm_sub_rev, Real.rpow_neg (norm_nonneg _),
-    show (3 / 2 : ℝ) = ((3 : ℕ) : ℝ) / 2 by norm_num, ← Real.pow_sqrt_eq_rpow (norm_nonneg _),
-    pow_succ, Real.sq_sqrt (norm_nonneg _)]
+    Real.rpow_three_div_two_eq_mul_sqrt (norm_nonneg _)]
   have hc : (d ρ : ℝ) = ((d ρ).toNat : ℝ) := by exact_mod_cast (Int.toNat_of_nonneg (hdn ρ)).symm
   rw [hc]
   exact norm_pair_sub_near_le hρ0 hzρ _
@@ -245,8 +244,7 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
   have hlogM : Real.log (K * Real.exp ((4 * ‖z‖) ^ (3 / 2 : ℝ))) =
       Real.log K + 8 * ‖z‖ * √‖z‖ := by
     rw [Real.log_mul (by positivity) (Real.exp_ne_zero _), Real.log_exp,
-      show (3 / 2 : ℝ) = ((3 : ℕ) : ℝ) / 2 by norm_num, ← Real.pow_sqrt_eq_rpow hR.le, pow_succ,
-      Real.sq_sqrt hR.le, Real.sqrt_mul (by norm_num),
+      Real.rpow_three_div_two_eq_mul_sqrt hR.le, Real.sqrt_mul (by norm_num),
       show √(4 : ℝ) = 2 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
     ring
   rw [hlogM] at hland
