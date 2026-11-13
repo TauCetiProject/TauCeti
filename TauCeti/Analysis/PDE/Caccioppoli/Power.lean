@@ -276,14 +276,10 @@ private theorem inv_mul_mul_mul_sq_mul_rpow_le (hlam : 0 < lam) {p : ℝ} (hp : 
     rw [← Real.rpow_natCast, ← Real.rpow_mul hU.le]
     norm_num
   rw [hts, hs2, ht2]
-  -- The difference of the two sides is a square: complete the square in `z s g` and `z t`.
-  have hsq : lam / 4 * (z ^ 2 * (s ^ 2 * g ^ 2)) + β ^ 2 / (lam * (1 - p) ^ 2) * (z ^ 2 * t ^ 2) -
-      (1 - p)⁻¹ * (β * g * (z ^ 2 * (t * s))) =
-      (lam * (1 - p) * (z * s * g) - 2 * β * (z * t)) ^ 2 / (4 * lam * (1 - p) ^ 2) := by
-    field_simp [h1p]
-    ring
-  have hnonneg : 0 ≤ (lam * (1 - p) * (z * s * g) - 2 * β * (z * t)) ^ 2 /
-      (4 * lam * (1 - p) ^ 2) := by positivity
+  -- Weighted Young's inequality for `z s g` and `β / (1 - p) z t` with weight `λ / 2`.
+  have hy := two_mul_le_add_mul_sq (a := z * s * g) (b := β / (1 - p) * (z * t))
+    (half_pos hlam)
+  field_simp at hy ⊢
   linarith
 
 /-- The pointwise estimate of the Caccioppoli inequality for powers with lower-order terms. If

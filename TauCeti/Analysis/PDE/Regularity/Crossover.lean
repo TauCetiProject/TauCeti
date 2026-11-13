@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Logarithm
 public import TauCeti.MeasureTheory.Integral.JohnNirenberg
-import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
