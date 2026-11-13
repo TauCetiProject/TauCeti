@@ -418,7 +418,6 @@ def simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid) :
 /-- The pinned base has one simple root per Bourbaki node. -/
 theorem card_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid) :
     (t.simplyConnectedBase ht).support.card = t.rank := by
-  classical
   rw [← Fintype.card_coe,
     ← Fintype.card_congr (t.simpleSupportEquivSimplyConnectedBase ht), Fintype.card_fin]
 
