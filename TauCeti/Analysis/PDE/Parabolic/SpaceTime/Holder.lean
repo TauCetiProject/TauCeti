@@ -80,18 +80,21 @@ noncomputable section
 open Set
 open scoped ENNReal NNReal
 
-namespace HolderWith
+namespace HolderOnWith
 
 variable {E F : Type*} [PseudoEMetricSpace E] [PseudoEMetricSpace F]
   {C α : ℝ≥0} {g : ℝ → F}
 
-/-- An `α / 2`-Hölder function of time is `α`-Hölder on parabolic space-time, with the
-same constant. -/
-theorem comp_parabolicTime (hg : HolderWith C (α / 2) g) :
-    HolderWith C α (fun p : TauCeti.ParabolicSpaceTime E ↦ g p.time) := by
-  intro p q
+/-- An `α / 2`-Hölder function on a set of times pulls back to an `α`-Hölder function
+on any parabolic set whose time coordinates lie in that set, with the same constant. -/
+theorem comp_parabolicTime {s : Set (TauCeti.ParabolicSpaceTime E)} {t : Set ℝ}
+    (hg : HolderOnWith C (α / 2) g t)
+    (hst : MapsTo (TauCeti.ParabolicSpaceTime.time (E := E)) s t) :
+    HolderOnWith C α (fun p : TauCeti.ParabolicSpaceTime E ↦ g p.time) s := by
+  intro p hp q hq
   calc
-    edist (g p.time) (g q.time) ≤ C * edist p.time q.time ^ ((α / 2 : ℝ≥0) : ℝ) := hg p.time q.time
+    edist (g p.time) (g q.time) ≤ C * edist p.time q.time ^ ((α / 2 : ℝ≥0) : ℝ) :=
+      hg p.time (hst hp) q.time (hst hq)
     _ = C * (edist p.time q.time ^ (1 / 2 : ℝ)) ^ (α : ℝ) := by
       rw [← ENNReal.rpow_mul]
       congr 2
@@ -101,12 +104,23 @@ theorem comp_parabolicTime (hg : HolderWith C (α / 2) g) :
       gcongr
       exact TauCeti.ParabolicSpaceTime.edist_time_rpow_le p q
 
-/-- Restricting a time-only `α / 2`-Hölder function to a parabolic slab preserves its
-constant and gives parabolic exponent `α`. -/
-theorem comp_parabolicTime_slab (hg : HolderWith C (α / 2) g) (a b : ℝ) :
+/-- A function that is `α / 2`-Hölder on `[a, b]` is `α`-Hölder on the parabolic
+slab over `[a, b]`, with the same constant. -/
+theorem comp_parabolicTime_slab {a b : ℝ} (hg : HolderOnWith C (α / 2) g (Icc a b)) :
     HolderWith C α (fun p : TauCeti.ParabolicSpaceTime.slab (E := E) a b ↦
       g (p : TauCeti.ParabolicSpaceTime E).time) :=
-  ((hg.comp_parabolicTime (E := E)).holderOnWith _).holderWith
+  (hg.comp_parabolicTime (fun _ hp ↦ TauCeti.ParabolicSpaceTime.mem_slab.1 hp)).holderWith
+
+end HolderOnWith
+
+namespace HolderWith
+
+/-- An `α / 2`-Hölder function of time is `α`-Hölder on parabolic space-time, with the
+same constant. -/
+theorem comp_parabolicTime {E F : Type*} [PseudoEMetricSpace E] [PseudoEMetricSpace F]
+    {C α : ℝ≥0} {g : ℝ → F} (hg : HolderWith C (α / 2) g) :
+    HolderWith C α (fun p : TauCeti.ParabolicSpaceTime E ↦ g p.time) :=
+  holderOnWith_univ.1 ((hg.holderOnWith univ).comp_parabolicTime (mapsTo_univ _ _))
 
 end HolderWith
 

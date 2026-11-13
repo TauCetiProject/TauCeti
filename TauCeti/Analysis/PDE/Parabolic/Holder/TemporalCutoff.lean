@@ -12,9 +12,10 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 /-!
 # Temporal cutoffs in the order-two parabolic Hölder space
 
-A time cutoff changing from zero to one on an interval of length `δ` has time derivative
-of size `δ⁻¹` and parabolic `α`-Hölder seminorm of size `δ^(-1 - α/2)`. These bounds are uniform
-in the position of the transition, the spatial variable, and the containing time slab.
+The time derivative of a cutoff changing from zero to one on an interval of length `δ`
+has supremum of size `δ⁻¹` and parabolic `α`-Hölder seminorm of size `δ^(-1 - α/2)`.
+These bounds are uniform in the position of the transition, the spatial variable,
+and the containing time slab.
 Unlike a compactly supported space-time cutoff, it is one on an entire later time slab.
 
 Such cutoffs remove the initial trace when applying a closed-slab Schauder estimate away
@@ -52,7 +53,7 @@ private theorem holderWith_scaled_time_deriv {M : ℝ≥0}
         δ⁻¹ * deriv smoothTransition (((p : ParabolicSpaceTime E).time - s) / δ)) := by
   suffices hscaled : HolderWith (M * (δ ^ (-1 - (α : ℝ) / 2)).toNNReal) (α / 2)
       (fun t : ℝ ↦ δ⁻¹ * deriv smoothTransition ((t - s) / δ)) from
-    hscaled.comp_parabolicTime_slab a b
+    (hscaled.holderOnWith (Icc a b)).comp_parabolicTime_slab
   apply holderOnWith_univ.1
   apply HolderOnWith.of_dist_le
   intro t _ r _
@@ -78,6 +79,9 @@ private theorem exists_scaled_time_deriv {M : ℝ≥0}
     ∃ v : HolderSpace α (ParabolicSpaceTime.slab (E := E) a b) ℝ,
       (∀ p, v p = δ⁻¹ * deriv smoothTransition
         (((p : ParabolicSpaceTime E).time - s) / δ)) ∧
+      ‖v.toBoundedContinuousFunction‖ ≤ M / δ ∧
+      (nnHolderNorm α (v : ParabolicSpaceTime.slab (E := E) a b → ℝ) : ℝ) ≤
+        M * δ ^ (-1 - (α : ℝ) / 2) ∧
       ‖v‖ ≤ M / δ + M * δ ^ (-1 - (α : ℝ) / 2) := by
   let ut : ParabolicSpaceTime.slab (E := E) a b →ᵇ ℝ :=
     BoundedContinuousFunction.ofNormedAddCommGroup
@@ -93,21 +97,29 @@ private theorem exists_scaled_time_deriv {M : ℝ≥0}
   have hvfun : (v : ParabolicSpaceTime.slab (E := E) a b → ℝ) = ut := by
     ext p
     exact HolderSpace.ofBoundedContinuousFunction_apply _ _ p
-  refine ⟨v, fun p ↦ by simp [v, ut], ?_⟩
   have hut : ‖ut‖ ≤ M / δ :=
     BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (by positivity) _
-  have h := HolderSpace.norm_le_of_norm_le_of_holderWith (f := v)
-    (M := (M : ℝ) / δ) (by positivity)
-    (fun p ↦ by rw [hvfun]; exact (ut.norm_coe_le_norm p).trans hut)
-    (by rw [hvfun]; exact huthol)
-  simpa only [NNReal.coe_mul, Real.coe_toNNReal _ (rpow_nonneg hδ.le _)] using h
+  refine ⟨v, fun p ↦ by simp [v, ut], ?_, ?_, ?_⟩
+  · simpa only [v, HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction] using hut
+  · have hsemi : nnHolderNorm α (ut : ParabolicSpaceTime.slab (E := E) a b → ℝ) ≤
+        M * (δ ^ (-1 - (α : ℝ) / 2)).toNNReal := by
+      exact_mod_cast coe_nnHolderNorm_le_eHolderNorm.trans huthol.eHolderNorm_le
+    rw [hvfun]
+    simpa only [NNReal.coe_mul, Real.coe_toNNReal _ (rpow_nonneg hδ.le _)] using
+      (NNReal.coe_le_coe.2 hsemi)
+  · have h := HolderSpace.norm_le_of_norm_le_of_holderWith (f := v)
+      (M := (M : ℝ) / δ) (by positivity)
+      (fun p ↦ by rw [hvfun]; exact (ut.norm_coe_le_norm p).trans hut)
+      (by rw [hvfun]; exact huthol)
+    simpa only [NNReal.coe_mul, Real.coe_toNNReal _ (rpow_nonneg hδ.le _)] using h
 
 /-- **Temporal cutoffs with parabolic scaling.** For `α ≤ 2`, one constant works for every
 transition interval `[s, s + δ]` and every closed time slab. The cutoff is zero before the
 transition, one afterwards, has zero spatial derivatives, and its order-two norm is bounded
 by `1 + M / δ + M δ^(-1 - α/2)`. Its value and time derivative are given explicitly by the
-rescaled smooth transition and its derivative. In particular the norm is `O(δ^(-1 - α/2))`
-as `δ ↓ 0`. -/
+rescaled smooth transition and its derivative. The derivative's supremum and parabolic
+Hölder seminorm are bounded separately by `M / δ` and `M δ^(-1 - α/2)`.
+In particular the norm is `O(δ^(-1 - α/2))` as `δ ↓ 0`. -/
 theorem exists_temporal_cutoff (hα : α ≤ 2) :
     ∃ M : ℝ, 0 ≤ M ∧ ∀ {δ : ℝ}, 0 < δ → ∀ (s a b : ℝ) (hab : a < b),
       ∃ χ : ParabolicC2HolderSpace α E ℝ hab,
@@ -120,6 +132,9 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
         (∀ p : ParabolicSpaceTime.slab (E := E) a b,
           s + δ ≤ (p : ParabolicSpaceTime E).time → χ p = 1) ∧
         spatialFDerivL χ = 0 ∧ spatialSecondFDerivL χ = 0 ∧
+        ‖(timeDerivL χ).toBoundedContinuousFunction‖ ≤ M / δ ∧
+        (nnHolderNorm α (timeDerivL χ : ParabolicSpaceTime.slab (E := E) a b → ℝ) : ℝ) ≤
+          M * δ ^ (-1 - (α : ℝ) / 2) ∧
         ‖χ‖ ≤ 1 + M / δ + M * δ ^ (-1 - (α : ℝ) / 2) := by
   have hd : ContDiff ℝ 1 (deriv smoothTransition) :=
     (smoothTransition.contDiff (n := 2)).deriv'
@@ -141,7 +156,7 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
     BoundedContinuousFunction.ofNormedAddCommGroup
       (fun p ↦ f (p : ParabolicSpaceTime E).time)
       (hf.continuous.comp (by fun_prop)) 1 (fun p ↦ smoothTransition.abs_le_one _)
-  obtain ⟨v, hv, hvnorm⟩ := exists_scaled_time_deriv (E := E) hM hhol hδ s a b
+  obtain ⟨v, hv, hvsup, hvsemi, hvnorm⟩ := exists_scaled_time_deriv (E := E) hM hhol hδ s a b
   have hx (t : Icc a b) (x : E) :
       HasFDerivAt (fun y ↦ u (ParabolicSpaceTime.slabMk y t))
         ((0 : ParabolicSpaceTime.slab (E := E) a b →ᵇ (E →L[ℝ] ℝ))
@@ -167,7 +182,7 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
       χ p = f (p : ParabolicSpaceTime E).time := by
     simp only [χ, mk_apply, u, BoundedContinuousFunction.coe_ofNormedAddCommGroup]
   refine ⟨χ, hχ, ?_, ?_, ?_, ?_, by simp only [χ, spatialFDerivL_mk],
-    by simp only [χ, spatialSecondFDerivL_mk], ?_⟩
+    by simp only [χ, spatialSecondFDerivL_mk], ?_, ?_, ?_⟩
   · simpa only [χ, timeDerivL_mk] using hv
   · intro p
     rw [hχ]
@@ -178,6 +193,8 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
   · intro p hp
     rw [hχ]
     exact smoothTransition.one_of_one_le ((le_div_iff₀ hδ).2 (by linarith))
+  · simpa only [χ, timeDerivL_mk] using hvsup
+  · simpa only [χ, timeDerivL_mk] using hvsemi
   · -- The norm is the value supremum plus the time-derivative Hölder norm.
     -- Scaling time by δ produces δ⁻¹ in the supremum and δ^(-1-α/2) in the seminorm.
     have hu : ‖u‖ ≤ 1 := BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ zero_le_one _
