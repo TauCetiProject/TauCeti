@@ -48,6 +48,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   character at an integer prime to the new level.
 * `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
   to its level and congruent to `1` modulo a multiple of its conductor.
+* `DirichletCharacter.primitiveCharacter_pow_eq_one`: at a nonzero level, the primitive character
+  of a character of order dividing `n` has order dividing `n`.
 * `DirichletCharacter.conductor_dvd_iff_forall_odd`: conversely, the conductor divides `d`, which
   need not divide the level, as soon as the character is `1` at every *odd* natural number prime
   to the level and congruent to `1` modulo `d`. This is how a divisibility of the conductor is
@@ -322,6 +324,13 @@ theorem apply_eq_one_of_conductor_dvd {R : Type*} [CommMonoidWithZero R] {N d : 
   rw [← primitiveCharacter_apply_of_isCoprime χ ha,
     (ZMod.intCast_eq_intCast_iff _ _ _).mpr (had.of_dvd (Int.natCast_dvd_natCast.mpr hd)),
     Int.cast_one, map_one]
+
+/-- The primitive character of a character of order dividing `n` at a nonzero level has order
+dividing `n`. -/
+theorem primitiveCharacter_pow_eq_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} {n : ℕ} (hχ : χ ^ n = 1) : χ.primitiveCharacter ^ n = 1 := by
+  apply changeLevel_injective χ.conductor_dvd_level
+  rw [map_pow, changeLevel_primitiveCharacter, map_one, hχ]
 
 /-- **The conductor, read on odd representatives.** The conductor of `χ` divides `d` exactly
 when `χ a = 1` for every odd natural number `a` prime to the level `N` with `a ≡ 1 (mod d)`.

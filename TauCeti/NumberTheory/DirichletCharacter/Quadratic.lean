@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
+public import TauCeti.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
@@ -94,9 +95,8 @@ theorem isQuadratic_mul {R : Type*} [CommRing R] {n m : ℕ} {χ : DirichletChar
 /-- The primitive character of a character of order dividing two at a nonzero level has order
 dividing two. -/
 theorem primitiveCharacter_sq_eq_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter R N} (hχ : χ ^ 2 = 1) : χ.primitiveCharacter ^ 2 = 1 := by
-  apply changeLevel_injective χ.conductor_dvd_level
-  rw [map_pow, changeLevel_primitiveCharacter, map_one, hχ]
+    {χ : DirichletCharacter R N} (hχ : χ ^ 2 = 1) : χ.primitiveCharacter ^ 2 = 1 :=
+  primitiveCharacter_pow_eq_one hχ
 
 /-- The primitive character of a quadratic Dirichlet character at a nonzero level is quadratic:
 its values at units are values of `χ` at units lifting them. -/
