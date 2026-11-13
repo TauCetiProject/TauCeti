@@ -229,7 +229,7 @@ theorem serreLift_injective : Function.Injective (t.serreLift ht) :=
 /-- **The Serre presentation of the pinned split Lie algebra**: the comparison map
 `TauCeti.DynkinType.serreLift` as an isomorphism of Lie algebras. -/
 def serreLiftEquiv : t.SerreLieAlgebra ≃ₗ⁅ℚ⁆ t.lieAlgebra ht :=
-  (t.lieBasis ht).serreLiftEquiv (by rw [lieBasis_A_eq]) (t.isSerreSystem_lieBasis ht)
+  (t.lieBasis ht).serreLiftEquiv (by rw [lieBasis_A_eq])
 
 /-- The Serre presentation isomorphism of the pinned split Lie algebra is the comparison map. -/
 @[simp]
@@ -266,9 +266,7 @@ variable {L : Type*} [LieRing L] [LieAlgebra ℚ L] [FiniteDimensional ℚ L]
 /-- The pinned rational Lie algebra of a Dynkin type is any Killing Lie algebra carrying a
 Lie algebra basis with the same numbered Cartan matrix, preserving all basis generators. -/
 def lieEquivOfBasis : t.lieAlgebra ht ≃ₗ⁅ℚ⁆ L :=
-  (t.serreLiftEquiv ht).symm.trans
-    (b.serreLiftEquiv (congrArg Matrix.transpose hA)
-      (by rw [← hA]; exact _root_.TauCeti.isSerreSystem_lieBasis b))
+  (t.lieBasis ht).lieEquivOfCartanMatrixEq b ((t.lieBasis_A_eq ht).trans hA.symm)
 
 /-- The comparison preserves the numbered Cartan generators. -/
 @[simp]

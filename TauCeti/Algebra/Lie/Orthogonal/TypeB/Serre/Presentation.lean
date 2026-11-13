@@ -42,11 +42,7 @@ variable {K : Type*} [Field K] [CharZero K] (n : ℕ)
 field, with the standard Bourbaki-numbered generators. This includes rank one. -/
 def typeBSerreEquiv : Matrix.ToLieAlgebra K (CartanMatrix.B (n + 1))ᵀ ≃ₗ⁅K⁆
     LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K :=
-  (typeBLieBasis (K := K) n).serreLiftEquiv
-    (by rw [typeBLieBasis_A])
-    (by simpa only [funext (typeBLieBasis_h (K := K) n),
-      funext (typeBLieBasis_e (K := K) n), funext (typeBLieBasis_f (K := K) n)] using
-      isSerreSystem_typeBSimpleRootGenerator (K := K) (n := n))
+  (typeBLieBasis (K := K) n).serreLiftEquiv (by rw [typeBLieBasis_A])
 
 /-- The type-B presentation isomorphism is the lift of the standard generators. -/
 @[simp]
@@ -97,6 +93,59 @@ theorem typeBSerreEquiv_symm_typeBSimpleNegativeRootGenerator (i : Fin (n + 1)) 
     (typeBSerreEquiv (K := K) n).symm (typeBSimpleNegativeRootGenerator i) =
       serreF K (CartanMatrix.B (n + 1))ᵀ i := by
   rw [LieEquiv.symm_apply_eq, typeBSerreEquiv_serreF]
+
+/-- The inverse presentation sends the terminal short coroot to the Serre Cartan generator. -/
+@[simp]
+theorem typeBSerreEquiv_symm_typeBShortCorootGenerator_last :
+    (typeBSerreEquiv (K := K) n).symm (typeBShortCorootGenerator (Fin.last n)) =
+      serreH K (CartanMatrix.B (n + 1))ᵀ (Fin.last n) := by
+  simpa only [typeBSimpleCorootGenerator_last] using
+    typeBSerreEquiv_symm_typeBSimpleCorootGenerator (K := K) n (Fin.last n)
+
+/-- The inverse presentation sends the terminal short root to the Serre raising generator. -/
+@[simp]
+theorem typeBSerreEquiv_symm_typeBShortRootGenerator_last :
+    (typeBSerreEquiv (K := K) n).symm (typeBShortRootGenerator (Fin.last n)) =
+      serreE K (CartanMatrix.B (n + 1))ᵀ (Fin.last n) := by
+  simpa only [typeBSimpleRootGenerator_last] using
+    typeBSerreEquiv_symm_typeBSimpleRootGenerator (K := K) n (Fin.last n)
+
+/-- The inverse presentation sends the negative terminal short root to the Serre lowering
+ generator. -/
+@[simp]
+theorem typeBSerreEquiv_symm_typeBShortNegativeRootGenerator_last :
+    (typeBSerreEquiv (K := K) n).symm (typeBShortNegativeRootGenerator (Fin.last n)) =
+      serreF K (CartanMatrix.B (n + 1))ᵀ (Fin.last n) := by
+  simpa only [typeBSimpleNegativeRootGenerator_last] using
+    typeBSerreEquiv_symm_typeBSimpleNegativeRootGenerator (K := K) n (Fin.last n)
+
+/-- The inverse presentation sends an adjacent difference coroot to its Serre Cartan generator. -/
+@[simp]
+theorem typeBSerreEquiv_symm_typeBDifferenceCorootGenerator_castSucc_succ
+    (j : Fin n) (h : j.castSucc ≠ j.succ) :
+    (typeBSerreEquiv (K := K) n).symm (typeBDifferenceCorootGenerator j.castSucc j.succ h) =
+      serreH K (CartanMatrix.B (n + 1))ᵀ j.castSucc := by
+  simpa only [typeBSimpleCorootGenerator_castSucc] using
+    typeBSerreEquiv_symm_typeBSimpleCorootGenerator (K := K) n j.castSucc
+
+/-- The inverse presentation sends an adjacent difference root to its Serre raising generator. -/
+@[simp]
+theorem typeBSerreEquiv_symm_typeBDifferenceRootGenerator_castSucc_succ
+    (j : Fin n) (h : j.castSucc ≠ j.succ) :
+    (typeBSerreEquiv (K := K) n).symm (typeBDifferenceRootGenerator j.castSucc j.succ h) =
+      serreE K (CartanMatrix.B (n + 1))ᵀ j.castSucc := by
+  simpa only [typeBSimpleRootGenerator_castSucc] using
+    typeBSerreEquiv_symm_typeBSimpleRootGenerator (K := K) n j.castSucc
+
+/-- The inverse presentation sends a negative adjacent difference root to its Serre lowering
+ generator. -/
+@[simp]
+theorem typeBSerreEquiv_symm_typeBDifferenceRootGenerator_succ_castSucc
+    (j : Fin n) (h : j.succ ≠ j.castSucc) :
+    (typeBSerreEquiv (K := K) n).symm (typeBDifferenceRootGenerator j.succ j.castSucc h) =
+      serreF K (CartanMatrix.B (n + 1))ᵀ j.castSucc := by
+  simpa only [typeBSimpleNegativeRootGenerator_castSucc] using
+    typeBSerreEquiv_symm_typeBSimpleNegativeRootGenerator (K := K) n j.castSucc
 
 end
 

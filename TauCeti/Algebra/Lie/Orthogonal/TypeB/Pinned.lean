@@ -100,6 +100,61 @@ theorem typeBPinnedLieEquiv_symm_typeBSimpleNegativeRootGenerator (i : Fin (n + 
       ((DynkinType.B (n + 1)).lieBasis ht).f i := by
   rw [LieEquiv.symm_apply_eq, typeBPinnedLieEquiv_lieBasis_f]
 
+/-- The inverse identification sends the terminal short coroot to the pinned Cartan generator. -/
+@[simp]
+theorem typeBPinnedLieEquiv_symm_typeBShortCorootGenerator_last :
+    (typeBPinnedLieEquiv n ht).symm (typeBShortCorootGenerator (Fin.last n)) =
+      ((DynkinType.B (n + 1)).lieBasis ht).h (Fin.last n) := by
+  simpa only [typeBSimpleCorootGenerator_last] using
+    typeBPinnedLieEquiv_symm_typeBSimpleCorootGenerator n ht (Fin.last n)
+
+/-- The inverse identification sends the terminal short root to the pinned raising generator. -/
+@[simp]
+theorem typeBPinnedLieEquiv_symm_typeBShortRootGenerator_last :
+    (typeBPinnedLieEquiv n ht).symm (typeBShortRootGenerator (Fin.last n)) =
+      ((DynkinType.B (n + 1)).lieBasis ht).e (Fin.last n) := by
+  simpa only [typeBSimpleRootGenerator_last] using
+    typeBPinnedLieEquiv_symm_typeBSimpleRootGenerator n ht (Fin.last n)
+
+/-- The inverse identification sends the negative terminal short root to the pinned lowering
+ generator. -/
+@[simp]
+theorem typeBPinnedLieEquiv_symm_typeBShortNegativeRootGenerator_last :
+    (typeBPinnedLieEquiv n ht).symm (typeBShortNegativeRootGenerator (Fin.last n)) =
+      ((DynkinType.B (n + 1)).lieBasis ht).f (Fin.last n) := by
+  simpa only [typeBSimpleNegativeRootGenerator_last] using
+    typeBPinnedLieEquiv_symm_typeBSimpleNegativeRootGenerator n ht (Fin.last n)
+
+/-- The inverse identification sends an adjacent difference coroot to its pinned Cartan
+ generator. -/
+@[simp]
+theorem typeBPinnedLieEquiv_symm_typeBDifferenceCorootGenerator_castSucc_succ
+    (j : Fin n) (h : j.castSucc ≠ j.succ) :
+    (typeBPinnedLieEquiv n ht).symm (typeBDifferenceCorootGenerator j.castSucc j.succ h) =
+      ((DynkinType.B (n + 1)).lieBasis ht).h j.castSucc := by
+  simpa only [typeBSimpleCorootGenerator_castSucc] using
+    typeBPinnedLieEquiv_symm_typeBSimpleCorootGenerator n ht j.castSucc
+
+/-- The inverse identification sends an adjacent difference root to its pinned raising
+ generator. -/
+@[simp]
+theorem typeBPinnedLieEquiv_symm_typeBDifferenceRootGenerator_castSucc_succ
+    (j : Fin n) (h : j.castSucc ≠ j.succ) :
+    (typeBPinnedLieEquiv n ht).symm (typeBDifferenceRootGenerator j.castSucc j.succ h) =
+      ((DynkinType.B (n + 1)).lieBasis ht).e j.castSucc := by
+  simpa only [typeBSimpleRootGenerator_castSucc] using
+    typeBPinnedLieEquiv_symm_typeBSimpleRootGenerator n ht j.castSucc
+
+/-- The inverse identification sends a negative adjacent difference root to its pinned lowering
+ generator. -/
+@[simp]
+theorem typeBPinnedLieEquiv_symm_typeBDifferenceRootGenerator_succ_castSucc
+    (j : Fin n) (h : j.succ ≠ j.castSucc) :
+    (typeBPinnedLieEquiv n ht).symm (typeBDifferenceRootGenerator j.succ j.castSucc h) =
+      ((DynkinType.B (n + 1)).lieBasis ht).f j.castSucc := by
+  simpa only [typeBSimpleNegativeRootGenerator_castSucc] using
+    typeBPinnedLieEquiv_symm_typeBSimpleNegativeRootGenerator n ht j.castSucc
+
 end
 
 end TauCeti
