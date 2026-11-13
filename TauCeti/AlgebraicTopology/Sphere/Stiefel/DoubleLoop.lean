@@ -51,6 +51,8 @@ degree of `τ` and the class of `α`.
 * `TauCeti.rotatingMeridianLoop`: the loop of loops `Γ_{u,v}`.
 * `TauCeti.stiefelDoubleLoop`: the double loop `σ_{p,u,v}`, with
   `TauCeti.continuous_stiefelDoubleLoop`.
+* `LinearMap.map_stiefelDoubleLoop`: a linear map carrying `(p, u, v)` to `(q, u', v')` carries
+  `σ_{p,u,v}` to `σ_{q,u',v'}`.
 * `TauCeti.meridianLoopRotation`: the map `α ∘ τ : Σ_p × S¹ → ΩSⁿ`.
 * `TauCeti.homotopic_loopFamilyCircleMap_stiefelDoubleLoop`: the evaluation `β` of the double loops
   on the circle is homotopic to `α ∘ τ`.
@@ -221,6 +223,62 @@ theorem continuous_stiefelDoubleLoop : Continuous (stiefelDoubleLoop p) := by
   have h₃ := Path.trans_continuous_family _ (Path.trans_continuous_family _ h₁ _ h₂) _
     (Path.symm_continuous_family _ h₁)
   exact Path.continuous_uncurry_iff.mp h₃
+
+/-! ### Equivariance under linear maps -/
+
+section Equivariance
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (L : E →ₗ[ℝ] F)
+  {p} {q : sphere (0 : F) 1}
+
+private theorem _root_.LinearMap.map_sphereMeridian (hq : (q : F) = L p)
+    {w : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1} {w' : sphere (0 : (ℝ ∙ (q : F))ᗮ) 1}
+    (hw : ((w' : (ℝ ∙ (q : F))ᗮ) : F) = L ((w : (ℝ ∙ (p : E))ᗮ) : E)) (t : I) :
+    L (sphereMeridian p w t) = (sphereMeridian q w' t : F) := by
+  simp [hq, hw]
+
+private theorem _root_.LinearMap.map_meridianLoop (hq : (q : F) = L p)
+    {x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : (ℝ ∙ (p : E))ᗮ) 1}
+    {x' : sphere (0 : (ℝ ∙ (q : F))ᗮ) 1 × sphere (0 : (ℝ ∙ (q : F))ᗮ) 1}
+    (h₁ : ((x'.1 : (ℝ ∙ (q : F))ᗮ) : F) = L ((x.1 : (ℝ ∙ (p : E))ᗮ) : E))
+    (h₂ : ((x'.2 : (ℝ ∙ (q : F))ᗮ) : F) = L ((x.2 : (ℝ ∙ (p : E))ᗮ) : E)) (t : I) :
+    L (meridianLoop p x t) = (meridianLoop q x' t : F) := by
+  rw [meridianLoop_def, meridianLoop_def, Path.trans_apply, Path.trans_apply]
+  split_ifs
+  · exact L.map_sphereMeridian hq h₂ _
+  · rw [Path.symm_apply, Path.symm_apply]
+    exact L.map_sphereMeridian hq h₁ _
+
+/-- **The double loops are equivariant under linear maps.** If a linear map `L : E → F` carries
+the point `p` and the frame `(u, v)` of `p^⊥` to the point `q` and the frame `(u', v')` of `q^⊥`,
+then it carries the double loop `σ_{p,u,v}` to `σ_{q,u',v'}`. The meridians and rotations that
+the double loops are built from are linear combinations of `p`, `u` and `v` whose coefficients only
+depend on the times. -/
+theorem _root_.LinearMap.map_stiefelDoubleLoop (hq : (q : F) = L p)
+    {x : stiefel (ℝ ∙ (p : E))ᗮ 2} {y : stiefel (ℝ ∙ (q : F))ᗮ 2}
+    (hy : ∀ i, ((y : Fin 2 → (ℝ ∙ (q : F))ᗮ) i : F) = L ((x : Fin 2 → (ℝ ∙ (p : E))ᗮ) i))
+    (s t : I) :
+    L (stiefelDoubleLoop p x s t) = (stiefelDoubleLoop q y s t : F) := by
+  have h₀ : ((stiefelProj _ 2 0 y : (ℝ ∙ (q : F))ᗮ) : F) =
+      L ((stiefelProj _ 2 0 x : (ℝ ∙ (p : E))ᗮ) : E) := by simpa using hy 0
+  have hcontr (s' : I) : L (meridianContraction p (stiefelProj _ 2 0 x) s' t) =
+      (meridianContraction q (stiefelProj _ 2 0 y) s' t : F) := by
+    rw [meridianContraction_apply, meridianContraction_apply]
+    -- `Path.Homotopy.reflTransSymm γ` evaluates `γ` at `reflTransSymmAux`.
+    exact L.map_sphereMeridian hq h₀ _
+  rw [stiefelDoubleLoop_def, stiefelDoubleLoop_def, Path.trans_apply, Path.trans_apply]
+  split_ifs
+  · rw [Path.trans_apply, Path.trans_apply]
+    split_ifs
+    · exact hcontr _
+    · rw [rotatingMeridianLoop_apply, rotatingMeridianLoop_apply]
+      refine L.map_meridianLoop hq ?_ ?_ _
+      · simpa using hy 0
+      · simp [hy]
+  · rw [Path.symm_apply, Path.symm_apply]
+    exact hcontr _
+
+end Equivariance
 
 /-! ### The evaluation of the double loops on the circle -/
 
