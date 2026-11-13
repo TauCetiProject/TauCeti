@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.FiniteFree
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Quotient
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FiniteModuleTopology
 import Mathlib.Analysis.Matrix.Normed
-import TauCeti.Analysis.Normed.Module.Quotient
 
 /-!
 # Presentations of module-valued restricted series
