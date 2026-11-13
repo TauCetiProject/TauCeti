@@ -176,16 +176,9 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential_atTop [CompleteSpace V] 
   set σ := a.principal.coefficient (x, ξ)
   -- Fourier inversion evaluates the limit integral.
   have hlim : ∫ η, 𝐞 ⟪η, x⟫ • σ (𝓕 φ η • v) = σ (φ x • v) := by
-    have hF : ∫ η, 𝐞 ⟪η, x⟫ • 𝓕 φ η = φ x := by
-      rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
-    have hint : Integrable fun η ↦ (𝐞 ⟪η, x⟫ • 𝓕 φ η) • v :=
-      ((𝓕 φ).integrable.norm.mono' ((Real.continuous_fourierChar.comp
-        (continuous_id.inner continuous_const)).smul (𝓕 φ).continuous).aestronglyMeasurable
-          (.of_forall fun η ↦ (Circle.norm_smul _ _).le)).smul_const v
-    calc ∫ η, 𝐞 ⟪η, x⟫ • σ (𝓕 φ η • v) = ∫ η, σ ((𝐞 ⟪η, x⟫ • 𝓕 φ η) • v) := by
-          congr 1 with η
-          rw [Circle.smul_def, Circle.smul_def, ← map_smul, smul_smul, smul_eq_mul]
-      _ = σ (φ x • v) := by rw [σ.integral_comp_comm hint, integral_smul_const, hF]
+    have h := SchwartzMap.fourierInv_postcompCLM_apply (σ.comp (.toSpanSingleton ℂ v)) (𝓕 φ) x
+    rw [fourierInv_fourier_eq, SchwartzMap.fourierInv_coe, Real.fourierInv_eq] at h
+    simpa using h
   rw [← hlim]
   simp_rw [Symbol.rpow_neg_smul_exp_smul_quantizeSchwartzValue_cutoffExponential]
   refine tendsto_integral_filter_of_dominated_convergence
