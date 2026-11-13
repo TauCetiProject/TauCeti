@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.IntervalCases
-import TauCeti.Analysis.Polynomial.HasseDerivBound
+public import TauCeti.Analysis.Polynomial.HasseDerivBound
 
 /-!
 # Examples of bounds on evaluated Hasse derivatives
@@ -25,30 +25,37 @@ The confluent Vandermonde matrix for the nodes `(0, 1)` with multiplicities `(2,
 `(1, 0)`, has squared Euclidean length at most `3`.
 -/
 
+public section
+
 open Finset
 
 namespace TauCeti.HasseDerivBoundExample
 
 open Polynomial
 
+theorem norm_coeff_X_sq_le (j : ℕ) : ‖(X ^ 2 : ℂ[X]).coeff j‖ ≤ 1 := by
+  rw [coeff_X_pow]; split_ifs <;> simp
+
+theorem norm_coeff_one_add_X_add_X_sq_le (j : ℕ) :
+    ‖(1 + X + X ^ 2 : ℂ[X]).coeff j‖ ≤ 1 := by
+  rcases j with _ | _ | _ | j <;> simp [coeff_X, coeff_one, coeff_X_pow]
+
 example : (hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 2 = 4 := by
   rw [← monomial_one_right_eq_X_pow, hasseDeriv_monomial]; norm_num
 
 example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 2‖ ≤ 5 := by
   refine (norm_eval_hasseDeriv_le (d := 2) (H := 1) (A := 2) (natDegree_X_pow_le 2)
-    (fun j _ ↦ by rw [coeff_X_pow]; split_ifs <;> simp) (by simp) 1).trans_eq ?_
+    (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 1).trans_eq ?_
   rw [show Icc 1 2 = {1, 2} by ext; simp; omega]; norm_num
 
 example : ‖(hasseDeriv 3 (X ^ 2 : ℂ[X])).eval 2‖ ≤ 0 := by
   refine (norm_eval_hasseDeriv_le (d := 2) (H := 1) (A := 2) (natDegree_X_pow_le 2)
-    (fun j _ ↦ by rw [coeff_X_pow]; split_ifs <;> simp) (by simp) 3).trans_eq ?_
+    (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 3).trans_eq ?_
   simp
 
 example : ‖(1 + X + X ^ 2 : ℂ[X]).eval 1‖ ≤ 3 := by
   have := norm_eval_hasseDeriv_le (f := (1 + X + X ^ 2 : ℂ[X])) (d := 2) (H := 1) (A := 1)
-    (by compute_degree!)
-    (fun j _ ↦ by rcases j with _ | _ | _ | j <;> simp [coeff_X, coeff_one, coeff_X_pow])
-    (a := 1) (by simp) 0
+    (by compute_degree!) (fun j _ ↦ norm_coeff_one_add_X_add_X_sq_le j) (a := 1) (by simp) 0
   rw [show Icc 0 2 = {0, 1, 2} by ext; simp; omega] at this
   simpa using this
 
@@ -56,7 +63,7 @@ example : ‖(1 + X + X ^ 2 : ℂ[X]).eval 1‖ ≤ 12 := by
   have := norm_eval_hasseDeriv_le_mul_two_pow_mul (f := (1 + X + X ^ 2 : ℂ[X])) (d := 2) (H := 1)
     (A := 1)
     (by compute_degree!)
-    (fun j _ ↦ by rcases j with _ | _ | _ | j <;> simp [coeff_X, coeff_one, coeff_X_pow])
+    (fun j _ ↦ norm_coeff_one_add_X_add_X_sq_le j)
     (a := 1) (by simp) 0
   norm_num at this ⊢
 
@@ -65,13 +72,13 @@ example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 10‖ = 20 := by
 
 example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 10‖ ≤ 21 := by
   refine (norm_eval_hasseDeriv_le (d := 2) (H := 1) (A := 10) (natDegree_X_pow_le 2)
-    (fun j _ ↦ by rw [coeff_X_pow]; split_ifs <;> simp) (by simp) 1).trans_eq ?_
+    (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 1).trans_eq ?_
   rw [show Icc 1 2 = {1, 2} by ext; simp; omega]; norm_num
 
 example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 10‖ ≤ 1200 := by
   refine (norm_eval_hasseDeriv_le_mul_two_pow_mul (d := 2) (H := 1) (A := 10)
     (natDegree_X_pow_le 2)
-    (fun j _ ↦ by rw [coeff_X_pow]; split_ifs <;> simp) (by simp) 1).trans_eq ?_
+    (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 1).trans_eq ?_
   norm_num
 
 example {j : ℕ} (hj : j ∈ range 3) : ‖(hasseDeriv 1 (X ^ j : ℂ[X])).eval 0‖ ≤ 1 :=
