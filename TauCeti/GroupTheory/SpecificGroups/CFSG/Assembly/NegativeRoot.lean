@@ -317,7 +317,10 @@ theorem frobenius_negativeSimpleRootSubgroup (d : ValidLieTypeIndex) (i : Fin d.
     | zero => simp
     | succ k ih =>
         simp [Function.iterate_succ_apply', ih, ← pow_mul, pow_succ]
-  erw [frobenius_eq_primeFrobenius_pow, fieldOrder_eq_characteristic_pow]
+  rw [DFunLike.congr_fun d.frobenius_eq_primeFrobenius_pow _]
+  -- The endomorphism power uses the dispatched ambient-group instance; erw reduces it
+  -- to the instance in Monoid.End.coe_pow, which identifies powers with function iteration.
+  erw [Monoid.End.coe_pow, fieldOrder_eq_characteristic_pow]
   exact iterate d.fieldExponent
 
 end
