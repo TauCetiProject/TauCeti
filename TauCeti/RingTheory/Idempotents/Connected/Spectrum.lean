@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.Clopen
+import Mathlib.RingTheory.Ideal.IdempotentFG
 import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
@@ -21,6 +22,8 @@ coordinate rings of geometrically connected affine schemes.
 
 * `IsIdempotentElem.eq_zero_or_eq_one_of_preconnectedSpace`: an idempotent is zero or one when
   `Spec R` is preconnected.
+* `Ideal.eq_bot_of_isIdempotentElem_of_ne_top`: a finitely generated idempotent proper ideal is
+  zero when `Spec R` is preconnected.
 * `TauCeti.connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one`: `Spec R` is connected
   if and only if every idempotent of `R` is zero or one.
 * `TauCeti.connectedSpace_primeSpectrum_of_isLocalRing`: the prime spectrum of a local ring is
@@ -45,6 +48,16 @@ theorem IsIdempotentElem.eq_zero_or_eq_one_of_preconnectedSpace
       simp [← SetLike.coe_set_eq, h]
   · exact .inr <| PrimeSpectrum.basicOpen_injOn_isIdempotentElem he .one <| by
       simp [← SetLike.coe_set_eq, h]
+
+/-- A finitely generated idempotent proper ideal of a commutative ring with preconnected prime
+spectrum is zero: its generator is an idempotent, hence `0` or `1`, and `1` would make the ideal
+the whole ring. -/
+theorem Ideal.eq_bot_of_isIdempotentElem_of_ne_top [PreconnectedSpace (PrimeSpectrum R)]
+    {I : Ideal R} (hfg : I.FG) (hI : IsIdempotentElem I) (hne : I ≠ ⊤) : I = ⊥ := by
+  obtain ⟨e, he, hspan⟩ := (Ideal.isIdempotentElem_iff_of_fg I hfg).mp hI
+  rcases he.eq_zero_or_eq_one_of_preconnectedSpace with rfl | rfl
+  · simpa using hspan
+  · exact absurd (by simpa using hspan) hne
 
 namespace TauCeti
 
