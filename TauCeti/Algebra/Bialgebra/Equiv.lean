@@ -16,22 +16,23 @@ bialgebra analogue of Mathlib's `AlgEquiv.arrowCongr`. It is used to compare fun
 homomorphisms whose values are only identified up to canonical bialgebra isomorphisms, such as
 iterated base changes.
 
-A bialgebra whose structure map is bijective is trivial: its counit is a bialgebra equivalence
-with the base ring. This is the common form of the statement that an affine group is trivial.
+A bialgebra whose structure map is surjective is trivial: its counit is a bialgebra equivalence
+with the base ring. The structure map of a bialgebra is always injective, so surjectivity is the
+whole condition. This is the common form of the statement that an affine group is trivial.
 
 ## Main definitions
 
 * `BialgEquiv.arrowCongr`: the bijection `(A₁ →ₐc[R] A₂) ≃ (A₁' →ₐc[R] A₂')` induced by two
   bialgebra equivalences.
-* `Bialgebra.counitBialgEquivOfBijective`: the counit as a bialgebra equivalence with the base
-  ring, when the structure map is bijective.
+* `Bialgebra.counitBialgEquivOfSurjective`: the counit as a bialgebra equivalence with the base
+  ring, when the structure map is surjective.
 
 ## Main results
 
 * `BialgEquiv.arrowCongr_apply` and `BialgEquiv.arrowCongr_symm_apply`: it and its inverse are
   conjugation by the two equivalences.
-* `Bialgebra.counitBialgEquivOfBijective_apply` and
-  `Bialgebra.counitBialgEquivOfBijective_symm_apply`: the counit equivalence is the counit, and
+* `Bialgebra.counitBialgEquivOfSurjective_apply` and
+  `Bialgebra.counitBialgEquivOfSurjective_symm_apply`: the counit equivalence is the counit, and
   its inverse is the structure map.
 -/
 
@@ -70,34 +71,34 @@ namespace Bialgebra
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Bialgebra R A]
 
-/-- A bialgebra whose structure map is bijective is bialgebra-equivalent to its base ring via the
-counit. -/
-noncomputable def counitBialgEquivOfBijective (h : Function.Bijective (algebraMap R A)) :
+/-- A bialgebra whose structure map is surjective is bialgebra-equivalent to its base ring via
+the counit. -/
+noncomputable def counitBialgEquivOfSurjective (h : Function.Surjective (algebraMap R A)) :
     A ≃ₐc[R] R :=
   BialgEquiv.ofBijective (counitBialgHom R A)
     ⟨fun x y hxy ↦ by
-      obtain ⟨r, rfl⟩ := h.2 x
-      obtain ⟨s, rfl⟩ := h.2 y
+      obtain ⟨r, rfl⟩ := h x
+      obtain ⟨s, rfl⟩ := h y
       simp only [counitBialgHom_apply, counit_algebraMap] at hxy
       rw [hxy],
     counit_surjective⟩
 
-/-- The counit equivalence of a bialgebra with bijective structure map is the counit. -/
+/-- The counit equivalence of a bialgebra with surjective structure map is the counit. -/
 @[simp]
-theorem counitBialgEquivOfBijective_apply (h : Function.Bijective (algebraMap R A)) (x : A) :
-    counitBialgEquivOfBijective h x = Coalgebra.counit (R := R) x := by
-  rw [counitBialgEquivOfBijective]
+theorem counitBialgEquivOfSurjective_apply (h : Function.Surjective (algebraMap R A)) (x : A) :
+    counitBialgEquivOfSurjective h x = Coalgebra.counit (R := R) x := by
+  rw [counitBialgEquivOfSurjective]
   exact congrFun (BialgEquiv.coe_ofBijective (counitBialgHom R A) _) x
 
-/-- The inverse of the counit equivalence of a bialgebra with bijective structure map is the
+/-- The inverse of the counit equivalence of a bialgebra with surjective structure map is the
 structure map. -/
 @[simp]
-theorem counitBialgEquivOfBijective_symm_apply (h : Function.Bijective (algebraMap R A))
-    (r : R) : (counitBialgEquivOfBijective h).symm r = algebraMap R A r := by
-  let e := counitBialgEquivOfBijective h
+theorem counitBialgEquivOfSurjective_symm_apply (h : Function.Surjective (algebraMap R A))
+    (r : R) : (counitBialgEquivOfSurjective h).symm r = algebraMap R A r := by
+  let e := counitBialgEquivOfSurjective h
   refine e.toMulEquiv.symm_apply_eq.mpr ?_
   calc
     r = Coalgebra.counit (R := R) (algebraMap R A r) := (counit_algebraMap r).symm
-    _ = e (algebraMap R A r) := (counitBialgEquivOfBijective_apply h _).symm
+    _ = e (algebraMap R A r) := (counitBialgEquivOfSurjective_apply h _).symm
 
 end Bialgebra

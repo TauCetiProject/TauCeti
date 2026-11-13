@@ -24,13 +24,16 @@ For a Hopf algebra, this coefficient is a unit. Thus the projective orbit of the
 avoids a hyperplane, the affine-chart input to the fixed-point argument for solvable groups.
 The coefficient calculation itself needs only a coalgebra.
 
-Over a domain, a coalgebra morphism into a torsion-free bialgebra spanned by its group-like
-elements that sends the diagonal coefficients of an upper-triangular basis to `1` sends the whole
-coefficient matrix to the identity matrix
-(`Module.Basis.map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top`): the
-comultiplication `Δ cᵢⱼ = ∑ₗ cᵢₗ ⊗ cₗⱼ` and an induction on the column `j` exhibit each image of
-an off-diagonal coefficient as a primitive element, and such a bialgebra has none but `0`
+Over a domain, let `K` be a torsion-free bialgebra spanned by its group-like elements. A
+`K`-comodule whose coefficient matrix is upper triangular with `1` on the diagonal has the
+identity coefficient matrix
+(`Module.Basis.coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top`): the
+comultiplication `Δ cᵢⱼ = ∑ₗ cᵢₗ ⊗ cₗⱼ` and an induction on the column `j` exhibit each
+off-diagonal coefficient as a primitive element, and such a bialgebra has none but `0`
 (`TauCeti.Subcoalgebra.eq_zero_of_groupLikeSetSpan_eq_top_of_comul_eq_tmul_add_tmul`).
+Corestriction gives the same conclusion for the image of a coefficient matrix under a coalgebra
+morphism into `K`
+(`Module.Basis.map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top`).
 -/
 
 public section
@@ -108,52 +111,63 @@ open scoped TensorProduct
 variable {R : Type u} {H : Type v} {K : Type w} {M : Type x} {ι : Type*}
   [CommRing R] [IsDomain R] [AddCommMonoid H] [Module R H] [Coalgebra R H]
   [Ring K] [Bialgebra R K] [Module.IsTorsionFree R K]
-  [AddCommMonoid M] [Module R M] [Comodule R H M]
+  [AddCommMonoid M] [Module R M]
   [Finite ι] [LinearOrder ι]
 
-/-- **A coalgebra morphism to a group-like-spanned bialgebra trivializes an upper-triangular
-representation.** Over a domain, let `K` be a torsion-free bialgebra spanned by its group-like
-elements. If `f` sends the diagonal coefficients of an upper-triangular basis to `1`, then it sends
-the whole coefficient matrix to the identity matrix. -/
-theorem map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top
-    (b : Module.Basis ι R M) (hb : (coefficientMatrix (C := H) b).IsUpperTriangular)
+/-- **A comodule over a group-like-spanned bialgebra with an upper-triangular basis and diagonal
+coefficients `1` is trivial.** Over a domain, let `K` be a torsion-free bialgebra spanned by its
+group-like elements. If the coefficient matrix of a `K`-comodule is upper triangular with `1` on
+the diagonal, then it is the identity matrix. -/
+theorem coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top
+    [Comodule R K M] (b : Module.Basis ι R M)
+    (hb : (coefficientMatrix (C := K) b).IsUpperTriangular)
     (hK : Subcoalgebra.groupLikeSetSpan (R := R) (C := K) Set.univ = ⊤)
-    (f : H →ₗc[R] K) (hf : ∀ i, f (coefficientMatrix (C := H) b i i) = 1) :
-    (coefficientMatrix (C := H) b).map f = 1 := by
+    (hdiag : ∀ i, coefficientMatrix (C := K) b i i = 1) :
+    coefficientMatrix (C := K) b = 1 := by
   classical
   let _ : Fintype ι := Fintype.ofFinite ι
-  -- Entries below the diagonal vanish, and the diagonal maps to `1`.
-  have hlow {i j : ι} (h : j < i) : f (coefficientMatrix (C := H) b i j) = 0 := by
-    rw [hb h, map_zero]
   -- Above the diagonal, fix the row `i` and induct on the column `j`.
-  have hup (i j : ι) : i < j → f (coefficientMatrix (C := H) b i j) = 0 := by
+  have hup (i j : ι) : i < j → coefficientMatrix (C := K) b i j = 0 := by
     induction j using WellFoundedLT.induction with
     | _ j ih =>
       intro hij
       refine Subcoalgebra.eq_zero_of_groupLikeSetSpan_eq_top_of_comul_eq_tmul_add_tmul hK
         (Bialgebra.comul_one (R := R) (A := K)) ?_
-      rw [← CoalgHomClass.map_comp_comul_apply, comul_coefficientMatrix_eq_sum, map_sum]
-      simp only [TensorProduct.map_tmul, CoalgHom.coe_linearMapOfClass]
-      rw [← Finset.add_sum_erase _ _ (Finset.mem_univ j),
+      rw [comul_coefficientMatrix_eq_sum, ← Finset.add_sum_erase _ _ (Finset.mem_univ j),
         ← Finset.add_sum_erase _ _ (Finset.mem_erase.mpr ⟨hij.ne, Finset.mem_univ i⟩)]
       -- The intermediate terms vanish: below the diagonal, or by the inductive hypothesis.
       have hrest : ∑ l ∈ (Finset.univ.erase j).erase i,
-          f (coefficientMatrix (C := H) b i l) ⊗ₜ[R] f (coefficientMatrix (C := H) b l j) =
-            0 := by
+          coefficientMatrix (C := K) b i l ⊗ₜ[R] coefficientMatrix (C := K) b l j = 0 := by
         refine Finset.sum_eq_zero fun l hl ↦ ?_
         simp only [Finset.mem_erase] at hl
         rcases lt_or_gt_of_ne hl.1 with hl' | hl'
-        · rw [hlow hl', TensorProduct.zero_tmul]
+        · rw [hb hl', TensorProduct.zero_tmul]
         rcases lt_or_gt_of_ne hl.2.1 with hl'' | hl''
         · rw [ih l hl'' hl', TensorProduct.zero_tmul]
-        · rw [hlow hl'', TensorProduct.tmul_zero]
-      rw [hrest, hf i, hf j, add_zero, add_comm]
+        · rw [hb hl'', TensorProduct.tmul_zero]
+      rw [hrest, hdiag i, hdiag j, add_zero, add_comm]
   ext i j
-  rw [Matrix.map_apply]
   rcases lt_trichotomy i j with hij | rfl | hij
   · rw [Matrix.one_apply_ne hij.ne, hup i j hij]
-  · rw [Matrix.one_apply_eq, hf]
-  · rw [Matrix.one_apply_ne hij.ne', hlow hij]
+  · rw [Matrix.one_apply_eq, hdiag]
+  · rw [Matrix.one_apply_ne hij.ne', hb hij]
+
+/-- **A coalgebra morphism to a group-like-spanned bialgebra trivializes an upper-triangular
+representation.** Over a domain, let `K` be a torsion-free bialgebra spanned by its group-like
+elements. If the image under `f` of a coefficient matrix is upper triangular with `1` on the
+diagonal, then it is the identity matrix. -/
+theorem map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top
+    [Comodule R H M] (b : Module.Basis ι R M) (f : H →ₗc[R] K)
+    (hb : ((coefficientMatrix (C := H) b).map f).IsUpperTriangular)
+    (hK : Subcoalgebra.groupLikeSetSpan (R := R) (C := K) Set.univ = ⊤)
+    (hf : ∀ i, f (coefficientMatrix (C := H) b i i) = 1) :
+    (coefficientMatrix (C := H) b).map f = 1 := by
+  -- Corestricting along `f` turns the mapped matrix into a coefficient matrix over `K`.
+  let _ : Comodule R K M := Corestrict f
+  rw [← coefficientMatrix_corestrict b f] at hb ⊢
+  refine b.coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top hb hK
+    fun i ↦ ?_
+  rw [coefficientMatrix_corestrict, Matrix.map_apply, hf]
 
 end GroupLikeSpan
 

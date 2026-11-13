@@ -15,9 +15,11 @@ import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Triangular
 
 Over a field, a bialgebra whose group-like elements span it has no nonzero primitive elements
 (`TauCeti.Subcoalgebra.eq_zero_of_groupLikeSetSpan_eq_top_of_comul_eq_tmul_add_tmul`). Hence a
-coalgebra morphism to such a bialgebra that sends the diagonal coefficients of an
-upper-triangular representation to `1` sends its whole coefficient matrix to the identity matrix
+coalgebra morphism to such a bialgebra that sends the coefficient matrix of a representation to
+an upper-triangular matrix with `1` on the diagonal sends it to the identity matrix
 (`Module.Basis.map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top`).
+More generally over a domain, a group with a faithful upper-unitriangular representation admits
+only trivial homomorphisms from diagonalizable groups.
 
 A reduced finite-type affine group over an algebraically closed field whose rational points are
 unipotent has a faithful upper-unitriangular representation, whose coefficients and their
@@ -30,6 +32,13 @@ subgroups such as `μₚ`. It is the input showing that a torus of a smooth conn
 group meets its unipotent radical trivially.
 
 ## Main declarations
+
+In the `Module.Basis` namespace:
+
+* `bialgHom_eq_unit_comp_counit_of_isUpperUnitriangular_of_surjective_of_groupLikeSetSpan_eq_top`:
+  over a domain, if an upper-unitriangular representation of `H` has surjective coordinate
+  morphism, then a bialgebra morphism from `H` to a torsion-free group-like-spanned bialgebra is
+  the counit followed by the unit.
 
 In the `TauCeti.geometricallyUnipotentPointsCommHopfAlgProperty` namespace:
 
@@ -50,9 +59,48 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti
+universe u v w x
 
-universe u v w
+namespace Module.Basis
+
+open TauCeti TauCeti.Comodule
+
+variable {R : Type u} {H : Type v} {K : Type w} {M : Type x} [CommRing R] [IsDomain R]
+  [CommRing H] [HopfAlgebra R H] [Ring K] [Bialgebra R K] [Module.IsTorsionFree R K]
+  [AddCommMonoid M] [Module R M] [Comodule R H M] {n : ℕ}
+
+/-- **A group with a faithful upper-unitriangular representation admits only trivial
+homomorphisms from diagonalizable groups.** Over a domain, suppose that an `H`-comodule has an
+upper-unitriangular coefficient matrix whose coordinate morphism `O(GLₙ) → H` is surjective. Then
+every bialgebra morphism from `H` to a torsion-free bialgebra spanned by its group-like elements
+is the counit followed by the unit. -/
+theorem
+    bialgHom_eq_unit_comp_counit_of_isUpperUnitriangular_of_surjective_of_groupLikeSetSpan_eq_top
+    (b : Module.Basis (Fin n) R M) (hb : (coefficientMatrix (C := H) b).IsUpperUnitriangular)
+    (hsurj : Function.Surjective (coordinateBialgHom (H := H) b))
+    (hK : Subcoalgebra.groupLikeSetSpan (R := R) (C := K) Set.univ = ⊤) (φ : H →ₐc[R] K) :
+    φ = (Bialgebra.unitBialgHom R K).comp (Bialgebra.counitBialgHom R H) := by
+  have hone := b.map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top
+    φ.toCoalgHom (hb.isUpperTriangular.map φ.toCoalgHom) hK fun i ↦ by
+      rw [hb.apply_diag i]
+      exact map_one φ
+  have hcomp : φ.toAlgHom.comp (coordinateBialgHom (H := H) b).toAlgHom =
+      ((Algebra.ofId R K).comp (Bialgebra.counitAlgHom R H)).comp
+        (coordinateBialgHom (H := H) b).toAlgHom := by
+    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext R n
+    intro i j
+    have h : φ (coefficientMatrix (C := H) b i j) = (1 : Matrix (Fin n) (Fin n) K) i j := by
+      simpa only [Matrix.map_apply, BialgHom.toCoalgHom_apply] using congrFun (congrFun hone i) j
+    simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, coordinateBialgHom_X, h,
+      Bialgebra.counitAlgHom_apply, counit_coefficientMatrix, Matrix.one_apply]
+    split_ifs <;> simp
+  ext x
+  obtain ⟨y, rfl⟩ := hsurj x
+  simpa using AlgHom.congr_fun hcomp y
+
+end Module.Basis
+
+namespace TauCeti
 
 namespace geometricallyUnipotentPointsCommHopfAlgProperty
 
@@ -74,23 +122,9 @@ theorem bialgHom_eq_unit_comp_counit_of_groupLikeSetSpan_eq_top [IsAlgClosed k]
     φ = (Bialgebra.unitBialgHom k K).comp (Bialgebra.counitBialgHom k H) := by
   obtain ⟨M, n, b, hb, hsurj⟩ :=
     exists_coordinateBialgHom_surjective_of_forall_isUnipotentPoint (forall_isUnipotentPoint hH)
-  have hone := b.map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top
-    hb.isUpperTriangular hK φ.toCoalgHom fun i ↦ by
-      rw [((Matrix.isUpperUnitriangular_def _).mp hb).2 i]
-      exact map_one φ
-  have hcomp : φ.toAlgHom.comp (coordinateBialgHom (H := H) b).toAlgHom =
-      ((Algebra.ofId k K).comp (Bialgebra.counitAlgHom k H)).comp
-        (coordinateBialgHom (H := H) b).toAlgHom := by
-    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext k n
-    intro i j
-    have h : φ (coefficientMatrix (C := H) b i j) = (1 : Matrix (Fin n) (Fin n) K) i j := by
-      simpa only [Matrix.map_apply, BialgHom.toCoalgHom_apply] using congrFun (congrFun hone i) j
-    simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, coordinateBialgHom_X, h,
-      Bialgebra.counitAlgHom_apply, counit_coefficientMatrix, Matrix.one_apply]
-    split_ifs <;> simp
-  ext x
-  obtain ⟨y, rfl⟩ := hsurj x
-  simpa using AlgHom.congr_fun hcomp y
+  exact
+    b.bialgHom_eq_unit_comp_counit_of_isUpperUnitriangular_of_surjective_of_groupLikeSetSpan_eq_top
+      hb hsurj hK φ
 
 /-- **A diagonalizable closed subgroup of a reduced unipotent group is trivial**, over an
 algebraically closed field. If a surjective bialgebra morphism `H → K` exhibits the group
@@ -117,8 +151,8 @@ noncomputable def counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective [IsAlgClos
     (hK : Subcoalgebra.groupLikeSetSpan (R := k) (C := K) Set.univ = ⊤)
     (φ : H →ₐc[k] K) (hφ : Function.Surjective φ) :
     K ≃ₐc[k] k :=
-  Bialgebra.counitBialgEquivOfBijective
-    (algebraMap_bijective_of_groupLikeSetSpan_eq_top_of_surjective hH hK φ hφ)
+  Bialgebra.counitBialgEquivOfSurjective
+    (algebraMap_bijective_of_groupLikeSetSpan_eq_top_of_surjective hH hK φ hφ).2
 
 /-- The triviality equivalence of a diagonalizable closed subgroup is the counit. -/
 @[simp]
@@ -130,7 +164,7 @@ theorem counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective_apply [IsAlgClosed k
     counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective hH hK φ hφ x =
       Coalgebra.counit (R := k) x := by
   rw [counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective]
-  exact Bialgebra.counitBialgEquivOfBijective_apply _ x
+  exact Bialgebra.counitBialgEquivOfSurjective_apply _ x
 
 /-- The inverse of the triviality equivalence of a diagonalizable closed subgroup is the
 structure map. -/
@@ -143,7 +177,7 @@ theorem counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective_symm_apply [IsAlgClo
     (counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective hH hK φ hφ).symm r =
       algebraMap k K r := by
   rw [counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective]
-  exact Bialgebra.counitBialgEquivOfBijective_symm_apply _ r
+  exact Bialgebra.counitBialgEquivOfSurjective_symm_apply _ r
 
 end geometricallyUnipotentPointsCommHopfAlgProperty
 

@@ -240,6 +240,14 @@ theorem groupLikeBasisCoalgEquiv_apply (h : groupLikeSetSpan (R := S) (C := D) S
     (x : D) : groupLikeBasisCoalgEquiv h x = (groupLikeBasis h).repr x :=
   (rfl)
 
+/-- The inverse of `groupLikeBasisCoalgEquiv` takes a coordinate vector to the corresponding
+linear combination of group-like elements. -/
+@[simp]
+theorem groupLikeBasisCoalgEquiv_symm_apply
+    (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤) (f : GroupLike S D →₀ S) :
+    (groupLikeBasisCoalgEquiv h).symm f = Finsupp.linearCombination S (groupLikeBasis h) f :=
+  (groupLikeBasis h).repr_symm_apply f
+
 /-- **A coalgebra spanned by its group-like elements has no nonzero skew-primitive elements at a
 single group-like element.** Over a domain, if the group-like elements span a torsion-free
 coalgebra `D`, `Δ g = g ⊗ g`, and `Δ x = x ⊗ g + g ⊗ x`, then `x = 0`. -/
