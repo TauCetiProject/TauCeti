@@ -568,27 +568,33 @@ lemma signedCoweight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
           · rw [signedReflection_of_ne h1 h2 h3 h4, pairRoot_dotProduct_of_ne h1 h2 h3 h4]
             module
 
-lemma signedReflection_injective {p q : Signed n} (h : q ≠ signedNeg p) :
-    Injective (signedReflection p q) := by
-  intro z w hzw
-  -- In these coordinates `Module.preReflection` in the root `p + q` is definitionally the map
-  -- `v ↦ v - (v ⬝ᵥ pairCoroot p q) • pairRoot p q`; Mathlib provides no named bridge, so the
-  -- `change` below is what turns the goal left by its injectivity into the reflection formula.
-  refine signedWeight_injective ((Module.involutive_preReflection (x := pairRoot p q)
-    (f := (dotProductBilin ℤ ℤ).flip (pairCoroot p q))
-    (pairRoot_dotProduct_pairCoroot_self h)).injective ?_)
-  change signedWeight z - (signedWeight z ⬝ᵥ pairCoroot p q) • pairRoot p q
-      = signedWeight w - (signedWeight w ⬝ᵥ pairCoroot p q) • pairRoot p q
-  rw [← signedWeight_signedReflection h z, ← signedWeight_signedReflection h w, hzw]
+lemma signedReflection_injective (p q : Signed n) : Injective (signedReflection p q) := by
+  refine Involutive.injective fun z => ?_
+  by_cases h1 : z = p
+  · rw [h1, signedReflection_left, signedReflection_signedNeg_right]
+  by_cases h2 : z = q
+  · rw [h2, signedReflection_right, signedReflection_signedNeg_left]
+  by_cases h3 : z = signedNeg p
+  · rw [h3, signedReflection_signedNeg_left, signedReflection_right]
+  by_cases h4 : z = signedNeg q
+  · rw [h4, signedReflection_signedNeg_right, signedReflection_left]
+  rw [signedReflection_of_ne h1 h2 h3 h4, signedReflection_of_ne h1 h2 h3 h4]
 
-lemma signedReflection_signedNeg {p q : Signed n} (h : q ≠ signedNeg p)
-    (z : Signed n) :
+lemma signedReflection_signedNeg (p q z : Signed n) :
     signedReflection p q (signedNeg z) = signedNeg (signedReflection p q z) := by
-  refine signedWeight_injective ?_
-  rw [signedWeight_signedReflection h (signedNeg z),
-    signedWeight_signedNeg (signedReflection p q z), signedWeight_signedReflection h z,
-    signedWeight_signedNeg z, neg_dotProduct, neg_smul]
-  module
+  by_cases h1 : z = p
+  · rw [h1, signedReflection_left, signedReflection_signedNeg_left, signedNeg_signedNeg]
+  by_cases h2 : z = q
+  · rw [h2, signedReflection_right, signedReflection_signedNeg_right, signedNeg_signedNeg]
+  by_cases h3 : z = signedNeg p
+  · rw [h3, signedReflection_signedNeg_left, signedNeg_signedNeg, signedReflection_left]
+  by_cases h4 : z = signedNeg q
+  · rw [h4, signedReflection_signedNeg_right, signedNeg_signedNeg, signedReflection_right]
+  rw [signedReflection_of_ne h1 h2 h3 h4,
+    signedReflection_of_ne (fun hc => h3 (by rw [← hc, signedNeg_signedNeg]))
+      (fun hc => h4 (by rw [← hc, signedNeg_signedNeg]))
+      (fun hc => h1 (by rw [← signedNeg_signedNeg z, hc, signedNeg_signedNeg]))
+      (fun hc => h2 (by rw [← signedNeg_signedNeg z, hc, signedNeg_signedNeg]))]
 
 /-- Reflection in the root `p + q` transports the root of a pair to the root of the reflected
 pair. -/
@@ -610,7 +616,7 @@ lemma pairCoroot_reflection {p q : Signed n} (h : q ≠ signedNeg p) (x y : Sign
   by_cases hxy : x = y
   · subst hxy
     rw [pairCoroot_self, pairCoroot_self, signedCoweight_signedReflection h x]
-  · rw [pairCoroot_of_ne hxy, pairCoroot_of_ne fun hc => hxy (signedReflection_injective h hc),
+  · rw [pairCoroot_of_ne hxy, pairCoroot_of_ne fun hc => hxy (signedReflection_injective p q hc),
       signedCoweight_signedReflection h x, signedCoweight_signedReflection h y, dotProduct_add]
     module
 

@@ -265,9 +265,9 @@ private lemma typeCReflectionIdx_pair_ne (i j : TypeCIndex n) :
     signedReflection (typeCFst i) (typeCSnd i) (typeCSnd j) ≠
       signedNeg (signedReflection (typeCFst i) (typeCSnd i) (typeCFst j)) := by
   intro hc
-  rw [← signedReflection_signedNeg (typeCSnd_ne_signedNeg_typeCFst i)] at hc
+  rw [← signedReflection_signedNeg] at hc
   exact typeCSnd_ne_signedNeg_typeCFst j
-    (signedReflection_injective (typeCSnd_ne_signedNeg_typeCFst i) hc)
+    (signedReflection_injective _ _ hc)
 
 private lemma typeCRoot_typeCReflectionIdx (i j : TypeCIndex n) :
     typeCRoot j - (typeCRoot j ⬝ᵥ typeCCoroot i) • typeCRoot i
