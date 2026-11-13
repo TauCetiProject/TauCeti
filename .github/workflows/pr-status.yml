@@ -49,7 +49,7 @@ jobs:
             && (contains(github.event.comment.body, 'tauceti-scoreboard')
                 || contains(github.event.changes.body.from, 'tauceti-scoreboard')))
       )
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # On the job, not the workflow: a workflow-level group admits runs before the `if` above is
     # evaluated, so an irrelevant event could displace the one pending run that mattered and then
@@ -92,10 +92,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f8e04a89d7f4406bbac9af986091f832c9be9c0a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f8e04a89d7f4406bbac9af986091f832c9be9c0a
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy

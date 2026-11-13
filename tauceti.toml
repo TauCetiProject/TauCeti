@@ -65,8 +65,7 @@ deployment = "cloudflare"
 [services.fleet]
 mode = "hosted"
 url = "https://fleet.taucetiproject.org"
-namespace_build_cap = 20
-pr_order = ["github", "fleet", "namespace"]
+pr_order = ["github", "fleet"]
 staging_order = ["tauchonki2"]
 
 # Staging is reserved for these hosts; other membership comes from the registered runners.
@@ -104,7 +103,7 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="f8e04a89d7f4406bbac9af986091f832c9be9c0a"
+ref="e478fc2279875adecd63bda947bd3cb558f4a2ed"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
 ref="6b07b400ba129a0f2771d2d315a410f72d462244"
