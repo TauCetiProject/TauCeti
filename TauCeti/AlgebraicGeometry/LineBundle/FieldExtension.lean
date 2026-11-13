@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Cohomology.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
+public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Endomorphisms
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.LineBundle.Hom
@@ -99,10 +99,6 @@ theorem pullback_injective : Function.Injective (pullback g) := by
     exact mul_inv_eq_one.mp (key _ (by rw [pullback_mul, pullback_inv, hab, mul_inv_cancel]))
   intro a ha
   obtain ⟨L, rfl⟩ := mk_surjective a
-  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
-  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
-  have : L.obj.IsLocallyFree := inferInstanceAs F.IsLocallyFree
-  have : L.obj.IsFiniteType := inferInstanceAs F.IsFiniteType
   -- Flat base change gives nonzero global sections `s` of `L` and `t` of its dual.
   obtain ⟨s, hs⟩ := exists_nonzero_unitHom_of_pullback_eq_one H L ha
   have hdual : pullback g (mk L.dual) = 1 := by

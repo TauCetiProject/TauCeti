@@ -130,6 +130,14 @@ instance isQuasicoherent_obj (L : InvertibleSheaf X) : L.obj.IsQuasicoherent :=
   let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
   inferInstanceAs F.IsQuasicoherent
 
+/-- The underlying sheaf of a line bundle is locally free. -/
+instance isLocallyFree_obj (L : InvertibleSheaf X) : L.obj.IsLocallyFree :=
+  -- The site-level instance is stated for sheaves of modules, and instance search does not
+  -- unfold `X.Modules`, so the underlying object is rebound with the type of sheaves of modules.
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
+  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
+  inferInstanceAs F.IsLocallyFree
+
 /-- The invertible sheaf given by the free sheaf on an indexing type with exactly one element. -/
 def free (X : Scheme.{u}) (I : Type u) [Nonempty I] [Subsingleton I] :
     InvertibleSheaf X :=

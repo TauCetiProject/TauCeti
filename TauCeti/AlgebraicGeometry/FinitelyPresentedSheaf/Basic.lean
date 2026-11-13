@@ -20,7 +20,8 @@ The main declarations are:
 * `TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf X`, the full subcategory of finitely
   presented objects in `X.Modules`;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.toFinitelyPresented`, the fully faithful inclusion
-  of invertible sheaves into finitely presented sheaves.
+  of invertible sheaves into finitely presented sheaves, together with the resulting
+  finite-presentation and finite-type instances on the underlying sheaf of a line bundle.
 
 The inclusion uses the site-level theorem that an invertible sheaf is finitely presented: its
 rank-one local trivializations give finite generators and have no relations. Thus every
@@ -67,6 +68,17 @@ abbrev toFinitelyPresented (X : Scheme.{u}) :
   ObjectProperty.ιOfLE fun M hM ↦ by
     let : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) M := hM
     exact TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (M := M)
+
+/-- The underlying sheaf of a line bundle is finitely presented. -/
+instance isFinitePresentation_obj (L : InvertibleSheaf X) : L.obj.IsFinitePresentation :=
+  ((toFinitelyPresented X).obj L).property
+
+/-- The underlying sheaf of a line bundle is of finite type. -/
+instance isFiniteType_obj (L : InvertibleSheaf X) : L.obj.IsFiniteType :=
+  -- Finite presentation implies finite type for sheaves of modules, and instance search does not
+  -- unfold `X.Modules`, so the underlying object is rebound with the type of sheaves of modules.
+  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
+  inferInstanceAs F.IsFiniteType
 
 end InvertibleSheaf
 
