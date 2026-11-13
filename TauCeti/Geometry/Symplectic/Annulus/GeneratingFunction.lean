@@ -36,13 +36,13 @@ coordinates `(x, X)`.
   (`TauCeti.stripGeneratingFunction_mk_zero`). It is invariant under a translation
   `(x, y) ↦ (x + a, y)`, such as the deck translation `a = 1`, when `F` commutes with it
   (`TauCeti.stripGeneratingFunction_add_fst`); it suffices that `F` commutes with the translation
-  near the segment from `(x, 0)` to `(x, y)`
+  near every interior point of the segment from `(x, 0)` to `(x, y)`
   (`TauCeti.stripGeneratingFunction_add_fst_of_eventuallyEq`).
 * `S` is `C^n` at `(x, y)` when `F` is `C^(n + 1)` at every point of the segment from `(x, 0)` to
   `(x, y)` (`TauCeti.contDiffAt_stripGeneratingFunction`), so `S` is `C^n` when `F` is `C^(n + 1)`
   (`TauCeti.contDiff_stripGeneratingFunction`).
 * If `F` is `C²` at every point of that segment, maps `(x, 0)` into the lower boundary line,
-  `Y(x, 0) = 0`, and preserves the area form `dx ∧ dy` along the segment, then
+  `Y(x, 0) = 0`, and preserves the area form `dx ∧ dy` at the interior points of the segment, then
   `dS = Y dX - y dx` at `(x, y)`, that is `∂ₓ S = Y ∂ₓ X - y` and `∂_y S = Y ∂_y X`
   (`TauCeti.hasFDerivAt_stripGeneratingFunction`). The proof differentiates under the integral:
   the `x`-derivative of the integrand differs from the `t`-derivative of `Y ∂ₓ X` by minus the
@@ -97,13 +97,14 @@ theorem stripGeneratingFunction_def (p : ℝ × ℝ) :
 theorem stripGeneratingFunction_mk_zero (x : ℝ) : stripGeneratingFunction F (x, 0) = 0 := by
   simp [stripGeneratingFunction_def]
 
-/-- If `F` commutes with the translation `(x, y) ↦ (x + a, y)` near the segment from `(p.1, 0)`
-to `p`, its generating function takes the same value at `p` and at `p + (a, 0)`. -/
+/-- If `F` commutes with the translation `(x, y) ↦ (x + a, y)` near every interior point of the
+segment from `(p.1, 0)` to `p`, its generating function takes the same value at `p` and at
+`p + (a, 0)`. -/
 theorem stripGeneratingFunction_add_fst_of_eventuallyEq {a : ℝ} {p : ℝ × ℝ}
-    (hF : ∀ t ∈ [[0, p.2]], (fun q ↦ F (q + (a, 0))) =ᶠ[𝓝 (p.1, t)] fun q ↦ F q + (a, 0)) :
+    (hF : ∀ t ∈ uIoo 0 p.2, (fun q ↦ F (q + (a, 0))) =ᶠ[𝓝 (p.1, t)] fun q ↦ F q + (a, 0)) :
     stripGeneratingFunction F (p + (a, 0)) = stripGeneratingFunction F p := by
   simp only [stripGeneratingFunction_def, Prod.fst_add, Prod.snd_add, add_zero]
-  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
   have hq : ((p.1 + a, t) : ℝ × ℝ) = (p.1, t) + (a, 0) := by simp
   -- Commuting with the translation near `(p.1, t)` makes the derivative of `F` invariant under it.
   have hD : fderiv ℝ F ((p.1, t) + (a, 0)) = fderiv ℝ F (p.1, t) := by
@@ -121,7 +122,7 @@ theorem stripGeneratingFunction_add_fst {a : ℝ} (hF : ∀ q, F (q + (a, 0)) = 
 
 variable {U : Set (ℝ × ℝ)}
 
-/-- If `F` is `C^k`, with `k` finite, at every point of the segment from `(x, 0)` to `(x, y)`,
+/-- If `F` is `C^k`, for `k ≠ ∞`, at every point of the segment from `(x, 0)` to `(x, y)`,
 then it is `C^k` on an open set containing that segment. -/
 private theorem exists_isOpen_contDiffOn_segment {k : WithTop ℕ∞} (hk : k ≠ ∞) {x y : ℝ}
     (hF : ∀ t ∈ [[0, y]], ContDiffAt ℝ k F (x, t)) :
@@ -212,10 +213,10 @@ private theorem fderiv_snd_mul_fst_fderiv_eq {q : ℝ × ℝ} (hF : ContDiffAt �
 
 /-- The partial derivative of the generating function in `x`: if `F` is `C²` on an open set
 containing the segment from `(x, 0)` to `(x, y)`, maps `(x, 0)` to the line `y = 0` and preserves
-area along the segment, then `∂ₓ S(x, y) = Y(x, y) ∂ₓ X(x, y) - y`. -/
+area at the interior points of the segment, then `∂ₓ S(x, y) = Y(x, y) ∂ₓ X(x, y) - y`. -/
 private theorem hasDerivAt_stripGeneratingFunction_fst (hU : IsOpen U) (hF : ContDiffOn ℝ 2 F U)
     {x y : ℝ} (hp : {x} ×ˢ [[0, y]] ⊆ U) (hY : (F (x, 0)).2 = 0)
-    (hdet : ∀ t ∈ [[0, y]], (fderiv ℝ F (x, t)).det = 1) :
+    (hdet : ∀ t ∈ uIoo 0 y, (fderiv ℝ F (x, t)).det = 1) :
     HasDerivAt (fun s ↦ stripGeneratingFunction F (s, y))
       ((F (x, y)).2 * (fderiv ℝ F (x, y) (1, 0)).1 - y) x := by
   set g : ℝ × ℝ → ℝ := fun q ↦ (F q).2 * (fderiv ℝ F q (0, 1)).1
@@ -237,7 +238,7 @@ private theorem hasDerivAt_stripGeneratingFunction_fst (hU : IsOpen U) (hF : Con
   have hFTC : ∫ t in (0 : ℝ)..y, fderiv ℝ h (x, t) (0, 1) = h (x, y) - h (x, 0) :=
     intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable
   have hdetint : ∫ t in (0 : ℝ)..y, (fderiv ℝ F (x, t)).det = y := by
-    rw [intervalIntegral.integral_congr (g := fun _ ↦ (1 : ℝ)) fun t ht ↦ hdet t ht]
+    rw [intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (1 : ℝ)) fun t ht ↦ hdet t ht]
     simp
   have hdetcont : ContinuousOn (fun t ↦ (fderiv ℝ F (x, t)).det) [[0, y]] :=
     ContinuousLinearMap.continuous_det.comp_continuousOn
@@ -255,11 +256,11 @@ private theorem hasDerivAt_stripGeneratingFunction_fst (hU : IsOpen U) (hF : Con
 
 /-- **The generating function of an area-preserving map.** If `F = (X, Y)` is `C²` at every point
 of the segment from `(x, 0)` to `p = (x, y)`, maps `(x, 0)` to the line `y = 0` and preserves the
-area form `dx ∧ dy` along that segment, then its generating function `S` satisfies
-`dS = Y dX - y dx` at `p`: `∂ₓ S = Y ∂ₓ X - y` and `∂_y S = Y ∂_y X`. -/
+area form `dx ∧ dy` at the interior points of that segment, then its generating function `S`
+satisfies `dS = Y dX - y dx` at `p`: `∂ₓ S = Y ∂ₓ X - y` and `∂_y S = Y ∂_y X`. -/
 theorem hasFDerivAt_stripGeneratingFunction {p : ℝ × ℝ}
     (hF : ∀ t ∈ [[0, p.2]], ContDiffAt ℝ 2 F (p.1, t)) (hY : (F (p.1, 0)).2 = 0)
-    (hdet : ∀ t ∈ [[0, p.2]], (fderiv ℝ F (p.1, t)).det = 1) :
+    (hdet : ∀ t ∈ uIoo 0 p.2, (fderiv ℝ F (p.1, t)).det = 1) :
     HasFDerivAt (stripGeneratingFunction F)
       ((F p).2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p) -
         p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) p := by
@@ -296,13 +297,13 @@ theorem hasFDerivAt_stripGeneratingFunction {p : ℝ × ℝ}
   · simpa using (hsnd.unique hsnd').symm
 
 /-- **The generating equations.** Let `F = (X, Y)` be `C²` at every point of the segment from
-`(x, 0)` to `p = (x, y)`, map `(x, 0)` to the line `y = 0`, preserve area along that segment, and
-twist at `p`: `∂_y X(p) ≠ 0`. If a function `S'` of `(x, X)` agrees near `p` with the
-generating function of `F` through `(x, y) ↦ (x, X(x, y))`, then at `(x, X(p))` it has derivative
-`Y(p) dX - y dx`. That is, `∂₁ S'(x, X) = -y` and `∂₂ S'(x, X) = Y`. -/
+`(x, 0)` to `p = (x, y)`, map `(x, 0)` to the line `y = 0`, preserve area at the interior points of
+that segment, and twist at `p`: `∂_y X(p) ≠ 0`. If a function `S'` of `(x, X)` agrees near `p`
+with the generating function of `F` through `(x, y) ↦ (x, X(x, y))`, then at `(x, X(p))` it has
+derivative `Y(p) dX - y dx`. That is, `∂₁ S'(x, X) = -y` and `∂₂ S'(x, X) = Y`. -/
 theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction {p : ℝ × ℝ}
     (hF : ∀ t ∈ [[0, p.2]], ContDiffAt ℝ 2 F (p.1, t))
-    (hY : (F (p.1, 0)).2 = 0) (hdet : ∀ t ∈ [[0, p.2]], (fderiv ℝ F (p.1, t)).det = 1)
+    (hY : (F (p.1, 0)).2 = 0) (hdet : ∀ t ∈ uIoo 0 p.2, (fderiv ℝ F (p.1, t)).det = 1)
     (htwist : (fderiv ℝ F p (0, 1)).1 ≠ 0) {S' : ℝ × ℝ → ℝ}
     (hS' : (fun q ↦ S' (q.1, (F q).1)) =ᶠ[𝓝 p] stripGeneratingFunction F) :
     HasFDerivAt S' ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ -
