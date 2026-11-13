@@ -335,6 +335,16 @@ lemma singularHomologyMap_comp {P'' : TopPair.{w}} (g : P' ⟶ P'') (n : ℕ) :
   rw [TopPair.singularHomologyMap, Functor.map_comp, SSetPair.homologyMap_comp]
 
 variable {P P'} in
+/-- Relative singular homology sends the map of pairs `eqToHom h` of an equation `h : P = P'` to
+`eqToHom` of the corresponding equation of homologies. -/
+@[simp]
+lemma singularHomologyMap_eqToHom (h : P = P') (n : ℕ) :
+    P.singularHomologyMap (eqToHom h) R n =
+      eqToHom (congrArg (TopPair.singularHomology · R n) h) := by
+  subst h
+  simp
+
+variable {P P'} in
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
 subspace `A'` induces the zero map on relative singular homology. -/
 lemma singularHomologyMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.map = Hom.fst f)

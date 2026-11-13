@@ -165,7 +165,8 @@ theorem normalizedMixedDifferential_apply_succ (φ : Π₀ n, normalizedHochschi
 the `B` term vanishes because `B` kills cyclic cochains. -/
 theorem normalizedMixedDifferential_single_of_mem_cyclicCochains {n : ℕ}
     {ψ : normalizedHochschildCochains R A M n}
-    (hψ : (ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ cyclicCochains R A M n) :
+    (hψ : (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) ∈ cyclicCochains R A M
+        n) :
     normalizedMixedDifferential R A M (DFinsupp.single n ψ) =
       DFinsupp.single (n + 1) (normalizedHochschildCoboundary R A M n ψ) := by
   cases n with
@@ -175,7 +176,7 @@ theorem normalizedMixedDifferential_single_of_mem_cyclicCochains {n : ℕ}
 /-- A cyclic normalized cocycle, placed in its own degree, is a cocycle for `b + B`. -/
 theorem normalizedMixedDifferential_single_eq_zero_of_mem_cyclicCochains {n : ℕ}
     {ψ : normalizedHochschildCochains R A M n}
-    (hψ : (ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ cyclicCochains R A M n)
+    (hψ : (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) ∈ cyclicCochains R A M n)
     (hb : hochschildCoboundary R A M n ψ = 0) :
     normalizedMixedDifferential R A M (DFinsupp.single n ψ) = 0 := by
   rw [normalizedMixedDifferential_single_of_mem_cyclicCochains hψ,
@@ -327,7 +328,8 @@ theorem normalizedPeriodicDifferential_eq_zero {i j : ZMod 2} (h : i + 1 ≠ j) 
 /-- On a cyclic normalized `n`-cochain the periodic differential is `b`. -/
 theorem normalizedPeriodicDifferential_single_of_mem_cyclicCochains {n : ℕ}
     {ψ : normalizedHochschildCochains R A M n}
-    (hψ : (ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ cyclicCochains R A M n) :
+    (hψ : (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) ∈ cyclicCochains R A M
+        n) :
     normalizedPeriodicDifferential R A M n (n + 1) (DFinsupp.single ⟨n, rfl⟩ ψ) =
       DFinsupp.single ⟨n + 1, Nat.cast_succ n⟩ (normalizedHochschildCoboundary R A M n ψ) := by
   rw [normalizedPeriodicDifferential_apply, normalizedPeriodicCochainsι_apply,
@@ -430,7 +432,7 @@ theorem mem_normalizedPeriodicCocycles_iff_complex (i : ZMod 2)
 /-- A cyclic normalized `n`-cocycle, placed in its own degree, is a periodic cocycle. -/
 theorem single_mem_normalizedPeriodicCocycles_of_mem_cyclicCochains {n : ℕ}
     {ψ : normalizedHochschildCochains R A M n}
-    (hψ : (ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ cyclicCochains R A M n)
+    (hψ : (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) ∈ cyclicCochains R A M n)
     (hb : hochschildCoboundary R A M n ψ = 0) :
     DFinsupp.single ⟨n, rfl⟩ ψ ∈ normalizedPeriodicCocycles R A M n := by
   rw [mem_normalizedPeriodicCocycles_iff,
@@ -502,7 +504,7 @@ instance : Subsingleton (normalizedPeriodicCochains R R M 1) where
 the product cochain of its value at `1`. -/
 noncomputable def normalizedPeriodicCochainsSelfZeroEquiv :
     normalizedPeriodicCochains R R M 0 ≃ₗ[R] M where
-  toFun φ := (φ ⟨0, Nat.cast_zero⟩ : MultilinearMap R (fun _ : Fin 1 ↦ R) M) fun _ ↦ 1
+  toFun φ := (φ ⟨0, Nat.cast_zero⟩ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ R) M) fun _ ↦ 1
   map_add' φ ψ := by simp
   map_smul' r φ := by simp
   invFun m := DFinsupp.single ⟨0, Nat.cast_zero⟩
@@ -517,7 +519,8 @@ noncomputable def normalizedPeriodicCochainsSelfZeroEquiv :
 @[simp]
 theorem normalizedPeriodicCochainsSelfZeroEquiv_apply (φ : normalizedPeriodicCochains R R M 0) :
     normalizedPeriodicCochainsSelfZeroEquiv R M φ =
-      (φ ⟨0, Nat.cast_zero⟩ : MultilinearMap R (fun _ : Fin 1 ↦ R) M) fun _ ↦ 1 := (rfl)
+      (φ ⟨0, Nat.cast_zero⟩ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ R)
+          M) fun _ ↦ 1 := (rfl)
 
 end GroundRing
 
