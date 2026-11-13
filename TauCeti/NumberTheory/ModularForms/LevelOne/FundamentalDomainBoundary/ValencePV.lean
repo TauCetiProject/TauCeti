@@ -690,6 +690,17 @@ private lemma analyticAt_comp_ofComplex_and_ne_zero_of_notMem_of_zeros_confined 
   exact hT z hz.1 hz.2
 
 
+/-- A zero of `f ∘ ofComplex` in the truncated fundamental domain lies in the image of any finset
+`S` capturing the divisor of the level-one modular form `f` on `𝒟`. -/
+private lemma mem_image_of_comp_ofComplex_eq_zero [ModularFormClass F 𝒮ℒ k] (f : F)
+    (hf : (⇑f : ℍ → ℂ) ≠ 0) {H : ℝ} {S : Finset ℍ}
+    (hcomp : ∀ p, p ∈ 𝒟 → orderOfVanishingAt ⇑f p ≠ 0 → p ∈ S) :
+    ∀ z ∈ UpperHalfPlane.coe '' ModularGroup.truncatedFundamentalDomain H,
+      (⇑f ∘ ofComplex) z = 0 → z ∈ S.image ((↑·) : ℍ → ℂ) := by
+  rintro z ⟨q, hq, rfl⟩ h0
+  exact Finset.mem_image_of_mem _ (hcomp q hq.1 (orderOfVanishingAt_ne_zero_of_eq_zero
+    (ModularFormClass.holo f) hf (by simpa [Function.comp_apply, ofComplex_apply] using h0)))
+
 /-- **The valence formula, with the elliptic points.** The divisor set `S` is now a finite set
 of upper half-plane points, *complete* for the closed fundamental domain: every point of `𝒟`
 of nonzero order belongs to it. Nothing confines the divisor to the interior — it may meet the
@@ -744,12 +755,8 @@ private theorem sum_orderOfVanishingAt_add_elliptic_add_qExpansionOrderAtCusp_eq
   obtain ⟨U, hU, hUdom, hUsub, hUZ⟩ := UpperHalfPlane.exists_isOpen_zeros_inter hg hf
     (K := UpperHalfPlane.coe '' ModularGroup.truncatedFundamentalDomain H)
     (image_subset_iff.mpr fun p _ ↦ p.im_pos)
-  have hoff : ∀ z ∈ U, z ∉ S.image ((↑·) : ℍ → ℂ) →
-      AnalyticAt ℂ (⇑f ∘ ofComplex) z ∧ (⇑f ∘ ofComplex) z ≠ 0 := by
-    refine analyticAt_comp_ofComplex_and_ne_zero_of_notMem_of_zeros_confined hg hUsub hUZ ?_
-    rintro z ⟨q, hq, rfl⟩ h0
-    exact Finset.mem_image_of_mem _ (hcomp q hq.1 (orderOfVanishingAt_ne_zero_of_eq_zero hg hf
-      (by simpa [Function.comp_apply, ofComplex_apply] using h0)))
+  have hoff := analyticAt_comp_ofComplex_and_ne_zero_of_notMem_of_zeros_confined hg hUsub hUZ
+    (mem_image_of_comp_ofComplex_eq_zero f hf hcomp)
   have hga : ∀ q ∈ Metric.closedBall (0 : ℂ) (fdBoundaryQRadius H),
       AnalyticAt ℂ (cuspFunction 1 ⇑f) q :=
     analyticAt_cuspFunction_of_mem_closedBall f (zero_lt_one.trans hH)

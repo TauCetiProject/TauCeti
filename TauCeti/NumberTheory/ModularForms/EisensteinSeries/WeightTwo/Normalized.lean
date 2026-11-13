@@ -162,31 +162,16 @@ theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠
   · subst u
     have hψ (a : ZMod 1) : ψ a = 1 := by
       rw [Subsingleton.elim a 1, map_one]
-    have hφpar : φ (-1) = 1 := by
-      simpa only [hψ, one_mul] using hpar
-    have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-    rw [hψ, one_mul, inv_mul_eq_iff_eq_mul₀ (normalizedCharG2_scale_ne_zero φ
-      (DirichletCharacter.gaussSum_inv_ne_zero_of_isPrimitive hφ (isPrimitive_stdAddChar v)))]
-    have hτ : gaussSum φ stdAddChar ≠ 0 :=
-      DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hφ (isPrimitive_stdAddChar v)
-    apply mul_left_cancel₀ hτ
-    -- the row sum is a generalized Bernoulli number, and `g(φ) g(φ⁻¹) = φ(-1) v = v`
-    have hB := φ.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli hφ le_rfl
-    have hprod :=
-      DirichletCharacter.gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive hφ
-        (isPrimitive_stdAddChar v)
-    rw [ZMod.card, hφpar, one_mul] at hprod
-    push_cast [Nat.factorial_two] at hB
-    rw [hB]
-    calc
-      _ = (2 * π * I) ^ 2 * -φ.generalizedBernoulli 2 / (2 * v) := by
-        field_simp
-      _ = -8 * π ^ 2 / v ^ 2 * (gaussSum φ stdAddChar * gaussSum φ⁻¹ stdAddChar) *
-          (-φ.generalizedBernoulli 2 / 4) := by
-        rw [hprod, mul_pow, mul_pow, I_sq]
-        field_simp
-        ring
-      _ = _ := by ring
+    have hB := φ.inv_normalization_mul_tsum_eq_generalizedBernoulli (k := 2) le_rfl hφ
+    have hscale : (2 * (-2 * π * I) ^ 2 / (((2 - 1).factorial : ℂ) * (v : ℂ) ^ 2) *
+        gaussSum φ⁻¹ ZMod.stdAddChar) = -8 * π ^ 2 / v ^ 2 * gaussSum φ⁻¹ stdAddChar := by
+      push_cast [Nat.factorial_one]
+      rw [mul_pow, mul_pow, I_sq]
+      ring
+    rw [hψ, one_mul]
+    push_cast at hB
+    rw [hscale, show (2 : ℂ) * 2 = 4 by norm_num] at hB
+    exact hB
   · rw [ψ.map_zero' hu, zero_mul, mul_zero]
 
 /-- When `ψ` and `φ` are not both trivial and `ψ(-1) φ(-1) = 1`, a normalized weight-two

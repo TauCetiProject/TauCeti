@@ -72,6 +72,17 @@ private def SquarefreeDecomposition (χ : (ZMod N)ˣ →* ℂˣ) (l : ℕ)
     ∀ n, (qExpansion 1 f).coeff n = ∑ q ∈ l.primeFactors.attach,
       if q.1 ∣ n then (qExpansion 1 (F q.1 q.2)).coeff (n / q.1) else 0
 
+/-- A sum over the `attach` of a finset `s = insert q t` splits into the term at `q` and the sum
+over the `attach` of `t`, for a summand depending on the membership proof. -/
+private theorem sum_attach_eq_of_eq_insert {ι M : Type*} [DecidableEq ι] [AddCommMonoid M]
+    {s t : Finset ι} {q : ι} (hq : q ∉ t) (hs : s = insert q t) (G : (x : ι) → x ∈ s → M) :
+    ∑ x ∈ s.attach, G x.1 x.2 = G q (hs ▸ Finset.mem_insert_self q t) +
+      ∑ x ∈ t.attach, G x.1 (hs ▸ Finset.mem_insert_of_mem x.2) := by
+  subst hs
+  rw [Finset.attach_insert, Finset.sum_insert (by simpa using hq), Finset.sum_image]
+  intro x _ y _ h
+  exact Subtype.ext (by simpa using congrArg Subtype.val h)
+
 omit [NeZero N] in
 /-- Assembling the decomposition at `l = q * l'` from the data at the prime `q` and the families
 over the primes of `l'`, all already read at the levels `N * l ^ 2` and `N * l ^ 2 / q'`. -/
@@ -118,22 +129,13 @@ private theorem squarefreeDecomposition_of_insert {χ : (ZMod N)ˣ →* ℂˣ} {
   · intro n
     rw [hcoeff n]
     symm
-    -- both sums over `attach` become sums over the sets, the summand guarded by membership
-    rw [← Finset.univ_eq_attach, ← Finset.sum_dite_of_true (fun _ hi ↦ hi) (fun q' hq' ↦
-        if q' ∣ n then (qExpansion 1
-          ((fun q' hq' ↦ if h : q' = q then h ▸ F else F' q' (hmem hq' h)) q' hq')).coeff (n / q')
-        else 0) fun _ _ ↦ 0,
-      Finset.sum_congr hpf fun _ _ ↦ rfl, Finset.sum_insert hql', ← Finset.univ_eq_attach,
-      ← Finset.sum_dite_of_true (fun _ hi ↦ hi) (fun q' hq' ↦ if q' ∣ n then
-        (qExpansion 1 (F' q' hq')).coeff (n / q') else 0) fun _ _ ↦ 0]
-    have hqpf : q ∈ l.primeFactors := hpf ▸ Finset.mem_insert_self q _
+    refine (sum_attach_eq_of_eq_insert hql' hpf fun q' hq' ↦ if q' ∣ n then (qExpansion 1
+      (if h : q' = q then h ▸ F else F' q' (hmem hq' h) :
+        CuspForm ((Gamma1 (N * l ^ 2 / q')).map (mapGL ℝ)) k)).coeff (n / q') else 0).trans ?_
     congr 1
-    · rw [dite_eq_left hqpf]
-      simp
-    · refine Finset.sum_congr rfl fun q' hq' ↦ ?_
-      have hne : q' ≠ q := fun h ↦ hql' (h ▸ hq')
-      have hq'pf : q' ∈ l.primeFactors := hpf ▸ Finset.mem_insert_of_mem hq'
-      rw [dite_eq_left hq'pf, dite_eq_left hq']
+    · simp
+    · refine Finset.sum_congr rfl fun q' _ ↦ ?_
+      have hne : q'.1 ≠ q := fun h ↦ hql' (h ▸ q'.2)
       simp [hne]
 
 /-- **Peeling a prime off `f`.** The multiples-of-`q` part `h` of `f`, read at level `N q²`

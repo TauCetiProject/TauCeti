@@ -144,6 +144,26 @@ private theorem qExpansion_sub_smul {k : ℤ} (f m : ModularForm 𝒮ℒ k) (a :
   simpa [PowerSeries.smul_eq_C_mul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL]
     using ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL f (a • m)
 
+/-- If `g = f - f₀ • m` is the cusp form obtained from a level-one form `f` of weight `4 n` by
+subtracting its constant term times a form `m` with `q`-expansion `E₄ ^ n`, and the `q`-expansion
+of `f` is the image of a power series over `K`, then so is that of `g / Δ`. -/
+private theorem qExpansion_discriminantEquiv_mem_range (φ : K →+* ℂ) {n : ℕ}
+    (f m : ModularForm 𝒮ℒ (4 * (n : ℤ))) (hmq : qExpansion 1 m = qExpansion 1 E₄ ^ n)
+    {F : PowerSeries K} (hF : PowerSeries.map φ F = qExpansion 1 f)
+    {g : CuspForm 𝒮ℒ (4 * (n : ℤ))} (hgf : ⇑g = ⇑f - (qExpansion 1 f).coeff 0 • ⇑m) :
+    qExpansion 1 (CuspForm.discriminantEquiv g) ∈ (PowerSeries.map φ).range := by
+  have ha₀ : φ (F.coeff 0) = (qExpansion 1 f).coeff 0 := by rw [← hF, PowerSeries.coeff_map]
+  have hΔg : qExpansion 1 discriminant * qExpansion 1 (CuspForm.discriminantEquiv g) =
+      qExpansion 1 g := by
+    rw [← CuspForm.coe_discriminant, ← ModularForm.qExpansion_mul_coe one_pos
+      one_mem_strictPeriods_SL, CuspForm.coe_discriminant, discriminant_mul_discriminantEquiv]
+  have hgq : qExpansion 1 g =
+      qExpansion 1 f - PowerSeries.map φ (PowerSeries.C (F.coeff 0)) * qExpansion 1 E₄ ^ n := by
+    rw [hgf, qExpansion_sub_smul, hmq, PowerSeries.map_C, ha₀]
+  refine mem_range_map_of_qExpansion_discriminant_mul_mem φ (hΔg ▸ ?_)
+  exact hgq ▸ sub_mem ⟨F, hF⟩ (mul_mem (RingHom.mem_range_self _ _)
+    (pow_mem (TauCeti.ModularForm.qExpansion_E_mem_range_map φ _) n))
+
 /-- Every level-one modular form of weight `k` with `4 ∣ k` whose `q`-expansion is the image of a
 power series over `K` under `φ : K →+* ℂ` is a combination of the `E₄ ^ a * Δ ^ b` with
 `4 a + 12 b = k`, with coefficients in `K`. -/
@@ -170,20 +190,8 @@ private theorem exists_finsupp_E₄_discriminant (φ : K →+* ℂ) {k : ℤ} (f
     have ha₀ : φ (F.coeff 0) = (qExpansion 1 f).coeff 0 := by rw [← hF, PowerSeries.coeff_map]
     obtain ⟨g, hg⟩ := sub_smul_isCuspForm f m hm
     have hgf : ⇑g = ⇑f - (qExpansion 1 f).coeff 0 • ⇑m := congr(⇑$hg)
-    -- The `q`-expansion of `g` is the image of a power series over `K`, hence so is that of
-    -- `g / Δ`.
-    have hΔg : qExpansion 1 discriminant * qExpansion 1 (CuspForm.discriminantEquiv g) =
-        qExpansion 1 g := by
-      rw [← CuspForm.coe_discriminant, ← ModularForm.qExpansion_mul_coe one_pos
-        one_mem_strictPeriods_SL, CuspForm.coe_discriminant, discriminant_mul_discriminantEquiv]
-    have hgq : qExpansion 1 g =
-        qExpansion 1 f - PowerSeries.map φ (PowerSeries.C (F.coeff 0)) * qExpansion 1 E₄ ^ n := by
-      rw [hgf, qExpansion_sub_smul, hmq, PowerSeries.map_C, ha₀]
-    have hgK : qExpansion 1 g ∈ (PowerSeries.map φ).range := hgq ▸ sub_mem hf
-      (mul_mem (RingHom.mem_range_self _ _)
-        (pow_mem (TauCeti.ModularForm.qExpansion_E_mem_range_map φ _) n))
     obtain ⟨c, hc, hgc⟩ := ih (4 * n - 12) (by omega) (CuspForm.discriminantEquiv g)
-      ⟨(n : ℤ) - 3, by ring⟩ (mem_range_map_of_qExpansion_discriminant_mul_mem φ (hΔg ▸ hgK))
+      ⟨(n : ℤ) - 3, by ring⟩ (qExpansion_discriminantEquiv_mem_range φ f m hmq hF hgf)
     refine ⟨.single (n, 0) (F.coeff 0) +
       c.mapDomain fun ab ↦ (ab.1, ab.2 + 1), fun ab hab ↦ ?_, fun τ ↦ ?_⟩
     · rcases Finset.mem_union.1 (Finsupp.support_add hab) with hab | hab
