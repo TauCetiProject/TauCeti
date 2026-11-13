@@ -208,12 +208,14 @@ theorem exp_add_of_mem_maximalIdeal_pow {i : ℕ}
 /-- The exact coefficient valuation of the rescaled exponential in a finite extension of
 `ℚ_p`: `v_K(x^n / n!) = n v_K(x) - e v_p(n!)`. The factor `e` is the absolute ramification
 index, so this uses the uniformizer normalization rather than `v(p) = 1`. -/
-theorem log_normalizedValuationWithZero_coeff_rescale_exp [CharZero K]
+theorem log_normalizedValuationWithZero_coeff_rescale_exp
     {x : K} (hx : x ≠ 0) (n : ℕ) :
+    letI := FinitePadicExtension.charZero K p
     WithZero.log (normalizedValuationWithZero K
         ((PowerSeries.rescale x (PowerSeries.exp K)).coeff n)) =
       (n : ℤ) * WithZero.log (normalizedValuationWithZero K x) -
         absoluteRamificationIndex K p * padicValNat p n.factorial := by
+  have := FinitePadicExtension.charZero K p
   have hfac : (n.factorial : K) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
   have h := toAdd_normalizedValuation_expSeries_term hx n hfac
   rw [natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p
@@ -227,11 +229,13 @@ theorem log_normalizedValuationWithZero_coeff_rescale_exp [CharZero K]
     hv _ (div_ne_zero (pow_ne_zero n hx) hfac), hv x hx, Nat.cast_mul] using h
 
 /-- The exponential expansion at an integral multiple of a deep additive element. -/
-theorem hasSum_coeff_rescale_exp_of_mem_maximalIdeal_pow [CharZero K] {i : ℕ}
+theorem hasSum_coeff_rescale_exp_of_mem_maximalIdeal_pow {i : ℕ}
     (hi : absoluteRamificationIndex K p < (p - 1) * i)
     (x : (𝓂[K] ^ i : Ideal 𝒪[K])) (z : 𝒪[K]) :
+    letI := FinitePadicExtension.charZero K p
     HasSum (fun n => (PowerSeries.rescale (x : K) (PowerSeries.exp K)).coeff n * (z : K) ^ n)
       (exp ((z : K) * x)) := by
+  have := FinitePadicExtension.charZero K p
   have h := hasSum_exp_of_mem_maximalIdeal_pow
     (⟨z * (x : 𝒪[K]), Ideal.mul_mem_left _ _ x.2⟩ : (𝓂[K] ^ i : Ideal 𝒪[K])) hi
   simpa only [Subring.coe_mul, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
@@ -243,14 +247,16 @@ end TauCeti
 namespace TauCeti
 
 variable {K : Type*} [NormedField K] [ValuativeRel K] [IsNonarchimedeanLocalField K]
-variable {p : ℕ} [Fact p.Prime] [FinitePadicExtension K p] [CharZero K] {i : ℕ}
+variable {p : ℕ} [Fact p.Prime] [FinitePadicExtension K p] {i : ℕ}
 
 /-- The exponential series of a deep additive element is restricted on the closed unit disc.
 The norm needs only to induce the given local-field topology. -/
 theorem isRestricted_rescale_exp_of_mem_maximalIdeal_pow
     (hi : absoluteRamificationIndex K p < (p - 1) * i)
     (x : (𝓂[K] ^ i : Ideal 𝒪[K])) :
+    letI := FinitePadicExtension.charZero K p
     (PowerSeries.rescale (x : K) (PowerSeries.exp K)).IsRestricted 1 := by
+  have := FinitePadicExtension.charZero K p
   have h := (hasSum_coeff_rescale_exp_of_mem_maximalIdeal_pow hi x 1).summable.tendsto_atTop_zero
   rw [PowerSeries.isRestricted_iff']
   simpa only [Subring.coe_one, one_pow, mul_one, Function.comp_def] using tendsto_norm_zero.comp h
