@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Angle
+import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.IsotropicSection
+import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Neighborhood
 
 /-!
 # Local action-angle coordinates near a regular Liouville torus
@@ -41,7 +43,16 @@ section through it, all these hypotheses hold on a neighbourhood `U` of the leve
 the angles, and it pulls `σ` back to `∑ᵢ dθᵢ ∧ dAᵢ` for action variables `A` that are a local
 diffeomorphism at the level value. These are the properties saying that `(θ mod 2π, A)` are
 action-angle coordinates near the torus, in which `σ = ∑ᵢ dθᵢ ∧ dIᵢ` with `I = A`; the map induced
-on the torus `(ℝ / 2πℤ)^ι` itself is not constructed in this file.
+on the torus `(ℝ / 2πℤ)^ι` itself is not constructed in this file. At the level value the angles
+sweep out the whole component, since a basis of periods spans `ι → ℝ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.range_angleMap`).
+
+No completeness of the Hamiltonian vector fields is needed for these coordinates. They are complete
+on an open neighbourhood `W` of a compact component of a level
+(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`),
+so the angle map built on `W`, followed by the inclusion `W → M`, gives action-angle coordinates
+near the component for any smooth family of Poisson-commuting functions
+(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLocalDiffeomorphAt_eval₂_mfderiv_eq_of_isCompact`).
 
 ## Main results
 
@@ -50,7 +61,9 @@ All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 * `injective_mfderiv_angleMap`, `isLocalDiffeomorphAt_angleMap`: for an isotropic section and
   independent periods, the angle map is a local diffeomorphism.
 * `exists_isLocalDiffeomorphAt_angleMap_of_isCompact`: local action-angle coordinates near a
-  compact regular component of a level.
+  compact regular component of a level, given by the angle map of complete commuting flows.
+* `exists_isLocalDiffeomorphAt_eval₂_mfderiv_eq_of_isCompact`: local action-angle coordinates
+  near a compact regular component of a level, with no completeness hypothesis.
 
 ## References
 
@@ -175,7 +188,8 @@ theorem isLocalDiffeomorphAt_angleMap (hdim : 2 * Fintype.card ι = finrank ℝ 
 regular points of `F`, and let `s` be a smooth isotropic section of `F` through `x`, defined on an
 open set `t`.
 Then there are periods `λ⁽ⁱ⁾`, action variables `A`, a local diffeomorphism at `F x`, and an open
-neighbourhood `U ⊆ t` of `F x` such that for all `c, c' ∈ U`:
+neighbourhood `U ⊆ t` of `F x` such that the angles `θ ↦ Ψ(θ, F x)` sweep out the component of `x`,
+and for all `c, c' ∈ U`:
 
 * the differential of `Aᵢ` at `c` is `(2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ(c) dcⱼ`;
 * the angle map `Ψ` is a local diffeomorphism at `(θ, c)` for every `θ`;
@@ -193,6 +207,8 @@ theorem exists_isLocalDiffeomorphAt_angleMap_of_isCompact
       (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') = 0) :
     ∃ (p : ι → (ι → ℝ) → ι → ℝ) (A : (ι → ℝ) → ι → ℝ) (U : Set (ι → ℝ)),
       IsOpen U ∧ F x ∈ U ∧ U ⊆ t ∧ IsLocalDiffeomorphAt 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) ∞ A (F x) ∧
+      range (fun θ ↦ hσ.angleMap hF hcomm hc s p (θ, F x)) =
+        connectedComponentIn (F ⁻¹' {F x}) x ∧
       ∀ c ∈ U,
         (∀ i, HasFDerivAt (fun c ↦ A c i)
           ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c) ∧
@@ -215,7 +231,10 @@ theorem exists_isLocalDiffeomorphAt_angleMap_of_isCompact
     eventually_of_mem (hU.mem_nhds hcU) fun c' hc' ↦ by
       obtain ⟨⟨-, -, hcl, -⟩, -⟩ := hUp c' hc'
       exact hcl ▸ AddSubgroup.subset_closure (mem_range_self i)
-  refine ⟨p, A, U, hU, hxU, hUt, hA, fun c hcU ↦ ?_⟩
+  refine ⟨p, A, U, hU, hxU, hUt, hA, ?_, fun c hcU ↦ ?_⟩
+  · obtain ⟨⟨-, hli, -⟩, -⟩ := hUp (F x) hxU
+    rw [hσ.range_angleMap hF hcomm hc hli, hsx]
+    exact hσ.range_hamiltonianFlowAction_apply hF hcomm hc hdim hreg
   obtain ⟨⟨hpd, hli, hcl, hAd, -⟩, hct⟩ := hUp c hcU
   have htc := ht.mem_nhds hct
   refine ⟨hAd, fun θ ↦ ?_, fun θ ↦ ?_, fun c' hc' θ θ' ↦ ?_⟩
@@ -229,6 +248,81 @@ theorem exists_isLocalDiffeomorphAt_angleMap_of_isCompact
       (hL c hct) (fun i ↦ (hpd i).differentiableAt (by simp)) (fun i ↦ hps i hcU) hAd θ
   · exact hσ.angleMap_eq_angleMap_iff_of_section hF hcomm hc (hFs c hct) (hFs c' (hUt hc')) hli
       hcl
+
+end IsSymplectic
+
+/-! ### Action-angle coordinates without completeness -/
+
+namespace IsSymplectic
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M]
+  {σ : SmoothTwoForm I M} {ι : Type*} [Fintype ι] {F : M → ι → ℝ}
+
+/-- **Local action-angle coordinates near a compact regular component of a level.** On a
+symplectic manifold of dimension `2 · |ι|`, let `F` be a smooth family of pairwise
+Poisson-commuting functions, and let the connected component `L` of `x` in its level `F⁻¹(F x)` be
+compact and consist of regular points of `F`. The Hamiltonian vector fields of the `F_i` need not
+be complete. Then there are a map `Ψ : ℝ^ι × ℝ^ι → M`, action variables `A`, a local
+diffeomorphism at `F x`, and an open neighbourhood `U` of `F x` such that the angles
+`θ ↦ Ψ(θ, F x)` sweep out `L`, and for all `c, c' ∈ U` and all angles `θ`:
+
+* `F (Ψ(θ, c)) = c`;
+* `Ψ` is a local diffeomorphism at `(θ, c)`;
+* `Ψ` pulls `σ` back to `∑ᵢ dθᵢ ∧ dAᵢ` at `(θ, c)`;
+* `Ψ(θ, c) = Ψ(θ', c')` exactly when `c' = c` and `θ' - θ ∈ 2πℤ^ι`.
+
+So `(θ mod 2π, A)` are action-angle coordinates on a neighbourhood of `L`, in which
+`σ = ∑ᵢ dθᵢ ∧ dIᵢ` with `I = A`. -/
+theorem exists_isLocalDiffeomorphAt_eval₂_mfderiv_eq_of_isCompact (hσ : σ.IsSymplectic)
+    (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ F) (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
+    (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
+    (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
+    (hK : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x)) :
+    ∃ (Ψ : (ι → ℝ) × (ι → ℝ) → M) (A : (ι → ℝ) → ι → ℝ) (U : Set (ι → ℝ)),
+      IsOpen U ∧ F x ∈ U ∧ IsLocalDiffeomorphAt 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) ∞ A (F x) ∧
+      range (fun θ ↦ Ψ (θ, F x)) = connectedComponentIn (F ⁻¹' {F x}) x ∧
+      ∀ c ∈ U,
+        (∀ θ, F (Ψ (θ, c)) = c) ∧
+        (∀ θ, IsLocalDiffeomorphAt 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I ∞ Ψ (θ, c)) ∧
+        (∀ θ a a' b b', SmoothBundleForm.eval₂ σ (Ψ (θ, c))
+            (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I Ψ (θ, c) (a, b))
+            (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I Ψ (θ, c) (a', b')) =
+          ∑ i, (a i * fderiv ℝ (fun c ↦ A c i) c b' - a' i * fderiv ℝ (fun c ↦ A c i) c b)) ∧
+        ∀ c' ∈ U, ∀ θ θ', Ψ (θ, c) = Ψ (θ', c') ↔
+          c' = c ∧ ∃ m : ι → ℤ, θ' = θ + fun i ↦ 2 * π * m i := by
+  -- The Hamiltonian flows are complete on an open neighbourhood `W` of the component, which is
+  -- also the component of `x` in its level in `W`; the chart is built on `W`.
+  obtain ⟨W, hxW, himage, hKW, hregW, hcommW, hcW⟩ :=
+    hσ.isNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField
+      (hF.of_le (by simp)) hcomm hreg hK
+  set y : W := ⟨x, hxW⟩
+  set σW : SmoothTwoForm I W := SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ
+  have hσW : σW.IsSymplectic := hσ.mpullback_subtype_val W
+  have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun z : W ↦ F z := hF.comp contMDiff_subtype_val
+  obtain ⟨t, ht, hyt, s, hsy, hs, hFs, hL⟩ :=
+    hσW.exists_contMDiffOn_section_eval₂_mfderiv_eq_zero hFW hcommW hcW
+      (hregW y (mem_connectedComponentIn rfl))
+  obtain ⟨p, A, U, hU, hyU, hUt, hA, hrange, hUc⟩ :=
+    hσW.exists_isLocalDiffeomorphAt_angleMap_of_isCompact hFW hcommW hcW hdim hregW hKW ht hyt
+      hsy hs hFs hL
+  -- Transport the chart on `W` along the inclusion `W → M`.
+  refine ⟨Subtype.val ∘ hσW.angleMap hFW hcommW hcW s p, A, U, hU, hyU, hA, ?_,
+    fun c hcU ↦ ?_⟩
+  · rw [← himage]
+    exact (range_comp Subtype.val _).trans (congrArg _ hrange)
+  obtain ⟨-, hloc, hpull, hinj⟩ := hUc c hcU
+  refine ⟨fun θ ↦ ?_, fun θ ↦ (hloc θ).comp (hg := isLocalDiffeomorph_subtype_val _),
+    fun θ a a' b b' ↦ ?_, fun c' hc' θ θ' ↦ ?_⟩
+  · exact (hσW.apply_angleMap hFW hcommW hcW (θ, c)).trans (hFs c (hUt hcU))
+  · -- the inclusion pulls `σ` back to `σW`, and the chain rule splits the differential
+    rw [mfderiv_comp (θ, c) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+      ((hloc θ).mdifferentiableAt (by simp))]
+    exact (SmoothForm.eval₂_mpullback _ contMDiff_subtype_val σ _ _ _).symm.trans
+      (hpull θ a a' b b')
+  · rw [Function.comp_apply, Function.comp_apply, Subtype.val_injective.eq_iff]
+    exact hinj c' hc' θ θ'
 
 end IsSymplectic
 

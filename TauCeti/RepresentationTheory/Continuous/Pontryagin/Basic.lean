@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Unitary.Character
+public import TauCeti.Analysis.CStarAlgebra.UnitaryCharacter
 public import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 

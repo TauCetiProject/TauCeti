@@ -7,7 +7,11 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import TauCeti.Topology.FiberBundle.Proper
 public import TauCeti.Topology.VectorBundle.GramSchmidt
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Topology.Maps.IsEmpty
 
 /-!
 # The orthonormal frame bundle of a Riemannian or Hermitian vector bundle
@@ -85,6 +89,9 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
   `TauCeti.OrthonormalFrameBundle.exists_smul_eq_iff`: the action is free and transitive on fibres.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization`: the frame bundle is locally trivial,
   equivariantly for the action.
+* `TauCeti.OrthonormalFrameBundle.isProperMap_proj`: for a finite-dimensional frame domain,
+  the projection of the frame bundle is proper,
+  so the frames over a compact set of the base form a compact set.
 * `TauCeti.OrthonormalFrameBundle.isOpenQuotientMap_totalSpaceMk_frame_apply`: applying frames to
   vectors is an open quotient map onto the total space of `E`.
 
@@ -595,6 +602,26 @@ theorem exists_trivialization [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜
   ⟨(trivializationAt F E x).orthonormalFrameBundle (Module.finBasisOfFinrankEq 𝕜 F h.symm)
       (stdOrthonormalBasis 𝕜 V),
     mem_baseSet_trivializationAt F E x, Trivialization.orthonormalFrameBundle_smul _ _ _⟩
+
+omit [CompleteSpace V] in
+/-- For a finite-dimensional frame domain, the orthonormal-frame projection is proper.
+A frame identifies its domain with the model fibre, so no separate dimension hypothesis is
+needed. If no frame exists, the domain of the projection is empty. -/
+theorem isProperMap_proj [FiniteDimensional 𝕜 V] :
+    IsProperMap (proj : OrthonormalFrameBundle 𝕜 F E V → B) := by
+  cases isEmpty_or_nonempty (OrthonormalFrameBundle 𝕜 F E V) with
+  | inl h =>
+    exact Topology.IsClosedEmbedding.isProperMap (.of_isEmpty _)
+  | inr h =>
+    obtain ⟨⟨x, φ⟩⟩ := h
+    let e := trivializationAt F E x
+    have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F E x
+    let L : V ≃ₗ[𝕜] F := φ.toLinearEquiv.trans (e.continuousLinearEquivAt 𝕜 x hx).toLinearEquiv
+    have : FiniteDimensional 𝕜 F := L.finiteDimensional
+    have : ProperSpace V := FiniteDimensional.proper_rclike 𝕜 V
+    have := FiniteDimensional.proper_rclike 𝕜 (V →L[𝕜] V)
+    exact isProperMap_of_forall_exists_trivialization fun y ↦
+      (exists_trivialization (E := E) L.finrank_eq y).imp fun _ ht ↦ ht.1
 
 /-- Applying frames to vectors is an open map from pairs of an orthonormal frame and a vector of
 `V` to the total space of `E`. -/
