@@ -42,10 +42,11 @@ and is a curve over `k` in the sense used to compare it with the function field:
 than the generic point are exactly its points of codimension one. When `x` is algebraic, both
 charts are the spectrum of the constant field, so the scheme has dimension zero.
 
-That the local ring at a codimension-one point is a discrete valuation ring
-(`TauCeti.AlgebraicGeometry.twoChartModel.isDiscreteValuationRing_stalk`) is the hypothesis under
-which `AlgebraicGeometry.Scheme.toPlace` attaches a place of the function field to a point, and,
-with the dimension bound `TauCeti.AlgebraicGeometry.twoChartModel.coheight_le_one`, it is the
+That the local ring at a codimension-one point is a discrete valuation ring (found by instance
+search from `TauCeti.AlgebraicGeometry.twoChartModel.isRegularLocalRing_stalk` through
+`TauCeti.AlgebraicGeometry.CodimensionOnePoint.isDiscreteValuationRing_stalk`) is the hypothesis
+under which `AlgebraicGeometry.Scheme.toPlace` attaches a place of the function field to a point,
+and, with the dimension bound `TauCeti.AlgebraicGeometry.twoChartModel.coheight_le_one`, it is the
 hypothesis on the local rings in the comparison of the points of a curve with the places of its
 function field (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`). That every local ring
 is a valuation ring (`TauCeti.AlgebraicGeometry.twoChartModel.valuationRing_stalk`) is the
@@ -65,9 +66,8 @@ For every nonzero `x`:
   one, also available as the instance
   `TauCeti.AlgebraicGeometry.twoChartModel.fact_coheight_le_one`.
 * `TauCeti.AlgebraicGeometry.twoChartModel.isRegularLocalRing_stalk`: every local ring is a
-  regular local ring.
-* `TauCeti.AlgebraicGeometry.twoChartModel.isDiscreteValuationRing_stalk`: the local ring at a
-  codimension-one point is a discrete valuation ring.
+  regular local ring, so the local ring at a codimension-one point is a discrete valuation ring
+  (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.isDiscreteValuationRing_stalk`).
 * `TauCeti.AlgebraicGeometry.twoChartModel.valuationRing_stalk`: every local ring is a valuation
   ring.
 
@@ -176,13 +176,6 @@ instance isRegularLocalRing_stalk (p : twoChartModel hF hx) :
     ⟨q, rfl⟩ | ⟨q, rfl⟩
   · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
   · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
-
-/-- **The local rings of the two-chart model at its codimension-one points are discrete valuation
-rings**: they are regular local rings of dimension one. -/
-instance isDiscreteValuationRing_stalk
-    (p : CodimensionOnePoint (twoChartModel hF hx)) :
-    IsDiscreteValuationRing ((twoChartModel hF hx).presheaf.stalk (p : twoChartModel hF hx)) :=
-  CodimensionOnePoint.isDiscreteValuationRing_stalk p
 
 /-- **The local rings of the two-chart model are valuation rings**: at the generic point the local
 ring is the function field, and at every other point it is a discrete valuation ring. -/
