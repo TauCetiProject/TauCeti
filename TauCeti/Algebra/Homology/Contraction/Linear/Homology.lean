@@ -65,13 +65,13 @@ namespace TauCeti.InternalGrading
 universe uK uM
 
 variable {K : Type uK} {M : Type uM} [DivisionRing K] [AddCommGroup M] [Module K M]
-  (G : InternalGrading K M) {d : Module.End K M}
+  (G : InternalGrading K M ℤ) {d : Module.End K M}
   (hhom : TauCeti.LinearMap.IsHomogeneous d G.piece G.piece 1) (hd : d ∘ₗ d = 0)
 
 /-! ### A homogeneous section of the differential onto its image -/
 
 /-- The grading of the image of `d` by its homogeneous elements. -/
-private noncomputable def rangeGrading : InternalGrading K (range d) :=
+private noncomputable def rangeGrading : InternalGrading K (range d) ℤ :=
   G.submodule (range d) hhom.isHomogeneous_range
 
 /-- A homogeneous section of degree `-1` of the corestriction of `d` to its image. -/

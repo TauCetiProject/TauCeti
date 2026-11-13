@@ -61,7 +61,7 @@ universe u v
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
-variable {G : InternalGrading R V}
+variable {G : InternalGrading R V ℤ}
 
 /-- A linear endomorphism of `A(V)` satisfying a Leibniz rule with an arbitrary sign `s p` for a
 left factor of degree `p`, and vanishing on generators, is zero. This covers both the difference
