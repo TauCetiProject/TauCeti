@@ -107,14 +107,14 @@ theorem hochschildCoboundary_mkPiRing_of_odd (hn : Odd n) (m : M) :
 
 /-- In even degree the Hochschild coboundary of every cochain on the ground ring vanishes. -/
 theorem hochschildCoboundary_self_of_even (hn : Even n)
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) :
     hochschildCoboundary R R M n φ = 0 := by
   rw [← φ.mkPiRing_apply_one_eq_self, hochschildCoboundary_mkPiRing_of_even R M hn]
 
 /-- In odd degree the Hochschild coboundary of a cochain on the ground ring is the product
 cochain of its value at `(1, …, 1)`. -/
 theorem hochschildCoboundary_self_of_odd (hn : Odd n)
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) :
     hochschildCoboundary R R M n φ =
       MultilinearMap.mkPiRing R (Fin (n + 2)) (φ fun _ ↦ 1) := by
   rw [← φ.mkPiRing_apply_one_eq_self, hochschildCoboundary_mkPiRing_of_odd R M hn]
@@ -157,7 +157,7 @@ theorem cyclicCocycles_self_of_odd (hn : Odd n) : cyclicCocycles R R M n = ⊥ :
   rw [mem_cyclicCocycles_iff, hochschildCoboundary_self_of_odd R M hn,
     MultilinearMap.mkPiRing_eq_zero_iff] at hφ
   rw [Submodule.mem_bot, ← Subtype.coe_inj,
-    ← (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M).mkPiRing_apply_one_eq_self,
+    ← (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M).mkPiRing_apply_one_eq_self,
     hφ, MultilinearMap.mkPiRing_zero, ZeroMemClass.coe_zero]
 
 /-! ### Even cocycle representatives -/
@@ -170,17 +170,18 @@ private def mkPiRingCocycle (hn : Even n) : M →ₗ[R] cyclicCocycles R R M n :
 
 private theorem coe_mkPiRingCocycle (hn : Even n) (m : M) :
     ((mkPiRingCocycle R M hn m : cyclicCochains R R M n) :
-      MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) = MultilinearMap.mkPiRing R (Fin (n + 1)) m :=
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+          R) M) = MultilinearMap.mkPiRing R (Fin (n + 1)) m :=
   (rfl)
 
 private theorem mkPiRingCocycle_apply_one (hn : Even n) (φ : cyclicCocycles R R M n) :
     mkPiRingCocycle R M hn
-        ((φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1) = φ :=
+        ((φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1) = φ :=
   Subtype.ext <| Subtype.ext <| MultilinearMap.mkPiRing_apply_one_eq_self _
 
 private theorem mkPiRingCocycle_surjective (hn : Even n) :
     Function.Surjective (mkPiRingCocycle R M hn) := fun φ ↦
-  ⟨(φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1,
+  ⟨(φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1,
     mkPiRingCocycle_apply_one R M hn φ⟩
 
 end Cochains
@@ -242,7 +243,8 @@ theorem mkPiRing_apply (hn : Even n) (m : M) :
 value `φ(1, …, 1)`. -/
 theorem mk_eq_mkPiRing (hn : Even n) (φ : cyclicCocycles R R M n) :
     mk R R M n φ =
-      mkPiRing R M n hn ((φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1) := by
+      mkPiRing R M n hn ((φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦
+          1) := by
   rw [mkPiRing, LinearMap.comp_apply, mkPiRingCocycle_apply_one]
 
 /-- In even degree every cyclic cohomology class of the ground ring is the class of a product
@@ -266,7 +268,7 @@ theorem mkPiRing_eq_zero_iff (hn : Even n) (hn₀ : n ≠ 0) {m : M} :
     rw [coe_cyclicHochschildCoboundary_apply, hochschildCoboundary_self_of_odd R M hk,
       coe_mkPiRingCocycle, MultilinearMap.mkPiRing_eq_iff] at h
     rw [← h,
-      (ψ : MultilinearMap R (fun _ : Fin (k + 1) ↦ R) M).mkPiRing_apply_one_eq_self]
+      (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ R) M).mkPiRing_apply_one_eq_self]
     exact ψ.2
   · intro hm
     exact ⟨⟨_, hm⟩, Subtype.ext <| by
@@ -310,7 +312,7 @@ theorem selfEquiv_apply (hn : Even n) (h2 : IsSMulRegular M (2 : R)) (m : M) :
 theorem selfEquiv_symm_mk (hn : Even n) (h2 : IsSMulRegular M (2 : R))
     (φ : cyclicCocycles R R M n) :
     (selfEquiv R M hn h2).symm (mk R R M n φ) =
-      (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1 := by
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1 := by
   rw [LinearEquiv.symm_apply_eq, selfEquiv_apply, mk_eq_mkPiRing R M hn]
 
 /-- In positive even degree `HCⁿ(R; M)` is the quotient of `M` by its `2`-torsion, by the class
@@ -335,7 +337,7 @@ theorem selfQuotEquiv_symm_mk (hn : Even n) (hn₀ : n ≠ 0)
     (φ : cyclicCocycles R R M n) :
     (selfQuotEquiv R M hn hn₀).symm (mk R R M n φ) =
       Submodule.Quotient.mk
-        ((φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1) := by
+        ((φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1) := by
   rw [LinearEquiv.symm_apply_eq, selfQuotEquiv_mk, mk_eq_mkPiRing R M hn]
 
 end cyclicCohomology

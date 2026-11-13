@@ -13,8 +13,8 @@ public import TauCeti.Combinatorics.Enumerative.Partition.Basic
 # Partitions and conjugacy classes of permutations
 
 This file gives the equivalence between partitions and conjugacy classes of permutations.  It is
-proved for permutations of any finite type and specialized to `Equiv.Perm (Fin n)` for the roadmap
-API.  Mathlib's partition of a permutation includes the fixed points as parts of size one.
+proved for permutations of any finite type and specialized to `Equiv.Perm (Fin n)`.  Mathlib's
+partition of a permutation includes the fixed points as parts of size one.
 
 The specialization to `Fin n` carries a transport along `Fintype.card (Fin n) = n`, which
 `TauCeti.parts_partitionEquivConjClasses_symm_mk` discharges on the parts: the partition indexing
@@ -22,8 +22,6 @@ the class of `σ` has the parts of the cycle type of `σ`.
 
 ## References
 
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 0.
 * Mathlib's `Mathlib.GroupTheory.Perm.Cycle.Type`, for `Equiv.Perm.partition` and
   `Equiv.Perm.partition_eq_of_isConj`.
 * Mathlib's `Mathlib.GroupTheory.Perm.Cycle.PossibleTypes`, for
