@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Riemannian
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Representative
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
@@ -82,10 +82,8 @@ theorem contMDiff_normalRepresentative
       (fun p : TotalSpace P (fun x => f.NormalSpace x hn) =>
         (⟨f p.proj, f.normalRepresentative p.proj hn p.2⟩ : TangentBundle J N)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let := f.normalSpaceFiberBundle hn hdim
-  rw [f.contMDiff_normalBundle_iff hn hm hdim]
-  convert f.contMDiff_normalRepresentative_normalClass hn hm using 1
-  funext p
-  rw [Function.comp_apply, normalQuotientMap_apply]
+  exact f.contMDiff_normalBundle_of_contMDiff_normalClass hn hm hdim
+    (fun x v ↦ f.normalRepresentative x hn v)
+    (f.contMDiff_normalRepresentative_normalClass hn hm)
 
 end TauCeti.SmoothEmbedding
