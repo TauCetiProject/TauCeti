@@ -19,13 +19,14 @@ differentiable at `x`, the derivative of `y ↦ ⟪g y, g' y⟫` obeys the produ
 
 On an open subset of a real inner product space, the derivative of the squared distance
 `y ↦ ‖y - a‖ ^ 2` vanishes exactly at the centre `a`.
-More generally, at a zero of a differentiable vector-valued map, its squared norm has
-vanishing differential.
+The squared-norm chain rule gives the differential for any differentiable vector-valued map;
+at a zero of the map, this differential vanishes.
 
 ## Main results
 
 * `TauCeti.mvfderiv_inner_apply`: the product rule for the inner product.
-* `TauCeti.Manifold.mvfderiv_norm_sq_comp_of_eq_zero`: the squared norm of a differentiable
+* `TauCeti.mvfderiv_norm_sq_comp`: the chain rule for the squared norm.
+* `TauCeti.mvfderiv_norm_sq_comp_eq_zero_of_eq_zero`: the squared norm of a differentiable
   vector-valued map has vanishing differential at a zero.
 * `TauCeti.mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff`: along the inclusion of an open subset,
   the only critical point of squared distance is the centre.
@@ -68,45 +69,46 @@ theorem mvfderiv_inner_apply {g g' : M → F} {x : M} (hg : MDiffAt g x) (hg' : 
     hpair']
   simp only [fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, add_comm]
 
-namespace Manifold
+section Real
 
-variable {p : M}
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] {p : M}
+
+/-- The differential of the squared norm of a differentiable vector-valued map is twice the
+inner product with the value of the map, composed with its differential. -/
+theorem mvfderiv_norm_sq_comp {f : M → G} (hf : MDiffAt f p) :
+    mvfderiv I (fun q ↦ ‖f q‖ ^ 2) p =
+      2 • (innerSL ℝ (f p)).comp (mvfderiv I f p) := by
+  ext v
+  simpa only [Function.comp_def, fderiv_norm_sq_apply, smul_apply,
+    ContinuousLinearMap.comp_apply] using
+    mvfderiv_comp_apply_of_differentiableAt (φ := fun z : G ↦ ‖z‖ ^ 2)
+      ((contDiff_norm_sq ℝ (n := 2)).differentiable (by norm_num)).differentiableAt hf v
 
 /-- At a zero of a differentiable vector-valued map, its squared norm has vanishing
 differential. -/
-theorem mvfderiv_norm_sq_comp_of_eq_zero
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    {f : M → F} (hf : MDifferentiableAt I 𝓘(ℝ, F) f p) (hzero : f p = 0) :
-    mvfderiv I (fun q ↦ ‖f q‖ ^ 2) p = 0 := by
-  ext a
-  simpa only [Function.comp_def, fderiv_norm_sq_apply, hzero, map_zero, smul_zero,
-    zero_apply] using
-    mvfderiv_comp_apply_of_differentiableAt (φ := fun z : F ↦ ‖z‖ ^ 2)
-      ((contDiff_norm_sq ℝ (n := 2)).differentiable (by norm_num)).differentiableAt hf a
-
-end Manifold
-
-section Real
-
-variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+theorem mvfderiv_norm_sq_comp_eq_zero_of_eq_zero {f : M → G} (hf : MDiffAt f p)
+    (hzero : f p = 0) : mvfderiv I (fun q ↦ ‖f q‖ ^ 2) p = 0 := by
+  simp [mvfderiv_norm_sq_comp hf, hzero]
 
 /-- Along the inclusion of an open subset of a real inner product space, the squared distance
 from `a` has a critical point exactly at `a`. -/
 @[simp]
 theorem mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff (U : Opens G) (a : G) (x : U) :
     mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x = 0 ↔ (x : G) = a := by
-  have hd : HasFDerivAt (fun v : G ↦ ‖v - a‖ ^ 2)
-      (2 • (innerSL ℝ ((x : G) - a))) (x : G) :=
-    ((hasFDerivAt_id (x : G)).sub_const a).norm_sq.congr_fderiv (by simp)
+  have hval : MDifferentiableAt 𝓘(ℝ, G) 𝓘(ℝ, G) (Subtype.val : U → G) x :=
+    (contMDiff_subtype_val (U := U) x).mdifferentiableAt one_ne_zero
+  have hd := mvfderiv_norm_sq_comp (hval.sub (mdifferentiableAt_const (c := a)))
+  rw [mvfderiv_sub hval mdifferentiableAt_const, mvfderiv_const, sub_zero] at hd
+  have hd_apply (v : TangentSpace 𝓘(ℝ, G) x) :
+      mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x v =
+        2 * inner ℝ ((x : G) - a) (mvfderiv 𝓘(ℝ, G) (Subtype.val : U → G) x v) := by
+    simpa only [Pi.sub_apply, smul_apply, ContinuousLinearMap.comp_apply,
+      innerSL_apply_apply, two_smul, add_apply, two_mul] using DFunLike.congr_fun hd v
   have happ (v : G) : mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x v =
       2 * inner ℝ ((x : G) - a) v := by
-    calc mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x v
-        = fderiv ℝ (fun v : G ↦ ‖v - a‖ ^ 2) x (mvfderiv 𝓘(ℝ, G) (Subtype.val : U → G) x v) :=
-          mvfderiv_comp_apply_of_differentiableAt hd.differentiableAt
-            ((contMDiff_subtype_val (U := U) x).mdifferentiableAt one_ne_zero) v
-      _ = 2 * inner ℝ ((x : G) - a) v := by
-          rw [Manifold.mvfderiv_subtype_val_apply x v, hd.fderiv]
-          simp [inner_sub_left]
+    -- Read the inclusion's tangent vector in `G` using the canonical derivative identity.
+    exact (hd_apply v).trans (congrArg (fun w : G ↦ 2 * inner ℝ ((x : G) - a) w)
+      (Manifold.mvfderiv_subtype_val_apply x v))
   constructor
   · intro h
     have h0 := happ ((x : G) - a)

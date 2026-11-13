@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Normal domains and the Riemannian logarithm
@@ -60,8 +61,9 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_comp_mfderiv_riemannianExp` and
   `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianExp_comp_mfderiv_riemannianLog`: the
   differentials of the logarithm and the exponential map are mutually inverse.
-* `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_self_apply`: the differential of the
-  logarithm at the base point is the identity.
+* `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_self_apply` and
+  `TauCeti.Manifold.IsNormalDomain.mvfderiv_riemannianLog_self`: the differential of the logarithm
+  at the base point is the identity.
 * `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval`: the geodesic towards a vector of a
   normal domain is defined at least up to time one.
 
@@ -426,6 +428,13 @@ theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
   change mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) (riemannianExp I M p 0)
     (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v) = v at hcomp
   rwa [mfderiv_riemannianExp_apply_zero, riemannianExp_zero] at hcomp
+
+/-- The vector-valued differential of the logarithm at the base point is the identity. -/
+@[simp] theorem mvfderiv_riemannianLog_self (h : IsNormalDomain I M p U) :
+    mvfderiv I (riemannianLog I M p U) p = ContinuousLinearMap.id ℝ (TangentSpace I p) := by
+  ext v
+  simp only [mvfderiv_apply_eq_mfderiv_apply, h.mfderiv_riemannianLog_self_apply,
+    ContinuousLinearMap.id_apply]
 
 end IsNormalDomain
 
