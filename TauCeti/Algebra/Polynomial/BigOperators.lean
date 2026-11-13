@@ -80,6 +80,7 @@ theorem monic_prod_X_sub_C_pow (s : Finset ι) (a : ι → R) (m : ι → ℕ) :
   monic_prod_of_monic _ _ fun i _ ↦ (monic_X_sub_C (a i)).pow (m i)
 
 /-- A finite product of powers `(X - a i) ^ m i` of linear factors has degree `∑ i, m i`. -/
+@[simp]
 theorem natDegree_prod_X_sub_C_pow [Nontrivial R] (s : Finset ι) (a : ι → R) (m : ι → ℕ) :
     (∏ i ∈ s, (X - C (a i)) ^ m i).natDegree = ∑ i ∈ s, m i := by
   rw [natDegree_prod_of_monic _ _ fun i _ ↦ (monic_X_sub_C (a i)).pow (m i)]
