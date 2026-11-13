@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # The moment defects of a closed two-form along a normal Cauchy–Riemann operator
@@ -66,10 +67,12 @@ is of type `(1,1)` for `J_N` along the fibre
 `‖E_k(z) v‖ ≤ 2 k ‖v‖ ∫ ‖w‖^(k-1) (1 + (‖ν‖ + ‖μ‖) ‖w‖) ‖(T - J_N^* T)(z, w) / 2‖ dw`
 
 (`TauCeti.norm_conjWirtingerDeriv_sliceMoment_pow_add_add_apply_le`), so the moment defects are
-controlled by the `J_N`-anti-invariant part of `T` alone. In Taubes's analysis of Seiberg–Witten
-solutions near a pseudoholomorphic curve, `T` is the rescaled cutoff curvature current, whose
-deviation from the cone of positive `(1,1)`-forms is small, and these statements turn that type
-estimate into the bounds on `E_k` that feed the Newton coefficient equation.
+controlled by the `J_N`-anti-invariant part of `T` alone: once that part is bounded, the last
+statement bounds `E_k`. In Taubes's analysis of Seiberg–Witten solutions near a pseudoholomorphic
+curve, `T` is the rescaled cutoff curvature current, whose type estimate is relative to the actual
+almost complex structure `J_a` rather than the frozen `J_N`. Turning that estimate into bounds on
+`E_k` still needs the comparison of `J_a` with `J_N` and the slice-motion and base-freezing terms,
+which are not proved here.
 
 The identity comes from the derivative of the slice moments, `dM_k = π_*(k w^(k-1) dw ∧ T)`
 (`TauCeti.fderiv_sliceMoment_pow_apply`), whose `(0,1)`-part pairs the base directions with
@@ -93,7 +96,8 @@ The identity comes from the derivative of the slice moments, `dM_k = π_*(k w^(k
   horizontal directions `(v, 0)`, `(i v, 0)` and on the fibre.
 * `TauCeti.sliceDefectDensity_compContinuousLinearMap_normalStructure`,
   `TauCeti.sliceDefectDensity_eq_zero_of_compContinuousLinearMap_eq`,
-  `TauCeti.sliceDefectDensity_antiInvariantPart`, `TauCeti.norm_sliceDefectDensity_le`.
+  `TauCeti.sliceDefectDensity_smul_sub_compContinuousLinearMap`,
+  `TauCeti.norm_sliceDefectDensity_le`.
 * `TauCeti.conjWirtingerDeriv_sliceMoment_pow_add_add_apply`: the defect identity.
 * `TauCeti.conjWirtingerDeriv_sliceMoment_pow_add_add_eq_zero`: the defects of a two-form of type
   `(1,1)` vanish.
@@ -280,27 +284,22 @@ section Density
 
 variable (ν μ : V →L⋆[ℂ] ℂ) (w : ℂ)
 
-/-- A two-form is antisymmetric in its two arguments. -/
-private theorem apply_swap (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (X Y : V × ℂ) :
-    τ ![Y, X] = -τ ![X, Y] := by
-  have h := τ.toAlternatingMap.map_swap ![X, Y] (i := 0) (j := 1) (by decide)
-  have he : ![X, Y] ∘ Equiv.swap 0 1 = ![Y, X] := by
-    funext i; fin_cases i <;> rfl
-  rw [he] at h
-  exact h
+/-- A point of `V × ℂ` is its base part plus the real and imaginary parts of its fibre part along
+`∂_x` and `∂_y`. -/
+private theorem prod_eq_add_smul_add_smul (x : V) (ζ : ℂ) :
+    ((x, ζ) : V × ℂ) = (x, 0) + ζ.re • ((0 : V), (1 : ℂ)) + ζ.im • ((0 : V), I) := by
+  ext
+  · simp
+  · simp [re_add_im]
 
 /-- The value of a two-form on `((x, ζ), ∂_x)` through its value on `((x, 0), ∂_x)` and the slice
 density `τ(∂_x, ∂_y)`. -/
 private theorem apply_prod_one (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (x : V) (ζ : ℂ) :
     τ ![(x, ζ), (0, 1)] = τ ![(x, 0), (0, 1)] - ζ.im * τ ![(0, 1), (0, I)] := by
-  have hx : ((x, ζ) : V × ℂ) = (x, 0) + ζ.re • ((0 : V), (1 : ℂ)) + ζ.im • ((0 : V), I) := by
-    ext
-    · simp
-    · simp [re_add_im]
   have h₁ : τ ![((0 : V), (1 : ℂ)), (0, 1)] = 0 := τ.map_eq_zero_of_eq _ (i := 0) (j := 1) rfl
     (by decide)
-  rw [hx, τ.vecCons_add, τ.vecCons_add, τ.vecCons_smul, τ.vecCons_smul, h₁,
-    apply_swap τ ((0 : V), (1 : ℂ)) ((0 : V), I)]
+  rw [prod_eq_add_smul_add_smul, τ.vecCons_add, τ.vecCons_add, τ.vecCons_smul, τ.vecCons_smul, h₁,
+    τ.map_vecCons_swap ((0 : V), (1 : ℂ)) ((0 : V), I)]
   simp only [smul_eq_mul]
   ring
 
@@ -308,13 +307,9 @@ private theorem apply_prod_one (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (x : V
 density `τ(∂_x, ∂_y)`. -/
 private theorem apply_prod_I (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (x : V) (ζ : ℂ) :
     τ ![(x, ζ), (0, I)] = τ ![(x, 0), (0, I)] + ζ.re * τ ![(0, 1), (0, I)] := by
-  have hx : ((x, ζ) : V × ℂ) = (x, 0) + ζ.re • ((0 : V), (1 : ℂ)) + ζ.im • ((0 : V), I) := by
-    ext
-    · simp
-    · simp [re_add_im]
   have h₁ : τ ![((0 : V), I), (0, I)] = 0 := τ.map_eq_zero_of_eq _ (i := 0) (j := 1) rfl
     (by decide)
-  rw [hx, τ.vecCons_add, τ.vecCons_add, τ.vecCons_smul, τ.vecCons_smul, h₁]
+  rw [prod_eq_add_smul_add_smul, τ.vecCons_add, τ.vecCons_add, τ.vecCons_smul, τ.vecCons_smul, h₁]
   simp only [smul_eq_mul]
   ring
 
@@ -331,6 +326,12 @@ def sliceDefectDensity (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) : ℂ 
   τ ![normalLift ν μ w v, (0, 1)] + I * τ ![normalLift ν μ w v, (0, I)] +
     I * (τ ![normalLift ν μ w (I • v), (0, 1)] + I * τ ![normalLift ν μ w (I • v), (0, I)])
 
+theorem sliceDefectDensity_def (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
+    sliceDefectDensity ν μ w τ v =
+      τ ![normalLift ν μ w v, (0, 1)] + I * τ ![normalLift ν μ w v, (0, I)] +
+        I * (τ ![normalLift ν μ w (I • v), (0, 1)] + I * τ ![normalLift ν μ w (I • v), (0, I)]) :=
+  (rfl)
+
 /-- The defect density through the values of `τ` on the horizontal directions `(v, 0)` and
 `(i v, 0)` and its slice density `τ(∂_x, ∂_y)`:
 
@@ -341,7 +342,7 @@ theorem sliceDefectDensity_eq (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V)
       τ ![(v, 0), (0, 1)] + I * τ ![(v, 0), (0, I)] + I * τ ![(I • v, 0), (0, 1)] -
         τ ![(I • v, 0), (0, I)] -
         2 * I * (ν v * w + μ v * conj w) * τ ![(0, 1), (0, I)] := by
-  rw [sliceDefectDensity, normalLift_I_smul, normalLift_apply]
+  rw [sliceDefectDensity_def, normalLift_I_smul, normalLift_apply]
   set a := ν v * w + μ v * conj w
   rw [apply_prod_one τ v (-a), apply_prod_I τ v (-a), apply_prod_one τ (I • v) (I * a),
     apply_prod_I τ (I • v) (I * a)]
@@ -354,14 +355,14 @@ theorem sliceDefectDensity_eq (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V)
 theorem sliceDefectDensity_add (τ σ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
     sliceDefectDensity ν μ w (τ + σ) v =
       sliceDefectDensity ν μ w τ v + sliceDefectDensity ν μ w σ v := by
-  simp only [sliceDefectDensity, ContinuousAlternatingMap.add_apply]
+  simp only [sliceDefectDensity_def, ContinuousAlternatingMap.add_apply]
   push_cast
   ring
 
 /-- The defect density is real homogeneous in the two-form. -/
 theorem sliceDefectDensity_smul (c : ℝ) (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
     sliceDefectDensity ν μ w (c • τ) v = c * sliceDefectDensity ν μ w τ v := by
-  simp only [sliceDefectDensity, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  simp only [sliceDefectDensity_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   push_cast
   ring
 
@@ -377,16 +378,12 @@ theorem sliceDefectDensity_compContinuousLinearMap_normalStructure
     rw [normalStructure_zero_prod, mul_one]
   have hJIv : normalStructure ν μ w (normalLift ν μ w (I • v)) = -normalLift ν μ w v := by
     rw [normalStructure_normalLift, smul_smul, I_mul_I, neg_one_smul, normalLift_neg]
-  have hnegL (X Y : V × ℂ) : τ ![-X, Y] = -τ ![X, Y] := by
-    rw [← neg_one_smul ℝ X, τ.vecCons_smul]
-    simp
-  have hnegR (X Y : V × ℂ) : τ ![X, -Y] = -τ ![X, Y] := by
-    rw [apply_swap, hnegL, apply_swap τ X Y, neg_neg]
   have hcomp (X Y : V × ℂ) :
       ⇑(normalStructure ν μ w) ∘ ![X, Y] = ![normalStructure ν μ w X, normalStructure ν μ w Y] := by
     funext i; fin_cases i <;> rfl
-  simp only [sliceDefectDensity, ContinuousAlternatingMap.compContinuousLinearMap_apply, hcomp,
-    normalStructure_normalLift, hJIv, hJI, hJ1, hnegL, hnegR]
+  simp only [sliceDefectDensity_def, ContinuousAlternatingMap.compContinuousLinearMap_apply, hcomp,
+    normalStructure_normalLift, hJIv, hJI, hJ1, ContinuousAlternatingMap.map_vecCons_neg,
+    ContinuousAlternatingMap.map_vecCons_vecCons_neg]
   push_cast
   linear_combination (τ ![normalLift ν μ w v, (0, 1)] +
     τ ![normalLift ν μ w (I • v), (0, I)]) * I_sq
@@ -401,7 +398,7 @@ theorem sliceDefectDensity_eq_zero_of_compContinuousLinearMap_eq
   linear_combination h / 2
 
 /-- The defect density only sees the anti-invariant part `(τ - J_N^* τ) / 2` of the two-form. -/
-theorem sliceDefectDensity_antiInvariantPart (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
+theorem sliceDefectDensity_smul_sub_compContinuousLinearMap (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
     sliceDefectDensity ν μ w
         ((2 : ℝ)⁻¹ • (τ - τ.compContinuousLinearMap (normalStructure ν μ w))) v =
       sliceDefectDensity ν μ w τ v := by
@@ -433,7 +430,7 @@ theorem norm_sliceDefectDensity_le (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v
       ≤ ‖(τ ![normalLift ν μ w v, (0, 1)] : ℂ)‖ + ‖(τ ![normalLift ν μ w v, (0, I)] : ℂ)‖ +
           (‖(τ ![normalLift ν μ w (I • v), (0, 1)] : ℂ)‖ +
             ‖(τ ![normalLift ν μ w (I • v), (0, I)] : ℂ)‖) := by
-        rw [sliceDefectDensity]
+        rw [sliceDefectDensity_def]
         refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans_eq ?_) ?_)
         · rw [norm_mul, norm_I, one_mul]
         · rw [norm_mul, norm_I, one_mul]
@@ -442,6 +439,24 @@ theorem norm_sliceDefectDensity_le (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v
     _ ≤ ‖τ‖ * B + ‖τ‖ * B + (‖τ‖ * B + ‖τ‖ * B) := by gcongr
     _ = 4 * ‖τ‖ * ‖v‖ * (1 + (‖ν‖ + ‖μ‖) * ‖w‖) := by ring
 
+/-- The pointwise form of the moment defect identity: `(i k / 2) w^(k-1) δ(τ)(v)` is half the
+integrand of `dM_k(v)` in `TauCeti.fderiv_sliceMoment_pow_apply`, plus `i / 2` times that of
+`dM_k(i v)`, plus the slice density weighted by `k ν(v) wᵏ` and by `k μ(v) w^(k-1) \bar w`. -/
+private theorem mul_sliceDefectDensity_eq (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (k : ℕ) (v : V) :
+    I * k / 2 * w ^ (k - 1) * sliceDefectDensity ν μ w τ v =
+      2⁻¹ * (k * w ^ (k - 1) * (I * τ ![(v, 0), (0, 1)] - τ ![(v, 0), (0, I)])) +
+        2⁻¹ * I * (k * w ^ (k - 1) * (I * τ ![(I • v, 0), (0, 1)] - τ ![(I • v, 0), (0, I)])) +
+        k * ν v * (τ ![(0, 1), (0, I)] • w ^ k) +
+        k * μ v * (τ ![(0, 1), (0, I)] • (w ^ (k - 1) * conj w)) := by
+  simp only [sliceDefectDensity_eq, real_smul]
+  rcases k with _ | n
+  · simp
+  · simp only [Nat.add_sub_cancel, pow_succ]
+    push_cast
+    -- Both sides are polynomial in the values of `τ`; they differ by a multiple of `I ^ 2 + 1`.
+    linear_combination (↑n + 1) / 2 * w ^ n * (τ ![(v, 0), (0, I)] -
+      2 * (ν v * w + μ v * conj w) * τ ![(0, 1), (0, I)]) * I_sq
+
 end Density
 
 /-! ### The moment defects of a closed two-form -/
@@ -449,6 +464,13 @@ end Density
 section Moments
 
 variable {T : V × ℂ → (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ} {K : Set ℂ} {z : V}
+
+/-- A continuous function on the fibre over `z` that vanishes wherever `T` does is integrable,
+when `T` vanishes over the complement of a compact set. -/
+private theorem integrable_of_forall_eq_zero (hK : IsCompact K)
+    (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {f : ℂ → ℂ} (hf : Continuous f)
+    (h : ∀ w, T (z, w) = 0 → f w = 0) : Integrable f :=
+  hf.integrable_of_hasCompactSupport (HasCompactSupport.intro hK fun w hw ↦ h w (hT z w hw))
 
 /-- **The moment defect identity.** Let `T` be a `C¹` two-form on `V × ℂ` vanishing over the
 complement of a compact set `K` and closed at every point of the fibre over `z`, and let
@@ -463,12 +485,14 @@ theorem conjWirtingerDeriv_sliceMoment_pow_add_add_apply (hK : IsCompact K)
     (conjWirtingerDeriv (sliceMoment T (· ^ k)) z + (k * sliceMoment T (· ^ k) z) • ν +
         (k * sliceMoment T (fun w ↦ w ^ (k - 1) * conj w) z) • μ) v =
       ∫ w, I * k / 2 * w ^ (k - 1) * sliceDefectDensity ν μ w (T (z, w)) v := by
+  -- The four integrands of `mul_sliceDefectDensity_eq`: those of `dM_k(v)` and `dM_k(i v)`, and
+  -- the slice density weighted by `wᵏ` and `w^(k-1) \bar w`. All are integrable.
   have hc (A : Fin 2 → V × ℂ) : Continuous fun w ↦ T (z, w) A :=
     (ContinuousAlternatingMap.apply ℝ (V × ℂ) ℝ A).continuous.comp
       (hTc.continuous.comp (Continuous.prodMk_right z))
   have hint {f : ℂ → ℂ} (hf : Continuous f) (h : ∀ w, T (z, w) = 0 → f w = 0) :
       Integrable f :=
-    hf.integrable_of_hasCompactSupport (HasCompactSupport.intro hK fun w hw ↦ h w (hT z w hw))
+    integrable_of_forall_eq_zero hK hT hf h
   set f₁ : ℂ → ℂ := fun w ↦ k * w ^ (k - 1) *
     (I * T (z, w) ![(v, 0), (0, 1)] - T (z, w) ![(v, 0), (0, I)])
   set f₂ : ℂ → ℂ := fun w ↦ k * w ^ (k - 1) *
@@ -485,23 +509,18 @@ theorem conjWirtingerDeriv_sliceMoment_pow_add_add_apply (hK : IsCompact K)
     hint ((hc _).smul (continuous_pow _)) fun w hw ↦ by simp [g₁, hw]
   have hg₂ : Integrable g₂ :=
     hint ((hc _).smul ((continuous_pow _).mul continuous_conj)) fun w hw ↦ by simp [g₂, hw]
-  have key (w : ℂ) : I * k / 2 * w ^ (k - 1) * sliceDefectDensity ν μ w (T (z, w)) v =
-      2⁻¹ * f₁ w + 2⁻¹ * I * f₂ w + (k * ν v) * g₁ w + (k * μ v) * g₂ w := by
-    simp only [sliceDefectDensity_eq, f₁, f₂, g₁, g₂, real_smul]
-    rcases k with _ | n
-    · simp
-    · simp only [Nat.add_sub_cancel, pow_succ]
-      push_cast
-      linear_combination (↑n + 1) / 2 * w ^ n * (T (z, w) ![(v, 0), (0, I)] -
-        2 * (ν v * w + μ v * conj w) * T (z, w) ![(0, 1), (0, I)]) * I_sq
+  -- Rewrite the integrand pointwise and split the integral into the four pieces.
   have i₁ : Integrable fun w ↦ 2⁻¹ * f₁ w := hf₁.const_mul _
   have i₂ : Integrable fun w ↦ 2⁻¹ * I * f₂ w := hf₂.const_mul _
   have i₁₂ : Integrable fun w ↦ 2⁻¹ * f₁ w + 2⁻¹ * I * f₂ w := i₁.add i₂
   have i₃ : Integrable fun w ↦ k * ν v * g₁ w := hg₁.const_mul _
   have i₁₂₃ : Integrable fun w ↦ 2⁻¹ * f₁ w + 2⁻¹ * I * f₂ w + k * ν v * g₁ w := i₁₂.add i₃
-  rw [integral_congr_ae (Filter.Eventually.of_forall key), integral_add i₁₂₃ (hg₂.const_mul _),
+  rw [integral_congr_ae (Filter.Eventually.of_forall fun w ↦
+      mul_sliceDefectDensity_eq ν μ w (T (z, w)) k v), integral_add i₁₂₃ (hg₂.const_mul _),
     integral_add i₁₂ i₃, integral_add i₁ i₂, integral_const_mul, integral_const_mul,
     integral_const_mul, integral_const_mul]
+  -- The first two pieces are `dM_k(v)` and `dM_k(i v)`, which combine to `\bar∂ M_k(v)`; the
+  -- last two are the slice moments `M_k` and `Q_{k-1}`.
   simp only [add_apply, FunLike.coe_smul, Pi.smul_apply,
     conjWirtingerDeriv_apply, fderiv_sliceMoment_pow_apply hK hTc hT hdT, sliceMoment_def,
     smul_eq_mul, f₁, f₂, g₁, g₂]
@@ -554,8 +573,8 @@ theorem norm_conjWirtingerDeriv_sliceMoment_pow_add_add_apply_le (hK : IsCompact
     simp [A, hT z w hw, h₀]
   rw [conjWirtingerDeriv_sliceMoment_pow_add_add_apply hK hTc hT hdT, ← integral_const_mul]
   refine norm_integral_le_of_norm_le hg (Filter.Eventually.of_forall fun w ↦ ?_)
-  rw [← sliceDefectDensity_antiInvariantPart, norm_mul, norm_mul, norm_div, norm_mul, norm_I,
-    one_mul, Complex.norm_natCast, Complex.norm_two, norm_pow]
+  rw [← sliceDefectDensity_smul_sub_compContinuousLinearMap, norm_mul, norm_mul, norm_div,
+    norm_mul, norm_I, one_mul, Complex.norm_natCast, Complex.norm_two, norm_pow]
   have h := norm_sliceDefectDensity_le ν μ w (A w) v
   calc ↑k / 2 * ‖w‖ ^ (k - 1) * ‖sliceDefectDensity ν μ w (A w) v‖
       ≤ ↑k / 2 * ‖w‖ ^ (k - 1) * (4 * ‖A w‖ * ‖v‖ * (1 + (‖ν‖ + ‖μ‖) * ‖w‖)) := by gcongr
