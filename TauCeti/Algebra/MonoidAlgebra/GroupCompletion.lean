@@ -122,17 +122,10 @@ theorem groupClosureToFractionRing_mapDomain_toGroupClosure (f : AddMonoidAlgebr
 theorem groupClosureToFractionRing_injective :
     Function.Injective (groupClosureToFractionRing S R K) := by
   let := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  have := S.isLocalization_addMonoidAlgebra_groupClosure R
-  refine (injective_iff_map_eq_zero _).mpr fun x hx => ?_
-  obtain ⟨⟨a, m⟩, ham⟩ := IsLocalization.surj (MonoidHom.mrange (of R S)) x
-  have hmap := congrArg (groupClosureToFractionRing S R K) ham
-  have h1 : groupClosureToFractionRing S R K
-      (algebraMap (AddMonoidAlgebra R S) _ a) = algebraMap (AddMonoidAlgebra R S) K a :=
-    groupClosureToFractionRing_mapDomain_toGroupClosure S R K a
-  rw [map_mul, hx, zero_mul, h1] at hmap
-  have ha0 : a = 0 :=
-    IsFractionRing.injective (AddMonoidAlgebra R S) K (hmap.symm.trans (map_zero _).symm)
-  rw [ha0, map_zero] at ham
-  exact (IsLocalization.map_units _ m).mul_left_eq_zero.mp ham
+  refine (S.isLocalization_addMonoidAlgebra_groupClosure R).injective_of_map_algebraMap_zero _ _
+    fun a ha => ?_
+  rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply,
+    groupClosureToFractionRing_mapDomain_toGroupClosure] at ha
+  rw [(map_eq_zero_iff _ (IsFractionRing.injective (AddMonoidAlgebra R S) K)).mp ha, map_zero]
 
 end AddMonoidAlgebra
