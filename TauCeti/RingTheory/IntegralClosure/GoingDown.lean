@@ -65,14 +65,10 @@ instance of_isIntegral_of_isTorsionFree [IsDomain R] [IsIntegrallyClosed R]
         rwa [IsScalarTower.algebraMap_apply R S, Ideal.Quotient.algebraMap_eq,
           Ideal.Quotient.eq_zero_iff_mem] at hr
     -- Going down holds for the integral extension domain `S ⧸ P`; pull the prime back to `S`.
-    have hQ : (Q.map (Ideal.Quotient.mk P)).IsPrime :=
-      Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective (by simpa using hPQ)
-    have hcomap (J : Ideal (S ⧸ P)) : (J.comap (Ideal.Quotient.mk P)).under R = J.under R := by
-      rw [Ideal.under_def, Ideal.under_def, Ideal.comap_comap,
-        IsScalarTower.algebraMap_eq R S (S ⧸ P), Ideal.Quotient.algebraMap_eq]
-    have hmap : (Q.map (Ideal.Quotient.mk P)).comap (Ideal.Quotient.mk P) = Q := by
-      rw [Ideal.comap_map_of_surjective' _ Ideal.Quotient.mk_surjective, Ideal.mk_ker,
-        sup_eq_left.mpr hPQ]
+    have hQ : (Q.map (Ideal.Quotient.mk P)).IsPrime := Ideal.isPrime_map_quotientMk_of_isPrime hPQ
+    have hcomap (J : Ideal (S ⧸ P)) : (J.comap (Ideal.Quotient.mk P)).under R = J.under R :=
+      Ideal.under_under (A := R) (B := S) J
+    have hmap := Ideal.comap_map_mk hPQ
     have hunder : (Q.map (Ideal.Quotient.mk P)).under R = Q.under R := by
       rw [← hcomap, hmap]
     obtain ⟨P', hP'Q, hP', hP'p⟩ :=

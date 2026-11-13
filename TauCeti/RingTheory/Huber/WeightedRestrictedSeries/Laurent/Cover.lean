@@ -313,15 +313,18 @@ private theorem laurentDiff_pieceRelations (f : A) (u : R₂) :
       (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight
         isWeightFamily_one_weight (fun _ ↦ subset_rfl) d)
 
-/-- The forward direction of `exact_algebraMap_laurentCoverDiff`: a pair of quotient classes with
-equal restrictions to the overlap is the image of a constant. -/
-private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b : R₁)
+/-- If the images of `a` and `b` agree in the overlap, they differ from a common constant `z` by
+multiples of the generators `f - X₀` and `1 - f X₀` of the two Laurent ideals. -/
+private theorem exists_weightedC_eq_sub_of_laurentCoverDiff_mk_eq_zero (f : A) (a b : R₁)
     (h : laurentCoverDiff A f
       (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
         Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) = 0) :
-    ∃ z : A, algebraMap A (laurentCoverLe A f × laurentCoverGe A f) z =
-      (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
-        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) := by
+    ∃ (z : A) (c d : R₁), weightedC _ isWeightFamily_one_weight z =
+        a - (weightedC _ isWeightFamily_one_weight f -
+          weightedX _ isWeightFamily_one_weight 0) * c ∧
+      weightedC _ isWeightFamily_one_weight z =
+        b - (1 - weightedC _ isWeightFamily_one_weight f *
+          weightedX _ isWeightFamily_one_weight 0) * d := by
   rw [laurentCoverDiff_mk, Ideal.Quotient.eq_zero_iff_mem,
     laurentCoverOverlapIdeal, Ideal.mem_span_singleton'] at h
   obtain ⟨q, hq⟩ := h
@@ -339,25 +342,31 @@ private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b
           weightedX _ isWeightFamily_one_weight 0) * d) = 0 := by
     rw [← Prod.mk_sub_mk, map_sub, hab, sub_self]
   obtain ⟨z, hz⟩ := (exact_algebraMap_laurentDiff A _).mp hz
+  refine ⟨z, c, d, ?_, ?_⟩
+  · simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
+      congrArg Prod.fst hz
+  · simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
+      congrArg Prod.snd hz
+
+/-- The forward direction of `exact_algebraMap_laurentCoverDiff`: a pair of quotient classes with
+equal restrictions to the overlap is the image of a constant. -/
+private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b : R₁)
+    (h : laurentCoverDiff A f
+      (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
+        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) = 0) :
+    ∃ z : A, algebraMap A (laurentCoverLe A f × laurentCoverGe A f) z =
+      (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
+        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) := by
+  obtain ⟨z, c, d, hz₁, hz₂⟩ := exists_weightedC_eq_sub_of_laurentCoverDiff_mk_eq_zero A f a b h
   refine ⟨z, Prod.ext ?_ ?_⟩
-  · have hz₁ : weightedC _ isWeightFamily_one_weight z =
-        a - (weightedC _ isWeightFamily_one_weight f -
-          weightedX _ isWeightFamily_one_weight 0) * c := by
-      simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
-        congrArg Prod.fst hz
-    -- Expose the product algebra map to compare its first component in the quotient.
+  · -- Expose the product algebra map to compare its first component in the quotient.
     change Ideal.Quotient.mk (laurentCoverLeIdeal A f)
       (weightedC _ isWeightFamily_one_weight z) =
         Ideal.Quotient.mk (laurentCoverLeIdeal A f) a
     rw [hz₁, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
     rw [laurentCoverLeIdeal]
     exact Ideal.mul_mem_right c _ (Ideal.mem_span_singleton_self _)
-  · have hz₂ : weightedC _ isWeightFamily_one_weight z =
-        b - (1 - weightedC _ isWeightFamily_one_weight f *
-          weightedX _ isWeightFamily_one_weight 0) * d := by
-      simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
-        congrArg Prod.snd hz
-    -- Expose the product algebra map to compare its second component in the quotient.
+  · -- Expose the product algebra map to compare its second component in the quotient.
     change Ideal.Quotient.mk (laurentCoverGeIdeal A f)
       (weightedC _ isWeightFamily_one_weight z) =
         Ideal.Quotient.mk (laurentCoverGeIdeal A f) b

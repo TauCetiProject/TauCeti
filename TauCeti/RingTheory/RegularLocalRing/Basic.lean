@@ -119,6 +119,22 @@ private lemma quotient_aux {x : R} (hxm : x ∈ maximalIdeal R) (hx : x ∉ maxi
   rw [h₂]
   exact_mod_cast (by omega : (maximalIdeal (R ⧸ span {x})).spanFinrank ≤ k)
 
+/-- A minimal prime contained in `(x)`, for `x ∈ 𝔪` outside every minimal prime, vanishes: it
+satisfies `P = x P`, so `P = 0` by Nakayama's lemma. -/
+private lemma eq_bot_of_le_span_singleton {x : R} (hxm : x ∈ maximalIdeal R)
+    (hmin : ∀ p ∈ minimalPrimes R, x ∉ p) {P : Ideal R} (hP : P ∈ minimalPrimes R)
+    (hPx : P ≤ span {x}) : P = ⊥ := by
+  have hPprime : P.IsPrime := IsMinimalPrime.isPrime hP
+  refine Submodule.eq_bot_of_le_smul_of_le_jacobson (span {x}) P
+    P.fg_of_isNoetherianRing (fun y hy ↦ ?_) ?_
+  · obtain ⟨z, rfl⟩ := mem_span_singleton'.mp (hPx hy)
+    have hz : z ∈ P := (hPprime.mem_or_mem hy).resolve_right (hmin P hP)
+    rw [mul_comm, ← smul_eq_mul]
+    exact Submodule.smul_mem_smul (mem_span_singleton_self x) hz
+  · rw [← Ideal.jacobson_bot, jacobson_eq_maximalIdeal ⊥ bot_ne_top,
+      span_singleton_le_iff_mem]
+    exact hxm
+
 /-- A regular local ring of dimension `n` is a domain. -/
 private theorem isDomain_of_ringKrullDim_eq (n : ℕ) :
     ∀ (R : Type u) [CommRing R] [IsRegularLocalRing R], ringKrullDim R = n → IsDomain R := by
@@ -148,16 +164,7 @@ ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrime
     -- a minimal prime `P ⊆ (x)` satisfies `P = x P`, hence vanishes by Nakayama's lemma
     obtain ⟨P, hP, hPx⟩ := exists_minimalPrimes_le (bot_le : ⊥ ≤ span {x})
     have hPprime : P.IsPrime := IsMinimalPrime.isPrime hP
-    have hP0 : P = ⊥ := by
-      refine Submodule.eq_bot_of_le_smul_of_le_jacobson (span {x}) P
-        P.fg_of_isNoetherianRing (fun y hy ↦ ?_) ?_
-      · obtain ⟨z, rfl⟩ := mem_span_singleton'.mp (hPx hy)
-        have hz : z ∈ P := (hPprime.mem_or_mem hy).resolve_right (hmin P hP)
-        rw [mul_comm, ← smul_eq_mul]
-        exact Submodule.smul_mem_smul (mem_span_singleton_self x) hz
-      · rw [← Ideal.jacobson_bot, jacobson_eq_maximalIdeal ⊥ bot_ne_top,
-          span_singleton_le_iff_mem]
-        exact hxm
+    have hP0 := eq_bot_of_le_span_singleton hxm hmin hP hPx
     have : (⊥ : Ideal R).IsPrime := hP0 ▸ hPprime
     exact IsDomain.of_bot_isPrime R
 

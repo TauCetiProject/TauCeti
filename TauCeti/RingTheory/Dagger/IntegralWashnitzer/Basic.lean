@@ -326,6 +326,29 @@ theorem coeff_ofMvPolynomial (p : MvPolynomial σ (Subring.unitClosedBall R)) (t
 
 end intWashnitzerAlgebra
 
+omit [IsUltrametricDist R] [NormOneClass R] in
+/-- The geometric decay `‖aᵥ‖ ≤ q ^ ⌊|ν| / c⌋` of the coefficients of a series, for `0 < q < 1` and
+`c > 0`, gives a radius `ρ > 1` and a constant `C` with `‖aᵥ‖ ≤ C ρ^{-|ν|}`. -/
+private theorem exists_norm_coeff_le_mul_inv_pow_of_le_pow {q : ℝ} (hq0 : 0 < q) (hq1 : q < 1)
+    {c : ℕ} (hc : 0 < c) {f : MvPowerSeries σ R} (h : ∀ t, ‖coeff t f‖ ≤ q ^ (t.degree / c)) :
+    ∃ ρ : ℝ, 1 < ρ ∧ ∃ C : ℝ, ∀ t, ‖coeff t f‖ ≤ C * (ρ ^ t.degree)⁻¹ := by
+  -- At the radius `ρ = q^{-1/c} > 1`, `‖aᵥ‖ ρ^{|ν|} ≤ q ^ j q ^ {-(j+1)} = q⁻¹`.
+  have hq : 1 < q⁻¹ := one_lt_inv_iff₀.2 ⟨hq0, hq1⟩
+  set ρ := q⁻¹ ^ ((c : ℝ)⁻¹)
+  have hρc : ρ ^ c = q⁻¹ := Real.rpow_inv_natCast_pow (inv_nonneg.2 hq0.le) hc.ne'
+  have hρ : 1 < ρ := Real.one_lt_rpow hq (by positivity)
+  refine ⟨ρ, hρ, q⁻¹, fun t ↦ ?_⟩
+  rw [le_mul_inv_iff₀ (by positivity)]
+  calc ‖coeff t f‖ * ρ ^ t.degree ≤ q ^ (t.degree / c) * (ρ ^ c) ^ (t.degree / c + 1) := by
+        rw [← pow_mul]
+        gcongr
+        · exact h t
+        · exact hρ.le
+        · exact (Nat.lt_mul_div_succ _ hc).le
+    _ = q⁻¹ := by
+        rw [hρc, inv_pow, pow_succ]
+        field_simp
+
 /-- **The Monsky–Washnitzer degree growth condition**, in coefficient form. For finitely many
 variables and any `0 < q < 1`, a series lies in `R°⟨X⟩†` iff for some integer `c > 0` its
 coefficients satisfy `‖aᵥ‖ ≤ q ^ ⌊|ν| / c⌋`. Over a normed field and for `q = ‖π‖`, this says
@@ -361,22 +384,8 @@ theorem mem_intWashnitzerAlgebra_iff_exists_norm_coeff_le_pow [Finite σ] {q : �
       _ ≤ q ^ j := mul_le_of_le_one_right (by positivity)
           ((div_le_one (by positivity)).2 (le_self_pow₀ hM hj.ne'))
   · rintro ⟨c, hc, h⟩
-    -- At the radius `ρ = q^{-1/c} > 1`, `‖aᵥ‖ ρ^{|ν|} ≤ q ^ j q ^ {-(j+1)} = q⁻¹`.
-    have hq : 1 < q⁻¹ := one_lt_inv_iff₀.2 ⟨hq0, hq1⟩
-    set ρ := q⁻¹ ^ ((c : ℝ)⁻¹)
-    have hρc : ρ ^ c = q⁻¹ := Real.rpow_inv_natCast_pow (inv_nonneg.2 hq0.le) hc.ne'
-    have hρ : 1 < ρ := Real.one_lt_rpow hq (by positivity)
-    refine ⟨⟨ρ, hρ, q⁻¹, fun t ↦ ?_⟩, fun t ↦ (h t).trans (pow_le_one₀ hq0.le hq1.le)⟩
-    rw [le_mul_inv_iff₀ (by positivity)]
-    calc ‖coeff t f‖ * ρ ^ t.degree ≤ q ^ (t.degree / c) * (ρ ^ c) ^ (t.degree / c + 1) := by
-          rw [← pow_mul]
-          gcongr
-          · exact h t
-          · exact hρ.le
-          · exact (Nat.lt_mul_div_succ _ hc).le
-      _ = q⁻¹ := by
-          rw [hρc, inv_pow, pow_succ]
-          field_simp
+    exact ⟨exists_norm_coeff_le_mul_inv_pow_of_le_pow hq0 hq1 hc h,
+      fun t ↦ (h t).trans (pow_le_one₀ hq0.le hq1.le)⟩
 
 end Defs
 
@@ -537,6 +546,21 @@ theorem isUnit_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K} :
     · simpa [hu, F] using congrArg Subtype.val u.mul_inv
     · simpa [hu, F] using congrArg Subtype.val u.inv_mul
 
+omit [CompleteSpace K] in
+/-- If every coefficient of `f ∈ K°⟨X⟩†` has norm less than one, then so does every product
+`f y` with `y ∈ K°⟨X⟩†`. -/
+theorem coeff_mul_norm_lt_one {f : intWashnitzerAlgebra σ K}
+    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ K)‖ < 1) (y : intWashnitzerAlgebra σ K) :
+    ∀ t, ‖coeff t ((f * y : intWashnitzerAlgebra σ K) : MvPowerSeries σ K)‖ < 1 := by
+  have hf : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K f‖ < 1 :=
+    washnitzerAlgebra.norm_lt_iff.2 h
+  have hy : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K y‖ ≤ 1 :=
+    mem_intWashnitzerAlgebra_iff_norm_le_one.1 y.2
+  have hlt := (norm_mul_le _ _).trans_lt
+    ((mul_le_of_le_one_right (norm_nonneg _) hy).trans_lt hf)
+  rw [← map_mul] at hlt
+  exact washnitzerAlgebra.norm_lt_iff.1 hlt
+
 /-- **The Jacobson radical of the integral Monsky–Washnitzer algebra.** Over a complete
 ultrametric normed field, a series in `K°⟨X⟩†` lies in the Jacobson radical iff all its
 coefficients have norm less than one. In particular, for every constant `π` with `‖π‖ < 1` and
@@ -568,15 +592,7 @@ theorem mem_jacobson_bot_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K
       simp [a, ha] at this
   · intro h y
     -- The coefficients of `f y` have norm less than one, so `f y + 1` passes the unit test.
-    have hfy : ∀ t, ‖coeff t ((f * y : intWashnitzerAlgebra σ K) : MvPowerSeries σ K)‖ < 1 := by
-      have hf : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K f‖ < 1 :=
-        washnitzerAlgebra.norm_lt_iff.2 h
-      have hy : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K y‖ ≤ 1 :=
-        mem_intWashnitzerAlgebra_iff_norm_le_one.1 y.2
-      have hlt := (norm_mul_le _ _).trans_lt
-        ((mul_le_of_le_one_right (norm_nonneg _) hy).trans_lt hf)
-      rw [← map_mul] at hlt
-      exact washnitzerAlgebra.norm_lt_iff.1 hlt
+    have hfy := coeff_mul_norm_lt_one h y
     refine isUnit_intWashnitzerAlgebra_iff.2 ⟨?_, fun t ht ↦ ?_⟩
     · have h0 := hfy 0
       rw [coeff_zero_eq_constantCoeff_apply] at h0

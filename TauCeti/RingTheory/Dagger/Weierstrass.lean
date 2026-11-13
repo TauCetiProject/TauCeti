@@ -462,6 +462,41 @@ private theorem exists_isDistinguished_polynomialToOption_map {Q : Polynomial K}
   rw [PowerSeries.coeff_map]
   exact (isUnit_iff_ne_zero.mpr hs.coeff_ne_zero).map _
 
+omit [CompleteSpace K] in
+/-- The minimal polynomial of `Y` modulo `I`, evaluated at `Y`, lies in `I`. -/
+private theorem polynomialToOption_map_minpoly_mem (I : Ideal W') :
+    polynomialToOption
+      ((minpoly K (Ideal.Quotient.mk I (X (Option σ) K none))).map (algebraMap K W)) ∈ I := by
+  have h : polynomialToOption
+      ((minpoly K (Ideal.Quotient.mk I (X (Option σ) K none))).map (algebraMap K W)) =
+        Polynomial.aeval (X (Option σ) K none) (minpoly K (Ideal.Quotient.mk I
+          (X (Option σ) K none))) := by
+    have h' : polynomialToOption.comp (Polynomial.mapRingHom (algebraMap K W)) =
+        (Polynomial.aeval (X (Option σ) K none) : Polynomial K →ₐ[K] W').toRingHom :=
+      Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
+    exact RingHom.congr_fun h' _
+  rw [← Ideal.Quotient.eq_zero_iff_mem, h, ← Ideal.Quotient.mkₐ_eq_mk K,
+    ← Polynomial.aeval_algHom_apply, Ideal.Quotient.mkₐ_eq_mk, minpoly.aeval]
+
+omit [CompleteSpace K] in
+/-- If polynomials surject onto integral quotients in the variables `σ`, then the image of every
+coefficient `a ∈ K⟨X⟩†` in an integral quotient of `K⟨X, Y⟩†` is a polynomial. -/
+private theorem mk_optionC_mem_range (ih : PolynomialsSurject (K := K) σ) (I : Ideal W')
+    [Algebra.IsIntegral K (W' ⧸ I)] (a : W) :
+    Ideal.Quotient.mk I (optionC a) ∈
+      ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial (Option σ) K)).range := by
+  -- The coefficients of a remainder have polynomial representatives modulo `I ∩ W`.
+  let J : Ideal W := I.comap (optionC (σ := σ) (R := K))
+  have : Algebra.IsIntegral K (W ⧸ J) :=
+    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I optionC le_rfl)
+      Ideal.quotientMap_injective
+  obtain ⟨p, hp⟩ := ih J (Ideal.Quotient.mk J a)
+  refine ⟨MvPolynomial.rename some p, ?_⟩
+  simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
+    Ideal.mem_comap] at hp
+  refine Ideal.Quotient.eq.mpr ?_
+  rwa [map_sub, optionC_ofMvPolynomial] at hp
+
 /-- The inductive step: Weierstrass division by the minimal polynomial of `Y = X none`. -/
 private theorem polynomialsSurject_option (ih : PolynomialsSurject (K := K) σ) :
     PolynomialsSurject (K := K) (Option σ) := by
@@ -470,28 +505,11 @@ private theorem polynomialsSurject_option (ih : PolynomialsSurject (K := K) σ) 
   set Q := minpoly K (Ideal.Quotient.mk I (X (Option σ) K none))
   have hQ0 : Q ≠ 0 := minpoly.ne_zero (Algebra.IsIntegral.isIntegral _)
   set ω : Polynomial W := Q.map (algebraMap K W)
-  have hωI : polynomialToOption ω ∈ I := by
-    have h : polynomialToOption ω = Polynomial.aeval (X (Option σ) K none) Q := by
-      have h' : polynomialToOption.comp (Polynomial.mapRingHom (algebraMap K W)) =
-          (Polynomial.aeval (X (Option σ) K none) : Polynomial K →ₐ[K] W').toRingHom :=
-        Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
-      exact RingHom.congr_fun h' Q
-    rw [← Ideal.Quotient.eq_zero_iff_mem, h, ← Ideal.Quotient.mkₐ_eq_mk K,
-      ← Polynomial.aeval_algHom_apply, Ideal.Quotient.mkₐ_eq_mk, minpoly.aeval]
+  have hωI : polynomialToOption ω ∈ I := polynomialToOption_map_minpoly_mem I
   obtain ⟨s, hg, hu⟩ := exists_isDistinguished_polynomialToOption_map (σ := σ) hQ0
   -- The coefficients of a remainder have polynomial representatives modulo `I ∩ W`.
-  let J : Ideal W := I.comap (optionC (σ := σ) (R := K))
-  have : Algebra.IsIntegral K (W ⧸ J) :=
-    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I optionC le_rfl)
-      Ideal.quotientMap_injective
   let S := ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial (Option σ) K)).range
-  have hC (a : W) : Ideal.Quotient.mk I (optionC a) ∈ S := by
-    obtain ⟨p, hp⟩ := ih J (Ideal.Quotient.mk J a)
-    refine ⟨MvPolynomial.rename some p, ?_⟩
-    simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
-      Ideal.mem_comap] at hp
-    refine Ideal.Quotient.eq.mpr ?_
-    rwa [map_sub, optionC_ofMvPolynomial] at hp
+  have hC (a : W) : Ideal.Quotient.mk I (optionC a) ∈ S := mk_optionC_mem_range ih I a
   have hY : Ideal.Quotient.mk I (X (Option σ) K none) ∈ S := ⟨MvPolynomial.X none, by simp⟩
   let ψ : Polynomial W →+* W' ⧸ I :=
     (Ideal.Quotient.mk I).comp polynomialToOption

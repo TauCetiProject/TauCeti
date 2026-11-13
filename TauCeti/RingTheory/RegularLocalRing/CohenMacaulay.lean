@@ -48,6 +48,23 @@ open _root_.IsLocalRing Ideal RingTheory.Sequence
 
 namespace TauCeti.IsRegularLocalRing
 
+/-- If `x ≠ 0` and the images of `rs` form a regular sequence on `R ⧸ (x)`, with `x` and `rs` in
+the maximal ideal, then `x :: rs` is a regular sequence on `R`. -/
+private theorem isRegular_cons_of_isRegular_quotient {R : Type u} [CommRing R]
+    [IsRegularLocalRing R] {x : R} {rs : List R} [IsRegularLocalRing (R ⧸ span {x})] (hx0 : x ≠ 0)
+    (hmem : ∀ r ∈ x :: rs, r ∈ maximalIdeal R)
+    (hQ : IsRegular (R ⧸ span {x}) (rs.map (Ideal.Quotient.mk (span {x})))) :
+    IsRegular R (x :: rs) := by
+  -- transport the regularity of the images to `R ⧸ x R` viewed as an `R`-module
+  have e : QuotSMulTop x R ≃ₗ[R] R ⧸ span {x} :=
+    (quotientEquivAlgOfEq R (by simp [← Submodule.ideal_span_singleton_smul])).toLinearEquiv
+  refine (isRegular_cons_iff R x rs).2 ⟨IsSMulRegular.of_ne_zero hx0, ?_⟩
+  rw [e.isRegular_congr]
+  refine IsRegular.of_isWeaklyRegular_of_mem_maximalIdeal _
+    (fun r hr ↦ hmem r (List.mem_cons_of_mem x hr)) ?_
+  rw [← isWeaklyRegular_map_algebraMap_iff (R ⧸ span {x}), Ideal.Quotient.algebraMap_eq]
+  exact hQ.toIsWeaklyRegular
+
 /-- The induction on the length behind `isRegular_of_ofList_eq_maximalIdeal`, stated for every
 regular local ring in the universe so that it applies to the quotient by the first entry. -/
 private theorem isRegular_of_ofList_eq_maximalIdeal_aux (n : ℕ) :
@@ -85,15 +102,7 @@ private theorem isRegular_of_ofList_eq_maximalIdeal_aux (n : ℕ) :
     have hQ : IsRegular (R ⧸ span {x}) (rs.map mk) := ih _ _ (by simpa using hn)
       (hmap ▸ map_maximalIdeal_of_surjective mk Ideal.Quotient.mk_surjective)
       (by rw [List.length_map]; omega)
-    -- transport the regularity of the images to `R ⧸ x R` viewed as an `R`-module
-    have e : QuotSMulTop x R ≃ₗ[R] R ⧸ span {x} :=
-      (quotientEquivAlgOfEq R (by simp [← Submodule.ideal_span_singleton_smul])).toLinearEquiv
-    refine (isRegular_cons_iff R x rs).2 ⟨IsSMulRegular.of_ne_zero hx0, ?_⟩
-    rw [e.isRegular_congr]
-    refine IsRegular.of_isWeaklyRegular_of_mem_maximalIdeal _
-      (fun r hr ↦ hmem r (List.mem_cons_of_mem x hr)) ?_
-    rw [← isWeaklyRegular_map_algebraMap_iff (R ⧸ span {x}), Ideal.Quotient.algebraMap_eq]
-    exact hQ.toIsWeaklyRegular
+    exact isRegular_cons_of_isRegular_quotient hx0 hmem hQ
 
 variable {R : Type u} [CommRing R] [IsRegularLocalRing R]
 
