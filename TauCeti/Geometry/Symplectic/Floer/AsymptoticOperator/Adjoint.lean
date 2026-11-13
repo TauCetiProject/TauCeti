@@ -51,7 +51,7 @@ uses it to show that `D` has no classical cokernel on decaying maps.
   (`Floer.stationaryCylinderAdjoint_eq_stationaryCylinderOperator_comp`). So decaying solutions of
   `D† η = 0` are reflections of decaying solutions of `D ξ = 0`, and these vanish by
   `Floer.eq_zero_of_stationaryCylinderOperator_eq_zero`: for `ω`-compatible `J_t`, a `C²` map of
-  period one in `t` with `D† η = 0` on `ℝ × [0, 1]` which tends to zero with `∂t η` as
+  period one in `t` with `D† η = 0` on `ℝ × (0, 1)` which tends to zero with `∂t η` as
   `|s| → ∞` is zero (`Floer.eq_zero_of_stationaryCylinderAdjoint_eq_zero`).
 * **No classical cokernel.** Consequently, for `ω`-compatible `J_t`, a `C²` map `η` of period one
   in `t`, decaying with `∂t η`, which is `L²`-orthogonal on the cylinder `ℝ × [0, 1]` to `D ξ` for
@@ -491,13 +491,13 @@ theorem eqOn_stationaryCylinderAdjoint_zero_of_forall_integral_eq_zero
 /-- **Decaying solutions of the adjoint equation vanish.** Let each `J_t` be `ω`-compatible and
 let `(t, v) ↦ J_t v` be continuous, and let each `S_t` be infinitesimally symplectic and depend
 continuously on `t`. A `C²` map `η` of period one in `t` with
-`D† η = -∂s η + J_t (∂t η - S_t η) = 0` on `ℝ × [0, 1]`, which tends to zero together with `∂t η`
+`D† η = -∂s η + J_t (∂t η - S_t η) = 0` on `ℝ × (0, 1)`, which tends to zero together with `∂t η`
 as `|s| → ∞`, uniformly in `t`, is identically zero. -/
 theorem eq_zero_of_stationaryCylinderAdjoint_eq_zero (hJ : ∀ t, ω.Compatible (J t))
     (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hη : ContDiff ℝ 2 η)
     (hper : ∀ s t, η (s, t + 1) = η (s, t))
-    (hD : EqOn (stationaryCylinderAdjoint J S η) 0 (univ ×ˢ Icc 0 1))
+    (hD : EqOn (stationaryCylinderAdjoint J S η) 0 (univ ×ˢ Ioo 0 1))
     (hdecay : Tendsto (fun z ↦ (η z, fderiv ℝ η z stdComplexLineImag))
       (comap Prod.fst (cocompact ℝ)) (𝓝 0)) :
     η = 0 := by
@@ -608,12 +608,8 @@ theorem eq_zero_of_forall_integral_associatedBilinForm_stationaryCylinderOperato
                 ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) :=
               setIntegral_congr_set hUc
           _ = 0 := h ξ hξ hξp hξd
-  -- By continuity it vanishes on the closed strip, and the adjoint equation has no decaying
-  -- solutions.
-  have hcl : closure U = univ ×ˢ Icc 0 1 := by
-    simp [U, closure_prod_eq, closure_Ioo zero_ne_one]
-  exact eq_zero_of_stationaryCylinderAdjoint_eq_zero hJ hJc hS hSc hη hper
-    (hcl ▸ hU0.closure (continuous_stationaryCylinderAdjoint hJc hSc hη₁) continuous_const) hdecay
+  -- The adjoint equation has no decaying solutions.
+  exact eq_zero_of_stationaryCylinderAdjoint_eq_zero hJ hJc hS hSc hη hper hU0 hdecay
 
 end Green
 
