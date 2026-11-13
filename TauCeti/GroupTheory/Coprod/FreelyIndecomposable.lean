@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.CoprodI
 public import Mathlib.GroupTheory.FreeGroup.Basic
-public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.GroupTheory.Coprod.Commute
+public import TauCeti.GroupTheory.CoprodI
 
 /-!
 # Freely indecomposable groups and Grushko decompositions
@@ -20,16 +19,20 @@ and a free product of two nontrivial groups is not.
 
 A *Grushko decomposition* of `G` is an internal free product decomposition
 `G = G₁ ∗ ⋯ ∗ G_p ∗ F_q` into finitely many subgroups `G_i`, each nontrivial, freely
-indecomposable and not infinite cyclic, and a free group `F_q` of finite rank `q`. For instance
-`ℤ² ∗ F₂` has a Grushko decomposition with `p = 1`, `G₁ = ℤ²` and `q = 2`. These are the objects
-of Grushko's theorem: every finitely generated group has a Grushko decomposition, the rank `q` is
-determined by the group and the factors `G_i` are determined up to conjugacy and permutation.
+indecomposable and not infinite cyclic, and a free group `F_q` of finite rank `q`. These are the
+objects of Grushko's theorem: every finitely generated group has a Grushko decomposition, the rank
+`q` is determined by the group and the factors `G_i` are determined up to conjugacy and
+permutation.
 
 ## Main definitions
 
 * `TauCeti.IsFreelyIndecomposable G`: `G` is not an internal free product of two nontrivial
   subgroups.
 * `TauCeti.GrushkoDecomposition G`: a Grushko decomposition `G = G₁ ∗ ⋯ ∗ G_p ∗ F_q`.
+* `TauCeti.GrushkoDecomposition.mulEquiv`: the isomorphism `G₁ ∗ ⋯ ∗ G_p ∗ F_q ≃* G` from the
+  external free product.
+* `TauCeti.GrushkoDecomposition.coprodFreeGroup`: if `H` is nontrivial, freely indecomposable and
+  not infinite cyclic, then `H ∗ F_n` is a Grushko decomposition with `p = 1` and `q = n`.
 
 ## Main results
 
@@ -37,14 +40,12 @@ determined by the group and the factors `G_i` are determined up to conjugacy and
   group `G` is the internal free product of the images of `f` and `g` exactly when `f` and `g`
   exhibit `G` as `A ∗ B`.
 * `MulEquiv.isFreelyIndecomposable_iff`: free indecomposability is invariant under isomorphism.
-* `TauCeti.isFreelyIndecomposable_of_commGroup`: commutative groups are freely indecomposable.
+* `TauCeti.IsFreelyIndecomposable.subsingleton_or_subsingleton`: if a freely indecomposable group
+  is isomorphic to `A ∗ B`, then `A` or `B` is trivial.
+* `TauCeti.isFreelyIndecomposable_of_isMulCommutative`: commutative groups are freely
+  indecomposable.
 * `TauCeti.not_isFreelyIndecomposable_coprod`: `A ∗ B` is not freely indecomposable for
   nontrivial `A`, `B`.
-* `TauCeti.exists_grushkoDecomposition_coprod_freeGroup`: if `H` is nontrivial, freely
-  indecomposable and not infinite cyclic, then `H ∗ F_n` is a Grushko decomposition with `p = 1`
-  and `q = n`.
-* `TauCeti.exists_grushkoDecomposition_int_prod_int_coprod_freeGroup`: `ℤ² ∗ F₂` has a Grushko
-  decomposition with `p = 1`, `G₁ = ℤ²` and `q = 2`.
 
 ## References
 
@@ -93,40 +94,60 @@ theorem isFreelyIndecomposable_iff {G : Type*} [Group G] :
       Function.Bijective (Coprod.lift A.subtype B.subtype) → A = ⊥ ∨ B = ⊥ :=
   Iff.rfl
 
-private theorem isFreelyIndecomposable_of_mulEquiv {G H : Type*} [Group G] [Group H] (e : G ≃* H)
-    (h : IsFreelyIndecomposable H) : IsFreelyIndecomposable G := by
+namespace IsFreelyIndecomposable
+
+variable {G H : Type*} [Group G] [Group H]
+
+/-- In a freely indecomposable group, one of the two subgroups of an internal free product
+decomposition is trivial. -/
+theorem eq_bot_or_eq_bot (h : IsFreelyIndecomposable G) {A B : Subgroup G}
+    (hAB : Function.Bijective (Coprod.lift A.subtype B.subtype)) : A = ⊥ ∨ B = ⊥ :=
+  h A B hAB
+
+/-- A group isomorphic to a freely indecomposable group is freely indecomposable. -/
+theorem map_mulEquiv (h : IsFreelyIndecomposable G) (e : G ≃* H) : IsFreelyIndecomposable H := by
   intro A B hAB
   have key := (Coprod.bijective_lift_subtype_range_iff
-    (f := (e : G →* H).comp A.subtype) (g := (e : G →* H).comp B.subtype)
-    (e.injective.comp A.subtype_injective) (e.injective.comp B.subtype_injective)).2
-    (by simpa [← Coprod.comp_lift] using e.bijective.comp hAB)
+    (f := (e.symm : H →* G).comp A.subtype) (g := (e.symm : H →* G).comp B.subtype)
+    (e.symm.injective.comp A.subtype_injective) (e.symm.injective.comp B.subtype_injective)).2
+    (by simpa [← Coprod.comp_lift] using e.symm.bijective.comp hAB)
   rw [MonoidHom.range_comp, MonoidHom.range_comp, Subgroup.range_subtype,
     Subgroup.range_subtype] at key
-  exact (h _ _ key).imp (Subgroup.map_eq_bot_iff_of_injective _ e.injective).1
-    (Subgroup.map_eq_bot_iff_of_injective _ e.injective).1
+  exact (h.eq_bot_or_eq_bot key).imp (Subgroup.map_eq_bot_iff_of_injective _ e.symm.injective).1
+    (Subgroup.map_eq_bot_iff_of_injective _ e.symm.injective).1
+
+/-- If a freely indecomposable group is isomorphic to a free product `A ∗ B`, then one of `A`,
+`B` is trivial. -/
+theorem subsingleton_or_subsingleton {A B : Type*} [Group A] [Group B]
+    (h : IsFreelyIndecomposable G) (e : A ∗ B ≃* G) : Subsingleton A ∨ Subsingleton B := by
+  -- the images of the two factors form an internal free product decomposition of `A ∗ B`
+  simpa [MonoidHom.range_eq_map, Subgroup.map_eq_bot_iff_of_injective, Coprod.inl_injective,
+    Coprod.inr_injective, eq_comm (a := (⊤ : Subgroup _)), subsingleton_iff_bot_eq_top,
+    Subgroup.subsingleton_iff]
+    using (h.map_mulEquiv e.symm).eq_bot_or_eq_bot <| (Coprod.bijective_lift_subtype_range_iff
+      Coprod.inl_injective Coprod.inr_injective).2 (by simpa using Function.bijective_id)
+
+end IsFreelyIndecomposable
 
 /-- Free indecomposability is invariant under isomorphism. -/
 theorem _root_.MulEquiv.isFreelyIndecomposable_iff {G H : Type*} [Group G] [Group H] (e : G ≃* H) :
     IsFreelyIndecomposable G ↔ IsFreelyIndecomposable H :=
-  ⟨isFreelyIndecomposable_of_mulEquiv e.symm, isFreelyIndecomposable_of_mulEquiv e⟩
+  ⟨fun h => h.map_mulEquiv e, fun h => h.map_mulEquiv e.symm⟩
 
 /-- A commutative group is freely indecomposable. -/
-theorem isFreelyIndecomposable_of_commGroup (G : Type*) [CommGroup G] :
+theorem isFreelyIndecomposable_of_isMulCommutative (G : Type*) [Group G] [IsMulCommutative G] :
     IsFreelyIndecomposable G := by
   intro A B hAB
   by_contra! h
   obtain ⟨a, ha⟩ := Subgroup.ne_bot_iff_exists_ne_one.1 h.1
   obtain ⟨b, hb⟩ := Subgroup.ne_bot_iff_exists_ne_one.1 h.2
-  have : Commute (Coprod.inl a : A ∗ B) (Coprod.inr b) := hAB.1 (by simp [mul_comm])
+  have : Commute (Coprod.inl a : A ∗ B) (Coprod.inr b) := hAB.1 (by simp [mul_comm' (a : G)])
   simp_all
 
 /-- A free product of two nontrivial groups is not freely indecomposable. -/
 theorem not_isFreelyIndecomposable_coprod (A B : Type*) [Group A] [Group B] [Nontrivial A]
-    [Nontrivial B] : ¬IsFreelyIndecomposable (A ∗ B) := fun h => by
-  -- the two factors form an internal free product decomposition of `A ∗ B`
-  simpa [MonoidHom.range_eq_map, Subgroup.map_eq_bot_iff_of_injective, Coprod.inl_injective,
-    Coprod.inr_injective] using h _ _ <| (Coprod.bijective_lift_subtype_range_iff
-      Coprod.inl_injective Coprod.inr_injective).2 (by simpa using Function.bijective_id)
+    [Nontrivial B] : ¬IsFreelyIndecomposable (A ∗ B) := fun h =>
+  (h.subsingleton_or_subsingleton (.refl _)).elim (not_subsingleton A) (not_subsingleton B)
 
 /-- A Grushko decomposition of a group: an internal free product decomposition into finitely
 many nontrivial freely indecomposable subgroups, none of them infinite cyclic, and a free group
@@ -145,46 +166,96 @@ structure GrushkoDecomposition (G : Type*) [Group G] where
   /-- The factors are freely indecomposable. -/
   isFreelyIndecomposable : ∀ i, IsFreelyIndecomposable (factor i)
   /-- No factor is infinite cyclic. -/
-  not_int : ∀ i, IsEmpty (factor i ≃* Multiplicative ℤ)
+  isEmpty_mulEquiv_int : ∀ i, IsEmpty (factor i ≃* Multiplicative ℤ)
   /-- The group is the free product of the factors and of the free factor. -/
   bijective : Function.Bijective
     (Coprod.lift (CoprodI.lift fun i => (factor i).subtype) free)
 
-/-- The free product `H ∗ F_n` of a nontrivial freely indecomposable group `H` which is not
-infinite cyclic with the free group of rank `n` has a Grushko decomposition with one freely
-indecomposable factor, the image of `H`, and a free factor of rank `n`. -/
-theorem exists_grushkoDecomposition_coprod_freeGroup {H : Type*} [Group H] [Nontrivial H]
-    (hH : IsFreelyIndecomposable H) (hZ : IsEmpty (H ≃* Multiplicative ℤ)) (n : ℕ) :
-    ∃ D : GrushkoDecomposition (H ∗ FreeGroup (Fin n)),
-      D.p = 1 ∧ D.q = n ∧ ∀ i, D.factor i = (Coprod.inl : H →* H ∗ FreeGroup (Fin n)).range := by
-  set R := (Coprod.inl : H →* H ∗ FreeGroup (Fin n)).range
-  let e : H ≃* R := MonoidHom.ofInjective Coprod.inl_injective
-  -- the free product of the one-element family `R` is `R`
-  let E : CoprodI (fun _ : Fin 1 => R) ≃* R :=
-    MonoidHom.toMulEquiv (CoprodI.lift fun _ => .id R)
-      (CoprodI.of (M := fun _ : Fin 1 => R) (i := 0))
-      (CoprodI.ext_hom _ _ fun i => by obtain rfl := Subsingleton.elim i 0; ext; simp)
-      (by ext; simp)
-  let Ψ := MulEquiv.coprodCongr (e.trans E.symm) (MulEquiv.refl (FreeGroup (Fin n)))
-  refine ⟨⟨1, n, fun _ => R, Coprod.inr, fun _ => e.injective.nontrivial,
-    fun _ => e.isFreelyIndecomposable_iff.1 hH, fun _ => ⟨fun f => hZ.false (e.trans f)⟩, ?_⟩,
-    rfl, rfl, fun _ => rfl⟩
-  have : (Coprod.lift (CoprodI.lift fun _ : Fin 1 => R.subtype) Coprod.inr).comp
-      Ψ.toMonoidHom = .id _ :=
-    Coprod.hom_ext
-      (by ext; simpa [Ψ, E, e, MulEquiv.coprodCongr] using MonoidHom.ofInjective_apply _)
-      (by ext; simp [Ψ, MulEquiv.coprodCongr])
-  refine (Function.Bijective.of_comp_iff _ Ψ.bijective).1 ?_
-  rw [← MulEquiv.coe_toMonoidHom, ← MonoidHom.coe_comp, this]
-  exact Function.bijective_id
+namespace GrushkoDecomposition
 
-/-- The free product `ℤ² ∗ F₂` has a Grushko decomposition with one freely indecomposable factor,
-the image of `ℤ²`, and a free factor of rank `2`. -/
-theorem exists_grushkoDecomposition_int_prod_int_coprod_freeGroup :
-    ∃ D : GrushkoDecomposition (Multiplicative (ℤ × ℤ) ∗ FreeGroup (Fin 2)), D.p = 1 ∧ D.q = 2 ∧
-      ∀ i, D.factor i = (Coprod.inl : Multiplicative (ℤ × ℤ) →* _ ∗ FreeGroup (Fin 2)).range :=
-  exists_grushkoDecomposition_coprod_freeGroup (isFreelyIndecomposable_of_commGroup _)
-    ⟨fun e => not_isAddCyclic_prod_of_infinite_nontrivial ℤ ℤ <|
-      isCyclic_multiplicative_iff.1 <| isCyclic_of_surjective e.symm e.symm.surjective⟩ 2
+attribute [instance] nontrivial
+
+variable {G : Type*} [Group G] (D : GrushkoDecomposition G)
+
+/-- The factors of a Grushko decomposition are nontrivial subgroups. -/
+@[simp]
+theorem factor_ne_bot (i : Fin D.p) : D.factor i ≠ ⊥ :=
+  (Subgroup.nontrivial_iff_ne_bot _).1 (D.nontrivial i)
+
+/-- The isomorphism onto `G` from the external free product `G₁ ∗ ⋯ ∗ G_p ∗ F_q` of the factors
+and the free group of rank `q`. -/
+noncomputable def mulEquiv : (CoprodI fun i => D.factor i) ∗ FreeGroup (Fin D.q) ≃* G :=
+  MulEquiv.ofBijective _ D.bijective
+
+theorem coe_mulEquiv :
+    ⇑D.mulEquiv = Coprod.lift (CoprodI.lift fun i => (D.factor i).subtype) D.free :=
+  (rfl)
+
+@[simp]
+theorem mulEquiv_inl_of {i : Fin D.p} (x : D.factor i) :
+    D.mulEquiv (Coprod.inl (CoprodI.of x)) = x := by
+  simp [coe_mulEquiv]
+
+@[simp]
+theorem mulEquiv_inr (w : FreeGroup (Fin D.q)) : D.mulEquiv (Coprod.inr w) = D.free w := by
+  simp [coe_mulEquiv]
+
+/-- The homomorphism from the free group of rank `q` onto the free factor is injective: the free
+factor of a Grushko decomposition is free of rank `q`. -/
+theorem free_injective : Function.Injective D.free := fun x y hxy =>
+  Coprod.inr_injective <| D.mulEquiv.injective <| by simpa using hxy
+
+/-- The Grushko decomposition of `H ∗ F_n` with one freely indecomposable factor, the image of
+`H`, and the free factor `F_n`, for a nontrivial freely indecomposable group `H` which is not
+infinite cyclic. -/
+@[expose] def coprodFreeGroup {H : Type*} [Group H] [Nontrivial H] (hH : IsFreelyIndecomposable H)
+    (hZ : IsEmpty (H ≃* Multiplicative ℤ)) (n : ℕ) :
+    GrushkoDecomposition (H ∗ FreeGroup (Fin n)) where
+  p := 1
+  q := n
+  factor _ := (Coprod.inl : H →* H ∗ FreeGroup (Fin n)).range
+  free := Coprod.inr
+  nontrivial _ := (MonoidHom.ofInjective Coprod.inl_injective).injective.nontrivial
+  isFreelyIndecomposable _ := hH.map_mulEquiv (MonoidHom.ofInjective Coprod.inl_injective)
+  isEmpty_mulEquiv_int _ :=
+    ⟨fun f => hZ.false ((MonoidHom.ofInjective Coprod.inl_injective).trans f)⟩
+  bijective := by
+    set R := (Coprod.inl : H →* H ∗ FreeGroup (Fin n)).range
+    let Ψ := MulEquiv.coprodCongr ((MonoidHom.ofInjective Coprod.inl_injective).trans
+      (MulEquiv.coprodIUnique fun _ : Fin 1 => R).symm) (MulEquiv.refl (FreeGroup (Fin n)))
+    have : (Coprod.lift (CoprodI.lift fun _ : Fin 1 => R.subtype) Coprod.inr).comp
+        Ψ.toMonoidHom = .id _ :=
+      Coprod.hom_ext
+        (by ext; simpa [Ψ, MulEquiv.coprodCongr] using MonoidHom.ofInjective_apply _)
+        (by ext; simp [Ψ, MulEquiv.coprodCongr])
+    refine (Function.Bijective.of_comp_iff _ Ψ.bijective).1 ?_
+    rw [← MulEquiv.coe_toMonoidHom, ← MonoidHom.coe_comp, this]
+    exact Function.bijective_id
+
+section coprodFreeGroup
+
+variable {H : Type*} [Group H] [Nontrivial H] (hH : IsFreelyIndecomposable H)
+  (hZ : IsEmpty (H ≃* Multiplicative ℤ)) (n : ℕ)
+
+@[simp]
+theorem coprodFreeGroup_p : (coprodFreeGroup hH hZ n).p = 1 :=
+  (rfl)
+
+@[simp]
+theorem coprodFreeGroup_q : (coprodFreeGroup hH hZ n).q = n :=
+  (rfl)
+
+@[simp]
+theorem coprodFreeGroup_factor (i : Fin (coprodFreeGroup hH hZ n).p) :
+    (coprodFreeGroup hH hZ n).factor i = (Coprod.inl : H →* H ∗ FreeGroup (Fin n)).range :=
+  (rfl)
+
+@[simp]
+theorem coprodFreeGroup_free : (coprodFreeGroup hH hZ n).free = Coprod.inr :=
+  (rfl)
+
+end coprodFreeGroup
+
+end GrushkoDecomposition
 
 end TauCeti
