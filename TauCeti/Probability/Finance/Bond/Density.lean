@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Finance.Bond.Trading
+public import TauCeti.Probability.Finance.Bond.Basic
 public import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 
 /-!
 # Finite-grid approximation in absolute bond variation
 
-A predictable bond holding with finite expected absolute interest income admits bounded,
-left-measurable finite-grid approximations in expected bond-variation L¹. The same sequence
-converges almost surely in pathwise bond-variation L¹. This supplies actual elementary
-holdings for passing from finite trading gains to the pathwise bond integral.
+On a finite horizon `[0, T]`, with a continuous short rate `r` and a finite sample measure
+`P`, a predictable bond holding with finite expected absolute interest income admits
+bounded, left-measurable finite-grid approximations in expected bond-variation L¹. The same
+sequence converges almost surely in pathwise bond-variation L¹. This supplies actual
+elementary holdings for passing from finite trading gains to the pathwise bond integral.
 
 The time weight is `|r(t) β(t)|`, the density identified by
 `variation_vectorMeasureIcc_bondPrice`. It may vanish on entire intervals. Neither the
@@ -25,8 +26,7 @@ the initial bond value may have either sign. No Brownian motion or path regulari
 holdings is required.
 
 Time is nonnegative real time, and rates and bond prices are evaluated by coercion to real
-time. Approximation uses the existing predictable-rectangle density and the almost-sure
-subsequence principle for nonnegative integrals.
+time.
 
 ## References
 
@@ -41,11 +41,12 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Finance
 
-/-- Bounded finite-grid bond holdings approximate every predictable holding with finite
+/-- On the finite horizon `[0, T]`, with continuous short rate `r` and finite sample measure
+`P`, bounded finite-grid bond holdings approximate every predictable holding with finite
 expected absolute interest income. Convergence holds in expected absolute bond variation
 and almost surely in pathwise absolute bond variation, for the same sequence. Trading
 heights are measurable at the left endpoints. Zero rates and a zero horizon are allowed. -/
-theorem exists_seq_simpleHolding_tendsto_bondVariation
+theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral_bondPrice
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
     {P : Measure Ω} [IsFiniteMeasure P] {r : ℝ → ℝ} {T : ℝ≥0}
     (hr : ContinuousOn r (Icc 0 (T : ℝ))) (β₀ : ℝ)
@@ -81,7 +82,7 @@ theorem exists_seq_simpleHolding_tendsto_bondVariation
     (withDensity_absolutelyContinuous _ _)
       (Probability.timeMeasure_singleton_zero T)
   obtain ⟨n, τ, a, C, hτ₀, hτ, ha, hbound, hmean, hpath⟩ :=
-    ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one_ae ν hν P hb hb₁
+    ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral ν hν P hb hb₁
   refine ⟨n, τ, a, C, hτ₀, hτ, ha, hbound, hmean, ?_⟩
   simpa only [ν, lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _
     hi.aestronglyMeasurable.eNorm (ae_of_all _ fun _ ↦ eNorm_lt_top), Pi.mul_apply]

@@ -17,23 +17,27 @@ import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 /-!
 # Approximation by bounded finite-grid holdings
 
-Every predictable square-integrable real process can be approximated in square-energy norm
-by a simple holding on one strictly increasing deterministic grid. The heights are bounded
-and measurable at the left endpoints, not the right endpoints. This turns density of
-predictable rectangle indicators in the native L² space into actual elementary integrands
-on which increment sums can be evaluated, as needed for completion of stochastic integrals.
+Predictable real processes admit bounded finite-grid approximations in L² or L¹ under
+the corresponding integrability hypotheses. For finite time and sample measures, one
+sequence converges both in product L¹ and almost surely in pathwise time L¹. The grids
+are strictly increasing and deterministic; heights are measurable at the left endpoints,
+not the right endpoints. These elementary integrands support increment sums and completion
+of stochastic integrals.
 
-The first theorem allows any measure on the predictable sigma-algebra finite on bounded
-predictable rectangles, with no mass at time zero. The second gives the finite-horizon
-Lebesgue-time × sample-measure form.
-Finally, one sequence of finite-grid holdings approximates a Brownian-integrable process
-on every finite horizon. For a finite predictable measure, L¹ approximation follows by
-first approximating by simple functions and then using L² density. For finite time and
-sample measures, a subsequence also converges in pathwise time L¹ almost surely; the time
-measure need only have no atom at zero. This includes deterministic bond variation.
+The first theorem gives L² density for any measure on the predictable sigma-algebra
+finite on bounded predictable rectangles, with a null initial slice `{0} × Ω`. The second
+gives the finite-horizon Lebesgue-time × finite-sample-measure form.
+For a finite predictable measure with a null initial slice, bounded finite-grid holdings
+are also dense in L¹. For finite time and sample measures, with no time atom at zero,
+one sequence approximates a predictable L¹ process both in product L¹ and almost surely
+in pathwise time L¹. This includes deterministic bond variation.
+Finally, `TauCeti.BrownianIntegrable.exists_seq_simpleHolding_tendsto_eLpNorm` gives one
+sequence approximating a Brownian-integrable process in L² on every finite horizon.
+
 No Brownian motion, usual filtration conditions or path regularity is assumed. The grids
 start at zero; their last date need not equal the observation horizon. Approximation is
-in energy norm, not pointwise or uniform in time.
+in L² or L¹ norm, with the stated almost-sure pathwise L¹ convergence, not pointwise or
+uniform in time.
 
 ## References
 
@@ -213,7 +217,7 @@ theorem exists_simpleHolding_eLpNorm_one_sub_lt
 left-measurable finite-grid approximations, both in product L¹ and almost surely in
 pathwise time L¹. The deterministic time measure may vanish on intervals, and needs
 only a null atom at zero; no continuity of the integrand is required. -/
-theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_ae
+theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral
     (ν : Measure ℝ≥0) [IsFiniteMeasure ν] (hν : ν {0} = 0)
     (P : Measure Ω) [IsFiniteMeasure P]
     {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyPredictable ℱ H)
