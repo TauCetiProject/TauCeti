@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.PeriodicOrbitLimit
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -347,27 +348,6 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization
     contDiffAt_const (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
     ((hU hz.1).2 z.2 hz.2)
     (hξ.contDiffAt.of_le one_le_two)).continuousWithinAt
-
-omit [FiniteDimensional ℝ V] in
-/-- **Pointwise comparison of energy densities.** If `a₀ ‖w‖² ≤ g w` for all `w`, with `a₀ > 0`,
-and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖² ≤ (2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, since
-`‖q‖² ≤ 2 ‖q - S v‖² + 2 m² ‖v‖²`. -/
-private theorem norm_sq_add_norm_sq_add_norm_sq_le {g : V → ℝ} {a₀ m : ℝ} (ha₀ : 0 < a₀)
-    (hg : ∀ w, a₀ * ‖w‖ ^ 2 ≤ g w) {S : V →L[ℝ] V} (hS : ‖S‖ ≤ m) (p q v : V) :
-    ‖p‖ ^ 2 + ‖q‖ ^ 2 + ‖v‖ ^ 2 ≤ (2 + 2 * m ^ 2) / a₀ * (g p + g (q - S v) + g v) := by
-  have hm₀ : 0 ≤ m := (norm_nonneg _).trans hS
-  have hq : ‖q‖ ≤ ‖q - S v‖ + m * ‖v‖ :=
-    calc ‖q‖ = ‖(q - S v) + S v‖ := by rw [sub_add_cancel]
-      _ ≤ ‖q - S v‖ + ‖S v‖ := norm_add_le _ _
-      _ ≤ ‖q - S v‖ + m * ‖v‖ := by gcongr; exact S.le_of_opNorm_le hS v
-  have hq₂ : ‖q‖ ^ 2 ≤ 2 * ‖q - S v‖ ^ 2 + 2 * m ^ 2 * ‖v‖ ^ 2 := by
-    nlinarith [norm_nonneg q, sq_nonneg (‖q - S v‖ - m * ‖v‖), mul_nonneg hm₀ (norm_nonneg v)]
-  calc _ ≤ (2 + 2 * m ^ 2) * (‖p‖ ^ 2 + ‖q - S v‖ ^ 2 + ‖v‖ ^ 2) := by
-        nlinarith [mul_nonneg (sq_nonneg m) (sq_nonneg ‖p‖),
-          mul_nonneg (sq_nonneg m) (sq_nonneg ‖q - S v‖), sq_nonneg ‖p‖, sq_nonneg ‖v‖]
-    _ = (2 + 2 * m ^ 2) / a₀ * (a₀ * ‖p‖ ^ 2 + a₀ * ‖q - S v‖ ^ 2 + a₀ * ‖v‖ ^ 2) := by
-        field_simp
-    _ ≤ _ := by gcongr <;> exact hg _
 
 open MeasureTheory in
 /-- **The end estimate in the norm of `V`.** Let `x` be a nondegenerate one-periodic orbit of a

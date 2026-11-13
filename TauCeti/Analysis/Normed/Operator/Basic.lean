@@ -66,6 +66,10 @@ If `J * J = -1` for a continuous linear operator `J` on a normed space over any 
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
 (`TauCeti.prodMap_mul_self_eq_neg_one`).
 
+If `a₀ ‖w‖² ≤ g w` and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖²` is bounded by
+`(2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, comparing an energy density with a perturbed middle
+term to the squared norms (`TauCeti.norm_sq_add_norm_sq_add_norm_sq_le`).
+
 A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
@@ -548,6 +552,32 @@ theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ
   refine (hbound (τ := fun x ↦ Φ x (σ x)) hinv).congr' ?_ EventuallyEq.rfl
   filter_upwards [hΦ.eventually (Units.isOpen.mem_nhds hΦa)] with x hx
   exact ContinuousLinearMap.ringInverse_apply_apply hx (σ x)
+
+end
+
+section
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- **Comparison of energy densities.** If `a₀ ‖w‖² ≤ g w` for all `w`, with `a₀ > 0`, and
+`‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖² ≤ (2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, since
+`‖q‖² ≤ 2 ‖q - S v‖² + 2 m² ‖v‖²`. -/
+theorem norm_sq_add_norm_sq_add_norm_sq_le {g : E → ℝ} {a₀ m : ℝ} (ha₀ : 0 < a₀)
+    (hg : ∀ w, a₀ * ‖w‖ ^ 2 ≤ g w) {S : E →L[𝕜] E} (hS : ‖S‖ ≤ m) (p q v : E) :
+    ‖p‖ ^ 2 + ‖q‖ ^ 2 + ‖v‖ ^ 2 ≤ (2 + 2 * m ^ 2) / a₀ * (g p + g (q - S v) + g v) := by
+  have hm₀ : 0 ≤ m := (norm_nonneg _).trans hS
+  have hq : ‖q‖ ≤ ‖q - S v‖ + m * ‖v‖ :=
+    calc ‖q‖ = ‖(q - S v) + S v‖ := by rw [sub_add_cancel]
+      _ ≤ ‖q - S v‖ + ‖S v‖ := norm_add_le _ _
+      _ ≤ ‖q - S v‖ + m * ‖v‖ := by gcongr; exact S.le_of_opNorm_le hS v
+  have hq₂ : ‖q‖ ^ 2 ≤ 2 * ‖q - S v‖ ^ 2 + 2 * m ^ 2 * ‖v‖ ^ 2 := by
+    nlinarith [norm_nonneg q, sq_nonneg (‖q - S v‖ - m * ‖v‖), mul_nonneg hm₀ (norm_nonneg v)]
+  calc _ ≤ (2 + 2 * m ^ 2) * (‖p‖ ^ 2 + ‖q - S v‖ ^ 2 + ‖v‖ ^ 2) := by
+        nlinarith [mul_nonneg (sq_nonneg m) (sq_nonneg ‖p‖),
+          mul_nonneg (sq_nonneg m) (sq_nonneg ‖q - S v‖), sq_nonneg ‖p‖, sq_nonneg ‖v‖]
+    _ = (2 + 2 * m ^ 2) / a₀ * (a₀ * ‖p‖ ^ 2 + a₀ * ‖q - S v‖ ^ 2 + a₀ * ‖v‖ ^ 2) := by
+        field_simp
+    _ ≤ _ := by gcongr <;> exact hg _
 
 end
 
