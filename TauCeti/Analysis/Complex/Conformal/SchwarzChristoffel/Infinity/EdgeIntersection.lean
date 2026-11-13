@@ -93,7 +93,7 @@ theorem schwarzChristoffelBoundary_injective_of_edge_intersections
     rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
       ← schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
         (ha i.castSucc_le_succ)
-        (fun k _ => not_mem_Ioo_castSucc_succ a ha i k) (hfinite _) (hfinite _)]
+        (fun k _ => notMem_Ioo_castSucc_succ a ha i k) (hfinite _) (hfinite _)]
     exact ⟨x, hi, rfl⟩
   refine injective_of_injOn_Iic_Icc_Ici (ha (Fin.zero_le _)) hleftInj hbounded hrightInj
     (fun x hx ↦ ?_) (fun x hx ↦ ?_) houter (fun y hy hyL ↦ ?_) fun y hy hyR ↦ ?_

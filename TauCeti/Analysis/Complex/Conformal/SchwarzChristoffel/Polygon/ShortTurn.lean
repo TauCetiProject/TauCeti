@@ -70,7 +70,7 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacen
   have hmid : i.succ = j.castSucc := Fin.ext hadj
   have hfree (k : Fin n) :
       ∀ l, e l ≠ 0 → a l ∉ Ioo (a k.castSucc) (a k.succ) :=
-    fun l _ ↦ not_mem_Ioo_castSucc_succ a ha k l
+    fun l _ ↦ notMem_Ioo_castSucc_succ a ha k l
   have hcornerSin : Real.sin (Real.pi * ∑ l with a l = a i.succ, e l) ≠ 0 :=
     sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero hcorner hcorner0
   have haff := affineIndependent_schwarzChristoffelVertex_of_adjacent a e z₀
@@ -110,7 +110,7 @@ theorem schwarzChristoffelVertex_succ_sub_eq_norm_mul (a e : Fin (n + 1) → ℝ
         Complex.exp (schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) := by
   have hai : a i.castSucc < a i.succ := ha i.castSucc_lt_succ
   have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) :=
-    fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k
+    fun k _ ↦ notMem_Ioo_castSucc_succ a ha.monotone i k
   simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀ i.castSucc hfinite_left,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ hfinite_right] using
     schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hfree hfinite_left hfinite_right
