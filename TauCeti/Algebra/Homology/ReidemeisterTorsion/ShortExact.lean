@@ -11,6 +11,7 @@ import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Logic.Equiv.Fin.Basic
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # Milnor's multiplicativity formula for torsion with homology bases
@@ -128,16 +129,6 @@ private theorem finprod_eq_finprod_three {M : Type*} [CommMonoid M] (G : ℤ →
   rw [finprod_eq_prod_of_fintype, Fin.prod_univ_three]
   congr 2 <;> simp <;> ring_nf
 
-
-/-- A linear equivalence `e` intertwining two maps `u` and `u'` up to a linear equivalence `e'` of
-their sources maps the range of `u` onto the range of `u'`. -/
-private theorem map_range_eq_range {P M P' M' : Type*} [AddCommGroup P] [Module F P]
-    [AddCommGroup M] [Module F M] [AddCommGroup P'] [Module F P'] [AddCommGroup M'] [Module F M']
-    {u : P →ₗ[F] M} {u' : P' →ₗ[F] M'} {e : M ≃ₗ[F] M'} {e' : P ≃ₗ[F] P'}
-    (h : ∀ x, e (u x) = u' (e' x)) :
-    (LinearMap.range u).map (e : M →ₗ[F] M') = LinearMap.range u' := by
-  rw [← LinearMap.range_comp, show (e : M →ₗ[F] M') ∘ₗ u = u' ∘ₗ (e' : P →ₗ[F] P') from
-    LinearMap.ext h, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
 
 /-- A bracket of a based acyclic complex, computed in another space: if a linear equivalence `ι`
 sends the chain basis to a basis `hb` and the boundary basis and the lifts to families `u` and
@@ -284,9 +275,10 @@ private def lesρ (k : ℤ) :
       (hS.homologySequenceComplex.d (3 * k + 2 + 1) (3 * k + 2)).hom))) F
       (LinearMap.range (hS.δ (k + 1) k rfl).hom) :=
   (hS.lesBoundaryBasis h₁ h₂ h₃ (3 * k + 2)).map
-    ((hS.lesIso₁ (3 * k + 2) k rfl).toLinearEquiv.ofSubmodules _ _ (map_range_eq_range
-      (e' := (hS.lesIso₃ (3 * k + 2 + 1) (k + 1) (by ring)).toLinearEquiv)
-      fun x ↦ hS.lesIso₁_d _ _ rfl x))
+    ((hS.lesIso₁ (3 * k + 2) k rfl).toLinearEquiv.ofSubmodules _ _
+      (LinearMap.map_range_eq_range_of_comp_eq _
+        (e₁ := (hS.lesIso₃ (3 * k + 2 + 1) (k + 1) (by ring)).toLinearEquiv.toLinearMap)
+        (LinearEquiv.surjective _) (LinearMap.ext fun x ↦ (hS.lesIso₁_d _ _ rfl x).symm)))
 
 /-- Lifts through the connecting map `Hₖ₊₁(S.X₃) → Hₖ(S.X₁)` of the basis `lesρ`. -/
 private def lesγ' (k : ℤ) :
@@ -307,9 +299,10 @@ private def lesφ (k : ℤ) :
       (hS.homologySequenceComplex.d (3 * k + 1 + 1) (3 * k + 1)).hom))) F
       (LinearMap.range (HomologicalComplex.homologyMap S.f k).hom) :=
   (hS.lesBoundaryBasis h₁ h₂ h₃ (3 * k + 1)).map
-    ((hS.lesIso₂ (3 * k + 1) k rfl).toLinearEquiv.ofSubmodules _ _ (map_range_eq_range
-      (e' := (hS.lesIso₁ (3 * k + 1 + 1) k (by ring)).toLinearEquiv)
-      fun x ↦ hS.lesIso₂_d _ _ rfl x))
+    ((hS.lesIso₂ (3 * k + 1) k rfl).toLinearEquiv.ofSubmodules _ _
+      (LinearMap.map_range_eq_range_of_comp_eq _
+        (e₁ := (hS.lesIso₁ (3 * k + 1 + 1) k (by ring)).toLinearEquiv.toLinearMap)
+        (LinearEquiv.surjective _) (LinearMap.ext fun x ↦ (hS.lesIso₂_d _ _ rfl x).symm)))
 
 /-- Lifts through `Hₖ(S.X₁) → Hₖ(S.X₂)` of the basis `lesφ`. -/
 private def lesψ (k : ℤ) :
@@ -329,8 +322,10 @@ private def lesγ (k : ℤ) :
       (hS.homologySequenceComplex.d (3 * k + 1) (3 * k)).hom))) F
       (LinearMap.range (HomologicalComplex.homologyMap S.g k).hom) :=
   (hS.lesBoundaryBasis h₁ h₂ h₃ (3 * k)).map
-    ((hS.lesIso₃ (3 * k) k rfl).toLinearEquiv.ofSubmodules _ _ (map_range_eq_range
-      (e' := (hS.lesIso₂ (3 * k + 1) k rfl).toLinearEquiv) fun x ↦ hS.lesIso₃_d _ _ rfl x))
+    ((hS.lesIso₃ (3 * k) k rfl).toLinearEquiv.ofSubmodules _ _
+      (LinearMap.map_range_eq_range_of_comp_eq _
+        (e₁ := (hS.lesIso₂ (3 * k + 1) k rfl).toLinearEquiv.toLinearMap)
+        (LinearEquiv.surjective _) (LinearMap.ext fun x ↦ (hS.lesIso₃_d _ _ rfl x).symm)))
 
 /-- Lifts through `Hₖ(S.X₂) → Hₖ(S.X₃)` of the basis `lesγ`. -/
 private def lesσ (k : ℤ) :
