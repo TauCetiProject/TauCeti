@@ -246,9 +246,10 @@ theorem SystemGroup.isSeparatedBy_coeff_range_inr_of_mul_inv_inl (hι : Function
 
 /-- For injective coefficients, the group of the one-variable equation `x = 1` is separated by
 `H`. -/
-theorem SystemGroup.isSeparatedBy_coeff_singleton_inr_of (hι : Function.Injective ι) :
-    IsSeparatedBy (SystemGroup.coeff {(inr (FreeGroup.of ()) : GX G Unit)}) ι :=
-  (SystemGroup.isSeparatedBy_coeff_iff _).2 (Rad_singleton_inr_of hι)
+theorem SystemGroup.isSeparatedBy_coeff_singleton_inr_of [Subsingleton X]
+    (hι : Function.Injective ι) (x : X) :
+    IsSeparatedBy (SystemGroup.coeff {(inr (FreeGroup.of x) : GX G X)}) ι :=
+  (SystemGroup.isSeparatedBy_coeff_iff _).2 (Rad_singleton_inr_of hι x)
 
 /-- Over `F(a, b)`, the group of the inconsistent system `{a, b, x}` is separated by `F(a, b)`,
 although it has no coefficient-preserving homomorphism to `F(a, b)`: it is trivial, so the empty

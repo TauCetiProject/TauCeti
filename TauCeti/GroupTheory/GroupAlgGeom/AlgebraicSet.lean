@@ -74,7 +74,7 @@ system `{a, b, x}` has no solutions; its radical and its normal closure are both
 * `TauCeti.GroupAlgGeom.I_singleton_comp`: the ideal of a point with coordinates `ι (g x)` is the
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
 * `TauCeti.GroupAlgGeom.Rad_range_inr_of_mul_inv_inl`,
-  `TauCeti.GroupAlgGeom.SystemGroup.coeff_bijective_range_inr_of_mul_inv_inl`: the system
+  `TauCeti.GroupAlgGeom.SystemGroup.coeff_range_inr_of_mul_inv_inl_bijective`: the system
   `x (g x)⁻¹`, `x ∈ X`, is radical for injective `ι`, and its group is `G` itself.
 * `TauCeti.GroupAlgGeom.V_eq_empty_of_inl_mem`, `TauCeti.GroupAlgGeom.Rad_eq_top_of_V_eq_empty`,
   `TauCeti.GroupAlgGeom.SystemGroup.isEmpty_gHom_iff`: a system containing a constant that is
@@ -509,11 +509,20 @@ theorem Rad_range_inr_of_mul_inv_inl (hι : Function.Injective ι) (g : X → G)
       normalClosure (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹) := by
   rw [Rad_def, ← singleton_comp_eq_V, I_singleton_comp hι]
 
+/-- For injective coefficients, the radical of the one-variable equation `x * b = 1` is its
+normal closure: the quotient `G[x] ⧸ ncl(x b)` is `G` itself. -/
+theorem Rad_inr_of_mul_inl [Subsingleton X] (hι : Function.Injective ι) (x : X) (b : G) :
+    Rad ι {(inr (FreeGroup.of x) : GX G X) * inl b} =
+      normalClosure {inr (FreeGroup.of x) * inl b} := by
+  have := uniqueOfSubsingleton x
+  simpa [Set.range_unique, Subsingleton.elim default x] using
+    Rad_range_inr_of_mul_inv_inl hι fun _ : X => b⁻¹
+
 /-- For injective coefficients, the radical of the one-variable equation `x = 1` is its normal
 closure. -/
-theorem Rad_singleton_inr_of (hι : Function.Injective ι) :
-    Rad ι {(inr (FreeGroup.of ()) : GX G Unit)} = normalClosure {inr (FreeGroup.of ())} := by
-  simpa [Set.range_unique] using Rad_range_inr_of_mul_inv_inl hι fun _ : Unit => 1
+theorem Rad_singleton_inr_of [Subsingleton X] (hι : Function.Injective ι) (x : X) :
+    Rad ι {(inr (FreeGroup.of x) : GX G X)} = normalClosure {inr (FreeGroup.of x)} := by
+  simpa using Rad_inr_of_mul_inl hι x 1
 
 /-! ### Quotients of `G[X]` -/
 
@@ -940,7 +949,7 @@ theorem not_injective_coeff_of_inl_mem {g : G} (hg : g ≠ 1) (hS : inl g ∈ S)
 
 /-- The group of the system `x (g x)⁻¹`, `x ∈ X`, which prescribes the value `g x` of every
 variable, is `G` itself: its coefficient homomorphism is bijective. -/
-theorem coeff_bijective_range_inr_of_mul_inv_inl (g : X → G) :
+theorem coeff_range_inr_of_mul_inv_inl_bijective (g : X → G) :
     Function.Bijective (coeff (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹)) := by
   -- The normal closure of the system is the kernel of evaluation at `g`, a retraction onto `G`.
   have hN : normalClosure (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹) =
@@ -956,10 +965,11 @@ theorem coeff_bijective_range_inr_of_mul_inv_inl (g : X → G) :
 
 /-- The group of the one-variable equation `x = 1` is `G` itself: its coefficient homomorphism
 is bijective. -/
-theorem coeff_bijective_singleton_inr_of :
-    Function.Bijective (coeff {(inr (FreeGroup.of ()) : GX G Unit)}) := by
-  have h := coeff_bijective_range_inr_of_mul_inv_inl fun _ : Unit => (1 : G)
-  rwa [Set.range_unique, map_one, inv_one, mul_one] at h
+theorem coeff_singleton_inr_of_bijective [Subsingleton X] (x : X) :
+    Function.Bijective (coeff {(inr (FreeGroup.of x) : GX G X)}) := by
+  have := uniqueOfSubsingleton x
+  have h := coeff_range_inr_of_mul_inv_inl_bijective fun _ : X => (1 : G)
+  rwa [Set.range_unique, Subsingleton.elim default x, map_one, inv_one, mul_one] at h
 
 /-- Restricting a `G`-homomorphism `G_{R(S)} → H` along `G_S → G_{R(S)}` gives the same solution
 of `S`. -/
@@ -1006,14 +1016,6 @@ have the same radical. -/
 theorem Rad_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
     Rad ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = Rad ι {inr (of x) * inl b} := by
   rw [Rad_def, V_pow_mul_inl_pow hn, Rad_def]
-
-/-- For injective coefficients, the radical of the one-variable equation `x * b = 1` is its
-normal closure: the quotient `G[x] ⧸ ncl(x b)` is `G` itself. -/
-theorem Rad_inr_of_mul_inl [Subsingleton X] (hι : Function.Injective ι) (x : X) (b : G) :
-    Rad ι {(inr (of x) : GX G X) * inl b} = normalClosure {inr (of x) * inl b} := by
-  have := uniqueOfSubsingleton x
-  simpa [Set.range_unique, Subsingleton.elim default x] using
-    Rad_range_inr_of_mul_inv_inl hι fun _ : X => b⁻¹
 
 /-- Over a group `H` with unique roots and injective coefficients, the radical of the
 one-variable equation `x ^ n * b ^ n = 1` (`n ≠ 0`) is the normal closure of `x * b`. -/
