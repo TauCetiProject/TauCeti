@@ -23,7 +23,7 @@ compact spatial support,
 
 as continuous linear maps of Schwartz spaces (`TauCeti.Symbol.quantizeUniformCLM_sharp`), where
 `a # b` is the composition symbol `TauCeti.Symbol.sharp`. The composition symbol is again uniform
-(`TauCeti.Symbol.IsUniform.sharp_right`), although it does not have compact spatial support in
+(`TauCeti.Symbol.IsUniform.sharp`), although it does not have compact spatial support in
 general. The pointwise form `Op(a) (Op(b) u) = Op(a # b) u`
 (`TauCeti.Symbol.quantizeSchwartzValue_quantizeUniformCLM`) holds for every symbol `a`, uniform
 or not, since `Op(b) u` is a Schwartz function.
@@ -82,7 +82,7 @@ theorem quantizeSchwartzValue_quantizeUniformCLM (a : Symbol n W U m')
 spatial support, `Op(a) ∘ Op(b) = Op(a # b)` as continuous linear maps of Schwartz spaces. -/
 theorem quantizeUniformCLM_sharp {a : Symbol n W U m'} (ha : a.IsUniform)
     (hb : b.HasCompactSpatialSupport) :
-    quantizeUniformCLM (a.sharp b hb) (ha.sharp_right b hb) =
+    quantizeUniformCLM (a.sharp b hb) (ha.sharp hb) =
       (quantizeUniformCLM a ha).comp (quantizeUniformCLM b hb.isUniform) := by
   ext u x
   rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply,
@@ -120,7 +120,7 @@ theorem quantizeFrequencyCLM_comp_quantizeUniformCLM [CompleteSpace V] {a : Symb
     (ha : a.HasCompactSpatialSupport) :
     (quantizeFrequencyCLM b).comp (quantizeUniformCLM a ha.isUniform) =
       quantizeUniformCLM ((ofFrequency b hb hbound).sharp a ha)
-        ((isUniform_ofFrequency hb hbound).sharp_right a ha) := by
+        ((isUniform_ofFrequency hb hbound).sharp ha) := by
   ext u x
   rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply,
     ← quantizeSchwartzValue_quantizeUniformCLM, quantizeSchwartzValue_ofFrequency]
@@ -153,7 +153,7 @@ theorem fourierMultiplierCLM_comp_quantizeUniformCLM {a : Symbol n U V m}
         (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))).comp
           (quantizeUniformCLM a ha.isUniform) =
       quantizeUniformCLM ((besselPotential s).sharp a ha)
-        ((isUniform_besselPotential s).sharp_right a ha) := by
+        ((isUniform_besselPotential s).sharp ha) := by
   rw [← quantizeFrequencyCLM_besselWeight]
   simp only [besselPotential_eq_ofFrequency]
   exact quantizeFrequencyCLM_comp_quantizeUniformCLM _ _ ha
