@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.Commutativity
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transpose
 
 /-!
