@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import TauCeti.Analysis.Fourier.PoissonSummation
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.SmoothSeries
-import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
 # Fourier series of test functions supported in a small compact set
@@ -90,21 +90,6 @@ private def phase (w : E) : E →L[ℝ] ℂ :=
 private theorem phase_apply (w x : E) : phase w x = 2 * π * I * ⟪x, w⟫ := by
   simp [phase, real_inner_comm]
 
-private theorem norm_phase_le (w : E) : ‖phase w‖ ≤ 2 * π * ‖w‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ by
-    have h : ‖phase w x‖ = 2 * π * |⟪x, w⟫| := by
-      rw [phase_apply]
-      simp [abs_of_pos Real.pi_pos]
-    rw [h]
-    calc 2 * π * |⟪x, w⟫| ≤ 2 * π * (‖w‖ * ‖x‖) := by
-          gcongr
-          exact abs_real_inner_le_norm x w |>.trans_eq (mul_comm _ _)
-      _ = 2 * π * ‖w‖ * ‖x‖ := by ring
-
-private theorem norm_exp_phase (w x : E) : ‖cexp (phase w x)‖ = 1 := by
-  rw [phase_apply, norm_exp]
-  simp
-
 private theorem contDiff_exp_phase (w : E) : ContDiff ℝ ∞ fun x ↦ cexp (phase w x) :=
   (phase w).contDiff.cexp
 
@@ -112,10 +97,13 @@ private theorem contDiff_exp_phase (w : E) : ContDiff ℝ ∞ fun x ↦ cexp (ph
 `(2π ‖w‖) ^ k`. -/
 private theorem norm_iteratedFDeriv_exp_phase_le (w x : E) (k : ℕ) :
     ‖iteratedFDeriv ℝ k (fun y ↦ cexp (phase w y)) x‖ ≤ (2 * π * ‖w‖) ^ k := by
-  refine ((phase w).norm_iteratedFDeriv_cexp_comp_le k x).trans ?_
-  rw [norm_exp_phase, one_mul]
-  gcongr
-  exact norm_phase_le w
+  have h : (fun y ↦ cexp (phase w y)) = TauCeti.fourierAtom (-w) := by
+    ext y
+    rw [TauCeti.fourierAtom_apply, phase_apply, inner_neg_right]
+    push_cast
+    ring_nf
+  rw [h, ← norm_neg w]
+  exact TauCeti.norm_iteratedFDeriv_fourierAtom_le (-w) x k
 
 /-- `(1 + 2π a) ^ k ≤ (2π) ^ k (1 + a) ^ k` for `a ≥ 0`, since `2π ≥ 1`. -/
 private theorem one_add_two_pi_mul_pow_le {a : ℝ} (ha : 0 ≤ a) (k : ℕ) :

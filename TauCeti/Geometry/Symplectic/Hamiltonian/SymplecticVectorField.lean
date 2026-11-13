@@ -57,6 +57,8 @@ which is not treated here.
   contraction.
 * `TauCeti.SmoothTwoForm.mem_symplecticVectorFields_iff_mlieDerivForm_eq_zero`: for closed `σ`,
   these are the smooth vector fields with `L_X σ = 0`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.mlieDerivForm_interiorEquiv_symm`: for symplectic `σ`, the
+  Lie derivative of `σ` along `(σ♭)⁻¹ β` is `dβ`.
 * `TauCeti.SmoothTwoForm.mem_symplecticVectorFields_of_isHamiltonianVectorField`: Hamiltonian
   vector fields are symplectic.
 * `TauCeti.SmoothTwoForm.interiorClass`: the class `[ι_X σ] ∈ H¹_dR(M)`.
@@ -114,6 +116,16 @@ theorem mem_symplecticVectorFields_iff_mlieDerivForm_eq_zero (hσ : σ.IsClosed)
     X ∈ σ.symplecticVectorFields ↔ mlieDerivForm X σ.1 = 0 := by
   rw [mem_symplecticVectorFields_iff,
     SmoothForm.mlieDerivForm_eq_mextDeriv_interior (X.contMDiff.mdifferentiable (by simp)) hσ]
+
+/-- **Lie derivative along an inverse flat map.** For a symplectic form `σ` on a
+finite-dimensional manifold and a smooth one-form `β`, the vector field `X = (σ♭)⁻¹ β` with
+`ι_X σ = β` has `L_X σ = dβ`. This is Cartan's formula `L_X σ = d(ι_X σ) + ι_X dσ`. -/
+theorem IsSymplectic.mlieDerivForm_interiorEquiv_symm [FiniteDimensional ℝ E]
+    (hσ : σ.IsSymplectic) (β : SmoothForm I M ℝ 1) :
+    mlieDerivForm (hσ.isNondegenerate.interiorEquiv.symm β) σ.1 = mextDeriv β.1 := by
+  rw [SmoothForm.mlieDerivForm_eq_mextDeriv_interior
+    ((hσ.isNondegenerate.interiorEquiv.symm β).contMDiff.mdifferentiable (by simp)) hσ.isClosed,
+    hσ.isNondegenerate.interior_interiorEquiv_symm]
 
 /-- A smooth vector field is Hamiltonian for a smooth `0`-form precisely when its contraction
 is the exterior derivative of that form. -/
@@ -192,13 +204,9 @@ theorem coe_negHamiltonianₗ (φ : SmoothForm I M ℝ 0) (x : M) :
       -σ.hamiltonianVectorField (fun y ↦ φ.1 y 0) x := by
   -- Both sides are `-(σ♭)⁻¹` of the differential `d(φ)`, read once as a form and once through
   -- `mvfderiv`.
-  have hd : SmoothForm.degreeOneEquiv (mextDerivₗ I 0 φ) x = mvfderiv I (fun y ↦ φ.1 y 0) x := by
-    ext v
-    rw [SmoothForm.degreeOneEquiv_apply_apply, mextDerivₗ_apply, RoughForm.eq_ofFunction φ.1,
-      mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-    simp only [RoughForm.ofFunction_apply]
   simp only [negHamiltonianₗ, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffSection.coe_neg,
-    Pi.neg_apply, interiorEquiv_symm_apply, hd, hamiltonianVectorField_def]
+    Pi.neg_apply, interiorEquiv_symm_apply, SmoothForm.degreeOneEquiv_mextDerivₗ,
+    hamiltonianVectorField_def]
 
 /-- The contraction of `-X_f` is `-df`. -/
 @[simp]
