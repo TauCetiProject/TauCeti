@@ -1157,10 +1157,7 @@ private theorem integral_Ico_eq_intervalIntegral (hH : ∀ q, Periodic (H q) 1) 
     ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), H q t (u (endChart q (s, t))) =
       ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))) := by
   have hper : Periodic (fun t ↦ H q t (u (endChart q (s, t)))) 1 := fun t ↦ by
-    have h := q.periodic_cylindricalEndLift s t
-    simp only [endChart_apply, Complex.equivRealProdCLM_symm_apply]
-    push_cast at h ⊢
-    rw [h, hH q t]
+    simp only [endChart_add_one, hH q t]
   have h := hper.intervalIntegral_add_eq (-1 / 2) 0
   rw [zero_add, show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num,
     intervalIntegral.integral_of_le (by norm_num)] at h

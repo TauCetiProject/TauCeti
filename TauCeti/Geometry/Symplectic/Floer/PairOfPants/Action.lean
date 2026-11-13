@@ -525,9 +525,7 @@ theorem integral_floerEnergyDensity_endChart_eq_hamiltonianAction_sub (ω : Symp
     (hu.comp (contDiff_endChart q 2).contDiffOn fun w hw ↦
       endChart_mem_thricePuncturedSphereReal hw) hab (fun w hw ↦ hpos w.1 hw.1) fun s _ ↦ ?_
   -- The end loops close up: `φ_q(s + i) = φ_q(s)`.
-  simp only [comp_apply, endChart_mk]
-  simpa using congrArg (fun w ↦ u (Complex.equivRealProdCLM w))
-    (q.periodic_cylindricalEndLift s 0)
+  simpa using congrArg u (endChart_add_one q s 0)
 
 /-- **The energy identity on a cylindrical part of an end.** On the part `c < ±s ≤ R` of the end
 `q`, with `c ≥ 2`, where the pair-of-pants perturbation is `H_q(t) dt`, the energy of a map `u`
