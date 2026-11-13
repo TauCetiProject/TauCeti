@@ -60,8 +60,14 @@ private theorem nativeSerreSystem : IsSerreSystem ℚ DynkinType.F4.cartanMatrix
     (f := Fin.cast rank_F4) (Fin.cast_injective _)
   have hCM : CartanMatrix.F₄ᵀ.submatrix (Fin.cast rank_F4) (Fin.cast rank_F4) =
       DynkinType.F4.cartanMatrix.transpose := by
+    rw [cartanMatrix_F4]
     ext i j
-    exact (congrFun (congrFun cartanMatrix_F4 j) i).symm
+    simp only [Matrix.submatrix_apply, Matrix.transpose_apply]
+    have hi : Fin.cast rank_F4 i = i := Fin.ext (Fin.val_cast rank_F4 i)
+    have hj : Fin.cast rank_F4 j = j := Fin.ext (Fin.val_cast rank_F4 j)
+    rw [hi, hj]
+    -- After removing the rank casts, both sides evaluate the same transposed matrix.
+    rfl
   rw [hCM] at h
   exact h
 
@@ -130,6 +136,29 @@ theorem pinnedRepresentation_ι_f (i : Fin DynkinType.F4.rank) :
   rw [pinnedRepresentation_ι, pinnedToSerre_f,
     rationalSerreRepresentation_serreF]
 
+/-- A positive root generator acts by the corresponding raising matrix. -/
+@[simp↓] theorem pinnedRepresentation_ι_rootGenerator_inl (i : Fin DynkinType.F4.rank) :
+    pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      ((DynkinType.lieBasis .F4 valid_F4).rootGenerator (.inl i))) =
+      Matrix.toLinAlgEquiv' (raisingMatrixRat (Fin.cast rank_F4 i)) := by
+  rw [LieAlgebra.Basis.rootGenerator_inl, pinnedRepresentation_ι_e]
+
+/-- A negative root generator acts by the corresponding lowering matrix. -/
+@[simp↓] theorem pinnedRepresentation_ι_rootGenerator_inr (i : Fin DynkinType.F4.rank) :
+    pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      ((DynkinType.lieBasis .F4 valid_F4).rootGenerator (.inr i))) =
+      Matrix.toLinAlgEquiv' (loweringMatrixRat (Fin.cast rank_F4 i)) := by
+  rw [LieAlgebra.Basis.rootGenerator_inr, pinnedRepresentation_ι_f]
+
+/-- The sum-indexed simple root generators act by the native root matrices. -/
+@[simp↓ low] theorem pinnedRepresentation_ι_rootGenerator
+    (k : Fin DynkinType.F4.rank ⊕ Fin DynkinType.F4.rank) :
+    pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      ((DynkinType.lieBasis .F4 valid_F4).rootGenerator k)) =
+      Matrix.toLinAlgEquiv' (rootMatrixRat (k.map (Fin.cast rank_F4) (Fin.cast rank_F4))) := by
+  cases k <;> simp only [Sum.map_inl, Sum.map_inr, rootMatrixRat_inl, rootMatrixRat_inr,
+    pinnedRepresentation_ι_rootGenerator_inl, pinnedRepresentation_ι_rootGenerator_inr]
+
 private theorem pinnedRepresentation_cartan_apply
     (x : DynkinType.F4.cartanSubalgebra (by trivial)) (v : Fin 26 → ℚ) (a : Fin 26) :
     pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
@@ -144,11 +173,9 @@ private theorem pinnedRepresentation_cartan_apply
   -- Evaluate a linear map on the Cartan basis instead of unfolding the matrix Lie algebra.
   simp only [map_sum, map_smul] at hx
   simp only [f, LinearMap.comp_apply, LieHom.coe_toLinearMap,
-    Submodule.subtype_apply, AlgHom.toLinearMap_apply] at hx
-  simpa only [LinearMap.sum_apply, LinearMap.smul_apply, Finset.sum_apply,
-    Pi.smul_apply, smul_eq_mul, coe_cartanBasis, pinnedRepresentation_ι_h,
-    Matrix.toLinAlgEquiv'_apply, Matrix.mulVec, dotProduct, cartanMatrixRat_apply,
-    ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ite_true, mul_assoc] using hx.symm
+    Submodule.subtype_apply, AlgHom.toLinearMap_apply, coe_cartanBasis,
+    pinnedRepresentation_ι_h] at hx
+  simpa [Matrix.mulVec, dotProduct, mul_assoc] using hx.symm
 
 /-- The pinned short-root action is faithful on the rational Lie algebra. -/
 theorem pinnedRepresentation_ι_injective :
@@ -157,6 +184,10 @@ theorem pinnedRepresentation_ι_injective :
   let ρ := pinnedRepresentation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
   let := LieRingModule.compLieHom (Fin 26 → ℚ) ρ
   let := LieModule.compLieHom (Fin 26 → ℚ) ρ
+  have hbracket (y : DynkinType.F4.lieAlgebra valid_F4) (v : Fin 26 → ℚ) :
+      ⁅y, v⁆ = pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ y) v := by
+    simp only [ρ, LieRingModule.compLieHom_apply, LieHom.comp_apply,
+      AlgHom.toLieHom_apply, Module.End.lie_apply]
   have : LieModule.IsFaithful ℚ (DynkinType.F4.cartanSubalgebra (by trivial))
       (Fin 26 → ℚ) := by
     rw [LieModule.isFaithful_iff']
@@ -165,10 +196,10 @@ theorem pinnedRepresentation_ι_injective :
         (DynkinType.cartanBasis .F4 (by trivial)).repr x (Fin.cast rank_F4.symm i)) = 0 := by
       apply eq_zero_of_f4ShortRootWeight_smul_eq_zero
       intro a
-      have ha := congrFun (hx (Pi.single a 1)) a
-      -- The pulled-back bracket is evaluation of the enveloping action.
-      change pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (x : DynkinType.F4.lieAlgebra (by trivial))) (Pi.single a 1) a = 0 at ha
+      have ha := hx (Pi.single a 1)
+      rw [LieSubalgebra.coe_bracket_of_module, hbracket] at ha
+      have ha := congrFun ha a
+      simp only [Pi.zero_apply] at ha
       rw [pinnedRepresentation_cartan_apply] at ha
       have hsum := Fintype.sum_equiv (finCongr rank_F4)
         (fun i => (DynkinType.cartanBasis .F4 (by trivial)).repr x i *
@@ -185,6 +216,11 @@ theorem pinnedRepresentation_ι_injective :
     simpa only [Fin.cast_cast, Fin.cast_refl, id_eq, Pi.zero_apply, Finsupp.zero_apply] using hi
   have := isFaithful_of_isFaithful_cartanSubalgebra
     (H := DynkinType.F4.cartanSubalgebra valid_F4) (M := Fin 26 → ℚ)
+  have haction : LieModule.toEnd ℚ (DynkinType.F4.lieAlgebra valid_F4) (Fin 26 → ℚ) =
+      fun y => pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ y) := by
+    funext y
+    exact LinearMap.ext fun v => (LieModule.toEnd_apply_apply ℚ _ _ y v).trans (hbracket y v)
+  rw [← haction]
   exact LieModule.IsFaithful.injective_toEnd (R := ℚ)
     (L := DynkinType.F4.lieAlgebra valid_F4) (M := Fin 26 → ℚ)
 
@@ -225,6 +261,21 @@ private theorem isCartanWeightVector_pinned (a : Fin 26) :
     (isCartanWeightVector_latticeBasis a) (Fin.cast rank_F4 i)
   simpa only [rep_ι, rationalSerreRepresentation_serreH] using h
 
+private theorem span_range_pinnedWeight_eq_top :
+    Submodule.span ℤ (Set.range (fun (a : Fin 26) (i : Fin DynkinType.F4.rank) =>
+      f4ShortRootWeight a (Fin.cast rank_F4 i))) = ⊤ := by
+  let e := LinearEquiv.funCongrLeft ℤ ℤ (finCongr rank_F4)
+  have hrange : Set.range (fun (a : Fin 26) (i : Fin DynkinType.F4.rank) =>
+      f4ShortRootWeight a (Fin.cast rank_F4 i)) = e '' Set.range f4ShortRootWeight := by
+    have he (a : Fin 26) : e (f4ShortRootWeight a) =
+        fun i => f4ShortRootWeight a (Fin.cast rank_F4 i) := by
+      ext i
+      simp only [e, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, finCongr_apply]
+    rw [← Set.range_comp]
+    exact congrArg Set.range (funext fun a => (he a).symm)
+  rw [hrange, Submodule.span_image_linearEquiv, span_range_f4ShortRootWeight_eq_top,
+    Submodule.map_top, LinearMap.range_eq_top.mpr e.surjective]
+
 /-- The full-weight Chevalley datum on the twenty-six-dimensional short-root module, with its
 specified integral coordinate basis, including the two zero-weight vectors. -/
 -- This concrete datum is reducible so that its carrier and module instances compute when
@@ -248,7 +299,7 @@ abbrev chevalleyDatum : DynkinType.ChevalleyDatum .F4 (by trivial) where
   weight a i := f4ShortRootWeight a (Fin.cast rank_F4 i)
   isCartanWeightVector_basis := by exact isCartanWeightVector_pinned
   weightLatticeBasis := (Pi.basisFun ℤ (Fin DynkinType.F4.rank)).map
-    (LinearEquiv.ofTop _ (by exact span_range_f4ShortRootWeight_eq_top)).symm
+    (LinearEquiv.ofTop _ (by exact span_range_pinnedWeight_eq_top)).symm
 
 /-- The datum's Cartan generator acts by the native diagonal matrix. -/
 @[simp↓] theorem chevalleyDatum_representation_h (i : Fin DynkinType.F4.rank) :
@@ -271,8 +322,32 @@ abbrev chevalleyDatum : DynkinType.ChevalleyDatum .F4 (by trivial) where
       Matrix.toLinAlgEquiv' (loweringMatrixRat (Fin.cast rank_F4 i)) :=
   pinnedRepresentation_ι_f i
 
+/-- The datum's positive root generator acts by the native raising matrix. -/
+@[simp↓] theorem chevalleyDatum_representation_rootGenerator_inl
+    (i : Fin DynkinType.F4.rank) :
+    chevalleyDatum.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      ((DynkinType.lieBasis .F4 valid_F4).rootGenerator (.inl i))) =
+      Matrix.toLinAlgEquiv' (raisingMatrixRat (Fin.cast rank_F4 i)) :=
+  pinnedRepresentation_ι_rootGenerator_inl i
+
+/-- The datum's negative root generator acts by the native lowering matrix. -/
+@[simp↓] theorem chevalleyDatum_representation_rootGenerator_inr
+    (i : Fin DynkinType.F4.rank) :
+    chevalleyDatum.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      ((DynkinType.lieBasis .F4 valid_F4).rootGenerator (.inr i))) =
+      Matrix.toLinAlgEquiv' (loweringMatrixRat (Fin.cast rank_F4 i)) :=
+  pinnedRepresentation_ι_rootGenerator_inr i
+
+/-- The datum's sum-indexed root generators act by the native root matrices. -/
+@[simp↓ low] theorem chevalleyDatum_representation_rootGenerator
+    (k : Fin DynkinType.F4.rank ⊕ Fin DynkinType.F4.rank) :
+    chevalleyDatum.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      ((DynkinType.lieBasis .F4 valid_F4).rootGenerator k)) =
+      Matrix.toLinAlgEquiv' (rootMatrixRat (k.map (Fin.cast rank_F4) (Fin.cast rank_F4))) :=
+  pinnedRepresentation_ι_rootGenerator k
+
 /-- A datum basis vector is the corresponding rational coordinate vector. -/
-@[simp↓] theorem chevalleyDatum_coe_basis (a : Fin 26) :
+@[simp↓] theorem coe_chevalleyDatum_basis (a : Fin 26) :
     ((chevalleyDatum.basis a).val : Fin 26 → ℚ) = Pi.single a 1 :=
   coe_latticeBasis a
 
@@ -284,16 +359,32 @@ abbrev chevalleyDatum : DynkinType.ChevalleyDatum .F4 (by trivial) where
 
 /-- The weights of the short-root datum span the full weight lattice. -/
 @[simp] theorem chevalleyDatum_weightLattice : chevalleyDatum.weightLattice = ⊤ :=
-  chevalleyDatum.weightLattice_def.trans (by exact span_range_f4ShortRootWeight_eq_top)
+  chevalleyDatum.weightLattice_def.trans span_range_pinnedWeight_eq_top
 
 /-- The actual torus coordinates of the datum are the native fundamental-weight coordinates. -/
-@[simp] theorem chevalleyDatum_coordinateWeight (a : Fin 26) (i : Fin DynkinType.F4.rank) :
-    chevalleyDatum.coordinateWeight a i = f4ShortRootWeight a (Fin.cast rank_F4 i) := by
-  have h := congrFun (chevalleyDatum.sum_coordinateWeight_smul a) i
-  simpa only [chevalleyDatum, Finset.sum_apply, Pi.smul_apply,
-    Module.Basis.map_apply, LinearEquiv.coe_ofTop_symm_apply, Pi.basisFun_apply,
-    Pi.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq,
-    Finset.mem_univ, ite_true] using h
+@[simp] theorem chevalleyDatum_coordinateWeight :
+    chevalleyDatum.coordinateWeight = fun a i => f4ShortRootWeight a (Fin.cast rank_F4 i) := by
+  ext a i
+  have h := chevalleyDatum.sum_coordinateWeight_smul a
+  conv_lhs at h =>
+    arg 2
+    ext j
+    rw [coe_chevalleyDatum_weightLatticeBasis]
+  simp only [← Pi.single_smul, smul_eq_mul, mul_one, Finset.univ_sum_single] at h
+  exact congrFun h i
+
+/-- Root characters use the pinned root datum's fundamental-weight coordinates. -/
+@[simp] theorem chevalleyDatum_coordinateRoot (γ : Fin DynkinType.F4.numRoots) :
+    chevalleyDatum.coordinateRoot γ =
+      (DynkinType.F4.simplyConnectedRootDatum valid_F4).root γ := by
+  ext i
+  have h := chevalleyDatum.sum_coordinateRoot_smul γ
+  conv_lhs at h =>
+    arg 2
+    ext j
+    rw [coe_chevalleyDatum_weightLatticeBasis]
+  simp only [← Pi.single_smul, smul_eq_mul, mul_one, Finset.univ_sum_single] at h
+  exact congrFun h i
 
 end
 
