@@ -96,7 +96,7 @@ divided-power exponential at the corresponding parameter. -/
 theorem kostantRootSubgroupPoints_val (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     (kostantRootSubgroupPoints e h ρ M hM i hnil f).val =
       baseChangeExp (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M
-        (dividedPower_smul_mem_of_kostantForm_apply_mem hM i)
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv)
         (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f)) := by
   refine LinearMap.ext fun z => ?_
   rw [← LinearMap.GeneralLinearGroup.coe_toLinearEquiv, kostantRootSubgroupPoints_toLinearEquiv,
@@ -110,7 +110,7 @@ base-changed divided-power one-parameter subgroup `TauCeti.baseChangeExpHom` eva
     LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)
         (kostantRootSubgroupPoints e h ρ M hM i hnil f) =
       baseChangeExpHom (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M
-        (dividedPower_smul_mem_of_kostantForm_apply_mem hM i) hnil
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv) hnil
         (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) :=
   LinearEquiv.toLinearMap_inj.mp <| by
     rw [LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,

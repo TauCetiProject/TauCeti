@@ -172,10 +172,14 @@ theorem kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
   rw [hp, hq, hr, hs,
-    ← baseChangeExp_zsmul c M (dividedPower_smul_mem_of_kostantForm_apply_mem hM k) hMz hk,
-    ← baseChangeExp_zsmul d M (dividedPower_smul_mem_of_kostantForm_apply_mem hM l) hMw hl,
-    ← baseChangeExp_zsmul a M (dividedPower_smul_mem_of_kostantForm_apply_mem hM m) hMv hm,
-    ← baseChangeExp_zsmul b M (dividedPower_smul_mem_of_kostantForm_apply_mem hM o) hMz' ho]
+    ← baseChangeExp_zsmul c M
+      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) hMz hk,
+    ← baseChangeExp_zsmul d M
+      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM l n hv) hMw hl,
+    ← baseChangeExp_zsmul a M
+      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM m n hv) hMv hm,
+    ← baseChangeExp_zsmul b M
+      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM o n hv) hMz' ho]
   exact baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul M hxy hxz hxw hwz hxv
     hxz' hyz hwv hzz' hwz' hvz' hi hj (hk.smul c) (hl.smul d) _ _ hMz hMw hMv hMz' _ _
 

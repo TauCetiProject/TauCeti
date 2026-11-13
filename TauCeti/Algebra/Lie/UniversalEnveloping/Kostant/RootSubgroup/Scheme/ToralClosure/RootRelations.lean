@@ -39,6 +39,7 @@ Chevalley--Demazure construction.
 
 ## References
 
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Sections 26--27.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.

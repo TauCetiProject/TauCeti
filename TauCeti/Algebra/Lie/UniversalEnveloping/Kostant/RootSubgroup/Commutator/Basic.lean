@@ -118,9 +118,9 @@ distinguished root vector. -/
 theorem dividedPower_zsmul_apply_mem (e : ι → L) (h : κ → L)
     (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V) (M : AddSubgroup V)
     (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M) (c : ℤ) (k : ι) : ∀ n, ∀ v ∈ M,
-    Associative.dividedPower n (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))) • v ∈ M :=
-  fun n => Associative.dividedPower_zsmul_smul_mem c _ M
-    (dividedPower_smul_mem_of_kostantForm_apply_mem hM k n)
+    Associative.dividedPower n (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))) • v ∈ M := by
+  exact fun n => Associative.dividedPower_zsmul_smul_mem c _ M
+    (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv)
 
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
@@ -329,9 +329,9 @@ theorem kostantRootSubgroupPoints_mul_of_lie_lie_eq {i j k l : ι} {c d : ℤ}
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
   rw [hp, hq, ← baseChangeExp_zsmul c M
-      (dividedPower_smul_mem_of_kostantForm_apply_mem hM k) hMz hk,
+      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) hMz hk,
     ← baseChangeExp_zsmul d M
-      (dividedPower_smul_mem_of_kostantForm_apply_mem hM l) hMw hl]
+      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM l n hv) hMw hl]
   exact baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul M hxy hxz
     (Commute.smul_right hcxw d) (Commute.smul_right hcyz c)
     hi hj hz _ _ hMz hMw _ _

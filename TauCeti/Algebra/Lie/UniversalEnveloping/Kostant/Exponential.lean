@@ -50,8 +50,7 @@ for any families of distinguished vectors, and a pinned root datum will supply t
 * `TauCeti.UniversalEnvelopingAlgebra.exp_zsmul_mem_map_kostantForm`: the exponential
   `exp (t • f (eᵢ))` lies in the image of the Kostant form; for nilpotent `f (eᵢ)` it is a root
   subgroup element.
-* `TauCeti.UniversalEnvelopingAlgebra.dividedPower_apply_mem_of_kostantForm_apply_mem` and
-  `TauCeti.UniversalEnvelopingAlgebra.dividedPower_smul_mem_of_kostantForm_apply_mem`: divided
+* `TauCeti.UniversalEnvelopingAlgebra.dividedPower_apply_mem_of_kostantForm_apply_mem`: divided
   powers of root vectors preserve any Kostant-stable additive subgroup.
 * `TauCeti.UniversalEnvelopingAlgebra.exp_zsmul_apply_mem_of_kostantForm_apply_mem`: the
   exponential `exp (t • ρ (eᵢ))`, a root subgroup element when `ρ (eᵢ)` is nilpotent, preserves
@@ -103,15 +102,6 @@ theorem dividedPower_apply_mem_of_kostantForm_apply_mem (e : ι → L) (h : κ �
   rw [← Associative.map_dividedPower ρ n]
   exact hM _ (dividedPower_mem_kostantForm e h i n) v hv
 
-/-- Bundled `•`-stability form of `dividedPower_apply_mem_of_kostantForm_apply_mem`, ready to pass
-to `TauCeti.baseChangeExp` and `TauCeti.baseChangeExpHom`. -/
-theorem dividedPower_smul_mem_of_kostantForm_apply_mem {e : ι → L} {h : κ → L}
-    {ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V} {M : AddSubgroup V}
-    (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M) (i : ι) :
-    ∀ n, ∀ v ∈ M, Associative.dividedPower n
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) • v ∈ M :=
-  fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv
-
 /-- **A root subgroup element preserves an admissible lattice.** If an additive subgroup `M` of a
 representation `V` of `L` is stable under the Kostant integral form, then it is stable under the
 exponential `exp (t • ρ (eᵢ))` with `t` an integer, which is a root subgroup element when `ρ (eᵢ)`
@@ -129,6 +119,7 @@ theorem exp_zsmul_apply_mem_of_kostantForm_apply_mem (e : ι → L) (h : κ → 
     (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M) {i : ι} (t : ℤ)
     {v : V} (hv : v ∈ M) :
     IsNilpotent.exp (t • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) v ∈ M :=
-  exp_zsmul_smul_mem (dividedPower_smul_mem_of_kostantForm_apply_mem hM i) t hv
+  exp_zsmul_smul_mem (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (fun n _ hw =>
+    dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hw) t hv
 
 end TauCeti.UniversalEnvelopingAlgebra

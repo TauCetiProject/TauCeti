@@ -59,6 +59,7 @@ straightening relations in the `G2` subdirectory of this one.
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4–6*, Chapter VI, §1, no. 3.
 -/
 
 public section

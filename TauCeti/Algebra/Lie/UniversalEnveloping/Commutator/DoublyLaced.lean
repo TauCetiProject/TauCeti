@@ -72,10 +72,6 @@ attribute [local instance high] Algebra.toModule
 
 variable {R : Type*} [CommRing R] [Algebra ℤ R]
 
-private theorem dp_zsmul (c : ℤ) {x : A} (M : S) (hM : ∀ n, ∀ v ∈ M, dividedPower n x • v ∈ M) :
-    ∀ n, ∀ v ∈ M, dividedPower n (c • x) • v ∈ M :=
-  fun n => Associative.dividedPower_zsmul_smul_mem c x M (hM n)
-
 private theorem commute_exp_zsmul_right (ρ : F) (M : S) {a b : L} {q : ℤ} (hab : q • ⁅a, b⁆ = 0)
     (hMa : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ a)) • v ∈ M)
     (hMb : ∀ n, ∀ v ∈ M, dividedPower n (q • ρ (ι ℚ b)) • v ∈ M)
@@ -102,7 +98,8 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_eq (ρ : F) (M : S) {x y z
   have _ : HasUniqueDiv L := .of_module_rat L
   have hxz : c • ⁅x, z⁆ = (2 * d) • w := by rw [← lie_zsmul, ← hxy, hxxy]
   have hyw := zsmul_lie_eq_zero_of_zsmul_lie_eq_two_mul_zsmul hxy hxz hyz
-  have hMcz := dp_zsmul c M hMz; have hMdw := dp_zsmul d M hMw
+  have hMcz := fun n => Associative.dividedPower_zsmul_smul_mem c _ M (hMz n)
+  have hMdw := fun n => Associative.dividedPower_zsmul_smul_mem d _ M (hMw n)
   let tr := toAdd t; let ur := toAdd u; let E (a : A) hM ha := baseChangeExpHom (R := R) a M hM ha
   have hmul : E (ρ (ι ℚ x)) hMx hx t * E (ρ (ι ℚ y)) hMy hy u = E (ρ (ι ℚ y)) hMy hy u *
         E (c • ρ (ι ℚ z)) hMcz (hz.smul c) (ofAdd (tr * ur)) *
@@ -137,7 +134,8 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq (ρ : F) (M : S) {x
         baseChangeExpHom (ρ (ι ℚ w)) M hMw hw (ofAdd ((-d : R) * (toAdd t * toAdd u ^ 2))) := by
   have hyx : ⁅y, x⁆ = (-c) • z := by rw [← lie_skew y x, hxy, neg_zsmul]
   have hyz : (-c) • ⁅y, z⁆ = (2 * d) • w := by rw [← lie_zsmul, ← hyx, hyyx]
-  have hMcz := dp_zsmul (-c) M hMz; have hMdw := dp_zsmul d M hMw
+  have hMcz := fun n => Associative.dividedPower_zsmul_smul_mem (-c) _ M (hMz n)
+  have hMdw := fun n => Associative.dividedPower_zsmul_smul_mem d _ M (hMw n)
   let tr := toAdd t; let ur := toAdd u; let E (a : A) hM ha := baseChangeExpHom (R := R) a M hM ha
   have hmul : E (ρ (ι ℚ y)) hMy hy u * E (ρ (ι ℚ x)) hMx hx t⁻¹ = E (ρ (ι ℚ x)) hMx hx t⁻¹ *
         E ((-c) • ρ (ι ℚ z)) hMcz (hz.smul (-c)) (ofAdd (ur * -tr)) *

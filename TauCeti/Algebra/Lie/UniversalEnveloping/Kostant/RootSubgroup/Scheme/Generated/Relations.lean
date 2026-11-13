@@ -28,7 +28,7 @@ give commuting generated-group points, while a class-two root string
 [xᵢ(s), xⱼ(t)] = xₖ(cst).
 ```
 
-The file also transports the multiply-laced relation from
+The file also transports the multiply-laced relations from
 `Scheme/MultiplyLacedRelations.lean` and the type-`G₂` relation from
 `Scheme/Relations/G2/Basic.lean`, together with its short-pair counterpart in
 `Scheme/Relations/G2/ShortPair.lean`. All these relations hold intrinsically on the
@@ -51,6 +51,7 @@ The file also transports the multiply-laced relation from
 
 ## References
 
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Sections 26--27.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
