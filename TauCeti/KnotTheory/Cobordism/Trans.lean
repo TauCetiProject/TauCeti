@@ -332,16 +332,14 @@ private theorem range_proj_inr :
 private theorem isOpenEmbedding_proj_inl : IsOpenEmbedding (proj S₁ S₂ ∘ Sum.inl) := by
   have he : IsEmbedding (stackMap S₁ S₂ ∘ (proj S₁ S₂ ∘ Sum.inl)) :=
     (isSmoothEmbedding_lower S₁).isEmbedding.comp IsEmbedding.subtypeVal
-  refine ⟨⟨(isEmbedding_stackMap S₁ S₂).isInducing.of_comp_iff.1 he.isInducing,
-    fun x x' h ↦ he.injective (congrArg (stackMap S₁ S₂) h)⟩, ?_⟩
+  refine ⟨(isEmbedding_stackMap S₁ S₂).of_comp_iff.mp he, ?_⟩
   rw [range_proj_inl]
   exact isOpen_lt (continuous_snd.comp (isEmbedding_stackMap S₁ S₂).continuous) continuous_const
 
 private theorem isOpenEmbedding_proj_inr : IsOpenEmbedding (proj S₁ S₂ ∘ Sum.inr) := by
   have he : IsEmbedding (stackMap S₁ S₂ ∘ (proj S₁ S₂ ∘ Sum.inr)) :=
     (isSmoothEmbedding_upper S₂).isEmbedding.comp IsEmbedding.subtypeVal
-  refine ⟨⟨(isEmbedding_stackMap S₁ S₂).isInducing.of_comp_iff.1 he.isInducing,
-    fun y y' h ↦ he.injective (congrArg (stackMap S₁ S₂) h)⟩, ?_⟩
+  refine ⟨(isEmbedding_stackMap S₁ S₂).of_comp_iff.mp he, ?_⟩
   rw [range_proj_inr]
   exact isOpen_lt continuous_const (continuous_snd.comp (isEmbedding_stackMap S₁ S₂).continuous)
 
@@ -679,16 +677,12 @@ private theorem proj_inr_comp_transition :
 
 private theorem contMDiff_transition :
     ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (transition S₁ S₂) := by
-  intro w
-  have hT := congrFun (proj_inr_comp_transition S₁ S₂)
-  obtain ⟨τ, hτ, -, hτeq⟩ := exists_deck S₁ S₂ (isOpenEmbedding_proj_inr S₁ S₂)
-    (isImmersionAt_upper_val S₁ S₂ (transition S₁ S₂ w)) (hT w).symm
-  have hinl : ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
-      (Sum.inl ∘ Subtype.val : overlap S₁ S₂ → Pieces S₁ S₂) :=
-    ContMDiff.inl.comp contMDiff_subtype_val
-  refine (hτ.comp w (hinl w)).congr_of_eventuallyEq ?_
-  filter_upwards [hinl.continuous.continuousAt.preimage_mem_nhds hτeq] with w' hw'
-  exact (isOpenEmbedding_proj_inr S₁ S₂).injective ((hT w').trans hw'.symm)
+  have hc : ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
+      ((proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂) := by
+    rw [proj_inr_comp_transition]
+    exact (isLocalDiffeomorph_proj_inl S₁ S₂).contMDiff.comp contMDiff_subtype_val
+  exact hc.of_comp_isLocalDiffeomorph (isLocalDiffeomorph_proj_inr S₁ S₂)
+    ((isOpenEmbedding_proj_inr S₁ S₂).isEmbedding.continuous_iff.mpr hc.continuous)
 
 private theorem isInvertible_mfderiv_transition (w : overlap S₁ S₂) :
     (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) (transition S₁ S₂) w).IsInvertible := by

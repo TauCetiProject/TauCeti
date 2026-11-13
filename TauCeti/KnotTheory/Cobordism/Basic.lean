@@ -16,7 +16,8 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.KnotTheory.SmoothCircle
 
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
-import TauCeti.AlgebraicTopology.Singular.Torus.Exterior
+import TauCeti.AlgebraicTopology.Singular.Sphere
+import TauCeti.Geometry.Sphere.Circle
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
@@ -259,13 +260,14 @@ one copy of `ℚ`. -/
 @[simp]
 theorem genus_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
     (ofConcordance F).genus = 0 := by
-  -- The cylinder `S¹ × ℝ` is homotopy equivalent to the one-circle torus `Unit → S¹`.
+  -- The cylinder `S¹ × ℝ` is homotopy equivalent to the circle, that is the sphere `S¹`.
   let e := ContinuousMap.HomotopyEquiv.prodContractible Circle ℝ
-  have h := ((e.trans (Homeomorph.ulift.symm.trans
-      (Homeomorph.funUnique Unit (ULift.{0} Circle)).symm).toHomotopyEquiv).singularHomologyIso
+  let e' : Circle ≃ₜ TopCat.sphere.{0} 1 :=
+    Homeomorph.ulift.symm.trans sphereOneHomeomorphCircle.symm
+  have h := ((e.trans e'.toHomotopyEquiv).singularHomologyIso
     (ModuleCat.of ℚ ℚ) 1).toLinearEquiv.finrank_eq
-  rw [finrank_singularHomology_pi_circle] at h
-  simp only [Nat.card_unique, Nat.choose_self, finrank_self, mul_one] at h
+  rw [ModuleCat.finrank_singularHomology_sphere] at h
+  simp only [ite_true, one_ne_zero, ite_false, finrank_self, add_zero] at h
   -- The first homology of the cobordism is, by definition, that of the cylinder `S¹ × ℝ`.
   rw [genus_def, surfaceGenus_def]
   exact (congrArg (· / 2) h).trans (by norm_num)
