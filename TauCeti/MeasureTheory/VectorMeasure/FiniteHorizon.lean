@@ -24,9 +24,8 @@ increment formulas. These are the endpoint conventions for pathwise finite-varia
 
 An increasing-part decomposition identifies this signed measure with the difference of the
 parts' restricted Stieltjes measures, even if the parts have infinite mass on the whole line.
-For right-continuous BV paths in a complete normed group with strongly measurable evaluations
-within the horizon, evaluation of the finite-horizon vector measure on any fixed set is strongly
-measurable.
+For BV paths in a complete normed group with strongly measurable evaluations within the
+horizon, evaluation of the finite-horizon vector measure on any fixed set is strongly measurable.
 
 The construction uses Mathlib's `BoundedVariationOn.vectorMeasure` and `Set.IccExtend`.
 
@@ -226,8 +225,8 @@ theorem vectorMeasureIcc_congr (hf : BoundedVariationOn f (Icc a b))
   congr 2
 
 /-- A decomposition of the path's increments into two increasing right-continuous parts
-identifies its finite-horizon signed measure with the difference of their Stieltjes measures.
-Neither increasing part needs finite mass outside the horizon. -/
+identifies its finite-horizon signed measure with the difference of their Stieltjes measures
+restricted to `(a, b]`. Neither increasing part needs finite mass outside the horizon. -/
 theorem vectorMeasureIcc_eq_toSignedMeasure_sub
     {f : α → ℝ} (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b)
     (p q : StieltjesFunction α)
@@ -258,17 +257,38 @@ theorem vectorMeasureIcc_eq_toSignedMeasure_sub
       ENNReal.toReal_ofReal (sub_nonneg.mpr (q.mono hx.1))] using hpq x hx
 
 /-- Fixed-set evaluations of finite-horizon Stieltjes vector measures are strongly measurable
-when the BV paths are right-continuous within the horizon and have strongly measurable
-evaluations there. No measurability or regularity outside the horizon is required. -/
+when the BV paths have strongly measurable evaluations within the horizon.
+No measurability or regularity outside the horizon is required. -/
 theorem stronglyMeasurable_vectorMeasureIcc_apply {Ω : Type*} [MeasurableSpace Ω]
     {X : α → Ω → E} (hab : a ≤ b)
     (hX : ∀ t ∈ Icc a b, StronglyMeasurable (X t))
-    (hfr : ∀ ω, ∀ x ∈ Icc a b, ContinuousWithinAt (fun t => X t ω) (Icc x b) x)
     (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set α) :
     StronglyMeasurable (fun ω => (hv ω).vectorMeasureIcc hab s) := by
+  -- First obtain measurable right limits, using constant extension at the terminal endpoint.
+  have hlim (z : α) (hz : z ∈ Icc a b) :
+      StronglyMeasurable (fun ω => (Set.IccExtend hab ((X · ω) ∘ Subtype.val)).rightLim z) := by
+    by_cases hzb : z = b
+    · subst z
+      have heq (ω) : (Set.IccExtend hab ((X · ω) ∘ Subtype.val)).rightLim b = X b ω := by
+        rw [(TauCeti.continuousWithinAt_IccExtend_Ici hab (by simp)).rightLim_eq,
+          IccExtend_of_mem hab _ hz]
+        rfl
+      simpa only [heq] using hX b hz
+    · obtain ⟨u, -, hu, hut⟩ := exists_seq_strictAnti_tendsto' (lt_of_le_of_ne hz.2 hzb)
+      apply stronglyMeasurable_of_tendsto atTop
+        (fun n => hX (u n) ⟨hz.1.trans (hu n).1.le, (hu n).2.le⟩)
+      apply tendsto_pi_nhds.mpr
+      intro ω
+      convert (((hv ω).IccExtend hab).tendsto_rightLim z).comp
+        (tendsto_nhdsWithin_iff.mpr ⟨hut, Eventually.of_forall fun n => (hu n).1⟩) using 1
+      funext n
+      exact (IccExtend_of_mem hab ((X · ω) ∘ Subtype.val)
+        ⟨hz.1.trans (hu n).1.le, (hu n).2.le⟩).symm
+  -- Interval evaluations are differences of these limits; extend to Borel sets by induction.
   have huniv : StronglyMeasurable (fun ω => (hv ω).vectorMeasureIcc hab univ) := by
-    simpa only [vectorMeasureIcc_univ _ hab (hfr _ a (left_mem_Icc.mpr hab))] using
-      (hX b (right_mem_Icc.mpr hab)).fun_sub (hX a (left_mem_Icc.mpr hab))
+    simpa only [vectorMeasureIcc_def, VectorMeasure.restrict_apply_univ,
+      vectorMeasure_Ioc _ hab] using
+      (hlim b (right_mem_Icc.mpr hab)).fun_sub (hlim a (left_mem_Icc.mpr hab))
   by_cases hs : MeasurableSet s
   · induction s, hs using MeasurableSpace.induction_on_inter
       (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic α)) isPiSystem_Iic with
@@ -282,10 +302,10 @@ theorem stronglyMeasurable_vectorMeasureIcc_apply {Ω : Type*} [MeasurableSpace 
           inter_comm (Iic x), Ioc_inter_Iic, vectorMeasureIcc_restrict]
       simp_rw [heval]
       by_cases hax : a ≤ min b x
-      · simp_rw [vectorMeasureIcc_Ioc _ hab (hfr _ a (left_mem_Icc.mpr hab))
-          (hfr _ _ ⟨hax, min_le_left _ _⟩) (left_mem_Icc.mpr hab)
-          ⟨hax, min_le_left _ _⟩ hax]
-        exact (hX _ ⟨hax, min_le_left _ _⟩).fun_sub (hX a (left_mem_Icc.mpr hab))
+      · simp_rw [vectorMeasureIcc_def,
+          VectorMeasure.restrict_eq_self _ measurableSet_Ioc measurableSet_Ioc
+            (Ioc_subset_Ioc le_rfl (min_le_left b x)), vectorMeasure_Ioc _ hax]
+        exact (hlim _ ⟨hax, min_le_left _ _⟩).fun_sub (hlim a (left_mem_Icc.mpr hab))
       · simp only [Ioc_eq_empty (not_lt.mpr (le_of_not_ge hax)), VectorMeasure.empty]
         exact stronglyMeasurable_const
     | compl s hs ih =>
@@ -300,16 +320,15 @@ theorem stronglyMeasurable_vectorMeasureIcc_apply {Ω : Type*} [MeasurableSpace 
     exact stronglyMeasurable_const
 
 /-- Fixed-set evaluations of finite-horizon Stieltjes vector measures are measurable when
-right-continuous BV paths in a second-countable Borel space have measurable evaluations within
+BV paths in a second-countable Borel space have measurable evaluations within
 the horizon. No measurability or regularity outside the horizon is required. -/
 theorem measurable_vectorMeasureIcc_apply {Ω : Type*} [MeasurableSpace Ω]
     [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
     {X : α → Ω → E} (hab : a ≤ b)
     (hX : ∀ t ∈ Icc a b, Measurable (X t))
-    (hfr : ∀ ω, ∀ x ∈ Icc a b, ContinuousWithinAt (fun t => X t ω) (Icc x b) x)
     (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set α) :
     Measurable (fun ω => (hv ω).vectorMeasureIcc hab s) :=
   (stronglyMeasurable_vectorMeasureIcc_apply hab
-    (fun t ht => (hX t ht).stronglyMeasurable) hfr hv s).measurable
+    (fun t ht => (hX t ht).stronglyMeasurable) hv s).measurable
 
 end BoundedVariationOn

@@ -10,19 +10,21 @@ public import TauCeti.MeasureTheory.VectorMeasure.FiniteHorizon
 import TauCeti.Topology.EMetricSpace.VariationOnFromTo
 
 /-!
-# Adapted signed finite-variation measures
+# Adapted variation parts and finite-horizon vector measures
 
 A continuous adapted real process of locally bounded variation decomposes into two continuous
 adapted increasing processes starting at zero. Their sum is the accumulated variation and their
 difference is the original process minus its initial value. In particular the parts are
 predictable on the original filtration; no moment bounds or usual conditions are needed.
 
-This decomposition identifies the finite-horizon derivative signed measure with the difference
-of two random Stieltjes measures. More generally, for adapted processes valued in a complete
-normed group with right-continuous BV paths on a finite horizon, fixed-set evaluations of the
-derivative vector measure are strongly measurable at the horizon. This supplies finite-variation
-integrators without assuming that the original path is increasing or globally BV.
-The open initial endpoint excludes an initial atom.
+Together with `BoundedVariationOn.vectorMeasureIcc_eq_toSignedMeasure_sub`, this decomposition
+identifies the finite-horizon derivative signed measure with the difference of the parts'
+Stieltjes measures restricted to `(a, b]`.
+
+For strongly adapted processes valued in a complete normed group with BV paths on a finite
+horizon, fixed-set evaluations of the derivative vector measure are strongly measurable at the
+horizon. This supplies finite-variation integrators without assuming that the original path is
+increasing or globally BV. The open initial endpoint excludes an initial atom.
 
 The construction uses Mathlib's signed-variation formulas
 `variationOnFromTo.add_self_monotoneOn` and `variationOnFromTo.sub_self_monotoneOn`, and the
@@ -45,7 +47,7 @@ variable {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
 
 /-- The positive and negative variation parts of a continuous adapted locally BV process can
 be chosen continuously and predictably on its raw filtration. Both start at zero; their sum
-is the accumulated variation, and their difference is the centered process. -/
+is the accumulated variation, and their difference is the process minus its initial value. -/
 theorem exists_stieltjesFunction_sub (hX : StronglyAdapted ℱ X)
     (hc : ∀ ω, Continuous (fun t => X t ω))
     (hv : ∀ ω, LocallyBoundedVariationOn (fun t => X t ω) univ) :
@@ -115,27 +117,25 @@ variable {R : Type*} [LinearOrder R] [TopologicalSpace R] [OrderTopology R]
   {E : Type*} [NormedAddCommGroup E] [CompleteSpace E]
   {ℱ : Filtration R m} {X : R → Ω → E} {a b : R}
 
-/-- Every fixed-set evaluation of the finite-horizon Stieltjes vector measure of an adapted
-process with right-continuous BV paths on that horizon is strongly measurable at the horizon.
+/-- Every fixed-set evaluation of the finite-horizon Stieltjes vector measure of a strongly
+adapted process with BV paths on that horizon is strongly measurable at the horizon.
 No moments or path regularity outside the horizon are required. -/
 theorem stronglyMeasurable_vectorMeasureIcc_apply (hX : StronglyAdapted ℱ X)
     (hab : a ≤ b)
-    (hfr : ∀ ω, ∀ t ∈ Icc a b, ContinuousWithinAt (fun u => X u ω) (Icc t b) t)
     (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set R) :
     StronglyMeasurable[ℱ b] (fun ω => (hv ω).vectorMeasureIcc hab s) := by
   let : MeasurableSpace Ω := ℱ b
   exact BoundedVariationOn.stronglyMeasurable_vectorMeasureIcc_apply hab
-    (fun _ ht => hX.stronglyMeasurable_le ht.2) hfr hv s
+    (fun _ ht => hX.stronglyMeasurable_le ht.2) hv s
 
-/-- Every fixed-set evaluation of the finite-horizon Stieltjes vector measure of an adapted
-process with right-continuous BV paths on that horizon is measurable at the horizon.
+/-- Every fixed-set evaluation of the finite-horizon Stieltjes vector measure of a strongly
+adapted process with BV paths on that horizon is measurable at the horizon.
 No moments or path regularity outside the horizon are required. -/
 theorem measurable_vectorMeasureIcc_apply [MeasurableSpace E] [BorelSpace E]
     (hX : StronglyAdapted ℱ X) (hab : a ≤ b)
-    (hfr : ∀ ω, ∀ t ∈ Icc a b, ContinuousWithinAt (fun u => X u ω) (Icc t b) t)
     (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set R) :
     Measurable[ℱ b] (fun ω => (hv ω).vectorMeasureIcc hab s) :=
-  (hX.stronglyMeasurable_vectorMeasureIcc_apply hab hfr hv s).measurable
+  (hX.stronglyMeasurable_vectorMeasureIcc_apply hab hv s).measurable
 
 end VectorMeasure
 
