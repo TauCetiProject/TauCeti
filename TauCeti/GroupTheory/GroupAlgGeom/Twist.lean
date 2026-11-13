@@ -18,10 +18,11 @@ at the point `v ↦ A(u) ^ l * u v * A(u) ^ r` (`eval_twistHom`). When the subst
 fixes `A`, so do the substitutions for the natural powers of `A` (`twistHom_pow_self`), and they
 fix every element that the substitution for `A` fixes
 (`twistHom_pow_apply_eq_self_of_apply_eq_self`). When the substitutions for `A` and for `A⁻¹`
-fix `A`, so do the substitutions for all the powers `A ^ k` (`twistHom_zpow_self`), and these
-form a one-parameter group of `G`-automorphisms of `G[X]`: the automorphism `twist A e h₁ h₂` for
-`A` itself has `k`-th power the substitution for `A ^ k` (`twist_pow_apply`, `twist_zpow_apply`),
-and its inverse is the substitution for `A⁻¹` (`twist_symm_apply`).
+fix `A`, so do the substitutions for all the powers `A ^ k` (`twistHom_zpow_self`), and they fix
+every element that the substitution for `A` fixes (`twistHom_zpow_apply_eq_self_of_apply_eq_self`).
+These form a one-parameter group of `G`-automorphisms of `G[X]`: the automorphism
+`twist A e h₁ h₂` for `A` itself has `k`-th power the substitution for `A ^ k` (`twist_pow_apply`,
+`twist_zpow_apply`), and its inverse is the substitution for `A⁻¹` (`twist_symm_apply`).
 
 The Nielsen-type automorphisms used to parametrise the solutions of quadratic equations are of
 this form: a block of variables is multiplied on the left or on the right, or conjugated, by a
@@ -105,14 +106,25 @@ theorem twistHom_pow_comp (h₁ : twistHom A e A = A) (j k : ℕ) :
   rw [pow_add]
   exact twistHom_comp (by rw [map_pow, twistHom_pow_self h₁ j]) ((Commute.refl A).pow_pow j k)
 
+/-- If the substitutions for `A` and for `A⁻¹` fix `A` and the substitution for `A` fixes `w`,
+then the substitution for every integer power of `A` fixes `w`. -/
+theorem twistHom_zpow_apply_eq_self_of_apply_eq_self (h₁ : twistHom A e A = A)
+    (h₂ : twistHom A⁻¹ e A = A) {w : GX G X} (hw : twistHom A e w = w) (k : ℤ) :
+    twistHom (A ^ k) e w = w := by
+  obtain ⟨n, rfl | rfl⟩ := k.eq_nat_or_neg
+  · rw [zpow_natCast, twistHom_pow_apply_eq_self_of_apply_eq_self h₁ hw]
+  · rw [zpow_neg, zpow_natCast, ← inv_pow]
+    refine twistHom_pow_apply_eq_self_of_apply_eq_self (by rw [map_inv, h₂]) ?_ n
+    -- The substitution for `A⁻¹` undoes the substitution for `A`, which fixes `w`.
+    nth_rw 1 [← hw]
+    rw [← MonoidHom.comp_apply, twistHom_comp h₂ (Commute.refl A).inv_left, inv_mul_cancel,
+      twistHom_one, MonoidHom.id_apply]
+
 /-- If the substitutions for `A` and for `A⁻¹` fix `A`, then so does the substitution for every
 integer power of `A`. -/
 theorem twistHom_zpow_self (h₁ : twistHom A e A = A) (h₂ : twistHom A⁻¹ e A = A) (k : ℤ) :
-    twistHom (A ^ k) e A = A := by
-  obtain ⟨n, rfl | rfl⟩ := k.eq_nat_or_neg
-  · rw [zpow_natCast, twistHom_pow_self h₁]
-  · rw [zpow_neg, zpow_natCast, ← inv_pow, ← inv_inj, ← map_inv,
-      twistHom_pow_self (by rw [map_inv, h₂])]
+    twistHom (A ^ k) e A = A :=
+  twistHom_zpow_apply_eq_self_of_apply_eq_self h₁ h₂ h₁ k
 
 /-- Evaluating the image of a word under the substitution `v ↦ A ^ l * v * A ^ r` at a point `u`
 is evaluating the word at the point `v ↦ A(u) ^ l * u v * A(u) ^ r`. -/
