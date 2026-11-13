@@ -26,7 +26,9 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.exists_nat_prod_lt` bounds both coordinates of a finite set of pairs of
   natural numbers.
 * `Finset.exists_perm_eqOn_le_apply` gives a permutation of `ℕ` fixing one finite set pointwise
-  and carrying a disjoint one past any bound.
+  and carrying a disjoint one past any bound, and `Finset.exists_perm_prod_fix_and_le` gives a
+  permutation of `ℕ` fixing every index of `tA ⊆ S ×ˢ S` and moving both coordinates of every
+  index of `tB ⊆ S' ×ˢ S'` past a bound, for disjoint `S` and `S'`.
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
 * `TauCeti.card_nonempty_finset` counts the nonempty finsets of a finite type.
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
@@ -80,8 +82,8 @@ import TauCeti.Data.Set.PowersetCard
   `Finset.mk_mem_map_swap_prodCongr_refl_iff` describe membership in a finset of pairs whose
   first coordinates are transposed.
 * `Finset.union_eq_union_and_disjoint_and_disjoint_of_repartition` shows that two pairs of
-  disjoint finsets partition the same elements, given two such partitions they agree with away
-  from a set of exceptional elements, and a comparison at the exceptional elements.
+  disjoint finsets partition the same elements, given two such partitions with which they agree
+  away from a set of exceptional elements, and a comparison at the exceptional elements.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
@@ -89,7 +91,7 @@ import TauCeti.Data.Set.PowersetCard
   coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
   says that this count is symmetric in the two factors,
   `Finset.card_mul_card_le_two_mul_card_filter_ne_product` says that these pairs make up at least
-  half of the product when the second factor has two elements, and
+  half of the product when the second factor has at least two elements, and
   `Finset.card_filter_ne_product_mul_card_le` bounds the proportion of these pairs in a
   subproduct of the product of two equal or disjoint finsets. Likewise
   `Finset.sq_mul_card_filter_ne_product_le` says that a rectangle with `ε`-fraction sides carries
@@ -112,7 +114,7 @@ namespace TauCeti
 
 /-- A union of two products of finsets can be rearranged by distributing each product over its
 union coordinate. -/
-theorem product_union_eq_union_product {s s' : Finset α} {t t' : Finset β}
+theorem product_union_eq_union_product {α β : Type*} {s s' : Finset α} {t t' : Finset β}
     [DecidableEq α] [DecidableEq β] :
     s ×ˢ t ∪ (s ∪ s') ×ˢ t' = s' ×ˢ t' ∪ s ×ˢ (t ∪ t') := by
   rw [Finset.union_product, Finset.product_union]
@@ -216,7 +218,8 @@ namespace Finset
 open scoped symmDiff
 
 /-- Every pair in the product of disjoint finsets has distinct coordinates. -/
-theorem filter_ne_product_of_disjoint {s t : Finset α} [DecidableEq α] (hst : Disjoint s t) :
+theorem filter_ne_product_of_disjoint {α : Type*} {s t : Finset α} [DecidableEq α]
+    (hst : Disjoint s t) :
     (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = s ×ˢ t :=
   filter_true_of_mem fun _ hp =>
     hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
@@ -235,7 +238,7 @@ theorem sq_mul_card_filter_ne_product_le {α R : Type*} [DecidableEq α] [CommSe
     _ ≤ #X * #Y := mul_le_mul hXc hYc (by positivity) (Nat.cast_nonneg _)
 
 /-- A finset has at most `#s ^ 2` ordered pairs of distinct elements. -/
-theorem card_offDiag_le_sq (s : Finset α) : #s.offDiag ≤ #s ^ 2 := by
+theorem card_offDiag_le_sq {α : Type*} (s : Finset α) : #s.offDiag ≤ #s ^ 2 := by
   rw [offDiag_card, sq]
   exact Nat.sub_le _ _
 
