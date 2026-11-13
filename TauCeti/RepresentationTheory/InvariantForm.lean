@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
+public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.Irreducible
 
 /-!
@@ -36,9 +37,11 @@ forms, and any nonzero one on it is either symmetric or alternating (in characte
 symmetric).  For an irreducible representation of a finite group over an algebraically closed
 field of characteristic zero, the values `+1` and `-1` of the Frobenius-Schur indicator
 `TauCeti.Representation.frobeniusSchurIndicator` are characterized by these invariant symmetric
-and alternating forms; this file supplies the forms, not the count.
+and alternating forms; this file supplies the forms, not their character-theoretic count.
 
-Nothing here needs a finite group, and almost nothing needs finite dimensions: invariance, and the
+Apart from the count of the invariant forms by the invariants of the tensor square, which needs
+`|G|` to be invertible, nothing here needs a finite group, and almost nothing needs finite
+dimensions: invariance, and the
 symmetric and alternating invariant forms with it, are defined for a representation of a monoid on
 a module over a commutative semiring, and only the results that invoke Schur's lemma ask for an
 algebraically closed field and a finite-dimensional space.  The `g⁻¹` in
@@ -73,6 +76,10 @@ representation, is what makes `G` a group.
 * `Representation.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms`: so
   away from characteristic two, in finite dimensions, the two counts add to the number of invariant
   forms.
+* `Representation.map_lcurry_eq_invariantForms`: currying maps the invariant functionals on the
+  tensor square `V ⊗ V` onto the invariant forms, over any commutative ring.
+* `Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self`: over a field in which
+  `|G|` is invertible, the invariant forms and the invariants of `V ⊗ V` have the same `finrank`.
 * `TauCeti.Representation.IsInvariantForm.nondegenerate` and
   `TauCeti.Representation.IsInvariantForm.nondegenerate_iff_ne_zero`: an invariant form on an
   irreducible representation is nondegenerate exactly when it is nonzero.
@@ -582,5 +589,45 @@ theorem finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms
       (IsRegular.of_ne_zero (two_ne_zero (α := k))).left ρ, finrank_bot, add_zero, eq_comm] at h
 
 end SymmetricAlternatingFinrank
+
+/-! ### Invariant forms from invariant functionals on the tensor square -/
+
+section TensorSquare
+
+variable {k G V : Type*} [CommRing k] [Group G] [AddCommMonoid V] [Module k V]
+
+/-- Over any commutative ring, currying (`TensorProduct.lcurry`) maps the invariant functionals on
+the tensor square onto the invariant forms: a functional `ψ` on `V ⊗ V` is invariant exactly when
+the form `(x, y) ↦ ψ (x ⊗ y)` is. -/
+theorem map_lcurry_eq_invariantForms (ρ : Representation k G V) :
+    Submodule.map (TensorProduct.lcurry (RingHom.id k) V V k) (ρ.tprod ρ).dual.invariants =
+      invariantForms ρ := by
+  refine le_antisymm (Submodule.map_le_iff_le_comap.mpr fun ψ hψ => ?_) fun B hB => ?_
+  · refine mem_invariantForms.mpr (isInvariantForm_iff.mpr fun g x y => ?_)
+    simp only [TensorProduct.lcurry_apply]
+    rw [← TensorProduct.map_tmul, ← tprod_apply, apply_of_mem_invariants_dual hψ]
+  · refine ⟨TensorProduct.lift.equiv (RingHom.id k) V V k B,
+      mem_invariants_dual_iff.mpr fun g u => ?_, ?_⟩
+    · have hext : TensorProduct.lift.equiv (RingHom.id k) V V k B ∘ₗ (ρ.tprod ρ) g =
+          TensorProduct.lift.equiv (RingHom.id k) V V k B :=
+        TensorProduct.ext' fun x y => by
+          simpa using (mem_invariantForms.mp hB).apply g x y
+      exact LinearMap.congr_fun hext u
+    · exact (TensorProduct.lift.equiv (RingHom.id k) V V k).symm_apply_apply B
+
+end TensorSquare
+
+/-- **The invariant forms and the invariants of the tensor square have the same `finrank`**,
+whenever `|G|` is invertible in the field `k`: currying identifies the invariant forms with the
+invariant functionals on `V ⊗ V` (`Representation.map_lcurry_eq_invariantForms`), and a
+representation and its dual have equally many invariants
+(`TauCeti.Representation.finrank_invariants_dual`).  They have the same dimension when
+finite-dimensional, and both `finrank`s are `0`, by convention, when infinite-dimensional. -/
+theorem finrank_invariantForms_eq_finrank_invariants_tprod_self {k G V : Type*} [Field k] [Group G]
+    [AddCommGroup V] [Module k V] [Invertible (Nat.card G : k)] (ρ : Representation k G V) :
+    finrank k (invariantForms ρ) = finrank k (ρ.tprod ρ).invariants := by
+  rw [← map_lcurry_eq_invariantForms ρ]
+  exact (LinearEquiv.finrank_map_eq (TensorProduct.lift.equiv (RingHom.id k) V V k).symm _).trans
+    (finrank_invariants_dual _)
 
 end Representation

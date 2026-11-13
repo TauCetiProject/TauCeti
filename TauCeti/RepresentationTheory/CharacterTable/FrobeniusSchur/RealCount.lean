@@ -80,8 +80,8 @@ declared into the root `Representation` namespace rather than into `TauCeti.Repr
 Everything indexed by a row of the character table is named in plain `TauCeti`, as in the sibling
 module `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/InvolutionCount.lean`.
 
-The field is taken in `Type` rather than an arbitrary universe, matching
-`TauCeti.frobeniusSchurIndicatorRow`.
+The results about the rows of the character table take the field in `Type` rather than an arbitrary
+universe, matching `TauCeti.frobeniusSchurIndicatorRow`.
 
 ## References
 
@@ -93,13 +93,13 @@ public section
 
 open Module (finrank)
 
-universe v w
+universe v
 
 namespace Representation
 
 open TauCeti TauCeti.Representation
 
-variable {k : Type} {G : Type v} {V : Type w} [Field k] [Group G] [AddCommGroup V] [Module k V]
+variable {k : Type*} {G : Type*} {V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
   [FiniteDimensional k V] [Fintype G] [Invertible (Nat.card G : k)]
 
 /-- **The average of the squared character counts the invariant bilinear forms**:
