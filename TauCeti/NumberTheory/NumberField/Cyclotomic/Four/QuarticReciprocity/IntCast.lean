@@ -357,7 +357,7 @@ private theorem coe_quartic_reciprocity_intCast_prime {π : 𝓞 K} (hπ : IsPri
       ((powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) : 𝓞 K) : K) := by
     have h := congrArg ((↑) : 𝓞 K → K) (quartic_reciprocity_natCast_prime hπ hp hq hq2)
     simp only [map_mul, map_pow, ← RingOfIntegers.coe_eq_algebraMap] at h
-    rwa [hπ.coe_powerResidueSymbolIdeal_mk_neg_one, ← zpow_natCast, ← zpow_mul'] at h
+    rwa [hπ.powerResidueSymbolIdeal_mk_neg_one, ← zpow_natCast, ← zpow_mul'] at h
   have hnat :
       ((powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ (q : 𝓞 K)) : 𝓞 K) : K) =
       ((powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) : 𝓞 K) : K) *
@@ -376,7 +376,7 @@ private theorem coe_quartic_reciprocity_intCast_prime {π : 𝓞 K} (hπ : IsPri
       rw [hp_eq, ← hq_def, Int.cast_neg, Int.cast_natCast, span_singleton_neg]
     rw [hspan, hneg]
     simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap]
-    rw [hπ.coe_powerResidueSymbolIdeal_mk_neg_one, hnat, mul_left_comm,
+    rw [hπ.powerResidueSymbolIdeal_mk_neg_one, hnat, mul_left_comm,
       ← zpow_add₀ (by norm_num)]
     congr 1
     obtain ⟨k, hk⟩ := hq_odd
@@ -403,7 +403,7 @@ private theorem coe_quartic_reciprocity_intCast_of_prime_of_odd {π : 𝓞 K}
     · simp
     · simp only [Int.cast_neg, Int.cast_one]
       push_cast
-      rw [one_mul, hπ.coe_powerResidueSymbolIdeal_mk_neg_one]
+      rw [one_mul, hπ.powerResidueSymbolIdeal_mk_neg_one]
       exact zpow_eq_zpow_of_modEq (n := 2) (by norm_num)
         (Int.modEq_iff_dvd.mpr ⟨-N4, by ring⟩)
   | h₃ m' p hm'0 hp_int ih =>
@@ -445,11 +445,11 @@ theorem IsPrimaryGaussian.coe_quartic_reciprocity_intCast_of_odd {π : 𝓞 K}
   | mul p y hp hp_prim hy ih =>
     have hp0 : span {p} ≠ ⊥ := by simpa using hp.ne_zero
     have hy0 : span {y} ≠ ⊥ := by simpa using hy.ne_zero
-    have hneg := (hp_prim.mul hy).coe_powerResidueSymbolIdeal_mk_neg_one
+    have hneg := (hp_prim.mul hy).powerResidueSymbolIdeal_mk_neg_one
     rw [← span_singleton_mul_span_singleton, powerResidueSymbolIdeal_mul_right hp0 hy0,
       RingOfIntegers.coe_eq_algebraMap, map_mul, ← RingOfIntegers.coe_eq_algebraMap,
-      ← RingOfIntegers.coe_eq_algebraMap, hp_prim.coe_powerResidueSymbolIdeal_mk_neg_one,
-      hy.coe_powerResidueSymbolIdeal_mk_neg_one] at hneg
+      ← RingOfIntegers.coe_eq_algebraMap, hp_prim.powerResidueSymbolIdeal_mk_neg_one,
+      hy.powerResidueSymbolIdeal_mk_neg_one] at hneg
     simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap]
     rw [← span_singleton_mul_span_singleton, powerResidueSymbolIdeal_mul_right hp0 hy0]
     simp only [RingHom.map_mul, ← RingOfIntegers.coe_eq_algebraMap]
