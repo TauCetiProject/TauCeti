@@ -10,7 +10,10 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import TauCeti.LinearAlgebra.Dual.Basis
 
 /-!
-# Opposite duals of finite projective modules
+# Dual bases and opposite duals of finite projective modules
+
+A finite projective module `M` over a semiring `R` has a finite dual basis: finitely many
+elements `bⱼ` and functionals `φⱼ` with `x = ∑ⱼ φⱼ(x) • bⱼ` for every `x`.
 
 For a left module `M` over a possibly noncommutative semiring `R`, the dual
 `Hom_R(M, R)` is a left `Rᵐᵒᵖ`-module, with scalars acting on the values on the right.
@@ -20,6 +23,7 @@ finite projectives, as required when forming the Auslander–Bridger transpose.
 
 ## Main results
 
+* `TauCeti.exists_sum_dual_smul_eq`: a finite projective module has a finite dual basis.
 * `TauCeti.oppositeDual_free`: the opposite dual of a finite free module is free.
 * `TauCeti.oppositeDual_projective`: the opposite dual of a finite projective module is projective.
 * `TauCeti.oppositeDual_finite`: the opposite dual of a finite projective module is finite.

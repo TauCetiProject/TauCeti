@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Defs
-public import Mathlib.RingTheory.Finiteness.Projective
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import TauCeti.Algebra.Ring.Opposite
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective

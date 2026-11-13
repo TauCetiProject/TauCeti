@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.IsTensorProduct.Pushout
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
-import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.Dual.FiniteProjective
 import TauCeti.RingTheory.Extension.Generators
