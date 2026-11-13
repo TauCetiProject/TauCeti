@@ -9,7 +9,6 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.Renewal.ArrivalMeasure
 public import TauCeti.Probability.Renewal.Exponential.Process
 public import TauCeti.Probability.PointProcess.Poisson.Construction
-public import TauCeti.Probability.PointProcess.Poisson.LaplaceCharacterization
 import TauCeti.Probability.PointProcess.Poisson.Count
 import TauCeti.Probability.PointProcess.Poisson.IntegerValued
 import TauCeti.Probability.RandomMeasure.Cumulative
@@ -93,12 +92,6 @@ private theorem identDistrib_renewalArrivalMeasure_of_expMeasure
   · filter_upwards [hrenew] with ω hω
     exact fun t ↦ by rw [congrFun hω t]; exact ENNReal.natCast_ne_top _
 
-private theorem isPoissonRandomMeasure_poissonLaw_smul_nnvolume :
-    IsPoissonRandomMeasure (r • nnvolume).poissonLaw id ((r : ℝ≥0∞) • nnvolume) := by
-  rw [Measure.coe_nnreal_smul]
-  exact isPoissonRandomMeasure_of_laplaceFunctional measurable_id
-    (fun _ hf ↦ Measure.laplaceFunctional_poissonLaw (r • nnvolume) hf)
-
 /-- The entire arrival measure of independent exponential waiting times has the
 homogeneous Poisson sampling law. The artificial arrival at zero is excluded.
 Independence forces `P` to be a probability measure; together with the law hypotheses,
@@ -108,7 +101,8 @@ theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     HasLaw (renewalArrivalMeasure T) (r • nnvolume).poissonLaw P := by
   exact (identDistrib_renewalArrivalMeasure_of_expMeasure hT hindep hlaw
-    isPoissonRandomMeasure_poissonLaw_smul_nnvolume).symm.hasLaw HasLaw.id
+    (by simpa only [Measure.coe_nnreal_smul] using
+      isPoissonRandomMeasure_poissonLaw (r • nnvolume))).symm.hasLaw HasLaw.id
 
 /-- Independent exponential waiting times generate a homogeneous Poisson random measure.
 In particular, counts on arbitrary disjoint measurable sets are independent, not only counts
@@ -117,9 +111,11 @@ theorem isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure
     (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     IsPoissonRandomMeasure P (renewalArrivalMeasure T) ((r : ℝ≥0∞) • nnvolume) := by
-  exact isPoissonRandomMeasure_poissonLaw_smul_nnvolume.of_identDistrib
+  rw [Measure.coe_nnreal_smul]
+  exact (isPoissonRandomMeasure_poissonLaw (r • nnvolume)).of_identDistrib
     (measurable_renewalArrivalMeasure hT)
     (identDistrib_renewalArrivalMeasure_of_expMeasure hT hindep hlaw
-      isPoissonRandomMeasure_poissonLaw_smul_nnvolume).symm
+      (by simpa only [Measure.coe_nnreal_smul] using
+        isPoissonRandomMeasure_poissonLaw (r • nnvolume))).symm
 
 end TauCeti.Probability
