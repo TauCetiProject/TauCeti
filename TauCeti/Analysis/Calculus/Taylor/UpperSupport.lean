@@ -20,8 +20,8 @@ The supported function need not be differentiable.
 
 ## References
 
-* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, local Shi localization,
-  Theorems 3.27–3.29.
+* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Theorems 3.27–3.29:
+  these analytic estimates supply the distance support barriers used in localization.
 * https://github.com/frenzymath/lean-eval-submissions
 * https://github.com/frenzymath/PoincareConjecture
 -/
@@ -50,7 +50,6 @@ theorem exists_smooth_upper_support_of_bounded_jets
     (hb : Tendsto b atTop (𝓝 Λ))
     (hA : ∀ j, ‖A j‖ ≤ K)
     (hH : ∀ j, ‖H j‖ ≤ M)
-    (hHsym : ∀ j v w, H j v w = H j w v)
     (htrace : ∀ j, ∑ i, H j (e i) (e i) ≤ b j)
     (hmajor : ∀ j x, ‖x‖ < ρ →
       f x ≤ c j + A j x + (1 / 2 : ℝ) * H j x x + C * ‖x‖ ^ 3)
@@ -92,12 +91,6 @@ theorem exists_smooth_upper_support_of_bounded_jets
     have hcont : Continuous (fun Q : E →L[ℝ] E →L[ℝ] ℝ ↦ Q v w) :=
       (continuous_id.clm_apply continuous_const).clm_apply continuous_const
     exact (hcont.tendsto B).comp hBlim
-  have hBsym (v w : E) : B v w = B w v := by
-    apply le_antisymm
-    · exact le_of_tendsto_of_tendsto' (hBEval v w) (hBEval w v)
-        (fun j ↦ (hHsym (σ j) v w).le)
-    · exact le_of_tendsto_of_tendsto' (hBEval w v) (hBEval v w)
-        (fun j ↦ (hHsym (σ j) w v).le)
   have hBtrace : (∑ i, B (e i) (e i)) ≤ Λ := by
     have ht : Tendsto (fun j ↦ ∑ i, H (σ j) (e i) (e i))
         atTop (𝓝 (∑ i, B (e i) (e i))) :=
@@ -126,15 +119,16 @@ theorem exists_smooth_upper_support_of_bounded_jets
   let J : E →L[ℝ] E →L[ℝ] ℝ := innerSL ℝ
   have hJ (v w : E) : J v w = inner ℝ v w := rfl
   let Q : E →L[ℝ] E →L[ℝ] ℝ :=
-    B + (2 * μ) • J
+    (1 / 2 : ℝ) • (B + B.flip) + (2 * μ) • J
   have hQsym (v w : E) : Q v w = Q w v := by
     simp only [Q, add_apply, smul_apply,
-      smul_eq_mul, hJ]
-    rw [hBsym v w, real_inner_comm v w]
+      smul_eq_mul, ContinuousLinearMap.flip_apply, hJ]
+    rw [real_inner_comm v w]
+    ring
   let P : E → ℝ := fun x ↦ f 0 + a x + (1 / 2 : ℝ) * Q x x
   have hPcont : ContDiff ℝ ∞ P := by
     exact ((contDiff_const (𝕜 := ℝ) (n := ∞) (c := f 0)).add a.contDiff).add
-      (contDiff_const.mul (Q.contDiff.clm_apply contDiff_id))
+      (contDiff_const.mul Q.contDiff_apply_self)
   have hPmajor (x : E) (hx : ‖x‖ < r) : f x ≤ P x := by
     have hxρ : ‖x‖ < ρ := hx.trans_le hrρ
     have hxn : ‖x‖ ≤ μ / (C + 1) := hx.le.trans (min_le_right _ _)
@@ -151,7 +145,7 @@ theorem exists_smooth_upper_support_of_bounded_jets
         add_le_add_right hcubic _
       _ = P x := by
         simp only [P, Q, add_apply, smul_apply,
-          smul_eq_mul, hJ, real_inner_self_eq_norm_sq]
+          smul_eq_mul, ContinuousLinearMap.flip_apply, hJ, real_inner_self_eq_norm_sq]
         ring
   have hdiag (x : E) :
       HasFDerivAt (fun y : E ↦ (1 / 2 : ℝ) * Q y y) (Q x) x := by
@@ -175,9 +169,12 @@ theorem exists_smooth_upper_support_of_bounded_jets
   have hQtrace : (∑ i, Q (e i) (e i)) =
       (∑ i, B (e i) (e i)) + (2 * μ) * (Fintype.card ι : ℝ) := by
     simp only [Q, add_apply, smul_apply,
-      smul_eq_mul, hJ, OrthonormalBasis.inner_eq_one, mul_one,
+      smul_eq_mul, ContinuousLinearMap.flip_apply, hJ,
+      OrthonormalBasis.inner_eq_one, mul_one,
       Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
       nsmul_eq_mul]
+    simp_rw [mul_add]
+    rw [Finset.sum_add_distrib, ← Finset.mul_sum]
     ring
   have hμeq : μ * (2 * ((Fintype.card ι : ℝ) + 1)) = ε := by
     dsimp [μ]

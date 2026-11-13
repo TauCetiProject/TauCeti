@@ -16,8 +16,8 @@ radius and cubic remainder for their square roots. No differentiability of the e
 
 ## References
 
-* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, local Shi localization,
-  Theorems 3.27–3.29.
+* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Theorems 3.27–3.29:
+  these analytic estimates supply the distance support barriers used in localization.
 * https://github.com/frenzymath/lean-eval-submissions
 * https://github.com/frenzymath/PoincareConjecture
 -/

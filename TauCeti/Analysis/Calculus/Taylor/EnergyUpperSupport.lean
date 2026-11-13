@@ -17,8 +17,8 @@ from the Hessian. A common cubic bound then yields an exactly touching smooth su
 
 ## References
 
-* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, local Shi localization,
-  Theorems 3.27–3.29.
+* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Theorems 3.27–3.29:
+  these analytic estimates supply the distance support barriers used in localization.
 * https://github.com/frenzymath/lean-eval-submissions
 * https://github.com/frenzymath/PoincareConjecture
 -/
@@ -45,7 +45,6 @@ theorem exists_smooth_upper_support_of_energy_expansions
     (hc : ∀ j, d ≤ c j ∧ c j ≤ R) (hclim : Tendsto c atTop (𝓝 d))
     (henergy0 : ∀ j, energy j 0 = c j ^ 2)
     (hL : ∀ j, ‖L j‖ ≤ 2 * c j) (hQ : ∀ j, ‖Q j‖ ≤ B)
-    (hQsym : ∀ j v w, Q j v w = Q j w v)
     (htrace : ∀ j, ∑ i, Q j (e i) (e i) ≤
       2 * (Fintype.card ι : ℝ) + 2 * (Fintype.card ι : ℝ) * K * c j ^ 2)
     (herror : ∀ j z, ‖z‖ < ρ0 →
@@ -128,8 +127,6 @@ theorem exists_smooth_upper_support_of_energy_expansions
             (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hd.le (hc j).1 3)
               (by norm_num))
       _ = (B / (2 * d) + (2 * R) ^ 2 / (4 * d ^ 3)) * ‖v‖ * ‖w‖ := by ring
-  have hHsym (j : ℕ) (v w : E) : H j v w = H j w v := by
-    rw [hHapply, hHapply, hQsym j v w, mul_comm (L j v) (L j w)]
   have hHtrace (j : ℕ) : ∑ i, H j (e i) (e i) ≤
       (Fintype.card ι : ℝ) / c j + (Fintype.card ι : ℝ) * K * c j := by
     have hden : 0 < 2 * c j := mul_pos (by norm_num) (hcpos j)
@@ -170,7 +167,7 @@ theorem exists_smooth_upper_support_of_energy_expansions
       (fun j ↦ (Fintype.card ι : ℝ) / c j + (Fintype.card ι : ℝ) * K * c j) A H 1 ρ C
       (B / (2 * d) + (2 * R) ^ 2 / (4 * d ^ 3))
       ((Fintype.card ι : ℝ) / d + (Fintype.card ι : ℝ) * K * d)
-      hρ hC hconstantLim htraceLim hAnorm hHnorm hHsym hHtrace hsupport ε hε
+      hρ hC hconstantLim htraceLim hAnorm hHnorm hHtrace hsupport ε hε
   exact ⟨P, r, hr, hrρ.trans hρρ0, hP, hP0.trans hf0, hPmajor, hPgrad, hPlap⟩
 
 end TauCeti
