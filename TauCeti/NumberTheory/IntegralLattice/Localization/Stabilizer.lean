@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.CompactOpen
 import TauCeti.LinearAlgebra.Basis.RangeSpan
-import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Polar
 import TauCeti.Logic.Equiv.Set
 import TauCeti.NumberTheory.Padics.RatCast
 
@@ -64,9 +63,6 @@ rational form of `L` and of its completions (`TauCeti.IntegralLattice.orthogonal
 
 ## Main results
 
-* `TauCeti.IntegralLattice.orthogonalGroup_norm`,
-  `TauCeti.IntegralLattice.orthogonalGroup_norm_baseChange`: `O(V)` and `O(V_p)` are the isometry
-  groups of the rational form and of the completed rational form.
 * `TauCeti.IntegralLattice.mem_localStabilizer_iff`: `g ∈ K_p(L)` exactly when `g` maps the image
   of `L_p` onto itself.
 * `TauCeti.IntegralLattice.mem_localStabilizer_iff_map_eq`: `g ∈ K_p(L)` exactly when `g` maps
@@ -97,31 +93,6 @@ namespace TauCeti
 namespace IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
-
-section OrthogonalGroup
-
-/-- The orthogonal group of the norm form of `L` is the isometry group of its rational form. -/
-theorem orthogonalGroup_norm : orthogonalGroup L.norm = L.form.isometryGroup := by
-  rw [norm_def]
-  exact orthogonalGroup_toQuadraticMap_eq_isometryGroup
-    ((isUnit_of_invertible (2 : ℚ)).isSMulRegular ℚ) L.isSymm
-
-variable (p : ℕ) [Fact p.Prime]
-
-/-- The completed norm form is the norm form of the completed rational form. -/
-theorem norm_baseChange :
-    L.norm.baseChange ℚ_[p] = (L.completedRationalForm p).toQuadraticMap := by
-  ext v
-  simp [norm_apply]
-
-/-- The local orthogonal group `O(V_p)` is the isometry group of the completed rational form. -/
-theorem orthogonalGroup_norm_baseChange :
-    orthogonalGroup (L.norm.baseChange ℚ_[p]) = (L.completedRationalForm p).isometryGroup := by
-  rw [norm_baseChange]
-  exact orthogonalGroup_toQuadraticMap_eq_isometryGroup
-    ((isUnit_of_invertible (2 : ℚ_[p])).isSMulRegular ℚ_[p]) (L.isSymm_completedRationalForm p)
-
-end OrthogonalGroup
 
 section Stabilizer
 

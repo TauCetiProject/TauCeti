@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Invertible
+public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
+public import TauCeti.LinearAlgebra.IntegralLattice.OrthogonalGroup
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
 public import TauCeti.NumberTheory.Padics.LocalGlobalLattice
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Polar
 
 /-!
 # Localizing an integral lattice at a prime
@@ -80,6 +84,8 @@ local data of the genus over to the rational quadratic spaces.
 * `TauCeti.IntegralLattice.nondegenerate_localIntegralForm_iff` and
   `TauCeti.IntegralLattice.nondegenerate_completedRationalForm_iff`: both local forms are
   nondegenerate exactly when the rational form of `L` is.
+* `TauCeti.IntegralLattice.orthogonalGroup_norm_baseChange`: the local orthogonal group `O(V_p)`
+  of the completed norm form is the isometry group of the completed rational form.
 * `TauCeti.IntegralLattice.Isometry.localizationToCompletion_localCarrierIsometry`: the canonical
   map is natural in isometries.
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_exists_isometryEquiv`: the integral
@@ -156,6 +162,20 @@ theorem isSymm_completedRationalForm : (L.completedRationalForm p).IsSymm :=
   LinearMap.BilinForm.isSymm_iff.mpr
     (LinearMap.BilinForm.IsSymm.baseChange ℚ_[p]
       (LinearMap.BilinForm.isSymm_iff.mp L.isSymm))
+
+/-- The completed norm form is the norm form of the completed rational form. -/
+theorem norm_baseChange :
+    L.norm.baseChange ℚ_[p] = (L.completedRationalForm p).toQuadraticMap := by
+  ext v
+  simp [norm_apply]
+
+/-- The local orthogonal group `O(V_p)` is the isometry group of the completed rational form. -/
+theorem orthogonalGroup_norm_baseChange :
+    QuadraticMap.orthogonalGroup (L.norm.baseChange ℚ_[p]) =
+      (L.completedRationalForm p).isometryGroup := by
+  rw [norm_baseChange]
+  exact QuadraticMap.orthogonalGroup_toQuadraticMap_eq_isometryGroup
+    ((isUnit_of_invertible (2 : ℚ_[p])).isSMulRegular ℚ_[p]) (L.isSymm_completedRationalForm p)
 
 /-- The canonical `ℤ_p`-linear map from the integral localization of `L` to the completion of its
 ambient space, sending `a ⊗ x` to `a ⊗ x`. -/

@@ -163,6 +163,10 @@ noncomputable def adelicTranslate : IntegralLattice V where
 theorem adelicTranslate_form : (L.adelicTranslate g).form = L.form :=
   (rfl)
 
+/-- A translate of a nondegenerate lattice is nondegenerate, since it carries the same form. -/
+instance instIsNondegenerateAdelicTranslate : (L.adelicTranslate g).IsNondegenerate :=
+  ⟨by rw [adelicTranslate_form]; exact L.form_nondegenerate⟩
+
 /-- A translate of `L` has the completed rational forms of `L`. -/
 @[simp]
 theorem adelicTranslate_completedRationalForm (p : ℕ) [Fact p.Prime] :
