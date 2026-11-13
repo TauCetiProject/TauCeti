@@ -21,8 +21,8 @@ conjugate surface.
 
 Each chart `e` of `M` doubles to a chart `TauCeti.SchottkyDouble.doubleChart e` of the double,
 with values in `ℂ`: it is `e` on the first copy and `z ↦ conj (e z)` on the second copy. This is
-well defined because a chart of the atlas is real exactly on the boundary. Its inverse sends a
-point `w` of the closed upper half-plane to the first copy and a point of the open lower
+well defined because a chart of the maximal atlas is real exactly on the boundary. Its inverse
+sends a point `w` of the closed upper half-plane to the first copy and a point of the open lower
 half-plane to the second copy, through the fold `TauCeti.ClosedUpperHalfPlane.fold`. The chart
 change between two doubled charts agrees on its source with the Schwarz reflection
 `TauCeti.ClosedUpperHalfPlane.schwarzDouble` of the chart change of `M`, which is holomorphic by the
@@ -30,11 +30,11 @@ Schwarz reflection principle. So the double is a Riemann surface without boundar
 Hausdorff and second countable when `M` is, and compact when `M` is.
 
 The sheet swap `TauCeti.DoubleAlong.swap` is an involution of the double which reads as
-`z ↦ conj z` in every doubled chart, so it is antiholomorphic; its fixed set is the boundary on the
-first copy. The first copy of the interior of `M` is an open subset of the double, on which the
-complex structure of the double restricts to that of the interior: the inclusion of the interior
-in the first copy is a holomorphic open embedding, and the inclusion in the second copy is an
-open embedding which reads as `z ↦ conj z` in charts.
+`z ↦ conj z` in every doubled chart, so it is antiholomorphic in the holomorphic charts of the
+double; its fixed set is the boundary on the first copy. The first copy of the interior of `M` is
+an open subset of the double, on which the complex structure of the double restricts to that of
+the interior: the inclusion of the interior in the first copy is a holomorphic open embedding, and
+the inclusion in the second copy is an open embedding which reads as `z ↦ conj z` in charts.
 
 The type `TauCeti.SchottkyDouble M` is a reducible abbreviation of the double along the boundary,
 so the topological API of `TauCeti.DoubleAlong` applies to it directly. Its complex charts are
@@ -43,7 +43,7 @@ attached only to doubles along the complement of `TauCeti.borderedInterior M`.
 ## Main definitions
 
 * `TauCeti.SchottkyDouble`: the double of a Riemann surface with boundary along its boundary.
-* `TauCeti.SchottkyDouble.doubleChart`: the doubled chart of a chart of the atlas.
+* `TauCeti.SchottkyDouble.doubleChart`: the doubled chart of a chart of the maximal atlas.
 * `TauCeti.SchottkyDouble.instChartedSpace`: the doubled charts, modelled on `ℂ`.
 * `TauCeti.SchottkyDouble.interiorInl` and `TauCeti.SchottkyDouble.interiorInr`: the inclusions
   of the interior in the first and second copies.
@@ -52,20 +52,24 @@ attached only to doubles along the complement of `TauCeti.borderedInterior M`.
 
 * `TauCeti.SchottkyDouble.doubleChart_symm_trans_eqOnSource`: a chart change of the double is the
   Schwarz reflection of the chart change of `M`.
+* `TauCeti.SchottkyDouble.doubleChart_mem_maximalAtlas`: the doubled chart of a chart of the
+  bordered holomorphic maximal atlas of `M` is a holomorphic chart of the double.
 * `TauCeti.SchottkyDouble.instHasGroupoid` and `TauCeti.SchottkyDouble.instIsManifold`: the double
   is a Riemann surface without boundary.
 * `TauCeti.SchottkyDouble.instT2Space`, `TauCeti.SchottkyDouble.instSecondCountableTopology`: the
   double is Hausdorff and second countable when `M` is. Compactness is inherited from
   `TauCeti.DoubleAlong`.
-* `TauCeti.SchottkyDouble.doubleChart_swap`: the swap reads as `z ↦ conj z` in every doubled chart.
+* `TauCeti.SchottkyDouble.doubleChart_swap` and
+  `TauCeti.SchottkyDouble.writtenInExtChartAt_swap_eventuallyEq_conj`: the swap reads as
+  `z ↦ conj z` in every doubled chart.
 * `TauCeti.DoubleAlong.swap_swap` and `TauCeti.DoubleAlong.fixed_locus` apply directly: the swap
   is an involution whose fixed set is the boundary on the first copy.
 * `TauCeti.SchottkyDouble.isOpenEmbedding_interiorInl` and
   `TauCeti.SchottkyDouble.contMDiff_interiorInl`: the first copy of the interior is a holomorphic
   open embedding.
 * `TauCeti.SchottkyDouble.isOpenEmbedding_interiorInr` and
-  `TauCeti.SchottkyDouble.extChartAt_interiorInr_eventuallyEq_conj`: the second copy of the
-  interior is an antiholomorphic open embedding.
+  `TauCeti.SchottkyDouble.writtenInExtChartAt_interiorInr_eventuallyEq_conj`: the second copy of
+  the interior is an open embedding which reads as `z ↦ conj z` in charts.
 
 ## References
 
@@ -119,22 +123,22 @@ private def doubleChartInvFun (e : OpenPartialHomeomorph M ClosedUpperHalfPlane)
     (fun w ↦ DoubleAlong.inl _ (e.symm (ClosedUpperHalfPlane.fold w)))
     fun w ↦ DoubleAlong.inr _ (e.symm (ClosedUpperHalfPlane.fold w))
 
-/-- A point of `M` at which a chart of the atlas is real lies on the boundary, so its two copies
-in the double agree. -/
-theorem inl_eq_inr_of_im_eq_zero (he : e ∈ atlas ClosedUpperHalfPlane M) {x : M}
-    (hx : x ∈ e.source) (h : (e x : ℂ).im = 0) :
+/-- A point of `M` at which a chart of the maximal atlas is real lies on the boundary, so its two
+copies in the double agree. -/
+theorem inl_eq_inr_of_im_eq_zero (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M)
+    {x : M} (hx : x ∈ e.source) (h : (e x : ℂ).im = 0) :
     DoubleAlong.inl (borderedInterior M : Set M)ᶜ x = DoubleAlong.inr _ x :=
   DoubleAlong.inl_coe_eq_inr _
-    ⟨x, (im_eq_zero_iff_notMem_borderedInterior (IsManifold.subset_maximalAtlas he) hx).1 h⟩
+    ⟨x, (im_eq_zero_iff_notMem_borderedInterior he hx).1 h⟩
 
 private theorem doubleChartFun_inl (x : M) : doubleChartFun e (DoubleAlong.inl _ x) = e x := by
   simp [doubleChartFun]
 
-private theorem doubleChartFun_inr (he : e ∈ atlas ClosedUpperHalfPlane M) {x : M}
-    (hx : x ∈ e.source) : doubleChartFun e (DoubleAlong.inr _ x) = conj (e x : ℂ) := by
+private theorem doubleChartFun_inr (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M)
+    {x : M} (hx : x ∈ e.source) : doubleChartFun e (DoubleAlong.inr _ x) = conj (e x : ℂ) := by
   by_cases hA : x ∈ (borderedInterior M : Set M)ᶜ
   · rw [← DoubleAlong.inl_coe_eq_inr _ ⟨x, hA⟩, doubleChartFun_inl,
-      conj_apply_eq_of_notMem_borderedInterior (IsManifold.subset_maximalAtlas he) hx hA]
+      conj_apply_eq_of_notMem_borderedInterior he hx hA]
   · have : DoubleAlong.inr _ x ∉ range (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) := by
       rintro ⟨y, hy⟩
       have h := (DoubleAlong.inl_eq_inr_iff _).1 hy
@@ -155,19 +159,16 @@ private theorem fold_doubleChartInvFun (w : ℂ) :
   · rw [doubleChartInvFun_of_im_nonneg hw, DoubleAlong.fold_inl]
   · rw [doubleChartInvFun_of_im_neg hw, DoubleAlong.fold_inr]
 
-private theorem fold_doubleChartFun (he : e ∈ atlas ClosedUpperHalfPlane M) {z : SchottkyDouble M}
-    (hz : DoubleAlong.fold _ z ∈ e.source) :
+private theorem fold_doubleChartFun (z : SchottkyDouble M) :
     ClosedUpperHalfPlane.fold (doubleChartFun e z) = e (DoubleAlong.fold _ z) := by
-  induction z using DoubleAlong.induction_on with
-  | hl x => simp [doubleChartFun_inl]
-  | hr x =>
-    rw [DoubleAlong.fold_inr] at hz ⊢
-    rw [doubleChartFun_inr he hz, ClosedUpperHalfPlane.fold_conj, ClosedUpperHalfPlane.fold_coe]
+  by_cases h : z ∈ range (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) <;>
+    simp [doubleChartFun, h, ClosedUpperHalfPlane.fold_conj]
 
 open Classical in
 /-- The doubled chart is continuous on both copies of the source of `e`: its two pieces agree on
 the frontier of the first copy, which lies in the boundary, where `e` is real. -/
-private theorem continuousOn_doubleChartFun (he : e ∈ atlas ClosedUpperHalfPlane M) :
+private theorem continuousOn_doubleChartFun
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M) :
     ContinuousOn (doubleChartFun e) (DoubleAlong.fold _ ⁻¹' e.source) := by
   have hc : ContinuousOn (fun z : SchottkyDouble M ↦ (e (DoubleAlong.fold _ z) : ℂ))
       (DoubleAlong.fold _ ⁻¹' e.source) :=
@@ -180,12 +181,13 @@ private theorem continuousOn_doubleChartFun (he : e ∈ atlas ClosedUpperHalfPla
     DoubleAlong.frontier_range_inl_subset _ (borderedInterior M).isOpen.isClosed_compl hfr
   rw [mem_preimage, DoubleAlong.fold_inl] at hz
   simp only [DoubleAlong.fold_inl]
-  exact (conj_apply_eq_of_notMem_borderedInterior (IsManifold.subset_maximalAtlas he) hz hA).symm
+  exact (conj_apply_eq_of_notMem_borderedInterior he hz hA).symm
 
 open Classical in
 /-- The inverse of the doubled chart is continuous on its target: its two pieces agree on the real
 axis, which `e.symm` sends to the boundary, where the two copies are glued. -/
-private theorem continuousOn_doubleChartInvFun (he : e ∈ atlas ClosedUpperHalfPlane M) :
+private theorem continuousOn_doubleChartInvFun
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M) :
     ContinuousOn (doubleChartInvFun e) (ClosedUpperHalfPlane.fold ⁻¹' e.target) := by
   have hc : ContinuousOn (fun w ↦ e.symm (ClosedUpperHalfPlane.fold w))
       (ClosedUpperHalfPlane.fold ⁻¹' e.target) :=
@@ -199,18 +201,19 @@ private theorem continuousOn_doubleChartInvFun (he : e ∈ atlas ClosedUpperHalf
   refine inl_eq_inr_of_im_eq_zero he hsrc ?_
   rw [e.right_inv hw, ClosedUpperHalfPlane.im_fold, h0, abs_zero]
 
-/-- The doubled chart of a chart `e` of the atlas of a Riemann surface with boundary `M`: the
-chart of the Schottky double that is `e` on the first copy and `z ↦ conj (e z)` on the second
+/-- The doubled chart of a chart `e` of the maximal atlas of a Riemann surface with boundary `M`:
+the chart of the Schottky double that is `e` on the first copy and `z ↦ conj (e z)` on the second
 copy. Its source consists of both copies of the source of `e`, and its target is the preimage of
 the target of `e` under the fold `TauCeti.ClosedUpperHalfPlane.fold`. -/
 def doubleChart (e : OpenPartialHomeomorph M ClosedUpperHalfPlane)
-    (he : e ∈ atlas ClosedUpperHalfPlane M) : OpenPartialHomeomorph (SchottkyDouble M) ℂ where
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M) :
+    OpenPartialHomeomorph (SchottkyDouble M) ℂ where
   toFun := doubleChartFun e
   invFun := doubleChartInvFun e
   source := DoubleAlong.fold _ ⁻¹' e.source
   target := ClosedUpperHalfPlane.fold ⁻¹' e.target
   map_source' z hz := by
-    simpa [mem_preimage, fold_doubleChartFun he hz] using e.map_source hz
+    simpa [mem_preimage, fold_doubleChartFun] using e.map_source hz
   map_target' w hw := by
     simpa [mem_preimage, fold_doubleChartInvFun] using e.map_target hw
   left_inv' z hz := by
@@ -241,7 +244,7 @@ def doubleChart (e : OpenPartialHomeomorph M ClosedUpperHalfPlane)
   continuousOn_toFun := continuousOn_doubleChartFun he
   continuousOn_invFun := continuousOn_doubleChartInvFun he
 
-variable (he : e ∈ atlas ClosedUpperHalfPlane M)
+variable (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M)
 
 @[simp]
 theorem doubleChart_source :
@@ -278,13 +281,12 @@ theorem fold_doubleChart_symm (w : ℂ) :
     DoubleAlong.fold _ ((doubleChart e he).symm w) = e.symm (ClosedUpperHalfPlane.fold w) :=
   fold_doubleChartInvFun w
 
-theorem fold_doubleChart {z : SchottkyDouble M} (hz : z ∈ (doubleChart e he).source) :
+@[simp]
+theorem fold_doubleChart (z : SchottkyDouble M) :
     ClosedUpperHalfPlane.fold (doubleChart e he z) = e (DoubleAlong.fold _ z) :=
-  fold_doubleChartFun he hz
+  fold_doubleChartFun z
 
-/-- The doubled chart intertwines the sheet swap with complex conjugation. Read between two
-doubled charts, the swap is complex conjugation after a holomorphic chart change, so it is
-antiholomorphic. -/
+/-- The doubled chart intertwines the sheet swap with complex conjugation on its source. -/
 theorem doubleChart_swap {z : SchottkyDouble M} (hz : z ∈ (doubleChart e he).source) :
     doubleChart e he (DoubleAlong.swap _ z) = conj (doubleChart e he z) := by
   induction z using DoubleAlong.induction_on with
@@ -302,7 +304,7 @@ theorem swap_mem_doubleChart_source_iff {z : SchottkyDouble M} :
 
 /-- A chart change of the double is the Schwarz reflection of the chart change of `M`. -/
 theorem doubleChart_symm_trans_eqOnSource {e' : OpenPartialHomeomorph M ClosedUpperHalfPlane}
-    (he' : e' ∈ atlas ClosedUpperHalfPlane M)
+    (he' : e' ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M)
     (h : ClosedUpperHalfPlane.PreservesRealAxis (e.symm.trans e')) :
     (doubleChart e he).symm.trans (doubleChart e' he') ≈
       ClosedUpperHalfPlane.schwarzDouble (e.symm.trans e') h := by
@@ -329,24 +331,25 @@ end doubleChart
 chart of the chart of `M` at its image under the fold. -/
 instance instChartedSpace : ChartedSpace ℂ (SchottkyDouble M) where
   atlas := {f | ∃ (e : OpenPartialHomeomorph M ClosedUpperHalfPlane)
-    (he : e ∈ atlas ClosedUpperHalfPlane M), f = doubleChart e he}
+    (he : e ∈ atlas ClosedUpperHalfPlane M),
+      f = doubleChart e (IsManifold.subset_maximalAtlas he)}
   chartAt z := doubleChart (chartAt ClosedUpperHalfPlane (DoubleAlong.fold _ z))
-    (chart_mem_atlas _ _)
+    (IsManifold.chart_mem_maximalAtlas _)
   mem_chart_source z := by
     rw [doubleChart_source]
     exact mem_chart_source ClosedUpperHalfPlane (DoubleAlong.fold _ z)
-  chart_mem_atlas z := ⟨_, _, rfl⟩
+  chart_mem_atlas z := ⟨_, chart_mem_atlas _ _, rfl⟩
 
 theorem chartAt_eq (z : SchottkyDouble M) :
     chartAt ℂ z = doubleChart (chartAt ClosedUpperHalfPlane (DoubleAlong.fold _ z))
-      (chart_mem_atlas _ _) :=
+      (IsManifold.chart_mem_maximalAtlas _) :=
   rfl
 
 /-- The chart of the double at a point of the first copy is the doubled chart at that point. -/
 @[simp]
 theorem chartAt_inl (x : M) :
     chartAt ℂ (DoubleAlong.inl (borderedInterior M : Set M)ᶜ x) =
-      doubleChart (chartAt ClosedUpperHalfPlane x) (chart_mem_atlas _ _) := by
+      doubleChart (chartAt ClosedUpperHalfPlane x) (IsManifold.chart_mem_maximalAtlas _) := by
   rw [chartAt_eq]
   congr 1
   simp
@@ -355,15 +358,57 @@ theorem chartAt_inl (x : M) :
 @[simp]
 theorem chartAt_inr (x : M) :
     chartAt ℂ (DoubleAlong.inr (borderedInterior M : Set M)ᶜ x) =
-      doubleChart (chartAt ClosedUpperHalfPlane x) (chart_mem_atlas _ _) := by
+      doubleChart (chartAt ClosedUpperHalfPlane x) (IsManifold.chart_mem_maximalAtlas _) := by
   rw [chartAt_eq]
   congr 1
   simp
 
 theorem mem_atlas_iff {f : OpenPartialHomeomorph (SchottkyDouble M) ℂ} :
     f ∈ atlas ℂ (SchottkyDouble M) ↔ ∃ (e : OpenPartialHomeomorph M ClosedUpperHalfPlane)
-      (he : e ∈ atlas ClosedUpperHalfPlane M), f = doubleChart e he :=
+      (he : e ∈ atlas ClosedUpperHalfPlane M),
+        f = doubleChart e (IsManifold.subset_maximalAtlas he) :=
   Iff.rfl
+
+/-- The doubled chart of a chart of the atlas of `M` is a chart of the atlas of the double. -/
+theorem doubleChart_mem_atlas {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ atlas ClosedUpperHalfPlane M) :
+    doubleChart e (IsManifold.subset_maximalAtlas he) ∈ atlas ℂ (SchottkyDouble M) :=
+  ⟨e, he, rfl⟩
+
+/-- The chart of the double is the same at a point and at its image under the sheet swap. -/
+@[simp]
+theorem chartAt_swap (z : SchottkyDouble M) :
+    chartAt ℂ (DoubleAlong.swap (borderedInterior M : Set M)ᶜ z) = chartAt ℂ z := by
+  rw [chartAt_eq, chartAt_eq]
+  congr 1
+  simp
+
+/-- In the chart of the double at `z` and the chart at its image under the sheet swap, the swap is
+`z ↦ conj z` near the image of `z`. -/
+theorem writtenInExtChartAt_swap_eventuallyEq_conj (z : SchottkyDouble M) :
+    writtenInExtChartAt 𝓘(ℂ) 𝓘(ℂ) z (DoubleAlong.swap (borderedInterior M : Set M)ᶜ)
+      =ᶠ[𝓝 (extChartAt 𝓘(ℂ) z z)] fun w ↦ conj w := by
+  simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+    modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp, chartAt_swap]
+  filter_upwards [(chartAt ℂ z).eventually_right_inverse (mem_chart_target ℂ z),
+    (chartAt ℂ z).open_target.mem_nhds (mem_chart_target ℂ z)] with w hw hw'
+  have hsrc := (chartAt ℂ z).map_target hw'
+  rw [chartAt_eq] at hsrc hw ⊢
+  simp only [Function.comp_apply]
+  rw [doubleChart_swap _ hsrc, hw]
+
+/-- A chart change between the doubled charts of two charts of `M` whose chart change is bordered
+holomorphic is holomorphic. -/
+private theorem doubleChart_symm_trans_mem_contDiffGroupoid
+    {e e' : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M)
+    (he' : e' ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M)
+    (hmem : e.symm.trans e' ∈ borderedHolomorphicGroupoid) :
+    (doubleChart e he).symm.trans (doubleChart e' he') ∈ contDiffGroupoid ω 𝓘(ℂ) :=
+  have hpr := ClosedUpperHalfPlane.preservesRealAxis_of_mem_borderedHolomorphicGroupoid hmem
+  (contDiffGroupoid ω 𝓘(ℂ)).mem_of_eqOnSource
+    (ClosedUpperHalfPlane.schwarzDouble_mem_contDiffGroupoid hpr hmem)
+    (doubleChart_symm_trans_eqOnSource he he' hpr)
 
 section holomorphic
 
@@ -374,15 +419,27 @@ Schwarz reflections of bordered holomorphic chart changes. -/
 instance instHasGroupoid : HasGroupoid (SchottkyDouble M) (contDiffGroupoid ω 𝓘(ℂ)) where
   compatible := by
     rintro _ _ ⟨e, he, rfl⟩ ⟨e', he', rfl⟩
-    have hmem := (borderedHolomorphicGroupoid).compatible he he'
-    have hpr := ClosedUpperHalfPlane.preservesRealAxis_of_mem_borderedHolomorphicGroupoid hmem
-    exact (contDiffGroupoid ω 𝓘(ℂ)).mem_of_eqOnSource
-      (ClosedUpperHalfPlane.schwarzDouble_mem_contDiffGroupoid hpr hmem)
-      (doubleChart_symm_trans_eqOnSource he he' hpr)
+    exact doubleChart_symm_trans_mem_contDiffGroupoid _ _
+      (borderedHolomorphicGroupoid.compatible he he')
 
 /-- **The Schottky double is a Riemann surface without boundary.** -/
 instance instIsManifold : IsManifold 𝓘(ℂ) ω (SchottkyDouble M) :=
   IsManifold.mk' _ _ _
+
+/-- The doubled chart of a chart of the bordered holomorphic maximal atlas of `M` is a chart of
+the holomorphic maximal atlas of the double. -/
+theorem doubleChart_mem_maximalAtlas {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ borderedHolomorphicGroupoid.maximalAtlas M) :
+    doubleChart e (StructureGroupoid.maximalAtlas_mono
+        (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans
+          (contDiffGroupoid_le ENat.LEInfty.out)) he) ∈
+      IsManifold.maximalAtlas 𝓘(ℂ) ω (SchottkyDouble M) := by
+  rintro _ ⟨e', he', rfl⟩
+  have hb' := borderedHolomorphicGroupoid.subset_maximalAtlas he'
+  exact ⟨doubleChart_symm_trans_mem_contDiffGroupoid _ _
+      (borderedHolomorphicGroupoid.compatible_of_mem_maximalAtlas he hb'),
+    doubleChart_symm_trans_mem_contDiffGroupoid _ _
+      (borderedHolomorphicGroupoid.compatible_of_mem_maximalAtlas hb' he)⟩
 
 end holomorphic
 
@@ -425,10 +482,9 @@ theorem isOpenEmbedding_interiorInl : IsOpenEmbedding (interiorInl M) :=
 
 /-- In the chart of the interior at `x` and the chart of the double at its image, the inclusion of
 the interior in the first copy is the identity near the image of `x`. -/
-theorem extChartAt_interiorInl_eventuallyEq_id (x : borderedInterior M) :
-    (extChartAt 𝓘(ℂ) (interiorInl M x) ∘ interiorInl M ∘ (extChartAt 𝓘(ℂ) x).symm) =ᶠ[𝓝
-      (extChartAt 𝓘(ℂ) x x)] id := by
-  simp only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+theorem writtenInExtChartAt_interiorInl_eventuallyEq_id (x : borderedInterior M) :
+    writtenInExtChartAt 𝓘(ℂ) 𝓘(ℂ) x (interiorInl M) =ᶠ[𝓝 (extChartAt 𝓘(ℂ) x x)] id := by
+  simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
     modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp]
   filter_upwards [(chartAt ℂ x).eventually_right_inverse (mem_chart_target ℂ x)] with w hw
   simp only [Function.comp_apply, interiorInl_apply, id_eq]
@@ -436,11 +492,11 @@ theorem extChartAt_interiorInl_eventuallyEq_id (x : borderedInterior M) :
 
 /-- **The first copy of the interior is holomorphic.** The inclusion of the interior of `M`, with
 its complex structure, in the first copy of the Schottky double is holomorphic. -/
-theorem contMDiff_interiorInl : ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω (interiorInl M) := by
+theorem contMDiff_interiorInl {n : ℕ∞ω} : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (interiorInl M) := by
   intro x
   refine contMDiffAt_iff.2 ⟨isOpenEmbedding_interiorInl.continuous.continuousAt, ?_⟩
   rw [modelWithCornersSelf_coe, range_id, contDiffWithinAt_univ]
-  exact contDiffAt_id.congr_of_eventuallyEq (extChartAt_interiorInl_eventuallyEq_id x)
+  exact contDiffAt_id.congr_of_eventuallyEq (writtenInExtChartAt_interiorInl_eventuallyEq_id x)
 
 /-! ### The second copy of the interior -/
 
@@ -460,13 +516,13 @@ theorem isOpenEmbedding_interiorInr : IsOpenEmbedding (interiorInr M) :=
     (DoubleAlong.isOpenEmbedding_inr_compl _ (borderedInterior M).isOpen.isClosed_compl)
     (funext fun x ↦ by simp)
 
-/-- **The second copy of the interior is antiholomorphic.** In the chart of the interior at `x`
-and the chart of the double at the image of `x` on the second copy, the inclusion of the interior
-in the second copy is `z ↦ conj z` near the image of `x`. -/
-theorem extChartAt_interiorInr_eventuallyEq_conj (x : borderedInterior M) :
-    (extChartAt 𝓘(ℂ) (interiorInr M x) ∘ interiorInr M ∘ (extChartAt 𝓘(ℂ) x).symm)
-      =ᶠ[𝓝 (extChartAt 𝓘(ℂ) x x)] fun w ↦ conj w := by
-  simp only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+/-- In the chart of the interior at `x` and the chart of the double at the image of `x` on the
+second copy, the inclusion of the interior in the second copy is `z ↦ conj z` near the image of
+`x`. -/
+theorem writtenInExtChartAt_interiorInr_eventuallyEq_conj (x : borderedInterior M) :
+    writtenInExtChartAt 𝓘(ℂ) 𝓘(ℂ) x (interiorInr M) =ᶠ[𝓝 (extChartAt 𝓘(ℂ) x x)]
+      fun w ↦ conj w := by
+  simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
     modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp]
   filter_upwards [(chartAt ℂ x).eventually_right_inverse (mem_chart_target ℂ x),
     (chartAt ℂ x).open_target.mem_nhds (mem_chart_target ℂ x)] with w hw hw'
