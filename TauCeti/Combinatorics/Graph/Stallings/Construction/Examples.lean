@@ -17,8 +17,9 @@ The Stallings graphs of three small lists of words over letters `a`, `b`, `c` ar
 with explicit labelled graphs.
 
 * For `[a b, a c]` with `b ≠ c` it has two vertices and three edges: an `a`-edge from the base
-  vertex to the other vertex, and a `b`-edge and a `c`-edge back. The `a`-edge is a spanning
-  tree whose tree loops read `a b` and `a c`, so these words freely generate the subgroup
+  vertex to the other vertex, and a `b`-edge and a `c`-edge back. For a spanning tree containing
+  the `a`-edge, the tree loops through the positive edges outside it read `a b` and `a c`
+  (`StallingsGraph.image_treeLoopWord_ab_ac`), so these words freely generate the subgroup
   (`StallingsGraph.lift_ab_ac_injective`). The element `b⁻¹ c` is read by crossing the `b`-edge
   backwards and the `c`-edge forwards: it lies in the subgroup, with the expression
   `(a b)⁻¹ (a c)` and no other (`StallingsGraph.lift_ab_ac_eq_inv_mul_iff`).
@@ -135,17 +136,42 @@ private def abAcTree : (abAc a b c).graph.SpanningTree where
   rev_mem _ h := h
   isTree := abAc_restrict_isTree a b c
 
-private theorem read_path_abAcTree :
-    (abAc a b c).read ((abAcTree a b c).path 0 1) = FreeGroup.of a :=
-  (congrArg (abAc a b c).read ((abAcTree a b c).path_src_tgt (e := ((0 : Fin 3), true)) rfl)).trans
+private theorem read_path_of_mem {T : (abAc a b c).graph.SpanningTree}
+    (hT : ((0 : Fin 3), true) ∈ T.darts) : (abAc a b c).read (T.path 0 1) = FreeGroup.of a :=
+  (congrArg (abAc a b c).read (T.path_src_tgt (e := ((0 : Fin 3), true)) hT)).trans
     (by rw [read_toPath]; simp [← FreeGroup.of.eq_1])
 
-private theorem treeLoopWord_abAcTree {e : (abAc a b c).graph.E} {x : α}
+private theorem treeLoopWord_of_mem {T : (abAc a b c).graph.SpanningTree}
+    (hT : ((0 : Fin 3), true) ∈ T.darts) {e : (abAc a b c).graph.E} {x : α}
     (hs : (abAc a b c).graph.src e = 1) (ht : (abAc a b c).graph.tgt e = 0)
     (hl : (abAc a b c).label e = (x, true)) :
-    (abAc a b c).treeLoopWord (abAcTree a b c) 0 e = FreeGroup.of a * FreeGroup.of x := by
-  rw [treeLoopWord_eq, hs, ht, (abAcTree a b c).path_self, read_nil, mul_one, read_path_abAcTree,
-    hl, ← FreeGroup.of.eq_1]
+    (abAc a b c).treeLoopWord T 0 e = FreeGroup.of a * FreeGroup.of x := by
+  rw [treeLoopWord_eq, hs, ht, T.path_self, read_nil, mul_one, read_path_of_mem a b c hT, hl,
+    ← FreeGroup.of.eq_1]
+
+/-- In the graph with an `a`-edge out of the base vertex and a `b`-edge and a `c`-edge back, let
+`T` be a spanning tree containing the `a`-edge. The tree loops through the positive edges
+outside `T` read `a b` and `a c`. For `b ≠ c` this graph is the Stallings graph of `[a b, a c]`
+and is folded, so these words form the free basis `StallingsGraph.freeGroupBasis` of its
+accepted subgroup for `T` and the orientation by forward edges. -/
+theorem image_treeLoopWord_ab_ac
+    {T : (ofDigraph (0 : Fin 2) ![0, 1, 1] ![1, 0, 0] ![a, b, c]).graph.SpanningTree}
+    (hT : ((0 : Fin 3), true) ∈ T.darts) :
+    (ofDigraph (0 : Fin 2) ![0, 1, 1] ![1, 0, 0] ![a, b, c]).treeLoopWord T 0 ''
+        ({e | e.2 = true} \ T.darts) =
+      {FreeGroup.of a * FreeGroup.of b, FreeGroup.of a * FreeGroup.of c} := by
+  have hb := treeLoopWord_of_mem a b c hT (e := ((1 : Fin 3), true)) (x := b) rfl rfl rfl
+  have hc := treeLoopWord_of_mem a b c hT (e := ((2 : Fin 3), true)) (x := c) rfl rfl rfl
+  -- Tree darts have trivial tree-loop words, so the `b`- and `c`-edges lie outside `T`.
+  have hne : ∀ x : α, FreeGroup.of a * FreeGroup.of x ≠ 1 := fun x h => by
+    simpa [← ofAdd_add] using congrArg (FreeGroup.lift fun _ => Multiplicative.ofAdd (1 : ℤ)) h
+  have h1 : ((1 : Fin 3), true) ∉ T.darts := fun h => hne b (hb ▸ treeLoopWord_eq_one _ T 0 h)
+  have h2 : ((2 : Fin 3), true) ∉ T.darts := fun h => hne c (hc ▸ treeLoopWord_eq_one _ T 0 h)
+  have hO : ({e | e.2 = true} \ T.darts : Set (abAc a b c).graph.E) =
+      {((1 : Fin 3), true), ((2 : Fin 3), true)} := by
+    ext ⟨i, s⟩
+    fin_cases i <;> cases s <;> simp [hT, h1, h2]
+  rw [hO, Set.image_pair, hb, hc]
 
 /-- For distinct letters `b` and `c`, the words `a b` and `a c` freely generate a subgroup of the
 free group. -/
@@ -164,9 +190,7 @@ theorem lift_ab_ac_injective (hbc : b ≠ c) :
         (abAc a b c).treeLoopWord (abAcTree a b c) 0 e.1).comp (FreeGroup.map φ) := by
     ext i
     simp only [FreeGroup.lift_apply_of, MonoidHom.comp_apply, FreeGroup.map.of]
-    fin_cases i
-    exacts [(treeLoopWord_abAcTree a b c (e := (1, true)) rfl rfl rfl).symm,
-      (treeLoopWord_abAcTree a b c (e := (2, true)) rfl rfl rfl).symm]
+    fin_cases i <;> exact (treeLoopWord_of_mem a b c (T := abAcTree a b c) rfl rfl rfl rfl).symm
   rw [key]
   exact ((abAc a b c).lift_treeLoopWord_injective _ 0 (abAc_isFolded a b c hbc) hO).comp
     (FreeGroup.map_injective hφ)
