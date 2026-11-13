@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.ContDiffMapSupportedIn
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Analysis.Normed.Module.Multilinear.Curry
+import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 import TauCeti.Topology.MetricSpace.Pseudo.Constructions
 
 /-!
@@ -30,9 +29,9 @@ Hence the same topology is induced by the restrictions `D^i f|_K ∈ C(K, E [×i
 (`ContDiffMapSupportedIn.restrictStructureMapCLM`, whose norm is the seminorm `N_i`), and the map
 `f ↦ (D^i f|_K)ᵢ` into the countable product `Π i, C(K, E [×i]→L[ℝ] F)` is a uniform
 embedding. When `E` is finite-dimensional, each factor is second countable because `K` is
-a compact metric space and `E [×i]→L[ℝ] F` is second countable, by currying one variable at a
-time. When `E` is infinite-dimensional, every compactly supported continuous function on `E`
-vanishes, so `𝓓^{n}_{K}(E, F)` is trivial.
+a compact metric space and `E [×i]→L[ℝ] F` is second countable
+(`ContinuousMultilinearMap.secondCountableTopology'`). When `E` is infinite-dimensional, every
+compactly supported continuous function on `E` vanishes, so `𝓓^{n}_{K}(E, F)` is trivial.
 
 ## Main definitions
 
@@ -152,14 +151,7 @@ theorem isUniformEmbedding_pi_restrictStructureMapCLM :
 instance instSecondCountableTopology [SecondCountableTopology F] :
     SecondCountableTopology 𝓓^{n}_{K}(E, F) := by
   by_cases hE : FiniteDimensional ℝ E
-  · -- Currying one variable at a time, `E [×i]→L[ℝ] F` is second countable.
-    have (i : ℕ) : SecondCountableTopology (E [×i]→L[ℝ] F) := by
-      induction i with
-      | zero => exact (continuousMultilinearCurryFin0 ℝ E F).toHomeomorph.secondCountableTopology
-      | succ i ih =>
-        exact (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (i + 1) ↦ E)
-          F).toHomeomorph.secondCountableTopology
-    exact (isUniformEmbedding_pi_restrictStructureMapCLM ℝ).isInducing.secondCountableTopology
+  · exact (isUniformEmbedding_pi_restrictStructureMapCLM ℝ).isInducing.secondCountableTopology
   · -- On an infinite-dimensional space, a compactly supported continuous function vanishes.
     have : Subsingleton 𝓓^{n}_{K}(E, F) := ⟨fun f g ↦ by
       have h (f : 𝓓^{n}_{K}(E, F)) : (f : E → F) = 0 :=

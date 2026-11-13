@@ -50,8 +50,12 @@ is such a family.
 * `TauCeti.SymplecticForm.hamiltonianVectorField_eq_zero_of_notMem`,
   `TauCeti.SymplecticForm.norm_hamiltonianVectorField_le_seminorm`: the Hamiltonian vector field
   of a function supported in `C` vanishes off `C` and is bounded by its `C¹` seminorm.
+* `TauCeti.SymplecticForm.hamiltonianVectorField_add_of_one_le`: the Hamiltonian vector field of
+  a slice is additive on `𝓓^{n}_{C}(P × V, ℝ)`.
 * `TauCeti.SymplecticForm.integrable_apply_hamiltonianVectorField`: the integrand of the pairing
   is integrable.
+* `TauCeti.SymplecticForm.norm_hamiltonianPairing_apply_le`: the pairing is bounded by the `C¹`
+  seminorm times the integral of `‖η‖` over the projection of `C`.
 * In `TauCeti.SymplecticForm`,
   `ae_eq_zero_of_forall_integral_apply_hamiltonianVectorField_eq_zero_of_denseRange`: Hamiltonian
   variations from a family with dense range in `𝓓^{n}_{C}(P × V, ℝ)` detect covector fields along
@@ -112,7 +116,7 @@ theorem norm_hamiltonianVectorField_le_seminorm (ω : SymplecticForm V) (hn : 1 
         ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm ℝ (by exact_mod_cast hn)
 
 /-- The Hamiltonian vector field is additive on the `C^n` functions supported in `C`, `1 ≤ n`. -/
-private theorem hamiltonianVectorField_add_of_one_le (ω : SymplecticForm V) (hn : 1 ≤ n)
+theorem hamiltonianVectorField_add_of_one_le (ω : SymplecticForm V) (hn : 1 ≤ n)
     (h g : 𝓓^{n}_{C}(P × V, ℝ)) (z : P) (y : V) :
     ω.hamiltonianVectorField (fun y' ↦ (h + g) (z, y')) y =
       ω.hamiltonianVectorField (fun y' ↦ h (z, y')) y +
@@ -172,6 +176,30 @@ theorem integrable_apply_hamiltonianVectorField (ω : SymplecticForm V) (hn : 1 
       simpa only [indicator_of_mem hz] using
         ω.norm_apply_hamiltonianVectorField_le_indicator hn u η h z)
 
+/-- The pairing of an integrable covector field along `u` with the Hamiltonian vector field of a
+`C^n` function supported in `C`, `1 ≤ n`, is bounded by its `C¹` seminorm times the integral of
+`‖η‖` over the projection of `C`, up to the norm of the inverse of the contraction by `ω`. -/
+private theorem norm_integral_apply_hamiltonianVectorField_le (ω : SymplecticForm V) (hn : 1 ≤ n)
+    {u : P → V} {η : P → V →L[ℝ] ℝ} (hη : IntegrableOn η (Prod.fst '' (C : Set (P × V))) μ)
+    (h : 𝓓^{n}_{C}(P × V, ℝ)) :
+    ‖∫ z, η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z)) ∂μ‖ ≤
+      ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
+        (∫ z in Prod.fst '' (C : Set (P × V)), ‖η z‖ ∂μ) *
+          ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h := by
+  set S : Set P := Prod.fst '' (C : Set (P × V))
+  have hS : MeasurableSet S := (C.isCompact.image continuous_fst).measurableSet
+  set B := ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
+    ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h
+  calc ‖∫ z, η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z)) ∂μ‖
+      ≤ ∫ z, S.indicator (fun z ↦ ‖η z‖ * B) z ∂μ :=
+        norm_integral_le_of_norm_le ((integrable_indicator_iff hS).2
+          (hη.norm.mul_const B)) (Eventually.of_forall
+            (ω.norm_apply_hamiltonianVectorField_le_indicator hn u η h))
+    _ = ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
+          (∫ z in S, ‖η z‖ ∂μ) * ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h := by
+        rw [integral_indicator hS, integral_mul_const]
+        ring
+
 /-- The pairing `δK ↦ ∫ η z (X_{δK(z, ·)}(u z)) dμ` of an integrable covector field along `u` with
 Hamiltonian variations, as a continuous linear functional on `𝓓^{n}_{C}(P × V, ℝ)`, `1 ≤ n`. -/
 noncomputable def hamiltonianPairing (ω : SymplecticForm V) (hn : 1 ≤ n) {u : P → V}
@@ -190,20 +218,8 @@ noncomputable def hamiltonianPairing (ω : SymplecticForm V) (hn : 1 ≤ n) {u :
       exact integral_smul c _)
     ⟨{1}, ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
       ∫ z in Prod.fst '' (C : Set (P × V)), ‖η z‖ ∂μ, by positivity, fun h ↦ by
-      set S : Set P := Prod.fst '' (C : Set (P × V))
-      have hS : MeasurableSet S := (C.isCompact.image continuous_fst).measurableSet
-      set B := ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
-        ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h
       rw [Finset.sup_singleton]
-      calc ‖∫ z, η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z)) ∂μ‖
-          ≤ ∫ z, S.indicator (fun z ↦ ‖η z‖ * B) z ∂μ :=
-            norm_integral_le_of_norm_le ((integrable_indicator_iff hS).2
-              (hη.norm.mul_const B)) (Eventually.of_forall
-                (ω.norm_apply_hamiltonianVectorField_le_indicator hn u η h))
-        _ = ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
-              (∫ z in S, ‖η z‖ ∂μ) * ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h := by
-            rw [integral_indicator hS, integral_mul_const]
-            ring⟩
+      exact ω.norm_integral_apply_hamiltonianVectorField_le hn hη h⟩
 
 @[simp]
 theorem hamiltonianPairing_apply (ω : SymplecticForm V) (hn : 1 ≤ n) {u : P → V}
@@ -212,6 +228,19 @@ theorem hamiltonianPairing_apply (ω : SymplecticForm V) (hn : 1 ≤ n) {u : P �
     ω.hamiltonianPairing hn hu hη h =
       ∫ z, η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z)) ∂μ :=
   (rfl)
+
+/-- The pairing of an integrable covector field along `u` with Hamiltonian variations is bounded
+by the `C¹` seminorm of the variation times the integral of `‖η‖` over the projection of `C`, up to
+the norm of the inverse of the contraction by `ω`. -/
+theorem norm_hamiltonianPairing_apply_le (ω : SymplecticForm V) (hn : 1 ≤ n) {u : P → V}
+    (hu : ContinuousOn u (Prod.fst '' (C : Set (P × V)))) {η : P → V →L[ℝ] ℝ}
+    (hη : IntegrableOn η (Prod.fst '' (C : Set (P × V))) μ) (h : 𝓓^{n}_{C}(P × V, ℝ)) :
+    ‖ω.hamiltonianPairing hn hu hη h‖ ≤
+      ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
+        (∫ z in Prod.fst '' (C : Set (P × V)), ‖η z‖ ∂μ) *
+          ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h := by
+  rw [hamiltonianPairing_apply]
+  exact ω.norm_integral_apply_hamiltonianVectorField_le hn hη h
 
 end OpensMeasurable
 
