@@ -456,7 +456,6 @@ theorem nonempty_homeomorph_unitAddTorus (hσc : σ.IsClosed) (b : B) :
     hxb
   obtain ⟨φ⟩ := IsSymplectic.nonempty_homeomorph_unitAddTorus ⟨hσc, hσ⟩
     (h.contMDiff_chartFamily (J := J) b) (h.poissonBracket_chartFamily b)
-    (h.isCompleteVectorField_chartFamily h.isProperMap b)
     (fun _ ↦ h.isRegularPoint_chartFamily_of_mem_connectedComponentIn hxb)
     h.two_mul_card_eq_finrank (h.isCompact_connectedComponentIn_chartFamily hxb)
   exact ⟨(Homeomorph.setCongr hcomp.symm).trans φ⟩

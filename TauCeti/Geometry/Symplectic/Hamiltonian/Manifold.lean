@@ -18,6 +18,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Integral
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
@@ -87,6 +88,9 @@ a nondegenerate form `σ₂` back to `σ`
 carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
 surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`), and so
 `{g ∘ φ, k ∘ φ} = {g, k} ∘ φ` there (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`).
+Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, for any form
+(`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp_subtype_val`,
+`TauCeti.SmoothTwoForm.poissonBracket_comp_subtype_val`).
 Along a curve where its differential is surjective, `φ` therefore maps integral curves of the
 Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField`).
@@ -124,6 +128,9 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
   fields, their integral curves and Poisson brackets under maps pulling one form back to the
   other.
+* `TauCeti.SmoothTwoForm.hamiltonianVectorField_comp_subtype_val`,
+  `TauCeti.SmoothTwoForm.poissonBracket_comp_subtype_val`: restriction to an open submanifold
+  preserves Hamiltonian vector fields and Poisson brackets.
 
 ## References
 
@@ -866,6 +873,53 @@ theorem isMIntegralCurve_comp_hamiltonianVectorField {g : M₂ → ℝ} {γ : �
 end IsNondegenerate
 
 end Naturality
+
+/-! ### Restriction to open submanifolds -/
+
+section Opens
+
+/-- **Hamiltonian vector fields restrict to open submanifolds.** For an open set `U`, the
+Hamiltonian vector field of the restriction of `f` to `U`, for the restriction of `σ` to `U`, is
+the Hamiltonian vector field of `f`, read in the tangent space of `U`. No nondegeneracy or
+differentiability is needed: both sides are computed from the same form and differential. -/
+@[simp]
+theorem hamiltonianVectorField_comp_subtype_val (σ : SmoothTwoForm I M)
+    {U : TopologicalSpace.Opens M} (f : M → ℝ) (x : U) :
+    SmoothTwoForm.hamiltonianVectorField
+        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
+        (f ∘ Subtype.val) x =
+      (Manifold.tangentSpaceOpenEquiv (I := I) x).symm (σ.hamiltonianVectorField f x) := by
+  have hflat : SmoothTwoForm.flat
+      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) x = σ.flat x := by
+    ext v w
+    rw [flat_apply, SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val,
+      ContinuousLinearEquiv.coe_coe, Manifold.tangentSpaceOpenEquiv_apply,
+      Manifold.tangentSpaceOpenEquiv_apply]
+    exact (flat_apply σ x v w).symm
+  have hd : mvfderiv I (f ∘ Subtype.val) x = mvfderiv I f (x : M) := by
+    ext v
+    exact Manifold.mfderiv_comp_subtype_val_apply v
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hflat, hd,
+    Manifold.tangentSpaceOpenEquiv_symm_apply]
+  -- The tangent spaces at `x` in `U` and at `(x : M)` in `M` are both the model space `E`.
+  exact (rfl)
+
+/-- **Poisson brackets restrict to open submanifolds.** For an open set `U`, the Poisson bracket
+of the restrictions of `f` and `g` to `U`, for the restriction of `σ` to `U`, is the restriction of
+their Poisson bracket. -/
+@[simp]
+theorem poissonBracket_comp_subtype_val (σ : SmoothTwoForm I M)
+    {U : TopologicalSpace.Opens M} (f g : M → ℝ) (x : U) :
+    SmoothTwoForm.poissonBracket
+        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
+        (f ∘ Subtype.val) (g ∘ Subtype.val) x =
+      σ.poissonBracket f g x := by
+  rw [poissonBracket_def, poissonBracket_def, hamiltonianVectorField_comp_subtype_val,
+    hamiltonianVectorField_comp_subtype_val, SmoothForm.eval₂_mpullback,
+    Manifold.mfderiv_subtype_val]
+  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+
+end Opens
 
 end SmoothTwoForm
 
