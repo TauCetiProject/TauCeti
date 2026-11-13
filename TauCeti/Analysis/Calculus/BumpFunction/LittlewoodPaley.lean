@@ -45,9 +45,13 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   `ψ₀ (2^{-j} ·)`.
 * `ContDiffBump.sum_littlewoodPaley_Ioc`: the telescoping partial sums.
 * `ContDiffBump.hasSum_littlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for `ξ ≠ 0`.
+* `ContDiffBump.exists_littlewoodPaley_pos`: on a nontrivial space each cutoff `ψⱼ` takes a
+  positive value.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
+* `ContDiffBump.exists_inhomogeneousLittlewoodPaley_pos`: on a nontrivial space no piece `ψⱼ`
+  is identically zero.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces,
   also between the partitions of two bump functions.
 * `ContDiffBump.exists_sum_sq_inhomogeneousLittlewoodPaley_le`: `∑ⱼ ψⱼ ξ ²` is bounded uniformly
@@ -144,6 +148,19 @@ theorem littlewoodPaley_eq_zero_of_le_norm {j : ℤ} {ξ : E}
   have h2 := h1.trans (norm_two_zpow_inv_smul_le_sub_one j ξ)
   rw [littlewoodPaley_apply, φ.zero_of_le_dist (by rwa [dist_zero_right]),
     φ.zero_of_le_dist (by rwa [dist_zero_right]), sub_self]
+
+/-- On a nontrivial space each cutoff `ψⱼ` takes a positive value: at a point `ξ` with
+`‖ξ‖ = 2^{j-1} φ.rOut`, `ψⱼ ξ = φ (2^{-j} ξ) - φ (2^{1-j} ξ) = φ (2^{-j} ξ) > 0`. -/
+theorem exists_littlewoodPaley_pos [Nontrivial E] (j : ℤ) : ∃ ξ, 0 < φ.littlewoodPaley j ξ := by
+  obtain ⟨ξ, hξ⟩ := exists_norm_eq E (mul_pos (zpow_pos two_pos (j - 1)) φ.rOut_pos).le
+  refine ⟨ξ, ?_⟩
+  have h1 : φ (((2 : ℝ) ^ (j - 1))⁻¹ • ξ) = 0 :=
+    φ.zero_of_le_dist (by rw [dist_zero_right]; exact le_norm_two_zpow_inv_smul_iff.2 hξ.ge)
+  rw [littlewoodPaley_apply, h1, sub_zero]
+  refine φ.pos_of_mem_ball (mem_ball_zero_iff.2 ?_)
+  rw [norm_inv_smul_of_nonneg (zpow_nonneg zero_le_two _), hξ, zpow_sub_one₀ two_ne_zero,
+    div_lt_iff₀ (zpow_pos two_pos _)]
+  nlinarith [φ.rOut_pos, zpow_pos (two_pos : (0 : ℝ) < 2) j]
 
 /-- The cutoff `ψⱼ` is supported in the closed annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`. -/
 theorem tsupport_littlewoodPaley_subset (j : ℤ) :
@@ -289,6 +306,15 @@ theorem inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le {j : ℕ} {ξ : E}
     (hξ : ‖ξ‖ ≤ 2 ^ j * φ.rIn) : φ.inhomogeneousLittlewoodPaley (j + 1) ξ = 0 := by
   rw [inhomogeneousLittlewoodPaley_succ]
   exact φ.littlewoodPaley_eq_zero_of_norm_le (by simpa using hξ)
+
+/-- On a nontrivial space no piece `ψⱼ` of the inhomogeneous partition is identically zero:
+`ψ₀ = φ` is positive at the origin, and `ψⱼ`, `j ≥ 1`, is a dyadic cutoff. -/
+theorem exists_inhomogeneousLittlewoodPaley_pos [Nontrivial E] (j : ℕ) :
+    ∃ ξ, 0 < φ.inhomogeneousLittlewoodPaley j ξ := by
+  rcases j with _ | j
+  · exact ⟨0, by simpa using φ.pos_of_mem_ball (mem_ball_self φ.rOut_pos)⟩
+  · rw [inhomogeneousLittlewoodPaley_succ]
+    exact φ.exists_littlewoodPaley_pos _
 
 /-- The low-frequency piece `ψ₀` is supported in the closed ball of radius `φ.rOut`. -/
 theorem tsupport_inhomogeneousLittlewoodPaley_zero_subset :

@@ -98,8 +98,7 @@ private theorem commute_of_coefficient_map_compL_flip_eq {a : Symbol n V V m} {T
     {p : CoordinateSpace n × CoordinateSpace n}
     (h : (a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ)).coefficient p =
       (a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ)).coefficient p) :
-    Commute (a.coefficient p) T := by
-  simpa [commute_iff_eq, ContinuousLinearMap.mul_def] using h
+    Commute (a.coefficient p) T := by simpa [commute_iff_eq, ContinuousLinearMap.mul_def] using h
 
 /-- If every value of a symbol commutes with an operator `T`, so does every value of its spatial
 derivatives. -/

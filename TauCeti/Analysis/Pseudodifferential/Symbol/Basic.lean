@@ -788,8 +788,7 @@ def frequencyLaplacianPow : (N : ℕ) → {m : ℝ} → Symbol n V W m →ₗ[�
 
 @[simp]
 theorem coefficient_frequencyLaplacianPow_zero (a : Symbol n V W m) :
-    (frequencyLaplacianPow 0 a).coefficient = a.coefficient := by
-  simp [frequencyLaplacianPow]
+    (frequencyLaplacianPow 0 a).coefficient = a.coefficient := by simp [frequencyLaplacianPow]
 
 theorem coefficient_frequencyLaplacianPow_succ (N : ℕ) (a : Symbol n V W m) :
     (frequencyLaplacianPow (N + 1) a).coefficient =
@@ -833,8 +832,7 @@ section Spatial
 
 /-- The order-zero weight with no frequency derivative is `1`. -/
 private theorem rpow_weight_zero (ξ : CoordinateSpace n) :
-    (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - ([] : List (Fin n)).length) / 2) = 1 := by
-  simp
+    (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - ([] : List (Fin n)).length) / 2) = 1 := by simp
 
 /-- A smooth frequency-independent coefficient `a(x, ξ) = f(x)`, the symbol of multiplication by
 `f`, is a symbol of order `0`. -/
@@ -1255,6 +1253,12 @@ theorem isSmoothing_iff_forall_exists_bound {a : Symbol n V W m} :
   refine ⟨fun h m' K hK α β => ?_, fun h m' => ⟨⟨a.coefficient, a.contDiff_coefficient, h m'⟩, rfl⟩⟩
   obtain ⟨b, hb⟩ := h m'
   exact hb ▸ b.exists_bound K hK α β
+
+/-- A symbol is smoothing iff for every `N` its coefficient is that of a symbol of order `m - N`. -/
+theorem isSmoothing_iff_forall_nat {a : Symbol n V W m} :
+    a.IsSmoothing ↔ ∀ N : ℕ, ∃ b : Symbol n V W (m - N), b.coefficient = a.coefficient := by
+  refine ⟨fun h N => h _, fun h m' => (h ⌈m - m'⌉₊).elim fun b hb => ?_⟩
+  exact ⟨inclusion (by linarith [Nat.le_ceil (m - m')]) b, by rw [coefficient_inclusion, hb]⟩
 
 @[simp]
 theorem isSmoothing_zero : (0 : Symbol n V W m).IsSmoothing :=
