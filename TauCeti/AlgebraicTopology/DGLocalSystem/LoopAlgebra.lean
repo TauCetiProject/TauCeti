@@ -263,15 +263,9 @@ theorem augmentation_loopChainToGroupAlgebra (a : loopChainAlgebra B b R) :
     rw [← DirectSum.lof_eq_of R]
     cases n with
     | zero =>
-      rw [loopChainToGroupAlgebra_lof_zero, loopChainAugmentation_lof_zero]
-      induction y using NormalizedCubicalChain.induction_on with
-      | zero => simp
-      | add y y' hy hy' => simp only [map_add, hy, hy']
-      | smul r y hy =>
-        rw [LinearMap.map_smul, LinearMap.map_smul,
-          ← _root_.MonoidAlgebra.augmentationLinearMap_apply, LinearMap.map_smul,
-          _root_.MonoidAlgebra.augmentationLinearMap_apply, hy, smul_eq_mul]
-      | ofCube c => simp
+      rw [loopChainToGroupAlgebra_lof_zero, loopChainAugmentation_lof_zero,
+        ← _root_.MonoidAlgebra.augmentationLinearMap_apply, ← LinearMap.comp_apply]
+      exact LinearMap.congr_fun (NormalizedCubicalChain.linearMap_ext fun c ↦ by simp) y
     | succ k => simp
   | add x y hx hy => simp only [map_add, hx, hy]
 
