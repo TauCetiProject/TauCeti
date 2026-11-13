@@ -36,6 +36,8 @@ orbits of the permutation action, by `Sym.ofFn_eq_ofFn_iff`. Nothing here is top
   postcomposition with `Sym.map`, and concatenation of ordered tuples with `Sym.append`.
 * `Sym.ofFn_eq_ofFn_iff`: two ordered tuples have the same underlying unordered tuple exactly when
   one is a reindexing of the other by a permutation.
+* `Sym.rel_coe_ofFn_iff`: an unordered tuple is matched to `ofFn f` by a relation, in the sense of
+  `Multiset.Rel`, exactly when it is `ofFn g` for an ordered tuple `g` related to `f` entrywise.
 * `Sym.count_coe_ofFn`: the multiplicity of a value in an unordered tuple is the number of entries
   of the ordered tuple taking that value.
 * `Sym.sum_single_eq_sum_single_iff`: two ordered tuples have the same letter counts
@@ -148,6 +150,34 @@ theorem ofFn_eq_ofFn_iff {f g : Fin n → α} :
       funext fun i => Equiv.ofFiberEquiv_map _ i⟩
   · rintro ⟨σ, rfl⟩
     exact (ofFn_comp_perm σ f).symm
+
+/-! ### Matchings -/
+
+/-- **Matchings with an ordered tuple.** An unordered tuple `s` is matched to `ofFn f` by a
+relation `r`, in the sense of `Multiset.Rel`, exactly when `s = ofFn g` for an ordered tuple `g`
+whose entries are related to those of `f` index by index. -/
+theorem rel_coe_ofFn_iff {r : α → β → Prop} {f : Fin n → α} {s : Sym β n} :
+    Multiset.Rel r (ofFn f : Multiset α) s ↔ ∃ g : Fin n → β, ofFn g = s ∧ ∀ i, r (f i) (g i) := by
+  induction n with
+  | zero =>
+    refine ⟨fun _ => ⟨Fin.elim0, Subsingleton.elim _ _, fun i => i.elim0⟩, fun _ => ?_⟩
+    rw [Sym.eq_nil_of_card_zero s]
+    simp
+  | succ n ih =>
+    rw [← Fin.cons_self_tail f, ofFn_cons, Sym.coe_cons, Multiset.rel_cons_left]
+    constructor
+    · rintro ⟨b, t, hb, ht, hs⟩
+      have hcard : Multiset.card t = n := by
+        have := congrArg Multiset.card hs
+        rw [Sym.card_coe, Multiset.card_cons] at this
+        omega
+      obtain ⟨g, hg, hfg⟩ := (ih (s := ⟨t, hcard⟩)).1 ht
+      refine ⟨Fin.cons b g, Sym.coe_injective ?_, Fin.cases hb hfg⟩
+      rw [ofFn_cons, Sym.coe_cons, hg, hs]
+      rfl
+    · rintro ⟨g, rfl, hfg⟩
+      refine ⟨g 0, ofFn (Fin.tail g), hfg 0, ih.2 ⟨Fin.tail g, rfl, fun i => hfg i.succ⟩, ?_⟩
+      rw [← Sym.coe_cons, ← ofFn_cons, Fin.cons_self_tail]
 
 /-! ### Letter counts -/
 
