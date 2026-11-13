@@ -63,7 +63,8 @@ private theorem clipped_increment_increment (f : ι → ℝ) {l u c d : ι}
 /-- Integrating one simple strategy against another's gains gives positions
 `b j * a i` on the intersections `(max (τ i) (ρ j), min (τ (i+1)) (ρ (j+1))]`.
 Disjoint intervals contribute zero; an intersection reduced to a point also has
-zero gains. Both grids and the observation time are arbitrary. -/
+zero gains. Both grids may be any nondecreasing grids, possibly with repeated dates
+or empty, and the observation time is arbitrary. -/
 theorem simpleGains_simpleGains_eq_sum (hτ : MonotoneOn τ (Set.Iic n))
     (hρ : MonotoneOn ρ (Set.Iic m)) (t : ι) (ω : Ω) :
     simpleGains ρ m b (simpleGains τ n a X) t ω =
