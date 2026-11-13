@@ -31,12 +31,11 @@ decompositions of `u` in the sum space of the couple. The integral `∫₀ᵗ �
 The ambient space of `l1Linfty` carries the indiscrete topology, so the normed real interpolation
 spaces `(L¹, L^∞)_{θ,q}` are those of the Lebesgue couple `TauCeti.CompatibleCouple.lebesgue` at
 the exponents `1` and `∞`, whose ambient space is the normed space `L¹ + L^∞`. Both couples have
-the same decompositions, so the embedding of the sum space of the Lebesgue couple into `L¹ + L^∞`
-is a surjective isometry
-(`TauCeti.CompatibleCouple.lebesgue_one_top_sumSpaceEmbed_surjective`,
-`TauCeti.CompatibleCouple.norm_lebesgue_one_top_sumSpaceEmbed`) and preserves the `K`-functional
-(`TauCeti.CompatibleCouple.kFunctional_l1Linfty_sumSpaceEmbed`). The formula holds for the
-Lebesgue couple as well (`TauCeti.CompatibleCouple.ofReal_kFunctional_lebesgue_one_top`,
+the same decompositions, so the embedding of the sum space of the Lebesgue couple into `L¹ + L^∞`,
+a surjective isometry (`TauCeti.CompatibleCouple.norm_lebesgue_one_top_sumSpaceEmbed`), preserves
+the `K`-functional (`TauCeti.CompatibleCouple.kFunctional_l1Linfty_sumSpaceEmbed`). The formula
+holds for the Lebesgue couple as well
+(`TauCeti.CompatibleCouple.ofReal_kFunctional_lebesgue_one_top`,
 `TauCeti.CompatibleCouple.kFunctional_lebesgue_one_top`).
 
 As a check, the `K`-functional of `c 1_A` is `‖c‖ min (t, μ A)`
@@ -84,15 +83,6 @@ private theorem memLp_of_eLpNorm_add_mul_ne_top {f₀ f₁ : α → E} (ht : 0 <
   refine ⟨memLp_iff.2 hfin₀.lt_top, memLp_iff.2 (lt_top_iff_ne_top.2 fun htop => hfin₁ ?_)⟩
   rw [htop, ENNReal.mul_top (by simpa using ht)]
 
-/-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions. -/
-private theorem lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum (g : Lp E 1 μ)
-    (h : Lp E ∞ μ) :
-    (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed
-        ((lebesgue 𝕜 E μ 1 ∞).fstToSum g + (lebesgue 𝕜 E μ 1 ∞).sndToSum h) =
-      (l1Linfty 𝕜 E μ).fstToSum g + (l1Linfty 𝕜 E μ).sndToSum h := by
-  rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀,
-    lebesgue_embed₁, L1AddLinfty.ofLp_eq_fstToSum, L1AddLinfty.ofLp_eq_sndToSum]
-
 /-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions, hence the same
 `K`-functional, read through the embedding of the sum space of the former into `L¹ + L^∞`. -/
 theorem kFunctional_l1Linfty_sumSpaceEmbed (ht : 0 ≤ t) (v : (lebesgue 𝕜 E μ 1 ∞).SumSpace) :
@@ -104,18 +94,34 @@ theorem kFunctional_l1Linfty_sumSpaceEmbed (ht : 0 ≤ t) (v : (lebesgue 𝕜 E 
   · rw [← hgh, lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum]
   · rw [lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum, hgh]
 
-/-- The embedding of the sum space of the Lebesgue couple `(L¹, L^∞)` into `L¹ + L^∞` is
-surjective. -/
-theorem lebesgue_one_top_sumSpaceEmbed_surjective :
-    Function.Surjective (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed := fun u => by
-  obtain ⟨g, h, hgh⟩ := (l1Linfty 𝕜 E μ).exists_fstToSum_add_sndToSum_eq u
-  exact ⟨_, (lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum g h).trans hgh⟩
-
-/-- The embedding of the sum space of the Lebesgue couple `(L¹, L^∞)` into `L¹ + L^∞` is
-norm-preserving. -/
-theorem norm_lebesgue_one_top_sumSpaceEmbed (v : (lebesgue 𝕜 E μ 1 ∞).SumSpace) :
-    ‖(lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v‖ = ‖v‖ := by
-  rw [← kFunctional_one, kFunctional_l1Linfty_sumSpaceEmbed zero_le_one, kFunctional_one]
+/-- Every decomposition `u = g + h` bounds `∫₀ᵗ ‖f‖*` by `‖g‖₁ + t ‖h‖_∞`, so `∫₀ᵗ ‖f‖*` is at most
+`K(t, u)`. -/
+private theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty
+    {u : L1AddLinfty 𝕜 E μ} {f : α → E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (ht : 0 ≤ t) :
+    ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s ≤
+      ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) := by
+  have hf : AEStronglyMeasurable f μ := (AEEqFun.aestronglyMeasurable _).congr hu
+  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
+  obtain ⟨g, h, hgh, hlt⟩ := (kFunctional_lt_iff ht).1
+    (lt_add_of_pos_right ((l1Linfty 𝕜 E μ).kFunctional t u) (NNReal.coe_pos.2 hε))
+  have hgh' : ⇑g + ⇑h =ᵐ[μ] f := (L1AddLinfty.fstToSum_add_sndToSum_eq_iff.1 hgh).trans hu
+  calc ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s
+      ≤ ∫⁻ y, ‖g y‖ₑ ∂μ + ENNReal.ofReal t * essSup (‖h ·‖ₑ) μ :=
+        μ.lintegral_decreasingRearrangement_le_lintegral_add_mul_essSup hf.eNorm t
+          (hgh'.mono fun y hy => by
+            simp only [Pi.add_apply] at hy ⊢
+            rw [← hy]
+            exact eNorm_add_le (g y) (h y))
+    _ = ENNReal.ofReal (‖g‖ + t * ‖h‖) := by
+        rw [ofReal_norm_add_mul_norm _ _ ht,
+          eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable g),
+          eLpNorm_exponent_top (Lp.aestronglyMeasurable h),
+          eLpNormEssSup_eq_essSup_eNorm]
+    _ ≤ ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u + ε) :=
+        ENNReal.ofReal_le_ofReal hlt.le
+    _ = ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) + ε := by
+        rw [ENNReal.ofReal_add (kFunctional_nonneg ht) ε.coe_nonneg,
+          ENNReal.ofReal_coe_nnreal]
 
 variable [NormedSpace ℝ E]
 
@@ -125,46 +131,26 @@ private theorem ofReal_kFunctional_l1Linfty_of_pos {u : L1AddLinfty 𝕜 E μ} {
     ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) =
       ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
   have hf : AEStronglyMeasurable f μ := (AEEqFun.aestronglyMeasurable _).congr hu
-  refine le_antisymm ?_ (ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_)
-  · -- A splitting `f = f₀ + f₁` of finite cost gives a decomposition of `u` of the same cost.
-    rw [μ.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm hf]
-    refine le_iInf fun f₀ => le_iInf fun f₁ => le_iInf fun hsum => ?_
-    by_cases hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ = ∞
-    · rw [hfin]
-      exact le_top
-    obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
-    have hdec : (l1Linfty 𝕜 E μ).fstToSum (h₀.toLp f₀) + (l1Linfty 𝕜 E μ).sndToSum (h₁.toLp f₁) =
-        u := by
-      refine L1AddLinfty.fstToSum_add_sndToSum_eq_iff.2 ?_
-      filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp, hu] with y hy₀ hy₁ hy
-      rw [Pi.add_apply, hy₀, hy₁, hy, ← Pi.add_apply, hsum]
-    calc ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u)
-        ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
-          ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
-      _ = eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
-          rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
-            eLpNorm_congr_ae h₁.coeFn_toLp]
-  · -- Every decomposition `u = g + h` bounds `∫₀ᵗ ‖f‖*` by `‖g‖₁ + t ‖h‖_∞`.
-    obtain ⟨g, h, hgh, hlt⟩ := (kFunctional_lt_iff ht.le).1
-      (lt_add_of_pos_right ((l1Linfty 𝕜 E μ).kFunctional t u) (NNReal.coe_pos.2 hε))
-    have hgh' : ⇑g + ⇑h =ᵐ[μ] f := (L1AddLinfty.fstToSum_add_sndToSum_eq_iff.1 hgh).trans hu
-    calc ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s
-        ≤ ∫⁻ y, ‖g y‖ₑ ∂μ + ENNReal.ofReal t * essSup (‖h ·‖ₑ) μ :=
-          μ.lintegral_decreasingRearrangement_le_lintegral_add_mul_essSup hf.eNorm t
-            (hgh'.mono fun y hy => by
-              simp only [Pi.add_apply] at hy ⊢
-              rw [← hy]
-              exact eNorm_add_le (g y) (h y))
-      _ = ENNReal.ofReal (‖g‖ + t * ‖h‖) := by
-          rw [ofReal_norm_add_mul_norm _ _ ht.le,
-            eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable g),
-            eLpNorm_exponent_top (Lp.aestronglyMeasurable h),
-            eLpNormEssSup_eq_essSup_eNorm]
-      _ ≤ ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u + ε) :=
-          ENNReal.ofReal_le_ofReal hlt.le
-      _ = ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) + ε := by
-          rw [ENNReal.ofReal_add (kFunctional_nonneg ht.le) ε.coe_nonneg,
-            ENNReal.ofReal_coe_nnreal]
+  refine le_antisymm ?_
+    (lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu ht.le)
+  -- A splitting `f = f₀ + f₁` of finite cost gives a decomposition of `u` of the same cost.
+  rw [μ.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm hf]
+  refine le_iInf fun f₀ => le_iInf fun f₁ => le_iInf fun hsum => ?_
+  by_cases hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ = ∞
+  · rw [hfin]
+    exact le_top
+  obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
+  have hdec : (l1Linfty 𝕜 E μ).fstToSum (h₀.toLp f₀) + (l1Linfty 𝕜 E μ).sndToSum (h₁.toLp f₁) =
+      u := by
+    refine L1AddLinfty.fstToSum_add_sndToSum_eq_iff.2 ?_
+    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp, hu] with y hy₀ hy₁ hy
+    rw [Pi.add_apply, hy₀, hy₁, hy, ← Pi.add_apply, hsum]
+  calc ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u)
+      ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
+        ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
+    _ = eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
+        rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
+          eLpNorm_congr_ae h₁.coeFn_toLp]
 
 /-- **The `K`-functional of `(L¹, L^∞)`.** For `t ≥ 0` and an element `u` of `L¹ + L^∞`
 represented by `f`, `K(t, u) = ∫₀ᵗ ‖f‖*`. -/
@@ -238,53 +224,42 @@ theorem exists_toAEEqFun_ae_eq_iff_lintegral_decreasingRearrangement_lt_top {f :
     (ht : 0 < t) :
     (∃ u : L1AddLinfty 𝕜 E μ, ⇑(toAEEqFun 𝕜 u) =ᵐ[μ] f) ↔
       AEStronglyMeasurable f μ ∧ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s < ∞ := by
-  rw [exists_toAEEqFun_ae_eq_iff]
-  refine ⟨fun ⟨g, h, hgh⟩ => ?_, fun ⟨hf, hfin⟩ => ?_⟩
-  · -- A decomposition `f = g + h` bounds `∫₀ᵗ ‖f‖*` by `‖g‖₁ + t ‖h‖_∞`.
-    have hf : AEStronglyMeasurable f μ :=
-      ((Lp.aestronglyMeasurable g).add (Lp.aestronglyMeasurable h)).congr hgh
-    refine ⟨hf, (μ.lintegral_decreasingRearrangement_le_lintegral_add_mul_essSup hf.eNorm t
-      (g := fun y => ‖g y‖ₑ) (h := fun y => ‖h y‖ₑ) (hgh.mono fun y hy => ?_)).trans_lt ?_⟩
-    · simp only [Pi.add_apply] at hy ⊢
-      rw [← hy]
-      exact eNorm_add_le (g y) (h y)
-    · rw [← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable g),
-        ← eLpNormEssSup_eq_essSup_eNorm, ← eLpNorm_exponent_top (Lp.aestronglyMeasurable h)]
-      exact ENNReal.add_lt_top.2 ⟨Lp.eLpNorm_lt_top g,
-        ENNReal.mul_lt_top ENNReal.ofReal_lt_top (Lp.eLpNorm_lt_top h)⟩
-  · -- Truncate `f` at the level `c = ‖f‖* t`: the part above `c` is integrable, since
-    -- `{‖f‖ > c}` has measure at most `t`, and the part below is bounded by `c`.
-    rw [μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.eNorm t] at hfin
-    set c := μ.decreasingRearrangement (‖f ·‖ₑ) t
-    obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_lt_top.1 hfin
-    have hc : c ≠ ∞ := fun hc => by
-      rw [hc, ENNReal.mul_top (by simpa using ht)] at hfin₁
-      exact lt_irrefl _ hfin₁
-    set S := {y | c < ‖f y‖ₑ}
-    have hS : NullMeasurableSet S μ := nullMeasurableSet_lt aemeasurable_const hf.eNorm
-    have hμS : μ S ≤ ENNReal.ofReal t := μ.measure_setOf_decreasingRearrangement_lt_le _ t
-    have h₀ : MemLp (S.indicator f) 1 μ := by
-      rw [memLp_iff, eLpNorm_one_eq_lintegral_eNorm (hf.indicator₀ hS)]
-      calc ∫⁻ y, ‖S.indicator f y‖ₑ ∂μ
-          ≤ ∫⁻ y, (‖f y‖ₑ - c) + S.indicator (fun _ => c) y ∂μ := lintegral_mono fun y => by
-            by_cases hy : y ∈ S
-            · simpa [hy] using le_tsub_add
-            · simp [hy]
-        _ ≤ ∫⁻ y, (‖f y‖ₑ - c) ∂μ + c * μ S := by
-            rw [lintegral_add_left' (hf.eNorm.sub_const c)]
-            gcongr
-            exact lintegral_indicator_const_le S c
-        _ < ∞ := ENNReal.add_lt_top.2 ⟨hfin₀,
-            ENNReal.mul_lt_top hc.lt_top (hμS.trans_lt ENNReal.ofReal_lt_top)⟩
-    have h₁ : MemLp (Sᶜ.indicator f) ∞ μ := by
-      rw [memLp_iff, eLpNorm_exponent_top (hf.indicator₀ hS.compl)]
-      refine (eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun y => ?_)).trans_lt hc.lt_top
-      by_cases hy : y ∈ S
-      · simp [hy]
-      · rw [Set.indicator_of_mem (show y ∈ Sᶜ from hy)]
-        exact not_lt.1 hy
-    refine ⟨h₀.toLp _, h₁.toLp _, ?_⟩
-    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp] with y hy₀ hy₁
-    rw [Pi.add_apply, hy₀, hy₁, Set.indicator_self_add_compl_apply]
+  refine ⟨fun ⟨u, hu⟩ => ⟨(AEEqFun.aestronglyMeasurable _).congr hu,
+    (CompatibleCouple.lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu
+      ht.le).trans_lt ENNReal.ofReal_lt_top⟩, fun ⟨hf, hfin⟩ => exists_toAEEqFun_ae_eq_iff.2 ?_⟩
+  -- Truncate `f` at the level `c = ‖f‖* t`: the part above `c` is integrable, since
+  -- `{‖f‖ > c}` has measure at most `t`, and the part below is bounded by `c`.
+  rw [μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.eNorm t] at hfin
+  set c := μ.decreasingRearrangement (‖f ·‖ₑ) t
+  obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_lt_top.1 hfin
+  have hc : c ≠ ∞ := fun hc => by
+    rw [hc, ENNReal.mul_top (by simpa using ht)] at hfin₁
+    exact lt_irrefl _ hfin₁
+  set S := {y | c < ‖f y‖ₑ}
+  have hS : NullMeasurableSet S μ := nullMeasurableSet_lt aemeasurable_const hf.eNorm
+  have hμS : μ S ≤ ENNReal.ofReal t := μ.measure_setOf_decreasingRearrangement_lt_le _ t
+  have h₀ : MemLp (S.indicator f) 1 μ := by
+    rw [memLp_iff, eLpNorm_one_eq_lintegral_eNorm (hf.indicator₀ hS)]
+    calc ∫⁻ y, ‖S.indicator f y‖ₑ ∂μ
+        ≤ ∫⁻ y, (‖f y‖ₑ - c) + S.indicator (fun _ => c) y ∂μ := lintegral_mono fun y => by
+          by_cases hy : y ∈ S
+          · simpa [hy] using le_tsub_add
+          · simp [hy]
+      _ ≤ ∫⁻ y, (‖f y‖ₑ - c) ∂μ + c * μ S := by
+          rw [lintegral_add_left' (hf.eNorm.sub_const c)]
+          gcongr
+          exact lintegral_indicator_const_le S c
+      _ < ∞ := ENNReal.add_lt_top.2 ⟨hfin₀,
+          ENNReal.mul_lt_top hc.lt_top (hμS.trans_lt ENNReal.ofReal_lt_top)⟩
+  have h₁ : MemLp (Sᶜ.indicator f) ∞ μ := by
+    rw [memLp_iff, eLpNorm_exponent_top (hf.indicator₀ hS.compl)]
+    refine (eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun y => ?_)).trans_lt hc.lt_top
+    by_cases hy : y ∈ S
+    · simp [hy]
+    · rw [Set.indicator_of_mem ((Set.mem_compl_iff S y).2 hy)]
+      exact not_lt.1 hy
+  refine ⟨h₀.toLp _, h₁.toLp _, ?_⟩
+  filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp] with y hy₀ hy₁
+  rw [Pi.add_apply, hy₀, hy₁, Set.indicator_self_add_compl_apply]
 
 end TauCeti.L1AddLinfty
