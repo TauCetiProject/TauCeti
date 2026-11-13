@@ -64,17 +64,6 @@ namespace AGraph
 variable {Γ : SerreGraph.{u, v}} {𝔸 : GraphOfGroups.{u, v, w, x} Γ} {v₀ : Γ.V}
   (B : AGraph.{u, v, w, x, u', v'} 𝔸 v₀)
 
-/-- The rank of a vertex group depends only on its isomorphism type. -/
-private theorem rankGrp_congr {B₁ B₂ : AGraph.{u, v, w, x, u', v'} 𝔸 v₀} {z₁ : B₁.graph.V}
-    {z₂ : B₂.graph.V} (e : B₁.grp z₁ ≃* B₂.grp z₂) : B₁.rankGrp z₁ = B₂.rankGrp z₂ := by
-  by_cases h : (B₁.grp z₁).FG
-  · have : Group.FG (B₁.grp z₁) := (Group.fg_iff_subgroup_fg _).2 h
-    have : Group.FG (B₂.grp z₂) := (isMulFG_congr e).1 this
-    rw [rankGrp_eq, rankGrp_eq, Group.rank_congr e]
-  · have h₂ : ¬ (B₂.grp z₂).FG := fun h₂ => h ((Group.fg_iff_subgroup_fg _).1
-      ((isMulFG_congr e).2 ((Group.fg_iff_subgroup_fg _).2 h₂)))
-    rw [rankGrp_of_not_fg _ h, rankGrp_of_not_fg _ h₂]
-
 /-- The identity of the underlying graph of `B`, as a morphism to the underlying graph of a move of
 `B`. Its maps are the identity by definition (those of `SerreGraph.Hom.id` are not exposed), so the
 transports in `subgroup_le_of_hom` along it reduce. -/
@@ -141,7 +130,7 @@ theorem subgroup_conj (hg : g B.base = 1) : (B.conj g).subgroup = B.subgroup := 
     exact (inv_mul_cancel_left _ _).symm
 
 /-- A conjugation move preserves finiteness. -/
-theorem isFinite_conj_iff : (B.conj g).IsFinite ↔ B.IsFinite := by
+@[simp] theorem isFinite_conj_iff : (B.conj g).IsFinite ↔ B.IsFinite := by
   unfold conj
   refine ⟨fun h => ⟨h.1, h.2, fun z => ?_⟩,
     fun h => ⟨h.1, h.2, fun z => have := h.3 z; inferInstance⟩⟩
@@ -157,37 +146,6 @@ theorem isFinite_conj_iff : (B.conj g).IsFinite ↔ B.IsFinite := by
 end conj
 
 /-! ### The Bass–Serre move A1 -/
-
-/-- `α` of a dart `e'` equal to the reverse of `e` is `ω` of `e`, read through the identifications
-of the edge groups and of the vertex groups. -/
-private theorem cast_α_eq_ω {e e' : Γ.E} (he : e' = Γ.rev e) (h₁ : Γ.src e' = Γ.tgt e)
-    (h₂ : Γ.toGeomEdge e = Γ.toGeomEdge e') (d : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
-    MulEquiv.cast (M := 𝔸.vertexGroup) h₁ (𝔸.α e' (MulEquiv.cast (M := 𝔸.edgeGroup) h₂ d)) =
-      𝔸.ω e d := by
-  subst he
-  rw [α_rev_apply]
-  simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
-  -- What remains is a transport from `A_{o(e⁻¹)}` to `A_{t(e)}`, the same group by definition.
-  rfl
-
-/-- Moving an edge group element across the dart of a letter `f_α, [f], f_ω`:
-`a α(c)⁻¹, e, ω(c) b ∼ a, e, b`, for a dart `e` of `Γ` read as an arrow from `a` to `b`. -/
-private theorem homotopic_bassSerre_letter {a b : Γ.V} (e : Γ.E) (ha : Γ.src e = a)
-    (hb : Γ.tgt e = b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e)) (x : 𝔸.vertexGroup a)
-    (y : 𝔸.vertexGroup b) :
-    Path.Homotopic (((Path.ofVertex (x * (MulEquiv.cast (M := 𝔸.vertexGroup) ha (𝔸.α e c))⁻¹)).comp
-      (Path.ofDart ⟨e, ha, hb⟩)).comp (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) hb
-        (𝔸.ω e c) * y))) (((Path.ofVertex x).comp (Path.ofDart ⟨e, ha, hb⟩)).comp
-          (Path.ofVertex y)) := by
-  rw [← αArrow_apply 𝔸 (⟨e, ha, hb⟩ : a ⟶ b), ← ωArrow_apply 𝔸 (⟨e, ha, hb⟩ : a ⟶ b)]
-  simp only [Path.ofVertex_eq_nil_cons, Path.ofDart_eq_nil_cons, Quiver.Path.comp_cons,
-    Quiver.Path.comp_nil]
-  have h := Path.Homotopic.dart_ωArrow (Quiver.Path.nil.cons
-    (Letter.vertex (x * (𝔸.αArrow (⟨e, ha, hb⟩ : a ⟶ b) c)⁻¹))) ⟨e, ha, hb⟩ c
-  refine (Path.Homotopic.mul _ _ _).symm.trans ((h.cons _).trans ?_)
-  refine (((Path.Homotopic.mul _ _ _).cons _).cons _).trans ?_
-  rw [inv_mul_cancel_right]
-  exact .refl _
 
 /-- The Bass–Serre move A1 by a family `c_f ∈ A_[f]`: the label `f_α` of a dart `f` is replaced by
 `f_α α_[f](c_f)⁻¹`. When `c` takes the same value on a dart and on its reverse, the label
@@ -219,7 +177,7 @@ theorem bassSerre_labelω (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast (M := �
     (f : B.graph.E) : (B.bassSerre c).labelω f = 𝔸.ω (B.typ.mapE f) (c f) * B.labelω f := by
   unfold bassSerre
   rw [labelω_def, labelω_def, map_mul, mul_inv_rev, map_inv, inv_inv, hc f]
-  exact congrArg (· * _) (cast_α_eq_ω (B.typ.map_rev f) _ _ _)
+  exact congrArg (· * _) (𝔸.cast_α_eq_ω (B.typ.map_rev f) _ _ _)
 
 /-- A Bass–Serre move by a family taking the same value on a dart and on its reverse preserves the
 represented subgroup (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for the move A1). -/
@@ -247,15 +205,17 @@ theorem subgroup_bassSerre (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast (M := 
       | dart f =>
         obtain ⟨e, rfl, rfl⟩ := f
         rw [letterPath_dart_arrow, letterPath_dart_arrow, hω e, map_mul, map_mul, map_inv]
-        exact homotopic_bassSerre_letter (B.typ.mapE e) (B.typ.map_src e) (B.typ.map_tgt _ e)
-          (c e) _ _
+        have h := Path.Homotopic.dart_αArrow_ωArrow (𝔸 := 𝔸)
+          ⟨B.typ.mapE e, B.typ.map_src e, B.typ.map_tgt _ e⟩ (c e)
+        rw [αArrow_apply, ωArrow_apply] at h
+        exact h _ _
   ext x
   rw [mem_subgroup_iff, mem_subgroup_iff]
   constructor <;> rintro ⟨p, rfl⟩ <;> refine ⟨p, ?_⟩
   exacts [congrArg _ (π₁.mk_eq_mk_iff.2 (key p).symm), congrArg _ (π₁.mk_eq_mk_iff.2 (key p))]
 
 /-- A Bass–Serre move preserves finiteness. -/
-theorem isFinite_bassSerre_iff : (B.bassSerre c).IsFinite ↔ B.IsFinite :=
+@[simp] theorem isFinite_bassSerre_iff : (B.bassSerre c).IsFinite ↔ B.IsFinite :=
   ⟨fun h => ⟨h.1, h.2, h.3⟩, fun h => ⟨h.1, h.2, h.3⟩⟩
 
 /-- A Bass–Serre move preserves the complexity. -/
@@ -318,7 +278,7 @@ theorem subgroup_adjust (ha : ∀ f, a f ∈ B.grpSrc f) : (B.adjust a).subgroup
     rfl
 
 /-- A simple adjustment preserves finiteness. -/
-theorem isFinite_adjust_iff : (B.adjust a).IsFinite ↔ B.IsFinite :=
+@[simp] theorem isFinite_adjust_iff : (B.adjust a).IsFinite ↔ B.IsFinite :=
   ⟨fun h => ⟨h.1, h.2, h.3⟩, fun h => ⟨h.1, h.2, h.3⟩⟩
 
 /-- A simple adjustment preserves the complexity. -/

@@ -110,6 +110,18 @@ theorem α_injective (e : Γ.E) : Function.Injective (𝔸.α e) := by
       (𝔸.α e (MulEquiv.cast (M := 𝔸.edgeGroup) (Γ.toGeomEdge_rev e) c)) := by
   simp only [α_apply, MulEquiv.cast_apply, cast_cast, cast_eq]
 
+/-- `α` of a dart `e'` equal to the reverse of `e` is `ω` of `e`, read through the identifications
+of the edge groups and of the vertex groups. -/
+theorem cast_α_eq_ω {e e' : Γ.E} (he : e' = Γ.rev e) (h₁ : Γ.src e' = Γ.tgt e)
+    (h₂ : Γ.toGeomEdge e = Γ.toGeomEdge e') (d : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
+    MulEquiv.cast (M := 𝔸.vertexGroup) h₁ (𝔸.α e' (MulEquiv.cast (M := 𝔸.edgeGroup) h₂ d)) =
+      𝔸.ω e d := by
+  subst he
+  rw [α_rev_apply]
+  simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
+  -- What remains is a transport from `A_{o(e⁻¹)}` to `A_{t(e)}`, the same group by definition.
+  rfl
+
 section Arrow
 
 variable {a b : Γ.V}

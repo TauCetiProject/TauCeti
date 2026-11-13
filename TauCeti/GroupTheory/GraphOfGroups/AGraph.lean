@@ -531,6 +531,19 @@ theorem rankGrp_eq (z : B.graph.V) [Group.FG (B.grp z)] : B.rankGrp z = Group.ra
 theorem rankGrp_of_not_fg {z : B.graph.V} (h : ¬ (B.grp z).FG) : B.rankGrp z = 0 := by
   simp [rankGrp, h]
 
+variable {B} in
+/-- The rank of a vertex group depends only on its isomorphism type. -/
+theorem rankGrp_congr {Γ' : SerreGraph} {𝔸' : GraphOfGroups Γ'} {v₀' : Γ'.V} {B' : AGraph 𝔸' v₀'}
+    {z : B.graph.V} {z' : B'.graph.V} (e : B.grp z ≃* B'.grp z') :
+    B.rankGrp z = B'.rankGrp z' := by
+  by_cases h : (B.grp z).FG
+  · have : Group.FG (B.grp z) := (Group.fg_iff_subgroup_fg _).2 h
+    have : Group.FG (B'.grp z') := (isMulFG_congr e).1 this
+    rw [rankGrp_eq, rankGrp_eq, Group.rank_congr e]
+  · have h' : ¬ (B'.grp z').FG := fun h' => h ((Group.fg_iff_subgroup_fg _).1
+      ((isMulFG_congr e).2 ((Group.fg_iff_subgroup_fg _).2 h')))
+    rw [rankGrp_of_not_fg _ h, rankGrp_of_not_fg _ h']
+
 /-- The complexity of an `𝔸`-graph: the rank `#E - #V + 1` of its underlying graph, for a finite
 connected graph with `#E` geometric edges and `#V` vertices, plus the sum of the ranks of its vertex
 groups. -/
