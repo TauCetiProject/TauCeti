@@ -32,12 +32,17 @@ numbering, and it is what the affine `E₈` matrix below is defined to be
 already carries affine matrices as *obstructions* inside the finite-type classification:
 `TauCeti.doubleForkCartanMatrix n` is the affine `Dₘ` matrix for `m = n + 5`, and
 `TauCeti.starCartanMatrix` at `![2, 2, 2]`, `![1, 3, 3]` and `![1, 2, 5]` is the affine `E₆`, `E₇`
-and `E₈` matrix. Those live on the sum and sigma
-index types that make the classification argument uniform rather than on `Fin`, and their marks are
-rational and unnormalized -- `TauCeti.starMark ![2, 2, 2]` is `9` times the marks below -- so
-identifying them with the diagrams of this file is a relabelling problem of its own, of a piece
-with relabelling them into the Bourbaki numbering, which is not proved here either. This
-file is the affine complement, and it is deliberately *graph* first, because its consumers --
+and `E₈` matrix. Those live on the sum and sigma index types that make the classification argument
+uniform rather than on `Fin`, and their marks are rational and unnormalized --
+`TauCeti.starMark ![2, 2, 2]` is `9` times the marks below -- so identifying them with the diagrams
+of this file is a relabelling problem of its own, which this file does not address. For the three
+stars it is done in `TauCeti/LinearAlgebra/RootSystem/AffineDynkinType/Star.lean`
+(`TauCeti.AffineDynkinType.starCartanMatrix_two_two_two_eq_submatrix_E6` and its `E₇` and `E₈`
+analogues); the affine `Dₘ` matrix `TauCeti.doubleForkCartanMatrix` is not identified here.
+Relabelling the finite diagram left after deleting the affine node into the Bourbaki numbering is
+`TauCeti.AffineDynkinType.bourbakiNode`, in
+`TauCeti/LinearAlgebra/RootSystem/AffineDynkinType/Deletion.lean`. This file is the affine
+complement, and it is deliberately *graph* first, because its consumers --
 zigzag and preprojective algebras, and the McKay correspondence -- start from the diagram rather
 than from a root system.
 

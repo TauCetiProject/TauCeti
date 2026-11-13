@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 
 /-!
 # The action functional on contractible loops of a weakly exact manifold
@@ -28,7 +28,7 @@ the capped loop** `(γ, u)`, where `u` is a cap of `γ = u (0, ·)`, is
 `A_H(γ, u) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt`,
 
 the action `TauCeti.cylinderAction ω H u` of `γ` measured against `u`. Its gluing, recapping and
-homotopy laws are proved in `TauCeti.Geometry.Symplectic.Hamiltonian.Action`; in general it
+homotopy laws are proved in `TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic`; in general it
 depends on the cap.
 
 The form `φ` is **weakly exact**

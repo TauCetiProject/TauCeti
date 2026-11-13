@@ -56,7 +56,7 @@ theorem equicontinuousOn_of_forall_isCompact_norm_fderiv_le
   let L : ℝ≥0 := ⟨max M 0, le_max_right _ _⟩
   have hLip : ∀ i, LipschitzOnWith L (u i) (closedBall (x : E) (r / 2)) := by
     intro i
-    apply (convex_closedBall (x : E) (r / 2)).lipschitzOnWith_of_nnnorm_fderiv_le (𝕜 := ℝ)
+    apply (convex_closedBall (x : E) (r / 2)).lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
     · intro y hy
       exact (hu i y (hball hy)).differentiableAt (hΩ.mem_nhds (hball hy))
     · intro y hy
