@@ -27,8 +27,8 @@ norm subgroups of all layers between `U` and `G` are the preimages of the corres
 of `G ⧸ U` (`ClassFormation.toAddSubgroup_normSubgroup_eq_comap`). This turns the lattice of norm
 subgroups into the lattice of subgroups of a finite abelian group:
 
-* the compositum of two abelian layers has the intersection of their norm subgroups as its norm
-  subgroup (`ClassFormation.normSubgroup_inf_of_isAbelian`);
+* the compositum of a layer with an abelian layer has the intersection of their norm subgroups as
+  its norm subgroup (`ClassFormation.normSubgroup_inf_of_isAbelian`);
 * the intersection of any two layers has the sum of their norm subgroups as its norm subgroup
   (`ClassFormation.normSubgroup_sup`; by norm limitation no abelianity is needed);
 * a layer lies below an abelian layer exactly when its norm subgroup lies in that of the abelian
@@ -180,11 +180,8 @@ section Lattice
 variable {V W : OpenNormalSubgroup G}
 
 include cf in
-/-- **Composita.** For abelian layers `V` and `W`, the norm subgroup of their compositum, cut out
-by `V ⊓ W`, is the intersection of the two norm subgroups. Abelianity is needed: by norm
-limitation the left side only sees the maximal abelian sublayer of `V ⊓ W`, which can be larger
-than the compositum of the maximal abelian sublayers of `V` and `W`. -/
-theorem normSubgroup_inf_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
+/-- **Composita, for abelian layers.** -/
+private theorem normSubgroup_inf_of_isAbelian_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
     (hW : W.IsAbelianClassFieldLayer) :
     F.normSubgroup (V ⊓ W) = F.normSubgroup V ⊓ F.normSubgroup W := by
   have hU : (V ⊓ W).IsAbelianClassFieldLayer := hV.inf hW
@@ -202,6 +199,20 @@ theorem normSubgroup_inf_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
       galHom_ofOpenNormal_mk_eq_one_iff hUW]
     -- Membership in an open normal subgroup is membership in its underlying subgroup.
     exact (SetLike.ext_iff.1 (OpenNormalSubgroup.toSubgroup_inf V W) _).trans Subgroup.mem_inf
+
+include cf in
+/-- **Composita.** For layers `V` and `W` with `W` abelian, the norm subgroup of their compositum,
+cut out by `V ⊓ W`, is the intersection of the two norm subgroups. Abelianity of `W` is needed: by
+norm limitation the left side only sees the maximal abelian sublayer of `V ⊓ W`, which can be
+larger than the compositum of the maximal abelian sublayers of `V` and `W` when neither is
+abelian; when `W` is abelian it is the compositum of the maximal abelian sublayer of `V` with
+`W`, so `V` need not be abelian. -/
+theorem normSubgroup_inf_of_isAbelian (hW : W.IsAbelianClassFieldLayer) :
+    F.normSubgroup (V ⊓ W) = F.normSubgroup V ⊓ F.normSubgroup W := by
+  have hmax := OpenNormalSubgroup.maximalAbelianLayer_inf_of_isAbelianClassFieldLayer (V := V) hW
+  rw [← cf.normSubgroup_maximalAbelianLayer (V ⊓ W), hmax,
+    cf.normSubgroup_inf_of_isAbelian_of_isAbelian V.isAbelianClassFieldLayer_maximalAbelianLayer hW,
+    cf.normSubgroup_maximalAbelianLayer]
 
 include cf in
 /-- **Intersections, for abelian layers.** -/
@@ -264,7 +275,7 @@ subgroup of the compositum `V ⊓ W` is then that of `V`, so the two layers have
 private theorem le_of_normSubgroup_le_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
     (hW : W.IsAbelianClassFieldLayer) (h : F.normSubgroup V ≤ F.normSubgroup W) : V ≤ W := by
   have hinf : F.normSubgroup (V ⊓ W) = F.normSubgroup V := by
-    rw [cf.normSubgroup_inf_of_isAbelian hV hW, inf_eq_left.mpr h]
+    rw [cf.normSubgroup_inf_of_isAbelian hW, inf_eq_left.mpr h]
   have hdegree : (ofOpenNormal (V ⊓ W)).degree = (ofOpenNormal V).degree := by
     rw [← cf.index_normSubgroup (hV.inf hW), hinf, cf.index_normSubgroup hV]
   have hindex : (V ⊓ W).toSubgroup.index = V.toSubgroup.index := by

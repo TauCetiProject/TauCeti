@@ -10,7 +10,9 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import Mathlib.Algebra.Group.Commutator
 import Mathlib.GroupTheory.Commutator.Basic
+import Mathlib.Algebra.Group.Commute.Hom
 public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.Data.Set.Card
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Fin
@@ -32,9 +34,9 @@ strictly quadratic but are not standard.
 
 This file defines the number of occurrences of a variable in an element of `G[X]`, quadratic and
 strictly quadratic finite systems, the four types of standard quadratic equations together with
-their atoms, atomic rank, genus and Euler characteristic, and degenerate, commutative and
-general-position solutions. It also records the standard equation `[x, y] = [a, b]` of genus one
-and its solutions.
+their atoms, variables, coefficients, atomic rank, genus, Euler characteristic and the invariant
+`κ(S)` of [IFT], Definition 6, and degenerate, commutative and general-position solutions. It also
+records the standard equation `[x, y] = [a, b]` of genus one and its solutions.
 
 The number of occurrences `occurrences x w` of `x` in `w` is defined as the least number of
 letters `x^{±1}` in an expression of `w` as a product of coefficients and letters `y^{±1}`. By
@@ -63,8 +65,9 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
   `TauCeti.GroupAlgGeom.Quadratic.IsStrictlyQuadratic`: every variable occurs in a finite system
   at most twice, respectively zero times or exactly twice.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard G X`: the standard quadratic equations of types
-  (1)–(4), with `Standard.toWord`, `Standard.atoms`, `Standard.atomicRank`, `Standard.genus`,
-  `Standard.IsOrientable` and `Standard.eulerChar`.
+  (1)–(4), with `Standard.toWord`, `Standard.atoms`, `Standard.vars`, `Standard.coeffs`,
+  `Standard.atomicRank`, `Standard.genus`, `Standard.IsOrientable`, `Standard.eulerChar` and
+  `Standard.kappa`.
 * `Standard.IsDegenerate`, `Standard.IsCommutative`, `Standard.IsGeneralPosition`: a point at
   which some atom vanishes, at which consecutive atoms commute, at which no two consecutive atoms
   commute.
@@ -84,6 +87,10 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isQuadratic`: standard equations are quadratic.
 * `TauCeti.GroupAlgGeom.Quadratic.isStandard_oneCommutatorEquation`: `[x, y] = [a, b]` is a
   standard orientable quadratic equation of genus one.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars_add_one`: `κ(S)` is the number of
+  variables of `S`, plus one when the coefficient `d` occurs; it equals `2 - χ(S)`
+  (`TauCeti.GroupAlgGeom.Quadratic.Standard.eulerChar_eq_two_sub_kappa`).
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isCommutative_of_mem_V_genusTwo`: every solution of
   `[x₁, y₁][x₂, y₂] = 1` is commutative, so this equation has no solution in general position.
 * `TauCeti.GroupAlgGeom.Quadratic.isGeneralPosition_genusThree`: `[x₁, y₁][x₂, y₂][x₃, y₃] = 1`
@@ -93,7 +100,7 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 ## References
 
 * [IFT] O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra
-  290 (2005), §2.7, Definitions 2–5.
+  290 (2005), §2.7, Definitions 2–6.
 * [VAR-I] O. Kharlampovich, A. Myasnikov, *Irreducible affine varieties over a free group. I:
   Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §1.
 -/
@@ -488,6 +495,28 @@ def eulerChar : Standard G X → ℤ
   | nonorientable n .. => 2 - n
   | nonorientableCoeff n m .. => 2 - n - (m + 1)
 
+/-- The set of variables occurring in a standard quadratic equation. -/
+def vars : Standard G X → Set X
+  | orientable _ _ x y _ => Set.range (Sum.elim x y)
+  | orientableCoeff _ _ _ x y z _ _ _ _ _ => Set.range (Sum.elim (Sum.elim x y) z)
+  | nonorientable _ _ x _ => Set.range x
+  | nonorientableCoeff _ _ _ x z _ _ _ _ _ => Set.range (Sum.elim x z)
+
+/-- The coefficients `d, c₁, …, c_m` of a standard quadratic equation. -/
+def coeffs : Standard G X → List G
+  | orientable .. => []
+  | orientableCoeff _ _ _ _ _ _ _ c _ d _ => d :: List.ofFn c
+  | nonorientable .. => []
+  | nonorientableCoeff _ _ _ _ _ _ c _ d _ => d :: List.ofFn c
+
+/-- The invariant `κ(S)` of a standard quadratic equation: the number of its variables, plus one
+when the coefficient `d` occurs. -/
+def kappa : Standard G X → ℕ
+  | orientable n .. => 2 * n
+  | orientableCoeff n m .. => 2 * n + m + 1
+  | nonorientable n .. => n
+  | nonorientableCoeff n m .. => n + m + 1
+
 section Accessors
 
 variable {n m : ℕ} {x y : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d : G}
@@ -627,7 +656,134 @@ theorem eulerChar_nonorientableCoeff {x : Fin n → X} (hn : 0 < n)
     (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
     (nonorientableCoeff n m hn x z inj c hc d hd).eulerChar = 2 - n - (m + 1) := (rfl)
 
+@[simp]
+theorem vars_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    (orientable (G := G) n hn x y inj).vars = Set.range (Sum.elim x y) := (rfl)
+
+@[simp]
+theorem vars_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (orientableCoeff n m hnm x y z inj c hc d hd).vars =
+      Set.range (Sum.elim (Sum.elim x y) z) := (rfl)
+
+@[simp]
+theorem vars_nonorientable {x : Fin n → X} (hn : 0 < n) (inj : x.Injective) :
+    (nonorientable (G := G) n hn x inj).vars = Set.range x := (rfl)
+
+@[simp]
+theorem vars_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff n m hn x z inj c hc d hd).vars = Set.range (Sum.elim x z) := (rfl)
+
+@[simp]
+theorem coeffs_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    (orientable (G := G) n hn x y inj).coeffs = [] := (rfl)
+
+@[simp]
+theorem coeffs_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (orientableCoeff n m hnm x y z inj c hc d hd).coeffs = d :: List.ofFn c := (rfl)
+
+@[simp]
+theorem coeffs_nonorientable {x : Fin n → X} (hn : 0 < n) (inj : x.Injective) :
+    (nonorientable (G := G) n hn x inj).coeffs = [] := (rfl)
+
+@[simp]
+theorem coeffs_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff n m hn x z inj c hc d hd).coeffs = d :: List.ofFn c := (rfl)
+
+@[simp]
+theorem kappa_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    (orientable (G := G) n hn x y inj).kappa = 2 * n := (rfl)
+
+@[simp]
+theorem kappa_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (orientableCoeff n m hnm x y z inj c hc d hd).kappa = 2 * n + m + 1 := (rfl)
+
+@[simp]
+theorem kappa_nonorientable {x : Fin n → X} (hn : 0 < n) (inj : x.Injective) :
+    (nonorientable (G := G) n hn x inj).kappa = n := (rfl)
+
+@[simp]
+theorem kappa_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff n m hn x z inj c hc d hd).kappa = n + m + 1 := (rfl)
+
 end Accessors
+
+/-! ### Variables, coefficients and `κ` -/
+
+section Kappa
+
+variable {S : Standard G X}
+
+/-- The coefficients of a standard quadratic equation are nontrivial. -/
+theorem ne_one_of_mem_coeffs {g : G} (hg : g ∈ S.coeffs) : g ≠ 1 := by
+  cases S <;> simp_all [List.mem_ofFn] <;> grind
+
+@[simp]
+theorem one_notMem_coeffs (S : Standard G X) : (1 : G) ∉ S.coeffs :=
+  fun h => ne_one_of_mem_coeffs h rfl
+
+@[simp]
+theorem coeffs_eq_nil_iff : S.coeffs = [] ↔ S.constant = 1 := by
+  cases S <;> simp_all
+
+@[simp]
+theorem constant_mem_coeffs_iff : S.constant ∈ S.coeffs ↔ S.constant ≠ 1 := by
+  cases S <;> simp_all
+
+theorem finite_vars (S : Standard G X) : S.vars.Finite := by
+  cases S <;> exact Set.finite_range _
+
+instance (S : Standard G X) : Finite S.vars :=
+  S.finite_vars.to_subtype
+
+/-- A standard quadratic equation without the coefficient `d` has `κ(S)` variables. -/
+theorem kappa_eq_ncard_vars (h : S.constant = 1) : S.kappa = S.vars.ncard := by
+  cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective, two_mul]
+
+/-- A standard quadratic equation with the coefficient `d` has `κ(S) - 1` variables. -/
+theorem kappa_eq_ncard_vars_add_one (h : S.constant ≠ 1) : S.kappa = S.vars.ncard + 1 := by
+  cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective, two_mul]
+
+/-- An orientable standard quadratic equation of genus `n` with `r` atoms has `n + r`
+variables. -/
+theorem ncard_vars_of_isOrientable (h : S.IsOrientable) :
+    S.vars.ncard = S.genus + S.atomicRank := by
+  cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective, add_assoc]
+
+/-- A non-orientable standard quadratic equation has one variable for each atom. -/
+theorem ncard_vars_of_not_isOrientable (h : ¬S.IsOrientable) : S.vars.ncard = S.atomicRank := by
+  cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective]
+
+/-- The Euler characteristic of a standard quadratic equation is `2 - κ(S)`. -/
+theorem eulerChar_eq_two_sub_kappa (S : Standard G X) : S.eulerChar = 2 - S.kappa := by
+  cases S <;> simp <;> lia
+
+/-- A standard quadratic equation with `κ(S) ≥ 4` has at least two atoms. -/
+theorem two_le_atomicRank_of_four_le_kappa (h : 4 ≤ S.kappa) : 2 ≤ S.atomicRank := by
+  cases S <;> simp_all <;> lia
+
+/-- The values of the atoms of a standard quadratic equation depend only on the values of its
+coefficients and of its variables. -/
+theorem map_eval_atoms_congr {ι ι' : G →* H} {v v' : X → H} (hι : ∀ g ∈ S.coeffs, ι g = ι' g)
+    (hv : ∀ x ∈ S.vars, v x = v' x) : S.atoms.map (eval ι v) = S.atoms.map (eval ι' v') := by
+  refine List.map_congr_left ?_
+  cases S <;> simp_all [or_imp, forall_and, map_commutatorElement]
+
+/-- The value of a standard quadratic equation depends only on the values of its coefficients
+and of its variables. -/
+theorem eval_toWord_congr {ι ι' : G →* H} {v v' : X → H} (hι : ∀ g ∈ S.coeffs, ι g = ι' g)
+    (hv : ∀ x ∈ S.vars, v x = v' x) : eval ι v S.toWord = eval ι' v' S.toWord := by
+  simp only [toWord_def, map_mul, map_list_prod, map_eval_atoms_congr hι hv, eval_inl]
+  by_cases h : S.constant = 1
+  · simp [h]
+  · rw [hι _ (constant_mem_coeffs_iff.2 h)]
+
+end Kappa
 
 /-! ### Standard equations are quadratic -/
 
@@ -693,6 +849,23 @@ theorem isQuadratic (S : Standard G X) : IsQuadratic {S.toWord} := by
     rw [← Finset.mul_sum, ← Finset.mul_sum]
     omega
 
+/-- A variable outside `S.vars` does not occur in the standard quadratic equation `S`. -/
+theorem occurrences_toWord_of_notMem_vars {S : Standard G X} {x : X} (hx : x ∉ S.vars) :
+    occurrences x S.toWord = 0 := by
+  have hcomm (a b : X) (ha : a ≠ x) (hb : b ≠ x) :
+      occurrences x ⁅(inr (FreeGroup.of a) : GX G X)⁻¹, (inr (FreeGroup.of b))⁻¹⁆ = 0 :=
+    Nat.eq_zero_of_le_zero <| (occurrences_commutatorElement_le ..).trans (by simp [ha, hb])
+  have hsq (a : X) (ha : a ≠ x) : occurrences x ((inr (FreeGroup.of a) : GX G X) ^ 2) = 0 :=
+    Nat.eq_zero_of_le_zero <| (occurrences_pow_le ..).trans (by simp [ha])
+  have hconj (a : X) (c : G) (ha : a ≠ x) :
+      occurrences x ((inr (FreeGroup.of a) : GX G X)⁻¹ * inl c * inr (FreeGroup.of a)) = 0 :=
+    Nat.eq_zero_of_le_zero <| (occurrences_conj_le ..).trans (by simp [ha])
+  have hatom : ∀ r ∈ S.atoms, occurrences x r = 0 := by
+    cases S <;> simp_all [or_imp, forall_and]
+  refine Nat.eq_zero_of_le_zero <| (occurrences_mul_le x _ _).trans ?_
+  rw [occurrences_inl, add_zero]
+  exact (occurrences_list_prod_le x _).trans_eq (List.sum_eq_zero (by simpa using hatom))
+
 end IsQuadratic
 
 /-! ### Degenerate, commutative and general-position solutions -/
@@ -740,6 +913,15 @@ theorem IsGeneralPosition.not_isCommutative (h : S.IsGeneralPosition ι v)
     | a :: b :: l => exact ⟨a, b, l, rfl⟩
   rw [hl, List.isChain_cons_cons] at h ⊢
   exact fun h' => h.1 h'.1
+
+/-- Composing a point with an injective `G`-homomorphism neither creates nor destroys
+commutativity. -/
+theorem isCommutative_comp_iff {K : Type*} [Group K] {ιK : G →* K} (f : GHom ι ιK)
+    (hf : Function.Injective f) : S.IsCommutative ιK (f ∘ v) ↔ S.IsCommutative ι v := by
+  have h : S.atoms.map (eval ιK (f ∘ v)) = (S.atoms.map (eval ι v)).map f := by
+    simp [Function.comp_def]
+  rw [isCommutative_iff, isCommutative_iff, h, List.isChain_map]
+  exact ⟨(·.imp fun _ _ => Commute.of_map hf), (·.imp fun _ _ h => h.map f)⟩
 
 end Solutions
 
