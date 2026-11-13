@@ -55,7 +55,7 @@ variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 `S` of scalars acting compatibly, for instance over `ℝ` for an operator on a complex space. -/
 theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →L[𝕜] V)]
     [IsScalarTower S 𝕜 (V →L[𝕜] V)] (T : V →L[𝕜] V) : (spectrum S T).Finite := by
-  have := FiniteDimensional.complete 𝕜 V
+  have := FiniteDimensional.completeSpace 𝕜 V
   rw [← spectrum.preimage_algebraMap 𝕜, spectrum_eq]
   exact (Module.End.finite_spectrum _).preimage (algebraMap S 𝕜).injective.injOn
 
@@ -63,7 +63,7 @@ theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →
 eigenvector of eigenvalue `c`. -/
 theorem isUnit_smul_one_sub {T : V →L[𝕜] V} {c : 𝕜} (h : ∀ v, T v = c • v → v = 0) :
     IsUnit (c • 1 - T) := by
-  have := FiniteDimensional.complete 𝕜 V
+  have := FiniteDimensional.completeSpace 𝕜 V
   refine isUnit_iff_isUnit_toLinearMap.2
     ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ h v ?_))
   have hv' : c • v - T v = 0 := by simpa using hv
