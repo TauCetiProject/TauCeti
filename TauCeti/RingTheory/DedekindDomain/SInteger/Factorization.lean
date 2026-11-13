@@ -29,10 +29,10 @@ because they need `FractionalIdeal.count`, and `Spectrum.lean` does not otherwis
 factorization layer — a consumer of the valuation transfer alone should not pay for it.
 
 Both are adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at the
-roadmap's §Provenance pin `66889eada51a`, Apache 2.0, by Michael Stoll). Following this
-repository's convention for adapted material, the upstream authorship is credited here rather than
-in the copyright header. Stoll's unprefixed names are given the `integer` prefix that
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's convention for
+adapted material, the upstream authorship is credited here rather than in the copyright header.
+Stoll's unprefixed names are given the `integer` prefix that
 `TauCeti/RingTheory/DedekindDomain/SInteger/` already uses.
 -/
 

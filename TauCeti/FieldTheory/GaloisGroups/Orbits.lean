@@ -522,12 +522,17 @@ theorem natCard_orbit_eq_natDegree_factor (hp : p ≠ 0)
   | h x => exact natCard_orbit_eq_natDegree_minpoly E x (by simpa using hsep)
 
 variable (p) in
-/-- For nonzero `p`, the number of Galois orbits on its roots is the number of its monic
-irreducible factors. -/
-theorem natCard_orbitQuotient (hp : p ≠ 0) :
+/-- The number of Galois orbits on the roots of `p` is the number of its monic irreducible
+factors. For `p = 0` both sides are `0`: there are no roots, and every monic irreducible
+polynomial is a factor of `0`, of which there are infinitely many. -/
+theorem natCard_orbitQuotient :
     Nat.card (MulAction.orbitRel.Quotient p.Gal (p.rootSet E))
-      = Nat.card p.Factors :=
-  Nat.card_congr (orbitQuotientEquivFactors p E hp)
+      = Nat.card p.Factors := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · rw [Nat.card_eq_zero_of_infinite (α := (0 : F[X]).Factors)]
+    have : IsEmpty ((0 : F[X]).rootSet E) := by rw [rootSet_zero]; infer_instance
+    rw [Nat.card_of_isEmpty]
+  · exact Nat.card_congr (orbitQuotientEquivFactors p E hp)
 
 /-! ## Transitivity without separability
 

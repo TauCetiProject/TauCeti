@@ -118,10 +118,7 @@ theorem steinberg_def :
             d.toSuzukiReeIndex.exponent i))) :=
   d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
     (x := fun j t => d.simpleRootSubgroup j t)
-    (fun j t => d.halfFrobenius_simpleRootSubgroup j t)
-    (fun j t => (d.halfFrobenius_halfFrobenius (d.simpleRootSubgroup j t)).trans
-      ((d.primeFrobenius_simpleRootSubgroup j t).trans (by simp)))
-    i u
+    (fun j t => d.halfFrobenius_simpleRootSubgroup j t) i u
 
 /-- The fixed subgroup of the Ree G2 Steinberg endomorphism. -/
 abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)

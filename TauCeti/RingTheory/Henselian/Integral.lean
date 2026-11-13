@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AdjoinRoot
 public import TauCeti.RingTheory.Henselian.Idempotent
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 import Mathlib.RingTheory.IntegralClosure.Algebra.Ideal
 import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 import TauCeti.RingTheory.AdjoinRoot.Idempotent
@@ -14,6 +15,7 @@ import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.Henselian.Factorization
 import TauCeti.RingTheory.Henselian.Radical
 import TauCeti.RingTheory.Idempotents.Polynomial
+import TauCeti.RingTheory.LocalRing.Module
 import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
@@ -35,6 +37,9 @@ pairs by their finite algebras, and by their integral algebras.
 * `TauCeti.henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot`: a pair `(R, I)` with `I`
   in the Jacobson radical is Henselian if idempotents lift along `I` in `R[X]/(f)` for every
   monic `f`.
+* `TauCeti.exists_isIdempotentElem_eq_of_isIntegral`: over a Henselian local ring, an idempotent
+  image of an integral element of a possibly noncommutative algebra, under an algebra map killing
+  the maximal ideal, is the image of an idempotent.
 * `Ideal.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an integral
   `R`-algebra, then `(S, IS)` is Henselian.
 * `TauCeti.HenselianLocalRing.of_finite`: a finite local algebra over a henselian local ring
@@ -161,7 +166,7 @@ instance henselianRing_map_of_isIntegral :
   TauCeti.henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot
     (by
       rw [← jacobson_bot]
-      exact map_le_jacobson_bot_of_isIntegral (by rw [jacobson_bot]; exact HenselianRing.jac))
+      exact map_le_jacobson_of_isIntegral bot_le (by rw [jacobson_bot]; exact HenselianRing.jac))
     fun f hf s hs ↦ by
       have : Module.Finite S (AdjoinRoot f) := hf.finite_adjoinRoot
       have : Algebra.IsIntegral R (AdjoinRoot f) := Algebra.IsIntegral.trans S
@@ -243,5 +248,83 @@ theorem henselianRing_iff_forall_henselianRing_map_of_isIntegral {R : Type u} [C
   refine ⟨fun _ _ _ _ _ ↦ inferInstance, fun H ↦ ?_⟩
   have := H R
   rwa [Algebra.algebraMap_self, Ideal.map_id] at this
+
+
+section Noncommutative
+
+open _root_.IsLocalRing (maximalIdeal)
+
+variable {R B : Type*} [CommRing R] [IsLocalRing R] [HenselianRing R (maximalIdeal R)]
+  [Ring B] [Algebra R B] {A : Type*} [Ring A] [Algebra R A]
+
+/-- **Idempotents lift along an algebra map killing the maximal ideal of a Henselian local ring**,
+one integral element at a time. Let `R` be a Henselian local ring and `π : A → B` a map of
+`R`-algebras, not necessarily commutative, such that the maximal ideal of `R` acts by zero on `B`.
+If `x : A` is integral over `R` and `π x` is idempotent, then `π x = π e` for an idempotent `e`
+of `A`.
+
+Let `F` be monic with `F(x) = 0`. Unless `π x` is trivial, the reduction `F₀` vanishes at `0` and
+`1`, since `Q(b) b = Q(1) b` and `Q(b) (1 - b) = Q(0) (1 - b)` for an idempotent `b`. Lifting the
+coprime factorization `F₀ = Xʳ H₀` with `X ∤ H₀` to `F = G H` with `U G + V H = 1`, the element
+`U(x) G(x)` is idempotent and maps to `U(1) b = b`. -/
+theorem exists_isIdempotentElem_eq_of_isIntegral (hB : ∀ r ∈ maximalIdeal R, algebraMap R B r = 0)
+    (π : A →ₐ[R] B) {x : A} (hx : IsIntegral R x) (hb : IsIdempotentElem (π x)) :
+    ∃ e : A, IsIdempotentElem e ∧ π e = π x := by
+  -- The trivial idempotents lift to themselves.
+  by_cases h0 : π x = 0
+  · exact ⟨0, .zero, by rw [map_zero, h0]⟩
+  by_cases h1 : 1 - π x = 0
+  · exact ⟨1, .one, by rw [map_one, ← sub_eq_zero.mp h1]⟩
+  let := Ideal.Quotient.field (maximalIdeal R)
+  obtain ⟨F, hF, hFx⟩ := hx
+  replace hFx : aeval x F = 0 := hFx
+  have hFb : aeval (π x) F = 0 := by rw [aeval_algHom_apply, hFx, map_zero]
+  -- Reduction modulo the maximal ideal commutes with evaluation.
+  have hev (P : R[X]) (a : R) : (P.map (Ideal.Quotient.mk (maximalIdeal R))).eval
+      (Ideal.Quotient.mk (maximalIdeal R) a) = Ideal.Quotient.mk (maximalIdeal R) (P.eval a) := by
+    rw [eval_map, eval₂_at_apply]
+  -- The reduction `F₀` of `F` vanishes at `0` and at `1`.
+  set F₀ := F.map (Ideal.Quotient.mk (maximalIdeal R))
+  have hroot {a : R} {c : B} (hc : c ≠ 0) (h : algebraMap R B (F.eval a) * c = 0) :
+      F₀.IsRoot (Ideal.Quotient.mk (maximalIdeal R) a) := by
+    rw [IsRoot, hev, Ideal.Quotient.eq_zero_iff_mem]
+    exact IsLocalRing.mem_maximalIdeal_of_smul_eq_zero hc (by rwa [Algebra.smul_def])
+  have hF0 : F₀.IsRoot 0 := by
+    simpa using hroot (a := 0) h1 (by rw [← hb.aeval_mul_one_sub, hFb, zero_mul])
+  have hF1 : F₀.IsRoot 1 := by
+    simpa using hroot (a := 1) h0 (by rw [← hb.aeval_mul_self, hFb, zero_mul])
+  -- Split off the exact power of `X`: `F₀ = Xʳ H₀` with `r ≥ 1` and `X ∤ H₀`, so that `Xʳ` and `H₀`
+  -- are coprime and `H₀(1) = 0`.
+  have hF₀ : F₀.Monic := hF.map _
+  obtain ⟨H₀, hFH, hX⟩ := exists_eq_pow_rootMultiplicity_mul_and_not_dvd F₀ hF₀.ne_zero 0
+  set r := rootMultiplicity 0 F₀
+  have hr : 0 < r := (rootMultiplicity_pos hF₀.ne_zero).mpr hF0
+  have hH₀ : H₀.Monic := ((monic_X_sub_C 0).pow r).of_mul_monic_left (hFH ▸ hF₀)
+  have hcop : IsCoprime ((X - C 0) ^ r) H₀ :=
+    ((irreducible_X_sub_C 0).coprime_iff_not_dvd.mpr hX).pow_left
+  have hH₀1 : H₀.eval 1 = 0 := by
+    have := hF1
+    rw [IsRoot, hFH] at this
+    simpa using this
+  -- Lift the factorization along the Henselian hypothesis, with a Bézout identity.
+  obtain ⟨G, H, -, -, hGH, ⟨U, V, hUV⟩, hG, hH⟩ :=
+    (maximalIdeal R).exists_monic_mul_eq hF ((monic_X_sub_C 0).pow r) hH₀ hcop hFH
+  refine ⟨aeval x (U * G), (IsIdempotentElem.of_mul_add (b := aeval x (V * H)) ?_ ?_).1, ?_⟩
+  · rw [← map_mul, show U * G * (V * H) = U * V * (G * H) by ring, hGH, map_mul, hFx, mul_zero]
+  · rw [← map_add, hUV, map_one]
+  -- The image of `e` is `U(b) G(b) = U(b) b = U(1) b = b`.
+  have hGb : aeval (π x) G = π x := by
+    rw [Ideal.aeval_eq_of_map_eq hB (π x) (Q := X ^ r) (by simp [hG]), aeval_X_pow,
+      ← Nat.sub_add_cancel hr, hb.pow_succ_eq]
+  have hU1 : Ideal.Quotient.mk (maximalIdeal R) (U.eval 1) = 1 := by
+    have := congr(eval 1 (map (Ideal.Quotient.mk (maximalIdeal R)) $hUV))
+    rw [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_mul, hG, hH] at this
+    have hU : eval 1 (map (Ideal.Quotient.mk (maximalIdeal R)) U) =
+        Ideal.Quotient.mk (maximalIdeal R) (U.eval 1) := by simp
+    simpa [hH₀1, hU] using this
+  rw [← aeval_algHom_apply, map_mul, hGb, hb.aeval_mul_self,
+    Ideal.algebraMap_eq_one_of_mk_eq_one hB hU1, one_mul]
+
+end Noncommutative
 
 end TauCeti

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Periodic
-public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
+public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
@@ -124,11 +125,8 @@ theorem exists_forall_norm_sub_le_mul_integral_of_nondegenerate (hH : ContDiff �
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hS : Continuous S := ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc
   -- The a priori estimate for periodic solutions of `ξ' = S ξ + f`.
-  have hunit : IsUnit ((1 : ℝ) • (1 : V →L[ℝ] V) - dysonSeriesLeft S 1) := by
-    refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.2
-      ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ hnd v ?_))
-    have hv' : v - dysonSeriesLeft S 1 v = 0 := by simpa using hv
-    exact (sub_eq_zero.1 hv').symm
+  have hunit : IsUnit ((1 : ℝ) • (1 : V →L[ℝ] V) - dysonSeriesLeft S 1) :=
+    ContinuousLinearMap.isUnit_smul_one_sub fun v hv ↦ hnd v (by simpa using hv)
   obtain ⟨C₀, hC₀, hA⟩ := exists_forall_norm_le_mul_integral_norm hS zero_le_one hunit
   -- The linearization error `r` is at most `ε₁ ‖ξ‖`, small enough to be absorbed.
   set ε₁ : ℝ := 1 / (2 * (C₀ + 1))
@@ -188,31 +186,20 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
       |ω.hamiltonianAction H γ - ω.hamiltonianAction H x| ≤
         C * ∫ t in (0 : ℝ)..1, ‖γ' t - ω.hamiltonianVectorField (H t) (γ t)‖ ^ 2 := by
   set X : ℝ → V → V := fun t ↦ ω.hamiltonianVectorField (H t)
-  set S : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (X t) (x t)
   have hXc : ContDiff ℝ 1 (uncurry X) := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   obtain ⟨δ₁, hδ₁, C₀, hC₀, hiso⟩ :=
     exists_forall_norm_sub_le_mul_integral_of_nondegenerate hH hx hx1 hnd
-  -- Near `x`, the vector field is Lipschitz at `x t` with constant `|L| + 1`.
-  obtain ⟨L, hL⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-    (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc).continuousOn
-  obtain ⟨δ₂, hδ₂, hlin⟩ := IsCompact.exists_pos_forall_norm_sub_sub_fderiv_le
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)) hXc hxc.continuousOn one_pos
+  -- Near `x`, the vector field is Lipschitz at `x t` with constant `|L|`.
+  obtain ⟨δ₂, hδ₂, L, hlip⟩ :=
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le_mul hXc hxc.continuousOn
   have hXlip (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) (y : V) (hy : ‖y - x t‖ ≤ δ₂) :
-      ‖X t y - X t (x t)‖ ≤ (|L| + 1) * ‖y - x t‖ := by
-    have h := hlin t ht (y - x t) hy
-    rw [add_sub_cancel] at h
-    calc ‖X t y - X t (x t)‖ = ‖S t (y - x t) + (X t y - X t (x t) - S t (y - x t))‖ := by
-          congr 1; abel
-      _ ≤ |L| * ‖y - x t‖ + 1 * ‖y - x t‖ := (norm_add_le _ _).trans (add_le_add
-          ((S t).le_opNorm _ |>.trans (mul_le_mul_of_nonneg_right
-            ((hL t ht).trans (le_abs_self _)) (norm_nonneg _))) h)
-      _ = _ := by ring
+      ‖X t y - X t (x t)‖ ≤ |L| * ‖y - x t‖ :=
+    (hlip t ht y hy).trans (mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _))
   set B := ‖ω.toBilinForm.toContinuousBilinearMap‖
-  have hB0 : 0 ≤ B := by positivity
-  refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, B * C₀ / 2 + 3 / 2 * B * (|L| + 1) * C₀ ^ 2, by positivity,
+  refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, B * C₀ / 2 + 3 / 2 * B * |L| * C₀ ^ 2, by positivity,
     fun {γ γ'} hγ' hγ hγ1 hγx ↦ ?_⟩
-  set ξ : ℝ → V := fun t ↦ γ t - x t with hξdef
+  set ξ : ℝ → V := fun t ↦ γ t - x t
   set η : ℝ → V := fun t ↦ γ' t - X t (γ t) with hηdef
   set ξ' : ℝ → V := fun t ↦ γ' t - X t (x t) with hξ'def
   set R : ℝ → ℝ := fun t ↦ H t (γ t) - H t (x t) - fderiv ℝ (H t) (x t) (ξ t) with hRdef
@@ -232,41 +219,40 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
   obtain ⟨t₀, ht₀, hmax⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_isMaxOn
     (nonempty_Icc.2 zero_le_one) (hγc.sub hxc).norm.continuousOn
   set m := ‖ξ t₀‖
-  have hm0 : 0 ≤ m := norm_nonneg _
   have hξm (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : ‖ξ t‖ ≤ m := hmax ht
   have hm : m ≤ C₀ * N := hiso hγ' hγ hγ1 hδ₁x t₀ ht₀
   -- Both terms of the action expansion are quadratic in `ξ` and `η`.
-  have hξ'b (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : ‖ξ' t‖ ≤ ‖η t‖ + (|L| + 1) * m := by
+  have hξ'b (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : ‖ξ' t‖ ≤ ‖η t‖ + |L| * m := by
     have h : ξ' t = η t + (X t (γ t) - X t (x t)) := by simp only [hξ'def, hηdef]; abel
     rw [h]
     exact (norm_add_le _ _).trans (add_le_add le_rfl ((hXlip t ht _ (hδ₂x t ht)).trans
       (mul_le_mul_of_nonneg_left (hξm t ht) (by positivity))))
-  have hRb (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : |R t| ≤ B * (|L| + 1) * m ^ 2 := by
+  have hRb (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : |R t| ≤ B * |L| * m ^ 2 := by
     have h := ω.abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le
       (fun y ↦ (hH.comp (contDiff_const.prodMk contDiff_id)).differentiable (by norm_num) y)
       (by positivity) (fun z hz ↦ hXlip t ht z (by simpa [dist_eq_norm] using hz)) (hδ₂x t ht)
-    calc |R t| ≤ B * (|L| + 1) * ‖ξ t‖ ^ 2 := h
-      _ ≤ B * (|L| + 1) * m ^ 2 := by gcongr; exact hξm t ht
+    calc |R t| ≤ B * |L| * ‖ξ t‖ ^ 2 := h
+      _ ≤ B * |L| * m ^ 2 := by gcongr; exact hξm t ht
   have hpb (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
       |(1 / 2 : ℝ) * ω (ξ t) (ξ' t) + R t| ≤
-        (1 / 2 : ℝ) * B * m * ‖η t‖ + (3 / 2 : ℝ) * B * (|L| + 1) * m ^ 2 := by
-    have h1 : |ω (ξ t) (ξ' t)| ≤ B * m * (‖η t‖ + (|L| + 1) * m) :=
+        (1 / 2 : ℝ) * B * m * ‖η t‖ + (3 / 2 : ℝ) * B * |L| * m ^ 2 := by
+    have h1 : |ω (ξ t) (ξ' t)| ≤ B * m * (‖η t‖ + |L| * m) :=
       (ω.abs_apply_le_opNorm_mul_norm_mul_norm _ _).trans
         (by gcongr; exacts [hξm t ht, hξ'b t ht])
     calc _ ≤ |(1 / 2 : ℝ) * ω (ξ t) (ξ' t)| + |R t| := abs_add_le _ _
       _ = (1 / 2 : ℝ) * |ω (ξ t) (ξ' t)| + |R t| := by
           rw [abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 1 / 2)]
-      _ ≤ (1 / 2 : ℝ) * (B * m * (‖η t‖ + (|L| + 1) * m)) + B * (|L| + 1) * m ^ 2 :=
+      _ ≤ (1 / 2 : ℝ) * (B * m * (‖η t‖ + |L| * m)) + B * |L| * m ^ 2 :=
           add_le_add (mul_le_mul_of_nonneg_left h1 (by norm_num)) (hRb t ht)
       _ = _ := by ring
   have hint : |∫ t in (0 : ℝ)..1, ((1 / 2 : ℝ) * ω (ξ t) (ξ' t) + R t)| ≤
-      (1 / 2 : ℝ) * B * m * N + (3 / 2 : ℝ) * B * (|L| + 1) * m ^ 2 := by
+      (1 / 2 : ℝ) * B * m * N + (3 / 2 : ℝ) * B * |L| * m ^ 2 := by
     have hi : IntervalIntegrable (fun t ↦ (1 / 2 : ℝ) * B * m * ‖η t‖) volume 0 1 :=
       (continuous_const.mul hηc.norm).intervalIntegrable _ _
     calc _ ≤ ∫ t in (0 : ℝ)..1, |(1 / 2 : ℝ) * ω (ξ t) (ξ' t) + R t| :=
           abs_integral_le_integral_abs zero_le_one
       _ ≤ ∫ t in (0 : ℝ)..1,
-          ((1 / 2 : ℝ) * B * m * ‖η t‖ + (3 / 2 : ℝ) * B * (|L| + 1) * m ^ 2) :=
+          ((1 / 2 : ℝ) * B * m * ‖η t‖ + (3 / 2 : ℝ) * B * |L| * m ^ 2) :=
           integral_mono_on zero_le_one (((continuous_const.mul (ω.continuous_apply_comp
             (hγc.sub hxc) (hγ'.sub (hXcomp hxc)))).add hRc).abs.intervalIntegrable _ _)
             (hi.add intervalIntegrable_const) hpb
@@ -284,10 +270,10 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
       _ = _ := Real.sq_sqrt (integral_nonneg zero_le_one fun _ _ ↦ by positivity)
   rw [ω.hamiltonianAction_sub_hamiltonianAction_eq_integral (hH.of_le (by norm_num)) hx hx1 hγ' hγ
     hγ1]
-  calc _ ≤ (1 / 2 : ℝ) * B * m * N + (3 / 2 : ℝ) * B * (|L| + 1) * m ^ 2 := hint
-    _ ≤ (1 / 2 : ℝ) * B * (C₀ * N) * N + (3 / 2 : ℝ) * B * (|L| + 1) * (C₀ * N) ^ 2 := by
+  calc _ ≤ (1 / 2 : ℝ) * B * m * N + (3 / 2 : ℝ) * B * |L| * m ^ 2 := hint
+    _ ≤ (1 / 2 : ℝ) * B * (C₀ * N) * N + (3 / 2 : ℝ) * B * |L| * (C₀ * N) ^ 2 := by
         gcongr
-    _ = (B * C₀ / 2 + 3 / 2 * B * (|L| + 1) * C₀ ^ 2) * N ^ 2 := by ring
+    _ = (B * C₀ / 2 + 3 / 2 * B * |L| * C₀ ^ 2) * N ^ 2 := by ring
     _ ≤ _ := mul_le_mul_of_nonneg_left hN2 (by positivity)
 
 variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {a c M : ℝ}
@@ -305,7 +291,7 @@ private theorem integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity
       ω.hamiltonianVectorField (H t) (u (s, t))‖ ^ 2 ≤
       (1 + M ^ 2) / c *
         ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u with he
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
   have hmem (t : ℝ) : (s, t) ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hsa, mem_univ t⟩
   -- The energy density controls the defect of the loops pointwise.
   have hdef (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ Icc 0 1) :
@@ -314,7 +300,6 @@ private theorem integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity
     have h := ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity hc.le
       (hJc z hz) (hJM z hz) (hfloer z hz)
     rw [← sliceDefect_hamiltonianVectorField, sliceDefect_def] at h
-    have h₁ := sq_nonneg ‖ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineReal‖
     rw [div_mul_eq_mul_div, le_div_iff₀ hc]
     nlinarith
   have hslicec : Continuous fun t ↦ e (s, t) :=
@@ -351,7 +336,7 @@ theorem exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity
     ∃ δ > 0, ∃ K, 0 < K ∧ ∀ s, a < s → (∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ δ) →
       |ω.hamiltonianAction H (fun t ↦ u (s, t)) - ω.hamiltonianAction H x| ≤
         K * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u with he
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
   obtain ⟨δ, hδ, C₁, hC₁, hB⟩ := exists_abs_hamiltonianAction_sub_le_of_nondegenerate hH hx hx1 hnd
   refine ⟨δ, hδ, C₁ * ((1 + M ^ 2) / c) + 1, by positivity, fun s hsa hclose ↦ ?_⟩
   have hγ' : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
@@ -444,7 +429,7 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≤
         ENNReal.ofReal (C * Real.exp (-(κ * s))) := by
   set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u with he
-  set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t)) with hAdef
+  set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le (by norm_num)
   have hopen : IsOpen (Ioi a ×ˢ (univ : Set ℝ)) := isOpen_Ioi.prod isOpen_univ
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
@@ -512,7 +497,7 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
         rw [Measure.prod_restrict]
         exact hRint
       exact h.integral_prod_left
-    have hlow : ∫ r in Icc s (s + K), f (s + K) / K ≤
+    have hlow : ∫ _ in Icc s (s + K), f (s + K) / K ≤
         ∫ r in Icc s (s + K), ∫ t in Icc (0 : ℝ) 1, e (r, t) :=
       setIntegral_mono_on (integrableOn_const (by simp)) hgint measurableSet_Icc fun r hr ↦ by
         rw [div_le_iff₀' hKpos]
@@ -523,7 +508,7 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
     have : f s - f (s + K) = A (s + K) - A s := by simp only [hfdef]; ring
     linarith
   -- Halving over every step of length `K` is exponential decay at the rate `log 2 / K`.
-  obtain hdecay := fun s (hs : s₀ ≤ s) ↦ le_div_mul_exp_of_antitoneOn hKpos (by norm_num)
+  obtain hdecay := fun s (hs : s₀ ≤ s) ↦ le_div_mul_exp_of_antitoneOn (by norm_num)
     (by norm_num) hfanti (hf0 s₀ hs₀a) hstep hs
   set κ : ℝ := Real.log 2 / K
   refine ⟨κ, div_pos (Real.log_pos one_lt_two) hKpos, 2 * f s₀ * Real.exp (κ * s₀),
@@ -557,7 +542,7 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
       v = 0)
     (hux : TendstoUniformly (fun s t ↦ u (s, t)) x atTop) :
     ∃ κ > 0, ∃ C, ∀ᶠ s in atTop, ∀ t, ‖u (s, t) - x t‖ ≤ C * Real.exp (-(κ * s)) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u with he
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
   have hu1 : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ) := hu.of_le (by norm_num)
   have hopen : IsOpen (Ioi a ×ˢ (univ : Set ℝ)) := isOpen_Ioi.prod isOpen_univ
   obtain ⟨κ₀, hκ₀, C₀, hdecay⟩ := exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp

@@ -74,7 +74,7 @@ private theorem evenCliffordEquivProdEnd_reverse_one_zero_of_finrank_eq_six
     P.finrank_W_eq_of_finrank_eq_two_mul (l := 3) (by omega)
   have hW : P.W ≠ ⊥ := Submodule.finrank_eq_zero.not.1 (by omega)
   have hplus : finrank K (spinPlus Q P) = 4 := by
-    rw [finrank_spinPlus P hW, hWfin]
+    rw [finrank_spinPlus P, hWfin]
     norm_num
   have hminus : finrank K (spinMinus Q P) = 4 := by
     rw [finrank_spinMinus P hW, hWfin]
@@ -222,7 +222,7 @@ private theorem exists_algEquiv_op_spinPlusAction_reverseEven [NeZero (2 : K)]
     P.finrank_W_eq_of_finrank_eq_two_mul (l := 3) (by omega)
   have hW : P.W ≠ ⊥ := Submodule.finrank_eq_zero.not.1 (by omega)
   have hplus : finrank K (spinPlus Q P) = 4 := by
-    rw [finrank_spinPlus P hW, hWfin]
+    rw [finrank_spinPlus P, hWfin]
     norm_num
   have hminus : finrank K (spinMinus Q P) = 4 := by
     rw [finrank_spinMinus P hW, hWfin]

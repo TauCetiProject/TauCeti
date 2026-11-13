@@ -73,8 +73,8 @@ Nothing here is ported. The ideal criterion is this repository's
 the module-coefficient layer `M⟨X⟩` it runs on are `Restricted/BaseChange.lean` and
 `Restricted/PowerSeries.lean`; the rest is new here.
 
-AINTLIB (`github.com/CBirkbeck/AINTLIB` @ `37bbdaeb9`, Apache-2.0), the roadmap's designated
-prior formalisation for this layer, **does** prove Lemma 8.31(2), and both shapes of it:
+AINTLIB (`github.com/CBirkbeck/AINTLIB` @ `37bbdaeb9`, Apache-2.0), a prior formalisation of
+this material, **does** prove Lemma 8.31(2), and both shapes of it:
 `Adic spaces/Wedhorn828.lean` has `lemma_8_31_fSubX_flat` (`A⟨X⟩/(f − X)` flat) and
 `lemma_8_31_oneSubfX_flat` (`A⟨X⟩/(1 − fX)` flat), with `lemma_8_31_tateAlgebra_faithfullyFlat`
 for 8.31(1). They were consulted, not ported, and the reason is the object rather than the
@@ -88,13 +88,6 @@ not available there, and porting theirs would mean porting the `TateAlgebra` lay
 saturation machinery instead. The hypotheses are comparable rather than weaker: AINTLIB
 carries `[IsTateRing A] [IsNoetherianRing A] [T2Space A]` (and `[IsStronglyNoetherian A]` on
 the `f − X` shape), this file `[IsTateRing A] [IsNoetherianRing A]` with a completeness bundle.
-
-That check was made by reading AINTLIB's declarations under their own names, not by grepping
-this repository's vocabulary — the method that produced the false negative `BaseChange.lean`
-records. Their sorry-freeness was measured with comments stripped: a plain `grep sorry` on
-`Wedhorn828.lean` reports 17 hits and every one is a docstring mention, mostly the phrase
-"sorry-free", so the file has none; the same instrument reports 9 in `Presheaf.lean`, which
-is the control that it can find one.
 -/
 
 open Filter Topology

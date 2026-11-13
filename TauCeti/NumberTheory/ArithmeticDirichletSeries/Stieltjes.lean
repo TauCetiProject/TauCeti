@@ -56,19 +56,7 @@ theorem setIntegral_Ioc_summatoryStieltjes_eq_sub_sub_integral {𝕜 : Type*} [R
   have hcast (x : ℝ) : ((summatory N w x : ℝ) : 𝕜) = summatory N (fun i ↦ (w i : 𝕜)) x := by
     simp only [summatory_apply, RCLike.ofReal_sum]
   simp only [setIntegral_Ioc_summatoryStieltjes N hw g hab, RCLike.real_smul_eq_coe_mul, hcast]
-  rcases le_or_gt 0 a with ha | ha
-  · exact summatory_mul_eq_sub_sub_integral_mul N _ ha hab hg_diff hg_int
-  -- Below `0` every summatory function vanishes, so the identity reduces to the one from `0`.
-  have hN (i : ι) : (0 : ℝ) ≤ N i := Nat.cast_nonneg _
-  rw [summatory_eq_zero_of_lt N hN ha, summatory_eq_zero_of_lt N hN ha, mul_zero, sub_zero,
-    sub_zero, summatory_mul_eq_sub_integral_mul_of_le N le_rfl hN _ b
-      (fun t ht ↦ hg_diff t ⟨ha.le.trans ht.1, ht.2⟩) (hg_int.mono_set (Icc_subset_Icc_left ha.le))]
-  congr 1
-  refine (setIntegral_eq_of_subset_of_ae_sdiff_eq_zero measurableSet_Ioc.nullMeasurableSet
-    (Ioc_subset_Ioc_left ha.le) ?_).symm
-  filter_upwards [volume.ae_ne 0] with t ht0 ht
-  have ht_neg : t < 0 := lt_of_le_of_ne (not_lt.mp fun h ↦ ht.2 ⟨h, ht.1.2⟩) ht0
-  rw [summatory_eq_zero_of_lt N hN ht_neg, mul_zero]
+  exact summatory_mul_eq_sub_sub_integral_mul N _ hab hg_diff hg_int
 
 /-! ### The prime counts of a number field -/
 

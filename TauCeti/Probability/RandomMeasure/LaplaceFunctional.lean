@@ -94,6 +94,24 @@ theorem laplaceFunctional_indicator_const (P : Measure Ω) (N : Ω → Measure X
       ∫⁻ ω, (ENNReal.expNeg (c * N ω A) : ℝ≥0∞) ∂P := by
   simp [laplaceFunctional_def, lintegral_indicator_const hA]
 
+/-- A finite indicator test evaluates the mixed moments of the negative exponentials of
+its counts. Zero coefficients ignore infinite counts. No disjointness is required. -/
+theorem laplaceFunctional_sum_indicator_natCast (P : Measure Ω) (N : Ω → Measure X)
+    {ι : Type*} [Fintype ι] {A : ι → Set X} (hA : ∀ i, MeasurableSet (A i)) (c : ι → ℕ) :
+    P.laplaceFunctional N
+        (fun x ↦ ∑ i, (A i).indicator (fun _ ↦ (c i : ℝ≥0∞)) x) =
+      ∫⁻ ω, ∏ i, EReal.exp (-(N ω (A i) : EReal)) ^ c i ∂P := by
+  classical
+  simp only [laplaceFunctional_def]
+  congr 1
+  funext ω
+  rw [lintegral_finsetSum _ (fun i _ ↦ measurable_const.indicator (hA i))]
+  simp only [lintegral_indicator_const (hA _), ENNReal.expNeg_sum,
+    ENNReal.ofNNReal_finsetProd, ENNReal.coe_expNeg, EReal.coe_ennreal_mul]
+  congr 1
+  ext i
+  rw [ENNReal.toEReal_natCast, ← mul_neg, EReal.exp_nmul]
+
 /-- The infinite test on a set recovers its void probability. This does not require
 integer-valued or locally finite realizations. -/
 theorem laplaceFunctional_indicator_top (hN : Measurable N)

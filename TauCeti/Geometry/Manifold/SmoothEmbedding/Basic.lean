@@ -14,14 +14,14 @@ import TauCeti.Geometry.Manifold.Immersion.Basic
 
 Mathlib provides the predicate `Manifold.IsSmoothEmbedding I J n f`, saying that a map between
 manifolds is a `C^n` immersion and a topological embedding, but it does not bundle maps satisfying
-that predicate. This file adds the small bundled type needed by the geometric-topology roadmap's
-first-class geometric knot/link presentations: a smooth presentation is a smooth embedding of the
-circle into an ambient manifold, and later files should traffic in the embedding as data rather
-than in a bare function plus detached hypotheses.
+that predicate. This file adds that small bundled type, in which geometric knot and link
+presentations are phrased: a smooth presentation is a smooth embedding of the circle into an
+ambient manifold, and it is handled as data rather than as a bare function plus detached
+hypotheses.
 
-The file deliberately stays at the general manifold level. The roadmap's circle presentations are
-special cases of this type, while the same bundled smooth embeddings are also the right inputs for
-later tubular-neighbourhood and surgery interfaces.
+The file deliberately stays at the general manifold level. Smooth knot presentations, embeddings
+of the circle, are special cases of this type, while the same bundled smooth embeddings are also
+the inputs of the tubular-neighbourhood and surgery constructions.
 
 ## Main definitions
 
@@ -156,19 +156,6 @@ theorem isImmersion (f : SmoothEmbedding I J n M N) : Manifold.IsImmersion I J n
 /-- A bundled smooth embedding is a topological embedding. -/
 theorem isEmbedding (f : SmoothEmbedding I J n M N) : IsEmbedding f :=
   f.isSmoothEmbedding.isEmbedding
-
-/-- The coordinate differential of an embedding remains split-injective on the overlap
-of its tangent charts, including for infinite-dimensional models. -/
-theorem hasLeftInverse_inTangentCoordinates_mfderiv [IsManifold I 1 M] [IsManifold J 1 N]
-    (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
-    (hy : f x ∈ (chartAt H' (f x₀)).source) :
-    (inTangentCoordinates I J _root_.id (f : M → N)
-      (mfderiv I J (f : M → N)) x₀ x).HasLeftInverse := by
-  rw [inTangentCoordinates,
-    ContinuousLinearMap.inCoordinates_eq (by simpa using hx) (by simpa using hy)]
-  exact ((isDiffImmersionAt_iff.mp (f.isImmersion.isDiffImmersionAt hn x)).comp
-    (ContinuousLinearEquiv.hasLeftInverse _)).continuousLinearEquivalence_comp
 
 /-- Bundle a map satisfying Mathlib's smooth-embedding predicate as a smooth embedding. -/
 def ofIsSmoothEmbedding (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :

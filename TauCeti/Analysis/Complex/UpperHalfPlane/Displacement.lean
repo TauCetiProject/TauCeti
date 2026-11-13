@@ -313,8 +313,6 @@ theorem cosh_dist_dilation_smul (s : ℝ) (z : ℍ) :
   have him : (dilation s • z).im = Real.exp s * z.im := by
     rw [← UpperHalfPlane.coe_im, TauCeti.UpperHalfPlane.coe_dilation_smul, Complex.im_ofReal_mul,
       UpperHalfPlane.coe_im]
-  have hy := z.im_pos
-  have he := Real.exp_pos s
   rw [cosh_dist', hre, him, Real.cosh_eq, Real.exp_neg]
   field_simp
   ring
@@ -380,7 +378,6 @@ theorem one_add_two_mul_sq_le_cosh_dist_smul {g : SL(2, ℝ)} (h₀₀ : g 0 0 =
       Complex.normSq_apply, coe_im, zero_div, Complex.neg_re, Complex.ofReal_re, neg_mul, zero_sub]
     ring
   have hy := z.im_pos
-  have hb2 : 0 < g 0 1 ^ 2 := by positivity
   have hr : 0 < z.re ^ 2 + z.im ^ 2 := by positivity
   rw [cosh_dist', hre, him, le_div_iff₀ (by positivity), div_pow]
   field_simp

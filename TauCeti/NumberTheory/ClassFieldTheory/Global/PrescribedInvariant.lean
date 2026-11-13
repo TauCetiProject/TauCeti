@@ -847,11 +847,11 @@ the class `a ∪ δχ'` of the layer, for the idele `a` of `F` concentrated at `
 has sum of local invariants `inv_H (c ∪ δχ)`. -/
 private theorem exists_ideleSumLocalInv_eq_subgroupInvMap
     (L : NormalLayer (AbsoluteGaloisGroup K))
-    (χ' : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (χ' : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
     (χ : Additive L.ground.toSubgroup →+ AddCircle (1 : ℚ))
     (hχ : IsOpen (χ.ker : Set (Additive L.ground.toSubgroup)))
     (hχχ' : ∀ u : L.ground.toSubgroup,
-      χ (.ofMul u) = χ' (.ofMul (Abelianization.of (u : L.Gal))))
+      χ (.ofMul u) = χ' (.ofMul (Group.Abelianization.of (u : L.Gal))))
     {F : IntermediateField K (SeparableClosure K)} [NumberField F]
     (hF : L.ground.toSubgroup = F.fixingSubgroup) {v : HeightOneSpectrum (𝓞 K)}
     (w : HeightOneSpectrum (𝓞 F)) [w.asIdeal.LiesOver v.asIdeal]
@@ -911,11 +911,11 @@ private theorem exists_ideleSumLocalInv_eq_subgroupInvMap
 sum of the local invariants of a class of the layer, for `F`, `w`, `τ'` and `τ` as above. -/
 private theorem exists_ideleSumLocalInv_eq_apply_of_fixingSubgroup
     (L : NormalLayer (AbsoluteGaloisGroup K))
-    (χ' : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (χ' : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
     (χ : Additive L.ground.toSubgroup →+ AddCircle (1 : ℚ))
     (hχ : IsOpen (χ.ker : Set (Additive L.ground.toSubgroup)))
     (hχχ' : ∀ u : L.ground.toSubgroup,
-      χ (.ofMul u) = χ' (.ofMul (Abelianization.of (u : L.Gal))))
+      χ (.ofMul u) = χ' (.ofMul (Group.Abelianization.of (u : L.Gal))))
     {F : IntermediateField K (SeparableClosure K)} [NumberField F]
     (hF : L.ground.toSubgroup = F.fixingSubgroup) {v : HeightOneSpectrum (𝓞 K)}
     (w : HeightOneSpectrum (𝓞 F)) [w.asIdeal.LiesOver v.asIdeal]
@@ -953,12 +953,12 @@ idele formation, `v` a finite place of `K`, `τ : Kˢ → K_vˢ` an embedding of
 invariants summing to `χ'` of the image of `φ_τ(g)` in `U ⧸ V`. -/
 theorem exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap
     (L : NormalLayer (AbsoluteGaloisGroup K))
-    (χ' : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (χ' : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
     {v : HeightOneSpectrum (𝓞 K)}
     (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
     (g : AbsoluteGaloisGroup (v.adicCompletion K)) (hg : absoluteGaloisGroupMap τ g ∈ L.ground) :
     ∃ y : L.H (ideleFormation K) 2,
-      ideleSumLocalInv K L y = χ' (.ofMul (Abelianization.of
+      ideleSumLocalInv K L y = χ' (.ofMul (Group.Abelianization.of
         (QuotientGroup.mk (⟨absoluteGaloisGroupMap τ g, hg⟩ : L.ground) : L.Gal))) := by
   -- The fixed field `F` of the ground `U` of the layer, a number field with `G_F = U`.
   obtain ⟨F, _, hF⟩ : ∃ F : IntermediateField K (SeparableClosure K),
@@ -974,8 +974,8 @@ theorem exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap
   -- The character `χ'` read on `U`; it kills the open subgroup `V`.
   obtain ⟨χ, hχ, hχχ'⟩ : ∃ χ : Additive L.ground.toSubgroup →+ AddCircle (1 : ℚ),
       IsOpen (χ.ker : Set (Additive L.ground.toSubgroup)) ∧ ∀ u : L.ground.toSubgroup,
-        χ (.ofMul u) = χ' (.ofMul (Abelianization.of (u : L.Gal))) :=
-    ⟨(χ'.comp Abelianization.of.toAdditive).comp
+        χ (.ofMul u) = χ' (.ofMul (Group.Abelianization.of (u : L.Gal))) :=
+    ⟨(χ'.comp Group.Abelianization.of.toAdditive).comp
       (QuotientGroup.mk' L.relativeTop : L.ground.toSubgroup →* L.Gal).toAdditive,
       AddSubgroup.isOpen_mono
         (H₁ := Subgroup.toAddSubgroup (G := L.ground.toSubgroup) L.relativeTop)
@@ -1001,13 +1001,13 @@ theorem exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic
       ideleSumLocalInv K L y = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) := by
   obtain ⟨γ, hγ⟩ := IsCyclic.exists_ofOrder_eq_natCard (α := L.Gal)
   obtain ⟨⟨g, hg⟩, hgγ⟩ := hv γ
-  -- The Galois group is commutative, so `Abelianization.of` is injective and `γ` keeps its order.
-  have hof : orderOf (Abelianization.of γ) = L.degree :=
-    ((orderOf_injective _ Abelianization.of_injective γ).trans hγ).trans
+  -- The Galois group is commutative, so `Group.Abelianization.of` is injective and `γ` keeps its
+  -- order.
+  have hof : orderOf (Group.Abelianization.of γ) = L.degree :=
+    ((orderOf_injective _ Group.Abelianization.of_injective γ).trans hγ).trans
       L.degree_eq_natCard_gal.symm
   obtain ⟨χ', hχ'⟩ := CharacterModule.exists_apply_eq_inv_addOrderOf
-    (Additive.ofMul (Abelianization.of γ))
-    (by rw [addOrderOf_ofMul_eq_orderOf, hof]; exact L.degree_pos.ne')
+    (Additive.ofMul (Group.Abelianization.of γ))
   obtain ⟨y, hy⟩ := exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap L χ' τ g hg
   refine ⟨y, hy.trans ?_⟩
   have hγ' : (QuotientGroup.mk (⟨absoluteGaloisGroupMap τ g, hg⟩ : L.ground) : L.Gal) = γ :=
@@ -1108,7 +1108,7 @@ private theorem exists_ideleLocalization_eq_pi_single_aux {E : Ω}
   obtain ⟨ψ, hψ⟩ : ∃ ψ : Additive (ZMod 4)ˣ →+ AddCircle (1 : ℚ),
       ψ (Additive.ofMul (-1)) =
         ((1 / addOrderOf (Additive.ofMul (-1 : (ZMod 4)ˣ)) : ℚ) : AddCircle (1 : ℚ)) :=
-    CharacterModule.exists_apply_eq_inv_addOrderOf _ (hneg.trans_ne (by decide))
+    CharacterModule.exists_apply_eq_inv_addOrderOf _
   set χ := ψ.comp (hζ.autToPow K).toAdditive with hχ_def
   have hχ := hζ.isOpen_ker_comp_autToPow (K := K) ψ
   refine ⟨characterCarryCocycle χ hχ a, DFinsupp.ext fun v ↦ ?_, fun u' hu' ↦ ?_, ?_⟩

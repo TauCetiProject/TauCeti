@@ -1,0 +1,28 @@
+name: Mixed queue candidate
+run-name: source request=${{ github.event.client_payload.request.request_id }}
+
+on:
+  repository_dispatch:
+    types: [tauceti-source-candidate-v2]
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+  actions: read
+
+jobs:
+  candidate:
+    # Deployment remains a separate, explicit operation. Unset is inert.
+    if: ${{ vars.TAUCETI_MIXED_QUEUE_CI_ENABLED == 'true' }}
+    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@de7633dd55b5fb6e596b69c0f4345f3e82322640
+    with:
+      tools_repository: TauCetiProject/TauCetiTools
+      tools_ref: de7633dd55b5fb6e596b69c0f4345f3e82322640
+      project_ref: ${{ github.workflow_sha }}
+      lean_root: TauCeti
+      roadmap_dir: TauCetiRoadmap
+      source_candidate_enabled: true
+    secrets:
+      CI_SOURCE_READ_TOKEN: ${{ secrets.CI_SOURCE_READ_TOKEN }}
+      LAKE_CACHE_KEY: ${{ secrets.LAKE_CACHE_KEY }}

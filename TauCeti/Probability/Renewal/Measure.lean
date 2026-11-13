@@ -210,7 +210,6 @@ time `t` is the renewal function of the increment law. -/
 theorem integral_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t : ℝ≥0) :
     ∫ ω, (renewalCountNat T t ω : ℝ) ∂P = ((P.map (T 0)).renewalFunction t).toReal := by
-  have hm := measurable_renewalCountNat hT t
   rw [integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall fun ω ↦ by positivity)
     (by fun_prop), ← lintegral_renewalCount hindep hid t]
   congr 1

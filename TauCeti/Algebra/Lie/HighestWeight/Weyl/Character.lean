@@ -324,9 +324,8 @@ theorem coeff_formalCharacter_mul_weylDenominator_eq_zero_of_isDominantIntegral_
     {nu : Dual K H} (hnu : IsDominantIntegral b nu) (hne : nu ≠ lam) :
     (formalCharacter K H M * weylDenominator (IsKilling.rootSystem H) b).coeff nu = 0 := by
   by_contra h
-  have hlam := hv.isDominantIntegral
-  exact hlam.casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
-      hnu (sub_mem_posRootCone_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h) hne
+  exact hnu.casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
+      (sub_mem_posRootCone_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h) hne
       (casimirScalar_eq_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen h).symm
 
 /-! ### The Weyl character formula -/
