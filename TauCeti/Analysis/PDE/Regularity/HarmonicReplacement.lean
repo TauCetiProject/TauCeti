@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.PDE.DirichletProblem
+import TauCeti.Analysis.InnerProductSpace.CauchySchwarz
 import TauCeti.Analysis.PDE.WeakLaplacian
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
@@ -75,14 +76,6 @@ namespace TauCeti
 
 namespace PDE
 
-/-- Cauchy–Schwarz turns the bound `c ‖x‖² ≤ ⟪g, x⟫` into `c ‖x‖ ≤ ‖g‖`. -/
-private theorem mul_norm_le_norm_of_mul_norm_sq_le_inner {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] {c : ℝ} {g x : V} (h : c * ‖x‖ ^ 2 ≤ ⟪g, x⟫_ℝ) : c * ‖x‖ ≤ ‖g‖ := by
-  rcases (norm_nonneg x).eq_or_lt with h0 | hpos
-  · rw [← h0, mul_zero]
-    exact norm_nonneg g
-  · exact le_of_mul_le_mul_right (by nlinarith [real_inner_le_norm g x]) hpos
-
 /-- **Sobolev functions orthogonal to the gradients of test functions are weakly harmonic.** If
 `w ∈ H¹(Ω)`, for an open `Ω` in a finite-dimensional real inner product space, satisfies
 `⟪∇w, ∇φ⟫_{L²(Ω)} = 0` for every test function `φ` on `Ω`, then the value of `w` is weakly
@@ -138,7 +131,7 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le [DecidableEq ι]
     (gamma := 0) h ha aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp)
     (fun _ _ => le_rfl) (u - w)
   rw [henergy] at hlower
-  exact mul_norm_le_norm_of_mul_norm_sq_le_inner hlower
+  exact mul_norm_le_norm_of_mul_norm_sq_le_re_inner (𝕜 := ℝ) hlower
 
 /-- **Weakly harmonic Sobolev functions are harmonic.** If `w ∈ H¹(Ω)` solves `Δw = 0` weakly,
 in the sense that `∫_Ω ⟨∇w, ∇φ⟩ = 0` for every test function `φ` on `Ω`, then `w` agrees almost
@@ -287,8 +280,8 @@ theorem exists_sub_mem_w1p0Submodule_forall_inner_gradient_eq_zero [Nontrivial F
     rw [← real_inner_self_eq_norm_sq]
     nth_rw 1 [W1p.gradient_sub]
     rw [inner_sub_left, hG _ huw, hw _ huw, sub_zero]
-  have h := mul_norm_le_norm_of_mul_norm_sq_le_inner (c := 1) (g := G)
-    (x := W1p.gradient (u - w)) (by rw [one_mul, hsq])
+  have h := mul_norm_le_norm_of_mul_norm_sq_le_re_inner (𝕜 := ℝ) (c := 1) (g := G)
+    (x := W1p.gradient (u - w)) (by rw [one_mul, hsq, RCLike.re_to_real])
   rwa [one_mul] at h
 
 end InnerProductSpace
