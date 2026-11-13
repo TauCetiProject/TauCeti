@@ -45,8 +45,6 @@ have exactly one free positive parameter per irreducible component.
 
 ## Main results
 
-* `RootPairing.componentProj_reflection_of_eq`: the projection onto the component space of `C`
-  carries the reflections at roots of `C` to the reflections of the component pairing.
 * `RootPairing.rootForm_componentPairing`: the canonical form of a component pairing is the
   restriction of the canonical form of the root system.
 * `RootPairing.InvariantForm.ofComponent_form_apply`: the reconstructed form is the sum of the
@@ -66,16 +64,6 @@ have exactly one free positive parameter per irreducible component.
 public section
 
 namespace RootPairing
-
-/-- The component projection carries the reflection at a root of `C` to the reflection of the
-component pairing. -/
-theorem componentProj_reflection_of_eq {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M]
-    [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [Finite ι] [P.IsRootSystem]
-    {C : P.Component} {i : ι} (h : P.componentOf i = C) (x : M) :
-    P.componentProj C (P.reflection i x) =
-      (P.componentPairing C).reflection ⟨i, h⟩ (P.componentProj C x) := by
-  ext
-  rw [coe_componentProj_reflection, coe_componentPairing_reflection_apply]
 
 /-- **The canonical form of a component pairing is the restriction of the canonical form of the
 root system**, since the coroots of the other components vanish on the component space. -/
