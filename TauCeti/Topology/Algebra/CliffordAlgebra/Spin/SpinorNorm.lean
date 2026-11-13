@@ -13,7 +13,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
 public import TauCeti.Topology.Algebra.Group.Connected
 import Mathlib.Analysis.Normed.Field.ProperSpace
 import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.Analysis.Normed.Field.Squares
+import TauCeti.Analysis.Normed.Field.Powers
 
 /-!
 # The spinor kernel is open
