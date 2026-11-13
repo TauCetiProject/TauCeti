@@ -198,8 +198,6 @@ theorem neg_mul_le_sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add {A : Matrix ι
 private theorem div_pow_div_le {n : ℕ} {lam d F p q : ℝ} (hn : 0 < n) (hlam : 0 < lam)
     (hd : lam ^ n ≤ d) (hF : F⁻ ≤ p + q) (hp : 0 ≤ p) (hq : 0 ≤ q) :
     (F⁻ / n) ^ n / d ≤ (2 / (n * lam)) ^ n * p ^ n + (2 / (n * lam)) ^ n * q ^ n := by
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 hn
-  have hF0 : 0 ≤ F⁻ / n := div_nonneg (negPart_nonneg F) hn'.le
   calc (F⁻ / n) ^ n / d ≤ (F⁻ / n) ^ n / lam ^ n :=
         div_le_div_of_nonneg_left (by positivity) (by positivity) hd
     _ = (F⁻ / (n * lam)) ^ n := by rw [← div_pow]; congr 1; field_simp
@@ -402,7 +400,7 @@ private theorem ofReal_mul_volume_ball_le_of_volume_ball_le {Γ S : Set (Euclide
     simp only [NNReal.coe_natCast, ENNReal.coe_natCast, ENNReal.rpow_natCast] at h
     calc ∫⁻ y in ball c R, ENNReal.ofReal ((f y)⁺ ^ N)
         = ∫⁻ y in ball c R, ‖(f y)⁺‖ₑ ^ N := lintegral_congr fun y ↦ by
-          rw [Real.enorm_eq_ofReal (posPart_nonneg _), ENNReal.ofReal_pow (posPart_nonneg _)]
+          rw [Real.eNorm_eq_ofReal (posPart_nonneg _), ENNReal.ofReal_pow (posPart_nonneg _)]
       _ ≤ ENNReal.ofReal B ^ N := h.trans (by gcongr)
       _ = ENNReal.ofReal (B ^ N) := (ENNReal.ofReal_pow (by positivity) N).symm
   have hvol (z : EuclideanSpace ℝ ι) {r : ℝ} (hr : 0 < r) :
@@ -536,7 +534,6 @@ theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball {κ θ τ : ℝ} (h
           volume ({x | u x < M} ∩ ball c (θ * R)) := by
   set N := Fintype.card ι
   set n : ℝ := (N : ℝ)
-  have hn : 0 < n := Nat.cast_pos.2 Fintype.card_pos
   set β : ℝ := n * κ
   have hβ : 0 < β := by positivity
   -- The barrier `(t² + θ²)^(-β)` drops by `2 / A` between the radii `τ` and `1`.

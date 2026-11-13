@@ -140,7 +140,7 @@ private theorem decompose_finiteApprox (k : ℕ) (x : ∀ n, ℳ n) (n : N)
       Submodule.coe_sum]
     rw [Finset.sum_eq_single n]
     · exact decompose_of_mem_same ℳ (x n).property
-    · intro m hm hmn
+    · intro m _ hmn
       exact decompose_of_mem_ne ℳ (x m).property hmn
     · exact fun h => (h hn').elim
   · have hb : ℳ n = ⊥ := hℳ n hP

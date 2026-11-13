@@ -222,7 +222,7 @@ theorem ae_abs_gradient_le_of_forall_integral_eq (hx : x₀ < x₁) {lam M : ℝ
     refine (intervalIntegral.abs_integral_le_integral_abs ht.1.le).trans ?_
     rw [intervalIntegral.integral_of_le ht.1.le]
     exact setIntegral_mono_set hf.abs (ae_of_all _ fun _ => abs_nonneg _)
-      (Ioc_subset_Ioo_right ht.2).eventuallyLE
+      (Ioc_subset_Ioo_right ht.2).eventuallySubset
   have hΦi : IntegrableOn (fun t => ∫ s in x₀..t, f s) (Ioo x₀ x₁) :=
     Integrable.of_bound
       (((TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
@@ -283,7 +283,7 @@ theorem abs_intervalRepresentativeL_sub_le_of_forall_integral_eq (hx : x₀ < x�
   have hFi : IntegrableOn F (Ioo x₀ x₁) := hF.integrable hs
   set K := (M / (x₁ - x₀) * (|(W1p.intervalTraceL hx u).2 - (W1p.intervalTraceL hx u).1| +
       ((x₁ - x₀) * (∫ t in Ioo x₀ x₁, |f t|) + ∫ t in Ioo x₀ x₁, |F t|) / lam) +
-    ∫ t in Ioo x₀ x₁, |f t|) / lam with hK
+    ∫ t in Ioo x₀ x₁, |f t|) / lam
   have hbound := ae_restrict_of_ae_restrict_of_subset hsub
     (ae_abs_gradient_le_of_forall_integral_eq hx hlam ha haM hf hFi hu)
   have hgrad : IntegrableOn (W1p.gradient u) (Ioo x₀ x₁) :=
@@ -324,8 +324,7 @@ private theorem div_le_mul_add_add_add {L lam M β T₀ T₁ Nf NF N : ℝ} (hL 
     (hNf : 0 ≤ Nf) (hNF0 : 0 ≤ NF) (hN : 0 ≤ N) (hNF : NF ≤ L ^ β * N) :
     (M / L * (|T₁ - T₀| + (L * Nf + NF) / lam) + Nf) / lam ≤
       (|M| / L * (1 + (L + L ^ β) / lam) + 1) / lam * (|T₀| + |T₁| + Nf + N) := by
-  set B := |T₀| + |T₁| + Nf + N with hB
-  have hB0 : 0 ≤ B := by positivity
+  set B := |T₀| + |T₁| + Nf + N
   have hD : |T₁ - T₀| ≤ B := (abs_sub _ _).trans (by linarith [abs_nonneg T₀, abs_nonneg T₁])
   have hNfB : Nf ≤ B := by linarith [abs_nonneg T₀, abs_nonneg T₁]
   have hNFB : NF ≤ L ^ β * B :=
@@ -417,7 +416,6 @@ theorem exists_norm_intervalRepresentativeL_le_and_holderWith (hx : x₀ < x₁)
             (∫ t in Ioo x₀ x₁, |f t|) +
               (eLpNorm F s (volume.restrict (Ioo x₀ x₁))).toReal)).toNNReal
           (1 - s.toNNReal⁻¹) (W1p.intervalRepresentativeL hx u) := by
-  have hL : 0 < x₁ - x₀ := sub_pos.2 hx
   -- The Hölder exponent `β = 1 - 1 / s` lies in `[0, 1]`.
   have hinv : s.toNNReal⁻¹ ≤ 1 := by
     rcases eq_or_ne s ⊤ with rfl | hs'
@@ -428,16 +426,13 @@ theorem exists_norm_intervalRepresentativeL_le_and_holderWith (hx : x₀ < x₁)
       one_div]
   have hβ0 : 0 ≤ 1 - 1 / s.toReal := by rw [← hβ]; exact NNReal.coe_nonneg _
   set c := (|M| / (x₁ - x₀) * (1 + ((x₁ - x₀) + (x₁ - x₀) ^ (1 - 1 / s.toReal)) / lam) + 1) /
-    lam * (x₁ - x₀) ^ (1 / s.toReal) + 1 / lam with hc
+    lam * (x₁ - x₀) ^ (1 / s.toReal) + 1 / lam
   have hc0 : 0 ≤ c := by positivity
   refine ⟨c + 1 + c * (x₁ - x₀) ^ (1 - 1 / s.toReal), by positivity, ?_⟩
   intro a f F u ha haM hf hF hu
   set ū := W1p.intervalRepresentativeL hx u
   set B := |(W1p.intervalTraceL hx u).1| + |(W1p.intervalTraceL hx u).2| +
     (∫ t in Ioo x₀ x₁, |f t|) + (eLpNorm F s (volume.restrict (Ioo x₀ x₁))).toReal with hB
-  have hB0 : 0 ≤ B := by
-    have : 0 ≤ ∫ t in Ioo x₀ x₁, |f t| := integral_nonneg fun t => abs_nonneg (f t)
-    positivity
   have hinc := abs_intervalRepresentativeL_sub_le_mul_rpow hx hlam ha haM hf hs hF hu
   have hcC : c ≤ c + 1 + c * (x₁ - x₀) ^ (1 - 1 / s.toReal) :=
     le_add_of_nonneg_right (by positivity) |>.trans' (le_add_of_nonneg_right zero_le_one)
