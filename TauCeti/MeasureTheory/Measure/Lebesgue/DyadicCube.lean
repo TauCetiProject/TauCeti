@@ -19,10 +19,10 @@ For `k : ℤ` and `m : ι → ℤ`, the **dyadic cube** of level `k` at position
 (`TauCeti.dyadicCube`). The cubes of a fixed level partition `ι → ℝ`, the cube of level `k`
 containing `x` being `Q(k, ⌊x / 2ᵏ⌋)` (`TauCeti.dyadicIndex`), and the levels are nested: two
 dyadic cubes are either disjoint or one contains the other. Together with the **Lebesgue
-differentiation theorem along dyadic cubes**, which says that the averages of a locally
-integrable function over the dyadic cubes containing `x` converge to its value at `x` as the
-level tends to `-∞`, this is what the stopping-time arguments of harmonic analysis need, starting
-with the Calderón–Zygmund decomposition.
+differentiation theorem along dyadic cubes**, which says that the averages of a locally integrable
+function over the dyadic cubes containing `x` converge to its value at `x` as the level tends to
+`-∞`, this is what the stopping-time arguments of harmonic analysis need, starting with the
+Calderón–Zygmund decomposition.
 
 The ambient space carries the sup norm, for which closed balls are closed boxes. A dyadic cube is
 therefore a closed ball up to a null set of its boundary
@@ -51,11 +51,6 @@ Mathlib's differentiation theorem along closed balls with moving centres.
   of bounded level, the maximal cubes are pairwise disjoint and contain every cube of the family.
 * `TauCeti.ae_tendsto_setLAverage_dyadicCube`: the Lebesgue differentiation theorem along dyadic
   cubes.
-* `TauCeti.tendsto_setLAverage_dyadicCube_atTop`,
-  `TauCeti.tendsto_setLAverage_enorm_dyadicCube_atTop`: averages over large dyadic cubes tend to
-  `0` for functions of finite integral and for `Lᵖ` functions, `1 ≤ p < ∞`; when they do,
-  `g` has finite integral over every dyadic cube
-  (`TauCeti.setLIntegral_dyadicCube_ne_top_of_tendsto`).
 
 ## References
 
@@ -295,7 +290,7 @@ theorem exists_forall_lt_of_mul_volume_dyadicCube_lt [Nonempty ι] {a δ : ℝ�
   rw [volume_dyadicCube] at hlt hk
   exact (hlt.trans hk).false
 
-/-- Lebesgue's differentiation theorem along dyadic cubes for a `g` of finite integral. -/
+/-- Lebesgue's differentiation theorem along dyadic cubes for an integrable `g`. -/
 private theorem ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top {g : (ι → ℝ) → ℝ≥0∞}
     (hg : AEMeasurable g) (hg' : ∫⁻ x, g x ≠ ∞) :
     ∀ᵐ x, Tendsto (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot
@@ -319,90 +314,33 @@ private theorem ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top {g : (ι �
   rw [setLIntegral_congr (dyadicCube_ae_eq_closedBall k (dyadicIndex k x)),
     measure_congr (dyadicCube_ae_eq_closedBall k (dyadicIndex k x))]
 
-/-- **Lebesgue's differentiation theorem along dyadic cubes**: for a `g` with finite integral over
-every dyadic cube, at almost every `x` the averages of `g` over the dyadic cubes containing `x`
-converge to `g x` as the level tends to `-∞`. -/
-theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg : AEMeasurable g)
-    (hg' : ∀ k m, ∫⁻ y in dyadicCube k m, g y ≠ ∞) :
+/-- **Lebesgue's differentiation theorem along dyadic cubes**: for a locally integrable `g`, at
+almost every `x` the averages of `g` over the dyadic cubes containing `x` converge to `g x` as the
+level tends to `-∞`. -/
+theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg : LocallyIntegrable g) :
     ∀ᵐ x, Tendsto (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot
       (𝓝 (g x)) := by
-  -- On each cube of level `0`, the restriction of `g` has finite integral.
-  have h (m : ι → ℤ) := ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top
-    (hg.indicator (measurableSet_dyadicCube 0 m))
-    (by rw [lintegral_indicator (measurableSet_dyadicCube 0 m)]; exact hg' 0 m)
-  filter_upwards [ae_all_iff.2 h] with x hx
-  have hx0 := mem_dyadicCube_dyadicIndex 0 x
-  rw [← indicator_of_mem hx0 g]
-  refine (hx (dyadicIndex 0 x)).congr' (eventually_atBot.2 ⟨0, fun k hk => ?_⟩)
-  -- The cubes of level at most `0` containing `x` lie in the cube of level `0` containing `x`.
-  have hsub := dyadicCube_subset_dyadicCube hk (mem_dyadicCube_dyadicIndex k x)
-  exact setLAverage_congr_fun (measurableSet_dyadicCube _ _) fun y hy =>
-    indicator_of_mem (hsub hy) g
-
-/-- In positive dimension, the averages of a `g` of finite integral over the dyadic cubes containing
-`x` tend to `0` as the cubes grow, being at most `∫⁻ g` divided by the volume of the cube. -/
-theorem tendsto_setLAverage_dyadicCube_atTop [Nonempty ι] {g : (ι → ℝ) → ℝ≥0∞} (hg : ∫⁻ x, g x ≠ ∞)
-    (x : ι → ℝ) :
-    Tendsto (fun j => ⨍⁻ y in dyadicCube j (dyadicIndex j x), g y ∂volume) atTop (𝓝 0) := by
-  have hlim : Tendsto (fun j => (∫⁻ y, g y) / volume (dyadicCube j (dyadicIndex j x)))
-      atTop (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_div (tendsto_volume_dyadicCube_atTop _) (.inr hg)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
-    fun j => ?_
-  simp only [setLAverage_eq]
-  exact ENNReal.div_le_div_right (setLIntegral_le_lintegral _ _) _
-
-/-- In positive dimension, for `f ∈ Lᵖ` with `1 ≤ p < ∞`, the averages of `‖f‖` over the dyadic
-cubes containing `x` tend to `0` as the cubes grow: by Hölder's inequality, the average over a
-cube `Q` is at most `‖f‖_p |Q|^(-1/p)`. -/
-theorem tendsto_setLAverage_enorm_dyadicCube_atTop [Nonempty ι] {E : Type*}
-    [NormedAddCommGroup E] {f : (ι → ℝ) → E} {p : ℝ≥0∞} (hf : MemLp f p) (hp : 1 ≤ p)
-    (hp' : p ≠ ∞) (x : ι → ℝ) :
-    Tendsto (fun j => ⨍⁻ y in dyadicCube j (dyadicIndex j x), ‖f y‖ₑ ∂volume) atTop (𝓝 0) := by
-  set Q : ℤ → Set (ι → ℝ) := fun j => dyadicCube j (dyadicIndex j x)
-  have hp0 : 0 < p.toReal⁻¹ :=
-    inv_pos.2 (ENNReal.toReal_pos (zero_lt_one.trans_le hp).ne' hp')
-  have hbound (j : ℤ) :
-      ⨍⁻ y in Q j, ‖f y‖ₑ ∂volume ≤ eLpNorm f p volume / volume (Q j) ^ p.toReal⁻¹ := by
-    have hQ0 : volume (Q j) ≠ 0 := (volume_dyadicCube_pos _ _).ne'
-    have hQ : volume (Q j) ≠ ∞ := volume_dyadicCube_ne_top _ _
-    have hr0 : volume (Q j) ^ p.toReal⁻¹ ≠ 0 := (ENNReal.rpow_pos (pos_iff_ne_zero.2 hQ0) hQ).ne'
-    have hrt : volume (Q j) ^ p.toReal⁻¹ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hp0.le hQ
-    -- Hölder's inequality on the cube.
-    have hm : AEStronglyMeasurable f (volume.restrict (Q j)) := hf.aestronglyMeasurable.restrict
-    have h1 := eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hm
-    rw [eLpNorm_one_eq_lintegral_eNorm hm, Measure.restrict_apply_univ, ENNReal.toReal_one,
-      div_one] at h1
-    rw [setLAverage_eq, ENNReal.div_le_iff hQ0 hQ]
-    calc ∫⁻ y in Q j, ‖f y‖ₑ
-        ≤ eLpNorm f p (volume.restrict (Q j)) * volume (Q j) ^ (1 - 1 / p.toReal) := h1
-      _ ≤ eLpNorm f p volume * volume (Q j) ^ (1 - 1 / p.toReal) := by
-        exact mul_le_mul_left (eLpNorm_restrict_le f p volume (Q j)) _
-      _ = eLpNorm f p volume / volume (Q j) ^ p.toReal⁻¹ *
-          (volume (Q j) ^ p.toReal⁻¹ * volume (Q j) ^ (1 - 1 / p.toReal)) := by
-        rw [← mul_assoc, ENNReal.div_mul_cancel hr0 hrt]
-      _ = eLpNorm f p volume / volume (Q j) ^ p.toReal⁻¹ * volume (Q j) := by
-        rw [← ENNReal.rpow_add _ _ hQ0 hQ, one_div, add_sub_cancel, ENNReal.rpow_one]
-  have hlim : Tendsto (fun j => eLpNorm f p volume / volume (Q j) ^ p.toReal⁻¹) atTop (𝓝 0) := by
-    have h := ((ENNReal.continuous_rpow_const (y := p.toReal⁻¹)).tendsto ∞).comp
-      (tendsto_volume_dyadicCube_atTop fun j => dyadicIndex j x)
-    rw [ENNReal.top_rpow_of_pos hp0] at h
-    simpa using ENNReal.Tendsto.const_div h (.inr hf.eLpNorm_ne_top)
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
-    hbound
-
-/-- If the averages of `g` over the dyadic cubes containing each point tend to `0` as the cubes
-grow, then `g` has finite integral over every dyadic cube: each lies in a larger dyadic cube on
-which the average of `g` is finite. -/
-theorem setLIntegral_dyadicCube_ne_top_of_tendsto {g : (ι → ℝ) → ℝ≥0∞}
-    (hg : ∀ x, Tendsto (fun j => ⨍⁻ y in dyadicCube j (dyadicIndex j x), g y ∂volume) atTop (𝓝 0))
-    (k : ℤ) (m : ι → ℤ) : ∫⁻ y in dyadicCube k m, g y ≠ ∞ := by
-  obtain ⟨x, hx⟩ := dyadicCube_nonempty k m
-  obtain ⟨j, hj, hkj⟩ := (((tendsto_order.1 (hg x)).2 1 one_pos).and
-    (eventually_ge_atTop k)).exists
-  refine ne_top_of_le_ne_top ?_ (lintegral_mono_set (dyadicCube_subset_dyadicCube hkj hx))
-  rw [← measure_mul_setLAverage _ (volume_dyadicCube_ne_top _ _)]
-  exact ENNReal.mul_ne_top (volume_dyadicCube_ne_top _ _) (hj.trans ENNReal.one_lt_top).ne
+  -- On each cube `Q` of level `0`, apply the integrable case to `g` restricted to `Q`; the cubes
+  -- of level at most `0` containing a point of `Q` lie in `Q`.
+  have hQ (m : ι → ℤ) : ∀ᵐ x, x ∈ dyadicCube 0 m → Tendsto
+      (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot (𝓝 (g x)) := by
+    have hm := measurableSet_dyadicCube (0 : ℤ) m
+    have hint : ∫⁻ x, (dyadicCube 0 m).indicator g x ≠ ∞ := by
+      rw [lintegral_indicator hm]
+      refine ne_top_of_le_ne_top ?_ (lintegral_mono_set (dyadicCube_subset_closedBall 0 m))
+      simpa only [eNorm_eq_self] using (hg.integrableOn_isCompact (isCompact_closedBall _ _)).2.ne
+    filter_upwards [ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top
+      (hg.aestronglyMeasurable.aemeasurable.indicator hm) hint]
+      with x hx hxm
+    rw [indicator_of_mem hxm] at hx
+    refine hx.congr' ?_
+    filter_upwards [eventually_le_atBot 0] with k hk
+    have hsub : dyadicCube k (dyadicIndex k x) ⊆ dyadicCube 0 m := by
+      simpa only [mem_dyadicCube.1 hxm] using
+        dyadicCube_subset_dyadicCube hk (mem_dyadicCube_dyadicIndex k x)
+    simp only [setLAverage_eq]
+    rw [setLIntegral_indicator hm, inter_eq_right.2 hsub]
+  filter_upwards [ae_all_iff.2 hQ] with x hx using hx _ (mem_dyadicCube_dyadicIndex 0 x)
 
 end Fintype
 
