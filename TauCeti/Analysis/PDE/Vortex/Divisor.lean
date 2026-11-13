@@ -10,6 +10,9 @@ public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Analysis.PDE.Vortex.Uniqueness
 public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import Mathlib.Data.Sym.Basic
+public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
+public import TauCeti.Topology.Sym.Basic
+import TauCeti.Analysis.Complex.ContinuousLog.Rouche
 
 /-!
 # The zero divisor of a framed plane vortex
@@ -42,6 +45,13 @@ symmetries of the vortex equations on `Sym^m ℂ`:
 * continuous gauge transformations, in particular the smooth framed gauges and the constant
   line-frame gauges, do not change the divisor
   (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_gaugeTransform`).
+
+The divisor also depends continuously on the field: if fields converge locally uniformly, the
+divisors of their sections converge in `Sym ℂ m`
+(`TauCeti.Vortex.tendsto_of_tendstoLocallyUniformly`), by Hurwitz's theorem
+`TauCeti.IsZeroMultiplicity.tendsto_of_tendstoLocallyUniformly`. Since `H^s(ℂ)`, `s > 1`, embeds
+continuously in the bounded continuous functions, convergence in the affine field space `A_m^s` is
+stronger than locally uniform convergence; no topology on `A_m^s` is constructed here.
 
 Conversely, by Taubes's uniqueness theorem
 (`TauCeti.Vortex.existsUnique_framedGaugeGroup_smul_eq`), two smooth framed vortices with a common
@@ -196,5 +206,27 @@ theorem isZeroMultiplicity_sectionValue_amplitudeField_prod_sub {u : ℂ → ℝ
   isZeroMultiplicity_sectionValue_amplitudeField hu (isZeroMultiplicity_prod_sub D)
 
 end Laws
+
+/-! ### Continuity of the divisor -/
+
+/-- **Continuity of the divisor.** If fields `y i` converge locally uniformly to `x`, and the zero
+multiplicities of their sections are the counts of `E i` and of `D` in `Sym ℂ m`, then `E i → D`
+in `Sym ℂ m`. -/
+theorem tendsto_of_tendstoLocallyUniformly {m : ℕ} {ι : Type*} {l : Filter ι}
+    {y : ι → ℂ → EuclideanSpace ℝ (Fin 4)} {D : Sym ℂ m} {E : ι → Sym ℂ m}
+    (hx : IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z)
+    (hy : ∀ᶠ i in l, IsZeroMultiplicity (sectionValue (y i)) fun z ↦ (E i : Multiset ℂ).count z)
+    (hxy : TendstoLocallyUniformly y x l) : Tendsto E l (𝓝 D) := by
+  -- the section is the value at the point of a `2`-Lipschitz function of the field
+  set Φ : EuclideanSpace ℝ (Fin 4) → ℂ := fun v ↦ 2 * ((v 2 : ℂ) + (v 3 : ℂ) * I)
+  have hΦ (u : ℂ → EuclideanSpace ℝ (Fin 4)) : Φ ∘ u = sectionValue u :=
+    funext fun z ↦ (sectionValue_apply u z).symm
+  have hlip : LipschitzWith 2 Φ := LipschitzWith.of_dist_le_mul fun v w ↦ by
+    have h := norm_sectionValue_le ((fun _ ↦ v) - fun _ ↦ w) 0
+    rw [sectionValue_sub, ← congrFun (hΦ _) 0, ← congrFun (hΦ _) 0] at h
+    simpa [dist_eq_norm] using h
+  have hsec := hlip.uniformContinuous.comp_tendstoLocallyUniformly hxy
+  simp only [hΦ] at hsec
+  exact hx.tendsto_of_tendstoLocallyUniformly hy hsec
 
 end TauCeti.Vortex
