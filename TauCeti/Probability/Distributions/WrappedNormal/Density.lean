@@ -97,8 +97,6 @@ holds at every variance, both sides vanishing at variance zero. -/
 theorem wrappedNormalPDFReal_coe_eq_gaussianLatticeSum (a : ℝ) (v : ℝ≥0) (x : ℝ) :
     wrappedNormalPDFReal a v x =
       √(2 * π) / √(v : ℝ) * gaussianLatticeSum ((a - x) / (2 * π)) (√(v : ℝ) / (2 * π)) := by
-  rcases eq_or_ne v 0 with rfl | _
-  · simp
   rw [wrappedNormalPDFReal_def, ← AddCircle.coe_sub, AddCircle.automorphize_coe,
     (hasSum_gaussianPDFReal_add_zsmul 0 v two_pi_pos.ne' (x - a)).tsum_eq, zero_sub, neg_sub,
     sqrt_mul two_pi_pos.le, ← mul_assoc, mul_inv, ← mul_assoc]
