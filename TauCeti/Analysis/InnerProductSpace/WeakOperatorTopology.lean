@@ -10,7 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import TauCeti.Analysis.CStarAlgebra.ProjectionDilation
+public import TauCeti.Analysis.CStarAlgebra.Projection.Dilation
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 
 /-!
