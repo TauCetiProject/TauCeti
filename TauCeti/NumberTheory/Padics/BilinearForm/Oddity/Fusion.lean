@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Replace
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
-import TauCeti.NumberTheory.Padics.BilinearForm.Oddity
+import TauCeti.NumberTheory.Padics.BilinearForm.Oddity.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -22,8 +22,9 @@ import TauCeti.NumberTheory.Padics.RingHoms
 Let `B` be a symmetric form on a finite free `ℤ_[2]`-module with a Jordan splitting `N` with
 respect to `2`, so that `B` is `2 ^ i` times a unimodular form `C i` on `N i`. In the Conway–Sloane
 calculus of `2`-adic symbols, a *compartment* is a run of consecutive constituents of type I, and
-only the total oddity of a compartment is an isometry invariant: *oddity fusion*. This file proves
-the elementary move behind it on every Jordan splitting, between two adjacent constituents `N k`
+the total oddity of a compartment is preserved by *oddity fusion* with constituent signs fixed.
+Sign walking can change both the signs and the total oddity. This file proves the elementary
+move behind these operations on every Jordan splitting, between two adjacent constituents `N k`
 and `N (k + 1)` of type I.
 
 Let `x ∈ N k` and `y ∈ N (k + 1)` with `B x x = 2 ^ k a` and `B y y = 2 ^ (k + 1) b` for units `a`
@@ -43,12 +44,13 @@ squares, and the oddities of the unimodular rescalings of `N k` and `N (k + 1)` 
   (`LinearMap.BilinForm.IsJordanSplitting.exists_signWalk_succ_of_odd_of_odd`).
 
 For example `⟨1⟩ ⊥ ⟨14⟩ ≅ ⟨7⟩ ⊥ ⟨2⟩` by the first move: the constituents of index `0` have the
-same sign but different determinant classes, so their oddities `1` and `7` are not invariants, only
-their totals with the oddities `7` and `1` of the constituents of index `1`. The vectors `x` and `y`
-are part of the data, since which case occurs depends on their norms, and both cases need not be
-available. In `⟨1⟩ ⊥ ⟨6⟩` every unit value `x₁ ^ 2 + 6 x₂ ^ 2` is `1` or `7` modulo `8`, so no
-Jordan splitting has a constituent of index `0` of sign `-1`: sign walking between the two
-constituents is impossible there, and only oddity fusion is available.
+same sign but different determinant classes: their individual oddities `1` and `7` differ, while
+their totals with the oddities `7` and `1` of the constituents of index `1` agree under this
+sign-preserving fusion move. The vectors `x` and `y` are part of the data, since which case occurs
+depends on their norms, and both cases need not be available. In `⟨1⟩ ⊥ ⟨6⟩` every unit value
+`x₁ ^ 2 + 6 x₂ ^ 2` is `1` or `7` modulo `8`, so no Jordan splitting has a constituent of index `0`
+of sign `-1`: sign walking between the two constituents is impossible there, and only oddity fusion
+is available.
 
 ## Main results
 
@@ -75,19 +77,6 @@ namespace LinearMap.BilinForm
 
 variable {M : Type*} [AddCommGroup M] [Module ℤ_[2] M] {B : BilinForm ℤ_[2] M}
   {N : ℕ → Submodule ℤ_[2] M}
-
-/-- For units `a`, `b` of `ℤ_[2]`, the change `a b (a + 2 b) - b` of the second coefficient of
-`⟨a, 2 b⟩ ≅ ⟨a + 2 b, 2 a b (a + 2 b)⟩` is `2 a` modulo `8`. -/
-private theorem eight_dvd_mul_mul_add_two_mul_sub_sub {a b : ℤ_[2]} (ha : IsUnit a)
-    (hb : IsUnit b) : (8 : ℤ_[2]) ∣ a * b * (a + 2 * b) - b - 2 * a := by
-  rw [← sub_zero (_ - _ - _), eight_dvd_sub_iff_toZModPow_three_eq]
-  simp only [map_sub, map_mul, map_add, map_ofNat, map_zero]
-  have hA := isUnit_iff_toZModPow_three_mul_self.mp ha
-  have hB := isUnit_iff_toZModPow_three_mul_self.mp hb
-  generalize toZModPow 3 a = A at hA ⊢
-  generalize toZModPow 3 b = B at hB ⊢
-  revert A B
-  decide
 
 /-- **The move between adjacent constituents of type I.** For `x ∈ N k` and `y ∈ N (k + 1)` with
 `B x x = 2 ^ k a` and `B y y = 2 ^ (k + 1) b`, `a` and `b` units, exchanging `x, y` for
@@ -178,9 +167,8 @@ private theorem IsJordanSplitting.exists_fusion_succ [Module.Free ℤ_[2] M]
     rwa [add_sub_cancel_left] at this
   · have := hB.eight_dvd_sub_sub_of_eq_span hyy hz'1 hH (fun j ↦ by simpa using hws 0 j)
       (fun j ↦ by simpa using hw's 0 j) hb hb' hHu hNl hN'l hC hC' hw hw'
-    rw [show C' w' w' - C w w - 2 * a =
-      C' w' w' - C w w - (a * b * (a + 2 * b) - b) + (a * b * (a + 2 * b) - b - 2 * a) by ring]
-    exact dvd_add this (eight_dvd_mul_mul_add_two_mul_sub_sub ha hb)
+    convert dvd_add this (eight_dvd_mul_mul_add_two_mul_sub_sub ha hb) using 1
+    ring
 
 /-- **Oddity fusion between adjacent constituents of type I.** Let `N` be a Jordan splitting with
 respect to `2` of a symmetric form `B` on a finite free `ℤ_[2]`-module, and let `x ∈ N k` and
@@ -225,9 +213,8 @@ theorem IsJordanSplitting.exists_oddityFusion_succ [Module.Free ℤ_[2] M]
   obtain ⟨N', hN', hagree, hdk, hdl, hok, hol⟩ := h.exists_fusion_succ hB hx hy ha hb hxx hyy hc
   refine ⟨N', hN', hagree, fun n d d' ↦ by simpa using hdk n d d',
     fun n d d' ↦ by simpa using hdl n d d', hok, fun C C' w w' hC hC' hw hw' ↦ ?_⟩
-  rw [show C' w' w' - C w w + 2 * b = C' w' w' - C w w - 2 * a + 8 * e by
-    linear_combination 2 * he]
-  exact dvd_add (hol C C' w w' hC hC' hw hw') (dvd_mul_right 8 e)
+  convert dvd_add (hol C C' w w' hC hC' hw hw') (dvd_mul_right 8 e) using 1
+  linear_combination 2 * he
 
 /-- **Sign walking between adjacent constituents of type I.** Let `N` be a Jordan splitting with
 respect to `2` of a symmetric form `B` on a finite free `ℤ_[2]`-module, and let `x ∈ N k` and
@@ -270,8 +257,7 @@ theorem IsJordanSplitting.exists_signWalk_succ_of_odd_of_odd [Module.Free ℤ_[2
     decide
   obtain ⟨N', hN', hagree, hdk, hdl, hok, hol⟩ := h.exists_fusion_succ hB hx hy ha hb hxx hyy hc
   refine ⟨N', hN', hagree, hdk, hdl, hok, fun C C' w w' hC hC' hw hw' ↦ ?_⟩
-  rw [show C' w' w' - C w w - 2 * b = C' w' w' - C w w - 2 * a + 8 * e by
-    linear_combination 2 * he]
-  exact dvd_add (hol C C' w w' hC hC' hw hw') (dvd_mul_right 8 e)
+  convert dvd_add (hol C C' w w' hC hC' hw hw') (dvd_mul_right 8 e) using 1
+  linear_combination 2 * he
 
 end LinearMap.BilinForm

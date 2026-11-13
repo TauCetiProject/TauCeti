@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.Padics.BilinearForm.BinaryDiagonal
 import TauCeti.NumberTheory.Padics.BilinearForm.MixedSignWalking.Basic
 import TauCeti.NumberTheory.Padics.BilinearForm.MixedSignWalking.EvenLower
-import TauCeti.NumberTheory.Padics.BilinearForm.Oddity
+import TauCeti.NumberTheory.Padics.BilinearForm.Oddity.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.NumberTheory.Padics.SerreSigns -- for `TauCeti.isUnit_five_padicInt`

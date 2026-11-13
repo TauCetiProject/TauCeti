@@ -566,4 +566,17 @@ theorem isSquare_of_toZModPow_three_eq_one {z : ℤ_[2]} (h : toZModPow 3 z = 1)
     (isUnit_iff_toZModPow_three_mul_self.mpr (by rw [h, one_mul])) (by rw [map_one, h])
   exact ⟨s, by rw [hs, mul_one, sq]⟩
 
+/-- For units `a`, `b` of `ℤ_[2]`, the change `a b (a + 2 b) - b` of the second coefficient of
+`⟨a, 2 b⟩ ≅ ⟨a + 2 b, 2 a b (a + 2 b)⟩` is `2 a` modulo `8`. -/
+theorem eight_dvd_mul_mul_add_two_mul_sub_sub {a b : ℤ_[2]} (ha : IsUnit a)
+    (hb : IsUnit b) : (8 : ℤ_[2]) ∣ a * b * (a + 2 * b) - b - 2 * a := by
+  rw [← sub_zero (_ - _ - _), eight_dvd_sub_iff_toZModPow_three_eq]
+  simp only [map_sub, map_mul, map_add, map_ofNat, map_zero]
+  have hA := isUnit_iff_toZModPow_three_mul_self.mp ha
+  have hB := isUnit_iff_toZModPow_three_mul_self.mp hb
+  generalize toZModPow 3 a = A at hA ⊢
+  generalize toZModPow 3 b = B at hB ⊢
+  revert A B
+  decide
+
 end PadicInt
