@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.Perm.SumCongr
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Induction.CharTwist
-public import TauCeti.RepresentationTheory.Intertwining.Congr
+public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Symmetric.Specht.SignTranspose
 public import TauCeti.RepresentationTheory.Tensor.External
 
@@ -46,8 +46,8 @@ map (`Representation.IntertwiningMap.charTwistLinearEquiv`), with no unitor to c
 
 ## Main statements
 
-* `TauCeti.signLinearCharacter_comp_finSumPermHom`: the restriction of `sgn_(a+b)` along the
-  block embedding is `sgn_a ⊠ sgn_b`.
+* `TauCeti.spechtModuleCharTwistSignEquiv_apply`, `TauCeti.inducedSpechtConjugateEquiv_mk`: the
+  two sign-transpose equivalences on elements and on generators, with their inverses.
 * `TauCeti.inducedSpechtTranspose_apply`, `TauCeti.inducedSpechtTranspose_symm_apply`: the
   comparison and its inverse are conjugation by the two sign-transpose equivalences.
 * `TauCeti.finrank_intertwiningMap_inducedSpecht_conjugate`: the two multiplicities agree.
@@ -66,16 +66,6 @@ open CategoryTheory MonoidalCategory Representation
 namespace TauCeti
 
 variable {a b : ℕ}
-
-/-- **The sign of the block embedding is the product of the signs of the blocks**: restricted
-along `Equiv.Perm.finSumPermHom a b`, the sign character of `S_(a+b)` is the external product
-`sgn_a ⊠ sgn_b` of the sign characters of the two factors of `S_a × S_b`. -/
-theorem signLinearCharacter_comp_finSumPermHom (k : Type*) [CommRing k] (a b : ℕ) :
-    (signLinearCharacter k (Fin (a + b))).comp (Equiv.Perm.finSumPermHom a b) =
-      (signLinearCharacter k (Fin a)).comp (MonoidHom.fst _ _) *
-        (signLinearCharacter k (Fin b)).comp (MonoidHom.snd _ _) := by
-  ext p
-  simp [Equiv.Perm.sign_finSumPerm]
 
 /-- **The induced Specht representation** `Ind_(S_a × S_b)^(S_(a+b)) (S^μ ⊠ S^ν)`: the external
 tensor product of the Specht modules of `μ ⊢ a` and `ν ⊢ b`, induced along the block embedding
@@ -106,6 +96,40 @@ noncomputable def spechtModuleCharTwistSignEquiv (μ : n.Partition) :
       (eqToIso (FDRep.ofLinearCharacter_def (signLinearCharacter ℚ (Fin n))))).symm ≪≫
         spechtModuleTensorSignIso μ)
 
+/-- `TauCeti.spechtModuleCharTwistSignEquiv` sends `v` to the image of `v ⊗ 1` under the
+equivalence `YoungTableau.spechtSubrepresentationTensorSignEquiv` of the row-superstandard tableau
+of `μ`, transported along `YoungDiagram.ofPartition_conjugate`, as in
+`TauCeti.isoToLinearEquiv_spechtModuleTensorSignIso_apply`. -/
+theorem spechtModuleCharTwistSignEquiv_apply (μ : n.Partition) (v : spechtModule (R := ℚ) μ) :
+    spechtModuleCharTwistSignEquiv μ v =
+      spechtSubrepresentationCongr (YoungDiagram.ofPartition_conjugate μ).symm
+        ((YoungDiagram.card_ofPartition μ).symm.trans (YoungDiagram.card_transpose _).symm)
+        (YoungDiagram.card_ofPartition μ.conjugate).symm
+        (YoungTableau.spechtSubrepresentationTensorSignEquiv
+          (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau
+          (v ⊗ₜ[ℚ] (1 : ℚ))) := by
+  refine (Representation.Equiv.trans_apply _ _ v).trans <|
+    (DFunLike.congr_fun (FDRep.toLinearEquiv_isoToEquiv _) _).trans ?_
+  rw [tprodOfLinearCharacterEquivCharTwist_symm_apply, FDRep.isoToLinearEquiv_trans,
+    LinearEquiv.trans_apply,
+    isoToLinearEquiv_spechtModuleTensorSignIso_apply, FDRep.isoToLinearEquiv_symm,
+    LinearEquiv.apply_symm_apply]
+
+/-- The inverse of `TauCeti.spechtModuleCharTwistSignEquiv`, through the inverse of
+`YoungTableau.spechtSubrepresentationTensorSignEquiv`. -/
+theorem spechtModuleCharTwistSignEquiv_symm_apply (μ : n.Partition)
+    (w : spechtModule (R := ℚ) μ.conjugate) :
+    (spechtModuleCharTwistSignEquiv μ).symm w =
+      TensorProduct.rid ℚ _ ((YoungTableau.spechtSubrepresentationTensorSignEquiv
+          (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau).symm
+        ((spechtSubrepresentationCongr (YoungDiagram.ofPartition_conjugate μ).symm
+          ((YoungDiagram.card_ofPartition μ).symm.trans (YoungDiagram.card_transpose _).symm)
+          (YoungDiagram.card_ofPartition μ.conjugate).symm).symm w)) := by
+  rw [← (spechtModuleCharTwistSignEquiv μ).symm_apply_apply (TensorProduct.rid ℚ _ _),
+    spechtModuleCharTwistSignEquiv_apply, ← TensorProduct.rid_symm_apply,
+    LinearEquiv.symm_apply_apply, Representation.Equiv.apply_symm_apply,
+    Representation.Equiv.apply_symm_apply]
+
 /-- **Transposing both shapes twists the induced Specht representation by the sign**:
 `Ind(S^(μᵗ) ⊠ S^(νᵗ)) ≅ Ind(S^μ ⊠ S^ν) ⊗ sgn_(a+b)`. The factors are the sign twists of `S^μ` and
 `S^ν`, the external product of the two signs is the restricted sign
@@ -120,6 +144,36 @@ noncomputable def inducedSpechtConjugateEquiv (μ : a.Partition) (ν : b.Partiti
       rw [externalTensor_charTwist, ← signLinearCharacter_comp_finSumPermHom,
         LinearEquiv.refl_toLinearMap, LinearMap.id_comp, LinearMap.comp_id])).ind _).trans
     (indCharTwistEquiv _ _ _)
+
+/-- `TauCeti.inducedSpechtConjugateEquiv` on generators:
+`⟦h ⊗ₜ (v ⊗ₜ w)⟧ ↦ sgn(h⁻¹) ⟦h ⊗ₜ (e_μ⁻¹ v ⊗ₜ e_ν⁻¹ w)⟧`, where `e_μ` and `e_ν` are the sign
+twist equivalences `TauCeti.spechtModuleCharTwistSignEquiv`. -/
+theorem inducedSpechtConjugateEquiv_mk (μ : a.Partition) (ν : b.Partition)
+    (h : Equiv.Perm (Fin (a + b))) (v : spechtModule (R := ℚ) μ.conjugate)
+    (w : spechtModule (R := ℚ) ν.conjugate) :
+    inducedSpechtConjugateEquiv μ ν (IndV.mk _ _ h (v ⊗ₜ[ℚ] w)) =
+      ((signLinearCharacter ℚ (Fin (a + b)) h⁻¹ : ℚˣ) : ℚ) •
+        IndV.mk _ _ h ((spechtModuleCharTwistSignEquiv μ).symm v ⊗ₜ[ℚ]
+          (spechtModuleCharTwistSignEquiv ν).symm w) := by
+  rw [inducedSpechtConjugateEquiv, Representation.Equiv.trans_apply, Representation.Equiv.ind_mk,
+    Representation.Equiv.trans_apply, Representation.Equiv.externalTensor_tmul]
+  exact indCharTwistEquiv_mk _ _ _ h _
+
+/-- The inverse of `TauCeti.inducedSpechtConjugateEquiv` on generators:
+`⟦h ⊗ₜ (v ⊗ₜ w)⟧ ↦ sgn(h) ⟦h ⊗ₜ (e_μ v ⊗ₜ e_ν w)⟧`. -/
+theorem inducedSpechtConjugateEquiv_symm_mk (μ : a.Partition) (ν : b.Partition)
+    (h : Equiv.Perm (Fin (a + b))) (v : spechtModule (R := ℚ) μ)
+    (w : spechtModule (R := ℚ) ν) :
+    (inducedSpechtConjugateEquiv μ ν).symm (IndV.mk _ _ h (v ⊗ₜ[ℚ] w)) =
+      ((signLinearCharacter ℚ (Fin (a + b)) h : ℚˣ) : ℚ) •
+        IndV.mk _ _ h (spechtModuleCharTwistSignEquiv μ v ⊗ₜ[ℚ]
+          spechtModuleCharTwistSignEquiv ν w) := by
+  rw [← (inducedSpechtConjugateEquiv μ ν).symm_apply_apply
+      (((signLinearCharacter ℚ (Fin (a + b)) h : ℚˣ) : ℚ) • IndV.mk _ _ h
+        (spechtModuleCharTwistSignEquiv μ v ⊗ₜ[ℚ] spechtModuleCharTwistSignEquiv ν w)),
+    map_smul, inducedSpechtConjugateEquiv_mk, Representation.Equiv.symm_apply_apply,
+    Representation.Equiv.symm_apply_apply, smul_smul, ← Units.val_mul, ← map_mul, mul_inv_cancel,
+    map_one, Units.val_one, one_smul]
 
 /-- **The transpose comparison of induced multiplicity spaces**: for `μ ⊢ a`, `ν ⊢ b` and
 `ξ ⊢ a + b`, the intertwining maps `S^ξ → Ind(S^μ ⊠ S^ν)` are identified with the intertwining
