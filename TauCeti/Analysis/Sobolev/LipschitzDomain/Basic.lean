@@ -23,6 +23,12 @@ Charts can be recentred and transported by affine isometries or positive dilatio
 with compact frontier have finite chart covers with a common bound; epigraphs of globally
 Lipschitz functions are examples.
 
+Inside the cylinder of a chart the closure of `Ω` is the region on or above the graph, so the
+exterior `(closure Ω)ᶜ` is the region strictly below it. Reflecting the normal coordinate turns
+this into the region above the negated graph: the exterior of a Lipschitz domain is again a
+Lipschitz domain, with the same Lipschitz constants and the same frontier. A Lipschitz domain is
+also regular open, `interior (closure Ω) = Ω`, so the closure of its exterior is `Ωᶜ`.
+
 A shared chart identifies a set in a real normed ambient space with an epigraph inside
 a cylinder in the real normed model space `WithLp 2 (ℝ × E)`. The centered predicate
 `Set.IsLipschitzChartWith` additionally requires that the graph pass through the chart centre.
@@ -44,9 +50,18 @@ support-containment lemmas provide the shared geometry for chart trace and exten
 * `TauCeti.normalCylinder`: the product cylinder used by boundary charts.
 * `Set.isLipschitzChart_of_forall_mem_iff`: a chart whose cylinder meets a set exactly above a
   Lipschitz graph is a Lipschitz boundary chart.
+* `Set.IsLipschitzChart.compl_closure`: a Lipschitz chart of `Ω`, with its normal coordinate
+  reflected, is a Lipschitz chart of `(closure Ω)ᶜ`, with the negated graph.
+* `Set.IsLipschitzDomain.compl_closure`: the exterior of a Lipschitz domain is a Lipschitz domain.
+* `Set.IsLipschitzDomain.interior_closure`: a Lipschitz domain is regular open.
+* `Set.IsLipschitzDomain.frontier_closure`: the closure of a Lipschitz domain has the same
+  frontier.
 * `Set.IsLipschitzChartWith`: a Lipschitz boundary chart with given coordinates, graph and radii.
 * `Set.IsLipschitzDomainAtWith`: the existence of a Lipschitz boundary chart centred at one point.
 * `Set.IsLipschitzDomainWith`: an open set with the local graph condition at every frontier point.
+* `Set.IsLipschitzChart.symm_mem_of_mul_norm_lt_fst`,
+  `Set.IsLipschitzChart.symm_notMem_of_fst_lt_neg_mul_norm`: a chart whose graph passes through
+  the centre contains the upward cone and misses the downward cone of its cylinder.
 * `Set.IsLipschitzChartWith.lipschitzWith`, `Set.IsLipschitzChartWith.apply_zero`: the graph of a
   chart is `L`-Lipschitz and passes through the centre.
 * `TauCeti.exists_isLipschitzChartWith_of_lipschitzOnWith`: extension of a local Lipschitz graph
@@ -209,6 +224,14 @@ theorem mem_iff (hc : IsLipschitzChart Ω e γ K h r) {x : F} (hxC : e x ∈ nor
   exact ⟨fun hx => (hc.image_inter_normalCylinder.subset ⟨hx, hxC⟩).1,
     fun hx => (hc.image_inter_normalCylinder.superset ⟨hx, hxC⟩).1⟩
 
+/-- A point whose image lies in the cylinder of a Lipschitz chart belongs to the closure of `Ω`
+exactly when its image lies on or above the graph. -/
+theorem mem_closure_iff (hc : IsLipschitzChart Ω e γ K h r) {x : F}
+    (hxC : e x ∈ normalCylinder h r) : x ∈ closure Ω ↔ γ (e x).snd ≤ (e x).fst := by
+  rw [← e.injective.mem_set_image]
+  exact ⟨fun hx => (hc.image_closure_inter_normalCylinder.subset ⟨hx, hxC⟩).1,
+    fun hx => (hc.image_closure_inter_normalCylinder.superset ⟨hx, hxC⟩).1⟩
+
 /-- A frontier point of `Ω` inside the cylinder of a Lipschitz chart lies on the graph. -/
 theorem fst_apply_eq_of_mem_frontier (hc : IsLipschitzChart Ω e γ K h r) {x : F}
     (hx : x ∈ frontier Ω) (hxC : e x ∈ normalCylinder h r) : (e x).fst = γ (e x).snd :=
@@ -290,7 +313,7 @@ theorem smul (hc : IsLipschitzChart Ω e γ K h r) {c : ℝ} (hc0 : 0 < c) :
     IsLipschitzChart (c • Ω) (dilateConj c e) (fun y => c * γ (c⁻¹ • y)) K (c * h) (c * r) := by
   refine ⟨mul_pos hc0 hc.height_pos, mul_pos hc0 hc.radius_pos, ?_, ?_⟩
   · have hK : ‖c‖₊ * K * ‖c⁻¹‖₊ = K := by
-      rw [mul_comm, ← mul_assoc, ← nnnorm_mul, inv_mul_cancel₀ hc0.ne', nnnorm_one, one_mul]
+      rw [mul_comm, ← mul_assoc, ← nnNorm_mul, inv_mul_cancel₀ hc0.ne', nnNorm_one, one_mul]
     simpa only [hK, Function.comp_def, smul_eq_mul] using
       ((lipschitzWith_smul c).comp hc.lipschitzWith).comp (lipschitzWith_smul c⁻¹)
   · have himage : dilateConj c e '' (c • Ω) = c • (e '' Ω) := by
@@ -303,6 +326,59 @@ theorem smul (hc : IsLipschitzChart Ω e γ K h r) {c : ℝ} (hc0 : 0 < c) :
         WithLp.smul_snd, smul_eq_mul, lt_inv_mul_iff₀ hc0]
     rw [himage, hepi, ← smul_normalCylinder hc0, ← smul_set_inter₀ hc0.ne',
       ← smul_set_inter₀ hc0.ne', hc.image_inter_normalCylinder]
+
+/-- The graph of a Lipschitz chart centred at a frontier point passes through the origin. -/
+theorem apply_zero_of_mem_frontier (hc : IsLipschitzChart Ω e γ K h r) {x : F}
+    (hx : x ∈ frontier Ω) (hex : e x = 0) : γ 0 = 0 := by
+  have := hc.fst_apply_eq_of_mem_frontier hx
+    (hex ▸ zero_mem_normalCylinder hc.height_pos hc.radius_pos)
+  simpa [hex] using this.symm
+
+/-- **Upward cone.** If the graph of a Lipschitz chart passes through the origin, every point of
+the cylinder above the cone `K * ‖y‖ < t` corresponds to a point of `Ω`. -/
+theorem symm_mem_of_mul_norm_lt_fst (hc : IsLipschitzChart Ω e γ K h r) (hγ : γ 0 = 0)
+    {z : WithLp 2 (ℝ × E)} (hz : z ∈ normalCylinder h r) (hlt : K * ‖z.snd‖ < z.fst) :
+    e.symm z ∈ Ω := by
+  rw [hc.mem_iff (by simpa using hz), AffineIsometryEquiv.apply_symm_apply]
+  have := hc.lipschitzWith.dist_le_mul z.snd 0
+  rw [hγ, Real.dist_eq, sub_zero, dist_zero_right] at this
+  linarith [le_abs_self (γ z.snd)]
+
+/-- **Downward cone.** If the graph of a Lipschitz chart passes through the origin, no point of
+the cylinder below the cone `t < -(K * ‖y‖)` corresponds to a point of `Ω`. -/
+theorem symm_notMem_of_fst_lt_neg_mul_norm (hc : IsLipschitzChart Ω e γ K h r) (hγ : γ 0 = 0)
+    {z : WithLp 2 (ℝ × E)} (hz : z ∈ normalCylinder h r)
+    (hlt : z.fst < -(K * ‖z.snd‖)) : e.symm z ∉ Ω := by
+  rw [hc.mem_iff (by simpa using hz), AffineIsometryEquiv.apply_symm_apply, not_lt]
+  have := hc.lipschitzWith.dist_le_mul z.snd 0
+  rw [hγ, Real.dist_eq, sub_zero, dist_zero_right] at this
+  linarith [neg_abs_le (γ z.snd)]
+
+/-- **The exterior chart.** If `e` is a Lipschitz chart of `Ω` with graph `γ`, then `e` followed by
+the reflection `(t, y) ↦ (-t, y)` of the normal coordinate is a Lipschitz chart of the exterior
+`(closure Ω)ᶜ` with graph `-γ`, the same Lipschitz constant and the same cylinder. -/
+theorem compl_closure (hc : IsLipschitzChart Ω e γ K h r) :
+    IsLipschitzChart (closure Ω)ᶜ
+      (e.trans (LinearIsometryEquiv.withLpProdCongr 2 (LinearIsometryEquiv.neg ℝ (E := ℝ))
+        (LinearIsometryEquiv.refl ℝ E)).toAffineIsometryEquiv) (fun y ↦ -γ y) K h r := by
+  refine isLipschitzChart_of_forall_mem_iff hc.height_pos hc.radius_pos hc.lipschitzWith.neg
+    fun z hz ↦ ?_
+  -- The reflected point `w = (-z.fst, z.snd)` lies in the cylinder, where the closure of `Ω` is
+  -- the region on or above the graph.
+  set w : WithLp 2 (ℝ × E) := WithLp.toLp 2 (-z.fst, z.snd) with hw_def
+  have hwC : e (e.symm w) ∈ normalCylinder h r := by
+    rw [e.apply_symm_apply, mem_normalCylinder]
+    rw [mem_normalCylinder] at hz
+    simp only [hw_def, WithLp.toLp_fst, WithLp.toLp_snd]
+    exact ⟨by linarith, by linarith, hz.2.2⟩
+  have hsymm : (e.trans (LinearIsometryEquiv.withLpProdCongr 2 (LinearIsometryEquiv.neg ℝ (E := ℝ))
+      (LinearIsometryEquiv.refl ℝ E)).toAffineIsometryEquiv).symm z = e.symm w := by
+    rw [AffineIsometryEquiv.symm_apply_eq]
+    obtain ⟨⟨t, y⟩⟩ := z
+    simp [hw_def]
+  rw [hsymm, mem_compl_iff, hc.mem_closure_iff hwC, e.apply_symm_apply, not_le]
+  simp only [hw_def, WithLp.toLp_fst, WithLp.toLp_snd]
+  constructor <;> intro h <;> linarith
 
 end IsLipschitzChart
 
@@ -359,6 +435,35 @@ theorem smul (hΩ : Ω.IsLipschitzDomain E) {c : ℝ} (hc : 0 < c) :
   obtain ⟨x, hx, rfl⟩ := hy
   obtain ⟨e, γ, K, h, r, hce, hex⟩ := hΩ x hx
   exact ⟨dilateConj c e, _, K, _, _, hce.smul hc, by simp [hex]⟩
+
+/-- **The exterior of a Lipschitz domain is a Lipschitz domain.** -/
+theorem compl_closure (hΩ : Ω.IsLipschitzDomain E) : (closure Ω)ᶜ.IsLipschitzDomain E := by
+  intro x hx
+  rw [frontier_compl] at hx
+  obtain ⟨e, γ, K, h, r, hc, hex⟩ := hΩ x (frontier_closure_subset hx)
+  exact ⟨_, _, K, h, r, hc.compl_closure, by simp [hex]⟩
+
+/-- **A Lipschitz domain is regular open**: it is the interior of its closure. -/
+theorem interior_closure (hΩ : Ω.IsLipschitzDomain E) : interior (closure Ω) = Ω := by
+  refine Subset.antisymm (fun x hx ↦ ?_) hΩ.isOpen.subset_interior_closure
+  by_contra hxΩ
+  have hxF : x ∈ frontier Ω := ⟨interior_subset hx, by rwa [hΩ.isOpen.interior_eq]⟩
+  obtain ⟨e, γ, K, h, r, hc, hex⟩ := hΩ x hxF
+  have h0 := zero_mem_normalCylinder (E := E) hc.height_pos hc.radius_pos
+  have hγ := hc.fst_apply_eq_of_mem_frontier hxF (hex ▸ h0)
+  -- In the reflected chart `x` lies on the graph, so it is in the closure of the exterior.
+  rw [← compl_compl (interior _), ← closure_compl, mem_compl_iff,
+    hc.compl_closure.mem_closure_iff (by simpa [hex] using h0)] at hx
+  simp only [hex, WithLp.zero_fst, WithLp.zero_snd] at hγ
+  exact hx (by simp [hex, ← hγ])
+
+/-- The closure of the exterior of a Lipschitz domain `Ω` is the complement of `Ω`. -/
+theorem closure_compl_closure (hΩ : Ω.IsLipschitzDomain E) : closure (closure Ω)ᶜ = Ωᶜ := by
+  rw [closure_compl, hΩ.interior_closure]
+
+/-- The closure of a Lipschitz domain `Ω` has the same frontier as `Ω`. -/
+theorem frontier_closure (hΩ : Ω.IsLipschitzDomain E) : frontier (closure Ω) = frontier Ω := by
+  rw [isClosed_closure.frontier_eq, hΩ.interior_closure, ← hΩ.isOpen.frontier_eq]
 
 /-- A Lipschitz domain with compact frontier has a finite cover of its frontier by the
 cylinders of Lipschitz charts sharing a common Lipschitz constant. -/

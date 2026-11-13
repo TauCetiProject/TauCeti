@@ -71,11 +71,11 @@ complete Hausdorff targets.
   Hausdorff topology.
 * `eq_id_of_comp_toCompletionLoc_eq_self` and `eq_comp_of_comp_toCompletionLoc_eq`: two
   corollaries of the previous item, saying that a continuous map compatible with the structure
-  maps is forced to be the identity, respectively the composite. These are **not** roadmap Layer
-  3.1's identity and composition laws for restriction maps: no restriction map is constructed
-  here, and these are conditional uniqueness statements about whatever compatible maps happen to
-  exist. They are what those laws will be proved *from* once the restriction maps themselves are
-  built.
+  maps is forced to be the identity, respectively the composite. These are **not** the identity
+  and composition laws for restriction maps: no restriction map is constructed here, and these
+  are conditional uniqueness statements about whatever compatible maps happen to exist. The
+  restriction maps and their laws are in
+  `TauCeti.RingTheory.Huber.LocalizationTopology.Restriction`.
 
 ## Provenance
 
@@ -710,10 +710,10 @@ carries `φ'` on to `φ''`, then any continuous `k` carrying the structure map t
 
 Only the *source* is a completed localisation — that is where extensionality is applied — so the
 middle and target objects are arbitrary topological semirings, with `φ'` and `φ''` the ring
-homomorphisms out of `A` they are equipped with. At the roadmap's intended instance these are the
-completed localisations of two further presentations and their structure maps, but nothing here
-requires that, and no restriction map is constructed: this is a uniqueness statement about maps
-compatible with the structure maps, not Layer 3.1's composition law for restriction maps. -/
+homomorphisms out of `A` they are equipped with. In the intended instance these are the completed
+localisations of two further presentations and their structure maps, but nothing here requires
+that, and no restriction map is constructed: this is a uniqueness statement about maps compatible
+with the structure maps, not the composition law for restriction maps. -/
 theorem eq_comp_of_comp_toCompletionLoc_eq [IsTopologicalRing A] (P : PairOfDefinition A)
     (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S)

@@ -66,6 +66,7 @@ consumer may rely on that.
 * `WeierstrassCurve.Affine.transcendental_genericX` and
   `WeierstrassCurve.Affine.genericX_ne_algebraMap`: the coordinate `x` is transcendental
   over the base field, so it takes no constant value.
+* `WeierstrassCurve.Affine.genericY_ne_zero`: the generic ordinate is a nonzero rational function.
 * `WeierstrassCurve.Affine.evalEval_polynomialY_genericX_genericY_ne_zero`: on an elliptic curve
   over a field the partial derivative `W_Y` is nonzero at the generic point.
 * `WeierstrassCurve.Affine.map_genericPoint_injective`: an `F`-algebra homomorphism from the
@@ -256,6 +257,13 @@ end IsElliptic
 section Field
 
 variable {F : Type*} [Field F] (W : _root_.WeierstrassCurve.Affine F)
+
+/-- The generic ordinate is a nonzero rational function. -/
+theorem genericY_ne_zero : W.genericY ≠ 0 := by
+  rw [genericY_def]
+  apply (map_ne_zero_iff _ (IsFractionRing.injective W.CoordinateRing W.FunctionField)).2
+  exact AdjoinRoot.mk_ne_zero_of_natDegree_lt W.monic_polynomial Polynomial.X_ne_zero
+    (by rw [Polynomial.natDegree_X, natDegree_polynomial]; decide)
 
 /-- **The coordinate function `x` is transcendental over the base field.** -/
 theorem transcendental_genericX : Transcendental F (genericX W) := by

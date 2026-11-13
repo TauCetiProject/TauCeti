@@ -184,12 +184,14 @@ theorem ringInverse_one_add_apply_sub_sum_mem (hanti : Antitone F) (hF0 : F 0 = 
   rw [map_sub, hinv, hgeom, sub_sub_cancel]
   exact pow_apply_mem_of_map_le (by simpa using hT) hy n
 
-/-- If `T` raises a decreasing filtration with `F 0 = ⊤` and `1 + T` is invertible, then the
-inverse of `1 + T` preserves the filtration. -/
+/-- If `T` raises a decreasing filtration with `F 0 = ⊤`, then the inverse of `1 + T` preserves
+the filtration.  When `1 + T` is not invertible, `Ring.inverse (1 + T) = 0`. -/
 theorem ringInverse_one_add_apply_mem (hanti : Antitone F) (hF0 : F 0 = ⊤)
-    (hT : ∀ n, (F n).map T ≤ F (n + 1)) (hu : IsUnit (1 + T)) {m : ℕ} {y : M} (hy : y ∈ F m) :
+    (hT : ∀ n, (F n).map T ≤ F (n + 1)) {m : ℕ} {y : M} (hy : y ∈ F m) :
     Ring.inverse (1 + T) y ∈ F m := by
-  simpa using ringInverse_one_add_apply_sub_sum_mem hanti hF0 hT hu hy 0
+  by_cases hu : IsUnit (1 + T)
+  · simpa using ringInverse_one_add_apply_sub_sum_mem hanti hF0 hT hu hy 0
+  · simp [Ring.inverse_non_unit _ hu]
 
 end Module.End
 

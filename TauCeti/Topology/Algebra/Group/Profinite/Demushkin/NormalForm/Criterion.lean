@@ -56,7 +56,7 @@ attribute [local instance 2000] Ring.toAddCommGroup
 section NormalForm
 
 variable {p : ℕ} [Fact p.Prime] {n : ℕ} {r : freeProP p (Fin n)}
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (hr : r ∈ proPFrattini p (freeProP p (Fin n))) (e : presentedProP p (Fin n) {r} ≃ₜ* G)
   (hG : IsDemushkin p G)
 include hr e hG
@@ -91,15 +91,16 @@ end NormalForm
 section Dyadic
 
 variable {n : ℕ} {r : freeProP 2 (Fin n)}
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n))) (e : presentedProP 2 (Fin n) {r} ≃ₜ* G)
   (hG : IsDemushkin 2 G) (hnalt : ∃ a : cohomFp 2 G 1, cupFp 2 G a a ≠ 0)
 include hr e hG hnalt
 
+omit hnalt in
 /-- **Labute's normal form modulo `λ_2` for a Demushkin relator, the nonalternating case of odd
-rank.** Let `G ≅ ⟨x₁, …, x_n ∣ r⟩` with `r ∈ Φ(F)` be a Demushkin group at `p = 2` on which some
-cup square `a ⌣ a` does not vanish, with `n` odd. Then for every `f ≥ 2` a continuous automorphism
-of `F` carries the class of `r` in `gr_1(F)` to the class of
+rank.** Let `G ≅ ⟨x₁, …, x_n ∣ r⟩` with `r ∈ Φ(F)` be a Demushkin group at `p = 2` with `n` odd
+(so that the cup form is automatically not alternating). Then for every `f ≥ 2` a continuous
+automorphism of `F` carries the class of `r` in `gr_1(F)` to the class of
 `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
 theorem IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd
     (hn : Odd n) {f : ℕ} (hf : 2 ≤ f) :
@@ -112,13 +113,12 @@ theorem IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWor
           demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n _⟩ :=
   freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd _
     (hG.nondegenerate_degreeOneForm hr e)
-    (fun h ↦ hnalt.elim fun a ha ↦
-      ha ((freeProP.isAlt_degreeOneForm_iff_forall_cupFp_self_eq_zero hr e).1 h a))
     hn hf
 
+omit hnalt in
 /-- **Labute's normal form modulo `λ_2` for a Demushkin relator, the nonalternating case of odd
 rank, at level `f = ∞`.** Let `G ≅ ⟨x₁, …, x_n ∣ r⟩` with `r ∈ Φ(F)` be a Demushkin group at
-`p = 2` on which some cup square `a ⌣ a` does not vanish, with `n` odd. Then a continuous
+`p = 2` with `n` odd (so that the cup form is automatically not alternating). Then a continuous
 automorphism of `F` carries the class of `r` in `gr_1(F)` to the class of
 `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
 theorem IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop
@@ -132,8 +132,6 @@ theorem IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWor
           demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n _⟩ :=
   freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop _
     (hG.nondegenerate_degreeOneForm hr e)
-    (fun h ↦ hnalt.elim fun a ha ↦
-      ha ((freeProP.isAlt_degreeOneForm_iff_forall_cupFp_self_eq_zero hr e).1 h a))
     hn
 
 /-- **Labute's normal form modulo `λ_2` for a Demushkin relator, the nonalternating case of even

@@ -74,7 +74,7 @@ instance instDiffeologicalSpaceProd : DiffeologicalSpace (X × Y) :=
     isPlotOn_univ := by simp only [isPlotOn_univ_iff, implies_true]
     isPlot_const := fun _ ↦ ⟨_root_.Diffeology.isPlot_const, _root_.Diffeology.isPlot_const⟩
     isPlotOn_reparam := by
-      intro n m u v hu hv p f h hp hf
+      intro n m u v _ _ p f h hp hf
       exact ⟨hp.1.comp_contDiffOn hf h, hp.2.comp_contDiffOn hf h⟩
     locality := fun _ _ hp ↦
       ⟨isPlotOn_of_locally fun z hz ↦

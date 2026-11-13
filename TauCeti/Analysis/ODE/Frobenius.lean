@@ -111,13 +111,17 @@ theorem _root_.Filter.EventuallyEq.isFrobeniusIntegrableAt_iff {f g : E × F →
   simp only [IsFrobeniusIntegrableAt, h.fderiv_eq, h.eq_of_nhds]
 
 /-- **The Frobenius integrability condition is necessary.** If `u` solves the total differential
-equation `D u y = f (y, u y)` near `x` and `f` is differentiable at `(x, u x)`, then `f` satisfies
-the Frobenius integrability condition at `(x, u x)`: the condition is the symmetry of the second
-derivative of `u` at `x`. -/
+equation `D u y = f (y, u y)` near `x`, then `f` satisfies the Frobenius integrability condition at
+`(x, u x)`: the condition is the symmetry of the second derivative of `u` at `x` (if `f` is not
+differentiable at `(x, u x)`, then `fderiv 𝕜 f (x, u x)` is zero and the condition is trivial). -/
 theorem isFrobeniusIntegrableAt_of_eventually_hasFDerivAt [IsRCLikeNormedField 𝕜]
     {f : E × F → E →L[𝕜] F} {u : E → F} {x : E}
-    (hu : ∀ᶠ y in 𝓝 x, HasFDerivAt u (f (y, u y)) y) (hf : DifferentiableAt 𝕜 f (x, u x)) :
+    (hu : ∀ᶠ y in 𝓝 x, HasFDerivAt u (f (y, u y)) y) :
     IsFrobeniusIntegrableAt f (x, u x) := by
+  by_cases hf : DifferentiableAt 𝕜 f (x, u x)
+  swap
+  · intro v w
+    simp [fderiv_zero_of_not_differentiableAt hf]
   intro v w
   have hgraph : HasFDerivAt (fun y ↦ (y, u y))
       ((ContinuousLinearMap.id 𝕜 E).prod (f (x, u x))) x :=
@@ -477,19 +481,23 @@ private theorem rayFamily_smul_apply_one {g : E × F → E →L[ℝ] F} {K : ℝ
 /-- **The Frobenius condition for a second-order system.** Let `f` describe a second-order
 equation `D²φ(y) = B(y, φ y, Dφ y)` as the first-order system `D(φ, α) = f(y, φ, α)` for the value
 and the differential, so that `(f p u).1 = α u` and `(f p u).2 v = B(p)(u, v)` is symmetric. Let
-`φ` be `C²` at `y` with value `c`, differential `α` and second derivative `B(y, c, α)` at `y`, and
-let `f` be differentiable at `(y, c, α)`. If, along `φ`, the derivatives at `y` of
+`φ` be `C²` at `y` with value `c`, differential `α` and second derivative `B(y, c, α)` at `y`.
+If, along `φ`, the derivatives at `y` of
 `z ↦ B(z, φ z, Dφ z)(u, v)` are symmetric in the direction of differentiation and the second slot,
 then `f` satisfies the Frobenius integrability condition at `(y, c, α)`. -/
 theorem isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm
     {f : E × F × (E →L[ℝ] F) → E →L[ℝ] F × (E →L[ℝ] F)}
     (hfst : ∀ p u, (f p u).1 = p.2.2 u) (hsnd : ∀ p u v, (f p u).2 v = (f p v).2 u)
-    {y : E} {q : F × (E →L[ℝ] F)} (hf : DifferentiableAt ℝ f (y, q)) {φ : E → F}
+    {y : E} {q : F × (E →L[ℝ] F)} {φ : E → F}
     (hφ : ContDiffAt ℝ 2 φ y) (hφy : φ y = q.1)
     (hDφ : fderiv ℝ φ y = q.2) (hD2φ : ∀ u v, fderiv ℝ (fderiv ℝ φ) y u v = (f (y, q) u).2 v)
     (h : ∀ u v w, fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 v) y w =
       fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 w) y v) :
     IsFrobeniusIntegrableAt f (y, q) := by
+  by_cases hf : DifferentiableAt ℝ f (y, q)
+  swap
+  · intro v w
+    simp [fderiv_zero_of_not_differentiableAt hf]
   set p : E × F × (E →L[ℝ] F) := (y, q)
   -- The components of the derivative of `f` are the derivatives of the components of `f`.
   have hevfst (d : E × F × (E →L[ℝ] F)) (a : E) :
@@ -652,8 +660,8 @@ private theorem exists_radial_solution_family [FiniteDimensional ℝ E] [FiniteD
           DifferentiableAt ℝ (fun x ↦ α (x, q.2)) (x₀ + t • q.1) →
             fderiv ℝ (fun x ↦ α (x, q.2)) (x₀ + t • q.1) q.1 =
               g (x₀ + t • q.1, α (x₀ + t • q.1, q.2)) q.1 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
-  let _ : CompleteSpace F := FiniteDimensional.complete ℝ F
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  let _ : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
   obtain ⟨c, r, hr, hc1, hc01, hcont, hc⟩ := exists_rayFamily_of_initial hg x₀ y₀
   let α : E × F → F := fun q ↦ (c (q.1 - x₀, q.2) 1).2
   let V : Set (E × F) :=
@@ -718,7 +726,7 @@ private theorem eventually_hasFDerivAt_of_radial_solution_family
     (hgint : ∀ᶠ p in 𝓝 (x₀, y₀), IsFrobeniusIntegrableAt g p ∧ g p = f p) :
     ∀ᶠ p in 𝓝 (x₀, y₀),
       HasFDerivAt (fun x ↦ α (x, p.2)) (f (p.1, α p)) p.1 := by
-  let _ : CompleteSpace F := FiniteDimensional.complete ℝ F
+  let _ : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
   -- Choose one product ball where the family is `C¹`, integrability holds, and `g = f`.
   obtain ⟨V, hV, hαV⟩ := (hαsmooth.of_le le_add_self).contDiffOn le_rfl (by simp)
   have hgraph : Tendsto (fun p : E × F ↦ (p.1, α p)) (𝓝 (x₀, y₀)) (𝓝 (x₀, y₀)) := by
@@ -902,11 +910,8 @@ theorem eventually_exists_hasFDerivAt_iff_eventually_isFrobeniusIntegrableAt
       ∀ᶠ p in 𝓝 p₀, IsFrobeniusIntegrableAt f p := by
   constructor
   · intro h
-    filter_upwards [h, eventually_mem_nhds_iff.2 hs] with p ⟨u, hu₀, hu⟩ hsp
-    have hfp : DifferentiableAt ℝ f (p.1, u p.1) := by
-      rw [hu₀]
-      exact (hf.contDiffAt hsp).differentiableAt (by simp)
-    simpa [hu₀] using isFrobeniusIntegrableAt_of_eventually_hasFDerivAt hu hfp
+    filter_upwards [h, eventually_mem_nhds_iff.2 hs] with p ⟨u, hu₀, hu⟩ _
+    simpa [hu₀] using isFrobeniusIntegrableAt_of_eventually_hasFDerivAt hu
   · intro h
     filter_upwards [h.eventually_nhds, eventually_mem_nhds_iff.2 hs] with p hp hsp
     obtain ⟨u, hu₀, -, hu⟩ := exists_eventually_hasFDerivAt_of_isFrobeniusIntegrableAt hf

@@ -68,11 +68,10 @@ characteristic of its homology remains a separate step.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.4, "Euler
-characteristic = Alexander polynomial, via the grid determinant formula", by supplying the Euler
-characteristic side of that equation; the grid determinant side is `Determinant.lean`. The
-conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.3 and
-Chapter 4.
+This is the Euler characteristic side of the identification of the graded Euler characteristic of
+grid homology with the Alexander polynomial via the grid determinant formula; the grid determinant
+side is `Determinant.lean`. The conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for
+Knots and Links*, Chapter 3.3 and Chapter 4.
 -/
 
 public section

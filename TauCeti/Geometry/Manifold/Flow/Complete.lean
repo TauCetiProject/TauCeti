@@ -29,6 +29,8 @@ completeness available without choosing a global flow or assuming finite dimensi
   and `IsCompleteVectorField.mem_maximalIntegralCurveInterval`.
 * `TauCeti.isCompleteVectorField_iff_maximalIntegralCurveInterval`: completeness in terms of
   pointwise maximal intervals.
+* `TauCeti.isCompleteVectorField_of_forall_exists_isMIntegralCurve`: a global integral curve
+  through every point makes a vector field complete, with no regularity assumption.
 * `TauCeti.isCompleteVectorField_iff_exists_isMIntegralCurve`: completeness in terms of global
   integral curves through every point.
 * `TauCeti.flowOf_flowOf_neg`: for a complete field the time-`(-t)` map of the maximal flow inverts
@@ -106,6 +108,14 @@ theorem maximalIntegralCurveInterval_eq_univ {v : (x : M) → TangentSpace I x}
 
 end IsCompleteVectorField
 
+/-- A vector field with a global integral curve through every point is complete. No regularity
+of the field or hypothesis on the manifold is needed. -/
+theorem isCompleteVectorField_of_forall_exists_isMIntegralCurve {v : (x : M) → TangentSpace I x}
+    (h : ∀ x, ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurve γ v) : IsCompleteVectorField v :=
+  isCompleteVectorField_iff_maximalIntegralCurveInterval.2 fun x ↦
+    let ⟨_, hx, hγ⟩ := h x
+    hγ.maximalIntegralCurveInterval_eq_univ hx
+
 variable [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M]
 
 /-- A `C¹` vector field is complete precisely when a global integral curve through every point
@@ -114,9 +124,10 @@ theorem isCompleteVectorField_iff_exists_isMIntegralCurve
     {v : (x : M) → TangentSpace I x}
     (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) :
     IsCompleteVectorField v ↔
-      ∀ x, ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurve γ v := by
-  rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
-  exact forall_congr' fun x ↦ maximalIntegralCurveInterval_eq_univ_iff hv
+      ∀ x, ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurve γ v :=
+  ⟨fun h x ↦
+      (maximalIntegralCurveInterval_eq_univ_iff hv).1 (h.maximalIntegralCurveInterval_eq_univ x),
+    isCompleteVectorField_of_forall_exists_isMIntegralCurve⟩
 
 /-- A uniform positive time of existence for local integral curves through every point makes a
 `C¹` vector field complete. -/
@@ -126,7 +137,7 @@ theorem isCompleteVectorField_of_exists_isMIntegralCurveOn
     {ε : ℝ} (hε : 0 < ε)
     (h : ∀ x : M, ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Ioo (-ε) ε)) :
     IsCompleteVectorField v :=
-  (isCompleteVectorField_iff_exists_isMIntegralCurve hv).mpr fun x ↦
+  isCompleteVectorField_of_forall_exists_isMIntegralCurve fun x ↦
     exists_isMIntegralCurve_of_isMIntegralCurveOn hv hε h x
 
 namespace IsCompleteVectorField
@@ -168,12 +179,18 @@ theorem isCompleteVectorField_of_isCompact_of_eq_zero_off {v : (x : M) → Tange
   exact fun x ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv (hK.insert x)
     (mapsTo_maximalIntegralCurve_insert_of_eq_zero_off hv hvK)
 
-/-- Every `C¹` vector field on a compact boundaryless Banach manifold is complete. -/
+omit [CompleteSpace E] in
+/-- Every `C¹` vector field on a compact boundaryless manifold is complete. No completeness of the
+model space is assumed: a nonempty compact manifold is modelled on a finite-dimensional space. -/
 theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
     {v : (x : M) → TangentSpace I x}
     (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) :
     IsCompleteVectorField v := by
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact fun x ↦ isEmptyElim x
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     isCompact_univ fun _ _ ↦ mem_univ _
 

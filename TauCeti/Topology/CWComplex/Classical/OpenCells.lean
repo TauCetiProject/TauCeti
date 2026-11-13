@@ -112,14 +112,19 @@ lemma notMem_skeletonLT_of_mem_openCell {i : cell C n} {x : X} (hx : x ∈ openC
     x ∉ (skeletonLT C (n : ℕ∞) : Set X) :=
   (disjoint_skeletonLT_openCell (le_refl (n : ℕ∞))).notMem_of_mem_right hx
 
+omit [T2Space X] in
 /-- A closed `m`-cell other than the `n`-cell `j` misses the open cell of `j` when `m ≤ n`: its
-frontier lies in the `(m-1)`-skeleton and its open cell is a different open cell. -/
+frontier lies in the base and in open cells of lower dimension, and its open cell is a different
+open cell. -/
 lemma disjoint_closedCell_openCell_of_ne {m : ℕ} (hm : m ≤ n) {i : cell C m} {j : cell C n}
     (hij : (⟨m, i⟩ : Σ n, cell C n) ≠ ⟨n, j⟩) : Disjoint (closedCell m i) (openCell n j) := by
   rw [← cellFrontier_union_openCell_eq_closedCell, disjoint_union_left]
-  exact ⟨(disjoint_skeletonLT_openCell le_rfl).mono_left
-      ((cellFrontier_subset_skeletonLT m i).trans (skeletonLT_mono (by exact_mod_cast hm))),
-    disjoint_openCell_of_ne hij⟩
+  refine ⟨?_, disjoint_openCell_of_ne hij⟩
+  obtain ⟨I, hI⟩ := cellFrontier_subset_finite_openCell m i
+  refine Disjoint.mono_left hI (disjoint_union_left.2 ⟨(disjointBase n j).symm, ?_⟩)
+  simp_rw [disjoint_iUnion₂_left]
+  intro k hk l _
+  exact disjoint_openCell_of_ne fun h ↦ (hk.trans_le hm).ne (Sigma.mk.inj_iff.1 h).1
 
 /-- Adjoining any family of closed `n`-cells to the `(n-1)`-skeleton gives a closed set.  Taking
 the family of all `n`-cells gives the `n`-skeleton; the point of the general statement is that

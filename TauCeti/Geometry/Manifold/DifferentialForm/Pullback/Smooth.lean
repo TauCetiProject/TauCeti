@@ -298,6 +298,17 @@ theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
     (mpullback f hf φ).1 x v = φ.1 (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
   rw [coe_mpullback, TauCeti.mpullback_apply]
 
+/-- Evaluation of the smooth pullback of a one-form on a tangent vector `v`: it is the form
+evaluated on the image of `v` under the differential. -/
+theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
+    (mpullback f hf φ).1 x ![v] = φ.1 (f x) ![mfderiv I I' f x v] := by
+  rw [mpullback_apply]
+  congr 1
+  ext i
+  fin_cases i
+  rfl
+
 /-- Pullback of smooth forms along a surjective smooth map whose derivatives are all surjective is
 injective. -/
 theorem mpullback_injective_of_surjective {f : M → M'} (hf : ContMDiff I I' ∞ f)
@@ -468,6 +479,19 @@ theorem mpullback_mpullback_symm (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm 
 theorem mpullback_symm_mpullback (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm I' M' F k) :
     mpullback φ.symm φ.symm.contMDiff (mpullback φ φ.contMDiff β) = β :=
   mpullback_symm_eq_of_mpullback_eq rfl
+
+/-- A form invariant under pullback by a smooth self-map `f` is invariant under pullback by every
+iterate `f^[n]`. -/
+theorem mpullback_iterate_eq_self {f : M → M} (hf : ContMDiff I I ∞ f) {β : SmoothForm I M F k}
+    (hβ : mpullback f hf β = β) (n : ℕ) : mpullback f^[n] (hf.iterate n) β = β := by
+  induction n with
+  | zero => exact LinearMap.congr_fun mpullback_id β
+  | succ n ih =>
+    -- `f^[n + 1]` is `f^[n] ∘ f` by definition of `Nat.iterate`.
+    calc mpullback f^[n + 1] (hf.iterate (n + 1)) β
+        = mpullback f hf (mpullback f^[n] (hf.iterate n) β) :=
+          (mpullback_mpullback f f^[n] hf (hf.iterate n) β).symm
+      _ = β := by rw [ih, hβ]
 
 /-- Pullback along a composite of diffeomorphisms is the composite of the pullbacks. -/
 theorem mpullback_trans (φ : M ≃ₘ⟮I, I'⟯ M') (ψ : M' ≃ₘ⟮I', I''⟯ M'')

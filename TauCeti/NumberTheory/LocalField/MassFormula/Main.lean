@@ -71,7 +71,7 @@ separable closure of `K` satisfy `∑_L q ^ (-c(L)) = n`, where `q` is the resid
 `K` and `c(L)` is the wild exponent. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent :
     ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = n := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · simp [totallyRamifiedOfDegree_zero]
   -- Integrate against Haar measure on `Fin n → K` normalized on the integer box.
   let : MeasurableSpace (Fin n → K) := borel _

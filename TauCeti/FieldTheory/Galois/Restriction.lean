@@ -38,6 +38,8 @@ of restriction of scalars.
   embeddings of a normal extension all have the same image and differ by automorphisms.
 * `AlgHom.restrictNormalHom_surjective` and `AlgHom.ker_restrictNormalHom`: for a normal `K/F`
   restriction is surjective, and its kernel is the subgroup fixing the image of `f`.
+* `IntermediateField.fixingSubgroup_normal`: the fixing subgroup of a normal intermediate field is
+  a normal subgroup.
 * `AlgHom.normal_fieldRange`: the image of a normal extension is normal.
 * `AlgHom.restrictNormalHomOfLE`: in the other direction, restriction `Gal(M/F) →* Gal(N/F)` to a
   normal intermediate field `N` of `K` lying in the image of `f`, with
@@ -111,6 +113,12 @@ theorem _root_.AlgHom.ker_restrictNormalHom (f : M →ₐ[F] K) [Normal F M] :
     f.restrictNormalHom.ker = f.fieldRange.fixingSubgroup := by
   ext σ
   simp [f.restrictNormalHom_eq_iff]
+
+/-- **The fixing subgroup of a normal intermediate field is normal**, being the kernel of
+restriction. Neither separability nor normality of the ambient extension `K/F` is used. -/
+instance _root_.IntermediateField.fixingSubgroup_normal (L : IntermediateField F K) [Normal F L] :
+    L.fixingSubgroup.Normal :=
+  L.restrictNormalHom_ker (K := F) (L := K) ▸ (AlgEquiv.restrictNormalHom L).normal_ker
 
 /-- Restriction along the inclusion of an intermediate field is Mathlib's
 `AlgEquiv.restrictNormalHom`. -/

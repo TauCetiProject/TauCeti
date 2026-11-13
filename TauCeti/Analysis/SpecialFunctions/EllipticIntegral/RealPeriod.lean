@@ -151,7 +151,6 @@ theorem realPeriod_eq_two_mul_pi_div_agm_of_one_real_root (hb : b ≠ 0)
       ← NNReal.agm_mul_distrib, mul_one]
   have hM : (0 : ℝ) < agm 1 (√(1 - √q ^ 2)).toNNReal :=
     NNReal.agm_pos one_pos (toNNReal_pos.2 (sqrt_pos.2 (by linarith)))
-  have hsA : 0 < √A := sqrt_pos.2 hA
   rw [legendreK_eq_pi_div_two_mul_agm hk, hk', hagm, NNReal.coe_mul,
     coe_toNNReal _ (by positivity)]
   field_simp
