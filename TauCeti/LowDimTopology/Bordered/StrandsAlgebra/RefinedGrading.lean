@@ -87,8 +87,9 @@ idempotents at the two ends (`TauCeti.MatchedGradingRefinement.grading_eq_mul_gr
 * `TauCeti.StrandGradingGroup.mem_zpowers_lambda_iff_mem_gPrime_inf_matchedSubgroup`,
   `TauCeti.StrandGradingGroup.mk_mem_gPrime_inf_matchedSubgroup`: the kernel and the image of the
   class map on `G(Z)`.
-* `TauCeti.StrandGradingGroup.exists_mul_eq_mul_mul_lambda_zpow`: elements of `G(Z)` commute up
-  to an even power of `λ`.
+* `TauCeti.StrandGradingGroup.exists_mul_eq_mul_mul_lambda_zpow`: when every fibre of `M` has at
+  most two points, elements of `matchedSubgroup M` (so of `G(Z)`) commute up to an even power of
+  `λ`.
 * `TauCeti.MatchedGradingRefinement.grading_mem_matchedSubgroup`,
   `TauCeti.MatchedGradingRefinement.grading_mem_gPrime_inf_matchedSubgroup`: refined gradings of
   the diagrams of `A(Z, i)` lie in `matchedSubgroup M`, and in `G(Z)`.
@@ -209,8 +210,9 @@ theorem mk_mem_gPrime_inf_matchedSubgroup {M : α → β} {δ : α → ℤ}
   ⟨mk_mem_gPrime (sum_eq_zero_of_pushBoundary_eq_zero hδ),
     mem_matchedSubgroup.2 (by simpa using hδ)⟩
 
-/-- **The form `L` is integral on `G(Z)`.** If every fibre of `M` has at most two points and the
-boundaries `δ₁`, `δ₂` cancel along each fibre, then `L(δ₁, δ₂)` is an integer. -/
+/-- **The form `L` is integral on `G(Z)` when fibres have at most two points.** If every fibre
+of `M` has at most two points and the boundaries `δ₁`, `δ₂` cancel along each fibre, then
+`L(δ₁, δ₂)` is an integer. -/
 theorem exists_linking_eq_intCast {M : α → β} (hM : ∀ b, #{x | M x = b} ≤ 2) {δ₁ δ₂ : α → ℤ}
     (hδ₁ : pushBoundary M δ₁ = 0) (hδ₂ : pushBoundary M δ₂ = 0) :
     ∃ k : ℤ, linking δ₁ δ₂ = k := by
