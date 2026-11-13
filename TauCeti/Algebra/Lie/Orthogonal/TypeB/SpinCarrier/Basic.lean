@@ -115,6 +115,18 @@ noncomputable def latticeBasis :
 noncomputable abbrev signSet (i : Fin (dimension n)) : Finset (Fin (n + 1)) :=
   (Fintype.equivFin (Finset (Fin (n + 1)))).symm i
 
+/-- The finite-ordinal spin-basis index of a sign set: the inverse of `signSet`. -/
+noncomputable abbrev basisIndex (s : Finset (Fin (n + 1))) : Fin (dimension n) :=
+  Fintype.equivFin (Finset (Fin (n + 1))) s
+
+@[simp]
+theorem signSet_basisIndex (s : Finset (Fin (n + 1))) : signSet n (basisIndex n s) = s :=
+  (Fintype.equivFin (Finset (Fin (n + 1)))).symm_apply_apply s
+
+@[simp]
+theorem basisIndex_signSet (i : Fin (dimension n)) : basisIndex n (signSet n i) = i :=
+  (Fintype.equivFin (Finset (Fin (n + 1)))).apply_symm_apply i
+
 /-- The simply connected type-`Bₙ₊₁` weight of a spin-basis vector. -/
 noncomputable abbrev basisWeight (i : Fin (dimension n)) : Fin (n + 1) → ℤ :=
   TauCeti.DynkinType.typeBSpinWeight (signSet n i)
@@ -141,7 +153,7 @@ theorem basisReflection_eq_self_iff (i : Fin (n + 1)) (a : Fin (dimension n)) :
   · intro h
     rw [basisReflection, Equiv.permCongr_apply,
       (DynkinType.typeBSpinReflection_eq_self_iff i _).2 h]
-    exact (Fintype.equivFin (Finset (Fin (n + 1)))).apply_symm_apply a
+    exact basisIndex_signSet n a
 
 /-- Each simple reflection on enumerated spin-basis indices is an involution. -/
 theorem basisReflection_involutive (i : Fin (n + 1)) :
@@ -151,9 +163,8 @@ theorem basisReflection_involutive (i : Fin (n + 1)) :
 
 /-- Enumeration transports a sequence of sign-set reflections to basis-index reflections. -/
 theorem foldl_basisReflection (l : List (Fin (n + 1))) (t : Finset (Fin (n + 1))) :
-    l.foldl (fun b j ↦ basisReflection n j b) (Fintype.equivFin (Finset (Fin (n + 1))) t) =
-      Fintype.equivFin (Finset (Fin (n + 1)))
-        (l.foldl (fun t j ↦ DynkinType.typeBSpinReflection j t) t) :=
+    l.foldl (fun b j ↦ basisReflection n j b) (basisIndex n t) =
+      basisIndex n (l.foldl (fun t j ↦ DynkinType.typeBSpinReflection j t) t) :=
   List.foldl_hom _ fun _ _ ↦ by simp [basisReflection]
 
 /-- A reindexed lattice-basis vector is the exterior basis vector of its sign set. -/

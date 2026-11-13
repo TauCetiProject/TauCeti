@@ -52,14 +52,6 @@ variable (n : ℕ)
 
 /-! ## Unit-coefficient exterior-basis steps -/
 
-private noncomputable def basisIndex (s : Finset (Fin (n + 1))) : Fin (dimension n) :=
-  Fintype.equivFin (Finset (Fin (n + 1))) s
-
-@[simp]
-private theorem signSet_basisIndex (s : Finset (Fin (n + 1))) :
-    signSet n (basisIndex n s) = s := by
-  simp [basisIndex, signSet]
-
 private def rootSourceSet :
     Fin (n + 1) ⊕ Fin (n + 1) → Finset (Fin (n + 1))
   | .inl i => Fin.lastCases ∅ (fun j => {j.succ}) i
