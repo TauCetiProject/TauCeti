@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Functoriality
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Quotient
 
+import TauCeti.Topology.Sheaves.Functors
+
 /-!
 # Morphisms of formal spectra
 
@@ -199,26 +201,6 @@ theorem map_injective {φ ψ : B →+* A} {hφ : Continuous φ} {hψ : Continuou
   have hmaps := (cancel_epi (globalSectionsIso (IsAdicRing.ideal_spec B).2.1).hom).mp hglobal
   exact congrArg CommRingCat.Hom.hom hmaps
 
-private theorem eqToHom_hom_comp_whiskerRight_of_eq_id {X : TopCat.{u}} {f : X ⟶ X}
-    (hf : f = 𝟙 X) {D : Type*} [Category* D] (F : X.Sheaf D)
-    (hobj : F = (TopCat.Sheaf.pushforward D f).obj F)
-    (hop : (Opens.map f).op = 𝟭 (Opens X)ᵒᵖ) :
-    (eqToHom hobj).hom ≫ Functor.whiskerRight (eqToHom hop) F.obj = 𝟙 F.obj := by
-  subst hf
-  ext U : 2
-  exact (Category.id_comp _).trans (F.obj.map_id U)
-
-private theorem eqToHom_hom_eq_whiskerRight_of_eq_comp {X Y Z : TopCat.{u}}
-    {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z} (hfg : h = f ≫ g)
-    {D : Type*} [Category* D] (F : X.Sheaf D)
-    (hobj : (TopCat.Sheaf.pushforward D h).obj F =
-      (TopCat.Sheaf.pushforward D g).obj ((TopCat.Sheaf.pushforward D f).obj F))
-    (hop : (Opens.map h).op = (Opens.map g).op ⋙ (Opens.map f).op) :
-    (eqToHom hobj).hom = Functor.whiskerRight (eqToHom hop) F.obj := by
-  subst hfg
-  ext U : 2
-  exact (F.obj.map_id _).symm
-
 /-- The identity homomorphism induces the identity morphism of formal spectra. -/
 @[simp]
 theorem map_id : map (RingHom.id A) continuous_id = 𝟙 (Spf A) := by
@@ -228,7 +210,7 @@ theorem map_id : map (RingHom.id A) continuous_id = 𝟙 (Spf A) := by
   rw [map_toHom, LocallyRingedSpace.id_toHom]
   refine PresheafedSpace.Hom.ext _ _ hid ?_
   rw [structureSheafMap_id]
-  exact eqToHom_hom_comp_whiskerRight_of_eq_id hid _ _ _
+  exact TopCat.Sheaf.eqToHom_hom_comp_whiskerRight_of_eq_id hid _ _
 
 variable {C : Type u} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
   [IsAdicRing C] (ψ : C →+* B) (hψ : Continuous ψ)
@@ -245,7 +227,7 @@ theorem map_comp : map (φ.comp ψ) (hφ.comp hψ) = map φ hφ ≫ map ψ hψ :
   have h := congrArg InducedCategory.Hom.hom (structureSheafMap_comp φ hφ ψ hψ
     (IsAdicRing.ideal_spec C).2.1 (IsAdicRing.ideal_spec B).2.1 (IsAdicRing.ideal_spec A).2.1).symm
   rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
-    TopCat.Sheaf.pushforward_map, eqToHom_hom_eq_whiskerRight_of_eq_comp hfg _ _ _] at h
+    TopCat.Sheaf.pushforward_map, TopCat.Sheaf.eqToHom_hom_eq_whiskerRight_of_eq_comp hfg _ _] at h
   exact h
 
 end TauCeti.FormalScheme.Spf

@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Map
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
+import TauCeti.Topology.Sheaves.Functors
+
 /-!
 # Functoriality of the formal-spectrum sheaf maps
 
@@ -57,9 +59,8 @@ private theorem ofHom_comap_comp :
 /-- Pushforward of a sheaf along `comap (RingHom.id A)` agrees with the sheaf itself. -/
 theorem pushforward_comap_id {D : Type*} [Category* D]
     (F : (TopCat.of (carrier A)).Sheaf D) :
-    (TopCat.Sheaf.pushforward D (TopCat.ofHom (comap (RingHom.id A) continuous_id))).obj F = F := by
-  rw [ofHom_comap_id]
-  rfl
+    (TopCat.Sheaf.pushforward D (TopCat.ofHom (comap (RingHom.id A) continuous_id))).obj F = F :=
+  TopCat.Sheaf.pushforward_obj_of_eq_id ofHom_comap_id F
 
 /-- Pushforward of a sheaf along `comap (φ.comp ψ)` agrees with iterated pushforward along
 `comap φ` and `comap ψ`. -/
@@ -67,47 +68,8 @@ theorem pushforward_comap_comp {D : Type*} [Category* D]
     (F : (TopCat.of (carrier A)).Sheaf D) :
     (TopCat.Sheaf.pushforward D (TopCat.ofHom (comap (φ.comp ψ) (hφ.comp hψ)))).obj F =
       (TopCat.Sheaf.pushforward D (TopCat.ofHom (comap ψ hψ))).obj
-        ((TopCat.Sheaf.pushforward D (TopCat.ofHom (comap φ hφ))).obj F) := by
-  rw [ofHom_comap_comp]
-  rfl
-
-private theorem pushforward_obj_of_eq_id {X : TopCat.{u}} {f : X ⟶ X} (hf : f = 𝟙 X)
-    {D : Type*} [Category* D] (F : X.Sheaf D) :
-    (TopCat.Sheaf.pushforward D f).obj F = F := by
-  rw [hf]
-  rfl
-
-private theorem pushforward_obj_of_eq_comp {X Y Z : TopCat.{u}}
-    {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z} (hfg : h = f ≫ g)
-    {D : Type*} [Category* D] (F : X.Sheaf D) :
-    (TopCat.Sheaf.pushforward D h).obj F =
-      (TopCat.Sheaf.pushforward D g).obj ((TopCat.Sheaf.pushforward D f).obj F) := by
-  rw [hfg]
-  rfl
-
-private theorem eqToHom_hom_app {X : TopCat.{u}} {D : Type*} [Category* D]
-    {F G : X.Sheaf D} (h : F = G) (U : (Opens X)ᵒᵖ) :
-    (eqToHom h).hom.app U = eqToHom (congrArg (fun S ↦ S.obj.obj U) h) := by
-  subst h
-  rfl
-
-private theorem eqToHom_symm_comp_pushforward_map_of_eq_id {X : TopCat.{u}} {f : X ⟶ X}
-    (hf : f = 𝟙 X) {D : Type*} [Category* D] {F G : X.Sheaf D} (α : F ⟶ G) :
-    eqToHom (pushforward_obj_of_eq_id hf F).symm ≫ (TopCat.Sheaf.pushforward D f).map α =
-      α ≫ eqToHom (pushforward_obj_of_eq_id hf G).symm := by
-  subst hf
-  exact (Category.id_comp _).trans (Category.comp_id _).symm
-
-private theorem eqToHom_symm_comp_pushforward_map_of_eq_comp {X Y Z : TopCat.{u}}
-    {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z} (hfg : h = f ≫ g)
-    {D : Type*} [Category* D] {F G : X.Sheaf D} (α : F ⟶ G) :
-    eqToHom (pushforward_obj_of_eq_comp hfg F).symm ≫
-        (TopCat.Sheaf.pushforward D h).map α =
-      (TopCat.Sheaf.pushforward D g).map
-          ((TopCat.Sheaf.pushforward D f).map α) ≫
-        eqToHom (pushforward_obj_of_eq_comp hfg G).symm := by
-  subst hfg
-  exact (Category.id_comp _).trans (Category.comp_id _).symm
+        ((TopCat.Sheaf.pushforward D (TopCat.ofHom (comap φ hφ))).obj F) :=
+  TopCat.Sheaf.pushforward_obj_of_eq_comp (ofHom_comap_comp φ hφ ψ hψ) F
 
 /-- The identity ring homomorphism induces the identity map on each quotient sheaf. -/
 @[simp]
@@ -127,7 +89,7 @@ theorem quotientMap_id (hL : IsAdic L) :
   have hlhs := congrArg CommRingCat.Hom.hom
     (quotientMap_hom_app (RingHom.id A) continuous_id hL hL le_rfl U)
   have hrhs := congrArg CommRingCat.Hom.hom
-    (eqToHom_hom_app (pushforward_comap_id (quotientSheaf hL)).symm U)
+    (TopCat.Sheaf.eqToHom_hom_app (pushforward_comap_id (quotientSheaf hL)).symm U)
   exact hlhs.trans <| (StructureSheaf.comap_congr h _ _ _ _).trans <|
     (StructureSheaf.comap_id hU).trans hrhs.symm
 
@@ -176,7 +138,8 @@ theorem quotientMap_comp (hH : IsAdic H) (hK : IsAdic K) (hL : IsAdic L)
   have heqU : ((eqToHom (pushforward_comap_comp φ hφ ψ hψ (quotientSheaf hL))).hom.app U).hom =
       StructureSheaf.comap (RingHom.id (A ⧸ L)) _ _
         (by rw [hU, PrimeSpectrum.comap_id]; exact Set.Subset.rfl) :=
-    (congrArg CommRingCat.Hom.hom (eqToHom_hom_app _ U)).trans (StructureSheaf.comap_id hU).symm
+    (congrArg CommRingCat.Hom.hom (TopCat.Sheaf.eqToHom_hom_app _ U)).trans
+      (StructureSheaf.comap_id hU).symm
   exact (congrArg₂ RingHom.comp hφU hψU).trans <|
     (StructureSheaf.comap_comp _ _ _ _ _ _ _).symm.trans <|
       (StructureSheaf.comap_congr (hring.trans (RingHom.id_comp _).symm) _ _ _ _).trans <|
@@ -194,7 +157,7 @@ theorem structureSheafMap_id (hI : IsAdic I) :
   refine structureSheaf.pushforward_hom_ext (RingHom.id A) continuous_id hI fun n ↦ ?_
   rw [structureSheafMap_comp_quotientProjection (RingHom.id A) continuous_id hI hI
     (is_ideal_adic_pow hI n.succ_pos) n le_rfl, quotientMap_id, toQuotientSheaf_pow_succ,
-    eqToHom_symm_comp_pushforward_map_of_eq_id ofHom_comap_id]
+    TopCat.Sheaf.eqToHom_symm_comp_pushforward_map_of_eq_id ofHom_comap_id]
 
 /-- The inverse-limit structure-sheaf maps commute with composition. -/
 @[reassoc]
@@ -204,21 +167,44 @@ theorem structureSheafMap_comp (hH : IsAdic H) (hK : IsAdic K) (hL : IsAdic L) :
         (structureSheafMap φ hφ hK hL) =
       structureSheafMap (φ.comp ψ) (hφ.comp hψ) hH hL ≫
         eqToHom (pushforward_comap_comp φ hφ ψ hψ (structureSheaf hL)) := by
-  rw [← cancel_mono (eqToHom (pushforward_comap_comp φ hφ ψ hψ (structureSheaf hL)).symm),
-    Category.assoc, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
+  refine (comp_eqToHom_iff (pushforward_comap_comp φ hφ ψ hψ (structureSheaf hL)).symm _ _).mp ?_
   refine structureSheaf.pushforward_hom_ext (φ.comp ψ) (hφ.comp hψ) hL fun n ↦ ?_
+  let Fφ := TopCat.Sheaf.pushforward CommRingCat (TopCat.ofHom (comap φ hφ))
+  let Fψ := TopCat.Sheaf.pushforward CommRingCat (TopCat.ofHom (comap ψ hψ))
+  let Fφψ := TopCat.Sheaf.pushforward CommRingCat (TopCat.ofHom (comap (φ.comp ψ) (hφ.comp hψ)))
+  have hL' := is_ideal_adic_pow hL n.succ_pos
   obtain ⟨m, hm⟩ := hK.exists_pow_succ_le_comap (hL.isOpen_pow (n + 1)) hφ
   have hK' := is_ideal_adic_pow hK m.succ_pos
   obtain ⟨k, hk⟩ := hH.exists_pow_succ_le_comap (hK.isOpen_pow (m + 1)) hψ
   have hH' := is_ideal_adic_pow hH k.succ_pos
-  rw [Category.assoc, Category.assoc,
-    eqToHom_symm_comp_pushforward_map_of_eq_comp (ofHom_comap_comp φ hφ ψ hψ),
-    ← Functor.map_comp_assoc, structureSheafMap_comp_quotientProjection φ hφ hK hL hK' n hm,
-    Functor.map_comp_assoc, structureSheafMap_comp_toQuotientSheaf_assoc ψ hψ hH hK hH' hK' hk,
-    quotientMap_comp_assoc φ hφ ψ hψ hH' hK' (is_ideal_adic_pow hL n.succ_pos) hk hm,
-    eqToHom_trans, eqToHom_refl, Category.comp_id,
-    structureSheafMap_comp_quotientProjection (φ.comp ψ) (hφ.comp hψ) hH hL hH' n
-      (fun _ hx ↦ hm (hk hx))]
+  calc
+    ((structureSheafMap ψ hψ hH hK ≫ Fψ.map (structureSheafMap φ hφ hK hL)) ≫
+        eqToHom (pushforward_comap_comp φ hφ ψ hψ (structureSheaf hL)).symm) ≫
+        Fφψ.map (quotientProjection hL n)
+      = structureSheafMap ψ hψ hH hK ≫
+          Fψ.map (structureSheafMap φ hφ hK hL ≫ Fφ.map (quotientProjection hL n)) ≫
+            eqToHom (pushforward_comap_comp φ hφ ψ hψ (quotientSheaf hL')).symm := by
+        simp only [Fφ, Fψ, Fφψ, Category.assoc]
+        rw [TopCat.Sheaf.eqToHom_symm_comp_pushforward_map_of_eq_comp
+          (ofHom_comap_comp φ hφ ψ hψ), ← Functor.map_comp_assoc]
+    _ = (structureSheafMap ψ hψ hH hK ≫ Fψ.map (toQuotientSheaf hK hK')) ≫
+          Fψ.map (quotientMap φ hφ hK' hL' hm) ≫
+            eqToHom (pushforward_comap_comp φ hφ ψ hψ (quotientSheaf hL')).symm := by
+        rw [structureSheafMap_comp_quotientProjection φ hφ hK hL hK' n hm]
+        simp only [Functor.map_comp, Category.assoc]
+    _ = toQuotientSheaf hH hH' ≫
+          (quotientMap ψ hψ hH' hK' hk ≫ Fψ.map (quotientMap φ hφ hK' hL' hm)) ≫
+            eqToHom (pushforward_comap_comp φ hφ ψ hψ (quotientSheaf hL')).symm := by
+        rw [structureSheafMap_comp_toQuotientSheaf ψ hψ hH hK hH' hK' hk]
+        simp only [Category.assoc]
+    _ = toQuotientSheaf hH hH' ≫
+          quotientMap (φ.comp ψ) (hφ.comp hψ) hH' hL' (fun _ hx ↦ hm (hk hx)) := by
+        rw [quotientMap_comp φ hφ ψ hψ hH' hK' hL' hk hm]
+        simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
+    _ = structureSheafMap (φ.comp ψ) (hφ.comp hψ) hH hL ≫
+          Fφψ.map (quotientProjection hL n) :=
+        (structureSheafMap_comp_quotientProjection (φ.comp ψ) (hφ.comp hψ) hH hL hH' n
+          (fun _ hx ↦ hm (hk hx))).symm
 
 end TopologicalRings
 
