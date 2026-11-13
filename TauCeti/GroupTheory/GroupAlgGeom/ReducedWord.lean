@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
-public import Mathlib.GroupTheory.FreeGroup.Reduce
+public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Algebra.Group.End
 import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.FreeGroup.Basic
@@ -64,6 +64,9 @@ directly for words in letters.
   product `w`.
 * `TauCeti.GroupAlgGeom.GX.reducedWord_inv`, `TauCeti.GroupAlgGeom.GX.reducedWord_inr`: the
   reduced words of `w⁻¹` and of the elements of `F(X)`.
+* `TauCeti.GroupAlgGeom.GX.mem_range_inl_iff`, `TauCeti.GroupAlgGeom.GX.mem_range_inr_iff`: the
+  elements of `G` and of `F(X)` are those whose reduced word has no variable letter, respectively
+  no coefficient.
 * `TauCeti.GroupAlgGeom.GX.exists_countVar_eq_add_two_mul`,
   `TauCeti.GroupAlgGeom.GX.countVar_reducedWord_le`: reduction removes letters `x^{±1}` in pairs,
   so it does not increase their number.
@@ -592,6 +595,40 @@ theorem reducedWord_inr_of (y : X) :
     reducedWord (inr (FreeGroup.of y) : GX G X) = [.inr (y, true)] :=
   (reducedWord_eq_iff (isReduced_singleton_inr _)).2 (by simp)
 
+/-- The coefficients are the elements of `G[X]` whose reduced word has no variable letter. -/
+theorem mem_range_inl_iff {w : GX G X} :
+    w ∈ Set.range (inl : G →* GX G X) ↔ ∀ x, countVar x (reducedWord w) = 0 := by
+  refine ⟨?_, fun h => ?_⟩
+  · rintro ⟨g, rfl⟩ x
+    by_cases hg : g = 1 <;> simp [hg]
+  · have hr := isReduced_reducedWord w
+    rw [← prod_reducedWord w]
+    generalize reducedWord w = l at h hr
+    -- a reduced word without variable letters has at most one letter
+    rcases l with _ | ⟨g | ⟨y, b⟩, _ | ⟨_ | ⟨z, c⟩, l⟩⟩
+    · exact ⟨1, by simp⟩
+    · exact ⟨g, by simp⟩
+    · simp at hr
+    · simpa using h z
+    all_goals simpa using h y
+
+/-- The elements of `F(X)` are the elements of `G[X]` whose reduced word has no coefficient. -/
+theorem mem_range_inr_iff {w : GX G X} :
+    w ∈ Set.range (inr : FreeGroup X →* GX G X) ↔ ∀ g, .inl g ∉ reducedWord w := by
+  classical
+  refine ⟨?_, fun h => ?_⟩
+  · rintro ⟨f, rfl⟩ g
+    simp [reducedWord_inr]
+  · rw [← prod_reducedWord w]
+    generalize reducedWord w = l at h
+    induction l with
+    | nil => exact ⟨1, by simp⟩
+    | cons a l ih =>
+      obtain ⟨f, hf⟩ := ih fun g hg => h g (List.mem_cons_of_mem _ hg)
+      rcases a with g | p
+      · exact absurd List.mem_cons_self (h g)
+      · exact ⟨FreeGroup.mk [p] * f, by simp [hf, letter_inr]⟩
+
 /-- The reduced word of `w⁻¹` is the formal inverse of the reduced word of `w`. -/
 @[simp]
 theorem reducedWord_inv (w : GX G X) : reducedWord w⁻¹ = invRev (reducedWord w) :=
@@ -629,9 +666,10 @@ variable [One G]
 /-- A word is cyclically reduced when it is reduced and, if it has at least two letters, its last
 and first letters do not combine: no letter of the cyclic word it spells combines with the next
 one. This condition is on letters: on words without coefficients it is
-`FreeGroup.IsCyclicallyReduced`. It differs from the condition of [IFT, §2.2] on syllables, that
-the first and last syllables lie in different factors of `G ∗ F(X)`: `x g y` is cyclically reduced
-here but not there, and `z⁻¹ y z` (one syllable of `F(X)`) is not cyclically reduced here. -/
+`FreeGroup.IsCyclicallyReduced` (`isCyclicallyReduced_map_inr`). It differs from the condition of
+[IFT, §2.2] on syllables, that the first and last syllables lie in different factors of
+`G ∗ F(X)`: `x g y` is cyclically reduced here but not there, and `z⁻¹ y z` (one syllable of
+`F(X)`) is not cyclically reduced here. -/
 def IsCyclicallyReduced (l : List (G ⊕ X × Bool)) : Prop :=
   IsReduced l ∧ ∀ a b m, l = a :: (m ++ [b]) → ¬Combines b a
 
@@ -665,6 +703,20 @@ theorem isCyclicallyReduced_cons_cons {a b : G ⊕ X × Bool} {l : List (G ⊕ X
       IsReduced (a :: b :: l) ∧ ¬Combines ((b :: l).getLast (List.cons_ne_nil b l)) a := by
   conv_lhs => rw [← List.dropLast_append_getLast (List.cons_ne_nil b l)]
   rw [isCyclicallyReduced_cons_append, List.dropLast_append_getLast]
+
+/-- A word in variable letters is cyclically reduced exactly when it is a cyclically reduced word of
+the free group `F(X)`. -/
+@[simp]
+theorem isCyclicallyReduced_map_inr {L : List (X × Bool)} :
+    IsCyclicallyReduced (L.map Sum.inr : List (G ⊕ X × Bool)) ↔
+      FreeGroup.IsCyclicallyReduced L := by
+  induction L using List.bidirectionalRec with
+  | nil => simp
+  | singleton a => simp
+  | cons_append a m b =>
+    rw [← List.cons_append, FreeGroup.isCyclicallyReduced_cons_append_iff,
+      ← isReduced_map_inr (G := G)]
+    simp [isCyclicallyReduced_cons_append]
 
 /-- The word `z⁻¹ a z` is not cyclically reduced: its last letter `z` cancels against its first
 letter `z⁻¹`. -/

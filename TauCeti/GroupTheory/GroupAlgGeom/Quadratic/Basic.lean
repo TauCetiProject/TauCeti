@@ -188,6 +188,11 @@ theorem occurrences_inl (x : X) (g : G) : occurrences x (inl g : GX G X) = 0 := 
 theorem occurrences_one (x : X) : occurrences x (1 : GX G X) = 0 := by
   simpa using occurrences_inl (G := G) x 1
 
+/-- The coefficients are the elements of `G[X]` in which no variable occurs. -/
+theorem mem_range_inl_iff_forall_occurrences_eq_zero {w : GX G X} :
+    w ∈ Set.range (inl : G →* GX G X) ↔ ∀ x, occurrences x w = 0 :=
+  mem_range_inl_iff
+
 @[simp]
 theorem occurrences_inv (x : X) (w : GX G X) : occurrences x w⁻¹ = occurrences x w := by
   simp [occurrences_eq_countVar_reducedWord]
