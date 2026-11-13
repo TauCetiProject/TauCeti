@@ -26,9 +26,10 @@ symmetrizer of a one-column shape consumes.
 
 Finally, it describes images of exterior powers under induced maps: inside the exterior algebra,
 the image of `⋀ⁿ M` under `f` is the `n`th power of the degree-one image of `f`, and over a field an
-injective map embeds `⋀ⁿ V` with its binomial dimension. Over a field, an exterior product with
-more factors in a finite-dimensional subspace than its dimension vanishes, and moving the remaining
-factors by vectors of that subspace does not change the product.
+injective map embeds `⋀ⁿ V` with its binomial dimension, with no finiteness assumption since a
+positive exterior power of an infinite-dimensional space is infinite-dimensional. Over a field, an
+exterior product with more factors in a finite-dimensional subspace than its dimension vanishes,
+and moving the remaining factors by vectors of that subspace does not change the product.
 
 ## Main definitions
 
@@ -49,7 +50,9 @@ factors by vectors of that subspace does not change the product.
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
-* `exteriorPower.map_bijective`: a bijective linear map induces bijections of exterior powers.
+* `exteriorPower.map_apply_ιMulti_two` and `exteriorPower.map_bijective`: the map induced by `f`
+  sends a two-vector `u ∧ w` to `f u ∧ f w`, and bijective maps induce bijections of exterior
+  powers.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
   factors of an exterior product.
 * `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
@@ -71,6 +74,8 @@ factors by vectors of that subspace does not change the product.
 * `TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower` and `TauCeti.ExteriorAlgebra.wedgeLeft`:
   left multiplication by a vector carries `⋀ⁿ M` into `⋀ⁿ⁺¹ M`, packaged as the linear map
   `v ↦ m ∧ v` with values in degree `n + 1`.
+* `exteriorPower.not_finite_of_not_finite`: a positive exterior power of an infinite-dimensional
+  vector space is infinite-dimensional.
 * `TauCeti.exteriorPower.finrank_range_map`: over a field, the image of `⋀ⁿ V` under the map
   induced by an injective linear map has dimension `(dim V).choose n`.
 * `TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero`: over a field, a vector lies in
@@ -269,11 +274,19 @@ theorem ιMulti_ne_zero_iff {n : ℕ} (v : Fin n → V) :
 
 end Field
 
-/-! ### Bijectivity of induced maps -/
+/-! ### Induced maps -/
 
 section Bijective
 
 variable [CommRing R] [AddCommGroup M] [Module R M] {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- Mapping a decomposable two-vector `u ∧ w` by `exteriorPower.map 2 f` gives `f u ∧ f w`. -/
+theorem map_apply_ιMulti_two (f : M →ₗ[R] N) (u w : M) :
+    map 2 f (ιMulti R 2 ![u, w]) = ιMulti R 2 ![f u, f w] := by
+  rw [map_apply_ιMulti]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
 
 /-- A bijective linear map induces a bijective map on every exterior power. -/
 theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) :
@@ -484,18 +497,40 @@ end ExteriorAlgebra
 
 namespace exteriorPower
 
-variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V] [Module.Finite K V]
+variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V]
   [AddCommGroup W] [Module K W]
 
-/-- Over a field, the image of the `n`th exterior power of a finite-dimensional space under the
-map induced by an injective linear map has dimension `(dim V).choose n`. -/
+/-- A positive exterior power of an infinite-dimensional vector space over a field is
+infinite-dimensional: it has a basis indexed by the `n`-element subsets of a basis index set. -/
+theorem _root_.exteriorPower.not_finite_of_not_finite (hV : ¬ Module.Finite K V) {n : ℕ}
+    (hn : n ≠ 0) : ¬ Module.Finite K (⋀[K]^n V) := by
+  intro h
+  classical
+  have ⟨I, b⟩ := Module.Free.exists_basis K V
+  have : Infinite I := by
+    by_contra hI
+    have := not_infinite_iff_finite.1 hI
+    exact hV (Module.Finite.of_basis b)
+  let : LinearOrder I := linearOrderOfSTO WellOrderingRel
+  have : NeZero n := ⟨hn⟩
+  have := Module.Finite.finite_basis (b.exteriorPower n)
+  exact not_finite (Set.powersetCard I n)
+
+/-- Over a field, the image of the `n`th exterior power of `V` under the map induced by an
+injective linear map has dimension `(dim V).choose n`. For an infinite-dimensional `V`, where
+`Module.finrank` takes the junk value `0`, both sides are `1` in degree `0` and `0` otherwise. -/
 theorem finrank_range_map {f : V →ₗ[K] W} (hf : Function.Injective f) (n : ℕ) :
     Module.finrank K (LinearMap.range (_root_.exteriorPower.map n f)) =
       (Module.finrank K V).choose n := by
-  rw [LinearMap.finrank_range_of_inj (_root_.exteriorPower.map_injective_field hf),
-    _root_.exteriorPower.finrank_eq]
+  rw [LinearMap.finrank_range_of_inj (_root_.exteriorPower.map_injective_field hf)]
+  by_cases hV : Module.Finite K V
+  · exact _root_.exteriorPower.finrank_eq K V n
+  rcases n.eq_zero_or_pos with rfl | hn
+  · rw [(_root_.exteriorPower.zeroEquiv K V).finrank_eq, Module.finrank_self,
+      Nat.choose_zero_right]
+  · rw [Module.finrank_of_not_finite (_root_.exteriorPower.not_finite_of_not_finite hV hn.ne'),
+      Module.finrank_of_not_finite hV, Nat.choose_eq_zero_of_lt hn]
 
-omit [Module.Finite K V] in
 /-- Over a field, a vector lies in the span of a linearly independent family of `n` vectors exactly
 when its product with the exterior product of the family vanishes in the exterior algebra. -/
 theorem mem_span_range_iff_ι_mul_ιMulti_eq_zero {n : ℕ} {v : Fin n → V}

@@ -296,8 +296,9 @@ theorem exists_isManifold_of_finrankSubspaceCharts [CompleteSpace 𝕜] [FiniteD
     ∃ C : ChartedSpace L s, letI := C
       IsManifold 𝓘(𝕜, L) n s ∧ ContMDiff 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
   obtain ⟨N, hN⟩ := L.exists_isCompl
-  exact exists_isManifold_of_linearSubspaceCharts
-    (Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN L.closed_of_finiteDimensional)
+  have hLN : Submodule.IsTopCompl L N :=
+    Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN L.isClosed_of_finiteDimensional
+  exact exists_isManifold_of_linearSubspaceCharts hLN
     (linearSubspaceCharts_of_finrankSubspaceCharts hcharts)
 
 omit e he hsmooth hinv in
@@ -314,12 +315,13 @@ theorem exists_isManifold_isSmoothEmbedding_of_finrankSubspaceCharts [CompleteSp
     ∃ C : ChartedSpace L s, letI := C
       IsManifold 𝓘(𝕜, L) n s ∧ Manifold.IsSmoothEmbedding 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
   obtain ⟨N, hN⟩ := L.exists_isCompl
+  have hLN : Submodule.IsTopCompl L N :=
+    Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN L.isClosed_of_finiteDimensional
   -- Work in the self-modelled copy of `M`, which has the same carrier and topology, so the same
   -- subset and charts; the identity diffeomorphism transports the smoothness of the charts.
   let h := BoundarylessModel.diffeomorph I (M := M) n
   obtain ⟨C, hC, hemb⟩ := exists_isManifold_isSmoothEmbedding_of_linearSubspaceCharts
-    (M := BoundarylessModel I M) (s := (s : Set (BoundarylessModel I M))) (n := n)
-    (Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN L.closed_of_finiteDimensional)
+    (M := BoundarylessModel I M) (s := (s : Set (BoundarylessModel I M))) (n := n) hLN
     fun y ↦ by
       obtain ⟨q, hy, hqs, hqi, hmem⟩ := linearSubspaceCharts_of_finrankSubspaceCharts hcharts
         ⟨h.symm y, by
