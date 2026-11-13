@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.List.Unsplit
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Word
 
 /-!
@@ -42,7 +41,7 @@ Here a word is a list of signed letters `α × Bool` and a subword is an infix, 
 * `FreeGroup.isReduced_blockInsert`: the new word is reduced exactly when the old word is.
 * `FreeGroup.map_mk_blockInsert`: a homomorphism killing `x` does not see the replacement.
 * `FreeGroup.isInfix_of_isInfix_blockInsert`: the replacement creates no occurrence of a word
-  in which the letter `x` does not appear.
+  containing neither `x` nor `x⁻¹`.
 
 ## Implementation notes
 
@@ -118,18 +117,6 @@ private theorem occursAt_append_right_iff (h : l.IsUnsplit [u ++ v, t₀]) (hk :
   obtain ⟨t', ht'⟩ : s ++ l <+: u ++ v :=
     prefix_of_prefix_length_le ⟨t, hst⟩ (prefix_append (u ++ v) t₀) hle
   exact ⟨s, t', ht', hs⟩
-
-/-- The formal inverses of the members of `L`, in the reverse order, split no occurrence of the
-formal inverse of `l` exactly when `L` splits no occurrence of `l`. -/
-@[simp]
-theorem invRev_isUnsplit {L : List (List (α × Bool))} :
-    (invRev l).IsUnsplit (L.map invRev).reverse ↔ l.IsUnsplit L := by
-  have hf : Function.Injective fun c : α × Bool ↦ (c.1, !c.2) := fun c c' h ↦ by
-    simpa [Prod.ext_iff] using h
-  have e : L.map invRev = (L.map (List.map fun c : α × Bool ↦ (c.1, !c.2))).map reverse := by
-    simp [invRev, Function.comp_def]
-  rw [e]
-  exact reverse_isUnsplit.trans (map_isUnsplit_iff hf)
 
 section BlockInsert
 
@@ -694,8 +681,8 @@ private theorem isInfix_of_isInfix_insertAux {u₁ : List (α × Bool)} (hu : �
           (fun c hc ↦ hu c (mem_cons_of_mem _ hc)) h.2⟩).isInfix
     · exact infix_cons (ih h)
 
-/-- A word without the letter `x` that occurs in the new word already occurs in the old word:
-the replacement creates no occurrence of a word in the other letters. -/
+/-- A word containing neither `x` nor `x⁻¹` that occurs in the new word already occurs in the
+old word: the replacement creates no occurrence of a word in the other letters. -/
 theorem isInfix_of_isInfix_blockInsert {u : List (α × Bool)}
     (h : u <:+: blockInsert a b x m w) (hu : ∀ c ∈ u, c.1 ≠ x) : u <:+: w :=
   isInfix_of_isInfix_insertAux hu (blockInsert_eq_insertAux a b x m w ▸ h)
