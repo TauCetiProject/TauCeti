@@ -8,8 +8,6 @@ module
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 public import TauCeti.LowDimTopology.Heegaard.StrongAdmissibility
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Algebra.BigOperators.Option
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
@@ -19,8 +17,9 @@ A *genus stabilization* of a pointed Heegaard diagram `(Σ, α, β, z)` takes th
 `Σ`, at a point of a region `r`, with the standard torus diagram `(T², α', β')` in which `α'` and
 `β'` meet transversely in a single point `c`. The new surface has genus one more, there is one
 new pair of attaching curves, and one new intersection point. Cutting the punctured torus along
-`α'` and `β'` leaves a square with its four corners at `c`, so the region `r` becomes a region of
-Euler characteristic `χ(r) - 1` with four additional corners, all at `c`, and every other region
+`α'` and `β'` leaves a punctured square, of Euler characteristic `0`, with its four corners at
+`c`. It is glued to `r` along the boundary of the removed disk, so the region `r` becomes a region
+of Euler characteristic `χ(r) - 1` with four additional corners, all at `c`, and every other region
 is unchanged. Each of the two new curves consists of a single arc from `c` to itself, with the
 new region on both sides.
 
@@ -35,11 +34,13 @@ The stabilization changes none of the combinatorics that the hat complex depends
 multiplicity, and the periodic domains are the same. The Maslov index is unchanged as well: the
 Euler measure of `D` drops by `2 D(r)` (one for the Euler characteristic and one for the four new
 corners) while each of the point measures at the two generators rises by `D(r)`, the multiplicity
-at all four corners of `c`. Hence the domains counted by the hat differential, its coefficients,
-the relative grading and the admissibility conditions all agree, and the hat differential of the
-stabilization is the hat differential of `H` transported along the generator correspondence.
-Stabilizing in a region containing a basepoint preserves niceness. The Euler normalization
-`∑ χ(R) - #(α ∩ β) = 2 - 2g` of a closed surface of genus `g` passes to genus `g + 1`.
+at all four corners of `c`. Hence the domains counted by the hat differential, its coefficients
+and the admissibility conditions all agree, and the hat differential of the stabilization is the
+hat differential of `H` transported along the generator correspondence. The Euler normalization
+`∑ χ(R) - #(α ∩ β) = 2 - 2g` of a closed surface of genus `g` passes to genus `g + 1`, so in a
+singly pointed diagram satisfying it the relative gradings agree modulo the periodic Maslov
+indices, and exactly when the periodic domains have Maslov index zero at the source generator.
+Stabilizing in a region containing a basepoint preserves niceness.
 
 This is the combinatorial half of the stabilization invariance of `\widehat{HF}`: for the
 holomorphic theory one must still identify the moduli spaces of the two diagrams (Ozsváth and
@@ -61,7 +62,10 @@ not treated here.
 * `TauCeti.HeegaardRegionSystem.hatDomains_stabilize` and
   `TauCeti.HeegaardRegionSystem.hatDifferential_stabilize`: the counted domains agree, and the
   hat differential of the stabilization is conjugate to that of `H`.
-* `TauCeti.HeegaardRegionSystem.relativeGrading_stabilize`: the relative gradings agree.
+* `TauCeti.HeegaardRegionSystem.coe_relativeGrading_stabilize` and
+  `TauCeti.HeegaardRegionSystem.relativeGrading_stabilize`: in a singly pointed diagram with the
+  Euler normalization of genus `n`, the relative gradings agree modulo the periodic Maslov
+  indices, and exactly when the periodic domains have Maslov index zero at the source generator.
 * `TauCeti.HeegaardRegionSystem.weaklyAdmissible_stabilize_iff`,
   `TauCeti.HeegaardRegionSystem.weaklyAdmissibleAt_stabilize_iff` and
   `TauCeti.HeegaardRegionSystem.stronglyAdmissible_stabilize_iff`: admissibility is unchanged.
@@ -83,6 +87,31 @@ public section
 
 namespace TauCeti
 
+section EulerNormalization
+
+variable {n : ℕ} {Point : Type*} {Region : Type*} [Fintype Point] [Fintype Region]
+  [DecidableEq Region]
+
+/-- The stabilization lowers `∑ χ(R) - #(α ∩ β)` by two, the change in the Euler characteristic
+of a closed surface when its genus rises by one. -/
+theorem sum_sub_single_sub_card_option (r : Region) (χ : Region → ℤ) :
+    ∑ s, (χ - Pi.single r 1 : Region → ℤ) s - (Fintype.card (Option Point) : ℤ) =
+      ∑ s, χ s - Fintype.card Point - 2 := by
+  simp [Finset.sum_sub_distrib]
+  ring
+
+/-- The Euler normalization of a closed surface of genus `n` for a Heegaard diagram gives that of
+genus `n + 1` for its stabilization. -/
+theorem sum_sub_single_sub_card_option_eq_two_sub_two_mul (r : Region) {χ : Region → ℤ}
+    (hχ : ∑ s, χ s - Fintype.card Point = 2 - 2 * (n : ℤ)) :
+    ∑ s, (χ - Pi.single r 1 : Region → ℤ) s - (Fintype.card (Option Point) : ℤ) =
+      2 - 2 * ((n + 1 : ℕ) : ℤ) := by
+  rw [sum_sub_single_sub_card_option, hχ]
+  push_cast
+  ring
+
+end EulerNormalization
+
 namespace HeegaardRegionSystem
 
 universe u v w
@@ -90,30 +119,6 @@ universe u v w
 variable {n : ℕ} {Point : Type u} {Region : Type v} {Basepoint : Type w}
 
 section Construction
-
-/-- Extending a curve labelling by a new point on a new curve: the fibres over the old curves
-are the images of the old fibres, and the fibre over the new curve is the new point. A
-permutation forming one cycle on each old fibre, extended to fix the new point, forms one cycle on
-each new fibre. -/
-private theorem isCycleOn_optionCongr_fiber {f : Point → Fin n} {σ : Equiv.Perm Point}
-    (hσ : ∀ j, σ.IsCycleOn {q | f q = j}) (i : Fin (n + 1)) :
-    Equiv.Perm.IsCycleOn (Equiv.optionCongr σ)
-      {p : Option Point | p.elim (Fin.last n) (fun q => (f q).castSucc) = i} := by
-  induction i using Fin.lastCases with
-  | last =>
-    have hs : {p : Option Point | p.elim (Fin.last n) (fun q => (f q).castSucc) = Fin.last n} =
-        {none} := by
-      ext p
-      cases p <;> simp [Fin.castSucc_ne_last]
-    rw [hs, Equiv.Perm.isCycleOn_singleton]
-    simp
-  | cast j =>
-    have hs : {p : Option Point | p.elim (Fin.last n) (fun q => (f q).castSucc) = j.castSucc} =
-        some '' {q | f q = j} := by
-      ext p
-      cases p <;> simp [(Fin.castSucc_ne_last j).symm]
-    rw [hs]
-    exact (hσ j).optionCongr
 
 variable (H : HeegaardRegionSystem n Point Region Basepoint) (r : Region)
 
@@ -255,12 +260,12 @@ theorem stabilize_basepoint : (H.stabilize r).basepoint = H.basepoint :=
 
 /-- All four corners at the new point lie in the region `r`. -/
 @[simp]
-theorem stabilize_cornerRegion_none (i : Fin 4) : (H.stabilize r).cornerRegion none i = r := by
+theorem cornerRegion_stabilize_none (i : Fin 4) : (H.stabilize r).cornerRegion none i = r := by
   fin_cases i <;> simp [cornerRegion_eq]
 
 /-- The corners at the old points are unchanged. -/
 @[simp]
-theorem stabilize_cornerRegion_some (p : Point) :
+theorem cornerRegion_stabilize_some (p : Point) :
     (H.stabilize r).cornerRegion (some p) = H.cornerRegion p := by
   simp [cornerRegion_eq]
 
@@ -272,8 +277,7 @@ variable {H : HeegaardRegionSystem n Point Region Basepoint} {r : Region}
 
 /-- Every generator of the stabilization uses the new point on the new `α`-curve, the only point
 there. -/
-@[simp 1100]
-theorem stabilize_point_last (x : (H.stabilize r).Generator) :
+theorem point_stabilize_last (x : (H.stabilize r).Generator) :
     (H.stabilize r).point x (Fin.last n) = none := by
   have h := (H.stabilize r).alpha_coe x (Fin.last n)
   rw [← HeegaardIntersectionSystem.point_apply] at h
@@ -326,25 +330,13 @@ private theorem bijective_beta_comp_stabilizeRestrictPoint (x : (H.stabilize r).
 private theorem bijective_beta_comp_snoc (x : H.Generator) :
     Function.Bijective ((H.stabilize r).beta ∘
       Fin.snoc (α := fun _ => Option Point) (fun j => some (H.point x j)) none) := by
-  refine Finite.injective_iff_bijective.mp fun i k hik => ?_
-  induction i using Fin.lastCases with
-  | last =>
-    induction k using Fin.lastCases with
-    | last => rfl
-    | cast k =>
-      simp only [Function.comp_apply, Fin.snoc_last, Fin.snoc_castSucc, stabilize_beta_none,
-        stabilize_beta_some] at hik
-      exact absurd hik.symm (Fin.castSucc_ne_last _)
-  | cast j =>
-    induction k using Fin.lastCases with
-    | last =>
-      simp only [Function.comp_apply, Fin.snoc_last, Fin.snoc_castSucc, stabilize_beta_none,
-        stabilize_beta_some] at hik
-      exact absurd hik (Fin.castSucc_ne_last _)
-    | cast k =>
-      simp only [Function.comp_apply, Fin.snoc_castSucc, stabilize_beta_some,
-        HeegaardIntersectionSystem.point_apply, HeegaardIntersectionSystem.beta_coe] at hik
-      exact congrArg Fin.castSucc (x.1.injective (Fin.castSucc_injective n hik))
+  have h : (H.stabilize r).beta ∘ (fun j => some (H.point x j)) = Fin.castSucc ∘ x.1 := by
+    ext j
+    simp
+  rw [Fin.comp_snoc, h]
+  refine Finite.injective_iff_bijective.mp
+    (Fin.snoc_injective_of_injective ((Fin.castSucc_injective n).comp x.1.injective) ?_)
+  simp
 
 variable (H r) in
 /-- The generators of the stabilization `H.stabilize r` correspond to those of `H`: a generator
@@ -364,17 +356,45 @@ noncomputable def stabilizeGeneratorEquiv : H.Generator ≃ (H.stabilize r).Gene
     rw [HeegaardIntersectionSystem.point_apply,
       HeegaardIntersectionSystem.generatorOfPointChoice_val]
     induction i using Fin.lastCases with
-    | last => rw [Fin.snoc_last, stabilize_point_last]
+    | last => rw [Fin.snoc_last, point_stabilize_last]
     | cast j =>
       rw [Fin.snoc_castSucc, ← some_stabilizeRestrictPoint, HeegaardIntersectionSystem.point_apply,
         HeegaardIntersectionSystem.generatorOfPointChoice_val]
 
+/-- Every generator of the stabilization uses the new point on the new `α`-curve. -/
+@[simp]
+theorem val_stabilize_last (x : (H.stabilize r).Generator) :
+    (x.2 (Fin.last n) : Option Point) = none := by
+  rw [← HeegaardIntersectionSystem.point_apply, point_stabilize_last]
+
 /-- The generator `x ∪ {c}` uses the points of `x` on the old curves. -/
-@[simp 1100]
 theorem point_stabilizeGeneratorEquiv_castSucc (x : H.Generator) (j : Fin n) :
     (H.stabilize r).point (H.stabilizeGeneratorEquiv r x) j.castSucc = some (H.point x j) := by
   rw [stabilizeGeneratorEquiv, Equiv.coe_fn_mk, HeegaardIntersectionSystem.point_apply,
     HeegaardIntersectionSystem.generatorOfPointChoice_val, Fin.snoc_castSucc]
+
+/-- The generator `x ∪ {c}` uses the points of `x` on the old curves. -/
+@[simp]
+theorem val_stabilizeGeneratorEquiv_castSucc (x : H.Generator) (j : Fin n) :
+    ((H.stabilizeGeneratorEquiv r x).2 j.castSucc : Option Point) = some (x.2 j : Point) := by
+  rw [← HeegaardIntersectionSystem.point_apply, point_stabilizeGeneratorEquiv_castSucc,
+    HeegaardIntersectionSystem.point_apply]
+
+/-- On the old curves, a generator of the stabilization uses the points of the corresponding
+generator of `H`. -/
+theorem point_stabilize_castSucc (x : (H.stabilize r).Generator) (j : Fin n) :
+    (H.stabilize r).point x j.castSucc =
+      some (H.point ((H.stabilizeGeneratorEquiv r).symm x) j) := by
+  rw [← some_stabilizeRestrictPoint, stabilizeGeneratorEquiv, Equiv.coe_fn_symm_mk,
+    HeegaardIntersectionSystem.point_apply, HeegaardIntersectionSystem.generatorOfPointChoice_val]
+
+/-- On the old curves, a generator of the stabilization uses the points of the corresponding
+generator of `H`. -/
+@[simp]
+theorem some_val_stabilizeGeneratorEquiv_symm (x : (H.stabilize r).Generator) (j : Fin n) :
+    some (((H.stabilizeGeneratorEquiv r).symm x).2 j : Point) = x.2 j.castSucc := by
+  rw [← HeegaardIntersectionSystem.point_apply, ← HeegaardIntersectionSystem.point_apply,
+    point_stabilize_castSucc]
 
 /-- The `0`-chain of `x ∪ {c}` agrees with that of `x` at the old points. -/
 @[simp]
@@ -387,12 +407,20 @@ theorem generatorChain_stabilizeGeneratorEquiv_some (x : H.Generator) (q : Point
     point_stabilizeGeneratorEquiv_castSucc]
   simp only [Option.some_inj]
 
-/-- The `0`-chain of `x ∪ {c}` contains the new point. -/
+/-- The `0`-chain of a generator of `H` is that of the corresponding generator of the
+stabilization at the old points. -/
 @[simp]
-theorem generatorChain_stabilizeGeneratorEquiv_none (x : H.Generator) :
-    (H.stabilize r).generatorChain (H.stabilizeGeneratorEquiv r x) none = 1 := by
+theorem generatorChain_stabilizeGeneratorEquiv_symm (x : (H.stabilize r).Generator) (q : Point) :
+    H.generatorChain ((H.stabilizeGeneratorEquiv r).symm x) q =
+      (H.stabilize r).generatorChain x (some q) := by
+  rw [← generatorChain_stabilizeGeneratorEquiv_some, Equiv.apply_symm_apply]
+
+/-- The `0`-chain of every generator of the stabilization contains the new point. -/
+@[simp]
+theorem generatorChain_stabilize_none (x : (H.stabilize r).Generator) :
+    (H.stabilize r).generatorChain x none = 1 := by
   classical
-  rw [HeegaardIntersectionSystem.generatorChain_apply, stabilize_alpha_none, stabilize_point_last]
+  rw [HeegaardIntersectionSystem.generatorChain_apply, stabilize_alpha_none, point_stabilize_last]
   simp
 
 end Generator
@@ -428,14 +456,14 @@ variable {H : HeegaardRegionSystem n Point Region Basepoint} {r : Region}
 
 /-- The new point has all four corners in the region `r`, so its point measure is the
 multiplicity at `r`. -/
-theorem stabilize_pointMeasure_none (D : Region → ℤ) :
+theorem pointMeasure_stabilize_none (D : Region → ℤ) :
     (H.stabilize r).pointMeasure D none = D r := by
   simp only [pointMeasure_apply, stabilize_alphaNext_symm_none, stabilize_alphaLeft_none,
     stabilize_alphaRight_none]
   ring
 
 /-- The point measures at the old points are unchanged. -/
-theorem stabilize_pointMeasure_some (D : Region → ℤ) (p : Point) :
+theorem pointMeasure_stabilize_some (D : Region → ℤ) (p : Point) :
     (H.stabilize r).pointMeasure D (some p) = H.pointMeasure D p := by
   simp
 
@@ -444,16 +472,17 @@ theorem generatorPointMeasure_stabilizeGeneratorEquiv (x : H.Generator) (D : Reg
     (H.stabilize r).generatorPointMeasure (H.stabilizeGeneratorEquiv r x) D =
       H.generatorPointMeasure x D + D r := by
   rw [generatorPointMeasure_apply, generatorPointMeasure_apply, Fin.sum_univ_castSucc]
-  simp only [point_stabilizeGeneratorEquiv_castSucc, stabilize_point_last,
-    stabilize_pointMeasure_some, stabilize_pointMeasure_none]
+  simp only [point_stabilizeGeneratorEquiv_castSucc, point_stabilize_last,
+    pointMeasure_stabilize_some, pointMeasure_stabilize_none]
 
 variable [Fintype Point] [DecidableEq Region]
 
 /-- The stabilization adds the four corners at the new point to the region `r`. -/
+@[simp]
 theorem cornerCount_stabilize (s : Region) :
     (H.stabilize r).cornerCount s = H.cornerCount s + if r = s then 4 else 0 := by
   simp only [cornerCount_eq_card, Finset.card_filter, Fintype.sum_prod_type, Fintype.sum_option,
-    stabilize_cornerRegion_none, stabilize_cornerRegion_some]
+    cornerRegion_stabilize_none, cornerRegion_stabilize_some]
   split_ifs <;> simp [add_comm]
 
 /-- Stabilizing in a region containing a basepoint preserves niceness: the regions without
@@ -474,7 +503,7 @@ characteristic and one for the four new corners. -/
 theorem eulerMeasure_stabilize (χ D : Region → ℤ) :
     (H.stabilize r).eulerMeasure (χ - Pi.single r 1) D = H.eulerMeasure χ D - 2 * D r := by
   simp only [eulerMeasure_eq_sub_sum_pointMeasure, Fintype.sum_option,
-    stabilize_pointMeasure_none, stabilize_pointMeasure_some, Pi.sub_apply, Int.cast_sub,
+    pointMeasure_stabilize_none, pointMeasure_stabilize_some, Pi.sub_apply, Int.cast_sub,
     sub_mul, Finset.sum_sub_distrib]
   simp [Pi.single_apply]
   ring
@@ -486,24 +515,6 @@ theorem maslovIndex_stabilize (χ : Region → ℤ) (x y : H.Generator) (D : Reg
       (H.stabilizeGeneratorEquiv r y) D = H.maslovIndex χ x y D := by
   simp only [maslovIndex_apply, eulerMeasure_stabilize,
     generatorPointMeasure_stabilizeGeneratorEquiv]
-  ring
-
-/-- The stabilization lowers `∑ χ(R) - #(α ∩ β)` by two, the change in the Euler characteristic
-of a closed surface when its genus rises by one. -/
-theorem sum_sub_single_sub_card_option (χ : Region → ℤ) :
-    ∑ s, (χ - Pi.single r 1 : Region → ℤ) s - (Fintype.card (Option Point) : ℤ) =
-      ∑ s, χ s - Fintype.card Point - 2 := by
-  simp [Finset.sum_sub_distrib]
-  ring
-
-/-- The Euler normalization of a closed surface of genus `n` for `H` gives that of genus `n + 1`
-for its stabilization. -/
-theorem sum_sub_single_sub_card_option_eq {χ : Region → ℤ}
-    (hχ : ∑ s, χ s - Fintype.card Point = 2 - 2 * (n : ℤ)) :
-    ∑ s, (χ - Pi.single r 1 : Region → ℤ) s - (Fintype.card (Option Point) : ℤ) =
-      2 - 2 * ((n + 1 : ℕ) : ℤ) := by
-  rw [sum_sub_single_sub_card_option, hχ]
-  push_cast
   ring
 
 /-- The periodic Maslov indices at `x ∪ {c}` are those at `x`. -/
@@ -530,6 +541,25 @@ theorem stronglyAdmissible_stabilize_iff (χ : Region → ℤ) (x : H.Generator)
       H.StronglyAdmissible χ x := by
   simp only [stronglyAdmissible_iff, periodicDomains_stabilize, maslovIndex_stabilize]
 
+/-- In a singly pointed diagram of a closed surface of genus `n`, the relative grading of
+`x ∪ {c}` and `y ∪ {c}` is that of `x` and `y` modulo the periodic Maslov indices at `x`. -/
+theorem coe_relativeGrading_stabilize [Subsingleton Basepoint] {χ : Region → ℤ}
+    (hχ : ∑ s, χ s - Fintype.card Point = 2 - 2 * (n : ℤ)) (z : Basepoint) (x y : H.Generator) :
+    ((H.stabilize r).relativeGrading (χ - Pi.single r 1) z (H.stabilizeGeneratorEquiv r x)
+      (H.stabilizeGeneratorEquiv r y) : ℚ ⧸ H.periodicMaslovIndices χ x) =
+      H.relativeGrading χ z x y := by
+  by_cases h : ∃ D, H.IsDomainBetween x y D
+  · obtain ⟨D, hD⟩ := h
+    have h' := ((isDomainBetween_stabilize_iff (r := r)).mpr hD).coe_relativeGrading_eq z
+      (sum_sub_single_sub_card_option_eq_two_sub_two_mul r hχ)
+    rw [periodicMaslovIndices_stabilize] at h'
+    rw [h', hD.coe_relativeGrading_eq z hχ, maslovIndex_stabilize, stabilize_basepoint]
+  · push Not at h
+    have h' : ∀ D, ¬(H.stabilize r).IsDomainBetween (H.stabilizeGeneratorEquiv r x)
+        (H.stabilizeGeneratorEquiv r y) D := fun D hD => h D (isDomainBetween_stabilize_iff.mp hD)
+    rw [relativeGrading_of_forall_not_isDomainBetween z h',
+      relativeGrading_of_forall_not_isDomainBetween z h]
+
 /-- In a singly pointed diagram of a closed surface of genus `n` whose periodic domains have
 Maslov index zero at `x`, the relative grading of `x ∪ {c}` and `y ∪ {c}` is that of `x` and
 `y`. -/
@@ -538,23 +568,8 @@ theorem relativeGrading_stabilize [Subsingleton Basepoint] {χ : Region → ℤ}
     (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (y : H.Generator) :
     (H.stabilize r).relativeGrading (χ - Pi.single r 1) z (H.stabilizeGeneratorEquiv r x)
       (H.stabilizeGeneratorEquiv r y) = H.relativeGrading χ z x y := by
-  by_cases h : ∃ D, H.IsDomainBetween x y D
-  · obtain ⟨D, hD⟩ := h
-    have hP' : ∀ P ∈ (H.stabilize r).periodicDomains, (H.stabilize r).maslovIndex
-        (χ - Pi.single r 1) (H.stabilizeGeneratorEquiv r x) (H.stabilizeGeneratorEquiv r x) P =
-          0 := by
-      intro P hPmem
-      rw [periodicDomains_stabilize] at hPmem
-      rw [maslovIndex_stabilize]
-      exact hP P hPmem
-    rw [(isDomainBetween_stabilize_iff.mpr hD).relativeGrading_eq z
-        (sum_sub_single_sub_card_option_eq hχ) hP', hD.relativeGrading_eq z hχ hP,
-      maslovIndex_stabilize, stabilize_basepoint]
-  · push Not at h
-    have h' : ∀ D, ¬(H.stabilize r).IsDomainBetween (H.stabilizeGeneratorEquiv r x)
-        (H.stabilizeGeneratorEquiv r y) D := fun D hD => h D (isDomainBetween_stabilize_iff.mp hD)
-    rw [relativeGrading_of_forall_not_isDomainBetween z h',
-      relativeGrading_of_forall_not_isDomainBetween z h]
+  have h := QuotientAddGroup.eq_iff_sub_mem.mp (coe_relativeGrading_stabilize (r := r) hχ z x y)
+  rwa [periodicMaslovIndices_eq_bot_iff.mpr hP, AddSubgroup.mem_bot, sub_eq_zero] at h
 
 /-- The domains counted by the hat differential from `x ∪ {c}` to `y ∪ {c}` are those counted
 from `x` to `y`. -/
