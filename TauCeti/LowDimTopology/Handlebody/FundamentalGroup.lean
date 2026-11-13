@@ -376,9 +376,6 @@ private theorem outerWeight_nonneg (z : ℂ) : 0 ≤ outerWeight g z := le_max_l
 
 private theorem holeWeight_nonneg (k : Fin g) (z : ℂ) : 0 ≤ holeWeight g k z := le_max_left _ _
 
-private theorem boundaryWeight_nonneg (z : ℂ) : 0 ≤ boundaryWeight g z :=
-  add_nonneg (outerWeight_nonneg z) (Finset.sum_nonneg fun k _ ↦ holeWeight_nonneg k z)
-
 private theorem outerWeight_le_boundaryWeight (z : ℂ) : outerWeight g z ≤ boundaryWeight g z :=
   le_add_of_nonneg_right (Finset.sum_nonneg fun k _ ↦ holeWeight_nonneg k z)
 
