@@ -188,9 +188,10 @@ namespace Ideal
 
 variable {A : Type*} [Semiring A] {e : A}
 
-/-- **The left ideal `Ae` is the piece `e • A` cut out by `e` acting on the right**, that is, by
-`MulOpposite.op e` acting through the opposite ring; this is the bridge to the Peirce
-decomposition `TauCeti.isInternal_smul_top`. -/
+/-- **The principal left ideal `Ideal.span {e} = A e` is the pointwise image
+`MulOpposite.op e • ⊤`** of `A` under right multiplication by `e`, acting through the opposite
+ring. For an idempotent `e` this is the bridge to the Peirce decomposition
+`TauCeti.isInternal_smul_top`. -/
 theorem span_singleton_eq_op_smul_top :
     (Ideal.span {e} : Ideal A) = MulOpposite.op e • (⊤ : Submodule A A) := by
   ext x
