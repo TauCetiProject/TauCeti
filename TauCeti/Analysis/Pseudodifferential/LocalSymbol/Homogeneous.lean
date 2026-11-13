@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.LocalSymbol
+public import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 
 /-!
 # Homogeneous symbols on an open set of positions
@@ -183,6 +184,62 @@ theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → LocalHomogeneou
 
 end Module
 
+section CastDegree
+
+variable {m' : ℝ}
+
+/-- Transport a homogeneous symbol on `U` along an equality of degrees, for instance to identify
+the degree `m - (0 : ℕ)` of a leading term with `m`. -/
+def castDegree (h : m = m') (a : LocalHomogeneousSymbol U V W m) :
+    LocalHomogeneousSymbol U V W m' where
+  coefficient := a.coefficient
+  coefficient_of_notMem := a.coefficient_of_notMem
+  zero_covector := a.zero_covector
+  contDiffOn_coefficient := a.contDiffOn_coefficient
+  homogeneous := h ▸ a.homogeneous
+
+@[simp]
+theorem coefficient_castDegree (h : m = m') (a : LocalHomogeneousSymbol U V W m) :
+    (a.castDegree h).coefficient = a.coefficient :=
+  (rfl)
+
+@[simp]
+theorem castDegree_rfl (a : LocalHomogeneousSymbol U V W m) : a.castDegree rfl = a :=
+  (rfl)
+
+@[simp]
+theorem castDegree_castDegree {m'' : ℝ} (h : m = m') (h' : m' = m'')
+    (a : LocalHomogeneousSymbol U V W m) :
+    (a.castDegree h).castDegree h' = a.castDegree (h.trans h') :=
+  (rfl)
+
+@[simp]
+theorem castDegree_zero (h : m = m') :
+    (0 : LocalHomogeneousSymbol U V W m).castDegree h = 0 :=
+  (rfl)
+
+@[simp]
+theorem castDegree_add (h : m = m') (a b : LocalHomogeneousSymbol U V W m) :
+    (a + b).castDegree h = a.castDegree h + b.castDegree h :=
+  (rfl)
+
+@[simp]
+theorem castDegree_smul (h : m = m') (c : ℂ) (a : LocalHomogeneousSymbol U V W m) :
+    (c • a).castDegree h = c • a.castDegree h :=
+  (rfl)
+
+@[simp]
+theorem castDegree_neg (h : m = m') (a : LocalHomogeneousSymbol U V W m) :
+    (-a).castDegree h = -a.castDegree h :=
+  (rfl)
+
+@[simp]
+theorem castDegree_sub (h : m = m') (a b : LocalHomogeneousSymbol U V W m) :
+    (a - b).castDegree h = a.castDegree h - b.castDegree h :=
+  (rfl)
+
+end CastDegree
+
 section Restrict
 
 /-- The restriction of a homogeneous symbol on `U` to a smaller open set `U'`, extended by zero at
@@ -233,6 +290,12 @@ theorem restrict_restrict (h : U' ≤ U) (h' : U'' ≤ U') (a : LocalHomogeneous
     rw [coefficient_restrict_of_mem _ _ hx, coefficient_restrict_of_mem _ _ (h' hx),
       coefficient_restrict_of_mem _ _ hx]
 
+@[simp]
+theorem restrict_castDegree {m' : ℝ} (h : U' ≤ U) (hm : m = m')
+    (a : LocalHomogeneousSymbol U V W m) :
+    restrict h (a.castDegree hm) = (restrict h a).castDegree hm :=
+  (rfl)
+
 end Restrict
 
 end LocalHomogeneousSymbol
@@ -276,6 +339,20 @@ theorem coefficient_restrictTopEquiv_symm_apply
       HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m).coefficient =
       a.coefficient := (rfl)
 
+@[simp]
+theorem restrictTopEquiv_castDegree {m' : ℝ} (h : m = m')
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    restrictTopEquiv (a.castDegree h) = (restrictTopEquiv a).castDegree h :=
+  LocalHomogeneousSymbol.ext (by simp)
+
+@[simp]
+theorem restrictTopEquiv_symm_castDegree {m' : ℝ} (h : m = m')
+    (a : LocalHomogeneousSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m) :
+    restrictTopEquiv.symm (a.castDegree h) =
+      (restrictTopEquiv.symm a :
+        HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m).castDegree h :=
+  HomogeneousSymbol.ext (by simp)
+
 variable (U) in
 /-- The restriction of a homogeneous symbol on `ℝⁿ` to the open set `U` of positions, extended by
 zero at positions outside `U`: the restriction from `⊤` to `U` of the corresponding homogeneous
@@ -314,6 +391,20 @@ theorem restrict_top (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace
     restrict ⊤ a = restrictTopEquiv a :=
   LocalHomogeneousSymbol.restrict_self (restrictTopEquiv a)
 
+/-- Restricting the homogeneous symbol on `⊤` corresponding to a homogeneous symbol on `ℝⁿ` gives
+the restriction of that homogeneous symbol. -/
+@[simp]
+theorem restrict_restrictTopEquiv (h : U ≤ ⊤)
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    LocalHomogeneousSymbol.restrict h (restrictTopEquiv a) = restrict U a :=
+  (rfl)
+
+@[simp]
+theorem restrict_castDegree {m' : ℝ} (h : m = m')
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    restrict U (a.castDegree h) = (restrict U a).castDegree h :=
+  LocalHomogeneousSymbol.ext (by simp [coefficient_restrict])
+
 end HomogeneousSymbol
 
 namespace LocalHomogeneousSymbol
@@ -325,24 +416,6 @@ section Extend
 
 variable {ψ : CoordinateSpace n → ℝ}
 
-/-- The cut-off coefficient `ψ(x) a(x, ξ)`, for a smooth cutoff `ψ` whose support is a closed
-subset of `ℝⁿ` contained in `U`, is smooth away from the zero frequency at every position. -/
-private theorem contDiffOn_cutoff_smul (a : LocalHomogeneousSymbol U V W m)
-    (hψ : ContDiff ℝ ∞ ψ) (hψU : tsupport ψ ⊆ U) :
-    ContDiffOn ℝ ∞ (fun p => ψ p.1 • a.coefficient p) {p | p.2 ≠ 0} := by
-  rintro ⟨x, ξ⟩ hξ
-  refine ContDiffAt.contDiffWithinAt ?_
-  by_cases hx : x ∈ U
-  · have hs : ((U : Set (CoordinateSpace n)) ×ˢ {ξ | ξ ≠ 0}) ∈ 𝓝 (x, ξ) :=
-      (U.isOpen.prod isOpen_ne).mem_nhds ⟨hx, hξ⟩
-    exact ((hψ.comp contDiff_fst).contDiffAt).smul (a.contDiffOn_coefficient.contDiffAt hs)
-  · have h0 : (fun p : CoordinateSpace n × CoordinateSpace n => ψ p.1 • a.coefficient p)
-        =ᶠ[𝓝 (x, ξ)] fun _ => 0 := by
-      filter_upwards [(continuous_fst.tendsto (x, ξ)).eventually
-        (notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hψU h))] with p hp
-      simp [hp]
-    exact contDiffAt_const.congr_of_eventuallyEq h0
-
 /-- The extension by zero of the cut-off homogeneous symbol `ψ(x) a(x, ξ)`, for a smooth cutoff
 `ψ` whose support is a closed subset of `ℝⁿ` contained in `U`: a homogeneous symbol on `ℝⁿ` of the
 same degree. -/
@@ -352,7 +425,10 @@ def extend (ψ : CoordinateSpace n → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψU : 
   toFun a :=
     { coefficient := fun p => ψ p.1 • a.coefficient p
       zero_covector := fun x => by simp
-      contDiffOn_coefficient := a.contDiffOn_cutoff_smul hψ hψU
+      contDiffOn_coefficient := contDiffOn_smul_of_eventuallyEq_zero (U.isOpen.prod isOpen_ne)
+        (fun _ _ => (hψ.comp contDiff_fst).contDiffAt) a.contDiffOn_coefficient fun p hp hpU =>
+          (continuous_fst.tendsto p).eventually
+            (notMem_tsupport_iff_eventuallyEq.1 fun h => hpU ⟨hψU h, hp⟩)
       homogeneous := fun x ξ t ht => by simp [a.homogeneous x ξ t ht, smul_comm (ψ x)] }
   map_add' a b := HomogeneousSymbol.ext (funext fun p => by simp [smul_add])
   map_smul' c a := HomogeneousSymbol.ext (funext fun p => by simp [smul_comm (ψ p.1) c])
@@ -363,6 +439,11 @@ variable (hψ : ContDiff ℝ ∞ ψ) (hψU : tsupport ψ ⊆ U)
 theorem coefficient_extend (a : LocalHomogeneousSymbol U V W m)
     (p : CoordinateSpace n × CoordinateSpace n) :
     (extend ψ hψ hψU a).coefficient p = ψ p.1 • a.coefficient p := (rfl)
+
+@[simp]
+theorem extend_castDegree {m' : ℝ} (h : m = m') (a : LocalHomogeneousSymbol U V W m) :
+    extend ψ hψ hψU (a.castDegree h) = (extend ψ hψ hψU a).castDegree h :=
+  HomogeneousSymbol.ext (funext fun p => by simp)
 
 /-- The cut-off extension of the restriction of a homogeneous symbol on `ℝⁿ` is its product with
 the cutoff. -/
@@ -392,10 +473,11 @@ variable (χ : FrequencyCutoff (CoordinateSpace n))
 of order `m` on `U`. -/
 def cutoffSymbol : LocalHomogeneousSymbol U V W m →ₗ[ℂ] LocalSymbol U V W m where
   toFun a := LocalSymbol.ofEventuallyEq (fun p => χ p.2 • a.coefficient p)
-    (fun x hx ξ => by simp [a.coefficient_of_notMem x hx ξ]) fun K hKU hK => by
-      obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one U.isOpen hKU
-      refine ⟨HomogeneousSymbol.cutoffSymbol χ (extend ψ hψ hψU a), fun x hx => ?_⟩
-      filter_upwards [hψ1 x hx] with y hy η
+    (fun x hx ξ => by simp [a.coefficient_of_notMem x hx ξ]) fun x hx => by
+      obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one
+        U.isOpen (singleton_subset_iff.2 hx)
+      refine ⟨HomogeneousSymbol.cutoffSymbol χ (extend ψ hψ hψU a), ?_⟩
+      filter_upwards [hψ1 x rfl] with y hy η
       simp [hy]
   map_add' a b := LocalSymbol.ext (funext fun p => by simp [smul_add])
   map_smul' c a := LocalSymbol.ext (funext fun p => by simp [smul_comm (χ p.2) c])
@@ -433,5 +515,27 @@ theorem HomogeneousSymbol.restrict_cutoffSymbol {U : TopologicalSpace.Opens (Coo
     Symbol.restrict U (cutoffSymbol χ a) =
       LocalHomogeneousSymbol.cutoffSymbol χ (HomogeneousSymbol.restrict U a) :=
   LocalSymbol.ext_of_mem fun x hx ξ => by simp [hx]
+
+/-- The cut-off term commutes with the identification of homogeneous symbols on `ℝⁿ` with
+homogeneous symbols on `⊤`. -/
+@[simp]
+theorem HomogeneousSymbol.restrictTopEquiv_cutoffSymbol {V W : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
+    (χ : FrequencyCutoff (CoordinateSpace n))
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    Symbol.restrictTopEquiv (cutoffSymbol χ a) =
+      LocalHomogeneousSymbol.cutoffSymbol χ (HomogeneousSymbol.restrictTopEquiv a) :=
+  LocalSymbol.ext (funext fun p => by simp)
+
+/-- The cut-off term commutes with the identification of homogeneous symbols on `⊤` with
+homogeneous symbols on `ℝⁿ`. -/
+@[simp]
+theorem HomogeneousSymbol.restrictTopEquiv_symm_cutoffSymbol {V W : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
+    (χ : FrequencyCutoff (CoordinateSpace n))
+    (a : LocalHomogeneousSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m) :
+    Symbol.restrictTopEquiv.symm (LocalHomogeneousSymbol.cutoffSymbol χ a) =
+      cutoffSymbol χ (HomogeneousSymbol.restrictTopEquiv.symm a) :=
+  Symbol.ext (funext fun p => by simp)
 
 end TauCeti

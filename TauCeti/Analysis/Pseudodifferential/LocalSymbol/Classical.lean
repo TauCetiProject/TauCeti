@@ -124,13 +124,14 @@ variable (a : LocalClassicalSymbol U V W m) (χ : FrequencyCutoff (CoordinateSpa
 theorem exists_remainder (N : ℕ) :
     ∃ r : LocalSymbol U V W (m - N), ∀ p, r.coefficient p =
       a.toLocalSymbol.coefficient p - ∑ j ∈ Finset.range N, χ p.2 • (a.term j).coefficient p := by
-  refine ⟨LocalSymbol.ofEventuallyEq _ (fun x hx ξ => ?_) fun K hKU hK => ?_,
+  refine ⟨LocalSymbol.ofEventuallyEq _ (fun x hx ξ => ?_) fun x hx => ?_,
     fun p => congrFun (LocalSymbol.coefficient_ofEventuallyEq _ _ _) p⟩
   · simp [a.toLocalSymbol.coefficient_of_notMem x hx ξ,
       fun j => (a.term j).coefficient_of_notMem x hx ξ]
-  · obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one U.isOpen hKU
-    refine ⟨(extendAux ψ hψ hψU a).remainder χ N, fun x hx => ?_⟩
-    filter_upwards [hψ1 x hx] with y hy η
+  · obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one
+      U.isOpen (singleton_subset_iff.2 hx)
+    refine ⟨(extendAux ψ hψ hψU a).remainder χ N, ?_⟩
+    filter_upwards [hψ1 x rfl] with y hy η
     simp [toSymbol_extendAux, term_extendAux, hy]
 
 /-- The remainder `a - ∑_{j<N} χ(ξ) a_{m-j}` of a classical symbol on `U` after `N` terms, a symbol
@@ -274,6 +275,14 @@ theorem term_sub : (a - b).term j = a.term j - b.term j := by
   rw [sub_eq_add_neg (a.term j)]
   exact congrArg (a.term j + ·) (term_neg b j)
 
+@[simp]
+theorem term_nsmul (k : ℕ) : (k • a).term j = k • a.term j :=
+  Nat.cast_smul_eq_nsmul ℂ k (a.term j)
+
+@[simp]
+theorem term_zsmul (k : ℤ) : (k • a).term j = k • a.term j :=
+  Int.cast_smul_eq_zsmul ℂ k (a.term j)
+
 instance : AddCommGroup (LocalClassicalSymbol U V W m) :=
   toLocalSymbol_injective.addCommGroup _ toLocalSymbol_zero toLocalSymbol_add toLocalSymbol_neg
     toLocalSymbol_sub (fun a k => toLocalSymbol_nsmul a k) (fun a k => toLocalSymbol_zsmul a k)
@@ -416,6 +425,24 @@ theorem term_restrictTopEquiv_symm_apply
     (restrictTopEquiv.symm a : ClassicalSymbol n V W m).term j =
       HomogeneousSymbol.restrictTopEquiv.symm (a.term j) := (rfl)
 
+/-- The remainders of the classical symbol on `⊤` corresponding to a classical symbol on `ℝⁿ` are
+the local symbols corresponding to its remainders. -/
+@[simp]
+theorem remainder_restrictTopEquiv_apply (a : ClassicalSymbol n V W m)
+    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
+    (restrictTopEquiv a).remainder χ N = Symbol.restrictTopEquiv (a.remainder χ N) :=
+  LocalSymbol.ext (funext fun p => by simp)
+
+/-- The remainders of the classical symbol on `ℝⁿ` corresponding to a classical symbol on `⊤` are
+the symbols corresponding to its remainders. -/
+@[simp]
+theorem remainder_restrictTopEquiv_symm_apply
+    (a : LocalClassicalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m)
+    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
+    (restrictTopEquiv.symm a : ClassicalSymbol n V W m).remainder χ N =
+      Symbol.restrictTopEquiv.symm (a.remainder χ N) :=
+  Symbol.ext (funext fun p => by simp)
+
 variable (U) in
 /-- The restriction of a classical symbol on `ℝⁿ` to the open set `U` of positions: the restriction
 from `⊤` to `U` of the corresponding classical symbol on `⊤`, with the restricted full symbol and
@@ -449,6 +476,13 @@ theorem restrict_restrict (h : U' ≤ U) (a : ClassicalSymbol n V W m) :
 @[simp]
 theorem restrict_top (a : ClassicalSymbol n V W m) : restrict ⊤ a = restrictTopEquiv a :=
   LocalClassicalSymbol.restrict_self (restrictTopEquiv a)
+
+/-- Restricting the classical symbol on `⊤` corresponding to a classical symbol on `ℝⁿ` gives the
+restriction of that classical symbol. -/
+@[simp]
+theorem restrict_restrictTopEquiv (h : U ≤ ⊤) (a : ClassicalSymbol n V W m) :
+    LocalClassicalSymbol.restrict h (restrictTopEquiv a) = restrict U a :=
+  (rfl)
 
 end ClassicalSymbol
 
