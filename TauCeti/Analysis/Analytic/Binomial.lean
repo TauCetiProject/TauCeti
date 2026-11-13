@@ -17,11 +17,12 @@ and complex arguments.  These results supply the analytic criterion used to dete
 integrability domain of the negative-binomial probability-generating function.
 
 It also treats the binomial series `binomialSeries 𝔸 a`, the power series of `(1 + y) ^ a`, with
-values in an arbitrary normed algebra `𝔸` rather than a normed division ring. Its radius is still at
-least `1`, since its coefficients are scalars. On the open unit ball the sums of the series for `a`
-and `b` multiply to the sum of the series for `a + b`, by the Chu–Vandermonde identity, and the
-series for a natural number `n` sums to `(1 + y) ^ n`. In particular the binomial series of `1 / 2`
-is a square root of `1 + y`, in any Banach algebra.
+values in a normed algebra `𝔸` over `ℝ` or `ℂ` rather than a normed division ring. Its radius is
+still at least `1`, since its coefficients are scalars, so it converges on the open unit ball when
+`𝔸` is complete. On the open unit ball of a Banach algebra the sums of the series for `a` and `b`
+multiply to the sum of the series for `a + b`, by the Chu–Vandermonde identity, and in any normed
+algebra the series for a natural number `n` sums to `(1 + y) ^ n`. In particular the binomial series
+of `1 / 2` is a square root of `1 + y`, in any Banach algebra.
 
 ## Main declarations
 
@@ -31,9 +32,9 @@ is a square root of `1 + y`, in any Banach algebra.
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
-* `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series converges on the
-  open unit ball of every normed algebra.
-* `TauCeti.binomialSeries_sum_mul_binomialSeries_sum` — on the open unit ball,
+* `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
+  `1` in every normed algebra over `ℝ` or `ℂ`.
+* `TauCeti.binomialSeries_sum_mul_binomialSeries_sum` — on the open unit ball of a Banach algebra,
   `(1 + y) ^ a * (1 + y) ^ b = (1 + y) ^ (a + b)` for the sums of the binomial series.
 * `TauCeti.binomialSeries_sum_natCast` — for a natural number `n` the binomial series sums to
   `(1 + y) ^ n`.
@@ -101,9 +102,9 @@ section NormedAlgebra
 
 variable {𝕂 : Type*} [RCLike 𝕂] {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra 𝕂 𝔸]
 
-/-- The binomial series converges on the open unit ball of every normed algebra over `ℝ` or `ℂ`,
-not only of a normed division ring (`binomialSeries_radius_ge_one`): its coefficients are scalars,
-so its terms are bounded by those of the scalar binomial series. -/
+/-- The binomial series has radius at least `1` in every normed algebra over `ℝ` or `ℂ`, not only
+in a normed division ring (`binomialSeries_radius_ge_one`). It converges on the open unit ball when
+the algebra is complete (`TauCeti.hasSum_binomialSeries`). -/
 theorem binomialSeries_radius_ge_one_of_normedRing (a : 𝕂) :
     1 ≤ (binomialSeries 𝔸 a).radius := by
   refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
