@@ -105,7 +105,7 @@ noncomputable def localizationAwayCoconeIsColimit : IsColimit (localizationAwayC
     { desc := fun c ↦ ofHom <| IsLocalization.liftAlgHom (M := M)
         (f := Algebra.ofId R c.pt) (fun x ↦ ?_)
       fac := fun c s ↦ ?_
-      uniq := fun c m hm ↦ ?_ }
+      uniq := fun c m _ ↦ ?_ }
   · have hx : IsUnit (algebraMap R (Localization.Away (∏ y ∈ ({x} : Finset M), (y : R))) x) := by
       simpa using IsLocalization.Away.algebraMap_isUnit
         (S := Localization.Away (∏ y ∈ ({x} : Finset M), (y : R)))

@@ -33,20 +33,15 @@ theorem exists_closure_range_eq_top_and_prod_orderOf_eq_card (G : Type*) [CommGr
   obtain ⟨ι, _, n, hn, ⟨e⟩⟩ := equiv_prod_multiplicative_zmod_of_finite G
   have : ∀ i, NeZero (n i) := fun i ↦ ⟨by have := hn i; omega⟩
   let σ : ι → G := fun i ↦ e.symm (Pi.mulSingle i (.ofAdd 1))
-  have hσ : ∀ i, orderOf (σ i) = n i := fun i ↦ by
-    simpa only [σ, MulEquiv.orderOf_eq, orderOf_piMulSingle, orderOf_ofAdd_eq_addOrderOf]
-      using ZMod.addOrderOf_one (n i)
+  have hσ (i : ι) : orderOf (σ i) = n i := by
+    simp [σ, orderOf_piMulSingle, ZMod.addOrderOf_one]
   refine ⟨ι, inferInstance, σ, eq_top_iff.2 fun x _ ↦ ?_, ?_⟩
   · -- Every element is a product of powers of the generators of the cyclic factors.
-    have hx : x = ∏ i, σ i ^ (e x i).toAdd.val := by
-      apply e.injective
-      rw [map_prod e]
-      refine ((Finset.prod_congr rfl fun i _ ↦ ?_).trans (Finset.univ_prod_mulSingle (e x))).symm
-      rw [map_pow, MulEquiv.apply_symm_apply, ← Pi.mulSingle_pow, ← ofAdd_nsmul, nsmul_one,
-        ZMod.natCast_zmod_val, ofAdd_toAdd]
-    rw [hx]
-    exact Subgroup.prod_mem _ fun i _ ↦ pow_mem (Subgroup.subset_closure (Set.mem_range_self i)) _
-  · simp_rw [hσ, Nat.card_congr e.toEquiv, Nat.card_pi, Nat.card_eq_fintype_card,
-      Fintype.card_multiplicative, ZMod.card]
+    rw [← e.symm_apply_apply x, ← Finset.univ_prod_mulSingle (e x), map_prod]
+    refine Subgroup.prod_mem _ fun i _ ↦ ?_
+    obtain ⟨k, hk⟩ : ∃ k : ℕ, .ofAdd 1 ^ k = e x i := ⟨(e x i).toAdd.val, by simp [← ofAdd_nsmul]⟩
+    rw [← hk, Pi.mulSingle_pow, map_pow]
+    exact pow_mem (Subgroup.subset_closure (Set.mem_range_self i)) _
+  · simp [hσ, Nat.card_congr e.toEquiv]
 
 end CommGroup

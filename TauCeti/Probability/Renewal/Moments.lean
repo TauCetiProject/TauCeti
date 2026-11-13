@@ -161,7 +161,6 @@ theorem exists_lintegral_renewalCount_pow_le (hT : ∀ n, Measurable (T n)) (hin
       summable_pow_mul_geometric_of_norm_lt_one p
       (by rwa [Real.norm_of_nonneg hρ0])
   set S := ∑' j : ℕ, ((j + 1 : ℕ) : ℝ) ^ p * ρ ^ (j + 1)
-  have hS : 0 ≤ S := tsum_nonneg fun j ↦ by positivity
   have hC : 0 ≤ (1 + S) * (L + 1) ^ p := by positivity
   refine ⟨NNReal.mk _ hC, fun t ↦ ?_⟩
   set k := ⌈t⌉₊
@@ -230,11 +229,11 @@ theorem memLp_toReal_renewalCount (hT : ∀ n, Measurable (T n)) (hindep : iInde
   -- Prove membership for the integer exponent `k = ⌈p⌉₊ + 1 ≥ p` and lower the exponent.
   set k : ℕ := ⌈p.toReal⌉₊ + 1
   have hk : MemLp (fun ω ↦ (renewalCount T t ω).toReal) k P := by
-    rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (by simp [k]) (by simp)
+    rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top (by simp [k]) (by simp)
       (measurable_renewalCount hT t).ennreal_toReal.aestronglyMeasurable]
     refine lt_of_le_of_lt (lintegral_mono fun ω ↦ ?_)
       (lintegral_renewalCount_pow_lt_top hT hindep hid hzero t k)
-    rw [ENNReal.toReal_natCast, ENNReal.rpow_natCast, Real.enorm_of_nonneg ENNReal.toReal_nonneg]
+    rw [ENNReal.toReal_natCast, ENNReal.rpow_natCast, Real.eNorm_of_nonneg ENNReal.toReal_nonneg]
     gcongr
     exact ENNReal.ofReal_toReal_le
   refine hk.mono_exponent ?_

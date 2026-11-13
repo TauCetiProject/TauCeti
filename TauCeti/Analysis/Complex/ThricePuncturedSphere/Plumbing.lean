@@ -112,6 +112,12 @@ theorem plumbingMap_apply (q : Puncture) (L : ℝ) (w : ℂ) :
     q.plumbingMap L w = q.endCenter + q.plumbingFactor L * w :=
   (rfl)
 
+/-- The second input of the inserted sphere sits at offset `f` from the center of the end it is
+plumbed into, where `f` is the plumbing factor. -/
+theorem plumbingMap_one_sub_endCenter (q : Puncture) (L : ℝ) :
+    q.plumbingMap L 1 - q.endCenter = q.plumbingFactor L := by
+  rw [plumbingMap_apply, mul_one, add_sub_cancel_left]
+
 theorem plumbingFactor_ne_zero (q : Puncture) (L : ℝ) : q.plumbingFactor L ≠ 0 :=
   div_ne_zero (mul_ne_zero q.endScale_ne_zero (Complex.exp_ne_zero _)) two_ne_zero
 
@@ -148,6 +154,12 @@ theorem norm_plumbingFactor (q : Puncture) (L : ℝ) :
     ‖q.plumbingFactor L‖ = ‖q.endScale‖ * Real.exp (-(2 * π * L)) / 2 := by
   rw [plumbingFactor_eq_mul_ofReal, norm_mul, Complex.norm_real,
     Real.norm_of_nonneg (by positivity), mul_div_assoc]
+
+/-- At a finite puncture the plumbing factor has norm `e^{-2πL} / 4`. -/
+theorem norm_plumbingFactor_of_ne_inf {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
+    ‖q.plumbingFactor L‖ = Real.exp (-(2 * π * L)) / 4 := by
+  rw [norm_plumbingFactor, norm_endScale hq]
+  ring
 
 /-- The first input of the inserted sphere sits at the center of the end it is plumbed into. -/
 @[simp]
@@ -285,14 +297,40 @@ theorem norm_sub_endCenter_div_plumbingFactor_le_iff {q : Puncture} (hq : q ≠ 
   rw [norm_div, norm_plumbingFactor, norm_endScale hq, div_le_iff₀ (by positivity), hexp]
   constructor <;> intro h <;> linarith
 
-/-- At a positive end `q`, the image of the point `1` under the plumbing map of neck length `L`
-lies in the open disc `‖· - c_q‖ < exp (-2π(L - 1)) / 2` bounded by the circle `s = L - 1` of the
-end `q`. -/
-theorem norm_plumbingMap_one_sub_endCenter_lt {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
+/-- The image of the point `1` under the plumbing map of neck length `L` lies in the open disc
+`‖· - c_q‖ < exp (-2π(L - 1)) / 2`. For a finite end `q ≠ ∞` this is the disc bounded by the circle
+`s = L - 1` of the end `q`; at `∞` the same inequality holds, but that circle has a different
+radius. -/
+theorem norm_plumbingMap_one_sub_endCenter_lt (q : Puncture) (L : ℝ) :
     ‖q.plumbingMap L 1 - q.endCenter‖ < Real.exp (-(2 * π * (L - 1))) / 2 := by
-  rw [plumbingMap_apply, add_sub_cancel_left, mul_one, norm_plumbingFactor, norm_endScale hq]
-  have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : -(2 * π * L) < -(2 * π * (L - 1)))
-  linarith [Real.exp_pos (-(2 * π * L))]
+  have hs : ‖q.endScale‖ ≤ 2 := by cases q <;> simp <;> norm_num
+  have h2 : 2 < Real.exp (2 * π) := by
+    linarith [Real.add_one_lt_exp (by positivity : 2 * π ≠ 0), Real.two_le_pi]
+  have hexp : Real.exp (-(2 * π * (L - 1))) = Real.exp (2 * π) * Real.exp (-(2 * π * L)) := by
+    rw [← Real.exp_add]
+    ring_nf
+  rw [plumbingMap_apply, add_sub_cancel_left, mul_one, norm_plumbingFactor, hexp]
+  have := Real.exp_pos (-(2 * π * L))
+  nlinarith [mul_le_mul_of_nonneg_right hs this.le, mul_lt_mul_of_pos_right h2 this]
+
+/-- The second input `ψ(1)` of the inserted sphere is at distance at least `1 - ‖f‖` from the
+center of the other finite end `r`, where `f` is the plumbing factor. -/
+theorem one_sub_norm_plumbingFactor_le {q r : Puncture} (hq : q ≠ inf) (hr : r ≠ inf) (hrq : r ≠ q)
+    (L : ℝ) : 1 - ‖q.plumbingFactor L‖ ≤ ‖q.plumbingMap L 1 - r.endCenter‖ := by
+  have h := one_sub_norm_sub_endCenter_le hq hr hrq (q.plumbingMap L 1)
+  rwa [plumbingMap_one_sub_endCenter] at h
+
+/-- For an end `q`, a point of the capped cylinder `ℂ ∖ {c_q'}`, that is the capped puncture `c_q`
+or a point of `ℂ ∖ {0, 1}`, which lies off the open disc `‖· - c_q‖ < exp (-2π(L - 1)) / 2` lies in
+the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`. -/
+theorem mem_plumbedSphere_of_le_norm_sub_endCenter {q : Puncture} {L : ℝ} {w : ℂ}
+    (hw : w = q.endCenter ∨ w ≠ 0 ∧ w ≠ 1)
+    (hle : Real.exp (-(2 * π * (L - 1))) / 2 ≤ ‖w - q.endCenter‖) :
+    (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1 := by
+  refine ⟨hw.resolve_left fun h => ?_,
+    fun h => (h ▸ norm_plumbingMap_one_sub_endCenter_lt q L).not_ge hle⟩
+  rw [h, sub_self, norm_zero] at hle
+  exact (by positivity : 0 < Real.exp (-(2 * π * (L - 1))) / 2).not_ge hle
 
 /-- **The plumbing map preserves the angular forms.** It pulls the angular form `dt` of the end
 `q` back to the angular form `dt` of the end at `∞`. -/

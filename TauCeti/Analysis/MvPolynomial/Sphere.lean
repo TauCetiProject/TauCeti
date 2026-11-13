@@ -70,7 +70,7 @@ theorem IsHomogeneous.eval_eq_norm_pow_mul_sphereEval {p : MvPolynomial σ ℝ} 
     eval (fun i ↦ x i) p = ‖x‖ ^ d * sphereEval p
       ⟨‖x‖⁻¹ • x, mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm hx)⟩ := by
   have hnorm : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
-  have hscale := hp.eval_smul (fun i ↦ (‖x‖⁻¹ • x) i) ‖x‖
+  have hscale := hp.eval_smul ‖x‖ (fun i ↦ (‖x‖⁻¹ • x) i)
   simpa only [sphereEval_apply, Pi.smul_def, PiLp.smul_apply, smul_eq_mul,
     ← mul_assoc, mul_inv_cancel₀ hnorm, one_mul] using hscale
 
@@ -87,7 +87,7 @@ theorem IsHomogeneous.eq_zero_of_sphereEval_eq_zero {p : MvPolynomial σ ℝ} {d
     have hz : eval (fun i ↦ u i) p = 0 := by
       simpa only [sphereEval_apply, ContinuousMap.zero_apply] using
         congrArg (fun f ↦ f ⟨u, mem_sphere_zero_iff_norm.2 hu⟩) h
-    have hscale := hp.eval_smul (fun i ↦ u i) 0
+    have hscale := hp.eval_smul 0 (fun i ↦ u i)
     simpa [hx, hz] using hscale
   · have hnonzero : (WithLp.toLp 2 x : EuclideanSpace ℝ σ) ≠ 0 := by
       simpa using hx

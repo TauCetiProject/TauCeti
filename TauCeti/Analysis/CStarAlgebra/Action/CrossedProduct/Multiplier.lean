@@ -48,6 +48,9 @@ No unit, separability, σ-finiteness or nondegeneracy is assumed.
 * `TauCeti.CStarAction.FullCrossedProduct.continuous_groupMultiplier_fst_apply` and
   `TauCeti.CStarAction.FullCrossedProduct.continuous_groupMultiplier_snd_apply`: strict continuity
   of the group map.
+* `TauCeti.CStarAction.FullCrossedProduct.integral_coefficientMultiplier_mul_groupMultiplier_fst`:
+  the integral formula `∫ i_A(f(s)) i_G(s) y dμ(s) = f * y` for `f` compactly supported, a Bochner
+  integral in the full crossed product.
 * `TauCeti.CStarAction.CovariantRepresentation.integratedFull_coefficientMultiplier_fst` and
   `TauCeti.CStarAction.CovariantRepresentation.integratedFull_groupMultiplier_fst`, with their
   right-action counterparts `integratedFull_coefficientMultiplier_snd` and
@@ -351,5 +354,52 @@ theorem integratedFull_groupMultiplier_snd (r : G) (x : FullCrossedProduct α μ
     P.isUnitary.adjoint_eq_inv]
 
 end CovariantRepresentation
+
+namespace FullCrossedProduct
+
+/-- The integrand `s ↦ i_A(f(s)) i_G(s) y` of the integral formula
+`integral_coefficientMultiplier_mul_groupMultiplier_fst` is continuous. -/
+theorem continuous_coefficientMultiplier_mul_groupMultiplier_fst
+    (f : ConvolutionAlgebra α μ) (y : FullCrossedProduct α μ) :
+    Continuous fun s => (coefficientMultiplier α μ (f.ofConv s) *
+      (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y := by
+  simp only [DoubleCentralizer.mul_fst, mul_apply_eq_comp]
+  have hfst : Continuous fun m : 𝓜(ℂ, FullCrossedProduct α μ) => m.fst :=
+    DoubleCentralizer.isUniformEmbedding_toProdMulOpposite.uniformContinuous.continuous.fst
+  exact (hfst.comp ((map_continuous (coefficientMultiplier α μ)).comp
+    f.ofConv.continuous)).clm_apply (continuous_groupMultiplier_fst_apply y)
+
+/-- The integrand `s ↦ i_A(f(s)) i_G(s) y` of the integral formula
+`integral_coefficientMultiplier_mul_groupMultiplier_fst` is integrable. -/
+theorem integrable_coefficientMultiplier_mul_groupMultiplier_fst
+    (f : ConvolutionAlgebra α μ) (y : FullCrossedProduct α μ) :
+    Integrable (fun s => (coefficientMultiplier α μ (f.ofConv s) *
+      (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y) μ := by
+  refine (continuous_coefficientMultiplier_mul_groupMultiplier_fst f y
+    ).integrable_of_hasCompactSupport (f.ofConv.hasCompactSupport.mono fun s hs hzero => hs ?_)
+  simp [hzero]
+
+/-- An element of the twisted convolution algebra acts on the full crossed product as the
+integral of its canonical multipliers: `∫ i_A(f(s)) i_G(s) y dμ(s) = f * y`. -/
+theorem integral_coefficientMultiplier_mul_groupMultiplier_fst (f : ConvolutionAlgebra α μ)
+    (y : FullCrossedProduct α μ) :
+    ∫ s, (coefficientMultiplier α μ (f.ofConv s) *
+      (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y ∂μ = of α μ f * y := by
+  rw [← sub_eq_zero, ← norm_le_zero_iff, norm_le_iff]
+  intro H _ _ _ P
+  -- Every integrated form takes the same value at both sides.
+  suffices h : P.integratedFull μ (∫ s, (coefficientMultiplier α μ (f.ofConv s) *
+      (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y ∂μ) =
+      P.integratedFull μ (of α μ f * y) by
+    rw [map_sub, h, sub_self, norm_zero]
+  ext ξ
+  let Φ : FullCrossedProduct α μ →L[ℂ] H := (ContinuousLinearMap.apply ℂ H ξ).comp
+    { toLinearMap := (P.integratedFull μ : _ →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
+  have hΦ (x) : Φ x = P.integratedFull μ x ξ := rfl
+  rw [← hΦ, ← Φ.integral_comp_comm (integrable_coefficientMultiplier_mul_groupMultiplier_fst f y),
+    map_mul, mul_apply_eq_comp, CovariantRepresentation.integratedFull_of_apply]
+  simp [hΦ, DoubleCentralizer.mul_fst]
+
+end FullCrossedProduct
 
 end TauCeti.CStarAction

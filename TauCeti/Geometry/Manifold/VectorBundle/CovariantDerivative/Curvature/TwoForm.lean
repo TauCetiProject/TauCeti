@@ -155,7 +155,7 @@ private theorem contMDiffAt_inner_curvatureTensor_chartDualFrame (x : M) {y : M}
   let D := Riemannian.Tensor.chartDualFrame (I := I) x
   have hframe (v : E) : CMDiffAt ∞ (T% (fun z ↦ e.symmL ℝ z v)) y :=
     (e.contMDiffAt_symmL hy).clm_bundle_apply (by
-      rw [contMDiffAt_section]
+      rw [contMDiffAt_section_iff]
       simpa using (contMDiffAt_const (I := I) (c := v) (n := ∞) (x := y)))
   have hD (k : Fin (finrank ℝ E)) : CMDiffAt ∞ (T% (D k)) y :=
     Riemannian.Tensor.contMDiffAt_chartDualFrame (n := ∞) x hy k
