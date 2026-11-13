@@ -54,6 +54,12 @@ system without solutions.
 
 * `TauCeti.LimitGroup.MRDiagram.exists_mem_branchHoms_node`: every choice of an edge at the root,
   a modular automorphism and a branch composite below is realised by a branch composite.
+* `TauCeti.LimitGroup.MRDiagram.isSound_node`, `TauCeti.LimitGroup.MRDiagram.isSound_edge`: a
+  vertex is sound exactly when its subdiagrams are sound at the transported tuples.
+* `TauCeti.LimitGroup.MRDiagram.isComplete_node_iff_of_forall_isComplete`: a vertex with complete
+  subdiagrams is complete exactly when every `A`-homomorphism factors through one step of it.
+* `TauCeti.LimitGroup.MRDiagram.isComplete_iff_of_subsingleton`: over trivial coefficients,
+  completeness concerns all homomorphisms from the root group to the target.
 * `TauCeti.LimitGroup.MRDiagram.isComplete_freeRoot`: the one-edge diagram of a free `A`-group is
   complete.
 * `TauCeti.LimitGroup.MRDiagram.isComplete_empty_iff`: the diagram without branches is complete
@@ -203,6 +209,14 @@ theorem isComplete_iff_branchHoms_eq_univ {D : MRDiagram ι} :
 theorem isComplete_leaf (free : IsFreeGGroup ι) : (leaf free).IsComplete ιL :=
   fun _ => Set.mem_univ _
 
+/-- Over trivial coefficients every homomorphism is an `A`-homomorphism: a diagram is complete
+exactly when every homomorphism from its root group to the target is a branch composite. -/
+theorem isComplete_iff_of_subsingleton [Subsingleton A] {D : MRDiagram ι} :
+    D.IsComplete ιL ↔ ∀ φ : H →* L, ∃ ψ ∈ D.branchHoms ιL, (ψ : H →* L) = φ := by
+  refine ⟨fun h φ => ⟨⟨φ, fun a => by simp [Subsingleton.elim a 1]⟩, h _, rfl⟩, fun h φ => ?_⟩
+  obtain ⟨ψ, hψ, hψφ⟩ := h φ
+  rwa [show ψ = φ from GHom.ext fun x => DFunLike.congr_fun hψφ x] at hψ
+
 variable (ιL) in
 /-- A diagram is *sound* for the system `S` of equations at the tuple `x` of its root group when
 every branch composite sends `x` to a solution of `S` in the target. -/
@@ -217,6 +231,29 @@ theorem isSound_iff {X : Type*} {D : MRDiagram ι} {S : Set (GX A X)} {x : X →
 theorem IsSound.mono {X : Type*} {D : MRDiagram ι} {S T : Set (GX A X)} {x : X → H}
     (h : D.IsSound ιL S x) (hTS : T ⊆ S) : D.IsSound ιL T x :=
   fun φ hφ => V_antitone ιL hTS (h φ hφ)
+
+/-- A leaf is sound for a system at a tuple exactly when every `A`-homomorphism from its group to
+the target sends the tuple to a solution. -/
+@[simp]
+theorem isSound_leaf {X : Type*} (free : IsFreeGGroup ι) {S : Set (GX A X)} {x : X → H} :
+    (leaf free).IsSound ιL S x ↔ ∀ φ : GHom ι ιL, (fun i => φ (x i)) ∈ V ιL S := by
+  simp [isSound_iff]
+
+/-- A vertex is sound for a system at a tuple exactly when, for every outgoing edge and every
+modular automorphism `σ`, the subdiagram at the end of the edge is sound at the image of the tuple
+under `σ` followed by the edge homomorphism. -/
+@[simp]
+theorem isSound_node {X : Type*} {M : Subgroup (MulAut H)}
+    {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)} {n : ℕ} {K : Fin n → Type u}
+    [∀ i, Group (K i)] {κ : ∀ i, A →* K i} {π : ∀ i, GHom ι (κ i)}
+    {child : ∀ i, MRDiagram (κ i)} {S : Set (GX A X)} {x : X → H} :
+    (node M hM π child).IsSound ιL S x ↔
+      ∀ i, ∀ σ ∈ M, (child i).IsSound ιL S fun j => π i (σ (x j)) := by
+  refine ⟨fun h i σ hσ ψ hψ => ?_, fun h φ hφ => ?_⟩
+  · obtain ⟨φ, hφ, hφψ⟩ := exists_mem_branchHoms_node hM π child i hσ hψ
+    simpa [hφψ] using h φ hφ
+  · obtain ⟨i, σ, hσ, ψ, hψ, hφψ⟩ := mem_branchHoms_node.1 hφ
+    simpa [hφψ] using h i σ hσ ψ hψ
 
 /-! ### Diagrams with one edge at the root, and the diagram without branches -/
 
@@ -252,7 +289,55 @@ theorem exists_mem_branchHoms_edge {σ : MulAut H} (hσ : σ ∈ M) {ψ : GHom �
     (hψ : ψ ∈ D.branchHoms ιL) : ∃ φ ∈ (edge M hM π D).branchHoms ιL, ∀ x, φ x = ψ (π (σ x)) :=
   exists_mem_branchHoms_node hM (fun _ => π) (fun _ => D) 0 hσ hψ
 
+/-- A diagram with one edge at the root is sound for a system at a tuple exactly when, for every
+modular automorphism `σ` of the root, the subdiagram is sound at the image of the tuple under `σ`
+followed by the edge homomorphism. -/
+@[simp]
+theorem isSound_edge {X : Type*} {S : Set (GX A X)} {x : X → H} :
+    (edge M hM π D).IsSound ιL S x ↔ ∀ σ ∈ M, D.IsSound ιL S fun j => π (σ (x j)) :=
+  isSound_node.trans ⟨fun h => h 0, fun h _ => h⟩
+
 end edge
+
+/-- A vertex whose subdiagrams are complete is complete exactly when every `A`-homomorphism from
+its group to the target factors as a modular automorphism, followed by the homomorphism of an
+outgoing edge and by an `A`-homomorphism out of the group at the end of that edge. -/
+theorem isComplete_node_iff_of_forall_isComplete {M : Subgroup (MulAut H)}
+    {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)} {n : ℕ} {K : Fin n → Type u}
+    [∀ i, Group (K i)] {κ : ∀ i, A →* K i} {π : ∀ i, GHom ι (κ i)}
+    {child : ∀ i, MRDiagram (κ i)} (hchild : ∀ i, (child i).IsComplete ιL) :
+    (node M hM π child).IsComplete ιL ↔
+      ∀ φ : GHom ι ιL, ∃ i, ∃ σ ∈ M, ∃ ψ : GHom (κ i) ιL, ∀ x, φ x = ψ (π i (σ x)) := by
+  simp only [isComplete_iff, mem_branchHoms_node]
+  exact forall_congr' fun _ => exists_congr fun i => exists_congr fun _ => and_congr_right fun _ =>
+    ⟨fun ⟨ψ, _, h⟩ => ⟨ψ, h⟩, fun ⟨ψ, h⟩ => ⟨ψ, hchild i ψ, h⟩⟩
+
+/-- A diagram with one edge at the root, whose subdiagram is complete, is complete exactly when
+every `A`-homomorphism from the root group to the target factors as a modular automorphism,
+followed by the edge homomorphism and by an `A`-homomorphism out of the group at its end. -/
+theorem isComplete_edge_iff_of_isComplete {K : Type u} [Group K] {κ : A →* K}
+    {M : Subgroup (MulAut H)} {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)} {π : GHom ι κ}
+    {D : MRDiagram κ} (hD : D.IsComplete ιL) :
+    (edge M hM π D).IsComplete ιL ↔
+      ∀ φ : GHom ι ιL, ∃ σ ∈ M, ∃ ψ : GHom κ ιL, ∀ x, φ x = ψ (π (σ x)) :=
+  (isComplete_node_iff_of_forall_isComplete fun _ => hD).trans
+    (forall_congr' fun _ => ⟨fun ⟨_, h⟩ => h, fun h => ⟨0, h⟩⟩)
+
+/-- An identity edge without modular automorphisms does not change the branch composites. -/
+@[simp]
+theorem branchHoms_edge_bot_id (D : MRDiagram ι) :
+    (edge ⊥ bot_le (GHom.id ι) D).branchHoms ιL = D.branchHoms ιL := by
+  ext φ
+  refine mem_branchHoms_edge.trans ⟨fun ⟨σ, hσ, ψ, hψ, h⟩ => ?_,
+    fun h => ⟨1, Subgroup.mem_bot.2 rfl, φ, h, fun _ => by simp⟩⟩
+  obtain rfl := Subgroup.mem_bot.1 hσ
+  exact (GHom.ext fun x => by simpa using h x) ▸ hψ
+
+/-- An identity edge without modular automorphisms does not change completeness. -/
+@[simp]
+theorem isComplete_edge_bot_id_iff {D : MRDiagram ι} :
+    (edge ⊥ bot_le (GHom.id ι) D).IsComplete ιL ↔ D.IsComplete ιL := by
+  simp [isComplete_iff_branchHoms_eq_univ]
 
 variable (ι) in
 /-- The diagram without branches: its root has no outgoing edge and is not a leaf. It is the
@@ -302,8 +387,7 @@ theorem modular_freeRoot (free : IsFreeGGroup ι) : (freeRoot free).modular = �
 @[simp]
 theorem branchHoms_freeRoot (free : IsFreeGGroup ι) :
     (freeRoot free).branchHoms ιL = Set.univ :=
-  Set.eq_univ_of_forall fun φ =>
-    mem_branchHoms_edge.2 ⟨1, Subgroup.mem_bot.2 rfl, φ, Set.mem_univ _, fun _ => by simp⟩
+  (branchHoms_edge_bot_id _).trans (branchHoms_leaf ιL free)
 
 /-- The one-edge diagram of a free `A`-group is complete. -/
 @[simp]
@@ -314,7 +398,7 @@ theorem isComplete_freeRoot (free : IsFreeGGroup ι) : (freeRoot free).IsComplet
 composite of the one-edge diagram from `H` to the leaf `H`. -/
 theorem exists_mem_branchHoms_freeRoot_eq [Subsingleton A] [IsFreeGroup H] (φ : H →* L) :
     ∃ ψ ∈ (freeRoot (IsFreeGGroup.of_subsingleton ι)).branchHoms ιL, (ψ : H →* L) = φ :=
-  ⟨⟨φ, fun a => by simp [Subsingleton.elim a 1]⟩, isComplete_freeRoot _ _, rfl⟩
+  isComplete_iff_of_subsingleton.1 (isComplete_freeRoot _) φ
 
 /-! ### Proper quotients -/
 
@@ -430,16 +514,19 @@ theorem isComplete_iff_of_equiv {D : MRDiagram ι} {x : X → H} (e : GHom ι ι
 /-- A diagram of the coordinate group of a system `S` over the target is sound for `S` at the
 variables: every branch composite is a solution of `S`. -/
 theorem isSound_coordGroup (D : MRDiagram (CoordGroup.coeff ιL S)) :
-    D.IsSound ιL S fun x => ((inr (FreeGroup.of x) : GX A X) : CoordGroup ιL S) :=
-  D.isSound_of_forall S fun φ =>
-    funext (CoordGroup.homEquiv_apply_coe φ) ▸ (CoordGroup.homEquiv ιL S φ).2
+    D.IsSound ιL S (CoordGroup.genericPoint ιL S) :=
+  D.isSound_of_forall S fun φ => by
+    have : (CoordGroup.homEquiv ιL S φ : X → L) = fun x => φ (CoordGroup.genericPoint ιL S x) :=
+      funext fun x => by simp [CoordGroup.genericPoint_apply]
+    exact this ▸ (CoordGroup.homEquiv ιL S φ).2
 
 /-- A diagram of the coordinate group of a system `S` over the target is complete exactly when
 every solution of `S` in the target is the value on the variables of a branch composite. -/
 theorem isComplete_coordGroup_iff {D : MRDiagram (CoordGroup.coeff ιL S)} :
     D.IsComplete ιL ↔ ∀ v ∈ V ιL S, ∃ φ ∈ D.branchHoms ιL,
-      ∀ x, φ ((inr (FreeGroup.of x) : GX A X) : CoordGroup ιL S) = v x :=
-  isComplete_iff_of_equiv S (CoordGroup.homEquiv ιL S) CoordGroup.homEquiv_apply_coe
+      ∀ x, φ (CoordGroup.genericPoint ιL S x) = v x :=
+  isComplete_iff_of_equiv S (CoordGroup.homEquiv ιL S) fun φ x => by
+    simp [CoordGroup.genericPoint_apply]
 
 /-- A diagram of the group presented by a system `S` is sound for `S` at the variables: every
 branch composite is a solution of `S`. -/

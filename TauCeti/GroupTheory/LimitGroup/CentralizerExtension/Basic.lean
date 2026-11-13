@@ -287,7 +287,7 @@ theorem coe_retractionGHom (k : Fin n → ℤ) : ⇑(retractionGHom (u := u) k) 
   (rfl)
 
 @[simp]
-theorem coe_monoidHom_retractionGHom (k : Fin n → ℤ) :
+theorem toMonoidHom_retractionGHom (k : Fin n → ℤ) :
     (retractionGHom (u := u) k : CentralizerExt u n →* G) = retraction k :=
   (rfl)
 

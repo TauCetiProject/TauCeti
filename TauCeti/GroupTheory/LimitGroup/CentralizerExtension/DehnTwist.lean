@@ -29,8 +29,9 @@ retractions `t ↦ u ^ k`.
   `t` to `t * u ^ k`.
 * `TauCeti.LimitGroup.CentralizerExt.dehnTwist_eq_one_iff`: the twist is trivial exactly when
   `u = 1`.
-* `TauCeti.LimitGroup.CentralizerExt.zpowers_dehnTwist_le_fixingSubgroup`: the powers of the
-  twist fix `G`.
+* `TauCeti.LimitGroup.CentralizerExt.dehnTwist_mem_fixingSubgroup`,
+  `TauCeti.LimitGroup.CentralizerExt.zpowers_dehnTwist_le_fixingSubgroup`: the twist and its
+  powers fix `G`.
 * `TauCeti.LimitGroup.CentralizerExt.retraction_comp_dehnTwist_zpow`: the retraction `t ↦ u ^ m`
   composed with the `k`-th power of the twist is the retraction `t ↦ u ^ (m + k)`.
 
@@ -113,11 +114,18 @@ theorem dehnTwist_eq_one_iff : dehnTwist u = 1 ↔ u = 1 := by
   have := dehnTwist_t u 0
   rwa [h, MulAut.one_apply, left_eq_mul, map_eq_one_iff _ of_injective] at this
 
+/-- The twist fixes `G`. -/
+@[simp]
+theorem dehnTwist_mem_fixingSubgroup :
+    dehnTwist u ∈ fixingSubgroup (MulAut (CentralizerExt u 1))
+      (Set.range (of : G →* CentralizerExt u 1)) :=
+  (mem_fixingSubgroup_iff _).2 fun _ ⟨g, hg⟩ => hg ▸ dehnTwist_of u g
+
 /-- The powers of the twist fix `G`. -/
 theorem zpowers_dehnTwist_le_fixingSubgroup :
     zpowers (dehnTwist u) ≤ fixingSubgroup (MulAut (CentralizerExt u 1))
       (Set.range (of : G →* CentralizerExt u 1)) :=
-  zpowers_le.2 <| (mem_fixingSubgroup_iff _).2 fun _ ⟨g, hg⟩ => hg ▸ dehnTwist_of u g
+  zpowers_le.2 (dehnTwist_mem_fixingSubgroup u)
 
 /-- The retraction `t ↦ u ^ m` composed with the `k`-th power of the twist is the retraction
 `t ↦ u ^ (m + k)`. -/

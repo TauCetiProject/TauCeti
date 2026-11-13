@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
+import Mathlib.Algebra.Group.ULift
 
 /-!
 # Free `G`-groups
@@ -20,22 +21,29 @@ specialisations of the free generators; they label the leaves of Makanin–Razbo
 ## Main definitions
 
 * `TauCeti.GroupAlgGeom.IsFreeGGroup ι`: `ι : G →* H` exhibits `H` as a free `G`-group.
+* `TauCeti.GroupAlgGeom.IsFreeGGroup.Generators`, `TauCeti.GroupAlgGeom.IsFreeGGroup.of`: a
+  chosen family of free generators of a free `G`-group.
+* `TauCeti.GroupAlgGeom.IsFreeGGroup.homEquiv`: the universal property, `G`-homomorphisms out of a
+  free `G`-group correspond to maps out of its free generators.
 
 ## Main results
 
 * `TauCeti.GroupAlgGeom.IsFreeGGroup.of_mulEquiv`: a group isomorphic over `G` to `G[Y]`, for a
   type `Y` in any universe, is a free `G`-group.
+* `TauCeti.GroupAlgGeom.IsFreeGGroup.of_unique_lift`: conversely, a group with a family of
+  elements that may be sent to arbitrary elements of any group under `G` by a unique
+  `G`-homomorphism is a free `G`-group.
 * `TauCeti.GroupAlgGeom.isFreeGGroup_inl`: `G[Y]` is a free `G`-group.
-* `TauCeti.GroupAlgGeom.IsFreeGGroup.of_gHom`: a free `G`-group stays free along a bijective
-  `G`-homomorphism.
+* `TauCeti.GroupAlgGeom.IsFreeGGroup.of_bijective_gHom`: a free `G`-group stays free along a
+  bijective `G`-homomorphism.
 * `TauCeti.GroupAlgGeom.IsFreeGGroup.of_bijective`: a bijective coefficient map exhibits a free
   `G`-group on no generators.
 * `TauCeti.GroupAlgGeom.IsFreeGGroup.injective`: the coefficient map of a free `G`-group is
   injective.
-* `TauCeti.GroupAlgGeom.IsFreeGGroup.of_subsingleton`: over trivial coefficients, every free group
-  is a free `G`-group.
-* `TauCeti.GroupAlgGeom.IsFreeGGroup.exists_gHom_apply_eq`: a free `G`-group has free generators
-  which may be sent to arbitrary elements of any group under `G`.
+* `TauCeti.GroupAlgGeom.isFreeGGroup_iff_isFreeGroup`: over trivial coefficients, the free
+  `G`-groups are the free groups.
+* `TauCeti.GroupAlgGeom.IsFreeGGroup.isFreeGroup`: a free `G`-group over a free group `G` is a
+  free group.
 
 ## References
 
@@ -75,7 +83,7 @@ theorem of_mulEquiv {Y : Type w} {ι : G →* H} (e : GX G Y ≃* H) (he : ∀ g
       e, fun g => by simp [he]⟩
 
 /-- A free `G`-group stays free along a bijective `G`-homomorphism. -/
-theorem of_gHom {K : Type w} [Group K] {ι : G →* H} {κ : G →* K} (h : IsFreeGGroup ι)
+theorem of_bijective_gHom {K : Type w} [Group K] {ι : G →* H} {κ : G →* K} (h : IsFreeGGroup ι)
     (φ : GHom ι κ) (hφ : Function.Bijective φ) : IsFreeGGroup κ := by
   obtain ⟨Y, e, he⟩ := h
   exact of_mulEquiv (e.trans (MulEquiv.ofBijective (φ : H →* K) hφ)) fun g => by simp [he]
@@ -101,24 +109,111 @@ theorem of_subsingleton [Subsingleton G] [IsFreeGroup H] (ι : G →* H) : IsFre
     (GX.equivFreeGroup G _).trans (IsFreeGroup.toFreeGroup H).symm, fun g => by
       rw [Subsingleton.elim g 1, map_one, map_one, map_one]⟩
 
-/-- A free `G`-group has a family of free generators: they may be sent to arbitrary elements of
-any group `K` receiving the coefficients, by a unique `G`-homomorphism. -/
-theorem exists_gHom_apply_eq {ι : G →* H} (h : IsFreeGGroup ι) :
-    ∃ (Y : Type u) (y : Y → H), ∀ {K : Type*} [Group K] (κ : G →* K) (v : Y → K),
-      ∃! φ : GHom ι κ, ∀ i, φ (y i) = v i := by
-  obtain ⟨Y, e, he⟩ := h
-  refine ⟨Y, fun i => e (inr (FreeGroup.of i)), fun {K} _ κ v => ?_⟩
-  refine ⟨⟨(eval κ v).comp e.symm.toMonoidHom, fun g => ?_⟩, fun i => ?_, fun φ hφ => ?_⟩
-  · simp [← he g]
-  · simp
-  · refine GHom.ext fun x => ?_
-    obtain ⟨w, rfl⟩ := e.surjective x
-    have hc : ((φ : H →* K).comp e.toMonoidHom).comp inl = κ :=
-      MonoidHom.ext fun g => by simp [he g]
-    have := DFunLike.congr_fun (eval_eq_of_comp_inl hc) w
-    simpa [hφ] using this.symm
+/-- A group under `G` is a free `G`-group as soon as some family `y` of its elements may be sent to
+arbitrary elements of any group `K` under `G` by a unique `G`-homomorphism. -/
+theorem of_unique_lift {ι : G →* H} {Y : Type w} (y : Y → H)
+    (hy : ∀ {K : Type (max u v w)} [Group K] (κ : G →* K) (v : Y → K),
+      ∃! φ : GHom ι κ, ∀ i, φ (y i) = v i) :
+    IsFreeGGroup ι := by
+  let up₁ : GX G Y ≃* ULift.{u} (GX G Y) := MulEquiv.ulift.symm
+  let up₂ : H ≃* ULift.{max v w} H := MulEquiv.ulift.symm
+  obtain ⟨φ, hφ, -⟩ := hy (up₁.toMonoidHom.comp inl) fun i => up₁ (inr (FreeGroup.of i))
+  let f : H →* GX G Y := up₁.symm.toMonoidHom.comp φ
+  have hf (g : G) : f (ι g) = inl g := congrArg ULift.down (φ.map_coeff g)
+  have hfy (i : Y) : f (y i) = inr (FreeGroup.of i) := congrArg ULift.down (hφ i)
+  have h₁ : f.comp (eval ι y) = .id _ := GX.ext_hom (by simp [hf]) (by simp [hfy])
+  -- Two `G`-homomorphisms `H → ULift H` agreeing on `y` are equal.
+  have h₂ := (hy (up₂.toMonoidHom.comp ι) fun i => up₂ (y i)).unique
+    (y₁ := ⟨up₂.toMonoidHom.comp ((eval ι y).comp f), fun g => by simp [hf]⟩)
+    (y₂ := ⟨up₂.toMonoidHom, fun _ => rfl⟩)
+    (fun i => congrArg up₂ ((congrArg (eval ι y) (hfy i)).trans (eval_inr_of ι y i))) fun _ => rfl
+  refine of_mulEquiv (MonoidHom.toMulEquiv (eval ι y) f h₁ ?_) (eval_inl ι y)
+  exact MonoidHom.ext fun x => congrArg ULift.down (DFunLike.congr_fun h₂ x)
+
+section Generators
+
+variable {ι : G →* H} (h : IsFreeGGroup ι)
+
+/-- A type of free generators of a free `G`-group, chosen once and for all. -/
+protected def Generators : Type u :=
+  (isFreeGGroup_iff.1 h).choose
+
+/-- The chosen isomorphism over `G` from `G[Y]`, for `Y` the chosen free generators, to a free
+`G`-group. -/
+noncomputable def mulEquiv : GX G h.Generators ≃* H :=
+  (isFreeGGroup_iff.1 h).choose_spec.choose
+
+@[simp]
+theorem mulEquiv_inl (g : G) : h.mulEquiv (inl g) = ι g :=
+  (isFreeGGroup_iff.1 h).choose_spec.choose_spec g
+
+/-- The chosen free generators of a free `G`-group, as elements of it. -/
+noncomputable def of (y : h.Generators) : H :=
+  h.mulEquiv (inr (FreeGroup.of y))
+
+@[simp]
+theorem mulEquiv_inr_of (y : h.Generators) : h.mulEquiv (inr (FreeGroup.of y)) = h.of y :=
+  (rfl)
+
+variable {K : Type w} [Group K] (κ : G →* K)
+
+/-- The universal property of a free `G`-group: its `G`-homomorphisms to a group `K` under `G`
+correspond to the maps from its free generators to `K`, by restriction. -/
+noncomputable def homEquiv : GHom ι κ ≃ (h.Generators → K) where
+  toFun φ y := φ (h.of y)
+  invFun v := (evalGHom κ v).comp
+    (.ofMulEquiv h.mulEquiv.symm fun g => by rw [MulEquiv.symm_apply_eq, mulEquiv_inl])
+  left_inv φ := by
+    have : eval κ (fun y => φ (h.of y)) = (φ : H →* K).comp h.mulEquiv.toMonoidHom :=
+      GX.ext_hom (by simp) (by simp)
+    ext x
+    simpa using DFunLike.congr_fun this (h.mulEquiv.symm x)
+  right_inv v := funext fun y => by simp [← mulEquiv_inr_of]
+
+@[simp]
+theorem homEquiv_apply (φ : GHom ι κ) (y : h.Generators) : h.homEquiv κ φ y = φ (h.of y) :=
+  (rfl)
+
+@[simp]
+theorem homEquiv_symm_apply_of (v : h.Generators → K) (y : h.Generators) :
+    (h.homEquiv κ).symm v (h.of y) = v y :=
+  congrFun ((h.homEquiv κ).apply_symm_apply v) y
+
+/-- The free generators of a free `G`-group may be sent to arbitrary elements of any group under
+`G` by a unique `G`-homomorphism. -/
+theorem unique_lift (v : h.Generators → K) : ∃! φ : GHom ι κ, ∀ y, φ (h.of y) = v y :=
+  ⟨(h.homEquiv κ).symm v, h.homEquiv_symm_apply_of κ v,
+    fun _ hφ => (h.homEquiv κ).eq_symm_apply.2 (funext hφ)⟩
+
+variable {κ} in
+/-- `G`-homomorphisms out of a free `G`-group agreeing on its free generators are equal. -/
+theorem gHom_ext {φ ψ : GHom ι κ} (hφψ : ∀ y, φ (h.of y) = ψ (h.of y)) : φ = ψ :=
+  (h.homEquiv κ).injective (funext hφψ)
+
+end Generators
+
+/-- Over trivial coefficients, a free `G`-group is a free group. -/
+theorem isFreeGroup_of_subsingleton [Subsingleton G] {ι : G →* H} (h : IsFreeGGroup ι) :
+    IsFreeGroup H :=
+  .ofMulEquiv ((GX.equivFreeGroup G _).symm.trans h.mulEquiv)
+
+/-- A free `G`-group over a free group `G` is a free group: `G ∗ F(Y)` is free on a basis of `G`
+together with `Y`. -/
+theorem isFreeGroup [IsFreeGroup G] {ι : G →* H} (h : IsFreeGGroup ι) : IsFreeGroup H := by
+  let e : GX G h.Generators ≃* FreeGroup (IsFreeGroup.Generators G ⊕ h.Generators) :=
+    MonoidHom.toMulEquiv
+      (lift (IsFreeGroup.lift (FreeGroup.of ∘ Sum.inl)) (FreeGroup.map Sum.inr))
+      (FreeGroup.lift (Sum.elim (inl ∘ IsFreeGroup.of) (inr ∘ FreeGroup.of)))
+      (hom_ext (IsFreeGroup.ext_hom fun _ => by simp) (FreeGroup.ext_hom _ _ fun _ => by simp))
+      (FreeGroup.ext_hom _ _ fun a => by cases a <;> simp)
+  exact (FreeGroupBasis.ofRepr (h.mulEquiv.symm.trans e)).isFreeGroup
 
 end IsFreeGGroup
+
+/-- Over trivial coefficients, the free `G`-groups are the free groups. -/
+theorem isFreeGGroup_iff_isFreeGroup [Subsingleton G] {ι : G →* H} :
+    IsFreeGGroup ι ↔ IsFreeGroup H :=
+  ⟨IsFreeGGroup.isFreeGroup_of_subsingleton, fun _ => .of_subsingleton ι⟩
 
 /-- The free `G`-group `G[Y]` is a free `G`-group. -/
 @[simp]

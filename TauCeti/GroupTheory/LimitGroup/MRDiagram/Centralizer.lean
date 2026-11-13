@@ -180,19 +180,13 @@ theorem exists_mem_branchHoms_centralizer_apply_t_eq_iff_mem_zpowers {g : G} :
     mem_zpowers_iff]
   exact ⟨fun ⟨k, hk⟩ => ⟨k 0, hk⟩, fun ⟨k, hk⟩ => ⟨fun _ => k, hk⟩⟩
 
-/-- The solutions of `[x, u] = 1` are the elements commuting with `u`. -/
-private theorem mem_V_commutatorElement_iff {v : Unit → G} :
-    v ∈ V (.id G) {⁅(inr (FreeGroup.of ()) : GX G Unit), (inl u : GX G Unit)⁆} ↔
-      Commute (v ()) u := by
-  simp only [mem_V, Set.mem_singleton_iff, forall_eq, map_commutatorElement, eval_inr_of,
-    eval_inl, MonoidHom.id_apply, commutatorElement_eq_one_iff_commute]
-
 /-- Every diagram of `G(u, ℤ)` is sound for the equation `[x, u] = 1` at `x = t`. -/
 theorem isSound_centralizerExt (D : MRDiagram (of : G →* CentralizerExt u 1)) :
     D.IsSound (.id G) {⁅(inr (FreeGroup.of ()) : GX G Unit), (inl u : GX G Unit)⁆}
       fun _ => t 0 :=
-  isSound_iff.2 fun φ _ => mem_V_commutatorElement_iff.2 <| by
-    simpa using ((commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map φ).symm
+  isSound_iff.2 fun φ _ => by
+    simpa [V_singleton_commutatorElement, mem_centralizer_singleton_iff] using
+      ((commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map φ).symm.eq
 
 /-- The twist diagram of `G(u, ℤ)` is complete exactly when every element commuting with the
 centralizer of `u` is a power of `u`. -/
@@ -229,9 +223,9 @@ theorem exists_mem_branchHoms_centralizer_apply_t_eq_iff_mem_V
     (hu : Subgroup.centralizer {u} ≤ zpowers u) {v : Unit → G} :
     (∃ φ ∈ (centralizer u).branchHoms (.id G), φ (t 0) = v ()) ↔
       v ∈ V (.id G) {⁅(inr (FreeGroup.of ()) : GX G Unit), (inl u : GX G Unit)⁆} := by
-  rw [mem_V_commutatorElement_iff, exists_mem_branchHoms_centralizer_apply_t_eq_iff_mem_zpowers]
-  exact ⟨fun ⟨k, hk⟩ => hk ▸ Commute.zpow_self u k,
-    fun h => hu (mem_centralizer_singleton_iff.2 h.eq)⟩
+  rw [exists_mem_branchHoms_centralizer_apply_t_eq_iff_mem_zpowers, V_singleton_commutatorElement,
+    Set.mem_ofPred_eq, MonoidHom.id_apply]
+  exact ⟨fun h => zpowers_le.2 (mem_centralizer_singleton_iff.2 rfl) h, fun h => hu h⟩
 
 /-- Without modular automorphisms, the only branch composite of the three-vertex diagram of
 `G(u, ℤ)` is the quotient `t ↦ 1`. -/
