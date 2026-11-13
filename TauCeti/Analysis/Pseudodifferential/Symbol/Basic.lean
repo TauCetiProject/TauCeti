@@ -296,28 +296,19 @@ theorem IsUniform.exists_norm_iteratedFDeriv_le {a : Symbol n V W m} (ha : a.IsU
     simp only [mixedDeriv_def, coordinateDeriv_nil] at h
     exact h.trans (le_add_of_nonneg_left (hB0 _ _))
 
-/-- A symbol whose estimates hold uniformly in the position has position derivatives of every
-order bounded by `C ⟨ξ⟩ ^ m`, uniformly in the position. -/
+/-- A uniform symbol has position derivatives of order at most `N` bounded by `C ⟨ξ⟩ ^ m`. -/
 theorem IsUniform.exists_norm_iteratedFDeriv_slice_le {a : Symbol n V W m} (ha : a.IsUniform)
-    (N : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ p ≤ N, ∀ y ξ : CoordinateSpace n,
+    (N : ℕ) : ∃ C, 0 ≤ C ∧ ∀ p ≤ N, ∀ y ξ : CoordinateSpace n,
       ‖iteratedFDeriv ℝ p (fun y ↦ a.coefficient (y, ξ)) y‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
   choose B hB0 hB using isUniform_iff.1 ha
-  set S : ℕ → ℝ := fun p ↦ ∑ r : Fin p → Fin n, B (List.ofFn r) []
-  have hS0 (p : ℕ) : 0 ≤ S p := Finset.sum_nonneg fun r _ ↦ hB0 _ _
-  refine ⟨∑ p ∈ Finset.range (N + 1), S p, Finset.sum_nonneg fun p _ ↦ hS0 p,
-    fun p hp y ξ ↦ ?_⟩
-  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
-    (contDiff_infty.1 (a.contDiff_coefficient_slice ξ) p) y).trans ?_
-  calc ∑ r : Fin p → Fin n, ‖coordinateDeriv (List.ofFn r) (fun y ↦ a.coefficient (y, ξ)) y‖
-      ≤ ∑ r : Fin p → Fin n, B (List.ofFn r) [] * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
-        Finset.sum_le_sum fun r _ ↦ by
-          simpa [mixedDeriv_def, coordinateDeriv_nil] using hB (List.ofFn r) [] y ξ
-    _ = S p * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by rw [Finset.sum_mul]
-    _ ≤ _ := by
-        gcongr
-        exact Finset.single_le_sum (f := S) (fun q _ ↦ hS0 q)
-          (Finset.mem_range.2 (Nat.lt_succ_of_le hp))
+  have hS p : 0 ≤ ∑ r : Fin p → Fin n, B (List.ofFn r) [] := Finset.sum_nonneg fun _ _ ↦ hB0 _ _
+  refine ⟨∑ p ∈ Finset.range (N + 1), ∑ r : Fin p → Fin n, B (List.ofFn r) [],
+    Finset.sum_nonneg fun p _ ↦ hS p, fun p hp y ξ ↦ ?_⟩
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1
+    (a.contDiff_coefficient_slice ξ) p) y).trans <| le_trans ?_ <| mul_le_mul_of_nonneg_right
+    (Finset.single_le_sum (fun q _ ↦ hS q) (Finset.mem_range_succ_iff.2 hp)) (by positivity)
+  rw [Finset.sum_mul]
+  exact Finset.sum_le_sum fun r _ ↦ by simpa [mixedDeriv_def] using hB (List.ofFn r) [] y ξ
 
 /-- A position slice `x ↦ a(x, ξ)` of a symbol with compact spatial support has compact
 support. -/
