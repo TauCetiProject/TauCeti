@@ -173,27 +173,23 @@ variable {g}
 bilinear form `g` positive on `L`; here `β` is `TauCeti.IsMaximalTotallyReal.normalPrimitive`.
 It tames `J` and makes `L` Lagrangian, and it is the exterior derivative of `β`
 (`TauCeti.IsMaximalTotallyReal.extDeriv_normalPrimitiveForm_apply`). -/
-def symplecticForm (hg : ∀ a ∈ L, a ≠ 0 → 0 < g a a) : SymplecticForm V where
-  toBilinForm := hL.normalPrimitive g - LinearMap.flip (hL.normalPrimitive g)
-  isAlt v := by simp
-  nondegenerate := by
-    -- `σ(v, J v)` is the compatible form of `g` on `v`, positive for `v ≠ 0`.
-    have key (v : V) (hv : v ≠ 0) :
-        hL.normalPrimitive g v (J v) - hL.normalPrimitive g (J v) v ≠ 0 := by
-      rw [normalPrimitive_apply_sub_normalPrimitive_apply]
-      exact (hL.compatibleForm_pos J.square_neg hg hv).ne'
-    refine ⟨fun v hv ↦ ?_, fun v hv ↦ ?_⟩ <;> by_contra h <;> have := hv (J v) <;>
-      simp only [LinearMap.sub_apply, LinearMap.flip_apply] at this
-    · exact key v h this
-    · exact key v h (by linarith)
+def symplecticForm (hg : ∀ a ∈ L, a ≠ 0 → 0 < g a a) : SymplecticForm V :=
+  -- `σ(v, J v)` is the compatible form of `g` on `v`, positive for `v ≠ 0`.
+  SymplecticForm.ofTames (J := J) (hL.normalPrimitive g - LinearMap.flip (hL.normalPrimitive g))
+    (fun v ↦ by simp) fun v hv ↦ by
+      simpa only [LinearMap.sub_apply, LinearMap.flip_apply,
+        normalPrimitive_apply_sub_normalPrimitive_apply] using
+        hL.compatibleForm_pos J.square_neg hg hv
 
 variable (hg : ∀ a ∈ L, a ≠ 0 → 0 < g a a)
 
 /-- Evaluation of the symplectic form of `L`: `σ(v, w) = β_v(w) - β_w(v)`. -/
 @[simp]
 theorem symplecticForm_apply (v w : V) :
-    hL.symplecticForm hg v w = hL.normalPrimitive g v w - hL.normalPrimitive g w v := by
-  simp [symplecticForm]
+    hL.symplecticForm hg v w = hL.normalPrimitive g v w - hL.normalPrimitive g w v :=
+  -- `simp` cannot rewrite with `ofTames_apply` here: the stored alternation proof has the unfolded
+  -- type `∀ v, σ v v = 0`, which does not match `IsAlt` at reducible transparency.
+  (SymplecticForm.ofTames_apply _ _ v w).trans (by simp)
 
 /-- The symplectic form of `L` evaluates on `(v, J v)` to the compatible form of `g`. -/
 theorem symplecticForm_apply_map_self (v : V) :

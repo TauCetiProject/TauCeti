@@ -21,7 +21,11 @@ iterates of `T`.
 On `L∞`, the class `1` is the constant-one element for an arbitrary measure, while Mathlib's
 heterogeneous Hölder action supplies pointwise multiplication. Mathlib's existing composition
 isometry preserves these operations. Its positivity, monotonicity, and fixed-point
-characterization hold on general `Lᵖ` and are supplied by `TauCeti.Probability.Ergodic.FixedSpace`.
+characterization hold on general `Lᵖ`. For ordered values, positivity and monotonicity are
+`MeasureTheory.Lp.compMeasurePreserving_nonneg` and
+`MeasureTheory.Lp.compMeasurePreserving_monotone` in
+`TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv`. The fixed-point
+characterization is supplied by `TauCeti.Probability.Ergodic.FixedSpace`.
 
 Mathlib provides the underlying composition maps as `AEEqFun.compMeasurePreserving` and
 `Lp.compMeasurePreservingₗᵢ`. The only new construction here is their Markov-operator interface.
