@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
 # Bessel-potential spaces between Besov spaces
@@ -34,6 +35,21 @@ Bessel potential `J^s` on a single block, with `C` independent of `j` and `p`
   distributions and `J^s` is continuous there, its sum is `J^s u`, which is therefore an `Lᵖ`
   function: this is `u ∈ H^{s,p}`.
 
+At `p = q = 2` the inclusions close up: for a complex Hilbert space `H`, the Besov space
+`B^s_{2,2}` and the Bessel-potential space `H^{s,2}` contain the same tempered distributions, with
+equivalent norms,
+
+`‖u‖_{H^s}² = ‖J^s u‖₂² ≍ ∑ⱼ 2^{2js} ‖Δⱼ u‖₂² = ‖u‖_{B^s_{2,2}}²`,
+
+with constants depending on `φ` and `s`. The order `0` case is Plancherel's theorem for the blocks:
+the blocks of an `L²` function are square summable in `L²`
+(`TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_sum_norm_sq_le`), and a tempered
+distribution whose blocks are square-summable `L²` functions is an `L²` function
+(`TemperedDistribution.exists_eq_and_norm_sq_le_of_littlewoodPaleyBlock_eq`). The localized
+estimate at `p = 2` for `J^s` and `J^{-s}` reduces every order to order `0`. Thus at `p = q = 2`
+the Besov scale is the Sobolev scale, which is how statements proved for Besov spaces (dyadic
+estimates, paraproducts) specialize to `H^s`.
+
 ## Main declarations
 
 * `TemperedDistribution.MemSobolev.memBesov`: `H^{s,p} ⊆ B^s_{p,∞}` for tempered distributions.
@@ -42,10 +58,16 @@ Bessel potential `J^s` on a single block, with `C` independent of `j` and `p`
   linear map.
 * `TauCeti.BesovSpace.toBesselPotentialSpace`: the inclusion `B^s_{p,1} → H^{s,p}` as a
   continuous linear map.
+* `TemperedDistribution.memBesov_two_two_iff_memSobolev`: `u ∈ B^s_{2,2}` if and only if
+  `u ∈ H^{s,2}`.
+* `TauCeti.BesovSpace.besselPotentialSpaceEquiv`: the identity on tempered distributions as an
+  isomorphism of normed spaces `B^s_{2,2} ≃L[ℂ] H^{s,2}`.
 
 ## References
 
 * J. Bergh and J. Löfström, *Interpolation Spaces: An Introduction*, Theorem 6.2.4.
+* H. Bahouri, J.-Y. Chemin and R. Danchin, *Fourier Analysis and Nonlinear Partial Differential
+  Equations*, Chapter 2 (the Littlewood–Paley decomposition and Besov spaces).
 * H. Triebel, *Theory of Function Spaces*, Section 2.3.3, Proposition 2.
 -/
 
@@ -58,6 +80,7 @@ open scoped ENNReal SchwartzMap BesselPotentialSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+  {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {φ : ContDiffBump (0 : E)} {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 namespace TemperedDistribution
@@ -174,9 +197,8 @@ def toBesovSpace : H^{s, p}(E, F) →L[ℂ] BesovSpace F φ s p ∞ :=
     refine ciSup_le fun j ↦ ?_
     obtain ⟨g, hg, hgf⟩ := hC u.toDistr u.toLp u.bessel_toDistr_eq_toLp j
     -- The block of `v` is the `Lᵖ` function `g`, since both represent `Δⱼ u`.
-    have hvg : v.block j = g := LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-        BesovSpace.coe_block, ← hg, v, MemBesov.toDistr_toBesovSpace]
+    have hvg : v.block j = g := Lp.toTemperedDistribution_injective <| by
+      simp only [BesovSpace.coe_block, ← hg, v, MemBesov.toDistr_toBesovSpace]
     rw [hvg]
     exact hgf
 
@@ -206,9 +228,8 @@ def toBesselPotentialSpace : BesovSpace F φ s p 1 →L[ℂ] H^{s, p}(E, F) :=
       simpa [norm_weightedBlocks_apply] using h
     obtain ⟨g, hg, hgf⟩ := hC u.toDistr u.block (fun j ↦ (coe_block u j).symm) hsum
     -- The `Lᵖ` part of `w` is `g`, since both represent `J^s u`.
-    have hwg : w.toLp = g := LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-        ← w.bessel_toDistr_eq_toLp, ← hg, w, MemSobolev.toBesselPotentialSpace_toDistr]
+    have hwg : w.toLp = g := Lp.toTemperedDistribution_injective <| by
+      simp only [← w.bessel_toDistr_eq_toLp, ← hg, w, MemSobolev.toBesselPotentialSpace_toDistr]
     simp only [LinearMap.coe_mk, AddHom.coe_mk, ← BesselPotentialSpace.norm_toLp_eq]
     rw [hwg, norm_eq_tsum_rpow ENNReal.one_ne_top]
     simpa using hgf
@@ -217,5 +238,152 @@ def toBesselPotentialSpace : BesovSpace F φ s p 1 →L[ℂ] H^{s, p}(E, F) :=
 theorem toDistr_toBesselPotentialSpace (u : BesovSpace F φ s p 1) :
     (toBesselPotentialSpace u).toDistr = u.toDistr := by
   simp [toBesselPotentialSpace]
+
+end TauCeti.BesovSpace
+
+/-! ### `B^s_{2,2} = H^{s,2}` -/
+
+namespace TemperedDistribution
+
+variable (φ s) in
+/-- `∑ⱼ (2^{sj} ‖fⱼ‖)²` controls `‖J^s u‖²` when the `fⱼ` are the blocks of `u`. -/
+private theorem exists_besselPotential_eq_and_norm_sq_le :
+    ∃ C : ℝ, ∀ (u : 𝓢'(E, H)) (f : ℕ → Lp H 2 (volume : Measure E)),
+      (∀ j, littlewoodPaleyBlock H φ j u = f j) →
+        Summable (fun j : ℕ ↦ (2 ^ (s * j) * ‖f j‖) ^ 2) →
+          ∃ w : Lp H 2 (volume : Measure E), besselPotential E H s u = w ∧
+            ‖w‖ ^ 2 ≤ C * ∑' j : ℕ, (2 ^ (s * j) * ‖f j‖) ^ 2 := by
+  obtain ⟨C₁, -, hC₁⟩ := exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le (F := H) φ s
+  obtain ⟨C₂, hC₂0, hC₂⟩ := exists_eq_and_norm_sq_le_of_littlewoodPaleyBlock_eq (H := H) φ
+  refine ⟨C₂ * C₁ ^ 2, fun u f hf hsum ↦ ?_⟩
+  choose g hg hgf using fun j ↦ hC₁ (p := 2) j u (f j) (hf j)
+  have hgf' : ∀ j, ‖g j‖ ^ 2 ≤ C₁ ^ 2 * (2 ^ (s * j) * ‖f j‖) ^ 2 := fun j ↦ by
+    rw [← mul_pow, ← mul_assoc]
+    exact pow_le_pow_left₀ (norm_nonneg _) (hgf j) 2
+  have hsum' : Summable fun j ↦ ‖g j‖ ^ 2 :=
+    (hsum.mul_left (C₁ ^ 2)).of_nonneg_of_le (fun j ↦ by positivity) hgf'
+  obtain ⟨w, hw, hwg⟩ :=
+    hC₂ _ g (fun j ↦ (littlewoodPaleyBlock_besselPotential_comm φ s j u).trans (hg j)) hsum'
+  refine ⟨w, hw, hwg.trans ?_⟩
+  calc C₂ * ∑' j, ‖g j‖ ^ 2 ≤ C₂ * ∑' j : ℕ, C₁ ^ 2 * (2 ^ (s * j) * ‖f j‖) ^ 2 :=
+        mul_le_mul_of_nonneg_left (hsum'.tsum_le_tsum hgf' (hsum.mul_left _)) hC₂0
+    _ = C₂ * C₁ ^ 2 * ∑' j : ℕ, (2 ^ (s * j) * ‖f j‖) ^ 2 := by rw [tsum_mul_left, mul_assoc]
+
+variable (φ s) in
+/-- `‖J^s u‖²` controls `∑ⱼ (2^{sj} ‖Δⱼ u‖)²`. -/
+private theorem exists_littlewoodPaleyBlock_eq_and_sum_sq_le :
+    ∃ C : ℝ, ∀ (u : 𝓢'(E, H)) (w : Lp H 2 (volume : Measure E)), besselPotential E H s u = w →
+      ∃ f : ℕ → Lp H 2 (volume : Measure E), (∀ j, littlewoodPaleyBlock H φ j u = f j) ∧
+        ∀ t : Finset ℕ, ∑ j ∈ t, (2 ^ (s * j) * ‖f j‖) ^ 2 ≤ C * ‖w‖ ^ 2 := by
+  obtain ⟨C₁, -, hC₁⟩ :=
+    exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le (F := H) φ (-s)
+  obtain ⟨C₂, -, hC₂⟩ := exists_littlewoodPaleyBlock_eq_and_sum_norm_sq_le (H := H) φ
+  refine ⟨C₁ ^ 2 * C₂, fun u w hw ↦ ?_⟩
+  obtain ⟨g, hg, hgw⟩ := hC₂ w
+  have hu : besselPotential E H (-s) (w : 𝓢'(E, H)) = u :=
+    (besselPotential_neg_apply_eq_iff s _ _).2 hw
+  choose f hf hfg using fun j ↦ hC₁ (p := 2) j w (g j) (hg j)
+  refine ⟨f, fun j ↦ hu ▸ (littlewoodPaleyBlock_besselPotential_comm φ _ j _).trans (hf j),
+    fun t ↦ ?_⟩
+  have hfg' : ∀ j : ℕ, (2 ^ (s * j) * ‖f j‖) ^ 2 ≤ C₁ ^ 2 * ‖g j‖ ^ 2 := fun j ↦ by
+    have h2 : (2 : ℝ) ^ (s * j) * 2 ^ (-s * j) = 1 := by
+      rw [← Real.rpow_add two_pos, neg_mul, add_neg_cancel, Real.rpow_zero]
+    calc (2 ^ (s * j) * ‖f j‖) ^ 2 ≤ (2 ^ (s * j) * (C₁ * 2 ^ (-s * j) * ‖g j‖)) ^ 2 := by
+          gcongr
+          exact hfg j
+      _ = C₁ ^ 2 * ‖g j‖ ^ 2 := by
+          rw [show (2 : ℝ) ^ (s * j) * (C₁ * 2 ^ (-s * j) * ‖g j‖) =
+            C₁ * ((2 : ℝ) ^ (s * j) * 2 ^ (-s * j)) * ‖g j‖ by ring, h2]
+          ring
+  calc ∑ j ∈ t, (2 ^ (s * j) * ‖f j‖) ^ 2 ≤ ∑ j ∈ t, C₁ ^ 2 * ‖g j‖ ^ 2 :=
+        Finset.sum_le_sum fun j _ ↦ hfg' j
+    _ ≤ C₁ ^ 2 * C₂ * ‖w‖ ^ 2 := by
+        rw [← Finset.mul_sum, mul_assoc]
+        exact mul_le_mul_of_nonneg_left (hgw t) (sq_nonneg C₁)
+
+variable (φ) in
+/-- **`B^s_{2,2} = H^{s,2}`.** A tempered distribution lies in the Besov space `B^s_{2,2}` built
+from any bump function `φ` exactly when it lies in the Bessel-potential space `H^{s,2}`, that is,
+when `J^s u = 𝓕⁻ ((1 + ‖ξ‖²)^{s/2} 𝓕 u)` is an `L²` function. -/
+theorem memBesov_two_two_iff_memSobolev {u : 𝓢'(E, H)} :
+    u.MemBesov φ s 2 2 ↔ u.MemSobolev s 2 := by
+  have memℓp_two_iff_summable_sq : ∀ {a : ℕ → ℝ}, Memℓp a 2 ↔ Summable fun j ↦ a j ^ 2 := by
+    intro a
+    rw [memℓp_gen_iff (by simp)]
+    simp
+  constructor
+  · intro hu
+    obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
+    obtain ⟨C, hC⟩ := exists_besselPotential_eq_and_norm_sq_le (H := H) φ s
+    obtain ⟨w, hw, -⟩ := hC u f hf (memℓp_two_iff_summable_sq.1 hmem)
+    exact ⟨w, hw⟩
+  · rintro ⟨w, hw⟩
+    obtain ⟨C, hC⟩ := exists_littlewoodPaleyBlock_eq_and_sum_sq_le (H := H) φ s
+    obtain ⟨f, hf, hfw⟩ := hC u w hw
+    exact memBesov_iff.2 ⟨f, hf, memℓp_two_iff_summable_sq.2
+      (summable_of_sum_le (fun j ↦ by positivity) hfw)⟩
+
+end TemperedDistribution
+
+namespace TauCeti.BesovSpace
+
+open TemperedDistribution
+
+variable (φ s) in
+/-- The `H^{s,2}` norm is bounded by a multiple of the `B^s_{2,2}` norm. -/
+private theorem exists_norm_le_of_toDistr_eq :
+    ∃ C : ℝ, ∀ (u : BesovSpace H φ s 2 2) (v : BesselPotentialSpace E H s 2),
+      v.toDistr = u.toDistr → ‖v‖ ≤ C * ‖u‖ := by
+  obtain ⟨C, hC⟩ := exists_besselPotential_eq_and_norm_sq_le (H := H) φ s
+  refine ⟨√C, fun u v huv ↦ ?_⟩
+  obtain ⟨w, hw, hwu⟩ :=
+    hC u.toDistr u.block (fun j ↦ (u.coe_block j).symm) (hasSum_norm_sq u).summable
+  have hv : v.toLp = w := Lp.toTemperedDistribution_injective <| by
+    simp only [← v.bessel_toDistr_eq_toLp, huv, hw]
+  rw [← BesselPotentialSpace.norm_toLp_eq, hv, ← Real.sqrt_sq (norm_nonneg u),
+    ← Real.sqrt_mul' _ (sq_nonneg _), ← (hasSum_norm_sq u).tsum_eq]
+  exact Real.le_sqrt_of_sq_le hwu
+
+variable (φ s) in
+/-- The `B^s_{2,2}` norm is bounded by a multiple of the `H^{s,2}` norm. -/
+private theorem exists_norm_le_of_toDistr_eq' :
+    ∃ C : ℝ, ∀ (v : BesselPotentialSpace E H s 2) (u : BesovSpace H φ s 2 2),
+      u.toDistr = v.toDistr → ‖u‖ ≤ C * ‖v‖ := by
+  obtain ⟨C, hC⟩ := exists_littlewoodPaleyBlock_eq_and_sum_sq_le (H := H) φ s
+  refine ⟨√C, fun v u huv ↦ ?_⟩
+  obtain ⟨f, hf, hfv⟩ := hC v.toDistr v.toLp v.bessel_toDistr_eq_toLp
+  have hu : ∀ j, u.block j = f j := fun j ↦ Lp.toTemperedDistribution_injective <| by
+    simp only [coe_block, huv, hf]
+  rw [← BesselPotentialSpace.norm_toLp_eq, ← Real.sqrt_sq (norm_nonneg v.toLp),
+    ← Real.sqrt_mul' _ (sq_nonneg _)]
+  refine Real.le_sqrt_of_sq_le ?_
+  rw [← (hasSum_norm_sq u).tsum_eq]
+  simp_rw [hu] at hfv ⊢
+  exact Summable.tsum_le_of_sum_le ((hasSum_norm_sq u).summable.congr fun j ↦ by rw [hu]) hfv
+
+variable (H φ s) in
+/-- **`B^s_{2,2} = H^{s,2}` with equivalent norms.** The identity on tempered distributions is an
+isomorphism of normed spaces between the Besov space `B^s_{2,2}` built from `φ` and the
+Bessel-potential space `H^{s,2}`. -/
+def besselPotentialSpaceEquiv : BesovSpace H φ s 2 2 ≃L[ℂ] BesselPotentialSpace E H s 2 :=
+  LinearEquiv.toContinuousLinearEquivOfBounds
+    { toFun u := ((memBesov_two_two_iff_memSobolev φ).1 u.memBesov_toDistr).toBesselPotentialSpace
+      invFun v := ((memBesov_two_two_iff_memSobolev φ).2 v.memSobolev_toDistr).toBesovSpace
+      map_add' _ _ := BesselPotentialSpace.ext (by simp)
+      map_smul' _ _ := BesselPotentialSpace.ext (by simp)
+      left_inv _ := BesovSpace.ext (by simp)
+      right_inv _ := BesselPotentialSpace.ext (by simp) }
+    _ _ (fun u ↦ (exists_norm_le_of_toDistr_eq (H := H) φ s).choose_spec u _ (by simp))
+    fun v ↦ (exists_norm_le_of_toDistr_eq' (H := H) φ s).choose_spec v _ (by simp)
+
+@[simp]
+theorem toDistr_besselPotentialSpaceEquiv (u : BesovSpace H φ s 2 2) :
+    (besselPotentialSpaceEquiv H φ s u).toDistr = u.toDistr :=
+  MemSobolev.toBesselPotentialSpace_toDistr _
+
+@[simp]
+theorem toDistr_besselPotentialSpaceEquiv_symm (v : BesselPotentialSpace E H s 2) :
+    ((besselPotentialSpaceEquiv H φ s).symm v).toDistr = v.toDistr :=
+  MemBesov.toDistr_toBesovSpace _
 
 end TauCeti.BesovSpace
