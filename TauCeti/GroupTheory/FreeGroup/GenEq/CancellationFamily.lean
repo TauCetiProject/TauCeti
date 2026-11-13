@@ -160,11 +160,13 @@ theorem pair_mem_toWords (S : EqIneqSystem X A) (y : X ⊕ Fin S.ineqs.length) :
 
 /-- The empty system in no variables has no words. -/
 @[simp]
-theorem toWords_empty [IsEmpty X] : (empty X A).toWords = [] := by
+theorem toWords_empty {X A : Type*} [IsEmpty X] [DecidableEq X] [DecidableEq A] :
+    (empty X A).toWords = [] := by
   simp [toWords]
 
 /-- The empty system in no variables has no words, so no occurrences of letters. -/
-instance [IsEmpty X] : IsEmpty (Fin (empty X A).toWords.length) := by
+instance {X A : Type*} [IsEmpty X] [DecidableEq X] [DecidableEq A] :
+    IsEmpty (Fin (empty X A).toWords.length) := by
   rw [toWords_empty, List.length_nil]
   infer_instance
 
@@ -525,17 +527,19 @@ theorem card_cancellationFamily_le [Fintype A] (S : EqIneqSystem X A) :
 
 section Empty
 
-variable [IsEmpty X] (T : Occurrence (empty X A).toWords → List ((Z ⊕ A) × Bool))
+variable {X Z A : Type*} [IsEmpty X] [DecidableEq X] [DecidableEq A]
 
 /-- Every table of the words of the empty system in no variables is a cancellation scheme. -/
 @[simp]
-theorem isCancellationScheme_empty : (empty X A).IsCancellationScheme T :=
+theorem isCancellationScheme_empty (T : Occurrence (empty X A).toWords → List ((Z ⊕ A) × Bool)) :
+    (empty X A).IsCancellationScheme T :=
   ⟨⟨isEmptyElim, isEmptyElim, isEmptyElim, fun o => isEmptyElim o, fun o => isEmptyElim o⟩,
     fun o => isEmptyElim o⟩
 
 /-- The generalised equation of a table of the empty system in no variables is the empty
 generalised equation. -/
-theorem genEq_empty : (empty X A).genEq T = GenEq.empty :=
+theorem genEq_empty (T : Occurrence (empty X A).toWords → List ((Z ⊕ A) × Bool)) :
+    (empty X A).genEq T = GenEq.empty :=
   eq_empty_of_numItems_eq_zero (by rw [numItems_ofEntries, length_flatMap_tableEntries]; simp)
 
 /-- The cancellation family of the empty system in no variables has exactly one member, the empty
