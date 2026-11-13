@@ -697,7 +697,7 @@ theorem coeff_injective (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
 variable (ι) in
 /-- The coordinate group `G_{R(S)}` of a system with a solution in a `G`-group `H`, as a
 `G`-group. -/
-@[expose] def toGGroup (hι : Function.Injective ι) (hS : (V ι S).Nonempty) : GGroup G :=
+abbrev toGGroup (hι : Function.Injective ι) (hS : (V ι S).Nonempty) : GGroup G :=
   ⟨CoordGroup ι S, coeff ι S, coeff_injective hι hS⟩
 
 @[simp]
