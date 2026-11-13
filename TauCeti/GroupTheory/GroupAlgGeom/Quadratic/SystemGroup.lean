@@ -100,7 +100,7 @@ noncomputable def orientableSystemGroupEquiv (hn : 0 < n) (inj : (Sum.elim x y).
     SystemGroup G {(orientable (G := G) n hn x y inj).toWord} ≃*
       Monoid.Coprod G (Monoid.Coprod (Orientable n 0) (FreeGroup ↥(Set.range (Sum.elim x y))ᶜ)) :=
   (QuotientGroup.quotientMulEquivOfEq (normalClosure_toWord_orientable hn inj)).trans
-    (SystemGroup.coprodPresentedGroupFreeGroupEquiv G {orientableRelator n 0}
+    (SystemGroup.equivCoprodPresentedGroupFreeGroup G {orientableRelator n 0}
       (orientableVarEquiv inj))
 
 variable (hn : 0 < n) (inj : (Sum.elim x y).Injective)
@@ -241,7 +241,7 @@ noncomputable def nonorientableSystemGroupEquiv (hn : 0 < n) (inj : x.Injective)
     SystemGroup G {(nonorientable (G := G) n hn x inj).toWord} ≃*
       Monoid.Coprod G (Monoid.Coprod (Nonorientable n 0) (FreeGroup ↥(Set.range x)ᶜ)) :=
   (QuotientGroup.quotientMulEquivOfEq (normalClosure_toWord_nonorientable hn inj)).trans
-    (SystemGroup.coprodPresentedGroupFreeGroupEquiv G {nonorientableRelator n 0}
+    (SystemGroup.equivCoprodPresentedGroupFreeGroup G {nonorientableRelator n 0}
       (nonorientableVarEquiv inj))
 
 variable (hn : 0 < n) (inj : x.Injective)
@@ -341,7 +341,7 @@ theorem orderOf_mk_inr_of_nonorientable_one {x : Fin 1 → X} (inj : x.Injective
 
 /-- The group of the torus equation `[x, y] = 1` over `G`, in the variables `x` and `y`, is
 `G ∗ ℤ²`. -/
-theorem nonempty_systemGroup_torus_mulEquiv :
+theorem nonempty_systemGroup_orientable_one_mulEquiv_coprod :
     Nonempty (SystemGroup G
         {(orientable (G := G) (X := Fin 1 ⊕ Fin 1) 1 one_pos Sum.inl Sum.inr
           (by simp [Function.injective_id])).toWord} ≃*
