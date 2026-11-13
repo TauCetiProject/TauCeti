@@ -645,8 +645,8 @@ theorem eq_levelThreeParameter {C : VariableChange R} (hr : C.r = x₁) (ht : C.
   exact ((toLevelThreeNormalForm h).u.isUnit.mul h.isUnit_three).mul_left_cancel
     (by linear_combination hμ - hμ₀)
 
-/-- The parameter `ζ` determined by the `y`-coordinate identity `hy₂` is
-`levelThreeRootOfUnity h`. -/
+/-- For a change of variables as in `eq_toLevelThreeNormalForm` carrying `Q` to
+`(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`, the root of unity `ζ` is `levelThreeRootOfUnity h`. -/
 theorem eq_levelThreeRootOfUnity {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ ζ : R}
     (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r)
     (hy₂ : y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t) :
