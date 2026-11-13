@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Integral.Asymptotics
 
 /-!
 # Improper-integral asymptotics and logarithmic decay
@@ -18,6 +19,11 @@ closed form `∫_A^∞ dy / y² = 1 / A` as a Lebesgue integral.
 ## Main declarations
 
 * `TauCeti.integrable_inv_sq_add_sq`: `(x ^ 2 + c ^ 2)⁻¹` is integrable for `c ≠ 0`.
+
+* `TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth`: sufficient logarithmic
+  growth makes an exponentially weighted polynomial integrable.
+* `TauCeti.eventually_quadratic_div_log_abs_gt`: quadratic growth dominates logarithmic growth
+  as `|x| → ∞`.
 
 * `TauCeti.lintegral_Ioi_inv_sq`: `∫⁻ y in Ioi A, (1 / ‖y‖₊) ^ 2 = ofReal A⁻¹` for `0 < A`, the
   integrand being the density of the hyperbolic area measure.
@@ -35,8 +41,105 @@ public section
 
 namespace TauCeti
 
-open Asymptotics Filter MeasureTheory Set
+open Asymptotics Filter MeasureTheory Real Set
 open scoped Topology
+
+/-- A continuous potential with sufficient logarithmic growth dominates a
+polynomial factor and makes the resulting exponential weight integrable. -/
+theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V : ℝ → ℝ}
+    (hp : 0 ≤ p) (ha : 0 < a) (hq : p - a * c < -1)
+    (hV : Continuous V)
+    (hGrowth : ∀ᶠ x in Filter.comap abs Filter.atTop, c * log |x| ≤ V x) :
+    Integrable (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) volume := by
+  let q : ℝ := p - a * c
+  have hq' : q < -1 := hq
+  have hTail : ∀ᶠ x in Filter.comap abs Filter.atTop, c * log |x| ≤ V x := hGrowth
+  rw [Filter.eventually_comap] at hTail
+  obtain ⟨R, hR⟩ := Filter.eventually_atTop.1 hTail
+  let R' : ℝ := max R 1
+  have hR' : 1 ≤ R' := le_max_right _ _
+  have hRbound (x : ℝ) (hx : R' ≤ |x|) : c * log |x| ≤ V x := by
+    exact hR _ (le_trans (le_max_left _ _) hx) x rfl
+  have hpoint (x : ℝ) (hx : 1 ≤ |x|) (hVx : c * log |x| ≤ V x) :
+      (1 + |x|) ^ p * exp (-a * V x) ≤ 2 ^ p * |x| ^ q := by
+    have hxabs : 0 < |x| := lt_of_lt_of_le zero_lt_one hx
+    have hpoly : (1 + |x|) ^ p ≤ (2 * |x|) ^ p :=
+      Real.rpow_le_rpow (by positivity) (by nlinarith) hp
+    have hexp : exp (-a * V x) ≤ |x| ^ (-a * c) := by
+      rw [Real.rpow_def_of_pos hxabs]
+      apply exp_le_exp.mpr
+      have hmul := mul_le_mul_of_nonpos_left hVx (by linarith : -a ≤ 0)
+      nlinarith [hmul]
+    calc
+      _ ≤ (2 * |x|) ^ p * |x| ^ (-a * c) :=
+        mul_le_mul hpoly hexp (by positivity) (by positivity)
+      _ = 2 ^ p * |x| ^ q := by
+        rw [Real.mul_rpow (by positivity) (by positivity)]
+        rw [mul_assoc, ← Real.rpow_add hxabs]
+        congr 2
+        dsimp [q]
+        ring
+  have hpowPos : IntegrableOn (fun x : ℝ => x ^ q) (Ioi R') volume :=
+    integrableOn_Ioi_rpow_of_lt hq' (lt_of_lt_of_le zero_lt_one hR')
+  have hpowNeg : IntegrableOn (fun x : ℝ => (-x) ^ q) (Iio (-R')) volume := by
+    rw [← (Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
+      (Homeomorph.neg ℝ).measurableEmbedding]
+    simp only [Function.comp_def, neg_preimage, neg_Iio, neg_neg]
+    exact hpowPos
+  have hg : Continuous (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) := by
+    have hbase : Continuous (fun x : ℝ => 1 + |x|) := by fun_prop
+    have hexp : Continuous (fun x : ℝ => exp (-a * V x)) := by fun_prop
+    exact (hbase.rpow_const (fun x => Or.inl (by positivity))).mul hexp
+  have hneg : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atBot]
+      (fun x : ℝ => (-x) ^ q) := by
+    apply Asymptotics.IsBigO.of_bound (2 ^ p)
+    filter_upwards [Filter.eventually_lt_atBot (-R')] with x hx
+    have hnegx : R' < -x := by linarith
+    have habs : |x| = -x := abs_of_nonpos (by linarith)
+    have hnonneg : 0 ≤ (1 + |x|) ^ p * exp (-a * V x) := by positivity
+    have hbound := hpoint x (by rw [habs]; linarith [hnegx, hR'])
+      (hRbound x (by rw [habs]; exact le_of_lt hnegx))
+    rw [Real.norm_eq_abs, abs_of_nonneg hnonneg, Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg (by linarith : 0 ≤ -x) q)]
+    simpa only [habs] using hbound
+  have hpos : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atTop]
+      (fun x : ℝ => x ^ q) := by
+    apply Asymptotics.IsBigO.of_bound (2 ^ p)
+    filter_upwards [Filter.eventually_gt_atTop R'] with x hx
+    have hxge1 : 1 ≤ x := le_of_lt (lt_of_le_of_lt hR' hx)
+    have habs : |x| = x := abs_of_nonneg (by linarith)
+    have hnonneg : 0 ≤ (1 + |x|) ^ p * exp (-a * V x) := by positivity
+    have hbound := hpoint x (by rw [habs]; exact hxge1)
+      (hRbound x (by rw [habs]; exact le_of_lt hx))
+    rw [Real.norm_eq_abs, abs_of_nonneg hnonneg, Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg (by linarith : 0 ≤ x) q)]
+    simpa only [habs] using hbound
+  exact hg.locallyIntegrable.integrable_of_isBigO_atBot_atTop hneg
+    ⟨Iio (-R'), Filter.Iio_mem_atBot _, hpowNeg⟩ hpos
+    ⟨Ioi R', Filter.Ioi_mem_atTop _, hpowPos⟩
+
+/-- Every fixed positive threshold is eventually below `x² / (2 log |x|)`
+as `|x|` tends to infinity. -/
+theorem eventually_quadratic_div_log_abs_gt (c : ℝ) (hc : 0 < c) :
+    ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
+      c < (x ^ 2 / 2) / log |x| := by
+  rw [Filter.eventually_comap]
+  apply Filter.eventually_atTop.2
+  refine ⟨max (2 * c + 1) 2, ?_⟩
+  intro t ht x hxt
+  have htA : 2 * c + 1 ≤ t := le_trans (le_max_left _ _) ht
+  have htB : 2 ≤ t := le_trans (le_max_right _ _) ht
+  have htpos : 0 < t := by linarith
+  have htgt : 1 < t := lt_of_lt_of_le one_lt_two htB
+  have hlogpos : 0 < log t := Real.log_pos htgt
+  have hlogle : log t ≤ t :=
+    (Real.log_le_sub_one_of_pos htpos).trans (by linarith)
+  have hmargin : 0 < t / 2 - c := by linarith
+  have hquad : c * t < t ^ 2 / 2 := by
+    have := mul_pos htpos hmargin
+    nlinarith
+  rw [← sq_abs, hxt, lt_div_iff₀ hlogpos]
+  exact (mul_le_mul_of_nonneg_left hlogle hc.le).trans_lt hquad
 
 /-- The inverse quadratic `x ↦ (x ^ 2 + c ^ 2)⁻¹` is integrable when `c ≠ 0`. -/
 theorem integrable_inv_sq_add_sq {c : ℝ} (hc : c ≠ 0) :
