@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Associated
+public import TauCeti.Topology.VectorBundle.Associated.Basic
 public import TauCeti.Geometry.Manifold.FiberBundle.Associated.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 

@@ -45,6 +45,17 @@ instance instAddCommGroup (b : B) : AddCommGroup (AssociatedBundle G P F b) :=
 instance instModule (b : B) : Module 𝕜 (AssociatedBundle G P F b) :=
   inferInstanceAs (Module 𝕜 F)
 
+/-- Addition is continuous for the existing associated-fibre topology. This delegate keeps
+native bundle-metric constructions from having to unfold the fibre presentation. -/
+instance instIsTopologicalAddGroup (b : B) : IsTopologicalAddGroup (AssociatedBundle G P F b) :=
+  inferInstanceAs (IsTopologicalAddGroup F)
+
+/-- Fixed scalar multiplication is continuous for the associated fibre's native module and
+topology, as required by the native Riemannian-metric installation API. -/
+instance instContinuousConstSMul (b : B) :
+    ContinuousConstSMul 𝕜 (AssociatedBundle G P F b) :=
+  inferInstanceAs (ContinuousConstSMul 𝕜 F)
+
 /-- Associated-bundle charts are linear when the structure-group action is linear. -/
 instance localTriv_isLinear (b : B) :
     ((associatedBundleCore G P F).localTriv b).IsLinear 𝕜 where
