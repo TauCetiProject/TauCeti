@@ -19,9 +19,8 @@ Hermitian form, so every subspace `V ≤ S_k(Γ)` has a Petersson-orthogonal com
 
 and `V` and `Vᗮ` intersect only in `0`. This file introduces that complement as
 `TauCeti.CuspForm.peterssonOrthogonal` and gives it the order-theoretic API the old/new
-decomposition of Layer 3 of the ModularForms roadmap needs: it reverses `≤`, it turns a
-supremum of subspaces into an infimum of complements, and orthogonality to the range of a
-linear map is tested on the map's values alone.
+decomposition needs: it reverses `≤`, it turns a supremum of subspaces into an infimum of
+complements, and orthogonality to the range of a linear map is tested on the map's values alone.
 
 The complement uses Mathlib's `Submodule.orthogonalBilin`, applied to the Petersson pairing
 bundled as a sesquilinear form. Deliberately, no `InnerProductSpace` instance on `S_k(Γ)` is

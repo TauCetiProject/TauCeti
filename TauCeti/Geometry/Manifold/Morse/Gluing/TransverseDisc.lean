@@ -117,7 +117,7 @@ private theorem exists_hasStrictFDerivAt_splitCoord {G : Type*} [NormedAddCommGr
       (fun z hz hzε ↦ (hs₂ z hz hzε).trans (by simp [π])) hyφ hyε
   obtain ⟨ψ, ψ', hψ, hπψ, hψ0, hψs⟩ :=
     exists_hasStrictFDerivAt_comp_eq_id_of_span_mtangentConeAt_sup_eq_top (by simp)
-      φ.mem_maximalAtlas hq hs₁ L.closed_of_finiteDimensional hyφ hyq hys₁ hπs hs₂' hys₂ htr
+      φ.mem_maximalAtlas hq hs₁ L.isClosed_of_finiteDimensional hyφ hyq hys₁ hπs hs₂' hys₂ htr
   refine ⟨fun z ↦ φ.splitCoordL (ψ z), (φ.splitCoordL : E →L[ℝ] _) ∘L ψ',
     φ.splitCoordL.hasStrictFDerivAt.comp 0 hψ, ?_, ?_, ?_⟩
   · rw [← hπψ, hπ, ContinuousLinearMap.comp_assoc]
@@ -157,7 +157,6 @@ theorem exists_hasStrictFDerivAt_mem_unstableSet (hMS : hX.IsMorseSmale)
         ∀ᶠ z in 𝓝 0, φ.coord.symm (φ.splitCoord.symm (ψ z)) ∈ φ.toChart.target ∧
           φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (ψ z))) ∈ hX.flow.unstableSet a := by
   obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
-    (hf.contMDiff.mdifferentiable (by simp))
   refine ⟨ε, hε, fun a y hy hyφ hyε ↦ ?_⟩
   obtain ⟨L, q, -, hyq, hq, hsq⟩ :=
     hX.exists_isSliceChart_unstableSet hf (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
@@ -194,13 +193,12 @@ theorem exists_hasStrictFDerivAt_mem_stableSet (hMS : hX.IsMorseSmale)
   have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
     ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl)
   obtain ⟨ε, hε, hεs⟩ := (hX.neg hf).exists_forall_mem_stableSet_iff (φ.neg hnd)
-    (φ.coord_mfderiv_neg hφ hnd) (hf.neg.contMDiff.mdifferentiable (by simp))
+    (φ.coord_mfderiv_neg hφ hnd)
   simp only [MorseChart.neg_toChart, MorseChart.neg_coord, MorseChart.neg_weight, Pi.neg_apply,
     Left.neg_neg_iff, ← hX.unstableSet_eq_stableSet_neg hf] at hεs
   refine ⟨ε, hε, fun b y hy hyφ hyε ↦ ?_⟩
   obtain ⟨L, q, -, hyq, hq, hsq⟩ :=
-    hX.exists_isSliceChart_stableSet (hf.contMDiff.mdifferentiable (by simp))
-      (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
+    hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
   -- Near `x`, the unstable set of `x` is the kernel of the contracting coordinate `u`.
   refine exists_hasStrictFDerivAt_splitCoord φ (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩)
     (fun z hz hzε ↦ (hεs z hz hzε).trans ?_) hq hsq hyφ hyε hyq hy.2 hy.1
