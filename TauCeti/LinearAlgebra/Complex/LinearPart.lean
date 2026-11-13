@@ -118,6 +118,12 @@ theorem isComplexLinear_id : IsComplexLinear J J (LinearMap.id) := by
 theorem isComplexLinear_zero : IsComplexLinear J J' (0 : V →ₗ[R] W) := by
   simp
 
+/-- The sum of two complex-linear maps is complex linear. -/
+theorem IsComplexLinear.add {F G : V →ₗ[R] W} (hF : IsComplexLinear J J' F)
+    (hG : IsComplexLinear J J' G) : IsComplexLinear J J' (F + G) :=
+  isComplexLinear_of_apply fun v => by
+    simp only [LinearMap.add_apply, map_add, hF.apply v, hG.apply v]
+
 /-- The composite of two complex-linear maps is complex linear. -/
 theorem IsComplexLinear.comp {F : V →ₗ[R] W} {G : W →ₗ[R] U}
     (hG : IsComplexLinear J' J'' G) (hF : IsComplexLinear J J' F) :
@@ -150,19 +156,21 @@ theorem isComplexLinear_arrowCongr_iff {V₂ W₂ : Type*}
     refine isComplexLinear_of_apply fun v => ?_
     simp [LinearEquiv.arrowCongr_apply, hF.apply]
 
+/-- A scalar multiple of a complex-linear map is complex linear. -/
+theorem IsComplexLinear.smul {F : V →ₗ[R] W} (c : R) (h : IsComplexLinear J J' F) :
+    IsComplexLinear J J' (c • F) :=
+  isComplexLinear_of_apply fun v => by
+    simp only [LinearMap.smul_apply, map_smul, h.apply v]
+
 /-- The submodule of complex-linear maps `V →ₗ[R] W` for the pair `(J, J')`. -/
 def complexLinearMaps (J : V →ₗ[R] V) (J' : W →ₗ[R] W) : Submodule R (V →ₗ[R] W) where
   carrier := {F | IsComplexLinear J J' F}
   zero_mem' := isComplexLinear_zero
-  add_mem' {F G} (hF : IsComplexLinear J J' F) (hG : IsComplexLinear J J' G) :=
-    isComplexLinear_of_apply fun v => by
-      simp only [LinearMap.add_apply, map_add, hF.apply v, hG.apply v]
-  smul_mem' c {F} (hF : IsComplexLinear J J' F) :=
-    isComplexLinear_of_apply fun v => by
-      simp only [LinearMap.smul_apply, map_smul, hF.apply v]
+  add_mem' := IsComplexLinear.add
+  smul_mem' c _ hF := hF.smul c
 
 /-- Membership in `complexLinearMaps J J'` is complex linearity. -/
-@[simp]
+@[simp, grind =]
 theorem mem_complexLinearMaps {F : V →ₗ[R] W} :
     F ∈ complexLinearMaps J J' ↔ IsComplexLinear J J' F := Iff.rfl
 
@@ -218,6 +226,22 @@ theorem IsComplexLinear.neg {F : V →ₗ[R] W} (h : IsComplexLinear J J' F) :
 theorem IsComplexAntilinear.neg {F : V →ₗ[R] W} (h : IsComplexAntilinear J J' F) :
     IsComplexAntilinear J J' (-F) :=
   isComplexAntilinear_of_apply fun v => by simp [h.apply v]
+
+/-- The sum of two complex-antilinear maps is complex antilinear. -/
+theorem IsComplexAntilinear.add {F G : V →ₗ[R] W} (hF : IsComplexAntilinear J J' F)
+    (hG : IsComplexAntilinear J J' G) : IsComplexAntilinear J J' (F + G) :=
+  isComplexAntilinear_of_apply fun v => by
+    simp only [LinearMap.add_apply, map_add, hF.apply v, hG.apply v, neg_add]
+
+/-- The difference of two complex-linear maps is complex linear. -/
+theorem IsComplexLinear.sub {F G : V →ₗ[R] W} (hF : IsComplexLinear J J' F)
+    (hG : IsComplexLinear J J' G) : IsComplexLinear J J' (F - G) := by
+  simpa only [sub_eq_add_neg] using hF.add hG.neg
+
+/-- The difference of two complex-antilinear maps is complex antilinear. -/
+theorem IsComplexAntilinear.sub {F G : V →ₗ[R] W} (hF : IsComplexAntilinear J J' F)
+    (hG : IsComplexAntilinear J J' G) : IsComplexAntilinear J J' (F - G) := by
+  simpa only [sub_eq_add_neg] using hF.add hG.neg
 
 /-- The composite of two complex-antilinear maps is complex linear. -/
 theorem IsComplexAntilinear.comp {F : V →ₗ[R] W} {G : W →ₗ[R] U}
@@ -297,19 +321,21 @@ variable {R V W : Type*} [CommSemiring R]
   [AddCommGroup W] [Module R W]
   {J : V →ₗ[R] V} {J' : W →ₗ[R] W}
 
+/-- A scalar multiple of a complex-antilinear map is complex antilinear. -/
+theorem IsComplexAntilinear.smul {F : V →ₗ[R] W} (c : R) (h : IsComplexAntilinear J J' F) :
+    IsComplexAntilinear J J' (c • F) :=
+  isComplexAntilinear_of_apply fun v => by
+    simp only [LinearMap.smul_apply, map_smul, h.apply v, smul_neg]
+
 /-- The submodule of complex-antilinear maps `V →ₗ[R] W` for the pair `(J, J')`. -/
 def complexAntilinearMaps (J : V →ₗ[R] V) (J' : W →ₗ[R] W) : Submodule R (V →ₗ[R] W) where
   carrier := {F | IsComplexAntilinear J J' F}
   zero_mem' := isComplexAntilinear_zero
-  add_mem' {F G} (hF : IsComplexAntilinear J J' F) (hG : IsComplexAntilinear J J' G) :=
-    isComplexAntilinear_of_apply fun v => by
-      simp only [LinearMap.add_apply, map_add, hF.apply v, hG.apply v, neg_add]
-  smul_mem' c {F} (hF : IsComplexAntilinear J J' F) :=
-    isComplexAntilinear_of_apply fun v => by
-      simp only [LinearMap.smul_apply, map_smul, hF.apply v, smul_neg]
+  add_mem' := IsComplexAntilinear.add
+  smul_mem' c _ hF := hF.smul c
 
 /-- Membership in `complexAntilinearMaps J J'` is complex antilinearity. -/
-@[simp]
+@[simp, grind =]
 theorem mem_complexAntilinearMaps {F : V →ₗ[R] W} :
     F ∈ complexAntilinearMaps J J' ↔ IsComplexAntilinear J J' F := Iff.rfl
 
@@ -331,18 +357,6 @@ noncomputable def complexAntilinearPartLinearMap (J : V →ₗ[𝕜] V) (J' : W 
     (V →ₗ[𝕜] W) →ₗ[𝕜] (V →ₗ[𝕜] W) :=
   (2⁻¹ : 𝕜) • (LinearMap.id + LinearMap.compRight 𝕜 J' ∘ₗ LinearMap.lcomp 𝕜 W J)
 
-/-- The defining formula for `complexLinearPartLinearMap J J'` on an input map. -/
-@[simp]
-theorem complexLinearPartLinearMap_apply (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F : V →ₗ[𝕜] W) :
-    complexLinearPartLinearMap J J' F = (2⁻¹ : 𝕜) • (F - J' ∘ₗ F ∘ₗ J) :=
-  (rfl)
-
-/-- The defining formula for `complexAntilinearPartLinearMap J J'` on an input map. -/
-@[simp]
-theorem complexAntilinearPartLinearMap_apply (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F : V →ₗ[𝕜] W) :
-    complexAntilinearPartLinearMap J J' F = (2⁻¹ : 𝕜) • (F + J' ∘ₗ F ∘ₗ J) :=
-  (rfl)
-
 /-- The complex-linear part `∂F = ½ (F - J' ∘ F ∘ J)` of a linear map. -/
 noncomputable def complexLinearPart (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F : V →ₗ[𝕜] W) :
     V →ₗ[𝕜] W :=
@@ -352,6 +366,28 @@ noncomputable def complexLinearPart (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] 
 noncomputable def complexAntilinearPart (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W)
     (F : V →ₗ[𝕜] W) : V →ₗ[𝕜] W :=
   complexAntilinearPartLinearMap J J' F
+
+/-- The complex-linear-part operator, as a function, is `complexLinearPart J J'`. -/
+@[simp]
+theorem coe_complexLinearPartLinearMap (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) :
+    ⇑(complexLinearPartLinearMap J J') = complexLinearPart J J' :=
+  (rfl)
+
+/-- The complex-antilinear-part operator, as a function, is `complexAntilinearPart J J'`. -/
+@[simp]
+theorem coe_complexAntilinearPartLinearMap (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) :
+    ⇑(complexAntilinearPartLinearMap J J') = complexAntilinearPart J J' :=
+  (rfl)
+
+/-- The complex-linear-part operator sends `F` to its complex-linear part. -/
+theorem complexLinearPartLinearMap_apply (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F : V →ₗ[𝕜] W) :
+    complexLinearPartLinearMap J J' F = complexLinearPart J J' F :=
+  (rfl)
+
+/-- The complex-antilinear-part operator sends `F` to its complex-antilinear part. -/
+theorem complexAntilinearPartLinearMap_apply (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F : V →ₗ[𝕜] W) :
+    complexAntilinearPartLinearMap J J' F = complexAntilinearPart J J' F :=
+  (rfl)
 
 /-- The defining formula for the complex-linear part as a linear-map equality. -/
 theorem complexLinearPart_def (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F : V →ₗ[𝕜] W) :
@@ -441,6 +477,19 @@ theorem complexLinearPart_neg (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F 
 theorem complexAntilinearPart_neg (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F : V →ₗ[𝕜] W) :
     complexAntilinearPart J J' (-F) = -complexAntilinearPart J J' F :=
   map_neg (complexAntilinearPartLinearMap J J') F
+
+/-- The complex-linear part commutes with subtraction in `F`. -/
+@[simp]
+theorem complexLinearPart_sub (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F G : V →ₗ[𝕜] W) :
+    complexLinearPart J J' (F - G) = complexLinearPart J J' F - complexLinearPart J J' G :=
+  map_sub (complexLinearPartLinearMap J J') F G
+
+/-- The complex-antilinear part commutes with subtraction in `F`. -/
+@[simp]
+theorem complexAntilinearPart_sub (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F G : V →ₗ[𝕜] W) :
+    complexAntilinearPart J J' (F - G)
+      = complexAntilinearPart J J' F - complexAntilinearPart J J' G :=
+  map_sub (complexAntilinearPartLinearMap J J') F G
 
 /-- For an additive endomorphism `K` with `K² = -1`, such as an almost complex structure, the
 equation `a + K b = 0` is equivalent to `b = K a`. -/
