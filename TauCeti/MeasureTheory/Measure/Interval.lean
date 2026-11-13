@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.Topology.Order.LeftRight
 import Mathlib.Topology.Order.AtTopBotIxx
 
@@ -19,7 +20,8 @@ import Mathlib.Topology.Order.AtTopBotIxx
 Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(x, a]` go to
 `-∞`. This file adds the analogous limits for `(x, a)` and `[x, a]`, and the right-continuity of
 `x ↦ μ (-∞, x]` and `x ↦ μ (-∞, x)` at `a` from the right, where both tend to `μ (-∞, a]`.
-Reflection exchanges the two open tails.
+Reflection exchanges the two open tails, and a negation-invariant measure gives `(-∞, x]` and
+`(-x, ∞)` the same mass when `{-x}` is null.
 
 On `ℝ`, a uniform bound `C` on the mass of the unit windows `[a, a + 1]` bounds the mass of
 longer windows linearly in their length, and so makes the measure locally finite.
@@ -39,6 +41,10 @@ longer windows linearly in their length, and so makes the measure locally finite
 * `MeasureTheory.Measure.tendsto_measureReal_Icc_neg_mul_atTop`: the real mass of symmetric
   intervals with endpoints `±δx` tends to the total mass of a finite real measure when `δ > 0`.
 * `MeasureTheory.Measure.map_neg_real_Ioi`: the right tail of a reflected measure is its left tail.
+* `MeasureTheory.Measure.measure_Iic_eq_measure_Ioi_neg`,
+  `MeasureTheory.Measure.measureReal_Iic_eq_measureReal_Ioi_neg`: a negation-invariant measure on
+  an ordered additive group gives `Iic x` and `Ioi (-x)` the same measure (and mass) when `{-x}`
+  is null.
 * `MeasureTheory.Measure.measure_Icc_add_natCast_le`,
   `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Icc_add_one_le`: a measure on `ℝ`
   whose unit windows `[a, a + 1]` have mass at most `C` gives `[a, a + n]` mass at most
@@ -51,6 +57,26 @@ open Set Filter
 open scoped Topology ENNReal NNReal
 
 namespace MeasureTheory
+
+namespace Measure
+
+/-- A negation-invariant measure on an ordered additive group gives the same measure to `Iic x` as
+to `Ioi (-x)`, provided the point `-x` is null. -/
+theorem measure_Iic_eq_measure_Ioi_neg {α : Type*} [AddCommGroup α] [PartialOrder α]
+    [IsOrderedAddMonoid α] [MeasurableSpace α] [MeasurableNeg α] (μ : Measure α)
+    [μ.IsNegInvariant] {x : α} (hnull : μ {-x} = 0) : μ (Iic x) = μ (Ioi (-x)) := by
+  have h2 : μ (Iic x) = μ (Ici (-x)) := by
+    simpa only [Set.neg_Iic] using (measure_neg μ (Iic x)).symm
+  rw [h2, (measure_congr (Ioi_ae_eq_Ici' hnull)).symm]
+
+/-- A negation-invariant measure on an ordered additive group gives the same mass to `Iic x` as to
+`Ioi (-x)`, provided the point `-x` is null. -/
+theorem measureReal_Iic_eq_measureReal_Ioi_neg {α : Type*} [AddCommGroup α] [PartialOrder α]
+    [IsOrderedAddMonoid α] [MeasurableSpace α] [MeasurableNeg α] (μ : Measure α)
+    [μ.IsNegInvariant] {x : α} (hnull : μ {-x} = 0) : μ.real (Iic x) = μ.real (Ioi (-x)) := by
+  rw [Measure.real, Measure.real, measure_Iic_eq_measure_Ioi_neg μ hnull]
+
+end Measure
 
 variable {α : Type*} {mα : MeasurableSpace α} {μ : Measure α}
 
@@ -152,7 +178,7 @@ theorem continuous_cumulative_restrict_lt_top (μ : Measure α) [NullSingletonCl
       ext y
       simp only [mem_inter_iff, mem_Iic, mem_ofPred_eq]
       constructor
-      · rintro ⟨hyx, hy⟩
+      · rintro ⟨_, hy⟩
         exact ⟨le_of_not_gt (fun hty ↦ hfinite ⟨y, hty, hy⟩), hy⟩
       · exact fun ⟨hyt, hy⟩ ↦ ⟨hyt.trans hx.le, hy⟩
     exact continuousWithinAt_const.congr (fun x hx ↦ heq x hx) rfl

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.ExtensionBasis
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Submodule
 
 /-!
 # Upper-triangular comodule structures and extensions
@@ -53,7 +54,7 @@ public section
 
 namespace TauCeti.Comodule
 
-open Module
+open _root_.Module
 
 universe u v w
 
@@ -84,24 +85,25 @@ theorem coefficientMatrix_castAdd_castAdd_of_castAdd_eq
     SMulMemClass.subtype_apply, ← hb, Basis.coord_apply, Basis.repr_self,
     Finsupp.single_apply, (Fin.castAdd_injective m n).eq_iff]
 
+omit [Module.Flat k C] in
 /-- If the first block of a basis of `M` is a basis of the subcomodule `N`, the lower-left block
 of its coefficient matrix vanishes. This is the matrix form of stability of the subcomodule. -/
 theorem coefficientMatrix_natAdd_castAdd_of_castAdd_eq
     (N : Subcomodule k C M) (bN : Basis (Fin m) k N) (b : Basis (Fin (m + n)) k M)
     (hb : ∀ j, b (Fin.castAdd n j) = bN j) (i : Fin n) (j : Fin m) :
     coefficientMatrix (C := C) b (Fin.natAdd m i) (Fin.castAdd n j) = 0 := by
-  rw [coefficientMatrix_apply, hb, ← N.subtype_apply (bN j), matrixCoefficient_map]
-  have hcoord : (b.coord (Fin.natAdd m i)).comp N.subtype.toLinearMap = 0 := by
+  have hcoord : (b.coord (Fin.natAdd m i)).comp (SMulMemClass.subtype N) = 0 := by
     refine bN.ext fun l ↦ ?_
-    simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
-      SMulMemClass.subtype_apply, ← hb, Basis.coord_apply, Basis.repr_self,
-      Finsupp.single_apply, LinearMap.zero_apply]
+    rw [LinearMap.comp_apply, SMulMemClass.subtype_apply, ← hb]
+    simp only [Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, LinearMap.zero_apply]
     refine ite_eq_right fun h ↦ ?_
     have hval := congrArg Fin.val h
     simp only [Fin.val_castAdd, Fin.val_natAdd] at hval
     omega
-  rw [hcoord]
-  simp
+  rw [coefficientMatrix_apply, hb]
+  exact N.carrier.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (N.coact_mem (bN j).2)
+    ((Submodule.mem_dualAnnihilator _).2 fun w hw ↦
+      LinearMap.congr_fun hcoord ⟨w, Subcomodule.mem_carrier.1 hw⟩)
 
 end Semiring
 

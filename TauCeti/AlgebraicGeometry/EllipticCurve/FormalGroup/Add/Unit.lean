@@ -57,8 +57,7 @@ them where the `rename` API is the more convenient of the two.
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeierstrassFormalGroup/Chord.lean` lines 576-870, the section `AddZero` —
 declarations `hasSubst_unitR`, `subst_unitR_renameL`, `subst_unitR_renameR`,
 `X_mul_subst_unitR_slopeSeries`, `subst_unitR_interceptSeries`, `ringHom_invOfUnit`,
