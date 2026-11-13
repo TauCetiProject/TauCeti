@@ -18,7 +18,8 @@ reductions, even when `Z` is noncomputable. The reduction specializes a single p
 Σ⁰₁ matrix relative to `Z`; it does not use an oracle to transform indices.
 
 A diagonal argument proves that totality is not Σ⁰₂ relative to `Z`. Consequently it is
-neither c.e. nor co-c.e. for any oracle, and does not many-one reduce to relative halting.
+neither c.e. nor co-c.e. for any oracle, and neither it nor its complement many-one reduces to
+relative halting.
 
 ## References
 
@@ -116,13 +117,17 @@ theorem not_rePred_mem_totality : ¬REPred (· ∈ totality Z) := by
   intro h
   exact not_manyOneReducible_totality_jump (Z.oneOneReducible_jump_of_rePred h).to_many_one
 
-/-- The complement of totality relative to any oracle is not computably enumerable. -/
-theorem not_rePred_mem_compl_totality : ¬REPred (· ∈ (totality Z)ᶜ) := by
-  intro h
-  obtain ⟨f, hf, heq⟩ := (Z.oneOneReducible_jump_of_rePred h).to_many_one
+/-- The complement of relative totality does not many-one reduce to the relative halting set. -/
+theorem not_manyOneReducible_compl_totality_jump :
+    ¬ManyOneReducible (· ∈ (totality Z)ᶜ) (· ∈ Z.jump) := by
+  rintro ⟨f, hf, heq⟩
   have hpi : IsPi Z 1 (· ∈ totality Z) :=
     isSigma_not_iff.1 ((isSigma_one_jump.preimage hf.computableIn).of_eq
       fun x => (heq x).symm)
   exact not_isSigma_two_totality hpi.sigma_succ
+
+/-- The complement of totality relative to any oracle is not computably enumerable. -/
+theorem not_rePred_mem_compl_totality : ¬REPred (· ∈ (totality Z)ᶜ) := fun h =>
+  not_manyOneReducible_compl_totality_jump (Z.oneOneReducible_jump_of_rePred h).to_many_one
 
 end TauCeti.ArithmeticalHierarchy
