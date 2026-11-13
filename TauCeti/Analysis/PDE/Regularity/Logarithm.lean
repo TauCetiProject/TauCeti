@@ -162,7 +162,7 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le :
       0 < r → Metric.ball x₀ (2 * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∫ x in Metric.ball x₀ r, (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu ≤
         C * (Lam / lam) ^ 2 * mu.real (Metric.ball x₀ r) / r ^ 2 := by
-  obtain ⟨c, hc0, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
+  obtain ⟨c, _, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨16 * c ^ 2 * (3 / 2) ^ Fintype.card ι, by positivity, ?_⟩
   intro mu _ Omega a lam Lam u ε x₀ r h ha hu hε hεu hr hball
   have hlam := h.pos
@@ -201,7 +201,7 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le :
             simp
       _ ≤ ∫ x in Omega, ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu :=
           setIntegral_mono_set hweighted (Filter.Eventually.of_forall fun x => by positivity)
-            ((Metric.ball_subset_ball (by linarith)).trans hball).eventuallyLE
+            ((Metric.ball_subset_ball (by linarith)).trans hball).eventuallySubset
   have hvol : mu.real (Metric.closedBall x₀ (3 * r / 2)) =
       (3 / 2) ^ Fintype.card ι * mu.real (Metric.ball x₀ r) := by
     rw [show 3 * r / 2 = 3 / 2 * r by ring,
@@ -252,8 +252,7 @@ theorem exists_setAverage_abs_log_sub_setAverage_le :
   have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ r)) := isFiniteMeasure_restrict.2 hBtop
   obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_log (by simp) hε hεu
   have hmem : MemLp (fun x => f x - m) 2 (mu.restrict (Metric.ball x₀ r)) :=
-    (((Lp.memLp (W1p.value w)).ae_eq hwv).mono_measure
-      (Measure.restrict_mono hBsub le_rfl)).sub (memLp_const m)
+    (W1p.memLp_log_value (by simp) hε hεu hBsub).sub (memLp_const m)
   -- The Poincaré–Wirtinger inequality on the ball, for `log u`.
   have hP := setIntegral_log_sub_setAverage_sq_le hε hεu hBsub hwv hwg
   -- Jensen's inequality bounds the `L¹` mean oscillation by the `L²` one.

@@ -438,7 +438,8 @@ theorem restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv
 
 /-- **A Frobenius lift generates the Galois group of each finite unramified level.** The
 restriction of an arithmetic Frobenius lift to the unramified extension `K_f` of degree `f`
-inside `K^{alg}` generates `Gal(K_f/K)`. -/
+inside `K^{alg}` generates `Gal(K_f/K)`; for `f = 0` the extension is `K` itself and the group is
+trivial. -/
 theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) {f : ℕ} :
     Subgroup.zpowers
       (AlgEquiv.restrictNormalHom (unramifiedExtension K (AlgebraicClosure K) f) σ) = ⊤ := by

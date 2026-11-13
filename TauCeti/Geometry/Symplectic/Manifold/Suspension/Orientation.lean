@@ -8,11 +8,12 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Leaf
 
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Symplectic.Manifold.Suspension.PeriodicTorus
 
 /-!
-# Orientation of the orbit-torus parametrization of a horizontal curve
+# Orientation and area of the orbit-torus parametrization of a horizontal curve
 
 Let `φ` be a diffeomorphism of a locally compact Hausdorff smooth manifold `M`, let `Y_φ` be its
 smooth mapping torus, with suspension vector field `T = ∂_t`, and let `X_φ = (ℝ / ℤ)_s × Y_φ`. For
@@ -40,6 +41,13 @@ everywhere. When `u` is moreover injective, `v` is a diffeomorphism of `C` onto 
 `(ℝ / ℤ) × (ℝ / dℤ)`, and an orientation-preserving one. This is the oriented parametrization of
 the embedded image `(ℝ / ℤ) × γ`.
 
+Change of variables along this diffeomorphism computes the area of the embedded curve for the
+symplectic form `Ω = ds ∧ dt + σ_v`. The orbit torus pulls `Ω` back to `ds ∧ dt_d`
+(`TauCeti.SmoothMappingTorus.mpullback_orbitTorus_suspensionForm`), whose integral over the
+oriented torus is `d`. So the `Ω`-area `∫_C u^* Ω` of an embedded curve of zero vertical area is
+the least period `d` of its primitive closed orbit, a positive integer, while its `σ_v`-area is
+zero by hypothesis.
+
 ## Main results
 
 * `mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq`: for a factor `v` through the orbit
@@ -51,6 +59,11 @@ the embedded image `(ℝ / ℤ) × γ`.
   orbit torus by a surjective orientation-preserving local diffeomorphism.
 * `exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero`:
   if the curve is also injective, the factor is an orientation-preserving diffeomorphism.
+* `integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq`: a curve parametrized by the
+  orbit torus of a point of period `d` through an orientation-preserving diffeomorphism has
+  `Ω`-area `d`.
+* `integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero`: an embedded curve of zero
+  vertical area has `Ω`-area the least period of its closed orbit.
 
 ## References
 
@@ -97,8 +110,7 @@ theorem mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq
     {e : TangentSpace I' c} (he : mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c e = ((1 : ℝ), (0 : ℝ))) :
     mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c (j c e) = ((0 : ℝ), (1 : ℝ)) := by
   subst hτv
-  have hτ : orbitTorus φ h = periodicTorus φ h :=
-    funext fun p ↦ by rw [orbitTorus_apply, periodicTorus_apply]
+  have hτ : orbitTorus φ h = periodicTorus φ h := (periodicTorus_eq_orbitTorus h).symm
   -- The differential of the orbit torus is `dτ (a, b) = a ∂_s + b T`.
   have hdτ (w : ℝ × ℝ) :
       mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) (v c) w =
@@ -167,8 +179,27 @@ theorem isOrientationPreservingAt_of_orbitTorus_comp_eq
   ext i
   exact hLb i
 
+variable {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
+
+/-- **The `Ω`-area of an oriented orbit-torus parametrization.** Let `u = τ ∘ Φ` for the orbit
+torus `τ` of a point of period `d` and an orientation-preserving diffeomorphism
+`Φ : C ≃ (ℝ / ℤ) × (ℝ / dℤ)`, for the product of the positive orientations of the two circles.
+Then the suspension form `Ω = ds ∧ dt + σ_v` integrates to `d` over `C`. -/
+theorem integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq
+    (Φ : C ≃ₘ⟮I', 𝓘(ℝ).prod 𝓘(ℝ)⟯ UnitAddCircle × AddCircle (d : ℝ))
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hτΦ : orbitTorus φ h ∘ Φ = u)
+    (hΦ : ∀ c, Manifold.Orientation.IsOrientationPreservingAt o
+      ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) Φ c) :
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 = d := by
+  subst hτΦ
+  have hΦe : Topology.IsOpenEmbedding Φ := Φ.coe_toHomeomorph ▸ Φ.toHomeomorph.isOpenEmbedding
+  rw [← SmoothForm.mpullback_mpullback _ _ Φ.contMDiff (contMDiff_orbitTorus h),
+    SmoothForm.coe_mpullback,
+    hΦe.integralTopForm_mpullback_of_isOrientationPreservingAt hΦ (by simp),
+    mpullback_orbitTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
+
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [I'.Boundaryless] [CompactSpace C]
-  [ConnectedSpace C] {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
+  [ConnectedSpace C]
 
 /-- **Oriented parametrization of a curve of zero vertical area.** Let `u` be a smooth
 pseudoholomorphic map with injective differential from a compact connected boundaryless surface
@@ -239,6 +270,38 @@ theorem exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero
     (congrArg (orbitTorus φ h ∘ ·) hΦ).trans hτv, fun c' ↦ ?_⟩
   rw [hΦ]
   exact hor c'
+
+/-- **The `Ω`-area of an embedded curve of zero vertical area.** Let `u` be an injective smooth
+pseudoholomorphic map with injective differential from a compact connected boundaryless surface
+`C`, oriented so that the frames `(e, j e)` are positive, into `X_φ` with an almost complex
+structure of block form along the image of `u` whose vertical restriction is tamed by `ω_v`. If
+the vertical area `∫_C u^* ω_v` vanishes, let `(s, [t, x])` be a value of `u`. Then the
+`Ω`-area `∫_C u^* Ω` of `u` is the least period of `x`, the period of the primitive closed orbit
+`γ` whose orbit torus `(ℝ / ℤ) × γ` is the image of `u`. -/
+theorem integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hu₁ : Injective u)
+    (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c)
+    (hS : ∀ c, J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
+      (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
+    (hV : ∀ c, ∀ v ∈ suspensionVerticalSubspace φ (u c),
+      J (u c) v ∈ suspensionVerticalSubspace φ (u c))
+    (htame : ∀ c, ∀ v ∈ suspensionVerticalSubspace φ (u c), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
+        (fiberForm φ σ hσ)) (u c) v (J (u c) v))
+    (h0 : integralTopForm o (SmoothForm.mpullback u hu
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+    (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
+    {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
+      minimalPeriod φ x := by
+  have : Fact (0 < (minimalPeriod φ x : ℝ)) :=
+    ⟨Nat.cast_pos.mpr (minimalPeriod_pos_of_integralTopForm_eq_zero hu ho hhol hS hV htame h0
+      hinj hc)⟩
+  obtain ⟨Φ, hτΦ, hΦ⟩ := exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero
+    (isPeriodicPt_minimalPeriod φ x) hu hu₁ ho hhol hS hV htame h0 hinj hc rfl
+  exact integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq _ Φ hu hτΦ hΦ
 
 end SmoothMappingTorus
 

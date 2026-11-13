@@ -75,10 +75,9 @@ private def netPoint {n N : ℕ} (hN : 0 < N)
 theorem totallyBounded_graphonSpaceI : TotallyBounded (Set.univ : Set GraphonSpaceI) := by
   rw [Metric.totallyBounded_iff]
   intro ε hε
-  obtain ⟨n, N, hn0, hnge, hN, hgrid, hweight⟩ :=
+  obtain ⟨n, N, _, hnge, hN, hgrid, hweight⟩ :=
     TauCeti.exists_nat_ge_and_div_le (K := ℝ) (by positivity : (0 : ℝ) < ε / 4)
       (4 ^ Nat.ceil (1 / (ε / 4) ^ 2))
-  have : NeZero n := ⟨hn0.ne'⟩
   refine ⟨Set.range (netPoint (n := n) hN), Set.finite_range _, ?_⟩
   rintro x -
   obtain ⟨W, rfl⟩ := SeparationQuotient.surjective_mk x

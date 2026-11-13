@@ -120,7 +120,7 @@ theorem singularHomologyMap_orbitTorus_addCircleProdFundamentalClass
 /-- Repeated traversal multiplies the integral closed-orbit class by `k`. The factorization
 is through the actual reduction map from the circle of length `k * d` to that of length `d`. -/
 theorem closedOrbitHomologyClass_const_mul (hx : Function.IsPeriodicPt φ d x)
-    [Fact (0 < (d : ℝ))] (k : ℕ) :
+    (k : ℕ) :
     closedOrbitHomologyClass (hx.const_mul k) = k • closedOrbitHomologyClass hx := by
   have hdm : ((k * d : ℕ) : ℝ) ∈ AddSubgroup.zmultiples (d : ℝ) := by
     refine AddSubgroup.mem_zmultiples_iff.mpr ⟨(k : ℤ), ?_⟩
@@ -139,7 +139,7 @@ theorem closedOrbitHomologyClass_const_mul (hx : Function.IsPeriodicPt φ d x)
 /-- Repeated traversal multiplies the integral orbit-torus class. For `k > 0` the orbit
 tori have the same image, while their parametrized classes retain the factor `k`. -/
 theorem orbitTorusHomologyClass_const_mul (hx : Function.IsPeriodicPt φ d x)
-    [Fact (0 < (d : ℝ))] (k : ℕ) :
+    (k : ℕ) :
     orbitTorusHomologyClass (hx.const_mul k) = k • orbitTorusHomologyClass hx := by
   rw [orbitTorusHomologyClass_def, closedOrbitHomologyClass_const_mul hx k, map_nsmul,
     orbitTorusHomologyClass_def]

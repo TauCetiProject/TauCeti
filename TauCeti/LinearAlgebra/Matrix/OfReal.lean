@@ -14,14 +14,15 @@ public import TauCeti.LinearAlgebra.Matrix.DetDescent
 # Real matrices as complex matrices
 
 A real matrix `N` is viewed as a complex matrix through the entrywise coercion
-`N.map ((↑) : ℝ → ℂ)`. This file records that a real orthogonal matrix is unitary as a complex
-matrix, and how the real Gram matrix `Re (Mᴴ M)` of the columns of a complex matrix `M` behaves:
-it transforms by congruence under a real change of basis, and it is positive definite when `Mᴴ M`
-is, in particular when `M` has independent columns.
+`N.map ((↑) : ℝ → ℂ)`. This file records that a real orthogonal matrix is unitary and a real
+symmetric matrix Hermitian as a complex matrix, and how the real Gram matrix `Re (Mᴴ M)` of the
+columns of a complex matrix `M` behaves: it transforms by congruence under a real change of basis,
+and it is positive definite when `Mᴴ M` is, in particular when `M` has independent columns.
 
 ## Main results
 
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
+* `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.IsHermitian.eq_map_ofReal_map_re_of_transpose_eq`: a Hermitian complex matrix equal to
   its transpose is real.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
@@ -50,6 +51,11 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
     ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
     conjTranspose_eq_transpose_of_trivial]
   exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans ((congrArg _ hO).trans (map_one _))
+
+/-- A real symmetric matrix is Hermitian as a complex matrix. -/
+theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
+    (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
+  hA.map _ fun _ ↦ by simp
 
 /-- A Hermitian complex matrix that is equal to its transpose is real. -/
 theorem IsHermitian.eq_map_ofReal_map_re_of_transpose_eq {q : Matrix n n ℂ} (hq : q.IsHermitian)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.UniformSpace.HeineCantor
+import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 
 /-!
 # Composing uniformly convergent families with continuous maps
@@ -21,6 +22,17 @@ continuous limit, composed with a continuous integrand. To compose with a map th
 the point `a` itself, as a time-dependent integrand does, first pass to the graphs
 `a ↦ (a, F i a)`, which converge uniformly to the graph of the limit
 (`TendstoUniformlyOn.graph`).
+
+For coefficients `P (x, y)` that depend on both the point `x` and the value `y`, continuity on a
+compact product `s ×ˢ t` suffices when all the values lie in `t`
+(`IsCompact.tendstoUniformlyOn_comp_prodMk`): `P` is then uniformly continuous there. This is the
+form in which the coefficients `J(z, u(z))` of a nonlinear equation converge along a sequence of
+maps `u` converging uniformly on a compact set.
+
+When the inner maps vary too, a uniformly convergent family `G i → g` can be composed with a
+uniformly convergent family `F i → f`, provided `g` is uniformly continuous on a set containing all
+the values (`TendstoUniformlyOn.comp_tendstoUniformlyOn`). This is the form needed to compare
+maps read at moving base points, such as `z ↦ G i (x i + z)` with `x i → x`.
 
 The file also records that a constant family converges uniformly
 (`TauCeti.tendstoUniformlyOn_const`), and that two families converging uniformly along the same
@@ -43,6 +55,19 @@ theorem IsCompact.comp_tendstoUniformlyOn (hf : IsCompact (f '' s))
     TendstoUniformlyOn (fun i x ↦ g (F i x)) (fun x ↦ g (f x)) p s := fun _ hu ↦ by
   filter_upwards [h _ (hf.uniformContinuousAt_of_continuousAt g hg hu)] with i hi x hx
   exact hi x hx (mem_image_of_mem f hx)
+
+/-- Let `G i → g` uniformly on `t`, with `g` uniformly continuous on `t`, and let `F i → f`
+uniformly on `s`, where `f` and eventually every `F i` map `s` into `t`. Then `G i ∘ F i → g ∘ f`
+uniformly on `s`. Mathlib's `UniformContinuousOn.comp_tendstoUniformlyOn_eventually` is the case of
+a constant outer family. -/
+theorem TendstoUniformlyOn.comp_tendstoUniformlyOn {t : Set β} {G : ι → β → γ}
+    (hG : TendstoUniformlyOn G g p t) (hg : UniformContinuousOn g t)
+    (h : TendstoUniformlyOn F f p s) (hF : ∀ᶠ i in p, MapsTo (F i) s t) (hf : MapsTo f s t) :
+    TendstoUniformlyOn (fun i x ↦ G i (F i x)) (fun x ↦ g (f x)) p s := fun u hu ↦ by
+  obtain ⟨v, hv, hvu⟩ := comp_mem_uniformity_sets hu
+  filter_upwards [hG v hv, hg.comp_tendstoUniformlyOn_eventually
+    (hF.mono fun _ hFi _ hx ↦ hFi hx) hf h v hv, hF] with i hGi hgi hFi x hx
+  exact hvu (SetRel.prodMk_mem_comp (hgi x hx) (hGi _ (hFi hx)))
 
 namespace TauCeti
 
@@ -69,3 +94,13 @@ theorem TendstoUniformlyOn.graph [UniformSpace α] (h : TendstoUniformlyOn F f p
   refine ⟨?_, h⟩
   exact (tendsto_principal.2 (.of_forall fun _ ↦ SetRel.mem_id.2 rfl)).mono_right
     refl_le_uniformity
+
+/-- Let `Fᵢ → f` uniformly on a compact set `s`, with all values on `s` in a compact set `t`. Then
+`P (x, Fᵢ x) → P (x, f x)` uniformly on `s`, for every `P` continuous on `s ×ˢ t`. -/
+theorem IsCompact.tendstoUniformlyOn_comp_prodMk [UniformSpace α] {t : Set β} {P : α × β → γ}
+    (hs : IsCompact s) (ht : IsCompact t) (hP : ContinuousOn P (s ×ˢ t))
+    (hF : ∀ᶠ i in p, MapsTo (F i) s t) (hf : MapsTo f s t) (h : TendstoUniformlyOn F f p s) :
+    TendstoUniformlyOn (fun i x ↦ P (x, F i x)) (fun x ↦ P (x, f x)) p s :=
+  ((hs.prod ht).uniformContinuousOn_of_continuous hP).comp_tendstoUniformlyOn_eventually
+    (hF.mono fun _ hFi _ hx ↦ mk_mem_prod hx (hFi hx)) (fun _ hx ↦ mk_mem_prod hx (hf hx))
+    h.graph

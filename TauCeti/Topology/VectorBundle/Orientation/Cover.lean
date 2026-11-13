@@ -224,7 +224,7 @@ theorem deck_ne_self (p : VectorBundleOrientationCover F E ι) : deck p ≠ p :=
   obtain ⟨b, o⟩ := p
   exact Module.Ray.ne_neg_self o (mk_eq_mk_iff.1 h).symm
 
-variable [Fintype ι] [FiniteDimensional ℝ F]
+variable [Fintype ι]
 
 /-- The sheet of every trivialization of the atlas is open, provided `ι` has cardinality the
 rank of the bundle. -/
@@ -311,6 +311,8 @@ theorem isCoveringMap_proj (hι : Fintype.card ι = finrank ℝ F) :
       (trivializationAt F E b).open_baseSet,
       isOpen_preimage_proj (trivializationAt F E b).open_baseSet,
       trivializationHomeomorph hι (trivializationAt F E b), fun _ ↦ rfl⟩
+
+variable [FiniteDimensional ℝ F]
 
 /-- The projection of the orientation double cover is surjective, provided `ι` has cardinality
 the rank of the bundle. -/
@@ -487,7 +489,7 @@ theorem isOpen_setOf_orientation_eq (o : VectorBundleOrientation F E ι) :
   rintro q ⟨hqU, hq, hqo⟩
   exact (e.mapOrientation ι hq).injective (hqo.trans (hUsub hqU hq).symm)
 
-variable [Fintype ι] [FiniteDimensional ℝ F]
+variable [Fintype ι]
 
 /-- The section of the orientation double cover given by an orientation of the bundle is
 continuous, provided `ι` has cardinality the rank of the bundle. -/
@@ -514,6 +516,8 @@ theorem nonempty_iff_exists_section (hι : Fintype.card ι = finrank ℝ F) :
   refine ⟨ofContinuous (fun b ↦ hproj b ▸ (s b).orientation) ?_⟩
   convert hs using 1
   exact funext fun b ↦ key (s b) b (hproj b)
+
+variable [FiniteDimensional ℝ F]
 
 /-- The points of the orientation double cover lying on the section given by an orientation `o`
 form a clopen set, provided `ι` has cardinality the rank of the bundle. -/

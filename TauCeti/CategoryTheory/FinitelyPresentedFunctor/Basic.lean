@@ -28,10 +28,12 @@ This file sets up `mod C` as a property of objects of the abelian category of fu
 `Cᵒᵖ ⥤ AddCommGrpCat`. A finitely presented functor is the cokernel of the image of a morphism of
 `C`, and conversely (`isFinitelyPresentedFunctor_iff_exists_isColimit`). Finitely generated
 functors, hence finitely presented ones, are additive. Representable functors are finitely
-presented. When `C` has binary biproducts, the cokernel of a morphism from a finitely generated
-functor to a finitely presented one is finitely presented: if `p : (-, Y) ⟶ F` is onto and
-`G` is presented by `g : X' ⟶ Y'`, lift `p ≫ φ` to `(-, u)` for some `u : Y ⟶ Y'`; then the
-cokernel of `φ` is presented by `g` and `u` together, as a morphism `X' ⊞ Y ⟶ Y'`. Finitely
+presented, so the Yoneda embedding factors through `mod C` (`TauCeti.modYoneda`), and every
+object of `mod C` is a quotient of a representable functor. When `C` has binary biproducts, the
+cokernel of a morphism from a finitely generated functor to a finitely presented one is finitely
+presented: if `p : (-, Y) ⟶ F` is onto and `G` is presented by `g : X' ⟶ Y'`, lift `p ≫ φ` to
+`(-, u)` for some `u : Y ⟶ Y'`; then the cokernel of `φ` is presented by `g` and `u` together, as
+a morphism `X' ⊞ Y ⟶ Y'`. Finitely
 presented functors are also closed under binary biproducts. So when `C` is nonempty with binary
 biproducts (for example, additive), `mod C` contains zero (which only needs `C` nonempty) and is
 closed under isomorphisms, cokernels and finite products and coproducts in the functor category.
@@ -46,6 +48,9 @@ closed under isomorphisms, cokernels and finite products and coproducts in the f
 * `TauCeti.IsFinitelyGeneratedFunctor.additive`: finitely generated functors are additive.
 * `TauCeti.isFinitelyPresentedFunctor_preadditiveYoneda_obj`: representable functors are
   finitely presented.
+* `TauCeti.modYoneda`: the Yoneda embedding of `C` into `mod C`, which preserves small limits.
+* `TauCeti.exists_epi_modYoneda_obj`: every object of `mod C` is a quotient of a representable
+  functor.
 * `TauCeti.IsFinitelyPresentedFunctor.of_isColimit_cokernelCofork`: closure under cokernels of
   morphisms out of finitely generated functors.
 * `TauCeti.IsFinitelyPresentedFunctor.biprod`: closure under binary biproducts.
@@ -156,6 +161,25 @@ theorem isFinitelyPresentedFunctor_preadditiveYoneda_obj (Y : C) :
 theorem isFinitelyGeneratedFunctor_preadditiveYoneda_obj (Y : C) :
     IsFinitelyGeneratedFunctor (preadditiveYoneda.obj Y) :=
   (isFinitelyPresentedFunctor_preadditiveYoneda_obj Y).isFinitelyGeneratedFunctor
+
+/-- The Yoneda embedding of `C` into `mod C`, sending `X` to the representable functor `(-, X)`. -/
+abbrev modYoneda : C ⥤ (isFinitelyPresentedFunctor C).FullSubcategory :=
+  (isFinitelyPresentedFunctor C).lift preadditiveYoneda
+    isFinitelyPresentedFunctor_preadditiveYoneda_obj
+
+/-- The Yoneda embedding of `C` into `mod C` preserves small limits, since `preadditiveYoneda`
+does and the inclusion of `mod C` into the functor category reflects them. -/
+instance (J : Type*) [Category* J] [Small.{v} J] :
+    PreservesLimitsOfShape J (modYoneda : C ⥤ (isFinitelyPresentedFunctor C).FullSubcategory) :=
+  have : PreservesLimitsOfShape J ((modYoneda : C ⥤ _) ⋙ (isFinitelyPresentedFunctor C).ι) :=
+    inferInstanceAs (PreservesLimitsOfShape J (preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}))
+  preservesLimitsOfShape_of_reflects_of_preserves _ (isFinitelyPresentedFunctor C).ι
+
+/-- Every object of `mod C` is a quotient of a representable functor. -/
+theorem exists_epi_modYoneda_obj (F : (isFinitelyPresentedFunctor C).FullSubcategory) :
+    ∃ (Y : C) (p : modYoneda.obj Y ⟶ F), Epi p := by
+  obtain ⟨Y, p, hp⟩ := isFinitelyGeneratedFunctor_def.1 F.property.isFinitelyGeneratedFunctor
+  exact ⟨Y, ObjectProperty.homMk p, (isFinitelyPresentedFunctor C).ι.epi_of_epi_map hp⟩
 
 open ZeroObject in
 /-- The zero functor is finitely presented, as the cokernel of `(-, 𝟙 Y)` for any object `Y`. -/

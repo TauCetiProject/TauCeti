@@ -88,12 +88,20 @@ end Stabilizer
 
 variable {X : Type*} [TopologicalSpace X] {A : X → E →L[𝕜] F} {q : E →L[𝕜] G}
 
-/-- Kernel sections are continuous on any continuous family of invertible pairs. -/
-theorem continuous_kerSection (hA : Continuous A) (h : ∀ x, ((A x).prod q).IsInvertible) :
-    Continuous (fun x ↦ (A x).kerSection q) := by
+/-- Kernel sections are continuous on any continuous family of invertible pairs in which both
+the operator and the complementary coordinate vary. -/
+theorem _root_.Continuous.kerSection {A : X → E →L[𝕜] F} {q : X → E →L[𝕜] G}
+    (hA : Continuous A) (hq : Continuous q) (h : ∀ x, ((A x).prod (q x)).IsInvertible) :
+    Continuous (fun x ↦ (A x).kerSection (q x)) := by
   refine continuous_iff_continuousAt.mpr fun x ↦ ?_
   exact (contDiffAt_kerSection (n := 0) (h x)).continuousAt.comp
-    (f := fun x ↦ (A x, q)) (hA.continuousAt.prodMk continuousAt_const)
+    (f := fun x ↦ (A x, q x)) (hA.continuousAt.prodMk hq.continuousAt)
+
+/-- Kernel sections are continuous on any continuous family of invertible pairs with a fixed
+complementary coordinate. -/
+theorem continuous_kerSection (hA : Continuous A) (h : ∀ x, ((A x).prod q).IsInvertible) :
+    Continuous (fun x ↦ (A x).kerSection q) :=
+  hA.kerSection continuous_const h
 
 /-- Product coordinates on the actual kernel locus, with its subspace topology.
 The base coordinate is unchanged, and the fibre coordinate is the fixed map `q`. -/
@@ -101,7 +109,7 @@ noncomputable def kernelHomeomorph (A : X → E →L[𝕜] F) (q : E →L[𝕜] 
     (hA : Continuous A) (h : ∀ x, ((A x).prod q).IsInvertible) :
     {p : X × E | A p.1 p.2 = 0} ≃ₜ X × G where
   toFun p := (p.val.1, q p.val.2)
-  invFun p := ⟨(p.1, (A p.1).kerSection q p.2), apply_kerSection (h p.1) p.2⟩
+  invFun p := ⟨(p.1, (A p.1).kerSection q p.2), apply_kerSection p.2⟩
   left_inv p := Subtype.ext (Prod.ext rfl (kerSection_apply_of_mem_ker (h p.val.1) p.property))
   right_inv p := Prod.ext rfl (apply_kerSection_right (h p.1) p.2)
   continuous_toFun := by fun_prop
@@ -160,9 +168,9 @@ theorem exists_isOpen_isInvertible_prod_comp {x₀ : X} (hA : ContinuousAt A x�
     ∃ p : F →L[𝕜] (A x₀).range, (∀ y : (A x₀).range, p y = y) ∧
       ∃ q : E →L[𝕜] (A x₀).ker, (∀ v : (A x₀).ker, q v = v) ∧
         ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧ ∀ x ∈ U, ((p ∘L A x).prod q).IsInvertible := by
-  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 E
   obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional_quotient
-    (Submodule.closed_of_finiteDimensional (A x₀).range)
+    (Submodule.isClosed_of_finiteDimensional (A x₀).range)
   obtain ⟨q, hq⟩ := (A x₀).ker_closedComplemented_of_finiteDimensional_range
   -- At `x₀` the pair is injective between spaces of equal dimension, hence invertible.
   have hinj := prod_comp_injective hp hq
@@ -187,7 +195,7 @@ theorem exists_isOpen_continuousOn_inverse_prod_comp {s : Set X} {x₀ : X}
       ∃ q : E →L[𝕜] (A x₀).ker, (∀ v : (A x₀).ker, q v = v) ∧
         ∃ U ⊆ s, IsOpen U ∧ x₀ ∈ U ∧ (∀ x ∈ U, ((p ∘L A x).prod q).IsInvertible) ∧
           ContinuousOn (fun x ↦ ((p ∘L A x).prod q).inverse) U := by
-  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 E
   obtain ⟨p, hp, q, hq, V, hV, hx₀V, hinv⟩ :=
     exists_isOpen_isInvertible_prod_comp (hA.continuousAt (hs.mem_nhds hx₀))
   have hT : ContinuousOn (fun x ↦ (p ∘L A x).prod q) s :=

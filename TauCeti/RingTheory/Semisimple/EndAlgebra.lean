@@ -23,14 +23,17 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.Semisimple.IsotypicEnd
 import TauCeti.RingTheory.Semisimple.SimpleArtinian
+import TauCeti.RingTheory.SimpleRing.FiniteDimensional
 
 /-!
 # The endomorphism algebra of a module over a simple Artinian algebra
 
-Let `K` be a field, let `R` be a finite-dimensional **simple** `K`-algebra and let `M` be an
-`R`-module which is finite-dimensional over `K`. All simple `R`-modules are isomorphic, to a fixed
-minimal left ideal `S`, and `M` is a direct sum of `k` copies of `S`
-(`IsIsotypicOfType.of_isSimpleRing`), so
+Let `K` be a field, let `R` be a **simple** `K`-algebra and let `M` be an `R`-module which is
+finite-dimensional over `K`. The algebra `R` is not assumed finite-dimensional: when `M ≠ 0`, `R`
+acts faithfully on `M` and so is finite-dimensional over `K`
+(`IsSimpleRing.finiteDimensional_of_nontrivial`), and when `M = 0` the statements below hold
+trivially. For `M ≠ 0`, all simple `R`-modules are isomorphic, to a fixed minimal left ideal `S`,
+and `M` is a direct sum of `k` copies of `S` (`IsIsotypicOfType.of_isSimpleRing`), so
 
   `End_R M ≃ₐ[K] Mat_k(End_R S)`,
 
@@ -109,11 +112,10 @@ theorem moduleEnd [Nontrivial M] : IsSimpleRing (Module.End R M) :=
 end Simplicity
 
 variable (K : Type*) [Field K] {R : Type*} [Ring R] [IsSimpleRing R] [Algebra K R]
-  [FiniteDimensional K R]
 
 section Aux
 
-variable (S : Submodule R R) [IsSimpleModule R S]
+variable [FiniteDimensional K R] (S : Submodule R R) [IsSimpleModule R S]
 variable (M : Type*) [AddCommGroup M] [Module K M] [Module R M] [IsScalarTower K R M]
   [FiniteDimensional K M]
 
@@ -135,17 +137,24 @@ variable {M : Type*} [AddCommGroup M] [Module K M] [Module R M] [IsScalarTower K
   [FiniteDimensional K M]
 
 /-- **The dimension of the endomorphism algebra of a module over a simple Artinian algebra.** For a
-finite-dimensional simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
+simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
 
   `finrank K (End_R M) * finrank K R = (finrank K M)²`.
 
-Both sides are `k² * m² * d²` in the notation of the module docstring: `M` is `Sᵏ` and `R` is `Sᵐ`
-for a minimal left ideal `S` with `finrank K S = m * d`, where `d = finrank K (End_R S)`.
+When `M ≠ 0`, both sides are `k² * m² * d²` in the notation of the module docstring: `M` is `Sᵏ`
+and `R` is `Sᵐ` for a minimal left ideal `S` with `finrank K S = m * d`, where
+`d = finrank K (End_R S)`. When `M = 0`, both `End_R M` and `M` are zero, so both sides are `0`.
 
-The identity determines `finrank K (End_R M)` outright, since `finrank K R ≠ 0`; it is stated as a
-product rather than a quotient to stay inside `ℕ`. -/
+For `M ≠ 0` the identity determines `finrank K (End_R M)` outright, since then `R` is
+finite-dimensional and `finrank K R ≠ 0`; it is stated as a product rather than a quotient to stay
+inside `ℕ`. -/
 theorem finrank_end_mul_finrank_eq_sq :
     finrank K (Module.End R M) * finrank K R = finrank K M ^ 2 := by
+  rcases subsingleton_or_nontrivial M with hM | hM
+  · rw [Module.finrank_zero_of_subsingleton (M := M),
+      Module.finrank_zero_of_subsingleton (M := Module.End R M)]
+    simp
+  have := finiteDimensional_of_nontrivial K (R := R) (M := M)
   have : IsArtinianRing R := IsArtinianRing.of_finite K R
   obtain ⟨S, hS⟩ := IsAtomic.exists_atom (Submodule R R)
   rw [← isSimpleModule_iff_isAtom] at hS
@@ -174,7 +183,7 @@ theorem finrank_end_mul_finrank_eq_sq :
   ring
 
 /-- **Matrices over a simple algebra are matrices over the opposite of an endomorphism algebra.**
-For a finite-dimensional simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
+For a simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
 
   `Mₐ(R) ≃ₐ[K] M_b((End_R M)ᵐᵒᵖ)`  with  `a = finrank K M`, `b = finrank K R`.
 
@@ -184,6 +193,15 @@ so if `R` and `(End_R M)ᵐᵒᵖ` are central over `K` they have the same Braue
 theorem nonempty_algEquiv_matrix_mulOpposite_end :
     Nonempty (Matrix (Fin (finrank K M)) (Fin (finrank K M)) R ≃ₐ[K]
       Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ) := by
+  rcases subsingleton_or_nontrivial M with hM | hM
+  · rw [Module.finrank_zero_of_subsingleton (M := M)]
+    have : Subsingleton (Matrix (Fin 0) (Fin 0) R) := inferInstance
+    have : Subsingleton (Module.End R M) := inferInstance
+    have : Subsingleton (Module.End R M)ᵐᵒᵖ := inferInstance
+    have : Subsingleton (Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ) :=
+      inferInstance
+    exact ⟨default⟩
+  have := finiteDimensional_of_nontrivial K (R := R) (M := M)
   have hdim : finrank K (Fin (finrank K R) → M) = finrank K (Fin (finrank K M) → R) := by
     simp [Module.finrank_pi_fintype, mul_comm]
   obtain ⟨e⟩ := nonempty_linearEquiv_of_finrank_eq (R := R) K hdim

@@ -5,29 +5,46 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.Data.Finset.Range
+public import Mathlib.Data.Set.Lattice.Disjoint
 public import Mathlib.Data.Set.Lattice.Indexed
-public import Mathlib.Order.SetNotation
-import Mathlib.Data.Set.Lattice.Indexed
+
+import Mathlib.Data.Fintype.Pi
+import Mathlib.Data.Set.Lattice.Bounded
 
 /-!
-# Sets cut out by conditions on a tuple of values
+# Indexed unions and intersections of sets
 
 A set defined by a condition `Φ` on the tuple of values of a family of functions is the union,
 over the tuples satisfying `Φ`, of the fibres of the family over those tuples.
 
+The union of the binary family `![U, V]` is `U ∪ V`.
+
+For pairwise disjoint sets `C`, the union `⋃ j, C j` splits into the earlier sets, the `k`-th set
+and the later sets, and these pieces are disjoint.
+
 ## Main results
 
+* `Set.iUnion_vecCons_pair`: the union of a family of two sets.
 * `TauCeti.setOf_apply_eq_biUnion_iInter`:
   `{x | Φ (g · x)} = ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | g i x = ε i}`.
 * `TauCeti.exists_notMem_succ_of_notMem_iInter`: a point outside the intersection of a decreasing
   sequence of sets lies outside `K (k + 1)` for some `k`.
 * `TauCeti.exists_map_eq_of_notMem`: a map taking the eventual value of maps which stabilize outside
   a decreasing sequence of sets, with a prescribed value on the intersection.
+* `TauCeti.iUnion_eq_union_of_pairwise_disjoint`: the decomposition of `⋃ j, C j` for pairwise
+  disjoint `C` and the disjointness of its three pieces.
 -/
 
 public section
 
-open Set
+open Function Set
+
+/-- The union of the binary family `![U, V]` is `U ∪ V`. -/
+@[simp]
+theorem Set.iUnion_vecCons_pair {X : Type*} (U V : Set X) : ⋃ i, ![U, V] i = U ∪ V := by
+  simp only [Matrix.vecCons, Set.iUnion_cons, Set.iUnion_of_empty, Set.union_empty]
 
 namespace TauCeti
 
@@ -64,5 +81,21 @@ theorem exists_map_eq_of_notMem {α β : Type*} {K : ℕ → Set α} (hKsucc : �
   rcases le_total (hex x hxX).choose k with hjk | hkj
   · exact (hGstab _ k hjk x hj).symm
   · exact hGstab k _ hkj x hx
+
+/-- For pairwise disjoint sets `C`, the union `⋃ j, C j` splits into the earlier sets, the `k`-th
+set and the later sets, and these three pieces are disjoint. -/
+theorem iUnion_eq_union_of_pairwise_disjoint {α : Type*} {C : ℕ → Set α}
+    (hC : Pairwise (Disjoint on C)) (k : ℕ) :
+    ⋃ j, C j = (⋃ i ∈ Finset.range k, C i) ∪ (C k ∪ ⋃ i, ⋃ (_ : k < i), C i) ∧
+    Disjoint (⋃ i ∈ Finset.range k, C i) (C k ∪ ⋃ i, ⋃ (_ : k < i), C i) ∧
+    Disjoint (C k) (⋃ i, ⋃ (_ : k < i), C i) := by
+  refine ⟨?_, ?_, ?_⟩
+  · simpa only [Finset.mem_range, not_lt, Set.biUnion_ge, Set.iSup_eq_iUnion]
+      using iSup_split C (fun i ↦ i < k)
+  · simp only [disjoint_union_right, disjoint_iUnion_left, disjoint_iUnion_right,
+      Finset.mem_range]
+    exact ⟨fun i hi ↦ hC (hi.ne), fun i hi i' hi' ↦ hC (by omega : i' ≠ i)⟩
+  · simp only [disjoint_iUnion_right]
+    exact fun i hi ↦ hC hi.ne
 
 end TauCeti

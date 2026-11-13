@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bound
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Uniqueness of Jacobi fields
@@ -73,6 +75,15 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_norm_sq (h : IsJacobiFieldOn I γ V s)
     (h.differentiableWithinAt_sectionCoord ht) (h.differentiableWithinAt_sectionCoord ht)
   simpa only [real_inner_self_eq_norm_sq, real_inner_comm (V t), two_mul] using hd
 
+/-- Away from its zeros, the norm of a Jacobi field has derivative `⟨DJ, J⟩ / ‖J‖`. -/
+theorem IsJacobiFieldOn.hasDerivWithinAt_norm (h : IsJacobiFieldOn I γ V s)
+    (ht : t ∈ s) (hV : V t ≠ 0) :
+    HasDerivWithinAt (fun r ↦ ‖V r‖)
+      (inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s t) (V t) / ‖V t‖) s t := by
+  have hd := (h.hasDerivWithinAt_norm_sq ht).sqrt
+    (pow_ne_zero 2 (norm_ne_zero_iff.mpr hV))
+  simpa only [Real.sqrt_sq (norm_nonneg _), mul_div_mul_left _ _ (two_ne_zero' ℝ)] using hd
+
 /-- **The energy identity for Jacobi fields.** The energy `‖J‖² + ‖DJ‖²` of a Jacobi field has
 derivative `2⟨DJ, J⟩ - 2⟨R(J, γ')γ', DJ⟩`. -/
 theorem IsJacobiFieldOn.hasDerivWithinAt_norm_sq_add_norm_sq (h : IsJacobiFieldOn I γ V s)
@@ -129,7 +140,6 @@ theorem IsJacobiFieldOn.eq_zero_of_eq_zero_of_alongCurveWithin_eq_zero
   have hbound (r : ℝ) (hr : r ∈ Icc (min t₀ t) (max t₀ t)) :
       ‖2 * inner ℝ (D r) (V r) - 2 * inner ℝ (R r) (D r)‖ ≤
         (1 + max C 0 * c ^ 2) * ‖‖V r‖ ^ 2 + ‖D r‖ ^ 2‖ := by
-    have hK : 0 ≤ max C 0 * c ^ 2 := by positivity
     rw [Real.norm_eq_abs, Real.norm_eq_abs,
       abs_of_nonneg (a := ‖V r‖ ^ 2 + ‖D r‖ ^ 2) (by positivity)]
     calc |2 * inner ℝ (D r) (V r) - 2 * inner ℝ (R r) (D r)|
@@ -173,17 +183,23 @@ theorem IsJacobiFieldOn.eq_of_eq_of_alongCurveWithin_eq (hV : IsJacobiFieldOn I 
   simpa [neg_one_smul, ← sub_eq_add_neg, sub_eq_zero] using h
 
 /-- **Uniqueness of Jacobi fields on overlapping parameter sets.** Two Jacobi fields along the
-same geodesic, on parameter sets whose intersection is preconnected with unique derivatives, agree
-on the intersection as soon as their values and covariant derivatives agree at one point of it. -/
+same geodesic, on parameter sets whose intersection is preconnected, agree on the intersection as
+soon as their values and covariant derivatives agree at one point of it. -/
 theorem IsJacobiFieldOn.eq_of_eq_of_alongCurveWithin_eq_inter (hV : IsJacobiFieldOn I γ V s)
     (hW : IsJacobiFieldOn I γ W u) (hsu : IsPreconnected (s ∩ u))
-    (hsu' : UniqueDiffOn ℝ (s ∩ u)) (ht₀ : t₀ ∈ s ∩ u) (h₀ : V t₀ = W t₀)
+    (ht₀ : t₀ ∈ s ∩ u) (h₀ : V t₀ = W t₀)
     (h₁ : alongCurveWithin (leviCivitaConnection I M) γ V s t₀ =
       alongCurveWithin (leviCivitaConnection I M) γ W u t₀) (ht : t ∈ s ∩ u) :
-    V t = W t :=
-  (hV.mono hsu' inter_subset_left).eq_of_eq_of_alongCurveWithin_eq
-    (hW.mono hsu' inter_subset_right) hsu ht₀ h₀
-    (by rw [hV.alongCurveWithin_subset (hsu' t₀ ht₀) inter_subset_left ht₀,
-      hW.alongCurveWithin_subset (hsu' t₀ ht₀) inter_subset_right ht₀, h₁]) ht
+    V t = W t := by
+  by_cases hnt : (s ∩ u).Nontrivial
+  · obtain ⟨a, ha, b, hb, hab⟩ := hnt
+    have hsu' : UniqueDiffOn ℝ (s ∩ u) := hsu.uniqueDiffOn ha hb hab
+    exact (hV.mono hsu' inter_subset_left).eq_of_eq_of_alongCurveWithin_eq
+      (hW.mono hsu' inter_subset_right) hsu ht₀ h₀
+      (by rw [hV.alongCurveWithin_subset (hsu' t₀ ht₀) inter_subset_left ht₀,
+        hW.alongCurveWithin_subset (hsu' t₀ ht₀) inter_subset_right ht₀, h₁]) ht
+  · rw [Set.not_nontrivial_iff] at hnt
+    rw [hnt ht ht₀]
+    exact h₀
 
 end TauCeti.Manifold

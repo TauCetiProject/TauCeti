@@ -150,11 +150,11 @@ noncomputable def upperTriRep (b : Fin p) : GL (Fin 2) ℚ :=
   fin_cases i <;> fin_cases j
   · simp [upperTriRep, ha]
   · have hlt : (0 : Fin 2) < 1 := by decide
-    have heq := upperTriGL_apply_lt ha ((upperTriEntriesEquivFin p).symm b) hlt
+    have heq := upperTriGL_apply_lt ((upperTriEntriesEquivFin p).symm b) hlt
     have hdef : (⟨(0, 1), hlt⟩ : {ij : Fin 2 × Fin 2 // ij.1 < ij.2}) = default := Subtype.ext rfl
     rw [hdef, upperTriEntriesEquivFin_symm_apply_default_val b] at heq
-    simp [upperTriRep, heq]
-  · simp [upperTriRep, ha]
+    exact heq.trans (by simp)
+  · simp [upperTriRep]
   · simp [upperTriRep, ha]
 
 /-- The unique upper-triangular representative at index one is the identity matrix. -/
@@ -169,7 +169,7 @@ noncomputable def upperTriRep (b : Fin p) : GL (Fin 2) ℚ :=
 `upperTriGL_apply_eq_zero_of_lt`. -/
 @[simp] lemma upperTriRep_apply_one_zero (b : Fin p) :
     (↑(upperTriRep p b) : Matrix (Fin 2) (Fin 2) ℚ) 1 0 = 0 :=
-  upperTriGL_apply_eq_zero_of_lt (fun i ↦ by fin_cases i <;> simp [b.pos]) _ (by decide)
+  upperTriGL_apply_eq_zero_of_lt _ (by decide)
 
 /-- **The upper-triangular representatives compose.** The product of the representative at
 offset `b'` of index `n` with the one at offset `b` of index `m` is again a representative,

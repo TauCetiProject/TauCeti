@@ -13,6 +13,7 @@ public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
@@ -41,6 +42,9 @@ its norm has finite integral over the half-cylinder `(a, ∞) × [0, 1]`, then:
 
 Together these give a periodic solution and a sequence `s_n → ∞` along which the loops converge
 to it uniformly (`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top`).
+The same results apply on a half-cylinder `s < a` through the reflected map `(s, t) ↦ u(-s, t)`,
+which has the same loops and the same squared defect integral
+(`TauCeti.setLIntegral_norm_sq_sliceDefect_comp_neg_fst`).
 
 The second statement is an application of the Arzelà–Ascoli theorem, in the form for periodic
 loops with a common modulus of continuity
@@ -143,6 +147,46 @@ theorem sub_eq_integral_add_integral_sliceDefect [CompleteSpace V]
     (fun t _ ↦ hasDerivAt_slice_add_sliceDefect (hu.differentiableOn one_ne_zero) hs t)
     ((hXc.add hd).intervalIntegrable _ _)).symm
 
+section Reflection
+
+/-- Reflecting the `s`-coordinate does not change the `t`-slices: the defect of
+`(s, t) ↦ u(-s, t)` at `z` is the defect of `u` at `(-z.1, z.2)`. -/
+theorem sliceDefect_comp_neg_fst {z : ℝ × ℝ} (hu : DifferentiableAt ℝ u (-z.1, z.2)) :
+    sliceDefect X (fun w ↦ u (-w.1, w.2)) z = sliceDefect X u (-z.1, z.2) := by
+  have hL : HasFDerivAt (fun w : ℝ × ℝ ↦ (-w.1, w.2))
+      ((-ContinuousLinearMap.fst ℝ ℝ ℝ).prod (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
+    hasFDerivAt_fst.neg.prodMk hasFDerivAt_snd
+  have hcomp : HasFDerivAt (fun w : ℝ × ℝ ↦ u (-w.1, w.2))
+      ((fderiv ℝ u (-z.1, z.2)).comp
+        ((-ContinuousLinearMap.fst ℝ ℝ ℝ).prod (ContinuousLinearMap.snd ℝ ℝ ℝ))) z :=
+    hu.hasFDerivAt.comp z hL
+  rw [sliceDefect_def, sliceDefect_def, hcomp.fderiv]
+  simp
+
+/-- **The defect at the negative end.** Reflecting the `s`-coordinate turns the half-cylinder
+`(-∞, a) × [0, 1]` into `(-a, ∞) × [0, 1]` and preserves the squared defect integral, so the
+results on the half-cylinder `s > a` apply at the negative end of `u` through the reflected map
+`(s, t) ↦ u(-s, t)`. -/
+theorem setLIntegral_norm_sq_sliceDefect_comp_neg_fst
+    (hu : DifferentiableOn ℝ u (Iio a ×ˢ univ)) :
+    ∫⁻ z in Ioi (-a) ×ˢ Icc 0 1,
+        ENNReal.ofReal (‖sliceDefect X (fun w ↦ u (-w.1, w.2)) z‖ ^ 2) =
+      ∫⁻ z in Iio a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) := by
+  have hpre : Prod.map Neg.neg id ⁻¹' (Iio a ×ˢ Icc (0 : ℝ) 1) = Ioi (-a) ×ˢ Icc 0 1 := by
+    ext z
+    simp [neg_lt]
+  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
+    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
+  rw [← hmp.setLIntegral_comp_preimage_emb
+    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id)
+    (fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)), hpre]
+  refine setLIntegral_congr_fun (measurableSet_Ioi.prod measurableSet_Icc) fun z hz ↦ ?_
+  have hz' : (-z.1, z.2) ∈ Iio a ×ˢ (univ : Set ℝ) := ⟨neg_lt.2 hz.1, mem_univ _⟩
+  rw [sliceDefect_comp_neg_fst (hu.differentiableAt
+    ((isOpen_Iio.prod isOpen_univ).mem_nhds hz')), Prod.map_apply, id_eq]
+
+end Reflection
+
 section Selection
 
 /-- Along the loop at `s > a`, the lower integral of the squared defect over `[0, 1]` is its
@@ -224,7 +268,7 @@ theorem norm_sub_le_add_sqrt_mul_sqrt_integral_sliceDefect [CompleteSpace V]
           exact Ioc_subset_Icc_self htI
         · exact intervalIntegral.norm_integral_le_integral_norm ht
     _ ≤ B * (t₂ - t₁) + √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) :=
-        add_le_add le_rfl (integral_le_sqrt_mul_sqrt_integral_sq ht (fun t _ ↦ norm_nonneg _)
+        add_le_add le_rfl (integral_le_sqrt_mul_sqrt_integral_sq ht
           ((hd.norm.pow 2).intervalIntegrable _ _))
 
 /-- **The defect integral is controlled by its `L²` norm.** Over a subinterval `[t₁, t₂]` of
@@ -238,7 +282,7 @@ theorem integral_norm_sliceDefect_le_sqrt (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ u
   have hd := continuous_norm_sliceDefect_sq hu hX hs
   calc ∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖
       ≤ √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) :=
-        integral_le_sqrt_mul_sqrt_integral_sq ht (fun t _ ↦ norm_nonneg _)
+        integral_le_sqrt_mul_sqrt_integral_sq ht
           (hd.intervalIntegrable _ _)
     _ ≤ 1 * √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (s, t)‖ ^ 2) := by
         gcongr
@@ -435,7 +479,7 @@ private theorem exists_tendstoUniformly_of_mapClusterPt (hu : ContDiffOn ℝ 1 u
   -- By the mean value inequality on the convex half-cylinder, `u` is `C`-Lipschitz, and so is
   -- each of its slices `s ↦ u (s, t)`.
   have hL : LipschitzOnWith C.toNNReal u (Ioi a ×ˢ univ) :=
-    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le
+    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt
         ((isOpen_Ioi.prod isOpen_univ).mem_nhds hz))
       fun z hz ↦ (Real.le_toNNReal_iff_coe_le hC0).2 (hC z hz)
@@ -526,7 +570,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC (a + 1, 0) ⟨lt_add_one a, trivial⟩)
   -- By the mean value inequality on the convex half-cylinder, `u` is `C`-Lipschitz.
   have hL : LipschitzOnWith C.toNNReal u (Ioi a ×ˢ univ) :=
-    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le
+    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt
         ((isOpen_Ioi.prod isOpen_univ).mem_nhds hz))
       fun z hz ↦ (Real.le_toNNReal_iff_coe_le hC0).2 (hC z hz)

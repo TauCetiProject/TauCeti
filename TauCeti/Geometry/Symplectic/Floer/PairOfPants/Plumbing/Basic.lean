@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Family
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
+public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
-import TauCeti.Geometry.Symplectic.Floer.Pullback
 
 /-!
 # Plumbing pair-of-pants perturbation data along a neck
@@ -61,13 +61,32 @@ does not depend on `L`. The curvature of the neck itself vanishes, as the datum 
 * `TauCeti.Floer.contMDiffAt_plumbedPerturbation`: for `L > 4` and period-one Hamiltonians of
   class `C^n`, the glued datum is of class `C^n` on the four-punctured sphere; smooth Hamiltonians
   give a smooth datum.
+* `TauCeti.SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt`,
+  `TauCeti.SmoothTwoForm.hamiltonianCurvature_perturbationPullback_plumbedPerturbation`: away
+  from the collars where the two data are glued, the curvature of the glued datum, or of its
+  pullback along the plumbing chart, is the curvature of the corresponding pair-of-pants datum.
 * `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le`: for
   `L > 4`, the integrated curvature of the glued datum along any map into a manifold is at most
   the sum of bounds for the six end Hamiltonians of the two pairs of pants, uniformly in `L`;
   `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le` is the
   case of a symplectic vector space.
-* `TauCeti.SymplecticForm.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le`: for a
-  symplectic vector space, the same bound for the integral of the curvature over any region.
+* `TauCeti.SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le`,
+  `TauCeti.SymplecticForm.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le`: the same
+  bound for the integral of the curvature over any region.
+* `TauCeti.Floer.differentiableAt_plumbedPerturbation_domain`,
+  `TauCeti.Floer.mdifferentiableAt_plumbedPerturbation_target`: for `C¹` Hamiltonians, the
+  components of the glued datum are differentiable in the domain point and in the target point
+  at the points of the four-punctured sphere.
+* `TauCeti.Floer.contDiffAt_plumbedPerturbation_prod`,
+  `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation`: for a vector space target, `L > 4` and
+  period-one Hamiltonians of class `C^n`, the glued datum is `C^n` jointly in the domain and
+  target points, also in the real coordinates.
+* `TauCeti.Floer.perturbationPullback_plumbedPerturbation_of_mem_truncation`: for `L ≥ R + 2`,
+  the pullback of the glued datum along `ψ` on the truncation `S_R` of the inserted pair of pants
+  is its pair-of-pants datum.
+* `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap`: for
+  `L > 4` and `L > R + 2`, if `u` solves the Floer equation of the glued datum at `ψ(w)` with
+  `w ∈ S_R`, then `u ∘ ψ` solves the Floer equation of the inserted pair of pants at `w`.
 
 ## References
 
@@ -81,7 +100,8 @@ public noncomputable section
 
 open Set Real Manifold Topology Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective
+  equivRealProdCLM_symm_realChart)
 
 namespace TauCeti.Floer
 
@@ -104,6 +124,57 @@ theorem contMDiffAt_plumbedPerturbation {n : ℕ∞} (hq : q ≠ inf)
       (fun p : ℂ × M => plumbedPerturbation Ha Hb q L p.1 p.2) (w, x) := by
   exact (contMDiffAt_plumbedPerturbation_family hq hHa hHb hHas hHbs hab hL hw x).comp
     (w, x) (contMDiffAt_const.prodMk contMDiffAt_id)
+
+/-- At points other than the four punctures, the components of the plumbed perturbation of `C¹`
+Hamiltonians are differentiable in the domain point. -/
+theorem differentiableAt_plumbedPerturbation_domain (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
+    (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1) (x : M) (v : ℂ) :
+    DifferentiableAt ℝ
+      (fun z' ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z') x v) z := by
+  have hK : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ plumbedPerturbation Ha Hb q L w x)
+      (Complex.equivRealProdCLM.symm z) :=
+    (contMDiffAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x).comp
+      (f := fun w : ℂ ↦ (w, x)) _ (contMDiffAt_id.prodMk contMDiffAt_const)
+  exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
+    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
+
+/-- At points other than the four punctures, the components of the plumbed perturbation of `C¹`
+Hamiltonians are differentiable in the target point. -/
+theorem mdifferentiableAt_plumbedPerturbation_target (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1)
+    (x : M) (v : ℂ) :
+    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ plumbedPerturbation Ha Hb q L w y v) x :=
+  (((contMDiffAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hw x).comp
+    (f := fun y : M ↦ (w, y)) x (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply
+    contMDiffAt_const).mdifferentiableAt one_ne_zero
+
+/-- In the real coordinates, the components of the plumbed perturbation of Hamiltonians of class
+`C^n` are `C^n` on the plumbed four-punctured sphere times the target manifold. -/
+theorem contMDiffOn_uncurry_plumbedPerturbation {n : ℕ∞} (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
+      ({z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) n
+      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
+      contMDiffAt_snd
+  exact (((contMDiffAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x).comp (z, x)
+    hφ).clm_apply contMDiffAt_const).contMDiffWithinAt
 
 omit [TopologicalSpace M] [ChartedSpace G M] in
 /-- Near a point off the collar `Re z ≥ L - 2` of the end `q`, the plumbed perturbation is the
@@ -128,6 +199,24 @@ private theorem eventually_plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab
   filter_upwards [eventually_ne_nhds hw, hc.eventually (lt_mem_nhds h)] with w' hw' h' x v
   exact plumbedPerturbation_plumbingMap hq hab hw' h'.le x v
 
+omit [TopologicalSpace M] [ChartedSpace G M] in
+/-- **The plumbed datum on the inserted truncation.** For neck length `L ≥ R + 2`, the pullback of
+the plumbed perturbation along the plumbing map `ψ_L`, at a point of the truncation `S_R` of the
+inserted pair of pants and in the real coordinates, is its pair-of-pants perturbation. -/
+theorem perturbationPullback_plumbedPerturbation_of_mem_truncation (hq : q ≠ inf)
+    (hab : Hb q = Ha inf) {R : ℝ} (hRL : R + 2 ≤ L) {w : ℝ × ℝ}
+    (hw : Complex.equivRealProdCLM.symm w ∈ truncation R) (v : ℝ × ℝ) (x : M) :
+    perturbationPullback (realChart (q.plumbingMap L))
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        v w x =
+      pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x
+        (Complex.equivRealProdCLM.symm v) := by
+  have h := (mem_truncation.1 hw).2.2 inf
+  rw [endSign_inf, neg_one_mul] at h
+  rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _),
+    plumbedPerturbation_plumbingMap hq hab (mem_truncation.1 hw).1 (by linarith)]
+
 end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
@@ -138,52 +227,14 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
 
-/-- At points other than the four punctures, the components of the plumbed perturbation of `C¹`
-Hamiltonians are differentiable in the domain point. -/
-private theorem differentiableAt_plumbedPerturbation_domain (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
-    (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1) (x : M) (v : ℂ) :
-    DifferentiableAt ℝ
-      (fun z' ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z') x v) z := by
-  have hK : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ plumbedPerturbation Ha Hb q L w x)
-      (Complex.equivRealProdCLM.symm z) :=
-    (contMDiffAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x).comp
-      (f := fun w : ℂ ↦ (w, x)) _ (contMDiffAt_id.prodMk contMDiffAt_const)
-  exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
-    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
-
-/-- At points other than the four punctures, the components of the plumbed perturbation of `C¹`
-Hamiltonians are differentiable in the target point. -/
-private theorem mdifferentiableAt_plumbedPerturbation_target (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1)
-    (x : M) (v : ℂ) :
-    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ plumbedPerturbation Ha Hb q L w y v) x :=
-  (((contMDiffAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hw x).comp
-    (f := fun y : M ↦ (w, y)) x (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply
-    contMDiffAt_const).mdifferentiableAt one_ne_zero
-
-/-- The longitudinal coordinate of an end, in the real coordinates, is measurable. -/
-private theorem measurable_re_endCoord (r : Puncture) :
-    Measurable fun z : ℝ × ℝ ↦ (r.endCoord (Complex.equivRealProdCLM.symm z)).re := by
-  simp_rw [re_endCoord]
-  exact (Real.measurable_log.comp (by fun_prop : Continuous fun z : ℝ × ℝ ↦
-    ‖(Complex.equivRealProdCLM.symm z - r.endCenter) / r.endScale‖).measurable).neg.div_const _
-
 variable [IsManifold I ⊤ M]
 
-/-- Off the collar `Re z ≥ L/2` of the end `q`, the curvature of the plumbed perturbation is the
-curvature of the perturbation of the receiving pair of pants. -/
-theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le (ω : SmoothTwoForm I M)
-    (hq : q ≠ inf) (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
+/-- Off the collar `Re z ≥ L - 2` of the end `q`, the curvature of the plumbed perturbation is
+the curvature of the perturbation of the receiving pair of pants. -/
+theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt (ω : SmoothTwoForm I M)
+    (hq : q ≠ inf) (hab : Hb q = Ha inf) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter)
-    (hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2) :
+    (hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re < L - 2) :
     ω.hamiltonianCurvature
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -193,7 +244,7 @@ theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le (ω : SmoothT
         (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
         z := by
   have hP := (Complex.equivRealProdCLM.symm.continuous.tendsto z).eventually
-    (eventually_plumbedPerturbation_eq (L := L) hq hab hz (by linarith))
+    (eventually_plumbedPerturbation_eq (L := L) hq hab hz hre)
   exact ω.hamiltonianCurvature_congr_of_eventuallyEq
     (hP.mono fun z' hz' ↦ funext fun x ↦ by simp only [hz'])
     (hP.mono fun z' hz' ↦ funext fun x ↦ by simp only [hz'])
@@ -256,7 +307,8 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_r
           (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z)‖ₑ :=
         setLIntegral_mono' hAm fun z hz ↦ by
-          rw [hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le ω hq hab hL hz.1 hz.2]
+          rw [hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt ω hq hab hz.1
+            (by linarith [hz.2])]
     _ ≤ _ := setLIntegral_le_lintegral _ _
     _ ≤ _ := lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hHb hHbs hBb u
 
@@ -382,6 +434,32 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (ω : Smooth
             hHas hHbs hab hL hBa u)
     _ = _ := add_comm _ _
 
+/-- **The integrated curvature of the plumbed perturbation over any region.** For period-one `C¹`
+Hamiltonians on a manifold with `|Ha r| ≤ Ba r` and `|Hb r| ≤ Bb r`, every map `u` into it and
+every set `s` of the plane, the integral of the curvature `R_K(z, u(z))` of the plumbed
+perturbation over `s` is at most `∑ r, Ba r + ∑ r, Bb r` in absolute value, for every neck length
+`L > 4`. -/
+theorem abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le (ω : SmoothTwoForm I M)
+    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
+    (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) (u : ℝ × ℝ → M)
+    (s : Set (ℝ × ℝ)) :
+    |∫ z in s, ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)| ≤ ∑ r, Ba r + ∑ r, Bb r := by
+  have hBa₀ (r : Puncture) : 0 ≤ Ba r := (abs_nonneg _).trans (hBa r 0 (u 0))
+  have hBb₀ (r : Puncture) : 0 ≤ Bb r := (abs_nonneg _).trans (hBb r 0 (u 0))
+  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (Finset.sum_nonneg fun r _ ↦ hBa₀ r)
+      (Finset.sum_nonneg fun r _ ↦ hBb₀ r)), ← Real.eNorm_eq_ofReal_abs,
+    ENNReal.ofReal_add (Finset.sum_nonneg fun r _ ↦ hBa₀ r) (Finset.sum_nonneg fun r _ ↦ hBb₀ r),
+    ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hBa₀ r, ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hBb₀ r]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    (ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL hBa
+      hBb u))
+
 end TauCeti.SmoothTwoForm
 
 namespace TauCeti.SymplecticForm
@@ -410,11 +488,13 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (ω : Symple
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hBa hBb u
 
-/-- **The integrated curvature of the plumbed perturbation over any region.** For period-one `C¹`
-Hamiltonians on a symplectic vector space with `|Ha r| ≤ Ba r` and `|Hb r| ≤ Bb r`, every map `u`
-into it and every set `s` of the plane, the integral of the curvature `R_K(z, u(z))` of the plumbed
-perturbation over `s` is at most `∑ r, Ba r + ∑ r, Bb r` in absolute value, for every neck length
-`L > 4`. -/
+/-- **The integrated curvature of the plumbed perturbation over any region.** This is the
+vector-space case of
+`TauCeti.SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le`: for
+period-one `C¹` Hamiltonians on a symplectic vector space with `|Ha r| ≤ Ba r` and
+`|Hb r| ≤ Bb r`, every map `u` into it and every set `s` of the plane, the integral of the
+curvature `R_K(z, u(z))` of the plumbed perturbation over `s` is at most `∑ r, Ba r + ∑ r, Bb r`
+in absolute value, for every neck length `L > 4`. -/
 theorem abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le (ω : SymplecticForm V)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
@@ -425,14 +505,123 @@ theorem abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le (ω : Symple
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)| ≤ ∑ r, Ba r + ∑ r, Bb r := by
-  have hBa₀ (r : Puncture) : 0 ≤ Ba r := (abs_nonneg _).trans (hBa r 0 (u 0))
-  have hBb₀ (r : Puncture) : 0 ≤ Bb r := (abs_nonneg _).trans (hBb r 0 (u 0))
-  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (Finset.sum_nonneg fun r _ ↦ hBa₀ r)
-      (Finset.sum_nonneg fun r _ ↦ hBb₀ r)), ← Real.enorm_eq_ofReal_abs,
-    ENNReal.ofReal_add (Finset.sum_nonneg fun r _ ↦ hBa₀ r) (Finset.sum_nonneg fun r _ ↦ hBb₀ r),
-    ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hBa₀ r, ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hBb₀ r]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL hBa
-      hBb u))
+  simpa using ω.constSmooth.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb
+    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
+    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hBa hBb u s
+
+end TauCeti.SymplecticForm
+
+namespace TauCeti.Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {Ha Hb : Puncture → ℝ → V → ℝ}
+  {q : Puncture} {L : ℝ}
+
+/-- At points other than the four punctures, the plumbed perturbation of Hamiltonians of class
+`C^n` is `C^n` jointly in the domain and target points. -/
+theorem contDiffAt_plumbedPerturbation_prod {n : ℕ∞} (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContDiff ℝ n (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1)
+    (x : V) :
+    ContDiffAt ℝ n (fun p : ℂ × V ↦ plumbedPerturbation Ha Hb q L p.1 p.2) (w, x) :=
+  (contMDiffAt_prod_modelWithCornersSelf_iff.1 (contMDiffAt_plumbedPerturbation (n := n) hq hHa
+    hHb (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
+    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hw x)).contDiffAt
+
+/-- In the real coordinates, the plumbed perturbation of Hamiltonians of class `C^n` is `C^n` at
+the points of the four-punctured sphere. -/
+theorem contDiffAt_uncurry_plumbedPerturbation {n : ℕ∞} (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContDiff ℝ n (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
+    (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1) (x : V) (v : ℂ) :
+    ContDiffAt ℝ n
+      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
+      (z, x) :=
+  ((contDiffAt_plumbedPerturbation_prod hq hHa hHb hHas hHbs hab hL hz x).comp
+    (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
+    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
+      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+
+/-- The plumbing chart maps the part `Re z > 2 - L` of the inserted thrice-punctured sphere into
+the four-punctured sphere, where the plumbed datum is `C¹`. -/
+theorem differentiableAt_uncurry_plumbedPerturbation_realChart_plumbingMap
+    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℝ × ℝ}
+    (hw : (Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1) ∧
+      2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re) (y : V) (v : ℂ) :
+    DifferentiableAt ℝ
+      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
+      (realChart (q.plumbingMap L) w, y) :=
+  (contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL
+    (by
+      rw [equivRealProdCLM_symm_realChart]
+      exact mapsTo_plumbingMap hq (by linarith) ⟨hw.1, by linarith [hw.2]⟩) y v).differentiableAt
+    one_ne_zero
+
+end TauCeti.Floer
+
+namespace TauCeti.SymplecticForm
+
+open Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {Ha Hb : Puncture → ℝ → V → ℝ} {q : Puncture} {R L : ℝ}
+
+/-- **The inserted pair of pants solves its Floer equation.** Let `u` solve the Floer equation
+`(du - X_K)^{0,1} = 0` of the plumbed perturbation `K` at the image `ψ_L(w)` of a point `w` of the
+truncation `S_R` of the inserted pair of pants, with neck length `L > 4` and `L > R + 2`. Then
+`u ∘ ψ_L` solves the Floer equation of the inserted pair-of-pants perturbation at `w`, for the same
+almost complex structure, because the plumbing map is holomorphic. -/
+theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap (ω : SymplecticForm V)
+    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) (hRL : R + 2 < L) {w : ℝ × ℝ}
+    (hw : Complex.equivRealProdCLM.symm w ∈ truncation R) {u : ℝ × ℝ → V}
+    (hu : DifferentiableAt ℝ u (realChart (q.plumbingMap L) w)) {J : AlmostComplexStructure V}
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedFDeriv
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u (realChart (q.plumbingMap L) w) : ℝ × ℝ →ₗ[ℝ] V)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedFDeriv
+      (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+      (u ∘ realChart (q.plumbingMap L)) w : ℝ × ℝ →ₗ[ℝ] V) := by
+  have h₂ := (mem_truncation.1 hw).2.2 inf
+  rw [endSign_inf, neg_one_mul] at h₂
+  have hw' : (Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1) ∧
+      2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re :=
+    ⟨⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩, by linarith⟩
+  have htgt (v : ℂ) :=
+    (differentiableAt_uncurry_plumbedPerturbation_realChart_plumbingMap hq hHa hHb hHas hHbs hab
+      hL hw' (u (realChart (q.plumbingMap L) w)) v).comp
+      (f := fun y : V ↦ (realChart (q.plumbingMap L) w, y)) _
+      ((differentiableAt_const _).prodMk differentiableAt_id)
+  have h' := ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback
+    ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w) hu (htgt 1)
+    (htgt Complex.I) (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_plumbingMap L _)) h
+  -- The pulled-back datum is the datum of the inserted pair of pants.
+  have hs : perturbationPullback (realChart (q.plumbingMap L))
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      stdComplexLineReal w =
+        fun x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x 1 :=
+    funext fun x ↦ by
+      rw [perturbationPullback_plumbedPerturbation_of_mem_truncation hq hab hRL.le hw,
+        equivRealProdCLM_symm_stdComplexLineReal]
+  have ht : perturbationPullback (realChart (q.plumbingMap L))
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      stdComplexLineImag w =
+        fun x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x Complex.I :=
+    funext fun x ↦ by
+      rw [perturbationPullback_plumbedPerturbation_of_mem_truncation hq hab hRL.le hw,
+        equivRealProdCLM_symm_stdComplexLineImag]
+  rwa [ω.perturbedFDeriv_congr (Ks' := fun z x ↦
+      pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt' := fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I) _
+    hs ht] at h'
 
 end TauCeti.SymplecticForm

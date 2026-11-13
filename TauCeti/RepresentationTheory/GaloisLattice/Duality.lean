@@ -34,7 +34,6 @@ noncomputable abbrev dual (M : GaloisLatticeCat k) : GaloisLatticeCat k :=
     have h : hmod = AddCommGroup.toIntModule V := Subsingleton.elim _ _
     subst hmod
     rw [galoisLatticeProperty_iff] at hM
-    let _ := hM.1.1
     let _ := hM.1.2
     exact galoisLatticeProperty_dual ρ hM.2⟩
 

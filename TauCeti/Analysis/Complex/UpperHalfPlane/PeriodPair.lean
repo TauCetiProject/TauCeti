@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Map
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
@@ -54,7 +56,9 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 
 ## Main results
 
-* `UpperHalfPlane.hasSum_weierstrassP_periodPair`: the series over integer pairs.
+* `UpperHalfPlane.hasSum_weierstrassP_periodPair`,
+  `UpperHalfPlane.hasSum_derivWeierstrassP_periodPair`: the series of `℘` and `℘'` over integer
+  pairs.
 * `UpperHalfPlane.intCast_mul_smul_add_intCast`: the lattice points of `γ z` in terms of those
   of `z`.
 * `UpperHalfPlane.weierstrassP_periodPair_smul`: the modular transformation law.
@@ -88,6 +92,10 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 * `UpperHalfPlane.lattice_periodPair_smul`: the lattice of `γ z` is `(c z + d)⁻¹ (ℤ z + ℤ)`, as a
   rescaled period pair.
 * `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
+* `PeriodPair.lattice_smul_eq_self_of_pow_eq_one`: if a primitive `n`-th root of unity preserves a
+  lattice, so does every `n`-th root of unity.
+* `UpperHalfPlane.lattice_I_smul_periodPair_I`, `UpperHalfPlane.lattice_ρ_smul_periodPair_ρ`: the
+  lattices `ℤ i + ℤ` and `ℤ ρ + ℤ` are preserved by multiplication by `i` and by `ρ`.
 -/
 
 public section
@@ -170,7 +178,7 @@ lemma intCast_mul_smul_add_intCast (γ : SL(2, ℤ)) (z : ℍ) (y : Fin 2 → �
 `(c z + d)⁻¹ (ℤ z + ℤ)`, so `℘(x / (c z + d); ℤ γz + ℤ) = (c z + d)² ℘(x; ℤ z + ℤ)`. -/
 theorem weierstrassP_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
     ℘[(γ • z).periodPair] (x / denom γ z) = denom γ z ^ 2 * ℘[z.periodPair] x := by
-  have hD := denom_ne_zero γ z
+  have _ := denom_ne_zero γ z
   -- reindex the integer pairs by `y ↦ y γ`
   let e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
     Matrix.toLinearEquivRight'OfInv
@@ -220,6 +228,14 @@ theorem hasSum_weierstrassZeta_periodPair (z : ℍ) (x : ℂ) :
     HasSum (fun y : Fin 2 → ℤ ↦ 1 / (x - (y 0 * z + y 1)) + 1 / ((y 0 : ℂ) * z + y 1) +
       x / ((y 0 : ℂ) * z + y 1) ^ 2) (z.periodPair.weierstrassZeta x) := by
   have h := z.periodPair.hasSum_weierstrassZeta x
+  rw [← (latticeEquiv z).hasSum_iff] at h
+  simpa only [Function.comp_def, coe_latticeEquiv] using h
+
+/-- **The Weierstrass derivative of `ℤ z + ℤ` as a series over integer pairs**:
+`℘'(x; ℤ z + ℤ) = ∑_y -2 / (x - (y₀ z + y₁))³`, the series converging absolutely. -/
+theorem hasSum_derivWeierstrassP_periodPair (z : ℍ) (x : ℂ) :
+    HasSum (fun y : Fin 2 → ℤ ↦ -2 / (x - (y 0 * z + y 1)) ^ 3) (℘'[z.periodPair] x) := by
+  have h := z.periodPair.hasSum_derivWeierstrassP x
   rw [← (latticeEquiv z).hasSum_iff] at h
   simpa only [Function.comp_def, coe_latticeEquiv] using h
 
@@ -291,7 +307,6 @@ theorem norm_rowSum_le (w : ℍ) :
   simp only [Nat.reduceAdd, pow_one, Nat.factorial_one, Nat.cast_one, div_one] at H
   set q := cexp (2 * π * Complex.I * w)
   have hq : ‖q‖ < 1 := norm_exp_two_pi_I_lt_one w
-  have hq' : 0 < 1 - ‖q‖ := by linarith
   have h1 : 1 - ‖q‖ ≤ ‖1 - q‖ := by
     simpa using norm_sub_norm_le (1 : ℂ) q
   have h2 : ‖(-2 * π * Complex.I : ℂ)‖ ^ 2 = 4 * π ^ 2 := by
@@ -452,14 +467,31 @@ namespace TauCeti.UpperHalfPlane
 open EisensteinSeries Filter
 open scoped Topology Manifold
 
+/-- Subtracting the lattice point `y₀ z + y₁` from the division point `(b₀ z + b₁) / N` and
+scaling by `N` gives the point of the integer pair `b - N y`. -/
+lemma intCast_sub_nsmul_mul_add_intCast {N : ℕ} [NeZero N] (b y : Fin 2 → ℤ) (z : ℂ) :
+    ((b - N • y) 0 : ℂ) * z + (b - N • y) 1 =
+      N * (((b 0 : ℂ) * z + b 1) / N - (y 0 * z + y 1)) := by
+  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  simp only [Pi.sub_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, Int.cast_sub,
+    Int.cast_mul, Int.cast_natCast]
+  field_simp
+  ring
+
 /-- The lattice series of `ζ` at the division point `(b₀ z + b₁) / M` converges locally uniformly
 in `z`. -/
-theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) [NeZero M] (b : Fin 2 → ℤ) :
+theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) (b : Fin 2 → ℤ) :
     TendstoLocallyUniformly
       (fun (s : Finset (Fin 2 → ℤ)) (z : ℍ) ↦ ∑ y ∈ s,
         (1 / (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) + 1 / ((y 0 : ℂ) * z + y 1) +
           ((b 0 : ℂ) * z + b 1) / M / ((y 0 : ℂ) * z + y 1) ^ 2))
       (fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M)) atTop := by
+  rcases eq_or_ne M 0 with rfl | hM
+  · -- for `M = 0` every summand and the limit vanish
+    simp only [Nat.cast_zero, div_zero, zero_sub, one_div, inv_neg, zero_div, add_zero,
+      neg_add_cancel, Finset.sum_const_zero, PeriodPair.weierstrassZeta_zero]
+    exact (tendsto_const_nhds (x := (0 : ℂ))).tendstoUniformly_const.tendstoLocallyUniformly
+  have : NeZero M := ⟨hM⟩
   rw [tendstoLocallyUniformly_iff_forall_isCompact]
   intro K hK
   obtain ⟨A, B, hB, HABK⟩ := subset_verticalStrip_of_isCompact hK
@@ -521,22 +553,21 @@ private lemma mdifferentiable_weierstrassZeta_periodPair_div_term (M : ℕ) [NeZ
       fun z ↦ M * eisSummand 1 (b - M • y) z + eisSummand 1 y z +
         ((b 0 : ℂ) * z + b 1) / M * eisSummand 2 y z := by
     ext z
-    have he : ((b - M • y) 0 : ℂ) * z + (b - M • y) 1 =
-        M * (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) := by
-      simp only [Pi.sub_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, Int.cast_sub,
-        Int.cast_mul, Int.cast_natCast]
-      field_simp
-      ring
-    rw [eisSummand, eisSummand, eisSummand, he, _root_.zpow_neg_one, _root_.zpow_neg_one,
-      _root_.zpow_neg, zpow_ofNat, mul_inv, mul_inv_cancel_left₀ hM]
+    rw [eisSummand, eisSummand, eisSummand, intCast_sub_nsmul_mul_add_intCast,
+      _root_.zpow_neg_one, _root_.zpow_neg_one, _root_.zpow_neg, zpow_ofNat, mul_inv,
+      mul_inv_cancel_left₀ hM]
     simp only [div_eq_mul_inv, one_mul]
   rw [h]
   exact ((mdifferentiable_const.mul (hS 1 _)).add (hS 1 y)).add (hx.mul (hS 2 y))
 
 /-- Each division value of `ζ` is holomorphic on `ℍ`. -/
-theorem mdifferentiable_weierstrassZeta_periodPair_div (M : ℕ) [NeZero M] (b : Fin 2 → ℤ) :
-    MDiff fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M) :=
-  mdifferentiable_of_tendstoLocallyUniformly
+theorem mdifferentiable_weierstrassZeta_periodPair_div (M : ℕ) (b : Fin 2 → ℤ) :
+    MDiff fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M) := by
+  rcases eq_or_ne M 0 with rfl | hM
+  · simpa [PeriodPair.weierstrassZeta_zero] using
+      (mdifferentiable_const : MDiff fun _ : ℍ ↦ (0 : ℂ))
+  have : NeZero M := ⟨hM⟩
+  exact mdifferentiable_of_tendstoLocallyUniformly
     (tendstoLocallyUniformly_weierstrassZeta_periodPair_div M b) (Eventually.of_forall fun s ↦ by
       convert MDifferentiable.sum (t := s)
         fun y _ ↦ mdifferentiable_weierstrassZeta_periodPair_div_term M b y using 1
@@ -654,6 +685,52 @@ lemma lattice_smul_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.latt
     (c • L).lattice = (c • L').lattice := by
   rw [lattice_smul, lattice_smul, h]
 
+/-- The invariants `g₂` and `g₃` depend only on the lattice. -/
+lemma g₂_eq_and_g₃_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
+    L.g₂ = L'.g₂ ∧ L.g₃ = L'.g₃ := by
+  simp [g₂, g₃, G_eq_of_lattice_eq h]
+
+/-- If `Λ` is homothetic to a lattice preserved by multiplication by `c`, then `Λ` is preserved by
+multiplication by `c`. -/
+lemma lattice_smul_eq_self_of_lattice_eq_smul {L L₀ : PeriodPair} {c d : ℂˣ}
+    (hd : L.lattice = (d • L₀).lattice) (hc : (c • L₀).lattice = L₀.lattice) :
+    (c • L).lattice = L.lattice := by
+  rw [lattice_smul_eq_of_lattice_eq c hd, ← mul_smul, mul_comm, mul_smul,
+    lattice_smul_eq_of_lattice_eq d hc, hd]
+
+section RootsOfUnity
+
+variable {L}
+
+/-- Every lattice is preserved by negation. -/
+@[simp]
+lemma lattice_neg_one_smul (L : PeriodPair) : ((-1 : ℂˣ) • L).lattice = L.lattice := by
+  ext x
+  have hx : x = ((-1 : ℂˣ) : ℂ) * -x := by simp
+  conv_lhs => rw [hx]
+  rw [mul_mem_lattice_smul_iff, neg_mem_iff]
+
+/-- If multiplication by a primitive `n`-th root of unity `ζ` preserves a lattice, then so does
+multiplication by every `n`-th root of unity. -/
+lemma lattice_smul_eq_self_of_pow_eq_one {ζ c : ℂˣ} {n : ℕ} [NeZero n]
+    (hζ : IsPrimitiveRoot (ζ : ℂ) n) (hL : (ζ • L).lattice = L.lattice)
+    (hc : (c : ℂ) ^ n = 1) : (c • L).lattice = L.lattice := by
+  have key (i : ℕ) : (ζ ^ i • L).lattice = L.lattice := by
+    induction i with
+    | zero => rw [pow_zero, one_smul]
+    | succ i ih => rw [pow_succ, mul_smul, lattice_smul_eq_of_lattice_eq _ hL, ih]
+  obtain ⟨i, -, hi⟩ := hζ.eq_pow_of_pow_eq_one hc
+  have hi' : c = ζ ^ i := Units.ext (by rw [Units.val_pow_eq_pow_val, hi])
+  rw [hi', key]
+
+/-- Every lattice is preserved by multiplication by a square root of unity `c = ±1`. -/
+lemma lattice_smul_eq_self_of_sq_eq_one {c : ℂˣ} (hc : (c : ℂ) ^ 2 = 1) :
+    (c • L).lattice = L.lattice :=
+  lattice_smul_eq_self_of_pow_eq_one (ζ := -1)
+    (by simpa using IsPrimitiveRoot.neg_one 0 two_ne_zero.symm) (lattice_neg_one_smul L) hc
+
+end RootsOfUnity
+
 lemma ω₁_ne_zero : L.ω₁ ≠ 0 := by
   simpa using L.indep.ne_zero 0
 
@@ -698,4 +775,42 @@ lemma lattice_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) :
   rw [hx, PeriodPair.mul_mem_lattice_smul_iff, ← div_denom_mem_lattice_periodPair_smul_iff γ z]
   simp [u, mul_div_cancel_left₀ _ (denom_ne_zero γ z)]
 
+/-- The lattice `ℤ i + ℤ` is preserved by multiplication by `i`. -/
+lemma lattice_I_smul_periodPair_I :
+    (Units.mk0 Complex.I I_ne_zero • UpperHalfPlane.I.periodPair).lattice =
+      UpperHalfPlane.I.periodPair.lattice := by
+  simp only [lattice, smul_ω₁, smul_ω₂, periodPair_ω₁, periodPair_ω₂, Units.val_mk0, coe_I,
+    I_mul_I, mul_one]
+  refine Submodule.span_eq_span ?_ ?_ <;>
+    simp only [Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe,
+      Submodule.mem_span_pair]
+  · exact ⟨⟨0, -1, by simp⟩, ⟨1, 0, by simp⟩⟩
+  · exact ⟨⟨0, 1, by simp⟩, ⟨-1, 0, by simp⟩⟩
+
+/-- The lattice `ℤ ρ + ℤ`, `ρ = (-1 + √-3) / 2`, is preserved by multiplication by `ρ`. -/
+lemma lattice_ρ_smul_periodPair_ρ :
+    (Units.mk0 (ρ : ℂ) ρ.ne_zero • ρ.periodPair).lattice = ρ.periodPair.lattice := by
+  simp only [lattice, smul_ω₁, smul_ω₂, periodPair_ω₁, periodPair_ω₂, Units.val_mk0, mul_one]
+  refine Submodule.span_eq_span ?_ ?_ <;>
+    simp only [Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe,
+      Submodule.mem_span_pair, zsmul_eq_mul]
+  · exact ⟨⟨-1, -1, by push_cast; linear_combination -ρ_sq⟩, ⟨1, 0, by simp⟩⟩
+  · exact ⟨⟨0, 1, by simp⟩, ⟨-1, -1, by push_cast; linear_combination -ρ_sq⟩⟩
+
 end UpperHalfPlane
+
+namespace TauCeti
+
+open scoped Manifold
+
+variable {EY : Type*} [NormedAddCommGroup EY] [NormedSpace ℂ EY] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℂ EY H} {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y]
+  {n : WithTop ℕ∞}
+
+/-- The periods `m τ(y) + k` of the lattices `ℤ τ(y) + ℤ` of a `C^n` map `τ : Y → ℍ` are `C^n`. -/
+theorem contMDiff_periodPair_periodMap_apply {τ : Y → ℍ}
+    (hτ : ContMDiff I 𝓘(ℂ) n fun y ↦ (τ y : ℂ)) (l : ℤ × ℤ) :
+    ContMDiff I 𝓘(ℂ) n fun y ↦ (τ y).periodPair.periodMap l :=
+  contMDiff_periodMap_apply (by simpa using hτ) (by simpa using contMDiff_const) l
+
+end TauCeti

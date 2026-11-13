@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 
 /-!
 # Restricting a continuous representation to an invariant submodule
@@ -175,7 +176,7 @@ end Quotient
 section Continuity
 
 variable {𝕜 G V : Type*} [NormedField 𝕜] [Monoid G] [TopologicalSpace G] [AddCommGroup V]
-  [TopologicalSpace V] [IsTopologicalAddGroup V] [Module 𝕜 V] [ContinuousConstSMul 𝕜 V]
+  [TopologicalSpace V] [IsTopologicalAddGroup V] [Module 𝕜 V]
   {π : ContRepresentation 𝕜 G V} {W : Submodule 𝕜 V} {hW : ∀ g, ∀ v ∈ W, π g v ∈ W}
 
 /-- Restricting a continuous representation to an invariant submodule preserves continuity: from
@@ -187,7 +188,7 @@ theorem continuous_subrepresentation (hπ : Continuous π) :
     Continuous (subrepresentation π W hW) := by
   rw [(ContinuousLinearMap.isInducing_postcomp W.subtypeL
     Topology.IsInducing.subtypeVal).continuous_iff]
-  exact (ContinuousLinearMap.precomp V W.subtypeL).continuous.comp hπ
+  exact (ContinuousLinearMap.continuous_precomp W.subtypeL).comp hπ
 
 end Continuity
 

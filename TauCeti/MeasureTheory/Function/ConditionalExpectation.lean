@@ -16,7 +16,7 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 # Generic conditional-expectation facts
 
 - `condExp_comp_ae_eq_of_pair_law_eq`: if `(Y, Z)` and `(Y', Z)` have the same law, then for a
-  measurable real observable `f` the conditional expectations of `f ∘ Y` and `f ∘ Y'` given `σ(Z)`
+  Banach-valued observable `f` the conditional expectations of `f ∘ Y` and `f ∘ Y'` given `σ(Z)`
   agree a.e.
 - `condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm`: L¹-continuity of conditional
   expectation — if `Xn → Xlim` in L¹ (in `eLpNorm`) and each `μ[Xn n | F]` agrees a.e. with a fixed
@@ -65,21 +65,23 @@ namespace TauCeti
 
 namespace MeasureTheory
 
-/-- If the pairs `(Y, Z)` and `(Y', Z)` have the same law, then for a measurable real observable
-`f` the conditional expectations of `f ∘ Y` and `f ∘ Y'` given `σ(Z)` agree almost everywhere.
+/-- If the pairs `(Y, Z)` and `(Y', Z)` have the same law, then for a Banach-valued observable `f`
+that is a.e. strongly measurable for the law of `Y`, the conditional expectations of `f ∘ Y` and
+`f ∘ Y'` given `σ(Z)` agree almost everywhere.
 
 If `Z` is not measurable, then `σ(Z)` is not contained in the ambient σ-algebra and both
 conditional expectations are `0`, as they are when `μ` trimmed to `σ(Z)` is not `σ`-finite. When
 `Z` is measurable, equal laws give equal first marginals, so `f ∘ Y` is integrable exactly when
 `f ∘ Y'` is; if neither is, both conditional expectations are `0`. If both are, they are pinned
-down by their integrals over the sets `Z ⁻¹' E`, and each such integral is an integral of
-`fun p => f p.1` over the slab `univ ×ˢ E` against the joint law, which is where the hypothesis
+down by their integrals over the sets `Z ⁻¹' S`, and each such integral is an integral of
+`fun p => f p.1` over the slab `univ ×ˢ S` against the joint law, which is where the hypothesis
 applies. So no integrability hypothesis, and no measurability of `Z`, is needed. -/
-theorem condExp_comp_ae_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : MeasurableSpace Ω]
-    [MeasurableSpace α] [mβ : MeasurableSpace β] {μ : Measure Ω}
-    (Y Y' : Ω → α) (Z : Ω → β) (hY : Measurable Y) (hY' : Measurable Y')
+theorem condExp_comp_ae_eq_of_pair_law_eq {Ω α β E : Type*} [mΩ : MeasurableSpace Ω]
+    [MeasurableSpace α] [mβ : MeasurableSpace β] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {μ : Measure Ω} (Y Y' : Ω → α) (Z : Ω → β) (hY : AEMeasurable Y μ)
+    (hY' : AEMeasurable Y' μ)
     (hpair : μ.map (fun ω => (Y ω, Z ω)) = μ.map (fun ω => (Y' ω, Z ω)))
-    {f : α → ℝ} (hf : Measurable f) :
+    {f : α → E} (hf : AEStronglyMeasurable f (μ.map Y)) :
     μ[fun ω => f (Y ω) | MeasurableSpace.comap Z mβ]
       =ᵐ[μ] μ[fun ω => f (Y' ω) | MeasurableSpace.comap Z mβ] := by
   -- For non-measurable `Z`, `comap Z mβ ≤ mΩ` fails and both conditional expectations are `0`.
@@ -87,43 +89,41 @@ theorem condExp_comp_ae_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : MeasurableSp
   case neg =>
     rw [condExp_of_not_le (mt measurable_iff_comap_le.2 hZ),
       condExp_of_not_le (mt measurable_iff_comap_le.2 hZ)]
-  have hmZ_le : MeasurableSpace.comap Z mβ ≤ mΩ := measurable_iff_comap_le.1 hZ
+  have hmZ_le := hZ.comap_le
   -- Without `σ`-finiteness of the trimmed measure both conditional expectations are `0`.
   by_cases hsf : SigmaFinite (μ.trim hmZ_le)
   case neg => rw [condExp_of_not_sigmaFinite hmZ_le hsf, condExp_of_not_sigmaFinite hmZ_le hsf]
-  -- Equal joint laws have equal first marginals, so integrability transfers to `Y'`.
-  have hmap : μ.map Y = μ.map Y' := by
-    have h := congrArg (Measure.map Prod.fst) hpair
-    rwa [Measure.map_map measurable_fst (hY.prodMk hZ),
-      Measure.map_map measurable_fst (hY'.prodMk hZ)] at h
-  have hiff : Integrable (fun ω => f (Y ω)) μ ↔ Integrable (fun ω => f (Y' ω)) μ := by
-    have h : Integrable f (μ.map Y) ↔ Integrable (fun ω => f (Y ω)) μ :=
-      integrable_map_measure hf.aestronglyMeasurable hY.aemeasurable
-    have h' : Integrable f (μ.map Y') ↔ Integrable (fun ω => f (Y' ω)) μ :=
-      integrable_map_measure hf.aestronglyMeasurable hY'.aemeasurable
-    rw [hmap] at h
-    exact h.symm.trans h'
+  -- The first marginal of the joint law of `(W, Z)` is the law of `W`.
+  have hfst (W : Ω → α) (hW : AEMeasurable W μ) :
+      MeasurePreserving Prod.fst (μ.map fun ω => (W ω, Z ω)) (μ.map W) :=
+    ⟨measurable_fst, Measure.fst_map_prodMk₀ hW hZ.aemeasurable⟩
+  -- Equal joint laws have equal first marginals, so measurability and integrability transfer
+  -- to `Y'`.
+  have hmap : μ.map Y = μ.map Y' := (hfst Y hY).map_eq.symm.trans (hpair ▸ (hfst Y' hY').map_eq)
+  have hf' : AEStronglyMeasurable f (μ.map Y') := hmap ▸ hf
+  have hiff : Integrable (fun ω => f (Y ω)) μ ↔ Integrable (fun ω => f (Y' ω)) μ :=
+    (integrable_map_measure hf hY).symm.trans (hmap ▸ integrable_map_measure hf' hY')
   by_cases hf_int : Integrable (fun ω => f (Y ω)) μ
   case neg =>
     -- Neither composite is integrable, so both conditional expectations are `0`.
     rw [condExp_of_not_integrable hf_int, condExp_of_not_integrable (mt hiff.2 hf_int)]
   have hf'_int : Integrable (fun ω => f (Y' ω)) μ := hiff.1 hf_int
-  have hslice : ∀ W : Ω → α, Measurable W → ∀ {E : Set β}, MeasurableSet E →
-      ∫ p in Set.univ ×ˢ E, f p.1 ∂(μ.map fun ω => (W ω, Z ω))
-        = ∫ ω in Z ⁻¹' E, f (W ω) ∂μ := by
-    intro W hW E hE
-    have hfst : Measurable fun p : α × β => f p.1 := hf.comp measurable_fst
-    rw [setIntegral_map (MeasurableSet.univ.prod hE) hfst.aestronglyMeasurable
-      (hW.prodMk hZ).aemeasurable]
-    have hpre : (fun ω => (W ω, Z ω)) ⁻¹' (Set.univ ×ˢ E) = Z ⁻¹' E := by
+  have hslice (W : Ω → α) (hW : AEMeasurable W μ) (hfW : AEStronglyMeasurable f (μ.map W))
+      {S : Set β} (hS : MeasurableSet S) :
+      ∫ p in Set.univ ×ˢ S, f p.1 ∂(μ.map fun ω => (W ω, Z ω))
+        = ∫ ω in Z ⁻¹' S, f (W ω) ∂μ := by
+    have hfWZ : AEStronglyMeasurable (fun p : α × β => f p.1) (μ.map fun ω => (W ω, Z ω)) :=
+      hfW.comp_quasiMeasurePreserving (hfst W hW).quasiMeasurePreserving
+    rw [setIntegral_map (MeasurableSet.univ.prod hS) hfWZ (hW.prodMk hZ.aemeasurable)]
+    have hpre : (fun ω => (W ω, Z ω)) ⁻¹' (Set.univ ×ˢ S) = Z ⁻¹' S := by
       ext ω; simp
     rw [hpre]
   refine (ae_eq_condExp_of_forall_setIntegral_eq hmZ_le hf_int
     (fun s _ _ => integrable_condExp.integrableOn) (fun A hA _ => ?_)
     stronglyMeasurable_condExp.aestronglyMeasurable).symm
-  obtain ⟨E, hE, rfl⟩ := hA
-  rw [setIntegral_condExp hmZ_le hf'_int ⟨E, hE, rfl⟩, ← hslice Y' hY' hE, ← hpair,
-    hslice Y hY hE]
+  obtain ⟨S, hS, rfl⟩ := hA
+  rw [setIntegral_condExp hmZ_le hf'_int ⟨S, hS, rfl⟩, ← hslice Y' hY' hf' hS, ← hpair,
+    hslice Y hY hf hS]
 
 /-- **L¹-continuity of conditional expectation.** If `Xn → Xlim` in `L¹` (in `eLpNorm`) and each
 `μ[Xn n | F]` agrees a.e. with a fixed `Y`, then `μ[Xlim | F]` agrees a.e. with `Y`. -/
@@ -275,7 +275,7 @@ theorem condExp_comap_ae_eq_of_injOn {Ω β E : Type*} [NormedAddCommGroup E] [N
     ⟨G ⁻¹' (G '' (s ∩ A)), ⟨_, (hs.inter hA).image_of_measurable_injOn hG
       (hinj.mono Set.inter_subset_right), rfl⟩, ?_⟩).symm.trans ?_
   · filter_upwards [hAμ] with ω hω
-    refine propext ⟨fun h ↦ ⟨ω, ⟨h, hω⟩, rfl⟩, ?_⟩
+    refine ⟨fun h ↦ ⟨ω, ⟨h, hω⟩, rfl⟩, ?_⟩
     rintro ⟨ω', ⟨hω's, hω'A⟩, he⟩
     rwa [← hinj hω'A hω he]
   · simpa using condExp_of_aestronglyMeasurable' le_rfl hf.1 hf
@@ -294,7 +294,7 @@ theorem lintegral_enorm_condExp_rpow_le {Ω E : Type*} [NormedAddCommGroup E] [N
     have hfi : ¬ Integrable f μ := fun h ↦ hf h.1
     simp [condExp_of_not_integrable hfi, hp₀]
   have h := eLpNorm_condExp_le_eLpNorm (μ := μ) (m := m) f (p := .ofReal p) (by simpa using hp)
-  simpa [eLpNorm_eq_lintegral_rpow_enorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hf,
+  simpa [eLpNorm_eq_lintegral_rpow_eNorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hf,
     ENNReal.rpow_le_rpow_iff] using h
 
 /-- **Positive-part bound for the conditional expectation**: for a real level `a`, the positive
@@ -307,11 +307,11 @@ theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : Measurabl
   -- Pointwise `(x - a)⁺ ≤ |x - a|`, then the triangle inequality and the L¹ contraction.
   calc ∫⁻ ω, ENNReal.ofReal ((μ[f | m] ω - a)⁺) ∂μ
       ≤ ∫⁻ ω, (‖μ[f | m] ω‖ₑ + ‖a‖ₑ) ∂μ := lintegral_mono fun ω => by
-        grw [← enorm_sub_le, Real.enorm_eq_ofReal_abs]
+        grw [← eNorm_sub_le, Real.eNorm_eq_ofReal_abs]
         exact ENNReal.ofReal_le_ofReal (sup_le (le_abs_self _) (abs_nonneg _))
     _ = eLpNorm (μ[f | m]) 1 μ + ‖a‖ₑ * μ Set.univ := by
         rw [lintegral_add_right _ measurable_const, lintegral_const,
-          eLpNorm_one_eq_lintegral_enorm integrable_condExp.aestronglyMeasurable]
+          eLpNorm_one_eq_lintegral_eNorm integrable_condExp.aestronglyMeasurable]
     _ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
         grw [eLpNorm_condExp_le_eLpNorm f le_rfl]
 

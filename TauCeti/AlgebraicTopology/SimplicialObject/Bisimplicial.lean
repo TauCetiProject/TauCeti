@@ -9,7 +9,7 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.AlgebraicTopology.AlternatingFaceMapComplex
-public import TauCeti.Algebra.Homology.TotalComplex
+public import TauCeti.Algebra.Homology.TotalComplex.Basic
 public import TauCeti.AlgebraicTopology.SimplexCategory.Subinterval
 
 /-!

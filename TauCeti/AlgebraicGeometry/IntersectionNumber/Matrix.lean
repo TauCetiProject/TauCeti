@@ -43,8 +43,10 @@ semidefinite over every linearly ordered field.
 
 Distinct components `Cᵢ ≠ Cⱼ` have `aᵢⱼ > 0` exactly when they meet, the scheme-theoretic
 intersection `Cᵢ ∩ Cⱼ` being finite over `κ` of length `aᵢⱼ`. The components are finitely many
-closed sets covering the special fibre, so when the special fibre is connected the graph on the
-components with an edge wherever `aᵢⱼ > 0` is connected. The intersection form then vanishes
+closed sets covering the special fibre, so the special fibre is connected exactly when the graph
+on the components with an edge wherever `aᵢⱼ > 0` is connected; this is the connectedness condition
+on the intersection matrix of a numerical type
+([Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z)). The intersection form then vanishes
 exactly on the multiples of `m`: a vertical divisor `D = Σᵢ xᵢ Cᵢ` has `D² = 0` if and only if it
 is a rational multiple of the special fibre `Σᵢ mᵢ Cᵢ`.
 
@@ -64,6 +66,8 @@ is a rational multiple of the special fibre `Σᵢ mᵢ Cᵢ`.
   positive exactly when the two components meet.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_reflTransGen`: for a connected
   special fibre, the positive-entry graph of `A` is connected.
+* `AlgebraicGeometry.Scheme.Hom.isPreconnected_preimage_closedPoint_iff_reflTransGen`: the special
+  fibre is connected exactly when the positive-entry graph of `A` is connected.
 * `AlgebraicGeometry.Scheme.Hom.dotProduct_mulVec_specialFiberIntersectionMatrix_eq_zero_iff`: for
   a connected special fibre, `xᵀ A x = 0` exactly when `x` is a multiple of `m`.
 
@@ -245,6 +249,15 @@ theorem specialFiberIntersectionMatrix_pos_iff {i j} (hij : i ≠ j) :
     IdealSheafData.coe_support_vanishingIdeal, TopologicalSpace.Closeds.coe_mk,
     TopologicalSpace.Closeds.coe_mk]
 
+omit hX h₀ h₁ [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] in
+/-- The special fibre is the union of its finitely many irreducible components. -/
+private theorem iUnion_closure_eq_preimage_closedPoint :
+    ⋃ c : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
+      closure {((c : CodimensionOnePoint X) : X)} = toBase ⁻¹' {closedPoint R} := by
+  rw [← toBase.biUnion_closure_eq_preimage_closedPoint hη, Set.iUnion_subtype]
+  simp
+
 /-- **A connected special fibre has a connected intersection graph.** Under the hypotheses of
 `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`, if the special fibre is
 connected then any two of its components are joined by a chain of components in which consecutive
@@ -255,20 +268,7 @@ theorem specialFiberIntersectionMatrix_reflTransGen
     (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R})) (i j) :
     Relation.ReflTransGen
       (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hX hη i j) i j := by
-  have hR := toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη
-  have hc (c : (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset) :
-      toBase (c : CodimensionOnePoint X) = closedPoint R :=
-    (Set.Finite.mem_toFinset _).mp c.2
-  -- The components cover the special fibre.
-  have hcover : ⋃ c : (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset,
-      closure {((c : CodimensionOnePoint X) : X)} = toBase ⁻¹' {closedPoint R} := by
-    refine (Set.iUnion_subset fun c ↦ closure_minimal (Set.singleton_subset_iff.mpr (hc c))
-      ((isClosed_singleton_closedPoint R).preimage toBase.continuous)).antisymm fun x hx ↦ ?_
-    obtain ⟨y, hy, hyx⟩ := toBase.exists_maximal_base_eq_closedPoint_specializes hR hx
-    obtain ⟨hy₁, hy₂⟩ := (toBase.maximal_base_eq_closedPoint_iff hR hη).mp hy
-    exact Set.mem_iUnion.mpr ⟨⟨⟨y, hy₂⟩, (Set.Finite.mem_toFinset _).mpr hy₁⟩,
-      specializes_iff_mem_closure.mp hyx⟩
-  rw [← hcover] at hconn
+  rw [← iUnion_closure_eq_preimage_closedPoint toBase hη] at hconn
   have h := hconn.transGen_of_iUnion_of_isClosed (locallyFinite_of_finite _)
     (fun _ ↦ isClosed_closure) i j
     ⟨_, subset_closure rfl⟩ ⟨_, subset_closure rfl⟩
@@ -276,6 +276,22 @@ theorem specialFiberIntersectionMatrix_reflTransGen
   by_cases hab' : a = b
   · exact hab' ▸ .refl
   · exact .single ⟨hab', (toBase.specialFiberIntersectionMatrix_pos_iff hX hη h₀ h₁ hab').mpr hab⟩
+
+/-- **The special fibre is connected exactly when its intersection graph is.** Under the
+hypotheses of `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`, the special
+fibre is connected if and only if any two of its components are joined by a chain of components in
+which consecutive components are distinct with positive intersection number, that is, the graph on
+the components with an edge where `(Cⱼ · Cᵢ) > 0` is connected
+([Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z)). -/
+theorem isPreconnected_preimage_closedPoint_iff_reflTransGen :
+    _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}) ↔ ∀ i j, Relation.ReflTransGen
+      (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hX hη i j) i j := by
+  refine ⟨toBase.specialFiberIntersectionMatrix_reflTransGen hX hη h₀ h₁, fun h ↦ ?_⟩
+  -- Chained components with positive intersection number meet, so their union is connected.
+  rw [← iUnion_closure_eq_preimage_closedPoint toBase hη]
+  exact IsPreconnected.iUnion_of_reflTransGen (fun _ ↦ isPreconnected_singleton.closure)
+    fun i j ↦ Relation.ReflTransGen.mono (fun _ _ hab ↦
+      (toBase.specialFiberIntersectionMatrix_pos_iff hX hη h₀ h₁ hab.1).mp hab.2) _ _ (h i j)
 
 section Multiplicity
 

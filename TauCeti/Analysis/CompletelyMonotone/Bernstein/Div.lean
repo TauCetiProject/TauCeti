@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CompletelyMonotone.Bernstein.Basic
-import TauCeti.Analysis.Calculus.Taylor
+import TauCeti.Analysis.Calculus.Taylor.Basic
 
 /-!
 # A Bernstein function divided by its parameter is completely monotone

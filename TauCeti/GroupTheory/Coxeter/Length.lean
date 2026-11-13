@@ -26,7 +26,9 @@ Finally, the length function is transported along the two canonical construction
 systems, `CoxeterSystem.reindex` and `CoxeterSystem.map`: relabelling the simple reflections or
 pushing the system through a group isomorphism leaves lengths unchanged. Both follow from the
 fact that a homomorphism carrying simple reflections to simple reflections does not increase
-length. These facts feed the Poincaré polynomial in `TauCeti/GroupTheory/Coxeter/Poincare.lean`.
+length. More generally, length depends only on the indexed simple reflections, even across
+different Coxeter matrices. These facts feed the Poincaré polynomial in
+`TauCeti/GroupTheory/Coxeter/Poincare.lean`.
 
 ## Main definitions
 
@@ -189,5 +191,12 @@ theorem length_map (e : W ≃* H) (w : W) : (cs.map e).length (e w) = cs.length 
     (by simpa using (cs.map e).length_apply_le_of_map_simple cs e.symm id (by simp) (e w))
 
 end Transport
+
+/-- Coxeter systems on the same group with the same indexed simple reflections have the same
+length function, even if their Coxeter matrices differ. -/
+theorem length_eq_of_simple_eq {M' : CoxeterMatrix B} (cs' : CoxeterSystem M' W)
+    (h : ∀ i, cs.simple i = cs'.simple i) (w : W) : cs.length w = cs'.length w :=
+  le_antisymm (cs'.length_apply_le_of_map_simple cs (.id W) id (fun i ↦ (h i).symm) w)
+    (cs.length_apply_le_of_map_simple cs' (.id W) id h w)
 
 end CoxeterSystem

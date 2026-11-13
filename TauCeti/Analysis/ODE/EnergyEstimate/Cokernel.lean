@@ -48,6 +48,8 @@ to prove that `D_A` is Fredholm when the limits of `A` at `±∞` are hyperbolic
   is closed, its index is `dim ker D_A - dim ker D_{-A†}`.
 * `TauCeti.WeakDerivStep.surjective_trajectoryOperator_iff_ker_neg_eq_bot`: when the range of
   `D_A` is closed, `D_A` is onto exactly when the kernel of `D_{-A†}` vanishes.
+* `TauCeti.WeakDerivStep.surjective_trajectoryOperator`: for a `C¹` symmetric family with a uniform
+  spectral gap `α` and `|⟪v, A' v⟫| ≤ β ‖v‖²`, `β < α²`, the operator `D_A` is onto.
 * `TauCeti.WeakDerivStep.exists_ae_eq_adjoint`: the pointwise adjoint of an essentially bounded
   family has an `L∞` class.
 
@@ -296,6 +298,47 @@ theorem ae_eq_adjoint_of_ae_eq
     ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), BL s = ContinuousLinearMap.adjoint (AL s) := by
   filter_upwards [hAL, hBL] with s hs hBs
   rw [hBs, hs]
+
+/-- **The trajectory operator of a coercive symmetric family is onto.** If a `C¹` family of
+symmetric operators on a finite-dimensional space satisfies `α ‖v‖ ≤ ‖A s v‖` and
+`|⟪v, A' s v⟫| ≤ β ‖v‖²` everywhere with `β < α²`, then `D_A u = u' + A u` maps `W^{1,2}(ℝ, E)`
+onto `L²(ℝ, E)`. Together with `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot`, `D_A` is
+then a linear isomorphism, with the inverse bound of
+`TauCeti.WeakDerivStep.min_one_mul_norm_le_norm_trajectoryOperator`. The coefficient of the
+operator is any `L∞` class `AL` of `A`. -/
+theorem surjective_trajectoryOperator [FiniteDimensional ℝ E] (hA : ContDiff ℝ 1 A)
+    (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {α β : ℝ} (hα : 0 ≤ α)
+    (hgap : ∀ s v, α * ‖v‖ ≤ ‖A s v‖) (hsmall : ∀ s v, |⟪v, deriv A s v⟫_ℝ| ≤ β * ‖v‖ ^ 2)
+    (hβ : β < α ^ 2) (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    Function.Surjective (trajectoryOperator (p := 2) AL) := by
+  -- The coercive estimate bounds `u` by `D_A u`, so the range of `D_A` is closed.
+  set m := min 1 (α ^ 2 - β)
+  have hm : 0 < m := lt_min one_pos (sub_pos.2 hβ)
+  have hbound (u) : ‖u‖ ≤ (m⁻¹).toNNReal * ‖trajectoryOperator (p := 2) AL u‖ := by
+    rw [Real.coe_toNNReal _ (inv_nonneg.2 hm.le), ← div_eq_inv_mul, le_div_iff₀ hm, mul_comm]
+    exact min_one_mul_norm_le_norm_trajectoryOperator hA hsym hα hgap
+      (fun s v ↦ (le_abs_self _).trans (hsmall s v)) AL hAL u
+  have hclosed : IsClosed ((trajectoryOperator (p := 2) AL).range :
+      Set (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :=
+    (ContinuousLinearMap.antilipschitz_of_bound _ hbound).isClosed_range
+      (trajectoryOperator (p := 2) AL).uniformContinuous
+  -- The family is symmetric, so the formal adjoint is `-D_{-A}`, and `-A` is coercive as well.
+  have hadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
+      AL s = ContinuousLinearMap.adjoint (AL s) := by
+    filter_upwards [hAL] with s hs
+    rw [hs, (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 (hsym s)).adjoint_eq]
+  have hnegAL : -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] -A := by
+    filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
+    rw [hs, Pi.neg_apply, hAs, Pi.neg_apply]
+  refine (surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj hclosed).2 <|
+    ker_trajectoryOperator_eq_bot (A := -A) hA.neg (fun s ↦ ?_) hα (fun s v ↦ ?_) (fun s v ↦ ?_)
+      hβ (-AL) hnegAL
+  · intro x y
+    simpa using hsym s x y
+  · simpa using hgap s v
+  · rw [deriv.neg, neg_apply, inner_neg_right]
+    exact (neg_le_abs _).trans (hsmall s v)
 
 end Orthogonal
 

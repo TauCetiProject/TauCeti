@@ -30,6 +30,8 @@ This file supplies general constructions for Lie modules that are missing from M
 
 ## Main results
 
+* `LieIdeal.center_eq_bot_of_isCompl_center`: an ideal complementary to the centre is
+  centreless; this needs only a commutative base ring, with no finite-dimensionality assumption.
 * `LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top`: an underlying-submodule dichotomy for
   a representation implies irreducibility of the induced Lie module.
 * `Module.Basis.repr_lie_eq_sum`: a Lie bracket coordinate is a weighted sum of bracket columns.
@@ -42,6 +44,8 @@ This file supplies general constructions for Lie modules that are missing from M
   of the Lie action on `v`.
 * `TauCeti.lieAnnihilator_eq_top_iff` and `TauCeti.lieAnnihilator_eq_top`: the annihilator of
   `v` is all of `L` exactly when every element annihilates `v`, in particular in a trivial module.
+* `TauCeti.apply_lie_eq_zero_of_lieAnnihilator_eq_top`: a coadjoint-fixed functional vanishes on
+  brackets.
 * `TauCeti.instIsTrivialDual`: the dual of a trivial Lie module is trivial, so for an abelian
   Lie algebra the annihilator of every element of the dual is the whole algebra.
 * `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
@@ -182,11 +186,7 @@ noncomputable def ofBijective (f : M →ₗ⁅R,L⁆ N) (hf : Function.Bijective
 
 @[simp]
 theorem ofBijective_apply (f : M →ₗ⁅R,L⁆ N) (hf : Function.Bijective f) (m : M) :
-    ofBijective f hf m = f m := by
-  -- `LieModuleEquiv` has no projection lemma exposing the underlying `LinearEquiv`, so reveal that
-  -- representation boundary before applying the corresponding linear-equivalence interface lemma.
-  change (LinearEquiv.ofBijective (f : M →ₗ[R] N) hf) m = f m
-  exact LinearEquiv.ofBijective_apply _ _
+    ofBijective f hf m = f m := by rfl
 
 /-- **An equivalence of `L`-modules is an equivalence of `L'`-modules** for a Lie subalgebra
 `L' ≤ L`, with the same underlying map. This is Mathlib's `LieModuleHom.restrictLie` for
@@ -341,6 +341,14 @@ theorem lieAnnihilator_eq_top_iff {v : M} :
 @[simp]
 theorem lieAnnihilator_eq_top [LieModule.IsTrivial L M] (v : M) : lieAnnihilator R L v = ⊤ :=
   (lieAnnihilator_eq_top_iff R L).2 fun x ↦ trivial_lie_zero L M x v
+
+variable {R L} in
+/-- **A coadjoint-fixed functional vanishes on brackets.** If every element of `L` annihilates
+`ν` in the coadjoint module `Module.Dual R L`, then `ν ⁅x, y⁆ = 0`. -/
+theorem apply_lie_eq_zero_of_lieAnnihilator_eq_top {ν : Module.Dual R L}
+    (hν : lieAnnihilator R L ν = ⊤) (x y : L) : ν ⁅x, y⁆ = 0 := by
+  have := LinearMap.congr_fun ((lieAnnihilator_eq_top_iff R L).1 hν x) y
+  rwa [Module.Dual.lie_apply, LinearMap.zero_apply, neg_eq_zero] at this
 
 /-- **A vector annihilated by a set of Lie elements is annihilated by the Lie subalgebra that set
 generates.** The annihilator is a Lie subalgebra, so the universal property of `lieSpan` promotes
@@ -573,3 +581,32 @@ theorem map_lie_swap {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [
     _ = ⁅f w, f v⁆ := lie_skew (f w) (f v)
 
 end LinearMap
+
+namespace LieIdeal
+
+open LieAlgebra
+
+/-- An ideal complementary to the centre of a Lie algebra has zero centre. -/
+theorem center_eq_bot_of_isCompl_center {R L : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] (J : LieIdeal R L) (hcompl : IsCompl (LieAlgebra.center R L) J) :
+    LieAlgebra.center R J = ⊥ := by
+  rw [LieSubmodule.eq_bot_iff]
+  intro x hx
+  have hcx : (x : L) ∈ center R L := by
+    apply (LieModule.mem_maxTrivSubmodule R L L (x : L)).mpr
+    intro y
+    have hy : y ∈ center R L ⊔ J := by
+      rw [hcompl.sup_eq_top]
+      exact LieSubmodule.mem_top y
+    obtain ⟨c, hc, d, hd, rfl⟩ := (LieSubmodule.mem_sup (center R L) J y).mp hy
+    have hcbr : ⁅c, (x : L)⁆ = 0 := by
+      rw [← lie_skew c (x : L),
+        (LieModule.mem_maxTrivSubmodule R L L c).mp hc (x : L), neg_zero]
+    rw [add_lie, hcbr, zero_add]
+    have hdbr := (LieModule.mem_maxTrivSubmodule R J J x).mp hx (⟨d, hd⟩ : J)
+    simpa only [LieHom.map_lie, map_zero, LieIdeal.incl_apply] using congrArg J.incl hdbr
+  have hzero : (x : L) ∈ (⊥ : LieIdeal R L) := hcompl.disjoint.le_bot
+    ((LieSubmodule.mem_inf _ _ _).mpr ⟨hcx, x.property⟩)
+  exact Subtype.ext ((LieSubmodule.mem_bot _).mp hzero)
+
+end LieIdeal

@@ -38,9 +38,16 @@ order is what governs the differentiability of reparametrizations of boundary ma
   controlled by the `H^s` norms of a function and of its derivative.
 * `TauCeti.CircleSobolev.derivative_eq_zero_iff`: the kernel of the derivative consists of the
   constant functions.
+* `TauCeti.CircleSobolev.bijective_derivative_add_inclusion`: `ζ ↦ ζ' + ζ` is a bijection
+  `H^(s + 1) → H^s`, since it multiplies the `n`-th Fourier coefficient by the nonvanishing factor
+  `1 + 2πin/T`; `TauCeti.CircleSobolev.derivativeAddInclusionEquiv` is the resulting continuous
+  linear equivalence, whose inverse divides the coefficients by that factor
+  (`TauCeti.CircleSobolev.coeff_derivativeAddInclusionEquiv_symm`).
 * `TauCeti.CircleSobolev.hasDerivAt_toContinuousMap`: for `s > 1/2`, the continuous representative
   of `a ∈ H^t` is differentiable, with derivative the continuous representative of
   `derivative T h a`.
+* `TauCeti.CircleSobolev.inner_derivative_inclusion`: integration by parts, `⟪a', b⟫ = -⟪a, b'⟫`
+  in `H^s`.
 
 ## References
 
@@ -84,9 +91,9 @@ def derivative (h : s + 1 ≤ t) : CircleSobolev t E →L[ℂ] CircleSobolev s E
   LinearMap.mkContinuous
     { toFun a := ⟨fun n ↦ (2 * π * I * n / T : ℂ) • a.coeff n,
         memℓp_of_forall_le fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)⟩
-      map_add' a b := CircleSobolev.ext (funext fun n ↦ smul_add _ _ _)
-      map_smul' c a := CircleSobolev.ext (funext fun n ↦ smul_comm _ c _) }
-    (2 * π / T) fun a ↦ norm_le_of_forall_le (div_nonneg (by positivity) hT.out.le)
+      map_add' a b := CircleSobolev.ext (funext fun n ↦ smul_add _ (a.coeff n) (b.coeff n))
+      map_smul' c a := CircleSobolev.ext (funext fun n ↦ smul_comm _ c (a.coeff n)) }
+    (2 * π / T) fun a ↦ norm_le_of_forall_le (C := 2 * π / T)
       fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)
 
 @[simp]
@@ -97,8 +104,7 @@ theorem coeff_derivative (h : s + 1 ≤ t) (a : CircleSobolev t E) (n : ℤ) :
 /-- Differentiation costs one order of regularity: `‖derivative T h a‖ ≤ 2π/T ‖a‖`. -/
 theorem norm_derivative_le (h : s + 1 ≤ t) (a : CircleSobolev t E) :
     ‖derivative T h a‖ ≤ 2 * π / T * ‖a‖ :=
-  norm_le_of_forall_le (div_nonneg (by positivity) hT.out.le)
-    fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)
+  norm_le_of_forall_le fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)
 
 theorem opNorm_derivative_le (h : s + 1 ≤ t) :
     ‖(derivative T h : CircleSobolev t E →L[ℂ] CircleSobolev s E)‖ ≤ 2 * π / T :=
@@ -168,7 +174,7 @@ an element of `H^(s + 1)` whose derivative is `b`. -/
 theorem exists_inclusion_eq_and_derivative_eq (a b : CircleSobolev s E)
     (hb : ∀ n, b.coeff n = (2 * π * I * n / T : ℂ) • a.coeff n) :
     ∃ c : CircleSobolev (s + 1) E, inclusion (by linarith) c = a ∧ derivative T le_rfl c = b := by
-  have hT₀ : 0 < 2 * π / T := div_pos (by positivity) hT.out
+  have _ : 0 < 2 * π / T := div_pos (by positivity) hT.out
   -- `(1 + |n|) ^ (s + 1) ‖a_n‖ = (1 + |n|) ^ s ‖a_n‖ + (1 + |n|) ^ s |n| ‖a_n‖`, and the last
   -- term is `T / 2π` times `(1 + |n|) ^ s ‖b_n‖`.
   have hle (n : ℤ) : weight (s + 1) n * ‖a.coeff n‖ ≤
@@ -188,6 +194,83 @@ theorem exists_inclusion_eq_and_derivative_eq (a b : CircleSobolev s E)
   refine ⟨⟨a.coeff, (memℓp_weight_smul_iff _).2 hsum⟩, CircleSobolev.ext (by simp),
     CircleSobolev.ext (funext fun n ↦ ?_)⟩
   rw [coeff_derivative, hb]
+
+omit hT in
+/-- The Fourier multiplier `1 + 2πin/T` of `ζ ↦ ζ' + ζ` does not vanish: its real part is `1`. -/
+private theorem one_add_derivFactor_ne_zero (n : ℤ) : (1 + 2 * π * I * n / T : ℂ) ≠ 0 := by
+  intro h
+  have := congrArg Complex.re h
+  simp [Complex.div_re] at this
+
+omit hT in
+/-- The Fourier multiplier `1 + 2πin/T` has modulus at least `1`. -/
+private theorem one_le_norm_one_add_derivFactor (n : ℤ) : 1 ≤ ‖(1 + 2 * π * I * n / T : ℂ)‖ := by
+  refine le_trans (le_of_eq ?_) (Complex.abs_re_le_norm _)
+  simp [Complex.div_re]
+
+/-- **`ζ ↦ ζ' + ζ` is a bijection `H^(s + 1) → H^s`.** It multiplies the `n`-th Fourier
+coefficient by `1 + 2πin/T`, which never vanishes. -/
+theorem bijective_derivative_add_inclusion (h : s + 1 = t) :
+    Function.Bijective
+      (derivative T h.le + inclusion (by linarith) :
+        CircleSobolev t E →L[ℂ] CircleSobolev s E) := by
+  subst h
+  refine ⟨fun a b hab ↦ CircleSobolev.ext (funext fun n ↦ ?_), fun b ↦ ?_⟩
+  · have hn := congrArg (fun c : CircleSobolev s E ↦ c.coeff n) hab
+    simp only [add_apply, coeff_add, Pi.add_apply, coeff_derivative, coeff_inclusion] at hn
+    refine smul_right_injective E (one_add_derivFactor_ne_zero T n) ?_
+    simp only [add_smul, one_smul]
+    rw [add_comm (a.coeff n), hn, add_comm]
+  · -- Divide the coefficients of `b` by `1 + 2πin/T`, then recover one order of regularity.
+    set c : ℤ → ℂ := fun n ↦ (1 + 2 * π * I * n / T : ℂ)⁻¹
+    have hc (n : ℤ) : ‖c n‖ ≤ 1 := by
+      rw [norm_inv]
+      exact inv_le_one_of_one_le₀ (one_le_norm_one_add_derivFactor T n)
+    let a : CircleSobolev s E := ⟨fun n ↦ c n • b.coeff n, memℓp_of_forall_le (C := 1) fun n ↦ by
+      rw [norm_smul, one_mul]
+      exact mul_le_mul_of_nonneg_left (mul_le_of_le_one_left (norm_nonneg _) (hc n))
+        (weight_nonneg s n)⟩
+    obtain ⟨d, hda, hdb⟩ := exists_inclusion_eq_and_derivative_eq T a (b - a) fun n ↦ by
+      have hne := one_add_derivFactor_ne_zero T n
+      simp only [coeff_sub, Pi.sub_apply, a, c, smul_smul]
+      have key : (1 : ℂ) - (1 + 2 * π * I * n / T)⁻¹ =
+          2 * π * I * n / T * (1 + 2 * π * I * n / T)⁻¹ := by
+        field_simp
+        ring
+      rw [← key, sub_smul, one_smul]
+    refine ⟨d, ?_⟩
+    rw [add_apply, hdb, hda, sub_add_cancel]
+
+/-- `ζ ↦ ζ' + ζ`, as a continuous linear equivalence `H^(s + 1) ≃ H^s`. -/
+def derivativeAddInclusionEquiv [CompleteSpace E] (h : s + 1 = t) :
+    CircleSobolev t E ≃L[ℂ] CircleSobolev s E :=
+  ContinuousLinearEquiv.ofBijective (derivative T h.le + inclusion (by linarith))
+    (LinearMap.ker_eq_bot.2 (bijective_derivative_add_inclusion T h).injective)
+    (LinearMap.range_eq_top.2 (bijective_derivative_add_inclusion T h).surjective)
+
+@[simp]
+theorem coe_derivativeAddInclusionEquiv [CompleteSpace E] (h : s + 1 = t) :
+    (derivativeAddInclusionEquiv (E := E) T h : CircleSobolev t E →L[ℂ] CircleSobolev s E) =
+      derivative T h.le + inclusion (by linarith) :=
+  ContinuousLinearEquiv.coe_ofBijective _ _ _
+
+@[simp]
+theorem derivativeAddInclusionEquiv_apply [CompleteSpace E] (h : s + 1 = t)
+    (a : CircleSobolev t E) :
+    derivativeAddInclusionEquiv T h a = derivative T h.le a + inclusion (by linarith) a :=
+  (rfl)
+
+/-- The inverse of `ζ ↦ ζ' + ζ` divides the `n`-th Fourier coefficient by `1 + 2πin/T`. -/
+@[simp]
+theorem coeff_derivativeAddInclusionEquiv_symm [CompleteSpace E] (h : s + 1 = t)
+    (b : CircleSobolev s E) (n : ℤ) :
+    ((derivativeAddInclusionEquiv T h).symm b).coeff n =
+      (1 + 2 * π * I * n / T : ℂ)⁻¹ • b.coeff n := by
+  have hb := congrArg (fun c : CircleSobolev s E ↦ c.coeff n)
+    ((derivativeAddInclusionEquiv T h).apply_symm_apply b)
+  simp only [derivativeAddInclusionEquiv_apply, coeff_add, Pi.add_apply, coeff_derivative,
+    coeff_inclusion] at hb
+  rw [eq_inv_smul_iff₀ (one_add_derivFactor_ne_zero T n), ← hb, add_smul, one_smul, add_comm]
 
 /-- For `s > 1/2` and `s + 1 ≤ t`, the continuous representative `x ↦ a(x)` of `a ∈ H^t` is
 differentiable as a function of `x : ℝ`, and its derivative is the continuous representative of
@@ -210,6 +293,19 @@ theorem hasDerivAt_toContinuousMap [CompleteSpace E] (hs : 1 / 2 < s) (h : s + 1
     ((summable_norm_coeff ht a).of_norm_bounded fun n ↦ by
       rw [norm_smul, fourier_apply, Circle.norm_coe, one_mul]) x using 1
   exact tsum_congr fun n ↦ by rw [coeff_derivative, smul_smul, mul_comm]
+
+/-- **Integration by parts on the circle.** The derivative is skew-adjoint for the inner product
+of `H^s`: `⟪a', b⟫ = -⟪a, b'⟫` for `a, b ∈ H^t` with `s + 1 ≤ t`, both regarded in `H^s`. On the
+Fourier side, the factor `2πin/T` of the derivative is purely imaginary. -/
+theorem inner_derivative_inclusion {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    (h : s + 1 ≤ t) (a b : CircleSobolev t F) :
+    inner ℂ (derivative T h a) (inclusion (by linarith) b) =
+      -inner ℂ (inclusion (by linarith) a) (derivative T h b) := by
+  rw [inner_eq_tsum, inner_eq_tsum, ← tsum_neg]
+  refine tsum_congr fun n ↦ ?_
+  simp only [coeff_derivative, coeff_inclusion, inner_smul_left, inner_smul_right, map_div₀,
+    map_mul, map_ofNat, conj_ofReal, conj_I, map_intCast]
+  ring
 
 end CircleSobolev
 

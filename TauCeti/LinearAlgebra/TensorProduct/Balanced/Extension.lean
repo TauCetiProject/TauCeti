@@ -453,10 +453,10 @@ variable (f) {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
 
 /-- The `S`-linear map `Sⁿ f(e) → S ⊗_R (Rⁿ e)`, `w ↦ ∑ i, wᵢ ⊗ eᵢ`, through the rows `eᵢ`
 of `e`. -/
-private def rangeVecMulLinearInv (he : IsIdempotentElem e) :
+private def rangeVecMulLinearInv :
     LinearMap.range (e.map f).vecMulLinear →ₗ[S]
       BalancedExtension f (LinearMap.range e.vecMulLinear) :=
-  Fintype.linearCombination S (fun i ↦ tmul f 1 ⟨e i, he.row_mem_range_vecMulLinear i⟩) ∘ₗ
+  Fintype.linearCombination S (fun i ↦ tmul f 1 ⟨e i, e.row_mem_range_vecMulLinear i⟩) ∘ₗ
     (LinearMap.range _).subtype
 
 /-- **Extension of the image of an idempotent matrix.** For an idempotent matrix `e` over `R`,
@@ -468,7 +468,7 @@ module, the extension of scalars along `f` is the image `Sⁿ f(e)` of the matri
 noncomputable def rangeVecMulLinearEquiv (he : IsIdempotentElem e) :
     BalancedExtension f (LinearMap.range e.vecMulLinear) ≃ₗ[S]
       LinearMap.range (e.map f).vecMulLinear :=
-  LinearEquiv.ofLinearMap (lift (e.rangeVecMulLinearMap f)) (rangeVecMulLinearInv f he)
+  LinearEquiv.ofLinearMap (lift (e.rangeVecMulLinearMap f)) (rangeVecMulLinearInv f)
     (LinearMap.ext fun w ↦ by
       conv_rhs => rw [LinearMap.id_apply, (he.matrix_map f).eq_sum_smul_row w]
       simp only [rangeVecMulLinearInv, LinearMap.comp_apply, Fintype.linearCombination_apply,
@@ -492,7 +492,7 @@ theorem coe_rangeVecMulLinearEquiv_tmul (he : IsIdempotentElem e) (s : S)
 theorem rangeVecMulLinearEquiv_symm_apply (he : IsIdempotentElem e)
     (w : LinearMap.range (e.map f).vecMulLinear) :
     (rangeVecMulLinearEquiv f he).symm w =
-      ∑ i, tmul f ((w : ι → S) i) ⟨e i, he.row_mem_range_vecMulLinear i⟩ := by
+      ∑ i, tmul f ((w : ι → S) i) ⟨e i, e.row_mem_range_vecMulLinear i⟩ := by
   simp [rangeVecMulLinearEquiv, rangeVecMulLinearInv, Fintype.linearCombination_apply, smul_tmul]
 
 end Idempotent

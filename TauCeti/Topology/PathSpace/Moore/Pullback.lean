@@ -79,6 +79,10 @@ theorem source_path (x : MoorePathPullback f b) : x.path.source = b := MoorePath
 @[simp]
 theorem target_path (x : MoorePathPullback f b) : x.path.target = f x.point := x.2
 
+@[simp]
+theorem toMoorePathFrom_toMoorePath (x : MoorePathPullback f b) :
+    (toMoorePathFrom x).toMoorePath = x.path := (rfl)
+
 @[ext]
 theorem ext {x y : MoorePathPullback f b} (h : x.point = y.point) (h' : x.path = y.path) :
     x = y := Subtype.ext (Prod.ext h (MoorePathFrom.ext h'))
@@ -90,6 +94,12 @@ theorem continuous_point : Continuous (point : MoorePathPullback f b → D) :=
 @[fun_prop]
 theorem continuous_path : Continuous (path : MoorePathPullback f b → MoorePath X) :=
   MoorePathFrom.continuous_toMoorePath.comp toMoorePathFrom.continuous
+
+/-- The end point of the underlying path from `b` is the image of the parameter. -/
+@[simp]
+theorem endpoint_toMoorePathFrom (x : MoorePathPullback f b) :
+    MoorePathFrom.endpoint X b (toMoorePathFrom x) = f x.point := by
+  rw [MoorePathFrom.endpoint_apply, toMoorePathFrom_toMoorePath, target_path]
 
 /-- Projection of the pulled-back path space to its parameter. -/
 def proj (f : C(D, X)) (b : X) : C(MoorePathPullback f b, D) :=

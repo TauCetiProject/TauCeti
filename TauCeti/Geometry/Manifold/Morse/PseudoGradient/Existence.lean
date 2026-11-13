@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
 public import TauCeti.Geometry.Manifold.VectorField.ModelChart
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.PartitionOfUnity
@@ -49,6 +50,10 @@ union with the interiors of the critical-point neighbourhoods is the returned ne
   compact set whose critical points are nondegenerate, and its Morse-function specialization
   `TauCeti.IsMorse.exists_contMDiff_pseudoGradientOn_nhds`.
 * `TauCeti.IsMorse.exists_isAdaptedPseudoGradient`: existence of adapted pseudo-gradients.
+* `TauCeti.IsAdaptedPseudoGradient.mdifferentiable`: differentiability of `f` follows from the
+  Morse-chart condition of an adapted pseudo-gradient.
+* `TauCeti.IsAdaptedPseudoGradient.antitone_comp`: `f` is antitone along every integral curve of an
+  adapted pseudo-gradient.
 
 The chart calculus used here is general and lives in
 `TauCeti/Geometry/Manifold/MFDeriv/ModelChart.lean` and
@@ -135,9 +140,11 @@ theorem coordL_symm_apply (z : Fin (Module.finrank ℝ E) → ℝ) :
     φ.coordL.symm z = φ.coord.symm z := by
   simp [coordL]
 
+omit [FiniteDimensional ℝ E] in
 /-- Coordinates of small sup norm are coordinates of points of the chart. -/
 theorem exists_pos_forall_norm_lt_mem_target :
     ∃ r > 0, ∀ z : Fin (Module.finrank ℝ E) → ℝ, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target := by
+  have := φ.finiteDimensional
   have h0 : (0 : Fin (Module.finrank ℝ E) → ℝ) ∈ φ.coordL.symm ⁻¹' φ.toChart.target := by
     rw [mem_preimage, map_zero, ← φ.apply_self]
     exact φ.toChart.map_source φ.mem_source
@@ -145,14 +152,18 @@ theorem exists_pos_forall_norm_lt_mem_target :
     (φ.toChart.open_target.preimage φ.coordL.symm.continuous) 0 h0
   exact ⟨r, hr, fun z hz ↦ by simpa using hball (mem_ball_zero_iff.2 hz)⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- The coordinate change of a Morse chart is continuous. -/
-theorem continuous_coord : Continuous φ.coord :=
-  φ.coordL.continuous.congr φ.coordL_apply
+theorem continuous_coord : Continuous φ.coord := by
+  have := φ.finiteDimensional
+  exact φ.coordL.continuous.congr φ.coordL_apply
 
+omit [FiniteDimensional ℝ E] in
 open Filter in
 /-- The point with coordinates `w` tends to the critical point as `w` tends to `0`. -/
 theorem tendsto_toChart_symm_coord_symm_nhds_zero :
     Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0) (𝓝 x) := by
+  have := φ.finiteDimensional
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
   have h := (φ.toChart.continuousAt_symm (hrT 0 (by simpa using hr))).comp
     (φ.coordL.symm.continuous.continuousAt.congr (.of_forall φ.coordL_symm_apply))
@@ -171,18 +182,24 @@ theorem hasFDerivAt_quadratic (z : E) :
     simp [quadratic, diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
   · simp
 
+omit [FiniteDimensional ℝ E] in
 /-- The derivative of the quadratic normal form is `v ↦ Σᵢ wᵢ (L z)ᵢ (L v)ᵢ`. -/
 theorem fderiv_quadratic_apply (z v : E) :
     fderiv ℝ φ.quadratic z v = ∑ i, φ.weight i * φ.coord z i * φ.coord v i := by
+  have := φ.finiteDimensional
   rw [(φ.hasFDerivAt_quadratic z).fderiv]
   simp
 
+omit [FiniteDimensional ℝ E] in
 /-- The quadratic normal form is differentiable. -/
-theorem differentiableAt_quadratic (z : E) : DifferentiableAt ℝ φ.quadratic z :=
-  (φ.hasFDerivAt_quadratic z).differentiableAt
+theorem differentiableAt_quadratic (z : E) : DifferentiableAt ℝ φ.quadratic z := by
+  have := φ.finiteDimensional
+  exact (φ.hasFDerivAt_quadratic z).differentiableAt
 
+omit [FiniteDimensional ℝ E] in
 /-- The quadratic normal form has a single critical point, the origin. -/
 theorem fderiv_quadratic_eq_zero_iff {z : E} : fderiv ℝ φ.quadratic z = 0 ↔ z = 0 := by
+  have := φ.finiteDimensional
   constructor
   · intro h0
     have hz : φ.coord z = 0 := by
@@ -212,29 +229,37 @@ private theorem exists_fderiv_quadratic_eq :
     simp [ℓ, φ.fderiv_quadratic_apply, coordL_apply, mul_assoc]
   · simp [ℓ, coordL_apply, sq]
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Hessian of the quadratic normal form** `f x + (1/2) Σᵢ wᵢ (L z)ᵢ²` is `Σᵢ wᵢ (L u)ᵢ²`, at
 every point. -/
 theorem hessianQuadraticForm_quadratic (z u : E) :
     hessianQuadraticForm φ.quadratic z u = ∑ i, φ.weight i * φ.coord u i ^ 2 := by
+  have := φ.finiteDimensional
   obtain ⟨B, hB, hBu⟩ := φ.exists_fderiv_quadratic_eq
   rw [hessianQuadraticForm_apply, hB, B.fderiv, hBu]
 
+omit [FiniteDimensional ℝ E] in
 /-- The quadratic normal form is smooth. -/
 theorem contDiff_quadratic : ContDiff ℝ ∞ φ.quadratic := by
+  have := φ.finiteDimensional
   obtain ⟨B, hB, -⟩ := φ.exists_fderiv_quadratic_eq
   rw [contDiff_infty_iff_fderiv, hB]
   exact ⟨fun z ↦ φ.differentiableAt_quadratic z, B.contDiff⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- The derivative of the quadratic normal form along the linear field is `-Σᵢ (L z)ᵢ²`. -/
 theorem fderiv_quadratic_linearField (z : E) :
     fderiv ℝ φ.quadratic z (φ.linearField z) = -∑ i, (φ.coord z i) ^ 2 := by
+  have := φ.finiteDimensional
   rw [fderiv_quadratic_apply]
   simp only [linearField, LinearEquiv.apply_symm_apply, ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rcases φ.weight_eq_neg_one_or_eq_one i with hw | hw <;> rw [hw] <;> ring
 
+omit [FiniteDimensional ℝ E] in
 /-- The linear field of a Morse chart is smooth. -/
 theorem contDiff_linearField : ContDiff ℝ ∞ φ.linearField := by
+  have := φ.finiteDimensional
   have h1 : ContDiff ℝ ∞ (fun z : E ↦ fun i ↦ -(φ.weight i * φ.coordL z i)) :=
     contDiff_pi.2 fun i ↦
       (contDiff_const.mul ((contDiff_apply ℝ (fun _ ↦ ℝ) i).comp φ.coordL.contDiff)).neg
@@ -244,16 +269,20 @@ theorem contDiff_linearField : ContDiff ℝ ∞ φ.linearField := by
   rw [this]
   exact φ.coordL.symm.contDiff.comp h1
 
+omit [FiniteDimensional ℝ E] in
 /-- The derivative of `f` along the field of a Morse chart is `-Σᵢ (L (ψ y))ᵢ²`. -/
 theorem mvfderiv_field_apply {y : M} (hy : y ∈ φ.toChart.source) :
     mvfderiv 𝓘(ℝ, E) f y (φ.field y) = -∑ i, (φ.coord (φ.toChart y) i) ^ 2 := by
+  have := φ.finiteDimensional
   rw [field, mvfderiv_mpullback_apply
     (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic _ hy]
   exact φ.fderiv_quadratic_linearField _
 
+omit [FiniteDimensional ℝ E] in
 /-- `f` strictly decreases along the field away from the centre of the chart. -/
 theorem mvfderiv_field_apply_lt_zero {y : M} (hy : y ∈ φ.toChart.source) (hyx : y ≠ x) :
     mvfderiv 𝓘(ℝ, E) f y (φ.field y) < 0 := by
+  have := φ.finiteDimensional
   rw [φ.mvfderiv_field_apply hy, neg_lt_zero]
   have hne : φ.coord (φ.toChart y) ≠ 0 := by
     rw [ne_eq, LinearEquiv.map_eq_zero_iff, φ.toChart_eq_zero_iff hy]
@@ -262,9 +291,11 @@ theorem mvfderiv_field_apply_lt_zero {y : M} (hy : y ∈ φ.toChart.source) (hyx
   exact Finset.sum_pos' (fun j _ ↦ sq_nonneg _)
     ⟨i, Finset.mem_univ _, by simpa using (sq_pos_of_ne_zero hi : (0 : ℝ) < _)⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- The centre is the only critical point of `f` in the source of a Morse chart. -/
 theorem mfderiv_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 ↔ y = x := by
+  have := φ.finiteDimensional
   rw [mfderiv_eq_zero_iff_of_eqOn
       (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy,
     φ.fderiv_quadratic_eq_zero_iff, φ.toChart_eq_zero_iff hy]
@@ -273,7 +304,7 @@ end FiniteDimensional
 
 section IsManifold
 
-variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] (φ : MorseChart E f x)
+variable [IsManifold 𝓘(ℝ, E) ∞ M] (φ : MorseChart E f x)
 
 /-- **The Hessian in the preferred chart.** At the centre `x` of a Morse chart `φ`, the Hessian of
 `f` read in the preferred chart at `x` is `v ↦ Σᵢ wᵢ (L (dφ v))ᵢ²`, where `dφ` is the derivative of
@@ -281,6 +312,7 @@ the Morse chart at `x`. -/
 theorem hessianQuadraticForm_extChartAt (v : E) :
     hessianQuadraticForm (f ∘ (extChartAt 𝓘(ℝ, E) x).symm) (extChartAt 𝓘(ℝ, E) x x) v =
       ∑ i, φ.weight i * φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x v) i ^ 2 := by
+  have := φ.finiteDimensional
   set ψ := extChartAt 𝓘(ℝ, E) x
   -- In the preferred chart, `f` is the normal form composed with the transition map `τ`.
   set τ : E → E := φ.toChart ∘ ψ.symm
@@ -318,12 +350,39 @@ theorem hessianQuadraticForm_extChartAt (v : E) :
 /-- The field of a Morse chart is smooth on the source of the chart. -/
 theorem contMDiffOn_field :
     ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
-      (fun y ↦ (⟨y, φ.field y⟩ : TangentBundle 𝓘(ℝ, E) M)) φ.toChart.source :=
-  contMDiffOn_mpullback φ.mem_maximalAtlas φ.contDiff_linearField.contDiffOn
+      (fun y ↦ (⟨y, φ.field y⟩ : TangentBundle 𝓘(ℝ, E) M)) φ.toChart.source := by
+  have := φ.finiteDimensional
+  exact contMDiffOn_mpullback φ.mem_maximalAtlas φ.contDiff_linearField.contDiffOn
 
 end IsManifold
 
 end MorseChart
+
+namespace IsAdaptedPseudoGradient
+
+variable [IsManifold 𝓘(ℝ, E) ∞ M] {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+
+/-- If `X` is an adapted pseudo-gradient for `f`, then `f` is differentiable; this hypothesis need
+not be assumed separately. -/
+theorem mdifferentiable (hX : IsAdaptedPseudoGradient f X) : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f :=
+  fun p ↦ by
+  -- Where `mfderiv` is nonzero, `f` is differentiable by definition of `mfderiv`; a zero of the
+  -- derivative has a Morse chart, in which `f` is the (smooth) quadratic normal form.
+  by_contra hd
+  obtain ⟨φ, -⟩ := hX.exists_morseChart p (mfderiv_zero_of_not_mdifferentiableAt hd)
+  have := Module.Finite.equiv φ.coord.symm
+  have h : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) (φ.quadratic ∘ φ.toChart) p :=
+    (φ.differentiableAt_quadratic _).mdifferentiableAt.comp p
+      (φ.mdifferentiableAt_toChart φ.mem_source)
+  exact hd (h.congr_of_eventuallyEq (Filter.eventuallyEq_of_mem
+    (φ.toChart.open_source.mem_nhds φ.mem_source) φ.eqOn_quadratic))
+
+/-- **`f` is antitone along every integral curve of an adapted pseudo-gradient.** -/
+theorem antitone_comp {γ : ℝ → M} (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X) :
+    Antitone (f ∘ γ) :=
+  hγ.antitone_comp (fun t ↦ hX.mdifferentiable (γ t)) fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
+
+end IsAdaptedPseudoGradient
 
 section Existence
 
@@ -333,6 +392,7 @@ section LocalField
 
 variable {C : Set M} {φ : ∀ c : C, MorseChart E f c} {A : C → Set M} {D : Set M}
 
+omit [FiniteDimensional ℝ E] in
 /-- Near a point of the neighbourhood `A c₀` of a critical point, the Morse field of `c₀` is a
 local candidate for the pseudo-gradient: it decreases `f` at the regular points of `D`, and it
 agrees with the Morse field of every `c` at the points of `A c`, because the sets `A c` lie in
@@ -433,6 +493,7 @@ private theorem exists_contMDiff_field_lt_zero_and_eq_field [T2Space M] [SigmaCo
     (n := (⊤ : ℕ∞)) (TangentSpace 𝓘(ℝ, E)) t ht hloc
   exact ⟨s, s.contMDiff, hs⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **The pseudo-gradient property on a neighbourhood of `K`.** Let `s` be a smooth field along
 which `f` decreases on `D`, equal to the Morse field of `c` on the neighbourhood `A c` of `c`. If
 `K` lies in the union of `D` and the interiors of the `A c`, and every critical point of `f` in `K`
@@ -565,11 +626,18 @@ theorem IsMorse.exists_contMDiff_pseudoGradientOn_nhds [T2Space M] [SigmaCompact
   IsCompact.exists_contMDiff_pseudoGradientOn_nhds hK hf.contMDiff fun _ _ hx ↦
     hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
 
+omit [FiniteDimensional ℝ E] in
 /-- **Existence of adapted pseudo-gradients** (Audin--Damian, Proposition 2.2.3). Every Morse
 function on a compact manifold has a pseudo-gradient field adapted to it. -/
 theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
     (hf : IsMorse 𝓘(ℝ, E) f) :
     ∃ X : (x : M) → TangentSpace 𝓘(ℝ, E) x, IsAdaptedPseudoGradient f X := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+  · exact ⟨fun y ↦ isEmptyElim y, ⟨fun y ↦ isEmptyElim y, fun y ↦ isEmptyElim y,
+      fun y ↦ isEmptyElim y⟩⟩
+  -- A nonempty compact manifold is locally compact, hence so is its model space.
+  let : Nonempty M := ⟨x⟩
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℝ, E)
   obtain ⟨U, hU, -, X, hX, hdesc, hchart⟩ :=
     hf.exists_contMDiff_pseudoGradientOn_nhds isCompact_univ
   have hUuniv : U = univ := univ_subset_iff.1 (subset_of_mem_nhdsSet hU)
