@@ -38,9 +38,9 @@ open scoped TensorProduct nonZeroDivisors
 namespace TauCeti
 
 variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
-  [Algebra R S] [Algebra R T] [Module.Free R S] [Module.Finite R S]
+  [Algebra R S] [Algebra R T] [Module.Free R S]
 
-/-- The trace form of a scalar-extended finite free algebra is the scalar extension
+/-- The trace form of a scalar-extended free algebra is the scalar extension
 of its trace form. -/
 @[simp]
 theorem Algebra.traceForm_baseChange :
