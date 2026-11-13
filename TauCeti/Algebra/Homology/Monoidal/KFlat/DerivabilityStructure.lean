@@ -186,8 +186,39 @@ lemma stageMap_comp_snd {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
 lemma stageMap_zero_f {K L : CochainComplex C ℤ} (g : K ⟶ L) (n : ℤ) :
     (stageMap E p g 0).f n = E.map (cyclesMap g n) := (rfl)
 
+/-- On stage `k + 1`, `stageMap` acts on the attached cells in degree `m` by applying `E` to
+`boundaryPairsMap`. -/
+@[simp]
+lemma inl_v_stageMap_f {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) (m q : ℤ)
+    (hmq : m + -1 = q) :
+    (mappingCone.inl (attachingMap (stage E.obj p.app K k).2
+      fun n ↦ p.app (boundaryPairs (stage E.obj p.app K k).2 n))).v m q hmq ≫
+        (stageMap E p g (k + 1)).f q =
+      E.map (boundaryPairsMap (stageMap_comp_snd E p g k) m) ≫
+        (mappingCone.inl (attachingMap (stage E.obj p.app L k).2
+          fun n ↦ p.app (boundaryPairs (stage E.obj p.app L k).2 n))).v m q hmq :=
+  mappingCone.inl_v_map_f _ _ (cellComplexMap E (stageMapAux E p g k).2)
+    (stageMapAux E p g k).1 (attachingMap_comm E p (stageMapAux E p g k).2) m q hmq
+
+-- State the right-associated `@[simp]` variants of `inl_v_stageMap_f`, `inr_stageMap`, and
+-- `inr_f_stageMap_f` explicitly: `kFlatResolution.stage` is `semireducible`, so `@[reassoc]`
+-- cannot apply `Category.assoc` at `implicit` transparency and leaves `(a ≫ b) ≫ h` unassociated.
+
+/-- Reassociated form of `inl_v_stageMap_f`. -/
+@[simp]
+lemma inl_v_stageMap_f_assoc {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) (m q : ℤ)
+    (hmq : m + -1 = q) {Z : C} (h : ((stage E.obj p.app L (k + 1)).1).X q ⟶ Z) :
+    (mappingCone.inl (attachingMap (stage E.obj p.app K k).2
+      fun n ↦ p.app (boundaryPairs (stage E.obj p.app K k).2 n))).v m q hmq ≫
+        (stageMap E p g (k + 1)).f q ≫ h =
+      E.map (boundaryPairsMap (stageMap_comp_snd E p g k) m) ≫
+        (mappingCone.inl (attachingMap (stage E.obj p.app L k).2
+          fun n ↦ p.app (boundaryPairs (stage E.obj p.app L k).2 n))).v m q hmq ≫ h :=
+  (Category.assoc _ _ h).symm.trans
+    ((congrArg (· ≫ h) (inl_v_stageMap_f E p g k m q hmq)).trans (Category.assoc _ _ h))
+
 /-- The stage maps commute with the inclusions into the next stages. -/
-@[reassoc]
+@[simp]
 lemma inr_stageMap {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
     mappingCone.inr (attachingMap (stage E.obj p.app K k).2
       fun n ↦ p.app (boundaryPairs (stage E.obj p.app K k).2 n)) ≫
@@ -195,6 +226,43 @@ lemma inr_stageMap {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
       stageMap E p g k ≫ mappingCone.inr (attachingMap (stage E.obj p.app L k).2
         fun n ↦ p.app (boundaryPairs (stage E.obj p.app L k).2 n)) :=
   inr_attachStepMap E p (stageMapAux E p g k).2
+
+/-- Reassociated form of `inr_stageMap`. -/
+@[simp]
+lemma inr_stageMap_assoc {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ)
+    {Z : CochainComplex C ℤ} (h : (stage E.obj p.app L (k + 1)).1 ⟶ Z) :
+    mappingCone.inr (attachingMap (stage E.obj p.app K k).2
+      fun n ↦ p.app (boundaryPairs (stage E.obj p.app K k).2 n)) ≫
+        stageMap E p g (k + 1) ≫ h =
+      stageMap E p g k ≫
+        mappingCone.inr (attachingMap (stage E.obj p.app L k).2
+          fun n ↦ p.app (boundaryPairs (stage E.obj p.app L k).2 n)) ≫ h :=
+  (Category.assoc _ _ h).symm.trans
+    ((congrArg (· ≫ h) (inr_stageMap E p g k)).trans (Category.assoc _ _ h))
+
+/-- In each degree, the stage maps commute with the inclusions into the next stages. -/
+@[simp]
+lemma inr_f_stageMap_f {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) (q : ℤ) :
+    (mappingCone.inr (attachingMap (stage E.obj p.app K k).2
+      fun n ↦ p.app (boundaryPairs (stage E.obj p.app K k).2 n))).f q ≫
+        (stageMap E p g (k + 1)).f q =
+      (stageMap E p g k).f q ≫
+        (mappingCone.inr (attachingMap (stage E.obj p.app L k).2
+          fun n ↦ p.app (boundaryPairs (stage E.obj p.app L k).2 n))).f q :=
+  HomologicalComplex.congr_hom (inr_stageMap E p g k) q
+
+/-- Reassociated form of `inr_f_stageMap_f`. -/
+@[simp]
+lemma inr_f_stageMap_f_assoc {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) (q : ℤ)
+    {Z : C} (h : ((stage E.obj p.app L (k + 1)).1).X q ⟶ Z) :
+    (mappingCone.inr (attachingMap (stage E.obj p.app K k).2
+      fun n ↦ p.app (boundaryPairs (stage E.obj p.app K k).2 n))).f q ≫
+        (stageMap E p g (k + 1)).f q ≫ h =
+      (stageMap E p g k).f q ≫
+        (mappingCone.inr (attachingMap (stage E.obj p.app L k).2
+          fun n ↦ p.app (boundaryPairs (stage E.obj p.app L k).2 n))).f q ≫ h :=
+  (Category.assoc _ _ h).symm.trans
+    ((congrArg (· ≫ h) (inr_f_stageMap_f E p g k q)).trans (Category.assoc _ _ h))
 
 /-- Identity chain maps induce identity morphisms on every stage. -/
 @[simp]
