@@ -438,7 +438,7 @@ theorem toSimpleGraph_prefix (d : (ofSimpleGraph G).EarDecomposition K) (h : H.t
       toGraph_initial_toSimpleGraph, initial_eq_graphAfter, initial_eq_graphAfter,
       graphAfter_prefix_zero]
   · rw [SimpleGraph.EarDecomposition.start_copy]
-    exact EarStart.toSimpleGraph_heq_of_heq (d.graphAfter_prefix_zero k) (d.start_prefix_heq k) _ _
+    exact EarStart.toSimpleGraph_heq_of_heq (d.graphAfter_prefix_zero k) (d.heq_start_prefix k) _ _
   · refine (walkAt_toSimpleGraph _ _ i).trans (Eq.trans ?_ (Eq.trans
       ((SimpleGraph.EarDecomposition.walkAt_prefix _ k _).trans
         (walkAt_toSimpleGraph d h _)).symm

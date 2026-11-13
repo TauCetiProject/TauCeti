@@ -1143,12 +1143,6 @@ theorem walkAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) (j : F
       d.walkAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
   rw [walkAt_eq, walkAt_eq, earAt_prefix]
 
-/-- Prefixing retains the initial vertex or cycle. -/
-theorem start_prefix_heq (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
-    (d.prefix i).start ≍ d.start := by
-  simp only [EarDecomposition.prefix]
-  exact .rfl
-
 /-- Prefixing retains the kind of every ear before the chosen index. -/
 theorem kindAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
     (j : Fin i.val) :
