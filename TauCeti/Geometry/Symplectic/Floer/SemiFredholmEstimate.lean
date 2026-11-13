@@ -518,10 +518,11 @@ end Patching
 Let `H` be a jointly `C²` Hamiltonian whose suspended vector field is globally Lipschitz, with
 orbits `x₋` and `x₊` whose initial points are nondegenerate fixed points of the time-one map, and
 let `J_t(y)` be a `C¹` family of almost complex structures, compatible with `ω` along `x₋`, `x₊`
-and the map `u`, which is `C¹` at the points of `ℝ × [0, 1]`. Suppose that the loops of `u` converge uniformly to `x₋` as
-`s → -∞` and to `x₊` as `s → ∞`, while the slice defect `∂t u - X_{H_t}(u)` tends uniformly to
-zero, as for a Floer cylinder from `x₋` to `x₊`. Then there are constants `C ≥ 0` and `T` such
-that every `C²` map `ξ` of period one in `t` that vanishes for `s ∉ (a, b)` satisfies
+and the map `u`, which is `C¹` at the points of `ℝ × [0, 1]`. Suppose that the loops of `u`
+converge uniformly to `x₋` as `s → -∞` and to `x₊` as `s → ∞`, while the slice defect
+`∂t u - X_{H_t}(u)` tends uniformly to zero, as for a Floer cylinder from `x₋` to `x₊`. Then
+there are constants `C ≥ 0` and `T` such that every `C²` map `ξ` of period one in `t` that
+vanishes for `s ∉ (a, b)` satisfies
 
 `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{[-T, T] × [0, 1]} ‖ξ‖²)`,
 
