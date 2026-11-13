@@ -41,9 +41,16 @@ Kudryashov, with the image of the chosen interior point recorded.
 public section
 
 open Metric Set Bornology
-open scoped Pointwise
+open scoped Pointwise Topology
 
 namespace TauCeti
+
+/-- Evaluating the bundled gauge rescale homeomorphism gives the gauge rescale map. -/
+@[simp] theorem gaugeRescaleHomeomorph_apply {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T1Space E]
+    (s t : Set E) (hsc : Convex ℝ s) (hs₀ : s ∈ 𝓝 0) (hsb : IsVonNBounded ℝ s)
+    (htc : Convex ℝ t) (ht₀ : t ∈ 𝓝 0) (htb : IsVonNBounded ℝ t) (x : E) :
+    gaugeRescaleHomeomorph s t hsc hs₀ hsb htc ht₀ htb x = gaugeRescale s t x := rfl
 
 section Module
 
@@ -62,17 +69,17 @@ theorem exists_homeomorph_image_eq_of_mem_interior (hsc : Convex ℝ s) (hsb : I
     apply gaugeRescaleHomeomorph (-x +ᵥ s) (-y +ᵥ t) <;>
       simp [← mem_interior_iff_mem_nhds, interior_vadd, mem_vadd_set_iff_neg_vadd_mem, *]
   let e : E ≃ₜ E := .trans (.addLeft (-x)) <| h.trans <| .addLeft y
-  have hint : e '' interior s = interior t := calc
-    (fun a ↦ y + h (-x + a)) '' interior s = y +ᵥ h '' interior (-x +ᵥ s) := by
-      simp_rw [interior_vadd, ← image_vadd, image_image, vadd_eq_add]
-    _ = _ := by rw [image_gaugeRescaleHomeomorph_interior, interior_vadd, vadd_neg_vadd]
-  have hcl : e '' closure s = closure t := calc
-    (fun a ↦ y + h (-x + a)) '' closure s = y +ᵥ h '' closure (-x +ᵥ s) := by
-      simp_rw [closure_vadd, ← image_vadd, image_image, vadd_eq_add]
-    _ = _ := by rw [image_gaugeRescaleHomeomorph_closure, closure_vadd, vadd_neg_vadd]
+  have he : ⇑e = fun a ↦ y + h (-x + a) := by ext; simp [e]
+  have he_img (u : Set E) : e '' u = y +ᵥ h '' (-x +ᵥ u) := by
+    simp_rw [he, ← image_vadd, image_image, vadd_eq_add]
+  have hint : e '' interior s = interior t := by
+    rw [he_img, ← interior_vadd, image_gaugeRescaleHomeomorph_interior, interior_vadd,
+      vadd_neg_vadd]
+  have hcl : e '' closure s = closure t := by
+    rw [he_img, ← closure_vadd, image_gaugeRescaleHomeomorph_closure, closure_vadd,
+      vadd_neg_vadd]
   refine ⟨e, ?_, hint, hcl, ?_⟩
-  · change y + gaugeRescale (-x +ᵥ s) (-y +ᵥ t) (-x + x) = y
-    rw [neg_add_cancel, gaugeRescale_zero, add_zero]
+  · simp [e, h]
   · simp_rw [← closure_sdiff_interior, image_sdiff e.injective, hint, hcl]
 
 /-- The interior of a closed convex bounded set `s` of a real topological vector space is
@@ -85,10 +92,11 @@ theorem exists_homeomorph_apply_eq_of_mem_interior (hsc : Convex ℝ s) (hsb : I
   obtain ⟨e, hexy, hint, hcl, -⟩ :=
     exists_homeomorph_image_eq_of_mem_interior hsc hsb hsc hsb hx hy
   rw [hs.closure_eq] at hcl
-  refine ⟨e.subtype fun z ↦ ?_, hexy, fun z ↦ ?_⟩
+  refine ⟨e.subtype fun z ↦ ?_, ?_, fun z ↦ ?_⟩
   · rw [← e.injective.mem_set_image, hcl]
-  · change e z ∈ interior s ↔ _
-    simpa only [hint] using e.injective.mem_set_image (a := (z : E)) (s := interior s)
+  · simpa only [Homeomorph.subtype_apply_coe] using hexy
+  · simpa only [Homeomorph.subtype_apply_coe, hint] using
+      e.injective.mem_set_image (a := (z : E)) (s := interior s)
 
 end Module
 

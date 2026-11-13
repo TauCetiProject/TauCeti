@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Convex.GaugeRescale
 public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Gauge.Basic
 
 /-!
 # Intrinsic interior points of compact and convex sets

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
-import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Gauge.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Basic
 
