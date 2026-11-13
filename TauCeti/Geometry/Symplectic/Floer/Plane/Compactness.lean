@@ -13,17 +13,21 @@ public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
 
 The Piunikhin–Salamon–Schwarz maps count solutions of the Floer equation `(du - X_K)^{0,1} = 0`
 on the complex plane, for the perturbation `K = TauCeti.Floer.PSSPlane.perturbation` of a PSS
-plane `p` built from a period-one Hamiltonian `H`. The value of the negative plane count on the
-fundamental cycle is the unit of the pair-of-pants product, and both planes are the caps glued to
-the ends of the pair of pants in the comparison with the quantum product. Counting them requires
+plane `p` built from a period-one Hamiltonian `H`. Here the target is a symplectic vector space
+`(V, ω)`: a finite-dimensional real inner product space `V` with a linear symplectic form `ω`. The
+value of the negative plane count on the fundamental cycle is the unit of the pair-of-pants
+product, and both planes are the caps glued to the ends of the pair of pants in the comparison
+with the quantum product. Counting them requires
 compactness of their moduli spaces below every action level.
 
 Let `ε = ±1` be the sign of the end of `p` at `∞`, and let `u` be a `C²` solution with `ω`-tame
 almost complex structures whose end loops `ℓ_R(t) = u(φ(ε R + i t))` have actions converging to
 `a` as `R → ∞`. If `|H| ≤ B`, the energy of `u` over the whole plane is at most `ε a + B`
 (`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_pssPlanePerturbation_le`). So a sequence of
-such solutions with `ε aₖ` bounded above has uniformly bounded energy, and the compactness theorem
-for Floer solutions of bounded energy
+such solutions with `ε aₖ` bounded above has uniformly bounded energy. If moreover `H` is `C³`,
+the solutions `uₖ` are `C³`, and their almost complex structures come from a single `C²` family
+`J(z, x)` of `ω`-tame structures on `(ℝ × ℝ) × V`, then the compactness theorem for Floer
+solutions of bounded energy
 (`TauCeti.SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`) applies
 on every compact window of the plane. For the negative plane, whose end is an output, the
 hypothesis bounds the end action `aₖ` from below; for the positive plane, whose end is an input,
@@ -31,16 +35,17 @@ it bounds it from above.
 
 The main result
 (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePerturbation` in
-`TauCeti.SymplecticForm`) fixes compact sets `D ⊆ ℝ × ℝ ≃ ℂ` and `K ⊆ V`, and gives a threshold
-`δ > 0`. For every open `Ω ⊆ D` and every sequence of solutions with image of `Ω` in `K` and
+`TauCeti.SymplecticForm`) fixes compact sets `D ⊆ ℝ × ℝ ≃ ℂ` and `C ⊆ V`, and gives a threshold
+`δ > 0`. For every open `Ω ⊆ D` and every sequence of solutions with image of `Ω` in `C` and
 `ε aₖ ≤ A`, a subsequence converges locally uniformly on `Ω` off a finite set `Z` of bubbling
 points with `#Z * δ ≤ A + B`, and every disc about a point of `Z` eventually carries energy at
 least `δ`.
-The window `D` may contain the pole disc, where `K` vanishes and the equation is the
+The window `D` may contain the pole disc, where the perturbation vanishes and the equation is the
 Cauchy–Riemann equation for `J`. This is the interior part of Gromov–Floer compactness for PSS
 planes, in the form proved for the pair of pants in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness`: the regularity of the limit, the
-bubbles at the points of `Z`, and breaking along the end are not treated here.
+bubbles at the points of `Z`, breaking along the end, and symplectic manifold targets are not
+treated here.
 
 ## References
 
@@ -60,26 +65,27 @@ namespace TauCeti.SymplecticForm
 open Floer Floer.PSSPlane
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {p : PSSPlane} {H : ℝ → V → ℝ}
+  {H : ℝ → V → ℝ}
 
 /-- **PSS planes with bounded end action converge off finitely many bubbling points.** Let `K` be
 the perturbation of a PSS plane `p`, with end sign `ε`, built from a period-one `C³` Hamiltonian
-`H` with `|H| ≤ B`, and let `J(z, x)` be a `C²` family of `ω`-tame structures on `(ℝ × ℝ) × V`,
-where the plane is read in real coordinates. Fix compact sets `D ⊆ ℝ × ℝ` and `K ⊆ V`. There is a
-threshold `δ > 0` with the following property. Let `uₖ` be `C³` solutions of
-`(du - X_K)^{0,1} = 0` on the plane for `J(z, u)`, whose end loops have limiting actions `aₖ`
-with `ε aₖ ≤ A`, and with `uₖ(Ω) ⊆ K` for an open `Ω ⊆ D`. Then there are a subsequence `φ`, a
-finite set `Z ⊆ Ω` with `#Z * δ ≤ A + B`, and a continuous `v : Ω \ Z → K` such that along `φ`
-every disc about a point of `Z` eventually carries energy at least `δ`, the differentials are
-uniformly bounded on every compact subset of `Ω \ Z`, and `u_{φ n} → v` locally uniformly on
-`Ω \ Z`. -/
+`H` with `|H| ≤ B` on a symplectic vector space `(V, ω)`, that is, a finite-dimensional real inner
+product space `V` with a linear symplectic form `ω`. Let `J(z, x)` be a `C²` family of `ω`-tame
+structures on `(ℝ × ℝ) × V`, where the plane is read in real coordinates. Fix compact sets
+`D ⊆ ℝ × ℝ` and `C ⊆ V`. There is a threshold `δ > 0` with the following property. Let `uₖ` be
+`C³` solutions of `(du - X_K)^{0,1} = 0` on the plane for `J(z, u)`, whose end loops have
+limiting actions `aₖ` with `ε aₖ ≤ A`, and with `uₖ(Ω) ⊆ C` for an open `Ω ⊆ D`. Then there
+are a subsequence `φ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ A + B`, and a continuous
+`v : Ω \ Z → C` such that along `φ` every disc about a point of `Z` eventually carries energy at
+least `δ`, the differentials are uniformly bounded on every compact subset of `Ω \ Z`, and
+`u_{φ n} → v` locally uniformly on `Ω \ Z`. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePerturbation
-    (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H)) {B : ℝ}
-    (hB : ∀ t x, |H t x| ≤ B) {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    (ω : SymplecticForm V) (p : PSSPlane) (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H))
+    {B : ℝ} (hB : ∀ t x, |H t x| ≤ B) {J : ℝ × ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 2
       (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap))
-    (hJt : ∀ z x, ω.Tames (J z x)) {D : Set (ℝ × ℝ)} {K : Set V} (hD : IsCompact D)
-    (hK : IsCompact K) :
+    (hJt : ∀ z x, ω.Tames (J z x)) {D : Set (ℝ × ℝ)} {C : Set V} (hD : IsCompact D)
+    (hC : IsCompact C) :
     ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃a : ℕ → ℝ⦄ ⦃A : ℝ⦄,
       IsOpen Ω → Ω ⊆ D → (∀ k, ContDiff ℝ 3 (u k)) →
       (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
@@ -90,21 +96,21 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePe
       (∀ k, Tendsto (fun R ↦ ω.hamiltonianAction H (fun t ↦ u k (equivRealProdCLM
         (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * I))))) atTop (𝓝 (a k))) →
       (∀ k, p.endSign * a k ≤ A) →
-      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, MapsTo (u k) Ω C) →
       ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono φ ∧
         ↑Z ⊆ Ω ∧ Z.card * δ ≤ A + B ∧
         (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
           (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x I) (u (φ n)) y) ∧
-        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
-          ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
-        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        (∀ L, IsCompact L → L ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ L, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) C ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
   have hK' (v : ℂ) :
       ContDiff ℝ 3 (uncurry fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x v) :=
     contDiff_uncurry_perturbation hH hHs v
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
-    isOpen_univ (hK' 1).contDiffOn (hK' I).contDiffOn hJ.contDiffOn hD hK (subset_univ _)
+    isOpen_univ (hK' 1).contDiffOn (hK' I).contDiffOn hJ.contDiffOn hD hC (subset_univ _)
     fun z _ x _ ↦ hJt z x
   refine ⟨δ, hδ, fun Ω u a A hΩ hΩD hu hfl ha hA huK ↦ ?_⟩
   set Ks : ℝ × ℝ → V → ℝ := fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x 1
