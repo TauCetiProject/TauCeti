@@ -49,6 +49,8 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 ## Main results
 
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
+* `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
+  `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
   elements.
 * `TauCeti.InternalGrading.decompose_mem_of_mem_span_sigma`: the components of an element in the
@@ -129,6 +131,16 @@ noncomputable def ofDecomposition (ℳ : ι → Submodule R M) [DirectSum.Decomp
 @[simp]
 theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
+
+/-- The decomposition carried by `ofDecomposition ℳ` is the given one, on every component. The two
+instances are not definitionally equal (the one on `(ofDecomposition ℳ).piece` is chosen from
+internality), but decompositions are unique. -/
+theorem coe_decompose_ofDecomposition_piece_apply (ℳ : ι → Submodule R M)
+    [DirectSum.Decomposition ℳ] (x : M) (i : ι) :
+    (DirectSum.decompose (ofDecomposition ℳ).piece x i : M) = DirectSum.decompose ℳ x i := by
+  unfold ofDecomposition
+  exact congrArg (fun d ↦ ((@DirectSum.decompose _ _ _ _ _ _ _ ℳ d x i : M)))
+    (Subsingleton.elim _ _)
 
 /-- A submodule is homogeneous for the internal grading `ofDecomposition ℳ` exactly when it is
 homogeneous for `ℳ`: the decomposition carried by `ofDecomposition ℳ` is the given one, as
