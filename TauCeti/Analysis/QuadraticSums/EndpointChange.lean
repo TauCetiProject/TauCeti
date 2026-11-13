@@ -5,19 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Constructions
-public import Mathlib.Analysis.Normed.Group.Real
-public import Mathlib.Analysis.Normed.Group.Continuity
-public import Mathlib.Topology.Order.Compact
-public import Mathlib.Topology.UniformSpace.HeineCantor
+public import TauCeti.Analysis.Normed.Group.UniformContinuity
+public import Mathlib.Analysis.Normed.Ring.Lemmas
 
 /-!
 # Changing endpoints in weighted quadratic sums
 
 The difference between right- and left-endpoint weighted quadratic sums is bounded by
-the largest weight increment times the unweighted quadratic sum. For continuous weights
-on a compact time interval, the largest increment tends to zero as the mesh does.
-Consequently changing endpoints does not affect a finite quadratic-sum limit.
+the largest weight increment times the unweighted quadratic sum. For uniformly continuous
+weights, the largest increment tends to zero as the mesh does. If the unweighted quadratic
+sums are eventually bounded, the difference between the weighted endpoint sums tends to
+zero. Thus changing endpoints preserves any limit of the weighted sums under this bound.
 
 The integrator need not be continuous or have bounded variation. In stochastic applications
 its quadratic sums converge only in probability; the pathwise result can then be applied
@@ -38,7 +36,7 @@ namespace TauCeti
 
 /-- Changing the endpoint of the weight costs at most its largest increment times the
 unweighted quadratic sum. Empty grids and unordered samples are allowed. -/
-theorem abs_sum_right_mul_sq_sub_sum_left_le {n : ℕ} (X B : Fin (n + 1) → ℝ) :
+theorem abs_sum_succ_mul_sq_sub_sum_castSucc_le {n : ℕ} (X B : Fin (n + 1) → ℝ) :
     |(∑ i : Fin n, X i.succ * (B i.succ - B i.castSucc) ^ 2) -
       ∑ i : Fin n, X i.castSucc * (B i.succ - B i.castSucc) ^ 2| ≤
       ‖fun i : Fin n ↦ X i.succ - X i.castSucc‖ *
@@ -57,56 +55,36 @@ theorem abs_sum_right_mul_sq_sub_sum_left_le {n : ℕ} (X B : Fin (n + 1) → �
 
 end TauCeti
 
-namespace ContinuousOn
+namespace UniformContinuousOn
 
-variable {ι : Type*} {l : Filter ι} {N : ι → ℕ}
-  {grid : ∀ k, Fin (N k + 1) → ℝ≥0} {a T : ℝ≥0} {δ : ι → ℝ}
-
-/-- The largest increment of a continuous function on a compact horizon tends to zero
-along arbitrary nondecreasing vanishing-mesh grids inside that horizon. -/
-theorem tendsto_norm_partition_sub {E : Type*} [NormedAddCommGroup E]
-    {X : ℝ≥0 → E} (hX : ContinuousOn X (Icc a T))
-    (hgrid : ∀ k, Monotone (grid k)) (ha : ∀ k, a ≤ grid k 0)
-    (hT : ∀ k, grid k (Fin.last (N k)) ≤ T)
-    (hmesh : ∀ k (i : Fin (N k)), (grid k i.succ : ℝ) - grid k i.castSucc ≤ δ k)
-    (hδ : Tendsto δ l (𝓝 0)) :
-    Tendsto (fun k ↦ ‖fun i : Fin (N k) ↦ X (grid k i.succ) - X (grid k i.castSucc)‖)
-      l (𝓝 0) := by
-  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  obtain ⟨η, hη, hclose⟩ := Metric.uniformContinuousOn_iff.1
-    (isCompact_Icc.uniformContinuousOn_of_continuous hX) (ε / 2) (half_pos hε)
-  filter_upwards [hδ.eventually_lt_const hη] with k hk
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)]
-  refine (pi_norm_le_iff_of_nonneg (half_pos hε).le).2 (fun i ↦ ?_) |>.trans_lt (half_lt_self hε)
-  have hmem (j : Fin (N k + 1)) : grid k j ∈ Icc a T :=
-    ⟨(ha k).trans (hgrid k (Fin.zero_le j)), (hgrid k (Fin.le_last j)).trans (hT k)⟩
-  have hd : dist (grid k i.succ) (grid k i.castSucc) < η := by
-    rw [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.2 (by
-      exact_mod_cast (hgrid k (Fin.castSucc_le_succ i))))]
-    exact (hmesh k i).trans_lt hk
-  have hdist := hclose (grid k i.succ) (hmem _) (grid k i.castSucc) (hmem _) hd
-  simpa only [dist_eq_norm] using hdist.le
-
-/-- For continuous weights, changing from left to right endpoints preserves any finite
-pathwise quadratic-sum limit. No path regularity of the integrator is required. -/
-theorem tendsto_sum_right_mul_sq_sub_sum_left {X B : ℝ≥0 → ℝ}
-    (hX : ContinuousOn X (Icc a T))
-    (hgrid : ∀ k, Monotone (grid k)) (ha : ∀ k, a ≤ grid k 0)
-    (hT : ∀ k, grid k (Fin.last (N k)) ≤ T)
-    (hmesh : ∀ k (i : Fin (N k)), (grid k i.succ : ℝ) - grid k i.castSucc ≤ δ k)
-    (hδ : Tendsto δ l (𝓝 0)) {q : ℝ}
-    (hQ : Tendsto (fun k ↦ ∑ i : Fin (N k),
-      (B (grid k i.succ) - B (grid k i.castSucc)) ^ 2) l (𝓝 q)) :
+/-- For uniformly continuous weights on vanishing-mesh grids, eventual boundedness of
+the unweighted quadratic sums makes the difference between right- and left-endpoint
+weighted sums tend to zero. No path regularity of the integrator is required. -/
+theorem tendsto_sum_succ_mul_sq_sub_sum_castSucc {α ι : Type*} [PseudoMetricSpace α]
+    {s : Set α} {X B : α → ℝ} (hX : UniformContinuousOn X s)
+    {l : Filter ι} {N : ι → ℕ} {grid : ∀ k, Fin (N k + 1) → α} {δ : ι → ℝ}
+    (hmem : ∀ᶠ k in l, ∀ j, grid k j ∈ s)
+    (hmesh : ∀ᶠ k in l, ∀ i : Fin (N k), dist (grid k i.succ) (grid k i.castSucc) ≤ δ k)
+    (hδ : Tendsto δ l (𝓝 0))
+    (hQ : l.IsBoundedUnder (· ≤ ·) (fun k ↦ ∑ i : Fin (N k),
+      (B (grid k i.succ) - B (grid k i.castSucc)) ^ 2)) :
     Tendsto (fun k ↦ (∑ i : Fin (N k), X (grid k i.succ) *
       (B (grid k i.succ) - B (grid k i.castSucc)) ^ 2) -
       ∑ i : Fin (N k), X (grid k i.castSucc) *
         (B (grid k i.succ) - B (grid k i.castSucc)) ^ 2) l (𝓝 0) := by
   apply tendsto_zero_iff_norm_tendsto_zero.2
   simp only [Real.norm_eq_abs]
-  have hprod := (hX.tendsto_norm_partition_sub hgrid ha hT hmesh hδ).mul hQ
-  rw [zero_mul] at hprod
+  have hinc := hX.tendsto_norm_sub_of_dist_le
+    (hmem.mono fun _ hk i ↦ hk i.castSucc) (hmem.mono fun _ hk i ↦ hk i.succ) hmesh hδ
+  have hnonneg (k : ι) : 0 ≤ ∑ i : Fin (N k),
+      (B (grid k i.succ) - B (grid k i.castSucc)) ^ 2 :=
+    sum_nonneg fun _ _ ↦ sq_nonneg _
+  have hnorm : l.IsBoundedUnder (· ≤ ·) (fun k ↦ ‖∑ i : Fin (N k),
+      (B (grid k i.succ) - B (grid k i.castSucc)) ^ 2‖) := by
+    simpa only [Real.norm_eq_abs, abs_of_nonneg (hnonneg _)] using hQ
+  have hprod := hinc.zero_mul_isBoundedUnder_le hnorm
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hprod
     (fun _ ↦ abs_nonneg _) (fun k ↦
-      TauCeti.abs_sum_right_mul_sq_sub_sum_left_le (X ∘ grid k) (B ∘ grid k))
+      TauCeti.abs_sum_succ_mul_sq_sub_sum_castSucc_le (X ∘ grid k) (B ∘ grid k))
 
-end ContinuousOn
+end UniformContinuousOn
