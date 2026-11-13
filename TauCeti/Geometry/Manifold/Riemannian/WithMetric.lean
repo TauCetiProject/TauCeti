@@ -436,6 +436,19 @@ theorem mfderiv_ofWithMetric_chartLocalFrame (α x : WithMetric g)
           (mem_chartAt_source_iff α x).not.1 hx),
       map_zero]
 
+open Riemannian.Tensor in
+/-- The chart Gram matrix of the copy of `M` carrying `g` is the Gram matrix of `g` in the chart
+frame of `M`. -/
+theorem _root_.Bundle.ContMDiffRiemannianMetric.chartGramMatrix_toWithMetric
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (α x : M) :
+    chartGramMatrix (I := I) (WithMetric.toWithMetric g α) (WithMetric.toWithMetric g x) =
+      Matrix.of fun i j ↦
+        g.inner x (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
+  ext i j
+  rw [chartGramMatrix_apply, WithMetric.inner_def, WithMetric.mfderiv_ofWithMetric_chartLocalFrame,
+    WithMetric.mfderiv_ofWithMetric_chartLocalFrame]
+  rfl
+
 end Metric
 
 end WithMetric

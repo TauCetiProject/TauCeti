@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
-public import Mathlib.LinearAlgebra.Matrix.PosDef
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
+public import TauCeti.Geometry.Manifold.Riemannian.Conformal
+public import TauCeti.LinearAlgebra.BilinearForm.DetRatio
 
 /-!
 # The relative volume density of two Riemannian metrics
@@ -35,14 +34,13 @@ volume density of `g'` is `J` times that of `g`. No orientation is used. For a c
 
 ## Main definitions
 
-* `TauCeti.bilinFormDetRatio`: the basis-independent ratio of the Gram determinants of two
-  bilinear forms on a finite-dimensional real vector space.
-* `TauCeti.relativeVolumeDensity`: the relative volume density of `g'` with respect to `g`.
+* `Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity`: the relative volume density of
+  `g'` with respect to `g`.
 
 ## Main results
 
-* `TauCeti.relativeVolumeDensity_eq_sqrt_det_of_orthonormal`: in a `g`-orthonormal basis, `J` is
-  the square root of the Gram determinant of `g'`.
+* `Module.Basis.relativeVolumeDensity_eq_sqrt_det_of_orthonormal`: in a `g`-orthonormal basis,
+  `J` is the square root of the Gram determinant of `g'`.
 * `TauCeti.relativeVolumeDensity_pos`, `TauCeti.contMDiff_relativeVolumeDensity`: `J` is positive
   and `C^n`.
 * `TauCeti.chartVolumeDensity_toWithMetric_eq_mul`: compatibility with chart volume densities.
@@ -67,68 +65,6 @@ noncomputable section
 
 namespace TauCeti
 
-section LinearAlgebra
-
-open LinearMap (BilinForm)
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-- The Gram determinant of a symmetric positive-definite bilinear form is positive in every
-basis. -/
-theorem det_toMatrix_pos {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ V)
-    {B : BilinForm ℝ V} (hsymm : ∀ v w, B v w = B w v) (hpos : ∀ v, v ≠ 0 → 0 < B v v) :
-    0 < (BilinForm.toMatrix b B).det :=
-  ((BilinForm.posDef_toQuadraticMap_iff_matrix b B ⟨hsymm⟩).1 hpos).det_pos
-
-variable [Module.Finite ℝ V]
-
-/-- The ratio `det B' / det B` of the Gram determinants of two bilinear forms on a
-finite-dimensional real vector space, computed in the basis `Module.finBasis ℝ V`. It does not
-depend on the basis: see `TauCeti.bilinFormDetRatio_eq`. -/
-def bilinFormDetRatio (B B' : BilinForm ℝ V) : ℝ :=
-  (BilinForm.toMatrix (Module.finBasis ℝ V) B').det /
-    (BilinForm.toMatrix (Module.finBasis ℝ V) B).det
-
-/-- **Basis independence of the Gram determinant ratio.** In any basis `b`, `bilinFormDetRatio B B'`
-is the ratio of the Gram determinants of `B'` and `B`. -/
-theorem bilinFormDetRatio_eq {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ V)
-    (B B' : BilinForm ℝ V) :
-    bilinFormDetRatio B B' =
-      (BilinForm.toMatrix b B').det / (BilinForm.toMatrix b B).det := by
-  set b₀ := (Module.finBasis ℝ V).reindex ((Module.finBasis ℝ V).indexEquiv b)
-  have hP : (b₀.toMatrix b).det ≠ 0 := by
-    rw [← Module.Basis.det_apply]
-    exact (b₀.isUnit_det b).ne_zero
-  rw [bilinFormDetRatio,
-    ← BilinForm.det_toMatrix_reindex _ ((Module.finBasis ℝ V).indexEquiv b) B,
-    ← BilinForm.det_toMatrix_reindex _ ((Module.finBasis ℝ V).indexEquiv b) B',
-    BilinForm.det_toMatrix_eq_det_sq_mul_det b₀ b, BilinForm.det_toMatrix_eq_det_sq_mul_det b₀ b,
-    mul_div_mul_left _ _ (pow_ne_zero 2 hP)]
-
-/-- In a basis in which `B` has the identity Gram matrix, `bilinFormDetRatio B B'` is the Gram
-determinant of `B'`. -/
-theorem bilinFormDetRatio_eq_det_of_toMatrix_eq_one {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι ℝ V) {B : BilinForm ℝ V} (hB : BilinForm.toMatrix b B = 1)
-    (B' : BilinForm ℝ V) :
-    bilinFormDetRatio B B' = (BilinForm.toMatrix b B').det := by
-  rw [bilinFormDetRatio_eq b, hB, Matrix.det_one, div_one]
-
-/-- The Gram determinant ratio of two symmetric positive-definite bilinear forms is positive. -/
-theorem bilinFormDetRatio_pos {B B' : BilinForm ℝ V} (hsymm : ∀ v w, B v w = B w v)
-    (hpos : ∀ v, v ≠ 0 → 0 < B v v) (hsymm' : ∀ v w, B' v w = B' w v)
-    (hpos' : ∀ v, v ≠ 0 → 0 < B' v v) :
-    0 < bilinFormDetRatio B B' :=
-  div_pos (det_toMatrix_pos _ hsymm' hpos') (det_toMatrix_pos _ hsymm hpos)
-
-/-- The Gram determinant ratio of a symmetric positive-definite bilinear form with itself is
-one. -/
-theorem bilinFormDetRatio_self {B : BilinForm ℝ V} (hsymm : ∀ v w, B v w = B w v)
-    (hpos : ∀ v, v ≠ 0 → 0 < B v v) :
-    bilinFormDetRatio B B = 1 :=
-  div_self (det_toMatrix_pos _ hsymm hpos).ne'
-
-end LinearAlgebra
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {n n' : ℕ∞ω}
@@ -136,9 +72,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- The **relative volume density** of a Riemannian metric `g'` with respect to a Riemannian
 metric `g` at `x`: the square root of the ratio of the Gram determinants of `g'_x` and `g_x` in
 any basis of `T_x M`. -/
-def relativeVolumeDensity (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+def _root_.Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
     (g' : ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)) (x : M) : ℝ :=
-  √(bilinFormDetRatio (g.inner x).toBilinForm (g'.inner x).toBilinForm)
+  √(LinearMap.BilinForm.detRatio (g.inner x).toBilinForm (g'.inner x).toBilinForm)
+
+open Bundle.ContMDiffRiemannianMetric (relativeVolumeDensity)
 
 variable {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
   {g' : ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)}
@@ -146,57 +85,54 @@ variable {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
 /-- The definition of the relative volume density. -/
 theorem relativeVolumeDensity_def (x : M) :
     relativeVolumeDensity g g' x =
-      √(bilinFormDetRatio (g.inner x).toBilinForm (g'.inner x).toBilinForm) :=
+      √(LinearMap.BilinForm.detRatio (g.inner x).toBilinForm (g'.inner x).toBilinForm) :=
   (rfl)
 
 /-- The relative volume density in a basis `b` of `T_x M`. -/
-theorem relativeVolumeDensity_eq_sqrt_div {x : M} {ι : Type*} [Fintype ι] [DecidableEq ι]
+theorem _root_.Module.Basis.relativeVolumeDensity_eq_sqrt_div {x : M} {ι : Type*}
+    [Fintype ι] [DecidableEq ι]
     (b : Module.Basis ι ℝ (TangentSpace I x)) :
     relativeVolumeDensity g g' x =
       √((Matrix.of fun i j ↦ g'.inner x (b i) (b j)).det /
         (Matrix.of fun i j ↦ g.inner x (b i) (b j)).det) := by
-  rw [relativeVolumeDensity, bilinFormDetRatio_eq b]
+  rw [relativeVolumeDensity, b.bilinFormDetRatio_eq]
   congr 3 <;> ext i j <;> simp [LinearMap.BilinForm.toMatrix_apply]
 
 /-- **The relative volume density in an orthonormal basis.** If `b` is a `g`-orthonormal basis of
 `T_x M`, the relative volume density of `g'` with respect to `g` at `x` is the square root of the
 Gram determinant of `g'_x` in `b`. -/
-theorem relativeVolumeDensity_eq_sqrt_det_of_orthonormal {x : M} {ι : Type*} [Fintype ι]
+theorem _root_.Module.Basis.relativeVolumeDensity_eq_sqrt_det_of_orthonormal
+    {x : M} {ι : Type*} [Fintype ι]
     [DecidableEq ι] (b : Module.Basis ι ℝ (TangentSpace I x))
     (hb : ∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0) :
     relativeVolumeDensity g g' x = √(Matrix.of fun i j ↦ g'.inner x (b i) (b j)).det := by
-  rw [relativeVolumeDensity_eq_sqrt_div b]
+  rw [b.relativeVolumeDensity_eq_sqrt_div]
   congr 1
-  rw [show (Matrix.of fun i j ↦ g.inner x (b i) (b j)) = 1 by
-    ext i j; simp [hb, Matrix.one_apply], Matrix.det_one, div_one]
+  have hGram : (Matrix.of fun i j ↦ g.inner x (b i) (b j)) = 1 := by
+    ext i j
+    simp [hb, Matrix.one_apply]
+  rw [hGram, Matrix.det_one, div_one]
 
 /-- The relative volume density is nonnegative. -/
+@[simp]
 theorem relativeVolumeDensity_nonneg (x : M) : 0 ≤ relativeVolumeDensity g g' x :=
   Real.sqrt_nonneg _
 
 /-- The relative volume density is positive. -/
+@[simp]
 theorem relativeVolumeDensity_pos (x : M) : 0 < relativeVolumeDensity g g' x :=
-  Real.sqrt_pos.2 <| bilinFormDetRatio_pos (g.symm x) (g.pos x) (g'.symm x) (g'.pos x)
+  Real.sqrt_pos.2 <| LinearMap.BilinForm.detRatio_pos (g.symm x) (g.pos x) (g'.symm x) (g'.pos x)
 
 /-- The relative volume density of a metric with respect to itself is one. -/
 @[simp]
 theorem relativeVolumeDensity_self (x : M) : relativeVolumeDensity g g x = 1 := by
-  rw [relativeVolumeDensity, bilinFormDetRatio_self (g.symm x) (g.pos x), Real.sqrt_one]
+  rw [relativeVolumeDensity, LinearMap.BilinForm.detRatio_self
+    ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero
+      (Module.finBasis ℝ (TangentSpace I x))).2
+      (Module.Basis.det_toMatrix_pos _ (g.symm x) (g.pos x)).ne'), Real.sqrt_one]
 
-/-- The chart Gram matrix of the copy of `M` carrying `g` is the Gram matrix of `g` in the chart
-frame of `M`. -/
-theorem chartGramMatrix_toWithMetric (g : ContMDiffRiemannianMetric I n E
-    (fun x : M ↦ TangentSpace I x)) (α x : M) :
-    chartGramMatrix (I := I) (WithMetric.toWithMetric g α) (WithMetric.toWithMetric g x) =
-      Matrix.of fun i j ↦
-        g.inner x (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
-  ext i j
-  rw [chartGramMatrix_apply, WithMetric.inner_def, WithMetric.mfderiv_ofWithMetric_chartLocalFrame,
-    WithMetric.mfderiv_ofWithMetric_chartLocalFrame]
-  rfl
-
-/-- On the chart source at `α`, the relative volume density is the ratio of the Gram determinants
-of the two metrics in the chart frame. -/
+/-- On the chart source at `α`, the relative volume density is the square root of the ratio
+of the Gram determinants of `g'` and `g`, in that order, in the chart frame. -/
 theorem relativeVolumeDensity_eq_sqrt_div_chartGramMatrix {α x : M}
     (hx : x ∈ (chartAt H α).source) :
     relativeVolumeDensity g g' x =
@@ -206,9 +142,10 @@ theorem relativeVolumeDensity_eq_sqrt_div_chartGramMatrix {α x : M}
           (WithMetric.toWithMetric g x)).det) := by
   have hx' : x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
     simpa only [TangentBundle.trivializationAt_baseSet] using hx
-  rw [relativeVolumeDensity_eq_sqrt_div
+  rw [Module.Basis.relativeVolumeDensity_eq_sqrt_div
     ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx'),
-    chartGramMatrix_toWithMetric, chartGramMatrix_toWithMetric]
+    ContMDiffRiemannianMetric.chartGramMatrix_toWithMetric,
+    ContMDiffRiemannianMetric.chartGramMatrix_toWithMetric]
   simp only [chartLocalFrame_apply_of_mem_chart_source α hx]
 
 /-- **Compatibility with chart volume densities.** On the chart source at `α`, the chart volume
@@ -240,6 +177,19 @@ theorem relativeVolumeDensity_eq_div_chartVolumeDensity {α x : M}
       rw [TangentBundle.trivializationAt_baseSet]
       exact (WithMetric.mem_chartAt_source_iff _ _).2 hx)
   rw [chartVolumeDensity_toWithMetric_eq_mul (g := g) hx, mul_div_cancel_right₀ _ hpos.ne']
+
+/-- Changing the reference metric multiplies relative volume densities. -/
+theorem relativeVolumeDensity_trans {n'' : ℕ∞ω}
+    {g'' : ContMDiffRiemannianMetric I n'' E (fun x : M ↦ TangentSpace I x)} (x : M) :
+    relativeVolumeDensity g g'' x =
+      relativeVolumeDensity g g' x * relativeVolumeDensity g' g'' x := by
+  have hpos := chartVolumeDensity_pos (I := I) (WithMetric.toWithMetric g' x)
+    (by simpa only [TangentBundle.trivializationAt_baseSet] using
+      mem_chart_source H (WithMetric.toWithMetric g' x))
+  rw [relativeVolumeDensity_eq_div_chartVolumeDensity (mem_chart_source H x),
+    relativeVolumeDensity_eq_div_chartVolumeDensity (mem_chart_source H x),
+    relativeVolumeDensity_eq_div_chartVolumeDensity (mem_chart_source H x), mul_comm,
+    div_mul_div_cancel₀ hpos.ne']
 
 /-- The relative volume density is `C^k` near every point when both copies of `M` carry `C^k`
 metrics. -/
@@ -288,12 +238,13 @@ omit [FiniteDimensional ℝ E] [LindelofSpace M] in
 /-- The identity map from the copy of `M` carrying `g` to the copy carrying `g'` is a measurable
 embedding. -/
 private theorem measurableEmbedding_toWithMetric_ofWithMetric :
-    MeasurableEmbedding fun x : WithMetric g ↦ WithMetric.toWithMetric g' x.ofWithMetric :=
-  .of_measurable_inverse
-    (WithMetric.continuous_toWithMetric.comp WithMetric.continuous_ofWithMetric).measurable
-    (by rw [range_eq_univ.2 fun y ↦ ⟨WithMetric.toWithMetric g y.ofWithMetric, rfl⟩]; exact .univ)
-    (WithMetric.continuous_toWithMetric.comp WithMetric.continuous_ofWithMetric).measurable
-    fun _ ↦ rfl
+    MeasurableEmbedding fun x : WithMetric g ↦ WithMetric.toWithMetric g' x.ofWithMetric := by
+  have hcoe : ⇑((WithMetric.homeomorph g).trans (WithMetric.homeomorph g').symm) =
+      (fun x : WithMetric g ↦ WithMetric.toWithMetric g' x.ofWithMetric) := by
+    funext x
+    simp only [Homeomorph.trans_apply, WithMetric.coe_homeomorph, WithMetric.coe_homeomorph_symm]
+  rw [← hcoe]
+  exact ((WithMetric.homeomorph g).trans (WithMetric.homeomorph g').symm).measurableEmbedding
 
 omit [LindelofSpace M] in
 /-- The relative volume density, as a density on the copy of `M` carrying `g`, is measurable. -/
@@ -390,17 +341,10 @@ theorem relativeVolumeDensity_rescale {f : M → ℝ} {hf : ContMDiff I 𝓘(ℝ
     {hf_pos : ∀ x, 0 < f x} (x : M) :
     relativeVolumeDensity g (g.rescale f hf hf_pos) x =
       f x ^ ((Module.finrank ℝ E : ℝ) / 2) := by
-  have hpos : 0 < (LinearMap.BilinForm.toMatrix (Module.finBasis ℝ (TangentSpace I x))
-      (g.inner x).toBilinForm).det :=
-    det_toMatrix_pos _ (g.symm x) (g.pos x)
-  have hmat : LinearMap.BilinForm.toMatrix (Module.finBasis ℝ (TangentSpace I x))
-      ((g.rescale f hf hf_pos).inner x).toBilinForm =
-      f x • LinearMap.BilinForm.toMatrix (Module.finBasis ℝ (TangentSpace I x))
-        (g.inner x).toBilinForm := by
-    ext i j
-    simp [LinearMap.BilinForm.toMatrix_apply]
-  rw [relativeVolumeDensity, bilinFormDetRatio, hmat, Matrix.det_smul, Fintype.card_fin,
-    mul_div_cancel_right₀ _ hpos.ne', Real.sqrt_pow_eq_rpow (hf_pos x).le]
-  rfl
+  have hpos := chartVolumeDensity_pos (I := I) (WithMetric.toWithMetric g x)
+    (by simpa only [TangentBundle.trivializationAt_baseSet] using
+      mem_chart_source H (WithMetric.toWithMetric g x))
+  rw [relativeVolumeDensity_eq_div_chartVolumeDensity (mem_chart_source H x),
+    WithMetric.chartVolumeDensity_rescale, mul_div_cancel_right₀ _ hpos.ne']
 
 end TauCeti
