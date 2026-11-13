@@ -386,19 +386,12 @@ theorem transportAlong_bijective (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g
   have : IsEmpty (RawCap γ₀) := not_nonempty_iff.1 h
   -- a cap of `γ₁` glued to `F.conjLoopHom` caps `F.basepointPath.conjLoop γ₀`, so `γ₀` would be
   -- null-homotopic
-  have : IsEmpty (RawCap γ₁) := ⟨fun D => h <| RawCap.nonempty_iff.2 <| by
-    have hD := Path.Homotopic.Quotient.eq.2 (RawCap.nonempty_iff.1 ⟨F.conjLoopHom ≫ D⟩)
-    rw [Path.conjLoop_apply, Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_trans,
-      Path.Homotopic.Quotient.mk_symm, Path.Homotopic.Quotient.mk_refl] at hD
-    rw [← Path.Homotopic.Quotient.eq, Path.Homotopic.Quotient.mk_refl]
-    set P := Path.Homotopic.Quotient.mk F.basepointPath
-    calc Path.Homotopic.Quotient.mk γ₀
-        = P.trans ((P.symm.trans ((Path.Homotopic.Quotient.mk γ₀).trans P)).trans P.symm) := by
-          simp only [← Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_symm,
-            Path.Homotopic.Quotient.refl_trans]
-          rw [Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_symm,
-            Path.Homotopic.Quotient.trans_refl]
-      _ = Path.Homotopic.Quotient.refl x := by simp [hD]⟩
+  have : IsEmpty (RawCap γ₁) := ⟨fun D => h <| RawCap.nonempty_iff.2 <|
+    Path.Homotopic.of_conj_nullhomotopic (α := F.basepointPath.symm) <| by
+      have hD := RawCap.nonempty_iff.1 ⟨F.conjLoopHom ≫ D⟩
+      rw [Path.conjLoop_apply] at hD
+      rw [Path.symm_symm]
+      exact (Path.Homotopic.trans_assoc _ _ _).trans hD⟩
   exact ⟨fun q => isEmptyElim (induction_on (motive := fun _ => False) q isEmptyElim),
     fun q => isEmptyElim (induction_on (motive := fun _ => False) q isEmptyElim)⟩
 
