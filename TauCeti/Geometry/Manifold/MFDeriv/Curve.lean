@@ -49,7 +49,10 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   curve within a parameter set and its unrestricted case, computed by
   `TauCeti.Manifold.curveVelocityWithin_apply` and `TauCeti.Manifold.curveVelocity_apply` and
   related by `TauCeti.Manifold.curveVelocityWithin_univ`; for a curve in a normed space they are
-  its derivatives (`TauCeti.Manifold.curveVelocityWithin_eq_derivWithin`).
+  its derivatives (`TauCeti.Manifold.curveVelocityWithin_eq_derivWithin`).  Where the derivative
+  within `s` is not unique the velocity is `0`
+  (`TauCeti.Manifold.curveVelocityWithin_eq_zero_of_not_uniqueDiffWithinAt`), and
+  `TauCeti.Manifold.curveVelocityWithin_map` is the chain rule for the velocity of an image curve.
 * `TauCeti.Manifold.curveVelocityLiftWithin` and `TauCeti.Manifold.curveVelocityLift`: the
   corresponding curves in the tangent bundle, together with their projection and fibre formulas.
   By `Filter.EventuallyEq.curveVelocityLiftWithin_eq`, the velocity lift within `s` at `t`
@@ -111,7 +114,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `TauCeti.Manifold.hasDerivAt_extChartAt_comp_curve` its unrestricted case and
   `TauCeti.Manifold.derivWithin_extChartAt_comp_curve` its form for the named velocity.
 * `TauCeti.Manifold.hasDerivWithinAt_derivWithin_extChartAt_comp_curve`: for a `C²` curve, the
-  second within-derivative of its moving-chart reading is a genuine derivative of the first one.
+  second within-derivative of its reading in the chart at `γ t` is a genuine derivative of the
+  first one.
 * `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Iic` and
   `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Ici`: a real curve constant on a closed half-line has
   zero manifold derivative in the interior of that half-line.
@@ -835,7 +839,6 @@ theorem hasDerivAt_extChartAt_comp_curve
     HasDerivAt (extChartAt I (γ t) ∘ γ) w t :=
   hasDerivWithinAt_univ.mp (hasDerivWithinAt_extChartAt_comp_curve hγ.hasMFDerivWithinAt)
 
-
 /-- The derivative within `s` of a differentiable curve read in the chart centred at the current
 point is its velocity within `s`. -/
 theorem derivWithin_extChartAt_comp_curve (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
@@ -845,9 +848,9 @@ theorem derivWithin_extChartAt_comp_curve (hγ : MDifferentiableWithinAt 𝓘(�
     (hasMFDerivWithinAt_curveVelocityWithin hγ)).derivWithin hs
 
 omit [IsManifold I 1 M] in
-/-- For a `C²` manifold-valued curve, the second within-derivative of its moving-chart reading is
-a genuine derivative of the first within-derivative.  This is the regularity needed to read a
-second-order equation in moving coordinates without either `derivWithin` taking its junk value. -/
+/-- For a `C²` manifold-valued curve, the second within-derivative of its reading in the chart at
+`γ t` is a genuine derivative of the first within-derivative.  This is the regularity needed to
+read a second-order equation in coordinates without either `derivWithin` taking its junk value. -/
 theorem hasDerivWithinAt_derivWithin_extChartAt_comp_curve
     (hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I 2 γ s t) (hs : UniqueDiffOn 𝕜 s) (ht : t ∈ s) :
     HasDerivWithinAt (derivWithin (extChartAt I (γ t) ∘ γ) s)
