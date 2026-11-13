@@ -134,19 +134,6 @@ end Adjoin
 
 namespace koszulComplex
 
-/-- The Koszul complex of the empty sequence is acyclic in positive degrees, since its exterior
-powers vanish. -/
-private theorem exact_koszulDifferential_of_isEmpty (x : Fin 0 → R) (k : ℕ) :
-    Function.Exact (koszulDifferential (Fintype.linearCombination R x) (k + 1))
-      (koszulDifferential (Fintype.linearCombination R x) k) := by
-  intro z
-  obtain rfl : z = 0 := by
-    rcases subsingleton_or_nontrivial R with _ | _
-    · exact (Module.subsingleton R _).elim z 0
-    · exact exteriorPower.eq_zero_of_finrank_lt _
-        (by rw [Module.finrank_zero_of_subsingleton]; omega) z
-  exact ⟨fun _ ↦ ⟨0, map_zero _⟩, fun _ ↦ map_zero _⟩
-
 /-- **The Koszul complex of a weakly regular sequence is acyclic in positive degrees**: if
 `x = (x₀, …, xₙ₋₁)` is a weakly regular sequence in `R`, then `Hₖ₊₁(K(x)) = 0` for every `k`.
 With `homologyZeroEquivSpan`, the complex of finite free modules `K(x)` resolves
@@ -156,7 +143,7 @@ theorem exactAt_of_isWeaklyRegular {n : ℕ} (x : Fin n → R)
     (koszulComplex (Fintype.linearCombination R x)).ExactAt (k + 1) := by
   rw [exactAt_succ_iff]
   induction n generalizing k with
-  | zero => exact exact_koszulDifferential_of_isEmpty x k
+  | zero => exact exact_koszulDifferential_of_subsingleton k
   | succ n ih =>
     rw [List.ofFn_succ', List.concat_eq_append, RingTheory.Sequence.isWeaklyRegular_append_iff,
       RingTheory.Sequence.isWeaklyRegular_singleton_iff] at hx

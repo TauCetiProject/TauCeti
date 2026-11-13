@@ -238,6 +238,19 @@ theorem norm_toWashnitzerAlgebra_le_one (f : intWashnitzerAlgebra σ R) :
     ‖toWashnitzerAlgebra σ R f‖ ≤ 1 :=
   mem_intWashnitzerAlgebra_iff_norm_le_one.1 (by rw [coe_toWashnitzerAlgebra]; exact f.2)
 
+/-- If every coefficient of `f ∈ R°⟨X⟩†` has norm less than one, then so does every product
+`f y` with `y ∈ R°⟨X⟩†`. -/
+theorem norm_coeff_mul_lt_one {f : intWashnitzerAlgebra σ R}
+    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ < 1) (y : intWashnitzerAlgebra σ R) :
+    ∀ t, ‖coeff t ((f * y : intWashnitzerAlgebra σ R) : MvPowerSeries σ R)‖ < 1 := by
+  have hf : ‖toWashnitzerAlgebra σ R f‖ < 1 := by
+    rw [washnitzerAlgebra.norm_lt_iff, coe_toWashnitzerAlgebra]
+    exact h
+  have hlt := (norm_mul_le _ _).trans_lt
+    ((mul_le_of_le_one_right (norm_nonneg _) (norm_toWashnitzerAlgebra_le_one y)).trans_lt hf)
+  rw [← map_mul, washnitzerAlgebra.norm_lt_iff, coe_toWashnitzerAlgebra] at hlt
+  exact hlt
+
 /-- A Gauss-norm-preserving ring isomorphism of Monsky–Washnitzer algebras restricts to their
 integral subrings. -/
 noncomputable def restrictRingEquiv {τ : Type*}
@@ -476,20 +489,6 @@ theorem mem_span_algebraMap_iff_norm_le {a : Subring.unitClosedBall K}
     exact inv_mul_le_one_of_le₀ hf (norm_nonneg _)
   · refine Subtype.ext ?_
     simp [MvPowerSeries.algebraMap_apply, mul_right_comm _ (f : MvPowerSeries σ K), ← map_mul, ha]
-
-/-- If every coefficient of `f ∈ K°⟨X⟩†` has norm less than one, then so does every product
-`f y` with `y ∈ K°⟨X⟩†`. -/
-theorem norm_coeff_mul_lt_one {f : intWashnitzerAlgebra σ K}
-    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ K)‖ < 1) (y : intWashnitzerAlgebra σ K) :
-    ∀ t, ‖coeff t ((f * y : intWashnitzerAlgebra σ K) : MvPowerSeries σ K)‖ < 1 := by
-  have hf : ‖toWashnitzerAlgebra σ K f‖ < 1 :=
-    washnitzerAlgebra.norm_lt_iff.2 h
-  have hy : ‖toWashnitzerAlgebra σ K y‖ ≤ 1 :=
-    mem_intWashnitzerAlgebra_iff_norm_le_one.1 y.2
-  have hlt := (norm_mul_le _ _).trans_lt
-    ((mul_le_of_le_one_right (norm_nonneg _) hy).trans_lt hf)
-  rw [← map_mul] at hlt
-  exact washnitzerAlgebra.norm_lt_iff.1 hlt
 
 end intWashnitzerAlgebra
 

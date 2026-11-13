@@ -358,19 +358,14 @@ private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b
       (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
         Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) := by
   obtain ⟨z, c, d, hz₁, hz₂⟩ := exists_weightedC_eq_sub_of_laurentCoverDiff_mk_eq_zero A f a b h
-  refine ⟨z, Prod.ext ?_ ?_⟩
-  · -- Expose the product algebra map to compare its first component in the quotient.
-    change Ideal.Quotient.mk (laurentCoverLeIdeal A f)
-      (weightedC _ isWeightFamily_one_weight z) =
-        Ideal.Quotient.mk (laurentCoverLeIdeal A f) a
-    rw [hz₁, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
+  refine ⟨z, ?_⟩
+  rw [Prod.algebraMap_apply, ← Ideal.Quotient.mk_algebraMap, ← Ideal.Quotient.mk_algebraMap,
+    algebraMap_weightedRestrictedSubring, Prod.mk.injEq]
+  refine ⟨?_, ?_⟩
+  · rw [hz₁, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
     rw [laurentCoverLeIdeal]
     exact Ideal.mul_mem_right c _ (Ideal.mem_span_singleton_self _)
-  · -- Expose the product algebra map to compare its second component in the quotient.
-    change Ideal.Quotient.mk (laurentCoverGeIdeal A f)
-      (weightedC _ isWeightFamily_one_weight z) =
-        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b
-    rw [hz₂, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
+  · rw [hz₂, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
     rw [laurentCoverGeIdeal]
     exact Ideal.mul_mem_right d _ (Ideal.mem_span_singleton_self _)
 

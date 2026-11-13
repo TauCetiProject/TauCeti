@@ -124,19 +124,6 @@ private theorem cyclicTotalLift_apply_column_one {m : ℕ}
     (cyclicTotalLift φ).1 m = barContraction R A M m ((1 - cyclicOperator R A M (m + 1)) φ) := by
   simp [cyclicTotalLift]
 
-/-- For a Hochschild cocycle `φ`, the contraction `s (1 - λ) φ` has bar coboundary `(1 - λ) φ`. -/
-private theorem barCoboundary_barContraction_one_sub_cyclicOperator {m : ℕ}
-    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1 + 1) ↦ A) M}
-    (hφ : hochschildCoboundary R A M (m + 1) φ = 0) :
-    barCoboundary R A M m (barContraction R A M m ((1 - cyclicOperator R A M (m + 1)) φ)) =
-      (1 - cyclicOperator R A M (m + 1)) φ := by
-  have hb := LinearMap.congr_fun
-    (one_sub_cyclicOperator_comp_hochschildCoboundary R A M (m + 1)) φ
-  simp only [LinearMap.comp_apply, hφ, map_zero] at hb
-  have h := barCoboundary_barContraction_add_barContraction_barCoboundary
-    ((1 - cyclicOperator R A M (m + 1)) φ)
-  rwa [← hb, map_zero, add_zero] at h
-
 /-- **The total differential of the lift.** For a Hochschild cocycle `φ`, the total differential
 of `φ + s (1 - λ) φ` is `N s (1 - λ) φ = B φ` in row `m`, column two. -/
 private theorem coe_cyclicTotalDifferential_cyclicTotalLift {m : ℕ}

@@ -413,22 +413,34 @@ private abbrev PolynomialsSurject (σ : Type*) : Prop :=
     Function.Surjective ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial σ K))
 
 omit [CompleteSpace K] in
-private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
-    (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
-  intro I _
-  let φ := renameEquiv (R := K) e
-  let J := I.comap φ.toAlgHom
+/-- If polynomials surject onto integral quotients in the variables `σ`, and the `K`-algebra map
+`φ : K⟨X_σ⟩† → K⟨X_τ⟩†` renames polynomials along `g : σ → τ`, then the image under `φ` of every
+`a ∈ K⟨X_σ⟩†` in an integral quotient of `K⟨X_τ⟩†` is the class of a polynomial. -/
+private theorem mk_apply_mem_range_of_polynomialsSurject {σ τ : Type*}
+    (h : PolynomialsSurject (K := K) σ)
+    (φ : washnitzerAlgebra σ K →ₐ[K] washnitzerAlgebra τ K) (g : σ → τ)
+    (hφ : ∀ p, φ (ofMvPolynomial σ K p) = ofMvPolynomial τ K (MvPolynomial.rename g p))
+    (I : Ideal (washnitzerAlgebra τ K)) [Algebra.IsIntegral K (washnitzerAlgebra τ K ⧸ I)]
+    (a : washnitzerAlgebra σ K) :
+    Ideal.Quotient.mk I (φ a) ∈ ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial τ K)).range := by
+  let J := I.comap φ
   have : Algebra.IsIntegral K (washnitzerAlgebra σ K ⧸ J) :=
-    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I φ.toAlgHom le_rfl)
-      Ideal.quotientMap_injective
-  intro x
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨p, hp⟩ := h J (Ideal.Quotient.mk J (φ.symm f))
-  refine ⟨MvPolynomial.rename e p, ?_⟩
+    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I φ le_rfl) Ideal.quotientMap_injective
+  obtain ⟨p, hp⟩ := h J (Ideal.Quotient.mk J a)
+  refine ⟨MvPolynomial.rename g p, ?_⟩
   simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
     Ideal.mem_comap] at hp
   refine Ideal.Quotient.eq.mpr ?_
-  simpa [φ] using hp
+  rwa [map_sub, hφ] at hp
+
+omit [CompleteSpace K] in
+private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
+    (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
+  intro I _ x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  obtain ⟨p, hp⟩ := mk_apply_mem_range_of_polynomialsSurject h (renameEquiv (R := K) e).toAlgHom e
+    (renameEquiv_ofMvPolynomial e) I ((renameEquiv e).symm f)
+  exact ⟨p, by simpa using hp⟩
 
 omit [CompleteSpace K] in
 private theorem polynomialsSurject_of_isEmpty {σ : Type*} [IsEmpty σ] :
@@ -467,35 +479,8 @@ omit [CompleteSpace K] in
 private theorem polynomialToOption_map_minpoly_mem (I : Ideal W') :
     polynomialToOption
       ((minpoly K (Ideal.Quotient.mk I (X (Option σ) K none))).map (algebraMap K W)) ∈ I := by
-  have h : polynomialToOption
-      ((minpoly K (Ideal.Quotient.mk I (X (Option σ) K none))).map (algebraMap K W)) =
-        Polynomial.aeval (X (Option σ) K none) (minpoly K (Ideal.Quotient.mk I
-          (X (Option σ) K none))) := by
-    have h' : polynomialToOption.comp (Polynomial.mapRingHom (algebraMap K W)) =
-        (Polynomial.aeval (X (Option σ) K none) : Polynomial K →ₐ[K] W').toRingHom :=
-      Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
-    exact RingHom.congr_fun h' _
-  rw [← Ideal.Quotient.eq_zero_iff_mem, h, ← Ideal.Quotient.mkₐ_eq_mk K,
-    ← Polynomial.aeval_algHom_apply, Ideal.Quotient.mkₐ_eq_mk, minpoly.aeval]
-
-omit [CompleteSpace K] in
-/-- If polynomials surject onto integral quotients in the variables `σ`, then the image of every
-coefficient `a ∈ K⟨X⟩†` in an integral quotient of `K⟨X, Y⟩†` is a polynomial. -/
-private theorem mk_optionC_mem_range (ih : PolynomialsSurject (K := K) σ) (I : Ideal W')
-    [Algebra.IsIntegral K (W' ⧸ I)] (a : W) :
-    Ideal.Quotient.mk I (optionC a) ∈
-      ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial (Option σ) K)).range := by
-  -- The coefficients of a remainder have polynomial representatives modulo `I ∩ W`.
-  let J : Ideal W := I.comap (optionC (σ := σ) (R := K))
-  have : Algebra.IsIntegral K (W ⧸ J) :=
-    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I optionC le_rfl)
-      Ideal.quotientMap_injective
-  obtain ⟨p, hp⟩ := ih J (Ideal.Quotient.mk J a)
-  refine ⟨MvPolynomial.rename some p, ?_⟩
-  simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
-    Ideal.mem_comap] at hp
-  refine Ideal.Quotient.eq.mpr ?_
-  rwa [map_sub, optionC_ofMvPolynomial] at hp
+  rw [← Ideal.Quotient.eq_zero_iff_mem, mk_polynomialToOption, Polynomial.eval₂_map,
+    AlgHom.comp_algebraMap, ← Polynomial.aeval_def, minpoly.aeval]
 
 /-- The inductive step: Weierstrass division by the minimal polynomial of `Y = X none`. -/
 private theorem polynomialsSurject_option (ih : PolynomialsSurject (K := K) σ) :
@@ -509,7 +494,8 @@ private theorem polynomialsSurject_option (ih : PolynomialsSurject (K := K) σ) 
   obtain ⟨s, hg, hu⟩ := exists_isDistinguished_polynomialToOption_map (σ := σ) hQ0
   -- The coefficients of a remainder have polynomial representatives modulo `I ∩ W`.
   let S := ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial (Option σ) K)).range
-  have hC (a : W) : Ideal.Quotient.mk I (optionC a) ∈ S := mk_optionC_mem_range ih I a
+  have hC (a : W) : Ideal.Quotient.mk I (optionC a) ∈ S :=
+    mk_apply_mem_range_of_polynomialsSurject ih optionC some optionC_ofMvPolynomial I a
   have hY : Ideal.Quotient.mk I (X (Option σ) K none) ∈ S := ⟨MvPolynomial.X none, by simp⟩
   let ψ : Polynomial W →+* W' ⧸ I :=
     (Ideal.Quotient.mk I).comp polynomialToOption

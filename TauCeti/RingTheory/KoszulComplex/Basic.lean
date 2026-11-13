@@ -32,6 +32,8 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
   differential is `φ` itself.
 * `TauCeti.exact_koszulDifferential_of_retract`: exactness of a Koszul complex passes to a
   retract along linear maps compatible with the functionals.
+* `TauCeti.exact_koszulDifferential_of_subsingleton`: the Koszul complex on the zero module is
+  exact in positive degrees.
 * `TauCeti.map_fst_koszulDifferential_coprod`: the coordinate formula for the differential
   after adjoining one scalar to a linear functional.
 * `TauCeti.koszulComplex.exactAt_succ_iff`: `Hₖ₊₁(K(φ)) = 0` exactly when the Koszul
@@ -196,6 +198,19 @@ theorem exact_koszulDifferential_of_retract {N : Type*} [AddCommGroup N] [Module
   rw [koszulDifferential_map, hψ, hy]
   simp only [← LinearMap.comp_apply, ← exteriorPower.map_comp, hhg,
     exteriorPower.map_id, LinearMap.id_apply]
+
+variable {φ} in
+/-- The Koszul complex of a functional on the zero module is exact in positive degrees, since the
+exterior powers `⋀ⁿ⁺¹ M` vanish. -/
+theorem exact_koszulDifferential_of_subsingleton [Subsingleton M] (n : ℕ) :
+    Function.Exact (koszulDifferential φ (n + 1)) (koszulDifferential φ n) := by
+  intro z
+  obtain rfl : z = 0 := by
+    rcases subsingleton_or_nontrivial R with _ | _
+    · exact (Module.subsingleton R _).elim z 0
+    · exact exteriorPower.eq_zero_of_finrank_lt _
+        (by rw [Module.finrank_zero_of_subsingleton]; omega) z
+  exact ⟨fun _ ↦ ⟨0, map_zero _⟩, fun _ ↦ map_zero _⟩
 
 /-- The Koszul homotopy identity in degree zero: `d(m ∧ r) = φ(m) r` for `r ∈ ⋀⁰ M`. -/
 theorem koszulDifferential_comp_wedgeLeft_zero (m : M) :

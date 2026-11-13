@@ -168,10 +168,8 @@ theorem TauCeti.isRegular_cons_iff_isRegular_quotient (x : R) (rs : List R) :
     (Ideal.quotientEquivAlgOfEq R
       (by simp [← Submodule.ideal_span_singleton_smul])).toLinearEquiv
   rw [isRegular_cons_iff']
-  refine and_congr_right' (e.toAddEquiv.isRegular_congr (List.forall₂_same.2 fun r _ q ↦ ?_))
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective r
-  rw [← Ideal.Quotient.algebraMap_eq, algebraMap_smul, algebraMap_smul]
-  exact e.map_smul a q
+  exact and_congr_right'
+    ((e.extendScalarsOfSurjective Ideal.Quotient.mk_surjective).isRegular_congr _)
 
 end Pow
 
