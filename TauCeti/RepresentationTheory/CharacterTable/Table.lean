@@ -61,7 +61,7 @@ take their familiar Hermitian form, because inversion conjugates character value
   `TauCeti.characterPairing_ofCharacter_irreducibleRepresentation_orthonormal` is the same relation
   phrased as orthonormality for the character pairing.
 * `TauCeti.exists_irreducibleCharacter_eq_one`: the trivial character is a row of the table, and
-  in characteristic zero every other row is nonconstant
+  every other row is nonconstant
   (`TauCeti.exists_irreducibleCharacter_ne_characterDegree`).
 * `TauCeti.card_conjClass_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.sum_characterTable_mul_conj`: **second (column) orthogonality**, over `k` and in its
@@ -433,23 +433,28 @@ end RowOrthogonality
 
 section Nonconstant
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k] [CharZero k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
-/-- **A nontrivial irreducible character is not constant.** Over an algebraically closed field of
-characteristic zero, if `i₀` indexes the trivial character, the constant function `1`, and
+/-- **A nontrivial irreducible character is not constant.** Over an algebraically closed field in
+which `|G|` is invertible, if `i₀` indexes the trivial character, the constant function `1`, and
 `i ≠ i₀`, then the `i`-th irreducible character takes somewhere a value other than its degree,
 which is its value `χᵢ(1)` at the identity (`TauCeti.irreducibleCharacter_one`).
 `TauCeti.exists_irreducibleCharacter_eq_one` supplies such an index `i₀`. -/
 theorem exists_irreducibleCharacter_ne_characterDegree {i₀ i : Fin (Nat.card (ConjClasses G))}
     (hi₀ : irreducibleCharacter k i₀ = fun _ : G => (1 : k)) (hne : i ≠ i₀) :
     ∃ g : G, irreducibleCharacter k i g ≠ characterDegree k i := by
-  have := finite_of_neZero_natCast_natCard k G
-  let _ : Fintype G := Fintype.ofFinite G
   by_contra! htriv
-  -- row orthogonality of `χᵢ` against the trivial character: `χᵢ(1) = 0`
-  simpa [htriv, hi₀, hne, (characterDegree_pos k i).ne'] using
-    card_inv_mul_sum_characterTable_mul_characterTable_inv (k := k) i i₀
+  have h0 : ∀ g : G, irreducibleCharacter k i₀ g = 1 := fun g ↦ congrFun hi₀ g
+  -- `χᵢ = χᵢ(1) • χᵢ₀` would be a linear relation between distinct irreducible characters
+  have h := Fintype.linearIndependent_iff.1
+    (linearIndependent_irreducibleCharacter (k := k) (G := G))
+    (Pi.single i 1 - Pi.single i₀ (characterDegree k i : k)) ?_ i
+  · simp [hne] at h
+  · ext g
+    simp only [Pi.single_apply, sub_smul, Finset.sum_sub_distrib, ite_smul, one_smul, zero_smul,
+      Finset.sum_ite_eq', Finset.mem_univ, ite_true, Pi.sub_apply, Pi.smul_apply, Pi.zero_apply,
+      smul_eq_mul, h0, htriv g, mul_one, sub_self]
 
 end Nonconstant
 
