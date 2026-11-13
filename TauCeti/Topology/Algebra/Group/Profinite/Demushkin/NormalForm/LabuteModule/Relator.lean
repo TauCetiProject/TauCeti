@@ -168,14 +168,7 @@ theorem exists_labuteRelatorClass_eq_add_smul_of_range_eq_unitsPlusMinus
   have hA : (demushkinCharacter hr).toMonoidHom.range = unitsPlusMinus f := by
     rwa [← range_demushkinRelatorCharacter]
   -- The rank `n` of the presented group is at least `4`: rank two has procyclic image.
-  have hn3 : 3 < n := by
-    have hrank := demushkinRank_presentedProP
-      (Set.singleton_subset_iff.mpr hr.mem_proPFrattini_of_presentedProP_singleton) hr
-    have hpos := hr.card_pos_presentedProP
-    simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hrank hpos
-    by_contra h
-    obtain ⟨k, hk⟩ := hn
-    exact hr.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two (by omega) hA
+  have hn3 := hr.three_lt_of_presentedProP_of_even_of_range_eq_unitsPlusMinus hn hA
   -- Labute's Theorem 6: an automorphism `e` of `F` carries `r` to the normal-form word, so `r` is
   -- that word read on the basis `x = e⁻¹ ∘ freeProPGen`.
   obtain ⟨e, he⟩ :=

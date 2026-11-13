@@ -21,7 +21,7 @@ import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Labute.RelatorCharacte
 Let `G` be a Demushkin group at `p = 2` of even rank `n` whose canonical character has image
 `V^(f) = {±1} × U^(f)` for a finite `f ≥ 2`. Then `n ≥ 4`, since this image is not procyclic and
 so does not occur at rank two
-(`TauCeti.IsDemushkin.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two`), and
+(`TauCeti.IsDemushkin.three_lt_demushkinRank_of_even_of_range_eq_unitsPlusMinus`), and
 Labute's Theorem 6 says that `G` is presented on `n` generators by the single relator
 `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, the normal-form word
 `TauCeti.demushkinWordTwoEven 0 f n`; in particular two such groups with the same rank and the same
@@ -565,15 +565,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
       e r = demushkinWordTwoEven 0 f n (freeProPGen 2 n) := by
   have hr := hG.mem_proPFrattini_of_presentedProP_singleton
-  -- The image `{±1} × U^(f)` is not procyclic, so it does not occur at rank two, and `n ≥ 4`.
-  have hn3 : 3 < n := by
-    have hn0 : 0 < n := by simpa using hG.card_pos_presentedProP
-    have hrank : demushkinRank hG = n := by
-      simpa using demushkinRank_presentedProP (Set.singleton_subset_iff.2 hr) hG
-    by_contra hn3
-    obtain ⟨k, hk⟩ := hn
-    exact hG.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two
-      (hrank.trans (by omega)) hA
+  have hn3 := hG.three_lt_of_presentedProP_of_even_of_range_eq_unitsPlusMinus hn hA
   -- Step 0: `q(G) = 2`, because `-1 ∉ 1 + 4ℤ_2` is a value of the canonical character.
   have hq : demushkinQ hG = 2 := by
     by_contra hq
