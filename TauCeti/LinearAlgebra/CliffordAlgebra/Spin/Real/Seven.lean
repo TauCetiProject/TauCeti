@@ -88,6 +88,18 @@ def spinSevenSupports : Finset (Finset (Fin (0 + 7))) :=
   {∅, {0, 1, 2, 3}, {0, 1, 4, 5}, {0, 2, 4, 6}, {2, 3, 4, 5}, {1, 3, 4, 6}, {1, 2, 5, 6},
     {0, 3, 5, 6}}
 
+/-- The defining list of the eight supports. -/
+theorem spinSevenSupports_def : spinSevenSupports =
+    {∅, {0, 1, 2, 3}, {0, 1, 4, 5}, {0, 2, 4, 6}, {2, 3, 4, 5}, {1, 3, 4, 6}, {1, 2, 5, 6},
+      {0, 3, 5, 6}} :=
+  (rfl)
+
+/-- Membership in the eight supports. -/
+theorem mem_spinSevenSupports {s : Finset (Fin (0 + 7))} :
+    s ∈ spinSevenSupports ↔ s = ∅ ∨ s = {0, 1, 2, 3} ∨ s = {0, 1, 4, 5} ∨ s = {0, 2, 4, 6} ∨
+      s = {2, 3, 4, 5} ∨ s = {1, 3, 4, 6} ∨ s = {1, 2, 5, 6} ∨ s = {0, 3, 5, 6} := by
+  simp only [spinSevenSupports_def, Finset.mem_insert, Finset.mem_singleton]
+
 /-- The supports are closed under symmetric difference. -/
 theorem symmDiff_mem_spinSevenSupports {s t : Finset (Fin (0 + 7))} (hs : s ∈ spinSevenSupports)
     (ht : t ∈ spinSevenSupports) : s ∆ t ∈ spinSevenSupports := by
@@ -95,6 +107,7 @@ theorem symmDiff_mem_spinSevenSupports {s t : Finset (Fin (0 + 7))} (hs : s ∈ 
   decide +kernel
 
 /-- There are eight supports: the three generating supports are independent over `𝔽₂`. -/
+@[simp]
 theorem card_spinSevenSupports : spinSevenSupports.card = 8 := by
   decide +kernel
 
@@ -202,7 +215,7 @@ private theorem exists_mem_isSignedBasis {s : Finset (Fin (0 + 7))}
     ⟨spinBasis {0, 1, 4, 5} (by decide), Subgroup.subset_closure (by simp), Or.inl rfl⟩
   have hC : ∃ g ∈ realSpinZeroSevenElementaryAbelian, IsSignedBasis g {0, 2, 4, 6} :=
     ⟨spinBasis {0, 2, 4, 6} (by decide), Subgroup.subset_closure (by simp), Or.inl rfl⟩
-  simp only [spinSevenSupports, Finset.mem_insert, Finset.mem_singleton] at hs
+  rw [mem_spinSevenSupports] at hs
   rcases hs with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact h₀
   · exact hA
@@ -248,30 +261,21 @@ theorem mem_realSpinZeroSevenElementaryAbelian_iff {g : realCliffordSpinGroup 0 
     · exact hh
     · exact mul_mem (Subgroup.subset_closure (by simp)) hh
 
+/-- The central element `-1` lies in the elementary abelian subgroup. -/
+theorem negOne_mem_realSpinZeroSevenElementaryAbelian :
+    spinGroup.negOne _ (nondegenerate_realCliffordForm 0 7).ne_zero ∈
+      realSpinZeroSevenElementaryAbelian :=
+  Subgroup.subset_closure (by simp [spinNegOne])
+
 /-- **Every element of the elementary abelian subgroup squares to `1`.** -/
 theorem mul_self_eq_one_of_mem_realSpinZeroSevenElementaryAbelian {g : realCliffordSpinGroup 0 7}
     (hg : g ∈ realSpinZeroSevenElementaryAbelian) : g * g = 1 := by
   obtain ⟨s, hs, hgs⟩ := mem_realSpinZeroSevenElementaryAbelian_iff.mp hg
   exact IsSignedBasis.mul_self hgs hs
 
-/-- **Any two elements of the elementary abelian subgroup commute**, as every element squares to
-`1` (`Commute.of_orderOf_dvd_two`). -/
-theorem mul_comm_of_mem_realSpinZeroSevenElementaryAbelian {g h : realCliffordSpinGroup 0 7}
-    (hg : g ∈ realSpinZeroSevenElementaryAbelian) (hh : h ∈ realSpinZeroSevenElementaryAbelian) :
-    g * h = h * g :=
-  congrArg Subtype.val <| Commute.eq <| Commute.of_orderOf_dvd_two
-    (fun x : realSpinZeroSevenElementaryAbelian ↦ orderOf_dvd_of_pow_eq_one <|
-      Subtype.ext <| by
-        rw [pow_two]; exact mul_self_eq_one_of_mem_realSpinZeroSevenElementaryAbelian x.2)
-    ⟨g, hg⟩ ⟨h, hh⟩
-
-/-- **The elementary abelian subgroup is commutative.** -/
-instance realSpinZeroSevenElementaryAbelian_isMulCommutative :
-    IsMulCommutative realSpinZeroSevenElementaryAbelian :=
-  ⟨⟨fun g h ↦ Subtype.ext (mul_comm_of_mem_realSpinZeroSevenElementaryAbelian g.2 h.2)⟩⟩
-
 /-- **The elementary abelian subgroup has order `16`**: its elements are the signed basis
 monomials `±e_s` for the eight supports, and these are distinct. -/
+@[simp]
 theorem natCard_realSpinZeroSevenElementaryAbelian :
     Nat.card realSpinZeroSevenElementaryAbelian = 16 := by
   have hb := isOrthoᵢ_associated_realCliffordForm 0 7
@@ -306,7 +310,12 @@ theorem natCard_realSpinZeroSevenElementaryAbelian :
     Fintype.card_coe, card_spinSevenSupports]
   simp
 
+/-- The elementary abelian subgroup is finite. -/
+instance finite_realSpinZeroSevenElementaryAbelian : Finite realSpinZeroSevenElementaryAbelian :=
+  Nat.finite_of_card_ne_zero (by simp)
+
 /-- **The elementary abelian subgroup has exponent `2`.** -/
+@[simp]
 theorem exponent_realSpinZeroSevenElementaryAbelian :
     Monoid.exponent realSpinZeroSevenElementaryAbelian = 2 := by
   have hdvd : Monoid.exponent realSpinZeroSevenElementaryAbelian ∣ 2 :=
@@ -323,6 +332,11 @@ theorem exponent_realSpinZeroSevenElementaryAbelian :
   · exact absurd h hne
   · exact h
 
+/-- **The elementary abelian subgroup is commutative**, as it has exponent `2`. -/
+instance realSpinZeroSevenElementaryAbelian_isMulCommutative :
+    IsMulCommutative realSpinZeroSevenElementaryAbelian :=
+  ⟨⟨mul_comm_of_exponent_two exponent_realSpinZeroSevenElementaryAbelian⟩⟩
+
 /-! ### The compact Spin group -/
 
 /-- **The elementary abelian subgroup of order `16` in the compact Spin group** `Spin(7)`, the
@@ -331,6 +345,19 @@ Spin group of the positive-definite form `realCliffordForm 7 0`: the image of
 `CliffordAlgebra.realCliffordSpinGroupEquivNeg 0 7`. -/
 noncomputable def realSpinSevenElementaryAbelian : Subgroup (realCliffordSpinGroup 7 0) :=
   realSpinZeroSevenElementaryAbelian.map (realCliffordSpinGroupEquivNeg 0 7).toMonoidHom
+
+/-- The defining equation of the elementary abelian subgroup of `Spin(7)`. -/
+theorem realSpinSevenElementaryAbelian_def : realSpinSevenElementaryAbelian =
+    realSpinZeroSevenElementaryAbelian.map (realCliffordSpinGroupEquivNeg 0 7).toMonoidHom :=
+  (rfl)
+
+/-- Membership in the elementary abelian subgroup of `Spin(7)`: the preimage under
+`CliffordAlgebra.realCliffordSpinGroupEquivNeg 0 7` lies in
+`TauCeti.realSpinZeroSevenElementaryAbelian`. -/
+theorem mem_realSpinSevenElementaryAbelian_iff {g : realCliffordSpinGroup 7 0} :
+    g ∈ realSpinSevenElementaryAbelian ↔
+      (realCliffordSpinGroupEquivNeg 0 7).symm g ∈ realSpinZeroSevenElementaryAbelian :=
+  Subgroup.mem_map_equiv
 
 /-- Every element of the elementary abelian subgroup of `Spin(7)` squares to `1`. -/
 theorem mul_self_eq_one_of_mem_realSpinSevenElementaryAbelian {g : realCliffordSpinGroup 7 0}
@@ -344,10 +371,24 @@ instance realSpinSevenElementaryAbelian_isMulCommutative :
   Subgroup.map_isMulCommutative _ _
 
 /-- The elementary abelian subgroup of `Spin(7)` has order `16`. -/
+@[simp]
 theorem natCard_realSpinSevenElementaryAbelian : Nat.card realSpinSevenElementaryAbelian = 16 := by
   rw [realSpinSevenElementaryAbelian,
     Subgroup.card_map_of_injective (realCliffordSpinGroupEquivNeg 0 7).injective,
     natCard_realSpinZeroSevenElementaryAbelian]
+
+/-- The elementary abelian subgroup of `Spin(7)` is finite. -/
+instance finite_realSpinSevenElementaryAbelian : Finite realSpinSevenElementaryAbelian :=
+  Nat.finite_of_card_ne_zero (by simp)
+
+/-- The elementary abelian subgroup of `Spin(7)` has exponent `2`. -/
+@[simp]
+theorem exponent_realSpinSevenElementaryAbelian :
+    Monoid.exponent realSpinSevenElementaryAbelian = 2 := by
+  rw [realSpinSevenElementaryAbelian, ← Monoid.exponent_eq_of_mulEquiv
+    (realSpinZeroSevenElementaryAbelian.equivMapOfInjective _
+      (realCliffordSpinGroupEquivNeg 0 7).injective),
+    exponent_realSpinZeroSevenElementaryAbelian]
 
 /-- **The elementary abelian subgroup of order `16` of `Spin(7)` lies in no torus of rank at most
 three**: it is not contained in the image of any injective homomorphism from a torus
