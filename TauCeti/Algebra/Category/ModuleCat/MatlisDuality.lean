@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDual
 public import TauCeti.RingTheory.Length.Algebra
@@ -79,17 +78,6 @@ attribute [local instance] moduleOfAlgebra isScalarTower_moduleOfAlgebra
 variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E]
   [Module.Injective R E] [Small.{v} R] {A : Type t} [Ring A] [Algebra R A]
   (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
-
-
-omit [Module.Injective R E] [Small.{v} R] in
-/-- A module over an `R`-algebra lies in the inverse image of the modules of finite length over `R`
-exactly when it has finite length over `R`. -/
-theorem isFiniteLength_inverseImage_restrictScalars_iff {B : Type*} [Ring B] [Algebra R B]
-    (M : ModuleCat.{w} B) :
-    (isFiniteLength.{w} R).inverseImage (restrictScalars.{w} (algebraMap R B)) M ↔
-      IsFiniteLength R M := by
-  rw [ObjectProperty.prop_inverseImage_iff, isFiniteLength_iff]
-  rfl
 
 include hE in
 /-- The dual of a left module of finite length over `R` has finite length over `R`. -/
@@ -216,6 +204,103 @@ noncomputable def matlisDualityOfFinite [Module.Finite R A] :
     (fun N h ↦ (isFiniteLength_iff _).mpr ((isFiniteLength_iff_of_finite R A _).mpr
       (isFiniteLength_matlisDualOpObj hE
         ((isFiniteLength_iff_of_finite R Aᵐᵒᵖ N).mp ((isFiniteLength_iff N).mp h)))))
+
+section SpecialLemmas
+
+@[simp]
+theorem matlisDuality_functor_obj_obj
+    (M : ((isFiniteLength.{max v w} R).inverseImage
+      (restrictScalars.{max v w} (algebraMap R A))).FullSubcategoryᵒᵖ) :
+    ((matlisDuality hE).functor.obj M).obj = matlisDualObj R E M.unop.obj :=
+  rfl
+
+@[simp]
+theorem matlisDuality_functor_map_hom
+    {M M' : ((isFiniteLength.{max v w} R).inverseImage
+      (restrictScalars.{max v w} (algebraMap R A))).FullSubcategoryᵒᵖ} (g : M ⟶ M') :
+    ((matlisDuality hE).functor.map g).hom = matlisDualMap R E g.unop.hom :=
+  rfl
+
+@[simp]
+theorem matlisDuality_inverse_obj_unop_obj
+    (N : ((isFiniteLength.{max v w} R).inverseImage
+      (restrictScalars.{max v w} (algebraMap R Aᵐᵒᵖ))).FullSubcategory) :
+    ((matlisDuality hE).inverse.obj N).unop.obj = matlisDualOpObj R E N.obj :=
+  rfl
+
+@[simp]
+theorem matlisDuality_inverse_map_unop_hom
+    {N N' : ((isFiniteLength.{max v w} R).inverseImage
+      (restrictScalars.{max v w} (algebraMap R Aᵐᵒᵖ))).FullSubcategory} (g : N ⟶ N') :
+    ((matlisDuality hE).inverse.map g).unop.hom = matlisDualOpMap R E g.hom :=
+  rfl
+
+/-- The unit of `ModuleCat.matlisDuality` is evaluation `M → D_R (D_R M)`. -/
+@[simp]
+theorem matlisDuality_unitIso_inv_app
+    (M : ((isFiniteLength.{max v w} R).inverseImage
+      (restrictScalars.{max v w} (algebraMap R A))).FullSubcategoryᵒᵖ) :
+    ((matlisDuality hE).unitIso.inv.app M).unop.hom =
+      (matlisDualEvalIso hE M.unop.obj
+        ((isFiniteLength_inverseImage_restrictScalars_iff _).mp M.unop.property)).hom :=
+  rfl
+
+/-- The inverse of the counit of `ModuleCat.matlisDuality` is evaluation `N → D_R (D_R N)`. -/
+@[simp]
+theorem matlisDuality_counitIso_inv_app
+    (N : ((isFiniteLength.{max v w} R).inverseImage
+      (restrictScalars.{max v w} (algebraMap R Aᵐᵒᵖ))).FullSubcategory) :
+    ((matlisDuality hE).counitIso.inv.app N).hom =
+      (matlisDualEvalIsoOp (A := A) hE N.obj
+        ((isFiniteLength_inverseImage_restrictScalars_iff _).mp N.property)).hom :=
+  rfl
+
+variable [Module.Finite R A]
+
+@[simp]
+theorem matlisDualityOfFinite_functor_obj_obj
+    (M : (isFiniteLength.{max v w} A).FullSubcategoryᵒᵖ) :
+    ((matlisDualityOfFinite hE).functor.obj M).obj = matlisDualObj R E M.unop.obj :=
+  rfl
+
+@[simp]
+theorem matlisDualityOfFinite_functor_map_hom
+    {M M' : (isFiniteLength.{max v w} A).FullSubcategoryᵒᵖ} (g : M ⟶ M') :
+    ((matlisDualityOfFinite hE).functor.map g).hom = matlisDualMap R E g.unop.hom :=
+  rfl
+
+@[simp]
+theorem matlisDualityOfFinite_inverse_obj_unop_obj
+    (N : (isFiniteLength.{max v w} Aᵐᵒᵖ).FullSubcategory) :
+    ((matlisDualityOfFinite hE).inverse.obj N).unop.obj = matlisDualOpObj R E N.obj :=
+  rfl
+
+@[simp]
+theorem matlisDualityOfFinite_inverse_map_unop_hom
+    {N N' : (isFiniteLength.{max v w} Aᵐᵒᵖ).FullSubcategory} (g : N ⟶ N') :
+    ((matlisDualityOfFinite hE).inverse.map g).unop.hom = matlisDualOpMap R E g.hom :=
+  rfl
+
+/-- The unit of `ModuleCat.matlisDualityOfFinite` is evaluation `M → D_R (D_R M)`. -/
+@[simp]
+theorem matlisDualityOfFinite_unitIso_inv_app
+    (M : (isFiniteLength.{max v w} A).FullSubcategoryᵒᵖ) :
+    ((matlisDualityOfFinite hE).unitIso.inv.app M).unop.hom =
+      (matlisDualEvalIso hE M.unop.obj ((isFiniteLength_iff_of_finite R A _).mp
+        ((isFiniteLength_iff _).mp M.unop.property))).hom :=
+  rfl
+
+/-- The inverse of the counit of `ModuleCat.matlisDualityOfFinite` is evaluation
+`N → D_R (D_R N)`. -/
+@[simp]
+theorem matlisDualityOfFinite_counitIso_inv_app
+    (N : (isFiniteLength.{max v w} Aᵐᵒᵖ).FullSubcategory) :
+    ((matlisDualityOfFinite hE).counitIso.inv.app N).hom =
+      (matlisDualEvalIsoOp (A := A) hE N.obj ((isFiniteLength_iff_of_finite R Aᵐᵒᵖ _).mp
+        ((isFiniteLength_iff _).mp N.property))).hom :=
+  rfl
+
+end SpecialLemmas
 
 section Consequences
 

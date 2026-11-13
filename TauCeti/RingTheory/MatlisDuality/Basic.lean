@@ -336,17 +336,16 @@ variable [Module.Injective R E] [Small.{v} R] {A : Type t} [Ring A] [Algebra R A
 every `R ⧸ 𝔪`, in particular if each `Hom_R(R ⧸ 𝔪, E)` has length one, then `E` is a cogenerator:
 evaluation `N → D_R (D_R N)` is injective for every `R`-module `N`. -/
 theorem MatlisDual.injective_evalₗ
-    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1) :
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Nontrivial (R ⧸ 𝔪 →ₗ[R] E)) :
     Function.Injective (evalₗ R E N) :=
   (equivLinearMap R E _).symm.injective.comp
     (((equivLinearMap R E N).arrowCongr (LinearEquiv.refl R E)).injective.comp
-      (injective_applyₗ_of_forall_isMaximal fun 𝔪 h𝔪 ↦
-        Module.length_pos_iff.mp (by rw [hE 𝔪 h𝔪]; exact zero_lt_one)))
+      (injective_applyₗ_of_forall_isMaximal hE))
 
 /-- **Matlis duality detects zero modules**: `D_R N` is zero exactly when `N` is, for every
 `R`-module `N`, of finite length or not. -/
 theorem subsingleton_matlisDual_iff
-    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1) :
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Nontrivial (R ⧸ 𝔪 →ₗ[R] E)) :
     Subsingleton (MatlisDual R E N) ↔ Subsingleton N := by
   refine ⟨fun _ ↦ ?_, fun _ ↦ (equivLinearMap R E N).toEquiv.subsingleton⟩
   have : Subsingleton (MatlisDual R E (MatlisDual R E N)) :=

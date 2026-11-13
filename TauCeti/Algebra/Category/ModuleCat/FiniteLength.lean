@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.RingTheory.FiniteLength
+public import TauCeti.Algebra.Category.ModuleCat.Algebra
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.CategoryTheory.ObjectProperty.Retract
@@ -21,7 +23,10 @@ holds on every finite-length module. This packages composition-series induction 
 
 The finite-length modules form the object property `ModuleCat.isFiniteLength R`, closed under
 subobjects (hence retracts and isomorphisms) and finite products. Over a left Artinian ring it is
-the property of being finitely generated (`ModuleCat.isFiniteLength_eq_isFG`).
+the property of being finitely generated (`ModuleCat.isFiniteLength_eq_isFG`). For an algebra `B`
+over a commutative ring `R`, the `B`-modules of finite length over `R` are the inverse image of
+`ModuleCat.isFiniteLength R` under restriction of scalars
+(`ModuleCat.isFiniteLength_inverseImage_restrictScalars_iff`).
 -/
 
 public section
@@ -86,5 +91,20 @@ theorem isFiniteLength_eq_isFG [IsArtinianRing R] :
     refine ⟨fun h ↦ ?_, fun _ ↦ isFiniteLength_of_finite R M⟩
     have := (isFiniteLength_iff_isNoetherian_isArtinian.1 h).1
     infer_instance
+
+section Algebra
+
+attribute [local instance] moduleOfAlgebra
+
+/-- A module over an `R`-algebra lies in the inverse image of the modules of finite length over `R`
+exactly when it has finite length over `R`. -/
+theorem isFiniteLength_inverseImage_restrictScalars_iff {R : Type*} [CommRing R] {B : Type*}
+    [Ring B] [Algebra R B] (M : ModuleCat.{u} B) :
+    (isFiniteLength.{u} R).inverseImage (restrictScalars.{u} (algebraMap R B)) M ↔
+      IsFiniteLength R M := by
+  rw [ObjectProperty.prop_inverseImage_iff, isFiniteLength_iff]
+  rfl
+
+end Algebra
 
 end ModuleCat
