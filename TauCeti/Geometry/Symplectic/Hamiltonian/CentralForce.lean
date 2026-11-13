@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
+public import Mathlib.Analysis.Complex.Circle
 public import TauCeti.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Gram.Pair
 public import Mathlib.Analysis.Calculus.Deriv.Inv
@@ -57,6 +58,8 @@ there.
 
 ## Main declarations
 
+* `TauCeti.centralForceHamiltonian_circle_smul`: on the phase space of a complex normed space,
+  rotations preserve every central-force Hamiltonian.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian`: Hamilton's
   equations for a central force.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum`: angular momentum generates
@@ -110,6 +113,15 @@ theorem continuousAt_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ} {x : V 
     (hU : ContinuousAt U ‖x.1‖) : ContinuousAt (centralForceHamiltonian m U) x :=
   ((continuous_snd.norm.pow 2).continuousAt.div_const _).add
     (hU.comp (f := fun y : V × V ↦ ‖y.1‖) continuous_fst.norm.continuousAt)
+
+/-- Rotations preserve every central-force Hamiltonian `‖p‖² / (2m) + U(‖q‖)`, on the phase space
+`V × V` of any complex normed space `V`, where the circle acts by `z • (q, p) = (z q, z p)`. -/
+@[simp]
+theorem centralForceHamiltonian_circle_smul [NormedSpace ℂ V] (m : ℝ) (U : ℝ → ℝ) (z : Circle)
+    (x : V × V) : centralForceHamiltonian m U (z • x) = centralForceHamiltonian m U x := by
+  obtain ⟨q, p⟩ := x
+  simp only [Circle.smul_def, Prod.smul_mk, centralForceHamiltonian_apply, norm_smul,
+    Circle.norm_coe, one_mul]
 
 /-- The derivative of the Kepler potential `-κ / r` at a nonzero radius is `κ / r²`. -/
 theorem hasDerivAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
