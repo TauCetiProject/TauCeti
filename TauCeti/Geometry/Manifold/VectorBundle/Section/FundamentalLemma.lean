@@ -48,44 +48,47 @@ open scoped ContDiff Manifold Topology
 
 namespace ContMDiffSection
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] {n : ℕ∞ω}
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- Fibrewise covector evaluation does not enlarge the support of a `C^n` section. -/
-theorem tsupport_clm_apply_subset (s : Cₛ^n⟮I; F, V⟯) (η : ∀ x, V x →L[ℝ] ℝ) :
+/-- Fibrewise continuous linear map evaluation does not enlarge the support of a
+`C^n` section. -/
+theorem tsupport_clm_apply_subset (s : Cₛ^n⟮I; F, V⟯) (η : ∀ x, V x →L[𝕜] G) :
     _root_.tsupport (fun x ↦ η x (s x)) ⊆ s.tsupport := by
   apply closure_minimal _ s.isClosed_tsupport
   exact Function.support_subset_iff'.2 fun x hx ↦ by
     simp [s.eq_zero_of_notMem_tsupport hx]
 
-/-- A continuous covector field pairs continuously with a `C^n` section on its
+/-- A field of continuous linear maps evaluates continuously on a `C^n` section on its
 continuity domain. -/
 theorem continuousOn_clm_apply (s : Cₛ^n⟮I; F, V⟯)
-    {η : ∀ x, V x →L[ℝ] ℝ} {U : Set M}
+    {η : ∀ x, V x →L[𝕜] G} {U : Set M}
     (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U)) :
     ContinuousOn (fun x ↦ η x (s x)) U :=
   hη.comp s.contMDiff.continuous.continuousOn (fun _ hx ↦ hx)
 
-/-- Pairing a continuous covector field with a `C^n` section supported in an open
-continuity domain gives a continuous scalar function on the whole base. -/
+/-- Evaluating a field of continuous linear maps on a `C^n` section supported in an open
+continuity domain gives a continuous `G`-valued function on the whole base. -/
 theorem continuous_clm_apply_of_tsupport_subset (s : Cₛ^n⟮I; F, V⟯)
-    {η : ∀ x, V x →L[ℝ] ℝ} {U : Set M} (hU : IsOpen U)
+    {η : ∀ x, V x →L[𝕜] G} {U : Set M} (hU : IsOpen U)
     (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
     (hsU : s.tsupport ⊆ U) : Continuous (fun x ↦ η x (s x)) := by
   exact (s.continuousOn_clm_apply hη).continuous_of_tsupport_subset hU
     ((s.tsupport_clm_apply_subset η).trans hsU)
 
-/-- A continuous covector field pairs integrably with every `C^n` section compactly
+/-- A field of continuous linear maps evaluates integrably on every `C^n` section compactly
 supported inside an open continuity domain, for any measure finite on compact sets
 that makes open sets measurable. -/
 theorem integrable_clm_apply_of_tsupport_subset [MeasurableSpace M] [OpensMeasurableSpace M]
     {μ : Measure M} [IsFiniteMeasureOnCompacts μ] (s : Cₛ^n⟮I; F, V⟯)
-    {η : ∀ x, V x →L[ℝ] ℝ} {U : Set M} (hU : IsOpen U)
+    {η : ∀ x, V x →L[𝕜] G} {U : Set M} (hU : IsOpen U)
     (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
     (hsc : IsCompact s.tsupport) (hsU : s.tsupport ⊆ U) :
     Integrable (fun x ↦ η x (s x)) μ := by
