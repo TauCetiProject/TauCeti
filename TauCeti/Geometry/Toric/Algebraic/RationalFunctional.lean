@@ -176,6 +176,12 @@ theorem map_functional {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap h h' T)
     IsRationalFunctional h (f.comp T) :=
   hT f hf
 
+/-- Differences of rational linear maps are rational. -/
+theorem sub {S T : V →ₗ[ℝ] V'} (hS : IsRationalLinearMap h h' S)
+    (hT : IsRationalLinearMap h h' T) : IsRationalLinearMap h h' (S - T) :=
+  (isRationalLinearMap_iff h h' _).mpr fun f hf => by
+    simpa [LinearMap.comp_sub] using (hS.map_functional hf).sub (hT.map_functional hf)
+
 /-- The identity real-linear map is rational. -/
 theorem id (h : IsIntegralLattice i) : IsRationalLinearMap h h LinearMap.id := by
   intro f hf
