@@ -155,9 +155,9 @@ private theorem exchangeCutoff_le_one (r : ℝ) : exchangeCutoff r ≤ 1 := by
   · exact (exists_exchangeCutoff.choose_spec.2.1 hr).trans (exchangeCutoff_of_le le_rfl).le
 
 private theorem lipschitzWith_exchangeCutoff : LipschitzWith (1 / 4) exchangeCutoff := by
-  refine lipschitzWith_of_nnnorm_deriv_le (contDiff_exchangeCutoff.differentiable two_ne_zero)
+  refine lipschitzWith_of_nnNorm_deriv_le (contDiff_exchangeCutoff.differentiable two_ne_zero)
     fun r ↦ ?_
-  rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs]
+  rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs]
   exact (exists_exchangeCutoff.choose_spec.2.2.2.2.2.1 r).trans_eq (by simp)
 
 /-- The horizontal displacement `c (1 - μ(|w|))` of `Φ_c` at `w = s + i t`. -/
@@ -248,7 +248,7 @@ private theorem approximatesLinearOn_exchangeMap (hc : |c| ≤ 1) :
 private theorem one_half_lt_inv_nnnorm_refl :
     (1 / 2 : ℝ≥0) < ‖((ContinuousLinearEquiv.refl ℝ (ℝ × ℝ)).symm : ℝ × ℝ →L[ℝ] ℝ × ℝ)‖₊⁻¹ := by
   rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
-    ContinuousLinearMap.nnnorm_id, inv_one]
+    ContinuousLinearMap.nnNorm_id, inv_one]
   norm_num
 
 private theorem injective_exchangeMap (hc : |c| ≤ 1) : Injective (exchangeMap c) :=
@@ -321,7 +321,6 @@ private theorem perturbationPullback_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c �
         (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) v y x =
       pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm y) x
         (Complex.equivRealProdCLM.symm v) := by
-  have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
   set e := Complex.equivRealProdCLM.symm
   -- A real-linear form on `ℂ` evaluated on `s + i t`.
   have hv : pairOfPantsPerturbation H (e y) x (e v) = v.1 * pairOfPantsPerturbation H (e y) x 1 +
@@ -735,7 +734,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_exchangePerturbation_exchang
     integral_floerEnergyDensity_image_exchangeMap ω hH hHs hc₀ hc₁ hu hs hsS,
     integral_area_image_exchangeMap ω hc₀ hc₁ hu hs hsS,
     integral_hamiltonianCurvature_image_exchangeMap ω hH hHs hc₀ hc₁ u hs hsS,
-    hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs hv hR]
+    hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs
+      isOpen_thricePuncturedSphereReal hsS hv hR]
   -- The boundary loops of `u ∘ Φ_c` are those of `u` on the recentred ends.
   simp only [Puncture.sum_univ, endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul,
     comp_apply, exchangeMap_cylindricalEndLift c (q := zero) (by decide) (by linarith : 0 ≤ R),
@@ -1046,7 +1046,6 @@ theorem integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation
           (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
   -- The map `u ∘ Φ_c` is `C²` on `S`, and the energy identity of the pair of pants applies to it.
   have hv : ContDiffOn ℝ 2 (u ∘ exchangeMap c) thricePuncturedSphereReal :=
     hu.comp (contDiff_exchangeMap c).contDiffOn fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw

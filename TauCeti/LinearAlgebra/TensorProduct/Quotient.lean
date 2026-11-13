@@ -112,8 +112,8 @@ tensor product is `M ⧸ I M = M`. -/
 theorem mk_one_bijective_of_ker_le_annihilator {S : Type*} [CommRing S] [Algebra R S]
     (hS : Function.Surjective (algebraMap R S))
     (hM : RingHom.ker (algebraMap R S) ≤ Module.annihilator R M) :
-    Function.Bijective (TensorProduct.mk R S M 1) := by
-  refine ⟨?_, TensorProduct.mk_surjective R M S hS⟩
+    Function.Bijective (mk R S M 1) := by
+  refine ⟨?_, mk_surjective R M S hS⟩
   let I := RingHom.ker (algebraMap R S)
   let e₀ := (Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R S) hS).symm
   let e : S ≃ₗ[R] R ⧸ I := e₀.toLinearEquiv
@@ -139,7 +139,7 @@ reductions `(R ⧸ (r)) ⊗ b` and `(R ⧸ (r)) ⊗ a` form an exact pair: if `a
 `a x = r • n`, then `r • b n = b (a x) = r • x`, so `x = b n`. -/
 theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddCommGroup M]
     [Module R M] [AddCommGroup N] [Module R N] {r : R} (a : M →ₗ[R] N) (b : N →ₗ[R] M)
-    (hab : a ∘ₗ b = r • LinearMap.id) (hba : b ∘ₗ a = r • LinearMap.id) (hr : IsSMulRegular M r) :
+    (hab : a ∘ₗ b = r • id) (hba : b ∘ₗ a = r • id) (hr : IsSMulRegular M r) :
     Function.Exact (b.lTensor (R ⧸ Ideal.span {r})) (a.lTensor (R ⧸ Ideal.span {r})) := by
   intro y
   obtain ⟨x, rfl⟩ := exists_one_tmul_eq _ y
@@ -154,7 +154,7 @@ theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddC
     rw [lTensor_tmul, ← sub_eq_zero, ← tmul_sub, one_tmul_eq_zero_iff_exists_smul_eq] at hz
     obtain ⟨m, hm⟩ := hz
     refine ⟨n - a m, ?_⟩
-    rw [smul_sub, ← map_smul, hm, map_sub, ← LinearMap.comp_apply, hab]
+    rw [smul_sub, ← map_smul, hm, map_sub, ← comp_apply, hab]
     simp
 
 /-- **Reductions of a factorization of a regular scalar are dually exact.** Let `a : M → N` and
@@ -166,8 +166,8 @@ this says that reducing a matrix factorization modulo a non-zero-divisor gives a
 periodic complex. -/
 theorem exact_comp_baseChange_quotient_span_singleton {R M N : Type*} [CommRing R]
     [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module.Projective R N] {r : R}
-    (a : M →ₗ[R] N) (b : N →ₗ[R] M) (hab : a ∘ₗ b = r • LinearMap.id)
-    (hba : b ∘ₗ a = r • LinearMap.id) (hr : IsSMulRegular R r) :
+    (a : M →ₗ[R] N) (b : N →ₗ[R] M) (hab : a ∘ₗ b = r • id)
+    (hba : b ∘ₗ a = r • id) (hr : IsSMulRegular R r) :
     Function.Exact
       (fun ψ : (R ⧸ Ideal.span {r}) ⊗[R] M →ₗ[R ⧸ Ideal.span {r}] R ⧸ Ideal.span {r} ↦
         ψ ∘ₗ b.baseChange (R ⧸ Ideal.span {r}))
@@ -197,7 +197,7 @@ theorem exact_comp_baseChange_quotient_span_singleton {R M N : Type*} [CommRing 
     -- From `a ∘ b = r • id`, `r • χ (b n) = ϕ (a (b n)) = r • ϕ n`, so `χ ∘ b = ϕ`.
     have hχ (n : N) : χ (b n) = ϕ n := hr (by
       simp only [smul_eq_mul]
-      rw [show r * χ (b n) = ϕ (a (b n)) from (hc _).symm, ← LinearMap.comp_apply a b, hab]
+      rw [show r * χ (b n) = ϕ (a (b n)) from (hc _).symm, ← comp_apply a b, hab]
       simp)
     refine ⟨((Ideal.span {r}).mkQ ∘ₗ χ).liftBaseChange _, ?_⟩
     refine TensorProduct.AlgebraTensorModule.ext fun s n ↦ ?_

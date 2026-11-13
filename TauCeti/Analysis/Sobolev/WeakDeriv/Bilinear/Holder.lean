@@ -137,31 +137,24 @@ private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H
       (fun x => B (u' n x) (w n x) + B (u n x) (w' n x)) v :=
     hasWeakLineDerivOn_bilin_convolution B hf.indicator hg.indicator
       hUloc hU'loc hVloc hV'loc (φ n).contDiff_normed (φ n).hasCompactSupport_normed (hsupp n)
-  -- Approximate identities converge in the input spaces. Hölder makes each of the three
-  -- products converge in its target space; restriction turns this into L1 convergence.
-  have hA := tendsto_normedBumpLp (mu := μ) hp hφ (hU.toLp U)
-  have hA' := tendsto_normedBumpLp (mu := μ) hp' hφ (hU'.toLp U')
-  have hC := tendsto_normedBumpLp (mu := μ) hq hφ (hV.toLp V)
-  have hC' := tendsto_normedBumpLp (mu := μ) hq' hφ (hV'.toLp V')
-  have hAae (n : ℕ) := normedBumpLp_ae_eq_convolution hp (φ n) hU
-  have hA'ae (n : ℕ) := normedBumpLp_ae_eq_convolution hp' (φ n) hU'
-  have hCae (n : ℕ) := normedBumpLp_ae_eq_convolution hq (φ n) hV
-  have hC'ae (n : ℕ) := normedBumpLp_ae_eq_convolution hq' (φ n) hV'
   have hUae := hU.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have hU'ae := hU'.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have hVae := hV.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have hV'ae := hV'.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
-  have h₁ := tendsto_setLIntegral_enorm_bilin_sub (r := r₁) B hWμ hA' hC hA'ae hU'ae hCae hVae
-  have h₂ := tendsto_setLIntegral_enorm_bilin_sub (r := r₂) B hWμ hA hC' hAae hUae hC'ae hV'ae
+  have h₁ := B.tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r₁) hp' hq hU' hV hφ hWμ
+    hU'ae hVae
+  have h₂ := B.tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r₂) hp hq' hU hV' hφ hWμ
+    hUae hV'ae
   -- The derivative error is bounded by the sum of the two product errors.
   have hm₁ (n : ℕ) : AEStronglyMeasurable (fun x => B (u' n x) (w n x) - B (f' x) (g x))
       (μ.restrict (W : Set E)) :=
     (B.continuous₂.comp_aestronglyMeasurable₂
-      ((Lp.aestronglyMeasurable _).congr (hA'ae n)).restrict
-      ((Lp.aestronglyMeasurable _).congr (hCae n)).restrict).sub hlim₁.aestronglyMeasurable
+      ((Lp.aestronglyMeasurable _).congr (normedBumpLp_ae_eq_convolution hp' (φ n) hU')).restrict
+      ((Lp.aestronglyMeasurable _).congr (normedBumpLp_ae_eq_convolution hq (φ n) hV)).restrict).sub
+        hlim₁.aestronglyMeasurable
   exact hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub (IntegrableOn.locallyIntegrableOn hlim)
     (IntegrableOn.locallyIntegrableOn (hlim₁.add hlim₂)) hweak
-    (tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWμ hA hC hAae hUae hCae hVae)
+    (B.tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r) hp hq hU hV hφ hWμ hUae hVae)
     (tendsto_setLIntegral_enorm_add_sub hm₁ h₁ h₂)
 
 /-- The local bilinear weak Leibniz rule with separate finite exponents for each factor and its

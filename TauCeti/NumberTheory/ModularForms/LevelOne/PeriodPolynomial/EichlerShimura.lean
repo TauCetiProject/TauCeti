@@ -440,7 +440,7 @@ theorem PeriodRelation.periodAction_extendedEvenPeriodPolynomialEquiv {k : ℤ} 
   · -- Reduce to `k = (w + 2 : ℕ)` and split along `M_k = S_k ⊕ ℂ · E_k`.
     obtain rfl : k = ((w + 2 : ℕ) : ℤ) := by omega
     have hk3 : 3 ≤ w + 2 := by omega
-    have hk2 : Even (w + 2) := hw.add even_two
+    have _ : Even (w + 2) := hw.add even_two
     have hw1 : w + 2 - 1 = w + 1 := by omega
     have hmem : F ∈ ModularForm.cuspFormSubmodule 𝒮ℒ (w + 2 : ℕ) ⊔ (ℂ ∙ ModularForm.E hk3) := by
       rw [(isCompl_cuspFormSubmodule_span_E hk3).sup_eq_top]

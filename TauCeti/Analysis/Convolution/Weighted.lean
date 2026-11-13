@@ -92,21 +92,21 @@ theorem enorm_one_add_norm_sq_rpow_mul_convolution_le {s : ℝ} (hs : 0 ≤ s)
     calc ‖w x‖ₑ * (a t * b (x - t))
         ≤ c * (‖w t‖ₑ + ‖w (x - t)‖ₑ) * (a t * b (x - t)) := by gcongr
       _ = c * (A t * b (x - t) + a t * B (x - t)) := by
-        simp only [A, B, a, b, enorm_mul]
+        simp only [A, B, a, b, eNorm_mul]
         ring
   calc ‖w x * (f ⋆[mul ℂ ℂ] g) x‖ₑ
       ≤ ‖w x‖ₑ * ∫⁻ t, a t * b (x - t) := by
-        rw [enorm_mul, convolution_def]
+        rw [eNorm_mul, convolution_def]
         gcongr
-        refine (enorm_integral_le_lintegral_enorm _).trans_eq ?_
-        simp only [mul_apply', enorm_mul, a, b]
+        refine (eNorm_integral_le_lintegral_eNorm _).trans_eq ?_
+        simp only [mul_apply', eNorm_mul, a, b]
     _ = ∫⁻ t, ‖w x‖ₑ * (a t * b (x - t)) :=
-        (lintegral_const_mul' ‖w x‖ₑ (fun t => a t * b (x - t)) enorm_ne_top).symm
+        (lintegral_const_mul' ‖w x‖ₑ (fun t => a t * b (x - t)) eNorm_ne_top).symm
     _ ≤ ∫⁻ t, c * (A t * b (x - t) + a t * B (x - t)) := lintegral_mono hweight
     _ = c * ((b ⋆ₗ A) x + (a ⋆ₗ B) x) := by
       rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-        lintegral_add_left' (f := fun t => A t * b (x - t)) (hwf.enorm.mul
-          (hg.enorm.comp_quasiMeasurePreserving
+        lintegral_add_left' (f := fun t => A t * b (x - t)) (hwf.eNorm.mul
+          (hg.eNorm.comp_quasiMeasurePreserving
             (quasiMeasurePreserving_sub_left_of_right_invariant volume x))),
         hcomm, lconvolution_def]
       simp only [neg_add_eq_sub, c]
@@ -127,16 +127,16 @@ theorem eLpNorm_one_add_norm_sq_rpow_mul_convolution_le {s : ℝ} (hs : 0 ≤ s)
     hwc.aestronglyMeasurable.mul hg
   set X := (fun y => ‖g y‖ₑ) ⋆ₗ fun y => ‖(((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f y‖ₑ
   set Y := (fun y => ‖f y‖ₑ) ⋆ₗ fun y => ‖(((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g y‖ₑ
-  have hX : AEMeasurable X := aemeasurable_lconvolution hg.enorm hwf.enorm
-  have hY : AEMeasurable Y := aemeasurable_lconvolution hf.enorm hwg.enorm
+  have hX : AEMeasurable X := aemeasurable_lconvolution hg.eNorm hwf.eNorm
+  have hY : AEMeasurable Y := aemeasurable_lconvolution hf.eNorm hwg.eNorm
   -- Integrate the pointwise bound, then apply Young's inequality to `X` and `Y`.
   calc eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x) 2
       ≤ eLpNorm (fun x => ENNReal.ofReal (2 ^ s) * (X x + Y x)) 2 :=
-        eLpNorm_mono_enorm
+        eLpNorm_mono_eNorm
           (f := fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x)
           (g := fun x => ENNReal.ofReal (2 ^ s) * (X x + Y x))
           (hwc.aestronglyMeasurable.mul (hf.convolution (mul ℂ ℂ) hg)) fun x => by
-            rw [enorm_eq_self]
+            rw [eNorm_eq_self]
             exact enorm_one_add_norm_sq_rpow_mul_convolution_le hs hwf hg x
     _ = ENNReal.ofReal (2 ^ s) * eLpNorm (X + Y) 2 :=
         eLpNorm_const_mul_ennreal (hX.add hY).aestronglyMeasurable
@@ -146,12 +146,12 @@ theorem eLpNorm_one_add_norm_sq_rpow_mul_convolution_le {s : ℝ} (hs : 0 ≤ s)
     _ ≤ ENNReal.ofReal (2 ^ s) *
         (eLpNorm g 1 * eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f x) 2 +
           eLpNorm f 1 * eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g x) 2) := by
-        rw [← eLpNorm_enorm _ hg, ← eLpNorm_enorm _ hf, ← eLpNorm_enorm _ hwf,
-          ← eLpNorm_enorm _ hwg]
+        rw [← eLpNorm_eNorm _ hg, ← eLpNorm_eNorm _ hf, ← eLpNorm_eNorm _ hwf,
+          ← eLpNorm_eNorm _ hwg]
         have h12 : (1 : ℝ≥0∞)⁻¹ + 2⁻¹ = 1 + 2⁻¹ := by rw [inv_one]
         gcongr
-        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hg.enorm hwf.enorm
-        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hf.enorm hwg.enorm
+        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hg.eNorm hwf.eNorm
+        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hf.eNorm hwg.eNorm
 
 /-- For `0 ≤ s`, if `f` and `g` are integrable and `(1 + ‖ξ‖ ^ 2) ^ (s / 2) f` and
 `(1 + ‖ξ‖ ^ 2) ^ (s / 2) g` are square integrable, then so is

@@ -112,13 +112,14 @@ theorem principalUnitGroup_ker {S : Type*} [Ring S] (f : R →+* S) :
   ext u
   simp [mem_principalUnitGroup, sub_eq_zero, Units.ext_iff]
 
-section CommRing
-
-variable {R : Type*} [CommRing R]
-
+/-- The principal unit groups `1 + I ^ n` of the powers of an ideal `I` decrease with `n`. -/
 theorem principalUnitGroup_pow_antitone (I : Ideal R) :
     Antitone fun n : ℕ ↦ (I ^ n).principalUnitGroup :=
   fun _ _ h ↦ principalUnitGroup_mono (pow_le_pow_right h)
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
 
 /-- The principal unit group of `I` is the kernel of reduction of units modulo `I`. -/
 theorem principalUnitGroup_eq_ker_unitsMap (I : Ideal R) :

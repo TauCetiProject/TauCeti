@@ -61,7 +61,12 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   manifold, a map into a normed space is differentiable at a point exactly when its preferred
   coordinate expression is differentiable at the chart image of the point.
 * `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
-  vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+  vector-valued manifold derivative is the Fréchet derivative of the coordinate expression;
+  `TauCeti.mvfderiv_comp_tangentSpaceCastModel_symm`,
+  `TauCeti.mvfderiv_apply_eq_fderiv_comp_extChartAt_symm`,
+  `TauCeti.range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm`, and
+  `TauCeti.injective_fderiv_comp_extChartAt_symm_iff` record the corresponding composition with
+  the model-space tangent cast, pointwise evaluation, range equality, and injectivity equivalence.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   differential of a map into a normed space vanishes at a point exactly when the
   Fréchet derivative of its preferred-chart coordinate expression does.
@@ -155,11 +160,11 @@ theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.c
     (letI := c; mfderiv I I' f x) = (letI := c'; mfderiv I I' f x) := by
   have hd := mdifferentiableAt_iff_of_chartAt_eq (I := I) (I' := I') h f x
   -- Select c as the local atlas for the source-side derivative formula.
-  let sourceAtlas : ChartedSpace H M := c
+  let _ : ChartedSpace H M := c
   by_cases hf : (letI := c; MDifferentiableAt I I' f x)
   · have hleft : (letI := c; mfderiv I I' f x) = _ := hf.mfderiv
     -- Select c' for the target-side formula; both displayed statements fix their atlas.
-    let targetAtlas : ChartedSpace H M := c'
+    let _ : ChartedSpace H M := c'
     have hright : (letI := c'; mfderiv I I' f x) = _ := (hd.mp hf).mfderiv
     apply hleft.trans
     apply Eq.trans ?_ hright.symm
@@ -169,7 +174,7 @@ theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.c
   · have hleft : (letI := c; mfderiv I I' f x) = 0 :=
       mfderiv_zero_of_not_mdifferentiableAt hf
     -- Select c' to apply its non-differentiability law.
-    let targetAtlas : ChartedSpace H M := c'
+    let _ : ChartedSpace H M := c'
     have hright : (letI := c'; mfderiv I I' f x) = 0 :=
       mfderiv_zero_of_not_mdifferentiableAt (hd.not.mp hf)
     exact hleft.trans hright.symm
@@ -478,9 +483,9 @@ namespace ContMDiffAt
 theorem contDiffAt_comp_chartAt_symm {n : WithTop ℕ∞}
     (hg : ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) n g z) :
     ContDiffAt 𝕜 n (g ∘ (chartAt E z).symm) (chartAt E z z) := by
-  have hext : ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
-  simpa only [hext, hext'] using hg.contDiffAt_comp_extChartAt_symm
+  simpa only [TauCeti.extChartAt_model_symm_eq_chartAt_symm,
+    TauCeti.extChartAt_model_apply_eq_chartAt_apply] using
+    hg.contDiffAt_comp_extChartAt_symm
 
 end ContMDiffAt
 
@@ -489,9 +494,8 @@ expression is the vector-valued manifold derivative. Both sides are `0` when the
 differentiable at the point. -/
 theorem TauCeti.fderiv_comp_chartAt_symm :
     fderiv 𝕜 (g ∘ (chartAt E z).symm) (chartAt E z z) = mvfderiv 𝓘(𝕜, E) g z := by
-  have hext : ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
-  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
+  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm,
+    TauCeti.extChartAt_model_symm_eq_chartAt_symm, TauCeti.extChartAt_model_apply_eq_chartAt_apply]
 
 /-- On a manifold modelled on its model space, the kernel of the vector-valued manifold derivative
 is the kernel of the derivative of the preferred-chart coordinate expression, a subspace of the
@@ -518,6 +522,50 @@ theorem TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm {e : OpenPartial
 
 end SelfModel
 
+namespace TauCeti
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, `mvfderiv I f x`, read on the model space `E`, agrees with the
+Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`, even without a
+differentiability hypothesis (both vanish when `f` is not differentiable at `x`). -/
+theorem mvfderiv_comp_tangentSpaceCastModel_symm (f : M → F) (x : M) :
+    (mvfderiv I f x).comp ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x) =
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  ext v
+  exact DFunLike.congr_fun (TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm (I := I)) v
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, `mvfderiv I f x` evaluated on `v` equals the Fréchet derivative of
+the preferred coordinate expression evaluated on `tangentSpaceCastModel I x v`, without any
+differentiability assumption. -/
+theorem mvfderiv_apply_eq_fderiv_comp_extChartAt_symm (f : M → F) (x : M)
+    (v : TangentSpace I x) :
+    mvfderiv I f x v =
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) (tangentSpaceCastModel I x v) := by
+  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, the range of `mvfderiv I f x` equals the range of the Fréchet
+derivative of the preferred coordinate expression at `extChartAt I x x`. -/
+theorem range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm (f : M → F) (x : M) :
+    (mvfderiv I f x).range = (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x)).range := by
+  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.range_comp_of_range_eq_top]
+  exact LinearMap.range_eq_top.mpr (tangentSpaceCastModel I x).symm.surjective
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, injectivity of `mvfderiv I f x` is equivalent to injectivity of the
+Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`. -/
+theorem injective_fderiv_comp_extChartAt_symm_iff :
+    Function.Injective (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x)) ↔
+      Function.Injective (mvfderiv I f x) := by
+  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe]
+  refine ⟨fun h u w huw ↦ ?_, fun h ↦ h.comp (tangentSpaceCastModel I x).symm.injective⟩
+  exact (tangentSpaceCastModel I x).injective (h (by simpa using huw))
+
+end TauCeti
 end Boundaryless
 
 /-! ### Preferred charts of a composite charted space -/
@@ -570,8 +618,8 @@ theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
         ((extChartAt I α) '' s) y := by
   rintro _ ⟨x, hx, rfl⟩
   exact (hasFDerivWithinAt_tangentCoordChange (I := I) (hsub hx)).mono fun y hy ↦ by
-    obtain ⟨z, hz, rfl⟩ := hy
-    exact extChartAt_target_subset_range α ((extChartAt I α).map_source (hsub hz).1)
+    obtain ⟨z, -, rfl⟩ := hy
+    exact mem_range_self _
 
 end ChartOverlap
 
@@ -641,7 +689,7 @@ theorem _root_.HasMFDerivAt.hasFDerivAt_extChartAt_comp {Q : F → M} {z : F} {�
   have hd : HasFDerivAt (extChartAt I α ∘ Q) L z := by
     have h := (hasMFDerivAt_extChartAt (I := I) hx).comp z hQ
     -- Cancel the canonical source tangent identification in the derivative composition.
-    convert! h.hasFDerivAt using 2
+    refine h.hasFDerivAt.congr_fderiv ?_
     ext v
     rw [← hη']
     rfl
@@ -739,10 +787,8 @@ theorem _root_.ContMDiffAt.hasStrictFDerivAt_extChartAt_conj {f : M → M'} {y :
     (hf : ContMDiffAt I I' 1 f y) :
     HasStrictFDerivAt (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm)
       (fderiv 𝕜 (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm) (extChartAt I y y))
-      (extChartAt I y y) := by
-  have h := (contMDiffAt_iff.mp hf).2
-  rw [I.range_eq_univ, contDiffWithinAt_univ] at h
-  exact h.hasStrictFDerivAt_fderiv one_ne_zero
+      (extChartAt I y y) :=
+  hf.contDiffAt_writtenInExtChartAt.hasStrictFDerivAt_fderiv one_ne_zero
 
 end RCLikeCharts
 

@@ -239,15 +239,21 @@ theorem exists_mem_calderonZygmundCubes_of_lt_setLAverage [Nonempty ι] (hg : �
   subst hm'
   exact le_of_not_gt fun hlt => (hmax j ⟨hkj₀.trans hj.le, hlt⟩).not_gt hj
 
-/-- In positive dimension, the union of the Calderón–Zygmund cubes of an integrable `g` shrinks as
-the height grows: for `0 < t ≤ t'`, each cube at height `t'` has average above `t`, so it lies in a
-cube at height `t`. -/
-theorem biUnion_calderonZygmundCubes_subset [Nonempty ι] (hg : ∫⁻ x, g x ≠ ∞) (ht : t ≠ 0)
+/-- The union of the Calderón–Zygmund cubes of an integrable `g` shrinks as the height grows: for
+`0 < t ≤ t'`, each cube at height `t'` has average above `t`, so it lies in a cube at height `t`.
+In dimension zero both unions are empty. -/
+theorem biUnion_calderonZygmundCubes_subset (hg : ∫⁻ x, g x ≠ ∞) (ht : t ≠ 0)
     {t' : ℝ≥0∞} (htt' : t ≤ t') :
     ⋃ q ∈ calderonZygmundCubes g t', dyadicCube q.1 q.2 ⊆
       ⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2 := by
   simp only [iUnion_subset_iff]
   intro p hp x hx
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · have huniv : ∀ k m, dyadicCube k m = (Set.univ : Set (ι → ℝ)) := dyadicCube_eq_univ
+    have h1 := hp.1
+    have h2 := hp.2 (p.1 + 1) p.2 (lt_add_one p.1) (by simp)
+    simp only [huniv] at h1 h2
+    exact absurd h1 (not_lt.2 h2)
   obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hg ht
     (htt'.trans_lt (lt_setLAverage_of_mem_calderonZygmundCubes hp))
   exact mem_biUnion hq (hsub hx)
@@ -343,19 +349,22 @@ theorem integrable_calderonZygmundBad (hf : Integrable f) (q : ℤ × (ι → �
 
 /-- Each bad part has integral zero. -/
 @[simp]
-theorem integral_calderonZygmundBad [CompleteSpace E] (f : (ι → ℝ) → E) (q : ℤ × (ι → ℤ)) :
+theorem integral_calderonZygmundBad (f : (ι → ℝ) → E) (q : ℤ × (ι → ℤ)) :
     ∫ x, calderonZygmundBad f q x = 0 := by
+  by_cases hE : CompleteSpace E
+  swap
+  · exact integral_of_not_completeSpace hE
   rw [calderonZygmundBad, integral_indicator (measurableSet_dyadicCube q.1 q.2)]
   exact setAverage_sub_setAverage (volume_dyadicCube_ne_top q.1 q.2) f
 
 /-- Each bad part has `L¹` norm at most twice the integral of `‖f‖` over its cube. -/
 theorem lintegral_enorm_calderonZygmundBad_le (f : (ι → ℝ) → E) (q : ℤ × (ι → ℤ)) :
     ∫⁻ x, ‖calderonZygmundBad f q x‖ₑ ≤ 2 * ∫⁻ x in dyadicCube q.1 q.2, ‖f x‖ₑ := by
-  simp_rw [calderonZygmundBad, enorm_indicator_eq_indicator_enorm]
+  simp_rw [calderonZygmundBad, eNorm_indicator_eq_indicator_eNorm]
   rw [lintegral_indicator (measurableSet_dyadicCube q.1 q.2), two_mul]
   calc ∫⁻ x in dyadicCube q.1 q.2, ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ
       ≤ ∫⁻ x in dyadicCube q.1 q.2, (‖f x‖ₑ + ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ) :=
-        lintegral_mono fun x => enorm_sub_le
+        lintegral_mono fun x => eNorm_sub_le
     _ = (∫⁻ x in dyadicCube q.1 q.2, ‖f x‖ₑ) +
           ∫⁻ _ in dyadicCube q.1 q.2, ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ :=
         lintegral_add_right _ measurable_const
@@ -368,7 +377,7 @@ theorem lintegral_enorm_calderonZygmundBad_le (f : (ι → ℝ) → E) (q : ℤ 
 by `2ⁿ t` almost everywhere. -/
 theorem ae_enorm_calderonZygmundGood_le [Nonempty ι] (hf : Integrable f) (ht : t ≠ 0) :
     ∀ᵐ x, ‖calderonZygmundGood f t x‖ₑ ≤ 2 ^ Fintype.card ι * t := by
-  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.1.enorm
+  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.1.eNorm
     hf.2.ne ht] with x hx
   by_cases hmem : ∃ q ∈ calderonZygmundCubes (‖f ·‖ₑ) t, x ∈ dyadicCube q.1 q.2
   · obtain ⟨q, hq, hxq⟩ := hmem
@@ -418,8 +427,8 @@ theorem aestronglyMeasurable_calderonZygmundGood (hf : AEStronglyMeasurable f) (
 /-- The good part of an integrable `f` is integrable. -/
 theorem integrable_calderonZygmundGood (hf : Integrable f) (t : ℝ≥0∞) :
     Integrable (calderonZygmundGood f t) :=
-  ⟨aestronglyMeasurable_calderonZygmundGood hf.1 t, hasFiniteIntegral_iff_enorm.2 <|
-    (lintegral_enorm_calderonZygmundGood_le f t).trans_lt (hasFiniteIntegral_iff_enorm.1 hf.2)⟩
+  ⟨aestronglyMeasurable_calderonZygmundGood hf.1 t, hasFiniteIntegral_iff_eNorm.2 <|
+    (lintegral_enorm_calderonZygmundGood_le f t).trans_lt (hasFiniteIntegral_iff_eNorm.1 hf.2)⟩
 
 /-- The bad parts of a function in `Lᵖ` are in `Lᵖ`. -/
 theorem memLp_calderonZygmundBad {p : ℝ≥0∞} (hf : MemLp f p) (q : ℤ × (ι → ℤ)) :
@@ -447,14 +456,20 @@ theorem sq_eLpNorm_calderonZygmundGood_le [Nonempty ι] (hf : Integrable f) (ht 
         rw [sq]
         gcongr
     _ = 2 ^ Fintype.card ι * t * ∫⁻ x, ‖calderonZygmundGood f t x‖ₑ :=
-        lintegral_const_mul'' _ hg.enorm
+        lintegral_const_mul'' _ hg.eNorm
     _ ≤ 2 ^ Fintype.card ι * t * ∫⁻ x, ‖f x‖ₑ :=
         mul_le_mul_right (lintegral_enorm_calderonZygmundGood_le f t) _
 
-/-- In positive dimension, the good part of an integrable `f` at a finite positive height is in
-`L²`. -/
-theorem memLp_two_calderonZygmundGood [Nonempty ι] (hf : Integrable f) (ht : t ≠ 0)
+/-- The good part of an integrable `f` at a finite positive height is in `L²`. -/
+theorem memLp_two_calderonZygmundGood (hf : Integrable f) (ht : t ≠ 0)
     (ht' : t ≠ ∞) : MemLp (calderonZygmundGood f t) 2 := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · have : IsFiniteMeasure (volume : Measure (ι → ℝ)) :=
+      ⟨by simp⟩
+    have hconst : calderonZygmundGood f t = fun _ => calderonZygmundGood f t 0 :=
+      funext fun x => congrArg _ (Subsingleton.elim _ _)
+    rw [hconst]
+    exact memLp_const _
   have h := (sq_eLpNorm_calderonZygmundGood_le hf ht).trans_lt <|
     ENNReal.mul_lt_top (ENNReal.mul_lt_top (by simp) ht'.lt_top) hf.2
   exact memLp_iff.2 ((WithTop.pow_lt_top_iff.1 h).resolve_right two_ne_zero)

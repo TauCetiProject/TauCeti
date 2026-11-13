@@ -226,7 +226,7 @@ theorem serreLift_injective : Function.Injective (t.serreLift ht) := by
   have key : ∀ {CM : Matrix (Fin t.rank) (Fin t.rank) ℤ}, (t.lieBasis ht).Aᵀ = CM →
       ∀ h : IsSerreSystem ℚ CM (t.lieBasis ht).h (t.lieBasis ht).e (t.lieBasis ht).f,
         Function.Injective (_root_.TauCeti.serreLift h) := by
-    rintro _ rfl h
+    rintro _ rfl _
     exact (t.lieBasis ht).serreLift_injective
   exact key (by rw [lieBasis_A_eq]) _
 

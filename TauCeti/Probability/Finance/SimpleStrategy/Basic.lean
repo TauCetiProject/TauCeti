@@ -423,7 +423,7 @@ theorem isSelfFinancing_iff :
 /-- Holdings that are constant across trading dates are self-financing. -/
 theorem isSelfFinancing_const (a b : Ω → ℝ) :
     IsSelfFinancing τ n (fun _ ↦ a) (fun _ ↦ b) S β := by
-  intro j hj ω
+  intro j _ ω
   rfl
 
 /-- Self-financing strategies are closed under addition. -/

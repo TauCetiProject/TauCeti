@@ -7,9 +7,7 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import Mathlib.Algebra.Regular.SMul
-public import Mathlib.RingTheory.Regular.RegularSequence
--- Proof-only: the first term of a weakly regular pair is regular modulo powers of the second.
-import TauCeti.RingTheory.Regular.RegularSequence
+public import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Regularity of the parameter on principal-adic completions
@@ -20,8 +18,9 @@ In particular the parameter remains a non-zero-divisor
 when forming a localization of its own adic completion.
 
 An element that is regular modulo every power of an ideal `I` is regular on the `I`-adic
-completion. For a weakly regular pair `(a, b)` on `M`, this makes `a` regular on the `(b)`-adic
-completion of `M`, even when `b` itself is not regular on `M`. This is the form in which a
+completion. For a weakly regular pair `(a, b)` on `M`, the element `a` is regular on `M ⧸ bⁿ M`
+for every `n`, so it is regular on the `(b)`-adic completion of `M`, even when `b` itself is not
+regular on `M`. This is the form in which a
 regular pair `(p, v)` makes the `(v)`-adic completion `p`-torsion-free before it is completed a
 second time, `p`-adically.
 -/
@@ -78,6 +77,5 @@ theorem AdicCompletion.isSMulRegular_of_forall_isSMulRegular_quotient {I : Ideal
 completion of `M`. The element `b` need not be regular on `M`. -/
 theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_adicCompletion {a b : R}
     (h : IsWeaklyRegular M [a, b]) : IsSMulRegular (AdicCompletion (Ideal.span {b}) M) a :=
-  AdicCompletion.isSMulRegular_of_forall_isSMulRegular_quotient fun n ↦ by
-    rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
-    simpa only [pow_one] using h.isSMulRegular_quotSMulTop_pow_swap n 1
+  AdicCompletion.isSMulRegular_of_forall_isSMulRegular_quotient
+    h.isSMulRegular_quotient_pow_smul_top

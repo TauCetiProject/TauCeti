@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Quotient
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Effective
 public import TauCeti.Topology.Algebra.GroupAction.GermKernel
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
-public import TauCeti.Topology.CategoryTheory.Groupoid.Effective
+public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Basic
 
 /-!
 # The effective quotient of an action groupoid
