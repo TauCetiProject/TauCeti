@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.OrthogonalGroup
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
 public import TauCeti.NumberTheory.Padics.LocalGlobalLattice
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Polar
 
@@ -382,11 +383,8 @@ private noncomputable def localLinearEquivOfMapsRange
     L.LocalCarrier p ≃ₗ[ℤ_[p]] M.LocalCarrier p :=
   have hmap : (LinearMap.range (L.localizationToCompletion p)).map
       (φ.toLinearEquiv.restrictScalars ℤ_[p] : _ →ₗ[ℤ_[p]] _) =
-        LinearMap.range (M.localizationToCompletion p) := by
-    ext y
-    rw [Submodule.mem_map_equiv, ← hφ]
-    simp only [LinearEquiv.restrictScalars_symm_apply]
-    rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv, LinearEquiv.apply_symm_apply]
+        LinearMap.range (M.localizationToCompletion p) :=
+    Submodule.map_equiv_eq_iff.mpr hφ
   (LinearEquiv.ofInjective _ (L.localizationToCompletion_injective p)).trans
     ((LinearEquiv.ofSubmodules (φ.toLinearEquiv.restrictScalars ℤ_[p]) _ _ hmap).trans
       (LinearEquiv.ofInjective _ (M.localizationToCompletion_injective p)).symm)

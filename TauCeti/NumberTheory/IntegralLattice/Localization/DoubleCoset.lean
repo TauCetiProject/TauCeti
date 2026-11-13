@@ -90,9 +90,7 @@ variable (g : L.orthogonalCompactOpens.finiteAdelicOrthogonal)
 
 /-- The carrier of `adelicTranslate`: the vectors `v` with `1 ⊗ v ∈ g_p L_p` at every prime. -/
 private def adelicTranslateCarrier : Submodule ℤ V where
-  carrier := {v | ∀ p : Nat.Primes, (1 : ℚ_[p]) ⊗ₜ[ℚ] v ∈
-    (L.carrier.padicLocalization p).map
-      ((g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap}
+  carrier := {v | ∀ p : Nat.Primes, (1 : ℚ_[p]) ⊗ₜ[ℚ] v ∈ L.localTranslate p (g p)}
   add_mem' ha hb p := by simpa only [TensorProduct.tmul_add] using add_mem (ha p) (hb p)
   zero_mem' p := by simp
   smul_mem' n v hv p := by simpa only [TensorProduct.tmul_smul] using zsmul_mem (hv p) n
@@ -101,18 +99,11 @@ private def adelicTranslateCarrier : Submodule ℤ V where
 private theorem isLattice_and_padicLocalization_adelicTranslateCarrier :
     (adelicTranslateCarrier L g).IsLattice ℚ ∧
       ∀ p : Nat.Primes, (adelicTranslateCarrier L g).padicLocalization p =
-        (L.carrier.padicLocalization p).map
-          ((g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap := by
-  have hlat (p : Nat.Primes) : ((L.carrier.padicLocalization p).map
-      ((g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap).IsLattice
-        ℚ_[p] :=
-    Submodule.isLattice_map _ (g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).toLinearMap
-      (g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).surjective
+        L.localTranslate p (g p) := by
   -- At almost every prime `g_p ∈ K_p(L)`, so that `g_p L_p = L_p`.
-  have hX : ∀ᶠ p : Nat.Primes in cofinite, (L.carrier.padicLocalization p).map
-      ((g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap =
-        L.carrier.padicLocalization p :=
-    g.2.mono fun p hp ↦ (L.mem_localStabilizer_iff_map_eq p).mp
+  have hX : ∀ᶠ p : Nat.Primes in cofinite,
+      L.localTranslate p (g p) = L.carrier.padicLocalization p :=
+    g.2.mono fun p hp ↦ (L.mem_localStabilizer_iff_localTranslate_eq p).mp
       (L.orthogonalCompactOpens_orthogonal p ▸ hp)
   obtain ⟨M, ⟨hM, hMX⟩, -⟩ := Submodule.existsUnique_isLattice_padicLocalization_eq _ hX
   obtain rfl : M = adelicTranslateCarrier L g := Submodule.ext fun v ↦ by
@@ -125,9 +116,9 @@ an isometry of `V_p` and the form is `p`-adically integral on `L_p`. -/
 private theorem norm_form_le_one_of_mem_adelicTranslateCarrier {v w : V}
     (hv : v ∈ adelicTranslateCarrier L g) (hw : w ∈ adelicTranslateCarrier L g) (p : Nat.Primes) :
     ‖(L.form v w : ℚ_[p])‖ ≤ 1 := by
-  have hv' := (Submodule.mem_map_equiv _).mp (hv p)
-  have hw' := (Submodule.mem_map_equiv _).mp (hw p)
-  rw [LinearEquiv.restrictScalars_symm_apply, ← L.range_localizationToCompletion] at hv' hw'
+  have hv' := mem_localTranslate_iff.mp (hv p)
+  have hw' := mem_localTranslate_iff.mp (hw p)
+  rw [← L.range_localizationToCompletion] at hv' hw'
   obtain ⟨a, ha⟩ := hv'
   obtain ⟨b, hb⟩ := hw'
   have hg : (g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V) ∈
@@ -175,16 +166,13 @@ theorem adelicTranslate_completedRationalForm (p : ℕ) [Fact p.Prime] :
 
 /-- A vector lies in `g • L` exactly when `1 ⊗ v ∈ g_p L_p` at every prime. -/
 theorem mem_adelicTranslate_carrier_iff {v : V} :
-    v ∈ (L.adelicTranslate g).carrier ↔ ∀ p : Nat.Primes, (1 : ℚ_[p]) ⊗ₜ[ℚ] v ∈
-      (L.carrier.padicLocalization p).map
-        ((g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap :=
+    v ∈ (L.adelicTranslate g).carrier ↔
+      ∀ p : Nat.Primes, (1 : ℚ_[p]) ⊗ₜ[ℚ] v ∈ L.localTranslate p (g p) :=
   Iff.rfl
 
 /-- **The localizations of `g • L` are the lattices `g_p L_p`.** -/
 theorem padicLocalization_adelicTranslate_carrier (p : Nat.Primes) :
-    (L.adelicTranslate g).carrier.padicLocalization p =
-      (L.carrier.padicLocalization p).map
-        ((g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap :=
+    (L.adelicTranslate g).carrier.padicLocalization p = L.localTranslate p (g p) :=
   (isLattice_and_padicLocalization_adelicTranslateCarrier L g).2 p
 
 /-- The translate of `L` by the identity is `L`. -/
@@ -192,7 +180,7 @@ theorem padicLocalization_adelicTranslate_carrier (p : Nat.Primes) :
 theorem adelicTranslate_one : L.adelicTranslate 1 = L := by
   refine IntegralLattice.ext ((Submodule.eq_iff_forall_padicLocalization_eq _).mpr fun p ↦ ?_) rfl
   rw [padicLocalization_adelicTranslate_carrier, RestrictedProduct.one_apply]
-  exact (L.mem_localStabilizer_iff_map_eq p).mp (one_mem _)
+  exact (L.mem_localStabilizer_iff_localTranslate_eq p).mp (one_mem _)
 
 /-- **Two translates of `L` coincide exactly when the adeles differ by an element of
 `K_f(L) = ∏_p K_p(L)`.** -/
@@ -205,9 +193,9 @@ theorem adelicTranslate_eq_adelicTranslate_iff
     Submodule.eq_iff_forall_padicLocalization_eq, mem_integralSubgroup]
   refine forall_congr' fun p ↦ ?_
   rw [padicLocalization_adelicTranslate_carrier, padicLocalization_adelicTranslate_carrier,
-    L.orthogonalCompactOpens_orthogonal, L.mem_localStabilizer_iff_map_eq,
+    L.orthogonalCompactOpens_orthogonal, L.mem_localStabilizer_iff_localTranslate_eq,
     RestrictedProduct.mul_apply, RestrictedProduct.inv_apply]
-  simp only [Submodule.ext_iff, Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply]
+  simp only [Submodule.ext_iff, mem_localTranslate_iff]
   -- `(g_p⁻¹ h_p)⁻¹ = h_p⁻¹ g_p`; the two conditions correspond under `x ↦ g_p x`.
   have key (x : ℚ_[p] ⊗[ℚ] V) :
       ((↑((g p)⁻¹ * h p) : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V)).symm x =
@@ -235,8 +223,8 @@ theorem adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier (γ : orthogo
   ext v
   rw [Submodule.mem_map_equiv, mem_adelicTranslate_carrier_iff, mem_adelicTranslate_carrier_iff]
   refine forall_congr' fun p ↦ ?_
-  rw [RestrictedProduct.mul_apply, OrthogonalCompactOpens.finiteAdelicOrthogonalDiagonal_apply]
-  simp only [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply]
+  rw [RestrictedProduct.mul_apply, OrthogonalCompactOpens.finiteAdelicOrthogonalDiagonal_apply,
+    mem_localTranslate_iff, mem_localTranslate_iff, LinearEquiv.restrictScalars_symm_apply]
   have key : ((↑(orthogonalGroupBaseChange (A := ℚ_[p]) L.norm γ * g p) :
       ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V)).symm (1 ⊗ₜ v) =
         (g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).symm (1 ⊗ₜ (γ : V ≃ₗ[ℚ] V).symm v) := by
@@ -272,36 +260,33 @@ theorem sameGenus_adelicTranslate : L.SameGenus (L.adelicTranslate g) := by
   rw [L.range_localizationToCompletion, (L.adelicTranslate g).range_localizationToCompletion]
   have hq := L.padicLocalization_adelicTranslate_carrier g q
   dsimp only [q] at hq
-  rw [hq, Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
-    LinearMap.BilinForm.coe_isometryGroupEquivIsometryEquiv, LinearEquiv.symm_apply_apply]
+  rw [hq, LinearMap.BilinForm.coe_isometryGroupEquivIsometryEquiv]
+  exact apply_mem_localTranslate_iff
 
 /-- **Every lattice on the quadratic space of `L` in the genus of `L` is a translate of `L`.** -/
 theorem exists_adelicTranslate_eq {M : IntegralLattice V} (hform : M.form = L.form)
     (hM : L.SameGenus M) : ∃ g, L.adelicTranslate g = M := by
   -- At every prime an integral local isometry `L_p ≅ M_p` extends to `k_p ∈ O(V_p)`.
   have hk (p : Nat.Primes) : ∃ k : orthogonalGroup (L.norm.baseChange ℚ_[p]),
-      (L.carrier.padicLocalization p).map
-        ((k : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap =
-        M.carrier.padicLocalization p := by
-    obtain ⟨φ, hφ⟩ := (localIntegralForm_equivalent_iff_exists_isometryEquiv p).mp
-      (hM.localIntegralForm_equivalent p)
+      L.localTranslate p k = M.carrier.padicLocalization p := by
     have hc : M.completedRationalForm p = L.completedRationalForm p := by
       rw [completedRationalForm_def, completedRationalForm_def, hform]
-    rw [L.range_localizationToCompletion p, M.range_localizationToCompletion p] at hφ
-    have hmap : (L.carrier.padicLocalization p).map
-        (φ.toLinearEquiv.restrictScalars ℤ_[p]).toLinearMap = M.carrier.padicLocalization p := by
-      ext y
-      rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply, ← hφ,
-        ← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv, LinearEquiv.apply_symm_apply]
-    exact ⟨⟨φ.toLinearEquiv, L.orthogonalGroup_norm_baseChange p ▸
-      LinearMap.BilinForm.mem_isometryGroup_iff.mpr fun x y ↦
-        (LinearMap.congr_fun₂ hc (φ x) (φ y)).symm.trans (φ.map_app y x)⟩, hmap⟩
+    have h := (localIntegralForm_equivalent_iff_exists_isometryEquiv p).mp
+      (hM.localIntegralForm_equivalent p)
+    rw [hc, L.range_localizationToCompletion p, M.range_localizationToCompletion p] at h
+    obtain ⟨φ, hφ⟩ := h
+    refine ⟨(MulEquiv.subgroupCongr (L.orthogonalGroup_norm_baseChange p)).symm
+      ((L.completedRationalForm p).isometryGroupEquivIsometryEquiv.symm φ),
+      localTranslate_eq_iff.mpr fun x ↦ ?_⟩
+    rw [MulEquiv.subgroupCongr_symm_apply,
+      LinearMap.BilinForm.coe_isometryGroupEquivIsometryEquiv_symm]
+    exact hφ x
   choose k hk using hk
   -- Where `M_p = L_p`, the isometry `k_p` lies in `K_p(L)`.
   have hev : ∀ᶠ p : Nat.Primes in cofinite, k p ∈ L.orthogonalCompactOpens.orthogonal p := by
     filter_upwards [Submodule.eventually_padicLocalization_eq (N := M.carrier) L.carrier]
       with p hp
-    rw [L.orthogonalCompactOpens_orthogonal, L.mem_localStabilizer_iff_map_eq, hk, hp]
+    rw [L.orthogonalCompactOpens_orthogonal, L.mem_localStabilizer_iff_localTranslate_eq, hk, hp]
   refine ⟨⟨k, hev⟩, IntegralLattice.ext ?_ hform.symm⟩
   refine (Submodule.eq_iff_forall_padicLocalization_eq _).mpr fun p ↦ ?_
   exact (L.padicLocalization_adelicTranslate_carrier _ p).trans (hk p)
@@ -343,12 +328,14 @@ theorem doubleCosetClass_injective : Function.Injective L.doubleCosetClass := by
   obtain ⟨g, rfl⟩ := Quotient.mk_surjective c
   obtain ⟨h, rfl⟩ := Quotient.mk_surjective d
   obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp hcd
-  let γ : orthogonalGroup L.norm := ⟨e, L.orthogonalGroup_norm ▸
-    LinearMap.BilinForm.mem_isometryGroup_iff.mpr fun x y ↦ e.toIsometryEquiv.map_app y x⟩
+  let γ : orthogonalGroup L.norm := (MulEquiv.subgroupCongr L.orthogonalGroup_norm).symm
+    (L.form.isometryGroupEquivIsometryEquiv.symm e.toIsometryEquiv)
+  have hγe : (γ : V ≃ₗ[ℚ] V) = e.toLinearEquiv := LinearEquiv.ext <| congrFun
+    (L.form.coe_isometryGroupEquivIsometryEquiv_symm e.toIsometryEquiv)
   have hγ : L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ * g) =
       L.adelicTranslate h :=
     IntegralLattice.ext ((L.adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier g γ).trans
-      e.map_carrier) rfl
+      (hγe ▸ e.map_carrier)) rfl
   refine DoubleCoset.eq.mpr ⟨_, ⟨γ, rfl⟩, _, (L.adelicTranslate_eq_adelicTranslate_iff).mp hγ, ?_⟩
   group
 

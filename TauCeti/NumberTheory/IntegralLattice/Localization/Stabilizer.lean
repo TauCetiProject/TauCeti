@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.CompactOpen
+import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.LinearAlgebra.Basis.RangeSpan
 import TauCeti.Logic.Equiv.Set
 import TauCeti.NumberTheory.Padics.RatCast
@@ -58,6 +59,8 @@ rational form of `L` and of its completions (`TauCeti.IntegralLattice.orthogonal
 ## Main definitions
 
 * `TauCeti.IntegralLattice.localStabilizer`: the local stabilizer `K_p(L)`.
+* `TauCeti.IntegralLattice.localTranslate`: the image `k L_p` of `L_p` under an isometry `k`
+  of `V_p`.
 * `TauCeti.IntegralLattice.orthogonalCompactOpens`: for a nondegenerate lattice, the compatible
   compact-open tuple whose orthogonal reference subgroups are the local stabilizers.
 
@@ -65,8 +68,8 @@ rational form of `L` and of its completions (`TauCeti.IntegralLattice.orthogonal
 
 * `TauCeti.IntegralLattice.mem_localStabilizer_iff`: `g ∈ K_p(L)` exactly when `g` maps the image
   of `L_p` onto itself.
-* `TauCeti.IntegralLattice.mem_localStabilizer_iff_map_eq`: `g ∈ K_p(L)` exactly when `g` maps
-  the localization `L_p` onto itself.
+* `TauCeti.IntegralLattice.mem_localStabilizer_iff_localTranslate_eq`: `g ∈ K_p(L)` exactly when
+  `g` maps the localization `L_p` onto itself.
 * `TauCeti.IntegralLattice.localStabilizer_eq_integralOrthogonalSubgroup`: in any basis of `L`,
   the local stabilizer is the integral orthogonal subgroup.
 * `TauCeti.IntegralLattice.isOpen_localStabilizer`,
@@ -120,19 +123,47 @@ theorem mem_localStabilizer_iff {g : orthogonalGroup (L.norm.baseChange ℚ_[p])
         x ∈ LinearMap.range (L.localizationToCompletion p) :=
   Iff.rfl
 
-/-- An isometry of `V_p` lies in `K_p(L)` exactly when it carries the localization `L_p` onto
-itself. -/
-theorem mem_localStabilizer_iff_map_eq {k : orthogonalGroup (L.norm.baseChange ℚ_[p])} :
-    k ∈ L.localStabilizer p ↔ (L.carrier.padicLocalization p).map
-      ((k : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap =
-        L.carrier.padicLocalization p := by
-  rw [mem_localStabilizer_iff, ← L.range_localizationToCompletion]
-  refine ⟨fun h ↦ Submodule.ext fun x ↦ ?_, fun h x ↦ ?_⟩
-  · rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply, ← h,
-      LinearEquiv.apply_symm_apply]
-  · conv_lhs => rw [← h]
-    rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
-      LinearEquiv.symm_apply_apply]
+/-- The image `k L_p ⊆ V_p` of the localization `L_p` under an isometry `k` of `V_p`. -/
+noncomputable def localTranslate (k : orthogonalGroup (L.norm.baseChange ℚ_[p])) :
+    Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V) :=
+  (L.carrier.padicLocalization p).map
+    ((k : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap
+
+/-- The image `k L_p` of the full lattice `L_p` is a full lattice in `V_p`. -/
+instance isLattice_localTranslate (k : orthogonalGroup (L.norm.baseChange ℚ_[p])) :
+    (L.localTranslate p k).IsLattice ℚ_[p] :=
+  Submodule.isLattice_map _ _ (k : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).surjective
+
+variable {L p} in
+/-- A vector lies in `k L_p` exactly when its preimage under `k` lies in `L_p`. -/
+@[simp]
+theorem mem_localTranslate_iff {k : orthogonalGroup (L.norm.baseChange ℚ_[p])}
+    {x : ℚ_[p] ⊗[ℚ] V} : x ∈ L.localTranslate p k ↔
+      (k : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).symm x ∈ L.carrier.padicLocalization p :=
+  Submodule.mem_map_equiv _
+
+variable {L p} in
+/-- The image `k x` lies in `k L_p` exactly when `x` lies in `L_p`. -/
+theorem apply_mem_localTranslate_iff {k : orthogonalGroup (L.norm.baseChange ℚ_[p])}
+    {x : ℚ_[p] ⊗[ℚ] V} :
+    (k : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V) x ∈ L.localTranslate p k ↔
+      x ∈ L.carrier.padicLocalization p := by
+  rw [mem_localTranslate_iff, LinearEquiv.symm_apply_apply]
+
+variable {L p} in
+/-- An isometry `k` of `V_p` carries `L_p` onto `N` exactly when `k x ∈ N ↔ x ∈ L_p` for
+every `x`. -/
+theorem localTranslate_eq_iff {k : orthogonalGroup (L.norm.baseChange ℚ_[p])}
+    {N : Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V)} :
+    L.localTranslate p k = N ↔ ∀ x, (k : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V) x ∈ N ↔
+      x ∈ L.carrier.padicLocalization p :=
+  Submodule.map_equiv_eq_iff
+
+/-- An isometry `k` of `V_p` lies in `K_p(L)` exactly when it carries the localization `L_p`
+onto itself. -/
+theorem mem_localStabilizer_iff_localTranslate_eq {k : orthogonalGroup (L.norm.baseChange ℚ_[p])} :
+    k ∈ L.localStabilizer p ↔ L.localTranslate p k = L.carrier.padicLocalization p := by
+  rw [localTranslate_eq_iff, mem_localStabilizer_iff, L.range_localizationToCompletion]
 
 /-- **The local stabilizer is an integral orthogonal subgroup.** In the rational basis of any basis
 `e` of `L`, the local stabilizer `K_p(L)` consists of the isometries whose matrices, and those of
