@@ -98,7 +98,9 @@ variable {D : Type*} [CommRing D] {F B B' : Finset D[X]} {b b' : D[X]}
 
 namespace IsIrreducibleBasis
 
-variable [IsDomain D]
+section NoZeroDivisors
+
+variable [NoZeroDivisors D]
 
 /-- The members of an irreducible basis are primitive. -/
 theorem isPrimitive (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) : b.IsPrimitive :=
@@ -114,9 +116,10 @@ theorem isSquarefreeBasis (hB : F.IsIrreducibleBasis B) : F.IsSquarefreeBasis B 
       (hB.irreducible b hb).associated_of_dvd (hB.irreducible b' hb') h
   exists_eq_C_mul_prod := hB.exists_eq_C_mul_prod
 
+end NoZeroDivisors
+
 variable [IsGCDMonoid D]
 
-omit [IsDomain D] in
 /-- An irreducible polynomial of positive degree is associated to a member of an irreducible
 basis of `F` exactly when it divides a nonzero member of `F`. -/
 theorem exists_associated_iff (hB : F.IsIrreducibleBasis B) {q : D[X]} (hq : Irreducible q)
@@ -136,14 +139,12 @@ theorem exists_associated_iff (hB : F.IsIrreducibleBasis B) {q : D[X]} (hq : Irr
   obtain ⟨b, hb, hqb⟩ := (hq'.dvd_finsetProd_iff _).1 h
   exact ⟨b, hb, hq.associated_of_dvd (hB.irreducible b hb) (hq'.dvd_of_dvd_pow hqb)⟩
 
-omit [IsDomain D] in
 /-- Irreducible bases of the same family agree up to associates. -/
 theorem exists_associated (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
     (hb : b ∈ B) : ∃ b' ∈ B', Associated b b' :=
   (hB'.exists_associated_iff (hB.irreducible b hb) (hB.natDegree_pos b hb)).2
     (hB.exists_dvd b hb)
 
-omit [IsDomain D] in
 /-- Each member of an irreducible basis is a unit multiple of a member of any other irreducible
 basis of the same family. -/
 theorem exists_eq_C_mul (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
@@ -155,17 +156,10 @@ theorem exists_eq_C_mul (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasi
   obtain ⟨r, hr, hru⟩ := Polynomial.isUnit_iff.1 u.isUnit
   exact ⟨b', hb', r, hr, by rw [← hu, ← hru, mul_comm]⟩
 
-omit [IsDomain D] in
 /-- Irreducible bases of the same family have the same number of members. -/
 theorem card_eq (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B') :
     B.card = B'.card := by
   classical
-  rcases subsingleton_or_nontrivial D with hD | hD
-  · have hempty {B : Finset D[X]} (hB : F.IsIrreducibleBasis B) : B = ∅ :=
-      eq_empty_of_forall_notMem fun b hb ↦
-        (hB.irreducible b hb).not_isUnit (isUnit_of_subsingleton b)
-    rw [hempty hB, hempty hB']
-  have : IsDomain D := TauCeti.isDomain_of_isGCDMonoid
   have hinj {B : Finset D[X]} (hB : F.IsIrreducibleBasis B) : Set.InjOn Associates.mk B :=
     fun b hb b' hb' h ↦ hB.eq_of_associated b hb b' hb' (Associates.mk_eq_mk_iff_associated.1 h)
   have himage : B.image Associates.mk = B'.image Associates.mk := by
@@ -180,7 +174,6 @@ theorem card_eq (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B') :
       exact ⟨b, hb, (Associates.mk_eq_mk_iff_associated.2 h).symm⟩
   rw [← card_image_of_injOn (hinj hB), ← card_image_of_injOn (hinj hB'), himage]
 
-omit [IsDomain D] in
 /-- The discriminant of a member of an irreducible basis is associated to the discriminant of a
 member of any other irreducible basis of the same family. -/
 theorem exists_associated_discr (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
@@ -192,14 +185,11 @@ theorem exists_associated_discr (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreduc
   rw [TauCeti.discr_C_mul _ hr.ne_zero]
   exact associated_unit_mul_left _ _ (hr.pow _)
 
-omit [IsDomain D] in
 /-- The resultant of two distinct members of an irreducible basis is associated to the resultant
 of two distinct members of any other irreducible basis of the same family. -/
 theorem exists_associated_resultant (hB : F.IsIrreducibleBasis B)
     (hB' : F.IsIrreducibleBasis B') (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
     ∃ c ∈ B', ∃ c' ∈ B', c ≠ c' ∧ Associated (resultant b b') (resultant c c') := by
-  have := (hB.irreducible b hb).nontrivial_coeff
-  have : IsDomain D := TauCeti.isDomain_of_isGCDMonoid
   obtain ⟨c, hc, r, hr, rfl⟩ := hB.exists_eq_C_mul hB' hb
   obtain ⟨c', hc', r', hr', rfl⟩ := hB.exists_eq_C_mul hB' hb'
   -- distinct members of `B` are not associated, so neither are the members of `B'` they are
@@ -221,8 +211,10 @@ variable (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
 /-- By Gauss's lemma, the members of an irreducible basis stay irreducible over the fraction
 field. -/
 theorem irreducible_map (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) :
-    Irreducible (b.map (algebraMap D K)) :=
-  (hB.isPrimitive hb).irreducible_iff_irreducible_map_fraction_map.1 (hB.irreducible b hb)
+    Irreducible (b.map (algebraMap D K)) := by
+  have := (hB.irreducible b hb).nontrivial_coeff
+  have : IsDomain D := TauCeti.isDomain_of_isGCDMonoid
+  exact (hB.isPrimitive hb).irreducible_iff_irreducible_map_fraction_map.1 (hB.irreducible b hb)
 
 end FractionField
 

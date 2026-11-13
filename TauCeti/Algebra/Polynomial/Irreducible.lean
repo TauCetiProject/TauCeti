@@ -21,11 +21,13 @@ open Polynomial
 
 namespace Irreducible
 
+/-- A monoid with an irreducible element is nontrivial, since `1` is not irreducible. -/
+theorem nontrivial {M : Type*} [Monoid M] {p : M} (hp : Irreducible p) : Nontrivial M :=
+  nontrivial_of_ne p 1 hp.ne_one
+
 /-- If `D[X]` has an irreducible element then `D` is not the zero ring. -/
 theorem nontrivial_coeff {D : Type*} [Semiring D] {q : D[X]} (hq : Irreducible q) :
-    Nontrivial D := by
-  by_contra h
-  rw [not_nontrivial_iff_subsingleton] at h
-  exact hq.not_isUnit (isUnit_of_subsingleton q)
+    Nontrivial D :=
+  Polynomial.nontrivial_iff.1 hq.nontrivial
 
 end Irreducible
