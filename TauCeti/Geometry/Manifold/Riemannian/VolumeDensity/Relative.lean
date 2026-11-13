@@ -297,6 +297,8 @@ section Measure
 
 variable [LindelofSpace M]
 
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
+
 omit [LindelofSpace M] in
 /-- The relative volume density, as a density on the copy of `M` carrying `g`, is measurable. -/
 private theorem measurable_ofReal_relativeVolumeDensity :

@@ -113,7 +113,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 variable {f : M → ℝ} {hf : ContMDiff I 𝓘(ℝ) n f} {hf_pos : ∀ x, 0 < f x}
 
-variable [FiniteDimensional ℝ E] [LindelofSpace M]
+variable [FiniteDimensional ℝ E]
+
+section Lindelof
+
+variable [LindelofSpace M]
 
 /-- **Volume under conformal change.** In real dimension `N`, the Riemannian volume of the
 rescaled metric `f g` is the image, under the identity map between the copies of `M`, of the
@@ -147,6 +151,28 @@ theorem integral_riemannianVolume_rescale {F : Type*} [NormedAddCommGroup F] [No
     integral_riemannianVolume_eq_integral_relativeVolumeDensity_smul
       g (g.rescale f hf hf_pos) φ
 
+/-- **Critical `Lᵖ` integrals under conformal change.** In real dimension `N`, for
+`ĝ = u ^ (4 / (N - 2)) g` with `u ≥ 0` and any function `v`,
+`∫ |v| ^ (2 N / (N - 2)) dV_ĝ = ∫ |u v| ^ (2 N / (N - 2)) dV_g`. -/
+theorem integral_abs_rpow_rescale_rpow {u : M → ℝ} (hu : ∀ x, 0 ≤ u x)
+    {hf : ContMDiff I 𝓘(ℝ) n fun x ↦ u x ^ (4 / ((Module.finrank ℝ E : ℝ) - 2))}
+    {hf_pos : ∀ x, 0 < u x ^ (4 / ((Module.finrank ℝ E : ℝ) - 2))} (v : M → ℝ) :
+    ∫ x, |v x.ofWithMetric| ^ (2 * (Module.finrank ℝ E : ℝ) / ((Module.finrank ℝ E : ℝ) - 2))
+        ∂riemannianVolume I (WithMetric (g.rescale _ hf hf_pos)) =
+      ∫ x, |u x.ofWithMetric * v x.ofWithMetric| ^
+          (2 * (Module.finrank ℝ E : ℝ) / ((Module.finrank ℝ E : ℝ) - 2))
+        ∂riemannianVolume I (WithMetric g) := by
+  rw [integral_riemannianVolume_rescale fun y ↦ |v y| ^
+    (2 * (Module.finrank ℝ E : ℝ) / ((Module.finrank ℝ E : ℝ) - 2))]
+  congr 1
+  funext x
+  rw [smul_eq_mul, ← Real.rpow_mul (hu _), abs_mul, abs_of_nonneg (hu _),
+    Real.mul_rpow (hu _) (abs_nonneg _)]
+  congr 2
+  ring
+
+end Lindelof
+
 /-- **Total volume under conformal change.** On a compact manifold of real dimension `N`, the
 total volume of the rescaled metric `f g` is `∫ f ^ (N / 2) dV_g`. -/
 theorem riemannianTotalVolume_rescale [CompactSpace M] :
@@ -172,26 +198,6 @@ theorem riemannianTotalVolume_rescale_rpow [CompactSpace M] {u : M → ℝ} (hu 
   funext x
   rw [← Real.rpow_mul (hu _)]
   congr 1
-  ring
-
-/-- **Critical `Lᵖ` integrals under conformal change.** In real dimension `N`, for
-`ĝ = u ^ (4 / (N - 2)) g` with `u ≥ 0` and any function `v`,
-`∫ |v| ^ (2 N / (N - 2)) dV_ĝ = ∫ |u v| ^ (2 N / (N - 2)) dV_g`. -/
-theorem integral_abs_rpow_rescale_rpow {u : M → ℝ} (hu : ∀ x, 0 ≤ u x)
-    {hf : ContMDiff I 𝓘(ℝ) n fun x ↦ u x ^ (4 / ((Module.finrank ℝ E : ℝ) - 2))}
-    {hf_pos : ∀ x, 0 < u x ^ (4 / ((Module.finrank ℝ E : ℝ) - 2))} (v : M → ℝ) :
-    ∫ x, |v x.ofWithMetric| ^ (2 * (Module.finrank ℝ E : ℝ) / ((Module.finrank ℝ E : ℝ) - 2))
-        ∂riemannianVolume I (WithMetric (g.rescale _ hf hf_pos)) =
-      ∫ x, |u x.ofWithMetric * v x.ofWithMetric| ^
-          (2 * (Module.finrank ℝ E : ℝ) / ((Module.finrank ℝ E : ℝ) - 2))
-        ∂riemannianVolume I (WithMetric g) := by
-  rw [integral_riemannianVolume_rescale fun y ↦ |v y| ^
-    (2 * (Module.finrank ℝ E : ℝ) / ((Module.finrank ℝ E : ℝ) - 2))]
-  congr 1
-  funext x
-  rw [smul_eq_mul, ← Real.rpow_mul (hu _), abs_mul, abs_of_nonneg (hu _),
-    Real.mul_rpow (hu _) (abs_nonneg _)]
-  congr 2
   ring
 
 end TauCeti.WithMetric
