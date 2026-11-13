@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.AB
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Total.Basic
 
 /-!
@@ -47,8 +48,9 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
 
 /-- Total Čech cohomology of the families in `E`, as a diagram of functors of the
 coefficient complex. Transition maps are induced by any raw refinement.
-The body is exposed so that its objects compute to fixed-family total cohomology functors. -/
-@[expose, simps obj]
+The body is exposed and implicitly reducible so that its objects compute to fixed-family total
+cohomology functors, including when matching simplification lemmas. -/
+@[expose, implicit_reducible, simps obj]
 def cechHypercohomologyDiagram : J ⥤ (Cᵒᵖ ⥤ CochainComplex A ℤ) ⥤ A where
   obj j := cechTotalComplexFunctor (E j).obj ⋙ HomologicalComplex.homologyFunctor A _ n
   map f := cechTotalComplexHomologyMap A n (hE (leOfHom f)).some
@@ -56,6 +58,16 @@ def cechHypercohomologyDiagram : J ⥤ (Cᵒᵖ ⥤ CochainComplex A ℤ) ⥤ A 
     (cechTotalComplexHomologyMap_id A n)
   map_comp _ _ := (cechTotalComplexHomologyMap_eq A n _ _).trans
     (cechTotalComplexHomologyMap_comp A n _ _)
+
+instance (j : J) : ((cechHypercohomologyDiagram A E hE n).obj j).Additive := by
+  rw [cechHypercohomologyDiagram_obj]
+  infer_instance
+
+instance : (cechHypercohomologyDiagram A E hE n).flip.Additive where
+  map_add := by
+    intros
+    ext j
+    exact Functor.map_add ((cechHypercohomologyDiagram A E hE n).obj j)
 
 /-- Any refinement between comparable families computes the transition map. -/
 lemma cechHypercohomologyDiagram_map {i j : J} (f : i ⟶ j) (φ : E j ⟶ E i) :
@@ -71,6 +83,10 @@ compute to colimits, as required by the structure and descent maps. -/
 def cechHypercohomology : (Cᵒᵖ ⥤ CochainComplex A ℤ) ⥤ A :=
   (cechHypercohomologyDiagram A E hE n).flip ⋙ colim
 
+instance : (cechHypercohomology A E hE n).Additive := by
+  unfold cechHypercohomology
+  infer_instance
+
 /-- The hypercohomology object is the colimit of the fixed-family total cohomology diagram. -/
 lemma cechHypercohomology_obj (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
     (cechHypercohomology A E hE n).obj P =
@@ -83,11 +99,27 @@ lemma cechHypercohomology_map {P Q : Cᵒᵖ ⥤ CochainComplex A ℤ} (α : P �
       colim.map ((cechHypercohomologyDiagram A E hE n).flip.map α) :=
   (rfl)
 
+variable {A}
+
+/-- The structure map from a family's total cohomology, natural in the coefficient complex. -/
+def cechHypercohomologyι (j : J) :
+    cechTotalComplexFunctor (E j).obj ⋙ HomologicalComplex.homologyFunctor A _ n ⟶
+      cechHypercohomology A E hE n :=
+  (pointwiseCocone (cechHypercohomologyDiagram A E hE n)).ι.app j
+
+variable (A)
+
 /-- The pointwise colimit cocone for total Čech cohomology, natural in the coefficient
-complex. Its body is exposed so that the cocone point computes to `cechHypercohomology`. -/
-@[expose, simps!]
-def cechHypercohomologyCocone : Cocone (cechHypercohomologyDiagram A E hE n) :=
-  pointwiseCocone (cechHypercohomologyDiagram A E hE n)
+complex. Its point and legs are the public hypercohomology functor and structure maps. The
+body is implicitly reducible so their types match in downstream simplification lemmas. -/
+@[expose, implicit_reducible, simps]
+def cechHypercohomologyCocone : Cocone (cechHypercohomologyDiagram A E hE n) where
+  pt := cechHypercohomology A E hE n
+  ι :=
+    { app := cechHypercohomologyι E hE n
+      naturality i j f := by
+        unfold cechHypercohomologyι
+        exact (pointwiseCocone (cechHypercohomologyDiagram A E hE n)).ι.naturality f }
 
 /-- Hypercohomology is the colimit in the functor category, computed pointwise. -/
 def isColimitCechHypercohomologyCocone :
@@ -96,12 +128,6 @@ def isColimitCechHypercohomologyCocone :
 
 variable {A}
 
-/-- The structure map from a family's total cohomology, natural in the coefficient complex. -/
-def cechHypercohomologyι (j : J) :
-    cechTotalComplexFunctor (E j).obj ⋙ HomologicalComplex.homologyFunctor A _ n ⟶
-      cechHypercohomology A E hE n :=
-  (cechHypercohomologyCocone A E hE n).ι.app j
-
 /-- The structure maps are the insertions into the colimit. -/
 lemma cechHypercohomologyι_app (j : J) (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
     (cechHypercohomologyι E hE n j).app P =
@@ -109,7 +135,7 @@ lemma cechHypercohomologyι_app (j : J) (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
   (rfl)
 
 /-- Structure maps respect the transition maps of the diagram. -/
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 lemma cechHypercohomologyDiagram_map_comp_cechHypercohomologyι {i j : J} (f : i ⟶ j) :
     (cechHypercohomologyDiagram A E hE n).map f ≫ cechHypercohomologyι E hE n j =
       cechHypercohomologyι E hE n i :=
@@ -137,7 +163,7 @@ lemma homologyMap_cechTotalComplexMap_comp_cechHypercohomologyι_app
 
 /-- Pointwise structure maps commute with coefficient morphisms. -/
 @[reassoc]
-lemma cechHypercohomologyι_app_naturality (j : J)
+lemma cechHypercohomologyι_naturality (j : J)
     {P Q : Cᵒᵖ ⥤ CochainComplex A ℤ} (α : P ⟶ Q) :
     (cechHypercohomologyι E hE n j).app P ≫ (cechHypercohomology A E hE n).map α =
       HomologicalComplex.homologyMap ((cechTotalComplexFunctor (E j).obj).map α) n ≫

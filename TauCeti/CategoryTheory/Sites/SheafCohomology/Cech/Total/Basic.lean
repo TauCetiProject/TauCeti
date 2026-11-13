@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomotopy
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
+public import TauCeti.Algebra.Homology.TotalComplex.Additive
 public import TauCeti.Algebra.Homology.TotalComplex.Homotopy
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
@@ -47,14 +48,22 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
 
 /-- The direct-sum total Čech complex of a presheaf of cochain complexes, functorial in its
 coefficients. The Čech grading is extended by zero from `ℕ` to `ℤ` before totalization.
-The composite functor is exposed so native total inclusions and maps can elaborate with its
-objects as their source and target. -/
+The composite functor is exposed with its object field given by the native total, so native
+total inclusions and maps also match simplification lemmas at implicit transparency. -/
 @[expose, implicit_reducible]
 def cechTotalComplexFunctor :
     (Cᵒᵖ ⥤ CochainComplex A ℤ) ⥤ CochainComplex A ℤ :=
-  cechComplexFunctor U ⋙
+  { cechComplexFunctor U ⋙
+      ComplexShape.embeddingUpNat.extendFunctor (CochainComplex A ℤ) ⋙
+        totalFunctor A (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) with
+    obj P := total (((cechComplexFunctor U).obj P).extend ComplexShape.embeddingUpNat)
+      (ComplexShape.up ℤ) }
+
+instance : (cechTotalComplexFunctor U :
+    (Cᵒᵖ ⥤ CochainComplex A ℤ) ⥤ CochainComplex A ℤ).Additive where
+  map_add := Functor.map_add (cechComplexFunctor U ⋙
     ComplexShape.embeddingUpNat.extendFunctor (CochainComplex A ℤ) ⋙
-      totalFunctor A (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
+      totalFunctor A (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ))
 
 /-- The total Čech complex is the native total of the zero-extended tuple bicomplex. -/
 @[simp]
@@ -89,7 +98,7 @@ lemma cechTotalComplexMap_def (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.m
 
 /-- On each total summand, refinement is the corresponding component of the extended
 Čech refinement map. -/
-@[reassoc, simp]
+@[reassoc (attr := simp)]
 lemma ι_cechTotalComplexMap
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (p q n : ℤ)
     (hpq : p + q = n) :
@@ -116,8 +125,6 @@ lemma cechTotalComplexMap_comp {ν : Type w} {W : ν → C}
     cechTotalComplexMap P (φ ≫ ψ) = cechTotalComplexMap P ψ ≫ cechTotalComplexMap P φ := by
   simp only [cechTotalComplexMap_def, cechComplexMap_comp,
     HomologicalComplex.extendMap_comp, total.map_comp]
-  -- The remaining object equations are instances of `cechTotalComplexFunctor_obj`.
-  rfl
 
 /-- The total refinement map is natural in the presheaf of coefficient complexes. -/
 @[reassoc]
@@ -143,7 +150,7 @@ def cechTotalComplexMapHomotopy
 
 /-- On each total summand the refinement prism is the extended Čech prism, with no extra
 sign. The inclusion on the right has bidegree `(p - 1,q)`. -/
-@[reassoc, simp]
+@[reassoc (attr := simp)]
 lemma ι_cechTotalComplexMapHomotopy_hom
     (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (p q n : ℤ)
     (hpq : p + q = n) :
@@ -169,19 +176,10 @@ variable (U) in
 /-- An empty family has zero total Čech complex, without requiring any value of the
 coefficient presheaf to vanish. -/
 lemma isZero_cechTotalComplexFunctor_obj [IsEmpty ι] :
-    IsZero ((cechTotalComplexFunctor U).obj P) := by
-  have hK : IsZero ((cechComplexFunctor U).obj P) := by
-    refine (IsZero.iff_id_eq_zero _).2 ?_
-    apply HomologicalComplex.hom_ext
-    intro p
-    exact Pi.hom_ext _ _ fun a ↦ isEmptyElim (a 0)
-  have hL := (ComplexShape.embeddingUpNat.extendFunctor (CochainComplex A ℤ)).map_isZero hK
-  refine (IsZero.iff_id_eq_zero _).2 ?_
-  ext n
-  apply total.hom_ext
-  intro p q hpq
-  exact ((HomologicalComplex.eval A _ q).map_isZero
-    ((HomologicalComplex.eval (CochainComplex A ℤ) _ p).map_isZero hL)).eq_of_src _ _
+    IsZero ((cechTotalComplexFunctor U).obj P) :=
+  (totalFunctor A (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)).map_isZero
+    ((ComplexShape.embeddingUpNat.extendFunctor (CochainComplex A ℤ)).map_isZero
+      (isZero_cechComplexFunctor_obj U P))
 
 section Homology
 
