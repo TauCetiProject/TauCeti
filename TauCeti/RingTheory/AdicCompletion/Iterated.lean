@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.AdicCompletion.Basic
 import Mathlib.Algebra.Module.Torsion.Basic
 
+import TauCeti.RingTheory.Regular.Pair
+
 /-!
 # Iterated adic completion
 

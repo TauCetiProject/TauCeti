@@ -19,6 +19,8 @@ import TauCeti.RingTheory.Regular.LinearMap
 import TauCeti.RingTheory.Regular.RegularSequence
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
+import TauCeti.RingTheory.Regular.Pair
+
 /-!
 # Regular local rings of dimension two
 

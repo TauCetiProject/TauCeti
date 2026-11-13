@@ -14,6 +14,8 @@ import TauCeti.RingTheory.Flat.LocalCriterion
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 import TauCeti.RingTheory.Regular.RegularSequence
 
+import TauCeti.RingTheory.Regular.Pair
+
 /-!
 # Miracle flatness
 

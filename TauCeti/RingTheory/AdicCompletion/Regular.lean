@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import Mathlib.Algebra.Regular.SMul
 public import TauCeti.RingTheory.Regular.RegularSequence
 
+import TauCeti.RingTheory.Regular.Pair
+
 /-!
 # Regularity of the parameter on principal-adic completions
 

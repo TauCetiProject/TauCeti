@@ -20,6 +20,8 @@ import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.Regular.RegularSequence
 
+import TauCeti.RingTheory.Regular.Pair
+
 /-!
 # Completions of localizations
 
