@@ -370,15 +370,14 @@ private theorem exists_eq_hemisphereHomeomorph_symm_or_neg (y : sphere (0 : E) 1
       linarith
     exact ⟨hemisphereHomeomorph p ⟨-y, hy'⟩, Or.inr (by simp)⟩
 
-variable [FiniteDimensional ℝ E] {X : Type*} [TopologicalSpace X] {A B : Set X}
+variable {X : Type*} [TopologicalSpace X] {A B : Set X}
 
-/-- **Two discs form the standard hemisphere pair.** For discs in the orthogonal
-complement of a unit vector `p`, there is a homeomorphism onto the sphere carrying
-exactly the first disc to the closed positive hemisphere and exactly the second to the
-closed negative hemisphere. On the first disc it agrees with the prescribed coordinates
-followed by the inverse of `TauCeti.hemisphereHomeomorph p`. The second is carried onto the closed
-hemisphere around `-p` after the radial extension of the gluing homeomorphism of the boundary
-spheres, so that the two maps agree on `A ∩ B`. -/
+/-- **Two discs form the standard hemisphere pair.** Let `A` and `B` be closed subsets
+covering `X`, each identified with the closed unit ball of the orthogonal complement of a
+unit vector `p`, and meeting exactly along their boundary spheres. There is a homeomorphism
+onto the sphere carrying exactly `A` to the closed positive hemisphere and exactly `B` to
+the closed negative hemisphere. On `A` it agrees with the prescribed coordinates followed
+by the inverse of `TauCeti.hemisphereHomeomorph p`. -/
 theorem exists_homeomorph_sphere_of_union_closedBall_orthogonal
     (hA : IsClosed A) (hB : IsClosed B) (hAB : A ∪ B = univ)
     (eA : A ≃ₜ closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1) (eB : B ≃ₜ closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1)
@@ -449,11 +448,6 @@ theorem exists_homeomorph_sphere_of_union_closedBall_orthogonal
       have hw : (⟨_, hmemB (eB.symm ⟨_, hz⟩)⟩ : closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1) = v :=
         Subtype.ext (by simp)
       simp only [gB, hw, e]
-  -- A compact space mapping bijectively and continuously onto the sphere is homeomorphic to it.
-  have : CompactSpace (closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1) :=
-    isCompact_iff_compactSpace.1 (isCompact_closedBall _ _)
-  have : CompactSpace X := ⟨hAB ▸ (isCompact_iff_compactSpace.2 eA.symm.compactSpace).union
-    (isCompact_iff_compactSpace.2 eB.symm.compactSpace)⟩
   have hlower (x : X) : ⟪(g x : E), (p : E)⟫ ≤ 0 ↔ x ∈ B := by
     constructor
     · intro hx
@@ -467,10 +461,36 @@ theorem exists_homeomorph_sphere_of_union_closedBall_orthogonal
       rw [hg_B ⟨x, hx⟩]
       simpa only [gB, coe_neg_sphere, inner_neg_left] using
         neg_nonpos.2 (e.symm ⟨_, hmemB ⟨x, hx⟩⟩).2
-  exact ⟨g.continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g ⟨hinj, hsurj⟩),
-    hg_A, hupper, hlower⟩
+  -- Each disc maps by a homeomorphism onto a closed hemisphere, so the glued map is closed.
+  have hclosedHem : IsClosed {y : sphere (0 : E) 1 | 0 ≤ ⟪(y : E), (p : E)⟫} :=
+    isClosed_le continuous_const (by fun_prop)
+  have hclosedA : IsClosedMap gA :=
+    (hclosedHem.isClosedMap_subtype_val.comp e.symm.isClosedMap).comp eA.isClosedMap
+  let T : closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1 ≃ₜ
+      closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
+    (H.trans (Homeomorph.neg _)).subtype fun v ↦ by simp [hHn]
+  have hclosedB : IsClosedMap gB := by
+    convert (Homeomorph.neg (sphere (0 : E) 1)).isClosedMap.comp
+      (hclosedHem.isClosedMap_subtype_val.comp
+        (eB.trans T |>.trans e.symm).isClosedMap) using 1
+    have hT (x : B) : T (eB x) = ⟨-H (eB x), hmemB x⟩ :=
+      Subtype.ext (by simp [T])
+    ext x
+    simp [gB, hT]
+  have hclosed : IsClosedMap g := by
+    intro s hs
+    have himage : g '' s = gA '' ((↑) ⁻¹' s) ∪ gB '' ((↑) ⁻¹' s) := by
+      simpa only [image_id] using image_of_range_union_range_eq_univ
+        (f₁ := gA) (f₂ := id) (g₁ := gB) (g₂ := id) (funext hg_A) (funext hg_B)
+        (by simpa only [Subtype.range_coe] using hAB) s
+    rw [himage]
+    exact (hclosedA _ (hs.preimage continuous_subtype_val)).union
+      (hclosedB _ (hs.preimage continuous_subtype_val))
+  obtain ⟨h, hh⟩ := isHomeomorph_iff_exists_homeomorph.1
+    (isHomeomorph_iff_continuous_isClosedMap_bijective.2 ⟨g.continuous, hclosed, hinj, hsurj⟩)
+  refine ⟨h, ?_⟩
+  simpa only [hh] using And.intro hg_A (And.intro hupper hlower)
 
-omit [FiniteDimensional ℝ E] in
 /-- **Two discs glued along their boundary spheres form a sphere.** Let `X` be covered by two
 closed sets `A` and `B`, each homeomorphic to the closed unit ball of a real inner product space
 `F` of dimension `n`, such that `A ∩ B` corresponds to the unit sphere under both

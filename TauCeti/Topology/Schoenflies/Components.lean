@@ -62,14 +62,13 @@ namespace TauCeti
 
 open Function Metric Module Set Topology
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {σ : sphere (0 : E) 1 → sphere (0 : F) 1}
 
 section Function
 
 variable {φ : sphere (0 : F) 1 → ℝ}
 
-omit [FiniteDimensional ℝ E] in
 /-- **The positive domain of a function vanishing exactly on an embedded sphere.** Let `σ` be a
 continuous injection of the unit sphere of a real normed space `E` into the
 unit sphere of a real normed space of dimension `dim E + 1`, and let `φ` be a continuous function
@@ -89,7 +88,6 @@ theorem connectedComponentIn_compl_range_eq_setOf_pos (hEF : finrank ℝ F = fin
         (Set.ext hφσ : φ ⁻¹' {0} = range σ)])
     ⟨z, hz⟩ hy
 
-omit [FiniteDimensional ℝ E] in
 /-- **The negative domain of a function vanishing exactly on an embedded sphere.** Let `σ` be a
 continuous injection of the unit sphere of a real normed space `E` into the
 unit sphere of a real normed space of dimension `dim E + 1`, and let `φ` be a continuous function
@@ -124,6 +122,7 @@ theorem exists_connectedComponentIn_eq (hb : IsBicollar σ b)
       (range σ)ᶜ = A ∪ B ∧ MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B ∧
       (∀ y ∈ A, connectedComponentIn (range σ)ᶜ y = A) ∧
       (∀ y ∈ B, connectedComponentIn (range σ)ᶜ y = B) := by
+  have : FiniteDimensional ℝ E := .of_finrank_pos (by omega)
   have : PreconnectedSpace (sphere (0 : E) 1) := Subtype.preconnectedSpace
     (isConnected_sphere (by rw [← finrank_eq_rank]; exact_mod_cast hE) 0 zero_le_one).2
   have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
