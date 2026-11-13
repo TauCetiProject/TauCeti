@@ -29,8 +29,9 @@ The starting point is the Riesz--Schauder theory of
 
 The two sides of a parametrix `S` of `T` are used separately. If `S ∘ T - 1` is compact, the
 identity `x = S (T x) - (S ∘ T - 1) x` is an estimate `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖K x‖` with compact
-error, so `T` has finite-dimensional kernel and, on a Banach space, closed range by Peetre's
-lemma. If `T ∘ S - 1` is compact, the range of `T` contains the range of the Fredholm operator
+error, so `T` has finite-dimensional kernel. The same identity makes a bounded sequence with
+convergent `T`-images converge along a subsequence, so `T` has closed range, with no completeness
+assumption. If `T ∘ S - 1` is compact, the range of `T` contains the range of the Fredholm operator
 `T ∘ S`, so it has finite codimension. Conversely, a continuous quasi-inverse of a Fredholm
 operator inverts it modulo finite-rank, hence compact, operators. A parametrix of `T` is also a
 parametrix of `T + C` for `C` compact, which gives the perturbation statement.
@@ -110,13 +111,17 @@ theorem _root_.ContinuousLinearMap.finiteDimensional_ker_of_isCompactOperator_co
   T.finiteDimensional_ker_of_compact_estimate hST
     (T.norm_le_opNorm_mul_norm_add_norm_comp_sub_one S)
 
-omit [CompleteSpace 𝕜] [CompleteSpace F] in
-/-- An operator on a Banach space with a left parametrix modulo compact operators has closed
-range: if `S ∘ T - 1` is compact then `range T` is closed. -/
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
+/-- An operator with a left parametrix modulo compact operators has closed range: if `S ∘ T - 1`
+is compact then `range T` is closed. No completeness of `E`, `F` or the scalar field is needed. -/
 theorem _root_.ContinuousLinearMap.isClosed_range_of_isCompactOperator_comp_sub_one
     (T : E →L[𝕜] F) {S : F →L[𝕜] E} (hST : IsCompactOperator (S.comp T - 1 : E →L[𝕜] E)) :
     IsClosed (T.range : Set F) :=
-  T.isClosed_range_of_compact_estimate hST (T.norm_le_opNorm_mul_norm_add_norm_comp_sub_one S)
+  T.isClosed_range_of_exists_subseq_tendsto fun {_ v y} hv hTv ↦ by
+    -- `v = S (T v) - (S ∘ T - 1) v`, and both terms converge along a subsequence.
+    obtain ⟨z, ψ, hψ, hz⟩ := hST.exists_subseq_tendsto hv
+    refine ⟨S y - z, ψ, hψ, ?_⟩
+    simpa using ((S.continuous.tendsto y).comp (hTv.comp hψ.tendsto_atTop)).sub hz
 
 omit [CompleteSpace E] in
 /-- An operator with a right parametrix modulo compact operators has finite-codimensional range:

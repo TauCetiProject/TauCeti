@@ -13,8 +13,8 @@ import TauCeti.LinearAlgebra.End.RangePow
 /-!
 # Stable kernel and range splittings for compact operators
 
-For a compact operator `K` on a real or complex normed space and a nonzero scalar `μ`,
-the kernels and ranges of powers of `K - μ • 1` stabilise.
+For a compact operator `K` on a normed space over a complete nontrivially normed field and a
+nonzero scalar `μ`, the kernels and ranges of powers of `K - μ • 1` stabilise.
 Their stable values are topological complements. This is the closed-subspace splitting
 underlying the nilpotent and invertible parts of Riesz--Schauder theory; in particular,
 `Submodule.projectionL` and `Submodule.prodEquivOfIsTopCompl` supply bounded coordinate
@@ -69,7 +69,7 @@ theorem exists_ker_pow_succ_eq_one_sub (hK : IsCompactOperator K) :
   rw [dist_eq_norm'] at hlt
   exact (hsep m n hmn).not_gt hlt
 
-variable [IsRCLikeNormedField 𝕜]
+variable [CompleteSpace 𝕜]
 
 /-- **The stable Riesz splitting at `1`.** For a compact operator `K`, the kernels and ranges
 of powers of `1 - K` are constant from some stage onward, and their stable values are
@@ -112,9 +112,6 @@ theorem exists_stable_ker_range_pow_one_sub (hK : IsCompactOperator K) :
     LinearMap.codisjoint_ker_pow_range_pow_of_range_pow_succ_eq
       (hstable (p + 1) (Nat.le_succ p)).2
   have hc : IsCompl (LinearMap.ker (f ^ p)) (LinearMap.range (f ^ p)) := ⟨hdisj, hcod⟩
-  have : CompleteSpace 𝕜 := by
-    let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-    infer_instance
   have := hK.finiteDimensional_ker_pow_one_sub p
   exact ⟨p, hstable,
     (hc.symm.isTopCompl_of_isClosed_of_finiteDimensional (hK.isClosed_range_pow_one_sub p)).symm⟩
