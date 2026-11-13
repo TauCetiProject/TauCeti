@@ -268,8 +268,7 @@ theorem slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq (hQ : 0 < Q)
 
 /-- **Slashing twice by `W` multiplies by `Q ^ (k - 2)`.** The square `W ^ 2` is `Q` times an
 element of `Γ₀(N)`; the scalar matrix contributes `Q ^ (k - 2)` and the `Γ₀(N)` factor is
-absorbed. This is the identity the normalization `(√Q) ^ (2 - k)` turns into an involution in
-even weight. -/
+absorbed. This is the identity the normalization `(√Q) ^ (2 - k)` turns into an involution. -/
 theorem slash_atkinLehnerGL_slash_atkinLehnerGL (hQ : 0 < Q)
     (h : IsAtkinLehnerMatrix N Q M) (f : ℍ → ℂ)
     (hf : ∀ γ ∈ (Gamma0 N).map (mapGL ℝ), f ∣[k] γ = f) :

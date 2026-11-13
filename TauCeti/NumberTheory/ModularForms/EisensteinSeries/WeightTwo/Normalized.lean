@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DirichletCharacter.LValues
+public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.QExpansion
-import TauCeti.NumberTheory.DirichletCharacter.GaussSum
+import TauCeti.NumberTheory.DirichletCharacter.LValues
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
@@ -28,7 +28,9 @@ coefficient is `δ_{u = 1} · (-Bₖ,φ / (2k))`.
 The raised series `E₂^{ψ,φ,t}(z) = E₂^{ψ,φ}(t z)`, at any level `N` with `t u v ∣ N`, lies in
 `M₂(N, ψφ)`; it has the same constant coefficient, and at `n = t m > 0` its coefficient is
 `σ₁^{ψ,φ}(m)`, the other positive coefficients being zero. For the trivial pair the weight-two
-series is not modular, and `TauCeti.EisensteinSeries.correctedE2` takes its place.
+series is not modular, and `TauCeti.EisensteinSeries.correctedE2` takes its place; it keeps
+Mathlib's normalization with constant term one, `correctedE2 t = E₂(z) - t E₂(t z)`, so its first
+coefficient is `-24` and its constant term is `1 - t`.
 
 ## Main definitions
 
@@ -59,7 +61,7 @@ public section
 
 noncomputable section
 
-open Complex AddChar ZMod ModularForm Matrix.SpecialLinearGroup CongruenceSubgroup
+open Complex ZMod ModularForm Matrix.SpecialLinearGroup CongruenceSubgroup
 open UpperHalfPlane hiding I
 
 open scoped Real
@@ -297,7 +299,6 @@ theorem qExpansion_normalizedCharG2MFRaise (htuv : t * (u * v) ∣ N) :
 
 /-- The `q`-expansion of `E₂^{ψ,φ,t}` is supported on the multiples of `t`. -/
 theorem isSupportedOnDvd_qExpansion_normalizedCharG2MFRaise (htuv : t * (u * v) ∣ N) :
-    haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
     PowerSeries.IsSupportedOnDvd t (qExpansion 1 (normalizedCharG2MFRaise ψ φ t htuv)) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
