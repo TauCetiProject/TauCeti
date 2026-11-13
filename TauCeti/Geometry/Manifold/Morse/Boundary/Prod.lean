@@ -196,9 +196,11 @@ theorem prod_morseTrajectorySlice_left {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(�
   have hxx : x ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x :=
     ⟨Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx),
       Flow.self_mem_stableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx)⟩
-  refine Set.ext fun ⟨z₁, z₂⟩ ↦ ?_
-  simp only [mem_morseTrajectorySlice, unstableSet_prod hX hY, stableSet_prod hX hY,
-    mem_prod, mem_image, Pi.add_apply, Function.comp_apply, Prod.mk.injEq]
+  ext z
+  obtain ⟨z₁, z₂⟩ := z
+  simp only [(hX.prod hY).mem_morseTrajectorySlice, mem_morseTrajectorySlice,
+    unstableSet_prod hX hY, stableSet_prod hX hY, mem_prod, mem_image, Pi.add_apply,
+    Function.comp_apply, Prod.mk.injEq]
   constructor
   · rintro ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, hz⟩
     obtain rfl := hX.eq_of_mem_unstableSet_inter_stableSet ⟨hu₁, hs₁⟩
@@ -215,9 +217,11 @@ theorem prod_morseTrajectorySlice_right {y : N} (hy : mfderiv 𝓘(ℝ, E') 𝓘
   have hyy : y ∈ hY.flow.unstableSet y ∩ hY.flow.stableSet y :=
     ⟨Flow.self_mem_unstableSet_iff.2 (hY.flow_apply_of_mfderiv_eq_zero hy),
       Flow.self_mem_stableSet_iff.2 (hY.flow_apply_of_mfderiv_eq_zero hy)⟩
-  refine Set.ext fun ⟨z₁, z₂⟩ ↦ ?_
-  simp only [mem_morseTrajectorySlice, unstableSet_prod hX hY, stableSet_prod hX hY,
-    mem_prod, mem_image, Pi.add_apply, Function.comp_apply, Prod.mk.injEq]
+  ext z
+  obtain ⟨z₁, z₂⟩ := z
+  simp only [(hX.prod hY).mem_morseTrajectorySlice, mem_morseTrajectorySlice,
+    unstableSet_prod hX hY, stableSet_prod hX hY, mem_prod, mem_image, Pi.add_apply,
+    Function.comp_apply, Prod.mk.injEq]
   constructor
   · rintro ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, hz⟩
     obtain rfl := hY.eq_of_mem_unstableSet_inter_stableSet ⟨hu₂, hs₂⟩
@@ -237,8 +241,8 @@ theorem IsMorseSmale.prod_morseTrajectorySlice_eq_empty (hXs : hX.IsMorseSmale)
       manifoldMorseIndex 𝓘(ℝ, E) f p' + manifoldMorseIndex 𝓘(ℝ, E') g q' + 1) :
     (hX.prod hY).morseTrajectorySlice (p, q) (p', q') = ∅ := by
   refine eq_empty_of_forall_notMem fun z hz ↦ ?_
-  simp only [mem_morseTrajectorySlice, unstableSet_prod hX hY, stableSet_prod hX hY,
-    mem_prod] at hz
+  simp only [(hX.prod hY).mem_morseTrajectorySlice, unstableSet_prod hX hY,
+    stableSet_prod hX hY, mem_prod] at hz
   obtain ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, -⟩ := hz
   have h₁ := hXs.manifoldMorseIndex_lt hf hpp' ⟨z.1, hu₁, hs₁⟩
   have h₂ := hYs.manifoldMorseIndex_lt hg hqq' ⟨z.2, hu₂, hs₂⟩
@@ -282,7 +286,8 @@ theorem prod_morseBoundaryCoeff (p p' : criticalPoints 𝓘(ℝ, E) f)
       manifoldMorseIndex 𝓘(ℝ, E) f p' + manifoldMorseIndex 𝓘(ℝ, E') g q' + 1
   swap
   · -- The index does not drop by one, so every coefficient vanishes.
-    rw [morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one _ _
+    rw [(hXs.prod hYs).morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one
+      (hf.comp_fst_add_comp_snd_chartedSpaceProd hg)
       (by rw [hindP, hindQ]; exact hind)]
     have h₁ : (if p = p' then hYs.morseBoundaryCoeff hg q q' else 0) = 0 := by
       split_ifs with h
@@ -295,7 +300,8 @@ theorem prod_morseBoundaryCoeff (p p' : criticalPoints 𝓘(ℝ, E) f)
         exact morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one _ _ (by omega)
       · rfl
     rw [h₁, h₂, add_zero]
-  rw [morseBoundaryCoeff_eq_ncard _ _ (by rw [hindP, hindQ]; exact hind),
+  rw [(hXs.prod hYs).morseBoundaryCoeff_eq_ncard (hf.comp_fst_add_comp_snd_chartedSpaceProd hg)
+      (by rw [hindP, hindQ]; exact hind),
     coe_criticalPointsProdEquiv_symm, coe_criticalPointsProdEquiv_symm]
   by_cases hpp : p = p'
   · subst hpp
@@ -357,7 +363,8 @@ theorem prod_morseBoundary_single (p : criticalPoints 𝓘(ℝ, E) f)
     · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
       rintro ⟨q'', hq''⟩
       exact h (congrArg Prod.fst (e.symm.injective hq''))
-  rw [Finsupp.add_apply, hL, hR, morseBoundary_single_apply,
+  rw [Finsupp.add_apply, hL, hR,
+    (hXs.prod hYs).morseBoundary_single_apply (hf.comp_fst_add_comp_snd_chartedSpaceProd hg),
     hXs.prod_morseBoundaryCoeff hf hg hYs, mul_add]
   split_ifs <;> simp [add_comm]
 

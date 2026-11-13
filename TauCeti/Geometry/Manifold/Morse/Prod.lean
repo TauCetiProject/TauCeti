@@ -231,8 +231,9 @@ charts with values in `E × E'`. -/
 theorem mem_criticalPoints_comp_fst_add_comp_snd_iff_chartedSpaceProd
     (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hg : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ) g) {p : M × N} :
     p ∈ criticalPoints 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) ↔
-      p.1 ∈ criticalPoints 𝓘(ℝ, E) f ∧ p.2 ∈ criticalPoints 𝓘(ℝ, E') g :=
-  mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd (hf p.1) (hg p.2)
+      p.1 ∈ criticalPoints 𝓘(ℝ, E) f ∧ p.2 ∈ criticalPoints 𝓘(ℝ, E') g := by
+  rw [mem_criticalPoints, mem_criticalPoints, mem_criticalPoints]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd (hf p.1) (hg p.2)
 
 attribute [local instance] isManifold_chartedSpaceProd
 
