@@ -56,9 +56,7 @@ hypothesis is replaced by the Euclidean one the argument actually used.
 The consumer is `TauCeti/Analysis/Complex/Conformal/Poincare/Isometry/Classification.lean`, which
 classifies the isometries of the Poincaré disc: an isometry of the hyperbolic metric fixing the
 origin is a Euclidean isometry of the disc fixing the origin, so the hyperbolic classification is
-this Euclidean one together with the Moebius factor that moves the base point. This supports the
-hyperbolic-metric layer L2 of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`) without adding to it.
+this Euclidean one together with the Moebius factor that moves the base point.
 -/
 
 public section

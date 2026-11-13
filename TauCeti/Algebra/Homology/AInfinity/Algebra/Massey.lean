@@ -414,8 +414,8 @@ theorem sub_mem_tripleMasseyIndeterminacy {w w' : 𝒜.Cohomology}
   -- boundaries, which does not change the value, and then the bounding cochains by cycles.
   obtain ⟨S, rfl⟩ := hw
   obtain ⟨S', rfl⟩ := hw'
-  obtain ⟨T₁, ha₁, hb₁, hc₁, hv₁⟩ := S.exists_a_eq S'.a_mem_cycles S'.cohomologyClass_a
-  obtain ⟨T₂, ha₂, hb₂, hc₂, hv₂⟩ := T₁.exists_b_eq S'.b_mem_cycles S'.cohomologyClass_b
+  obtain ⟨T₁, ha₁, _, _, hv₁⟩ := S.exists_a_eq S'.a_mem_cycles S'.cohomologyClass_a
+  obtain ⟨T₂, ha₂, hb₂, _, hv₂⟩ := T₁.exists_b_eq S'.b_mem_cycles S'.cohomologyClass_b
   obtain ⟨T₃, ha₃, hb₃, hc₃, hv₃⟩ := T₂.exists_c_eq S'.c_mem_cycles S'.cohomologyClass_c
   rw [← hv₁, ← hv₂, ← hv₃]
   exact T₃.value_sub_value_mem S' (by rw [ha₃, ha₂, ha₁]) (by rw [hb₃, hb₂])

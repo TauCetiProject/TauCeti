@@ -105,12 +105,6 @@ a prescribed element inside.
 
 ## References
 
-This supplies a prerequisite for
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`,
-Layer 6 ("Elementary and hyperelementary subgroups"), which asks for exactly these two predicates
-"from these orientations, with their basic closure properties", as the indexing sets of Artin's and
-Brauer's induction theorems.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Part II, §10.
 -/
 
