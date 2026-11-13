@@ -12,10 +12,10 @@ import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 /-!
 # Spectral flow of a path of self-adjoint operators
 
-Let `A : ℝ → E →L[ℂ] E` be a family of bounded self-adjoint operators on a complex Hilbert space,
-continuous on `[a, b]`, with a spectral window (`ContinuousLinearMap.IsSpectralWindow`) at every
-time. The **spectral flow** `TauCeti.spectralFlow A a b` is the net number of eigenvalues of `A t`
-crossing `0` from below as `t` runs from `a` to `b`, counted with multiplicity: an eigenvalue
+Let `A : ℝ → E →L[𝕜] E` be a family of bounded self-adjoint operators on a real or complex Hilbert
+space, continuous on `[a, b]`, with a spectral window (`ContinuousLinearMap.IsSpectralWindow`) at
+every time. The **spectral flow** `TauCeti.spectralFlow A a b` is the net number of eigenvalues of
+`A t` crossing `0` from below as `t` runs from `a` to `b`, counted with multiplicity: an eigenvalue
 moving from negative to nonnegative counts `+1`, one moving from nonnegative to negative counts
 `-1`.
 
@@ -60,15 +60,22 @@ namespace TauCeti
 
 open ContinuousLinearMap
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
-  {A : ℝ → E →L[ℂ] E} {s : Set ℝ}
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAlgebra ℝ (E →L[𝕜] E)] [IsometricContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint]
+  {A : ℝ → E →L[𝕜] E} {s : Set ℝ}
 
 /-- A **spectral flow potential** of a family `A` of operators on a set `s ⊆ ℝ` is a function
 `F : ℝ → ℤ` such that near every `t ∈ s`, `F` differs by a constant from the number of eigenvalues
 of `A` in `[0, r)`, for some spectral window `r` of `A t`. -/
-def IsSpectralFlowPotential (A : ℝ → E →L[ℂ] E) (s : Set ℝ) (F : ℝ → ℤ) : Prop :=
+def IsSpectralFlowPotential (A : ℝ → E →L[𝕜] E) (s : Set ℝ) (F : ℝ → ℤ) : Prop :=
   ∀ t ∈ s, ∃ r, IsSpectralWindow (A t) r ∧
     ∀ᶠ u in 𝓝[s] t, F u - spectralRank (A u) (Ico 0 r) = F t - spectralRank (A t) (Ico 0 r)
+
+/-- Unfolds `TauCeti.IsSpectralFlowPotential`. -/
+theorem isSpectralFlowPotential_iff {F : ℝ → ℤ} :
+    IsSpectralFlowPotential A s F ↔ ∀ t ∈ s, ∃ r, IsSpectralWindow (A t) r ∧
+      ∀ᶠ u in 𝓝[s] t, F u - spectralRank (A u) (Ico 0 r) = F t - spectralRank (A t) (Ico 0 r) :=
+  Iff.rfl
 
 namespace IsSpectralFlowPotential
 
@@ -84,6 +91,8 @@ theorem mono (hF : IsSpectralFlowPotential A s F) {s' : Set ℝ} (hs : s' ⊆ s)
     IsSpectralFlowPotential A s' F := fun t ht ↦
   let ⟨r, hr, hev⟩ := hF t (hs ht)
   ⟨r, hr, hev.filter_mono (nhdsWithin_mono t hs)⟩
+
+variable [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
 
 /-- A potential differs locally by a constant from the eigenvalue count of *every* spectral window,
 not only from that of the window in its definition. -/
@@ -150,8 +159,8 @@ end IsSpectralFlowPotential
 
 /-- **Existence of potentials.** A family of operators that is continuous on `[a, b]` and has a
 spectral window at every point has a potential there. -/
-theorem exists_isSpectralFlowPotential {a b : ℝ} (hA : ContinuousOn A (Icc a b))
-    (hw : ∀ t ∈ Icc a b, ∃ r, IsSpectralWindow (A t) r) :
+theorem exists_isSpectralFlowPotential [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] {a b : ℝ}
+    (hA : ContinuousOn A (Icc a b)) (hw : ∀ t ∈ Icc a b, ∃ r, IsSpectralWindow (A t) r) :
     ∃ F, IsSpectralFlowPotential A (Icc a b) F := by
   rcases lt_or_ge b a with hba | hab
   · exact ⟨0, fun t ht ↦ absurd (ht.1.trans ht.2) (not_le.2 hba)⟩
@@ -188,12 +197,12 @@ open scoped Classical in
 of eigenvalues crossing `0` from below, `F b - F a` for any potential `F` of `A` on `[a, b]`. It is
 well defined for continuous families with a spectral window at every point; it is `0` when no
 potential exists or `b < a`. -/
-noncomputable def spectralFlow (A : ℝ → E →L[ℂ] E) (a b : ℝ) : ℤ :=
+noncomputable def spectralFlow (A : ℝ → E →L[𝕜] E) (a b : ℝ) : ℤ :=
   if h : a ≤ b ∧ ∃ F, IsSpectralFlowPotential A (Icc a b) F then
     h.2.choose b - h.2.choose a else 0
 
 /-- The spectral flow over a reversed interval is `0` by convention. -/
-theorem spectralFlow_eq_zero_of_lt (A : ℝ → E →L[ℂ] E) {a b : ℝ} (h : b < a) :
+theorem spectralFlow_eq_zero_of_lt (A : ℝ → E →L[𝕜] E) {a b : ℝ} (h : b < a) :
     spectralFlow A a b = 0 :=
   dite_eq_right fun h' ↦ h.not_ge h'.1
 
@@ -203,8 +212,9 @@ theorem spectralFlow_eq_zero_of_forall_not_isSpectralFlowPotential {a b : ℝ}
   dite_eq_right fun ⟨_, F, hF⟩ ↦ h F hF
 
 /-- The spectral flow is computed by any potential. -/
-theorem IsSpectralFlowPotential.spectralFlow_eq {F : ℝ → ℤ} {a b : ℝ}
-    (hF : IsSpectralFlowPotential A (Icc a b) F) (hA : ContinuousOn A (Icc a b)) (hab : a ≤ b) :
+theorem IsSpectralFlowPotential.spectralFlow_eq [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] {F : ℝ → ℤ}
+    {a b : ℝ} (hF : IsSpectralFlowPotential A (Icc a b) F) (hA : ContinuousOn A (Icc a b))
+    (hab : a ≤ b) :
     spectralFlow A a b = F b - F a := by
   unfold spectralFlow
   split_ifs with h
@@ -215,22 +225,23 @@ theorem IsSpectralFlowPotential.spectralFlow_eq {F : ℝ → ℤ} {a b : ℝ}
 
 /-- Over an interval on which a single `r` is a spectral window throughout, the spectral flow is
 the change in the number of eigenvalues in `[0, r)`. -/
-theorem spectralFlow_eq_of_isSpectralWindow {a b r : ℝ} (hA : ContinuousOn A (Icc a b))
-    (hr : ∀ t ∈ Icc a b, IsSpectralWindow (A t) r) (hab : a ≤ b) :
+theorem spectralFlow_eq_of_isSpectralWindow [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] {a b r : ℝ}
+    (hA : ContinuousOn A (Icc a b)) (hr : ∀ t ∈ Icc a b, IsSpectralWindow (A t) r) (hab : a ≤ b) :
     spectralFlow A a b = spectralRank (A b) (Ico 0 r) - spectralRank (A a) (Ico 0 r) :=
   IsSpectralFlowPotential.spectralFlow_eq (F := fun u ↦ spectralRank (A u) (Ico 0 r))
     (fun t ht ↦ ⟨r, hr t ht, by simp⟩) hA hab
 
 /-- The spectral flow over a degenerate interval vanishes. -/
 @[simp]
-theorem spectralFlow_self (A : ℝ → E →L[ℂ] E) (a : ℝ) : spectralFlow A a a = 0 := by
+theorem spectralFlow_self (A : ℝ → E →L[𝕜] E) (a : ℝ) : spectralFlow A a a = 0 := by
   unfold spectralFlow
   split_ifs <;> simp
 
 /-- **Concatenation.** The spectral flows over `[a, b]` and `[b, c]` add up to the flow over
 `[a, c]`. -/
-theorem spectralFlow_add_adjacent_intervals {a b c : ℝ} (hA : ContinuousOn A (Icc a c))
-    (hw : ∀ t ∈ Icc a c, ∃ r, IsSpectralWindow (A t) r) (hab : a ≤ b) (hbc : b ≤ c) :
+theorem spectralFlow_add_adjacent_intervals [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] {a b c : ℝ}
+    (hA : ContinuousOn A (Icc a c)) (hw : ∀ t ∈ Icc a c, ∃ r, IsSpectralWindow (A t) r)
+    (hab : a ≤ b) (hbc : b ≤ c) :
     spectralFlow A a b + spectralFlow A b c = spectralFlow A a c := by
   obtain ⟨F, hF⟩ := exists_isSpectralFlowPotential hA hw
   have hab' : Icc a b ⊆ Icc a c := Icc_subset_Icc le_rfl hbc
