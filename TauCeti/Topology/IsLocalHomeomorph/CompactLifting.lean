@@ -5,10 +5,9 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import Mathlib.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Lifting
 public import Mathlib.Topology.Order.Compact
 
-import Mathlib.Topology.Order.Real
 public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Order.ProjIcc
 import Mathlib.Tactic.Linarith
@@ -37,72 +36,6 @@ open Set Filter Function
 open scoped Topology
 
 namespace IsLocalHomeomorph
-
-/-- Paste two actual lifts on adjacent real intervals. The explicit construction
-preserves the entire first interval; separation and ordering hypotheses are unnecessary.
-Both continuation steps below use this same pasting argument. -/
-private theorem exists_paste_interval_lifts
-    {X Y : Type*} [TopologicalSpace X] {f : X → Y} {c : ℝ → Y}
-    {a b d : ℝ} {l₁ l₂ : ℝ → X}
-    (h₁ : ContinuousOn l₁ (Icc a b)) (h₂ : ContinuousOn l₂ (Icc b d))
-    (hjoin : l₁ b = l₂ b) (hp₁ : EqOn (f ∘ l₁) c (Icc a b))
-    (hp₂ : EqOn (f ∘ l₂) c (Icc b d)) :
-    ∃ l : ℝ → X, ContinuousOn l (Icc a d) ∧ EqOn l l₁ (Icc a b) ∧
-      EqOn (f ∘ l) c (Icc a d) := by
-  classical
-  refine ⟨(Iic b).piecewise l₁ l₂, ?_,
-    fun t ht ↦ piecewise_eq_of_mem _ _ _ ht.2, ?_⟩
-  · apply ContinuousOn.piecewise
-    · intro t ht
-      have : t = b := by simpa only [frontier_Iic, mem_singleton_iff] using ht.2
-      subst t
-      exact hjoin
-    · exact h₁.mono fun t ht ↦ ⟨ht.1.1, by simpa only [closure_Iic, mem_Iic] using ht.2⟩
-    · exact h₂.mono fun t ht ↦
-        ⟨by simpa only [compl_Iic, closure_Ioi, mem_Ici] using ht.2, ht.1.2⟩
-  · intro t ht
-    by_cases htb : t ∈ Iic b
-    · simpa only [comp_apply, piecewise_eq_of_mem _ _ _ htb] using hp₁ ⟨ht.1, htb⟩
-    · simpa only [comp_apply, piecewise_eq_of_notMem _ _ _ htb] using
-        hp₂ ⟨(lt_of_not_ge htb).le, ht.2⟩
-
-/-- A local inverse continues an existing interval lift beyond its endpoint. -/
-private theorem exists_extend_lift_of_localHomeomorph
-    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    {f : X → Y} (hf : IsLocalHomeomorph f) {c : ℝ → Y} (hc : Continuous c)
-    {a T : ℝ} (hT : a ≤ T) {l : ℝ → X} (hl : ContinuousOn l (Icc a T))
-    (hproj : EqOn (f ∘ l) c (Icc a T)) :
-    ∃ δ : ℝ, 0 < δ ∧ ∃ l' : ℝ → X,
-      ContinuousOn l' (Icc a (T + δ)) ∧ EqOn l' l (Icc a T) ∧
-      EqOn (f ∘ l') c (Icc a (T + δ)) := by
-  classical
-  obtain ⟨e, hs, he⟩ := hf (l T)
-  have ht : c T ∈ e.target := by
-    rw [← hproj ⟨hT, le_rfl⟩, comp_apply, he]
-    exact e.map_source hs
-  obtain ⟨η, hη, hsub⟩ := Metric.mem_nhds_iff.mp
-    (hc.continuousAt.preimage_mem_nhds (e.open_target.mem_nhds ht))
-  let δ : ℝ := η / 2
-  have hδ : 0 < δ := half_pos hη
-  have hmaps : MapsTo c (Icc T (T + δ)) e.target := by
-    intro t ht'
-    apply hsub
-    rw [Metric.mem_ball, Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr ht'.1)]
-    dsimp [δ] at ht'
-    linarith [ht'.2]
-  let l₂ : ℝ → X := e.symm ∘ c
-  have hl₂ : ContinuousOn l₂ (Icc T (T + δ)) :=
-    e.continuousOn_symm.comp hc.continuousOn hmaps
-  have hjoin : l₂ T = l T := by
-    change e.symm (c T) = l T
-    rw [← hproj ⟨hT, le_rfl⟩, comp_apply, he]
-    exact e.left_inv hs
-  refine ⟨δ, hδ, ?_⟩
-  apply exists_paste_interval_lifts hl hl₂ hjoin.symm hproj
-  intro t ht'
-  change f (e.symm (c t)) = c t
-  rw [he]
-  exact e.right_inv (hmaps ht')
 
 /-- Compact confinement of every lifted prefix gives a lift on the full
 closed interval. An accumulation point supplies the inverse branch at the
@@ -183,18 +116,18 @@ private theorem exists_lift_Icc_of_compact_prefixes_of_continuous
     have hl₂ : ContinuousOn l₂ (Icc t' T) := e.continuousOn_symm.comp hc.continuousOn hmaps
     have hproj₂ : EqOn (f ∘ l₂) c (Icc t' T) := by
       intro u hu
-      change f (e.symm (c u)) = c u
+      dsimp only [l₂, comp_apply]
       rw [he]
       exact e.right_inv (hmaps hu)
     have hjoin : l₂ t' = l₁ t' := by
-      change e.symm (c t') = l₁ t'
+      dsimp only [l₂, comp_apply]
       calc
         e.symm (c t') = x t' := by
           rw [← hxproj t' ht', he]
           exact e.left_inv hsrc
         _ = l₁ t' := hx t' ht'
     obtain ⟨l, hl, heq, hproj⟩ :=
-      exists_paste_interval_lifts hs₁.1 hl₂ hjoin.symm hs₁.2.2 hproj₂
+      ContinuousOn.exists_lift_piecewise_Icc hs₁.1 hl₂ hjoin.symm hs₁.2.2 hproj₂
     exact ⟨⟨hT0, hT1⟩, l, hl, (heq ⟨le_rfl, ht'.1⟩).trans hs₁.2.1, hproj⟩
   have hT : T = b := by
     rcases eq_or_lt_of_le hT1 with h | h
@@ -202,7 +135,7 @@ private theorem exists_lift_Icc_of_compact_prefixes_of_continuous
     exfalso
     obtain ⟨_, l, hl, h0, hproj⟩ := hTA
     obtain ⟨δ, hδ, l', hl', heq, hproj'⟩ :=
-      exists_extend_lift_of_localHomeomorph hf hc hT0 hl hproj
+      exists_extend_lift_Icc hf hc hT0 hl hproj
     have hnext : T < min (T + δ) b := lt_min (by linarith) h
     have hnextA : min (T + δ) b ∈ A := by
       refine ⟨⟨hT0.trans hnext.le, min_le_right _ _⟩, l',
