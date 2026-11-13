@@ -405,7 +405,7 @@ theorem differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnectio
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
     (ht : t ∈ s) :
     DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
+      (sectionCoord ℝ (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
   TauCeti.Manifold.differentiableWithinAt_sectionCoord γ _
     ((contMDiffOn_alongCurveWithin_leviCivitaConnection hs hV t ht).mdifferentiableWithinAt
       one_ne_zero)

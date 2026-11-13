@@ -167,13 +167,13 @@ theorem inner_alongCurve_normalFrameExpansion (h : IsNormalDomain I M p U)
   have he (i : ι) : MDiffAt (T% (normalOrthonormalFrame I M p U b i)) (γ t) :=
     ((h.contMDiffOn_normalOrthonormalFrame b i).contMDiffAt
       (h.isOpen_image.mem_nhds hq)).mdifferentiableAt (by simp)
-  have hecoord (i : ι) : DifferentiableAt ℝ (sectionCoord (F := E) γ (e i) (γ t)) t :=
+  have hecoord (i : ι) : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ (e i) (γ t)) t :=
     differentiableAt_sectionCoord γ (e i) ((he i).comp t hγ)
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hcoeff (i : ι) : HasDerivAt (fun s ↦ ⟪b i, y s⟫_ℝ) ⟪b i, y'⟫_ℝ t :=
     (innerSL ℝ (b i)).hasFDerivAt.comp_hasDerivAt t hy
   have hterm (i : ι) : DifferentiableAt ℝ
-      (sectionCoord (F := E) γ (fun s ↦ ⟪b i, y s⟫_ℝ • e i s) (γ t)) t := by
+      (sectionCoord ℝ (F := E) γ (fun s ↦ ⟪b i, y s⟫_ℝ • e i s) (γ t)) t := by
     rw [sectionCoord_smul]
     exact (hcoeff i).differentiableAt.smul (hecoord i)
   have hframe (i : ι) : alongCurve (leviCivitaConnection I M) γ (e i) t =
@@ -208,7 +208,7 @@ curve. -/
 theorem differentiableAt_sectionCoord_normalFrameExpansion (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
     {y : ℝ → TangentSpace I p} {t : ℝ} (hy : DifferentiableAt ℝ y t) (ht : t • v ∈ U) :
-    DifferentiableAt ℝ (sectionCoord (F := E)
+    DifferentiableAt ℝ (sectionCoord ℝ (F := E)
       (fun s : ℝ ↦ riemannianExp I M p (s • v))
       (fun s ↦ b.normalFrameExpansion (U := U) (riemannianExp I M p (s • v)) (y s))
       (riemannianExp I M p (t • v))) t := by
@@ -218,7 +218,7 @@ theorem differentiableAt_sectionCoord_normalFrameExpansion (h : IsNormalDomain I
   have hγ : MDiffAt γ t :=
     ((contMDiffAt_riemannianExp (h.subset_expDomain ht)).comp t
       hlin.contMDiff.contMDiffAt).mdifferentiableAt (by simp)
-  have hecoord (i : ι) : DifferentiableAt ℝ (sectionCoord (F := E) γ
+  have hecoord (i : ι) : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ
       (fun s ↦ normalOrthonormalFrame I M p U b i (γ s)) (γ t)) t :=
     differentiableAt_sectionCoord γ _
       ((((h.contMDiffOn_normalOrthonormalFrame b i).contMDiffAt
@@ -300,7 +300,7 @@ theorem inner_radialParallel (h : IsNormalDomain I M p U)
     exact ((contMDiffAt_riemannianExp (h.subset_expDomain (hseg s hs))).comp s
       hlin.contMDiff.contMDiffAt).mdifferentiableAt (by simp)
   have hcoord (z : TangentSpace I p) (s : ℝ) (hs : s ∈ Icc l r) :
-      DifferentiableAt ℝ (sectionCoord (F := E) γ (P z) (γ s)) s :=
+      DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ (P z) (γ s)) s :=
     h.differentiableAt_sectionCoord_normalFrameExpansion b v
       (h.hasDerivAt_radialParallelCoefficients_apply b v hlr.le hseg z hs).differentiableAt
       (hseg s hs)
@@ -405,13 +405,13 @@ theorem radialParallelLinearMap_radial (h : IsNormalDomain I M p U)
     (hgeo.contMDiffOn.contMDiffAt
       (isOpen_geodesicInterval.mem_nhds (hmem s hs))).mdifferentiableAt (by norm_num)
   have hPcoord (s : ℝ) (hs : s ∈ Icc l r) :
-      DifferentiableAt ℝ (sectionCoord (F := E) γ P (γ s)) s :=
+      DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ P (γ s)) s :=
     differentiableAt_sectionCoord γ P
       ((h.contMDiffAt_radialParallelLinearMap_apply b v hlr.le hseg v
         (hseg s hs)).mdifferentiableAt (by simp))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ s))
   have hVcoord (s : ℝ) (hs : s ∈ Icc l r) :
-      DifferentiableAt ℝ (sectionCoord (F := E) γ (curveVelocity I γ) (γ s)) s :=
+      DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ (curveVelocity I γ) (γ s)) s :=
     differentiableAt_sectionCoord_curveVelocity (γ := γ) hgeo.contMDiffOn
       isOpen_geodesicInterval (hmem s hs)
   have hP (s : ℝ) (hs : s ∈ Icc l r) : alongCurve (leviCivitaConnection I M) γ P s = 0 := by
@@ -491,13 +491,13 @@ theorem radialParallelLinearMap_eq_of_mem (h : IsNormalDomain I M p U)
     ((contMDiffAt_riemannianExp (h.subset_expDomain (hseg s hs.1))).comp s
       hlin.contMDiff.contMDiffAt).mdifferentiableAt (by simp)
   have hPcoord (s : ℝ) (hs : s ∈ Icc l r ∩ Icc l' r') :
-      DifferentiableAt ℝ (sectionCoord (F := E) γ P (γ s)) s :=
+      DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ P (γ s)) s :=
     differentiableAt_sectionCoord γ P
       ((h.contMDiffAt_radialParallelLinearMap_apply b v hlr hseg a
         (hseg s hs.1)).mdifferentiableAt (by simp))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ s))
   have hQcoord (s : ℝ) (hs : s ∈ Icc l r ∩ Icc l' r') :
-      DifferentiableAt ℝ (sectionCoord (F := E) γ Q (γ s)) s :=
+      DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ Q (γ s)) s :=
     differentiableAt_sectionCoord γ Q
       ((h.contMDiffAt_radialParallelLinearMap_apply b v hlr' hseg' a
         (hseg s hs.1)).mdifferentiableAt (by simp))

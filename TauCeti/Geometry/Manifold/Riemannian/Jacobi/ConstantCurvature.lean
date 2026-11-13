@@ -95,12 +95,12 @@ differentiable coefficients, has differentiable coordinate readings. -/
 private theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord_smul_sub_smul
     (h : IsJacobiFieldOn I γ V s) (ht : t ∈ s) {f g : ℝ → ℝ}
     (hf : DifferentiableAt ℝ f t) (hg : DifferentiableAt ℝ g t) :
-    DifferentiableWithinAt ℝ (sectionCoord (F := E) γ
+    DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ
       (fun r ↦ f r • V r - g r • alongCurveWithin (leviCivitaConnection I M) γ V s r)
         (γ t)) s t := by
-  have hcoord : sectionCoord (F := E) γ
+  have hcoord : sectionCoord ℝ (F := E) γ
       (fun r ↦ f r • V r - g r • alongCurveWithin (leviCivitaConnection I M) γ V s r) (γ t) =
-      fun r ↦ f r • sectionCoord (F := E) γ V (γ t) r - g r • sectionCoord (F := E) γ
+      fun r ↦ f r • sectionCoord ℝ (F := E) γ V (γ t) r - g r • sectionCoord ℝ (F := E) γ
         (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t) r := by
     funext r
     simp only [sectionCoord_apply, map_sub, map_smul]
@@ -132,11 +132,12 @@ theorem IsJacobiFieldOn.alongCurveWithin_smul_sub_smul_eq_zero
         (fun r ↦ -φ r) r • alongCurveWithin (leviCivitaConnection I M) γ V s r := by
     funext r
     rw [neg_smul, sub_eq_add_neg]
-  have h₁ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (fun r ↦ φ' r • V r) (γ t)) s t := by
+  have h₁ : DifferentiableWithinAt ℝ
+      (sectionCoord ℝ (F := E) γ (fun r ↦ φ' r • V r) (γ t)) s t := by
     rw [sectionCoord_smul]
     exact (hφ' t).differentiableAt.differentiableWithinAt.smul
       (h.differentiableWithinAt_sectionCoord ht)
-  have h₂ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (fun r ↦ (fun r ↦ -φ r) r •
+  have h₂ : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ (fun r ↦ (fun r ↦ -φ r) r •
       alongCurveWithin (leviCivitaConnection I M) γ V s r) (γ t)) s t := by
     rw [sectionCoord_smul]
     exact (hφ t).differentiableAt.neg.differentiableWithinAt.smul
@@ -168,8 +169,8 @@ theorem IsJacobiFieldOn.exists_eq_smul_add_smul
     ∃ P Q : ∀ t, TangentSpace I (γ t),
       (∀ t ∈ s, alongCurveWithin (leviCivitaConnection I M) γ P s t = 0) ∧
       (∀ t ∈ s, alongCurveWithin (leviCivitaConnection I M) γ Q s t = 0) ∧
-      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ P (γ t)) s t) ∧
-      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q (γ t)) s t) ∧
+      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ P (γ t)) s t) ∧
+      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ Q (γ t)) s t) ∧
       P a = V a ∧ Q a = alongCurveWithin (leviCivitaConnection I M) γ V s a ∧
       ∀ t ∈ s, V t = ψ t • P t + φ t • Q t := by
   refine ⟨fun r ↦ φ' r • V r - φ r • alongCurveWithin (leviCivitaConnection I M) γ V s r,

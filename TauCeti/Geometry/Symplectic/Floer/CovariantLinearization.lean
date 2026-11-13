@@ -153,13 +153,13 @@ theorem floerLinearization_smul (c : ℝ) :
 coordinate curves. -/
 theorem floerLinearization_add
     (hξs : DifferentiableAt ℝ
-      (sectionCoord (F := E) (fun s ↦ u (s, z.2)) (fun s ↦ ξ (s, z.2)) (u z)) z.1)
+      (sectionCoord ℝ (F := E) (fun s ↦ u (s, z.2)) (fun s ↦ ξ (s, z.2)) (u z)) z.1)
     (hηs : DifferentiableAt ℝ
-      (sectionCoord (F := E) (fun s ↦ u (s, z.2)) (fun s ↦ η (s, z.2)) (u z)) z.1)
+      (sectionCoord ℝ (F := E) (fun s ↦ u (s, z.2)) (fun s ↦ η (s, z.2)) (u z)) z.1)
     (hξt : DifferentiableAt ℝ
-      (sectionCoord (F := E) (fun t ↦ u (z.1, t)) (fun t ↦ ξ (z.1, t)) (u z)) z.2)
+      (sectionCoord ℝ (F := E) (fun t ↦ u (z.1, t)) (fun t ↦ ξ (z.1, t)) (u z)) z.2)
     (hηt : DifferentiableAt ℝ
-      (sectionCoord (F := E) (fun t ↦ u (z.1, t)) (fun t ↦ η (z.1, t)) (u z)) z.2) :
+      (sectionCoord ℝ (F := E) (fun t ↦ u (z.1, t)) (fun t ↦ η (z.1, t)) (u z)) z.2) :
     ω.floerLinearization cov J Ks Kt u (ξ + η) z =
       ω.floerLinearization cov J Ks Kt u ξ z + ω.floerLinearization cov J Ks Kt u η z := by
   simp only [floerLinearization_def, Pi.add_apply,

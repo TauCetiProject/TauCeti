@@ -109,7 +109,7 @@ at `t` and `n` a differentiable field along `γ` that is orthogonal to the veloc
 unit-speed curve this is `⟪D_t n, γ'⟫ = -k_g`. -/
 theorem inner_alongCurve_curveVelocity_eq_neg_geodesicCurvature_mul
     (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t)
-    (hn : DifferentiableAt ℝ (sectionCoord (F := E) γ n (γ t)) t)
+    (hn : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ n (γ t)) t)
     (hnγ : ∀ᶠ r in 𝓝 t, ⟪n r, curveVelocity I γ r⟫_ℝ = 0) :
     ⟪alongCurve (leviCivitaConnection I M) γ n t, curveVelocity I γ t⟫_ℝ =
       -(geodesicCurvature γ n t * ‖curveVelocity I γ t‖ ^ 2) := by
@@ -152,7 +152,7 @@ field along it which, near `t`, has unit length and is orthogonal to the velocit
 theorem alongCurve_eq_neg_geodesicCurvature_smul_curveVelocity
     (hdim : Module.finrank ℝ (TangentSpace I (γ t)) = 2)
     (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) (hγ₀ : curveVelocity I γ t ≠ 0)
-    (hn : DifferentiableAt ℝ (sectionCoord (F := E) γ n (γ t)) t)
+    (hn : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ n (γ t)) t)
     (hn₁ : ∀ᶠ r in 𝓝 t, ‖n r‖ = 1)
     (hnγ : ∀ᶠ r in 𝓝 t, ⟪n r, curveVelocity I γ r⟫_ℝ = 0) :
     alongCurve (leviCivitaConnection I M) γ n t =

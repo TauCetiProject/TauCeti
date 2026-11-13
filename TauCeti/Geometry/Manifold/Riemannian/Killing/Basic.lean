@@ -312,13 +312,13 @@ private theorem IsKillingField.inner_alongCurveWithin_alongCurveWithin_eq
       ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (Y (γ r))) s :=
     (hY.of_le (by simp)).comp_contMDiffOn hγ.contMDiffOn
   have hcoord {Y : Π x : M, TangentSpace I x} (hY : CMDiff ∞ (T% Y)) :
-      DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (fun r ↦ Y (γ r)) (γ t)) s t :=
+      DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ (fun r ↦ Y (γ r)) (γ t)) s t :=
     differentiableWithinAt_sectionCoord γ _
       (((hlift hY) t ht).mdifferentiableWithinAt (by norm_num))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-  have hWcoord : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t :=
+  have hWcoord : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t :=
     differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection hs (hlift hX) ht
-  have hγ'coord : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ γ' (γ t)) s t :=
+  have hγ'coord : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ γ' (γ t)) s t :=
     differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   -- With `A = ∇_Z X`, the Killing equation gives `⟪W, Z⟫ = ⟪∇_{γ'} X, Z⟫ = -⟪γ', A⟫` along `γ`.

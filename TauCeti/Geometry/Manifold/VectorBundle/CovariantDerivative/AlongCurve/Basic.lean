@@ -106,18 +106,18 @@ section along the curve.  When the coordinate readings are not differentiable wi
 or `γ` does not stay in `(trivializationAt E (TangentSpace I) x).baseSet` near `t` within `s`, its
 components may carry their junk value `0`. -/
 def alongCurveInChartWithin (s : Set 𝕜) (x : M) (t : 𝕜) : E :=
-  derivWithin (sectionCoord (F := E) γ V x) s t +
+  derivWithin (sectionCoord 𝕜 (F := E) γ V x) s t +
     christoffelMap (Module.finBasis 𝕜 E)
       (cov.isCovariantDerivativeOn (s := (trivializationAt E (TangentSpace I) x).baseSet)) (γ t)
-        (sectionCoord (F := E) γ V x t) (derivWithin (extChartAt I x ∘ γ) s t)
+        (sectionCoord 𝕜 (F := E) γ V x t) (derivWithin (extChartAt I x ∘ γ) s t)
 
 /-- The defining formula for the coordinate covariant derivative within a parameter set. -/
 theorem alongCurveInChartWithin_apply (s : Set 𝕜) (x : M) (t : 𝕜) :
     alongCurveInChartWithin cov γ V s x t =
-      derivWithin (sectionCoord (F := E) γ V x) s t +
+      derivWithin (sectionCoord 𝕜 (F := E) γ V x) s t +
         christoffelMap (Module.finBasis 𝕜 E)
           (cov.isCovariantDerivativeOn (s := (trivializationAt E (TangentSpace I) x).baseSet))
-            (γ t) (sectionCoord (F := E) γ V x t) (derivWithin (extChartAt I x ∘ γ) s t) :=
+            (γ t) (sectionCoord 𝕜 (F := E) γ V x t) (derivWithin (extChartAt I x ∘ γ) s t) :=
   (rfl)
 
 /-- The moving-chart candidate for the covariant derivative of `V` along `γ` within the parameter
@@ -146,7 +146,7 @@ theorem continuousLinearMapAt_alongCurveWithin
     (hC : C = (trivializationAt E (TangentSpace I) (γ t)).continuousLinearMapAt 𝕜 (γ t))
     (Q : ∀ r, TangentSpace I (γ r)) :
     C (alongCurveWithin cov γ Q s t) =
-      derivWithin (sectionCoord (F := E) γ Q (γ t)) s t +
+      derivWithin (sectionCoord 𝕜 (F := E) γ Q (γ t)) s t +
         christoffelMap (Module.finBasis 𝕜 E)
           (cov.isCovariantDerivativeOn
             (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
@@ -168,7 +168,7 @@ theorem alongCurveWithin_of_not_uniqueDiffWithinAt {s : Set 𝕜} {t : 𝕜}
 in the canonical tangent trivialization at that point. -/
 theorem alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero {s : Set 𝕜} {t : 𝕜}
     (hV : V t = 0) :
-    alongCurveWithin cov γ V s t = derivWithin (sectionCoord (F := E) γ V (γ t)) s t := by
+    alongCurveWithin cov γ V s t = derivWithin (sectionCoord 𝕜 (F := E) γ V (γ t)) s t := by
   simp [alongCurveWithin_apply, alongCurveInChartWithin_apply, sectionCoord_apply, hV, map_zero]
   rfl
 
@@ -198,8 +198,8 @@ theorem alongCurve_apply (t : 𝕜) :
 /-- The coordinate formula within a parameter set is additive in the field. -/
 private theorem alongCurveInChartWithin_add (W : ∀ t, TangentSpace I (γ t)) (s : Set 𝕜)
     (x : M) {t : 𝕜}
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V x) s t)
-    (hW : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ W x) s t) :
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V x) s t)
+    (hW : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ W x) s t) :
     alongCurveInChartWithin cov γ (fun r ↦ V r + W r) s x t =
       alongCurveInChartWithin cov γ V s x t + alongCurveInChartWithin cov γ W s x t := by
   rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply,
@@ -209,8 +209,8 @@ private theorem alongCurveInChartWithin_add (W : ∀ t, TangentSpace I (γ t)) (
 
 /-- The moving-chart candidate within a parameter set is additive in the field. -/
 theorem alongCurveWithin_add (W : ∀ t, TangentSpace I (γ t)) (s : Set 𝕜) {t : 𝕜}
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ W (γ t)) s t) :
     alongCurveWithin cov γ (fun r ↦ V r + W r) s t =
       alongCurveWithin cov γ V s t + alongCurveWithin cov γ W s t := by
   rw [alongCurveWithin_apply, alongCurveWithin_apply, alongCurveWithin_apply,
@@ -218,8 +218,8 @@ theorem alongCurveWithin_add (W : ∀ t, TangentSpace I (γ t)) (s : Set 𝕜) {
 
 /-- The unrestricted moving-chart candidate is additive in the field. -/
 theorem alongCurve_add (W : ∀ t, TangentSpace I (γ t)) {t : 𝕜}
-    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : DifferentiableAt 𝕜 (sectionCoord (F := E) γ W (γ t)) t) :
+    (hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ W (γ t)) t) :
     alongCurve cov γ (fun r ↦ V r + W r) t =
       alongCurve cov γ V t + alongCurve cov γ W t := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← alongCurveWithin_univ]
@@ -229,8 +229,8 @@ theorem alongCurve_add (W : ∀ t, TangentSpace I (γ t)) {t : 𝕜}
 /-- The coordinate formula within a parameter set respects subtraction of fields. -/
 private theorem alongCurveInChartWithin_sub (W : ∀ t, TangentSpace I (γ t)) (s : Set 𝕜)
     (x : M) {t : 𝕜}
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V x) s t)
-    (hW : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ W x) s t) :
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V x) s t)
+    (hW : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ W x) s t) :
     alongCurveInChartWithin cov γ (fun r ↦ V r - W r) s x t =
       alongCurveInChartWithin cov γ V s x t - alongCurveInChartWithin cov γ W s x t := by
   rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply,
@@ -241,8 +241,8 @@ private theorem alongCurveInChartWithin_sub (W : ∀ t, TangentSpace I (γ t)) (
 /-- Covariant differentiation within a parameter set respects subtraction of differentiable
 fields. -/
 theorem alongCurveWithin_sub (W : ∀ t, TangentSpace I (γ t)) (s : Set 𝕜) {t : 𝕜}
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ W (γ t)) s t) :
     alongCurveWithin cov γ (fun r ↦ V r - W r) s t =
       alongCurveWithin cov γ V s t - alongCurveWithin cov γ W s t := by
   rw [alongCurveWithin_apply, alongCurveWithin_apply, alongCurveWithin_apply,
@@ -250,8 +250,8 @@ theorem alongCurveWithin_sub (W : ∀ t, TangentSpace I (γ t)) (s : Set 𝕜) {
 
 /-- Covariant differentiation along a curve respects subtraction of differentiable fields. -/
 theorem alongCurve_sub (W : ∀ t, TangentSpace I (γ t)) {t : 𝕜}
-    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : DifferentiableAt 𝕜 (sectionCoord (F := E) γ W (γ t)) t) :
+    (hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ W (γ t)) t) :
     alongCurve cov γ (fun r ↦ V r - W r) t =
       alongCurve cov γ V t - alongCurve cov γ W t := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← alongCurveWithin_univ]
@@ -261,9 +261,9 @@ theorem alongCurve_sub (W : ∀ t, TangentSpace I (γ t)) {t : 𝕜}
 /-- The coordinate formula within a parameter set obeys the scalar Leibniz rule. -/
 private theorem alongCurveInChartWithin_smul (f : 𝕜 → 𝕜) (s : Set 𝕜) (x : M) {t : 𝕜}
     (hf : DifferentiableWithinAt 𝕜 f s t)
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V x) s t) :
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V x) s t) :
     alongCurveInChartWithin cov γ (fun r ↦ f r • V r) s x t =
-      derivWithin f s t • sectionCoord (F := E) γ V x t +
+      derivWithin f s t • sectionCoord 𝕜 (F := E) γ V x t +
         f t • alongCurveInChartWithin cov γ V s x t := by
   rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply, sectionCoord_smul,
     derivWithin_smul hf hV]
@@ -273,7 +273,7 @@ private theorem alongCurveInChartWithin_smul (f : 𝕜 → 𝕜) (s : Set 𝕜) 
 /-- The moving-chart candidate within a parameter set obeys the scalar Leibniz rule. -/
 theorem alongCurveWithin_smul (f : 𝕜 → 𝕜) (s : Set 𝕜) {t : 𝕜}
     (hf : DifferentiableWithinAt 𝕜 f s t)
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t) :
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) s t) :
     alongCurveWithin cov γ (fun r ↦ f r • V r) s t =
       derivWithin f s t • V t + f t • alongCurveWithin cov γ V s t := by
   rw [alongCurveWithin_apply, alongCurveWithin_apply,
@@ -284,7 +284,7 @@ theorem alongCurveWithin_smul (f : 𝕜 → 𝕜) (s : Set 𝕜) {t : 𝕜}
 
 /-- The unrestricted moving-chart candidate obeys the scalar Leibniz rule. -/
 theorem alongCurve_smul (f : 𝕜 → 𝕜) {t : 𝕜} (hf : DifferentiableAt 𝕜 f t)
-    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ V (γ t)) t) :
+    (hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) t) :
     alongCurve cov γ (fun r ↦ f r • V r) t =
       deriv f t • V t + f t • alongCurve cov γ V t := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← derivWithin_univ]
@@ -296,8 +296,8 @@ scalar, without a differentiability hypothesis on the field. -/
 private theorem alongCurveInChartWithin_const_smul (c : 𝕜) (s : Set 𝕜) (x : M) (t : 𝕜) :
     alongCurveInChartWithin cov γ (fun r ↦ c • V r) s x t =
       c • alongCurveInChartWithin cov γ V s x t := by
-  have hcoord : sectionCoord (F := E) γ (fun r ↦ c • V r) x =
-      c • sectionCoord (F := E) γ V x := by
+  have hcoord : sectionCoord 𝕜 (F := E) γ (fun r ↦ c • V r) x =
+      c • sectionCoord 𝕜 (F := E) γ V x := by
     rw [sectionCoord_smul (F := E) γ V (fun _ ↦ c) x]
     rfl
   rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply, hcoord,
@@ -324,8 +324,8 @@ theorem alongCurve_const_smul (c : 𝕜) (t : 𝕜) :
 @[simp]
 theorem alongCurveWithin_zero (s : Set 𝕜) (t : 𝕜) :
     alongCurveWithin cov γ (fun r : 𝕜 ↦ (0 : TangentSpace I (γ r))) s t = 0 := by
-  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, sectionCoord_zero (γ := γ)]
-  simp only [derivWithin_zero, Pi.zero_apply, map_zero, zero_apply, add_zero]
+  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, fun_sectionCoord_zero (γ := γ)]
+  simp only [derivWithin_fun_const, Pi.zero_apply, map_zero, zero_apply, add_zero]
 
 /-- The unrestricted moving-chart candidate of the zero field is zero. -/
 @[simp]
@@ -345,7 +345,7 @@ theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜
     alongCurveWithin cov (fun _ : 𝕜 ↦ x) W s t = derivWithin W s t := by
   have hx := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x
   set L : E ≃L[𝕜] E := (trivializationAt E (TangentSpace I) x).continuousLinearEquivAt 𝕜 x hx
-  have hcoord : sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x = L ∘ W :=
+  have hcoord : sectionCoord 𝕜 (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x = L ∘ W :=
     funext fun r ↦ (sectionCoord_apply (F := E) (V := TangentSpace I) _ W x r).trans
       (congrFun (Trivialization.coe_continuousLinearEquivAt_eq (R := 𝕜) _ hx) (W r)).symm
   -- `L` is an equivalence, so it commutes with `derivWithin` even where `W` is not
@@ -358,10 +358,10 @@ theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜
   -- Unfold the candidate by `change`: `W` is `E`-valued, so rewriting with the defining lemmas
   -- would have to see through the identification `TangentSpace I x = E`.
   change (trivializationAt E (TangentSpace I) x).symmL 𝕜 x
-      (derivWithin (sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x) s t +
+      (derivWithin (sectionCoord 𝕜 (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x) s t +
         christoffelMap (Module.finBasis 𝕜 E)
           (cov.isCovariantDerivativeOn (s := (trivializationAt E (TangentSpace I) x).baseSet)) x
-            (sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x t)
+            (sectionCoord 𝕜 (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x t)
             (derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t)) = _
   rw [hcoord, hderiv, hchart, map_zero, add_zero,
     ← Trivialization.symm_continuousLinearEquivAt_eq _ hx]
@@ -421,7 +421,7 @@ theorem alongCurveWithin_of_mem_nhds {s : Set 𝕜} {t : 𝕜} (hs : s ∈ 𝓝 
 larger set are defined and the smaller set has a unique derivative at `t`. -/
 theorem alongCurveWithin_subset {s u : Set 𝕜} {t : 𝕜} (hsu : s ⊆ u)
     (hs : UniqueDiffWithinAt 𝕜 s t)
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) u t)
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) u t)
     (hγ : DifferentiableWithinAt 𝕜 (extChartAt I (γ t) ∘ γ) u t) :
     alongCurveWithin cov γ V s t = alongCurveWithin cov γ V u t := by
   rw [alongCurveWithin_apply, alongCurveWithin_apply, alongCurveInChartWithin_apply,
@@ -433,10 +433,10 @@ that set, together with its value at the parameter under consideration. -/
 theorem alongCurveWithin_congr {W : ∀ t, TangentSpace I (γ t)} {s : Set 𝕜} {t : 𝕜}
     (h : ∀ᶠ r in 𝓝[s] t, V r = W r) (ht : V t = W t) :
     alongCurveWithin cov γ V s t = alongCurveWithin cov γ W s t := by
-  have hpoint : sectionCoord (F := E) γ V (γ t) t = sectionCoord (F := E) γ W (γ t) t := by
+  have hpoint : sectionCoord 𝕜 (F := E) γ V (γ t) t = sectionCoord 𝕜 (F := E) γ W (γ t) t := by
     rw [sectionCoord_apply, sectionCoord_apply, ht]
-  have hcoord : sectionCoord (F := E) γ V (γ t) =ᶠ[𝓝[s] t]
-      sectionCoord (F := E) γ W (γ t) := h.mono fun r hr ↦ by
+  have hcoord : sectionCoord 𝕜 (F := E) γ V (γ t) =ᶠ[𝓝[s] t]
+      sectionCoord 𝕜 (F := E) γ W (γ t) := h.mono fun r hr ↦ by
     rw [sectionCoord_apply, sectionCoord_apply, hr]
   rw [alongCurveWithin_apply, alongCurveWithin_apply, alongCurveInChartWithin_apply,
     alongCurveInChartWithin_apply, hcoord.derivWithin_eq hpoint, hpoint]
@@ -454,11 +454,11 @@ field must both read differentiably at `φ t` in the chart centred at `γ (φ t)
 theorem alongCurveWithin_comp (φ : 𝕜 → 𝕜) {s s' : Set 𝕜} {t : 𝕜}
     (hφ : DifferentiableWithinAt 𝕜 φ s' t) (hmaps : Set.MapsTo φ s' s)
     (hγ : DifferentiableWithinAt 𝕜 (extChartAt I (γ (φ t)) ∘ γ) s (φ t))
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ (φ t))) s (φ t)) :
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ (φ t))) s (φ t)) :
     alongCurveWithin cov (γ ∘ φ) (fun r ↦ V (φ r)) s' t =
       derivWithin φ s' t • alongCurveWithin cov γ V s (φ t) := by
-  have hVcomp : derivWithin (sectionCoord (F := E) γ V (γ (φ t)) ∘ φ) s' t =
-      derivWithin φ s' t • derivWithin (sectionCoord (F := E) γ V (γ (φ t))) s (φ t) :=
+  have hVcomp : derivWithin (sectionCoord 𝕜 (F := E) γ V (γ (φ t)) ∘ φ) s' t =
+      derivWithin φ s' t • derivWithin (sectionCoord 𝕜 (F := E) γ V (γ (φ t))) s (φ t) :=
     derivWithin.scomp t hV hφ hmaps
   have hγcomp : derivWithin ((extChartAt I (γ (φ t)) ∘ γ) ∘ φ) s' t =
       derivWithin φ s' t • derivWithin (extChartAt I (γ (φ t)) ∘ γ) s (φ t) :=
@@ -473,7 +473,7 @@ The curve and the field must both read differentiably at `φ t` in the chart cen
 `γ (φ t)`. -/
 theorem alongCurve_comp (φ : 𝕜 → 𝕜) {t : 𝕜} (hφ : DifferentiableAt 𝕜 φ t)
     (hγ : DifferentiableAt 𝕜 (extChartAt I (γ (φ t)) ∘ γ) (φ t))
-    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ V (γ (φ t))) (φ t)) :
+    (hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ (φ t))) (φ t)) :
     alongCurve cov (γ ∘ φ) (fun r ↦ V (φ r)) t =
       deriv φ t • alongCurve cov γ V (φ t) := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← derivWithin_univ]
@@ -486,14 +486,14 @@ theorem alongCurve_comp (φ : 𝕜 → 𝕜) {t : 𝕜} (hφ : DifferentiableAt 
 differentiable coordinate readings. -/
 theorem alongCurveWithin_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSpace I (γ r))
     {s : Set 𝕜} {t : 𝕜}
-    (hW : ∀ i ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ (W i) (γ t)) s t) :
+    (hW : ∀ i ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ (W i) (γ t)) s t) :
     alongCurveWithin cov γ (fun r ↦ ∑ i ∈ A, W i r) s t =
       ∑ i ∈ A, alongCurveWithin cov γ (W i) s t := by
   classical
   induction A using Finset.induction_on with
   | empty => simp
   | @insert i A hi ih =>
-    have hWA : ∀ j ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ (W j) (γ t)) s t :=
+    have hWA : ∀ j ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ (W j) (γ t)) s t :=
       fun j hj ↦ hW j (Finset.mem_insert_of_mem hj)
     simp only [Finset.sum_insert hi]
     rw [alongCurveWithin_add cov γ (W i) _ s (hW i (Finset.mem_insert_self i A))
@@ -502,7 +502,7 @@ theorem alongCurveWithin_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, Tan
 /-- Covariant differentiation along a curve commutes with finite sums of fields having
 differentiable coordinate readings. -/
 theorem alongCurve_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSpace I (γ r)) {t : 𝕜}
-    (hW : ∀ i ∈ A, DifferentiableAt 𝕜 (sectionCoord (F := E) γ (W i) (γ t)) t) :
+    (hW : ∀ i ∈ A, DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ (W i) (γ t)) t) :
     alongCurve cov γ (fun r ↦ ∑ i ∈ A, W i r) t = ∑ i ∈ A, alongCurve cov γ (W i) t := by
   simpa only [alongCurveWithin_univ] using
     alongCurveWithin_sum cov γ A W (s := Set.univ) fun i hi ↦ (hW i hi).differentiableWithinAt

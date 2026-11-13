@@ -58,7 +58,7 @@ theorem eventuallyEq_sectionCoord_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x 
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hV : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t) :
-    sectionCoord (F := E) γ (alongCurveWithin cov γ V s) x =ᶠ[𝓝[s] t]
+    sectionCoord 𝕜 (F := E) γ (alongCurveWithin cov γ V s) x =ᶠ[𝓝[s] t]
       alongCurveInChartWithin cov γ V s x := by
   let e := trivializationAt E (TangentSpace I) x
   have hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I 1 γ s t :=
@@ -102,7 +102,7 @@ theorem contMDiffWithinAt_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
       (n := n + 1)).contMDiffAt.comp_contMDiffWithinAt t hV
   have hn : n ≤ n + 1 := le_self_add
   have h1 : (1 : ℕ∞ω) ≤ n + 1 := le_add_of_nonneg_left (zero_le : 0 ≤ n)
-  have hv : ContDiffWithinAt 𝕜 (n + 1) (sectionCoord (F := E) γ V x) s t :=
+  have hv : ContDiffWithinAt 𝕜 (n + 1) (sectionCoord 𝕜 (F := E) γ V x) s t :=
     (contDiffWithinAt_sectionCoord_iff γ V hγ hx).2 hV
   have hu : ContDiffWithinAt 𝕜 (n + 1) (extChartAt I x ∘ γ) s t :=
     ((contMDiffAt_extChartAt' (by

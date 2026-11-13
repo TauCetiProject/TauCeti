@@ -88,7 +88,7 @@ theorem IsJacobiFieldOn.uniqueDiffOn (h : IsJacobiFieldOn I γ V s) : UniqueDiff
 /-- The coordinate reading of a Jacobi field is differentiable within its parameter set. -/
 theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord
     (h : IsJacobiFieldOn I γ V s) (ht : t ∈ s) :
-    DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t :=
+    DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t :=
   TauCeti.Manifold.differentiableWithinAt_sectionCoord γ V
     ((h.contMDiffOn t ht).mdifferentiableWithinAt (by norm_num))
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
@@ -104,7 +104,7 @@ theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin (h : IsJacobiFieldOn I γ V
 theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord_alongCurveWithin
     (h : IsJacobiFieldOn I γ V s) (ht : t ∈ s) :
     DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
+      (sectionCoord ℝ (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
   differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
     h.uniqueDiffOn h.contMDiffOn ht
 

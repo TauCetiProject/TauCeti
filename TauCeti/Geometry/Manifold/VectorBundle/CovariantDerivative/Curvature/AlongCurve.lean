@@ -114,17 +114,17 @@ private theorem exists_coordinates_alongCurveWithin_curvatureTensor
         C (cov.curvatureTensor (γ t) a b c) =
           A (γ t) (C a) (C b) (C c)) ∧
       ∀ (Q₁ Q₂ Q₃ : ∀ r, TangentSpace I (γ r))
-        (_h₁ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q₁ (γ t)) s t)
-        (_h₂ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q₂ (γ t)) s t)
-        (_h₃ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q₃ (γ t)) s t),
+        (_h₁ : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ Q₁ (γ t)) s t)
+        (_h₂ : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ Q₂ (γ t)) s t)
+        (_h₃ : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ Q₃ (γ t)) s t),
       C (alongCurveWithin cov γ
           (fun r ↦ cov.curvatureTensor (γ r) (Q₁ r) (Q₂ r) (Q₃ r)) s t) =
         derivWithin (fun r ↦ A (γ r)) s t (C (Q₁ t)) (C (Q₂ t)) (C (Q₃ t)) +
           A (γ t) (C (Q₁ t)) (C (Q₂ t))
-            (derivWithin (sectionCoord (F := E) γ Q₃ (γ t)) s t) +
+            (derivWithin (sectionCoord ℝ (F := E) γ Q₃ (γ t)) s t) +
           A (γ t) (C (Q₁ t))
-            (derivWithin (sectionCoord (F := E) γ Q₂ (γ t)) s t) (C (Q₃ t)) +
-          A (γ t) (derivWithin (sectionCoord (F := E) γ Q₁ (γ t)) s t)
+            (derivWithin (sectionCoord ℝ (F := E) γ Q₂ (γ t)) s t) (C (Q₃ t)) +
+          A (γ t) (derivWithin (sectionCoord ℝ (F := E) γ Q₁ (γ t)) s t)
             (C (Q₂ t)) (C (Q₃ t)) +
           christoffelMap (Module.finBasis ℝ E)
             (cov.isCovariantDerivativeOn
@@ -145,16 +145,16 @@ private theorem exists_coordinates_alongCurveWithin_curvatureTensor
       γ r ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
     hγ.continuousWithinAt.preimage_mem_nhdsWithin
       ((trivializationAt E (TangentSpace I) (γ t)).open_baseSet.mem_nhds he)
-  have hEq : (fun r ↦ A (γ r) (sectionCoord (F := E) γ Q₁ (γ t) r)
-      (sectionCoord (F := E) γ Q₂ (γ t) r) (sectionCoord (F := E) γ Q₃ (γ t) r)) =ᶠ[𝓝[s] t]
-      sectionCoord (F := E) γ
+  have hEq : (fun r ↦ A (γ r) (sectionCoord ℝ (F := E) γ Q₁ (γ t) r)
+      (sectionCoord ℝ (F := E) γ Q₂ (γ t) r) (sectionCoord ℝ (F := E) γ Q₃ (γ t) r)) =ᶠ[𝓝[s] t]
+      sectionCoord ℝ (F := E) γ
         (fun r ↦ cov.curvatureTensor (γ r) (Q₁ r) (Q₂ r) (Q₃ r)) (γ t) := by
     filter_upwards [hnear] with r hr
     simpa only [sectionCoord_apply] using (hread (γ r) hr (Q₁ r) (Q₂ r) (Q₃ r)).symm
-  have hpoint : sectionCoord (F := E) γ
+  have hpoint : sectionCoord ℝ (F := E) γ
       (fun r ↦ cov.curvatureTensor (γ r) (Q₁ r) (Q₂ r) (Q₃ r)) (γ t) t =
-      A (γ t) (sectionCoord (F := E) γ Q₁ (γ t) t)
-        (sectionCoord (F := E) γ Q₂ (γ t) t) (sectionCoord (F := E) γ Q₃ (γ t) t) := by
+      A (γ t) (sectionCoord ℝ (F := E) γ Q₁ (γ t) t)
+        (sectionCoord ℝ (F := E) γ Q₂ (γ t) t) (sectionCoord ℝ (F := E) γ Q₃ (γ t) t) := by
     simpa only [sectionCoord_apply] using hread (γ t) he (Q₁ t) (Q₂ t) (Q₃ t)
   have hd := (h.congr_of_eventuallyEq hEq.symm hpoint).derivWithin hu
   rw [continuousLinearMapAt_alongCurveWithin cov rfl, hd, hread (γ t) he]
@@ -166,10 +166,10 @@ private theorem exists_coordinates_alongCurveWithin_curvatureTensor
 a differentiable coordinate reading. No unique-derivative hypothesis is needed here. -/
 theorem differentiableWithinAt_sectionCoord_curvatureTensor
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hU : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ U (γ t)) s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
-    DifferentiableWithinAt ℝ (sectionCoord (F := E) γ
+    (hU : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ U (γ t)) s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
+    DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ
       (fun r ↦ cov.curvatureTensor (γ r) (U r) (V r) (W r)) (γ t)) s t := by
   let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
   let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
@@ -193,9 +193,9 @@ theorem differentiableWithinAt_sectionCoord_curvatureTensor
 Only differentiability within the parameter set at the tested parameter is required. -/
 theorem alongCurveWithin_curvatureTensor
     (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hU : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ U (γ t)) s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hU : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ U (γ t)) s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
     alongCurveWithin cov γ (fun r ↦ cov.curvatureTensor (γ r) (U r) (V r) (W r)) s t =
       cov.derivCurvatureTensor cov (γ t) (curveVelocityWithin I γ s t) (U t) (V t) (W t) +
         cov.curvatureTensor (γ t) (alongCurveWithin cov γ U s t) (V t) (W t) +
@@ -212,7 +212,7 @@ theorem alongCurveWithin_curvatureTensor
   obtain ⟨Y, hY, hYt⟩ := exists_contMDiff_section_eq I E ∞ (V t)
   obtain ⟨Z, hZ, hZt⟩ := exists_contMDiff_section_eq I E ∞ (W t)
   have hcoord (Q : Π x : M, TangentSpace I x) (hQ : CMDiff ∞ (T% Q)) :
-      DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (fun r ↦ Q (γ r)) (γ t)) s t :=
+      DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ (fun r ↦ Q (γ r)) (γ t)) s t :=
     differentiableWithinAt_sectionCoord γ _
       ((hQ.mdifferentiableAt (by simp)).comp_mdifferentiableWithinAt t hγ) he
   have hpull (Q : Π x : M, TangentSpace I x) (hQ : CMDiff ∞ (T% Q)) :
@@ -244,9 +244,9 @@ No metric compatibility or torsion assumption is needed. -/
 theorem HasParallelCurvature.alongCurveWithin_curvatureTensor_eq_zero
     (h : cov.HasParallelCurvature)
     (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hU : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ U (γ t)) s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
+    (hU : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ U (γ t)) s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t)
     (hU₀ : alongCurveWithin cov γ U s t = 0)
     (hV₀ : alongCurveWithin cov γ V s t = 0)
     (hW₀ : alongCurveWithin cov γ W s t = 0) :
@@ -262,10 +262,10 @@ theorem HasParallelCurvature.inner_curvatureTensor_eq_of_alongCurveWithin_eq_zer
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (hs : UniqueDiffOn ℝ s) (hconn : IsPreconnected s)
     (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s) {Z : ∀ r, TangentSpace I (γ r)}
-    (hU : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ U (γ t)) s t)
-    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
-    (hZ : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Z (γ t)) s t)
+    (hU : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ U (γ t)) s t)
+    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t)
+    (hZ : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ Z (γ t)) s t)
     (hU₀ : ∀ t ∈ s, alongCurveWithin cov γ U s t = 0)
     (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
     (hW₀ : ∀ t ∈ s, alongCurveWithin cov γ W s t = 0)

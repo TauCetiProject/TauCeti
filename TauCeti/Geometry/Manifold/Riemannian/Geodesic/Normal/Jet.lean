@@ -102,7 +102,7 @@ private theorem alongCurveWithin_two_radialField (h : IsNormalDomain I M p U)
   have hcoord (Y : ∀ t, TangentSpace I (γ t))
       (hY : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent ∞
         (fun t ↦ TotalSpace.mk' E (γ t) (Y t)) s) (t : ℝ) (ht : t ∈ s) :
-      DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Y (γ t)) s t :=
+      DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ Y (γ t)) s t :=
     differentiableWithinAt_sectionCoord γ Y ((hY t ht).mdifferentiableWithinAt (by simp))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hmul (Y : ∀ t, TangentSpace I (γ t))
@@ -114,7 +114,7 @@ private theorem alongCurveWithin_two_radialField (h : IsNormalDomain I M p U)
         differentiableWithinAt_id (hcoord Y hY t ht)
   have hm := hmul X hX
   have hsmul : DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (fun r ↦ r • D X r) (γ t)) s t := by
+      (sectionCoord ℝ (F := E) γ (fun r ↦ r • D X r) (γ t)) s t := by
     rw [sectionCoord_smul]
     exact differentiableWithinAt_id.smul (hcoord (D X) hDX t ht)
   calc
@@ -148,12 +148,12 @@ private theorem alongCurveWithin_three_radialField (h : IsNormalDomain I M p U)
   have hcoord (Y : ∀ t, TangentSpace I (γ t))
       (hY : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent ∞
         (fun t ↦ TotalSpace.mk' E (γ t) (Y t)) s) (t : ℝ) (ht : t ∈ s) :
-      DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Y (γ t)) s t :=
+      DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ Y (γ t)) s t :=
     differentiableWithinAt_sectionCoord γ Y ((hY t ht).mdifferentiableWithinAt (by simp))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hsecond (t : ℝ) (ht : t ∈ s) := h.alongCurveWithin_two_radialField v w ht
   have hsmul : DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (fun r ↦ r • D (D X) r) (γ 0)) s 0 := by
+      (sectionCoord ℝ (F := E) γ (fun r ↦ r • D (D X) r) (γ 0)) s 0 := by
     rw [sectionCoord_smul]
     exact differentiableWithinAt_id.smul (hcoord (D (D X)) hDDX 0 h0)
   have hmul0 : D (fun r ↦ r • D (D X) r) 0 = D (D X) 0 := by
