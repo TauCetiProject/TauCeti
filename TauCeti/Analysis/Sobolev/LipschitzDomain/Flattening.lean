@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.GraphFlattening
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Flattening a `Cᵏ` boundary graph by a change of variables
@@ -132,17 +133,10 @@ theorem exists_isChangeOfVariables_of_contDiff {Omega : Set F}
     simpa [hγ0, Real.dist_eq] using
       hγδ (by simpa using (mem_ball_zero_iff.mp hy).trans_le (min_le_right b δ))
   -- A common bound `M` for the derivatives of `γ` of orders `1` through `k` on `closedBall 0 b'`.
-  obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : E) b').exists_bound_of_continuousOn
-    (f := fun y ↦ ∑ i ∈ Finset.range (k + 1), ‖iteratedFDeriv ℝ i γ y‖)
-    (continuous_finsetSum _ fun i hi ↦
-      (hγ.continuous_iteratedFDeriv (by
-        exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hi))).norm).continuousOn
-  have hMb : ∀ i, i ≤ k → ∀ y ∈ ball (0 : E) b', ‖iteratedFDeriv ℝ i γ y‖ ≤ M := by
-    intro i hik y hy
-    have hy' := hM y (ball_subset_closedBall hy)
-    rw [Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)] at hy'
-    exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (iteratedFDeriv ℝ j γ y))
-      (Finset.mem_range.mpr (Nat.lt_succ_of_le hik))).trans hy'
+  obtain ⟨M, -, hM⟩ := hγ.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ
+    (isCompact_closedBall (0 : E) b') (subset_univ _)
+  have hMb : ∀ i, i ≤ k → ∀ y ∈ ball (0 : E) b', ‖iteratedFDeriv ℝ i γ y‖ ≤ M :=
+    fun i hik y hy ↦ hM i hik y (ball_subset_closedBall hy)
   -- The flat cylinder `W` and its preimage `W₁` under flattening.
   let W : Opens (WithLp 2 (ℝ × E)) := ⟨normalCylinder (a / 2) b', isOpen_normalCylinder _ _⟩
   let W₁ : Opens (WithLp 2 (ℝ × E)) := ⟨G ⁻¹' W, W.isOpen.preimage G.continuous⟩
