@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Degree.Sphere.Rotation
+public import TauCeti.Geometry.Manifold.Degree.SphereRotation
 public import TauCeti.Geometry.Manifold.Instances.Stiefel
 
 /-!

@@ -37,6 +37,8 @@ unit sphere of `E` along itself; this is how knotted arcs are slid along a great
 * `LinearIsometry.planeRotation_neg_one`: the rotation by `-1` is the reflection across that
   complement.
 * `LinearIsometry.contMDiff_planeRotation`: the rotation is smooth in the angle and the point.
+* `Continuous.planeRotation`: the rotation depends continuously on the plane and the angle, for
+  the operator norm.
 -/
 
 public section
@@ -191,5 +193,20 @@ theorem contMDiff_planeRotation {m : ℕ∞ω} :
       fun p : Circle × E => ((p.1 : ℂ) - 1) * planeCoord ι p.2 :=
     contDiff_mul.contMDiff.comp ((hc.sub contMDiff_const).prodMk_space hw)
   exact hx.add (ι.toContinuousLinearMap.contDiff.contMDiff.comp hmul)
+
+/-- **The rotation depends continuously on the plane and the angle**: if the isometric embeddings
+`ι x` and the points `c x` of the unit circle depend continuously on `x`, then so does
+`planeRotation (ι x) (c x)`, for the operator norm. -/
+theorem _root_.Continuous.planeRotation {X : Type*} [TopologicalSpace X] {ι : X → ℂ →ₗᵢ[ℝ] E}
+    {c : X → Circle} (hι : Continuous fun x ↦ (ι x).toContinuousLinearMap) (hc : Continuous c) :
+    Continuous fun x ↦ (((ι x).planeRotation (c x)).toContinuousLinearEquiv : E →L[ℝ] E) := by
+  have h (x : X) : (((ι x).planeRotation (c x)).toContinuousLinearEquiv : E →L[ℝ] E) =
+      ContinuousLinearMap.id ℝ E + (ι x).toContinuousLinearMap.comp
+        ((ContinuousLinearMap.lsmul ℝ ℂ ((c x : ℂ) - 1)).comp (planeCoord (ι x))) := by
+    ext y
+    simp [planeRotation_apply_eq, sub_mul]
+  have hι1 (w : ℂ) : Continuous fun x ↦ ι x w := hι.clm_apply continuous_const
+  simp only [h, planeCoord]
+  fun_prop
 
 end LinearIsometry
