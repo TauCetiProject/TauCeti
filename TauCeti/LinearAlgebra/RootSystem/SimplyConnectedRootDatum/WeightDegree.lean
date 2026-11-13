@@ -133,7 +133,7 @@ theorem weightDegree_cartanMatrix_row (i : Fin t.rank) :
   have hweight : (fun j ↦ t.cartanMatrix i j) =
       t.geckWeight ht (Sum.inr (t.simpleIndex ht i)) := by
     ext j
-    simp
+    simp [pairingIn_simpleIndex]
   have hi := (t.simpleSupportEquiv ht i).property
   rw [coe_simpleSupportEquiv] at hi
   rw [hweight, weightDegree_geckWeight_inr,
