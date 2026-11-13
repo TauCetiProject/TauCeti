@@ -222,17 +222,19 @@ private theorem milnorBottFunction_symm_scale_le (hμa : Antitone μ)
     milnorBottFunction_of_mem hΨ hx, hf i x hx, norm_fibreScale_snd_fst, norm_fibreScale_snd_snd,
     mul_pow, sq_abs]
   have hst := mul_le_of_le_one_left (sq_nonneg ‖(Ψ i x).2.2‖) (pow_le_one₀ (n := 2) hs.1 hs.2)
-  have hμle := hμa (show ‖(Ψ i x).2.1‖ ^ 2 + 2 * (s ^ 2 * ‖(Ψ i x).2.2‖ ^ 2) ≤
-    ‖(Ψ i x).2.1‖ ^ 2 + 2 * ‖(Ψ i x).2.2‖ ^ 2 by linarith)
-  linarith
+  have harg : ‖(Ψ i x).2.1‖ ^ 2 + 2 * (s ^ 2 * ‖(Ψ i x).2.2‖ ^ 2) ≤
+      ‖(Ψ i x).2.1‖ ^ 2 + 2 * ‖(Ψ i x).2.2‖ ^ 2 := by
+    linarith
+  linarith [hμa harg]
 
 /-- Milnor's function lies below `c - ε` on the negative disc bundle `{‖u‖² ≤ ε, v = 0}` of a
 normal form. -/
 private theorem milnorBottFunction_le_of_mem_disc (hμ_eq : ∀ r ≤ ε, μ r = 2 * ε)
     (hx : x ∈ (Ψ i).source) (hxε : ‖(Ψ i x).2.1‖ ^ 2 ≤ ε) (hxv : (Ψ i x).2.2 = 0) :
     milnorBottFunction Ψ f μ x ≤ c - ε := by
-  rw [milnorBottFunction_of_mem hΨ hx, hf i x hx, hxv, norm_zero,
-    show ‖(Ψ i x).2.1‖ ^ 2 + 2 * (0 : ℝ) ^ 2 = ‖(Ψ i x).2.1‖ ^ 2 by ring, hμ_eq _ hxε]
+  rw [milnorBottFunction_of_mem hΨ hx, hf i x hx, hxv]
+  simp only [norm_zero, zero_pow two_ne_zero, mul_zero, add_zero]
+  rw [hμ_eq _ hxε]
   linarith [sq_nonneg ‖(Ψ i x).2.1‖]
 
 /-- A point of `{F ≤ c - ε}` lies in the lower sublevel with the negative disc bundles attached

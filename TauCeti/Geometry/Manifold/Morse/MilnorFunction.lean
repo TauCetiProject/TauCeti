@@ -80,13 +80,18 @@ def lowerOn [Fintype ι] (U : ι → Set M) (g : ι → M → ℝ) (f : M → �
 
 variable [Fintype ι]
 
+theorem lowerOn_def (U : ι → Set M) (g : ι → M → ℝ) (f : M → ℝ) (x : M) :
+    lowerOn U g f x = f x - ∑ i, (U i).indicator (g i) x := by
+  rw [lowerOn]
+
 theorem lowerOn_of_mem (hU : Pairwise (Disjoint on U)) (hx : x ∈ U i) :
     lowerOn U g f x = f x - g i x := by
-  rw [lowerOn, Finset.sum_eq_single i (fun j _ hji ↦ indicator_of_notMem
+  rw [lowerOn_def, Finset.sum_eq_single i (fun j _ hji ↦ indicator_of_notMem
     (fun hj ↦ (hU hji).ne_of_mem hj hx rfl) _) (by simp), indicator_of_mem hx]
 
+@[simp]
 theorem lowerOn_of_forall_notMem (hx : ∀ i, x ∉ U i) : lowerOn U g f x = f x := by
-  simp [lowerOn, indicator_of_notMem (hx _)]
+  simp [lowerOn_def, indicator_of_notMem (hx _)]
 
 theorem lowerOn_le (hg : ∀ i, ∀ y ∈ U i, 0 ≤ g i y) (x : M) : lowerOn U g f x ≤ f x :=
   sub_le_self _ (Finset.sum_nonneg fun i _ ↦ indicator_nonneg (hg i) _)
@@ -111,7 +116,7 @@ include hK
 theorem lowerOn_eventuallyEq (hx : x ∉ ⋃ i, K i) : lowerOn U g f =ᶠ[𝓝 x] f := by
   filter_upwards [(isClosed_iUnion_of_finite fun i ↦ (hK i).isClosed).isOpen_compl.mem_nhds hx]
     with y hy
-  rw [lowerOn, Finset.sum_eq_zero fun i _ ↦
+  rw [lowerOn_def, Finset.sum_eq_zero fun i _ ↦
     indicator_eq_zero_of_notMem hgK i fun h ↦ hy (mem_iUnion.2 ⟨i, h⟩), sub_zero]
 
 /-- **The lowered function is smooth** when `f` is smooth and each `g i` is smooth on the open set
