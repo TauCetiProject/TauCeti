@@ -17,9 +17,10 @@ divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
 ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
 of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
 same `p`-free part as `k` either divides `k` or is `p * k`. The product of any set of prime
-factors of `n` divides `n`, and monomial products of an injective family of primes (or fixed
-positive powers of their casts in characteristic zero) are injective on finitely supported
-exponent tuples.
+factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the prime
+factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family of
+primes (or fixed positive powers of their casts in characteristic zero) are injective on finitely
+supported exponent tuples.
 -/
 
 public section
@@ -34,6 +35,26 @@ theorem minFac_mem_primeFactors {n : ℕ} (hn : 1 < n) : n.minFac ∈ n.primeFac
 theorem prod_dvd_of_subset_primeFactors {n : ℕ} {s : Finset ℕ} (h : s ⊆ n.primeFactors) :
     ∏ p ∈ s, p ∣ n :=
   (Finset.prod_dvd_prod_of_subset _ _ id h).trans (prod_primeFactors_dvd n)
+
+/-- **Coprimality only sees the prime factors.** For nonzero `L`, a number is coprime to the
+product of the prime factors of `L` exactly when it is coprime to `L`.
+
+This restates `coprime_prod_primeFactors_iff_coprime` of AINTLIB's `LeanModularForms` project
+(`StrongMultiplicityOne.lean`, <https://github.com/CBirkbeck/AINTLIB>, commit
+`2baa76f742bdb4fb8ee323fabba41203bd390e08`, Apache-2.0), proved from
+`Nat.dvd_prod_primeFactors_pow_self` instead of by contradiction on a common prime divisor. -/
+@[simp]
+theorem coprime_prod_primeFactors_right_iff {n L : ℕ} (hL : L ≠ 0) :
+    Coprime n (∏ p ∈ L.primeFactors, p) ↔ Coprime n L :=
+  ⟨fun h ↦ (h.pow_right L).coprime_dvd_right (dvd_prod_primeFactors_pow_self hL),
+    fun h ↦ h.coprime_dvd_right (prod_primeFactors_dvd L)⟩
+
+/-- **Coprimality only sees the prime factors.** For nonzero `L`, the product of the prime factors
+of `L` is coprime to a number exactly when `L` is. -/
+@[simp]
+theorem coprime_prod_primeFactors_left_iff {n L : ℕ} (hL : L ≠ 0) :
+    Coprime (∏ p ∈ L.primeFactors, p) n ↔ Coprime L n := by
+  rw [coprime_comm, coprime_prod_primeFactors_right_iff hL, coprime_comm]
 
 /-- Peeling the block at the least prime factor makes `n` strictly smaller. -/
 theorem ordCompl_minFac_lt {n : ℕ} (hn : 1 < n) : ordCompl[n.minFac] n < n :=
