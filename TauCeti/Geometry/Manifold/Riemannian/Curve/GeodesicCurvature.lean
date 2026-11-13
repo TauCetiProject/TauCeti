@@ -205,14 +205,14 @@ theorem geodesicCurvature_comp (hγ : ContMDiff 𝓘(ℝ) I 2 γ) {φ : ℝ → 
     hγ.contMDiffOn isOpen_univ (Set.mem_univ (φ t))
   rw [geodesicCurvature_def, geodesicCurvature_def,
     acceleration_comp _ γ hφ hφ' (hγ.mdifferentiable two_ne_zero) hV,
-    curveVelocity_comp (hφ t).hasDerivAt (hγ.mdifferentiable two_ne_zero (φ t)),
-    inner_add_left, real_inner_smul_left, real_inner_smul_left, real_inner_comm, hn, norm_smul,
-    mul_pow, Real.norm_eq_abs, sq_abs, mul_zero, zero_add,
-    mul_div_mul_left _ _ (pow_ne_zero 2 hφ₀)]
+    curveVelocity_comp (hφ t).hasDerivAt (hγ.mdifferentiable two_ne_zero (φ t))]
+  simp only [inner_add_left, real_inner_smul_left, (real_inner_comm _ _).trans hn,
+    mul_zero, zero_add, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  exact mul_div_mul_left _ _ (pow_ne_zero 2 hφ₀)
 
 /-- **Reversing the parametrization** of a `C²` curve together with its normal field does not
 change the geodesic curvature. Unlike `TauCeti.Manifold.geodesicCurvature_comp`, the normal field
-need not be orthogonal to the velocity, since the reversal `r ↦ d - r` has no second derivative.
+need not be orthogonal to the velocity, since the reversal `r ↦ d - r` has zero second derivative.
 -/
 theorem geodesicCurvature_comp_const_sub (hγ : ContMDiff 𝓘(ℝ) I 2 γ) (d t : ℝ) :
     geodesicCurvature (fun r ↦ γ (d - r)) (fun r ↦ n (d - r)) t =
