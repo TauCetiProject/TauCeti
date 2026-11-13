@@ -37,7 +37,7 @@ theorem comap_comap (hg : MeasurableEmbedding g) (f : α → β) (μ : Measure �
   have himg : ∀ A : Set β, MeasurableSet A → NullMeasurableSet (g '' A) μ :=
     fun A hA => (hg.measurableSet_image' hA).nullMeasurableSet
   have hqmp : QuasiMeasurePreserving g (μ.comap g) μ :=
-    ⟨hg.measurable, by
+    ⟨hg.measurable.aemeasurable, by
       rw [hg.map_comap]
       exact Measure.restrict_le_self.absolutelyContinuous⟩
   by_cases hR : Function.Injective f ∧
