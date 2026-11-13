@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
@@ -34,6 +36,8 @@ meromorphic order to every point of `closedBall c R`.
 * `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero`: an analytic function on
   a closed disc that does not vanish on the bounding sphere has finite meromorphic order throughout
   the closed disc.
+* `DifferentiableOn.neg_one_le_meromorphicOrderAt`: a function differentiable off a closed set of
+  at-worst-simple poles has meromorphic order at least `-1` throughout an open set.
 -/
 
 public section
@@ -93,5 +97,20 @@ theorem AnalyticOnNhd.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero
       rw [(hf ζ (sphere_subset_closedBall hζ)).meromorphicOrderAt_eq,
         (hf ζ (sphere_subset_closedBall hζ)).analyticOrderAt_eq_zero.2 (hsphere ζ hζ)]
       exact WithTop.zero_ne_top) hz
+
+/-- **Simple poles on an open set.** If `f` is complex differentiable on `U \ S` for a closed set
+`S`, and has meromorphic order at least `-1` at each point of `S` in `U`, then it has order at
+least `-1` at every point of the open set `U`: at points off `S` by analyticity. -/
+theorem DifferentiableOn.neg_one_le_meromorphicOrderAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} {U S : Set ℂ} (hU : IsOpen U)
+    (hS : IsClosed S) (hf : DifferentiableOn ℂ f (U \ S))
+    (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
+    ∀ w ∈ U, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f w := by
+  intro w hw
+  by_cases hwS : w ∈ S
+  · exact h_simple w hwS hw
+  · have h_an : AnalyticAt ℂ f w := hf.analyticOnNhd (hU.sdiff hS) w ⟨hw, hwS⟩
+    exact le_trans (by exact_mod_cast (by norm_num : (-1 : ℤ) ≤ 0))
+      h_an.meromorphicOrderAt_nonneg
 
 end

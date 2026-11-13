@@ -38,8 +38,6 @@ The induced affine topology is subcanonical by full faithfulness of the relative
   presented algebra map is an affine fppf cover.
 * `AlgHom.exists_faithfullyFlat_lift`: points lift along a faithfully flat, finitely presented
   algebra map after a faithfully flat, finitely presented extension of the value algebra.
-
-This advances the cross-cutting sheaves-and-descent prerequisite in the ReductiveGroups roadmap.
 -/
 
 public section

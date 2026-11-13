@@ -135,7 +135,7 @@ theorem exists_isHomogeneous_value_eq_iff_sub_minimalModel_m_three {x y z w : �
     (∃ S : 𝒜.TripleMasseyDefiningSystem x y z, S.IsHomogeneous p q r ∧ S.value = w) ↔
       ∃ s ∈ 𝒜.cohomologyGrading.piece (q + r - 1), ∃ t ∈ 𝒜.cohomologyGrading.piece (p + q - 1),
         x * s + t * z = w - 𝒜.minimalModel.m 3 ![x, y, z] :=
-  exists_isHomogeneous_value_eq_iff_sub_mem hx hy hz
+  exists_isHomogeneous_value_eq_iff_sub_mem
     (𝒜.exists_isHomogeneous_value_eq_minimalModel_m_three hx hy hz hxy hyz)
 
 /-- **The higher operations of the minimal model select elements of higher Massey products.**

@@ -40,8 +40,8 @@ with the same rank and the same `q`-invariant `q ≠ 2` are topologically isomor
   a relator with nondegenerate degree-one form and exponent vector `q e₁`, `p ^ 2 ∣ q`, is carried
   to `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` by a continuous automorphism of `F`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne`: a
-  relator in `Φ(F)` presenting a Demushkin group with `q(G) ≠ p` is carried to
-  `x₁^{q(G)} (x₁, x₂) ⋯ (x_{n-1}, x_n)`.
+  relator presenting a Demushkin group with `q(G) ≠ p` (it lies in `Φ(F)` automatically) is carried
+  to `x₁^{q(G)} (x₁, x₂) ⋯ (x_{n-1}, x_n)`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_apply_demushkinWordNeTwo_zero_mul_eq`: a relator
   `(x₁, x₂) ⋯ (x_{n-1}, x_n) T` with `T ∈ λ_2(F)` and `n` even presents a Demushkin group with
   `q(G) ≠ p`, and is carried to `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` with `q = 0` or `q = p^k`,
@@ -183,22 +183,23 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_toAdd_exponentS
   exact ⟨e₁.trans e₂, he₂⟩
 
 /-- **Labute's normal form for `q ≠ p`** (Labute, Theorem 3, the cases `q = 0` and `q = p^f` with
-`f ≥ 2`). Let `r ∈ Φ(F)` be a relator of the free pro-`p` group on `n` generators presenting a
-Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q`-invariant `q(G) ≠ p`. Then a continuous
-automorphism of `F` carries `r` to `x₁^{q(G)} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
+`f ≥ 2`). Let `r` be a relator of the free pro-`p` group on `n` generators presenting a
+Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q`-invariant `q(G) ≠ p` (then `r ∈ Φ(F)`
+automatically). Then a continuous automorphism of `F` carries `r` to
+`x₁^{q(G)} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
 theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne
-    {r : freeProP p (Fin n)} (hr : r ∈ proPFrattini p (freeProP p (Fin n)))
+    {r : freeProP p (Fin n)}
     (hG : IsDemushkin p (presentedProP p (Fin n) {r})) (hq : demushkinQ hG ≠ p) :
     ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n),
       e r = demushkinWordNeTwo (demushkinQ hG) n (freeProPGen p n) := by
+  have hr : r ∈ proPFrattini p (freeProP p (Fin n)) :=
+    hG.mem_proPFrattini_of_presentedProP_singleton
   have hn : 0 < n := by simpa using hG.card_pos_presentedProP
   have hr₁ : r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
     (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr
-  have hpr : ∀ x, (p : ℤ_[p]) ∣ (exponentSum p (Fin n) r).toAdd x :=
-    dvd_exponentSum_of_mem_proPFrattini p (Fin n) hr
   -- `q(G) ≠ p` says that every exponent sum of `r` is divisible by `p ^ 2`.
   have hsq : ∀ x, (p : ℤ_[p]) ^ 2 ∣ (exponentSum p (Fin n) r).toAdd x := fun x ↦
-    by_contra fun hx ↦ hq ((demushkinQ_presentedProP_eq_iff_exists_not_dvd hG hpr).2 ⟨x, hx⟩)
+    by_contra fun hx ↦ hq ((demushkinQ_presentedProP_eq_iff_exists_not_dvd hG).2 ⟨x, hx⟩)
   -- An automorphism `e₁` carries the exponent vector of `r` to `q₀ e₁`, where `q₀` is a coordinate
   -- of that vector dividing all the others.
   obtain ⟨x₁, e₁, hx₁, he₁⟩ := exists_continuousMulEquiv_toAdd_exponentSum_eq_single r ⟨0, hn⟩
@@ -208,9 +209,9 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne
       (u : ℤ_[p]) * (exponentSum p (Fin n) r).toAdd x₁ = (demushkinQ hG : ℤ_[p]) ∧
         p ^ 2 ∣ demushkinQ hG := by
     by_cases hq0 : (exponentSum p (Fin n) r).toAdd x₁ = 0
-    · rw [(demushkinQ_presentedProP_eq_zero_iff hw hv hG (hpr x₁)).2 hq0, hq0]
+    · rw [(demushkinQ_presentedProP_eq_zero_iff hw hv hG).2 hq0, hq0]
       exact ⟨1, by rw [mul_zero, Nat.cast_zero], dvd_zero _⟩
-    · rw [demushkinQ_presentedProP_eq_pow_valuation hw hv hG (hpr x₁) hq0]
+    · rw [demushkinQ_presentedProP_eq_pow_valuation hw hv hG hq0]
       refine ⟨(PadicInt.unitCoeff hq0)⁻¹, ?_, pow_dvd_pow p ?_⟩
       · rw [Nat.cast_pow, Units.inv_mul_eq_iff_eq_mul]
         exact PadicInt.unitCoeff_spec hq0
@@ -278,48 +279,50 @@ theorem exists_continuousMulEquiv_apply_demushkinWordNeTwo_zero_mul_eq (hn : Eve
       (by rw [hcls]; exact nondegenerate_degreeOneForm_demushkinWordNeTwo hn (dvd_zero p))
   -- The class has no `p`-power part, so the `q`-invariant is not `p`.
   have hq : demushkinQ hG ≠ p := by
-    rw [Ne, demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero hr hG,
+    rw [Ne, demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero hG,
       not_exists]
     intro i hi
     apply hi
     rw [hcls, degreeOneBasis_repr_gradedMk_inl_eq_zero_iff, toAdd_exponentSum_demushkinWordNeTwo,
       Nat.cast_zero, zero_smul, Pi.zero_apply]
     exact dvd_zero _
-  obtain ⟨e, he⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne hr hG hq
+  obtain ⟨e, he⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne hG hq
   refine ⟨e, demushkinQ hG, ?_, he⟩
   by_cases h0 : demushkinQ hG = 0
   · exact Or.inl h0
   exact Or.inr (hG.exists_two_le_demushkinQ_eq_pow_of_ne h0 hq)
 
-/-- **Labute's normal form for `q ≠ 2`** (Labute, Theorem 3, the case `q ≠ 2`). Let `r ∈ Φ(F)` be
-a relator of the free pro-`p` group on `n` generators presenting a Demushkin group
-`G = ⟨x₁, …, x_n ∣ r⟩` with `q`-invariant `q(G) ≠ 2`. Then a continuous automorphism of `F`
-carries `r` to `x₁^{q(G)} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
+/-- **Labute's normal form for `q ≠ 2`** (Labute, Theorem 3, the case `q ≠ 2`). Let `r` be a
+relator of the free pro-`p` group on `n` generators presenting a Demushkin group
+`G = ⟨x₁, …, x_n ∣ r⟩` with `q`-invariant `q(G) ≠ 2` (then `r ∈ Φ(F)` automatically). Then a
+continuous automorphism of `F` carries `r` to `x₁^{q(G)} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
 theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two
-    {r : freeProP p (Fin n)} (hr : r ∈ proPFrattini p (freeProP p (Fin n)))
+    {r : freeProP p (Fin n)}
     (hG : IsDemushkin p (presentedProP p (Fin n) {r})) (hq : demushkinQ hG ≠ 2) :
     ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n),
       e r = demushkinWordNeTwo (demushkinQ hG) n (freeProPGen p n) := by
+  have hr : r ∈ proPFrattini p (freeProP p (Fin n)) :=
+    hG.mem_proPFrattini_of_presentedProP_singleton
   by_cases hqp : demushkinQ hG = p
   · -- For `q(G) = p` the prime is odd, and the relator has a nonzero `p`-power part.
     have hp : Odd p := (Fact.out : p.Prime).odd_of_ne_two fun h ↦ hq (hqp.trans h)
     rw [hqp]
     exact exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_odd hp _
       (hG.nondegenerate_degreeOneForm hr (ContinuousMulEquiv.refl _))
-      ((demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero hr hG).1 hqp)
-  · exact exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne hr hG hqp
+      ((demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero hG).1 hqp)
+  · exact exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne hG hqp
 
-/-- **Labute's normal form for a one-relator Demushkin group with `q ≠ 2`.** Let `r ∈ Φ(F)` be a
+/-- **Labute's normal form for a one-relator Demushkin group with `q ≠ 2`.** Let `r` be a
 relator of the free pro-`p` group on `n` generators presenting a Demushkin group with
-`q`-invariant `q(G) ≠ 2`. Then `⟨x₁, …, x_n ∣ r⟩` is topologically isomorphic to
-`⟨x₁, …, x_n ∣ x₁^{q(G)} (x₁, x₂) ⋯ (x_{n-1}, x_n)⟩`. -/
+`q`-invariant `q(G) ≠ 2` (then `r ∈ Φ(F)` automatically). Then `⟨x₁, …, x_n ∣ r⟩` is
+topologically isomorphic to `⟨x₁, …, x_n ∣ x₁^{q(G)} (x₁, x₂) ⋯ (x_{n-1}, x_n)⟩`. -/
 theorem exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_demushkinQ_ne_two
-    {r : freeProP p (Fin n)} (hr : r ∈ proPFrattini p (freeProP p (Fin n)))
+    {r : freeProP p (Fin n)}
     (hG : IsDemushkin p (presentedProP p (Fin n) {r})) (hq : demushkinQ hG ≠ 2) :
     Nonempty (presentedProP p (Fin n) {r} ≃ₜ*
       presentedProP p (Fin n) {demushkinWordNeTwo (demushkinQ hG) n (freeProPGen p n)}) := by
   obtain ⟨e, he⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hr hG hq
+    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hG hq
   exact ⟨presentedProP.congrSingleton e he⟩
 
 end freeProP
@@ -341,7 +344,7 @@ theorem IsDemushkin.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_o
       (hG.nondegenerate_degreeOneForm hr e)
   have hqq : demushkinQ hG' = demushkinQ hG := demushkinQ_congr hG' hG e
   obtain ⟨e'⟩ :=
-    freeProP.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_demushkinQ_ne_two hr hG'
+    freeProP.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_demushkinQ_ne_two hG'
       (hqq ▸ hq)
   rw [hqq] at e'
   exact ⟨e.symm.trans e'⟩

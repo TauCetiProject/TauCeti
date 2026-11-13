@@ -108,7 +108,7 @@ theorem contMDiffWithinAt_curvatureTensor_alongMap
         (cov.curvatureTensor (f q) (X q) (Y q) (σ q))) s p := by
   let _ : NormedAddCommGroup (F →L[ℝ] F) := inferInstance
   let _ : NormedSpace ℝ (F →L[ℝ] F) := inferInstance
-  have hf : ContMDiffWithinAt I' I n f s p := (contMDiffWithinAt_totalSpace.mp hσ).1
+  have hf : ContMDiffWithinAt I' I n f s p := (contMDiffWithinAt_totalSpace_iff.mp hσ).1
   have hR := (cov.contMDiff_curvatureTensorCLM.of_le hn).contMDiffAt.comp_contMDiffWithinAt
     p hf
   simpa only [curvatureTensorCLM_apply] using
