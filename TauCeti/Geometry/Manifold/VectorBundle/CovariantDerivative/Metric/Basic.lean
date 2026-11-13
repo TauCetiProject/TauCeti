@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 
 -- Only the characterization lemma below accesses the unexposed defining tensor equality.
 import all Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
@@ -24,6 +25,12 @@ assuming manifold regularity
 For differentiable sections with locally constant inner product, metric compatibility gives
 the skew-symmetry identity for their covariant derivatives, including orthogonality to a
 section of locally constant length.
+
+For sections whose covariant derivatives vanish, metric compatibility implies that their inner
+product has vanishing differential (`IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero`,
+`IsMetricCompatible.mvfderiv_inner_eq_zero_of_cov_eq_zero`), is locally constant on open sets
+(`IsMetricCompatible.eventuallyEq_inner_const_of_cov_eq_zero`), and is constant on preconnected open
+sets (`IsMetricCompatible.inner_eq_of_isPreconnected_of_cov_eq_zero`).
 
 It also records the twice-differentiated product rule for a metric-compatible covariant
 derivative. It supplies the second-derivative calculation used to establish curvature
@@ -42,7 +49,7 @@ derivative of the metric through `∇`:
 
 public section
 
-open Bundle FiberBundle VectorField
+open Bundle FiberBundle Filter VectorField
 open scoped ContDiff Manifold Topology
 
 namespace CovariantDerivative
@@ -99,7 +106,52 @@ theorem IsMetricCompatible.inner_apply_self_eq_zero_of_eventuallyEq_const
   rw [real_inner_comm (cov σ x v) (σ x)] at h
   linarith
 
-variable [IsManifold I 1 M] {n : ℕ∞ω} [ContMDiffCovariantDerivative cov n]
+/-- For a metric-compatible connection, the inner product of two sections that are differentiable
+and parallel at `x` has vanishing differential at `x`. -/
+theorem IsMetricCompatible.mvfderiv_inner_eq_zero_of_cov_eq_zero
+    (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y} {x : M}
+    (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x)
+    (hσ0 : cov σ x = 0) (hτ0 : cov τ x = 0) :
+    mvfderiv I (fun y ↦ inner ℝ (σ y) (τ y)) x = 0 :=
+  TauCeti.mvfderiv_eq_zero_iff.mpr (hcov.hasMFDerivAt_inner_of_eq_zero hσ hτ hσ0 hτ0).mfderiv
+
+variable [IsManifold I 1 M]
+
+/-- For a metric-compatible connection, the inner product of two sections that are differentiable
+and parallel on an open set `U` is locally constant on `U`. -/
+theorem IsMetricCompatible.eventuallyEq_inner_const_of_cov_eq_zero
+    (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y} {U : Set M} (hU : IsOpen U)
+    (hσ : MDiff[U] (T% σ)) (hτ : MDiff[U] (T% τ))
+    (hσ0 : ∀ y ∈ U, cov σ y = 0) (hτ0 : ∀ y ∈ U, cov τ y = 0) {x : M} (hx : x ∈ U) :
+    (fun y ↦ inner ℝ (σ y) (τ y)) =ᶠ[𝓝 x] fun _ ↦ inner ℝ (σ x) (τ x) := by
+  have hdiff : MDifferentiableOn I 𝓘(ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) U := fun y hy ↦
+    (((hσ y hy).mdifferentiableAt (hU.mem_nhds hy)).inner_bundle
+      ((hτ y hy).mdifferentiableAt (hU.mem_nhds hy))).mdifferentiableWithinAt
+  refine hdiff.eventuallyEq_const_of_mfderiv_eq_zero hU (fun y hy ↦ ?_) hx
+  exact (hcov.hasMFDerivAt_inner_of_eq_zero
+    ((hσ y hy).mdifferentiableAt (hU.mem_nhds hy))
+    ((hτ y hy).mdifferentiableAt (hU.mem_nhds hy))
+    (hσ0 y hy) (hτ0 y hy)).mfderiv
+
+/-- **Parallel sections of a metric-compatible connection have constant inner products** on any
+preconnected open set. Neither boundarylessness nor finite dimensionality of `M` is required. -/
+theorem IsMetricCompatible.inner_eq_of_isPreconnected_of_cov_eq_zero
+    (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y} {U : Set M}
+    (hU : IsOpen U) (hUconn : IsPreconnected U)
+    (hσ : MDiff[U] (T% σ)) (hτ : MDiff[U] (T% τ))
+    (hσ0 : ∀ y ∈ U, cov σ y = 0) (hτ0 : ∀ y ∈ U, cov τ y = 0)
+    {x y : M} (hx : x ∈ U) (hy : y ∈ U) :
+    inner ℝ (σ x) (τ x) = inner ℝ (σ y) (τ y) := by
+  let Uo : TopologicalSpace.Opens M := ⟨U, hU⟩
+  have : PreconnectedSpace Uo := isPreconnected_iff_preconnectedSpace.mp hUconn
+  let φ : Uo → ℝ := fun z ↦ inner ℝ (σ z.1) (τ z.1)
+  have hloc : IsLocallyConstant φ :=
+    (IsLocallyConstant.iff_eventually_eq φ).mpr fun z ↦ by
+      have hev := hcov.eventuallyEq_inner_const_of_cov_eq_zero hU hσ hτ hσ0 hτ0 z.2
+      exact continuous_subtype_val.continuousAt.eventually hev
+  exact hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
+
+variable {n : ℕ∞ω} [ContMDiffCovariantDerivative cov n]
 
 /-- The twice-differentiated metric product rule for a `C^n` metric-compatible connection. -/
 theorem IsMetricCompatible.mvfderiv_mvfderiv_inner

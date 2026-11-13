@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill
 import TauCeti.Geometry.Manifold.Distribution.Kernel
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
 # Symmetries of O'Neill's tensors and integrability of the horizontal distribution
@@ -293,9 +294,10 @@ private theorem inner_leviCivitaConnection_horizontalLift_self {B : Π y : N, Ta
   have hXh (y : M) : X y ∈ (mfderiv I J f y).kerᗮ := h.horizontalLift_mem_orthogonal_ker y _
   obtain ⟨V, hVd, rfl, hVv⟩ := h.exists_vertical_extension hw
   -- `⟨X, V⟩ = 0`, so `⟨∇_X X, V⟩ = -⟨X, ∇_X V⟩`.
-  have h₁ := hmetric.mvfderiv_inner_eq X hXd hVd
   have hXV : (fun y ↦ ⟪X y, V y⟫_ℝ) = fun _ ↦ 0 := funext fun y ↦
     Submodule.inner_right_of_mem_orthogonal (hVv y) (hXh y) |> (real_inner_comm _ _).trans
+  have h₁ := hmetric.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+    hXd hVd (Filter.EventuallyEq.of_eq hXV) (X x)
   -- `|X|²` is pulled back from the base, so its derivative along `V` vanishes and
   -- `⟨X, ∇_V X⟩ = 0`.
   have h₂ := hmetric.mvfderiv_inner_eq V hXd hXd
@@ -316,7 +318,6 @@ private theorem inner_leviCivitaConnection_horizontalLift_self {B : Π y : N, Ta
         (by simp [minSmoothness_of_isRCLikeNormedField]) hXd hVd (hB.mdifferentiableAt (by simp))
         (.of_forall fun y ↦ h.mfderiv_horizontalLift y _) (.of_forall hVv)) (hXh x)
   have hXx : X x = h.horizontalLift x (B (f x)) := rfl
-  rw [hXV, mvfderiv_const, zero_apply] at h₁
   rw [hd] at h₂
   rw [← h₃, inner_sub_right] at hbr
   beta_reduce at h₁ h₂

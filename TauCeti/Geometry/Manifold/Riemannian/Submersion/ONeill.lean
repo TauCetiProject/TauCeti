@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Smoothness
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
@@ -172,17 +173,15 @@ private theorem inner_exchangeTensor_add_inner {Y Z : Π x : M, TangentSpace I x
     exact Submodule.inner_right_of_mem_orthogonal
       (Submodule.starProjection_apply_mem _ _) (Submodule.starProjection_apply_mem _ _)
   have hmetric := CovariantDerivative.isMetricCompatible_leviCivitaConnection I (M := M)
-  have h₁ := hmetric.mvfderiv_inner_eq (FiberBundle.extend E u)
-    (hV.clm_bundle_apply hY) (hH.clm_bundle_apply hZ)
-  have h₂ := hmetric.mvfderiv_inner_eq (FiberBundle.extend E u)
-    (hH.clm_bundle_apply hY) (hV.clm_bundle_apply hZ)
   have hzero₂ : (fun y ↦ ⟪(mfderiv I J f y).kerᗮ.starProjection (Y y),
       (mfderiv I J f y).ker.starProjection (Z y)⟫_ℝ) = fun _ ↦ 0 :=
     (funext fun _ ↦ real_inner_comm _ _).trans (hzero Z Y)
-  rw [hzero] at h₁
-  rw [hzero₂] at h₂
-  simp only [mvfderiv_const, zero_apply, FiberBundle.extend_apply_self]
-    at h₁ h₂
+  have h₁ := hmetric.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+    (hV.clm_bundle_apply hY) (hH.clm_bundle_apply hZ)
+    (Filter.EventuallyEq.of_eq (hzero Y Z)) u
+  have h₂ := hmetric.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+    (hH.clm_bundle_apply hY) (hV.clm_bundle_apply hZ)
+    (Filter.EventuallyEq.of_eq hzero₂) u
   rw [h.exchangeTensor_apply hY, h.exchangeTensor_apply hZ]
   simp only [inner_add_left, inner_add_right, Submodule.starProjection_orthogonal,
     sub_apply, ContinuousLinearMap.id_apply, inner_sub_left,
