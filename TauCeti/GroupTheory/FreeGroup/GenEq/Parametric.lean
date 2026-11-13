@@ -287,7 +287,7 @@ theorem baseKind_eq_sectionKind {μ : Fin Ω.numBases} {s : Ω.closedSections}
 theorem sectionKind_closedSectionOfBase (μ : Fin Ω.numBases) :
     P.sectionKind ⟨Ω.closedSectionOfBase μ, Ω.closedSectionOfBase_mem_closedSections μ⟩ =
       P.baseKind μ :=
-  (P.baseKind_eq_sectionKind (Ω.baseItems_subset_closedSectionOfBase μ)).symm
+  (P.baseKind_eq_sectionKind (Ω.baseItems_subset_sectionItems_closedSectionOfBase μ)).symm
 
 end SectionPartition
 

@@ -195,7 +195,7 @@ theorem crosses_fst_of_mem_connections
   ⟨(Ω.bounds_of_mem_connections c hc).1, (Ω.bounds_of_mem_connections c hc).2.1⟩
 
 /-- The last boundary `q` of a boundary connection `(p, μ, q)` crosses the dual base `Δ(μ)`. -/
-theorem crosses_snd_of_mem_connections
+theorem crosses_snd_snd_of_mem_connections
     {c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)} (hc : c ∈ Ω.connections) :
     Ω.Crosses c.2.2 (Ω.dual c.2.1) :=
   ⟨(Ω.bounds_of_mem_connections c hc).2.2.1, (Ω.bounds_of_mem_connections c hc).2.2.2⟩
@@ -425,7 +425,7 @@ theorem closedSectionOfItem_eq_iff {k : Fin Ω.numItems}
     Ω.mem_sectionItems_closedSectionOfItem k⟩, fun h ↦ Ω.closedSectionOfItem_eq_of_mem h.1 h.2⟩
 
 /-- Every item lies in exactly one closed section. -/
-theorem existsUnique_mem_closedSections (k : Fin Ω.numItems) :
+theorem existsUnique_mem_closedSections_and_mem_sectionItems (k : Fin Ω.numItems) :
     ∃! s, s ∈ Ω.closedSections ∧ k ∈ Ω.sectionItems s.1 s.2 :=
   ⟨_, Ω.closedSectionOfItem_eq_iff.1 rfl, fun _ h ↦ (Ω.closedSectionOfItem_eq_iff.2 h).symm⟩
 
@@ -472,7 +472,7 @@ theorem closedSectionOfBase_mem_closedSections (μ : Fin Ω.numBases) :
   Ω.closedSectionOfItem_mem_closedSections _
 
 /-- A variable base lies in its closed section. -/
-theorem baseItems_subset_closedSectionOfBase (μ : Fin Ω.numBases) :
+theorem baseItems_subset_sectionItems_closedSectionOfBase (μ : Fin Ω.numBases) :
     Ω.baseItems μ ⊆ Ω.sectionItems (Ω.closedSectionOfBase μ).1 (Ω.closedSectionOfBase μ).2 :=
   fun k hk ↦ Ω.closedSectionOfItem_eq_closedSectionOfBase hk ▸
     Ω.mem_sectionItems_closedSectionOfItem k
@@ -480,13 +480,13 @@ theorem baseItems_subset_closedSectionOfBase (μ : Fin Ω.numBases) :
 /-- The closed section of a variable base `μ` starts at or before `α(μ)`. -/
 theorem closedSectionOfBase_fst_le (μ : Fin Ω.numBases) :
     (Ω.closedSectionOfBase μ).1 ≤ Ω.left μ := by
-  have := Ω.baseItems_subset_closedSectionOfBase μ
+  have := Ω.baseItems_subset_sectionItems_closedSectionOfBase μ
   grind [baseItems_def, sectionItems_subset_sectionItems_iff, left_lt_right]
 
 /-- The closed section of a variable base `μ` ends at or after `β(μ)`. -/
 theorem right_le_closedSectionOfBase_snd (μ : Fin Ω.numBases) :
     Ω.right μ ≤ (Ω.closedSectionOfBase μ).2 := by
-  have := Ω.baseItems_subset_closedSectionOfBase μ
+  have := Ω.baseItems_subset_sectionItems_closedSectionOfBase μ
   grind [baseItems_def, sectionItems_subset_sectionItems_iff, left_lt_right]
 
 /-- The closed section of a variable base starts at a closed boundary. -/
@@ -518,11 +518,11 @@ theorem closedSectionOfBase_eq_iff {μ : Fin Ω.numBases}
     {s : Fin (Ω.numItems + 1) × Fin (Ω.numItems + 1)} :
     Ω.closedSectionOfBase μ = s ↔ s ∈ Ω.closedSections ∧ Ω.baseItems μ ⊆ Ω.sectionItems s.1 s.2 :=
   ⟨by rintro rfl; exact ⟨Ω.closedSectionOfBase_mem_closedSections μ,
-    Ω.baseItems_subset_closedSectionOfBase μ⟩,
+    Ω.baseItems_subset_sectionItems_closedSectionOfBase μ⟩,
     fun h ↦ Ω.closedSectionOfItem_eq_of_mem h.1 (h.2 (Ω.left_mem_baseItems μ))⟩
 
 /-- Every variable base lies in exactly one closed section. -/
-theorem existsUnique_baseItems_subset (μ : Fin Ω.numBases) :
+theorem existsUnique_mem_closedSections_and_baseItems_subset (μ : Fin Ω.numBases) :
     ∃! s, s ∈ Ω.closedSections ∧ Ω.baseItems μ ⊆ Ω.sectionItems s.1 s.2 :=
   ⟨_, Ω.closedSectionOfBase_eq_iff.1 rfl, fun _ h ↦ (Ω.closedSectionOfBase_eq_iff.2 h).symm⟩
 
