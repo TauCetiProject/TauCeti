@@ -66,9 +66,9 @@ example :
 example :
     directSumAsModuleEquiv τ
         ((directSum τ).asModuleEquiv.symm (lof k (Fin 1) (fun _ ↦ Fin 2 → k) 0 ![1, 0])) ≠ 0 := by
-  rw [directSumAsModuleEquiv_lof, Ne, DFinsupp.single_eq_zero]
+  rw [directSumAsModuleEquiv_lof, Ne, DFinsupp.single_eq_zero, LinearEquiv.map_eq_zero_iff]
   intro h
-  exact one_ne_zero (congrFun h 0)
+  simpa using congrFun h 0
 
 end Trivial
 

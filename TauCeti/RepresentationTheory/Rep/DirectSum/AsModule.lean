@@ -86,8 +86,9 @@ theorem directSumAsModuleEquiv_apply (x : (directSum ρ).asModule) (i : ι) :
 /-- The inverse comparison assembles a family of components into a vector of the direct sum. -/
 theorem directSumAsModuleEquiv_symm_apply (y : Π₀ i, (ρ i).asModule) (i : ι) :
     (directSum ρ).asModuleEquiv ((directSumAsModuleEquiv ρ).symm y) i =
-      (ρ i).asModuleEquiv (y i) :=
-  (rfl)
+      (ρ i).asModuleEquiv (y i) := by
+  refine ((ρ i).asModuleEquiv.symm_apply_eq).mp ?_
+  rw [← directSumAsModuleEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-- **The inverse comparison sends the `i`-th component `v` to `v` in summand `i`.** -/
 @[simp]
@@ -120,10 +121,18 @@ theorem directSumAsModuleEquiv_comp_directSumMap (f : ∀ i, IntertwiningMap (ρ
     (directSumAsModuleEquiv σ).toLinearMap ∘ₗ
         IntertwiningMap.equivLinearMapAsModule _ _ (IntertwiningMap.directSumMap f) =
       DFinsupp.mapRange.linearMap (fun i ↦ IntertwiningMap.equivLinearMapAsModule _ _ (f i)) ∘ₗ
-        (directSumAsModuleEquiv ρ).toLinearMap :=
-  -- Both sides apply `f i` to the `i`-th component, through the identity maps
-  -- `Representation.asModuleEquiv`.
-  LinearMap.ext fun x ↦ DFinsupp.ext fun i ↦ IntertwiningMap.directSumMap_apply f x i
+        (directSumAsModuleEquiv ρ).toLinearMap := by
+  ext x i
+  obtain ⟨v, rfl⟩ := (directSum ρ).asModuleEquiv.symm.surjective x
+  apply (σ i).asModuleEquiv.injective
+  -- Write each attached `k[G]`-linear map as the image of its intertwining map, so that
+  -- `IntertwiningMap.equivLinearMapAsModule_symm_apply` evaluates both sides.
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    directSumAsModuleEquiv_apply, LinearEquiv.apply_symm_apply,
+    DFinsupp.mapRange.linearMap_apply, DFinsupp.mapRange_apply, directSumAsModuleEquiv_apply,
+    LinearEquiv.apply_symm_apply, ← IntertwiningMap.equivLinearMapAsModule_symm_apply,
+    ← IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearEquiv.symm_apply_apply,
+    LinearEquiv.symm_apply_apply, IntertwiningMap.directSumMap_apply]
 
 end Naturality
 
