@@ -84,6 +84,7 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_real [Fact (1 ≤ (q : ℝ�
       eLpNorm (W1p.value v) t (volume.restrict V) ≤ C * ‖v‖ₑ) :
     ∃ C : ℝ≥0, ∀ u : ℂ → ℝ, eLpNorm u t (volume.restrict V) ≤ C * eLpNormWkp q W 1 u := by
   obtain ⟨C, hC⟩ := hW1p
+  -- `C + 1` is nonzero, so that it absorbs an infinite right-hand side: `0 * ∞ = 0` in `ℝ≥0∞`.
   refine ⟨C + 1, fun u => ?_⟩
   by_cases hfin : eLpNormWkp q W 1 u = ∞
   · rw [hfin, ENNReal.mul_top (by simp)]
@@ -203,6 +204,7 @@ theorem exists_eLpNormWkp_le_mul_eLpNormWkp_succ (hq : 1 ≤ q) (hqs : q ≤ s)
   | succ k ih =>
     obtain ⟨C₀, hC₀⟩ := exists_eLpNorm_le_mul_eLpNormWkp_one (F := F) hq hqs hgap hVc hVW
     obtain ⟨C₁, hC₁⟩ := ih (F := ℂ →L[ℝ] F)
+    -- The `+ 1` keeps the constant nonzero, for the case of an infinite right-hand side.
     refine ⟨C₀ + C₁ + 1, fun u => ?_⟩
     by_cases hfin : eLpNormWkp q W (k + 1 + 1) u = ∞
     · rw [hfin, ENNReal.mul_top (by simp)]

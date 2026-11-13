@@ -59,12 +59,12 @@ theorem exists_le_and_inv_sub_inv_le_and_lt_mul {k : ℕ} {p n : ℝ≥0} (hpn :
     · rw [← NNReal.coe_le_coe, ← inv_le_inv₀ hs0 hp0]
       linarith
     · have h1 : (n : ℝ) / p < k + 1 := (div_lt_iff₀ hp0).2 hkp'
-      have h2 : (n : ℝ) * (s : ℝ)⁻¹ < k := by
-        rw [hsa, mul_sub, mul_inv_cancel₀ hn0.ne', ← div_eq_mul_inv]
+      have h2 : (n : ℝ) / s < k := by
+        have : (n : ℝ) / s = n / p - 1 := by rw [div_eq_mul_inv, hsa]; field_simp
         linarith
-      rw [← NNReal.coe_lt_coe, NNReal.coe_mul, NNReal.coe_natCast,
-        ← inv_mul_cancel_right₀ hs0.ne' (n : ℝ)]
-      exact mul_lt_mul_of_pos_right h2 hs0
+      rw [← NNReal.coe_lt_coe]
+      push_cast
+      exact (div_lt_iff₀ hs0).1 h2
   · have hk : 1 ≤ k := by
       rcases Nat.eq_zero_or_pos k with rfl | hk
       · simp at hkp'
