@@ -373,15 +373,7 @@ theorem sum_finrank_mul_character (g : G) :
     ∑ i, (Module.finrank k (V i) : k) * (ρ i).character g =
       if g = 1 then (Nat.card G : k) else 0 := by
   have := fun i => (ρ i).asModuleEquiv.finiteDimensional
-  split_ifs with hg
-  · subst hg
-    simp_rw [Representation.char_one, ← sq]
-    have h := congrArg (Nat.cast : ℕ → k) (sum_finrank_sq_eq_card ρ hind hcard)
-    push_cast at h
-    exact h
-  · have h := ClassFunction.sum_char_mul_char_inv ρ hind hcard g 1
-    simp only [isConj_one_left, hg, ite_false, inv_one, Representation.char_one] at h
-    simpa [mul_comm] using h
+  simpa using ClassFunction.card_conjClass_mul_sum_char_mul_char_inv ρ hind hcard 1 g⁻¹
 
 end Dimensions
 
