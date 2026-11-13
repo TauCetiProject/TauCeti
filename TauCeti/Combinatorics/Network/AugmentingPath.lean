@@ -135,8 +135,8 @@ theorem isMaximum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMaximum ↔ f.IsMi
 theorem isMinimum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMinimum ↔ f.IsMaximum := by
   rw [← isMaximum_swap, swap_swap]
 
-/-- A bounded terminal assignment is minimum if it equals minus the cut bound of the complement of
-a vertex set containing `s` but not `t`. -/
+/-- A bounded `s`–`t` assignment whose value equals minus the cut bound of the complement of a
+vertex set containing `s` but not `t` is minimum. -/
 theorem isMinimum_of_val_eq_neg_cutBound_compl [DecidableEq V]
     (f : BoundedFlow lo hi s t) {S : Finset V} (hs : s ∈ S) (ht : t ∉ S)
     (h : f.val = -cutBound lo hi Sᶜ) : f.IsMinimum :=
@@ -228,8 +228,8 @@ theorem isMinimum_iff_not_positiveReachable (hst : s ≠ t) (f : BoundedFlow lo 
     f.IsMinimum ↔ ¬PositiveReachable (residualCapacity lo hi f.toFun) t s := by
   rw [← isMaximum_swap, isMaximum_iff_not_positiveReachable hst.symm, swap_toFun]
 
-/-- A minimum bounded assignment between distinct terminals equals minus the cut bound of the
-complement of some vertex set containing `s` but not `t`. -/
+/-- The value of a minimum bounded `s`–`t` assignment between distinct terminals equals minus the
+cut bound of the complement of some vertex set containing `s` but not `t`. -/
 theorem IsMinimum.exists_val_eq_neg_cutBound_compl [DecidableEq V] (hst : s ≠ t)
     {f : BoundedFlow lo hi s t} (hf : f.IsMinimum) :
     ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = -cutBound lo hi Sᶜ := by
