@@ -35,11 +35,13 @@ scalar maps.
 
 * `TauCeti.constantCompositum_eq_top_of_isFractionRing_tensorProduct`,
   `TauCeti.IsFunctionField.of_isFractionRing_tensorProduct`,
-  `TauCeti.transcendental_algebraMap_of_isFractionRing_tensorProduct`,
-  `TauCeti.isSeparable_adjoin_simple_of_isFractionRing_tensorProduct`, and
-  `TauCeti.finrank_over_adjoin_simple_eq_of_isFractionRing_tensorProduct`: compositum generation,
-  function-field structure, transcendental and separating parameters, and degree over a parameter
-  persist in any fraction field of `F ⊗[k] K`.
+  `Transcendental.algebraMap_of_isFractionRing_tensorProduct`,
+  `TauCeti.isSeparable_adjoin_simple_of_isFractionRing_tensorProduct`,
+  `TauCeti.finrank_over_adjoin_simple_eq_of_isFractionRing_tensorProduct`,
+  `TauCeti.isSeparable_ratFunc_of_isFractionRing_tensorProduct`, and
+  `TauCeti.finrank_ratFunc_eq_of_isFractionRing_tensorProduct`: compositum generation,
+  function-field structure, transcendental and separating parameters, and degrees over `k(x)` and
+  `RatFunc k` persist in any fraction field of `F ⊗[k] K`.
 * `TauCeti.IsFunctionField.fractionRing_tensorProduct`,
   `TauCeti.IsFunctionField.fractionRing_tensorProduct_of_perfectField`, and
   `TauCeti.IsFunctionField.fractionRing_tensorProduct_of_isAlgClosed`: `FractionRing (F ⊗[k] K)` is
@@ -91,7 +93,7 @@ theorem IsFunctionField.of_isFractionRing_tensorProduct (hF : IsFunctionField k 
 
 /-- An element of `F` transcendental over `k` remains transcendental over `K` in any fraction
 field `Q` of `F ⊗[k] K`. -/
-theorem transcendental_algebraMap_of_isFractionRing_tensorProduct {x : F}
+theorem _root_.Transcendental.algebraMap_of_isFractionRing_tensorProduct {x : F}
     (hx : Transcendental k x) :
     Transcendental K (algebraMap F Q x) :=
   (linearDisjoint_of_isFractionRing_tensorProduct (k := k)).transcendental_algebraMap hx
@@ -110,12 +112,40 @@ theorem isSeparable_adjoin_simple_of_isFractionRing_tensorProduct (x : F)
 
 /-- Tensor-fraction-field extension of constants preserves the degree over a parameter.
 Neither the constants nor the relative extension need be separable. -/
-theorem finrank_over_adjoin_simple_eq_of_isFractionRing_tensorProduct (x : F)
-    [FiniteDimensional k⟮x⟯ F] :
+theorem finrank_over_adjoin_simple_eq_of_isFractionRing_tensorProduct (x : F) :
     Module.finrank K⟮algebraMap F Q x⟯ Q = Module.finrank k⟮x⟯ F :=
   finrank_over_adjoin_simple_eq_of_linearDisjoint
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) x
+
+section RatFunc
+
+variable [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+  [Algebra (RatFunc K) Q] [IsScalarTower K (RatFunc K) Q]
+
+omit [IsScalarTower k (F ⊗[k] K) Q] in
+/-- Separability over `RatFunc k` persists in any fraction field `Q` of `F ⊗[k] K` over
+`RatFunc K` when the rational variable `X` maps compatibly. -/
+theorem isSeparable_ratFunc_of_isFractionRing_tensorProduct
+    (hX : algebraMap F Q (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc K) Q RatFunc.X)
+    [Algebra.IsSeparable (RatFunc k) F] :
+    Algebra.IsSeparable (RatFunc K) Q :=
+  isSeparable_ratFunc_of_constantCompositum_eq_top (k := k)
+    (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) hX
+
+/-- **Degree over the rational function field is preserved in any fraction field of `F ⊗[k] K`.**
+When `X` acts compatibly on `F` and `Q`, we have `[Q : RatFunc K] = [F : RatFunc k]`, with no
+algebraicity or separability hypothesis on `K / k` or `F / RatFunc k`. -/
+theorem finrank_ratFunc_eq_of_isFractionRing_tensorProduct
+    (hX : algebraMap F Q (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc K) Q RatFunc.X) :
+    Module.finrank (RatFunc K) Q = Module.finrank (RatFunc k) F :=
+  finrank_ratFunc_eq_of_linearDisjoint
+    (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
+    (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) hX
+
+end RatFunc
 
 end SpecifiedFractionField
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
 public import TauCeti.FieldTheory.Separable.Regular
+import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Constant field extensions of regular fields
@@ -122,7 +123,7 @@ theorem isGeometricallyReduced_of_constantCompositum_eq_top_of_isGeometricallyRe
     Algebra.IsGeometricallyReduced k' F' := by
   have := isDomain_tensorProduct_of_constantCompositum_eq_top_of_isGeometricallyReduced
     hex h (AlgebraicClosure k')
-  exact isGeometricallyReduced_of_isDomain_tensorProduct (k := k') (F := F') (AlgebraicClosure k')
+  exact isGeometricallyReduced_of_isReduced_tensorProduct (k := k') (AlgebraicClosure k')
 
 end Stability
 

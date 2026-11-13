@@ -124,7 +124,7 @@ end LinearDisjoint
 
 section Functoriality
 
-variable {k A B C : Type*} (K : Type*) [CommRing k] [CommRing A] [CommRing B] [CommRing C]
+variable {k A B C : Type*} (K : Type*) [CommSemiring k] [CommRing A] [CommRing B] [CommRing C]
   [CommRing K] [Algebra k A] [Algebra k B] [Algebra k C] [Algebra k K] [Module.Flat k K]
 
 /-- When `K` is flat over `k` and `QB` has no zero divisors, the base change
@@ -272,7 +272,7 @@ end Functoriality
 
 section FieldSource
 
-variable {k E B : Type*} (K : Type*) [CommRing k] [Field E] [CommRing B] [CommRing K]
+variable {k E B : Type*} (K : Type*) [CommSemiring k] [Field E] [CommRing B] [CommRing K]
   [Algebra k E] [Algebra k B] [Algebra k K] [Module.Flat k K]
 
 omit [Module.Flat k K] in
@@ -469,11 +469,10 @@ theorem fractionRingTensorCongrAlgEquiv_trans {C : Type*} [CommRing C] [Algebra 
 end Congr
 
 /-- As a `K`-algebra homomorphism, `fractionRingTensorCongrAlgEquiv` agrees with
-`fractionRingTensorMapAlgHom` when `K` is flat over a commutative ring `k` and `QB` has no zero
-divisors. -/
+`fractionRingTensorMapAlgHom` when `K` is flat over `k` and `QB` has no zero divisors. -/
 @[simp]
 theorem fractionRingTensorCongrAlgEquiv_toAlgHom {k A B : Type*} (K QA QB : Type*)
-    [CommRing k] [CommRing A] [CommRing B] [CommRing K]
+    [CommSemiring k] [CommRing A] [CommRing B] [CommRing K]
     [Algebra k A] [Algebra k B] [Algebra k K] [Module.Flat k K]
     [CommRing QA] [Algebra (A ⊗[k] K) QA] [Algebra K QA]
     [IsScalarTower K (A ⊗[k] K) QA] [IsFractionRing (A ⊗[k] K) QA]
