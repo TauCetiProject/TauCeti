@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Analysis.Contour.Argument.PowerSum
 import Mathlib.Analysis.Complex.Liouville
-import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.RingTheory.Polynomial.PrescribedPowerSums
 
@@ -36,7 +35,7 @@ analytic `f`, the proof is the classical one through symmetric functions. Choose
 `x`, the `k`-th power sum of the zeros of the slice in the disc of radius `R` is the contour
 integral `(2πi)⁻¹ ∮ ζᵏ ∂_w f (x, ζ) / f (x, ζ)`
 (`TauCeti.Contour.sum_map_pow_zeroMultiset_eq_circleIntegral_fderiv`), which is holomorphic in `x`
-(`TauCeti.Contour.differentiableOn_sum_map_pow_zeroMultiset`). For `k = 0` it is
+(`TauCeti.Contour.differentiableAt_sum_map_pow_zeroMultiset`). For `k = 0` it is
 the number of zeros, which is therefore constant, say `N`. The `k`-th power sum is then bounded by
 `N Rᵏ`, so it is constant by Liouville's theorem. By Newton's identities the power sums determine
 the multiset of zeros (`TauCeti.roots_newtonPolynomial_sum_map_pow`).
@@ -75,22 +74,20 @@ private theorem exists_forall_analyticOrderAt_eq_count_of_analyticOnNhd {f : E �
   set R := max K 0 + 1
   have hR : 0 < R := by positivity
   have hKR : K < R := by grind
-  have hf' : ∀ x ∈ (univ : Set E), ∀ ζ ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ f (x, ζ) :=
-    fun x _ ζ _ ↦ hf (x, ζ) trivial
+  have hf' (x : E) : ∀ ζ ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ f (x, ζ) :=
+    fun ζ _ ↦ hf (x, ζ) trivial
   have hslice (x : E) : AnalyticOnNhd ℂ (fun w ↦ f (x, w)) (closedBall 0 R) :=
-    fun w _ ↦ (hf (x, w) trivial).curry_right
+    fun w hw ↦ (hf' x w hw).curry_right
   have hsphere (x : E) : ∀ ζ ∈ sphere (0 : ℂ) R, f (x, ζ) ≠ 0 := fun ζ hζ ↦
     hK x ζ (by rw [mem_sphere_zero_iff_norm.1 hζ]; exact hKR.le)
-  set Z : E → Multiset ℂ := fun x ↦ (hslice x).zeroMultiset
-  have hdiff (k : ℕ) : Differentiable ℂ fun x ↦ ((Z x).map (· ^ k)).sum :=
-    differentiableOn_univ.1 <| Contour.differentiableOn_sum_map_pow_zeroMultiset isOpen_univ hR
-      hf' (fun x _ ↦ hsphere x) (fun _ _ ↦ rfl) k
+  set Z : E → Multiset ℂ := fun x ↦ AnalyticOnNhd.zeroMultiset (fun w ↦ f (x, w)) (ball 0 R)
+  have hdiff (k : ℕ) : Differentiable ℂ fun x ↦ ((Z x).map (· ^ k)).sum := fun x ↦
+    Contour.differentiableAt_sum_map_pow_zeroMultiset hR (hf' x) (hsphere x) k
   -- The number of zeros is the zeroth power sum: it is continuous and integer valued, hence
   -- constant on the connected base.
   have hcard (x : E) : (Z x).card = (Z 0).card :=
-    Contour.card_zeroMultiset_eq_of_isPreconnected isOpen_univ
-      (convex_univ : Convex ℝ (univ : Set E)).isPreconnected hR hf' (fun x _ ↦ hsphere x)
-      (fun _ _ ↦ rfl) trivial trivial
+    Contour.card_zeroMultiset_eq_of_isPreconnected isPreconnected_univ hR (fun x _ ↦ hf' x)
+      (fun x _ ↦ hsphere x) trivial trivial
   -- Every zero lies in `ball 0 R`, so the `k`-th power sum is bounded by `card (Z 0) * R ^ k`,
   -- and Liouville's theorem makes it constant.
   have hpow (k : ℕ) (x : E) : ((Z x).map (· ^ k)).sum = ((Z 0).map (· ^ k)).sum := by
@@ -103,7 +100,7 @@ private theorem exists_forall_analyticOrderAt_eq_count_of_analyticOnNhd {f : E �
     obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 ht
     rw [Function.comp_apply, norm_pow]
     exact pow_le_pow_left₀ (norm_nonneg a)
-      (mem_ball_zero_iff.1 ((hslice y).mem_ball_of_mem_zeroMultiset ha)).le k
+      (mem_ball_zero_iff.1 (AnalyticOnNhd.mem_of_mem_zeroMultiset ha)).le k
   -- Newton's identities recover each multiset of zeros from its power sums.
   have hZ (x : E) : Z x = Z 0 := by
     rw [← roots_newtonPolynomial_sum_map_pow (Z x), ← roots_newtonPolynomial_sum_map_pow (Z 0),
