@@ -25,7 +25,9 @@ identifies the case `S = ∅` with the polynomial ring. `isLocalization_partiall
 `isLocalization_partiallyLaurent_of_subset` invert the selected variables and then any newly
 selected variables. `partialCoeffMap` transports these constructions along coefficient maps,
 including noninjective maps. `partialAeval` evaluates in a commutative algebra with units
-required only for selected variables. Algebra maps to arbitrary, possibly noncommutative,
+required only for selected variables. `partiallyLaurent_eq_adjoin` and
+`partiallyLaurent_le_iff` characterize generation by the
+variables and selected inverse variables. Algebra maps to arbitrary, possibly noncommutative,
 semiring targets are determined by the polynomial variables. Variable maps preserving the
 selected sets give `partialRename`, and bijections reindex the selected sets by their images.
 
@@ -84,12 +86,8 @@ theorem partialInclusion_inj {p q : AddMonoidAlgebra R (nonnegOutside S)} :
 
 @[simp]
 theorem partialInclusion_eq_zero {p : AddMonoidAlgebra R (nonnegOutside S)} :
-    partialInclusion R S p = 0 ↔ p = 0 := by
-  constructor
-  · intro h
-    exact partialInclusion_injective (by simpa using h)
-  · rintro rfl
-    exact map_zero _
+    partialInclusion R S p = 0 ↔ p = 0 :=
+  map_eq_zero_iff _ partialInclusion_injective
 
 @[simp]
 theorem range_partialInclusion : (partialInclusion R S).range = partiallyLaurent R S := (rfl)
@@ -257,12 +255,8 @@ theorem toPartiallyLaurent_inj {p q : MvPolynomial K R} :
 
 @[simp]
 theorem toPartiallyLaurent_eq_zero {p : MvPolynomial K R} :
-    toPartiallyLaurent (S := S) p = 0 ↔ p = 0 := by
-  constructor
-  · intro h
-    exact toPartiallyLaurent_injective (by simpa using h)
-  · rintro rfl
-    exact map_zero _
+    toPartiallyLaurent (S := S) p = 0 ↔ p = 0 :=
+  map_eq_zero_iff _ toPartiallyLaurent_injective
 
 /-- Polynomial inclusion is compatible with enlarging the inverted set. -/
 @[simp]
@@ -326,6 +320,15 @@ theorem partialDenominators_def :
 
 theorem X_mem_partialDenominators {i : K} (hi : i ∈ S) :
     MvPolynomial.X i ∈ partialDenominators R S := Submonoid.subset_closure ⟨i, hi, rfl⟩
+
+/-- A monoid map sends every allowed denominator to a unit whenever it sends each
+selected variable to a unit. The target monoid need not be commutative. -/
+theorem isUnit_map_of_mem_partialDenominators {M F : Type*} [Monoid M]
+    [FunLike F (MvPolynomial K R) M] [MonoidHomClass F (MvPolynomial K R) M]
+    (f : F) (hf : ∀ i ∈ S, IsUnit (f (MvPolynomial.X i)))
+    {p : MvPolynomial K R} (hp : p ∈ partialDenominators R S) : IsUnit (f p) :=
+  ((Submonoid.closure_le (S := (IsUnit.submonoid M).comap (f : MvPolynomial K R →* M))).mpr
+    (by rintro _ ⟨i, hi, rfl⟩; exact hf i hi)) hp
 
 /-- Every monic monomial supported on the inverted variables is an allowed denominator. -/
 theorem monomial_mem_partialDenominators {n : K →₀ ℕ} (hn : ∀ i ∉ S, n i = 0) :
@@ -409,6 +412,30 @@ theorem coe_val_partialUnitX_zpow (i : S) (n : ℤ) :
     simp [f]
   simp [← h, ← map_zpow, f]
 
+/-- Enlarging the inverted set preserves the chosen variable units. -/
+@[simp]
+theorem map_inclusion_partialUnitX {T : Set K} (hST : S ⊆ T) (i : S) :
+    Units.map (Subalgebra.inclusion (partiallyLaurent_mono (R := R) hST) :
+      partiallyLaurent R S →* partiallyLaurent R T) (partialUnitX i) =
+      partialUnitX ⟨(i : K), hST i.property⟩ := by
+  apply Units.ext
+  simp only [Units.coe_map, AlgHom.coe_toMonoidHom, val_partialUnitX]
+  exact inclusion_toPartiallyLaurent hST _
+
+@[simp]
+theorem inclusion_val_inv_partialUnitX {T : Set K} (hST : S ⊆ T) (i : S) :
+    Subalgebra.inclusion (partiallyLaurent_mono (R := R) hST) ((partialUnitX i)⁻¹).val =
+      ((partialUnitX (R := R) ⟨(i : K), hST i.property⟩)⁻¹).val := by
+  apply Subtype.ext
+  simp
+
+@[simp]
+theorem inclusion_val_partialUnitX_zpow {T : Set K} (hST : S ⊆ T) (i : S) (n : ℤ) :
+    Subalgebra.inclusion (partiallyLaurent_mono (R := R) hST) ((partialUnitX i)^n).val =
+      ((partialUnitX (R := R) ⟨(i : K), hST i.property⟩)^n).val := by
+  apply Subtype.ext
+  simp
+
 /-- The partially Laurent ring carries the canonical polynomial-algebra structure. -/
 noncomputable instance partialAlgebraMvPolynomial :
     Algebra (MvPolynomial K R) (partiallyLaurent R S) :=
@@ -428,18 +455,9 @@ instance : IsScalarTower (MvPolynomial K R) (partiallyLaurent R S) (LaurentRing 
 the chosen variables. This holds for an arbitrary, possibly infinite inverted set. -/
 instance isLocalization_partiallyLaurent :
     IsLocalization (partialDenominators R S) (partiallyLaurent R S) where
-  map_units := by
-    rintro ⟨y, hy⟩
-    dsimp only
-    rw [partialDenominators] at hy
-    induction hy using Submonoid.closure_induction with
-    | mem x hx =>
-      obtain ⟨i, hi, rfl⟩ := hx
-      refine ⟨partialUnitX ⟨i, hi⟩, ?_⟩
-      apply Subtype.ext
-      simp [partialUnitX, MvPolynomial.toLaurent_X]
-    | one => simp
-    | mul x y _ _ hx hy => simpa using hx.mul hy
+  map_units y := isUnit_map_of_mem_partialDenominators
+    (algebraMap (MvPolynomial K R) (partiallyLaurent R S))
+    (fun _ hi ↦ isUnit_toPartiallyLaurent_X hi) y.property
   surj f := by
     obtain ⟨n, hn, p, hp⟩ := exists_coe_mul_toLaurent_monomial f
     refine ⟨(p, ⟨MvPolynomial.monomial n 1, monomial_mem_partialDenominators hn⟩), ?_⟩
@@ -502,15 +520,8 @@ The target algebra need not be commutative. -/
 @[ext high + 1]
 theorem partialAlgHom_ext {f g : partiallyLaurent R S →ₐ[R] A}
     (h : ∀ i, f (toPartiallyLaurent (MvPolynomial.X i)) =
-      g (toPartiallyLaurent (MvPolynomial.X i))) : f = g := by
-  apply AlgHom.toRingHom_injective
-  apply IsLocalization.ringHom_ext (partialDenominators R S)
-  apply RingHom.ext
-  intro p
-  have hp : f.comp toPartiallyLaurent = g.comp toPartiallyLaurent :=
-    MvPolynomial.algHom_ext h
-  simpa only [RingHom.comp_apply, AlgHom.coe_toRingHom, algebraMap_eq_toPartiallyLaurent,
-    AlgHom.comp_apply] using DFunLike.congr_fun hp p
+      g (toPartiallyLaurent (MvPolynomial.X i))) : f = g :=
+  IsLocalization.algHom_ext (partialDenominators R S) (MvPolynomial.algHom_ext h)
 
 end Evaluation
 
@@ -527,33 +538,27 @@ theorem lift_toPartiallyLaurent (f : MvPolynomial K R →+* A)
   rw [algebraMap_eq_toPartiallyLaurent] at h
   exact h
 
-variable [Algebra R A]
-
-/-- The localization lift evaluates the canonical polynomial inclusion as prescribed. -/
+/-- Over any scalar-tower base, the localization lift evaluates the polynomial
+inclusion as prescribed. -/
 @[simp]
-theorem liftAlgHom_toPartiallyLaurent (f : MvPolynomial K R →ₐ[R] A)
+theorem liftAlgHom_toPartiallyLaurent {R₀ : Type*} [CommSemiring R₀]
+    [Algebra R₀ (MvPolynomial K R)] [Algebra R₀ (partiallyLaurent R S)]
+    [IsScalarTower R₀ (MvPolynomial K R) (partiallyLaurent R S)] [Algebra R₀ A]
+    (f : MvPolynomial K R →ₐ[R₀] A)
     (hf : ∀ y : partialDenominators R S, IsUnit (f y)) (p : MvPolynomial K R) :
-    (IsLocalization.liftAlgHom hf : partiallyLaurent R S →ₐ[R] A) (toPartiallyLaurent p) =
-      f p := by
-  rw [IsLocalization.liftAlgHom_apply]
-  have h := IsLocalization.lift_eq (S := partiallyLaurent R S) hf p
-  rw [algebraMap_eq_toPartiallyLaurent] at h
-  simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using h
+    (IsLocalization.liftAlgHom hf : partiallyLaurent R S →ₐ[R₀] A) (toPartiallyLaurent p) =
+      f p :=
+  (IsLocalization.liftAlgHom_apply _ _).trans (lift_toPartiallyLaurent (f : _ →+* A) hf p)
+
+variable [Algebra R A]
 
 /-- Evaluate at arbitrary elements of a commutative algebra, with units required only for
 selected variables. Commutativity ensures the prescribed elements define a polynomial map. -/
 noncomputable def partialAeval (x : K → A) (hx : ∀ i ∈ S, IsUnit (x i)) :
-    partiallyLaurent R S →ₐ[R] A := by
-  refine IsLocalization.liftAlgHom (M := partialDenominators R S) (f := MvPolynomial.aeval x) ?_
-  rintro ⟨p, hp⟩
-  change IsUnit (MvPolynomial.aeval x p)
-  rw [partialDenominators_def] at hp
-  induction hp using Submonoid.closure_induction with
-  | mem p hp =>
-    obtain ⟨i, hi, rfl⟩ := hp
-    simpa using hx i hi
-  | one => simp
-  | mul p q _ _ hp hq => simpa using hp.mul hq
+    partiallyLaurent R S →ₐ[R] A :=
+  IsLocalization.liftAlgHom (M := partialDenominators R S) (f := MvPolynomial.aeval x)
+    (fun y ↦ isUnit_map_of_mem_partialDenominators (MvPolynomial.aeval x)
+      (fun i hi ↦ by simpa using hx i hi) y.property)
 
 /-- Partial evaluation extends the usual polynomial evaluation. -/
 @[simp]
@@ -608,15 +613,91 @@ theorem aeval_comp_partiallyLaurent_val (x : K → Aˣ) :
 theorem partialAeval_comp_inclusion {T : Set K} (hST : S ⊆ T) (x : K → A)
     (hx : ∀ i ∈ T, IsUnit (x i)) :
     (partialAeval (R := R) x hx).comp (Subalgebra.inclusion (partiallyLaurent_mono (R := R) hST)) =
-      partialAeval (R := R) x (fun i hi ↦ hx i (hST hi)) := by
-  apply partialAlgHom_ext
-  intro i
-  simp only [AlgHom.comp_apply]
-  exact (congrArg (partialAeval (R := R) x hx)
-    (inclusion_toPartiallyLaurent (R := R) hST (MvPolynomial.X i))).trans
-      (by simp only [partialAeval_toPartiallyLaurent, MvPolynomial.aeval_X])
+      partialAeval (R := R) x (fun i hi ↦ hx i (hST hi)) :=
+  partialAlgHom_ext fun i ↦ by
+    simp only [AlgHom.comp_apply]
+    rw [inclusion_toPartiallyLaurent (R := R) hST]
+    simp
+
+/-- Full evaluation on an element of the partial ring agrees with partial evaluation. -/
+@[simp]
+theorem aeval_coe_partiallyLaurent (x : K → Aˣ) (p : partiallyLaurent R S) :
+    aeval (R := R) x (p : LaurentRing R K) =
+      partialAeval (R := R) (fun i ↦ (x i : A)) (fun i _ ↦ (x i).isUnit) p :=
+  DFunLike.congr_fun (aeval_comp_partiallyLaurent_val x) p
+
+/-- Partial evaluation commutes with inclusion in a larger partial ring. -/
+@[simp]
+theorem partialAeval_inclusion {T : Set K} (hST : S ⊆ T) (x : K → A)
+    (hx : ∀ i ∈ T, IsUnit (x i)) (p : partiallyLaurent R S) :
+    partialAeval (R := R) x hx (Subalgebra.inclusion (partiallyLaurent_mono hST) p) =
+      partialAeval (R := R) x (fun i hi ↦ hx i (hST hi)) p :=
+  DFunLike.congr_fun (partialAeval_comp_inclusion hST x hx) p
+
+/-- Evaluation at the partial ring's own variables is the identity. -/
+@[simp]
+theorem partialAeval_X_left :
+    partialAeval (R := R) (fun i ↦ toPartiallyLaurent (MvPolynomial.X i))
+      (fun _ hi ↦ isUnit_toPartiallyLaurent_X hi) = AlgHom.id R (partiallyLaurent R S) :=
+  partialAlgHom_ext fun _ ↦ by simp
+
+theorem partialAeval_X_left_apply (p : partiallyLaurent R S) :
+    partialAeval (R := R) (fun i ↦ toPartiallyLaurent (MvPolynomial.X i))
+      (fun _ hi ↦ isUnit_toPartiallyLaurent_X hi) p = p := by
+  rw [partialAeval_X_left, AlgHom.id_apply]
+
+/-- Partial evaluation is natural under algebra homomorphisms of the target. -/
+theorem comp_partialAeval {B : Type*} [CommSemiring B] [Algebra R B]
+    (φ : A →ₐ[R] B) (x : K → A) (hx : ∀ i ∈ S, IsUnit (x i)) :
+    φ.comp (partialAeval (R := R) x hx) =
+      partialAeval (R := R) (fun i ↦ φ (x i)) (fun i hi ↦ (hx i hi).map φ) :=
+  partialAlgHom_ext fun _ ↦ by simp
 
 end Aeval
+
+/-- A subalgebra contains the partial ring exactly when it contains every variable and
+the inverse of each selected variable. -/
+theorem partiallyLaurent_le_iff (B : Subalgebra R (LaurentRing R K)) :
+    partiallyLaurent R S ≤ B ↔
+      (∀ i, (X i : LaurentRing R K) ∈ B) ∧
+        ∀ i ∈ S, ((unitX i)⁻¹ : (LaurentRing R K)ˣ).val ∈ B := by
+  constructor
+  · intro h
+    exact ⟨fun i ↦ h (X_mem_partiallyLaurent i),
+      fun _ hi ↦ h (val_inv_unitX_mem_partiallyLaurent hi)⟩
+  · rintro ⟨hX, hInv⟩
+    let x (i : K) : B := ⟨X i, hX i⟩
+    have hx (i : K) (hi : i ∈ S) : IsUnit (x i) := by
+      refine ⟨⟨x i, ⟨((unitX i)⁻¹).val, hInv i hi⟩, ?_, ?_⟩, rfl⟩
+      · apply Subtype.ext
+        simpa only [Subalgebra.coe_mul, Subalgebra.coe_one, x, ← val_unitX] using
+          Units.mul_inv (unitX (R := R) i)
+      · apply Subtype.ext
+        simpa only [Subalgebra.coe_mul, Subalgebra.coe_one, x, ← val_unitX] using
+          Units.inv_mul (unitX (R := R) i)
+    let f := partialAeval (R := R) x hx
+    have hf : B.val.comp f = (partiallyLaurent R S).val :=
+      partialAlgHom_ext fun _ ↦ by simp [f, x]
+    intro p hp
+    have h := DFunLike.congr_fun hf (⟨p, hp⟩ : partiallyLaurent R S)
+    have hval : (f ⟨p, hp⟩ : LaurentRing R K) = p := h
+    rw [← hval]
+    exact (f ⟨p, hp⟩).property
+
+/-- Variables and the selected inverse variables generate the partial ring as an algebra. -/
+theorem partiallyLaurent_eq_adjoin :
+    partiallyLaurent R S = Algebra.adjoin R
+      (Set.range (X : K → LaurentRing R K) ∪
+        (fun i ↦ ((unitX i)⁻¹ : (LaurentRing R K)ˣ).val) '' S) := by
+  apply le_antisymm
+  · apply (partiallyLaurent_le_iff _).2
+    exact ⟨fun i ↦ Algebra.subset_adjoin (Or.inl ⟨i, rfl⟩),
+      fun i hi ↦ Algebra.subset_adjoin (Or.inr ⟨i, hi, rfl⟩)⟩
+  · apply Algebra.adjoin_le
+    rintro _ (⟨i, rfl⟩ | ⟨i, hi, rfl⟩)
+    · exact X_mem_partiallyLaurent i
+    · exact val_inv_unitX_mem_partiallyLaurent hi
+
 
 section Coefficients
 
@@ -682,6 +763,31 @@ theorem partialCoeffMap_toPartiallyLaurent (φ : R →+* A) (p : MvPolynomial K 
   apply Subtype.ext
   simp [MvPolynomial.toLaurent_map]
 
+/-- Coefficient change preserves the selected variable units. -/
+@[simp]
+theorem map_partialCoeffMap_partialUnitX (φ : R →+* A) (i : S) :
+    Units.map (↑(partialCoeffMap (S := S) φ) :
+      partiallyLaurent R S →* partiallyLaurent A S)
+      (partialUnitX i) = partialUnitX i := by
+  apply Units.ext
+  simp
+
+@[simp]
+theorem partialCoeffMap_val_inv_partialUnitX (φ : R →+* A) (i : S) :
+    partialCoeffMap φ ((partialUnitX i)⁻¹).val = ((partialUnitX (R := A) i)⁻¹).val := by
+  have h := congrArg (fun u : (partiallyLaurent A S)ˣ ↦ (u⁻¹).val)
+    (map_partialCoeffMap_partialUnitX φ i)
+  simpa only [← map_inv, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+    MonoidHom.coe_ofClass] using h
+
+@[simp]
+theorem partialCoeffMap_val_partialUnitX_zpow (φ : R →+* A) (i : S) (n : ℤ) :
+    partialCoeffMap φ ((partialUnitX i)^n).val = ((partialUnitX (R := A) i)^n).val := by
+  have h := congrArg (fun u : (partiallyLaurent A S)ˣ ↦ (u^n).val)
+    (map_partialCoeffMap_partialUnitX φ i)
+  simpa only [← map_zpow, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+    MonoidHom.coe_ofClass] using h
+
 /-- Changing coefficients preserves each permitted basis monomial. -/
 @[simp]
 theorem partialCoeffMap_partiallyLaurentBasis (φ : R →+* A) (m : nonnegOutside S) :
@@ -705,6 +811,19 @@ theorem partialCoeffMap_algebraMap (φ : R →+* A) (r : R) :
       algebraMap A (partiallyLaurent A S) (φ r) := by
   apply Subtype.ext
   simp
+
+/-- Evaluation after scalar extension agrees with the original partial evaluation. -/
+@[simp]
+theorem partialAeval_partialCoeffMap_algebraMap [Algebra R A] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] (x : K → B) (hx : ∀ i ∈ S, IsUnit (x i))
+    (p : partiallyLaurent R S) :
+    partialAeval (R := A) x hx (partialCoeffMap (algebraMap R A) p) =
+      partialAeval (R := R) x hx p := by
+  let f : partiallyLaurent R S →ₐ[R] B :=
+    { toRingHom := (partialAeval (R := A) x hx).toRingHom.comp
+        (partialCoeffMap (algebraMap R A))
+      commutes' := by intro r; simp [IsScalarTower.algebraMap_apply R A B] }
+  exact DFunLike.congr_fun (partialAlgHom_ext (f := f) fun _ ↦ by simp [f]) p
 
 end Coefficients
 
@@ -751,30 +870,64 @@ theorem partialRename_toPartiallyLaurent (f : K → K') (hST : Set.MapsTo f S T)
   apply Subtype.ext
   simp [rename_toLaurent]
 
+/-- Injective variable maps restrict to injective maps on partial rings. -/
+theorem partialRename_injective {f : K → K'} (hf : Function.Injective f)
+    (hST : Set.MapsTo f S T) : Function.Injective (partialRename (R := R) f hST) := by
+  intro p q h
+  exact Subtype.ext (rename_injective hf (by simpa using congrArg Subtype.val h))
+
+/-- Renaming carries a selected variable unit to the selected image unit. -/
+@[simp]
+theorem map_partialRename_partialUnitX (f : K → K') (hST : Set.MapsTo f S T) (i : S) :
+    Units.map (partialRename (R := R) f hST : partiallyLaurent R S →* partiallyLaurent R T)
+      (partialUnitX i) = partialUnitX ⟨f i, hST i.property⟩ := by
+  apply Units.ext
+  simp
+
+@[simp]
+theorem partialRename_val_inv_partialUnitX (f : K → K') (hST : Set.MapsTo f S T) (i : S) :
+    partialRename (R := R) f hST ((partialUnitX i)⁻¹).val =
+      ((partialUnitX (R := R) ⟨f i, hST i.property⟩)⁻¹).val := by
+  have h := congrArg (fun u : (partiallyLaurent R T)ˣ ↦ (u⁻¹).val)
+    (map_partialRename_partialUnitX f hST i)
+  simpa only [← map_inv, Units.coe_map, AlgHom.coe_toMonoidHom] using h
+
+@[simp]
+theorem partialRename_val_partialUnitX_zpow (f : K → K') (hST : Set.MapsTo f S T)
+    (i : S) (n : ℤ) :
+    partialRename (R := R) f hST ((partialUnitX i)^n).val =
+      ((partialUnitX (R := R) ⟨f i, hST i.property⟩)^n).val := by
+  have h := congrArg (fun u : (partiallyLaurent R T)ˣ ↦ (u^n).val)
+    (map_partialRename_partialUnitX f hST i)
+  simpa only [← map_zpow, Units.coe_map, AlgHom.coe_toMonoidHom] using h
+
+/-- Evaluating renamed variables is evaluation at their prescribed images. -/
+theorem partialAeval_comp_partialRename {A : Type*} [CommSemiring A] [Algebra R A]
+    (f : K → K') (hST : Set.MapsTo f S T) (x : K' → A)
+    (hx : ∀ i ∈ T, IsUnit (x i)) :
+    (partialAeval (R := R) x hx).comp (partialRename f hST) =
+      partialAeval (R := R) (x ∘ f) (fun i hi ↦ hx (f i) (hST hi)) :=
+  partialAlgHom_ext fun _ ↦ by simp
+
+@[simp]
+theorem partialAeval_partialRename {A : Type*} [CommSemiring A] [Algebra R A]
+    (f : K → K') (hST : Set.MapsTo f S T) (x : K' → A)
+    (hx : ∀ i ∈ T, IsUnit (x i)) (p : partiallyLaurent R S) :
+    partialAeval (R := R) x hx (partialRename f hST p) =
+      partialAeval (R := R) (x ∘ f) (fun i hi ↦ hx (f i) (hST hi)) p :=
+  DFunLike.congr_fun (partialAeval_comp_partialRename f hST x hx) p
+
 @[simp]
 theorem partialRename_id :
-    partialRename (R := R) (S := S) id (Set.mapsTo_id S) = AlgHom.id R (partiallyLaurent R S) := by
-  apply AlgHom.ext
-  intro p
-  apply Subtype.ext
-  simp only [AlgHom.id_apply]
-  exact (coe_partialRename id (Set.mapsTo_id S) p).trans (by simp)
+    partialRename (R := R) (S := S) id (Set.mapsTo_id S) = AlgHom.id R (partiallyLaurent R S) :=
+  partialAlgHom_ext fun _ ↦ by simp
 
 /-- Composition of variable maps gives composition of the restricted renamings. -/
 theorem partialRename_comp (f : K → K') (g : K' → K'')
     (hST : Set.MapsTo f S T) (hTU : Set.MapsTo g T U) :
     (partialRename (R := R) g hTU).comp (partialRename f hST) =
-      partialRename (g ∘ f) (hTU.comp hST) := by
-  apply AlgHom.ext
-  intro p
-  apply Subtype.ext
-  simp only [AlgHom.comp_apply]
-  calc
-    _ = rename g (rename f (p : LaurentRing R K)) :=
-      (coe_partialRename g hTU (partialRename f hST p)).trans
-        (congrArg (rename g) (coe_partialRename f hST p))
-    _ = rename (g ∘ f) (p : LaurentRing R K) := rename_rename f g _
-    _ = _ := (coe_partialRename (g ∘ f) (hTU.comp hST) p).symm
+      partialRename (g ∘ f) (hTU.comp hST) :=
+  partialAlgHom_ext fun _ ↦ by simp
 
 @[simp]
 theorem partialRename_partialRename (f : K → K') (g : K' → K'')
@@ -785,58 +938,31 @@ theorem partialRename_partialRename (f : K → K') (g : K' → K'')
 
 /-- A bijection of variables reindexes the selected variables by its image. -/
 noncomputable def partialRenameEquiv (R : Type*) [CommSemiring R] (S : Set K) (e : K ≃ K') :
-    partiallyLaurent R S ≃ₐ[R] partiallyLaurent R (e '' S) := by
-  let hF : Set.MapsTo e S (e '' S) := Set.mapsTo_image e S
-  let hB : Set.MapsTo e.symm (e '' S) S :=
-    Set.mapsTo_iff_image_subset.mpr (e.symm_image_image S).le
-  let forward : partiallyLaurent R S →ₐ[R] partiallyLaurent R (e '' S) := partialRename e hF
-  let backward : partiallyLaurent R (e '' S) →ₐ[R] partiallyLaurent R S := partialRename e.symm hB
-  refine
-    { toFun := forward
-      invFun := backward
-      left_inv := ?_
-      right_inv := ?_
-      map_mul' := forward.map_mul
-      map_add' := forward.map_add
-      commutes' := forward.commutes }
-  · intro p
-    apply Subtype.ext
-    have hcomp : e.symm ∘ e = id := e.symm_comp_self
-    calc
-      _ = rename e.symm (rename e (p : LaurentRing R K)) :=
-        (coe_partialRename e.symm hB (forward p)).trans
-          (congrArg (rename e.symm) (coe_partialRename e hF p))
-      _ = rename (e.symm ∘ e) (p : LaurentRing R K) := rename_rename _ _ _
-      _ = _ := by rw [hcomp, rename_id, AlgHom.id_apply]
-  · intro p
-    apply Subtype.ext
-    have hcomp : e ∘ e.symm = id := e.self_comp_symm
-    calc
-      _ = rename e (rename e.symm (p : LaurentRing R K')) :=
-        (coe_partialRename e hF (backward p)).trans
-          (congrArg (rename e) (coe_partialRename e.symm hB p))
-      _ = rename (e ∘ e.symm) (p : LaurentRing R K') := rename_rename _ _ _
-      _ = _ := by rw [hcomp, rename_id, AlgHom.id_apply]
+    partiallyLaurent R S ≃ₐ[R] partiallyLaurent R (e '' S) :=
+  AlgEquiv.ofAlgHom (partialRename e (Set.mapsTo_image e S))
+    (partialRename e.symm (Set.mapsTo_iff_image_subset.mpr (e.symm_image_image S).le))
+    (partialAlgHom_ext fun _ ↦ by simp) (partialAlgHom_ext fun _ ↦ by simp)
 
 @[simp]
 theorem partialRenameEquiv_apply (e : K ≃ K') (p : partiallyLaurent R S) :
     partialRenameEquiv R S e p = partialRename (T := e '' S) e (Set.mapsTo_image e S) p := by rfl
 
 @[simp]
+theorem partialRenameEquiv_symm_apply (e : K ≃ K') (p : partiallyLaurent R (e '' S)) :
+    (partialRenameEquiv R S e).symm p =
+      partialRename e.symm (Set.mapsTo_iff_image_subset.mpr (e.symm_image_image S).le) p := by
+  rfl
+
 theorem coe_partialRenameEquiv_symm_apply (e : K ≃ K') (p : partiallyLaurent R (e '' S)) :
     ((partialRenameEquiv R S e).symm p : LaurentRing R K) =
       rename e.symm (p : LaurentRing R K') := by
-  have hback : Set.MapsTo e.symm (e '' S) S :=
-    Set.mapsTo_iff_image_subset.mpr (e.symm_image_image S).le
-  exact coe_partialRename e.symm hback p
+  simp
 
-@[simp]
 theorem partialRenameEquiv_symm_partialRename (e : K ≃ K') (p : partiallyLaurent R S) :
     (partialRenameEquiv R S e).symm
       (partialRename (T := e '' S) e (Set.mapsTo_image e S) p) = p := by
   rw [← partialRenameEquiv_apply, AlgEquiv.symm_apply_apply]
 
-@[simp]
 theorem partialRename_partialRenameEquiv_symm (e : K ≃ K')
     (p : partiallyLaurent R (e '' S)) :
     partialRename (T := e '' S) e (Set.mapsTo_image e S)
