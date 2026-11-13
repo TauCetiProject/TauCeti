@@ -37,7 +37,9 @@ The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
 
 ## Main statements
 
-* `ZLattice.isEven_sqrt_level_smul_dual`: the Fricke partner `√N • L^∨` is even, for every `L`.
+* `ZLattice.isEven_sqrt_level_smul_dual`, `ZLattice.discreteTopology_sqrt_level_smul_dual`,
+  `ZLattice.isZLattice_sqrt_level_smul_dual`: the Fricke partner `√N • L^∨` is even and discrete,
+  and is a full lattice when `L` is full with `N ≠ 0`.
 * `ZLattice.det_sqrt_level_smul_dual`: for a full lattice of rank `n`,
   `det (√N • L^∨) = Nⁿ / det L`.
 * `ZLattice.IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual`: for a full integral
@@ -79,9 +81,20 @@ theorem isEven_sqrt_level_smul_dual : IsEven (√(level L : ℝ) • dual L) :=
 theorem isIntegral_sqrt_level_smul_dual : IsIntegral (√(level L : ℝ) • dual L) :=
   (isEven_sqrt_level_smul_dual L).isIntegral
 
+/-- The Fricke partner `√N • L^∨` is discrete in the ambient space. -/
+instance discreteTopology_sqrt_level_smul_dual :
+    DiscreteTopology (√(level L : ℝ) • dual L : Submodule ℤ E) :=
+  (isEven_sqrt_level_smul_dual L).discreteTopology
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
+
+/-- When `level L ≠ 0`, the Fricke partner `√N • L^∨` of a full lattice `L` is a full lattice. -/
+instance isZLattice_sqrt_level_smul_dual [NeZero (level L)] :
+    IsZLattice ℝ (√(level L : ℝ) • dual L) :=
+  have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (NeZero.pos _))⟩
+  inferInstance
 
 /-- The Fricke partner of a full lattice `L` of level `N` and rank `n` has determinant
 `det (√N • L^∨) = Nⁿ / det L`. -/
