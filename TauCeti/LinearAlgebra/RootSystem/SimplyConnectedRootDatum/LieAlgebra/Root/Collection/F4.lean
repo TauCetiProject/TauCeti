@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.NonG2
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.NotG2
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Positive
 
 /-!
@@ -16,7 +17,7 @@ They collect in any prescribed duplicate-free order, over every commutative valu
 every Kostant-stable lattice with nilpotent simple root operators. No uniqueness is asserted.
 
 This table-indexed form specializes
-`TauCeti.DynkinType.mem_biSup_range_chevalleyRootSubgroup_iff_exists_list_prod_map` using
+`TauCeti.DynkinType.mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod` using
 `TauCeti.DynkinType.mem_posRoots_F4_iff`.
 
 ## References
@@ -34,7 +35,8 @@ open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 variable {ht : F4.Valid} {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (F4.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
   (M : AddSubgroup V)
-  (hM : ∀ u ∈ kostantForm (F4.lieBasis ht).rootGenerator (F4.lieBasis ht).h,
+  (hM : ∀ u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm
+      (F4.lieBasis ht).rootGenerator (F4.lieBasis ht).h,
     ∀ v ∈ M, ρ u v ∈ M)
   (hnil : ∀ i, IsNilpotent
     (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((F4.lieBasis ht).rootGenerator i))))
@@ -51,9 +53,9 @@ theorem mem_biSup_range_chevalleyRootSubgroup_F4_iff_exists_list_prod_map (A : C
         (chevalleyRootSubgroup ρ M hM hnil γ A).range ↔
       ∃ u : Fin F4.numRoots → A,
         (l.map fun γ => chevalleyRootSubgroup ρ M hM hnil γ A
-          (Multiplicative.ofAdd (u γ))).prod = g :=
-  mem_biSup_range_chevalleyRootSubgroup_iff_exists_list_prod_map ρ M hM hnil
-    (by intro h; cases h) A hl
-    (fun γ => (hlS γ).trans (mem_posRoots_F4_iff ht γ).symm)
+          (Multiplicative.ofAdd (u γ))).prod = g := by
+  let _ := isNotG2_rationalRootSystem F4 ht (by intro h; cases h)
+  exact mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod ρ M hM hnil A l hl
+    (fun γ => (hlS γ).trans (mem_posRoots_F4_iff ht γ).symm) g
 
 end TauCeti.DynkinType
