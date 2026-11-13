@@ -73,8 +73,8 @@ noncomputable def negativeExponentsEquivFinsuppDegree (κ : Type*) [Fintype κ] 
 
 /-- The entries of `negativeExponentsEquivFinsuppDegree κ hj e`, viewed in `ℤ`, are `-e i - 1`. -/
 @[simp]
-theorem coe_negativeExponentsEquivFinsuppDegree_apply {κ : Type*} [Fintype κ] {m : ℤ} {j : ℕ}
-    (hj : (j : ℤ) = -m - Fintype.card κ) (e : negativeExponents κ m) (i : κ) :
+theorem natCast_coe_negativeExponentsEquivFinsuppDegree_apply_apply {κ : Type*} [Fintype κ]
+    {m : ℤ} {j : ℕ} (hj : (j : ℤ) = -m - Fintype.card κ) (e : negativeExponents κ m) (i : κ) :
     ((negativeExponentsEquivFinsuppDegree κ hj e : κ →₀ ℕ) i : ℤ) = -e.1 i - 1 := by
   have := (mem_negativeExponents.1 e.2).2 i
   simp only [negativeExponentsEquivFinsuppDegree, Equiv.coe_fn_mk,
@@ -83,7 +83,7 @@ theorem coe_negativeExponentsEquivFinsuppDegree_apply {κ : Type*} [Fintype κ] 
 
 /-- The inverse of `negativeExponentsEquivFinsuppDegree` sends `d` to the exponent `-d - 1`. -/
 @[simp]
-theorem coe_negativeExponentsEquivFinsuppDegree_symm_apply {κ : Type*} [Fintype κ] {m : ℤ}
+theorem coe_negativeExponentsEquivFinsuppDegree_symm_apply_apply {κ : Type*} [Fintype κ] {m : ℤ}
     {j : ℕ} (hj : (j : ℤ) = -m - Fintype.card κ) (d : {d : κ →₀ ℕ // d.degree = j}) (i : κ) :
     ((negativeExponentsEquivFinsuppDegree κ hj).symm d : κ → ℤ) i = -(d.1 i : ℤ) - 1 := by
   simp only [negativeExponentsEquivFinsuppDegree, Equiv.coe_fn_symm_mk]
