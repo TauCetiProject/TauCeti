@@ -253,12 +253,6 @@ def mergeFacesSide (h : C.IsMergeable g₁ g₂) (g : Option {g : C.Face // g �
   ⟨C.outgoing (C.mergeFacesCornerOrigin g₁ g₂ ⟨g, k⟩),
     h.toGeomEdge_outgoing_mergeFacesCornerOrigin_ne _⟩
 
-/-- The last side of a face is the incoming side of its first corner. -/
-private theorem incoming_mk_zero (g : C.Face) :
-    C.incoming ⟨g, ⟨0, C.sides_pos g⟩⟩ =
-      C.side g ⟨C.sides g - 1, Nat.sub_lt (C.sides_pos g) Nat.one_pos⟩ :=
-  (C.incoming_mk_of_eq_zero rfl rfl).trans (C.outgoing_def _)
-
 /-- The positions of `X` in the merged face are followed by the next side of `g₁`; the last
 position of `X` is followed by the start of `Y`, at the source of `d`. -/
 private theorem tgt_outgoing_mergeFacesCornerOrigin_of_lt (h : C.IsMergeable g₁ g₂)
@@ -357,7 +351,7 @@ instance [Finite C.Face] : Finite (C.mergeFaces h).Face :=
 
 /-- The dart of a side occurrence of the merged complex is the dart of the side occurrence of `C`
 it comes from. -/
-theorem coe_outgoing_mergeFaces (c : (C.mergeFaces h).Corner) :
+@[simp] theorem coe_outgoing_mergeFaces (c : (C.mergeFaces h).Corner) :
     ((C.mergeFaces h).outgoing c).1 = C.outgoing (C.mergeFacesCornerOrigin g₁ g₂ c) := by
   rw [outgoing_def]
   rfl

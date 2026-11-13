@@ -176,6 +176,12 @@ theorem incoming_mk_of_eq_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j : �
   rw [← h]
   exact C.incoming_nextCorner ⟨f, i⟩
 
+/-- The incoming side of the first corner of a face is its last side. -/
+theorem incoming_mk_zero (f : C.Face) :
+    C.incoming ⟨f, ⟨0, C.sides_pos f⟩⟩ =
+      C.side f ⟨C.sides f - 1, Nat.sub_lt (C.sides_pos f) Nat.one_pos⟩ :=
+  C.incoming_mk_of_eq_zero rfl rfl
+
 /-- The corner preceding the first corner of a face is its last corner. -/
 theorem prevCorner_mk_zero (f : C.Face) :
     C.prevCorner ⟨f, ⟨0, C.sides_pos f⟩⟩ =
