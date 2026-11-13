@@ -49,19 +49,19 @@ example : double (1 : ℚ) 1 ⟨-1, 1⟩ = 0 := by
 example {K : Type*} [Field K] [DecidableEq K]
     (P : (model (2 : K) 1).toAffine.Point) :
     double 1 1 (coordinates 2 1 P) ≠ 0 :=
-  (double_coordinates (by simp) (by simp) (by norm_num) P).1
+  (double_coordinates (by simp) (by norm_num) P).1
 
 -- Characteristic three requires no modification of the formula or its correctness theorem.
 example (P : (model (0 : ZMod 3) 1).toAffine.Point) :
     double 2 4 (coordinates 0 1 P) ≠ 0 ∧
       (double 2 4 (coordinates 0 1 P)).cross (coordinates 0 1 (P + P)) = 0 :=
-  double_coordinates (by decide) (by decide) (by decide) P
+  double_coordinates (by decide) (by decide) P
 
 -- In characteristic two, the scaled relation with nonzero D forces A = 0;
 -- correctness therefore covers only that degenerate model.
 example (P : (model (0 : ZMod 2) 1).toAffine.Point) :
     double 1 1 (coordinates 0 1 P) ≠ 0 ∧
       (double 1 1 (coordinates 0 1 P)).cross (coordinates 0 1 (P + P)) = 0 :=
-  double_coordinates (by decide) (by decide) (by decide) P
+  double_coordinates (by decide) (by decide) P
 
 end TauCeti.Montgomery

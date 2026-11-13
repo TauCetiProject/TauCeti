@@ -15,7 +15,8 @@ A state of a Markov kernel is recurrent if the chain started there returns at a 
 time almost surely, and transient otherwise. Recurrence is equivalent to divergence of
 the diagonal Green function, and is constant on communicating classes. The mean return
 time is the extended nonnegative expectation of the first return time; it is at least one,
-and infinite at a transient state.
+equals the sum of the pre-return tail probabilities when singletons are measurable, and is
+infinite at a transient state.
 
 Every state reachable from a recurrent state is recurrent and hits the original state
 almost surely. Consequently a recurrent communicating class is closed. In an irreducible
@@ -93,6 +94,23 @@ theorem one_le_meanReturnTime : 1 ≤ κ.meanReturnTime x := by
       have h := le_hittingAfter (u := fun n (ω : ℕ → S) => ω n) (s := {x}) (n := 1) ω
       exact_mod_cast ENat.natCast_le_toENNReal.2 h
 
+/-- Congruence in the kernel argument of `Kernel.meanReturnTime`. -/
+theorem meanReturnTime_congr {κ η : Kernel S S} [IsMarkovKernel κ] [IsMarkovKernel η]
+    (h : κ = η) (x : S) :
+    κ.meanReturnTime x = η.meanReturnTime x := by
+  subst h
+  rfl
+
+/-- The mean return time of any state is strictly positive. -/
+theorem meanReturnTime_pos (κ : Kernel S S) [IsMarkovKernel κ] (x : S) :
+    0 < κ.meanReturnTime x :=
+  zero_lt_one.trans_le κ.one_le_meanReturnTime
+
+/-- The mean return time of any state is nonzero. -/
+theorem meanReturnTime_ne_zero (κ : Kernel S S) [IsMarkovKernel κ] (x : S) :
+    κ.meanReturnTime x ≠ 0 :=
+  (κ.meanReturnTime_pos x).ne'
+
 /-- **A transient state has infinite mean return time.** The chain started there fails to return
 with positive probability, and the first return time is infinite on that event. -/
 theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) : κ.meanReturnTime x = ∞ := by
@@ -127,6 +145,16 @@ theorem isRecurrent_of_meanReturnTime_ne_top (h : κ.meanReturnTime x ≠ ∞) :
     κ.IsRecurrent x := by
   by_contra hx
   exact h ((isTransient_iff.mpr hx).meanReturnTime_eq_top)
+
+/-- **Tail-sum formula for the mean return time.** -/
+theorem meanReturnTime_eq_tsum (κ : Kernel S S) [IsMarkovKernel κ] (x : S) :
+    κ.meanReturnTime x =
+      ∑' n : ℕ, markovChainLaw (Measure.dirac x) κ
+        {ω | (n : WithTop ℕ) < hittingAfter (fun k ω => ω k) {x} 1 ω} := by
+  have hτ : IsStoppingTime (Filtration.piLE (X := fun _ : ℕ => S))
+      (hittingAfter (fun k (ω : ℕ → S) => ω k) {x} 1) :=
+    Filtration.adapted_piLE.isStoppingTime_hittingAfter (measurableSet_singleton x)
+  exact lintegral_enat_eq_tsum _ fun n => Filtration.le _ n _ (hτ.measurableSet_gt n)
 
 /-- A state is recurrent exactly when its diagonal Green function is infinite. -/
 theorem isRecurrent_iff_tsum_eq_top :
