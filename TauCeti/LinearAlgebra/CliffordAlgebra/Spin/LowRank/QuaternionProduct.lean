@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.SplitCenter
 
-import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.LinearAlgebra.CliffordAlgebra.OddSplitting
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 

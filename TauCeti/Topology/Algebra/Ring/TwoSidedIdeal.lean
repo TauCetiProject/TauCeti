@@ -11,7 +11,6 @@ public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.ApproximateUnit
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
-public import TauCeti.Algebra.Subalgebra.Center
 
 /-!
 # Closed two-sided ideals

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Basic
-public import TauCeti.Algebra.Subalgebra.Center
 public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
 /-!
