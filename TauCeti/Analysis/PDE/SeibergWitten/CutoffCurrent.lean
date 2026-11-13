@@ -80,7 +80,9 @@ by parts in the first term, these pointwise bounds reduce that pairing to integr
 (`covariantPhaseForm_eq_twistedDifferential_log`). The operator `∂bar_a` satisfies the product
 rule `∂bar_a (h α) = α ∂bar_(a - a') h + h ∂bar_(a') α` for a second connection form `a' = i b'`
 (`covariantDBar_mul`), so the quotient of two holomorphic sections is holomorphic for the
-difference of their connections where the denominator does not vanish.
+difference of their connections where the denominator does not vanish
+(`covariantDBar_sub_eq_zero_of_mul`), and everywhere if the zeros of the denominator have dense
+complement (`covariantDBar_sub_eq_zero_of_dense`).
 
 On a pair of vectors the cutoff current is an explicit combination of the curvature and of the
 covariant derivative: with `s = |α|²` and `χ'` the derivative of `χ`,
@@ -711,30 +713,23 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
 theorem covariantPhaseForm_eq_twistedDifferential_log (hα : DifferentiableAt ℝ α x)
     (h₀ : α x ≠ 0) (hdbar : covariantDBar J b α x = 0) :
     covariantPhaseForm b α x = J.twistedDifferential (fun y ↦ Real.log (‖α y‖ ^ 2)) x := by
-  have hd := hα.hasFDerivAt.norm_sq
-  have hn : ‖α x‖ ^ 2 ≠ 0 := by positivity
-  have hc := J.twistedDifferential_comp (Real.hasDerivAt_log hn) hd.differentiableAt
-  rw [Function.comp_def] at hc
-  rw [hc]
-  ext v
-  obtain ⟨w, rfl⟩ : ∃ w, v = fun _ ↦ w := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
-  -- The real and imaginary parts of `∇_w α + i ∇_{J w} α = 0`.
-  have hw := congrArg (fun φ : E →L[ℝ] ℂ ↦ φ w) hdbar
-  simp only [covariantDBar_apply, covariantDeriv_apply, zero_apply, div_eq_zero_iff,
-    OfNat.ofNat_ne_zero, or_false, Complex.ext_iff, add_re, add_im, mul_re, mul_im, I_re, I_im,
-    ofReal_re, ofReal_im, zero_re, zero_im] at hw
-  simp only [covariantPhaseForm_apply, ContinuousAlternatingMap.add_apply, phaseForm_apply,
-    ContinuousAlternatingMap.smul_apply, J.twistedDifferential_apply, hd.fderiv,
-    _root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
-    smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat, mul_re, mul_im, conj_re, conj_im, inv_re, inv_im]
-  rw [← normSq_eq_norm_sq] at hn ⊢
-  field_simp
-  rw [normSq_apply] at hn ⊢
-  linear_combination (α x).re * hw.2 - (α x).im * hw.1
+  have hn : normSq (α x) ≠ 0 := (normSq_pos.2 h₀).ne'
+  -- Specialize the modulus-potential decomposition to `χ = 1` away from `0` and `H = log`.
+  have hH : HasDerivAt Real.log ((fun s : ℝ ↦ if s = 0 then (0 : ℝ) else 1) (normSq (α x)) /
+      normSq (α x)) (normSq (α x)) := by
+    simpa [hn, one_div] using Real.hasDerivAt_log hn
+  have h := cutoffPhaseForm_eq_twistedDifferential_add J
+    (χ := fun s : ℝ ↦ if s = 0 then (0 : ℝ) else 1) (b := b) hH (by simp) hα
+  simp only [cutoffPhaseForm_apply, hn, ite_false, one_smul] at h
+  have hE : cutoffDBarForm J (fun s : ℝ ↦ if s = 0 then (0 : ℝ) else 1) b α x = 0 := by
+    ext v
+    simp [hdbar]
+  rw [h, hE, add_zero]
+  simp_rw [normSq_eq_norm_sq]
 
 /-- **Product rule for `∂bar_a`.** For a second connection form `a' = i b'`,
 `∂bar_a (h α) = α ∂bar_(a - a') h + h ∂bar_(a') α`. -/
-theorem covariantDBar_mul {h : E → ℂ} {b' : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+theorem covariantDBar_mul {h : E → ℂ} (b' : E → E [⋀^Fin 1]→L[ℝ] ℝ)
     (hh : DifferentiableAt ℝ h x) (hα : DifferentiableAt ℝ α x) :
     covariantDBar J b (h * α) x =
       α x • covariantDBar J (b - b') h x + h x • covariantDBar J b' α x := by
@@ -743,6 +738,30 @@ theorem covariantDBar_mul {h : E → ℂ} {b' : E → E [⋀^Fin 1]→L[ℝ] ℝ
     _root_.add_apply, _root_.smul_apply, smul_eq_mul, Pi.sub_apply,
     ContinuousAlternatingMap.sub_apply, ofReal_sub]
   ring
+
+/-- **The quotient of two holomorphic sections is holomorphic.** If `∂bar_a (h α') = 0`,
+`∂bar_(a') α' = 0` and `α'` does not vanish at `x`, then `∂bar_(a - a') h = 0` at `x`. -/
+theorem covariantDBar_sub_eq_zero_of_mul {h α' : E → ℂ} {b' : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    (hh : DifferentiableAt ℝ h x) (hα' : DifferentiableAt ℝ α' x) (hx : α' x ≠ 0)
+    (hdbar : covariantDBar J b (h * α') x = 0) (hdbar' : covariantDBar J b' α' x = 0) :
+    covariantDBar J (b - b') h x = 0 := by
+  ext v
+  have hv := congrArg (fun φ : E →L[ℝ] ℂ ↦ φ v) hdbar
+  simp only [covariantDBar_mul J b' hh hα', hdbar', _root_.add_apply, _root_.smul_apply,
+    zero_apply, smul_eq_mul, mul_zero, add_zero] at hv
+  exact (mul_eq_zero.1 hv).resolve_left hx
+
+/-- **The quotient of two holomorphic sections is holomorphic everywhere.** If `α = h α'` with
+`h` of class `C¹`, `∂bar_a α = 0` and `∂bar_(a') α' = 0` everywhere, and `α'` is differentiable
+and nonzero on a dense set, then `∂bar_(a - a') h = 0` everywhere, including at the zeros of `α'`.
+-/
+theorem covariantDBar_sub_eq_zero_of_dense {h α' : E → ℂ} {b' : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    (hb : Continuous b) (hb' : Continuous b') (hh : ContDiff ℝ 1 h) (hα' : Differentiable ℝ α')
+    (hα : α = h * α') (hdense : Dense {y | α' y ≠ 0}) (hdbar : ∀ y, covariantDBar J b α y = 0)
+    (hdbar' : ∀ y, covariantDBar J b' α' y = 0) : covariantDBar J (b - b') h = 0 :=
+  (continuous_covariantDBar J hh (hb.sub hb')).ext_on hdense continuous_const fun y hy ↦
+    covariantDBar_sub_eq_zero_of_mul J (hh.differentiable one_ne_zero y) (hα' y) hy
+      (hα ▸ hdbar y) (hdbar' y)
 
 /-- **Pointwise bound on the correction form.** If `χ` vanishes on `[0, c)` and `|χ| ≤ 1`, then
 `‖2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J‖ ≤ (2 / √c) ‖∂bar_a α‖`. -/

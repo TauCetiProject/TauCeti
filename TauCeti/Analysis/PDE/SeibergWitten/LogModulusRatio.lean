@@ -32,7 +32,8 @@ the same multiplicities, in the form `α = h α'` for a nowhere-vanishing `C²` 
 argument is Taubes's comparison of the log-modulus ratio `w = log |h|² = log |α|² - log |α'|²`:
 
 * Where `α'` does not vanish, `h = α / α'` is holomorphic for the difference of the connections,
-  `∂bar_(a - a') h = 0` (`covariantDBar_sub_eq_zero_of_mul`), by the product rule for `∂bar`.
+  `∂bar_(a - a') h = 0` (`TauCeti.SeibergWitten.covariantDBar_sub_eq_zero_of_mul`), by the
+  product rule for `∂bar`.
 * For a nowhere-vanishing `h` with `∂bar_c h = 0`, the phase form `Im (h⁻¹ dh) + c` is
   `d^c_J log |h|²` (`TauCeti.SeibergWitten.covariantPhaseForm_eq_twistedDifferential_log`), and the
   phase form `Im (h⁻¹ dh)` is closed, so `dc = d d^c_J log |h|²`. Taking the `J`-trace gives
@@ -42,7 +43,7 @@ argument is Taubes's comparison of the log-modulus ratio `w = log |h|² = log |�
   equation `Δ w = κ |α'|² (|h|² - 1) = κ |α'|² (eʷ - 1)` wherever `h ≠ 0`, across the common
   zeros (`laplacian_log_norm_sq_eq_mul_sub_one`). The zeros of `α'` enter only through the
   density of their complement, which carries the identity `∂bar_(a - a') h = 0` to all of `E`
-  (`covariantDBar_sub_eq_zero_of_dense`).
+  (`TauCeti.SeibergWitten.covariantDBar_sub_eq_zero_of_dense`).
 * For `κ ≥ 0`, `w Δ w ≥ 0`. If `w` is bounded and both sections satisfy the transverse vacuum
   condition `|α| → 1` as the component along a nonzero subspace `K` (the normal factor) tends to
   infinity, uniformly in the complementary (base) directions, then `w → 0` in the same sense, and
@@ -59,9 +60,6 @@ of `TauCeti.Vortex.exists_eq_phaseGauge_of_forall_section_eq_mul`.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.covariantDBar_sub_eq_zero_of_mul`,
-  `TauCeti.SeibergWitten.covariantDBar_sub_eq_zero_of_dense`: the quotient of two holomorphic
-  sections is holomorphic for the difference of the connections.
 * `TauCeti.SeibergWitten.laplacian_log_norm_sq_eq_sum_extDeriv`: `Δ log |h|² = ∑ᵢ dc(eᵢ, J eᵢ)`
   for a nowhere-vanishing `h` with `∂bar_c h = 0`.
 * `TauCeti.SeibergWitten.laplacian_log_norm_sq_eq_mul_sub_one`: the difference equation of the
@@ -91,29 +89,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {J : AlmostComplexStructure E} {b b' c : E → E [⋀^Fin 1]→L[ℝ] ℝ} {α α' h : E → ℂ} {x : E}
   {ι : Type*} [Fintype ι]
 
-/-- **The quotient of two holomorphic sections is holomorphic.** If `∂bar_a (h α') = 0`,
-`∂bar_(a') α' = 0` and `α'` does not vanish at `x`, then `∂bar_(a - a') h = 0` at `x`. -/
-theorem covariantDBar_sub_eq_zero_of_mul (hh : DifferentiableAt ℝ h x)
-    (hα' : DifferentiableAt ℝ α' x) (hx : α' x ≠ 0) (hdbar : covariantDBar J b (h * α') x = 0)
-    (hdbar' : covariantDBar J b' α' x = 0) : covariantDBar J (b - b') h x = 0 := by
-  ext v
-  have hv := congrArg (fun φ : E →L[ℝ] ℂ ↦ φ v) hdbar
-  simp only [covariantDBar_mul J (b' := b') hh hα', hdbar', _root_.add_apply, _root_.smul_apply,
-    zero_apply, smul_eq_mul, mul_zero, add_zero] at hv
-  exact (mul_eq_zero.1 hv).resolve_left hx
-
-/-- **The quotient of two holomorphic sections is holomorphic everywhere.** If `α = h α'` with
-`h` of class `C¹`, `∂bar_a α = 0` and `∂bar_(a') α' = 0` everywhere, and `α'` is differentiable
-and nonzero on a dense set, then `∂bar_(a - a') h = 0` everywhere, including at the zeros of `α'`.
--/
-theorem covariantDBar_sub_eq_zero_of_dense (hb : Continuous b) (hb' : Continuous b')
-    (hh : ContDiff ℝ 1 h) (hα' : Differentiable ℝ α') (hα : α = h * α')
-    (hdense : Dense {y | α' y ≠ 0}) (hdbar : ∀ y, covariantDBar J b α y = 0)
-    (hdbar' : ∀ y, covariantDBar J b' α' y = 0) : covariantDBar J (b - b') h = 0 :=
-  (continuous_covariantDBar J hh (hb.sub hb')).ext_on hdense continuous_const fun y hy ↦
-    covariantDBar_sub_eq_zero_of_mul (hh.differentiable one_ne_zero y) (hα' y) hy (hα ▸ hdbar y)
-      (hdbar' y)
-
 /-- **The Laplacian of `log |h|²` for a holomorphic unit.** Let `J` be orthogonal and let `h` be
 `C²` at `x`, with `h x ≠ 0` and `∂bar_c h = 0` near `x` for the connection form `c`. Then
 `Δ log |h|² = ∑ᵢ dc(eᵢ, J eᵢ)` at `x`, for every orthonormal basis `(eᵢ)`. -/
@@ -130,26 +105,27 @@ theorem laplacian_log_norm_sq_eq_sum_extDeriv (hJ : ∀ v w, ⟪J v, J w⟫ = �
       with y hy hhy hy₀
     rw [Pi.sub_apply, ← covariantPhaseForm_eq_twistedDifferential_log J
       (hhy.differentiableAt (by simp)) hy₀ hy, covariantPhaseForm_apply, add_sub_cancel_left]
-  rw [← J.sum_extDeriv_twistedDifferential_apply_eq_laplacian hJ hu e, hev.extDeriv_eq,
-    extDeriv_sub ((J.contDiffAt_twistedDifferential (n := 1) hu).differentiableAt one_ne_zero)
+  rw [← J.sum_extDeriv_twistedDifferential_apply_eq_laplacian hJ _ x e, hev.extDeriv_eq,
+    extDeriv_sub ((J.contDiffAt_twistedDifferential (n := 1) hu le_rfl).differentiableAt
+      one_ne_zero)
       ((contDiffAt_phaseForm hh hx le_rfl).differentiableAt one_ne_zero),
     extDeriv_phaseForm hh hx, sub_zero]
 
 /-- **The difference equation of the log-modulus ratio.** Let `J` be orthogonal, `(eᵢ)` an
 orthonormal basis, and let `(b, α)` and `(b', α')` solve the flat vortex equations
-`∂bar_a α = 0`, `∑ᵢ db(eᵢ, J eᵢ) = κ (|α|² - 1)` with differentiable connection forms. If
-`α = h α'` for a `C²` function `h`, and `α'` is differentiable and nonzero on a dense set, then
-the log-modulus ratio `w = log |h|²` satisfies `Δ w = κ |α'|² (|h|² - 1)` at every point where
-`h` does not vanish, including the zeros of `α'`. -/
+`∂bar_a α = 0` everywhere and `∑ᵢ db(eᵢ, J eᵢ) = κ (|α|² - 1)` at `x`, with differentiable
+connection forms. If `α = h α'` for a `C²` function `h`, `α'` is differentiable and nonzero on a
+dense set, and `h x ≠ 0`, then the log-modulus ratio `w = log |h|²` satisfies
+`Δ w = κ |α'|² (|h|² - 1)` at `x`, even if `α'` vanishes there. -/
 theorem laplacian_log_norm_sq_eq_mul_sub_one (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
     (e : OrthonormalBasis ι ℝ E) {κ : ℝ} (hb : Differentiable ℝ b) (hb' : Differentiable ℝ b')
     (hh : ContDiff ℝ 2 h) (hα' : Differentiable ℝ α') (hα : α = h * α')
     (hdense : Dense {y | α' y ≠ 0}) (hdbar : ∀ y, covariantDBar J b α y = 0)
     (hdbar' : ∀ y, covariantDBar J b' α' y = 0)
-    (hF : ∀ y, ∑ i, extDeriv b y ![e i, J (e i)] = κ * (‖α y‖ ^ 2 - 1))
-    (hF' : ∀ y, ∑ i, extDeriv b' y ![e i, J (e i)] = κ * (‖α' y‖ ^ 2 - 1)) (hx : h x ≠ 0) :
+    (hF : ∑ i, extDeriv b x ![e i, J (e i)] = κ * (‖α x‖ ^ 2 - 1))
+    (hF' : ∑ i, extDeriv b' x ![e i, J (e i)] = κ * (‖α' x‖ ^ 2 - 1)) (hx : h x ≠ 0) :
     Δ (fun y ↦ Real.log (‖h y‖ ^ 2)) x = κ * ‖α' x‖ ^ 2 * (‖h x‖ ^ 2 - 1) := by
-  have hratio := covariantDBar_sub_eq_zero_of_dense hb.continuous hb'.continuous
+  have hratio := covariantDBar_sub_eq_zero_of_dense J hb.continuous hb'.continuous
     (hh.of_le (by norm_num)) hα' hα hdense hdbar hdbar'
   rw [laplacian_log_norm_sq_eq_sum_extDeriv hJ hh.contDiffAt hx
       (Eventually.of_forall fun y ↦ congrFun hratio y) e, extDeriv_sub (hb x) (hb' x)]
@@ -182,8 +158,8 @@ theorem norm_eq_one_and_eq_sub_phaseForm_of_tendsto (hJ : ∀ v w, ⟪J v, J w�
     ContDiff.log (ContDiff.norm_sq ℝ hh) fun y ↦ (hpos y).ne'
   -- `log |h|²` and `|h|² - 1` have the same sign, so `w Δ w ≥ 0` for `w = log |h|²`.
   have hsign (y : E) : 0 ≤ Real.log (‖h y‖ ^ 2) * Δ (fun y ↦ Real.log (‖h y‖ ^ 2)) y := by
-    rw [laplacian_log_norm_sq_eq_mul_sub_one hJ e hb hb' hh hα' hα hdense hdbar hdbar' hF hF'
-      (hh₀ y)]
+    rw [laplacian_log_norm_sq_eq_mul_sub_one hJ e hb hb' hh hα' hα hdense hdbar hdbar' (hF y)
+      (hF' y) (hh₀ y)]
     have hκα : 0 ≤ κ * ‖α' y‖ ^ 2 := by positivity
     rcases le_total (‖h y‖ ^ 2) 1 with h1 | h1
     · nlinarith [mul_nonneg (neg_nonneg.2 (Real.log_nonpos (hpos y).le h1)) (sub_nonneg.2 h1)]
@@ -202,14 +178,11 @@ theorem norm_eq_one_and_eq_sub_phaseForm_of_tendsto (hJ : ∀ v w, ⟪J v, J w�
   refine ⟨fun y ↦ (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1
     (Real.eq_one_of_pos_of_log_eq_zero (hpos y) (congrFun hw₀ y)), funext fun y ↦ ?_⟩
   -- The phase form `Im (h⁻¹ dh) + (b - b')` is `d^c_J log |h|² = 0`.
-  have hratio := covariantDBar_sub_eq_zero_of_dense hb.continuous hb'.continuous
+  have hratio := covariantDBar_sub_eq_zero_of_dense J hb.continuous hb'.continuous
     (hh.of_le (by norm_num)) hα' hα hdense hdbar hdbar'
   have hτ := covariantPhaseForm_eq_twistedDifferential_log J (hh.differentiable (by simp) y)
     (hh₀ y) (congrFun hratio y)
-  have h0 : J.twistedDifferential (0 : E → ℝ) y = 0 := by
-    ext v
-    simp
-  rw [hw₀, h0, covariantPhaseForm_apply, Pi.sub_apply] at hτ
+  rw [hw₀, J.twistedDifferential_zero, Pi.zero_apply, covariantPhaseForm_apply, Pi.sub_apply] at hτ
   rw [Pi.sub_apply, ← sub_eq_zero, ← hτ]
   abel
 

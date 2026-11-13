@@ -72,6 +72,22 @@ theorem twistedDifferential_apply (f : E → ℝ) (x : E) (v : Fin 1 → E) :
     J.twistedDifferential f x v = -2⁻¹ * fderiv ℝ f x (J (v 0)) := by
   simp [twistedDifferential]
 
+/-- The twisted differential of a constant function vanishes. -/
+@[simp]
+theorem twistedDifferential_fun_const (c : ℝ) : J.twistedDifferential (fun _ ↦ c) = 0 := by
+  ext x v
+  simp
+
+/-- The twisted differential of a constant function vanishes. -/
+@[simp]
+theorem twistedDifferential_const (c : ℝ) : J.twistedDifferential (Function.const E c) = 0 :=
+  J.twistedDifferential_fun_const c
+
+/-- The twisted differential of the zero function vanishes. -/
+@[simp]
+theorem twistedDifferential_zero : J.twistedDifferential (0 : E → ℝ) = 0 :=
+  J.twistedDifferential_fun_const 0
+
 /-- **Chain rule for the twisted differential.** If `H` has derivative `h'` at `f x`, then
 `d^c_J (H ∘ f) = h' • d^c_J f` at `x`. -/
 theorem twistedDifferential_comp {H : ℝ → ℝ} {h' : ℝ} {f : E → ℝ} {x : E}
@@ -96,40 +112,56 @@ theorem twistedDifferential_const_smul (c : ℝ) (f : E → ℝ) (x : E) :
   simp [fderiv_const_smul_field]
   ring
 
-/-- The twisted differential of a `C^(n+1)` function is `C^n`. -/
-theorem contDiff_twistedDifferential {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ (n + 1) f) :
-    ContDiff ℝ n (J.twistedDifferential f) := by
-  unfold twistedDifferential
-  exact (ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).contDiff.comp
-    (((hf.fderiv_right le_rfl).clm_comp contDiff_const).const_smul _)
-
-/-- The twisted differential of a function that is `C^(n+1)` at a point is `C^n` at that point. -/
-theorem contDiffAt_twistedDifferential {n : WithTop ℕ∞} {f : E → ℝ} {x : E}
-    (hf : ContDiffAt ℝ (n + 1) f x) : ContDiffAt ℝ n (J.twistedDifferential f) x := by
+/-- The twisted differential of a function that is `C^m` at a point is `C^n` at that point, for
+`n + 1 ≤ m`. -/
+theorem contDiffAt_twistedDifferential {m n : WithTop ℕ∞} {f : E → ℝ} {x : E}
+    (hf : ContDiffAt ℝ m f x) (hnm : n + 1 ≤ m) : ContDiffAt ℝ n (J.twistedDifferential f) x := by
   unfold twistedDifferential
   exact (ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).contDiff.contDiffAt.comp x
-    (((hf.fderiv_right le_rfl).clm_comp contDiffAt_const).const_smul _)
+    (((hf.fderiv_right hnm).clm_comp contDiffAt_const).const_smul _)
 
-/-- **The exterior derivative of the twisted differential.** For `f` that is `C²` at `x`,
+/-- The twisted differential of a `C^m` function is `C^n`, for `n + 1 ≤ m`. -/
+theorem contDiff_twistedDifferential {m n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ m f)
+    (hnm : n + 1 ≤ m) : ContDiff ℝ n (J.twistedDifferential f) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ J.contDiffAt_twistedDifferential hf.contDiffAt hnm
+
+/-- **The exterior derivative of the twisted differential.**
 `d d^c_J f (v, w) = (D²f(w, J v) - D²f(v, J w)) / 2`. -/
-theorem extDeriv_twistedDifferential_apply {f : E → ℝ} {x : E} (hf : ContDiffAt ℝ 2 f x)
-    (v w : E) :
+theorem extDeriv_twistedDifferential_apply (f : E → ℝ) (x v w : E) :
     extDeriv (J.twistedDifferential f) x ![v, w] =
       2⁻¹ * (fderiv ℝ (fderiv ℝ f) x w (J v) - fderiv ℝ (fderiv ℝ f) x v (J w)) := by
-  have hd : DifferentiableAt ℝ (fderiv ℝ f) x :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hω : DifferentiableAt ℝ (J.twistedDifferential f) x :=
-    (J.contDiffAt_twistedDifferential (n := 1) hf).differentiableAt one_ne_zero
-  have hcoef (u : E) : (fun y ↦ J.twistedDifferential f y (fun _ ↦ u)) =
-      fun y ↦ -2⁻¹ * fderiv ℝ f y (J u) := by
-    funext y
+  by_cases hd : DifferentiableAt ℝ (fderiv ℝ f) x
+  · have hω : DifferentiableAt ℝ (J.twistedDifferential f) x := by
+      unfold twistedDifferential
+      exact (ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).differentiableAt.comp x
+        ((hd.clm_comp (differentiableAt_const
+          (LinearMap.toContinuousLinearMap J.toLinearMap))).const_smul (-2⁻¹ : ℝ))
+    have hcoef (u : E) : (fun y ↦ J.twistedDifferential f y (fun _ ↦ u)) =
+        fun y ↦ -2⁻¹ * fderiv ℝ f y (J u) := by
+      funext y
+      simp
+    rw [extDeriv_apply_pair_of_differentiableAt hω, hcoef, hcoef,
+      fderiv_const_mul (hd.clm_apply (differentiableAt_const _)),
+      fderiv_const_mul (hd.clm_apply (differentiableAt_const _)),
+      fderiv_clm_apply hd (differentiableAt_const _),
+      fderiv_clm_apply hd (differentiableAt_const _)]
     simp
-  rw [extDeriv_apply_pair_of_differentiableAt hω, hcoef, hcoef,
-    fderiv_const_mul (hd.clm_apply (differentiableAt_const _)),
-    fderiv_const_mul (hd.clm_apply (differentiableAt_const _)),
-    fderiv_clm_apply hd (differentiableAt_const _), fderiv_clm_apply hd (differentiableAt_const _)]
-  simp
-  ring
+    ring
+  · -- `df = 2 (d^c_J f) ∘ J`, so `d^c_J f` is not differentiable at `x` either.
+    have hω : ¬DifferentiableAt ℝ (J.twistedDifferential f) x := fun hω ↦ hd <| by
+      have hdf : fderiv ℝ f = fun y ↦ (2 : ℝ) • ((ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ)
+          (0 : Fin 1)).symm (J.twistedDifferential f y)).comp
+            (LinearMap.toContinuousLinearMap J.toLinearMap) := by
+        funext y
+        ext u
+        simp [twistedDifferential, J.apply_apply]
+      rw [hdf]
+      exact (((ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).symm.differentiableAt.comp
+        x hω).clm_comp (differentiableAt_const
+          (LinearMap.toContinuousLinearMap J.toLinearMap))).const_smul (2 : ℝ)
+    rw [extDeriv_apply_pair, fderiv_zero_of_not_differentiableAt hω,
+      fderiv_zero_of_not_differentiableAt hd]
+    simp
 
 open MeasureTheory in
 /-- **Integration by parts for the twisted differential.** For a C1 function `g` and a compactly
@@ -242,11 +274,10 @@ open scoped RealInnerProductSpace
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- **The `J`-trace of `d d^c_J f` is the Laplacian of `f`.** For an orthogonal almost complex
-structure `J` and an orthonormal basis `(eᵢ)`, `∑ᵢ d d^c_J f (eᵢ, J eᵢ) = Δ f` at every point where
-`f` is `C²`. Each term is `(D²f(eᵢ, eᵢ) + D²f(J eᵢ, J eᵢ)) / 2`, and `(J eᵢ)` is again an
-orthonormal basis. -/
+structure `J` and an orthonormal basis `(eᵢ)`, `∑ᵢ d d^c_J f (eᵢ, J eᵢ) = Δ f`. Each term is
+`(D²f(eᵢ, eᵢ) + D²f(J eᵢ, J eᵢ)) / 2`, and `(J eᵢ)` is again an orthonormal basis. -/
 theorem sum_extDeriv_twistedDifferential_apply_eq_laplacian (J : AlmostComplexStructure V)
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {f : V → ℝ} {x : V} (hf : ContDiffAt ℝ 2 f x)
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (f : V → ℝ) (x : V)
     {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ V) :
     ∑ i, extDeriv (J.twistedDifferential f) x ![e i, J (e i)] = Δ f x := by
   have hΔ := congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis f e) x
@@ -257,7 +288,7 @@ theorem sum_extDeriv_twistedDifferential_apply_eq_laplacian (J : AlmostComplexSt
   have hJe (v : V) : J.linearEquiv.isometryOfInner hJ v = J v :=
     congrFun (LinearEquiv.coe_isometryOfInner J.linearEquiv hJ) v
   simp only [hJe] at hΔJ
-  simp only [J.extDeriv_twistedDifferential_apply hf, J.apply_apply, map_neg]
+  simp only [J.extDeriv_twistedDifferential_apply, J.apply_apply, map_neg]
   rw [← Finset.mul_sum, Finset.sum_sub_distrib, ← hΔJ, hΔ]
   simp only [Finset.sum_neg_distrib]
   ring
