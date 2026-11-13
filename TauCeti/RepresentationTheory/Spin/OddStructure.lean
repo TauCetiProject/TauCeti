@@ -76,6 +76,8 @@ only its even half is, the whole algebra being two copies of that half.
   bookkeeping the operator form rests on.
 * `TauCeti.SpinPolarizationData.not_injective_spinAction_of_odd_finrank`: in odd dimension a single
   Fock action is not faithful, over any field.
+* `TauCeti.spinAction_injOn_even`: the Fock action is faithful on the even subalgebra in either
+  parity of the dimension.
 
 ## References
 
@@ -356,5 +358,21 @@ theorem SpinPolarizationData.evenCliffordEquivEnd_toMatrix_intertwines_spinRep
       rw [b.equivFun_apply]
 
 end OperatorForm
+
+/-- The Clifford action of a finite-dimensional polarized quadratic space is faithful on
+the even subalgebra, in either parity of the dimension. In odd dimension this does not
+extend to the whole Clifford algebra. -/
+theorem spinAction_injOn_even {K : Type u} [Field K] [Invertible (2 : K)]
+    {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    {Q : QuadraticForm K V} (P : SpinPolarizationData Q) :
+    Set.InjOn (spinAction Q P) (even Q : Set (CliffordAlgebra Q)) := by
+  rcases Nat.even_or_odd (finrank K V) with heven | hodd
+  · exact (spinAction_injective P heven).injOn
+  · have : NeZero (2 : K) := ⟨Invertible.ne_zero 2⟩
+    intro x hx y hy hxy
+    have h := evenSpinAction_injective P hodd
+      (a₁ := ⟨x, hx⟩) (a₂ := ⟨y, hy⟩)
+      (by simpa only [evenSpinAction_apply] using hxy)
+    exact congrArg Subtype.val h
 
 end TauCeti

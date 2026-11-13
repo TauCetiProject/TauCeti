@@ -20,8 +20,9 @@ The type-D result concerns the full exterior spinor module, not either half-spin
 In odd dimension the action of the whole Clifford algebra is not faithful. Its restriction
 to the even subalgebra is nevertheless faithful, and the quadratic Lie algebra lies in that
 subalgebra. In even dimension the whole Clifford action is faithful. We combine these two
-structure theorems as `TauCeti.spinAction_injOn_even` and apply it to the independently
-constructed quadratic realizations of the orthogonal Lie algebras.
+structure theorems via `TauCeti.spinAction_injOn_even` to prove faithfulness on the quadratic
+Lie subalgebra, then apply it to the independently constructed quadratic realizations of the
+orthogonal Lie algebras.
 
 The central formal inputs are `TauCeti.spinAction_injective`,
 `TauCeti.evenSpinAction_injective`, and the numbered quadratic realizations
@@ -42,21 +43,21 @@ namespace TauCeti
 
 universe u v w
 
-/-- The Clifford action of a finite-dimensional polarized quadratic space is faithful on
-the even subalgebra, in either parity of the dimension. In odd dimension this does not
-extend to the whole Clifford algebra. -/
-theorem spinAction_injOn_even {K : Type u} [Field K] [Invertible (2 : K)]
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- The quadratic Lie subalgebra of a finite-dimensional polarized quadratic space acts
+faithfully on the spinor module, since it lies in the even Clifford subalgebra. -/
+theorem spinAction_comp_quadraticLieSubalgebra_incl_injective
+    {K : Type u} [Field K] [Invertible (2 : K)]
     {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
     {Q : QuadraticForm K V} (P : SpinPolarizationData Q) :
-    Set.InjOn (spinAction Q P) (even Q : Set (CliffordAlgebra Q)) := by
-  rcases Nat.even_or_odd (finrank K V) with heven | hodd
-  · exact (spinAction_injective P heven).injOn
-  · have : NeZero (2 : K) := ⟨Invertible.ne_zero 2⟩
-    intro x hx y hy hxy
-    have h := evenSpinAction_injective P hodd
-      (a₁ := ⟨x, hx⟩) (a₂ := ⟨y, hy⟩)
-      (by simpa only [evenSpinAction_apply] using hxy)
-    exact congrArg Subtype.val h
+    Function.Injective ((spinAction Q P).toLieHom.comp (quadraticLieSubalgebra Q).incl) := by
+  intro x y hxy
+  apply Subtype.ext
+  exact spinAction_injOn_even P
+    (quadraticLieSubalgebra_le_even Q x.property)
+    (quadraticLieSubalgebra_le_even Q y.property)
+    (by simpa only [LieHom.comp_apply, LieSubalgebra.coe_incl, AlgHom.toLieHom_apply] using hxy)
 
 namespace SpinPolarizationData
 
@@ -71,12 +72,10 @@ theorem typeBSpinLieRep_injective (z : P.line) (hz : Q (z : V) = 1) :
     Function.Injective (P.typeBSpinLieRep b z hz) := by
   have := Module.Finite.of_basis (P.typeBBasis b z hz)
   intro x y hxy
-  apply (P.typeBQuadraticEquiv b z hz).injective
-  apply Subtype.ext
-  exact spinAction_injOn_even P
-    (quadraticLieSubalgebra_le_even Q (P.typeBQuadraticEquiv b z hz x).property)
-    (quadraticLieSubalgebra_le_even Q (P.typeBQuadraticEquiv b z hz y).property)
-    (by simpa only [typeBSpinLieRep_apply, LieEquiv.coe_toLieHom] using hxy)
+  apply (spinAction_comp_quadraticLieSubalgebra_incl_injective P).comp
+    (P.typeBQuadraticEquiv b z hz).injective
+  simpa only [Function.comp_apply, typeBSpinLieRep_apply, LieHom.comp_apply, LieSubalgebra.coe_incl,
+    AlgHom.toLieHom_apply, LieEquiv.coe_toLieHom] using hxy
 
 /-- The full spin representation of the split even orthogonal Lie algebra is faithful.
 This asserts faithfulness on the sum of the two half-spin modules, not on either summand. -/
@@ -84,12 +83,10 @@ theorem typeDSpinLieRep_injective (hline : P.line = ⊥) :
     Function.Injective (P.typeDSpinLieRep b hline) := by
   have := Module.Finite.of_basis (P.typeDBasis b hline)
   intro x y hxy
-  apply (P.typeDQuadraticEquiv b hline).injective
-  apply Subtype.ext
-  exact spinAction_injOn_even P
-    (quadraticLieSubalgebra_le_even Q (P.typeDQuadraticEquiv b hline x).property)
-    (quadraticLieSubalgebra_le_even Q (P.typeDQuadraticEquiv b hline y).property)
-    (by simpa only [typeDSpinLieRep_apply, LieEquiv.coe_toLieHom] using hxy)
+  apply (spinAction_comp_quadraticLieSubalgebra_incl_injective P).comp
+    (P.typeDQuadraticEquiv b hline).injective
+  simpa only [Function.comp_apply, typeDSpinLieRep_apply, LieHom.comp_apply, LieSubalgebra.coe_incl,
+    AlgHom.toLieHom_apply, LieEquiv.coe_toLieHom] using hxy
 
 end SpinPolarizationData
 
