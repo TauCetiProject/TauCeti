@@ -140,16 +140,16 @@ theorem eulerClass_eq_neg_singularCohomologyMap_of_fiberwise
 back to the Thom class of `E'` with the transported orientation `φ^* o`. -/
 theorem singularCohomologyMap_thomPairMapOfFiberwise_thomClass_comap :
     TopPair.singularCohomologyMap (thomPairMapOfFiberwise hφ) (n + 1) (o.thomClass hF) =
-      (o.comap ((Fintype.card_fin _).trans hF.symm) hφ).thomClass hF :=
-  o.singularCohomologyMap_thomPairMapOfFiberwise_thomClass hF _ hφ (map_comap_apply _ o hφ)
+      (o.comap ((Fintype.card_fin _).trans hF'.symm) hφ).thomClass hF' :=
+  o.singularCohomologyMap_thomPairMapOfFiberwise_thomClass hF _ hF' hφ (map_comap_apply _ o hφ)
 
 /-- **Naturality of the Euler class under bundle maps, with the transported orientation.** For a
 fibrewise isomorphism `φ b' : E'_{b'} ≃ E_{g b'}` over `g`, the Euler class of `E'` with the
 transported orientation `φ^* o` is the pull-back along `g` of the Euler class of `(E, o)`. -/
 theorem eulerClass_comap :
-    (o.comap ((Fintype.card_fin _).trans hF.symm) hφ).eulerClass hF =
+    (o.comap ((Fintype.card_fin _).trans hF'.symm) hφ).eulerClass hF' =
       TopCat.singularCohomologyMap (TopCat.ofHom g) (n + 1) (o.eulerClass hF) :=
-  o.eulerClass_eq_singularCohomologyMap_of_fiberwise hF _ hφ (map_comap_apply _ o hφ)
+  o.eulerClass_eq_singularCohomologyMap_of_fiberwise hF _ hF' hφ (map_comap_apply _ o hφ)
 
 end BaseMap
 
@@ -187,9 +187,9 @@ theorem eulerClass_eq_neg_of_fiberwise
 isomorphism of real vector bundles `φ b : E'_b ≃ E_b` over the same base, the Euler class of `E'`
 with the transported orientation `φ^* o` is that of `(E, o)`. -/
 theorem eulerClass_comap_id :
-    (o.comap (g := ContinuousMap.id B) ((Fintype.card_fin _).trans hF.symm) hφ).eulerClass hF =
+    (o.comap (g := ContinuousMap.id B) ((Fintype.card_fin _).trans hF'.symm) hφ).eulerClass hF' =
       o.eulerClass hF :=
-  o.eulerClass_eq_of_fiberwise hF _ hφ (map_comap_apply (g := ContinuousMap.id B) _ o hφ)
+  o.eulerClass_eq_of_fiberwise hF _ hF' hφ (map_comap_apply (g := ContinuousMap.id B) _ o hφ)
 
 end Isomorphism
 
