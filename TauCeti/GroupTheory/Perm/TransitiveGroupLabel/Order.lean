@@ -185,34 +185,6 @@ of `4T1` and `4T2`. -/
 theorem transitiveGroupLabel_four_iff_natCard_eq_of_two_le (j : TransitiveGroupIndex 4)
     (hj : 2 ≤ (j : ℕ)) (G : Subgroup (Perm (Fin 4))) :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 4 j) :=
-  ⟨fun h => h.natCard_eq, fun h => by
-    have hG : Nat.card G = 8 ∨ Nat.card G = 12 ∨ Nat.card G = 24 := by
-      obtain ⟨a, ha⟩ := j
-      rw [numTransitiveGroups_four] at ha
-      have hj' : 2 ≤ a := by simpa using hj
-      rw [h]
-      interval_cases a
-      · exact Or.inl natCard_referenceSubgroup_four_two
-      · exact Or.inr (Or.inl natCard_referenceSubgroup_four_three)
-      · exact Or.inr (Or.inr natCard_referenceSubgroup_four_four)
-    obtain ⟨k, hk⟩ := G.exists_transitiveGroupLabel_four_of_natCard_eq hG
-    have hjk : j = k := by
-      have h2 : Nat.card (referenceSubgroup 4 j) = Nat.card (referenceSubgroup 4 k) :=
-        h.symm.trans hk.natCard_eq
-      obtain ⟨a, ha⟩ := j
-      obtain ⟨b, hb⟩ := k
-      rw [numTransitiveGroups_four] at ha hb
-      have hj' : 2 ≤ a := by simpa using hj
-      have hval : a = b := by
-        interval_cases a <;> interval_cases b <;> first
-          | rfl
-          | simp only [natCard_referenceSubgroup_four_zero, natCard_referenceSubgroup_four_one,
-              natCard_referenceSubgroup_four_two, natCard_referenceSubgroup_four_three,
-              natCard_referenceSubgroup_four_four] at h2
-            omega
-      subst hval
-      rfl
-    rw [hjk]
-    exact hk⟩
+  ⟨TransitiveGroupLabel.natCard_eq, G.transitiveGroupLabel_four_of_two_le_of_natCard_eq hj⟩
 
 end TauCeti

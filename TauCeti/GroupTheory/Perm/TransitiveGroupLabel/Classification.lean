@@ -420,19 +420,26 @@ private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgrou
     exact (Set.ext_iff.1 (alternatingGroup.coe_kleinFour_of_card_eq_four (by simp)) _).2
       (Or.inr hcycle)
 
-/-- A subgroup of the symmetric group on four points of order `8`, `12` or `24` carries a
-label. -/
-theorem _root_.Subgroup.exists_transitiveGroupLabel_four_of_natCard_eq
-    (G : Subgroup (Perm (Fin 4)))
-    (hG : Nat.card G = 8 ∨ Nat.card G = 12 ∨ Nat.card G = 24) :
-    ∃ j, TransitiveGroupLabel j G := by
+/-- **A subgroup of the symmetric group on four points with the order of `4T3`, `4T4` or `4T5`
+carries that label.** For `2 ≤ j`, the reference subgroup of `4T(j + 1)` has order `8`, `12` or
+`24`. Order eight makes the subgroup a Sylow `2`-subgroup, conjugate to the reference subgroup of
+`4T3`; order twelve makes it the alternating group, of index two; order `24` makes it the whole
+group. No transitivity is assumed: it follows from the order. -/
+theorem _root_.Subgroup.transitiveGroupLabel_four_of_two_le_of_natCard_eq
+    (G : Subgroup (Perm (Fin 4))) {j : TransitiveGroupIndex 4} (hj : 2 ≤ (j : ℕ))
+    (hG : Nat.card G = Nat.card (referenceSubgroup 4 j)) : TransitiveGroupLabel j G := by
   have hmul : G.index * Nat.card G = 24 := by
     simpa [Fintype.card_perm, Nat.factorial] using G.index_mul_card
-  rcases hG with hk | hk | hk <;> rw [hk] at hmul
+  obtain ⟨a, ha⟩ := j
+  rw [numTransitiveGroups_four] at ha
+  have ha2 : 2 ≤ a := hj
+  interval_cases a
   · -- Order eight: `G` and the reference subgroup of `4T3` are Sylow `2`-subgroups.
+    rw [natCard_referenceSubgroup_four_two] at hG
+    rw [hG] at hmul
     have hindex : G.index = 3 := by omega
     let P : Sylow 2 (Perm (Fin 4)) :=
-      (IsPGroup.of_card (n := 3) hk).toSylow (by rw [hindex]; decide)
+      (IsPGroup.of_card (n := 3) hG).toSylow (by rw [hindex]; decide)
     have hQ : (referenceSubgroup 4 ⟨2, by simp⟩).index = 3 := by
       have h := (referenceSubgroup 4 ⟨2, by simp⟩).index_mul_card
       rw [natCard_referenceSubgroup_four_two, Nat.card_perm, Nat.card_fin] at h
@@ -442,11 +449,15 @@ theorem _root_.Subgroup.exists_transitiveGroupLabel_four_of_natCard_eq
       (IsPGroup.of_card (n := 3) natCard_referenceSubgroup_four_two).toSylow
         (by rw [hQ]; decide)
     obtain ⟨τ, hτ⟩ := exists_smul_eq (Perm (Fin 4)) P Q
-    exact ⟨⟨2, by simp⟩, (transitiveGroupLabel_iff _ _).2 ⟨τ, congrArg Sylow.toSubgroup hτ⟩⟩
-  · refine ⟨⟨3, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
+    exact (transitiveGroupLabel_iff _ _).2 ⟨τ, congrArg Sylow.toSubgroup hτ⟩
+  · rw [natCard_referenceSubgroup_four_three] at hG
+    rw [hG] at hmul
+    refine transitiveGroupLabel_of_eq ?_
     rw [referenceSubgroup_four_three]
     exact eq_alternatingGroup_of_index_eq_two (by omega)
-  · refine ⟨⟨4, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
+  · rw [natCard_referenceSubgroup_four_four] at hG
+    rw [hG] at hmul
+    refine transitiveGroupLabel_of_eq ?_
     rw [referenceSubgroup_four_four]
     exact Subgroup.index_eq_one.1 (by omega)
 
@@ -463,7 +474,12 @@ theorem exists_transitiveGroupLabel_four (G : Subgroup (Perm (Fin 4)))
     interval_cases k <;> simp_all
   rcases hk' with rfl | rfl | rfl | rfl
   · exact exists_transitiveGroupLabel_four_of_natCard_eq_four G hk
-  all_goals exact G.exists_transitiveGroupLabel_four_of_natCard_eq (by omega)
+  · exact ⟨_, G.transitiveGroupLabel_four_of_two_le_of_natCard_eq (j := ⟨2, by simp⟩) le_rfl
+      (by rw [hk, natCard_referenceSubgroup_four_two])⟩
+  · exact ⟨_, G.transitiveGroupLabel_four_of_two_le_of_natCard_eq (j := ⟨3, by simp⟩)
+      (by decide) (by rw [hk, natCard_referenceSubgroup_four_three])⟩
+  · exact ⟨_, G.transitiveGroupLabel_four_of_two_le_of_natCard_eq (j := ⟨4, by simp⟩)
+      (by decide) (by rw [hk, natCard_referenceSubgroup_four_four])⟩
 
 /-- A transitive subgroup of the symmetric group on four points carries exactly one label, one of
 `4T1`, …, `4T5`. -/
