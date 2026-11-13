@@ -99,7 +99,6 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {s : Set ℝ} {K : ℝ}
   simp_rw [sub_sum_taylor_two_eq_sum_sub_taylorWithinEval]
   -- The compact set may have gaps where the function is not smooth, so use the compact-set
   -- estimate rather than the parameter-family estimate on a containing interval.
-  have hK : 0 ≤ max K 0 := le_max_right _ _
   apply Metric.tendsto_nhds.2
   intro ε hε
   obtain ⟨η, hη, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact
