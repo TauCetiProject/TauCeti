@@ -27,7 +27,7 @@ arXiv:1910.05934v1) — the strongly noetherian form of Tate acyclicity — whic
 for Tate rings; the predicate itself needs only the nonarchimedean topology, so it is stated
 here in that generality.
 
-`A` is not assumed complete or Hausdorff: following the roadmap, `A⟨X₁,…,Xₖ⟩` — the
+`A` is not assumed complete or Hausdorff: `A⟨X₁,…,Xₖ⟩` — the
 `TauCeti.Huber.restrictedMvPowerSeriesCompletion` of
 `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion` — is *defined* as the separated
 completion of the ring of restricted power series at the trivial weight family `Tᵢ = {1}`

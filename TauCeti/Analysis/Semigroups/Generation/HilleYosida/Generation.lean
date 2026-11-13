@@ -29,9 +29,6 @@ scalar-shift identities for partial linear maps and semigroup generators show th
 is exactly `A`, while its growth bound becomes `(omega, M)`. The final characterization combines
 this construction with density and the sharp generator-resolvent estimates for every C₀-semigroup.
 
-This proves the Hille--Yosida milestone in Part A of the
-[one-parameter-semigroups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/OneParameterSemigroups/README.md#part-a--strongly-continuous-semigroups).
-
 ## Main results
 
 * `TauCeti.Semigroups.hilleYosidaLimitSemigroup_generator`: the exponent-zero limit semigroup has
@@ -100,9 +97,9 @@ theorem hilleYosidaLimitSemigroup_generator {A : X →ₗ.[ℝ] X} {M : ℝ}
     simpa only [S, hilleYosidaLimitSemigroup_realOperator_apply_of_nonneg hM hres hpow hdense
       ht (x : X)] using
       tendsto_yosidaLimit_of_norm_resolvent_pow_le hM hres hpow hdense ht (x : X)
-  · intro x T hT
+  · intro x T _
     refine (tendstoUniformlyOn_exp_yosidaApproximation_of_norm_resolvent_pow_le
-      hM hres hpow hdense (A x) hT).congr_right fun u hu => ?_
+      hM hres hpow hdense (A x)).congr_right fun u hu => ?_
     exact (hilleYosidaLimitSemigroup_realOperator_apply_of_nonneg hM hres hpow hdense
       hu.1 (A x)).symm
   · intro T _hT

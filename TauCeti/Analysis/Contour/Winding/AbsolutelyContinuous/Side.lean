@@ -99,7 +99,7 @@ theorem eventually_mem_filledHull_sdiff_of_hasDerivAt (hab : a < b)
   have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) :=
     le_of_eq (by rw [Filter.map_subRight_nhdsGT, sub_self])
   filter_upwards [hsub.eventually
-    (hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj ht₀ hd hv),
+    (hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hclosed hinj ht₀ hd hv),
     hseg] with s hn hseg
   rw [hC.filledHull_sdiff_eq_connectedComponentIn hn.1]
   exact (convex_segment _ _).isPreconnected.subset_connectedComponentIn (right_mem_segment _ _ _)
@@ -128,7 +128,7 @@ theorem eventually_notMem_filledHull_of_hasDerivAt (hab : a < b)
   have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) :=
     le_of_eq (by rw [Filter.map_subRight_nhdsGT, sub_self])
   filter_upwards [hsub.eventually
-    (hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj ht₀ hd hv),
+    (hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hclosed hinj ht₀ hd hv),
     hseg] with s hn hseg
   simp only [neg_smul, smul_neg, ← sub_eq_add_neg] at hseg
   have hmem := (convex_segment _ _).isPreconnected.subset_connectedComponentIn

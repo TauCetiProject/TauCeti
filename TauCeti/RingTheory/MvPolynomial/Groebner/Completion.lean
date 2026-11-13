@@ -89,7 +89,7 @@ theorem of_isRemainder [DecidableEq (MvPolynomial σ R)]
 
 /-- A step retains every previous divisor. -/
 theorem subset (h : m.RemainderStep H G) : G ⊆ H := by
-  obtain ⟨f, r, hf, hrem, hr, hH⟩ := remainderStep_iff.mp h
+  obtain ⟨f, r, _, _, _, hH⟩ := remainderStep_iff.mp h
   apply Finset.coe_subset.mp
   rw [hH]
   exact Set.subset_insert r (G : Set (MvPolynomial σ R))
@@ -98,7 +98,7 @@ theorem subset (h : m.RemainderStep H G) : G ⊆ H := by
 theorem span_leadingTerm_lt (h : m.RemainderStep H G) :
     Ideal.span (m.leadingTerm '' (G : Set (MvPolynomial σ R))) <
       Ideal.span (m.leadingTerm '' (H : Set (MvPolynomial σ R))) := by
-  obtain ⟨f, r, hf, hrem, hr, hH⟩ := remainderStep_iff.mp h
+  obtain ⟨f, r, _, hrem, hr, hH⟩ := remainderStep_iff.mp h
   rw [hH]
   exact hrem.span_leadingTerm_lt hr
 
@@ -121,7 +121,7 @@ variable [CommRing R]
 /-- A step preserves the generated ideal. -/
 theorem RemainderStep.span_eq {G H : Finset (MvPolynomial σ R)} (h : m.RemainderStep H G) :
     Ideal.span (H : Set (MvPolynomial σ R)) = Ideal.span (G : Set (MvPolynomial σ R)) := by
-  obtain ⟨f, r, hf, hrem, hr, hH⟩ := remainderStep_iff.mp h
+  obtain ⟨f, r, hf, hrem, _, hH⟩ := remainderStep_iff.mp h
   rw [hH]
   apply Submodule.span_insert_eq_span
   simpa using sub_mem hf hrem.sub_mem_span
@@ -135,7 +135,7 @@ theorem isGroebnerBasis_iff_no_remainderStep (m : MonomialOrder σ)
   classical
   refine ⟨?_, ?_⟩
   · intro h H hstep
-    obtain ⟨f, r, hf, hrem, hr, hH⟩ := remainderStep_iff.mp hstep
+    obtain ⟨f, r, hf, hrem, hr, _⟩ := remainderStep_iff.mp hstep
     exact hr ((h.remainder_eq_zero_iff_mem hrem).2 hf)
   · intro h
     apply m.isGroebnerBasis_iff_isRemainder_zero.2

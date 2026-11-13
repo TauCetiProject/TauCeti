@@ -18,15 +18,15 @@ points lying in finitely many disjoint coordinate patches. If the multiplicity i
 `m i`, its coordinates form a block `Fin (m i) → 𝕜`; a bijection
 `(Σ i, Fin (m i)) ≃ Fin n` regroups those blocks into the model space `Fin n → 𝕜`.
 
-`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` proves that changing the surface
+`Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` proves that changing the surface
 coordinate is analytic on one block when its roots are distinct. This file applies that result to
 a finite family of blocks and then conjugates the family by the possibly different source and
 target regroupings. The assembled statement is
-`TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm`.
+`Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm`.
 
 Thus the blockwise coordinate-change expression used by elementary-symmetric charts is analytic
 at tuples that are multiplicity-free inside every block. At colliding tuples, the polynomial case
-is `TauCeti.Sym.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
+is `Polynomial.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
 `TauCeti/Analysis/Polynomial/SymmetricPower.lean`. The complex colliding-point case, including
 general holomorphic coordinate changes, is proved separately in
 `TauCeti/Analysis/Polynomial/RootSum/Family.lean`.
@@ -40,8 +40,8 @@ elementary symmetric functions. The organization follows Ozsváth--Szabó,
 public section
 
 open Topology
-
-namespace TauCeti
+open TauCeti (piSigmaConstHomeomorph analyticAt_piSigmaConstHomeomorph
+  analyticAt_piSigmaConstHomeomorph_symm)
 
 namespace Sym
 
@@ -62,7 +62,7 @@ private theorem analyticAt_pi_coeffEquiv_map_coeffEquiv_symm
     (hφ : ∀ i j, AnalyticAt 𝕜 (φ i) (z i j)) :
     AnalyticAt 𝕜
       (fun c i => coeffEquiv 𝕜 (m i)
-        (_root_.Sym.map (φ i) ((coeffEquiv 𝕜 (m i)).symm (c i)))) c₀ := by
+        (Sym.map (φ i) ((coeffEquiv 𝕜 (m i)).symm (c i)))) c₀ := by
   refine AnalyticAt.pi fun i => ?_
   exact AnalyticAt.comp (f := fun c : (∀ i, Fin (m i) → 𝕜) => c i)
     (analyticAt_coeffEquiv_map_coeffEquiv_symm (hz i) (hc₀ i) (hφ i))
@@ -82,7 +82,7 @@ theorem analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm
     (hφ : ∀ i j, AnalyticAt 𝕜 (φ i) (z i j)) :
     AnalyticAt 𝕜
       (fun c => piSigmaConstHomeomorph 𝕜 e' (fun i =>
-        coeffEquiv 𝕜 (m i) (_root_.Sym.map (φ i)
+        coeffEquiv 𝕜 (m i) (Sym.map (φ i)
           ((coeffEquiv 𝕜 (m i)).symm ((piSigmaConstHomeomorph 𝕜 e).symm c i)))))
       (piSigmaConstHomeomorph 𝕜 e c₀) := by
   have hblocks := analyticAt_pi_coeffEquiv_map_coeffEquiv_symm hz hc₀ hφ
@@ -93,5 +93,3 @@ theorem analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm
   exact (analyticAt_piSigmaConstHomeomorph (𝕜 := 𝕜) e' _).comp hmiddle
 
 end Sym
-
-end TauCeti

@@ -522,21 +522,11 @@ theorem eventually_windingNumber_add_I_mul_eq_add_one_of_forall_eq
       windingNumber γ a b (γ t₀ + h • (I * v)) =
         windingNumber γ a b (γ t₀ - h • (I * v)) + 1 := by
   obtain ⟨havoid, htend⟩ := hγ.tendsto_windingNumber_add_I_mul_sub hab ht₀ hd hv huniq
-  filter_upwards [havoid, htend (Metric.ball_mem_nhds (1 : ℂ) one_half_pos)]
+  filter_upwards [havoid, htend (Metric.ball_mem_nhds (1 : ℂ) one_pos)]
     with h ⟨hpos, hneg⟩ hball
-  refine ⟨hpos, hneg, ?_⟩
-  obtain ⟨m, hm⟩ := hγ.exists_int_windingNumber hclosed hpos
-  obtain ⟨n, hn⟩ := hγ.exists_int_windingNumber hclosed hneg
-  have hmn : m = n + 1 := by
-    rw [mem_preimage, Metric.mem_ball, dist_eq_norm, hm, hn] at hball
-    have hnorm : ((|m - (n + 1)| : ℤ) : ℝ) < ((1 : ℤ) : ℝ) := by
-      have heq : (m : ℂ) - (n : ℂ) - 1 = ((m - (n + 1) : ℤ) : ℂ) := by push_cast; ring
-      rw [heq, Complex.norm_intCast, ← Int.cast_abs] at hball
-      rw [Int.cast_one]
-      linarith
-    obtain ⟨h1, h2⟩ := abs_lt.mp (Int.cast_lt.mp hnorm)
-    omega
-  rw [hm, hn, hmn, Int.cast_add, Int.cast_one]
+  exact ⟨hpos, hneg, by
+    simpa using hγ.windingNumber_eq_add_intCast_of_dist_lt (k := 1) hclosed hpos hneg
+      (by simpa using hball)⟩
 
 /-- **Exact `+1` winding-number jump across a regular interior point of a simple closed AC curve.**
 For a simple closed absolutely continuous curve (`InjOn γ (Ico a b)` and `γ a = γ b`), at any

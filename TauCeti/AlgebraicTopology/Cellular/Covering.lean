@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.Permutation
+public import TauCeti.AlgebraicTopology.Cellular.Equivariant
 public import TauCeti.RepresentationTheory.FreeOfBasis
 public import TauCeti.Topology.CWComplex.Classical.Covering
 public import Mathlib.RepresentationTheory.Rep.Basic
@@ -89,16 +90,9 @@ def cellularChainRepresentation (n : ℕ) :
     haveI := hG.isCoveringMap.t2Space
     Representation R G (cellularChainGroup (p ⁻¹' C) (ModuleCat.of R R) n : ModuleCat R) :=
   letI := cwComplexPreimage C hG.isCoveringMap
-  letI := cellPreimageMulAction C hG n
   haveI := hG.isCoveringMap.t2Space
-  { toFun g := (cellularChainGroupMap _ _ (isCellular_preimageSMul C hG g)
-      (ModuleCat.of R R) n).hom
-    map_one' := (cellularChainBasis (p ⁻¹' C) R n).ext fun c ↦ by
-      simp only [cellularChainGroupMap_preimageSMul_cellularChainBasis, one_smul,
-        one_apply_eq_self]
-    map_mul' g h := (cellularChainBasis (p ⁻¹' C) R n).ext fun c ↦ by
-      simp only [mul_apply_eq_comp, cellularChainGroupMap_preimageSMul_cellularChainBasis,
-        mul_smul] }
+  cellularActionRepresentation (p ⁻¹' C) (preimageSMul C hG)
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R n
 
 /-- An element `g` acts on the cellular chains of the lift by the chain map of translation by
 `g`. -/
@@ -107,8 +101,11 @@ lemma cellularChainRepresentation_apply (n : ℕ) (g : G) :
     letI := cwComplexPreimage C hG.isCoveringMap
     haveI := hG.isCoveringMap.t2Space
     cellularChainRepresentation C hG R n g =
-      (cellularChainGroupMap _ _ (isCellular_preimageSMul C hG g) (ModuleCat.of R R) n).hom :=
-  (rfl)
+      (cellularChainGroupMap _ _ (isCellular_preimageSMul C hG g) (ModuleCat.of R R) n).hom := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  have := hG.isCoveringMap.t2Space
+  unfold cellularChainRepresentation
+  exact cellularActionRepresentation_apply _ _ _ _ _ _ _ _
 
 /-- An element `g` sends the cellular basis vector of a lifted cell to that of its translate.
 This is not a `simp` lemma: `simp` unfolds `TauCeti.cellularChainBasis` by
@@ -120,7 +117,11 @@ lemma cellularChainRepresentation_cellularChainBasis {n : ℕ} (g : G)
     haveI := hG.isCoveringMap.t2Space
     cellularChainRepresentation C hG R n g (cellularChainBasis (p ⁻¹' C) R n c) =
       cellularChainBasis (p ⁻¹' C) R n (g • c) :=
-  cellularChainGroupMap_preimageSMul_cellularChainBasis C hG R g c
+  by
+    let := cwComplexPreimage C hG.isCoveringMap
+    have := hG.isCoveringMap.t2Space
+    rw [cellularChainRepresentation_apply]
+    exact cellularChainGroupMap_preimageSMul_cellularChainBasis C hG R g c
 
 /-- The cellular differential of the lift is `G`-equivariant, so it is a morphism of
 representations. -/
@@ -129,13 +130,8 @@ def cellularDifferentialRep (n : ℕ) :
       Rep.of (cellularChainRepresentation C hG R n) :=
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
-  Rep.ofHom
-    { toLinearMap := (cellularDifferential (p ⁻¹' C) (ModuleCat.of R R) n).hom
-      isIntertwining' g := by
-        rw [cellularChainRepresentation_apply, cellularChainRepresentation_apply]
-        simpa only [ModuleCat.hom_comp] using congrArg ModuleCat.Hom.hom
-          (cellularChainGroupMap_comp_cellularDifferential _ _ (isCellular_preimageSMul C hG g)
-            (ModuleCat.of R R) n) }
+  cellularActionDifferential (p ⁻¹' C) (preimageSMul C hG)
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R n
 
 /-- The underlying linear map of `TauCeti.cellularDifferentialRep` is the cellular
 differential. -/
@@ -144,8 +140,11 @@ lemma cellularDifferentialRep_hom_toLinearMap (n : ℕ) :
     letI := cwComplexPreimage C hG.isCoveringMap
     haveI := hG.isCoveringMap.t2Space
     (cellularDifferentialRep C hG R n).hom.toLinearMap =
-      (cellularDifferential (p ⁻¹' C) (ModuleCat.of R R) n).hom :=
-  (rfl)
+      (cellularDifferential (p ⁻¹' C) (ModuleCat.of R R) n).hom := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  have := hG.isCoveringMap.t2Space
+  unfold cellularDifferentialRep
+  exact cellularActionDifferential_hom_toLinearMap _ _ _ _ _ _ _
 
 /-- **The cellular chain complex of the lift is a chain complex of representations of `G`**: its
 terms are the representations `TauCeti.cellularChainRepresentation` and its differentials are the
@@ -153,18 +152,18 @@ cellular differentials. -/
 def cellularChainComplexRep : ChainComplex (Rep.{w} R G) ℕ :=
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
-  ChainComplex.of (fun n ↦ Rep.of (cellularChainRepresentation C hG R n))
-    (cellularDifferentialRep C hG R) fun n ↦ by
-      ext x
-      exact ConcreteCategory.congr_hom
-        (cellularDifferential_comp_cellularDifferential (p ⁻¹' C) (ModuleCat.of R R) n) x
+  cellularActionComplex (p ⁻¹' C) (preimageSMul C hG)
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R
 
 /-- The objects of `TauCeti.cellularChainComplexRep` are the representations
 `TauCeti.cellularChainRepresentation`. -/
 @[simp]
 lemma cellularChainComplexRep_X (n : ℕ) :
-    (cellularChainComplexRep C hG R).X n = Rep.of (cellularChainRepresentation C hG R n) :=
-  (rfl)
+    (cellularChainComplexRep C hG R).X n = Rep.of (cellularChainRepresentation C hG R n) := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  have := hG.isCoveringMap.t2Space
+  unfold cellularChainComplexRep cellularChainRepresentation
+  exact cellularActionComplex_X _ _ _ _ _ _ _
 
 /-- The differentials of `TauCeti.cellularChainComplexRep` are the equivariant cellular
 differentials, transported across `TauCeti.cellularChainComplexRep_X`. -/
@@ -173,13 +172,10 @@ lemma cellularChainComplexRep_d (n : ℕ) :
     (cellularChainComplexRep C hG R).d (n + 1) n =
       eqToHom (cellularChainComplexRep_X C hG R (n + 1)) ≫ cellularDifferentialRep C hG R n ≫
         eqToHom (cellularChainComplexRep_X C hG R n).symm := by
-  -- The object equations hold by definition, so both transports are identities; the body of
-  -- `cellularChainComplexRep` is not exposed, so reducing its differential needs an `unfold`.
-  have h : ∀ m : ℕ, cellularChainComplexRep_X C hG R m = rfl := fun _ ↦ Subsingleton.elim _ _
-  rw [h (n + 1), h n]
-  unfold cellularChainComplexRep
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-  exact ChainComplex.of_d _ _ n
+  let := cwComplexPreimage C hG.isCoveringMap
+  have := hG.isCoveringMap.t2Space
+  unfold cellularChainComplexRep cellularDifferentialRep
+  exact cellularActionComplex_d _ _ _ _ _ _ n
 
 /-- **Forgetting the action of `G`, `TauCeti.cellularChainComplexRep` is the cellular chain
 complex of the lift**: the components of this isomorphism are transports along equalities of
@@ -192,17 +188,8 @@ def cellularChainComplexRepForget₂Iso :
       cellularChainComplex (p ⁻¹' C) (ModuleCat.of R R) :=
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
-  HomologicalComplex.Hom.isoOfComponents
-    (fun n ↦ eqToIso (by
-      rw [Functor.mapHomologicalComplex_obj_X, cellularChainComplex_X, cellularChainComplexRep_X]
-      rfl))
-    fun i j (h : j + 1 = i) ↦ by
-      subst h
-      rw [Functor.mapHomologicalComplex_obj_d, cellularChainComplexRep_d, cellularChainComplex_d]
-      simp only [eqToIso.hom, eqToHom_trans_assoc]
-      -- The remaining transports are between objects that are the cellular chain groups by
-      -- definition, so both sides are the cellular differential.
-      rfl
+  (cellularActionComplexForget₂Iso (p ⁻¹' C) (preimageSMul C hG)
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R).symm
 
 /-- The components of `TauCeti.cellularChainComplexRepForget₂Iso` are the transports along the
 equalities of objects that hold by definition. -/
@@ -212,8 +199,11 @@ lemma cellularChainComplexRepForget₂Iso_hom_f (n : ℕ) :
     haveI := hG.isCoveringMap.t2Space
     (cellularChainComplexRepForget₂Iso C hG R).hom.f n = eqToHom (by
       rw [Functor.mapHomologicalComplex_obj_X, cellularChainComplex_X, cellularChainComplexRep_X]
-      rfl) :=
-  (rfl)
+      rfl) := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  have := hG.isCoveringMap.t2Space
+  unfold cellularChainComplexRepForget₂Iso
+  exact cellularActionComplexForget₂Iso_inv_f _ _ _ _ _ _ _
 
 section Free
 

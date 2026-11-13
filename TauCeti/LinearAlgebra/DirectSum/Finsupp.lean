@@ -8,10 +8,11 @@ module
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 
 /-!
-# Coefficients in a tensor product with a free module
+# Tensor products with spaces of finitely supported functions
 
-Two facts about Mathlib's `TensorProduct.finsuppScalarLeft`, which identifies `(ι →₀ R) ⊗[R] N`
-with `ι →₀ N` by taking coefficients against the standard basis.
+Supplements to Mathlib's `TensorProduct.finsuppScalarLeft`, which identifies `(ι →₀ R) ⊗[R] N`
+with `ι →₀ N` by taking coefficients against the standard basis, and to `finsuppTensorFinsupp'`,
+which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
 
 ## Main results
 
@@ -35,17 +36,14 @@ coefficients of `t`. -/
 @[simp]
 lemma finsuppScalarLeft_lTensor_apply (g : N →ₗ[R] N') (t : (ι →₀ R) ⊗[R] N) (i : ι) :
     finsuppScalarLeft R N' ι (g.lTensor _ t) i = g (finsuppScalarLeft R N ι t i) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul p n => simp
-  | add a b ha hb => simp [ha, hb]
+  induction t <;> simp_all
 
 /-- An element of `(ι →₀ R) ⊗ N` is the sum of its coefficients against the basis vectors. -/
 lemma sum_single_tmul_finsuppScalarLeft (t : (ι →₀ R) ⊗[R] N) :
     ∑ i ∈ (finsuppScalarLeft R N ι t).support,
       Finsupp.single i (1 : R) ⊗ₜ finsuppScalarLeft R N ι t i = t := by
-  conv_rhs => rw [← (finsuppScalarLeft R N ι).symm_apply_apply t,
-    ← Finsupp.sum_single (finsuppScalarLeft R N ι t)]
-  simp [Finsupp.sum, finsuppScalarLeft_symm_apply_single]
+  simpa [Finsupp.sum, finsuppScalarLeft_symm_apply_single] using
+    congr((finsuppScalarLeft R N ι).symm $(Finsupp.sum_single (finsuppScalarLeft R N ι t)))
 
 end TensorProduct
 
@@ -58,16 +56,11 @@ tensor product of two pushforwards is the pushforward along the product map. -/
 theorem finsuppTensorFinsupp'_mapDomain (g₁ : α → α') (g₂ : β → β') (c : α →₀ R) (d : β →₀ R) :
     finsuppTensorFinsupp' R α' β' (Finsupp.mapDomain g₁ c ⊗ₜ[R] Finsupp.mapDomain g₂ d) =
       Finsupp.mapDomain (Prod.map g₁ g₂) (finsuppTensorFinsupp' R α β (c ⊗ₜ[R] d)) := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c₁ c₂ h₁ h₂ =>
-    simp only [Finsupp.mapDomain_add, TensorProduct.add_tmul, map_add, h₁, h₂]
-  | single a s =>
-    induction d using Finsupp.induction_linear with
-    | zero => simp
-    | add d₁ d₂ h₁ h₂ =>
-      simp only [Finsupp.mapDomain_add, TensorProduct.tmul_add, map_add, h₁, h₂]
-    | single b t =>
-      simp [Finsupp.mapDomain_single, finsuppTensorFinsupp'_single_tmul_single]
+  -- Both sides are linear in `c ⊗ₜ d`, so it suffices to compare them on basis vectors.
+  have h : (finsuppTensorFinsupp' R α' β').toLinearMap ∘ₗ
+      TensorProduct.map (Finsupp.lmapDomain R R g₁) (Finsupp.lmapDomain R R g₂) =
+      Finsupp.lmapDomain R R (Prod.map g₁ g₂) ∘ₗ (finsuppTensorFinsupp' R α β).toLinearMap := by
+    ext; simp [Finsupp.mapDomain_single]
+  exact congr($h (c ⊗ₜ d))
 
 end FinsuppTensorFinsupp

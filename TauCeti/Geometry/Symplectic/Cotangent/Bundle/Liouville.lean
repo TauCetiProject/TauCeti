@@ -49,6 +49,8 @@ and nothing here assumes finite dimension.
 * `TauCeti.CotangentBundle.symplecticForm`: the canonical symplectic form `ω = -dλ`.
 * `TauCeti.CotangentBundle.inChartAt_symplecticForm_apply`: its chart formula.
 * `TauCeti.CotangentBundle.isSymplectic_symplecticForm`: `ω` is symplectic.
+* `TauCeti.CotangentBundle.isLagrangian_ker_mfderiv_proj`: the fibres of `T*M → M` are
+  Lagrangian.
 
 ## References
 
@@ -351,6 +353,28 @@ theorem isSymplectic_symplecticForm : (symplecticForm I M).IsSymplectic where
     intro z v hv
     exact (strongDualCotangentSymplecticForm (V := E)).nondegenerate.1 v fun w ↦
       (eval₂_symplecticForm z v w).symm.trans (hv w)
+
+/-- At a covector `z`, read in the preferred chart at `z` itself, the tangent-space symplectic form
+of `ω` is the linear form `TauCeti.strongDualCotangentSymplecticForm`. -/
+theorem symplecticFormAt_symplecticForm (z : CotangentBundle I M) :
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.symplecticFormAt z =
+      strongDualCotangentSymplecticForm (V := E) :=
+  SymplecticForm.toBilinForm_injective (LinearMap.ext₂ fun v w ↦
+    (SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply _ z v w).trans
+      (eval₂_symplecticForm z v w))
+
+/-- **The fibres of a cotangent bundle are Lagrangian.** At every covector, the vertical tangent
+space, the kernel of the differential of the projection `T*M → M`, is a Lagrangian subspace for the
+canonical symplectic form. -/
+theorem isLagrangian_ker_mfderiv_proj (z : CotangentBundle I M) :
+    ((isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.symplecticFormAt
+        z).IsLagrangian
+      (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (TotalSpace.proj : CotangentBundle I M → M) z).ker := by
+  have h := isLagrangian_strongDualCotangentFiber (V := E)
+  rw [← ker_fst_eq_strongDualCotangentFiber, ← symplecticFormAt_symplecticForm z] at h
+  rw [Bundle.mfderiv_proj, ContinuousLinearMap.coe_fst]
+  -- The tangent space at `z` is the model space `E × StrongDual ℝ E` of the preferred chart.
+  exact h
 
 end Symplectic
 

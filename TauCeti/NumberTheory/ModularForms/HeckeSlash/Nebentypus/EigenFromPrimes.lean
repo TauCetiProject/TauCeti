@@ -80,7 +80,7 @@ private theorem exists_smul_pow {F : cuspFormCharSpace k χ}
 to every `T_{p^v}`. The `r + 2` step is the Diamond–Shurman recurrence, whose scalar term acts
 through the nebentypus. -/
 private theorem exists_smul_heckeTGeneratorRecGamma0 {F : cuspFormCharSpace k χ} {p : ℕ}
-    (hp : p.Prime) (hpN : Nat.Coprime p N)
+    (hpN : Nat.Coprime p N)
     (h : ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) F = c • F) (v : ℕ) :
     ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTGeneratorRecGamma0 N p v) F = c • F := by
   induction v using Nat.strong_induction_on with
@@ -93,7 +93,7 @@ private theorem exists_smul_heckeTGeneratorRecGamma0 {F : cuspFormCharSpace k χ
       obtain ⟨b, hb⟩ := ih r (by omega)
       obtain ⟨c, hc⟩ := h
       refine ⟨c * a - (χ (ZMod.unitOfCoprime p hpN) : ℂ) * (p : ℂ) ^ (k - 1) * b, ?_⟩
-      rw [heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ k χ hp.pos hpN r]
+      rw [heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ k χ hpN r]
       simp only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply, ha, hb,
         map_smul, hc, smul_smul, sub_smul]
       ring_nf
@@ -115,7 +115,7 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime
   | prime_pow p v hp hv =>
     have hpN : Nat.Coprime p N := hnN.coprime_dvd_left (dvd_pow_self p hv.ne')
     rw [heckeTCompositeGamma0_prime_pow N hp]
-    exact exists_smul_heckeTGeneratorRecGamma0 hp hpN (h p hp hpN) v
+    exact exists_smul_heckeTGeneratorRecGamma0 hpN (h p hp hpN) v
   | zero => exact ⟨1, by rw [heckeTCompositeGamma0_zero, map_one, one_apply_eq_self, one_smul]⟩
   | one => exact ⟨1, by rw [heckeTCompositeGamma0_one, map_one, one_apply_eq_self, one_smul]⟩
   | coprime a b _ _ hab iha ihb =>
@@ -140,7 +140,7 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime {F : cuspFormCharSpace
   | prime_pow p v hp _ =>
       rw [heckeTCompositeGamma0_prime_pow N hp]
       by_cases hpN : Nat.Coprime p N
-      · exact exists_smul_heckeTGeneratorRecGamma0 hp hpN (h p hp) v
+      · exact exists_smul_heckeTGeneratorRecGamma0 hpN (h p hp) v
       · rw [heckeTGeneratorRecGamma0_eq_generator_pow_of_not_coprime N hpN]
         exact exists_smul_pow (h p hp) v
   | zero => exact ⟨1, by rw [heckeTCompositeGamma0_zero, map_one, one_apply_eq_self, one_smul]⟩

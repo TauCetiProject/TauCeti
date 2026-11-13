@@ -135,14 +135,27 @@ theorem isDomain_tensorProduct_of_isGeometricallyReduced (hex : IsIntegrallyClos
   exact (hφ.comp (Algebra.TensorProduct.comm k F A).injective).isDomain
     (φ.comp (Algebra.TensorProduct.comm k F A).toAlgHom)
 
-/-- **Separably generated fields with exact constants are regular.** If `x ∈ F` is transcendental
-over `k`, `F` is separable algebraic over `k(x)` and `k` is algebraically closed in `F`, then
-`F ⊗[k] A` is a domain for every `k`-algebra `A` that is a domain, in particular for every field
-extension of `k`. -/
+/-- **Separably generated fields with exact constants are regular.** If `F` is separable algebraic
+over `k(x)` for some `x ∈ F`, and `k` is algebraically closed in `F`, then `F ⊗[k] A` is a domain
+for every `k`-algebra `A` that is a domain, in particular for every field extension of `k`. When
+`x` is algebraic over `k`, so is `F`, hence `F = k` and the statement is trivial. -/
 theorem isDomain_tensorProduct_of_separating (hex : IsIntegrallyClosedIn k F) {x : F}
-    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] (A : Type*) [CommRing A] [IsDomain A]
-    [Algebra k A] : IsDomain (F ⊗[k] A) :=
-  have := isGeometricallyReduced_of_separating hx
-  isDomain_tensorProduct_of_isGeometricallyReduced hex A
+    [Algebra.IsSeparable k⟮x⟯ F] (A : Type*) [CommRing A] [IsDomain A]
+    [Algebra k A] : IsDomain (F ⊗[k] A) := by
+  by_cases hx : Transcendental k x
+  · have := isGeometricallyReduced_of_separating hx
+    exact isDomain_tensorProduct_of_isGeometricallyReduced hex A
+  -- Otherwise `F` is algebraic over `k`, so the exact constants force `k = F`.
+  have h1 : Algebra.IsAlgebraic k k⟮x⟯ :=
+    IntermediateField.isAlgebraic_adjoin_simple (not_not.1 hx).isIntegral
+  have h2 : Algebra.IsAlgebraic k⟮x⟯ F := Algebra.IsSeparable.isAlgebraic _ _
+  have h3 : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮x⟯ F
+  have hbij : Function.Bijective (algebraMap k F) :=
+    ⟨(algebraMap k F).injective, fun y ↦ (IsIntegralClosure.isIntegral_iff (R := k) (A := k)).1
+      (Algebra.IsAlgebraic.isAlgebraic y).isIntegral⟩
+  let e : F ⊗[k] A ≃ₐ[k] A :=
+    (Algebra.TensorProduct.congr (AlgEquiv.ofBijective (Algebra.ofId k F) hbij).symm
+      AlgEquiv.refl).trans (Algebra.TensorProduct.lid k A)
+  exact e.toMulEquiv.isDomain
 
 end TauCeti

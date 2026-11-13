@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 /-!
 # Rings of finite Krull dimension
 
-A ring whose Krull dimension is a natural number has finite Krull dimension. This is the form in
+A semiring whose Krull dimension is a natural number has finite Krull dimension. This is the form in
 which finiteness of the dimension usually arises, from a computation `dim R = n`.
 
 A surjection from a domain of finite Krull dimension onto a ring of at least the same dimension is
@@ -19,16 +19,16 @@ dimension.
 
 ## Main results
 
-* `FiniteRingKrullDim.of_ringKrullDim_eq_natCast`: a ring of Krull dimension `n : ℕ` has finite
-  Krull dimension.
+* `FiniteRingKrullDim.of_ringKrullDim_eq_natCast`: a semiring of Krull dimension `n : ℕ` has
+  finite Krull dimension.
 * `RingHom.injective_of_surjective_of_ringKrullDim_le`: a surjection from a domain of finite
   Krull dimension onto a ring of at least the same dimension is injective.
 -/
 
 public section
 
-/-- A ring whose Krull dimension is a natural number `n` has finite Krull dimension. -/
-theorem FiniteRingKrullDim.of_ringKrullDim_eq_natCast {R : Type*} [CommRing R] {n : ℕ}
+/-- A semiring whose Krull dimension is a natural number `n` has finite Krull dimension. -/
+theorem FiniteRingKrullDim.of_ringKrullDim_eq_natCast {R : Type*} [CommSemiring R] {n : ℕ}
     (h : ringKrullDim R = n) : FiniteRingKrullDim R :=
   finiteRingKrullDim_iff_ne_bot_and_top.mpr
     (h ▸ ⟨WithBot.natCast_ne_bot _, WithBot.coe_inj.not.mpr (ENat.natCast_ne_top _)⟩)
@@ -41,9 +41,7 @@ theorem RingHom.injective_of_surjective_of_ringKrullDim_le {R S : Type*} [CommRi
   refine (injective_iff_map_eq_zero f).2 fun r hr ↦ by_contra fun hr0 ↦ ?_
   -- A nonzero kernel element is a nonzerodivisor, so it would lower the dimension.
   have hlt := ringKrullDim_succ_le_of_surjective f hf (mem_nonZeroDivisors_of_ne_zero hr0) hr
-  rw [le_antisymm (ringKrullDim_le_of_surjective f hf) hdim] at hlt
-  have htop := ringKrullDim_ne_top (R := R)
-  lift ringKrullDim R to ℕ∞ using ringKrullDim_ne_bot with d
-  lift d to ℕ using by simpa using htop
-  norm_cast at hlt
-  omega
+  -- Write the finite dimension of `R` as a natural number `d`, so that `dim S < d ≤ dim S`.
+  lift ringKrullDim R to ℕ∞ using ringKrullDim_ne_bot with d hd
+  lift d to ℕ using by simpa [← hd] using ringKrullDim_ne_top (R := R)
+  exact (ENat.WithBot.add_one_le_natCast_iff.mp hlt).not_ge hdim

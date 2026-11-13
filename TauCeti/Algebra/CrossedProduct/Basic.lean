@@ -60,7 +60,7 @@ Central simplicity of the crossed product of a finite Galois extension of fields
   homomorphism out of the crossed product is determined by its values on `L` and on the `u_σ`.
 * `TauCeti.CrossedProduct.finrank_eq_finrank_mul_card`: for `L` free over `K`, the
   `Module.finrank` of the crossed product is `Module.finrank K L * Nat.card (Aut_K(L))`; and
-  `TauCeti.CrossedProduct.finrank_eq_finrank_sq`: for a finite Galois extension its dimension is
+  `TauCeti.CrossedProduct.finrank_eq_finrank_sq`: for a Galois extension its dimension is
   `[L : K]²`.
 
 ## References
@@ -597,11 +597,15 @@ section Field
 
 variable {K : Type u} [Field K] {L : Type v} [Field L] [Algebra K L] (c : TwoCocycle K L)
 
-/-- **The crossed product of a finite Galois extension has dimension `[L : K]²`**, so it has degree
-`[L : K]` as a central simple algebra. -/
-theorem finrank_eq_finrank_sq [FiniteDimensional K L] [IsGalois K L] :
+/-- **The crossed product of a Galois extension has dimension `[L : K]²`**, so for a finite
+extension it has degree `[L : K]` as a central simple algebra. For an infinite extension both
+sides are the junk value `0`. -/
+theorem finrank_eq_finrank_sq [IsGalois K L] :
     Module.finrank K (CrossedProduct c) = Module.finrank K L ^ 2 := by
-  rw [finrank_eq_finrank_mul_card, IsGalois.card_aut_eq_finrank, sq]
+  rw [finrank_eq_finrank_mul_card]
+  by_cases h : FiniteDimensional K L
+  · rw [IsGalois.card_aut_eq_finrank, sq]
+  · simp [Module.finrank_of_not_finite h]
 
 end Field
 

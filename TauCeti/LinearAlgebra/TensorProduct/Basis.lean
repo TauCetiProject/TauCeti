@@ -14,8 +14,8 @@ import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 # Tensor-product basis coordinates
 
 This file records how contractions against one factor of a tensor product detect equality when
-that factor is projective, and how coordinates in a basis of one factor commute with maps of the
-other.
+that factor is projective, how contracting against a basis of one factor extracts coefficients,
+and how coordinates in a basis of one factor commute with maps of the other.
 It also proves that the coordinates in bases obtained by scalar extension commute with a map of
 the scalar-extension algebras, and that over a basis with at most one index a scalar extension
 consists of pure tensors.
@@ -26,6 +26,8 @@ consists of pure tensors.
   factor detect equality.
 * `Submodule.tensor_mem_range_iff_forall_tensorComponent_mem`: contractions against a projective
   right factor detect membership in the tensor product with a submodule of the left factor.
+* `Module.Basis.tensorComponent_coord_sum_tmul`: contracting against a coordinate functional of a
+  basis of the right factor recovers the corresponding coefficient.
 * `Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply` and
   `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
   the left factor commute with maps of the right factor, so such a map kills an element exactly
@@ -67,18 +69,18 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   classical
   obtain ⟨s, hs⟩ := Module.projective_def'.mp (inferInstance : Module.Projective R N)
   let b := Finsupp.basisSingleOne (R := R) (ι := N)
-  have hmap : TensorProduct.map LinearMap.id s x = TensorProduct.map LinearMap.id s y := by
-    apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
+  have hmap : map LinearMap.id s x = map LinearMap.id s y := by
+    apply (equivFinsuppOfBasisRight b (M := M)).injective
     ext i
     have hcoord :
-        _root_.LinearMap.tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s x) =
-        _root_.LinearMap.tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s y) := by
+        _root_.LinearMap.tensorComponent (b.coord i) (map LinearMap.id s x) =
+        _root_.LinearMap.tensorComponent (b.coord i) (map LinearMap.id s y) := by
       simpa only [_root_.LinearMap.tensorComponent_map, LinearMap.id_apply] using
         h ((b.coord i).comp s)
-    simpa only [TensorProduct.equivFinsuppOfBasisRight_apply,
+    simpa only [equivFinsuppOfBasisRight_apply,
       _root_.LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe] using hcoord
-  have := congrArg (TensorProduct.map LinearMap.id (Finsupp.linearCombination R id)) hmap
-  simpa only [TensorProduct.map_map, LinearMap.id_comp, hs, TensorProduct.map_id,
+  have := congrArg (map LinearMap.id (Finsupp.linearCombination R id)) hmap
+  simpa only [map_map, LinearMap.id_comp, hs, map_id,
     LinearMap.id_apply] using this
 
 end TensorProduct
@@ -104,8 +106,8 @@ theorem tensor_mem_range_iff_forall_tensorComponent_mem (S : Submodule R M) (z :
     rw [← LinearMap.rTensor_def, ← rTensor_mkQ, LinearMap.mem_ker]
     apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
     intro f
-    rw [map_zero, LinearMap.rTensor_def, LinearMap.tensorComponent_map, LinearMap.comp_id]
-    simpa only [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] using h f
+    rw [map_zero, LinearMap.tensorComponent_rTensor]
+    simpa only [mkQ_apply, Quotient.mk_eq_zero] using h f
 
 end Submodule
 
@@ -116,6 +118,14 @@ universe u v w
 variable {R : Type u} {M : Type v} {N : Type w}
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
+
+/-- Contracting `∑ⱼ xⱼ ⊗ bⱼ` against the `i`-th coordinate functional of a basis `b` of the right
+factor recovers the coefficient `xᵢ`. -/
+theorem tensorComponent_coord_sum_tmul {ι : Type*} [Fintype ι] (b : Module.Basis ι R N)
+    (x : ι → M) (i : ι) :
+    LinearMap.tensorComponent (b.coord i) (∑ j, x j ⊗ₜ[R] b j) = x i := by
+  classical
+  simp [Finsupp.single_apply]
 
 section EquivFinsuppOfBasisLeft
 
