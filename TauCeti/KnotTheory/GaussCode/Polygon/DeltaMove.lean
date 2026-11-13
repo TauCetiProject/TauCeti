@@ -776,58 +776,26 @@ private theorem exists_mem_doublePoints_eq {i : Fin n} {c : P}
 
 omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: the
-correspondence `g` is injective on the double points of `poly`, since `y ≠ y'` are not double
-points of `poly`, and it keeps the fibres of `π` on them, since the double points over `π x` are
-`x` and `x'`, which it sends over `π y`. -/
-private theorem injOn_doublePoints_and_apply_eq {g : P → P} {x x' y y' : P} (hgx : g x = y)
-    (hgx' : g x' = y') (hgo : ∀ z, z ≠ x → z ≠ x' → g z = z)
-    (hgoff : ∀ z, projAlong ℝ p₀ d z ≠ projAlong ℝ p₀ d x → g z = z) (hyy' : y ≠ y')
+correspondence `g` keeps the fibres of `π` on the double points of `poly`, since the double points
+over `π x` are `x` and `x'`, which it sends over `π y`. -/
+private theorem apply_eq_of_doublePoints_eq {g : P → P} {x x' y y' : P} (hgx : g x = y)
+    (hgx' : g x' = y')
+    (hgoff : ∀ z, projAlong ℝ p₀ d z ≠ projAlong ℝ p₀ d x → g z = z)
     (hπy : projAlong ℝ p₀ d y = projAlong ℝ p₀ d y')
-    (hy : y ∉ poly.doublePoints ℝ (projAlong ℝ p₀ d))
-    (hy' : y' ∉ poly.doublePoints ℝ (projAlong ℝ p₀ d))
     (hpair : ∀ z ∈ poly.boundary ℝ, projAlong ℝ p₀ d z = projAlong ℝ p₀ d x → z = x ∨ z = x') :
-    InjOn g (poly.doublePoints ℝ (projAlong ℝ p₀ d)) ∧
-      ∀ z ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d), ∀ w ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d),
-        projAlong ℝ p₀ d z = projAlong ℝ p₀ d w →
-          projAlong ℝ p₀ d (g z) = projAlong ℝ p₀ d (g w) := by
-  -- Only `x` is sent to `y`, and only `x'` to `y'`.
-  have hgy {z : P} (hz : z ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d)) (h : g z = y) : z = x := by
-    by_contra h₁
-    by_cases h₂ : z = x'
-    · rw [h₂, hgx'] at h
-      exact hyy' h.symm
-    · exact hy (by rwa [← h, hgo z h₁ h₂])
-  have hgy' {z : P} (hz : z ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d)) (h : g z = y') :
-      z = x' := by
-    by_contra h₂
-    by_cases h₁ : z = x
-    · rw [h₁, hgx] at h
-      exact hyy' h
-    · exact hy' (by rwa [← h, hgo z h₁ h₂])
-  refine ⟨fun z₁ hz₁ z₂ hz₂ h ↦ ?_, fun z hz w hw h ↦ ?_⟩
-  · by_cases h₁ : z₁ = x
-    · rw [h₁, hgx] at h
-      rw [h₁, hgy hz₂ h.symm]
-    by_cases h₂ : z₁ = x'
-    · rw [h₂, hgx'] at h
-      rw [h₂, hgy' hz₂ h.symm]
-    rw [hgo z₁ h₁ h₂] at h
-    by_cases h₃ : z₂ = x
-    · rw [h₃, hgx] at h
-      exact (hy (h ▸ hz₁)).elim
-    by_cases h₄ : z₂ = x'
-    · rw [h₄, hgx'] at h
-      exact (hy' (h ▸ hz₁)).elim
-    rw [h, hgo z₂ h₃ h₄]
-  · have hgπ {u : P} (hu : u ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d))
-        (hux : projAlong ℝ p₀ d u = projAlong ℝ p₀ d x) :
-        projAlong ℝ p₀ d (g u) = projAlong ℝ p₀ d y := by
-      rcases hpair u (doublePoints_subset_boundary hu) hux with rfl | rfl
-      · rw [hgx]
-      · rw [hgx', hπy]
-    by_cases hzx : projAlong ℝ p₀ d z = projAlong ℝ p₀ d x
-    · rw [hgπ hz hzx, hgπ hw (h ▸ hzx)]
-    · rw [hgoff z hzx, hgoff w (h ▸ hzx), h]
+    ∀ z ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d), ∀ w ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d),
+      projAlong ℝ p₀ d z = projAlong ℝ p₀ d w →
+        projAlong ℝ p₀ d (g z) = projAlong ℝ p₀ d (g w) := by
+  intro z hz w hw h
+  have hgπ {u : P} (hu : u ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d))
+      (hux : projAlong ℝ p₀ d u = projAlong ℝ p₀ d x) :
+      projAlong ℝ p₀ d (g u) = projAlong ℝ p₀ d y := by
+    rcases hpair u (doublePoints_subset_boundary hu) hux with rfl | rfl
+    · rw [hgx]
+    · rw [hgx', hπy]
+  by_cases hzx : projAlong ℝ p₀ d z = projAlong ℝ p₀ d x
+  · rw [hgπ hz hzx, hgπ hw (h ▸ hzx)]
+  · rw [hgoff z hzx, hgoff w (h ▸ hzx), h]
 
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: `i + r` and
 `j + s₀`, the times of `x` and `x'`, are crossing times; the only crossing time on edge `i` is
@@ -1130,7 +1098,6 @@ of the two strands from edge `i` to that new edge, and the two polygons have the
 The numbers of crossings agree, and the codes are compared together with them. -/
 theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {i j : Fin n} {c : P}
-    (hs' : (poly.insertVertex i c).IsSimple ℝ)
     (hπ' : (poly.insertVertex i c).IsRegularProjection ℝ (projAlong ℝ p₀ d))
     (hΔ : poly.IsDeltaMove ℝ i c)
     (hT : AffineIndependent ℝ ![projAlong ℝ p₀ d (poly i),
@@ -1141,7 +1108,9 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
     (hcross : ∃ x ∈ poly.edgeSet ℝ i, ∃ x' ∈ poly.edgeSet ℝ j, x ≠ x' ∧
       projAlong ℝ p₀ d x = projAlong ℝ p₀ d x')
     (b : Basis (Fin 3) ℝ V) :
-    (⟨_, gaussCode hs' hπ' b⟩ : Σ m, BasedOrientedGaussCode m) = ⟨_, gaussCode hs hπ b⟩ := by
+    (⟨_, gaussCode (hΔ.isSimple_insertVertex hs) hπ' b⟩ : Σ m, BasedOrientedGaussCode m) =
+      ⟨_, gaussCode hs hπ b⟩ := by
+  have hs' := hΔ.isSimple_insertVertex hs
   /- The proof follows edge `j` in barycentric coordinates of the projected triangle until it
   leaves it at `y'`, lifts that point to the point `y` of the new edges, and then compares the two
   diagrams with `gaussCode_eq_of_strictMonoOn`: the crossing `x`/`x'` of edges `i` and `j` becomes
@@ -1153,7 +1122,7 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
   obtain ⟨hd, hji, ha, ha', hxDP, hx'DP, hpair, ⟨r, hr, rfl⟩, s₀, hs₀, rfl⟩ :=
     exists_mem_Ioo_of_crossing hs hπ hx hx' hxx' hπx
   -- Stage 2: edge `j` leaves the projected triangle at `y'`, over the point `y` of the new edges.
-  obtain ⟨s₁, hs₁, hs₁₀, y, τy, L, hL, hyD, hπy, hyy', hyb, hyq, hy'q, hxq, hτy, hbpy, hdiry, hDPj,
+  obtain ⟨s₁, hs₁, -, y, τy, L, hL, hyD, hπy, hyy', -, hyq, hy'q, hxq, hτy, hbpy, hdiry, hDPj,
     hN⟩ := exists_slide hs hπ hπ' hΔ hT hprism b hd hji ha ha' hr hs₀ hxDP hπx
   -- Stage 3: the correspondence `g` of double points, sending `x ↦ y` and `x' ↦ y'`.
   obtain ⟨g, hgx, hgx', hgo⟩ : ∃ g : P → P, g (lineMap (poly i) (poly (finRotate n i)) r) = y ∧
@@ -1166,8 +1135,7 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
       projAlong ℝ p₀ d (lineMap (poly i) (poly (finRotate n i)) r)) : g z = z :=
     hgo z (fun h' ↦ h (by rw [h'])) fun h' ↦ h (by rw [h', hπx])
   have hDPi := fun z ↦ eq_of_mem_edgeSet_of_mem_doublePoints hs hπ hΔ hprism hji hx hx' hπx (z := z)
-  obtain ⟨hginj, hfib⟩ := injOn_doublePoints_and_apply_eq hgx hgx' hgo hgoff hyy' hπy
-    (fun h ↦ hyb (doublePoints_subset_boundary h)) (fun h ↦ hs₁₀ (hDPj s₁ right_mem_uIcc h)) hpair
+  have hfib := apply_eq_of_doublePoints_eq hgx hgx' hgoff hπy hpair
   -- Stage 4: the change of time `φ`, matching the crossing times.
   have hbpinj : InjOn poly.boundaryParam (poly.crossingTimes p₀ d) :=
     hs.injOn_boundaryParam.mono crossingTimes_subset_Ico
@@ -1178,7 +1146,7 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
     (mapsTo_doublePoints_insertVertex hgx hgx' hgo hDPi hpair hyq hy'q)
     fun z hz ↦ exists_mem_doublePoints_eq hπ hgx hgx' hgo hxDP hx'DP hxx' hπx hxq hN hz
   -- Stage 5: the over/under data and the signs are kept.
-  exact gaussCode_eq_of_strictMonoOn b hs hπ b hs' hπ' hφ hct hbp hginj hfib
+  exact gaussCode_eq_of_strictMonoOn b hs hπ b hs' hπ' hφ hct hbp hfib
     (exists_pos_smul_eq_vsub hd hΔ hji ha ha' hgx hgx' hgoff (hΔ.edgeSet_subset_closedInterior hx)
       hyD hx' ⟨s₁, Ioo_subset_Icc_self hs₁, rfl⟩ hyy' hπy hpair)
     (sign_det_eq_of_slide hbpinj hπ b hji hr hs₀ hxx' hπx hτx hτx' hL hφx hdir hdiry)
