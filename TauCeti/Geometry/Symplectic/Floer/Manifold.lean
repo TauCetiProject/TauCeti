@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Translation
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -81,6 +82,10 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_eq_zero_of_cylindrical`: the curvature vanishes along a line
   near which the perturbation is cylindrical; the vector-space case is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`.
+* `SmoothTwoForm.hamiltonianCurvature_add_const`, `SmoothTwoForm.perturbedMFDeriv_add_const`,
+  `SmoothTwoForm.floerEnergyDensity_add_const`: adding a target-independent one-form to the
+  perturbation adds its exterior derivative to the curvature, and changes neither the Floer
+  equation nor the energy density.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`,
   `SmoothTwoForm.continuous_hamiltonianCurvature_zero_left_comp` and
@@ -100,6 +105,9 @@ form they recover the vector-space definitions.
   `SymplecticForm.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`.
 * `SmoothTwoForm.IsNondegenerate.integrableOn_floerEnergyDensity`: over a compact set where `u`
   and `K` are `C¹`, the energy density is integrable whenever the curvature is.
+* `SmoothTwoForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`: where the
+  perturbation data vanish the energy is the area, so energy minus area plus integrated curvature
+  does not change when a region is shrunk to the part where the data live.
 * `IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn`:
   changing the perturbation data inside a compact region `D` does not change the energy plus the
   integrated curvature over `D`; the vector-space case is
@@ -117,8 +125,12 @@ form they recover the vector-space definitions.
   symplectic area, the integrated curvature and the curvature allowance under changes of domain
   coordinates.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
-  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`: translations of the domain
-  translate the curvature and preserve the curvature allowance along a map.
+  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`,
+  `SmoothTwoForm.perturbedMFDeriv_comp_add_right`,
+  `SmoothTwoForm.floerEnergyDensity_comp_add_right`,
+  `SmoothTwoForm.floerEnergyDensity_cylindrical_comp_add_right`: translations of the domain
+  translate the curvature, the perturbed derivative and the energy density, and preserve the
+  curvature allowance along a map.
 
 ## References
 
@@ -222,6 +234,17 @@ theorem isComplexLinearMap_perturbedMFDeriv_iff (ω : SmoothTwoForm I M)
     rw [add_eq_zero_iff_eq_neg] at h
     rw [h, map_neg, AlmostComplexStructure.apply_apply, neg_neg]
 
+/-- **The perturbed derivative of a translate.** The perturbed derivative of `w ↦ u (w + v)` for
+the translated data `w ↦ K (w + v)` at `z` is the perturbed derivative of `u` for `K` at `z + v`. -/
+theorem perturbedMFDeriv_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
+    ω.perturbedMFDeriv (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.perturbedMFDeriv Ks Kt u (z + v) := by
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, mfderiv_comp_add_right]
+  -- The two sides differ only in how the tangent spaces at `u (z + v)` are written.
+  rfl
+
 /-- The symplectic area density of `du - X_K` for a manifold target. -/
 def floerEnergyDensity (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
     (u : ℝ × ℝ → M) (z : ℝ × ℝ) : ℝ :=
@@ -244,6 +267,22 @@ theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) 
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def]
+
+/-- Translating a map and its perturbation data by `v` translates the Floer energy density by
+`v`. -/
+theorem floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.floerEnergyDensity Ks Kt u (z + v) := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_comp_add_right]
+
+/-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
+`(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
+theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SmoothTwoForm I M) (H : ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (c : ℝ) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) z =
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) := by
+  simpa using ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (c, 0) z
 
 section Continuity
 
@@ -520,6 +559,64 @@ theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SmoothTwoForm I M)
   exact ω.hamiltonianCurvature_cylindrical (fun t ↦ Kt (c, t)) (c, t) x
 
 end Curvature
+
+section TargetIndependent
+
+/-! ### Target-independent perturbations
+
+Adding to `K` a one-form `k = k_s ds + k_t dt` whose components are functions of the domain point
+alone changes no Hamiltonian vector field. The perturbed derivative, and with it the Floer equation
+and the energy density, are unchanged, while the curvature changes by the exterior derivative
+`∂_s k_t - ∂_t k_s` of `k`. Normalizing the Hamiltonians on the ends by functions of time is the
+main example. These are the manifold-target versions of the identities of
+`TauCeti.Geometry.Symplectic.Floer.Energy`. -/
+
+/-- The curvature of a target-independent perturbation `k = k_s ds + k_t dt` is the exterior
+derivative `∂_s k_t - ∂_t k_s`; the Poisson bracket term vanishes. -/
+@[simp]
+theorem hamiltonianCurvature_const (ω : SmoothTwoForm I M) (ks kt : ℝ × ℝ → ℝ) (z : ℝ × ℝ)
+    (x : M) :
+    ω.hamiltonianCurvature (fun w _ ↦ ks w) (fun w _ ↦ kt w) z x =
+      fderiv ℝ kt z stdComplexLineReal - fderiv ℝ ks z stdComplexLineImag := by
+  simp [hamiltonianCurvature_def]
+
+/-- Adding a target-independent one-form to the perturbation adds its exterior derivative to the
+curvature: `R_{K + k} = R_K + ∂_s k_t - ∂_t k_s`, at a point where the components are
+differentiable in the domain. -/
+theorem hamiltonianCurvature_add_const (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ}
+    {ks kt : ℝ × ℝ → ℝ} {z : ℝ × ℝ} {x : M} (hKs : DifferentiableAt ℝ (fun w ↦ Ks w x) z)
+    (hKt : DifferentiableAt ℝ (fun w ↦ Kt w x) z) (hks : DifferentiableAt ℝ ks z)
+    (hkt : DifferentiableAt ℝ kt z) :
+    ω.hamiltonianCurvature (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) z x =
+      ω.hamiltonianCurvature Ks Kt z x +
+        ω.hamiltonianCurvature (fun w _ ↦ ks w) (fun w _ ↦ kt w) z x := by
+  rw [hamiltonianCurvature_const, hamiltonianCurvature_def, hamiltonianCurvature_def,
+    fderiv_fun_add hKt hkt, fderiv_fun_add hKs hks]
+  simp only [add_apply, poissonBracket_add_const_left,
+    poissonBracket_add_const_right]
+  ring
+
+/-- Adding a target-independent one-form to the perturbation does not change the perturbed
+derivative, so a map solves the Floer equation for `K + k` exactly when it solves it for `K`. -/
+@[simp]
+theorem perturbedMFDeriv_add_const (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → M) :
+    ω.perturbedMFDeriv (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) u =
+      ω.perturbedMFDeriv Ks Kt u := by
+  funext z
+  simp only [perturbedMFDeriv, hamiltonianVectorField_add_const]
+
+/-- Adding a target-independent one-form to the perturbation does not change the Floer energy
+density. -/
+@[simp]
+theorem floerEnergyDensity_add_const (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → M) :
+    ω.floerEnergyDensity (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) u =
+      ω.floerEnergyDensity Ks Kt u := by
+  funext z
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_add_const]
+
+end TargetIndependent
 
 /-! ### Changes of domain coordinates -/
 
@@ -940,6 +1037,17 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
   rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_sub hsum hR,
     integral_add harea hdi.integrableOn, hdD, add_zero]
 
+/-- **The area density is integrable over compact sets.** If `u` is `C¹` on an open set `U`, then
+over a compact set `C ⊆ U` the two-form evaluated on the derivatives of `u` along two fixed
+vectors, `z ↦ ω_{u(z)}(du_z a, du_z b)`, is integrable. -/
+theorem integrableOn_eval₂_mfderiv (ω : SmoothTwoForm I M) {U C : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hC : IsCompact C) (hCU : C ⊆ U) (a b : ℝ × ℝ) :
+    IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z a)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z b) : ℝ)) C := by
+  have h := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu a b
+  simp only [← SmoothBundleForm.eval₂_apply] at h
+  exact (h.mono hCU).integrableOn_compact hC
+
 /-- **Integrability of the energy density, for a manifold target.** Let `u` and the perturbation
 datum `K = K_s ds + K_t dt` be `C¹` over an open set `U` of the domain, for a nondegenerate
 two-form on a finite-dimensional manifold, and let `T ⊆ U` be compact. If the curvature `R_K(u)` is
@@ -955,10 +1063,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E
     (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) T) :
     IntegrableOn (ω.floerEnergyDensity Ks Kt u) T := by
   have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ univ) := fun _ hz ↦ ⟨hz, mem_univ _⟩
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu
-    stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  replace harea := (harea.mono hTU).integrableOn_compact (μ := volume) hT
+  have harea := ω.integrableOn_eval₂_mfderiv hU hu hT hTU stdComplexLineReal stdComplexLineImag
   -- Each pulled-back component `K(u)` is `C¹` on `U`, so its derivative is continuous on `U`.
   have hd {K : ℝ × ℝ → M → ℝ}
       (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
@@ -1080,6 +1185,44 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_
   rw [← integral_add hE hR, ← integral_add hE' hR', setIntegral_congr_fun hD.measurableSet hpt,
     integral_add (f := fun z ↦ ω.floerEnergyDensity Ks' Kt' u z +
       ω.hamiltonianCurvature Ks' Kt' z (u z)) (hE'.add hR') hdi.integrableOn, hdD, add_zero]
+
+/-- **Shrinking to where the datum lives, for a manifold target.** Let `T ⊆ D` with `D`
+measurable, and let `K_s` and `K_t` vanish near every point of `D \ T`. If the energy density, the
+symplectic area density and the curvature `R_K(u)` are integrable over `D`, then the Floer energy
+minus the symplectic area plus the integrated curvature is the same over `D` as over `T`. -/
+theorem integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero {D T : Set (ℝ × ℝ)}
+    (hD : MeasurableSet D) (hTD : T ⊆ D) (hKsD : ∀ z ∈ D \ T, Ks =ᶠ[𝓝 z] 0)
+    (hKtD : ∀ z ∈ D \ T, Kt =ᶠ[𝓝 z] 0) (hE : IntegrableOn (ω.floerEnergyDensity Ks Kt u) D)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) D)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) D) :
+    (∫ z in D, ω.floerEnergyDensity Ks Kt u z) -
+      (∫ z in D, (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+      (∫ z in D, ω.hamiltonianCurvature Ks Kt z (u z)) =
+    (∫ z in T, ω.floerEnergyDensity Ks Kt u z) -
+      (∫ z in T, (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+      ∫ z in T, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- Off `T` the datum vanishes, so the energy is the area and the curvature vanishes.
+  have hzero (z : ℝ × ℝ) (hz : z ∈ D \ T) :
+      ω.floerEnergyDensity Ks Kt u z -
+        (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
+        ω.hamiltonianCurvature Ks Kt z (u z) = 0 := by
+    have hKs' : Ks =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKsD z hz
+    have hKt' : Kt =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKtD z hz
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hKs' hKt', hamiltonianCurvature_zero]
+    simp [floerEnergyDensity_def, hKs'.self_of_nhds, hKt'.self_of_nhds,
+      hamiltonianVectorField_const]
+  have h := setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (μ := volume) hD hTD hzero
+  have e₁ := integral_add (hE.sub hA) hR
+  have e₂ := integral_sub hE hA
+  have e₃ := integral_add ((hE.mono_set hTD).sub (hA.mono_set hTD)) (hR.mono_set hTD)
+  have e₄ := integral_sub (hE.mono_set hTD) (hA.mono_set hTD)
+  simp only [Pi.sub_apply] at e₁ e₃
+  linarith
 
 end Integral
 
