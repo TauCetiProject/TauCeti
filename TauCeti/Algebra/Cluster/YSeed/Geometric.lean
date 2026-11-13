@@ -53,7 +53,7 @@ theorem toTropicalYSeed_coefficient
     (B.toTropicalYSeed h).coefficient k = Multiplicative.ofAdd (B.frozenColumn h k) :=
   (rfl)
 
-theorem toTropicalYSeed_coefficient_toAdd
+theorem toAdd_toTropicalYSeed_coefficient
     (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
     (h : B.HasFiniteFrozenSupport) (k : K) (j : J) :
     ((B.toTropicalYSeed h).coefficient k).toAdd j = B.matrix (Sum.inr j) k :=
@@ -102,20 +102,20 @@ theorem toExtendedMatrix_symmetrizer (s : YSeed K (Trop J)) :
 
 /-- The matrix presentation of a tropical Y-seed has finitely supported frozen columns. -/
 @[simp]
-theorem toExtendedMatrix_hasFiniteFrozenSupport (s : YSeed K (Trop J)) :
+theorem hasFiniteFrozenSupport_toExtendedMatrix (s : YSeed K (Trop J)) :
     s.toExtendedMatrix.HasFiniteFrozenSupport := by
   rw [ExchangeMatrix.hasFiniteFrozenSupport_iff]
   exact fun k ↦ (s.coefficient k).toAdd.hasFiniteSupport
 
 @[simp]
-theorem toExtendedMatrix_frozenColumn (s : YSeed K (Trop J))
+theorem frozenColumn_toExtendedMatrix (s : YSeed K (Trop J))
     (h : s.toExtendedMatrix.HasFiniteFrozenSupport) (k : K) :
     s.toExtendedMatrix.frozenColumn h k = (s.coefficient k).toAdd := by
   ext j
   simp
 
 @[simp]
-theorem toExtendedMatrix_principal (s : YSeed K (Trop J)) :
+theorem principal_toExtendedMatrix (s : YSeed K (Trop J)) :
     s.toExtendedMatrix.principal = s.exchangeMatrix := by
   ext : 1
   · ext i k
@@ -131,7 +131,7 @@ theorem toTropicalYSeed_toExtendedMatrix (s : YSeed K (Trop J))
     apply Multiplicative.toAdd.injective
     ext j
     simp
-  · exact s.toExtendedMatrix_principal
+  · exact s.principal_toExtendedMatrix
 
 /-- Reading tropical exponents intertwines coefficient mutation with the actual extended
 matrix mutation. -/
@@ -157,8 +157,8 @@ theorem toExtendedMatrix_mutation [DecidableEq K] [DecidableEq J]
         rw [ExchangeMatrix.mutation_matrix, matrixMutation_apply_of_ne (by simp) hl]
         simp only [toExtendedMatrix_frozen, toExtendedMatrix_mutable,
           Function.Embedding.inl_apply]
-        have h := posPart_mul_add_neg_mul_inf_zero ((s.coefficient k).toAdd j)
-          (s.exchangeMatrix.matrix k l)
+        have h := posPart_mul_add_neg_mul_inf_zero (s.exchangeMatrix.matrix k l)
+          ((s.coefficient k).toAdd j)
         simp only [mul_comm] at h ⊢
         linarith
   · simp [toExtendedMatrix_symmetrizer]
@@ -178,8 +178,7 @@ theorem toExtendedMatrix_reindex (eK : K ≃ K') (s : YSeed K (Trop J)) :
 principal matrix and its chosen symmetrizer. -/
 @[simp]
 theorem toExtendedMatrix_reindex_frozen (eJ : J ≃ J') (s : YSeed K (Trop J)) :
-    ({ coefficient := Trop.reindex eJ ∘ s.coefficient
-       exchangeMatrix := s.exchangeMatrix } : YSeed K (Trop J')).toExtendedMatrix =
+    (s.map (Trop.reindex eJ).toCoefficientSemifieldHom).toExtendedMatrix =
       ExchangeMatrix.reindex (row' := Function.Embedding.inl)
         (Equiv.sumCongr (Equiv.refl K) eJ) (Equiv.refl K) (fun _ ↦ by simp)
         s.toExtendedMatrix := by
@@ -208,7 +207,7 @@ Both sides retain the same chosen principal symmetrizer. -/
 noncomputable def tropicalYSeedEquiv :
     YSeed K (Trop J) ≃
       {B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J) // B.HasFiniteFrozenSupport} where
-  toFun s := ⟨s.toExtendedMatrix, s.toExtendedMatrix_hasFiniteFrozenSupport⟩
+  toFun s := ⟨s.toExtendedMatrix, s.hasFiniteFrozenSupport_toExtendedMatrix⟩
   invFun B := B.1.toTropicalYSeed B.2
   left_inv s := s.toTropicalYSeed_toExtendedMatrix _
   right_inv B := Subtype.ext (B.1.toExtendedMatrix_toTropicalYSeed B.2)
@@ -264,33 +263,24 @@ theorem toTropicalYSeed_mutation [DecidableEq K] [DecidableEq J]
   rw [toExtendedMatrix_toTropicalYSeed, YSeed.toExtendedMatrix_mutation,
     toExtendedMatrix_toTropicalYSeed]
 
-/-- Inverting the correspondence after simultaneous relabelling relabels the tropical
-coefficient generators and pulls back the mutable column. -/
-theorem toTropicalYSeed_reindex_coefficient (eK : K ≃ K') (eJ : J ≃ J')
-    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
-    (h' : (reindex (row' := Function.Embedding.inl) (Equiv.sumCongr eK eJ) eK
-      (fun _ ↦ by simp) B).HasFiniteFrozenSupport) (k : K') :
-    ((reindex (row' := Function.Embedding.inl) (Equiv.sumCongr eK eJ) eK
-      (fun _ ↦ by simp) B).toTropicalYSeed h').coefficient k =
-      Trop.reindex eJ
-        ((B.toTropicalYSeed ((B.hasFiniteFrozenSupport_reindex_iff eK eJ).mp h')).coefficient
-          (eK.symm k)) := by
-  apply Multiplicative.toAdd.injective
-  ext j
-  simp
-
-/-- The principal part of simultaneous relabelling is mutable seed relabelling, including
-its chosen symmetrizer. -/
-theorem toTropicalYSeed_reindex_exchangeMatrix (eK : K ≃ K') (eJ : J ≃ J')
+/-- Inverting the correspondence commutes with simultaneous mutable relabelling and
+coefficient specialization along the frozen generator isomorphism. -/
+@[simp]
+theorem toTropicalYSeed_reindex (eK : K ≃ K') (eJ : J ≃ J')
     (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
     (h' : (reindex (row' := Function.Embedding.inl) (Equiv.sumCongr eK eJ) eK
       (fun _ ↦ by simp) B).HasFiniteFrozenSupport) :
-    ((reindex (row' := Function.Embedding.inl) (Equiv.sumCongr eK eJ) eK
-      (fun _ ↦ by simp) B).toTropicalYSeed h').exchangeMatrix =
-      (YSeed.reindex eK
-        (B.toTropicalYSeed ((B.hasFiniteFrozenSupport_reindex_iff eK eJ).mp h'))).exchangeMatrix :=
-    by
-  simp
+    (reindex (row' := Function.Embedding.inl) (Equiv.sumCongr eK eJ) eK
+      (fun _ ↦ by simp) B).toTropicalYSeed h' =
+      YSeed.reindex eK
+        ((B.toTropicalYSeed ((B.hasFiniteFrozenSupport_reindex_iff eK eJ).mp h')).map
+          (Trop.reindex eJ).toCoefficientSemifieldHom) := by
+  ext : 1
+  · funext k
+    apply Multiplicative.toAdd.injective
+    ext j
+    simp
+  · simp
 
 end ExchangeMatrix
 

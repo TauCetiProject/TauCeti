@@ -20,10 +20,12 @@ rewrites tropical coefficient mutation contributions as exchange-matrix correcti
 
 public section
 
-/-- A linear combination involving the negative part of `c` is the difference of the
-products of the matching positive and negative parts. -/
+namespace TauCeti
+
+/-- Rewrites `b⁺ * c + (-b) * (c ⊓ 0)` as `b⁺ * c⁺ - b⁻ * c⁻` in terms of positive and
+negative parts. Here `c ⊓ 0` is the infimum with zero, namely `-c⁻`. -/
 theorem posPart_mul_add_neg_mul_inf_zero {R : Type*} [Ring R] [Lattice R]
-    [AddLeftMono R] (c b : R) :
+    [AddLeftMono R] (b c : R) :
     b⁺ * c + (-b) * (c ⊓ 0) = b⁺ * c⁺ - b⁻ * c⁻ := by
   have hc : c ⊓ 0 = -c⁻ := by rw [negPart_eq_neg_inf_zero, neg_neg]
   calc
@@ -31,3 +33,5 @@ theorem posPart_mul_add_neg_mul_inf_zero {R : Type*} [Ring R] [Lattice R]
         b⁺ * (c⁺ - c⁻) + (b⁺ - b⁻) * c⁻ := by
       rw [posPart_sub_negPart, posPart_sub_negPart, hc, neg_mul_neg]
     _ = b⁺ * c⁺ - b⁻ * c⁻ := by noncomm_ring
+
+end TauCeti

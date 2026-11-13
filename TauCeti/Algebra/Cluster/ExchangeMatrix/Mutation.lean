@@ -305,10 +305,31 @@ theorem mutation_symmetrizer (k : K) : (B.mutation k).symmetrizer = B.symmetrize
   (rfl)
 
 /-- Taking the underlying matrix commutes with a finite sequence of mutations. -/
+@[simp]
 theorem foldl_mutation_matrix (w : List K) :
     (w.foldl (fun C k ↦ C.mutation k) B).matrix = w.foldl (matrixMutation row) B.matrix :=
   (List.foldl_hom (fun C : ExchangeMatrix row ↦ C.matrix)
     (l := w) (init := B) (fun _ _ ↦ rfl)).symm
+
+/-- Finite mutation sequences retain the chosen principal symmetrizer. -/
+@[simp]
+theorem foldl_mutation_symmetrizer (w : List K) :
+    (w.foldl (fun C k ↦ C.mutation k) B).symmetrizer = B.symmetrizer := by
+  induction w generalizing B with
+  | nil => rfl
+  | cons k w ih => simpa only [List.foldl_cons, mutation_symmetrizer] using ih (B.mutation k)
+
+/-- A row of an exchange matrix vanishes after mutation exactly when it vanished before. -/
+theorem mutation_row_eq_zero_iff (k : K) (i : I) :
+    (∀ l, (B.mutation k).matrix i l = 0) ↔ ∀ l, B.matrix i l = 0 := by
+  simpa only [mutation_matrix] using matrixMutation_row_eq_zero_iff row B.matrix k i
+
+/-- Finite mutation sequences preserve and reflect zero rows of arbitrary exchange matrices.
+The simp normal form is supplied by `foldl_mutation_matrix` and the raw matrix row-zero law. -/
+theorem foldl_mutation_row_eq_zero_iff (w : List K) (i : I) :
+    (∀ l, (w.foldl (fun C k ↦ C.mutation k) B).matrix i l = 0) ↔
+      ∀ l, B.matrix i l = 0 := by
+  simpa only [foldl_mutation_matrix] using foldl_matrixMutation_row_eq_zero_iff row B.matrix w i
 
 /-- Mutating an exchange matrix twice in the same direction gives back the original exchange
 matrix. -/

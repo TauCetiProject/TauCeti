@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.CoefficientSemifield.Basic
+public import Mathlib.Algebra.Ring.Equiv
 
 /-!
 # Homomorphisms of coefficient semifields
@@ -219,3 +220,33 @@ instance : Unique (CoefficientSemifieldHom P PUnit.{u + 1}) where
 end CoefficientSemifieldHom
 
 end TauCeti
+
+namespace RingEquiv
+
+variable {P Q R : Type*} [TauCeti.CoefficientSemifield P]
+  [TauCeti.CoefficientSemifield Q] [TauCeti.CoefficientSemifield R]
+
+/-- An isomorphism preserving multiplication and auxiliary addition is a homomorphism of
+coefficient semifields. -/
+def toCoefficientSemifieldHom (e : P ≃+* Q) : TauCeti.CoefficientSemifieldHom P Q :=
+  { MonoidHom.ofClass e, AddHomClass.toAddHom e with }
+
+@[simp]
+theorem coe_toCoefficientSemifieldHom (e : P ≃+* Q) :
+    ⇑e.toCoefficientSemifieldHom = e :=
+  (rfl)
+
+@[simp]
+theorem toCoefficientSemifieldHom_refl :
+    (RingEquiv.refl P).toCoefficientSemifieldHom = TauCeti.CoefficientSemifieldHom.id P := by
+  ext
+  rfl
+
+@[simp]
+theorem toCoefficientSemifieldHom_trans (e : P ≃+* Q) (f : Q ≃+* R) :
+    (e.trans f).toCoefficientSemifieldHom =
+      f.toCoefficientSemifieldHom.comp e.toCoefficientSemifieldHom := by
+  ext
+  rfl
+
+end RingEquiv

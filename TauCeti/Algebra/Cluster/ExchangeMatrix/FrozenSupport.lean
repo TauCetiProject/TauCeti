@@ -79,13 +79,6 @@ theorem hasFiniteFrozenSupport_mutation_iff [DecidableEq K] [DecidableEq J]
     (B.mutation k).HasFiniteFrozenSupport ↔ B.HasFiniteFrozenSupport :=
   ⟨fun h ↦ by simpa using h.mutation k, fun h ↦ h.mutation k⟩
 
-/-- A frozen row vanishes after mutation exactly when it vanished before mutation. -/
-theorem mutation_frozen_row_eq_zero_iff [DecidableEq K] [DecidableEq J]
-    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (k : K) (j : J) :
-    (∀ l, (B.mutation k).matrix (Sum.inr j) l = 0) ↔ ∀ l, B.matrix (Sum.inr j) l = 0 :=
-  by simpa only [mutation_matrix] using
-    matrixMutation_row_eq_zero_iff Function.Embedding.inl B.matrix k (Sum.inr j)
-
 /-- Mutation negates the frozen exponent vector in its own direction, independently of
 which finiteness proofs are supplied. -/
 @[simp]
@@ -97,6 +90,18 @@ theorem frozenColumn_mutation_self [DecidableEq K] [DecidableEq J]
   ext j
   simp
 
+/-- Injectively restricting frozen rows, and arbitrarily restricting or relabelling mutable
+columns, preserves columnwise finite frozen support. -/
+theorem HasFiniteFrozenSupport.submatrix
+    {B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)}
+    (h : B.HasFiniteFrozenSupport) (g : K' → K) {fJ : J' → J}
+    (hfJ : Function.Injective fJ)
+    (hcompat : ∀ k, Sum.map g fJ (Function.Embedding.inl k) = Function.Embedding.inl (g k)) :
+    (B.submatrix (Sum.map g fJ) g hcompat).HasFiniteFrozenSupport := by
+  intro k
+  simpa only [Function.support, Set.preimage_ofPred_eq, submatrix_matrix,
+    Matrix.submatrix_apply, Sum.map_inr] using (h (g k)).preimage hfJ.injOn
+
 /-- Simultaneous mutable and frozen relabelling preserves finite frozen support. -/
 @[simp]
 theorem hasFiniteFrozenSupport_reindex_iff (eK : K ≃ K') (eJ : J ≃ J')
@@ -105,17 +110,23 @@ theorem hasFiniteFrozenSupport_reindex_iff (eK : K ≃ K') (eJ : J ≃ J')
       (fun _ ↦ by
         simp only [Function.Embedding.inl_apply, Equiv.sumCongr_apply, Sum.map_inl])
       B).HasFiniteFrozenSupport ↔ B.HasFiniteFrozenSupport := by
+  let C : ExchangeMatrix (Function.Embedding.inl : K' ↪ K' ⊕ J') :=
+    reindex (Equiv.sumCongr eK eJ) eK (fun _ ↦ by simp) B
+  change C.HasFiniteFrozenSupport ↔ B.HasFiniteFrozenSupport
+  have hCm : C.matrix = B.matrix.submatrix (Equiv.sumCongr eK eJ).symm eK.symm :=
+    B.reindex_matrix _ _ _
   constructor
   · intro h k
-    have hf := (h (eK k)).preimage eJ.injective.injOn
-    simpa only [Function.support, Set.preimage_ofPred_eq, reindex_matrix,
-      Matrix.submatrix_apply, Equiv.sumCongr_symm,
-      Equiv.sumCongr_apply, Sum.map_inr, Equiv.symm_apply_apply] using hf
+    have hs := (h.submatrix eK eJ.injective (fun _ ↦ rfl)) k
+    rw [C.submatrix_matrix (Sum.map eK eJ) eK (fun _ ↦ rfl), hCm] at hs
+    simpa only [Matrix.submatrix_apply, Equiv.sumCongr_symm, Equiv.sumCongr_apply,
+      Sum.map_inr, Equiv.symm_apply_apply] using hs
   · intro h k
-    simpa only [Function.support, Set.preimage_ofPred_eq, reindex_matrix,
-      Matrix.submatrix_apply, Equiv.sumCongr_symm,
-      Equiv.sumCongr_apply, Sum.map_inr] using
-      (h (eK.symm k)).preimage eJ.symm.injective.injOn
+    rw [hCm]
+    have hs := (h.submatrix eK.symm eJ.symm.injective (fun _ ↦ rfl)) k
+    rw [B.submatrix_matrix (Sum.map eK.symm eJ.symm) eK.symm (fun _ ↦ rfl)] at hs
+    simpa only [Matrix.submatrix_apply, Equiv.sumCongr_symm, Equiv.sumCongr_apply,
+      Sum.map_inr] using hs
 
 /-- Every finite mutation sequence preserves and reflects finite frozen support. -/
 @[simp]
@@ -127,15 +138,6 @@ theorem hasFiniteFrozenSupport_foldl_mutation_iff [DecidableEq K] [DecidableEq J
   | cons k w ih =>
     simpa only [List.foldl_cons] using (ih (B.mutation k)).trans
       (B.hasFiniteFrozenSupport_mutation_iff k)
-
-/-- A frozen row vanishes after any finite mutation sequence exactly when it vanished before. -/
-@[simp]
-theorem foldl_mutation_frozen_row_eq_zero_iff [DecidableEq K] [DecidableEq J]
-    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (w : List K) (j : J) :
-    (∀ l, (w.foldl (fun C k ↦ C.mutation k) B).matrix (Sum.inr j) l = 0) ↔
-      ∀ l, B.matrix (Sum.inr j) l = 0 := by
-  rw [B.foldl_mutation_matrix]
-  exact foldl_matrixMutation_row_eq_zero_iff _ B.matrix w (Sum.inr j)
 
 /-- Frozen exponent vectors reindex by relabelling their frozen coordinates, while their
 mutable column is pulled back. The reindexed matrix's finiteness proof is arbitrary. -/
@@ -209,20 +211,59 @@ theorem reindexFiniteFrozen_symm (eK : K ≃ K') (eJ : J ≃ J') :
     cases i <;> simp [reindexFiniteFrozen]
   · simp [reindexFiniteFrozen]
 
-/-- For an extended matrix with finite frozen support and finitely many mutable directions,
-some finite subset contains every nonzero frozen row after any finite mutation sequence. -/
-theorem exists_finset_frozen_support_foldl [Finite K] [DecidableEq K] [DecidableEq J]
+/-- The finite set of initially nonzero frozen rows, for finitely many mutable directions.
+Its coercion to a type supplies the finite frozen carrier of the geometric coefficient reduction. -/
+noncomputable def frozenSupport [Finite K]
     (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
-    (h : B.HasFiniteFrozenSupport) :
-    ∃ S : Finset J, ∀ w : List K, ∀ j ∉ S, ∀ l,
-      (w.foldl (fun C k ↦ C.mutation k) B).matrix (Sum.inr j) l = 0 := by
-  classical
-  have hf : (⋃ k, Function.support fun j ↦ B.matrix (Sum.inr j) k).Finite :=
-    Set.finite_iUnion h
-  refine ⟨hf.toFinset, fun w j hj l ↦ ?_⟩
-  apply ((B.foldl_mutation_frozen_row_eq_zero_iff w j).2 ?_) l
-  have hnot : j ∉ ⋃ k, Function.support fun j ↦ B.matrix (Sum.inr j) k := by
-    simpa using hj
-  simpa only [Set.mem_iUnion, Function.mem_support, not_exists, not_not] using hnot
+    (h : B.HasFiniteFrozenSupport) : Finset J :=
+  (Set.finite_iUnion h).toFinset
+
+@[simp]
+theorem mem_frozenSupport_iff [Finite K]
+    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
+    (h : B.HasFiniteFrozenSupport) (j : J) :
+    j ∈ B.frozenSupport h ↔ ∃ k, B.matrix (Sum.inr j) k ≠ 0 := by
+  simp [frozenSupport, Function.mem_support]
+
+/-- The finite set of nonzero frozen rows is invariant under mutation, independently of the
+finiteness proof supplied after mutation. -/
+@[simp]
+theorem frozenSupport_mutation [Finite K] [DecidableEq K] [DecidableEq J]
+    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (k : K)
+    (h : (B.mutation k).HasFiniteFrozenSupport) :
+    (B.mutation k).frozenSupport h =
+      B.frozenSupport ((B.hasFiniteFrozenSupport_mutation_iff k).mp h) := by
+  ext j
+  simpa only [mem_frozenSupport_iff, not_forall] using
+    not_congr (B.mutation_row_eq_zero_iff k (Sum.inr j))
+
+/-- A finite mutation sequence retains precisely the initial set of nonzero frozen rows. -/
+@[simp]
+theorem frozenSupport_foldl_mutation [Finite K] [DecidableEq K] [DecidableEq J]
+    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (w : List K)
+    (h : (w.foldl (fun C k ↦ C.mutation k) B).HasFiniteFrozenSupport) :
+    (w.foldl (fun C k ↦ C.mutation k) B).frozenSupport h =
+      B.frozenSupport ((B.hasFiniteFrozenSupport_foldl_mutation_iff w).mp h) := by
+  ext j
+  simpa only [mem_frozenSupport_iff, not_forall] using
+    not_congr (B.foldl_mutation_row_eq_zero_iff w (Sum.inr j))
+
+/-- Every entry outside the canonical finite set of initially nonzero frozen rows vanishes. -/
+theorem matrix_inr_eq_zero_of_not_mem_frozenSupport [Finite K]
+    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
+    (h : B.HasFiniteFrozenSupport) {j : J} (hj : j ∉ B.frozenSupport h) (k : K) :
+    B.matrix (Sum.inr j) k = 0 := by
+  have hz : ∀ k, B.matrix (Sum.inr j) k = 0 := by
+    simpa only [mem_frozenSupport_iff, not_exists, not_not] using hj
+  exact hz k
+
+/-- Frozen rows outside the canonical finite carrier remain zero through every mutation word. -/
+theorem foldl_mutation_frozen_row_eq_zero_of_not_mem_frozenSupport
+    [Finite K] [DecidableEq K] [DecidableEq J]
+    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
+    (h : B.HasFiniteFrozenSupport) (w : List K) {j : J} (hj : j ∉ B.frozenSupport h) :
+    ∀ l, (w.foldl (fun C k ↦ C.mutation k) B).matrix (Sum.inr j) l = 0 :=
+  (B.foldl_mutation_row_eq_zero_iff w (Sum.inr j)).2
+    (B.matrix_inr_eq_zero_of_not_mem_frozenSupport h hj)
 
 end TauCeti.ExchangeMatrix

@@ -237,6 +237,18 @@ theorem principal_matrix : B.principal.matrix = B.matrix.submatrix row id :=
 theorem principal_symmetrizer : B.principal.symmetrizer = B.symmetrizer :=
   (rfl)
 
+/-- Taking the principal block commutes with any compatible row and column restriction. -/
+@[simp]
+theorem principal_submatrix (f : I' → I) (g : K' → K)
+    (h : ∀ k, f (row' k) = row (g k)) :
+    (B.submatrix f g h).principal =
+      B.principal.submatrix (row' := Function.Embedding.refl K') g g (fun _ ↦ rfl) := by
+  ext : 1
+  · ext i j
+    change B.matrix (f (row' i)) (g j) = B.matrix (row (g i)) (g j)
+    rw [h]
+  · rfl
+
 /-- A square exchange matrix is its own principal block. -/
 @[simp]
 theorem principal_eq_self (B : ExchangeMatrix (Function.Embedding.refl K)) : B.principal = B := by
@@ -290,13 +302,8 @@ theorem principal_reindex (eI : I ≃ I') (eK : K ≃ K')
     (reindex eI eK h B).principal =
       reindex (row := Function.Embedding.refl K) (row' := Function.Embedding.refl K')
         eK eK (fun _ ↦ by simp only [Function.Embedding.refl_apply]) B.principal := by
-  ext : 1
-  · ext i j
-    have hi : eI.symm (row' i) = row (eK.symm i) := by
-      apply eI.injective
-      simpa using (h (eK.symm i)).symm
-    simp [hi]
-  · simp
+  exact B.principal_submatrix eI.symm eK.symm fun k ↦ by
+    rw [Equiv.symm_apply_eq, h, Equiv.apply_symm_apply]
 
 /-- The block diagonal sum of two exchange matrices: its mutable indices, its rows and its
 symmetrizer are the disjoint unions of those of the summands, and no entry joins the two. -/
