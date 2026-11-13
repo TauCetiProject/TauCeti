@@ -735,7 +735,7 @@ theorem _root_.ContMDiffOn.contMDiffOn_curveVelocityLiftWithin {m n : ℕ∞ω} 
 
 /-- The within-domain velocity lift of a `C¹` curve is continuous on a domain with unique
 manifold derivatives. -/
-theorem ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
+theorem _root_.ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
     (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 1 γ u)
     (hu : UniqueMDiffOn 𝓘(𝕜, 𝕜) u) :
     ContinuousOn (curveVelocityLiftWithin I γ u) u :=
@@ -744,7 +744,7 @@ theorem ContMDiffOn.continuousOn_curveVelocityLiftWithin {u : Set 𝕜}
 /-- The velocity lift of a `C¹` curve is continuous on an open parameter set. The openness
 ensures that the unrestricted velocity in `curveVelocityLift` agrees with the derivative within
 the parameter set. -/
-theorem ContMDiffOn.continuousOn_curveVelocityLift {u : Set 𝕜}
+theorem _root_.ContMDiffOn.continuousOn_curveVelocityLift {u : Set 𝕜}
     (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 1 γ u) (hu : IsOpen u) :
     ContinuousOn (curveVelocityLift I γ) u := by
   refine (ContMDiffOn.continuousOn_curveVelocityLiftWithin hγ hu.uniqueMDiffOn).congr
@@ -753,7 +753,7 @@ theorem ContMDiffOn.continuousOn_curveVelocityLift {u : Set 𝕜}
     curveVelocityWithin_of_mem_nhds (hu.mem_nhds ht)]
 
 /-- The unrestricted case of `ContMDiffOn.continuousOn_curveVelocityLift`. -/
-theorem ContMDiff.continuous_curveVelocityLift
+theorem _root_.ContMDiff.continuous_curveVelocityLift
     (hγ : ContMDiff 𝓘(𝕜, 𝕜) I 1 γ) : Continuous (curveVelocityLift I γ) := by
   rw [← continuousOn_univ, ← curveVelocityLiftWithin_univ]
   exact ContMDiffOn.continuousOn_curveVelocityLiftWithin hγ.contMDiffOn uniqueMDiffOn_univ
