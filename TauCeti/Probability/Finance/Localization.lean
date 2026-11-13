@@ -156,7 +156,7 @@ theorem tendsto_eLpNorm_linearGrowth_geometricBrownianMotion
 
 /-- A strongly adapted, almost surely right-continuous local martingale with a uniform
 polynomial bound in a positive geometric Brownian stock stopped at maturity is a true
-martingale. Together with `memLp_two_of_geometricBrownianMotion_bound`, this verifies the
+martingale. Together with `memLp_two_of_geometricBrownianMotion_bound_randomTime`, this verifies the
 square-integrable true-martingale condition for a discounted candidate price once its local
 Itô identity and terminal extension have been established. -/
 theorem martingale_of_locally_martingale_of_geometricBrownianMotion_bound
@@ -172,7 +172,10 @@ theorem martingale_of_locally_martingale_of_geometricBrownianMotion_bound
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   apply hX.martingale_of_locally_martingale_of_lintegral_iSup_norm_sq_lt_top hlocal
     (fun _ ↦ hcontX.mono fun ω hω t _ ↦ hω t)
-  simpa only [Real.norm_eq_abs, sq_abs] using
-    hW.lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound hcont hs hbound
+  intro R
+  simp only [Real.norm_eq_abs, sq_abs]
+  refine lt_of_le_of_lt (lintegral_mono fun ω ↦ iSup₂_le fun t _ ↦
+    le_iSup (fun u ↦ ENNReal.ofReal (X u ω ^ 2)) t)
+    (hW.lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound hcont hs hbound)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
