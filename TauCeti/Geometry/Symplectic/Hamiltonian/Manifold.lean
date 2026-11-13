@@ -95,6 +95,11 @@ Along a curve where its differential is surjective, `φ` therefore maps integral
 Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField`).
 
+The same holds pointwise for a map `φ : M → V` into a vector space with a constant symplectic form
+`ω₀` that pulls `ω₀` back to a nondegenerate `σ` at a single point `x`, such as a Darboux chart:
+when its differential at `x` is surjective, it carries the Hamiltonian vector field of `g ∘ φ` to
+that of `g` (`TauCeti.SmoothTwoForm.IsNondegenerate.mvfderiv_hamiltonianVectorField_comp`).
+
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField`: the equation `ι_X σ = df`, also in the
@@ -128,6 +133,8 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
   fields, their integral curves and Poisson brackets under maps pulling one form back to the
   other.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mvfderiv_hamiltonianVectorField_comp`: the pointwise
+  naturality in a symplectic chart into a vector space.
 * `TauCeti.SmoothTwoForm.hamiltonianVectorField_comp_subtype_val`,
   `TauCeti.SmoothTwoForm.poissonBracket_comp_subtype_val`: restriction to an open submanifold
   preserves Hamiltonian vector fields and Poisson brackets.
@@ -861,6 +868,38 @@ theorem isMIntegralCurve_comp_hamiltonianVectorField {g : M₂ → ℝ} {γ : �
 end IsNondegenerate
 
 end Naturality
+
+/-! ### Naturality in a symplectic chart -/
+
+section Chart
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {ω₀ : SymplecticForm V} {φ : M → V}
+  {x : M}
+
+namespace IsNondegenerate
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ V]
+
+/-- **Hamiltonian vector fields in a symplectic chart.** Let `φ` be differentiable at `x`, with
+surjective differential there, and pull the symplectic form `ω₀` back to the nondegenerate form
+`σ` at `x`. For a function `g` differentiable at `φ x`, the differential of `φ` carries the
+Hamiltonian vector field of `g ∘ φ` at `x` to the Hamiltonian vector field of `g` for `ω₀` at
+`φ x`. This is a pointwise form of
+`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`, which asks for a
+globally defined smooth map pulling one form back to the other. -/
+theorem mvfderiv_hamiltonianVectorField_comp (hσ : σ.IsNondegenerate)
+    (hφ : MDifferentiableAt I 𝓘(ℝ, V) φ x) (hsurj : Function.Surjective (mvfderiv I φ x))
+    (hform : ∀ v w : TangentSpace I x, σ.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    {g : V → ℝ} (hg : DifferentiableAt ℝ g (φ x)) :
+    mvfderiv I φ x (σ.hamiltonianVectorField (g ∘ φ) x) = ω₀.hamiltonianVectorField g (φ x) := by
+  refine (ω₀.eq_hamiltonianVectorField_iff g (φ x) _).2 fun w ↦ ?_
+  obtain ⟨v, rfl⟩ := hsurj w
+  -- Both sides are `d(g ∘ φ)_x v`: the left one because `φ` pulls `ω₀` back to `σ`.
+  rw [← hform, hσ.eval₂_hamiltonianVectorField, mvfderiv_comp_apply_of_differentiableAt hg hφ]
+
+end IsNondegenerate
+
+end Chart
 
 /-! ### Restriction to open submanifolds -/
 
