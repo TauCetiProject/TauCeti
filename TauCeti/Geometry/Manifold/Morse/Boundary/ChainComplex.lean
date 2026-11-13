@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.Differential
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
 public import Mathlib.Algebra.Field.ZMod
-import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 
 /-!
 # The mod-two Morse chain complex of a compact manifold
@@ -32,9 +31,12 @@ The terms are finite-dimensional, of dimension the number `cₙ` of critical poi
 homology is finite-dimensional, bounded by the critical counts, and vanishes above `m`. Its
 Euler characteristic is the signed critical count `∑ᵢ (-1)ⁱ cᵢ`, and so the Euler characteristic
 of `M` (`IsMorseSmale.sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`).
-When the boundary vanishes, as it does on `ℝℙ²`, the homology in each degree is the term in that
-degree (`IsMorseSmale.XIsoHomologyOfMorseBoundaryEqZero`), so it has dimension the number of
-critical points of that index
+In terms of Mathlib's Euler characteristics of a complex, both `(h.morseComplex hf).eulerChar` and
+`(h.morseComplex hf).homologyEulerChar` are this signed count
+(`IsMorseSmale.eulerChar_morseComplex`, `IsMorseSmale.homologyEulerChar_morseComplex`).
+When the boundary vanishes, as it does on `ℝℙ²`, every differential of the complex vanishes
+(`IsMorseSmale.morseComplex_d_eq_zero_of_morseBoundary_eq_zero`), so the homology in each degree
+is the term in that degree and has dimension the number of critical points of that index
 (`IsMorseSmale.finrank_homology_morseComplex_of_morseBoundary_eq_zero`).
 
 ## Main declarations
@@ -53,8 +55,12 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
   homology is the signed count of critical points.
 * `sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`: it is the Euler
   characteristic of `M`.
-* `XIsoHomologyOfMorseBoundaryEqZero`: with zero boundary, the Morse homology in degree `n` is the
-  term in degree `n`.
+* `eulerChar_morseComplex`, `homologyEulerChar_morseComplex`: Mathlib's Euler characteristics of
+  the Morse chain complex and of its homology are the signed count of critical points.
+* `eulerChar_morseComplex_eq_eulerChar`, `homologyEulerChar_morseComplex_eq_eulerChar`: they are
+  the Euler characteristic of `M`.
+* `morseComplex_d_eq_zero_of_morseBoundary_eq_zero`: with zero boundary, every differential of the
+  Morse chain complex vanishes.
 * `finrank_homology_morseComplex_of_morseBoundary_eq_zero`: with zero boundary, the Morse homology
   in degree `n` has dimension the number of critical points of index `n`.
 
@@ -242,6 +248,40 @@ theorem sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar [Fi
   rw [h.sum_range_neg_one_pow_mul_finrank_homology_morseComplex hf,
     hf.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar]
 
+/-- **The Euler characteristic of the Morse chain complex** is the signed count `∑ᵢ (-1)ⁱ cᵢ` of
+critical points, where `cᵢ` is the number of critical points of index `i`. -/
+theorem eulerChar_morseComplex :
+    (h.morseComplex hf).eulerChar =
+      ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount 𝓘(ℝ, E) f i).toNat := by
+  rw [HomologicalComplex.eulerChar_eq_sum_finSet_of_finrankSupport_subset _
+    (Finset.range (finrank ℝ E + 1)) ((GradedObject.finrankSupport_subset_iff _ _).2 fun i hi ↦
+      ModuleCat.finrank_eq_zero_of_isZero
+        (h.isZero_morseComplex_X_of_finrank_lt hf (by simpa [Nat.lt_succ_iff] using hi)))]
+  simp [h.finrank_morseComplex_X hf]
+
+/-- **The Euler characteristic of Morse homology**, in terms of Mathlib's homological Euler
+characteristic: it is the signed count `∑ᵢ (-1)ⁱ cᵢ` of critical points. -/
+theorem homologyEulerChar_morseComplex :
+    (h.morseComplex hf).homologyEulerChar =
+      ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount 𝓘(ℝ, E) f i).toNat := by
+  rw [← ChainComplex.eulerChar_eq_homologyEulerChar _
+      (Filter.eventually_atTop.2 ⟨finrank ℝ E + 1, fun _ hn ↦
+        h.isZero_morseComplex_X_of_finrank_lt hf hn⟩),
+    h.eulerChar_morseComplex hf]
+
+/-- For a compact boundaryless manifold `M` of finite CW type, the Euler characteristic of the
+Morse chain complex is the Euler characteristic of `M`. -/
+theorem eulerChar_morseComplex_eq_eulerChar [FiniteCWType M] :
+    (h.morseComplex hf).eulerChar = eulerChar M := by
+  rw [h.eulerChar_morseComplex hf, hf.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar]
+
+/-- For a compact boundaryless manifold `M` of finite CW type, the Euler characteristic of the
+mod-two Morse homology is the Euler characteristic of `M`. -/
+theorem homologyEulerChar_morseComplex_eq_eulerChar [FiniteCWType M] :
+    (h.morseComplex hf).homologyEulerChar = eulerChar M := by
+  rw [h.homologyEulerChar_morseComplex hf,
+    hf.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar]
+
 /-- If the total Morse boundary vanishes, so does every graded Morse boundary. -/
 theorem morseBoundaryAt_eq_zero_of_morseBoundary_eq_zero (h0 : h.morseBoundary hf = 0) (n : ℕ) :
     h.morseBoundaryAt hf n = 0 :=
@@ -259,14 +299,6 @@ theorem morseComplex_d_eq_zero_of_morseBoundary_eq_zero (h0 : h.morseBoundary hf
     -- Both sides are the zero morphism; they differ only in how the terms are written.
     rfl
   · exact (h.morseComplex hf).shape i j hij
-
-/-- **Morse homology with zero boundary.** If the mod-two Morse boundary vanishes, the term of the
-Morse chain complex in degree `n` is isomorphic to the mod-two Morse homology in degree `n`. -/
-noncomputable def XIsoHomologyOfMorseBoundaryEqZero (h0 : h.morseBoundary hf = 0) (n : ℕ) :
-    (h.morseComplex hf).X n ≅ (h.morseComplex hf).homology n :=
-  (h.morseComplex hf).XIsoHomologyOfDEqZero n
-    (h.morseComplex_d_eq_zero_of_morseBoundary_eq_zero hf h0 _ _)
-    (h.morseComplex_d_eq_zero_of_morseBoundary_eq_zero hf h0 _ _)
 
 /-- **Morse homology with zero boundary.** If the mod-two Morse boundary vanishes, the mod-two
 Morse homology in degree `n` has dimension the number of critical points of index `n`. -/
