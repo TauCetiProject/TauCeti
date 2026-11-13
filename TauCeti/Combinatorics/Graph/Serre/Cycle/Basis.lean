@@ -147,7 +147,7 @@ retains that loop's coefficient rather than discarding it. -/
 
 /-- The fundamental cycle of a loop is the unit chain on that loop: no forest edge is
 needed to return to its source. -/
-@[simp] theorem IsSpanningForest.cycleBasis_of_loop (hF : Γ.IsSpanningForest O F)
+theorem IsSpanningForest.cycleBasis_of_loop (hF : Γ.IsSpanningForest O F)
     (e : ↥(O \ F)) (he : Γ.src e.val = Γ.tgt e.val) :
     (hF.cycleBasis R e).val = Finsupp.single ⟨e.val, e.property.1⟩ 1 := by
   classical

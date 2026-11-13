@@ -161,9 +161,9 @@ the unit vector of its dart. -/
 
 /-- The fundamental cycle of a positive loop dart outside the tree is the unit chain on that
 loop. -/
-@[simp] theorem cycleBasis_of_loop (e : ↥(O \ T.darts)) (he : Γ.src e.1 = Γ.tgt e.1) :
+theorem cycleBasis_of_loop (e : ↥(O \ T.darts)) (he : Γ.src e.1 = Γ.tgt e.1) :
     (T.cycleBasis hO R e).val = Finsupp.single ⟨e.1, e.2.1⟩ 1 := by
-  simp [cycleBasis_apply, he]
+  simp [cycleBasis_apply, IsSpanningForest.cycleBasis_of_loop, he]
 
 /-- Extension of scalars sends `r ⊗` an integral fundamental cycle of a spanning tree to `r` times
 its fundamental cycle over `R`. -/

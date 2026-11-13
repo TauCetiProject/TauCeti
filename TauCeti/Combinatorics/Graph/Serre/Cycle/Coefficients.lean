@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Cycle.Basis
+public import TauCeti.Data.Finsupp.Single
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
