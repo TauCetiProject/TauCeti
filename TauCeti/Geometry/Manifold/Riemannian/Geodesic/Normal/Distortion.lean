@@ -222,7 +222,7 @@ theorem exists_isNormalDomain_ball_antilipschitzWith_riemannianExp (p : M) {c : 
           ← ENNReal.ofReal_mul (by positivity)]
         exact ENNReal.ofReal_le_ofReal ((hlog _ (hγU t ht) _).2)
     rwa [hγ0, hγ1, hn.riemannianLog_riemannianExp (hsub hw),
-      hn.riemannianLog_riemannianExp (hsub hv), ← edist_eq_enorm_sub, edist_comm] at hle
+      hn.riemannianLog_riemannianExp (hsub hv), ← eDist_eq_eNorm_sub, edist_comm] at hle
   · -- The path leaves the normal neighbourhood, the open ball of radius `R` about `p`, so it is
     -- longer than `2 R / 3`, while `v` and `w` are closer than that.
     push Not at hγU
