@@ -297,8 +297,8 @@ theorem neg_mul_norm_fderiv_one_sub_sq_le_laplacian {a b c m : ℝ}
       rw [fderiv_sub_const]
       exact fderiv_clm_apply_const_apply (hDu.differentiableAt (by norm_num)) 1 w
   have hΔ : Δ (fun y ↦ fderiv ℝ u y 1 - e₀) z = Δ (fun y ↦ fderiv ℝ u y 1) z := by
-    rw [show (fun y ↦ fderiv ℝ u y 1 - e₀) = (fun y ↦ fderiv ℝ u y 1) - fun _ ↦ e₀ from rfl,
-      hξ.laplacian_sub contDiffAt_const, laplacian_const, Pi.zero_apply, sub_zero]
+    rw [← Pi.sub_def, hξ.laplacian_sub contDiffAt_const, laplacian_const, Pi.zero_apply,
+      sub_zero]
   have hsymm : fderiv ℝ (fderiv ℝ u) z I 1 = fderiv ℝ (fderiv ℝ u) z 1 I :=
     hu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1
   have hL := norm_laplacian_fderiv_one_le_of_periodic hJe hu hJ hCR hJsq ha hb hc hm hm'

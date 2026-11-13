@@ -314,8 +314,7 @@ theorem mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian
       intro x hx
       have hwx := hw0 x hx
       have hadd : Δ (fun x ↦ w x + κ) x = Δ w x := by
-        rw [show (fun x ↦ w x + κ) = w + fun _ ↦ κ from rfl,
-          (hw.contDiffAt (isOpen_ball.mem_nhds hx)).laplacian_add contDiffAt_const,
+        rw [← Pi.add_def, (hw.contDiffAt (isOpen_ball.mem_nhds hx)).laplacian_add contDiffAt_const,
           laplacian_const, Pi.zero_apply, add_zero]
       rw [hadd]
       refine le_trans ?_ (hΔ' x hx)
