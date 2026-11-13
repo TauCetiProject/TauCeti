@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import Mathlib.Algebra.Group.Equiv.Defs
+public import Mathlib.Algebra.Group.PUnit
 public import Mathlib.Algebra.Group.Subgroup.Ker
 
 /-!
@@ -35,6 +36,7 @@ through Mathlib's `MulEquiv.cast` along equalities of indices.
   a dart `e : a ⟶ b` of the quiver of `Γ`, with values in `A_a` and `A_b`.
 * `TauCeti.GraphOfGroups.segment`: the graph of groups of an amalgamated product.
 * `TauCeti.GraphOfGroups.loop`: the graph of groups of an HNN extension.
+* `TauCeti.GraphOfGroups.trivial`: the graph of groups with trivial vertex and edge groups.
 * `TauCeti.GraphOfGroups.restrict`: the restriction of a graph of groups to the subgraph spanned
   by a reversal-closed set of darts, with all vertices of the graph.
 
@@ -276,6 +278,20 @@ variable {G : Type w} {C : Type x} [Group G] [Group C] (f g : C →* G)
   MonoidHom.ext fun c => (loop f g hf hg).α_rev_apply ((), true) c
 
 end loop
+
+-- Protected so that an unqualified `trivial` in this namespace still means `trivial : True`.
+/-- The graph of groups on `Γ` all of whose vertex and edge groups are trivial. -/
+protected def trivial (Γ : SerreGraph.{u, v}) : GraphOfGroups.{u, v, 0, 0} Γ where
+  vertexGroup _ := PUnit
+  edgeGroup _ := PUnit
+  ω _ := 1
+  ω_injective _ := Function.injective_of_subsingleton _
+
+instance (a : Γ.V) : Subsingleton ((GraphOfGroups.trivial Γ).vertexGroup a) :=
+  inferInstanceAs (Subsingleton PUnit)
+
+instance (y : Γ.GeomEdge) : Subsingleton ((GraphOfGroups.trivial Γ).edgeGroup y) :=
+  inferInstanceAs (Subsingleton PUnit)
 
 section restrict
 
