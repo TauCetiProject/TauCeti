@@ -62,7 +62,7 @@ theorem IsNullRecurrent.not_isPositiveRecurrent (hx : κ.IsNullRecurrent x) :
     ¬ κ.IsPositiveRecurrent x :=
   (isNullRecurrent_iff_isRecurrent_and_not_isPositiveRecurrent.mp hx).2
 
-/-- Recurrence splits into the mutually exclusive positive and null cases. -/
+/-- Recurrence splits into the positive and null cases. -/
 theorem isRecurrent_iff_isPositiveRecurrent_or_isNullRecurrent :
     κ.IsRecurrent x ↔ κ.IsPositiveRecurrent x ∨ κ.IsNullRecurrent x := by
   rw [isNullRecurrent_iff_isRecurrent_and_not_isPositiveRecurrent]
@@ -85,8 +85,7 @@ theorem Communicates.isNullRecurrent_iff (hxy : κ.Communicates x y) :
   simp only [isNullRecurrent_iff_isRecurrent_and_not_isPositiveRecurrent,
     hxy.isRecurrent_iff, hxy.isPositiveRecurrent_iff]
 
-/-- Every state reachable from a null recurrent state is null recurrent. Recurrence
-forces the reverse reachability, so the states lie in the same communicating class. -/
+/-- Every state reachable from a null recurrent state is null recurrent. -/
 theorem IsNullRecurrent.of_reaches (hx : κ.IsNullRecurrent x) (hxy : κ.Reaches x y) :
     κ.IsNullRecurrent y :=
   (Communicates.isNullRecurrent_iff
@@ -122,14 +121,14 @@ theorem isPositiveRecurrent_of_finite_communicatingClass
   exact (isPositiveRecurrent_subtype_iff hmeas
     ⟨x, by simp⟩).mp ((κ.subtype hmeas).isPositiveRecurrent_of_finite ⟨x, by simp⟩)
 
-/-- A recurrent state with a finite communicating class is positive recurrent.
-Closedness is automatic from recurrence. -/
+/-- On a countable state space, a recurrent state with a finite communicating class
+is positive recurrent. -/
 theorem IsRecurrent.isPositiveRecurrent_of_finite_communicatingClass [Countable S]
     (hx : κ.IsRecurrent x) (hfinite : (κ.communicatingClass x).Finite) :
     κ.IsPositiveRecurrent x :=
   Kernel.isPositiveRecurrent_of_finite_communicatingClass hfinite hx.isClosedSet_communicatingClass
 
-/-- A null recurrent state necessarily has an infinite communicating class. -/
+/-- On a countable state space, a null recurrent state has an infinite communicating class. -/
 theorem IsNullRecurrent.infinite_communicatingClass [Countable S] (hx : κ.IsNullRecurrent x) :
     (κ.communicatingClass x).Infinite := by
   intro hfinite
@@ -142,6 +141,11 @@ theorem isRecurrent_iff_isPositiveRecurrent_of_finite [Finite S] :
     κ.IsRecurrent x ↔ κ.IsPositiveRecurrent x :=
   ⟨fun hx => hx.isPositiveRecurrent_of_finite_communicatingClass (Set.toFinite _),
     IsPositiveRecurrent.isRecurrent⟩
+
+/-- No state of a finite state space is null recurrent. -/
+@[simp]
+theorem not_isNullRecurrent_of_finite [Finite S] : ¬ κ.IsNullRecurrent x :=
+  fun hx => hx.infinite_communicatingClass (Set.toFinite _)
 
 end MeasurableSingleton
 

@@ -12,10 +12,10 @@ public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.ReturnMean
 /-!
 # Classification of nearest-neighbor integer walks
 
-The symmetric walk is null recurrent, not positive recurrent. Every nonsymmetric
-walk is transient, including the deterministic endpoint parameters. These conclusions
-use the return-probability series and extended mean return-time computations, rather
-than assuming either recurrence or the absence of an invariant probability.
+The nearest-neighbor integer walk is null recurrent exactly when its right-step
+probability is `1 / 2` and has no positive recurrent state for any parameter.
+Together with the transience results in `IntegerWalk.Recurrence`, these results
+complete the state classification, including the deterministic endpoint parameters.
 
 ## References
 
@@ -30,6 +30,7 @@ namespace TauCeti.Probability
 
 /-- The nearest-neighbor integer walk is null recurrent exactly at the symmetric
 parameter, at every starting state. -/
+@[simp↓]
 theorem integerWalk_isNullRecurrent_iff (p : unitInterval) (x : ℤ) :
     (integerWalk p).IsNullRecurrent x ↔ (p : ℝ) = 1 / 2 := by
   constructor
@@ -41,6 +42,7 @@ theorem integerWalk_isNullRecurrent_iff (p : unitInterval) (x : ℤ) :
 
 /-- No nearest-neighbor integer walk has a positive recurrent state, including
 at the deterministic endpoint parameters. -/
+@[simp↓]
 theorem integerWalk_not_isPositiveRecurrent (p : unitInterval) (x : ℤ) :
     ¬ (integerWalk p).IsPositiveRecurrent x := by
   intro hx
