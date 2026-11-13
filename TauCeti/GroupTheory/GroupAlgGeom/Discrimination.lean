@@ -26,7 +26,10 @@ of quotients of free `G`-groups, even before the quotient is known to be a `G`-g
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.comp`, `TauCeti.GroupAlgGeom.IsSeparatedBy.comp`:
   discrimination and separation survive restriction of the coefficients.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
-  coefficient-preserving homomorphism to `H`.
+  coefficient-preserving homomorphism to `H`; with discrimination the group may be trivial
+  (`TauCeti.GroupAlgGeom.IsDiscriminatedBy.nonempty_gHom`).
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.injective_of_injective`: a group discriminated by a
+  `G`-group is a `G`-group.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_iInf_ker`: separation by `H` means the kernels of all
   coefficient-preserving homomorphisms to `H` intersect trivially.
 
@@ -76,6 +79,19 @@ theorem isSeparatedBy {ιK : G →* K} {ιH : G →* H}
   intro k hk
   obtain ⟨φ, hφ⟩ := h {k} (by simpa using hk)
   exact ⟨φ, hφ k (by simp)⟩
+
+/-- A group discriminated by `H` admits a coefficient-preserving homomorphism to `H`. -/
+theorem nonempty_gHom {ιK : G →* K} {ιH : G →* H} (h : IsDiscriminatedBy ιK ιH) :
+    Nonempty (GHom ιK ιH) :=
+  let ⟨φ, _⟩ := h ∅ (by simp)
+  ⟨φ⟩
+
+/-- If `K` is discriminated by `H` over `G` and the coefficient map `ιH` is injective, so is
+`ιK`. -/
+theorem injective_of_injective {ιK : G →* K} {ιH : G →* H} (h : IsDiscriminatedBy ιK ιH)
+    (hH : Function.Injective ιH) : Function.Injective ιK := fun a b hab => by
+  obtain ⟨φ⟩ := h.nonempty_gHom
+  exact hH (by rw [← φ.map_coeff a, ← φ.map_coeff b, hab])
 
 /-- The source of an injective coefficient-preserving map into a discriminated group is
 discriminated by the same target. -/
