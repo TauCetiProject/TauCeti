@@ -81,20 +81,21 @@ theorem mem_Gamma0Projective_iff (N : ℕ) (g : PSL(2, ℤ)) :
 the center of `SL₂(ℤ)`, is already contained in `Γ₀(N)`. -/
 theorem Gamma0Projective_index (N : ℕ) :
     (Gamma0Projective N).index = (CongruenceSubgroup.Gamma0 N).index :=
-  Subgroup.index_map_mk'_of_neg_one_mem CongruenceSubgroup.neg_one_mem_Gamma0
+  Matrix.SpecialLinearGroup.index_map_mk'_of_neg_one_mem CongruenceSubgroup.neg_one_mem_Gamma0
 
 /-- The lift of the projective image of `Γ₀(N)` to `SL₂(ℤ)` is `Γ₀(N)`, which contains `-I`. -/
 @[simp]
 theorem liftSL_Gamma0Projective (N : ℕ) :
     (Gamma0Projective N).liftSL = CongruenceSubgroup.Gamma0 N :=
-  Subgroup.liftSL_map_of_neg_one_mem CongruenceSubgroup.neg_one_mem_Gamma0
+  Matrix.SpecialLinearGroup.liftSL_map_of_neg_one_mem CongruenceSubgroup.neg_one_mem_Gamma0
 
 /-- **The projective index of `Γ(N)`** for `N ≥ 3`: since `-I ∉ Γ(N)`, the image of `Γ(N)` in
 `PSL₂(ℤ)` has index `|SL₂(ℤ/Nℤ)| / 2`. -/
 theorem two_mul_index_map_Gamma {N : ℕ} (hN : 3 ≤ N) :
     2 * ((CongruenceSubgroup.Gamma N).map
         (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = Nat.card SL(2, ZMod N) := by
-  rw [Subgroup.two_mul_index_map_mk'_of_neg_one_notMem, CongruenceSubgroup.index_Gamma]
+  rw [Matrix.SpecialLinearGroup.two_mul_index_map_mk'_of_neg_one_notMem,
+    CongruenceSubgroup.index_Gamma]
   rw [CongruenceSubgroup.neg_one_mem_Gamma_iff]
   exact fun h ↦ by have := Nat.le_of_dvd two_pos h; omega
 

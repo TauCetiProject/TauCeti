@@ -42,9 +42,11 @@ index.
 * `Subgroup.liftSL_conjAct_smul`: lifting commutes with conjugation.
 * `Subgroup.index_map_mk'_of_center_le`: the image in `PSL(n, R)` of a subgroup of `SL(n, R)`
   containing the centre has the same index.
-* `Subgroup.index_map_mk'_of_neg_one_mem` and `Subgroup.two_mul_index_map_mk'_of_neg_one_notMem`:
-  the index of the image in `PSL(2, R)` of a subgroup of `SL(2, R)`.
-* `Subgroup.finiteIndex_map_mk'_iff`: that image has finite index exactly when the subgroup does.
+* `Matrix.SpecialLinearGroup.index_map_mk'_of_neg_one_mem` and
+  `Matrix.SpecialLinearGroup.two_mul_index_map_mk'_of_neg_one_notMem`: the index of the image in
+  `PSL(2, R)` of a subgroup of `SL(2, R)`.
+* `Matrix.SpecialLinearGroup.finiteIndex_map_mk'_center_iff`: that image has finite index exactly
+  when the subgroup does.
 
 ## References
 
@@ -236,21 +238,29 @@ theorem neg_one_mem_liftSL (Γ : Subgroup (ProjectiveSpecialLinearGroup (Fin 2) 
     (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ.liftSL :=
   center_le_liftSL Γ <| mem_center_iff.mpr fun g ↦ by rw [mul_neg_one, neg_one_mul]
 
-variable [NoZeroDivisors R]
+end FinTwo
+
+end Subgroup
+
+namespace Matrix.SpecialLinearGroup
+
+open Subgroup
+
+variable {R : Type*} [CommRing R] [NoZeroDivisors R]
 
 variable {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)}
 
 /-- A subgroup of `SL(2, R)` containing `-I` is the lift of its image in `PSL(2, R)`. -/
 theorem liftSL_map_of_neg_one_mem (h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ) :
     (Γ.map (QuotientGroup.mk' (center (SpecialLinearGroup (Fin 2) R)))).liftSL = Γ := by
-  rw [liftSL_map, withCenter_eq_self_iff, SpecialLinearGroup.center_le_iff_neg_one_mem]
+  rw [liftSL_map, withCenter_eq_self_iff, center_le_iff_neg_one_mem]
   exact h
 
 /-- The image in `PSL(2, R)` of a subgroup `Γ` of `SL(2, R)` containing `-I` has the index of
 `Γ`. -/
 theorem index_map_mk'_of_neg_one_mem (h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ) :
     (Γ.map (QuotientGroup.mk' (center (SpecialLinearGroup (Fin 2) R)))).index = Γ.index :=
-  index_map_mk'_of_center_le <| SpecialLinearGroup.center_le_iff_neg_one_mem.mpr h
+  index_map_mk'_of_center_le <| center_le_iff_neg_one_mem.mpr h
 
 /-- The image in `PSL(2, R)` of a subgroup `Γ` of `SL(2, R)` not containing `-I` has half the
 index of `Γ`: the cosets of `Γ` pair up into the cosets of `±Γ`. -/
@@ -259,11 +269,11 @@ theorem two_mul_index_map_mk'_of_neg_one_notMem
     2 * (Γ.map (QuotientGroup.mk' (center (SpecialLinearGroup (Fin 2) R)))).index =
       Γ.index := by
   rw [index_map_mk'_eq_index_sup, ← withCenter_def,
-    SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem h]
+    index_eq_two_mul_index_withCenter_of_neg_one_notMem h]
 
 /-- The image in `PSL(2, R)` of a subgroup of `SL(2, R)` has finite index exactly when the
 subgroup does. -/
-theorem finiteIndex_map_mk'_iff :
+theorem finiteIndex_map_mk'_center_iff :
     (Γ.map (QuotientGroup.mk' (center (SpecialLinearGroup (Fin 2) R)))).FiniteIndex ↔
       Γ.FiniteIndex := by
   refine ⟨fun h ↦ ?_, fun _ ↦ inferInstance⟩
@@ -271,6 +281,4 @@ theorem finiteIndex_map_mk'_iff :
   · exact ⟨index_map_mk'_of_neg_one_mem hΓ ▸ h.index_ne_zero⟩
   · exact ⟨two_mul_index_map_mk'_of_neg_one_notMem hΓ ▸ mul_ne_zero two_ne_zero h.index_ne_zero⟩
 
-end FinTwo
-
-end Subgroup
+end Matrix.SpecialLinearGroup

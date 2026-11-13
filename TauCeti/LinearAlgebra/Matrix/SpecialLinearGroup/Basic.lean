@@ -468,6 +468,7 @@ theorem disjoint_center_iff_neg_one_notMem [NoZeroDivisors R] [NeZero (2 : R)]
 
 /-- **A subgroup of `SL₂` contains the centre exactly when it contains `-I`**, the centre being
 `{±I}` by `mem_center_iff_eq_one_or_eq_neg_one`. -/
+@[simp]
 theorem center_le_iff_neg_one_mem [NoZeroDivisors R]
     {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} :
     Subgroup.center (SpecialLinearGroup (Fin 2) R) ≤ Γ ↔
