@@ -133,7 +133,7 @@ theorem tendstoUniformly_setIntegral_of_L1
   rw [edist_comm]
   apply lt_of_le_of_lt (edist_integral_le_lintegral_edist hi.restrict hf.restrict) ?_
   refine lt_of_le_of_lt ?_ hsmall
-  simp_rw [edist_eq_enorm_sub]
+  simp_rw [eDist_eq_eNorm_sub]
   gcongr
   exact variation_restrict_le.trans Measure.restrict_le_self
 
