@@ -209,6 +209,8 @@ theorem initialExp_eq_of_coeff_ne_zero_of_forall_lt {f : MvPowerSeries σ R} {α
     by_contra! h
     exact MvPowerSeries.mem_support.mp hβ (hlt β h)
 
+/-- For a nonzero power series `f`, `m.initialExp f = α` if and only if `coeff α f ≠ 0` and every
+strictly `m`-smaller exponent has zero coefficient in `f`. -/
 theorem initialExp_eq_iff {f : MvPowerSeries σ R} {α : σ →₀ ℕ} (hf : f ≠ 0) :
     m.initialExp f = α ↔
       MvPowerSeries.coeff α f ≠ 0 ∧ ∀ β, β ≺[m] α → MvPowerSeries.coeff β f = 0 := by
@@ -378,6 +380,8 @@ theorem coeff_add_initialExp_mul (f g : MvPowerSeries σ R) :
           exact hsum.ne (congrArg m.toSyn huv.symm)
       rw [m.coeff_eq_zero_of_lt_initialExp hv, mul_zero]
 
+/-- If `m.initialCoeff f * m.initialCoeff g ≠ 0`, then the initial exponent of `f * g` is the sum
+of the initial exponents of `f` and `g`. -/
 theorem initialExp_mul_of_mul_initialCoeff_ne_zero {f g : MvPowerSeries σ R}
     (h : m.initialCoeff f * m.initialCoeff g ≠ 0) :
     m.initialExp (f * g) = m.initialExp f + m.initialExp g :=
@@ -385,11 +389,15 @@ theorem initialExp_mul_of_mul_initialCoeff_ne_zero {f g : MvPowerSeries σ R}
     (by rwa [m.coeff_add_initialExp_mul])
     fun _ ↦ m.coeff_mul_eq_zero_of_lt_add_initialExp
 
+/-- If `m.initialCoeff f * m.initialCoeff g ≠ 0`, then the initial coefficient of `f * g` is the
+product of the initial coefficients of `f` and `g`. -/
 theorem initialCoeff_mul_of_mul_initialCoeff_ne_zero {f g : MvPowerSeries σ R}
     (h : m.initialCoeff f * m.initialCoeff g ≠ 0) :
     m.initialCoeff (f * g) = m.initialCoeff f * m.initialCoeff g := by
   rw [initialCoeff_def, m.initialExp_mul_of_mul_initialCoeff_ne_zero h, m.coeff_add_initialExp_mul]
 
+/-- If `m.initialCoeff f * m.initialCoeff g ≠ 0`, then the initial term of `f * g` is the product
+of the initial terms of `f` and `g`. -/
 theorem initialTerm_mul_of_mul_initialCoeff_ne_zero {f g : MvPowerSeries σ R}
     (h : m.initialCoeff f * m.initialCoeff g ≠ 0) :
     m.initialTerm (f * g) = m.initialTerm f * m.initialTerm g := by
@@ -397,11 +405,15 @@ theorem initialTerm_mul_of_mul_initialCoeff_ne_zero {f g : MvPowerSeries σ R}
     m.initialExp_mul_of_mul_initialCoeff_ne_zero h,
     m.initialCoeff_mul_of_mul_initialCoeff_ne_zero h, MvPowerSeries.monomial_mul_monomial]
 
+/-- Over a semiring without zero divisors, the initial exponent of a product of nonzero power
+series is the sum of their initial exponents. -/
 theorem initialExp_mul [NoZeroDivisors R] {f g : MvPowerSeries σ R} (hf : f ≠ 0) (hg : g ≠ 0) :
     m.initialExp (f * g) = m.initialExp f + m.initialExp g :=
   m.initialExp_mul_of_mul_initialCoeff_ne_zero <|
     mul_ne_zero (m.initialCoeff_ne_zero_iff.mpr hf) (m.initialCoeff_ne_zero_iff.mpr hg)
 
+/-- Over a semiring without zero divisors, the initial coefficient of a product of power series is
+the product of their initial coefficients. -/
 @[simp]
 theorem initialCoeff_mul [NoZeroDivisors R] (f g : MvPowerSeries σ R) :
     m.initialCoeff (f * g) = m.initialCoeff f * m.initialCoeff g := by
@@ -412,6 +424,8 @@ theorem initialCoeff_mul [NoZeroDivisors R] (f g : MvPowerSeries σ R) :
   exact m.initialCoeff_mul_of_mul_initialCoeff_ne_zero <|
     mul_ne_zero (m.initialCoeff_ne_zero_iff.mpr hf) (m.initialCoeff_ne_zero_iff.mpr hg)
 
+/-- Over a semiring without zero divisors, the initial term of a product of power series is the
+product of their initial terms. -/
 @[simp]
 theorem initialTerm_mul [NoZeroDivisors R] (f g : MvPowerSeries σ R) :
     m.initialTerm (f * g) = m.initialTerm f * m.initialTerm g := by
@@ -535,6 +549,8 @@ theorem initialTerm_smul_of_mul_initialCoeff_ne_zero {c : R} {f : MvPowerSeries 
     m.initialTerm_monomial_mul h, MvPowerSeries.monomial_zero_eq_C_apply,
     ← MvPowerSeries.smul_eq_C_mul]
 
+/-- Over a semiring without zero divisors, scaling by a nonzero scalar `c` leaves `m.initialExp f`
+unchanged. -/
 theorem initialExp_smul [NoZeroDivisors R] {c : R} (hc : c ≠ 0) (f : MvPowerSeries σ R) :
     m.initialExp (c • f) = m.initialExp f := by
   rcases eq_or_ne f 0 with rfl | hf
@@ -744,18 +760,24 @@ theorem initialDiagramVertices_subset [Finite σ] (I : Ideal (MvPowerSeries σ R
     (m.initialDiagramVertices I : Set (σ →₀ ℕ)) ⊆ m.initialDiagram I :=
   fun _ hα ↦ (m.mem_initialDiagramVertices_iff.mp hα).prop
 
+/-- For finitely many variables `σ`, `m.initialDiagramVertices I` is an antichain for the
+componentwise order on `σ →₀ ℕ`. -/
 theorem isAntichain_initialDiagramVertices [Finite σ] (I : Ideal (MvPowerSeries σ R)) :
     IsAntichain (· ≤ ·) (m.initialDiagramVertices I : Set (σ →₀ ℕ)) := by
   intro α hα β hβ
   exact setOfPred_minimal_antichain _ (m.mem_initialDiagramVertices_iff.mp hα)
     (m.mem_initialDiagramVertices_iff.mp hβ)
 
+/-- For finitely many variables `σ`, an exponent belongs to `m.initialDiagram I` if and only if it
+lies above some vertex in `m.initialDiagramVertices I`. -/
 theorem mem_initialDiagram_iff_exists_mem_initialDiagramVertices_le [Finite σ]
     {I : Ideal (MvPowerSeries σ R)} {γ : σ →₀ ℕ} :
     γ ∈ m.initialDiagram I ↔ ∃ α ∈ m.initialDiagramVertices I, α ≤ γ := by
   conv_lhs => rw [m.initialDiagram_eq_biUnion_minimal]
   simp
 
+/-- For finitely many variables `σ`, `m.initialDiagram I` decomposes as the finite union of the
+cones `Set.Ici α` over `α ∈ m.initialDiagramVertices I`. -/
 theorem initialDiagram_eq_biUnion_initialDiagramVertices [Finite σ]
     (I : Ideal (MvPowerSeries σ R)) :
     m.initialDiagram I = ⋃ α ∈ m.initialDiagramVertices I, Set.Ici α := by
@@ -806,6 +828,9 @@ theorem initialDiagram_span_monomial [Nontrivial R] (S : Set (σ →₀ ℕ)) :
     intro h
     simpa using congrArg (MvPowerSeries.coeff γ) h
 
+/-- Over a nontrivial semiring, if `S` is an antichain of exponents, the minimal elements of the
+initial diagram of the ideal generated by pure monomials `monomial β 1` (`β ∈ S`) are precisely the
+elements of `S`. -/
 theorem minimal_mem_initialDiagram_span_monomial_iff [Nontrivial R] {S : Set (σ →₀ ℕ)}
     (hS : IsAntichain (· ≤ ·) S) {α : σ →₀ ℕ} :
     Minimal (· ∈ m.initialDiagram
@@ -813,6 +838,9 @@ theorem minimal_mem_initialDiagram_span_monomial_iff [Nontrivial R] {S : Set (σ
   rw [m.initialDiagram_span_monomial, ← coe_upperClosure]
   exact hS.minimal_mem_upperClosure_iff_mem
 
+/-- For finitely many variables `σ` over a nontrivial semiring, if `s` is a finite antichain of
+exponents, then the minimal diagram vertices of the ideal generated by pure monomials
+`monomial β 1` (`β ∈ s`) are precisely `s`. -/
 theorem initialDiagramVertices_span_monomial [Finite σ] [Nontrivial R] {s : Finset (σ →₀ ℕ)}
     (hs : IsAntichain (· ≤ ·) (s : Set (σ →₀ ℕ))) :
     m.initialDiagramVertices
