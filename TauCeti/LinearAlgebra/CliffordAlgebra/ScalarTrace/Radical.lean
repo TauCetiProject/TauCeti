@@ -94,7 +94,8 @@ theorem mem_span_radical_iff_eq_zero_of_nondegenerate (hQ : Q.Nondegenerate)
 /-- Because `CliffordAlgebra.scalarTrace` vanishes on the odd part, an even Clifford element pairs
 to zero with every element of `CliffordAlgebra.even Q` if and only if it pairs to zero with every
 element of `CliffordAlgebra Q`. -/
-theorem forall_mem_even_scalarTrace_mul_eq_zero_iff {x : CliffordAlgebra Q} (hx : x ∈ even Q) :
+theorem forall_mem_even_scalarTrace_mul_eq_zero_iff_forall_scalarTrace_mul_eq_zero
+    {x : CliffordAlgebra Q} (hx : x ∈ even Q) :
     (∀ y ∈ even Q, scalarTrace Q (x * y) = 0) ↔
       ∀ y : CliffordAlgebra Q, scalarTrace Q (x * y) = 0 := by
   refine ⟨fun h y ↦ ?_, fun h y _ ↦ h y⟩
@@ -107,12 +108,14 @@ theorem forall_mem_even_scalarTrace_mul_eq_zero_iff {x : CliffordAlgebra Q} (hx 
   have hxy₁ : x * y₁ ∈ evenOdd Q 1 := by simpa using SetLike.mul_mem_graded hx0 hy₁
   rw [mul_add, map_add, h y₀ hy₀', scalarTrace_eq_zero_of_mem_evenOdd_one hxy₁, add_zero]
 
-/-- Subtype form of `CliffordAlgebra.forall_mem_even_scalarTrace_mul_eq_zero_iff` on
+/-- Subtype form of
+`CliffordAlgebra.forall_mem_even_scalarTrace_mul_eq_zero_iff_forall_scalarTrace_mul_eq_zero` on
 `CliffordAlgebra.even Q`. -/
-theorem forall_even_scalarTrace_mul_eq_zero_iff (x : even Q) :
-    (∀ y : even Q, scalarTrace Q ((x * y : even Q) : CliffordAlgebra Q) = 0) ↔
+theorem forall_even_scalarTrace_mul_eq_zero_iff_forall_scalarTrace_mul_eq_zero (x : even Q) :
+    (∀ y : even Q, scalarTrace Q ((x : CliffordAlgebra Q) * y) = 0) ↔
       ∀ y : CliffordAlgebra Q, scalarTrace Q ((x : CliffordAlgebra Q) * y) = 0 := by
-  simpa [Subtype.forall] using forall_mem_even_scalarTrace_mul_eq_zero_iff x.2
+  simpa [Subtype.forall] using
+    forall_mem_even_scalarTrace_mul_eq_zero_iff_forall_scalarTrace_mul_eq_zero x.2
 
 end CommRing
 
@@ -199,17 +202,17 @@ theorem mem_span_radical_iff_forall_scalarTrace_mul_eq_zero (x : CliffordAlgebra
 
 /-- For a nondegenerate quadratic form on a finite-dimensional space, the scalar-trace pairing on
 `CliffordAlgebra Q` is nondegenerate. -/
-theorem forall_scalarTrace_mul_eq_zero_iff_eq_zero (hQ : Q.Nondegenerate) {x : CliffordAlgebra Q} :
+theorem forall_scalarTrace_mul_eq_zero_iff (hQ : Q.Nondegenerate) {x : CliffordAlgebra Q} :
     (∀ y : CliffordAlgebra Q, scalarTrace Q (x * y) = 0) ↔ x = 0 := by
   rw [← mem_span_radical_iff_forall_scalarTrace_mul_eq_zero,
     mem_span_radical_iff_eq_zero_of_nondegenerate hQ]
 
 /-- For a nondegenerate quadratic form on a finite-dimensional space, the restriction of
 `CliffordAlgebra.scalarTrace` to `CliffordAlgebra.even Q` is a nondegenerate trace pairing. -/
-theorem forall_even_scalarTrace_mul_eq_zero_iff_eq_zero (hQ : Q.Nondegenerate) {x : even Q} :
-    (∀ y : even Q, scalarTrace Q ((x * y : even Q) : CliffordAlgebra Q) = 0) ↔ x = 0 := by
-  rw [forall_even_scalarTrace_mul_eq_zero_iff,
-    forall_scalarTrace_mul_eq_zero_iff_eq_zero hQ, Subtype.ext_iff, Subalgebra.coe_zero]
+theorem forall_even_scalarTrace_mul_eq_zero_iff (hQ : Q.Nondegenerate) {x : even Q} :
+    (∀ y : even Q, scalarTrace Q ((x : CliffordAlgebra Q) * y) = 0) ↔ x = 0 := by
+  rw [forall_even_scalarTrace_mul_eq_zero_iff_forall_scalarTrace_mul_eq_zero,
+    forall_scalarTrace_mul_eq_zero_iff hQ, Subtype.ext_iff, Subalgebra.coe_zero]
 
 end FiniteDimensional
 
