@@ -48,6 +48,7 @@ the two steps above.
 
 * `TauCeti.integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul`: integration by parts against
   the Newtonian kernel.
+* `TauCeti.integral_fderiv_mul_newtonianKernel_sub`: the same identity with the pole at `a`.
 * `TauCeti.hasWeakFDerivOn_newtonianKernel`: the classical derivative of the kernel is its weak
   derivative.
 * `TauCeti.integral_laplacian_mul_newtonianKernel`: `-Δ Gₙ = δ₀`.
@@ -141,6 +142,21 @@ theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul
   rcases le_or_gt n 2 with hn | hn
   · exact integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul_of_le_two hn hg hc v
   · exact integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul_of_three_le (by omega) hg hc v
+
+/-- **Integration by parts against the Newtonian kernel with pole `a`.** In every dimension, for
+a `C¹` function `g` with compact support, `∫ ∂ᵥg (x) Gₙ(x - a) dx = -∫ g(x) ∂ᵥGₙ(x - a) dx`. -/
+theorem integral_fderiv_mul_newtonianKernel_sub
+    {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g)
+    (v a : EuclideanSpace ℝ (Fin n)) :
+    ∫ x, fderiv ℝ g x v * newtonianKernel n (x - a) =
+      -∫ x, g x * fderiv ℝ (newtonianKernel n) (x - a) v := by
+  have h := integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (g := fun y ↦ g (y + a))
+    (hg.comp (contDiff_id.add contDiff_const)) (hc.comp_homeomorph (Homeomorph.addRight a)) v
+  simp only [fderiv_comp_add_right] at h
+  rw [← integral_add_right_eq_self (fun x ↦ fderiv ℝ g x v * newtonianKernel n (x - a)) a,
+    ← integral_add_right_eq_self (fun x ↦ g x * fderiv ℝ (newtonianKernel n) (x - a) v) a]
+  simp only [add_sub_cancel_right]
+  simpa only [mul_comm] using h
 
 /-- **The Newtonian kernel is weakly differentiable.** In every dimension, on every open set the
 classical derivative of `Gₙ`, which exists away from the origin, is a weak derivative of `Gₙ`. -/

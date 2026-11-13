@@ -300,7 +300,7 @@ theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : F
     simp [← Finset.coe_inj, Set.Iio_def]
   rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
       fun j _ hj => hf j (by simpa using hj),
-    ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
+    ← Finset.insert_Iio, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
     Finset.prod_map]
   simp only [castLEEmb_apply]
 
