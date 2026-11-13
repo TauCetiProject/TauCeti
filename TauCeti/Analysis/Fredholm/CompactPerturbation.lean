@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.ClosedRange
 import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 
 /-!

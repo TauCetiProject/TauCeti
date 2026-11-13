@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import Mathlib.RingTheory.Finiteness.Cofinite
 import TauCeti.Analysis.Normed.Module.RieszLemma
+import TauCeti.Analysis.Normed.Operator.ClosedRange
 import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 import TauCeti.LinearAlgebra.End.RangePow
 
@@ -27,7 +28,7 @@ also needs `A` to be a strict map, which uses the lower bound
 The kernel argument is `IsCompactOperator.finiteDimensional_eigenspace` at the eigenvalue `1`,
 and holds on any Hausdorff topological vector space. The closed-range argument uses the
 sequential criterion `ContinuousLinearMap.isClosed_range_of_exists_subseq_tendsto` from
-`TauCeti.Analysis.Normed.Operator.Compact.Estimate`. The cokernel argument uses the separation
+`TauCeti.Analysis.Normed.Operator.ClosedRange`. The cokernel argument uses the separation
 consequence `IsCompactOperator.exists_dist_lt_of_norm_le`.
 
 * On `ker A` the operator `K` restricts to the identity, and a compact identity forces finite
