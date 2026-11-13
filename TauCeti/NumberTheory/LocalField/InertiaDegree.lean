@@ -43,6 +43,7 @@ side, and conversely.
 * `TauCeti.inertiaDegree_eq_inertiaDeg`: the intrinsic residue degree agrees with
   `Ideal.inertiaDeg` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.
+* `TauCeti.ramificationIndex_eq_of_algEquiv`: ramification index is an isomorphism invariant.
 * `TauCeti.dvd_finrank_of_normalizedValuation_pow_eq`: if `α` has valuation `a / q` in lowest
   terms for the valuation of `L` extending `v_K`, then `q ∣ [L : K]`.
 * `TauCeti.isTotallyRamified_iff_inertiaDegree_eq_one`: total ramification is equivalent to
@@ -133,6 +134,19 @@ theorem ramificationIndex_mul_inertiaDegree :
   symm
   refine Fintype.sum_eq_single (⟨𝓂[L], hmem⟩ : ↥(Ideal.primesOver 𝓂[K] 𝒪[L])) fun q hq ↦ ?_
   exact absurd (Subtype.ext (by simpa [hs] using q.2)) hq
+
+variable (K L) in
+/-- The ramification index is unchanged by an equivalence of extensions over the base field: both
+extensions have the same degree and the same residue degree. -/
+theorem ramificationIndex_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    ramificationIndex K L = ramificationIndex K M := by
+  have := finite_of_valuativeExtension K L
+  refine Nat.eq_of_mul_eq_mul_right (inertiaDegree_pos (K := K) (L := L)) ?_
+  rw [ramificationIndex_mul_inertiaDegree, inertiaDegree_eq_of_algEquiv K L M e,
+    ramificationIndex_mul_inertiaDegree]
+  exact e.toLinearEquiv.finrank_eq
 
 /-- **Denominators of base-normalised valuations divide the degree.** If `α` has valuation
 `v_K(x) / q`, in lowest terms, for the valuation of `L` extending `v_K`, then `q ∣ [L : K]`: it
