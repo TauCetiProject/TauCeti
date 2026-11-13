@@ -526,14 +526,12 @@ def frequencyDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 1)
         rw [mixedDeriv_coordinateDeriv_snd, order_sub_one_sub_length]
         exact ha x hx ξ }
   map_add' a b := by
-    ext1
-    funext p
+    ext p : 2
     exact congrFun (coordinateDeriv_add [j]
       (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_right p.1)) _)
       (contDiff_infty.1 (b.contDiff_coefficient.comp (contDiff_prodMk_right p.1)) _)) p.2
   map_smul' c a := by
-    ext1
-    funext p
+    ext p : 2
     exact congrFun (coordinateDeriv_const_smul [j] (fun η => a.coefficient (p.1, η)) c) p.2
 
 @[simp]
@@ -581,14 +579,12 @@ def spatialDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
           rw [mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
           exact ha x hx ξ⟩ }
   map_add' a b := by
-    ext1
-    funext p
+    ext p : 2
     exact congrFun (coordinateDeriv_add [j]
       (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_left p.2)) _)
       (contDiff_infty.1 (b.contDiff_coefficient.comp (contDiff_prodMk_left p.2)) _)) p.1
   map_smul' c a := by
-    ext1
-    funext p
+    ext p : 2
     exact congrFun (coordinateDeriv_const_smul [j] (fun y => a.coefficient (y, p.2)) c) p.1
 
 @[simp]
@@ -640,23 +636,6 @@ theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : Coord
       (spatialDeriv j a).coefficient (x, ξ) := by
   rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
 
-/-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
-the position. -/
-theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))
-    (hK : IsCompact K) :
-    ∃ C, ∀ x ∈ K, ∀ ξ,
-      ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  choose C hC0 hC using fun j ↦ (spatialDeriv j a).exists_bound_coefficient K hK
-  obtain ⟨D, -, hD⟩ :=
-    (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.exists_opNorm_le (F := V →L[ℂ] W)
-  refine ⟨D * ∑ j, C j, fun x hx ξ ↦ ?_⟩
-  rw [mul_assoc]
-  refine hD (mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) (by positivity)) fun j ↦ ?_
-  rw [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply, fderiv_coefficient_single]
-  refine (hC j x hx ξ).trans ?_
-  gcongr
-  exact Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)
-
 /-- Every Fréchet derivative of a symbol of order `m`, in the position and the frequency jointly,
 is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in the position. -/
 theorem exists_norm_iteratedFDeriv_coefficient_le (a : Symbol n V W m)
@@ -670,6 +649,21 @@ theorem exists_norm_iteratedFDeriv_coefficient_le (a : Symbol n V W m)
   rw [Finset.sum_mul]
   exact Finset.sum_le_sum fun r _ => (hA r x hx ξ).trans <| mul_le_mul_of_nonneg_left
     (rpow_weight_le_rpow_weight ξ (sub_le_self m (Nat.cast_nonneg _))) (hA0 r)
+
+/-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
+the position. -/
+theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) : ∃ C, ∀ x ∈ K, ∀ ξ,
+      ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, -, hC⟩ := a.exists_norm_iteratedFDeriv_coefficient_le hK 1
+  refine ⟨C, fun x hx ξ ↦ ?_⟩
+  have h : HasFDerivAt (fun y ↦ a.coefficient (y, ξ)) _ x :=
+    (a.contDiff_coefficient.differentiable (by simp) _).hasFDerivAt.comp x
+      (hasFDerivAt_prodMk_left x ξ)
+  rw [h.fderiv]
+  exact (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (fderiv ℝ a.coefficient (x, ξ)))
+    fun v ↦ (ContinuousLinearMap.le_opNorm _ (v, 0)).trans_eq (by simp)).trans
+    (by simpa using hC x hx ξ)
 
 /-- The symbol estimates of `a` bound the Fréchet derivatives in `ξ` of each position derivative
 `∂_x^α a(x, ξ)`: the `i`-th one is at most `G ⟨ξ⟩^(m - i)` for `x` in a compact set. -/
@@ -740,16 +734,14 @@ theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
 @[simp]
 theorem frequencyDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
     frequencyDeriv j (inclusion h a) = inclusion (by linarith) (frequencyDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp
 
 /-- Spatial derivatives commute with the order inclusions. -/
 @[simp]
 theorem spatialDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
     spatialDeriv j (inclusion h a) = inclusion h (spatialDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp
 
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
