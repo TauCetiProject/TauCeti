@@ -41,6 +41,8 @@ proves:
 * `TauCeti.HasLaurentSeriesOnAnnulus.circleLaurentCoeff_eq` and
   `TauCeti.HasLaurentSeriesOnAnnulus.coeff_unique`: circle-integral coefficient formula and
   uniqueness of Laurent expansions.
+* `TauCeti.circleLaurentCoeff_inv_sub`: the Laurent coefficients of a simple pole `(a - z)⁻¹`
+  on a circle about `c` of radius less than `‖a - c‖`.
 * `TauCeti.hasLaurentSeriesOnAnnulus_of_differentiable_off_countable`,
   `DifferentiableOn.hasLaurentSeriesOnAnnulus`, and
   `TauCeti.differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus`: Laurent's theorem on concentric
@@ -214,6 +216,39 @@ theorem circleLaurentCoeff_eq_of_hasSum_sphere {f : ℂ → E} {a : ℤ → E} {
     · subst k; simp
     · rw [ite_eq_right (Ne.symm hkn), ite_eq_right hkn]
   exact hsum_coeff.unique hsingle
+
+/-- The Laurent coefficients of the simple pole `z ↦ (a - z)⁻¹` on a circle about `c` that does
+not reach `a` are those of its geometric expansion `∑_{n ≥ 0} (z - c) ^ n / (a - c) ^ (n + 1)`. -/
+theorem circleLaurentCoeff_inv_sub {a c : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρa : ρ < ‖a - c‖) (n : ℤ) :
+    circleLaurentCoeff (fun z => (a - z)⁻¹) c ρ n = if 0 ≤ n then (a - c) ^ (-n - 1) else 0 := by
+  have hd : a - c ≠ 0 := norm_pos_iff.1 (hρ.trans hρa)
+  set b : ℤ → ℂ := fun k => if 0 ≤ k then (a - c) ^ (-k - 1) else 0 with hb
+  have hb_nat (k : ℕ) : b k = (a - c)⁻¹ * ((a - c) ^ k)⁻¹ := by
+    simp only [hb, Int.natCast_nonneg, ite_true, zpow_sub_one₀ hd, zpow_neg, zpow_natCast,
+      mul_comm]
+  have hb_neg (k : ℕ) : b (-(k + 1)) = 0 := by
+    simp only [hb, ite_eq_right_iff]
+    omega
+  refine circleLaurentCoeff_eq_of_hasSum_sphere (a := b) hρ (fun z hz => ?_) ?_ n
+  · have hzc : ‖z - c‖ = ρ := mem_sphere_iff_norm.1 hz
+    have hw : ‖(z - c) / (a - c)‖ < 1 := by
+      rwa [norm_div, div_lt_one (hρ.trans hρa), hzc]
+    have hsum := (hasSum_geometric_of_norm_lt_one hw).mul_left (a - c)⁻¹
+    rw [one_sub_div hd, sub_sub_sub_cancel_right, inv_div, ← div_eq_inv_mul,
+      div_div_cancel_left₀ hd] at hsum
+    have h := HasSum.of_nat_of_neg_add_one (f := fun k : ℤ => (z - c) ^ k • b k)
+      (hsum.congr_fun fun k => ?_) (hasSum_zero.congr_fun fun k => ?_)
+    · rwa [add_zero] at h
+    · simp only [zpow_natCast, hb_nat, smul_eq_mul, div_pow]
+      ring
+    · rw [hb_neg, smul_zero]
+  · refine Summable.of_nat_of_neg_add_one ?_ (summable_zero.congr fun k => by
+      rw [hb_neg, norm_zero, zero_mul])
+    have hr : ρ / ‖a - c‖ < 1 := (div_lt_one (hρ.trans hρa)).2 hρa
+    refine ((summable_geometric_of_lt_one (by positivity) hr).mul_left ‖a - c‖⁻¹).congr
+      fun k => ?_
+    simp only [hb_nat, norm_mul, norm_inv, norm_pow, zpow_natCast, div_pow]
+    ring
 
 namespace HasLaurentSeriesOnAnnulus
 
