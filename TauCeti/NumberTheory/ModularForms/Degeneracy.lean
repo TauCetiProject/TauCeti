@@ -798,7 +798,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) [NeZero l] (hlN : 
     Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ'
   -- move the upper-left entry, along its own column, until it is coprime to `l`
   obtain ⟨i, hi⟩ := exists_sub_mul_isCoprime (γ' 0 0) (γ' 1 0) l
-    ⟨γ' 1 1, -γ' 0 1, by linear_combination hdet⟩
+    (Matrix.SpecialLinearGroup.isCoprime_col γ' 0)
   -- then clear the upper-right entry modulo `l`, which the previous step made possible
   have hunit : IsUnit ((γ' 0 0 - i * γ' 1 0 : ℤ) : ZMod l) :=
     (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
