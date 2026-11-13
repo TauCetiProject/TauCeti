@@ -57,8 +57,8 @@ the unit tangent vector at every time.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
 * `TauCeti.homotopyOperator_add`, `TauCeti.homotopyOperator_sub`: `h` is additive on continuous
   forms.
-* `TauCeti.homotopyOperator_mpullback_apply_eq_zero`: `h (H^* σ)` vanishes over every point at
-  which `H` is stationary in time.
+* `TauCeti.homotopyOperator_mpullback_apply_eq_zero`: `h (f^* σ)` vanishes over every point at
+  which `f` is stationary in time.
 * `TauCeti.homotopyOperator_mpullback_fst`: `h` vanishes on forms pulled back from `M` along the
   projection `M × [0, 1] → M`.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
@@ -70,10 +70,12 @@ the unit tangent vector at every time.
 * `TauCeti.mextDeriv_homotopyOperator`: for a closed form, `d (h φ) = ι₁^* φ - ι₀^* φ`.
 * `TauCeti.homotopyOperator_mextDeriv_of_mpullback_eq_zero`: for a form whose end slices vanish,
   `h (d φ) = -d (h φ)`.
-* `TauCeti.homotopyOperator_mpullback_one_sub_mpullback_zero`: for a closed form `η` on the double
-  cylinder `(M × [0, 1]) × [0, 1]` vanishing on the second time vector over both ends of the inner
-  cylinder, `h (j₁^* η - j₀^* η) = -d (h (h η))`; this is the homotopy-rel-ends invariance of the
-  homotopy operator.
+* `TauCeti.mextDeriv_homotopyOperator_homotopyOperator`: for a closed form `φ` on the double
+  cylinder `(M × [0, 1]) × [0, 1]`, with `h_s` and `h_t` the homotopy operators in the outer and
+  inner time coordinates, `d (h_t (h_s φ)) = (ι₁^* (h_s φ) - ι₀^* (h_s φ)) - (h_t (j₁^* φ) -
+  h_t (j₀^* φ))`, where `ι_c x = (x, c)` and `j_c p = (p, c)`. No condition on `φ` at the ends of
+  the inner cylinder is needed; when `h_s φ` vanishes over both of them, this is the
+  homotopy-rel-ends invariance of the homotopy operator.
 
 ## References
 
@@ -147,17 +149,17 @@ theorem homotopyOperator_apply_eq_zero
       fun i ↦ ((w i : E), (0 : EuclideanSpace ℝ (Fin 1)))) = 0
   exact h _ _
 
-/-- The homotopy operator of a pullback `H^* σ` vanishes at every point `x` over which the map
-`H : M × [0, 1] → N` is stationary in time: when `H (x, t)` does not depend on `t`, the derivative
-of `H` kills the unit time vector `∂ₜ` at every `(x, t)`. -/
+/-- The homotopy operator of a pullback `f^* σ` vanishes at every point `x` over which the map
+`f : M × [0, 1] → N` is stationary in time: when `f (x, t) = y` for every `t`, the derivative of
+`f` kills the unit time vector `∂ₜ` at every `(x, t)`. -/
 theorem homotopyOperator_mpullback_apply_eq_zero {E' H' N : Type*} [NormedAddCommGroup E']
     [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
-    [ChartedSpace H' N] {H : M × Icc (0 : ℝ) 1 → N} {x : M} (hx : ∀ t, H (x, t) = H (x, 0))
+    [ChartedSpace H' N] {f : M × Icc (0 : ℝ) 1 → N} {x : M} {y : N} (hx : ∀ t, f (x, t) = y)
     (σ : RoughForm I' N F (k + 1)) :
-    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I' H σ) x = 0 := by
+    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I' f σ) x = 0 := by
   refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
   rw [mpullback_apply]
-  exact (σ (H (x, t))).map_coord_zero 0
+  exact (σ (f (x, t))).map_coord_zero 0
     (mfderiv_inr_eq_zero_of_forall_apply_eq (fun s ↦ (hx s).trans (hx t).symm) _)
 
 /-- The homotopy operator vanishes on every form pulled back from `M` along the projection
@@ -595,44 +597,42 @@ theorem homotopyOperator_mextDeriv_of_mpullback_eq_zero [IsManifold I 2 M] [Comp
   rw [Pi.neg_apply, eq_neg_iff_add_eq_zero]
   exact (add_comm _ _).trans key
 
-/-- **Closed forms on the double cylinder.** Let `η` be a closed `C¹` form, with values in a Banach
-space, on the double cylinder `(M × [0, 1]) × [0, 1]` over a `C²` manifold `M` possibly with
-boundary or corners, and write `jₛ p = (p, s)` for its slices. If `η` vanishes on every family
-starting with the second time vector `∂ₛ` over both ends `M × {0}` and `M × {1}` of the inner
-cylinder, then the homotopy operators of the two slices of `η` differ by an exact form:
-`h (j₁^* η - j₀^* η) = -d (h (h η))`. -/
-theorem homotopyOperator_mpullback_one_sub_mpullback_zero [IsManifold I 2 M] [CompleteSpace F]
-    {η : RoughForm ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) ((M × Icc (0 : ℝ) 1) × Icc (0 : ℝ) 1) F
-      (k + 2)}
-    (hη : IsSmoothForm ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) 1 η) (hclosed : mextDeriv η = 0)
-    (h₀ : ∀ (x : M) (s : Icc (0 : ℝ) 1) (v : Fin (k + 1) → (E × EuclideanSpace ℝ (Fin 1)) ×
-        EuclideanSpace ℝ (Fin 1)),
-      η ((x, 0), s) (Matrix.vecCons ((0 : E × EuclideanSpace ℝ (Fin 1)),
-        (1 : TangentSpace (𝓡∂ 1) s)) v) = 0)
-    (h₁ : ∀ (x : M) (s : Icc (0 : ℝ) 1) (v : Fin (k + 1) → (E × EuclideanSpace ℝ (Fin 1)) ×
-        EuclideanSpace ℝ (Fin 1)),
-      η ((x, 1), s) (Matrix.vecCons ((0 : E × EuclideanSpace ℝ (Fin 1)),
-        (1 : TangentSpace (𝓡∂ 1) s)) v) = 0) :
-    homotopyOperator
-        (mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 1)) η -
-          mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 0)) η) =
-      -mextDeriv (homotopyOperator (homotopyOperator η)) := by
+/-- **The iterated homotopy operator on the double cylinder.** For a closed `C¹` `(k + 2)`-form
+`φ` on `(M × [0, 1]) × [0, 1]` with values in a Banach space, on a `C²` manifold `M` possibly with
+boundary or corners, the exterior derivative of `h_t (h_s φ)` is
+`(ι₁^* (h_s φ) - ι₀^* (h_s φ)) - (h_t (j₁^* φ) - h_t (j₀^* φ))`, where the inner homotopy operator
+`h_s` integrates over the last coordinate `s` and the outer one `h_t` over `t`, `ι_c x = (x, c)`,
+and `j_c p = (p, c)`. -/
+theorem mextDeriv_homotopyOperator_homotopyOperator [IsManifold I 2 M] [CompleteSpace F]
+    {φ : RoughForm ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) ((M × Icc (0 : ℝ) 1) × Icc (0 : ℝ) 1) F (k + 2)}
+    (hφ : IsSmoothForm ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) 1 φ) (hclosed : mextDeriv φ = 0) :
+    mextDeriv (homotopyOperator (homotopyOperator φ)) =
+      (mpullback I (I.prod (𝓡∂ 1)) (fun x ↦ (x, 1)) (homotopyOperator φ) -
+          mpullback I (I.prod (𝓡∂ 1)) (fun x ↦ (x, 0)) (homotopyOperator φ)) -
+        (homotopyOperator
+            (mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 1)) φ) -
+          homotopyOperator
+            (mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 0)) φ)) := by
   have : IsManifold (I.prod (𝓡∂ 1)) ((1 : ℕ∞) + 1 : WithTop ℕ∞) (M × Icc (0 : ℝ) 1) :=
     IsManifold.of_le (n := 2) (by norm_num)
-  have : IsManifold (I.prod (𝓡∂ 1)) 1 (M × Icc (0 : ℝ) 1) := IsManifold.of_le (n := 2) (by norm_num)
-  -- The inner homotopy operator `β = h η` is a `C¹` form on `M × [0, 1]` with
-  -- `d β = j₁^* η - j₀^* η`.
-  have hβ : IsSmoothForm (I.prod (𝓡∂ 1)) 1 (homotopyOperator η) :=
-    IsSmoothForm.homotopyOperator (r := 1) hη
-  have hdβ : mextDeriv (homotopyOperator η) =
-      mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 1)) η -
-        mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 0)) η :=
-    funext fun p ↦ mextDeriv_homotopyOperator hη hclosed p
-  -- Over both ends of the inner cylinder `β` vanishes, since `η` vanishes on `∂ₛ` there; so
-  -- `h (d β) = -d (h β)`.
-  rw [← hdβ]
-  refine homotopyOperator_mextDeriv_of_mpullback_eq_zero hβ ?_ ?_
-  · exact funext fun x ↦ mpullback_apply_eq_zero (homotopyOperator_apply_eq_zero (h₀ x))
-  · exact funext fun x ↦ mpullback_apply_eq_zero (homotopyOperator_apply_eq_zero (h₁ x))
+  have hres (c : Icc (0 : ℝ) 1) : ContMDiff (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1))
+      ((0 : ℕ∞) + 1) fun p : M × Icc (0 : ℝ) 1 ↦ (p, c) :=
+    contMDiff_id.prodMk contMDiff_const
+  -- The slices `j₁^* φ` and `j₀^* φ` in `s` are continuous.
+  set φ₁ := mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 1)) φ
+  set φ₀ := mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 0)) φ
+  have hφ₁ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ₁ := (hφ.of_le (by simp)).mpullback (hres 1)
+  have hφ₀ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ₀ := (hφ.of_le (by simp)).mpullback (hres 0)
+  -- `L = h_s φ` is `C¹` and, by the cochain-homotopy identity in `s`, `d L = j₁^* φ - j₀^* φ`.
+  have hL : IsSmoothForm (I.prod (𝓡∂ 1)) 1 (homotopyOperator φ) := hφ.homotopyOperator
+  have hdL : mextDeriv (homotopyOperator φ) = φ₁ - φ₀ :=
+    funext (mextDeriv_homotopyOperator hφ hclosed)
+  -- The homotopy operator in `t` commutes with the difference of the continuous forms `j₁^* φ`
+  -- and `j₀^* φ`; the cochain-homotopy identity in `t` for `L` concludes.
+  funext x
+  have key := mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv hL x
+  rw [hdL, homotopyOperator_sub hφ₁ hφ₀] at key
+  rw [Pi.sub_apply, Pi.sub_apply, Pi.sub_apply, ← key, Pi.sub_apply]
+  abel
 
 end TauCeti

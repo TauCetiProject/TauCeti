@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Flux
-import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator.Homotopy
 import TauCeti.Geometry.Manifold.Instances.Icc
 
 /-!
