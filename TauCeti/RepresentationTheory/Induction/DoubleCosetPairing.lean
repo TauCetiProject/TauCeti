@@ -54,10 +54,6 @@ in its second argument is exactly what `MulAction.fixedBy_inv` absorbs.
 
 ## References
 
-This is the "`⟨Ind_H^G 1, Ind_H^G 1⟩_G = #(H \ G / H)`" clause of the permutation-character item of
-Layer 2 in `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, proved here for
-two possibly different subgroups.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.3, Exercise 7.3.
 -/
 
