@@ -214,7 +214,7 @@ theorem _root_.LipschitzWith.bmoSeminorm_comp_le
     _ ≤ 2 * ⨍⁻ y in ball c r, (K : ℝ≥0∞) * ‖f y - ⨍ z in ball c r, f z ∂μ‖ₑ ∂μ := by
       gcongr
       exact .of_forall fun y => by
-        simpa only [edist_eq_enorm_sub] using hφ (f y) (⨍ z in ball c r, f z ∂μ)
+        simpa only [eDist_eq_eNorm_sub] using hφ (f y) (⨍ z in ball c r, f z ∂μ)
     _ = 2 * K * ⨍⁻ y in ball c r, ‖f y - ⨍ z in ball c r, f z ∂μ‖ₑ ∂μ := by
       rw [laverage_const_mul ENNReal.coe_ne_top, mul_assoc]
     _ ≤ 2 * K * bmoSeminorm f μ := by
