@@ -630,21 +630,6 @@ theorem isVertexStart_iff (d : G.EarDecomposition H) :
     d.IsVertexStart ↔ ∃ v : V(G), d.initial = Graph.noEdge {v.1} β :=
   Iff.rfl
 
-/-- Reindex the target graph of an ear decomposition along `H = H'` without changing any data
-fields. -/
-@[expose, reducible]
-def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') : G.EarDecomposition H' where
-  length := d.length
-  graphAfter := d.graphAfter
-  start := d.start
-  earAt := d.earAt
-  earAt_fst := d.earAt_fst
-  graphAfter_succ := d.graphAfter_succ
-  graphAfter_last := d.graphAfter_last.trans h
-
-@[simp]
-theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := rfl
-
 /-- An ear decomposition starts from a single actual vertex if and only if its initial stage is
 not a cycle. -/
 theorem isVertexStart_iff_not_start_isCycle (d : G.EarDecomposition H) :
@@ -753,6 +738,7 @@ theorem isOpen_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
   ⟨start_isCycle_cycle walk isCycle, fun i ↦ Fin.elim0 i⟩
 
 /-- Reindex the final graph of an ear decomposition along an equality of graphs. -/
+@[expose]
 protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     G.EarDecomposition H' where
   length := d.length
