@@ -46,6 +46,12 @@ theorem isConvex_iff {S : Set Γ.V} : Γ.IsConvex S ↔
     ∀ a ∈ S, ∀ b ∈ S, ∀ p : Γ.Path a b, Path.IsReduced Γ p →
       ∀ e ∈ Path.darts Γ p, Γ.src e ∈ S := Iff.rfl
 
+/-- A reduced path between vertices of a convex set starts its darts in the set. -/
+theorem IsConvex.src_mem {S : Set Γ.V} (hS : Γ.IsConvex S) {a b : Γ.V} (ha : a ∈ S)
+    (hb : b ∈ S) {p : Γ.Path a b} (hp : Path.IsReduced Γ p) {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) : Γ.src e ∈ S :=
+  hS a ha b hb p hp e he
+
 /-- A reduced path between vertices of a convex set also ends its darts in the set. -/
 theorem IsConvex.tgt_mem {S : Set Γ.V} (hS : Γ.IsConvex S) {a b : Γ.V} (ha : a ∈ S)
     (hb : b ∈ S) {p : Γ.Path a b} (hp : Path.IsReduced Γ p) {e : Γ.E}
@@ -53,7 +59,7 @@ theorem IsConvex.tgt_mem {S : Set Γ.V} (hS : Γ.IsConvex S) {a b : Γ.V} (ha : 
   have hp' : Path.IsReduced Γ p.reverse := (Path.isReduced_reverse Γ p).mpr hp
   have he' : Γ.rev e ∈ Path.darts Γ p.reverse := by
     simpa only [Path.darts_reverse, List.mem_map, List.mem_reverse] using ⟨e, he, rfl⟩
-  simpa only [src_rev] using hS b hb a ha p.reverse hp' (Γ.rev e) he'
+  simpa only [src_rev] using hS.src_mem hb ha hp' he'
 
 /-- A reduced path ending at a vertex `b` of a convex set `C`, whose last dart starts outside `C`,
 can be continued by any reduced path from `b` to a vertex of `C` without backtracking. -/
@@ -130,7 +136,7 @@ theorem IsTree.isConvex_union (h : Γ.IsTree) {A B : Set Γ.V} (hA : Γ.IsConvex
     obtain ⟨r, hr, -⟩ := h.existsUnique_isReduced c b
     have he' := (h.isAcyclic.darts_sublist hp (q.comp r)).subset he
     rw [Path.darts_comp, List.mem_append] at he'
-    exact he'.imp (hA a ha c hcA q hq e) (hB c hcB b hb r hr e)
+    exact he'.imp (hA.src_mem ha hcA hq) (hB.src_mem hcB hb hr)
   rintro a (ha | ha) b (hb | hb) p hp e he
   · exact Or.inl (hA a ha b hb p hp e he)
   · exact key hA hB hcA hcB a ha b hb p hp e he
@@ -158,7 +164,7 @@ theorem IsTree.tgt_mem_or_src_mem (h : Γ.IsTree) {A B : Set Γ.V} (hA : Γ.IsCo
   have he := (h.isAcyclic.darts_sublist (Path.isReduced_toPath Γ (Γ.dart e)) (q.comp r)).subset
     (by rw [Path.darts_toPath, dart_val]; exact List.mem_singleton_self e)
   rw [Path.darts_comp, List.mem_append] at he
-  exact he.imp (hA.tgt_mem hs hcA hq) (hB c hcB _ ht r hr e)
+  exact he.imp (hA.tgt_mem hs hcA hq) (hB.src_mem hcB ht hr)
 
 /-! ### Induced darts of unions of convex sets in a tree -/
 

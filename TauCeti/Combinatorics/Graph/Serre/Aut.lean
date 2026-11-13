@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Convex.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Convex.Hull
 public import TauCeti.Combinatorics.Graph.Serre.Dist
 public import TauCeti.Combinatorics.Graph.Serre.Iso
 public import Mathlib.GroupTheory.GroupAction.Defs
@@ -28,8 +28,8 @@ reversal and is compatible with the group law. Hence automorphisms preserve dist
 `n`-th power of an automorphism moves a vertex joined to its image by at most `|n|` times as
 much as the automorphism. In an acyclic graph an automorphism fixing two vertices fixes every
 dart of the reduced path between them, so the fixed vertices of an automorphism form a convex set.
-Automorphisms map convex sets of vertices to convex sets, and the darts induced by a set of
-vertices to the darts induced by its translate.
+Automorphisms map convex sets of vertices to convex sets, commute with convex hulls, and map the
+darts induced by a set of vertices to the darts induced by its translate.
 
 The segment carries the automorphism exchanging its two vertices; it maps the edge to its
 reverse, which is the kind of inversion excluded from actions on trees. It is an involution, so
@@ -276,8 +276,8 @@ open scoped Pointwise in
     refine fun ψ S hS => isConvex_iff.mpr fun a ha b hb p hp e he => ?_
     rw [Set.mem_smul_set_iff_inv_smul_mem] at ha hb ⊢
     -- The translate of `p` by `ψ⁻¹` joins the translates of its endpoints through `ψ⁻¹ • e`.
-    have hsrc := isConvex_iff.mp hS _ ha _ hb (ψ⁻¹.smulPath p)
-      ((isReduced_smulPath ψ⁻¹ p).mpr hp) _ (by rw [darts_smulPath]; exact List.mem_map_of_mem he)
+    have hsrc := hS.src_mem ha hb ((isReduced_smulPath ψ⁻¹ p).mpr hp)
+      (by rw [darts_smulPath]; exact List.mem_map_of_mem he)
     rwa [src_smul] at hsrc
   exact ⟨fun h => by simpa only [inv_smul_smul] using key φ⁻¹ h, key φ⟩
 
@@ -288,6 +288,16 @@ theorem smul_set_inducedDarts (φ : Γ.Aut) (C : Set Γ.V) :
     φ • Γ.inducedDarts C = Γ.inducedDarts (φ • C) := by
   ext e
   simp only [Set.mem_smul_set_iff_inv_smul_mem, mem_inducedDarts_iff, src_smul, tgt_smul]
+
+open scoped Pointwise in
+/-- Automorphisms commute with convex hulls. -/
+theorem convexHull_smul_set (φ : Γ.Aut) (S : Set Γ.V) :
+    Γ.convexHull (φ • S) = φ • Γ.convexHull S := by
+  refine ((φ.isConvex_smul_set_iff.mpr (isConvex_convexHull S)).convexHull_subset
+    (Set.smul_set_mono (subset_convexHull S))).antisymm ?_
+  rw [Set.smul_set_subset_iff_subset_inv_smul_set]
+  exact (φ⁻¹.isConvex_smul_set_iff.mpr (isConvex_convexHull _)).convexHull_subset
+    (by rw [← Set.smul_set_subset_iff_subset_inv_smul_set]; exact subset_convexHull _)
 
 end Aut
 

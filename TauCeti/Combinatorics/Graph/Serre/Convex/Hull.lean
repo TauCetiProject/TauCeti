@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Aut
+public import TauCeti.Combinatorics.Graph.Serre.Convex.Basic
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Data.Set.Finite.List
 public import Mathlib.Order.Closure
@@ -23,8 +23,7 @@ its pairs of vertices, so the hull of a finite set is finite.
 
 Hulls in a tree are computed from segments through a base vertex: the hull of `{x} ∪ S` is the
 union of `{x}` and the segments `[x, s]` for `s ∈ S`, because subtrees through a common vertex
-glue to a subtree. In particular `[a, c] ⊆ [a, b] ∪ [b, c]`. Automorphisms commute with convex
-hulls.
+glue to a subtree. In particular `[a, c] ⊆ [a, b] ∪ [b, c]`.
 
 ## Main declarations
 
@@ -37,7 +36,6 @@ hulls.
   is finite.
 * `TauCeti.SerreGraph.IsTree.convexHull_insert`: in a tree, the hull of `{x} ∪ S` is the union of
   `{x}` and the segments from `x` to the vertices of `S`.
-* `TauCeti.SerreGraph.Aut.convexHull_smul_set`: automorphisms commute with convex hulls.
 
 ## References
 
@@ -95,6 +93,14 @@ theorem convexHull_mono {S T : Set Γ.V} (h : S ⊆ T) : Γ.convexHull S ⊆ Γ.
 
 @[simp] theorem convexHull_univ : Γ.convexHull Set.univ = Set.univ :=
   Γ.convexHull.closure_top
+
+@[simp] theorem convexHull_eq_empty : Γ.convexHull S = ∅ ↔ S = ∅ :=
+  ⟨fun h => Set.subset_empty_iff.mp (h ▸ subset_convexHull S), by
+    rintro rfl
+    exact convexHull_empty⟩
+
+@[simp] theorem convexHull_nonempty_iff : (Γ.convexHull S).Nonempty ↔ S.Nonempty := by
+  simp only [Set.nonempty_iff_ne_empty, ne_eq, convexHull_eq_empty]
 
 /-- In an acyclic graph, the convex hull of a vertex is that vertex. -/
 @[simp] theorem IsAcyclic.convexHull_singleton (h : Γ.IsAcyclic) (v : Γ.V) :
@@ -167,13 +173,13 @@ theorem IsAcyclic.convexHull_eq_biUnion_convexHull_pair (h : Γ.IsAcyclic) (S : 
     ((Path.reduce Γ (qa.comp (r.comp qc.reverse))).comp (Path.reduce Γ qc)))).subset he
   simp only [Path.darts_comp, List.mem_append] at he'
   rcases he' with he' | he' | he'
-  · exact Set.mem_biUnion ha (Set.mem_biUnion hb (isConvex_iff.mp (isConvex_convexHull _) u hu a
-      (left_mem_convexHull_pair a b) _ (Path.isReduced_reduce Γ _) e he'))
-  · exact Set.mem_biUnion ha (Set.mem_biUnion hc (isConvex_iff.mp (isConvex_convexHull _) a
-      (left_mem_convexHull_pair a c) c (right_mem_convexHull_pair a c) _
-      (Path.isReduced_reduce Γ _) e he'))
-  · exact Set.mem_biUnion hc (Set.mem_biUnion hd (isConvex_iff.mp (isConvex_convexHull _) c
-      (left_mem_convexHull_pair c d) v hv _ (Path.isReduced_reduce Γ _) e he'))
+  · exact Set.mem_biUnion ha (Set.mem_biUnion hb ((isConvex_convexHull _).src_mem hu
+      (left_mem_convexHull_pair a b) (Path.isReduced_reduce Γ _) he'))
+  · exact Set.mem_biUnion ha (Set.mem_biUnion hc ((isConvex_convexHull _).src_mem
+      (left_mem_convexHull_pair a c) (right_mem_convexHull_pair a c) (Path.isReduced_reduce Γ _)
+      he'))
+  · exact Set.mem_biUnion hc (Set.mem_biUnion hd ((isConvex_convexHull _).src_mem
+      (left_mem_convexHull_pair c d) hv (Path.isReduced_reduce Γ _) he'))
 
 /-- In an acyclic graph, the convex hull of a finite set of vertices is finite. -/
 theorem IsAcyclic.finite_convexHull (h : Γ.IsAcyclic) (hS : S.Finite) :
@@ -213,18 +219,6 @@ theorem IsTree.convexHull_pair_subset_union (h : Γ.IsTree) (a b c : Γ.V) :
     ⟨b, right_mem_convexHull_pair a b, left_mem_convexHull_pair b c⟩).convexHull_subset
       (Set.pair_subset (Or.inl (left_mem_convexHull_pair a b))
         (Or.inr (right_mem_convexHull_pair b c)))
-
-/-! ### Automorphisms -/
-
-open scoped Pointwise in
-/-- Automorphisms commute with convex hulls. -/
-theorem Aut.convexHull_smul_set (φ : Γ.Aut) (S : Set Γ.V) :
-    Γ.convexHull (φ • S) = φ • Γ.convexHull S := by
-  refine ((φ.isConvex_smul_set_iff.mpr (isConvex_convexHull S)).convexHull_subset
-    (Set.smul_set_mono (subset_convexHull S))).antisymm ?_
-  rw [Set.smul_set_subset_iff_subset_inv_smul_set]
-  exact (φ⁻¹.isConvex_smul_set_iff.mpr (isConvex_convexHull _)).convexHull_subset
-    (by rw [← Set.smul_set_subset_iff_subset_inv_smul_set]; exact subset_convexHull _)
 
 end SerreGraph
 end TauCeti

@@ -24,7 +24,8 @@ such actions.
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
   set, and an element is elliptic exactly when its translation length
   `ℓ(g) = min_v d(v, g v)` vanishes. Translation length is invariant under conjugation and
-  inversion. The action maps convex sets of vertices to convex sets.
+  inversion. The action maps convex sets of vertices to convex sets and commutes with convex
+  hulls; the segment from `x` to `(g h) x` lies in the union of `[x, g x]` and `g [x, h x]`.
 * A `G`-tree is *minimal* when no nonempty convex `G`-invariant proper set of vertices exists,
   and it is *relative* to families `𝒜` and `ℋ` of subgroups when its dart stabilizers lie in `𝒜`
   and every member of `ℋ` is elliptic.
@@ -115,6 +116,10 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 /-- Any two vertices of a `G`-tree are joined by a path. -/
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b
+
+/-- The underlying graph of a `G`-tree is acyclic. -/
+@[simp] theorem isAcyclic : T.IsAcyclic :=
+  T.isTree.isAcyclic
 
 section Translate
 
@@ -405,6 +410,29 @@ induced by the set. -/
 theorem smul_set_inducedDarts (g : G) (C : Set T.V) :
     g • T.inducedDarts C = T.inducedDarts (g • C) := by
   rw [smul_set_vertex_def, smul_set_dart_def, Aut.smul_set_inducedDarts]
+
+/-- The action commutes with convex hulls. -/
+theorem convexHull_smul_set (g : G) (S : Set T.V) :
+    T.convexHull (g • S) = g • T.convexHull S := by
+  rw [smul_set_vertex_def, smul_set_vertex_def, Aut.convexHull_smul_set]
+
+/-- The translate of the segment from `a` to `b` is the segment from `g • a` to `g • b`. -/
+theorem smul_set_convexHull_pair (g : G) (a b : T.V) :
+    g • T.convexHull {a, b} = T.convexHull {g • a, g • b} := by
+  rw [← convexHull_smul_set, Set.smul_set_insert, Set.smul_set_singleton]
+
+/-- The segment from `x` to `(g * h) • x` is contained in the union of the segment from `x` to
+`g • x` and the translate by `g` of the segment from `x` to `h • x`. -/
+theorem convexHull_pair_mul_smul_subset (g h : G) (x : T.V) :
+    T.convexHull {x, (g * h) • x} ⊆ T.convexHull {x, g • x} ∪ g • T.convexHull {x, h • x} := by
+  rw [smul_set_convexHull_pair, ← mul_smul]
+  exact T.isTree.convexHull_pair_subset_union _ _ _
+
+/-- The segment from `x` to `g⁻¹ • x` is the translate by `g⁻¹` of the segment from `x` to
+`g • x`. -/
+theorem convexHull_pair_inv_smul (g : G) (x : T.V) :
+    T.convexHull {x, g⁻¹ • x} = g⁻¹ • T.convexHull {x, g • x} := by
+  rw [smul_set_convexHull_pair, inv_smul_smul, Set.pair_comm]
 
 end Pointwise
 
