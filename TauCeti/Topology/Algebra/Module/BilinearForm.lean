@@ -9,13 +9,9 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.LocallyConvex.Bounded
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
-public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 import TauCeti.Analysis.Matrix.PosDef
-import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import Mathlib.Topology.Instances.Matrix
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.QuadraticMap
@@ -115,28 +111,12 @@ theorem _root_.LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap
     {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
     [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
     [ContinuousSMul 𝕜 V] [FiniteDimensional 𝕜 V] [T2Space V]
-    (B : LinearMap.BilinForm 𝕜 V) : B.toContinuousBilinearMap.toBilinForm = B := by
-  ext v w
-  simp only [ContinuousLinearMap.toBilinForm_apply, LinearMap.toContinuousBilinearMap_apply]
+    (B : LinearMap.BilinForm 𝕜 V) : B.toContinuousBilinearMap.toBilinForm = B :=
+  rfl
 
 section
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-
-/-- The bilinear form of a continuous linear map into the dual space is left-separating exactly
-when the map is injective. -/
-theorem _root_.ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective (L : E →L[𝕜] E →L[𝕜] 𝕜)
-    :
-    L.toBilinForm.SeparatingLeft ↔ Function.Injective L := by
-  rw [LinearMap.separatingLeft_iff_ker_eq_bot, LinearMap.ker_eq_bot]
-  exact ⟨fun h v w hvw ↦ h (LinearMap.ext fun u ↦ by simp [hvw]),
-    fun h v w hvw ↦ h (ContinuousLinearMap.ext fun u ↦ by simpa using LinearMap.congr_fun hvw u)⟩
-
-/-- The bilinear form of a continuous linear map into the dual space is symmetric exactly when
-the map takes symmetric values. -/
-theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
-    L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
-  LinearMap.BilinForm.isSymm_def
 
 /-- The kernel of the bilinear form of a continuous linear map into the dual space is the kernel of
 the map. -/
@@ -144,6 +124,20 @@ theorem _root_.ContinuousLinearMap.ker_toBilinForm (L : E →L[𝕜] E →L[𝕜
     LinearMap.ker L.toBilinForm = L.ker := by
   ext x
   simp [LinearMap.ext_iff, ContinuousLinearMap.ext_iff]
+
+/-- The bilinear form of a continuous linear map into the dual space is left-separating exactly
+when the map is injective. -/
+theorem _root_.ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective
+    (L : E →L[𝕜] E →L[𝕜] 𝕜) :
+    L.toBilinForm.SeparatingLeft ↔ Function.Injective L := by
+  rw [LinearMap.separatingLeft_iff_ker_eq_bot, L.ker_toBilinForm]
+  exact LinearMap.ker_eq_bot
+
+/-- The bilinear form of a continuous linear map into the dual space is symmetric exactly when
+the map takes symmetric values. -/
+theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
+    L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
+  LinearMap.BilinForm.isSymm_def
 
 /-- A subspace on whose nonzero vectors the diagonal of a continuous bilinear form does not vanish
 meets every subspace of the kernel of the form trivially. -/
@@ -240,8 +234,8 @@ an open set. -/
 theorem _root_.ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm
     {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [FiniteDimensional 𝕜 E] :
-    IsOpen {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} := by
-  exact isOpen_setOf_nondegenerate fun v w ↦ by
+    IsOpen {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} :=
+  isOpen_setOf_nondegenerate fun v w ↦ by
     simpa only [ContinuousLinearMap.toBilinForm_apply] using
       (continuous_id.clm_apply continuous_const).clm_apply continuous_const
 
