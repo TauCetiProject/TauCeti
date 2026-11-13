@@ -161,42 +161,42 @@ theorem isMerge_or_isSplit (v : W.Vertex) : W.IsMerge v ∨ W.IsSplit v := by
 
 /-- Stored cyclic successor of an end at its incident vertex, before the merge inversion
 used for compatible surface rotation. -/
-def rotation : Equiv.Perm W.End :=
+def cyclicSucc : Equiv.Perm W.End :=
   W.ends.symm.trans ((Equiv.prodCongr (Equiv.refl _) (finRotate 3)).trans W.ends)
 
-theorem rotation_def : W.rotation =
+theorem cyclicSucc_def : W.cyclicSucc =
     W.ends.symm.trans ((Equiv.prodCongr (Equiv.refl _) (finRotate 3)).trans W.ends) := (rfl)
 
-/-- Cyclic rotation moves to the next slot, rather than reversing the order. -/
-@[simp] theorem rotation_ends (v : W.Vertex) (i : Fin 3) :
-    W.rotation (W.ends (v, i)) = W.ends (v, finRotate 3 i) := by
-  simp [rotation, Equiv.trans_apply, Equiv.prodCongr_apply, Prod.map]
+/-- Cyclic successor moves to the next slot, rather than reversing the order. -/
+@[simp] theorem cyclicSucc_ends (v : W.Vertex) (i : Fin 3) :
+    W.cyclicSucc (W.ends (v, i)) = W.ends (v, finRotate 3 i) := by
+  simp [cyclicSucc, Equiv.trans_apply, Equiv.prodCongr_apply, Prod.map]
 
-/-- Cyclic rotation preserves incidence. -/
-@[simp] theorem incident_rotation (d : W.End) : W.incident (W.rotation d) = W.incident d := by
+/-- Cyclic successor preserves incidence. -/
+@[simp] theorem incident_cyclicSucc (d : W.End) : W.incident (W.cyclicSucc d) = W.incident d := by
   obtain ⟨⟨v, i⟩, rfl⟩ := W.ends.surjective d
   simp
 
-@[simp] theorem rotation_symm_ends (v : W.Vertex) (i : Fin 3) :
-    W.rotation.symm (W.ends (v, i)) = W.ends (v, (finRotate 3).symm i) := by
-  apply W.rotation.injective
+@[simp] theorem cyclicSucc_symm_ends (v : W.Vertex) (i : Fin 3) :
+    W.cyclicSucc.symm (W.ends (v, i)) = W.ends (v, (finRotate 3).symm i) := by
+  apply W.cyclicSucc.injective
   simp
 
-@[simp] theorem incident_rotation_symm (d : W.End) :
-    W.incident (W.rotation.symm d) = W.incident d := by
+@[simp] theorem incident_cyclicSucc_symm (d : W.End) :
+    W.incident (W.cyclicSucc.symm d) = W.incident d := by
   obtain ⟨⟨v, i⟩, rfl⟩ := W.ends.surjective d
   simp
 
-/-- Three cyclic rotations fix every end. -/
-@[simp] theorem rotation_rotation_rotation (d : W.End) :
-    W.rotation (W.rotation (W.rotation d)) = d := by
+/-- Three cyclic successors fix every end. -/
+@[simp] theorem cyclicSucc_cyclicSucc_cyclicSucc (d : W.End) :
+    W.cyclicSucc (W.cyclicSucc (W.cyclicSucc d)) = d := by
   obtain ⟨⟨v, i⟩, rfl⟩ := W.ends.surjective d
   fin_cases i <;> simp [finRotate_apply]
 
 /-- No end is fixed by its cyclic successor. -/
-theorem rotation_ne (d : W.End) : W.rotation d ≠ d := by
+theorem cyclicSucc_ne_self (d : W.End) : W.cyclicSucc d ≠ d := by
   obtain ⟨⟨v, i⟩, rfl⟩ := W.ends.surjective d
-  rw [W.rotation_ends, ne_eq, W.ends.injective.eq_iff, Prod.mk.injEq]
+  rw [W.cyclicSucc_ends, ne_eq, W.ends.injective.eq_iff, Prod.mk.injEq]
   fin_cases i <;> simp [finRotate_apply]
 
 /-- The interval-end count is three times the number of vertices. -/
@@ -306,11 +306,11 @@ def trans {U : ClosedWeb} (f : W.Iso V) (g : V.Iso U) : W.Iso U where
   simp only [IsSplit, f.map_ends (v, 0)]
 
 /-- Isomorphisms preserve cyclic successor. -/
-@[simp] theorem map_rotation (f : W.Iso V) (e : W.Edge) (b : Bool) :
-    V.rotation (f.edge e, b) = (f.edge (W.rotation (e, b)).1, (W.rotation (e, b)).2) := by
+@[simp] theorem map_cyclicSucc (f : W.Iso V) (e : W.Edge) (b : Bool) :
+    V.cyclicSucc (f.edge e, b) = (f.edge (W.cyclicSucc (e, b)).1, (W.cyclicSucc (e, b)).2) := by
   obtain ⟨⟨v, i⟩, h⟩ := W.ends.surjective (e, b)
-  have hr := V.rotation_ends (f.vertex v) i
-  rw [f.map_ends (v, i), f.map_ends (v, finRotate 3 i), ← W.rotation_ends, h] at hr
+  have hr := V.cyclicSucc_ends (f.vertex v) i
+  rw [f.map_ends (v, i), f.map_ends (v, finRotate 3 i), ← W.cyclicSucc_ends, h] at hr
   exact hr
 
 @[simp] theorem refl_trans (f : W.Iso V) : (refl W).trans f = f := by
@@ -376,7 +376,7 @@ def relabelIso {V E C : Type v}
     (v : W.Vertex ≃ V) (e : W.Edge ≃ E) (c : W.Circle ≃ C) :
     (W.relabelIso v e c).circle = c := (rfl)
 
-theorem relabel_ends {V E C : Type v}
+theorem relabel_ends_apply {V E C : Type v}
     (v : W.Vertex ≃ V) (e : W.Edge ≃ E) (c : W.Circle ≃ C) (x : V × Fin 3) :
     (W.relabel v e c).ends x =
       (e (W.ends (v.symm x.1, x.2)).1, (W.ends (v.symm x.1, x.2)).2) := (rfl)
@@ -406,11 +406,11 @@ theorem relabel_ends {V E C : Type v}
     (W.relabel v e c).IsSplit a ↔ W.IsSplit (v.symm a) := by
   simpa using (W.relabelIso v e c).isSplit_map (v.symm a)
 
-@[simp] theorem rotation_relabel {V E C : Type v}
+@[simp] theorem cyclicSucc_relabel_apply {V E C : Type v}
     (v : W.Vertex ≃ V) (e : W.Edge ≃ E) (c : W.Circle ≃ C) (d : E × Bool) :
-    (W.relabel v e c).rotation d =
-      (e (W.rotation (e.symm d.1, d.2)).1, (W.rotation (e.symm d.1, d.2)).2) := by
-  simpa using (W.relabelIso v e c).map_rotation (e.symm d.1) d.2
+    (W.relabel v e c).cyclicSucc d =
+      (e (W.cyclicSucc (e.symm d.1, d.2)).1, (W.cyclicSucc (e.symm d.1, d.2)).2) := by
+  simpa using (W.relabelIso v e c).map_cyclicSucc (e.symm d.1) d.2
 
 /-- Reverse every interval orientation, leaving cyclic orders and circles unchanged. -/
 abbrev reverse : ClosedWeb.{u} where
@@ -421,14 +421,14 @@ abbrev reverse : ClosedWeb.{u} where
   orientation_one x := by simpa using congrArg Bool.not (W.orientation_one x)
   orientation_two x := by simpa using congrArg Bool.not (W.orientation_two x)
 
-theorem reverse_ends (x : W.Vertex × Fin 3) :
+theorem reverse_ends_apply (x : W.Vertex × Fin 3) :
     W.reverse.ends x = ((W.ends x).1, !(W.ends x).2) := (rfl)
 
 /-- Orientation reversal interchanges source and target incidence. -/
 @[simp] theorem incident_reverse (d : W.End) :
     W.reverse.incident d = W.incident (d.1, !d.2) := by
   obtain ⟨x, rfl⟩ := W.reverse.ends.surjective d
-  rw [W.reverse.incident_ends, reverse_ends]
+  rw [W.reverse.incident_ends, reverse_ends_apply]
   simp [incident]
 
 @[simp] theorem source_reverse (e : W.Edge) : W.reverse.source e = W.target e := by
@@ -438,19 +438,19 @@ theorem reverse_ends (x : W.Vertex × Fin 3) :
   simp [source, target]
 
 @[simp] theorem isMerge_reverse (v : W.Vertex) : W.reverse.IsMerge v ↔ W.IsSplit v := by
-  rw [IsMerge, reverse_ends]
+  rw [IsMerge, reverse_ends_apply]
   simp [IsSplit]
 
 @[simp] theorem isSplit_reverse (v : W.Vertex) : W.reverse.IsSplit v ↔ W.IsMerge v := by
-  rw [IsSplit, reverse_ends]
+  rw [IsSplit, reverse_ends_apply]
   simp [IsMerge]
 
-/-- Reversing orientations conjugates rotation by the exchange of the two edge ends. -/
-@[simp] theorem rotation_reverse (d : W.End) :
-    W.reverse.rotation d =
-      ((W.rotation (d.1, !d.2)).1, !(W.rotation (d.1, !d.2)).2) := by
+/-- Reversing orientations conjugates cyclic successor by exchange of the two edge ends. -/
+@[simp] theorem cyclicSucc_reverse_apply (d : W.End) :
+    W.reverse.cyclicSucc d =
+      ((W.cyclicSucc (d.1, !d.2)).1, !(W.cyclicSucc (d.1, !d.2)).2) := by
   obtain ⟨⟨v, i⟩, rfl⟩ := W.reverse.ends.surjective d
-  rw [W.reverse.rotation_ends, reverse_ends, reverse_ends]
+  rw [W.reverse.cyclicSucc_ends, reverse_ends_apply, reverse_ends_apply]
   simp
 
 /-- Orientation reversal is an involution. -/
@@ -458,7 +458,7 @@ theorem reverse_ends (x : W.Vertex × Fin 3) :
   have h : W.reverse.reverse.ends = W.ends := by
     apply Equiv.ext
     intro x
-    rw [reverse_ends, reverse_ends]
+    rw [reverse_ends_apply, reverse_ends_apply]
     simp
   cases W
   simp only [reverse]
@@ -473,13 +473,13 @@ abbrev mirror : ClosedWeb.{u} where
   orientation_one x := by simpa [Equiv.swap_apply_def] using W.orientation_two x
   orientation_two x := by simpa [Equiv.swap_apply_def] using W.orientation_one x
 
-theorem mirror_ends (v : W.Vertex) (i : Fin 3) :
+theorem mirror_ends_apply (v : W.Vertex) (i : Fin 3) :
     W.mirror.ends (v, i) = W.ends (v, Equiv.swap (1 : Fin 3) 2 i) := (rfl)
 
 /-- Mirror reversal does not change incidence. -/
 @[simp] theorem incident_mirror (d : W.End) : W.mirror.incident d = W.incident d := by
   obtain ⟨⟨v, i⟩, rfl⟩ := W.mirror.ends.surjective d
-  rw [W.mirror.incident_ends, mirror_ends, W.incident_ends]
+  rw [W.mirror.incident_ends, mirror_ends_apply, W.incident_ends]
 
 @[simp] theorem source_mirror (e : W.Edge) : W.mirror.source e = W.source e := by
   simp [source]
@@ -488,11 +488,11 @@ theorem mirror_ends (v : W.Vertex) (i : Fin 3) :
   simp [target]
 
 @[simp] theorem isMerge_mirror (v : W.Vertex) : W.mirror.IsMerge v ↔ W.IsMerge v := by
-  rw [IsMerge, mirror_ends]
+  rw [IsMerge, mirror_ends_apply]
   simp [IsMerge, Equiv.swap_apply_def]
 
 @[simp] theorem isSplit_mirror (v : W.Vertex) : W.mirror.IsSplit v ↔ W.IsSplit v := by
-  rw [IsSplit, mirror_ends]
+  rw [IsSplit, mirror_ends_apply]
   simp [IsSplit, Equiv.swap_apply_def]
 
 /-- Mirror reversal is an involution, not a cyclic rotation of the three ends. -/
@@ -500,19 +500,19 @@ theorem mirror_ends (v : W.Vertex) (i : Fin 3) :
   have h : W.mirror.mirror.ends = W.ends := by
     apply Equiv.ext
     rintro ⟨v, i⟩
-    rw [mirror_ends, mirror_ends]
+    rw [mirror_ends_apply, mirror_ends_apply]
     simp
   cases W
   simp only [mirror]
   congr 1
 
 /-- Mirroring changes cyclic successor to cyclic predecessor. -/
-@[simp] theorem rotation_mirror : W.mirror.rotation = W.rotation.symm := by
+@[simp] theorem cyclicSucc_mirror : W.mirror.cyclicSucc = W.cyclicSucc.symm := by
   apply Equiv.ext
   intro d
   obtain ⟨⟨v, i⟩, rfl⟩ := W.mirror.ends.surjective d
-  apply W.rotation.injective
-  rw [Equiv.apply_symm_apply, W.mirror.rotation_ends]
+  apply W.cyclicSucc.injective
+  rw [Equiv.apply_symm_apply, W.mirror.cyclicSucc_ends]
   fin_cases i <;> simp [Equiv.swap_apply_def, finRotate_apply]
 
 /-- Orientation reversal and mirror reversal commute. -/
@@ -527,17 +527,25 @@ abbrev circles (C : Type u) [Finite C] : ClosedWeb.{u} where
   orientation_one x := isEmptyElim x
   orientation_two x := isEmptyElim x
 
-@[simp] theorem reverse_circles (C : Type u) [Finite C] :
-    (circles C).reverse = circles C := by
-  have h : (circles C).reverse.ends = (circles C).ends := Subsingleton.elim _ _
-  simp only [reverse, circles]
+/-- Orientation reversal fixes every vertex-free web. -/
+theorem reverse_of_isEmpty_vertex [IsEmpty W.Vertex] : W.reverse = W := by
+  have h : W.reverse.ends = W.ends := Equiv.ext fun x ↦ isEmptyElim x.1
+  cases W
+  simp only [reverse]
   congr 1
 
-@[simp] theorem mirror_circles (C : Type u) [Finite C] :
-    (circles C).mirror = circles C := by
-  have h : (circles C).mirror.ends = (circles C).ends := Subsingleton.elim _ _
-  simp only [mirror, circles]
+/-- Mirror reversal fixes every vertex-free web. -/
+theorem mirror_of_isEmpty_vertex [IsEmpty W.Vertex] : W.mirror = W := by
+  have h : W.mirror.ends = W.ends := Equiv.ext fun x ↦ isEmptyElim x.1
+  cases W
+  simp only [mirror]
   congr 1
+
+@[simp] theorem reverse_circles (C : Type u) [Finite C] :
+    (circles C).reverse = circles C := (circles C).reverse_of_isEmpty_vertex
+
+@[simp] theorem mirror_circles (C : Type u) [Finite C] :
+    (circles C).mirror = circles C := (circles C).mirror_of_isEmpty_vertex
 
 /-- The empty closed web. -/
 abbrev empty : ClosedWeb.{u} := circles PEmpty
@@ -581,10 +589,10 @@ abbrev sum (V : ClosedWeb.{v}) : ClosedWeb.{max u v} where
   orientation_two x := by
     cases x <;> simp [W.orientation_two, V.orientation_two]
 
-theorem sum_ends_inl (V : ClosedWeb.{v}) (v : W.Vertex) (i : Fin 3) :
+theorem sum_ends_apply_inl (V : ClosedWeb.{v}) (v : W.Vertex) (i : Fin 3) :
     (W.sum V).ends (Sum.inl v, i) = (Sum.inl (W.ends (v, i)).1, (W.ends (v, i)).2) := (rfl)
 
-theorem sum_ends_inr (V : ClosedWeb.{v}) (v : V.Vertex) (i : Fin 3) :
+theorem sum_ends_apply_inr (V : ClosedWeb.{v}) (v : V.Vertex) (i : Fin 3) :
     (W.sum V).ends (Sum.inr v, i) = (Sum.inr (V.ends (v, i)).1, (V.ends (v, i)).2) := (rfl)
 
 /-- Incidence on the left component of a disjoint union. -/
@@ -593,7 +601,7 @@ theorem sum_ends_inr (V : ClosedWeb.{v}) (v : V.Vertex) (i : Fin 3) :
   obtain ⟨⟨v, i⟩, h⟩ := W.ends.surjective (e, b)
   have hv : W.incident (e, b) = v := by rw [← h, incident_ends]
   have hi := (W.sum V).incident_ends (Sum.inl v) i
-  rw [sum_ends_inl, h] at hi
+  rw [sum_ends_apply_inl, h] at hi
   rw [hv]
   exact hi
 
@@ -603,7 +611,7 @@ theorem sum_ends_inr (V : ClosedWeb.{v}) (v : V.Vertex) (i : Fin 3) :
   obtain ⟨⟨v, i⟩, h⟩ := V.ends.surjective (e, b)
   have hv : V.incident (e, b) = v := by rw [← h, incident_ends]
   have hi := (W.sum V).incident_ends (Sum.inr v) i
-  rw [sum_ends_inr, h] at hi
+  rw [sum_ends_apply_inr, h] at hi
   rw [hv]
   exact hi
 
@@ -639,20 +647,20 @@ theorem sum_ends_inr (V : ClosedWeb.{v}) (v : V.Vertex) (i : Fin 3) :
 @[simp] theorem isSplit_sum_inr (V : ClosedWeb.{v}) (v : V.Vertex) :
     (W.sum V).IsSplit (Sum.inr v) ↔ V.IsSplit v := by simp [IsSplit]
 
-@[simp] theorem rotation_sum_inl (V : ClosedWeb.{v}) (e : W.Edge) (b : Bool) :
-    (W.sum V).rotation (Sum.inl e, b) =
-      (Sum.inl (W.rotation (e, b)).1, (W.rotation (e, b)).2) := by
+@[simp] theorem cyclicSucc_sum_apply_inl (V : ClosedWeb.{v}) (e : W.Edge) (b : Bool) :
+    (W.sum V).cyclicSucc (Sum.inl e, b) =
+      (Sum.inl (W.cyclicSucc (e, b)).1, (W.cyclicSucc (e, b)).2) := by
   obtain ⟨⟨v, i⟩, h⟩ := W.ends.surjective (e, b)
-  have hr := (W.sum V).rotation_ends (Sum.inl v) i
-  rw [sum_ends_inl, sum_ends_inl, ← W.rotation_ends, h] at hr
+  have hr := (W.sum V).cyclicSucc_ends (Sum.inl v) i
+  rw [sum_ends_apply_inl, sum_ends_apply_inl, ← W.cyclicSucc_ends, h] at hr
   exact hr
 
-@[simp] theorem rotation_sum_inr (V : ClosedWeb.{v}) (e : V.Edge) (b : Bool) :
-    (W.sum V).rotation (Sum.inr e, b) =
-      (Sum.inr (V.rotation (e, b)).1, (V.rotation (e, b)).2) := by
+@[simp] theorem cyclicSucc_sum_apply_inr (V : ClosedWeb.{v}) (e : V.Edge) (b : Bool) :
+    (W.sum V).cyclicSucc (Sum.inr e, b) =
+      (Sum.inr (V.cyclicSucc (e, b)).1, (V.cyclicSucc (e, b)).2) := by
   obtain ⟨⟨v, i⟩, h⟩ := V.ends.surjective (e, b)
-  have hr := (W.sum V).rotation_ends (Sum.inr v) i
-  rw [sum_ends_inr, sum_ends_inr, ← V.rotation_ends, h] at hr
+  have hr := (W.sum V).cyclicSucc_ends (Sum.inr v) i
+  rw [sum_ends_apply_inr, sum_ends_apply_inr, ← V.cyclicSucc_ends, h] at hr
   exact hr
 
 @[simp] theorem reverse_sum (V : ClosedWeb.{v}) :
@@ -660,8 +668,8 @@ theorem sum_ends_inr (V : ClosedWeb.{v}) (v : V.Vertex) (i : Fin 3) :
   have h : (W.sum V).reverse.ends = (W.reverse.sum V.reverse).ends := by
     apply Equiv.ext
     rintro ⟨v | v, i⟩
-    · rw [reverse_ends, sum_ends_inl, sum_ends_inl, reverse_ends]
-    · rw [reverse_ends, sum_ends_inr, sum_ends_inr, reverse_ends]
+    · rw [reverse_ends_apply, sum_ends_apply_inl, sum_ends_apply_inl, reverse_ends_apply]
+    · rw [reverse_ends_apply, sum_ends_apply_inr, sum_ends_apply_inr, reverse_ends_apply]
   cases W
   cases V
   simp only [reverse, sum]
@@ -672,8 +680,8 @@ theorem sum_ends_inr (V : ClosedWeb.{v}) (v : V.Vertex) (i : Fin 3) :
   have h : (W.sum V).mirror.ends = (W.mirror.sum V.mirror).ends := by
     apply Equiv.ext
     rintro ⟨v | v, i⟩
-    · rw [mirror_ends, sum_ends_inl, sum_ends_inl, mirror_ends]
-    · rw [mirror_ends, sum_ends_inr, sum_ends_inr, mirror_ends]
+    · rw [mirror_ends_apply, sum_ends_apply_inl, sum_ends_apply_inl, mirror_ends_apply]
+    · rw [mirror_ends_apply, sum_ends_apply_inr, sum_ends_apply_inr, mirror_ends_apply]
   cases W
   cases V
   simp only [mirror, sum]
@@ -687,7 +695,7 @@ def emptySum : (empty.{u}.sum W).Iso W where
   map_ends x := by
     rcases x with ⟨v | v, i⟩
     · exact v.elim
-    · rw [Equiv.emptySum_apply_inr, sum_ends_inr]
+    · rw [Equiv.emptySum_apply_inr, sum_ends_apply_inr]
       simp
 
 @[simp] theorem emptySum_vertex : W.emptySum.vertex = Equiv.emptySum _ _ := (rfl)
@@ -701,7 +709,7 @@ def sumEmpty : (W.sum empty.{u}).Iso W where
   circle := Equiv.sumEmpty _ _
   map_ends x := by
     rcases x with ⟨v | v, i⟩
-    · rw [Equiv.sumEmpty_apply_inl, sum_ends_inl]
+    · rw [Equiv.sumEmpty_apply_inl, sum_ends_apply_inl]
       simp
     · exact v.elim
 
@@ -717,12 +725,12 @@ def sumAssoc (V : ClosedWeb.{v}) (U : ClosedWeb) :
   circle := Equiv.sumAssoc _ _ _
   map_ends x := by
     rcases x with ⟨(v | v) | v, i⟩
-    · rw [Equiv.sumAssoc_apply_inl_inl, sum_ends_inl, sum_ends_inl, sum_ends_inl]
+    · rw [Equiv.sumAssoc_apply_inl_inl, sum_ends_apply_inl, sum_ends_apply_inl, sum_ends_apply_inl]
       simp
-    · rw [Equiv.sumAssoc_apply_inl_inr, sum_ends_inr, sum_ends_inl, sum_ends_inl,
-        sum_ends_inr]
+    · rw [Equiv.sumAssoc_apply_inl_inr, sum_ends_apply_inr, sum_ends_apply_inl, sum_ends_apply_inl,
+        sum_ends_apply_inr]
       simp
-    · rw [Equiv.sumAssoc_apply_inr, sum_ends_inr, sum_ends_inr, sum_ends_inr]
+    · rw [Equiv.sumAssoc_apply_inr, sum_ends_apply_inr, sum_ends_apply_inr, sum_ends_apply_inr]
       simp
 
 @[simp] theorem sumAssoc_vertex (V : ClosedWeb.{v}) (U : ClosedWeb) :
@@ -740,10 +748,10 @@ def sumComm (V : ClosedWeb.{v}) : (W.sum V).Iso (V.sum W) where
   map_ends x := by
     rcases x with ⟨v | v, i⟩
     · simp only [Equiv.sumComm_apply, Sum.swap_inl]
-      rw [sum_ends_inr, sum_ends_inl]
+      rw [sum_ends_apply_inr, sum_ends_apply_inl]
       rfl
     · simp only [Equiv.sumComm_apply, Sum.swap_inr]
-      rw [sum_ends_inl, sum_ends_inr]
+      rw [sum_ends_apply_inl, sum_ends_apply_inr]
       rfl
 
 @[simp] theorem sumComm_vertex (V : ClosedWeb.{v}) :
@@ -763,7 +771,7 @@ def reverse (f : W.Iso V) : W.reverse.Iso V.reverse where
   edge := f.edge
   circle := f.circle
   map_ends x := by
-    rw [ClosedWeb.reverse_ends, ClosedWeb.reverse_ends, f.map_ends x]
+    rw [ClosedWeb.reverse_ends_apply, ClosedWeb.reverse_ends_apply, f.map_ends x]
 
 @[simp] theorem reverse_vertex (f : W.Iso V) : f.reverse.vertex = f.vertex := (rfl)
 @[simp] theorem reverse_edge (f : W.Iso V) : f.reverse.edge = f.edge := (rfl)
@@ -791,10 +799,10 @@ def sum {W' V' : ClosedWeb} (f : W.Iso V) (g : W'.Iso V') :
   map_ends x := by
     rcases x with ⟨v | v, i⟩
     · simp only [Equiv.sumCongr_apply, Sum.map_inl]
-      rw [sum_ends_inl, sum_ends_inl, f.map_ends (v, i)]
+      rw [sum_ends_apply_inl, sum_ends_apply_inl, f.map_ends (v, i)]
       rfl
     · simp only [Equiv.sumCongr_apply, Sum.map_inr]
-      rw [sum_ends_inr, sum_ends_inr, g.map_ends (v, i)]
+      rw [sum_ends_apply_inr, sum_ends_apply_inr, g.map_ends (v, i)]
       rfl
 
 @[simp] theorem sum_vertex {W' V' : ClosedWeb} (f : W.Iso V) (g : W'.Iso V') :
@@ -819,7 +827,7 @@ abbrev theta : ClosedWeb where
   orientation_one _ := rfl
   orientation_two _ := rfl
 
-theorem theta_ends (v : Bool) (i : Fin 3) :
+theorem theta_ends_apply (v : Bool) (i : Fin 3) :
     theta.ends (v, i) = (i, if i = 0 then v else !v) := by
   simp [theta, Equiv.prodCongrRight, Equiv.prodComm_apply]
   split <;> rfl
@@ -828,7 +836,7 @@ theorem theta_ends (v : Bool) (i : Fin 3) :
     theta.incident d = if d.1 = 0 then d.2 else !d.2 := by
   rcases d with ⟨e, b⟩
   have h := theta.incident_ends (if e = 0 then b else !b) e
-  rw [theta_ends] at h
+  rw [theta_ends_apply] at h
   by_cases he : e = 0 <;> simpa [he] using h
 
 @[simp] theorem source_theta (e : Fin 3) : theta.source e = decide (e ≠ 0) := by
@@ -839,22 +847,22 @@ theorem theta_ends (v : Bool) (i : Fin 3) :
   rw [target_def, incident_theta]
   by_cases h : e = 0 <;> simp [h]
 
-@[simp] theorem rotation_theta (d : theta.End) :
-    theta.rotation d =
+@[simp] theorem cyclicSucc_theta_apply (d : theta.End) :
+    theta.cyclicSucc d =
       (finRotate 3 d.1, if finRotate 3 d.1 = 0 then theta.incident d
         else !(theta.incident d)) := by
   rcases d with ⟨e, b⟩
-  have h := theta.rotation_ends (theta.incident (e, b)) e
-  rw [theta_ends, theta_ends, incident_theta] at h
+  have h := theta.cyclicSucc_ends (theta.incident (e, b)) e
+  rw [theta_ends_apply, theta_ends_apply, incident_theta] at h
   rw [incident_theta]
   by_cases he : e = 0 <;> simpa [he] using h
 
 @[simp] theorem isMerge_theta (v : Bool) : theta.IsMerge v ↔ v = false := by
-  rw [IsMerge, theta_ends]
+  rw [IsMerge, theta_ends_apply]
   simp
 
 @[simp] theorem isSplit_theta (v : Bool) : theta.IsSplit v ↔ v = true := by
-  rw [IsSplit, theta_ends]
+  rw [IsSplit, theta_ends_apply]
   simp
 
 end ClosedWeb
