@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Algebra.Group.QuantifierFree
+public import TauCeti.ModelTheory.Algebra.Group.SystemFormula
 
 /-!
 # Existential and universal group formulas as solution statements
@@ -29,9 +30,15 @@ coefficients with solvability statements for finite families of equation–inequ
   when one system of a finite family has a solution.
 * `FirstOrder.Language.group.universal_iff_no_solution`: a universal sentence holds exactly
   when no system of a finite family has a solution.
-* `FirstOrder.Language.group.noSolutionSentence`: conversely, for finite sets of words `E` and
-  `I` in `n` variables, a universal sentence of the group language without coefficients saying
-  that no `n`-tuple satisfies `e = 1` for `e ∈ E` and `i ≠ 1` for `i ∈ I`.
+* `TauCeti.EqIneqSystem.noSolutionSentence`: conversely, for a system of equations and
+  inequations in `n` variables with coefficient names `A`, a universal sentence of the group
+  language with coefficient names `A` saying that the system has no solution.
+* `TauCeti.EqIneqSystem.exists_isSolution_of_forall_isUniversal`: if every universal sentence
+  true in `H` holds in `K`, every system solvable in `K` is solvable in `H`, whatever its type of
+  variables.
+* `FirstOrder.Language.group.noSolutionSentence`: the same sentence without coefficients, for
+  finite sets of words `E` and `I` in `n` variables: no `n`-tuple satisfies `e = 1` for `e ∈ E`
+  and `i ≠ 1` for `i ∈ I`.
 
 The reduction of existential and universal sentences to systems of equations and inequations
 follows Kharlampovich and Myasnikov, *Implicit function theorem over free groups*, §2.3.
@@ -222,28 +229,110 @@ example :
     ne_eq, commutatorElement_eq_one_iff_commute, true_and]
   exact fun h => absurd (FreeGroup.eq_of_commute_of_of h) (by decide)
 
+end FirstOrder.Language.group
+
+/-! ### Universal sentences forbidding solutions of systems with coefficients -/
+
+namespace TauCeti.EqIneqSystem
+
+open FirstOrder FirstOrder.Language
+
+variable {A : Type*} {n : ℕ}
+
+/-- The universal sentence of the group language with coefficient names `A` saying that the
+system `S` of equations and inequations in the variables `Fin n` has no solution: the negation
+of the formula of `S`, with its variables universally quantified. -/
+noncomputable def noSolutionSentence (S : EqIneqSystem (Fin n) A) : Language.group[[A]].Sentence :=
+  (BoundedFormula.relabel Sum.inr S.toFormula).not.alls
+
+/-- The sentence `S.noSolutionSentence` is the negation of the formula of `S`, with its variables
+universally quantified. -/
+theorem noSolutionSentence_def (S : EqIneqSystem (Fin n) A) :
+    S.noSolutionSentence = (BoundedFormula.relabel Sum.inr S.toFormula).not.alls := (rfl)
+
+/-- The sentence `S.noSolutionSentence` is universal. -/
+theorem isUniversal_noSolutionSentence (S : EqIneqSystem (Fin n) A) :
+    S.noSolutionSentence.IsUniversal :=
+  (S.isQF_toFormula.relabel Sum.inr).not.isUniversal.alls
+
+/-- A group, with the coefficient names `A` read through `c`, satisfies `S.noSolutionSentence`
+exactly when the system `S` has no solution in it. -/
+@[simp]
+theorem realize_noSolutionSentence {G : Type*} [Group G] (S : EqIneqSystem (Fin n) A) (c : A → G) :
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    G ⊨ S.noSolutionSentence ↔ ¬∃ v : Fin n → G, S.IsSolution v c := by
+  let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+  let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+  simp [noSolutionSentence_def, Sentence.Realize, Formula.realize_relabel_sumInr,
+    -BoundedFormula.realize_relabel]
+
+/-- If every universal sentence of the group language with coefficient names `A` that holds in `H`
+also holds in `K`, then every system of equations and inequations with a solution in `K` has a
+solution in `H`. -/
+theorem exists_isSolution_of_forall_isUniversal {X K H : Type*} [Group K] [Group H] {cK : A → K}
+    {cH : A → H} (h : letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
+      letI : (Language.constantsOn A).Structure K := Language.constantsOn.structure cK
+      letI : Language.group.Structure H := TauCeti.Group.structureOfGroup H
+      letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure cH
+      ∀ σ : Language.group[[A]].Sentence, σ.IsUniversal → H ⊨ σ → K ⊨ σ)
+    {S : EqIneqSystem X A} (hS : ∃ v : X → K, S.IsSolution v cK) :
+    ∃ v : X → H, S.IsSolution v cH := by
+  classical
+  obtain ⟨v, hv⟩ := hS
+  -- Only the finitely many variables `T` occurring in the words of `S` matter: relabel them by
+  -- `Fin n`, sending all other variables to one further index.
+  let T : Finset X :=
+    ((S.eqs ++ S.ineqs).flatMap fun w => w.toWord.filterMap (·.1.getLeft?)).toFinset
+  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin (Option T)
+  let g : X → Fin n := fun x => e (if hx : x ∈ T then some ⟨x, hx⟩ else none)
+  have hK : (S.relabel g).IsSolution (fun i => (e.symm i).elim 1 fun t => v t) cK := by
+    rw [isSolution_relabel]
+    rw [← ofWords_toWord S] at hv ⊢
+    refine (isSolution_ofWords_congr cK fun w hw x b hx => ?_).1 hv
+    have hxT : x ∈ T := by
+      simp only [List.mem_append, List.mem_map] at hw
+      simp only [T, List.mem_toFinset, List.mem_flatMap, List.mem_append, List.mem_filterMap]
+      obtain ⟨w', hw', rfl⟩ | ⟨w', hw', rfl⟩ := hw
+      exacts [⟨w', .inl hw', _, hx, rfl⟩, ⟨w', .inr hw', _, hx, rfl⟩]
+    simp [g, hxT]
+  by_contra hH
+  refine (realize_noSolutionSentence _ cK).1 (h _ (S.relabel g).isUniversal_noSolutionSentence
+    ((realize_noSolutionSentence _ cH).2 fun ⟨u, hu⟩ => hH ⟨u ∘ g, ?_⟩)) ⟨_, hK⟩
+  rwa [isSolution_relabel] at hu
+
+end TauCeti.EqIneqSystem
+
 /-! ### Universal sentences forbidding solutions of systems without coefficients -/
 
-/-- The equation `w = 1` for a word `w` in the bound variables `Fin n`, as an atomic formula of
-the group language without coefficients. -/
-private noncomputable def wordEqOne (w : FreeGroup (Fin n)) :
-    Language.group.BoundedFormula Empty n :=
-  Language.Term.bdEqual ((wordTerm w).relabel Sum.inr) 1
+namespace FirstOrder.Language.group
+
+open FirstOrder TauCeti
+
+variable {n : ℕ}
 
 /-- The universal sentence of the group language without coefficients saying that no `n`-tuple
 `x` of group elements satisfies the equations `e(x) = 1` for `e ∈ E` and the inequations
-`i(x) ≠ 1` for `i ∈ I`. -/
+`i(x) ≠ 1` for `i ∈ I`: the sentence `EqIneqSystem.noSolutionSentence` of this system with no
+coefficient names, read in the group language without constants. -/
 noncomputable def noSolutionSentence (E I : Finset (FreeGroup (Fin n))) :
     Language.group.Sentence :=
-  (BoundedFormula.iInf (fun e : E => wordEqOne (e : FreeGroup (Fin n))) ⊓
-    BoundedFormula.iInf (fun i : I => (wordEqOne (i : FreeGroup (Fin n))).not)).not.alls
+  (LEquiv.addEmptyConstants Language.group Empty).invLHom.onSentence
+    (EqIneqSystem.noSolutionSentence
+      ⟨E.toList.map (FreeGroup.map Sum.inl), I.toList.map (FreeGroup.map Sum.inl)⟩)
+
+/-- The sentence `noSolutionSentence E I` is the sentence `EqIneqSystem.noSolutionSentence` of
+the system with equations `E` and inequations `I` and no coefficient names, read in the group
+language without constants. -/
+theorem noSolutionSentence_def (E I : Finset (FreeGroup (Fin n))) :
+    noSolutionSentence E I = (LEquiv.addEmptyConstants Language.group Empty).invLHom.onSentence
+      (EqIneqSystem.noSolutionSentence
+        ⟨E.toList.map (FreeGroup.map Sum.inl), I.toList.map (FreeGroup.map Sum.inl)⟩) := (rfl)
 
 /-- The sentence `noSolutionSentence E I` is universal. -/
 theorem isUniversal_noSolutionSentence (E I : Finset (FreeGroup (Fin n))) :
     (noSolutionSentence E I).IsUniversal :=
-  ((BoundedFormula.IsQF.iInf fun _ => (BoundedFormula.IsAtomic.equal _ _).isQF).inf
-    (BoundedFormula.IsQF.iInf fun _ => (BoundedFormula.IsAtomic.equal _ _).isQF.not)).not
-    |>.isUniversal.alls
+  (EqIneqSystem.isUniversal_noSolutionSentence _).onBoundedFormula _
 
 section NoSolution
 
@@ -255,7 +344,18 @@ and the inequations `I`. -/
     (E I : Finset (FreeGroup (Fin n))) :
     G ⊨ noSolutionSentence E I ↔
       ¬∃ x : Fin n → G, (∀ e ∈ E, FreeGroup.lift x e = 1) ∧ ∀ i ∈ I, FreeGroup.lift x i ≠ 1 := by
-  simp [noSolutionSentence, wordEqOne, Sentence.Realize]
+  let : (Language.constantsOn Empty).Structure G := Language.constantsOn.structure isEmptyElim
+  have : (LEquiv.addEmptyConstants Language.group Empty).invLHom.IsExpansionOn G :=
+    LHom.sumElim_isExpansionOn _ _ _
+  have heval (x : Fin n → G) (w : FreeGroup (Fin n)) :
+      EqIneqSystem.eval x (isEmptyElim : Empty → G) (FreeGroup.map Sum.inl w) =
+        FreeGroup.lift x w := by
+    rw [← MonoidHom.comp_apply, EqIneqSystem.eval_eq_lift]
+    congr 1
+    ext
+    simp
+  rw [noSolutionSentence_def, LHom.realize_onSentence, EqIneqSystem.realize_noSolutionSentence]
+  simp [EqIneqSystem.isSolution_iff, heval]
 
 /-- With a single inequation `w ≠ 1`, the sentence `noSolutionSentence E {w}` is the universal
 implication `∀ x, (⋀ e ∈ E, e(x) = 1) → w(x) = 1`: a group satisfies it exactly when `w` vanishes

@@ -7,8 +7,11 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.BlockRepresentation
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
+public import TauCeti.RepresentationTheory.CharacterTable.Table
 public import TauCeti.RingTheory.Semisimple.Wedderburn.Blocks
 import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.OfModule
 
 /-!
 # The Wedderburn blocks of `k[G]` classify its irreducible representations
@@ -40,6 +43,11 @@ the invariance statements it unlocks.
   presentation**, in the form that each degree occurs equally often in the two.
 * `AlgEquiv.nonempty_equiv_index_simpleSubmoduleClasses`: the block index is in bijection with the
   isomorphism classes of simple `k[G]`-modules.
+* `Representation.existsUnique_nonempty_equiv_irreducibleRepresentation`: every irreducible
+  representation, with carrier in any universe, is equivalent to exactly one of the chosen
+  irreducible models `Zᵢ = TauCeti.irreducibleRepresentation k i`.
+* `TauCeti.existsUnique_nonempty_linearEquiv_irreducibleRepresentation`: the same lookup for simple
+  `k[G]`-modules. This is the lookup assigning its class to a simple summand of a representation.
 
 ## Implementation notes
 
@@ -192,5 +200,43 @@ theorem natCard_degree_fiber_eq (n : ℕ) :
   exact Nat.card_congr (Equiv.subtypeEquiv σ fun i => by rw [(hσ i).1])
 
 end Uniqueness
+
+section Models
+
+variable (k : Type u) (G : Type v) [Field k] [IsAlgClosed k] [Group G] [Finite G]
+  [Invertible (Nat.card G : k)]
+
+variable {k G} in
+/-- **Every irreducible representation is one of the chosen irreducible models**, and only one:
+for an irreducible `ρ` there is exactly one row `i` of the character table with `ρ ≃ Zᵢ`. The
+carrier of `ρ` may lie in any universe, not only in that of `k`. -/
+theorem _root_.Representation.existsUnique_nonempty_equiv_irreducibleRepresentation {V : Type w}
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) [ρ.IsIrreducible] :
+    ∃! i : Fin (Nat.card (ConjClasses G)), Nonempty (ρ.Equiv (irreducibleRepresentation k i)) := by
+  obtain ⟨i, ⟨φ⟩⟩ := ClassFunction.exists_nonempty_equiv (irreducibleRepresentation k)
+    (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) ρ
+  exact ⟨i, ⟨φ⟩, fun j ⟨ψ⟩ ↦ (Representation.nonempty_equiv_iff_eq _
+    (pairwise_isEmpty_equiv_irreducibleRepresentation k)).mp ⟨ψ.symm.trans φ⟩⟩
+
+/-- **Every simple `k[G]`-module is one of the chosen irreducible models**, and only one: for a
+simple `k[G]`-module `N` there is exactly one row `i` of the character table with `N ≅ Zᵢ` as
+`k[G]`-modules. The module `N` may lie in any universe, not only in that of `k`. -/
+theorem existsUnique_nonempty_linearEquiv_irreducibleRepresentation (N : Type w) [AddCommGroup N]
+    [Module k[G] N] [IsSimpleModule k[G] N] :
+    ∃! i : Fin (Nat.card (ConjClasses G)),
+      Nonempty (N ≃ₗ[k[G]] (irreducibleRepresentation k i).asModule) := by
+  -- View `N` as a representation through the scalars restricted along `k → k[G]`.
+  let _ : Module k N := Module.compHom N (algebraMap k k[G])
+  have : IsScalarTower k k[G] N := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : (_root_.Representation.ofModule' (k := k) (G := G) N).IsIrreducible :=
+    (Representation.isIrreducible_ofModule'_iff N).mpr inferInstance
+  let eN := (Representation.ofModule'AsModuleEquiv (k := k) (G := G) N).symm
+  refine (existsUnique_congr fun i ↦ ?_).mp
+    (_root_.Representation.existsUnique_nonempty_equiv_irreducibleRepresentation
+      (_root_.Representation.ofModule' (k := k) (G := G) N))
+  rw [Representation.nonempty_equiv_iff]
+  exact ⟨fun ⟨e⟩ ↦ ⟨eN ≪≫ₗ e⟩, fun ⟨e⟩ ↦ ⟨eN.symm ≪≫ₗ e⟩⟩
+
+end Models
 
 end TauCeti
