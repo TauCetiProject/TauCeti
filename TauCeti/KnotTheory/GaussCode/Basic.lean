@@ -6,12 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.Data.Finset.Sort
-import TauCeti.GroupTheory.Perm.Basic
-import Mathlib.Data.Fin.Rev
-import Mathlib.Data.Fintype.Prod
-import Mathlib.Tactic.FinCases
 
 /-!
 # Based oriented Gauss codes
@@ -105,8 +99,8 @@ theorem ext {D E : BasedOrientedGaussCode n}
 /-- Partnered visits carry the same crossing label. -/
 @[simp]
 theorem visit_partner (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
-    D.visit (D.partner.val i) = D.visit i := by
-  exact (D.visit_eq_iff i (D.partner.val i)).mpr (Or.inr rfl) |>.symm
+    D.visit (D.partner.val i) = D.visit i :=
+  (D.visit_eq_iff i (D.partner.val i)).mpr (Or.inr rfl) |>.symm
 
 /-- Every crossing label occurs in the traversal. -/
 theorem visit_surjective (D : BasedOrientedGaussCode n) : Function.Surjective D.visit := by
@@ -695,8 +689,8 @@ def writhe (D : BasedUnorientedGaussCode n) : ℤ :=
 
 /-- The writhe of an unoriented class is the writhe of any oriented representative. -/
 @[simp] theorem writhe_forgetOrientation (D : BasedOrientedGaussCode n) :
-    writhe D.forgetOrientation = D.writhe := by
-  exact BasedUnorientedGaussCode.lift_forgetOrientation BasedOrientedGaussCode.writhe
+    writhe D.forgetOrientation = D.writhe :=
+  BasedUnorientedGaussCode.lift_forgetOrientation BasedOrientedGaussCode.writhe
     BasedOrientedGaussCode.writhe_reverse D
 
 /-- Mirror a based unoriented Gauss code. -/
