@@ -66,6 +66,12 @@ theorem coe_stableSymmetricProj_stableEsymm (n d : ℕ) :
     (stableSymmetricProj R n d (stableEsymm R n) : MvPolynomial (Fin d) R) = esymm (Fin d) R n := by
   rw [stableEsymm, coe_stableSymmetricProj_stableSchur, schurPoly_ones]
 
+/-- **The Schur function of the one-column partition is the elementary symmetric function**,
+`s_(1ⁿ) = e_n`. -/
+@[simp]
+theorem stableSchur_ones (n : ℕ) : stableSchur R (Nat.Partition.ones n) = stableEsymm R n :=
+  (rfl)
+
 /-- `e_0` is the unit of the symmetric functions. -/
 @[simp]
 theorem stableEsymm_zero : stableEsymm R 0 = stableSymmetricOne R :=
@@ -83,6 +89,16 @@ homogeneous symmetric polynomial. -/
 theorem coe_stableSymmetricProj_stableHsymm (n d : ℕ) :
     (stableSymmetricProj R n d (stableHsymm R n) : MvPolynomial (Fin d) R) = hsymm (Fin d) R n := by
   rw [stableHsymm, stableSymmetricProj_mk]
+
+/-- **The Schur function of the one-row partition is the complete homogeneous symmetric
+function**, `s_(n) = h_n`. -/
+@[simp]
+theorem stableSchur_indiscrete (n : ℕ) :
+    stableSchur R (Nat.Partition.indiscrete n) = stableHsymm R n :=
+  stableSymmetricSubmodule_ext fun d => Subtype.ext <| by
+    classical
+    rw [coe_stableSymmetricProj_stableSchur, schurPoly_indiscrete,
+      coe_stableSymmetricProj_stableHsymm]
 
 /-- `h_0` is the unit of the symmetric functions. -/
 @[simp]
