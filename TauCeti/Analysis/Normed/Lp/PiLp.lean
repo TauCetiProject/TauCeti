@@ -11,8 +11,7 @@ public import Mathlib.Analysis.Normed.Lp.PiLp
 # Comparisons of finite product norms and distances
 
 The finite `Lᵖ` norm is nonnegative for every exponent and respects coordinatewise bounds on
-norms, including when the two families have different target spaces. Every finite `PiLp` vector is
-the sum of its coordinate `PiLp.single` vectors (`PiLp.univ_sum_single`). This compares scalar
+norms, including when the two families have different target spaces. This compares scalar
 evaluations of a vector family with the vector family's `Lᵖ` norm. For constant fibres we
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
 of multiples of one vector, and the invariance of the norm under reindexing.
@@ -24,13 +23,16 @@ Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` t
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons.
 
-Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
-in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
-`f` vanish. In particular, extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k`
-coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the
-vectors so obtained are those whose coordinates `j ≥ k` vanish.
-The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
-Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
+Every finite `PiLp` vector is the sum of its coordinate `PiLp.single` vectors
+(`PiLp.univ_sum_single`), and for `p ≥ 1` coordinate placement bundles as a linear isometry
+`PiLp.singleLI` and continuous linear map `PiLp.singleCLM`. Extending a vector of `Lᵖ(ι, E)` by zero
+along an embedding `f : ι ↪ ι'` places its coordinate `i` in the slot `f i`, and the vectors so
+obtained are those whose coordinates outside the range of `f` vanish. In particular, extending a
+vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`,
+places its coordinates in the slots `j < k`; the vectors so obtained are those whose coordinates
+`j ≥ k` vanish. The finite sum against a zero-extended vector reduces to the sum over its original
+coordinates. Over an index type with at most one element, the `Lᵖ` norm is the norm of the
+coordinate.
 
 ## Source
 
@@ -86,6 +88,37 @@ protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) 
     exact Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) _
 
 variable [∀ i, SeminormedAddCommGroup (E i)]
+
+section SingleLI
+
+variable (p E) [Fact (1 ≤ p)] [DecidableEq ι] {𝕜 : Type*} [Semiring 𝕜] [∀ i, Module 𝕜 (E i)]
+
+/-- Coordinate inclusion `v ↦ PiLp.single p i v` into `PiLp p E` as a linear isometry. -/
+noncomputable def singleLI (i : ι) : E i →ₗᵢ[𝕜] PiLp p E where
+  toLinearMap :=
+    (WithLp.linearEquiv p 𝕜 (∀ j, E j)).symm.toLinearMap ∘ₗ LinearMap.single 𝕜 E i
+  norm_map' := norm_single p E i
+
+/-- Coordinate inclusion `v ↦ PiLp.single p i v` into `PiLp p E` as a continuous linear map,
+right-inverse to `PiLp.proj p E i`. -/
+noncomputable def singleCLM (i : ι) : E i →L[𝕜] PiLp p E :=
+  (singleLI p E i).toContinuousLinearMap
+
+variable {p E}
+
+/-- `PiLp.singleLI` evaluates as `PiLp.single`. -/
+@[simp]
+theorem singleLI_apply (i : ι) (v : E i) :
+    singleLI (𝕜 := 𝕜) p E i v = single p i v :=
+  (rfl)
+
+/-- `PiLp.singleCLM` evaluates as `PiLp.single`. -/
+@[simp]
+theorem singleCLM_apply (i : ι) (v : E i) :
+    singleCLM (𝕜 := 𝕜) p E i v = single p i v :=
+  (rfl)
+
+end SingleLI
 
 /-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
 @[simp]

@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Fourier.AddCircle
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
 public import TauCeti.MeasureTheory.Function.Lp.PiLp
 
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.MeasureTheory.Integral.Bochner.Star
 
 /-!
 # The continuous characters of the circle are the Fourier monomials
@@ -82,8 +84,9 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
   shifts its Fourier coefficients by `n`.
-* `TauCeti.fourierCoeff_star`: the Fourier coefficients of the complex conjugate of an `Lᵖ`
-  function are the conjugates of its reflected coefficients.
+* `MeasureTheory.Lp.fourierCoeff_star`, `TauCeti.fourierCoeff_star`,
+  `TauCeti.fourierCoeff_star_clm`: the Fourier coefficients of `star f` are `star` (complex
+  conjugate, or Hilbert-space adjoint) of the reflected coefficients of `f`.
 * `TauCeti.fourierCoeff_fourierLp`: the Fourier coefficients of the `Lᵖ` monomial `e_n` are `1`
   at `n` and `0` elsewhere.
 * `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
@@ -404,16 +407,38 @@ theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (haarAddCircle (T := T)))
     rw [hx, Pi.smul_apply', coe_fourierBasis, hm, hma, smul_eq_mul, mul_comm]
   rw [fourierCoeff_congr_ae hae, fourierCoeff_fourierLp_smul]
 
+/-- In a normed complex star module, the Fourier coefficients of `star f` are `star` of the
+reflected Fourier coefficients of `f`. -/
+theorem _root_.MeasureTheory.Lp.fourierCoeff_star {p : ℝ≥0∞} {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [StarAddMonoid E] [NormedStarGroup E]
+    [StarModule ℂ E] (f : Lp E p (haarAddCircle (T := T))) (n : ℤ) :
+    fourierCoeff (star f : Lp E p (haarAddCircle (T := T))) n =
+      star (fourierCoeff f (-n)) := by
+  have : StarModule ℝ E := ⟨fun r x ↦ by
+    rw [← algebraMap_smul ℂ r x, star_smul, star_trivial r, ← algebraMap_smul ℂ r (star x),
+      Algebra.algebraMap_eq_smul_one, star_smul, star_trivial r, star_one]⟩
+  rw [fourierCoeff_congr_ae (Lp.coeFn_star f), fourierCoeff, fourierCoeff, ← integral_star]
+  congr 1; funext x
+  rw [neg_neg, Pi.star_apply, star_smul, fourier_neg, RCLike.star_def]
+
 /-- The Fourier coefficients of the complex conjugate of an `Lᵖ` function are the conjugates of
 its reflected coefficients. -/
 @[simp]
 theorem fourierCoeff_star {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := T))) (n : ℤ) :
     fourierCoeff (star f : Lp ℂ p (haarAddCircle (T := T))) n =
       starRingEnd ℂ (fourierCoeff f (-n)) := by
-  rw [fourierCoeff_congr_ae (Lp.coeFn_star f), fourierCoeff, fourierCoeff, ← integral_conj]
-  congr 1
-  funext x
-  rw [neg_neg, Pi.star_apply, smul_eq_mul, smul_eq_mul, map_mul, fourier_neg, RCLike.star_def]
+  rw [Lp.fourierCoeff_star, RCLike.star_def]
+
+/-- For a circle `Lᵖ` family of bounded operators on a complex Hilbert space `H`, the `n`-th
+Fourier coefficient of `star A` is the Hilbert-space adjoint of the `(-n)`-th Fourier coefficient
+of `A`. -/
+@[simp]
+theorem fourierCoeff_star_clm {p : ℝ≥0∞} {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace ℂ H] [CompleteSpace H]
+    (A : Lp (H →L[ℂ] H) p (haarAddCircle (T := T))) (n : ℤ) :
+    fourierCoeff (star A : Lp (H →L[ℂ] H) p (haarAddCircle (T := T))) n =
+      ContinuousLinearMap.adjoint (fourierCoeff A (-n)) := by
+  rw [Lp.fourierCoeff_star, ContinuousLinearMap.star_eq_adjoint]
 
 /-- The Fourier coefficients of the `Lᵖ` monomial `e_n` are those of the continuous monomial
 `e_n`: `1` at `n` and `0` elsewhere. -/

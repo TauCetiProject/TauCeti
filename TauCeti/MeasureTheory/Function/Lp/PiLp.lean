@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.SpecificCodomains.WithLp
+public import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -28,6 +29,8 @@ or fibrewise `L²` spaces.
 ## Main definitions
 
 * `MeasureTheory.Lp.piLpEquiv`: `Lp (PiLp p E) p μ ≃ₗᵢ[𝕜] PiLp p (fun i ↦ Lp (E i) p μ)`.
+* `MeasureTheory.Lp.piLpSingleLI`: isometric coordinate inclusion
+  `Lp (E i) p μ →ₗᵢ[𝕜] Lp (PiLp p E) p μ`.
 * `MeasureTheory.Lp.subspacePiLpEquiv`: `↥M ≃ₗᵢ[𝕜] PiLp p (fun i ↦ ↥(N i))` for a submodule `M`
   characterized coordinatewise under `piLpEquiv` by submodules `N i`.
 
@@ -35,8 +38,12 @@ or fibrewise `L²` spaces.
 
 * `MeasureTheory.Lp.coeFn_piLpEquiv_apply`, `MeasureTheory.Lp.coeFn_piLpEquiv_symm`: pointwise
   almost-everywhere descriptions of `piLpEquiv` and its inverse.
-* `MeasureTheory.Lp.piLpEquiv_apply_eq_compLpL`: over a nontrivially normed field, the `i`-th
-  coordinate of `piLpEquiv` is `(PiLp.proj p E i).compLpL p μ`.
+* `MeasureTheory.Lp.eq_sum_piLpSingleLI`: every `f : Lp (PiLp p E) p μ` is the finite sum of its
+  coordinate inclusions `piLpSingleLI`.
+* `MeasureTheory.Lp.piLpEquiv_apply_eq_compLpL`,
+  `MeasureTheory.Lp.piLpSingleLI_apply_eq_compLpL`: over a nontrivially normed field, coordinate
+  evaluation and inclusion are `(PiLp.proj p E i).compLpL p μ` and
+  `(PiLp.singleCLM p E i).compLpL p μ`.
 * `MeasureTheory.Lp.coeFn_piLpEquiv_symm_single`: the inverse on a single-coordinate vector is
   almost everywhere `x ↦ PiLp.single p i (h x)`.
 * `MeasureTheory.Lp.piLpEquiv_lpSMul`: `piLpEquiv` commutes coordinatewise with heterogeneous `Lp`
@@ -128,6 +135,13 @@ def piLpEquiv : Lp (PiLp p E) p μ ≃ₗᵢ[𝕜] PiLp p (fun i ↦ Lp (E i) p 
     rw [PiLp.toLp_apply, h₁, h₂, PiLp.toLp_apply]
   norm_map' := norm_toLp_eval_eq p E
 
+variable (μ) in
+/-- Isometric coordinate inclusion `Lp (E i) p μ →ₗᵢ[𝕜] Lp (PiLp p E) p μ` placing an `Lp`
+function in slot `i` and `0` in all other coordinates. -/
+def piLpSingleLI [DecidableEq ι] (i : ι) : Lp (E i) p μ →ₗᵢ[𝕜] Lp (PiLp p E) p μ :=
+  (piLpEquiv p 𝕜 E μ).symm.toLinearIsometry.comp
+    (PiLp.singleLI (𝕜 := 𝕜) p (fun j ↦ Lp (E j) p μ) i)
+
 variable {p 𝕜 E}
 
 /-- Each coordinate of `piLpEquiv` agrees almost everywhere with pointwise coordinate evaluation. -/
@@ -152,6 +166,30 @@ theorem coeFn_piLpEquiv_symm_single [DecidableEq ι] (i : ι) (h : Lp (E i) p μ
     · exact (Lp.coeFn_zero (E j) p μ).mono fun _ hx ↦ by simpa [Pi.single_eq_of_ne hj] using hx
   filter_upwards [coeFn_piLpEquiv_symm (𝕜 := 𝕜) (PiLp.single p i h), hall] with x hx hcoord
   exact hx.trans (PiLp.ext hcoord)
+
+/-- `piLpSingleLI` unfolds to `(piLpEquiv p 𝕜 E μ).symm` applied to `PiLp.single`. -/
+theorem piLpSingleLI_eq_symm_single [DecidableEq ι] (i : ι) (h : Lp (E i) p μ) :
+    piLpSingleLI p 𝕜 E μ i h = (piLpEquiv p 𝕜 E μ).symm (PiLp.single p i h) := by
+  simp [piLpSingleLI]
+
+/-- `piLpEquiv` sends `piLpSingleLI p 𝕜 E μ i h` to `PiLp.single p i h`. -/
+@[simp]
+theorem piLpEquiv_piLpSingleLI [DecidableEq ι] (i : ι) (h : Lp (E i) p μ) :
+    piLpEquiv p 𝕜 E μ (piLpSingleLI p 𝕜 E μ i h) = PiLp.single p i h := by
+  rw [piLpSingleLI_eq_symm_single, LinearIsometryEquiv.apply_symm_apply]
+
+/-- `piLpSingleLI` acts pointwise almost everywhere by `PiLp.single`. -/
+theorem coeFn_piLpSingleLI [DecidableEq ι] (i : ι) (h : Lp (E i) p μ) :
+    piLpSingleLI p 𝕜 E μ i h =ᵐ[μ] fun x ↦ PiLp.single p i (h x) := by
+  rw [piLpSingleLI_eq_symm_single]
+  exact coeFn_piLpEquiv_symm_single (𝕜 := 𝕜) i h
+
+/-- Every `f : Lp (PiLp p E) p μ` is the finite sum of its coordinate inclusions `piLpSingleLI`. -/
+theorem eq_sum_piLpSingleLI [DecidableEq ι] (f : Lp (PiLp p E) p μ) :
+    f = ∑ i, piLpSingleLI p 𝕜 E μ i (piLpEquiv p 𝕜 E μ f i) := by
+  apply (piLpEquiv p 𝕜 E μ).injective
+  rw [map_sum]
+  simpa only [piLpEquiv_piLpSingleLI] using (PiLp.univ_sum_single (piLpEquiv p 𝕜 E μ f)).symm
 
 /-- Coordinate evaluation via `piLpEquiv` commutes with heterogeneous `Lp` scalar multiplication. -/
 theorem piLpEquiv_lpSMul {q : ℝ≥0∞} [HolderTriple q p p] (a : Lp 𝕜 q μ)
@@ -235,6 +273,15 @@ theorem piLpEquiv_apply_eq_compLpL (f : Lp (PiLp p E) p μ) (i : ι) :
   filter_upwards [coeFn_piLpEquiv_apply (𝕜 := 𝕜) f i,
     (PiLp.proj (𝕜 := 𝕜) p E i).coeFn_compLpL f] with x h₁ h₂
   rw [h₁, h₂, PiLp.proj_apply]
+
+/-- Over a nontrivially normed field, `piLpSingleLI` agrees with composition on `Lp` with the
+continuous coordinate inclusion `PiLp.singleCLM`. -/
+theorem piLpSingleLI_apply_eq_compLpL [DecidableEq ι] (i : ι) (h : Lp (E i) p μ) :
+    piLpSingleLI p 𝕜 E μ i h = (PiLp.singleCLM (𝕜 := 𝕜) p E i).compLpL p μ h := by
+  apply Lp.ext
+  filter_upwards [coeFn_piLpSingleLI (𝕜 := 𝕜) i h,
+    (PiLp.singleCLM (𝕜 := 𝕜) p E i).coeFn_compLpL h] with x h₁ h₂
+  rw [h₁, h₂, PiLp.singleCLM_apply]
 
 end NontriviallyNormedField
 

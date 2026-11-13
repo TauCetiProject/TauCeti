@@ -134,6 +134,33 @@ theorem piLpEquiv_apply (f : lp (fun a ↦ PiLp p (E a)) p) (i : ι) (a : α) :
 theorem piLpEquiv_symm_apply (g : PiLp p (fun i ↦ lp (fun a ↦ E a i) p)) (a : α) (i : ι) :
     (piLpEquiv p 𝕜 E).symm g a i = g i a := (rfl)
 
+/-- On a sequence concentrated at index `a`, the `i`-th coordinate of `lp.piLpEquiv` is
+`lp.single p a (v i)`. -/
+@[simp]
+theorem piLpEquiv_single_apply [DecidableEq α] (a : α) (v : PiLp p (E a)) (i : ι) :
+    piLpEquiv p 𝕜 E (lp.single p a v) i = lp.single p a (v i) := by
+  ext b; rcases eq_or_ne b a with rfl | hba <;> simp [*]
+
+/-- `lp.piLpEquiv` interchanges `lp.single` and `PiLp.single`. -/
+@[simp]
+theorem piLpEquiv_single_single [DecidableEq α] [DecidableEq ι] (a : α) (j : ι) (x : E a j) :
+    piLpEquiv p 𝕜 E (lp.single p a (PiLp.single p j x)) = PiLp.single p j (lp.single p a x) := by
+  ext i b; rcases eq_or_ne i j with rfl | hij <;> rcases eq_or_ne b a with rfl | hba <;> simp [*]
+
+/-- On a vector concentrated in coordinate `j`, `(lp.piLpEquiv).symm` evaluates at `a` to
+`PiLp.single p j (g a)`. -/
+@[simp]
+theorem piLpEquiv_symm_single_apply [DecidableEq ι] (j : ι) (g : lp (fun a ↦ E a j) p) (a : α) :
+    (piLpEquiv p 𝕜 E).symm (PiLp.single p j g) a = PiLp.single p j (g a) := by
+  ext i; rcases eq_or_ne i j with rfl | hij <;> simp [*]
+
+/-- `(lp.piLpEquiv).symm` interchanges `PiLp.single` and `lp.single`. -/
+@[simp]
+theorem piLpEquiv_symm_single_single [DecidableEq α] [DecidableEq ι] (j : ι) (a : α) (x : E a j) :
+    (piLpEquiv p 𝕜 E).symm (PiLp.single p j (lp.single p a x)) =
+      lp.single p a (PiLp.single p j x) := by
+  ext b i; rcases eq_or_ne b a with rfl | hba <;> rcases eq_or_ne i j with rfl | hij <;> simp [*]
+
 end NormedRing
 
 end lp
