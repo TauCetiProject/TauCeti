@@ -129,12 +129,8 @@ theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p
   have hHc : ContDiff ℝ ∞ fun w ↦ ∑ i, radialHamiltonian (G i) (p i) w :=
     ContDiff.sum fun i _ ↦ contDiff_radialHamiltonian (hGc i) (p i)
   have hHs : HasCompactSupport fun w ↦ ∑ i, radialHamiltonian (G i) (p i) w := by
-    refine HasCompactSupport.intro (Finset.univ.isCompact_biUnion fun i _ ↦
-      isCompact_closedBall (p i) (r / 3)) fun w hw ↦ Finset.sum_eq_zero fun i _ ↦ ?_
-    have hw' : r / 3 < ‖w - p i‖ := by
-      rw [← dist_eq_norm]
-      exact not_le.1 fun h ↦ hw (Set.mem_iUnion₂_of_mem (Finset.mem_univ i) (mem_closedBall.2 h))
-    simp [hGR i _ (by nlinarith : r ^ 2 / 9 ≤ ‖w - p i‖ ^ 2)]
+    rw [← Finset.sum_fn]
+    exact HasCompactSupport.finset_sum fun i _ ↦ hasCompactSupport_radialHamiltonian (hGR i) (p i)
   choose K' hXi using fun i ↦ exists_lipschitzWith_hamiltonianVectorField_radialHamiltonian
     ((hGc i).of_le (by simp)) (hGR i) (p i)
   refine ⟨_, hHc, hHs, stdComplexSymplecticForm.exists_lipschitzWith_hamiltonianVectorField
