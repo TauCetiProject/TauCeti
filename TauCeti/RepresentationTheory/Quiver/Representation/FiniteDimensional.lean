@@ -114,23 +114,6 @@ theorem IsFinDim.of_epi {M N : QuiverRep.{u, v, w, t} k Q} (hM : IsFinDim k Q M)
   exact Module.Finite.of_surjective (f.app x).hom
     ((ModuleCat.epi_iff_surjective (f.app x)).mp inferInstance)
 
-/-- A finite biproduct of pointwise finite-dimensional representations is pointwise
-finite-dimensional. No finiteness of the quiver is required. -/
-theorem isFinDim_biproduct {ι : Type*} [Finite ι]
-    (M : ι → QuiverRep.{u, v, w, t} k Q) (hM : ∀ i, IsFinDim k Q (M i)) :
-    IsFinDim k Q (Limits.biproduct M) := by
-  intro v
-  -- Reindex to `Fin n` because `ModuleCat.biproductIsoPi` requires an index type in `Type`.
-  obtain ⟨n, ⟨r⟩⟩ := Finite.exists_equiv_fin ι
-  let M' (i : Fin n) := M (r.symm i)
-  have (i : Fin n) : FiniteDimensional k ((M' i).obj v) := hM (r.symm i) v
-  let i : Limits.biproduct M ≅ Limits.biproduct M' :=
-    Limits.biproduct.whiskerEquiv r (fun j ↦ eqToIso (by simp [M']))
-  let E := (evaluation (Paths Q) (ModuleCat k)).obj v
-  let e := E.mapIso i ≪≫ E.mapBiproduct M' ≪≫
-    ModuleCat.biproductIsoPi (fun i ↦ (M' i).obj v)
-  exact Module.Finite.equiv e.toLinearEquiv.symm
-
 section ExactStructure
 
 variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
@@ -187,6 +170,15 @@ instance : ObjectProperty.IsClosedUnderBinaryProducts (IsFinDim.{u, v, w, t} k Q
 under subobjects and quotients, this makes the full subcategory abelian. -/
 instance : ObjectProperty.IsClosedUnderFiniteProducts (IsFinDim.{u, v, w, t} k Q) :=
   ObjectProperty.IsClosedUnderFiniteProducts.mk'
+
+variable {k Q} in
+/-- A finite biproduct of pointwise finite-dimensional representations is pointwise
+finite-dimensional. No finiteness of the quiver is required. -/
+theorem isFinDim_biproduct {ι : Type*} [Finite ι]
+    (M : ι → QuiverRep.{u, v, w, t} k Q) (hM : ∀ i, IsFinDim k Q (M i)) :
+    IsFinDim k Q (Limits.biproduct M) :=
+  ObjectProperty.prop_of_iso _ (Limits.biproduct.isoProduct M).symm
+    (ObjectProperty.prop_pi (IsFinDim.{u, v, w, t} k Q) M hM)
 
 /-- The inclusion of pointwise finite-dimensional representations preserves finite limits. -/
 instance : PreservesFiniteLimits (ObjectProperty.ι (IsFinDim.{u, v, w, t} k Q)) := by
