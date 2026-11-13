@@ -25,13 +25,17 @@ are primitively encoded and the arity of a function symbol is primitive recursiv
   encoding and decoding functions are those of Mathlib's `Encodable (L.Term α)` instance; only
   the proof that they are primitive recursive is new.
 * `FirstOrder.Language.Term.primrec_listEncode`, `FirstOrder.Language.Term.primrec_listDecode`:
-  spelling a term and Mathlib's decoder are primitive recursive.
+  spelling a term, and reading a list of symbols as a list of terms with `listDecode`, are
+  primitive recursive.
+* `FirstOrder.Language.Term.primrec_var`, `FirstOrder.Language.Term.primrec_func`: forming a
+  variable term and applying a function symbol to a tuple of terms are primitive recursive.
 * `FirstOrder.Language.Term.primrecPred_exists_listEncode_eq`: the lists that spell a term form
-  a primitive recursive set. Mathlib's decoder also accepts lists that spell no term (it drops
-  everything after the first complete term), so validity is the condition that decoding followed
-  by spelling returns the list itself, `FirstOrder.Language.Term.exists_listEncode_eq_iff`.
-  For natural-number codes, the set of codes of terms is primitive recursive by Mathlib's
-  `Primcodable.mem_range_encode`.
+  a primitive recursive set. The decoder of terms (`Encodable.decode`) returns the first term
+  that `listDecode` reads off the coded list, so it also accepts lists that spell no term, such
+  as the spelling of a term followed by further symbols. A list spells a term exactly when
+  `listDecode` reads it as a single term whose spelling is the list,
+  `FirstOrder.Language.Term.exists_listEncode_eq_iff`. For natural-number codes, the set of
+  codes of terms is primitive recursive by Mathlib's `Primcodable.mem_range_encode`.
 
 The decoder is shown primitive recursive by running it on spellings: a variable pushes its
 one-letter spelling on a stack, and a function symbol of arity `n` replaces the top `n` spellings
@@ -58,7 +62,8 @@ theorem listEncode_ne_nil (t : L.Term α) : t.listEncode ≠ [] := by
 theorem listDecode_listEncode (t : L.Term α) : listDecode t.listEncode = [t] := by
   simpa using listDecode_encode_list [t]
 
-/-- A list spells a term exactly when decoding it and spelling the result returns the list. -/
+/-- A list spells a term exactly when `listDecode` reads it as a single term whose spelling is
+the list. -/
 theorem exists_listEncode_eq_iff {l : List (α ⊕ Σ i, L.Functions i)} :
     (∃ t : L.Term α, t.listEncode = l) ↔ (listDecode l).map listEncode = [l] := by
   refine ⟨?_, fun h => ?_⟩
@@ -69,13 +74,13 @@ theorem exists_listEncode_eq_iff {l : List (α ⊕ Σ i, L.Functions i)} :
 
 /-- A function symbol of positive arity without arguments decodes to no term. -/
 @[simp]
-theorem listDecode_singleton_inr {n : ℕ} (f : L.Functions (n + 1)) :
+theorem listDecode_singleton_inr_add_one {n : ℕ} (f : L.Functions (n + 1)) :
     listDecode [Sum.inr ⟨n + 1, f⟩] = ([] : List (L.Term α)) := by
   simp [listDecode]
 
 /-- A function symbol of positive arity without arguments does not spell a term. -/
 @[simp]
-theorem listEncode_ne_singleton_inr {n : ℕ} (f : L.Functions (n + 1)) (t : L.Term α) :
+theorem listEncode_ne_singleton_inr_add_one {n : ℕ} (f : L.Functions (n + 1)) (t : L.Term α) :
     t.listEncode ≠ [Sum.inr ⟨n + 1, f⟩] := fun h => by
   simpa [h] using listDecode_listEncode t
 
@@ -139,10 +144,10 @@ theorem decode_encode_list (l : List (α ⊕ Σ i, L.Functions i)) :
   simp [decode_eq_decode_bind_listDecode]
 
 /-- The code of a function symbol of positive arity without arguments decodes to no term. -/
-theorem decode_encode_singleton_inr {n : ℕ} (f : L.Functions (n + 1)) :
+theorem decode_encode_singleton_inr_add_one {n : ℕ} (f : L.Functions (n + 1)) :
     decode (α := L.Term α) (encode ([Sum.inr ⟨n + 1, f⟩] : List (α ⊕ Σ i, L.Functions i))) =
       none := by
-  rw [decode_encode_list, listDecode_singleton_inr, List.head?_nil]
+  rw [decode_encode_list, listDecode_singleton_inr_add_one, List.head?_nil]
 
 /-- A list of terms and the list of their spellings have the same code. -/
 theorem encode_map_listEncode (l : List (L.Term α)) : encode (l.map listEncode) = encode l := by
@@ -219,7 +224,7 @@ theorem primrec_listEncode :
     Primrec (listEncode : L.Term α → List (α ⊕ Σ i, L.Functions i)) :=
   primrec_listEncode_iff.2 .id
 
-/-- Mathlib's decoder of lists of variables and function symbols is primitive recursive. -/
+/-- Reading a list of variables and function symbols as a list of terms is primitive recursive. -/
 theorem primrec_listDecode :
     Primrec (listDecode : List (α ⊕ Σ i, L.Functions i) → List (L.Term α)) :=
   Primrec.encode_iff.1 <| (Primrec.encode.comp primrec_foldr_decodeStep).of_eq fun l => by
@@ -235,5 +240,13 @@ theorem primrecPred_exists_listEncode_eq :
 /-- Forming a variable term is primitive recursive. -/
 theorem primrec_var : Primrec (var : α → L.Term α) :=
   primrec_listEncode_iff.1 <| Primrec.list_cons.comp Primrec.sumInl (.const [])
+
+/-- Applying a function symbol to a tuple of terms is primitive recursive. -/
+theorem primrec_func {n : ℕ} (f : L.Functions n) :
+    Primrec (func f : (Fin n → L.Term α) → L.Term α) := by
+  refine primrec_listEncode_iff.1 <| (Primrec.list_cons.comp (.const (Sum.inr ⟨n, f⟩))
+    (Primrec.list_flatten.comp <| Primrec.list_ofFn fun i =>
+      primrec_listEncode.comp (Primrec.fin_app.comp .id (.const i)))).of_eq fun ts => ?_
+  simp [listEncode, List.ofFn_eq_map, List.flatMap_def]
 
 end FirstOrder.Language.Term

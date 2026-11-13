@@ -72,7 +72,6 @@ instance : Primcodable (Σ n, Language.group.Functions n) :=
   Primcodable.ofEquiv (Fin 3) sigmaFunctionsEquiv
 
 /-- The code of a function symbol of the language of groups is its arity. -/
-@[simp]
 theorem encode_sigmaFunctions (s : Σ n, Language.group.Functions n) :
     Encodable.encode s = s.1 := by
   simp [Encodable.encode_ofEquiv, Encodable.Subtype.encode_eq]
@@ -92,7 +91,7 @@ variable {A X : Type*}
 @[simp]
 theorem listEncode_ne_singleton_mul (t : Language.group[[A]].Term X) :
     t.listEncode ≠ [Sum.inr ⟨2, Sum.inl mulFunc⟩] :=
-  Term.listEncode_ne_singleton_inr _ t
+  Term.listEncode_ne_singleton_inr_add_one _ t
 
 variable [Primcodable A] [Encodable X]
 
@@ -102,7 +101,7 @@ theorem decode_encode_singleton_mul :
     Encodable.decode (α := Language.group[[A]].Term X)
       (Encodable.encode ([Sum.inr ⟨2, Sum.inl mulFunc⟩] :
         List (X ⊕ Σ i, Language.group[[A]].Functions i))) = none :=
-  Term.decode_encode_singleton_inr _
+  Term.decode_encode_singleton_inr_add_one _
 
 /-- The code of a variable, as a group term, is Mathlib's code of the one-letter list. -/
 theorem encode_var (x : X) :

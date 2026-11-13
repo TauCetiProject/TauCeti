@@ -214,6 +214,11 @@ theorem sigmaFunctionsWithConstantsEquiv_con (a : A) :
   (rfl)
 
 @[simp]
+theorem sigmaFunctionsWithConstantsEquiv_inr (a : A) :
+    sigmaFunctionsWithConstantsEquiv A ⟨0, (Sum.inr a : L[[A]].Functions 0)⟩ = Sum.inr a :=
+  (rfl)
+
+@[simp]
 theorem sigmaFunctionsWithConstantsEquiv_symm_inl (f : Σ n, L.Functions n) :
     (sigmaFunctionsWithConstantsEquiv A).symm (Sum.inl f) = ⟨f.1, Sum.inl f.2⟩ :=
   (rfl)

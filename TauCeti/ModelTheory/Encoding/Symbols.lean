@@ -9,15 +9,18 @@ public import Mathlib.Computability.Primrec.Basic
 public import TauCeti.ModelTheory.LanguageMap
 
 /-!
-# Primitive encodings of the symbols of a first-order language
+# Primitive encodings of the function symbols of a first-order language
 
-Mathlib's list encodings (`Mathlib.ModelTheory.Encoding`) spell a term or a formula as a list of
-symbols. Reading such a list back requires the arity of every symbol, so the encodings are
-primitive recursive only when the dependent pairs `Σ n, L.Functions n` of function symbols with
-their arities are primitively encoded and the arity `Sigma.fst` is primitive recursive. This file
-records the arity condition as a class, `FirstOrder.Language.PrimrecFunctionArity`, and supplies
-it for a language with added constants `L[[A]]`, whose function symbols are coded as a function
-symbol of `L` or a constant from `A` (`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`).
+Mathlib's list encoding of terms (`Mathlib.ModelTheory.Encoding`) spells a term as a list of
+variables and function symbols, and reading such a list back uses the arity of every function
+symbol. This file records, as the class `FirstOrder.Language.PrimrecFunctionArity`, the condition
+that the arity `Sigma.fst` is primitive recursive on the primitively encoded function symbols
+`Σ n, L.Functions n`. Together with primitively encoded variables, this condition suffices for
+the encoding of terms to be primitive recursive (`FirstOrder.Language.Term.instPrimcodable`).
+
+The file supplies the code of the function symbols and the arity condition for a language with
+added constants `L[[A]]`, whose function symbols are coded as a function symbol of `L` or a
+constant from `A` (`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`).
 -/
 
 public section
