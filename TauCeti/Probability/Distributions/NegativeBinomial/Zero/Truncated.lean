@@ -121,7 +121,7 @@ theorem cdf_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 < r) (hp : 
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
   rw [Measure.cdf_map_natCast_cond_compl_zero _
       (negativeBinomialMeasure_singleton_zero_ne_one hr hp hp1) hx,
-    cdf_map_cast_negativeBinomialMeasure hr hp hp1.le hx,
+    cdf_map_cast_negativeBinomialMeasure hr.le hp hx,
     negativeBinomialMeasure_real_singleton_zero hr.le hp hp1.le]
 
 /-- Below one, the cdf of the zero-truncated negative-binomial law of positive shape and success
@@ -156,6 +156,6 @@ theorem quantile_map_cast_negativeBinomialMeasure_cond_compl_zero_eq_iff (hr : 0
   have hv : p ^ r + u * (1 - p ^ r) ∈ Ioo 0 1 :=
     ⟨by nlinarith [rpow_pos_of_pos hp r, hu.1], by nlinarith [hu.2]⟩
   rw [quantile_map_cast_negativeBinomialMeasure_cond_compl_zero hr hp hp1 hu,
-    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp hp1.le hv]
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr.le hp hv]
 
 end TauCeti.Probability

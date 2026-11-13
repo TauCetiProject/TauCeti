@@ -128,12 +128,12 @@ theorem opNorm_zero_iff' (f : E →SL[σ] F) : ‖f‖ = 0 ↔ f = 0 := by
 /-- The nonnegative operator norm vanishes exactly at zero, even for a seminormed source. -/
 @[simp]
 theorem opNNNorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖₊ = 0 ↔ f = 0 := by
-  simpa only [← NNReal.coe_eq_zero, coe_nnnorm] using f.opNorm_zero_iff'
+  simpa only [← NNReal.coe_eq_zero, coe_nnNorm] using f.opNorm_zero_iff'
 
 /-- The extended operator norm vanishes exactly at zero, even for a seminormed source. -/
 @[simp]
 theorem opENorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖ₑ = 0 ↔ f = 0 := by
-  simpa only [enorm_eq_nnnorm, ENNReal.coe_eq_zero] using f.opNNNorm_eq_zero_iff
+  simpa only [eNorm_eq_nnNorm, ENNReal.coe_eq_zero] using f.opNNNorm_eq_zero_iff
 
 /-- Continuous semilinear maps from a seminormed space to a normed space form a normed group
 for the operator norm. Use this construction locally when the source is only seminormed. -/
@@ -183,7 +183,7 @@ theorem enorm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpa
     abel
   rw [hsplit]
   calc _ ≤ ‖(A' - A).comp (B' - B)‖ₑ + ‖(A' - A).comp B‖ₑ + ‖A.comp (B' - B)‖ₑ :=
-        (enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _)
+        (eNorm_add_le _ _).trans (add_le_add_left (eNorm_add_le _ _) _)
     _ ≤ _ := by gcongr <;> exact opENorm_comp_le _ _
 
 section Inverse
@@ -409,7 +409,7 @@ theorem image_ball_eq_ball {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
     (h : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) (r : ℝ) :
     q '' Metric.ball 0 r = Metric.ball 0 r := by
   refine subset_antisymm ?_ (h r)
-  have h' : ‖q‖₊ ≤ 1 := by rwa [← NNReal.coe_le_one, coe_nnnorm]
+  have h' : ‖q‖₊ ≤ 1 := by rwa [← NNReal.coe_le_one, coe_nnNorm]
   simpa using ((q.lipschitzWith.weaken h').mapsTo_ball one_ne_zero 0 r).image_subset
 
 end MetricQuotient
