@@ -44,7 +44,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω} {c : M} {r : ℝ}
 
 /-- The inclusion of an open ball into its ambient manifold is `C^n`. -/
-theorem contMDiff_ball_subtype_val :
+theorem contMDiff_subtypeVal_ball :
     ContMDiff I I n (Subtype.val : Metric.ball c r → M) :=
   contMDiff_subtype_val (U := ⟨Metric.ball c r, Metric.isOpen_ball⟩)
 
@@ -53,22 +53,22 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [ChartedSpace H' N] (f : N → Metric.ball c r)
 
 /-- A map into an open ball is `C^n` within a set at a point iff its ambient map is. -/
-@[simp] theorem contMDiffWithinAt_ball_subtypeVal_comp_iff (s : Set N) (x : N) :
+@[simp] theorem contMDiffWithinAt_subtypeVal_ball_comp_iff (s : Set N) (x : N) :
     ContMDiffWithinAt I' I n (Subtype.val ∘ f) s x ↔ ContMDiffWithinAt I' I n f s x :=
   ContMDiffWithinAt.subtypeVal_comp_iff ⟨Metric.ball c r, Metric.isOpen_ball⟩ f s x
 
 /-- A map into an open ball is `C^n` at a point iff its ambient map is. -/
-@[simp] theorem contMDiffAt_ball_subtypeVal_comp_iff (x : N) :
+@[simp] theorem contMDiffAt_subtypeVal_ball_comp_iff (x : N) :
     ContMDiffAt I' I n (Subtype.val ∘ f) x ↔ ContMDiffAt I' I n f x :=
   ContMDiffAt.subtypeVal_comp_iff ⟨Metric.ball c r, Metric.isOpen_ball⟩ f x
 
 /-- A map into an open ball is `C^n` on a set iff its ambient map is. -/
-@[simp] theorem contMDiffOn_ball_subtypeVal_comp_iff (s : Set N) :
+@[simp] theorem contMDiffOn_subtypeVal_ball_comp_iff (s : Set N) :
     ContMDiffOn I' I n (Subtype.val ∘ f) s ↔ ContMDiffOn I' I n f s :=
   ContMDiffOn.subtypeVal_comp_iff ⟨Metric.ball c r, Metric.isOpen_ball⟩ f s
 
 /-- A map into an open ball is `C^n` iff its ambient map is. -/
-@[simp] theorem contMDiff_ball_subtypeVal_comp_iff :
+@[simp] theorem contMDiff_subtypeVal_ball_comp_iff :
     ContMDiff I' I n (Subtype.val ∘ f) ↔ ContMDiff I' I n f :=
   ContMDiff.subtypeVal_comp_iff ⟨Metric.ball c r, Metric.isOpen_ball⟩ f
 

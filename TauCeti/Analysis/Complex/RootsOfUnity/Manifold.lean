@@ -107,7 +107,7 @@ theorem contMDiff_coe_pow_rootsOfUnityBall {n : ℕ∞ω} :
 /-- The power map between the two discs is holomorphic for their open-subset atlases. -/
 theorem rootsOfUnityBall.contMDiff_powMap {n : ℕ∞ω} :
     ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (rootsOfUnityBall.powMap m r) := by
-  apply (contMDiff_ball_subtypeVal_comp_iff _).1
+  apply (contMDiff_subtypeVal_ball_comp_iff _).1
   simpa only [Function.comp_def, rootsOfUnityBall.coe_powMap] using
     (contMDiff_coe_pow_rootsOfUnityBall (m := m) (r := r) (n := n))
 
