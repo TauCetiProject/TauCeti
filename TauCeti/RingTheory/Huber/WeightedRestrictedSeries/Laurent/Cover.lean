@@ -13,18 +13,23 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # The two-piece Laurent cover
 
-Let `A` be a complete separated nonarchimedean ring and let `f : A`.  The two Laurent pieces and
-their overlap have the presentations
+Let `A` be a complete separated nonarchimedean ring and let `f : A`.  Following Wedhorn (8.2.1),
+we use the presentations
 
 ```text
-A⟨X⟩/(f-X),   A⟨Y⟩/(1-fY),   A⟨X,Y⟩/(1-XY, f-X).
+A⟨X⟩/(f-X),   A⟨Y⟩/(1-fY),   A⟨X,Y⟩/(1-XY, f-X)
 ```
+
+for the two Laurent pieces and their overlap.  These are the algebraic quotients by the relation
+ideals; they are the coordinate rings of the pieces when `A` is a strongly noetherian Tate ring
+(Wedhorn, Examples 6.38 and 6.39), where the relation ideals are closed.
 
 This file descends the exact Laurent row from
 `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Laurent.Basic` to these presentations.  The
 difference of the two restriction maps is surjective, and its kernel consists exactly of pairs of
-equal constants.  This is the algebraic exactness assertion for the two-piece Laurent cover in
-Wedhorn's Lemma 8.33.
+equal constants.  This is exactness in the middle and at the right end of the algebraic sequence
+for the two-piece Laurent cover in Wedhorn's Lemma 8.33; injectivity of the first map (Wedhorn,
+Corollary 8.32) is not proved in this file.
 
 The proof uses the decomposition of every restricted Laurent series as a series in `X` plus `Y`
 times a series in `Y`.  Multiplying that decomposition by `f-X` expresses an arbitrary element of
@@ -32,7 +37,7 @@ the overlap relation ideal as the image of the two piece relation ideals.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.33, p. 84.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.33, pp. 83-84.
 
 ## Provenance
 
