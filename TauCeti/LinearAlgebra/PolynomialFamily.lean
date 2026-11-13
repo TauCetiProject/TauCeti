@@ -67,7 +67,7 @@ section Coefficients
 linear combination of the values of the power sum at the points, with coefficients the entries of
 the adjugate of the Vandermonde matrix. -/
 theorem det_vandermonde_smul_eq_sum_adjugate_smul {R : Type u} [CommRing R] {M : Type v}
-    [AddCommGroup M] [Module R M] {d : ℕ} (x : Fin d → R) (u : ℕ → M) (m : Fin d) :
+    [AddCommMonoid M] [Module R M] {d : ℕ} (x : Fin d → R) (u : ℕ → M) (m : Fin d) :
     (Matrix.vandermonde x).det • u m = ∑ i, (Matrix.vandermonde x).adjugate m i •
       ∑ k ∈ Finset.range d, x i ^ k • u k := by
   set V := Matrix.vandermonde x
@@ -79,7 +79,7 @@ theorem det_vandermonde_smul_eq_sum_adjugate_smul {R : Type u} [CommRing R] {M :
   rw [Finset.sum_comm]
   simp [V, Matrix.vandermonde_apply]
 
-variable {R : Type u} [CommRing R] [IsDomain R] [Infinite R] {M : Type v} [AddCommGroup M]
+variable {R : Type u} [CommRing R] [IsDomain R] [Infinite R] {M : Type v} [AddCommMonoid M]
   [Module R M] [Module.IsTorsionFree R M]
 
 /-- **A power sum with vector coefficients that vanishes identically has zero coefficients.**
@@ -101,9 +101,15 @@ coefficients.** Let `R` be an infinite integral domain and `M` a torsion-free `R
 `m < d`. -/
 theorem eq_of_forall_sum_range_pow_smul_eq {d : ℕ} {u v : ℕ → M}
     (h : ∀ c : R, ∑ m ∈ Finset.range d, c ^ m • u m = ∑ m ∈ Finset.range d, c ^ m • v m)
-    {m : ℕ} (hm : m < d) : u m = v m :=
-  sub_eq_zero.mp <| eq_zero_of_forall_sum_range_pow_smul_eq_zero (R := R) (u := u - v)
-    (fun c ↦ by simp [smul_sub, Finset.sum_sub_distrib, h c]) hm
+    {m : ℕ} (hm : m < d) : u m = v m := by
+  -- Cramer's rule at `d` distinct points expresses `det V • u m` and `det V • v m` through the
+  -- same values, and `det V ≠ 0` because the points are distinct.
+  set x : Fin d → R := fun i ↦ Infinite.natEmbedding R i
+  have hV : (Matrix.vandermonde x).det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr
+    ((Infinite.natEmbedding R).injective.comp Fin.val_injective)
+  rw [← smul_right_inj hV, det_vandermonde_smul_eq_sum_adjugate_smul x u ⟨m, hm⟩,
+    det_vandermonde_smul_eq_sum_adjugate_smul x v ⟨m, hm⟩]
+  simp only [h]
 
 end Coefficients
 

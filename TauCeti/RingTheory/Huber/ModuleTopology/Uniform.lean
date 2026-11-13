@@ -26,7 +26,7 @@ topology. The trace `Tr_{B/A}` of a power-bounded element of `B` is bounded unif
 unit `d` of `A`, depending only on `A` and on a presentation of `B` as a direct summand of some
 `Aⁿ`, such that `d · Tr_{B/A}(b) ∈ A°` for every `b ∈ B°`. When `A` is moreover uniform, the
 traces of the power-bounded elements of `B` therefore form a bounded subset of `A`
-(`TauCeti.Huber.isBounded_image_projectiveTrace`).
+(`TauCeti.Huber.isBounded_image_projectiveTrace_setOf_isPowerBounded`).
 
 If `B` is finite étale over `A`, its trace pairing is perfect
 (`Algebra.etale_iff_projectiveTraceForm_bijective`), so every coordinate functional of `B` is of
@@ -49,8 +49,9 @@ degree one, and value `N_{B/A}(1 - t b)` at `t ∈ A`, which lies in `A°` when 
 
 ## Main results
 
-* `TauCeti.Huber.isBounded_image_projectiveTrace`: over a complete uniform Tate ring, the traces
-  of the power-bounded elements of a finite projective algebra form a bounded set.
+* `TauCeti.Huber.isBounded_image_projectiveTrace_setOf_isPowerBounded`: over a complete uniform
+  Tate ring, the traces of the power-bounded elements of a finite projective algebra form a
+  bounded set.
 * `TauCeti.Huber.IsUniform.of_isModuleTopology_of_etale`: a finite étale algebra over a complete
   uniform Tate ring, with its natural topology, is uniform.
 
@@ -137,7 +138,8 @@ private theorem exists_isUnit_forall_mul_projectiveTrace_mem [Module.Projective 
 /-- **Traces of power-bounded elements are bounded.** For a finite projective algebra `B` over a
 complete Hausdorff uniform Tate ring `A`, with its natural topology, the traces `Tr_{B/A}(b)` of
 the power-bounded elements `b ∈ B` form a bounded subset of `A`. -/
-theorem isBounded_image_projectiveTrace [IsUniform A] [Module.Projective A B] :
+theorem isBounded_image_projectiveTrace_setOf_isPowerBounded [IsUniform A]
+    [Module.Projective A B] :
     IsBounded (Algebra.projectiveTrace A B '' {b : B | IsPowerBounded b}) := by
   obtain ⟨d, hd, h⟩ := exists_isUnit_forall_mul_projectiveTrace_mem (A := A) (B := B)
   refine ((isBounded_singleton (↑hd.unit⁻¹ : A)).mul
@@ -179,7 +181,8 @@ theorem IsUniform.of_isModuleTopology_of_etale [Algebra.Etale A B] : IsUniform B
   set u := hϖ.isUnit.unit
   set S : Set A :=
     {((u⁻¹ : Aˣ) : A) ^ N} * Algebra.projectiveTrace A B '' {b : B | IsPowerBounded b}
-  have hS : IsBounded S := (isBounded_singleton _).mul isBounded_image_projectiveTrace
+  have hS : IsBounded S :=
+    (isBounded_singleton _).mul isBounded_image_projectiveTrace_setOf_isPowerBounded
   have hcoord (b : B) (hb : IsPowerBounded b) (k : Fin n) : s b k ∈ S := by
     refine ⟨_, rfl, _, ⟨ϖ ^ N • x k * b, ?_, rfl⟩, ?_⟩
     · exact mem_powerBoundedSubring.mp (mul_mem (hN k) (mem_powerBoundedSubring.mpr hb))

@@ -32,7 +32,8 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
 `projectiveCharpolyRev f` is the reversed characteristic polynomial of the matrix of `σ ∘ f ∘ π`
 (`LinearMap.projectiveCharpolyRev_eq_charpolyRev_toMatrix`). Through this description:
 
-* its value at `t` is the determinant of `1 - t f` (`LinearMap.eval_projectiveCharpolyRev`), and
+* its value at `t` is the determinant of `1 - t f` (`LinearMap.eval_projectiveCharpolyRev`), so
+  its value at `0` is `1` (`LinearMap.eval_zero_projectiveCharpolyRev`), and
   its coefficient in degree one is minus the trace `LinearMap.projectiveTrace` of `f`
   (`LinearMap.coeff_projectiveCharpolyRev_one`);
 * it commutes with base change (`LinearMap.projectiveCharpolyRev_baseChange`);
@@ -138,6 +139,12 @@ theorem eval_projectiveCharpolyRev (f : Module.End R M) (t : R) :
   rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
     Matrix.eval_charpolyRev_eq_det_one_sub_smul, projectiveDet_eq_det_of_comp_eq_id π σ h, hσ,
     ← det_toMatrix (Pi.basisFun R (Fin n)), map_sub, map_smul, toMatrix_one]
+
+/-- The value at `0` of the reversed characteristic polynomial is `1`. -/
+@[simp]
+theorem eval_zero_projectiveCharpolyRev (f : Module.End R M) :
+    (projectiveCharpolyRev f).eval 0 = 1 := by
+  rw [← coeff_zero_eq_eval_zero, coeff_projectiveCharpolyRev_zero]
 
 /-- The value at `1` of the reversed characteristic polynomial `det (1 - X f)` is the determinant
 of `1 - f`. -/
