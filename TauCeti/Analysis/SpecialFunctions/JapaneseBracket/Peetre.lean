@@ -179,7 +179,7 @@ omit [SeminormedAddGroup E] in
 /-- Comparable norms give comparable Japanese bracket weights: if `‖x‖ ≤ c ‖y‖` and `‖y‖ ≤ c ‖x‖`
 with `c ≥ 1`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| (1 + ‖y‖ ^ 2) ^ (s / 2)` for every real `s`.
 For `s ≥ 0` this uses `‖x‖ ≤ c ‖y‖`, and for `s < 0` it uses `‖y‖ ≤ c ‖x‖`. This applies to
-`y = A x` for a linear isomorphism `A` with `c ≥ max ‖A‖ ‖A⁻¹‖`. -/
+`y = A x` for a continuous linear equivalence `A` with `c ≥ max 1 (max ‖A‖ ‖A⁻¹‖)`. -/
 theorem one_add_norm_sq_rpow_le_of_norm_le_mul [SeminormedAddGroup E] {F : Type*}
     [SeminormedAddGroup F] {c : ℝ} (hc : 1 ≤ c) (s : ℝ) {x : E} {y : F} (hxy : ‖x‖ ≤ c * ‖y‖)
     (hyx : ‖y‖ ≤ c * ‖x‖) :

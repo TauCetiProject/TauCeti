@@ -15,6 +15,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
 # Sobolev wave front sets
@@ -357,24 +358,18 @@ theorem IsMicrolocallySobolevAt.compCLMOfContinuousLinearEquiv {s : ℝ} {T : �
   set A : E →L[ℝ] E := (e.symm : E →L[ℝ] E)†
   have hinv : ∀ η, ((e : E →L[ℝ] E)†) (A η) = η := fun η ↦ by
     simpa using e.symm.adjoint_symm_adjoint_apply η
-  set L : E ≃L[ℝ] E := .equivOfInverse A ((e : E →L[ℝ] E)†) hinv e.adjoint_symm_adjoint_apply
-  have hLA : (L : E → E) = A := funext (ContinuousLinearEquiv.equivOfInverse_apply _ _ _ _)
-  have hdet : LinearMap.det (L : E →ₗ[ℝ] E) ≠ 0 := (LinearEquiv.isUnit_det' L.toLinearEquiv).ne_zero
+  set L : E ≃L[ℝ] E := e.symm.adjointEquiv
+  have hLA : (L : E → E) = A := funext e.symm.adjointEquiv_apply
   refine ⟨e.symm.transportTestFunction hOV φ, by simpa using hφ, A ⁻¹' Γ,
     hΓ.preimage A.continuous, hξ, fun t ht η hη ↦ ?_, ?_⟩
   · simpa only [mem_preimage, map_smul] using hcone t ht (A η) hη
   -- Change variables `ζ = A η` in the square integrability of `T` on `Γ`.
-  have hemb : MeasurableEmbedding (L : E → E) := L.toHomeomorph.measurableEmbedding
-  have hmap : (volume.restrict (A ⁻¹' Γ)).map A =
-      ENNReal.ofReal |(LinearMap.det (L : E →ₗ[ℝ] E))⁻¹| • volume.restrict Γ := by
-    rw [← hLA, ← hemb.restrict_map, show (L : E → E) = (L : E →ₗ[ℝ] E) from rfl,
-      Measure.map_linearMap_addHaar_eq_smul_addHaar volume hdet, Measure.restrict_smul]
   have hmem : MemLp (fun η ↦ (1 + ‖A η‖ ^ 2) ^ (s / 2) • T.localFourier φ (A η)) 2
       (volume.restrict (A ⁻¹' Γ)) := by
-    have h := hL.smul_measure (c := ENNReal.ofReal |(LinearMap.det (L : E →ₗ[ℝ] E))⁻¹|)
-      ENNReal.ofReal_ne_top
-    rw [← hmap] at h
-    exact h.comp_of_map A.continuous.aemeasurable
+    rw [← hLA, ← Function.comp_def (fun ζ ↦ (1 + ‖ζ‖ ^ 2) ^ (s / 2) • T.localFourier φ ζ) L,
+      memLp_iff, Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage]
+    exact ENNReal.mul_lt_top
+      (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top) hL
   -- The weights at `η` and at `A η` are comparable, since `‖η‖ ≤ ‖e‖ ‖A η‖`.
   set c : ℝ := max 1 (max ‖(e : E →L[ℝ] E)‖ ‖A‖)
   have hc : 1 ≤ c := le_max_left _ _
@@ -423,9 +418,8 @@ theorem sobolevWaveFrontSet_compCLMOfContinuousLinearEquiv (s : ℝ) (e : E ≃L
       Prod.map e ((e.symm : E →L[ℝ] E)†) ⁻¹' T.sobolevWaveFrontSet s := by
   ext ⟨x, ξ⟩
   have hx : x ∈ V ↔ e x ∈ Ω := ⟨fun h ↦ hVO h, fun h ↦ by simpa using hOV h⟩
-  have hξ : ξ ≠ 0 ↔ ((e.symm : E →L[ℝ] E)†) ξ ≠ 0 := by
-    refine ⟨fun h h0 ↦ h ?_, fun h h0 ↦ h (by simp [h0])⟩
-    rw [← e.symm.adjoint_symm_adjoint_apply ξ, h0, map_zero]
+  have hξ : ξ ≠ 0 ↔ ((e.symm : E →L[ℝ] E)†) ξ ≠ 0 :=
+    (map_ne_zero_iff _ e.symm.adjoint_bijective.injective).symm
   simp only [mem_sobolevWaveFrontSet_iff, mem_preimage, Prod.map_apply, hx, hξ,
     isMicrolocallySobolevAt_compCLMOfContinuousLinearEquiv_iff e hVO hOV]
 
