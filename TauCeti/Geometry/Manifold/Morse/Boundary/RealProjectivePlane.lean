@@ -44,7 +44,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   differ by one there are exactly two trajectories.
 * `IsMorseSmale.morseBoundary_projectiveMomentFunction_real`: the mod-two Morse boundary is zero.
 * `IsMorseSmale.finrank_homology_morseComplex_projectiveMomentFunction_real`: the mod-two Morse
-  homology is one-dimensional in degrees `0`, `1` and `2` and zero above.
+  homology has dimension `1` in degrees `0`, `1` and `2` and dimension `0` above.
 
 ## References
 
@@ -121,9 +121,9 @@ theorem morseBoundary_projectiveMomentFunction_real : h.morseBoundary hf = 0 := 
     (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 2)
     (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0)
 
-/-- **The mod-two Morse homology of `ℝℙ²`.** For every pseudo-gradient adapted to the moment
-function on the real projective plane, the mod-two Morse homology is one-dimensional in degrees
-`0`, `1` and `2`, and zero in higher degrees. -/
+/-- **The mod-two Morse homology of `ℝℙ²`.** For distinct weights, so that the moment function on
+the real projective plane is Morse, and every pseudo-gradient adapted to it, the mod-two Morse
+homology has dimension `1` in degrees `0`, `1` and `2`, and dimension `0` in higher degrees. -/
 theorem finrank_homology_morseComplex_projectiveMomentFunction_real (n : ℕ) :
     finrank (ZMod 2) ((h.morseComplex hf).homology n) = if n ≤ 2 then 1 else 0 := by
   rw [h.finrank_homology_morseComplex_of_morseBoundary_eq_zero hf

@@ -8,7 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Differential
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
-import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Algebra.Field.ZMod
+import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 
 /-!
 # The mod-two Morse chain complex of a compact manifold
@@ -31,8 +32,9 @@ The terms are finite-dimensional, of dimension the number `cₙ` of critical poi
 homology is finite-dimensional, bounded by the critical counts, and vanishes above `m`. Its
 Euler characteristic is the signed critical count `∑ᵢ (-1)ⁱ cᵢ`, and so the Euler characteristic
 of `M` (`IsMorseSmale.sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`).
-When the boundary vanishes, as it does on `ℝℙ²`, the homology in each degree has dimension the
-number of critical points of that index
+When the boundary vanishes, as it does on `ℝℙ²`, the homology in each degree is the term in that
+degree (`IsMorseSmale.XIsoHomologyOfMorseBoundaryEqZero`), so it has dimension the number of
+critical points of that index
 (`IsMorseSmale.finrank_homology_morseComplex_of_morseBoundary_eq_zero`).
 
 ## Main declarations
@@ -45,11 +47,14 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 * `morseComplex`: the mod-two Morse chain complex, indexed by `ℕ`.
 * `finrank_morseComplex_X`: its term in degree `n` has dimension the number of critical points of
   index `n`.
+* `finite_homology_morseComplex`: the Morse homology is finite-dimensional.
 * `isZero_homology_morseComplex_of_finrank_lt`: the Morse homology vanishes above the dimension.
 * `sum_range_neg_one_pow_mul_finrank_homology_morseComplex`: the Euler characteristic of the Morse
   homology is the signed count of critical points.
 * `sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`: it is the Euler
   characteristic of `M`.
+* `XIsoHomologyOfMorseBoundaryEqZero`: with zero boundary, the Morse homology in degree `n` is the
+  term in degree `n`.
 * `finrank_homology_morseComplex_of_morseBoundary_eq_zero`: with zero boundary, the Morse homology
   in degree `n` has dimension the number of critical points of index `n`.
 
@@ -111,6 +116,7 @@ theorem morseBoundaryAt_single_apply {n : ℕ}
 /-- **The graded and total Morse boundaries agree.** Including the chains of index `n + 1` and of
 index `n` into all Morse chains intertwines the graded boundary with the total boundary
 `morseBoundary`: the boundary of a chain of index `n + 1` is a chain of index `n`. -/
+@[simp]
 theorem mapDomain_morseBoundaryAt {n : ℕ}
     (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ ZMod 2) :
     (h.morseBoundaryAt hf n c).mapDomain Subtype.val =
@@ -172,7 +178,7 @@ theorem morseComplex_d (n : ℕ) :
   simp [morseComplex]
 
 /-- The terms of the Morse chain complex are finite-dimensional. -/
-theorem finite_morseComplex_X (n : ℕ) : Module.Finite (ZMod 2) ((h.morseComplex hf).X n) := by
+instance finite_morseComplex_X (n : ℕ) : Module.Finite (ZMod 2) ((h.morseComplex hf).X n) := by
   have := hf.finite_criticalPoints.to_subtype
   rw [morseComplex_X]
   exact Module.Finite.finsupp
@@ -197,13 +203,17 @@ theorem isZero_morseComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
     ⟨fun p ↦ (manifoldMorseIndex_le_finrank.trans_lt hn).ne p.2⟩
   infer_instance
 
+/-- The mod-two Morse homology is finite-dimensional. -/
+instance finite_homology_morseComplex (n : ℕ) :
+    Module.Finite (ZMod 2) ((h.morseComplex hf).homology n) :=
+  have : Module.Finite (ZMod 2) ((h.morseComplex hf).sc n).X₂ := h.finite_morseComplex_X hf n
+  ((h.morseComplex hf).sc n).finite_homology
+
 /-- **The weak Morse inequality for Morse homology.** The mod-two Morse homology in degree `n` has
 dimension at most the number of critical points of index `n`. -/
 theorem finrank_homology_morseComplex_le (n : ℕ) :
-    finrank (ZMod 2) ((h.morseComplex hf).homology n) ≤ (criticalCount 𝓘(ℝ, E) f n).toNat := by
-  have := h.finite_morseComplex_X hf n
-  exact (h.morseComplex hf).finrank_homology_le_finrank_X n |>.trans_eq
-    (h.finrank_morseComplex_X hf n)
+    finrank (ZMod 2) ((h.morseComplex hf).homology n) ≤ (criticalCount 𝓘(ℝ, E) f n).toNat :=
+  (h.morseComplex hf).finrank_homology_le_finrank_X n |>.trans_eq (h.finrank_morseComplex_X hf n)
 
 /-- The mod-two Morse homology vanishes above the dimension of `M`. -/
 theorem isZero_homology_morseComplex_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
@@ -238,20 +248,34 @@ theorem morseBoundaryAt_eq_zero_of_morseBoundary_eq_zero (h0 : h.morseBoundary h
   LinearMap.ext fun c ↦ Finsupp.mapDomain_injective Subtype.val_injective <| by
     simp [mapDomain_morseBoundaryAt, h0]
 
+/-- If the total Morse boundary vanishes, every differential of the Morse chain complex is
+zero. -/
+theorem morseComplex_d_eq_zero_of_morseBoundary_eq_zero (h0 : h.morseBoundary hf = 0) (i j : ℕ) :
+    (h.morseComplex hf).d i j = 0 := by
+  by_cases hij : (ComplexShape.down ℕ).Rel i j
+  · obtain rfl : j + 1 = i := hij
+    rw [morseComplex_d, h.morseBoundaryAt_eq_zero_of_morseBoundary_eq_zero hf h0,
+      ModuleCat.ofHom_zero]
+    -- Both sides are the zero morphism; they differ only in how the terms are written.
+    rfl
+  · exact (h.morseComplex hf).shape i j hij
+
+/-- **Morse homology with zero boundary.** If the mod-two Morse boundary vanishes, the term of the
+Morse chain complex in degree `n` is isomorphic to the mod-two Morse homology in degree `n`. -/
+noncomputable def XIsoHomologyOfMorseBoundaryEqZero (h0 : h.morseBoundary hf = 0) (n : ℕ) :
+    (h.morseComplex hf).X n ≅ (h.morseComplex hf).homology n :=
+  (h.morseComplex hf).XIsoHomologyOfDEqZero n
+    (h.morseComplex_d_eq_zero_of_morseBoundary_eq_zero hf h0 _ _)
+    (h.morseComplex_d_eq_zero_of_morseBoundary_eq_zero hf h0 _ _)
+
 /-- **Morse homology with zero boundary.** If the mod-two Morse boundary vanishes, the mod-two
 Morse homology in degree `n` has dimension the number of critical points of index `n`. -/
 theorem finrank_homology_morseComplex_of_morseBoundary_eq_zero (h0 : h.morseBoundary hf = 0)
     (n : ℕ) :
     finrank (ZMod 2) ((h.morseComplex hf).homology n) = (criticalCount 𝓘(ℝ, E) f n).toNat := by
-  have hd (i j : ℕ) : (h.morseComplex hf).d i j = 0 := by
-    by_cases hij : (ComplexShape.down ℕ).Rel i j
-    · obtain rfl : j + 1 = i := hij
-      rw [morseComplex_d, h.morseBoundaryAt_eq_zero_of_morseBoundary_eq_zero hf h0,
-        ModuleCat.ofHom_zero]
-      -- Both sides are the zero morphism; they differ only in how the terms are written.
-      rfl
-    · exact (h.morseComplex hf).shape i j hij
-  rw [(h.morseComplex hf).finrank_homology_eq_finrank_X_of_d_eq_zero n (hd _ _) (hd _ _),
+  rw [(h.morseComplex hf).finrank_homology_eq_finrank_X_of_d_eq_zero n
+      (h.morseComplex_d_eq_zero_of_morseBoundary_eq_zero hf h0 _ _)
+      (h.morseComplex_d_eq_zero_of_morseBoundary_eq_zero hf h0 _ _),
     h.finrank_morseComplex_X hf]
 
 end IsMorseSmale

@@ -850,6 +850,7 @@ theorem criticalCount_le_totalCriticalCount (j : ℕ) :
 
 /-- The number of critical points of index `j` is the cardinality of the type of critical points
 of index `j`; both are `0` when there are infinitely many. -/
+@[simp]
 theorem natCard_eq_toNat_criticalCount (j : ℕ) :
     Nat.card {p : criticalPoints I f // manifoldMorseIndex I f p = j} =
       (criticalCount I f j).toNat := by
