@@ -98,10 +98,10 @@ theorem _root_.IsSimplyConnected.filledHull_subset (hUc : IsSimplyConnected U)
   obtain ⟨L, hLc, hL⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc hUo
     (g := fun z => z - a) (by fun_prop) (by rintro ⟨z, hz, h0⟩; exact haU (sub_eq_zero.mp h0 ▸ hz))
   -- the bounded component of `Uᶜ` through `a` is cut out by an open set `V` with frontier in `U`
-  obtain ⟨V, -, haV, -, hVc, hVU⟩ :=
+  obtain ⟨V, -, haV, hVc, hVU⟩ :=
     hUo.isClosed_compl.exists_isOpen_isCompact_closure_disjoint_frontier
       (Metric.isCompact_of_isClosed_isBounded hUo.isClosed_compl.connectedComponentIn
-        (mem_filledHull_iff.mp ha)) isOpen_univ (subset_univ _)
+        (mem_filledHull_iff.mp ha))
   have hKU : frontier V ⊆ U := fun z hz => by
     by_contra hzU
     exact disjoint_left.mp hVU hz hzU

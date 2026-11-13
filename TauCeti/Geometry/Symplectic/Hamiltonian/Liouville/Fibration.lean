@@ -24,10 +24,10 @@ The proof reduces to the topological Liouville–Arnold theorem for `n` Poisson-
 (`TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus`). A smooth map
 `κ : B → ℝⁿ` which near `b` is a chart of `B` (localized by a bump function) pulls back to the
 family `F = κ ∘ π`. Its components Poisson-commute because the fibres are Lagrangian
-(`IsLagrangianFibration.poissonBracket_comp_eq_zero`); `F` is regular along `π⁻¹(b)` because
-`dκ_b` is invertible and `π` is a submersion; and since `κ` is injective near `b`, the connected
-compact fibre `π⁻¹(b)` is exactly the connected component of the level `F⁻¹(F x)` through any of
-its points `x`. No completeness of the Hamiltonian vector fields is needed.
+(`IsLagrangianFibration.poissonBracket_comp_eq_zero`); `F` is regular along
+`π⁻¹(b)` because `dκ_b` is invertible and `π` is a submersion; and since `κ` is injective near `b`,
+the connected compact fibre `π⁻¹(b)` is exactly the connected component of the level
+`F⁻¹(F x)` through any of its points `x`.
 
 ## References
 

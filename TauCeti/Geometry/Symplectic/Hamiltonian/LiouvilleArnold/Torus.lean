@@ -8,13 +8,12 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Arnold
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Localization
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Neighborhood
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 import TauCeti.Topology.Algebra.Module.Quotient
-import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Liouville tori are smooth Lagrangian embeddings of `ℝⁿ / Λ`
@@ -52,7 +51,7 @@ Liouville–Arnold theorem on a single compact regular component; no symplectic 
 
 For a compact `L` the completeness hypothesis can be dropped: the Hamiltonian vector fields of the
 system restricted to a suitable open neighbourhood `W` of `L` are complete
-(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`),
+(`IsNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField`),
 and the construction above on `W`, followed by the inclusion of `W`, is a Lagrangian embedding of
 a torus `(ι → ℝ) / Λ` onto `L`
 (`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLagrangianEmbedding_of_isCompact`).
@@ -309,32 +308,21 @@ theorem exists_isLagrangianEmbedding_of_isCompact (hdim : 2 * Fintype.card ι = 
       (f : AddAction.orbitRel.Quotient Λ.toIntSubmodule (ι → ℝ) → M),
       IsZLattice ℝ Λ.toIntSubmodule ∧ hσ.isNondegenerate.IsLagrangianEmbedding 𝓘(ℝ, ι → ℝ) f ∧
         range f = connectedComponentIn (F ⁻¹' {F x}) x := by
-  -- Restrict the system to a neighbourhood `W` of `L` on which its flows are complete.
-  obtain ⟨W, hLW, -, hcW⟩ :=
-    hσ.isNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField hF hcomm hL
-      isOpen_univ (subset_univ _)
+  -- Restrict the system to a neighbourhood `W` of `L` on which its flows are complete; there `L`
+  -- is still a compact regular component of a level.
+  obtain ⟨W, hxW, hLW, hKW, hregW, hcommW, hcW⟩ :=
+    hσ.isNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField
+      (hF.of_le (by simp)) hcomm hreg hL
   have hσW := hσ.mpullback_subtype_val W
   have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ (fun y : W ↦ F y) := hF.comp contMDiff_subtype_val
-  have hcommW := hσ.isNondegenerate.poissonBracket_comp_subtype_val_eq_zero W
-    (hF.mdifferentiable (by simp)) hcomm
-  set x' : W := ⟨x, hLW (mem_connectedComponentIn rfl)⟩
-  -- The component of `x'` in its level of `F|_W` is `L`, so it is compact and regular.
-  have hLW' : (↑) '' connectedComponentIn ((fun y : W ↦ F y) ⁻¹' {F x}) x' =
-      connectedComponentIn (F ⁻¹' {F x}) x :=
-    Subtype.image_val_connectedComponentIn_preimage (S := F ⁻¹' {F x}) (x := x') hLW
-  have hregW (y : W) (hy : y ∈ connectedComponentIn ((fun y : W ↦ F y) ⁻¹' {F x}) x') :
-      IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun y : W ↦ F y) y :=
-    (hreg y (hLW' ▸ mem_image_of_mem _ hy)).comp (isRegularPoint_subtype_val y)
-  have hKW : IsCompact (connectedComponentIn ((fun y : W ↦ F y) ⁻¹' {F x}) x') := by
-    rwa [Subtype.isCompact_iff, hLW']
   have := hσW.discreteTopology_hamiltonianFlowStabilizer hFW hcommW hcW
-    (hregW x' (mem_connectedComponentIn rfl))
-  refine ⟨_, this, Subtype.val ∘ hσW.ofQuotientHamiltonianFlowStabilizer hFW hcommW hcW x',
+    (hregW _ (mem_connectedComponentIn rfl))
+  refine ⟨_, this, Subtype.val ∘ hσW.ofQuotientHamiltonianFlowStabilizer hFW hcommW hcW ⟨x, hxW⟩,
     hσW.isZLattice_hamiltonianFlowStabilizer hFW hcommW hcW hdim hregW hKW,
     hσ.isNondegenerate.isLagrangianEmbedding_subtype_val_comp_iff.2
       (hσW.isLagrangianEmbedding_ofQuotientHamiltonianFlowStabilizer hFW hcommW hcW hdim hregW),
     ?_⟩
-  rw [range_comp, hσW.range_ofQuotientHamiltonianFlowStabilizer hFW hcommW hcW hdim hregW, hLW']
+  rw [range_comp, hσW.range_ofQuotientHamiltonianFlowStabilizer hFW hcommW hcW hdim hregW, hLW]
 
 end IsSymplectic
 

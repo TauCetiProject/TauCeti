@@ -8,37 +8,31 @@ module
 public import TauCeti.Algebra.Module.ZLattice.Cylinder
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Arnold
-import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold.Torus
+import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Neighborhood
 import TauCeti.Topology.Algebra.Module.CompactQuotient
-import TauCeti.Topology.Algebra.Module.Quotient
 
 /-!
 # Regular components are cylinders, and compact ones are Liouville tori
 
 Let `σ` be a symplectic form on a `2n`-dimensional boundaryless manifold `M` and let
-`F : M → (ι → ℝ)` be `n` smooth, pairwise Poisson-commuting functions, with the conventions
-`ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`.
+`F : M → (ι → ℝ)` be `n` smooth, pairwise Poisson-commuting functions whose Hamiltonian vector
+fields are complete, with the conventions `ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`.
 
-When the Hamiltonian vector fields of the `Fᵢ` are complete, the Hamiltonian flow action
-identifies a regular connected component `L` of a common level with the quotient of `ι → ℝ` by its
-discrete stabilizer `Λ`
+The Hamiltonian flow action identifies a regular connected component `L` of a common level
+with the quotient of `ι → ℝ` by its discrete stabilizer `Λ`
 (`TauCeti.SmoothTwoForm.IsSymplectic.quotientHamiltonianFlowStabilizerHomeomorph`). Without any
 compactness, `Λ` is a free abelian group of some rank `r ≤ n`, and `L` is homeomorphic to the
-cylinder `(ℝ / ℤ)ʳ × ℝⁿ⁻ʳ`. If `L` is compact, this quotient is compact, so `Λ` spans `ι → ℝ`
-(`TauCeti.SmoothTwoForm.IsSymplectic.span_hamiltonianFlowStabilizer_eq_top`).
+cylinder `(ℝ / ℤ)ʳ × ℝⁿ⁻ʳ`. If `L` is compact, the quotient is compact, so `Λ` spans `ι → ℝ` and
+is a full lattice. A lattice basis then identifies `L` with the torus `(ℝ / ℤ)ⁿ`.
 
-The homeomorphism of a compact regular component `L` with the torus `(ℝ / ℤ)ⁿ` needs no
-completeness hypothesis on `M`. The flows of the system restricted to an open neighbourhood `W` of
-`L` are complete
+For a compact regular component no completeness is needed: the Hamiltonian vector fields are
+complete on an open neighbourhood of `L` whose levels are compact
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`),
-so `L` is the range of a Lagrangian embedding of a torus `(ι → ℝ) / Λ` for a full lattice `Λ`
-(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLagrangianEmbedding_of_isCompact`). This quotient is
-identified with `(ι → ℝ) ⧸ Λ` (`Submodule.orbitRelQuotientContinuousAddEquiv`), and a lattice basis
-then identifies it with `(ℝ / ℤ)ⁿ`.
+and `L` is the torus already as a component of a level of the restriction of `F` to that
+neighbourhood.
 
-Other components of the level need not be regular. Action-angle coordinates near `L` are not
-treated here; the smooth Lagrangian embedding of the torus onto `L` is proved in
-`TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold.Torus`.
+Other components of the level need not be regular. The smooth identification and action-angle
+coordinates near `L` are not treated here.
 
 ## Main results
 
@@ -116,18 +110,30 @@ include hσ hF hcomm in
 theorem). Let `F` be a family of `n` Poisson-commuting functions on a `2n`-dimensional symplectic
 manifold. If the connected component of `x` in its common level `F⁻¹(F x)` is compact and consists
 of regular points of `F`, then it is homeomorphic to the torus `(ℝ / ℤ)ⁿ`. The Hamiltonian vector
-fields of the `Fᵢ` need not be complete. -/
+fields of the `F_i` need not be complete. -/
 theorem nonempty_homeomorph_unitAddTorus
     (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
     (hdim : 2 * Fintype.card ι = finrank ℝ E)
     (hK : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x)) :
     Nonempty (connectedComponentIn (F ⁻¹' {F x}) x ≃ₜ UnitAddTorus ι) := by
-  obtain ⟨Λ, _, f, _, hf, hrange⟩ :=
-    hσ.exists_isLagrangianEmbedding_of_isCompact hF hcomm hdim hreg hK
-  exact ⟨(Homeomorph.setCongr hrange.symm).trans <|
-    hf.isSmoothEmbedding.isEmbedding.toHomeomorph.symm.trans <|
-      (Submodule.orbitRelQuotientContinuousAddEquiv _).toHomeomorph.trans
-        (IsZLattice.basis Λ.toIntSubmodule).quotientLatticeEquiv.toHomeomorph⟩
+  -- The Hamiltonian flows are complete on an open neighbourhood `W` of the component, which is
+  -- also the component of `x` in its level in `W`.
+  obtain ⟨W, hxW, himage, hKW, hregW, hcommW, hcW⟩ :=
+    hσ.isNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField
+      (hF.of_le (by simp)) hcomm hreg hK
+  set y : W := ⟨x, hxW⟩
+  have hσW := hσ.mpullback_subtype_val W
+  have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun z : W ↦ F z := hF.comp contMDiff_subtype_val
+  -- On `W` the component is `(ι → ℝ) / Λ` for the full lattice `Λ` of periods of `x`.
+  set Λ := hσW.hamiltonianFlowStabilizer hFW hcommW hcW y
+  have : DiscreteTopology Λ := hσW.discreteTopology_hamiltonianFlowStabilizer hFW hcommW hcW
+    (hregW y (mem_connectedComponentIn rfl))
+  have : IsZLattice ℝ Λ.toIntSubmodule :=
+    ⟨hσW.span_hamiltonianFlowStabilizer_eq_top hFW hcommW hcW hregW hdim hKW⟩
+  exact ⟨((Homeomorph.setCongr himage).symm.trans
+    (Topology.IsEmbedding.subtypeVal.homeomorphImage _).symm).trans
+    ((hσW.quotientHamiltonianFlowStabilizerHomeomorph hFW hcommW hcW hdim hregW).symm.trans
+      (IsZLattice.basis Λ.toIntSubmodule).quotientLatticeEquiv.toHomeomorph)⟩
 
 end IsSymplectic
 
