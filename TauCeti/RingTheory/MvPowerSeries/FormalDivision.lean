@@ -17,35 +17,27 @@ Given a monomial order `ord : MonomialOrder σ` and a finite linearly ordered fa
 `F : ι → MvPowerSeries σ R` of formal power series whose `ord`-initial exponents `α i` carry unit
 coefficients, exponents in `σ →₀ ℕ` partition into the disjoint translated cones
 `Δᵢ = {γ | α i ≤ γ ∧ ∀ j < i, ¬ α j ≤ γ}` and the complementary remainder region
-`Δ = {γ | ∀ i, ¬ α i ≤ γ}`. Hironaka's formal division theorem asserts that every formal power
-series `G : MvPowerSeries σ R` admits a unique decomposition
-`G = (∑ i, Q i * F i) + R'` such that `α i + β ∈ Δᵢ` for every `β ∈ (Q i).support` and
-`β ∈ Δ` for every `β ∈ R'.support` (`MonomialOrder.existsUnique_formalDivision`).
+`Δ = {γ | ∀ i, ¬ α i ≤ γ}`. Hironaka's formal division theorem states that every
+`G : MvPowerSeries σ R` admits a unique decomposition `G = (∑ i, Q i * F i) + R'` with
+`α i + β ∈ Δᵢ` for `β ∈ (Q i).support` and `β ∈ Δ` for `β ∈ R'.support`
+(`MonomialOrder.existsUnique_formalDivision`).
 
-Because the monomial order is compatible with addition and cancellative, in each coefficient
-`coeff γ ((∑ i, Q i * F i) + R')` every contribution from non-initial exponents `δ ≠ α i` of `F i`
-involves quotient exponents `β` satisfying `α i + β ≺[ord] γ`. Both existence (by well-founded
-recursion `WellFounded.fix` on `ord.syn`) and uniqueness (as a special case of lower-set
-vanishing `MonomialOrder.coeff_eq_zero_and_coeff_eq_zero_of_isLowerSet`) therefore hold over an
-arbitrary ring `R` and arbitrary variable type `σ`, without topological completeness or finiteness
-hypotheses. Specializing to `MonomialOrder.degLex` over a field gives the graded-lexicographic
-division theorem `TauCeti.formalDivision`.
+Because `ord` is compatible with addition and cancellative, in `coeff γ ((∑ i, Q i * F i) + R')`
+every contribution from non-initial exponents `δ ≠ α i` of `F i` involves quotient exponents `β`
+with `α i + β ≺[ord] γ`. Existence (via `WellFounded.fix` on `ord.syn`) and uniqueness (via
+`MonomialOrder.coeff_eq_zero_and_coeff_eq_zero_of_isLowerSet`) therefore hold over an arbitrary
+ring `R` and variable type `σ`, specializing to `TauCeti.formalDivision` for `MonomialOrder.degLex`.
 
-When `σ` is finite and the coefficients form a field `K`, choosing generators of an ideal
-`I : Ideal (MvPowerSeries σ K)` at the minimal vertices `ord.initialDiagramVertices I` yields:
+When `σ` is finite and the coefficients form a field `K`, choosing generators of
+`I : Ideal (MvPowerSeries σ K)` at `ord.initialDiagramVertices I` yields:
 
-* a unique normal-form remainder modulo `I` in `ord.complementSubmodule I`
-  (`MonomialOrder.existsUnique_sub_mem_and_mem_complementSubmodule`) and the direct-sum complement
-  decomposition `IsCompl (I.restrictScalars K) (ord.complementSubmodule I)`
+* unique normal-form remainders (`MonomialOrder.existsUnique_sub_mem_and_mem_complementSubmodule`)
+  and `IsCompl (I.restrictScalars K) (ord.complementSubmodule I)`
   (`MonomialOrder.isCompl_restrictScalars_complementSubmodule`);
-* the `K`-linear projection `ord.normalRemainder I : MvPowerSeries σ K →ₗ[K] MvPowerSeries σ K`
-  onto `ord.complementSubmodule I` along `I` (via `Submodule.projection`), vanishing precisely on
-  `I` (`MonomialOrder.normalRemainder_eq_zero_iff`), together with the `K`-linear quotient
-  isomorphism `ord.quotientEquivComplementSubmodule I` (via `Submodule.quotientEquivOfIsCompl`)
-  from `MvPowerSeries σ K ⧸ I` onto `ord.complementSubmodule I`;
-* for each `v ∈ ord.initialDiagram I`, the unique normalized generator `ord.standardGenerator I v`
-  in `I` whose difference from `monomial v 1` is supported outside `ord.initialDiagram I`, having
-  initial exponent `v` and initial coefficient `1`, and generating `I` as `v` ranges over
+* the `K`-linear projection `ord.normalRemainder I` (via `Submodule.projection`) and quotient
+  equivalence `ord.quotientEquivComplementSubmodule I` (via `Submodule.quotientEquivOfIsCompl`);
+* for each `v ∈ ord.initialDiagram I`, the normalized generator `ord.standardGenerator I v ∈ I`
+  with initial exponent `v` and initial coefficient `1`, generating `I` over
   `ord.initialDiagramVertices I`
   (`MonomialOrder.span_image_standardGenerator_initialDiagramVertices`).
 
@@ -54,8 +46,7 @@ When `σ` is finite and the coefficients form a field `K`, choosing generators o
 * `MonomialOrder.complementSubmodule`: the `R`-submodule of series supported outside
   `ord.initialDiagram I`.
 * `MonomialOrder.normalRemainder`: the canonical `K`-linear normal-remainder projection
-  `MvPowerSeries σ K →ₗ[K] MvPowerSeries σ K` modulo `I` onto `ord.complementSubmodule I`, for
-  `[Finite σ] [Field K]`.
+  `MvPowerSeries σ K →ₗ[K] MvPowerSeries σ K` modulo `I` onto `ord.complementSubmodule I`.
 * `MonomialOrder.quotientEquivComplementSubmodule`: the canonical `K`-linear isomorphism
   `(MvPowerSeries σ K ⧸ I) ≃ₗ[K] ord.complementSubmodule I`.
 * `MonomialOrder.standardGenerator`: the unique normalized element of `I` congruent to
@@ -63,17 +54,15 @@ When `σ` is finite and the coefficients form a field `K`, choosing generators o
 
 ## Main results
 
-* `MonomialOrder.existsUnique_formalDivision`: Hironaka's formal division for an arbitrary
-  `MonomialOrder σ` over a ring `R` when the initial coefficients are units.
-* `MonomialOrder.existsUnique_formalDivision_of_divisionRing`: specialization over a division ring.
-* `TauCeti.formalDivision`: graded-lexicographic formal division in `MvPowerSeries (Fin n) K`.
+* `MonomialOrder.existsUnique_formalDivision`,
+  `MonomialOrder.existsUnique_formalDivision_of_divisionRing`, `TauCeti.formalDivision`: Hironaka's
+  formal division over a ring, a division ring, and `MvPowerSeries (Fin n) K` with `degLex`.
 * `MonomialOrder.snd_eq_zero_iff_mem_of_eq_sum_mul_add`,
-  `MonomialOrder.span_range_eq_of_forall_mem_initialDiagram_exists_le`: division by
-  initial-diagram generators detects membership in `I` and generates `I`.
+  `MonomialOrder.span_range_eq_of_forall_mem_initialDiagram_exists_le`: formal division by
+  initial-diagram generators detects ideal membership and spans `I`.
 * `MonomialOrder.isCompl_restrictScalars_complementSubmodule`,
-  `MonomialOrder.snd_eq_normalRemainder_of_eq_sum_mul_add`: `I` and `ord.complementSubmodule I`
-  are complementary `K`-submodules of `MvPowerSeries σ K`, and formal-division remainders by
-  initial-diagram generators compute `ord.normalRemainder I`.
+  `MonomialOrder.snd_eq_normalRemainder_of_eq_sum_mul_add`: complement decomposition and agreement
+  of formal-division remainders with `ord.normalRemainder I`.
 * `MonomialOrder.eq_standardGenerator_iff`, `MonomialOrder.initialExp_standardGenerator`,
   `MonomialOrder.span_image_standardGenerator_initialDiagramVertices`: uniqueness, initial data,
   and ideal generation for Hironaka's normalized vertex generators.
@@ -103,8 +92,7 @@ private def inCell [LinearOrder ι] (i : ι) (γ : σ →₀ ℕ) : Prop :=
   α i ≤ γ ∧ ∀ j, j < i → ¬ α j ≤ γ
 
 /-- `inRem α γ` holds when `γ` avoids all cones `α i + (σ →₀ ℕ)`. -/
-private def inRem (γ : σ →₀ ℕ) : Prop :=
-  ∀ i, ¬ α i ≤ γ
+private def inRem (γ : σ →₀ ℕ) : Prop := ∀ i, ¬ α i ≤ γ
 
 private theorem inCell_unique [LinearOrder ι] {i₁ i₂ : ι} {γ : σ →₀ ℕ}
     (h₁ : inCell α i₁ γ) (h₂ : inCell α i₂ γ) : i₁ = i₂ := by
@@ -114,8 +102,7 @@ private theorem inCell_unique [LinearOrder ι] {i₁ i₂ : ι} {γ : σ →₀ 
   · exact absurd h₂.1 (h₁.2 i₂ hlt)
 
 private theorem not_inCell_of_inRem [LinearOrder ι] {i : ι} {γ : σ →₀ ℕ} (hr : inRem α γ) :
-    ¬ inCell α i γ :=
-  fun hc ↦ hr i hc.1
+    ¬ inCell α i γ := fun hc ↦ hr i hc.1
 
 private theorem exists_inCell_of_not_inRem [Finite ι] [LinearOrder ι] {γ : σ →₀ ℕ}
     (h : ¬ inRem α γ) : ∃ i, inCell α i γ := by
@@ -171,8 +158,7 @@ private theorem coeff_mul_eq_ite_inCell {ι : Type*} [LinearOrder ι]
   · rw [ite_eq_right hcell]
     split_ifs with hle
     · rw [Finset.sum_singleton]
-      have hnot : ¬ inCell α i (α i + (γ - α i)) := by
-        rwa [add_tsub_cancel_of_le hle]
+      have hnot : ¬ inCell α i (α i + (γ - α i)) := by rwa [add_tsub_cancel_of_le hle]
       have hzero : MvPowerSeries.coeff (γ - α i) (Q i) = 0 := by
         by_contra hne
         exact hnot ((inCell_add_iff α).mpr (hQ i (γ - α i) (MvPowerSeries.mem_support.mpr hne)))
@@ -195,12 +181,9 @@ private theorem coeff_sum_add_of_inCell {ι : Type*} [Fintype ι] [LinearOrder �
   rw [map_add, hrem0, add_zero, map_sum]
   simp_rw [coeff_mul_eq_ite_inCell hQ, Finset.sum_add_distrib]
   congr 1
-  rw [Finset.sum_eq_single i₀]
-  · exact ite_eq_left hi₀
-  · intro i _ hne
-    exact ite_eq_right fun hi ↦ hne (inCell_unique α hi hi₀)
-  · intro hmem
-    exact absurd (Finset.mem_univ i₀) hmem
+  rw [Finset.sum_eq_single i₀
+    (fun i _ hne ↦ ite_eq_right fun hi ↦ hne (inCell_unique α hi hi₀))
+    (fun hmem ↦ absurd (Finset.mem_univ i₀) hmem), ite_eq_left hi₀]
 
 private theorem coeff_sum_add_of_inRem {ι : Type*} [Fintype ι] [LinearOrder ι]
     {F : ι → MvPowerSeries σ R} {α : ι → (σ →₀ ℕ)}
@@ -212,10 +195,7 @@ private theorem coeff_sum_add_of_inRem {ι : Type*} [Fintype ι] [LinearOrder ι
   classical
   rw [map_add, add_comm _ (MvPowerSeries.coeff γ rem), map_sum]
   simp_rw [coeff_mul_eq_ite_inCell hQ, Finset.sum_add_distrib]
-  have hzero : (∑ x : ι, if inCell α x γ then
-      MvPowerSeries.coeff (γ - α x) (Q x) * MvPowerSeries.coeff (α x) (F x) else 0) = 0 :=
-    Finset.sum_eq_zero fun i _ ↦ ite_eq_right (not_inCell_of_inRem α hr)
-  rw [hzero, zero_add]
+  rw [Finset.sum_eq_zero fun i _ ↦ ite_eq_right (not_inCell_of_inRem α hr), zero_add]
   rfl
 
 private theorem toSyn_add_lt_of_mem_antidiagonal {ι : Type*}
@@ -329,25 +309,13 @@ private theorem formalDivision_unique {ι : Type*} [Fintype ι] [LinearOrder ι]
       (∀ i β, β ∈ (qr₂.1 i).support → ∀ j, j < i → ¬ α j ≤ α i + β) ∧
       (∀ β ∈ qr₂.2.support, ∀ i, ¬ α i ≤ β)) :
     qr₁ = qr₂ := by
-  have hQ : ∀ i β, β ∈ (qr₁.1 i - qr₂.1 i).support → ∀ j, j < i → ¬ α j ≤ α i + β := by
-    intro i β hβ
-    rcases MvPowerSeries.support_sub (qr₁.1 i) (qr₂.1 i) hβ with hβ₁ | hβ₂
-    · exact h₁.2.1 i β hβ₁
-    · exact h₂.2.1 i β hβ₂
-  have hR : ∀ β ∈ (qr₁.2 - qr₂.2).support, ∀ i, ¬ α i ≤ β := by
-    intro β hβ
-    rcases MvPowerSeries.support_sub qr₁.2 qr₂.2 hβ with hβ₁ | hβ₂
-    · exact h₁.2.2 β hβ₁
-    · exact h₂.2.2 β hβ₂
+  have hQ : ∀ i β, β ∈ (qr₁.1 i - qr₂.1 i).support → ∀ j, j < i → ¬ α j ≤ α i + β := fun i β hβ ↦
+    (MvPowerSeries.support_sub _ _ hβ).elim (h₁.2.1 i β) (h₂.2.1 i β)
+  have hR : ∀ β ∈ (qr₁.2 - qr₂.2).support, ∀ i, ¬ α i ≤ β := fun β hβ ↦
+    (MvPowerSeries.support_sub _ _ hβ).elim (h₁.2.2 β) (h₂.2.2 β)
   have hsum : (∑ i, (qr₁.1 i - qr₂.1 i) * F i) + (qr₁.2 - qr₂.2) = 0 := by
-    simp_rw [sub_mul, Finset.sum_sub_distrib]
-    have heq : (∑ i, qr₁.1 i * F i) + qr₁.2 = (∑ i, qr₂.1 i * F i) + qr₂.2 :=
-      h₁.1.symm.trans h₂.1
-    calc
-      (∑ i, qr₁.1 i * F i - ∑ i, qr₂.1 i * F i) + (qr₁.2 - qr₂.2) =
-          ((∑ i, qr₁.1 i * F i) + qr₁.2) - ((∑ i, qr₂.1 i * F i) + qr₂.2) :=
-        (add_sub_add_comm _ _ _ _).symm
-      _ = 0 := sub_eq_zero.mpr heq
+    simp_rw [sub_mul, Finset.sum_sub_distrib, ← add_sub_add_comm]
+    exact sub_eq_zero.mpr (h₁.1.symm.trans h₂.1)
   obtain ⟨hQ0, hR0⟩ := ord.coeff_eq_zero_and_coeff_eq_zero_of_isLowerSet hα hu hQ hR isLowerSet_univ
     fun γ _ ↦ by rw [hsum, map_zero]
   refine Prod.ext (funext fun i ↦ MvPowerSeries.ext fun β ↦ ?_) (MvPowerSeries.ext fun γ ↦ ?_)
@@ -499,8 +467,7 @@ theorem existsUnique_formalDivision {ι : Type*} [Fintype ι] [LinearOrder ι]
       G = (∑ i, qr.1 i * F i) + qr.2 ∧
       (∀ i β, β ∈ (qr.1 i).support → ∀ j, j < i → ¬ α j ≤ α i + β) ∧
       (∀ β ∈ qr.2.support, ∀ i, ¬ α i ≤ β) :=
-  ⟨(ord.divQuot F α hu G, ord.divRem F α hu G),
-    ord.divQuot_rem_spec hα hu G,
+  ⟨(ord.divQuot F α hu G, ord.divRem F α hu G), ord.divQuot_rem_spec hα hu G,
     fun _ h ↦ ord.formalDivision_unique hα hu h (ord.divQuot_rem_spec hα hu G)⟩
 
 /-- Over a division ring `K`, every `ord`-initial coefficient is automatically a unit, so formal
@@ -515,10 +482,8 @@ theorem existsUnique_formalDivision_of_divisionRing {K ι : Type*} [DivisionRing
       (∀ i β, β ∈ (qr.1 i).support → ∀ j, j < i → ¬ α j ≤ α i + β) ∧
       (∀ β ∈ qr.2.support, ∀ i, ¬ α i ≤ β) := by
   refine ord.existsUnique_formalDivision F α hα (fun i ↦ ?_) G
-  obtain ⟨hf0, hexp⟩ :=
-    ord.isLeast_toSyn_support_iff_ne_zero_and_initialExp_eq.mp (hα i)
-  rw [← hexp]
-  exact (ord.coeff_initialExp_ne_zero hf0).isUnit
+  obtain ⟨hf0, hexp⟩ := ord.isLeast_toSyn_support_iff_ne_zero_and_initialExp_eq.mp (hα i)
+  exact hexp ▸ (ord.coeff_initialExp_ne_zero hf0).isUnit
 
 end GeneralDivision
 
@@ -532,10 +497,7 @@ def complementSubmodule {R : Type*} [Semiring R] (I : Ideal (MvPowerSeries σ R)
     Submodule R (MvPowerSeries σ R) where
   carrier := {f | ∀ β ∈ f.support, β ∉ ord.initialDiagram I}
   zero_mem' β hβ := by simp at hβ
-  add_mem' {f g} hf hg β hβ := by
-    rcases MvPowerSeries.support_add f g hβ with hβf | hβg
-    · exact hf β hβf
-    · exact hg β hβg
+  add_mem' {f g} hf hg β hβ := (MvPowerSeries.support_add f g hβ).elim (hf β) (hg β)
   smul_mem' c {f} hf β hβ := hf β (MvPowerSeries.support_smul_subset c f hβ)
 
 theorem mem_complementSubmodule_iff {R : Type*} [Semiring R]
