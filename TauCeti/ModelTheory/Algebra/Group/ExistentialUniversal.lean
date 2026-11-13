@@ -245,6 +245,11 @@ of the formula of `S`, with its variables universally quantified. -/
 noncomputable def noSolutionSentence (S : EqIneqSystem (Fin n) A) : Language.group[[A]].Sentence :=
   (BoundedFormula.relabel Sum.inr S.toFormula).not.alls
 
+/-- The sentence `S.noSolutionSentence` is the negation of the formula of `S`, with its variables
+universally quantified. -/
+theorem noSolutionSentence_def (S : EqIneqSystem (Fin n) A) :
+    S.noSolutionSentence = (BoundedFormula.relabel Sum.inr S.toFormula).not.alls := (rfl)
+
 /-- The sentence `S.noSolutionSentence` is universal. -/
 theorem isUniversal_noSolutionSentence (S : EqIneqSystem (Fin n) A) :
     S.noSolutionSentence.IsUniversal :=
@@ -259,7 +264,7 @@ theorem realize_noSolutionSentence {G : Type*} [Group G] (S : EqIneqSystem (Fin 
     G ⊨ S.noSolutionSentence ↔ ¬∃ v : Fin n → G, S.IsSolution v c := by
   let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
   let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-  simp [noSolutionSentence, Sentence.Realize, Formula.realize_relabel_sumInr,
+  simp [noSolutionSentence_def, Sentence.Realize, Formula.realize_relabel_sumInr,
     -BoundedFormula.realize_relabel]
 
 /-- If every universal sentence of the group language with coefficient names `A` that holds in `H`
@@ -316,6 +321,14 @@ noncomputable def noSolutionSentence (E I : Finset (FreeGroup (Fin n))) :
     (EqIneqSystem.noSolutionSentence
       ⟨E.toList.map (FreeGroup.map Sum.inl), I.toList.map (FreeGroup.map Sum.inl)⟩)
 
+/-- The sentence `noSolutionSentence E I` is the sentence `EqIneqSystem.noSolutionSentence` of
+the system with equations `E` and inequations `I` and no coefficient names, read in the group
+language without constants. -/
+theorem noSolutionSentence_def (E I : Finset (FreeGroup (Fin n))) :
+    noSolutionSentence E I = (LEquiv.addEmptyConstants Language.group Empty).invLHom.onSentence
+      (EqIneqSystem.noSolutionSentence
+        ⟨E.toList.map (FreeGroup.map Sum.inl), I.toList.map (FreeGroup.map Sum.inl)⟩) := (rfl)
+
 /-- The sentence `noSolutionSentence E I` is universal. -/
 theorem isUniversal_noSolutionSentence (E I : Finset (FreeGroup (Fin n))) :
     (noSolutionSentence E I).IsUniversal :=
@@ -341,7 +354,7 @@ and the inequations `I`. -/
     congr 1
     ext
     simp
-  rw [noSolutionSentence, LHom.realize_onSentence, EqIneqSystem.realize_noSolutionSentence]
+  rw [noSolutionSentence_def, LHom.realize_onSentence, EqIneqSystem.realize_noSolutionSentence]
   simp [EqIneqSystem.isSolution_iff, heval]
 
 /-- With a single inequation `w ≠ 1`, the sentence `noSolutionSentence E {w}` is the universal
