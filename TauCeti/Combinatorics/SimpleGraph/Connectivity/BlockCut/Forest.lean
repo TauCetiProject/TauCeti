@@ -21,16 +21,15 @@ forest, and that its connected components correspond to those of `G`.
   block through `c` to `B` avoiding `c`, which `SimpleGraph.IsBlock.mem_support_of_ne` forbids.
 * `SimpleGraph.blockCutVertexComponent`: each vertex of the block--cut graph determines a
   connected component of `G`, namely the component containing the block or the cut vertex.
-* `SimpleGraph.blockCutGraph_reachable_iff`: for a finite vertex type, two vertices of the
-  block--cut graph are reachable from each other exactly when they determine the same component
-  of `G`.  Finiteness ensures that every vertex and every edge of `G` lies in a block.
+* `SimpleGraph.blockCutGraph_reachable_iff`: two vertices of the block--cut graph are reachable
+  from each other exactly when they determine the same component of `G`.
 * `SimpleGraph.Walk.reachableAvoiding_blockCutGraph`: a walk in `G` avoiding a set of cut vertices
   lifts to reachability in the block--cut graph avoiding the corresponding cut-vertex nodes.
 * `SimpleGraph.Walk.exists_walk_notMem_support_of_blockCutGraph`: a block--cut walk avoiding a
   cut-vertex node projects to a walk in `G` avoiding that cut vertex.
 * `SimpleGraph.blockCutComponentEquiv`: hence the components of the block--cut graph and of `G`
   are in canonical bijection.
-* `SimpleGraph.blockCutGraph_isTree_iff`: the block--cut graph of a finite graph is a tree
+* `SimpleGraph.blockCutGraph_isTree_iff`: the block--cut graph of a graph is a tree
   exactly when the graph is connected.
 
 The results follow R. Diestel, *Graph Theory*, 5th ed., Graduate Texts in Mathematics 173,
@@ -230,9 +229,9 @@ theorem blockCutGraph_reachable_block_block_of_mem (B C : G.BlockVertex) {x : V}
     G.blockCutGraph.Reachable (.inl B) (.inl C) :=
   (reachableAvoiding_blockCutGraph_block_block_of_mem B C hxB hxC ∅ (by simp)).reachable
 
-/-- In a finite graph, a walk of `G` avoiding a set of cut vertices lifts to reachability between
+/-- A walk of `G` avoiding a set of cut vertices lifts to reachability between
 any blocks containing its endpoints, while avoiding the corresponding cut-vertex nodes. -/
-theorem Walk.reachableAvoiding_blockCutGraph [Finite V] {x y : V} (p : G.Walk x y)
+theorem Walk.reachableAvoiding_blockCutGraph {x y : V} (p : G.Walk x y)
     (B C : G.BlockVertex) (hxB : x ∈ (B : Set V)) (hyC : y ∈ (C : Set V))
     (S : Set G.CutVertex) (hp : ∀ c ∈ S, (c : V) ∉ p.support) :
     ReachableAvoiding G.blockCutGraph.AdjHom (Sum.inr '' S) (.inl B) (.inl C) := by
@@ -247,17 +246,17 @@ theorem Walk.reachableAvoiding_blockCutGraph [Finite V] {x y : V} (p : G.Walk x 
       (hxzD (by simp)) S fun c hc hcx ↦ hp c hc (by simp [hcx])).trans
       (ih ⟨D, hD⟩ (hxzD (by simp)) hyC fun c hc hcp ↦ hp c hc (by simp [hcp]))
 
-/-- In a finite graph, if `x` and `y` are reachable in `G`, then any block containing `x` and any
+/-- If `x` and `y` are reachable in `G`, then any block containing `x` and any
 block containing `y` are reachable in the block--cut graph. -/
-theorem Reachable.blockCutGraph_reachable_block_block [Finite V] {x y : V} (h : G.Reachable x y)
+theorem Reachable.blockCutGraph_reachable_block_block {x y : V} (h : G.Reachable x y)
     (B C : G.BlockVertex) (hxB : x ∈ (B : Set V)) (hyC : y ∈ (C : Set V)) :
     G.blockCutGraph.Reachable (.inl B) (.inl C) := by
   obtain ⟨p⟩ := h
   exact (p.reachableAvoiding_blockCutGraph B C hxB hyC ∅ (by simp)).reachable
 
-/-- In a finite graph, every vertex of the block--cut graph is reachable from a block containing
+/-- Every vertex of the block--cut graph is reachable from a block containing
 a vertex of the component it determines. -/
-private theorem exists_blockCutGraph_reachable_block [Finite V] (x : G.BlockCutVertex) :
+private theorem exists_blockCutGraph_reachable_block (x : G.BlockCutVertex) :
     ∃ B : G.BlockVertex, ∃ a ∈ (B : Set V), G.blockCutGraph.Reachable x (.inl B) ∧
       G.blockCutVertexComponent x = G.connectedComponentMk a := by
   rcases x with B | v
@@ -268,9 +267,9 @@ private theorem exists_blockCutGraph_reachable_block [Finite V] (x : G.BlockCutV
       (G.blockCutGraph_adj_cutVertex_block v ⟨D, hD⟩).2 hvD
     exact ⟨⟨D, hD⟩, v, hvD, h.reachable, blockCutVertexComponent_cutVertex v⟩
 
-/-- In a finite graph, two vertices of the block--cut graph are reachable from each other exactly
+/-- Two vertices of the block--cut graph are reachable from each other exactly
 when they determine the same connected component of `G`. -/
-theorem blockCutGraph_reachable_iff [Finite V] {x y : G.BlockCutVertex} :
+theorem blockCutGraph_reachable_iff {x y : G.BlockCutVertex} :
     G.blockCutGraph.Reachable x y ↔
       G.blockCutVertexComponent x = G.blockCutVertexComponent y := by
   refine ⟨Reachable.blockCutVertexComponent_eq, fun h ↦ ?_⟩
@@ -279,9 +278,9 @@ theorem blockCutGraph_reachable_iff [Finite V] {x y : G.BlockCutVertex} :
   have hab : G.Reachable a b := ConnectedComponent.exact (hx.symm.trans (h.trans hy))
   exact hxB.trans ((hab.blockCutGraph_reachable_block_block B C haB hbC).trans hyC.symm)
 
-/-- **Components of the block--cut forest.** For a finite graph, the connected components of the
+/-- **Components of the block--cut forest.** The connected components of the
 block--cut graph correspond to those of the graph. -/
-noncomputable def blockCutComponentEquiv [Finite V] :
+noncomputable def blockCutComponentEquiv :
     G.blockCutGraph.ConnectedComponent ≃ G.ConnectedComponent :=
   Equiv.ofBijective
     (ConnectedComponent.lift G.blockCutVertexComponent fun _ _ p _ ↦
@@ -295,28 +294,27 @@ noncomputable def blockCutComponentEquiv [Finite V] :
 /-- `blockCutComponentEquiv` sends the component of a vertex of the block--cut graph to the
 component of `G` that the vertex determines. -/
 @[simp]
-theorem blockCutComponentEquiv_connectedComponentMk [Finite V] (x : G.BlockCutVertex) :
+theorem blockCutComponentEquiv_connectedComponentMk (x : G.BlockCutVertex) :
     G.blockCutComponentEquiv (G.blockCutGraph.connectedComponentMk x) =
       G.blockCutVertexComponent x :=
   (rfl)
 
 /-- The inverse of `blockCutComponentEquiv` sends the component of a vertex to the component of
 any block containing it. -/
-theorem blockCutComponentEquiv_symm_connectedComponentMk_of_mem [Finite V] (B : G.BlockVertex)
+theorem blockCutComponentEquiv_symm_connectedComponentMk_of_mem (B : G.BlockVertex)
     {v : V} (hv : v ∈ (B : Set V)) :
     G.blockCutComponentEquiv.symm (G.connectedComponentMk v) =
       G.blockCutGraph.connectedComponentMk (.inl B) := by
   rw [Equiv.symm_apply_eq, blockCutComponentEquiv_connectedComponentMk,
     blockCutVertexComponent_block_of_mem B hv]
 
-/-- A finite graph has a connected block--cut graph exactly when it is connected. -/
-theorem blockCutGraph_connected_iff [Finite V] : G.blockCutGraph.Connected ↔ G.Connected := by
+/-- A graph has a connected block--cut graph exactly when it is connected. -/
+theorem blockCutGraph_connected_iff : G.blockCutGraph.Connected ↔ G.Connected := by
   rw [← card_connectedComponent_eq_one_iff, ← card_connectedComponent_eq_one_iff,
     Nat.card_congr G.blockCutComponentEquiv]
 
-/-- **The block--cut tree.** The block--cut graph of a finite graph is a tree exactly when the
-graph is connected. -/
-theorem blockCutGraph_isTree_iff [Finite V] : G.blockCutGraph.IsTree ↔ G.Connected := by
+/-- **The block--cut tree.** The block--cut graph is a tree exactly when the graph is connected. -/
+theorem blockCutGraph_isTree_iff : G.blockCutGraph.IsTree ↔ G.Connected := by
   rw [isTree_iff, blockCutGraph_connected_iff, and_iff_left blockCutGraph_isAcyclic]
 
 end SimpleGraph

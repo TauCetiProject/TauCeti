@@ -153,6 +153,22 @@ theorem not_isCutVertex_induce_of_exists_walk
   rw [Walk.support_induce, List.mem_attachWith] at hx
   exact (hp x hx).2 rfl
 
+/-- A directed union of vertex sets inducing connected graphs without cut vertices has no cut
+vertex. No finiteness of the family or of the vertex sets is needed. -/
+theorem not_isCutVertex_induce_sUnion_of_directedOn {S : Set (Set V)}
+    (hS : DirectedOn (· ⊆ ·) S)
+    (hconn : ∀ B ∈ S, (G.induce B).Connected)
+    (hcut : ∀ B ∈ S, ∀ v, ¬(G.induce B).IsCutVertex v) (x : ↑(⋃₀ S)) :
+    ¬(G.induce (⋃₀ S)).IsCutVertex x := by
+  apply not_isCutVertex_induce_of_exists_walk
+  intro x _ a ha b hb hax hbx
+  obtain ⟨B, hB, haB⟩ := Set.mem_sUnion.mp ha
+  obtain ⟨C, hC, hbC⟩ := Set.mem_sUnion.mp hb
+  obtain ⟨D, hD, hBD, hCD⟩ := hS B hB C hC
+  obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne (hconn D hD) (hcut D hD)
+    (hBD haB) (hCD hbC) hax hbx
+  exact ⟨p, fun y hy ↦ ⟨Set.mem_sUnion.mpr ⟨D, hD, (hp y hy).1⟩, (hp y hy).2⟩⟩
+
 /-- **Adding an ear.** If a vertex set induces a connected graph without cut vertices, then adding
 the vertices of a path between two of its vertices gives a vertex set whose induced graph still
 has no cut vertex. -/
