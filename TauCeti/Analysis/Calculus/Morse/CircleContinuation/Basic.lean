@@ -38,7 +38,7 @@ satisfies the hypotheses of the Picard–Lindelöf theorem
 (`TauCeti.isPicardLindelof_circleContinuationSlope`), two solutions agreeing at one parameter
 agree on `0 < t < 1` (`TauCeti.eqOn_Ioo_of_hasDerivAt_circleContinuationSlope`), and solutions on
 the two sides of a window glue with a solution on the window
-(`TauCeti.exists_hasDerivAt_of_hasDerivWithinAt_Icc_glue`). The file proves the three
+(`TauCeti.exists_eq_hasDerivAt_of_hasDerivWithinAt_Icc`). The file proves the three
 dynamical facts about this equation used by the counterexamples.
 
 * **Drift bound.** Along any trajectory, between the levels `a` and `b` of `t` the angle moves by
@@ -335,15 +335,14 @@ every parameter of the window, since `a (1 - b²)` bounds `t (1 - t²)` from bel
 theorem lipschitzWith_circleContinuationSlope (δ : ℝ) (r : ℝ → ℝ) {a b : ℝ} (ha : 0 < a)
     (hab : a ≤ b) (hb : b < 1) :
     ∀ t ∈ Icc a b, LipschitzWith
-      ⟨4 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) (mul_pos ha (by nlinarith)).le⟩
+      (.mk (4 * |δ| / (a * (1 - b ^ 2)))
+        (div_nonneg (by positivity) (mul_pos ha (by nlinarith)).le))
       (circleContinuationSlope δ r t) := by
   intro t ht
   have hm : 0 < a * (1 - b ^ 2) := mul_pos ha (by nlinarith)
   refine LipschitzWith.of_dist_le_mul fun θ θ' ↦ ?_
   refine (dist_circleContinuationSlope_le δ r (ha.trans_le ht.1) (ht.2.trans_lt hb) θ θ').trans ?_
-  -- Unfold the coercion of the `ℝ≥0` Lipschitz constant.
-  change _ ≤ (4 * |δ| / (a * (1 - b ^ 2))) * dist θ θ'
-  rw [div_eq_mul_inv]
+  rw [NNReal.coe_mk, div_eq_mul_inv]
   gcongr 4 * |δ| * ?_ * _
   gcongr
   all_goals nlinarith [ht.1, ht.2]
@@ -352,13 +351,16 @@ theorem lipschitzWith_circleContinuationSlope (δ : ℝ) (r : ℝ → ℝ) {a b 
 point `(t₀, θ₀)`, for a path continuous on the window. With `m = a (1 - b²)`, a lower bound for
 `t (1 - t²)` on the window, the slope is bounded by `2 |δ| / m` and `4 |δ| / m`-Lipschitz. -/
 theorem isPicardLindelof_circleContinuationSlope (δ : ℝ) {r : ℝ → ℝ} {a b : ℝ}
-    (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr : ContinuousOn r (Icc a b)) (t₀ : Icc a b)
-    (θ₀ : ℝ) :
+    (ha : 0 < a) (hb : b < 1) (hr : ContinuousOn r (Icc a b)) (t₀ : Icc a b) (θ₀ : ℝ) :
     IsPicardLindelof (circleContinuationSlope δ r) t₀ θ₀
-      ⟨2 * |δ| / (a * (1 - b ^ 2)) * (b - a),
-        mul_nonneg (div_nonneg (by positivity) (mul_pos ha (by nlinarith)).le) (sub_nonneg.2 hab)⟩ 0
-      ⟨2 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) (mul_pos ha (by nlinarith)).le⟩
-      ⟨4 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) (mul_pos ha (by nlinarith)).le⟩ := by
+      (.mk (2 * |δ| / (a * (1 - b ^ 2)) * (b - a))
+        (mul_nonneg (div_nonneg (by positivity) (mul_pos ha (by nlinarith [t₀.2.1, t₀.2.2])).le)
+          (sub_nonneg.2 (t₀.2.1.trans t₀.2.2)))) 0
+      (.mk (2 * |δ| / (a * (1 - b ^ 2)))
+        (div_nonneg (by positivity) (mul_pos ha (by nlinarith [t₀.2.1, t₀.2.2])).le))
+      (.mk (4 * |δ| / (a * (1 - b ^ 2)))
+        (div_nonneg (by positivity) (mul_pos ha (by nlinarith [t₀.2.1, t₀.2.2])).le)) := by
+  have hab : a ≤ b := t₀.2.1.trans t₀.2.2
   have hm : 0 < a * (1 - b ^ 2) := mul_pos ha (by nlinarith)
   have hmem : ∀ t ∈ Icc a b, 0 < t ∧ t < 1 := fun t ht ↦
     ⟨ha.trans_le ht.1, ht.2.trans_lt hb⟩
@@ -374,41 +376,45 @@ theorem isPicardLindelof_circleContinuationSlope (δ : ℝ) {r : ℝ → ℝ} {a
       (baseSpeed_pos (hmem t ht).1 (hmem t ht).2).ne'
   · rw [Real.norm_eq_abs]
     refine (abs_circleContinuationSlope_le δ r (hmem t ht).1 (hmem t ht).2 θ).trans ?_
-    -- Unfold the coercion of the `ℝ≥0` bound.
-    change _ ≤ 2 * |δ| / (a * (1 - b ^ 2))
-    rw [div_eq_mul_inv]
+    rw [NNReal.coe_mk, div_eq_mul_inv]
     gcongr 2 * |δ| * ?_
     exact hinv t ht
-  · -- Unfold the coercions of the `ℝ≥0` constants.
-    change 2 * |δ| / (a * (1 - b ^ 2)) * max (b - t₀) (t₀ - a) ≤
-      2 * |δ| / (a * (1 - b ^ 2)) * (b - a) - 0
-    rw [sub_zero]
+  · simp only [NNReal.coe_mk, NNReal.coe_zero, sub_zero]
     gcongr
     exact max_le (by linarith [t₀.2.1]) (by linarith [t₀.2.2])
 
 /-- **Uniqueness of trajectories.** Two solutions of `Θ' = circleContinuationSlope δ r t (Θ t)` on
-`[a, b] ⊆ (0, 1)` that agree at one parameter agree on `[a, b]`. -/
-theorem eqOn_Icc_of_hasDerivAt_circleContinuationSlope {δ : ℝ} {r Θ₁ Θ₂ : ℝ → ℝ}
+`[a, b] ⊆ (0, 1)`, with one-sided derivatives at the ends, that agree at one parameter agree on
+`[a, b]`. -/
+theorem eqOn_Icc_of_hasDerivWithinAt_circleContinuationSlope {δ : ℝ} {r Θ₁ Θ₂ : ℝ → ℝ}
     {a b t₀ : ℝ} (ha : 0 < a) (hb : b < 1) (ht₀ : t₀ ∈ Icc a b)
-    (h₁ : ∀ t ∈ Icc a b, HasDerivAt Θ₁ (circleContinuationSlope δ r t (Θ₁ t)) t)
-    (h₂ : ∀ t ∈ Icc a b, HasDerivAt Θ₂ (circleContinuationSlope δ r t (Θ₂ t)) t)
+    (h₁ : ∀ t ∈ Icc a b, HasDerivWithinAt Θ₁ (circleContinuationSlope δ r t (Θ₁ t)) (Icc a b) t)
+    (h₂ : ∀ t ∈ Icc a b, HasDerivWithinAt Θ₂ (circleContinuationSlope δ r t (Θ₂ t)) (Icc a b) t)
     (h : Θ₁ t₀ = Θ₂ t₀) : EqOn Θ₁ Θ₂ (Icc a b) := by
   have hK := fun t ht ↦ (lipschitzWith_circleContinuationSlope δ r ha (ht₀.1.trans ht₀.2) hb t
     ht).lipschitzOnWith (s := univ)
-  have hc₁ : ContinuousOn Θ₁ (Icc a b) := fun t ht ↦ (h₁ t ht).continuousAt.continuousWithinAt
-  have hc₂ : ContinuousOn Θ₂ (Icc a b) := fun t ht ↦ (h₂ t ht).continuousAt.continuousWithinAt
+  have hc₁ : ContinuousOn Θ₁ (Icc a b) := fun t ht ↦ (h₁ t ht).continuousWithinAt
+  have hc₂ : ContinuousOn Θ₂ (Icc a b) := fun t ht ↦ (h₂ t ht).continuousWithinAt
   rw [← Icc_union_Icc_eq_Icc ht₀.1 ht₀.2]
   refine EqOn.union ?_ ?_
   · have hs : Ioc a t₀ ⊆ Icc a b := fun t ht ↦ ⟨ht.1.le, ht.2.trans ht₀.2⟩
+    have hd : ∀ (Θ : ℝ → ℝ), (∀ t ∈ Icc a b,
+        HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Icc a b) t) →
+        ∀ t ∈ Ioc a t₀, HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Iic t) t :=
+      fun Θ hΘ t ht ↦ (hΘ t (hs ht)).mono_of_mem_nhdsWithin
+        (Icc_mem_nhdsLE_of_mem ⟨ht.1, ht.2.trans ht₀.2⟩)
     exact ODE_solution_unique_of_mem_Icc_left (s := fun _ ↦ univ) (fun t ht ↦ hK t (hs ht))
-      (hc₁.mono (Icc_subset_Icc_right ht₀.2)) (fun t ht ↦ (h₁ t (hs ht)).hasDerivWithinAt)
-      (fun _ _ ↦ mem_univ _) (hc₂.mono (Icc_subset_Icc_right ht₀.2))
-      (fun t ht ↦ (h₂ t (hs ht)).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) h
+      (hc₁.mono (Icc_subset_Icc_right ht₀.2)) (hd Θ₁ h₁) (fun _ _ ↦ mem_univ _)
+      (hc₂.mono (Icc_subset_Icc_right ht₀.2)) (hd Θ₂ h₂) (fun _ _ ↦ mem_univ _) h
   · have hs : Ico t₀ b ⊆ Icc a b := fun t ht ↦ ⟨ht₀.1.trans ht.1, ht.2.le⟩
+    have hd : ∀ (Θ : ℝ → ℝ), (∀ t ∈ Icc a b,
+        HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Icc a b) t) →
+        ∀ t ∈ Ico t₀ b, HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Ici t) t :=
+      fun Θ hΘ t ht ↦ (hΘ t (hs ht)).mono_of_mem_nhdsWithin
+        (Icc_mem_nhdsGE_of_mem ⟨ht₀.1.trans ht.1, ht.2⟩)
     exact ODE_solution_unique_of_mem_Icc_right (s := fun _ ↦ univ) (fun t ht ↦ hK t (hs ht))
-      (hc₁.mono (Icc_subset_Icc_left ht₀.1)) (fun t ht ↦ (h₁ t (hs ht)).hasDerivWithinAt)
-      (fun _ _ ↦ mem_univ _) (hc₂.mono (Icc_subset_Icc_left ht₀.1))
-      (fun t ht ↦ (h₂ t (hs ht)).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) h
+      (hc₁.mono (Icc_subset_Icc_left ht₀.1)) (hd Θ₁ h₁) (fun _ _ ↦ mem_univ _)
+      (hc₂.mono (Icc_subset_Icc_left ht₀.1)) (hd Θ₂ h₂) (fun _ _ ↦ mem_univ _) h
 
 /-- **Uniqueness of trajectories on `0 < t < 1`.** Two solutions of
 `Θ' = circleContinuationSlope δ r t (Θ t)` on `0 < t < 1` that agree at one parameter agree
@@ -422,9 +428,10 @@ theorem eqOn_Ioo_of_hasDerivAt_circleContinuationSlope {δ : ℝ} {r Θ₁ Θ₂
   intro t ht
   have hs : Icc (min t t₀) (max t t₀) ⊆ Ioo 0 1 := fun s hs ↦
     ⟨(lt_min ht.1 ht₀.1).trans_le hs.1, hs.2.trans_lt (max_lt ht.2 ht₀.2)⟩
-  exact eqOn_Icc_of_hasDerivAt_circleContinuationSlope (lt_min ht.1 ht₀.1) (max_lt ht.2 ht₀.2)
-    ⟨min_le_right _ _, le_max_right _ _⟩ (fun s hs' ↦ h₁ s (hs hs'))
-    (fun s hs' ↦ h₂ s (hs hs')) h ⟨min_le_left _ _, le_max_left _ _⟩
+  exact eqOn_Icc_of_hasDerivWithinAt_circleContinuationSlope (lt_min ht.1 ht₀.1)
+    (max_lt ht.2 ht₀.2) ⟨min_le_right _ _, le_max_right _ _⟩
+    (fun s hs' ↦ (h₁ s (hs hs')).hasDerivWithinAt) (fun s hs' ↦ (h₂ s (hs hs')).hasDerivWithinAt)
+    h ⟨min_le_left _ _, le_max_left _ _⟩
 
 /-- The trajectory of the half-turn continuation leaving the source minimum, on the window
 `[1/3, 5/6]`: a solution starting at the angle `π / 2`. -/
@@ -433,14 +440,21 @@ private theorem exists_hasDerivWithinAt_circleContinuationSlope (δ : ℝ) {ρ :
     ∃ Θ : ℝ → ℝ, Θ (1 / 3) = π / 2 ∧ ∀ t ∈ Icc (1 / 3 : ℝ) (5 / 6),
       HasDerivWithinAt Θ (circleContinuationSlope δ (fun t ↦ π * ρ t) t (Θ t))
         (Icc (1 / 3) (5 / 6)) t :=
-  (isPicardLindelof_circleContinuationSlope δ (by norm_num) (by norm_num) (by norm_num)
-    (by fun_prop) ⟨1 / 3, by norm_num, by norm_num⟩
-    (π / 2)).exists_eq_forall_mem_Icc_hasDerivWithinAt₀
+  (isPicardLindelof_circleContinuationSlope δ (by norm_num) (by norm_num) (by fun_prop)
+    ⟨1 / 3, by norm_num, by norm_num⟩ (π / 2)).exists_eq_forall_mem_Icc_hasDerivWithinAt₀
 
 /-- The angular velocity vanishes where `sin (2 (θ - r t)) = 0`. -/
 theorem circleContinuationSlope_eq_zero {δ : ℝ} {r : ℝ → ℝ} {t θ : ℝ}
     (h : sin (2 * (θ - r t)) = 0) : circleContinuationSlope δ r t θ = 0 := by
   simp [circleContinuationSlope_def, h]
+
+/-- The constant angle `m` solves the slope equation at the parameters where
+`sin (2 (m - r t)) = 0`. -/
+theorem hasDerivAt_const_circleContinuationSlope {δ : ℝ} {r : ℝ → ℝ} {t m : ℝ}
+    (h : sin (2 * (m - r t)) = 0) :
+    HasDerivAt (fun _ ↦ m) (circleContinuationSlope δ r t m) t := by
+  rw [circleContinuationSlope_eq_zero h]
+  exact hasDerivAt_const t m
 
 /-- The base trajectory `τ s = (1 + e^{-2 s})^{-1/2}` of `t' = t (1 - t²)`, running from `t = 0`
 to `t = 1`. -/
@@ -562,16 +576,13 @@ theorem exists_circleContinuationField_connection {ρ : ℝ → ℝ} (hρ : Cont
   obtain ⟨δ, hδ, Θ, hΘa, hΘb, hΘ⟩ :=
     exists_hasDerivWithinAt_circleContinuationSlope_eq_pi hρ hmono h0 h1
   -- Extend by the constant angles `π / 2` for `t ≤ 1/3` and `π` for `t ≥ 5/6`, zeros of the slope.
-  have hzero₀ : ∀ t ≤ 1 / 3, circleContinuationSlope δ (fun t ↦ π * ρ t) t (π / 2) = 0 :=
-    fun t ht ↦ circleContinuationSlope_eq_zero (by
-      rw [h0 t ht, mul_zero, sub_zero, mul_div_cancel₀ _ two_ne_zero, sin_pi])
-  have hzero₁ : ∀ t, 2 / 3 ≤ t → circleContinuationSlope δ (fun t ↦ π * ρ t) t π = 0 :=
-    fun t ht ↦ circleContinuationSlope_eq_zero (by
-      rw [h1 t ht, mul_one, sub_self, mul_zero, sin_zero])
-  obtain ⟨Θg, hΘg₀, -, hΘg₁, hΘg⟩ := exists_hasDerivAt_of_hasDerivWithinAt_Icc_glue
+  obtain ⟨Θg, hΘg₀, -, hΘg₁, hΘg⟩ := exists_eq_hasDerivAt_of_hasDerivWithinAt_Icc
     (I := univ) (E₀ := fun _ ↦ π / 2) (E₁ := fun _ ↦ π) (by norm_num) hΘa.symm hΘb
-    (fun t _ ht ↦ (hasDerivAt_const t _).congr_deriv (hzero₀ t ht).symm) hΘ
-    (fun t _ ht ↦ (hasDerivAt_const t _).congr_deriv (hzero₁ t (by linarith)).symm)
+    (fun t _ ht ↦ (hasDerivAt_const_circleContinuationSlope (by
+      rw [h0 t ht, mul_zero, sub_zero, mul_div_cancel₀ _ two_ne_zero, sin_pi])).hasDerivWithinAt)
+    hΘ
+    (fun t _ ht ↦ (hasDerivAt_const_circleContinuationSlope (by
+      rw [h1 t (by linarith), mul_one, sub_self, mul_zero, sin_zero])).hasDerivWithinAt)
   -- Follow the graph along the base trajectory from `t = 0` to `t = 1`.
   refine ⟨δ, hδ, fun s ↦ (Θg (baseOrbit s), baseOrbit s), fun s ↦ ?_, ?_, ?_⟩
   · exact hasDerivAt_circleContinuationField (hasDerivAt_baseOrbit s) (baseOrbit_pos s)

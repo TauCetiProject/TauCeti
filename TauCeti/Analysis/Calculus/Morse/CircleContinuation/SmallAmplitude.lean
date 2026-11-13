@@ -7,13 +7,13 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.CircleContinuation.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
-public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.Calculus.Morse.IntervalBase
 
 /-!
 # The index-preserving trajectories of a small-amplitude circle continuation
 
-Let `r` be a path of rotations which is constant, `r = r₀`, for `t ≤ a`, and constant,
-`r = r₁`, for `t ≥ b`, where `0 < a ≤ b < 1`, and consider the parameter field
+Let `r` be a path of rotations which is constant, `r = r₀`, for `0 < t ≤ a`, and constant,
+`r = r₁`, for `b ≤ t < 1`, where `0 < a ≤ b < 1`, and consider the parameter field
 `W = 2 δ sin (2 (θ - r t)) ∂_θ + t (1 - t²) ∂_t` of the continuation family
 `f_{r(t)} = δ cos (2 (θ - r t))` on the circle (`TauCeti.circleContinuationField`), with `δ > 0`.
 Its zeros on the two ends are the critical points of `f_{r₀}` at `t = 0` and of `f_{r₁}` at
@@ -43,19 +43,19 @@ trajectories when the amplitude is small, in the sense that the drift bound
 
 So if a target maximum `m₁` and a source maximum `m₀` satisfy `|m₁ - m₀| + ε < π / 2`, every
 trajectory converging to `m₁` is constant on `t ≥ b` and converges at `t = 0` to `m₀`
-(`TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_circleContinuationSlope`); if a source
-minimum `m₀` and a target minimum `m₁` satisfy `|m₁ - m₀| + ε < π / 2`, every trajectory leaving
-`m₀` is constant on `t ≤ a` and converges to `m₁`
-(`TauCeti.tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_circleContinuationSlope`). The separation
-bound is a hypothesis of these statements: a small drift alone does not provide such a partner,
-but the rotations below do. Given such a pairing, the trajectory exists, and it is unique since a
-trajectory is determined by one of its points
+(`TauCeti.tendsto_nhdsGT_zero_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsLT_one`); if a
+source minimum `m₀` and a target minimum `m₁` satisfy `|m₁ - m₀| + ε < π / 2`, every trajectory
+leaving `m₀` is constant on `t ≤ a` and converges to `m₁`
+(`TauCeti.tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsGT_zero`). The
+separation bound is a hypothesis of these statements: a small drift alone does not provide such a
+partner, but the rotations below do. Given such a pairing, the trajectory exists, and it is unique
+since a trajectory is determined by one of its points
 (`TauCeti.eqOn_Ioo_of_hasDerivAt_circleContinuationSlope`), so the count of trajectories into
 `m₁`, respectively out of `m₀`, is `1` for this pairing and `0` for every other end. No trajectory
 runs from a source minimum `m₀` to a target maximum `m₁` with `ε < |m₁ - m₀|`
-(`TauCeti.not_tendsto_nhdsGT_zero_and_tendsto_nhdsLT_one_circleContinuationSlope`): when every
-source minimum is farther than `ε` from every target maximum, the parameter field has no
-connection of expected dimension `-1`, which is what fails for large amplitude in
+(`TauCeti.not_tendsto_nhdsGT_zero_and_tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope`):
+when every source minimum is farther than `ε` from every target maximum, the parameter field has
+no connection of expected dimension `-1`, which is what fails for large amplitude in
 `TauCeti.exists_circleContinuationField_connection`.
 
 These statements compute the continuations of small amplitude along rotations. For the
@@ -73,24 +73,24 @@ and the source minima stay at distance at least `π / 6 > ε` from the target ma
 
 ## Main results
 
-* `TauCeti.exists_hasDerivAt_circleContinuationSlope`: a trajectory through every point of the
+* `exists_hasDerivAt_circleContinuationSlope`: a trajectory through every point of the
   window.
-* `TauCeti.tendsto_nhdsGT_zero_of_abs_sub_lt_pi_div_two_circleContinuationSlope`,
-  `TauCeti.tendsto_nhdsLT_one_of_abs_sub_lt_pi_div_two_circleContinuationSlope`: the basins of the
-  maxima at `t = 0` and of the minima at `t = 1`.
-* `TauCeti.eq_of_tendsto_nhdsGT_zero_circleContinuationSlope`,
-  `TauCeti.eq_of_tendsto_nhdsLT_one_circleContinuationSlope`: the trajectories leaving a source
-  minimum and entering a target maximum are constant on the ends.
-* `TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_circleContinuationSlope`,
-  `TauCeti.exists_tendsto_nhdsGT_tendsto_nhdsLT_circleContinuationSlope_of_cos_eq_one`:
+* `tendsto_nhdsGT_zero_of_hasDerivWithinAt_circleContinuationSlope_of_abs_sub_lt_pi_div_two`,
+  `tendsto_nhdsLT_one_of_hasDerivWithinAt_circleContinuationSlope_of_abs_sub_lt_pi_div_two`:
+  the basins of the maxima at `t = 0` and of the minima at `t = 1`.
+* `eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsGT_zero`,
+  `eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsLT_one`: the trajectories
+  leaving a source minimum and entering a target maximum are constant on the ends.
+* `tendsto_nhdsGT_zero_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsLT_one`,
+  `exists_hasDerivAt_circleContinuationSlope_tendsto_nhdsGT_tendsto_nhdsLT_of_cos_eq_one`:
   the unique trajectory into a target maximum, given a source maximum `m₀` with
   `|m₁ - m₀| + ε < π / 2`, and its source `m₀`.
-* `TauCeti.tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_circleContinuationSlope`,
-  `TauCeti.exists_tendsto_nhdsGT_tendsto_nhdsLT_circleContinuationSlope_of_cos_eq_neg_one`:
+* `tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsGT_zero`,
+  `exists_hasDerivAt_circleContinuationSlope_tendsto_nhdsGT_tendsto_nhdsLT_of_cos_eq_neg_one`:
   the unique trajectory out of a source minimum, given a target minimum `m₁` with
   `|m₁ - m₀| + ε < π / 2`, and its target `m₁`.
-* `TauCeti.not_tendsto_nhdsGT_zero_and_tendsto_nhdsLT_one_circleContinuationSlope`: no trajectory
-  from a source minimum `m₀` to a target maximum `m₁` with `ε < |m₁ - m₀|`.
+* `not_tendsto_nhdsGT_zero_and_tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope`:
+  no trajectory from a source minimum `m₀` to a target maximum `m₁` with `ε < |m₁ - m₀|`.
 
 ## References
 
@@ -106,54 +106,21 @@ namespace TauCeti
 
 /-! ### The explicit solutions on the ends -/
 
-/-- The time `U t = log t - log (1 - t²) / 2` of the base flow `t' = t (1 - t²)`. -/
-private noncomputable def baseTime (t : ℝ) : ℝ := log t - log (1 - t ^ 2) / 2
-
-private theorem hasDerivAt_baseTime {t : ℝ} (h₀ : 0 < t) (h₁ : t < 1) :
-    HasDerivAt baseTime (t * (1 - t ^ 2))⁻¹ t := by
-  have hq : 0 < 1 - t ^ 2 := by nlinarith
-  have h := (hasDerivAt_log h₀.ne').sub
-    ((((hasDerivAt_pow 2 t).const_sub 1).log hq.ne').div_const 2)
-  refine h.congr_deriv ?_
-  field_simp
-  ring
-
-private theorem tendsto_baseTime_nhdsGT_zero : Tendsto baseTime (𝓝[>] 0) atBot := by
-  have hc : ContinuousAt (fun t : ℝ ↦ log (1 - t ^ 2) / 2) 0 :=
-    ((continuousAt_log (by norm_num)).comp (by fun_prop)).div_const 2
-  have h : Tendsto (fun t : ℝ ↦ -(log (1 - t ^ 2) / 2)) (𝓝[>] 0) (𝓝 (-(log (1 - 0 ^ 2) / 2))) :=
-    (hc.tendsto.mono_left nhdsWithin_le_nhds).neg
-  exact (tendsto_log_nhdsGT_zero.atBot_add h).congr fun t ↦ by simp [baseTime, sub_eq_add_neg]
-
-private theorem tendsto_baseTime_nhdsLT_one : Tendsto baseTime (𝓝[<] 1) atTop := by
-  have hq : Tendsto (fun t : ℝ ↦ 1 - t ^ 2) (𝓝[<] 1) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · have : Tendsto (fun t : ℝ ↦ 1 - t ^ 2) (𝓝 1) (𝓝 (1 - 1 ^ 2)) :=
-        (continuous_const.sub (continuous_pow 2)).tendsto 1
-      simpa using this.mono_left nhdsWithin_le_nhds
-    · filter_upwards [Ioo_mem_nhdsLT (by norm_num : (0 : ℝ) < 1)] with t ht
-      exact show 0 < 1 - t ^ 2 by nlinarith [ht.1, ht.2]
-  have h₁ : Tendsto (fun t : ℝ ↦ -(log (1 - t ^ 2) / 2)) (𝓝[<] 1) atTop :=
-    tendsto_neg_atBot_atTop.comp ((tendsto_log_nhdsGT_zero.comp hq).atBot_div_const two_pos)
-  have h₀ : Tendsto log (𝓝[<] 1) (𝓝 (log 1)) :=
-    ((continuousAt_log one_ne_zero).tendsto).mono_left nhdsWithin_le_nhds
-  exact (h₀.add_atTop h₁).congr fun t ↦ by simp [baseTime, sub_eq_add_neg]
-
 /-- The explicit solution `m + arctan (c e^{4 δ cos (2 (m - r₀)) U t})` of the slope equation
 for the constant path `r₀`, around a critical point `m` of `δ cos (2 (θ - r₀))`. -/
 private noncomputable def endSolution (δ r₀ m c t : ℝ) : ℝ :=
-  m + arctan (c * exp (4 * (δ * cos (2 * (m - r₀))) * baseTime t))
+  m + arctan (c * exp (4 * (δ * cos (2 * (m - r₀))) * intervalBaseTimeCoordinate t))
 
 private theorem hasDerivAt_endSolution {δ r₀ m c t : ℝ} (hm : sin (2 * (m - r₀)) = 0)
     (h₀ : 0 < t) (h₁ : t < 1) :
     HasDerivAt (endSolution δ r₀ m c)
       (circleContinuationSlope δ (fun _ ↦ r₀) t (endSolution δ r₀ m c t)) t := by
   set κ := δ * cos (2 * (m - r₀))
-  have hy : HasDerivAt (fun t ↦ c * exp (4 * κ * baseTime t))
-      (c * (exp (4 * κ * baseTime t) * (4 * κ * (t * (1 - t ^ 2))⁻¹))) t :=
-    (((hasDerivAt_baseTime h₀ h₁).const_mul (4 * κ)).exp).const_mul c
+  have hy : HasDerivAt (fun t ↦ c * exp (4 * κ * intervalBaseTimeCoordinate t))
+      (c * (exp (4 * κ * intervalBaseTimeCoordinate t) * (4 * κ * (t * (1 - t ^ 2))⁻¹))) t :=
+    (((hasDerivAt_intervalBaseTimeCoordinate ⟨h₀, h₁⟩).const_mul (4 * κ)).exp).const_mul c
   refine (hy.arctan.const_add m).congr_deriv ?_
-  set Y := c * exp (4 * κ * baseTime t)
+  set Y := c * exp (4 * κ * intervalBaseTimeCoordinate t)
   have hY : 0 < 1 + Y ^ 2 := by positivity
   have hsq := sq_sqrt hY.le
   -- Shift the angle by the critical point `m`, where `sin (2 (m - r₀)) = 0`.
@@ -169,16 +136,18 @@ private theorem hasDerivAt_endSolution {δ r₀ m c t : ℝ} (hm : sin (2 * (m -
 /-- The explicit solution through the angle `v` at the parameter `t₁`, for `|v - m| < π / 2`. -/
 private theorem endSolution_eq {δ r₀ m v t₁ : ℝ} (hv : |v - m| < π / 2) :
     endSolution δ r₀ m
-        (tan (v - m) * exp (-(4 * (δ * cos (2 * (m - r₀))) * baseTime t₁))) t₁ = v := by
+        (tan (v - m) * exp (-(4 * (δ * cos (2 * (m - r₀))) * intervalBaseTimeCoordinate t₁)))
+        t₁ = v := by
   have h₁ : -(π / 2) < v - m := by linarith [neg_abs_le (v - m)]
   have h₂ : v - m < π / 2 := by linarith [le_abs_self (v - m)]
   -- The two exponentials cancel, leaving `arctan (tan (v - m)) = v - m`.
   simp [endSolution, mul_assoc, ← exp_add, arctan_tan h₁ h₂]
 
 private theorem tendsto_endSolution {δ r₀ m c : ℝ} {l : Filter ℝ}
-    (h : Tendsto (fun t ↦ 4 * (δ * cos (2 * (m - r₀))) * baseTime t) l atBot) :
+    (h : Tendsto (fun t ↦ 4 * (δ * cos (2 * (m - r₀))) * intervalBaseTimeCoordinate t) l atBot) :
     Tendsto (endSolution δ r₀ m c) l (𝓝 m) := by
-  have h' : Tendsto (fun t ↦ c * exp (4 * (δ * cos (2 * (m - r₀))) * baseTime t)) l (𝓝 (c * 0)) :=
+  have h' : Tendsto (fun t ↦ c * exp (4 * (δ * cos (2 * (m - r₀))) * intervalBaseTimeCoordinate t))
+      l (𝓝 (c * 0)) :=
     (tendsto_exp_atBot.comp h).const_mul c
   have h'' := ((continuous_arctan.tendsto _).comp h').const_add m
   rw [mul_zero, arctan_zero, add_zero] at h''
@@ -214,18 +183,21 @@ private theorem exists_endSolution (δ r₀ v t₁ : ℝ) :
 and constant on either side of it, then through every point `(θ₀, t₀)` with `t₀` in the window
 passes a solution of `Θ' = circleContinuationSlope δ r t (Θ t)` on the whole of `0 < t < 1`. -/
 theorem exists_hasDerivAt_circleContinuationSlope {δ r₀ r₁ a b : ℝ} {r : ℝ → ℝ} (ha : 0 < a)
-    (hab : a < b) (hb : b < 1) (hr : ContinuousOn r (Icc a b)) (hr₀ : ∀ t ≤ a, r t = r₀)
-    (hr₁ : ∀ t, b ≤ t → r t = r₁) {t₀ : ℝ} (ht₀ : t₀ ∈ Icc a b) (θ₀ : ℝ) :
+    (hab : a ≤ b) (hb : b < 1) (hr : ContinuousOn r (Icc a b)) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀)
+    (hr₁ : ∀ t ∈ Ico b 1, r t = r₁) {t₀ : ℝ} (ht₀ : t₀ ∈ Icc a b) (θ₀ : ℝ) :
     ∃ Θ : ℝ → ℝ, Θ t₀ = θ₀ ∧
       ∀ t ∈ Ioo (0 : ℝ) 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t := by
-  obtain ⟨W, hW₀, hW⟩ := (isPicardLindelof_circleContinuationSlope δ ha hab.le hb hr
+  obtain ⟨W, hW₀, hW⟩ := (isPicardLindelof_circleContinuationSlope δ ha hb hr
     ⟨t₀, ht₀⟩ θ₀).exists_eq_forall_mem_Icc_hasDerivWithinAt₀
   obtain ⟨E₀, hE₀, hE₀'⟩ := exists_endSolution δ r₀ (W a) a
   obtain ⟨E₁, hE₁, hE₁'⟩ := exists_endSolution δ r₁ (W b) b
-  obtain ⟨Θ, -, hΘW, -, hΘ⟩ := exists_hasDerivAt_of_hasDerivWithinAt_Icc_glue
+  obtain ⟨Θ, -, hΘW, -, hΘ⟩ := exists_eq_hasDerivAt_of_hasDerivWithinAt_Icc
     (I := Ioo 0 1) hab hE₀ hE₁.symm
-    (fun t ht hta ↦ by rw [circleContinuationSlope_of_eq (hr₀ t hta)]; exact hE₀' t ht) hW
-    (fun t ht htb ↦ by rw [circleContinuationSlope_of_eq (hr₁ t htb)]; exact hE₁' t ht)
+    (fun t ht hta ↦ by
+      rw [circleContinuationSlope_of_eq (hr₀ t ⟨ht.1, hta⟩)]; exact (hE₀' t ht).hasDerivWithinAt)
+    hW
+    (fun t ht htb ↦ by
+      rw [circleContinuationSlope_of_eq (hr₁ t ⟨htb, ht.2⟩)]; exact (hE₁' t ht).hasDerivWithinAt)
   exact ⟨Θ, by rw [hΘW t₀ ht₀, hW₀], hΘ⟩
 
 /-! ### The ends: basins of the zeros -/
@@ -234,86 +206,100 @@ theorem exists_hasDerivAt_circleContinuationSlope {δ r₀ r₁ a b : ℝ} {r : 
 critical point `m` of `δ cos (2 (θ - r₀))` is the explicit solution around `m`. -/
 private theorem eqOn_endSolution {δ r₀ m a b t₁ : ℝ} {r Θ : ℝ → ℝ} (ha : 0 < a) (hb : b < 1)
     (ht₁ : t₁ ∈ Icc a b) (hr : ∀ t ∈ Icc a b, r t = r₀) (hm : sin (2 * (m - r₀)) = 0)
-    (hΘ : ∀ t ∈ Icc a b, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t)
+    (hΘ : ∀ t ∈ Icc a b, HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Icc a b) t)
     (hΘm : |Θ t₁ - m| < π / 2) :
     EqOn Θ (endSolution δ r₀ m
-      (tan (Θ t₁ - m) * exp (-(4 * (δ * cos (2 * (m - r₀))) * baseTime t₁)))) (Icc a b) := by
-  refine eqOn_Icc_of_hasDerivAt_circleContinuationSlope ha hb ht₁ hΘ (fun t ht ↦ ?_)
+      (tan (Θ t₁ - m) * exp (-(4 * (δ * cos (2 * (m - r₀))) * intervalBaseTimeCoordinate t₁))))
+      (Icc a b) := by
+  refine eqOn_Icc_of_hasDerivWithinAt_circleContinuationSlope ha hb ht₁ hΘ (fun t ht ↦ ?_)
     (endSolution_eq hΘm).symm
   rw [circleContinuationSlope_of_eq (hr t ht)]
-  exact hasDerivAt_endSolution hm (ha.trans_le ht.1) (ht.2.trans_lt hb)
+  exact (hasDerivAt_endSolution hm (ha.trans_le ht.1) (ht.2.trans_lt hb)).hasDerivWithinAt
 
 /-- **The basin of a maximum at `t = 0`.** On an interval `0 < t ≤ b₀` where the path is
 constant, `r = r₀`, a solution whose angle at `b₀` lies within `π / 2` of a maximum `m` of
 `δ cos (2 (θ - r₀))`, `δ > 0`, converges to `m` as `t → 0`. -/
-theorem tendsto_nhdsGT_zero_of_abs_sub_lt_pi_div_two_circleContinuationSlope {δ r₀ m b₀ : ℝ}
-    {r Θ : ℝ → ℝ} (hδ : 0 < δ) (hb₀ : 0 < b₀) (hb₀' : b₀ < 1)
+theorem tendsto_nhdsGT_zero_of_hasDerivWithinAt_circleContinuationSlope_of_abs_sub_lt_pi_div_two
+    {δ r₀ m b₀ : ℝ} {r Θ : ℝ → ℝ} (hδ : 0 < δ) (hb₀ : 0 < b₀) (hb₀' : b₀ < 1)
     (hr : ∀ t ∈ Ioc 0 b₀, r t = r₀) (hm : cos (2 * (m - r₀)) = 1)
-    (hΘ : ∀ t ∈ Ioc 0 b₀, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t)
+    (hΘ : ∀ t ∈ Ioc 0 b₀,
+      HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Ioc 0 b₀) t)
     (hΘm : |Θ b₀ - m| < π / 2) : Tendsto Θ (𝓝[>] 0) (𝓝 m) := by
   have hs : sin (2 * (m - r₀)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inl hm)
   have heq : ∀ t ∈ Ioc 0 b₀, Θ t = endSolution δ r₀ m
-      (tan (Θ b₀ - m) * exp (-(4 * (δ * cos (2 * (m - r₀))) * baseTime b₀))) t := by
+      (tan (Θ b₀ - m) * exp (-(4 * (δ * cos (2 * (m - r₀))) * intervalBaseTimeCoordinate b₀)))
+      t := by
     intro t ht
     have hsub : Icc t b₀ ⊆ Ioc 0 b₀ := fun s hs ↦ ⟨ht.1.trans_le hs.1, hs.2⟩
     exact eqOn_endSolution ht.1 hb₀' ⟨ht.2, le_rfl⟩ (fun s hs' ↦ hr s (hsub hs')) hs
-      (fun s hs' ↦ hΘ s (hsub hs')) hΘm ⟨le_rfl, ht.2⟩
+      (fun s hs' ↦ (hΘ s (hsub hs')).mono hsub) hΘm ⟨le_rfl, ht.2⟩
   refine (tendsto_endSolution (δ := δ) (r₀ := r₀) (c := tan (Θ b₀ - m) *
-    exp (-(4 * (δ * cos (2 * (m - r₀))) * baseTime b₀))) ?_).congr' ?_
+    exp (-(4 * (δ * cos (2 * (m - r₀))) * intervalBaseTimeCoordinate b₀))) ?_).congr' ?_
   · rw [hm, mul_one]
-    exact tendsto_baseTime_nhdsGT_zero.const_mul_atBot (by positivity)
+    exact tendsto_intervalBaseTimeCoordinate_nhdsGT_zero.const_mul_atBot (by positivity)
   · filter_upwards [Ioc_mem_nhdsGT hb₀] with t ht
     exact (heq t ht).symm
 
 /-- **The basin of a minimum at `t = 1`.** On an interval `a₀ ≤ t < 1` where the path is
 constant, `r = r₁`, a solution whose angle at `a₀` lies within `π / 2` of a minimum `m` of
 `δ cos (2 (θ - r₁))`, `δ > 0`, converges to `m` as `t → 1`. -/
-theorem tendsto_nhdsLT_one_of_abs_sub_lt_pi_div_two_circleContinuationSlope {δ r₁ m a₀ : ℝ}
-    {r Θ : ℝ → ℝ} (hδ : 0 < δ) (ha₀ : 0 < a₀) (ha₀' : a₀ < 1)
+theorem tendsto_nhdsLT_one_of_hasDerivWithinAt_circleContinuationSlope_of_abs_sub_lt_pi_div_two
+    {δ r₁ m a₀ : ℝ} {r Θ : ℝ → ℝ} (hδ : 0 < δ) (ha₀ : 0 < a₀) (ha₀' : a₀ < 1)
     (hr : ∀ t ∈ Ico a₀ 1, r t = r₁) (hm : cos (2 * (m - r₁)) = -1)
-    (hΘ : ∀ t ∈ Ico a₀ 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t)
+    (hΘ : ∀ t ∈ Ico a₀ 1,
+      HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Ico a₀ 1) t)
     (hΘm : |Θ a₀ - m| < π / 2) : Tendsto Θ (𝓝[<] 1) (𝓝 m) := by
   have hs : sin (2 * (m - r₁)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inr hm)
   have heq : ∀ t ∈ Ico a₀ 1, Θ t = endSolution δ r₁ m
-      (tan (Θ a₀ - m) * exp (-(4 * (δ * cos (2 * (m - r₁))) * baseTime a₀))) t := by
+      (tan (Θ a₀ - m) * exp (-(4 * (δ * cos (2 * (m - r₁))) * intervalBaseTimeCoordinate a₀)))
+      t := by
     intro t ht
     have hsub : Icc a₀ t ⊆ Ico a₀ 1 := fun s hs ↦ ⟨hs.1, hs.2.trans_lt ht.2⟩
     exact eqOn_endSolution ha₀ ht.2 ⟨le_rfl, ht.1⟩ (fun s hs' ↦ hr s (hsub hs')) hs
-      (fun s hs' ↦ hΘ s (hsub hs')) hΘm ⟨ht.1, le_rfl⟩
+      (fun s hs' ↦ (hΘ s (hsub hs')).mono hsub) hΘm ⟨ht.1, le_rfl⟩
   refine (tendsto_endSolution (δ := δ) (r₀ := r₁) (c := tan (Θ a₀ - m) *
-    exp (-(4 * (δ * cos (2 * (m - r₁))) * baseTime a₀))) ?_).congr' ?_
+    exp (-(4 * (δ * cos (2 * (m - r₁))) * intervalBaseTimeCoordinate a₀))) ?_).congr' ?_
   · rw [hm, show 4 * (δ * -1) = -(4 * δ) by ring]
-    exact tendsto_baseTime_nhdsLT_one.const_mul_atTop_of_neg (by linarith)
+    exact tendsto_intervalBaseTimeCoordinate_nhdsLT_one.const_mul_atTop_of_neg (by linarith)
   · filter_upwards [Ico_mem_nhdsLT ha₀'] with t ht
     exact (heq t ht).symm
 
-/-- The constant angle `m` at a critical point of `δ cos (2 (θ - r₀))` solves the slope
-equation wherever the path takes the value `r₀`. -/
-private theorem hasDerivAt_const_circleContinuationSlope {δ r₀ m t : ℝ} {r : ℝ → ℝ}
-    (hr : r t = r₀) (hm : sin (2 * (m - r₀)) = 0) :
-    HasDerivAt (fun _ ↦ m) (circleContinuationSlope δ r t m) t := by
-  rw [circleContinuationSlope_eq_zero (by rw [hr]; exact hm)]
-  exact hasDerivAt_const t m
-
 /-- On an interval `[s, u] ⊆ (0, 1)` where the path is constant, `r = r₀`, a solution taking the
 value of a critical point `m` of `δ cos (2 (θ - r₀))` at one parameter is constantly `m`. -/
-private theorem eqOn_const_of_hasDerivAt_circleContinuationSlope {δ r₀ m s u t₁ : ℝ}
+private theorem eqOn_const_of_hasDerivWithinAt_circleContinuationSlope {δ r₀ m s u t₁ : ℝ}
     {r Θ : ℝ → ℝ} (hs : 0 < s) (hu : u < 1) (ht₁ : t₁ ∈ Icc s u) (hr : ∀ t ∈ Icc s u, r t = r₀)
     (hm : sin (2 * (m - r₀)) = 0)
-    (hΘ : ∀ t ∈ Icc s u, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t)
+    (hΘ : ∀ t ∈ Icc s u, HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Icc s u) t)
     (hΘm : Θ t₁ = m) : EqOn Θ (fun _ ↦ m) (Icc s u) :=
-  eqOn_Icc_of_hasDerivAt_circleContinuationSlope hs hu ht₁ hΘ
-    (fun t ht ↦ hasDerivAt_const_circleContinuationSlope (hr t ht) hm) hΘm
+  eqOn_Icc_of_hasDerivWithinAt_circleContinuationSlope hs hu ht₁ hΘ
+    (fun t ht ↦
+      (hasDerivAt_const_circleContinuationSlope (by rw [hr t ht]; exact hm)).hasDerivWithinAt) hΘm
+
+/-- An angle `θ` within `π / 2` of a critical point `m` of `cos (2 (θ - ρ))` is `m` itself, if it
+is not within `π / 2` of any critical point `m'` of the opposite kind. -/
+private theorem eq_of_forall_cos_eq_neg_not_abs_sub_lt {θ m ρ : ℝ}
+    (hθ : θ ∈ Ioo (m - π / 2) (m + π / 2))
+    (h : ∀ m', cos (2 * (m' - ρ)) = -cos (2 * (m - ρ)) → ¬ |θ - m'| < π / 2) : θ = m := by
+  rcases lt_trichotomy θ m with hlt | heq | hgt
+  · refine (h (m - π / 2) ?_ ?_).elim
+    · rw [show 2 * (m - π / 2 - ρ) = 2 * (m - ρ) - π by ring, cos_sub_pi]
+    · rw [abs_lt]; constructor <;> linarith [hθ.1]
+  · exact heq
+  · refine (h (m + π / 2) ?_ ?_).elim
+    · rw [show 2 * (m + π / 2 - ρ) = 2 * (m - ρ) + π by ring, cos_add_pi]
+    · rw [abs_lt]; constructor <;> linarith [hθ.2]
 
 /-- **Only the constant trajectory leaves a source minimum.** On an interval `0 < t ≤ b₀` where
 the path is constant, `r = r₀`, a solution converging as `t → 0` to a minimum `m` of
 `δ cos (2 (θ - r₀))`, `δ > 0`, is constantly `m`. Indeed, a solution which differs from `m` close
 to `t = 0` lies there within `π / 2` of one of the neighbouring maxima `m ± π / 2`, and so converges
 to it. -/
-theorem eq_of_tendsto_nhdsGT_zero_circleContinuationSlope {δ r₀ m b₀ : ℝ} {r Θ : ℝ → ℝ}
+theorem eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsGT_zero {δ r₀ m b₀ : ℝ}
+    {r Θ : ℝ → ℝ}
     (hδ : 0 < δ) (hb₀' : b₀ < 1) (hr : ∀ t ∈ Ioc 0 b₀, r t = r₀)
     (hm : cos (2 * (m - r₀)) = -1)
-    (hΘ : ∀ t ∈ Ioc 0 b₀, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t)
+    (hΘ : ∀ t ∈ Ioc 0 b₀,
+      HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Ioc 0 b₀) t)
     (hlim : Tendsto Θ (𝓝[>] 0) (𝓝 m)) : ∀ t ∈ Ioc 0 b₀, Θ t = m := by
   intro t ht
   have hπ : 0 < π / 2 := by positivity
@@ -322,34 +308,28 @@ theorem eq_of_tendsto_nhdsGT_zero_circleContinuationSlope {δ r₀ m b₀ : ℝ}
   have hsub : Ioc 0 s ⊆ Ioc 0 b₀ := fun u hu ↦ ⟨hu.1, hu.2.trans (hs.2.trans ht.2)⟩
   have hsb : s < 1 := hs.2.trans_lt (ht.2.trans_lt hb₀')
   -- A neighbouring maximum `m'` with `Θ s` in its basin would be the limit instead.
-  have hne : ∀ m', cos (2 * (m' - r₀)) = 1 → |Θ s - m'| < π / 2 → False := fun m' hm' hsm' ↦ by
-    have h := tendsto_nhdsGT_zero_of_abs_sub_lt_pi_div_two_circleContinuationSlope hδ hs.1 hsb
-      (fun u hu ↦ hr u (hsub hu)) hm' (fun u hu ↦ hΘ u (hsub hu)) hsm'
-    have hmm := tendsto_nhds_unique hlim h
-    rw [hmm] at hm
+  have hΘs : Θ s = m := eq_of_forall_cos_eq_neg_not_abs_sub_lt hsm fun m' hm' hsm' ↦ by
+    rw [hm, neg_neg] at hm'
+    have h :=
+      tendsto_nhdsGT_zero_of_hasDerivWithinAt_circleContinuationSlope_of_abs_sub_lt_pi_div_two
+      hδ hs.1 hsb (fun u hu ↦ hr u (hsub hu)) hm' (fun u hu ↦ (hΘ u (hsub hu)).mono hsub) hsm'
+    rw [tendsto_nhds_unique hlim h] at hm
     linarith
-  have hΘs : Θ s = m := by
-    rcases lt_trichotomy (Θ s) m with h | h | h
-    · refine (hne (m - π / 2) ?_ ?_).elim
-      · rw [show 2 * (m - π / 2 - r₀) = 2 * (m - r₀) - π by ring, cos_sub_pi, hm, neg_neg]
-      · rw [abs_lt]; constructor <;> linarith [hsm.1]
-    · exact h
-    · refine (hne (m + π / 2) ?_ ?_).elim
-      · rw [show 2 * (m + π / 2 - r₀) = 2 * (m - r₀) + π by ring, cos_add_pi, hm, neg_neg]
-      · rw [abs_lt]; constructor <;> linarith [hsm.2]
   have hsq : sin (2 * (m - r₀)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inr hm)
   have hIcc : Icc s t ⊆ Ioc 0 b₀ := fun u hu ↦ ⟨hs.1.trans_le hu.1, hu.2.trans ht.2⟩
-  exact eqOn_const_of_hasDerivAt_circleContinuationSlope hs.1 (ht.2.trans_lt hb₀')
-    ⟨le_rfl, hs.2⟩ (fun u hu ↦ hr u (hIcc hu)) hsq (fun u hu ↦ hΘ u (hIcc hu)) hΘs
+  exact eqOn_const_of_hasDerivWithinAt_circleContinuationSlope hs.1 (ht.2.trans_lt hb₀')
+    ⟨le_rfl, hs.2⟩ (fun u hu ↦ hr u (hIcc hu)) hsq (fun u hu ↦ (hΘ u (hIcc hu)).mono hIcc) hΘs
     ⟨hs.2, le_rfl⟩
 
 /-- **Only the constant trajectory enters a target maximum.** On an interval `a₀ ≤ t < 1` where
 the path is constant, `r = r₁`, a solution converging as `t → 1` to a maximum `m` of
 `δ cos (2 (θ - r₁))`, `δ > 0`, is constantly `m`. -/
-theorem eq_of_tendsto_nhdsLT_one_circleContinuationSlope {δ r₁ m a₀ : ℝ} {r Θ : ℝ → ℝ}
+theorem eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsLT_one {δ r₁ m a₀ : ℝ}
+    {r Θ : ℝ → ℝ}
     (hδ : 0 < δ) (ha₀ : 0 < a₀) (hr : ∀ t ∈ Ico a₀ 1, r t = r₁)
     (hm : cos (2 * (m - r₁)) = 1)
-    (hΘ : ∀ t ∈ Ico a₀ 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t)
+    (hΘ : ∀ t ∈ Ico a₀ 1,
+      HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Ico a₀ 1) t)
     (hlim : Tendsto Θ (𝓝[<] 1) (𝓝 m)) : ∀ t ∈ Ico a₀ 1, Θ t = m := by
   intro t ht
   have hπ : 0 < π / 2 := by positivity
@@ -358,25 +338,17 @@ theorem eq_of_tendsto_nhdsLT_one_circleContinuationSlope {δ r₁ m a₀ : ℝ} 
   have hsub : Ico s 1 ⊆ Ico a₀ 1 := fun u hu ↦ ⟨ht.1.trans (hs.1.trans hu.1), hu.2⟩
   have hs₀' : 0 < s := ha₀.trans_le (ht.1.trans hs.1)
   -- A neighbouring minimum `m'` with `Θ s` in its basin would be the limit instead.
-  have hne : ∀ m', cos (2 * (m' - r₁)) = -1 → |Θ s - m'| < π / 2 → False := fun m' hm' hsm' ↦ by
-    have h := tendsto_nhdsLT_one_of_abs_sub_lt_pi_div_two_circleContinuationSlope hδ hs₀' hs.2
-      (fun u hu ↦ hr u (hsub hu)) hm' (fun u hu ↦ hΘ u (hsub hu)) hsm'
-    have hmm := tendsto_nhds_unique hlim h
-    rw [hmm] at hm
+  have hΘs : Θ s = m := eq_of_forall_cos_eq_neg_not_abs_sub_lt hsm fun m' hm' hsm' ↦ by
+    rw [hm] at hm'
+    have h :=
+      tendsto_nhdsLT_one_of_hasDerivWithinAt_circleContinuationSlope_of_abs_sub_lt_pi_div_two
+      hδ hs₀' hs.2 (fun u hu ↦ hr u (hsub hu)) hm' (fun u hu ↦ (hΘ u (hsub hu)).mono hsub) hsm'
+    rw [tendsto_nhds_unique hlim h] at hm
     linarith
-  have hΘs : Θ s = m := by
-    rcases lt_trichotomy (Θ s) m with h | h | h
-    · refine (hne (m - π / 2) ?_ ?_).elim
-      · rw [show 2 * (m - π / 2 - r₁) = 2 * (m - r₁) - π by ring, cos_sub_pi, hm]
-      · rw [abs_lt]; constructor <;> linarith [hsm.1]
-    · exact h
-    · refine (hne (m + π / 2) ?_ ?_).elim
-      · rw [show 2 * (m + π / 2 - r₁) = 2 * (m - r₁) + π by ring, cos_add_pi, hm]
-      · rw [abs_lt]; constructor <;> linarith [hsm.2]
   have hsq : sin (2 * (m - r₁)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inl hm)
   have hIcc : Icc t s ⊆ Ico a₀ 1 := fun u hu ↦ ⟨ht.1.trans hu.1, hu.2.trans_lt hs.2⟩
-  exact eqOn_const_of_hasDerivAt_circleContinuationSlope (ha₀.trans_le ht.1) hs.2
-    ⟨hs.1, le_rfl⟩ (fun u hu ↦ hr u (hIcc hu)) hsq (fun u hu ↦ hΘ u (hIcc hu)) hΘs
+  exact eqOn_const_of_hasDerivWithinAt_circleContinuationSlope (ha₀.trans_le ht.1) hs.2
+    ⟨hs.1, le_rfl⟩ (fun u hu ↦ hr u (hIcc hu)) hsq (fun u hu ↦ (hΘ u (hIcc hu)).mono hIcc) hΘs
     ⟨le_rfl, hs.1⟩
 
 /-! ### The trajectories preserving the Morse index -/
@@ -394,134 +366,141 @@ private theorem abs_sub_le_of_hasDerivAt_circleContinuationSlope (hδ : 0 < δ) 
     fun t ht ↦ (hΘ t ⟨ha.trans_le ht.1, ht.2.trans_lt hb⟩).hasDerivWithinAt).trans ?_
   rwa [abs_of_pos hδ]
 
-/-- **The source of the trajectory into a target maximum.** Let the path be `r₀` for `t ≤ a` and
-`r₁` for `t ≥ b`, with `0 < a ≤ b < 1`, and let the drift of the angle across the window `[a, b]`
-be at most `ε`. Let `m₁` be a maximum of the target function `δ cos (2 (θ - r₁))`, and let `m₀`
-be a maximum of the source function `δ cos (2 (θ - r₀))` with `|m₁ - m₀| + ε < π / 2`; this
+/-- **The source of the trajectory into a target maximum.** Let the path be `r₀` for `0 < t ≤ a`
+and `r₁` for `b ≤ t < 1`, with `0 < a ≤ b < 1`, and let the drift of the angle across the window
+`[a, b]` be at most `ε`. Let `m₁` be a maximum of the target function `δ cos (2 (θ - r₁))`, and
+let `m₀` be a maximum of the source function `δ cos (2 (θ - r₀))` with `|m₁ - m₀| + ε < π / 2`; this
 separation is assumed, not provided by the drift bound. If a trajectory converges as `t → 1` to
 `m₁`, then it converges as `t → 0` to `m₀`. -/
-theorem tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_circleContinuationSlope (hδ : 0 < δ)
-    (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ≤ a, r t = r₀)
-    (hr₁ : ∀ t, b ≤ t → r t = r₁) (hε : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ ≤ ε)
+theorem tendsto_nhdsGT_zero_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsLT_one
+    (hδ : 0 < δ) (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀)
+    (hr₁ : ∀ t ∈ Ico b 1, r t = r₁) (hε : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ ≤ ε)
     (hm₀ : cos (2 * (m₀ - r₀)) = 1) (hm₁ : cos (2 * (m₁ - r₁)) = 1)
     (hd : |m₁ - m₀| + ε < π / 2)
     (hΘ : ∀ t ∈ Ioo (0 : ℝ) 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t)
     (hlim : Tendsto Θ (𝓝[<] 1) (𝓝 m₁)) : Tendsto Θ (𝓝[>] 0) (𝓝 m₀) := by
-  have h₁ := eq_of_tendsto_nhdsLT_one_circleContinuationSlope hδ (ha.trans_le hab)
-    (fun t ht ↦ hr₁ t ht.1) hm₁ (fun t ht ↦ hΘ t ⟨(ha.trans_le hab).trans_le ht.1, ht.2⟩) hlim b
+  have h₁ := eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsLT_one hδ
+    (ha.trans_le hab) hr₁ hm₁
+    (fun t ht ↦ (hΘ t ⟨(ha.trans_le hab).trans_le ht.1, ht.2⟩).hasDerivWithinAt) hlim b
     ⟨le_rfl, hb⟩
   have hw := abs_sub_le_of_hasDerivAt_circleContinuationSlope hδ ha hab hb hε hΘ
-  refine tendsto_nhdsGT_zero_of_abs_sub_lt_pi_div_two_circleContinuationSlope hδ ha
-    (hab.trans_lt hb) (fun t ht ↦ hr₀ t ht.2) hm₀
-    (fun t ht ↦ hΘ t ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩) ?_
+  refine tendsto_nhdsGT_zero_of_hasDerivWithinAt_circleContinuationSlope_of_abs_sub_lt_pi_div_two
+    hδ ha (hab.trans_lt hb) hr₀ hm₀
+    (fun t ht ↦ (hΘ t ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩).hasDerivWithinAt) ?_
   rw [h₁] at hw
   have h := abs_sub_le (Θ a) m₁ m₀
   rw [abs_sub_comm (Θ a) m₁] at h
   linarith
 
-/-- **The target of the trajectory out of a source minimum.** Let the path be `r₀` for `t ≤ a`
-and `r₁` for `t ≥ b`, with `0 < a ≤ b < 1`, and let the drift of the angle across the window
-`[a, b]` be at most `ε`. Let `m₀` be a minimum of the source function `δ cos (2 (θ - r₀))`, and
-let `m₁` be a minimum of the target function `δ cos (2 (θ - r₁))` with `|m₁ - m₀| + ε < π / 2`;
-this separation is assumed, not provided by the drift bound. If a trajectory converges as `t → 0`
-to `m₀`, then it converges as `t → 1` to `m₁`. -/
-theorem tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_circleContinuationSlope (hδ : 0 < δ)
-    (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ≤ a, r t = r₀)
-    (hr₁ : ∀ t, b ≤ t → r t = r₁) (hε : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ ≤ ε)
+/-- **The target of the trajectory out of a source minimum.** Let the path be `r₀` for `0 < t ≤ a`
+and `r₁` for `b ≤ t < 1`, with `0 < a ≤ b < 1`, and let the drift of the angle across the window
+`[a, b]` be at most `ε`. Let `m₀` be a minimum of the source function `δ cos (2 (θ - r₀))`, and let
+`m₁` be a minimum of the target function `δ cos (2 (θ - r₁))` with `|m₁ - m₀| + ε < π / 2`; this
+separation is assumed, not provided by the drift bound. If a trajectory converges as `t → 0` to
+`m₀`, then it converges as `t → 1` to `m₁`. -/
+theorem tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsGT_zero
+    (hδ : 0 < δ) (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀)
+    (hr₁ : ∀ t ∈ Ico b 1, r t = r₁) (hε : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ ≤ ε)
     (hm₀ : cos (2 * (m₀ - r₀)) = -1) (hm₁ : cos (2 * (m₁ - r₁)) = -1)
     (hd : |m₁ - m₀| + ε < π / 2)
     (hΘ : ∀ t ∈ Ioo (0 : ℝ) 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t)
     (hlim : Tendsto Θ (𝓝[>] 0) (𝓝 m₀)) : Tendsto Θ (𝓝[<] 1) (𝓝 m₁) := by
-  have h₀ := eq_of_tendsto_nhdsGT_zero_circleContinuationSlope hδ (hab.trans_lt hb)
-    (fun t ht ↦ hr₀ t ht.2) hm₀ (fun t ht ↦ hΘ t ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩) hlim a
+  have h₀ := eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsGT_zero hδ
+    (hab.trans_lt hb) hr₀ hm₀
+    (fun t ht ↦ (hΘ t ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩).hasDerivWithinAt) hlim a
     ⟨ha, le_rfl⟩
   have hw := abs_sub_le_of_hasDerivAt_circleContinuationSlope hδ ha hab hb hε hΘ
-  refine tendsto_nhdsLT_one_of_abs_sub_lt_pi_div_two_circleContinuationSlope hδ
-    (ha.trans_le hab) hb (fun t ht ↦ hr₁ t ht.1) hm₁
-    (fun t ht ↦ hΘ t ⟨(ha.trans_le hab).trans_le ht.1, ht.2⟩) ?_
+  refine tendsto_nhdsLT_one_of_hasDerivWithinAt_circleContinuationSlope_of_abs_sub_lt_pi_div_two hδ
+    (ha.trans_le hab) hb hr₁ hm₁
+    (fun t ht ↦ (hΘ t ⟨(ha.trans_le hab).trans_le ht.1, ht.2⟩).hasDerivWithinAt) ?_
   rw [h₀] at hw
   have h := abs_sub_le (Θ b) m₀ m₁
   rw [abs_sub_comm m₀ m₁] at h
   linarith
 
-/-- **No trajectory from a source minimum to a target maximum.** Let the path be `r₀` for `t ≤ a`
-and `r₁` for `t ≥ b`, with `0 < a ≤ b < 1`, and let the drift of the angle across the window
-`[a, b]` be at most `ε`. Then no trajectory runs from a minimum `m₀` of the source function to a
-maximum `m₁` of the target function with `ε < |m₁ - m₀|`: it would be constantly `m₀` on `t ≤ a`
-and constantly `m₁` on `t ≥ b`. Both zeros have index one for the total field, so such a
+/-- **No trajectory from a source minimum to a target maximum.** Let the path be `r₀` for
+`0 < t ≤ a` and `r₁` for `b ≤ t < 1`, with `0 < a ≤ b < 1`, and let the drift of the angle across
+the window `[a, b]` be at most `ε`. Then no trajectory runs from a minimum `m₀` of the source
+function to a maximum `m₁` of the target function with `ε < |m₁ - m₀|`: it would be constantly `m₀`
+on `t ≤ a` and constantly `m₁` on `t ≥ b`. Both zeros have index one for the total field, so such a
 trajectory would have expected dimension `-1`. -/
-theorem not_tendsto_nhdsGT_zero_and_tendsto_nhdsLT_one_circleContinuationSlope (hδ : 0 < δ)
-    (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ≤ a, r t = r₀)
-    (hr₁ : ∀ t, b ≤ t → r t = r₁) (hε : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ ≤ ε)
+theorem not_tendsto_nhdsGT_zero_and_tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope
+    (hδ : 0 < δ) (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀)
+    (hr₁ : ∀ t ∈ Ico b 1, r t = r₁) (hε : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ ≤ ε)
     (hm₀ : cos (2 * (m₀ - r₀)) = -1) (hm₁ : cos (2 * (m₁ - r₁)) = 1) (hd : ε < |m₁ - m₀|)
     (hΘ : ∀ t ∈ Ioo (0 : ℝ) 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) :
     ¬ (Tendsto Θ (𝓝[>] 0) (𝓝 m₀) ∧ Tendsto Θ (𝓝[<] 1) (𝓝 m₁)) := by
   rintro ⟨hlim₀, hlim₁⟩
-  have h₀ := eq_of_tendsto_nhdsGT_zero_circleContinuationSlope hδ (hab.trans_lt hb)
-    (fun t ht ↦ hr₀ t ht.2) hm₀ (fun t ht ↦ hΘ t ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩) hlim₀ a
+  have h₀ := eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsGT_zero hδ
+    (hab.trans_lt hb) hr₀ hm₀
+    (fun t ht ↦ (hΘ t ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩).hasDerivWithinAt) hlim₀ a
     ⟨ha, le_rfl⟩
-  have h₁ := eq_of_tendsto_nhdsLT_one_circleContinuationSlope hδ (ha.trans_le hab)
-    (fun t ht ↦ hr₁ t ht.1) hm₁ (fun t ht ↦ hΘ t ⟨(ha.trans_le hab).trans_le ht.1, ht.2⟩) hlim₁ b
+  have h₁ := eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsLT_one hδ
+    (ha.trans_le hab) hr₁ hm₁
+    (fun t ht ↦ (hΘ t ⟨(ha.trans_le hab).trans_le ht.1, ht.2⟩).hasDerivWithinAt) hlim₁ b
     ⟨le_rfl, hb⟩
   have hw := abs_sub_le_of_hasDerivAt_circleContinuationSlope hδ ha hab hb hε hΘ
   rw [h₀, h₁] at hw
   linarith
 
 /-- **The trajectory into a target maximum exists.** Under the hypotheses of
-`TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_circleContinuationSlope`, with `a < b` and a
+`TauCeti.tendsto_nhdsGT_zero_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsLT_one`, with a
 path continuous on the window, some trajectory runs from the source maximum `m₀` to the target
 maximum `m₁`. By `TauCeti.eqOn_Ioo_of_hasDerivAt_circleContinuationSlope` it is unique on
 `0 < t < 1`, since every trajectory into `m₁` takes the value `m₁` at `t = b`
-(`TauCeti.eq_of_tendsto_nhdsLT_one_circleContinuationSlope`). -/
-theorem exists_tendsto_nhdsGT_tendsto_nhdsLT_circleContinuationSlope_of_cos_eq_one
-    (hδ : 0 < δ) (ha : 0 < a) (hab : a < b) (hb : b < 1) (hr : ContinuousOn r (Icc a b))
-    (hr₀ : ∀ t ≤ a, r t = r₀) (hr₁ : ∀ t, b ≤ t → r t = r₁)
+(`TauCeti.eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsLT_one`). -/
+theorem exists_hasDerivAt_circleContinuationSlope_tendsto_nhdsGT_tendsto_nhdsLT_of_cos_eq_one
+    (hδ : 0 < δ) (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr : ContinuousOn r (Icc a b))
+    (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀) (hr₁ : ∀ t ∈ Ico b 1, r t = r₁)
     (hε : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ ≤ ε)
     (hm₀ : cos (2 * (m₀ - r₀)) = 1) (hm₁ : cos (2 * (m₁ - r₁)) = 1)
     (hd : |m₁ - m₀| + ε < π / 2) :
     ∃ Θ : ℝ → ℝ, (∀ t ∈ Ioo (0 : ℝ) 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) ∧
       Tendsto Θ (𝓝[>] 0) (𝓝 m₀) ∧ Tendsto Θ (𝓝[<] 1) (𝓝 m₁) := by
   obtain ⟨Θ, hΘ₀, hΘ⟩ :=
-    exists_hasDerivAt_circleContinuationSlope ha hab hb hr hr₀ hr₁ ⟨hab.le, le_rfl⟩ m₁
+    exists_hasDerivAt_circleContinuationSlope ha hab hb hr hr₀ hr₁ ⟨hab, le_rfl⟩ m₁
   have hsq : sin (2 * (m₁ - r₁)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inl hm₁)
   -- On `t ≥ b` the trajectory through `m₁` at `t = b` is constantly `m₁`.
   have hconst : ∀ t ∈ Ico b 1, Θ t = m₁ := fun t ht ↦
-    eqOn_const_of_hasDerivAt_circleContinuationSlope (ha.trans hab) ht.2 ⟨le_rfl, ht.1⟩
-      (fun u hu ↦ hr₁ u hu.1) hsq
-      (fun u hu ↦ hΘ u ⟨(ha.trans hab).trans_le hu.1, hu.2.trans_lt ht.2⟩) hΘ₀ ⟨ht.1, le_rfl⟩
+    eqOn_const_of_hasDerivWithinAt_circleContinuationSlope (ha.trans_le hab) ht.2 ⟨le_rfl, ht.1⟩
+      (fun u hu ↦ hr₁ u ⟨hu.1, hu.2.trans_lt ht.2⟩) hsq
+      (fun u hu ↦ (hΘ u ⟨(ha.trans_le hab).trans_le hu.1, hu.2.trans_lt ht.2⟩).hasDerivWithinAt)
+      hΘ₀ ⟨ht.1, le_rfl⟩
   have hlim : Tendsto Θ (𝓝[<] 1) (𝓝 m₁) := tendsto_const_nhds.congr' <| by
     filter_upwards [Ico_mem_nhdsLT hb] with t ht
     exact (hconst t ht).symm
-  exact ⟨Θ, hΘ, tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_circleContinuationSlope hδ ha hab.le hb
-    hr₀ hr₁ hε hm₀ hm₁ hd hΘ hlim, hlim⟩
+  exact ⟨Θ, hΘ, tendsto_nhdsGT_zero_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsLT_one
+    hδ ha hab hb hr₀ hr₁ hε hm₀ hm₁ hd hΘ hlim, hlim⟩
 
 /-- **The trajectory out of a source minimum exists.** Under the hypotheses of
-`TauCeti.tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_circleContinuationSlope`, with `a < b` and a
+`TauCeti.tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsGT_zero`, with a
 path continuous on the window, some trajectory runs from the source minimum `m₀` to the target
 minimum `m₁`. By `TauCeti.eqOn_Ioo_of_hasDerivAt_circleContinuationSlope` it is unique on
 `0 < t < 1`, since every trajectory out of `m₀` takes the value `m₀` at `t = a`
-(`TauCeti.eq_of_tendsto_nhdsGT_zero_circleContinuationSlope`). -/
-theorem exists_tendsto_nhdsGT_tendsto_nhdsLT_circleContinuationSlope_of_cos_eq_neg_one
-    (hδ : 0 < δ) (ha : 0 < a) (hab : a < b) (hb : b < 1) (hr : ContinuousOn r (Icc a b))
-    (hr₀ : ∀ t ≤ a, r t = r₀) (hr₁ : ∀ t, b ≤ t → r t = r₁)
+(`TauCeti.eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsGT_zero`). -/
+theorem exists_hasDerivAt_circleContinuationSlope_tendsto_nhdsGT_tendsto_nhdsLT_of_cos_eq_neg_one
+    (hδ : 0 < δ) (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr : ContinuousOn r (Icc a b))
+    (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀) (hr₁ : ∀ t ∈ Ico b 1, r t = r₁)
     (hε : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ ≤ ε)
     (hm₀ : cos (2 * (m₀ - r₀)) = -1) (hm₁ : cos (2 * (m₁ - r₁)) = -1)
     (hd : |m₁ - m₀| + ε < π / 2) :
     ∃ Θ : ℝ → ℝ, (∀ t ∈ Ioo (0 : ℝ) 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) ∧
       Tendsto Θ (𝓝[>] 0) (𝓝 m₀) ∧ Tendsto Θ (𝓝[<] 1) (𝓝 m₁) := by
   obtain ⟨Θ, hΘ₀, hΘ⟩ :=
-    exists_hasDerivAt_circleContinuationSlope ha hab hb hr hr₀ hr₁ ⟨le_rfl, hab.le⟩ m₀
+    exists_hasDerivAt_circleContinuationSlope ha hab hb hr hr₀ hr₁ ⟨le_rfl, hab⟩ m₀
   have hsq : sin (2 * (m₀ - r₀)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inr hm₀)
   -- On `t ≤ a` the trajectory through `m₀` at `t = a` is constantly `m₀`.
   have hconst : ∀ t ∈ Ioc 0 a, Θ t = m₀ := fun t ht ↦
-    eqOn_const_of_hasDerivAt_circleContinuationSlope ht.1 (hab.trans hb) ⟨ht.2, le_rfl⟩
-      (fun u hu ↦ hr₀ u hu.2) hsq
-      (fun u hu ↦ hΘ u ⟨ht.1.trans_le hu.1, hu.2.trans_lt (hab.trans hb)⟩) hΘ₀ ⟨le_rfl, ht.2⟩
+    eqOn_const_of_hasDerivWithinAt_circleContinuationSlope ht.1 (hab.trans_lt hb) ⟨ht.2, le_rfl⟩
+      (fun u hu ↦ hr₀ u ⟨ht.1.trans_le hu.1, hu.2⟩) hsq
+      (fun u hu ↦ (hΘ u ⟨ht.1.trans_le hu.1, hu.2.trans_lt (hab.trans_lt hb)⟩).hasDerivWithinAt)
+      hΘ₀ ⟨le_rfl, ht.2⟩
   have hlim : Tendsto Θ (𝓝[>] 0) (𝓝 m₀) := tendsto_const_nhds.congr' <| by
     filter_upwards [Ioc_mem_nhdsGT ha] with t ht
     exact (hconst t ht).symm
-  exact ⟨Θ, hΘ, hlim, tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_circleContinuationSlope hδ ha hab.le
-    hb hr₀ hr₁ hε hm₀ hm₁ hd hΘ hlim⟩
+  exact ⟨Θ, hΘ, hlim,
+    tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope_of_tendsto_nhdsGT_zero
+      hδ ha hab hb hr₀ hr₁ hε hm₀ hm₁ hd hΘ hlim⟩
 
 end Classification
 
