@@ -105,8 +105,9 @@ theorem mem_cochain_gradeBy_zero_of_coordinates_eq_coefficientComparison [Semiri
     e ∈ gradeBy R F₁ (fun p => n - μ₁ p) 0 := by
   rw [gradeBy_sub, sub_zero, mem_gradeBy_iff_coordinates hF₁ (degree ω c) hμ₁ r₁]
   intro i
-  rw [he i, show n - μ₁ ⟨i, r₁ i⟩ = -(μ₁ ⟨i, r₁ i⟩ - n) by ring]
-  exact coefficientComparison_mem_gradeBy q hq ((degree ω c).comp q) (degree ω c) (fun _ => rfl)
+  rw [he i]
+  simpa only [neg_sub] using coefficientComparison_mem_gradeBy q hq ((degree ω c).comp q)
+    (degree ω c) (fun _ => rfl) (k := μ₁ ⟨i, r₁ i⟩ - n)
     fun A hA => by rw [AddMonoidHom.comp_apply]; linarith [hE i A hA]
 
 include hμ₂ hμ₀ in
@@ -129,9 +130,8 @@ theorem novikovMapOfMatrix_coefficientComparison_mem_gradeBy [CommSemiring R] [F
   have hc := coefficientComparison_mem_gradeBy q hq ((degree ω c).comp q) (degree ω c)
     (fun _ => rfl) (k := μ₀ ⟨l, r₀ l⟩ - μ₂ ⟨j, r₂ j⟩ - ε)
     fun A hA => by rw [AddMonoidHom.comp_apply]; linarith [hK j l A hA]
-  have h := SetLike.mul_mem_graded (hb j) hc
-  rwa [show k - μ₂ ⟨j, r₂ j⟩ + -(μ₀ ⟨l, r₀ l⟩ - μ₂ ⟨j, r₂ j⟩ - ε) = k + ε - μ₀ ⟨l, r₀ l⟩ by ring]
-    at h
+  convert SetLike.mul_mem_graded (hb j) hc using 2
+  ring
 
 end Grading
 
@@ -269,7 +269,7 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_
   refine LinearMap.mem_coboundaries_iff.2 ⟨_, ?_, rfl⟩
   have h := novikovMapOfMatrix_coefficientComparison_mem_gradeBy r₂ r₀ hF₂ hF₀ q hq hμ₂ hμ₀ K hK
     hb.2
-  rwa [gradeBy_sub, show n - (j - 1) = n - j + 1 by ring]
+  rwa [gradeBy_sub, ← sub_add]
 
 include hμ₁ hμ₀ in
 /-- **The unit in the second input, on cocycles.** Under the identity of
@@ -309,7 +309,7 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_
   refine LinearMap.mem_coboundaries_iff.2 ⟨_, ?_, rfl⟩
   have h := novikovMapOfMatrix_coefficientComparison_mem_gradeBy r₁ r₀ hF₁ hF₀ q hq hμ₁ hμ₀ K hK
     ha.2
-  rwa [gradeBy_sub, show n - (i - 1) = n - i + 1 by ring]
+  rwa [gradeBy_sub, ← sub_add]
 
 include hμ₀ in
 /-- **The unit on a common complex, in the first input.** If the second input and the output of
