@@ -21,8 +21,9 @@ A *state* of a possibly nonunital C⋆-algebra `A` is a positive linear function
 This file defines the state space `TauCeti.stateSpace A` as a subset of the weak-* dual
 `WeakDual ℂ A`, so that convexity, closedness and compactness refer to the weak-* topology.
 
-* `TauCeti.mem_stateSpace_iff_exists_positiveLinearMap`: the states are exactly the positive
-  linear maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic continuity of positive maps.
+* `TauCeti.StateSpace.toPositiveLinearMap` and
+  `TauCeti.mem_stateSpace_iff_exists_positiveLinearMap`: the states are exactly the positive linear
+  maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic continuity of positive maps.
 * `TauCeti.convex_stateSpace`: the state space is convex. No unit is needed, because the norm of
   a positive functional is its limit along an approximate unit.
 * `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
@@ -87,6 +88,12 @@ theorem norm_toStrongDual_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : ‖toS
 theorem norm_apply_le_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) : ‖φ a‖ ≤ ‖a‖ := by
   simpa [norm_toStrongDual_of_mem_stateSpace hφ] using (toStrongDual φ).le_opNorm a
 
+/-- A subsingleton C⋆-algebra has no states. -/
+@[simp]
+theorem stateSpace_eq_empty [Subsingleton A] : stateSpace A = ∅ := by
+  ext φ
+  simp [mem_stateSpace_iff, Subsingleton.elim (toStrongDual φ) 0]
+
 /-- In the norm topology of the continuous dual, the state space is closed. -/
 theorem isClosed_preimage_toWeakDual_stateSpace :
     IsClosed (StrongDual.toWeakDual ⁻¹' stateSpace A) := by
@@ -103,19 +110,63 @@ theorem _root_.PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff (ω : A
 
 variable [StarOrderedRing A]
 
+/-- A state commutes with `star`. -/
+theorem map_star_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) : φ (star a) = star (φ a) :=
+  WeakDual.map_star_of_map_nonneg (fun _ => map_nonneg_of_mem_stateSpace hφ) a
+
+/-- A state maps self-adjoint elements to self-adjoint (real) scalars. -/
+theorem isSelfAdjoint_apply_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A}
+    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) :=
+  WeakDual.isSelfAdjoint_apply_of_map_nonneg (fun _ => map_nonneg_of_mem_stateSpace hφ) ha
+
+/-- Cauchy–Schwarz inequality for a state: `‖φ a‖ ^ 2 ≤ ‖φ (star a * a)‖`. -/
+theorem norm_apply_sq_le_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) :
+    ‖φ a‖ ^ 2 ≤ ‖φ (star a * a)‖ := by
+  simpa [norm_toStrongDual_of_mem_stateSpace hφ] using
+    WeakDual.norm_apply_sq_le_mul_of_map_nonneg (fun _ => map_nonneg_of_mem_stateSpace hφ) a
+
+namespace StateSpace
+
+/-- View a state `φ : stateSpace A` as a bundled positive linear map `A →ₚ[ℂ] ℂ`. -/
+noncomputable def toPositiveLinearMap (φ : stateSpace A) : A →ₚ[ℂ] ℂ :=
+  φ.1.toPositiveLinearMap fun _ => map_nonneg_of_mem_stateSpace φ.2
+
+/-- `StateSpace.toPositiveLinearMap φ` evaluates as `φ`. -/
+@[simp]
+theorem toPositiveLinearMap_apply (φ : stateSpace A) (a : A) :
+    toPositiveLinearMap φ a = φ.1 a := by
+  simp [toPositiveLinearMap]
+
+/-- The underlying linear map of `StateSpace.toPositiveLinearMap φ` is `toStrongDual φ.1`. -/
+@[simp]
+theorem toLinearMap_toPositiveLinearMap (φ : stateSpace A) :
+    (toPositiveLinearMap φ).toLinearMap = (toStrongDual φ.1 : A →ₗ[ℂ] ℂ) := by
+  simp [toPositiveLinearMap]
+
+/-- Bundling `StateSpace.toPositiveLinearMap φ` as a continuous positive functional recovers
+`toStrongDual φ.1`. -/
+@[simp]
+theorem coe_ofClass_toPositiveLinearMap (φ : stateSpace A) :
+    (PositiveContinuousLinearMap.ofClass (toPositiveLinearMap φ) : A →L[ℂ] ℂ) =
+      toStrongDual φ.1 := by
+  simp [toPositiveLinearMap]
+
+/-- As a continuous positive functional, `StateSpace.toPositiveLinearMap φ` has norm one. -/
+theorem norm_ofClass_toPositiveLinearMap (φ : stateSpace A) :
+    ‖(PositiveContinuousLinearMap.ofClass (toPositiveLinearMap φ) : A →L[ℂ] ℂ)‖ = 1 := by
+  simpa using norm_toStrongDual_of_mem_stateSpace φ.2
+
+end StateSpace
+
 /-- The states of `A` are exactly the positive linear maps `A →ₚ[ℂ] ℂ` of norm one, viewed in the
 weak-* dual. -/
 theorem mem_stateSpace_iff_exists_positiveLinearMap :
     φ ∈ stateSpace A ↔ ∃ ω : A →ₚ[ℂ] ℂ, ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 ∧
       StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = φ := by
-  refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ =>
-    h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
-  let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
-  have hω : (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = toStrongDual φ := by
-    -- `PositiveLinearMap.mk₀` has no evaluation lemma; it evaluates as `φ` by definition
-    ext
-    rfl
-  exact ⟨ω, hω ▸ norm_toStrongDual_of_mem_stateSpace hφ, by rw [hω, toWeakDual_toStrongDual]⟩
+  refine ⟨fun hφ => ⟨StateSpace.toPositiveLinearMap ⟨φ, hφ⟩,
+    StateSpace.norm_ofClass_toPositiveLinearMap ⟨φ, hφ⟩, by simp⟩,
+    fun ⟨ω, hω, h⟩ =>
+      h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
 
 /-- **Convexity of the state space.** Real convex combinations of states are states. -/
 theorem convex_stateSpace : Convex ℝ (stateSpace A) := by
