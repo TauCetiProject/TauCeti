@@ -124,23 +124,27 @@ namespace HomotopyCategory.Bounded
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C] [HasZeroObject C]
 
 /-- The inclusion `Kⁿ[-n] ⟶ K` of the top term of a bounded complex `K` vanishing above degree `n`,
-as a morphism of the bounded homotopy category. -/
+as a morphism of the bounded homotopy category from the top term placed in degree `n` to the class
+of `K`. -/
 noncomputable def ιTop (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE n]
     (hK : _root_.CochainComplex.bounded C K) :
-    (⟨(_root_.HomotopyCategory.quotient C (.up ℤ)).obj
-        ((HomologicalComplex.single C (.up ℤ) n).obj (K.X n)),
-      (HomotopyCategory.bounded_quotient_obj_iff _).2
-        ((_root_.CochainComplex.bounded_iff C _).2 ⟨n, n, inferInstance, inferInstance⟩)⟩ :
-      HomotopyCategory.Bounded C) ⟶
-      ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩ :=
-  ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop n))
+    (singleFunctor C n).obj (K.X n) ⟶ (quotient C).obj ⟨K, hK⟩ :=
+  ObjectProperty.homMk ((singleFunctorCompιIso C n).hom.app (K.X n) ≫
+    eqToHom (_root_.HomotopyCategory.quotient_obj_singleFunctors_obj C n (K.X n)).symm ≫
+      (_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop n) ≫
+        eqToHom (quotient_obj_obj C ⟨K, hK⟩).symm)
 
 omit [HasBinaryBiproducts C] in
+/-- In the homotopy category, `ιTop` is the class of the inclusion of the top term, through the
+comparison of the single functors and of the quotients. -/
 @[simp]
 theorem ιTop_hom (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE n]
     (hK : _root_.CochainComplex.bounded C K) :
-    (ιTop K n hK).hom = (_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop n) := by
-  simp [ιTop]
+    (ιTop K n hK).hom = (singleFunctorCompιIso C n).hom.app (K.X n) ≫
+      eqToHom (_root_.HomotopyCategory.quotient_obj_singleFunctors_obj C n (K.X n)).symm ≫
+        (_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop n) ≫
+          eqToHom (quotient_obj_obj C ⟨K, hK⟩).symm :=
+  (rfl)
 
 /-- **Splitting off the top term**: for a bounded complex `K` vanishing above degree `b + 1`, there
 is a distinguished triangle of the bounded homotopy category whose vertices are the top term

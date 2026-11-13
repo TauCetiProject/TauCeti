@@ -175,7 +175,12 @@ theorem boundedProjective_trW_Q_map_ιTop (K : CochainComplex C ℤ) (n : ℤ) [
     hT).2 ?_
   have e := isoTriangleOfIso₁₂ _ _ ((HomotopyCategory.Bounded.ι C).map_distinguished _ hT)
     (_root_.HomotopyCategory.mappingCone_triangleh_distinguished (K.ιTop (b + 1)))
-    (Iso.refl _) (Iso.refl _) (by simp)
+    ((HomotopyCategory.Bounded.singleFunctorCompιIso C (b + 1)).app (K.X (b + 1)) ≪≫
+      eqToIso (_root_.HomotopyCategory.quotient_obj_singleFunctors_obj C _ _).symm)
+    (eqToIso (HomotopyCategory.Bounded.quotient_obj_obj C ⟨K, hK⟩)) (by
+      dsimp
+      rw [HomotopyCategory.Bounded.ιTop_hom]
+      simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id])
   obtain ⟨e'⟩ := K.nonempty_iso_quotient_obj_mappingCone_ιTop b
   let L : CochainComplex.Bounded C :=
     ⟨_, CochainComplex.bounded_stupidTrunc_embeddingUpIntLE hK b⟩
