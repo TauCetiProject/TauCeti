@@ -84,23 +84,13 @@ theorem map_weight {S F : Type*} [CommMonoid S] [FunLike F R S] [MonoidHomClass 
     f (D.weight w) = D.weight (fun x y ↦ f (w x y)) := by
   simp only [weight_def, map_prod, apply_ite f, map_one]
 
-/-- Transport along an order isomorphism preserves matching weights without a symmetry
-assumption. -/
-theorem weight_congr_orderIso {β : Type*} [Fintype β] [LinearOrder β]
-    (D : PerfectMatching α) (e : α ≃o β) (w : β → β → R) :
-    (congr e.toEquiv D).weight w = D.weight (fun x y ↦ w (e x) (e y)) := by
-  simp only [weight_def]
-  symm
-  apply Fintype.prod_equiv e.toEquiv
-  intro x
-  rw [congr_val_apply_apply]
-  simp only [OrderIso.coe_toEquiv, e.lt_iff_lt]
-
-/-- Transport preserves matching weights when weights are symmetric on the transported arcs.
-In particular, symmetric weights do not depend on the linear order used to orient the arcs. -/
+/-- Transport preserves matching weights when weights are symmetric on the arcs whose
+orientation is reversed. In particular, symmetric weights do not depend on the linear order
+used to orient the arcs. -/
 theorem weight_congr_equiv {β : Type*} [Fintype β] [LinearOrder β]
     (D : PerfectMatching α) (e : α ≃ β) (w : β → β → R)
-    (hw : ∀ x, w (e (D.val x)) (e x) = w (e x) (e (D.val x))) :
+    (hw : ∀ x, x < D.val x → e (D.val x) < e x →
+      w (e (D.val x)) (e x) = w (e x) (e (D.val x))) :
     (congr e D).weight w = D.weight (fun x y ↦ w (e x) (e y)) := by
   -- Swap the ends exactly of the arcs whose orientation changes under transport.
   let f : α → α := fun x ↦ if (x < D.val x ↔ e x < e (D.val x)) then x else D.val x
@@ -118,6 +108,13 @@ theorem weight_congr_equiv {β : Type*} [Fintype β] [LinearOrder β]
     rcases lt_or_gt_of_ne (e.injective.ne (D.apply_ne x).symm) with he | he <;>
     simp [f, D.apply_apply, hx, he, not_lt_of_gt hx, not_lt_of_gt he, hw x]
 
+/-- Transport along an order isomorphism preserves matching weights without a symmetry
+assumption. -/
+theorem weight_congr_orderIso {β : Type*} [Fintype β] [LinearOrder β]
+    (D : PerfectMatching α) (e : α ≃o β) (w : β → β → R) :
+    (congr e.toEquiv D).weight w = D.weight (fun x y ↦ w (e x) (e y)) :=
+  weight_congr_equiv D e.toEquiv w fun _ hx he ↦ (lt_asymm he (e.lt_iff_lt.mpr hx)).elim
+
 /-- On an empty type the unique matching has the empty product as its weight. -/
 @[simp]
 theorem weight_of_isEmpty [IsEmpty α] (D : PerfectMatching α) (w : α → α → R) :
@@ -125,7 +122,7 @@ theorem weight_of_isEmpty [IsEmpty α] (D : PerfectMatching α) (w : α → α �
   simp [weight_def]
 
 /-- Adjoining an arc multiplies the weight by its pair weight in increasing endpoint order. -/
-theorem weight_extend_min_max {a b : α} (hab : a ≠ b)
+theorem weight_extend_eq_min_max_mul_weight {a b : α} (hab : a ≠ b)
     (E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b}) (w : α → α → R) :
     (extend hab E).weight w = w (min a b) (max a b) * E.weight (fun x y ↦ w x y) := by
   let f : α → R := fun x ↦ if x < (extend hab E).val x then w x ((extend hab E).val x) else 1
@@ -156,7 +153,7 @@ theorem weight_extend {a b : α} (hab : a ≠ b)
     (E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b}) (w : α → α → R)
     (hw : b < a → w b a = w a b) :
     (extend hab E).weight w = w a b * E.weight (fun x y ↦ w x y) := by
-  rw [weight_extend_min_max]
+  rw [weight_extend_eq_min_max_mul_weight]
   rcases lt_or_gt_of_ne hab with h | h
   · rw [min_eq_left h.le, max_eq_right h.le]
   · rw [min_eq_right h.le, max_eq_left h.le, hw h]
@@ -165,7 +162,7 @@ theorem weight_extend {a b : α} (hab : a ≠ b)
 theorem weight_eq_min_max_mul_weight_restrict {a b : α} (D : PerfectMatching α)
     (hab : D.val a = b) (w : α → α → R) :
     D.weight w = w (min a b) (max a b) * (D.restrict hab).weight (fun x y ↦ w x y) := by
-  have h := weight_extend_min_max (hab ▸ D.apply_ne a).symm (D.restrict hab) w
+  have h := weight_extend_eq_min_max_mul_weight (hab ▸ D.apply_ne a).symm (D.restrict hab) w
   rwa [extend_restrict] at h
 
 /-- Removing an arc factors out its pair weight. Symmetry is needed only when the endpoints
@@ -178,15 +175,25 @@ theorem weight_eq_mul_weight_restrict {a b : α} (D : PerfectMatching α)
 
 end Monoid
 
-/-- Relabeling positions preserves the sum of matching weights for symmetric pair weights. -/
-theorem sum_weight_congr_equiv {β : Type*} [Fintype β] [LinearOrder β] [CommSemiring R]
-    (e : α ≃ β) (w : β → β → R) (hw : ∀ x y, w x y = w y x) :
+/-- Relabeling positions preserves the sum of matching weights when weights are symmetric
+on pairs whose orientation is reversed. -/
+theorem sum_weight_equiv {β : Type*} [Fintype β] [LinearOrder β] [CommSemiring R]
+    (e : α ≃ β) (w : β → β → R)
+    (hw : ∀ x y, x < y → e y < e x → w (e y) (e x) = w (e x) (e y)) :
     (∑ D : PerfectMatching β, D.weight w) =
       ∑ D : PerfectMatching α, D.weight (fun x y ↦ w (e x) (e y)) := by
   symm
   apply Fintype.sum_equiv (congr e)
   intro D
-  exact (weight_congr_equiv D e w (fun x ↦ hw _ _)).symm
+  exact (weight_congr_equiv D e w (fun x ↦ hw x (D.val x))).symm
+
+/-- Relabeling along an order isomorphism preserves the sum of matching weights without a
+symmetry assumption. -/
+theorem sum_weight_orderIso {β : Type*} [Fintype β] [LinearOrder β] [CommSemiring R]
+    (e : α ≃o β) (w : β → β → R) :
+    (∑ D : PerfectMatching β, D.weight w) =
+      ∑ D : PerfectMatching α, D.weight (fun x y ↦ w (e x) (e y)) :=
+  sum_weight_equiv e.toEquiv w fun _ _ hxy he ↦ (lt_asymm he (e.lt_iff_lt.mpr hxy)).elim
 
 /-- The sum of matching weights on an empty type is one: there is exactly one empty matching.
 This is the initial value for expansion by partners. -/
