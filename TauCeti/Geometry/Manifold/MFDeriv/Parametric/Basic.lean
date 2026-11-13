@@ -43,7 +43,12 @@ boundary points.
   jointly `C^n` family is `C^m` for `m + 1 ≤ n`.
 * `ContMDiffAt.contMDiffAt_curveVelocity_snd`: for a jointly `C^n` map `f : 𝕜 → 𝕜 → M`, the
   velocities of the curves `f q`, as a map of both parameters to the tangent bundle, are `C^m`
-  for `m + 1 ≤ n`.
+  for `m + 1 ≤ n`. `ContMDiffAt.contMDiffAt_curveVelocity_fst` is the same statement for the
+  curves `q ↦ f q r`. `ContMDiffAt.contMDiffAt_curveVelocity_snd_slice` and
+  `ContMDiffAt.contMDiffAt_curveVelocity_fst_slice` restrict these fields to a fixed time and
+  a fixed first parameter, respectively.
+* `ContMDiffAt.contMDiffAt_variationField`: the variation field of a jointly `C^n` family
+  is a `C^m` field along its central curve for `m + 1 ≤ n`.
 * `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`: the parameter derivative of the differential of a
   jointly `C²` family is the differential of its parameter derivative.
 * `TauCeti.Manifold.contMDiffAt_mvfderiv_of_contMDiffAt_uncurry`: the differential at a fixed point
@@ -149,6 +154,47 @@ theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd {f : 𝕜 → 𝕜 → 
   refine htangent.congr_of_eventuallyEq ?_
   filter_upwards [hnear] with z hz
   simp only [Function.comp_apply, ι, tangentMap, curveVelocity_eq_mfderiv_snd hz]
+
+/-- **Regularity of the transverse velocity field of a two-parameter family.** If
+`f : 𝕜 → 𝕜 → M` is jointly `C^n` at `(u, v)`, then the velocities of the curves `q ↦ f q r`, as a
+map of both parameters to the tangent bundle, are `C^m` at `(u, v)` for every `m` with
+`m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_fst {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent m
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (curveVelocity I (fun q ↦ f q z.2) z.1))
+      (u, v) := by
+  have hswap : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.2 z.1) (v, u) :=
+    hf.comp (v, u) (contDiff_snd.prodMk contDiff_fst).contMDiff.contMDiffAt
+  exact (hswap.contMDiffAt_curveVelocity_snd (f := fun q r ↦ f r q) hmn).comp (u, v)
+    (contDiff_snd.prodMk contDiff_fst).contMDiff.contMDiffAt
+
+/-- At a fixed time `t`, the velocities at `t` of the curves `f s` of a family which is jointly
+`C^n` at `(u, t)` form a `C^m` map `s ↦ (f s t, ∂ₜ f (s, t))` to the tangent bundle at `u`, for
+every `m` with `m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd_slice {f : 𝕜 → 𝕜 → M} {u t : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun s ↦ TotalSpace.mk' E (f s t) (curveVelocity I (f s) t)) u :=
+  (hf.contMDiffAt_curveVelocity_snd hmn).comp u (contDiff_prodMk_left t).contMDiff.contMDiffAt
+
+/-- At a fixed first parameter `u`, the transverse velocities of a family `f : 𝕜 → 𝕜 → M`
+which is jointly `C^n` at `(u, v)` form a `C^m` map along `f u` at `v`, for every `m` with
+`m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_fst_slice {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun r ↦ TotalSpace.mk' E (f u r) (curveVelocity I (fun q ↦ f q r) u)) v :=
+  (hf.contMDiffAt_curveVelocity_fst hmn).comp v (contDiff_prodMk_right u).contMDiff.contMDiffAt
+
+/-- **Regularity of the variation field.** The variation field of a family `f : 𝕜 → 𝕜 → M` which
+is jointly `C^n` at `(0, v)` is a `C^m` field along the central curve `f 0` at `v`, for every `m`
+with `m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_variationField {f : 𝕜 → 𝕜 → M} {v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (0, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun r ↦ TotalSpace.mk' E (f 0 r) (variationField I f r)) v := by
+  simpa only [variationField_apply] using hf.contMDiffAt_curveVelocity_fst_slice hmn
 
 /-- **Mixed derivatives on a manifold.** If a family `F : 𝕜 → M → F'` is jointly `C²` at `(t, x)`
 (analytic, over a field other than `ℝ` or `ℂ`), then the parameter derivative at `t` of the
