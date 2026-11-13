@@ -6,18 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Stable.Isomorphism
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Isomorphism
 
 /-!
 # Recovering isomorphisms from the projective stable category
 
-The projective stable quotient detects invertibility and isomorphism classes between
-finite-length modules with no nonzero projective retracts. Indecomposability is not required:
-the modules may be sums of non-projective indecomposables. This lets stable inverse
-comparisons recover actual modules after projective summands have been excluded.
+The projective stable quotient detects invertibility and isomorphism classes between finite-length
+modules with no nonzero projective retracts. Indecomposability is not required: the modules may be
+sums of non-projective indecomposables. This lets stable inverse comparisons recover actual modules
+after projective summands have been excluded.
 
-This is the case of `ModuleCat.isIso_map_iff_of_isZero_retract` for the projective stable
-functor, which sends exactly the projective modules to zero.
+This is the case of `CategoryTheory.Functor.isIso_map_iff_of_reflects_isZero_retract` for the
+projective stable functor, which sends exactly the projective modules to zero.
 
 ## References
 
@@ -54,7 +54,7 @@ theorem isIso_projectiveStableFunctor_map_iff_of_isZero_projective_retract
     (hPM : ∀ {P : ModuleCat.{v} A}, Retract P M → Projective P → IsZero P)
     (hPN : ∀ {P : ModuleCat.{v} A}, Retract P N → Projective P → IsZero P) :
     IsIso ((S).map f) ↔ IsIso f :=
-  isIso_map_iff_of_isZero_retract _ f hM hN
+  (S).isIso_map_iff_of_reflects_isZero_retract f ((S).map_surjective) hM hN
     (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPM)
     (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPN)
 
@@ -66,7 +66,8 @@ theorem nonempty_iso_projectiveStableFunctor_obj_iff_of_isZero_projective_retrac
     (hPM : ∀ {P : ModuleCat.{v} A}, Retract P M → Projective P → IsZero P)
     (hPN : ∀ {P : ModuleCat.{v} A}, Retract P N → Projective P → IsZero P) :
     Nonempty ((S).obj M ≅ (S).obj N) ↔ Nonempty (M ≅ N) :=
-  nonempty_iso_obj_iff_of_isZero_retract _ M N hM hN
+  (S).nonempty_iso_obj_iff_of_reflects_isZero_retract M N ((S).map_surjective)
+    ((S).map_surjective) hM hN
     (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPM)
     (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPN)
 

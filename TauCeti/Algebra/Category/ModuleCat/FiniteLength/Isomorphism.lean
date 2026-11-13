@@ -11,12 +11,13 @@ public import Mathlib.RingTheory.FiniteLength
 import Mathlib.LinearAlgebra.Projection
 
 /-!
-# Recovering isomorphisms from a quotient of finite-length modules
+# Functors detecting isomorphisms of finite-length modules
 
-Let `F` be a full functor out of `ModuleCat A` that preserves zero morphisms, such as the quotient
+Let `F` be a functor out of `ModuleCat A` that preserves zero morphisms, such as the quotient
 functor to the projective or the injective stable category. Suppose that for finite-length modules
-`M` and `N`, every retract of `M` or of `N` that `F` sends to zero is zero. Then `F` detects
-invertibility of maps `M ⟶ N`, and `M ≅ N` as soon as `F M ≅ F N`. Indecomposability is not
+`M` and `N`, `F` reflects zero retracts: every retract of `M` or of `N` that `F` sends to zero is
+zero. If `F` is surjective on maps `N ⟶ M`, it detects invertibility of maps `M ⟶ N`; if it is
+also surjective on maps `M ⟶ N`, then `M ≅ N` as soon as `F M ≅ F N`. Indecomposability is not
 required.
 
 The argument uses Mathlib's Fitting decomposition `LinearMap.eventually_isCompl_ker_pow_range_pow`.
@@ -25,8 +26,9 @@ retract of `M` killed by `F`, hence zero, so `f` is invertible.
 
 ## Main results
 
-* `ModuleCat.isIso_map_iff_of_isZero_retract`: `F` detects invertibility.
-* `ModuleCat.nonempty_iso_obj_iff_of_isZero_retract`: `F` detects isomorphism classes.
+* `CategoryTheory.Functor.isIso_map_iff_of_reflects_isZero_retract`: `F` detects invertibility.
+* `CategoryTheory.Functor.nonempty_iso_obj_iff_of_reflects_isZero_retract`: `F` detects
+  isomorphism classes.
 
 ## References
 
@@ -36,9 +38,9 @@ retract of `M` killed by `F`, hence zero, so `f` is invertible.
 
 public section
 
-namespace ModuleCat
+namespace CategoryTheory.Functor
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory.Limits ModuleCat
 
 universe u v
 
@@ -81,35 +83,39 @@ private theorem isIso_of_map_eq_id [F.PreservesZeroMorphisms] (M : ModuleCat.{v}
   exact (isUnit_iff_isIso f).mp
     ((isUnit_pow_succ_iff (n := n)).mp hu |>.map M.endRingEquiv.symm)
 
-variable [F.Full] [F.PreservesZeroMorphisms]
+variable [F.PreservesZeroMorphisms]
 
-/-- **A quotient detects invertibility between finite-length modules**: if a full functor `F`
-preserving zero morphisms sends no nonzero retract of `M` or of `N` to zero, a map `M ⟶ N` is
-invertible exactly when its image under `F` is. -/
-theorem isIso_map_iff_of_isZero_retract {M N : ModuleCat.{v} A} (f : M ⟶ N)
+/-- **Detecting invertibility between finite-length modules**: if a functor `F` preserving zero
+morphisms sends no nonzero retract of `M` or of `N` to zero and is surjective on maps `N ⟶ M`, a
+map `M ⟶ N` is invertible exactly when its image under `F` is. -/
+theorem isIso_map_iff_of_reflects_isZero_retract {M N : ModuleCat.{v} A} (f : M ⟶ N)
+    (hF : Function.Surjective (F.map : (N ⟶ M) → (F.obj N ⟶ F.obj M)))
     (hM : IsFiniteLength A M) (hN : IsFiniteLength A N)
     (hZM : ∀ {K : ModuleCat.{v} A}, Retract K M → IsZero (F.obj K) → IsZero K)
     (hZN : ∀ {K : ModuleCat.{v} A}, Retract K N → IsZero (F.obj K) → IsZero K) :
     IsIso (F.map f) ↔ IsIso f := by
   refine ⟨fun hf ↦ ?_, fun _ ↦ inferInstance⟩
-  obtain ⟨g, hg⟩ := F.map_surjective (inv (F.map f))
+  obtain ⟨g, hg⟩ := hF (CategoryTheory.inv (F.map f))
   have := isIso_of_map_eq_id F M hM hZM (End.of (f ≫ g)) (by simp [hg])
   have := isIso_of_map_eq_id F N hN hZN (End.of (g ≫ f)) (by simp [hg])
   have : Mono f := mono_of_mono f g
   have : Epi f := epi_of_epi g f
   exact isIso_of_mono_of_epi f
 
-/-- **A quotient detects isomorphism classes of finite-length modules**: under the hypotheses of
-`ModuleCat.isIso_map_iff_of_isZero_retract`, `F M ≅ F N` exactly when `M ≅ N`. -/
-theorem nonempty_iso_obj_iff_of_isZero_retract (M N : ModuleCat.{v} A)
+/-- **Detecting isomorphism classes of finite-length modules**: if a functor `F` preserving zero
+morphisms sends no nonzero retract of `M` or of `N` to zero and is surjective on maps `M ⟶ N` and
+`N ⟶ M`, then `F M ≅ F N` exactly when `M ≅ N`. -/
+theorem nonempty_iso_obj_iff_of_reflects_isZero_retract (M N : ModuleCat.{v} A)
+    (hF : Function.Surjective (F.map : (M ⟶ N) → (F.obj M ⟶ F.obj N)))
+    (hF' : Function.Surjective (F.map : (N ⟶ M) → (F.obj N ⟶ F.obj M)))
     (hM : IsFiniteLength A M) (hN : IsFiniteLength A N)
     (hZM : ∀ {K : ModuleCat.{v} A}, Retract K M → IsZero (F.obj K) → IsZero K)
     (hZN : ∀ {K : ModuleCat.{v} A}, Retract K N → IsZero (F.obj K) → IsZero K) :
     Nonempty (F.obj M ≅ F.obj N) ↔ Nonempty (M ≅ N) := by
   refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ ⟨F.mapIso e⟩⟩
-  obtain ⟨f, hf⟩ := F.map_surjective e.hom
+  obtain ⟨f, hf⟩ := hF e.hom
   have : IsIso (F.map f) := hf.symm ▸ e.isIso_hom
-  have := (isIso_map_iff_of_isZero_retract F f hM hN hZM hZN).1 this
+  have := (isIso_map_iff_of_reflects_isZero_retract F f hF' hM hN hZM hZN).1 this
   exact ⟨asIso f⟩
 
-end ModuleCat
+end CategoryTheory.Functor

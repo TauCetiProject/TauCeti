@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Stable.Injective
-public import TauCeti.Algebra.Category.ModuleCat.Stable.Isomorphism
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Isomorphism
 
 /-!
 # Recovering isomorphisms from the injective stable category
 
-The injective stable quotient detects invertibility and isomorphism classes between
-finite-length modules with no nonzero injective retracts. Indecomposability is not required. This
-is the dual of `TauCeti.Algebra.Category.ModuleCat.ProjectiveStable.Isomorphism`, and the case of
-`ModuleCat.isIso_map_iff_of_isZero_retract` for the injective stable functor, which sends exactly
-the injective modules to zero.
+The injective stable quotient detects invertibility and isomorphism classes between finite-length
+modules with no nonzero injective retracts. Indecomposability is not required. This is the dual of
+`TauCeti.Algebra.Category.ModuleCat.ProjectiveStable.Isomorphism`, and the case of
+`CategoryTheory.Functor.isIso_map_iff_of_reflects_isZero_retract` for the injective stable functor,
+which sends exactly the injective modules to zero.
 
 ## References
 
@@ -52,7 +52,7 @@ theorem isIso_injectiveStableFunctor_map_iff_of_isZero_injective_retract
     (hPM : ∀ {P : ModuleCat.{v} A}, Retract P M → Injective P → IsZero P)
     (hPN : ∀ {P : ModuleCat.{v} A}, Retract P N → Injective P → IsZero P) :
     IsIso ((S).map f) ↔ IsIso f :=
-  isIso_map_iff_of_isZero_retract _ f hM hN
+  (S).isIso_map_iff_of_reflects_isZero_retract f ((S).map_surjective) hM hN
     (isZero_of_retract_of_isZero_injectiveStableFunctor_obj hPM)
     (isZero_of_retract_of_isZero_injectiveStableFunctor_obj hPN)
 
@@ -64,7 +64,8 @@ theorem nonempty_iso_injectiveStableFunctor_obj_iff_of_isZero_injective_retract
     (hPM : ∀ {P : ModuleCat.{v} A}, Retract P M → Injective P → IsZero P)
     (hPN : ∀ {P : ModuleCat.{v} A}, Retract P N → Injective P → IsZero P) :
     Nonempty ((S).obj M ≅ (S).obj N) ↔ Nonempty (M ≅ N) :=
-  nonempty_iso_obj_iff_of_isZero_retract _ M N hM hN
+  (S).nonempty_iso_obj_iff_of_reflects_isZero_retract M N ((S).map_surjective)
+    ((S).map_surjective) hM hN
     (isZero_of_retract_of_isZero_injectiveStableFunctor_obj hPM)
     (isZero_of_retract_of_isZero_injectiveStableFunctor_obj hPN)
 
