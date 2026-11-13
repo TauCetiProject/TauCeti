@@ -21,8 +21,8 @@ or construction of a general stochastic integral, is assumed.
 
 The finite-grid error estimate combines the centered weighted quadratic error, the cubic
 increment sum and the ordinary time-quadrature error. It applies to every nondecreasing
-finite grid, including repeated dates and the empty zero-horizon grid. Consequently no
-nestedness or summability of the meshes is required for mean-square convergence.
+finite grid starting at `0`, including repeated dates and the empty zero-horizon grid.
+Consequently no nestedness or summability of the meshes is required for mean-square convergence.
 Only pre-Brownian laws are used; path continuity and filtration conditions are unnecessary.
 This polynomial change-of-variables limit is independent of a general
 Itô formula.

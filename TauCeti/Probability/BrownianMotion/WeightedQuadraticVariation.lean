@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.BrownianMotion.Martingale
-import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Independence.Integration
 
 /-!
@@ -148,7 +147,7 @@ theorem memLp_sum_eval_mul_sq_sub_sub (hB : IsPreBrownianReal B P)
       (ENNReal.eq_div_iff (by norm_num) (by norm_num)).2 (by norm_num)
     simpa only [← he, ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs,
       sq_abs, Pi.sub_apply] using h
-  exact ((hB.hasLaw_eval (t i)).memLp (memLp_id_gaussianReal' 4 (by norm_num))).fun_mul
+  exact (hB.memLp_eval (t i) (p := 4) (by norm_num)).fun_mul
     (hs.sub (memLp_const _))
 
 /-- For heights equal to the Brownian left endpoint, the second moment of the centered
@@ -182,17 +181,11 @@ theorem integral_sq_sum_eval_mul_sq_sub_sub (hB : IsPreBrownianReal B P)
     _ = _ := by
       rw [hF.integral_sq_sum_mul_sq_sub_sub ht (fun i _ ↦ hF.adapted (t i))
         (fun i _ ↦ hW.memLp_eval (t i) (by norm_num))]
-      congr 1
-      apply sum_congr rfl
-      intro i _
-      have h := (hW.hasLaw_eval (t i)).integral_comp
-        (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
-      have hm : (∫ ω, W (t i) ω ^ 2 ∂P) = t i := by
-        simpa [Function.comp_def, TauCeti.Probability.integral_sq_gaussianReal] using h
-      rw [hm]
+      simp_rw [hW.integral_sq_eval]
 
-/-- The Brownian-height quadratic error is bounded by twice the last date times elapsed
-time times the mesh bound. No sign assumption on the mesh bound is needed. -/
+/-- The second moment of the centered Brownian-height quadratic error is bounded by twice
+the last date times elapsed time times the mesh bound. No sign assumption on the mesh bound
+is needed. -/
 theorem integral_sq_sum_eval_mul_sq_sub_sub_le (hB : IsPreBrownianReal B P)
     {t : ℕ → ℝ≥0} {n : ℕ} (ht : MonotoneOn t (Set.Iic n)) {δ : ℝ}
     (hmesh : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ) :
