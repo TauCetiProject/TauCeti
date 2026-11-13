@@ -156,18 +156,17 @@ end TauCeti
 limit on a compact domain. The source spaces may vary and only need pseudometrics. -/
 theorem Continuous.ball_subset_range_of_uniform_relation_approximation
     {A B ι : Type*} [TopologicalSpace A] [CompactSpace A] [MetricSpace B]
-    (X : ι → Type*) [∀ k, PseudoMetricSpace (X k)]
-    (Φ : ∀ k, A → X k) (R : ∀ k, X k → B → Prop)
-    (ψ : ι → A → B) (e : A → B) (o : A) {ρ : ℝ}
+    {X : ι → Type*} [∀ k, PseudoMetricSpace (X k)]
+    {Φ : ∀ k, A → X k} {R : ∀ k, X k → B → Prop}
+    {ψ : ι → A → B} {e : A → B} {o : A} {ρ : ℝ}
     {l : Filter ι} [l.NeBot]
     (he : Continuous e) (hlim : TendstoUniformly ψ e l)
-    (ε : ι → ℝ) (hε : Tendsto ε l (𝓝 0))
+    {ε : ι → ℝ} (hε : Tendsto ε l (𝓝 0))
     (hrelated : ∀ᶠ k in l, ∀ x : A, R k (Φ k x) (ψ k x))
     (hdist : ∀ᶠ k in l, ∀ (x y : X k) (z w : B),
       R k x z → R k y w → |dist x y - dist z w| ≤ ε k)
-    (hcover : ∀ᶠ k in l, ∀ y : B, ∃ x : X k, R k x y)
-    (hchart : ∀ᶠ k in l, ∀ y : X k,
-      dist (Φ k o) y < ρ → ∃ x : A, Φ k x = y) :
+    (hcover : ∀ y ∈ Metric.ball (e o) ρ, ∀ᶠ k in l, ∃ x : X k, R k x y)
+    (hchart : ∀ᶠ k in l, Metric.ball (Φ k o) ρ ⊆ range (Φ k)) :
     Metric.ball (e o) ρ ⊆ range e := by
   intro y hy
   have hinside : dist (e o) y < ρ := by
@@ -181,16 +180,16 @@ theorem Continuous.ball_subset_range_of_uniform_relation_approximation
   have hsmall : ∀ᶠ k in l, ε k < margin / 3 :=
     hε.eventually_lt_const (by positivity)
   have herror : ∀ᶠ k in l, ε k < η := hε.eventually_lt_const hη
-  filter_upwards [hrelated, hdist, hcover, hchart, hcenter, hsmall, herror]
+  filter_upwards [hrelated, hdist, hcover y hy, hchart, hcenter, hsmall, herror]
     with k hkrel hkdist hkcover hkchart hkcenter hksmall hkerror
-  obtain ⟨q, hq⟩ := hkcover y
+  obtain ⟨q, hq⟩ := hkcover
   have hdistCenter := hkdist (Φ k o) q (ψ k o) y (hkrel o) hq
   have hsource : dist (Φ k o) q < ρ := by
     have hupper := (le_abs_self (dist (Φ k o) q - dist (ψ k o) y)).trans hdistCenter
     have htriangle := dist_triangle (ψ k o) (e o) y
     dsimp only [margin] at hkcenter hksmall
     linarith
-  obtain ⟨x, hx⟩ := hkchart q hsource
+  obtain ⟨x, hx⟩ := hkchart (by simpa only [Metric.mem_ball, dist_comm] using hsource)
   have hxrel : R k (Φ k x) y := hx ▸ hq
   have hclose := hkdist (Φ k x) (Φ k x) (ψ k x) y (hkrel x) hxrel
   simp only [dist_self, zero_sub, abs_neg, abs_of_nonneg dist_nonneg] at hclose
