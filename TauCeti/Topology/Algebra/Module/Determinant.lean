@@ -35,8 +35,8 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 
 ## Main declarations
 
-* `ContinuousLinearMap.det_id`, `ContinuousLinearMap.det_smul`: the determinant of the identity
-  and of a scalar multiple.
+* `ContinuousLinearMap.det_id`, `ContinuousLinearMap.det_comp`, `ContinuousLinearMap.det_smul`:
+  the determinant of the identity, of a composition and of a scalar multiple.
 * `ContinuousLinearMap.exists_le_norm_det_id_sub_smul`: over `ℝ` or `ℂ`, the second-order lower
   bound `1 - δ re (trace H) - P δ² ≤ ‖det (1 - δ H)‖` for `0 ≤ δ ≤ 1`.
 * `ContinuousLinearEquiv.det_symm_comp_mul_det_symm_comp`: relative determinants multiply.
@@ -55,6 +55,11 @@ variable {R M : Type*} [CommRing R] [TopologicalSpace M] [AddCommGroup M] [Modul
 @[simp]
 theorem det_id : (ContinuousLinearMap.id R M).det = 1 :=
   LinearMap.det_id
+
+/-- The determinant of a composition is the product of the determinants. -/
+@[simp]
+theorem det_comp (f g : M →L[R] M) : (f ∘L g).det = f.det * g.det :=
+  LinearMap.det_comp (f : M →ₗ[R] M) g
 
 /-- Multiplying a map by a scalar `c` multiplies its determinant by `c ^ finrank R M`. -/
 @[simp]
