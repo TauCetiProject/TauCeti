@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
 public import TauCeti.Geometry.Manifold.GroupAction.Restrict
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
 public import TauCeti.Topology.Algebra.ProperAction.Basic
+
+import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 
 /-!
 # The coadjoint stabilizer acting on a level of an equivariant moment map
@@ -20,23 +22,28 @@ Let a Lie group `G` act smoothly on a manifold `M` with a coadjoint-equivariant 
 (`(TauCeti.Lie.coadjointRepresentation ℝ I G).stabilizer c`) and `Z = μ⁻¹(c)` for the level.
 In Marsden–Weinstein–Meyer reduction the reduced space is the orbit space `Z / G_c`. This file
 sets up the action of `G_c` on `Z` and proves the properties of it that the quotient construction
-needs, all from the equivariance `μ (g • x) = Ad*_g (μ x)`.
+needs. The invariance of `Z`, its orbit relation and its stabilizers follow from the equivariance
+`μ (g • x) = Ad*_g (μ x)` alone; properness and smoothness combine this with the corresponding
+hypotheses on the action, and regularity also uses the moment-map equation.
 
 * The stabilizer of a point lies in the coadjoint stabilizer of its value, `G_x ≤ G_{μ x}`
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.stabilizer_le_stabilizer_coadjointRepresentation`).
-* Conversely, an element of `G` carrying a point of `Z` into `Z` lies in `G_c`. Hence `Z` is
-  invariant under exactly the elements of `G_c`, and is a `SubMulAction` of `G_c`
-  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulAction`).
+* The level `Z` is invariant under `G_c`, so it is a `SubMulAction` of `G_c`
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulAction`). Conversely, an element of
+  `G` carrying a point of `Z` into `Z` lies in `G_c`.
 * Two points of `Z` lie in the same `G_c`-orbit exactly when they lie in the same `G`-orbit, so
   `Z / G_c → M / G` is injective, with image the orbits meeting `Z`
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitRelQuotientMap_levelSubMulAction_injective`).
   Thus the reduced space at `c` is the space of `G`-orbits in `μ⁻¹(G · c)`.
-* The stabilizer of a point of `Z` in `G_c` is its whole stabilizer in `G`. So `G_c` acts freely
-  on `Z` exactly when `G` acts freely at every point of `Z`, and then **freeness implies
-  regularity**: where the form is nondegenerate, `dμ_z` is surjective at every `z ∈ Z`
+* The stabilizer of a point of `Z` in `G_c` is its whole stabilizer in `G`. So `G_c` acts freely,
+  or locally freely, on `Z` exactly when `G` does at every point of `Z`. Where the form is
+  nondegenerate, `dμ_z` is surjective exactly when the `G_c`-stabilizer of `z ∈ Z` is discrete
+  (`differential_surjective_iff_discreteTopology_stabilizer_levelSubMulAction`),
+  so in particular **freeness implies regularity**
   (`IsEquivariantMomentMap.differential_surjective_of_stabilizer_levelSubMulAction_eq_bot`).
-* If `G` acts properly on `M`, then `G_c` acts properly on `Z`, since `G_c` is a closed subgroup
-  and `Z` is closed (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.properSMul_levelSubMulAction`).
+* If `G` acts properly on `M`, then `G_c` acts properly on `Z`, since every element of `G`
+  carrying a point of `Z` into `Z` lies in `G_c`
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.properSMul_levelSubMulAction`).
 
 * The action is smooth: for a manifold structure on `G_c` with smooth inclusion into `G`, such as
   its closed-subgroup Lie group structure, and a manifold structure on `Z` whose inclusion into
@@ -94,8 +101,9 @@ theorem apply_smul_eq_of_mem_stabilizer (h : σ.IsEquivariantMomentMap μ) {g : 
   rw [h.apply_smul, hx]
   exact Representation.mem_stabilizer.1 hg
 
-/-- **Only the coadjoint stabilizer preserves the level.** If `g` carries a point of the level
-`μ⁻¹(c)` into the same level, then `g` fixes `c` under the coadjoint action. -/
+/-- **Only the coadjoint stabilizer carries points of the level into the level.** If `g` carries
+a point of the level `μ⁻¹(c)` into the same level, then `g` fixes `c` under the coadjoint
+action. -/
 theorem mem_stabilizer_coadjointRepresentation_of_apply_eq (h : σ.IsEquivariantMomentMap μ)
     {g : G} {x : M} (hx : μ x = c) (hgx : μ (g • x) = c) :
     g ∈ (Lie.coadjointRepresentation ℝ I G).stabilizer c := by
@@ -120,6 +128,7 @@ theorem mem_levelSubMulAction (h : σ.IsEquivariantMomentMap μ) {x : M} :
   Iff.rfl
 
 /-- The underlying set of the level is the preimage `μ⁻¹(c)`. -/
+@[simp]
 theorem coe_levelSubMulAction (h : σ.IsEquivariantMomentMap μ) :
     (h.levelSubMulAction c : Set M) = μ ⁻¹' {c} :=
   (rfl)
@@ -135,8 +144,9 @@ theorem orbitRelQuotientMap_levelSubMulAction_injective (h : σ.IsEquivariantMom
     h.mem_stabilizer_coadjointRepresentation_of_apply_eq (h.mem_levelSubMulAction.1 hy)
       (h.mem_levelSubMulAction.1 hgy)
 
-/-- **The `G_c`-orbits on the level are the `G`-orbits.** Two points of the level `μ⁻¹(c)` lie in
-the same orbit of the coadjoint stabilizer `G_c` exactly when they lie in the same `G`-orbit. -/
+/-- **The `G_c`-orbit relation on the level is the `G`-orbit relation.** Two points of the level
+`μ⁻¹(c)` lie in the same orbit of the coadjoint stabilizer `G_c` exactly when they lie in the same
+`G`-orbit. -/
 theorem orbitRel_levelSubMulAction_iff (h : σ.IsEquivariantMomentMap μ)
     {z z' : h.levelSubMulAction c} :
     MulAction.orbitRel ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
@@ -168,6 +178,19 @@ theorem stabilizer_levelSubMulAction_eq_bot_iff (h : σ.IsEquivariantMomentMap �
   rw [h.stabilizer_levelSubMulAction, Subgroup.subgroupOf_eq_bot, disjoint_iff,
     inf_eq_left.2 hle]
 
+/-- **Local freeness on the level.** A point `z` of the level `μ⁻¹(c)` has discrete stabilizer in
+`G_c` exactly when it has discrete stabilizer in `G`. So `G_c` acts locally freely on the level
+exactly when `G` acts locally freely at each of its points. -/
+theorem discreteTopology_stabilizer_levelSubMulAction_iff (h : σ.IsEquivariantMomentMap μ)
+    (z : h.levelSubMulAction c) :
+    DiscreteTopology
+        (MulAction.stabilizer ((Lie.coadjointRepresentation ℝ I G).stabilizer c) z) ↔
+      DiscreteTopology (MulAction.stabilizer G (z : M)) := by
+  have hle := h.stabilizer_le_stabilizer_coadjointRepresentation (z : M)
+  rw [h.mem_levelSubMulAction.1 z.2] at hle
+  rw [h.stabilizer_levelSubMulAction]
+  exact (Subgroup.subgroupOfContinuousMulEquivOfLe hle).discreteTopology_iff
+
 /-! ### Smoothness -/
 
 /-- **The coadjoint stabilizer acts smoothly on the level.** Give `G_c` a manifold structure for
@@ -189,26 +212,36 @@ theorem contMDiffSMul_levelSubMulAction (h : σ.IsEquivariantMomentMap μ)
       (f := ((Lie.coadjointRepresentation ℝ I G).stabilizer c).subtype) hGc
   hZ.contMDiffSMul fun g z ↦ SubMulAction.val_smul g z
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
-
 /-! ### Properness -/
 
 /-- **Properness on the level.** If `G` acts properly on `M`, then the coadjoint stabilizer `G_c`
-acts properly on the level `μ⁻¹(c)`: it is a closed subgroup acting on a closed invariant
-subset. -/
+acts properly on the level `μ⁻¹(c)`, since every element of `G` carrying a point of the level into
+the level lies in `G_c`. -/
 theorem properSMul_levelSubMulAction [ProperSMul G M] (h : σ.IsEquivariantMomentMap μ) :
     ProperSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) :=
-  have : IsClosed ((Lie.coadjointRepresentation ℝ I G).stabilizer c : Set G) :=
-    Lie.isClosed_stabilizer_coadjointRepresentation I c
-  have hZ : IsClosed (h.levelSubMulAction c : Set M) := by
-    rw [coe_levelSubMulAction]
-    exact h.toIsMomentMap.isClosed_preimage_singleton c
-  hZ.isClosedEmbedding_subtypeVal.properSMul (G := (Lie.coadjointRepresentation ℝ I G).stabilizer c)
-    fun g z ↦ SubMulAction.val_smul g z
+  Topology.IsEmbedding.subtypeVal.properSMul_of_monoidHom
+    (φ := ((Lie.coadjointRepresentation ℝ I G).stabilizer c).subtype)
+    Topology.IsEmbedding.subtypeVal (fun g z ↦ SubMulAction.val_smul g z)
+    fun _ y y' hg ↦ ⟨⟨_, h.mem_stabilizer_coadjointRepresentation_of_apply_eq
+      (h.mem_levelSubMulAction.1 y.2) (hg ▸ h.mem_levelSubMulAction.1 y'.2)⟩, rfl⟩
+
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
 /-! ### Regularity -/
 
 variable [T2Space M] [BoundarylessManifold I' M] [FiniteDimensional ℝ E']
+
+/-- **Locally free points of the level are regular.** At a point `z` of the level `μ⁻¹(c)` where
+the form is nondegenerate, the differential `dμ_z` is surjective exactly when the stabilizer of `z`
+in the coadjoint stabilizer `G_c` is discrete. -/
+theorem differential_surjective_iff_discreteTopology_stabilizer_levelSubMulAction
+    (h : σ.IsEquivariantMomentMap μ)
+    {z : h.levelSubMulAction c} (hσ : (σ.bilinFormAt (z : M)).Nondegenerate) :
+    Function.Surjective (h.differential (z : M)) ↔
+      DiscreteTopology
+        (MulAction.stabilizer ((Lie.coadjointRepresentation ℝ I G).stabilizer c) z) := by
+  rw [h.discreteTopology_stabilizer_levelSubMulAction_iff,
+    h.toIsMomentMap.differential_surjective_iff_discreteTopology_stabilizer hσ]
 
 /-- **Freeness implies regularity.** If the coadjoint stabilizer `G_c` acts freely at a point `z`
 of the level `μ⁻¹(c)` and the form is nondegenerate at `z`, then the differential `dμ_z` is
@@ -218,9 +251,13 @@ theorem differential_surjective_of_stabilizer_levelSubMulAction_eq_bot
     (h : σ.IsEquivariantMomentMap μ)
     {z : h.levelSubMulAction c} (hσ : (σ.bilinFormAt (z : M)).Nondegenerate)
     (hz : MulAction.stabilizer ((Lie.coadjointRepresentation ℝ I G).stabilizer c) z = ⊥) :
-    Function.Surjective (h.differential (z : M)) :=
-  h.toIsMomentMap.differential_surjective_of_stabilizer_eq_bot hσ
-    ((h.stabilizer_levelSubMulAction_eq_bot_iff z).1 hz)
+    Function.Surjective (h.differential (z : M)) := by
+  have : Subsingleton
+      (MulAction.stabilizer ((Lie.coadjointRepresentation ℝ I G).stabilizer c) z) := by
+    rw [hz]
+    infer_instance
+  exact (h.differential_surjective_iff_discreteTopology_stabilizer_levelSubMulAction hσ).2
+    inferInstance
 
 end IsEquivariantMomentMap
 

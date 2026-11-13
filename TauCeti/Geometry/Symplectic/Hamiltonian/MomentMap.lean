@@ -162,16 +162,6 @@ theorem mdifferentiableAt (h : σ.IsMomentMap a μ) (Z : 𝔤) (x : M) :
     MDifferentiableAt I 𝓘(ℝ) (fun y ↦ μ y Z) x :=
   (h.contMDiff Z).mdifferentiableAt (by simp)
 
-/-- **The levels of a moment map are closed.** The level `μ⁻¹(c)` is cut out by the continuous
-equations `μ_Z = c(Z)`, one for each `Z`. -/
-theorem isClosed_preimage_singleton (h : σ.IsMomentMap a μ) (c : Module.Dual ℝ 𝔤) :
-    IsClosed (μ ⁻¹' {c}) := by
-  have hset : μ ⁻¹' {c} = ⋂ Z : 𝔤, {x | μ x Z = c Z} := by
-    ext x
-    simp [LinearMap.ext_iff]
-  rw [hset]
-  exact isClosed_iInter fun Z ↦ isClosed_eq (h.contMDiff Z).continuous continuous_const
-
 /-- Adding a constant `ν ∈ 𝔤*` to a moment map gives a moment map of the same action. -/
 theorem add_const (h : σ.IsMomentMap a μ) (ν : Module.Dual ℝ 𝔤) :
     σ.IsMomentMap a fun x ↦ μ x + ν where
