@@ -109,6 +109,7 @@ theorem projectorDiagonal_le_one (i : ι) : U.projectorDiagonal i ≤ 1 := by
 
 /-- A diagonal entry of `P_U` vanishes exactly when the corresponding basis vector is orthogonal
 to `U`. -/
+@[simp]
 theorem projectorDiagonal_eq_zero_iff {i : ι} :
     U.projectorDiagonal i = 0 ↔ EuclideanSpace.single i (1 : 𝕜) ∈ Uᗮ := by
   rw [projectorDiagonal_eq_norm_sq, sq_eq_zero_iff, norm_eq_zero,
@@ -116,6 +117,7 @@ theorem projectorDiagonal_eq_zero_iff {i : ι} :
 
 /-- A diagonal entry of `P_U` equals `1` exactly when the corresponding basis vector lies
 in `U`. -/
+@[simp]
 theorem projectorDiagonal_eq_one_iff {i : ι} :
     U.projectorDiagonal i = 1 ↔ EuclideanSpace.single i (1 : 𝕜) ∈ U := by
   rw [projectorDiagonal_eq_norm_sq, pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero]

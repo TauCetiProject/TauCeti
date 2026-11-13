@@ -35,8 +35,9 @@ and their moment values are the rows of `TauCeti.BottSamelson.fixedMoment`
 `(e₀, 01, e₀)`, `(e₀, 01, e₁)`, `(e₀, 02, e₀)`, `(e₀, 02, e₂)`,
 `(e₁, 01, e₀)`, `(e₁, 01, e₁)`, `(e₁, 12, e₁)`, `(e₁, 12, e₂)`.
 
-Every value of `μ` lies in the hexagon `TauCeti.BottSamelson.momentPolygon`, the convex hull of
-these eight values (`TauCeti.BottSamelson.moment_mem_convexHull`). The diagonal entries of a
+For nonnegative weights `a, b, c`, every value of `μ` lies in the hexagon
+`TauCeti.BottSamelson.momentPolygon`, the convex hull of these eight values
+(`TauCeti.BottSamelson.moment_mem_convexHull`). The diagonal entries of a
 projector lie in `[0, 1]` and sum to its rank, which gives the trace and the first five bounds, and
 the third diagonal entry of `Π_{L₁}` vanishes because `L₁ ⊆ P₀`, which gives `z ≤ b + c`. This is
 one inclusion of the description of the image of `μ` as the hexagon; the other one, that every
@@ -53,8 +54,8 @@ point of the hexagon is a moment value, is the content of the convexity theorem 
   value of a triple of coordinate subspaces in `X`.
 * `TauCeti.BottSamelson.sum_moment`: on `X`, the coordinates of `μ` sum to `a + 2b + c`.
 * `TauCeti.BottSamelson.moment_mem_momentPolygon`,
-  `TauCeti.BottSamelson.moment_mem_convexHull`: every moment value lies in the hexagon, the convex
-  hull of the eight fixed values.
+  `TauCeti.BottSamelson.moment_mem_convexHull`: for nonnegative weights, every moment value lies
+  in the hexagon, the convex hull of the eight fixed values.
 
 ## References
 
@@ -93,6 +94,7 @@ theorem projectorDiagonal_initialPlane : initialPlane.projectorDiagonal = ![1, 1
   ext i
   fin_cases i <;> simp
 
+@[simp]
 theorem finrank_initialPlane : finrank ℂ initialPlane = 2 := by
   rw [initialPlane_eq_span_image, ← Finset.coe_pair, finrank_span_image_single]
   rfl
