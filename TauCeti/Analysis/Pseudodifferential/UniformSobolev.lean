@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.CalderonVaillancourt
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 import TauCeti.Analysis.Pseudodifferential.Sobolev
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 
 /-!
 # Sobolev mapping of uniform symbols at even steps
@@ -87,70 +87,14 @@ variable {n : ℕ} {m : ℝ}
 
 section Extension
 
-variable {V W U : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-  [NormedAddCommGroup U] [InnerProductSpace ℂ U] [CompleteSpace U]
-
-/-- A continuous linear map `A` of Schwartz spaces extends to a bounded operator `H^s → H^r`. -/
-private def HasSobolevExtension (A : 𝓢(CoordinateSpace n, V) →L[ℂ] 𝓢(CoordinateSpace n, W))
-    (s r : ℝ) : Prop :=
-  ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{r}(CoordinateSpace n, W),
-    T ∘L SchwartzMap.toBesselPotentialSpaceCLM s 2 = SchwartzMap.toBesselPotentialSpaceCLM r 2 ∘L A
-
-variable {A B : 𝓢(CoordinateSpace n, V) →L[ℂ] 𝓢(CoordinateSpace n, W)} {s r q : ℝ}
-
-private theorem HasSobolevExtension.comp
-    {C : 𝓢(CoordinateSpace n, W) →L[ℂ] 𝓢(CoordinateSpace n, U)}
-    (hC : HasSobolevExtension C r q) (hA : HasSobolevExtension A s r) :
-    HasSobolevExtension (C ∘L A) s q := by
-  obtain ⟨T, hT⟩ := hA
-  obtain ⟨T', hT'⟩ := hC
-  exact ⟨T' ∘L T, by rw [ContinuousLinearMap.comp_assoc, hT, ← ContinuousLinearMap.comp_assoc,
-    hT', ContinuousLinearMap.comp_assoc]⟩
-
-private theorem HasSobolevExtension.add (hA : HasSobolevExtension A s r)
-    (hB : HasSobolevExtension B s r) : HasSobolevExtension (A + B) s r := by
-  obtain ⟨T, hT⟩ := hA
-  obtain ⟨T', hT'⟩ := hB
-  exact ⟨T + T', by rw [ContinuousLinearMap.add_comp, hT, hT', ContinuousLinearMap.comp_add]⟩
-
-private theorem HasSobolevExtension.smul (hA : HasSobolevExtension A s r) (c : ℂ) :
-    HasSobolevExtension (c • A) s r := by
-  obtain ⟨T, hT⟩ := hA
-  exact ⟨c • T, by rw [ContinuousLinearMap.smul_comp, hT, ContinuousLinearMap.comp_smul]⟩
-
-private theorem HasSobolevExtension.sub (hA : HasSobolevExtension A s r)
-    (hB : HasSobolevExtension B s r) : HasSobolevExtension (A - B) s r := by
-  simpa only [sub_eq_add_neg, neg_one_smul] using hA.add (hB.smul (-1))
-
-/-- Extensions into `H^r` are extensions into every `H^{r'}` with `r' ≤ r`. -/
-private theorem HasSobolevExtension.mono (hA : HasSobolevExtension A s r) {r' : ℝ} (h : r' ≤ r) :
-    HasSobolevExtension A s r' := by
-  obtain ⟨T, hT⟩ := hA
-  refine ⟨BesselPotentialSpace.inclusion h ∘L T, ?_⟩
-  rw [ContinuousLinearMap.comp_assoc, hT, ← ContinuousLinearMap.comp_assoc]
-  congr 1
-  exact ContinuousLinearMap.ext (BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM h)
-
-/-- The Bessel multiplier `J^t` extends to a bounded operator `H^s → H^{s - t}`. -/
-private theorem hasSobolevExtension_besselMultiplier (t : ℝ) (h : r + t = s) :
-    HasSobolevExtension (SchwartzMap.fourierMultiplierCLM V
-      (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))) s r := by
-  refine ⟨((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V r 2).symm.toContinuousLinearEquiv :
-      Lp V 2 (volume : Measure (CoordinateSpace n)) →L[ℂ] H^{r}(CoordinateSpace n, V)) ∘L
-    ((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V s 2).toContinuousLinearEquiv :
-      H^{s}(CoordinateSpace n, V) →L[ℂ] Lp V 2 (volume : Measure (CoordinateSpace n))), ?_⟩
-  ext1 u
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, BesselPotentialSpace.toLpₗᵢ_apply,
-    SchwartzMap.toLp_toBesselPotentialSpaceCLM, LinearIsometryEquiv.symm_apply_eq,
-    SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM, h]
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {s r : ℝ}
 
 /-- **Calderón–Vaillancourt.** The quantization of a uniform symbol of order at most `0` extends
 to a bounded operator on `H⁰ = L²`. -/
 private theorem hasSobolevExtension_quantizeUniformCLM_zero {b : Symbol n V W m}
     (hb : b.IsUniform) (hm : m ≤ 0) :
-    HasSobolevExtension (quantizeUniformCLM b hb) 0 0 := by
+    SchwartzMap.HasSobolevExtension (quantizeUniformCLM b hb) 0 0 := by
   obtain ⟨T, hT⟩ := exists_quantizeUniformOrderZeroLp (inclusion hm b) (hb.inclusion hm)
   refine ⟨((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) W 0 2).symm.toContinuousLinearEquiv :
       Lp W 2 (volume : Measure (CoordinateSpace n)) →L[ℂ] H^{0}(CoordinateSpace n, W)) ∘L T ∘L
@@ -164,14 +108,10 @@ private theorem hasSobolevExtension_quantizeUniformCLM_zero {b : Symbol n V W m}
   filter_upwards [(quantizeUniformCLM b hb u).coeFn_toLp 2] with x hx
   rw [hx, coefficient_inclusion, quantizeUniformCLM_apply]
 
-private theorem HasSobolevExtension.smul_real (hA : HasSobolevExtension A s r) (c : ℝ) :
-    HasSobolevExtension (c • A) s r := by
-  simpa only [Complex.coe_smul] using hA.smul (c : ℂ)
-
 /-- On a Schwartz function, an extension of `Op(b)` gives the tempered distribution of
 `Op(b) u`. -/
-private theorem HasSobolevExtension.exists_toDistr {b : Symbol n V W m} {hb : b.IsUniform}
-    (h : HasSobolevExtension (quantizeUniformCLM b hb) s r) :
+private theorem exists_toDistr_of_hasSobolevExtension {b : Symbol n V W m} {hb : b.IsUniform}
+    (h : SchwartzMap.HasSobolevExtension (quantizeUniformCLM b hb) s r) :
     ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{r}(CoordinateSpace n, W),
       ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
         (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
@@ -198,7 +138,7 @@ private theorem besselMultiplier_neg_two_comp_besselMultiplier_two
 /-- Uniform symbols of order at most `-2k` quantize to bounded operators `L² → H^{2k}`. -/
 private theorem hasSobolevExtension_quantizeUniformCLM_of_le_neg (k : ℕ) :
     ∀ {μ : ℝ} (b : Symbol n V W μ) (hb : b.IsUniform), μ ≤ -(2 * k) →
-      HasSobolevExtension (quantizeUniformCLM b hb) 0 (2 * k) := by
+      SchwartzMap.HasSobolevExtension (quantizeUniformCLM b hb) 0 (2 * k) := by
   induction k with
   | zero =>
     intro μ b hb hμ
@@ -212,15 +152,15 @@ private theorem hasSobolevExtension_quantizeUniformCLM_of_le_neg (k : ℕ) :
       (by linarith)
     have h₂ := ih b.laplacianCommutator hb.laplacianCommutator (by linarith)
     rw [← besselMultiplier_neg_two_comp_besselMultiplier_two (quantizeUniformCLM b hb)]
-    refine (hasSobolevExtension_besselMultiplier (-2) (r := 2 * (k + 1)) (s := 2 * k)
-      (by ring)).comp ?_
+    refine (SchwartzMap.hasSobolevExtension_besselMultiplier (-2) (r := 2 * (k + 1))
+      (s := 2 * k) (by ring)).comp ?_
     rw [eq_sub_of_add_eq (quantizeUniformCLM_comp_besselPotential_two b hb).symm]
     exact h₁.sub (h₂.smul_real _)
 
 /-- Uniform symbols of order at most `2k` quantize to bounded operators `L² → H^{-2k}`. -/
 private theorem hasSobolevExtension_quantizeUniformCLM_of_le (k : ℕ) :
     ∀ {μ : ℝ} (b : Symbol n V W μ) (hb : b.IsUniform), μ ≤ 2 * k →
-      HasSobolevExtension (quantizeUniformCLM b hb) 0 (-(2 * k)) := by
+      SchwartzMap.HasSobolevExtension (quantizeUniformCLM b hb) 0 (-(2 * k)) := by
   induction k with
   | zero =>
     intro μ b hb hμ
@@ -246,7 +186,8 @@ private theorem hasSobolevExtension_quantizeUniformCLM_of_le (k : ℕ) :
       quantizeUniformCLM_congr _ _ (by
         rw [coefficient_comp_besselPotential_comp_besselPotential, neg_add_cancel,
           coefficient_comp_besselPotential_zero])
-    have hJ (r : ℝ) := hasSobolevExtension_besselMultiplier (V := W) (n := n) 2
+    have hJ (r : ℝ) := SchwartzMap.hasSobolevExtension_besselMultiplier (F := W)
+      (E := CoordinateSpace n) 2
       (r := r - 2) (s := r) (by ring)
     rw [hb', quantizeUniformCLM_comp_besselPotential_two c hc, hlc,
       quantizeUniformCLM_comp_besselPotential_two c' hc']
@@ -262,10 +203,11 @@ private theorem hasSobolevExtension_quantizeUniformCLM_of_le (k : ℕ) :
 `s - m ∈ 2ℤ`. -/
 private theorem hasSobolevExtension_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform)
     {s : ℝ} {k : ℤ} (hk : s - m = 2 * k) :
-    HasSobolevExtension (quantizeUniformCLM a ha) s (s - m) := by
+    SchwartzMap.HasSobolevExtension (quantizeUniformCLM a ha) s (s - m) := by
   -- `Op(a) = Op(a ⟨ξ / 2π⟩ ^ (-s)) ∘ J^s`, and `J^s : H^s → L²` is an isometry.
   have hb := ha.comp (isUniform_besselPotential (V := V) (n := n) (-s))
-  have hJ := hasSobolevExtension_besselMultiplier (V := V) (n := n) s (r := 0) (s := s) (by ring)
+  have hJ := SchwartzMap.hasSobolevExtension_besselMultiplier (F := V) (E := CoordinateSpace n) s
+    (r := 0) (s := s) (by ring)
   have ha' : quantizeUniformCLM a ha = quantizeUniformCLM _ hb ∘L
       SchwartzMap.fourierMultiplierCLM V
         (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) := by
@@ -293,7 +235,7 @@ theorem exists_quantizeUniformSobolevHilbert_of_sub_eq_two_mul (a : Symbol n V W
       ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
         (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
           ∫ x, φ x • quantizeSchwartzValue a.coefficient u x :=
-  (hasSobolevExtension_quantizeUniformCLM a ha hk).exists_toDistr
+  exists_toDistr_of_hasSobolevExtension (hasSobolevExtension_quantizeUniformCLM a ha hk)
 
 end Extension
 
