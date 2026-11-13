@@ -22,8 +22,8 @@ images carries the sign of the degree of the left factor.
 
 The construction transports the existing tensor differential, then identifies
 it with the unique odd extension of the generator assignment. It retains
-constant terms in either factor differential. This is the algebraic disjoint-union
-comparison for orbit algebras.
+constant terms in either factor differential. This supplies the algebraic comparison
+used for orbit algebras of disjoint unions.
 
 ## References
 
@@ -41,7 +41,7 @@ universe u v w
 variable {R : Type u} [CommRing R]
 variable {V : Type v} {W : Type w} [AddCommGroup V] [Module R V]
   [AddCommGroup W] [Module R W]
-variable (G : InternalGrading R V) (H : InternalGrading R W)
+variable (G : InternalGrading R V ℤ) (H : InternalGrading R W ℤ)
 variable (dV : SignedSym G →ₗ[R] SignedSym G) (dW : SignedSym H →ₗ[R] SignedSym H)
 
 /-- The differential on `A(V × W)`, transported from the Koszul tensor differential.
@@ -148,28 +148,28 @@ theorem prodDifferential_inl_mul_inr {p : ℤ} {a : SignedSym G}
     ofProd_inl, ofProd_inr, GradedTensorProduct.tmul_one_mul_one_tmul]
   exact dgTensorDifferential_tmul_of_mem ha b
 
-/-- The inclusion of the left orbit algebra is a DG algebra map. -/
+/-- The DG algebra map `A(V) → A(V × W)` induced by the first factor inclusion. -/
 noncomputable def dgInl (hV : IsDGAlgebra (signedSymPiece G) dV)
     (hW : IsDGAlgebra (signedSymPiece H) dW) :
     DGAlgHom hV (isDGAlgebra_prodDifferential hV hW) where
   toGradedAlgHom := inl G H
   map_d' a := prodDifferential_inl hW.map_one_eq_zero a
 
-/-- The inclusion of the right orbit algebra is a DG algebra map. -/
+/-- The DG algebra map `A(W) → A(V × W)` induced by the second factor inclusion. -/
 noncomputable def dgInr (hV : IsDGAlgebra (signedSymPiece G) dV)
     (hW : IsDGAlgebra (signedSymPiece H) dW) :
     DGAlgHom hW (isDGAlgebra_prodDifferential hV hW) where
   toGradedAlgHom := inr G H
   map_d' b := prodDifferential_inr hV.map_one_eq_zero b
 
-/-- The disjoint-union comparison, as a DG algebra map. -/
+/-- The DG algebra map `A(V × W) → A(V) ᵍ⊗ A(W)` lifting `ofProd`. -/
 noncomputable def dgOfProd (hV : IsDGAlgebra (signedSymPiece G) dV)
     (hW : IsDGAlgebra (signedSymPiece H) dW) :
     DGAlgHom (isDGAlgebra_prodDifferential hV hW) (isDGAlgebra_gradedTensorGrading hV hW) where
   toGradedAlgHom := ofProd G H
   map_d' a := (ofProd_prodDifferential G H dV dW a).symm
 
-/-- The inverse disjoint-union comparison, as a DG algebra map. -/
+/-- The inverse DG algebra map `A(V) ᵍ⊗ A(W) → A(V × W)` lifting `toProd`. -/
 noncomputable def dgToProd (hV : IsDGAlgebra (signedSymPiece G) dV)
     (hW : IsDGAlgebra (signedSymPiece H) dW) :
     DGAlgHom (isDGAlgebra_gradedTensorGrading hV hW) (isDGAlgebra_prodDifferential hV hW) where
