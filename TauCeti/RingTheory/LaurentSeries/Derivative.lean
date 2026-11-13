@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.HahnSeries.Derivation
 public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.LaurentSeries.Basic
+public import TauCeti.RingTheory.LaurentSeries.HasseDeriv
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.Algebra.Lie.TransferInstance
@@ -16,7 +17,7 @@ public import Mathlib.Algebra.Lie.TransferInstance
 # Differentiation of Laurent series
 
 This file bundles the coefficientwise formal derivative `D` of Laurent series as a derivation over
-any commutative ring, using the Leibniz rule from `LaurentSeries.Basic`. The bundle allows the
+any commutative ring, using the Leibniz rule from `LaurentSeries.HasseDeriv`. The bundle allows the
 universal property of Kähler differentials to compare it with differentiation of algebraic
 functions in a local parameter. Laurent derivations carry the commutator Lie algebra structure
 over the coefficient ring, with `[aD, bD] = (a Db - b Da)D` over any commutative ring.

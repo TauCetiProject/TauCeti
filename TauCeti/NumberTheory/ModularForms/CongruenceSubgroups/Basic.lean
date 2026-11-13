@@ -376,6 +376,15 @@ theorem Gamma1_map_le_Gamma1_map_of_dvd {M N : ℕ} (h : M ∣ N) :
     (Gamma1 N).map (mapGL ℝ) ≤ (Gamma1 M).map (mapGL ℝ) :=
   Subgroup.map_mono (Gamma1_le_Gamma1_of_dvd h)
 
+/-- The index of a subgroup of `SL(2, ℤ)` equals the number of cosets of its real matrix
+image in `𝒮ℒ`. -/
+theorem _root_.Subgroup.card_quotient_mapGL_eq_index (Γ : Subgroup SL(2, ℤ)) :
+    Nat.card (𝒮ℒ ⧸ (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) = Γ.index := by
+  rw [← Subgroup.index_eq_card, ← Subgroup.relIndex,
+    MonoidHom.range_eq_map (Matrix.SpecialLinearGroup.mapGL ℝ), ← Subgroup.relIndex_comap,
+    Subgroup.comap_map_eq_self_of_injective Matrix.SpecialLinearGroup.mapGL_injective,
+    Subgroup.relIndex_top_right]
+
 /-- A finite-index subgroup of `SL(2, ℤ)` has finite index in every subgroup of `SL(2, ℤ)` after
 mapping to `GL₂(ℝ)`, so the trace between the two images is defined. This covers, for instance,
 `Γ(N)` in `Γ₁(N)` and `Γ₁(N)` in `Γ₀(N)`. -/
