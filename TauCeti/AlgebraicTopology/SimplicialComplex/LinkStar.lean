@@ -224,6 +224,12 @@ theorem closedStar_empty : closedStar K ∅ = K := by
   refine SetLike.ext fun ρ => ?_
   simp only [mem_closedStar, union_empty, and_self]
 
+/-- Taking the closed star of a face again does not change its closed star. -/
+@[simp]
+theorem closedStar_closedStar : closedStar (closedStar K σ) σ = closedStar K σ := by
+  refine SetLike.ext fun ρ => ?_
+  simp [mem_closedStar]
+
 /-- The link at the empty simplex is the whole complex. -/
 @[simp]
 theorem link_empty : link K ∅ = K := by

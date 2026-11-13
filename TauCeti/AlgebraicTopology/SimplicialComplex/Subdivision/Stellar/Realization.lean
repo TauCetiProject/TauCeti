@@ -101,6 +101,29 @@ private theorem exists_zero_coordinate {x : ι →₀ ℝ} (hvσ : v ∉ σ)
   obtain ⟨i, hi, hix⟩ := exists_notMem_of_mem_stellarSubdivision hvσ hx
   exact ⟨i, hi, Finsupp.notMem_support_iff.mp hix⟩
 
+/-- The barycentric stellar map sends a point into the open star of the starred face exactly
+when its coordinate at the new vertex is positive. Normalization of the coordinates is not
+needed. -/
+theorem subset_support_stellarSubdivisionLinearMap_iff {x : ι →₀ ℝ} (hvσ : v ∉ σ)
+    (hxpos : ∀ i, 0 ≤ x i) (hxface : x.support ∈ stellarSubdivision K σ v) :
+    σ ⊆ (stellarSubdivisionLinearMap σ v x).support ↔ 0 < x v := by
+  obtain ⟨a, ha, hxa⟩ := exists_zero_coordinate hvσ hxface
+  have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by
+    exact_mod_cast Finset.card_pos.mpr ⟨a, ha⟩)
+  have hcoord (i : ι) (hi : i ∈ σ) :
+      stellarSubdivisionLinearMap σ v x i = x i + x v * (σ.card : ℝ)⁻¹ := by
+    have hiv : i ≠ v := fun h => hvσ (h ▸ hi)
+    simp [stellarSubdivisionLinearMap_apply, hi, hiv]
+  constructor
+  · intro h
+    have hne := Finsupp.mem_support_iff.mp (h ha)
+    rw [hcoord a ha, hxa, zero_add] at hne
+    exact lt_of_le_of_ne (hxpos v) (fun hzero => hne (by simp [← hzero]))
+  · intro h i hi
+    apply Finsupp.mem_support_iff.mpr
+    rw [hcoord i hi]
+    exact (add_pos_of_nonneg_of_pos (hxpos i) (mul_pos h hc)).ne'
+
 /-- The barycentric map sends the stellar polyhedron into the original polyhedron. -/
 theorem mapsTo_stellarSubdivisionLinearMap :
     MapsTo (stellarSubdivisionLinearMap σ v)
