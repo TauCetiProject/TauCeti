@@ -73,6 +73,11 @@ injective. For `n = 0` this always holds. -/
 def HasProjectiveInjectiveCoresolution (X : C) (n : ℕ) : Prop :=
   HasCoresolution (fun Y ↦ Projective Y ∧ Injective Y) X n
 
+theorem hasProjectiveInjectiveCoresolution_iff_hasCoresolution {X : C} {n : ℕ} :
+    HasProjectiveInjectiveCoresolution X n ↔
+      HasCoresolution (fun Y ↦ Projective Y ∧ Injective Y) X n :=
+  Iff.rfl
+
 theorem hasProjectiveInjectiveCoresolution_iff {X : C} {n : ℕ} :
     HasProjectiveInjectiveCoresolution X n ↔ ∃ S : ComposableArrows C (n + 1),
       S.IsCoresolution ∧ Nonempty (S.obj' 1 ≅ X) ∧
