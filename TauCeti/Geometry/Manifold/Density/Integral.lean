@@ -516,9 +516,6 @@ section TopForm
 
 variable [IsManifold I 1 M]
 
-private theorem abs_intCast_units (u : ℤˣ) : |((u : ℤ) : ℝ)| = 1 := by
-  rcases Int.units_eq_one_or u with h | h <;> simp [h]
-
 /-- In a preferred chart, the coefficient of the density of a top form is its signed coefficient
 against an orientation lift, weighted by the relative sign of the model basis. -/
 theorem RoughForm.toDensity_inChartAt (l : Manifold.OrientationLift I M (Fin m))
@@ -541,29 +538,15 @@ theorem RoughForm.toDensity_inChartAt (l : Manifold.OrientationLift I M (Fin m))
       exact_mod_cast Int.isUnit_mul_self (l.signAt x x).isUnit
     have habs : |D.toLinearMap.det| = (l.signAt α x : ℝ) * (l.signAt x x : ℝ) *
         D.toLinearMap.det := by
-      rw [← abs_of_pos hD, abs_mul, abs_mul, abs_intCast_units, abs_intCast_units, one_mul, one_mul]
+      rw [← abs_of_pos hD, abs_mul, abs_mul, abs_unit_intCast, abs_unit_intCast, one_mul, one_mul]
     -- The value of the density at `x` on the model basis.
     have hval : (φ.toDensity (Manifold.Orientation.mk l)) x b =
         (Orientation.signBasis l.modelOrientation b : ℝ) * l.signAt x x * φ x b := by
       have hs := congrArg (fun u : ℤˣ ↦ ((u : ℤ) : ℝ)) (l.signBasis_orientationAt b x)
       simp only [Units.val_mul, Int.cast_mul] at hs
       rw [← hs]
-      let c : Basis (Fin m) ℝ (TangentSpace I x) := b
-      rcases c.orientation_eq_or_eq_neg (l.orientationAt x) with h | h
-      · have hc := Orientation.signBasis_orientation c
-        rw [← h] at hc
-        rw [show (l.orientationAt x).signBasis b = 1 from hc, Units.val_one, Int.cast_one, one_mul]
-        exact φ.toDensity_apply_of_orientation_eq (b := c)
-          (by rw [Manifold.Orientation.orientationAt_mk, h])
-      · classical
-        have hs : (l.orientationAt x).signBasis c = -1 := by
-          rw [h, Orientation.signBasis_neg, Orientation.signBasis_orientation]
-        have hne : c.orientation ≠ (Manifold.Orientation.mk l).orientationAt x := by
-          rw [Manifold.Orientation.orientationAt_mk, h]
-          exact Module.Ray.ne_neg_self _
-        rw [show (l.orientationAt x).signBasis b = -1 from hs,
-          Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul]
-        exact (φ.toDensity_apply _ x c).trans (ite_eq_right hne)
+      exact (φ.toDensity_apply_basis _ x b).trans
+        (by rw [Manifold.Orientation.orientationAt_mk]; rfl)
     -- The form coefficient changes to the chart at `x` with the signed determinant.
     have hcoef := φ.inChartAt_apply_basis_eq_det_mul b ((extChartAt I α).map_source hx)
       (x := x) (by rw [(extChartAt I α).left_inv hx]; exact mem_extChartAt_source x)
@@ -613,7 +596,7 @@ theorem integrableDensity_toDensity_iff (o : Manifold.Orientation I M (Fin m))
         φ.signedInChartAt b α (fun x ↦ l.signAt α x) y :=
     funext (RoughForm.toDensity_inChartAt l φ b α)
   have hu : IsUnit ((Orientation.signBasis l.modelOrientation b : ℤ) : ℝ) :=
-    isUnit_iff_ne_zero.mpr (abs_pos.mp (by rw [abs_intCast_units]; exact one_pos))
+    isUnit_iff_ne_zero.mpr (abs_pos.mp (by rw [abs_unit_intCast]; exact one_pos))
   rw [heq, integrable_const_mul_iff hu]
   apply φ.integrable_signedInChartAt_iff_unsigned b α (fun x ↦ l.signAt α x) ?_ b.addHaar
   apply continuousOn_iff_continuous_domRestrict.mp

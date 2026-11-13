@@ -55,6 +55,14 @@ def toDensity (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m)) 
   haveI := o.fact_finrank_tangentSpace x
   (φ x).toAlternatingMap.toDensity (o.orientationAt x)
 
+/-- The density of a top form on a basis of a tangent space is the value of the form, weighted by
+the sign of the basis relative to the tangent orientation. -/
+theorem toDensity_apply_basis (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m))
+    (x : M) (b : Basis (Fin m) ℝ (TangentSpace I x)) :
+    φ.toDensity o x b = ((o.orientationAt x).signBasis b : ℝ) * φ x b :=
+  have := o.fact_finrank_tangentSpace x
+  AlternatingMap.toDensity_apply_basis (φ x).toAlternatingMap (o.orientationAt x) b
+
 /-- The density of a top form on a basis of a tangent space: the value of the form, negated
 when the basis is negatively oriented. -/
 theorem toDensity_apply (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m)) (x : M)
