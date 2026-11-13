@@ -206,7 +206,7 @@ theorem hasLaw_finsetSum_nat_count_sub [∀ i : I, IsLocallyFiniteMeasure (Λs i
 /-- A finite sum of independent homogeneous Poisson count processes has Poisson increments
 with rate the sum of the selected rates. Zero rates, equal endpoints and the empty family
 are included. -/
-theorem hasLaw_finsetSum_nat_count_sub_poissonMeasure {rs : ι → ℝ≥0}
+theorem hasLaw_finsetSum_nat_count_sub_smul_nnvolume {rs : ι → ℝ≥0}
     (h : ∀ i ∈ I, IsPoissonRandomMeasure P (N i) ((rs i : ℝ≥0∞) • nnvolume))
     (hind : iIndepFun (fun i : I => N i) P) {s t : ℝ≥0} (hst : s ≤ t) :
     HasLaw (fun ω => (∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊) -
