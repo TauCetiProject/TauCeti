@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LeftInverse
+public import TauCeti.Analysis.InnerProductSpace.Gram.LeftInverse
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
@@ -27,10 +27,10 @@ complete: the formula is applied after embedding `V` into its completion.
 
 ## Main results
 
-* `ContinuousLinearMap.isUnit_adjoint_comp_self_iff`: the Gram operator of an operator out of a
-  finite-dimensional space is invertible exactly when the operator is injective.
-* `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
-  projection onto the range of `B`.
+* `ContinuousLinearMap.starProjection_range_eq`: the formula `B ∘L gramLeftInverse B` for the
+  orthogonal projection onto the range of `B`.
+* `ContinuousLinearMap.sub_apply_gramLeftInverse_eq_starProjection_orthogonal_range`: subtracting
+  the Gram component gives the projection onto the orthogonal complement of the range.
 * `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
   `B B†`.
 * `LinearMap.finrank_orthogonal_range_of_injective`: the dimension of the orthogonal
@@ -59,45 +59,31 @@ section Adjoint
 
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [CompleteSpace V]
 
-/-- The orthogonal projection onto the range of `B` is `B (B† B)⁻¹ B†`, when the Gram operator
-`B† B` is invertible. -/
+/-- When `B† B` is invertible, the orthogonal projection onto the range of `B` is
+`B ∘L gramLeftInverse B`. -/
 theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProjection]
     (hB : IsUnit (adjoint B ∘L B)) :
     B.range.starProjection = B ∘L gramLeftInverse B := by
-  rw [gramLeftInverse_def, ← comp_assoc]
   ext v
-  refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero (LinearMap.mem_range_self _ _) ?_
-  rintro _ ⟨x, rfl⟩
-  -- Move `B` across the inner product: `B† (v - B (B† B)⁻¹ B† v) = 0`.
-  rw [coe_coe, ← adjoint_inner_left, map_sub]
-  simp [← comp_apply (adjoint B), ← mul_apply_eq_comp, Ring.mul_inverse_cancel _ hB]
+  exact Submodule.eq_starProjection_of_mem_orthogonal (LinearMap.mem_range_self _ _)
+    (sub_apply_gramLeftInverse_mem_orthogonal_range hB v)
 
 /-- For an isometry `B`, the operator `B B†` is the orthogonal projection onto the range of `B`. -/
 theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
     [B.range.HasOrthogonalProjection] : B ∘L adjoint B = B.range.starProjection := by
-  have h := (isometry_iff_adjoint_comp_self B).1 hB
-  rw [starProjection_range_eq (h ▸ isUnit_one), gramLeftInverse_def, h,
-    Ring.inverse_one, one_def, id_comp]
+  rw [starProjection_range_eq ((isometry_iff_adjoint_comp_self B).mp hB ▸ isUnit_one),
+    gramLeftInverse_of_isometry hB]
 
-/-- Subtracting the Gram tangent component gives the orthogonal normal projection. -/
-theorem sub_apply_gramLeftInverse_eq_starProjection_orthogonal {B : F →L[𝕜] V}
-    [B.range.HasOrthogonalProjection] (hB : IsUnit (adjoint B ∘L B)) (v : V) :
+/-- When `B† B` is invertible, `v - B (gramLeftInverse B v)` is the orthogonal projection of `v`
+onto `B.rangeᗮ`, the orthogonal complement of the range of `B`. -/
+theorem sub_apply_gramLeftInverse_eq_starProjection_orthogonal_range {B : F →L[𝕜] V}
+    (hB : IsUnit (adjoint B ∘L B)) (v : V) :
     v - B (gramLeftInverse B v) = B.rangeᗮ.starProjection v := by
-  rw [Submodule.starProjection_orthogonal', starProjection_range_eq hB]
-  simp only [sub_apply, one_apply_eq_self, comp_apply]
-
-/-- A left inverse that vanishes on the normal space is the Gram left inverse. -/
-theorem eq_gramLeftInverse {B : F →L[𝕜] V} [B.range.HasOrthogonalProjection]
-    (hB : IsUnit (adjoint B ∘L B)) {L : V →L[𝕜] F} (hL : L ∘L B = .id 𝕜 F)
-    (horth : ∀ v ∈ B.rangeᗮ, L v = 0) : L = gramLeftInverse B := by
-  ext v
-  have hnormal : v - B (gramLeftInverse B v) ∈ B.rangeᗮ := by
-    rw [sub_apply_gramLeftInverse_eq_starProjection_orthogonal hB]
-    exact Submodule.starProjection_apply_mem _ _
-  have h := horth _ hnormal
-  have hcancel := DFunLike.congr_fun hL (gramLeftInverse B v)
-  simp only [comp_apply, id_apply] at hcancel
-  simpa only [map_sub, hcancel, sub_eq_zero] using h
+  symm
+  apply Submodule.eq_starProjection_of_mem_orthogonal
+    (sub_apply_gramLeftInverse_mem_orthogonal_range hB v)
+  simpa only [sub_sub_cancel, coe_coe] using
+    B.range.le_orthogonal_orthogonal (LinearMap.mem_range_self _ (gramLeftInverse B v))
 
 end Adjoint
 
