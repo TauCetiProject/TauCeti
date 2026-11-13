@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Cycle.Coefficients
-public import TauCeti.Combinatorics.Graph.Serre.Cycle.SpanningTree
 public import TauCeti.Combinatorics.Graph.Serre.Path.SpanningTree
 public import TauCeti.Combinatorics.Quiver.PathWeight
 public import Mathlib.GroupTheory.Abelianization.Defs
@@ -28,10 +27,10 @@ with the integral cycle lattice. The inverse uses a spanning tree `T`: a chain `
 product of the tree loops through its darts, whose cycle class is `c` minus the tree paths to
 the vertices of the boundary of `c`, hence `c` itself when `c` is a cycle. The cycle class of
 the tree loop through a positive dart outside `T` is a fundamental cycle: among the positive
-darts outside `T` it has coordinate one at that dart and zero elsewhere. Since the positive darts
-of `T` form a spanning forest, it is the fundamental cycle of that dart in the forest basis of
-the cycle module, over every coefficient ring; so the isomorphism matches the classes of the tree
-loops with the integral forest basis.
+darts outside `T` it has coordinate one at that dart and zero elsewhere. So it is the
+fundamental cycle of that dart in the basis of the cycle module given by `T`, over every
+coefficient ring, and the isomorphism matches the classes of the tree loops with the integral
+fundamental cycles.
 
 ## Main definitions
 
@@ -48,7 +47,7 @@ loops with the integral forest basis.
 * `TauCeti.SerreGraph.SpanningTree.cycleChordCoordinates_cycleClass_loop`: tree loops have unit
   coordinates outside the tree.
 * `TauCeti.SerreGraph.SpanningTree.cycleClass_loop`: the cycle class of a tree loop is the
-  fundamental cycle of its dart for the spanning forest of positive tree darts.
+  fundamental cycle of its dart.
 * `TauCeti.SerreGraph.PathGroup.cycleBaseChangeEquiv_tmul_cycleClass`: extension of scalars
   carries integral cycle classes to cycle classes.
 
@@ -259,7 +258,7 @@ theorem coe_cycleClass_loop_apply_of_notMem (hO : Γ.IsOrientation O) (e : Γ.E)
 /-- The cycle class of the tree loop through a positive dart outside the tree is a fundamental
 cycle: its coordinates at the positive darts outside the tree form the unit vector of that
 dart. -/
-@[simp] theorem cycleChordCoordinates_cycleClass_loop (hO : Γ.IsOrientation O)
+theorem cycleChordCoordinates_cycleClass_loop (hO : Γ.IsOrientation O)
     (e : ↥(O \ T.darts)) :
     Γ.cycleChordCoordinates O T.darts R (PathGroup.cycleClass hO R (T.loop v e.1)).toAdd =
       Finsupp.single e 1 := by
@@ -270,15 +269,13 @@ dart. -/
   simp [Finsupp.single_apply, Subtype.ext_iff]
 
 /-- The cycle class of the tree loop through a positive dart outside the tree is the fundamental
-cycle of that dart for the spanning forest of positive tree darts. -/
-@[simp] theorem cycleClass_loop (hO : Γ.IsOrientation O) (e : ↥(O \ (T.darts ∩ O))) :
-    PathGroup.cycleClass hO R (T.loop v e.1) = .ofAdd ((T.isSpanningForest hO).cycleBasis R e) := by
-  classical
+cycle of that dart. -/
+@[simp] theorem cycleClass_loop (hO : Γ.IsOrientation O) (e : ↥(O \ T.darts)) :
+    PathGroup.cycleClass hO R (T.loop v e.1) = .ofAdd (T.cycleBasis hO R e) := by
   apply Multiplicative.toAdd.injective
-  apply (T.isSpanningForest hO).cycleChordCoordinates_injective
+  apply (T.cycleBasis hO R).repr.injective
   ext f
-  simp [T.coe_cycleClass_loop_apply_of_notMem R v hO _ (f := ⟨f.1, f.2.1⟩)
-    fun h => f.2.2 ⟨h, f.2.1⟩, dartChain_of_mem R hO e.2.1, Finsupp.single_apply, Subtype.ext_iff]
+  simpa using DFunLike.congr_fun (T.cycleChordCoordinates_cycleClass_loop R v hO e) f
 
 /-- The class in the abelianized path group of the product of tree loops prescribed by an
 integral chain. -/
@@ -366,8 +363,8 @@ not depend on the spanning tree. -/
 /-- The inverse isomorphism sends the integral fundamental cycle of a positive dart outside the
 tree to the class of its tree loop. -/
 @[simp] theorem abelianizationEquivCycle_symm_cycleBasis (hO : Γ.IsOrientation O)
-    (e : ↥(O \ (T.darts ∩ O))) :
-    (T.abelianizationEquivCycle v hO).symm ((T.isSpanningForest hO).cycleBasis ℤ e) =
+    (e : ↥(O \ T.darts)) :
+    (T.abelianizationEquivCycle v hO).symm (T.cycleBasis hO ℤ e) =
       Additive.ofMul (Group.Abelianization.of (T.loop v e.1)) := by
   simpa using T.abelianizationEquivCycle_symm_cycleClass v hO (T.loop v e.1)
 

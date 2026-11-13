@@ -5,18 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Cycle.Forest
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.Basis
 public import TauCeti.Combinatorics.Graph.Serre.SpanningTree
 
 /-!
-# Spanning trees as spanning forests, and the edge count of a finite tree
+# Spanning trees as spanning forests: fundamental cycles and the edge count of a finite tree
 
 Let `T` be a spanning tree and `O` an orientation of `Γ`. Deleting a dart of `T` together with
 its reverse separates its endpoints, so the simple support of `T` is a tree, and the positive
-darts of `T` form a spanning forest of `O`. Counting gives the edge count of a finite tree: a
-spanning tree of a graph with finitely many vertices has one positive dart fewer than there are
-vertices. Hence a connected graph with finitely many positive darts, which then has finitely
-many vertices, has `#O + 1 - #V` positive darts outside a spanning tree.
+darts of `T` form a spanning forest of `O`. Its fundamental cycles, indexed by the positive darts
+outside `T`, form a basis of the cycle module over any ring: the cycle of such a dart has
+coordinate one at that dart and zero at the other positive darts outside `T`. Counting gives the
+edge count of a finite tree: a spanning tree of a graph with finitely many vertices has one
+positive dart fewer than there are vertices. Hence a connected graph with finitely many positive
+darts, which then has finitely many vertices, has `#O + 1 - #V` positive darts outside a spanning
+tree.
 
 ## Main results
 
@@ -24,6 +27,8 @@ many vertices, has `#O + 1 - #V` positive darts outside a spanning tree.
   is a tree.
 * `TauCeti.SerreGraph.SpanningTree.isSpanningForest`: the positive darts of a spanning tree
   form a spanning forest of the orientation.
+* `TauCeti.SerreGraph.SpanningTree.cycleBasis`: the fundamental cycle basis of a spanning tree,
+  indexed by the positive darts outside the tree.
 * `TauCeti.SerreGraph.SpanningTree.card_inter_add_one`: a spanning tree has `#V - 1` positive
   darts.
 * `TauCeti.SerreGraph.SpanningTree.card_diff_add_card`: the number of positive darts outside a
@@ -33,6 +38,7 @@ many vertices, has `#O + 1 - #V` positive darts outside a spanning tree.
 
 * J.-P. Serre, *Trees*, Chapter I, §2.3.
 * I. Kapovich, A. Myasnikov, *Stallings foldings and subgroups of free groups*, §8, Lemma 8.2.
+* R. Diestel, *Graph Theory*, §1.9 (fundamental cycle bases).
 -/
 
 public section
@@ -111,6 +117,45 @@ theorem isSpanningForest : Γ.IsSpanningForest O (T.darts ∩ O) where
     ext a b
     exact iff_of_true (T.reachable_supportGraph a b)
       (hO.reachable_supportGraph_iff.mpr ⟨T.path a b⟩)
+
+section CycleBasis
+
+variable (R : Type*) [Ring R]
+
+/-- The fundamental cycle basis of a spanning tree: the basis of the cycle module over `R` indexed
+by the positive darts outside the tree, whose cycle through such a dart has coordinate one at that
+dart and zero at the other positive darts outside the tree. -/
+noncomputable def cycleBasis : Module.Basis ↥(O \ T.darts) R (Γ.incidenceBoundary O R).ker :=
+  ((T.isSpanningForest hO).cycleBasis R).reindex (Set.equivOfEq Set.sdiff_inter_self_eq_sdiff)
+
+/-- The fundamental cycle of a positive dart outside the tree is its fundamental cycle for the
+spanning forest of positive tree darts. -/
+theorem cycleBasis_apply (e : ↥(O \ T.darts)) :
+    T.cycleBasis hO R e =
+      (T.isSpanningForest hO).cycleBasis R ⟨e.1, e.2.1, fun h => e.2.2 h.1⟩ := by
+  simp [cycleBasis]
+
+/-- The coefficient of the fundamental cycle of a positive dart outside the tree in a cycle is the
+coordinate of the cycle at that dart. -/
+@[simp] theorem cycleBasis_repr (c : (Γ.incidenceBoundary O R).ker) (e : ↥(O \ T.darts)) :
+    (T.cycleBasis hO R).repr c e = c.val ⟨e.1, e.2.1⟩ := by
+  simp [cycleBasis]
+
+/-- The fundamental cycles of the tree have unit coordinates at the positive darts outside the
+tree. -/
+@[simp] theorem cycleBasis_apply_chord (e f : ↥(O \ T.darts)) :
+    (T.cycleBasis hO R e).val ⟨f.1, f.2.1⟩ = Finsupp.single e (1 : R) f := by
+  rw [← T.cycleBasis_repr hO]
+  simp
+
+/-- The coordinates of a fundamental cycle of the tree at the positive darts outside the tree form
+the unit vector of its dart. -/
+@[simp] theorem cycleChordCoordinates_cycleBasis (e : ↥(O \ T.darts)) :
+    Γ.cycleChordCoordinates O T.darts R (T.cycleBasis hO R e) = Finsupp.single e 1 := by
+  ext f
+  simp
+
+end CycleBasis
 
 /-- A spanning tree of a graph with finitely many vertices has one positive dart fewer than
 there are vertices. -/

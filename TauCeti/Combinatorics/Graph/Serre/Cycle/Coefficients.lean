@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Cycle.Basis
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.SpanningTree
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -17,10 +17,11 @@ scalars. The comparison sends a pure tensor `r ⊗ c` to the chain with coeffici
 two with the binary cycle space, not merely with an abstract vector space of the same rank.
 
 Spanning-forest bases prove the comparison is bijective. The coordinate formula shows that
-it is independent of the forest and carries integral fundamental cycles to the fundamental
-cycles over the new coefficient ring. No finiteness, connectedness or orientation assumption
-is needed; loops and parallel edges are retained. On a loop, the integral unit cycle reduces
-to the binary unit cycle on the same loop.
+it is independent of the forest and carries `r ⊗` an integral fundamental cycle, of a spanning
+forest or of a spanning tree, to `r` times the fundamental cycle over the new coefficient ring.
+The comparison needs no finiteness, connectedness or orientation assumption; loops and parallel
+edges are retained. On a loop, the integral unit cycle reduces to the binary unit cycle on the
+same loop.
 
 ## References
 
@@ -71,18 +72,22 @@ theorem cycleBaseChangeEquiv_tmul_eq (r : R) (c : (Γ.incidenceBoundary O ℤ).k
     (Γ.cycleBaseChangeEquiv O R (r ⊗ₜ[ℤ] c)).val e = r * (c.val e : R) := by
   simp [cycleBaseChangeEquiv_tmul_eq]
 
-/-- An integral fundamental cycle becomes the fundamental cycle on the same chord after
-extension of scalars. This also expresses compatibility with any choice of spanning forest. -/
-@[simp] theorem IsSpanningForest.cycleBaseChangeEquiv_one_tmul_cycleBasis
-    (hF : Γ.IsSpanningForest O F) (e : ↥(O \ F)) :
-    Γ.cycleBaseChangeEquiv O R (1 ⊗ₜ[ℤ] hF.cycleBasis ℤ e) =
-      hF.cycleBasis R e := by
-  classical
+/-- Extension of scalars sends `r ⊗` an integral fundamental cycle to `r` times the fundamental
+cycle on the same chord; for `r = 1`, the integral fundamental cycle becomes the fundamental cycle.
+This also expresses compatibility with any choice of spanning forest. -/
+@[simp] theorem IsSpanningForest.cycleBaseChangeEquiv_tmul_cycleBasis
+    (hF : Γ.IsSpanningForest O F) (r : R) (e : ↥(O \ F)) :
+    Γ.cycleBaseChangeEquiv O R (r ⊗ₜ[ℤ] hF.cycleBasis ℤ e) = r • hF.cycleBasis R e := by
   apply hF.cycleChordCoordinates_injective
   ext f
-  simp only [cycleChordCoordinates_apply, cycleBaseChangeEquiv_tmul,
-    one_mul, IsSpanningForest.cycleBasis_apply_chord]
-  simp [Finsupp.single_apply]
+  by_cases h : e = f <;> simp [h]
+
+/-- Extension of scalars sends `r ⊗` an integral fundamental cycle of a spanning tree to `r` times
+its fundamental cycle over `R`. -/
+@[simp] theorem SpanningTree.cycleBaseChangeEquiv_tmul_cycleBasis (T : Γ.SpanningTree)
+    (hO : Γ.IsOrientation O) (r : R) (e : ↥(O \ T.darts)) :
+    Γ.cycleBaseChangeEquiv O R (r ⊗ₜ[ℤ] T.cycleBasis hO ℤ e) = r • T.cycleBasis hO R e := by
+  simp [SpanningTree.cycleBasis_apply]
 
 /-- Integral cycles modulo two are the binary cycle space, with edgewise coefficient
 reduction rather than an unspecified vector-space isomorphism. The named integral and binary
