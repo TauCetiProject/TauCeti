@@ -209,7 +209,7 @@ private theorem Wkp.exists_norm_le_of_hasWeakLineDerivOn (v : E) :
   | 0 => by
     refine ⟨‖innerSL ℝ v‖₊, fun w d h => ?_⟩
     rw [Wkp.eq_of_hasWeakLineDerivOn h (Wkp.hasWeakLineDerivOn_value_innerSL_compLp v w),
-      coe_nnnorm]
+      coe_nnNorm]
     exact ((innerSL ℝ v).norm_compLp_le _).trans
       (mul_le_mul_of_nonneg_left (Wkp.norm_iteratedGradient_le 0 w) (norm_nonneg _))
   | k + 1 => by

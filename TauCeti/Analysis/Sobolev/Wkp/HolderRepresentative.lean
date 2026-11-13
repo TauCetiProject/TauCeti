@@ -160,7 +160,7 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL {Ω
           ≤ ∑ l, ‖A l‖ * (K * ‖D l‖ * ‖u‖) := Finset.sum_le_sum fun l _ =>
             ((A l).norm_compContinuousMultilinearMap_le _).trans
               (mul_le_mul_of_nonneg_left (hGn i hi l x hx) (norm_nonneg _))
-        _ = c * ‖u‖ := by simp only [c, NNReal.coe_sum, NNReal.coe_mul, coe_nnnorm,
+        _ = c * ‖u‖ := by simp only [c, NNReal.coe_sum, NNReal.coe_mul, coe_nnNorm,
               Finset.sum_mul, mul_assoc]
         _ ≤ max ‖T‖₊ c * ‖u‖ := mul_le_mul_of_nonneg_right
           (by exact_mod_cast le_max_right _ _) (norm_nonneg u)
@@ -173,11 +173,11 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL {Ω
               (mul_le_mul_of_nonneg_left (by
                 rw [← dist_eq_norm]
                 refine ((hGb l i hi).2.dist_le hx hy).trans ?_
-                rw [NNReal.coe_mul, coe_nnnorm, mul_assoc (K : ℝ) ‖D l‖]
+                rw [NNReal.coe_mul, coe_nnNorm, mul_assoc (K : ℝ) ‖D l‖]
                 gcongr
                 exact (D l).le_opNorm u) (norm_nonneg _))
         _ = c * ‖u‖ * dist x y ^ (α : ℝ) := by
-          simp only [c, NNReal.coe_sum, NNReal.coe_mul, coe_nnnorm, Finset.sum_mul, mul_assoc]
+          simp only [c, NNReal.coe_sum, NNReal.coe_mul, coe_nnNorm, Finset.sum_mul, mul_assoc]
         _ ≤ ↑(max ‖T‖₊ c * ‖u‖₊) * dist x y ^ (α : ℝ) := by
           push_cast
           gcongr
