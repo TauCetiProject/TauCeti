@@ -69,17 +69,14 @@ theorem finiteEulerSum_add (f g : ℤ → G) (s : Finset ℤ) :
     finiteEulerSum (fun n ↦ f n + g n) s = finiteEulerSum f s + finiteEulerSum g s := by
   simp only [finiteEulerSum, smul_add, Finset.sum_add_distrib]
 
-/-- Two finite sets supporting the same family compute the same Euler sum. -/
+/-- Two finite sets compute the same Euler sum of a family that vanishes in every degree lying in
+only one of them; for instance, when both sets contain the support of the family. -/
 theorem finiteEulerSum_eq_of_eq_zero (f : ℤ → G) {s t : Finset ℤ}
-    (hs : ∀ n, n ∉ s → f n = 0) (ht : ∀ n, n ∉ t → f n = 0) :
+    (hs : ∀ n ∈ t, n ∉ s → f n = 0) (ht : ∀ n ∈ s, n ∉ t → f n = 0) :
     finiteEulerSum f s = finiteEulerSum f t := by
-  have hsu : finiteEulerSum f s = finiteEulerSum f (s ∪ t) :=
-    Finset.sum_subset Finset.subset_union_left fun n _ hn ↦ by
-      rw [hs n hn, smul_zero]
-  have htu : finiteEulerSum f t = finiteEulerSum f (s ∪ t) :=
-    Finset.sum_subset Finset.subset_union_right fun n _ hn ↦ by
-      rw [ht n hn, smul_zero]
-  rw [hsu, htu]
+  rw [finiteEulerSum_def, finiteEulerSum_def]
+  exact Finset.sum_congr_of_eq_on_inter (fun n hn hnt ↦ by rw [ht n hn hnt, smul_zero])
+    (fun n hn hns ↦ by rw [hs n hn hns, smul_zero]) fun _ _ _ ↦ rfl
 
 /-- Translating the grading by `m` multiplies its Euler sum by `(-1)ᵐ`. The set on the right is
 the corresponding translate of the finite summation range. -/
