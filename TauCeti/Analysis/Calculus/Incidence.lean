@@ -187,7 +187,7 @@ theorem isRegularIncidenceParameter_id {F : E × P → V} {p : P}
     IsRegularIncidenceParameter F (id : V → V) p := by
   apply isRegularIncidenceParameter_of_surjective_fderiv
     (fun x _ _ ↦ hF x) (fun _ y _ ↦ differentiableAt_id)
-  intro x y hxy
+  intro _ y _
   simpa using (Function.surjective_id : Surjective (id : V → V))
 
 end Regular
