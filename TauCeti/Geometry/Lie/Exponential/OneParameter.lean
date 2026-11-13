@@ -17,8 +17,9 @@ For an element `x` of a complete normed real algebra, `TauCeti.expUnitHom` bundl
 `t ↦ expUnit (t • x)` as a continuous one-parameter subgroup. This file records the smoothness
 and initial velocity of its underlying curve, and characterizes the subgroup by that velocity.
 
-This is the concrete Banach-algebra model for the one-parameter subgroups associated to a future
-abstract Lie-group exponential map.
+This is the concrete Banach-algebra model for the one-parameter subgroups of the abstract
+Lie-group exponential on `Rˣ`; `TauCeti.Geometry.Lie.Exponential.Units.Compatibility` identifies
+the two.
 
 ## Main results
 
@@ -37,11 +38,6 @@ abstract Lie-group exponential map.
   a trivial group exactly when its generator vanishes.
 * `TauCeti.existsUnique_eq_expUnitHom`: a continuous one-parameter subgroup of `Rˣ` whose
   underlying curve is differentiable at `0` is `expUnitHom x` for a unique `x : R`.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "One-parameter subgroups" and "The matrix and circle shadows".
 -/
 
 public section
