@@ -27,7 +27,7 @@ namespace Monoid.Coprod
 
 variable {M N : Type*} [Monoid M] [Monoid N]
 
-/-! The proof lets `M ∗ N` act on the set `M × N`: an element `a` of `M` multiplies on the left the
+/- The proof lets `M ∗ N` act on the set `M × N`: an element `a` of `M` multiplies on the left the
 first coordinate of the pairs whose second coordinate is `1` and fixes the other pairs, and
 symmetrically for `N`. On `(1, 1)`, `inl a * inr b` and `inr b * inl a` give `(1, b)` and `(a, 1)`
 when `a ≠ 1` and `b ≠ 1`. -/
