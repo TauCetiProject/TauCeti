@@ -180,10 +180,10 @@ private theorem ae_lintegral_enorm_le_of_cell {n : ℕ} {Y Z : Type*} [NormedAdd
       (fun _ ↦ (closedBall (latticePoint k) √n).indicator (fun _ ↦ (c : ℝ≥0∞)) y) x := by
     intro x y
     by_cases hK : K x y = 0
-    · rw [hK, enorm_eq_nnnorm, nnnorm_zero, ENNReal.coe_zero]
+    · rw [hK, eNorm_eq_nnNorm, nnNorm_zero, ENNReal.coe_zero]
       exact zero_le
     obtain ⟨hx, hy⟩ := hsupp x y hK
-    simpa [hx, hy, enorm_le_coe, ← NNReal.coe_le_coe] using hc x y
+    simpa [hx, hy, eNorm_le_coe, ← NNReal.coe_le_coe] using hc x y
   refine ⟨.of_forall fun x ↦ ?_, .of_forall fun y ↦ ?_⟩
   · refine (lintegral_enorm_row_le_of_le_indicator measurableSet_closedBall h x).trans_eq ?_
     rw [volume_closedBall_eq_cellVolume, ENNReal.coe_mul]

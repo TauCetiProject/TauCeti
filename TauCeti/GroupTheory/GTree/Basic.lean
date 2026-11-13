@@ -35,13 +35,16 @@ such actions.
   `T` dominates `T'` exactly when every vertex stabilizer of `T` is elliptic in `T'`. Two
   `G`-trees lie in the same deformation space when each dominates the other.
 
-A `G`-tree with at most one vertex has no darts, is minimal and relative to all families of
-subgroups, every subgroup is elliptic in it, and it is dominated by every `G`-tree; it dominates
-exactly the `G`-trees in which `G` fixes a vertex. The one-vertex `G`-tree is such a tree. The
-line, a `G`-tree for the infinite cyclic group, is in `TauCeti.GroupTheory.GTree.Line`. The
-automorphism of the segment exchanging its vertices inverts its edge
-(`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree exchanges the
-endpoints of a dart.
+A `G`-tree has at most one vertex exactly when it has no darts. Such a tree is minimal and
+relative to all families of subgroups, every subgroup is elliptic in it, and it is dominated by
+every `G`-tree; it dominates exactly the `G`-trees in which `G` fixes a vertex. The one-vertex
+`G`-tree is such a tree. In a `G`-tree with trivial vertex stabilizers only the trivial subgroup
+is elliptic, so such a tree is relative to every family containing the trivial subgroup and every
+family of trivial subgroups. The line, a `G`-tree for the infinite cyclic group, is in
+`TauCeti.GroupTheory.GTree.Line`, and the axis of a hyperbolic element is in
+`TauCeti.GroupTheory.GTree.Axis`. The automorphism of the segment exchanging its vertices inverts
+its edge (`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree
+exchanges the endpoints of a dart.
 
 ## Main declarations
 
@@ -112,6 +115,107 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 /-- Any two vertices of a `G`-tree are joined by a path. -/
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b
+
+section Translate
+
+variable {T}
+
+/-- The translate of a path by an element of the group: the path through the translates of its
+darts. -/
+def smulPath (g : G) {a b : T.V} (p : T.Path a b) : T.Path (g • a) (g • b) :=
+  (T.action g).smulPath p
+
+/-- The translate of a path by `g` is its translate by the automorphism by which `g` acts. -/
+theorem smulPath_def (g : G) {a b : T.V} (p : T.Path a b) :
+    smulPath g p = (T.action g).smulPath p := (rfl)
+
+/-- The translate of the empty path is empty. -/
+@[simp] theorem smulPath_nil (g : G) (a : T.V) :
+    smulPath g (Quiver.Path.nil : T.Path a a) = Quiver.Path.nil :=
+  Aut.smulPath_nil (T.action g) a
+
+/-- The translate of a path extended by a dart is the translate extended by the translated
+dart. -/
+@[simp] theorem smulPath_cons (g : G) {a b c : T.V} (p : T.Path a b) (e : Quiver.Hom b c) :
+    smulPath g (p.cons e) =
+      (smulPath g p).cons ⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :=
+  Aut.smulPath_cons (T.action g) p e
+
+/-- The translate of a one-dart path is the one-dart path through the translated dart. -/
+@[simp] theorem smulPath_toPath (g : G) {a b : T.V} (e : Quiver.Hom a b) :
+    smulPath g e.toPath =
+      Quiver.Hom.toPath (⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :
+        Quiver.Hom (g • a) (g • b)) :=
+  Aut.smulPath_toPath (T.action g) e
+
+/-- The translate of a concatenation is the concatenation of the translates. -/
+@[simp] theorem smulPath_comp (g : G) {a b c : T.V} (p : T.Path a b) (q : T.Path b c) :
+    smulPath g (p.comp q) = (smulPath g p).comp (smulPath g q) :=
+  Aut.smulPath_comp (T.action g) p q
+
+/-- The translate of a reversed path is the reverse of the translate. -/
+@[simp] theorem smulPath_reverse (g : G) {a b : T.V} (p : T.Path a b) :
+    smulPath g p.reverse = (smulPath g p).reverse :=
+  Aut.smulPath_reverse (T.action g) p
+
+/-- The translate of a path passes through the translates of its vertices. -/
+@[simp] theorem vertices_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    (smulPath g p).vertices = p.vertices.map (g • ·) :=
+  Aut.vertices_smulPath (T.action g) p
+
+/-- The identity translates every path to itself. -/
+theorem one_smulPath {a b : T.V} (p : T.Path a b) :
+    smulPath (1 : G) p = p.cast (one_smul G a).symm (one_smul G b).symm := by
+  rw [Quiver.Path.eq_cast_iff_heq]
+  exact (congr_arg_heq (fun φ : T.Aut => φ.smulPath p) (map_one T.action)).trans
+    (heq_of_eq (Aut.one_smulPath p))
+
+/-- Translating by a product is translating by each factor in turn. -/
+theorem mul_smulPath (g h : G) {a b : T.V} (p : T.Path a b) :
+    smulPath (g * h) p = (smulPath g (smulPath h p)).cast (mul_smul g h a).symm
+      (mul_smul g h b).symm := by
+  rw [Quiver.Path.eq_cast_iff_heq]
+  exact (congr_arg_heq (fun φ : T.Aut => φ.smulPath p) (map_mul T.action g h)).trans
+    (heq_of_eq (Aut.mul_smulPath _ _ p))
+
+/-- The translate of a path traverses the translates of its darts. -/
+@[simp] theorem darts_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    Path.darts T.toSerreGraph (smulPath g p) = (Path.darts T.toSerreGraph p).map (g • ·) :=
+  Aut.darts_smulPath (T.action g) p
+
+/-- The translate of a path is reduced exactly when the path is. -/
+@[simp] theorem isReduced_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    Path.IsReduced T.toSerreGraph (smulPath g p) ↔ Path.IsReduced T.toSerreGraph p :=
+  Aut.isReduced_smulPath (T.action g) p
+
+/-- The translate of a path has the same length as the path. -/
+@[simp] theorem length_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    (smulPath g p).length = p.length :=
+  Aut.length_smulPath (T.action g) p
+
+end Translate
+
+/-- The `n`-th power of an element moves a vertex by at most `n` times as much as the element. -/
+theorem dist_pow_smul_le (g : G) (v : T.V) (n : ℕ) :
+    T.dist v (g ^ n • v) ≤ n * T.dist v (g • v) := by
+  rw [smul_vertex_def, smul_vertex_def, map_pow]
+  exact Aut.dist_pow_smul_le (T.action g) (T.nonempty_path _ _) n
+
+/-- The `n`-th power of an element moves a vertex by at most `|n|` times as much as the
+element. -/
+theorem dist_zpow_smul_le (g : G) (v : T.V) (n : ℤ) :
+    T.dist v (g ^ n • v) ≤ n.natAbs * T.dist v (g • v) := by
+  rw [smul_vertex_def, smul_vertex_def, map_zpow]
+  exact Aut.dist_zpow_smul_le (T.action g) (T.nonempty_path _ _) n
+
+/-- A vertex `v` is moved by at most the displacement of another vertex `a` plus twice the
+distance between them. -/
+theorem dist_smul_le_dist_smul_add_two_mul_dist (g : G) (a v : T.V) :
+    T.dist v (g • v) ≤ T.dist a (g • a) + 2 * T.dist v a := by
+  have h₁ := dist_triangle (T.nonempty_path v a) (T.nonempty_path a (g • v))
+  have h₂ := dist_triangle (T.nonempty_path a (g • a)) (T.nonempty_path (g • a) (g • v))
+  rw [dist_smul, dist_comm a v] at h₂
+  omega
 
 instance : Nonempty T.V := ((connected_iff _).mp (IsTree.connected _ T.isTree)).1
 
@@ -191,10 +295,14 @@ theorem IsHyperbolic.ne_one {g : G} (hg : T.IsHyperbolic g) : g ≠ 1 := by
     T.IsEllipticSubgroup (Subgroup.zpowers g) ↔ T.IsElliptic g := by
   simp only [isEllipticSubgroup_iff, Subgroup.zpowers_le, mem_stabilizer_iff, isElliptic_iff]
 
-/-- The powers of an elliptic element are elliptic. -/
+/-- The integer powers of an elliptic element are elliptic. -/
 theorem IsElliptic.zpow {g : G} (hg : T.IsElliptic g) (n : ℤ) : T.IsElliptic (g ^ n) := by
   obtain ⟨v, hv⟩ := isEllipticSubgroup_zpowers_iff.mpr hg
   exact ⟨v, hv (Subgroup.zpow_mem_zpowers g n)⟩
+
+/-- The natural powers of an elliptic element are elliptic. -/
+theorem IsElliptic.pow {g : G} (hg : T.IsElliptic g) (n : ℕ) : T.IsElliptic (g ^ n) := by
+  simpa only [zpow_natCast] using hg.zpow n
 
 /-- Elements of an elliptic subgroup are elliptic. -/
 theorem IsEllipticSubgroup.isElliptic {H : Subgroup G} (hH : T.IsEllipticSubgroup H) {g : G}
@@ -240,6 +348,11 @@ variable (T) in
 /-- Dart stabilizers are elliptic. -/
 theorem isEllipticSubgroup_stabilizer_dart (e : T.E) : T.IsEllipticSubgroup (stabilizer G e) :=
   ⟨T.src e, T.stabilizer_dart_le_stabilizer_src e⟩
+
+/-- If the vertex stabilizers of a `G`-tree are trivial, only the trivial subgroup is elliptic. -/
+theorem isEllipticSubgroup_iff_eq_bot (h : ∀ v : T.V, stabilizer G v = ⊥) {H : Subgroup G} :
+    T.IsEllipticSubgroup H ↔ H = ⊥ := by
+  simp only [isEllipticSubgroup_iff, h, le_bot_iff, exists_const]
 
 /-- In a `G`-tree with at most one vertex, `G` fixes the vertex. -/
 @[simp] theorem stabilizer_eq_top_of_subsingleton [Subsingleton T.V] (v : T.V) :
@@ -413,11 +526,23 @@ theorem isEmpty_dart_of_subsingleton [Subsingleton T.V] : IsEmpty T.E :=
   (IsTree.isAcyclic _ T.isTree).isEmpty_dart_of_subsingleton
 
 variable (T) in
+/-- A `G`-tree without darts has at most one vertex. -/
+theorem subsingleton_of_isEmpty_dart [IsEmpty T.E] : Subsingleton T.V :=
+  ⟨fun a b => (T.nonempty_path a b).elim (eq_of_path_of_forall_src_eq_tgt _ isEmptyElim)⟩
+
+variable (T) in
 /-- A `G`-tree with at most one vertex is relative to all families of subgroups. -/
 theorem isRelative_of_subsingleton [Subsingleton T.V] (𝒜 ℋ : Set (Subgroup G)) :
     T.IsRelative 𝒜 ℋ :=
   ⟨fun e => (T.isEmpty_dart_of_subsingleton.false e).elim,
     fun H _ => T.isEllipticSubgroup_of_subsingleton H⟩
+
+/-- A `G`-tree with trivial vertex stabilizers is relative to any family of subgroups containing
+the trivial subgroup and any family of trivial subgroups. -/
+theorem isRelative_of_forall_stabilizer_eq_bot {𝒜 ℋ : Set (Subgroup G)} (h𝒜 : ⊥ ∈ 𝒜)
+    (hℋ : ℋ ⊆ {⊥}) (h : ∀ v : T.V, stabilizer G v = ⊥) : T.IsRelative 𝒜 ℋ :=
+  ⟨fun e => (isEllipticSubgroup_iff_eq_bot h).mp (T.isEllipticSubgroup_stabilizer_dart e) ▸ h𝒜,
+    fun _ hH => (isEllipticSubgroup_iff_eq_bot h).mpr (hℋ hH)⟩
 
 /-! ### Domination and deformation spaces -/
 
