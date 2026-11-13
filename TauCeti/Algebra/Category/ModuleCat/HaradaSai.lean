@@ -222,7 +222,8 @@ theorem ofOpSequence_map_eq_zero_of_length_le {M : ℕ → ModuleCat.{v} A}
       have h : homOfLE (Nat.zero_le (j + 1)) = homOfLE (Nat.zero_le j) ≫ homOfLE (Nat.le_succ j) :=
         rfl
       rw [h, Functor.map_comp, ih (by omega), Functor.ofSequence_map_homOfLE_succ]
-      simp only [g, show j < n by omega, ↓reduceIte]
+      have hjn : j < n := by omega
+      simp only [g, hjn, ↓reduceIte]
       exact (G.map_comp _ _).symm
   have h0 := ofSequence_map_eq_zero_of_length_le g (fun i ↦ hM _) (fun i ↦ hlen _) hg hn
   rw [hcomp n le_rfl] at h0
