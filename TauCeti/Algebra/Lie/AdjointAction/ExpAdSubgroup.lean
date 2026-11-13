@@ -113,14 +113,6 @@ section Filtration
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
 
-/-- Membership in a step of the filtration of the centralizer of `e` does not depend on whether
-`ad` is taken over `K` or over `ℚ`, since both are the same bracket. -/
-private theorem mem_ker_inf_range_pow_iff_rat {e x : L} {n : ℕ} :
-    x ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ n) ↔
-      x ∈ LinearMap.ker (ad ℚ L e) ⊓ LinearMap.range (ad ℚ L e ^ n) := by
-  simp only [Submodule.mem_inf, LinearMap.mem_ker, LinearMap.mem_range, ad_apply,
-    ad_pow_apply_eq_ad_pow_apply K ℚ e]
-
 /-- If `y` lies in the `k`-th step of the filtration of the centralizer of `e` and `⁅y, v⁆` does
 too, then `exp (ad y) v = v + ⁅y, v⁆` up to the `2k`-th step. Here `K` is any commutative ring and
 `L` is also a `ℚ`-Lie algebra. -/
@@ -129,7 +121,7 @@ theorem expAd_apply_sub_sub_mem {e y v : L} {k : ℕ} (hy : ∀ z, ∃ m, (ad K 
     (hyv : ⁅y, v⁆ ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ k)) :
     expAd y hy v - v - ⁅y, v⁆ ∈
       LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ (k + k)) := by
-  rw [mem_ker_inf_range_pow_iff_rat (K := K)] at hyk hyv ⊢
+  rw [mem_ker_inf_range_pow_iff K ℚ] at hyk hyv ⊢
   set F := fun n : ℕ => LinearMap.ker (ad ℚ L e) ⊓ LinearMap.range (ad ℚ L e ^ n)
   have hpow : ∀ m, (ad ℚ L y ^ (m + 1)) v ∈ F k := by
     intro m
