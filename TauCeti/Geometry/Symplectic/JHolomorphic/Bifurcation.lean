@@ -595,7 +595,7 @@ private theorem configurationCount_insert_eq_insert_insert_of_torusWeightSeries_
   refine configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq (A₀ := cls c)
     (m := m) (σ := σ) (i := i) (U := {e ∈ s | r c e ∧ r e c}) (by simpa using hc)
     (by simp [hc', hd]) (Set.sep_subset _ _)
-    (compatible_iff_mem_sep fun k hk e he ↦ by rw [Finset.mem_singleton.1 hk])
+    (compatible_iff_mem_sep fun k hk e _ ↦ by rw [Finset.mem_singleton.1 hk])
     (compatible_iff_mem_sep fun k hk e he ↦ ?_) (by simp) ?_ (fun e he ↦ ?_) (fun e he ↦ ?_)
     (hKK ▸ hpos) (hKK ▸ hfin) fun j _ ↦ ?_
   · rcases Finset.mem_insert.1 hk with rfl | hk
@@ -678,7 +678,7 @@ theorem configurationCount_insert_eq_insert_of_area_lt_two_mul {c c' : ι} (hc :
   refine configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq (A₀ := cls c)
     (m := fun _ ↦ 1) (σ := fun _ ↦ σ₀) (i := fun e ↦ if e = c then j else j')
     (U := {e ∈ s | r c e ∧ r e c}) (by simpa using hc) (by simpa using hc') (Set.sep_subset _ _)
-    (compatible_iff_mem_sep fun k hk e he ↦ by rw [Finset.mem_singleton.1 hk])
+    (compatible_iff_mem_sep fun k hk e _ ↦ by rw [Finset.mem_singleton.1 hk])
     (compatible_iff_mem_sep fun k hk e he ↦ Finset.mem_singleton.1 hk ▸ hcomp' e he) (by simp)
     (by simp) (fun e he ↦ ?_) (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin) fun n hn ↦ ?_
   · rcases hmem he with rfl | rfl
