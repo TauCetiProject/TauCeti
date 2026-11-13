@@ -22,10 +22,11 @@ is the union of the wave front sets of the frame components, for any frame
 with values in a vector bundle, where `T` is localized in a chart and trivialized by a frame; the
 results here show that it does not depend on the frame.
 
-Moreover a single cutoff and a single cone witness microlocal smoothness of all components at once
-(`Distribution.notMem_vectorWaveFrontSet_iff`): `(x, ξ)` lies outside the wave front set of `T`
-exactly when some test function `φ` with `φ x ≠ 0` has localized Fourier transforms
-`η ↦ (ℓ ∘ T) (φ e_η)` rapidly decreasing in one open cone around `ξ` for every `ℓ`.
+Moreover, for finite-dimensional `F`, a single cutoff and a single cone witness microlocal
+smoothness of all components at once (`Distribution.notMem_vectorWaveFrontSet_iff`): `(x, ξ)` lies
+outside the wave front set of `T` exactly when some test function `φ` with `φ x ≠ 0` has localized
+Fourier transforms `η ↦ (ℓ ∘ T) (φ e_η)` rapidly decreasing in one open cone around `ξ` for every
+`ℓ`.
 
 A change of frame by a smooth function `G : E → (F →L[ℂ] F')` multiplies `T` by `G`. Writing `G`
 in a real basis `(Aᵢ)` of the finite-dimensional space `F →L[ℂ] F'` as `G = ∑ gᵢ Aᵢ` with smooth
@@ -39,9 +40,10 @@ invertible smooth frame change preserves it.
 * `Distribution.vectorWaveFrontSet_eq_waveFrontSet`: for `F = ℂ` it is the wave front set of `T`.
 * `Distribution.vectorWaveFrontSet_eq_iUnion_basis`: it is the union of the wave front sets of the
   frame components, for every basis of a finite-dimensional `F`.
-* `Distribution.notMem_vectorWaveFrontSet_iff`: one cutoff and one cone serve all components.
+* `Distribution.notMem_vectorWaveFrontSet_iff`: for finite-dimensional `F`, one cutoff and one
+  cone serve all components.
 * `Distribution.isOpen_diff_vectorWaveFrontSet`, `Distribution.smul_mem_vectorWaveFrontSet_iff`:
-  it is closed in `Ω × (E \ {0})` and conic.
+  it is closed in `Ω × (E \ {0})` for finite-dimensional `F`, and conic.
 * `Distribution.vectorWaveFrontSet_mapCLM_subset`, `Distribution.vectorWaveFrontSet_mapCLM_equiv`:
   a complex-linear map of the values does not enlarge it, and an isomorphism preserves it.
 * `Distribution.vectorWaveFrontSet_sum_mapCLM_smulLeftCLM_subset`: multiplication by a smooth
@@ -113,7 +115,9 @@ theorem vectorWaveFrontSet_eq_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
       simpa [mul_comm] using ℓ.map_smul (T φ) (1 : ℂ)
     rw [h]
     exact waveFrontSet_smul_subset _ T
-  · have h : mapCLM ((ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ) T = T := rfl
+  · have h : mapCLM ((ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ) T = T := by
+      ext φ
+      simp
     exact h ▸ waveFrontSet_mapCLM_subset_vectorWaveFrontSet (.id ℂ ℂ) T
 
 /-! ### Linear maps of the values -/
