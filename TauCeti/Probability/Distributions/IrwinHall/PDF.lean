@@ -218,7 +218,8 @@ theorem integral_irwinHallPDFReal {n : ℕ} (hn : 0 < n) :
   have hμ := irwinHallMeasure_eq_withDensity hn
   have hfi := integrable_irwinHallPDFReal n
   have hmass := measureReal_withDensity_ofReal
-    (s := univ) (ae_of_all _ (irwinHallPDFReal_nonneg n)) MeasurableSet.univ hfi.integrableOn
+    (s := univ) (ae_of_all _ (irwinHallPDFReal_nonneg n)) MeasurableSet.univ
+    hfi.integrableOn.aemeasurable
   simpa [← irwinHallPDF_eq_ofReal, ← hμ] using hmass.symm
 
 /-- A variable with positive-order Irwin–Hall law has a density. -/

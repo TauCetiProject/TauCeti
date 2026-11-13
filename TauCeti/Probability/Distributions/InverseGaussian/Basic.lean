@@ -510,7 +510,7 @@ theorem cdf_inverseGaussianMeasure_of_pos (hμ : 0 < μ) (hlam : 0 < lam) (hx : 
   rw [cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ,
     inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam),
     measureReal_withDensity_ofReal (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
-      measurableSet_Ioi hint,
+      measurableSet_Ioi hint.aemeasurable,
     integral_Ioi_inverseGaussianPDFReal_of_pos hμ hlam hx, sub_sub_cancel, cdfFormula]
 
 /-- At positive parameters, the inverse Gaussian cdf vanishes on the nonpositive half-line. -/

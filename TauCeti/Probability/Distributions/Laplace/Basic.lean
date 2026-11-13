@@ -338,7 +338,8 @@ private lemma measureReal_laplaceMeasure {s : Set ℝ} (hs : MeasurableSet s)
     (hint : IntegrableOn (laplacePDFReal μ b) s) :
     (laplaceMeasure μ b).real s = ∫ y in s, laplacePDFReal μ b y := by
   rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
-  exact measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b)) hs hint
+  exact measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b)) hs
+    hint.aemeasurable
 
 /-- The upper tail of a Laplace law above its location. -/
 theorem measureReal_Ioi_laplaceMeasure (hb : 0 < b) (hx : μ ≤ x) :

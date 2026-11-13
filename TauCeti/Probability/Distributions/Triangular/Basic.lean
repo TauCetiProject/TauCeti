@@ -508,7 +508,7 @@ private theorem cdf_triangularMeasure_eq_triangularSpline (hab : a < b) (hac : a
   have := isProbabilityMeasure_triangularMeasure hab hac hcb
   rw [cdf_eq_real, triangularMeasure_eq_withDensity, funext (triangularPDF_eq_ofReal a b c),
     measureReal_withDensity_ofReal (ae_of_all _ (triangularPDFReal_nonneg a b c))
-      measurableSet_Iic (integrable_triangularPDFReal a b c).integrableOn,
+      measurableSet_Iic (integrable_triangularPDFReal a b c).integrableOn.aemeasurable,
     integral_Iic_triangularPDFReal hab hac hcb]
 
 /-- The triangular cdf in closed form at every point: `0` up to the lower endpoint, the rising
