@@ -32,8 +32,8 @@ stabilizer, and extend along the orbit.
 
 * `MulActionHom.toPUnit`: the equivariant map from any space to the point.
 * `MulActionHom.constOfMemFixedPoints`: the constant equivariant map at a fixed point.
-* `MulActionHom.stabilizer_preimage_of_subset_range`: the stabilizer of the preimage of a set of
-  values is the stabilizer of the set.
+* `TauCeti.MulAction.stabilizer_preimage_of_subset_range`: the stabilizer of the preimage of a set
+  of values is the stabilizer of the set.
 * `TauCeti.MulAction.nonempty_mulActionHom_iff`: an equivariant map exists exactly when every
   stabilizer of `X` is contained in a stabilizer of `Y`.
 -/
@@ -72,17 +72,24 @@ theorem coe_constOfMemFixedPoints {y : Y} (hy : y ∈ fixedPoints N Y) :
     ⇑(constOfMemFixedPoints (X := X) (φ := φ) hy) = Function.const X y :=
   (rfl)
 
-section Stabilizer
+end MulActionHom
+
+namespace TauCeti
+
+open MulAction
 
 open scoped Pointwise
 
-variable {G X Y F : Type*} [Group G] [MulAction G X] [MulAction G Y] [FunLike F X Y]
-  [MulActionHomClass F G X Y]
+variable {G X Y : Type*} [Group G] [MulAction G X] [MulAction G Y]
+
+section Stabilizer
+
+variable {F : Type*} [FunLike F X Y] [MulActionHomClass F G X Y]
 
 /-- The stabilizer of the preimage of a set of values of an equivariant map is the stabilizer of
 the set. -/
-theorem stabilizer_preimage_of_subset_range (f : F) {s : Set Y} (hs : s ⊆ Set.range f) :
-    stabilizer G (f ⁻¹' s) = stabilizer G s := by
+theorem MulAction.stabilizer_preimage_of_subset_range (f : F) {s : Set Y}
+    (hs : s ⊆ Set.range f) : stabilizer G (f ⁻¹' s) = stabilizer G s := by
   ext g
   rw [mem_stabilizer_iff, mem_stabilizer_iff, ← Group.preimage_smul_set]
   refine Set.preimage_eq_preimage' ?_ hs
@@ -92,26 +99,18 @@ theorem stabilizer_preimage_of_subset_range (f : F) {s : Set Y} (hs : s ⊆ Set.
 
 /-- The stabilizer of the preimage of a set under a surjective equivariant map is the stabilizer
 of the set. -/
-theorem stabilizer_preimage_of_surjective {f : F} (hf : Function.Surjective f) (s : Set Y) :
-    stabilizer G (f ⁻¹' s) = stabilizer G s :=
+theorem MulAction.stabilizer_preimage_of_surjective {f : F} (hf : Function.Surjective f)
+    (s : Set Y) : stabilizer G (f ⁻¹' s) = stabilizer G s :=
   stabilizer_preimage_of_subset_range f (hf.range_eq ▸ Set.subset_univ s)
 
 /-- The stabilizer of the image of a point under an equivariant map is the stabilizer of the
 fibre through that point. -/
-theorem stabilizer_apply_eq_stabilizer_preimage (f : F) (x : X) :
+theorem MulAction.stabilizer_apply_eq_stabilizer_preimage (f : F) (x : X) :
     stabilizer G (f x) = stabilizer G (f ⁻¹' {f x}) := by
   rw [stabilizer_preimage_of_subset_range f (Set.singleton_subset_iff.mpr ⟨x, rfl⟩),
     stabilizer_singleton]
 
 end Stabilizer
-
-end MulActionHom
-
-namespace TauCeti
-
-open MulAction
-
-variable {G X Y : Type*} [Group G] [MulAction G X] [MulAction G Y]
 
 /-- There is an equivariant map `X →[G] Y` exactly when the stabilizer of every point of `X` is
 contained in the stabilizer of some point of `Y`. -/

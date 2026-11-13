@@ -192,6 +192,18 @@ include hS in
 private theorem ne_rev_of_mem_of_notMem {e f : Γ.E} (he : e ∉ S) (hf : f ∈ S) : f ≠ Γ.rev e :=
   fun h => he (Γ.rev_rev e ▸ hS _ (h ▸ hf))
 
+/-- A lift of a reduced path of the collapse, followed by a reduced path of collapsed darts, is
+reduced. -/
+private theorem isReduced_comp_of_collapse {x y : (Γ.collapse S hS).V}
+    {P : (Γ.collapse S hS).Path x y} {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Path b c}
+    (hp : Path.IsReduced Γ p)
+    (hlast : (Path.darts Γ p).getLast? = (Path.darts _ P).getLast?.map (fun f => f.1))
+    (hq : Path.IsReduced Γ q) (hqS : ∀ e ∈ Path.darts Γ q, e ∈ S) :
+    Path.IsReduced Γ (p.comp q) := by
+  refine (Path.isReduced_comp_iff Γ p q).mpr ⟨hp, hq, fun e he f hf => ?_⟩
+  obtain ⟨g, -, rfl⟩ := Option.mem_map.mp (hlast ▸ he)
+  exact ne_rev_of_mem_of_notMem hS g.2 (hqS f (List.mem_of_mem_head? hf))
+
 /-- A reduced path of the collapse lifts to a reduced path of the graph from any vertex over its
 start, ending with the last dart of the given path; the darts of the lift start over vertices of
 the given path. -/
@@ -210,18 +222,16 @@ private theorem exists_isReduced_path_of_collapse {x y : (Γ.collapse S hS).V}
     -- Join the end of the lift to the source of the new dart by a reduced path of collapsed darts.
     obtain ⟨q, hq, hqS⟩ := exists_isReduced_path_of_collapseVertex_eq hS hb'
     refine ⟨Γ.tgt e.1, (p'.comp q).cons (Γ.dart e.1), rfl, ?_, by simp, fun R hPR _ f hf => ?_⟩
-    · rw [Path.isReduced_iff_isChain] at hP hp' hq ⊢
-      rw [Path.darts_cons, List.isChain_append] at hP
-      rw [Path.darts_cons, Path.darts_comp, dart_val, List.isChain_append, List.isChain_append]
-      refine ⟨⟨hp', hq, fun x hx y hy => ?_⟩, List.isChain_singleton _, fun x hx y hy => ?_⟩
-      · obtain ⟨f, -, rfl⟩ := Option.mem_map.mp (hlast ▸ hx)
-        exact ne_rev_of_mem_of_notMem hS f.2 (hqS y (List.mem_of_mem_head? hy))
-      · obtain rfl : e.1 = y := by simpa using hy
-        rw [List.getLast?_append] at hx
-        rcases Option.or_eq_some_iff.mp hx with hx | ⟨-, hx⟩
-        · exact fun h => e.2 (h ▸ hS x (hqS x (List.mem_of_mem_getLast? hx)))
-        · obtain ⟨f, hf, rfl⟩ := Option.map_eq_some_iff.mp (hlast ▸ hx)
-          exact fun h => hP.2.2 f hf e rfl (Subtype.ext h)
+    · rw [← Quiver.Path.comp_toPath_eq_cons] at hP ⊢
+      refine (Path.isReduced_comp_iff Γ _ _).mpr
+        ⟨Γ.isReduced_comp_of_collapse S hS hp' hlast hq hqS, Path.isReduced_toPath _ _,
+          fun x hx y hy => ?_⟩
+      obtain rfl : e.1 = y := by simpa using hy
+      rw [Path.darts_comp, List.getLast?_append] at hx
+      rcases Option.or_eq_some_iff.mp hx with hx | ⟨-, hx⟩
+      · exact fun h => e.2 (h ▸ hS x (hqS x (List.mem_of_mem_getLast? hx)))
+      · obtain ⟨f, hf, rfl⟩ := Option.map_eq_some_iff.mp (hlast ▸ hx)
+        exact fun h => ((Path.isReduced_comp_iff _ _ _).mp hP).2.2 f hf e (by simp) (Subtype.ext h)
     · have he : (Γ.collapse S hS).src e ∈ R := hPR e (by simp)
       simp only [Path.darts_cons, Path.darts_comp, dart_val, List.mem_append,
         List.mem_singleton] at hf
@@ -229,18 +239,6 @@ private theorem exists_isReduced_path_of_collapse {x y : (Γ.collapse S hS).V}
       · exact hR R (fun g hg => hPR g (by simp [hg])) he f hf
       · rwa [collapseVertex_src_eq_of_mem_darts hS hqS hf, hb']
       · exact he
-
-/-- A lift of a reduced path of the collapse, followed by a reduced path of collapsed darts, is
-reduced. -/
-private theorem isReduced_comp_of_collapse {x y : (Γ.collapse S hS).V}
-    {P : (Γ.collapse S hS).Path x y} {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Path b c}
-    (hp : Path.IsReduced Γ p)
-    (hlast : (Path.darts Γ p).getLast? = (Path.darts _ P).getLast?.map (fun f => f.1))
-    (hq : Path.IsReduced Γ q) (hqS : ∀ e ∈ Path.darts Γ q, e ∈ S) :
-    Path.IsReduced Γ (p.comp q) := by
-  refine (Path.isReduced_comp_iff Γ p q).mpr ⟨hp, hq, fun e he f hf => ?_⟩
-  obtain ⟨g, -, rfl⟩ := Option.mem_map.mp (hlast ▸ he)
-  exact ne_rev_of_mem_of_notMem hS g.2 (hqS f (List.mem_of_mem_head? hf))
 
 variable {Γ} in
 /-- The collapse of a forest is a forest. -/
@@ -298,11 +296,9 @@ theorem IsAcyclic.isConvex_collapseVertex_preimage_singleton (h : Γ.IsAcyclic)
 
 /-- The collapse map is injective exactly when every collapsed dart is a loop. -/
 theorem collapseVertex_injective_iff :
-    Function.Injective (Γ.collapseVertex S hS) ↔ ∀ e ∈ S, Γ.src e = Γ.tgt e := by
-  refine ⟨fun h e he => h (collapseVertex_src_eq_tgt hS he), fun h a b hab => ?_⟩
-  obtain ⟨p, hp⟩ := (collapseVertex_eq_iff hS).mp hab
-  exact ((Path.mem_iff_mem_of_forall_mem_darts Γ (R := {a}) hS
-    (fun e he hea => (h e he).symm.trans hea) p hp).mp rfl).symm
+    Function.Injective (Γ.collapseVertex S hS) ↔ ∀ e ∈ S, Γ.src e = Γ.tgt e :=
+  ⟨fun h _ he => h (collapseVertex_src_eq_tgt hS he),
+    fun h => Function.LeftInverse.injective (collapseLift_collapseVertex hS id h)⟩
 
 variable {Γ} in
 /-- In a forest, the collapse map is injective exactly when no dart is collapsed. -/
@@ -317,17 +313,18 @@ theorem collapseVertex_empty_injective (hS : ∀ e ∈ (∅ : Set Γ.E), Γ.rev 
   (Γ.collapseVertex_injective_iff ∅ hS).mpr fun _ he => he.elim
 
 /-- The collapse has no dart exactly when every dart is collapsed. -/
-theorem isEmpty_collapse_E_iff : IsEmpty (Γ.collapse S hS).E ↔ S = Set.univ :=
+theorem isEmpty_collapse_dart_iff : IsEmpty (Γ.collapse S hS).E ↔ S = Set.univ :=
   (isEmpty_subtype fun e => e ∉ S).trans (by simp [Set.eq_univ_iff_forall])
 
 /-- Collapsing every dart leaves no dart. -/
-instance isEmpty_collapse_univ_E (hS : ∀ e ∈ (Set.univ : Set Γ.E), Γ.rev e ∈ (Set.univ : Set Γ.E)) :
+instance isEmpty_collapse_univ_dart
+    (hS : ∀ e ∈ (Set.univ : Set Γ.E), Γ.rev e ∈ (Set.univ : Set Γ.E)) :
     IsEmpty (Γ.collapse Set.univ hS).E :=
-  (Γ.isEmpty_collapse_E_iff _ hS).mpr rfl
+  (Γ.isEmpty_collapse_dart_iff _ hS).mpr rfl
 
 /-- The collapse has at most one vertex exactly when the spanning subgraph on the collapsed darts
 is preconnected. -/
-theorem subsingleton_collapse_V_iff :
+theorem subsingleton_collapse_iff :
     Subsingleton (Γ.collapse S hS).V ↔ (Γ.restrict S hS).Preconnected := by
   rw [Γ.preconnected_restrict_iff S hS]
   refine ⟨fun h a b => (collapseVertex_eq_iff hS).mp (h.allEq _ _), fun h => ⟨fun x y => ?_⟩⟩
@@ -340,12 +337,12 @@ variable {Γ} in
 theorem Preconnected.subsingleton_collapse_univ (h : Γ.Preconnected)
     (hS : ∀ e ∈ (Set.univ : Set Γ.E), Γ.rev e ∈ (Set.univ : Set Γ.E)) :
     Subsingleton (Γ.collapse Set.univ hS).V :=
-  (Γ.subsingleton_collapse_V_iff _ hS).mpr ((Γ.preconnected_restrict_iff _ hS).mpr
+  (Γ.subsingleton_collapse_iff _ hS).mpr ((Γ.preconnected_restrict_iff _ hS).mpr
     fun a b => ⟨(Γ.preconnected_iff.mp h a b).some, fun _ _ => Set.mem_univ _⟩)
 
 variable {Γ} in
 /-- Collapsing a tree leaves a single vertex exactly when every dart is collapsed. -/
-theorem IsTree.subsingleton_collapse_V_iff (h : Γ.IsTree) :
+theorem IsTree.subsingleton_collapse_iff (h : Γ.IsTree) :
     Subsingleton (Γ.collapse S hS).V ↔ S = Set.univ := by
   refine ⟨fun hV => Set.eq_univ_of_forall fun e => by_contra fun he => ?_, ?_⟩
   · exact (h.isAcyclic.collapse S hS).src_ne_tgt ⟨e, he⟩ (hV.allEq _ _)
@@ -362,15 +359,10 @@ variable {Γ S}
 collapse map. -/
 theorem collapseVertex_smul_eq (φ : Γ.Aut) (hφ : ∀ e ∈ S, φ • e ∈ S) {a b : Γ.V}
     (h : Γ.collapseVertex S hS a = Γ.collapseVertex S hS b) :
-    Γ.collapseVertex S hS (φ • a) = Γ.collapseVertex S hS (φ • b) := by
-  obtain ⟨p, hp⟩ := (collapseVertex_eq_iff hS).mp h
-  clear h
-  induction p with
-  | nil => rfl
-  | cons p e ih =>
-    obtain ⟨e, rfl, rfl⟩ := e
-    rw [ih fun f hf => hp f (by simp [hf]), ← src_smul, ← tgt_smul]
-    exact collapseVertex_src_eq_tgt hS (hφ e (hp e (by simp)))
+    Γ.collapseVertex S hS (φ • a) = Γ.collapseVertex S hS (φ • b) :=
+  congrArg (collapseLift hS (fun v => Γ.collapseVertex S hS (φ • v)) fun e he => by
+    rw [← src_smul, ← tgt_smul]
+    exact collapseVertex_src_eq_tgt hS (hφ e he)) h
 
 /-- An automorphism preserving the set of collapsed darts preserves the fibres of the collapse
 map in both directions. -/
@@ -402,7 +394,7 @@ def collapse (φ : Γ.Aut) (hφ : ∀ e, φ • e ∈ S ↔ e ∈ S) : (Γ.colla
 /-- The identity induces the identity of the collapse. -/
 @[simp] theorem collapse_one (h : ∀ e, (1 : Γ.Aut) • e ∈ S ↔ e ∈ S) :
     (1 : Γ.Aut).collapse hS h = 1 := by
-  refine ext (fun x => ?_) fun e => Subtype.ext ?_
+  refine Iso.ext (fun x => ?_) fun e => Subtype.ext ?_
   · obtain ⟨a, rfl⟩ := Γ.collapseVertex_surjective S hS x
     rw [← smul_vertex_def, ← smul_vertex_def, collapse_smul_collapseVertex, one_smul, one_smul]
   · rw [← smul_dart_def, ← smul_dart_def, collapse_smul_val, one_smul, one_smul]
@@ -412,7 +404,7 @@ automorphisms. -/
 theorem collapse_mul (φ ψ : Γ.Aut) (hφ : ∀ e, φ • e ∈ S ↔ e ∈ S)
     (hψ : ∀ e, ψ • e ∈ S ↔ e ∈ S) (h : ∀ e, (φ * ψ) • e ∈ S ↔ e ∈ S) :
     (φ * ψ).collapse hS h = φ.collapse hS hφ * ψ.collapse hS hψ := by
-  refine ext (fun x => ?_) fun e => Subtype.ext ?_
+  refine Iso.ext (fun x => ?_) fun e => Subtype.ext ?_
   · obtain ⟨a, rfl⟩ := Γ.collapseVertex_surjective S hS x
     simp only [← smul_vertex_def, collapse_smul_collapseVertex, mul_smul]
   · simp only [← smul_dart_def, collapse_smul_val, mul_smul]

@@ -186,7 +186,7 @@ theorem IsMinimal.collapse (h : T.IsMinimal) : (T.collapse S hS hG).IsMinimal :=
 /-- The stabilizer of a vertex of a collapse is the stabilizer of the subtree collapsed to it. -/
 theorem stabilizer_collapse_vertex (x : (T.collapse S hS hG).V) :
     stabilizer G x = stabilizer G (T.collapseHom S hS hG ⁻¹' {x}) := by
-  rw [MulActionHom.stabilizer_preimage_of_surjective (T.collapseHom_surjective S hS hG),
+  rw [MulAction.stabilizer_preimage_of_surjective (T.collapseHom_surjective S hS hG),
     stabilizer_singleton]
 
 /-- A dart of a collapse has the same stabilizer as in the tree. -/
@@ -219,12 +219,9 @@ theorem collapseHom_empty_injective (hS : ∀ e ∈ (∅ : Set T.E), T.rev e ∈
 variable {T S} in
 /-- A collapse identifying no vertices dominates the original tree. -/
 theorem collapse_dominates_of_injective (h : Function.Injective (T.collapseHom S hS hG)) :
-    (T.collapse S hS hG).Dominates T := by
-  refine dominates_iff.mpr fun x => ?_
-  obtain ⟨v, rfl⟩ := T.collapseHom_surjective S hS hG x
-  refine isEllipticSubgroup_iff.mpr ⟨v, fun g hg => mem_stabilizer_iff.mpr (h ?_)⟩
-  rw [map_smul]
-  exact mem_stabilizer_iff.mp hg
+    (T.collapse S hS hG).Dominates T :=
+  dominates_iff_nonempty.mpr
+    ⟨collapseLift hS hG (.id G) fun _ he => h (collapseHom_src_eq_tgt hS hG he)⟩
 
 /-- Collapsing no edge gives a tree dominating the original tree. -/
 theorem collapse_empty_dominates (hS : ∀ e ∈ (∅ : Set T.E), T.rev e ∈ (∅ : Set T.E))
@@ -248,32 +245,32 @@ theorem collapse_empty_sameDeformationSpace
   collapse_sameDeformationSpace_of_injective hS hG (T.collapseHom_empty_injective hS hG)
 
 /-- A collapse of a tree has a single vertex exactly when every edge is collapsed. -/
-theorem subsingleton_collapse_V_iff : Subsingleton (T.collapse S hS hG).V ↔ S = Set.univ :=
-  IsTree.subsingleton_collapse_V_iff S hS T.isTree
+theorem subsingleton_collapse_iff : Subsingleton (T.collapse S hS hG).V ↔ S = Set.univ :=
+  IsTree.subsingleton_collapse_iff S hS T.isTree
 
 /-- Collapsing every edge of a tree leaves a single vertex. -/
 instance subsingleton_collapse_univ
     (hS : ∀ e ∈ (Set.univ : Set T.E), T.rev e ∈ (Set.univ : Set T.E))
     (hG : ∀ g : G, ∀ e ∈ (Set.univ : Set T.E), g • e ∈ (Set.univ : Set T.E)) :
     Subsingleton (T.collapse Set.univ hS hG).V :=
-  (T.subsingleton_collapse_V_iff _ hS hG).mpr rfl
+  (T.subsingleton_collapse_iff _ hS hG).mpr rfl
 
 /-- A collapse of a tree has no dart exactly when every edge is collapsed. -/
-theorem isEmpty_collapse_E_iff : IsEmpty (T.collapse S hS hG).E ↔ S = Set.univ :=
-  T.toSerreGraph.isEmpty_collapse_E_iff S hS
+theorem isEmpty_collapse_dart_iff : IsEmpty (T.collapse S hS hG).E ↔ S = Set.univ :=
+  T.toSerreGraph.isEmpty_collapse_dart_iff S hS
 
 /-- Collapsing every edge of a tree leaves no dart. -/
-instance isEmpty_collapse_univ_E
+instance isEmpty_collapse_univ_dart
     (hS : ∀ e ∈ (Set.univ : Set T.E), T.rev e ∈ (Set.univ : Set T.E))
     (hG : ∀ g : G, ∀ e ∈ (Set.univ : Set T.E), g • e ∈ (Set.univ : Set T.E)) :
     IsEmpty (T.collapse Set.univ hS hG).E :=
-  (T.isEmpty_collapse_E_iff _ hS hG).mpr rfl
+  (T.isEmpty_collapse_dart_iff _ hS hG).mpr rfl
 
 variable {T S} in
 /-- A collapse of every edge is dominated by every `G`-tree. -/
 theorem dominates_collapse_of_eq_univ (T' : GTree.{u', v'} G) (h : S = Set.univ) :
     T'.Dominates (T.collapse S hS hG) :=
-  have := (T.subsingleton_collapse_V_iff S hS hG).mpr h
+  have := (T.subsingleton_collapse_iff S hS hG).mpr h
   T'.dominates_of_subsingleton
 
 /-- The tree obtained by collapsing every edge is dominated by every `G`-tree. -/
