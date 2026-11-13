@@ -46,7 +46,7 @@ the data here, and none of the statements below use it.
 ## References
 
 * K. Rubin, *Euler Systems*, Annals of Mathematics Studies 147, Princeton University Press,
-  2000, I.1.
+  2000, I.5.
 -/
 
 public section
@@ -103,6 +103,11 @@ condition. -/
 theorem mem_selmerGroup_iff {c : H1 G M} :
     c ∈ 𝓕.selmerGroup ↔ ∀ i, 𝓕.localization i c ∈ 𝓕.localCondition i := by
   simp only [selmerGroup, AddSubgroup.mem_iInf, AddSubgroup.mem_comap]
+
+/-- Every localisation of a Selmer class satisfies the corresponding local condition. -/
+theorem localization_mem (c : 𝓕.selmerGroup) (i : ι) :
+    𝓕.localization i c ∈ 𝓕.localCondition i :=
+  (mem_selmerGroup_iff 𝓕).mp c.2 i
 
 end SelmerStructure
 
