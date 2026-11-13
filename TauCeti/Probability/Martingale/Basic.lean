@@ -35,7 +35,11 @@ The following results need only a preordered time index. The norm of a Banach-va
 martingale is a submartingale (`MeasureTheory.Martingale.norm`). For a real submartingale,
 multiplication by a nonnegative position known at an earlier date preserves the expectation
 inequality when both products are integrable (`MeasureTheory.Submartingale.integral_mul_le`).
-In particular, positions need not be bounded. Nonnegative submartingale values inherit Lᵖ
+In particular, positions need not be bounded. A predictable height times a later martingale
+increment has mean zero when the product is integrable
+(`MeasureTheory.Martingale.integral_mul_sub_eq_zero`). Martingale values inherit deterministic
+norm bounds from later values (`MeasureTheory.Martingale.ae_norm_le_of_le`).
+Nonnegative submartingale values inherit Lᵖ
 integrability from later values for `p ≥ 1` (`MeasureTheory.Submartingale.memLp_of_le`).
 
 If `V / N` is a martingale under `Q` for a real process `N`, then `V` is recovered from its value
@@ -144,6 +148,33 @@ theorem Submartingale.integral_mul_le [SigmaFiniteFiltration μ ℱ]
       exact mul_le_mul_of_nonneg_left hle hp
     _ = ∫ ω, μ[a * Y j | ℱ i] ω ∂μ := integral_congr_ae he.symm
     _ = _ := integral_condExp (ℱ.le i)
+
+/-- A predictable height times a later martingale increment has mean zero whenever the
+product is integrable. No separate moment assumption on the height is needed. -/
+theorem Martingale.integral_mul_sub_eq_zero [SigmaFiniteFiltration μ ℱ]
+    (hM : Martingale Y ℱ μ) {s t : ι} (hst : s ≤ t)
+    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ)
+    (hint : Integrable (ξ * (Y t - Y s)) μ) :
+    ∫ ω, ξ ω * (Y t ω - Y s ω) ∂μ = 0 := by
+  have hzero : μ[Y t - Y s | ℱ s] =ᵐ[μ] 0 := by
+    refine (condExp_sub (hM.integrable t) (hM.integrable s) _).trans ?_
+    simpa only [sub_self] using
+      (hM.condExp_ae_eq hst).sub (hM.condExp_ae_eq (i := s) le_rfl)
+  have hpull := condExp_mul_of_stronglyMeasurable_left hξ hint
+    ((hM.integrable t).sub (hM.integrable s))
+  have heq : μ[ξ * (Y t - Y s) | ℱ s] =ᵐ[μ] 0 := by
+    filter_upwards [hpull, hzero] with ω hp hz
+    simpa [hz] using hp
+  simpa only [Pi.mul_apply, Pi.sub_apply, Pi.zero_apply, integral_zero] using
+    (integral_condExp (ℱ.le s) (f := ξ * (Y t - Y s))).symm.trans (integral_congr_ae heq)
+
+/-- A deterministic almost-sure norm bound on a martingale at a later date also bounds
+its value at every earlier date. -/
+theorem Martingale.ae_norm_le_of_le (hX : Martingale X ℱ μ) {i j : ι} (hij : i ≤ j)
+    {C : ℝ} (hb : ∀ᵐ ω ∂μ, ‖X j ω‖ ≤ C) : ∀ᵐ ω ∂μ, ‖X i ω‖ ≤ C := by
+  filter_upwards [ae_bdd_norm_condExp_of_ae_bdd_norm (m := ℱ i) hb,
+    hX.condExp_ae_eq hij] with ω hb he
+  simpa only [he] using hb
 
 /-- A nonnegative submartingale value inherits Lᵖ integrability from a later value,
 for every `p ≥ 1`. Only the earlier value needs to be nonnegative. -/

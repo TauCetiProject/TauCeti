@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Function
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
@@ -26,6 +27,9 @@ control on small sets from a uniform bound on `∫ Φ(‖fᵢ‖)`.
   (`TauCeti.exists_setLIntegral_enorm_le_mul_add`). In particular a family of a.e. strongly
   measurable functions with such a bound is uniformly integrable in Mathlib's sense
   (`TauCeti.unifIntegrable_of_lintegral_ofReal_le`).
+* On a finite measure space, a uniform second-moment bound and almost-everywhere convergence
+  to zero imply convergence of expectations to zero
+  (`TauCeti.tendsto_integral_zero_of_integral_sq_le`).
 
 ## Implementation notes
 
@@ -212,5 +216,33 @@ theorem unifIntegrable_of_lintegral_ofReal_le {Φ : ℝ → ℝ}
         gcongr
     _ ≤ ε / 2 + ε / 2 := by gcongr
     _ = ε := ENNReal.add_halves ε
+
+/-- On a finite measure space, almost-everywhere convergence to zero and a uniform
+second-moment bound imply convergence of expectations to zero. -/
+theorem tendsto_integral_zero_of_integral_sq_le [IsFiniteMeasure μ] {f : ℕ → α → ℝ}
+    (hf : ∀ k, MemLp (f k) 2 μ) {B : ℝ}
+    (hbound : ∀ k, ∫ x, f k x ^ 2 ∂μ ≤ B)
+    (hlim : ∀ᵐ x ∂μ, Tendsto (fun k ↦ f k x) atTop (𝓝 0)) :
+    Tendsto (fun k ↦ ∫ x, f k x ∂μ) atTop (𝓝 0) := by
+  have hUI : UnifIntegrable f 1 μ := by
+    apply unifIntegrable_of_lintegral_ofReal_le
+      (Φ := fun x : ℝ ↦ x ^ 2) (C := ENNReal.ofReal B)
+      (by
+        have he : (fun x : ℝ ↦ x ^ 2 / x) =ᶠ[atTop] fun x ↦ x := by
+          filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
+          field_simp
+        exact tendsto_id.congr' he.symm)
+      (fun k ↦ (hf k).aestronglyMeasurable) ENNReal.ofReal_ne_top
+    intro k
+    rw [← ofReal_integral_eq_lintegral_ofReal
+      (by simpa only [Real.norm_eq_abs, sq_abs] using (hf k).integrable_sq)
+      (Eventually.of_forall fun _ ↦ sq_nonneg _)]
+    simpa only [Real.norm_eq_abs, sq_abs] using ENNReal.ofReal_le_ofReal (hbound k)
+  have hL1 := tendsto_Lp_finite_of_tendsto_ae le_rfl ENNReal.one_ne_top
+    (fun k ↦ (hf k).aestronglyMeasurable)
+    (MemLp.zero : MemLp (0 : α → ℝ) 1 μ) hUI hlim
+  simpa only [Pi.zero_apply, integral_zero] using
+    tendsto_integral_of_L1' (0 : α → ℝ)
+      (Eventually.of_forall fun k ↦ (hf k).integrable (by norm_num)) hL1
 
 end TauCeti
