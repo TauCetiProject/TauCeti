@@ -32,26 +32,32 @@ the `k`th band in degree `k` sits at `(-2k, k)`.
   `k`th band (`TauCeti.nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso`), and zero
   everywhere else (`TauCeti.isZero_realProjectiveMomentSpectralSequence_page_two_X`).
 * **The second page** at `(-2k, k)` is `Hₖ(ℝℙᴺ; ℤ)`
-  (`TauCeti.realProjectiveMomentSpectralSequencePageThreeXIso`): `ℤ` for `k = 0` and for odd
-  `k = N`, `ℤ / 2` for odd `k < N`, and `0` for even `0 < k ≤ N`.
+  (`TauCeti.realProjectiveMomentSpectralSequencePageThreeXIso`): `ℤ` for `k = 0`
+  (`TauCeti.realProjectiveMomentSpectralSequencePageThreeXZeroIso`) and for odd `k = N`
+  (`TauCeti.realProjectiveMomentSpectralSequencePageThreeXTopIsoOfOdd`), `ℤ / 2` for odd `k < N`
+  (`TauCeti.realProjectiveMomentSpectralSequencePageThreeXIsoOfOdd`), and `0` for even `k > 0`
+  (`TauCeti.isZero_realProjectiveMomentSpectralSequence_page_three_X_of_even`). It vanishes off
+  these positions (`TauCeti.isZero_realProjectiveMomentSpectralSequence_page_three_X`).
 * **The first differential** out of an odd band vanishes
   (`TauCeti.realProjectiveMomentSpectralSequence_page_two_d_eq_zero_of_odd`), and out of an even
-  band `k ≥ 2` it is multiplication by `±2` in any identification with `ℤ`
+  band `2 ≤ k ≤ N` it is multiplication by `±2` in any identification with `ℤ`
   (`TauCeti.realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_neg_two_smul`), and by
   `2` in a suitable one
   (`TauCeti.exists_realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul`). So the first
   page is a copy of the cellular chain complex of `ℝℙᴺ`.
 
-The differentials are not computed from attaching maps. The positions `(-2k, k)` admit no
-differential on the later pages, since the first page vanishes in the other positions of the
-same total degrees. So the second page at `(-2k, k)` is the graded piece of the filtration of
+The differentials are not computed from attaching maps. Every nonzero object of the first page
+lies on the line `p = -2q`, while a differential of a page `s ≥ 3` has bidegree `(s, 1 - s)` and
+leaves that line, so the positions `(-2k, k)` admit no differential on the later pages. So the
+second page at `(-2k, k)` is the graded piece of the filtration of
 `Hₖ(ℝℙᴺ; ℤ)` by the images of the sublevels, which is all of `Hₖ(ℝℙᴺ; ℤ)`, the other graded
 pieces in degree `k` vanishing. The second page is also the homology of the first, a complex
 `ℤ ⟵ ℤ ⟵ ⋯ ⟵ ℤ`, and the known homology of `ℝℙᴺ`
 (`TauCeti.RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd`) forces its differentials. A
 nonzero endomorphism of `ℤ` is injective, so a differential out of an odd band, where the second
-page does not vanish, is zero; the cokernel of an endomorphism `n` of `ℤ` has `|n|` elements, so a
-differential out of an even band, whose cokernel is `ℤ / 2`, is `±2`.
+page does not vanish, is zero. The cokernel of an endomorphism `n ≠ 0` of `ℤ` has `|n|` elements,
+and that of `0` is the infinite group `ℤ`, so a differential out of an even band, whose cokernel is
+`ℤ / 2`, is `±2`.
 
 ## References
 
@@ -157,8 +163,7 @@ theorem isZero_realProjectiveMomentSpectralSequence_page_two_X (pq : ℤ × ℤ)
   lia
 
 /-- **The first page on the diagonal.** For `0 ≤ k ≤ N`, the object at `(-2k, k)` on the first
-page (numbered `2`) of `TauCeti.realProjectiveMomentSpectralSequence N` is `ℤ`: the `k`th band
-`f⁻¹[k - 1 / 2, k + 1 / 2]` contains exactly one critical point, `[eₖ]`, of index `k`. -/
+page (numbered `2`) of `TauCeti.realProjectiveMomentSpectralSequence N` is `ℤ`. -/
 theorem nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso {k : ℤ} (h₀ : 0 ≤ k)
     (hk : k ≤ N) : Nonempty (((𝔈[N]).page 2).X (-2 * k, k) ≅ ModuleCat.of ℤ ℤ) := by
   obtain ⟨k, rfl⟩ := Int.eq_ofNat_of_zero_le h₀
@@ -205,12 +210,13 @@ private theorem sublevel_cut_top :
     push_cast
     linarith
 
-/-- On the page `N + 3`, the positions of the bands `0, …, N` carry the graded pieces of the
-homology of `ℝℙᴺ`. -/
-private def pageXIsoCokernelAbutmentFiltrationMap (pq : ℤ × ℤ) (h₀ : 0 ≤ pq.2) (hN : pq.2 ≤ N) :
-    ((𝔈[N]).page (N + 3)).X pq ≅ cokernel ((𝔄[N]).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
+/-- On a late enough page `r`, the position `pq` carries a graded piece of the homology of
+`ℝℙᴺ`. -/
+private def pageXIsoCokernelAbutmentFiltrationMap (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (h₀ : pq.2 + 2 ≤ r) (hN : N + 2 ≤ pq.2 + r) :
+    ((𝔈[N]).page r).X pq ≅ cokernel ((𝔄[N]).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   filteredSpaceSpectralSequencePageXIsoGradedOfFinite (a := 0) (b := N + 1) _ _
-    (sublevel_cut_zero N) (sublevel_cut_top N) (N + 3) (by lia) pq (by lia) (by lia)
+    (sublevel_cut_zero N) (sublevel_cut_top N) r hr pq (by lia) (by lia)
 
 /-- Off the diagonal, the graded pieces of the homology of `ℝℙᴺ` vanish. -/
 private theorem isZero_cokernel_abutmentFiltrationMap {j m : ℤ} (h₀ : 0 ≤ j) (hN : j ≤ N)
@@ -218,10 +224,12 @@ private theorem isZero_cokernel_abutmentFiltrationMap {j m : ℤ} (h₀ : 0 ≤ 
   obtain ⟨p, rfl⟩ : ∃ p, m = p + j := ⟨m - j, by lia⟩
   exact ((𝔈[N]).isZero_page_X_of_le le_rfl
     (isZero_realProjectiveMomentSpectralSequence_page_two_X N (p, j) (by simp only; lia))
-    (N + 3) (by lia)).of_iso (pageXIsoCokernelAbutmentFiltrationMap N (p, j) h₀ hN).symm
+    (N + 3) (by lia)).of_iso
+      (pageXIsoCokernelAbutmentFiltrationMap N (N + 3) (by lia) (p, j) (by simp only; lia)
+        (by simp only; lia)).symm
 
 /-- On the diagonal, the graded piece of `Hₖ(ℝℙᴺ)` is everything. -/
-private def cokernelAbutmentFiltrationMapIsoSingularHomology (k : ℕ) (hk : k ≤ N) :
+private def cokernelAbutmentFiltrationMapIsoSingularHomology (k : ℕ) :
     cokernel ((𝔄[N]).abutmentFiltrationMap k (-k)) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) :=
@@ -230,7 +238,6 @@ private def cokernelAbutmentFiltrationMapIsoSingularHomology (k : ℕ) (hk : k �
       (singularChainFiltration_eq_bot _ (sublevel_cut_zero N)) _)
     (CochainComplex.isIso_filtrationAbutmentFiltrationι _ _
       (singularChainFiltration_eq_top _ (sublevel_cut_top N)) _)
-    (by lia) (by lia)
     (fun j hj₀ hjN hjk ↦ isZero_cokernel_abutmentFiltrationMap N hj₀ (by lia) (by lia)) ≪≫
   filteredSpaceAbutmentIso _ (Monotone.comp (sublevel_mono 𝔣[N]) monotone_cut) k
 
@@ -246,51 +253,78 @@ private theorem isZero_page_three_X_of_rel (k : ℤ) (s : ℤ) (hs : 3 ≤ s) (p
   rcases h with h | h <;> simp only [ComplexShape.up'_Rel, Prod.ext_iff, Prod.fst_add,
     Prod.snd_add] at h <;> lia
 
-/-- **The second page is the homology of `ℝℙᴺ`.** For `k ≤ N`, the object at `(-2k, k)` on the
-second page (numbered `3`) of `TauCeti.realProjectiveMomentSpectralSequence N` is
-`Hₖ(ℝℙᴺ; ℤ)`. It survives unchanged to every later page, and the filtration of `Hₖ(ℝℙᴺ; ℤ)` by
-the images of the sublevels has no other nonzero graded piece. -/
-def realProjectiveMomentSpectralSequencePageThreeXIso (k : ℕ) (hk : k ≤ N) :
+/-- **The second page is the homology of `ℝℙᴺ`.** The object at `(-2k, k)` on the second page
+(numbered `3`) of `TauCeti.realProjectiveMomentSpectralSequence N` is `Hₖ(ℝℙᴺ; ℤ)`: it is the
+object at `(-2k, k)` on the page `k + N + 3`, which is the `k`th graded piece of the filtration
+of `Hₖ(ℝℙᴺ; ℤ)` by the images of the sublevels, and that graded piece is all of
+`Hₖ(ℝℙᴺ; ℤ)`. -/
+def realProjectiveMomentSpectralSequencePageThreeXIso (k : ℕ) :
     ((𝔈[N]).page 3).X (-2 * k, k) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) :=
   ((𝔈[N]).pageXIsoOfLEOfIsZero (r := 3) (by norm_num)
-      (fun s hs pq' h ↦ isZero_page_three_X_of_rel N k s hs pq' h) (N + 3) (by lia)).symm ≪≫
-    pageXIsoCokernelAbutmentFiltrationMap N _ (by simp) (by simpa using hk) ≪≫
+      (fun s hs pq' h ↦ isZero_page_three_X_of_rel N k s hs pq' h) (k + N + 3) (by lia)).symm ≪≫
+    pageXIsoCokernelAbutmentFiltrationMap N (k + N + 3) (by lia) _ (by simp only; lia)
+      (by simp only; lia) ≪≫
     eqToIso (congrArg (fun m ↦ cokernel ((𝔄[N]).abutmentFiltrationMap k m)) (by simp; ring)) ≪≫
-    cokernelAbutmentFiltrationMapIsoSingularHomology N k hk
+    cokernelAbutmentFiltrationMapIsoSingularHomology N k
 
-/-- The homology of `RPᴺ` is that of the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`. -/
-private def singularHomologyIsoProjectivization (k : ℕ) :
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
-        (ModuleCat.of ℤ ℤ)).obj (TopCat.of (RealProjectiveSpace N)) ≅
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
-        (ModuleCat.of ℤ ℤ)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) :=
-  ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
-    (ModuleCat.of ℤ ℤ)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
-      (RealProjectiveSpace.homeomorphProjectivization N))
+/-- **The second page in degree `0`.** The object at `(0, 0)` on the second page (numbered `3`)
+of `TauCeti.realProjectiveMomentSpectralSequence N` is `H₀(ℝℙᴺ; ℤ) = ℤ`. -/
+def realProjectiveMomentSpectralSequencePageThreeXZeroIso :
+    ((𝔈[N]).page 3).X (0, 0) ≅ ModuleCat.of ℤ ℤ :=
+  realProjectiveMomentSpectralSequencePageThreeXIso N 0 ≪≫
+    (RealProjectiveSpace.singularHomologyIsoProjectivization N (ModuleCat.of ℤ ℤ) 0).symm ≪≫
+    (RealProjectiveSpace.singularHomologyZeroLinearEquiv ℤ).toModuleIso
 
-/-- In an odd degree `k ≤ N` the homology of `ℝℙᴺ`, so the second page at `(-2k, k)`, does not
-vanish: it is `ℤ / 2` for `k < N` and `ℤ` for `k = N`. -/
+/-- **The second page in odd degrees below `N`.** For odd `k < N`, the object at `(-2k, k)` on
+the second page (numbered `3`) of `TauCeti.realProjectiveMomentSpectralSequence N` is
+`Hₖ(ℝℙᴺ; ℤ) = ℤ / 2`. -/
+def realProjectiveMomentSpectralSequencePageThreeXIsoOfOdd {k : ℕ} (hk : Odd k) (hkN : k < N) :
+    ((𝔈[N]).page 3).X (-2 * k, k) ≅ ModuleCat.of ℤ (ZMod 2) :=
+  realProjectiveMomentSpectralSequencePageThreeXIso N k ≪≫
+    (RealProjectiveSpace.singularHomologyIsoProjectivization N (ModuleCat.of ℤ ℤ) k).symm ≪≫
+    (RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd hk hkN).toModuleIso
+
+/-- **The second page in the top degree.** For odd `N`, the object at `(-2N, N)` on the second
+page (numbered `3`) of `TauCeti.realProjectiveMomentSpectralSequence N` is `H_N(ℝℙᴺ; ℤ) = ℤ`. -/
+def realProjectiveMomentSpectralSequencePageThreeXTopIsoOfOdd (hN : Odd N) :
+    ((𝔈[N]).page 3).X (-2 * N, N) ≅ ModuleCat.of ℤ ℤ :=
+  realProjectiveMomentSpectralSequencePageThreeXIso N N ≪≫
+    (RealProjectiveSpace.singularHomologyIsoProjectivization N (ModuleCat.of ℤ ℤ) N).symm ≪≫
+    (RealProjectiveSpace.singularHomologyTopLinearEquivOfOdd ℤ hN).toModuleIso
+
+/-- **The second page in even positive degrees.** For even `k > 0`, the object at `(-2k, k)` on
+the second page (numbered `3`) of `TauCeti.realProjectiveMomentSpectralSequence N` is
+`Hₖ(ℝℙᴺ; ℤ) = 0`. -/
+theorem isZero_realProjectiveMomentSpectralSequence_page_three_X_of_even {k : ℕ} (hk : Even k)
+    (hk0 : k ≠ 0) : IsZero (((𝔈[N]).page 3).X (-2 * k, k)) :=
+  (RealProjectiveSpace.isZero_singularHomology_projectivization_of_even ℤ
+    (isRegular_iff_ne_zero.2 two_ne_zero).right hk hk0).of_iso
+    (realProjectiveMomentSpectralSequencePageThreeXIso N k)
+
+/-- **The second page vanishes off the diagonal.** On the second page (numbered `3`) of
+`TauCeti.realProjectiveMomentSpectralSequence N`, only the positions `(-2k, k)` with `0 ≤ k ≤ N`
+can be nonzero. -/
+theorem isZero_realProjectiveMomentSpectralSequence_page_three_X (pq : ℤ × ℤ)
+    (h : ¬(pq.1 = -2 * pq.2 ∧ 0 ≤ pq.2 ∧ pq.2 ≤ N)) :
+    IsZero (((𝔈[N]).page 3).X pq) :=
+  (𝔈[N]).isZero_page_X_of_le le_rfl (isZero_realProjectiveMomentSpectralSequence_page_two_X N pq h)
+    3 (by norm_num)
+
+/-! ### The first differential -/
+
+/-- In an odd degree `k ≤ N` the second page at `(-2k, k)` does not vanish: it is `ℤ / 2` for
+`k < N` and `ℤ` for `k = N`. -/
 private theorem not_isZero_page_three_X_of_odd {k : ℕ} (hk : Odd k) (hkN : k ≤ N) :
     ¬IsZero (((𝔈[N]).page 3).X (-2 * k, k)) := by
-  rw [((realProjectiveMomentSpectralSequencePageThreeXIso N k hkN).trans
-    (singularHomologyIsoProjectivization N k).symm).isZero_iff, ModuleCat.isZero_iff_subsingleton]
   rcases hkN.lt_or_eq with hkN | rfl
-  · exact fun h ↦ not_subsingleton (ZMod 2)
-      ((RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd hk hkN).toEquiv.symm.subsingleton)
-  · exact fun h ↦ not_subsingleton ℤ
-      ((RealProjectiveSpace.singularHomologyTopLinearEquivOfOdd ℤ hk).toEquiv.symm.subsingleton)
-
-/-- On the first page, the object at a position whose outgoing differential vanishes survives to
-the second page as the cokernel of the incoming differential. -/
-private def pageThreeXIsoCokernel (pq pq' pq'' : ℤ × ℤ) (h' : pq' + (2, 1 - 2) = pq)
-    (h'' : pq + (2, 1 - 2) = pq'') (hd : ((𝔈[N]).page 2).d pq pq'' = 0) :
-    ((𝔈[N]).page 3).X pq ≅ cokernel (((𝔈[N]).page 2).d pq' pq) :=
-  ((𝔈[N]).iso 2 3 pq).symm ≪≫
-    ((𝔈[N]).page 2).isoHomologyι pq pq'' (ComplexShape.next_eq' _ h'') hd ≪≫
-    (((𝔈[N]).page 2).opcyclesIsCokernel pq' pq
-      (ComplexShape.prev_eq' _ h')).coconePointUniqueUpToIso (colimit.isColimit _)
+  · rw [(realProjectiveMomentSpectralSequencePageThreeXIsoOfOdd N hk hkN).isZero_iff,
+      ModuleCat.isZero_iff_subsingleton]
+    exact fun h ↦ not_subsingleton (ZMod 2) h
+  · rw [(realProjectiveMomentSpectralSequencePageThreeXTopIsoOfOdd k hk).isZero_iff,
+      ModuleCat.isZero_iff_subsingleton]
+    exact fun h ↦ not_subsingleton ℤ h
 
 /-- The positions `(-2j, j)` and `(-2(j - 1), j - 1)` are joined by a differential of the first
 page. -/
@@ -298,11 +332,24 @@ private theorem rel_two (j : ℤ) : ((-2 * j, j) : ℤ × ℤ) + (2, 1 - 2) = (-
   ext <;> simp <;> ring
 
 /-- **The first differential out of an odd band vanishes.** On the first page (numbered `2`) of
-`TauCeti.realProjectiveMomentSpectralSequence N`, for odd `j` the differential from `(-2j, j)` to
-`(-2(j - 1), j - 1)`, the connecting map `Hⱼ(M_{j+1/2}, M_{j-1/2}) ⟶ Hⱼ₋₁(M_{j-1/2}, M_{j-3/2})`
-of the sublevels `M_c = {f ≤ c}`, is zero. -/
-theorem realProjectiveMomentSpectralSequence_page_two_d_eq_zero_of_odd {j : ℤ} (hj : Odd j) :
-    ((𝔈[N]).page 2).d (-2 * j, j) (-2 * (j - 1), j - 1) = 0 := by
+`TauCeti.realProjectiveMomentSpectralSequence N`, every differential out of a position `(p, j)`
+with odd `j` is zero. For `p = -2j` this is the differential to `(-2(j - 1), j - 1)`, the
+connecting map `Hⱼ(M_{j+1/2}, M_{j-1/2}) ⟶ Hⱼ₋₁(M_{j-1/2}, M_{j-3/2})` of the sublevels
+`M_c = {f ≤ c}`. -/
+theorem realProjectiveMomentSpectralSequence_page_two_d_eq_zero_of_odd {pq pq' : ℤ × ℤ}
+    (hj : Odd pq.2) : ((𝔈[N]).page 2).d pq pq' = 0 := by
+  obtain ⟨p, j⟩ := pq
+  change Odd j at hj
+  by_cases hrel : (ComplexShape.up' ((2, 1 - 2) : ℤ × ℤ)).Rel (p, j) pq'
+  swap
+  · exact ((𝔈[N]).page 2).shape _ _ hrel
+  obtain rfl : (p, j) + (2, 1 - 2) = pq' := hrel
+  by_cases hp : p = -2 * j
+  swap
+  · exact (isZero_realProjectiveMomentSpectralSequence_page_two_X N _
+      (by simp only; tauto)).eq_of_src _ _
+  subst hp
+  rw [rel_two]
   obtain ⟨i, rfl⟩ := hj
   by_cases hjN : 0 ≤ i ∧ 2 * i + 1 ≤ N
   swap
@@ -337,8 +384,7 @@ theorem realProjectiveMomentSpectralSequence_page_two_d_eq_zero_of_odd {j : ℤ}
 /-- **The first differential out of an even band is `±2`.** On the first page (numbered `2`) of
 `TauCeti.realProjectiveMomentSpectralSequence N`, for even `j` with `2 ≤ j ≤ N`, the differential
 from `(-2j, j)` to `(-2(j - 1), j - 1)` is multiplication by `2` or by `-2` in any identification of
-the two objects with `ℤ`. Its cokernel is the second page at `(-2(j - 1), j - 1)`, which is
-`Hⱼ₋₁(ℝℙᴺ; ℤ) = ℤ / 2`. -/
+the two objects with `ℤ`. -/
 theorem realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_neg_two_smul {j : ℤ}
     (hj : Even j) (h₂ : 2 ≤ j) (hjN : j ≤ N)
     (e : ((𝔈[N]).page 2).X (-2 * j, j) ≅ ModuleCat.of ℤ ℤ)
@@ -353,14 +399,14 @@ theorem realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_neg_two_s
   -- The second page at `(-2(j - 1), j - 1)` is `ℤ / 2`.
   obtain ⟨z⟩ : Nonempty (((𝔈[N]).page 3).X (-2 * (j - 1), j - 1) ≅ ModuleCat.of ℤ (ZMod 2)) := by
     rw [hk]
-    exact ⟨realProjectiveMomentSpectralSequencePageThreeXIso N k (by lia) ≪≫
-      (singularHomologyIsoProjectivization N k).symm ≪≫
-      (RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd hkodd (by lia)).toModuleIso⟩
+    exact ⟨realProjectiveMomentSpectralSequencePageThreeXIsoOfOdd N hkodd (by lia)⟩
   -- It is also the cokernel of the differential, since the next differential vanishes.
   set φ := e.inv ≫ ((𝔈[N]).page 2).d (-2 * j, j) (-2 * (j - 1), j - 1) ≫ e'.hom with hφ
-  let i := z.symm ≪≫ pageThreeXIsoCokernel N _ _ _ (rel_two j) (rel_two (j - 1))
+  let i := z.symm ≪≫ (𝔈[N]).pageXIsoCokernel le_rfl 3 (by norm_num)
+    (ComplexShape.prev_eq' _ (rel_two j)) (ComplexShape.next_eq' _ (rel_two (j - 1)))
     (realProjectiveMomentSpectralSequence_page_two_d_eq_zero_of_odd N
-      (by rw [hk]; exact_mod_cast hkodd)) ≪≫ cokernel.mapIso _ φ e e' (by simp [hφ])
+      (by change Odd (j - 1); rw [hk]; exact_mod_cast hkodd)) ≪≫
+    cokernel.mapIso _ φ e e' (by simp [hφ])
   have hcard := Nat.card_congr i.toLinearEquiv.toEquiv
   rw [ModuleCat.natCard_cokernel_int, ModuleCat.coe_of, Nat.card_zmod] at hcard
   have hφ' : φ = φ.hom 1 • 𝟙 _ := by ext; simp

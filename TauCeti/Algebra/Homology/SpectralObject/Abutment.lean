@@ -15,7 +15,7 @@ Let `X` be a spectral object in an abelian category, indexed by `EInt`. Its abut
 filtered by the images of the maps `H^n(⊥ ≤ q) ⟶ H^n(⊥ ≤ ⊤)`: the `q`th piece is
 `opZ^n(⊥ ≤ q, q ≤ ⊤)`, the cokernel of `δ : H^{n-1}(q ≤ ⊤) ⟶ H^n(⊥ ≤ q)`, embedded in the abutment
 by `X.abutmentFiltrationι q n` (a monomorphism, by exactness). The pieces increase with `q`
-(`X.abutmentFiltrationMap q n`, compatible with the embeddings), and the limit object
+(`X.abutmentFiltrationMap q n`, monomorphisms compatible with the embeddings), and the limit object
 `X.EInfty q n = E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of the spectral sequence is the graded piece: the cokernel
 of `F_q H^n ⟶ F_{q+1} H^n` (`X.EInftyIsoCokernel`), from Mathlib's short exact sequence
 `shortComplexOpcyclesThreeδ₂Toδ₁_shortExact`.
@@ -92,6 +92,9 @@ lemma abutmentFiltrationMap_ι (q n : ℤ) :
   rw [X.opcyclesMap_fromOpcycles _ _ _ _ _ _ _ _ _ (𝟙 _) n (by simp [threeδ₂Toδ₁])
     (by simp [threeδ₂Toδ₁]), CategoryTheory.Functor.map_id, Category.comp_id]
 
+instance (q n : ℤ) : Mono (X.abutmentFiltrationMap q n) :=
+  mono_of_mono_fac (X.abutmentFiltrationMap_ι q n)
+
 /-- The limit object `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of the spectral sequence is the graded piece
 `F_{q+1} H^n / F_q H^n` of the filtration of the abutment. -/
 noncomputable def EInftyIsoCokernel (q n : ℤ) :
@@ -137,12 +140,20 @@ lemma isIso_abutmentFiltrationι {q n : ℤ}
 
 /-- **Vanishing graded pieces keep the filtration at zero.** If the `a`th piece of the filtration of
 the abutment in degree `n` vanishes, and so do the graded pieces `F_{j+1} H^n / F_j H^n` for
-`a ≤ j < q`, then the `q`th piece vanishes. -/
+`a ≤ j < q`, then the `q`th piece vanishes. For `q ≤ a` this holds because the filtration
+increases. -/
 theorem isZero_abutmentFiltration_of_isZero_cokernel {a q n : ℤ}
-    (ha : IsZero (X.abutmentFiltration a n)) (haq : a ≤ q)
+    (ha : IsZero (X.abutmentFiltration a n))
     (h : ∀ j, a ≤ j → j < q → IsZero (cokernel (X.abutmentFiltrationMap j n))) :
     IsZero (X.abutmentFiltration q n) := by
-  suffices ∀ j, a ≤ j → j ≤ q → IsZero (X.abutmentFiltration j n) from this q haq le_rfl
+  rcases le_or_gt q a with hqa | haq
+  · clear h
+    induction q, hqa using Int.leInductionDown with
+    | base => exact ha
+    | pred j hj ih =>
+      have hj' : IsZero (X.abutmentFiltration (j - 1 + 1) n) := (sub_add_cancel j 1).symm ▸ ih
+      exact IsZero.of_mono (X.abutmentFiltrationMap (j - 1) n) hj'
+  suffices ∀ j, a ≤ j → j ≤ q → IsZero (X.abutmentFiltration j n) from this q haq.le le_rfl
   intro j hj
   induction j, hj using Int.leInduction with
   | base => exact fun _ ↦ ha
@@ -154,20 +165,27 @@ theorem isZero_abutmentFiltration_of_isZero_cokernel {a q n : ℤ}
 
 /-- **Vanishing graded pieces keep the filtration exhaustive.** If the `b`th piece of the
 filtration of the abutment in degree `n` is everything, and the graded pieces
-`F_{j+1} H^n / F_j H^n` vanish for `q ≤ j < b`, then the `q`th piece is everything. -/
+`F_{j+1} H^n / F_j H^n` vanish for `q ≤ j < b`, then the `q`th piece is everything. For `b ≤ q`
+this holds because the filtration increases. -/
 theorem isIso_abutmentFiltrationι_of_isZero_cokernel {q b n : ℤ}
-    (hb : IsIso (X.abutmentFiltrationι b n)) (hqb : q ≤ b)
+    (hb : IsIso (X.abutmentFiltrationι b n))
     (h : ∀ j, q ≤ j → j < b → IsZero (cokernel (X.abutmentFiltrationMap j n))) :
     IsIso (X.abutmentFiltrationι q n) := by
-  suffices ∀ j, j ≤ b → q ≤ j → IsIso (X.abutmentFiltrationι j n) from this q hqb le_rfl
+  rcases le_or_gt b q with hbq | hqb
+  · clear h
+    induction q, hbq using Int.leInduction with
+    | base => exact hb
+    | succ j hj ih =>
+      have : Epi (X.abutmentFiltrationι (j + 1) n) :=
+        epi_of_epi_fac (X.abutmentFiltrationMap_ι j n)
+      exact isIso_of_mono_of_epi _
+  suffices ∀ j, j ≤ b → q ≤ j → IsIso (X.abutmentFiltrationι j n) from this q hqb.le le_rfl
   intro j hj
   induction j, hj using Int.leInductionDown with
   | base => exact fun _ ↦ hb
   | pred j hj ih =>
     intro hqj
     have hj : IsIso (X.abutmentFiltrationι j n) := ih (by lia)
-    have : Mono (X.abutmentFiltrationMap (j - 1) n) :=
-      mono_of_mono_fac (X.abutmentFiltrationMap_ι (j - 1) n)
     have : Epi (X.abutmentFiltrationMap (j - 1) n) :=
       Abelian.epi_of_cokernel_π_eq_zero _ ((h (j - 1) hqj (by lia)).eq_of_tgt _ _)
     have : IsIso (X.abutmentFiltrationMap (j - 1) n) := isIso_of_mono_of_epi _
@@ -175,19 +193,42 @@ theorem isIso_abutmentFiltrationι_of_isZero_cokernel {q b n : ℤ}
     rw [← X.abutmentFiltrationMap_ι (j - 1) n]
     infer_instance
 
+/-- If the filtration of the abutment in degree `n` vanishes at `a`, is everything at `b`, and
+has no nonzero graded piece in `[a, b)` other than the `q`th one, then it has no nonzero graded
+piece other than the `q`th one at all. -/
+private theorem isZero_cokernel_abutmentFiltrationMap_of_ne {a b q n : ℤ}
+    (ha : IsZero (X.abutmentFiltration a n)) (hb : IsIso (X.abutmentFiltrationι b n))
+    (h : ∀ j, a ≤ j → j < b → j ≠ q → IsZero (cokernel (X.abutmentFiltrationMap j n)))
+    {j : ℤ} (hjq : j ≠ q) : IsZero (cokernel (X.abutmentFiltrationMap j n)) := by
+  by_cases haj : a ≤ j
+  · by_cases hjb : j < b
+    · exact h j haj hjb hjq
+    have := X.isIso_abutmentFiltrationι_of_isZero_cokernel hb (q := j)
+      fun _ _ _ ↦ (by lia : False).elim
+    have := X.isIso_abutmentFiltrationι_of_isZero_cokernel hb (q := j + 1)
+      fun _ _ _ ↦ (by lia : False).elim
+    have : IsIso (X.abutmentFiltrationMap j n ≫ X.abutmentFiltrationι (j + 1) n) := by
+      rw [abutmentFiltrationMap_ι]
+      infer_instance
+    have := IsIso.of_isIso_comp_right (X.abutmentFiltrationMap j n)
+      (X.abutmentFiltrationι (j + 1) n)
+    exact isZero_cokernel_of_epi _
+  · have := (X.isZero_abutmentFiltration_of_isZero_cokernel ha (q := j + 1)
+      fun _ _ _ ↦ (by lia : False).elim).epi (X.abutmentFiltrationMap j n)
+    exact isZero_cokernel_of_epi _
+
 /-- **A finite filtration with a single nonzero graded piece.** If the filtration of the abutment
 in degree `n` vanishes at `a` and is everything at `b`, and its only graded piece between them that
 may be nonzero is `F_{q+1} H^n / F_q H^n`, then that graded piece is the abutment `H^n(⊥ ≤ ⊤)`,
 through the embedding of `F_{q+1} H^n`. -/
 noncomputable def cokernelAbutmentFiltrationMapIsoAbutment {a b q n : ℤ}
     (ha : IsZero (X.abutmentFiltration a n)) (hb : IsIso (X.abutmentFiltrationι b n))
-    (haq : a ≤ q) (hqb : q < b)
     (h : ∀ j, a ≤ j → j < b → j ≠ q → IsZero (cokernel (X.abutmentFiltrationMap j n))) :
     cokernel (X.abutmentFiltrationMap q n) ≅ X.abutment n :=
-  have hq := X.isZero_abutmentFiltration_of_isZero_cokernel ha haq
-    fun j hj hjq ↦ h j hj (by lia) hjq.ne
-  have := X.isIso_abutmentFiltrationι_of_isZero_cokernel hb (by lia : q + 1 ≤ b)
-    fun j hj hjb ↦ h j (by lia) hjb (by lia)
+  have hq := X.isZero_abutmentFiltration_of_isZero_cokernel ha
+    fun _ _ hjq ↦ X.isZero_cokernel_abutmentFiltrationMap_of_ne ha hb h hjq.ne
+  have := X.isIso_abutmentFiltrationι_of_isZero_cokernel hb (q := q + 1)
+    fun _ hj _ ↦ X.isZero_cokernel_abutmentFiltrationMap_of_ne ha hb h (by lia)
   cokernelIsoOfEq (hq.eq_of_src _ 0) ≪≫ cokernelZeroIsoTarget ≪≫
     asIso (X.abutmentFiltrationι (q + 1) n)
 
@@ -195,10 +236,9 @@ noncomputable def cokernelAbutmentFiltrationMapIsoAbutment {a b q n : ℤ}
 @[reassoc (attr := simp)]
 lemma π_cokernelAbutmentFiltrationMapIsoAbutment_hom {a b q n : ℤ}
     (ha : IsZero (X.abutmentFiltration a n)) (hb : IsIso (X.abutmentFiltrationι b n))
-    (haq : a ≤ q) (hqb : q < b)
     (h : ∀ j, a ≤ j → j < b → j ≠ q → IsZero (cokernel (X.abutmentFiltrationMap j n))) :
     cokernel.π (X.abutmentFiltrationMap q n) ≫
-        (X.cokernelAbutmentFiltrationMapIsoAbutment ha hb haq hqb h).hom =
+        (X.cokernelAbutmentFiltrationMapIsoAbutment ha hb h).hom =
       X.abutmentFiltrationι (q + 1) n := by
   simp [cokernelAbutmentFiltrationMapIsoAbutment, cokernelZeroIsoTarget]
 

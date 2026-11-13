@@ -123,4 +123,28 @@ lemma pageXIsoOfLEOfIsZero_add_one {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
         E.pageXIsoOfLEOfIsZero hr h s hrs :=
   Int.leInduction_add_one _ _ s hrs
 
+/-- **An object whose outgoing differential vanishes survives as a cokernel.** If the differential
+of the page `r` out of `pq` vanishes, the object at `pq` on the next page `r'` is the cokernel of
+the differential of the page `r` into `pq`. -/
+noncomputable def pageXIsoCokernel {r : ℤ} (hr : r₀ ≤ r) (r' : ℤ) (hrr' : r + 1 = r')
+    {pq pq' pq'' : κ} (h' : (c r).prev pq = pq') (h'' : (c r).next pq = pq'')
+    (hd : (E.page r).d pq pq'' = 0) :
+    (E.page r').X pq ≅ cokernel ((E.page r).d pq' pq) :=
+  (E.iso r r' pq hrr' hr).symm ≪≫ (E.page r).isoHomologyι pq pq'' h'' hd ≪≫
+    ((E.page r).opcyclesIsCokernel pq' pq h').coconePointUniqueUpToIso (colimit.isColimit _)
+
+/-- Through `CategoryTheory.SpectralSequence.pageXIsoCokernel`, the class on the page `r'` of a
+cycle of the page `r` is its image in the cokernel of the incoming differential. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_iso_hom_pageXIsoCokernel_hom {r : ℤ} (hr : r₀ ≤ r) (r' : ℤ) (hrr' : r + 1 = r')
+    {pq pq' pq'' : κ} (h' : (c r).prev pq = pq') (h'' : (c r).next pq = pq'')
+    (hd : (E.page r).d pq pq'' = 0) :
+    (E.page r).homologyπ pq ≫ (E.iso r r' pq hrr' hr).hom ≫
+        (E.pageXIsoCokernel hr r' hrr' h' h'' hd).hom =
+      (E.page r).iCycles pq ≫ cokernel.π ((E.page r).d pq' pq) := by
+  simp only [pageXIsoCokernel, Iso.trans_hom, Iso.symm_hom, Iso.hom_inv_id_assoc,
+    HomologicalComplex.isoHomologyι_hom, HomologicalComplex.homology_π_ι_assoc]
+  exact congrArg _ (IsColimit.comp_coconePointUniqueUpToIso_hom
+    ((E.page r).opcyclesIsCokernel pq' pq h') (colimit.isColimit _) WalkingParallelPair.one)
+
 end CategoryTheory.SpectralSequence

@@ -48,7 +48,8 @@ block of the same sign to its inertia.
 
 * `TauCeti.projectiveMomentFunction`: the moment function with weights `w`.
 * `TauCeti.contMDiff_projectiveMomentFunction`: it is smooth.
-* `TauCeti.projectiveMomentFunction_mem_Icc`: its values lie between the weights.
+* `TauCeti.le_projectiveMomentFunction`, `TauCeti.projectiveMomentFunction_le` and
+  `TauCeti.projectiveMomentFunction_mem_Icc`: its values lie between the weights.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_iff`: for arbitrary weights its critical
   points are the eigenlines of the diagonal form.
 * `TauCeti.criticalPoints_projectiveMomentFunction`: for distinct weights its critical points are
@@ -381,20 +382,36 @@ theorem projectiveMomentFunction_mk_single (w : Fin (n + 1) → ℝ) (k : Fin (n
   rw [← affineChart_symm_zero, ← comp_apply (f := projectiveMomentFunction 𝕜 w),
     projectiveMomentFunction_comp_affineChart_symm, model_zero]
 
+/-- The denominator `∑ i, ‖v i‖ ^ 2` of the moment function is positive at a nonzero vector. -/
+private theorem sum_norm_sq_pos {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) : 0 < ∑ i, ‖v i‖ ^ 2 := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+  exact Finset.sum_pos' (fun j _ ↦ by positivity) ⟨i, Finset.mem_univ _, by
+    have : ‖v i‖ ≠ 0 := norm_ne_zero_iff.2 hi
+    positivity⟩
+
+/-- **The values of the moment function are bounded below by the weights.** If every weight is at
+least `a`, so is every value of the moment function, a weighted average of the weights. -/
+theorem le_projectiveMomentFunction {w : Fin (n + 1) → ℝ} {a : ℝ} (hw : ∀ i, a ≤ w i)
+    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) : a ≤ projectiveMomentFunction 𝕜 w x := by
+  induction x using Projectivization.ind with | h v hv => ?_
+  rw [projectiveMomentFunction_mk, le_div_iff₀ (sum_norm_sq_pos hv), Finset.mul_sum]
+  exact Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hw i) (by positivity)
+
+/-- **The values of the moment function are bounded above by the weights.** If every weight is at
+most `b`, so is every value of the moment function, a weighted average of the weights. -/
+theorem projectiveMomentFunction_le {w : Fin (n + 1) → ℝ} {b : ℝ} (hw : ∀ i, w i ≤ b)
+    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) : projectiveMomentFunction 𝕜 w x ≤ b := by
+  induction x using Projectivization.ind with | h v hv => ?_
+  rw [projectiveMomentFunction_mk, div_le_iff₀ (sum_norm_sq_pos hv), Finset.mul_sum]
+  exact Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hw i) (by positivity)
+
 /-- **The values of the moment function lie between the weights.** If every weight lies in
-`[a, b]`, so does every value of the moment function, a weighted average of the weights. -/
+`[a, b]`, so does every value of the moment function. -/
 theorem projectiveMomentFunction_mem_Icc {w : Fin (n + 1) → ℝ} {a b : ℝ}
     (hw : ∀ i, w i ∈ Icc a b) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
-    projectiveMomentFunction 𝕜 w x ∈ Icc a b := by
-  induction x using Projectivization.ind with | h v hv => ?_
-  rw [projectiveMomentFunction_mk]
-  have hpos : 0 < ∑ i, ‖v i‖ ^ 2 := by
-    obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
-    exact Finset.sum_pos' (fun j _ ↦ by positivity) ⟨i, Finset.mem_univ _, by
-      have : ‖v i‖ ≠ 0 := norm_ne_zero_iff.2 hi
-      positivity⟩
-  refine ⟨(le_div_iff₀ hpos).2 ?_, (div_le_iff₀ hpos).2 ?_⟩ <;> rw [Finset.mul_sum] <;>
-    exact Finset.sum_le_sum fun i _ ↦ by nlinarith [(hw i).1, (hw i).2, sq_nonneg ‖v i‖]
+    projectiveMomentFunction 𝕜 w x ∈ Icc a b :=
+  ⟨le_projectiveMomentFunction (fun i ↦ (hw i).1) x,
+    projectiveMomentFunction_le (fun i ↦ (hw i).2) x⟩
 
 private theorem projectiveMomentFunction_comp_extend_symm (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
     projectiveMomentFunction 𝕜 w ∘ ((affineOpenPartialHomeomorph k).extend 𝓘(ℝ, Fin n → 𝕜)).symm =

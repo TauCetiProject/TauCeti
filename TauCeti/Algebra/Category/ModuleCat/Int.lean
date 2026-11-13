@@ -16,8 +16,9 @@ reflects vanishing of their composite. This transports zero-composite laws betwe
 additive groups and `ModuleCat ℤ`.
 
 An endomorphism `φ` of `ℤ` in `ModuleCat ℤ` is multiplication by `φ 1`, so its cokernel is
-`ℤ / φ 1` and has `|φ 1|` elements (`ModuleCat.natCard_cokernel_int`); this recovers `φ` up to sign
-from its cokernel.
+`ℤ / φ 1`, and `Nat.card` of the cokernel is `|φ 1|` (`ModuleCat.natCard_cokernel_int`): for
+`φ ≠ 0` the cokernel has `|φ 1|` elements, and for `φ = 0` it is the infinite group `ℤ`. This
+recovers `φ` up to sign from its cokernel.
 -/
 
 public section
@@ -46,8 +47,9 @@ namespace ModuleCat
 
 open Limits
 
-/-- **The cokernel of an endomorphism of `ℤ`.** The cokernel of `φ : ℤ ⟶ ℤ` in `ModuleCat ℤ` has
-`|φ 1|` elements; when `φ = 0` it is `ℤ`, which is infinite, and `Nat.card` is `0`. -/
+/-- **The cokernel of an endomorphism of `ℤ`.** `Nat.card` of the cokernel of `φ : ℤ ⟶ ℤ` in
+`ModuleCat ℤ` is `|φ 1|`: for `φ ≠ 0` the cokernel has `|φ 1|` elements, and for `φ = 0` it is
+`ℤ`, which is infinite, so `Nat.card` is `0`. -/
 theorem natCard_cokernel_int (φ : of ℤ ℤ ⟶ of ℤ ℤ) :
     Nat.card (cokernel (C := ModuleCat.{0} ℤ) φ) = (φ.hom 1).natAbs := by
   have hφ : φ.hom = LinearMap.toSpanSingleton ℤ ℤ (φ.hom 1) := LinearMap.ext_ring (by simp)
