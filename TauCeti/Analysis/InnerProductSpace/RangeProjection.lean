@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.LeftInverse
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
@@ -53,20 +52,15 @@ section Adjoint
 
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [CompleteSpace V]
 
-/-- The Gram operator `B† B` of an operator out of a finite-dimensional space is invertible
-exactly when `B` is injective. -/
-theorem isUnit_adjoint_comp_self_iff [FiniteDimensional 𝕜 F] (B : F →L[𝕜] V) :
-    IsUnit (adjoint B ∘L B) ↔ Injective B := by
-  simp only [isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_ker_eq_bot,
-    ker_adjoint_comp_self, LinearMap.ker_eq_bot, coe_coe]
-
 /-- The orthogonal projection onto the range of `B` is `B (B† B)⁻¹ B†`, when the Gram operator
 `B† B` is invertible. -/
 theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProjection]
     (hB : IsUnit (adjoint B ∘L B)) :
-    B.range.starProjection = B ∘L Ring.inverse (adjoint B ∘L B) ∘L adjoint B := by
-  have hG : (adjoint B ∘L B) ∘L Ring.inverse (adjoint B ∘L B) = 1 :=
-    Ring.mul_inverse_cancel _ hB
+    B.range.starProjection = B ∘L gramLeftInverse B := by
+  rw [gramLeftInverse_def, ← comp_assoc]
+  have hG : (adjoint B ∘L B) ∘L Ring.inverse (adjoint B ∘L B) = 1 := by
+    rw [← mul_def]
+    exact Ring.mul_inverse_cancel _ hB
   ext v
   rw [comp_apply, comp_apply]
   refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero
@@ -81,7 +75,28 @@ theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProje
 theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
     [B.range.HasOrthogonalProjection] : B ∘L adjoint B = B.range.starProjection := by
   have h := (isometry_iff_adjoint_comp_self B).1 hB
-  rw [starProjection_range_eq (h ▸ isUnit_one), h, Ring.inverse_one, one_def, id_comp]
+  rw [starProjection_range_eq (h ▸ isUnit_one), gramLeftInverse_def, h,
+    Ring.inverse_one, one_def, id_comp]
+
+/-- Subtracting the Gram tangent component gives the orthogonal normal projection. -/
+theorem sub_apply_gramLeftInverse_eq_starProjection_orthogonal {B : F →L[𝕜] V}
+    [B.range.HasOrthogonalProjection] (hB : IsUnit (adjoint B ∘L B)) (v : V) :
+    v - B (gramLeftInverse B v) = B.rangeᗮ.starProjection v := by
+  rw [Submodule.starProjection_orthogonal', starProjection_range_eq hB]
+  simp only [sub_apply, one_apply_eq_self, comp_apply]
+
+/-- A left inverse that vanishes on the normal space is the Gram left inverse. -/
+theorem eq_gramLeftInverse {B : F →L[𝕜] V} [B.range.HasOrthogonalProjection]
+    (hB : IsUnit (adjoint B ∘L B)) {L : V →L[𝕜] F} (hL : L ∘L B = .id 𝕜 F)
+    (horth : ∀ v ∈ B.rangeᗮ, L v = 0) : L = gramLeftInverse B := by
+  ext v
+  have hnormal : v - B (gramLeftInverse B v) ∈ B.rangeᗮ := by
+    rw [sub_apply_gramLeftInverse_eq_starProjection_orthogonal hB]
+    exact Submodule.starProjection_apply_mem _ _
+  have h := horth _ hnormal
+  have hcancel := DFunLike.congr_fun hL (gramLeftInverse B v)
+  simp only [comp_apply, id_apply] at hcancel
+  simpa only [map_sub, hcancel, sub_eq_zero] using h
 
 end Adjoint
 
@@ -188,21 +203,13 @@ theorem ContinuousAt.starProjection_range {A : X → E →L[𝕜] V} {x : X}
   have hrange (y : X) : (B y).range = (A y).range :=
     LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr j.surjective)
   have hB : ContinuousAt B x := hA.clm_comp continuousAt_const
-  have hB' : ContinuousAt (fun y ↦ ContinuousLinearMap.adjoint (B y)) x :=
-    ContinuousLinearMap.adjoint.continuous.continuousAt.comp hB
   have hG := (ContinuousLinearMap.isUnit_adjoint_comp_self_iff (B x)).2
     (hinj.comp j.injective)
-  have hi : ContinuousAt
-      (fun y ↦ Ring.inverse (ContinuousLinearMap.adjoint (B y) ∘L B y)) x := by
-    have h : ContinuousAt (Ring.inverse : (F →L[𝕜] F) → F →L[𝕜] F)
-        (hG.unit : F →L[𝕜] F) := NormedRing.inverse_continuousAt hG.unit
-    rw [hG.unit_spec] at h
-    exact h.comp (f := fun y : X ↦ ContinuousLinearMap.adjoint (B y) ∘L B y)
-      (hB'.clm_comp hB)
+  have hL := (ContinuousLinearMap.continuousAt_gramLeftInverse hG).comp hB
   have hev : ∀ᶠ y in 𝓝 x, Injective (B y) :=
     hB.preimage_mem_nhds
       (ContinuousLinearMap.isOpen_injective.mem_nhds (hinj.comp j.injective))
-  refine (hB.clm_comp (hi.clm_comp hB')).congr_of_eventuallyEq ?_
+  refine (hB.clm_comp hL).congr_of_eventuallyEq ?_
   filter_upwards [hev] with y hy
   simp only [← hrange y]
   exact ContinuousLinearMap.starProjection_range_eq
@@ -228,20 +235,14 @@ theorem ContDiffAt.starProjection_range {A : X → E →L[ℝ] V} {u₀ : X} {n 
   have hrange : ∀ u, (B u).range = (A u).range := fun u =>
     LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr j.surjective)
   have hB : ContDiffAt ℝ n B u₀ := hA.clm_comp contDiffAt_const
-  have hB' : ContDiffAt ℝ n (fun u => ContinuousLinearMap.adjoint (B u)) u₀ :=
-    (ContinuousLinearMap.adjoint : (F →L[ℝ] V) ≃ₗᵢ[ℝ] (V →L[ℝ] F)).contDiff.contDiffAt.comp u₀ hB
-  have hG : IsUnit (ContinuousLinearMap.adjoint (B u₀) ∘L B u₀) :=
-    (ContinuousLinearMap.isUnit_adjoint_comp_self_iff _).mpr (hinj.comp j.injective)
-  have hinv : ContDiffAt ℝ n
-      (fun u => Ring.inverse (ContinuousLinearMap.adjoint (B u) ∘L B u)) u₀ := by
-    have := contDiffAt_ringInverse ℝ (n := n) hG.unit
-    rw [hG.unit_spec] at this
-    exact this.comp u₀ (hB'.clm_comp hB)
+  have hG := (ContinuousLinearMap.isUnit_adjoint_comp_self_iff (B u₀)).mpr
+    (hinj.comp j.injective)
+  have hL := (ContinuousLinearMap.contDiffAt_gramLeftInverse hG).comp u₀ hB
   -- Near `u₀` the operators stay injective, so the projection is given by the Gram formula.
   have hev : ∀ᶠ u in 𝓝 u₀, Injective (B u) :=
     hB.continuousAt.preimage_mem_nhds
       (ContinuousLinearMap.isOpen_injective.mem_nhds (hinj.comp j.injective))
-  refine (hB.clm_comp (hinv.clm_comp hB')).congr_of_eventuallyEq ?_
+  refine (hB.clm_comp hL).congr_of_eventuallyEq ?_
   filter_upwards [hev] with u hu
   simp only [← hrange u]
   exact ContinuousLinearMap.starProjection_range_eq
