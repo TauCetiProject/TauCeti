@@ -56,8 +56,8 @@ length one the `L¹` norm is at most the `Lᵖ` norm. These local `Lᵖ` norms t
   bounds the norm of the embedding by `√2`.
 * `TauCeti.WeakDerivStep.integral_weakFDeriv_apply_one_eq_sub`: the fundamental theorem of
   calculus `∫ r in s..t, u' r = u t - u s`.
-* `TauCeti.WeakDerivStep.hasDerivAt_toZeroAtInfty_iff`: the continuous representative has a
-  continuous derivative `g` exactly when the weak derivative is `g` almost everywhere.
+* `TauCeti.WeakDerivStep.forall_hasDerivAt_toZeroAtInfty_iff`: the continuous representative has
+  a continuous derivative `g` exactly when the weak derivative is `g` almost everywhere.
 
 ## References
 
@@ -315,7 +315,7 @@ theorem integral_weakFDeriv_apply_one_eq_sub (hp : p ≠ ∞)
 /-- **The derivative of the continuous representative is the weak derivative.** For a continuous
 `g`, the continuous representative of a path `u` has derivative `g t` at every `t` exactly when the
 weak derivative of `u` agrees with `g` almost everywhere. -/
-theorem hasDerivAt_toZeroAtInfty_iff (hp : p ≠ ∞)
+theorem forall_hasDerivAt_toZeroAtInfty_iff (hp : p ≠ ∞)
     (u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
     {g : ℝ → F} (hg : Continuous g) :

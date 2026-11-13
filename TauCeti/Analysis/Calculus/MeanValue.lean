@@ -65,7 +65,7 @@ time `a` (`TauCeti.norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero`).
 If `G` is differentiable on `s` with a derivative `G'` uniformly continuous there, one radius
 `η` serves at every centre: on each ball of radius at most `η` inside `s`, the first-order
 remainder of `G` against its derivative at the centre is at most `c` times the increment
-(`UniformContinuousOn.exists_pos_norm_image_sub_le_of_hasFDerivAt`). This is the pointwise
+(`UniformContinuousOn.exists_pos_norm_image_sub_sub_le_of_hasFDerivAt`). This is the pointwise
 estimate behind the differentiability of superposition operators.
 
 ## Comparing maps with nearby derivatives
@@ -154,9 +154,9 @@ that on every ball of radius `r ≤ η` contained in `s`, with centre `x₀`, th
 of `G` against `G' x₀` is at most `c` times the increment: `‖G x₁ - G x₂ - G' x₀ (x₁ - x₂)‖ ≤
 c ‖x₁ - x₂‖`. The radius `η` does not depend on `x₀`. Derivatives may be taken over a real or
 complex scalar field. -/
-theorem exists_pos_norm_image_sub_le_of_hasFDerivAt {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
-    [IsRCLikeNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y]
-    [NormedSpace 𝕜 Y] {G : X → Y} {G' : X → X →L[𝕜] Y} {s : Set X}
+theorem exists_pos_norm_image_sub_sub_le_of_hasFDerivAt {𝕜 X Y : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {G : X → Y} {G' : X → X →L[𝕜] Y} {s : Set X}
     (hG' : UniformContinuousOn G' s) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x) {c : ℝ}
     (hc : 0 < c) :
     ∃ η > 0, ∀ x₀ r, r ≤ η → ball x₀ r ⊆ s → ∀ x₁ ∈ ball x₀ r, ∀ x₂ ∈ ball x₀ r,

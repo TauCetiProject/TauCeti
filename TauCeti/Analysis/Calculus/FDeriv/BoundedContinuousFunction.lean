@@ -118,7 +118,7 @@ theorem hasFDerivAt_of_forall_apply_eq (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) 
   intro c hc
   -- A modulus of continuity `η` for `G'` at the tolerance `c` controls the remainder of `G` at
   -- every point `f₀ t` simultaneously, on the ball of radius `min δ η`.
-  obtain ⟨η, hη, hG'η⟩ := hG'.exists_pos_norm_image_sub_le_of_hasFDerivAt hGs hc
+  obtain ⟨η, hη, hG'η⟩ := hG'.exists_pos_norm_image_sub_sub_le_of_hasFDerivAt hGs hc
   have hρ : 0 < min δ η := lt_min hδ hη
   filter_upwards [ball_mem_nhds (0 : α →ᵇ X) hρ] with h hh
   rw [mem_ball_zero_iff] at hh
