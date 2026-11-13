@@ -64,7 +64,7 @@ private theorem isIntegralElem_coeff_laurentRing (φ : A →+* B) {y : LaurentRi
   obtain ⟨p, hp, hpy⟩ := hy
   -- A common monomial denominator `u = X^n` for `y` and for the coefficients of `p`.
   obtain ⟨n₁, hn₁⟩ := LaurentRing.exists_forall_mul_toLaurent_monomial (p.support.image p.coeff)
-  obtain ⟨n₂, z, hz⟩ := LaurentRing.exists_mul_toLaurent_monomial y
+  obtain ⟨n₂, z, hz, -⟩ := LaurentRing.exists_mul_toLaurent_monomial y
   obtain ⟨z, hz⟩ := LaurentRing.exists_mul_toLaurent_monomial_add ⟨z, hz⟩ n₁
   rw [add_comm n₂] at hz
   set u : LaurentRing A K := toLaurent (monomial (n₁ + n₂) 1)
