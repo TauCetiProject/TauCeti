@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Fourier
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
 /-!
@@ -135,22 +136,9 @@ function at integer frequencies, multiplied by the location character. -/
 theorem integral_fourier_wrappedNormalMeasure (m : AddCircle (2 * π)) (v : ℝ≥0) (n : ℤ) :
     ∫ θ, fourier n θ ∂wrappedNormalMeasure m v =
       fourier n m * (Real.exp (-(v : ℝ) * (n : ℝ) ^ 2 / 2) : ℂ) := by
-  have hexp (x : ℝ) :
-      fourier n (x : AddCircle (2 * π)) = Complex.exp (((n : ℝ) : ℂ) * x * Complex.I) := by
-    rw [fourier_coe_apply]
-    congr 1
-    push_cast
-    field_simp
-  rw [wrappedNormalMeasure_def, integral_map (by fun_prop) (by fun_prop)]
-  simp_rw [fourier_apply, zsmul_add, AddCircle.toCircle_add, Circle.coe_mul]
-  simp_rw [← fourier_apply, hexp]
-  rw [integral_const_mul]
-  have h := charFun_gaussianReal (μ := 0) (v := v) n
-  rw [charFun_apply_real] at h
-  rw [h, Complex.ofReal_exp]
-  congr 2
+  rw [wrappedNormalMeasure_def, integral_fourier_map_add_coe, charFun_gaussianReal]
   push_cast
-  ring
+  ring_nf
 
 /-- The first trigonometric moment has modulus `exp (-v / 2)`; hence the circular variance is
 `1 - exp (-v / 2)`, including at zero variance. -/

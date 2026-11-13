@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Analysis.Fourier.AddCircle
+public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Topology.MetricSpace.UniformConvergence
 
@@ -27,7 +28,7 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory Set Topology
+open Filter MeasureTheory Real Set Topology
 
 namespace MeasureTheory.ProbabilityMeasure
 
@@ -117,3 +118,19 @@ theorem ext_of_forall_integral_fourier_eq {ν : ProbabilityMeasure (AddCircle T)
   exact tendsto_nhds_unique tendsto_const_nhds hlim
 
 end MeasureTheory.ProbabilityMeasure
+
+namespace MeasureTheory
+
+/-- The integer Fourier moments of a real law, read modulo `2π` and translated by `m`,
+are the character of the location `m` times the characteristic function of the law. -/
+theorem integral_fourier_map_add_coe (μ : Measure ℝ) (m : AddCircle (2 * π)) (n : ℤ) :
+    ∫ θ, fourier n θ ∂μ.map (fun x : ℝ ↦ m + (x : AddCircle (2 * π))) =
+      fourier n m * charFun μ n := by
+  have hπ : (π : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 pi_ne_zero
+  rw [integral_map (by fun_prop) (by fun_prop), charFun_apply_real, ← integral_const_mul]
+  congr 1; funext x
+  rw [fourier_apply, zsmul_add, AddCircle.toCircle_add, Circle.coe_mul, ← fourier_apply,
+    ← fourier_apply, fourier_coe_apply]
+  congr 2; push_cast; field_simp
+
+end MeasureTheory
