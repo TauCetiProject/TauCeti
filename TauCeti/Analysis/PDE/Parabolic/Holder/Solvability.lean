@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Schauder
+import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Analysis.PDE.Ellipticity.Basic
 
@@ -56,8 +57,9 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
   Cauchy problem.
 * `euclideanInitialDataCLE`: the initial-data isomorphism `u ↦ (P u, u(·, 0))`, with
   `euclideanInitialDataCLE_apply`, and the equation and initial condition for its inverse,
-  `euclideanParabolicOperatorL_euclideanInitialDataCLE_symm_apply` and
-  `spatialTrace_euclideanInitialDataCLE_symm_apply`.
+  `euclideanParabolicOperatorL_euclideanInitialDataCLE_symm_apply`,
+  `spatialTrace_euclideanInitialDataCLE_symm_apply` and
+  `euclideanInitialDataCLE_symm_apply_slabMk_zero`.
 * `exists_norm_euclideanInitialDataCLE_symm_le`: the uniform bound on the solution operators.
 * `exists_norm_euclideanInitialDataCLE_symm_sub_le`: their Lipschitz dependence on the
   coefficients.
@@ -123,7 +125,11 @@ private theorem exists_norm_le_mul_norm_prod (hα₀ : 0 < α) (hα₁ : α < 1)
     (Lam := ∑ _i : ι, ∑ _j : ι, (K : ℝ)) hlam K T₀
   refine ⟨2 * C, by positivity, fun T hT hTT₀ a b c ha hak hbk hck u ↦ ?_⟩
   -- The coefficient bound gives the upper ellipticity bound.
-  have h := hest T hT hTT₀ a b c ha (toQuadraticForm'_le_of_forall_norm_le hak) hak hbk hck u
+  have hup : ∀ p (ξ : EuclideanSpace ℝ ι), (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤
+      (∑ _i : ι, ∑ _j : ι, (K : ℝ)) * ‖ξ‖ ^ 2 := fun p ↦
+    Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
+      ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (hak i j)
+  have h := hest T hT hTT₀ a b c ha hup hak hbk hck u
   have h₁ := norm_fst_le (euclideanParabolicOperatorL hα₁.le a b c u,
     u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩)
   have h₂ := norm_snd_le (euclideanParabolicOperatorL hα₁.le a b c u,
@@ -152,32 +158,6 @@ private theorem exists_one_le_and_norm_le
       (Finset.mem_univ i)
     linarith [norm_nonneg c]
   · linarith
-
-/-- The coefficient matrices on the segment from the identity to a uniformly elliptic `a` are
-uniformly elliptic with constant `min 1 λ`. -/
-private theorem min_one_mul_le_toQuadraticForm'_segment
-    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ} {lam : ℝ}
-    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (p : slab (E := EuclideanSpace ℝ ι) 0 T)
-    (ξ : EuclideanSpace ℝ ι) :
-    min 1 lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ ((1 - t) • HolderSpace.const
-      ((1 : Matrix ι ι ℝ) i j) + t • a i j : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-        p).toQuadraticForm' ξ := by
-  have hM : (Matrix.of fun i j ↦ ((1 - t) • HolderSpace.const ((1 : Matrix ι ι ℝ) i j) +
-      t • a i j : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) p) =
-      (1 - t) • (1 : Matrix ι ι ℝ) + t • Matrix.of fun i j ↦ a i j p := by
-    ext i j
-    simp [HolderSpace.add_apply, HolderSpace.smul_apply]
-  rw [hM, Matrix.toQuadraticForm'_add, Matrix.toQuadraticForm'_smul, Matrix.toQuadraticForm'_smul,
-    _root_.add_apply, _root_.smul_apply, _root_.smul_apply, smul_eq_mul, smul_eq_mul,
-    PDE.toQuadraticForm'_one]
-  have h₁ := ha p ξ
-  have h₂ : min 1 lam * ‖ξ‖ ^ 2 ≤ ‖ξ‖ ^ 2 :=
-    mul_le_of_le_one_left (sq_nonneg _) (min_le_left _ _)
-  have h₃ : min 1 lam * ‖ξ‖ ^ 2 ≤ lam * ‖ξ‖ ^ 2 :=
-    mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)
-  nlinarith
 
 /-- **Solvability of the parabolic Cauchy problem.** For `0 < α < 1`, coefficients `aⁱʲ`, `bⁱ`,
 `c` in `C_b^{α,α/2}(ℝⁿ × [0, T])` with `a` uniformly elliptic, `λ ‖ξ‖² ≤ ξᵀ a ξ` with `0 < λ`,
@@ -211,8 +191,13 @@ theorem bijective_euclideanParabolicOperatorL_prod_spatialTraceL (hα₀ : 0 < �
       fun i j ↦ mem_closedBall_zero_iff.1 <| convex_closedBall 0 (K : ℝ)
         (mem_closedBall_zero_iff.2 (hδ i j)) (mem_closedBall_zero_iff.2 (hak i j))
         (sub_nonneg.2 ht₁) ht₀ (sub_add_cancel 1 t)
-    refine hest T hT le_rfl _ _ _ (min_one_mul_le_toQuadraticForm'_segment ha ht₀ ht₁) hseg
-      (fun i ↦ ?_) ?_ u
+    refine hest T hT le_rfl _ _ _ (fun p ξ ↦ ?_) hseg (fun i ↦ ?_) ?_ u
+    · -- The segment matrices are uniformly elliptic with constant `min 1 λ`.
+      convert PDE.min_mul_le_toQuadraticForm'_smul_add_smul (A := 1)
+        (fun ξ ↦ (one_mul _).trans_le (PDE.toQuadraticForm'_one ξ).ge) (ha p)
+        (sub_nonneg.2 ht₁) ht₀ (sub_add_cancel 1 t) ξ using 3
+      ext i j
+      simp [HolderSpace.add_apply, HolderSpace.smul_apply]
     · simpa [norm_smul, Real.norm_of_nonneg ht₀] using
         (mul_le_of_le_one_left (norm_nonneg _) ht₁).trans (hbk i)
     · simpa [norm_smul, Real.norm_of_nonneg ht₀] using
@@ -232,31 +217,30 @@ the solution operator of the Cauchy problem `P u = f`, `u(·, 0) = g`. -/
 def euclideanInitialDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
     (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
     (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) {lam : ℝ} (hlam : 0 < lam)
-    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
     ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT ≃L[ℝ]
       HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
         CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ :=
-  ContinuousLinearEquiv.ofBijective _
-    (LinearMap.ker_eq_bot.2
-      (bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT b c hlam ha).1)
-    (LinearMap.range_eq_top.2
-      (bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT b c hlam ha).2)
+  have hbij := ha.elim fun _ h ↦
+    bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT b c h.1 h.2
+  ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hbij.1)
+    (LinearMap.range_eq_top.2 hbij.2)
 
 section InitialDataCLE
 
 variable {hα₀ : 0 < α} {hα₁ : α < 1} {hT : (0 : ℝ) < T}
   {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
   {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-  {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ} {lam : ℝ} {hlam : 0 < lam}
-  {ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+  {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+  {ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
     lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ}
 
 /-- The initial-data isomorphism sends `u` to its forcing `P u` and its initial trace. -/
 @[simp]
 theorem euclideanInitialDataCLE_apply (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) :
-    euclideanInitialDataCLE hα₀ hα₁ hT a b c hlam ha u =
+    euclideanInitialDataCLE hα₀ hα₁ hT a b c ha u =
       (euclideanParabolicOperatorL hα₁.le a b c u, u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩) := by
   simp [euclideanInitialDataCLE, spatialTraceL_apply]
 
@@ -266,8 +250,8 @@ theorem euclideanParabolicOperatorL_euclideanInitialDataCLE_symm_apply
     (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
       CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
     euclideanParabolicOperatorL hα₁.le a b c
-      ((euclideanInitialDataCLE hα₀ hα₁ hT a b c hlam ha).symm d) = d.1 := by
-  have h := (euclideanInitialDataCLE hα₀ hα₁ hT a b c hlam ha).apply_symm_apply d
+      ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm d) = d.1 := by
+  have h := (euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).apply_symm_apply d
   rw [euclideanInitialDataCLE_apply] at h
   exact congrArg Prod.fst h
 
@@ -277,11 +261,20 @@ trace `g`. -/
 theorem spatialTrace_euclideanInitialDataCLE_symm_apply
     (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
       CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
-    ((euclideanInitialDataCLE hα₀ hα₁ hT a b c hlam ha).symm d).spatialTrace
+    ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm d).spatialTrace
       ⟨0, left_mem_Icc.2 hT.le⟩ = d.2 := by
-  have h := (euclideanInitialDataCLE hα₀ hα₁ hT a b c hlam ha).apply_symm_apply d
+  have h := (euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).apply_symm_apply d
   rw [euclideanInitialDataCLE_apply] at h
   exact congrArg Prod.snd h
+
+/-- The solution of the Cauchy problem with initial datum `g` takes the value `g x` at `(x, 0)`. -/
+@[simp]
+theorem euclideanInitialDataCLE_symm_apply_slabMk_zero
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) (x : EuclideanSpace ℝ ι) :
+    (euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm d (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩) =
+      d.2 x := by
+  rw [← spatialTrace_apply, spatialTrace_euclideanInitialDataCLE_symm_apply]
 
 end InitialDataCLE
 
@@ -299,12 +292,13 @@ theorem exists_norm_euclideanInitialDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : 
         (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
           lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
         (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
-        ‖(euclideanInitialDataCLE hα₀ hα₁ hT a b c hlam ha).symm.toContinuousLinearMap‖ ≤ C := by
+        ‖(euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap‖ ≤
+          C := by
   obtain ⟨C, hC, hest⟩ := exists_norm_le_mul_norm_prod (ι := ι) hα₀ hα₁ hlam K T₀
   refine ⟨C, hC, fun T hT hTT₀ a b c ha hak hbk hck ↦
     ContinuousLinearMap.opNorm_le_bound _ hC fun d ↦ ?_⟩
   simpa using hest T hT hTT₀ a b c ha hak hbk hck
-    ((euclideanInitialDataCLE hα₀ hα₁ hT a b c hlam ha).symm d)
+    ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩).symm d)
 
 /-- **Lipschitz dependence of the solution operator on the coefficients.** Under the bounds of
 `exists_norm_euclideanInitialDataCLE_symm_le`, the solution operators of two Cauchy problems
@@ -321,14 +315,15 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
           lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a' i j p).toQuadraticForm' ξ),
         (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
         (∀ i j, ‖a' i j‖ ≤ K) → (∀ i, ‖b' i‖ ≤ K) → ‖c'‖ ≤ K →
-        ‖(euclideanInitialDataCLE hα₀ hα₁ hT a b c hlam ha).symm.toContinuousLinearMap -
-          (euclideanInitialDataCLE hα₀ hα₁ hT a' b' c' hlam ha').symm.toContinuousLinearMap‖ ≤
+        ‖(euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
+          (euclideanInitialDataCLE hα₀ hα₁ hT a' b' c'
+            ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
           C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
   obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam K T₀
   refine ⟨24 * C ^ 2, by positivity,
     fun T hT hTT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
-  set e := euclideanInitialDataCLE hα₀ hα₁ hT a b c hlam ha
-  set e' := euclideanInitialDataCLE hα₀ hα₁ hT a' b' c' hlam ha'
+  set e := euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩
+  set e' := euclideanInitialDataCLE hα₀ hα₁ hT a' b' c' ⟨lam, hlam, ha'⟩
   set δ := ∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖
   -- The resolvent identity `e⁻¹ - e'⁻¹ = e⁻¹ (e' - e) e'⁻¹`.
   have hres : e.symm.toContinuousLinearMap - e'.symm.toContinuousLinearMap =

@@ -488,6 +488,23 @@ lemma lower_bound_toQuadraticForm'_add_of_lower_bound {A B : Matrix n n ℝ} {la
   have hB_lower := hB ξ
   nlinarith
 
+/-- A convex combination of coefficient matrices with quadratic lower bounds `λ₁` and `λ₂` has
+the quadratic lower bound `min λ₁ λ₂`. -/
+lemma min_mul_le_toQuadraticForm'_smul_add_smul {A B : Matrix n n ℝ} {lam₁ lam₂ : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam₁ * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hB : ∀ ξ : EuclideanSpace ℝ n, lam₂ * ‖ξ‖ ^ 2 ≤ B.toQuadraticForm' ξ) {s t : ℝ}
+    (hs : 0 ≤ s) (ht : 0 ≤ t) (hst : s + t = 1) (ξ : EuclideanSpace ℝ n) :
+    min lam₁ lam₂ * ‖ξ‖ ^ 2 ≤ (s • A + t • B).toQuadraticForm' ξ := by
+  rw [toQuadraticForm'_add, toQuadraticForm'_smul, toQuadraticForm'_smul, _root_.add_apply,
+    _root_.smul_apply, _root_.smul_apply, smul_eq_mul, smul_eq_mul]
+  calc min lam₁ lam₂ * ‖ξ‖ ^ 2
+        = s * (min lam₁ lam₂ * ‖ξ‖ ^ 2) + t * (min lam₁ lam₂ * ‖ξ‖ ^ 2) := by
+          rw [← add_mul, hst, one_mul]
+    _ ≤ s * A.toQuadraticForm' ξ + t * B.toQuadraticForm' ξ := by
+      gcongr
+      · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (sq_nonneg _)).trans (hA ξ)
+      · exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)).trans (hB ξ)
+
 /-- A bilinear upper bound for a coefficient matrix bounds its quadratic form in absolute
 value by the same constant. -/
 lemma abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le {B : Matrix n n ℝ} {Mu : ℝ}
