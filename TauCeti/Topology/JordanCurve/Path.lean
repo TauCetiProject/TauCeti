@@ -162,8 +162,8 @@ theorem isJordanCurve_range_union_range_of_inter_eq_pair {y : X} {γ δ : Path x
     exact Or.inl (Subtype.ext (show (s : ℝ) = (t : ℝ) by linarith))
 
 omit [T2Space X] in
-/-- Two distinct points of a Jordan curve split it into two injective paths meeting exactly
-at those points. The second path traverses the complementary circle arc in reverse. -/
+/-- For distinct points `x, y ∈ C` on a Jordan curve `C`, there exist two injective paths
+from `x` to `y` whose ranges cover `C` and meet exactly in `{x, y}`. -/
 theorem IsJordanCurve.exists_injective_path_range_union_eq_and_inter_eq_pair {C : Set X}
     (hC : IsJordanCurve C) {y : X} (hx : x ∈ C) (hy : y ∈ C) (hxy : x ≠ y) :
     ∃ α β : Path x y, Function.Injective α ∧ Function.Injective β ∧

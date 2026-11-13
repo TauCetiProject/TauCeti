@@ -130,7 +130,8 @@ theorem IsCrosscut.range_inter_frontier (hγ : IsCrosscut γ U) (hU : IsOpen U) 
     · exact ⟨⟨0, by simp⟩, hγ.source_mem_frontier⟩
     · exact ⟨⟨1, by simp⟩, hγ.target_mem_frontier⟩
 
-/-- A crosscut and a path in the frontier with the same endpoints meet exactly there. -/
+/-- A crosscut of an open set and a path in its frontier with the same endpoints meet
+exactly there. -/
 theorem IsCrosscut.range_inter_range_eq_pair (hγ : IsCrosscut γ U) (hU : IsOpen U)
     {α : Path x y} (hα : range α ⊆ frontier U) : range γ ∩ range α = {x, y} := by
   refine Subset.antisymm (fun z hz ↦ ?_) ?_
@@ -220,6 +221,12 @@ theorem IsCrosscut.map' {f : ℂ → ℂ} (hγ : γ.IsCrosscut U) (hUo : IsOpen 
   rw [isCrosscut_def, map'_coe]
   exact ⟨fun s t hst => hγ.injective (hfi (hγU s) (hγU t) hst), hfr hγ.source_mem_frontier,
     hfr hγ.target_mem_frontier, fun t ht => mem_image_of_mem f (hγ.mapsTo_interior ht)⟩
+
+/-- The existence of a crosscut of a disc forces its radius to be positive. -/
+theorem IsCrosscut.radius_pos {c : ℂ} {r : ℝ} (hγ : IsCrosscut γ (ball c r)) : 0 < r :=
+  not_le.mp fun hr ↦ hγ.source_ne_target (subsingleton_sphere c hr
+    (frontier_ball_subset_sphere hγ.source_mem_frontier)
+    (frontier_ball_subset_sphere hγ.target_mem_frontier))
 
 /-- **A nondegenerate chord of a disc is a crosscut.** If `x` and `y` are distinct points of
 `sphere c r`, then the straight path from `x` to `y` is injective, its endpoints lie on the
