@@ -317,7 +317,8 @@ private theorem setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn {φ ξ : 
   refine ⟨(hG.neg.sub hT).integrableOn.congr_fun (fun z _ => (hpt z).symm)
     (measurableSet_lt measurable_const measurable_im), ?_⟩
   simp_rw [hpt]
-  rw [integral_sub (f := fun z => -G z) hG.neg.integrableOn hT.integrableOn, integral_neg, hgreen, hsplit]
+  rw [integral_sub (f := fun z => -G z) hG.neg.integrableOn hT.integrableOn, integral_neg, hgreen,
+    hsplit]
   ring
 
 /-- **Classical solutions are weak solutions up to the boundary.** Let `J` be `C¹` on `Ω`, with
