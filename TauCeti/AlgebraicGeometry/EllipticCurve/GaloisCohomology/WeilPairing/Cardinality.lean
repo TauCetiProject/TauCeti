@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Th
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Cardinality
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Cardinality
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
-import TauCeti.RepresentationTheory.Homological.ContCohomology.NatCardComparison
 
 /-!
 # Orders of local isogeny cohomology groups
@@ -69,51 +68,8 @@ theorem natCard_H1_kerCoeff [DecidableEq K] (p : ℕ) [Fact p.Prime]
   have hn : IsUnit (φ.degree : K) :=
     isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr φ.degree_pos.ne')
   have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
-  let := AddCommGroup.zmodModule φ.degree_nsmul_kerCoeff_eq_zero
-  -- Tate's formula uses the algebraic-closure Galois group, whereas point coefficients use
-  -- the separable-closure group. Restrict the discrete representation along their equivalence.
-  let A := ofDiscreteModule (ZMod φ.degree) (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
-  let X : GalRep φ.degree K := TopRep.res (absoluteGaloisGroupRestrictEquiv K).toMonoidHom A
-  have hX : IsSmoothDiscrete (ZMod φ.degree) X :=
-    (ofDiscreteModule_isSmoothDiscrete _ _ _).res
-      (absoluteGaloisGroupRestrictEquiv K).continuous
-  have : Fact (IsSmoothDiscrete (ZMod φ.degree) X) := ⟨hX⟩
-  let := TopRep.distribMulAction X
-  have := hX.continuousSMul
-  let e : (ofIsogeny φ).KerCoeff ≃+ X.V := AddEquiv.refl _
-  have hecont : Continuous e := continuous_of_discreteTopology
-  have hecont' : Continuous e.symm :=
-    @continuous_of_discreteTopology X.V _ hX.discreteTopology _ _ _
-  have he (g : Field.absoluteGaloisGroup K) (x : (ofIsogeny φ).KerCoeff) :
-      e (absoluteGaloisGroupRestrictEquiv K g • x) = g • e x := by
-    rw [TopRep.distribMulAction_smul, ContRepresentation.restrict_apply_apply]
-    exact (ofDiscreteModule_ρ_apply_apply (R := ZMod φ.degree)
-      (absoluteGaloisGroupRestrictEquiv K g) x).symm
-  -- Transport all three explicit cohomology orders through the same compatible pair.
-  have h₀ := Nat.card_congr (Equiv.ofBijective _ (explicitMap0_bijective
-    (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
-    (absoluteGaloisGroupRestrictEquiv K).toMonoidHom
-    (absoluteGaloisGroupRestrictEquiv K).surjective e.toAddMonoidHom e.bijective he))
-  have h₁ := Nat.card_congr (explicitMap1Equiv
-    (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff (Field.absoluteGaloisGroup K) X.V
-    (absoluteGaloisGroupRestrictEquiv K) e hecont hecont' he).toEquiv
-  have h₂ := Nat.card_congr (explicitMap2Equiv
-    (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff (Field.absoluteGaloisGroup K) X.V
-    (absoluteGaloisGroupRestrictEquiv K) e hecont hecont' he).toEquiv
-  have : Finite X.V := Finite.of_equiv _ e.toEquiv
-  -- Apply the Euler characteristic, then identify H⁰ and H² with the rational kernels.
-  have h := eulerCharacteristic_mixed p K φ.degree φ.degree_pos.ne' X inferInstance
-  -- Supply the topology-dependent instances explicitly for the restricted representation.
-  have hc₀ := @TopRep.natCard_H0_eq_natCard_continuousCohomology
-    _ _ _ _ _ _ _ X hX.discreteTopology
-  have hc₁ := @TopRep.natCard_H1_eq_natCard_continuousCohomology
-    _ _ _ _ _ _ _ X hX.discreteTopology hX.continuousSMul
-  have hc₂ := @TopRep.natCard_H2_eq_natCard_continuousCohomology
-    _ _ _ _ _ _ _ X hX.discreteTopology hX.continuousSMul inferInstance
-  rw [← hc₀, ← hc₁, ← hc₂, ← h₀, ← h₁, ← h₂,
+  rw [natCard_H1_eq_mul p K (ofIsogeny φ).KerCoeff,
     ← Nat.card_congr (ofIsogeny φ).kerPointMapEquivInvariants.toEquiv,
-    φ.natCard_H2_kerCoeff hn, ← Nat.card_congr e.toEquiv,
-    φ.natCard_kerCoeff_eq_degree] at h
-  exact h
+    φ.natCard_H2_kerCoeff hn, φ.natCard_kerCoeff_eq_degree]
 
 end TauCeti.Isogeny
