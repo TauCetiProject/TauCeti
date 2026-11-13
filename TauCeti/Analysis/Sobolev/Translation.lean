@@ -154,9 +154,9 @@ theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (h : E)
     exact isClosed_le
       (((((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h).toLinearIsometry
         |>.toContinuousLinearMap.comp W1p.valueL) -
-        W1p.valueL).continuous.enorm)
+        W1p.valueL).continuous.eNorm)
       ((ENNReal.continuous_const_mul (by finiteness)).comp
-        W1p.gradientL.continuous.enorm)
+        W1p.gradientL.continuous.eNorm)
   refine w1p0Submodule_subset_of_isClosed hclosed (fun phi => ?_) hu
   simpa only [Set.mem_ofPred_eq, W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ] using
     eLpNorm_testFunctionLp_comp_add_sub_testFunctionLp_le h phi
@@ -183,7 +183,7 @@ theorem W1p0.eLpNorm_value_extendByZeroL_comp_add_sub_le_mul_enorm_gradient {Ome
     (W1p0.extendByZeroL le_top u).2).trans_eq ?_
   congr 1
   rw [W1p0.gradient_extendByZeroL]
-  exact enorm_eq_iff_norm_eq.2 ((extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet
+  exact eNorm_eq_iff_norm_eq.2 ((extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet
     (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤))).norm_map _)
 
 /-- **Uniform smallness of translation increments for a gradient-bounded Sobolev family.** If

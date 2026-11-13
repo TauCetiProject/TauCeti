@@ -132,7 +132,7 @@ def ofContinuousMap : C(AddCircle T, E) →L[ℂ] CircleSobolev 0 E :=
 @[simp]
 theorem coeff_ofContinuousMap (f : C(AddCircle T, E)) (n : ℤ) :
     (ofContinuousMap T f).coeff n = fourierCoeff f n := by
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   set b := Module.finBasis ℂ E
   have hcoord (i) : fourierCoeff (fun x ↦ b.coord i (f x)) n = b.coord i (fourierCoeff f n) :=
     (LinearMap.toContinuousLinearMap (b.coord i)).fourierCoeff_comp
@@ -169,7 +169,8 @@ section FiniteDimensional
 variable [FiniteDimensional ℂ E]
 
 /-- A finite-dimensional complex space is complete, as needed for continuous representatives. -/
-local instance instCompleteSpaceOfContinuousMap : CompleteSpace E := FiniteDimensional.complete ℂ E
+local instance instCompleteSpaceOfContinuousMap : CompleteSpace E :=
+  FiniteDimensional.completeSpace ℂ E
 
 /-- For `s > 1/2`, the loop given by the continuous representative of `a ∈ H^s(E)` is `a` itself,
 regarded as an element of `H⁰(E)`. -/
