@@ -10,6 +10,7 @@ permissions:
   pull-requests: read
   statuses: write
   actions: read
+  id-token: write # required by the shared harness's telemetry job, outside the candidate sandbox
 
 jobs:
   candidate:
