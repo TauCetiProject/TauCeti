@@ -8,9 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.Average
 public import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube
 import TauCeti.Analysis.Normed.Group.InfiniteSum
-import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
-import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # The Calderón–Zygmund decomposition
@@ -41,9 +39,9 @@ The cubes are the maximal dyadic cubes on which the average of `‖f‖` exceeds
 is where integrability and positive dimension enter; and `‖f‖ ≤ t` almost everywhere off them by
 the Lebesgue differentiation theorem along dyadic cubes. The selection of the cubes is stated for
 an arbitrary `g : (ι → ℝ) → ℝ≥0∞` in place of `‖f‖ₑ`, and needs only `∫ g ^ p < ∞` for some
-`p ≥ 1`: then `g ≤ ε + ε ^ (1 - p) g ^ p` bounds the average over a cube `Q` by
-`ε + ε ^ (1 - p) ∫ g ^ p / |Q|`, which is below `t` for `ε < t` and large `Q`. This lets the
-Fefferman–Stein inequality run the same stopping time on functions in `Lᵖ`.
+`p ≥ 1`: then Jensen's inequality bounds the `p`-th power of the average over a cube `Q` by
+`∫ g ^ p / |Q|`, which is below `t ^ p` for large `Q`. This lets the Fefferman–Stein inequality
+run the same stopping time on functions in `Lᵖ`.
 
 ## Main declarations
 
@@ -226,32 +224,19 @@ theorem exists_mem_calderonZygmundCubes_of_lt_setLAverage [Nonempty ι] {p : ℝ
     ∃ q ∈ calderonZygmundCubes g t, k ≤ q.1 ∧ dyadicCube k m ⊆ dyadicCube q.1 q.2 := by
   obtain ⟨x, hx⟩ := nonempty_of_measure_ne_zero (volume_dyadicCube_pos k m).ne'
   let A : ℤ → ℝ≥0∞ := fun j => ⨍⁻ y in dyadicCube j (dyadicIndex j x), g y ∂volume
-  -- The averages over the cubes containing `x` are eventually below `t`: for `0 < ε < t`, the
-  -- bound `g ≤ ε + ε ^ (1 - p) g ^ p` makes them at most `ε + ε ^ (1 - p) ∫ g ^ p / |Q|`.
+  -- The averages over the cubes containing `x` are eventually below `t`, since by Jensen's
+  -- inequality their `p`-th powers are at most `∫⁻ g ^ p` divided by the volume of the cube.
   have hsmall : ∀ᶠ j in atTop, A j < t := by
-    obtain ⟨ε, hε, hεt⟩ := exists_between (pos_iff_ne_zero.2 ht)
-    have hε' : ε ^ (1 - p) * ∫⁻ y, g y ^ p ≠ ∞ :=
-      ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero hε.ne' hεt.ne_top) hg
-    have hlim : Tendsto (fun j => ε + ε ^ (1 - p) * (∫⁻ y, g y ^ p) /
-        volume (dyadicCube j (dyadicIndex j x))) atTop (𝓝 ε) := by
-      simpa using tendsto_const_nhds.add
-        (ENNReal.Tendsto.const_div (tendsto_volume_dyadicCube_atTop _) (.inr hε'))
-    filter_upwards [(tendsto_order.1 hlim).2 t hεt] with j hj
-    refine lt_of_le_of_lt ?_ hj
-    set Q := dyadicCube j (dyadicIndex j x)
-    have hQ := volume_dyadicCube_ne_top j (dyadicIndex j x)
-    have hQ₀ := (volume_dyadicCube_pos j (dyadicIndex j x)).ne'
-    calc A j = (∫⁻ y in Q, g y) / volume Q := setLAverage_eq _ _ _
-      _ ≤ (∫⁻ y in Q, (ε + ε ^ (1 - p) * g y ^ p)) / volume Q := by
-          gcongr with y
-          exact ENNReal.le_add_rpow_mul_rpow _ _ hp
-      _ ≤ (ε * volume Q + ε ^ (1 - p) * ∫⁻ y, g y ^ p) / volume Q := by
-          rw [lintegral_add_left measurable_const, setLIntegral_const,
-            lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_ne_zero hε.ne' hεt.ne_top)]
-          gcongr
-          exact Measure.restrict_le_self
-      _ = ε + ε ^ (1 - p) * (∫⁻ y, g y ^ p) / volume Q := by
-          rw [ENNReal.add_div, ENNReal.mul_div_cancel_right hQ₀ hQ]
+    have hp₀ : 0 < p := zero_lt_one.trans_le hp
+    have hlim : Tendsto (fun j => (∫⁻ y, g y ^ p) / volume (dyadicCube j (dyadicIndex j x)))
+        atTop (𝓝 0) := by
+      simpa using ENNReal.Tendsto.const_div (tendsto_volume_dyadicCube_atTop _) (.inr hg)
+    filter_upwards [(tendsto_order.1 hlim).2 _
+      (ENNReal.rpow_pos (pos_iff_ne_zero.2 ht) (lt_of_lt_of_le h le_top).ne)] with j hj
+    refine (ENNReal.rpow_lt_rpow_iff hp₀).1 (lt_of_le_of_lt ?_ hj)
+    refine (rpow_laverage_le_laverage_rpow hp).trans ?_
+    rw [setLAverage_eq]
+    exact ENNReal.div_le_div_right (setLIntegral_le_lintegral _ _) _
   obtain ⟨N, hN⟩ := eventually_atTop.1 hsmall
   obtain ⟨j₀, ⟨hkj₀, hj₀⟩, hmax⟩ := Int.exists_greatest_of_bdd (P := fun j => k ≤ j ∧ t < A j)
     ⟨N, fun j hj => le_of_not_gt fun hNj => (hN j hNj.le).not_gt hj.2⟩
@@ -281,21 +266,17 @@ theorem biUnion_calderonZygmundCubes_subset {p : ℝ} (hp : 1 ≤ p)
     (htt'.trans_lt (lt_setLAverage_of_mem_calderonZygmundCubes hp'))
   exact mem_biUnion hq (hsub hx)
 
-/-- In positive dimension, a function `g` with `∫ g ^ p < ∞` for some `p ≥ 1` is at most `t` almost
-everywhere off its Calderón–Zygmund cubes at a positive height `t`. -/
+/-- In positive dimension, an a.e. measurable `g` with `∫ g ^ p < ∞` for some `p ≥ 1` is at most
+`t` almost everywhere off its Calderón–Zygmund cubes at a positive height `t`. -/
 theorem ae_le_of_forall_notMem_calderonZygmundCubes [Nonempty ι] (hg : AEMeasurable g) {p : ℝ}
     (hp : 1 ≤ p) (hg' : ∫⁻ x, g x ^ p ≠ ∞) (ht : t ≠ 0) :
     ∀ᵐ x, (∀ q ∈ calderonZygmundCubes g t, x ∉ dyadicCube q.1 q.2) → g x ≤ t := by
-  -- `g` is locally integrable, since `∫_K g ≤ |K| + ∫ g ^ p`.
+  -- `g` is locally integrable, since it lies in `Lᵖ` with `p ≥ 1`.
   have hloc : LocallyIntegrable g := by
-    refine locallyIntegrable_iff.2 fun K hK => ⟨hg.aestronglyMeasurable.restrict, ?_⟩
-    simp only [HasFiniteIntegral, eNorm_eq_self]
-    refine lt_of_le_of_lt (b := volume K + ∫⁻ x, g x ^ p)
-      ((lintegral_le_measure_univ_add_lintegral_rpow g hp).trans ?_)
-      (ENNReal.add_lt_top.2 ⟨hK.measure_lt_top, hg'.lt_top⟩)
-    rw [Measure.restrict_apply_univ]
-    gcongr
-    exact Measure.restrict_le_self
+    have hp' : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 (zero_lt_one.trans_le hp)).ne'
+    refine MemLp.locallyIntegrable ((eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp'
+      ENNReal.ofReal_ne_top hg.aestronglyMeasurable).2 ?_) (ENNReal.one_le_ofReal.2 hp)
+    simpa [ENNReal.toReal_ofReal (zero_le_one.trans hp)] using hg'.lt_top
   filter_upwards [ae_tendsto_setLAverage_dyadicCube hloc] with x hx hnot
   refine le_of_tendsto hx (Eventually.of_forall fun k => le_of_not_gt fun hlt => ?_)
   obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hp hg' ht hlt

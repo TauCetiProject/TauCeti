@@ -596,7 +596,8 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le {f : (ι → ℝ) → F}
     _ ≤ _ := mul_le_mul' le_rfl (ENNReal.le_of_add_le_add_left hhalf h)
 
 /-- **The Fefferman–Stein inequality**, as an inequality between the integrals `∫⁻ ‖·‖ₑ ^ p`.
-For `1 < p < ∞` and `f` on `ℝⁿ = ι → ℝ`, `n ≥ 1`, with `∫ ‖f‖ ^ p₀ < ∞` for some `1 ≤ p₀ ≤ p`,
+For `1 < p < ∞` and an a.e. strongly measurable `f` on `ℝⁿ = ι → ℝ`, `n ≥ 1`, with
+`∫ ‖f‖ ^ p₀ < ∞` for some `1 ≤ p₀ ≤ p`,
 
 `∫ ‖f‖^p ≤ 2^(p + 1) 2^((p + 2n + 2) p) ∫ (f^#)^p`,
 

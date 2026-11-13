@@ -62,9 +62,10 @@ and the three terms are compared with the constant `-∫ K c z (h₂ z) dz` on `
 
 Integrating this estimate, with the `Lᵖ` bounds for the maximal function for `q < p`, leads to the
 Coifman–Rochberg–Weiss theorem. The case `p₀ = p` of the Fefferman–Stein inequality
-`TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction`, for functions in `Lᵖ`, is the form needed there.
-The remaining step is to show that `[b, T] f ∈ Lᵖ`, for example by truncating `b` and
-approximating `f`.
+`TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction`, for functions in `Lᵖ`, is the form needed there:
+for bounded truncations `b_k` of `b` and `f ∈ L² ∩ Lᵖ`, the commutator `[b_k, T] f` lies in `Lᵖ`, so
+it gives an `Lᵖ` bound uniform in `k`, which passes to `b` and to all `f ∈ Lᵖ` by Fatou's lemma and
+density.
 
 ## Main declarations
 
