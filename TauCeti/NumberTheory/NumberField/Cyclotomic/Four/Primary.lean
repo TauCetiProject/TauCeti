@@ -46,7 +46,7 @@ The unit `1` is primary, so the reciprocity statements carry their nonunit hypot
   `(N(a + b i) - 1) / 4 ≡ -((a - 1) / 2) (mod 4)`.
 * `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_coprime_four`: a primary element generates
   an ideal of norm prime to `4`, and `TauCeti.IsPrimaryGaussian.natCast_absNorm_sub_one_div_four`
-  identifies `(N(λ 𝓞 K) - 1) / 4` with the integer `(N(a + b i) - 1) / 4`.
+  identifies `(N(λ 𝓞 K) - 1) / 4` with the integer `(N(λ) - 1) / 4`.
 * `TauCeti.IsPrimaryGaussian.exists_multiset_prod_eq`: a primary element is a product of primary
   primes.
 
@@ -200,19 +200,17 @@ theorem IsPrimaryGaussian.absNorm_span_singleton_coprime_four (hx : IsPrimaryGau
   -- `4 = 2 ^ 2` holds by `rfl`, so coprimality to `2` suffices.
   exact Nat.Coprime.pow_right 2 (Nat.coprime_two_right.mpr (Int.natAbs_odd.mpr hx.odd_norm))
 
-/-- For primary `λ = a + b i`, the natural number `(N(λ 𝓞 K) - 1) / 4`, with `N` the absolute
-ideal norm, is the integer `(N(a + b i) - 1) / 4` of `IsPrimaryGaussian.norm_sub_one_div_four`.
-This converts the exponent of a power residue symbol at `λ 𝓞 K` into the integer exponent whose
-congruences are computed above. -/
-theorem IsPrimaryGaussian.natCast_absNorm_sub_one_div_four {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
-    {a b : ℤ} (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
-    (((Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) - 1) / 4 : ℕ) : ℤ) =
-      (Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) - 1) / 4 := by
+/-- For primary `x`, the natural number `(N(x 𝓞 K) - 1) / 4`, with `N` the absolute ideal norm,
+is the integer `(N(x) - 1) / 4` of `IsPrimaryGaussian.norm_sub_one_div_four`. This converts the
+exponent of a power residue symbol at `x 𝓞 K` into the integer exponent whose congruences are
+computed above. -/
+theorem IsPrimaryGaussian.natCast_absNorm_sub_one_div_four (hx : IsPrimaryGaussian x) :
+    (((Ideal.absNorm (Ideal.span {x}) - 1) / 4 : ℕ) : ℤ) =
+      (Algebra.norm ℤ x - 1) / 4 := by
   have hcop := hx.absNorm_span_singleton_coprime_four
-  have hN : (Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) : ℤ) =
-      Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) :=
-    RingOfIntegers.natCast_absNorm_span_singleton_of_four _
-  have h₀ : Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≠ 0 := by
+  have hN : (Ideal.absNorm (Ideal.span {x}) : ℤ) = Algebra.norm ℤ x :=
+    RingOfIntegers.natCast_absNorm_span_singleton_of_four x
+  have h₀ : Ideal.absNorm (Ideal.span {x}) ≠ 0 := by
     intro h
     rw [h, Nat.coprime_zero_left] at hcop
     exact absurd hcop (by norm_num)

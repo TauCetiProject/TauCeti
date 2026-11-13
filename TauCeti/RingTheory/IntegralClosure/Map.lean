@@ -23,6 +23,9 @@ integral over `R`, so lying over applies along the restricted map.
 * `AlgHom.mapIntegralClosure_injective`: it preserves injectivity.
 * `Ideal.exists_isPrime_comap_mapIntegralClosure_eq`: a prime of the integral closure in `A` is
   the contraction of a prime of the integral closure in `B` along an injective `f`.
+* `Ideal.exists_injective_algHom_and_isPrime_comap_eq_of_isIntegralClosure`: along an injective
+  `f : A →ₐ[R] B`, any integral closures `S` of `R` in `A` and `T` of `R` in `B` admit an
+  injective `R`-algebra map `S →ₐ[R] T` lifting a given prime of `S` to a prime of `T`.
 -/
 
 public section
@@ -61,3 +64,22 @@ theorem Ideal.exists_isPrime_comap_mapIntegralClosure_eq (P : Ideal (integralClo
       (f.mapIntegralClosure : integralClosure R A →+* integralClosure R B)).mp
         (AlgHom.mapIntegralClosure_injective hf)]
     exact bot_le
+
+/-- Lying over between abstract integral closures: along an injective `R`-algebra map `f : A → B`,
+composing `f.mapIntegralClosure` with `IsIntegralClosure.equiv` on both sides produces an injective
+`R`-algebra map `g : S →ₐ[R] T` and a prime of `T` contracting to `P`. -/
+theorem Ideal.exists_injective_algHom_and_isPrime_comap_eq_of_isIntegralClosure
+    {S : Type*} [CommRing S] [Algebra R S] [Algebra S A] [IsScalarTower R S A]
+    [IsIntegralClosure S R A] (P : Ideal S) [P.IsPrime] (T : Type*) [CommRing T] [Algebra R T]
+    [Algebra T B] [IsScalarTower R T B] [IsIntegralClosure T R B]
+    {f : A →ₐ[R] B} (hf : Function.Injective f) :
+    ∃ g : S →ₐ[R] T, Function.Injective g ∧ ∃ Q : Ideal T, Q.IsPrime ∧ Q.comap g = P := by
+  let eS := IsIntegralClosure.equiv R S A (integralClosure R A)
+  let eT := IsIntegralClosure.equiv R (integralClosure R B) B T
+  obtain ⟨Q, hQ, hQP⟩ :=
+    (P.comap eS.symm.toRingHom).exists_isPrime_comap_mapIntegralClosure_eq hf
+  refine ⟨eT.toAlgHom.comp (f.mapIntegralClosure.comp eS.toAlgHom),
+    eT.injective.comp ((AlgHom.mapIntegralClosure_injective hf).comp eS.injective),
+    Q.comap eT.symm.toRingHom, Ideal.comap_isPrime eT.symm.toRingHom Q, ?_⟩
+  ext x
+  simpa [Ideal.mem_comap] using SetLike.ext_iff.mp hQP (eS x)

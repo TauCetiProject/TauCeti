@@ -43,7 +43,7 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
   is odd exactly when `a + b` is;
 * `IsPrimitiveRoot.isUnit_intCast_add_intCast_mul_toInteger_iff_of_four`: `a + b i` is a unit
   exactly when `a² + b² = 1`;
-* `TauCeti.finrank_four`: `[K : ℚ] = 2`;
+* `TauCeti.finrank_eq_two_of_isCyclotomicExtension_four`: `[K : ℚ] = 2`;
 * `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
 * `TauCeti.exists_gal_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
   fourth root of unity;
@@ -58,8 +58,9 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 * `NumberField.RingOfIntegers.natCast_absNorm_span_singleton_of_four`: the absolute norm of
   `x ℤ[i]` is the norm of `x`;
 * `TauCeti.prime_natCast_of_mod_four_eq_three`: a rational prime `q ≡ 3 (mod 4)` stays prime in
-  `ℤ[i]`, and `TauCeti.mk_pow_eq_mk_apply_of_mod_four_eq_three` identifies the `q`-th power map on
-  `ℤ[i] ⧸ q ℤ[i]` with complex conjugation.
+  `ℤ[i]`, and
+  `TauCeti.idealQuotientMk_span_natCast_pow_eq_idealQuotientMk_apply_of_mod_four_eq_three`
+  identifies the `q`-th power map on `ℤ[i] ⧸ q ℤ[i]` with complex conjugation.
 
 The conjugation argument follows the cubic case in
 [TauCetiProject/TauCeti#21047](https://github.com/TauCetiProject/TauCeti/pull/21047).
@@ -170,7 +171,8 @@ end IsPrimitiveRoot
 namespace TauCeti
 
 /-- The fourth cyclotomic field `ℚ(i)` has degree `2` over `ℚ`. -/
-theorem finrank_four {K : Type*} [Field K] [CharZero K] [IsCyclotomicExtension {4} ℚ K] :
+theorem finrank_eq_two_of_isCyclotomicExtension_four
+    {K : Type*} [Field K] [CharZero K] [IsCyclotomicExtension {4} ℚ K] :
     Module.finrank ℚ K = 2 := by
   rw [IsCyclotomicExtension.Rat.finrank 4 K]
   decide
@@ -321,7 +323,7 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
 /-- The absolute norm of `q 𝓞 K` is `q²`, since `𝓞 K` has rank two. -/
 theorem absNorm_span_natCast_four (q : ℕ) : absNorm (span {(q : 𝓞 K)}) = q ^ 2 := by
-  rw [absNorm_span_natCast, RingOfIntegers.rank, finrank_four]
+  rw [absNorm_span_natCast, RingOfIntegers.rank, finrank_eq_two_of_isCyclotomicExtension_four]
 
 end TauCeti
 
@@ -378,7 +380,8 @@ theorem prime_natCast_of_mod_four_eq_three {q : ℕ}
 
 /-- Modulo an inert prime `Q = q 𝓞 K` with `q ≡ 3 (mod 4)`, the `q`-th power map on `𝓞 K ⧸ Q`
 agrees with complex conjugation `σ`. -/
-theorem mk_pow_eq_mk_apply_of_mod_four_eq_three {q : ℕ} (hq : q.Prime) (hq3 : q % 4 = 3)
+theorem idealQuotientMk_span_natCast_pow_eq_idealQuotientMk_apply_of_mod_four_eq_three {q : ℕ}
+    (hq : q.Prime) (hq3 : q % 4 = 3)
     {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
     (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) (x : 𝓞 K) :
     (Ideal.Quotient.mk (span {(q : 𝓞 K)}) x) ^ q =

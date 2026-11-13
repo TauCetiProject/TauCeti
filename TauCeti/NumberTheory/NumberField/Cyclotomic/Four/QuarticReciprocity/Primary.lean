@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.QuarticReciprocit
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.RationalResidue
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.SupplementaryLaws
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
-import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
@@ -51,8 +50,9 @@ in two stages:
 
 ## References
 
-* N. Xu, *Reciprocity Laws*, §5, Propositions 5.12–5.13.
+* N. Xu, *Reciprocity Laws*, §5, Theorem 5.8 and Proposition 5.13.
 * K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 9, §§8–9.
+* M. C. Relyea, *On finite fields and higher reciprocity*, §4.1, Theorem 4.4.
 -/
 
 public section
@@ -307,37 +307,25 @@ private theorem coe_quartic_reciprocity_add_mul_of_isCoprime {ζ : K} {hζ : IsP
 
 /-! ### The general law of biquadratic reciprocity -/
 
-/-- Multiplying a primary element `x = a + b i` by a rational integer `r ≡ 1 (mod 4)` leaves the
-parity of `(N(x 𝓞 K) - 1) / 4` equal to that of `(a - 1) / 2`. -/
+/-- Multiplying a primary element `α = x + y i` by a rational integer `r ≡ 1 (mod 4)` leaves the
+parity of `(N((r * α) 𝓞 K) - 1) / 4` equal to that of `(x - 1) / 2`. -/
 private theorem absNorm_intCast_mul_sub_one_div_four_modEq {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
     {r x y : ℤ} (hr : r ≡ 1 [ZMOD 4])
     (hxy : IsPrimaryGaussian ((x : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger)) :
     (((absNorm (span {(r : 𝓞 K) * ((x : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger)}) - 1) / 4 : ℕ) : ℤ) ≡
       (x - 1) / 2 [ZMOD 2] := by
-  set α : 𝓞 K := (x : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger
-  obtain ⟨w, z, hwz⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) ((r : 𝓞 K) * α)
-  have hr_prim : IsPrimaryGaussian ((r : 𝓞 K) * α) := (isPrimaryGaussian_intCast_iff.mpr hr).mul hxy
-  have hwz_prim : IsPrimaryGaussian ((w : 𝓞 K) + (z : 𝓞 K) * hζ.toInteger) := hwz.symm ▸ hr_prim
-  rw [← hwz, hwz_prim.natCast_absNorm_sub_one_div_four, hwz, map_mul]
-  have hr0 : (r : 𝓞 K) = (r : 𝓞 K) + ((0 : ℤ) : 𝓞 K) * hζ.toInteger := by simp
-  rw [hr0, hζ.norm_intCast_add_intCast_mul_toInteger_of_four, zero_pow two_ne_zero, add_zero]
-  obtain ⟨t, ht⟩ : ∃ t, r = 4 * t + 1 := ⟨(r - 1) / 4, by simp only [Int.ModEq] at hr; omega⟩
-  have hcop4 := hxy.absNorm_span_singleton_coprime_four
-  have hpos : 1 ≤ absNorm (span {α}) :=
-    Nat.one_le_iff_ne_zero.mpr fun h0 ↦ absurd (h0 ▸ hcop4) (by decide)
-  obtain ⟨u, hu⟩ := (Nat.modEq_iff_dvd' hpos).mp (absNorm_modEq_one hcop4).symm
-  have hN := RingOfIntegers.natCast_absNorm_span_singleton_of_four α
-  have hN_eq : Algebra.norm ℤ α = 4 * (u : ℤ) + 1 := by omega
-  have hprod_div : (r ^ 2 * Algebra.norm ℤ α - 1) / 4 =
-      (u : ℤ) + 2 * (t * (2 * t + 1) * (4 * (u : ℤ) + 1)) := by
-    rw [ht, hN_eq]
-    have h : (4 * t + 1) ^ 2 * (4 * (u : ℤ) + 1) - 1 =
-        4 * ((u : ℤ) + 2 * (t * (2 * t + 1) * (4 * (u : ℤ) + 1))) := by ring
-    rw [h, Int.mul_ediv_cancel_left _ (by decide)]
-  have hu_eq : (Algebra.norm ℤ α - 1) / 4 = (u : ℤ) := by omega
-  refine (Int.modEq_iff_dvd.mpr ?_).trans hxy.norm_sub_one_div_four
-  rw [hprod_div, hu_eq]
-  exact ⟨-(t * (2 * t + 1) * (4 * (u : ℤ) + 1)), by ring⟩
+  have hmul : (r : 𝓞 K) * ((x : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger) =
+      ((r * x : ℤ) : 𝓞 K) + ((r * y : ℤ) : 𝓞 K) * hζ.toInteger := by push_cast; ring
+  have hrxy : IsPrimaryGaussian (((r * x : ℤ) : 𝓞 K) + ((r * y : ℤ) : 𝓞 K) * hζ.toInteger) :=
+    hmul ▸ (isPrimaryGaussian_intCast_iff.mpr hr).mul hxy
+  rw [hmul, hrxy.natCast_absNorm_sub_one_div_four]
+  refine hrxy.norm_sub_one_div_four.trans ?_
+  obtain ⟨t, rfl⟩ : ∃ t, r = 4 * t + 1 := ⟨(r - 1) / 4, by simp only [Int.ModEq] at hr; omega⟩
+  have hdiv : ((4 * t + 1) * x - 1) / 2 = (x - 1) / 2 + 2 * (t * x) := by
+    rw [show (4 * t + 1) * x - 1 = (x - 1) + 2 * (2 * (t * x)) by ring,
+      Int.add_mul_ediv_left _ _ (by decide)]
+  rw [hdiv]
+  exact Int.modEq_iff_dvd.mpr ⟨-(t * x), by ring⟩
 
 /-- Expands `((n * α₂) / (m * α₁))_4` when `m ≡ 1 (mod 4)` and `gcd(n, m) = 1`. -/
 private theorem powerResidueSymbolIdeal_span_intCast_mul_mk_intCast_mul {m n : ℤ} {α₁ α₂ : 𝓞 K}
@@ -405,14 +393,10 @@ theorem IsPrimaryGaussian.coe_quartic_reciprocity {π₁ π₂ : 𝓞 K} (hπ₁
     ((powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) : 𝓞 K) : K) =
       ((powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) : 𝓞 K) : K) *
         (-1) ^ (((Algebra.norm ℤ π₂ - 1) / 4) * ((Algebra.norm ℤ π₁ - 1) / 4)) := by
-  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  have hcast {x : 𝓞 K} (hx : IsPrimaryGaussian x) :
-      (((absNorm (span {x}) - 1) / 4 : ℕ) : ℤ) = (Algebra.norm ℤ x - 1) / 4 := by
-    obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
-    exact hx.natCast_absNorm_sub_one_div_four
   rw [hπ₁.quartic_reciprocity hπ₂]
   push_cast
-  rw [← zpow_natCast, Nat.cast_mul, hcast hπ₂, hcast hπ₁]
+  rw [← zpow_natCast, Nat.cast_mul, hπ₂.natCast_absNorm_sub_one_div_four,
+    hπ₁.natCast_absNorm_sub_one_div_four]
 
 /-- **The law of biquadratic reciprocity in coordinates.** For any primary elements
 `π₁ = a + b i` and `π₂ = c + d i` of `𝓞 K = ℤ[i]`,

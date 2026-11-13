@@ -487,21 +487,11 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_isMaximal (P P' : Ideal (
     (hP' : (absNorm P').Coprime m) (hPP' : (absNorm P).Coprime (absNorm P')) (hm : 2 ≤ m) :
     powerResidueSymbol P' m (Quotient.mk P' (stickelbergerPhi P m)) =
       powerResidueSymbol P m (Quotient.mk P (absNorm P' : 𝓞 K)) := by
-  -- Work in the ring of algebraic integers of `ℂ`, which is integral over `𝓞 K` through `f`, and
-  -- in a prime of it over `P'`.
   let _ := Ideal.Quotient.field P
-  let f : 𝓞 K →+* integralClosure ℤ ℂ :=
-    (Classical.arbitrary (K →+* ℂ)).toIntAlgHom.mapIntegralClosure.toRingHom
-  have hf : Function.Injective f := AlgHom.mapIntegralClosure_injective
-    (f := (Classical.arbitrary (K →+* ℂ)).toIntAlgHom) (RingHom.injective _)
   obtain ⟨ψ, hψ⟩ := TauCeti.exists_primitive_addChar_integralClosure (𝓞 K ⧸ P)
-  let _ := f.toAlgebra
-  have : IsScalarTower ℤ (𝓞 K) (integralClosure ℤ ℂ) :=
-    IsScalarTower.of_algebraMap_eq' (RingHom.ext_int _ _)
-  have : Algebra.IsIntegral (𝓞 K) (integralClosure ℤ ℂ) :=
-    ⟨fun x ↦ (integralClosure.isIntegral x).tower_top⟩
-  obtain ⟨I, hI, hIP'⟩ := exists_ideal_over_maximal_of_isIntegral P'
-    (((RingHom.injective_iff_ker_eq_bot _).mp hf).trans_le bot_le)
+  obtain ⟨f, hf, I, hI, hIP'⟩ :=
+    P'.exists_injective_algHom_and_isPrime_comap_eq_of_isIntegralClosure (integralClosure ℤ ℂ)
+      (f := (Classical.arbitrary (K →+* ℂ)).toIntAlgHom) (RingHom.injective _)
   exact powerResidueSymbol_stickelbergerPhi_of_comap P P' hP' hPP' hm hf hψ I hIP'
 
 /-- **The residue symbol of `Φ(A)` at a second prime.** Let `m ≥ 2`, let `P'` be a maximal ideal of
