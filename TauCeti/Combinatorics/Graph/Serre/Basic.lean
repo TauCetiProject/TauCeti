@@ -92,6 +92,12 @@ def toGeomEdge (e : Γ.E) : Γ.GeomEdge := Quot.mk _ e
 theorem toGeomEdge_surjective : Function.Surjective Γ.toGeomEdge :=
   Quot.mk_surjective
 
+/-- A graph without darts has no geometric edge. -/
+instance [IsEmpty Γ.E] : IsEmpty Γ.GeomEdge := Quot.instIsEmpty
+
+/-- A graph with finitely many darts has finitely many geometric edges. -/
+instance [Finite Γ.E] : Finite Γ.GeomEdge := Finite.of_surjective _ Γ.toGeomEdge_surjective
+
 /-- Two darts have the same geometric edge exactly when they are equal or mutually reverse. -/
 theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
     Γ.toGeomEdge e = Γ.toGeomEdge f ↔ f = e ∨ f = Γ.rev e := by
@@ -453,6 +459,21 @@ instance [DecidableEq V] : DecidableEq (noEdge.{u, v} V).V := inferInstanceAs (D
 
 /-- The graph without edges on an empty type has no vertex. -/
 instance [IsEmpty V] : IsEmpty (noEdge.{u, v} V).V := inferInstanceAs (IsEmpty V)
+
+/-- The graph without edges on a nonempty type has a vertex. -/
+instance [Nonempty V] : Nonempty (noEdge.{u, v} V).V := inferInstanceAs (Nonempty V)
+
+/-- A vertex of a graph without edges, the default element of `V`. -/
+instance [Inhabited V] : Inhabited (noEdge.{u, v} V).V := inferInstanceAs (Inhabited V)
+
+/-- The graph without edges on a subsingleton has at most one vertex. -/
+instance [Subsingleton V] : Subsingleton (noEdge.{u, v} V).V := inferInstanceAs (Subsingleton V)
+
+/-- The graph without edges on a type with exactly one element has exactly one vertex. -/
+instance [Unique V] : Unique (noEdge.{u, v} V).V := inferInstanceAs (Unique V)
+
+/-- The graph without edges on a nontrivial type has two distinct vertices. -/
+instance [Nontrivial V] : Nontrivial (noEdge.{u, v} V).V := inferInstanceAs (Nontrivial V)
 
 /-- In a graph without edges a path joins two vertices exactly when they are equal. -/
 @[simp] theorem noEdge_nonempty_path_iff {a b : V} :

@@ -15,14 +15,15 @@ The Serre graph `SerreGraph.parallelGraph α` has the two vertices `false` and `
 each `a : α`, a pair of mutually reverse darts joining them: the dart `(a, b)` runs from the
 vertex `b` to the vertex `!b`. Distinct elements of `α` give distinct geometric edges with the
 same ends, so this is the basic example of a graph with multiple edges; for a one-element type it
-is the segment, and for an empty type it consists of two isolated vertices.
+is the segment, and for an empty type it consists of two isolated vertices. Its geometric edges
+correspond to the elements of `α` (`parallelGraphGeomEdgeEquiv`).
 
 The graph is connected exactly when `α` is nonempty, and then its underlying multigraph has one
 component; when `α` is empty it has two. For `a ≠ b` the closed path `parallelLoop a b`, which
-crosses the edge `a` and comes back along the edge `b`, is reduced and nonempty. Hence the graph
-is acyclic exactly when `α` has at most one element, and a tree exactly when `α` has exactly one
-element: multiple edges are detected by the tree predicate. Traversed backwards,
-`parallelLoop a b` is `parallelLoop b a`.
+crosses the edge `a` and comes back along the edge `b`, is reduced and nonempty; for `a = b` it
+backtracks and reduces to the empty path. Hence the graph is acyclic exactly when `α` has at
+most one element, and a tree exactly when `α` has exactly one element: multiple edges are
+detected by the tree predicate. Traversed backwards, `parallelLoop a b` is `parallelLoop b a`.
 
 ## References
 
@@ -68,6 +69,18 @@ instance : Fintype (parallelGraph α).V := inferInstanceAs (Fintype Bool)
 /-- The two vertices of a graph of parallel edges have decidable equality. -/
 instance : DecidableEq (parallelGraph α).V := inferInstanceAs (DecidableEq Bool)
 
+/-- The vertex `false` of a graph of parallel edges. -/
+instance : Inhabited (parallelGraph α).V := inferInstanceAs (Inhabited Bool)
+
+/-- The two vertices of a graph of parallel edges are distinct. -/
+instance : Nontrivial (parallelGraph α).V := inferInstanceAs (Nontrivial Bool)
+
+/-- A graph of parallel edges indexed by a nonempty type has a dart. -/
+instance [Nonempty α] : Nonempty (parallelGraph α).E := inferInstanceAs (Nonempty (α × Bool))
+
+/-- The dart along the default edge leaving the vertex `false`. -/
+instance [Inhabited α] : Inhabited (parallelGraph α).E := inferInstanceAs (Inhabited (α × Bool))
+
 /-- A graph of finitely many parallel edges has finitely many darts. -/
 instance [Finite α] : Finite (parallelGraph α).E := inferInstanceAs (Finite (α × Bool))
 
@@ -97,12 +110,43 @@ have the same index: parallel edges remain distinct. -/
   rw [edge_eq_iff, parallelGraph_rev]
   exact key e f
 
+/-- Two darts of a graph of parallel edges have the same geometric edge exactly when they have
+the same index. -/
+@[simp] theorem parallelGraph_toGeomEdge_eq_iff (e f : (parallelGraph α).E) :
+    (parallelGraph α).toGeomEdge e = (parallelGraph α).toGeomEdge f ↔ e.1 = f.1 := by
+  rw [toGeomEdge_eq_toGeomEdge_iff, ← edge_eq_iff, parallelGraph_edge_eq_iff, eq_comm]
+
+/-- The geometric edges of a graph of parallel edges are its edge indices. -/
+def parallelGraphGeomEdgeEquiv (α : Type w) : (parallelGraph α).GeomEdge ≃ α where
+  toFun := GeomEdge.lift (parallelGraph α) Prod.fst fun _ => rfl
+  invFun a := (parallelGraph α).toGeomEdge (a, true)
+  left_inv x := by
+    obtain ⟨e, rfl⟩ := (parallelGraph α).toGeomEdge_surjective x
+    exact (parallelGraph_toGeomEdge_eq_iff _ _).mpr (GeomEdge.lift_toGeomEdge _ _ _ _)
+  right_inv _ := GeomEdge.lift_toGeomEdge _ _ _ _
+
+@[simp] theorem parallelGraphGeomEdgeEquiv_toGeomEdge (e : (parallelGraph α).E) :
+    parallelGraphGeomEdgeEquiv α ((parallelGraph α).toGeomEdge e) = e.1 :=
+  GeomEdge.lift_toGeomEdge _ _ _ _
+
+@[simp] theorem parallelGraphGeomEdgeEquiv_symm_apply (a : α) :
+    (parallelGraphGeomEdgeEquiv α).symm a = (parallelGraph α).toGeomEdge (a, true) :=
+  (rfl)
+
 /-- Every undirected edge of a graph of parallel edges joins the two vertices. -/
 @[simp] theorem parallelGraph_edgeEnds (q : (parallelGraph α).Edge) :
     (parallelGraph α).edgeEnds q = s(false, true) := by
   have key : ∀ x : Bool, s(x, !x) = s(false, true) := by decide
   induction q using Edge.ind with
   | h e => rw [edgeEnds_edge, parallelGraph_src, parallelGraph_tgt]; exact key e.2
+
+/-- The dart `(a, false)`, which runs along the edge `a` from the vertex `false` to the vertex
+`true`, as an arrow of the quiver of the graph. -/
+def parallelDart (a : α) : Quiver.Hom (V := (parallelGraph α).V) false true :=
+  (parallelGraph α).dart (a, false)
+
+@[simp] theorem parallelDart_val (a : α) : (parallelDart a).1 = (a, false) :=
+  dart_val _ _
 
 /-- A graph of parallel edges is preconnected exactly when it has an edge. -/
 @[simp] theorem parallelGraph_preconnected_iff : (parallelGraph α).Preconnected ↔ Nonempty α := by
@@ -114,9 +158,7 @@ have the same index: parallel edges remain distinct. -/
   · refine (parallelGraph α).preconnected_of_forall_nonempty_path false fun b => ?_
     cases b
     · exact ⟨.nil⟩
-    · -- The dart `(a, false)` runs from `false` to `true`: its ends `(a, false).2` and
-      -- `!(a, false).2` reduce to these vertices.
-      exact ⟨((parallelGraph α).dart (a, false)).toPath⟩
+    · exact ⟨(parallelDart a).toPath⟩
 
 /-- A graph of parallel edges is connected exactly when it has an edge. -/
 @[simp] theorem parallelGraph_connected_iff : (parallelGraph α).Connected ↔ Nonempty α := by
@@ -126,44 +168,43 @@ have the same index: parallel edges remain distinct. -/
 /-- The closed path at the vertex `false` that crosses the edge `a` and returns along the
 edge `b`. -/
 def parallelLoop (a b : α) : (parallelGraph α).Path false false :=
-  (Quiver.Hom.toPath
-    (⟨(a, false), rfl, rfl⟩ : Quiver.Hom (V := (parallelGraph α).V) false true)).cons
-    ⟨(b, true), rfl, rfl⟩
+  (parallelDart a).toPath.cons (Quiver.reverse (parallelDart b))
 
-/-- The closed path `parallelLoop a b` is the dart `(a, false)` followed by the dart `(b, true)`,
-as arrows of the quiver of the graph. -/
-theorem parallelLoop_def (a b : α) : parallelLoop a b =
-    (Quiver.Hom.toPath
-      (⟨(a, false), rfl, rfl⟩ : Quiver.Hom (V := (parallelGraph α).V) false true)).cons
-      (⟨(b, true), rfl, rfl⟩ : Quiver.Hom (V := (parallelGraph α).V) true false) :=
+/-- The closed path `parallelLoop a b` is the arrow `parallelDart a` followed by the reverse of
+the arrow `parallelDart b`. -/
+theorem parallelLoop_def (a b : α) :
+    parallelLoop a b = (parallelDart a).toPath.cons (Quiver.reverse (parallelDart b)) :=
   (rfl)
 
 /-- Traversing the closed path `parallelLoop a b` backwards crosses the edge `b` and returns
 along the edge `a`. -/
 @[simp] theorem reverse_parallelLoop (a b : α) :
     (parallelLoop a b).reverse = parallelLoop b a := by
-  simp only [parallelLoop_def, Quiver.Path.reverse, Quiver.Path.reverse_toPath,
-    Quiver.Path.comp_toPath_eq_cons]
-  congr 2 <;> exact Subtype.ext ((reverse_val _ _).trans (by simp))
+  simp [parallelLoop_def]
 
 @[simp] theorem darts_parallelLoop (a b : α) :
-    Path.darts (parallelGraph α) (parallelLoop a b) = [(a, false), (b, true)] :=
-  (Path.darts_cons _ _ _).trans (congrArg (· ++ _) (Path.darts_toPath _ _))
+    Path.darts (parallelGraph α) (parallelLoop a b) = [(a, false), (b, true)] := by
+  simp [parallelLoop_def, reverse_val (parallelGraph α)]
 
 @[simp] theorem length_parallelLoop (a b : α) : (parallelLoop a b).length = 2 :=
   (Path.length_darts _ _).symm.trans (congrArg List.length (darts_parallelLoop a b))
 
 /-- Crossing one edge and returning along another is reduced exactly when the two edges are
 distinct. -/
-@[simp] theorem parallelLoop_isReduced_iff {a b : α} :
+@[simp] theorem isReduced_parallelLoop_iff {a b : α} :
     Path.IsReduced (parallelGraph α) (parallelLoop a b) ↔ a ≠ b := by
   rw [Path.isReduced_iff_isChain, darts_parallelLoop, List.isChain_pair, parallelGraph_rev]
   exact not_congr ⟨fun h => (congrArg Prod.fst h).symm, fun h => h ▸ rfl⟩
 
+/-- Crossing an edge and returning along it reduces to the empty path. -/
+@[simp] theorem reduce_parallelLoop_self (a : α) :
+    Path.reduce (parallelGraph α) (parallelLoop a a) = Quiver.Path.nil := by
+  simp [parallelLoop_def, Quiver.Hom.toPath]
+
 /-- A graph with two distinct parallel edges is not acyclic. -/
 theorem parallelGraph_not_isAcyclic {a b : α} (hab : a ≠ b) : ¬(parallelGraph α).IsAcyclic :=
   fun h => two_ne_zero <| (length_parallelLoop a b).symm.trans <| congrArg Quiver.Path.length <|
-    (isAcyclic_iff _).mp h false (parallelLoop a b) (parallelLoop_isReduced_iff.mpr hab)
+    (isAcyclic_iff _).mp h false (parallelLoop a b) (isReduced_parallelLoop_iff.mpr hab)
 
 /-- A graph of parallel edges is acyclic exactly when it has at most one edge. -/
 @[simp] theorem parallelGraph_isAcyclic_iff : (parallelGraph α).IsAcyclic ↔ Subsingleton α := by

@@ -281,7 +281,7 @@ count is `Nat.card V`; both sides are `0` when `V` is infinite. -/
   componentCount_toGraph_of_forall_src_eq_tgt _ isEmptyElim
 
 /-- The multigraph underlying a graph of two or more isolated vertices is not connected. -/
-theorem toGraph_noEdge_not_connected [Nontrivial V] : ¬(noEdge.{u, v} V).toGraph.Connected :=
+theorem not_connected_toGraph_noEdge [Nontrivial V] : ¬(noEdge.{u, v} V).toGraph.Connected :=
   fun h => noEdge_not_connected ((connected_toGraph_iff _).mp h)
 
 /-- The multigraph underlying the graph of two isolated vertices has two components. -/
