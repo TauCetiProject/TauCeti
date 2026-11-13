@@ -14,9 +14,10 @@ public import Mathlib.MeasureTheory.MeasurableSpace.EventuallyMeasurable
 
 Completing the ambient measure does not change conditional expectations onto an original
 sub-σ-algebra. Adjoining all ambient null sets to that sub-σ-algebra likewise leaves the
-conditional expectation unchanged almost everywhere. These identities allow martingale
-identities to be transported to a completed stochastic basis without identifying its
-measurable space with the original one.
+conditional expectation unchanged almost everywhere. Consequently, conditional expectation
+onto a sub-σ-algebra fixes every integrable function measurable for it modulo ambient null
+sets. These identities allow martingale identities to be transported to a completed
+stochastic basis without identifying its measurable space with the original one.
 
 Only null-set augmentation requires sigma-finiteness on the original conditioning σ-algebra;
 ambient completion alone does not. Observables are assumed almost everywhere strongly measurable
@@ -104,5 +105,27 @@ theorem condExp_eventuallyMeasurableSpace_completion (hm : m ≤ m₀)
     (m₁ := m) (m₂ := eventuallyMeasurableSpace m (ae μ))
     le_eventuallyMeasurableSpace hle (fun _ hs => hs)
   exact hce.trans (condExp_completion hm hf)
+
+/-- Conditional expectation onto `m` fixes every integrable function that is almost everywhere
+strongly measurable for `m` augmented by the ambient null sets. In particular, such a function
+agrees almost everywhere with a strongly `m`-measurable function, although the augmented
+σ-algebra need not be contained in the ambient one. -/
+theorem condExp_of_aestronglyMeasurable_eventuallyMeasurableSpace (hm : m ≤ m₀)
+    [SigmaFinite (μ.trim hm)]
+    (hf : AEStronglyMeasurable[eventuallyMeasurableSpace m (ae μ)] f μ)
+    (hfi : Integrable f μ) : μ[f | m] =ᵐ[μ] f := by
+  have hle : eventuallyMeasurableSpace m (ae μ) ≤ eventuallyMeasurableSpace m₀ (ae μ) := by
+    rintro s ⟨t, ht, hst⟩
+    exact ⟨t, hm t ht, hst⟩
+  -- Condition on the augmented σ-algebra inside the completed space, where it is a
+  -- sub-σ-algebra, and compare with conditioning on `m` there.
+  let ν : @Measure Ω (eventuallyMeasurableSpace m₀ (ae μ)) := μ.completion
+  have : SigmaFinite (ν.trim (hm.trans le_eventuallyMeasurableSpace)) :=
+    (μ.trim_completion hm).symm ▸ inferInstance
+  have : SigmaFinite (ν.trim hle) := sigmaFiniteTrim_mono hle le_eventuallyMeasurableSpace
+  have hfiν : Integrable f ν := μ.measurePreserving_id_completion.integrable_comp_of_integrable hfi
+  -- The completed measure has the same null sets, `Measure.ae_completion`.
+  exact (condExp_eventuallyMeasurableSpace_completion hm hfi.aestronglyMeasurable).symm.trans
+    (condExp_of_aestronglyMeasurable' (μ := ν) hle hf hfiν)
 
 end TauCeti.MeasureTheory
