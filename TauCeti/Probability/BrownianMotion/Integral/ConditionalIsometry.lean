@@ -41,19 +41,22 @@ variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 
 /-- The elementary Brownian isometry on an event known at every left endpoint.
 The interval lengths are clipped at the observation time, while the heights remain
-measurable at their original left endpoints. -/
+measurable at their original left endpoints and need only be square-integrable on the event. -/
 theorem setIntegral_sq_sum_mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P)
     (hst : ∀ i ∈ I, s i ≤ t i)
     (hdisj : (I : Set ι).Pairwise fun i j => t i ≤ s j ∨ t j ≤ s i)
     (hX : ∀ i ∈ I, StronglyMeasurable[ℱ (s i)] (X i))
-    (hXi : ∀ i ∈ I, MemLp (X i) 2 P) {A : Set Ω} (hA : MeasurableSet A)
+    {A : Set Ω} (hXi : ∀ i ∈ I, MemLp (X i) 2 (P.restrict A))
     (hAs : ∀ i ∈ I, MeasurableSet[ℱ (s i)] A) (T : ℝ≥0) :
     ∫ ω in A, (∑ i ∈ I,
       X i ω * (W (min (t i) T) ω - W (min (s i) T) ω)) ^ 2 ∂P =
       ∑ i ∈ I, (∫ ω in A, X i ω ^ 2 ∂P) * (↑(min (t i) T) - ↑(min (s i) T)) := by
+  rcases I.eq_empty_or_nonempty with rfl | ⟨i₀, hi₀⟩
+  · simp
+  have hA : MeasurableSet A := ℱ.le (s i₀) A (hAs i₀ hi₀)
   have h := hW.integral_sq_sum_mul_sub_min I hst hdisj
     (fun i hi => (hX i hi).indicator (hAs i hi))
-    (fun i hi => (hXi i hi).indicator hA.nullMeasurableSet) T
+    (fun i hi => (memLp_indicator_iff_restrict hA.nullMeasurableSet).mpr (hXi i hi)) T
   have hleft : (fun ω => (∑ i ∈ I, A.indicator (X i) ω *
       (W (min (t i) T) ω - W (min (s i) T) ω)) ^ 2) =
       A.indicator (fun ω => (∑ i ∈ I, X i ω *
@@ -88,7 +91,7 @@ theorem condExp_sq_sum_mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P)
     (fun _ _ _ => integrable_condExp.integrableOn) (fun A hA _ => ?_)
     stronglyMeasurable_condExp.aestronglyMeasurable).symm
   rw [setIntegral_condExp (ℱ.le r) henergy hA,
-    hW.setIntegral_sq_sum_mul_sub_min hst hdisj hX hXi (ℱ.le r A hA)
+    hW.setIntegral_sq_sum_mul_sub_min hst hdisj hX (fun i hi => (hXi i hi).restrict A)
       (fun i hi => ℱ.mono (hrs i hi) A hA) T,
     integral_finsetSum _ (fun i hi => ((hXi i hi).integrable_sq.mul_const _).integrableOn)]
   exact sum_congr rfl fun i _ => integral_mul_const _ _
