@@ -22,8 +22,9 @@ This weight is integrable as soon as both the asset drift and the target drift g
 integrable. All results work for an arbitrary time measure, so they apply pathwise on a
 finite horizon without any expected-energy or expected-variation assumption. Signed and
 vanishing coefficients are allowed. These are error estimates, not constructions of
-stochastic integrals. The drift and diffusion results are independent; measurability is
-required only for the respective gain or square energy, not for each factor separately.
+stochastic integrals. The drift and diffusion error bounds and convergence results are
+independent; their measurability hypotheses concern only the respective gain or square energy,
+not each factor separately.
 
 ## References
 
@@ -42,8 +43,9 @@ namespace TauCeti.Finance
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
   {a D V e : α → ℝ}
 
-/-- Asset drift integrability and measurable target drift gains give finite mass for
-`w = |D| / (1 + |a|) + V²`, without requiring measurable holdings separately. -/
+/-- Integrable asset drift and squared diffusion, together with measurable target drift gains,
+give finite mass for `w = |D| / (1 + |a|) + V²`, without requiring measurable holdings
+separately. -/
 theorem integrable_abs_div_one_add_abs_add_sq (hD : Integrable D μ)
     (haD : AEStronglyMeasurable (fun x ↦ a x * D x) μ)
     (hV : Integrable (fun x ↦ V x ^ 2) μ) :
@@ -61,8 +63,9 @@ theorem integrable_abs_div_one_add_abs_add_sq (hD : Integrable D μ)
   exact (hD.abs.mono_nonneg hm (ae_of_all _ fun x ↦ by positivity)
     (ae_of_all _ fun x ↦ div_le_self (abs_nonneg _) (by linarith [abs_nonneg (a x)]))).add hV
 
-/-- Integrable target gains give finite target energy for the mixed weight, without
-requiring finite drift-weight mass or measurable holdings separately. -/
+/-- Measurable asset drift and integrable target drift gains and squared diffusion gains give
+finite target energy for the mixed weight, without requiring finite drift-weight mass or
+measurable holdings separately. -/
 theorem integrable_abs_div_one_add_abs_add_sq_mul_sq (hD : AEStronglyMeasurable D μ)
     (haD : Integrable (fun x ↦ a x * D x) μ)
     (haV : Integrable (fun x ↦ (a x * V x) ^ 2) μ) :
@@ -163,7 +166,8 @@ private theorem drift_error_estimate
       simpa only [Real.rpow_two, sq_sqrt (hA0 _), sq_sqrt (hE0 _),
         ← one_div, ← sqrt_eq_rpow] using h
 
-/-- Finite mixed weighted square error implies integrability of measurable drift gains. -/
+/-- Finite complementary drift mass and mixed weighted square error imply integrability of
+measurable drift gains. -/
 theorem integrable_mul_of_integrable_abs_div_one_add_abs_add_sq_mul_sq
     (heD : AEStronglyMeasurable (fun x ↦ e x * D x) μ)
     (hA : Integrable (fun x ↦ |D x| * (1 + |a x|)) μ)
@@ -204,8 +208,9 @@ theorem integral_mul_sq_le
   have : 0 ≤ |D x| / (1 + |a x|) := by positivity
   nlinarith [mul_nonneg this (sq_nonneg (e x))]
 
-/-- Mixed weighted square-error convergence implies drift L¹ convergence. Integrability
-and measurability are required only eventually along the index filter. -/
+/-- Under integrable complementary drift mass, mixed weighted square-error convergence implies
+drift L¹ convergence. Weighted-error integrability and drift-gain measurability are required only
+eventually along the index filter. -/
 theorem tendsto_integral_abs_mul_of_tendsto_integral {ι : Type*} {l : Filter ι}
     {e : ι → α → ℝ}
     (hA : Integrable (fun x ↦ |D x| * (1 + |a x|)) μ)
