@@ -173,22 +173,6 @@ theorem hasLaw_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P)
   exact HasLaw.comp ⟨by fun_prop, rfl⟩
     (hB.hasLaw_log_timeDependentGeometricBrownianMotion hs μ σ hσ t)
 
-/-- Exponentials of multiples of Wiener integrals are integrable. -/
-private theorem integrable_exp_mul_wienerIntegral (hB : IsPreBrownianReal B P) {T : ℝ≥0}
-    {f : ℝ≥0 → ℝ} (hf : MemLp f 2 (timeMeasure T)) (q : ℝ) :
-    Integrable (fun ω ↦ exp (q * hB.wienerIntegral T (hf.toLp f) ω)) P := by
-  have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  exact mgf_pos_iff.mp (mgf_gaussianReal (hB.hasLaw_wienerIntegral_toLp hf) q ▸ exp_pos _)
-
-/-- The exponential moments of a Wiener integral are those of its Gaussian law. -/
-private theorem integral_exp_mul_wienerIntegral (hB : IsPreBrownianReal B P) {T : ℝ≥0}
-    {f : ℝ≥0 → ℝ} (hf : MemLp f 2 (timeMeasure T)) (q : ℝ) :
-    ∫ ω, exp (q * hB.wienerIntegral T (hf.toLp f) ω) ∂P =
-      exp (q ^ 2 * (∫ t, f t ^ 2 ∂timeMeasure T) / 2) := by
-  rw [← mgf, mgf_gaussianReal (hB.hasLaw_wienerIntegral_toLp hf),
-    Real.coe_toNNReal _ (integral_nonneg fun _ ↦ sq_nonneg _)]
-  ring_nf
-
 /-- Every real absolute power of the process is integrable. -/
 theorem integrable_abs_rpow_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P)
     (s q : ℝ) (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) :

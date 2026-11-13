@@ -12,6 +12,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.Normed.Affine.MazurUlam
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPartSq
 
@@ -40,7 +41,9 @@ The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the 
 adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
 (`ContinuousLinearMap.integral_adjoint`).
 Indicators of any countably spanning generating π-system of finite-measure sets have
-dense real linear span in L².
+dense real linear span in L². For initial intervals of a second-countable linear order, a
+continuous linear map out of `L²` therefore takes almost everywhere `m`-measurable values
+once it does so on the indicators (`TauCeti.aestronglyMeasurable_of_indicatorConstLp_Iic`).
 
 The space `L²(μ)` is infinite-dimensional as soon as `μ` carries infinitely many pairwise disjoint
 sets of positive finite measure (`MeasureTheory.L2.not_finiteDimensional_of_pairwise_disjoint`),
@@ -380,5 +383,28 @@ theorem topologicalClosure_span_indicatorConstLp_Iic_eq_top
     · rintro ⟨a, rfl⟩
       exact ⟨Set.Iic a, Set.mem_range_self a, rfl⟩
   rwa [hset] at hdense
+
+/-- A continuous linear map out of real `L²` of a Borel measure finite on initial intervals of a
+second-countable linearly ordered space takes almost everywhere `m`-measurable values as soon
+as it does so on the initial-interval indicators. -/
+theorem aestronglyMeasurable_of_indicatorConstLp_Iic
+    {α : Type*} [TopologicalSpace α] [MeasurableSpace α] [SecondCountableTopology α]
+    [LinearOrder α] [OrderTopology α] [BorelSpace α] {μ : Measure α}
+    (hμ : ∀ a, μ (Set.Iic a) ≠ ∞) {Ω : Type*} {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    (hm : m ≤ mΩ) (A : Lp ℝ 2 μ →L[ℝ] Lp ℝ 2 P)
+    (hA : ∀ a, AEStronglyMeasurable[m] (A (indicatorConstLp 2 measurableSet_Iic (hμ a) 1)) P)
+    (f : Lp ℝ 2 μ) : AEStronglyMeasurable[m] (A f) P := by
+  let V : Submodule ℝ (Lp ℝ 2 μ) := (lpMeas ℝ ℝ m 2 P).comap A.toLinearMap
+  have hV : IsClosed (V : Set (Lp ℝ 2 μ)) :=
+    (isClosed_aestronglyMeasurable (F := ℝ) (p := 2) (μ := P) hm).preimage A.continuous
+  have hspan : Submodule.span ℝ (Set.range fun a : α ↦
+      indicatorConstLp (μ := μ) 2 measurableSet_Iic (hμ a) (1 : ℝ)) ≤ V := by
+    rw [Submodule.span_le]
+    rintro _ ⟨a, rfl⟩
+    exact Submodule.mem_comap.2 ((mem_lpMeas_iff_aestronglyMeasurable (𝕜 := ℝ)).2 (hA a))
+  have htop := Submodule.topologicalClosure_minimal _ hspan hV
+  rw [topologicalClosure_span_indicatorConstLp_Iic_eq_top hμ] at htop
+  exact (mem_lpMeas_iff_aestronglyMeasurable (𝕜 := ℝ)).1
+    (Submodule.mem_comap.1 (htop Submodule.mem_top))
 
 end TauCeti
