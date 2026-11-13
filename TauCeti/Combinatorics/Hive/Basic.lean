@@ -48,12 +48,32 @@ theorem IsHive.rotate {h : Vertex n → R} (hh : IsHive h) :
 theorem IsHive.reflect {h : Vertex n → R} (hh : IsHive h) :
     IsHive (fun p => h p.reflect) := fun _ _ _ _ hr => hh hr.reflect
 
+/-- Clockwise rotation does not affect whether a labelling is a hive. -/
+@[simp] theorem isHive_rotate_iff (h : Vertex n → R) :
+    IsHive (fun p => h p.rotate) ↔ IsHive h := by
+  constructor
+  · intro hh
+    simpa only [Vertex.rotate_rotate_rotate] using hh.rotate.rotate
+  · exact IsHive.rotate
+
+/-- Reflection does not affect whether a labelling is a hive. -/
+@[simp] theorem isHive_reflect_iff (h : Vertex n → R) :
+    IsHive (fun p => h p.reflect) ↔ IsHive h := by
+  constructor
+  · intro hh
+    simpa only [Vertex.reflect_reflect] using hh.reflect
+  · exact IsHive.reflect
+
 /-- Restriction to a translated lattice subtriangle preserves hive inequalities. -/
 theorem IsHive.restrict {m : ℕ} {h : Vertex (m + n) → R} (hh : IsHive h)
     (p : Vertex m) : IsHive (fun q => h (p.add q)) :=
   fun _ _ _ _ hr => hh (hr.add p)
 
 end Symmetry
+
+/-- Every constant labelling satisfies the hive inequalities. -/
+@[simp] theorem isHive_const [Add R] [Preorder R] (c : R) :
+    IsHive (fun _ : Vertex n => c) := fun _ _ _ _ _ => le_rfl
 
 section AddMonoid
 
@@ -89,6 +109,12 @@ def hiveSubmonoid (n : ℕ) (R : Type*) [AddCommMonoid R] [Preorder R]
       convert hh hr using 1 <;> dsimp only <;> abel
     exact (add_le_add_iff_right _).mp hi
   · convert add_le_add_right (hh hr) (c + c) using 1 <;> dsimp only <;> abel
+
+/-- Adding a constant on the left does not affect whether a labelling is a hive. -/
+@[simp] theorem isHive_const_add_iff [IsOrderedCancelAddMonoid R]
+    (c : R) (h : Vertex n → R) :
+    IsHive (fun p => c + h p) ↔ IsHive h := by
+  simpa only [add_comm] using isHive_add_const_iff h c
 
 end AddMonoid
 
@@ -132,11 +158,17 @@ instance : CoeFun (Hive n R) (fun _ => Vertex n → R) := ⟨fun h => h.val⟩
 def ofLabel (h : Vertex n → R) (hh : IsHive h) (hA : h (Vertex.cornerA n) = 0) :
     Hive n R := ⟨h, hh, hA⟩
 
+@[simp] theorem coe_ofLabel (h : Vertex n → R) (hh : IsHive h)
+    (hA : h (Vertex.cornerA n) = 0) : (ofLabel h hh hA : Vertex n → R) = h := (rfl)
+
+@[simp] theorem ofLabel_coe (h : Hive n R) (hh : IsHive (h : Vertex n → R))
+    (hA : h (Vertex.cornerA n) = 0) : ofLabel (h : Vertex n → R) hh hA = h := (rfl)
+
 @[simp] theorem ofLabel_apply (h : Vertex n → R) (hh : IsHive h)
     (hA : h (Vertex.cornerA n) = 0) (p : Vertex n) : ofLabel h hh hA p = h p := (rfl)
 
 /-- The underlying labelling of a normalized hive satisfies the rhombus inequalities. -/
-theorem isHive (h : Hive n R) : IsHive (h : Vertex n → R) := h.property.1
+@[simp] theorem isHive (h : Hive n R) : IsHive (h : Vertex n → R) := h.property.1
 
 @[simp] theorem apply_cornerA (h : Hive n R) : h (Vertex.cornerA n) = 0 := h.property.2
 

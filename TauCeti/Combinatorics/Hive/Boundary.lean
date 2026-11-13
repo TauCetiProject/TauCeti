@@ -39,7 +39,7 @@ def boundary (h : Vertex n → R) (s : Fin 3) (i : Fin n) : R :=
   h (Vertex.edge n s i.succ) - h (Vertex.edge n s i.castSucc)
 
 /-- Each boundary entry is the corresponding clockwise forward difference. -/
-@[simp] theorem boundary_apply (h : Vertex n → R) (s : Fin 3) (i : Fin n) :
+theorem boundary_apply (h : Vertex n → R) (s : Fin 3) (i : Fin n) :
     boundary h s i = h (Vertex.edge n s i.succ) - h (Vertex.edge n s i.castSucc) := (rfl)
 
 @[simp] theorem boundary_zero : boundary (0 : Vertex n → R) = 0 := by
@@ -51,11 +51,38 @@ def boundary (h : Vertex n → R) (s : Fin 3) (i : Fin n) : R :=
   simp only [boundary, Pi.add_apply]
   abel
 
+@[simp] theorem boundary_neg (h : Vertex n → R) : boundary (-h) = -boundary h := by
+  funext s i
+  simp only [boundary, Pi.neg_apply]
+  abel
+
+@[simp] theorem boundary_sub (h k : Vertex n → R) : boundary (h - k) = boundary h - boundary k := by
+  funext s i
+  simp only [boundary, Pi.sub_apply]
+  abel
+
+@[simp] theorem boundary_smul {K : Type*} [Monoid K] [DistribMulAction K R]
+    (c : K) (h : Vertex n → R) : boundary (c • h) = c • boundary h := by
+  funext s i
+  simp only [boundary, Pi.smul_apply, smul_sub]
+
+@[simp] theorem boundary_const (c : R) : boundary (fun _ : Vertex n => c) = 0 := by
+  funext s i
+  simp [boundary]
+
 /-- Boundary differences do not depend on the additive gauge. -/
 @[simp] theorem boundary_add_const (h : Vertex n → R) (c : R) :
     boundary (fun p => h p + c) = boundary h := by
   funext s i
   simp [boundary]
+
+@[simp] theorem boundary_const_add (c : R) (h : Vertex n → R) :
+    boundary (fun p => c + h p) = boundary h := by
+  simpa only [add_comm] using boundary_add_const h c
+
+@[simp] theorem boundary_sub_const (h : Vertex n → R) (c : R) :
+    boundary (fun p => h p - c) = boundary h := by
+  simpa only [sub_eq_add_neg] using boundary_add_const h (-c)
 
 /-- The sum along one side is the difference of its endpoint values. -/
 theorem sum_boundary (h : Vertex n → R) (s : Fin 3) :
@@ -64,7 +91,7 @@ theorem sum_boundary (h : Vertex n → R) (s : Fin 3) :
     Fin.sum_univ_succ_sub_castSucc (fun i => h (Vertex.edge n s i))
 
 /-- The cyclic trace of a boundary is zero, without a normalization assumption. -/
-theorem sum_boundary_eq_zero (h : Vertex n → R) : ∑ s, ∑ i, boundary h s i = 0 := by
+@[simp] theorem sum_sum_boundary_eq_zero (h : Vertex n → R) : ∑ s, ∑ i, boundary h s i = 0 := by
   simp only [sum_boundary, Fin.sum_univ_three, Vertex.edge_zero, Vertex.edge_one,
     Vertex.edge_two, Vertex.edgeAB_last, Vertex.edgeAB_zero, Vertex.rotate_rotate_rotate]
   abel
@@ -87,9 +114,8 @@ section OrderedGroup
 
 variable [AddCommGroup R] [Preorder R] [IsOrderedAddMonoid R]
 
--- Give affine evaluation priority over the generic boundary_apply expansion.
 /-- An affine hive has constant boundary slopes `u`, `v - u`, and `-v` clockwise. -/
-@[simp high] theorem boundary_affine (u v : R) (s : Fin 3) (i : Fin n) :
+@[simp] theorem boundary_affine (u v : R) (s : Fin 3) (i : Fin n) :
     boundary (affine u v : Vertex n → R) s i = ![u, v - u, -v] s := by
   have hn : n - (i : ℕ) = (n - ((i : ℕ) + 1)) + 1 := by omega
   fin_cases s <;>
@@ -164,11 +190,20 @@ theorem boundary_antitone (h : Hive n R) (s : Fin 3) :
   funext s i
   simp [boundary]
 
+/-- Restricting a hive has the same boundary as its translated labelling. -/
+@[simp] theorem boundary_restrict {m : ℕ} (h : Hive (m + n) R) (p : Vertex m) :
+    boundary (h.restrict p : Vertex n → R) = boundary (fun q => h (p.add q)) := by
+  funext s i
+  simp [boundary]
+
 end OrderedGroup
 
 /-- The three cyclic dominant weights of an integer hive. -/
 def boundaryWeight (h : IntegerHive n) (s : Fin 3) : DominantWeight n :=
   ⟨boundary (h : Vertex n → ℤ) s, h.boundary_antitone s⟩
+
+@[simp] theorem coe_boundaryWeight (h : IntegerHive n) (s : Fin 3) :
+    (h.boundaryWeight s : Fin n → ℤ) = boundary (h : Vertex n → ℤ) s := (rfl)
 
 @[simp] theorem boundaryWeight_apply (h : IntegerHive n) (s : Fin 3) (i : Fin n) :
     (h.boundaryWeight s).val i = boundary (h : Vertex n → ℤ) s i := (rfl)
