@@ -421,11 +421,6 @@ private theorem ae_eq_convolution_of_mFourierCoeff_eq_smul [DecidableEq d] {R : 
   · rw [hc n hn, hfg, smul_comm]
   · rw [hfg, hspec n (not_le.1 hn), smul_zero, smul_zero, smul_zero]
 
-omit [CompleteSpace E] in
-private theorem eNorm_lsmul_le : ‖(ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E)‖ₑ ≤ 1 := by
-  rw [← ofReal_norm, ← ENNReal.ofReal_one]
-  exact ENNReal.ofReal_le_ofReal ContinuousLinearMap.opNorm_lsmul_le
-
 /-- **Nikol'skii's inequality on the torus**, Bernstein's inequality without derivatives: for
 `1 ≤ p ≤ q ≤ ∞` there is `C` such that every integrable `f` on `(ℝ / ℤ)^d` whose Fourier
 coefficients vanish outside the ball `‖n‖ ≤ R`, `R ≥ 1`, satisfies
@@ -468,7 +463,7 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero {p q : ℝ≥0∞} (hp : 1 �
           7 ^ Fintype.card d * R ^ ((Fintype.card d : ℝ) * (1 - r⁻¹.toReal))) *
           eLpNorm f p volume := by
         gcongr
-        · exact eNorm_lsmul_le
+        · exact ContinuousLinearMap.opENorm_lsmul_le
         · exact eLpNorm_tensorKernel_cutoff_le hR hr
     _ = _ := by rw [one_mul, hrexp]
 
@@ -501,7 +496,7 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul {p : ℝ�
           max (∫ y, ‖𝓕⁻ cutoff y‖) (∫ y, ‖𝓕⁻ derivCutoff y‖) ^ Fintype.card d * R * ‖v‖) *
           eLpNorm f p volume := by
         gcongr
-        · exact eNorm_lsmul_le
+        · exact ContinuousLinearMap.opENorm_lsmul_le
         · exact eLpNorm_derivKernel_le v hR
     _ = _ := by rw [one_mul]
 
