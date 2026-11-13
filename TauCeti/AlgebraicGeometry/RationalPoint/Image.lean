@@ -20,9 +20,10 @@ rational points. No reducedness, smoothness or separability hypothesis is needed
 
 Constructible subsets of a locally finite-type scheme are determined by their rational
 points; in particular a nonempty locally closed subset contains a rational point. Chevalley's
-theorem therefore detects on rational points the inclusion of the image of a morphism from a
-locally finite-type scheme in the image of a morphism from a finite-type scheme, and the
-surjectivity of a morphism from a finite-type scheme, all over a locally finite-type target.
+theorem, applied over the affine opens of a locally finite-type target, therefore detects on
+rational points the inclusion of the image of a morphism from a locally finite-type scheme in the
+image of a quasi-compact morphism from a locally finite-type scheme, and the surjectivity of a
+quasi-compact morphism from a locally finite-type scheme.
 These comparisons allow rational orbit calculations to control the full constructible image of an
 algebraic orbit morphism.
 
@@ -108,36 +109,39 @@ variable (f : X ⟶ Y) (π : Y ⟶ Spec (.of k))
   [LocallyOfFiniteType π] [LocallyOfFiniteType (f ≫ π)]
 
 /-- Over an algebraically closed field `k`, the image of a morphism `f` from a locally finite-type
-scheme is contained in the image of a morphism `g` from a finite-type scheme, both into a locally
-finite-type scheme, exactly when every rational point that lifts along `f` lifts along `g`. -/
+scheme is contained in the image of a quasi-compact morphism `g` from a locally finite-type scheme,
+both into a locally finite-type scheme, exactly when every rational point that lifts along `f`
+lifts along `g`. -/
 theorem range_subset_range_iff_forall_rationalPoint (g : Z ⟶ Y)
-    [LocallyOfFiniteType (g ≫ π)] [CompactSpace Z] :
+    [LocallyOfFiniteType (g ≫ π)] [QuasiCompact g] :
     Set.range f ⊆ Set.range g ↔
       ∀ (p : Spec (.of k) ⟶ Y), p ≫ π = 𝟙 _ →
         (∃ q : Spec (.of k) ⟶ X, q ≫ f = p) →
           ∃ r : Spec (.of k) ⟶ Z, r ≫ g = p := by
   let : IsLocallyNoetherian Y := LocallyOfFiniteType.isLocallyNoetherian π
   let : LocallyOfFiniteType g := locallyOfFiniteType_of_comp g π
-  have hg : IsConstructible (Set.range g) := by
-    simpa using (g.isLocallyConstructible_image (s := Set.univ)
-      IsLocallyConstructible.univ).isConstructible_of_subset_of_isCompact subset_rfl
-        (isCompact_univ.image g.continuous)
-  -- The inclusion is tested on the rational points of `X`, through the constructible preimage of
-  -- the image of `g`; no compactness of `X` is needed for that preimage to be constructible.
-  rw [← Set.image_univ, Set.image_subset_iff,
-    IsConstructible.univ.subset_iff_forall_rationalPoint (f ≫ π) (f.isConstructible_preimage hg)]
-  refine ⟨fun h p hp ⟨q, hq⟩ ↦ ?_, fun h q hq _ ↦ ?_⟩
+  refine ⟨fun h p _ ⟨q, hq⟩ ↦ ?_, fun h ↦ ?_⟩
   · subst hq
-    obtain ⟨z, hz⟩ := h q (by rwa [Category.assoc] at hp) trivial
-    exact (g.exists_comp_eq_iff_mem_range (q ≫ f)).mpr ⟨z, hz.trans (q.comp_apply f _).symm⟩
-  · obtain ⟨r, hr⟩ := h (q ≫ f) (by rwa [Category.assoc]) ⟨q, rfl⟩
-    obtain ⟨z, hz⟩ := (g.exists_comp_eq_iff_mem_range (q ≫ f)).mp ⟨r, hr⟩
-    exact ⟨z, hz.trans (q.comp_apply f _)⟩
+    exact (g.exists_comp_eq_iff_mem_range (q ≫ f)).mpr (h ⟨_, (q.comp_apply f _).symm⟩)
+  rintro _ ⟨x, rfl⟩
+  obtain ⟨V, hV, hxV, -⟩ :=
+    exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top (f x))
+  -- By Chevalley's theorem the image of `g` meets the affine open `V` in a constructible set, and
+  -- the inclusion of its preimage under `f` is tested on the rational points of `X`.
+  have hVc : IsConstructible (V : Set Y) := hV.isCompact.isConstructible V.isOpen
+  have hgV : IsConstructible (Set.range g ∩ V) := by
+    simpa using (g.isLocallyConstructible_image (s := Set.univ)
+      IsLocallyConstructible.univ).inter_of_isOpen_isCompact V.isOpen hV.isCompact
+  refine (((f.isConstructible_preimage hVc).subset_iff_forall_rationalPoint (f ≫ π)
+    (f.isConstructible_preimage hgV)).mpr (fun q hq hqV ↦ ⟨?_, hqV⟩) hxV).1
+  obtain ⟨r, hr⟩ := h (q ≫ f) (by rwa [Category.assoc]) ⟨q, rfl⟩
+  obtain ⟨z, hz⟩ := (g.exists_comp_eq_iff_mem_range (q ≫ f)).mp ⟨r, hr⟩
+  exact ⟨z, hz.trans (q.comp_apply f _)⟩
 
-/-- A morphism from a finite-type scheme to a locally finite-type scheme over an algebraically
-closed field is surjective on all scheme points exactly when every rational point has a rational
-lift. -/
-theorem surjective_iff_forall_rationalPoint [CompactSpace X] :
+/-- A quasi-compact morphism from a locally finite-type scheme to a locally finite-type scheme over
+an algebraically closed field is surjective on all scheme points exactly when every rational point
+has a rational lift. -/
+theorem surjective_iff_forall_rationalPoint [QuasiCompact f] :
     Function.Surjective f ↔ ∀ (p : Spec (.of k) ⟶ Y), p ≫ π = 𝟙 _ →
       ∃ q : Spec (.of k) ⟶ X, q ≫ f = p := by
   constructor
