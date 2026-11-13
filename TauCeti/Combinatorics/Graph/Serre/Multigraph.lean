@@ -106,7 +106,7 @@ def toGraph : Graph Γ.V Γ.Edge where
     · intro _
       trivial
   left_mem_of_isLink := by
-    intro q x y h
+    intro q x y _
     trivial
 
 @[simp] theorem vertexSet_toGraph : (Γ.toGraph).vertexSet = Set.univ := by
@@ -128,7 +128,7 @@ theorem toGraph_isLink_edge {u v : Γ.V} (e : Quiver.Hom u v) :
 def Path.toWalk {u v : Γ.V} (p : Γ.Path u v) : Γ.toGraph.Walk u v := by
   induction p with
   | nil => exact .nil
-  | @cons a b p e ih =>
+  | @cons a b _ e ih =>
     exact ih.append (Γ.toGraph_isLink_edge e).toWalk
 
 @[simp] theorem Path.toWalk_nil (u : Γ.V) :

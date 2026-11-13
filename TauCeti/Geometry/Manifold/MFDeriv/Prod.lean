@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Derivatives of maps that factor through a projection
@@ -29,11 +30,15 @@ fields on a product manifold.
   of a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
+* `ContinuousLinearMap.mvfderiv_comp_fst_apply` and `ContinuousLinearMap.mvfderiv_comp_snd_apply`:
+  the derivative of a continuous linear map applied to a vector-valued function of one factor.
 * `TauCeti.mvfderiv_comp_fst_mul_comp_snd_apply`: the product rule for a function of the first
   factor times a function of the second factor.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
   the one-variable derivative `deriv`.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
+* `TauCeti.mfderiv_inr_eq_zero_of_forall_apply_eq`: a map constant on a slice `{p} × N` has
+  differential vanishing on the vectors tangent to that slice.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
   `𝕜 × N`.
 * `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
@@ -149,6 +154,26 @@ theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.
   -- as these points are equal by definition.
   rfl
 
+/-- The derivative of a continuous linear map applied to a vector-valued function of the first
+factor, read on a product: the derivative of `y ↦ L (g y.1)` is `L` applied to the derivative of
+`g` on the first component. -/
+theorem _root_.ContinuousLinearMap.mvfderiv_comp_fst_apply {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] (L : F →L[𝕜] F') {g : M → F} {p : M × N}
+    (hg : MDifferentiableAt I 𝓘(𝕜, F) g p.1) (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) (fun y ↦ L (g y.1)) p v = L (mvfderiv I g p.1 v.1) := by
+  -- The map is `(L ∘ g) ∘ Prod.fst` by definition.
+  exact (TauCeti.mvfderiv_comp_fst_apply (L ∘ g) p v).trans (L.mvfderiv_comp_apply hg _)
+
+/-- The derivative of a continuous linear map applied to a vector-valued function of the second
+factor, read on a product: the derivative of `y ↦ L (g y.2)` is `L` applied to the derivative of
+`g` on the second component. -/
+theorem _root_.ContinuousLinearMap.mvfderiv_comp_snd_apply {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] (L : F →L[𝕜] F') {g : N → F} {p : M × N}
+    (hg : MDifferentiableAt J 𝓘(𝕜, F) g p.2) (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) (fun y ↦ L (g y.2)) p v = L (mvfderiv J g p.2 v.2) := by
+  -- The map is `(L ∘ g) ∘ Prod.snd` by definition.
+  exact (TauCeti.mvfderiv_comp_snd_apply (L ∘ g) p v).trans (L.mvfderiv_comp_apply hg _)
+
 /-- **Product rule on a product.** The derivative of `(x, y) ↦ g x * h y` sends a tangent vector
 `(u, w)` at `p` to `dg(u) * h p.2 + g p.1 * dh(w)`. -/
 theorem mvfderiv_comp_fst_mul_comp_snd_apply {g : M → 𝕜} {h : N → 𝕜} {p : M × N}
@@ -187,6 +212,24 @@ theorem mvfderiv_curry_right {f : M × N → F} (p : M) (x : N)
   -- The product tangent synonym and the product of tangent synonyms have the same vectors;
   -- their `inr` maps agree pointwise. Composing with `y ↦ (p, y)` is currying at `p`.
   exact hd.trans (by ext v; rfl)
+
+/-- A map on a product that is constant on the slice `{p} × N` through `(p, x)` has differential
+at `(p, x)` vanishing on the vectors `(0, v)` tangent to that slice. No differentiability is
+needed: the differential is zero where the map is not differentiable. -/
+theorem mfderiv_inr_eq_zero_of_forall_apply_eq {f : M × N → M''} {p : M} {x : N}
+    (hc : ∀ y, f (p, y) = f (p, x)) (v : TangentSpace J x) :
+    mfderiv (I.prod J) I'' f (p, x) ((0 : TangentSpace I p), v) = 0 := by
+  by_cases hf : MDifferentiableAt (I.prod J) I'' f (p, x)
+  · have hd := mfderiv_comp_of_eq hf
+      (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (rfl : (p, x) = (p, x))
+    dsimp only [id_eq] at hd
+    -- The composite with the slice inclusion `y ↦ (p, y)` is constant.
+    rw [show (f ∘ fun y : N ↦ (p, y)) = fun _ ↦ f (p, x) from funext hc, mfderiv_const,
+      mfderiv_prod_right] at hd
+    exact (DFunLike.congr_fun hd v).symm
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf]
+    -- The zero map evaluates to zero; the product tangent space is the product of the factors.
+    rfl
 
 /-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
 `p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/

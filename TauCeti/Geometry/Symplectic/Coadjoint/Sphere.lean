@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.UnitSphere
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Comoment
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 
@@ -42,7 +43,12 @@ for every `r`,
 
 (`TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`). Since the rotations span every tangent
 plane, this determines `r σ`: it is the KKS form of the sphere of radius `r`, transported to `S²`
-along `x ↦ r x`. The total area `4π r` is not computed here.
+along `x ↦ r x`. Since the unit sphere has area `4π`
+(`Orientation.integralTopForm_sphereOrientation_sphereVolumeForm`), the integral of `r σ` over `S²`
+with its outward-normal orientation is `4π r` (`TauCeti.integralTopForm_smul_sphereAreaForm`). For
+`r > 0` this is the KKS area of the coadjoint sphere of radius `r`, not its Euclidean area `4π r²`:
+read on that sphere, the KKS form is `1 / r` times its Euclidean area form. For `r ≤ 0` the
+integral is a signed value.
 
 ## Main definitions
 
@@ -57,6 +63,8 @@ along `x ↦ r x`. The total area `4π r` is not computed here.
   rotation action, and `TauCeti.momentCocycle_sphereRotationAction`: it is infinitesimally
   equivariant.
 * `TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`: `r σ` is the KKS form on generators.
+* `TauCeti.integralTopForm_smul_sphereAreaForm`: `r σ` integrates to `4π r` over `S²`, the KKS area
+  of the coadjoint sphere of radius `r > 0`.
 
 ## References
 
@@ -252,5 +260,18 @@ theorem orbitTangent_sphereRotationAction (x : S²) : sphereRotationAction.orbit
   rw [mvfderiv_sphereRotationAction_apply, coe_soThreeEquiv, crossProductMatrix_mulVec,
     cross_cross_eq_smul_sub_smul, hxv]
   simp [dotProduct_self_eq_one]
+
+/-! ### The area -/
+
+/-- **The KKS area of the coadjoint sphere of radius `r > 0` is `4π r`.** For every real `r`, the
+form `r σ` integrates to `4π r` over `S²` with its outward-normal orientation. For `r > 0`, `r σ`
+is the KKS form of the coadjoint sphere of radius `r` transported to `S²`
+(`TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`), so this is its KKS area; for `r ≤ 0` it
+is a signed integral. -/
+theorem integralTopForm_smul_sphereAreaForm (r : ℝ) :
+    integralTopForm (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation
+      (r • sphereAreaForm).1 = 4 * Real.pi * r := by
+  rw [Submodule.coe_smul, integralTopForm_smul, sphereAreaForm_eq_sphereVolumeForm,
+    Orientation.integralTopForm_sphereOrientation_sphereVolumeForm, mul_comm]
 
 end TauCeti

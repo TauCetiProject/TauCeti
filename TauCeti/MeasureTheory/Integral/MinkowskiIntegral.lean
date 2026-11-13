@@ -186,7 +186,7 @@ theorem lintegral_mul_setLIntegral_rpow_le [SFinite ν] [SFinite μ] {R : β →
   have hr0 : 0 < r := zero_lt_one.trans_le hr
   -- The integrand `F t x = w t ^ r⁻¹ * g x` on the relation, and `0` off it.
   set F : β → α → ℝ≥0∞ := fun t x ↦
-    {z : β × α | R z.1 z.2}.indicator (fun z ↦ w z.1 ^ r⁻¹ * g z.2) (t, x) with hFdef
+    {z : β × α | R z.1 z.2}.indicator (fun z ↦ w z.1 ^ r⁻¹ * g z.2) (t, x)
   have hF : AEMeasurable (uncurry F) (ν.prod μ) :=
     ((hw.pow_const _).comp_fst.mul hg.comp_snd).indicator hR
   have hRx : ∀ t, MeasurableSet {x | R t x} := fun t ↦ measurable_prodMk_left hR

@@ -36,8 +36,7 @@ isomorphism criterion using sections over the members of a basis.
 
 `TauCeti/AlgebraicGeometry/Cohomology/Basic.lean` defines the cohomology of an `𝒪_X`-module as
 the sheaf cohomology of its underlying abelian sheaf, so this exactness is what puts that
-cohomology into a long exact sequence; it is Layer B infrastructure for
-`TauCetiRoadmap/JacobianChallenge/README.md`. No formalization is vendored: the functor is
+cohomology into a long exact sequence. No formalization is vendored: the functor is
 Mathlib's `SheafOfModules.toSheaf` for the sheaf of rings `X.ringCatSheaf`, and its exactness is
 `TauCeti/Algebra/Category/ModuleCat/Sheaf/Exactness.lean`.
 -/

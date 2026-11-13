@@ -159,7 +159,7 @@ noncomputable def quotientPowAlgEquiv {x : MaximalSpectrum A} (hx : x ∈ U) (n 
     (A ⧸ x.asIdeal ^ n) ≃ₐ[K] B ⧸ (x.asIdeal ^ n).map φ :=
   -- The only maximal ideal containing a power of `𝔪ₓ` is `𝔪ₓ`; no maximal ideal contains `𝔪ₓ⁰`.
   h.quotientAlgEquiv hA fun y hy ↦ by
-    rcases Nat.eq_zero_or_pos n with rfl | hn
+    rcases Nat.eq_zero_or_pos n with rfl | _
     · exact absurd (by simpa using hy) y.isMaximal.ne_top
     · rwa [← MaximalSpectrum.ext (x.isMaximal.eq_of_le y.isMaximal.ne_top
         (Ideal.IsPrime.le_of_pow_le hy))]

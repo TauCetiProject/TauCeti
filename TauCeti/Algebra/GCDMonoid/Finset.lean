@@ -36,13 +36,9 @@ then some integer combination `∑ i ∈ s, f i * c i` is `1`. -/
 theorem exists_sum_natCast_mul_eq_one_of_gcd_eq_one {ι : Type*} {s : Finset ι} {f : ι → ℕ}
     (h : s.gcd f = 1) : ∃ c : ι → ℤ, ∑ i ∈ s, (f i : ℤ) * c i = 1 := by
   obtain ⟨c, hc⟩ := s.gcd_eq_sum_mul fun i => (f i : ℤ)
-  refine ⟨c, ?_⟩
-  rw [← hc]
-  have hdvd : (s.gcd fun i => (f i : ℤ)).natAbs ∣ 1 := by
-    rw [← h]
-    refine Finset.dvd_gcd fun i hi => ?_
-    rw [← Int.natAbs_natCast (f i)]
-    exact Int.natAbs_dvd_natAbs.2 (Finset.gcd_dvd hi)
-  rw [← Int.natAbs_of_nonneg Int.finsetGcd_nonneg, Nat.dvd_one.1 hdvd, Nat.cast_one]
+  refine ⟨c, hc ▸ Int.eq_one_of_dvd_one Int.finsetGcd_nonneg ?_⟩
+  -- The gcd in `ℤ` divides every `f i`, hence also their gcd `1` in `ℕ`.
+  rw [← Nat.cast_one, ← h]
+  exact Int.dvd_natCast.2 <| Finset.dvd_gcd fun i hi => Int.dvd_natCast.1 (Finset.gcd_dvd hi)
 
 end Finset

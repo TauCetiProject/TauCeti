@@ -183,7 +183,7 @@ example : ∀ᶠ Q : ℝ in atTop,
   have hL : LinearIndependent ℚ
       (fun i : Unit ↦ LinearMap.proj (R := ℚ) (φ := fun _ : Unit ↦ ℚ) i) := by
     rw [Fintype.linearIndependent_iff]
-    intro a ha i
+    intro a ha _
     simpa using LinearMap.congr_fun ha (fun _ ↦ (1 : ℚ))
   have hc : approxWeight (K := ℚ) ∅ (fun _ (_ : Unit) ↦ (-1 : ℝ)) < 0 := by
     rw [approxWeight_def]
