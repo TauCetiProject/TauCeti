@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Hom.GroupNorm
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.DivisibleHull
+import Mathlib.Algebra.Order.Group.PiLex
 import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
@@ -59,10 +60,15 @@ seminorms in the sense of Mathlib's `GroupSeminormClass`, and `map_mul_le_add`, 
 * `TauCeti.LyndonLength.min_gromovProduct_le`: Gromov products are `0`-hyperbolic.
 * `TauCeti.LyndonLength.gromovProduct_nonneg`, `TauCeti.LyndonLength.gromovProduct_le_left`,
   `TauCeti.LyndonLength.gromovProduct_le_right`: `0 ≤ c(g, f) ≤ min (l g) (l f)`.
+* `TauCeti.LyndonLength.IsFree.eq_one_of_map_eq_zero`: for a free Lyndon length function only
+  the identity has length zero. In particular a group with a free Lyndon length function with
+  values in the trivial group `ℤ⁰` is trivial.
 * `TauCeti.LyndonLength.IsFree.comap`: restriction along an injective homomorphism preserves
-  freeness.
+  freeness. Conversely, by `TauCeti.LyndonLength.injective_of_isFree_comap`, a homomorphism along
+  which the restriction is free is injective.
 * `TauCeti.LyndonLength.isFree_zero_iff`: the zero length function is free only on the trivial
   group.
+* `TauCeti.LyndonLength.isRegular_zero`: the zero length function is regular.
 * `TauCeti.LyndonLength.IsFree.sq_ne_one`: a group with a free Lyndon length function has no
   elements of order two. In particular `TauCeti.LyndonLength.discrete` is not free on `ℤ/2`.
 * `TauCeti.LyndonLength.isFree_absLength`, `TauCeti.LyndonLength.isRegular_absLength`: the
@@ -285,6 +291,25 @@ theorem IsFree.sq_ne_one {l : LyndonLength G Λ} (hl : l.IsFree) (hg : g ≠ 1) 
   rw [h, map_one_eq_zero] at this
   exact (apply_nonneg l g).not_gt this
 
+omit [IsOrderedAddMonoid Λ] in
+/-- For a free Lyndon length function, only the identity has length zero. This is the axiom
+`eq_one_of_map_eq_zero` of Mathlib's group norms: a free Lyndon length function is a `Λ`-valued
+group norm. -/
+theorem IsFree.eq_one_of_map_eq_zero {l : LyndonLength G Λ} (hl : l.IsFree) (hg : l g = 0) :
+    g = 1 := by
+  by_contra h
+  have h1 := l.map_one'
+  have hinv := l.map_inv' g
+  -- Given `l g = 0`, axiom (L3) for `g, g ^ 2, g` reads `0 < l (g ^ 2) → 0 = l (g ^ 2)`, which
+  -- contradicts (L5).
+  have h3 := l.eq_of_lt' g (g ^ 2) g
+  have hlt := hl.lt_map_sq g h
+  simp_all [pow_two]
+
+-- A free Lyndon length function with values in `ℤ⁰`, the trivial group, lives on a trivial group.
+example {l : LyndonLength G (Lex (Fin 0 → ℤ))} (hl : l.IsFree) : Subsingleton G :=
+  subsingleton_of_forall_eq 1 fun _ => hl.eq_one_of_map_eq_zero (Subsingleton.elim _ _)
+
 /-! ### Restriction along a homomorphism -/
 
 /-- The restriction `h ↦ l (φ h)` of a Lyndon length function along a group homomorphism. -/
@@ -323,18 +348,29 @@ theorem IsFree.comap {l : LyndonLength G Λ} (hl : l.IsFree) {φ : H →* G}
   lt_map_sq g hg := by
     simpa using hl.lt_map_sq (φ g) ((map_ne_one_iff φ hφ).2 hg)
 
+/-- A homomorphism along which the restriction of a Lyndon length function is free is injective.
+In particular, a length-preserving homomorphism `φ` (that is, `l.comap φ = l₀`) out of a group
+with a free length function `l₀` is injective. -/
+theorem injective_of_isFree_comap {l : LyndonLength G Λ} {φ : H →* G} (h : (l.comap φ).IsFree) :
+    Function.Injective φ :=
+  (injective_iff_map_eq_one φ).2 fun _ hg => h.eq_one_of_map_eq_zero (by simp [hg])
+
 /-! ### Examples -/
 
 /-- The zero length function is free exactly on the trivial group. -/
 theorem isFree_zero_iff : (0 : LyndonLength G Λ).IsFree ↔ Subsingleton G := by
-  refine ⟨fun h => ⟨fun g f => ?_⟩, fun _ => ⟨fun g f => ⟨0, ?_⟩, fun g hg => ?_⟩⟩
-  · have key : ∀ x : G, x = 1 := fun x => by
-      by_contra hx
-      simpa using h.lt_map_sq x hx
-    rw [key g, key f]
+  refine ⟨fun h => subsingleton_of_forall_eq 1 fun _ => h.eq_one_of_map_eq_zero (by simp),
+    fun _ => ⟨fun g f => ⟨0, ?_⟩, fun g hg => ?_⟩⟩
   · rw [coe_eq_gromovProduct_iff]
     simp
   · exact absurd (Subsingleton.elim g 1) hg
+
+omit [IsOrderedAddMonoid Λ] in
+/-- The zero length function is regular. Together with `TauCeti.LyndonLength.isFree_zero_iff`, it
+is a regular Lyndon length function that is not free on any nontrivial group. -/
+@[simp]
+theorem isRegular_zero : (0 : LyndonLength G Λ).IsRegular := fun g f =>
+  ⟨1, g, f, by simp, by simp, by simp, by simp, by simp [gromovProduct]⟩
 
 variable (G) in
 /-- The length function on `G` that is `0` at the identity and `1` elsewhere. -/

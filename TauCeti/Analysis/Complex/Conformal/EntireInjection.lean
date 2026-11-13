@@ -137,7 +137,7 @@ theorem exists_eq_mul_add_of_injective (hf : Differentiable ℂ f) (hinj : Injec
     obtain rfl | hw0 := eq_or_ne w 0
     · by_contra hw'0
       exact hne w' hw' (Ne.symm hw'0) (h.symm.trans hφ0)
-    obtain rfl | hw'0 := eq_or_ne w' 0
+    obtain rfl | _ := eq_or_ne w' 0
     · exact absurd (h.trans hφ0) (hne w hw hw0)
     exact inv_injective (hinj (sub_left_injective (inv_injective h)))
   have hd : _root_.deriv φ 0 ≠ 0 :=
@@ -155,12 +155,9 @@ theorem exists_eq_mul_add_of_injective (hf : Differentiable ℂ f) (hinj : Injec
     exact mul_le_mul_of_nonneg_left hw.le (norm_nonneg w)
   -- Hence `‖f z - f 0‖ ≤ 2 ‖z‖ / ‖φ'(0)‖` at infinity, so `f` has linear growth.
   have hO : f =O[cobounded ℂ] (· ^ 1) := by
-    have hpos : 0 < ‖_root_.deriv φ 0‖ := norm_pos_iff.2 hd
     refine Asymptotics.IsBigO.of_bound (‖f 0‖ + 2 / ‖_root_.deriv φ 0‖) ?_
     filter_upwards [tendsto_inv₀_cobounded.eventually hslope, eventually_cobounded_le_norm 1]
       with z hz hz1
-    have hz0 : 0 < ‖z‖ := one_pos.trans_le hz1
-    have hu : 0 < ‖f z - f 0‖ := hr.trans_le (hfar z hz1)
     simp only [φ, inv_inv, norm_inv] at hz
     have hbound : ‖f z - f 0‖ ≤ 2 / ‖_root_.deriv φ 0‖ * ‖z‖ := by
       rw [← inv_inv ‖f z - f 0‖]

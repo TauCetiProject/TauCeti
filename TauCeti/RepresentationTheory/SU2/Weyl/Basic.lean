@@ -61,12 +61,6 @@ evenness of characters that this yields is proved in
 
 ## References
 
-This is the Weyl group of the engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, "Engine case: `SU(2)` and the maximal
-torus", which needs the `W`-invariant (even) functions on `T` to be the class functions of `SU(2)`;
-it is the `SU(2)` instance of `weylGroup T = N_G(T) / T` from
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`, Layer 6.
-
 Inside Tau Ceti, the inversion action of the Weyl reflection on the torus was first formalized by
 `TauCeti.SU2.isConj_inv_of_mem_torus` in `TauCeti/RepresentationTheory/SU2/TorusConjugacy.lean`,
 which conjugated a torus element to its inverse by the sign-opposite quarter turn

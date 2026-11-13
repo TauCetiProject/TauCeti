@@ -71,7 +71,7 @@ theorem singularValue_eq_linearMap_singularValues (T : E →L[𝕜] F) (n : ℕ)
     set V := v.spanIndices ↑({i | (i : ℕ) < n} : Finset (Fin (finrank 𝕜 E)))
     refine (NNReal.coe_le_coe.mpr
       (T.singularValue_le_nnnorm_comp_orthogonal (v.rank_spanIndices_val_lt_le n))).trans ?_
-    rw [coe_nnnorm]
+    rw [coe_nnNorm]
     exact T.norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis v
       (A.sq_singularValues_antitone.comp_monotone (Fin.valOrderEmb _).monotone)
       A.adjoint_comp_self_rightSingularBasis n
@@ -97,7 +97,7 @@ namespace LinearMap
 largest singular value: `‖A‖ = σ₀(A)`. -/
 theorem norm_toContinuousLinearMap_eq_singularValues_zero (A : E →ₗ[𝕜] F) :
     ‖LinearMap.toContinuousLinearMap A‖ = A.singularValues 0 := by
-  rw [← coe_nnnorm, ← ContinuousLinearMap.singularValue_zero,
+  rw [← coe_nnNorm, ← ContinuousLinearMap.singularValue_zero,
     ContinuousLinearMap.singularValue_eq_linearMap_singularValues, coe_toContinuousLinearMap]
 
 /-- **Weyl's perturbation bound for singular values.** Each singular value of a linear map between

@@ -58,7 +58,7 @@ private theorem mem_wordFiltrationPrevious_of_pbwSymmetrizationMap_eq_zero
     {k : ℕ} {p : SymmetricAlgebra R L} (hp : p ∈ F k)
     (h0 : pbwSymmetrizationMap R L p = 0) :
     p ∈ TauCeti.Algebra.wordFiltrationPrevious (SymmetricAlgebra.ι R L) k := by
-  set q : 𝒮 k := DirectSum.decompose 𝒮 p k with hqdef
+  set q : 𝒮 k := DirectSum.decompose 𝒮 p k
   have hr := sub_decompose_mem_wordFiltrationPrevious hp
   have hsr := pbwSymmetrizationMap_mem_pbwFiltrationPrevious R L hr
   have hq : pbwSymmetrizationMap R L q ∈ pbwFiltrationPrevious R L k := by
