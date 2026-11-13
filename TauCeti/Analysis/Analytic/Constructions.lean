@@ -18,7 +18,10 @@ Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analy
 (`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`).
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
-that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`).
+that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`), and
+precomposing by a linear isometry preserves the exact convergence radius `r` without dividing by an
+operator norm (`HasFPowerSeriesOnBall.compLinearIsometry`,
+`HasFPowerSeriesWithinOnBall.compLinearIsometry`).
 -/
 
 public section
@@ -94,3 +97,38 @@ theorem Finset.hasFPowerSeriesOnBall_sum {ι : Type*} {f : ι → E → F}
   exact I.hasFPowerSeriesWithinOnBall_sum hr h
 
 end FinsetSum
+
+section LinearIsometry
+
+open scoped ENNReal NNReal
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Precomposing a power series within `s` by a linear isometry preserves the convergence radius
+`r` without dividing by an operator norm. -/
+theorem HasFPowerSeriesWithinOnBall.compLinearIsometry {v : E →ₗᵢ[𝕜] F} {f : F → G}
+    {pf : FormalMultilinearSeries 𝕜 F G} {s : Set F} {x : E} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesWithinOnBall f pf s (v x) r) :
+    HasFPowerSeriesWithinOnBall (f ∘ v)
+      (pf.compContinuousLinearMap v.toContinuousLinearMap) (v ⁻¹' s) x r := by
+  have hu_le : ‖v.toContinuousLinearMap‖ₑ ≤ 1 := by
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff, ← NNReal.coe_le_coe]
+    exact v.norm_toContinuousLinearMap_le
+  have hr_le : r ≤ r / ‖v.toContinuousLinearMap‖ₑ :=
+    (ENNReal.le_div_iff_mul_le (Or.inr hf.r_pos.ne') (Or.inl eNorm_ne_top)).2
+      (mul_le_of_le_one_right' hu_le)
+  exact (hf.compContinuousLinearMap (u := v.toContinuousLinearMap)).of_le hf.r_pos hr_le
+
+/-- Precomposing a power series on a ball by a linear isometry preserves the convergence radius
+`r` without dividing by an operator norm. -/
+theorem HasFPowerSeriesOnBall.compLinearIsometry {v : E →ₗᵢ[𝕜] F} {f : F → G}
+    {pf : FormalMultilinearSeries 𝕜 F G} {x : E} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f pf (v x) r) :
+    HasFPowerSeriesOnBall (f ∘ v) (pf.compContinuousLinearMap v.toContinuousLinearMap) x r := by
+  rw [← hasFPowerSeriesWithinOnBall_univ] at hf ⊢
+  exact hf.compLinearIsometry
+
+end LinearIsometry

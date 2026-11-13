@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Quaternion.Basic
-public import TauCeti.Analysis.Quaternion.Fueter
+public import TauCeti.Analysis.Quaternion.Kernel
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Quaternion.Regularity
 
 /-!
-# Twice differentiable Fueter regular functions are harmonic
+# Fueter regular functions are harmonic
 
 Write `e = (1, i, j, k)` for the standard orthonormal basis `Quaternion.orthonormalBasisOneIJK`
 of `ℍ`. The conjugate of the left Fueter operator
@@ -29,11 +30,14 @@ identity for every symmetric real bilinear map `B : ℍ →L[ℝ] ℍ →L[ℝ] 
 
 and its right counterpart with `fueterRight (B (e n)) * star (e n)`.
 
-Applied to the second derivative of a function that is Fueter regular near `q` and whose
-derivative is differentiable at `q`, the left side vanishes, because the Fueter operator applied
-to the first derivative vanishes near `q`, and the right side is the Laplacian, computed in the
-orthonormal basis `e`. The second derivative is symmetric by
-`second_derivative_symmetric_of_eventually`; no continuity of the second derivative is needed.
+Because every function that is left or right Fueter regular on a neighbourhood of `q` is real
+analytic and hence smooth at `q` (`LeftFueterOn.contDiffAt`, `RightFueterOn.contDiffAt`), its
+derivative is differentiable at `q` with symmetric second derivative without any auxiliary `C²`
+assumption. Applying the identity above to `fderiv ℝ (fderiv ℝ f) q` shows that the left side
+vanishes, because the Fueter operator applied to the first derivative vanishes near `q`, while the
+right side is the Euclidean Laplacian `Δ f q` computed in the orthonormal basis `e`. The converse
+does not hold: `q ↦ ((q.re ^ 2 - q.imI ^ 2 : ℝ) : ℍ)` has vanishing Laplacian everywhere on `ℍ`
+without satisfying either Fueter equation away from `0`.
 
 ## Main declarations
 
@@ -41,10 +45,11 @@ orthonormal basis `e`. The second derivative is symmetric by
   `TauCeti.sum_fueterRight_mul_star_orthonormalBasisOneIJK`: the conjugate operators compose with
   the Fueter operators to the trace of a symmetric bilinear map.
 * `TauCeti.LeftFueterOn.laplacian_eq_zero`, `TauCeti.RightFueterOn.laplacian_eq_zero`: a function
-  that is Fueter regular on a neighbourhood of `q`, with derivative differentiable at `q`, has
-  vanishing Laplacian at `q`.
-* `TauCeti.LeftFueterOn.laplacian_eq_zero_of_contDiffOn` and its right counterpart: a Fueter
-  regular function of class `C²` on an open set is harmonic there.
+  that is left or right Fueter regular on a neighbourhood of `q` has vanishing Laplacian at `q`.
+* `TauCeti.LeftFueterOn.laplacian_eq_zero_of_isOpen`,
+  `TauCeti.RightFueterOn.laplacian_eq_zero_of_isOpen`: a function that is left or right Fueter
+  regular on an open set has vanishing Laplacian at every point of that set.
+* `TauCeti.laplacian_cauchyFueterKernel`: the Cauchy–Fueter kernel is harmonic away from its pole.
 
 ## References
 
@@ -90,10 +95,11 @@ theorem sum_fueterRight_mul_star_orthonormalBasisOneIJK {B : ℍ →L[ℝ] ℍ �
     hB ⟨0, 0, 0, 1⟩ ⟨0, 1, 0, 0⟩, hB ⟨0, 0, 0, 1⟩ ⟨0, 0, 1, 0⟩]
   ext <;> simp <;> ring
 
-/-- A function that is left Fueter regular on a neighbourhood of `q`, and whose derivative is
-differentiable at `q`, has vanishing Laplacian at `q`. -/
-theorem LeftFueterOn.laplacian_eq_zero (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 q)
-    (h : DifferentiableAt ℝ (fderiv ℝ f) q) : Δ f q = 0 := by
+/-- A function that is left Fueter regular on a neighbourhood of `q` has vanishing Laplacian at
+`q`. -/
+theorem LeftFueterOn.laplacian_eq_zero (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 q) : Δ f q = 0 := by
+  have h : DifferentiableAt ℝ (fderiv ℝ f) q :=
+    (((hf.contDiffAt hs (n := 2)).fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)
   have hev : ∀ᶠ x in 𝓝 q, LeftFueterAt f x := eventually_of_mem hs (leftFueterOn_iff.1 hf)
   have hB := second_derivative_symmetric_of_eventually
     (hev.mono fun _ hx ↦ hx.differentiableAt.hasFDerivAt) h.hasFDerivAt
@@ -105,10 +111,11 @@ theorem LeftFueterOn.laplacian_eq_zero (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 
       (g := fderiv ℝ f) (hev.mono fun _ hx ↦ by simpa using hx.fueterLeft_fderiv) w
   simp [hL]
 
-/-- A function that is right Fueter regular on a neighbourhood of `q`, and whose derivative is
-differentiable at `q`, has vanishing Laplacian at `q`. -/
-theorem RightFueterOn.laplacian_eq_zero (hf : RightFueterOn f s) (hs : s ∈ 𝓝 q)
-    (h : DifferentiableAt ℝ (fderiv ℝ f) q) : Δ f q = 0 := by
+/-- A function that is right Fueter regular on a neighbourhood of `q` has vanishing Laplacian at
+`q`. -/
+theorem RightFueterOn.laplacian_eq_zero (hf : RightFueterOn f s) (hs : s ∈ 𝓝 q) : Δ f q = 0 := by
+  have h : DifferentiableAt ℝ (fderiv ℝ f) q :=
+    (((hf.contDiffAt hs (n := 2)).fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)
   have hev : ∀ᶠ x in 𝓝 q, RightFueterAt f x := eventually_of_mem hs (rightFueterOn_iff.1 hf)
   have hB := second_derivative_symmetric_of_eventually
     (hev.mono fun _ hx ↦ hx.differentiableAt.hasFDerivAt) h.hasFDerivAt
@@ -120,16 +127,22 @@ theorem RightFueterOn.laplacian_eq_zero (hf : RightFueterOn f s) (hs : s ∈ �
       (g := fderiv ℝ f) (hev.mono fun _ hx ↦ by simpa using hx.fueterRight_fderiv) w
   simp [hL]
 
-/-- A left Fueter regular function of class `C²` on an open set is harmonic there. -/
-theorem LeftFueterOn.laplacian_eq_zero_of_contDiffOn (hf : LeftFueterOn f s) (hs : IsOpen s)
-    (h₂ : ContDiffOn ℝ 2 f s) (hq : q ∈ s) : Δ f q = 0 :=
+/-- A left Fueter regular function on an open set has vanishing Laplacian at every point of that
+set. -/
+theorem LeftFueterOn.laplacian_eq_zero_of_isOpen (hf : LeftFueterOn f s) (hs : IsOpen s)
+    (hq : q ∈ s) : Δ f q = 0 :=
   hf.laplacian_eq_zero (hs.mem_nhds hq)
-    (((h₂.contDiffAt (hs.mem_nhds hq)).fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)
 
-/-- A right Fueter regular function of class `C²` on an open set is harmonic there. -/
-theorem RightFueterOn.laplacian_eq_zero_of_contDiffOn (hf : RightFueterOn f s) (hs : IsOpen s)
-    (h₂ : ContDiffOn ℝ 2 f s) (hq : q ∈ s) : Δ f q = 0 :=
+/-- A right Fueter regular function on an open set has vanishing Laplacian at every point of that
+set. -/
+theorem RightFueterOn.laplacian_eq_zero_of_isOpen (hf : RightFueterOn f s) (hs : IsOpen s)
+    (hq : q ∈ s) : Δ f q = 0 :=
   hf.laplacian_eq_zero (hs.mem_nhds hq)
-    (((h₂.contDiffAt (hs.mem_nhds hq)).fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)
+
+/-- The Cauchy–Fueter kernel is harmonic away from its pole. -/
+theorem laplacian_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) :
+    Δ (fun x ↦ cauchyFueterKernel x q₀) q = 0 :=
+  (leftFueterOn_cauchyFueterKernel (Set.notMem_compl_iff.mpr rfl)).laplacian_eq_zero
+    (isOpen_compl_singleton.mem_nhds hq)
 
 end TauCeti
