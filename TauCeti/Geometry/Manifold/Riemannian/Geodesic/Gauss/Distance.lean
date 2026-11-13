@@ -321,6 +321,14 @@ theorem IsNormalDomain.dist_eq_norm_riemannianLog_of_mem_ball (h : IsNormalDomai
   rw [dist_edist, h.edist_eq_enorm_riemannianLog_of_mem_ball hU hq]
   simp
 
+/-- Near the centre of a positive-radius normal ball, squared distance agrees with the
+squared norm of the Riemannian logarithm. -/
+theorem IsNormalDomain.dist_sq_eventuallyEq_norm_riemannianLog_sq
+    (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) (hr : 0 < r) :
+    (fun q ↦ dist p q ^ 2) =ᶠ[𝓝 p] fun q ↦ ‖riemannianLog I M p U q‖ ^ 2 := by
+  filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)] with q hq
+  rw [h.dist_eq_norm_riemannianLog_of_mem_ball hU hq]
+
 /-- If the open tangent ball of radius `r` lies in a normal domain at `p`, then the squared
 distance from `p` is smooth on the metric ball of radius `r` about `p`, including at `p`
 when `0 < r`. -/
@@ -343,10 +351,7 @@ theorem contMDiffAt_dist_sq_self (p : M) :
 /-- The differential of the squared distance from a point vanishes at that point. -/
 @[simp] theorem mvfderiv_dist_sq_self (p : M) : mvfderiv I (fun q ↦ dist p q ^ 2) p = 0 := by
   obtain ⟨r, hr, h⟩ := exists_isNormalDomain_ball (I := I) p
-  have heq : (fun q ↦ dist p q ^ 2) =ᶠ[𝓝 p]
-      fun q ↦ ‖riemannianLog I M p (Metric.ball 0 r) q‖ ^ 2 := by
-    filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)] with q hq
-    rw [h.dist_eq_norm_riemannianLog_of_mem_ball subset_rfl hq]
+  have heq := h.dist_sq_eventuallyEq_norm_riemannianLog_sq subset_rfl hr
   exact heq.mvfderiv_eq.trans (mvfderiv_norm_sq_comp_eq_zero_of_eq_zero
     (h.mdifferentiableAt_riemannianLog h.self_mem_image) h.riemannianLog_self)
 
