@@ -79,17 +79,9 @@ omit [Invertible (2 : R)] in
 theorem mem_span_radical_iff_eq_zero_of_nondegenerate (hQ : Q.Nondegenerate)
     {x : CliffordAlgebra Q} :
     x ∈ TwoSidedIdeal.span (ι Q '' (Q.radical : Set M)) ↔ x = 0 := by
-  refine ⟨fun hx ↦ ?_, fun hx ↦ hx ▸ zero_mem _⟩
-  induction hx using TwoSidedIdeal.span_induction with
-  | mem _ hx =>
-    obtain ⟨v, hv, rfl⟩ := hx
-    simp [hQ.radical_eq_bot] at hv
-    simp [hv]
-  | zero => rfl
-  | add _ _ _ _ hx hz => simp [hx, hz]
-  | neg _ _ hx => simp [hx]
-  | left_absorb _ _ _ hx => simp [hx]
-  | right_absorb _ _ _ hx => simp [hx]
+  have hbot : TwoSidedIdeal.span (ι Q '' (Q.radical : Set M)) = ⊥ :=
+    le_bot_iff.mp (TwoSidedIdeal.span_le.mpr (by simp [hQ.radical_eq_bot]))
+  rw [hbot, TwoSidedIdeal.mem_bot]
 
 /-- Because `CliffordAlgebra.scalarTrace` vanishes on the odd part, an even Clifford element pairs
 to zero with every element of `CliffordAlgebra.even Q` if and only if it pairs to zero with every

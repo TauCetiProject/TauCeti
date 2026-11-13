@@ -291,7 +291,8 @@ theorem _root_.QuadraticMap.associated_weightedSumSquares (w : ι → R) (x y : 
 
 /-- The standard coordinate basis `Pi.basisFun R ι` is orthogonal for any diagonal quadratic
 form. -/
-theorem _root_.QuadraticMap.isOrthoᵢ_associated_weightedSumSquares (w : ι → R) :
+theorem _root_.QuadraticMap.isOrthoᵢ_associated_weightedSumSquares {S : Type*} [Monoid S]
+    [DistribMulAction S R] [SMulCommClass S R R] (w : ι → S) :
     (QuadraticMap.associated (QuadraticMap.weightedSumSquares R w)).IsOrthoᵢ
       (Pi.basisFun R ι) := by
   classical

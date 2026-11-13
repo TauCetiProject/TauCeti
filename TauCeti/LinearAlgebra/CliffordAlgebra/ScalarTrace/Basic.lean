@@ -18,6 +18,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Monomials
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 
 /-!
@@ -177,10 +178,7 @@ preserves `CliffordAlgebra.scalarTrace`. -/
 theorem scalarTrace_map {M' : Type*} [AddCommGroup M'] [Module R M'] {Q' : QuadraticForm R M'}
     (f : Q →qᵢ Q') (x : CliffordAlgebra Q) :
     scalarTrace Q' (map f x) = scalarTrace Q x := by
-  have h : ExteriorAlgebra.algebraMapInv.comp (ExteriorAlgebra.map f.toLinearMap) =
-      ExteriorAlgebra.algebraMapInv :=
-    ExteriorAlgebra.hom_ext <| LinearMap.ext fun m ↦ by simp
-  rw [scalarTrace_apply, equivExterior_map, ← AlgHom.comp_apply, h, scalarTrace_apply]
+  rw [scalarTrace_apply, equivExterior_map, ExteriorAlgebra.algebraMapInv_map, scalarTrace_apply]
 
 /-- A vector orthogonal to the image of a quadratic isometry pairs to zero in scalar trace with
 every element from the subalgebra `CliffordAlgebra.map f`. -/
@@ -191,11 +189,8 @@ theorem scalarTrace_ι_mul_map_eq_zero {M' : Type*} [AddCommGroup M'] [Module R 
   have hB : QuadraticMap.associated (-Q') v ∘ₗ f.toLinearMap = 0 := by
     ext m
     simpa using hv m
-  have hmap (d : Module.Dual R M') (y : ExteriorAlgebra R M) :
-      contractLeft d (ExteriorAlgebra.map f.toLinearMap y) =
-        ExteriorAlgebra.map f.toLinearMap (contractLeft (d ∘ₗ f.toLinearMap) y) :=
-    contractLeft_map { f.toLinearMap with map_app' := fun _ ↦ rfl } d y
-  rw [scalarTrace_apply, equivExterior_ι_mul, equivExterior_map, hmap, hB]
+  rw [scalarTrace_apply, equivExterior_ι_mul, equivExterior_map, ExteriorAlgebra.contractLeft_map,
+    hB]
   simp
 
 /-- Right-multiplied form of `CliffordAlgebra.scalarTrace_ι_mul_map_eq_zero`: an element in the

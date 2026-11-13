@@ -148,15 +148,11 @@ namespace TauCeti.TemperleyLieb
 
 /-! ### Arithmetic helpers for `√2` in `ℂ` -/
 
-/-- Viewed in `ℂ`, the real loop value `√2` is self-adjoint. -/
-theorem isSelfAdjoint_ofReal_sqrt_two : IsSelfAdjoint (Real.sqrt 2 : ℂ) :=
-  Complex.conj_ofReal _
-
 /-- Registers `IsSelfAdjoint (Real.sqrt 2 : ℂ)` as a `Fact` so that
 `TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m` carries the analytic adjoint instances
 `TemperleyLieb.instStarRing` and `TemperleyLieb.instStarModule`. -/
 instance : Fact (IsSelfAdjoint (Real.sqrt 2 : ℂ)) :=
-  ⟨isSelfAdjoint_ofReal_sqrt_two⟩
+  ⟨Complex.conj_ofReal _⟩
 
 private theorem sqrt_two_coe_mul_self :
     (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
@@ -265,6 +261,34 @@ theorem majorana_mul_majorana_comm_of_ne {m : ℕ} {j k : Fin m} (hjk : j ≠ k)
     majorana m j * majorana m k = -(majorana m k * majorana m j) :=
   eq_neg_of_add_eq_zero_left (majorana_mul_majorana_add_swap_of_ne hjk)
 
+/-- For distinct indices `a ≠ b`, the Majorana product `c_a * c_b` squares to `-1`. -/
+theorem majorana_mul_majorana_mul_self_of_ne {m : ℕ} {a b : Fin m} (hab : a ≠ b) :
+    (majorana m a * majorana m b) * (majorana m a * majorana m b) = -1 := by
+  simpa [majorana_def] using
+    CliffordAlgebra.ι_mul_ι_mul_self_of_isOrtho (isOrtho_cliffordForm_single hab 1 1)
+
+/-- For distinct indices `a ≠ b`, the scaled Majorana product `I • (c_a * c_b)` squares to `1`. -/
+theorem I_smul_majorana_mul_majorana_mul_self_of_ne {m : ℕ} {a b : Fin m} (hab : a ≠ b) :
+    (Complex.I • (majorana m a * majorana m b)) *
+      (Complex.I • (majorana m a * majorana m b)) = 1 := by
+  rw [smul_mul_smul_comm, majorana_mul_majorana_mul_self_of_ne hab, Complex.I_mul_I,
+    neg_one_smul, neg_neg]
+
+/-- A Majorana generator distinct from `c` and `d` commutes with `c_c * c_d`. -/
+theorem commute_majorana_majorana_mul_majorana_of_ne {m : ℕ} {a c d : Fin m}
+    (hac : a ≠ c) (had : a ≠ d) :
+    Commute (majorana m a) (majorana m c * majorana m d) :=
+  (CliffordAlgebra.commute_ι_mul_ι_ι_of_isOrtho
+    (isOrtho_cliffordForm_single hac.symm 1 1)
+    (isOrtho_cliffordForm_single had.symm 1 1)).symm
+
+/-- Products of Majorana generators at disjoint index pairs commute. -/
+theorem commute_majorana_mul_majorana_of_ne {m : ℕ} {a b c d : Fin m}
+    (hac : a ≠ c) (had : a ≠ d) (hbc : b ≠ c) (hbd : b ≠ d) :
+    Commute (majorana m a * majorana m b) (majorana m c * majorana m d) :=
+  (commute_majorana_majorana_mul_majorana_of_ne hac had).mul_left
+    (commute_majorana_majorana_mul_majorana_of_ne hbc hbd)
+
 /-- Every Majorana generator has odd Clifford parity. -/
 theorem majorana_mem_evenOdd_one (m : ℕ) (j : Fin m) :
     majorana m j ∈ CliffordAlgebra.evenOdd (cliffordForm m) 1 :=
@@ -286,6 +310,12 @@ theorem involute_majorana (m : ℕ) (j : Fin m) :
 @[simp]
 theorem reverse_majorana (m : ℕ) (j : Fin m) :
     CliffordAlgebra.reverse (majorana m j) = majorana m j := by
+  simp [majorana_def]
+
+/-- Complex-linear Clifford conjugation `star` negates each Majorana generator. -/
+@[simp]
+theorem star_majorana (m : ℕ) (j : Fin m) :
+    star (majorana m j) = -majorana m j := by
   simp [majorana_def]
 
 /-- Every Majorana generator has scalar part `0`. -/
@@ -612,24 +642,6 @@ theorem scalarTrace_cliffordProjection (m : ℕ) (j : Fin (m - 1)) :
     ne_of_apply_ne Fin.val (by dsimp; omega)
   simp [cliffordProjection_def, hne]
 
-/-- Auxiliary involution `I • (c_a * c_b)` for distinct Majorana indices `a ≠ b`: its square is
-`1`. -/
-private theorem smul_I_majorana_mul_self {m : ℕ} {a b : Fin m} (hab : a ≠ b) :
-    (Complex.I • (majorana m a * majorana m b)) *
-      (Complex.I • (majorana m a * majorana m b)) = 1 := by
-  have hmaj : (majorana m a * majorana m b) * (majorana m a * majorana m b) = -1 := by
-    simpa [majorana_def] using
-      CliffordAlgebra.ι_mul_ι_mul_self_of_isOrtho (isOrtho_cliffordForm_single hab 1 1)
-  rw [smul_mul_smul_comm, hmaj, Complex.I_mul_I, neg_one_smul, neg_neg]
-
-/-- A Majorana generator distinct from `c` and `d` commutes with `c_c * c_d`. -/
-private theorem commute_majorana_mul_majorana {m : ℕ} {a c d : Fin m}
-    (hac : a ≠ c) (had : a ≠ d) :
-    Commute (majorana m a) (majorana m c * majorana m d) :=
-  (CliffordAlgebra.commute_ι_mul_ι_ι_of_isOrtho
-    (isOrtho_cliffordForm_single hac.symm 1 1)
-    (isOrtho_cliffordForm_single had.symm 1 1)).symm
-
 /-- Two Majorana-pair involutions sharing exactly one index anticommute. -/
 private theorem smul_I_majorana_anticommute {m : ℕ} {a b c d : Fin m}
     (hac : a ≠ c) (had : a ≠ d) (hbc : b = c) (hbd : b ≠ d) :
@@ -652,7 +664,7 @@ private theorem smul_I_majorana_anticommute {m : ℕ} {a b c d : Fin m}
           = ((majorana m b * majorana m d) * majorana m a) * majorana m b :=
             (mul_assoc _ _ _).symm
       _ = majorana m a * (majorana m b * (majorana m d * majorana m b)) := by
-            rw [(commute_majorana_mul_majorana hac had).symm.eq]
+            rw [(commute_majorana_majorana_mul_majorana_of_ne hac had).symm.eq]
             simp only [mul_assoc]
       _ = -(majorana m a * ((majorana m b * majorana m b) * majorana m d)) := by
             rw [majorana_mul_majorana_comm_of_ne hbd.symm]
@@ -677,7 +689,7 @@ theorem cliffordProjection_mul_self (m : ℕ) (j : Fin (m - 1)) :
     ne_of_apply_ne Fin.val (by dsimp; omega)
   rw [cliffordProjection_def]
   set u := Complex.I • (majorana m ⟨j.1, by omega⟩ * majorana m ⟨j.1 + 1, by omega⟩)
-  have hu : u * u = 1 := smul_I_majorana_mul_self hne
+  have hu : u * u = 1 := I_smul_majorana_mul_majorana_mul_self_of_ne hne
   rw [smul_mul_smul_comm, TauCeti.one_add_mul_self_of_mul_self_eq_one hu, ← two_smul ℂ, smul_smul]
   norm_num
 
@@ -691,7 +703,7 @@ theorem cliffordProjection_mul_cliffordProjection_mul_cliffordProjection {m : �
   rw [cliffordProjection_def m i, cliffordProjection_def m j]
   set u := Complex.I • (majorana m ⟨i.1, by omega⟩ * majorana m ⟨i.1 + 1, by omega⟩)
   set v := Complex.I • (majorana m ⟨j.1, by omega⟩ * majorana m ⟨j.1 + 1, by omega⟩)
-  have hu : u * u = 1 := smul_I_majorana_mul_self hi_ne
+  have hu : u * u = 1 := I_smul_majorana_mul_majorana_mul_self_of_ne hi_ne
   have huv : u * v + v * u = 0 := by
     rcases h with hij | hji
     · exact smul_I_majorana_anticommute
@@ -710,12 +722,6 @@ theorem cliffordProjection_mul_cliffordProjection_mul_cliffordProjection {m : �
   simp only [smul_mul_assoc, mul_smul_comm, hprod, smul_smul]
   norm_num
 
-/-- Disjoint Majorana pairs commute. -/
-private theorem commute_majorana_pair {m : ℕ} {a b c d : Fin m}
-    (hac : a ≠ c) (had : a ≠ d) (hbc : b ≠ c) (hbd : b ≠ d) :
-    Commute (majorana m a * majorana m b) (majorana m c * majorana m d) :=
-  (commute_majorana_mul_majorana hac had).mul_left (commute_majorana_mul_majorana hbc hbd)
-
 /-- Distant Clifford projections commute. -/
 theorem commute_cliffordProjection {m : ℕ} {i j : Fin (m - 1)}
     (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
@@ -723,7 +729,7 @@ theorem commute_cliffordProjection {m : ℕ} {i j : Fin (m - 1)}
   have hpair : Commute
       (majorana m ⟨i.1, by omega⟩ * majorana m ⟨i.1 + 1, by omega⟩)
       (majorana m ⟨j.1, by omega⟩ * majorana m ⟨j.1 + 1, by omega⟩) := by
-    refine commute_majorana_pair ?_ ?_ ?_ ?_ <;>
+    refine commute_majorana_mul_majorana_of_ne ?_ ?_ ?_ ?_ <;>
       exact ne_of_apply_ne Fin.val (by dsimp; omega)
   rw [cliffordProjection_def, cliffordProjection_def]
   exact (((Commute.one_left _).add_left
@@ -940,18 +946,23 @@ theorem cliffordIncl_star (m : ℕ) (a : CliffordAlgebra (cliffordForm m)) :
     cliffordIncl m (star a) = star (cliffordIncl m a) :=
   CliffordAlgebra.map_star (cliffordExtendIsometry m) a
 
+/-- The coordinate inclusion maps `EvenClifford m` into `EvenClifford (m + 1)`. -/
+theorem cliffordIncl_mem_even (m : ℕ) {a : CliffordAlgebra (cliffordForm m)}
+    (ha : a ∈ EvenClifford m) :
+    cliffordIncl m a ∈ EvenClifford (m + 1) :=
+  CliffordAlgebra.map_mem_even (cliffordExtendIsometry m) ha
+
 /-- The restricted coordinate inclusion `EvenClifford m →ₐ[ℂ] EvenClifford (m + 1)`. -/
 noncomputable def evenCliffordIncl (m : ℕ) :
     EvenClifford m →ₐ[ℂ] EvenClifford (m + 1) :=
-  ((cliffordIncl m).comp (EvenClifford m).val).codRestrict (EvenClifford (m + 1)) fun x ↦ by
-    rw [AlgHom.comp_apply, Subalgebra.val_apply, cliffordIncl_def]
-    exact CliffordAlgebra.map_mem_even (cliffordExtendIsometry m) x.2
+  ((cliffordIncl m).comp (EvenClifford m).val).codRestrict (EvenClifford (m + 1)) fun x ↦
+    cliffordIncl_mem_even m x.2
 
 /-- Coercing `evenCliffordIncl` to the ambient Clifford algebra recovers `cliffordIncl`. -/
 @[simp]
 theorem coe_evenCliffordIncl (m : ℕ) (x : EvenClifford m) :
     (evenCliffordIncl m x : CliffordAlgebra (cliffordForm (m + 1))) = cliffordIncl m x := by
-  simp [evenCliffordIncl]
+  rfl
 
 /-- `cliffordIncl` maps the `j`-th Majorana generator to `majorana (m + 1) j.castSucc`. -/
 @[simp]
@@ -1010,6 +1021,19 @@ theorem cliffordIncl_injective (m : ℕ) : Function.Injective (cliffordIncl m) :
   intro a ha
   apply (scalarTrace_cliffordAdjoint_mul_self_eq_zero_iff m).mp
   rw [← scalarTrace_cliffordIncl m, map_mul, cliffordIncl_cliffordAdjoint, ha, mul_zero, map_zero]
+
+/-- `cliffordIncl m a` lies in `EvenClifford (m + 1)` if and only if `a` lies in
+`EvenClifford m`. -/
+@[simp]
+theorem cliffordIncl_mem_even_iff (m : ℕ) {a : CliffordAlgebra (cliffordForm m)} :
+    cliffordIncl m a ∈ EvenClifford (m + 1) ↔ a ∈ EvenClifford m := by
+  refine ⟨fun h ↦ ?_, cliffordIncl_mem_even m⟩
+  have hinv : CliffordAlgebra.involute (cliffordIncl m a) = cliffordIncl m a :=
+    CliffordAlgebra.involute_eq_self_iff.mpr
+      (by simpa [← CliffordAlgebra.even_toSubmodule] using h)
+  rw [← cliffordIncl_involute] at hinv
+  simpa [← CliffordAlgebra.even_toSubmodule] using
+    CliffordAlgebra.involute_eq_self_iff.mp (cliffordIncl_injective m hinv)
 
 /-- The even coordinate inclusion `evenCliffordIncl m` is injective. -/
 theorem evenCliffordIncl_injective (m : ℕ) : Function.Injective (evenCliffordIncl m) := by
@@ -1201,6 +1225,26 @@ theorem quotientEvenCliffordEquiv_quotientStrandIncl
       evenCliffordIncl (n + 1) (htr.quotientEvenCliffordEquiv (n + 1) q) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
   simp
+
+/-- `(quotientEvenCliffordEquiv m).symm` maps `evenCliffordHom m x` back to the quotient class
+of `x`. -/
+@[simp]
+theorem quotientEvenCliffordEquiv_symm_evenCliffordHom
+    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (m : ℕ)
+    (x : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m) :
+    (htr.quotientEvenCliffordEquiv m).symm (evenCliffordHom m x) =
+      Ideal.Quotient.mk ((tr m).traceRadical (htr.map_mul_comm m)) x :=
+  (htr.quotientEvenCliffordEquiv m).injective (by simp)
+
+/-- `(quotientEvenCliffordEquiv _).symm` intertwines `evenCliffordIncl` with
+`quotientStrandIncl`. -/
+@[simp]
+theorem quotientEvenCliffordEquiv_symm_evenCliffordIncl
+    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (n : ℕ)
+    (y : EvenClifford (n + 1)) :
+    (htr.quotientEvenCliffordEquiv (n + 2)).symm (evenCliffordIncl (n + 1) y) =
+      htr.quotientStrandIncl n ((htr.quotientEvenCliffordEquiv (n + 1)).symm y) :=
+  (htr.quotientEvenCliffordEquiv (n + 2)).injective (by simp)
 
 /-- The induced trace on the `m`-strand Temperley–Lieb quotient at `δ = √2` is `(√2 : ℂ) ^ m` times
 `CliffordAlgebra.scalarTrace` under `quotientEvenCliffordEquiv`. -/
