@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.Real.Irrational
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Fourier.TwistedWirtinger
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -315,13 +316,6 @@ private theorem setIntegral_im_mul_conj_eq_zero (hu : ContDiff ℝ 2 u) (hχ₁ 
 end IntegrationByParts
 
 section Estimate
-
-/-- `2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂`. -/
-private theorem two_mul_I_mul_im_conj_mul :
-    (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
-  have h := sub_conj (conj ω₁ * ω₂)
-  simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
-  linear_combination -h
 
 /-- The pointwise expansion of `|ω₂ A - ω₁ B|²`, written for `W` with `2 i D W = ω₂ A - ω₁ B`,
 `D = Im (conj ω₁ ω₂)`. -/

@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
+import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -431,14 +432,10 @@ theorem conjWirtingerDeriv_apply_one_eq_inv_smul_sub {f : ℂ → W} {ω₁ ω�
     (hω : (conj ω₁ * ω₂).im ≠ 0) (x : ℂ) :
     conjWirtingerDeriv f x 1 = (2 * I * (conj ω₁ * ω₂).im : ℂ)⁻¹ •
       (ω₂ • fderiv ℝ f x ω₁ - ω₁ • fderiv ℝ f x ω₂) := by
-  have h2 : (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
-    have h := sub_conj (conj ω₁ * ω₂)
-    simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
-    linear_combination -h
   have hne : (2 * I * (conj ω₁ * ω₂).im : ℂ) ≠ 0 :=
     mul_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) (mod_cast hω)
   rw [eq_inv_smul_iff₀ hne, fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
-    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, h2]
+    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, two_mul_I_mul_im_conj_mul]
   module
 
 /-- In one variable the conjugate Wirtinger derivative vanishes exactly when its value

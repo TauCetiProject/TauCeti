@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Fourier.Torus.Decay
 import TauCeti.Analysis.Fourier.Torus.Smooth
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
@@ -232,46 +232,6 @@ section Correspondence
 
 open _root_.UnitAddTorus TauCeti.UnitAddTorus
 
-/-- The lattice coordinates `p ↦ p₀ ω₁ + p₁ ω₂`, a real-linear equivalence when `ω₁` and `ω₂` are
-linearly independent. -/
-private def latticeEquiv (hω : (conj ω₁ * ω₂).im ≠ 0) : (Fin 2 → ℝ) ≃L[ℝ] ℂ :=
-  (LinearMap.linearEquivOfInjective
-    ((LinearMap.proj 0).smulRight ω₁ + (LinearMap.proj 1).smulRight ω₂ :
-      (Fin 2 → ℝ) →ₗ[ℝ] ℂ)
-    (by
-      rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-      intro p hp
-      simp only [LinearMap.add_apply, LinearMap.smulRight_apply, LinearMap.proj_apply,
-        real_smul] at hp
-      have hre := congrArg re hp
-      have hi := congrArg im hp
-      simp only [add_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero, zero_re, add_im,
-        mul_im, zero_im] at hre hi
-      replace hω : ω₁.re * ω₂.im - ω₁.im * ω₂.re ≠ 0 := fun h ↦ hω <| by
-        simp only [mul_im, conj_re, conj_im]
-        linarith
-      have h0 : p 0 * (ω₁.re * ω₂.im - ω₁.im * ω₂.re) = 0 := by
-        linear_combination ω₂.im * hre - ω₂.re * hi
-      have h1 : p 1 * (ω₁.re * ω₂.im - ω₁.im * ω₂.re) = 0 := by
-        linear_combination ω₁.re * hi - ω₁.im * hre
-      funext i
-      fin_cases i
-      · simpa [hω] using h0
-      · simpa [hω] using h1)
-    (by rw [Complex.finrank_real_complex]; simp)).toContinuousLinearEquiv
-
-private theorem latticeEquiv_apply (hω : (conj ω₁ * ω₂).im ≠ 0) (p : Fin 2 → ℝ) :
-    latticeEquiv hω p = p 0 * ω₁ + p 1 * ω₂ := by
-  simp [latticeEquiv, real_smul]
-
-private theorem latticeEquiv_symm_apply_fst (hω : (conj ω₁ * ω₂).im ≠ 0) :
-    (latticeEquiv hω).symm ω₁ = Pi.single 0 1 :=
-  (latticeEquiv hω).symm_apply_eq.2 (by simp [latticeEquiv_apply])
-
-private theorem latticeEquiv_symm_apply_snd (hω : (conj ω₁ * ω₂).im ≠ 0) :
-    (latticeEquiv hω).symm ω₂ = Pi.single 1 1 :=
-  (latticeEquiv hω).symm_apply_eq.2 (by simp [latticeEquiv_apply])
-
 /-- The exponent `2πi (θ₁ p₀ + θ₂ p₁)` of the phase of a section in lattice coordinates. -/
 private def phaseCLM (θ₁ θ₂ : ℝ) : (Fin 2 → ℝ) →L[ℝ] ℂ :=
   (2 * π * I : ℂ) • ofRealCLM.comp (θ₁ • ContinuousLinearMap.proj 0 +
@@ -301,7 +261,7 @@ private theorem ofTorus_latticeEquiv (hω : (conj ω₁ * ω₂).im ≠ 0)
     (g : UnitAddTorus (Fin 2) → ℂ) (p : Fin 2 → ℝ) :
     ofTorus hω θ₁ θ₂ g (latticeEquiv hω p) =
       exp (phaseCLM θ₁ θ₂ p) * g fun i ↦ (p i : UnitAddCircle) := by
-  simp [ofTorus]
+  rw [ofTorus, Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply]
 
 private theorem ofTorus_mem (hω : (conj ω₁ * ω₂).im ≠ 0) {g : UnitAddTorus (Fin 2) → ℂ}
     (hg : g ∈ smoothFunctions (Fin 2)) : ofTorus hω θ₁ θ₂ g ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ := by

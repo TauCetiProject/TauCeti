@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.LinearAlgebra.Complex.Determinant
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -27,6 +29,12 @@ In the frame of a nonzero direction `v`, the point `v (s ± h i)` on either side
 A rank-one map `L.smulRight w` built from a real functional `L` on `ℂ` splits along the real
 basis `1, I` as `L 1 • re ⊗ w + L I • im ⊗ w`
 (`ContinuousLinearMap.smulRight_eq_re_add_im`).
+
+Two complex numbers `ω₁`, `ω₂` are linearly independent over `ℝ` exactly when the oriented area
+`Im (conj ω₁ ω₂)` of the parallelogram they span is nonzero, and `2 i Im (conj ω₁ ω₂)` is
+`ω₂ conj ω₁ - ω₁ conj ω₂` (`TauCeti.two_mul_I_mul_im_conj_mul`). In that case the lattice
+coordinates `p ↦ p₀ ω₁ + p₁ ω₂` are a real-linear equivalence `TauCeti.latticeEquiv` of
+`Fin 2 → ℝ` with `ℂ`.
 -/
 
 public section
@@ -132,6 +140,67 @@ theorem mul_sub_mul_I_sub_mul_div_im (hv : v ≠ 0) (h : ℝ) :
   rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg] at this
 
 end LineThrough
+
+section LatticeCoordinates
+
+open Complex ComplexConjugate
+
+variable {ω₁ ω₂ : ℂ}
+
+/-- `2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂`. -/
+theorem two_mul_I_mul_im_conj_mul :
+    (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
+  have h := sub_conj (conj ω₁ * ω₂)
+  simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
+  linear_combination -h
+
+/-- The lattice coordinates `p ↦ p₀ ω₁ + p₁ ω₂`, a real-linear equivalence when `ω₁` and `ω₂` are
+linearly independent. -/
+noncomputable def latticeEquiv (hω : (conj ω₁ * ω₂).im ≠ 0) : (Fin 2 → ℝ) ≃L[ℝ] ℂ :=
+  (LinearMap.linearEquivOfInjective
+    ((LinearMap.proj 0).smulRight ω₁ + (LinearMap.proj 1).smulRight ω₂ :
+      (Fin 2 → ℝ) →ₗ[ℝ] ℂ)
+    (by
+      rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+      intro p hp
+      simp only [LinearMap.add_apply, LinearMap.smulRight_apply, LinearMap.proj_apply,
+        real_smul] at hp
+      have hre := congrArg re hp
+      have hi := congrArg im hp
+      simp only [add_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero, zero_re, add_im,
+        mul_im, zero_im] at hre hi
+      replace hω : ω₁.re * ω₂.im - ω₁.im * ω₂.re ≠ 0 := fun h ↦ hω <| by
+        simp only [mul_im, conj_re, conj_im]
+        linarith
+      have h0 : p 0 * (ω₁.re * ω₂.im - ω₁.im * ω₂.re) = 0 := by
+        linear_combination ω₂.im * hre - ω₂.re * hi
+      have h1 : p 1 * (ω₁.re * ω₂.im - ω₁.im * ω₂.re) = 0 := by
+        linear_combination ω₁.re * hi - ω₁.im * hre
+      funext i
+      fin_cases i
+      · simpa [hω] using h0
+      · simpa [hω] using h1)
+    (by rw [Complex.finrank_real_complex]; simp)).toContinuousLinearEquiv
+
+/-- The lattice coordinates send `p` to `p₀ ω₁ + p₁ ω₂`. -/
+@[simp]
+theorem latticeEquiv_apply (hω : (conj ω₁ * ω₂).im ≠ 0) (p : Fin 2 → ℝ) :
+    latticeEquiv hω p = p 0 * ω₁ + p 1 * ω₂ := by
+  simp [latticeEquiv, real_smul]
+
+/-- The lattice coordinates of `ω₁` are `(1, 0)`. -/
+@[simp]
+theorem latticeEquiv_symm_apply_fst (hω : (conj ω₁ * ω₂).im ≠ 0) :
+    (latticeEquiv hω).symm ω₁ = Pi.single 0 1 :=
+  (latticeEquiv hω).symm_apply_eq.2 (by simp)
+
+/-- The lattice coordinates of `ω₂` are `(0, 1)`. -/
+@[simp]
+theorem latticeEquiv_symm_apply_snd (hω : (conj ω₁ * ω₂).im ≠ 0) :
+    (latticeEquiv hω).symm ω₂ = Pi.single 1 1 :=
+  (latticeEquiv hω).symm_apply_eq.2 (by simp)
+
+end LatticeCoordinates
 
 end TauCeti
 
