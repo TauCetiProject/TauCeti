@@ -423,16 +423,12 @@ section FiniteSupport
 variable {ι : Type*} [DecidableEq ι]
   {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M] [Module R M]
 
-private theorem InternalGrading.finite_piece_ne_bot_aux (G : InternalGrading R M ι)
-    [Module.Finite R M] : {p | G.piece p ≠ ⊥}.Finite :=
-  G.isInternal.submodule_iSupIndep.finite_ne_bot_of_fg
-    (by rw [G.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
-
 /-- A finitely generated internally graded module has only finitely many nonzero homogeneous
 pieces. -/
 theorem InternalGrading.finite_piece_ne_bot (G : InternalGrading R M ι) [Module.Finite R M] :
     {p | G.piece p ≠ ⊥}.Finite :=
-  G.finite_piece_ne_bot_aux
+  G.isInternal.submodule_iSupIndep.finite_ne_bot_of_fg
+    (by rw [G.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
 
 /-- Summing the homogeneous components over the finite set of nonzero pieces reconstructs the
 original element. -/
