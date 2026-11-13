@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Rat
-public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.Elementary
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Generators
-import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
-import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.RingTheory.GradedAlgebra.DirectSum
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # The rational power-sum presentation of the symmetric functions
@@ -21,19 +21,15 @@ generate `Λ_R`; comparing with the free generation by the elementary symmetric 
 they are algebraically independent as well. Over `ℤ` this fails: `p₁² - p₂ = 2 e₂`, and `e₂` is not
 a polynomial in the power sums.
 
-The inverse of the presentation is described by the polynomials `E_n` in the variables `X r`,
-which stand for `p_(r + 1)`, determined by `E₀ = 1` and Newton's recursion
-`E_(n + 1) = (1 / (n + 1)) ∑_{i + j = n} (-1)ʲ Eᵢ X_j`. Here `1 / (n + 1)` is the image in `R` of a
-rational number, so no division is asserted in `R` itself. The polynomial `E_n` is homogeneous of
-degree `n` for the weight `X r ↦ r + 1`, does not depend on the coefficient ring, and specialises in
-`d` variables to Newton's expression of `e_n` through the power sums.
+The inverse of the presentation is described by the polynomials
+`TauCeti.SymmetricFunction.esymmPsumPoly R n`, written `E_n`, in the variables `X r`, which stand
+for `p_(r + 1)`: they are determined by `E₀ = 1` and Newton's recursion, and specialise in every
+finite alphabet to Newton's expression of `e_n` through the power sums.
 
 ## Main definitions
 
 * `TauCeti.SymmetricFunction.psumAlgHom R`: the algebra homomorphism `R[X₀, X₁, …] → Λ_R` sending
   `X r` to `p_(r + 1)`.
-* `TauCeti.SymmetricFunction.esymmPsumPoly R n`: for a `ℚ`-algebra `R`, the polynomial `E_n`
-  expressing `e_n` through the power sums.
 * `TauCeti.SymmetricFunction.psumAlgEquiv R`: for a `ℚ`-algebra `R`, the power-sum presentation
   `R[X₀, X₁, …] ≃ₐ[R] Λ_R`.
 
@@ -41,20 +37,17 @@ degree `n` for the weight `X r ↦ r + 1`, does not depend on the coefficient ri
 
 * `TauCeti.SymmetricFunction.mul_of_stableEsymm_eq_sum`: **Newton's identities** in `Λ_R`.
 * `TauCeti.SymmetricFunction.psumAlgHom_esymmPsumPoly`: `E_n` evaluated at the power sums is `e_n`.
+* `TauCeti.SymmetricFunction.psumAlgHom_injective`,
+  `TauCeti.SymmetricFunction.psumAlgHom_surjective`: over a `ℚ`-algebra, the power sums are
+  algebraically independent and generate `Λ_R`.
 * `TauCeti.SymmetricFunction.psumAlgEquiv_symm_of_stableEsymm`,
   `TauCeti.SymmetricFunction.psumAlgEquiv_symm_of_stablePsum`: the inverse of the presentation
-  sends `e_n` to `E_n` and `p_(r + 1)` to `X r`.
+  sends `e_n` to `E_n` and `p_n` to `X (n - 1)`.
 * `TauCeti.SymmetricFunction.algHom_ext_of_stablePsum`: over a `ℚ`-algebra, algebra homomorphisms
   out of `Λ_R` agree once they agree on the power sums.
-* `TauCeti.SymmetricFunction.aeval_psum_esymmPsumPoly`: in `d` variables, `E_n` evaluated at the
-  power sums is the elementary symmetric polynomial `e_n`.
-* `TauCeti.SymmetricFunction.map_esymmPsumPoly`: `E_n` is natural in the coefficient ring.
 * `TauCeti.SymmetricFunction.psumAlgHom_weightedHomogeneousComponent`,
   `TauCeti.SymmetricFunction.isWeightedHomogeneous_psumAlgEquiv_symm_of`: the presentation
   identifies the weighted grading `deg X_r = r + 1` with the grading of `Λ_R`.
-* `TauCeti.SymmetricFunction.two_mul_esymmPsumPoly_two`,
-  `TauCeti.SymmetricFunction.six_mul_esymmPsumPoly_three`: `2 e₂ = p₁² - p₂` and
-  `6 e₃ = p₁³ - 3 p₁ p₂ + 2 p₃`.
 
 ## References
 
@@ -67,7 +60,7 @@ public section
 
 namespace TauCeti
 
-open MvPolynomial DirectSum Finset
+open MvPolynomial Finset
 
 namespace SymmetricFunction
 
@@ -95,55 +88,22 @@ theorem specialization_psumAlgHom (d : ℕ) (p : MvPolynomial ℕ R) :
     MvPolynomial.algHom_ext fun r => by simp
   exact DFunLike.congr_fun h p
 
-/-- Products of symmetric functions of degrees `i` and `j` have degree `i + j`. -/
-private theorem mul_mem_range_of {x y : SymmetricFunction R} {i j k : ℕ} (hk : i + j = k)
-    (hx : x ∈ Set.range (DirectSum.of _ i)) (hy : y ∈ Set.range (DirectSum.of _ j)) :
-    x * y ∈ Set.range (DirectSum.of _ k) := by
-  subst hk
-  obtain ⟨a, rfl⟩ := hx
-  obtain ⟨b, rfl⟩ := hy
-  exact ⟨_, (DirectSum.of_mul_of (A := fun n => stableSymmetricSubmodule R n) a b).symm⟩
-
-/-- A monomial of weighted degree `k` is sent to a symmetric function of degree `k`. -/
-private theorem psumAlgHom_monomial_mem_range (s : ℕ →₀ ℕ) (a : R) {k : ℕ}
-    (hk : Finsupp.weight (· + 1) s = k) :
-    psumAlgHom R (monomial s a) ∈ Set.range (DirectSum.of _ k) := by
-  induction s using Finsupp.induction generalizing k with
-  | zero =>
-    rw [map_zero] at hk
-    subst hk
-    refine ⟨a • stableSymmetricOne R, ?_⟩
-    rw [DirectSum.of_smul, of_stableSymmetricOne, monomial_zero', algHom_C,
-      Algebra.algebraMap_eq_smul_one]
-  | single_add r b s _ _ ih =>
-    have hpow : ∀ m : ℕ, psumAlgHom R (X r ^ m) ∈ Set.range (DirectSum.of _ (m * (r + 1))) := by
-      intro m
-      induction m with
-      | zero =>
-        rw [zero_mul]
-        exact ⟨stableSymmetricOne R, by rw [of_stableSymmetricOne, pow_zero, map_one]⟩
-      | succ m ihm =>
-        rw [pow_succ, map_mul]
-        exact mul_mem_range_of R (by ring) ihm ⟨_, (psumAlgHom_X R r).symm⟩
-    rw [monomial_single_add, map_mul]
-    refine mul_mem_range_of R ?_ (hpow b) (ih rfl)
-    rw [← hk, map_add, Finsupp.weight_single, smul_eq_mul]
-
 /-- **The power-sum homomorphism is graded**: it sends the component of weighted degree `n`, for
 the weight `X r ↦ r + 1`, to the component of degree `n`. -/
 theorem psumAlgHom_weightedHomogeneousComponent (n : ℕ) (p : MvPolynomial ℕ R) :
     psumAlgHom R (weightedHomogeneousComponent (· + 1) n p) =
       DirectSum.of _ n (psumAlgHom R p n) := by
-  induction p using MvPolynomial.induction_on' with
-  | monomial s a =>
-    have hs := isWeightedHomogeneous_monomial (· + 1) s a rfl
-    obtain ⟨y, hy⟩ := psumAlgHom_monomial_mem_range R s a rfl
-    rw [← hy]
-    obtain rfl | hn := eq_or_ne (Finsupp.weight (· + 1) s) n
-    · rw [hs.weightedHomogeneousComponent_same, ← hy, DirectSum.of_eq_same]
-    · rw [hs.weightedHomogeneousComponent_ne _ (Ne.symm hn), map_zero,
-        DirectSum.of_eq_of_ne _ _ _ (Ne.symm hn), map_zero]
-  | add p q hp hq => rw [map_add, map_add, hp, hq, map_add, DirectSum.add_apply, map_add]
+  classical
+  let := weightedDecomposition R (fun r : ℕ => r + 1)
+  have h := DirectSum.map_decompose_shift (weightedHomogeneousSubmodule R (· + 1))
+    (DirectSum.summand R fun n => stableSymmetricSubmodule R n) (psumAlgHom R).toAddMonoidHom id
+    Function.injective_id
+    (fun _ x hx => (mem_weightedHomogeneousSubmodule _ _ _ _).mp hx |>.aeval_mem
+      fun r => DirectSum.of_mem_summand (r + 1) _) n p
+  have hc : (DirectSum.decompose (weightedHomogeneousSubmodule R (· + 1)) p n : MvPolynomial ℕ R) =
+      weightedHomogeneousComponent (· + 1) n p :=
+    weightedDecomposition.decompose'_apply R _ p n
+  rwa [hc, DirectSum.coe_decompose_summand] at h
 
 end CommSemiring
 
@@ -156,22 +116,12 @@ variable (R : Type*) [CommRing R]
 theorem mul_of_stableEsymm_eq_sum (n : ℕ) :
     (n + 1 : SymmetricFunction R) * DirectSum.of _ (n + 1) (stableEsymm R (n + 1)) =
       ∑ x ∈ antidiagonal n, (-1) ^ x.2 * DirectSum.of _ x.1 (stableEsymm R x.1) *
-        psumAlgHom R (X x.2) := by
+        DirectSum.of _ (x.2 + 1) (stablePsum R x.2.succ_ne_zero) := by
   refine ext_specialization fun d => ?_
-  have h := MvPolynomial.mul_esymm_eq_sum (Fin d) R (n + 1)
-  rw [sum_filter, Nat.sum_antidiagonal_succ', mul_add, mul_sum] at h
-  simp only [lt_irrefl, ↓reduceIte, mul_zero, zero_add] at h
   simp only [map_mul, map_add, map_natCast, map_one, specialization_of,
-    coe_stableSymmetricProj_stableEsymm, map_sum, map_pow, map_neg, psumAlgHom_X,
-    coe_stableSymmetricProj_stablePsum, Nat.cast_add, Nat.cast_one] at h ⊢
-  rw [h]
-  refine sum_congr rfl fun x hx => ?_
-  rw [mem_antidiagonal] at hx
-  subst hx
-  simp only [show x.1 < x.1 + x.2 + 1 by omega, ↓reduceIte]
-  rw [← mul_assoc, ← mul_assoc, ← pow_add,
-    show x.1 + x.2 + 1 + 1 + x.1 = x.2 + 2 * (x.1 + 1) by ring, pow_add, pow_mul]
-  simp
+    coe_stableSymmetricProj_stableEsymm, map_sum, map_pow, map_neg,
+    coe_stableSymmetricProj_stablePsum]
+  exact mul_esymm_succ_eq_sum (Fin d) R n
 
 end CommRing
 
@@ -179,116 +129,13 @@ section Rat
 
 variable (R : Type*) [CommRing R] [Algebra ℚ R]
 
-/-- Multiplying by `n + 1` cancels the scalar `1 / (n + 1)` coming from `ℚ`. -/
-private theorem natCast_add_one_mul_algebraMap_inv_smul {A : Type*} [Semiring A] [Algebra R A]
-    (n : ℕ) (a : A) : ((n : A) + 1) * (algebraMap ℚ R ((n : ℚ) + 1)⁻¹ • a) = a := by
-  have h : ((n : R) + 1) * algebraMap ℚ R ((n : ℚ) + 1)⁻¹ = 1 := by
-    rw [show ((n : R) + 1) = algebraMap ℚ R ((n : ℚ) + 1) by simp, ← map_mul,
-      mul_inv_cancel₀ (by positivity), map_one]
-  rw [Algebra.smul_def, ← mul_assoc, show ((n : A) + 1) = algebraMap R A ((n : R) + 1) by simp,
-    ← map_mul, h, map_one, one_mul]
-
-/-- The polynomial `E_n` in the variables `X r`, standing for the power sums `p_(r + 1)`, which
-expresses the elementary symmetric function `e_n` over a `ℚ`-algebra: `E₀ = 1` and
-`E_(n + 1) = (1 / (n + 1)) ∑_{i + j = n} (-1)ʲ Eᵢ X_j`, Newton's recursion. -/
-noncomputable def esymmPsumPoly : ℕ → MvPolynomial ℕ R
-  | 0 => 1
-  | n + 1 => algebraMap ℚ R ((n : ℚ) + 1)⁻¹ •
-      ∑ x ∈ (antidiagonal n).attach, (-1) ^ x.1.2 * esymmPsumPoly x.1.1 * X x.1.2
-decreasing_by
-  have := Nat.antidiagonal.fst_lt x.2
-  omega
-
-@[simp]
-theorem esymmPsumPoly_zero : esymmPsumPoly R 0 = 1 := by
-  rw [esymmPsumPoly]
-
-/-- **Newton's recursion** for `TauCeti.SymmetricFunction.esymmPsumPoly`. -/
-theorem esymmPsumPoly_succ (n : ℕ) :
-    esymmPsumPoly R (n + 1) = algebraMap ℚ R ((n : ℚ) + 1)⁻¹ •
-      ∑ x ∈ antidiagonal n, (-1) ^ x.2 * esymmPsumPoly R x.1 * X x.2 := by
-  rw [esymmPsumPoly]
-  congr 1
-  exact sum_attach (antidiagonal n) fun x => (-1) ^ x.2 * esymmPsumPoly R x.1 * X x.2
-
-/-- Newton's recursion for `TauCeti.SymmetricFunction.esymmPsumPoly` with the denominator cleared:
-`(n + 1) E_(n + 1) = ∑_{i + j = n} (-1)ʲ Eᵢ X_j`. -/
-theorem mul_esymmPsumPoly_succ (n : ℕ) :
-    (n + 1 : MvPolynomial ℕ R) * esymmPsumPoly R (n + 1) =
-      ∑ x ∈ antidiagonal n, (-1) ^ x.2 * esymmPsumPoly R x.1 * X x.2 := by
-  rw [esymmPsumPoly_succ, natCast_add_one_mul_algebraMap_inv_smul]
-
-@[simp]
-theorem esymmPsumPoly_one : esymmPsumPoly R 1 = X 0 := by
-  simp [esymmPsumPoly_succ]
-
-/-- `2 e₂ = p₁² - p₂`. -/
-theorem two_mul_esymmPsumPoly_two : 2 * esymmPsumPoly R 2 = X 0 ^ 2 - X 1 := by
-  have h := mul_esymmPsumPoly_succ R 1
-  norm_num [Nat.antidiagonal_succ] at h
-  linear_combination h
-
-/-- `6 e₃ = p₁³ - 3 p₁ p₂ + 2 p₃`. -/
-theorem six_mul_esymmPsumPoly_three :
-    6 * esymmPsumPoly R 3 = X 0 ^ 3 - 3 * X 0 * X 1 + 2 * X 2 := by
-  have h := mul_esymmPsumPoly_succ R 2
-  norm_num [Nat.antidiagonal_succ] at h
-  linear_combination 2 * h + X 0 * two_mul_esymmPsumPoly_two R
-
 /-- **`E_n` evaluated at the power sums is the elementary symmetric function** `e_n`. -/
 @[simp]
 theorem psumAlgHom_esymmPsumPoly (n : ℕ) :
-    psumAlgHom R (esymmPsumPoly R n) = DirectSum.of _ n (stableEsymm R n) := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    obtain _ | n := n
-    · simp
-    have hsum : psumAlgHom R (∑ x ∈ antidiagonal n, (-1) ^ x.2 * esymmPsumPoly R x.1 * X x.2) =
-        (n + 1 : SymmetricFunction R) * DirectSum.of _ (n + 1) (stableEsymm R (n + 1)) := by
-      rw [mul_of_stableEsymm_eq_sum, map_sum]
-      refine sum_congr rfl fun x hx => ?_
-      rw [map_mul, map_mul, map_pow, map_neg, map_one,
-        ih x.1 (Nat.antidiagonal.fst_lt hx)]
-    rw [esymmPsumPoly_succ, map_smul, hsum, ← mul_smul_comm,
-      natCast_add_one_mul_algebraMap_inv_smul]
-
-/-- In `d` variables, `E_n` evaluated at the power sums `p₁, p₂, …` is the elementary symmetric
-polynomial `e_n`. -/
-theorem aeval_psum_esymmPsumPoly (d n : ℕ) :
-    aeval (fun r => psum (Fin d) R (r + 1)) (esymmPsumPoly R n) = esymm (Fin d) R n := by
-  rw [← specialization_psumAlgHom, psumAlgHom_esymmPsumPoly, specialization_of,
-    coe_stableSymmetricProj_stableEsymm]
-
-/-- **`E_n` does not depend on the coefficient ring**: it is natural in ring homomorphisms between
-`ℚ`-algebras. -/
-theorem map_esymmPsumPoly {S : Type*} [CommRing S] [Algebra ℚ S] (f : R →+* S) (n : ℕ) :
-    map f (esymmPsumPoly R n) = esymmPsumPoly S n := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    obtain _ | n := n
-    · simp
-    rw [esymmPsumPoly_succ, esymmPsumPoly_succ, smul_eq_C_mul, smul_eq_C_mul, map_mul, map_C,
-      RingHom.map_rat_algebraMap, map_sum]
-    congr 1
-    refine sum_congr rfl fun x hx => ?_
-    rw [map_mul, map_mul, map_pow, map_neg, map_one, map_X,
-      ih x.1 (Nat.antidiagonal.fst_lt hx)]
-
-/-- `E_n` is homogeneous of degree `n` for the weight `X r ↦ r + 1`. -/
-theorem isWeightedHomogeneous_esymmPsumPoly (n : ℕ) :
-    IsWeightedHomogeneous (· + 1) (esymmPsumPoly R n) n := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    obtain _ | n := n
-    · simpa using isWeightedHomogeneous_one R (· + 1)
-    rw [esymmPsumPoly_succ, smul_eq_C_mul]
-    refine IsWeightedHomogeneous.C_mul (IsWeightedHomogeneous.sum _ _ _ fun x hx => ?_) _
-    have hx' := mem_antidiagonal.mp hx
-    have h := (((isWeightedHomogeneous_one R (· + 1)).neg.pow x.2).mul
-      (ih x.1 (Nat.antidiagonal.fst_lt hx))).mul (isWeightedHomogeneous_X R (· + 1) x.2)
-    convert h using 1
-    simp only [smul_zero, zero_add]
-    omega
+    psumAlgHom R (esymmPsumPoly R n) = DirectSum.of _ n (stableEsymm R n) :=
+  ext_specialization fun d => by
+    rw [specialization_psumAlgHom, aeval_psum_esymmPsumPoly, specialization_of,
+      coe_stableSymmetricProj_stableEsymm]
 
 /-- The algebra homomorphism `R[X₀, X₁, …] → R[X₀, X₁, …]` sending `X r` to `E_(r + 1)`, the
 inverse of the power-sum presentation read in the elementary generators. -/
@@ -352,11 +199,33 @@ noncomputable def psumAlgEquiv : MvPolynomial ℕ R ≃ₐ[R] SymmetricFunction 
 theorem psumAlgEquiv_apply (p : MvPolynomial ℕ R) : psumAlgEquiv R p = psumAlgHom R p :=
   (rfl)
 
-/-- The power sum `p_(r + 1)` corresponds to the variable `X r`. -/
+/-- **The power sums are algebraically independent** over a `ℚ`-algebra. -/
+theorem psumAlgHom_injective : Function.Injective (psumAlgHom R) :=
+  (psumAlgEquiv R).injective
+
+/-- **The power sums generate the symmetric functions** over a `ℚ`-algebra. -/
+theorem psumAlgHom_surjective : Function.Surjective (psumAlgHom R) :=
+  (psumAlgEquiv R).surjective
+
+/-- Every symmetric function is the polynomial in the power sums that
+`(TauCeti.SymmetricFunction.psumAlgEquiv R).symm` assigns to it. -/
 @[simp]
-theorem psumAlgEquiv_symm_of_stablePsum (r : ℕ) :
-    (psumAlgEquiv R).symm (DirectSum.of _ (r + 1) (stablePsum R r.succ_ne_zero)) = X r := by
-  rw [AlgEquiv.symm_apply_eq, psumAlgEquiv_apply, psumAlgHom_X]
+theorem psumAlgHom_psumAlgEquiv_symm (x : SymmetricFunction R) :
+    psumAlgHom R ((psumAlgEquiv R).symm x) = x :=
+  (psumAlgEquiv R).apply_symm_apply x
+
+/-- A polynomial in the power sums is recovered from the symmetric function it defines. -/
+@[simp]
+theorem psumAlgEquiv_symm_psumAlgHom (p : MvPolynomial ℕ R) :
+    (psumAlgEquiv R).symm (psumAlgHom R p) = p :=
+  (psumAlgEquiv R).symm_apply_apply p
+
+/-- The power sum `p_n`, for `n ≠ 0`, corresponds to the variable `X (n - 1)`. -/
+@[simp]
+theorem psumAlgEquiv_symm_of_stablePsum {n : ℕ} (hn : n ≠ 0) :
+    (psumAlgEquiv R).symm (DirectSum.of _ n (stablePsum R hn)) = X (n - 1) := by
+  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn
+  rw [AlgEquiv.symm_apply_eq, psumAlgEquiv_apply, Nat.add_sub_cancel, psumAlgHom_X]
 
 /-- The elementary symmetric function `e_n` corresponds to Newton's polynomial `E_n`. -/
 @[simp]
