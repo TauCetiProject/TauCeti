@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import TauCeti.Topology.FiberBundle.Proper
 public import TauCeti.Topology.VectorBundle.GramSchmidt
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.CStarAlgebra.Basic
 
 /-!
 # The orthonormal frame bundle of a Riemannian or Hermitian vector bundle
@@ -87,6 +90,8 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
   `TauCeti.OrthonormalFrameBundle.exists_smul_eq_iff`: the action is free and transitive on fibres.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization`: the frame bundle is locally trivial,
   equivariantly for the action.
+* `TauCeti.OrthonormalFrameBundle.isProperMap_proj`: the projection of the frame bundle is proper,
+  so the frames over a compact set of the base form a compact set.
 * `TauCeti.OrthonormalFrameBundle.isOpenQuotientMap_totalSpaceMk_frame_apply`: applying frames to
   vectors is an open quotient map onto the total space of `E`.
 
@@ -622,6 +627,16 @@ theorem exists_trivialization [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜
   ⟨(trivializationAt F E x).orthonormalFrameBundle (Module.finBasisOfFinrankEq 𝕜 F h.symm)
       (stdOrthonormalBasis 𝕜 V),
     mem_baseSet_trivializationAt F E x, Trivialization.orthonormalFrameBundle_smul _ _ _⟩
+
+/-- When `V` has the dimension of the model fibre, the projection of the orthonormal frame bundle
+is a proper map, since the bundle is locally trivial with compact fibre the unitary group of `V`.
+In particular, the orthonormal frames over a compact set of the base form a compact set. -/
+theorem isProperMap_proj [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜 V]
+    (h : Module.finrank 𝕜 V = Module.finrank 𝕜 F) :
+    IsProperMap (proj : OrthonormalFrameBundle 𝕜 F E V → B) := by
+  have := FiniteDimensional.proper_rclike 𝕜 (V →L[𝕜] V)
+  exact isProperMap_of_forall_exists_trivialization fun x ↦
+    (exists_trivialization h x).imp fun _ ht ↦ ht.1
 
 /-- Applying frames to vectors is an open map from pairs of an orthonormal frame and a vector of
 `V` to the total space of `E`. -/

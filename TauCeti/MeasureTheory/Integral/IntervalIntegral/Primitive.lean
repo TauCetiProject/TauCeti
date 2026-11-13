@@ -9,10 +9,13 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.Order.ProjIcc
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Topology.Order.Interval
@@ -38,6 +41,12 @@ used to identify weak derivatives on an interval with ordinary primitives.
   `TauCeti.intervalIntegral.eLpNorm_primitive_le_mul_eLpNorm`: on a bounded interval `(a, b)`,
   the primitive based at a point of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`, so its
   `Lᵖ(a, b)` norm is at most `(b - a) ^ (1 / p) ‖f‖₁`, and hence at most `(b - a) ‖f‖_p`.
+* `TauCeti.intervalIntegral.continuous_of_forall_eq_add_integral`,
+  `TauCeti.intervalIntegral.norm_le_of_forall_eq_add_integral` and
+  `TauCeti.intervalIntegral.isCompact_closure_range_of_forall_eq_add_integral`: a family of
+  primitives `c + ∫_{t₀}^· d v` in `C([a, b], E)` is continuous in `v` when `d v` is continuous in
+  `v` in `L¹(a, b)`, is bounded by `‖c‖ + ∫ B` when `‖d v‖ ≤ B`, and then has relatively compact
+  range (Arzelà–Ascoli).
 * `TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le`: integration by parts
   between a `C¹` real function `φ` and the primitive of an integrable `f`, which need not be
   differentiable anywhere:
@@ -94,19 +103,10 @@ theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Io
     (ht₀ : t₀ ∈ Icc a b) :
     eLpNorm (fun t ↦ ∫ s in t₀..t, f s) p (volume.restrict (Ioo a b)) ≤
       volume (Ioo a b) ^ p.toReal⁻¹ * eLpNorm f 1 (volume.restrict (Ioo a b)) := by
-  have hf' : IntegrableOn f (Icc a b) := by rwa [integrableOn_Icc_iff_integrableOn_Ioo]
   have hbound : ∀ᵐ t ∂volume.restrict (Ioo a b),
       ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ioo a b, ‖f s‖ := by
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-    -- The oriented interval between `t₀` and `t` lies in `[a, b]`.
-    have hsub : Ι t₀ t ⊆ Icc a b := uIoc_subset_uIcc.trans
-      (uIcc_subset_Icc ht₀ (Ioo_subset_Icc_self ht))
-    calc ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ι t₀ t, ‖f s‖ :=
-          _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
-      _ ≤ ∫ s in Icc a b, ‖f s‖ :=
-          setIntegral_mono_set hf'.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
-            hsub.eventuallyLE
-      _ = ∫ s in Ioo a b, ‖f s‖ := integral_Icc_eq_integral_Ioo
+    exact norm_integral_le_setIntegral_norm hf ht₀ (Ioo_subset_Icc_self ht)
   have hm : AEStronglyMeasurable (fun t ↦ ∫ s in t₀..t, f s) (volume.restrict (Ioo a b)) :=
     ((continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).mono
       Ioo_subset_Icc_self).aestronglyMeasurable measurableSet_Ioo
@@ -114,8 +114,8 @@ theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Io
       ≤ volume.restrict (Ioo a b) univ ^ p.toReal⁻¹ *
           ENNReal.ofReal (∫ s in Ioo a b, ‖f s‖) := eLpNorm_le_of_ae_bound hm hbound
     _ = volume (Ioo a b) ^ p.toReal⁻¹ * eLpNorm f 1 (volume.restrict (Ioo a b)) := by
-      rw [Measure.restrict_apply_univ, ofReal_integral_norm_eq_lintegral_enorm hf,
-        eLpNorm_one_eq_lintegral_enorm hf.aestronglyMeasurable]
+      rw [Measure.restrict_apply_univ, ofReal_integral_norm_eq_lintegral_eNorm hf,
+        eLpNorm_one_eq_lintegral_eNorm hf.aestronglyMeasurable]
 
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s`, based at a point `t₀` of
 `[a, b]`, is at most `b - a` times the `Lᵖ(a, b)` norm of `f`, for `1 ≤ p ≤ ∞`. -/
@@ -143,6 +143,72 @@ theorem eLpNorm_primitive_le_mul_eLpNorm {p : ENNReal} (hp : 1 ≤ p) {t₀ : �
           simp
         rw [← hpow]
         ring
+
+/-! ### Families of primitives -/
+
+section Family
+
+variable {X : Type*} {μ : Measure ℝ} [NullSingletonClass μ] {t₀ : ℝ} {c : E}
+
+/-- A family of primitives `T v = c + ∫_{t₀}^· d v ∂μ` on `[a, b]`, based at a point `t₀` of
+`[a, b]`, is continuous in `v` if the integrands `d v` depend continuously on `v` in `L¹(a, b)`. -/
+theorem continuous_of_forall_eq_add_integral [TopologicalSpace X] {d : X → ℝ → E}
+    {T : X → C(Icc a b, E)} (ht₀ : t₀ ∈ Icc a b) (hdi : ∀ v, IntegrableOn (d v) (Ioo a b) μ)
+    (hdc : ∀ v₀, Continuous fun v ↦ ∫ t in Ioo a b, ‖d v t - d v₀ t‖ ∂μ)
+    (hT : ∀ v (t : Icc a b), T v t = c + ∫ s in t₀..t, d v s ∂μ) : Continuous T := by
+  refine continuous_iff_continuousAt.2 fun v₀ ↦ tendsto_iff_dist_tendsto_zero.2 ?_
+  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun v ↦ ?_) (by simpa using (hdc v₀).tendsto v₀)
+  refine (ContinuousMap.dist_le (integral_nonneg fun _ ↦ norm_nonneg _)).2 fun t ↦ ?_
+  rw [hT, hT, dist_eq_norm, add_sub_add_left_eq_sub, ← _root_.intervalIntegral.integral_sub
+    ((hdi v).intervalIntegrable_of_mem_Icc ht₀ t.2)
+    ((hdi v₀).intervalIntegrable_of_mem_Icc ht₀ t.2)]
+  exact norm_integral_le_setIntegral_norm ((hdi v).sub (hdi v₀)) ht₀ t.2
+
+/-- A primitive `g = c + ∫_{t₀}^· d ∂μ` on `[a, b]`, based at a point `t₀` of `[a, b]`, with
+`‖d‖ ≤ B` almost everywhere on `(a, b)`, is bounded by `‖c‖ + ∫ B`. -/
+theorem norm_le_of_forall_eq_add_integral {d : ℝ → E} {B : ℝ → ℝ} {g : C(Icc a b, E)}
+    (ht₀ : t₀ ∈ Icc a b) (hdi : IntegrableOn d (Ioo a b) μ) (hBi : IntegrableOn B (Ioo a b) μ)
+    (hdB : ∀ᵐ t ∂μ.restrict (Ioo a b), ‖d t‖ ≤ B t)
+    (hg : ∀ t : Icc a b, g t = c + ∫ s in t₀..t, d s ∂μ) :
+    ‖g‖ ≤ ‖c‖ + ∫ t in Ioo a b, B t ∂μ := by
+  have hB := integral_mono_ae hdi.norm hBi hdB
+  refine (ContinuousMap.norm_le _ (add_nonneg (norm_nonneg _)
+    ((integral_nonneg fun _ ↦ norm_nonneg _).trans hB))).2 fun t ↦ ?_
+  rw [hg]
+  exact (norm_add_le _ _).trans
+    (add_le_add le_rfl ((norm_integral_le_setIntegral_norm hdi ht₀ t.2).trans hB))
+
+/-- **Arzelà–Ascoli for primitives.** A family of primitives `T v = c + ∫_{t₀}^· d v ∂μ` on
+`[a, b]`, based at a point `t₀` of `[a, b]`, whose integrands are dominated almost everywhere on
+`(a, b)` by a fixed integrable function `B` has relatively compact range. -/
+theorem isCompact_closure_range_of_forall_eq_add_integral [ProperSpace E] {d : X → ℝ → E}
+    {B : ℝ → ℝ} {T : X → C(Icc a b, E)} (ht₀ : t₀ ∈ Icc a b)
+    (hdi : ∀ v, IntegrableOn (d v) (Ioo a b) μ) (hBi : IntegrableOn B (Ioo a b) μ)
+    (hdB : ∀ v, ∀ᵐ t ∂μ.restrict (Ioo a b), ‖d v t‖ ≤ B t)
+    (hT : ∀ v (t : Icc a b), T v t = c + ∫ s in t₀..t, d v s ∂μ) :
+    IsCompact (closure (range T)) := by
+  -- The increments of `T v` are bounded by those of the primitive of `B`.
+  have hTinc : ∀ v (y z : Icc a b), dist (T v y) (T v z) ≤ |∫ s in y..z, B s ∂μ| :=
+    fun v y z ↦ by
+      rw [hT, hT, dist_eq_norm, add_sub_add_left_eq_sub, norm_sub_rev,
+        _root_.intervalIntegral.integral_interval_sub_left
+          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ z.2)
+          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ y.2)]
+      exact norm_integral_le_abs_of_ae_norm_le hBi (hdB v) y.2 z.2
+  set R := ‖c‖ + ∫ t in Ioo a b, B t ∂μ
+  refine ArzelaAscoli.isCompact_closure_range_of_equicontinuous (fun y ↦ ?_)
+    fun _ ↦ ⟨Metric.closedBall 0 R, isCompact_closedBall 0 R, fun v ↦ ?_⟩
+  · refine Metric.equicontinuousAt_of_continuity_modulus
+      (fun z : Icc a b ↦ |∫ s in y..z, B s ∂μ|) ?_ _
+      (Eventually.of_forall fun z v ↦ hTinc v y z)
+    have hBc : Continuous fun z : Icc a b ↦ ∫ s in y..z, B s ∂μ :=
+      (continuousOn_primitive_interval_of_integrableOn_Ioo hBi y.2).comp_continuous
+        continuous_subtype_val Subtype.prop
+    simpa using hBc.abs.tendsto y
+  · exact mem_closedBall_zero_iff.2 (((T v).norm_coe_le_norm _).trans
+      (norm_le_of_forall_eq_add_integral ht₀ (hdi v) hBi (hdB v) (hT v)))
+
+end Family
 
 variable [CompleteSpace E]
 
