@@ -76,19 +76,12 @@ theorem smul_eq_decompose_zero_smul_of_concentrated [GradedAlgebra 𝒜]
     {N : GradedModuleCat.{v} 𝒜} {p : ℤ}
     (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (a : A) (x : N) :
     a • x = (DirectSum.decompose 𝒜 a 0 : A) • x := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | add a b ha hb => simpa only [add_smul, decompose_add, DirectSum.add_apply,
-      Submodule.coe_add] using congrArg₂ (· + ·) ha hb
-  | @homogeneous i a =>
-    by_cases hi : i = 0
-    · subst i
-      rw [decompose_of_mem_same 𝒜 a.property]
-    · rw [decompose_of_mem_ne 𝒜 a.property hi, zero_smul]
-      have hx : x ∈ N.grading.piece p := (piece_eq_top_of_concentrated hN).symm ▸
-        Submodule.mem_top
-      simpa only [vadd_eq_add, hN (i + p) (by omega), Submodule.mem_bot] using
-        SetLike.GradedSMul.smul_mem (B := N.grading.piece) a.property hx
+  have hmem (y : N) : y ∈ N.grading.piece p :=
+    (piece_eq_top_of_concentrated hN).symm ▸ Submodule.mem_top
+  have h := DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 N.grading.piece
+    (a := a) (i := 0) (hmem x)
+  rw [zero_add, decompose_of_mem_same N.grading.piece (hmem (a • x))] at h
+  exact h
 
 /-- A degree-zero-linear map between modules concentrated in the same degree is a graded
 `A`-linear map. The degree-zero scalar actions are the restrictions of the given `A`-actions. -/
