@@ -9,9 +9,6 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Ear.Basic
 public import TauCeti.Combinatorics.Graph.OfSimpleGraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Ear.Basic
 
-import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
-import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
-
 /-!
 # Ear decompositions of simple graphs as multigraph ear decompositions
 
@@ -314,6 +311,10 @@ theorem length_toGraph (d : G.EarDecomposition H) : d.toGraph.length = d.length 
 theorem graphAfter_toGraph (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
     d.toGraph.graphAfter i = (d.subgraphAfter i).toGraph := rfl
 
+@[simp]
+theorem earAt_toGraph (d : G.EarDecomposition H) (i : Fin d.length) :
+    d.toGraph.earAt i = ⟨(d.subgraphAfter i.castSucc).toGraph, (d.earAt i).toGraph⟩ := rfl
+
 theorem initial_toGraph (d : G.EarDecomposition H) : d.toGraph.initial = d.initial.toGraph := by
   rw [Graph.EarDecomposition.initial_eq_graphAfter, ← subgraphAfter_zero]
 
@@ -465,27 +466,21 @@ theorem EarDecomposition.toGraph_prefix {H : G.Subgraph} (d : G.EarDecomposition
   refine Graph.EarDecomposition.ext _ _ hlen ?_ ?_ ?_
   · refine (Fin.heq_fun_iff (congrArg (· + 1) hlen)).mpr fun i ↦ ?_
     let j : Fin (k + 1) := Fin.cast (congrArg (· + 1) hleft) i
-    have hi : i = Fin.cast (congrArg (· + 1) hleft).symm j := Fin.ext rfl
     have hj : (⟨i, congrArg (· + 1) hlen ▸ i.2⟩ :
         Fin ((d.toGraph.prefix k).length + 1)) =
         Fin.cast (congrArg (· + 1) hright).symm j := Fin.ext rfl
-    rw [hj, hi, EarDecomposition.graphAfter_toGraph,
-      show Fin.cast (congrArg (· + 1) hleft).symm j = j from Fin.ext rfl,
-      Graph.EarDecomposition.graphAfter_prefix,
-      EarDecomposition.graphAfter_toGraph,
-      SimpleGraph.EarDecomposition.subgraphAfter_prefix]
+    rw [hj, Graph.EarDecomposition.graphAfter_prefix, EarDecomposition.graphAfter_toGraph,
+      EarDecomposition.graphAfter_toGraph]
+    exact congrArg Subgraph.toGraph (d.subgraphAfter_prefix k j)
   · exact (d.toGraph.heq_start_prefix k).symm
   · refine (Fin.heq_fun_iff hlen).mpr fun i ↦ ?_
     let j : Fin k := Fin.cast hleft i
-    have hi : i = Fin.cast hleft.symm j := Fin.ext rfl
     have hj : (⟨i, hlen ▸ i.2⟩ : Fin (d.toGraph.prefix k).length) =
         Fin.cast hright.symm j := Fin.ext rfl
-    rw [hj, hi, Graph.EarDecomposition.earAt_prefix]
-    change (⟨_, ((d.prefix k).earAt (Fin.cast hleft.symm j)).toGraph⟩ :
-        Σ K : Graph α (Sym2 α), (Graph.ofSimpleGraph G).Ear K) = _
-    rw [show Fin.cast hleft.symm j = j from Fin.ext rfl,
-      SimpleGraph.EarDecomposition.earAt_prefix]
-    rfl
+    rw [hj, Graph.EarDecomposition.earAt_prefix, EarDecomposition.earAt_toGraph,
+      EarDecomposition.earAt_toGraph]
+    exact Sigma.ext (congrArg Subgraph.toGraph (d.subgraphAfter_prefix k j.castSucc))
+      (heq_of_eq (congrArg Ear.toGraph (d.earAt_prefix k j)))
 
 /-- Ear decompositions of a subgraph `H` of a simple graph `G` correspond to ear decompositions of
 `H.toGraph` in `Graph.ofSimpleGraph G`. -/

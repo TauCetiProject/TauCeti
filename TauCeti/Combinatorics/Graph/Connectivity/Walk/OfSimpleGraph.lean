@@ -9,7 +9,6 @@ public import TauCeti.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 public import TauCeti.Combinatorics.Graph.OfSimpleGraph
 
 /-!
