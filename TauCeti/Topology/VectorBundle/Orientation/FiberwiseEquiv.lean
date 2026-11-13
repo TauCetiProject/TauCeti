@@ -11,8 +11,8 @@ public import TauCeti.Topology.VectorBundle.Thom.FiberwiseEquiv
 /-!
 # Thom and Euler classes of isomorphic oriented bundles
 
-Let `E' → B'` and `E → B` be real vector bundles with model fibre `F` of dimension `n + 1`, with
-orientations `o'` and `o`, and let `φ b' : E'_{b'} ≃ E_{g b'}` be a fibrewise isomorphism over a
+Let `E' → B'` and `E → B` be real vector bundles of rank `n + 1`, with model fibres `F'` and `F`
+and orientations `o'` and `o`, and let `φ b' : E'_{b'} ≃ E_{g b'}` be a fibrewise isomorphism over a
 continuous map `g : B' → B` (with continuous total-space map). If `φ` is orientation preserving,
 that is, `φ b'` carries `o' b'` to `o (g b')` for every `b'`, then the map of Thom pairs
 `(E', E'₀) ⟶ (E, E₀)` of `φ` (`TauCeti.thomPairMapOfFiberwise`) pulls the integral Thom class of
@@ -58,12 +58,13 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
 
 section BaseMap
 
-variable {B' : Type w} [TopologicalSpace B'] {E' : B' → Type w}
-  [TopologicalSpace (TotalSpace F E')] [∀ b, AddCommMonoid (E' b)] [∀ b, Module ℝ (E' b)]
-  [∀ b, TopologicalSpace (E' b)] [FiberBundle F E'] [VectorBundle ℝ F E']
-  (o' : VectorBundleOrientation F E' (Fin (n + 1))) {g : C(B', B)}
+variable {B' : Type w} [TopologicalSpace B'] {F' : Type w} [NormedAddCommGroup F']
+  [NormedSpace ℝ F'] {E' : B' → Type w} [TopologicalSpace (TotalSpace F' E')]
+  [∀ b, AddCommMonoid (E' b)] [∀ b, Module ℝ (E' b)] [∀ b, TopologicalSpace (E' b)]
+  [FiberBundle F' E'] [VectorBundle ℝ F' E']
+  (o' : VectorBundleOrientation F' E' (Fin (n + 1))) (hF' : finrank ℝ F' = n + 1) {g : C(B', B)}
   {φ : ∀ b', E' b' ≃L[ℝ] E (g b')}
-  (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2))
+  (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2))
 
 include hφ
 
@@ -74,8 +75,8 @@ every `b'`, the map of Thom pairs of `φ` pulls the Thom class of `(E, o)` back 
 theorem singularCohomologyMap_thomPairMapOfFiberwise_thomClass
     (ho : ∀ b', Orientation.map (Fin (n + 1)) (φ b').toLinearEquiv (o' b') = o (g b')) :
     TopPair.singularCohomologyMap (thomPairMapOfFiberwise hφ) (n + 1) (o.thomClass hF) =
-      o'.thomClass hF := by
-  refine (eq_thomClass_iff o' hF _).2 fun e' _ b' hb' ↦ ?_
+      o'.thomClass hF' := by
+  refine (eq_thomClass_iff o' hF' _).2 fun e' _ b' hb' ↦ ?_
   -- On the fibre over `b'`, the pulled-back class is the generator selected by `o (g b')`, pulled
   -- back along `φ b'` followed by the preferred trivialization at `g b'`.
   have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) (g b')
@@ -87,7 +88,7 @@ theorem singularCohomologyMap_thomPairMapOfFiberwise_thomClass
     Trivialization.mapOrientation_apply, ← ho, ← Orientation.map_trans]
   -- The generator selected by `o' b'` does not depend on the linear isomorphism `E'_{b'} ≃ F`
   -- used to read it.
-  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o' b') _ _ hF
+  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o' b') _ _ hF hF'
 
 /-- **Orientation-reversing bundle maps negate the Thom class.** For a fibrewise isomorphism
 `φ b' : E'_{b'} ≃ E_{g b'}` over `g` carrying the orientation `o' b'` to `-o (g b')` for every `b'`,
@@ -96,8 +97,8 @@ of `(E', o')`. -/
 theorem singularCohomologyMap_thomPairMapOfFiberwise_thomClass_of_map_eq_neg
     (ho : ∀ b', Orientation.map (Fin (n + 1)) (φ b').toLinearEquiv (o' b') = -o (g b')) :
     TopPair.singularCohomologyMap (thomPairMapOfFiberwise hφ) (n + 1) (o.thomClass hF) =
-      -o'.thomClass hF := by
-  have h := (-o).singularCohomologyMap_thomPairMapOfFiberwise_thomClass hF o' hφ ho
+      -o'.thomClass hF' := by
+  have h := (-o).singularCohomologyMap_thomPairMapOfFiberwise_thomClass hF o' hF' hφ ho
   rw [thomClass_neg, map_neg] at h
   exact neg_eq_iff_eq_neg.1 h
 
@@ -107,9 +108,10 @@ every `b'`, the Euler class of `(E', o')` is the pull-back along `g` of the Eule
 `(E, o)`. -/
 theorem eulerClass_eq_singularCohomologyMap_of_fiberwise
     (ho : ∀ b', Orientation.map (Fin (n + 1)) (φ b').toLinearEquiv (o' b') = o (g b')) :
-    o'.eulerClass hF = TopCat.singularCohomologyMap (TopCat.ofHom g) (n + 1) (o.eulerClass hF) := by
+    o'.eulerClass hF' =
+      TopCat.singularCohomologyMap (TopCat.ofHom g) (n + 1) (o.eulerClass hF) := by
   rw [eulerClass_def, eulerClass_def,
-    ← o.singularCohomologyMap_thomPairMapOfFiberwise_thomClass hF o' hφ ho]
+    ← o.singularCohomologyMap_thomPairMapOfFiberwise_thomClass hF o' hF' hφ ho]
   exact ConcreteCategory.congr_hom (eulerClass_thomPairMapOfFiberwise hφ (n + 1)) (o.thomClass hF)
 
 /-- **Orientation-reversing bundle maps negate the Euler class.** For a fibrewise isomorphism
@@ -118,19 +120,21 @@ the Euler class of `(E', o')` is the negative of the pull-back along `g` of the 
 `(E, o)`. -/
 theorem eulerClass_eq_neg_singularCohomologyMap_of_fiberwise
     (ho : ∀ b', Orientation.map (Fin (n + 1)) (φ b').toLinearEquiv (o' b') = -o (g b')) :
-    o'.eulerClass hF =
+    o'.eulerClass hF' =
       -TopCat.singularCohomologyMap (TopCat.ofHom g) (n + 1) (o.eulerClass hF) := by
   rw [← map_neg, ← eulerClass_neg]
-  exact (-o).eulerClass_eq_singularCohomologyMap_of_fiberwise hF o' hφ ho
+  exact (-o).eulerClass_eq_singularCohomologyMap_of_fiberwise hF o' hF' hφ ho
 
 end BaseMap
 
 section Isomorphism
 
-variable {E' : B → Type w} [TopologicalSpace (TotalSpace F E')] [∀ b, AddCommMonoid (E' b)]
-  [∀ b, Module ℝ (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E'] [VectorBundle ℝ F E']
-  (o' : VectorBundleOrientation F E' (Fin (n + 1))) {φ : ∀ b, E' b ≃L[ℝ] E b}
-  (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2))
+variable {F' : Type w} [NormedAddCommGroup F'] [NormedSpace ℝ F'] {E' : B → Type w}
+  [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)] [∀ b, Module ℝ (E' b)]
+  [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] [VectorBundle ℝ F' E']
+  (o' : VectorBundleOrientation F' E' (Fin (n + 1))) (hF' : finrank ℝ F' = n + 1)
+  {φ : ∀ b, E' b ≃L[ℝ] E b}
+  (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2))
 
 include hφ
 
@@ -139,8 +143,9 @@ bundles `φ b : E'_b ≃ E_b` over the same base carrying the orientation `o' b`
 `b`, the Euler classes of `(E', o')` and `(E, o)` agree. -/
 theorem eulerClass_eq_of_fiberwise
     (ho : ∀ b, Orientation.map (Fin (n + 1)) (φ b).toLinearEquiv (o' b) = o b) :
-    o'.eulerClass hF = o.eulerClass hF :=
-  (o.eulerClass_eq_singularCohomologyMap_of_fiberwise hF o' (g := ContinuousMap.id B) hφ ho).trans
+    o'.eulerClass hF' = o.eulerClass hF :=
+  (o.eulerClass_eq_singularCohomologyMap_of_fiberwise hF o' hF' (g := ContinuousMap.id B) hφ
+    ho).trans
     (ConcreteCategory.congr_hom (TopCat.singularCohomologyMap_id _ (n + 1)) _)
 
 /-- **Orientation-reversing isomorphisms negate the Euler class.** For an isomorphism of real
@@ -148,9 +153,9 @@ vector bundles `φ b : E'_b ≃ E_b` over the same base carrying the orientation
 every `b`, the Euler class of `(E', o')` is the negative of that of `(E, o)`. -/
 theorem eulerClass_eq_neg_of_fiberwise
     (ho : ∀ b, Orientation.map (Fin (n + 1)) (φ b).toLinearEquiv (o' b) = -o b) :
-    o'.eulerClass hF = -o.eulerClass hF := by
+    o'.eulerClass hF' = -o.eulerClass hF := by
   rw [← eulerClass_neg]
-  exact (-o).eulerClass_eq_of_fiberwise hF o' hφ ho
+  exact (-o).eulerClass_eq_of_fiberwise hF o' hF' hφ ho
 
 end Isomorphism
 

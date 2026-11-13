@@ -80,22 +80,10 @@ theorem memLp_wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_iff {r : ℝ} (hr 
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp_top : p ≠ ∞) :
     MemLp (fun w => wirtingerDeriv
       (fun v => (π : ℂ)⁻¹ * ∫ z in ball c r, (v - z)⁻¹) w 1) p volume ↔ 1 < p.toReal := by
-  rw [memLp_congr_ae (ae_wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball hr.le c)]
-  have htrans := (MeasurableEquiv.addLeft c).memLp_map_measure_iff
-    (g := (closedBall c r)ᶜ.indicator (fun w => -(r : ℂ)^2/(w - c)^2)) (p := p) (μ := volume)
-  have hpres : MeasurePreserving (MeasurableEquiv.addLeft c : ℂ → ℂ) volume volume :=
-    measurePreserving_add_left volume c
-  rw [hpres.map_eq] at htrans
-  have heq : (closedBall c r)ᶜ.indicator (fun w => -(r : ℂ)^2/(w - c)^2) ∘
-      (MeasurableEquiv.addLeft c : ℂ → ℂ) =
-      (closedBall (0 : ℂ) r)ᶜ.indicator (fun w => -(r : ℂ)^2/w^2) := by
-    funext w
-    simp [Set.indicator, mem_closedBall, dist_eq_norm, Function.comp_apply, MeasurableEquiv.addLeft]
-  rw [heq] at htrans
-  refine htrans.trans ?_
-  rw [memLp_indicator_iff_restrict measurableSet_closedBall.compl.nullMeasurableSet]
-  rw [memLp_div_pow_compl_closedBall_iff
-    (neg_ne_zero.mpr (pow_ne_zero 2 (Complex.ofReal_ne_zero.mpr hr.ne'))) hr 2 hp0 hp_top]
+  rw [memLp_congr_ae (ae_wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball hr.le c),
+    memLp_indicator_iff_restrict measurableSet_closedBall.compl.nullMeasurableSet,
+    memLp_div_sub_pow_compl_closedBall_iff
+      (neg_ne_zero.mpr (pow_ne_zero 2 (Complex.ofReal_ne_zero.mpr hr.ne'))) c hr 2 hp0 hp_top]
   norm_num
 
 /-- The actual disc Cauchy integral is essentially bounded, including a degenerate disc. -/

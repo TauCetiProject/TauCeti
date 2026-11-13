@@ -11,8 +11,6 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
@@ -28,12 +26,7 @@ since Mathlib's derivative is `0` wherever it is undefined. Mathlib's
 `iteratedDeriv_comp_const_smul` states the same formula under a `ContDiff` hypothesis.
 
 The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the constant `2 c`, and
-the affine line `t ↦ a + t • b` has constant derivative `b` and vanishing second derivative; in
-particular the scalar affine function `s ↦ c s + d` has derivative `c`.
-
-A linear fractional function `s ↦ (a s + b) / (c s + d)` has derivative
-`(a d - b c) / (c s + d) ^ 2` and second derivative `-2 c (a d - b c) / (c s + d) ^ 3` away from
-its pole.
+the affine line `t ↦ a + t • b` has constant derivative `b` and vanishing second derivative.
 
 The second derivative of the square root of a quadratic polynomial `Q s = a + b s + c s ^ 2` is
 computed where `Q` is positive. Since `2 Q Q'' - Q' ^ 2` is the constant `4 a c - b ^ 2`, it is
@@ -51,10 +44,7 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
   `TauCeti.deriv_deriv_comp_mul_left` its second derivative.
 * `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
 * `TauCeti.deriv_const_add_smul`, `TauCeti.iteratedDeriv_two_const_add_smul`: the first and
-  second derivatives of the affine line `t ↦ a + t • b`, and `TauCeti.hasDerivAt_mul_add` the
-  derivative of `s ↦ c * s + d`.
-* `TauCeti.hasDerivAt_linearFractional`, `TauCeti.deriv_deriv_linearFractional`: the first and
-  second derivatives of `s ↦ (a s + b) / (c s + d)`.
+  second derivatives of the affine line `t ↦ a + t • b`.
 * `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
 * `TauCeti.sq_mul_deriv_deriv_comp_log`, `TauCeti.deriv_deriv_comp_exp`: the second derivatives
@@ -124,10 +114,6 @@ variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] 
 theorem deriv_const_add_smul (a b : F) : deriv (fun t : 𝕜 ↦ a + t • b) = fun _ ↦ b :=
   funext fun t ↦ by simpa using (((hasDerivAt_id t).smul_const b).const_add a).deriv
 
-/-- The affine function `s ↦ c * s + d` has derivative `c`. -/
-theorem hasDerivAt_mul_add (c d t : 𝕜) : HasDerivAt (fun s ↦ c * s + d) c t := by
-  simpa using ((hasDerivAt_id t).const_mul c).add_const (c := d)
-
 /-- The second derivative of the affine line `t ↦ a + t • b` vanishes. -/
 @[simp]
 theorem iteratedDeriv_two_const_add_smul (a b : F) :
@@ -136,35 +122,6 @@ theorem iteratedDeriv_two_const_add_smul (a b : F) :
     Pi.zero_def]
 
 end AffineLine
-
-section LinearFractional
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a b c d t : 𝕜}
-
-/-- Away from its pole, the linear fractional function `s ↦ (a * s + b) / (c * s + d)` has
-derivative `(a * d - b * c) / (c * t + d) ^ 2` at `t`. -/
-theorem hasDerivAt_linearFractional (ht : c * t + d ≠ 0) :
-    HasDerivAt (fun s ↦ (a * s + b) / (c * s + d)) ((a * d - b * c) / (c * t + d) ^ 2) t := by
-  convert (hasDerivAt_mul_add a b t).div (hasDerivAt_mul_add c d t) ht using 1
-  ring
-
-/-- Away from its pole, the linear fractional function `s ↦ (a * s + b) / (c * s + d)` has second
-derivative `-2 * c * (a * d - b * c) / (c * t + d) ^ 3` at `t`. -/
-theorem deriv_deriv_linearFractional (ht : c * t + d ≠ 0) :
-    deriv (deriv fun s ↦ (a * s + b) / (c * s + d)) t =
-      -2 * c * (a * d - b * c) / (c * t + d) ^ 3 := by
-  have hq := hasDerivAt_mul_add c d t
-  have hderiv : deriv (fun s ↦ (a * s + b) / (c * s + d)) =ᶠ[𝓝 t]
-      fun s ↦ (a * d - b * c) / (c * s + d) ^ 2 := by
-    filter_upwards [hq.continuousAt.eventually_ne ht] with s hs
-    exact (hasDerivAt_linearFractional hs).deriv
-  rw [hderiv.deriv_eq]
-  convert ((hasDerivAt_const t (a * d - b * c)).div (hq.pow 2) (pow_ne_zero 2 ht)).deriv using 1
-  simp only [Pi.pow_apply, Nat.cast_ofNat]
-  field_simp
-  ring
-
-end LinearFractional
 
 /-- The second derivative of the square root of a quadratic polynomial
 `Q s = a + b * s + c * s ^ 2` at a point `t` where `Q` is positive is
