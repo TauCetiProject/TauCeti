@@ -206,19 +206,20 @@ theorem cartanProjection_pbwHomogeneousSymmetrization_sub_mem_pbwFiltrationPrevi
   obtain ⟨t, rfl⟩ := (SymmetricPower.equivHomogeneous (R := K) (M := L) n).surjective p
   rw [UniversalEnvelopingAlgebra.pbwHomogeneousSymmetrization_equivHomogeneous,
     SymmetricPower.coe_equivHomogeneous_apply]
-  refine LinearMap.apply_mem_of_forall_symmetricPower_tprod
+  refine LinearMap.apply_mem_of_forall_finTprod
     (cartanProjection b ∘ₗ UniversalEnvelopingAlgebra.pbwSymmetrization K L n hn -
       (UniversalEnvelopingAlgebra.symmetricAlgebraEquiv K H).toLinearMap ∘ₗ
         (lieCartanRestriction H).toLinearMap ∘ₗ SymmetricPower.toSymmetricAlgebra K L n)
     _ (fun m ↦ ?_) t
   -- the restriction of the product of the `m i` is the product of the generators `π (m i)`
   have hres : UniversalEnvelopingAlgebra.symmetricAlgebraEquiv K H
-      (lieCartanRestriction H (SymmetricPower.toSymmetricAlgebra K L n (⨂ₛ[K] i, m i))) =
+      (lieCartanRestriction H
+        (SymmetricPower.toSymmetricAlgebra K L n (SymmetricPower.finTprod K n m))) =
         (List.ofFn fun i ↦
           _root_.UniversalEnvelopingAlgebra.ι K (killingCartanProjection H (m i))).prod := by
     simp [List.prod_ofFn]
   have hsym : cartanProjection b (UniversalEnvelopingAlgebra.pbwSymmetrization K L n hn
-        (⨂ₛ[K] i, m i)) -
+        (SymmetricPower.finTprod K n m)) -
       cartanProjection b (List.ofFn fun i ↦ _root_.UniversalEnvelopingAlgebra.ι K (m i)).prod ∈
         UniversalEnvelopingAlgebra.pbwFiltrationPrevious K H n := by
     rw [← map_sub]

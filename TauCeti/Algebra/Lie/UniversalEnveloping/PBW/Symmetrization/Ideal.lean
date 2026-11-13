@@ -40,9 +40,9 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open TauCeti.SymmetricAlgebra
 
-universe v
+universe u v
 
-variable {R : Type} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 

@@ -22,9 +22,9 @@ determined by its values on pure symmetric tensors, this says that composing wit
 symmetric tensor `⨂ₛ` is a bijection from the linear maps `Sym[R] ι M →ₗ[R] N` onto the
 permutation-invariant multilinear maps `Mⁱ → N`, for every `N`.
 
-As a first use, prepending a fixed factor to a pure tensor is permutation-invariant in the remaining
-factors, so it lifts to `SymmetricPower.consMul : M →ₗ[R] Sym[R]^k M →ₗ[R] Sym[R]^(k + 1) M`.
-Since `Sym[R]^k M` is indexed by `Fin k`, this part takes the scalars in `Type`.
+Prepending a fixed factor to a pure tensor is permutation-invariant in the remaining factors, so
+it lifts to `SymmetricPower.consMul`. We index the symmetric powers by `ULift (Fin k)` in the
+scalar universe, and use `SymmetricPower.finTprod` to form tensors from families on `Fin k`.
 
 ## Main definitions
 
@@ -90,20 +90,83 @@ theorem lift_tprod (hf : ∀ e : Equiv.Perm ι, f.domDomCongr e = f) (m : ι →
 
 end Lift
 
+section Reindex
+
+variable [CommSemiring R] [AddCommMonoid M] [Module R M] {κ : Type u}
+
+private noncomputable def reindexLinear (e : ι ≃ κ) :
+    SymmetricPower R ι M →ₗ[R] SymmetricPower R κ M :=
+  lift ((tprod R).domDomCongr e.symm) fun σ ↦
+    MultilinearMap.ext fun m ↦ by
+      simpa only [MultilinearMap.domDomCongr_apply, Equiv.permCongr_apply, Equiv.symm_apply_apply]
+        using tprod_equiv (e.permCongr σ) (fun i ↦ m (e.symm i))
+
+@[simp]
+private theorem reindexLinear_tprod (e : ι ≃ κ) (m : ι → M) :
+    reindexLinear e (⨂ₛ[R] i, m i) = ⨂ₛ[R] i, m (e.symm i) := by
+  simp [reindexLinear]
+
+/-- Reindexing the factors of a symmetric tensor power along an equivalence. -/
+noncomputable def reindex (e : ι ≃ κ) :
+    SymmetricPower R ι M ≃ₗ[R] SymmetricPower R κ M :=
+  LinearEquiv.ofLinearMap (reindexLinear e) (reindexLinear e.symm)
+    (SymmetricPower.ext fun m ↦ by simp)
+    (SymmetricPower.ext fun m ↦ by simp)
+
+/-- Reindexing a pure symmetric tensor transports its family of factors. -/
+@[simp]
+theorem reindex_tprod (e : ι ≃ κ) (m : ι → M) :
+    reindex e (⨂ₛ[R] i, m i) = ⨂ₛ[R] i, m (e.symm i) :=
+  reindexLinear_tprod e m
+
+end Reindex
+
 /-! ### Multiplication by one more factor -/
 
 section ConsMul
 
-variable {R : Type} {M : Type v} [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+variable (R) in
+/-- A pure symmetric tensor formed from a family indexed by `Fin n`. The index of the
+symmetric power is lifted to the universe of the scalars. -/
+noncomputable def finTprod (n : ℕ) :
+    (Fin n → M) →ₘₗ[R] SymmetricPower R (ULift.{u} (Fin n)) M :=
+  (tprod R).domDomCongr Equiv.ulift
+
+/-- The lifted indices of a pure tensor select the original factors via `ULift.down`. -/
+theorem finTprod_apply (n : ℕ) (m : Fin n → M) :
+    finTprod R n m = ⨂ₛ[R] (i : ULift.{u} (Fin n)), m i.down := by
+  rfl
+
+/-- Reordering the factors of a pure symmetric tensor leaves it unchanged. -/
+theorem finTprod_perm {n : ℕ} (e : Equiv.Perm (Fin n)) (m : Fin n → M) :
+    finTprod R n (m ∘ e) = finTprod R n m :=
+  tprod_equiv (Equiv.ulift.symm.permCongr e) (fun i ↦ m i.down)
+
+/-- Linear maps on the lifted symmetric power are determined by tensors formed from
+`Fin n`-indexed families. -/
+theorem fin_ext {n : ℕ} [AddCommMonoid N] [Module R N]
+    {f g : SymmetricPower R (ULift.{u} (Fin n)) M →ₗ[R] N}
+    (h : ∀ m : Fin n → M, f (finTprod R n m) = g (finTprod R n m)) : f = g :=
+  SymmetricPower.ext fun m ↦ h (fun i ↦ m ⟨i⟩)
+
+/-- A linear map out of the lifted symmetric power lands in a submodule if it does so on
+tensors formed from `Fin n`-indexed families. -/
+theorem _root_.LinearMap.apply_mem_of_forall_finTprod {n : ℕ} [AddCommMonoid N] [Module R N]
+    (f : SymmetricPower R (ULift.{u} (Fin n)) M →ₗ[R] N) (p : Submodule R N)
+    (h : ∀ m : Fin n → M, f (finTprod R n m) ∈ p) (x : SymmetricPower R (ULift.{u} (Fin n)) M) :
+    f x ∈ p :=
+  f.apply_mem_of_forall_symmetricPower_tprod p (fun m ↦ h (fun i ↦ m ⟨i⟩)) x
 
 /-- Prepending a fixed factor to a pure tensor is invariant under permutations of the remaining
 factors. -/
 theorem tprod_cons_perm_invariant (k : ℕ) (m : M) (e : Equiv.Perm (Fin k)) :
-    ((tprod R (ι := Fin (k + 1)) (M := M)).curryLeft m).domDomCongr e =
-      (tprod R).curryLeft m := by
+    ((finTprod R (k + 1)).curryLeft m).domDomCongr e =
+      (finTprod R (k + 1)).curryLeft m := by
   ext v
   simp only [MultilinearMap.domDomCongr_apply, MultilinearMap.curryLeft_apply]
-  rw [← tprod_equiv (Equiv.Perm.decomposeFin.symm (0, e)) (Fin.cons m v)]
+  rw [← finTprod_perm (Equiv.Perm.decomposeFin.symm (0, e)) (Fin.cons m v)]
   congr 1
   funext i
   cases i using Fin.cases with
@@ -113,28 +176,37 @@ theorem tprod_cons_perm_invariant (k : ℕ) (m : M) (e : Equiv.Perm (Fin k)) :
 variable (R M) in
 /-- Multiplying a symmetric tensor of degree `k` by one more factor, prepended to every pure
 tensor. -/
-noncomputable def consMul (k : ℕ) : M →ₗ[R] Sym[R]^k M →ₗ[R] Sym[R]^(k + 1) M where
-  toFun m := lift ((tprod R).curryLeft m) (tprod_cons_perm_invariant k m)
-  map_add' m m' := SymmetricPower.ext fun v ↦ by
-    simp [lift_tprod]
-  map_smul' c m := SymmetricPower.ext fun v ↦ by
-    simp [lift_tprod]
+noncomputable def consMul (k : ℕ) :
+    M →ₗ[R] SymmetricPower R (ULift.{u} (Fin k)) M →ₗ[R]
+      SymmetricPower R (ULift.{u} (Fin (k + 1))) M where
+  toFun m := lift (((finTprod R (k + 1)).curryLeft m).domDomCongr Equiv.ulift.symm) fun e ↦ by
+    ext v
+    let d : ULift.{u} (Fin k) ≃ Fin k := Equiv.ulift
+    have h : (fun i ↦ v (e (d.symm i))) = (v ∘ d.symm) ∘ d.permCongr e := by
+      funext i
+      exact congrArg v (d.left_inv (e (d.symm i))).symm
+    change (finTprod R (k + 1)).curryLeft m (fun i ↦ v (e (d.symm i))) =
+      (finTprod R (k + 1)).curryLeft m (v ∘ d.symm)
+    rw [h]
+    exact congrFun (congrArg DFunLike.coe (tprod_cons_perm_invariant k m (d.permCongr e))) _
+  map_add' m m' := SymmetricPower.ext fun v ↦ by simp
+  map_smul' c m := SymmetricPower.ext fun v ↦ by simp
 
 /-- Multiplying a pure symmetric tensor by one more factor prepends that factor. -/
 @[simp]
 theorem consMul_tprod (k : ℕ) (m : M) (v : Fin k → M) :
-    consMul R M k m (⨂ₛ[R] i, v i) = ⨂ₛ[R] i, (Fin.cons m v : Fin (k + 1) → M) i := by
-  simp [consMul, lift_tprod]
+    consMul R M k m (finTprod R k v) = finTprod R (k + 1) (Fin.cons m v) := by
+  simp [consMul, finTprod]
 
 /-- Multiplications of a symmetric tensor by two factors commute. -/
-theorem consMul_comm (k : ℕ) (m m' : M) (x : Sym[R]^k M) :
+theorem consMul_comm (k : ℕ) (m m' : M) (x : SymmetricPower R (ULift.{u} (Fin k)) M) :
     consMul R M (k + 1) m (consMul R M k m' x) = consMul R M (k + 1) m' (consMul R M k m x) := by
   suffices h : consMul R M (k + 1) m ∘ₗ consMul R M k m' =
       consMul R M (k + 1) m' ∘ₗ consMul R M k m from LinearMap.congr_fun h x
-  refine SymmetricPower.ext fun v ↦ ?_
+  refine SymmetricPower.fin_ext fun v ↦ ?_
   simp only [LinearMap.comp_apply, consMul_tprod]
-  rw [← tprod_equiv (Equiv.swap 0 1) (Fin.cons m (Fin.cons m' v))]
-  exact congrArg (fun f : Fin (k + 2) → M ↦ ⨂ₛ[R] i, f i)
+  rw [← finTprod_perm (Equiv.swap 0 1) (Fin.cons m (Fin.cons m' v))]
+  exact congrArg (finTprod R (k + 2))
     (Matrix.cons_cons_comp_swap_zero_one m m' v)
 
 end ConsMul

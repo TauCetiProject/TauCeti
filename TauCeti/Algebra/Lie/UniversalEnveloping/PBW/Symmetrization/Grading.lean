@@ -25,7 +25,7 @@ public section
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-variable {Γ : Type*} [AddCommMonoid Γ] (R : Type) (L : Type*)
+variable {Γ : Type*} [AddCommMonoid Γ] (R : Type*) (L : Type*)
   [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
   (ℒ : Γ → Submodule R L)
 

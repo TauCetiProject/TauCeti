@@ -42,9 +42,9 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 open TauCeti.SymmetricAlgebra
 open scoped TensorProduct
 
-universe v
+universe u v
 
-variable (R : Type) (L : Type v) [CommRing R] [Algebra ℚ R]
+variable (R : Type u) (L : Type v) [CommRing R] [Algebra ℚ R]
   [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -73,7 +73,8 @@ theorem pbwSymmetrizationMap_of_mem {n : ℕ} {p : SymmetricAlgebra R L} (hp : p
 /-- Multiplying a symmetric tensor and then applying the global map gives the
 degreewise permutation average. -/
 @[simp]
-theorem pbwSymmetrizationMap_toSymmetricAlgebra (n : ℕ) (x : Sym[R]^n L) :
+theorem pbwSymmetrizationMap_toSymmetricAlgebra (n : ℕ)
+    (x : SymmetricPower R (ULift.{u} (Fin n)) L) :
     pbwSymmetrizationMap R L (TauCeti.SymmetricPower.toSymmetricAlgebra R L n x) =
       TauCeti.UniversalEnvelopingAlgebra.pbwSymmetrization R L n
         (IsUnit.natCast_factorial_of_algebra ℚ n) x := by
