@@ -379,4 +379,20 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
   · rintro ⟨hx, hy, h⟩
     exact (hmem ⟨z.1, hx⟩ ⟨z.2, hy⟩).mp ((hf _ _).mpr h)
 
+/-- **The gluing is injective in the isometry.** An even unimodular overlattice of `L ⊥ M` obtained
+by gluing determines the isometry of discriminant forms used to build it. Together with
+`TauCeti.IntegralLattice.exists_eq_glueAlongDiscriminant` this is the uniqueness half of
+Nikulin's correspondence. -/
+theorem glueAlongDiscriminant_injective :
+    Function.Injective (L.glueAlongDiscriminant M hL hM) := by
+  intro e e' h
+  apply DFunLike.coe_injective
+  funext a
+  induction a using Submodule.Quotient.induction_on with
+  | _ x =>
+    obtain ⟨y, hy⟩ := Submodule.Quotient.mk_surjective _ (e (Submodule.Quotient.mk x))
+    have hmem := (L.mem_glueAlongDiscriminant_iff M hL hM e x y).mpr hy.symm
+    rw [h] at hmem
+    exact (((L.mem_glueAlongDiscriminant_iff M hL hM e' x y).mp hmem).trans hy).symm
+
 end TauCeti.IntegralLattice
