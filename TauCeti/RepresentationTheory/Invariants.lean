@@ -306,38 +306,6 @@ private theorem range_norm_free_eq_invariants (ι : Type*) :
       TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply, Finsupp.mapRange_apply,
       smul_eq_mul, ← asAlgebraHom_ofMulAction_smul_eq_mul, asAlgebraHom_single_one]
 
-omit [Fintype G] in
-/-- A representation whose underlying `k[G]`-module is projective is a retract, as a representation,
-of the free representation on its underlying module: there is an intertwining map out of the free
-representation with an intertwining section. -/
-private theorem exists_intertwiningMap_section_of_projective (ρ : Representation k G V)
-    [Module.Projective k[G] ρ.asModule] :
-    ∃ (F : IntertwiningMap
-        (ofModule' (k := k) (G := G) (ρ.asModule →₀ MonoidAlgebra k G)) ρ)
-      (S : IntertwiningMap ρ
-        (ofModule' (k := k) (G := G) (ρ.asModule →₀ MonoidAlgebra k G))), ∀ z, F (S z) = z := by
-  obtain ⟨s, hs⟩ := Module.projective_def.mp ‹Module.Projective k[G] ρ.asModule›
-  let τ := ofModule' (k := k) (G := G) (ρ.asModule →₀ MonoidAlgebra k G)
-  let E : τ.asModule ≃ₗ[k[G]] (ρ.asModule →₀ MonoidAlgebra k G) :=
-    TauCeti.Representation.ofModule'AsModuleEquiv _
-  let F : IntertwiningMap τ ρ := (IntertwiningMap.equivLinearMapAsModule τ ρ).symm
-    (Finsupp.linearCombination k[G] id ∘ₗ E.toLinearMap)
-  let S : IntertwiningMap ρ τ :=
-    (IntertwiningMap.equivLinearMapAsModule ρ τ).symm (E.symm.toLinearMap ∘ₗ s)
-  have hF_apply (z : ρ.asModule →₀ MonoidAlgebra k G) :
-      F z = ρ.asModuleEquiv
-        (Finsupp.linearCombination k[G] id (E (τ.asModuleEquiv.symm z))) := by
-    simp only [F, IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_coe]
-  have hS_apply (z : V) :
-      S z = τ.asModuleEquiv (E.symm (s (ρ.asModuleEquiv.symm z))) := by
-    simp only [S, IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_coe]
-  -- `S` is a section of `F`, because `s` is a section of `Finsupp.linearCombination`.
-  refine ⟨F, S, fun z => ?_⟩
-  simpa only [hF_apply, hS_apply, LinearEquiv.symm_apply_apply, E.apply_symm_apply,
-    LinearEquiv.apply_symm_apply] using congrArg ρ.asModuleEquiv (hs (ρ.asModuleEquiv.symm z))
-
 /-- **The norm maps onto the invariants of a projective representation.** Let `G` be finite over
 an arbitrary commutative ring `k`. If the `k[G]`-module underlying `ρ` is projective, then every
 invariant vector is the norm of a vector.
