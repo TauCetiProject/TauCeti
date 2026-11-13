@@ -176,8 +176,8 @@ Kitware, Apache-2.0); the proof here uses the accepted continuous-map theorem. -
 theorem adjoint_comp_ritzResidual_eq_zero (A : E →ₗ[𝕜] E)
     (X : F →ₗᵢ[𝕜] E) : X.toLinearMap.adjoint ∘ₗ (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ
       (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) = 0 := by
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   have h := ContinuousLinearMap.adjoint_comp_sylvester_compression
     A.toContinuousLinearMap (X := X.toContinuousLinearMap) X.isometry
   simpa only [ContinuousLinearMap.compression_def, ContinuousLinearMap.sylvester_apply,
@@ -199,13 +199,12 @@ theorem inner_map_ritzResidual_eq_zero (A : E →ₗ[𝕜] E) (X : F →ₗᵢ[�
     simp
   simpa using h
 
-/-- The real part of the pairing of the `i`-th left singular vector of `Uᗮ.starProjection ∘ X`
-with the Ritz residual of the matching right singular vector is the corresponding singular value
-times the difference of the two displayed quadratic forms: that of `A` at the left singular
-vector, and that of `Xᴴ A X` at the right singular vector. -/
-theorem IsSymmetric.re_inner_leftSingularVector_ritzResidual
-    {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
-    {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
+/-- For a subspace `U` reducing `A`, the real part of the pairing of the `i`-th left singular
+vector of `Uᗮ.starProjection ∘ X` with the Ritz residual of the matching right singular vector is
+the corresponding singular value times the difference of the two displayed quadratic forms: that
+of `A` at the left singular vector, and that of `Xᴴ A X` at the right singular vector. -/
+theorem _root_.Submodule.IsReducing.re_inner_leftSingularVector_ritzResidual
+    {A : E →ₗ[𝕜] E} {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U.IsReducing A)
     (X : F →ₗ[𝕜] E) (i : Fin (finrank 𝕜 F)) :
     RCLike.re ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X) i,
         (A ∘ₗ X - X ∘ₗ (X.adjoint ∘ₗ A ∘ₗ X))
@@ -232,9 +231,7 @@ theorem IsSymmetric.re_inner_leftSingularVector_ritzResidual
     dsimp [y]
     rw [LinearMap.leftSingularVector_def]
     exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
-  have hSyl := LinearMap.congr_fun
-    (((hA.isReducing_iff_mem_invtSubmodule U).mpr hU).sylvester_starProjection_orthogonal_comp
-      X M) v
+  have hSyl := LinearMap.congr_fun (hU.sylvester_starProjection_orthogonal_comp X M) v
   have hright :
       ⟪y, Uᗮ.starProjection.toLinearMap (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜 := by
     -- Expand composition so the projection can move across the inner product.

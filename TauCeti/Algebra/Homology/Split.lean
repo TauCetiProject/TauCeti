@@ -29,6 +29,15 @@ mathematically, the same argument works over any hereditary ring.  The result th
 statements about the homology of such complexes, such as the Künneth theorem, to complexes with
 zero differential.
 
+It also shows that a quasi-isomorphism `f : K ⟶ L` between two complexes satisfying both
+hypotheses is a homotopy equivalence with underlying morphism `f` (`HomotopyEquiv.ofQuasiIso`).
+Both complexes are homotopy equivalent to their complexes of homology objects, `f` induces a
+quasi-isomorphism between these, and a quasi-isomorphism between complexes with zero differentials
+is an isomorphism (`HomologicalComplex.isIso_of_quasiIso_of_d_eq_zero`).  So for complexes of
+vector spaces, for instance real singular chains and their subcomplexes, quasi-isomorphisms and
+homotopy equivalences are the same morphisms
+(`HomologicalComplex.quasiIso_iff_homotopyEquivalences`).
+
 For a chain complex indexed by `ℕ` whose terms and homology objects are projective, both
 hypotheses hold over any ring.  The projection of the cycles `Zₙ` onto the projective homology
 splits, so the boundaries `Bₙ = ker (Zₙ ⟶ Hₙ)` are a retract of `Zₙ`; and `Kₙ₊₁ ⟶ Bₙ` is the
@@ -79,6 +88,10 @@ inverts the differential on the complement of the cycles.  Precomposing it with 
   are projective and split off; `ChainComplex.projective_cycles_of_projective_homology` and
   `ChainComplex.isSplitMono_iCycles_of_projective_homology` are the case of projective homology in
   every degree.
+* `HomotopyEquiv.ofQuasiIso`: a quasi-isomorphism between two such complexes is a homotopy
+  equivalence.
+* `HomologicalComplex.quasiIso_iff_homotopyEquivalences`: between two such complexes, the
+  quasi-isomorphisms are exactly the homotopy equivalences.
 * `HomologicalComplex.homologyComplex`, `HomologicalComplex.toHomologyComplex` and
   `HomologicalComplex.isIso_homologyMap_toHomologyComplex`: the complex of homology objects, and
   the projection onto it when the cycles split off, a quasi-isomorphism.
@@ -447,3 +460,64 @@ theorem isSplitMono_iCycles_of_projective_homology (n : ℕ) : IsSplitMono (K.iC
   K.isSplitMono_iCycles_of_projective_homology_lt n fun _ _ ↦ inferInstance
 
 end ChainComplex
+
+namespace HomologicalComplex
+
+/-! ### Quasi-isomorphisms of split complexes -/
+
+section QuasiIso
+
+open Split
+
+variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} {c : ComplexShape ι}
+  {K L : HomologicalComplex C c} [∀ i, IsSplitMono (K.iCycles i)]
+  [∀ i, IsSplitEpi (K.homologyπ i)] [∀ i, IsSplitMono (L.iCycles i)]
+  [∀ i, IsSplitEpi (L.homologyπ i)] (f : K ⟶ L)
+
+/-- The map `G = e_K⁻¹ ≫ f ≫ e_L` between the complexes of homology objects, through the homotopy
+equivalences `e_K` and `e_L` of `K` and `L` with their homology. -/
+private def homologyComplexMap : K.homologyComplex ⟶ L.homologyComplex :=
+  (homotopyEquiv K).inv ≫ f ≫ (homotopyEquiv L).hom
+
+/-- For a quasi-isomorphism `f`, the map `G` is a quasi-isomorphism between complexes with zero
+differentials, hence an isomorphism. -/
+private instance isIso_homologyComplexMap [QuasiIso f] : IsIso (homologyComplexMap f) :=
+  have : QuasiIso (homologyComplexMap f) := by rw [homologyComplexMap]; infer_instance
+  isIso_of_quasiIso_of_d_eq_zero _ (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+/-- `f` is homotopic to `e_K ≫ G ≫ e_L⁻¹`, since `e_K ≫ e_K⁻¹` and `e_L ≫ e_L⁻¹` are homotopic to
+the identities. -/
+private def homotopyHomologyComplexMap :
+    Homotopy ((homotopyEquiv K).hom ≫ homologyComplexMap f ≫ (homotopyEquiv L).inv) f :=
+  (Homotopy.ofEq (by simp [homologyComplexMap])).trans
+    (((homotopyEquiv K).homotopyHomInvId.compRight _).trans
+      ((Homotopy.ofEq (Category.id_comp _)).trans
+        (((homotopyEquiv L).homotopyHomInvId.compLeft f).trans
+          (Homotopy.ofEq (Category.comp_id f)))))
+
+/-- **A quasi-isomorphism of split complexes is a homotopy equivalence.**  Let `f : K ⟶ L` be a
+quasi-isomorphism between complexes in an abelian category whose cycles split off their terms and
+whose homology splits off their cycles, for instance complexes of vector spaces over a division
+ring (see `TauCeti.Algebra.Homology.Semisimple`).  This is a homotopy equivalence with underlying
+morphism `f` (`HomotopyEquiv.ofQuasiIso_hom`), together with a chosen homotopy inverse and chosen
+homotopies. -/
+def _root_.HomotopyEquiv.ofQuasiIso [QuasiIso f] : HomotopyEquiv K L :=
+  -- `K ≃ H(K) ≅ H(L) ≃ L`, with the middle isomorphism `G`, and `f` is homotopic to the composite
+  (((homotopyEquiv K).trans ((HomotopyEquiv.ofIso (asIso (homologyComplexMap f))).trans
+    (homotopyEquiv L).symm))).copy (homotopyHomologyComplexMap f)
+
+/-- The homotopy equivalence `HomotopyEquiv.ofQuasiIso f` has underlying morphism `f`. -/
+@[simp]
+theorem _root_.HomotopyEquiv.ofQuasiIso_hom [QuasiIso f] : (HomotopyEquiv.ofQuasiIso f).hom = f :=
+  (rfl)
+
+/-- A morphism of complexes whose cycles split off their terms and whose homology splits off their
+cycles, such as complexes of vector spaces over a division ring, is a quasi-isomorphism exactly
+when it is a homotopy equivalence. -/
+theorem quasiIso_iff_homotopyEquivalences : QuasiIso f ↔ homotopyEquivalences C c f :=
+  ⟨fun _ ↦ ⟨.ofQuasiIso f, HomotopyEquiv.ofQuasiIso_hom f⟩,
+    fun hf ↦ homotopyEquivalences_le_quasiIso _ _ _ hf⟩
+
+end QuasiIso
+
+end HomologicalComplex

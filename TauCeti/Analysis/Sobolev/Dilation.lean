@@ -72,7 +72,7 @@ theorem eLpNorm_fderiv_comp_inv_smul (u : E → F) {r : ℝ} (hr : r ≠ 0) (p :
   rw [hfderiv, eLpNorm_const_smul r⁻¹ (fun x => fderiv ℝ u (r⁻¹ • x)) p μ,
     eLpNorm_comp_inv_smul μ (fderiv ℝ u) hr p, ← mul_assoc]
   congr 1
-  rw [Real.enorm_eq_ofReal_abs, abs_inv, ← ENNReal.ofReal_mul (by positivity),
+  rw [Real.eNorm_eq_ofReal_abs, abs_inv, ← ENNReal.ofReal_mul (by positivity),
     Real.rpow_sub (abs_pos.2 hr), Real.rpow_one, ← div_eq_inv_mul]
 
 /-- **Dilation scaling of the `Lᵖ` seminorm of the `k`-th derivative:**
@@ -91,7 +91,7 @@ theorem eLpNorm_iteratedFDeriv_comp_inv_smul {u : E → F} {k : ℕ} (hu : ContD
   rw [hiter, eLpNorm_const_smul (r⁻¹ ^ k) (fun x => iteratedFDeriv ℝ k u (r⁻¹ • x)) p μ,
     eLpNorm_comp_inv_smul μ (iteratedFDeriv ℝ k u) hr p, ← mul_assoc]
   congr 1
-  rw [Real.enorm_eq_ofReal_abs, abs_pow, abs_inv, ← ENNReal.ofReal_mul (by positivity),
+  rw [Real.eNorm_eq_ofReal_abs, abs_pow, abs_inv, ← ENNReal.ofReal_mul (by positivity),
     Real.rpow_sub (abs_pos.2 hr), Real.rpow_natCast, inv_pow, ← div_eq_inv_mul]
 
 end MeasureTheory.Measure

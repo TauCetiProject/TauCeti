@@ -180,7 +180,7 @@ theorem val_preimage_laurentPiece_mem_spaRationalFamily
     | empty =>
       refine ⟨{1}, 1, by simp, ?_⟩
       simp [rationalSubset_singleton_one, Subtype.coe_preimage_self]
-    | insert i t hi ih =>
+    | insert i t _ ih =>
       obtain ⟨T, s, hT, hts⟩ := ih
       rw [Finset.set_biInter_insert, hts, ← Set.preimage_inter]
       split_ifs

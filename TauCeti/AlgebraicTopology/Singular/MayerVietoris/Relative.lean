@@ -492,14 +492,20 @@ lemma relativeMayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
   · simp [mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnion]
   · simp [homologyMap_smallPairToUnion_comp_relativeMayerVietorisδ R hU hV n m h]
 
-include hU hV in
 /-- The map `H₀(X, U) ⊞ H₀(X, V) ⟶ H₀(X, U ∪ V)` at the end of the relative Mayer–Vietoris
-sequence is an epimorphism. -/
+sequence is an epimorphism, for any subspaces `U` and `V`: already `H₀(X, U) ⟶ H₀(X, U ∪ V)` is,
+as the maps `H₀(X) ⟶ H₀(X, A)` are. -/
 lemma epi_relativeMayerVietorisFromBiprod_zero : Epi (relativeMayerVietorisFromBiprod R U V 0) := by
-  have := isIso_homologyMap_smallPairToUnion R U V hU hV 0
-  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_left U V) (isPushout_right U V)
-  rw [← mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnion]
-  exact epi_comp _ _
+  have hj : Epi (TopPair.singularHomologyMap
+      (TopPair.ofSubsetMap (𝟙 X) (Set.subset_union_left (s := U) (t := V))) R 0) := by
+    have : Epi ((TopPair.ofSubset U).singularHomologyπ R 0 ≫ TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap (𝟙 X) (Set.subset_union_left (s := U) (t := V))) R 0) := by
+      have : Epi ((TopPair.ofSubset (U ∪ V)).singularHomologyπ R 0) := inferInstance
+      rwa [← TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (R := R)
+        (Set.subset_union_left (s := U) (t := V)) 0] at this
+    exact epi_of_epi ((TopPair.ofSubset U).singularHomologyπ R 0) _
+  unfold relativeMayerVietorisFromBiprod
+  infer_instance
 
 /-! ### Naturality -/
 
