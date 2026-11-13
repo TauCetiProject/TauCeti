@@ -49,8 +49,8 @@ The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
   `level (√N • L^∨) = N / gcd (N, c_L)`.
 * `ZLattice.IsEven.level_sqrt_level_smul_dual_dvd`: in a finite-dimensional space, the level of the
   Fricke partner divides `N`.
-* `ZLattice.IsEven.level_sqrt_level_smul_dual_eq_level_iff`: it equals `N` exactly when `N` is
-  coprime to the content.
+* `ZLattice.IsEven.level_sqrt_level_smul_dual_eq_level_iff`: for an even full lattice, it equals `N`
+  exactly when `N` is coprime to the content.
 * `ZLattice.IsEven.level_sqrt_smul_of_isUnimodular`,
   `ZLattice.IsEven.sqrt_level_smul_dual_sqrt_smul_of_isUnimodular`: for an even unimodular `L`, in
   a finite-dimensional space of positive dimension the lattice `√m • L` has level `m` for every

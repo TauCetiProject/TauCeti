@@ -58,8 +58,9 @@ so its discriminant group and every quotient `L^∨ ⧸ (L^∨ ∩ a L^∨ ∩ L
   `ZLattice.IsEven.signedDiscr_eq_one_of_isUnimodular`: for integral full lattices
   `D_L = (-1) ^ ⌊n / 2⌋ det L ≠ 0`, and `D_L = 1` for every even unimodular lattice.
 * `ZLattice.IsIntegral.signedDiscr_sqrt_smul`,
-  `ZLattice.IsIntegral.mul_signedDiscr_sqrt_level_smul_dual`: `D_{√m • L} = mⁿ D_L` and
-  `D_L * D_{√N • L^∨} = Nⁿ`, the latter in a finite-dimensional space of dimension `n`.
+  `ZLattice.IsIntegral.mul_signedDiscr_sqrt_level_smul_dual`: for an integral full lattice of rank
+  `n` and `m ≠ 0`, `D_{√m • L} = mⁿ D_L`; for an integral lattice in a finite-dimensional space of
+  dimension `n`, `D_L * D_{√N • L^∨} = Nⁿ`.
 * `ZLattice.IsIntegral.signedDiscr_rationalFormClass_ratModel`,
   `TauCeti.IntegralLattice.signedDiscr_realModel`: comparisons with the rational and real models.
 * `ZLattice.isCoprime_signedDiscr_of_isCoprime_level`,
