@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import TauCeti.CategoryTheory.Bicategory.Strict.Pseudofunctor
 
 /-!
 # Equivariant groupoid lifts of categorical group actions
@@ -614,26 +615,25 @@ lemma jointActCommIso_comp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
           (L.jointAct r a).map ((L.jointMapComp g h gh hgh).inv.app Y) =
       (L.jointMapComp g h gh hgh).inv.app ((L.jointAct p a).obj Y) ≫
         (L.jointActCommIso gh a).hom.app Y := by
-  rw [← cancel_mono ((L.jointAct r a).map ((L.jointMapComp g h gh hgh).hom.app Y))]
-  simp only [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id_app]
-  simp only [jointActCommIso_hom_app, jointMapComp_inv_app, jointMapComp_hom_app,
-    Functor.map_comp, Category.assoc, jointMap, jointAct]
-  rw [← L.joint.mapComp'_inv_whiskerRight_mapComp'₀₂₃_inv_app_assoc
-    (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc
-    (g ×ₘ a).toLoc (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc (gh ×ₘ a).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc]) (by simp [← Quiver.Hom.comp_toLoc, hgh])
-    (by simp [← Quiver.Hom.comp_toLoc, ← hgh]),
-    ← L.joint.mapComp'₀₁₃_hom_comp_whiskerLeft_mapComp'_hom_app
-    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 r ×ₘ a).toLoc
-    (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ a).toLoc (gh ×ₘ a).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc, hgh]) (by simp [← Quiver.Hom.comp_toLoc])
-    (by simp [← Quiver.Hom.comp_toLoc, ← hgh]),
-    L.joint.mapComp'₀₂₃_inv_comp_mapComp'₀₁₃_hom_app_assoc
-    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ a).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc
-    (g ×ₘ a).toLoc (h ×ₘ a).toLoc (gh ×ₘ a).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc]) (by simp [← Quiver.Hom.comp_toLoc])
-    (by simp [← Quiver.Hom.comp_toLoc, ← hgh])]
-  simp
+  have := congrArg (fun φ ↦ φ.toNatTrans.app Y)
+    (L.joint.isoMapOfCommSq_hom_whiskerRight_mapComp'
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ a) (g ×ₘ 𝟙 (SingleObj.star H)) (g ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 q ×ₘ a)).toLoc
+      (⟨by simp⟩ : CommSq (𝟙 q ×ₘ a) (h ×ₘ 𝟙 (SingleObj.star H)) (h ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 r ×ₘ a)).toLoc
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ a) (gh ×ₘ 𝟙 (SingleObj.star H)) (gh ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 r ×ₘ a)).toLoc
+      (by simp [← Quiver.Hom.comp_toLoc, hgh]) (by simp [← Quiver.Hom.comp_toLoc, hgh]))
+  beta_reduce at this
+  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
+    Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl, Category.id_comp,
+    Category.comp_id] at this
+  rw [← cancel_mono ((L.jointAct r a).map ((L.jointMapComp g h gh hgh).hom.app Y)),
+    ← cancel_epi ((L.jointMapComp g h gh hgh).hom.app ((L.jointAct p a).obj Y))]
+  simp only [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id_app, Iso.hom_inv_id_app_assoc]
+  erw [(L.jointAct r a).map_id, Category.comp_id]
+  simp only [jointActCommIso, jointMapComp_hom_app, jointMap, jointAct] at this ⊢
+  exact this.symm
 
 /-- Compatibility of the commuting isomorphisms of the joint functors with the composition
 comparisons along `H`. -/
@@ -645,25 +645,21 @@ lemma jointActCommIso_actComp {p q : Γ} (g : p ⟶ q)
           (L.jointAct q b).map ((L.jointActCommIso g a).hom.app Y) =
       (L.jointActCommIso g ab).hom.app Y ≫
         (L.jointActComp q a b ab hab).hom.app ((L.jointMap g).obj Y) := by
-  simp only [jointActCommIso_hom_app, jointActComp_hom_app, Functor.map_comp, Category.assoc,
-    jointMap, jointAct]
-  rw [L.joint.mapComp'₀₁₃_hom_comp_whiskerLeft_mapComp'_hom_app
-    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ a).toLoc (𝟙 q ×ₘ b).toLoc
-    (g ×ₘ a).toLoc (𝟙 q ×ₘ ab).toLoc (g ×ₘ ab).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc]) (by simp [← Quiver.Hom.comp_toLoc, hab])
-    (by simp [← Quiver.Hom.comp_toLoc]),
-    ← L.joint.mapComp'₀₂₃_inv_comp_mapComp'₀₁₃_hom_app_assoc
-    (𝟙 p ×ₘ a).toLoc (𝟙 p ×ₘ b).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc
-    (𝟙 p ×ₘ ab).toLoc (g ×ₘ b).toLoc (g ×ₘ ab).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc, hab]) (by simp [← Quiver.Hom.comp_toLoc])
-    (by simp [← Quiver.Hom.comp_toLoc]),
-    L.joint.mapComp'₀₁₃_hom_comp_whiskerLeft_mapComp'_hom_app_assoc
-    (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ b).toLoc
-    (g ×ₘ a).toLoc (g ×ₘ b).toLoc (g ×ₘ ab).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc]) (by simp [← Quiver.Hom.comp_toLoc])
-    (by simp [← Quiver.Hom.comp_toLoc, ← hab])]
-  rw [← Functor.map_comp_assoc]
-  simp
+  have := congrArg (fun φ ↦ φ.toNatTrans.app Y)
+    (L.joint.isoMapOfCommSq_hom_whiskerLeft_mapComp'
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ a) (g ×ₘ 𝟙 (SingleObj.star H)) (g ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 q ×ₘ a)).toLoc
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ b) (g ×ₘ 𝟙 (SingleObj.star H)) (g ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 q ×ₘ b)).toLoc
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ ab) (g ×ₘ 𝟙 (SingleObj.star H)) (g ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 q ×ₘ ab)).toLoc
+      (by simp [← Quiver.Hom.comp_toLoc, hab]) (by simp [← Quiver.Hom.comp_toLoc, hab]))
+  beta_reduce at this
+  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
+    Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl, Category.id_comp,
+    Category.comp_id] at this
+  rw [jointActComp, jointActComp, jointActCommIso, jointActCommIso, jointActCommIso]
+  exact this.symm
 
 /-- Mixed unit coherence of the joint functors: the commuting isomorphism of `F (𝟙 p, 1)` with
 `F (𝟙 p, a)` is induced by the unit comparison `F (𝟙 p, 1) ≅ 𝟭`. -/
