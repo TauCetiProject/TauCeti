@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.Binomial
 public import TauCeti.Analysis.Polynomial.L1Norm
 import Mathlib.Data.Nat.Choose.Bounds
+import TauCeti.Algebra.Polynomial.Lifts
 import TauCeti.RingTheory.Binomial
 
 /-!
@@ -53,8 +54,6 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 * `TauCeti.multichoose_X_add_one_ne_zero`: Baker's binomial polynomials are nonzero.
 * `TauCeti.multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts`: `Δ(a + L X; k)` has integral
   coefficients.
-* `TauCeti.pow_mul_eval_hasseDeriv_mem_range_intCast_of_comp_mem_lifts`: if `P(x + L X)` has
-  integral coefficients, then `L ^ m (1 / m!) P⁽ᵐ⁾(x)` is an integer.
 * `TauCeti.pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast`: Baker's
   denominator bound, `L ^ m Δ(x; k, l, m) ∈ ℤ` for integral `x`.
 * `TauCeti.lcm_pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast`: its classical
@@ -179,20 +178,6 @@ theorem multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts {k : ℕ} {L : ℤ}
       rw [sub_add_cancel] at h
       rw [eq_sub_of_add_eq h.symm]
       exact sub_mem hn (ih' _)
-
-/-- **Denominators of divided derivatives from an integral rescaled translate.** If the
-polynomial `P(x + L X)` has integral coefficients, then for every `m` the number
-`L ^ m (1 / m!) (d / dX) ^ m P` at `x` is an integer: it is the coefficient of `X ^ m` in
-`P(x + L X)`. -/
-theorem pow_mul_eval_hasseDeriv_mem_range_intCast_of_comp_mem_lifts {P : ℚ[X]} {x L : ℚ}
-    (hP : P.comp (C x + C L * X) ∈ lifts (Int.castRingHom ℚ)) (m : ℕ) :
-    L ^ m * (hasseDeriv m P).eval x ∈ Set.range (Int.cast : ℤ → ℚ) := by
-  have e : P.comp (C x + C L * X) = (taylor x P).comp (C L * X) := by
-    simp [taylor_apply, comp_assoc, add_comm]
-  rw [e, lifts_iff_coeff_lifts] at hP
-  obtain ⟨z, hz⟩ := hP m
-  rw [comp_C_mul_X_coeff, taylor_coeff, eq_intCast] at hz
-  exact ⟨z, hz.trans (mul_comm _ _)⟩
 
 /-- **Baker's denominator bound.** If each of `1, …, k` divides the integer `L`, then for every
 integer `x` and all `l, m`,

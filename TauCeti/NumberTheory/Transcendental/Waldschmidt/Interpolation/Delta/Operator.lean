@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Delta.Basic
+import TauCeti.Algebra.Polynomial.Lifts
 
 /-!
 # The delta operators of Waldschmidt's interpolation matrix
