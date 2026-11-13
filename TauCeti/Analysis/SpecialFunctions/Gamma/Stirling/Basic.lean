@@ -18,7 +18,8 @@ logarithm of Gamma satisfies
 `‖logGamma s - ((s - 1/2) log s - s + log (2π) / 2)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖)`,
 with `log` the principal branch. This is the leading-order case of
 [DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1), with an explicit (non-optimal) error constant proved
-here. Taking real parts gives the corresponding statement for `log ‖Γ s‖`.
+here. Taking real parts gives the corresponding statement for `log ‖Γ s‖`. Its consequence on
+vertical strips is in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Vertical.lean`.
 
 The proof uses only the derivative of the error
 `E(s) = logGamma s - ((s - 1/2) log s - s + log (2π) / 2)`, which is
