@@ -155,7 +155,7 @@ theorem norm_toLp_le_toReal_summingENorm_mul {T : E →L[𝕜] F}
       (T.summingENorm p).toReal * weakLpNorm (𝕜 := 𝕜) p x := by
   have h := ENNReal.toReal_mono (ENNReal.mul_ne_top hT ENNReal.ofReal_ne_top)
     (enorm_toLp_le_summingENorm_mul_of_ne_top hT x)
-  rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (apply_nonneg _ _), toReal_enorm] at h
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (apply_nonneg _ _), toReal_eNorm] at h
 
 /-- An operator of zero operator norm has zero gauge. -/
 theorem summingENorm_eq_zero_of_norm_eq_zero {T : E →L[𝕜] F} (hT : ‖T‖ = 0) :
@@ -176,7 +176,7 @@ theorem summingENorm_smul (c : 𝕜) (T : E →L[𝕜] F) :
     (c • T).summingENorm p = ‖c‖ₑ * T.summingENorm p := by
   have h (n : ℕ) (x : Fin n → E) :
       ‖WithLp.toLp p (fun i ↦ (c • T) (x i))‖ₑ = ‖c‖ₑ * ‖WithLp.toLp p (fun i ↦ T (x i))‖ₑ := by
-    simp only [smul_apply, ← Pi.smul_def, WithLp.toLp_smul, enorm_smul]
+    simp only [smul_apply, ← Pi.smul_def, WithLp.toLp_smul, eNorm_smul]
   simp only [summingENorm_def, h, mul_div_assoc, ENNReal.mul_iSup]
 
 /-- Negation preserves the gauge. -/
@@ -195,7 +195,7 @@ theorem summingENorm_add_le (S T : E →L[𝕜] F) :
       ext i
       simp
     rw [hadd]
-    exact enorm_add_le _ _
+    exact eNorm_add_le _ _
   calc
     _ ≤ (‖WithLp.toLp p (fun i ↦ S (x i))‖ₑ + ‖WithLp.toLp p (fun i ↦ T (x i))‖ₑ) /
         ENNReal.ofReal (weakLpNorm (𝕜 := 𝕜) p x) := by gcongr
@@ -231,7 +231,7 @@ theorem summingENorm_comp_right_le (T : F →L[𝕜] G) (B : E →L[𝕜] F) :
         le_antisymm ((opNorm_comp_le T B).trans (by simp [hB'])) (norm_nonneg _)
       simp [summingENorm_eq_zero_of_norm_eq_zero hTB]
     · simp [hT, ENNReal.top_mul hB]
-  · rw [summingENorm_le_iff (ENNReal.mul_ne_top hT enorm_ne_top)]
+  · rw [summingENorm_le_iff (ENNReal.mul_ne_top hT eNorm_ne_top)]
     intro n x
     calc
       _ ≤ T.summingENorm p * ENNReal.ofReal (weakLpNorm (𝕜 := 𝕜) p (B ∘ x)) :=
@@ -277,7 +277,7 @@ theorem enorm_le_summingENorm (T : E →L[𝕜] F) : ‖T‖ₑ ≤ T.summingENo
       ENNReal.ofReal_le_ofReal (weakLpNorm_le_norm (𝕜 := 𝕜) p (Pi.single (0 : Fin 1) v))
   have h := T.enorm_toLp_div_le_summingENorm (p := p) (Pi.single (0 : Fin 1) v)
   rw [hT, PiLp.toLp_single, ← ofReal_norm, PiLp.norm_single, ofReal_norm] at h
-  rw [← ENNReal.div_le_iff_le_mul (Or.inl hv) (Or.inl enorm_ne_top)]
+  rw [← ENNReal.div_le_iff_le_mul (Or.inl hv) (Or.inl eNorm_ne_top)]
   exact (ENNReal.div_le_div_left hw _).trans h
 
 /-- The gauge vanishes exactly at zero for maps into a separated normed space. -/
@@ -303,7 +303,7 @@ theorem lowerSemicontinuous_summingENorm :
     LowerSemicontinuous (summingENorm p : (E →L[𝕜] F) → ℝ≥0∞) := by
   refine lowerSemicontinuous_iSup fun n ↦ lowerSemicontinuous_iSup fun x ↦ ?_
   have hc : Continuous fun T : E →L[𝕜] F ↦ ‖WithLp.toLp p (fun i ↦ T (x i))‖ₑ :=
-    continuous_enorm.comp ((PiLp.continuous_toLp p _).comp
+    continuous_eNorm.comp ((PiLp.continuous_toLp p _).comp
       (continuous_pi fun i ↦ continuous_eval_const (x i)))
   rcases eq_or_ne (ENNReal.ofReal (weakLpNorm (𝕜 := 𝕜) p x)) 0 with hx | hx
   · -- Dividing by zero multiplies by `∞ = ⨆ k, k`, so the ratio is a supremum of continuous maps.
@@ -430,7 +430,7 @@ def absolutelySummingOperators : Submodule 𝕜 (E →L[𝕜] F) where
     (S.summingENorm_add_le T).trans_lt (ENNReal.add_lt_top.2 ⟨hS, hT⟩)
   zero_mem' := by simp
   smul_mem' c T hT := by
-    simpa [ContinuousLinearMap.summingENorm_smul] using ENNReal.mul_lt_top enorm_lt_top hT
+    simpa [ContinuousLinearMap.summingENorm_smul] using ENNReal.mul_lt_top eNorm_lt_top hT
 
 variable {𝕜 p}
 
@@ -458,19 +458,19 @@ theorem mem_absolutelySummingOperators_iff {T : E →L[𝕜] F} :
 theorem comp_left_mem_absolutelySummingOperators (A : F →L[𝕜] G) {T : E →L[𝕜] F}
     (hT : T ∈ absolutelySummingOperators 𝕜 p E F) :
     A ∘L T ∈ absolutelySummingOperators 𝕜 p E G :=
-  (A.summingENorm_comp_left_le T).trans_lt (ENNReal.mul_lt_top enorm_lt_top hT)
+  (A.summingENorm_comp_left_le T).trans_lt (ENNReal.mul_lt_top eNorm_lt_top hT)
 
 /-- Absolutely summing operators are stable under composition on the right. -/
 theorem comp_right_mem_absolutelySummingOperators {T : F →L[𝕜] G}
     (hT : T ∈ absolutelySummingOperators 𝕜 p F G) (B : E →L[𝕜] F) :
     T ∘L B ∈ absolutelySummingOperators 𝕜 p E G :=
-  (T.summingENorm_comp_right_le B).trans_lt (ENNReal.mul_lt_top hT enorm_lt_top)
+  (T.summingENorm_comp_right_le B).trans_lt (ENNReal.mul_lt_top hT eNorm_lt_top)
 
 /-- Rank-one operators are absolutely summing. -/
 theorem smulRight_mem_absolutelySummingOperators (f : StrongDual 𝕜 E) (y : F) :
     f.smulRight y ∈ absolutelySummingOperators 𝕜 p E F :=
   (ContinuousLinearMap.summingENorm_smulRight_le f y).trans_lt
-    (ENNReal.mul_lt_top enorm_lt_top enorm_lt_top)
+    (ENNReal.mul_lt_top eNorm_lt_top eNorm_lt_top)
 
 end NormedField
 
@@ -662,7 +662,7 @@ theorem norm_le_iff {T : AbsolutelySumming 𝕜 p E F} {C : ℝ} (hC : 0 ≤ C) 
 theorem norm_smulRight (f : StrongDual 𝕜 E) (y : F) :
     ‖smulRight (p := p) f y‖ = ‖f‖ * ‖y‖ := by
   rw [norm_def, toContinuousLinearMap_smulRight, ContinuousLinearMap.summingENorm_smulRight,
-    ENNReal.toReal_mul, toReal_enorm, toReal_enorm]
+    ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm]
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 

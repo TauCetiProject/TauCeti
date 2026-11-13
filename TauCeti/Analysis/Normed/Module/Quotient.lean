@@ -166,7 +166,7 @@ noncomputable def quotientRightInverse (W : Submodule 𝕜 F) [IsClosed (W : Set
 /-- The chosen quotient lift has the public uniform bound constant two. -/
 @[simp]
 theorem quotientRightInverse_nnnorm (W : Submodule 𝕜 F) [IsClosed (W : Set F)] :
-    W.quotientRightInverse.nnnorm = 2 := by
+    W.quotientRightInverse.nnNorm = 2 := by
   simp only [quotientRightInverse]
 
 end Submodule

@@ -254,6 +254,12 @@ section Compact
 
 variable [CompactSpace X] [CompactSpace Y]
 
+omit [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] in
+/-- The preimage under a finite holomorphic map of the support of the divisor of `ω` is finite. -/
+theorem finite_preimage_support_divisor (f : FiniteHolomorphicMap X Y) (ω : OneForm Y) :
+    (f ⁻¹' (ω.divisor.support : Set Y)).Finite :=
+  ω.divisor.support.finite_toSet.preimage' fun y _ ↦ f.finite_fiber y
+
 /-- **The divisor formula for pullback of a meromorphic differential.** The correction to
 pullback of its divisor is exactly the ramification divisor of the map. -/
 theorem divisor_pullback (ω : OneForm Y) (f : FiniteHolomorphicMap X Y)

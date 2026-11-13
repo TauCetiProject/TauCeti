@@ -200,7 +200,7 @@ theorem contMDiffAt_totalSpace_subbundle {X : ι → Π x, E x} {U : Set B}
   have hproj : ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜')) IB n
       (fun q : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ q.proj) p :=
     (Bundle.contMDiff_proj (fun x ↦ V x)).contMDiffAt
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨hproj, ?_⟩
   have hpE := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) p.proj
   have hA := (contMDiffAt_trivOperator (𝕜 := 𝕜) (𝕜' := 𝕜') (y₀ := p.proj)
@@ -398,7 +398,7 @@ theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
   have : CompleteSpace 𝕜' := by
     let := IsRCLikeNormedField.rclike 𝕜'
     infer_instance
-  obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace.mp hw
+  obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace_iff.mp hw
   obtain ⟨U, hU, hbU, Y, hY, hYn⟩ := hV (b m₀)
   let eV := hY.trivialization hU
   have : MemTrivializationAtlas eV :=
@@ -698,7 +698,7 @@ private theorem exists_isImmersionAtOfComplement_subbundle_of_retraction
     ∃ (Q : Submodule 𝕜 F) (_ : Nonempty ((F' × Q) ≃L[𝕜] F)),
       IsImmersionAtOfComplement (P × Q) (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
         (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) p := by
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   let eV := trivializationAt F' (fun x ↦ V x) p.proj
   let eE := trivializationAt F E (f p.proj)
   have hx₀V : p.proj ∈ eV.baseSet := FiberBundle.mem_baseSet_trivializationAt F' (fun x ↦ V x) _
