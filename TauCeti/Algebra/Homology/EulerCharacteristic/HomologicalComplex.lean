@@ -66,16 +66,6 @@ theorem finite_homology (i : ι) [IsNoetherian R (K.X i)] :
   have : IsNoetherian R (K.sc i).X₂ := ‹IsNoetherian R (K.X i)›
   (K.sc i).finite_homology
 
-/-- If `f : ι → ℕ` vanishes away from `j₀` and vanishes at `j₀` when `j₀ ∉ s`, then `f j₀`
-equals `∑ j ∈ s, f j`. -/
-private lemma eq_sum_of_forall_ne_zero (f : ι → ℕ) {s : Finset ι} {j₀ : ι}
-    (hne : ∀ j, j ≠ j₀ → f j = 0) (hout : j₀ ∉ s → f j₀ = 0) :
-    f j₀ = ∑ j ∈ s, f j := by
-  classical
-  by_cases hmem : j₀ ∈ s
-  · exact (Finset.sum_eq_single j₀ (fun j _ hj ↦ hne j hj) (fun h ↦ (h hmem).elim)).symm
-  · rw [hout hmem, Finset.sum_eq_zero fun j hj ↦ hne j fun h ↦ hmem (h ▸ hj)]
-
 /-- For an index `i`, if the incoming differential from `c.prev i` vanishes whenever
 `c.prev i ∉ s`, then the rank of `im (K.d (c.prev i) i)` equals the sum over `j ∈ s` of the ranks
 of `im (K.d j i)`. -/
@@ -83,8 +73,8 @@ private lemma finrank_range_d_prev_eq_sum [Nontrivial R] {s : Finset ι} {i : ι
     (hprev : c.prev i ∉ s → K.d (c.prev i) i = 0) :
     finrank R (LinearMap.range (K.d (c.prev i) i).hom) =
       ∑ j ∈ s, finrank R (LinearMap.range (K.d j i).hom) := by
-  refine eq_sum_of_forall_ne_zero (fun j ↦ finrank R (LinearMap.range (K.d j i).hom))
-    (fun j hj ↦ ?_) (fun hmem ↦ ?_)
+  symm
+  refine Finset.sum_eq_single (c.prev i) (fun j _ hj ↦ ?_) (fun hmem ↦ ?_)
   · rw [K.shape j i (fun h ↦ hj (c.prev_eq' h).symm), ModuleCat.hom_zero, LinearMap.range_zero]
     exact finrank_zero_of_subsingleton
   · rw [hprev hmem, ModuleCat.hom_zero, LinearMap.range_zero]
@@ -97,8 +87,8 @@ private lemma finrank_range_d_next_eq_sum [Nontrivial R] {s : Finset ι} {i : ι
     (hnext : c.next i ∉ s → K.d i (c.next i) = 0) :
     finrank R (LinearMap.range (K.d i (c.next i)).hom) =
       ∑ j ∈ s, finrank R (LinearMap.range (K.d i j).hom) := by
-  refine eq_sum_of_forall_ne_zero (fun j ↦ finrank R (LinearMap.range (K.d i j).hom))
-    (fun j hj ↦ ?_) (fun hmem ↦ ?_)
+  symm
+  refine Finset.sum_eq_single (c.next i) (fun j _ hj ↦ ?_) (fun hmem ↦ ?_)
   · rw [K.shape i j (fun h ↦ hj (c.next_eq' h).symm), ModuleCat.hom_zero, LinearMap.range_zero]
     exact finrank_zero_of_subsingleton
   · rw [hnext hmem, ModuleCat.hom_zero, LinearMap.range_zero]

@@ -30,6 +30,8 @@ double loop spaces of sphere bundles over highly connected bases (Proposition 6.
 * `TauCeti.TopCat.isIso_singularHomologyMap_fiberι`: the fibre inclusion is an isomorphism on
   `H_m` for `m < n`.
 * `TauCeti.TopCat.epi_singularHomologyMap_fiberι`: the fibre inclusion is surjective on `H_n`.
+* `TauCeti.TopCat.fiberSingularHomologyIsoOfPath`: a path in `B` induces singular homology
+  isomorphisms between the fibres over its endpoints in every degree.
 
 ## References
 
@@ -47,6 +49,8 @@ open scoped Topology Topology.Homotopy
 universe u
 
 namespace TauCeti.TopCat
+
+section ConnectedBase
 
 variable {E B : TopCat.{u}} {p : E ⟶ B} {b : B} {n : ℕ} (R : Type u) [Ring R]
 
@@ -69,5 +73,42 @@ theorem epi_singularHomologyMap_fiberι (hp : serreFibrations p)
     Epi (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
       (p.fiberι b)) :=
   (isNConnected_fiberι_of_mem_serreFibrations hp hB).epi_singularHomologyMap R hm
+
+end ConnectedBase
+
+/-- **Path transport on singular homology of fibres of a Serre fibration.** A path `γ` from `b₀` to
+`b₁` in `B` induces an isomorphism `H_n(p⁻¹(b₀); R) ≅ H_n(p⁻¹(b₁); R)` in every degree `n` over any
+ring `R`, obtained by pulling `p` back to the contractible interval `ULift unitInterval` and
+inverting the homology maps of the endpoint fibre inclusions. -/
+noncomputable def fiberSingularHomologyIsoOfPath {E B : _root_.TopCat.{u}} {p : E ⟶ B}
+    (hp : serreFibrations p) (R : Type u) [Ring R] {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
+    (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj (p.fiber b₀)) ≅
+      (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj (p.fiber b₁)) :=
+  let g : _root_.TopCat.of (ULift.{u} unitInterval) ⟶ B :=
+    _root_.TopCat.ofHom ⟨fun t ↦ γ t.down, γ.continuous.comp continuous_uliftDown⟩
+  let p' := _root_.TopCat.pullbackFst g p
+  have hp' : serreFibrations p' := mem_serreFibrations_pullbackFst hp g
+  have : ContractibleSpace (_root_.TopCat.of (ULift.{u} unitInterval)) :=
+    have : ContractibleSpace unitInterval :=
+      (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, unitInterval.zero_mem⟩
+    Homeomorph.ulift.contractibleSpace
+  have : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
+      (p'.fiberι (ULift.up (0 : unitInterval)))) :=
+    isIso_singularHomologyMap_fiberι R hp' (n := n + 1) (fun _ _ ↦ inferInstance)
+      (Nat.lt_succ_self n)
+  have : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
+      (p'.fiberι (ULift.up (1 : unitInterval)))) :=
+    isIso_singularHomologyMap_fiberι R hp' (n := n + 1) (fun _ _ ↦ inferInstance)
+      (Nat.lt_succ_self n)
+  ((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).mapIso
+      (eqToIso (congrArg p.fiber γ.source.symm) ≪≫
+        (p.fiberPullbackFstIso g (ULift.up (0 : unitInterval))).symm) ≪≫
+    asIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
+      (p'.fiberι (ULift.up (0 : unitInterval)))) ≪≫
+    (asIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
+      (p'.fiberι (ULift.up (1 : unitInterval))))).symm ≪≫
+    ((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).mapIso
+      (p.fiberPullbackFstIso g (ULift.up (1 : unitInterval)) ≪≫
+        eqToIso (congrArg p.fiber γ.target))
 
 end TauCeti.TopCat

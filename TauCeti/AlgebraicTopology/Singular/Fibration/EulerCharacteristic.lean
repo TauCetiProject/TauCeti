@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.DirectSum.Finite
+public import TauCeti.Algebra.Homology.SpectralObject.ModuleCat
 public import TauCeti.Algebra.Homology.SpectralSequence.EulerCharacteristic
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.AlgebraicTopology.Singular.Fibration.ArbitraryBase
@@ -28,11 +29,9 @@ abutment filtration (`CategoryTheory.Abelian.SpectralObject.finrank_abutment_eq_
 the homological finiteness and Euler characteristic theorems of Serre (1951) and
 Klein--Malkiewich--Ramzi:
 
-* **Path transport of fibre homology.** Pulling `p` back along a path `γ : Path b₀ b₁` in `B`
-  produces a Serre fibration over the contractible interval `ULift unitInterval`, whose fibre
-  inclusions at `0` and `1` induce singular homology isomorphisms in every degree
-  (`TauCeti.TopCat.fiberSingularHomologyIsoOfPath`). No Hurewicz-fibration hypothesis is needed.
-  In particular, fibres over points in the same path component have the same Euler characteristic
+* **Invariance of the fibre Euler characteristic along paths.** By path transport on fibre
+  singular homology (`TauCeti.TopCat.fiberSingularHomologyIsoOfPath`), fibres over points in the
+  same path component have the same Euler characteristic whenever both have finite CW type
   (`TauCeti.TopCat.eulerChar_fiber_eq_of_joined`).
 * **Vanishing in large degrees and finite generation.** Over a base `B` of finite CW type, if the
   singular homology of each fibre vanishes in large degrees, then so does `H_*(E; R)` over any ring
@@ -72,47 +71,10 @@ namespace TauCeti.TopCat
 
 section PathTransport
 
-variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p) (R : Type u) [Ring R]
-include hp
-
-/-- **Path transport on singular homology of fibres of a Serre fibration.** A path `γ` from `b₀` to
-`b₁` in `B` induces an isomorphism `H_n(p⁻¹(b₀); R) ≅ H_n(p⁻¹(b₁); R)` in every degree `n` over any
-ring `R`, obtained by pulling `p` back to the contractible interval `ULift unitInterval` and
-inverting the homology maps of the endpoint fibre inclusions. -/
-def fiberSingularHomologyIsoOfPath {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
-    (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj (p.fiber b₀)) ≅
-      (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj (p.fiber b₁)) :=
-  let g : _root_.TopCat.of (ULift.{u} unitInterval) ⟶ B :=
-    _root_.TopCat.ofHom ⟨fun t ↦ γ t.down, γ.continuous.comp continuous_uliftDown⟩
-  let p' := _root_.TopCat.pullbackFst g p
-  have hp' : serreFibrations p' := mem_serreFibrations_pullbackFst hp g
-  have : ContractibleSpace (_root_.TopCat.of (ULift.{u} unitInterval)) :=
-    have : ContractibleSpace unitInterval :=
-      (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, unitInterval.zero_mem⟩
-    Homeomorph.ulift.contractibleSpace
-  have : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
-      (p'.fiberι (ULift.up (0 : unitInterval)))) :=
-    isIso_singularHomologyMap_fiberι R hp' (n := n + 1) (fun _ _ ↦ inferInstance)
-      (Nat.lt_succ_self n)
-  have : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
-      (p'.fiberι (ULift.up (1 : unitInterval)))) :=
-    isIso_singularHomologyMap_fiberι R hp' (n := n + 1) (fun _ _ ↦ inferInstance)
-      (Nat.lt_succ_self n)
-  ((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).mapIso
-      (eqToIso (congrArg p.fiber γ.source.symm) ≪≫
-        (p.fiberPullbackFstIso g (ULift.up (0 : unitInterval))).symm) ≪≫
-    asIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
-      (p'.fiberι (ULift.up (0 : unitInterval)))) ≪≫
-    (asIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
-      (p'.fiberι (ULift.up (1 : unitInterval))))).symm ≪≫
-    ((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).mapIso
-      (p.fiberPullbackFstIso g (ULift.up (1 : unitInterval)) ≪≫
-        eqToIso (congrArg p.fiber γ.target))
-
-omit [Ring R] in
 /-- Fibres of a Serre fibration over points in the same path component have the same Euler
 characteristic whenever both fibres have finite CW type. -/
-theorem eulerChar_fiber_eq_of_joined {b₀ b₁ : B} (h : Joined b₀ b₁)
+theorem eulerChar_fiber_eq_of_joined {E B : _root_.TopCat.{u}} {p : E ⟶ B}
+    (hp : serreFibrations p) {b₀ b₁ : B} (h : Joined b₀ b₁)
     [FiniteCWType (p.fiber b₀)] [FiniteCWType (p.fiber b₁)] :
     eulerChar (p.fiber b₀) = eulerChar (p.fiber b₁) := by
   rw [eulerChar_eq_finsum_finrank_singularHomology (p.fiber b₀) (ULift.{u} ℚ),
@@ -143,14 +105,6 @@ private lemma serreFirstPagePos_injective :
   have h2 := congrArg Prod.snd h
   dsimp [serreFirstPagePos] at h1 h2
   ext <;> lia
-
-/-- A coproduct of zero objects in `ModuleCat R` is zero. -/
-private lemma isZero_coprod_of_forall_isZero {R : Type u} [Ring R] {ι : Type u}
-    {Z : ι → ModuleCat.{u} R} (hZ : ∀ i, IsZero (Z i)) : IsZero (∐ Z) := by
-  classical
-  have (i : ι) : Subsingleton (Z i) := ModuleCat.subsingleton_of_isZero (hZ i)
-  exact (ModuleCat.isZero_of_subsingleton (ModuleCat.of R (⨁ i, Z i))).of_iso
-    (ModuleCat.coprodIsoDirectSum Z)
 
 /-- Reindex the cokernel of `abutmentFiltrationMap` along an equality of total degrees. -/
 private def cokernelAbutmentFiltrationMapIso {R : Type u} [Ring R]
@@ -237,7 +191,7 @@ private lemma isZero_serreSpectralSequence_page_two_X_of_notMem {K Q : ℕ}
     IsZero (((serreSpectralSequence C (_root_.TopCat.pullbackFst g p) R).page 2).X pq) := by
   rcases isZero_or_eq_serreFirstPagePos hp C g R pq with hz | ⟨k, q, rfl⟩
   · exact hz
-  · refine (isZero_coprod_of_forall_isZero fun j ↦ ?_).of_iso
+  · refine ((colimit.isColimit _).isZero_pt (Functor.isZero _ fun ⟨j⟩ ↦ ?_)).of_iso
       (serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g k q (serreFirstPagePos k q)
         (serreFirstPagePos_snd k q) (serreFirstPagePos_add k q))
     by_cases hk : k < K

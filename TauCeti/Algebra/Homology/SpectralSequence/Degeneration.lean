@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Finite.Basic
 public import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
 
 /-!
@@ -25,7 +26,8 @@ degenerate: all differentials from the page `r` on vanish
 
 ## Main results
 
-* `CategoryTheory.SpectralSequence.isZero_page_X_of_le`: a zero object stays zero on later pages.
+* `CategoryTheory.SpectralSequence.isZero_page_X_of_le`: a zero object stays zero on later pages,
+  so finite support propagates (`CategoryTheory.SpectralSequence.finite_not_isZero_page_X_of_le`).
 * `CategoryTheory.SpectralSequence.page_d_eq_zero_of_le`: a differential of a later page between
   positions one of which is zero on an earlier page vanishes.
 * `CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero`: the differentials at a
@@ -56,6 +58,13 @@ every later page `r' ≥ r`, since each page is the homology of the previous one
 lemma isZero_page_X_of_le {r : ℤ} (hr : r₀ ≤ r) {pq : κ} (h : IsZero ((E.page r).X pq))
     (r' : ℤ) (hrr' : r ≤ r') : IsZero ((E.page r' (hr.trans hrr')).X pq) :=
   E.prop_page_X_of_le IsZero hr h r' hrr'
+
+/-- If `E_r` is nonzero at only finitely many positions, then so is every later page `E_{r'}` with
+`r ≤ r'`. -/
+theorem finite_not_isZero_page_X_of_le {r : ℤ} (hr : r₀ ≤ r)
+    (h : {pq : κ | ¬ IsZero ((E.page r).X pq)}.Finite) (r' : ℤ) (hrr' : r ≤ r') :
+    {pq : κ | ¬ IsZero ((E.page r' (hr.trans hrr')).X pq)}.Finite :=
+  h.subset fun _ hpq hpq₀ ↦ hpq (E.isZero_page_X_of_le hr hpq₀ r' hrr')
 
 /-- **Differentials into or out of zero objects vanish on later pages.** If the source or the
 target of a differential of the page `r' ≥ r` is zero on the page `r`, the differential is zero. -/
