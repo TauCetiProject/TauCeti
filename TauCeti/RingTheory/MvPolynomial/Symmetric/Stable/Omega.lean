@@ -51,8 +51,11 @@ this holds over every commutative ring.
 * `TauCeti.SymmetricFunction.hsymmAlgHom_injective`,
   `TauCeti.SymmetricFunction.hsymmAlgHom_surjective`: the `h_r` are algebraically independent
   generators of `Λ_R`.
-* `TauCeti.SymmetricFunction.esymmAlgEquiv_trans_omega`: the free generation by the `h_r` is the
-  free generation by the `e_r` followed by `ω`.
+* `TauCeti.SymmetricFunction.esymmAlgEquiv_trans_omega`,
+  `TauCeti.SymmetricFunction.hsymmAlgEquiv_trans_omega`: `ω` carries the free generation by the
+  `e_r` to the free generation by the `h_r`, and back.
+* `TauCeti.SymmetricFunction.algHom_ext_of_stableHsymm`: algebra homomorphisms out of `Λ_R` agree
+  once they agree on the `h_r`.
 
 ## References
 
@@ -198,6 +201,18 @@ theorem omega_omega (x : SymmetricFunction R) : omega R (omega R x) = x :=
 theorem omega_symm : (omega R).symm = omega R :=
   AlgEquiv.ext fun x => (AlgEquiv.symm_apply_eq _).mpr (omega_omega R x).symm
 
+/-- `ω ∘ ω = id`, as algebra equivalences. -/
+@[simp]
+theorem omega_trans_omega : (omega R).trans (omega R) = AlgEquiv.refl :=
+  AlgEquiv.ext (omega_omega R)
+
+/-- `ω ∘ ω = id`, as algebra homomorphisms. -/
+@[simp]
+theorem omega_comp_omega :
+    (omega R : SymmetricFunction R →ₐ[R] SymmetricFunction R).comp (omega R) =
+      AlgHom.id R (SymmetricFunction R) :=
+  AlgHom.ext (omega_omega R)
+
 /-- `ω` turns a polynomial in the elementary symmetric functions into the same polynomial in the
 complete homogeneous symmetric functions. -/
 @[simp]
@@ -241,10 +256,41 @@ theorem hsymmAlgEquiv_symm_of_stableHsymm (r : ℕ) :
     (hsymmAlgEquiv R).symm (DirectSum.of _ (r + 1) (stableHsymm R (r + 1))) = X r := by
   rw [AlgEquiv.symm_apply_eq, hsymmAlgEquiv_apply, hsymmAlgHom_X]
 
+/-- Every symmetric function is the polynomial in the `h_r` that
+`(TauCeti.SymmetricFunction.hsymmAlgEquiv R).symm` assigns to it. -/
+@[simp]
+theorem hsymmAlgHom_hsymmAlgEquiv_symm (x : SymmetricFunction R) :
+    hsymmAlgHom R ((hsymmAlgEquiv R).symm x) = x :=
+  (hsymmAlgEquiv R).apply_symm_apply x
+
+/-- A polynomial in the `h_r` is recovered from the symmetric function it defines. -/
+@[simp]
+theorem hsymmAlgEquiv_symm_hsymmAlgHom (p : MvPolynomial ℕ R) :
+    (hsymmAlgEquiv R).symm (hsymmAlgHom R p) = p :=
+  (hsymmAlgEquiv R).symm_apply_apply p
+
 /-- The free generation by the `h_r` is the free generation by the `e_r` followed by `ω`. -/
 theorem esymmAlgEquiv_trans_omega : (esymmAlgEquiv R).trans (omega R) = hsymmAlgEquiv R :=
   AlgEquiv.ext fun p => by
     rw [AlgEquiv.trans_apply, esymmAlgEquiv_apply, hsymmAlgEquiv_apply, omega_esymmAlgHom]
+
+/-- The free generation by the `e_r` is the free generation by the `h_r` followed by `ω`. -/
+theorem hsymmAlgEquiv_trans_omega : (hsymmAlgEquiv R).trans (omega R) = esymmAlgEquiv R :=
+  AlgEquiv.ext fun p => by
+    rw [AlgEquiv.trans_apply, esymmAlgEquiv_apply, hsymmAlgEquiv_apply, omega_hsymmAlgHom]
+
+variable {R} in
+/-- **Algebra homomorphisms out of the symmetric functions are determined by their values on the
+complete homogeneous symmetric functions** `h₁, h₂, …`. -/
+theorem algHom_ext_of_stableHsymm {A : Type*} [Semiring A] [Algebra R A]
+    {f g : SymmetricFunction R →ₐ[R] A}
+    (h : ∀ n, f (DirectSum.of _ (n + 1) (stableHsymm R (n + 1))) =
+      g (DirectSum.of _ (n + 1) (stableHsymm R (n + 1)))) : f = g := by
+  have hfg : f.comp (hsymmAlgEquiv R).toAlgHom = g.comp (hsymmAlgEquiv R).toAlgHom :=
+    MvPolynomial.algHom_ext fun r => by simpa using h r
+  refine AlgHom.ext fun x => ?_
+  obtain ⟨p, rfl⟩ := (hsymmAlgEquiv R).surjective x
+  exact DFunLike.congr_fun hfg p
 
 /-! ### `ω` on the power sums -/
 

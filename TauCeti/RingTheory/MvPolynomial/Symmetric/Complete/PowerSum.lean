@@ -15,8 +15,9 @@ import TauCeti.RingTheory.PowerSeries.Geometric
 
 The generating function `H(t) = ∑ₙ hₙ tⁿ` of the complete homogeneous symmetric polynomials in the
 variables `xᵢ` is the product `∏ᵢ (1 - xᵢ t)⁻¹`. Its logarithmic derivative is therefore
-`∑ᵢ xᵢ / (1 - xᵢ t)`, the generating function of the power sums: `t H'(t) = H(t) P(t)` with
-`P(t) = ∑_{n ≥ 1} pₙ tⁿ`. Comparing coefficients gives **Newton's identities for the complete
+`H'(t) / H(t) = ∑ᵢ xᵢ / (1 - xᵢ t) = ∑_{n ≥ 1} pₙ tⁿ⁻¹`. Multiplying by `t` gives
+`t H'(t) = H(t) P(t)`, where `P(t) = ∑_{n ≥ 1} pₙ tⁿ = ∑ᵢ xᵢ t / (1 - xᵢ t)` is the generating
+function of the power sums. Comparing coefficients gives **Newton's identities for the complete
 homogeneous symmetric polynomials**, `k hₖ = ∑_{i = 1}^{k} h_{k - i} pᵢ`. They are the counterpart
 of Mathlib's `MvPolynomial.mul_esymm_eq_sum` for the elementary symmetric polynomials, but have no
 signs.
