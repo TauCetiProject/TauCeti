@@ -96,12 +96,10 @@ theorem directSumAsModuleEquiv_symm_single [DecidableEq ι] (i : ι) (v : (ρ i)
     (directSumAsModuleEquiv ρ).symm (DFinsupp.single i v) =
       (directSum ρ).asModuleEquiv.symm (DirectSum.lof k ι V i ((ρ i).asModuleEquiv v)) := by
   apply (directSum ρ).asModuleEquiv.injective
-  ext j
-  rw [directSumAsModuleEquiv_symm_apply, LinearEquiv.apply_symm_apply]
-  obtain rfl | hij := eq_or_ne i j
-  · rw [DFinsupp.single_eq_same, DirectSum.lof_apply]
-  · rw [DFinsupp.single_eq_of_ne hij.symm, map_zero, DirectSum.lof_eq_of,
-      DirectSum.of_eq_of_ne _ _ _ hij.symm]
+  rw [directSumAsModuleEquiv, LinearEquiv.coe_symm_mk', LinearEquiv.apply_symm_apply,
+    LinearEquiv.apply_symm_apply, DFinsupp.mapRange.linearEquiv_symm,
+    DFinsupp.mapRange.linearEquiv_apply, DFinsupp.mapRange_single, DirectSum.single_eq_lof k,
+    LinearEquiv.symm_symm]
 
 /-- **The comparison sends `v` in summand `i` to the `i`-th component `v`.** -/
 theorem directSumAsModuleEquiv_lof [DecidableEq ι] (i : ι) (v : V i) :
