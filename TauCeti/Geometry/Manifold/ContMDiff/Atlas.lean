@@ -38,6 +38,8 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 * `TauCeti.contMDiffAt_prodMap_id_of_mem_maximalAtlas`,
   `TauCeti.contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas`: a chart times the identity, and its
   inverse, are smooth.
+* `ContMDiffOn.contDiffOn_comp_symm_of_mem_maximalAtlas`: a `C^n` map into a normed space, read
+  through the inverse of a chart of the maximal atlas, is `C^n`.
 * `TauCeti.conj_chartAt_source` and `TauCeti.comp_conj_chartAt`: the domain of that chart is
   where the extended chart lands in the domain of `c`, and in the model vector space it reads as
   `c ∘ extChartAt I x`.
@@ -134,6 +136,21 @@ theorem contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas
     contDiff_fst.contMDiff.contMDiffAt).prodMk contDiff_snd.contMDiff.contMDiffAt
 
 end ProdMap
+
+section CompSymm
+
+variable {F M' : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace M']
+  [ChartedSpace E M'] {φ : OpenPartialHomeomorph M' E}
+
+/-- A map `f` that is `C^n` on a set `S`, read through the inverse of a chart `φ` of the maximal
+atlas, is `C^n` on the set of points of the target of `φ` that `φ.symm` sends into `S`. -/
+theorem _root_.ContMDiffOn.contDiffOn_comp_symm_of_mem_maximalAtlas {f : M' → F} {S : Set M'}
+    (hf : ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, F) n f S) (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M') :
+    ContDiffOn 𝕜 n (f ∘ φ.symm) (φ.target ∩ φ.symm ⁻¹' S) :=
+  contMDiffOn_iff_contDiffOn.1 (hf.comp
+    ((contMDiffOn_symm_of_mem_maximalAtlas hφ).mono Set.inter_subset_left) Set.inter_subset_right)
+
+end CompSymm
 
 end TauCeti
 

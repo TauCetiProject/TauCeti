@@ -34,6 +34,10 @@ cell by cell, that the skeleta of a CW complex form good pairs.
 * `TauCeti.norm_radialPush`: its norm is the linear interpolation of the endpoint norms.
 * `TauCeti.norm_le_norm_radialPush` and `TauCeti.norm_radialPush_le_one`: on the closed unit
   ball it does not decrease norms and stays in the ball.
+* `TauCeti.radialPush_of_le_norm`: outside the ball of radius `r` it scales by the interpolation
+  from `1` to `‖y‖⁻¹`, and `TauCeti.radialPush_one_of_le_norm`: it ends there at the radial
+  projection to the unit sphere.
+* `TauCeti.inv_norm_smul_radialPush`: for `r > 0` it moves every vector along its ray.
 * `TauCeti.radialPush_of_norm_eq_one`: it fixes the unit sphere.
 * `TauCeti.norm_radialPush_one`: at the end it sends the shell `r ≤ ‖y‖` to the unit sphere.
 
@@ -83,6 +87,33 @@ interpolation from `1` to `r⁻¹`. -/
 theorem radialPush_of_norm_pos_of_norm_le (hy0 : 0 < ‖y‖) (hyr : ‖y‖ ≤ r) (t : I) :
     radialPush r t y = (1 - (t : ℝ) + (t : ℝ) * r⁻¹) • y := by
   simp [radialPush, hy0, hyr, smul_smul, ← add_smul]
+
+/-- On a vector of norm at least `r > 0`, the radial push scales by the linear interpolation
+from `1` to `‖y‖⁻¹`. -/
+theorem radialPush_of_le_norm (hr : 0 < r) (hy : r ≤ ‖y‖) (t : I) :
+    radialPush r t y = (1 - (t : ℝ) + (t : ℝ) * ‖y‖⁻¹) • y := by
+  rw [radialPush, radialRetraction_of_le_norm hy, smul_smul, smul_smul, ← add_smul]
+  congr 1
+  field_simp
+
+/-- At the end, the radial push sends a vector of norm at least `r > 0` to its radial projection
+on the unit sphere. -/
+theorem radialPush_one_of_le_norm (hr : 0 < r) (hy : r ≤ ‖y‖) : radialPush r 1 y = ‖y‖⁻¹ • y := by
+  simp [radialPush_of_le_norm hr hy]
+
+/-- For `r > 0` the radial push moves every vector along its ray: its radial projection does not
+change. -/
+theorem inv_norm_smul_radialPush (hr : 0 < r) (t : I) :
+    ‖radialPush r t y‖⁻¹ • radialPush r t y = ‖y‖⁻¹ • y := by
+  rcases (norm_nonneg y).eq_or_lt' with hy | hy
+  · simp [norm_smul, hy]
+  have hk : 0 < r⁻¹ * min 1 (r / ‖y‖) := by positivity
+  have hc : 0 < 1 - (t : ℝ) + (t : ℝ) * (r⁻¹ * min 1 (r / ‖y‖)) := by
+    rcases t.2.1.eq_or_lt with h | h
+    · simp [← h]
+    · nlinarith [mul_pos h hk, t.2.2]
+  rw [radialPush_eq_smul, norm_smul, Real.norm_of_nonneg hc.le, smul_smul, mul_inv,
+    mul_right_comm, inv_mul_cancel₀ hc.ne', one_mul]
 
 theorem continuous_radialPush (hr : 0 ≤ r) : Continuous fun p : I × E ↦ radialPush r p.1 p.2 :=
   ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul

@@ -64,7 +64,8 @@ extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on th
 
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
-(`TauCeti.prodMap_mul_self_eq_neg_one`).
+(`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
+(`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
 
 A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
@@ -552,5 +553,27 @@ theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ
 end
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- If `A² = -1`, then `a + A b = y` holds exactly when `b - A a = -A y`: apply `A`. For a complex
+structure `J` on the target of a map `u : ℂ → V` with derivative `D`, this rewrites the
+Cauchy–Riemann equation tested on `∂ₛ`, `D 1 + J D i = η`, as the one tested on `∂ₜ`,
+`D i - J D 1 = -J η`. -/
+theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A = -1) {a b y : V} :
+    a + A b = y ↔ b - A a = -A y := by
+  have hAA (x : V) : A (A x) = -x := by simpa using congr($hA x)
+  constructor
+  · rintro rfl
+    simp [hAA, sub_eq_add_neg]
+  · intro h
+    have h' := congrArg A h
+    simp only [map_sub, map_neg, hAA, neg_neg] at h'
+    rw [← h']
+    abel
+
+end ContinuousLinearMap
 
 end
