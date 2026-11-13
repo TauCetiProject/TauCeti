@@ -24,6 +24,11 @@ vanishes exactly when this restriction does
 some covector takes the value `1` at `v`, so a top-degree form `ω` with `ι_v ω = 0` vanishes
 (`AlternatingMap.eq_zero_of_curryLeft_eq_zero`).
 
+If all vectors in a tuple `u` lie in `ker f`, evaluations on `Matrix.vecCons W u` are
+proportional to `f W` (`AlternatingMap.smul_map_vecCons_eq`). In dimension two this compares
+area contractions with conormal values, providing the linear-algebra input for independence
+of boundary orientation from the choice of inward transverse vector.
+
 These are the steps from a top wedge power to nondegeneracy: a two-form with a nonzero vector in
 its kernel has vanishing top power, and the top-degree form `α ∧ (dα)ⁿ` on a space of dimension
 `2 n + 1` is determined by `(dα)ⁿ` on the hyperplane `ker α`.
@@ -36,6 +41,35 @@ open Module
 namespace AlternatingMap
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {n : ℕ}
+
+/-- In dimension `n + 1`, if every `u i` lies in `ker f`, then
+`f W • ω (Matrix.vecCons W' u) = f W' • ω (Matrix.vecCons W u)`.
+This proportionality identity holds for any module codomain, including when either
+functional value vanishes. -/
+theorem smul_map_vecCons_eq {N : Type*} [AddCommGroup N] [Module K N]
+    (ω : V [⋀^Fin (n + 1)]→ₗ[K] N) (hn : finrank K V = n + 1) (f : Dual K V)
+    {u : Fin n → V} (hu : ∀ i, f (u i) = 0) (W W' : V) :
+    f W • ω (Matrix.vecCons W' u) = f W' • ω (Matrix.vecCons W u) := by
+  by_cases hf : f = 0
+  · simp [hf]
+  have := Module.finite_of_finrank_eq_succ hn
+  have hker : finrank K (LinearMap.ker f) = n := by
+    have := Dual.finrank_ker_add_one_of_ne_zero hf
+    omega
+  -- The difference and all the `u i` lie in the `n`-dimensional kernel.
+  let v : LinearMap.ker f := ⟨f W • W' - f W' • W, by simp [mul_comm]⟩
+  let u' : Fin n → LinearMap.ker f := fun i ↦ ⟨u i, hu i⟩
+  have hz := (ω.compLinearMap (LinearMap.ker f).subtype).map_linearDependent
+    (Matrix.vecCons v u') (by
+      intro hli
+      have := hli.fintype_card_le_finrank
+      simp only [Fintype.card_fin, hker] at this
+      omega)
+  have hcomp : (fun i ↦ (LinearMap.ker f).subtype (Matrix.vecCons v u' i)) =
+      Matrix.vecCons (f W • W' - f W' • W) u :=
+    Fin.comp_cons (LinearMap.ker f).subtype v u'
+  rw [compLinearMap_apply, hcomp, ← curryLeft_apply_apply, map_sub, map_smul, map_smul] at hz
+  simpa only [sub_apply, smul_apply, curryLeft_apply_apply, sub_eq_zero] using hz
 
 /-- **A top-degree form is determined by an interior product on a hyperplane.** On a space of
 dimension `n + 1`, let `f v = 1`. A top-degree alternating form `ω` vanishes exactly when the
