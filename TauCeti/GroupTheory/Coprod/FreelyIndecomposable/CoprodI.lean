@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FreeGroup.Reduce
-public import TauCeti.GroupTheory.Coprod.FreelyIndecomposable
+public import TauCeti.GroupTheory.Coprod.FreelyIndecomposable.Basic
 public import TauCeti.GroupTheory.CoprodI.Split
 
 /-!
