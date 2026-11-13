@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition.PartitionOfUnity
-import TauCeti.Geometry.Symplectic.Floer.Linearization
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -47,11 +46,11 @@ linearized Floer operator has this form (`TauCeti.SymplecticForm.floerLinearizat
 * **The ends.** For `D_u`, the estimate on the two ends, in the norm of `V`, is
   `SymplecticForm.exists_mem_forall_setIntegral_norm_sq_le_mul_setIntegral_floerLinearization`; it
   controls `ξ` beyond some `R` and below `-R` by `D_u ξ` alone.
-* **Patching.** Cutoffs `βm`, `β₀`, `βp` with `βm + β₀ + βp = 1`, equal to one far out on the
-  negative end, on the core `[-T, T]` with `T = R + 1`, and far out on the positive end
-  (`TauCeti.exists_contDiff_partition_of_unity_three`), split `ξ` into three pieces, one for each
-  estimate. By the Leibniz rule `D (β ξ) = β D ξ + β' ξ`, the cutoffs only add terms `β' ξ`,
-  which are supported in `[-T, T]`.
+* **Patching.** Cutoffs `βm`, `β₀`, `βp` with `βm + β₀ + βp = 1`, equal to one on `(-∞, -T]`,
+  on `[-R, R]` and on `[T, ∞)` respectively, where `T = R + 1` and `β₀` vanishes outside
+  `(-T, T)` (`TauCeti.exists_contDiff_partitionOfUnity_three`), split `ξ` into three pieces,
+  one for each estimate. By the Leibniz rule `D (β ξ) = β D ξ + β' ξ`, the cutoffs only add
+  terms `β' ξ`, which are supported in `[-T, T]`.
 
 These are estimates on smooth maps; the Sobolev completion and the Fredholm property itself are
 not treated here.
@@ -353,7 +352,7 @@ private theorem le_mul_add_of_le_three_mul {Cm C₀ Cp L Q Qm Q₀ Qp Dm D₀ Dp
     mul_nonneg hC₀ hD, mul_nonneg hS hI]
 
 /-- **Patching the three estimates.** Let `βm + β₀ + βp = 1` be a partition of unity of the line
-as in `TauCeti.exists_contDiff_partition_of_unity_three` for `R ≥ 0`, and let
+as in `TauCeti.exists_contDiff_partitionOfUnity_three` for `R ≥ 0`, and let
 `D = ∂s + J ∂t + S` satisfy the `L²` estimates on the ends `s ≤ -R` and `s ≥ R` and the interior
 estimate on the core `[-(R + 1), R + 1] × [0, 1]`. Then a `C²` map `ξ` of period one in `t`
 vanishing for `s ∉ (a, b)`, where `[a, b]` contains `[-(R + 1), R + 1]`, satisfies the
@@ -495,9 +494,11 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_add_setIntegral_of_ends
     prod_mono (subset_univ _) subset_rfl
   obtain ⟨C₀, hC₀, h₀⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic
     (by linarith : -(R + 1) ≤ R + 1) (fun z hz ↦ hJ z (hK hz)) (hJc.mono hK) (hS.mono hK)
-  -- Cutoffs `βm + β₀ + βp = 1`, equal to one on the negative end, the core and the positive end.
+  -- Cutoffs `βm + β₀ + βp = 1`, equal to one on `(-∞, -(R + 1)]`, on `[-R, R]` and on
+  -- `[R + 1, ∞)`, with `β₀` vanishing outside `(-(R + 1), R + 1)`.
   obtain ⟨L, βm, β₀, βp, hβmc, hβ₀c, hβpc, hsum, hβ1, hβL, hβT, hβm0, hβ₀0, hβp0⟩ :=
-    exists_contDiff_partition_of_unity_three hR
+    exists_contDiff_partitionOfUnity_three hR
+  have h1 {x : ℝ} (hx : x ∈ Icc (0 : ℝ) 1) : |x| ≤ 1 := (abs_of_nonneg hx.1).trans_le hx.2
   refine ⟨6 * (Cm + C₀ + Cp) + 6 * (Cm + C₀ + Cp) * L ^ 2 + 3 * C₀ + 3, by positivity, R + 1,
     fun ξ hξ hper a b hsupp ↦ ?_⟩
   -- Enlarging `[a, b]` to contain the core does not change the integrals over `[a, b] × [0, 1]`.
@@ -506,7 +507,8 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_add_setIntegral_of_ends
   rw [← e₁, ← e₂]
   exact setIntegral_le_of_partition hJc hS hR hCm hC₀ hCp (fun s hs ↦ hTm s (by linarith))
     (fun s hs ↦ hTp s (by linarith)) hm h₀ hp
-    ⟨hβmc.of_le (by simp), hβ₀c.of_le (by simp), hβpc.of_le (by simp)⟩ hsum hβ1 hβL hβT hβm0
+    ⟨hβmc.of_le (by simp), hβ₀c.of_le (by simp), hβpc.of_le (by simp)⟩ hsum
+    (fun s ↦ ⟨h1 (hβ1 s).1, h1 (hβ1 s).2.1, h1 (hβ1 s).2.2⟩) hβL hβT hβm0
     hβ₀0 hβp0 hξ hper (min_le_right _ _) (le_max_right _ _) fun z hz ↦ hsupp z fun h ↦
       hz ⟨(min_le_left _ _).trans_lt h.1, h.2.trans_le (le_max_left _ _)⟩
 
