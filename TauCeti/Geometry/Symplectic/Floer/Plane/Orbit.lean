@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
+public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
 
 /-!
@@ -44,8 +44,9 @@ half-cylinder `s > a`, for any `a ≥ 2`, for the cylindrical datum `H(t) dt`, w
 injective on the half-strip `s > a`, `0 ≤ t < 1`, so the energy of the half-cylinder is at most
 that of `u` on `‖w‖ > exp (2πa)`
 (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_positive_le`). The
-results on finite-energy half-cylinders of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder` then
-apply. The negative plane is the positive plane for the reversed Hamiltonian `-H(-t)`
+results on finite-energy half-cylinders of
+`TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` then apply. The negative plane is the
+positive plane for the reversed Hamiltonian `-H(-t)`
 (`TauCeti.Floer.PSSPlane.perturbation_negative`), and its loops are the loops of the positive plane
 traversed backwards. Reversing time turns an orbit `y` of `-H(-t)` into the orbit `t ↦ y(-t)` of
 `H`, since both the time and the derivative change sign
