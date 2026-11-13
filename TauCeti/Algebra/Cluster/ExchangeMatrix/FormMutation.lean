@@ -271,6 +271,7 @@ end Compatibility
 
 /-- For an alternating form, mutating along `B` and its mutation in the same direction
 recovers the form if `B (row k) k = 0` and row `k` of `Bᵀ * Λ` vanishes outside `row k`. -/
+@[simp]
 theorem matrixFormMutation_matrixFormMutation [DecidableEq K]
     (row : K ↪ I) (B : Matrix I K ℤ)
     {Λ : Matrix I I ℤ} (hΛ : Λ.toBilin'.IsAlt) (k : K)
@@ -308,6 +309,7 @@ theorem matrixFormMutation_neg (row : K ↪ I) (B : Matrix I K ℤ)
 
 /-- For an alternating form, negating the exchange matrix fixes its mutation when
 `B (row k) k = 0` and row `k` of `Bᵀ * Λ` vanishes outside `row k`. -/
+@[simp]
 theorem matrixFormMutation_neg_left (row : K ↪ I) (B : Matrix I K ℤ)
     {Λ : Matrix I I ℤ} (hΛ : Λ.toBilin'.IsAlt) (k : K)
     (hkk : B (row k) k = 0) (h : ∀ j ≠ row k, (Bᵀ * Λ) k j = 0) :
