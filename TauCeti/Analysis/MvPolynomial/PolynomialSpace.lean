@@ -21,6 +21,10 @@ These are functions on the whole Euclidean space, before restriction to a domain
 to almost-everywhere classes. In particular, degree zero means exactly the constant functions,
 also when the coordinate type is empty.
 
+Evaluating a real multilinear map on the diagonal gives a polynomial function of degree at most
+the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`); this covers
+the homogeneous terms of a power series.
+
 The construction uses Mathlib's `MvPolynomial.evalₗ` and `MvPolynomial.funext`, and the formal
 dimension formula `TauCeti.finrank_restrictTotalDegree`.
 -/
@@ -140,6 +144,26 @@ theorem mem_polynomialsDegLE_zero_iff {f : EuclideanSpace ℝ ι → ℝ} :
     simp
   · rintro ⟨c, rfl⟩
     exact const_mem_polynomialsDegLE ι 0 c
+
+/-- Evaluating a real multilinear map on the diagonal gives a polynomial function whose degree is
+at most the number of arguments. -/
+theorem _root_.MultilinearMap.apply_const_mem_polynomialsDegLE [Finite ι] {κ : Type*}
+    [Fintype κ] (m : (Π _ : κ, EuclideanSpace ℝ ι) →ₘₗ[ℝ] ℝ) :
+    (fun x ↦ m fun _ ↦ x) ∈ polynomialsDegLE ι (Fintype.card κ) := by
+  classical
+  have := Fintype.ofFinite ι
+  set b := EuclideanSpace.basisFun ι ℝ
+  refine (mem_polynomialsDegLE_iff ι).2
+    ⟨∑ σ : κ → ι, C (m fun j ↦ b (σ j)) * ∏ j, X (σ j), ?_, ?_⟩
+  · refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun σ _ ↦ ?_)
+    refine (totalDegree_mul _ _).trans ?_
+    rw [totalDegree_C, zero_add]
+    refine (totalDegree_finsetProd _ _).trans ?_
+    simp [totalDegree_X]
+  · ext x
+    -- Expand `x = ∑ᵢ xᵢ eᵢ` in every argument by multilinearity.
+    conv_rhs => rw [← b.sum_repr x, m.map_sum]
+    simp [m.map_smul_univ, b, mul_comm]
 
 /-- Bounded-degree polynomial functions form a finite-dimensional space. -/
 instance [Finite ι] (m : ℕ) : FiniteDimensional ℝ (polynomialsDegLE ι m) :=

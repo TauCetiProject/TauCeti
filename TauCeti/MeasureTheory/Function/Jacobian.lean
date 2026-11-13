@@ -25,7 +25,9 @@ on `s` with `c > 0`, then `f` pushes `μ` on `s` forward to at most `c⁻¹ μ` 
 
 For `f` differentiable on an open set `s` and mapping it into `t`, the same bound holds with the
 Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` on `f '' s`
-(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`).
+(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`). If moreover the derivative is
+invertible on `s`, then almost-everywhere properties on `t` pull back along `f` to almost-everywhere
+properties on `s` (`MeasureTheory.ae_restrict_comp_of_differentiableOn`).
 
 Such a pushforward bound `μ.map f ≤ C • ν` gives the `eLpNorm` estimate for precomposition with
 `f` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a change of variables no upper bound on
@@ -52,6 +54,8 @@ a permutation of the vertices of a simplex, acts on integrals over it.
   `c⁻¹ μ` on `f '' s`.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
   differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
+* `MeasureTheory.ae_restrict_comp_of_differentiableOn`: almost-everywhere properties pull back
+  along a map that is injective with invertible derivative on an open set.
 * `MeasureTheory.exists_det_bounds_of_isCompact`: Jacobian and derivative bounds on a compact
   set.
 * `MeasureTheory.eLpNorm_comp_restrict_le`, `MeasureTheory.eLpNorm_comp_fderiv_restrict_le`: the
@@ -117,6 +121,28 @@ theorem map_restrict_le_smul_restrict_of_differentiableOn (hs : IsOpen s)
     (μ.restrict s).map f ≤ (ENNReal.ofReal c)⁻¹ • μ.restrict t :=
   (map_restrict_le_smul_restrict_image_of_differentiableOn μ hs hf hinj subset_rfl
     hs.measurableSet hc hdet).trans (by gcongr; exact hmaps.image_subset)
+
+/-- **Null sets pull back along a map with invertible derivative.** If `f` is injective and
+differentiable on an open set `s`, with invertible derivative there, and maps `s` into `t`, then a
+property holding `μ`-almost everywhere on `t` holds at `f x` for `μ`-almost every `x ∈ s`: the
+pushforward of `|det f'| μ` on `s` is `μ` on `f '' s`, and the density is positive. -/
+theorem ae_restrict_comp_of_differentiableOn {P : E → Prop} (hs : IsOpen s)
+    (hf : DifferentiableOn ℝ f s) (hinj : InjOn f s) (hdet : ∀ x ∈ s, (fderiv ℝ f x).det ≠ 0)
+    (hmaps : MapsTo f s t) (h : ∀ᵐ y ∂μ.restrict t, P y) : ∀ᵐ x ∂μ.restrict s, P (f x) := by
+  have hf' : ∀ x ∈ s, HasFDerivWithinAt f (fderiv ℝ f x) s x := fun x hx =>
+    ((hf x hx).differentiableAt (hs.mem_nhds hx)).hasFDerivAt.hasFDerivWithinAt
+  have himage : ∀ᵐ y ∂μ.restrict (f '' s), P y :=
+    ae_restrict_of_ae_restrict_of_subset hmaps.image_subset h
+  rw [← map_withDensity_abs_det_fderiv_eq_addHaar μ hs.measurableSet.nullMeasurableSet hf'
+    hinj] at himage
+  have hdens := aemeasurable_ofReal_abs_det_fderivWithin μ hs.measurableSet hf'
+  have hfm : AEMeasurable f ((μ.restrict s).withDensity
+      fun x => ENNReal.ofReal |(fderiv ℝ f x).det|) :=
+    (hf.continuousOn.aemeasurable hs.measurableSet).mono_ac
+      (withDensity_absolutelyContinuous _ _)
+  refine (withDensity_absolutelyContinuous' hdens ?_).ae_le (ae_of_ae_map hfm himage)
+  filter_upwards [self_mem_ae_restrict hs.measurableSet] with x hx
+  simpa using hdet x hx
 
 /-! ### Jacobian bounds on compact sets and `Lᵖ` bounds for precomposition -/
 

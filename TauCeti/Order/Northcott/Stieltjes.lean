@@ -105,7 +105,7 @@ theorem setIntegral_Ioc_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 ≤ w
       summatory N (fun i ↦ w i • g (N i)) b - summatory N (fun i ↦ w i • g (N i)) a := by
   rw [restrict_Ioc_measure_summatoryStieltjes, summatory_sub_summatory_eq_sum_filter N _ hab,
     integral_finsetSum_measure fun i _ ↦
-      (integrable_dirac enorm_lt_top).smul_measure ENNReal.ofReal_ne_top]
+      (integrable_dirac eNorm_lt_top).smul_measure ENNReal.ofReal_ne_top]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [integral_smul_measure, integral_dirac, ENNReal.toReal_ofReal (hw i)]
 
