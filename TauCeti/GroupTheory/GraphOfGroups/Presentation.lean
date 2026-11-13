@@ -136,6 +136,12 @@ variable (T) in
 def edge (e : Γ.E) : π₁Tree 𝔸 T :=
   mk (Monoid.Coprod.inr (FreeGroup.of e))
 
+/-- The homomorphisms `A_v →* π₁(𝔸, T)` do not see transport along an equality of vertices. -/
+theorem of_cast {v v' : Γ.V} (h : v = v') (a : 𝔸.vertexGroup v) :
+    of T v' (MulEquiv.cast (M := 𝔸.vertexGroup) h a) = of T v a := by
+  subst h
+  rfl
+
 /-- Reversing a dart inverts its element: `rev e = e⁻¹`. -/
 @[simp] theorem edge_rev (e : Γ.E) : (edge T (Γ.rev e) : π₁Tree 𝔸 T) = (edge T e)⁻¹ :=
   eq_inv_of_mul_eq_one_left <| by
@@ -415,7 +421,7 @@ noncomputable def equivCoprod [∀ y, Subsingleton (𝔸.edgeGroup y)] (hO : Γ.
       (fun _ he => by simp [dartWord_of_mem_tree hT he]) (fun e => by simp [dartWord_rev hO])
       (fun _ c => by simp [Subsingleton.elim c 1]))
     (ofCoprod 𝔸 T O)
-    (by ext <;> simp [lift_dartWord (SerreGraph.IsOrientation.mem_or_rev_mem _ hO)])
+    (by ext <;> simp [lift_dartWord hO.mem_or_rev_mem])
     (by ext <;> simp)
 
 @[simp] theorem equivCoprod_of [∀ y, Subsingleton (𝔸.edgeGroup y)] (hO : Γ.IsOrientation O)
@@ -469,7 +475,7 @@ noncomputable def equivFreeGroup (hO : Γ.IsOrientation O)
       (fun _ _ => by simp))
     (FreeGroup.lift fun x => edge T x.1)
     (hom_ext (fun v => MonoidHom.ext fun a => by simp [Subsingleton.elim a 1]) fun e => by
-      simpa using lift_dartWord (SerreGraph.IsOrientation.mem_or_rev_mem _ hO) e)
+      simpa using lift_dartWord hO.mem_or_rev_mem e)
     (FreeGroup.ext_hom _ _ fun x => by simp)
 
 /-- The free-group coordinate of a dart generator is the signed coordinate of the dart. -/
