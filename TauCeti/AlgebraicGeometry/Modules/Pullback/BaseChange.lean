@@ -14,7 +14,6 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.Scheme.Opens
-import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
@@ -67,7 +66,7 @@ statements.
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSectionsLE`: for affine opens `U` and
   `V ≤ g⁻¹ U`, sections over `V` of the pullback are the base change along `Γ(X, U) → Γ(Y, V)`;
   `AlgebraicGeometry.Scheme.Hom.isBaseChange_app_pullbackSectionsLE_of_isIso` transports this
-  along an isomorphism `g^* M ≅ N`.
+  along a morphism `g^* M ⟶ N` inducing an isomorphism on sections over `V`.
 * `AlgebraicGeometry.Scheme.Hom.flat_sectionsBase_pullback`: flatness of the sections over an
   affine open survives every base change.
 * `AlgebraicGeometry.Scheme.Hom.liftBaseChange_pullbackSectionsBaseLinear_injective`: for flat
@@ -915,12 +914,12 @@ theorem isBaseChange_pullbackSectionsLE {U : X.Opens} (hU : IsAffineOpen U) {V :
   convert h using 1
   exact LinearMap.ext hφ
 
-/-- Variant of `isBaseChange_pullbackSectionsLE` for a module `N` isomorphic to `g^* M`, such as a
-component of a pulled-back graded algebra: pulling back sections to `V` and transporting them
-along an isomorphism `α : g^* M ⟶ N` is a base change along `g.appLE U V hVU`. -/
+/-- Variant of `isBaseChange_pullbackSectionsLE` for a morphism `α : g^* M ⟶ N` inducing an
+isomorphism on sections over `V`, such as a component of a pulled-back graded algebra:
+pulling back sections to `V` and applying `α.app V` is a base change along `g.appLE U V hVU`. -/
 theorem isBaseChange_app_pullbackSectionsLE_of_isIso {N : Y.Modules}
-    (α : (pullback g).obj M ⟶ N) [IsIso α] {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
-    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) [Algebra Γ(X, U) Γ(Y, V)]
+    (α : (pullback g).obj M ⟶ N) {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
+    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) [IsIso (α.app V)] [Algebra Γ(X, U) Γ(Y, V)]
     (hA : ∀ r, algebraMap Γ(X, U) Γ(Y, V) r = g.appLE U V hVU r)
     [Module Γ(X, U) Γ(N, V)] [IsScalarTower Γ(X, U) Γ(Y, V) Γ(N, V)]
     (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ(N, V))
@@ -935,9 +934,11 @@ theorem isBaseChange_app_pullbackSectionsLE_of_isIso {N : Y.Modules}
       map_add' := map_add _
       map_smul' r s := ((g.pullbackSectionsLE M U V hVU).map_smulₛₗ r s).trans
         (congrArg (· • _) (hA r).symm) }
-  exact (IsBaseChange.iff_of_equiv_comm (.refl _ _)
-    (Scheme.Modules.sectionsLinearEquiv (asIso α) V) (LinearMap.ext fun s ↦
-      (hφ s).trans (Scheme.Modules.sectionsLinearEquiv_apply (asIso α) V _).symm)).mp
+  let e : Γ((pullback g).obj M, V) ≃ₗ[Γ(Y, V)] Γ(N, V) :=
+    LinearEquiv.ofBijective
+      { toFun := α.app V, map_add' := map_add _, map_smul' := α.app_smul }
+      (ConcreteCategory.bijective_of_isIso (α.app V))
+  exact (IsBaseChange.iff_of_equiv_comm (.refl _ _) e (LinearMap.ext hφ)).mp
     (g.isBaseChange_pullbackSectionsLE M hU hV hVU hA ψ fun _ ↦ rfl)
 
 end AlgebraicGeometry.Scheme.Hom
