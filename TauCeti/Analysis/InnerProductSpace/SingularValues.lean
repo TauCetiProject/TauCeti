@@ -185,17 +185,11 @@ theorem ncard_ofPred_singularValues_eq (T : E →ₗ[𝕜] F) {s : ℝ} (hs : 0 
     ← Set.ncard_coe_finset, Finset.coe_filter_univ]
 
 /-- A value `s ≤ 0` occurs among the singular values of `T` either never (`s < 0`) or infinitely
-often (`s = 0`, from the dimension of the source on), so its `ncard` is `0`. -/
+often (`s = 0`), so its `ncard` is `0`. -/
 @[simp]
 theorem ncard_ofPred_singularValues_eq_zero_of_nonpos (T : E →ₗ[𝕜] F) {s : ℝ} (hs : s ≤ 0) :
-    {i | T.singularValues i = s}.ncard = 0 := by
-  rcases hs.lt_or_eq with hs | rfl
-  · have hempty : {i | T.singularValues i = s} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun i (hi : T.singularValues i = s) ↦
-        (T.singularValues_nonneg i).not_gt (hi ▸ hs)
-    rw [hempty, Set.ncard_empty]
-  · exact Set.Infinite.ncard ((Set.Ici_infinite (finrank 𝕜 E)).mono fun i hi ↦
-      T.singularValues_of_finrank_le hi)
+    {i | T.singularValues i = s}.ncard = 0 :=
+  Finsupp.ncard_ofPred_eq_zero_of_not_pos (singularValues_antitone T) hs.not_gt
 
 /-- A linear map and its adjoint have the same singular values. -/
 @[simp]
@@ -203,11 +197,8 @@ theorem singularValues_adjoint (A : E →ₗ[𝕜] F) :
     (adjoint A).singularValues = A.singularValues := by
   refine Finsupp.eq_of_antitone_of_ncard_eq (singularValues_antitone _)
     (singularValues_antitone _) fun s hs ↦ ?_
-  rcases hs.lt_or_gt with hs | hs
-  · rw [ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs.le,
-      ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs.le]
-  · rw [ncard_ofPred_singularValues_eq _ hs, ncard_ofPred_singularValues_eq _ hs, adjoint_adjoint,
-      finrank_eigenspace_comp_comm A (adjoint A) (by simpa using hs.ne')]
+  rw [ncard_ofPred_singularValues_eq _ hs, ncard_ofPred_singularValues_eq _ hs, adjoint_adjoint,
+    finrank_eigenspace_comp_comm A (adjoint A) (by simpa using hs.ne')]
 
 /-- The singular values of `A : E →ₗ[𝕜] F` vanish from the dimension of the target on. -/
 theorem singularValues_of_finrank_le_right (A : E →ₗ[𝕜] F) {i : ℕ} (hi : finrank 𝕜 F ≤ i) :

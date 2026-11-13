@@ -496,12 +496,8 @@ theorem principalSines_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
   -- matches that of `V ⊓ Uᗮ` when `dim U = dim V`.
   refine Finsupp.eq_of_antitone_of_ncard_eq (principalSines_antitone U V)
     (principalSines_antitone V U) fun s hs ↦ ?_
-  rw [principalSines_def, principalSines_def]
-  rcases hs.lt_or_gt with hs | hs
-  · -- No principal sine is negative.
-    rw [LinearMap.ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs.le,
-      LinearMap.ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs.le]
-  rw [LinearMap.ncard_ofPred_singularValues_eq _ hs, LinearMap.ncard_ofPred_singularValues_eq _ hs]
+  rw [principalSines_def, principalSines_def, LinearMap.ncard_ofPred_singularValues_eq _ hs,
+    LinearMap.ncard_ofPred_singularValues_eq _ hs]
   have ht₀ : ((s ^ 2 : ℝ) : 𝕜) ≠ 0 := by exact_mod_cast (pow_pos hs 2).ne'
   by_cases ht₁ : ((s ^ 2 : ℝ) : 𝕜) = 1
   · rw [ht₁, eigenspace_sinThetaMap_one, eigenspace_sinThetaMap_one,

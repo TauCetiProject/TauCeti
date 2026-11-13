@@ -39,7 +39,9 @@ value of `A ⊕ B` occurs as often as in `A` and `B` together. In particular the
 * `LinearMap.finrank_eigenspace_prodMap_withLpMap`: the eigenspaces of `T₁ ⊕ T₂` have dimension
   `dim ker(T₁ - μ) + dim ker(T₂ - μ)`.
 * `LinearMap.ncard_ofPred_singularValues_prodMap_withLpMap`: a value occurs among the
-  singular values of `A ⊕ B` as often as among those of `A` and `B` together.
+  singular values of `A ⊕ B` as often as among those of `A` and `B` together, counted by
+  `Set.ncard`; for a value `s ≤ 0` both sides are `0` (no negative value occurs, and `0` occurs
+  infinitely often).
 * `LinearMap.singularValues_prodMap_withLpMap_self`: `σᵢ(A ⊕ A) = σ_{⌊i/2⌋}(A)`.
 * `LinearMap.kyFanSum_prodMap_withLpMap_self`: `K₂ₖ(A ⊕ A) = 2 Kₖ(A)`.
 
