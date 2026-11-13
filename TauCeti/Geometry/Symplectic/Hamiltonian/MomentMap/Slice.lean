@@ -253,14 +253,13 @@ def symplecticSliceRepresentation :
 
 /-- The stabilizer acts on the symplectic slice by `[u] ↦ [dh_x u]`. -/
 @[simp]
-theorem symplecticSliceRepresentation_mk
-    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I' I' (fun y : M ↦ g • y) x)
-    (g : stabilizer G x)
+theorem symplecticSliceRepresentation_mk (g : stabilizer G x)
     (u : (hσ.symplecticFormAt x).orthogonal
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)) :
     hσ.symplecticSliceRepresentation hσG g (Submodule.Quotient.mk u) =
-      Submodule.Quotient.mk ⟨tangentRepresentation hd g u,
-        hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG hd g u.2⟩ := by
+      Submodule.Quotient.mk
+        ⟨tangentRepresentation (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x)
+          g u, hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g u.2⟩ := by
   rw [symplecticSliceRepresentation, SymplecticForm.reducedSpaceRepresentation_apply_mk]
   simp only [tangentAut_apply]
 
