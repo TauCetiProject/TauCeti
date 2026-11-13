@@ -63,16 +63,17 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateRes
   rw [Iso.inv_hom_id_apply] at hc
   have hr := TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_HNegTwoRes
     T.galHom.range x
-  -- `abelianizationCongr` is definitionally `Abelianization.map` in both directions, and the
+  -- `abelianizationCongr` is definitionally `Group.Abelianization.map` in both directions, and the
   -- additive equivalence and right unitor coerce to their underlying functions here.
   calc
-    _ = (TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))).toAddEquiv
+    _ = (TensorProduct.rid ℤ (Additive (Group.Abelianization T.galHom.range))).toAddEquiv
         (TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial
           (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
           (TauCeti.TateCohomology.HNegTwoRes (Rep.trivial ℤ big.Gal ℤ)
             T.galHom.range x)) := hc.symm
-    _ = (Abelianization.lift
-        (Abelianization.of : T.galHom.range →* Abelianization T.galHom.range).transfer).toAdditive
+    _ = (Group.Abelianization.lift
+        (Group.Abelianization.of : T.galHom.range →* Group.Abelianization
+            T.galHom.range).transfer).toAdditive
           (TauCeti.TateCohomology.HNegTwoAddEquivAbelianization x) := hr
     _ = _ := by
       let E := (MonoidHom.ofInjective T.galHom_injective).abelianizationCongr.toAdditive
@@ -91,7 +92,7 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateCor
     T.HNegTwoAddEquivAbelianization_trivialTateRangeIso_hom_neg_two]
   rw [T.inclusionHom_apply, MonoidHom.toAdditive_apply_apply,
     MonoidHom.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply,
-    toMul_ofMul, Abelianization.map_map_apply]
+    toMul_ofMul, Group.Abelianization.map_map_apply]
   have h : T.galHom.range.subtype.comp
       (MonoidHom.ofInjective T.galHom_injective : small.Gal →* T.galHom.range) = T.galHom :=
     MonoidHom.ext fun _ ↦ MonoidHom.ofInjective_apply T.galHom_injective

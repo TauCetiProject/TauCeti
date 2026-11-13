@@ -230,8 +230,11 @@ theorem convolutionL_nonneg {h : Lp ℝ 1 μ} {f : Lp ℝ p μ} (hh : 0 ≤ h) (
   exact smul_nonneg hy (by simpa using leftTranslation_mono y hf)
 
 /-- The integral of a convolution is the product of the integrals: `∫ (h ⋆ f) = (∫ h) • ∫ f`. -/
-theorem integral_convolutionL [CompleteSpace E] (h : Lp 𝕜 1 μ) (f : Lp E 1 μ) :
+theorem integral_convolutionL (h : Lp 𝕜 1 μ) (f : Lp E 1 μ) :
     ∫ x, convolutionL μ 1 ENNReal.one_ne_top h f x ∂μ = (∫ x, h x ∂μ) • ∫ x, f x ∂μ := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   rw [← L1.integral_eq_integral, L1.integral_eq, convolutionL_apply,
     ← L1.integralCLM.integral_comp_comm
       (integrable_smul_leftTranslation ENNReal.one_ne_top (L1.integrable_coeFn h) f)]

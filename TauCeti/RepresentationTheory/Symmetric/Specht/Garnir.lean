@@ -85,8 +85,6 @@ relation is proved, and stated, for the whole of `A_X`.
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Section 7.
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 2.6.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5, whose standard basis of the Specht module these relations straighten towards.
 -/
 
 public section

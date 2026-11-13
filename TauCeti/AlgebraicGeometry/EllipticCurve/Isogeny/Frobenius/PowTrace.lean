@@ -154,12 +154,14 @@ private theorem trace_toMatrix_pow_eq_frobeniusPowTrace (hN : (N : K) ≠ 0)
   push_cast
   linear_combination h
 
+omit [NeZero N] in
 /-- **The trace of `π ^ n` on `E[N]` is `t n` modulo `N`**, over a separably closed extension of
 the finite base in which `N` is invertible. -/
 theorem trace_torsionLinearMap_pow_ofIsogeny_baseChangeFrobenius (hN : (N : K) ≠ 0) (n : ℕ) :
     LinearMap.trace (ZMod N) _
         ((ofIsogeny (baseChangeFrobenius K W) ^ n).torsionLinearMap N) =
       W.frobeniusPowTrace n := by
+  have : NeZero N := ⟨fun h ↦ hN (by simp [h])⟩
   obtain ⟨b⟩ := WeierstrassCurve.nonempty_basis_torsionBy (W⁄K) N hN
   rw [LinearMap.trace_eq_matrix_trace (ZMod N) b, ← torsionRepresentation_apply, _root_.map_pow,
     torsionRepresentation_apply, ← LinearMap.toMatrix_pow,

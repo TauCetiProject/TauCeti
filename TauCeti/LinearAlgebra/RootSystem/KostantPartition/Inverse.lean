@@ -55,13 +55,11 @@ partition function of `S` with `i` erased, and the induction hypothesis applies.
   `TauCeti.sum_powerset_neg_one_pow_mul_kostantPartition`: **the inversion identity**, the second
   being the case `S = Φ⁺` that inverts the Weyl denominator.
 
-## Roadmap
+## Implementation notes
 
-The Kostant partition function is asked for in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, to be consumed by the Verma weight
-multiplicities of that layer and by Kostant's multiplicity formula in Layer 6, whose stated proof is
-"by expanding the character formula against the geometric-series expansion of the inverse
-denominator (whose coefficients are `P`)". This file is that expansion. As with
+Kostant's multiplicity formula is proved by expanding the character formula against the
+geometric-series expansion of the inverse Weyl denominator, whose coefficients are the values of
+the Kostant partition function. This file is that expansion. As with
 `TauCeti.weylDenominator` and `TauCeti.kostantPartition`, nothing here uses the Lie algebra, so it
 is stated for a base of an arbitrary root pairing.
 

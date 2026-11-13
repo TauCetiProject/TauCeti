@@ -43,9 +43,7 @@ theorem re_inner_le_of_spectrum_subset_Iic
     RCLike.re ⟪T x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2 := by
   have hle : T ≤ algebraMap ℝ (H →L[𝕜] H) c :=
     le_algebraMap_of_spectrum_le (fun r hr => hσ hr) hT
-  have hpos : (algebraMap ℝ (H →L[𝕜] H) c - T).IsPositive := by
-    rw [← ContinuousLinearMap.nonneg_iff_isPositive]
-    exact sub_nonneg.mpr hle
+  have hpos : (algebraMap ℝ (H →L[𝕜] H) c - T).IsPositive := ContinuousLinearMap.le_def.mp hle
   have hx := hpos.re_inner_nonneg_left x
   simp only [sub_apply, inner_sub_left, map_sub, re_inner_algebraMap_apply] at hx
   linarith
@@ -57,9 +55,7 @@ theorem le_re_inner_of_spectrum_subset_Ici
     c * ‖x‖ ^ 2 ≤ RCLike.re ⟪T x, x⟫_𝕜 := by
   have hle : algebraMap ℝ (H →L[𝕜] H) c ≤ T :=
     algebraMap_le_of_le_spectrum (fun r hr => hσ hr) hT
-  have hpos : (T - algebraMap ℝ (H →L[𝕜] H) c).IsPositive := by
-    rw [← ContinuousLinearMap.nonneg_iff_isPositive]
-    exact sub_nonneg.mpr hle
+  have hpos : (T - algebraMap ℝ (H →L[𝕜] H) c).IsPositive := ContinuousLinearMap.le_def.mp hle
   have hx := hpos.re_inner_nonneg_left x
   simp only [sub_apply, inner_sub_left, map_sub, re_inner_algebraMap_apply] at hx
   linarith
@@ -72,8 +68,7 @@ theorem lowerFormBoundOn_of_restriction_spectrum_subset_Ici
     {U : Submodule 𝕜 H} [U.HasOrthogonalProjection]
     (hU : ∀ x ∈ U, A x ∈ U) {c : ℝ}
     (hσ : spectrum ℝ (A.restrict hU) ⊆ Set.Ici c) : A.LowerFormBoundOn U c := by
-  let : CompleteSpace U :=
-    completeSpace_coe_iff_isComplete.mpr U.isComplete_coe_of_hasOrthogonalProjection
+  let : CompleteSpace U := U.completeSpace_coe_of_hasOrthogonalProjection
   have hres : IsSelfAdjoint (A.restrict hU) :=
     isSelfAdjoint_iff_isSymmetric.mpr (hA.restrict_invariant hU)
   apply (lowerFormBoundOn_iff A U c).2
@@ -89,8 +84,7 @@ theorem upperFormBoundOn_of_restriction_spectrum_subset_Iic
     {U : Submodule 𝕜 H} [U.HasOrthogonalProjection]
     (hU : ∀ x ∈ U, A x ∈ U) {c : ℝ}
     (hσ : spectrum ℝ (A.restrict hU) ⊆ Set.Iic c) : A.UpperFormBoundOn U c := by
-  let : CompleteSpace U :=
-    completeSpace_coe_iff_isComplete.mpr U.isComplete_coe_of_hasOrthogonalProjection
+  let : CompleteSpace U := U.completeSpace_coe_of_hasOrthogonalProjection
   have hres : IsSelfAdjoint (A.restrict hU) :=
     isSelfAdjoint_iff_isSymmetric.mpr (hA.restrict_invariant hU)
   apply (upperFormBoundOn_iff A U c).2

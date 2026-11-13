@@ -60,7 +60,9 @@ of projective space.
   `V` over `ℝ` or `ℂ`.
 * `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
-  homeomorphism from `U_i` onto `Fin n → K`.
+  homeomorphism from `U_i` onto `Fin n → K`, with
+  `Projectivization.isOpenEmbedding_affineChart_symm` showing that its inverse is an open
+  embedding.
 * `Projectivization.interAffineOpenHomeomorph`: the affine chart identifies the part `X ∩ U_i` of a
   set `X` with its image in `Fin n → K`.
 -/
@@ -301,6 +303,12 @@ theorem coe_affineOpenPartialHomeomorph (i : Fin (n + 1)) :
 theorem coe_affineOpenPartialHomeomorph_symm (i : Fin (n + 1)) :
     ⇑(affineOpenPartialHomeomorph (K := K) i).symm = (affineChart i).symm :=
   (rfl)
+
+/-- The inverse of the standard affine chart is an open embedding onto `affineOpen i`. -/
+theorem isOpenEmbedding_affineChart_symm (i : Fin (n + 1)) :
+    IsOpenEmbedding (affineChart (K := K) i).symm :=
+  coe_affineOpenPartialHomeomorph_symm (K := K) i ▸
+    (affineOpenPartialHomeomorph (K := K) i).symm.isOpenEmbedding (by simp)
 
 /-- **The affine part of a subset of projective space.** The standard affine chart at the
 coordinate `i` restricts to a homeomorphism from the part `X ∩ U_i` of a set `X` inside the affine
