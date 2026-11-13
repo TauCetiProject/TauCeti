@@ -19,13 +19,18 @@ For a torsion-free connection on the target, differentiate the inhomogeneous Flo
 
 `D_u ξ = ∇_s ξ - ∇_ξ X_Ks + (∇_ξ J)(u_t - X_Kt) + J(∇_t ξ - ∇_ξ X_Kt)`.
 
-All vectors live in the actual tangent fibre of the target. The derivative of `J` is the
-induced Hom connection, not the ordinary derivative of a matrix in a chosen chart. The
-variation field is the actual parameter velocity of the family, and the interchange of
+In the map variation all vectors live in the actual tangent fibre of the target. The derivative
+of `J` is the induced Hom connection, not the ordinary derivative of a matrix in a chosen chart.
+The variation field is the actual parameter velocity of the family, and the interchange of
 parameter and domain derivatives follows from torsion-freeness and joint `C²` regularity.
 Domain-dependent coefficients are allowed; coefficients are held fixed during this map
 variation. No Floer equation, compatibility of the connection with `J`, or metric is required.
 This is a pointwise formula, not a Sobolev or Fredholm assertion.
+
+Varying instead the endomorphism field along a line `J + q Y`, with the map and Hamiltonians
+fixed, the derivative of the operator is `Y(u)(∂t u - X_Kt)`
+(`hasDerivAt_floerOperator_add_smul`). There the tangent fibre at `u z` is read in its model
+normed space `E`, where `HasDerivAt` is stated.
 
 The operator is written with partial curve velocities, so its definition does not depend on
 any choice of connection. For a differentiable map, `floerOperator_eq` identifies it with the
@@ -86,8 +91,9 @@ theorem floerOperator_eq (ω : SmoothTwoForm I M)
   simp only [stdComplexLineReal_eq, stdComplexLineImag_eq]
 
 /-- **The `J`-direction derivative of the Floer operator.** Along the line `J + q Y` of
-domain-dependent endomorphism fields, the intrinsic Floer operator is affine in `q`, with
-derivative `Y(u)(∂t u - X_Kt)` in the tangent fibre at `u z`. -/
+domain-dependent endomorphism fields, the intrinsic Floer operator has derivative
+`Y(u)(∂t u - X_Kt)` at every parameter `q`. The tangent fibre at `u z` is read in its model
+normed space `E`. -/
 theorem hasDerivAt_floerOperator_add_smul (ω : SmoothTwoForm I M)
     (J Y : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
     (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (z : ℝ × ℝ) (q : ℝ) :
