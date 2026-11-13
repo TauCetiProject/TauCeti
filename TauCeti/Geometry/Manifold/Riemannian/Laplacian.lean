@@ -251,10 +251,9 @@ theorem hessian_div_eq_mvfderiv_add [IsManifold I 2 M]
         mvfderiv I (fun x ↦ mvfderiv I f x (Y x) / f x) x (X x) -
         mvfderiv I f x (CovariantDerivative.leviCivitaConnection I M Y x (X x)) / f x =
       hessian I f x (X x) (Y x) / f x := by
-  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := 2) (by simp)
   have hfx : MDiffAt f x := hf.mdifferentiableAt (by simp)
   have hdY : MDiffAt (fun x ↦ mvfderiv I f x (Y x)) x :=
-    mdifferentiableAt_mvfderiv_apply (n := 2) hf (by simp) hY
+    mdifferentiableAt_mvfderiv_apply hf le_rfl hY
   rw [hessian_apply_eq_mvfderiv_sub x hf X Y hY]
   have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) x (X x) =
       -(f x ^ 2)⁻¹ * mvfderiv I f x (X x) := by
