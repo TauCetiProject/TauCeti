@@ -150,4 +150,13 @@ theorem IsLocalComplement.exists_isComplement'_of_coprime_index (h : N.IsLocalCo
   have : H.FiniteIndex := ⟨hH⟩
   exact ⟨_, h.isComplement'_gaschutzComplement _ (fun u => u.out_eq') hcop⟩
 
+/-- **Gaschütz's splitting theorem**, as a criterion. If `N ≤ H` and `[G : H]` is prime to
+`|N|`, then the abelian normal subgroup `N` has a complement in `G` if and only if it has a local
+complement in `H`. -/
+theorem exists_isComplement'_iff_exists_isLocalComplement_of_coprime_index (hNH : N ≤ H)
+    (hcop : Nat.Coprime H.index (Nat.card N)) :
+    (∃ D : Subgroup G, N.IsComplement' D) ↔ ∃ K : Subgroup G, N.IsLocalComplement K H :=
+  ⟨fun ⟨D, hD⟩ => ⟨D ⊓ H, hD.isLocalComplement_inf hNH⟩,
+    fun ⟨_, hK⟩ => hK.exists_isComplement'_of_coprime_index hcop⟩
+
 end Subgroup
