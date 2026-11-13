@@ -162,15 +162,16 @@ theorem isZeroAt_of_smul_slash_scaleGL_eq {Γ' : Subgroup (GL (Fin 2) ℝ)} [Γ'
 
 /-- **The nebentypus relation descends to the level-raised function.** If a cusp form `g` of level
 `N` lies in the `χ`-eigenspace and is the level-raise of `f`, then `f ∣[k] diag(l, 1)` satisfies
-the classical nebentypus relation for `χ` on the nose.
+the classical nebentypus relation for `χ` on the nose, that is, it lies in
+`TauCeti.functionCharSpace k χ`.
 
 This is the hypothesis `slash_mapGL_eq_self_of_mem_Gamma1_div` asks for. -/
 lemma nebentypus_slash_scaleGL_of_mem_cuspFormCharSpace {l N : ℕ} [NeZero l] {k : ℤ}
     {χ : (ZMod N)ˣ →* ℂˣ} {f : ℍ → ℂ} {g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hgχ : g ∈ cuspFormCharSpace k χ) (hg : ⇑g = (l : ℂ) ^ (1 - k) • (f ∣[k] scaleGL l))
-    (γ : SL(2, ℤ)) (hγ : γ ∈ Gamma0 N) : (f ∣[k] scaleGL l) ∣[k] mapGL ℝ γ =
-      (χ ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) : ℂ) • (f ∣[k] scaleGL l) := by
-  have h := (mem_cuspFormCharSpace_iff_nebentypus k χ g).mp hgχ ⟨γ, hγ⟩
+    (hgχ : g ∈ cuspFormCharSpace k χ) (hg : ⇑g = (l : ℂ) ^ (1 - k) • (f ∣[k] scaleGL l)) :
+    f ∣[k] scaleGL l ∈ functionCharSpace k χ := by
+  refine (mem_functionCharSpace_iff k χ _).mpr fun γ ↦ ?_
+  have h := (mem_cuspFormCharSpace_iff_nebentypus k χ g).mp hgχ γ
   -- the normalizing scalar `l ^ (1 - k)` relating `g` to `f ∣[k] diag(l, 1)` passes through
   -- the slash — `mapGL ℝ γ` has positive determinant — and then cancels, so the relation is
   -- inherited unchanged: `smul_slash` moves the scalar out, `σ_mapGL_real_eq_refl` kills the
