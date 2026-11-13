@@ -31,7 +31,7 @@ These statements concern meromorphic germs: the native total gamma value at a po
 
 public section
 
-open Complex
+open Complex Filter Topology
 
 namespace TauCeti.LFunctions.AnalyticLFunctionData
 
@@ -115,6 +115,12 @@ theorem meromorphicOrderAt_gammaFactor_ne_top (s : ℂ) :
     meromorphicOrderAt d.gammaFactor s ≠ ⊤ := by
   rw [d.meromorphicOrderAt_gammaFactor_eq_neg_count]
   exact WithTop.coe_ne_top
+
+/-- The gamma factor is nonzero on a punctured neighbourhood of every point. -/
+theorem eventually_ne_zero_gammaFactor (s : ℂ) :
+    ∀ᶠ z in 𝓝[≠] s, d.gammaFactor z ≠ 0 :=
+  (meromorphicOrderAt_ne_top_iff_eventually_ne_zero (d.meromorphic_gammaFactor s)).mp
+    (d.meromorphicOrderAt_gammaFactor_ne_top s)
 
 /-- The gamma factor has order zero exactly where its native total value is nonzero. -/
 theorem meromorphicOrderAt_gammaFactor_eq_zero_iff (s : ℂ) :

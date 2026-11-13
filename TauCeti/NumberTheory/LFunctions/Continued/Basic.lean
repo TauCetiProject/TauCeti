@@ -11,21 +11,22 @@ public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import Mathlib.NumberTheory.LSeries.Deriv
 
 /-!
-# Removing the archimedean factors from a completed L-function
+# Removing the conductor and gamma factors from a completed L-function
 
 `AnalyticLFunctionData.continuedL` removes the conductor power and the gamma factor
 from the completed function. A pole of the completion can be cancelled by a zero of the
 reciprocal gamma factor. The raw pointwise product has an incorrect value at such a
 removable singularity, so we repair its nonnegative-order germs using Mathlib's
-`toMeromorphicNFOn`. At genuine poles we retain the original representative.
+`toMeromorphicNFOn`. When the raw product is meromorphic on `ℂ`, genuine poles retain
+the original representative; otherwise the construction returns the zero function.
 
 For a record with meromorphic continuation, the repaired function is meromorphic,
 is analytic at every point of nonnegative order, and its order is the order of the
 completion minus that of the gamma factor. It agrees with the raw product away from
 the recorded poles, and recovers the completion as a punctured germ everywhere.
 These statements do not require a functional equation or a Dirichlet series.
-With Dirichlet agreement and average absolute coefficient growth, it agrees with
-the Dirichlet series throughout `Re s > 1`, including any gamma poles there.
+With meromorphic continuation, Dirichlet agreement and average absolute coefficient growth,
+it agrees with the Dirichlet series throughout `Re s > 1`, including any gamma poles there.
 
 ## References
 
@@ -34,7 +35,7 @@ the Dirichlet series throughout `Re s > 1`, including any gamma poles there.
 
 public section
 
-open Complex Filter Topology
+open Complex ComplexConjugate Filter Topology
 
 namespace TauCeti.LFunctions.AnalyticLFunctionData
 
@@ -46,13 +47,31 @@ noncomputable def uncompletedProduct (s : ℂ) : ℂ :=
   ((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.completed s * d.invGammaFactor s
 
 /-- The pointwise formula for the raw uncompleted product. -/
-theorem uncompletedProduct_def :
-    d.uncompletedProduct =
-      fun s ↦ ((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.completed s * d.invGammaFactor s := (rfl)
+theorem uncompletedProduct_def (s : ℂ) :
+    d.uncompletedProduct s =
+      ((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.completed s * d.invGammaFactor s := (rfl)
+
+/-- Taking the dual card reflects the raw uncompleted product across the real axis. -/
+@[simp]
+theorem uncompletedProduct_dual (s : ℂ) :
+    d.dual.uncompletedProduct s = conj (d.uncompletedProduct (conj s)) := by
+  simp only [uncompletedProduct_def, dual_conductor, dual_completed_apply,
+    invGammaFactor_def, gammaFactor_dual, map_mul, map_inv₀]
+  have hN := TauCeti.ofReal_cpow_conj (d.conductor : ℕ).cast_nonneg (-(conj s) / 2)
+  simp only [Complex.ofReal_natCast, map_div₀, map_neg, map_ofNat, conj_conj] at hN
+  rw [← hN]
+
+/-- Comparing cards preserves the raw uncompleted product. -/
+theorem EqOffZero.uncompletedProduct_eq {d e : AnalyticLFunctionData} (h : d.EqOffZero e) :
+    d.uncompletedProduct = e.uncompletedProduct := by
+  funext s
+  simp only [uncompletedProduct_def, invGammaFactor_def, h.conductor_eq, h.completed_eq,
+    h.gammaFactor_eq]
 
 /-- The uncompleted function obtained by removing the conductor and gamma factors.
-Nonnegative-order singularities of the raw product are repaired analytically;
-the representative at any remaining pole is unchanged. -/
+When the raw product is meromorphic on `ℂ` (in particular, under meromorphic continuation),
+its nonnegative-order singularities are repaired analytically and the representative at any
+remaining pole is unchanged. Otherwise this is the zero function. -/
 noncomputable def continuedL : ℂ → ℂ :=
   toMeromorphicNFOn d.uncompletedProduct {s | 0 ≤ meromorphicOrderAt d.uncompletedProduct s}
 
@@ -62,15 +81,61 @@ theorem continuedL_def :
       {s | 0 ≤ meromorphicOrderAt d.uncompletedProduct s} :=
   (rfl)
 
+/-- Comparing cards preserves the continued uncompleted function. -/
+theorem EqOffZero.continuedL_eq {d e : AnalyticLFunctionData} (h : d.EqOffZero e) :
+    d.continuedL = e.continuedL := by
+  simp only [continuedL_def, h.uncompletedProduct_eq]
+
+/-- Taking the dual card reflects the continued uncompleted function across the real axis. -/
+@[simp]
+theorem continuedL_dual (s : ℂ) :
+    d.dual.continuedL s = conj (d.continuedL (conj s)) := by
+  have hr : d.dual.uncompletedProduct = conj ∘ d.uncompletedProduct ∘ conj :=
+    funext d.uncompletedProduct_dual
+  have ho (z : ℂ) : meromorphicOrderAt d.dual.uncompletedProduct z =
+      meromorphicOrderAt d.uncompletedProduct (conj z) := by
+    rw [hr, meromorphicOrderAt_conj_conj]
+  -- Reflection preserves the repair set and its meromorphy hypothesis.
+  have hm : MeromorphicOn d.dual.uncompletedProduct
+      {z | 0 ≤ meromorphicOrderAt d.dual.uncompletedProduct z} ↔
+      MeromorphicOn d.uncompletedProduct
+        {z | 0 ≤ meromorphicOrderAt d.uncompletedProduct z} := by
+    constructor <;> intro h z hz
+    · have hz' := h (conj z) (by simpa only [Set.mem_ofPred_eq, ho, conj_conj] using hz)
+      simpa only [hr, meromorphicAt_conj_conj_iff, conj_conj] using hz'
+    · rw [hr, meromorphicAt_conj_conj_iff]
+      exact h _ (by simpa only [Set.mem_ofPred_eq, ho] using hz)
+  simp only [continuedL_def]
+  by_cases hf : MeromorphicOn d.uncompletedProduct
+      {z | 0 ≤ meromorphicOrderAt d.uncompletedProduct z}
+  · have hf' := hm.mpr hf
+    by_cases hs : 0 ≤ meromorphicOrderAt d.dual.uncompletedProduct s
+    · -- On the repair set, the analytic representatives agree by their punctured germs.
+      have hs' : 0 ≤ meromorphicOrderAt d.uncompletedProduct (conj s) := by rwa [ho] at hs
+      have ha := (meromorphicNFOn_toMeromorphicNFOn _ _ hs).meromorphicOrderAt_nonneg_iff_analyticAt
+        |>.mp (by rwa [meromorphicOrderAt_toMeromorphicNFOn hf' hs])
+      have hb :=
+        (meromorphicNFOn_toMeromorphicNFOn _ _ hs').meromorphicOrderAt_nonneg_iff_analyticAt
+        |>.mp (by rwa [meromorphicOrderAt_toMeromorphicNFOn hf hs'])
+      have hc : Tendsto conj (𝓝[≠] s) (𝓝[≠] (conj s)) :=
+        continuous_conj.continuousWithinAt.tendsto_nhdsWithin fun z hz ↦
+          (starRingEnd ℂ).injective.ne hz
+      apply (ha.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+        (by simpa only [Function.comp_def, conj_conj] using hb.conj_conj.continuousAt)).mp _
+        |>.eq_of_nhds
+      filter_upwards [hf'.toMeromorphicNFOn_eq_self_on_nhdsNE hs,
+        hc.eventually (hf.toMeromorphicNFOn_eq_self_on_nhdsNE hs')] with z hz hz'
+      simpa only [Function.comp_apply, hz, hz'] using d.uncompletedProduct_dual z
+    · rw [toMeromorphicNFOn_eq_self_on_compl hf' hs,
+        toMeromorphicNFOn_eq_self_on_compl hf (by simpa only [Set.mem_compl_iff,
+          Set.mem_ofPred_eq, ← ho] using hs), d.uncompletedProduct_dual]
+  · simp only [toMeromorphicNFOn_of_not_meromorphicOn hf,
+      toMeromorphicNFOn_of_not_meromorphicOn (hm.not.mpr hf), Pi.zero_apply, map_zero]
+
 private theorem analyticAt_conductorPower (s : ℂ) :
     AnalyticAt ℂ (fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2)) s :=
   (((differentiable_id.neg.div_const 2).const_cpow
     (Or.inl (Nat.cast_ne_zero.mpr d.conductor.ne_zero))).analyticAt s)
-
-private theorem eventually_ne_zero_gammaFactor (s : ℂ) :
-    ∀ᶠ z in 𝓝[≠] s, d.gammaFactor z ≠ 0 :=
-  (meromorphicOrderAt_ne_top_iff_eventually_ne_zero (d.meromorphic_gammaFactor s)).mp
-    (d.meromorphicOrderAt_gammaFactor_ne_top s)
 
 variable {d} (h : d.HasMeromorphicContinuation)
 
@@ -80,7 +145,7 @@ include h
 @[fun_prop]
 theorem HasMeromorphicContinuation.meromorphic_uncompletedProduct :
     Meromorphic d.uncompletedProduct := by
-  simp only [uncompletedProduct_def]
+  rw [funext d.uncompletedProduct_def]
   exact fun s ↦ ((analyticAt_conductorPower d s).meromorphicAt.mul (h.meromorphic s)).mul
     (d.analyticAt_invGammaFactor s).meromorphicAt
 
@@ -92,7 +157,7 @@ theorem HasMeromorphicContinuation.continuedL_eq_uncompletedProduct_of_analyticA
     h.meromorphic_uncompletedProduct.meromorphicOn ha.meromorphicOrderAt_nonneg,
     toMeromorphicNFAt_eq_self.mpr ha.meromorphicNFAt]
 
-/-- Removing the archimedean factors changes no punctured germ of the raw product. -/
+/-- Repairing nonnegative-order singularities changes no punctured germ of the raw product. -/
 theorem HasMeromorphicContinuation.continuedL_eventuallyEq (s : ℂ) :
     d.continuedL =ᶠ[𝓝[≠] s] d.uncompletedProduct := by
   filter_upwards [(h.meromorphic_uncompletedProduct s).eventually_analyticAt] with z hz
@@ -109,7 +174,7 @@ theorem HasMeromorphicContinuation.meromorphicOrderAt_continuedL (s : ℂ) :
     meromorphicOrderAt d.continuedL s =
       meromorphicOrderAt d.completed s - meromorphicOrderAt d.gammaFactor s := by
   rw [meromorphicOrderAt_congr (h.continuedL_eventuallyEq s)]
-  simp only [uncompletedProduct_def]
+  rw [funext d.uncompletedProduct_def]
   rw [fun_meromorphicOrderAt_mul
       (f := fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2) * d.completed z)
       ((analyticAt_conductorPower d s).meromorphicAt.mul (h.meromorphic s))
@@ -138,12 +203,13 @@ theorem HasMeromorphicContinuation.analyticAt_continuedL_iff (s : ℂ) :
 theorem HasMeromorphicContinuation.continuedL_eq {s : ℂ} (hs : d.polarOrder s = 0) :
     d.continuedL s = d.uncompletedProduct s := by
   apply h.continuedL_eq_uncompletedProduct_of_analyticAt
-  simp only [uncompletedProduct_def]
+  rw [funext d.uncompletedProduct_def]
   exact ((analyticAt_conductorPower d s).mul (h.analyticAt s hs)).mul
     (d.analyticAt_invGammaFactor s)
 
 /-- At a genuine pole of the uncompleted function, the raw representative is retained. -/
-theorem HasMeromorphicContinuation.continuedL_eq_of_order_neg {s : ℂ}
+theorem
+    HasMeromorphicContinuation.continuedL_eq_uncompletedProduct_of_meromorphicOrderAt_neg {s : ℂ}
     (hs : meromorphicOrderAt d.continuedL s < 0) :
     d.continuedL s = d.uncompletedProduct s := by
   rw [meromorphicOrderAt_congr (h.continuedL_eventuallyEq s)] at hs
@@ -155,16 +221,28 @@ theorem HasMeromorphicContinuation.analyticAt_continuedL_of_polarOrder_eq_zero {
     (hs : d.polarOrder s = 0) : AnalyticAt ℂ d.continuedL s := by
   apply h.analyticAt_continuedL
   rw [meromorphicOrderAt_congr (h.continuedL_eventuallyEq s)]
-  simp only [uncompletedProduct_def]
+  rw [funext d.uncompletedProduct_def]
   exact (((analyticAt_conductorPower d s).mul (h.analyticAt s hs)).mul
     (d.analyticAt_invGammaFactor s)).meromorphicOrderAt_nonneg
 
-/-- Away from gamma poles and recorded poles, putting back the archimedean factors
-recovers the completed function pointwise. -/
+/-- Away from gamma poles, no repair of the raw uncompleted product is needed. -/
+theorem HasMeromorphicContinuation.continuedL_eq_of_gammaFactor_ne_zero {s : ℂ}
+    (hγ : d.gammaFactor s ≠ 0) : d.continuedL s = d.uncompletedProduct s := by
+  by_cases hs : d.polarOrder s = 0
+  · exact h.continuedL_eq hs
+  · apply h.continuedL_eq_uncompletedProduct_of_meromorphicOrderAt_neg
+    rw [h.meromorphicOrderAt_continuedL,
+      (d.meromorphicOrderAt_gammaFactor_eq_zero_iff s).mpr hγ, sub_zero,
+      h.meromorphicOrderAt_eq s hs]
+    exact_mod_cast neg_lt_zero.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hs) :
+      (0 : ℤ) < d.polarOrder s)
+
+/-- Away from gamma poles, putting back the conductor and gamma factors recovers
+the completed function pointwise, including at recorded poles. -/
 theorem HasMeromorphicContinuation.completed_eq_mul_continuedL {s : ℂ}
-    (hs : d.polarOrder s = 0) (hγ : d.gammaFactor s ≠ 0) :
+    (hγ : d.gammaFactor s ≠ 0) :
     d.completed s = ((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s * d.continuedL s := by
-  rw [h.continuedL_eq hs]
+  rw [h.continuedL_eq_of_gammaFactor_ne_zero hγ]
   simp only [uncompletedProduct_def, invGammaFactor_def, neg_div, Complex.cpow_neg]
   have hN := d.conductor_cpow_ne_zero (s / 2)
   field_simp
@@ -174,11 +252,8 @@ as a punctured germ at every point, including the poles. -/
 theorem HasMeromorphicContinuation.completed_eventuallyEq_mul_continuedL (s : ℂ) :
     d.completed =ᶠ[𝓝[≠] s]
       fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (z / 2) * d.gammaFactor z * d.continuedL z := by
-  filter_upwards [h.continuedL_eventuallyEq s, eventually_ne_zero_gammaFactor d s] with z hz hzγ
-  rw [hz]
-  simp only [uncompletedProduct_def, invGammaFactor_def, neg_div, Complex.cpow_neg]
-  have hN := d.conductor_cpow_ne_zero (z / 2)
-  field_simp
+  filter_upwards [d.eventually_ne_zero_gammaFactor s] with z hzγ
+  exact h.completed_eq_mul_continuedL hzγ
 
 /-- An analytic function with the same punctured germ has the repaired value. -/
 theorem HasMeromorphicContinuation.continuedL_eq_of_eventuallyEq {g : ℂ → ℂ} {s : ℂ}
@@ -190,8 +265,9 @@ theorem HasMeromorphicContinuation.continuedL_eq_of_eventuallyEq {g : ℂ → �
     heq).eq_of_nhds
 
 omit h in
-/-- With absolute convergence on the right half-plane, removing the archimedean
-factors recovers the Dirichlet series, even at a cancelled gamma pole. -/
+/-- With meromorphic continuation and absolute convergence on the right half-plane,
+removing the conductor and gamma factors recovers the Dirichlet series, even at a
+cancelled gamma pole. -/
 theorem HasDirichletAgreement.continuedL_eq_LSeries (hD : d.HasDirichletAgreement)
     (hc : d.HasMeromorphicContinuation) (hg : d.HasAverageCoefficientGrowth)
     {s : ℂ} (hs : 1 < s.re) :
@@ -200,7 +276,7 @@ theorem HasDirichletAgreement.continuedL_eq_LSeries (hD : d.HasDirichletAgreemen
     ((hasAverageCoefficientGrowth_iff_abscissaOfAbsConv_le.mp hg).trans_lt
       (by exact_mod_cast hs))
   apply hc.continuedL_eq_of_eventuallyEq ha
-  filter_upwards [hc.completed_eventuallyEq_mul_continuedL s, eventually_ne_zero_gammaFactor d s,
+  filter_upwards [hc.completed_eventuallyEq_mul_continuedL s, d.eventually_ne_zero_gammaFactor s,
     nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs))]
     with z hz hzγ hzre
   have hN := d.conductor_cpow_ne_zero (z / 2)

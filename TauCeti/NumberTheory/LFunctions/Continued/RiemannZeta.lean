@@ -43,19 +43,13 @@ private theorem continuedL_eventuallyEq_riemannZeta (s : ℂ) :
 /-- Removing the conductor and gamma factors from the zeta record recovers the
 native Riemann zeta function, including the removable value at zero. -/
 @[simp]
-theorem continuedL_riemannZetaData : riemannZetaData.continuedL = riemannZeta := by
+theorem riemannZetaData_continuedL : riemannZetaData.continuedL = riemannZeta := by
   funext s
   have heq := continuedL_eventuallyEq_riemannZeta s
   by_cases hs : s = 1
   · subst s
-    have ho : meromorphicOrderAt riemannZetaData.continuedL 1 = (-1 : ℤ) := by
-      rw [riemannZetaData_hasMeromorphicContinuation.meromorphicOrderAt_continuedL,
-        riemannZetaData_completed, meromorphicOrderAt_completedRiemannZeta_one]
-      rw [funext riemannZetaData_gammaFactor,
-        (meromorphicOrderAt_Gammaℝ_eq_zero_iff 1).mpr (by rw [Gammaℝ_one]; exact one_ne_zero)]
-      simp
-    rw [riemannZetaData_hasMeromorphicContinuation.continuedL_eq_of_order_neg
-      (by rw [ho]; exact_mod_cast (by norm_num : (-1 : ℤ) < 0))]
+    rw [riemannZetaData_hasMeromorphicContinuation.continuedL_eq_of_gammaFactor_ne_zero
+      (by rw [riemannZetaData_gammaFactor, Gammaℝ_one]; exact one_ne_zero)]
     rw [uncompletedProduct_riemannZetaData, riemannZeta_def_of_ne_zero one_ne_zero]
   · exact riemannZetaData_hasMeromorphicContinuation.continuedL_eq_of_eventuallyEq
       (analyticOn_riemannZeta s hs) heq
