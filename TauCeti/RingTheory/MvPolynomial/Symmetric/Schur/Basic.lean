@@ -79,8 +79,6 @@ involution, and it lives downstream in
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2.
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 5.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7.
 -/
 
 public section
