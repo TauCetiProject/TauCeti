@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Backward
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Schauder
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight.Backward
 
 /-!
 # A priori estimates in spatially weighted parabolic Hölder classes
@@ -28,21 +27,24 @@ apply to `v`. This file transports the a priori theory along this conjugation.
   `‖u / w‖_{2+α,par} ≤ C (‖P u / w‖_{α,par} + ‖u(·, 0) / w‖_{2,α})`. The constant depends only
   on the dimension, `α`, the ellipticity constants, a bound on the coefficient norms, a bound on
   the norms of `∂ᵢℓ` and `∂ᵢ∂ⱼℓ`, and a bound on the horizon.
-* **The comparison bound in the weighted uniform norm.** For degenerate elliptic `a` and
-  `c_w ≤ γ`, `|P u| ≤ K w` and `|u(·, t₀)| ≤ M w` give
+* **The comparison bound in the weighted uniform norm.** For degenerate elliptic `a`, `c_w ≤ γ`
+  and `0 ≤ γ`, `|P u| ≤ K w` and `|u(·, t₀)| ≤ M w` give
   `|u(x, t)| ≤ w(x) exp (γ (t - t₀)) (M + (t - t₀) K)`. The sign condition is on `c_w`, not on
   `c`: for `w = exp x` on the line and constant coefficients, `c_w = c + a + b`.
 * **Uniqueness.** For degenerate elliptic `a`, with no sign condition on `c`, an element of the
   weighted class is determined by `P u` and `u(·, t₀)`. This is uniqueness for the Cauchy
-  problem among functions growing at most like `w`, such as `w = exp ⟨x⟩` with
-  `⟨x⟩ = √(1 + ‖x‖²)`. Some growth restriction is necessary: Tychonoff constructed a nonzero
-  solution of the heat equation with zero initial data. The weight `exp ‖x‖²` is not admissible
-  here, since its logarithm has unbounded gradient and the conjugated coefficient `c_w` is then
-  unbounded.
+  problem in the weighted class `w C_b^{2+α,1+α/2}`, whose elements grow at most like `w`, for
+  weights such as `w = exp ⟨x⟩` with `⟨x⟩ = √(1 + ‖x‖²)`. Some growth restriction is necessary:
+  Tychonoff constructed a nonzero solution of the heat equation with zero initial data. The
+  weight `exp ‖x‖²` is not admissible here, since its logarithm has unbounded gradient and the
+  conjugated coefficient `c_w` is then unbounded.
 * **Time reversal.** The backward operator `P_back u = ∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u`
   conjugates in the same way, `P_back (w v) = w P_back,w v`, with the same coefficients
-  `b_w`, `c_w`, because `w` does not depend on time. The terminal-value problem therefore has the
-  same comparison bound and uniqueness in the weighted class.
+  `b_w`, `c_w`, because `w` does not depend on time
+  (`TauCeti.ParabolicC2HolderSpace.exp_mul_euclideanBackwardParabolicOperatorL_eq`). The
+  terminal-value problem therefore has the same comparison bound, again under `c_w ≤ γ` and
+  `0 ≤ γ` with `|P_back u| ≤ K w` and `|u(·, t₁)| ≤ M w`, and the same uniqueness in the weighted
+  class.
 
 ## Main declarations
 
@@ -50,8 +52,6 @@ apply to `v`. This file transports the a priori theory along this conjugation.
 * `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_exp_mul_mul_add_mul_of_eq_exp_mul`: the weighted
   comparison bound.
 * `TauCeti.ParabolicC2HolderSpace.eq_of_eq_exp_mul`: uniqueness in the weighted class.
-* `TauCeti.ParabolicC2HolderSpace.exp_mul_euclideanBackwardParabolicOperatorL_eq`: the
-  conjugation identity for the backward operator.
 * `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_exp_mul_mul_add_mul_of_eq_exp_mul_backward` and
   `TauCeti.ParabolicC2HolderSpace.eq_of_eq_exp_mul_backward`: the comparison bound and uniqueness
   for the terminal-value problem.
@@ -185,8 +185,8 @@ theorem abs_le_exp_mul_exp_mul_mul_add_mul_of_eq_exp_mul
 
 /-- **Uniqueness in the weighted class.** Let `a` be degenerate elliptic. If `u₁ = exp ℓ * v₁`
 and `u₂ = exp ℓ * v₂` with `v₁, v₂ ∈ C_b^{2+α,1+α/2}` on `ℝⁿ × [t₀, t₁]` have the same
-`P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` and the same initial values, then they are equal. No sign
-condition on `c` is needed. -/
+`P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` and the same initial values, then `v₁ = v₂`, so `u₁` and
+`u₂` agree on `ℝⁿ × [t₀, t₁]`. No sign condition on `c` is needed. -/
 theorem eq_of_eq_exp_mul
     (ha : ∀ p (ξ : EuclideanSpace ℝ ι), 0 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
     (hℓ : ContDiff ℝ 2 ℓ) (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
@@ -231,35 +231,6 @@ variable {t₀ t₁ : ℝ} {ht : t₀ < t₁} (hα : α ≤ 1)
 
 include hα
 
-/-- **Conjugation of the backward operator by a spatial weight.** Under the hypotheses of the
-forward conjugation identity `exp_mul_euclideanParabolicOperatorL_eq`, the backward operator
-`P_back u = ∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u` applied to `u = exp ℓ * v` is `exp ℓ` times the
-backward operator with the conjugated coefficients `aⁱʲ`, `b_wⁱ`, `c_w` applied to `v`. -/
-theorem exp_mul_euclideanBackwardParabolicOperatorL_eq (hℓ : ContDiff ℝ 2 ℓ)
-    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
-    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1) = d2ℓ i j x)
-    (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
-    (hu : ∀ y (s : Icc t₀ t₁), u y s = exp (ℓ y) * v (slabMk y s))
-    (x : EuclideanSpace ℝ ι) (t : Icc t₀ t₁) :
-    exp (ℓ x) * euclideanBackwardParabolicOperatorL hα a
-        (euclideanWeightedFirstOrderCoeff a b dℓ) (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ)
-        v (slabMk x t) =
-      derivWithin (u x) (Icc t₀ t₁) t +
-        (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
-            (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
-          ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
-          c (slabMk x t) * u x t) := by
-  -- Since the weight does not depend on time, `P_back,w v = 2 ∂ₜv - P_w v`, and likewise for `u`.
-  have hfwd :=
-    exp_mul_euclideanParabolicOperatorL_eq hα (a := a) (b := b) (c := c) hℓ hdℓ hd2ℓ v hu x t
-  have htime := derivWithin_eq_exp_smul_timeDerivL v
-    (fun y s ↦ (hu y s).trans (smul_eq_mul _ _).symm) x t
-  rw [smul_eq_mul] at htime
-  rw [euclideanParabolicOperatorL_apply] at hfwd
-  rw [euclideanBackwardParabolicOperatorL_apply]
-  linear_combination (-2) * htime - hfwd
-
 /-- **The terminal-value comparison bound in the weighted uniform norm.** Let `a` be degenerate
 elliptic and `c_w ≤ γ` with `0 ≤ γ`. If `u = exp ℓ * v` with `v ∈ C_b^{2+α,1+α/2}` on
 `ℝⁿ × [t₀, t₁]` satisfies `|P_back u| ≤ K exp ℓ` and `|u(·, t₁)| ≤ M exp ℓ`, then
@@ -299,7 +270,7 @@ theorem abs_le_exp_mul_exp_mul_mul_add_mul_of_eq_exp_mul_backward
 /-- **Uniqueness for the terminal-value problem in the weighted class.** Let `a` be degenerate
 elliptic. If `u₁ = exp ℓ * v₁` and `u₂ = exp ℓ * v₂` with `v₁, v₂ ∈ C_b^{2+α,1+α/2}` on
 `ℝⁿ × [t₀, t₁]` have the same `P_back u = ∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u` and the same terminal
-values, then they are equal. -/
+values, then `v₁ = v₂`, so `u₁` and `u₂` agree on `ℝⁿ × [t₀, t₁]`. -/
 theorem eq_of_eq_exp_mul_backward
     (ha : ∀ p (ξ : EuclideanSpace ℝ ι), 0 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
     (hℓ : ContDiff ℝ 2 ℓ) (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
