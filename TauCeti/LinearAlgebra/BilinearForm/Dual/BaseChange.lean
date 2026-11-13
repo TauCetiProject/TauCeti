@@ -61,6 +61,8 @@ theorem dualSubmodule_baseChange_of_basis (B : LinearMap.BilinForm K V) (hB : B.
       Submodule.span A' ((fun x : V ↦ (1 : K') ⊗ₜ[K] x) '' Submodule.span A s) =
         Submodule.span A' ((fun x : V ↦ (1 : K') ⊗ₜ[K] x) '' s) := by
     let f : V →ₗ[A] K' ⊗[K] V := (TensorProduct.mk K K' V 1).restrictScalars A
+    -- Expose the tensor lambda as an A-linear map so map_coe and map_span apply.
+    -- Restricting scalars preserves its underlying function, so this equality is definitional.
     rw [show (fun x : V ↦ (1 : K') ⊗ₜ[K] x) = f from rfl, ← Submodule.map_coe,
       Submodule.map_span, Submodule.span_span_of_tower]
   rw [hb, dualSubmodule_span_of_basis B hB, hspan, hspan]
