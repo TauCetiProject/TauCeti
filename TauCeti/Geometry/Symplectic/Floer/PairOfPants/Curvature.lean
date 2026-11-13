@@ -591,7 +591,8 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endChart
     rw [perturbationPullback_endChart, equivRealProdCLM_symm_stdComplexLineImag]
     exact funext (pairOfPantsEndComponent_I_of_pos (hH q) (hpos hw))
   rw [hω.integral_floerEnergyDensity_image_of_perturbationPullback
-    (P := fun s ↦ smoothTransition (q.endSign * s - 1)) hUo hVo (contDiff_endChart q 2)
+    (P := fun s ↦ smoothTransition (q.endSign * s - 1)) hUo hVo
+    (contDiff_endChart q 2).contDiffOn
     (fun w _ ↦ det_fderiv_endChart_nonneg q w) (fun _ hw ↦ hw.2) hu (fun w hw x ↦ hK hw x 1)
     (fun w hw x ↦ hK hw x _) hs ht
     (smoothTransition.contDiff.comp (by fun_prop))
@@ -703,7 +704,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   have hAd : Pairwise (Disjoint on A) := fun q r hqr => disjoint_image_endPiece hqr
   have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f T) :
       ∫ z in T, f z = (∫ z in C, f z) + ∑ q, ∫ z in A q, f z :=
-    setIntegral_eq_setIntegral_diff_iUnion_add_sum hAm hAd hAT hf
+    setIntegral_eq_setIntegral_sdiff_iUnion_add_sum hAm hAd hAT hf
   -- On the core the perturbation vanishes nearby, so the energy is the area and the curvature
   -- vanishes.
   have hcore {z : ℝ × ℝ} (hz : z ∈ C) :

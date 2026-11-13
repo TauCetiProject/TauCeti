@@ -33,7 +33,7 @@ on nonempty open sets.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
-* `MeasureTheory.setIntegral_eq_setIntegral_diff_iUnion_add_sum`: an integral over `T` splits along
+* `MeasureTheory.setIntegral_eq_setIntegral_sdiff_iUnion_add_sum`: an integral over `T` splits along
   finitely many pairwise disjoint measurable subsets of `T` and the rest of `T`.
 * `MeasureTheory.setIntegral_mul_le_mul_setIntegral_abs`: the pairing of an integrable `f` on `Ω`
   with a function `g` bounded by `S` on `V ⊆ Ω` is at most `S ∫_Ω |f|`.
@@ -169,7 +169,7 @@ namespace MeasureTheory
 
 /-- An integral over `T` splits along finitely many pairwise disjoint measurable sets `A i ⊆ T`
 into the integral over the rest `T \ ⋃ i, A i` plus the sum of the integrals over the `A i`. -/
-theorem setIntegral_eq_setIntegral_diff_iUnion_add_sum {α E ι : Type*} [MeasurableSpace α]
+theorem setIntegral_eq_setIntegral_sdiff_iUnion_add_sum {α E ι : Type*} [MeasurableSpace α]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [Fintype ι] {ν : Measure α} {T : Set α}
     {A : ι → Set α} (hAm : ∀ i, MeasurableSet (A i)) (hAd : Pairwise (Disjoint on A))
     (hAT : ∀ i, A i ⊆ T) {f : α → E} (hf : IntegrableOn f T ν) :
