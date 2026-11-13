@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -214,21 +214,15 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     have hdchart (a : TangentSpace I x) : mvfderiv I chart x a =
         fderiv ℝ ψ.symm (e x) (mfderiv I 𝓘(ℝ, E) e x a) := by
       have hfun : (chart : M → E) = ψ.symm ∘ e := funext hcoe
-      rw [hfun, mvfderiv_comp_apply_of_differentiableAt
-        (mdifferentiableAt_iff_differentiableAt.1 (ψ.symm.mdifferentiable (by simp) _)) (hmd hxe),
-        mvfderiv_apply_eq_mfderiv_apply]
+      rw [hfun, mvfderiv_comp_apply_of_differentiableAt (ψ.symm.differentiable (by simp) _)
+        (hmd hxe), mvfderiv_apply_eq_mfderiv_apply]
     -- The flat Darboux identity at `ψ⁻¹ (e x)`, read through the inverse differential.
     have hflat (a b : E) : ω' (e x) ![a, b] =
         ω' 0 ![fderiv ℝ ψ.symm (e x) a, fderiv ℝ ψ.symm (e x) b] := by
       have h := congrArg (fun A ↦ A ![fderiv ℝ ψ.symm (e x) a, fderiv ℝ ψ.symm (e x) b])
         (hψ _ hu)
-      have hinv' (c : E) : fderiv ℝ ψ (ψ.symm (e x)) (fderiv ℝ ψ.symm (e x) c) = c := by
-        have hc := fderiv_comp (e x)
-          (mdifferentiableAt_iff_differentiableAt.1 (ψ.mdifferentiable (by simp) (ψ.symm (e x))))
-          (mdifferentiableAt_iff_differentiableAt.1 (ψ.symm.mdifferentiable (by simp) (e x)))
-        have hid : (ψ ∘ ψ.symm : E → E) = id := funext ψ.apply_symm_apply
-        rw [hid, fderiv_id] at hc
-        exact (DFunLike.congr_fun hc c).symm
+      have hinv' (c : E) : fderiv ℝ ψ (ψ.symm (e x)) (fderiv ℝ ψ.symm (e x) c) = c :=
+        ψ.fderiv_apply_fderiv_symm_apply (by simp) (e x) c
       simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, hψu] at h
       rw [← h]
       congr 1
