@@ -112,6 +112,16 @@ theorem exact_limMap (hf : ∀ n, Function.Injective (f.app (op n)).hom)
     exact LinearMap.mem_ker.1 (G.lim_eq_ker ▸ y.2)
   exact ⟨⟨x, hxlim⟩, Subtype.ext <| (coe_limMap_apply f _).trans hx⟩
 
+/-- A levelwise injective comparison of towers is bijective on limits if it is exact with
+an obstruction tower whose limit vanishes. The obstruction maps need not be surjective. -/
+theorem limMap_bijective_of_lim_eq_bot (i : F ⟶ G) (δ : G ⟶ H)
+    (hi : ∀ n, Function.Injective (i.app (op n)).hom)
+    (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ.app (op n)).hom)
+    (hH : H.lim = ⊥) : Function.Bijective (limMap i) := by
+  have : Subsingleton H.lim := Submodule.subsingleton_iff_eq_bot.2 hH
+  refine ⟨limMap_injective hi, fun x ↦ ?_⟩
+  exact (exact_limMap hi hex x).1 (Subsingleton.elim _ _)
+
 /-- If `lim¹ A` vanishes, then for a levelwise exact sequence `A → B → C → 0` the map
 `lim B → lim C` is surjective. -/
 theorem limMap_surjective_of_subsingleton_limOne

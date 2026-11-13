@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
 public import TauCeti.Algebra.Category.ModuleCat.Tower.MittagLeffler
 public import TauCeti.CategoryTheory.Functor.ProZero
 import Mathlib.RingTheory.Multiplicity
@@ -78,6 +79,15 @@ theorem lim_eq_bot_of_isProZero (hF : F.IsProZero) : F.lim = ⊥ := by
   have h := hF.isZero_of_isLimit F.isLimitLimCone
   rw [limCone_pt, ModuleCat.isZero_of_iff_subsingleton] at h
   exact Submodule.subsingleton_iff_eq_bot.1 h
+
+/-- A levelwise injective comparison of towers is bijective on limits if it is exact with
+a pro-zero obstruction tower. The obstruction maps need not be surjective. -/
+theorem limMap_bijective_of_isProZero
+    {F G H : ModuleTower.{v} R} (i : F ⟶ G) (δ : G ⟶ H)
+    (hi : ∀ n, Function.Injective (i.app (op n)).hom)
+    (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ.app (op n)).hom)
+    (hH : H.IsProZero) : Function.Bijective (limMap i) :=
+  limMap_bijective_of_lim_eq_bot i δ hi hex (lim_eq_bot_of_isProZero hH)
 
 /-- A pro-zero tower is Mittag-Leffler: the images of the composite transitions into each term
 are eventually zero. -/
@@ -234,6 +244,17 @@ theorem isProZero_smulTower_iff (f : R) :
       simpa using hk x
     rw [smulTower_transitionOfLE, Nat.add_sub_cancel_left]
     exact hk'
+
+/-- A levelwise injective comparison of towers is bijective on limits if its obstruction
+maps form an exact sequence into a scalar-multiplication tower annihilated by a uniform
+power of the scalar. The obstruction maps need not be surjective. -/
+theorem limMap_bijective_of_pow_smul_eq_zero
+    {F G : ModuleTower.{v} R} (i : F ⟶ G) (f : R) (δ : G ⟶ smulTower Q f)
+    (hi : ∀ n, Function.Injective (i.app (op n)).hom)
+    (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ.app (op n)).hom)
+    (hQ : ∃ k : ℕ, ∀ x : Q, f ^ k • x = 0) :
+    Function.Bijective (limMap i) :=
+  limMap_bijective_of_isProZero i δ hi hex ((isProZero_smulTower_iff f).2 hQ)
 
 end SMulTower
 
