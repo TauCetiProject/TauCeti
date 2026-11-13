@@ -234,6 +234,15 @@ theorem closedStar_closedStar {σ τ : Finset ι} :
     union_comm τ σ]
   exact ⟨fun h => ⟨h.1, h.2.2⟩, fun h => ⟨h.1, h.1.mono subset_union_left, h.2⟩⟩
 
+/-- Deleting `τ` from the closed star of `σ` restricts the deletion of `τ` in `K` to that closed
+star. -/
+@[simp]
+theorem deletion_closedStar {σ τ : Finset ι} :
+    deletion (closedStar K σ) τ = closedStar K σ ⊓ deletion K τ := by
+  refine SetLike.ext fun ρ => ?_
+  simp only [mem_inf, mem_deletion]
+  exact ⟨fun h => ⟨h.1, closedStar_le h.1, h.2⟩, fun h => ⟨h.1, h.2.2⟩⟩
+
 /-- The link at the empty simplex is the whole complex. -/
 @[simp]
 theorem link_empty : link K ∅ = K := by
