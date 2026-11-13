@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FreeGroup.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.BigOperators.Group.List.Basic
 import Mathlib.Algebra.Group.Submonoid.BigOperators
 
@@ -26,6 +27,8 @@ free group.
 * `FreeGroup.lift_map`: lifting after mapping the generators is lifting the composite.
 * `FreeGroup.lift_sumElim_image_map_inl`: substituting words for the generators of the second
   summand of `α ⊕ β` recovers every set of words in `α`.
+* `FreeGroup.natCard_monoidHom`: a homomorphism out of `FreeGroup α` is its family of values on
+  the generators, so there are `|G| ^ |α|` of them into `G` when `α` is finite.
 -/
 
 public section
@@ -89,5 +92,11 @@ is a left inverse of the inclusion of `FreeGroup α`, so it recovers every set o
 theorem lift_sumElim_image_map_inl {α β : Type*} (w : β → FreeGroup α) (R : Set (FreeGroup α)) :
     lift (Sum.elim of w) '' (map Sum.inl '' R) = R := by
   simp [Set.image_image]
+
+/-- A homomorphism out of the free group on a finite set `α` is its family of values on the
+generators, so there are `Nat.card G ^ Nat.card α` homomorphisms into `G`. -/
+theorem natCard_monoidHom (α G : Type*) [Group G] [Finite α] :
+    Nat.card (FreeGroup α →* G) = Nat.card G ^ Nat.card α := by
+  rw [← Nat.card_congr lift, Nat.card_fun]
 
 end FreeGroup

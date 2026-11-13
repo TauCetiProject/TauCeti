@@ -51,6 +51,9 @@ of the thrice-punctured sphere, as isomorphism classes of connected triples are 
   label.
 * `TauCeti.MarkedIsoClass.stabilizerEquiv`: fixing a label identifies marked classes with
   connected triples modulo permutations stabilizing that label.
+* `TauCeti.MarkedIsoClass.stabilizer_eq_bot`, `TauCeti.MarkedIsoClass.natCard_mul_factorial`:
+  relabeling acts freely on marked connected triples, so marked classes of degree `n` have
+  `n!` elements each.
 -/
 
 open Equiv MulAction
@@ -303,6 +306,28 @@ def forget : MarkedIsoClass n → ConnectedIsoClass n :=
 theorem forget_mk (t : ConnectedTriple n) (i : Fin n) :
     (mk t i).forget = ConnectedIsoClass.mk t :=
   (rfl)
+
+/-- Relabeling acts freely on marked connected triples: a relabeling fixing a connected triple
+and one of its sheets is an automorphism of a transitive triple fixing a sheet, hence the
+identity. -/
+theorem stabilizer_eq_bot (x : ConnectedTriple n × Fin n) :
+    stabilizer (Perm (Fin n)) x = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).2 fun τ hτ => ?_
+  rw [mem_stabilizer_iff, Prod.smul_mk, Prod.mk.injEq] at hτ
+  have ht : τ • x.1.1 = x.1.1 := congrArg Subtype.val hτ.1
+  refine x.1.1.eq_one_of_mem_automorphismGroup_of_apply_eq x.1.2.isPretransitive ?_ hτ.2
+  exact PermutationTriple.mem_automorphismGroup_iff.2
+    ⟨by rw [← PermutationTriple.smul_σ0, ht], by rw [← PermutationTriple.smul_σ1, ht]⟩
+
+/-- Since relabeling acts freely, the `n` markings of the connected triples of degree `n` fall
+into marked classes of exactly `n!` elements each. -/
+theorem natCard_mul_factorial :
+    Nat.card (MarkedIsoClass n) * n.factorial = n * Fintype.card (ConnectedTriple n) := by
+  have h := Nat.card_congr (selfEquivOrbitsQuotientProd stabilizer_eq_bot :
+    ConnectedTriple n × Fin n ≃ MarkedIsoClass n × Perm (Fin n))
+  rw [Nat.card_prod, Nat.card_prod, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
+    Nat.card_eq_fintype_card (α := Perm (Fin n)), Fintype.card_perm, Fintype.card_fin] at h
+  exact h.symm.trans (mul_comm _ _)
 
 /-- Fixing any label identifies its stabilizer-orbit quotient with marked triple classes.
 For positive degree, `i = 0` gives the fixed-zero-label description. -/
