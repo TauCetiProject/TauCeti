@@ -77,8 +77,6 @@ theorem continuous_betaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 ≤ β) {V : ℝ 
 /-- A measurable potential gives a measurable weight for every inverse temperature. -/
 theorem measurable_betaGasWeight (n : ℕ) (β : ℝ) {V : ℝ → ℝ}
     (hV : Measurable V) : Measurable (betaGasWeight n β V) := by
-  have hrpow : Measurable (fun t : ℝ => |t| ^ β) := by
-    fun_prop
   unfold betaGasWeight
   fun_prop
 
