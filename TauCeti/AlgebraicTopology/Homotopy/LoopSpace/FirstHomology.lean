@@ -78,6 +78,26 @@ def doubleLoopSpaceFirstHomologyAddEquiv (x : X) [Subsingleton (π_ 2 X x)] :
   (pathLoopSpaceMulEquiv 1).symm.toAdditive.trans
     (pathLoopSpaceFirstHomologyAddEquiv (Path.refl x))
 
+/-- `TauCeti.doubleLoopSpaceFirstHomologyAddEquiv` applies the inverse loop-space shift and then
+degree-one Hurewicz for the loop space of `ΩX`. -/
+theorem doubleLoopSpaceFirstHomologyAddEquiv_apply (x : X) [Subsingleton (π_ 2 X x)]
+    (a : Additive (π_ 3 X x)) :
+    doubleLoopSpaceFirstHomologyAddEquiv x a =
+      letI := (pathConnectedSpace_doubleLoopSpace_iff x).2 ‹_›
+      pathLoopSpaceFirstHomologyAddEquiv (Path.refl x)
+        (Additive.ofMul ((pathLoopSpaceMulEquiv 1).symm a.toMul)) :=
+  (rfl)
+
+/-- The inverse of `TauCeti.doubleLoopSpaceFirstHomologyAddEquiv` applies the inverse degree-one
+Hurewicz isomorphism for the loop space of `ΩX` and then the loop-space shift. -/
+theorem doubleLoopSpaceFirstHomologyAddEquiv_symm_apply (x : X) [Subsingleton (π_ 2 X x)]
+    (a : ((singularChains ℤ).obj (TopCat.of (Ω (Ω X x) (Path.refl x)))).homology 1) :
+    (doubleLoopSpaceFirstHomologyAddEquiv x).symm a =
+      letI := (pathConnectedSpace_doubleLoopSpace_iff x).2 ‹_›
+      Additive.ofMul (pathLoopSpaceMulEquiv 1
+        ((pathLoopSpaceFirstHomologyAddEquiv (Path.refl x)).symm a).toMul) :=
+  (rfl)
+
 namespace MooreLoopSpace
 
 /-- Normalization identifies the first integral homology of a path-connected Moore loop

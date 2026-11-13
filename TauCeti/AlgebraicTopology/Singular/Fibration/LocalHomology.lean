@@ -19,7 +19,9 @@ fibre** `F = p⁻¹(b)` is the relative singular homology `Hₖ(E, E ∖ F)`. Th
 with coefficients in a ring `R`:
 
 * `Hₘ(E, E ∖ F; R) = 0` for `m < r` (`TauCeti.TopCat.isZero_singularHomology_complFiber`);
-* `Hₙ₊ᵣ(E, E ∖ F; R) ≅ Hₙ(F; R)` (`TauCeti.TopCat.singularHomologyComplFiberIso`).
+* `Hₙ₊ᵣ(E, E ∖ F; R) ≅ Hₙ(F; R)` (`TauCeti.TopCat.singularHomologyComplFiberIso`), in
+  particular `Hₙ₊ᵣ(B × F, (B ∖ {b}) × F; R) ≅ Hₙ(F; R)` for the projection of a product
+  (`TauCeti.TopCat.singularHomologyComplFiberProdIso`).
 
 For the identity of `B` this is the local homology of `B` at `b`
 (`TauCeti.singularHomologyComplSingletonFinrankIso`). The composite
@@ -55,6 +57,7 @@ over the punctured base is the shifted homology of the fibre
 ## Main definitions and results
 
 * `TauCeti.TopCat.singularHomologyComplFiberIso`: `Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))`.
+* `TauCeti.TopCat.singularHomologyComplFiberProdIso`: `Hₙ₊ᵣ(B × F, (B ∖ {b}) × F) ≅ Hₙ(F)`.
 * `TauCeti.TopCat.isZero_singularHomology_complFiber`: `Hₘ(E, E ∖ p⁻¹(b)) = 0` for `m < r`.
 * `TauCeti.TopCat.LivesAboveFundamentalClass`: classes of `Hₖ(E)` with nonzero image in
   `Hₖ(E, E ∖ p⁻¹(b))`.
@@ -254,6 +257,30 @@ def singularHomologyComplFiberIso (hp : serreFibrations p) (n m : ℕ)
       (ball_mem_nhds _ (radius_pos e hb)) n m h ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
       (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (fiberHomeomorph e hb p))
+
+/-- **The local homology of a product along a fibre of the projection.** Let `b` lie in the source
+of an open partial homeomorphism `e : B → V` to a real normed space of finite dimension `r`. Then
+`Hₘ(B × F, (B ∖ {b}) × F; R) ≅ Hₙ(F; R)` for `m = n + r`. This is
+`TauCeti.TopCat.singularHomologyComplFiberIso` for the projection `B × F → B`, followed by the
+identification of its fibre over `b` with `F`. -/
+def singularHomologyComplFiberProdIso (F : Type u) [TopologicalSpace F] (n m : ℕ)
+    (h : n + finrank ℝ V = m) :
+    (TopPair.ofSubset ((Prod.fst ⁻¹' {b})ᶜ : Set (_root_.TopCat.of (B × F)))).singularHomology
+        (ModuleCat.of R R) m ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+        (ModuleCat.of R R)).obj (_root_.TopCat.of F) :=
+  singularHomologyComplFiberIso R e hb
+      (p := _root_.TopCat.ofHom (ContinuousMap.fst : C(B × F, B)))
+      (mem_serreFibrations_fst (F := _root_.TopCat.of F)) n m h ≪≫
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo
+        (X := _root_.TopCat.of (Prod.fst ⁻¹' {b} : Set (B × F)))
+        { toFun := fun x ↦ x.1.2
+          invFun := fun y ↦ ⟨(b, y), rfl⟩
+          left_inv := fun x ↦ Subtype.ext (Prod.ext x.2.symm rfl)
+          right_inv := fun _ ↦ rfl
+          continuous_toFun := by fun_prop
+          continuous_invFun := by fun_prop })
 
 end Chart
 

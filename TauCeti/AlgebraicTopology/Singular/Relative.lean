@@ -442,6 +442,19 @@ lemma singularHomologyπ_naturality (n : ℕ) :
       P.singularHomologyπ R n ≫ TopPair.singularHomologyMap f R n :=
   SSetPair.homologyπ_naturality (toSSetPair.map f) R n
 
+/-- The map from ambient to relative singular homology is natural in the coefficient object. -/
+@[reassoc]
+lemma singularHomologyπ_coefficient_naturality {M N : C} (φ : M ⟶ N) (n : ℕ) :
+    ((AlgebraicTopology.singularHomologyFunctor C n).map φ).app P.fst ≫
+        P.singularHomologyπ N n =
+      P.singularHomologyπ M n ≫ HomologicalComplex.homologyMap
+        (((SSetPair.chainComplexFunctor C).map φ).app (toSSetPair.obj P)) n := by
+  have h := singularChainComplexπ_coefficient_naturality P φ
+  rw [TauCeti.singularChainComplexFunctor_map_app] at h
+  exact (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
+    ((congrArg (HomologicalComplex.homologyMap · n) h).trans
+      (HomologicalComplex.homologyMap_comp _ _ n))
+
 variable {P P'} in
 /-- If `f` is a map of pairs which is an isomorphism on the ambient spaces, the map from ambient to
 relative singular homology of its target is an isomorphism as soon as its composite with the map

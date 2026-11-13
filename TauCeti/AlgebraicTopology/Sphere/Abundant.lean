@@ -22,16 +22,17 @@ The unit sphere `S³` of a real normed space of dimension `4` is abundant with 2
 (`TauCeti.isAbundantWithTwoSpheres_sphere`). This is the first example of Barraud, Damian,
 Humilière and Oancea after their Definition 6.11.
 
-By invariance of abundance under homeomorphisms and coefficient isomorphisms, it suffices to treat
-the unit sphere `S³ ⊆ ℍ` at `1` with coefficients `ℤ`. As `S³` is a topological group,
-`Map(S², S³) ≃ₜ S³ × Ω²S³` over `S³` (`TauCeti.sphereGroupHomeomorphIteratedLoopSpace`), and a
-homeomorphism carries the right sphere to `1`. The local homology of the projection
+Abundance is invariant under homeomorphisms and coefficient isomorphisms. The homeomorphism
+`sphereHomeomorphOfFinrankEq` identifies the unit sphere with `S³ ⊆ ℍ`, and left multiplication
+in `S³` carries `1` to any chosen point, so it suffices to treat `S³ ⊆ ℍ` at `1` with coefficients
+`ℤ`. As `S³` is a topological group, `Map(S², S³) ≃ₜ S³ × Ω²S³` over `S³`
+(`TauCeti.sphereGroupHomeomorphIteratedLoopSpace`). The local homology of the projection
 `S³ × Ω²S³ → S³` along the fibre over `1` is
 `H₄(S³ × Ω²S³, (S³ ∖ {1}) × Ω²S³) ≅ H₁(Ω²S³; ℤ) ≅ π₃(S³) ≅ ℤ`
-(`TauCeti.TopCat.singularHomologyComplFiberIso`,
-`TauCeti.doubleLoopSpaceFirstHomologySphereAddEquiv`), and the localization onto it is onto
-because `S³ ∖ {1}` is contractible (`TauCeti.epi_fiberLocalization_fst`). So some class of degree
-`4 > 3` lives over the fundamental class.
+(`TauCeti.TopCat.singularHomologyComplFiberProdIso`,
+`TauCeti.doubleLoopSpaceFirstHomologySphereAddEquiv`), and the localization onto it is an
+epimorphism because `S³ ∖ {1}` is contractible (`TauCeti.epi_fiberLocalization_fst`). So some
+class of degree `4 > 3` lives over the fundamental class.
 
 ## Main results
 
@@ -64,28 +65,15 @@ private theorem isAbundantWithTwoSpheres_sphere_quaternion_one :
   -- fibre, which is `H₁(Ω²S³) ≅ ℤ`.
   have hloc : Nontrivial (localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ ℤ)
       (Prod.fst ⁻¹' {(1 : sphere (0 : ℍ) 1)} : Set (sphere (0 : ℍ) 1 × F)) 4) := by
-    let fib : (Prod.fst ⁻¹' {(1 : sphere (0 : ℍ) 1)} : Set (sphere (0 : ℍ) 1 × F)) ≃ₜ F :=
-      { toFun := fun x ↦ x.1.2
-        invFun := fun ω ↦ ⟨(1, ω), rfl⟩
-        left_inv := fun x ↦ Subtype.ext (Prod.ext x.2.symm rfl)
-        right_inv := fun _ ↦ rfl
-        continuous_toFun := by fun_prop
-        continuous_invFun := by fun_prop }
     let ob : OrthonormalBasis (Fin 4) ℝ ℍ :=
       (stdOrthonormalBasis ℝ ℍ).reindex (finCongr (Quaternion.finrank_eq_four (R := ℝ)))
     have : Nontrivial (((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)) :=
       (doubleLoopSpaceFirstHomologySphereAddEquiv ob 1).toEquiv.nontrivial
-    let p : TopCat.of (sphere (0 : ℍ) 1 × F) ⟶ TopCat.of (sphere (0 : ℍ) 1) :=
-      TopCat.ofHom ContinuousMap.fst
-    have hp : TopCat.serreFibrations p :=
-      TopCat.mem_serreFibrations_fst (B := TopCat.of (sphere (0 : ℍ) 1)) (F := TopCat.of F)
-    let φ := TopCat.singularHomologyComplFiberIso ℤ
+    exact (TopCat.singularHomologyComplFiberProdIso (B := TopCat.of (sphere (0 : ℍ) 1)) ℤ
       (chartAt (EuclideanSpace ℝ (Fin 3)) (1 : sphere (0 : ℍ) 1))
-      (mem_chart_source (EuclideanSpace ℝ (Fin 3)) (1 : sphere (0 : ℍ) 1)) hp 1 4 (by simp)
-    let ψ := ((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj (ModuleCat.of ℤ ℤ)).mapIso
-      (TopCat.isoOfHomeo (X := TopCat.of (p ⁻¹' {(1 : sphere (0 : ℍ) 1)})) (Y := TopCat.of F) fib)
-    exact (φ ≪≫ ψ).toLinearEquiv.toEquiv.nontrivial
+      (mem_chart_source (EuclideanSpace ℝ (Fin 3)) (1 : sphere (0 : ℍ) 1)) F 1 4
+      (by simp)).toLinearEquiv.toEquiv.nontrivial
   have : ContractibleSpace ({1}ᶜ : Set (sphere (0 : ℍ) 1)) :=
     contractibleSpace_sphere_compl_singleton 1
   obtain ⟨y, hy⟩ := exists_ne (0 : (localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ ℤ)
@@ -113,7 +101,7 @@ private theorem isAbundantWithTwoSpheres_sphere_quaternion_one :
 
 /-- **The three-sphere is abundant with 2-spheres.** The unit sphere of a real normed space of
 dimension `4` is abundant with 2-spheres at every point `b`, with coefficients `R` isomorphic to
-`ℤ`: some class of `H₄(Map(S², S³); R)` lives over the fundamental class at `b`, and `4 > 3`. -/
+`ℤ`. -/
 theorem isAbundantWithTwoSpheres_sphere {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (hE : Module.finrank ℝ E = 4) (b : sphere (0 : E) 1) {R : ModuleCat.{0} ℤ}
     (e : R ≅ ModuleCat.of ℤ ℤ) : IsAbundantWithTwoSpheres R b := by

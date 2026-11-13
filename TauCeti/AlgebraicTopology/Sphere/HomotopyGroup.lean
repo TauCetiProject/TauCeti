@@ -172,6 +172,16 @@ def doubleLoopSpaceFirstHomologySphereAddEquiv (b : OrthonormalBasis (Fin 4) ℝ
     subsingleton_homotopyGroup_sphere_of_basis b (by simp) x
   (doubleLoopSpaceFirstHomologyAddEquiv x).symm.trans (homotopyGroupSphereAddEquiv (n := 1) b x)
 
+/-- `TauCeti.doubleLoopSpaceFirstHomologySphereAddEquiv` is the inverse of degree-one Hurewicz for
+the double loop space followed by `TauCeti.homotopyGroupSphereAddEquiv`. -/
+theorem doubleLoopSpaceFirstHomologySphereAddEquiv_apply (b : OrthonormalBasis (Fin 4) ℝ E)
+    (x : sphere (0 : E) 1) [Subsingleton (π_ 2 (sphere (0 : E) 1) x)]
+    (a : ((singularChains ℤ).obj
+      (TopCat.of (Ω (Ω (sphere (0 : E) 1) x) (Path.refl x)))).homology 1) :
+    doubleLoopSpaceFirstHomologySphereAddEquiv b x a =
+      homotopyGroupSphereAddEquiv (n := 1) b x ((doubleLoopSpaceFirstHomologyAddEquiv x).symm a) :=
+  (rfl)
+
 /-- **The first homology of the double loop space of `S³` is `ℤ`.** For the unit sphere `S³` of
 a real inner product space with an orthonormal basis `b` indexed by `Fin 4`, the first integral
 homology of the double Moore loop space `ΩᴹΩᴹS³` is `π₃(S³) ≅ ℤ`, through degree-one Hurewicz

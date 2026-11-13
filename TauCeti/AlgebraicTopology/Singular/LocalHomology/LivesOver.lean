@@ -35,12 +35,14 @@ needed for the statements below.
   class, so does `α` (`TauCeti.LivesOverFundamentalClass.of_homologyMap`). With `σ = p` and
   `p' = id`, a class lives over the fundamental class as soon as its image in `Hₖ(M)` does
   (`TauCeti.LivesOverFundamentalClass.of_homologyMap_proj`). Localization also commutes with
-  changing coefficients (`TauCeti.singularHomologyFunctor_map_app_comp_fiberLocalization`), so
-  living over the fundamental class is invariant under coefficient isomorphisms
+  changing coefficients (`TauCeti.singularHomologyFunctor_map_app_comp_fiberLocalization`), so a
+  class lives over the fundamental class if its image under a change of coefficients does
+  (`TauCeti.LivesOverFundamentalClass.of_singularHomologyFunctor_map_app`), and living over the
+  fundamental class is invariant under coefficient isomorphisms
   (`TauCeti.livesOverFundamentalClass_singularHomologyFunctor_map_app_iff`).
 * **Products.** If `B ∖ {b}` is contractible, the localization
-  `Hₖ(B × F) → Hₖ(B × F, (B ∖ {b}) × F)` at the fibre of the projection over `b` is onto
-  (`TauCeti.epi_fiberLocalization_fst`).
+  `Hₖ(B × F) → Hₖ(B × F, (B ∖ {b}) × F)` at the fibre of the projection over `b` is an
+  epimorphism (`TauCeti.epi_fiberLocalization_fst`).
 * **Sections.** For a section `s` of `p`, the composite `p_* ∘ s_*` is the identity on homology
   (`TauCeti.homologyMap_comp_homologyMap_of_comp_eq_id`), and the localization of `s_* β` is the
   image under `s` of the localization of `β`. So a class `α` with `p_* α = 0` that lives over the
@@ -125,7 +127,8 @@ theorem homologyMap_comp_fiberLocalization (σ : C(E, E')) {M' : Type w} {p : E 
   exact h'
 
 /-- **Naturality of the localization at the fibre in the coefficients**: changing coefficients
-along `φ : R ⟶ R'` commutes with localizing at the fibre of `p` over `b`. -/
+along `φ : R ⟶ R'` commutes with localizing at the fibre of `p` over `b`. This is
+`TauCeti.TopPair.singularHomologyπ_coefficient_naturality` for the pair `(E, E ∖ p⁻¹(b))`. -/
 @[reassoc]
 theorem singularHomologyFunctor_map_app_comp_fiberLocalization {R' : A} (φ : R ⟶ R')
     (p : E → M) (b : M) (k : ℕ) :
@@ -133,13 +136,9 @@ theorem singularHomologyFunctor_map_app_comp_fiberLocalization {R' : A} (φ : R 
         fiberLocalization R' p b k =
       fiberLocalization R p b k ≫ HomologicalComplex.homologyMap
         (((SSetPair.chainComplexFunctor A).map φ).app
-          (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))))) k := by
-  have h := TopPair.singularChainComplexπ_coefficient_naturality
-    (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))) φ
-  rw [singularChainComplexFunctor_map_app] at h
-  exact (HomologicalComplex.homologyMap_comp _ _ k).symm.trans
-    ((congrArg (HomologicalComplex.homologyMap · k) h).trans
-      (HomologicalComplex.homologyMap_comp _ _ k))
+          (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))))) k :=
+  TopPair.singularHomologyπ_coefficient_naturality
+    (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))) φ k
 
 /-- For the identity of `M`, the localization at the fibre over `b` is the quotient map to
 `Hₖ(M, M ∖ M)` followed by restriction to the local homology `Hₖ(M, M ∖ {b})` at `b`. -/
@@ -154,16 +153,17 @@ theorem fiberLocalization_id [TopologicalSpace M] (b : M) (k : ℕ) :
   rw [localHomologyRestriction_def, ← h]
   erw [TopCat.toSSet.map_id, SSet.homologyMap_id, Category.id_comp]
 
-/-- **Localization at a fibre of a product is onto** when the base minus the point is contractible:
-for `b ∈ B` with `B ∖ {b}` contractible, `Hₖ(B × F) → Hₖ(B × F, (B ∖ {b}) × F)` is an epimorphism.
-In positive degree, the next map `Hₖ₋₁((B ∖ {b}) × F) → Hₖ₋₁(B × F)` of the pair sequence is
-injective, since its composite with the projection to `F` is induced by a homotopy equivalence. -/
+/-- **Localization at a fibre of a product is an epimorphism** when the base minus the point is
+contractible: for `b ∈ B` with `B ∖ {b}` contractible, `Hₖ(B × F) → Hₖ(B × F, (B ∖ {b}) × F)` is
+an epimorphism. -/
 theorem epi_fiberLocalization_fst {B F : Type w} [TopologicalSpace B] [TopologicalSpace F] (b : B)
     [ContractibleSpace ({b}ᶜ : Set B)] (k : ℕ) :
     Epi (fiberLocalization R (Prod.fst : B × F → B) b k) := by
   cases k with
   | zero => exact inferInstanceAs (Epi (TopPair.singularHomologyπ _ R 0))
   | succ k =>
+  -- The next map `Hₖ((B ∖ {b}) × F) → Hₖ(B × F)` of the pair sequence is a monomorphism, since
+  -- its composite with the projection to `F` is induced by a homotopy equivalence.
   let P : TopPair := TopPair.ofSubset ((Prod.fst ⁻¹' {b})ᶜ : Set (TopCat.of (B × F)))
   let snd : P.fst ⟶ TopCat.of F := TopCat.ofHom ContinuousMap.snd
   -- The complement `(B ∖ {b}) × F` of the fibre, projected onto `F`.
@@ -276,7 +276,7 @@ theorem LivesOverFundamentalClass.sub_homologyMap_section [TopologicalSpace M] (
     LivesOverFundamentalClass R p b
       (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β) := by
   have hsb : s ⁻¹' (p ⁻¹' {b}) ⊆ id ⁻¹' {b} := by
-    rw [← preimage_comp, show (p ∘ s : M → M) = id from congrArg DFunLike.coe hs]
+    rw [← preimage_comp, ← ContinuousMap.coe_comp, hs, ContinuousMap.coe_id]
   intro h
   rw [map_sub, sub_eq_zero] at h
   -- The localization of `β = p_* s_* β` at `b` is the image under `p` of the localization of
@@ -312,24 +312,43 @@ theorem exists_forall_livesOverFundamentalClass_sub_iff [TopologicalSpace M] (p 
     fun ⟨α, hα₀, hα⟩ ↦ ⟨α, hα.sub_homologyMap_section R p s hs hα₀⟩⟩
   rw [map_sub, homologyMap_comp_homologyMap_of_comp_eq_id_apply R p s hs k, sub_self]
 
-/-- **Changing coefficients along an isomorphism.** For an isomorphism `e : R ≅ R'` of
+/-- **Changing coefficients.** For a morphism `φ : R ⟶ R'` of coefficients, if the image in
+`Hₖ(E; R')` of a class `α ∈ Hₖ(E; R)` lives over the fundamental class at `b`, then so does
+`α`. -/
+theorem LivesOverFundamentalClass.of_singularHomologyFunctor_map_app {R' : ModuleCat.{w} Λ}
+    (φ : R ⟶ R') {p : E → M} {b : M} {k : ℕ}
+    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)}
+    (hα : LivesOverFundamentalClass R' p b
+      ((((AlgebraicTopology.singularHomologyFunctor _ k).map φ).app (TopCat.of E)).hom α)) :
+    LivesOverFundamentalClass R p b α := fun h ↦ hα <|
+  -- Evaluate both composites of the naturality square at `α`; the lower one vanishes by `h`.
+  (congrArg (fun f ↦ f.hom α)
+    (singularHomologyFunctor_map_app_comp_fiberLocalization R φ p b k)).trans <|
+      (congrArg (HomologicalComplex.homologyMap
+        (((SSetPair.chainComplexFunctor (ModuleCat.{w} Λ)).map φ).app
+          (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))))) k).hom
+        h).trans (map_zero _)
+
+/-- **Changing coefficients along an isomorphism.** For an isomorphism `φ : R ⟶ R'` of
 coefficients, the image in `Hₖ(E; R')` of a class `α ∈ Hₖ(E; R)` lives over the fundamental class
 at `b` exactly when `α` does. -/
+@[simp]
 theorem livesOverFundamentalClass_singularHomologyFunctor_map_app_iff {R' : ModuleCat.{w} Λ}
-    (e : R ≅ R') {p : E → M} {b : M} {k : ℕ}
+    (φ : R ⟶ R') [IsIso φ] {p : E → M} {b : M} {k : ℕ}
     {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)} :
     LivesOverFundamentalClass R' p b
-        ((((AlgebraicTopology.singularHomologyFunctor _ k).map e.hom).app (TopCat.of E)).hom α) ↔
+        ((((AlgebraicTopology.singularHomologyFunctor _ k).map φ).app (TopCat.of E)).hom α) ↔
       LivesOverFundamentalClass R p b α := by
+  refine ⟨LivesOverFundamentalClass.of_singularHomologyFunctor_map_app R φ, fun hα ↦ ?_⟩
   -- Changing coefficients on the relative group is an isomorphism, hence injective.
   have hinj : Function.Injective (HomologicalComplex.homologyMap
-      (((SSetPair.chainComplexFunctor (ModuleCat.{w} Λ)).map e.hom).app
+      (((SSetPair.chainComplexFunctor (ModuleCat.{w} Λ)).map φ).app
         (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))))) k).hom :=
     (ModuleCat.mono_iff_injective _).1 inferInstance
   have h := congrArg (fun f ↦ f.hom α)
-    (singularHomologyFunctor_map_app_comp_fiberLocalization R e.hom p b k)
+    (singularHomologyFunctor_map_app_comp_fiberLocalization R φ p b k)
   -- `h` evaluates both composites at `α`; they are the two sides below by `ModuleCat.hom_comp`.
-  exact (Iff.of_eq (congrArg (· ≠ 0) h)).trans (hinj.ne_iff' (map_zero _))
+  exact (Iff.of_eq (congrArg (· ≠ 0) h)).2 ((hinj.ne_iff' (map_zero _)).2 hα)
 
 end LivesOver
 
@@ -371,8 +390,7 @@ theorem livesOverFundamentalClass_id_fundamentalClass (b : M) :
 /-- **Classes over a section, modulo the fundamental class.** Let `s` be a section of a map
 `p : E → M` to a compact oriented `n`-manifold. A class `α ∈ Hₙ(E; ℤ)` keeps living over the
 fundamental class at `b` after subtracting any class `s_* β`, `β ∈ Hₙ(M; ℤ)`, exactly when it does
-so after subtracting every multiple `d • s_*[M]`. Indeed the localization of `β` at `b` is a
-multiple of the local orientation at `b`, which is the localization of `[M]`. -/
+so after subtracting every multiple `d • s_*[M]`. -/
 theorem forall_livesOverFundamentalClass_sub_iff (p : E → M) (s : C(M, E)) (hs : p ∘ s = id)
     (b : M)
     (α : ((TopCat.toSSet.obj (TopCat.of E)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
@@ -387,6 +405,8 @@ theorem forall_livesOverFundamentalClass_sub_iff (p : E → M) (s : C(M, E)) (hs
           (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.fundamentalClass hn)) := by
   refine ⟨fun h d ↦ by simpa using h (d • o.fundamentalClass hn), fun h β ↦ ?_⟩
   have hsb : s ⁻¹' (p ⁻¹' {b}) ⊆ id ⁻¹' {b} := by rw [← preimage_comp, hs]
+  -- The localization of `β` at `b` is a multiple of the local orientation at `b`, which is the
+  -- localization of `[M]`.
   obtain ⟨d, hd⟩ := (isLocalOrientation_iff _ _ _).1 (o b).property
     ((fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) id b n).hom β)
   rw [← o.fiberLocalization_id_fundamentalClass hn b, ← map_zsmul] at hd

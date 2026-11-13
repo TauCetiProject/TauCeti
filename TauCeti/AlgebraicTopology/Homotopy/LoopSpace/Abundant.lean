@@ -208,13 +208,13 @@ theorem IsAbundantWithTwoSpheres.homeomorph {Q' : Type u} [TopologicalSpace Q'] 
     k).hom α, fun β ↦ LivesOverFundamentalClass.of_homologyMap R
       (Φ.symm : C(C(Sphere2, Q'), C(Sphere2, Q))) hfib ?_⟩
   -- `Φ⁻¹_*` undoes `Φ_*` and sends the constant spheres `σ_* β` to `σ_* e⁻¹_* β`.
-  rw [map_sub, homologyMap_comp_homologyMap_of_comp_eq_id_apply R _ _ hΦ k, ← ModuleCat.comp_apply,
-    ← SSet.homologyMap_comp, ← Functor.map_comp, ← TopCat.ofHom_comp, hconst, TopCat.ofHom_comp,
-    Functor.map_comp, SSet.homologyMap_comp, ModuleCat.comp_apply]
+  rw [map_sub, homologyMap_comp_homologyMap_of_comp_eq_id_apply R _ _ hΦ k,
+    homologyMap_comp_homologyMap_apply, hconst, ← homologyMap_comp_homologyMap_apply]
   exact hα _
 
 /-- **Abundance is invariant under homeomorphisms.** For a homeomorphism `e : Q ≃ₜ Q'`, the space
 `Q'` is abundant with 2-spheres at `e b` exactly when `Q` is abundant with 2-spheres at `b`. -/
+@[simp]
 theorem _root_.Homeomorph.isAbundantWithTwoSpheres_iff {Q' : Type u} [TopologicalSpace Q']
     (e : Q ≃ₜ Q') (b : Q) : IsAbundantWithTwoSpheres R (e b) ↔ IsAbundantWithTwoSpheres R b :=
   ⟨fun h ↦ by simpa using h.homeomorph e.symm, fun h ↦ h.homeomorph e⟩
@@ -246,7 +246,7 @@ theorem IsAbundantWithTwoSpheres.of_iso {R' : ModuleCat.{u} Λ} (e : R ≅ R') {
   exact (Iff.of_eq (congrArg (LivesOverFundamentalClass R' (mappingSpaceEval Sphere2.north) b)
     ((((AlgebraicTopology.singularHomologyFunctor _ k).map e.hom).app
       (TopCat.of C(Sphere2, Q))).hom.map_sub _ _))).1
-    ((livesOverFundamentalClass_singularHomologyFunctor_map_app_iff R e).2 (hα β))
+    ((livesOverFundamentalClass_singularHomologyFunctor_map_app_iff R e.hom).2 (hα β))
 
 /-- **Abundance is invariant under coefficient isomorphisms.** For an isomorphism `e : R ≅ R'`, a
 space is abundant with 2-spheres at `b` with coefficients `R` exactly when it is with coefficients
@@ -281,7 +281,8 @@ theorem isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub_zsmul {b : Q}
           (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.fundamentalClass hn))) :
     IsAbundantWithTwoSpheres (ModuleCat.of ℤ (ULift.{0} ℤ)) b :=
   ⟨n, α, (o.forall_livesOverFundamentalClass_sub_iff hn _ _
-    (congrArg DFunLike.coe (mappingSpaceEval_comp_const' _)) b α).2 hα⟩
+    (by rw [← ContinuousMap.coe_comp, mappingSpaceEval_comp_const', ContinuousMap.coe_id]) b
+      α).2 hα⟩
 
 end HomologicalOrientation
 
