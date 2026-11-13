@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Taylor.Partitions
-public import TauCeti.Probability.BrownianMotion.QuadraticVariation
+public import TauCeti.Probability.BrownianMotion.Taylor.Parameter
 
 /-!
 # Second-order Taylor expansions along Brownian partitions
@@ -20,9 +20,8 @@ transformed process is required. Repeated dates and empty grids are allowed.
 
 This is the Taylor-expansion step of Itô's formula. It does not identify the linear
 sum as a stochastic integral or the weighted quadratic sum as a time integral.
-The proof combines the deterministic compact-path Taylor estimate with Brownian
-quadratic-sum convergence, extracting a sequence if convergence in measure fails.
-In particular, no almost-sure convergence along every partition sequence is asserted.
+Convergence holds in probability; no almost-sure convergence along every partition
+sequence is asserted.
 
 ## References
 
@@ -63,20 +62,6 @@ theorem tendstoInMeasure_sub_sum_taylor_two (hB : IsBrownianReal B P)
       (B (grid k (i + 1)) ω - B (grid k i) ω)) -
     1 / 2 * ∑ i ∈ Finset.range (N k), deriv (deriv f) (B (grid k i) ω) *
       (B (grid k (i + 1)) ω - B (grid k i) ω) ^ 2
-  have hcoord (t : ℝ≥0) : AEStronglyMeasurable (B t) P :=
-    (hB.hasLaw_eval t).aemeasurable.aestronglyMeasurable
-  have hf' : ContDiff ℝ 1 (deriv f) := hf.deriv'
-  have hRmeas (k : ι) : AEStronglyMeasurable (R k) P := by
-    dsimp only [R]
-    have hc := hf.continuous
-    have hc' := hf.continuous_deriv (by norm_num)
-    have hc'' := hf'.continuous_deriv (by norm_num)
-    refine AEStronglyMeasurable.sub (by fun_prop) ?_
-    apply AEStronglyMeasurable.const_mul
-    apply Finset.aestronglyMeasurable_fun_sum
-    intro i _
-    exact (hc''.comp_aestronglyMeasurable (hcoord (grid k i))).mul
-      (((hcoord (grid k (i + 1))).sub (hcoord (grid k i))).pow 2)
   suffices hlim : TendstoInMeasure P R l (fun _ ↦ (0 : ℝ)) by
     simpa only [R] using hlim
   rw [tendstoInMeasure_iff_tendsto_toNNReal]
@@ -95,42 +80,24 @@ theorem tendstoInMeasure_sub_sum_taylor_two (hB : IsBrownianReal B P)
   choose u hu_bad hu_grid hu_a hu_b hu_mesh huδ using hchoose
   have hδu : Tendsto (fun m ↦ δ (u m)) atTop (𝓝 0) :=
     squeeze_zero_norm (fun m ↦ (huδ m).le) tendsto_one_div_add_atTop_nhds_zero_nat
-  -- Quadratic sums along this sequence have an almost-surely convergent subsequence.
-  have hQ : TendstoInMeasure P (fun k ω ↦ ∑ i ∈ Finset.range (N (u k)),
-      (B (grid (u k) (i + 1)) ω - B (grid (u k) i) ω) ^ 2) atTop
-      (fun _ ↦ (b : ℝ) - a) := by
-    have h := hB.toIsPreBrownianReal.tendstoInMeasure_quadraticSum
+  -- The constant-parameter specialization controls the remainders along this sequence.
+  have hRlim : TendstoInMeasure P (fun k ↦ R (u k)) atTop (fun _ ↦ (0 : ℝ)) := by
+    have h := hB.tendstoInMeasure_sum_sub_taylorWithinEval_two_param
+      (s := {(0 : ℝ)}) isCompact_singleton (f := fun _ ↦ f) (fun _ _ ↦ hf)
+      ((hf.continuous_iteratedDeriv 2 (by norm_num)).comp continuous_snd).continuousOn
       (grid := fun k (i : Fin (N (u k) + 1)) ↦ grid (u k) i)
       (fun k i j hij ↦ hu_grid k (by simpa using i.isLt) (by simpa using j.isLt) hij)
       hu_a hu_b (fun k i ↦ hu_mesh k i i.isLt) hδu
-    simp_rw [← Fin.sum_univ_eq_sum_range]
-    simpa only [TauCeti.Probability.quadraticSum_def, Fin.val_succ, Fin.val_castSucc] using h
-  obtain ⟨ms, hms, hQae⟩ := hQ.exists_seq_tendsto_ae
-  -- On each continuous path, bounded quadratic sums and vanishing mesh control the remainder.
-  have hRae : ∀ᵐ ω ∂P, Tendsto (fun k ↦ R (u (ms k)) ω) atTop (𝓝 0) := by
-    filter_upwards [hB.cont, hQae] with ω hcont hQω
-    have hlast (k i : ℕ) (hi : i ≤ N (u k)) : grid (u k) i ≤ b := by
-      rw [← hu_b k]
-      exact hu_grid k hi (mem_Iic.2 le_rfl) hi
-    have hstep (k i : ℕ) (hi : i < N (u k)) :
-        grid (u k) i ≤ grid (u k) (i + 1) :=
-      hu_grid k hi.le (Nat.succ_le_of_lt hi) (Nat.le_succ i)
-    have hlim := TauCeti.tendsto_sub_sum_taylor_two_of_continuousOn
-      (fun _ _ ↦ hf.contDiffAt) isCompact_Icc (hcont.continuousOn (s := Icc 0 b))
-      (t := fun k ↦ grid (u (ms k))) (n := fun k ↦ N (u (ms k)))
-      (Eventually.of_forall fun k i hi ↦ ⟨bot_le, hlast _ _ hi⟩)
-      (Eventually.of_forall fun k i hi ↦ by
-        have hd : 0 ≤ (grid (u (ms k)) (i + 1) : ℝ) - grid (u (ms k)) i :=
-          sub_nonneg.2 (by exact_mod_cast hstep (ms k) i hi)
-        simpa only [NNReal.dist_eq, Real.dist_eq, abs_of_nonneg hd, Function.comp_def] using
-          hu_mesh (ms k) i hi)
-      (hδu.comp hms.tendsto_atTop)
-      (hQω.eventually_le_const (by linarith : (b : ℝ) - a < (b : ℝ) - a + 1))
-    simpa only [R, hu_a, hu_b] using hlim
-  -- The resulting convergence in measure contradicts the choice of every extracted index.
-  have hRlim := tendstoInMeasure_of_tendsto_ae (fun k ↦ hRmeas (u (ms k))) hRae
+      (fun _ _ ↦ 0) (fun _ _ ↦ mem_singleton 0)
+    convert h using 1
+    funext k ω
+    dsimp only [R]
+    rw [← hu_b k, ← hu_a k,
+      TauCeti.sub_sum_taylor_two_eq_sum_sub_taylorWithinEval f (fun i ↦ B (grid (u k) i) ω)]
+    simp only [← Fin.sum_univ_eq_sum_range, Fin.val_succ, Fin.val_castSucc]
+  -- Convergence in measure contradicts the choice of every extracted index.
   obtain ⟨m, hm⟩ :=
     ((tendstoInMeasure_iff_tendsto_toNNReal.1 hRlim ε hε).eventually hS).exists
-  exact hu_bad (ms m) hm
+  exact hu_bad m hm
 
 end ProbabilityTheory.IsBrownianReal

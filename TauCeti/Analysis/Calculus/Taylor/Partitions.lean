@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Taylor.Parameter
+public import TauCeti.Analysis.Calculus.Taylor.Basic
+import TauCeti.Analysis.Normed.Group.UniformContinuity
 
 /-!
 # Accumulated Taylor remainders
@@ -82,13 +83,14 @@ theorem abs_sum_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b : ℝ}
     norm_sum_le_of_le (Finset.range n) hstep
 
 /-- The sum of the first- and second-order Taylor terms approximates the endpoint increment
-for functions C² near a fixed compact set and grids eventually confined to it, with
-vanishing increments and eventually bounded quadratic sums. The grid family may be indexed
-by any filter. No nesting, ordering, or bound on the number of grid points is required. -/
+for functions C² near a fixed compact set and grids whose left endpoints are eventually
+confined to it, with vanishing increments and eventually bounded quadratic sums. The grid family
+may be indexed by any filter. No nesting, ordering, or bound on the number of grid points
+is required. -/
 theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {s : Set ℝ} {K : ℝ}
     (hf : ∀ z ∈ s, ContDiffAt ℝ 2 f z) (hs : IsCompact s)
     {ι : Type*} {l : Filter ι} {x : ι → ℕ → ℝ} {n : ι → ℕ} {δ : ι → ℝ}
-    (hx : ∀ᶠ k in l, ∀ i ≤ n k, x k i ∈ s)
+    (hx : ∀ᶠ k in l, ∀ i < n k, x k i ∈ s)
     (hδ : ∀ᶠ k in l, ∀ i < n k, |x k (i + 1) - x k i| ≤ δ k)
     (hδ0 : Tendsto δ l (𝓝 0))
     (hQ : ∀ᶠ k in l, ∑ i ∈ Finset.range (n k), (x k (i + 1) - x k i) ^ 2 ≤ K) :
@@ -109,7 +111,7 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {s : Set ℝ} {K : ℝ}
         ε / (max K 0 + 1) * (x k (i + 1) - x k i) ^ 2 := by
     have hi' := Finset.mem_range.1 hi
     simpa only [Real.norm_eq_abs] using
-      hTaylor _ (hxk i hi'.le) _ (hxk (i + 1) hi') ((hδk i hi').trans_lt hk)
+      hTaylor _ (hxk i hi') _ ((hδk i hi').trans_lt hk)
   have hbound : |∑ i ∈ Finset.range (n k),
       (f (x k (i + 1)) - taylorWithinEval f 2 univ (x k i) (x k (i + 1)))| ≤
       ε / (max K 0 + 1) * max K 0 := by
@@ -127,7 +129,7 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {s : Set ℝ} {K : ℝ}
 
 /-- Along grids eventually in a compact metric set with eventually controlled vanishing mesh
 and bounded quadratic sums, the second-order Taylor expansion along a continuous real path has
-vanishing accumulated remainder. The function need only be C² at the path values in that set.
+vanishing accumulated remainder. The function need only be C² near the path values on that set.
 No variation bound on the path is assumed. -/
 theorem tendsto_sub_sum_taylor_two_of_continuousOn {f : ℝ → ℝ}
     {α : Type*} [PseudoMetricSpace α] {g : α → ℝ} {s : Set α}
@@ -143,35 +145,20 @@ theorem tendsto_sub_sum_taylor_two_of_continuousOn {f : ℝ → ℝ}
         (g (t k (i + 1)) - g (t k i))) -
       1 / 2 * ∑ i ∈ Finset.range (n k), deriv (deriv f) (g (t k i)) *
         (g (t k (i + 1)) - g (t k i)) ^ 2) l (𝓝 0) := by
-  let D (k : ι) : ℝ≥0 := (Finset.range (n k)).sup fun i ↦
-    ‖g (t k (i + 1)) - g (t k i)‖₊
-  have hD : Tendsto D l (𝓝 0) := by
-    apply tendsto_order.2
-    refine ⟨fun a ha ↦ (not_lt_of_ge (zero_le : 0 ≤ a) ha).elim, fun ε hε ↦ ?_⟩
-    obtain ⟨η, hη, hηg⟩ := Metric.uniformContinuousOn_iff.1
-      (hs.uniformContinuousOn_of_continuous hg) (ε : ℝ) (NNReal.coe_pos.2 hε)
-    filter_upwards [hδ.eventually_lt_const hη, ht, hmesh] with k hk htk hmeshk
-    apply Finset.sup_lt_iff hε |>.2
-    intro i hi
-    have hi' := Finset.mem_range.1 hi
-    rw [← NNReal.coe_lt_coe]
-    push_cast
-    rw [← dist_eq_norm]
-    exact hηg _ (htk (i + 1) hi') _ (htk i hi'.le)
-      ((hmeshk i hi').trans_lt hk)
+  let D (k : ι) := ‖fun i : Fin (n k) ↦ g (t k (i + 1)) - g (t k i)‖
+  have hD : Tendsto D l (𝓝 0) :=
+    (hs.uniformContinuousOn_of_continuous hg).tendsto_norm_sub_of_dist_le
+      (x := fun k (i : Fin (n k)) ↦ t k i)
+      (y := fun k i ↦ t k (i + 1))
+      (ht.mono fun k htk i ↦ htk i i.isLt.le)
+      (ht.mono fun k htk i ↦ htk (i + 1) i.isLt)
+      (hmesh.mono fun k hk i ↦ hk i i.isLt) hδ
   apply tendsto_sub_sum_taylor_two
     (fun z hz ↦ by obtain ⟨x, hx, rfl⟩ := hz; exact hf x hx)
-    (hs.image_of_continuousOn hg) (K := K)
-    (δ := fun k ↦ (D k : ℝ))
-    (ht.mono fun k htk i hi ↦ mem_image_of_mem g (htk i hi))
-    (Eventually.of_forall fun k i hi ↦ ?_)
-    (by simpa only [Function.comp_def, NNReal.coe_zero] using
-      NNReal.continuous_coe.tendsto 0 |>.comp hD) hQ
-  rw [← Real.norm_eq_abs]
-  dsimp only [D]
-  have hle := NNReal.coe_le_coe.2 (Finset.le_sup (f := fun i ↦
-    ‖g (t k (i + 1)) - g (t k i)‖₊) (Finset.mem_range.2 hi))
-  push_cast at hle
-  exact hle
+    (hs.image_of_continuousOn hg) (K := K) (δ := D)
+    (ht.mono fun k htk i hi ↦ mem_image_of_mem g (htk i hi.le))
+    (Eventually.of_forall fun k i hi ↦ ?_) hD hQ
+  simpa only [Real.norm_eq_abs] using
+    norm_le_pi_norm (fun i : Fin (n k) ↦ g (t k (i + 1)) - g (t k i)) ⟨i, hi⟩
 
 end TauCeti

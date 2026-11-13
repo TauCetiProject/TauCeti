@@ -22,7 +22,7 @@ The file provides:
 
 * **Uniform second-order remainder.** For a function C² near a compact set, the
   second-order Taylor remainder is bounded by `ε * (y - x)²` whenever the increment is
-  sufficiently small, uniformly over endpoints in the set.
+  sufficiently small, uniformly over expansion points in the set.
 * **Size of the remainder.** From the Lagrange form of the remainder, if `|f⁽ⁿ⁺¹⁾| ≤ M` between
   `x₀` and `x`, then `|f x - T(x)| ≤ M |x - x₀|ⁿ⁺¹ / (n+1)!`, where `T` is the Taylor polynomial
   of order `n` expanded at `x₀`.
@@ -51,7 +51,8 @@ function divided by its parameter is completely monotone.
 * `TauCeti.exists_pos_forall_abs_sub_taylorWithinEval_two_le`: a uniform small-coefficient
   second-order remainder estimate on a compact interval. The variant
   `TauCeti.exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact` applies to any
-  compact set, without smoothness in the gaps between its points.
+  compact set, requiring C² regularity only on a neighborhood of that set rather than on
+  an entire interval containing it.
 * `TauCeti.abs_sub_taylorWithinEval_le`: a bound on the Taylor remainder when the next derivative
   is bounded, with the error proportional to `|x - x₀|^(n+1)`.
 * `TauCeti.le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg`: if
@@ -179,11 +180,12 @@ theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b
   exact ⟨δ, hδ, hTaylor 0 (mem_singleton 0)⟩
 
 /-- Uniform second-order Taylor remainder estimate for a function C² near a compact set.
-Only smoothness at the points of the set is required, even when the set is disconnected. -/
+The function need only be C² in a neighborhood of each point of the set, rather than across
+its convex hull when the set is disconnected. The evaluation point need not lie in the set. -/
 theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact {f : ℝ → ℝ}
     {s : Set ℝ} (hf : ∀ z ∈ s, ContDiffAt ℝ 2 f z) (hs : IsCompact s)
     {ε : ℝ} (hε : 0 < ε) :
-    ∃ δ > 0, ∀ x ∈ s, ∀ y ∈ s, |y - x| < δ →
+    ∃ δ > 0, ∀ x ∈ s, ∀ y, |y - x| < δ →
       |f y - taylorWithinEval f 2 univ x y| ≤ ε * (y - x) ^ 2 := by
   have hlocal (z : s) : ∃ U : Set ℝ, IsOpen U ∧ (z : ℝ) ∈ U ∧
       ∀ x ∈ U, ∀ y ∈ U,
@@ -206,7 +208,7 @@ theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact {f : ℝ 
   choose U hU hz hTaylor using hlocal
   obtain ⟨δ, hδ, hcover⟩ := lebesgue_number_lemma_of_metric hs hU
     (fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hz ⟨x, hx⟩⟩)
-  refine ⟨δ, hδ, fun x hx y _ hxy ↦ ?_⟩
+  refine ⟨δ, hδ, fun x hx y hxy ↦ ?_⟩
   obtain ⟨z, hball⟩ := hcover x hx
   exact hTaylor z x (hball (Metric.mem_ball_self hδ)) y
     (hball (by simpa only [Metric.mem_ball, Real.dist_eq] using hxy))
