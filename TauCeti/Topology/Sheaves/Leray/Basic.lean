@@ -8,7 +8,6 @@ module
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Leray
 public import TauCeti.Topology.Sheaves.Cech.Basic
 
-import Mathlib.Data.Fintype.Lattice
 import TauCeti.CategoryTheory.Limits.Lattice
 
 /-!

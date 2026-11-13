@@ -35,12 +35,12 @@ The proof is by dimension shifting. Embed `F` into an injective sheaf `I`, with 
   `0 ⟶ F(V) ⟶ I(V) ⟶ Q(V) ⟶ 0` is exact, because `H¹(V, F) = 0`; so the Čech complexes form a
   short exact sequence `0 ⟶ Č(U, F) ⟶ Č(U, I) ⟶ Č(U, Q) ⟶ 0`.
 * `Č(U, I)` has no cohomology in positive degrees, as for every injective abelian sheaf
-  (`TauCeti.CategoryTheory.exactAt_cechComplexFunctor_obj_obj_of_injective`); on a site there
-  are no flasque sheaves, and this replaces the flasqueness of injective sheaves on a space. Nor
-  has `I` sheaf cohomology in positive degrees. The two long exact sequences then give
-  `Hⁿ⁺¹(U, F) ≅ Hⁿ(U, Q)` and `Hⁿ⁺¹(F) ≅ Hⁿ(Q)` for `n ≥ 1`, while in degree one both `H¹(U, F)`
-  and `H¹(F)` are the cokernel of `I(T) ⟶ Q(T)`, since `H⁰(U, -)` and `H⁰(-)` are both global
-  sections.
+  (`TauCeti.CategoryTheory.exactAt_cechComplexFunctor_obj_obj_of_injective`). This holds on
+  any site, so the argument uses it in place of the flasqueness of injective sheaves on a
+  topological space. Nor has `I` sheaf cohomology in positive degrees. The two long exact
+  sequences then give `Hⁿ⁺¹(U, F) ≅ Hⁿ(U, Q)` and `Hⁿ⁺¹(F) ≅ Hⁿ(Q)` for `n ≥ 1`, while in degree
+  one both `H¹(U, F)` and `H¹(F)` are the cokernel of `I(T) ⟶ Q(T)`, since `H⁰(U, -)` and
+  `H⁰(-)` are both global sections.
 * `Q` is again acyclic on the finite products, as `Hᵏ(V, Q) ≅ Hᵏ⁺¹(V, F)` for `k ≥ 1`.
 
 Induction on the degree, for all sheaves at once, concludes.
@@ -49,7 +49,9 @@ Induction on the degree, for all sheaves at once, concludes.
 
 * `TauCeti.CategoryTheory.cechInjectiveCokernelSequence`: the sequence of Čech complexes of the
   chosen injective cokernel sequence `0 ⟶ F ⟶ I ⟶ Q ⟶ 0`, with its maps
-  `TauCeti.CategoryTheory.cechInjectiveCokernelSequenceMap`;
+  `TauCeti.CategoryTheory.cechInjectiveCokernelSequenceMap`; it is short exact when `F` has no
+  first cohomology on the finite products of members of `U`
+  (`TauCeti.CategoryTheory.cechInjectiveCokernelSequence_shortExact`);
 * `TauCeti.CategoryTheory.homologyCechComplexIsoH`: for a Leray covering `U`, `Hⁿ(U, F) ≅ Hⁿ(F)`
   for every `n`;
 * `TauCeti.CategoryTheory.homologyMap_comp_homologyCechComplexIsoH_hom`: this isomorphism is
@@ -60,6 +62,13 @@ Induction on the degree, for all sheaves at once, concludes.
   the connecting maps of the Čech and sheaf injective cokernel sequences.
 
 ## References
+
+The formalization is adapted from split 6 of the
+[lookahead development](https://github.com/roed-math/TauCeti-w2-fresh/tree/lookahead/SchemeAndStackFoundations/leray-spectral-sequence),
+at commit `877ee62`
+(<https://github.com/roed-math/TauCeti-w2-fresh/tree/877ee6253118ae038b46aca137f48841db354fe9>).
+The degree `0` part of that development is in
+`TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.DegreeZero`.
 
 * [Stacks: Tag 03AV](https://stacks.math.columbia.edu/tag/03AV), Section 21.10 on Čech cohomology
   and cohomology, and [Stacks: Tag 03OW](https://stacks.math.columbia.edu/tag/03OW), for Leray's
@@ -135,6 +144,17 @@ theorem cechInjectiveCokernelSequenceMap_τ₃ {F G : Sheaf J AddCommGrpCat.{v}}
 
 variable [HasExt.{v} (Sheaf J AddCommGrpCat.{v})]
 
+/-- If `F` has no first cohomology on the finite products `U (a 0) × ⋯ × U (a m)` of members of
+the family, the sections of `0 ⟶ F ⟶ I ⟶ Q ⟶ 0` on them are short exact, so the sequence of Čech
+complexes `0 ⟶ Č(U, F) ⟶ Č(U, I) ⟶ Č(U, Q) ⟶ 0` is short exact. -/
+theorem cechInjectiveCokernelSequence_shortExact {F : Sheaf J AddCommGrpCat.{v}}
+    (hF : ∀ (m : ℕ) (a : Fin (m + 1) → ι), Subsingleton (F.H'.{v} 1 (∏ᶜ fun j ↦ U (a j)))) :
+    (cechInjectiveCokernelSequence U F).ShortExact :=
+  shortExact_map_cechComplexFunctor U
+    ((injectiveCokernelSequence F).map (sheafToPresheaf _ AddCommGrpCat.{v})) fun m a ↦
+      _root_.CategoryTheory.Sheaf.H'.shortExact_map_sheafSections
+        (injectiveCokernelSequence_shortExact F) _ (hF m a)
+
 /-- The Leray condition: `F` has no cohomology in positive degrees on the finite products
 `U (a 0) × ⋯ × U (a m)` of members of the family. -/
 private def IsLerayProd (F : Sheaf J AddCommGrpCat.{v}) : Prop :=
@@ -142,14 +162,11 @@ private def IsLerayProd (F : Sheaf J AddCommGrpCat.{v}) : Prop :=
 
 variable {U}
 
-/-- On the finite products of members of the family, the sections of `0 ⟶ F ⟶ I ⟶ Q ⟶ 0` are
-short exact for a Leray sheaf `F`, so its Čech complexes form a short exact sequence. -/
+/-- The Čech complexes of the injective cokernel sequence of a Leray sheaf form a short exact
+sequence. -/
 private lemma cechSeq_shortExact {F : Sheaf J AddCommGrpCat.{v}} (hF : IsLerayProd U F) :
     (cechInjectiveCokernelSequence U F).ShortExact :=
-  shortExact_map_cechComplexFunctor U
-    ((injectiveCokernelSequence F).map (sheafToPresheaf _ AddCommGrpCat.{v})) fun m a ↦
-      _root_.CategoryTheory.Sheaf.H'.shortExact_map_sheafSections
-        (injectiveCokernelSequence_shortExact F) _ (hF m a 0)
+  cechInjectiveCokernelSequence_shortExact U fun m a ↦ hF m a 0
 
 /-- The cokernel `Q` of the chosen injective embedding of a Leray sheaf is again Leray. -/
 private lemma isLerayProd_cokernel {F : Sheaf J AddCommGrpCat.{v}} (hF : IsLerayProd U F) :
@@ -188,36 +205,13 @@ private def cechIsoOne (F : Sheaf J AddCommGrpCat.{v}) (hF : IsLerayProd U F) :
       AddCommGrpCat.of (_root_.CategoryTheory.Sheaf.H.{v} F 1) :=
   have := epi_δ_cechSeq U hF 0
   have := epi_ofHom_δ_zero F
-  have hC : HomologicalComplex.homologyMap ((cechComplexFunctor U).map
-      (cokernel.π (Injective.ι F)).hom) 0 ≫ (cechSeq_shortExact hF).δ 0 1 rfl = 0 :=
-    (cechSeq_shortExact hF).comp_δ 0 1 _
-  have hH :
-      AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map (cokernel.π (Injective.ι F)) 0) ≫
-        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
-          (injectiveCokernelSequence_shortExact F) 0 1 rfl) = 0 := by
-    ext x
-    exact (_root_.CategoryTheory.Sheaf.H.exact_map_δ (injectiveCokernelSequence_shortExact F) 0 1
-      rfl).apply_apply_eq_zero x
-  have hEC := (cechSeq_shortExact hF).homology_exact₃ 0 1 rfl
-  have hEH := _root_.CategoryTheory.Sheaf.H.longSequence_exact₃'
-    (injectiveCokernelSequence_shortExact F) 0 1 rfl
-  { hom := hEC.desc
-      ((homologyZeroCechIso U hT hU _).hom ≫ AddCommGrpCat.ofHom
-        (_root_.CategoryTheory.Sheaf.H.δ (injectiveCokernelSequence_shortExact F) 0 1 rfl))
-      (by rw [homologyMap_comp_homologyZeroCechIso_hom_assoc, hH, comp_zero])
-    inv := hEH.desc
-      ((homologyZeroCechIso U hT hU _).inv ≫ (cechSeq_shortExact hF).δ 0 1 rfl)
-      (by
-        simp only [(Iso.eq_inv_comp _).2 (homologyMap_comp_homologyZeroCechIso_hom U hT hU
-          (cokernel.π (Injective.ι F))).symm, Category.assoc, Iso.hom_inv_id_assoc, hC,
-          comp_zero])
-    hom_inv_id := by
-      rw [← cancel_epi ((cechSeq_shortExact hF).δ 0 1 rfl), hEC.g_desc_assoc, Category.assoc,
-        hEH.g_desc, Iso.hom_inv_id_assoc, Category.comp_id]
-    inv_hom_id := by
-      rw [← cancel_epi (AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
-        (injectiveCokernelSequence_shortExact F) 0 1 rfl)), hEH.g_desc_assoc, Category.assoc,
-        hEC.g_desc, Iso.inv_hom_id_assoc, Category.comp_id] }
+  CokernelCofork.mapIsoOfIsColimit
+    ((cechSeq_shortExact hF).homology_exact₃ 0 1 rfl).gIsCokernel
+    (_root_.CategoryTheory.Sheaf.H.longSequence_exact₃'
+      (injectiveCokernelSequence_shortExact F) 0 1 rfl).gIsCokernel
+    (Arrow.isoMk (homologyZeroCechIso U hT hU (Injective.under F))
+      (homologyZeroCechIso U hT hU (cokernel (Injective.ι F)))
+      (homologyMap_comp_homologyZeroCechIso_hom U hT hU (cokernel.π (Injective.ι F))).symm)
 
 /-- The degree-one comparison commutes with the Čech connecting map `H⁰(U, Q) ⟶ H¹(U, F)` and
 `H⁰(Q) ⟶ H¹(F)`. -/
@@ -226,7 +220,8 @@ private lemma δ_comp_cechIsoOne_hom (F : Sheaf J AddCommGrpCat.{v}) (hF : IsLer
       (homologyZeroCechIso U hT hU _).hom ≫ AddCommGrpCat.ofHom
         (_root_.CategoryTheory.Sheaf.H.δ (injectiveCokernelSequence_shortExact F) 0 1 rfl) := by
   have := epi_δ_cechSeq U hF 0
-  exact ((cechSeq_shortExact hF).homology_exact₃ 0 1 rfl).g_desc _ _
+  exact CokernelCofork.π_mapOfIsColimit
+    ((cechSeq_shortExact hF).homology_exact₃ 0 1 rfl).gIsCokernel _ _
 
 /-- **Leray's theorem, in the form constructed by induction.** The comparison is defined by
 dimension shifting along the chosen injective cokernel sequence `0 ⟶ F ⟶ I ⟶ Q ⟶ 0`: in degree

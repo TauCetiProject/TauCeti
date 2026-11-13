@@ -16,23 +16,23 @@ import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Coefficients
 
 Let `F` be a sheaf of `R`-modules on a topological space `X` whose underlying sheaf of abelian
 groups has `H¹(X, F) = 0`. By the degree one Leray comparison
-(`TauCeti.Topology.homologyCechComplexIsoHOne`), every finite open cover whose members have
+(`TauCeti.Topology.homologyCechComplexIsoHOne`), every open cover whose members have
 vanishing `H¹` has vanishing first Čech cohomology, computed with module coefficients. If every
-open cover of `X` is refined by such a finite cover, every class of the cover-colimit Čech
+open cover of `X` is refined by such a cover, every class of the cover-colimit Čech
 cohomology `TauCeti.Topology.cechCohomology` dies on a refinement, so the degree one Čech cohomology
 of `F` vanishes.
 
 Under the refinement hypothesis, this is the converse of
 `CategoryTheory.Sheaf.subsingleton_H'_one_of_isZero_cechCohomology_moduleCat`. A typical use is
 a compact Riemann surface, where coordinate discs have vanishing `H¹` for the structure sheaf, and
-`H¹(X, 𝒪) = 0` can be read off from the Čech cohomology of one finite cover by such discs.
+`H¹(X, 𝒪) = 0` can be read off from the Čech cohomology of one cover by such discs.
 
 ## Main results
 
-* `CategoryTheory.Sheaf.isZero_homology_one_cechComplex_of_subsingleton_H`: a finite cover
+* `CategoryTheory.Sheaf.isZero_homology_one_cechComplex_of_subsingleton_H`: a cover
   whose members have vanishing `H¹` has vanishing first Čech cohomology when `H¹(X, F) = 0`.
 * `CategoryTheory.Sheaf.isZero_cechCohomology_one_of_subsingleton_H`: if every open cover is
-  refined by such a finite cover and `H¹(X, F) = 0`, the degree one Čech cohomology of `F`
+  refined by such a cover and `H¹(X, F) = 0`, the degree one Čech cohomology of `F`
   vanishes.
 
 ## References
@@ -55,9 +55,9 @@ variable {X : TopCat.{u}} {R : Type u} [Ring R]
   (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
 
 /-- **Leray covers have the cohomology of the sheaf.** Let `F` be a sheaf of modules whose
-underlying sheaf of abelian groups has `H¹(X, F) = 0`. A finite open cover whose members `U i`
+underlying sheaf of abelian groups has `H¹(X, F) = 0`. An open cover whose members `U i`
 have `H¹(U i, F) = 0` has vanishing first Čech cohomology, with module coefficients. -/
-theorem isZero_homology_one_cechComplex_of_subsingleton_H {ι : Type u} [Finite ι]
+theorem isZero_homology_one_cechComplex_of_subsingleton_H {ι : Type u}
     (U : ι → Opens X) (hU : ⨆ i, U i = ⊤)
     (hF : ∀ i, Subsingleton (Sheaf.H'
       ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) 1 (U i)))
@@ -80,19 +80,19 @@ theorem isZero_homology_one_cechComplex_of_subsingleton_H {ι : Type u} [Finite 
   exact hG.eq_of_src _ _
 
 /-- **Vanishing of Čech `H¹` from vanishing sheaf `H¹`.** Let `F` be a sheaf of modules whose
-underlying sheaf of abelian groups has `H¹(X, F) = 0`. If every open cover of `X` is refined by a
-finite open cover whose members `W i` have `H¹(W i, F) = 0`, then the degree one Čech cohomology of
+underlying sheaf of abelian groups has `H¹(X, F) = 0`. If every open cover of `X` is refined by an
+open cover whose members `W i` have `H¹(W i, F) = 0`, then the degree one Čech cohomology of
 `F`, the colimit over all open covers, vanishes. -/
 theorem isZero_cechCohomology_one_of_subsingleton_H
     (hF : ∀ {κ : Type u} (V : κ → Opens X), IsOpenCover V →
-      ∃ (ι : Type u) (_ : Finite ι) (W : ι → Opens X), ⨆ i, W i = ⊤ ∧ (∀ i, ∃ k, W i ≤ V k) ∧
+      ∃ (ι : Type u) (W : ι → Opens X), ⨆ i, W i = ⊤ ∧ (∀ i, ∃ k, W i ≤ V k) ∧
         ∀ i, Subsingleton (Sheaf.H'
           ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) 1 (W i)))
     (h : Subsingleton (Sheaf.H
       ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) 1)) :
     IsZero ((cechCohomology X (ModuleCat.{u} R) 1).obj F.obj) := by
   refine (IsZero.iff_id_eq_zero _).2 (cechCohomology_obj_hom_ext fun V ↦ ?_)
-  obtain ⟨ι, _, W, hW, hWV, hWa⟩ := hF V.opens V.isOpenCover
+  obtain ⟨ι, W, hW, hWV, hWa⟩ := hF V.opens V.isOpenCover
   choose k hk using hWV
   let φ : FormalCoproduct.mk ι W ⟶ V.toFormalCoproduct := ⟨k, fun i ↦ homOfLE (hk i)⟩
   have hz := isZero_homology_one_cechComplex_of_subsingleton_H F W hW hWa h

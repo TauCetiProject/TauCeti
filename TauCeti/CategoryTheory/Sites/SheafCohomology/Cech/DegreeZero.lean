@@ -25,12 +25,21 @@ with refinement of coverings. This is the base case of Leray's acyclicity theore
 * `TauCeti.CategoryTheory.quasiIsoAt_cechAugmentation_zero_of_mem`: for a sheaf and a covering
   family, the augmentation of the Čech complex is a quasi-isomorphism in degree `0`;
 * `TauCeti.CategoryTheory.homologyZeroCechIso`: for an abelian sheaf and a covering family,
-  `H⁰(U, F) ≅ H⁰(F)`, naturally in `F`
+  `H⁰(U, F) ≅ H⁰(F)`, induced by the augmentation
+  (`TauCeti.CategoryTheory.homologyMap_cechAugmentation_comp_homologyZeroCechIso_hom`), naturally
+  in `F`
   (`TauCeti.CategoryTheory.homologyMap_comp_homologyZeroCechIso_hom`) and compatibly with
   refinement maps
   (`TauCeti.CategoryTheory.homologyMap_cechComplexMap_comp_homologyZeroCechIso_hom`).
 
 ## References
+
+The formalization is adapted from split 6 of the
+[lookahead development](https://github.com/roed-math/TauCeti-w2-fresh/tree/lookahead/SchemeAndStackFoundations/leray-spectral-sequence),
+at commit `877ee62`
+(<https://github.com/roed-math/TauCeti-w2-fresh/tree/877ee6253118ae038b46aca137f48841db354fe9>),
+where it is part of the proof of Leray's acyclicity theorem; it is split off here so that the
+degree `0` comparison for open covers can use it.
 
 * [Stacks: Tag 03AV](https://stacks.math.columbia.edu/tag/03AV), Section 21.10 on Čech cohomology
   and cohomology.
@@ -79,6 +88,18 @@ def homologyZeroCechIso (F : Sheaf J AddCommGrpCat.{v}) :
   (asIso (HomologicalComplex.homologyMap (cechAugmentation U hT F.obj) 0)).symm ≪≫
     HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0 _ ≪≫
       ((_root_.CategoryTheory.Sheaf.H.equiv₀ F hT).symm.toAddCommGrpIso)
+
+/-- The identification of degree `0` Čech cohomology with degree `0` sheaf cohomology is induced
+by the augmentation `F(T) ⟶ Č(U, F)`: composed with it, it is the identification of the global
+sections `F(T)` with `H⁰(F)`. -/
+@[reassoc (attr := simp)]
+theorem homologyMap_cechAugmentation_comp_homologyZeroCechIso_hom (F : Sheaf J AddCommGrpCat.{v}) :
+    HomologicalComplex.homologyMap (cechAugmentation U hT F.obj) 0 ≫
+        (homologyZeroCechIso U hT hU F).hom =
+      (HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0 _).hom ≫
+        ((_root_.CategoryTheory.Sheaf.H.equiv₀ F hT).symm.toAddCommGrpIso).hom := by
+  have := quasiIsoAt_cechAugmentation_zero_of_mem U hT hU F
+  simp only [homologyZeroCechIso, Iso.trans_hom, Iso.symm_hom, asIso_inv, IsIso.hom_inv_id_assoc]
 
 /-- The identification of degree `0` Čech cohomology with degree `0` sheaf cohomology is natural
 in the sheaf. -/

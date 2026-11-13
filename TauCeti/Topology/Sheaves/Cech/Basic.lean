@@ -26,9 +26,11 @@ import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Comparison
 Let `F` be a flasque sheaf of abelian groups on a topological space `X`. This file proves that
 for every finite open cover `U` of `X` the augmented Čech complex
 `0 ⟶ F(X) ⟶ Č⁰(U, F) ⟶ Č¹(U, F) ⟶ ⋯` is exact: flasque sheaves have no higher Čech cohomology
-for finite covers. Together with the acyclicity of flasque sheaves for derived-functor cohomology
-(`TauCeti.Topology.subsingleton_H'_succ_of_isFlasque`), this is the input to the comparison of
-Čech and derived-functor cohomology for covers whose finite intersections are acyclic.
+for finite covers. This is the Čech counterpart of the acyclicity of flasque sheaves for
+derived-functor cohomology (`TauCeti.Topology.subsingleton_H'_succ_of_isFlasque`). The comparison
+of Čech and derived-functor cohomology for covers whose finite intersections are acyclic
+(`TauCeti.Topology.homologyCechComplexIsoH`) does not use it: it holds for arbitrary covers, by
+the Čech acyclicity of injective sheaves on a site.
 
 The proof is by induction on the number of members of the cover, applied more generally to the
 restricted presheaves `V ↦ F(Y ∩ V)` for opens `Y` contained in the union of the members. For a

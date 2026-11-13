@@ -11,12 +11,11 @@ public import TauCeti.Topology.Sheaves.Flasque.Basic
 import Mathlib.Algebra.Category.Grp.AB
 import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.CategoryTheory.Limits.Lattice
-import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Exact
 
 /-!
 # Leray comparison in degree one
 
-For a finite open cover, vanishing of `H¹(Uᵢ,F)` on the individual members suffices to compare
+For an open cover, vanishing of `H¹(Uᵢ,F)` on the individual members suffices to compare
 Čech `H¹` with sheaf `H¹`. Acyclicity of finite intersections in positive degrees is not needed.
 
 Embed `F` into an injective sheaf `I` with quotient `Q`. The Čech sequence is left exact in every
@@ -159,25 +158,22 @@ private lemma homologyMap_comp_lerayOneZeroIso_hom (hU : ⨆ i, U i = ⊤)
       (cechInjectiveCokernelSequence U F).g from cokernel.π_desc _ _ _]
   exact homologyMap_comp_homologyZeroCechIso_hom U hU (cokernel.π (Injective.ι F))
 
-/-- The Čech connecting map is onto because the injective sheaf is flasque. -/
-private lemma epi_lerayOneCokerSeq_δ [Finite ι] (hU : ⨆ i, U i = ⊤)
+/-- The Čech connecting map is onto because the injective sheaf has no Čech cohomology in
+positive degrees. -/
+private lemma epi_lerayOneCokerSeq_δ
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
-    Epi ((cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 (by simp)) := by
-  have : QuasiIso (cechAugmentation U isTerminalTop (Injective.under F).obj) :=
-    TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque (Injective.under F) U hU
-  apply (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).epi_δ
-  exact ((exactAt_iff_of_quasiIsoAt
-    (cechAugmentation U isTerminalTop (Injective.under F).obj) 1).mp
-    (CochainComplex.exactAt_succ_single_obj _ 0)).isZero_homology
+    Epi ((cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 (by simp)) :=
+  (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).epi_δ 0 1 _
+    (exactAt_cechComplexFunctor_obj_obj_of_injective U (Injective.under F) 0).isZero_homology
 
-/-- **Degree-one Leray comparison.** Vanishing of `H¹(Uᵢ,F)` on the members of a finite open
+/-- **Degree-one Leray comparison.** Vanishing of `H¹(Uᵢ,F)` on the members of an open
 cover suffices for `H¹(U,F) ≅ H¹(X,F)`; no acyclicity of intersections is assumed. -/
-def homologyCechComplexIsoHOne [Finite ι] (hU : ⨆ i, U i = ⊤)
+def homologyCechComplexIsoHOne (hU : ⨆ i, U i = ⊤)
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
     (hF : ∀ i, Subsingleton (F.H' 1 (U i))) :
     ((cechComplexFunctor U).obj F.obj).homology 1 ≅
       AddCommGrpCat.of (_root_.CategoryTheory.Sheaf.H.{u} F 1) := by
-  have := epi_lerayOneCokerSeq_δ U hU F
+  have := epi_lerayOneCokerSeq_δ U F
   have : Epi (AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
       (injectiveCokernelSequence_shortExact F) 0 1 rfl)) :=
     (AddCommGrpCat.epi_iff_surjective _).2 (_root_.CategoryTheory.Sheaf.H.δ_surjective
@@ -192,7 +188,7 @@ def homologyCechComplexIsoHOne [Finite ι] (hU : ⨆ i, U i = ⊤)
 
 /-- The comparison intertwines the two connecting maps. -/
 @[reassoc]
-private lemma lerayOneCokerSeq_δ_comp_iso_hom [Finite ι] (hU : ⨆ i, U i = ⊤)
+private lemma lerayOneCokerSeq_δ_comp_iso_hom (hU : ⨆ i, U i = ⊤)
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
     (hF : ∀ i, Subsingleton (F.H' 1 (U i))) :
     (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 (by simp) ≫
@@ -214,7 +210,7 @@ private lemma lerayOneCokerSeq_δ_comp_iso_hom [Finite ι] (hU : ⨆ i, U i = �
 
 /-- With the all-degree Leray hypotheses, the degree-one comparison agrees with the
 existing all-degree comparison. The memberwise vanishing witness may be chosen independently. -/
-lemma homologyCechComplexIsoH_one_eq_homologyCechComplexIsoHOne [Finite ι]
+lemma homologyCechComplexIsoH_one_eq_homologyCechComplexIsoHOne
     (hU : ⨆ i, U i = ⊤)
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
     (hF : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U)))
@@ -222,12 +218,9 @@ lemma homologyCechComplexIsoH_one_eq_homologyCechComplexIsoHOne [Finite ι]
     homologyCechComplexIsoH U hU F hF 1 = homologyCechComplexIsoHOne U hU F hF₁ := by
   have h01 : (ComplexShape.up ℕ).Rel 0 1 := by simp
   have hS : (cechInjectiveCokernelSequence U F).ShortExact :=
-    shortExact_map_cechComplexFunctor U
-      ((injectiveCokernelSequence F).map (sheafToPresheaf _ AddCommGrpCat.{u})) fun m a ↦
-        _root_.CategoryTheory.Sheaf.H'.shortExact_map_sheafSections
-          (injectiveCokernelSequence_shortExact F) _
-          (CompleteLattice.finite_product_of_forall_finset_inf
-            (p := fun W ↦ Subsingleton (F.H' 1 W)) U (fun t ht ↦ hF t ht 0) a)
+    cechInjectiveCokernelSequence_shortExact U fun _ a ↦
+      CompleteLattice.finite_product_of_forall_finset_inf
+        (p := fun W ↦ Subsingleton (F.H' 1 W)) U (fun t ht ↦ hF t ht 0) a
   let φ : lerayOneCokerSeq U F ⟶ cechInjectiveCokernelSequence U F :=
     { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := lerayOneCokerToQuotient U F
       comm₁₂ := by
@@ -246,7 +239,7 @@ lemma homologyCechComplexIsoH_one_eq_homologyCechComplexIsoHOne [Finite ι]
   have hd := HomologicalComplex.HomologySequence.δ_naturality φ
     (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f) hS 0 1 h01
   have : Epi ((cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 h01) :=
-    epi_lerayOneCokerSeq_δ U hU F
+    epi_lerayOneCokerSeq_δ U F
   have hid : HomologicalComplex.homologyMap φ.τ₁ 1 =
       𝟙 ((lerayOneCokerSeq U F).X₁.homology 1) :=
     HomologicalComplex.homologyMap_id _ _
@@ -319,7 +312,7 @@ private lemma lerayOneCokerSeqHom_comp_zeroIso (hU : ⨆ i, U i = ⊤) (hV : ⨆
   simp only [Category.assoc]
 
 /-- Naturality of the degree-one comparison follows from the two long exact sequences. -/
-private lemma lerayOneIso_naturality [Finite ι] [Finite κ]
+private lemma lerayOneIso_naturality
     (hU : ⨆ i, U i = ⊤) (hV : ⨆ i, V i = ⊤)
     (hF : ∀ i, Subsingleton (F.H' 1 (U i))) (hG : ∀ i, Subsingleton (G.H' 1 (V i)))
     (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G)
@@ -338,7 +331,7 @@ private lemma lerayOneIso_naturality [Finite ι] [Finite κ]
   let dV : (lerayOneCokerSeq V G).X₃.homology 0 ⟶
       ((cechComplexFunctor V).obj G.obj).homology 1 :=
     (cokernelSequence_shortExact (cechInjectiveCokernelSequence V G).f).δ 0 1 h01
-  have : Epi dU := epi_lerayOneCokerSeq_δ U hU F
+  have : Epi dU := epi_lerayOneCokerSeq_δ U F
   have hd : dU ≫ HomologicalComplex.homologyMap φ.τ₁ 1 =
       HomologicalComplex.homologyMap (lerayOneCokerSeqHom U V φ).τ₃ 0 ≫ dV :=
     HomologicalComplex.HomologySequence.δ_naturality
@@ -386,7 +379,7 @@ private lemma lerayOneIso_naturality [Finite ι] [Finite κ]
 
 /-- Degree-one Leray comparison is natural in the coefficient sheaf. -/
 @[reassoc]
-theorem homologyMap_comp_homologyCechComplexIsoHOne_hom [Finite ι]
+theorem homologyMap_comp_homologyCechComplexIsoHOne_hom
     (hU : ⨆ i, U i = ⊤) (f : F ⟶ G)
     (hF : ∀ i, Subsingleton (F.H' 1 (U i))) (hG : ∀ i, Subsingleton (G.H' 1 (U i))) :
     HomologicalComplex.homologyMap ((cechComplexFunctor U).map f.hom) 1 ≫
@@ -416,7 +409,7 @@ private def lerayOneSeqRefinement
 /-- Degree-one Leray comparison commutes with the actual map induced by a cover refinement. -/
 @[reassoc]
 theorem homologyMap_cechComplexMap_comp_homologyCechComplexIsoHOne_hom
-    [Finite ι] [Finite κ] (hU : ⨆ i, U i = ⊤) (hV : ⨆ i, V i = ⊤)
+    (hU : ⨆ i, U i = ⊤) (hV : ⨆ i, V i = ⊤)
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
     (hFU : ∀ i, Subsingleton (F.H' 1 (U i))) (hFV : ∀ i, Subsingleton (F.H' 1 (V i)))
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
@@ -433,9 +426,9 @@ theorem homologyMap_cechComplexMap_comp_homologyCechComplexIsoHOne_hom
   simpa only [lerayOneSeqRefinement, ShortComplex.id_τ₁, ShortComplex.id_τ₃,
         _root_.CategoryTheory.Sheaf.H.ofHom_map_id, Category.comp_id] using h
 
-/-- A refinement between memberwise `H¹`-acyclic finite covers induces an isomorphism on `H¹`. -/
+/-- A refinement between memberwise `H¹`-acyclic covers induces an isomorphism on `H¹`. -/
 theorem isIso_homologyMap_cechComplexMap_one
-    [Finite ι] [Finite κ] (hU : ⨆ i, U i = ⊤) (hV : ⨆ i, V i = ⊤)
+    (hU : ⨆ i, U i = ⊤) (hV : ⨆ i, V i = ⊤)
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
     (hFU : ∀ i, Subsingleton (F.H' 1 (U i))) (hFV : ∀ i, Subsingleton (F.H' 1 (V i)))
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
