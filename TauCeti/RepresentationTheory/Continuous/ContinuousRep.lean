@@ -155,6 +155,12 @@ def subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)
     (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
 
 @[simp]
+theorem toRepresentation_subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)
+    (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) :
+    (ρ.subrepresentation W hW).toRepresentation = ρ.toRepresentation.subrepresentation W hW :=
+  (rfl)
+
+@[simp]
 theorem coe_subrepresentation_apply (ρ : ContinuousRep Γ A M) (W : Submodule A M)
     (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) (g : Γ) (x : W) :
     (ρ.subrepresentation W hW g x : M) = ρ g x :=
@@ -163,7 +169,7 @@ theorem coe_subrepresentation_apply (ρ : ContinuousRep Γ A M) (W : Submodule A
 variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V] [TopologicalSpace V]
 
 /-- Descent to the quotient by an invariant submodule, with its quotient topology. -/
-def quotient [IsTopologicalAddGroup V] (ρ : ContinuousRep Γ R V) (W : Submodule R V)
+def quotient [ContinuousAdd V] (ρ : ContinuousRep Γ R V) (W : Submodule R V)
     (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) : ContinuousRep Γ R (V ⧸ W) where
   toRepresentation := ρ.toRepresentation.quotient W hW
   continuous_action := by
@@ -171,7 +177,13 @@ def quotient [IsTopologicalAddGroup V] (ρ : ContinuousRep Γ R V) (W : Submodul
     exact W.continuous_mkQ.comp ρ.continuous_action
 
 @[simp]
-theorem quotient_apply_mk [IsTopologicalAddGroup V] (ρ : ContinuousRep Γ R V)
+theorem toRepresentation_quotient [ContinuousAdd V] (ρ : ContinuousRep Γ R V)
+    (W : Submodule R V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) :
+    (ρ.quotient W hW).toRepresentation = ρ.toRepresentation.quotient W hW :=
+  (rfl)
+
+@[simp]
+theorem quotient_apply_mk [ContinuousAdd V] (ρ : ContinuousRep Γ R V)
     (W : Submodule R V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) (g : Γ) (x : V) :
     ρ.quotient W hW g (Submodule.Quotient.mk x) = Submodule.Quotient.mk (ρ g x) :=
   (rfl)

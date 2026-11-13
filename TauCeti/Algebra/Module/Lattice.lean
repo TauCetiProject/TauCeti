@@ -24,8 +24,9 @@ This file provides generic results about full submodules over fraction fields. I
 ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
 between full submodules to rational linear equivalences of their ambient spaces, and proves that
 surjective linear maps preserve full lattices over commutative-ring algebras, as do finite
-products. Finally, a free full lattice over an integral domain rationalizes to its ambient vector
-space over the fraction field.
+products. Injective linear maps pull back full lattices over Noetherian domains with the given
+fraction field. Finally, a free full lattice over an integral domain rationalizes to its ambient
+vector space over the fraction field.
 
 ## Main declarations
 
@@ -41,6 +42,8 @@ space over the fraction field.
   with restricting a submodule to another submodule.
 * `Submodule.isLattice_span`: the span of a finite set spanning the ambient module is a full
   lattice.
+* `Submodule.isLattice_comap`: pullback of a full lattice along an injective linear map over
+  a Noetherian domain with the given fraction field.
 * `Module.Finite.of_isLattice`: a module containing a full lattice is finite.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
@@ -523,8 +526,8 @@ theorem exists_ne_zero_forall_smul_mem (S : Submodule R V')
 
 omit [IsDomain R] in
 /-- Pulling back a full lattice along an injective linear map gives a full lattice over a
-Noetherian domain. In particular, intersection with a vector subspace is a lattice in that
-subspace. -/
+Noetherian domain with fraction field `K`. In particular, intersection with a vector subspace
+is a lattice in that subspace. -/
 theorem _root_.Submodule.isLattice_comap {W : Type*} [AddCommGroup W] [Module R W]
     [Module K W] [IsScalarTower R K W] [IsNoetherianRing R]
     (S : Submodule R V') [S.IsLattice K] (f : W →ₗ[K] V') (hf : Function.Injective f) :
