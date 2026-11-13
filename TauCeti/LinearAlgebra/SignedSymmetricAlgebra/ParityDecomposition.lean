@@ -89,7 +89,7 @@ namespace TauCeti.SignedSym
 universe u v w
 
 variable {R : Type u} [CommRing R] {V : Type v} [AddCommGroup V] [Module R V]
-variable (G : InternalGrading R V)
+variable (G : InternalGrading R V ℤ)
 
 /-! ### Even and odd factor inclusions and projections -/
 
@@ -928,7 +928,7 @@ theorem fromExteriorOdd_mem_parityGrading_iff [Invertible (2 : R)] {k : ZMod 2}
 
 section Functoriality
 
-variable {W : Type w} [AddCommGroup W] [Module R W] (H : InternalGrading R W)
+variable {W : Type w} [AddCommGroup W] [Module R W] (H : InternalGrading R W ℤ)
 
 /-- `fromSymmetricEven` is natural with respect to degree-preserving linear maps. -/
 theorem map_comp_fromSymmetricEven (f : V →ₗ[R] W)

@@ -33,7 +33,7 @@ universe u v
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
-variable (G : InternalGrading R V)
+variable (G : InternalGrading R V ℤ)
 
 /-- Homogeneous elements supercommute with the sign determined by their total input degrees.
 No assumption on the characteristic of the coefficient ring is needed. -/
