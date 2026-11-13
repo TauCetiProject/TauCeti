@@ -288,7 +288,7 @@ private def hopfLoop :
     (Path.continuous_toMoorePath.comp
       (hopfLoopPath hw).continuous).moorePath_rescale_of_forall_eq_source (by fun_prop)
       fun q hq t ↦ by
-        obtain rfl : q = 1 := Subtype.ext (sub_eq_zero.1 (nnnorm_eq_zero.1 hq))
+        obtain rfl : q = 1 := Subtype.ext (sub_eq_zero.1 (nnNorm_eq_zero.1 hq))
         simp [hopfLoopPath_one]
 
 private theorem hopfLoop_one : hopfLoop hw 1 = 1 :=
@@ -298,7 +298,7 @@ private theorem toPath_hopfLoop (q : sphere (0 : ℍ) 1) :
     (hopfLoop hw q).toPath = hopfLoopPath hw q := by
   rcases eq_or_ne q 1 with rfl | hq
   · rw [hopfLoop_one, MooreLoopSpace.toPath_one, hopfLoopPath_one]
-  have h : ‖(q : ℍ) - 1‖₊ ≠ 0 := fun h ↦ hq (Subtype.ext (sub_eq_zero.1 (nnnorm_eq_zero.1 h)))
+  have h : ‖(q : ℍ) - 1‖₊ ≠ 0 := fun h ↦ hq (Subtype.ext (sub_eq_zero.1 (nnNorm_eq_zero.1 h)))
   ext s
   simp [hopfLoop, MooreLoopSpace.toPath_apply, h]
 
