@@ -27,30 +27,41 @@ relative homology `Hₙ({f ≤ q + 1/2}, {f ≤ q - 1/2})`, `p + q = -n`, of the
 critical point `[e_q]`. So it is a copy of the coefficients at each position `(-2k, k)`, `k ≤ N`,
 and zero elsewhere.
 
+The first differential from the saddle `(-2, 1)` to the minimum `(0, 0)` vanishes, since it is
+the connecting map of the triple `({f ≤ 3/2}, {f ≤ 1/2}, {f ≤ -1/2})` and the disc `{f ≤ 1/2}` is
+contractible (`TauCeti.contractibleSpace_sublevel_projectiveMomentFunction_natCast`). So the
+minimum survives to the second page.
+
 On `ℝℙ²` with integer coefficients the first page is therefore `ℤ` at the positions `(0, 0)`,
 `(-2, 1)` and `(-4, 2)` of the minimum, the saddle and the maximum. Its differentials need not
 vanish: the differential from the maximum to the saddle is multiplication by `±2`, for any
 identifications of both objects with `ℤ`. It is the connecting map of the triple
-`({f ≤ 5/2}, {f ≤ 3/2}, {f ≤ 1/2})`, and the contractible disc `{f ≤ 1/2}`
-(`TauCeti.contractibleSpace_sublevel_projectiveMomentFunction_natCast`) identifies its cokernel
-with `H₁(ℝℙ²; ℤ) ≅ ℤ/2` and shows it is injective since `H₂(ℝℙ²; ℤ) = 0`. The differential from
-the saddle to the minimum vanishes. So the relative homology of the attached cells is not yet the
-second page: the second page (numbered `3`) is `ℤ`, `ℤ/2` and `0` at the minimum, the saddle and
-the maximum, the integral homology groups `H₀`, `H₁` and `H₂` of `ℝℙ²`.
+`({f ≤ 5/2}, {f ≤ 3/2}, {f ≤ 1/2})`, and the contractible disc `{f ≤ 1/2}` identifies its cokernel
+with `H₁(ℝℙ²; ℤ) ≅ ℤ/2` and shows it is injective since `H₂(ℝℙ²; ℤ) = 0`. So the relative homology
+of the attached cells is not yet the second page: the second page (numbered `3`) is `ℤ`, `ℤ/2` and
+`0` at the minimum, the saddle and the maximum, the integral homology groups `H₀`, `H₁` and `H₂` of
+`ℝℙ²`. More generally, with coefficients in a ring `R`, the cokernel of this differential and the
+second page at the saddle are `R / 2R`, and if right multiplication by `2` is injective on `R` the
+differential is injective and the second page vanishes at the maximum.
 
 ## Main results
 
 * `TauCeti.nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso` and
   `TauCeti.isZero_realProjectiveMomentSpectralSequence_page_two_X`: the first page.
+* `TauCeti.realProjectiveMomentSpectralSequence_page_two_d_neg_two_one_eq_zero` and
+  `TauCeti.nonempty_realProjectiveMomentSpectralSequence_page_three_X_zero_zero_iso`: the first
+  differential from the saddle to the minimum vanishes, and the minimum survives to the second
+  page.
 * `TauCeti.mono_realProjectiveMomentSpectralSequence_page_two_d`,
-  `TauCeti.nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso` and
+  `TauCeti.nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso`,
+  `TauCeti.nonempty_cokernel_realProjectiveMomentSpectralSequence_int_page_two_d_iso` and
   `TauCeti.realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul`: on
-  `ℝℙ²`, the first differential from the maximum to the saddle is injective with cokernel `ℤ/2`,
-  and is multiplication by `±2`.
+  `ℝℙ²`, the first differential from the maximum to the saddle is injective with cokernel `R / 2R`,
+  so `ℤ/2` integrally, where it is multiplication by `±2`.
 * `TauCeti.isZero_realProjectiveMomentSpectralSequence_page_three_X_neg_four_two`,
   `TauCeti.nonempty_realProjectiveMomentSpectralSequence_page_three_X_neg_two_one_iso` and
-  `TauCeti.nonempty_realProjectiveMomentSpectralSequence_page_three_X_zero_zero_iso`: the second
-  page of `ℝℙ²`.
+  `TauCeti.nonempty_realProjectiveMomentSpectralSequence_int_page_three_X_neg_two_one_iso`: the
+  second page of `ℝℙ²` at the maximum and the saddle.
 
 ## References
 
@@ -96,6 +107,31 @@ private noncomputable abbrev uniqueBand (k : ℕ) (hk : k ≤ N) :
     simp only at hj
     subst hj
     rfl
+
+/-- The critical-band filtration `q ↦ {f ≤ q - 1/2}` of `ℝℙᴺ`. -/
+private abbrev filt (N : ℕ) : ℤ → Set (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) :=
+  (fun b ↦ {x | projectiveMomentFunction ℝ (fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) x ≤ b}) ∘
+    fun q : ℤ ↦ (q : ℝ) - 1 / 2
+
+/-- The critical-band filtration of `ℝℙᴺ` is increasing. -/
+private theorem monotone_filt (N : ℕ) : Monotone (filt N) :=
+  (sublevel_mono _).comp
+    (isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := N)).monotone
+
+/-- The disc `{f ≤ 1/2}` around the minimum is contractible. -/
+private theorem contractibleSpace_filt_one (N : ℕ) : ContractibleSpace (filt N 1) :=
+  contractibleSpace_sublevel_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := N)
+    (c := ((1 : ℤ) : ℝ) - 1 / 2) (by norm_num) (by norm_num)
+
+/-- On the first page, the position before `pq + (2, -1)` is `pq`. -/
+private theorem prev_page_two (pq pq' : ℤ × ℤ) (h₁ : pq.1 + 2 = pq'.1) (h₂ : pq.2 - 1 = pq'.2) :
+    (ComplexShape.up' ((2, 1 - 2) : ℤ × ℤ)).prev pq' = pq :=
+  (ComplexShape.up' _).prev_eq' (Prod.ext h₁ (by simp only [Prod.snd_add]; lia))
+
+/-- On the first page, the position after `pq` is `pq + (2, -1)`. -/
+private theorem next_page_two (pq pq' : ℤ × ℤ) (h₁ : pq.1 + 2 = pq'.1) (h₂ : pq.2 - 1 = pq'.2) :
+    (ComplexShape.up' ((2, 1 - 2) : ℤ × ℤ)).next pq = pq' :=
+  (ComplexShape.up' _).next_eq' (Prod.ext h₁ (by simp only [Prod.snd_add]; lia))
 
 section SpectralSequence
 
@@ -150,29 +186,75 @@ theorem isZero_realProjectiveMomentSpectralSequence_page_two_X (pq : ℤ × ℤ)
   simp only
   omega
 
+/-- The triple `({f ≤ 3/2}, {f ≤ 1/2}, {f ≤ -1/2})` of the first differential from the saddle to the
+minimum; its last stage is empty. -/
+private abbrev lowerTriple (N : ℕ) : TopTriple :=
+  TopTriple.ofInclusions (monotone_filt N (by norm_num : (0 : ℤ) ≤ 1))
+    (monotone_filt N (by norm_num : (1 : ℤ) ≤ 2))
+
+/-- The connecting map `H₁({f ≤ 3/2}, {f ≤ 1/2}) ⟶ H₀({f ≤ 1/2}, {f ≤ -1/2})` vanishes: it factors
+through the connecting map of the pair `({f ≤ 3/2}, {f ≤ 1/2})`, which vanishes because
+`{f ≤ 1/2}` is contractible. -/
+private theorem singularHomologyδ_lowerTriple_eq_zero :
+    (lowerTriple N).singularHomologyδ R 1 0 = 0 := by
+  have : ContractibleSpace (TopTriple.outerPair.obj (lowerTriple N)).snd :=
+    contractibleSpace_filt_one N
+  rw [(lowerTriple N).singularHomologyδ_eq_comp_singularHomologyπ R 1 0 rfl,
+    TopPair.singularHomologyδ_eq_zero_of_contractibleSpace]
+  exact zero_comp
+
+/-- The object of the minimum on the first page is `H₀({f ≤ 1/2}, {f ≤ -1/2})`. -/
+private def minFirstPageXIso :
+    ((realProjectiveMomentSpectralSequence N R).page 2).X (0, 0) ≅
+      (TopTriple.innerPair.obj (lowerTriple N)).singularHomology R 0 :=
+  filteredSpaceSpectralSequenceFirstPageXIso R (monotone_filt N) (0, 0) 0 1 rfl rfl 0 rfl 0 rfl
+
+/-- The object of the saddle on the first page, as the relative homology of the outer pair of the
+triple `({f ≤ 3/2}, {f ≤ 1/2}, {f ≤ -1/2})`. -/
+private def saddleLowerFirstPageXIso :
+    ((realProjectiveMomentSpectralSequence N R).page 2).X (-2, 1) ≅
+      (TopTriple.outerPair.obj (lowerTriple N)).singularHomology R 1 :=
+  filteredSpaceSpectralSequenceFirstPageXIso R (monotone_filt N) (-2, 1) 1 2 rfl rfl (-1) rfl 1 rfl
+
+/-- **The first differential from the saddle to the minimum vanishes.** On the first page of the
+spectral sequence of the critical-band filtration of `ℝℙᴺ`, the differential from `(-2, 1)` to
+`(0, 0)` is zero: it is the connecting map of the triple `({f ≤ 3/2}, {f ≤ 1/2}, {f ≤ -1/2})`, and
+the disc `{f ≤ 1/2}` around the minimum is contractible. -/
+theorem realProjectiveMomentSpectralSequence_page_two_d_neg_two_one_eq_zero :
+    ((realProjectiveMomentSpectralSequence N R).page 2).d (-2, 1) (0, 0) = 0 := by
+  -- `filteredSpaceSpectralSequence_first_page_d_eq` at `(p, q) = (-2, 1)` and `n = 0`, whose
+  -- statement agrees with `h` by evaluating the arithmetic on numerals.
+  have h : ((realProjectiveMomentSpectralSequence N R).page 2).d (-2, 1) (0, 0) =
+      (saddleLowerFirstPageXIso (N := N) R).hom ≫ (lowerTriple N).singularHomologyδ R 1 0 ≫
+        (minFirstPageXIso (N := N) R).inv :=
+    filteredSpaceSpectralSequence_first_page_d_eq R (monotone_filt N) 1 (-2) 0 (by norm_num)
+  rw [h, singularHomologyδ_lowerTriple_eq_zero, zero_comp, comp_zero]
+
+/-- **The second page at the minimum.** On the second page (numbered `3`) of the spectral sequence
+of the critical-band filtration of `ℝℙᴺ`, the object at `(0, 0)` of the minimum is still a copy of
+the coefficients. -/
+theorem nonempty_realProjectiveMomentSpectralSequence_page_three_X_zero_zero_iso :
+    Nonempty (((realProjectiveMomentSpectralSequence N R).page 3).X (0, 0) ≅ R) := by
+  set K := (realProjectiveMomentSpectralSequence N R).page 2
+  obtain ⟨e⟩ := nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso R 0 (Nat.zero_le N)
+  have hd : K.d (0, 0) (2, -1) = 0 :=
+    (isZero_filteredSpaceSpectralSequence_page_two_X R (monotone_filt N) (2, -1)
+      (by norm_num)).eq_of_tgt _ _
+  exact ⟨((realProjectiveMomentSpectralSequence N R).iso 2 3 (0, 0)).symm ≪≫
+    (K.isoHomologyπ (-2, 1) (0, 0) (prev_page_two (-2, 1) (0, 0) (by norm_num) (by norm_num))
+      (realProjectiveMomentSpectralSequence_page_two_d_neg_two_one_eq_zero R)).symm ≪≫
+    K.iCyclesIso (0, 0) (2, -1) (next_page_two (0, 0) (2, -1) (by norm_num) (by norm_num)) hd ≪≫ e⟩
+
 end SpectralSequence
 
 section Plane
 
 open CategoryTheory Limits
 
-/-- The critical-band filtration `q ↦ {f ≤ q - 1/2}` of `ℝℙ²`. -/
-private abbrev filt : ℤ → Set (TopCat.of (ℙ ℝ (Fin 3 → ℝ))) :=
-  (fun b ↦ {x | projectiveMomentFunction ℝ (fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x ≤ b}) ∘
-    fun q : ℤ ↦ (q : ℝ) - 1 / 2
+variable (R : Type) [Ring R]
 
-/-- The critical-band filtration of `ℝℙ²` is increasing. -/
-private theorem monotone_filt : Monotone filt :=
-  (sublevel_mono _).comp
-    (isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := 2)).monotone
-
-/-- The disc `{f ≤ 1/2}` around the minimum is contractible. -/
-private theorem contractibleSpace_filt_one : ContractibleSpace (filt 1) :=
-  contractibleSpace_sublevel_projectiveMomentFunction_natCast (n := 2)
-    (c := ((1 : ℤ) : ℝ) - 1 / 2) (by norm_num) (by norm_num)
-
-/-- The last stage `{f ≤ 5/2}` of the filtration is all of `ℝℙ²`. -/
-private def filtThreeHomeomorph : filt 3 ≃ₜ RealProjectiveSpace 2 :=
+/-- The last stage `{f ≤ 5/2}` of the filtration of `ℝℙ²` is all of `ℝℙ²`. -/
+private def filtThreeHomeomorph : filt 2 3 ≃ₜ RealProjectiveSpace 2 :=
   (Homeomorph.setCongr (eq_univ_of_forall fun x ↦
       (projectiveMomentFunction_le (c := 2) (fun i ↦ by exact_mod_cast Nat.le_of_lt_succ i.2)
         x).trans (by norm_num))).trans
@@ -181,87 +263,89 @@ private def filtThreeHomeomorph : filt 3 ≃ₜ RealProjectiveSpace 2 :=
 /-- The homology of the pair `({f ≤ 5/2}, {f ≤ 1/2})` is the homology of `ℝℙ²` in positive
 degrees. -/
 private def singularHomologyFiltPairIso (k : ℕ) :
-    (TopPair.ofInclusion (monotone_filt (by norm_num : (1 : ℤ) ≤ 3))).singularHomology
-        (ModuleCat.of ℤ ℤ) (k + 1) ≅
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (k + 1)).obj
-        (ModuleCat.of ℤ ℤ)).obj (TopCat.of (RealProjectiveSpace 2)) :=
+    (TopPair.ofInclusion (monotone_filt 2 (by norm_num : (1 : ℤ) ≤ 3))).singularHomology
+        (ModuleCat.of R R) (k + 1) ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) (k + 1)).obj
+        (ModuleCat.of R R)).obj (TopCat.of (RealProjectiveSpace 2)) :=
   have : ContractibleSpace
-      (TopPair.ofInclusion (monotone_filt (by norm_num : (1 : ℤ) ≤ 3))).snd :=
-    contractibleSpace_filt_one
-  have := TopPair.isIso_singularHomologyπ_of_contractibleSpace
-    (TopPair.ofInclusion (monotone_filt (by norm_num : (1 : ℤ) ≤ 3))) (ModuleCat.of ℤ ℤ) k
-  (asIso (TopPair.singularHomologyπ _ _ (k + 1))).symm ≪≫
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (k + 1)).obj
-      (ModuleCat.of ℤ ℤ)).mapIso (TopCat.isoOfHomeo filtThreeHomeomorph)
+      (TopPair.ofInclusion (monotone_filt 2 (by norm_num : (1 : ℤ) ≤ 3))).snd :=
+    contractibleSpace_filt_one 2
+  (TopPair.singularHomologyIsoOfContractibleSpace
+      (TopPair.ofInclusion (monotone_filt 2 (by norm_num : (1 : ℤ) ≤ 3))) (ModuleCat.of R R)
+      k).symm ≪≫
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) (k + 1)).obj
+      (ModuleCat.of R R)).mapIso
+        (TopCat.isoOfHomeo (X := TopCat.of (filt 2 3)) filtThreeHomeomorph)
 
-/-- `H₂(ℝℙ², {f ≤ 1/2}; ℤ) = 0`. -/
-private theorem isZero_singularHomology_filtPair_two :
-    IsZero ((TopPair.ofInclusion (monotone_filt (by norm_num : (1 : ℤ) ≤ 3))).singularHomology
-      (ModuleCat.of ℤ ℤ) 2) :=
-  (RealProjectiveSpace.isZero_singularHomology_int_of_even (N := 2) (k := 2) (by decide)
-    (by decide)).of_iso (singularHomologyFiltPairIso 1)
+/-- `H₂(ℝℙ², {f ≤ 1/2}; R) = 0` when right multiplication by `2` is injective on `R`. -/
+private theorem isZero_singularHomology_filtPair_two (h2 : IsRightRegular (2 : R)) :
+    IsZero ((TopPair.ofInclusion (monotone_filt 2 (by norm_num : (1 : ℤ) ≤ 3))).singularHomology
+      (ModuleCat.of R R) 2) :=
+  (RealProjectiveSpace.isZero_singularHomology_of_even R (N := 2) (k := 2) h2 (by decide)
+    (by decide)).of_iso (singularHomologyFiltPairIso R 1)
 
-/-- `H₁(ℝℙ², {f ≤ 1/2}; ℤ) ≅ ℤ/2`. -/
+/-- `H₁(ℝℙ², {f ≤ 1/2}; R) ≅ R / 2R`. -/
 private def singularHomologyFiltPairOneIso :
-    (TopPair.ofInclusion (monotone_filt (by norm_num : (1 : ℤ) ≤ 3))).singularHomology
-      (ModuleCat.of ℤ ℤ) 1 ≅ ModuleCat.of ℤ (ZMod 2) :=
-  singularHomologyFiltPairIso 0 ≪≫
-    (RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd (N := 2) (k := 1) odd_one
+    (TopPair.ofInclusion (monotone_filt 2 (by norm_num : (1 : ℤ) ≤ 3))).singularHomology
+      (ModuleCat.of R R) 1 ≅ ModuleCat.of R (R ⧸ R ∙ (2 : R)) :=
+  singularHomologyFiltPairIso R 0 ≪≫
+    (RealProjectiveSpace.singularHomologyLinearEquivOfOdd R (N := 2) (k := 1) odd_one
       (by norm_num)).toModuleIso
 
-/-- `H₁({f ≤ 5/2}, {f ≤ 3/2}; ℤ) = 0`: the band around the maximum has no critical point of
+/-- `H₁({f ≤ 5/2}, {f ≤ 3/2}; R) = 0`: the band around the maximum has no critical point of
 index `1`. -/
 private theorem isZero_singularHomology_filtPair_upper_one :
-    IsZero ((TopPair.ofInclusion (monotone_filt (by norm_num : (2 : ℤ) ≤ 3))).singularHomology
-      (ModuleCat.of ℤ ℤ) 1) :=
-  (isZero_realProjectiveMomentSpectralSequence_page_two_X (ModuleCat.of ℤ ℤ) (-3, 2)
+    IsZero ((TopPair.ofInclusion (monotone_filt 2 (by norm_num : (2 : ℤ) ≤ 3))).singularHomology
+      (ModuleCat.of R R) 1) :=
+  (isZero_realProjectiveMomentSpectralSequence_page_two_X (ModuleCat.of R R) (-3, 2)
     fun k _ h ↦ by simp only [Prod.ext_iff] at h; omega).of_iso
-    (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of ℤ ℤ) monotone_filt (-3, 2) 2 3 rfl
-      rfl (-1) rfl 1 rfl).symm
+    (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R) (monotone_filt 2) (-3, 2) 2 3
+      rfl rfl (-1) rfl 1 rfl).symm
 
 /-- The triple `({f ≤ 5/2}, {f ≤ 3/2}, {f ≤ 1/2})` of the first differential from the maximum to
 the saddle. -/
 private abbrev upperTriple : TopTriple :=
-  TopTriple.ofInclusions (monotone_filt (by norm_num : (1 : ℤ) ≤ 2))
-    (monotone_filt (by norm_num : (2 : ℤ) ≤ 3))
+  TopTriple.ofInclusions (monotone_filt 2 (by norm_num : (1 : ℤ) ≤ 2))
+    (monotone_filt 2 (by norm_num : (2 : ℤ) ≤ 3))
 
 /-- The connecting map `H₂({f ≤ 5/2}, {f ≤ 3/2}) ⟶ H₁({f ≤ 3/2}, {f ≤ 1/2})` is injective, since
 `H₂(ℝℙ², {f ≤ 1/2}) = 0`. -/
-private theorem mono_singularHomologyδ_upperTriple :
-    Mono (upperTriple.singularHomologyδ (ModuleCat.of ℤ ℤ) 2 1) :=
-  (upperTriple.singularHomology_exact_outer (ModuleCat.of ℤ ℤ) 2 1).mono_g
-    (isZero_singularHomology_filtPair_two.eq_of_src _ _)
+private theorem mono_singularHomologyδ_upperTriple (h2 : IsRightRegular (2 : R)) :
+    Mono (upperTriple.singularHomologyδ (ModuleCat.of R R) 2 1) :=
+  (upperTriple.singularHomology_exact_outer (ModuleCat.of R R) 2 1).mono_g
+    ((isZero_singularHomology_filtPair_two R h2).eq_of_src _ _)
 
 /-- The map `H₁({f ≤ 3/2}, {f ≤ 1/2}) ⟶ H₁({f ≤ 5/2}, {f ≤ 1/2})` is surjective, since
 `H₁({f ≤ 5/2}, {f ≤ 3/2}) = 0`. -/
 private theorem epi_singularHomologyMap_innerToTotal_upperTriple :
     Epi (TopPair.singularHomologyMap (TopTriple.innerToTotal.app upperTriple)
-      (ModuleCat.of ℤ ℤ) 1) :=
-  (upperTriple.singularHomology_exact_total (ModuleCat.of ℤ ℤ) 1).epi_f
-    (isZero_singularHomology_filtPair_upper_one.eq_of_tgt _ _)
+      (ModuleCat.of R R) 1) :=
+  (upperTriple.singularHomology_exact_total (ModuleCat.of R R) 1).epi_f
+    ((isZero_singularHomology_filtPair_upper_one R).eq_of_tgt _ _)
 
 /-- The cokernel of the connecting map `H₂({f ≤ 5/2}, {f ≤ 3/2}) ⟶ H₁({f ≤ 3/2}, {f ≤ 1/2})` is
-`H₁(ℝℙ², {f ≤ 1/2}) ≅ ℤ/2`. -/
+`H₁(ℝℙ², {f ≤ 1/2}) ≅ R / 2R`. -/
 private def cokernelSingularHomologyδUpperTripleIso :
-    cokernel (upperTriple.singularHomologyδ (ModuleCat.of ℤ ℤ) 2 1) ≅ ModuleCat.of ℤ (ZMod 2) :=
-  have := epi_singularHomologyMap_innerToTotal_upperTriple
+    cokernel (upperTriple.singularHomologyδ (ModuleCat.of R R) 2 1) ≅
+      ModuleCat.of R (R ⧸ R ∙ (2 : R)) :=
+  have := epi_singularHomologyMap_innerToTotal_upperTriple R
   (cokernelIsCokernel _).coconePointUniqueUpToIso
-      (upperTriple.singularHomology_exact_inner (ModuleCat.of ℤ ℤ) 2 1).gIsCokernel ≪≫
-    singularHomologyFiltPairOneIso
+      (upperTriple.singularHomology_exact_inner (ModuleCat.of R R) 2 1).gIsCokernel ≪≫
+    singularHomologyFiltPairOneIso R
 
 /-- The object of the maximum on the first page is `H₂({f ≤ 5/2}, {f ≤ 3/2})`. -/
 private def maxFirstPageXIso :
-    ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (-4, 2) ≅
-      (TopTriple.outerPair.obj upperTriple).singularHomology (ModuleCat.of ℤ ℤ) 2 :=
-  filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of ℤ ℤ) monotone_filt (-4, 2) 2 3 rfl rfl
-    (-2) rfl 2 rfl
+    ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2).X (-4, 2) ≅
+      (TopTriple.outerPair.obj upperTriple).singularHomology (ModuleCat.of R R) 2 :=
+  filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R) (monotone_filt 2) (-4, 2) 2 3 rfl
+    rfl (-2) rfl 2 rfl
 
 /-- The object of the saddle on the first page is `H₁({f ≤ 3/2}, {f ≤ 1/2})`. -/
 private def saddleFirstPageXIso :
-    ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (-2, 1) ≅
-      (TopTriple.innerPair.obj upperTriple).singularHomology (ModuleCat.of ℤ ℤ) 1 :=
-  filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of ℤ ℤ) monotone_filt (-2, 1) 1 2 rfl rfl
-    (-1) rfl 1 rfl
+    ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2).X (-2, 1) ≅
+      (TopTriple.innerPair.obj upperTriple).singularHomology (ModuleCat.of R R) 1 :=
+  filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R) (monotone_filt 2) (-2, 1) 1 2 rfl
+    rfl (-1) rfl 1 rfl
 
 /-- The first differential from the maximum to the saddle is the connecting map of the triple
 `({f ≤ 5/2}, {f ≤ 3/2}, {f ≤ 1/2})`. The general identification
@@ -269,30 +353,37 @@ private def saddleFirstPageXIso :
 `(p + 2, q - 1)`, in degrees `n + 1` and `n`; here these integers are numerals, and the statement
 agrees with it by evaluating the arithmetic on numerals. -/
 private theorem page_two_d_eq :
-    ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d (-4, 2) (-2, 1) =
-      maxFirstPageXIso.hom ≫ upperTriple.singularHomologyδ (ModuleCat.of ℤ ℤ) 2 1 ≫
-        saddleFirstPageXIso.inv :=
-  filteredSpaceSpectralSequence_first_page_d_eq (ModuleCat.of ℤ ℤ) monotone_filt 2 (-4) 1
+    ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2).d (-4, 2) (-2, 1) =
+      (maxFirstPageXIso R).hom ≫ upperTriple.singularHomologyδ (ModuleCat.of R R) 2 1 ≫
+        (saddleFirstPageXIso R).inv :=
+  filteredSpaceSpectralSequence_first_page_d_eq (ModuleCat.of R R) (monotone_filt 2) 2 (-4) 1
     (by norm_num)
 
 /-- **The first differential from the maximum to the saddle is injective.** On the first page of
-the spectral sequence of the critical-band filtration of `ℝℙ²` with integer coefficients, the
-differential from `(-4, 2)`, the copy of `ℤ` of the maximum, to `(-2, 1)`, the copy of `ℤ` of the
-saddle, is a monomorphism. -/
-theorem mono_realProjectiveMomentSpectralSequence_page_two_d :
-    Mono (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d
+the spectral sequence of the critical-band filtration of `ℝℙ²` with coefficients in a ring `R` on
+which right multiplication by `2` is injective, the differential from `(-4, 2)`, the copy of `R` of
+the maximum, to `(-2, 1)`, the copy of `R` of the saddle, is a monomorphism. -/
+theorem mono_realProjectiveMomentSpectralSequence_page_two_d (h2 : IsRightRegular (2 : R)) :
+    Mono (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2).d
       (-4, 2) (-2, 1)) := by
-  have := mono_singularHomologyδ_upperTriple
+  have := mono_singularHomologyδ_upperTriple R h2
   rw [page_two_d_eq]
   infer_instance
 
-/-- **The first differential from the maximum to the saddle has cokernel `ℤ/2`.** -/
+/-- **The first differential from the maximum to the saddle has cokernel `R / 2R`.** -/
 theorem nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso :
-    Nonempty (cokernel (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d
-      (-4, 2) (-2, 1)) ≅ ModuleCat.of ℤ (ZMod 2)) := by
+    Nonempty (cokernel (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2).d
+      (-4, 2) (-2, 1)) ≅ ModuleCat.of R (R ⧸ R ∙ (2 : R))) := by
   rw [page_two_d_eq]
   exact ⟨cokernelEpiComp _ _ ≪≫ cokernelCompIsIso _ _ ≪≫
-    cokernelSingularHomologyδUpperTripleIso⟩
+    cokernelSingularHomologyδUpperTripleIso R⟩
+
+/-- **The integral first differential from the maximum to the saddle has cokernel `ℤ/2`.** -/
+theorem nonempty_cokernel_realProjectiveMomentSpectralSequence_int_page_two_d_iso :
+    Nonempty (cokernel (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d
+      (-4, 2) (-2, 1)) ≅ ModuleCat.of ℤ (ZMod 2)) := by
+  obtain ⟨e⟩ := nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso ℤ
+  exact ⟨e ≪≫ (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv.toModuleIso⟩
 
 /-- **The first differential from the maximum to the saddle is multiplication by `±2`.** Whatever
 identifications of the objects `(-4, 2)` and `(-2, 1)` of the first page with `ℤ` are chosen, the
@@ -311,7 +402,7 @@ theorem realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_tw
   -- An endomorphism of `ℤ` is multiplication by its value `m` at `1`, with cokernel `ℤ/m`.
   set m := φ.hom 1
   have hφ : φ.hom = LinearMap.toSpanSingleton ℤ ℤ m := LinearMap.ext_ring (by simp [m])
-  obtain ⟨e⟩ := nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso
+  obtain ⟨e⟩ := nonempty_cokernel_realProjectiveMomentSpectralSequence_int_page_two_d_iso
   have hcard : Nat.card (ZMod 2) = m.natAbs :=
     calc Nat.card (ZMod 2) = Nat.card (cokernel φ : ModuleCat ℤ) :=
           Nat.card_congr
@@ -328,111 +419,51 @@ theorem realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_tw
     simp [hφ, mul_comm]
   rcases Int.natAbs_eq m with h | h <;> rw [← hcard] at h <;> rw [hφm, h] <;> simp
 
-/-- The triple `({f ≤ 3/2}, {f ≤ 1/2}, {f ≤ -1/2})` of the first differential from the saddle to the
-minimum; its last stage is empty. -/
-private abbrev lowerTriple : TopTriple :=
-  TopTriple.ofInclusions (monotone_filt (by norm_num : (0 : ℤ) ≤ 1))
-    (monotone_filt (by norm_num : (1 : ℤ) ≤ 2))
-
-/-- The connecting map `H₁({f ≤ 3/2}, {f ≤ 1/2}) ⟶ H₀({f ≤ 1/2}, {f ≤ -1/2})` vanishes: it factors
-through the connecting map of the pair `({f ≤ 3/2}, {f ≤ 1/2})`, which vanishes because `H₀` of
-the contractible `{f ≤ 1/2}` injects into `H₀({f ≤ 3/2})`. -/
-private theorem singularHomologyδ_lowerTriple_eq_zero :
-    lowerTriple.singularHomologyδ (ModuleCat.of ℤ ℤ) 1 0 = 0 := by
-  have : ContractibleSpace (TopTriple.outerPair.obj lowerTriple).snd := contractibleSpace_filt_one
-  have h := ((TopTriple.outerPair.obj lowerTriple).map.mono_singularHomologyMap_of_isZero
-    (ModuleCat.of ℤ ℤ) (isZero_reducedSingularHomologyFunctor_of_contractibleSpace
-      (ModuleCat.of ℤ ℤ) _ 0)).right_cancellation _ _
-    (((TopTriple.outerPair.obj lowerTriple).singularHomologyδ_comp (ModuleCat.of ℤ ℤ) 1 0
-      rfl).trans zero_comp.symm)
-  rw [lowerTriple.singularHomologyδ_eq_comp_singularHomologyπ (ModuleCat.of ℤ ℤ) 1 0 rfl, h]
-  exact zero_comp
-
-/-- The object of the minimum on the first page is `H₀({f ≤ 1/2}, {f ≤ -1/2})`. -/
-private def minFirstPageXIso :
-    ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (0, 0) ≅
-      (TopTriple.innerPair.obj lowerTriple).singularHomology (ModuleCat.of ℤ ℤ) 0 :=
-  filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of ℤ ℤ) monotone_filt (0, 0) 0 1 rfl rfl
-    0 rfl 0 rfl
-
-/-- The object of the saddle on the first page, as the relative homology of the outer pair of the
-triple `({f ≤ 3/2}, {f ≤ 1/2}, {f ≤ -1/2})`. -/
-private def saddleLowerFirstPageXIso :
-    ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (-2, 1) ≅
-      (TopTriple.outerPair.obj lowerTriple).singularHomology (ModuleCat.of ℤ ℤ) 1 :=
-  filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of ℤ ℤ) monotone_filt (-2, 1) 1 2 rfl rfl
-    (-1) rfl 1 rfl
-
-/-- The first differential from the saddle to the minimum vanishes. -/
-private theorem page_two_d_saddle_eq_zero :
-    ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d (-2, 1) (0, 0) = 0 := by
-  have h : ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d (-2, 1) (0, 0) =
-      saddleLowerFirstPageXIso.hom ≫ lowerTriple.singularHomologyδ (ModuleCat.of ℤ ℤ) 1 0 ≫
-        minFirstPageXIso.inv :=
-    filteredSpaceSpectralSequence_first_page_d_eq (ModuleCat.of ℤ ℤ) monotone_filt 1 (-2) 0
-      (by norm_num)
-  rw [h, singularHomologyδ_lowerTriple_eq_zero, zero_comp, comp_zero]
-
-/-- On the first page, the position before `pq + (2, -1)` is `pq`. -/
-private theorem prev_page_two (pq pq' : ℤ × ℤ) (h₁ : pq.1 + 2 = pq'.1) (h₂ : pq.2 - 1 = pq'.2) :
-    (ComplexShape.up' ((2, 1 - 2) : ℤ × ℤ)).prev pq' = pq :=
-  (ComplexShape.up' _).prev_eq' (Prod.ext h₁ (by simp only [Prod.snd_add]; lia))
-
-/-- On the first page, the position after `pq` is `pq + (2, -1)`. -/
-private theorem next_page_two (pq pq' : ℤ × ℤ) (h₁ : pq.1 + 2 = pq'.1) (h₂ : pq.2 - 1 = pq'.2) :
-    (ComplexShape.up' ((2, 1 - 2) : ℤ × ℤ)).next pq = pq' :=
-  (ComplexShape.up' _).next_eq' (Prod.ext h₁ (by simp only [Prod.snd_add]; lia))
-
 /-- **The second page at the maximum vanishes.** On the second page (numbered `3`) of the
-spectral sequence of the critical-band filtration of `ℝℙ²` with integer coefficients, the object
-at `(-4, 2)` of the maximum is zero: the first differential out of it is injective. -/
-theorem isZero_realProjectiveMomentSpectralSequence_page_three_X_neg_four_two :
-    IsZero (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (-4, 2)) := by
-  set K := (realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2
-  have := mono_realProjectiveMomentSpectralSequence_page_two_d
-  refine IsZero.of_iso ?_ ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).iso 2 3
+spectral sequence of the critical-band filtration of `ℝℙ²` with coefficients in a ring `R` on
+which right multiplication by `2` is injective, the object at `(-4, 2)` of the maximum is zero: the
+first differential out of it is injective. -/
+theorem isZero_realProjectiveMomentSpectralSequence_page_three_X_neg_four_two
+    (h2 : IsRightRegular (2 : R)) :
+    IsZero (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 3).X (-4, 2)) := by
+  set K := (realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2
+  have := mono_realProjectiveMomentSpectralSequence_page_two_d R h2
+  refine IsZero.of_iso ?_ ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).iso 2 3
     (-4, 2)).symm
   refine IsZero.of_iso ?_ (K.homologyIsoSc' (-6, 3) (-4, 2) (-2, 1)
     (prev_page_two (-6, 3) (-4, 2) (by norm_num) (by norm_num))
     (next_page_two (-4, 2) (-2, 1) (by norm_num) (by norm_num)))
   refine (ShortComplex.exact_iff_isZero_homology _).1
     ((ShortComplex.exact_iff_mono (K.sc' (-6, 3) (-4, 2) (-2, 1))
-      ((isZero_realProjectiveMomentSpectralSequence_page_two_X (ModuleCat.of ℤ ℤ) (-6, 3)
+      ((isZero_realProjectiveMomentSpectralSequence_page_two_X (ModuleCat.of R R) (-6, 3)
         fun k hk h ↦ ?_).eq_of_src _ _)).2 this)
   simp only [Prod.ext_iff] at h
   omega
 
-/-- **The second page at the saddle is `ℤ/2`.** On the second page (numbered `3`) of the spectral
-sequence of the critical-band filtration of `ℝℙ²` with integer coefficients, the object at
-`(-2, 1)` of the saddle is the cokernel `ℤ/2` of the first differential from the maximum. -/
+/-- **The second page at the saddle is `R / 2R`.** On the second page (numbered `3`) of the
+spectral sequence of the critical-band filtration of `ℝℙ²` with coefficients in a ring `R`, the
+object at `(-2, 1)` of the saddle is the cokernel `R / 2R` of the first differential from the
+maximum. -/
 theorem nonempty_realProjectiveMomentSpectralSequence_page_three_X_neg_two_one_iso :
-    Nonempty (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (-2, 1) ≅
-      ModuleCat.of ℤ (ZMod 2)) := by
-  set K := (realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2
-  obtain ⟨e⟩ := nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso
-  exact ⟨((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).iso 2 3 (-2, 1)).symm ≪≫
+    Nonempty (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 3).X (-2, 1) ≅
+      ModuleCat.of R (R ⧸ R ∙ (2 : R))) := by
+  set K := (realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2
+  obtain ⟨e⟩ := nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso R
+  exact ⟨((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).iso 2 3 (-2, 1)).symm ≪≫
     K.isoHomologyι (-2, 1) (0, 0) (next_page_two (-2, 1) (0, 0) (by norm_num) (by norm_num))
-      page_two_d_saddle_eq_zero ≪≫
+      (realProjectiveMomentSpectralSequence_page_two_d_neg_two_one_eq_zero _) ≪≫
     (K.opcyclesIsCokernel (-4, 2) (-2, 1)
       (prev_page_two (-4, 2) (-2, 1) (by norm_num) (by norm_num))).coconePointUniqueUpToIso
       (cokernelIsCokernel _) ≪≫ e⟩
 
-/-- **The second page at the minimum is `ℤ`.** On the second page (numbered `3`) of the spectral
-sequence of the critical-band filtration of `ℝℙ²` with integer coefficients, the object at
-`(0, 0)` of the minimum is still a copy of `ℤ`. -/
-theorem nonempty_realProjectiveMomentSpectralSequence_page_three_X_zero_zero_iso :
-    Nonempty (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (0, 0) ≅
-      ModuleCat.of ℤ ℤ) := by
-  set K := (realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2
-  obtain ⟨e⟩ := nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso (N := 2)
-    (ModuleCat.of ℤ ℤ) 0 (by norm_num)
-  have hd : K.d (0, 0) (2, -1) = 0 :=
-    (isZero_filteredSpaceSpectralSequence_page_two_X (ModuleCat.of ℤ ℤ) monotone_filt (2, -1)
-      (by norm_num)).eq_of_tgt _ _
-  exact ⟨((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).iso 2 3 (0, 0)).symm ≪≫
-    (K.isoHomologyπ (-2, 1) (0, 0) (prev_page_two (-2, 1) (0, 0) (by norm_num) (by norm_num))
-      page_two_d_saddle_eq_zero).symm ≪≫
-    K.iCyclesIso (0, 0) (2, -1) (next_page_two (0, 0) (2, -1) (by norm_num) (by norm_num)) hd ≪≫ e⟩
+/-- **The integral second page at the saddle is `ℤ/2`.** On the second page (numbered `3`) of the
+spectral sequence of the critical-band filtration of `ℝℙ²` with integer coefficients, the object
+at `(-2, 1)` of the saddle is `ℤ/2`. -/
+theorem nonempty_realProjectiveMomentSpectralSequence_int_page_three_X_neg_two_one_iso :
+    Nonempty (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (-2, 1) ≅
+      ModuleCat.of ℤ (ZMod 2)) := by
+  obtain ⟨e⟩ := nonempty_realProjectiveMomentSpectralSequence_page_three_X_neg_two_one_iso ℤ
+  exact ⟨e ≪≫ (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv.toModuleIso⟩
 
 end Plane
 
