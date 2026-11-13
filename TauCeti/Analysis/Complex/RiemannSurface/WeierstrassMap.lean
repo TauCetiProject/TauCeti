@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Torus
 public import TauCeti.Analysis.Complex.RiemannSurface.SphereMap
 import TauCeti.Algebra.Module.ZLattice.Quotient
 import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Divisor
-import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodPair
+import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
 import TauCeti.Geometry.Manifold.Instances.Quotient
 
 /-!
