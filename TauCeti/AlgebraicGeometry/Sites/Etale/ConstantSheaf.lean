@@ -75,7 +75,7 @@ variable (S : Scheme.{u})
 /-- The presheaf on the small étale site of `S` of locally constant functions with values in `M`,
 `U ↦ LocallyConstant U M`, as a functor of `M`. Restriction is composition with the underlying
 continuous map, and a map `M → M'` acts by composition. -/
-@[expose, simps]
+@[expose, implicit_reducible, simps]
 def etaleLocallyConstantPresheaf : Type u ⥤ S.Etaleᵒᵖ ⥤ Type u where
   obj M :=
     { obj U := LocallyConstant U.unop.left M
@@ -288,6 +288,14 @@ theorem etaleConstantSheafSectionsEquiv_apply (M : Type u) (U : S.Etale)
       ((constantSheafIsoEtaleLocallyConstantSheaf S).hom.app M).hom.app (op U) x :=
   (rfl)
 
+/-- Evaluating the comparison isomorphism on a section gives its locally constant function. -/
+@[simp]
+theorem constantSheafIsoEtaleLocallyConstantSheaf_hom_app_hom_app (M : Type u) (U : S.Etale)
+    (x : ((constantSheaf (smallEtaleTopology S) (Type u)).obj M).obj.obj (op U)) :
+    (dsimp% ((constantSheafIsoEtaleLocallyConstantSheaf S).hom.app M).hom.app (op U) x) =
+      etaleConstantSheafSectionsEquiv S M U x :=
+  (etaleConstantSheafSectionsEquiv_apply S M U x).symm
+
 /-- The class of `m` in the constant étale sheaf corresponds to the constant function `m`. -/
 @[simp]
 theorem etaleConstantSheafSectionsEquiv_toSheafify_app (M : Type u) (U : S.Etale) (m : M) :
@@ -325,6 +333,15 @@ theorem etaleConstantSheafSectionsEquiv_symm_apply (M : Type u) (U : S.Etale)
     (etaleConstantSheafSectionsEquiv S M U).symm g =
       ((constantSheafIsoEtaleLocallyConstantSheaf S).inv.app M).hom.app (op U) g :=
   (rfl)
+
+/-- Evaluating the inverse comparison isomorphism gives the section attached to a locally
+constant function. -/
+@[simp]
+theorem constantSheafIsoEtaleLocallyConstantSheaf_inv_app_hom_app (M : Type u) (U : S.Etale)
+    (g : LocallyConstant U.left M) :
+    (dsimp% ((constantSheafIsoEtaleLocallyConstantSheaf S).inv.app M).hom.app (op U) g) =
+      (etaleConstantSheafSectionsEquiv S M U).symm g :=
+  (etaleConstantSheafSectionsEquiv_symm_apply S M U g).symm
 
 /-- The constant function `m` corresponds to the class of `m` in the constant étale sheaf. -/
 @[simp]

@@ -27,6 +27,13 @@ def equivContinuousMap (X Y : Type*) [TopologicalSpace X] [TopologicalSpace Y]
   left_inv _ := rfl
   right_inv _ := rfl
 
+/-- Passing to a continuous map and back recovers the locally constant function. -/
+@[simp]
+theorem equivContinuousMap_symm_toContinuousMap {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [DiscreteTopology Y] (f : LocallyConstant X Y) :
+    (equivContinuousMap X Y).symm f.toContinuousMap = f :=
+  (rfl)
+
 /-- The locally constant function attached to a continuous map to a discrete space has the same
 underlying function. -/
 @[simp]
