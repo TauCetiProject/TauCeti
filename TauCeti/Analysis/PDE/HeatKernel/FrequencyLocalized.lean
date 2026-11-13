@@ -282,11 +282,6 @@ private theorem heatKernel_convolution_eq_fourierInv_convolution {σ : 𝓢(E, �
   set w : 𝓢(E, F) := SchwartzMap.convolution (lsmul ℂ ℂ) (𝓕⁻ σ) f
   have hw : (w : E → F) = ⇑(𝓕⁻ σ : 𝓢(E, ℂ)) ⋆[lsmul ℂ ℂ] (f : E → F) :=
     funext (convolution_apply _ _ f)
-  have hK : Integrable (fun x : E ↦ (heatKernel t x : ℂ)) := (integrable_heatKernel ht).ofReal
-  have hu : heatKernel t ⋆ (f : E → F) =
-      (fun x : E ↦ (heatKernel t x : ℂ)) ⋆[lsmul ℂ ℂ] (f : E → F) := by
-    funext x
-    simp only [convolution_def, lsmul_apply, Complex.coe_smul]
   have hFw : 𝓕 (w : E → F) = fun ξ ↦ σ ξ • 𝓕 (f : E → F) ξ := by
     funext ξ
     rw [hw, Real.fourier_smul_convolution_eq (𝓕⁻ σ).integrable f.integrable, ← fourier_coe,
@@ -294,10 +289,10 @@ private theorem heatKernel_convolution_eq_fourierInv_convolution {σ : 𝓢(E, �
   have hFu : 𝓕 (heatKernel t ⋆ (f : E → F)) = 𝓕 (w : E → F) := by
     rw [hFw]
     funext ξ
-    rw [hu, Real.fourier_smul_convolution_eq hK f.integrable, fourier_heatKernel ht]
+    rw [fourier_heatKernel_convolution ht f.integrable]
     by_cases h : 𝓕 (f : E → F) ξ = 0
     · simp [h]
-    · rw [hσ ξ h]
+    · rw [hσ ξ h, Complex.coe_smul]
   have hcont : Continuous (heatKernel t ⋆ (f : E → F)) :=
     BddAbove.continuous_convolution_right_of_integrable (lsmul ℝ ℝ)
       ⟨SchwartzMap.seminorm ℝ 0 0 f, fun _ ⟨y, hy⟩ ↦ hy ▸ norm_le_seminorm ℝ f y⟩
