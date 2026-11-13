@@ -454,6 +454,31 @@ theorem sphericalPendulumRotationAngle_eq_integral_sin (hj : j ≠ 0) (hz₀ : z
   generalize (b - a) / 2 * cos θ = k at hrc ⊢
   field_simp
 
+/-- **Joint continuity of the regular integrand.** With the turning points `z₋(h, j)`,
+`z₊(h, j)` substituted, the integrand of `sphericalPendulumRotationAngle_eq_integral_sin` is jointly
+continuous in `((h, j), θ)` for `(h, j)` in `sphericalPendulumTurningPointDomain`, since its
+denominator is positive there. -/
+theorem continuousOn_sphericalPendulumRotationAngleSinIntegrand :
+    ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumRotationAngleSinIntegrand
+        (sphericalPendulumLowerTurningPoint p.1.1 p.1.2)
+        (sphericalPendulumUpperTurningPoint p.1.1 p.1.2) p.1.1 p.1.2 p.2)
+      (sphericalPendulumTurningPointDomain ×ˢ univ) := by
+  have ha : ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumLowerTurningPoint p.1.1 p.1.2)
+      (sphericalPendulumTurningPointDomain ×ˢ univ) :=
+    continuousOn_sphericalPendulumLowerTurningPoint.comp continuousOn_fst fun p hp ↦ hp.1
+  have hb : ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumUpperTurningPoint p.1.1 p.1.2)
+      (sphericalPendulumTurningPointDomain ×ˢ univ) :=
+    continuousOn_sphericalPendulumUpperTurningPoint.comp continuousOn_fst fun p hp ↦ hp.1
+  simp only [sphericalPendulumRotationAngleSinIntegrand_def]
+  refine ContinuousOn.div (by fun_prop) (by fun_prop) fun p hp ↦ ?_
+  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hp.1
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz hV
+  have ha₁ := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz hV
+  have hb₁ := sphericalPendulumUpperTurningPoint_lt_one hj hz hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz hV
+  exact (one_sub_sq_mul_sqrt_sub_add_mul_sin_pos ha₁ hab.le hb₁ (by linarith) p.2).ne'
+
 /-- **Continuity of the rotation angle.** The rotation angle `Θ(h, j)` is continuous on the
 values `(h, j)` with `j ≠ 0` lying strictly above the curve of relative equilibria, that is, with
 `V_j(z) < h` for some height `z ∈ (-1, 1)`. -/
@@ -461,27 +486,14 @@ theorem continuousOn_sphericalPendulumRotationAngle :
     ContinuousOn (fun c : ℝ × ℝ ↦ sphericalPendulumRotationAngle c.1 c.2)
       sphericalPendulumTurningPointDomain := by
   let R := sphericalPendulumTurningPointDomain
-  set a : R → ℝ := fun c ↦ sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2
-  set b : R → ℝ := fun c ↦ sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2
-  have ha : Continuous a :=
-    continuousOn_iff_continuous_domRestrict.1 continuousOn_sphericalPendulumLowerTurningPoint
-  have hb : Continuous b :=
-    continuousOn_iff_continuous_domRestrict.1 continuousOn_sphericalPendulumUpperTurningPoint
   let G : R → ℝ → ℝ := fun c θ ↦
-    sphericalPendulumRotationAngleSinIntegrand (a c) (b c) (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 θ
-  -- The integrand of `sphericalPendulumRotationAngle_eq_integral_sin` is jointly continuous,
-  -- since its denominator is positive.
-  have hG : Continuous (Function.uncurry G) := by
-    simp only [G, sphericalPendulumRotationAngleSinIntegrand_def, Function.uncurry_def]
-    refine Continuous.div (by fun_prop) (by fun_prop) fun p ↦ ?_
-    obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 p.1.2
-    have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz hV
-    have ha₁ := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz hV
-    have hb₁ := sphericalPendulumUpperTurningPoint_lt_one hj hz hV
-    have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-      hj hz hV
-    exact (one_sub_sq_mul_sqrt_sub_add_mul_sin_pos ha₁ hab.le hb₁
-      (by linarith) p.2).ne'
+    sphericalPendulumRotationAngleSinIntegrand
+      (sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2)
+      (sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2) (c : ℝ × ℝ).1
+      (c : ℝ × ℝ).2 θ
+  have hG : Continuous (Function.uncurry G) :=
+    continuousOn_sphericalPendulumRotationAngleSinIntegrand.comp_continuous
+      (by fun_prop : Continuous fun p : R × ℝ ↦ ((p.1 : ℝ × ℝ), p.2)) fun p ↦ ⟨p.1.2, trivial⟩
   rw [continuousOn_iff_continuous_domRestrict]
   refine ((continuous_const (y := (2 : ℝ))).mul
     (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume) hG
