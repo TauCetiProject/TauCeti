@@ -533,11 +533,8 @@ theorem SmoothAlmostComplexStructure.nijenhuis_const (Jc : V →L[ℝ] V) (hJc :
   -- Tangent vectors of the model space are vectors of `V`, so that the constant fields below are
   -- maps `V → V`.
   have key (v w : V) : (SmoothAlmostComplexStructure.const Jc hJc).nijenhuis x v w = 0 := by
-    rw [show v = (fun _ : V ↦ v) x from rfl, show w = (fun _ : V ↦ w) x from rfl,
-      nijenhuis_apply _ (hconst v) (hconst w), hJ, hJ]
-    simp only [mlieBracket_const_model_space]
-    rw [map_zero]
-    simp
+    rw [nijenhuis_apply _ (hconst v) (hconst w), hJ, hJ]
+    simp only [mlieBracket_const_model_space, map_zero, sub_self]
   ext v w
   exact key v w
 
