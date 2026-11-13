@@ -628,6 +628,10 @@ theorem contMDiff_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F�
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
 
+section
+
+omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
+
 /-- A `C^n` fibrewise linear equivalence with finite-dimensional model source has a `C^n`
 inverse on total spaces. -/
 theorem contMDiff_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
@@ -638,6 +642,8 @@ theorem contMDiff_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
   let := FiniteDimensional.completeSpace 𝕜 F₁
   have : ∀ x, IsTopologicalAddGroup (E₁ x) := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁
   have : ∀ x, ContinuousSMul 𝕜 (E₁ x) := VectorBundle.continuousSMul 𝕜 F₁ E₁
+  have : ∀ x, IsTopologicalAddGroup (E₂ x) := VectorBundle.isTopologicalAddGroup 𝕜 F₂ E₂
+  have : ∀ x, ContinuousSMul 𝕜 (E₂ x) := VectorBundle.continuousSMul 𝕜 F₂ E₂
   have h := (contMDiff_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).2 he
   have hi := h.clm_bundle_inverse fun x ↦ ContinuousLinearMap.isInvertible_equiv
   have ha := (hi.comp (contMDiff_proj E₂)).clm_bundle_apply contMDiff_id
@@ -674,10 +680,11 @@ theorem bundleDiffeomorph_symm_apply (p : TotalSpace F₂ E₂) :
 
 /-- The underlying homeomorphism of `bundleDiffeomorph` is `bundleHomeomorph`. -/
 @[simp]
-theorem toHomeomorph_bundleDiffeomorph [∀ x, IsTopologicalAddGroup (E₁ x)]
-    [∀ x, ContinuousSMul 𝕜 (E₁ x)] :
+theorem toHomeomorph_bundleDiffeomorph :
     (bundleDiffeomorph e he).toHomeomorph = bundleHomeomorph e he.continuous :=
   Homeomorph.ext fun p ↦ by simp
+
+end
 
 end
 
@@ -702,13 +709,13 @@ def bundleDiffeomorphOfHom :
     (bundleDiffeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
 
 /-- The underlying homeomorphism of `bundleDiffeomorphOfHom` is `bundleHomeomorphOfHom`. -/
-@[simp] theorem toHomeomorph_bundleDiffeomorphOfHom [∀ x, IsTopologicalAddGroup (E₁ x)]
-    [∀ x, ContinuousSMul 𝕜 (E₁ x)] :
+@[simp] theorem toHomeomorph_bundleDiffeomorphOfHom :
     (bundleDiffeomorphOfHom e he).toHomeomorph = bundleHomeomorphOfHom e he.continuous :=
   Homeomorph.ext fun p ↦ by simp
 
 end
 
+omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
 /-- For a finite-dimensional model source, a family of fibrewise linear maps is realized by a
 `C^n` diffeomorphism of total spaces exactly when the induced map of total spaces is `C^n` and
 every fibre map is bijective. -/
@@ -724,6 +731,8 @@ theorem exists_bundleDiffeomorph_iff (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x) :
   have h (x : B) : ∃ e : E₁ x ≃L[𝕜] E₂ x, ⇑e = ϕ x := by
     have := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁ x
     have := VectorBundle.continuousSMul 𝕜 F₁ E₁ x
+    have := VectorBundle.isTopologicalAddGroup 𝕜 F₂ E₂ x
+    have := VectorBundle.continuousSMul 𝕜 F₂ E₂ x
     let := FiberBundle.t2Space F₁ E₁ x
     let := FiberBundle.t2Space F₂ E₂ x
     let := VectorBundle.finiteDimensional 𝕜 F₁ E₁ x

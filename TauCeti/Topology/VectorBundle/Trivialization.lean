@@ -252,21 +252,20 @@ namespace VectorBundle
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {B : Type*} [TopologicalSpace B]
   (F : Type*) [NormedAddCommGroup F] [NormedSpace 𝕜 F] (E : B → Type*)
-  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
 
-include 𝕜 F in
 /-- The fibres of a topological vector bundle are topological additive groups: the preferred
 trivialization at `b` restricts to a linear homeomorphism of the fibre onto the model fibre. -/
-protected theorem isTopologicalAddGroup (b : B) : IsTopologicalAddGroup (E b) :=
+protected theorem isTopologicalAddGroup [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
+    [VectorBundle 𝕜 F E] (b : B) : IsTopologicalAddGroup (E b) :=
   let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
     (FiberBundle.mem_baseSet_trivializationAt' b)
   e.toHomeomorph.isInducing.isTopologicalAddGroup e
 
-include F in
 /-- The fibres of a topological vector bundle have continuous scalar multiplication: the preferred
 trivialization at `b` restricts to a linear homeomorphism of the fibre onto the model fibre. -/
-protected theorem continuousSMul (b : B) : ContinuousSMul 𝕜 (E b) :=
+protected theorem continuousSMul [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+    [VectorBundle 𝕜 F E] (b : B) : ContinuousSMul 𝕜 (E b) :=
   let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
     (FiberBundle.mem_baseSet_trivializationAt' b)
   e.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ e.map_smul c x
