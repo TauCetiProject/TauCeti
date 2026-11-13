@@ -304,6 +304,26 @@ def mapLinearMap (f : A →+ B) : TateModule p A →ₗ[ℤ_[p]] TateModule p B 
 theorem mapLinearMap_apply (f : A →+ B) (x : TateModule p A) : mapLinearMap f x = map f x :=
   (rfl)
 
+/-- An additive equivalence induces a `ℤ_p`-linear equivalence of Tate modules. -/
+def mapLinearEquiv (e : A ≃+ B) : TateModule p A ≃ₗ[ℤ_[p]] TateModule p B :=
+  LinearEquiv.ofLinearMap (mapLinearMap e.toAddMonoidHom)
+    (mapLinearMap e.symm.toAddMonoidHom)
+    (by ext x n; simp)
+    (by ext x n; simp)
+
+/-- The equivalence induced on Tate modules is the map induced by the additive equivalence. -/
+@[simp]
+theorem mapLinearEquiv_apply (e : A ≃+ B) (x : TateModule p A) :
+    mapLinearEquiv e x = map e.toAddMonoidHom x :=
+  (rfl)
+
+/-- The inverse equivalence on Tate modules is induced by the inverse additive equivalence. -/
+@[simp]
+theorem mapLinearEquiv_symm (e : A ≃+ B) :
+    (mapLinearEquiv (p := p) e).symm = mapLinearEquiv e.symm := by
+  ext x n
+  rfl
+
 end Map
 
 end PadicModule
