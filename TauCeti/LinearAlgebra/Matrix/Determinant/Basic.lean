@@ -147,8 +147,8 @@ theorem det_submatrix_map_ne_zero_iff {m n R S l : Type*} [Fintype l] [Decidable
 /-- **Multilinearity of the determinant in all rows at once.** The determinant of a matrix whose
 `i`-th row is a sum over a finite set `A i` is the sum, over the choices of one summand in each
 row, of the determinants of the resulting matrices. -/
-theorem det_of_sum_rows {ι κ R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
-    (A : ι → Finset κ) (g : ι → κ → ι → R) :
+theorem det_of_sum_rows {ι R : Type*} {κ : ι → Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (A : ∀ i, Finset (κ i)) (g : ∀ i, κ i → ι → R) :
     (Matrix.of fun i j => ∑ t ∈ A i, g i t j).det
       = ∑ y ∈ Fintype.piFinset A, (Matrix.of fun i j => g i (y i) j).det := by
   have key := (detRowAlternating (R := R) (n := ι)).toMultilinearMap.map_sum_finset
