@@ -98,9 +98,9 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
 * `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
   maps.
-* `MeasureTheory.Integrable.fourierCoeff_piLp_apply`, `TauCeti.fourierCoeff_piLp_apply`: the `i`-th
-  coordinate of the `n`-th Fourier coefficient of an integrable or `Lᵖ` `PiLp`-valued circle
-  function is the `n`-th Fourier coefficient of its `i`-th coordinate.
+* `MeasureTheory.Integrable.fourierCoeff_piLp_apply`, `MeasureTheory.Lp.fourierCoeff_piLp_apply`:
+  the `i`-th coordinate of the `n`-th Fourier coefficient of an integrable or `Lᵖ` `PiLp`-valued
+  circle function is the `n`-th Fourier coefficient of its `i`-th coordinate.
 
 ## Tags
 
@@ -333,8 +333,8 @@ theorem _root_.MeasureTheory.Integrable.fourierCoeff_piLp_apply {ι : Type*} [Fi
 /-- The `i`-th coordinate of the `n`-th Fourier coefficient of a `PiLp`-valued `Lᵖ` function on
 `AddCircle T` (`1 ≤ p ≤ ∞`) is the `n`-th Fourier coefficient of its `i`-th coordinate under
 `MeasureTheory.Lp.piLpEquiv`. -/
-theorem fourierCoeff_piLp_apply {ι : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
+theorem _root_.MeasureTheory.Lp.fourierCoeff_piLp_apply {ι : Type*} [Fintype ι] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
     [∀ i, CompleteSpace (E i)] (f : Lp (PiLp p E) p (haarAddCircle (T := T))) (n : ℤ) (i : ι) :
     fourierCoeff f n i =
       fourierCoeff (Lp.piLpEquiv p ℂ E (haarAddCircle (T := T)) f i) n :=

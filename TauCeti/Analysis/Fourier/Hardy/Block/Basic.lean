@@ -72,7 +72,7 @@ theorem coeFn_blockFourierMode (r : ℕ) (n : ℤ) (i : Fin r) :
 @[simp] theorem fourierCoeff_blockFourierMode (r : ℕ) (n k : ℤ) (i : Fin r) :
     fourierCoeff (blockFourierMode r n i) k =
       if k = n then EuclideanSpace.single i 1 else 0 := by
-  ext j; rw [fourierCoeff_piLp_apply, piLpEquiv_blockFourierMode]
+  ext j; rw [Lp.fourierCoeff_piLp_apply, piLpEquiv_blockFourierMode]
   rcases eq_or_ne j i with rfl | hji
   · rw [ite_eq_left rfl, coe_fourierBasis, fourierCoeff_fourierLp]
     rcases eq_or_ne k n with rfl | hkn <;> simp [*, EuclideanSpace.single]
@@ -130,7 +130,7 @@ theorem mem_blockHardySubmodule_iff {r : ℕ}
     (f : Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1))) :
     f ∈ blockHardySubmodule r ↔ ∀ n : ℤ, n < 0 → fourierCoeff f n = 0 := by
   rw [mem_blockHardySubmodule_iff_piLpEquiv]
-  simp_rw [mem_hardySubmodule_iff, PiLp.ext_iff, PiLp.zero_apply, fourierCoeff_piLp_apply]
+  simp_rw [mem_hardySubmodule_iff, PiLp.ext_iff, PiLp.zero_apply, Lp.fourierCoeff_piLp_apply]
   exact ⟨fun h n hn i ↦ h i n hn, fun h i n hn ↦ h n hn i⟩
 
 /-- The span of all vector Fourier modes is dense in vector-valued circle `L²`. -/
@@ -228,9 +228,9 @@ theorem coe_blockHardyEquiv_symm_single {r : ℕ} (j : Fin r) (h : HardySpace) :
     (f : Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1))) (n : ℤ) :
     fourierCoeff ((blockHardySubmodule r).starProjection f) n =
       if 0 ≤ n then fourierCoeff f n else 0 := by
-  ext i; rw [fourierCoeff_piLp_apply, piLpEquiv_blockHardySubmodule_starProjection,
+  ext i; rw [Lp.fourierCoeff_piLp_apply, piLpEquiv_blockHardySubmodule_starProjection,
     fourierCoeff_hardySubmodule_starProjection]
-  split_ifs <;> simp [fourierCoeff_piLp_apply]
+  split_ifs <;> simp [Lp.fourierCoeff_piLp_apply]
 
 /-- Membership in `(blockHardySubmodule r)ᗮ` is coordinatewise membership in `hardySubmoduleᗮ`. -/
 theorem mem_blockHardySubmodule_orthogonal_iff_piLpEquiv {r : ℕ}
@@ -248,7 +248,7 @@ theorem mem_blockHardySubmodule_orthogonal_iff {r : ℕ}
     f ∈ (blockHardySubmodule r)ᗮ ↔ ∀ n : ℕ, fourierCoeff f (n : ℤ) = 0 := by
   rw [mem_blockHardySubmodule_orthogonal_iff_piLpEquiv]
   simp_rw [mem_hardySubmodule_orthogonal_iff, PiLp.ext_iff, PiLp.zero_apply,
-    fourierCoeff_piLp_apply]
+    Lp.fourierCoeff_piLp_apply]
   exact ⟨fun h n i ↦ h i n, fun h i n ↦ h n i⟩
 
 /-- Every strictly negative vector Fourier mode belongs to `(blockHardySubmodule r)ᗮ`. -/
@@ -327,8 +327,8 @@ def blockHardyRepr (r : ℕ) : BlockHardySpace r ≃ₗᵢ[ℂ] lp (fun _ : ℕ 
 theorem blockHardyRepr_blockHardyEquiv_eq_fourierCoeff {r : ℕ} (f : ↥(blockHardySubmodule r))
     (n : ℕ) : blockHardyRepr r (blockHardyEquiv r f) n =
       fourierCoeff (f : Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1))) (n : ℤ) :=
-  PiLp.ext fun i ↦ by
-    rw [blockHardyRepr_apply, hardyBasis_repr, coe_blockHardyEquiv_apply, fourierCoeff_piLp_apply]
+  PiLp.ext fun i ↦ by rw [blockHardyRepr_apply, hardyBasis_repr, coe_blockHardyEquiv_apply,
+    Lp.fourierCoeff_piLp_apply]
 
 /-- The `(ℕ × Fin r)`-indexed Fourier Hilbert basis of `BlockHardySpace r`. -/
 def blockHardyBasis (r : ℕ) : HilbertBasis (ℕ × Fin r) ℂ (BlockHardySpace r) :=
