@@ -47,6 +47,8 @@ The restriction of a locally finite complex to a compact set has finitely many f
   given face of `K` whose convex hull contains the point.
 * `Geometry.SimplicialComplex.space_restrict_of_isExtreme`: `|K.restrict B| = |K| ∩ B` when `B`
   is a convex extreme subset of `|K|`.
+* `Geometry.SimplicialComplex.le_restrictConvexHull_iff`: `K.restrictConvexHull B` is the largest
+  subcomplex of `K` whose underlying space lies in `B`.
 * `Geometry.SimplicialComplex.space_restrictConvexHull`: `|K.restrictConvexHull B| = |K| ∩ B`
   when every simplex of `K` whose open simplex meets `B` lies in `B`.
 -/
@@ -115,17 +117,29 @@ theorem space_restrict_subset (hB : Convex 𝕜 B) : (K.restrict B).space ⊆ K.
   obtain ⟨s, hs, hxs⟩ := mem_space_iff.1 hx
   exact ⟨space_restrict_subset_space hx, hB.convexHull_subset_iff.2 hs.2 hxs⟩
 
-@[simp]
+@[simp, grind =]
 theorem mem_restrictConvexHull_faces :
     s ∈ (K.restrictConvexHull B).faces ↔ s ∈ K.faces ∧ convexHull 𝕜 (s : Set E) ⊆ B :=
   Iff.rfl
 
+@[simp, grind =]
+theorem vertices_restrictConvexHull : (K.restrictConvexHull B).vertices = K.vertices ∩ B := by
+  ext x
+  simp [mem_vertices]
+
 theorem restrictConvexHull_le : K.restrictConvexHull B ≤ K := fun _ hs => hs.1
+
+theorem restrictConvexHull_le_restrict : K.restrictConvexHull B ≤ K.restrict B :=
+  fun _ hs => ⟨hs.1, (subset_convexHull 𝕜 _).trans hs.2⟩
 
 theorem restrictConvexHull_mono (h : B ⊆ C) : K.restrictConvexHull B ≤ K.restrictConvexHull C :=
   fun _ hs => ⟨hs.1, hs.2.trans h⟩
 
-@[simp]
+theorem restrictConvexHull_mono_left {L : SimplicialComplex 𝕜 E} (h : K ≤ L) :
+    K.restrictConvexHull B ≤ L.restrictConvexHull B :=
+  fun _ hs => ⟨h hs.1, hs.2⟩
+
+@[simp, grind =]
 theorem restrictConvexHull_restrictConvexHull :
     (K.restrictConvexHull B).restrictConvexHull C = K.restrictConvexHull (B ∩ C) := by
   ext s
@@ -136,6 +150,19 @@ theorem space_restrictConvexHull_subset : (K.restrictConvexHull B).space ⊆ K.s
   intro x hx
   obtain ⟨s, hs, hxs⟩ := mem_space_iff.1 hx
   exact ⟨convexHull_subset_space hs.1 hxs, hs.2 hxs⟩
+
+/-- `K.restrictConvexHull B` is the largest subcomplex of `K` whose underlying space lies in
+`B`. -/
+theorem le_restrictConvexHull_iff {A : SimplicialComplex 𝕜 E} :
+    A ≤ K.restrictConvexHull B ↔ A ≤ K ∧ A.space ⊆ B :=
+  ⟨fun h => ⟨h.trans restrictConvexHull_le,
+      (space_mono h).trans (space_restrictConvexHull_subset.trans inter_subset_right)⟩,
+    fun h _ hs => ⟨h.1 hs, (convexHull_subset_space hs).trans h.2⟩⟩
+
+@[simp]
+theorem restrictConvexHull_eq_self : K.restrictConvexHull B = K ↔ K.space ⊆ B :=
+  ⟨fun h => (le_restrictConvexHull_iff.1 h.ge).2,
+    fun h => restrictConvexHull_le.antisymm (le_restrictConvexHull_iff.2 ⟨le_rfl, h⟩)⟩
 
 /-- On a convex set, a closed simplex lies in the set exactly when its vertices do, so the two
 restrictions agree. -/
@@ -159,6 +186,12 @@ theorem finite_faces_restrict (hK : LocallyFinite fun s : K.faces => convexHull 
   intro s hs
   obtain ⟨v, hv⟩ := K.nonempty_of_mem_faces hs.1
   exact ⟨⟨s, hs.1⟩, ⟨v, subset_convexHull 𝕜 _ hv, hs.2 hv⟩, rfl⟩
+
+/-- Only finitely many simplices of a locally finite complex lie in a compact set. -/
+theorem finite_faces_restrictConvexHull
+    (hK : LocallyFinite fun s : K.faces => convexHull 𝕜 (s : Set E)) (hB : IsCompact B) :
+    (K.restrictConvexHull B).faces.Finite :=
+  (finite_faces_restrict hK hB).subset restrictConvexHull_le_restrict
 
 end Compact
 
