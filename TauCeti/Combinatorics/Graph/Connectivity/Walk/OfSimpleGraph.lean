@@ -297,6 +297,14 @@ theorem support_liftToGraph (p : G.toSimpleGraph.Walk x y) :
   | cons h p ih =>
       rw [liftToGraph_cons, Graph.Walk.support_cons, ih, support_cons, List.map_cons]
 
+/-- Lifting preserves and reflects disjointness of whole supports, including for walks with
+different endpoints. -/
+theorem disjoint_support_liftToGraph_iff {s t s' t' : G.vertexSet}
+    (p : G.toSimpleGraph.Walk s t) (q : G.toSimpleGraph.Walk s' t') :
+    p.liftToGraph.support.Disjoint q.liftToGraph.support ↔ p.support.Disjoint q.support := by
+  simp only [support_liftToGraph]
+  exact ⟨List.Disjoint.of_map, List.disjoint_map Subtype.val_injective⟩
+
 /-- Lifting a simplified walk preserves its length. -/
 @[simp]
 theorem length_liftToGraph (p : G.toSimpleGraph.Walk x y) :

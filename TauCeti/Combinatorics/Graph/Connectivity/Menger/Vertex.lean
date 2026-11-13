@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.VertexConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Simplification
 public import TauCeti.Combinatorics.Network.Menger.Vertex
 public import Mathlib.Data.Set.Card
 
@@ -81,16 +82,6 @@ public section
 open Finset TauCeti
 
 universe u v
-
-open scoped Graph in
-/-- Lifting walks of the underlying simple graph preserves and reflects internal disjointness,
-since the lift keeps every vertex sequence. -/
-@[simp]
-theorem SimpleGraph.Walk.internallyDisjoint_liftToGraph_iff {α : Type u} {β : Type v}
-    {G : Graph α β} {s t : V(G)} {p q : G.toSimpleGraph.Walk s t} :
-    p.liftToGraph.InternallyDisjoint q.liftToGraph ↔ p.InternallyDisjoint q := by
-  simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_liftToGraph,
-    List.forall_mem_map, List.mem_map_of_injective Subtype.val_injective, Subtype.val_inj]
 
 namespace Graph
 

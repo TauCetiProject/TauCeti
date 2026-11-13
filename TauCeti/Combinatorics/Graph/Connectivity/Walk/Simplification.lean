@@ -35,20 +35,25 @@ namespace Graph.Walk
 
 variable {α : Type u} {β : Type v} {G : Graph α β}
 
+/-- A nonloop link gives adjacency in the underlying simple graph. -/
+theorem _root_.Graph.IsLink.toSimpleGraph_adj {x y : α} {e : β} (h : G.IsLink e x y)
+    (hxy : x ≠ y) : G.toSimpleGraph.Adj ⟨x, h.left_mem⟩ ⟨y, h.right_mem⟩ :=
+  ⟨fun heq ↦ hxy (Subtype.mk.inj heq), h.adj⟩
+
 /-- The first step of a path joins distinct vertices in the underlying simple graph. -/
 theorem IsPath.toSimpleGraph_adj {x y z : α} {e : β} {h : G.IsLink e x y}
-    {p : G.Walk y z} (hp : (cons e h p).IsPath) (hx : x ∈ V(G)) :
-    G.toSimpleGraph.Adj ⟨x, hx⟩ ⟨y, h.right_mem⟩ :=
-  ⟨fun hxy ↦ ((isPath_cons e h p).1 hp).2
-    ((Subtype.mk.inj hxy).symm ▸ p.start_mem_support), h.adj⟩
+    {p : G.Walk y z} (hp : (cons e h p).IsPath) :
+    G.toSimpleGraph.Adj ⟨x, h.left_mem⟩ ⟨y, h.right_mem⟩ :=
+  h.toSimpleGraph_adj fun hxy ↦ ((isPath_cons e h p).1 hp).2
+    (hxy.symm ▸ p.start_mem_support)
 
 /-- Forget the edge identities of a multigraph path, retaining its vertex sequence as a walk
 in the underlying simple graph. The endpoint membership proofs include the empty path case. -/
 def toSimpleGraphWalk : {x y : α} → (p : G.Walk x y) → p.IsPath →
     (hx : x ∈ V(G)) → (hy : y ∈ V(G)) → G.toSimpleGraph.Walk ⟨x, hx⟩ ⟨y, hy⟩
   | _, _, .nil, _, _, _ => .nil
-  | _, _, .cons e h p, hp, hx, hy =>
-      SimpleGraph.Walk.cons (hp.toSimpleGraph_adj hx)
+  | _, _, .cons e h p, hp, _, hy =>
+      SimpleGraph.Walk.cons hp.toSimpleGraph_adj
         (p.toSimpleGraphWalk ((isPath_cons e h p).1 hp).1 h.right_mem hy)
 
 /-- Projection preserves the empty path. -/
@@ -62,7 +67,7 @@ theorem toSimpleGraphWalk_nil {x : α} (hx : x ∈ V(G)) (hp : (nil : G.Walk x x
 theorem toSimpleGraphWalk_cons {x y z : α} (e : β) (h : G.IsLink e x y) (p : G.Walk y z)
     (hp : (cons e h p).IsPath) (hx : x ∈ V(G)) (hz : z ∈ V(G)) :
     (cons e h p).toSimpleGraphWalk hp hx hz =
-      SimpleGraph.Walk.cons (hp.toSimpleGraph_adj hx)
+      SimpleGraph.Walk.cons hp.toSimpleGraph_adj
         (p.toSimpleGraphWalk ((isPath_cons e h p).1 hp).1 h.right_mem hz) :=
   (rfl)
 
@@ -112,7 +117,7 @@ theorem toSimpleGraphWalk_append {x y z : α} (p : G.Walk x y) (q : G.Walk y z)
 theorem _root_.Graph.IsLink.toSimpleGraphWalk_toWalk {x y : α} {e : β}
     (h : G.IsLink e x y) (hp : h.toWalk.IsPath) :
     h.toWalk.toSimpleGraphWalk hp h.left_mem h.right_mem =
-      ((h.toWalk_eq_cons ▸ hp).toSimpleGraph_adj h.left_mem).toWalk := by
+      (h.toSimpleGraph_adj (h.isPath_toWalk_iff.1 hp)).toWalk := by
   simp only [h.toWalk_eq_cons, toSimpleGraphWalk_cons, toSimpleGraphWalk_nil,
     SimpleGraph.Adj.toWalk]
 
@@ -196,17 +201,10 @@ theorem toSimpleGraphWalk_injective_of_pairwise_internallyDisjoint {ι : Type*} 
     {P : ι → G.Walk s t} (hP : ∀ i, (P i).IsPath)
     (hdisj : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j))
     (hst : s ≠ t) (hadj : ¬G.toSimpleGraph.Adj s t) :
-    Function.Injective (fun i ↦ (P i).toSimpleGraphWalk (hP i) s.2 t.2) := by
-  intro i j hij
-  by_contra hne
-  have hd := (internallyDisjoint_toSimpleGraphWalk_iff (P i) (P j) (hP i) (hP j) s.2 t.2).2
-    (hdisj hne)
-  obtain ⟨a, ha, has, hat⟩ :=
-    ((P i).toSimpleGraphWalk (hP i) s.2 t.2).exists_mem_support_ne_ne hst hadj
-  rcases SimpleGraph.Walk.internallyDisjoint_def.1 hd a ha
-    (by simpa only [hij] using ha) with h | h
-  · exact has h
-  · exact hat h
+    Function.Injective (fun i ↦ (P i).toSimpleGraphWalk (hP i) s.2 t.2) :=
+  SimpleGraph.Walk.injective_of_pairwise_internallyDisjoint
+    (fun i j hij ↦ (internallyDisjoint_toSimpleGraphWalk_iff
+      (P i) (P j) (hP i) (hP j) s.2 t.2).2 (hdisj hij)) hst hadj
 
 /-- A finite internally disjoint family between distinct nonadjacent terminals has the same
 number of distinct paths after projection. -/
@@ -252,12 +250,12 @@ theorem toSimpleGraphWalk_liftToGraph (p : G.toSimpleGraph.Walk s t)
   apply List.map_injective_iff.2 Subtype.val_injective
   simp
 
-/-- Lifting preserves and reflects disjointness of whole supports, including for walks with
-different endpoints. -/
-theorem disjoint_support_liftToGraph_iff {s' t' : V(G)}
-    (p : G.toSimpleGraph.Walk s t) (q : G.toSimpleGraph.Walk s' t') :
-    p.liftToGraph.support.Disjoint q.liftToGraph.support ↔ p.support.Disjoint q.support := by
-  simp only [support_liftToGraph]
-  exact ⟨List.Disjoint.of_map, List.disjoint_map Subtype.val_injective⟩
+/-- Lifting walks of the underlying simple graph preserves and reflects internal disjointness,
+since the lift keeps every vertex sequence. -/
+@[simp]
+theorem internallyDisjoint_liftToGraph_iff {p q : G.toSimpleGraph.Walk s t} :
+    p.liftToGraph.InternallyDisjoint q.liftToGraph ↔ p.InternallyDisjoint q := by
+  simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_liftToGraph,
+    List.forall_mem_map, List.mem_map_of_injective Subtype.val_injective, Subtype.val_inj]
 
 end SimpleGraph.Walk

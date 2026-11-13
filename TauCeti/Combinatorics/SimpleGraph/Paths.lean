@@ -123,6 +123,16 @@ theorem exists_mem_support_ne_ne (hst : s ≠ t) (hadj : ¬G.Adj s t) (p : G.Wal
   | nil => exact absurd rfl hst
   | @cons _ x _ h p => exact ⟨x, by simp, h.ne.symm, fun hxt ↦ hadj (hxt ▸ h)⟩
 
+/-- Pairwise internally disjoint walks between distinct nonadjacent terminals are distinct:
+any repeated walk would share an internal vertex with itself. -/
+theorem injective_of_pairwise_internallyDisjoint {ι : Type*} {P : ι → G.Walk s t}
+    (hdisj : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j))
+    (hst : s ≠ t) (hadj : ¬G.Adj s t) : Function.Injective P := by
+  intro i j hij
+  by_contra hne
+  obtain ⟨v, hv, hvs, hvt⟩ := (P i).exists_mem_support_ne_ne hst hadj
+  exact (hdisj hne v hv (hij ▸ hv)).elim hvs hvt
+
 end InternallyDisjoint
 
 /-- Decompose the support of a path `R : G.Walk a b` between distinct endpoints `a ≠ b` as
