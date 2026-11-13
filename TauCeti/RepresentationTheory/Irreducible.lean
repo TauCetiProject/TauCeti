@@ -59,6 +59,8 @@ irreducible by.
   algebra map exhausts the endomorphisms is irreducible.
 * `Representation.isIrreducible_of_finrank_intertwiningMap_self_eq_one`: a semisimple
   representation whose equivariant endomorphisms are the scalars is irreducible.
+* `Representation.IsIrreducible.eq_one_or_eq_neg_one_of_commute`: the operator form of the next
+  lemma.
 * `Representation.IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one`: Schur's lemma for an
   involutive equivariant endomorphism, over any field.
 * `Representation.asAlgebraHom_surjective_of_isIrreducible`: over an algebraically closed
@@ -231,6 +233,18 @@ theorem IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one {ρ : Representati
   have he : e f * e f = 1 := by rw [← map_mul, hf, map_one]
   exact (mul_self_eq_one_iff.mp he).imp
     (fun h ↦ e.injective (by simpa using h)) fun h ↦ e.injective (by simpa using h)
+
+/-- **An involutive operator commuting with an irreducible representation is `±1`.** This is the
+operator form of `IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one`. -/
+theorem IsIrreducible.eq_one_or_eq_neg_one_of_commute {ρ : Representation k G V}
+    (hρ : ρ.IsIrreducible) {A : Module.End k V} (hA : ∀ g, A * ρ g = ρ g * A)
+    (hAA : A * A = 1) : A = 1 ∨ A = -1 := by
+  let T : IntertwiningMap ρ ρ := A.intertwiningMap_of_isIntertwiningMap ρ ρ fun g w ↦ by
+    rw [← mul_apply_eq_comp, hA, mul_apply_eq_comp]
+  have hT : T * T = 1 := DFunLike.ext _ _ fun w ↦ by simpa [T] using DFunLike.congr_fun hAA w
+  rcases hρ.eq_one_or_eq_neg_one_of_mul_self_eq_one hT with h | h
+  · exact Or.inl (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
+  · exact Or.inr (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
 
 open scoped MonoidAlgebra in
 /-- **Burnside density theorem.** The monoid algebra of a finite-dimensional irreducible

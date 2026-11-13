@@ -184,23 +184,11 @@ theorem monomialGroup_apply_monomialGroupEpsilon_eq_one_or_eq_neg_one {R M I : T
     [AddCommGroup M] [Module R M] {Q : QuadraticForm R M} (v : I → M) {k : Type*} [Field k]
     {W : Type*} [AddCommGroup W] [Module k W] (ρ : Representation k (monomialGroup Q v) W)
     [ρ.IsIrreducible] :
-    ρ (monomialGroupEpsilon Q v) = 1 ∨ ρ (monomialGroupEpsilon Q v) = -1 := by
-  let ε := monomialGroupEpsilon Q v
-  have hcentral : ε ∈ Submonoid.center (monomialGroup Q v) := by
-    simpa only [← Subgroup.center_toSubmonoid, Subgroup.mem_toSubmonoid] using
-      monomialGroupEpsilon_mem_center v
-  let T := IntertwiningMap.centralMul ρ ε hcentral
-  -- Mathlib exposes no projection lemma for the underlying action of `centralMul`.
-  have hTmap : T.toLinearMap = ρ ε := rfl
-  have hTapply (w : W) : T w = ρ ε w := rfl
-  have hεε : ε * ε = 1 := monomialGroupEpsilon_mul_self v
-  have hT : T * T = 1 := by
-    apply IntertwiningMap.ext
-    simp only [IntertwiningMap.coe_mul, hTmap, ← map_mul, hεε, map_one]
-    rfl
-  rcases (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_mul_self_eq_one hT with h | h
-  · exact Or.inl (LinearMap.ext fun w ↦ by simpa [hTapply, ε] using DFunLike.congr_fun h w)
-  · exact Or.inr (LinearMap.ext fun w ↦ by simpa [hTapply, ε] using DFunLike.congr_fun h w)
+    ρ (monomialGroupEpsilon Q v) = 1 ∨ ρ (monomialGroupEpsilon Q v) = -1 :=
+  (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_commute
+    (fun g ↦ by
+      rw [← map_mul, ← map_mul, Subgroup.mem_center_iff.mp (monomialGroupEpsilon_mem_center v) g])
+    (by rw [← map_mul, monomialGroupEpsilon_mul_self v, map_one])
 
 section Classification
 
@@ -226,19 +214,12 @@ private theorem apply_eq_one_or_eq_neg_one_of_apply_monomialGroupEpsilon_eq_one
     · have hgh : g * h = monomialGroupEpsilon Q b * (h * g) :=
         Subtype.ext (by simpa using hc.eq)
       rw [← map_mul, hgh, map_mul, hρ, one_mul, map_mul]
-  let T : IntertwiningMap ρ ρ := (ρ g).intertwiningMap_of_isIntertwiningMap ρ ρ fun h w ↦ by
-    rw [← mul_apply_eq_comp, hcomm, mul_apply_eq_comp]
   -- Every signed monomial squares to `1` or `ε`, which both act trivially.
-  have hT : T * T = 1 := DFunLike.ext _ _ fun w ↦ by
-    have hsq : ρ g * ρ g = 1 := by
-      rw [← map_mul]
-      rcases (mem_monomialGroupSign_iff b).mp (mul_self_mem_monomialGroupSign b
-          (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij)) hQ g) with h | h <;>
-        simp [h, hρ]
-    simpa [T] using DFunLike.congr_fun hsq w
-  rcases (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_mul_self_eq_one hT with h | h
-  · exact Or.inl (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
-  · exact Or.inr (LinearMap.ext fun w ↦ by simpa [T] using DFunLike.congr_fun h w)
+  refine (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_commute hcomm ?_
+  rw [← map_mul]
+  rcases (mem_monomialGroupSign_iff b).mp (mul_self_mem_monomialGroupSign b
+      (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij)) hQ g) with h | h <;>
+    simp [h, hρ]
 
 omit [Nontrivial R] [LinearOrder I] in
 /-- The scalar actions of the signed monomials assemble into a character trivial on `ε`. -/

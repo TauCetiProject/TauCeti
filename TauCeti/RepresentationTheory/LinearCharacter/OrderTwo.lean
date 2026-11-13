@@ -37,34 +37,15 @@ theorem nonempty_equiv_trivial_or_ofLinearCharacter_of_forall_eq_one_or_eq
   classical
   let := hρ
   have := hρ.nontrivial
-  have htcentral : t ∈ Submonoid.center G := by
-    rw [Submonoid.mem_center_iff]
-    intro g
-    rcases hG g with rfl | rfl <;> simp
-  let T := IntertwiningMap.centralMul ρ t htcentral
-  -- `centralMul` stores the action as its underlying linear map; Mathlib has no projection lemma.
-  have hTmap : T.toLinearMap = ρ t := rfl
-  have hT (x : V) : T x = ρ t x := rfl
-  have hsq : T * T = 1 := by
-    apply IntertwiningMap.ext
-    simp only [IntertwiningMap.coe_mul, hTmap, ← map_mul, ht, map_one]
-    rfl
-  have hcases : T = 1 ∨ T = -1 := hρ.eq_one_or_eq_neg_one_of_mul_self_eq_one hsq
+  have hcases : ρ t = 1 ∨ ρ t = -1 := hρ.eq_one_or_eq_neg_one_of_commute
+    (fun g ↦ by rcases hG g with rfl | rfl <;> simp) (by rw [← map_mul, ht, map_one])
   obtain ⟨ψ, hψ, haction⟩ : ∃ ψ : G →* kˣ, (ψ = 1 ∨ ψ = χ) ∧
       ∀ g, ρ g = (ψ g : k) • (1 : Module.End k V) := by
     rcases hcases with hpos | hneg
     · refine ⟨1, Or.inl rfl, fun g ↦ ?_⟩
-      rcases hG g with rfl | rfl
-      · simp
-      · ext x
-        simpa only [hT, MonoidHom.one_apply, Units.val_one, one_smul,
-          one_apply_eq_self, IntertwiningMap.coe_one, id_eq] using
-          DFunLike.congr_fun hpos x
+      rcases hG g with rfl | rfl <;> simp [hpos]
     · refine ⟨χ, Or.inr rfl, fun g ↦ ?_⟩
-      rcases hG g with rfl | rfl
-      · simp
-      · ext x
-        simpa [hT, hχ] using DFunLike.congr_fun hneg x
+      rcases hG g with rfl | rfl <;> simp [hneg, hχ]
   have he := (hρ.nonempty_equiv_ofLinearCharacter_iff ψ).mpr haction
   rcases hψ with rfl | rfl
   · exact Or.inl (by simpa only [Representation.ofLinearCharacter_one] using he)
