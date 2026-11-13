@@ -105,9 +105,7 @@ theorem sq_eq_zero [Invertible (2 : R)] {p : ℤ} {a : SignedSym G}
 /-- The canonical generator map preserves parity. -/
 theorem generator_mem_parityGrading {k : ZMod 2} {x : V} (hx : x ∈ parityGrading G.piece k) :
     generator G x ∈ parityGrading (signedSymPiece G) k := by
-  simpa only [add_zero] using
-    ((isHomogeneous_signedSymGenerator G).coarsenGrading_zero
-      (Int.castAddHom (ZMod 2))).map_mem hx
+  simpa only [add_zero] using (isHomogeneous_signedSymGenerator G).parityGrading_zero.map_mem hx
 
 /-- Elements of pure parity supercommute with the sign determined by their parities, even when
 they combine multiple integer degrees. -/

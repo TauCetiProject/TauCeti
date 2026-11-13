@@ -90,36 +90,21 @@ theorem lift_symm_apply {A : Type*} [CommSemiring A] [Algebra R A]
     (H : SymmetricAlgebra R M →ₐ[R] A) : lift.symm H = H.toLinearMap ∘ₗ ι R M :=
   lift.symm_apply_eq.2 <| by ext; simp
 
+open scoped IsMulCommutative in
 private def liftOfCommuteHom {A : Type*} [Semiring A] [Algebra R A] (f : M →ₗ[R] A)
-    (hf : ∀ x y, Commute (f x) (f y)) : SymmetricAlgebra R M →ₐ[R] A := by
-  let S : Subalgebra R A := Algebra.adjoin R (Set.range f)
-  have hmem_comm : ∀ (m : M) {b : A}, b ∈ S → Commute (f m) b := fun m _ hb ↦
-    Algebra.adjoin_induction
-      (fun _ ⟨n, hn⟩ ↦ hn ▸ hf m n)
-      (fun r ↦ Algebra.commute_algebraMap_right r (f m))
-      (fun _ _ _ _ ↦ Commute.add_right)
-      (fun _ _ _ _ ↦ Commute.mul_right)
-      hb
-  have hcomm : ∀ {a b : A}, a ∈ S → b ∈ S → Commute a b := fun {a b} ha hb ↦
-    Algebra.adjoin_induction
-      (fun _ ⟨m, hm⟩ ↦ hm ▸ hmem_comm m hb)
-      (fun r ↦ Algebra.commute_algebraMap_left r b)
-      (fun _ _ _ _ ↦ Commute.add_left)
-      (fun _ _ _ _ ↦ Commute.mul_left)
-      ha
-  letI : CommSemiring S :=
-    { (inferInstance : Semiring S) with
-      mul_comm := fun a b ↦ Subtype.ext (hcomm a.2 b.2).eq }
-  let f' : M →ₗ[R] S :=
-    { toFun := fun m ↦ ⟨f m, Algebra.subset_adjoin ⟨m, rfl⟩⟩
-      map_add' := fun x y ↦ Subtype.ext (map_add f x y)
-      map_smul' := fun r x ↦ Subtype.ext (map_smul f r x) }
-  exact S.val.comp (lift f')
+    (hf : ∀ x y, Commute (f x) (f y)) : SymmetricAlgebra R M →ₐ[R] A :=
+  let S := Algebra.adjoin R (Set.range f)
+  letI : IsMulCommutative S :=
+    Algebra.isMulCommutative_adjoin R <| by rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩ _; exact hf x y
+  S.val.comp <|
+    lift (A := S) <| f.codRestrict S.toSubmodule fun m ↦
+      Algebra.subset_adjoin (Set.mem_range_self m)
 
 private theorem liftOfCommuteHom_ι {A : Type*} [Semiring A] [Algebra R A] (f : M →ₗ[R] A)
     (hf : ∀ x y, Commute (f x) (f y)) (m : M) :
     liftOfCommuteHom f hf (ι R M m) = f m := by
-  simp [liftOfCommuteHom]
+  simp only [liftOfCommuteHom, AlgHom.comp_apply, Subalgebra.coe_val, lift_ι_apply]
+  exact LinearMap.codRestrict_apply _ _ m
 
 /-- Universal property of `SymmetricAlgebra R M` into a (possibly noncommutative) `R`-algebra `A`:
 `R`-algebra homomorphisms `SymmetricAlgebra R M →ₐ[R] A` correspond bijectively to `R`-linear maps

@@ -67,8 +67,7 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.LinearMap.IsHomogeneous.map_decompose` and
   `TauCeti.LinearMap.IsHomogeneous.restrict_decompose`: a homogeneous map commutes with homogeneous
   projection, up to the shift of degree.
-* `TauCeti.DirectSum.mem_of_forall_ne_eq_bot` and
-  `TauCeti.InternalGrading.mem_piece_of_piece_eq_bot`: when all pieces outside one degree vanish,
+* `TauCeti.InternalGrading.mem_piece_of_piece_eq_bot`: when all pieces outside one degree vanish,
   every element lies in that piece.
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
   `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
@@ -333,20 +332,6 @@ theorem map_eq_map_decompose {N : Type w} [AddCommMonoid N] (G : InternalGrading
   · rw [DFinsupp.notMem_support_iff.mp hi, Submodule.coe_zero, map_zero]
 
 end InternalGrading
-
-/-- When all pieces of a direct-sum decomposition of submodules outside degree `i` vanish, every
-element lies in the degree-`i` piece. -/
-theorem DirectSum.mem_of_forall_ne_eq_bot {R M ι : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] [DecidableEq ι] {ℳ : ι → Submodule R M} [_root_.DirectSum.Decomposition ℳ]
-    {i : ι} (h : ∀ j, j ≠ i → ℳ j = ⊥) (x : M) : x ∈ ℳ i := by
-  have htop : ⊤ ≤ ℳ i := by
-    rw [← (_root_.DirectSum.Decomposition.isInternal ℳ).submodule_iSup_eq_top]
-    refine iSup_le fun j ↦ ?_
-    by_cases hj : j = i
-    · exact hj ▸ le_rfl
-    · rw [h j hj]
-      exact bot_le
-  exact htop Submodule.mem_top
 
 /-- When all homogeneous pieces outside degree `i` vanish, every element has degree `i`. -/
 theorem InternalGrading.mem_piece_of_piece_eq_bot {R M : Type*} [Semiring R] [AddCommMonoid M]

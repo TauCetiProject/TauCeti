@@ -193,7 +193,7 @@ theorem isHomogeneous_map_length (f : V →ₗ[R] W)
   simp only [add_zero, AlgHom.toLinearMap_apply]
   rw [lengthPiece_def] at ha
   rw [lengthPiece_def]
-  exact Submodule.algHom_mem_pow_of_mem_pow (map G H f hf)
+  exact (map G H f hf).apply_mem_pow_of_mem_pow
     (by
       rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
       rw [AlgHom.toLinearMap_apply, map_generator]
@@ -221,8 +221,8 @@ theorem lengthPiece_le_signedSymPiece_of_piece_eq_bot {d : ℤ}
   intro a ha
   refine length_induction G (P := fun m b => b ∈ signedSymPiece G (m * d))
     (fun r => ?_) (fun _ _ _ hx hy => add_mem hx hy) (fun m x b hb => ?_) ha
-  · rw [Nat.cast_zero, zero_mul, Algebra.algebraMap_eq_smul_one]
-    exact Submodule.smul_mem _ r (SetLike.one_mem_graded (signedSymPiece G))
+  · rw [Nat.cast_zero, zero_mul]
+    exact SetLike.algebraMap_mem_graded (signedSymPiece G) r
   · have hdeg : (m + 1 : ℕ) * d = d + m * d := by push_cast; rw [add_mul, one_mul, add_comm]
     rw [hdeg]
     exact SetLike.mul_mem_graded

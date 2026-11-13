@@ -24,7 +24,7 @@ irreducible by a rewriting system), it suffices that `s ⊆ span R (W 0)` and th
 `b * c` of a word `b ∈ W t` with a generator `c ∈ s` lies in `span R (W (t + 1))`; the induction on
 `t` is `Submodule.span_pow_succ_le_span_of_forall_mul_mem`. Likewise, an algebra homomorphism
 mapping `M` into `N` maps `M ^ n` into `N ^ n` (`Submodule.map_pow_le_pow`,
-`Submodule.algHom_mem_pow_of_mem_pow`).
+`AlgHom.apply_mem_pow_of_mem_pow`).
 
 For submodules `X` and `Y` of a commutative algebra, write `V = X ⊔ Y`. A product of `i + j + 1`
 elements of `V` is a sum of products with at least `i + 1` factors from `X` or at least `j + 1`
@@ -43,7 +43,7 @@ the computation of the cohomology of the twisting sheaves on the projective line
 * `Submodule.pow_eq_pow_of_pow_succ_eq_pow`: `M ^ (n + 1) = M ^ n` propagates to all `k ≥ n`.
 * `Submodule.span_pow_succ_le_span_of_forall_mul_mem`: `span R s ^ (t + 1) ≤ span R (W t)` if
   `s ⊆ span R (W 0)` and right multiplication by `s` maps each `W t` into `span R (W (t + 1))`.
-* `Submodule.map_pow_le_pow` and `Submodule.algHom_mem_pow_of_mem_pow`: an algebra homomorphism
+* `Submodule.map_pow_le_pow` and `AlgHom.apply_mem_pow_of_mem_pow`: an algebra homomorphism
   mapping `M` into `N` maps `M ^ n` into `N ^ n`.
 * `Submodule.sup_pow_add_add_one_le`: `(X ⊔ Y) ^ (i + j + 1)` is contained in
   `X ^ (i + 1) * (X ⊔ Y) ^ j ⊔ Y ^ (j + 1) * (X ⊔ Y) ^ i`.
@@ -98,7 +98,7 @@ protected theorem map_pow_le_pow {B : Type*} [Semiring B] [Algebra R B]
 
 /-- Elementwise form of `Submodule.map_pow_le_pow`: if an algebra homomorphism maps `M` into `N`,
 it maps every element of `M ^ n` into `N ^ n`. -/
-theorem algHom_mem_pow_of_mem_pow {B : Type*} [Semiring B] [Algebra R B]
+theorem _root_.AlgHom.apply_mem_pow_of_mem_pow {B : Type*} [Semiring B] [Algebra R B]
     {M : Submodule R A} {N : Submodule R B} (f : A →ₐ[R] B) (hf : M.map f.toLinearMap ≤ N)
     {n : ℕ} {a : A} (ha : a ∈ M ^ n) : f a ∈ N ^ n := by
   simpa only [AlgHom.toLinearMap_apply] using Submodule.map_pow_le_pow f hf n (mem_map_of_mem ha)

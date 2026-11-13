@@ -54,9 +54,9 @@ equation (1.1).
 
 ## Main results
 
-* `TauCeti.SignedSym.map_lengthPiece_symmetricEquiv` and
-  `TauCeti.SignedSym.map_lengthPiece_toExterior`: word-length compatibility with homogeneous
-  polynomials and exterior powers over any commutative ring.
+* `TauCeti.SignedSym.toExterior_surjective`, `TauCeti.SignedSym.map_lengthPiece_symmetricEquiv`,
+  and `TauCeti.SignedSym.map_lengthPiece_toExterior`: surjectivity and word-length compatibility
+  with homogeneous polynomials and exterior powers over any commutative ring.
 * `TauCeti.SignedSym.map_signedSymPiece_toExterior_of_piece_eq_bot`: degree-`1` input-degree
   compatibility with `TauCeti.ExteriorAlgebra.integerGrading R V`.
 * `TauCeti.SignedSym.lengthPiece_eq_bot_of_even_piece_eq_bot_of_finrank_lt`,
@@ -92,10 +92,8 @@ def symmetricEquiv (hG : ∀ p, Odd p → G.piece p = ⊥) :
       · rw [Int.negOnePow_even _ ((Int.not_odd_iff_even.mp hp).mul_right q), Units.val_one,
           one_smul, mul_comm])
     (SymmetricAlgebra.liftOfCommute
-      ⟨generator G, fun x y =>
-        commute_of_mem_parityGrading_zero G
-          (generator_mem_parityGrading G (mem_parityGrading_zero_of_odd_eq_bot hG x))
-          (generator G y)⟩)
+      ⟨generator G, fun x y => (commute_iff_eq _ _).mpr
+        (mul_comm_of_odd_piece_eq_bot G hG (generator G x) (generator G y))⟩)
     (by ext x; simp)
     (by ext x; simp)
 
@@ -169,6 +167,15 @@ theorem toExterior_generator (hG : ∀ p, Even p → G.piece p = ⊥) (x : V) :
     toExterior G hG (generator G x) = ExteriorAlgebra.ι R x := by
   simp [toExterior]
 
+/-- Over any commutative ring, `toExterior G hG` is surjective onto `ExteriorAlgebra R V`. -/
+theorem toExterior_surjective (hG : ∀ p, Even p → G.piece p = ⊥) :
+    Function.Surjective (toExterior G hG) :=
+  ExteriorAlgebra.induction
+    (fun r => ⟨algebraMap R _ r, AlgHom.commutes _ r⟩)
+    (fun x => ⟨generator G x, toExterior_generator G hG x⟩)
+    (fun _ _ ⟨a, ha⟩ ⟨b, hb⟩ => ⟨a * b, by rw [map_mul, ha, hb]⟩)
+    (fun _ _ ⟨a, ha⟩ ⟨b, hb⟩ => ⟨a + b, by rw [map_add, ha, hb]⟩)
+
 /-- **Purely odd comparison.** When `2` is invertible and all even-degree pieces of `V` vanish,
 `SignedSym G` is isomorphic as an `R`-algebra to `ExteriorAlgebra R V`. -/
 def exteriorEquiv [Invertible (2 : R)] (hG : ∀ p, Even p → G.piece p = ⊥) :
@@ -188,11 +195,32 @@ theorem exteriorEquiv_apply [Invertible (2 : R)] (hG : ∀ p, Even p → G.piece
     exteriorEquiv G hG a = toExterior G hG a := by
   simp [exteriorEquiv]
 
+/-- The underlying algebra homomorphism of `exteriorEquiv` is `toExterior`. -/
+@[simp]
+theorem exteriorEquiv_toAlgHom [Invertible (2 : R)] (hG : ∀ p, Even p → G.piece p = ⊥) :
+    (exteriorEquiv G hG).toAlgHom = toExterior G hG :=
+  AlgEquiv.toAlgHom_ofAlgHom _ _ _ _
+
 /-- The underlying linear map of `exteriorEquiv` is that of `toExterior`. -/
 @[simp]
 theorem exteriorEquiv_toLinearMap [Invertible (2 : R)] (hG : ∀ p, Even p → G.piece p = ⊥) :
     (exteriorEquiv G hG).toLinearMap = (toExterior G hG).toLinearMap :=
   AlgEquiv.toLinearMap_ofAlgHom _ _ _ _
+
+/-- Applying `(exteriorEquiv G hG).symm` after `toExterior G hG` recovers the original element. -/
+@[simp]
+theorem exteriorEquiv_symm_toExterior [Invertible (2 : R)] (hG : ∀ p, Even p → G.piece p = ⊥)
+    (a : SignedSym G) :
+    (exteriorEquiv G hG).symm (toExterior G hG a) = a := by
+  rw [← exteriorEquiv_apply G hG a, AlgEquiv.symm_apply_apply]
+
+/-- Applying `toExterior G hG` after `(exteriorEquiv G hG).symm` recovers the original exterior
+element. -/
+@[simp]
+theorem toExterior_exteriorEquiv_symm [Invertible (2 : R)] (hG : ∀ p, Even p → G.piece p = ⊥)
+    (e : ExteriorAlgebra R V) :
+    toExterior G hG ((exteriorEquiv G hG).symm e) = e := by
+  rw [← exteriorEquiv_apply G hG, AlgEquiv.apply_symm_apply]
 
 /-- The inverse of `exteriorEquiv` sends each exterior generator to the generator of
 `SignedSym G`. -/
@@ -225,9 +253,11 @@ corresponds to word length `n` in `SignedSym G`. -/
 theorem toExterior_mem_exteriorPower_iff [Invertible (2 : R)]
     (hG : ∀ p, Even p → G.piece p = ⊥) {n : ℕ} {a : SignedSym G} :
     toExterior G hG a ∈ ⋀[R]^n V ↔ a ∈ lengthPiece G n := by
-  rw [← exteriorEquiv_apply G hG a, ← map_lengthPiece_toExterior G hG n,
-    ← exteriorEquiv_toLinearMap G hG, ← AlgEquiv.toLinearEquiv_toLinearMap,
-    Submodule.mem_map_equiv, ← AlgEquiv.toLinearEquiv_apply, LinearEquiv.symm_apply_apply]
+  refine ⟨fun h => ?_, toExterior_mem_exteriorPower G hG⟩
+  rw [← map_lengthPiece_toExterior G hG n] at h
+  obtain ⟨b, hb, hab⟩ := h
+  rwa [← exteriorEquiv_symm_toExterior G hG a, ← hab,
+    AlgHom.toLinearMap_apply, exteriorEquiv_symm_toExterior]
 
 /-- When `2` is invertible, the inverse of `exteriorEquiv` lands in `lengthPiece G n` precisely
 on the `n`-th exterior power. -/
@@ -235,8 +265,7 @@ on the `n`-th exterior power. -/
 theorem exteriorEquiv_symm_mem_lengthPiece_iff [Invertible (2 : R)]
     (hG : ∀ p, Even p → G.piece p = ⊥) {n : ℕ} {e : ExteriorAlgebra R V} :
     (exteriorEquiv G hG).symm e ∈ lengthPiece G n ↔ e ∈ ⋀[R]^n V := by
-  rw [← toExterior_mem_exteriorPower_iff G hG, ← exteriorEquiv_apply G hG,
-    AlgEquiv.apply_symm_apply]
+  rw [← toExterior_mem_exteriorPower_iff G hG, toExterior_exteriorEquiv_symm]
 
 /-- When `V` is concentrated in degree `1`, `toExterior` maps the input-degree piece
 `signedSymPiece G p` onto `TauCeti.ExteriorAlgebra.integerGrading R V p` for every integer `p`,
@@ -272,9 +301,21 @@ theorem toExterior_mem_integerGrading_iff_of_piece_eq_bot [Invertible (2 : R)]
       fun q hq => hG q (by rintro rfl; exact absurd hq (by decide))) :
     toExterior G hG' a ∈ TauCeti.ExteriorAlgebra.integerGrading R V p ↔
       a ∈ signedSymPiece G p := by
-  rw [← exteriorEquiv_apply G hG' a, ← map_signedSymPiece_toExterior_of_piece_eq_bot G hG p hG',
-    ← exteriorEquiv_toLinearMap G hG', ← AlgEquiv.toLinearEquiv_toLinearMap,
-    Submodule.mem_map_equiv, ← AlgEquiv.toLinearEquiv_apply, LinearEquiv.symm_apply_apply]
+  refine ⟨fun h => ?_, fun h => toExterior_mem_integerGrading_of_piece_eq_bot G hG h hG'⟩
+  rw [← map_signedSymPiece_toExterior_of_piece_eq_bot G hG p hG'] at h
+  obtain ⟨b, hb, hab⟩ := h
+  rwa [← exteriorEquiv_symm_toExterior G hG' a, ← hab,
+    AlgHom.toLinearMap_apply, exteriorEquiv_symm_toExterior]
+
+/-- When `V` is concentrated in degree `1` and `2` is invertible, the inverse of `exteriorEquiv`
+lands in `signedSymPiece G p` precisely on `TauCeti.ExteriorAlgebra.integerGrading R V p`. -/
+theorem exteriorEquiv_symm_mem_signedSymPiece_iff_of_piece_eq_bot [Invertible (2 : R)]
+    (hG : ∀ q, q ≠ 1 → G.piece q = ⊥) {p : ℤ} {e : ExteriorAlgebra R V}
+    (hG' : ∀ q, Even q → G.piece q = ⊥ :=
+      fun q hq => hG q (by rintro rfl; exact absurd hq (by decide))) :
+    (exteriorEquiv G hG').symm e ∈ signedSymPiece G p ↔
+      e ∈ TauCeti.ExteriorAlgebra.integerGrading R V p := by
+  rw [← toExterior_mem_integerGrading_iff_of_piece_eq_bot G hG, toExterior_exteriorEquiv_symm]
 
 /-- When `2` is invertible and all even-degree pieces of a finite free `R`-module `V` vanish,
 every word-length piece of `SignedSym G` above `finrank R V` vanishes. -/
