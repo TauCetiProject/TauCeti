@@ -53,6 +53,7 @@ variable {Q : Type u} [_root_.Quiver.{v} Q] [Fintype Q] [∀ a b : Q, Fintype (a
 
 /-- **The diagram of the Gram matrix of the polarized Tits form is the underlying graph** of the
 quiver: two distinct vertices are joined exactly when there is an arrow between them. -/
+@[simp]
 theorem diagramGraph_toMatrix_titsPolarForm :
     diagramGraph ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)) = Quiver.underlyingGraph Q := by
   ext i j
