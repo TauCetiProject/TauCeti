@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Ring.Quotient
+public import TauCeti.Analysis.Normed.Ring.Quotient.Basic
 public import TauCeti.RingTheory.Affinoid.Continuity
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 public import Mathlib.Topology.Algebra.Algebra.Equiv

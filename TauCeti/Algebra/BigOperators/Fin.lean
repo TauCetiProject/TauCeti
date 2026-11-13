@@ -9,7 +9,7 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Logic.Equiv.Fin.Basic
-import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Max
 
@@ -40,6 +40,10 @@ compatibility between the two is needed) telescopes (`StrictMono.eq_add_sum_ite_
 `a 0` plus the gaps below `a k`, and a finset sum of values in the list is the cardinality times
 `a 0` plus, for each gap, the number of elements above its lower threshold times the gap
 (`StrictMono.sum_eq_card_nsmul_add_sum_card_filter_nsmul_sub`).
+
+Mathlib's `finSigmaFinEquiv` places the pair `⟨i, k⟩`, `k < m i`, at `∑_{i' < i} m i' + k`
+(`val_finSigmaFinEquiv_eq_sum_filter`), so pairs with an earlier first entry come earlier
+(`finSigmaFinEquiv_lt_of_fst_lt`).
 -/
 
 public section
@@ -191,6 +195,33 @@ theorem prod_finTwoArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 2 
   rfl
 
 end Fintype
+
+/-- The position of the pair `⟨i, k⟩` in the lexicographic order is `∑_{i' < i} m i' + k`. -/
+theorem val_finSigmaFinEquiv_eq_sum_filter {r : ℕ} {m : Fin r → ℕ}
+    (x : (i : Fin r) × Fin (m i)) :
+    (finSigmaFinEquiv x : ℕ) = ∑ i ∈ Finset.univ.filter (· < x.1), m i + x.2 := by
+  rw [finSigmaFinEquiv_apply]
+  congr 1
+  refine (Finset.sum_map Finset.univ (Fin.castLEEmb x.1.2.le) m).symm.trans
+    (congrArg (fun s : Finset (Fin r) => s.sum m) ?_)
+  ext t
+  simp only [Finset.mem_map, Finset.mem_univ, true_and, Fin.coe_castLEEmb, Finset.mem_filter]
+  exact ⟨fun ⟨u, hu⟩ => hu ▸ u.2, fun h => ⟨⟨t, h⟩, rfl⟩⟩
+
+/-- A pair with an earlier first entry comes earlier in the lexicographic order. -/
+theorem finSigmaFinEquiv_lt_of_fst_lt {r : ℕ} {m : Fin r → ℕ} {x y : (i : Fin r) × Fin (m i)}
+    (h : x.1 < y.1) : finSigmaFinEquiv x < finSigmaFinEquiv y := by
+  rw [Fin.lt_def, val_finSigmaFinEquiv_eq_sum_filter, val_finSigmaFinEquiv_eq_sum_filter]
+  have hsub : insert x.1 (Finset.univ.filter (· < x.1)) ⊆ Finset.univ.filter (· < y.1) := by
+    intro t ht
+    simp only [Finset.mem_insert, Finset.mem_filter, Finset.mem_univ, true_and] at ht ⊢
+    rcases ht with rfl | ht
+    · exact h
+    · exact ht.trans h
+  have := Finset.sum_le_sum_of_subset (f := m) hsub
+  rw [Finset.sum_insert (by simp)] at this
+  have := x.2.2
+  omega
 
 namespace TauCeti
 

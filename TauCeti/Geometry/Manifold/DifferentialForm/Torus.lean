@@ -69,7 +69,8 @@ pulls it back to `sign σ` times itself, and the diagonal rescaling of the perio
   `TauCeti.mpullback_generalLinearGroup_smul_sum_smul_torusTimeForm` pulls `∑ j, b j • dt_j` back
   to `∑ k, (Aᵀ b)_k • dt_k`.
 * `TauCeti.torusVolumeForm_apply`, `TauCeti.torusVolumeForm_apply_ne_zero`: the determinant
-  formula for the volume form, which vanishes nowhere.
+  formula for the volume form, which vanishes nowhere;
+  `TauCeti.torusVolumeForm_apply_eq_apply_zero`: its coefficients are constant.
 * `TauCeti.mpullback_reindex_torusVolumeForm`,
   `TauCeti.mpullback_piMap_diffeomorphAddCircle_torusVolumeForm`: the permutation sign law and the
   rescaling law for the volume form.
@@ -310,6 +311,14 @@ theorem torusVolumeForm_apply (x : ∀ i, AddCircle (p i))
     (torusVolumeForm p).1 x v = (Matrix.of fun i j ↦ v j i).det := by
   rw [torusVolumeForm, SmoothForm.wedgeFamily_apply]
   simp only [torusTimeForm_apply, Matrix.cons_val_fin_one]
+
+/-- The volume form of the torus has constant coefficients in the product charts: at every point
+it is the same alternating map of `Fin n → ℝ` as at `0`. -/
+theorem torusVolumeForm_apply_eq_apply_zero (x : ∀ i, AddCircle (p i)) :
+    ((torusVolumeForm p).1 x : (Fin n → ℝ) [⋀^Fin n]→L[ℝ] ℝ) = (torusVolumeForm p).1 0 := by
+  ext w
+  -- Both sides are the determinant of `w`, read at the points `x` and `0`.
+  exact (torusVolumeForm_apply p x w).trans (torusVolumeForm_apply p 0 w).symm
 
 /-- The volume form of the torus takes the value `1` on the coordinate basis of a tangent
 space. -/

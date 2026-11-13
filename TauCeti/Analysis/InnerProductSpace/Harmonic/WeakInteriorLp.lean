@@ -77,7 +77,6 @@ theorem WeaklyHarmonicOn.exists_W1p_value_ae_eq_norm_le_integral_norm
     WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_norm_and_norm_fderiv_le_integral_norm
       (F := ℝ) (μ := μ) c hrR hRΩ
   let V : ℝ := (measureUnivNNReal (μ.restrict (ball c r)) : ℝ≥0) ^ p.toReal⁻¹
-  have hV : 0 ≤ V := by positivity
   refine ⟨(2 * V * C).toNNReal, fun {u} hu hi ↦ ?_⟩
   have : IsFiniteMeasure (μ.restrict (⟨ball c r, isOpen_ball⟩ : Opens E)) := by
     rw [Opens.coe_mk]
