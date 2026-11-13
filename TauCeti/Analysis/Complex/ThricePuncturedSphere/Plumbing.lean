@@ -327,18 +327,28 @@ theorem one_sub_norm_plumbingFactor_le {q r : Puncture} (hq : q ≠ inf) (hr : r
   have h := one_sub_norm_sub_endCenter_le hq hr hrq (q.plumbingMap L 1)
   rwa [plumbingMap_one_sub_endCenter] at h
 
+/-- **The receiving part is far from the center.** For `L ≥ 0`, a point `w ≠ c_q` with
+`Re z ≤ L/2` in the end coordinate `z` of the end `q ≠ ∞` lies at distance at least `2 ‖f‖` from
+the center `c_q`, where `f` is the plumbing factor. -/
+theorem two_mul_norm_plumbingFactor_le_norm_sub_endCenter {q : Puncture} (hq : q ≠ inf)
+    {L : ℝ} (hL : 0 ≤ L) {w : ℂ} (hc : w ≠ q.endCenter) (h : (q.endCoord w).re ≤ L / 2) :
+    2 * ‖q.plumbingFactor L‖ ≤ ‖w - q.endCenter‖ := by
+  -- `‖w - c_q‖ ≥ u / 2` and `‖f‖ = u² / 4` for `u = exp (-2π(L/2)) ∈ (0, 1]`.
+  have hu₀ : 0 < Real.exp (-(2 * π * (L / 2))) := Real.exp_pos _
+  have hu₁ : Real.exp (-(2 * π * (L / 2))) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
+  have hge := (re_endCoord_le_iff hq hc).1 h
+  rw [norm_plumbingFactor_eq_sq_div_of_ne_inf hq]
+  nlinarith
+
 /-- **The receiving part is far from the inserted inputs.** For `L ≥ 0`, a point `w ≠ c_q` with
 `Re z ≤ L/2` in the end coordinate `z` of the end `q ≠ ∞` lies at distance at least
 `‖f‖ exp (-2π) / 2` from the center `c_q`, where `f` is the plumbing factor. -/
 theorem norm_plumbingFactor_mul_exp_div_two_le_norm_sub_endCenter {q : Puncture} (hq : q ≠ inf)
     {L : ℝ} (hL : 0 ≤ L) {w : ℂ} (hc : w ≠ q.endCenter) (h : (q.endCoord w).re ≤ L / 2) :
     ‖q.plumbingFactor L‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - q.endCenter‖ := by
-  have hu₀ : 0 < Real.exp (-(2 * π * (L / 2))) := Real.exp_pos _
-  have hu₁ : Real.exp (-(2 * π * (L / 2))) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [pi_pos])
-  have hge := (re_endCoord_le_iff hq hc).1 h
-  rw [norm_plumbingFactor_eq_sq_div_of_ne_inf hq]
-  nlinarith
+  nlinarith [two_mul_norm_plumbingFactor_le_norm_sub_endCenter hq hL hc h,
+    norm_nonneg (q.plumbingFactor L)]
 
 /-- **The receiving part is far from the second inserted input.** For `L ≥ 0`, a point with
 `Re z ≤ L/2` in the end coordinate `z` of the end `q ≠ ∞` lies at distance at least
@@ -353,14 +363,11 @@ theorem norm_plumbingFactor_mul_exp_div_two_le_norm_sub_plumbingMap_one {q : Pun
   · -- At the center the distance to `ψ(1)` is the plumbing factor itself.
     rw [norm_sub_rev, hψ]
     nlinarith [norm_nonneg (q.plumbingFactor L)]
-  · -- Elsewhere `‖w - c_q‖ ≥ u / 2`, which exceeds `‖f‖ = u² / 4` by at least `u² / 4`.
-    have hu₀ : 0 < Real.exp (-(2 * π * (L / 2))) := Real.exp_pos _
-    have hu₁ : Real.exp (-(2 * π * (L / 2))) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
-    have hge := (re_endCoord_le_iff hq hc).1 h
+  · -- Elsewhere `‖w - c_q‖ ≥ 2 ‖f‖`, so `‖w - ψ(1)‖ ≥ ‖w - c_q‖ - ‖f‖ ≥ ‖f‖`.
     have h₁ := norm_sub_norm_le (w - q.endCenter) (q.plumbingMap L 1 - q.endCenter)
-    rw [sub_sub_sub_cancel_right, hψ, norm_plumbingFactor_eq_sq_div_of_ne_inf hq] at h₁
-    rw [norm_plumbingFactor_eq_sq_div_of_ne_inf hq]
-    nlinarith
+    rw [sub_sub_sub_cancel_right, hψ] at h₁
+    nlinarith [two_mul_norm_plumbingFactor_le_norm_sub_endCenter hq hL hc h,
+      norm_nonneg (q.plumbingFactor L)]
 
 /-- For an end `q`, a point of the capped cylinder `ℂ ∖ {c_q'}`, that is the capped puncture `c_q`
 or a point of `ℂ ∖ {0, 1}`, which lies off the open disc `‖· - c_q‖ < exp (-2π(L - 1)) / 2` lies in

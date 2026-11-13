@@ -184,12 +184,8 @@ theorem pairOfPantsPerturbation_cylindricalEndLift_of_pos {q : Puncture}
     pairOfPantsPerturbation H (q.cylindricalEndLift z) x (deriv q.cylindricalEndLift z * v) =
       v.im * (smoothTransition (q.endSign * z.re - 1) * H q z.im x) := by
   rw [pairOfPantsPerturbation, Finset.sum_eq_single q]
-  · obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
-    have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
-    have hp : H q (z.im + k) x = H q z.im x := by
-      simpa using congrFun (hH.int_mul k z.im) x
-    rw [smul_apply, endAngularForm_cylindricalEndLift, re_endCoord_cylindricalEndLift, him, hp,
-      smul_eq_mul, mul_comm]
+  · rw [smul_apply, endAngularForm_cylindricalEndLift, re_endCoord_cylindricalEndLift,
+      apply_im_endCoord_cylindricalEndLift hH, smul_eq_mul, mul_comm]
   · intro r _ hr
     simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero hr hz]
   · simp
@@ -326,83 +322,8 @@ theorem smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le {w : ℂ}
   smoothTransition.zero_of_nonpos
     (by linarith [neg_re_endCoord_inf_le zero_le_one (w := w) (by rwa [mul_one])])
 
-/-! ### Separated input discs -/
-
-/-- The factor `exp (-2π)` relating the radius of the support of an input end weight to the radius
-of its end disc is less than `1`. -/
-theorem exp_neg_two_pi_lt_one : Real.exp (-(2 * π)) < 1 :=
-  Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
-
-/-- A point of a disc `‖w - c i‖ < r i` disjoint from discs `‖w - c j‖ < r j` containing the
-discs `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` lies outside the latter discs. -/
-theorem le_norm_sub_of_norm_sub_lt {ι : Type*} {c a : ι → ℂ} {r : ι → ℝ} {i : ι}
-    (hr : ∀ j, j ≠ i → ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ r j)
-    (hsep : ∀ j, j ≠ i → r i + r j ≤ ‖c i - c j‖) {w : ℂ} (hw : ‖w - c i‖ < r i) (j : ι)
-    (hji : j ≠ i) : ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c j‖ := by
-  have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-    simpa using norm_sub_le (w - c i) (w - c j)
-  linarith [hsep j hji, hr j hji, norm_sub_rev (c i) (c j)]
-
-/-- A point of a disc `‖w - c‖ < r` with `‖c‖ + r ≤ 2 exp (2π)` lies in the disc
-`‖w‖ ≤ 2 exp (2π)`. -/
-theorem norm_le_two_mul_exp_of_norm_sub_lt {c w : ℂ} {r : ℝ}
-    (hout : ‖c‖ + r ≤ 2 * Real.exp (2 * π)) (hw : ‖w - c‖ < r) : ‖w‖ ≤ 2 * Real.exp (2 * π) := by
-  have h₂ : ‖w‖ ≤ ‖c‖ + ‖w - c‖ := by simpa using norm_add_le c (w - c)
-  linarith
-
-/-- **Strict separation of the input discs is an open condition.** If the discs
-`‖w - c i‖ < ‖a i‖ exp (-2π) / 2` have strictly separated closures inside the open disc
-`‖w‖ < 2 exp (2π)`, the same holds at every configuration near `(c, a)`. -/
-theorem eventually_pairwise_add_lt_norm_sub_and_norm_add_lt {ι : Type*} [Finite ι] {c a : ι → ℂ}
-    (hsep : Pairwise fun i j =>
-      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 < ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 < 2 * Real.exp (2 * π)) :
-    ∀ᶠ ca : (ι → ℂ) × (ι → ℂ) in 𝓝 (c, a),
-      (Pairwise fun i j => ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 +
-        ‖ca.2 j‖ * Real.exp (-(2 * π)) / 2 < ‖ca.1 i - ca.1 j‖) ∧
-      ∀ i, ‖ca.1 i‖ + ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 < 2 * Real.exp (2 * π) := by
-  refine (Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => ?_).and
-    (Filter.eventually_all.2 fun i => ?_)
-  · by_cases hij : i = j
-    · exact Filter.Eventually.of_forall fun _ h => (h hij).elim
-    · have hc : Continuous fun ca : (ι → ℂ) × (ι → ℂ) => ‖ca.1 i - ca.1 j‖ := by fun_prop
-      have ha : Continuous fun ca : (ι → ℂ) × (ι → ℂ) =>
-          ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 + ‖ca.2 j‖ * Real.exp (-(2 * π)) / 2 := by fun_prop
-      exact (ha.continuousAt.eventually_lt hc.continuousAt (hsep hij)).mono fun _ h _ => h
-  · have h : Continuous fun ca : (ι → ℂ) × (ι → ℂ) =>
-        ‖ca.1 i‖ + ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 := by fun_prop
-    exact h.continuousAt.eventually_lt continuousAt_const (hout i)
-
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
-
-/-- The point `(w - c) / a` of the plane on which an input end with center `c` and scale `a` is
-modelled is `C^n` jointly in the center, the scale and the domain point `w`, at every point with
-`a ≠ 0`. -/
-theorem contDiffAt_sub_div {n : WithTop ℕ∞} {c a : ℂ} (ha : a ≠ 0) (w : ℂ) :
-    ContDiffAt ℝ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-  have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-    refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
-      (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
-  exact h.restrict_scalars ℝ
-
-/-- The point `(w - c) / a` of the plane on which an input end with center `c` and scale `a` is
-modelled, paired with the target point, is `C^n` jointly in the center, the scale, the domain point
-`w` and the target point, at every point with `a ≠ 0`. -/
-theorem contMDiffAt_sub_div_prodMk {n : WithTop ℕ∞} {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) (𝓘(ℝ, ℂ).prod I) n
-      (fun p : (ℂ × ℂ) × (ℂ × M) => ((p.2.1 - p.1.1) / p.1.2, p.2.2)) ((c, a), (w, x)) :=
-  ((contDiffAt_sub_div ha w).contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1))
-    ((c, a), (w, x)) (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))).prodMk
-    (contMDiffAt_snd.comp _ contMDiffAt_snd)
-
-/-- Evaluating the centers and the scales of a configuration at the input `i` is smooth. -/
-theorem contMDiff_apply_prodMk {ι : Type*} [Fintype ι] {n : WithTop ℕ∞} (i : ι) :
-    ContMDiff (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I))
-      (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) n
-      (fun p : ((ι → ℂ) × (ι → ℂ)) × (ℂ × M) => ((p.1.1 i, p.1.2 i), p.2)) :=
-  have hL : ContDiff ℝ n (fun q : (ι → ℂ) × (ι → ℂ) => (q.1 i, q.2 i)) := by fun_prop
-  (hL.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
 
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` along a `C^n`
 family `f` of points of `ℂ`. -/

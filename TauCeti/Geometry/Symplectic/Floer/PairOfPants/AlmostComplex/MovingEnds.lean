@@ -229,6 +229,20 @@ theorem eq_puncturedSphereAlmostComplex_of_cayley_eq (h₀ : ω.Compatible J₀)
   refine h₀.eq_of_cayley_eq hK (tames_puncturedSphereAlmostComplex h₀ w x) ?_
   rw [cayley_puncturedSphereAlmostComplex_of_mem h₀ (h ▸ h₀.cayley_mem_cayleyBall hK), h]
 
+/-- **The structure depends only on the Cayley coordinate.** Two configurations of input ends
+whose Cayley coordinates agree at the points `(w, x)` and `(w', x')` carry the same structure
+there. -/
+theorem puncturedSphereAlmostComplex_congr (h₀ : ω.Compatible J₀) {κ : Type*} [Fintype κ]
+    {c' a' : κ → ℂ} {J' : κ → ℝ → M → AlmostComplexStructure V}
+    {Jout' : ℝ → M → AlmostComplexStructure V} {w w' : ℂ} {x x' : M}
+    (h : puncturedSphereCayley J₀ c a J Jout w x = puncturedSphereCayley J₀ c' a' J' Jout' w' x') :
+    puncturedSphereAlmostComplex h₀ c a J Jout w x =
+      puncturedSphereAlmostComplex h₀ c' a' J' Jout' w' x' := by
+  rw [puncturedSphereAlmostComplex_def, puncturedSphereAlmostComplex_def]
+  generalize puncturedSphereCayley J₀ c' a' J' Jout' w' x' = C at h ⊢
+  subst h
+  rfl
+
 /-- **The Cayley transform of the structure.** If the end structures are `ω`-tame and the discs
 `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`,
 the Cayley transform of the structure, relative to `J₀`, is `puncturedSphereCayley J₀ c a J Jout`.
@@ -257,14 +271,17 @@ theorem compatible_puncturedSphereAlmostComplex (h₀ : ω.Compatible J₀)
     rw [cayley_puncturedSphereAlmostComplex_of_mem h₀ h]
     -- The Cayley transforms of compatible structures are self-adjoint for `ω(·, J₀ ·)`, and so is
     -- their weighted sum.
-    have hsa {K : AlmostComplexStructure V} (hK : ω.Compatible K) (v v' : V) :
-        ω (J₀.cayley K v) (J₀ v') = ω v (J₀ (J₀.cayley K v')) :=
+    have hsa {K : AlmostComplexStructure V} (hK : ω.Compatible K) :
+        J₀.cayley K ∈ (ω.associatedBilinForm J₀).selfAdjointSubmodule :=
       (SymplecticForm.mem_compatibleCayleyBall.1
-        ((h₀.cayley_mem_compatibleCayleyBall_iff hK.tames).2 hK)).2 v v'
-    have hJsa (i : ι) (t : ℝ) (y : M) := hsa (hJc i t y)
-    have hJoutsa (t : ℝ) (y : M) := hsa (hJoutc t y)
-    refine SymplecticForm.mem_compatibleCayleyBall.2 ⟨h, fun v v' => ?_⟩
-    simp [puncturedSphereCayley_def, map_sum, hJsa, hJoutsa]
+        ((h₀.cayley_mem_compatibleCayleyBall_iff hK.tames).2 hK)).2
+    have hmem : puncturedSphereCayley J₀ c a J Jout w x ∈
+        (ω.associatedBilinForm J₀).selfAdjointSubmodule := by
+      rw [puncturedSphereCayley_def]
+      exact Submodule.add_mem _
+        (Submodule.sum_mem _ fun i _ => Submodule.smul_mem _ _ (hsa (hJc i _ x)))
+        (Submodule.smul_mem _ _ (hsa (hJoutc _ x)))
+    exact SymplecticForm.mem_compatibleCayleyBall.2 ⟨h, hmem⟩
   · rw [puncturedSphereAlmostComplex_of_notMem h₀ h]
     exact h₀
 
@@ -299,12 +316,8 @@ theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_forall_ne
   -- Only the input `i` contributes at `w`.
   have hC : puncturedSphereCayley J₀ c a J Jout w x =
       smoothTransition (z.re - 1) • J₀.cayley (J i z.im x) := by
-    obtain ⟨k, hk⟩ := zero.exists_endCoord_cylindricalEndLift z
-    have him : (zero.endCoord (zero.cylindricalEndLift z)).im = z.im + k := by
-      rw [hk]
-      simp
-    have hp : J i (z.im + k) = J i z.im := by simpa using hJp.int_mul k z.im
-    rw [puncturedSphereCayley_of_forall_ne hne hz, hφ, re_endCoord_cylindricalEndLift, him, hp]
+    rw [puncturedSphereCayley_of_forall_ne hne hz, hφ, re_endCoord_cylindricalEndLift,
+      apply_im_endCoord_cylindricalEndLift hJp]
   rw [cayley_puncturedSphereAlmostComplex_of_mem h₀ (hC ▸ h₀.smul_cayley_mem_cayleyBall (hJ _ x)
     (smoothTransition.abs_le_one (z.re - 1))), hC]
 
@@ -457,8 +470,8 @@ theorem plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex (h₀ :
   rw [plumbedAlmostComplex_def]
   split_ifs with h
   · -- On the inserted half only the two inputs of the inserted pair of pants contribute.
-    refine eq_puncturedSphereAlmostComplex_of_cayley_eq h₀
-      (tames_pairOfPantsAlmostComplex h₀ _ x) ?_
+    rw [← puncturedSphereAlmostComplex_eq_pairOfPantsAlmostComplex h₀ hJa]
+    refine puncturedSphereAlmostComplex_congr h₀ ?_
     have hpos : 0 < (q.endCoord w).re := by linarith [(by positivity : 0 ≤ L / 2)]
     have h₁ := exp_neg_two_pi_div_two_le_norm_sub_endCenter hq hr hrq hpos
     have h₂ := norm_le_two_mul_exp_of_re_endCoord_pos hq hpos
@@ -466,23 +479,23 @@ theorem plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex (h₀ :
         0 :=
       smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub
         (by rwa [norm_two_mul_endScale hr, one_mul])
-    set v := (w - q.endCenter) / q.plumbingFactor L
+    rw [puncturedSphereCayley_def, puncturedSphereCayley_def, Fin.sum_univ_two,
+      Fin.sum_univ_three]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
+      Matrix.tail_cons]
+    -- The second inserted input is the input `1` of the inserted pair of pants.
     have hf := q.plumbingFactor_ne_zero L
-    have hv₁ : zero.endCoord ((w - q.plumbingMap L 1) / -q.plumbingFactor L) = one.endCoord v := by
-      have h' := endCoord_zero_sub_endCenter_div one v
-      simp only [endCenter_one, endScale_one] at h'
-      rw [← h', plumbingMap_apply]
-      congr 1
-      simp only [v]
+    have hv₁ : (w - q.plumbingMap L 1) / -q.plumbingFactor L =
+        ((w - q.endCenter) / q.plumbingFactor L - 1) / -1 := by
+      rw [plumbingMap_apply]
       field_simp
       ring
-    rw [cayley_pairOfPantsAlmostComplex, Puncture.sum_univ, puncturedSphereCayley_def,
-      Fin.sum_univ_three]
-    simp [hr₀, smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le h₂, hv₁, v,
+    rw [hv₁]
+    simp [hr₀, smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le h₂,
       AlmostComplexStructure.cayley_self]
   · -- On the receiving part the two inputs of the inserted pair of pants do not contribute.
-    refine eq_puncturedSphereAlmostComplex_of_cayley_eq h₀
-      (tames_pairOfPantsAlmostComplex h₀ _ x) ?_
+    rw [pairOfPantsAlmostComplex_update_base_eq_puncturedSphereAlmostComplex h₀ hq hrq hr hJb]
+    refine puncturedSphereAlmostComplex_congr h₀ ?_
     have hle : (q.endCoord w).re ≤ L / 2 := not_lt.1 h
     have hψ := smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub (c := q.plumbingMap L 1)
       (a := -q.plumbingFactor L) (by
@@ -494,11 +507,9 @@ theorem plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex (h₀ :
       · rw [sub_self, zero_div, smoothTransition_endCoord_zero_zero]
       · exact smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub
           (norm_plumbingFactor_mul_exp_div_two_le_norm_sub_endCenter hq hL hc hle)
-    rw [cayley_pairOfPantsAlmostComplex, Puncture.sum_univ, puncturedSphereCayley_def,
+    rw [puncturedSphereCayley_def, puncturedSphereCayley_def, Fin.sum_univ_one,
       Fin.sum_univ_three]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
-      Matrix.tail_cons, hψ, hc, zero_smul, zero_add, endCoord_zero_sub_endCenter_div]
-    cases q <;> cases r <;> simp_all [AlmostComplexStructure.cayley_self]
+    simp [hψ, hc]
 
 end PairOfPants
 
