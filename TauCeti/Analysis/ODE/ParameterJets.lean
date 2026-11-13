@@ -44,11 +44,15 @@ variable {𝕜 P F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup P
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 -- Pin the canonical operator-space structures for the augmented-system induction.
+/-- The canonical normed group structure on endomorphisms. -/
 local instance jetEndGroup : NormedAddCommGroup (F →L[𝕜] F) :=
   ContinuousLinearMap.toNormedAddCommGroup
+/-- The canonical scalar action on endomorphisms. -/
 local instance jetEndSpace : NormedSpace 𝕜 (F →L[𝕜] F) := ContinuousLinearMap.toNormedSpace
+/-- The canonical normed group structure on parameter derivatives. -/
 local instance jetDerivativeGroup : NormedAddCommGroup (P →L[𝕜] F) :=
   ContinuousLinearMap.toNormedAddCommGroup
+/-- The canonical scalar action on parameter derivatives. -/
 local instance jetDerivativeSpace : NormedSpace 𝕜 (P →L[𝕜] F) := ContinuousLinearMap.toNormedSpace
 
 /-- The linear system for a solution together with its parameter derivative. -/
@@ -123,11 +127,15 @@ end Coefficient
 variable {P F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- The canonical real normed group structure on endomorphisms. -/
 local instance realJetEndGroup : NormedAddCommGroup (F →L[ℝ] F) :=
   ContinuousLinearMap.toNormedAddCommGroup
+/-- The canonical real scalar action on endomorphisms. -/
 local instance realJetEndSpace : NormedSpace ℝ (F →L[ℝ] F) := ContinuousLinearMap.toNormedSpace
+/-- The canonical real normed group structure on parameter derivatives. -/
 local instance realJetDerivativeGroup : NormedAddCommGroup (P →L[ℝ] F) :=
   ContinuousLinearMap.toNormedAddCommGroup
+/-- The canonical real scalar action on parameter derivatives. -/
 local instance realJetDerivativeSpace : NormedSpace ℝ (P →L[ℝ] F) :=
   ContinuousLinearMap.toNormedSpace
 
