@@ -259,8 +259,8 @@ theorem exists_continuous_linearIsometryEquiv_of_contractibleSpace (φ : C(K, B)
     OrthonormalBasis.mk (gramSchmidtNormed_orthonormal (d y).linearIndependent)
       (by rw [span_gramSchmidtNormed_range, span_gramSchmidt, (d y).span_eq])
   have hu (k : Fin (finrank ℝ F)) : Continuous fun y : K ↦ (u y k : TotalSpace F E) := by
-    simpa [u] using Continuous.gramSchmidtNormed_bundle (b := fun y : K ↦ φ y) hd
-      (fun y ↦ (d y).linearIndependent) k
+    simpa [u] using Continuous.gramSchmidtNormed_bundle (b := fun y : K ↦ φ y) k
+      (fun j _ ↦ hd j) fun y ↦ (d y).linearIndependent.linearIndepOn _
   exact ⟨fun y ↦ (u y).repr.symm, OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp
     ((OrthonormalFrameBundle.continuous_mk_repr_symm φ.continuous hu).prodMap continuous_id)⟩
 
