@@ -141,7 +141,7 @@ theorem hasDerivAt_slice_add_sliceDefect (hu : DifferentiableOn ℝ u (Ioi a ×�
 `C¹` map, `u(s, t₂) - u(s, t₁) = ∫_{t₁}^{t₂} X(t, u(s, t)) dt + ∫_{t₁}^{t₂} (∂_t u - X(t, u))`
 after applying a continuous linear map `L` into a Banach space. When `V` is complete, `L` can be
 the identity; in general, take the embedding of `V` into its completion. -/
-theorem sub_eq_integral_add_integral_sliceDefect {W : Type*} [NormedAddCommGroup W]
+private theorem sub_eq_integral_add_integral_sliceDefect_map {W : Type*} [NormedAddCommGroup W]
     [NormedSpace ℝ W] [CompleteSpace W] (L : V →L[ℝ] W) (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
     (hX : Continuous (uncurry X)) {s : ℝ} (hs : a < s) (t₁ t₂ : ℝ) :
     L (u (s, t₂)) - L (u (s, t₁)) =
@@ -156,6 +156,17 @@ theorem sub_eq_integral_add_integral_sliceDefect {W : Type*} [NormedAddCommGroup
     (fun t _ ↦ ?_) ((hXc.add hd).intervalIntegrable _ _)).symm
   simpa only [Pi.add_apply, map_add, Function.comp_def] using L.hasFDerivAt.comp_hasDerivAt t
     (hasDerivAt_slice_add_sliceDefect (hu.differentiableOn one_ne_zero) hs t)
+
+/-- **The loops solve the integral equation up to the defect.** Along the loop at `s > a` of a
+`C¹` map into a Banach space, `u(s, t₂) - u(s, t₁) = ∫_{t₁}^{t₂} X(t, u(s, t)) dt +
+∫_{t₁}^{t₂} (∂_t u - X(t, u))`. -/
+theorem sub_eq_integral_add_integral_sliceDefect [CompleteSpace V]
+    (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) (hX : Continuous (uncurry X)) {s : ℝ} (hs : a < s)
+    (t₁ t₂ : ℝ) :
+    u (s, t₂) - u (s, t₁) =
+      (∫ t in t₁..t₂, X t (u (s, t))) + ∫ t in t₁..t₂, sliceDefect X u (s, t) := by
+  simpa using
+    sub_eq_integral_add_integral_sliceDefect_map (ContinuousLinearMap.id ℝ V) hu hX hs t₁ t₂
 
 section Reflection
 
@@ -333,7 +344,7 @@ pointwise to `x` and the `L²` norms of their defects tend to `0`, then
 `x(t) - x(0) = ∫₀ᵗ X(τ, x(τ)) dτ` for `t ∈ [0, 1]`, after applying a continuous linear map `L` into
 a Banach space. When `V` is complete, `L` can be the identity; in general, take the embedding of `V`
 into its completion. -/
-theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect {W : Type*}
+private theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect_map {W : Type*}
     [NormedAddCommGroup W] [NormedSpace ℝ W] [CompleteSpace W] (L : V →L[ℝ] W)
     (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) {K : Set V} (hK : IsCompact K)
     (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X)) {ι : Type*}
@@ -347,7 +358,7 @@ theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect {W : Type*}
   -- Along the sequence, `u(s, t) - u(s, 0) = ∫₀ᵗ X(τ, u(s, τ)) dτ + ∫₀ᵗ (defect)`.
   have hsplit : ∀ i, L (u (φ i, t)) - L (u (φ i, 0)) =
       (∫ τ in (0 : ℝ)..t, L (X τ (u (φ i, τ)))) + ∫ τ in (0 : ℝ)..t, L (sliceDefect X u (φ i, τ)) :=
-    fun i ↦ sub_eq_integral_add_integral_sliceDefect L hu hX (hφa i) 0 t
+    fun i ↦ sub_eq_integral_add_integral_sliceDefect_map L hu hX (hφa i) 0 t
   -- The first integral converges by dominated convergence.
   have hA : Tendsto (fun i ↦ ∫ τ in (0 : ℝ)..t, L (X τ (u (φ i, τ)))) l
       (𝓝 (∫ τ in (0 : ℝ)..t, L (X τ (x τ)))) :=
@@ -369,6 +380,21 @@ theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect {W : Type*}
     ((L.continuous.tendsto _).comp (hx t)).sub ((L.continuous.tendsto _).comp (hx 0))
   simp_rw [hsplit] at hL
   simpa using (tendsto_nhds_unique (hA.add hD) hL).symm
+
+/-- **The integral equation passes to the limit.** Let `X` be continuous and let `u` be `C¹` on
+the half-cylinder `s > a`, with loops in a compact set `K`, in a Banach space. If the loops at
+`s_i > a` converge pointwise to `x` and the `L²` norms of their defects tend to `0`, then
+`x(t) - x(0) = ∫₀ᵗ X(τ, x(τ)) dτ` for `t ∈ [0, 1]`. -/
+theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect [CompleteSpace V]
+    (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) {K : Set V} (hK : IsCompact K)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X)) {ι : Type*}
+    {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {φ : ι → ℝ} (hφa : ∀ i, a < φ i)
+    (hφ : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ ^ 2) l (𝓝 0))
+    {x : ℝ → V} (hx : ∀ t, Tendsto (fun i ↦ u (φ i, t)) l (𝓝 (x t))) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) :
+    x t - x 0 = ∫ τ in (0 : ℝ)..t, X τ (x τ) := by
+  simpa using sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect_map
+    (ContinuousLinearMap.id ℝ V) hu hK huK hX hφa hφ hx ht
 
 /-- **Loops with small defect converge to periodic orbits.** Let `X` be a continuous,
 `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder `s > a`, with
@@ -423,7 +449,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral
   -- `(ι ∘ x)' = ι (X(t, x))` by periodicity; as `ι` is isometric, `x' = X(t, x)`.
   set ι : V →L[ℝ] UniformSpace.Completion V := UniformSpace.Completion.toComplL
   have hint : ∀ t ∈ Icc (0 : ℝ) 1, ι (x t) - ι (x 0) = ∫ τ in (0 : ℝ)..t, ι (X τ (x τ)) :=
-    fun t ht ↦ sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect ι hu hK huK hX
+    fun t ht ↦ sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect_map ι hu hK huK hX
       (fun n ↦ hφa (ψ n)) hdef hpt ht
   refine ⟨ψ, hψ, x, hxper, fun t ↦ ?_, hux⟩
   have h := hasDerivAt_of_periodic_of_sub_eq_integral (x := fun τ ↦ ι (x τ))
