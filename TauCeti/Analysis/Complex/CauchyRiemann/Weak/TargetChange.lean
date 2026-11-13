@@ -38,7 +38,7 @@ subsets of `U`, every statement applies verbatim to half-discs.
 * `TauCeti.isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp`: invariance under `C¹`
   diffeomorphisms of the target. The field `Ψ_* J` is `OpenPartialHomeomorph.pullbackEnd` along
   `Ψ.symm` and the term `Ψ_* η` is Mathlib's `VectorField.pullback` along `Ψ.symm`.
-* `TauCeti.isWeakCauchyRiemannOn_iff_continuousLinearEquiv_comp`: invariance under continuous
+* `ContinuousLinearEquiv.isWeakCauchyRiemannOn_iff_comp`: invariance under continuous
   linear equivalences `A` of the target, which transport `J` to `A ∘ J ∘ A⁻¹`.
 * `TauCeti.IsWeakCauchyRiemannOn.contDiffOn_comp_graph_of_intertwine`: domain-dependent changes
   of target coordinates `z ↦ Φ(z, u z)`.
@@ -155,7 +155,7 @@ end Diffeomorphism
 /-- **Invariance under linear changes of the target.** For a continuous linear equivalence
 `A : V ≃L[ℝ] W`, `u` is a weak solution for `J` and `η` exactly when `A ∘ u` is a weak solution
 for `A ∘ J ∘ A⁻¹` and `A ∘ η ∘ A⁻¹`. Each side makes its codomain complete, hence both. -/
-theorem isWeakCauchyRiemannOn_iff_continuousLinearEquiv_comp (A : V ≃L[ℝ] W) :
+theorem _root_.ContinuousLinearEquiv.isWeakCauchyRiemannOn_iff_comp (A : V ≃L[ℝ] W) :
     IsWeakCauchyRiemannOn p U J η u ↔ IsWeakCauchyRiemannOn p U
       (fun z y => (A : V →L[ℝ] W).comp ((J z (A.symm y)).comp (A.symm : W →L[ℝ] V)))
       (fun z y => A (η z (A.symm y))) (fun z => A (u z)) := by

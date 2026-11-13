@@ -23,9 +23,30 @@ back along `e.symm` pushes forward by `De`.
   `De⁻¹_{e p} (X (e p))` at `p`.
 * `OpenPartialHomeomorph.vectorFieldPullback_symm_apply`: the pullback of `X` along `e.symm` is
   the pushforward `De_p (X p)` at `e p`.
+* `VectorField.pullback_zero`, `VectorField.pullback_fun_zero`: the pullback of the zero vector
+  field along any map is zero.
 -/
 
 public section
+
+namespace VectorField
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The pullback of the zero vector field along any map is zero. -/
+@[simp]
+theorem pullback_zero (f : E → F) : pullback 𝕜 f 0 = 0 := by
+  ext x
+  simp [pullback]
+
+/-- The pullback of the zero vector field, written as a constant function, along any map is
+zero. -/
+@[simp]
+theorem pullback_fun_zero (f : E → F) : pullback 𝕜 f (fun _ => 0) = 0 :=
+  pullback_zero f
+
+end VectorField
 
 namespace OpenPartialHomeomorph
 
