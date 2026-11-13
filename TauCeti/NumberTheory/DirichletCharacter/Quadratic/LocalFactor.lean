@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.OddPrimePower.Quadratic
 public import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Classification
 public import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Quadratic
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.OddPart
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # Local conductors of a quadratic Dirichlet character
@@ -24,9 +25,10 @@ prime-power classification, and `1`, `4` or `8` at `p = 2`, by the dyadic classi
 
 Equivalently, the conductor of `χ`, which is the level of its primitive character `χ*`, has
 squarefree odd part and `2`-adic exponent `0`, `2` or `3`. These are the shape results for
-primitive levels, `DirichletCharacter.IsPrimitive.squarefree_ordCompl_two` and
-`DirichletCharacter.IsPrimitive.factorization_two_eq_zero_or_two_or_three`, applied to `χ*`,
-which is quadratic when `χ` is.
+primitive levels, `DirichletCharacter.IsPrimitive.squarefree_ordCompl_two_of_sq_eq_one` and
+`DirichletCharacter.IsPrimitive.factorization_two_eq_zero_or_two_or_three_of_sq_eq_one`, applied
+to `χ*`, which has order dividing two when `χ` does
+(`DirichletCharacter.primitiveCharacter_pow_eq_one`).
 
 The results are proved for characters of order dividing two with values in any commutative
 monoid with zero, and specialised to quadratic characters with values in a commutative ring.
@@ -84,7 +86,7 @@ theorem factorization_conductor_le_one_of_sq_eq_one (hχ : χ ^ 2 = 1) {p : ℕ}
   · simp [conductor_eq_zero_iff_level_eq_zero.mpr rfl]
   have : NeZero N := ⟨hN⟩
   exact χ.primitiveCharacter_isPrimitive.factorization_le_one_of_sq_eq_one
-    (primitiveCharacter_sq_eq_one hχ) hp hp2
+    (primitiveCharacter_pow_eq_one hχ) hp hp2
 
 /-- The odd part of the conductor of a character of order dividing two at a nonzero level is
 squarefree. -/
@@ -92,7 +94,7 @@ theorem squarefree_ordCompl_two_conductor_of_sq_eq_one [NeZero N] (hχ : χ ^ 2 
     Squarefree (ordCompl[2] χ.conductor) :=
   have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
   χ.primitiveCharacter_isPrimitive.squarefree_ordCompl_two_of_sq_eq_one
-    (primitiveCharacter_sq_eq_one hχ)
+    (primitiveCharacter_pow_eq_one hχ)
 
 /-- The `2`-adic exponent of the conductor of a character of order dividing two is `0`, `2` or
 `3`. -/
@@ -103,7 +105,7 @@ theorem factorization_two_conductor_eq_zero_or_two_or_three_of_sq_eq_one (hχ : 
   · simp [conductor_eq_zero_iff_level_eq_zero.mpr rfl]
   have : NeZero N := ⟨hN⟩
   exact χ.primitiveCharacter_isPrimitive.factorization_two_eq_zero_or_two_or_three_of_sq_eq_one
-    (primitiveCharacter_sq_eq_one hχ)
+    (primitiveCharacter_pow_eq_one hχ)
 
 end SqEqOne
 

@@ -64,7 +64,7 @@ theorem conductor_eq_one_or_four_or_eight_of_sq_eq_one {R : Type*} [CommMonoidWi
   obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow Nat.prime_two).mp χ.conductor_dvd_level
   have hfac :=
     χ.primitiveCharacter_isPrimitive.factorization_two_eq_zero_or_two_or_three_of_sq_eq_one
-      (primitiveCharacter_sq_eq_one hχ)
+      (primitiveCharacter_pow_eq_one hχ)
   rw [hj, Nat.factorization_pow_self Nat.prime_two] at hfac
   rcases hfac with rfl | rfl | rfl <;> simp [hj]
 
