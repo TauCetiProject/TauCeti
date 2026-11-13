@@ -38,7 +38,7 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
   at most `max 1 (K ^ α)`.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
-  norm at most `‖g‖`.
+  norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry equivalence.
 
 ## References
 
@@ -619,6 +619,19 @@ theorem compLeftL_apply (g : Y →L[ℝ] Y') (f : HolderSpace α X Y) (x : X) :
 /-- Postcomposition with a continuous linear map `g` has operator norm at most `‖g‖`. -/
 theorem norm_compLeftL_le (g : Y →L[ℝ] Y') : ‖compLeftL (α := α) (X := X) g‖ ≤ ‖g‖ :=
   LinearMap.mkContinuous_norm_le _ (norm_nonneg g) _
+
+/-- Postcomposition with a linear isometry equivalence preserves the Hölder-space norm. -/
+theorem norm_compLeftL_linearIsometryEquiv (e : Y ≃ₗᵢ[ℝ] Y') (f : HolderSpace α X Y) :
+    ‖compLeftL (e : Y →L[ℝ] Y') f‖ = ‖f‖ := by
+  refine le_antisymm (((compLeftL _).le_opNorm f).trans (mul_le_of_le_one_left (norm_nonneg f)
+    ((norm_compLeftL_le _).trans e.toLinearIsometry.norm_toContinuousLinearMap_le))) ?_
+  calc ‖f‖ = ‖compLeftL (e.symm : Y' →L[ℝ] Y) (compLeftL (e : Y →L[ℝ] Y') f)‖ := by
+        congr 1
+        ext x
+        simp
+    _ ≤ ‖compLeftL (e : Y →L[ℝ] Y') f‖ :=
+      ((compLeftL _).le_opNorm _).trans (mul_le_of_le_one_left (norm_nonneg _)
+        ((norm_compLeftL_le _).trans e.symm.toLinearIsometry.norm_toContinuousLinearMap_le))
 
 end compLeft
 

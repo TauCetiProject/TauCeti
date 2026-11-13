@@ -82,12 +82,6 @@ theorem continuousMultilinearCurryFin2_iteratedFDeriv_two (f : E → F) (x : E) 
   simp only [continuousMultilinearCurryFin2_apply, iteratedFDeriv_two_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
 
-/-- The curried second Fréchet derivative is the second iterated derivative, curried, including at
-points where these derivatives are junk-valued. -/
-theorem fderiv_fderiv_eq_continuousMultilinearCurryFin2_comp (f : E → F) :
-    fderiv 𝕜 (fderiv 𝕜 f) = continuousMultilinearCurryFin2 𝕜 E F ∘ iteratedFDeriv 𝕜 2 f :=
-  funext fun x ↦ (continuousMultilinearCurryFin2_iteratedFDeriv_two f x).symm
-
 /-- Differences of curried second derivatives and multilinear second derivatives have
 exactly the same norm, without differentiability assumptions. -/
 theorem norm_fderiv_fderiv_sub (f : E → F) (x y : E) :
