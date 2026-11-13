@@ -42,6 +42,14 @@ theorem coe_toGroupClosure (s : S) : (S.toGroupClosure s : G) = s :=
 theorem toGroupClosure_injective : Function.Injective S.toGroupClosure :=
   (S.subtype.injective_codRestrict _ _).mpr S.subtype_injective
 
+/-- The additive range of `S.toGroupClosure` is the preimage of `S` in the generated subgroup. -/
+@[simp]
+theorem mrange_toGroupClosure :
+    AddMonoidHom.mrange S.toGroupClosure =
+      S.comap (AddSubgroup.closure (S : Set G)).subtype := by
+  ext x
+  exact ⟨fun ⟨s, hs⟩ ↦ hs ▸ s.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+
 end
 
 variable [AddCommGroup G] (S : AddSubmonoid G)

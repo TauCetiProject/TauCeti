@@ -26,6 +26,8 @@ Maps of lattices carrying one cone into another induce contravariant maps of dua
 ## Main declarations
 
 * `TauCeti.Toric.dualSemigroup`: integral characters nonnegative on a cone.
+* `TauCeti.Toric.dualSemigroup_nsmulSaturated`: the dual semigroup of any cone is saturated under
+  positive natural multiples.
 * `TauCeti.Toric.dualSemigroupMap`: the contravariant map induced by a compatible map of
   lattices and cones.
 
@@ -82,6 +84,12 @@ theorem dualSemigroup_anti (hi : IsIntegralLattice i) {σ τ : PointedCone ℝ V
 /-- Taking the dual semigroup reverses the order on pointed cones. -/
 theorem dualSemigroup_antitone (hi : IsIntegralLattice i) :
     Antitone (dualSemigroup hi) := fun _ _ h ↦ dualSemigroup_anti hi h
+
+/-- The dual semigroup of any cone is saturated under positive natural multiples: if a positive
+multiple of an integral character is nonnegative on `σ`, so is the character itself. -/
+theorem dualSemigroup_nsmulSaturated (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
+    (dualSemigroup hi σ).NSMulSaturated :=
+  PointedCone.latticePoints_nsmulSaturated _ _
 
 /-- The dual semigroup of the zero cone is the full character group. -/
 @[simp]

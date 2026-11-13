@@ -55,6 +55,8 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
   integrally closed subring containing its kernel to an integrally closed subring.
 * `Subring.mem_of_pow_mem_of_isIntegrallyClosedIn`: a subring integrally closed in `A` contains
   every element some positive power of which it contains.
+* `IsIntegrallyClosed.of_leftInverse`: a ring retract of an integrally closed domain is integrally
+  closed.
 -/
 
 public section
@@ -237,3 +239,31 @@ theorem isIntegrallyClosedIn_map_of_ker_le (S : Subring A) [IsIntegrallyClosedIn
     exact ⟨a, Subring.isIntegrallyClosedIn_iff.mp inferInstance ha, rfl⟩
 
 end Subring
+
+/-- **A ring retract of an integrally closed domain is integrally closed.** If `i : R →+* A`
+admits a left inverse `π : A →+* R` and `A` is an integrally closed domain, then `R` is
+integrally closed: a fraction `a / b` in `FractionRing R` integral over `R` maps to `y ∈ A`
+with `y * i b = i a`, and applying `π` yields `π y * b = a`. -/
+theorem IsIntegrallyClosed.of_leftInverse {R A : Type*} [CommRing R] [CommRing A]
+    [IsDomain A] [IsIntegrallyClosed A] {i : R →+* A} {π : A →+* R}
+    (h : Function.LeftInverse π i) : IsIntegrallyClosed R := by
+  have : IsDomain R := h.injective.isDomain i
+  have h_nzd : nonZeroDivisors R ≤ (nonZeroDivisors A).comap i := fun b hb ↦
+    mem_nonZeroDivisors_iff_ne_zero.mpr
+      ((map_ne_zero_iff i h.injective).mpr (mem_nonZeroDivisors_iff_ne_zero.mp hb))
+  obtain ⟨f, hf_eq⟩ : ∃ f : FractionRing R →+* FractionRing A,
+      ∀ r, f (algebraMap R (FractionRing R) r) = algebraMap A (FractionRing A) (i r) :=
+    ⟨IsLocalization.map (FractionRing A) i h_nzd, IsLocalization.map_eq h_nzd⟩
+  refine (isIntegrallyClosed_iff (FractionRing R)).mpr fun {z} ⟨p, hp, hpz⟩ ↦ ?_
+  have hcomp : (algebraMap A (FractionRing A)).comp i = f.comp (algebraMap R (FractionRing R)) :=
+    RingHom.ext fun r ↦ (hf_eq r).symm
+  have hfz : IsIntegral A (f z) := ⟨p.map i, hp.map i, by
+    rw [Polynomial.eval₂_map, hcomp, ← Polynomial.hom_eval₂, hpz, map_zero]⟩
+  obtain ⟨y, hy⟩ := IsIntegrallyClosed.isIntegral_iff.mp hfz
+  obtain ⟨⟨a, b⟩, hzb⟩ := IsLocalization.surj (nonZeroDivisors R) z
+  have hyb : y * i b.1 = i a := IsFractionRing.injective A (FractionRing A) <| by
+    rw [map_mul, hy, ← hf_eq b.1, ← map_mul, hzb, hf_eq a]
+  refine ⟨π y, ?_⟩
+  have hπyb : π y * b.1 = a := by rw [← h b.1, ← map_mul, hyb, h a]
+  apply (IsLocalization.map_units (FractionRing R) b).mul_right_cancel
+  rw [← map_mul, hπyb, hzb]

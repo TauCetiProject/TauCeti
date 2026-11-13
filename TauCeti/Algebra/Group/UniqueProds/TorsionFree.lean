@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.UniqueProds.Basic
+public import Mathlib.Algebra.Module.Torsion.Free
 import Mathlib.Algebra.Group.UniqueProds.VectorSpace
 import Mathlib.GroupTheory.DivisibleHull
 import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
@@ -20,8 +21,9 @@ commutative monoid `M` with unique division embeds into its Grothendieck group, 
 unique division and therefore embeds into its divisible hull. The divisible hull is a
 `ℚ`-vector space, and those have two unique sums.
 
-Through Mathlib's instances for monoid algebras, this makes `R[M]` a domain whenever `R` is one
-and `M` is a torsion-free commutative group, with no finite generation hypothesis.
+Through `Module.IsTorsionFree.to_twoUniqueSums_int` and Mathlib's instances for monoid algebras,
+this makes `R[M]` a domain whenever `R` is one and `M` is a torsion-free commutative group
+(`[Module.IsTorsionFree ℤ M]`, including free `ℤ`-modules), with no finite generation hypothesis.
 -/
 
 public section
@@ -42,3 +44,10 @@ instance (priority := low) HasUniqueRoots.to_twoUniqueProds [CancelCommMonoid M]
     [HasUniqueRoots M] : TwoUniqueProds M :=
   -- As for `AffineMonoid.to_twoUniqueProds`, transfer the additive statement along `Additive M`.
   Multiplicative.instTwoUniqueProdsOfTwoUniqueSums (M := Additive M)
+
+/-- A torsion-free abelian group has two unique sums; unlike `HasUniqueDiv.to_twoUniqueSums`, this
+fires directly for `[Module.Free ℤ G]` via `Module.Free.instIsTorsionFree`. -/
+instance (priority := low) Module.IsTorsionFree.to_twoUniqueSums_int {G : Type*} [AddCommGroup G]
+    [Module.IsTorsionFree ℤ G] : TwoUniqueSums G :=
+  have : HasUniqueDiv G := .of_isTorsionFree ℤ G
+  inferInstance

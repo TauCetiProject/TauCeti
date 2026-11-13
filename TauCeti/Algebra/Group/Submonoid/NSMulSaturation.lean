@@ -28,12 +28,41 @@ additive counterparts, e.g. `Submonoid.powSaturation` becomes `AddSubmonoid.nsmu
 * `Submonoid.powSaturated_powSaturation`: the saturation is `PowSaturated`.
 * `Submonoid.powSaturation_le_iff_le`: the saturation is the least `PowSaturated` submonoid
   containing `s`.
-* `Submonoid.powSaturation_eq_self`: saturating an already `PowSaturated` submonoid is a no-op.
+* `Submonoid.powSaturation_eq_self` and `Submonoid.powSaturation_eq_self_iff`: saturating an
+  already `PowSaturated` submonoid is a no-op, and this characterizes `PowSaturated` submonoids.
+* `Submonoid.powSaturation_idem`: saturation is idempotent.
+* `Submonoid.PowSaturated.comap` and `Submonoid.PowSaturated.inf`: preimages and intersections of
+  `PowSaturated` submonoids are `PowSaturated`.
+* `Submonoid.powSaturation_comap`: saturation commutes with preimage along a monoid homomorphism.
+* `Submonoid.powSaturated_comap_subtype_iff`: for `s ≤ t`, the pullback of `s` to `t` is
+  `PowSaturated` iff `s.powSaturation ⊓ t = s`.
 -/
 
 public section
 
 namespace Submonoid
+
+section Monoid
+
+variable {M N : Type*} [Monoid M] [Monoid N]
+
+/-- The preimage of a `PowSaturated` submonoid under a monoid homomorphism is `PowSaturated`. -/
+@[to_additive /-- The preimage of an `NSMulSaturated` additive submonoid under an additive monoid
+homomorphism is `NSMulSaturated`. -/]
+theorem PowSaturated.comap {t : Submonoid N} (ht : t.PowSaturated) (f : M →* N) :
+    (t.comap f).PowSaturated :=
+  fun _ _ h ↦ ht (by simpa using h)
+
+/-- The intersection of two `PowSaturated` submonoids is `PowSaturated`. -/
+@[to_additive /-- The intersection of two `NSMulSaturated` additive submonoids is
+`NSMulSaturated`. -/]
+theorem PowSaturated.inf {s t : Submonoid M} (hs : s.PowSaturated) (ht : t.PowSaturated) :
+    (s ⊓ t).PowSaturated := fun n _ h ↦ by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact .inl rfl
+  · exact .inr ⟨(hs h.1).resolve_left hn, (ht h.2).resolve_left hn⟩
+
+end Monoid
 
 variable {M : Type*} [CommMonoid M]
 
@@ -107,5 +136,35 @@ theorem powSaturation_eq_self {s : Submonoid M} (hs : PowSaturated s) : s.powSat
   · exact (powSaturation_le_iff_le (s := s) (t := s) hs).mpr (le_refl s)
   · exact le_powSaturation
 
-end Submonoid
+/-- A submonoid equals its saturation if and only if it is `PowSaturated`. -/
+@[to_additive /-- An additive submonoid equals its saturation if and only if it is
+`NSMulSaturated`. -/]
+theorem powSaturation_eq_self_iff {s : Submonoid M} : s.powSaturation = s ↔ s.PowSaturated :=
+  ⟨fun h ↦ h ▸ powSaturated_powSaturation, powSaturation_eq_self⟩
 
+/-- Taking the saturation twice is taking it once. -/
+@[to_additive /-- Taking the saturation twice is taking it once. -/]
+theorem powSaturation_idem (s : Submonoid M) :
+    s.powSaturation.powSaturation = s.powSaturation :=
+  powSaturation_eq_self powSaturated_powSaturation
+
+/-- Saturation commutes with preimage under any monoid homomorphism. -/
+@[to_additive /-- Saturation commutes with preimage under any additive monoid homomorphism. -/]
+theorem powSaturation_comap {N : Type*} [CommMonoid N] (s : Submonoid M) (f : N →* M) :
+    (s.comap f).powSaturation = s.powSaturation.comap f := by
+  ext x
+  simp
+
+/-- For submonoids `s ≤ t`, the pullback of `s` to `t` is `PowSaturated` in `t` if and only if
+the saturation of `s` in `M` meets `t` in `s`. -/
+@[to_additive /-- For additive submonoids `s ≤ t`, the pullback of `s` to `t` is `NSMulSaturated`
+in `t` if and only if the saturation of `s` in `M` meets `t` in `s`. -/]
+theorem powSaturated_comap_subtype_iff {s t : Submonoid M} (hst : s ≤ t) :
+    (s.comap t.subtype).PowSaturated ↔ s.powSaturation ⊓ t = s := by
+  refine ⟨fun h ↦ le_antisymm (fun x hx ↦ ?_) (le_inf le_powSaturation hst),
+    fun h n x hnx ↦ or_iff_not_imp_left.mpr fun hn ↦ ?_⟩
+  · obtain ⟨n, hn, hnx⟩ := mem_powSaturation.mp hx.1
+    exact (h (g := ⟨x, hx.2⟩) (by simpa using hnx)).resolve_left hn.ne'
+  · exact h.le ⟨mem_powSaturation.mpr ⟨n, Nat.pos_of_ne_zero hn, by simpa using hnx⟩, x.2⟩
+
+end Submonoid
