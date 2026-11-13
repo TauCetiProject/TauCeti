@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Basic.Denumerable
-import Mathlib.Logic.Equiv.Sigma
 
 /-!
 # Finite and extended cardinalities
