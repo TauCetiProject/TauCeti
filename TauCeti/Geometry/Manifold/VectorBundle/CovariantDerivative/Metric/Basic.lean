@@ -84,9 +84,9 @@ theorem IsMetricCompatible.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_c
     (hc : (fun y ↦ inner ℝ (σ y) (τ y)) =ᶠ[𝓝 x] fun _ ↦ c)
     (v : TangentSpace I x) :
     inner ℝ (cov σ x v) (τ x) + inner ℝ (σ x) (cov τ x v) = 0 := by
-  have hmetric := hcov.mvfderiv_inner_eq (fun _ ↦ v) hσ hτ
-  rw [hc.mvfderiv_eq, mvfderiv_const] at hmetric
-  exact hmetric.symm
+  classical
+  simpa only [Pi.single_eq_same, hc.mvfderiv_eq, mvfderiv_const, zero_apply] using
+    (hcov.mvfderiv_inner_eq (Pi.single x v) hσ hτ).symm
 
 /-- The covariant derivative of a section of locally constant length is orthogonal to that
 section for a metric-compatible connection. -/

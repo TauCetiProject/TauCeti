@@ -9,8 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.ConnectionForm
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame.Orthonormal
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.LocalFrame
 
 /-!
 # Connection operators in normal orthonormal frames
@@ -208,19 +207,13 @@ theorem normalFrameConnectionCoefficient_add_swap (h : IsNormalDomain I M p U)
     (hq : q ∈ riemannianExp I M p '' U) :
     b.normalFrameConnectionCoefficient (U := U) v i j q +
       b.normalFrameConnectionCoefficient (U := U) v j i q = 0 := by
-  have hconstant : (fun y ↦ inner ℝ (normalOrthonormalFrame I M p U b i y)
-      (normalOrthonormalFrame I M p U b j y)) =ᶠ[𝓝 q] fun _ ↦ if i = j then 1 else 0 := by
-    filter_upwards [h.isOpen_image.mem_nhds hq] with y hy
-    exact (orthonormal_iff_ite.mp (h.orthonormal_normalOrthonormalFrame b hy)) i j
-  have hcov := isMetricCompatible_leviCivitaConnection I (M := M)
-  have hskew := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
-      (((h.contMDiffOn_normalOrthonormalFrame b i).contMDiffAt
-        (h.isOpen_image.mem_nhds hq)).mdifferentiableAt (by simp))
-      (((h.contMDiffOn_normalOrthonormalFrame b j).contMDiffAt
-        (h.isOpen_image.mem_nhds hq)).mdifferentiableAt (by simp))
-      hconstant (normalCoordinateField I M p U v q)
-  simpa only [OrthonormalBasis.normalFrameConnectionCoefficient_apply, real_inner_comm,
-    add_comm] using hskew
+  let hs := h.isLocalFrameOn_normalOrthonormalFrame b
+  rw [h.normalFrameConnectionCoefficient_eq_connectionForm b hs v i j hq,
+    h.normalFrameConnectionCoefficient_eq_connectionForm b hs v j i hq]
+  have hskew := hs.connectionForm_add_connectionForm_swap (by simp) h.isOpen_image
+    (fun y hy ↦ h.orthonormal_normalOrthonormalFrame b hy)
+    (isMetricCompatible_leviCivitaConnection I (M := M)) j i
+  simpa using congrArg (fun A ↦ A q ![normalCoordinateField I M p U v q]) hskew
 
 end IsNormalDomain
 

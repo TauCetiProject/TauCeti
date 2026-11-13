@@ -66,10 +66,10 @@ theorem connectionForm_apply (j l : ι) (x : M) (v : Fin 1 → TangentSpace I x)
 
 variable [IsManifold I 2 M] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle 2 F V I]
-  (hs : IsLocalFrameOn I F 2 s u)
+  (hn : 2 ≤ n)
   (hu : IsOpen u) [ContMDiffCovariantDerivativeOn F 1 cov.toFun u]
 
-include hu in
+include hn hu in
 /-- The connection one-forms of a C¹ connection in a C² local frame are C¹
 at every point of the open frame domain. -/
 theorem contMDiffAt_connectionForm {x : M} (hx : x ∈ u) (j l : ι) :
@@ -90,10 +90,11 @@ theorem contMDiffAt_connectionForm {x : M} (hx : x ∈ u) (j l : ι) :
   have hd : CMDiff[u ∩ e.baseSet] 1
       (T% (fun y ↦ cov (s j) y (e.symmL ℝ y (v 0)))) :=
     ContMDiffOn.clm_bundle_apply
-      ((ContMDiffCovariantDerivativeOn.contMDiff (hs.contMDiffOn j)).mono inter_subset_left)
+      ((ContMDiffCovariantDerivativeOn.contMDiff
+        ((hs.contMDiffOn j).of_le hn)).mono inter_subset_left)
       (hdir.mono inter_subset_right)
   have hc := (hs.mono inter_subset_left).contMDiffOn_coeff
-    (hu.inter e.open_baseSet) one_le_two hd l
+    (hu.inter e.open_baseSet) (one_le_two.trans hn) hd l
   refine (hc.contMDiffAt ((hu.inter e.open_baseSet).mem_nhds ⟨hx, he⟩)).congr_of_eventuallyEq ?_
   filter_upwards [(hu.inter e.open_baseSet).mem_nhds ⟨hx, he⟩] with y hy
   have hy' : y ∈ u ∩ (chartAt H x).source := hy
@@ -104,7 +105,7 @@ theorem contMDiffAt_connectionForm {x : M} (hx : x ∈ u) (j l : ι) :
 
 variable [Fintype ι]
 
-include hu in
+include hn hu in
 /-- **Cartan's second structure equation**, evaluated on C¹ direction fields in
 a C² local frame: `Fˡⱼ = dAˡⱼ + ∑ₘ Aˡₘ ∧ Aᵐⱼ`.
 Section coefficients are columns, and the order of the wedge factors is matrix
@@ -116,11 +117,17 @@ theorem coeff_curvatureOperator_eq_mextDeriv_add_wedge {x : M} (hx : x ∈ u)
       TauCeti.mextDeriv (hs.connectionForm cov j l) x ![X x, Y x] +
         ∑ m, ((hs.connectionForm cov m l).wedge (hs.connectionForm cov j m))
           x ![X x, Y x] := by
+  let hs₂ : IsLocalFrameOn I F 2 s u :=
+    { hs with contMDiffOn := fun i ↦ (hs.contMDiffOn i).of_le hn }
+  -- Lowering regularity changes only proofs, so the frame coefficients are unchanged.
+  have hcoeff (k : ι) : hs₂.coeff k = hs.coeff k := by rfl
+  have hcurv := hs₂.coeff_curvatureOperator hu cov hx hX hY j l
+  simp only [hcoeff] at hcurv
   rw [TauCeti.mextDeriv_apply_one
-    ((hs.contMDiffAt_connectionForm cov hu hx j l).mdifferentiableAt one_ne_zero)
+    ((hs.contMDiffAt_connectionForm cov hn hu hx j l).mdifferentiableAt one_ne_zero)
     ((hX.contMDiffAt (hu.mem_nhds hx)).mdifferentiableAt one_ne_zero)
     ((hY.contMDiffAt (hu.mem_nhds hx)).mdifferentiableAt one_ne_zero),
-    hs.coeff_curvatureOperator hu cov hx hX hY j l]
+    hcurv]
   simp only [TauCeti.RoughForm.wedge_apply_one_one, connectionForm_apply,
     Matrix.cons_val_zero]
   simp only [mul_comm]
