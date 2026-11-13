@@ -13,7 +13,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Polynomial.HermiteInterpolation
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
-import TauCeti.Analysis.PDE.Schrodinger.Planar
+import TauCeti.Analysis.PDE.Schrodinger.Stationary
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
@@ -43,19 +43,21 @@ element with `δα = α η`, `η` of class `C²`, vanishes. That is the vanishin
 `TauCeti.Vortex.eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto`.
 
 **Equality.** At a smooth vortex with the degree-`m` end framing, the kernel
-`gaugeFixedKernel x` has real dimension exactly `2m` (`TauCeti.Vortex.finrank_gaugeFixedKernel`),
-since every entire `H` is the holomorphic part of a kernel element
-(`TauCeti.Vortex.exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul`). Write
+`gaugeFixedKernel x` (`TauCeti.Vortex.gaugeFixedKernel`), of real dimension at most `2m` by
+`TauCeti.Vortex.finrank_gaugeFixedKernel_le`, has real dimension exactly `2m`
+(`TauCeti.Vortex.finrank_gaugeFixedKernel`), since every entire `H` is the holomorphic part of a
+kernel element (`TauCeti.Vortex.exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul`). Write
 `α = e^ν f` with `f` entire (`TauCeti.Vortex.differentiable_exp_neg_mul_sectionValue`). Take a
 cutoff `ρ` equal to one near the finitely many zeros of `α`, and let `y₀` be the compactly
 supported smooth field with section `ρ e^ν H` and connection variation `2 i (∂bar ρ) H / f`. Off
 the zeros of `α` it is the complexified gauge direction of `ρ H / f`
 (`TauCeti.Vortex.complexGaugeDirection`), so the holomorphicity rows of `L_x y₀` vanish, and the
 two remaining rows are a smooth compactly supported defect. The correction is the complexified
-gauge direction of a smooth `h ∈ H²` solving `-Δh + P h = -(defect)` with `P = |α|² / 4`
-(`TauCeti.exists_contDiff_mem_realSobolevFunctions_neg_laplacian_add_mul_eq`). The principal
-parts of `y₀ + complexGaugeDirection x h` are the derivatives of `H`, and these can be prescribed
-arbitrarily by Hermite interpolation (`Polynomial.exists_degree_lt_eval_iterate_derivative_eq`).
+gauge direction of a smooth `h`, with `h` and `∇h` square integrable, solving
+`Δh = P h + (defect)` with `P = |α|² / 4` (`TauCeti.exists_contDiff_laplacian_eq_mul_add`). The
+principal parts of `y₀ + complexGaugeDirection x h` are the derivatives of `H`, and these can be
+prescribed arbitrarily by Hermite interpolation
+(`Polynomial.exists_degree_lt_eval_iterate_derivative_eq`).
 
 These are statements about classical solutions; the Fredholm property of the Sobolev realization
 of `L_x` and the vanishing of its cokernel are not treated here.
@@ -68,7 +70,6 @@ of `L_x` and the vanishing of its cokernel are not treated here.
 * `TauCeti.Vortex.finiteDimensional_of_tendsto_sectionValue_mul_inv_pow` and
   `TauCeti.Vortex.finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow`: the same for a vortex
   framed in degree `m`, with bound `2m`.
-* `TauCeti.Vortex.gaugeFixedKernel`: the `C²` square-integrable kernel of `L_x`.
 * `TauCeti.Vortex.exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul`: every entire
   function is the holomorphic part of a kernel element.
 * `TauCeti.Vortex.finrank_gaugeFixedKernel`: the kernel at a framed degree-`m` vortex has real
@@ -219,28 +220,6 @@ theorem finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow {m : ℕ} (hx : C
       eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto
         (hx.of_le (by norm_num)) hhol (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
         (hV y hy).1.continuous (hV y hy).2.1 (hV y hy).2.2 hη hyη
-
-/-! ### The kernel -/
-
-/-- **The kernel of the gauge-fixed operator.** The real vector space of `C²` square-integrable
-variations `y` with `L_x y = 0` at every point, for the gauge-fixed operator
-`L_x = d₀* ⊕ d₁` (`TauCeti.Vortex.gaugeFixedOperator`). -/
-def gaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
-  carrier := {y | ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0}
-  add_mem' {y v} hy hv := ⟨hy.1.add hv.1, hy.2.1.add hv.2.1, fun z ↦ by
-    rw [gaugeFixedOperator_add x (hy.1.differentiable (by simp) z)
-      (hv.1.differentiable (by simp) z), hy.2.2 z, hv.2.2 z, add_zero]⟩
-  zero_mem' := ⟨contDiff_const, MemLp.zero, fun z ↦ by simp [gaugeFixedOperator_zero]⟩
-  smul_mem' t y hy := ⟨hy.1.const_smul t, hy.2.1.const_smul t, fun z ↦ by
-    rw [gaugeFixedOperator_smul, hy.2.2 z, smul_zero]⟩
-
-/-- Membership in the kernel of the gauge-fixed operator. -/
-@[simp]
-theorem mem_gaugeFixedKernel {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
-    y ∈ gaugeFixedKernel x ↔
-      ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0 :=
-  Iff.rfl
 
 /-! ### A compactly supported seed with prescribed holomorphic part -/
 
@@ -456,42 +435,39 @@ private theorem laplacian_ofReal_add_mul_I {z : ℂ} (hh₁ : ContDiffAt ℝ 2 h
 
 end OfRealAddMulI
 
-/-- The complexified gauge direction of `h₁ + i h₂`, for smooth `h₁`, `h₂ ∈ H²(ℂ)`, at a field with
-continuous section coordinates bounded by one, is square integrable. -/
+/-- The complexified gauge direction of `h₁ + i h₂`, for `C¹` functions `h₁`, `h₂` which are square
+integrable with square-integrable derivatives, at a field with continuous section coordinates
+bounded by one, is square integrable. -/
 private theorem memLp_complexGaugeDirection {h₁ h₂ : ℂ → ℝ} (hx₂ : Continuous fun z ↦ x z 2)
     (hx₃ : Continuous fun z ↦ x z 3) (hxb : ∀ z, ‖x z 2‖ ≤ 1 ∧ ‖x z 3‖ ≤ 1)
-    (hh₁ : ContDiff ℝ ∞ h₁) (hS₁ : h₁ ∈ realSobolevFunctions ℂ 2 2) (hh₂ : ContDiff ℝ ∞ h₂)
-    (hS₂ : h₂ ∈ realSobolevFunctions ℂ 2 2) :
+    (hh₁ : ContDiff ℝ 1 h₁) (hS₁ : MemLp h₁ 2 volume) (hD₁ : MemLp (fderiv ℝ h₁) 2 volume)
+    (hh₂ : ContDiff ℝ 1 h₂) (hS₂ : MemLp h₂ 2 volume) (hD₂ : MemLp (fderiv ℝ h₂) 2 volume) :
     MemLp (complexGaugeDirection x fun z ↦ (h₁ z : ℂ) + h₂ z * I) 2 volume := by
-  have hfd (z v : ℂ) := fderiv_ofReal_add_mul_I_apply ((hh₁.differentiable (by simp)) z)
-    ((hh₂.differentiable (by simp)) z) v
-  -- Classical derivatives of smooth `H²` functions are in `H¹ ⊆ L²`.
-  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) (hS : f ∈ realSobolevFunctions ℂ 2 2) (v : ℂ) :
-      MemLp (fun z ↦ fderiv ℝ f z v) 2 volume := by
-    refine memLp_of_mem_realSobolevFunctions (s := 1) ?_
-    refine fderiv_apply_mem_realSobolevFunctions ENNReal.one_lt_two ENNReal.ofNat_ne_top
-      zero_le_one (hf.of_le (by simp)) ?_ v
-    rwa [one_add_one_eq_two]
-  have hmul (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) (hS : f ∈ realSobolevFunctions ℂ 2 2) {g : ℂ → ℝ}
+  have hfd (z v : ℂ) := fderiv_ofReal_add_mul_I_apply ((hh₁.differentiable one_ne_zero) z)
+    ((hh₂.differentiable one_ne_zero) z) v
+  have hd {f : ℂ → ℝ} (hD : MemLp (fderiv ℝ f) 2 volume) (v : ℂ) :
+      MemLp (fun z ↦ fderiv ℝ f z v) 2 volume :=
+    (ContinuousLinearMap.apply ℝ ℝ v).comp_memLp' hD
+  have hmul {f : ℂ → ℝ} (hf : Continuous f) (hS : MemLp f 2 volume) {g : ℂ → ℝ}
       (hg : Continuous g) (hgb : ∀ z, ‖g z‖ ≤ 1) : MemLp (fun z ↦ f z * g z) 2 volume :=
-    (memLp_of_mem_realSobolevFunctions hS).of_le (hf.continuous.mul hg).aestronglyMeasurable
+    hS.of_le (hf.mul hg).aestronglyMeasurable
       (ae_of_all _ fun z ↦ by
         rw [norm_mul]
         exact mul_le_of_le_one_right (norm_nonneg _) (hgb z))
   refine memLp_piLp_iff.2 fun i ↦ ?_
   fin_cases i
-  · convert ((hd h₂ hh₂ hS₂ 1).neg).sub (hd h₁ hh₁ hS₁ I) using 1
+  · convert ((hd hD₂ 1).neg).sub (hd hD₁ I) using 1
     funext z
     simp [hfd]
-  · convert (hd h₁ hh₁ hS₁ 1).sub (hd h₂ hh₂ hS₂ I) using 1
+  · convert (hd hD₁ 1).sub (hd hD₂ I) using 1
     funext z
     simp [hfd]
-  · convert (hmul h₁ hh₁ hS₁ hx₂ fun z ↦ (hxb z).1).sub
-      (hmul h₂ hh₂ hS₂ hx₃ fun z ↦ (hxb z).2) using 1
+  · convert (hmul hh₁.continuous hS₁ hx₂ fun z ↦ (hxb z).1).sub
+      (hmul hh₂.continuous hS₂ hx₃ fun z ↦ (hxb z).2) using 1
     funext z
     simp
-  · convert (hmul h₁ hh₁ hS₁ hx₃ fun z ↦ (hxb z).2).add
-      (hmul h₂ hh₂ hS₂ hx₂ fun z ↦ (hxb z).1) using 1
+  · convert (hmul hh₁.continuous hS₁ hx₃ fun z ↦ (hxb z).2).add
+      (hmul hh₂.continuous hS₂ hx₂ fun z ↦ (hxb z).1) using 1
     funext z
     simp
 
@@ -597,8 +573,8 @@ theorem exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul (hx : ContDi
   have hy₀c : HasCompactSupport y₀ := hasCompactSupport_seedField b.hasCompactSupport
   have hLi (i : Fin 4) : ContDiff ℝ ∞ fun z ↦ gaugeFixedOperator x y₀ z i :=
     contDiff_euclidean.mp (contDiff_gaugeFixedOperator hx (hy₀.of_le (by simp))) i
-  have hg (i : Fin 4) : MemLp (fun z ↦ -gaugeFixedOperator x y₀ z i) 2 volume := by
-    refine (hLi i).neg.continuous.memLp_of_hasCompactSupport (hy₀c.mono' fun u hu ↦ ?_)
+  have hg (i : Fin 4) : MemLp (fun z ↦ gaugeFixedOperator x y₀ z i) 2 volume := by
+    refine (hLi i).continuous.memLp_of_hasCompactSupport (hy₀c.mono' fun u hu ↦ ?_)
     by_contra h
     apply hu
     simp [gaugeFixedOperator_congr_nhds x (notMem_tsupport_iff_eventuallyEq.1 h),
@@ -608,31 +584,35 @@ theorem exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul (hx : ContDi
   have hP₀ (z : ℂ) : 0 ≤ P z := by positivity
   have hPle (z : ℂ) : 4 * P z ≤ 1 :=
     normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol hlim z
-  have hPb : MemLp P ⊤ volume := memLp_top_potential hx.continuous hlim
   obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 / 8 : ℝ) < 1 / 4)
   have hxb (z : ℂ) : ‖x z 2‖ ≤ 1 ∧ ‖x z 3‖ ≤ 1 := by
     have h4 := hPle z
     simp only [Real.norm_eq_abs, abs_le]
     refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> nlinarith [sq_nonneg (x z 2), sq_nonneg (x z 3)]
-  -- Solve `-Δ h + P h = -(L_x y₀)` in the two gauge-type rows, and correct `y₀` by
+  -- Solve `Δ h = P h + L_x y₀` in the two gauge-type rows, and correct `y₀` by
   -- `complexGaugeDirection x (h₁ + i h₂)`.
-  obtain ⟨h₁, hh₁, hS₁, hE₁⟩ := exists_contDiff_mem_realSobolevFunctions_neg_laplacian_add_mul_eq
-    (((hxi 2).pow 2).add ((hxi 3).pow 2)) hPb hP₀ (by norm_num : (0 : ℝ) < 1 / 8)
-    (fun z hz ↦ (hR z hz).le) (hLi 1).neg (hg 1)
-  obtain ⟨h₂, hh₂, hS₂, hE₂⟩ := exists_contDiff_mem_realSobolevFunctions_neg_laplacian_add_mul_eq
-    (((hxi 2).pow 2).add ((hxi 3).pow 2)) hPb hP₀ (by norm_num : (0 : ℝ) < 1 / 8)
-    (fun z hz ↦ (hR z hz).le) (hLi 0).neg (hg 0)
+  have hPC (z : ℂ) : P z ≤ 1 / 4 := by linarith [hPle z]
+  obtain ⟨h₁, hh₁, hS₁, hD₁, -, hE₁⟩ := exists_contDiff_laplacian_eq_mul_add le_top
+    (((hxi 2).pow 2).add ((hxi 3).pow 2)) hP₀ hPC (by norm_num : (0 : ℝ) < 1 / 8)
+    (fun z hz ↦ (hR z hz).le) (hLi 1) (hg 1)
+  obtain ⟨h₂, hh₂, hS₂, hD₂, -, hE₂⟩ := exists_contDiff_laplacian_eq_mul_add le_top
+    (((hxi 2).pow 2).add ((hxi 3).pow 2)) hP₀ hPC (by norm_num : (0 : ℝ) < 1 / 8)
+    (fun z hz ↦ (hR z hz).le) (hLi 0) (hg 0)
+  replace hh₁ : ContDiff ℝ ∞ h₁ := hh₁.of_le le_self_add
+  replace hh₂ : ContDiff ℝ ∞ h₂ := hh₂.of_le le_self_add
   have hh := contDiff_ofReal_add_mul_I hh₁ hh₂
   obtain ⟨hG, hdec⟩ := sectionValue_add_eq_mul_add_exp_mul hb.continuous hν hH hα hρ₁
     hh.continuous
-  refine ⟨_, ⟨(hy₀.of_le (by simp)).add (contDiff_complexGaugeDirection
+  refine ⟨_, mem_gaugeFixedKernel.2 ⟨(hy₀.of_le (by simp)).add (contDiff_complexGaugeDirection
     ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) (hh.of_le (by simp))),
     (hy₀.continuous.memLp_of_hasCompactSupport hy₀c).add (memLp_complexGaugeDirection
-      (hxi 2).continuous (hxi 3).continuous hxb hh₁ hS₁ hh₂ hS₂),
+      (hxi 2).continuous (hxi 3).continuous hxb (hh₁.of_le (by simp)) hS₁ hD₁ (hh₂.of_le (by simp))
+      hS₂ hD₂),
     fun z ↦ gaugeFixedOperator_add_complexGaugeDirection_eq_zero (hx.of_le (by simp)) (hhol z)
       (hy₀.of_le (by simp)) ⟨gaugeFixedOperator_seedField_eq_zero hx hsol hZ hb hρ₁ hν hH
         hf (by simp) z, gaugeFixedOperator_seedField_eq_zero hx hsol hZ hb hρ₁ hν hH
-        hf (by simp) z⟩ (hh₁.of_le (by simp)) (hh₂.of_le (by simp)) (hE₁ z) (hE₂ z)⟩, _, hG, hdec⟩
+        hf (by simp) z⟩ (hh₁.of_le (by simp)) (hh₂.of_le (by simp)) (by linarith [hE₁ z])
+        (by linarith [hE₂ z])⟩, _, hG, hdec⟩
 
 /-! ### The dimension of the kernel -/
 
@@ -640,7 +620,7 @@ theorem exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul (hx : ContDi
 vortex whose section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Then the space of `C²`
 square-integrable solutions of `L_x y = 0` has real dimension `2 m`, the real dimension of the
 tangent space of the divisor space `Sym^m ℂ`. The upper bound is
-`TauCeti.Vortex.finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow`; for the lower bound, the
+`TauCeti.Vortex.finrank_gaugeFixedKernel_le`; for the lower bound, the
 principal parts of `δα / α` at the zeros of `α` give a surjective real-linear map of this kernel
 onto `ℂ^m`, by `TauCeti.Vortex.exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul`
 applied to Hermite interpolation polynomials. -/
@@ -676,10 +656,8 @@ theorem finrank_gaugeFixedKernel {m : ℕ} (hx : ContDiff ℝ ∞ x) (hsol : ∀
     rw [principalPartMap_apply, principalPart_eq_iteratedDeriv hα hν.continuous hG
       p.differentiable hyG i.2.2, Polynomial.iteratedDeriv]
     exact hpt i
-  have := finiteDimensional_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hhol hframe
-    hker
-  refine le_antisymm (finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow
-    (hx.of_le (by simp)) hhol hframe hker) ?_
+  have := finiteDimensional_gaugeFixedKernel (hx.of_le (by simp)) hhol hframe
+  refine le_antisymm (finrank_gaugeFixedKernel_le (hx.of_le (by simp)) hhol hframe) ?_
   calc 2 * m = Module.finrank ℝ (Multiset.ToType (D : Multiset ℂ) → ℂ) := by
         rw [Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex,
           smul_eq_mul, Finset.card_univ, Multiset.card_coe, Sym.card_coe, mul_comm]
