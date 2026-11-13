@@ -21,8 +21,8 @@ tensors span the symmetric square, and on the exterior side the passage from a f
 alternating map is Mathlib's universal property, an equivalence.
 
 Nothing here is representation theory: this is the dictionary that
-`TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy` runs the invariants of the
-two squares through to reach invariant forms.  The symmetric side is available over a commutative
+`TauCeti.RepresentationTheory.InvariantForm.Squares` runs the invariants of the two squares
+through to reach invariant forms.  The symmetric side is available over a commutative
 semiring, the exterior side over a commutative ring, which is where Mathlib's exterior power lives.
 
 ## Main definitions
