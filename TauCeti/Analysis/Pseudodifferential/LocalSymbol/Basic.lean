@@ -49,6 +49,10 @@ global one. It does extend after multiplication by a cutoff:
 
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 
+Conversely, `TauCeti.LocalSymbol.ofEventuallyEq` builds a local symbol from a function that agrees,
+near every position in `U`, with a symbol on `ℝⁿ`: the estimates of a local symbol only involve
+the coefficient near positions of `U`.
+
 ## References
 
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
@@ -211,7 +215,51 @@ instance : Module ℂ (LocalSymbol U V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → LocalSymbol U V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (AddMonoidHom.mk' coefficient coefficient_add) a s
+
 end Module
+
+section OfEventuallyEq
+
+/-- A function on `ℝⁿ × ℝⁿ` that vanishes at positions outside `U` is a symbol of order `m` on
+`U` as soon as, near every position in `U`, it agrees with a symbol of order `m` on `ℝⁿ`. This is
+how local symbols are built from global ones, for instance after multiplication by a cutoff that
+equals `1` near a position. -/
+def ofEventuallyEq (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ x ∈ U, ∃ s : Symbol n V W m, ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = f (y, η)) :
+    LocalSymbol U V W m where
+  coefficient := f
+  contDiffOn_coefficient := by
+    rintro ⟨x, ξ⟩ ⟨hx, -⟩
+    obtain ⟨s, hs⟩ := h x hx
+    have hsf : s.coefficient =ᶠ[𝓝 (x, ξ)] f :=
+      (continuous_fst.tendsto (x, ξ)).eventually hs |>.mono fun p hp => hp p.2
+    exact (s.contDiff_coefficient.contDiffAt.congr_of_eventuallyEq hsf.symm).contDiffWithinAt
+  coefficient_of_notMem := hf
+  exists_bound K hKU hK α β := by
+    choose! s hs using h
+    obtain ⟨t, -, hKt⟩ := hK.elim_nhds_subcover
+      (fun x => interior {y | ∀ η, (s x).coefficient (y, η) = f (y, η)})
+      fun x hx => interior_mem_nhds.2 (hs x (hKU hx))
+    choose C hC hsC using fun x => (s x).exists_bound K hK α β
+    refine ⟨∑ x ∈ t, C x, Finset.sum_nonneg fun x _ => hC x, fun y hy ξ => ?_⟩
+    obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 (hKt hy)
+    rw [← mixedDeriv_congr_of_eventually (mem_interior_iff_mem_nhds.1 hyx)]
+    exact (hsC x y hy ξ).trans (mul_le_mul_of_nonneg_right
+      (Finset.single_le_sum (fun x _ => hC x) hxt) (by positivity))
+
+@[simp]
+theorem coefficient_ofEventuallyEq (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ x ∈ U, ∃ s : Symbol n V W m, ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = f (y, η)) :
+    (ofEventuallyEq f hf h).coefficient = f :=
+  (rfl)
+
+end OfEventuallyEq
 
 section Restrict
 
@@ -361,6 +409,13 @@ theorem restrict_restrict (h : U' ≤ U) (a : Symbol n V W m) :
 theorem restrict_top (a : Symbol n V W m) : a.restrict ⊤ = restrictTopEquiv a :=
   LocalSymbol.restrict_self (restrictTopEquiv a)
 
+/-- Restricting the local symbol on `⊤` corresponding to a symbol on `ℝⁿ` gives the restriction of
+that symbol. -/
+@[simp]
+theorem restrict_restrictTopEquiv (h : U ≤ ⊤) (a : Symbol n V W m) :
+    LocalSymbol.restrict h (restrictTopEquiv a) = a.restrict U :=
+  (rfl)
+
 theorem restrict_inclusion {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
     (inclusion h a).restrict U = LocalSymbol.inclusion h (a.restrict U) :=
   LocalSymbol.ext_of_mem fun x hx ξ => by simp [hx]
@@ -487,6 +542,16 @@ restriction of the original symbol. -/
 theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
     (a : LocalSymbol U V W m) : (extend ψ hψ hψU a).restrict U' = restrict h a :=
   ext_of_mem fun x hx ξ => by simp [hx, (hψ1 hx).trans (Pi.one_apply x)]
+
+/-- For a cutoff supported in a smaller open set `U' ⊆ U`, extending the restriction to `U'` is
+extending the original symbol. -/
+@[simp]
+theorem extend_restrict (h : U' ≤ U) (hψU' : tsupport ψ ⊆ U') (a : LocalSymbol U V W m) :
+    extend ψ hψ hψU' (restrict h a) = extend ψ hψ (hψU'.trans h) a :=
+  Symbol.ext (funext fun ⟨x, ξ⟩ => by
+    by_cases hx : x ∈ U'
+    · simp [hx]
+    · simp [hx, image_eq_zero_of_notMem_tsupport fun hy => hx (hψU' hy)])
 
 end Extend
 

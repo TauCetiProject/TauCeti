@@ -36,6 +36,10 @@ not belong to any particular application.
   `TauCeti.intervalIntegral.norm_integral_le_abs_of_ae_norm_le`: for such a function
   and measure, the integral between two points of `[a, b]` is bounded by the `L¹(a, b)` norm, and
   by the integral of a function dominating `‖f‖` almost everywhere on `(a, b)`.
+* `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
+  integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
+* `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
+  integrable function is bounded in norm by the integral of its norm over the whole space.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
@@ -201,6 +205,27 @@ theorem MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc {E : Type*}
     IntervalIntegrable f μ s t :=
   ((integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf |>.mono_set
     (uIcc_subset_Icc hs ht)).intervalIntegrable
+
+/-- For `f` integrable on `(a, b)`, `c ∈ [a, b]` and `a ≤ s ≤ t ≤ b`, the integral of `f` over
+`(s, t)` is the difference of the primitives `∫ x in c..t, f x` and `∫ x in c..s, f x` based at
+`c`. -/
+theorem MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℝ → E} {μ : Measure ℝ} [NullSingletonClass μ] {a b c s t : ℝ}
+    (hf : IntegrableOn f (Ioo a b) μ) (hc : c ∈ Icc a b) (has : a ≤ s) (hst : s ≤ t)
+    (htb : t ≤ b) :
+    ∫ x in Ioo s t, f x ∂μ = (∫ x in c..t, f x ∂μ) - ∫ x in c..s, f x ∂μ := by
+  rw [intervalIntegral.integral_interval_sub_left
+      (hf.intervalIntegrable_of_mem_Icc hc ⟨has.trans hst, htb⟩)
+      (hf.intervalIntegrable_of_mem_Icc hc ⟨has, hst.trans htb⟩),
+    intervalIntegral.integral_of_le hst, integral_Ioc_eq_integral_Ioo]
+
+/-- The norm of an interval integral of an integrable function is at most the integral of its
+norm over the whole space. -/
+theorem MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {μ : Measure ℝ} (hf : Integrable f μ)
+    (a b : ℝ) : ‖∫ x in a..b, f x ∂μ‖ ≤ ∫ x, ‖f x‖ ∂μ :=
+  intervalIntegral.norm_integral_le_integral_norm_uIoc.trans
+    (setIntegral_le_integral hf.norm (.of_forall fun _ ↦ norm_nonneg _))
 
 namespace TauCeti.intervalIntegral
 
