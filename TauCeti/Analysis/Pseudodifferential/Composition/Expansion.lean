@@ -365,8 +365,8 @@ private theorem exists_norm_scaledSharp_le (hb : b.HasCompactSpatialSupport)
     {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, |t| ≤ 2 → ∀ x ∈ K, ∀ ξ,
       ‖scaledSharp a b t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
-  obtain ⟨C, hC0, hC⟩ :=
-    hb.exists_norm_integral_sharpIntegrand_le a hK (R := 4 * π) (by linarith [Real.two_le_pi])
+  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_integral_sharpIntegrand_le
+    (a.exists_bound_coefficient K hK) (R := 4 * π) (by linarith [Real.two_le_pi])
   exact ⟨C, hC0, fun t ht ↦ hC _ (abs_mul_two_pi_le ht)⟩
 
 /-- At `t = 1` the family is the composition symbol. -/
@@ -446,8 +446,8 @@ private theorem hasDerivAt_scaledSharp (hb : b.HasCompactSpatialSupport) {t₀ :
     HasDerivAt (fun t ↦ scaledSharp a b t x ξ)
       (∑ j, (-Complex.I) • scaledSharp (frequencyDeriv j a) (spatialDeriv j b) t₀ x ξ) t₀ := by
   choose C _ hC using fun j ↦ (hb.spatialDeriv j).exists_norm_sharpIntegrand_le
-    (frequencyDeriv j a) (isCompact_singleton (x := x)) ((n : ℝ) + 1) (R := 4 * π)
-    (by linarith [Real.two_le_pi])
+    ((frequencyDeriv j a).exists_bound_coefficient _ (isCompact_singleton (x := x)))
+    ((n : ℝ) + 1) (R := 4 * π) (by linarith [Real.two_le_pi])
   have hball : ∀ t ∈ Metric.ball t₀ 1, |t * (2 * π)| ≤ 4 * π := fun t ht ↦ by
     rw [Metric.mem_ball, Real.dist_eq] at ht
     have := abs_sub_abs_le_abs_sub t t₀
@@ -640,7 +640,8 @@ private theorem exists_bound_remainderSymbol [CompleteSpace W] [CompleteSpace U]
       rw [← coefficient_spatialDeriv, spatialDeriv_remainderSymbol, coefficient_add, Pi.add_apply])
     (fun a _ hb j x ξ ↦ by
       rw [← coefficient_frequencyDeriv, coefficient_frequencyDeriv_remainderSymbol, Pi.add_apply])
-    (fun _ _ hb _ hK ↦ exists_norm_coefficient_remainderSymbol_le hb N hK) a hb α β hK
+    (fun _ ↦ True) (fun _ _ _ ↦ trivial) (fun _ _ _ ↦ trivial)
+    (fun _ _ hb _ ↦ exists_norm_coefficient_remainderSymbol_le hb N hK) a trivial hb α β
 
 variable [CompleteSpace W] [CompleteSpace U]
 
