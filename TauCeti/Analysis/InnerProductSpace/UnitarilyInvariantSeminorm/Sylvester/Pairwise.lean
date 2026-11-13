@@ -96,8 +96,8 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 written through the functional calculi of symmetric `A` and `B`: with `A eᵢ = αᵢ eᵢ` and
 `B fⱼ = βⱼ fⱼ`, the sum `∑ₗ (⟪sin (τA) uₗ, C cos (τB) vₗ⟫ + ⟪cos (τA) uₗ, C (-sin (τB)) vₗ⟫)` is
 `∑ₗ ∑ᵢ ∑ⱼ ⟪uₗ, eᵢ⟫ ⟪eᵢ, C fⱼ⟫ ⟪fⱼ, vₗ⟫ sin ((αᵢ - βⱼ) τ)`. -/
-private theorem sum_inner_cfc_add_inner_cfc {n m p : ℕ} {A : E →ₗ[𝕜] E} {B : F →ₗ[𝕜] F}
-    (hA : A.IsSymmetric) (hB : B.IsSymmetric) (hn : finrank 𝕜 E = n) (hm : finrank 𝕜 F = m)
+private theorem sum_inner_cfc_add_inner_cfc {n m p : ℕ} {S : E →ₗ[𝕜] E} {T : F →ₗ[𝕜] F}
+    (hA : S.IsSymmetric) (hB : T.IsSymmetric) (hn : finrank 𝕜 E = n) (hm : finrank 𝕜 F = m)
     (C : F →ₗ[𝕜] E) (u : Fin p → E) (v : Fin p → F) (τ : ℝ) :
     ∑ l, (⟪hA.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
         C (hB.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
@@ -124,8 +124,8 @@ private theorem sum_inner_cfc_add_inner_cfc {n m p : ℕ} {A : E →ₗ[𝕜] E}
 
 /-- The phase-twisted coefficient sums of `C : F →ₗ[𝕜] E` against orthonormal families of `p`
 vectors are bounded by the Ky Fan `p`-sum of `C`, since `sin² + cos² = 1`. -/
-private theorem norm_sum_inner_cfc_add_inner_cfc_le_kyFanSum {p : ℕ} {A : E →ₗ[𝕜] E}
-    {B : F →ₗ[𝕜] F} (hA : A.IsSymmetric) (hB : B.IsSymmetric) (C : F →ₗ[𝕜] E) {u : Fin p → E}
+private theorem norm_sum_inner_cfc_add_inner_cfc_le_kyFanSum {p : ℕ} {S : E →ₗ[𝕜] E}
+    {T : F →ₗ[𝕜] F} (hA : S.IsSymmetric) (hB : T.IsSymmetric) (C : F →ₗ[𝕜] E) {u : Fin p → E}
     {v : Fin p → F} (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) (τ : ℝ) :
     ‖∑ l, (⟪hA.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
         C (hB.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
