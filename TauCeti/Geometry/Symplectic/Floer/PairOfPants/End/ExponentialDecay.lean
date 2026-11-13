@@ -13,19 +13,27 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence
 
 Let `K` be a Hamiltonian perturbation on the pair of pants `S = ℂ ∖ {0, 1}` with values in a
 symplectic vector space `(V, ω)`, equal to `H_q(t) dt` beyond some height `T₀` on each end `q`,
-and let `u` be a finite-energy solution of the Floer equation `(du - X_K)^{0,1} = 0` on `S` with
-image in a compact set `B` in which every one-periodic orbit of `H_q` is nondegenerate. By
+for one-periodic `C³` Hamiltonians `H_q` whose suspended Hamiltonian vector fields are globally
+Lipschitz. Let `u` be a `C³` finite-energy solution of the Floer equation
+`(du - X_K)^{0,1} = 0` on `S` with image in a compact set `B` in which every one-periodic orbit of
+`H_q` is nondegenerate. Suppose that on each end beyond `T₀` the almost complex structure is
+cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`, for a one-periodic family `J_q(t, x)` which
+is `C²` on an open neighbourhood of `ℝ × B` and tamed by `ω` on `ℝ × B`. By
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence` each end loop
-`t ↦ u(φ_q(±s, t))` converges uniformly to a one-periodic orbit `y_q` of `H_q` as `s → ∞`. This
-file shows that the convergence is exponentially fast: there are `κ > 0` and `C` with
+`t ↦ u(φ_q(±s, t))` then converges uniformly to a one-periodic orbit `y_q` of `H_q` as `s → ∞`.
+This file shows that the convergence is exponentially fast: there are `κ > 0` and `C` with
 
 `‖u(φ_q(±s, t)) - y_q(t)‖ ≤ C exp (-κ s)`
 
-for all large `s` and all `t`. Exponential convergence of `u - y_q` on each end is one of the
-asymptotic conditions under which a pair of pants with nondegenerate ends lies in the exponentially
-weighted function spaces of the linearized Floer operator, and under which its ends can be
-pre-glued to Floer cylinders. Exponential decay of the derivatives of `u` along the ends is not
-treated here.
+for all large `s` and all `t`. Without the cylindrical assumption, the same estimate holds on an
+end that is already known to converge uniformly to a nondegenerate orbit, given only `C²`
+regularity of `H_q` and `u` (keeping the Lipschitz assumption), a bound on the `s`-derivative of
+`u` in the positive end chart and uniform taming constants on a half-cylinder of that end.
+
+Exponential convergence of `u - y_q` on each end is one of the asymptotic conditions under which a
+pair of pants with nondegenerate ends lies in the exponentially weighted function spaces of the
+linearized Floer operator, and under which its ends can be pre-glued to Floer cylinders.
+Exponential decay of the derivatives of `u` along the ends is not treated here.
 
 **Nondegeneracy in the positive end chart.** In the positive end chart `φ'_q` the end is a Floer
 half-cylinder for the Hamiltonian `H'_q(t, x) = ±H_q(±t, x)`
@@ -41,7 +49,7 @@ point of the time-one map of `H_q` therefore gives the hypothesis
 
 * `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp_endChart_of_floer`: an end that
   converges uniformly to a nondegenerate orbit converges exponentially fast, under a bound on the
-  derivative of `u ∘ φ'_q` and uniform taming constants on a half-cylinder of the end.
+  `s`-derivative of `u ∘ φ'_q` and uniform taming constants on a half-cylinder of the end.
 * `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp_endChart_of_cylindrical`: when the
   almost complex structure is cylindrical on the end and all orbits in `B` are nondegenerate, the
   end converges exponentially fast to an orbit, with no bounds assumed.
@@ -131,7 +139,7 @@ theorem eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self {q : Pun
 be equal to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C²` Hamiltonians `H_q`, and
 let `u` be `C²` on `S`, solving the Floer equation `(du - X_K)^{0,1} = 0` on `S` with finite energy.
 Fix an end `q`, and suppose that on some half-cylinder `s > b` of the positive end chart `φ'_q` the
-derivative of `u ∘ φ'_q` is bounded and the almost complex structures are uniformly tame,
+`s`-derivative `∂_s(u ∘ φ'_q)` is bounded and the almost complex structures are uniformly tame,
 `c ‖v‖² ≤ ω(v, J v)` and `‖J v‖ ≤ M ‖v‖`. Suppose that the loops `t ↦ u(φ_q(±s, t))` converge
 uniformly, as `s → ∞`, to a `1`-periodic orbit `y` of `H_q` which is nondegenerate: the suspension
 of the Hamiltonian vector field of `H_q` is globally Lipschitz and `y(0)` is a nondegenerate fixed
@@ -153,7 +161,7 @@ theorem exists_pos_eventually_norm_sub_le_exp_endChart_of_floer
     (hyper : Periodic y 1) (hy : ∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (H q) hL 0 1) (y 0))
     (hconv : TendstoUniformly (fun s t ↦ u (endChart q (q.endSign * s, t))) y atTop)
-    {b C : ℝ} (hC : ∀ z : ℝ × ℝ, b < z.1 → ‖fderiv ℝ (u ∘ positiveEndChart q) z‖ ≤ C)
+    {b C : ℝ} (hC : ∀ z : ℝ × ℝ, b < z.1 → ‖fderiv ℝ (u ∘ positiveEndChart q) z (1, 0)‖ ≤ C)
     (hc : 0 < c)
     (hJc : ∀ z : ℝ × ℝ, b < z.1 → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (positiveEndChart q z) v))
     (hJM : ∀ z : ℝ × ℝ, b < z.1 → ∀ v, ‖J (positiveEndChart q z) v‖ ≤ M * ‖v‖) :
@@ -189,8 +197,7 @@ theorem exists_pos_eventually_norm_sub_le_exp_endChart_of_floer
       (hfloer _ (hmem z hz.1)))
     (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
       (hu.differentiableOn two_ne_zero) q ha₀ haT))
-    (fun z hz ↦ ((fderiv ℝ (u ∘ positiveEndChart q) z).le_opNorm _).trans <| by
-      simpa using hC z (hab z hz.1))
+    (fun z hz ↦ hC z (hab z hz.1))
     (periodic_comp_endSign_mul hyper) (hasDerivAt_comp_endSign_mul_positiveEndHamiltonian hy)
     (fun v hv ↦ eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self hL (hHs q) (hH q)
       hy hyper hnd hv) hux
@@ -270,7 +277,9 @@ theorem exists_pos_eventually_norm_sub_le_exp_endChart_of_cylindrical
     exact positiveEndChart_mem_thricePuncturedSphereReal hs
   exact ⟨y, hyper, hy, exists_pos_eventually_norm_sub_le_exp_endChart_of_floer hKH hH
     (fun q ↦ (hHs q).of_le (by norm_num)) (hu.of_le (by norm_num)) hfloer hE q hL hyper hy
-    (hnd y hyper hy hyB) hconv (fun z hz ↦ hC z hz.le) hc
+    (hnd y hyper hy hyB) hconv
+    (fun z hz ↦ ((fderiv ℝ (u ∘ positiveEndChart q) z).le_opNorm _).trans <| by
+      simpa using hC z hz.le) hc
     (fun z hz v ↦ by rw [(hJb z hz).1]; exact (hcM _ _ (hJb z hz).2 v).1)
     fun z hz v ↦ by rw [(hJb z hz).1]; exact (hcM _ _ (hJb z hz).2 v).2⟩
 
