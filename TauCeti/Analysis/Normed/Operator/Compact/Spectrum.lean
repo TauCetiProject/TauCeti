@@ -47,7 +47,7 @@ private theorem exists_eigenvector_span_chain (μ : ℕ → 𝕜) (hinj : Functi
   have hmono : Monotone V := fun _ _ h ↦ span_mono (Set.image_mono (Set.Iio_subset_Iio h))
   have hclosed (n : ℕ) : IsClosed (V n : Set E) := by
     have := FiniteDimensional.span_of_finite 𝕜 ((Set.finite_Iio n).image v)
-    exact (V n).closed_of_finiteDimensional
+    exact (V n).isClosed_of_finiteDimensional
   have hstrict (n : ℕ) : V n < V (n + 1) := by
     refine (hmono (Nat.le_succ n)).lt_of_ne ?_
     intro heq

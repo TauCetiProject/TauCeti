@@ -67,11 +67,10 @@ about indices outside the chain, since finite type passes to principal submatric
 ## References
 
 This file supplies the "at most one multiple edge" step of the classification of finite-type Cartan
-matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, step (5), and
-Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4. The two affine diagrams and their
-labels are Table Aff 2 of V. G. Kac, *Infinite Dimensional Lie Algebras*, CUP (1990), whose
-convention `aᵢⱼ = ⟨αⱼ, αᵢ^∨⟩` is the transpose of the one used here.
+matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, step
+(5), and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4. The two affine diagrams
+and their labels are Table Aff 2 of V. G. Kac, *Infinite Dimensional Lie Algebras*, CUP (1990),
+whose convention `aᵢⱼ = ⟨αⱼ, αᵢ^∨⟩` is the transpose of the one used here.
 -/
 
 public section

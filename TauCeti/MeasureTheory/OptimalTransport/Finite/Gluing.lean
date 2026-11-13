@@ -23,9 +23,9 @@ the marginals; making it visible is important when the finite law is later obtai
 an arbitrary probability carrier.
 
 The construction is deliberately at the `PMF` level.  It is not a second measure-level gluing
-theorem: `TauCeti.MeasureTheory.exists_glue_of_countable_middle` already provides that result.
-This finite API records the actual matrix calculation that the arbitrary-carrier triangle proof
-will consume.
+theorem: `TauCeti.MeasureTheory.exists_glue_of_countable_middle` already provides that result,
+and the triangle inequality for graphon cut distance, `TauCeti.DenseGraphLimits.cutDist_triangle`,
+is proved with it.  This finite API records the explicit matrix calculation.
 
 ## Main definitions
 
@@ -42,8 +42,6 @@ will consume.
 
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Lemma 6.5.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 design-validation milestone
-  preceding `cutDist_triangle`: finite coupling gluing with zero-mass middle atoms explicit.
 -/
 
 public section

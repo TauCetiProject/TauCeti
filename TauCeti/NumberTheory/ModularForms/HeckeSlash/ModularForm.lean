@@ -14,8 +14,8 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Independence
 # The slash sum descends to modular forms and to cusp forms
 
 `Form.lean` bundles the double coset as an endomorphism of
-`SlashInvariantForm (G.map (mapGL ℝ)) k`, and flags that this is *not* the roadmap's Layer 2(b)
-target because holomorphy and the cusp conditions are not yet carried along. This file supplies
+`SlashInvariantForm (G.map (mapGL ℝ)) k`, and flags that this is *not* yet a Hecke operator on
+modular forms because holomorphy and the cusp conditions are not carried along. This file supplies
 exactly that: the two remaining structure fields.
 
 Invariance comes from `heckeSlashEnd`, holomorphy from `mdifferentiable_heckeSlashSum`, and
@@ -32,12 +32,11 @@ bundling is what lets them compose and later carry a ring structure.
 
 `G` is any subgroup of `SL(2, ℤ)` whose image `G.map (mapGL ℝ)` is arithmetic — the hypothesis
 the two cusp lemmas need, and one `(Gamma1 N).map (mapGL ℝ)` carries through
-`CongruenceSubgroup.instFiniteIndexGamma1` once `N ≠ 0`. **This is the roadmap's Layer 2(b)
-statement**: at `G = Γ₁(N)` and `Δ = Δ₀(N)` the endomorphisms below are the Hecke operators of a
-double coset acting on `M_k(Γ₁(N))` and on `S_k(Γ₁(N))`, for an arbitrary double coset of the
-Hecke triple, with no divisibility condition relating the level and the determinant. The
-`q`-expansion recurrences that identify particular cosets with the classical `Tₙ` are separate
-statements and are not proved here.
+`CongruenceSubgroup.instFiniteIndexGamma1` once `N ≠ 0`. At `G = Γ₁(N)` and `Δ = Δ₀(N)` the
+endomorphisms below are the Hecke operators of a double coset acting on `M_k(Γ₁(N))` and on
+`S_k(Γ₁(N))`, for an arbitrary double coset of the Hecke triple, with no divisibility condition
+relating the level and the determinant. The `q`-expansion recurrences that identify particular
+cosets with the classical `Tₙ` are separate statements and are not proved here.
 
 ## Main definitions
 
@@ -123,7 +122,7 @@ private lemma coe_heckeSlashCuspForm (f : CuspForm (G.map (mapGL ℝ)) k) :
 
 /-- **The double coset as a `ℂ`-linear endomorphism of `ModularForm (G.map (mapGL ℝ)) k`.** This
 is the form Hecke operators are consumed in: bundling is what lets them compose and later carry a
-ring structure. At `G = Γ₁(N)` this is the roadmap's Layer 2(b) operator. -/
+ring structure. At `G = Γ₁(N)` this is the Hecke operator of a double coset on `M_k(Γ₁(N))`. -/
 noncomputable def heckeSlashModularFormEnd :
     Module.End ℂ (ModularForm (G.map (mapGL ℝ)) k) where
   toFun := heckeSlashModularForm k D hD
