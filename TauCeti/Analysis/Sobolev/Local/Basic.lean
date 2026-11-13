@@ -37,7 +37,8 @@ supported in the domain), composition of local `Lᵖ` operator families with con
 pairing, pointwise product maps of operator fields, decreasing the integrability exponent, and
 decreasing the derivative order. On an open set, local `Lᵖ` membership is detected on the open
 subsets with compact closure inside it.
-Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension.
+Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension,
+and smooth maps on the whole plane are in every class on every set.
 Conversely, if `g` is `Cᵏ` on an open set `Ω` and agrees almost everywhere there with
 `u ∈ MemWkpLoc p Ω (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
 (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`, for `k ≥ 1`) and
@@ -543,6 +544,12 @@ theorem _root_.ContDiffOn.memWkpLoc [CompleteSpace F]
       hf.fderiv_of_isOpen Ω.isOpen (by simp)
     refine ⟨(hf.continuousOn.mono hU).memLpLoc, fderiv ℝ f, ?_, ih hD⟩
     exact (hf.of_le (by simp)).hasWeakFDerivOn_fderiv.mono (interior_subset.trans hU)
+
+/-- A `Cᵏ` map on the whole plane is in the local class `W^{k,p}` on every set, for every
+exponent. -/
+theorem _root_.ContDiff.memWkpLoc [CompleteSpace F] (hf : ContDiff ℝ k f) :
+    MemWkpLoc p U k f :=
+  hf.contDiffOn.memWkpLoc (Ω := ⊤) ((Set.subset_univ U).trans_eq Opens.coe_top.symm)
 
 /-! ### Bounds for chains of weak derivatives -/
 
