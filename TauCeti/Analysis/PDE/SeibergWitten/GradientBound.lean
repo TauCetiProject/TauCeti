@@ -116,15 +116,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {A F : Type*} [NormedAddCommGroup A] [NormedAddCommGroup F]
   {α : M → A} {Dα : M → F} {r K₁ K₂ : ℝ}
 
-/-- **Taubes's gradient bound at a maximum point.** Suppose `|α|²` and `x = |∇_a α|²` are `C²`
-and satisfy the projected Weitzenböck inequality
+/-- **Taubes's gradient bound at a maximum point.** Suppose that at a point `x₀` the functions
+`|α|²` and `x = |∇_a α|²` are `C²` and satisfy the projected Weitzenböck inequality
 `-Δ|α|² / 2 + |∇_a α|² - (r / 4)(1 - |α|²)|α|² ≤ K₁` and the bound
-`-K₂ r (|∇_a α|² + 1) ≤ Δ|∇_a α|² / 2`. At a local maximum `x₀` of `|∇_a α|² + (K₂ + 1) r |α|²`
-where `(K₂ + 1) r (1 - |α|²) ≤ |∇_a α|²`, the gradient is bounded independently of `r`:
-`|∇_a α(x₀)|² ≤ 4 (K₁ + K₂ + K₁ K₂) / 3`. -/
-theorem norm_sq_le_of_isLocalMax (hr : 0 < r) (hK₂ : 0 ≤ K₂)
-    (hα : ContMDiff I 𝓘(ℝ) 2 fun y ↦ ‖α y‖ ^ 2) (hDα : ContMDiff I 𝓘(ℝ) 2 fun y ↦ ‖Dα y‖ ^ 2)
-    {x₀ : M}
+`-K₂ r (|∇_a α|² + 1) ≤ Δ|∇_a α|² / 2`. If `x₀` is a local maximum of
+`|∇_a α|² + (K₂ + 1) r |α|²` where `(K₂ + 1) r (1 - |α|²) ≤ |∇_a α|²`, the gradient is bounded
+independently of `r`: `|∇_a α(x₀)|² ≤ 4 (K₁ + K₂ + K₁ K₂) / 3`. -/
+theorem norm_sq_le_of_isLocalMax (hr : 0 < r) (hK₂ : 0 ≤ K₂) {x₀ : M}
+    (hα : ContMDiffAt I 𝓘(ℝ) 2 (fun y ↦ ‖α y‖ ^ 2) x₀)
+    (hDα : ContMDiffAt I 𝓘(ℝ) 2 (fun y ↦ ‖Dα y‖ ^ 2) x₀)
     (hW : -(Manifold.laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x₀ / 2) + ‖Dα x₀‖ ^ 2 -
       r / 4 * (1 - ‖α x₀‖ ^ 2) * ‖α x₀‖ ^ 2 ≤ K₁)
     (hB : -(K₂ * r * (‖Dα x₀‖ ^ 2 + 1)) ≤
@@ -132,11 +132,11 @@ theorem norm_sq_le_of_isLocalMax (hr : 0 < r) (hK₂ : 0 ≤ K₂)
     (hmax : IsLocalMax (fun y ↦ ‖Dα y‖ ^ 2 + (K₂ + 1) * r * ‖α y‖ ^ 2) x₀)
     (hf : (K₂ + 1) * r * (1 - ‖α x₀‖ ^ 2) ≤ ‖Dα x₀‖ ^ 2) :
     ‖Dα x₀‖ ^ 2 ≤ 4 / 3 * (K₁ + K₂ + K₁ * K₂) := by
-  have hcα : ContMDiff I 𝓘(ℝ) 2 (((K₂ + 1) * r) • fun y ↦ ‖α y‖ ^ 2) := by
-    simpa only [Pi.smul_def, smul_eq_mul, Pi.mul_def] using contMDiff_const.mul hα
-  have hΔ := Manifold.laplaceBeltrami_nonpos_of_isLocalMax (hDα.add hcα).contMDiffAt hmax
-  rw [Manifold.laplaceBeltrami_add I hDα hcα,
-    Manifold.laplaceBeltrami_smul I _ hα] at hΔ
+  have hcα : ContMDiffAt I 𝓘(ℝ) 2 (((K₂ + 1) * r) • fun y ↦ ‖α y‖ ^ 2) x₀ := by
+    simpa only [Pi.smul_def, smul_eq_mul, Pi.mul_def] using contMDiffAt_const.mul hα
+  have hΔ := Manifold.laplaceBeltrami_nonpos_of_isLocalMax (hDα.add hcα) hmax
+  rw [Manifold.laplaceBeltrami_add_of_contMDiffAt I hDα hcα,
+    Manifold.laplaceBeltrami_smul_of_contMDiffAt I _ hα] at hΔ
   exact le_of_add_mul_nonpos (by positivity) (by positivity) hr hK₂ hW hB hΔ hf
 
 /-- **Taubes's pointwise gradient bound** `|∇_a α|² ≤ C r w₊ + C`, with `w₊ = max (1 - |α|²) 0`.
@@ -172,7 +172,7 @@ theorem norm_sq_le_mul_max_one_sub_add [CompactSpace M] {K₃ : ℝ} (hr : 0 < r
   have hK : 0 ≤ 4 / 3 * (K₁ + K₂ + K₁ * K₂) + (K₂ + 1) * K₃ := by positivity
   rcases le_or_gt ((K₂ + 1) * r * (1 - ‖α x₀‖ ^ 2)) (‖Dα x₀‖ ^ 2) with hf | hf
   · -- At a maximum where `f ≥ 0`, the gradient is bounded independently of `r`.
-    have hx := norm_sq_le_of_isLocalMax hr hK₂ hα hDα (hW x₀) (hB x₀)
+    have hx := norm_sq_le_of_isLocalMax hr hK₂ (hα x₀) (hDα x₀) (hW x₀) (hB x₀)
       (hx₀.isLocalMax Filter.univ_mem) hf
     linarith
   · -- Otherwise `f < 0` at its maximum, hence everywhere.
