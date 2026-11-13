@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
@@ -530,15 +531,6 @@ section Weight
 variable {a : E × E → V →L[ℂ] W} {x : E} {C C' m m' : ℝ}
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The line derivative in the direction `v` of the phase `ζ ↦ 𝐞 ⟪ζ, x⟫` is
-`2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫`. This is Mathlib's derivative of `ζ ↦ 𝐞 (-L x ζ)` with `L = -innerSL ℝ`. -/
-private lemma hasLineDerivAt_fourierChar_inner (x v ζ : E) :
-    HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, x⟫ : ℂ)) ((2 * π * Complex.I * ⟪v, x⟫) * 𝐞 ⟪ζ, x⟫) ζ v := by
-  convert (hasFDerivAt_fourierChar_neg_bilinear_right (-innerSL ℝ) x ζ).hasLineDerivAt v
-    using 1 <;> simp [innerSL_apply_apply ℝ, real_inner_comm x]
-  ring
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The line derivative in the direction `v` of the frequency-side integrand
 `ζ ↦ a(x, 2πζ) (f ζ)`. -/
 private lemma hasLineDerivAt_apply (ha : ContDiff ℝ 1 fun ξ ↦ a (x, ξ)) (f : 𝓢(E, V)) (v ζ : E) :
@@ -585,7 +577,7 @@ private lemma integral_by_parts_quantizeSchwartzValue (ha : ContDiff ℝ 1 fun �
     (((hint₁.smul (2 * π)).add hint₂).congr (ae_of_all _ fun ζ ↦ by
       simp [Circle.smul_def, smul_add, smul_comm (2 * π)]))
     (hint.congr (ae_of_all _ fun ζ ↦ by simp [Circle.smul_def]))
-    (fun ζ _ ↦ hasLineDerivAt_fourierChar_inner x v ζ)
+    (fun ζ _ ↦ Real.hasLineDerivAt_fourierChar_inner x v ζ)
     (fun ζ _ ↦ hasLineDerivAt_apply ha (𝓕 u) v ζ)
   have h₁ : ∫ ζ, ContinuousLinearMap.lsmul ℝ ℂ (𝐞 ⟪ζ, x⟫ : ℂ)
       ((2 * π) • a' (x, (2 * π) • ζ) (𝓕 u ζ) + a (x, (2 * π) • ζ) (∂_{v} (𝓕 u) ζ)) =
