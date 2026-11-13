@@ -54,8 +54,8 @@ target, which lets one chart serve all nearby points. The converse is Hadamard's
 * `TauCeti.differentialOperators_apply_eq_of_eventuallyEq`,
   `TauCeti.tsupport_apply_subset_of_mem_differentialOperators`: differential operators are local,
   so they do not enlarge supports.
-* `TauCeti.eq_of_forall_hasCompactSupport_apply_eq`: on a boundaryless manifold, a differential
-  operator is determined by its values on compactly supported functions.
+* `TauCeti.differentialOperators_eq_of_forall_hasCompactSupport_apply_eq`: a differential operator
+  is determined by its values on compactly supported functions.
 
 ## References
 
@@ -197,42 +197,65 @@ theorem differentialOperators_apply_eq_of_iteratedFDeriv_eq {m : ℕ}
     Pi.sub_apply, sub_eq_zero] at h
   exact h
 
-/-- **Differential operators are local.** At an interior point `x`, a differential operator on
-`C^∞(M)` takes the same value at `x` on two smooth functions that agree near `x`. -/
+/-- **Differential operators are local.** A differential operator on `C^∞(M)` takes the same value
+at `x` on two smooth functions that agree near `x`. This holds at boundary points as well. -/
 theorem differentialOperators_apply_eq_of_eventuallyEq {m : ℕ}
     {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
     (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
-    (hx : I.IsInteriorPoint x) {f g : C^∞⟮I, M; ℝ⟯} (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) :
+    {f g : C^∞⟮I, M; ℝ⟯} (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) :
     D f x = D g x := by
-  have h := (continuousAt_extChartAt_symm (I := I) x).tendsto
-  rw [extChartAt_to_inv] at h
-  exact differentialOperators_apply_eq_of_iteratedFDeriv_eq hD hx fun k _ ↦
-    ((hfg.comp_tendsto h).iteratedFDeriv ℝ k).eq_of_nhds
+  -- Take a bump function `χ` at `x` supported where `f = g`. Then `1 - χ` vanishes at `x` and
+  -- `(1 - χ) * (f - g) = f - g`, so `f - g = (1 - χ) ^ (m + 1) * (f - g)` lies in `I_x ^ (m + 1)`.
+  obtain ⟨χ, -, hχ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp hfg
+  let φ : C^∞⟮I, M; ℝ⟯ := ⟨χ, χ.contMDiff⟩
+  have hφ : 1 - φ ∈ smoothVanishingIdeal I x := by
+    rw [mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub, ContMDiffMap.coe_one,
+      ContMDiffMap.coeFn_mk, Pi.sub_apply, Pi.one_apply, χ.eq_one, sub_self]
+  have hφfg : (1 - φ) * (f - g) = f - g := by
+    ext y
+    rw [ContMDiffMap.coe_mul, ContMDiffMap.coe_sub, ContMDiffMap.coe_one, ContMDiffMap.coeFn_mk,
+      ContMDiffMap.coe_sub, Pi.mul_apply, Pi.sub_apply, Pi.sub_apply, Pi.one_apply]
+    by_cases hy : χ y = 0
+    · rw [hy, sub_zero, one_mul]
+    · rw [show f y = g y from hχ (subset_tsupport _ hy), sub_self, mul_zero]
+  have hpow : ∀ n : ℕ, (1 - φ) ^ n * (f - g) = f - g := fun n ↦ by
+    induction n with
+    | zero => rw [pow_zero, one_mul]
+    | succ n ih => rw [pow_succ, mul_assoc, hφfg, ih]
+  have hmem : f - g ∈ smoothVanishingIdeal I x ^ (m + 1) :=
+    hpow (m + 1) ▸ Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hφ _)
+  have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)
+    (x := f - g) (by simpa using hmem)
+  rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
+    Pi.sub_apply, sub_eq_zero] at h
+  exact h
 
-/-- A differential operator on `C^∞(M)` does not enlarge supports: on a boundaryless manifold,
-`tsupport (D f) ⊆ tsupport f`. -/
-theorem tsupport_apply_subset_of_mem_differentialOperators [BoundarylessManifold I M] {m : ℕ}
+/-- A differential operator on `C^∞(M)` does not enlarge supports: `tsupport (D f) ⊆ tsupport f`.
+-/
+theorem tsupport_apply_subset_of_mem_differentialOperators {m : ℕ}
     {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
     (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (f : C^∞⟮I, M; ℝ⟯) : tsupport (D f) ⊆ tsupport f := by
   refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
   by_contra hxf
   refine hx ?_
-  simpa using differentialOperators_apply_eq_of_eventuallyEq hD
-    BoundarylessManifold.isInteriorPoint (g := 0) (notMem_tsupport_iff_eventuallyEq.mp hxf)
+  have hf0 : (f : M → ℝ) =ᶠ[𝓝 x] (0 : C^∞⟮I, M; ℝ⟯) := by
+    rw [ContMDiffMap.coe_zero]
+    exact notMem_tsupport_iff_eventuallyEq.mp hxf
+  rw [differentialOperators_apply_eq_of_eventuallyEq hD hf0, map_zero, ContMDiffMap.coe_zero,
+    Pi.zero_apply]
 
 /-- A differential operator on `C^∞(M)` maps compactly supported functions to compactly
-supported functions, on a boundaryless manifold. -/
-theorem hasCompactSupport_apply_of_mem_differentialOperators [BoundarylessManifold I M] {m : ℕ}
+supported functions. -/
+theorem hasCompactSupport_apply_of_mem_differentialOperators {m : ℕ}
     {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
     (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     {f : C^∞⟮I, M; ℝ⟯} (hf : HasCompactSupport f) : HasCompactSupport (D f) :=
   hf.mono' ((subset_tsupport _).trans (tsupport_apply_subset_of_mem_differentialOperators hD f))
 
 /-- A differential operator on `C^∞(M)` is determined by its values on compactly supported
-functions, on a boundaryless manifold: two differential operators agreeing there are equal, since
-they are local. -/
-theorem eq_of_forall_hasCompactSupport_apply_eq [BoundarylessManifold I M] {m₁ m₂ : ℕ}
+functions: two differential operators agreeing there are equal, since they are local. -/
+theorem differentialOperators_eq_of_forall_hasCompactSupport_apply_eq {m₁ m₂ : ℕ}
     {D₁ D₂ : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
     (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m₁)
     (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m₂)
@@ -247,8 +270,7 @@ theorem eq_of_forall_hasCompactSupport_apply_eq [BoundarylessManifold I M] {m₁
   have hφgc : HasCompactSupport (φ * g : C^∞⟮I, M; ℝ⟯) := by
     rw [ContMDiffMap.coe_mul, ContMDiffMap.coeFn_mk]
     exact χ.hasCompactSupport.mul_right
-  rw [← differentialOperators_apply_eq_of_eventuallyEq hD₁ BoundarylessManifold.isInteriorPoint hφg,
-    ← differentialOperators_apply_eq_of_eventuallyEq hD₂ BoundarylessManifold.isInteriorPoint hφg,
-    h _ hφgc]
+  rw [← differentialOperators_apply_eq_of_eventuallyEq hD₁ hφg,
+    ← differentialOperators_apply_eq_of_eventuallyEq hD₂ hφg, h _ hφgc]
 
 end TauCeti
