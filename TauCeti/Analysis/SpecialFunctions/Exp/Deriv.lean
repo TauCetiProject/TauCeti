@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.ContDiff.Basic
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Derivatives of exponential functions
@@ -30,6 +32,9 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
   has norm `‖exp z‖`.
 * `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
   `n`-th derivative of `x ↦ exp (ℓ x)` has norm at most `‖exp (ℓ x)‖ ‖ℓ‖ ^ n`.
+* `ContDiff.isBigO_iteratedFDeriv_succ_exp`: along any filter, the derivative of order `n + 1` of
+  `exp ℓ` is `O(ρ)` when the derivatives of `ℓ` of positive order up to that order are `O(ρ)` and
+  those of `exp ℓ` of lower order are bounded.
 -/
 
 public section
@@ -103,3 +108,26 @@ theorem norm_iteratedFDeriv_cexp_comp_le {E : Type*} [NormedAddCommGroup E] [Nor
   simp
 
 end ContinuousLinearMap
+
+open Asymptotics in
+open scoped ContDiff in
+/-- **Asymptotic bounds on the derivatives of `exp ℓ`.** Along any filter, the derivative of order
+`n + 1` of `y ↦ exp (ℓ y)` is `O(ρ)` for a `C^(n + 1)` map `ℓ` once the derivatives of `ℓ` of
+orders `1` to `n + 1` are `O(ρ)` and those of `exp ℓ` of order at most `n` are bounded: it is the
+order-`n` derivative of `exp ℓ • Dℓ`, which `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`
+bounds. -/
+theorem ContDiff.isBigO_iteratedFDeriv_succ_exp {D : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] {ℓ : D → ℝ} {n : ℕ} (hℓ : ContDiff ℝ (n + 1) ℓ) {l : Filter D}
+    {ρ : D → ℝ} (hℓn : ∀ i, 1 ≤ i → i ≤ n + 1 → iteratedFDeriv ℝ i ℓ =O[l] ρ)
+    (hen : ∀ i ≤ n, iteratedFDeriv ℝ i (fun y ↦ Real.exp (ℓ y)) =O[l] fun _ ↦ (1 : ℝ)) :
+    iteratedFDeriv ℝ (n + 1) (fun y ↦ Real.exp (ℓ y)) =O[l] ρ := by
+  have hB := (ContinuousLinearMap.lsmul ℝ ℝ).isBigO_iteratedFDeriv_of_bilinear
+    ((Real.contDiff_exp.comp hℓ).of_le (by norm_cast; omega))
+    (hℓ.fderiv_right (m := n) le_rfl) (n := n) le_rfl hen
+    (fun i hi ↦ (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_fderiv.le).trans
+      (hℓn (i + 1) (by omega) (by omega)))
+  simp only [ContinuousLinearMap.lsmul_apply, one_mul, Function.comp_apply] at hB
+  have hfe : (fun y ↦ Real.exp (ℓ y) • fderiv ℝ ℓ y) = fderiv ℝ (fun y ↦ Real.exp (ℓ y)) :=
+    funext fun y ↦ (fderiv_exp (hℓ.differentiable (by simp) y)).symm
+  rw [hfe] at hB
+  exact (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_fderiv.ge).trans hB
