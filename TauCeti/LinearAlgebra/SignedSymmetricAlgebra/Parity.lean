@@ -152,7 +152,7 @@ end ParitySignedSym
 
 namespace SignedSym
 
-variable (G : InternalGrading R V)
+variable (G : InternalGrading R V ℤ)
 
 /-- Integer-graded generators also satisfy the relations for parity-homogeneous inputs,
 which need not be homogeneous for the integer grading. -/
