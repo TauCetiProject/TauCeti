@@ -105,6 +105,7 @@ theorem directSumEquivCongrLeft_apply (x : ⨁ i, V i) (j : κ) :
   (rfl)
 
 /-- The inverse reindexing reads the summand of index `h.symm j` off the summand of index `j`. -/
+@[simp]
 theorem directSumEquivCongrLeft_symm_apply (y : ⨁ j, V (h.symm j)) (j : κ) :
     (directSumEquivCongrLeft ρ h).symm y (h.symm j) = y j := by
   rw [← directSumEquivCongrLeft_apply ρ h, Representation.Equiv.apply_symm_apply]
