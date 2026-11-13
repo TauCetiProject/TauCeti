@@ -529,7 +529,7 @@ theorem unsymmetrifyMap_isCovering : (unsymmetrifyMap G o).IsCovering := by
   exact (Quiver.Hom.cast_heq rfl htarget _).symm.trans
     (heq_of_eq (Subsingleton.elim _ _))
 
-/-- The inverse comparison from a symmetrified orientation to the doubled graph is also a quiver
+/-- The canonical comparison from a symmetrified orientation to the doubled graph is also a quiver
 covering. -/
 theorem symmetrifyMap_isCovering : (symmetrifyMap G o).IsCovering := by
   let φ := unsymmetrifyMap G o
