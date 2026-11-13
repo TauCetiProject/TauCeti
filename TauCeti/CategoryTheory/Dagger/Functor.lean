@@ -57,7 +57,7 @@ theorem map_isUnitary (F : C ⥤ D) [F.PreservesDagger] {X Y : C} {f : X ⟶ Y}
       congrArg F.map hf.2
 
 /-- Faithful dagger-preserving functors detect unitary arrows. -/
-@[simp] theorem map_isUnitary_iff (F : C ⥤ D) [F.PreservesDagger] [F.Faithful]
+@[simp] theorem isUnitary_map_iff (F : C ⥤ D) [F.PreservesDagger] [F.Faithful]
     {X Y : C} (f : X ⟶ Y) : IsUnitary (F.map f) ↔ IsUnitary f := by
   simp only [isUnitary_iff, ← map_dagger, ← Functor.map_comp, ← Functor.map_id,
     F.map_injective.eq_iff]

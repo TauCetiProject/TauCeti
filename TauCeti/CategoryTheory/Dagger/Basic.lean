@@ -190,11 +190,11 @@ theorem isUnitary_iff (f : X ⟶ Y) :
 namespace IsUnitary
 
 /-- A unitary arrow composed with its dagger is the identity. -/
-@[simp, reassoc, grind =] theorem hom_dagger_id {f : X ⟶ Y} (hf : IsUnitary f) :
+@[reassoc (attr := simp), grind =] theorem hom_dagger_id {f : X ⟶ Y} (hf : IsUnitary f) :
     f ≫ dagger f = 𝟙 X := hf.1
 
 /-- The dagger of a unitary arrow composed with that arrow is the identity. -/
-@[simp, reassoc, grind =] theorem dagger_hom_id {f : X ⟶ Y} (hf : IsUnitary f) :
+@[reassoc (attr := simp), grind =] theorem dagger_hom_id {f : X ⟶ Y} (hf : IsUnitary f) :
     dagger f ≫ f = 𝟙 Y := hf.2
 
 /-- Identity arrows are unitary. -/
