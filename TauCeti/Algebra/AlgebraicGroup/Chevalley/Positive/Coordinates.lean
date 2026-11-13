@@ -115,7 +115,7 @@ local notation "PositiveRoot" =>
 
 /-- In the full-weight model, an ordered enumeration of all positive roots without repetitions
 gives an injective parameter map. The value ring is arbitrary. -/
-theorem positiveRootProduct_injective (l : List PositiveRoot) (hl : l.Nodup)
+theorem scChevalleyDatum_positiveRootProduct_injective (l : List PositiveRoot) (hl : l.Nodup)
     (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
     Function.Injective ((D).positiveRootProduct l A) := by
   classical
@@ -141,54 +141,54 @@ theorem positiveRootProduct_injective (l : List PositiveRoot) (hl : l.Nodup)
 
 /-- Positive-root coordinates for a simply laced full-weight Chevalley datum over an arbitrary
 commutative ring. The list enumerates all positive roots, in any order without repetitions. -/
-noncomputable def positiveRootEquiv (hs : t.IsSimplyLaced) (l : List PositiveRoot)
+noncomputable def scPositiveRootEquiv (hs : t.IsSimplyLaced) (l : List PositiveRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
     (PositiveRoot → A) ≃ (D).positivePoints A :=
   Equiv.ofBijective ((D).positiveRootProduct l A)
-    ⟨t.positiveRootProduct_injective ht l hl hcover A,
+    ⟨t.scChevalleyDatum_positiveRootProduct_injective ht l hl hcover A,
       (D).positiveRootProduct_surjective hs l hl hcover A⟩
 
 /-- The coordinate equivalence multiplies the given root parameters in the specified order. -/
 @[simp]
-theorem positiveRootEquiv_apply (hs : t.IsSimplyLaced) (l : List PositiveRoot)
+theorem scPositiveRootEquiv_apply (hs : t.IsSimplyLaced) (l : List PositiveRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A]
     (u : PositiveRoot → A) :
-    t.positiveRootEquiv ht hs l hl hcover A u = (D).positiveRootProduct l A u :=
+    t.scPositiveRootEquiv ht hs l hl hcover A u = (D).positiveRootProduct l A u :=
   (rfl)
 
 /-- Extracting coordinates from an ordered positive-root product recovers its parameters. -/
 @[simp]
-theorem positiveRootEquiv_symm_positiveRootProduct (hs : t.IsSimplyLaced)
+theorem scPositiveRootEquiv_symm_positiveRootProduct (hs : t.IsSimplyLaced)
     (l : List PositiveRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
     (A : Type v) [CommRing A] (u : PositiveRoot → A) :
-    (t.positiveRootEquiv ht hs l hl hcover A).symm ((D).positiveRootProduct l A u) = u :=
-  (t.positiveRootEquiv ht hs l hl hcover A).symm_apply_apply u
+    (t.scPositiveRootEquiv ht hs l hl hcover A).symm ((D).positiveRootProduct l A u) = u :=
+  (t.scPositiveRootEquiv ht hs l hl hcover A).symm_apply_apply u
 
 /-- Multiplying the extracted positive-root coordinates reproduces the original positive point. -/
 @[simp]
-theorem positiveRootProduct_positiveRootEquiv_symm (hs : t.IsSimplyLaced)
+theorem positiveRootProduct_scPositiveRootEquiv_symm (hs : t.IsSimplyLaced)
     (l : List PositiveRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
     (A : Type v) [CommRing A] (g : (D).positivePoints A) :
-    (D).positiveRootProduct l A ((t.positiveRootEquiv ht hs l hl hcover A).symm g) = g :=
-  (t.positiveRootEquiv ht hs l hl hcover A).apply_symm_apply g
+    (D).positiveRootProduct l A ((t.scPositiveRootEquiv ht hs l hl hcover A).symm g) = g :=
+  (t.scPositiveRootEquiv ht hs l hl hcover A).apply_symm_apply g
 
 /-- Extracting coordinates after scalar change applies the ring map coordinatewise. In
 particular, coordinates are natural even under reduction modulo a prime. -/
 @[simp]
-theorem positiveRootEquiv_symm_map (hs : t.IsSimplyLaced) (l : List PositiveRoot)
+theorem scPositiveRootEquiv_symm_map (hs : t.IsSimplyLaced) (l : List PositiveRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
     {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
     (g : (D).positivePoints A) :
-    (t.positiveRootEquiv ht hs l hl hcover B).symm
+    (t.scPositiveRootEquiv ht hs l hl hcover B).symm
         ⟨((D).pointsPresentation A).map ((D).pointsPresentation B) f (g : (D).points A),
           (D).map_positivePoints_le f (Subgroup.mem_map.mpr ⟨g, g.2, rfl⟩)⟩ =
-      fun γ => f ((t.positiveRootEquiv ht hs l hl hcover A).symm g γ) := by
-  apply (t.positiveRootEquiv ht hs l hl hcover B).injective
-  simp only [Equiv.apply_symm_apply, positiveRootEquiv_apply]
+      fun γ => f ((t.scPositiveRootEquiv ht hs l hl hcover A).symm g γ) := by
+  apply (t.scPositiveRootEquiv ht hs l hl hcover B).injective
+  simp only [Equiv.apply_symm_apply, scPositiveRootEquiv_apply]
   apply Subtype.ext
   rw [← (D).map_positiveRootProduct l f]
   exact congrArg (((D).pointsPresentation A).map ((D).pointsPresentation B) f)
     (congrArg Subtype.val
-      ((t.positiveRootEquiv ht hs l hl hcover A).apply_symm_apply g).symm)
+      ((t.scPositiveRootEquiv ht hs l hl hcover A).apply_symm_apply g).symm)
 
 end TauCeti.DynkinType
