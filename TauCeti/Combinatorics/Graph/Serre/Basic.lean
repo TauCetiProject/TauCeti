@@ -132,6 +132,11 @@ theorem IsOrientation.rev_notMem_of_mem {O : Set Γ.E} (hO : Γ.IsOrientation O)
     (e : Γ.E) (he : e ∈ O) : Γ.rev e ∉ O :=
   (hO e).mp he
 
+/-- An orientation contains a dart of every geometric edge. -/
+theorem IsOrientation.mem_or_rev_mem {O : Set Γ.E} (hO : Γ.IsOrientation O) (e : Γ.E) :
+    e ∈ O ∨ Γ.rev e ∈ O :=
+  or_iff_not_imp_right.2 (hO e).2
+
 /-- An orientation contains exactly one dart above each geometric edge. -/
 theorem IsOrientation.bijective_toGeomEdge {O : Set Γ.E} (hO : Γ.IsOrientation O) :
     Function.Bijective fun e : O => Γ.toGeomEdge e := by
