@@ -22,10 +22,12 @@ public import TauCeti.GroupTheory.QuotientGroup.Basic
 
 Two subgroups `H` and `K` of a group `G` are **almost conjugate** (also called *Gassmann
 equivalent*, or *locally conjugate*) when they meet every conjugacy class of `G` in the same
-number of elements. Conjugate subgroups are almost conjugate, but the converse fails: there are
-finite groups with non-conjugate almost-conjugate subgroups. These are Gassmann's examples, and
-they are the group-theoretic input to the construction of non-isomorphic arithmetically
-equivalent number fields.
+number of elements. This is the classical notion for finite `H` and `K` (in particular for finite
+`G`). The definition counts with `Nat.card`, which is `0` on an infinite set, so for infinite
+subgroups it is coarser than comparing cardinalities. Conjugate subgroups are almost conjugate,
+but the converse fails: there are finite groups with non-conjugate almost-conjugate subgroups.
+These are Gassmann's examples, and they are the group-theoretic input to the construction of
+non-isomorphic arithmetically equivalent number fields.
 
 The notion is equivalently a statement about the coset spaces. For `g : G` the number of cosets
 of `H` fixed by `g` is related to the number of elements of `H` conjugate to `g` by the
@@ -88,7 +90,8 @@ namespace Subgroup
 variable {G Γ : Type*} [Group G] [Group Γ]
 
 /-- Two subgroups `H` and `K` of `G` are **almost conjugate** when they meet every conjugacy class
-of `G` in the same number of elements. -/
+of `G` in the same number of elements. This is the classical notion for finite `H` and `K`; the
+number of elements is `Nat.card`, so an infinite intersection counts as `0`. -/
 def AlmostConjugate (H K : Subgroup G) : Prop :=
   ∀ C : ConjClasses G,
     Nat.card {x : G // x ∈ C.carrier ∧ x ∈ H} = Nat.card {x : G // x ∈ C.carrier ∧ x ∈ K}
