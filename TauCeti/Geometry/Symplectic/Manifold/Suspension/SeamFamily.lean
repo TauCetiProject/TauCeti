@@ -130,8 +130,8 @@ theorem seamStructure_add_one (k : ℤ) :
 /-- The piece of the vertical family on the time interval `[k, k + 1]`: the smooth Cayley path
 from `J_k` to `J_(k + 1)`, constant for `t ≤ k + 1/3` and for `t ≥ k + 2/3`. -/
 def seamPath (k : ℤ) (t : ℝ) : SmoothAlmostComplexStructure I M :=
-  (compatible_seamStructure hσ hJ₀ k).cayleyPath (compatible_seamStructure hσ hJ₀ (k + 1))
-    (3 * (t - k) - 1)
+  (compatible_seamStructure hσ hJ₀ k).cayleyPath
+    (compatible_seamStructure hσ hJ₀ (k + 1)).tames (3 * (t - k) - 1)
 
 /-- On the collar `t ≤ k + 1/3` the piece on `[k, k + 1]` is `J_k`. -/
 theorem seamPath_of_le {k : ℤ} {t : ℝ} (ht : t ≤ k + 1 / 3) :
@@ -154,8 +154,9 @@ theorem seamPath_add_one (k : ℤ) (t : ℝ) :
     seamPath hσ hJ₀ (k + 1) (t + 1) = (seamPath hσ hJ₀ k t).pullback φ := by
   rw [seamPath, seamPath, SmoothTwoForm.Compatible.pullback_cayleyPath]
   refine (SmoothTwoForm.Compatible.cayleyPath_congr (compatible_seamStructure hσ hJ₀ (k + 1))
-    (compatible_seamStructure hσ hJ₀ (k + 1 + 1)) ((compatible_seamStructure hσ hJ₀ k).pullback φ)
-    ((compatible_seamStructure hσ hJ₀ (k + 1)).pullback φ) (seamStructure_add_one k)
+    (compatible_seamStructure hσ hJ₀ (k + 1 + 1)).tames
+    ((compatible_seamStructure hσ hJ₀ k).pullback φ)
+    ((compatible_seamStructure hσ hJ₀ (k + 1)).tames.pullback φ) (seamStructure_add_one k)
     (seamStructure_add_one (k + 1)) _).trans ?_
   congr 1
   push_cast
@@ -232,7 +233,7 @@ theorem contMDiff_seamFamily_family :
     (K₀ := fun r : P × (ℝ × ℝ) ↦ seamStructure φ (K₀ r.1) k)
     (K₁ := fun r : P × (ℝ × ℝ) ↦ seamStructure φ (K₀ r.1) (k + 1))
     (fun r ↦ compatible_seamStructure hσ (hK₀ r.1) k)
-    (fun r ↦ compatible_seamStructure hσ (hK₀ r.1) (k + 1))
+    (fun r ↦ (compatible_seamStructure hσ (hK₀ r.1) (k + 1)).tames)
     ((contMDiff_seamStructure_family hs k).comp hreassoc)
     ((contMDiff_seamStructure_family hs (k + 1)).comp hreassoc) hc).comp
       (((contMDiff_fst.prodMk (contMDiff_fst.comp contMDiff_snd)).prodMk
@@ -284,7 +285,8 @@ include hJ₀ in
 /-- Every member of the vertical family is compatible with `σ`. -/
 theorem compatible_seamFamily (hσn : σ.IsNondegenerate) (p : (ℝ × ℝ) × M) :
     (hσn.symplecticFormAt p.2).Compatible (seamFamily hσ hJ₀ p) :=
-  ((compatible_seamStructure hσ hJ₀ _).compatible_cayleyPath _ _).compatibleAt p.2
+  ((compatible_seamStructure hσ hJ₀ _).compatible_cayleyPath
+    (compatible_seamStructure hσ hJ₀ (⌊p.1.2⌋ + 1)) _).compatibleAt p.2
 
 /-- On the collar of width `1/3` around the integer time `k`, the vertical family is
 `J_k = (φ ^ k)^* J₀`. -/
