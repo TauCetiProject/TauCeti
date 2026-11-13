@@ -292,7 +292,6 @@ private theorem hasCompactSupport_cutoffLogModulus_remainder (b : ContDiffBump (
       funext w
       simp [logModulus, div_eq_inv_mul]
     rw [hfun, InnerProductSpace.laplacian_smul _ hlog, laplacian_log_normSq_of_equation_eq_zero
-      ((hxd 0).differentiable (by simp) z) ((hxd 1).differentiable (by simp) z)
       ((hxd 2).contDiffAt.of_le (by norm_cast)) ((hxd 3).contDiffAt.of_le (by norm_cast)) hα
       (.of_forall hsol), smul_eq_mul]
     ring
@@ -312,17 +311,15 @@ private theorem cutoffLogModulus_mem_realSobolevFunctions (b : ContDiffBump (0 :
     (hb : ∀ z, b.rIn - 1 ≤ ‖z‖ → 1 / 2 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (s : ℝ) :
     cutoffLogModulus b x ∈ realSobolevFunctions ℂ s 2 := by
   have hxd (i : Fin 4) : ContDiff ℝ ∞ (fun w ↦ x w i) := contDiff_euclidean.1 hx i
-  have hb₁ := (hxd 0).differentiable (by simp)
-  have hb₂ := (hxd 1).differentiable (by simp)
   have hp := (hxd 2).of_le (m := 2) (by norm_cast)
   have hq := (hxd 3).of_le (m := 2) (by norm_cast)
   set g := cutoffLogModulus b x
   have hg : ContDiff ℝ ∞ g := contDiff_cutoffLogModulus b hx hb
-  have hbd := abs_cutoffLogModulus_le b (normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim) hb
+  have hbd := abs_cutoffLogModulus_le b (normSq_le_one_of_tendsto hp hq hsol hlim) hb
   -- `g` is square integrable, since `g² ≤ 1 - |α|²`.
   have hL : MemLp g 2 volume := by
     refine (memLp_two_iff_integrable_sq hg.continuous.aestronglyMeasurable).2 <|
-      (integrable_one_sub_normSq (μ := volume) hb₁ hb₂ hp hq hsol hlim).mono'
+      (integrable_one_sub_normSq (μ := volume) hp hq hsol hlim).mono'
         (hg.continuous.pow 2).aestronglyMeasurable (.of_forall fun z ↦ ?_)
     obtain ⟨h₁, -⟩ := hbd z
     rw [Real.norm_eq_abs, abs_pow, sq_abs]
