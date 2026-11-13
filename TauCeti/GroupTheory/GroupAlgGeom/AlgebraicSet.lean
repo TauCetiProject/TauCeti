@@ -398,11 +398,11 @@ theorem GHom.comp_mem_V {K : Type*} [Group K] {κ : G →* K} (φ : GHom ι κ) 
 
 /-! ### Finite subsystems -/
 
-/-- A homomorphism `m : G[X] →* G'[Y]` together with a map of points `θ` compatible with
+/-- A map `m : G[X] → G'[Y]` together with a map of points `θ` compatible with
 evaluation carries finite subsystems of `m(S)` with the same solutions back to finite subsystems
 of `S` with the same solutions. -/
 theorem exists_finite_V_eq_of_map {G' Y : Type*} [Group G'] {ι : G →* H} {ι' : G' →* H}
-    (m : GX G X →* GX G' Y) (θ : (X → H) → (Y → H))
+    (m : GX G X → GX G' Y) (θ : (X → H) → (Y → H))
     (hθ : ∀ v s, eval ι' (θ v) (m s) = eval ι v s) {S : Set (GX G X)}
     (h : ∃ T ⊆ m '' S, T.Finite ∧ V ι' T = V ι' (m '' S)) :
     ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
@@ -1083,14 +1083,18 @@ section Pow
 
 open FreeGroup
 
-/-- Over a torsion-free group `H` with injective coefficients, the radical of the one-variable
-equation `x ^ n = 1` (`n ≠ 0`) is the normal closure of `x`. -/
-theorem Rad_pow_eq_normalClosure [IsMulTorsionFree H] (hι : Function.Injective ι) {n : ℕ}
-    (hn : n ≠ 0) :
+/-- Over a group `H` without nonidentity elements of `n`-th power `1` (for instance, a
+torsion-free group and `n ≠ 0`) and with injective coefficients, the radical of the one-variable
+equation `x ^ n = 1` is the normal closure of `x`. -/
+theorem Rad_pow_eq_normalClosure (hι : Function.Injective ι) {n : ℕ}
+    (hH : ∀ h : H, h ^ n = 1 → h = 1) :
     Rad ι {(inr (of ()) : GX G Unit) ^ n} = normalClosure {inr (of ())} := by
   have hV : V ι {(inr (of ()) : GX G Unit) ^ n} = {ι ∘ fun _ => 1} := by
     ext v
-    simp [hn, funext_iff, Unique.forall_iff]
+    simp only [mem_V, Set.mem_singleton_iff, forall_eq, map_pow, eval_inr, lift_apply_of,
+      funext_iff, Unique.forall_iff]
+    simp only [Function.comp_apply, PUnit.default_eq_unit]
+    exact ⟨fun h => (hH _ h).trans ι.map_one.symm, fun h => by simp [h]⟩
   rw [Rad_def, hV, I_singleton_comp hι]
   simp [Set.range_unique]
 
@@ -1156,7 +1160,8 @@ theorem rad_sq :
         normalClosure {inr (of ())} ∧
       normalClosure {(inr (of ()) : GX (FreeGroup (Fin 2)) Unit) ^ 2} ≠
         normalClosure {inr (of ())} :=
-  ⟨Rad_pow_eq_normalClosure Function.injective_id two_ne_zero,
+  ⟨Rad_pow_eq_normalClosure Function.injective_id
+      fun _ h => (pow_eq_one_iff_left two_ne_zero).1 h,
     normalClosure_pow_ne_normalClosure (by decide) ()⟩
 
 end Pow
