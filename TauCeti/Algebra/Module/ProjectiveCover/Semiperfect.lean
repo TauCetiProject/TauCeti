@@ -21,6 +21,14 @@ every finitely generated module has a minimal projective presentation by finitel
 projectives (`TauCeti.exists_isMinimalProjectivePresentation_of_isSemiperfectRing`). Artin algebras
 are semiperfect and Noetherian, so these apply to them.
 
+Conversely, a cover of a simple module has a local endomorphism ring
+(`TauCeti.IsProjectiveCover.isLocalRing_end`), and a projective cover of a projective module is an
+isomorphism. So if every simple module has a projective cover, the cover of `R` from the first
+result is an isomorphism, and `R` is a finite product of projectives with local endomorphism rings
+(`TauCeti.exists_linearEquiv_pi_of_forall_isSimpleModule`), which makes `R` semiperfect
+(`TauCeti.IsSemiperfectRing.of_linearEquiv_pi`). This gives the characterization of semiperfect
+rings by projective covers (`TauCeti.isSemiperfectRing_tfae`).
+
 ## The construction
 
 * **Covers of simple modules.** If `p : P → S` is a projective cover of a simple module, every
@@ -45,6 +53,11 @@ are semiperfect and Noetherian, so these apply to them.
 * `TauCeti.exists_isMinimalProjectivePresentation_of_isSemiperfectRing`: over a left Noetherian
   semiperfect ring, every finitely generated module has a minimal projective presentation by
   finitely generated projectives.
+* `TauCeti.IsProjectiveCover.isLocalRing_end`: a projective cover of a simple module has a local
+  endomorphism ring.
+* `TauCeti.isSemiperfectRing_tfae`: `R` is semiperfect exactly when it is a finite product of
+  projectives with local endomorphism rings, exactly when every finitely generated module has a
+  projective cover, exactly when every simple module has one.
 
 ## References
 
@@ -53,7 +66,11 @@ are semiperfect and Noetherian, so these apply to them.
 * R. Wisbauer, *Coalgebras and Bialgebras*, lecture notes, Cairo (2004), 3.12 (applied to covers
   of simple modules).
 * F. L. Sandomierski, *On semiperfect and perfect rings*, Proc. Amer. Math. Soc. **21** (1969),
-  205–207, Theorem 4.
+  205–207, Theorem 4 (semiperfect rings are those whose simple modules have projective covers).
+* H. Krause, *Krull-Schmidt categories and projective covers*, Expo. Math. **33** (2015), 535–549,
+  Lemma 3.6 and Proposition 4.1.
+* R. Wisbauer, *Foundations of Module and Ring Theory*, 19.7 (covers of simple modules are
+  local).
 -/
 
 public section
@@ -100,6 +117,63 @@ theorem IsProjectiveCover.le_ker_of_ne_top {p : P →ₗ[R] S} (hp : IsProjectiv
     rw [sup_comm, ← Submodule.comap_map_eq, h, Submodule.comap_top]
 
 end Simple
+
+section Local
+
+variable {P M S : Type*} [AddCommGroup P] [Module R P] [AddCommGroup M] [Module R M]
+  [AddCommGroup S] [Module R S]
+
+/-- **A projective cover of a projective module is an isomorphism**: it splits, and its kernel is a
+superfluous direct summand. -/
+theorem IsProjectiveCover.bijective_of_projective [Module.Projective R M] {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) : Function.Bijective f := by
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property f LinearMap.id hf.surjective
+  have hfg (y : M) : f (g y) = y := LinearMap.congr_fun hg y
+  -- `P` is the sum of `ker f` and the image of the section, which is therefore everything.
+  have hsup : LinearMap.ker f ⊔ LinearMap.range g = ⊤ := eq_top_iff.2 fun x _ ↦
+    Submodule.mem_sup.2 ⟨x - g (f x), by simp [hfg], g (f x), LinearMap.mem_range_self _ _,
+      sub_add_cancel _ _⟩
+  have hg_surj : Function.Surjective g :=
+    LinearMap.range_eq_top.1 (hf.isSuperfluous_ker.eq_top_of_sup_eq_top hsup)
+  refine ⟨fun x y hxy ↦ ?_, hf.surjective⟩
+  obtain ⟨x, rfl⟩ := hg_surj x
+  obtain ⟨y, rfl⟩ := hg_surj y
+  rw [hfg, hfg] at hxy
+  rw [hxy]
+
+/-- **The cover of a simple module has a local endomorphism ring**: for an endomorphism `φ`, one of
+`φ` and `1 - φ` is onto, since their images sum to everything and proper submodules lie in the
+kernel of the cover; and an onto endomorphism is a projective cover of the projective source, hence
+invertible. -/
+theorem IsProjectiveCover.isLocalRing_end [IsSimpleModule R S] {p : P →ₗ[R] S}
+    (hp : IsProjectiveCover p) : IsLocalRing (Module.End R P) := by
+  have := hp.projective
+  have := IsSimpleModule.nontrivial R S
+  have : Nontrivial P := hp.surjective.nontrivial
+  have hker : LinearMap.ker p ≠ ⊤ := fun h ↦ by
+    obtain ⟨y, hy⟩ := exists_ne (0 : S)
+    obtain ⟨x, rfl⟩ := hp.surjective y
+    exact hy (LinearMap.mem_ker.1 (h ▸ Submodule.mem_top))
+  -- An onto endomorphism has a proper, hence superfluous, kernel.
+  have hunit (φ : Module.End R P) (hφ : Function.Surjective φ) : IsUnit φ := by
+    have hφker : LinearMap.ker φ ≠ ⊤ := fun h ↦ by
+      obtain ⟨y, hy⟩ := exists_ne (0 : P)
+      obtain ⟨x, rfl⟩ := hφ y
+      exact hy (LinearMap.mem_ker.1 (h ▸ Submodule.mem_top))
+    have hcov : IsProjectiveCover φ :=
+      ⟨inferInstance, hφ, hp.isSuperfluous_ker.mono (hp.le_ker_of_ne_top hφker)⟩
+    exact (Module.End.isUnit_iff φ).2 hcov.bijective_of_projective
+  refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun φ ↦ ?_
+  by_contra! h
+  have h₁ : LinearMap.range φ ≠ ⊤ := fun ht ↦ h.1 (hunit φ (LinearMap.range_eq_top.1 ht))
+  have h₂ : LinearMap.range (1 - φ) ≠ ⊤ := fun ht ↦ h.2 (hunit _ (LinearMap.range_eq_top.1 ht))
+  refine hker (top_le_iff.1 fun x _ ↦ ?_)
+  have hx : x = φ x + (1 - φ) x := by simp
+  rw [hx]
+  exact add_mem (hp.le_ker_of_ne_top h₁ (LinearMap.mem_range_self _ _))
+    (hp.le_ker_of_ne_top h₂ (LinearMap.mem_range_self _ _))
+
+end Local
 
 section Generation
 
@@ -293,5 +367,90 @@ theorem exists_isMinimalProjectivePresentation_of_isSemiperfectRing [IsNoetheria
   exact ⟨P₀, _, _, p₀, P₁, _, _, _, h₀.isMinimalProjectivePresentation h₁, this, h₁.finite⟩
 
 end Semiperfect
+
+section Decomposition
+
+/-- **Covers of simple modules decompose the ring.** If every simple left `R`-module has a
+projective cover, then `R` is, as a left module over itself, a finite product of projective modules
+with local endomorphism rings: the projective cover of `R` given by
+`TauCeti.exists_isProjectiveCover_pi_of_isCoatom` is an isomorphism, as `R` is projective. -/
+theorem exists_linearEquiv_pi_of_forall_isSimpleModule
+    (h : ∀ (S : Type u) [AddCommGroup S] [Module R S] [IsSimpleModule R S], ∃ (P : Type u)
+      (_ : AddCommGroup P) (_ : Module R P) (p : P →ₗ[R] S), IsProjectiveCover p) :
+    ∃ (n : ℕ) (P : Fin n → Type u) (_ : ∀ i, AddCommGroup (P i)) (_ : ∀ i, Module R (P i)),
+      (∀ i, Module.Projective R (P i)) ∧ (∀ i, IsLocalRing (Module.End R (P i))) ∧
+        Nonempty (R ≃ₗ[R] ∀ i, P i) := by
+  obtain ⟨n, P, _, _, N, p, f, hN, hp, hf⟩ :=
+    exists_isProjectiveCover_pi_of_isCoatom.{u, u, u} (R := R) (M := R)
+      fun N hN ↦ have := isSimpleModule_iff_isCoatom.2 hN; h (R ⧸ N)
+  have := fun i ↦ isSimpleModule_iff_isCoatom.2 (hN i)
+  exact ⟨n, P, _, _, fun i ↦ (hp i).projective, fun i ↦ (hp i).isLocalRing_end,
+    ⟨(LinearEquiv.ofBijective f hf.bijective_of_projective).symm⟩⟩
+
+/-- **A decomposition of the ring into local projectives makes it semiperfect.** If `R` is, as a
+left module over itself, a finite product of modules with local endomorphism rings, the
+idempotents `eᵢ` of the factors are complete and orthogonal, with `Reᵢ` the `i`-th factor, so
+their corners are local (`IsSemiperfectRing.of_isLocalRing_corner`). -/
+theorem IsSemiperfectRing.of_linearEquiv_pi {n : ℕ} {P : Fin n → Type*}
+    [∀ i, AddCommGroup (P i)] [∀ i, Module R (P i)] [∀ i, IsLocalRing (Module.End R (P i))]
+    (φ : R ≃ₗ[R] ∀ i, P i) : IsSemiperfectRing R := by
+  classical
+  let e : Fin n → R := fun i ↦ φ.symm (Pi.single i (φ 1 i))
+  -- Right multiplication by `eᵢ` is the projection onto the `i`-th factor.
+  have hφ (x : R) (i : Fin n) : φ x i = x • φ 1 i := by
+    simpa using congrFun (φ.map_smul x 1) i
+  have hmul (x : R) (i : Fin n) : x * e i = φ.symm (Pi.single i (φ x i)) := by
+    rw [hφ x i, ← smul_eq_mul, ← map_smul, Pi.single_smul]
+  have hφe (i : Fin n) : φ (e i) = Pi.single i (φ 1 i) := φ.apply_symm_apply _
+  have he : CompleteOrthogonalIdempotents e := by
+    refine ⟨⟨fun i ↦ ?_, fun i j hij ↦ ?_⟩, ?_⟩
+    · rw [IsIdempotentElem, hmul, hφe, Pi.single_eq_same]
+    · beta_reduce
+      rw [hmul, hφe, Pi.single_eq_of_ne' hij, Pi.single_zero, map_zero]
+    · rw [← map_sum, Finset.univ_sum_single, φ.symm_apply_apply]
+  refine IsSemiperfectRing.of_isLocalRing_corner he fun i ↦ ?_
+  -- The left ideal `Reᵢ` is the `i`-th factor.
+  let ψ : P i →ₗ[R] R := φ.symm.toLinearMap ∘ₗ LinearMap.single R P i
+  have hψ : Function.Injective ψ := fun a b hab ↦ Pi.single_injective i (φ.symm.injective hab)
+  have hrange : LinearMap.range ψ = (Ideal.span {e i} : Ideal R) := by
+    ext x
+    rw [LinearMap.mem_range, Ideal.mem_span_singleton']
+    constructor
+    · rintro ⟨y, rfl⟩
+      refine ⟨ψ y, ?_⟩
+      simp only [hmul, ψ, LinearMap.comp_apply, LinearEquiv.coe_coe, φ.apply_symm_apply,
+        LinearMap.coe_single, Pi.single_eq_same]
+    · rintro ⟨a, rfl⟩
+      exact ⟨φ a i, by rw [hmul]; rfl⟩
+  let iso : P i ≃ₗ[R] (Ideal.span {e i} : Ideal R) :=
+    (LinearEquiv.ofInjective ψ hψ).trans (LinearEquiv.ofEq _ _ hrange)
+  have : IsLocalRing (Module.End R (Ideal.span {e i} : Ideal R)) := iso.conjRingEquiv.isLocalRing
+  exact (he.idem i).isLocalRing_corner_of_isLocalRing_end
+
+/-- **Semiperfect rings by projective covers** (Sandomierski; Krause, Proposition 4.1). For a ring
+`R`, the following are equivalent:
+1. `R` is semiperfect;
+2. `R` is, as a left module over itself, a finite product of projective modules with local
+   endomorphism rings;
+3. every finitely generated left `R`-module has a projective cover;
+4. every simple left `R`-module has a projective cover. -/
+theorem isSemiperfectRing_tfae : List.TFAE
+    [IsSemiperfectRing R,
+      ∃ (n : ℕ) (P : Fin n → Type u) (_ : ∀ i, AddCommGroup (P i)) (_ : ∀ i, Module R (P i)),
+        (∀ i, Module.Projective R (P i)) ∧ (∀ i, IsLocalRing (Module.End R (P i))) ∧
+          Nonempty (R ≃ₗ[R] ∀ i, P i),
+      ∀ (M : Type u) [AddCommGroup M] [Module R M] [Module.Finite R M], ∃ (P : Type u)
+        (_ : AddCommGroup P) (_ : Module R P) (p : P →ₗ[R] M), IsProjectiveCover p,
+      ∀ (S : Type u) [AddCommGroup S] [Module R S] [IsSimpleModule R S], ∃ (P : Type u)
+        (_ : AddCommGroup P) (_ : Module R P) (p : P →ₗ[R] S), IsProjectiveCover p] := by
+  tfae_have 1 → 3 := fun _ M _ _ _ ↦ exists_isProjectiveCover_of_isSemiperfectRing (M := M)
+  tfae_have 3 → 4 := fun h S _ _ _ ↦ h S
+  tfae_have 4 → 2 := exists_linearEquiv_pi_of_forall_isSimpleModule
+  tfae_have 2 → 1 := fun ⟨_, _, _, _, _, hloc, ⟨φ⟩⟩ ↦
+    have := hloc
+    IsSemiperfectRing.of_linearEquiv_pi φ
+  tfae_finish
+
+end Decomposition
 
 end TauCeti
