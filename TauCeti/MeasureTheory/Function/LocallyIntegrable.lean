@@ -111,6 +111,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
   every `Lᵖ` on its measurable subsets.
+* `Continuous.integrable_of_support_subset_isCompact`: a continuous function supported in a
+  compact set is integrable, without a separation assumption on the domain.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
   compactly supported function is integrable.
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in
@@ -474,6 +476,16 @@ section ContinuousOn
 
 variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E]
+
+/-- A continuous function supported in a compact set is integrable for any measure finite on
+compact sets. Neither closedness nor measurability of the compact set is required. -/
+theorem Continuous.integrable_of_support_subset_isCompact {f : X → E} {K : Set X}
+    (hf : Continuous f) (hK : IsCompact K) (hsupp : Function.support f ⊆ K) :
+    Integrable f μ := by
+  have hmeas := hf.stronglyMeasurable_of_support_subset_isCompact hK hsupp
+  exact (hf.continuousOn.integrableOn_of_subset_isCompact hK hmeas.measurableSet_support
+    hsupp ((measure_mono hsupp).trans_lt hK.measure_lt_top).ne).integrable_of_forall_notMem_eq_zero
+    (fun _ hx ↦ Function.notMem_support.mp hx)
 
 /-- The squared norm of a continuous compactly supported function is integrable for any measure
 finite on compact sets. -/
