@@ -45,7 +45,7 @@ problem of traffic control*, Amer. Math. Monthly 46, 281–283; the argument fol
   `Graph.isEdgeConnected_two_iff_nonempty_earDecomposition`,
   `Graph.connected_and_forall_not_isBridge_iff_nonempty_earDecomposition`: ear characterizations of
   `2`-edge-connected multigraphs.
-* `SimpleGraph.isEdgeConnected_two_iff_exists_isVertexStart_earDecomposition_ofSimpleGraph`,
+* `SimpleGraph.isEdgeConnected_two_iff_exists_isVertexStart_earDecomposition`,
   `SimpleGraph.isEdgeConnected_two_iff_nonempty_earDecomposition_ofSimpleGraph`: the corresponding
   simple-graph characterizations via `Graph.ofSimpleGraph`.
 -/
@@ -301,8 +301,8 @@ variable {α : Type u}
 /-- **Ear characterization of `2`-edge-connected simple graphs** (vertex-started form). A simple
 graph on a nonempty vertex type with finitely many edges is `2`-edge-connected if and only if
 `Graph.ofSimpleGraph H` admits an ear decomposition starting from a single vertex. -/
-theorem isEdgeConnected_two_iff_exists_isVertexStart_earDecomposition_ofSimpleGraph
-    (H : SimpleGraph α) [Finite H.edgeSet] [Nonempty α] :
+theorem isEdgeConnected_two_iff_exists_isVertexStart_earDecomposition (H : SimpleGraph α)
+    [Finite H.edgeSet] [Nonempty α] :
     H.IsEdgeConnected 2 ↔
       ∃ d : (Graph.ofSimpleGraph H).EarDecomposition (Graph.ofSimpleGraph H),
         d.IsVertexStart := by

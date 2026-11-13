@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Simple
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.Graph.EdgeEnds
 public import TauCeti.Combinatorics.Graph.Isomorphism
 
@@ -214,5 +215,134 @@ theorem toSimpleGraphIso_trans {V'' E'' : Type*} {K : Graph V'' E''}
   simp
 
 end Iso
+
+end Graph
+
+namespace SimpleGraph.Subgraph
+
+variable {V : Type u} {G : SimpleGraph V}
+
+/-- Regard a subgraph of a simple graph as an edge-labelled graph on the ambient vertex type.
+Its edge identities are the unordered pairs in the subgraph's edge set. -/
+@[expose]
+def toGraph (H : G.Subgraph) : Graph V (Sym2 V) where
+  vertexSet := H.verts
+  edgeSet := H.edgeSet
+  IsLink e x y := e = s(x, y) ∧ H.Adj x y
+  isLink_symm _ _ := ⟨fun _ _ h ↦ ⟨h.1.trans Sym2.eq_swap, H.adj_symm h.2⟩⟩
+  eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h₁ h₂ := by
+    exact (Sym2.eq_iff.mp (h₁.1.symm.trans h₂.1)).imp And.left And.left
+  edge_mem_iff_exists_isLink e := by
+    induction e using Sym2.ind with
+    | _ x y =>
+        rw [SimpleGraph.Subgraph.mem_edgeSet]
+        constructor
+        · exact fun h ↦ ⟨x, y, rfl, h⟩
+        · rintro ⟨a, b, hab, hAdj⟩
+          rcases Sym2.eq_iff.mp hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+          · exact hAdj
+          · exact H.adj_symm hAdj
+  left_mem_of_isLink := fun _ _ _ h ↦ H.edge_vert h.2
+
+@[simp]
+theorem vertexSet_toGraph (H : G.Subgraph) : H.toGraph.vertexSet = H.verts := rfl
+
+@[simp]
+theorem edgeSet_toGraph (H : G.Subgraph) : H.toGraph.edgeSet = H.edgeSet := rfl
+
+@[simp]
+theorem toGraph_isLink (H : G.Subgraph) (e : Sym2 V) (x y : V) :
+    H.toGraph.IsLink e x y ↔ e = s(x, y) ∧ H.Adj x y := Iff.rfl
+
+@[simp]
+theorem toGraph_adj (H : G.Subgraph) (x y : V) : H.toGraph.Adj x y ↔ H.Adj x y := by
+  constructor
+  · rintro ⟨e, rfl, hxy⟩
+    exact hxy
+  · exact fun hxy ↦ ⟨s(x, y), rfl, hxy⟩
+
+/-- The graph associated to a simple subgraph is a subgraph of the graph associated to the
+ambient simple graph. -/
+theorem toGraph_le_ofSimpleGraph (H : G.Subgraph) : H.toGraph ≤ Graph.ofSimpleGraph G := by
+  refine ⟨by simp, fun e x y h ↦ ?_⟩
+  rw [Graph.ofSimpleGraph_isLink]
+  exact ⟨h.1, by simpa [h.1] using H.adj_sub h.2⟩
+
+end SimpleGraph.Subgraph
+
+namespace Graph
+
+variable {V : Type u} {G : SimpleGraph V}
+
+/-- A subgraph of `Graph.ofSimpleGraph G`, expressed as a subgraph of `G` with the same vertices
+and adjacencies. -/
+@[expose]
+def toSimpleGraphSubgraph (K : Graph V (Sym2 V)) (hK : K ≤ Graph.ofSimpleGraph G) : G.Subgraph where
+  verts := K.vertexSet
+  Adj := K.Adj
+  adj_sub h := (ofSimpleGraph_adj_iff _ _).mp (h.mono hK)
+  edge_vert h := h.left_mem
+  symm := ⟨fun _ _ ↦ Adj.symm⟩
+
+@[simp]
+theorem verts_toSimpleGraphSubgraph (K : Graph V (Sym2 V)) (hK : K ≤ Graph.ofSimpleGraph G) :
+    (K.toSimpleGraphSubgraph hK).verts = K.vertexSet := rfl
+
+@[simp]
+theorem adj_toSimpleGraphSubgraph (K : Graph V (Sym2 V)) (hK : K ≤ Graph.ofSimpleGraph G)
+    (x y : V) : (K.toSimpleGraphSubgraph hK).Adj x y ↔ K.Adj x y := Iff.rfl
+
+/-- Passing from a simple subgraph to an edge-labelled graph and back recovers the subgraph. -/
+@[simp]
+theorem SimpleGraph.Subgraph.toSimpleGraphSubgraph_toGraph (H : G.Subgraph)
+    (h : H.toGraph ≤ Graph.ofSimpleGraph G) : H.toGraph.toSimpleGraphSubgraph h = H := by
+  ext x y
+  · rfl
+  · simp
+
+/-- A subgraph of `Graph.ofSimpleGraph G` is recovered from its associated simple subgraph. -/
+@[simp]
+theorem toGraph_toSimpleGraphSubgraph (K : Graph V (Sym2 V))
+    (hK : K ≤ Graph.ofSimpleGraph G) : (K.toSimpleGraphSubgraph hK).toGraph = K := by
+  refine @Graph.ext V (Sym2 V) _ _ rfl ?_
+  intro e x y
+  constructor
+  · rintro ⟨rfl, hxy⟩
+    obtain ⟨f, hf⟩ := hxy
+    have hfg := hK.isLink_mono hf
+    rw [Graph.ofSimpleGraph_isLink] at hfg
+    simpa [hfg.1] using hf
+  · intro h
+    have hg := hK.isLink_mono h
+    rw [Graph.ofSimpleGraph_isLink] at hg
+    exact ⟨hg.1, ⟨e, h⟩⟩
+
+@[simp]
+theorem edgeSet_toSimpleGraphSubgraph (K : Graph V (Sym2 V))
+    (hK : K ≤ Graph.ofSimpleGraph G) : (K.toSimpleGraphSubgraph hK).edgeSet = K.edgeSet := by
+  rw [← SimpleGraph.Subgraph.edgeSet_toGraph, K.toGraph_toSimpleGraphSubgraph]
+
+/-- The associated simple subgraph respects equality of the multigraphs and is independent of
+the subgraph proofs. -/
+theorem toSimpleGraphSubgraph_congr {K L : Graph V (Sym2 V)}
+    (h : K = L) (hK : K ≤ Graph.ofSimpleGraph G) (hL : L ≤ Graph.ofSimpleGraph G) :
+    K.toSimpleGraphSubgraph hK = L.toSimpleGraphSubgraph hL := by
+  subst L
+  congr
+
+/-- The graph associated to the ambient simple graph becomes the top subgraph. -/
+@[simp]
+theorem ofSimpleGraph_toSimpleGraphSubgraph (h : Graph.ofSimpleGraph G ≤ Graph.ofSimpleGraph G) :
+    (Graph.ofSimpleGraph G).toSimpleGraphSubgraph h = ⊤ := by
+  ext x y <;> simp
+
+/-- A one-vertex graph becomes the corresponding singleton subgraph of the ambient simple graph. -/
+@[simp]
+theorem toSimpleGraphSubgraph_noEdge_singleton (v : V)
+    (h : Graph.noEdge {v} (Sym2 V) ≤ Graph.ofSimpleGraph G) :
+    (Graph.noEdge {v} (Sym2 V)).toSimpleGraphSubgraph h = G.singletonSubgraph v := by
+  ext x y
+  · simp [toSimpleGraphSubgraph]
+  · simp [toSimpleGraphSubgraph, Graph.Adj]
 
 end Graph
