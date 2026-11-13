@@ -430,7 +430,7 @@ theorem exists_hasFPowerSeriesOnBall_of_hasSum {f : (ι → 𝕜) → F} {x : ι
   refine ⟨p, ⟨hrad, ENNReal.coe_pos.2 hr, fun {y} hy ↦ ?_⟩, hpc⟩
   have hynorm : ‖y‖ < (r : ℝ) := by
     have h : ‖y‖₊ < r := by
-      simpa only [mem_eball_zero_iff, enorm_eq_nnnorm, ENNReal.coe_lt_coe] using hy
+      simpa only [mem_eball_zero_iff, eNorm_eq_nnNorm, ENNReal.coe_lt_coe] using hy
     exact_mod_cast h
   -- Sum the given expansion fiberwise by total degree; each fiber is finite.
   let e : (Σ k : ℕ, {α // α ∈ univ.piAntidiag k}) ≃ (ι → ℕ) :=

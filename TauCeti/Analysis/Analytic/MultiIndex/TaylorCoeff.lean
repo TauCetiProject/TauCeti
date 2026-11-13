@@ -194,7 +194,7 @@ theorem exists_hasSum_mvTaylorCoeff {f : (ι → 𝕜) → F} {x : ι → 𝕜} 
   · simp_rw [hp.mvTaylorCoeff_eq]
     have hy_ball : y ∈ Metric.eball (0 : ι → 𝕜) r := by
       have h1 : (‖y‖₊ : ℝ≥0∞) < ρ := ENNReal.coe_lt_coe.2 (by exact_mod_cast hy)
-      simpa only [Metric.mem_eball, edist_zero_right, enorm_eq_nnnorm] using h1.trans hρ_lt_r
+      simpa only [Metric.mem_eball, edist_zero_right, eNorm_eq_nnNorm] using h1.trans hρ_lt_r
     refine hp.hasSum_mvCoeff hy_ball ?_
     refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun k ↦ ?_) hop
     gcongr
