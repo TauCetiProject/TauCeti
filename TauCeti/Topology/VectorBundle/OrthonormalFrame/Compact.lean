@@ -9,6 +9,8 @@ public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
 public import TauCeti.Topology.FiberBundle.Proper
 public import TauCeti.Analysis.InnerProductSpace.Unitary
 
+import TauCeti.Topology.Maps.IsEmpty
+
 /-!
 # Compact orthonormal frames over compact sets
 
@@ -46,10 +48,7 @@ theorem isProperMap_proj :
     IsProperMap (proj : OrthonormalFrameBundle 𝕜 F E V → B) := by
   cases isEmpty_or_nonempty (OrthonormalFrameBundle 𝕜 F E V) with
   | inl h =>
-    exact isProperMap_iff_isClosedMap_and_compact_fibers.mpr
-      ⟨continuous_iff_continuousAt.mpr (fun x ↦ isEmptyElim x),
-        fun s _ ↦ by simp [Set.eq_empty_of_isEmpty s],
-        fun s ↦ by simp [Set.eq_empty_of_isEmpty]⟩
+    exact Topology.IsClosedEmbedding.isProperMap (.of_isEmpty _)
   | inr h =>
     obtain ⟨⟨x, φ⟩⟩ := h
     let e := trivializationAt F E x
