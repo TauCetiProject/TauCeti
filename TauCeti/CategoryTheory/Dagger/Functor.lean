@@ -92,6 +92,12 @@ def dagger (α : F ⟶ G) : G ⟶ F where
   ext X
   simp
 
+/-- Taking the pointwise dagger reverses an equality natural transformation. -/
+@[simp, grind =] theorem dagger_eqToHom (h : F = G) :
+    (eqToHom h : F ⟶ G).dagger = eqToHom h.symm := by
+  cases h
+  simp
+
 /-- Taking pointwise daggers reverses vertical composition. -/
 @[simp, grind =] theorem dagger_comp [H.PreservesDagger] (α : F ⟶ G) (β : G ⟶ H) :
     (α ≫ β).dagger = β.dagger ≫ α.dagger := by

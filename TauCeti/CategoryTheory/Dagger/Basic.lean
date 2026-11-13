@@ -67,8 +67,17 @@ def daggerEquiv (X Y : C) : (X ⟶ Y) ≃ (Y ⟶ X) where
 @[simp] theorem daggerEquiv_apply (f : X ⟶ Y) : daggerEquiv X Y f = dagger f := (rfl)
 
 /-- The inverse dagger bijection also takes daggers. -/
-@[simp] theorem daggerEquiv_symm_apply (f : Y ⟶ X) :
+theorem daggerEquiv_symm_apply (f : Y ⟶ X) :
     (daggerEquiv X Y).symm f = dagger f := (rfl)
+
+/-- The inverse dagger bijection reverses its endpoints. -/
+@[simp] theorem daggerEquiv_symm : (daggerEquiv X Y).symm = daggerEquiv Y X := (rfl)
+
+/-- Taking the dagger reverses an equality arrow. -/
+@[simp, grind =] theorem dagger_eqToHom (h : X = Y) :
+    dagger (eqToHom h) = eqToHom h.symm := by
+  cases h
+  simp
 
 /-- Taking daggers detects equality. -/
 @[simp] theorem dagger_inj {f g : X ⟶ Y} : dagger f = dagger g ↔ f = g :=
@@ -141,6 +150,16 @@ def daggerAddEquiv (X Y : C) : (X ⟶ Y) ≃+ (Y ⟶ X) where
 @[simp, grind =] theorem dagger_sub (f g : X ⟶ Y) : dagger (f - g) = dagger f - dagger g :=
   (daggerAddEquiv X Y).map_sub f g
 
+/-- Taking daggers commutes with natural scalar multiplication. -/
+@[simp, grind =] theorem dagger_nsmul (n : ℕ) (f : X ⟶ Y) :
+    dagger (n • f) = n • dagger f :=
+  map_nsmul (daggerAddEquiv X Y) n f
+
+/-- Taking daggers commutes with integer scalar multiplication. -/
+@[simp, grind =] theorem dagger_zsmul (n : ℤ) (f : X ⟶ Y) :
+    dagger (n • f) = n • dagger f :=
+  map_zsmul (daggerAddEquiv X Y) n f
+
 /-- Taking daggers commutes with finite sums of arrows. -/
 @[simp] theorem dagger_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) :
     dagger (∑ i ∈ s, f i) = ∑ i ∈ s, dagger (f i) :=
@@ -149,8 +168,8 @@ def daggerAddEquiv (X Y : C) : (X ⟶ Y) ≃+ (Y ⟶ X) where
 end Preadditive
 
 /-- Conjugate-scalar compatibility for a dagger on a native linear category.
-The scalar involution is arbitrary; complex conjugation is its standard specialization. -/
-class DaggerLinear (R : Type w) [CommSemiring R] [StarRing R]
+The scalar star operation is arbitrary; complex conjugation is its standard specialization. -/
+class DaggerLinear (R : Type w) [Semiring R] [Star R]
     (C : Type u) [Category.{v} C] [DaggerCategory C] [Preadditive C]
     [Linear R C] : Prop where
   /-- Taking daggers conjugates the scalar. -/
@@ -206,11 +225,31 @@ def toIso {f : X ⟶ Y} (hf : IsUnitary f) : X ≅ Y where
 @[simp, grind =] theorem toIso_inv {f : X ⟶ Y} (hf : IsUnitary f) :
     hf.toIso.inv = TauCeti.dagger f := (rfl)
 
+/-- A unitary arrow is invertible. -/
+theorem isIso {f : X ⟶ Y} (hf : IsUnitary f) : IsIso f := hf.toIso.isIso_hom
+
 end IsUnitary
+
+/-- Equality arrows are unitary. -/
+@[simp] theorem isUnitary_eqToHom (h : X = Y) : IsUnitary (eqToHom h) := by
+  cases h
+  simp
 
 /-- Taking the dagger preserves and reflects unitarity. -/
 @[simp] theorem isUnitary_dagger_iff (f : X ⟶ Y) : IsUnitary (dagger f) ↔ IsUnitary f :=
   ⟨fun h => by simpa using h.dagger, IsUnitary.dagger⟩
+
+/-- Taking inverses preserves and reflects unitarity. -/
+@[simp] theorem isUnitary_inv_iff (f : X ⟶ Y) [IsIso f] :
+    IsUnitary (inv f) ↔ IsUnitary f := by
+  constructor
+  · intro h
+    have hd : dagger (inv f) = f := by
+      simpa only [IsIso.inv_inv] using IsIso.eq_inv_of_hom_inv_id h.hom_dagger_id
+    simpa only [hd] using h.dagger
+  · intro h
+    have hd : dagger f = inv f := IsIso.eq_inv_of_hom_inv_id h.hom_dagger_id
+    simpa only [hd] using h.dagger
 
 end TauCeti
 
@@ -261,7 +300,7 @@ instance [Preadditive C] [DaggerPreadditive C] : StarRing (End X) where
   star_add f g := by ext; simp
 
 /-- The scalar action on endomorphisms is compatible with the dagger involution. -/
-instance {R : Type w} [CommSemiring R] [StarRing R] [Preadditive C] [Linear R C]
+instance {R : Type w} [Semiring R] [Star R] [Preadditive C] [Linear R C]
     [DaggerLinear R C] : StarModule R (End X) where
   star_smul r f := by ext; simp
 

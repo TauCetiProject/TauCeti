@@ -109,6 +109,67 @@ variable {X Y Z : HilbertCat.{u, v} 𝕜}
 /-- The concrete-category projection retains the underlying continuous linear map. -/
 theorem hom_eq (f : X ⟶ Y) : ConcreteCategory.hom f = (f : X →L[𝕜] Y) := (rfl)
 
+/-- Bundling a continuous linear map retains the original map as a categorical arrow. -/
+theorem ofHom_eq (f : X →L[𝕜] Y) :
+    ConcreteCategory.ofHom (C := HilbertCat 𝕜) (X := X) (Y := Y) f =
+      (f : X ⟶ Y) := (rfl)
+
+/-- Bundling the zero continuous linear map gives the zero arrow. -/
+@[simp] theorem ofHom_zero :
+    ConcreteCategory.ofHom (C := HilbertCat 𝕜) (X := X) (Y := Y) 0 = 0 := (rfl)
+
+section
+
+variable {E F G : Type v} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
+
+/-- Bundling the continuous linear identity gives the categorical identity. -/
+@[simp] theorem ofHom_id : ofHom (ContinuousLinearMap.id 𝕜 E) = 𝟙 (of 𝕜 E) := (rfl)
+
+/-- Bundling continuous-linear-map composition gives categorical composition. -/
+@[simp] theorem ofHom_comp (f : E →L[𝕜] F) (g : F →L[𝕜] G) :
+    ofHom (g.comp f) = ofHom f ≫ ofHom g := (rfl)
+
+/-- Bundling continuous linear maps preserves addition. -/
+@[simp] theorem ofHom_add (f g : E →L[𝕜] F) :
+    ofHom (f + g) = ofHom f + ofHom g := (rfl)
+
+/-- Bundling continuous linear maps preserves negation. -/
+@[simp] theorem ofHom_neg (f : E →L[𝕜] F) : ofHom (-f) = -ofHom f := (rfl)
+
+/-- Bundling continuous linear maps preserves subtraction. -/
+@[simp] theorem ofHom_sub (f g : E →L[𝕜] F) :
+    ofHom (f - g) = ofHom f - ofHom g := (rfl)
+
+/-- Bundling continuous linear maps preserves natural scalar multiplication. -/
+@[simp] theorem ofHom_nsmul (n : ℕ) (f : E →L[𝕜] F) :
+    ofHom (n • f) = n • ofHom f := (rfl)
+
+/-- Bundling continuous linear maps preserves integer scalar multiplication. -/
+@[simp] theorem ofHom_zsmul (n : ℤ) (f : E →L[𝕜] F) :
+    ofHom (n • f) = n • ofHom f := (rfl)
+
+/-- Bundling continuous linear maps preserves field scalar multiplication. -/
+@[simp] theorem ofHom_smul (r : 𝕜) (f : E →L[𝕜] F) :
+    ofHom (r • f) = r • ofHom f := (rfl)
+
+/-- Bundling continuous linear maps preserves finite sums. -/
+@[simp] theorem ofHom_sum {ι : Type*} (s : Finset ι) (f : ι → (E →L[𝕜] F)) :
+    ofHom (∑ i ∈ s, f i) = ∑ i ∈ s, ofHom (f i) := (rfl)
+
+end
+
+/-- Bundling a continuous linear map preserves its operator norm. -/
+@[simp] theorem norm_ofHom (f : X →L[𝕜] Y) :
+    ‖ConcreteCategory.ofHom (C := HilbertCat 𝕜) (X := X) (Y := Y) f‖ = ‖f‖ := (rfl)
+
+/-- Taking the dagger of a bundled continuous linear map gives its adjoint. -/
+@[simp] theorem dagger_ofHom (f : X →L[𝕜] Y) :
+    dagger (ConcreteCategory.ofHom (C := HilbertCat 𝕜) (X := X) (Y := Y) f) =
+      ConcreteCategory.ofHom (C := HilbertCat 𝕜) (X := Y) (Y := X)
+        (ContinuousLinearMap.adjoint f) := (rfl)
+
 /-- The underlying map of the zero morphism is zero. -/
 @[simp] theorem hom_zero : ConcreteCategory.hom (0 : X ⟶ Y) = 0 := (rfl)
 
@@ -181,6 +242,13 @@ theorem isUnitary_linearIsometryEquiv (e : X ≃ₗᵢ[𝕜] Y) :
     simp [comp_eq_comp, id_eq_id, dagger_eq_adjoint, hom_eq,
       LinearIsometryEquiv.adjoint_eq_symm]
 
+/-- Bundling a linear isometric equivalence gives a unitary Hilbert-space arrow. -/
+@[simp] theorem isUnitary_ofHom_linearIsometryEquiv {E F : Type v}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (e : E ≃ₗᵢ[𝕜] F) : IsUnitary (ofHom (e : E →L[𝕜] F)) :=
+  isUnitary_linearIsometryEquiv (X := of 𝕜 E) (Y := of 𝕜 F) e
+
 /-- Recover the linear isometric equivalence from a unitary arrow. -/
 def linearIsometryEquivOfUnitary (f : X ⟶ Y) (hf : IsUnitary f) :
     X ≃ₗᵢ[𝕜] Y := by
@@ -226,7 +294,7 @@ def unitaryEquivLinearIsometryEquiv :
   right_inv e := by ext x; rfl
 
 /-- The unitary-to-isometry correspondence uses the recovered isometric equivalence. -/
-theorem unitaryEquivLinearIsometryEquiv_eq (f : { f : X ⟶ Y // IsUnitary f }) :
+theorem unitaryEquivLinearIsometryEquiv_apply (f : { f : X ⟶ Y // IsUnitary f }) :
     unitaryEquivLinearIsometryEquiv f = linearIsometryEquivOfUnitary f.1 f.2 := (rfl)
 
 /-- The unitary-to-isometry correspondence preserves the underlying continuous linear map. -/
@@ -239,12 +307,12 @@ theorem unitaryEquivLinearIsometryEquiv_eq (f : { f : X ⟶ Y // IsUnitary f }) 
     (unitaryEquivLinearIsometryEquiv.symm e).1 = ofHom (e : X →L[𝕜] Y) := (rfl)
 
 /-- The unitary-to-isometry correspondence preserves evaluation. -/
-theorem unitaryEquivLinearIsometryEquiv_apply
+theorem unitaryEquivLinearIsometryEquiv_apply_apply
     (f : { f : X ⟶ Y // IsUnitary f }) (x : X) :
     unitaryEquivLinearIsometryEquiv f x = f.1 x := (rfl)
 
 /-- The inverse correspondence regards an isometry as its continuous linear map. -/
-theorem unitaryEquivLinearIsometryEquiv_symm_apply
+theorem unitaryEquivLinearIsometryEquiv_symm_val_apply
     (e : X ≃ₗᵢ[𝕜] Y) (x : X) :
     (unitaryEquivLinearIsometryEquiv.symm e).1 x = e x := (rfl)
 
