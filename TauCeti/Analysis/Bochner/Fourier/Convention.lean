@@ -14,12 +14,12 @@ public import TauCeti.Analysis.PositiveDefinite.Pullback
 /-!
 # Fourier-convention characteristic functions
 
-Mathlib's characteristic function of a finite measure is
+Mathlib's characteristic function of a measure is
 `t ↦ ∫ x, exp (⟪x, t⟫ * I) ∂μ`, while Bochner's theorem in `BochnerTheorem.lean` is stated in
 the `2π` convention `a ↦ ∫ q, exp (-2πi⟪a, q⟫) ∂μ`. This file records the conversion between these
-normalizations, shows continuity of the Fourier-convention transform of a finite measure directly
-by dominated convergence, and transports positive definiteness from the existing
-characteristic-function API.
+normalizations and transports continuity (`TauCeti.continuous_charFun_of_opensMeasurableSpace`)
+and positive definiteness from the characteristic-function API to the Fourier-convention
+transform of any measure.
 
 The file also bridges Mathlib's Fourier transform `𝓕` to the Fourier atom, and it carries the
 measure-uniqueness theorem — the uniqueness half of Bochner's theorem — consumed by
@@ -35,7 +35,7 @@ measure-uniqueness theorem — the uniqueness half of Bochner's theorem — cons
 * `MeasureTheory.Measure.integral_fourierAtom_conv`: the Fourier-convention transform turns
   convolution of finite measures into multiplication.
 * `TauCeti.posSemidef_fourierConventionCharFun_sub`: the Fourier-convention
-  translation-invariant kernel of a finite measure is positive definite.
+  translation-invariant kernel of a measure is positive definite.
 * `TauCeti.posSemidef_charFun_neg_two_pi_smul_sub`: the same kernel written as
   `charFun ν ((-2π) • (a - b))`.
 * `TauCeti.Measure.ext_of_forall_integral_fourierAtom_eq`: a finite measure is determined by its
@@ -58,7 +58,7 @@ namespace TauCeti
 variable {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
   [MeasurableSpace V] {μ : Measure V}
 
-/-- The Fourier-convention integral of a finite measure, written in exponential normal form,
+/-- The Fourier-convention integral of a measure, written in exponential normal form,
 is Mathlib's characteristic function evaluated at `(-2π) • a`. -/
 @[simp]
 theorem integral_exp_neg_two_pi_inner_eq_charFun_neg_two_pi_smul (a : V) :
@@ -69,7 +69,7 @@ theorem integral_exp_neg_two_pi_inner_eq_charFun_neg_two_pi_smul (a : V) :
   simp only [inner_smul_right, Complex.ofReal_mul, Complex.ofReal_ofNat, Complex.ofReal_neg]
   ring_nf
 
-/-- The Fourier-convention integral of a finite measure, written with the atom
+/-- The Fourier-convention integral of a measure, written with the atom
 `exp (-2πi⟪a, q⟫)`, is Mathlib's characteristic function evaluated at `(-2π) • a`.
 
 Not a `@[simp]` lemma: `simp` already proves it — `fourierAtom_apply` and `neg_mul` rewrite
@@ -141,8 +141,8 @@ theorem posSemidef_charFun_neg_two_pi_smul_sub :
   simpa only [integral_fourierAtom_eq_charFun_neg_two_pi_smul] using
     posSemidef_fourierConventionCharFun_sub (ν := ν)
 
-/-- The Fourier-convention transform of a measure is continuous: it is a rescaling of the
-characteristic function, which is continuous. -/
+/-- The Fourier-convention transform `a ↦ ∫ q, exp (-2πi⟪a, q⟫) ∂ν` of every measure is
+continuous. -/
 theorem continuous_fourierConventionCharFun :
     Continuous fun a : W => ∫ q, fourierAtom a q ∂ν := by
   simp only [integral_fourierAtom_eq_charFun_neg_two_pi_smul]

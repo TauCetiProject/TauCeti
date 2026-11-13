@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Bochner.CharFun.PosDef
 public import TauCeti.Analysis.PositiveDefinite.AddGroup
-public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.TaylorExpansion
 
 /-!
 # Characteristic functions as positive-definite functions
@@ -17,9 +16,10 @@ Tau Ceti's generic positive-definite-function predicate. If the involution on an
 negation, then Mathlib's characteristic function `MeasureTheory.charFun μ` of a measure is
 `TauCeti.IsPositiveDefinite`.
 
-Together with Mathlib's continuity theorem for characteristic functions, this shows that the
-characteristic function of a finite measure is continuous and positive definite, the easy
-direction of Bochner's theorem.
+Together with `TauCeti.continuous_charFun_of_opensMeasurableSpace`, this shows that the
+characteristic function of every measure on a real inner product space with
+`[OpensMeasurableSpace E]` is continuous and positive definite, the easy direction of Bochner's
+theorem.
 
 ## Main declarations
 
@@ -66,9 +66,8 @@ Bochner's theorem in the language of `TauCeti.IsPositiveDefinite`. For a measure
 finite, `charFun μ` vanishes. -/
 theorem continuous_charFun_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
     (hstar : ∀ x : E, star x = -x) :
-    Continuous (MeasureTheory.charFun μ) ∧ IsPositiveDefinite (MeasureTheory.charFun μ) := by
-  exact ⟨continuous_charFun_of_opensMeasurableSpace,
-    charFun_isPositiveDefinite_of_star_eq_neg hstar⟩
+    Continuous (MeasureTheory.charFun μ) ∧ IsPositiveDefinite (MeasureTheory.charFun μ) :=
+  ⟨continuous_charFun_of_opensMeasurableSpace, charFun_isPositiveDefinite_of_star_eq_neg hstar⟩
 
 end Seminormed
 
