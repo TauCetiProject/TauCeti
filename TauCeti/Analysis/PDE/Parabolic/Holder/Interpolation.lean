@@ -172,18 +172,32 @@ theorem norm_toBoundedContinuousFunction_timeDerivL_le (f : ParabolicC2HolderSpa
     ring
   rwa [hpow, timeExtension_of_mem, ← HolderSpace.toBoundedContinuousFunction_apply] at h
 
+/-- The spatial derivative of the time extension of `u` at each time of `[a, b]` is the time
+extension of `D_x u`. -/
+private theorem hasFDerivAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) :
+    ∀ t ∈ Icc a b, ∀ y, HasFDerivAt (fun z ↦ timeExtension hab.le f z t)
+      (timeExtension hab.le (spatialFDerivL f) y t) y := by
+  intro t ht y
+  simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ y
+
+/-- The time derivative within `[a, b]` of the time extension of `u` at each position is the time
+extension of `∂ₜ u`. -/
+private theorem hasDerivWithinAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) :
+    ∀ y, ∀ t ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f y)
+      (timeExtension hab.le (timeDerivL f) y t) (Icc a b) t := by
+  intro y t ht
+  simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasTimeDerivWithinAt y ⟨t, ht⟩
+
 /-- For `γ ≤ 1`, the temporal `γ`-seminorm of an order-two map is at most
 `‖∂ₜ u‖_∞ + 2 ‖u‖_∞`. -/
 theorem timeEHolderNorm_le {γ : ℝ≥0} (hγ : γ ≤ 1) (f : ParabolicC2HolderSpace α E F hab) :
     timeEHolderNorm γ (f : slab (E := E) a b → F) ≤
       ↑(‖(timeDerivL f).toBoundedContinuousFunction‖₊ + 2 * ‖valueL f‖₊) := by
-  have ht : ∀ x, ∀ s ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f x)
-      (timeExtension hab.le (timeDerivL f) x s) (Icc a b) s := fun x s hs ↦ by
-    simpa [timeExtension_def, projIcc_of_mem hab.le hs] using f.hasTimeDerivWithinAt x ⟨s, hs⟩
   have hlip := timeEHolderNorm_one_le_of_hasDerivWithinAt
-    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) ht fun x s _ ↦ by
-    simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnNorm]
-      using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
+    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) (hasDerivWithinAt_timeExtension f)
+    fun x s _ ↦ by
+      simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnNorm]
+        using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
   rw [timeExtension_space_slabTime] at hlip
   -- A bounded time derivative makes the time slices Lipschitz; at time differences larger than
   -- one, the oscillation bound wins.
@@ -205,22 +219,14 @@ private theorem eHolderNorm_valueL_add_eHolderNorm_spatialFDerivL_le (hα : α �
             nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) +
             nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _)) +
         14 * ε ^ (-(1 + (α : ℝ))) * ‖valueL f‖₊) := by
-  have hx : ∀ t ∈ Icc a b, ∀ y,
-      HasFDerivAt (fun z ↦ timeExtension hab.le f z t)
-        (timeExtension hab.le (spatialFDerivL f) y t) y := by
-    intro t ht y
-    simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ y
+  have hx := hasFDerivAt_timeExtension f
   have hxx : ∀ t ∈ Icc a b, ∀ y,
       HasFDerivAt (fun z ↦ timeExtension hab.le (spatialFDerivL f) z t)
         (timeExtension hab.le (spatialSecondFDerivL f) y t) y := by
     intro t ht y
     simpa [timeExtension_def, projIcc_of_mem hab.le ht] using
       f.hasSpatialSecondFDerivAt ⟨t, ht⟩ y
-  have ht : ∀ y, ∀ t ∈ Icc a b,
-      HasDerivWithinAt (timeExtension hab.le f y)
-        (timeExtension hab.le (timeDerivL f) y t) (Icc a b) t := by
-    intro y t ht
-    simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasTimeDerivWithinAt y ⟨t, ht⟩
+  have ht := hasDerivWithinAt_timeExtension f
   have h := ParabolicSpaceTime.eHolderNorm_add_eHolderNorm_le hα hε hε₁ hx hxx ht
     (M₀ := ‖valueL f‖₊) (M₂ := ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖₊)
     (Mₜ := ‖(timeDerivL f).toBoundedContinuousFunction‖₊)
@@ -432,16 +438,8 @@ theorem norm_valueHolderL_le_add_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpac
     rw [hqdef, neg_div]
   -- The spatial and temporal Lipschitz seminorms of the value are the suprema of the gradient
   -- and of the time derivative.
-  have hx : ∀ t ∈ Icc a b, ∀ y,
-      HasFDerivAt (fun z ↦ timeExtension hab.le f z t)
-        (timeExtension hab.le (spatialFDerivL f) y t) y := by
-    intro t ht y
-    simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ y
-  have ht : ∀ y, ∀ t ∈ Icc a b,
-      HasDerivWithinAt (timeExtension hab.le f y)
-        (timeExtension hab.le (timeDerivL f) y t) (Icc a b) t := by
-    intro y t ht
-    simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasTimeDerivWithinAt y ⟨t, ht⟩
+  have hx := hasFDerivAt_timeExtension f
+  have ht := hasDerivWithinAt_timeExtension f
   have h₁ := spaceEHolderNorm_one_le_of_hasFDerivAt hx (C := ‖spatialFDerivL f‖₊)
     fun y t _ ↦ by
       rw [timeExtension_def, coe_nnNorm]

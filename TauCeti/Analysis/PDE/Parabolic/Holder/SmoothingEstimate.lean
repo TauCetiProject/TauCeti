@@ -167,7 +167,7 @@ private theorem exists_timeCutoff {E : Type*} [NormedAddCommGroup E] [NormedSpac
     rw [HolderSpace.coe_toBoundedContinuousFunction] at h₃
     have hz₁ : ‖spatialFDerivL (ofTime (E := E) (hab := hT) φ hφ hH)‖ = 0 := by
       rw [spatialFDerivL_ofTime]
-      rw [BoundedContinuousFunction.norm_def, dist_self]
+      exact norm_zero (E := slab (E := E) 0 T →ᵇ (E →L[ℝ] ℝ))
     have hz₂ : ‖spatialSecondFDerivL (ofTime (E := E) (hab := hT) φ hφ hH)‖ = 0 := by
       rw [spatialSecondFDerivL_ofTime]
       exact norm_zero
@@ -230,9 +230,7 @@ private theorem norm_mul_timeDerivL_valueHolderL_le {E : Type*} [NormedAddCommGr
   have hsup : ‖(valueHolderL hα (restrictL has le_rfl hsb u)).toBoundedContinuousFunction‖ ≤
       ‖valueL u‖ := by
     rw [toBoundedContinuousFunction_valueHolderL]
-    refine (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ ?_
-    rw [valueL_apply, restrictL_apply, ← valueL_apply]
-    exact (valueL u).norm_coe_le_norm _
+    exact norm_valueL_restrictL_le u
   have hmul : ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ 1 := ContinuousLinearMap.opNorm_mul_le ℝ ℝ
   have hin : 0 ≤ (A : ℝ) * ‖valueHolderL hα (restrictL has le_rfl hsb u)‖ +
       nnHolderNorm α (HolderSpace.compLipschitzL _ hincl (timeDerivL χ) :
@@ -412,10 +410,7 @@ private theorem weighted_step (hα₁ : α < 1) {T d T₀ : ℝ} {hT : 0 < T} (h
     (A := ⟨A / d, by positivity⟩) hχA hCS (hS _)
   have hI := norm_valueHolderL_le_add_mul hα₁.le (restrictL h₄ le_rfl h₄T u)
     (r := τ * d) (by positivity) (by nlinarith)
-  have hV₄ : ‖valueL (restrictL h₄ le_rfl h₄T u)‖ ≤ ‖valueL u‖ := by
-    refine (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ ?_
-    rw [valueL_apply, restrictL_apply, ← valueL_apply]
-    exact (valueL u).norm_coe_le_norm _
+  have hV₄ : ‖valueL (restrictL h₄ le_rfl h₄T u)‖ ≤ ‖valueL u‖ := norm_valueL_restrictL_le u
   -- The norm of the cutoff: `‖χ‖_{α,par} ≤ 24 (1 + A/d + [χ']_{α,par})`.
   have hχn : ‖valueHolderL hα₁.le χ‖ ≤ 24 * (1 + A / d +
       nnHolderNorm α (timeDerivL χ : slab (E := EuclideanSpace ℝ ι) 0 T → ℝ)) :=
@@ -440,6 +435,43 @@ private theorem weighted_step (hα₁ : α < 1) {T d T₀ : ℝ} {hT : 0 < T} (h
     (norm_nonneg _) (norm_nonneg _) (by positivity) (NNReal.coe_nonneg _)
   -- The restrictions in `key` and in the goal differ only in proof terms.
   convert key using 3
+
+/-- **The supremum bound from the comparison principle.** For degenerate elliptic `a` and
+`‖c‖_{α,par} ≤ K`, every `u ∈ C_b^{2+α,1+α/2}` on `ℝⁿ × [0, T]`, `T ≤ T₀`, with
+`|u(·, 0)| ≤ M` satisfies `sup |u| ≤ exp(K T₀) (1 + T₀) (M + ‖P u‖_{α,par})`. -/
+private theorem norm_valueL_le_exp_mul (hα : α ≤ 1) {T T₀ K : ℝ≥0} {hT : (0 : ℝ) < T}
+    (hTT₀ : T ≤ T₀) (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι), 0 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (hck : ‖c‖ ≤ K) (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {M : ℝ}
+    (hM : ∀ x, |u (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤ M) :
+    ‖valueL u‖ ≤
+      Real.exp (K * T₀) * (1 + T₀) * (M + ‖euclideanParabolicOperatorL hα a b c u‖) := by
+  set Pu := ‖euclideanParabolicOperatorL hα a b c u‖
+  have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hM 0)
+  have hPu : 0 ≤ Pu := norm_nonneg _
+  have hT₀ : (T : ℝ) ≤ T₀ := by exact_mod_cast hTT₀
+  refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
+  have hmax := abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le hα (b := b) ha
+    (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck))
+    K.coe_nonneg u (fun q ↦ by
+      simpa only [Real.norm_eq_abs] using HolderSpace.norm_apply_le
+        (euclideanParabolicOperatorL hα a b c u) q) hM p
+  obtain ⟨ht₀, htT⟩ := (slabTime p).2
+  have htT₀ : (slabTime p : ℝ) ≤ T₀ := htT.trans hT₀
+  rw [valueL_apply, Real.norm_eq_abs]
+  refine hmax.trans ?_
+  rw [sub_zero]
+  have hexp : Real.exp (K * (slabTime p : ℝ)) ≤ Real.exp (K * T₀) :=
+    Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left htT₀ K.coe_nonneg)
+  have hlin : M + (slabTime p : ℝ) * Pu ≤ (1 + T₀) * (M + Pu) := by
+    nlinarith [mul_le_mul_of_nonneg_right htT₀ hPu, T₀.coe_nonneg]
+  calc _ ≤ Real.exp (K * T₀) * (M + (slabTime p : ℝ) * Pu) :=
+        mul_le_mul_of_nonneg_right hexp (by positivity)
+    _ ≤ Real.exp (K * T₀) * ((1 + T₀) * (M + Pu)) :=
+        mul_le_mul_of_nonneg_left hlin (Real.exp_pos _).le
+    _ = _ := by ring
 
 variable {lam Lam : ℝ}
 
@@ -494,28 +526,8 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
   have hPu : 0 ≤ Pu := norm_nonneg _
   have hT₀ : (T : ℝ) ≤ T₀ := by exact_mod_cast hTT₀
   -- The comparison principle bounds the supremum of `u` by its initial values and `P u`.
-  have hV : V ≤ E₀ * (M + Pu) := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
-    have hmax := abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le hα₁.le
-      (b := b) (fun q ξ ↦ (mul_nonneg hlam.le (sq_nonneg ‖ξ‖)).trans (ha q ξ))
-      (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck))
-      K.coe_nonneg u (fun q ↦ by
-        simpa only [Real.norm_eq_abs] using HolderSpace.norm_apply_le
-          (euclideanParabolicOperatorL hα₁.le a b c u) q) hM p
-    obtain ⟨ht₀, htT⟩ := (slabTime p).2
-    have htT₀ : (slabTime p : ℝ) ≤ T₀ := htT.trans hT₀
-    rw [valueL_apply, Real.norm_eq_abs]
-    refine hmax.trans ?_
-    rw [sub_zero]
-    have hexp : Real.exp (K * (slabTime p : ℝ)) ≤ Real.exp (K * T₀) :=
-      Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left htT₀ K.coe_nonneg)
-    have hlin : M + (slabTime p : ℝ) * Pu ≤ (1 + T₀) * (M + Pu) := by
-      nlinarith [mul_le_mul_of_nonneg_right htT₀ hPu, T₀.coe_nonneg]
-    calc _ ≤ Real.exp (K * T₀) * (M + (slabTime p : ℝ) * Pu) :=
-          mul_le_mul_of_nonneg_right hexp (by positivity)
-      _ ≤ Real.exp (K * T₀) * ((1 + T₀) * (M + Pu)) :=
-          mul_le_mul_of_nonneg_left hlin (Real.exp_pos _).le
-      _ = _ := by ring
+  have hV : V ≤ E₀ * (M + Pu) := norm_valueL_le_exp_mul hα₁.le hTT₀ a b c
+    (fun q ξ ↦ (mul_nonneg hlam.le (sq_nonneg ‖ξ‖)).trans (ha q ξ)) hck u hM
   -- The weighted norms `W d = d^(1 + α/2) ‖u‖_{2+α,par; [d, T]}` for `0 < d < T`.
   let W : ℝ → ℝ := fun d ↦ if h : 0 < d ∧ d < T then
     d ^ (1 + (α : ℝ) / 2) * ‖restrictL h.1.le le_rfl h.2 u‖ else 0

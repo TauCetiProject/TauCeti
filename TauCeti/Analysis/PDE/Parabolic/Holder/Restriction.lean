@@ -43,7 +43,8 @@ initial time be estimated through the restriction of the other factor.
 ## Main declarations
 
 * `TauCeti.ParabolicC2HolderSpace.restrictL`: restriction to a smaller slab, with
-  `TauCeti.ParabolicC2HolderSpace.norm_restrictL_apply_le`.
+  `TauCeti.ParabolicC2HolderSpace.norm_restrictL_apply_le` and
+  `TauCeti.ParabolicC2HolderSpace.norm_valueL_restrictL_le`.
 * `TauCeti.ParabolicC2HolderSpace.timeReverseLIE`: time reversal about `T`.
 * `TauCeti.ParabolicC2HolderSpace.restrictL_timeReverseLIE`: the two commute.
 * `TauCeti.ParabolicC1HolderSpace.restrictL`, `TauCeti.ParabolicC1HolderSpace.timeReverseLIE` and
@@ -181,6 +182,13 @@ theorem norm_restrictL_apply_le (f : ParabolicC2HolderSpace α E F hab) :
     ‖restrictL ha hb hab' f‖ ≤ ‖f‖ := by
   rw [restrictL_eq_restrict]
   exact norm_restrict_le ha hb hab' f
+
+/-- The restriction of a map to a smaller slab has supremum at most that of the map. -/
+theorem norm_valueL_restrictL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueL (restrictL ha hb hab' f)‖ ≤ ‖valueL f‖ :=
+  (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
+    rw [valueL_apply, restrictL_apply, ← valueL_apply]
+    exact (valueL f).norm_coe_le_norm _
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
