@@ -13,7 +13,7 @@ import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 /-!
 # Elementary asymptotic criteria
 
-Seven general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
+Eight general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
 elementary limit of ratios.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
@@ -34,6 +34,10 @@ estimate is used, not differentiability.
 In a seminormed group the norm is at most one on a neighbourhood of the origin, so there a higher
 power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
 remainder of one order be read as a remainder of a smaller order.
+
+A bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` outside a ball about any centre `c` of a normed division ring
+gives `g = O(x⁻¹ ^ n)` at infinity: the decay rate of an inverse power does not depend on the
+centre.
 
 A bound `F = O(x ^ r)` at infinity survives the dilation `x ↦ c x` for `c > 0`. This is how
 rapid decay at infinity, `O(x ^ r)` for every `r`, passes to rescaled functions such as the
@@ -65,6 +69,8 @@ evaluations of elliptic integrals.
   on which eventually `σ ≠ a`, then `f(σ) = O((σ - a)⁻¹)` along it.
 * `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`: `‖x‖ ^ m = O(‖x‖ ^ n)` at the origin
   whenever `n ≤ m`.
+* `Asymptotics.isBigO_inv_pow_cobounded_of_norm_le`: a bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` for
+  `‖x - c‖ > R` gives `g = O(x⁻¹ ^ n)` at infinity.
 * `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
   `F (c x) = O(x ^ r)` for `c > 0`.
 * `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
@@ -125,6 +131,34 @@ theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddCommG
   filter_upwards [Metric.closedBall_mem_nhds (0 : E) one_pos] with x hx
   simp only [one_mul, norm_pow, norm_norm]
   exact pow_le_pow_of_le_one (norm_nonneg x) (by simpa [Metric.mem_closedBall] using hx) h
+
+/-- **An inverse-power bound about any centre is a decay bound at infinity.** If
+`‖g x‖ ≤ A / ‖x - c‖ ^ n` whenever `R < ‖x - c‖`, then `g = O(x⁻¹ ^ n)` along `cobounded 𝕜`. -/
+theorem isBigO_inv_pow_cobounded_of_norm_le {𝕜 E : Type*} [NormedDivisionRing 𝕜]
+    [SeminormedAddCommGroup E] {g : 𝕜 → E} {c : 𝕜} {R A : ℝ} (n : ℕ)
+    (hg : ∀ x, R < ‖x - c‖ → ‖g x‖ ≤ A / ‖x - c‖ ^ n) :
+    g =O[Bornology.cobounded 𝕜] fun x ↦ x⁻¹ ^ n := by
+  refine IsBigO.of_bound (2 ^ n * A) ?_
+  filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (2 * ‖c‖ + 2 * |R| + 1)]
+    with x hx
+  have := norm_sub_norm_le x c
+  have := norm_nonneg c
+  have := le_abs_self R
+  have := abs_nonneg R
+  have hρ : 0 < ‖x - c‖ := by linarith
+  have hxR : R < ‖x - c‖ := by linarith
+  have hA : 0 ≤ A := by
+    have := (norm_nonneg _).trans (hg x hxR)
+    rwa [le_div_iff₀ (by positivity), zero_mul] at this
+  have hinv : (‖x - c‖ ^ n)⁻¹ ≤ 2 ^ n * (‖x‖ ^ n)⁻¹ := by
+    have hx0 : 0 < ‖x‖ := by linarith
+    calc (‖x - c‖ ^ n)⁻¹ = 2 ^ n * ((2 * ‖x - c‖) ^ n)⁻¹ := by
+          rw [mul_pow, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul]
+      _ ≤ 2 ^ n * (‖x‖ ^ n)⁻¹ := by gcongr; linarith
+  calc ‖g x‖ ≤ A / ‖x - c‖ ^ n := hg x hxR
+    _ = A * (‖x - c‖ ^ n)⁻¹ := div_eq_mul_inv _ _
+    _ ≤ A * (2 ^ n * (‖x‖ ^ n)⁻¹) := by gcongr
+    _ = 2 ^ n * A * ‖x⁻¹ ^ n‖ := by rw [norm_pow, norm_inv, inv_pow]; ring
 
 /-- **A power bound at infinity survives a dilation.** If `F = O(x ^ r)` as `x → ∞`, then
 `F (c x) = O(x ^ r)` for every `c > 0`. -/

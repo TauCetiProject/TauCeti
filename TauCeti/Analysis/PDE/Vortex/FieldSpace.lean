@@ -54,7 +54,7 @@ that make multiplication by its coefficients, and its own defect, compatible wit
 scale.
 
 For `s > 1`, a continuous field in `A_m^s` tends to the reference field at infinity, by Sobolev
-embedding into `C₀`. In particular its section satisfies the end framing
+embedding into `C₀`, and it is bounded. In particular its section satisfies the end framing
 `α(z) (z / |z|)^(-m) → 1`, and its modulus tends to one; with the maximum principle this gives
 `|α| ≤ 1` for every `C²` vortex in `A_m^s`. No equation map, gauge group, Fredholm property or
 smooth structure on the quotient is constructed here.
@@ -441,5 +441,26 @@ theorem normSq_le_one_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : 
     exacts [hb₁, hb₂, hp.continuous, hq.continuous]
   exact normSq_le_one_of_tendsto hp hq hsol
     (tendsto_normSq_of_mem_framedFieldSpace hs hx hcont) z
+
+/-- A continuous field of the affine space `A_m^s`, `s > 1`, is bounded: it tends to the
+reference field at infinity, and the reference field is bounded. -/
+theorem exists_norm_le_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
+    (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
+    (hcont : Continuous x) : ∃ C, ∀ z, ‖x z‖ ≤ C := by
+  -- The coordinates of the reference field are bounded.
+  choose B hB using fun i ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m i 0
+  have href (z : ℂ) : ‖referenceField f m z‖ ≤ √(∑ i, B i ^ 2) := by
+    refine Real.le_sqrt_of_sq_le ?_
+    rw [EuclideanSpace.norm_sq_eq]
+    gcongr with i
+    simpa [norm_iteratedFDeriv_zero] using hB i z
+  -- The difference `x - x_m` is continuous and tends to zero at infinity.
+  let d : ZeroAtInftyContinuousMap ℂ (EuclideanSpace ℝ (Fin 4)) :=
+    ⟨⟨x - referenceField f m, hcont.sub (contDiff_referenceField f m).continuous⟩,
+      tendsto_sub_referenceField hs hx hcont⟩
+  obtain ⟨D, hD⟩ := isBounded_iff_forall_norm_le.1 d.isBounded_range
+  refine ⟨D + √(∑ i, B i ^ 2), fun z ↦ ?_⟩
+  calc ‖x z‖ = ‖(x z - referenceField f m z) + referenceField f m z‖ := by rw [sub_add_cancel]
+    _ ≤ D + √(∑ i, B i ^ 2) := (norm_add_le _ _).trans (add_le_add (hD _ ⟨z, rfl⟩) (href z))
 
 end TauCeti.Vortex

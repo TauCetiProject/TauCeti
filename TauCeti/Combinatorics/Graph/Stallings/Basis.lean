@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Folded
-public import TauCeti.GroupTheory.GraphOfGroups.PathGroup
-public import TauCeti.GroupTheory.FreeGroup.Rank
+public import TauCeti.GroupTheory.GraphOfGroups.Rank
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 
 /-!
@@ -27,12 +26,13 @@ this basis.
 
 Consequently the accepted subgroup is finitely generated exactly when there are finitely many
 positive non-tree darts, its rank is then their number, and it is trivial exactly when there
-are none.
+are none. For a connected graph with finitely many vertices this gives the Euler form of the
+rank: the rank plus the number of vertices is the number of positive darts plus one.
 
 ## References
 
 * I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*,
-  §6, Lemma 6.1 and Corollary 6.8.
+  §6, Lemma 6.1 and Corollary 6.8; §8, Lemma 8.2.
 * A. Hatcher, *Algebraic Topology*, §1.A, Proposition 1A.2.
 -/
 
@@ -229,6 +229,15 @@ outside a spanning tree. -/
 theorem rank_subgroup (hS : S.IsFolded) (hO : S.graph.IsOrientation O) [Group.FG (S.subgroup a)] :
     Group.rank (S.subgroup a) = Nat.card ↥(O \ T.darts) :=
   (S.freeGroupBasis T a hS hO).rank_eq_nat_card
+
+/-- The Euler form of the rank: for a connected folded graph with finitely many vertices
+accepting a finitely generated subgroup, the rank of that subgroup plus the number of vertices
+is the number of positive darts plus one. -/
+theorem rank_subgroup_add_card (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
+    (h : S.graph.Connected) [Finite S.graph.V] [Group.FG (S.subgroup a)] :
+    Group.rank (S.subgroup a) + Nat.card S.graph.V = Nat.card O + 1 := by
+  have : Group.FG (PathGroup S.graph a) := (isMulFG_congr (S.pathGroupEquivSubgroup hS a)).mpr ‹_›
+  rw [← Group.rank_congr (S.pathGroupEquivSubgroup hS a), hO.rank_pathGroup_add_card h a]
 
 /-- A folded graph accepts only the identity exactly when its basis is empty: every positive
 dart lies in the spanning tree. In particular a graph without darts accepts the trivial

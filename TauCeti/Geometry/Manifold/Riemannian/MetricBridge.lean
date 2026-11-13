@@ -24,7 +24,7 @@ norm times the distance from `x` to `y`.
 This is the chart-level estimate needed when transferring vector-valued variation estimates to
 `Manifold.pathELength` in the Hopf--Rinow lower-semicontinuity argument.  The proof uses the
 interval-integral estimate
-`enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc` and the chain rule for `mfderivWithin`.
+`eNorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc` and the chain rule for `mfderivWithin`.
 
 The interval-integral estimate and the local-coordinate differential argument follow the
 corresponding constructions in Mathlib's `Geometry/Manifold/Riemannian/Basic.lean`.
@@ -87,7 +87,7 @@ theorem enorm_sub_le_mul_pathELength {f : M → F} {γ : ℝ → M} {a b : ℝ}
     calc
       ‖(f ∘ γ) b - (f ∘ γ) a‖ₑ ≤
           ∫⁻ t in Icc a b, ‖derivWithin (f ∘ γ) (Icc a b) t‖ₑ := by
-        apply enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc _ hab.le
+        apply eNorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc _ hab.le
         rwa [← contMDiffOn_iff_contDiffOn]
       _ ≤ ∫⁻ t in Icc a b, C * ‖mfderiv[Icc a b] γ t 1‖ₑ := by
         apply setLIntegral_mono' measurableSet_Icc (fun t ht ↦ ?_)
@@ -191,7 +191,7 @@ theorem edist_le_mul_riemannianEDist {f : M → F}
     have h := enorm_sub_le_mul_pathELength zero_le_one (hγ.mdifferentiableOn one_ne_zero)
       (hf.comp_contMDiffOn hγ) (fun t _ ↦ (hf (γ t)).mdifferentiableAt one_ne_zero)
       fun t _ ↦ hC _ _
-    rw [hγ0, hγ1, ← edist_eq_enorm_sub, edist_comm] at h
+    rw [hγ0, hγ1, ← eDist_eq_eNorm_sub, edist_comm] at h
     exact ENNReal.div_le_of_le_mul' h
   calc edist (f x) (f y) = C * (edist (f x) (f y) / C) :=
         (ENNReal.mul_div_cancel hC0' ENNReal.coe_ne_top).symm
