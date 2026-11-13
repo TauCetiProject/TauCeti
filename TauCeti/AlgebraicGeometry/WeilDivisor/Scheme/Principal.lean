@@ -20,7 +20,7 @@ therefore vanishes on `U`. The codimension-one points outside `U` are finite, by
 
 The main results are:
 
-* `SchemeWeilDivisor.finite_setOfPred_not_mem`: a nonempty open misses only finitely many
+* `SchemeWeilDivisor.finite_setOfPred_notMem`: a nonempty open misses only finitely many
   codimension-one points;
 * `SchemeWeilDivisor.finite_support_orderAt`: the orders of a nonzero rational function have
   finite support;
@@ -53,7 +53,7 @@ noncomputable section
 
 /-- A nonempty open subset of an irreducible scheme with Noetherian underlying space contains all
 but finitely many codimension-one points. -/
-lemma finite_setOfPred_not_mem [IrreducibleSpace X] [NoetherianSpace X]
+lemma finite_setOfPred_notMem [IrreducibleSpace X] [NoetherianSpace X]
     (U : X.Opens) [Nonempty U] :
     {x : CodimensionOnePoint X | (x : X) ∉ U}.Finite := by
   have hU := U.isOpen.isClosed_compl
@@ -73,7 +73,7 @@ lemma finite_support_orderAt (f : Additive X.functionFieldˣ) :
     exists_isUnit_germ_eq X ((Additive.toMul f : X.functionFieldˣ) : X.functionField)
       (Units.ne_zero _)
   let : Nonempty U := hU
-  refine (finite_setOfPred_not_mem U).subset ?_
+  refine (finite_setOfPred_notMem U).subset ?_
   intro x hx
   simp only [Set.mem_ofPred_eq]
   intro hxU
