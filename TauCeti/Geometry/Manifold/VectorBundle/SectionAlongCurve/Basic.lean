@@ -18,6 +18,8 @@ reading.
 ## Main definitions and results
 
 * `TauCeti.Manifold.sectionCoord`: the coordinate reading of a section along a curve.
+* `TauCeti.Manifold.continuousWithinAt_sectionCoord` and `continuousAt_sectionCoord`: continuity
+  of the coordinate reading in any trivialization containing the base point.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for that
   reading within a parameter set.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord_sum`: finite sums of sections with
@@ -108,7 +110,30 @@ theorem sectionCoord_comp (φ : 𝕜 → 𝕜) (x : M) :
   ext t
   simp only [sectionCoord_apply, Function.comp_apply]
 
-/-! ### Differentiability of the coordinate reading -/
+/-! ### Continuity and differentiability of the coordinate reading -/
+
+/-- A continuous section along a curve has continuous coordinates in any canonical
+trivialization whose base set contains the current base point, also within a parameter set. -/
+theorem continuousWithinAt_sectionCoord {s : Set 𝕜} {x : M} {t : 𝕜}
+    (h : ContinuousWithinAt (fun r ↦ TotalSpace.mk' F (γ r) (W r)) s t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    ContinuousWithinAt (sectionCoord (F := F) γ W x) s t := by
+  let e := trivializationAt F V x
+  have hγ := ((FiberBundle.continuousWithinAt_totalSpace F _).1 h).1
+  have he := ((e.continuousAt ((e.coe_mem_source).2 hx)).comp_continuousWithinAt
+    (f := fun r ↦ TotalSpace.mk' F (γ r) (W r)) h).snd
+  refine he.congr_of_eventuallyEq ?_ (e.continuousLinearMapAt_apply_of_mem 𝕜 hx (W t))
+  filter_upwards [hγ.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)] with r hr
+  exact e.continuousLinearMapAt_apply_of_mem 𝕜 hr (W r)
+
+/-- A continuous section along a curve has continuous coordinates in any canonical
+trivialization whose base set contains the current base point. -/
+theorem continuousAt_sectionCoord {x : M} {t : 𝕜}
+    (h : ContinuousAt (fun r ↦ TotalSpace.mk' F (γ r) (W r)) t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    ContinuousAt (sectionCoord (F := F) γ W x) t := by
+  rw [← continuousWithinAt_univ]
+  exact continuousWithinAt_sectionCoord γ W h.continuousWithinAt hx
 
 /-- A finite sum of sections along a curve whose coordinate readings are differentiable within
 `s` at `t` again has a coordinate reading differentiable within `s` at `t`. -/

@@ -123,35 +123,23 @@ private theorem hasDerivAt_sectionCoord_floerOperator_coefficient_difference
       (fun r ↦ TotalSpace.mk' E (γ r) (ω.hamiltonianVectorField (δKt z) (γ r))) 0 :=
     hδXt.comp (f := γ) hγ.continuousAt
   have hJγ := (hJ.comp 0 hγ).continuousAt
+  have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ 0)
   have hcoord (V : ∀ r, TangentSpace I (γ r))
-      (hV : ContinuousAt (fun r ↦ TotalSpace.mk' E (γ r) (V r)) 0) :
-      ContinuousAt (sectionCoord (F := E) γ V (γ 0)) 0 := by
-    let e := trivializationAt E (TangentSpace I) (γ 0)
-    have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ 0)
-    refine ((FiberBundle.continuousAt_totalSpace E _).1 hV).2.congr_of_eventuallyEq ?_
-    filter_upwards [hγ.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hbase)] with r hr
-    simpa only [sectionCoord_apply] using e.continuousLinearMapAt_apply_of_mem ℝ hr (V r)
+      (hV : ContinuousAt (fun r ↦ TotalSpace.mk' E (γ r) (V r)) 0) :=
+    continuousAt_sectionCoord γ V hV hbase
   have hW : ContinuousAt (sectionCoord (F := E) γ W (γ 0)) 0 := by
     simpa only [W, sectionCoord_sub, sectionCoord_smul] using!
       (((hcoord _ (hYγ.clm_bundle_apply hΔt.continuousAt)).sub (hcoord _ hδXsγ)).sub
         (hcoord _ (hJγ.clm_bundle_apply hδXtγ))).sub
           (continuousAt_id.smul (hcoord _ (hYγ.clm_bundle_apply hδXtγ)))
   -- At zero, the derivative of r • W(r) is W(0), using continuity rather than a product rule.
-  have hd := HasFDerivWithinAt.clm_apply_of_eq_zero
-    (ContinuousAt.continuousWithinAt (s := Set.univ)
-      ((ContinuousLinearMap.toSpanSingletonCLE : E ≃L[ℝ] ℝ →L[ℝ] E).continuousAt.comp hW))
-      ((hasDerivAt_id (0 : ℝ)).hasFDerivAt.hasFDerivWithinAt (s := Set.univ)) rfl
   have hp : HasDerivAt (fun r ↦ r • sectionCoord (F := E) γ W (γ 0) r)
       (W 0) 0 := by
-    have hd' := hd.hasDerivWithinAt
-    rw [hasDerivWithinAt_univ] at hd'
-    apply hd'.congr_deriv
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.toSpanSingleton_apply,
-      one_smul, Function.comp_apply]
-    rw [ContinuousLinearMap.toSpanSingletonCLE_apply_apply, one_smul]
-    simp
-    -- At its centre the canonical tangent trivialization is the identity on the model fibre.
-    rfl
+    have hd := (hasDerivAt_id (0 : ℝ)).smul_of_eq_zero hW rfl
+    simp only [one_smul] at hd
+    refine hd.congr_deriv ?_
+    rw [sectionCoord_apply]
+    exact continuousLinearMapAt_trivializationAt_self (γ 0) (W 0)
   -- Read the exact affine expansion in section coordinates, retaining the mixed term.
   simp only [W, γ, Vt, zero_smul, sub_zero] at hp
   refine hp.congr_of_eventuallyEq ?_
@@ -161,9 +149,9 @@ private theorem hasDerivAt_sectionCoord_floerOperator_coefficient_difference
     (u r) z hr.1 hr.2.1 hr.2.2.1 hr.2.2.2 r]
   simp [γ]
 
-/-- The simultaneous affine-coefficient Floer operator is differentiable in section coordinates
+/-- The simultaneous affine-coefficient Floer operator is differentiable as a tangent-bundle map
 at zero. Only continuity of the perturbation directions is needed; no connection is required. -/
-theorem differentiableAt_sectionCoord_floerOperator_add_smul_coefficients
+theorem mdifferentiableAt_floerOperator_add_smul_coefficients
     {u : ℝ → ℝ × ℝ → M} {z : ℝ × ℝ}
     (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (0, z))
     (hJ : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
@@ -179,9 +167,14 @@ theorem differentiableAt_sectionCoord_floerOperator_add_smul_coefficients
       MDifferentiableAt I 𝓘(ℝ) (Kt z) (u r z) ∧
       MDifferentiableAt I 𝓘(ℝ) (δKs z) (u r z) ∧
       MDifferentiableAt I 𝓘(ℝ) (δKt z) (u r z)) :
-    DifferentiableAt ℝ (sectionCoord (F := E) (fun r ↦ u r z) (fun r ↦
-      ω.floerOperator (fun w x ↦ J w x + r • Y w x)
-        (fun w ↦ Ks w + r • δKs w) (fun w ↦ Kt w + r • δKt w) (u r) z) (u 0 z)) 0 := by
+    MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent (fun r ↦ TotalSpace.mk' E (u r z)
+      (ω.floerOperator (fun w x ↦ J w x + r • Y w x)
+        (fun w ↦ Ks w + r • δKs w) (fun w ↦ Kt w + r • δKt w) (u r) z)) 0 := by
+  have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun r ↦ u r z) 0 :=
+    (hu.comp 0 (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
+      (by norm_num)
+  apply (differentiableAt_sectionCoord_iff _ _ hγ
+    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z))).1
   have hF := differentiableAt_sectionCoord _ _
     (ω.mdifferentiableAt_floerOperator J Ks Kt hu hJ hXs hXt)
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z))
@@ -232,8 +225,6 @@ theorem alongCurve_floerOperator_add_smul_coefficients
   have hF := differentiableAt_sectionCoord γ F
     (ω.mdifferentiableAt_floerOperator J Ks Kt hu hJ hXs hXt)
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z))
-  have hG := ω.differentiableAt_sectionCoord_floerOperator_add_smul_coefficients
-    J Y Ks Kt δKs δKt hu hJ hY hXs hXt hδXs hδXt hK
   have hd := ω.hasDerivAt_sectionCoord_floerOperator_coefficient_difference
     J Y Ks Kt δKs δKt hu hJ hY hXt hδXs hδXt hK
   have hsum : G = fun r ↦ F r + (G r - F r) := by funext r; abel
@@ -241,8 +232,7 @@ theorem alongCurve_floerOperator_add_smul_coefficients
   -- Name the curve and operators in the goal so the sum rule matches these local abbreviations.
   -- The difference vanishes at zero, so its Christoffel term vanishes as well.
   change alongCurve cov γ G 0 = _
-  rw [hsum, alongCurve_add cov γ F (fun r ↦ G r - F r) hF
-    (by simpa only [sectionCoord_sub] using hG.sub hF),
+  rw [hsum, alongCurve_add cov γ F (fun r ↦ G r - F r) hF hd.differentiableAt,
     ← alongCurveWithin_univ cov γ (fun r ↦ G r - F r) 0,
     alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero cov γ _ hzero,
     derivWithin_univ, hd.deriv,
