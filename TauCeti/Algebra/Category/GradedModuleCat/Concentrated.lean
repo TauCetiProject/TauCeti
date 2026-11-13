@@ -30,7 +30,7 @@ public section
 
 namespace TauCeti.GradedModuleCat
 
-open _root_.DirectSum
+open CategoryTheory _root_.DirectSum
 
 universe uk uA v
 
@@ -72,8 +72,8 @@ theorem positive_smul_top_eq_bot_of_concentrated (N : GradedModuleCat.{v} 𝒜) 
       simp [hz]
 
 /-- On a module concentrated in one degree, a scalar acts through its degree-zero component. -/
-theorem smul_eq_decompose_zero_smul_of_concentrated [GradedAlgebra 𝒜]
-    {N : GradedModuleCat.{v} 𝒜} {p : ℤ}
+theorem smul_eq_decompose_zero_smul_of_concentrated [DirectSum.Decomposition 𝒜]
+    (N : GradedModuleCat.{v} 𝒜) {p : ℤ}
     (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (a : A) (x : N) :
     a • x = (DirectSum.decompose 𝒜 a 0 : A) • x := by
   have hmem (y : N) : y ∈ N.grading.piece p :=
@@ -83,10 +83,15 @@ theorem smul_eq_decompose_zero_smul_of_concentrated [GradedAlgebra 𝒜]
   rw [zero_add, decompose_of_mem_same N.grading.piece (hmem (a • x))] at h
   exact h
 
-/-- A degree-zero-linear map between modules concentrated in the same degree is a graded
-`A`-linear map. The degree-zero scalar actions are the restrictions of the given `A`-actions. -/
-def ofGradeZeroLinearMapOfConcentrated [GradedAlgebra 𝒜]
-    {M N : GradedModuleCat.{v} 𝒜} {p : ℤ}
+/-- Shifting a module concentrated in degree `p` by `n` concentrates it in degree `p + n`. -/
+theorem shiftObj_piece_eq_bot_of_concentrated (N : GradedModuleCat.{v} 𝒜) {p : ℤ}
+    (n : ℤ) (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (q : ℤ) (hq : q ≠ p + n) :
+    (N.shiftObj n).grading.piece q = ⊥ := by
+  rw [InternalGrading.shift_piece]
+  exact hN _ (by omega)
+
+private def liftGradeZeroLinearMapOfConcentrated [GradedAlgebra 𝒜]
+    (M N : GradedModuleCat.{v} 𝒜) {p : ℤ}
     (hM : ∀ q, q ≠ p → M.grading.piece q = ⊥)
     (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥)
     (f : M →ₗ[SetLike.GradeZero.subalgebra 𝒜] N) : M ⟶ N :=
@@ -94,9 +99,12 @@ def ofGradeZeroLinearMapOfConcentrated [GradedAlgebra 𝒜]
     { toFun := f
       map_add' := f.map_add
       map_smul' a x := by
-        rw [smul_eq_decompose_zero_smul_of_concentrated hM,
-          smul_eq_decompose_zero_smul_of_concentrated hN]
-        exact f.map_smul (DirectSum.decompose 𝒜 a 0) x }
+        rw [smul_eq_decompose_zero_smul_of_concentrated M hM,
+          smul_eq_decompose_zero_smul_of_concentrated N hN]
+        -- The degree-zero subalgebra has definitionally the same carrier as the zero piece.
+        let a₀ : SetLike.GradeZero.subalgebra 𝒜 :=
+          ⟨(DirectSum.decompose 𝒜 a 0 : A), (DirectSum.decompose 𝒜 a 0).property⟩
+        exact f.map_smul a₀ x }
     (LinearMap.isHomogeneous_def.2 fun q x hx => by
       by_cases hq : q = p
       · subst q
@@ -104,13 +112,54 @@ def ofGradeZeroLinearMapOfConcentrated [GradedAlgebra 𝒜]
       · have hx0 : x = 0 := by simpa only [hM q hq, Submodule.mem_bot] using hx
         simp [hx0])
 
-/-- The underlying function of the induced graded map is the original degree-zero-linear map. -/
+/-- Between modules concentrated in the same degree, graded `A`-linear maps are exactly the
+maps linear over the degree-zero subalgebra. Both directions preserve the underlying function.
+The degree-zero scalar actions are restrictions of the given `A`-actions. -/
+def gradeZeroLinearMapEquivOfConcentrated [GradedAlgebra 𝒜]
+    (M N : GradedModuleCat.{v} 𝒜) {p : ℤ}
+    (hM : ∀ q, q ≠ p → M.grading.piece q = ⊥)
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) :
+    (M ⟶ N) ≃ₗ[k] (M →ₗ[SetLike.GradeZero.subalgebra 𝒜] N) where
+  toFun f := f.hom.restrictScalars (SetLike.GradeZero.subalgebra 𝒜)
+  invFun := liftGradeZeroLinearMapOfConcentrated M N hM hN
+  left_inv f := by ext; rfl
+  right_inv f := by ext; rfl
+  map_add' _ _ := by rfl
+  map_smul' _ _ := by rfl
+
+/-- Restricting a graded map to degree-zero scalars preserves its value on every element. -/
 @[simp]
-theorem ofGradeZeroLinearMapOfConcentrated_apply [GradedAlgebra 𝒜]
-    {M N : GradedModuleCat.{v} 𝒜} {p : ℤ}
+theorem gradeZeroLinearMapEquivOfConcentrated_apply [GradedAlgebra 𝒜]
+    (M N : GradedModuleCat.{v} 𝒜) {p : ℤ}
+    (hM : ∀ q, q ≠ p → M.grading.piece q = ⊥)
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (f : M ⟶ N) (x : M) :
+    gradeZeroLinearMapEquivOfConcentrated M N hM hN f x = f.hom x := by rfl
+
+/-- Lifting a degree-zero-linear map to a graded map preserves its value on every element. -/
+@[simp]
+theorem gradeZeroLinearMapEquivOfConcentrated_symm_apply [GradedAlgebra 𝒜]
+    (M N : GradedModuleCat.{v} 𝒜) {p : ℤ}
     (hM : ∀ q, q ≠ p → M.grading.piece q = ⊥)
     (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥)
     (f : M →ₗ[SetLike.GradeZero.subalgebra 𝒜] N) (x : M) :
-    (ofGradeZeroLinearMapOfConcentrated hM hN f).hom x = f x := (rfl)
+    ((gradeZeroLinearMapEquivOfConcentrated M N hM hN).symm f).hom x = f x := by rfl
+
+/-- The degree-zero-linear presentation sends the graded identity to the linear identity. -/
+@[simp]
+theorem gradeZeroLinearMapEquivOfConcentrated_id [GradedAlgebra 𝒜]
+    (M : GradedModuleCat.{v} 𝒜) {p : ℤ}
+    (hM : ∀ q, q ≠ p → M.grading.piece q = ⊥) :
+    gradeZeroLinearMapEquivOfConcentrated M M hM hM (𝟙 M) =
+      LinearMap.id := by rfl
+
+/-- The degree-zero-linear presentation preserves composition. -/
+theorem gradeZeroLinearMapEquivOfConcentrated_comp [GradedAlgebra 𝒜]
+    (M N P : GradedModuleCat.{v} 𝒜) {p : ℤ}
+    (hM : ∀ q, q ≠ p → M.grading.piece q = ⊥)
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥)
+    (hP : ∀ q, q ≠ p → P.grading.piece q = ⊥) (f : M ⟶ N) (g : N ⟶ P) :
+    gradeZeroLinearMapEquivOfConcentrated M P hM hP (f ≫ g) =
+      (gradeZeroLinearMapEquivOfConcentrated N P hN hP g).comp
+        (gradeZeroLinearMapEquivOfConcentrated M N hM hN f) := by rfl
 
 end TauCeti.GradedModuleCat

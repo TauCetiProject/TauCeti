@@ -28,8 +28,6 @@ Over a semisimple ring, the torsion ideal of an element is a direct summand of t
 element generates a copy of the projective left ideal `R f` for an idempotent `f`. Minimal graded
 projective covers over an algebra with semisimple degree-zero part are assembled from such
 idempotents.
-The regular module over a semisimple ring also detects every nonzero module, with no
-finite-generation hypothesis.
 
 ## Main results
 
@@ -42,8 +40,6 @@ finite-generation hypothesis.
   sends `w` to `x` if and only if the torsion ideal of `w` is contained in that of `x`.
 * `IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff`: over a semisimple ring,
   every cyclic submodule `R ∙ v` is isomorphic to `R f` for an idempotent `f` fixing `v`.
-* `IsSemisimpleRing.subsingleton_of_subsingleton_linearMap`: vanishing of all linear maps
-  to the regular module detects the zero module over a semisimple ring.
 -/
 
 public section
@@ -134,17 +130,5 @@ theorem _root_.IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff [IsSemi
   · rintro ⟨r, rfl⟩
     rw [mul_assoc, hu.eq]
   · exact fun hc => ⟨c, hc.symm⟩
-
-/-- The regular module over a semisimple ring detects nonzero modules: if every linear map
-from `M` to `R` is zero, then `M` is zero. No finite-generation hypothesis is needed. -/
-theorem _root_.IsSemisimpleRing.subsingleton_of_subsingleton_linearMap [IsSemisimpleRing R]
-    (h : Subsingleton (M →ₗ[R] R)) : Subsingleton M := by
-  refine subsingleton_of_forall_eq 0 fun x => ?_
-  obtain ⟨e, -, hex, he⟩ :=
-    IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff (R := R) x
-  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_apply_eq_iff (R := R) (w := x) (x := e)).2
-    (fun a ha => (he a).1 ha)
-  have he0 : e = 0 := by simpa only [h.elim f 0, LinearMap.zero_apply] using hf.symm
-  simpa only [he0, zero_smul] using hex.symm
 
 end TauCeti

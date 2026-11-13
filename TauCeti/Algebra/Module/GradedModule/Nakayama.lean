@@ -22,6 +22,8 @@ presentation of that quotient. It detects the generating degrees of terms of min
 projective resolutions: maps to modules annihilated by `A₊` see precisely this quotient.
 Neither projectivity nor semisimplicity is needed for the generation criterion. Boundedness below
 is essential; no finite-generation hypothesis is required when a lower bound is supplied.
+Finite generation over the graded algebra supplies a lower bound for any compatible grading
+when the algebra is nonnegatively graded.
 
 The positive-degree action `A₊ M` is itself a homogeneous submodule, stable under degree-zero
 scalars: its degree-`p` components are sums of products `a • y` with `a` of positive degree `i`
@@ -185,6 +187,44 @@ theorem smul_mem_positive_smul_top [SetLike.GradedMul 𝒜] {a : A} (ha : a ∈ 
   · rw [← mul_smul]
     exact Submodule.smul_mem_smul (hmul b hb) Submodule.mem_top
   · simpa only [smul_add] using Submodule.add_mem _ hx hy
+
+omit [IsScalarTower k A M] in
+/-- A finitely generated graded module over a nonnegatively graded algebra is bounded below. -/
+theorem bddBelow_setOf_piece_ne_bot [Module.Finite A M] [DirectSum.Decomposition 𝒜]
+    (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) : BddBelow {p | G.piece p ≠ ⊥} := by
+  classical
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := M)
+  obtain ⟨b, hb⟩ : BddBelow (⋃ g ∈ s, ((decompose G.piece g).support : Set ℤ)) :=
+    (s.finite_toSet.biUnion fun g _ ↦ Finset.finite_toSet _).bddBelow
+  let L : Submodule k M := ⨆ q : Set.Ici b, G.piece q
+  have hAL : ∀ (a : A), ∀ y ∈ L, a • y ∈ L := by
+    intro a y hy
+    refine Submodule.iSup_induction _ (motive := fun y ↦ a • y ∈ L) hy
+      (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by
+        simpa only [smul_add] using L.add_mem hy hz
+    rw [← sum_support_decompose 𝒜 a, Finset.sum_smul]
+    refine L.sum_mem fun i _ ↦ ?_
+    by_cases hi0 : i < 0
+    · have hz : (decompose 𝒜 a i : A) = 0 := by
+        simpa only [h𝒜 i hi0, Submodule.mem_bot] using (decompose 𝒜 a i).property
+      simp [hz]
+    · exact Submodule.mem_iSup_of_mem ⟨i + q, (q.property : b ≤ (q : ℤ)).trans
+          (le_add_of_nonneg_left (le_of_not_gt hi0))⟩
+        (SetLike.GradedSMul.smul_mem (decompose 𝒜 a i).property hy)
+  let L' : Submodule A M := { L.toAddSubmonoid with smul_mem' := hAL }
+  have hL : ∀ y : M, y ∈ L := by
+    have hsL : Submodule.span A (s : Set M) ≤ L' := by
+      refine Submodule.span_le.mpr fun g hg ↦ ?_
+      rw [← sum_support_decompose G.piece g]
+      refine L.sum_mem fun q hq ↦ Submodule.mem_iSup_of_mem ⟨q, ?_⟩ (decompose _ g q).property
+      exact hb (Set.mem_biUnion hg hq)
+    exact fun y ↦ hsL (hs ▸ Submodule.mem_top)
+  refine ⟨b, fun p hp ↦ ?_⟩
+  by_contra! hpb
+  refine hp (eq_bot_iff.mpr fun x hx ↦ ?_)
+  refine Submodule.disjoint_def.mp (G.isInternal.submodule_iSupIndep p) x hx ?_
+  refine (iSup_le fun q ↦ ?_ : L ≤ ⨆ j, ⨆ (_ : j ≠ p), G.piece j) (hL x)
+  exact le_iSup₂_of_le (q : ℤ) (hpb.trans_le q.2).ne' le_rfl
 
 variable [GradedAlgebra 𝒜]
 
