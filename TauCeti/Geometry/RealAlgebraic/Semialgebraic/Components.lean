@@ -100,14 +100,9 @@ avoids repetitions in the family. -/
 theorem IsLocallySemialgebraic.locallyFinite_connectedComponentIn
     (hs : IsLocallySemialgebraic s) :
     LocallyFinite (fun C : (_root_.connectedComponentIn s '' s) ↦ (C : Set (σ → ℝ))) := by
-  intro x
+  refine locallyFinite_connectedComponentIn_of_forall_mem_nhds fun x ↦ ?_
   obtain ⟨U, hUo, hxU, -, -, hfin⟩ :=
     (hs.semialgebraicAt x).exists_finite_image_connectedComponentIn (V := univ) univ_mem
-  refine ⟨U, hUo.mem_nhds hxU, (hfin.preimage Subtype.val_injective.injOn).subset ?_⟩
-  rintro C ⟨y, hyC, hyU⟩
-  obtain ⟨z, _, hzC⟩ := C.property
-  have hy : y ∈ _root_.connectedComponentIn s z := hzC ▸ hyC
-  exact ⟨y, ⟨connectedComponentIn_subset s z hy, hyU⟩,
-    (connectedComponentIn_eq hy).symm.trans hzC⟩
+  exact ⟨U, hUo.mem_nhds hxU, hfin⟩
 
 end TauCeti

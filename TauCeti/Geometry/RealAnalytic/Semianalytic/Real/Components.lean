@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.Real.Basic
 public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Topology.Order.IntermediateValue
-import Mathlib.Topology.Compactness.LocallyFinite
 
 /-!
 # Components of semianalytic subsets of the real line
@@ -81,7 +80,7 @@ theorem SemianalyticAt.exists_finite_isPreconnected_cover {s V : Set ℝ} {x : �
 
 /-- All global connected components have semianalytic intersections with one common small
 interval near a semianalytic real point. An intersection may contain several local pieces. -/
-theorem SemianalyticAt.exists_isSemianalytic_inter_connectedComponentIn {s V : Set ℝ} {x : ℝ}
+theorem SemianalyticAt.exists_isSemianalytic_connectedComponentIn_inter {s V : Set ℝ} {x : ℝ}
     (hs : SemianalyticAt s x) (hV : V ∈ 𝓝 x) :
     ∃ a b, x ∈ Ioo a b ∧ Ioo a b ⊆ V ∧
       ∀ y, IsSemianalytic (_root_.connectedComponentIn s y ∩ Ioo a b) := by
@@ -109,7 +108,7 @@ theorem IsSemianalytic.connectedComponentIn_real {s : Set ℝ} (hs : IsSemianaly
     IsSemianalytic (_root_.connectedComponentIn s y) := by
   refine isSemianalytic_iff.2 fun x => ?_
   obtain ⟨a, b, hx, _, hc⟩ :=
-    (hs.semianalyticAt x).exists_isSemianalytic_inter_connectedComponentIn (V := univ) univ_mem
+    (hs.semianalyticAt x).exists_isSemianalytic_connectedComponentIn_inter (V := univ) univ_mem
   refine ((hc y).semianalyticAt x).congr ?_
   filter_upwards [Ioo_mem_nhds hx.1 hx.2] with z hz
   simp only [mem_inter_iff, hz, and_true]
@@ -120,26 +119,16 @@ from different points of the same component. -/
 theorem IsSemianalytic.locallyFinite_connectedComponentIn_real {s : Set ℝ}
     (hs : IsSemianalytic s) :
     LocallyFinite (fun C : (_root_.connectedComponentIn s '' s) => (C : Set ℝ)) := by
-  intro x
+  refine locallyFinite_connectedComponentIn_of_forall_mem_nhds fun x => ?_
   obtain ⟨a, b, hx, _, hfin⟩ :=
     (hs.semianalyticAt x).exists_finite_image_connectedComponentIn (V := univ) univ_mem
-  refine ⟨Ioo a b, Ioo_mem_nhds hx.1 hx.2,
-    (hfin.preimage Subtype.val_injective.injOn).subset ?_⟩
-  rintro C ⟨y, hyC, hyU⟩
-  obtain ⟨z, _, hzC⟩ := C.property
-  have hy : y ∈ _root_.connectedComponentIn s z := hzC ▸ hyC
-  exact ⟨y, ⟨connectedComponentIn_subset s z hy, hyU⟩,
-    (connectedComponentIn_eq hy).symm.trans hzC⟩
+  exact ⟨Ioo a b, Ioo_mem_nhds hx.1 hx.2, hfin⟩
 
 /-- Only finitely many global connected components of a semianalytic subset of the real
 line meet a given compact set. The components themselves need not be bounded or closed. -/
 theorem IsSemianalytic.finite_image_connectedComponentIn_inter_real {s K : Set ℝ}
     (hs : IsSemianalytic s) (hK : IsCompact K) :
-    (_root_.connectedComponentIn s '' (s ∩ K)).Finite := by
-  have hfin := hs.locallyFinite_connectedComponentIn_real.finite_nonempty_inter_compact hK
-  refine (hfin.image (fun C : (_root_.connectedComponentIn s '' s) => (C : Set ℝ))).subset ?_
-  rintro C ⟨y, ⟨hys, hyK⟩, rfl⟩
-  exact ⟨⟨_root_.connectedComponentIn s y, y, hys, rfl⟩,
-    ⟨y, mem_connectedComponentIn hys, hyK⟩, rfl⟩
+    (_root_.connectedComponentIn s '' (s ∩ K)).Finite :=
+  hs.locallyFinite_connectedComponentIn_real.finite_image_connectedComponentIn_inter hK
 
 end TauCeti

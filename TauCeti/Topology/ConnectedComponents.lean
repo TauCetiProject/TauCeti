@@ -14,6 +14,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Topology.PathComponent
 public import Mathlib.Topology.Order.OrderClosed
 public import Mathlib.Topology.Sets.Opens
+import Mathlib.Topology.Compactness.LocallyFinite
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
@@ -212,6 +213,31 @@ theorem _root_.Set.Finite.image_connectedComponentIn_sUnion {s : Set X} {𝒞 : 
   rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
   have hts : t ⊆ s := (subset_sUnion_of_mem ht).trans hsub
   exact connectedComponentIn_eq ((hc t ht).subset_connectedComponentIn hx hts hy)
+
+/-- If every ambient point has a neighborhood meeting only finitely many components of `s`,
+the distinct nonempty components form a locally finite family. -/
+theorem locallyFinite_connectedComponentIn_of_forall_mem_nhds {s : Set X}
+    (h : ∀ x, ∃ U ∈ 𝓝 x, (connectedComponentIn s '' (s ∩ U)).Finite) :
+    LocallyFinite (fun C : (connectedComponentIn s '' s) ↦ (C : Set X)) := by
+  intro x
+  obtain ⟨U, hU, hfin⟩ := h x
+  refine ⟨U, hU, (hfin.preimage Subtype.val_injective.injOn).subset ?_⟩
+  rintro C ⟨y, hyC, hyU⟩
+  obtain ⟨z, _, hzC⟩ := C.property
+  have hy : y ∈ connectedComponentIn s z := hzC ▸ hyC
+  exact ⟨y, ⟨connectedComponentIn_subset s z hy, hyU⟩,
+    (connectedComponentIn_eq hy).symm.trans hzC⟩
+
+/-- Only finitely many members of a locally finite family of distinct nonempty connected
+components meet a compact set. -/
+theorem _root_.LocallyFinite.finite_image_connectedComponentIn_inter {s K : Set X}
+    (h : LocallyFinite (fun C : (connectedComponentIn s '' s) ↦ (C : Set X)))
+    (hK : IsCompact K) : (connectedComponentIn s '' (s ∩ K)).Finite := by
+  have hfin := h.finite_nonempty_inter_compact hK
+  refine (hfin.image (fun C : (connectedComponentIn s '' s) ↦ (C : Set X))).subset ?_
+  rintro C ⟨y, ⟨hys, hyK⟩, rfl⟩
+  exact ⟨⟨connectedComponentIn s y, y, hys, rfl⟩,
+    ⟨y, mem_connectedComponentIn hys, hyK⟩, rfl⟩
 
 /-- **The frontier of a connected component of an open set misses the set.** Equivalently,
 `frontier (connectedComponentIn F x) ∩ F = ∅`: the component is clopen in `F`. -/

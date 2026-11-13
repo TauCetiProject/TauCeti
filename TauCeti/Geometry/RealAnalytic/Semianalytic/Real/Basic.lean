@@ -33,20 +33,24 @@ open Filter Set Topology
 namespace TauCeti
 
 /-- An open upper ray of the real line is semianalytic. -/
+@[simp]
 theorem isSemianalytic_Ioi (a : ℝ) : IsSemianalytic (Ioi a) := by
   simpa only [Pi.sub_apply, sub_pos, Ioi] using
     (analyticOnNhd_id.sub (analyticOnNhd_const (v := a))).isSemianalytic_setOf_pos
 
 /-- An open lower ray of the real line is semianalytic. -/
+@[simp]
 theorem isSemianalytic_Iio (a : ℝ) : IsSemianalytic (Iio a) := by
   simpa only [Pi.sub_apply, sub_pos, Iio] using
     ((analyticOnNhd_const (v := a)).sub analyticOnNhd_id).isSemianalytic_setOf_pos
 
 /-- An open interval of the real line is semianalytic, including an empty interval. -/
+@[simp]
 theorem isSemianalytic_Ioo (a b : ℝ) : IsSemianalytic (Ioo a b) :=
   (isSemianalytic_Ioi a).inter (isSemianalytic_Iio b)
 
 /-- A singleton of the real line is semianalytic. -/
+@[simp]
 theorem isSemianalytic_singleton (a : ℝ) : IsSemianalytic ({a} : Set ℝ) := by
   simpa only [Pi.sub_apply, sub_eq_zero, ofPred_eq_eq_singleton] using
     (analyticOnNhd_id.sub (analyticOnNhd_const (v := a))).isSemianalytic_setOf_eq_zero
