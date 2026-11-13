@@ -29,6 +29,9 @@ to variable elimination by minimal-exponent slicing in multihomogeneous polynomi
 * `MvPolynomial.X_pow_dvd_X_pow_mul_iff`: for `i ≠ j`, `Xᵢ ^ k ∣ Xⱼ ^ l * p ↔ Xᵢ ^ k ∣ p`.
 * `MvPolynomial.aeval_update_X_zero_eq_modMonomial`: setting `X i` to `0` computes the remainder
   `p.modMonomial (Finsupp.single i 1)`.
+* `MvPolynomial.mem_support_modMonomial`, `MvPolynomial.support_modMonomial_subset`,
+  `MvPolynomial.coeff_modMonomial_of_mem_support`: support and coefficient characterization of
+  `modMonomial`.
 * `MvPolynomial.vars_divMonomial_subset`, `MvPolynomial.vars_modMonomial_subset`,
   `MvPolynomial.notMem_vars_modMonomial_single`: variable-set bounds for monomial division and
   remainder.
@@ -59,6 +62,23 @@ theorem X_pow_dvd_X_pow_mul_iff {i j : σ} (hij : i ≠ j) {k l : ℕ} {p : MvPo
   rw [coeff_modMonomial_of_not_le _ hm, h']
   simp
 
+/-- An exponent vector lies in the support of `p.modMonomial s` if and only if it lies in the
+support of `p` and is not bounded below by `s`. -/
+theorem mem_support_modMonomial {p : MvPolynomial σ R} {s m : σ →₀ ℕ} :
+    m ∈ (p.modMonomial s).support ↔ m ∈ p.support ∧ ¬ s ≤ m := by
+  by_cases h : s ≤ m <;> simp [h]
+
+/-- Taking the remainder modulo a monomial selects a subset of the support. -/
+theorem support_modMonomial_subset (p : MvPolynomial σ R) (s : σ →₀ ℕ) :
+    (p.modMonomial s).support ⊆ p.support :=
+  fun _ hm ↦ (mem_support_modMonomial.mp hm).1
+
+/-- Every exponent in the support of `p.modMonomial s` has the same coefficient as in `p`. -/
+theorem coeff_modMonomial_of_mem_support {p : MvPolynomial σ R} {s m : σ →₀ ℕ}
+    (hm : m ∈ (p.modMonomial s).support) :
+    (p.modMonomial s).coeff m = p.coeff m :=
+  coeff_modMonomial_of_not_le p (mem_support_modMonomial.mp hm).2
+
 /-- Dividing by a monomial does not introduce new variables. -/
 theorem vars_divMonomial_subset (p : MvPolynomial σ R) (s : σ →₀ ℕ) :
     (p.divMonomial s).vars ⊆ p.vars := by
@@ -76,17 +96,16 @@ theorem vars_modMonomial_subset (p : MvPolynomial σ R) (s : σ →₀ ℕ) :
   intro j hj
   rw [mem_vars_iff_mem_support] at hj ⊢
   obtain ⟨m, hm, hmj⟩ := hj
-  have hns : ¬ s ≤ m := fun hle ↦ mem_support_iff.mp hm (coeff_modMonomial_of_le p hle)
-  rw [mem_support_iff, coeff_modMonomial_of_not_le p hns, ← mem_support_iff] at hm
-  exact ⟨m, hm, hmj⟩
+  exact ⟨m, support_modMonomial_subset p s hm, hmj⟩
 
 /-- Taking the remainder modulo `X i` eliminates `i` from the variables of `p`. -/
+@[simp]
 theorem notMem_vars_modMonomial_single (p : MvPolynomial σ R) (i : σ) :
     i ∉ (p.modMonomial (Finsupp.single i 1)).vars := by
   classical
   rw [mem_vars_iff_mem_support]
   rintro ⟨m, hm, hmi⟩
-  refine mem_support_iff.mp hm (coeff_modMonomial_of_le p ?_)
+  refine (mem_support_modMonomial.mp hm).2 ?_
   rw [Finsupp.single_le_iff, Nat.one_le_iff_ne_zero]
   exact Finsupp.mem_support_iff.mp hmi
 
@@ -98,8 +117,9 @@ theorem aeval_update_X_zero_eq_modMonomial [DecidableEq σ] (i : σ) (p : MvPoly
   rw [map_add, map_mul, aeval_X, Function.update_self, zero_mul, add_zero]
   -- Variable `i` does not occur in `p.modMonomial (Finsupp.single i 1)`, so `Function.update X i 0`
   -- agrees with `X` on its `vars`.
-  refine Eq.trans (eval₂Hom_congr' (RingHom.ext fun _ ↦ rfl) (fun j _ hj ↦ ?_) rfl)
-    (aeval_X_left_apply _)
-  exact Function.update_of_ne (ne_of_mem_of_not_mem hj (notMem_vars_modMonomial_single p i)) _ _
+  conv_rhs => rw [← aeval_X_left_apply (p.modMonomial (Finsupp.single i 1))]
+  rw [aeval_eq_eval₂Hom, aeval_eq_eval₂Hom]
+  exact eval₂Hom_congr' rfl
+    (fun j _ hj ↦ Function.update_of_ne (ne_of_mem_of_not_mem hj (by simp)) _ _) rfl
 
 end MvPolynomial

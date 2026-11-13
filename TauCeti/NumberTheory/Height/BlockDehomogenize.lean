@@ -41,7 +41,6 @@ variable {K κ : Type*} [Field K] [Height.AdmissibleAbsValues K] [DecidableEq κ
 /-- On a multihomogeneous polynomial `P` in two-coordinate blocks, `blockDehomogenize` preserves
 the set of nonzero coefficients and therefore preserves `mulHeight`. -/
 -- Cannot be `@[simp]` because `e` cannot be inferred by `simp` (`simpNF`).
-@[grind =>]
 theorem IsMultiHomogeneous.mulHeight_blockDehomogenize {e : κ → ℕ}
     {P : MvPolynomial (κ × Fin 2) K} (hP : IsMultiHomogeneous e P) :
     (blockDehomogenize P).mulHeight = P.mulHeight :=
@@ -50,17 +49,23 @@ theorem IsMultiHomogeneous.mulHeight_blockDehomogenize {e : κ → ℕ}
       let ⟨n, _, hn⟩ := IsMultiHomogeneous.exists_coeff_eq_of_mem_support_blockDehomogenize hP hm
       ⟨n, hn⟩)
     (mulHeight_le_of_forall_exists_coeff_eq fun _ hn ↦
-      let ⟨m, _, _, hm⟩ := IsMultiHomogeneous.coeff_blockDehomogenize_eq_of_mem_support hP hn
+      let ⟨m, _, _, hm⟩ :=
+        IsMultiHomogeneous.exists_coeff_blockDehomogenize_eq_of_mem_support hP hn
       ⟨m, hm.symm⟩)
+
+grind_pattern IsMultiHomogeneous.mulHeight_blockDehomogenize =>
+  IsMultiHomogeneous e P, (blockDehomogenize P).mulHeight
 
 /-- On a multihomogeneous polynomial `P` in two-coordinate blocks, `blockDehomogenize` preserves
 `logHeight`. -/
 -- Cannot be `@[simp]` because `e` cannot be inferred by `simp` (`simpNF`).
-@[grind =>]
 theorem IsMultiHomogeneous.logHeight_blockDehomogenize {e : κ → ℕ}
     {P : MvPolynomial (κ × Fin 2) K} (hP : IsMultiHomogeneous e P) :
     (blockDehomogenize P).logHeight = P.logHeight := by
   rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight,
     IsMultiHomogeneous.mulHeight_blockDehomogenize hP]
+
+grind_pattern IsMultiHomogeneous.logHeight_blockDehomogenize =>
+  IsMultiHomogeneous e P, (blockDehomogenize P).logHeight
 
 end MvPolynomial

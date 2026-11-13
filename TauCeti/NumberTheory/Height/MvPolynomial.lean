@@ -13,6 +13,7 @@ public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.RingTheory.MvPolynomial.Abv.Coeff
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 public import TauCeti.RingTheory.MvPolynomial.Box
+import TauCeti.Algebra.MvPolynomial.Division
 import TauCeti.NumberTheory.Height.Basic
 
 /-!
@@ -603,13 +604,11 @@ theorem logHeight_divMonomial_le (p : MvPolynomial σ K) (s : σ →₀ ℕ) :
 the multiplicative height. -/
 theorem mulHeight_modMonomial_le (p : MvPolynomial σ K) (s : σ →₀ ℕ) :
     (p.modMonomial s).mulHeight ≤ p.mulHeight :=
-  mulHeight_le_of_forall_exists_coeff_eq fun m hm ↦ ⟨m,
-    coeff_modMonomial_of_not_le p fun hle ↦ mem_support_iff.mp hm (coeff_modMonomial_of_le p hle)⟩
+  mulHeight_le_of_forall_exists_coeff_eq fun m hm ↦ ⟨m, coeff_modMonomial_of_mem_support hm⟩
 
 /-- Taking the remainder modulo a monomial cannot increase the logarithmic height. -/
 theorem logHeight_modMonomial_le (p : MvPolynomial σ K) (s : σ →₀ ℕ) :
     (p.modMonomial s).logHeight ≤ p.logHeight :=
-  logHeight_le_of_forall_exists_coeff_eq fun m hm ↦ ⟨m,
-    coeff_modMonomial_of_not_le p fun hle ↦ mem_support_iff.mp hm (coeff_modMonomial_of_le p hle)⟩
+  logHeight_le_of_forall_exists_coeff_eq fun m hm ↦ ⟨m, coeff_modMonomial_of_mem_support hm⟩
 
 end MvPolynomial

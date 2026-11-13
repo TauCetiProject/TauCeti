@@ -89,7 +89,8 @@ theorem IsMultiHomogeneous.formIndex_eq_weightedIndex_blockDehomogenize [Decidab
   set Q := MvPolynomial.substFormInv (fun h ↦ ![-α h, 1]) (fun _ ↦ 1) P
   have hQ : IsMultiHomogeneous e Q := IsMultiHomogeneous.substFormInv hP _ _
   refine le_iInf₂ fun n hn ↦ ?_
-  obtain ⟨m, hm, hmn, -⟩ := IsMultiHomogeneous.coeff_blockDehomogenize_eq_of_mem_support hQ hn
+  obtain ⟨m, hm, hmn, -⟩ :=
+    IsMultiHomogeneous.exists_coeff_blockDehomogenize_eq_of_mem_support hQ hn
   refine (iInf₂_le m hm).trans_eq ?_
   rw [Finsupp.weight_apply, Finsupp.sum_fintype _ _ (by simp)]
   exact Finset.sum_congr rfl fun h _ ↦ by simp [hmn h, div_eq_mul_inv]

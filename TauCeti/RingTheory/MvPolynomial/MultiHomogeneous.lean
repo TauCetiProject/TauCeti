@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
 
+import TauCeti.Algebra.MvPolynomial.Division
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
@@ -53,9 +54,10 @@ conditions of the construction be imposed on derivatives.
   multihomogeneous of multidegree `fun h ↦ d h - ∑ i, I (h, i)`, and
   `MvPolynomial.IsMultiHomogeneous.sum_le_of_hasseDeriv_ne_zero`: if it is nonzero, then
   `∑ i, I (h, i) ≤ d h` for every block.
-* `MvPolynomial.IsMultiHomogeneous.aeval`, `MvPolynomial.IsMultiHomogeneous.modMonomial`,
+* `MvPolynomial.IsMultiHomogeneous.aeval`, `MvPolynomial.IsMultiHomogeneous.rename`,
+  `MvPolynomial.isMultiHomogeneous_rename_iff`, `MvPolynomial.IsMultiHomogeneous.modMonomial`,
   `MvPolynomial.IsMultiHomogeneous.divMonomial`: preservation of multihomogeneity under block-linear
-  evaluation and monomial remainder/division.
+  evaluation, blockwise renaming, and monomial remainder/division.
 
 ## References
 
@@ -231,10 +233,36 @@ protected theorem IsMultiHomogeneous.aeval {τ : Type*} (hP : IsMultiHomogeneous
   (hP h).aeval fun ⟨h', i⟩ ↦ by
     simpa [Pi.single_apply, eq_comm] using hg h' i h
 
+/-- Renaming coordinates within each block preserves multihomogeneity. -/
+protected theorem IsMultiHomogeneous.rename {τ : Type*} (hP : IsMultiHomogeneous d P)
+    (f : κ → ι → τ) :
+    IsMultiHomogeneous d (MvPolynomial.rename (fun p : κ × ι ↦ (p.1, f p.1 p.2)) P) := by
+  have hre : MvPolynomial.rename (fun p : κ × ι ↦ (p.1, f p.1 p.2)) P =
+      MvPolynomial.aeval (fun p : κ × ι ↦ (X (p.1, f p.1 p.2) : MvPolynomial (κ × τ) R)) P :=
+    AlgHom.congr_fun (by ext; simp) P
+  rw [hre]
+  exact hP.aeval fun h i ↦ isMultiHomogeneous_X h (f h i)
+
+/-- Blockwise injective variable renaming preserves and reflects multihomogeneity. -/
+theorem isMultiHomogeneous_rename_iff {τ : Type*} {f : κ → τ → ι}
+    (hf : ∀ h, Function.Injective (f h)) {Q : MvPolynomial (κ × τ) R} :
+    IsMultiHomogeneous d (MvPolynomial.rename (fun p : κ × τ ↦ (p.1, f p.1 p.2)) Q) ↔
+      IsMultiHomogeneous d Q := by
+  refine ⟨fun hhom h u hu ↦ ?_, fun hQ ↦ hQ.rename f⟩
+  set emb : κ × τ → κ × ι := fun p ↦ (p.1, f p.1 p.2)
+  have hemb : Function.Injective emb := by
+    rintro ⟨h', a⟩ ⟨h'', b⟩ hc
+    obtain ⟨rfl, hc2⟩ := Prod.mk.inj hc
+    exact Prod.ext rfl (hf h' hc2)
+  have hc : (rename emb Q).coeff (u.mapDomain emb) ≠ 0 := by
+    rwa [coeff_rename_mapDomain emb hemb]
+  have hw := hhom h hc
+  rwa [Finsupp.weight_apply, Finsupp.sum_mapDomain_index_inj hemb, ← Finsupp.weight_apply] at hw
+
 /-- Taking the remainder modulo a monomial preserves multihomogeneity. -/
 protected theorem IsMultiHomogeneous.modMonomial (hP : IsMultiHomogeneous d P) (s : κ × ι →₀ ℕ) :
-    IsMultiHomogeneous d (P.modMonomial s) := fun h n hn ↦
-  hP h (by rwa [coeff_modMonomial_of_not_le P fun hle ↦ hn (coeff_modMonomial_of_le P hle)] at hn)
+    IsMultiHomogeneous d (P.modMonomial s) := fun h _ hn ↦
+  hP h (coeff_modMonomial_of_mem_support (mem_support_iff.mpr hn) ▸ hn)
 
 /-- Dividing a multihomogeneous polynomial of multidegree `d` by `monomial s 1` gives a
 multihomogeneous polynomial of residual multidegree `fun h ↦ d h - ∑ i, s (h, i)`. -/

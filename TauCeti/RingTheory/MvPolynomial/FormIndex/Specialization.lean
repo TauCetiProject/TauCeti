@@ -16,10 +16,11 @@ affine Roth index theorem, one eliminates in each block `h : κ` every coordinat
 coordinates `i₀ h ≠ i₁ h` with `M h (i₀ h) ≠ 0`, without decreasing `formIndex` or enlarging the set
 of nonzero coefficients.
 
-Setting a non-pivot coordinate `X (h₁, j)` (`j ≠ i₀ h₁`) to `0` commutes with `substFormInv` once
-the `(h₁, j)`-coefficient of `M` is zeroed out (`MvPolynomial.aeval_update_X_zero_substFormInv`), so
-reducing modulo `X (h₁, j)` can only drop monomials of `substFormInv M i₀ P` and therefore cannot
-decrease `formIndex` (`MvPolynomial.formIndex_le_formIndex_modMonomial_single`). Naive
+Setting any variable `X (h₁, j)` to `0` maps `formIdeal t d M` into the form ideal with `M h₁ j`
+zeroed out, so reducing modulo `X (h₁, j)` cannot decrease `formIndex` over any commutative
+semiring (`MvPolynomial.formIndex_le_formIndex_modMonomial_single`); over a field, for a non-pivot
+coordinate `j ≠ i₀ h₁`, this specialization also commutes with `substFormInv`
+(`MvPolynomial.aeval_update_X_zero_substFormInv`). Naive
 specialization `X (h₁, j) ↦ 0` can annihilate `P` when every monomial of `P` is divisible by
 `X (h₁, j)`; instead, one first divides `P` by the maximal power `X (h₁, j) ^ k` dividing `P`
 (which has `formIndex` zero because `j ≠ i₀ h₁`, leaving `formIndex` unchanged by `formIndex_mul`)
@@ -47,7 +48,47 @@ namespace MvPolynomial
 open Finset
 open scoped ENNReal
 
-variable {K κ ι : Type*} [Field K]
+variable {R K κ ι : Type*}
+
+section CommSemiring
+
+variable [CommSemiring R] [Fintype κ] [Fintype ι] [DecidableEq κ] [DecidableEq ι]
+
+/-- Reducing modulo `X (h₁, j)` and zeroing out `M h₁ j` does not decrease `formIndex`. -/
+theorem formIndex_le_formIndex_modMonomial_single {d : κ → ℕ} {M : κ → ι → R}
+    (h₁ : κ) (j : ι) (P : MvPolynomial (κ × ι) R) :
+    formIndex d M P ≤
+      formIndex d (Function.update M h₁ (Function.update (M h₁) j 0))
+        (P.modMonomial (Finsupp.single (h₁, j) 1)) := by
+  set M' := Function.update M h₁ (Function.update (M h₁) j 0)
+  set ev : MvPolynomial (κ × ι) R →ₐ[R] MvPolynomial (κ × ι) R :=
+    aeval (Function.update X (h₁, j) 0)
+  have hev_form (h : κ) :
+      ev (∑ i, C (M h i) * X (h, i)) = ∑ i, C (M' h i) * X (h, i) := by
+    simp only [ev, map_sum, map_mul, algHom_C, algebraMap_eq, aeval_X]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rcases eq_or_ne h h₁ with rfl | hh
+    · rcases eq_or_ne i j with rfl | hi
+      · simp [M']
+      · have hne : (h, i) ≠ (h, j) := fun hc ↦ hi (Prod.mk.inj hc).2
+        simp [M', Function.update_of_ne hi, Function.update_of_ne hne]
+    · have hne : (h, i) ≠ (h₁, j) := fun hc ↦ hh (Prod.mk.inj hc).1
+      simp [M', Function.update_of_ne hh, Function.update_of_ne hne]
+  rw [formIndex_def]
+  refine iSup₂_le fun t ht ↦ le_formIndex_of_mem ?_
+  rw [← aeval_update_X_zero_eq_modMonomial]
+  have hmap : Ideal.map ev (formIdeal t d M) ≤ formIdeal t d M' := by
+    rw [formIdeal_def, Ideal.map_span, Ideal.span_le]
+    rintro _ ⟨_, ⟨k, hk, rfl⟩, rfl⟩
+    dsimp only
+    rw [SetLike.mem_coe, map_prod]
+    simp only [map_pow, hev_form]
+    exact prod_pow_mem_formIdeal hk
+  exact hmap (Ideal.mem_map_of_mem _ ht)
+
+end CommSemiring
+
+variable [Field K]
 
 section SingleVariable
 
@@ -89,29 +130,6 @@ theorem aeval_update_X_zero_substFormInv {M : κ → ι → K} {i₀ : κ → ι
   · simp [ev, Function.update_of_ne hne, hi]
 
 variable [Fintype κ]
-
-/-- Reducing modulo `X (h₁, j)` for `j ≠ i₀ h₁` and zeroing out `M h₁ j` does not decrease
-`formIndex`. -/
-theorem formIndex_le_formIndex_modMonomial_single {d : κ → ℕ} {M : κ → ι → K} {i₀ : κ → ι}
-    (hM : ∀ h, M h (i₀ h) ≠ 0) {h₁ : κ} {j : ι} (hj : j ≠ i₀ h₁) (P : MvPolynomial (κ × ι) K) :
-    formIndex d M P ≤
-      formIndex d (Function.update M h₁ (Function.update (M h₁) j 0))
-        (P.modMonomial (Finsupp.single (h₁, j) 1)) := by
-  set M' := Function.update M h₁ (Function.update (M h₁) j 0)
-  have hM' (h : κ) : M' h (i₀ h) ≠ 0 := by
-    rcases eq_or_ne h h₁ with rfl | hh
-    · simpa [M', hj.symm] using hM h
-    · simpa [M', hh] using hM h
-  have hcomm : substFormInv M' i₀ (P.modMonomial (Finsupp.single (h₁, j) 1)) =
-      (substFormInv M i₀ P).modMonomial (Finsupp.single (h₁, j) 1) := by
-    rw [← aeval_update_X_zero_eq_modMonomial, ← aeval_update_X_zero_substFormInv hj,
-      aeval_update_X_zero_eq_modMonomial]
-  rw [formIndex_eq_iInf hM, formIndex_eq_iInf hM', hcomm]
-  refine le_iInf₂ fun n hn ↦ iInf₂_le n ?_
-  have hns : ¬ Finsupp.single (h₁, j) 1 ≤ n :=
-    fun hle ↦ mem_support_iff.mp hn (coeff_modMonomial_of_le _ hle)
-  rw [mem_support_iff, coeff_modMonomial_of_not_le _ hns, ← mem_support_iff] at hn
-  exact hn
 
 omit [DecidableEq κ] [DecidableEq ι] in
 /-- A power of a non-pivot variable `X (h₁, j)` (`j ≠ i₀ h₁`) has `formIndex` zero. -/
@@ -169,16 +187,14 @@ private theorem exists_eliminate_single {d e : κ → ℕ} {M : κ → ι → K}
       vars_divMonomial_subset P s (vars_modMonomial_subset Q _ hp)⟩
   have hcoeff : ∀ n' ∈ P'.support, ∃ n ∈ P.support, P'.coeff n' = P.coeff n := by
     intro n' hn'
-    have hns : ¬ Finsupp.single (h₁, j) 1 ≤ n' :=
-      fun hle ↦ mem_support_iff.mp hn' (coeff_modMonomial_of_le Q hle)
     have hc : P'.coeff n' = P.coeff (s + n') := by
-      rw [coeff_modMonomial_of_not_le Q hns, coeff_divMonomial]
+      rw [coeff_modMonomial_of_mem_support hn', coeff_divMonomial]
     exact ⟨s + n', mem_support_iff.mpr (hc ▸ mem_support_iff.mp hn'), hc⟩
   have hMne : ∀ h, M h ≠ 0 := fun h ↦ Function.ne_iff.mpr ⟨i₀ h, hM h⟩
   have hidx : formIndex d M P ≤
       formIndex d (Function.update M h₁ (Function.update (M h₁) j 0)) P' := by
     rw [← hPeq, formIndex_mul hMne, formIndex_X_pow_eq_zero hM hj, zero_add]
-    exact formIndex_le_formIndex_modMonomial_single hM hj Q
+    exact formIndex_le_formIndex_modMonomial_single h₁ j Q
   exact ⟨P', fun h ↦ e h - ∑ i, s (h, i), hP'ne, fun h ↦ Nat.sub_le _ _,
     (hPhom.divMonomial s).modMonomial _, hvars, hcoeff, hidx⟩
 
@@ -291,40 +307,11 @@ private theorem formIndex_rename_twoCoord {d : κ → ℕ} {i₀ i₁ : κ → �
       have h1 : emb (h, 1) = (h, i₀ h) := rfl
       rw [← h1, Finsupp.mapDomain_apply_of_injective hemb]
 
-omit [Fintype κ] [Fintype ι] in
-private theorem isMultiHomogeneous_of_rename_twoCoord [Finite ι] {e' : κ → ℕ} {i₀ i₁ : κ → ι}
-    (hne : ∀ h, i₀ h ≠ i₁ h) {Q : MvPolynomial (κ × Fin 2) K}
-    (hhom : IsMultiHomogeneous e' (rename (fun p : κ × Fin 2 ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)) Q)) :
-    IsMultiHomogeneous e' Q := by
-  classical
-  cases nonempty_fintype ι
-  set emb : κ × Fin 2 → κ × ι := fun p ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)
-  have hemb : Function.Injective emb := twoCoordEmb_injective hne
-  rw [isMultiHomogeneous_iff]
-  intro u hu h
-  have hc : (rename emb Q).coeff (u.mapDomain emb) ≠ 0 := by
-    rwa [coeff_rename_mapDomain emb hemb]
-  have hsum := isMultiHomogeneous_iff.mp hhom (u.mapDomain emb) hc h
-  have hpair : ∑ i : ι, (u.mapDomain emb) (h, i) = u (h, 0) + u (h, 1) := by
-    rw [← Finset.add_sum_erase _ _ (mem_univ (i₁ h)),
-      ← Finset.add_sum_erase _ _ (mem_erase.mpr ⟨hne h, mem_univ (i₀ h)⟩)]
-    have hrest : ∑ i ∈ (univ.erase (i₁ h)).erase (i₀ h), (u.mapDomain emb) (h, i) = 0 :=
-      Finset.sum_eq_zero fun i hi ↦ Finsupp.mapDomain_of_notMem_range u _ fun ⟨⟨h', c⟩, hc⟩ ↦ by
-        obtain ⟨rfl, hc2⟩ := Prod.mk.inj hc
-        fin_cases c
-        · exact (mem_erase.mp (mem_erase.mp hi).2).1 hc2.symm
-        · exact (mem_erase.mp hi).1 hc2.symm
-    have h0 : emb (h, 0) = (h, i₁ h) := rfl
-    have h1 : emb (h, 1) = (h, i₀ h) := rfl
-    rw [hrest, add_zero, ← h0, ← h1, Finsupp.mapDomain_apply_of_injective hemb,
-      Finsupp.mapDomain_apply_of_injective hemb]
-  rw [Fin.sum_univ_two, ← hpair, hsum]
-
 /-- **Variable elimination to two coordinates per block.** Given a nonzero multihomogeneous
 polynomial `P` of multidegree `e` and two distinct coordinates `i₀ h ≠ i₁ h` per block with
 `M h (i₀ h) ≠ 0`, sequential minimal-exponent slicing produces a nonzero multihomogeneous polynomial
 `Q` on `κ × Fin 2` of multidegree `e' ≤ e` whose nonzero coefficients all occur in `P` and whose
-index along the affine-chart forms `![- (- (M h (i₁ h) / M h (i₀ h))), 1]` is at least
+index along the affine-chart forms `![M h (i₁ h) / M h (i₀ h), 1]` is at least
 `formIndex d M P`. -/
 theorem exists_elimination {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ : κ → ι}
     (hne : ∀ h, i₀ h ≠ i₁ h) (hM : ∀ h, M h (i₀ h) ≠ 0) {P : MvPolynomial (κ × ι) K}
@@ -333,13 +320,15 @@ theorem exists_elimination {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ :
       Q ≠ 0 ∧ (∀ h, e' h ≤ e h) ∧ IsMultiHomogeneous e' Q ∧
       (∀ u ∈ Q.support, ∃ n ∈ P.support, Q.coeff u = P.coeff n) ∧
       formIndex d M P ≤
-        formIndex d (fun h ↦ ![- (- (M h (i₁ h) / M h (i₀ h))), 1]) Q := by
+        formIndex d (fun h ↦ ![M h (i₁ h) / M h (i₀ h), 1]) Q := by
   classical
   set S : Finset (κ × ι) := univ.filter fun p ↦ p.2 ≠ i₀ p.1 ∧ p.2 ≠ i₁ p.1
   obtain ⟨P₁, e', M', hP₁, he', hP₁hom, hdisj, -, hM'out, hM'in, hP₁coeff, hidx⟩ :=
     exists_eliminate_finset (d := d) S (fun p hp ↦ (mem_filter.mp hp).2.1) hM hP hPhom
   set emb : κ × Fin 2 → κ × ι := fun p ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)
   have hemb : Function.Injective emb := twoCoordEmb_injective hne
+  have hf (h : κ) : Function.Injective ![i₁ h, i₀ h] := fun a b hab ↦ by
+    fin_cases a <;> fin_cases b <;> simp_all [(hne h).symm]
   have hrange : (P₁.vars : Set (κ × ι)) ⊆ Set.range emb := by
     rintro ⟨h, i⟩ hp
     have hnotS : (h, i) ∉ S := Finset.disjoint_left.mp hdisj hp
@@ -360,10 +349,10 @@ theorem exists_elimination {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ :
   have hM'z (h : κ) (i : ι) (hi0 : i ≠ i₀ h) (hi1 : i ≠ i₁ h) : M' h i = 0 :=
     hM'in (h, i) (mem_filter.mpr ⟨mem_univ _, hi0, hi1⟩)
   have hscale : (fun h ↦ (M h (i₀ h))⁻¹ • ![M' h (i₁ h), M' h (i₀ h)]) =
-      (fun h ↦ ![- (- (M h (i₁ h) / M h (i₀ h))), 1]) := by
+      (fun h ↦ ![M h (i₁ h) / M h (i₀ h), 1]) := by
     ext h c
     fin_cases c <;> simp [hM'0, hM'1, div_eq_inv_mul, hM h]
-  refine ⟨Q, e', hQne, he', isMultiHomogeneous_of_rename_twoCoord hne (hQeq.symm ▸ hP₁hom),
+  refine ⟨Q, e', hQne, he', (isMultiHomogeneous_rename_iff hf).mp (hQeq.symm ▸ hP₁hom),
     hQcoeff, hidx.trans_eq ?_⟩
   rw [← hQeq, formIndex_rename_twoCoord hne (fun h ↦ (hM'0 h).symm ▸ hM h) hM'z,
     ← formIndex_smul_form (c := fun h ↦ (M h (i₀ h))⁻¹)

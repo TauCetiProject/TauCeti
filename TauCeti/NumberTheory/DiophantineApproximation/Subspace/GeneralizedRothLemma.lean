@@ -126,7 +126,7 @@ theorem formIndex_le_of_degree_ratio {m : ℕ} [NeZero m] {ι : Type*} [Fintype 
       _ ≤ d h * ((Fintype.card ι - 1 : ℝ) * logHeight₁ (α h)) := by gcongr
       _ = (Fintype.card ι - 1 : ℝ) * (d h * logHeight₁ (α h)) := by ring
   calc formIndex d M P
-      ≤ formIndex d (fun h ↦ ![-α h, 1]) Q := hidx
+      ≤ formIndex d (fun h ↦ ![-α h, 1]) Q := by simpa [α] using hidx
     _ = weightedIndex d α F :=
         IsMultiHomogeneous.formIndex_eq_weightedIndex_blockDehomogenize hQhom d α
     _ ≤ ENNReal.ofReal (2 * m * σ ^ ((1 : ℝ) / 2 ^ (m - 1))) :=

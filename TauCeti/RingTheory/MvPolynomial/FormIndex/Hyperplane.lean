@@ -23,9 +23,10 @@ derivative `hasseDeriv I P` that does not vanish identically on the common kerne
 characteristic (using Hasse derivatives rather than naive partial derivatives) and connects
 `substForm` and `substFormInv` with `MvPolynomial.blockLinearForm` and `MvPolynomial.linearSubst`:
 
-* `MvPolynomial.aeval_hasseDeriv_eq_zero_of_lt_formIndex`: for any `K`-algebra `A` and any tuple
-  `y : κ × ι → A` satisfying `∑ i, M h i • y (h, i) = 0` in every block `h`, every Hasse derivative
-  `hasseDeriv I P` of weighted order `∑ h, (∑ i, I (h, i)) / d h < formIndex d M P` vanishes at `y`.
+* `MvPolynomial.aeval_hasseDeriv_eq_zero_of_lt_formIndex`: over any commutative semiring `R`, for
+  any `R`-algebra `A` and any tuple `y : κ × ι → A` satisfying `∑ i, M h i • y (h, i) = 0` in every
+  block `h`, every Hasse derivative `hasseDeriv I P` of weighted order
+  `∑ h, (∑ i, I (h, i)) / d h < formIndex d M P` vanishes at `y`.
 * `MvPolynomial.exists_aeval_blockLinearForm_hasseDeriv_ne_zero_of_formIndex_ne_top`: conversely,
   whenever `formIndex d M P ≠ ⊤` and the columns of `B h : ι → τ → K` span `ker (M h)` in each
   block, there exists `I` of exact weighted order `∑ h, (∑ i, I (h, i)) / d h = formIndex d M P`
@@ -118,6 +119,116 @@ theorem substFormInv_eq_linearSubst [Field K] [Fintype κ] [DecidableEq κ] (M :
 
 end LinearSubst
 
+section Vanishing
+
+variable [CommSemiring R] [Fintype κ] [Fintype ι]
+
+/-- **Vanishing of low-order Hasse derivatives on the common kernel.** For any `R`-algebra `A` and
+any tuple `y : κ × ι → A` annihilated by every linear form `M h`, every Hasse derivative
+`hasseDeriv I P` of `(1 / d h)`-weighted order strictly below `formIndex d M P` vanishes at `y`. -/
+theorem aeval_hasseDeriv_eq_zero_of_lt_formIndex {A : Type*} [CommSemiring A] [Algebra R A]
+    {d : κ → ℕ} {M : κ → ι → R} {P : MvPolynomial (κ × ι) R}
+    {I : κ × ι →₀ ℕ} (hI : ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h < formIndex d M P)
+    {y : κ × ι → A} (hy : ∀ h, ∑ i, M h i • y (h, i) = 0) :
+    aeval y (hasseDeriv I P) = 0 := by
+  classical
+  rw [formIndex_def] at hI
+  obtain ⟨s, hs⟩ := lt_iSup_iff.mp hI
+  obtain ⟨hPs, hIs⟩ := lt_iSup_iff.mp hs
+  rw [formIdeal_def] at hPs
+  set Ψ : MvPolynomial (κ × ι) R →+* MvPolynomial (κ × ι) A :=
+    eval₂Hom (C.comp (algebraMap R A)) fun p ↦ X p + C (y p)
+  have hΨ_eq (Q : MvPolynomial (κ × ι) R) :
+      Ψ Q = map (aeval y).toRingHom (taylor (X : κ × ι → MvPolynomial (κ × ι) R) (map C Q)) := by
+    induction Q using MvPolynomial.induction_on with
+    | C r => simp [Ψ]
+    | add p q hp hq => simp [hp, hq]
+    | mul_X p q hp =>
+      have hX : Ψ (X q) = X q + C (y q) := eval₂Hom_X' _ _ q
+      rw [map_mul, hp, hX, map_mul, map_X, map_mul, taylor_X, map_mul, map_add, map_X, map_C]
+      simp
+  have hΨ_coeff (Q : MvPolynomial (κ × ι) R) (e : κ × ι →₀ ℕ) :
+      (Ψ Q).coeff e = aeval y (hasseDeriv e Q) := by
+    rw [hΨ_eq Q, coeff_map, coeff_taylor_X_map_C]
+    rfl
+  have hΨ_form (h : κ) :
+      Ψ (∑ i, C (M h i) * X (h, i)) = ∑ i, C (algebraMap R A (M h i)) * X (h, i) := by
+    have hterm (i : ι) :
+        Ψ (C (M h i) * X (h, i)) = C (algebraMap R A (M h i)) * X (h, i) +
+          C (algebraMap R A (M h i) * y (h, i)) := by
+      rw [map_mul]
+      dsimp only [Ψ]
+      rw [eval₂Hom_C, RingHom.comp_apply, eval₂Hom_X', mul_add, ← C_mul]
+    simp_rw [map_sum, hterm, Finset.sum_add_distrib, ← map_sum]
+    have hy' : ∑ i, algebraMap R A (M h i) * y (h, i) = 0 := by
+      simpa only [Algebra.smul_def] using hy h
+    rw [hy', C_0, add_zero]
+  clear hI hs
+  have hvanish : ∀ e : κ × ι →₀ ℕ,
+      ∑ h, (∑ i, e (h, i) : ℝ≥0∞) / d h < s → (Ψ P).coeff e = 0 := by
+    induction hPs using Submodule.span_induction with
+    | mem g hg =>
+      obtain ⟨j, hj, rfl⟩ := hg
+      intro e he
+      by_contra hne
+      have hhom : IsMultiHomogeneous j (Ψ (∏ h, (∑ i, C (M h i) * X (h, i)) ^ j h)) := by
+        have hhom' : IsMultiHomogeneous (∑ h : κ, j h • Pi.single h 1)
+            (∏ h, (∑ i, C (algebraMap R A (M h i)) * X (h, i)) ^ j h) :=
+          IsMultiHomogeneous.prod univ _ (fun h ↦ j h • Pi.single h 1) fun h _ ↦
+            (IsMultiHomogeneous.sum univ _ fun i _ ↦ (isMultiHomogeneous_X h i).C_mul _).pow (j h)
+        have hj_eq : (∑ h : κ, j h • Pi.single h 1) = j := by
+          ext h'; simp [Pi.single_apply]
+        rw [hj_eq] at hhom'
+        simpa only [map_prod, map_pow, hΨ_form] using hhom'
+      have hej : ∀ h, ∑ i, e (h, i) = j h := isMultiHomogeneous_iff.mp hhom e hne
+      refine he.not_ge (hj.trans_eq (Finset.sum_congr rfl fun h _ ↦ ?_))
+      rw [← Nat.cast_sum, hej h]
+    | zero =>
+      intro e _
+      simp
+    | add f g _ _ hf hg =>
+      intro e he
+      simp [hf e he, hg e he]
+    | smul r f _ hf =>
+      intro e he
+      rw [smul_eq_mul, map_mul, coeff_mul]
+      refine Finset.sum_eq_zero fun x hx ↦ ?_
+      have hxle (h : κ) (i : ι) : x.2 (h, i) ≤ e (h, i) := by
+        rw [← Finset.mem_antidiagonal.mp hx, Finsupp.add_apply]
+        exact Nat.le_add_left _ _
+      have hxlt : ∑ h, (∑ i, x.2 (h, i) : ℝ≥0∞) / d h < s :=
+        (Finset.sum_le_sum fun h _ ↦ ENNReal.div_le_div_right
+          (Finset.sum_le_sum fun i _ ↦ Nat.cast_le.mpr (hxle h i)) _).trans_lt he
+      rw [hf x.2 hxlt, mul_zero]
+  rw [← hΨ_coeff P I]
+  exact hvanish I hIs
+
+/-- Pointwise vanishing on the common kernel of Hasse derivatives of weighted order strictly below
+`formIndex d M P`. -/
+theorem eval_hasseDeriv_eq_zero_of_lt_formIndex {d : κ → ℕ} {M : κ → ι → R}
+    {P : MvPolynomial (κ × ι) R} {I : κ × ι →₀ ℕ}
+    (hI : ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h < formIndex d M P)
+    {x : κ × ι → R} (hx : ∀ h, ∑ i, M h i * x (h, i) = 0) :
+    eval x (hasseDeriv I P) = 0 := by
+  simpa only [aeval_eq_eval] using
+    aeval_hasseDeriv_eq_zero_of_lt_formIndex hI (y := x) (by simpa [smul_eq_mul] using hx)
+
+/-- Any block-linear parameterization `B` of subspaces contained in `ker (M h)` annihilates every
+Hasse derivative of weighted order strictly below `formIndex d M P`. -/
+theorem aeval_blockLinearForm_hasseDeriv_eq_zero_of_lt_formIndex [Fintype τ] {d : κ → ℕ}
+    {M : κ → ι → R} {P : MvPolynomial (κ × ι) R} {I : κ × ι →₀ ℕ}
+    (hI : ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h < formIndex d M P)
+    {B : κ → ι → τ → R} (hB : ∀ h a, ∑ i, M h i * B h i a = 0) :
+    aeval (blockLinearForm B) (hasseDeriv I P) = 0 := by
+  refine aeval_hasseDeriv_eq_zero_of_lt_formIndex hI fun h ↦ ?_
+  simp only [blockLinearForm_apply, Algebra.smul_def, algebraMap_eq, Finset.mul_sum, ← mul_assoc,
+    ← C_mul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_eq_zero fun a _ ↦ ?_
+  rw [← Finset.sum_mul, ← map_sum, hB h a, map_zero, zero_mul]
+
+end Vanishing
+
 section Hyperplane
 
 variable [Field K] [Fintype κ] [Fintype ι]
@@ -176,37 +287,6 @@ private theorem killPivot_comp_substFormInv {M : κ → ι → K} {i₀ : κ →
   rw [AlgHom.comp_apply, ← aeval_kerForm_comp_substForm hi₀, AlgHom.comp_apply,
     substForm_substFormInv hi₀]
 
-omit [Fintype κ] in
-private theorem aeval_comp_aeval_kerForm {A : Type*} [CommRing A] [Algebra K A]
-    {M : κ → ι → K} {i₀ : κ → ι} (hi₀ : ∀ h, M h (i₀ h) ≠ 0) {y : κ × ι → A}
-    (hy : ∀ h, ∑ i, M h i • y (h, i) = 0) :
-    (aeval y).comp (aeval (kerForm M i₀)) = aeval y := by
-  ext ⟨h, i⟩ : 1
-  by_cases hi : i = i₀ h
-  · subst hi
-    have hsum := hy h
-    rw [← Finset.add_sum_erase _ _ (mem_univ (i₀ h)), add_eq_zero_iff_eq_neg] at hsum
-    have hy0 : y (h, i₀ h) = - ∑ j ∈ univ.erase (i₀ h), (M h j / M h (i₀ h)) • y (h, j) := by
-      have := congrArg ((M h (i₀ h))⁻¹ • ·) hsum
-      rwa [inv_smul_smul₀ (hi₀ h), smul_neg, Finset.smul_sum,
-        Finset.sum_congr rfl fun j _ ↦ by rw [smul_smul, ← div_eq_inv_mul]] at this
-    simp only [AlgHom.comp_apply, aeval_X, kerForm, ↓reduceIte, map_neg, map_sum,
-      ← smul_eq_C_mul, map_smul, hy0]
-  · simp [kerForm, hi]
-
-omit [Fintype κ] [Fintype ι] [DecidableEq ι] in
-private theorem exists_mem_support_of_killPivot_ne_zero {i₀ : κ → ι}
-    {H : MvPolynomial (κ × ι) K} (hH : killPivot i₀ H ≠ 0) :
-    ∃ r ∈ H.support, (∀ h, r (h, i₀ h) = 0) ∧ H.coeff r ≠ 0 := by
-  let f : {p : κ × ι // p.2 ≠ i₀ p.1} → κ × ι := Subtype.val
-  have hne : H.killCompl (f := f) Subtype.val_injective ≠ 0 := fun h0 ↦
-    hH (by simp [killPivot, f, h0])
-  obtain ⟨s, hs⟩ := support_nonempty.mpr hne
-  have hc : H.coeff (s.mapDomain f) ≠ 0 := by
-    rwa [← coeff_killCompl Subtype.val_injective, ← mem_support_iff]
-  exact ⟨s.mapDomain f, mem_support_iff.mpr hc, fun h ↦
-    Finsupp.mapDomain_of_notMem_range s (h, i₀ h) (by simp [f]), hc⟩
-
 omit [Fintype κ] [Fintype ι] [DecidableEq ι] in
 private theorem coeff_killPivot_of_eq_zero {i₀ : κ → ι}
     (H : MvPolynomial (κ × ι) K) {r : κ × ι →₀ ℕ} (hr : ∀ h, r (h, i₀ h) = 0) :
@@ -219,68 +299,6 @@ private theorem coeff_killPivot_of_eq_zero {i₀ : κ → ι}
     coeff_killCompl]
 
 end PivotHelpers
-
-/-- **Vanishing of low-order Hasse derivatives on the common kernel.** For any `K`-algebra `A` and
-any tuple `y : κ × ι → A` annihilated by every linear form `M h`, every Hasse derivative
-`hasseDeriv I P` of `(1 / d h)`-weighted order strictly below `formIndex d M P` vanishes at `y`. -/
-theorem aeval_hasseDeriv_eq_zero_of_lt_formIndex {A : Type*} [CommRing A] [Algebra K A]
-    {d : κ → ℕ} {M : κ → ι → K} (hM : ∀ h, M h ≠ 0) {P : MvPolynomial (κ × ι) K}
-    {I : κ × ι →₀ ℕ} (hI : ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h < formIndex d M P)
-    {y : κ × ι → A} (hy : ∀ h, ∑ i, M h i • y (h, i) = 0) :
-    aeval y (hasseDeriv I P) = 0 := by
-  classical
-  choose i₀ hi₀ using fun h ↦ Function.ne_iff.mp (hM h)
-  suffices aeval (kerForm M i₀) (hasseDeriv I P) = 0 by
-    have hcomp := AlgHom.congr_fun (aeval_comp_aeval_kerForm hi₀ hy) (hasseDeriv I P)
-    simpa [this] using hcomp.symm
-  set Q := substFormInv M i₀ P
-  have h0Q : Q = hasseDeriv 0 Q := by simp
-  have hPQ : P = substForm M i₀ (hasseDeriv 0 Q) :=
-    (substForm_substFormInv hi₀ P).symm.trans (congrArg _ h0Q)
-  rw [hPQ, substForm_eq_aeval_blockLinearForm,
-    hasseDeriv_aeval_blockLinearForm_hasseDeriv, map_sum]
-  refine Finset.sum_eq_zero fun e he ↦ ?_
-  rw [map_smul, map_nsmul, ← substForm_eq_aeval_blockLinearForm, ← AlgHom.comp_apply,
-    aeval_kerForm_comp_substForm hi₀, zero_add]
-  suffices killPivot i₀ (hasseDeriv e Q) = 0 by rw [this, nsmul_zero, smul_zero]
-  by_contra hne
-  obtain ⟨r, -, hr0, hrc⟩ := exists_mem_support_of_killPivot_ne_zero hne
-  rw [hasseDeriv_coeff] at hrc
-  have hre : r + e ∈ Q.support := mem_support_iff.mpr (right_ne_zero_of_mul hrc)
-  have hle : formIndex d M P ≤ ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h := by
-    rw [formIndex_eq_iInf hi₀]
-    refine (iInf₂_le (r + e) hre).trans (Finset.sum_le_sum fun h _ ↦ ?_)
-    refine ENNReal.div_le_div_right ?_ _
-    have hdeg := (mem_filter.mp he).2 h
-    have hle_nat : (r + e) (h, i₀ h) ≤ ∑ i, I (h, i) := by
-      rw [Finsupp.add_apply, hr0 h, zero_add, ← hdeg]
-      exact Finset.single_le_sum (f := fun l ↦ e (h, l)) (fun _ _ ↦ Nat.zero_le _) (mem_univ _)
-    exact_mod_cast hle_nat
-  exact hI.not_ge hle
-
-/-- Pointwise vanishing on the common kernel of Hasse derivatives of weighted order strictly below
-`formIndex d M P`. -/
-theorem eval_hasseDeriv_eq_zero_of_lt_formIndex {d : κ → ℕ} {M : κ → ι → K} (hM : ∀ h, M h ≠ 0)
-    {P : MvPolynomial (κ × ι) K} {I : κ × ι →₀ ℕ}
-    (hI : ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h < formIndex d M P)
-    {x : κ × ι → K} (hx : ∀ h, ∑ i, M h i * x (h, i) = 0) :
-    eval x (hasseDeriv I P) = 0 := by
-  simpa only [aeval_eq_eval] using
-    aeval_hasseDeriv_eq_zero_of_lt_formIndex hM hI (y := x) (by simpa [smul_eq_mul] using hx)
-
-/-- Any block-linear parameterization `B` of subspaces contained in `ker (M h)` annihilates every
-Hasse derivative of weighted order strictly below `formIndex d M P`. -/
-theorem aeval_blockLinearForm_hasseDeriv_eq_zero_of_lt_formIndex [Fintype τ] {d : κ → ℕ}
-    {M : κ → ι → K} (hM : ∀ h, M h ≠ 0) {P : MvPolynomial (κ × ι) K} {I : κ × ι →₀ ℕ}
-    (hI : ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h < formIndex d M P)
-    {B : κ → ι → τ → K} (hB : ∀ h a, ∑ i, M h i * B h i a = 0) :
-    aeval (blockLinearForm B) (hasseDeriv I P) = 0 := by
-  refine aeval_hasseDeriv_eq_zero_of_lt_formIndex hM hI fun h ↦ ?_
-  simp only [blockLinearForm_apply, Algebra.smul_def, algebraMap_eq, Finset.mul_sum, ← mul_assoc,
-    ← C_mul]
-  rw [Finset.sum_comm]
-  refine Finset.sum_eq_zero fun a _ ↦ ?_
-  rw [← Finset.sum_mul, ← map_sum, hB h a, map_zero, zero_mul]
 
 /-- Core existence of a multi-index `I` of exact weighted order `formIndex d M P` whose Hasse
 derivative does not vanish after projecting onto `∏ h, ker (M h)`. -/
@@ -298,18 +316,16 @@ private theorem exists_aeval_kerForm_hasseDeriv_ne_zero [DecidableEq ι]
   have hidx : ∑ h, (n₀ (h, i₀ h) : ℝ≥0∞) / d h = formIndex d M P := by
     rw [formIndex_eq_iInf hi₀]
     exact le_antisymm (le_iInf₂ hmin) (iInf₂_le n₀ hn₀)
-  set k : κ × ι →₀ ℕ := Finsupp.equivFunOnFinite.symm fun p ↦ if p.2 = i₀ p.1 then n₀ p else 0
-  set r : κ × ι →₀ ℕ := Finsupp.equivFunOnFinite.symm fun p ↦ if p.2 = i₀ p.1 then 0 else n₀ p
+  set k : κ × ι →₀ ℕ := n₀.filter (fun p ↦ p.2 = i₀ p.1)
+  set r : κ × ι →₀ ℕ := n₀.filter (fun p ↦ ¬ p.2 = i₀ p.1)
   have hrk : r + k = n₀ := by
-    ext ⟨h, i⟩
-    by_cases hi : i = i₀ h <;> simp [r, k, hi]
+    rw [add_comm]
+    exact n₀.filter_add_filter_not _
   have hr0 (h : κ) : r (h, i₀ h) = 0 := by simp [r]
   have hkchoose : (k.prod fun p c ↦ (r p + c).choose c) = 1 := by
     refine Finset.prod_eq_one fun ⟨h, i⟩ hp ↦ ?_
-    have hi : i = i₀ h := by
-      by_contra hne
-      exact Finsupp.mem_support_iff.mp hp (by simp [k, hne])
-    subst hi
+    rw [Finsupp.support_filter, Finset.mem_filter] at hp
+    obtain ⟨-, rfl⟩ : _ ∧ i = i₀ h := hp
     simp [hr0 h]
   have hkillne : killPivot i₀ (hasseDeriv k Q) ≠ 0 := by
     intro h0
@@ -430,7 +446,7 @@ theorem le_formIndex_iff_forall_eval_hasseDeriv_eq_zero [Infinite K] {t : ℝ≥
     t ≤ formIndex d M P ↔
       ∀ I : κ × ι →₀ ℕ, ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h < t →
         ∀ x : κ × ι → K, (∀ h, ∑ i, M h i * x (h, i) = 0) → eval x (hasseDeriv I P) = 0 := by
-  refine ⟨fun hle I hIt x hx ↦ eval_hasseDeriv_eq_zero_of_lt_formIndex hM (hIt.trans_le hle) hx,
+  refine ⟨fun hle I hIt x hx ↦ eval_hasseDeriv_eq_zero_of_lt_formIndex (hIt.trans_le hle) hx,
     fun hall ↦ by_contra fun hnot ↦ ?_⟩
   have hlt : formIndex d M P < t := lt_of_not_ge hnot
   obtain ⟨I, x, hIeq, hx, hne⟩ :=

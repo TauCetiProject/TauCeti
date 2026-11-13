@@ -283,8 +283,7 @@ theorem formIdeal_smul_form {c : κ → R} (hc : ∀ h, IsUnit (c h)) (t : ℝ�
     simp only [Pi.smul_apply, smul_eq_mul, C_mul, mul_assoc, ← mul_sum, mul_pow, prod_mul_distrib,
       ← map_pow, ← map_prod]
   have hunit (j : κ → ℕ) : IsUnit (C (∏ h, c h ^ j h) : MvPolynomial (κ × ι) R) :=
-    (Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one
-      fun h _ ↦ (hc h).pow (j h)).map C
+    (IsUnit.prod_univ_iff.mpr fun h ↦ (hc h).pow (j h)).map C
   refine le_antisymm ?_ ?_ <;> rw [formIdeal, Ideal.span_le] <;> rintro _ ⟨j, hj, rfl⟩ <;>
     dsimp only <;> rw [SetLike.mem_coe]
   · rw [hgen j, Ideal.unit_mul_mem_iff_mem _ (hunit j)]
