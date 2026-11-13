@@ -121,7 +121,7 @@ noncomputable abbrev coordinateHopfAlgebra : CommHopfAlgCat.{u} R :=
 
 /-- The coordinate Hopf algebra of `𝔾ₐ` is reduced over a reduced ring: it is the polynomial
 algebra on the single generator `x`. -/
-theorem isReduced_coordinateHopfAlgebra [IsReduced R] :
+instance isReduced_coordinateHopfAlgebra [IsReduced R] :
     IsReduced (coordinateHopfAlgebra R) :=
   isReduced_of_injective (coordinateAlgEquiv R).toRingHom (coordinateAlgEquiv R).injective
 
