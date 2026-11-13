@@ -46,7 +46,7 @@ example (k : ℕ) :
       a • coordinates 0 1 Q ≠ 0 := by
     rw [Ne, Pair.smul_eq_zero, not_or]
     exact ⟨ha, coordinates_ne_zero hB Q⟩
-  refine ⟨diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero hB
+  refine ⟨diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero
     (.some 2 0 nonsingular_two_zero) k (by simp) (by simp) (by simp), ?_⟩
   have h := diffAdd_nsmul_ne_zero_iff_of_cross_eq_zero h₂ hB
     (A := 0) (.some 2 0 nonsingular_two_zero) k

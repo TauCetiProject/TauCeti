@@ -342,6 +342,7 @@ theorem weightedE1_eq_zero_of_even {W : (Fin 2 → ZMod N) → ℂ} (hW : W.Even
 
 /-! ### Holomorphy -/
 
+omit [NeZero N] in
 /-- The corrected division values are holomorphic on `ℍ`: the quasi-periods are the division
 values `η₁ = 2 ζ(z / 2)` and `η₂ = 2 ζ(1 / 2)`. -/
 private lemma mdifferentiable_zetaValue (b : Fin 2 → ℤ) : MDiff (zetaValue N b) := by

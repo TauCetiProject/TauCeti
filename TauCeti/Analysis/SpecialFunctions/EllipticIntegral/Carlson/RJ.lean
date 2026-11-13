@@ -118,7 +118,7 @@ theorem integrableOn_carlsonRJ_integrand {x y z p : ℂ} (hx : x ∈ slitPlane �
     (by norm_num)
   obtain ⟨Cy, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hy (r := -(1 / 2)) (by norm_num)
   obtain ⟨Cz, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hz (r := -(1 / 2)) (by norm_num)
-  obtain ⟨Cp, hCp0, hCp⟩ := TauCeti.exists_norm_inv_ofReal_add_le hp
+  obtain ⟨Cp, _, hCp⟩ := TauCeti.exists_norm_inv_ofReal_add_le hp
   push_cast at hCx hCy hCz
   have hcpow {w : ℂ} (hw : w ∈ slitPlane ∪ {0}) :
       ContinuousOn (fun t : ℝ => ((t : ℂ) + w) ^ (-(1 / 2) : ℂ)) (Ioi 0) := fun _ ht =>

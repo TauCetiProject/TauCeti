@@ -78,6 +78,15 @@ theorem _root_.Rat.AbsoluteValue.IsStandard.padic (q : ℕ) [Fact q.Prime] :
     Rat.AbsoluteValue.IsStandard (Rat.AbsoluteValue.padic q) :=
   .inr ⟨q, inferInstance, rfl⟩
 
+/-- A standard absolute value on `ℚ` is nontrivial. -/
+theorem _root_.Rat.AbsoluteValue.IsStandard.isNontrivial {a : AbsoluteValue ℚ ℝ}
+    (ha : Rat.AbsoluteValue.IsStandard a) : a.IsNontrivial := by
+  rcases ha with rfl | ⟨q, hq, rfl⟩
+  · exact ⟨2, two_ne_zero, by norm_num⟩
+  · refine ⟨q, Nat.cast_ne_zero.mpr hq.out.ne_zero, ?_⟩
+    rw [Rat.AbsoluteValue.padic_eq_padicNorm]
+    exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime.ne
+
 /-- Two equivalent standard absolute values on `ℚ` are equal. -/
 theorem _root_.Rat.AbsoluteValue.IsStandard.eq_of_isEquiv {a b : AbsoluteValue ℚ ℝ}
     (ha : Rat.AbsoluteValue.IsStandard a) (hb : Rat.AbsoluteValue.IsStandard b) (h : a.IsEquiv b) :
@@ -86,25 +95,11 @@ theorem _root_.Rat.AbsoluteValue.IsStandard.eq_of_isEquiv {a b : AbsoluteValue �
   · rfl
   · exact absurd h (Rat.AbsoluteValue.not_real_isEquiv_padic q')
   · exact absurd h.symm (Rat.AbsoluteValue.not_real_isEquiv_padic q)
-  · have hlt : Rat.AbsoluteValue.padic q' (q : ℚ) < 1 := by
-      refine h.lt_one_iff.mp ?_
-      rw [Rat.AbsoluteValue.padic_eq_padicNorm]
-      exact_mod_cast (padicNorm.nat_lt_one_iff q).mpr dvd_rfl
-    rw [Rat.AbsoluteValue.padic_eq_padicNorm] at hlt
-    have hdvd := (padicNorm.nat_lt_one_iff q).mp (by exact_mod_cast hlt)
-    obtain rfl := (Nat.prime_dvd_prime_iff_eq Fact.out Fact.out).mp hdvd
+  · -- The prime of a bounded nontrivial absolute value on `ℚ` is unique (Ostrowski).
+    obtain rfl := (Rat.AbsoluteValue.equiv_padic_of_bounded
+      (Rat.AbsoluteValue.IsStandard.padic q).isNontrivial
+      fun n ↦ by exact_mod_cast Rat.AbsoluteValue.padic_le_one q n).unique ⟨‹_›, .rfl⟩ ⟨‹_›, h⟩
     rfl
-
-/-- A standard absolute value on `ℚ` is nontrivial. -/
-theorem _root_.Rat.AbsoluteValue.IsStandard.isNontrivial {a : AbsoluteValue ℚ ℝ}
-    (ha : Rat.AbsoluteValue.IsStandard a) : a.IsNontrivial := by
-  rcases ha with rfl | ⟨q, hq, rfl⟩
-  · exact ⟨2, two_ne_zero, by norm_num⟩
-  · refine ⟨q, Nat.cast_ne_zero.mpr hq.out.ne_zero, ?_⟩
-    simp only [Rat.AbsoluteValue.padic_eq_padicNorm, padicNorm.padicNorm_p_of_prime]
-    have : (1 : ℝ) < q := by exact_mod_cast hq.out.one_lt
-    push_cast
-    exact (inv_lt_one_of_one_lt₀ this).ne
 
 /-- A nontrivial absolute value on `ℚ` takes a value other than `1` at a nonzero natural number. -/
 theorem _root_.AbsoluteValue.IsNontrivial.exists_nat_ne_one {a : AbsoluteValue ℚ ℝ}

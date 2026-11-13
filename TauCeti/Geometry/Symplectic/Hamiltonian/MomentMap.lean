@@ -76,7 +76,9 @@ manifold (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq`), and it is a Lie
 vanishes at `x` exactly when `σ(Z_M x, Z'_M x) = μ(x)(⁅Z, Z'⁆)` for all `Z, Z'`
 (`TauCeti.SmoothTwoForm.momentCocycle_eq_zero_iff`), and then `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`, so the
 isotropy algebra `𝔤_x` lies in the coadjoint stabilizer of `μ(x)`
-(`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`).
+(`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`). For a nondegenerate form, if
+moreover `μ(x)` is coadjoint-fixed, the components of `μ` pairwise Poisson-commute at `x`
+(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`).
 
 The first example is the linear action of the symplectic Lie algebra `sp(V, ω)`, the skew-adjoint
 endomorphisms of a finite-dimensional symplectic vector space `(V, ω)`, by the vector fields
@@ -489,6 +491,16 @@ theorem momentCocycle_apply_eq_poissonBracket [FiniteDimensional ℝ E] (h : σ.
     σ.momentCocycle a μ x Z Z' = (TrivialLieModule.equiv ℝ 𝔤 ℝ).symm
       (σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x - μ x ⁅Z, Z'⁆) := by
   rw [momentCocycle_apply, h.poissonBracket_eq_eval₂ hσ]
+
+/-- **Components of a moment map Poisson-commute** at a point where the cocycle of the moment map
+vanishes and `μ(x)` is coadjoint-fixed, for instance everywhere for an infinitesimally
+equivariant moment map of an abelian Lie algebra. -/
+theorem poissonBracket_eq_zero [FiniteDimensional ℝ E] (h : σ.IsMomentMap a μ)
+    (hσ : σ.IsNondegenerate) {x : M} (hc : σ.momentCocycle a μ x = 0)
+    (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤) (Z Z' : 𝔤) :
+    σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x = 0 := by
+  rw [h.poissonBracket_eq_eval₂ hσ, momentCocycle_eq_zero_iff.1 hc,
+    apply_lie_eq_zero_of_lieAnnihilator_eq_top hμ]
 
 /-- If the cocycle of a moment map vanishes at `x`, its differential carries the generated vector
 `Z_M x` to the coadjoint action of `Z` on `μ(x)`: `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Adapted
+public import Mathlib.Probability.Process.HittingTime
 
 /-!
 # The natural filtration of path space through finite prefixes
@@ -84,3 +85,17 @@ theorem adapted_of_eq_comap_prefix {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ 
       (comap_measurable (fun ω (i : Fin (n + 1)) => X i ω))
 
 end MeasureTheory.Filtration
+
+namespace TauCeti.Probability
+
+open MeasureTheory
+
+/-- The event that the coordinate process enters a measurable set `s` at some time at least `m`
+is measurable. -/
+theorem measurableSet_hittingAfter_coord_ne_top {α : Type*} [MeasurableSpace α] {s : Set α}
+    (hs : MeasurableSet s) (m : ℕ) :
+    MeasurableSet {x : ℕ → α | hittingAfter (fun k (x : ℕ → α) => x k) s m x ≠ ⊤} :=
+  ((measurableSet_singleton ⊤).preimage
+    (Filtration.adapted_piLE.isStoppingTime_hittingAfter (n := m) hs).measurable').compl
+
+end TauCeti.Probability

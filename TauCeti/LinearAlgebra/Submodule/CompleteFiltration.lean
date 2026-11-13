@@ -40,6 +40,8 @@ perturbation lemma for complete filtered contractions, where the series need not
 * `Module.End.ringInverse_one_add_apply_sub_sum_mem`: when `1 + T` is invertible, its inverse
   is the limit of the partial geometric sums, with an explicit rate of convergence.
 * `Module.End.ringInverse_one_add_apply_mem`: the inverse preserves the filtration.
+* `TauCeti.IsCompleteFiltration.surjOn`: a map sending a complete filtration into a separated one
+  compatibly, and surjective on the associated graded modules, maps `F 0` onto `G 0`.
 * `TauCeti.isCompleteFiltration_pi`: the filtration of a product `∀ i, E i` by vanishing of the
   coordinates of weight below `n` is complete and separated.
 
@@ -102,6 +104,53 @@ structure IsCompleteFiltration (F : ℕ → Submodule R M) : Prop where
   in the filtration has a limit. -/
   exists_limit : ∀ x : ℕ → M, (∀ n, x (n + 1) - x n ∈ F n) → ∃ L, ∀ n, L - x n ∈ F n
 
+namespace IsCompleteFiltration
+
+variable {F : ℕ → Submodule R M} (hF : IsCompleteFiltration F)
+include hF
+
+/-- **Tails of a complete filtration are complete.** Dropping the first `d` terms of a complete
+separated filtration gives a complete separated filtration. -/
+theorem comp_add_right (d : ℕ) : IsCompleteFiltration fun n ↦ F (n + d) where
+  antitone _ _ h := hF.antitone (Nat.add_le_add_right h d)
+  eq_zero_of_forall_mem x hx :=
+    hF.eq_zero_of_forall_mem x fun n ↦ hF.antitone (Nat.le_add_right n d) (hx n)
+  exists_limit x hx := by
+    -- Delay the sequence by `d` steps, repeating its first term; the delayed sequence converges
+    -- for `F`, and its limit is a limit of `x` for the tail.
+    obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ x (n - d)) fun n ↦ by
+      rcases Nat.lt_or_ge n d with hn | hn
+      · rw [Nat.sub_eq_zero_of_le hn, Nat.sub_eq_zero_of_le hn.le, sub_self]
+        exact zero_mem _
+      · rw [Nat.sub_add_comm hn]
+        simpa [Nat.sub_add_cancel hn] using hx (n - d)
+    exact ⟨L, fun n ↦ by simpa using hL (n + d)⟩
+
+/-- **Successive approximation.** Let `f` map a complete filtration `F` into a separated
+filtration `G`, with `f (F n) ⊆ G n`. If `f` is surjective on the associated graded modules, in
+the sense that every element of `G n` is the image of an element of `F n` up to an element of
+`G (n + 1)`, then `f` maps `F 0` onto `G 0`. This is the analogue, for filtrations which need not
+come from the powers of an ideal, of Mathlib's `surjective_of_mkQ_comp_surjective`. -/
+theorem surjOn {N : Type*} [AddCommGroup N] [Module R N] {G : ℕ → Submodule R N}
+    (hG : ∀ y, (∀ n, y ∈ G n) → y = 0) (f : M →ₗ[R] N) (hf : ∀ n, (F n).map f ≤ G n)
+    (h : ∀ n, ∀ z ∈ G n, ∃ x ∈ F n, z - f x ∈ G (n + 1)) :
+    Set.SurjOn f (F 0) (G 0) := by
+  intro y hy
+  -- Correct `y` one filtration step at a time: `x n` satisfies `y - f (x n) ∈ G n`.
+  let x : (n : ℕ) → {x : M // y - f x ∈ G n} := fun n ↦ Nat.rec ⟨0, by simpa using hy⟩
+    (fun n xn ↦ ⟨xn.1 + (h n _ xn.2).choose, by
+      rw [map_add, ← sub_sub]
+      exact (h n _ xn.2).choose_spec.2⟩) n
+  have hx (n : ℕ) : (x (n + 1)).1 - (x n).1 = (h n _ (x n).2).choose := add_sub_cancel_left _ _
+  obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ (x n).1) fun n ↦ by
+    rw [hx]
+    exact (h n _ (x n).2).choose_spec.1
+  refine ⟨L, by simpa [x] using hL 0, (sub_eq_zero.1 (hG _ fun n ↦ ?_)).symm⟩
+  rw [← sub_sub_sub_cancel_right y (f L) (f (x n).1), ← map_sub]
+  exact sub_mem (x n).2 (hf n ⟨_, hL n, rfl⟩)
+
+end IsCompleteFiltration
+
 end TauCeti
 
 namespace Module.End
@@ -135,12 +184,14 @@ theorem ringInverse_one_add_apply_sub_sum_mem (hanti : Antitone F) (hF0 : F 0 = 
   rw [map_sub, hinv, hgeom, sub_sub_cancel]
   exact pow_apply_mem_of_map_le (by simpa using hT) hy n
 
-/-- If `T` raises a decreasing filtration with `F 0 = ⊤` and `1 + T` is invertible, then the
-inverse of `1 + T` preserves the filtration. -/
+/-- If `T` raises a decreasing filtration with `F 0 = ⊤`, then the inverse of `1 + T` preserves
+the filtration.  When `1 + T` is not invertible, `Ring.inverse (1 + T) = 0`. -/
 theorem ringInverse_one_add_apply_mem (hanti : Antitone F) (hF0 : F 0 = ⊤)
-    (hT : ∀ n, (F n).map T ≤ F (n + 1)) (hu : IsUnit (1 + T)) {m : ℕ} {y : M} (hy : y ∈ F m) :
+    (hT : ∀ n, (F n).map T ≤ F (n + 1)) {m : ℕ} {y : M} (hy : y ∈ F m) :
     Ring.inverse (1 + T) y ∈ F m := by
-  simpa using ringInverse_one_add_apply_sub_sum_mem hanti hF0 hT hu hy 0
+  by_cases hu : IsUnit (1 + T)
+  · simpa using ringInverse_one_add_apply_sub_sum_mem hanti hF0 hT hu hy 0
+  · simp [Ring.inverse_non_unit _ hu]
 
 end Module.End
 

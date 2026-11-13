@@ -24,7 +24,10 @@ linear equivalence `e.continuousLinearEquivAt 𝕜 b`, with inverse its symmetri
 `Bundle.Trivialization.homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt`).
 
 More generally, any linear trivialization sends a vector over its base set to a nonzero vector
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). For two linear
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). Over the base
+set, its fibrewise linear inverse `e.symmₗ R b` is the inverse of the fibrewise linear equivalence
+(`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
+(`Bundle.Trivialization.symmₗ_injective`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
 of the first followed by the coordinate change from the first to the second
 (`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). Linear coordinate changes
@@ -40,7 +43,9 @@ We also record the product trivialization's fibrewise inverse
 (`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
 bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear trivializations
 and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
-`Bundle.Trivialization.restrictScalars_coordChangeL`).
+`Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
+fields has the same continuous linear map at every point over either field
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
 -/
 
 public section
@@ -86,6 +91,17 @@ vector is nonzero. -/
 theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
     (e v).2 ≠ 0 ↔ v.2 ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
+
+/-- Over the base set, the fibrewise linear inverse of a linear trivialization is the inverse of
+its fibrewise linear equivalence. -/
+theorem coe_linearEquivAt_symm {b : B} (hb : b ∈ e.baseSet) :
+    ((e.linearEquivAt R b hb).symm : F →ₗ[R] E b) = e.symmₗ R b :=
+  LinearMap.ext fun u ↦ by rw [LinearEquiv.coe_coe, linearEquivAt_symm_apply, symmₗ_apply e hb]
+
+/-- Over the base set, the fibrewise linear inverse of a linear trivialization is injective. -/
+theorem symmₗ_injective {b : B} (hb : b ∈ e.baseSet) : Function.Injective (e.symmₗ R b) := by
+  rw [← e.coe_linearEquivAt_symm R hb, LinearEquiv.coe_coe]
+  exact (e.linearEquivAt R b hb).symm.injective
 
 end Linear
 
@@ -211,8 +227,23 @@ theorem restrictScalars_coordChangeL (𝕜' 𝕜 : Type*)
     [IsScalarTower 𝕜' 𝕜 F] [TopologicalSpace (TotalSpace F E)]
     [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)]
     (e e' : Trivialization F (π F E)) [e.IsLinear 𝕜'] [e'.IsLinear 𝕜'] [e.IsLinear 𝕜]
-    [e'.IsLinear 𝕜] {b : B} (hb : b ∈ e.baseSet ∩ e'.baseSet) :
+    [e'.IsLinear 𝕜] {b : B} :
     (e.coordChangeL 𝕜 e' b : F →L[𝕜] F).restrictScalars 𝕜' = e.coordChangeL 𝕜' e' b := by
-  ext v; simp [Trivialization.coordChangeL_apply' e e' hb]
+  by_cases hb : b ∈ e.baseSet ∩ e'.baseSet
+  · ext v; simp [Trivialization.coordChangeL_apply' e e' hb]
+  · ext v; simp [Trivialization.coordChangeL, hb]
+
+/-- A trivialization that is linear over both `𝕜'` and `𝕜` has the same continuous linear map at
+every point over either field. In particular the `𝕜'`-linear map of a trivialization of a
+`VectorBundle 𝕜 F E`, restricted to `𝕜'` by `VectorBundle.restrictScalars`, is `𝕜`-linear. -/
+theorem coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt (𝕜' 𝕜 : Type*)
+    [NontriviallyNormedField 𝕜'] [NontriviallyNormedField 𝕜] {F : Type*} {E : B → Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [∀ x, AddCommMonoid (E x)]
+    [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+    [∀ x, TopologicalSpace (E x)] [FiberBundle F E] (e : Trivialization F (π F E))
+    [e.IsLinear 𝕜'] [e.IsLinear 𝕜] (b : B) :
+    ⇑(e.continuousLinearMapAt 𝕜' b) = e.continuousLinearMapAt 𝕜 b := by
+  ext v
+  simp only [continuousLinearMapAt_apply, coe_linearMapAt]
 
 end Bundle.Trivialization

@@ -17,8 +17,9 @@ every submodule on which `Q` is nonpositive is totally real for `J`. No almost-c
 finite-dimensionality, division, linear order, or inner product is required. Over such a field
 in finite dimension, `J` is then automatically injective on such a subspace, so the subspace has
 at most half the ambient dimension. With a linear order, the negative index of inertia of `Q`
-has the same bound. The inertia bound applies the subspace bound to the maximal
-negative-definite subspace provided by Mathlib's
+has the same bound, also without finite-dimensionality, where it holds trivially because
+`Module.finrank` and the negative index are both `0`. The inertia bound applies the subspace
+bound to the maximal negative-definite subspace provided by Mathlib's
 `QuadraticForm.exists_finrank_eq_sigNeg_and_negDef`.
 
 The complex-dimension consequences for almost complex structures are in
@@ -94,7 +95,7 @@ end FiniteDimensional
 section LinearOrder
 
 variable {K E : Type*} [Field K] [LinearOrder K] [IsOrderedAddMonoid K]
-variable [AddCommGroup E] [Module K E] [FiniteDimensional K E]
+variable [AddCommGroup E] [Module K E]
 variable (Q : QuadraticForm K E)
 
 /-- If `Q(v) + Q(Jv)` is positive for every nonzero `v`, for a linear endomorphism `J`, then twice
@@ -102,6 +103,13 @@ the negative index of inertia of `Q` is at most the dimension of `E`. -/
 theorem two_mul_sigNeg_le_finrank_of_add_comp_posDef (J : E →ₗ[K] E)
     (hQJ : (Q + Q.comp J).PosDef) :
     2 * sigNeg Q ≤ finrank K E := by
+  by_cases hE : Module.Finite K E
+  swap
+  · have h : sigNeg Q ≤ finrank K E := by
+      rw [← sigPos_neg]
+      exact sigPos_le_finrank (-Q)
+    rw [Module.finrank_of_not_finite hE] at h ⊢
+    omega
   obtain ⟨W, hWdim, hWneg⟩ := exists_finrank_eq_sigNeg_and_negDef Q
   rw [← hWdim]
   exact Q.two_mul_finrank_le_of_add_comp_posDef J hQJ fun v hv ↦ by
