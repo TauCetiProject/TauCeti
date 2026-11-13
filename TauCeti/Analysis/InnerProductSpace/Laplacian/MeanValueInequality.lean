@@ -328,7 +328,7 @@ theorem mul_le_five_mul_setIntegral_ball_of_neg_mul_le_laplacian
   have hint : ∫ x in ball z ε, w x ∂μ ≤ I :=
     setIntegral_mono_set ((hwc.integrableOn_compact (isCompact_closedBall _ _)).mono_set
       ball_subset_closedBall) (ae_restrict_of_forall_mem measurableSet_ball hw0)
-      (ball_subset_closedBall.trans hsub).eventuallyLE
+      (ball_subset_closedBall.trans hsub).eventuallySubset
   -- Since `K' ε² ≤ 1 / 4`, the correction is at most an eighth of the left-hand side.
   have hKε : K' * ε ^ 2 ≤ 1 / 4 := by
     have : ε ^ 2 ≤ r ^ 2 / 4 := by nlinarith
