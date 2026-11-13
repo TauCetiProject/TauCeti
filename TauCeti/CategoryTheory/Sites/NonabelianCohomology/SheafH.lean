@@ -73,11 +73,22 @@ def zeroMulEquivSections (F : Sheaf J AddCommGrpCat.{w}) :
 
 /-- The global section of `F` given by a class `x` in `H⁰(F)`: its value over `U` is the image
 of `1` under the morphism from the constant presheaf `ℤ` to `F` adjoint to `x`. -/
-lemma zeroMulEquivSections_apply_coe (F : Sheaf J AddCommGrpCat.{w}) (x : H F 0) (U : Cᵒᵖ) :
-    (zeroMulEquivSections F (.ofAdd x)).1 U = abelianSheafToGrpSheafObjEquiv F U (.ofAdd
-      (((sheafificationAdjunction J AddCommGrpCat.{w}).homEquiv _ F (Ext.addEquiv₀ x)).app U
+lemma zeroMulEquivSections_apply_coe (F : Sheaf J AddCommGrpCat.{w})
+    (x : Multiplicative (H F 0)) (U : Cᵒᵖ) :
+    (zeroMulEquivSections F x).1 U = abelianSheafToGrpSheafObjEquiv F U (.ofAdd
+      (((sheafificationAdjunction J AddCommGrpCat.{w}).homEquiv _ F (Ext.addEquiv₀ x.toAdd)).app U
         ⟨1⟩)) :=
   constIntHomMulEquivSections_apply_coe F _ U
+
+/-- The degree-zero class corresponding to a global section is the class of the sheaf morphism
+adjoint to the morphism from the constant integer presheaf determined by that section. -/
+@[simp]
+lemma zeroMulEquivSections_symm_apply_toAdd (F : Sheaf J AddCommGrpCat.{w})
+    (s : (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections) :
+    ((zeroMulEquivSections F).symm s).toAdd =
+      Ext.mk₀ (((sheafificationAdjunction J AddCommGrpCat.{w}).homEquiv _ F).symm
+        (((constIntHomMulEquivSections F).symm s).toAdd)) :=
+  (rfl)
 
 /-- The identification of `H⁰` with global sections is natural in the abelian sheaf. -/
 @[simp]

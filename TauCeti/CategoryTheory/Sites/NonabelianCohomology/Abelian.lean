@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.CategoryTheory.Sites.Abelian
 public import Mathlib.CategoryTheory.Sites.EpiMono
+public import TauCeti.Algebra.Category.Grp.ForgetCorepresentable
 public import TauCeti.Algebra.Category.Grp.Limits
 public import TauCeti.CategoryTheory.Sites.EpiMono
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Connecting
@@ -118,31 +119,6 @@ private lemma map_toAdd_symm_sections (F : Sheaf J AddCommGrpCat.{w})
   rw [MulEquiv.apply_symm_apply] at h
   rw [(s.2 f).symm.trans h, MulEquiv.symm_apply_apply, toAdd_ofAdd]
 
-/-- `AddCommGrpCat.uliftZMultiplesAddEquiv` evaluates a morphism out of `ℤ` at `1`; this holds by
-definition. -/
-private lemma uliftZMultiplesAddEquiv_apply_one {G : AddCommGrpCat.{w}}
-    (f : AddCommGrpCat.of (ULift ℤ) ⟶ G) : G.uliftZMultiplesAddEquiv f = f ⟨1⟩ :=
-  (rfl)
-
-/-- `AddCommGrpCat.uliftZMultiplesAddEquiv` is natural in the target group: composing with
-`g : G ⟶ G'` applies `g` to the value at `1`. -/
-private lemma uliftZMultiplesAddEquiv_comp {G G' : AddCommGrpCat.{w}}
-    (f : AddCommGrpCat.of (ULift ℤ) ⟶ G) (g : G ⟶ G') :
-    G'.uliftZMultiplesAddEquiv (f ≫ g) = g (G.uliftZMultiplesAddEquiv f) := by
-  rw [uliftZMultiplesAddEquiv_apply_one, uliftZMultiplesAddEquiv_apply_one,
-    ConcreteCategory.comp_apply]
-
-/-- The identity of `ℤ` corresponds to `1` under `AddCommGrpCat.uliftZMultiplesAddEquiv`. -/
-private lemma uliftZMultiplesAddEquiv_id :
-    (AddCommGrpCat.of (ULift.{w} ℤ)).uliftZMultiplesAddEquiv (𝟙 _) = ⟨1⟩ :=
-  uliftZMultiplesAddEquiv_apply_one _
-
-/-- The morphism out of `ℤ` corresponding to an element `g` under
-`AddCommGrpCat.uliftZMultiplesAddEquiv` sends `1` to `g`. -/
-private lemma uliftZMultiplesAddEquiv_symm_apply_one {G : AddCommGrpCat.{w}} (g : G) :
-    G.uliftZMultiplesAddEquiv.symm g ⟨1⟩ = g :=
-  (uliftZMultiplesAddEquiv_apply_one _).symm.trans (AddEquiv.apply_symm_apply _ _)
-
 /-- Morphisms from the constant presheaf `ℤ` to an abelian sheaf `F` are the global sections of
 `F`, through the image of `1`. -/
 def constIntHomMulEquivSections (F : Sheaf J AddCommGrpCat.{w}) :
@@ -160,12 +136,14 @@ def constIntHomMulEquivSections (F : Sheaf J AddCommGrpCat.{w}) :
             refine (AddCommGrpCat.uliftZMultiplesAddEquiv _).injective ?_
             -- Both sides are evaluated at `1`; the section `s` is compatible with restriction.
             simp only [Functor.const_obj_map, Functor.const_obj_obj]
-            rw [uliftZMultiplesAddEquiv_comp, uliftZMultiplesAddEquiv_comp,
-              AddEquiv.apply_symm_apply, uliftZMultiplesAddEquiv_id,
-              uliftZMultiplesAddEquiv_symm_apply_one, map_toAdd_symm_sections] }
+            rw [AddCommGrpCat.uliftZMultiplesAddEquiv_comp,
+              AddCommGrpCat.uliftZMultiplesAddEquiv_comp,
+              AddEquiv.apply_symm_apply, AddCommGrpCat.uliftZMultiplesAddEquiv_id,
+              AddCommGrpCat.uliftZMultiplesAddEquiv_symm_apply_one, map_toAdd_symm_sections] }
       left_inv ψ := NatTrans.ext (funext fun U ↦
         (AddCommGrpCat.uliftZMultiplesAddEquiv _).symm_apply_eq.2 (by
-          rw [MulEquiv.symm_apply_apply, toAdd_ofAdd, uliftZMultiplesAddEquiv_apply_one]))
+          rw [MulEquiv.symm_apply_apply, toAdd_ofAdd,
+            AddCommGrpCat.uliftZMultiplesAddEquiv_apply_one]))
       right_inv s := Subtype.ext (funext fun U ↦
         (congrArg (fun a ↦ abelianSheafToGrpSheafObjEquiv F U (.ofAdd a))
           ((AddCommGrpCat.uliftZMultiplesAddEquiv _).apply_symm_apply _)).trans (by simp)) }
