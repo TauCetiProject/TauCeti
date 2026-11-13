@@ -330,6 +330,7 @@ theorem coeff_torusWeightSeries_false_three (m : ℕ) :
 
 /-- A torus taken once has weight `w_(σ, i)(1) = 1` if its determinant sign `σ` is positive and
 `-1` if it is negative, whatever its index `i`. -/
+@[simp]
 theorem coeff_one_torusWeightSeries (σ : Bool) (i : Fin 4) :
     coeff 1 (torusWeightSeries σ i) = if σ then 1 else -1 := by
   fin_cases i <;> cases σ <;> simp [coeff_X]

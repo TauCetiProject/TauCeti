@@ -157,6 +157,42 @@ private theorem filter_mem_compatibleConfigurations [DecidablePred (· ∈ K)]
       hl.2.1 hd.1 hk.1 fun h ↦ hd.2 (h ▸ hk.2)⟩
   · rw [eq_sub_iff_add_eq', ← map_add, Finsupp.filter_add_filter_not, hl.2.2]
 
+/-- The configurations of `K ∪ s` avoiding the cluster `K` are the configurations of `s`. -/
+private theorem mem_compatibleConfigurations_union_and_filter_eq_zero_iff
+    [DecidablePred (· ∈ K)] (hKs : Disjoint K s) {l : ι →₀ ℕ} :
+    l ∈ compatibleConfigurations r cls (K ∪ s) A ∧ l.filter (· ∈ K) = 0 ↔
+      l ∈ compatibleConfigurations r cls s A := by
+  rw [Finsupp.filter_eq_zero_iff, mem_compatibleConfigurations, mem_compatibleConfigurations]
+  refine ⟨fun ⟨hl, hK⟩ ↦ ⟨fun c hc ↦ (hl.1 hc).resolve_left fun hcK ↦
+    Finsupp.mem_support_iff.1 hc (hK c hcK), hl.2⟩, fun hl ↦
+    ⟨⟨hl.1.trans Set.subset_union_right, hl.2⟩, fun c hcK ↦
+      Finsupp.notMem_support_iff.1 fun hc ↦ Set.disjoint_left.1 hKs hcK (hl.1 hc)⟩⟩
+
+/-- If the configurations of `T` in class `A` are finite in number, then the part in `K` of such a
+configuration, when nonempty, has nonzero class: a nonempty part of class zero could be added to
+the configuration any number of times. -/
+private theorem linearCombination_filter_ne_zero_of_finite [DecidablePred (· ∈ K)] {T : Set ι}
+    (hfin : (compatibleConfigurations r cls T A).Finite) {l : ι →₀ ℕ}
+    (hl : l ∈ compatibleConfigurations r cls T A) (hlK : l.filter (· ∈ K) ≠ 0) :
+    Finsupp.linearCombination ℕ cls (l.filter (· ∈ K)) ≠ 0 := by
+  intro h
+  rw [mem_compatibleConfigurations] at hl
+  have hsupp (j : ℕ) : ↑(l + j • l.filter (· ∈ K)).support ⊆ (↑l.support : Set ι) :=
+    fun d hd ↦ by
+      simp only [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.coe_add, Finsupp.coe_smul,
+        Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finsupp.filter_apply] at hd ⊢
+      intro hd'
+      simp [hd'] at hd
+  refine hfin.not_infinite (Set.infinite_of_injective_forall_mem
+    (f := fun j : ℕ ↦ l + j • l.filter (· ∈ K)) (fun j j' hj ↦ ?_) fun j ↦ ?_)
+  · obtain ⟨k, hk⟩ := Finsupp.support_nonempty_iff.2 hlK
+    have := DFunLike.congr_fun (add_left_cancel hj) k
+    simp only [Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul] at this
+    exact Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 hk)) this
+  · rw [mem_compatibleConfigurations]
+    exact ⟨(hsupp j).trans hl.1, hl.2.1.mono (hsupp j), by
+      rw [map_add, map_nsmul, h, smul_zero, add_zero, hl.2.2]⟩
+
 /-- If the configurations of `K ∪ s` in class `A` are finite in number, then so are those of the
 cluster `K` in every class `B` for which the candidates `U` compatible with `K` have a
 configuration in class `A - B`. -/
@@ -169,6 +205,14 @@ theorem finite_compatibleConfigurations_of_union (hKs : Disjoint K s) (hUs : U �
   obtain ⟨n, hn⟩ := hn
   exact (hfin.preimage (add_left_injective n).injOn).subset fun m hm ↦
     (add_mem_compatibleConfigurations_union hKs hUs hU hm hn).1
+
+/-- If every member `k` of a cluster, given by a predicate `p`, has the same compatibility with the
+candidates of `s` as `c`, then a candidate of `s` is compatible with a member of the cluster exactly
+when it lies in the set of candidates of `s` compatible with `c`. -/
+private theorem compatible_iff_mem_sep {p : ι → Prop} {c : ι}
+    (hcomp : ∀ k, p k → ∀ e ∈ s, r k e ∧ r e k ↔ r c e ∧ r e c) :
+    ∀ k, p k → ∀ e ∈ s, r k e ∧ r e k ↔ e ∈ {e ∈ s | r c e ∧ r e c} :=
+  fun k hk e he ↦ (hcomp k hk e he).trans ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
 
 variable [CommSemiring R] {w : ι → ℕ → R}
 
@@ -195,27 +239,10 @@ theorem configurationCount_union (hKs : Disjoint K s) (hUs : U ⊆ s)
         (compatibleConfigurations r cls U (A - κ l)).Finite := by
     rw [Set.Finite.mem_toFinset] at hl
     obtain ⟨hm, hn⟩ := filter_mem_compatibleConfigurations hU hl hlK
-    refine ⟨fun h ↦ ?_, finite_compatibleConfigurations_of_union hKs hUs hU hfin ⟨_, hn⟩,
+    exact ⟨linearCombination_filter_ne_zero_of_finite hfin hl hlK,
+      finite_compatibleConfigurations_of_union hKs hUs hU hfin ⟨_, hn⟩,
       (hfin.preimage (add_right_injective _).injOn).subset fun n hn' ↦
         (add_mem_compatibleConfigurations_union hKs hUs hU hm hn').1⟩
-    -- A nonempty configuration of `K` in class zero could be added to `l` any number of times.
-    simp only [κ] at h
-    rw [mem_compatibleConfigurations] at hl
-    have hsupp (j : ℕ) : ↑(l + j • l.filter (· ∈ K)).support ⊆ (↑l.support : Set ι) :=
-      fun d hd ↦ by
-        simp only [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.coe_add, Finsupp.coe_smul,
-          Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finsupp.filter_apply] at hd ⊢
-        intro hd'
-        simp [hd'] at hd
-    refine hfin.not_infinite (Set.infinite_of_injective_forall_mem
-      (f := fun j : ℕ ↦ l + j • l.filter (· ∈ K)) (fun j j' hj ↦ ?_) fun j ↦ ?_)
-    · obtain ⟨k, hk⟩ := Finsupp.support_nonempty_iff.2 hlK
-      have := DFunLike.congr_fun (add_left_cancel hj) k
-      simp only [Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul] at this
-      exact Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 hk)) this
-    · rw [mem_compatibleConfigurations]
-      exact ⟨(hsupp j).trans hl.1, hl.2.1.mono (hsupp j), by
-        rw [map_add, map_nsmul, h, smul_zero, add_zero, hl.2.2]⟩
   rw [configurationCount_eq_sum hfin,
     ← Finset.sum_filter_add_sum_filter_not F fun l ↦ l.filter (· ∈ K) = 0]
   congr 1
@@ -224,12 +251,8 @@ theorem configurationCount_union (hKs : Disjoint K s) (hUs : U ⊆ s)
       hfin.subset (compatibleConfigurations_mono Set.subset_union_right)
     rw [configurationCount_eq_sum hfins]
     refine Finset.sum_congr (Finset.ext fun l ↦ ?_) fun _ _ ↦ rfl
-    rw [Finset.mem_filter, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset,
-      Finsupp.filter_eq_zero_iff, mem_compatibleConfigurations, mem_compatibleConfigurations]
-    refine ⟨fun ⟨hl, hK⟩ ↦ ⟨fun c hc ↦ (hl.1 hc).resolve_left fun hcK ↦
-      Finsupp.mem_support_iff.1 hc (hK c hcK), hl.2⟩, fun hl ↦
-      ⟨⟨hl.1.trans Set.subset_union_right, hl.2⟩, fun c hcK ↦
-        Finsupp.notMem_support_iff.1 fun hc ↦ Set.disjoint_left.1 hKs hcK (hl.1 hc)⟩⟩
+    rw [Finset.mem_filter, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset]
+    exact mem_compatibleConfigurations_union_and_filter_eq_zero_iff hKs
   · -- The configurations meeting `K` are grouped by the class of their part in `K`.
     set F₁ := F.filter fun l ↦ ¬l.filter (· ∈ K) = 0
     rw [finsum_mem_eq_sum_of_inter_support_eq _ (t := F₁.image κ) ?_,
@@ -381,15 +404,10 @@ theorem configurationCount_insert_insert_of_weight_eq_neg (hcd : c ≠ d) (hc : 
   classical
   have hunion : insert c (insert d s) = ({c, d} : Set ι) ∪ s := by
     rw [Set.insert_union, Set.singleton_union]
-  have hKs : Disjoint ({c, d} : Set ι) s := Set.disjoint_left.2 fun e he hes ↦ by
-    rcases he with rfl | rfl
-    exacts [hc hes, hd hes]
-  have hU : ∀ k ∈ ({c, d} : Set ι), ∀ e ∈ s, r k e ∧ r e k ↔ e ∈ {e ∈ s | r c e ∧ r e c} := by
-    intro k hk e he
-    rw [Set.mem_sep_iff]
-    rcases hk with rfl | rfl
-    · exact ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
-    · exact ⟨fun h ↦ ⟨he, (hcomp e he).1 h⟩, fun h ↦ (hcomp e he).2 h.2⟩
+  have hKs : Disjoint ({c, d} : Set ι) s := by simp [hc, hd]
+  have hU := compatible_iff_mem_sep (r := r) (s := s) (p := (· ∈ ({c, d} : Set ι))) (c := c) <| by
+    rintro k (rfl | rfl) e he
+    exacts [Iff.rfl, hcomp e he]
   have hsub : ∅ ∪ s ⊆ insert c (insert d s) := by
     rw [Set.empty_union]
     exact (Set.subset_insert d s).trans (Set.subset_insert c _)
@@ -485,8 +503,6 @@ theorem configurationCount_insert_insert_of_eq_torusWeight_not {c d : ι} (hc : 
   have hcd : c ≠ d := by
     rintro rfl
     have := congrFun (hwc.symm.trans hwd) 1
-    rw [torusWeight_def, torusWeight_def, coeff_one_torusWeightSeries,
-      coeff_one_torusWeightSeries] at this
     cases σ₀ <;> simp at this
   have hK : (↑(insert c (insert d ∅) : Finset ι) : Set ι) ∪ s = insert c (insert d s) := by
     simp [Set.insert_union]
@@ -500,16 +516,11 @@ theorem configurationCount_insert_insert_of_eq_torusWeight_not {c d : ι} (hc : 
   conv_rhs => rw [← Set.empty_union s, ← Finset.coe_empty]
   refine configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq (m := fun _ ↦ 1)
     (σ := fun e ↦ if e = c then σ₀ else !σ₀) (i := fun _ ↦ j) (A₀ := cls c)
-    (U := {e ∈ s | r c e ∧ r e c}) ?_ (by simp) (Set.sep_subset _ _) (fun k hk e he ↦ ?_)
-    (by simp) ?_ (by simp) (fun e he ↦ ?_) (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin)
-    fun _ _ ↦ ?_
-  · exact Set.disjoint_left.2 fun e he hes ↦ by
-      rcases hmem (Or.inl he) with rfl | rfl
-      exacts [hc hes, hd hes]
-  · rw [Set.mem_sep_iff]
-    rcases hmem (Or.inl hk) with rfl | rfl
-    · exact ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
-    · exact ⟨fun h ↦ ⟨he, (hcomp e he).1 h⟩, fun h ↦ (hcomp e he).2 h.2⟩
+    (U := {e ∈ s | r c e ∧ r e c}) (by simp [hc, hd]) (by simp) (Set.sep_subset _ _)
+    (compatible_iff_mem_sep fun k hk e he ↦ ?_) (by simp) ?_ (by simp) (fun e he ↦ ?_)
+    (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin) fun _ _ ↦ ?_
+  · rcases hmem (Or.inl hk) with rfl | rfl
+    exacts [Iff.rfl, hcomp e he]
   · rw [Finset.coe_insert, Finset.coe_insert, Finset.coe_empty, LawfulSingleton.insert_empty_eq]
     exact Set.pairwise_pair.2 fun _ ↦ hr
   · rcases hmem he with rfl | rfl
@@ -561,7 +572,7 @@ private theorem configurationCount_insert_eq_insert_insert_of_torusWeightSeries_
     rw [hf] at hseries
     have h1 := congrArg (coeff 2) ((isUnit_torusWeightSeries σc' ic').mul_left_cancel
       (hseries.symm.trans (mul_one _).symm))
-    rw [coeff_expand, coeff_one, coeff_one_torusWeightSeries] at h1
+    rw [coeff_expand, coeff_one] at h1
     cases σd <;> simp at h1
   set m : ι → ℕ+ := fun e ↦ if e = d then 2 else 1 with hm
   set σ : ι → Bool := fun e ↦ if e = c then σc else if e = c' then σc' else σd with hσ
@@ -583,15 +594,12 @@ private theorem configurationCount_insert_eq_insert_insert_of_torusWeightSeries_
   rw [← hK, ← hK']
   refine configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq (A₀ := cls c)
     (m := m) (σ := σ) (i := i) (U := {e ∈ s | r c e ∧ r e c}) (by simpa using hc)
-    (by simp [hc', hd]) (Set.sep_subset _ _) (fun k hk e he ↦ ?_) (fun k hk e he ↦ ?_) (by simp)
-    ?_ (fun e he ↦ ?_) (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin) fun j _ ↦ ?_
-  · rw [Set.mem_sep_iff, Finset.mem_singleton.1 hk]
-    exact ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
-  · rw [Set.mem_sep_iff]
-    rcases Finset.mem_insert.1 hk with rfl | hk
-    · exact ⟨fun h ↦ ⟨he, (hcomp' e he).1 h⟩, fun h ↦ (hcomp' e he).2 h.2⟩
-    · rw [Finset.mem_singleton.1 hk]
-      exact ⟨fun h ↦ ⟨he, (hcompd e he).1 h⟩, fun h ↦ (hcompd e he).2 h.2⟩
+    (by simp [hc', hd]) (Set.sep_subset _ _)
+    (compatible_iff_mem_sep fun k hk e he ↦ by rw [Finset.mem_singleton.1 hk])
+    (compatible_iff_mem_sep fun k hk e he ↦ ?_) (by simp) ?_ (fun e he ↦ ?_) (fun e he ↦ ?_)
+    (hKK ▸ hpos) (hKK ▸ hfin) fun j _ ↦ ?_
+  · rcases Finset.mem_insert.1 hk with rfl | hk
+    exacts [hcomp' e he, Finset.mem_singleton.1 hk ▸ hcompd e he]
   · simp only [Finset.coe_insert, Finset.coe_singleton]
     exact Set.pairwise_pair.2 fun _ ↦ hr
   · rcases hmem he with rfl | rfl | rfl
@@ -670,12 +678,9 @@ theorem configurationCount_insert_eq_insert_of_area_lt_two_mul {c c' : ι} (hc :
   refine configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq (A₀ := cls c)
     (m := fun _ ↦ 1) (σ := fun _ ↦ σ₀) (i := fun e ↦ if e = c then j else j')
     (U := {e ∈ s | r c e ∧ r e c}) (by simpa using hc) (by simpa using hc') (Set.sep_subset _ _)
-    (fun k hk e he ↦ ?_) (fun k hk e he ↦ ?_) (by simp) (by simp) (fun e he ↦ ?_)
-    (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin) fun n hn ↦ ?_
-  · rw [Set.mem_sep_iff, Finset.mem_singleton.1 hk]
-    exact ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
-  · rw [Set.mem_sep_iff, Finset.mem_singleton.1 hk]
-    exact ⟨fun h ↦ ⟨he, (hcomp' e he).1 h⟩, fun h ↦ (hcomp' e he).2 h.2⟩
+    (compatible_iff_mem_sep fun k hk e he ↦ by rw [Finset.mem_singleton.1 hk])
+    (compatible_iff_mem_sep fun k hk e he ↦ Finset.mem_singleton.1 hk ▸ hcomp' e he) (by simp)
+    (by simp) (fun e he ↦ ?_) (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin) fun n hn ↦ ?_
   · rcases hmem he with rfl | rfl
     · simp
     · simp [hcls']
@@ -692,7 +697,7 @@ theorem configurationCount_insert_eq_insert_of_area_lt_two_mul {c c' : ι} (hc :
     interval_cases n
     · rw [coeff_zero_eq_constantCoeff_apply, coeff_zero_eq_constantCoeff_apply,
         constantCoeff_torusWeightSeries, constantCoeff_torusWeightSeries]
-    · rw [coeff_one_torusWeightSeries, coeff_one_torusWeightSeries]
+    · simp
 
 end Ray
 
