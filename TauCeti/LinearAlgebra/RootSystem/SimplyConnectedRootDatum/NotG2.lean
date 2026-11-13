@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SimplyLaced
 public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
 
 /-!
-# The doubly-laced root systems are not G₂
+# Simply-laced and doubly-laced root systems are not G₂
 
+Simply-laced types satisfy the hypothesis by symmetry of their Cartan pairing.
 The Cartan integers of the pinned rational systems of types B, C and F₄ have absolute value at
 most two. These instances make the root-string bounds outside G₂ available for the classical
 families in arbitrary valid rank and for F₄, in particular for collecting their positive root
@@ -38,6 +40,23 @@ private theorem isNotG2_rationalRootSystem_of_abs_pairing_le_two
     rw [heq]
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     omega
+
+/-- A simply-laced pinned rational root system is not G₂. -/
+theorem isNotG2_rationalRootSystem_of_isSimplyLaced
+    {t : DynkinType} {ht : t.Valid} (hs : t.IsSimplyLaced) :
+    (t.rationalRootSystem ht).IsNotG2 := by
+  apply isNotG2_rationalRootSystem_of_abs_pairing_le_two
+  intro i j
+  have hred := t.isReduced_simplyConnectedRootDatum ht
+  have h := (t.simplyConnectedRootDatum ht).pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed i j
+  have heq (a b : Fin t.numRoots) :
+      (t.simplyConnectedRootDatum ht).pairingIn ℤ a b =
+        (t.simplyConnectedRootDatum ht).pairing a b :=
+    (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ a b
+  simp only [heq, t.pairing_simplyConnectedRootDatum_comm ht hs j i,
+    Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at h
+  rw [abs_le]
+  omega
 
 /-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :

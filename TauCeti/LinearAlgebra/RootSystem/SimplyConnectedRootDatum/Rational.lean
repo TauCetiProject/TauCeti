@@ -132,13 +132,6 @@ theorem root_rationalRootSystem_eq_add_iff (α β γ : Fin t.numRoots) :
   simpa only [one_nsmul] using
     t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1
 
-/-- Rational base change preserves and reflects opposite-root relations. -/
-theorem root_rationalRootSystem_eq_neg_iff (α β : Fin t.numRoots) :
-    (t.rationalRootSystem ht).root α = -(t.rationalRootSystem ht).root β ↔
-      (t.simplyConnectedRootDatum ht).root α =
-        -(t.simplyConnectedRootDatum ht).root β := by
-  simp only [funext_iff, Pi.neg_apply, root_rationalRootSystem, ← Int.cast_neg, Int.cast_inj]
-
 @[simp] theorem coroot_rationalRootSystem (i : Fin t.numRoots) (k : Fin t.rank) :
     (t.rationalRootSystem ht).coroot i k = ((t.simplyConnectedRootDatum ht).coroot i k : ℚ) := by
   rw [rationalRootSystem, coroot_rootPairingBaseChange, piAlgebraMap_apply]

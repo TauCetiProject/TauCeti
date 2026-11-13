@@ -105,8 +105,7 @@ private theorem commutator_mem_higher_roots
   -- A root sum has either no double string or exactly one orientation of a double string.
   by_cases hsum : P.root α + P.root β ∈ Set.range P.root
   · obtain ⟨γ, hγ⟩ := hsum
-    have hγZ := (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1).mp (by simpa using hγ)
-    simp only [one_nsmul] at hγZ
+    have hγZ := (t.root_rationalRootSystem_eq_add_iff ht α β γ).mp hγ
     have hlin := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
     have hexclude := P.not_double_root_add_and_root_add_double_mem hlin
     have hdouble {a c d : Fin t.numRoots}
