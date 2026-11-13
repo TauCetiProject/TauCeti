@@ -173,8 +173,7 @@ private theorem norm_finsum_sub_tsum_le (hf : Differentiable ℂ f) (hf0 : f 0 �
   refine tsum_of_norm_bounded (hS.mul_left _).hasSum fun ρ ↦ ?_
   have hρ0 : (ρ : ℂ) ≠ 0 := fun h ↦ h0 (h ▸ ρ.property)
   have hzρ : z ≠ ρ := fun h ↦ hzS (h ▸ ρ.property)
-  rw [norm_sub_rev, Real.rpow_neg (norm_nonneg _),
-    Real.rpow_three_div_two_eq_mul_sqrt (norm_nonneg _)]
+  rw [norm_sub_rev, Real.rpow_neg (norm_nonneg _), Real.rpow_three_div_two_eq_mul_sqrt]
   have hc : (d ρ : ℝ) = ((d ρ).toNat : ℝ) := by exact_mod_cast (Int.toNat_of_nonneg (hdn ρ)).symm
   rw [hc]
   exact norm_pair_sub_near_le hρ0 hzρ _
@@ -246,7 +245,7 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
   have hlogM : Real.log (K * Real.exp ((4 * ‖z‖) ^ (3 / 2 : ℝ))) =
       Real.log K + 8 * ‖z‖ * √‖z‖ := by
     rw [Real.log_mul (by positivity) (Real.exp_ne_zero _), Real.log_exp,
-      Real.rpow_three_div_two_eq_mul_sqrt hR.le, Real.sqrt_mul (by norm_num),
+      Real.rpow_three_div_two_eq_mul_sqrt, Real.sqrt_mul (by norm_num),
       show √(4 : ℝ) = 2 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
     ring
   rw [hlogM] at hland
@@ -340,10 +339,8 @@ theorem OrderLE.logDeriv_eq_add_logDeriv_divisorProductOne (h : OrderLE f 1)
   have hsum := h.summable_divisor_toNat_mul_norm_inv_sq hf hf0 (by norm_num)
   obtain ⟨a, _, hfa⟩ := h.exists_eq_cexp_mul_divisorProductOne hf hf0
   have hPz : divisorProductOne f z ≠ 0 := fun h0 ↦ hz (by rw [hfa z, h0, mul_zero])
-  have hfe : f = fun w ↦ divisorProductOne f w * exp (a + logDeriv f 0 * w) :=
-    funext fun w ↦ (hfa w).trans (mul_comm _ _)
-  conv_lhs => rw [hfe]
-  rw [logDeriv_mul_cexp hPz ((differentiable_divisorProductOne hsum) z) (by fun_prop), add_comm]
+  conv_lhs => rw [funext hfa]
+  rw [logDeriv_cexp_mul hPz ((differentiable_divisorProductOne hsum) z) (by fun_prop)]
   simp
 
 /-- **Partial fractions for the logarithmic derivative.** Off its zeros, an entire function of

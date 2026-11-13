@@ -20,6 +20,7 @@ The variable ranges over any nontrivially normed field `𝕜` over which `ℂ` i
 
 * `TauCeti.logDeriv_cexp`: `logDeriv (fun x ↦ exp (L x)) x = deriv L x`.
 * `TauCeti.logDeriv_mul_cexp`: `logDeriv (fun x ↦ g x * exp (L x)) x = logDeriv g x + deriv L x`.
+* `TauCeti.logDeriv_cexp_mul`: `logDeriv (fun x ↦ exp (L x) * g x) x = deriv L x + logDeriv g x`.
 -/
 
 public section
@@ -38,5 +39,12 @@ theorem logDeriv_mul_cexp (hgx : g x ≠ 0) (hg : DifferentiableAt 𝕜 g x)
     (hL : DifferentiableAt 𝕜 L x) :
     logDeriv (fun y ↦ g y * Complex.exp (L y)) x = logDeriv g x + deriv L x := by
   rw [logDeriv_fun_mul x hgx (Complex.exp_ne_zero _) hg hL.cexp, logDeriv_cexp hL]
+
+/-- Multiplying by `exp ∘ L` on the left adds the derivative of `L` to the logarithmic
+derivative. -/
+theorem logDeriv_cexp_mul (hgx : g x ≠ 0) (hg : DifferentiableAt 𝕜 g x)
+    (hL : DifferentiableAt 𝕜 L x) :
+    logDeriv (fun y ↦ Complex.exp (L y) * g y) x = deriv L x + logDeriv g x := by
+  rw [logDeriv_fun_mul x (Complex.exp_ne_zero _) hgx hL.cexp hg, logDeriv_cexp hL]
 
 end TauCeti

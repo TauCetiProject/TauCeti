@@ -36,6 +36,8 @@ of support finite and bounds sums over their subsets by the corresponding closed
   meromorphic orders.
 * `MeromorphicOn.zero_lt_divisor_iff_of_analyticAt` — at a point of analyticity and finite order,
   the divisor is positive exactly at a zero.
+* `AnalyticOnNhd.mem_divisor_support_iff`: for a function analytic on a neighbourhood of a
+  preconnected set and somewhere nonzero there, the divisor support is the zero set.
 * `MeromorphicOn.divisor_finite_inter_support_of_isCompact` — finite divisor support on a
   subset of a compact set in the meromorphic domain.
 * `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
@@ -156,6 +158,20 @@ theorem MeromorphicOn.zero_lt_divisor_iff_of_analyticAt {𝕜 E : Type*} [Nontri
   have h : analyticOrderAt f z ≠ ⊤ := fun h ↦ htop (by simp [h])
   rw [hm.divisor_eq_analyticOrderNatAt hf hz, Nat.cast_pos, Nat.pos_iff_ne_zero,
     ← hf.analyticOrderAt_ne_zero, ← Nat.cast_analyticOrderNatAt h, Nat.cast_ne_zero]
+
+/-- For a function analytic on a neighbourhood of a preconnected set `U` and nonzero at some point
+of `U`, a point of `U` lies in the support of the divisor on `U` exactly when it is a zero. -/
+theorem AnalyticOnNhd.mem_divisor_support_iff {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {w z : 𝕜}
+    (hf : AnalyticOnNhd 𝕜 f U) (hU : IsPreconnected U) (hw : w ∈ U) (hfw : f w ≠ 0)
+    (hz : z ∈ U) : z ∈ (MeromorphicOn.divisor f U).support ↔ f z = 0 := by
+  have hw' : analyticOrderAt f w ≠ ⊤ := by
+    rw [(hf w hw).analyticOrderAt_eq_zero.mpr hfw]
+    exact ENat.zero_ne_top
+  have h := hf.analyticOrderAt_ne_top_of_isPreconnected hU hw hz hw'
+  rw [Function.mem_support, hf.meromorphicOn.divisor_eq_analyticOrderNatAt (hf z hz) hz,
+    Nat.cast_ne_zero, ← (hf z hz).analyticOrderAt_ne_zero, ← Nat.cast_analyticOrderNatAt h,
+    Nat.cast_ne_zero]
 
 open Set
 

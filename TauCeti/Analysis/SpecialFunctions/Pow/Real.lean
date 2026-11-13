@@ -192,10 +192,14 @@ exponent: `√x ^ n = x ^ (n / 2)`. -/
 theorem pow_sqrt_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √x ^ n = x ^ ((n : ℝ) / 2) := by
   rw [← rpow_natCast, ← rpow_div_two_eq_sqrt _ hx]
 
-/-- The power `x ^ (3 / 2)` of a nonnegative real is `x * √x`. -/
-theorem rpow_three_div_two_eq_mul_sqrt {x : ℝ} (hx : 0 ≤ x) : x ^ (3 / 2 : ℝ) = x * √x := by
-  rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add' hx (by norm_num), rpow_one,
-    ← sqrt_eq_rpow]
+/-- The power `x ^ (3 / 2)` is `x * √x` for every real `x`. For `x < 0` both sides vanish: the
+square root is `0`, and `x ^ (3 / 2)` has the factor `cos (3 π / 2) = 0`. -/
+theorem rpow_three_div_two_eq_mul_sqrt (x : ℝ) : x ^ (3 / 2 : ℝ) = x * √x := by
+  rcases le_or_gt 0 x with hx | hx
+  · rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add' hx (by norm_num), rpow_one,
+      ← sqrt_eq_rpow]
+  · rw [sqrt_eq_zero'.mpr hx.le, mul_zero, rpow_def_of_neg hx,
+      show 3 / 2 * π = π / 2 + π by ring, cos_add_pi, cos_pi_div_two, neg_zero, mul_zero]
 
 /-- For a nonnegative real number `a`, taking the real power `s / 2` of `a ^ 2` gives `a ^ s`. -/
 @[simp]
