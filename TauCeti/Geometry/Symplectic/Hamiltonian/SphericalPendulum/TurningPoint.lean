@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 On the fibre `F⁻¹(h, j)` of the energy–momentum map `F = (H, J)` of the spherical pendulum the
 height `z = q₃` and the vertical momentum satisfy `p₃² = 2 (h - z) (1 - z²) - j²`
 (`TauCeti.sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace`). The heights occurring in the fibre
-are therefore those `z ∈ [-1, 1]` where this cubic radicand is nonnegative
+are therefore those `z ∈ [-1, 1]` with `z ≤ h` where this cubic radicand is nonnegative
 (`TauCeti.image_apply_two_preimage_sphericalPendulumEnergyMomentum`), and the motion of the height
 turns around at its lowest and highest values `z₋` and `z₊`, the **turning points**
 (`TauCeti.sphericalPendulumLowerTurningPoint`, `TauCeti.sphericalPendulumUpperTurningPoint`),
@@ -56,7 +56,7 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- The energy–momentum values with nonzero vertical momentum strictly above the curve of
+/-- The energy–momentum values with nonzero vertical angular momentum strictly above the curve of
 relative equilibria: the domain where the two turning points are distinct and avoid the poles. -/
 def sphericalPendulumTurningPointDomain : Set (ℝ × ℝ) :=
   {c | c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1}
