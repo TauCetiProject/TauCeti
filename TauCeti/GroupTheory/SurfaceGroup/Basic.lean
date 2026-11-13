@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.GroupTheory.PresentedGroup
 public import Mathlib.Tactic.DeriveFintype
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.GroupTheory.SpecificGroups.Dihedral
 
 /-!
 # Surface groups with boundary
@@ -50,6 +51,12 @@ out of a surface group correspond to tuples of elements at which the surface wor
   universal properties, and `TauCeti.SurfaceGroup.Orientable.homEquiv` and
   `TauCeti.SurfaceGroup.Nonorientable.homEquiv`, the bijections between homomorphisms out of a
   surface group and the tuples satisfying its relation.
+
+## Main results
+
+* `TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`: two generators `cᵢ` and `cⱼ` of `S⁻(g, m)`
+  commute only when they are equal, as one sees by sending them to two reflections of the
+  dihedral group of order `6`.
 
 ## References
 
@@ -365,6 +372,23 @@ theorem homEquiv_apply (f : Nonorientable g m →* G) :
 theorem homEquiv_symm_apply
     (t : {t : (Fin g → G) × (Fin m → G) // nonorientableWord t.1 t.2 = 1}) :
     homEquiv.symm t = lift t.1.1 t.1.2 t.2 := (rfl)
+
+/-- Two generators `cᵢ` and `cⱼ` of the nonorientable surface group `S⁻(g, m)` commute only when
+they are equal. In particular `S⁻(g, m)` is not commutative for `g ≥ 2`. -/
+@[simp]
+theorem commute_c_iff {i j : Fin g} : Commute (c g m i) (c g m j) ↔ i = j := by
+  classical
+  refine ⟨fun h ↦ by_contra fun hij ↦ ?_, fun h ↦ h ▸ .refl _⟩
+  -- Send `cᵢ` and `cⱼ` to two noncommuting reflections of the dihedral group of order `6` and
+  -- every other generator to `1`. Reflections square to `1`, so the relator is killed.
+  let κ : Fin g → DihedralGroup 3 := fun k ↦
+    if k = i then .sr 0 else if k = j then .sr 1 else 1
+  have hκ (k : Fin g) : κ k ^ 2 = 1 := by
+    simp only [κ]
+    split_ifs <;> simp [sq]
+  have := (h.map (lift κ (fun _ ↦ 1) (by simp [nonorientableWord_def, hκ, List.ofFn_const]))).eq
+  have hne : (DihedralGroup.sr 0 : DihedralGroup 3) * .sr 1 ≠ .sr 1 * .sr 0 := by decide
+  exact hne (by simpa [κ, Ne.symm hij] using this)
 
 end Nonorientable
 
