@@ -1137,14 +1137,6 @@ theorem typeABoxMap_idMorphism_of_lt (hMm : Mm.IsStrictlyUnital ι) (h : X → �
     typeABoxMap N N Mm N.idMorphism φ = φ :=
   funext fun z => (typeABoxMap_idMorphism_apply_of_lt hMm h hh φ z).trans (hφ z)
 
-/-- Adding two homotopies over a ring of characteristic two: from `a + p = D k + k'` and
-`p + b = D t + t'` deduce `a + b = D (k + t) + (k' + t')`. -/
-private theorem add_eq_map_add_add_of_charTwo [CharP R 2] {V : Type*} [AddCommGroup V]
-    [Module R V] (D : V →ₗ[R] V) {a b p k k' t t' : V} (h₁ : a + p = D k + k')
-    (h₂ : p + b = D t + t') : a + b = D (k + t) + (k' + t') := by
-  rw [map_add, add_add_add_comm, ← h₁, ← h₂, add_assoc, ← add_assoc p,
-    add_self_eq_zero_of_charTwo R, zero_add]
-
 /-- **Homotopy invariance of the box tensor product with a bounded module.** Over a ring of
 characteristic two, let `M` be strictly unital with operations `m_{k+1}` vanishing for `k ≥ K`.
 Let `F` from `N` to `N'` and `G` from `N'` to `N` be homomorphisms of type `D` structures whose
@@ -1168,7 +1160,7 @@ theorem typeABoxMap_typeABoxMap_add_of_act_eq_zero [CharP R 2] (hMm : Mm.IsStric
   have h₂ := typeABoxMap_add_typeABoxMap_of_act_eq_zero N N Mm hK hH φ
   rw [typeABoxMap_idMorphism_of_act_eq_zero hMm hK hφ] at h₂
   -- Add `T_G ∘ T_F + T_{F G} = ∂ K + K ∂` and `T_{F G} + id = ∂ T_H + T_H ∂`.
-  exact add_eq_map_add_add_of_charTwo _
+  exact add_eq_map_add_add_of_charTwo R _
     (typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_act_eq_zero N N' N Mm hK hF hG hG' φ) h₂
 
 /-- **Homotopy invariance of the box tensor product of bounded type `D` structures.** Over a ring
@@ -1192,7 +1184,7 @@ theorem typeABoxMap_typeABoxMap_add_of_lt [CharP R 2] (hMm : Mm.IsStrictlyUnital
   have h₂ := typeABoxMap_add_typeABoxMap_of_lt N N Mm h hh h hh hH φ
   rw [typeABoxMap_idMorphism_of_lt hMm h hh hφ] at h₂
   -- Add `T_G ∘ T_F + T_{F G} = ∂ K + K ∂` and `T_{F G} + id = ∂ T_H + T_H ∂`.
-  exact add_eq_map_add_add_of_charTwo _
+  exact add_eq_map_add_add_of_charTwo R _
     (typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt N N' N Mm h hh h' hh' h hh hF hG hG' φ) h₂
 
 end StrictUnit
