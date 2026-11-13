@@ -40,7 +40,8 @@ change of charts.
   at the point, in every chart it is the value and the chart derivative of the local
   representative (`TauCeti.FirstJetBundle.trivializationAt_jet`), and it is a `C^n` section of
   `J¹V` for a `C^(n+1)` section `s` (`TauCeti.FirstJetBundle.contMDiff_jet`).
-  For the trivial bundle over a model space it is `(s x, fderiv 𝕜 s x)`.
+  For the trivial bundle over a model space it is `(s x, fderiv 𝕜 s x)`, and for a constant
+  section `v` of a trivial bundle it is `(v, 0)` (`TauCeti.FirstJetBundle.jet_trivial_const`).
 * `TauCeti.FirstJetBundle.value` and `TauCeti.FirstJetBundle.ofDeriv`: the fibres of the projection
   `J¹V → V` and of the inclusion `Hom(TM, V) → J¹V` of continuous linear maps (for
   finite-dimensional fibres, `Hom(TM, V) = T*M ⊗ V`). The projection sends `j¹s(x)` to
@@ -545,20 +546,26 @@ theorem trivializationAt_jet {s : ∀ x, V x} {y : M}
   rw [trivializationAt_apply_snd]
   exact coordChange_jet I F hs hi
 
-/-- **The derivative coordinate of a first jet is a manifold derivative.** For a section `s`
-differentiable at `x`, the derivative coordinate of `j¹s(x)` is the manifold derivative at `x` of
-`s` read in the preferred trivialization at `x`, with the tangent space at `x` identified with the
-model space as in the fibre `F × (E →L[𝕜] F)` of `J¹V`. -/
-theorem jet_snd_eq_mfderiv {s : ∀ x, V x} {x : M}
-    (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun x ↦ TotalSpace.mk' F x (s x)) x) :
+/-- **The derivative coordinate of a first jet is a manifold derivative.** The derivative
+coordinate of `j¹s(x)` is the manifold derivative at `x` of `s` read in the preferred
+trivialization at `x`, with the tangent space at `x` identified with the model space as in the
+fibre `F × (E →L[𝕜] F)` of `J¹V`. Both sides vanish when `s` is not differentiable at `x`. -/
+theorem jet_snd_eq_mfderiv (s : ∀ x, V x) (x : M) :
     (jet I F s x).2 = mfderiv I 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) x := by
-  have hg : MDifferentiableAt I 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) x :=
-    ((trivializationAt F V x).mdifferentiableAt_section_iff I s
-      (mem_baseSet_trivializationAt F V x)).1 hs
-  -- Written in the chart at `x`, the trivialized section is the local representative.
-  rw [hg.mfderiv_abuse, jet_snd]
-  refine congrArg (fderivWithin 𝕜 · (range I) (extChartAt I x x)) (funext fun z ↦ ?_)
-  simp [writtenInExtChartAt, localRep_apply]
+  -- Read through the inverse chart at `x`, the trivialized section is the local representative.
+  have hw : (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) ∘ (extChartAt I x).symm =
+      localRep I F s x :=
+    funext fun z ↦ by simp [localRep_apply]
+  rw [jet_snd]
+  by_cases hg : MDifferentiableAt I 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) x
+  · rw [hg.mfderiv_abuse]
+    refine congrArg (fderivWithin 𝕜 · (range I) (extChartAt I x x)) (funext fun z ↦ ?_)
+    simp [writtenInExtChartAt, localRep_apply]
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hg,
+      fderivWithin_zero_of_not_differentiableWithinAt]
+    · rfl
+    rwa [mdifferentiableAt_iff_source_of_mem_source (mem_chart_source H x),
+      mdifferentiableWithinAt_iff_differentiableWithinAt, hw] at hg
 
 /-- The value of a first jet, the fibre of the projection `J¹V → V`. -/
 def value (x : M) : FirstJetBundle I F V x →L[𝕜] V x :=
@@ -653,11 +660,21 @@ def ofDeriv (x : M) : (TangentSpace I x →L[𝕜] V x) →L[𝕜] FirstJetBundl
 
 /-- The jet of `L` has value coordinate `0` and derivative coordinate `L` read in the
 trivialization at `x`. -/
-@[simp]
 theorem ofDeriv_apply (x : M) (L : TangentSpace I x →L[𝕜] V x) :
     ofDeriv I F x L =
       (((0 : F), ((trivializationAt F V x).continuousLinearMapAt 𝕜 x).comp L) :
         FirstJetBundle I F V x) :=
+  (rfl)
+
+/-- The value coordinate of the jet of a homomorphism is zero. -/
+@[simp]
+theorem ofDeriv_fst (x : M) (L : TangentSpace I x →L[𝕜] V x) : (ofDeriv I F x L).1 = 0 :=
+  (rfl)
+
+/-- The derivative coordinate of the jet of `L` is `L` read in the trivialization at `x`. -/
+@[simp]
+theorem ofDeriv_snd (x : M) (L : TangentSpace I x →L[𝕜] V x) :
+    (ofDeriv I F x L).2 = ((trivializationAt F V x).continuousLinearMapAt 𝕜 x).comp L :=
   (rfl)
 
 /-- The inclusion of `Hom(TₓM, Vₓ)` into the first jets is injective. -/
@@ -672,6 +689,7 @@ theorem ofDeriv_injective (x : M) : Function.Injective (ofDeriv I F (V := V) x) 
     (trivializationAt F V x).symmL_continuousLinearMapAt hx]
 
 /-- The value of the jet of a homomorphism `L` is zero. -/
+@[simp]
 theorem value_ofDeriv (x : M) (L : TangentSpace I x →L[𝕜] V x) :
     value I F x (ofDeriv I F x L) = 0 :=
   (value_eq_zero_iff I F x _).2 rfl
@@ -740,6 +758,17 @@ Fréchet derivative of the section. -/
 theorem jet_trivial_snd (s : ∀ x : E, Bundle.Trivial E F x) (x : E) :
     (jet 𝓘(𝕜, E) F s x).2 = fderiv 𝕜 s x := by
   simp [fderivWithin_univ]
+
+/-- The first jet of a constant section of a trivial bundle has value coordinate the constant
+and derivative coordinate zero. -/
+@[simp]
+theorem jet_trivial_const (v : F) (x : M) :
+    jet I F (fun _ ↦ v : ∀ y, Bundle.Trivial M F y) x =
+      ((v, 0) : FirstJetBundle I F (Bundle.Trivial M F) x) := by
+  refine Prod.ext (by simp) ?_
+  -- In the trivialization of the trivial bundle, the constant section reads as a constant.
+  rw [jet_snd_eq_mfderiv]
+  exact mfderiv_const
 
 end Trivial
 
