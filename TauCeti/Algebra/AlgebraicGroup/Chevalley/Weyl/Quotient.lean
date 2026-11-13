@@ -10,6 +10,7 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.DoubleBond
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Orthogonal
+import TauCeti.LinearAlgebra.RootSystem.Coxeter.DynkinType
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
@@ -58,7 +59,9 @@ private def simpleClass (i : Fin t.rank) : Q :=
 
 private theorem simpleClass_mul_self (i : Fin t.rank) :
     D.simpleClass A i * D.simpleClass A i = 1 := by
-  rw [simpleClass, ← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff]
+  rw [simpleClass, ← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff,
+    Subgroup.mem_subgroupOf, MonoidHom.mem_range]
+  simp only [Subgroup.coe_mul, simpleLift]
   exact ⟨D.simpleCorootParameter i A (-1),
     (D.simpleCorootPoints_eq_torusPoints i A (-1)).symm.trans
       (D.weylElement_mul_self i A).symm⟩
@@ -67,7 +70,8 @@ private theorem simpleClass_commute (i j : Fin t.rank) (hij : t.cartanMatrix i j
     Commute (D.simpleClass A i) (D.simpleClass A j) := by
   have h : D.simpleLift A i * D.simpleLift A j = D.simpleLift A j * D.simpleLift A i := by
     apply Subtype.ext
-    exact (D.commute_weylElement_simpleIndex A i j hij 1 1).eq
+    simpa only [Subgroup.coe_mul, simpleLift] using
+      (D.commute_weylElement_simpleIndex A i j hij 1 1).eq
   simpa only [commute_iff_eq, simpleClass, map_mul, QuotientGroup.mk'_apply] using
     congrArg (QuotientGroup.mk' H) h
 
@@ -78,7 +82,8 @@ private theorem simpleClass_braid (i j : Fin t.rank)
   have h : D.simpleLift A i * D.simpleLift A j * D.simpleLift A i =
       D.simpleLift A j * D.simpleLift A i * D.simpleLift A j := by
     apply Subtype.ext
-    exact D.weylElement_braid_of_cartanMatrix_eq_neg_one i j hij hji A
+    simpa only [Subgroup.coe_mul, simpleLift] using
+      D.weylElement_braid_of_cartanMatrix_eq_neg_one i j hij hji A
   simpa only [simpleClass, map_mul, QuotientGroup.mk'_apply] using
     congrArg (QuotientGroup.mk' H) h
 
@@ -106,7 +111,8 @@ private theorem simpleClass_pow_four (i j : Fin t.rank)
     have h : D.simpleLift A i * D.simpleLift A j * D.simpleLift A i * D.simpleLift A j =
         D.simpleLift A j * D.simpleLift A i * D.simpleLift A j * D.simpleLift A i := by
       apply Subtype.ext
-      exact D.weylElement_braid_of_cartanMatrix_eq_neg_two i j hij hji A
+      simpa only [Subgroup.coe_mul, simpleLift] using
+        D.weylElement_braid_of_cartanMatrix_eq_neg_two i j hij hji A
     simpa only [simpleClass, map_mul, QuotientGroup.mk'_apply, pow_two, mul_assoc] using
       congrArg (QuotientGroup.mk' H) h
   have hinv (k : Fin t.rank) : (D.simpleClass A k)⁻¹ = D.simpleClass A k :=
@@ -138,45 +144,8 @@ private theorem simpleClass_liftable (hs : t ≠ .G2) :
   by_cases h : i = j
   · subst j
     simp only [D.simpleClass_mul_self, one_pow]
-  -- Outside G₂ the off-diagonal entries are 0, -1 or -2. The finite-type
-  -- product bound and symmetric zero pattern leave just the four pairs below.
-  have hentry (k l : Fin t.rank) (hkl : k ≠ l) :
-      t.cartanMatrix k l ∈ ({0, -1, -2} : Set ℤ) := by
-    by_cases hsl : t.IsSimplyLaced
-    · rcases ((isSimplyLaced_cartanMatrix_iff_of_valid ht).mpr hsl) hkl with hk | hk <;>
-        simp [hk]
-    · cases t with
-      | B n =>
-        -- Expose the reduced index type so the matrix entry rules can match.
-        change Fin n at k l
-        simp only [cartanMatrix_B, CartanMatrix.B, Matrix.of_apply]
-        split_ifs <;> simp_all
-      | C n =>
-        -- As in type B, the dependent indices reduce to Fin n.
-        change Fin n at k l
-        simp only [cartanMatrix_C, CartanMatrix.C, Matrix.of_apply]
-        split_ifs <;> simp_all
-      | F4 =>
-        -- Reduce the dependent indices before checking the fixed finite matrix.
-        change Fin 4 at k l
-        rw [cartanMatrix_F4]
-        fin_cases k <;> fin_cases l <;> first | exact (hkl rfl).elim | decide
-      | G2 => exact (hs rfl).elim
-      | _ => exact (hsl (by simp)).elim
-  have hp := cartanMatrix_mul_cartanMatrix_mem_of_ne (t.simplyConnectedRootDatum ht)
-    (t.simplyConnectedBase ht) (e.injective.ne h)
-  simp only [e, cartanMatrix_simplyConnectedBase_apply] at hp
-  have hz := t.cartanMatrix_apply_eq_zero_iff_symm i j
-  have hpairs :
-      (t.cartanMatrix i j = 0 ∧ t.cartanMatrix j i = 0) ∨
-      (t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -1) ∨
-      (t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -2) ∨
-      (t.cartanMatrix i j = -2 ∧ t.cartanMatrix j i = -1) := by
-    have hi := hentry i j h
-    have hj := hentry j i (Ne.symm h)
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hi hj hp
-    rcases hi with hi | hi | hi <;> rcases hj with hj | hj | hj <;> simp_all
-  rcases hpairs with ⟨hij, _⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩
+  rcases cartanMatrix_pairs_of_ne_G2 hs h with
+    ⟨hij, _⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩
   · rw [hij, zero_mul, coxeterOrder_zero, (D.simpleClass_commute A i j hij).mul_pow]
     simp only [pow_two, D.simpleClass_mul_self, one_mul]
   · simpa only [hij, hji, neg_mul_neg, one_mul, coxeterOrder_one] using
@@ -228,7 +197,9 @@ private theorem quotientSection_weylProjection (hs : t ≠ .G2) (g : Nₖ) :
     rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
     · simp only [MonoidHom.comp_apply, D.weylProjection_torusPoints, map_one,
         QuotientGroup.mk'_apply]
-      exact ((QuotientGroup.eq_one_iff (N := Hₖ) _).mpr ⟨s, rfl⟩).symm
+      symm
+      rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, MonoidHom.mem_range]
+      exact ⟨s, rfl⟩
     · simp only [MonoidHom.comp_apply, D.weylProjection_weylElement,
         D.quotientSection_simple]
       rw [simpleClass, QuotientGroup.mk'_apply]
@@ -246,7 +217,8 @@ theorem ker_weylProjection_of_ne_G2 (hs : t ≠ .G2) :
     apply (QuotientGroup.eq_one_iff g).mp
     rw [← QuotientGroup.mk'_apply, ← D.quotientSection_weylProjection K hs g,
       MonoidHom.mem_ker.mp hg, map_one]
-  · rintro ⟨s, hsg⟩
+  · rw [Subgroup.mem_subgroupOf, MonoidHom.mem_range]
+    rintro ⟨s, hsg⟩
     have hg : g = ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ :=
       Subtype.ext hsg.symm
     rw [hg, MonoidHom.mem_ker, D.weylProjection_torusPoints]
@@ -267,9 +239,19 @@ theorem weylQuotientEquivOfNeG2_mk (hs : t ≠ .G2) (g : Nₖ) :
     QuotientGroup.quotientMulEquivOfEq_mk,
     TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
+/-- The Weyl quotient equivalence sends the class of a pinned simple Weyl representative
+to its simple reflection. -/
+@[simp↓]
+theorem weylQuotientEquivOfNeG2_mk_weylElement (hs : t ≠ .G2) (i : Fin t.rank) :
+    D.weylQuotientEquivOfNeG2 K hs
+        (QuotientGroup.mk
+          ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩) =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
+  rw [D.weylQuotientEquivOfNeG2_mk, D.weylProjection_weylElement]
+
 /-- The inverse Weyl quotient equivalence sends a Weyl projection to its quotient class. -/
 @[simp]
-theorem weylQuotientEquivOfNeG2_symm_apply (hs : t ≠ .G2) (g : Nₖ) :
+theorem weylQuotientEquivOfNeG2_symm_weylProjection (hs : t ≠ .G2) (g : Nₖ) :
     (D.weylQuotientEquivOfNeG2 K hs).symm (D.weylProjection K g) =
       QuotientGroup.mk g := by
   apply (D.weylQuotientEquivOfNeG2 K hs).symm_apply_eq.mpr
@@ -283,7 +265,7 @@ theorem weylQuotientEquivOfNeG2_symm_ofIdx (hs : t ≠ .G2) (i : Fin t.rank) :
         (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
       QuotientGroup.mk
         ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩ := by
-  rw [← D.weylProjection_weylElement K i, D.weylQuotientEquivOfNeG2_symm_apply]
+  rw [← D.weylProjection_weylElement K i, D.weylQuotientEquivOfNeG2_symm_weylProjection]
 
 end
 
