@@ -656,9 +656,9 @@ section CommRing
 
 variable {τ S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- If `f` has zero constant coefficient and linear part `X + Y`, the linear part of `f(x, y)` is
-the sum of the linear parts of `x` and `y`, for `x` and `y` without constant coefficient. -/
-theorem homogeneousComponent_one_subst_pair (h₀ : f.constantCoeff = 0)
+/-- If `f` has linear part `X + Y`, the linear part of `f(x, y)` is the sum of the linear parts
+of `x` and `y`, for `x` and `y` without constant coefficient. -/
+theorem homogeneousComponent_one_subst_pair
     (hX : coeff (single 0 1) f = 1) (hY : coeff (single 1 1) f = 1) {x y : MvPowerSeries τ S}
     (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) :
     homogeneousComponent 1 (f.subst ![x, y]) =
@@ -666,10 +666,29 @@ theorem homogeneousComponent_one_subst_pair (h₀ : f.constantCoeff = 0)
   have hxy : HasSubst ![x, y] := hasSubst_of_constantCoeff_zero fun i ↦ by
     fin_cases i <;> simp [hx, hy]
   have hl := hxy.homogeneousComponent_one
-  rw [homogeneousComponent_subst_of_le_order
-      (by simpa using one_le_order_iff_constCoeff_eq_zero.mpr h₀) hxy
+  -- Split off the constant term of `f`, which contributes nothing in degree one.
+  set g : MvPowerSeries (Fin 2) R := f - C (constantCoeff f) with hg
+  have hg₀ : g.constantCoeff = 0 := by simp [hg]
+  have hgX : coeff (single 0 1) g = 1 := by
+    simp [hg, coeff_C, hX, Finsupp.single_eq_zero]
+  have hgY : coeff (single 1 1) g = 1 := by
+    simp [hg, coeff_C, hY, Finsupp.single_eq_zero]
+  have hf : f = g + C (constantCoeff f) := by simp [hg]
+  have hC : homogeneousComponent 1
+      (algebraMap R (MvPowerSeries τ S) (constantCoeff f)) = 0 := by
+    ext d
+    rw [coeff_homogeneousComponent]
+    split_ifs with hd
+    · have hd0 : d ≠ 0 := by rintro rfl; simp at hd
+      rw [algebraMap_apply]
+      exact coeff_C_of_ne_zero hd0 _
+    · simp
+  rw [hf, subst_add hxy, ← MvPolynomial.coe_C, subst_coe, MvPolynomial.aeval_C, map_add, hC,
+    add_zero,
+    homogeneousComponent_subst_of_le_order
+      (by simpa using one_le_order_iff_constCoeff_eq_zero.mpr hg₀) hxy
       (fun i ↦ by fin_cases i <;> simp [hx, hy]),
-    homogeneousComponent_one_eq_X_add_X hX hY, subst_add hl, subst_X hl, subst_X hl]
+    homogeneousComponent_one_eq_X_add_X hgX hgY, subst_add hl, subst_X hl, subst_X hl]
   simp
 
 end CommRing
