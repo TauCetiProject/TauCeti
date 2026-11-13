@@ -157,6 +157,8 @@ private def conjLift (f : K →* G) (ψ : A →* CentralizerExt u n) (g : G) (i 
     Monoid.Coprod K A →* CentralizerExt u n :=
   Monoid.Coprod.lift ((MulAut.conj (t i * of g)⁻¹).toMonoidHom.comp (of.comp f)) ψ
 
+section
+
 variable {f : K →* G} {ψ : A →* CentralizerExt u n} {g : G}
 
 /-- `conjLift` sends a reduced word of `K ∗ A` to the product of a reduced word of `G(u, ℤⁿ)`
@@ -213,8 +215,9 @@ private theorem injective_lift_conj (i : Fin n) (hf : Function.Injective f)
   | nil => rfl
   | cons s L => simp [Monoid.CoprodI.Word.fstIdx] at hWi
 
-variable (u)
+end
 
+variable (u) in
 /-- The homomorphism `K ∗ A →* G(u, ℤⁿ)` that is `f` on `K` and sends `a ∈ A` to the conjugate
 `(tᵢ g) (ι a) (tᵢ g)⁻¹` of the element `ι a` of `ℤⁿ`. -/
 def coprodPiLift (f : K →* G) (ι : A →* (Fin n → Multiplicative ℤ)) (g : G) (i : Fin n) :
@@ -222,7 +225,7 @@ def coprodPiLift (f : K →* G) (ι : A →* (Fin n → Multiplicative ℤ)) (g 
   Monoid.Coprod.lift (of.comp f)
     ((MulAut.conj (t i * of g)).toMonoidHom.comp ((zpowersPiHom t commute_t_t).comp ι))
 
-variable {ι : A →* (Fin n → Multiplicative ℤ)} (g) (i : Fin n)
+variable (u) (f : K →* G) (ι : A →* (Fin n → Multiplicative ℤ)) (g : G) (i : Fin n)
 
 @[simp] theorem coprodPiLift_inl (k : K) : coprodPiLift u f ι g i (inl k) = of (f k) := by
   simp [coprodPiLift]
@@ -236,7 +239,7 @@ variable {ι : A →* (Fin n → Multiplicative ℤ)} (g) (i : Fin n)
 @[simp] theorem coprodPiLift_comp_inl : (coprodPiLift u f ι g i).comp inl = of.comp f :=
   Monoid.Coprod.lift_comp_inl _ _
 
-variable {u g}
+variable {u f ι g}
 
 /-- If `C_G(u)` is malnormal and `g ∉ C_G(u)`, then for embeddings `f : K →* G` and
 `ι : A →* ℤⁿ` the homomorphism `K ∗ A →* G(u, ℤⁿ)` that is `f` on `K` and sends `a ∈ A` to
@@ -250,7 +253,7 @@ end Lift
 
 section FreeGroup
 
-variable {K X : Type*} [Group K] {m : X → ℤ} {g : G} (i : Fin n)
+variable {K X : Type*} [Group K]
 
 variable (u) in
 /-- The homomorphism `∗ₓ F(x) →* G(u, ℤⁿ)` that conjugates the factor `F(x)`, sent to `⟨tᵢ⟩`,
@@ -259,6 +262,10 @@ private def syllableLift (m : X → ℤ) (g : G) (i : Fin n) :
     (Monoid.CoprodI fun _ : X => FreeGroup Unit) →* CentralizerExt u n :=
   Monoid.CoprodI.lift fun x =>
     (MulAut.conj (t i ^ m x * of g)).toMonoidHom.comp (FreeGroup.lift fun _ => t i)
+
+section
+
+variable {m : X → ℤ} {g : G} (i : Fin n)
 
 /-- The image under `syllableLift` of the product of a reduced word of `∗ₓ F(x)`, multiplied on the
 left by `tᵢ^{-k}`, is a block of `C_G(u) × ℤⁿ`, provided that it is not `tᵢ⁰` and that `m` does not
@@ -309,8 +316,9 @@ private theorem isBlock_freeGroupLift (hm : Function.Injective m) (hm₀ : ∀ x
   rw [h, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, ← hW]
   simpa using isBlock_zpow_mul_syllableLift i hm hm₀ hg W 0 (absurd · h₀) fun x _ => hm₀ x
 
-variable (u)
+end
 
+variable (u) in
 /-- The homomorphism `K ∗ F(X) →* G(u, ℤⁿ)` that is `f` on `K` and sends the generator `x` to the
 conjugate `(tᵢ g tᵢ^{m x} g) tᵢ (tᵢ g tᵢ^{m x} g)⁻¹` of `tᵢ`, written as the conjugate by `tᵢ g`
 of `(tᵢ^{m x} g) tᵢ (tᵢ^{m x} g)⁻¹`. -/
@@ -319,7 +327,7 @@ def coprodFreeGroupLift (f : K →* G) (m : X → ℤ) (g : G) (i : Fin n) :
   Monoid.Coprod.lift (of.comp f) ((MulAut.conj (t i * of g)).toMonoidHom.comp
     (FreeGroup.lift fun x => MulAut.conj (t i ^ m x * of g) (t i)))
 
-variable {f : K →* G} (g)
+variable (u) (f : K →* G) (m : X → ℤ) (g : G) (i : Fin n)
 
 @[simp] theorem coprodFreeGroupLift_inl (k : K) :
     coprodFreeGroupLift u f m g i (inl k) = of (f k) := by
@@ -335,7 +343,7 @@ variable {f : K →* G} (g)
     (coprodFreeGroupLift u f m g i).comp inl = of.comp f :=
   Monoid.Coprod.lift_comp_inl _ _
 
-variable {u g}
+variable {u f m g}
 
 /-- If `C_G(u)` is malnormal and `g ∉ C_G(u)`, then for an embedding `f : K →* G` and an injective
 `m : X → ℤ` with nonzero values, the homomorphism `K ∗ F(X) →* G(u, ℤⁿ)` that is `f` on `K` and
@@ -350,18 +358,6 @@ end FreeGroup
 end CentralizerExt
 
 open CentralizerExt
-
-/-- A nonabelian residually free group has an element `u` that is not a proper power and an element
-`g` outside `C(u)`. -/
-private theorem exists_not_isProperPower_notMem_centralizer {G : Type*} [Group G]
-    (hG : IsResiduallyFree G) (hG' : ¬IsMulCommutative G) :
-    ∃ u g : G, ¬Group.IsProperPower u ∧ g ∉ centralizer {u} := by
-  obtain ⟨a, b, hab⟩ : ∃ a b : G, b * a ≠ a * b := by
-    by_contra! h
-    exact hG' ⟨⟨fun a b => h b a⟩⟩
-  obtain ⟨r, -, -, -, hr, hC⟩ := hG.centralizerExt_root_reduction (u := a)
-    (by rintro rfl; simp at hab)
-  exact ⟨r, b, hr, by rwa [← hC, mem_centralizer_singleton_iff]⟩
 
 variable {H : Type u} [Group H]
 
@@ -378,7 +374,7 @@ theorem exists_ice_embedding_coprod_pi (hH : IsFullyResiduallyFree H) (hH' : ¬I
         (MulEquiv.coprodPUnit H)
     exact ⟨H, _, .id H, .refl, .ofMulEquiv e fun h => by simp [e],
       (GHom.ofMulEquiv_bijective _ _).1⟩
-  · obtain ⟨u, g, hu, hg⟩ := exists_not_isProperPower_notMem_centralizer hH.isResiduallyFree hH'
+  · obtain ⟨u, g, hu, hg⟩ := hH.isResiduallyFree.exists_not_isProperPower_notMem_centralizer hH'
     exact ⟨_, _, of, ICE.single (isAdmissibleCentralizerStep_iff.2 ⟨hu, n.succ_pos⟩),
       ⟨coprodPiLift u (.id H) (.id _) g 0, fun h => by simp⟩,
       coprodPiLift_injective 0 Function.injective_id Function.injective_id
@@ -389,7 +385,7 @@ countable set embeds, over `H`, in an iterated extension of centralizers of `H`.
 theorem exists_ice_embedding_GX (hH : IsFullyResiduallyFree H) (hH' : ¬IsMulCommutative H)
     (X : Type*) [Countable X] : ∃ (E : Type u) (_ : Group E) (j : H →* E) (_ : ICE H E j)
       (f : GHom (inl : H →* GX H X) j), Function.Injective f := by
-  obtain ⟨u, g, hu, hg⟩ := exists_not_isProperPower_notMem_centralizer hH.isResiduallyFree hH'
+  obtain ⟨u, g, hu, hg⟩ := hH.isResiduallyFree.exists_not_isProperPower_notMem_centralizer hH'
   obtain ⟨e, he⟩ := Countable.exists_injective_nat X
   refine ⟨_, _, of, ICE.single (isAdmissibleCentralizerStep_iff.2 ⟨hu, Nat.one_pos⟩),
     ⟨coprodFreeGroupLift u (.id H) (fun x => e x + 1) g (0 : Fin 1), fun h => by simp⟩,

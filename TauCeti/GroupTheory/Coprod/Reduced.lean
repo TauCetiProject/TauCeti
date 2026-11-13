@@ -20,6 +20,8 @@ adjacent letters are merged in the free monoid `FreeMonoid (M ⊕ N)`, which is 
 
 ## Main results
 
+* `Monoid.Coprod.inl_mul_inl_mul`, `Monoid.Coprod.inr_mul_inr_mul`: adjacent letters of the same
+  factor merge.
 * `Monoid.Coprod.exists_reduced_list_mk_eq`: every element of `M ∗ N` is the image of a reduced
   word.
 
@@ -35,16 +37,18 @@ namespace Monoid.Coprod
 
 variable {M N : Type*} [MulOneClass M] [MulOneClass N]
 
-/-- Two letters of `M` merge. -/
-private theorem inl_mul_mk_of_inl_mul (m m' : M) (w : FreeMonoid (M ⊕ N)) :
-    inl m * mk (.of (.inl m') * w) = inl (m * m') * mk w := by
-  -- `M ∗ N` is only a `MulOneClass`: reassociate in the free monoid.
+/-- Two letters of `M` merge: `inl m * (inl m' * x) = inl (m * m') * x`. For `MulOneClass` factors
+this is not an instance of `mul_assoc`: Mathlib makes `M ∗ N` a monoid only when `M` and `N` are. -/
+theorem inl_mul_inl_mul (m m' : M) (x : M ∗ N) : inl m * (inl m' * x) = inl (m * m') * x := by
+  -- Reassociate in the free monoid `FreeMonoid (M ⊕ N)`.
+  obtain ⟨w, rfl⟩ := mk_surjective x
   rw [map_mul inl, ← mk_of_inl, ← mk_of_inl (N := N) m']
   simp only [← map_mul, mul_assoc]
 
-/-- Two letters of `N` merge. -/
-private theorem inr_mul_mk_of_inr_mul (n n' : N) (w : FreeMonoid (M ⊕ N)) :
-    inr n * mk (.of (.inr n') * w) = inr (n * n') * mk w := by
+/-- Two letters of `N` merge: `inr n * (inr n' * x) = inr (n * n') * x`. For `MulOneClass` factors
+this is not an instance of `mul_assoc`: Mathlib makes `M ∗ N` a monoid only when `M` and `N` are. -/
+theorem inr_mul_inr_mul (n n' : N) (x : M ∗ N) : inr n * (inr n' * x) = inr (n * n') * x := by
+  obtain ⟨w, rfl⟩ := mk_surjective x
   rw [map_mul inr, ← mk_of_inr, ← mk_of_inr (M := M) n']
   simp only [← map_mul, mul_assoc]
 
@@ -59,7 +63,7 @@ private theorem exists_reduced_list_mk_eq_inl_mul (m : M) {L : List (M ⊕ N)}
     · exact ⟨[], by simp [hm]⟩
     · exact ⟨[.inl m], by simp [Ne.symm hm, FreeMonoid.ofList_cons]⟩
   | .inl m' :: L, hc, h₁, h₂ =>
-    rw [FreeMonoid.ofList_cons, inl_mul_mk_of_inl_mul]
+    rw [FreeMonoid.ofList_cons, map_mul mk, mk_of_inl, inl_mul_inl_mul]
     by_cases hm : m * m' = 1
     · exact ⟨L, by simpa using hc.tail, fun h => h₁ (List.mem_cons_of_mem _ h),
         fun h => h₂ (List.mem_cons_of_mem _ h), by simp [hm]⟩
@@ -82,7 +86,7 @@ private theorem exists_reduced_list_mk_eq_inr_mul (n : N) {L : List (M ⊕ N)}
     · exact ⟨[], by simp [hn]⟩
     · exact ⟨[.inr n], by simp [Ne.symm hn, FreeMonoid.ofList_cons]⟩
   | .inr n' :: L, hc, h₁, h₂ =>
-    rw [FreeMonoid.ofList_cons, inr_mul_mk_of_inr_mul]
+    rw [FreeMonoid.ofList_cons, map_mul mk, mk_of_inr, inr_mul_inr_mul]
     by_cases hn : n * n' = 1
     · exact ⟨L, by simpa using hc.tail, fun h => h₁ (List.mem_cons_of_mem _ h),
         fun h => h₂ (List.mem_cons_of_mem _ h), by simp [hn]⟩
