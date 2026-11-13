@@ -210,17 +210,14 @@ theorem exists_homeomorph_closure_connectedComponentIn_compl_range
   obtain hE | hE | hE : finrank ℝ E = 0 ∨ finrank ℝ E = 1 ∨ 1 < finrank ℝ E := by omega
   · -- `Sᵐ⁻¹` is empty, and `y` is alone in its component of the discrete sphere `S⁰`.
     have : Subsingleton E := finrank_zero_iff.1 hE
-    have hS (x : sphere (0 : E) 1) : False := by
-      simpa [Subsingleton.elim (x : E) 0] using norm_eq_of_mem_sphere x
     have := discreteTopology_sphere_of_finrank_eq_one (hEF.trans (by rw [hE])) (0 : F) 1
     have hcl : closure (connectedComponentIn (range σ)ᶜ y) = {y} := by
-      rw [range_eq_empty_iff.2 ⟨hS⟩, compl_empty, connectedComponentIn_univ,
+      rw [range_eq_empty, compl_empty, connectedComponentIn_univ,
         connectedComponent_eq_singleton, closure_singleton]
-    have hB : closedBall (0 : E) 1 = {0} :=
-      subsingleton_of_subsingleton.eq_singleton_of_mem (mem_closedBall_self zero_le_one)
     refine ⟨(Homeomorph.setCongr hcl).trans ((Homeomorph.homeomorphOfUnique _ _).trans
-      (Homeomorph.setCongr hB.symm)), fun _ x _ ↦ (hS x).elim, fun z ↦ ?_⟩
-    simp [Subsingleton.elim (_ : E) 0]
+      (Homeomorph.setCongr (closedBall_eq_singleton_of_subsingleton zero_le_one).symm)),
+      fun _ x _ ↦ isEmptyElim x, fun z ↦ ?_⟩
+    simp [sphere_eq_empty_of_subsingleton]
   · exact exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq_one
       hEF hE hb.injective hy
   · -- Transport `Sᵐ` to the unit sphere of a Euclidean space.
@@ -234,11 +231,12 @@ theorem exists_homeomorph_closure_connectedComponentIn_compl_range
     have hcl : e '' closure (connectedComponentIn (range σ)ᶜ y) =
         closure (connectedComponentIn (range (e ∘ σ))ᶜ (e y)) := by
       rw [e.image_closure, e.image_connectedComponentIn hy, e.image_compl, range_comp]
-    -- `Homeomorph.setCongr` does not move points, so `z` is sent to `e z` before applying `h`.
-    refine ⟨((e.image _).trans (Homeomorph.setCongr hcl)).trans h,
-      fun z x hzx ↦ hσ _ x (show e z = e (σ x) by rw [hzx]), fun z ↦ (hS _).trans ?_⟩
-    change e z ∈ range (e ∘ σ) ↔ _
-    rw [range_comp, e.injective.mem_set_image]
+    let Ψ : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ
+        closure (connectedComponentIn (range (e ∘ σ))ᶜ (e y)) :=
+      e.subtype fun w ↦ by rw [← hcl, e.injective.mem_set_image]
+    refine ⟨Ψ.trans h, fun z x hzx ↦ hσ (Ψ z) x ?_, fun z ↦ (hS (Ψ z)).trans ?_⟩
+    · rw [Homeomorph.subtype_apply_coe, hzx, comp_apply]
+    · rw [Homeomorph.subtype_apply_coe, range_comp, e.injective.mem_set_image]
 
 end IsBicollar
 
