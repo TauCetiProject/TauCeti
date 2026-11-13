@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Stopping
+public import Mathlib.Topology.Order.Cadlag
 import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
+import TauCeti.Probability.Process.StoppedValue
 
 /-!
 # Dyadic approximation of stopping times
@@ -16,7 +19,10 @@ Round a nonnegative stopping time upwards to the grid of mesh `2⁻ⁿ`, leaving
 unchanged. The resulting times have countable range, remain stopping times on the original
 filtration, decrease to the original time, and preserve zero. No completeness or right
 continuity of the filtration is needed. These approximations allow countable-range sampling
-identities to be passed to right-continuous processes at bounded stopping times.
+identities to be passed to right-continuous processes at bounded stopping times, and show
+that the restarted increment path `t ↦ X (τ + t) - X τ` of an almost-surely right-continuous
+process into a pseudo-metrizable Borel group is almost-everywhere measurable in the product
+σ-algebra on path space (`MeasureTheory.IsStoppingTime.aemeasurable_stoppedValue_add_const_sub`).
 
 Stopped-value convergence is asserted only at finite times: the native value at infinity
 is a fallback, not a terminal path limit.
@@ -223,5 +229,58 @@ theorem dyadicCeilTime (hτ : IsStoppingTime ℱ τ) (n : ℕ) :
   exact ℱ.mono (by
     rw [div_le_iff₀ (by positivity)]
     exact Nat.floor_le (by positivity)) _ (hτ _)
+
+/-- At any stopping time `τ` on a raw filtration indexed by `ℝ≥0`, the restarted increment path
+`t ↦ stoppedValue X (fun ω' ↦ τ ω' + t) ω - stoppedValue X τ ω` of an almost-surely
+right-continuous coordinatewise measurable process into a pseudo-metrizable Borel additive group is
+almost-everywhere measurable as a map into path space `ℝ≥0 → E`. -/
+theorem aemeasurable_stoppedValue_add_const_sub {E : Type*} [TopologicalSpace E]
+    [TopologicalSpace.PseudoMetrizableSpace E] [AddGroup E] [ContinuousSub E]
+    [MeasurableSpace E] [BorelSpace E] [MeasurableSub₂ E] {P : Measure Ω} {X : ℝ≥0 → Ω → E}
+    (hτ : IsStoppingTime ℱ τ) (hmeas : ∀ t, Measurable (X t))
+    (hrc : ∀ᵐ ω ∂P, IsRightContinuous (X · ω)) :
+    AEMeasurable
+      (fun ω (t : ℝ≥0) ↦ stoppedValue X (fun ω' ↦ τ ω' + t) ω - stoppedValue X τ ω) P := by
+  classical
+  -- Modify off a single measurable null superset of `{ω | ¬IsRightContinuous (X · ω)}` so the
+  -- dyadic approximations converge pointwise at every uncountably many coordinates `t`.
+  let N : Set Ω := toMeasurable P {ω | ¬IsRightContinuous (X · ω)}
+  have hN_null : P N = 0 := (measure_toMeasurable _).trans (ae_iff.1 hrc)
+  let G : Set Ω := Nᶜ ∩ {ω | τ ω ≠ ⊤}
+  have hG_meas : MeasurableSet G :=
+    (measurableSet_toMeasurable P _).compl.inter hτ.measurableSet_eq_top.compl
+  let g : Ω → ℝ≥0 → E := fun ω t ↦
+    G.indicator (fun ω' ↦ stoppedValue X (fun ω'' ↦ τ ω'' + t) ω' - stoppedValue X τ ω') ω
+  have hg_meas : Measurable g := by
+    refine measurable_pi_iff.2 fun t ↦ measurable_of_tendsto_metrizable
+      (f := fun n ↦ G.indicator
+        (stoppedValue (fun s ω' ↦ X (s + t) ω' - X s ω')
+          (fun ω' ↦ TauCeti.dyadicCeilTime n (τ ω'))))
+      (fun n ↦ ?_) (tendsto_pi_nhds.2 fun ω ↦ ?_)
+    · exact ((hτ.dyadicCeilTime n).measurable_stoppedValue_of_countable_range
+        (TauCeti.countable_range_dyadicCeilTime τ n)
+        fun s ↦ (hmeas (s + t)).sub (hmeas s)).indicator hG_meas
+    · by_cases hωG : ω ∈ G
+      · have hωrc : IsRightContinuous (X · ω) :=
+          not_not.1 fun h ↦ hωG.1 (subset_toMeasurable P _ h)
+        have hinc_rc : IsRightContinuous (fun s : ℝ≥0 ↦ X (s + t) ω - X s ω) := fun s ↦ by
+          have hshift : ContinuousWithinAt (fun u : ℝ≥0 ↦ X (u + t) ω) (Ioi s) s :=
+            (hωrc (s + t)).comp (f := fun u : ℝ≥0 ↦ u + t) (by fun_prop)
+              (fun u (hu : s < u) ↦ add_lt_add_of_lt_of_le hu le_rfl)
+          exact hshift.sub (hωrc s)
+        simpa only [g, indicator_of_mem hωG,
+          stoppedValue_add_const_sub_stoppedValue (u := X) (τ := τ) t hωG.2] using
+          TauCeti.tendsto_stoppedValue_dyadicCeilTime
+            (fun s ω' ↦ X (s + t) ω' - X s ω') τ ω hωG.2
+            ((isRightContinuous_iff_continuousWithinAt_Ici.1 hinc_rc) _)
+      · simpa only [g, indicator_of_notMem hωG] using tendsto_const_nhds
+  refine hg_meas.aemeasurable.congr ?_
+  filter_upwards [ae_iff.2 (by simpa [N] using hN_null : P Nᶜᶜ = 0)] with ω hωN
+  funext t
+  by_cases hτω : τ ω = ⊤
+  · have hnotG : ω ∉ G := fun h ↦ h.2 hτω
+    exact (indicator_of_notMem hnotG _).trans
+      (stoppedValue_add_const_sub_stoppedValue_of_eq_top (u := X) t hτω).symm
+  · exact indicator_of_mem (⟨hωN, hτω⟩ : ω ∈ G) _
 
 end MeasureTheory.IsStoppingTime

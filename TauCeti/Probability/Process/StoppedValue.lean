@@ -30,10 +30,19 @@ preimage decomposition `MeasureTheory.stoppedValue_preimage_eq`. This file prove
 These are the measurability facts needed to state the strong Markov property of a chain with values
 in an arbitrary measurable space.
 
-Even for uncountable time, a stopping time with countable range permits strongly measurable
-gluing, without any topology on time and without a separability assumption or any algebraic
-structure on the values. Capping such a time at each deterministic horizon shows that a strongly
-adapted process remains strongly adapted after stopping, including on a raw filtration.
+Even for uncountable time, a random time with countable range and measurable level sets—in
+particular any countable-range stopping time—makes the stopped value of a coordinatewise measurable
+process measurable in the ambient σ-algebra
+(`MeasureTheory.IsStoppingTime.measurable_stoppedValue_of_countable_range`), and permits strongly
+measurable gluing for adapted processes without any topology on time and without a separability
+assumption or any algebraic structure on the values. Capping such a time at each deterministic
+horizon shows that a strongly adapted process remains strongly adapted after stopping, including on
+a raw filtration. For restarted increments `u (τ + t) - u τ`,
+`MeasureTheory.stoppedValue_add_const_sub_stoppedValue`,
+`MeasureTheory.stoppedValue_add_const_sub_stoppedValue_of_eq_top`, and
+`MeasureTheory.continuous_stoppedValue_add_const_sub_stoppedValue` relate the difference of stopped
+values to the stopped increment family on `{τ ≠ ⊤}`, record its vanishing at `⊤`, and show that it
+preserves pathwise continuity.
 -/
 
 public section
@@ -50,6 +59,42 @@ theorem stoppedValue_of_eq {i : ι} {ω : Ω} (h : τ ω = i) :
     stoppedValue u τ ω = u i ω := by
   simp [stoppedValue, h]
 
+/-- On the finite-time event `{τ ≠ ⊤}`, subtracting the stopped value from the stopped value at a
+translated time agrees with sampling the shifted increment process at `τ`. -/
+theorem stoppedValue_add_const_sub_stoppedValue [Add ι] [Sub β] (t : ι) {ω : Ω} (h : τ ω ≠ ⊤) :
+    stoppedValue u (fun ω' ↦ τ ω' + t) ω - stoppedValue u τ ω =
+      stoppedValue (fun s ω' ↦ u (s + t) ω' - u s ω') τ ω := by
+  cases hτ : τ ω with
+  | top => exact absurd hτ h
+  | coe s => simp [stoppedValue, hτ, ← WithTop.coe_add]
+
+/-- At an infinite stopping time, translating the time by a finite increment leaves both stopped
+values at the fallback index, so their difference vanishes. -/
+theorem stoppedValue_add_const_sub_stoppedValue_of_eq_top [Add ι] [AddGroup β] (t : ι) {ω : Ω}
+    (h : τ ω = ⊤) :
+    stoppedValue u (fun ω' ↦ τ ω' + t) ω - stoppedValue u τ ω = 0 := by
+  simp [stoppedValue, h]
+
+/-- If `u · ω` is continuous, then the restarted increment path
+`t ↦ stoppedValue u (fun ω' ↦ τ ω' + t) ω - stoppedValue u τ ω` is continuous at `ω`: it shifts and
+recenters `u · ω` when `τ ω` is finite and vanishes identically when `τ ω = ⊤`. -/
+theorem continuous_stoppedValue_add_const_sub_stoppedValue [TopologicalSpace ι] [Add ι]
+    [ContinuousAdd ι] [TopologicalSpace β] [AddGroup β] [ContinuousSub β] (τ : Ω → WithTop ι)
+    {ω : Ω} (hu : Continuous (u · ω)) :
+    Continuous (fun t : ι ↦ stoppedValue u (fun ω' ↦ τ ω' + t) ω - stoppedValue u τ ω) := by
+  cases h : τ ω with
+  | top =>
+    simpa only [stoppedValue_add_const_sub_stoppedValue_of_eq_top _ h] using continuous_const
+  | coe s =>
+    have heq :
+        (fun t : ι ↦ stoppedValue u (fun ω' ↦ τ ω' + t) ω - stoppedValue u τ ω) =
+          fun t ↦ u (s + t) ω - u s ω :=
+      funext fun t ↦
+        (stoppedValue_add_const_sub_stoppedValue (u := u) (τ := τ) t
+          (h ▸ WithTop.coe_ne_top)).trans (stoppedValue_of_eq h)
+    rw [heq]
+    exact (hu.comp (continuous_const.add continuous_id)).sub continuous_const
+
 /-- The preimage of a set under a stopped value, decomposed along the values of the stopping
 time. -/
 theorem stoppedValue_preimage_eq (t : Set β) :
@@ -65,16 +110,63 @@ theorem stoppedValue_preimage_eq (t : Set β) :
 
 variable [MeasurableSpace β]
 
+/-- At a random time with countable range whose level sets are measurable, the stopped value of a
+coordinatewise measurable process is measurable. Neither a topology on time nor adaptation of the
+process is required. -/
+theorem measurable_stoppedValue_of_countable_range_of_measurableSet_eq
+    (hu : ∀ i, Measurable (u i)) (hc : (Set.range τ).Countable)
+    (hτ : ∀ v ∈ Set.range τ, MeasurableSet {ω | τ ω = v}) :
+    Measurable (stoppedValue u τ) := by
+  intro t ht
+  have hpre : stoppedValue u τ ⁻¹' t =
+      ⋃ v ∈ Set.range τ, {ω | τ ω = v} ∩ u v.untopA ⁻¹' t := by
+    ext ω
+    simp only [stoppedValue, Set.mem_preimage, Set.mem_iUnion, Set.mem_inter_iff,
+      Set.mem_ofPred_eq, exists_prop]
+    exact ⟨fun h => ⟨τ ω, ⟨ω, rfl⟩, rfl, h⟩,
+      fun ⟨v, _, hv, h⟩ => by simpa only [hv] using h⟩
+  rw [hpre]
+  exact MeasurableSet.biUnion hc fun v hv => (hτ v hv).inter (hu v.untopA ht)
+
+/-- At a measurable random time with countable range, the stopped value of a coordinatewise
+measurable process is measurable. -/
+theorem measurable_stoppedValue_of_countable_range [MeasurableSpace (WithTop ι)]
+    [MeasurableSingletonClass (WithTop ι)] (hu : ∀ i, Measurable (u i))
+    (hτ : Measurable τ) (hc : (Set.range τ).Countable) :
+    Measurable (stoppedValue u τ) :=
+  measurable_stoppedValue_of_countable_range_of_measurableSet_eq hu hc
+    fun v _ => hτ (measurableSet_singleton v)
+
 /-- In countable time, a stopped value of a measurable process at a measurable random time is
 measurable. -/
 theorem measurable_stoppedValue_of_countable [Countable ι] [MeasurableSpace (WithTop ι)]
     [MeasurableSingletonClass (WithTop ι)] (hu : ∀ i, Measurable (u i)) (hτ : Measurable τ) :
+    Measurable (stoppedValue u τ) :=
+  measurable_stoppedValue_of_countable_range hu hτ (Set.to_countable _)
+
+/-- At a stopping time with countable range, the stopped value of a coordinatewise measurable
+process is measurable in the ambient σ-algebra. Neither adaptation of the process nor any topology
+on time is required; at infinity the stopped value uses `(⊤ : WithTop ι).untopA`. -/
+theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder ι]
+    {ℱ : Filtration ι m} (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable)
+    (hu : ∀ i, Measurable (u i)) :
     Measurable (stoppedValue u τ) := by
-  intro t ht
-  rw [stoppedValue_preimage_eq]
-  refine .union (.iUnion fun i => ?_) ?_
-  · exact (hτ (measurableSet_singleton _)).inter (hu i ht)
-  · exact (hτ (measurableSet_singleton _)).inter (hu _ ht)
+  have hR : {i : ι | (i : WithTop ι) ∈ Set.range τ}.Countable :=
+    hc.preimage WithTop.coe_injective
+  have heq (i : ι) : MeasurableSet {ω | τ ω = i} :=
+    ℱ.le i _ (hτ.measurableSet_eq_of_countable_range hc i)
+  refine measurable_stoppedValue_of_countable_range_of_measurableSet_eq hu hc fun v hv => ?_
+  cases v with
+  | coe i => exact heq i
+  | top =>
+    have htop : {ω | τ ω = ⊤} =
+        (⋃ i ∈ {i : ι | (i : WithTop ι) ∈ Set.range τ}, {ω | τ ω = i})ᶜ := by
+      ext ω
+      cases h : τ ω with
+      | top => simp [h]
+      | coe i => simpa [h] using (⟨ω, h⟩ : ∃ y, τ y = (i : WithTop ι))
+    rw [htop]
+    exact (MeasurableSet.biUnion hR fun i _ => heq i).compl
 
 section CountableTime
 
