@@ -15,8 +15,8 @@ import Mathlib.Tactic.Ring
 # Replication of pairwise optimization problems
 
 Replace each vertex of a loopless directed graph with a finite edge set by `q` copies and
-each edge by the complete bipartite graph between its endpoint clusters. A nonnegative pair
-cost, depending on the labels at its endpoints, has infimum multiplied by `q²`. Labels may vary
+each edge by the complete bipartite graph between its endpoint clusters. A pair cost,
+depending on the labels at its endpoints, has infimum multiplied by `q²`. Labels may vary
 arbitrarily within each cluster, and the label type need not be finite. Nonnegative costs
 inside clusters do not change the result if they vanish on cluster-constant assignments.
 
@@ -41,7 +41,7 @@ variable {V A ι M : Type*}
 /-- If every section has pair cost at least `d`, the total inter-cluster pair cost is at least
 `Fintype.card ι ^ 2` copies of `d`. Only the edge set is required to be finite, and no sign
 assumption on the pair costs is needed. -/
-theorem card_sq_nsmul_le_sum_of_forall_sections [Fintype ι] [AddCommMonoid M]
+theorem card_sq_nsmul_le_sum_of_forall_le_sum [Fintype ι] [AddCommMonoid M]
     [LinearOrder M] [IsOrderedCancelAddMonoid M] (E : Finset (V × V))
     (hE : ∀ e ∈ E, e.1 ≠ e.2) (w : V × V → ι → ι → M) {d : M}
     (hd : ∀ s : V → ι, d ≤ ∑ e ∈ E, w e (s e.1) (s e.2)) :
@@ -87,13 +87,12 @@ theorem card_sq_nsmul_le_sum_of_forall_sections [Fintype ι] [AddCommMonoid M]
     (pow_ne_zero (Fintype.card S - 2) (Fintype.card_ne_zero (α := ι)))).mp
   simpa only [sum_const, card_univ, Fintype.card_fun, hpow, mul_smul] using hsum
 
-/-- Replication multiplies the infimum of nonnegative pair costs by the square of the number
-of copies, even with a nonnegative penalty vanishing on cluster-constant assignments.
-Neither the vertex type nor the label type must be finite, and no infimum need be attained.
-The statement includes empty copy types, empty graphs and empty vertex types. -/
+/-- Replication multiplies the infimum of pair costs by the square of the number of copies,
+even with a nonnegative penalty vanishing on cluster-constant assignments. The pair costs may
+take either sign, neither the vertex type nor the label type must be finite, and no infimum need
+be attained. The statement includes empty copy types, empty graphs and empty vertex types. -/
 theorem ciInf_add_sum_eq_card_sq_mul_ciInf_sum [Fintype ι] [Nonempty A] (E : Finset (V × V))
     (hE : ∀ e ∈ E, e.1 ≠ e.2) (w : V × V → A → A → ℝ)
-    (hw : ∀ e ∈ E, ∀ a b, 0 ≤ w e a b)
     (c : (V → ι → A) → ℝ) (hc : ∀ β, 0 ≤ c β)
     (hc_const : ∀ β : V → A, c (fun v _ ↦ β v) = 0) :
     (⨅ β : V → ι → A, c β + ∑ e ∈ E, ∑ a, ∑ b, w e (β e.1 a) (β e.2 b)) =
@@ -101,37 +100,52 @@ theorem ciInf_add_sum_eq_card_sq_mul_ciInf_sum [Fintype ι] [Nonempty A] (E : Fi
   classical
   let f (β : V → A) := ∑ e ∈ E, w e (β e.1) (β e.2)
   let F (β : V → ι → A) := c β + ∑ e ∈ E, ∑ a, ∑ b, w e (β e.1 a) (β e.2 b)
-  have hf : BddBelow (Set.range f) := ⟨0, by
-    rintro _ ⟨β, rfl⟩
-    exact sum_nonneg fun e he ↦ hw e he _ _⟩
-  have hF : BddBelow (Set.range F) := ⟨0, by
-    rintro _ ⟨β, rfl⟩
-    exact add_nonneg (hc β) (sum_nonneg fun e he ↦
-      sum_nonneg fun a _ ↦ sum_nonneg fun b _ ↦ hw e he _ _)⟩
   have hcopy (β : V → A) : F (fun v _ ↦ β v) = (Fintype.card ι : ℝ) ^ 2 * f β := by
     simp [F, f, hc_const, ← mul_sum]
     ring
-  refine le_antisymm ?_ ?_
-  · rw [Real.mul_iInf_of_nonneg (sq_nonneg (Fintype.card ι : ℝ))]
-    exact le_ciInf fun β ↦ (ciInf_le hF (fun v _ ↦ β v)).trans_eq (hcopy β)
-  · apply le_ciInf
-    intro β
-    have hsections := E.card_sq_nsmul_le_sum_of_forall_sections hE
-      (fun e a b ↦ w e (β e.1 a) (β e.2 b))
-      (fun s ↦ ciInf_le hf (fun v ↦ β v (s v)))
-    have hbound : (Fintype.card ι : ℝ) ^ 2 * iInf f ≤
+  have hlower {m : ℝ} (hm : ∀ β, m ≤ f β) (β : V → ι → A) :
+      (Fintype.card ι : ℝ) ^ 2 * m ≤ F β := by
+    have hsections := E.card_sq_nsmul_le_sum_of_forall_le_sum hE
+      (fun e a b ↦ w e (β e.1 a) (β e.2 b)) (fun s ↦ hm (fun v ↦ β v (s v)))
+    have hbound : (Fintype.card ι : ℝ) ^ 2 * m ≤
         ∑ e ∈ E, ∑ a, ∑ b, w e (β e.1 a) (β e.2 b) := by
       simpa [nsmul_eq_mul, Nat.cast_pow] using hsections
     exact hbound.trans (le_add_of_nonneg_left (hc β))
+  obtain hι | hι := isEmpty_or_nonempty ι
+  · have hF (β : V → ι → A) : F β = 0 := by
+      rw [Subsingleton.elim β fun v _ ↦ Classical.arbitrary A, hcopy]
+      simp
+    rw [Fintype.card_eq_zero, Nat.cast_zero, zero_pow two_ne_zero, zero_mul]
+    exact (iInf_congr hF).trans ciInf_const
+  by_cases hf : BddBelow (Set.range f)
+  · have hF : BddBelow (Set.range F) := ⟨_, by
+      rintro _ ⟨β, rfl⟩
+      exact hlower (fun β ↦ ciInf_le hf β) β⟩
+    refine le_antisymm ?_ (le_ciInf (hlower fun β ↦ ciInf_le hf β))
+    rw [Real.mul_iInf_of_nonneg (sq_nonneg (Fintype.card ι : ℝ))]
+    exact le_ciInf fun β ↦ (ciInf_le hF (fun v _ ↦ β v)).trans_eq (hcopy β)
+  · have hpos : 0 < (Fintype.card ι : ℝ) ^ 2 :=
+      pow_pos (Nat.cast_pos.mpr Fintype.card_pos) 2
+    have hF : ¬BddBelow (Set.range F) := by
+      rintro ⟨m, hm⟩
+      refine hf ⟨m / (Fintype.card ι : ℝ) ^ 2, ?_⟩
+      rintro _ ⟨β, rfl⟩
+      rw [div_le_iff₀' hpos, ← hcopy]
+      exact hm ⟨_, rfl⟩
+    exact (Real.iInf_of_not_bddBelow hF).trans
+      (by rw [Real.iInf_of_not_bddBelow hf, mul_zero])
 
-/-- The infimum of nonnegative pair costs is multiplied by the square of the number of copies
-when every edge is replaced by all pairs of copies of its endpoints. -/
-theorem ciInf_sum_eq_card_sq_mul_ciInf_sum [Fintype ι] [Nonempty A] (E : Finset (V × V))
-    (hE : ∀ e ∈ E, e.1 ≠ e.2) (w : V × V → A → A → ℝ)
-    (hw : ∀ e ∈ E, ∀ a b, 0 ≤ w e a b) :
+/-- The infimum of pair costs is multiplied by the square of the number of copies when every
+edge is replaced by all pairs of copies of its endpoints. -/
+theorem ciInf_sum_eq_card_sq_mul_ciInf_sum [Fintype ι] (E : Finset (V × V))
+    (hE : ∀ e ∈ E, e.1 ≠ e.2) (w : V × V → A → A → ℝ) :
     (⨅ β : V → ι → A, ∑ e ∈ E, ∑ a, ∑ b, w e (β e.1 a) (β e.2 b)) =
       (Fintype.card ι : ℝ) ^ 2 * ⨅ β : V → A, ∑ e ∈ E, w e (β e.1) (β e.2) := by
-  simpa using E.ciInf_add_sum_eq_card_sq_mul_ciInf_sum hE w hw
+  obtain hA | hA := isEmpty_or_nonempty A
+  · obtain hV | hV := isEmpty_or_nonempty V
+    · simp [E.eq_empty_of_isEmpty]
+    rcases isEmpty_or_nonempty ι with hι | hι <;> simp
+  simpa using E.ciInf_add_sum_eq_card_sq_mul_ciInf_sum hE w
     (fun _ : V → ι → A ↦ 0) (fun _ ↦ le_rfl) (fun _ ↦ rfl)
 
 end Finset
