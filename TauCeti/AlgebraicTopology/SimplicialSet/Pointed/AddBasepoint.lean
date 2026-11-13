@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import Mathlib.CategoryTheory.MorphismProperty.Limits
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
 -- The degreewise formulas below compute through the native undercategory presentation.
@@ -16,6 +18,11 @@ import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 The functor `K ↦ K₊` adjoins a disjoint basepoint degreewise to a simplicial set. It is left
 adjoint to forgetting the basepoint of a pointed simplicial set: based maps `K₊ ⟶ X` are the
 same as unpointed maps `K ⟶ X`.
+
+On underlying simplicial sets, the naturality square of the adjunction unit `K ⟶ K₊` is a
+pushout square (`PointedSSet.isPushout_addBasepointForgetAdjunction_unit`). Consequently,
+adjoining a disjoint basepoint preserves every morphism property of simplicial sets that is
+stable under cobase change, such as monomorphisms and anodyne extensions.
 
 ## Main definitions
 
@@ -157,5 +164,57 @@ def addBasepointForgetAdjunction :
       homEquiv_naturality_left_symm := fun f g ↦ by
         ext n x
         cases x <;> rfl }
+
+/-- The unit `K ⟶ K₊` of `(-)₊ ⊣ forget` sends every simplex `x` to `some x`. -/
+@[simp]
+lemma addBasepointForgetAdjunction_unit_app_app (K : SSet.{u}) (n : SimplexCategoryᵒᵖ)
+    (x : K.obj n) :
+    dsimp% (addBasepointForgetAdjunction.unit.app K).app n x = some x := by
+  rw [addBasepointForgetAdjunction, Adjunction.mkOfHomEquiv_unit_app]
+  rfl
+
+/-- For any map `f : K ⟶ L` of simplicial sets, the naturality square of the unit `K ⟶ K₊`
+is a pushout square on underlying simplicial sets: `L₊` is obtained from `L` and `K₊` by
+attaching the disjoint basepoint along `K`. -/
+lemma isPushout_addBasepointForgetAdjunction_unit {K L : SSet.{u}} (f : K ⟶ L) :
+    IsPushout f (addBasepointForgetAdjunction.unit.app K)
+      (addBasepointForgetAdjunction.unit.app L) (addBasepoint.map f).right where
+  w := addBasepointForgetAdjunction.unit.naturality f
+  isColimit' := ⟨Limits.PushoutCocone.IsColimit.mk _
+    (fun s ↦
+      { app := fun n ↦ ↾fun x ↦ x.elim (s.inr.app n none) (s.inl.app n)
+        naturality := fun n m g ↦ by
+          ext x
+          cases x with
+          | none => exact congr_hom (s.inr.naturality g) (none : Option (K.obj n))
+          | some y => exact congr_hom (s.inl.naturality g) y })
+    (fun _ ↦ by
+      ext _ _
+      rfl)
+    (fun s ↦ by
+      ext n x
+      cases x with
+      | none => rfl
+      | some x => exact congr_hom (NatTrans.congr_app s.condition n) x)
+    (fun s m hl hr ↦ by
+      ext n x
+      cases x with
+      | none => exact congr_hom (NatTrans.congr_app hr n) (none : Option (K.obj n))
+      | some y => exact congr_hom (NatTrans.congr_app hl n) y)⟩
+
+/-- Adjoining a disjoint basepoint preserves any morphism property of simplicial sets that is
+stable under cobase change. -/
+lemma addBasepoint_map_right_mem (W : MorphismProperty SSet.{u})
+    [W.IsStableUnderCobaseChange] {K L : SSet.{u}} {f : K ⟶ L} (hf : W f) :
+    W (addBasepoint.map f).right :=
+  W.of_isPushout (isPushout_addBasepointForgetAdjunction_unit f).flip hf
+
+/-- Adjoining a disjoint basepoint preserves monomorphisms on underlying simplicial sets. -/
+instance mono_addBasepoint_map_right {K L : SSet.{u}} (f : K ⟶ L) [Mono f] :
+    Mono (addBasepoint.map f).right := by
+  rw [NatTrans.mono_iff_mono_app]
+  intro n
+  rw [mono_iff_injective]
+  exact Option.map_injective ((mono_iff_injective (f.app n)).1 inferInstance)
 
 end TauCeti.PointedSSet
