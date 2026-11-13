@@ -67,7 +67,8 @@ replaced by `2 (∫_{B_r} f² + ∫_{B_r} θ² ‖D²u‖²)`
 (`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_sub_le`).
 No continuity of `a` is used. If `|aᵢⱼ - Aᵢⱼ| ≤ M` and `D²u ∈ L^{2q}(B_r)`, Hölder's inequality with
 the conjugate exponent `q'` and `θ^(2q') ≤ ((n + 1)² M)^(2q' - 1) θ` bound the error by the mean
-deviation `⨍_{B_r} θ`, which gives Krylov's estimate in scale-invariant form
+deviation `⨍_{B_r} θ` (`TauCeti.integral_sq_mul_norm_sq_le_L1_mul_L2q_of_le`), which gives
+Krylov's estimate in scale-invariant form
 (`TauCeti.PDE.setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le`):
 
 `⨍_{B_ρ} ‖D²u - (D²u)_{B_ρ}‖² ≤ C κ⁻² ⨍_{B_r} ‖D²u - (D²u)_{B_r}‖²`
@@ -374,23 +375,6 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_m
 
 variable {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
 
-/-- The deviation `∑ᵢⱼ |aᵢⱼ - Aᵢⱼ|` of a measurable coefficient field from a constant matrix is
-measurable. -/
-private theorem aestronglyMeasurable_sum_sum_abs_sub
-    {μ : Measure (EuclideanSpace ℝ (Fin (n + 1)))}
-    (ham : ∀ i j, AEStronglyMeasurable (fun x => a x i j) μ) :
-    AEStronglyMeasurable (fun x => ∑ i, ∑ j, |a x i j - A i j|) μ :=
-  Finset.aestronglyMeasurable_fun_sum _ fun i _ => Finset.aestronglyMeasurable_fun_sum _
-    fun j _ => continuous_abs.comp_aestronglyMeasurable ((ham i j).sub aestronglyMeasurable_const)
-
-/-- An entrywise deviation bound `|aᵢⱼ - Aᵢⱼ| ≤ M` gives `∑ᵢⱼ |aᵢⱼ - Aᵢⱼ| ≤ (n + 1)² M`. -/
-private theorem sum_sum_abs_sub_le {M : ℝ} {x : EuclideanSpace ℝ (Fin (n + 1))}
-    (hx : ∀ i j, |a x i j - A i j| ≤ M) :
-    ∑ i, ∑ j, |a x i j - A i j| ≤ (n + 1) ^ 2 * M := by
-  calc ∑ i, ∑ j, |a x i j - A i j| ≤ ∑ _i : Fin (n + 1), ∑ _j : Fin (n + 1), M :=
-        Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => hx i j
-    _ = (n + 1) ^ 2 * M := by simp; ring
-
 /-- **Mean oscillation of the Hessian for variable coefficients, by freezing.** Let
 `u ∈ W^{2,2}(Ω)` solve `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on `B_r = ball x₀ r ⊆ Ω`, where the
 coefficient `a` is measurable and stays entrywise within `M` of a constant matrix `A` that is
@@ -433,7 +417,7 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_s
   set c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => Matrix.contraction (A - a x) (H x)
   have hH : MemLp H 2 μr :=
     (memLp_iteratedGradient_one u).mono_measure (Measure.restrict_mono hball le_rfl)
-  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_sum_sum_abs_sub ham
+  have hθm : AEStronglyMeasurable θ μr := by fun_prop
   have hcm : AEStronglyMeasurable c μr := by
     simp only [c, Matrix.contraction_apply, Matrix.sub_apply]
     refine Finset.aestronglyMeasurable_fun_sum _ fun i _ => Finset.aestronglyMeasurable_fun_sum _
@@ -443,7 +427,8 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_s
         hH.aestronglyMeasurable).inner aestronglyMeasurable_const
   have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ (n + 1) ^ 2 * M := by
     filter_upwards [haM] with x hx
-    exact ⟨by positivity, sum_sum_abs_sub_le hx⟩
+    exact ⟨by positivity, (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ =>
+      hx i j).trans_eq (by simp; ring)⟩
   have hc : ∀ x, |c x| ≤ θ x * ‖H x‖ := fun x => by
     convert Matrix.abs_sum_sum_mul_apply_single_le (A - a x).transpose (H x) using 2
     · simp only [c, Matrix.contraction_apply, EuclideanSpace.inner_single_right,
@@ -549,59 +534,23 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le
   set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => ∑ i, ∑ j, |a x i j - A i j|
   set K : ℝ := (n + 1) ^ 2 * M
   have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hK : 0 ≤ K := by
-    have := ae_restrict_neBot.2 (measure_ball_pos volume x₀ hr).ne'
-    obtain ⟨x, hx⟩ := haM.exists
-    exact (by positivity : (0 : ℝ) ≤ θ x).trans (sum_sum_abs_sub_le hx)
-  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_sum_sum_abs_sub ham
   have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K := by
     filter_upwards [haM] with x hx
-    exact ⟨by positivity, sum_sum_abs_sub_le hx⟩
-  have hθi : Integrable θ μr := Integrable.of_bound hθm K (by
-    filter_upwards [hθ] with x hx
-    rw [Real.norm_of_nonneg hx.1]
-    exact hx.2)
-  -- Hölder's inequality with the bounded weight `θ²` and exponents `q'`, `q` bounds the error
-  -- term `∫ θ² ‖D²u‖²` of the frozen comparison.
-  have hH2 : MemLp (fun x => ‖H x‖ ^ 2) (ENNReal.ofReal q) μr := by
-    have h := hHq.norm_rpow_div (ENNReal.ofReal 2)
-    rw [← ENNReal.ofReal_div_of_pos two_pos, ENNReal.toReal_ofReal zero_le_two,
-      show 2 * q / 2 = q by ring] at h
-    simpa only [Real.rpow_two] using h
-  have hHolder := integral_mul_le_L1_mul_Lq_of_le hq.symm (hθm.pow 2)
-    (hθ.mono fun x hx => ⟨sq_nonneg _, pow_le_pow_left₀ hx.1 hx.2 2⟩)
-    (ae_of_all _ fun x => sq_nonneg ‖H x‖) hH2
-  -- Since `0 ≤ θ ≤ K`, `(K²)^(q' - 1) θ² ≤ K^(2q' - 1) θ`.
-  have hθq : (K ^ 2) ^ (q' - 1) * ∫ x in ball x₀ r, θ x ^ 2 ≤
-      K ^ (2 * q' - 1) * ∫ x in ball x₀ r, θ x := by
-    rw [← integral_const_mul, ← integral_const_mul]
-    refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity) (hθi.const_mul _)
-      (hθ.mono fun x hx => ?_)
-    have hθ2 : θ x ^ 2 ≤ K * θ x := by nlinarith [hx.1, hx.2]
-    calc (K ^ 2) ^ (q' - 1) * θ x ^ 2 = K ^ (2 * (q' - 1)) * θ x ^ 2 := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul hK]
-          norm_num
-      _ ≤ K ^ (2 * (q' - 1)) * (K * θ x) :=
-          mul_le_mul_of_nonneg_left hθ2 (Real.rpow_nonneg hK _)
-      _ = K ^ (2 * q' - 1) * θ x := by
-          rw [show 2 * q' - 1 = 2 * (q' - 1) + 1 by ring,
-            Real.rpow_add_one' hK (by linarith [hq.symm.lt])]
-          ring
-  have hHq' : ∫ x in ball x₀ r, (‖H x‖ ^ 2) ^ q = ∫ x in ball x₀ r, ‖H x‖ ^ (2 * q) := by
-    refine integral_congr_ae (ae_of_all _ fun x => ?_)
-    simp only
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
-    norm_num
+    exact ⟨by positivity, (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ =>
+      hx i j).trans_eq (by simp; ring)⟩
+  have hK : 0 ≤ K := by
+    have := ae_restrict_neBot.2 (measure_ball_pos volume x₀ hr).ne'
+    obtain ⟨x, hx⟩ := hθ.exists
+    exact hx.1.trans hx.2
   set Iθ := ∫ x in ball x₀ r, θ x
+  have hIθ : 0 ≤ Iθ := integral_nonneg_of_ae (hθ.mono fun x hx => hx.1)
   set IH := ∫ x in ball x₀ r, ‖H x‖ ^ (2 * q)
   have hIH : 0 ≤ IH := integral_nonneg fun x => by positivity
+  -- Hölder's inequality with the bounded weight `θ` and exponents `q'`, `q` bounds the error
+  -- term `∫ θ² ‖D²u‖²` of the frozen comparison.
   have hΘ : ∫ x in ball x₀ r, θ x ^ 2 * ‖H x‖ ^ 2 ≤
-      (K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * IH ^ q⁻¹ := by
-    refine hHolder.trans ?_
-    rw [hHq']
-    exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (mul_nonneg (Real.rpow_nonneg
-      (sq_nonneg K) _) (integral_nonneg fun x => sq_nonneg _)) hθq hq.symm.inv_nonneg)
-      (Real.rpow_nonneg hIH _)
+      (K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * IH ^ q⁻¹ :=
+    integral_sq_mul_norm_sq_le_L1_mul_L2q_of_le hq.symm (by fun_prop) hθ hHq
   have key := setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_sub_le
     hA u hball ham haM heq hρ hρr
   -- Pass to averages: `|B_ρ| = (ρ / r)^(n + 1) |B_r|`.
@@ -621,7 +570,8 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le
     havg r (fun x => ‖H x‖ ^ (2 * q)), hVρ]
   have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * IH) ^ q⁻¹ =
       V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * IH ^ q⁻¹) := by
-    rw [mul_left_comm, Real.mul_rpow (inv_nonneg.2 hV.le) (by positivity),
+    rw [mul_left_comm,
+      Real.mul_rpow (inv_nonneg.2 hV.le) (mul_nonneg (Real.rpow_nonneg hK _) hIθ),
       Real.mul_rpow (inv_nonneg.2 hV.le) hIH, mul_mul_mul_comm, ← Real.rpow_add (inv_pos.2 hV),
       hq.symm.inv_add_inv_eq_one, Real.rpow_one]
   rw [hsplit]

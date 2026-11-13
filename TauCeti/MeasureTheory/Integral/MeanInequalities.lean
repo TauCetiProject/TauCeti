@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Variants of Hölder's inequality
@@ -39,6 +40,8 @@ which absorbs a pairing into a coercive term in energy estimates.
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
 * `TauCeti.integral_mul_le_L1_mul_Lq_of_le`: Hölder's inequality with a bounded weight.
+* `TauCeti.integral_sq_mul_norm_sq_le_L1_mul_L2q_of_le`: its squared form
+  `∫ w² ‖g‖² ≤ (K ^ (2p - 1) ∫ w) ^ (1/p) (∫ ‖g‖ ^ (2q)) ^ (1/q)`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 
 ## References
@@ -49,10 +52,10 @@ which absorbs a pairing into a coercive term in energy estimates.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory
 open scoped ENNReal InnerProductSpace
+
+namespace TauCeti
 
 variable {β : Type*} [MeasurableSpace β] {ν : Measure β}
 
@@ -107,21 +110,78 @@ theorem integral_mul_le_L1_mul_Lq_of_le [IsFiniteMeasure ν] {p q K : ℝ}
     (hpq : p.HolderConjugate q) {w g : β → ℝ} (hwm : AEStronglyMeasurable w ν)
     (hw : ∀ᵐ x ∂ν, 0 ≤ w x ∧ w x ≤ K) (hg0 : 0 ≤ᵐ[ν] g) (hg : MemLp g (ENNReal.ofReal q) ν) :
     ∫ x, w x * g x ∂ν ≤ (K ^ (p - 1) * ∫ x, w x ∂ν) ^ p⁻¹ * (∫ x, g x ^ q ∂ν) ^ q⁻¹ := by
+  rcases eq_zero_or_neZero ν with rfl | _
+  · simp only [integral_zero_measure, mul_zero]
+    positivity
+  have hK : 0 ≤ K := by
+    obtain ⟨x, hx⟩ := hw.exists
+    exact hx.1.trans hx.2
   have hwK : ∀ᵐ x ∂ν, ‖w x‖ ≤ K := hw.mono fun x hx => by rw [Real.norm_of_nonneg hx.1]; exact hx.2
+  have hwi : Integrable w ν := memLp_one_iff_integrable.1 (MemLp.of_bound hwm K hwK)
   refine (integral_mul_le_Lp_mul_Lq_of_nonneg hpq (hw.mono fun x hx => hx.1) hg0
     (MemLp.of_bound hwm K hwK) hg).trans ?_
   rw [one_div, one_div]
   refine mul_le_mul_of_nonneg_right (Real.rpow_le_rpow
     (integral_nonneg_of_ae (hw.mono fun x hx => Real.rpow_nonneg hx.1 _)) ?_ hpq.inv_nonneg)
     (Real.rpow_nonneg (integral_nonneg_of_ae (hg0.mono fun x hx => Real.rpow_nonneg hx _)) _)
-  rw [← integral_const_mul]
-  refine integral_mono_of_nonneg (hw.mono fun x hx => Real.rpow_nonneg hx.1 _)
-    ((memLp_one_iff_integrable.1 (MemLp.of_bound hwm K hwK)).const_mul _) (hw.mono fun x hx => ?_)
-  -- `w ^ p = w ^ (p - 1) w ≤ K ^ (p - 1) w`.
-  calc w x ^ p = w x ^ (p - 1) * w x := by
-        rw [← Real.rpow_add_one' hx.1 (by linarith [hpq.lt]), sub_add_cancel]
-    _ ≤ K ^ (p - 1) * w x :=
-        mul_le_mul_of_nonneg_right (Real.rpow_le_rpow hx.1 hx.2 hpq.sub_one_pos.le) hx.1
+  -- `∫ w ^ p ≤ K ^ (p - 1) ∫ w`, by interpolating between `L^∞` and `L¹`.
+  simpa only [Measure.restrict_univ, Real.rpow_one] using
+    MeasureTheory.setIntegral_rpow_le_rpow_mul_setIntegral_rpow (ν := ν) (s := Set.univ) (p := 1)
+      (q := p) hK subset_rfl hpq.lt.le hpq.ne_zero (by simpa using hw.mono fun x hx => hx.1)
+      (by simpa using hwi) (by simpa using hw.mono fun x hx => hx.2)
+
+/-- **Hölder's inequality with a bounded weight, squared.** Let `p, q` be Hölder conjugate
+exponents, let `w` be measurable with `0 ≤ w ≤ K` on a finite measure space and let
+`g ∈ L^{2q}`. Then
+`∫ w² ‖g‖² ≤ (K ^ (2p - 1) ∫ w) ^ (1/p) (∫ ‖g‖ ^ (2q)) ^ (1/q)`: the square of the `L²` norm of
+`w g` is controlled by the `L¹` norm of the weight and the `L^{2q}` norm of `g`. -/
+theorem integral_sq_mul_norm_sq_le_L1_mul_L2q_of_le [IsFiniteMeasure ν] {E : Type*}
+    [NormedAddCommGroup E] {p q K : ℝ} (hpq : p.HolderConjugate q) {w : β → ℝ} {g : β → E}
+    (hwm : AEStronglyMeasurable w ν) (hw : ∀ᵐ x ∂ν, 0 ≤ w x ∧ w x ≤ K)
+    (hg : MemLp g (ENNReal.ofReal (2 * q)) ν) :
+    ∫ x, w x ^ 2 * ‖g x‖ ^ 2 ∂ν ≤
+      (K ^ (2 * p - 1) * ∫ x, w x ∂ν) ^ p⁻¹ * (∫ x, ‖g x‖ ^ (2 * q) ∂ν) ^ q⁻¹ := by
+  rcases eq_zero_or_neZero ν with rfl | _
+  · simp only [integral_zero_measure, mul_zero]
+    positivity
+  have hK : 0 ≤ K := by
+    obtain ⟨x, hx⟩ := hw.exists
+    exact hx.1.trans hx.2
+  have hwi : Integrable w ν := Integrable.of_bound hwm K
+    (hw.mono fun x hx => by rw [Real.norm_of_nonneg hx.1]; exact hx.2)
+  have hg2 : MemLp (fun x => ‖g x‖ ^ 2) (ENNReal.ofReal q) ν := by
+    have h := hg.norm_rpow_div (ENNReal.ofReal 2)
+    rw [← ENNReal.ofReal_div_of_pos two_pos, ENNReal.toReal_ofReal zero_le_two,
+      show 2 * q / 2 = q by ring] at h
+    simpa only [Real.rpow_two] using h
+  have hHolder := integral_mul_le_L1_mul_Lq_of_le hpq (hwm.pow 2)
+    (hw.mono fun x hx => ⟨sq_nonneg _, pow_le_pow_left₀ hx.1 hx.2 2⟩)
+    (ae_of_all _ fun x => sq_nonneg ‖g x‖) hg2
+  -- `∫ w² ≤ K ∫ w`, by interpolating between `L^∞` and `L¹`.
+  have hw2 : ∫ x, w x ^ 2 ∂ν ≤ K * ∫ x, w x ∂ν := by
+    have h := MeasureTheory.setIntegral_rpow_le_rpow_mul_setIntegral_rpow (ν := ν) (s := Set.univ)
+      (p := 1) (q := 2) hK subset_rfl one_le_two two_ne_zero
+      (by simpa using hw.mono fun x hx => hx.1) (by simpa using hwi)
+      (by simpa using hw.mono fun x hx => hx.2)
+    norm_num only [Measure.restrict_univ, Real.rpow_one, Real.rpow_two] at h
+    exact h
+  have hgq : ∫ x, (‖g x‖ ^ 2) ^ q ∂ν = ∫ x, ‖g x‖ ^ (2 * q) ∂ν := by
+    refine integral_congr_ae (ae_of_all _ fun x => ?_)
+    simp only
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
+    norm_num
+  refine hHolder.trans ?_
+  rw [hgq]
+  refine mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (mul_nonneg (Real.rpow_nonneg
+    (sq_nonneg K) _) (integral_nonneg fun x => sq_nonneg _)) ?_ hpq.inv_nonneg)
+    (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
+  -- `(K²) ^ (p - 1) ∫ w² ≤ K ^ (2p - 1) ∫ w`.
+  calc (K ^ 2) ^ (p - 1) * ∫ x, w x ^ 2 ∂ν ≤ (K ^ 2) ^ (p - 1) * (K * ∫ x, w x ∂ν) :=
+        mul_le_mul_of_nonneg_left hw2 (Real.rpow_nonneg (sq_nonneg K) _)
+    _ = K ^ (2 * p - 1) * ∫ x, w x ∂ν := by
+        rw [← Real.rpow_natCast, ← Real.rpow_mul hK, show 2 * p - 1 = (2 : ℕ) * (p - 1) + 1 by
+          push_cast; ring, Real.rpow_add_one' hK (by push_cast; linarith [hpq.lt])]
+        ring
 
 /-- **Weighted Young inequality for a pairing.** For a nonnegative weight `w` and `δ > 0`,
 

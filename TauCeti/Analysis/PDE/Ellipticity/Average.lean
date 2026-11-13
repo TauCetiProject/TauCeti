@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
+import TauCeti.MeasureTheory.Integral.Average
 
 /-!
 # Averages of uniformly elliptic coefficient fields
@@ -15,7 +16,7 @@ Let `a` be a matrix-valued coefficient field, uniformly elliptic with constants 
 set `s` of positive finite measure. Its entrywise average `ā = ⨍_s a` is again uniformly elliptic
 with the same constants (`TauCeti.PDE.UniformlyEllipticOn.setAverage`): the bilinear form of `ā`
 is the average of the bilinear forms of `a`
-(`TauCeti.PDE.dotProduct_mulVec_setAverage`), and both defining inequalities survive averaging.
+(`TauCeti.dotProduct_mulVec_setAverage`), and both defining inequalities survive averaging.
 
 Freezing a variable coefficient at its average over a ball, rather than at its value at a point,
 is how equations with coefficients of vanishing mean oscillation are compared with
@@ -34,22 +35,6 @@ namespace PDE
 
 variable {X n : Type*} [MeasurableSpace X] [Fintype n] {μ : Measure X} {s : Set X}
   {a : X → Matrix n n ℝ} {lam Lam : ℝ}
-
-/-- The bilinear form of the entrywise average of a matrix field is the average of its bilinear
-forms: `η ⬝ (⨍_s a) ξ = ⨍_s η ⬝ a ξ`. -/
-theorem dotProduct_mulVec_setAverage (ha : ∀ i j, IntegrableOn (fun x => a x i j) s μ)
-    (η ξ : n → ℝ) :
-    η ⬝ᵥ ((Matrix.of fun i j => ⨍ x in s, a x i j ∂μ) *ᵥ ξ) = ⨍ x in s, η ⬝ᵥ (a x *ᵥ ξ) ∂μ := by
-  have hrow : ∀ i, IntegrableOn (fun x => ∑ j, a x i j * ξ j) s μ := fun i =>
-    integrable_finsetSum _ fun j _ => (ha i j).mul_const _
-  simp only [dotProduct, mulVec, of_apply, setAverage_eq, smul_eq_mul]
-  rw [integral_finsetSum _ fun i _ => (hrow i).const_mul _, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [integral_const_mul, integral_finsetSum _ fun j _ => (ha i j).mul_const _, Finset.mul_sum,
-    Finset.mul_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  rw [integral_mul_const]
-  ring
 
 /-- **Averages of uniformly elliptic fields.** If `a` is uniformly elliptic with constants
 `λ, Λ` on a measurable set `s` of positive finite measure and has integrable entries there, then
