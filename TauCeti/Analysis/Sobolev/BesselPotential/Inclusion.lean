@@ -55,6 +55,16 @@ common compact support, are statements about this map.
   `BesselPotentialSpace.toLp_inclusion`, `BesselPotentialSpace.inclusionLp_zero`,
   `BesselPotentialSpace.inclusionLp_inclusion` and
   `BesselPotentialSpace.inclusionLp_toBesselPotentialSpaceCLM`.
+* `BesselPotentialSpace.toLp_inclusion_injective`: an element is determined by the `Lᵖ` function
+  of its inclusion, and `BesselPotentialSpace.coeFn_toLp_inclusion_add`,
+  `BesselPotentialSpace.coeFn_toLp_inclusion_smul`: that function is additive and homogeneous
+  almost everywhere.
+* `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the inclusion into
+  `H^{0,p}(E, G) = Lᵖ` exhibits every element of `H^{s,p}(E, G)` as an `Lᵖ` function, which lies
+  in `H^{s,p}` (`BesselPotentialSpace.memSobolev_toLp_inclusion`) and defines `u` again
+  (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_toLp_inclusion`).
+* `BesselPotentialSpace.toLp_inclusion_toBesselPotentialSpace`: for `s ≥ 0`, the `Lᵖ` function of
+  the element of `H^{s,p}(E, G)` defined by an `Lᵖ` function `g` is `g`.
 * `BesselPotentialSpace.norm_inclusion_le`, `BesselPotentialSpace.norm_inclusionLp_le`: for `p = 2`
   the operator norms of `inclusion` and `inclusionLp` are at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
@@ -186,6 +196,50 @@ theorem inclusionLp_toBesselPotentialSpaceCLM (hs : 0 ≤ s) (u : 𝓢(E, G)) :
   simp only [inclusionLp, ContinuousLinearMap.comp_apply, inclusion_toBesselPotentialSpaceCLM,
     ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv, toLpₗᵢ_apply]
   exact SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero u
+
+/-- An element of `H^{s,p}(E, G)` is determined by the `Lᵖ` function of its inclusion into
+`H^{r,p}(E, G)`. For `r = 0` this is the inclusion into `Lᵖ` (`toLp_inclusion`). -/
+theorem toLp_inclusion_injective (h : r ≤ s) :
+    Function.Injective fun u : H^{s, p}(E, G) ↦ (inclusion h u).toLp :=
+  (injective_toLp E G r p).comp (inclusion_injective h)
+
+/-- The `Lᵖ` function of the inclusion of `u + v` is almost everywhere the sum of those of `u`
+and `v`. -/
+theorem coeFn_toLp_inclusion_add (h : r ≤ s) (u v : H^{s, p}(E, G)) :
+    ⇑(inclusion h (u + v)).toLp =ᵐ[volume] ⇑(inclusion h u).toLp + ⇑(inclusion h v).toLp := by
+  rw [map_add, toLp_add]
+  exact Lp.coeFn_add _ _
+
+/-- The `Lᵖ` function of the inclusion of `c • u` is almost everywhere `c` times that of `u`. -/
+theorem coeFn_toLp_inclusion_smul (h : r ≤ s) (c : ℂ) (u : H^{s, p}(E, G)) :
+    ⇑(inclusion h (c • u)).toLp =ᵐ[volume] c • ⇑(inclusion h u).toLp := by
+  rw [map_smul, toLp_smul]
+  exact Lp.coeFn_smul _ _
+
+/-- **Elements of `H^{s,p}`, `s ≥ 0`, are `Lᵖ` functions.** The `Lᵖ` function underlying the
+inclusion of `u ∈ H^{s,p}(E, G)` into `H^{0,p}(E, G)` has the tempered distribution `u`. -/
+theorem toTemperedDistribution_toLp_inclusion (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
+    ((inclusion h u).toLp : 𝓢'(E, G)) = u := by
+  simp
+
+/-- For `s ≥ 0`, the `Lᵖ` function of `u ∈ H^{s,p}(E, G)` lies in `H^{s,p}`. -/
+theorem memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
+    MemSobolev s p ((inclusion h u).toLp : 𝓢'(E, G)) := by
+  rw [toTemperedDistribution_toLp_inclusion]
+  exact u.memSobolev_toDistr
+
+/-- For `s ≥ 0`, the element of `H^{s,p}(E, G)` defined by the `Lᵖ` function of
+`u ∈ H^{s,p}(E, G)` is `u`. -/
+theorem toBesselPotentialSpace_memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
+    (memSobolev_toLp_inclusion h u).toBesselPotentialSpace = u :=
+  ext (by simp)
+
+/-- For `s ≥ 0`, the `Lᵖ` function of the element of `H^{s,p}(E, G)` defined by an `Lᵖ` function
+`g` is `g`. -/
+theorem toLp_inclusion_toBesselPotentialSpace (h : 0 ≤ s) {f : 𝓢'(E, G)} (hf : MemSobolev s p f)
+    {g : Lp G p (volume : Measure E)} (hg : (g : 𝓢'(E, G)) = f) :
+    (inclusion h hf.toBesselPotentialSpace).toLp = g := by
+  rw [toLp_inclusion, inclusionLp_eq_iff, hg, MemSobolev.toBesselPotentialSpace_toDistr]
 
 section Hilbert
 
