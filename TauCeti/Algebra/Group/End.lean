@@ -13,7 +13,8 @@ import Mathlib.Algebra.Group.AddChar
 
 The permutation underlying an automorphism, `MulAut.toPerm`, acts as the automorphism does, and
 it determines the automorphism by `MulEquiv.toEquiv_injective`. This moves `orderOf` and cycle
-arguments from automorphisms to permutations.
+arguments from automorphisms to permutations. The identity automorphism, viewed as a monoid
+homomorphism, is the identity homomorphism.
 
 A family `f : ℕ → M →* M` of endomorphisms of a type with multiplication and a distinguished
 one, indexed additively so that `f 0` is the identity and `f (a + b)` is the composite of `f a`
@@ -28,6 +29,7 @@ for that shape once, so that each Chevalley carrier only supplies its two iterat
 ## Main results
 
 * `MulAut.toPerm_apply`: the permutation underlying an automorphism applies as the automorphism.
+* `MulAut.toMonoidHom_one`: the identity automorphism is the identity monoid homomorphism.
 * `TauCeti.Monoid.End.pow_eq_of_add_eq_comp`: `f k ^ m = f (k * m)` in `Monoid.End M`.
 -/
 
@@ -38,6 +40,14 @@ namespace MulAut
 /-- The permutation underlying an automorphism acts as the automorphism does. -/
 @[simp]
 theorem toPerm_apply {M : Type*} [Mul M] (f : MulAut M) (x : M) : toPerm M f x = f x := rfl
+
+/-- The identity automorphism, as a monoid homomorphism, is the identity homomorphism. -/
+@[to_additive (attr := simp)
+  /-- The identity automorphism, as an additive monoid homomorphism, is the identity
+  homomorphism. -/]
+theorem toMonoidHom_one {M : Type*} [MulOneClass M] :
+    ((1 : MulAut M) : M →* M) = MonoidHom.id M :=
+  rfl
 
 end MulAut
 

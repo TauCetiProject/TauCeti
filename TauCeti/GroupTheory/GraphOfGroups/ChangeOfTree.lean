@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.End
 public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 import TauCeti.GroupTheory.GraphOfGroups.BaseVertex
 
@@ -31,8 +32,9 @@ Changing the base vertex `v₀` changes the isomorphism by an inner automorphism
 
 * `TauCeti.GraphOfGroups.π₁TreeEquiv_of`, `TauCeti.GraphOfGroups.π₁TreeEquiv_edge`: the
   isomorphism on the generators.
-* `TauCeti.GraphOfGroups.π₁TreeEquiv_toπ₁Tree`: the isomorphism on the element read off an
-  `𝔸`-path.
+* `TauCeti.GraphOfGroups.π₁TreeEquiv_toπ₁Tree`, `TauCeti.GraphOfGroups.π₁TreeEquiv_weight_edge`:
+  the isomorphism on the element read off an `𝔸`-path, and on the product of the dart generators
+  along an edge path.
 * `TauCeti.GraphOfGroups.map_π₁TreeEquiv_map_of`, `TauCeti.GraphOfGroups.map_π₁TreeEquiv_range_of`:
   it carries the image of a subgroup of a vertex group to a conjugate of its image.
 * `TauCeti.GraphOfGroups.π₁TreeEquiv_self`, `π₁TreeEquiv_symm`, `π₁TreeEquiv_trans`,
@@ -160,6 +162,16 @@ generators of `π₁(𝔸, T')` along the `T`-geodesic from `v₀` to `v`. -/
   rw [π₁TreeEquiv_def, MulEquiv.trans_apply, π₁Equiv_symm_toπ₁Tree, π₁Equiv_mk,
     ← T.reverse_path v₀ b]
   simp [Prefunctor.mapPath_reverse, mul_assoc, -SpanningTree.reverse_path]
+
+/-- The change of maximal tree sends the product of the dart generators of `π₁(𝔸, T)` along an
+edge path `p` from `a` to `b` to `w_a p w_b⁻¹`, where `p` is read in `π₁(𝔸, T')` and `w_v` is the
+product of the dart generators of `π₁(𝔸, T')` along the `T`-geodesic from `v₀` to `v`. -/
+@[simp] theorem π₁TreeEquiv_weight_edge {a b : Γ.V} (p : Γ.Path a b) :
+    π₁TreeEquiv 𝔸 v₀ T T' (p.weight fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T.darts e.1) =
+      (T.path v₀ a).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.1) *
+        p.weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.1) *
+        ((T.path v₀ b).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.1))⁻¹ := by
+  simpa using π₁TreeEquiv_toπ₁Tree 𝔸 v₀ T T' ((dartPrefunctor 𝔸).mapPath p)
 
 /-- The change of maximal tree sends `g ∈ A_v` to `w_v g w_v⁻¹`, where `w_v` is the product of
 the dart generators of `π₁(𝔸, T')` along the `T`-geodesic from `v₀` to `v`. -/
