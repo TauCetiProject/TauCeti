@@ -50,10 +50,15 @@ admissible functions through their boundary traces:
   closed strip, which on the boundary lines restrict to strongly continuous, uniformly bounded
   families `T₀ t : X₀ → Y₀` and `T₁ t : X₁ → Y₁`. Such a family sends admissible functions `F` to
   admissible functions `z ↦ T z (F z)` (`IsBoundedAnalyticFamily.isStripFunction_apply`), and so
-  induces `ComplexMethodSpace.analyticMap θ : [X₀, X₁]_θ → [Y₀, Y₁]_θ`, lying over `T θ`
-  (`ComplexMethodSpace.toSum_analyticMap`). **Stein's interpolation theorem**
-  (`ComplexMethodSpace.norm_analyticMap_le`): if `‖T₀ t x‖ ≤ M₀ ‖x‖` and `‖T₁ t x‖ ≤ M₁ ‖x‖` for
-  all `t`, then `‖T θ u‖_θ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖_θ` for `0 ≤ θ ≤ 1`.
+  induces `ComplexMethodSpace.analyticFamilyMap θ : [X₀, X₁]_θ → [Y₀, Y₁]_θ`, lying over `T θ`
+  (`ComplexMethodSpace.toSum_analyticFamilyMap`). **Stein's interpolation theorem for families
+  bounded on the sum spaces** (`ComplexMethodSpace.norm_analyticFamilyMap_le`): if
+  `‖T₀ t x‖ ≤ M₀ ‖x‖` and `‖T₁ t x‖ ≤ M₁ ‖x‖` for all `t`, then
+  `‖T θ u‖_θ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖_θ` for `0 ≤ θ ≤ 1`. Stein's theorem in general allows
+  operators `T z` defined only on a dense subspace of the intersection, such as the Bessel
+  potentials of varying order between Bessel potential spaces of different orders; that form needs
+  the density of intersection-valued admissible functions (Bergh–Löfström, Lemma 4.2.3) and is
+  not proved here.
 * `ComplexMethodSpace.map`: the constant families (`IsBoundedAnalyticFamily.const`). Continuous
   linear maps `T₀ : X₀ → Y₀`, `T₁ : X₁ → Y₁` that agree on the intersection, with norms at most
   `M₀, M₁ ≥ 0`, induce a map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` of norm at most `M₀ ^ (1 - θ) * M₁ ^ θ`
@@ -159,6 +164,25 @@ theorem const_smul (hF : C.IsStripFunction F g) (c : ℂ) : C.IsStripFunction (c
     exact mul_le_mul_of_nonneg_left (hM z hz) (norm_nonneg c)
   apply_mul_I t := by simp [hF.apply_mul_I]
   apply_one_add_mul_I t := by simp [hF.apply_one_add_mul_I]
+
+/-- Multiplying an admissible function by a scalar function `c`, holomorphic on the open strip,
+continuous up to its boundary and bounded on the closed strip, gives an admissible function. Its
+boundary traces are any `g'` with `g'₀ t = c (t * I) • g₀ t` and `g'₁ t = c (1 + t * I) • g₁ t`;
+they are supplied by the caller, since they vanish at infinity only as products. -/
+theorem smul (hF : C.IsStripFunction F g) {c : ℂ → ℂ} (hc : DiffContOnCl ℂ c (verticalStrip 0 1))
+    {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) {g' : C₀(ℝ, X₀) × C₀(ℝ, X₁)}
+    (hg'₀ : ∀ t, g'.1 t = c (t * I) • g.1 t) (hg'₁ : ∀ t, g'.2 t = c (1 + t * I) • g.2 t) :
+    C.IsStripFunction (fun z => c z • F z) g' where
+  diffContOnCl := hc.smul hF.diffContOnCl
+  isBounded := by
+    obtain ⟨M, hM⟩ := hF.exists_norm_le
+    refine isBounded_iff_forall_norm_le.2 ⟨K * M, ?_⟩
+    rintro _ ⟨z, hz, rfl⟩
+    have hKz := hK z hz
+    exact (norm_smul _ _).trans_le
+      (mul_le_mul hKz (hM z hz) (norm_nonneg _) ((norm_nonneg _).trans hKz))
+  apply_mul_I t := by simp [hF.apply_mul_I, hg'₀]
+  apply_one_add_mul_I t := by simp [hF.apply_one_add_mul_I, hg'₁]
 
 theorem sub (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G h) :
     C.IsStripFunction (F - G) (g - h) := by
@@ -740,7 +764,13 @@ Only strong continuity is required up to the boundary: on `L²`, the multiplicat
 the imaginary powers `(1 + ‖ξ‖²) ^ (i t)` are strongly continuous in `t` but not continuous in
 operator norm. A family whose norms grow on the
 boundary lines can often be made bounded by multiplying it by a Gaussian factor
-`exp (δ (z - θ) ^ 2)`. -/
+`exp (δ (z - θ) ^ 2)`.
+
+Every `T z` must be bounded on the whole sum space `X₀ + X₁`. This excludes families that lose
+regularity in the interior of the strip, such as `z ↦ J ^ ((1 - z) s₀ + z s₁)` from
+`(H^(s₀,p), H^(s₁,p))` to `(L^p, L^p)` for `s₀ ≠ s₁`, where `J` is the Bessel potential; those
+are only defined on the intersection, and interpolating them needs the density of
+intersection-valued admissible functions (Bergh–Löfström, Lemma 4.2.3). -/
 structure IsBoundedAnalyticFamily (T : ℂ → C.SumSpace →L[ℂ] D.SumSpace) (T₀ : ℝ → X₀ →L[ℂ] Y₀)
     (T₁ : ℝ → X₁ →L[ℂ] Y₁) : Prop where
   /-- `T` is holomorphic in operator norm on the open strip. -/
@@ -791,8 +821,10 @@ variable {T : ℂ → C.SumSpace →L[ℂ] D.SumSpace} {T₀ : ℝ → X₀ →L
 `(g₀, g₁) ↦ (t ↦ T₀ t (g₀ t), t ↦ T₁ t (g₁ t))`. -/
 def boundaryMap (hT : IsBoundedAnalyticFamily T T₀ T₁) :
     C₀(ℝ, X₀) × C₀(ℝ, X₁) →L[ℂ] C₀(ℝ, Y₀) × C₀(ℝ, Y₁) :=
-  (ZeroAtInftyContinuousMap.compLeftFamily T₀ hT.continuous_fst hT.exists_norm_fst_le).prodMap
-    (ZeroAtInftyContinuousMap.compLeftFamily T₁ hT.continuous_snd hT.exists_norm_snd_le)
+  (ZeroAtInftyContinuousMap.compLeftFamily T₀ hT.continuous_fst
+      (hT.exists_norm_fst_le.imp fun _ hM t => (T₀ t).le_of_opNorm_le (hM t))).prodMap
+    (ZeroAtInftyContinuousMap.compLeftFamily T₁ hT.continuous_snd
+      (hT.exists_norm_snd_le.imp fun _ hM t => (T₁ t).le_of_opNorm_le (hM t)))
 
 omit [T1Space V] [T1Space W] in
 @[simp]
@@ -831,38 +863,23 @@ theorem norm_boundaryMap_apply_le (hT : IsBoundedAnalyticFamily T T₀ T₁) {M�
       hb.trans (by nlinarith [norm_nonneg g.2, norm_snd_le g])⟩
 
 /-- **Bounded analytic families preserve admissible functions.** If `F` is admissible with
-boundary traces `g = (g₀, g₁)` and `c` is an entire function bounded on the closed strip, then
-`z ↦ c z • T z (F z)` is admissible, with boundary traces `t ↦ c (t * I) • T₀ t (g₀ t)` and
-`t ↦ c (1 + t * I) • T₁ t (g₁ t)`. -/
-theorem isStripFunction_smul_apply (hT : IsBoundedAnalyticFamily T T₀ T₁) {c : ℂ → ℂ}
-    (hc : Differentiable ℂ c) {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K)
-    {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g)
-    {g' : C₀(ℝ, Y₀) × C₀(ℝ, Y₁)} (hg'₀ : ∀ t, g'.1 t = c (t * I) • T₀ t (g.1 t))
-    (hg'₁ : ∀ t, g'.2 t = c (1 + t * I) • T₁ t (g.2 t)) :
-    D.IsStripFunction (fun z => c z • T z (F z)) g' := by
-  obtain ⟨M, hM⟩ := hT.exists_norm_le
-  obtain ⟨N, hN⟩ := hF.exists_norm_le
-  have hsub := closure_verticalStrip_subset 0 1
-  refine ⟨hc.diffContOnCl.smul ⟨hT.differentiableOn.clm_apply hF.diffContOnCl.differentiableOn,
-    ContinuousLinearMap.continuousOn_apply_of_norm_le
-      (fun x => (hT.continuousOn_apply x).mono hsub) (fun z hz => hM z (hsub hz))
-      hF.diffContOnCl.continuousOn⟩, ?_,
-    fun t => by simp [hF.apply_mul_I, hT.apply_mul_I, hg'₀],
-    fun t => by simp [hF.apply_one_add_mul_I, hT.apply_one_add_mul_I, hg'₁]⟩
-  refine isBounded_iff_forall_norm_le.2 ⟨K * (M * N), ?_⟩
-  rintro _ ⟨z, hz, rfl⟩
-  have hKz := hK z hz
-  exact (norm_smul _ _).trans_le (mul_le_mul hKz ((T z).le_of_opNorm_le_of_le (hM z hz) (hN z hz))
-    (norm_nonneg _) ((norm_nonneg _).trans hKz))
-
-/-- **Bounded analytic families preserve admissible functions.** If `F` is admissible with
 boundary traces `g = (g₀, g₁)`, then `z ↦ T z (F z)` is admissible, with boundary traces
 `t ↦ T₀ t (g₀ t)` and `t ↦ T₁ t (g₁ t)`. -/
 theorem isStripFunction_apply (hT : IsBoundedAnalyticFamily T T₀ T₁) {F : ℂ → C.SumSpace}
     {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g) :
     D.IsStripFunction (fun z => T z (F z)) (hT.boundaryMap g) := by
-  simpa using hT.isStripFunction_smul_apply (differentiable_const 1) (K := 1) (by simp) hF
-    (g' := hT.boundaryMap g) (by simp) (by simp)
+  obtain ⟨M, hM⟩ := hT.exists_norm_le
+  obtain ⟨N, hN⟩ := hF.exists_norm_le
+  have hsub := closure_verticalStrip_subset 0 1
+  refine ⟨⟨hT.differentiableOn.clm_apply hF.diffContOnCl.differentiableOn,
+    AddMonoidHomClass.continuousOn_apply_of_bound
+      (fun x => (hT.continuousOn_apply x).mono hsub)
+      (fun z hz => (T z).le_of_opNorm_le (hM z (hsub hz))) hF.diffContOnCl.continuousOn⟩, ?_,
+    fun t => by simp [hF.apply_mul_I, hT.apply_mul_I],
+    fun t => by simp [hF.apply_one_add_mul_I, hT.apply_one_add_mul_I]⟩
+  refine isBounded_iff_forall_norm_le.2 ⟨M * N, ?_⟩
+  rintro _ ⟨z, hz, rfl⟩
+  exact (T z).le_of_opNorm_le_of_le (hM z hz) (hN z hz)
 
 /-- The map of admissible boundary traces induced by a bounded analytic family: on admissible
 functions it is `F ↦ (z ↦ T z (F z))` (`IsBoundedAnalyticFamily.isStripFunction_stripTracesMap`). -/
@@ -897,34 +914,37 @@ variable {C} {θ : ℝ} {T : ℂ → C.SumSpace →L[ℂ] D.SumSpace} {T₀ : �
 
 variable (θ) in
 /-- The map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` induced by a bounded analytic family `T`. It lies over
-`T θ` on the sum spaces (`ComplexMethodSpace.toSum_analyticMap`), and its norm is at most
+`T θ` on the sum spaces (`ComplexMethodSpace.toSum_analyticFamilyMap`), and its norm is at most
 `M₀ ^ (1 - θ) * M₁ ^ θ` when `M₀`, `M₁` bound the boundary operators
-(`ComplexMethodSpace.norm_analyticMap_le`). -/
-def analyticMap (hT : IsBoundedAnalyticFamily T T₀ T₁) :
+(`ComplexMethodSpace.norm_analyticFamilyMap_le`). -/
+def analyticFamilyMap (hT : IsBoundedAnalyticFamily T T₀ T₁) :
     C.ComplexMethodSpace θ →L[ℂ] D.ComplexMethodSpace θ :=
   lift ((mk θ).comp hT.stripTracesMap) fun g hg => by
     rw [ContinuousLinearMap.comp_apply, ← map_zero (mk (C := D) θ), mk_eq_mk_iff,
       hT.stripEval_stripTracesMap, hg, map_zero, map_zero]
 
 @[simp]
-theorem analyticMap_mk (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
-    analyticMap θ hT (mk θ g) = mk θ (hT.stripTracesMap g) :=
+theorem analyticFamilyMap_mk (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
+    analyticFamilyMap θ hT (mk θ g) = mk θ (hT.stripTracesMap g) :=
   (rfl)
 
 /-- The map induced by a bounded analytic family `T` lies over `T θ`. -/
 @[simp]
-theorem toSum_analyticMap (hT : IsBoundedAnalyticFamily T T₀ T₁) (u : C.ComplexMethodSpace θ) :
-    toSum (analyticMap θ hT u) = T θ (toSum u) := by
+theorem toSum_analyticFamilyMap (hT : IsBoundedAnalyticFamily T T₀ T₁)
+    (u : C.ComplexMethodSpace θ) :
+    toSum (analyticFamilyMap θ hT u) = T θ (toSum u) := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  rw [analyticMap_mk, toSum_mk, toSum_mk, hT.stripEval_stripTracesMap]
+  rw [analyticFamilyMap_mk, toSum_mk, toSum_mk, hT.stripEval_stripTracesMap]
 
 /-- The image of an admissible function under a bounded analytic family scaled by
 `scaleFactor M₀ M₁` has boundary traces of norm at most those of the original one, so the class of
-`scaleFactor M₀ M₁ θ • analyticMap θ hT u` has norm at most that of any representative of `u`. -/
-private theorem norm_scaleFactor_smul_analyticMap_mk_le (hT : IsBoundedAnalyticFamily T T₀ T₁)
-    (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
-    (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖) (g : C.stripTraces) :
-    ‖scaleFactor M₀ M₁ θ • analyticMap θ hT (mk θ g)‖ ≤ ‖g‖ := by
+`scaleFactor M₀ M₁ θ • analyticFamilyMap θ hT u` has norm at most that of any representative of
+`u`. -/
+private theorem norm_scaleFactor_smul_analyticFamilyMap_mk_le
+    (hT : IsBoundedAnalyticFamily T T₀ T₁) (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀)
+    (hM₁ : 0 < M₁) (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖)
+    (g : C.stripTraces) :
+    ‖scaleFactor M₀ M₁ θ • analyticFamilyMap θ hT (mk θ g)‖ ≤ ‖g‖ := by
   have hc := differentiable_scaleFactor M₀ M₁
   -- the boundary operators multiplied by `scaleFactor M₀ M₁` are contractions
   have hS₀ (t : ℝ) (x : X₀) : ‖(scaleFactor M₀ M₁ (t * I) • T₀ t) x‖ ≤ 1 * ‖x‖ := by
@@ -938,51 +958,51 @@ private theorem norm_scaleFactor_smul_analyticMap_mk_le (hT : IsBoundedAnalyticF
   let G₀ := ZeroAtInftyContinuousMap.compLeftFamily
     (fun t : ℝ => scaleFactor M₀ M₁ (t * I) • T₀ t)
     (fun x => by simpa using (hc.continuous.comp (by fun_prop)).fun_smul (hT.continuous_fst x))
-    ⟨1, fun t => ContinuousLinearMap.opNorm_le_bound _ zero_le_one (hS₀ t)⟩
+    ⟨1, hS₀⟩
   let G₁ := ZeroAtInftyContinuousMap.compLeftFamily
     (fun t : ℝ => scaleFactor M₀ M₁ (1 + t * I) • T₁ t)
     (fun x => by simpa using (hc.continuous.comp (by fun_prop)).fun_smul (hT.continuous_snd x))
-    ⟨1, fun t => ContinuousLinearMap.opNorm_le_bound _ zero_le_one (hS₁ t)⟩
-  have hg' := hT.isStripFunction_smul_apply hc (fun z hz => norm_scaleFactor_le hz)
-    (C.isStripFunction_stripFunction g) (g' := (G₀ (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1,
+    ⟨1, hS₁⟩
+  have hg' := (hT.isStripFunction_apply (C.isStripFunction_stripFunction g)).smul
+    hc.diffContOnCl (fun z hz => norm_scaleFactor_le hz) (g' := (G₀ (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1,
       G₁ (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2)) (fun t => by simp [G₀]) (fun t => by simp [G₁])
   refine (norm_le_of_toSum_eq hθ hg'
-    (by rw [map_smul, toSum_analyticMap, toSum_mk, stripEval_apply])).trans
+    (by rw [map_smul, toSum_analyticFamilyMap, toSum_mk, stripEval_apply])).trans
     (norm_prod_le_iff.2 ⟨?_, ?_⟩)
   · simpa using ((ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ hS₀ _).trans_eq
       (one_mul _)).trans (norm_fst_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)))
   · simpa using ((ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ hS₁ _).trans_eq
       (one_mul _)).trans (norm_snd_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)))
 
-/-- `ComplexMethodSpace.norm_analyticMap_le` for strictly positive bounds. -/
-private theorem norm_analyticMap_le_of_pos (hT : IsBoundedAnalyticFamily T T₀ T₁)
+/-- `ComplexMethodSpace.norm_analyticFamilyMap_le` for strictly positive bounds. -/
+private theorem norm_analyticFamilyMap_le_of_pos (hT : IsBoundedAnalyticFamily T T₀ T₁)
     (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
     (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖)
-    (u : C.ComplexMethodSpace θ) : ‖analyticMap θ hT u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
+    (u : C.ComplexMethodSpace θ) : ‖analyticFamilyMap θ hT u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
   set K := M₀ ^ (1 - θ) * M₁ ^ θ
   have hKpos : 0 < K := by positivity
-  -- every representative `g` of `u` gives `‖analyticMap u‖ ≤ K * ‖g‖`; take the infimum
+  -- every representative `g` of `u` gives `‖analyticFamilyMap u‖ ≤ K * ‖g‖`; take the infimum
   refine le_of_forall_pos_le_add fun ε hε => ?_
   obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 (lt_add_of_pos_right ‖u‖ (div_pos hε hKpos))
-  calc ‖analyticMap θ hT (mk θ g)‖
-      = K * ‖scaleFactor M₀ M₁ θ • analyticMap θ hT (mk θ g)‖ := by
+  calc ‖analyticFamilyMap θ hT (mk θ g)‖
+      = K * ‖scaleFactor M₀ M₁ θ • analyticFamilyMap θ hT (mk θ g)‖ := by
         rw [norm_smul, ← mul_assoc, mul_comm K, norm_scaleFactor_mul_rpow hM₀ hM₁, one_mul]
     _ ≤ K * (‖mk θ g‖ + ε / K) := mul_le_mul_of_nonneg_left
-        ((norm_scaleFactor_smul_analyticMap_mk_le hT hθ hM₀ hM₁ h₀ h₁ g).trans hg.le) hKpos.le
+        ((norm_scaleFactor_smul_analyticFamilyMap_mk_le hT hθ hM₀ hM₁ h₀ h₁ g).trans hg.le) hKpos.le
     _ = K * ‖mk θ g‖ + ε := by rw [mul_add, mul_div_cancel₀ _ hKpos.ne']
 
-/-- **Stein's interpolation theorem for analytic families.** If the boundary operators of a
+/-- **Stein's interpolation theorem for bounded analytic families.** If the boundary operators of a
 bounded analytic family `T` satisfy `‖T₀ t x‖ ≤ M₀ ‖x‖` and `‖T₁ t x‖ ≤ M₁ ‖x‖` with
 `M₀, M₁ ≥ 0`, then `T θ` maps `[X₀, X₁]_θ` to `[Y₀, Y₁]_θ` with
 `‖T θ u‖_θ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖_θ` for `0 ≤ θ ≤ 1`. -/
-theorem norm_analyticMap_le (hT : IsBoundedAnalyticFamily T T₀ T₁) (hθ : θ ∈ Icc 0 1)
+theorem norm_analyticFamilyMap_le (hT : IsBoundedAnalyticFamily T T₀ T₁) (hθ : θ ∈ Icc 0 1)
     {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁) (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖)
     (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖) (u : C.ComplexMethodSpace θ) :
-    ‖analyticMap θ hT u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
+    ‖analyticFamilyMap θ hT u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
   -- apply the bound for the positive constants `M₀ + ε`, `M₁ + ε` and let `ε → 0`
   have hle (ε : ℝ) (hε : 0 < ε) :
-      ‖analyticMap θ hT u‖ ≤ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * ‖u‖ :=
-    norm_analyticMap_le_of_pos hT hθ (by positivity) (by positivity)
+      ‖analyticFamilyMap θ hT u‖ ≤ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * ‖u‖ :=
+    norm_analyticFamilyMap_le_of_pos hT hθ (by positivity) (by positivity)
       (fun t x => (h₀ t x).trans (by gcongr; linarith))
       (fun t x => (h₁ t x).trans (by gcongr; linarith)) u
   have hcont : Continuous fun ε : ℝ => (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * ‖u‖ :=
@@ -992,13 +1012,13 @@ theorem norm_analyticMap_le (hT : IsBoundedAnalyticFamily T T₀ T₁) (hθ : θ
   simp only [add_zero] at hlim
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
 
-/-- The operator norm form of `ComplexMethodSpace.norm_analyticMap_le`. -/
-theorem opNorm_analyticMap_le (hT : IsBoundedAnalyticFamily T T₀ T₁) (hθ : θ ∈ Icc 0 1)
+/-- The operator norm form of `ComplexMethodSpace.norm_analyticFamilyMap_le`. -/
+theorem opNorm_analyticFamilyMap_le (hT : IsBoundedAnalyticFamily T T₀ T₁) (hθ : θ ∈ Icc 0 1)
     {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁) (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖)
     (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖) :
-    ‖analyticMap θ hT‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ :=
+    ‖analyticFamilyMap θ hT‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity)
-    (norm_analyticMap_le hT hθ hM₀ hM₁ h₀ h₁)
+    (norm_analyticFamilyMap_le hT hθ hM₀ hM₁ h₀ h₁)
 
 end ComplexMethodSpace
 
@@ -1022,6 +1042,13 @@ composition with the map `x₀ + x₁ ↦ T₀ x₀ + T₁ x₁` of sum spaces
 (`CompatibleCouple.isStripFunction_stripTracesMap`). -/
 def stripTracesMap : C.stripTraces →L[ℂ] D.stripTraces :=
   (IsBoundedAnalyticFamily.const T₀ T₁ h).stripTracesMap
+
+/-- The map of traces of the constant family is `CompatibleCouple.stripTracesMap`. -/
+@[simp]
+theorem IsBoundedAnalyticFamily.stripTracesMap_const :
+    (IsBoundedAnalyticFamily.const T₀ T₁ h).stripTracesMap =
+      CompatibleCouple.stripTracesMap T₀ T₁ h :=
+  (rfl)
 
 @[simp]
 theorem stripTracesMap_apply_fst (g : C.stripTraces) (t : ℝ) :
@@ -1080,13 +1107,14 @@ variable (θ) in
 `x₀ + x₁ ↦ T₀ x₀ + T₁ x₁` of sum spaces (`ComplexMethodSpace.toSum_map`), and its norm is at most
 `M₀ ^ (1 - θ) * M₁ ^ θ` when `M₀`, `M₁` bound `T₀`, `T₁` (`ComplexMethodSpace.norm_map_le`).
 It is the map induced by the constant analytic family `IsBoundedAnalyticFamily.const T₀ T₁ h`
-(`ComplexMethodSpace.analyticMap_const`). -/
+(`ComplexMethodSpace.analyticFamilyMap_const`). -/
 def map : C.ComplexMethodSpace θ →L[ℂ] D.ComplexMethodSpace θ :=
-  analyticMap θ (IsBoundedAnalyticFamily.const T₀ T₁ h)
+  analyticFamilyMap θ (IsBoundedAnalyticFamily.const T₀ T₁ h)
 
 /-- The map induced by a constant analytic family is `ComplexMethodSpace.map`. -/
-theorem analyticMap_const :
-    analyticMap θ (IsBoundedAnalyticFamily.const T₀ T₁ h) = map θ T₀ T₁ h :=
+@[simp]
+theorem analyticFamilyMap_const :
+    analyticFamilyMap θ (IsBoundedAnalyticFamily.const T₀ T₁ h) = map θ T₀ T₁ h :=
   (rfl)
 
 @[simp]
@@ -1145,7 +1173,7 @@ theorem map_ofInter (hθ : θ ∈ Icc 0 1) {x : C.inter} {y : D.inter}
 theorem norm_map_le (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
     (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (u : C.ComplexMethodSpace θ) :
     ‖map θ T₀ T₁ h u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ :=
-  norm_analyticMap_le (IsBoundedAnalyticFamily.const T₀ T₁ h) hθ hM₀ hM₁ (fun _ => h₀)
+  norm_analyticFamilyMap_le (IsBoundedAnalyticFamily.const T₀ T₁ h) hθ hM₀ hM₁ (fun _ => h₀)
     (fun _ => h₁) u
 
 /-- The operator norm form of `ComplexMethodSpace.norm_map_le`. -/
