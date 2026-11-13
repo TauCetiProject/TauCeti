@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
+public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.SetTheory.Descriptive.Antichain
 import TauCeti.SetTheory.Descriptive.Tree
 
@@ -42,7 +43,9 @@ Two consequences follow directly from uniform separation:
   `B ×ˢ (C \ B)` produces a countable threshold `α < ω₁` above which `bfEquivSetoid L V β` cannot
   cross from `B` into `C \ B` (`exists_bfLevel_saturated_of_analyticSet`, together with the
   two-sided equivalence `exists_bfLevel_mem_iff_of_analyticSet` and its Borel specialization
-  `exists_bfLevel_mem_iff_of_measurableSet`).
+  `exists_bfLevel_mem_iff_of_measurableSet`). In particular the model class of every countably
+  branching infinitary sentence is saturated from some countable level on
+  (`exists_bfLevel_mem_modelsOf_iff`).
 * **Absence of Cantor antichains and thinness from countable back-and-forth quotients.** If `A`
   meets only countably many classes of `bfEquivSetoid L V α` at every countable level `α < ω₁`,
   then `A` carries no Cantor antichain for isomorphism
@@ -61,6 +64,8 @@ Two consequences follow directly from uniform separation:
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_analyticSet`, and
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_measurableSet`: asymptotic saturation
   of isomorphism-invariant analytic and relatively Borel splits.
+* `TauCeti.RelationalConfiguration.exists_bfLevel_mem_modelsOf_iff`: the model class of a
+  sentence is saturated from some countable back-and-forth level on.
 * `TauCeti.RelationalConfiguration.not_hasCantorAntichainOn_of_countable_bfEquivSetoid` and
   `TauCeti.RelationalConfiguration.isThinOn_of_countable_bfEquivSetoid`: countable level quotients
   forbid Cantor antichains unconditionally and force thinness in countable vocabularies.
@@ -411,6 +416,21 @@ theorem exists_bfLevel_mem_iff_of_measurableSet [Countable V] [∀ n, Countable 
       ∀ β ≥ α, ∀ c ∈ C, ∀ d ∈ C, bfEquivSetoid L V β c d → (c ∈ B ↔ d ∈ B) :=
   exists_bfLevel_mem_iff_of_analyticSet (hC.inter_measurableSet hB)
     (@Set.sdiff_eq _ C B ▸ hC.inter_measurableSet hB.compl) hinv
+
+/-- **Back-and-forth saturation of a sentence.** On a countable carrier in a vocabulary with
+countably many relation symbols of each arity, the model class of an infinitary sentence with
+countable branching is a union of `bfEquivSetoid L V β`-classes for every `β` from some countable
+level `α < ω₁` on. -/
+theorem exists_bfLevel_mem_modelsOf_iff [Countable V] [∀ n, Countable (L.Relations n)]
+    {ι : Type*} [Countable ι] (θ : L.SentenceInf ι) :
+    ∃ α : Ordinal.{o}, α < ω₁ ∧
+      ∀ β ≥ α, ∀ c d, bfEquivSetoid L V β c d → (c ∈ modelsOf θ ↔ d ∈ modelsOf θ) := by
+  obtain ⟨α, hα, hsat⟩ := exists_bfLevel_mem_iff_of_measurableSet.{u, v, w, o}
+    (B := modelsOf (V := V) θ) (C := univ) MeasurableSet.univ.analyticSet (measurableSet_modelsOf θ)
+    fun c _ d _ hcd => by
+      obtain ⟨e⟩ := isoSetoid_apply.mp hcd
+      exact (e.mem_modelsOf_iff θ).mp
+  exact ⟨α, hα, fun β hβ c d => hsat β hβ c (mem_univ c) d (mem_univ d)⟩
 
 /-! ### Cantor antichains and thinness from countable level quotients -/
 

@@ -43,6 +43,21 @@ open RelationalConfiguration
 variable {L : Language.{u, v}} [L.IsRelational] [Countable (Σ n, L.Relations n)]
 variable {V : Type w} [Countable V] {K : Set (RelationalConfiguration L V)}
 
+omit [Countable (Σ n, L.Relations n)] [Countable V] in
+/-- If a set `K` of configurations meets uncountably many isomorphism classes and countably many
+classes at level `α`, then some member `c` of `K` has a level-`α` class meeting `K` in uncountably
+many isomorphism classes. -/
+theorem exists_bfClass_uncountable_isoClasses
+    (hK : ¬ (Quotient.mk (isoSetoid L V) '' K).Countable) {α : Ordinal.{o}}
+    [Countable (Quotient ((bfEquivSetoid L V α).comap (Subtype.val : K → _)))] :
+    ∃ c ∈ K,
+      ¬ (Quotient.mk (isoSetoid L V) '' (K ∩ {d | bfEquivSetoid L V α c d})).Countable := by
+  refine (bfEquivSetoid L V α).exists_class_not_small K
+    (fun A => (Quotient.mk (isoSetoid L V) '' A).Countable) ?_ hK
+  intro S hS hs
+  rw [image_sUnion, sUnion_image]
+  exact hS.biUnion hs
+
 /-- A non-small class with countably many classes at level `α` has a non-small level class with
 small complement, provided smallness is closed under countable unions and every sentence cut
 has a small side. The centre belongs to the original class. -/
