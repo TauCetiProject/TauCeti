@@ -131,8 +131,8 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_eNorm`, whose
   codomain of `w`, converge uniformly to `f`, with `f • w` integrable and the products `fs i • w`
   eventually almost everywhere strongly measurable.
 * `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a continuous weight with
-  compact support in an open set `Ω` pass to limits of maps continuous on `Ω` that converge
-  uniformly on the support of the weight.
+  compact support pass to limits of maps, eventually continuous on the support of the weight, that
+  converge uniformly on that support.
 * `norm_integral_smul_sub_integral_smul_le` bounds the change of such an integral when the weight
   is perturbed uniformly on a set of finite measure.
 
@@ -624,7 +624,7 @@ to `0`.** If `f i → g` uniformly on a set `s` with `μ s ≠ ∞`, then
 `f i - g` are almost everywhere strongly measurable; neither the set nor the functions need be
 measurable. -/
 theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub {α E ι : Type*}
-    [MeasurableSpace α] [NormedAddCommGroup E] {μ : Measure α} {s : Set α} {l : Filter ι}
+    [MeasurableSpace α] [SeminormedAddCommGroup E] {μ : Measure α} {s : Set α} {l : Filter ι}
     {f : ι → α → E} {g : α → E} (h : TendstoUniformlyOn f g l s) (hμs : μ s ≠ ∞) :
     Tendsto (fun i => ∫⁻ x in s, ‖f i x - g x‖ₑ ∂μ) l (𝓝 0) := by
   refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
@@ -638,24 +638,26 @@ theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub {α E ι : Type
     _ ≤ ε := hηε.le
 
 /-- **Integrals against a compactly supported weight pass to uniform limits.** Let `a` be a
-continuous weight with compact support in an open set `Ω`. If maps `f i`, continuous on `Ω`,
-converge to a map `g`, continuous on `Ω`, uniformly on the support of `a`, then
+continuous weight with compact support. If maps `f i`, eventually continuous on the support of `a`,
+converge to a map `g` uniformly on the support of `a`, then
 `∫ x, a x • f i x ∂μ → ∫ x, a x • g x ∂μ`. -/
 theorem tendsto_integral_smul_of_tendstoUniformlyOn {X F ι : Type*} [TopologicalSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [SecondCountableTopologyEither X F] {μ : Measure X} [IsLocallyFiniteMeasure μ] {l : Filter ι}
-    {Ω : Set X} (hΩ : IsOpen Ω)
-    {f : ι → X → F} {g : X → F} (hf : ∀ i, ContinuousOn (f i) Ω) (hg : ContinuousOn g Ω)
-    {a : X → ℝ} (ha : Continuous a) (hac : HasCompactSupport a) (haΩ : tsupport a ⊆ Ω)
+    {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {l : Filter ι}
+    {f : ι → X → F} {g : X → F} {a : X → ℝ} (ha : Continuous a) (hac : HasCompactSupport a)
+    (hf : ∀ᶠ i in l, ContinuousOn (f i) (tsupport a))
     (hlim : TendstoUniformlyOn f g l (tsupport a)) :
     Tendsto (fun i ↦ ∫ x, a x • f i x ∂μ) l (𝓝 (∫ x, a x • g x ∂μ)) := by
-  have hint : ∀ {h : X → F}, ContinuousOn h Ω → Integrable (fun x ↦ a x • h x) μ := fun hh ↦
-    (hh.locallyIntegrableOn hΩ.measurableSet).integrable_smul_left_of_hasCompactSupport ha hac
-      haΩ
+  rcases l.eq_or_neBot with rfl | hl
+  · exact tendsto_bot
+  have hint : ∀ {h : X → F}, ContinuousOn h (tsupport a) → Integrable (fun x ↦ a x • h x) μ := by
+    intro h hh
+    exact (hh.integrableOn_compact' hac (isClosed_tsupport a).measurableSet
+      ).locallyIntegrableOn.integrable_smul_left_of_hasCompactSupport ha hac subset_rfl
   obtain ⟨B, hB⟩ := ha.bounded_above_of_compact_support hac
-  exact tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (Eventually.of_forall hB)
-    (Eventually.of_forall fun x hx ↦ image_eq_zero_of_notMem_tsupport hx)
-    (Eventually.of_forall fun i ↦ hint (hf i)) (hint hg).aestronglyMeasurable
+  exact tendsto_integral_smul_of_tendsto_lintegral_enorm_sub
+    (Eventually.of_forall hB) (Eventually.of_forall fun x hx ↦ image_eq_zero_of_notMem_tsupport hx)
+    (hf.mono fun i hi ↦ hint hi) (hint (hlim.continuousOn hf.frequently)).aestronglyMeasurable
     (hlim.tendsto_setLIntegral_enorm_sub hac.measure_lt_top.ne)
 
 /-- If functions `fᵢ` with values in a space `𝕜` acting boundedly on the codomain `G` of `w`
@@ -692,20 +694,21 @@ theorem _root_.TendstoUniformly.tendsto_integral_smul_of_integrable {α ι 𝕜 
         rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
         nlinarith
 
-/-- **Perturbing the weight of an integral.** Replacing the weight `a` by `b`, with
-`|b - a| ≤ η` and both vanishing off a set `K` of finite measure, changes the integral against a
-function bounded by `B` on `K` by at most `η B μ(K)`. -/
+/-- **Perturbing the weight of an integral.** Replacing the weight `a` by `b`, where the two agree
+off a set `K` of finite measure, `|b - a| ≤ η` on `K`, and `h` is bounded by `B` on `K`, changes
+the integral against `h` by at most `η B μ(K)`. All pointwise hypotheses hold almost everywhere. -/
 theorem norm_integral_smul_sub_integral_smul_le {X F : Type*} [MeasurableSpace X]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure X} {K : Set X} (hK : μ K < ∞)
     {a b : X → ℝ} {h : X → F} {η B : ℝ} (ha : Integrable (fun x ↦ a x • h x) μ)
-    (hb : Integrable (fun x ↦ b x • h x) μ) (haK : ∀ x ∉ K, a x = 0) (hbK : ∀ x ∉ K, b x = 0)
-    (hab : ∀ x, |b x - a x| ≤ η) (hB : ∀ x ∈ K, ‖h x‖ ≤ B) :
+    (hb : Integrable (fun x ↦ b x • h x) μ) (habK : ∀ᵐ x ∂μ, x ∉ K → a x = b x)
+    (hab : ∀ᵐ x ∂μ, x ∈ K → |b x - a x| ≤ η) (hB : ∀ᵐ x ∂μ, x ∈ K → ‖h x‖ ≤ B) :
     ‖∫ x, a x • h x ∂μ - ∫ x, b x • h x ∂μ‖ ≤ η * B * μ.real K := by
-  rw [← integral_sub ha hb, ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
-    simp [haK x hx, hbK x hx]]
-  refine norm_setIntegral_le_of_norm_le_const hK fun x hx ↦ ?_
+  rw [← integral_sub ha hb, ← setIntegral_eq_integral_of_ae_compl_eq_zero
+    (habK.mono fun x hx hxK ↦ by simp [hx hxK])]
+  refine norm_setIntegral_le_of_norm_le_const_ae' hK ?_
+  filter_upwards [hab, hB] with x hx hxB hxK
   rw [← sub_smul, norm_smul, Real.norm_eq_abs, abs_sub_comm]
-  exact mul_le_mul (hab x) (hB x hx) (norm_nonneg _) ((abs_nonneg _).trans (hab x))
+  exact mul_le_mul (hx hxK) (hxB hxK) (norm_nonneg _) ((abs_nonneg _).trans (hx hxK))
 
 /-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone
