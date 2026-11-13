@@ -205,12 +205,12 @@ theorem cylindricalEndLift_inf_mem_puncturedSphereTruncation
     nlinarith
 
 /-- For a nonzero scale `a`, a point at distance between `‖a‖ exp (-2πR) / 2` and
-`‖a‖ exp (-2π) / 2` from `c` is the image of a point with `1 ≤ s ≤ R` and `t ∈ [-1/2, 1/2)` on the
+`‖a‖ exp (-2πr) / 2` from `c` is the image of a point with `r ≤ s ≤ R` and `t ∈ [-1/2, 1/2)` on the
 input end with center `c` and scale `a`. -/
-theorem exists_add_mul_cylindricalEndLift_eq {c a w : ℂ} (ha : a ≠ 0)
+theorem exists_add_mul_cylindricalEndLift_eq {r : ℝ} {c a w : ℂ} (ha : a ≠ 0)
     (h₁ : ‖a‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c‖)
-    (h₂ : ‖w - c‖ ≤ ‖a‖ * Real.exp (-(2 * π)) / 2) :
-    ∃ z : ℂ, z.re ∈ Icc 1 R ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2) ∧
+    (h₂ : ‖w - c‖ ≤ ‖a‖ * Real.exp (-(2 * π * r)) / 2) :
+    ∃ z : ℂ, z.re ∈ Icc r R ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2) ∧
       c + a * zero.cylindricalEndLift z = w := by
   have hapos := norm_pos_iff.2 ha
   set ζ := (w - c) / a
@@ -223,7 +223,7 @@ theorem exists_add_mul_cylindricalEndLift_eq {c a w : ℂ} (ha : a ≠ 0)
     rcases hζn with h | h <;> linarith
   refine ⟨zero.endCoord ζ, ⟨?_, ?_⟩, zero.im_endCoord_mem_Ico ζ, ?_⟩
   · refine le_re_endCoord_of_norm_sub_endCenter_le (by decide) hζ ?_
-    rw [endCenter_zero, sub_zero, hζn, div_le_iff₀ hapos, mul_one]
+    rw [endCenter_zero, sub_zero, hζn, div_le_iff₀ hapos]
     linarith
   · refine (re_endCoord_le_iff (by decide) hζ).2 ?_
     rw [endCenter_zero, sub_zero, hζn, le_div_iff₀ hapos]

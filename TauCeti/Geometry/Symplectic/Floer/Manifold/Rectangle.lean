@@ -13,11 +13,11 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 # The energy identity over a rectangle of a change of coordinates
 
 Let `φ` be an orientation-preserving change of coordinates of the plane, `C²` on an open set
-containing a closed rectangle, along which a Hamiltonian datum `K` pulls back to the
-continuation datum `P(s) H(t) dt`, as on a cylindrical end of a punctured surface in the end
-coordinates. Over the image under `φ` of the rectangle, on which `φ` is injective, this file
-gives the energy identity for a map into a manifold with a nondegenerate two-form, and the
-integrability of the curvature.
+containing a closed rectangle `[a₁, b₁] × [t₀, t₁]`, along which a Hamiltonian datum `K` pulls
+back to the continuation datum `P(s) H(t) dt`, as on a cylindrical end of a punctured surface in
+the end coordinates. Over the image under `φ` of the half-open rectangle `[a₁, b₁] × [t₀, t₁)`,
+on which `φ` is injective, this file gives the energy identity for a map into a manifold with a
+nondegenerate two-form, and the integrability of the curvature.
 
 ## Main results
 
@@ -25,7 +25,8 @@ integrability of the curvature.
   energy is the symplectic area, plus the boundary terms of the two sides `s = a₁` and `s = b₁`,
   minus the integrated curvature.
 * `SmoothTwoForm.integrableOn_hamiltonianCurvature_image_of_perturbationPullback`: the curvature
-  is integrable over the image of the rectangle as soon as the map is continuous there.
+  is integrable over the image of the half-open rectangle as soon as the map is continuous on a
+  set containing the image of the closed rectangle.
 
 ## References
 

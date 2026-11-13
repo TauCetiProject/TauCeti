@@ -45,7 +45,7 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   from the punctures (`TauCeti.Floer.contMDiffAt_puncturedSpherePerturbation`), so it is a smooth
   family over any smooth path of configurations; for a fixed configuration and a normed target,
   `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_prod` is the form in real coordinates, and
-  `TauCeti.Floer.contMDiffAt_puncturedSpherePerturbation_real` that of its components for a
+  `TauCeti.Floer.contMDiffAt_uncurry_puncturedSpherePerturbation` that of its components for a
   manifold target;
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
@@ -419,7 +419,7 @@ theorem contMDiffAt_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Period
 /-- Off the centers of the input ends, for period-one Hamiltonians of class `C^n` and nonzero
 scales, the components of the datum are `C^n` jointly in the domain point, in real coordinates,
 and the target point. -/
-theorem contMDiffAt_puncturedSpherePerturbation_real {n : ℕ∞} (hH : ∀ i, Periodic (H i) 1)
+theorem contMDiffAt_uncurry_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Periodic (H i) 1)
     (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H i))) (hHout : Periodic Hout 1)
     (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry Hout)) {c a : ι → ℂ}
     (ha : ∀ i, a i ≠ 0) {z : ℝ × ℝ} (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) (x : M)

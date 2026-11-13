@@ -203,12 +203,13 @@ private theorem lt_norm_of_notMem_movingEndPiece (ha : ∀ i, a i ≠ 0) {z : �
   have hIco : Ico (-1 / 2 : ℝ) (-1 / 2 + 1) = Ico (-1 / 2) (1 / 2) := by norm_num
   refine ⟨fun i ↦ ?_, ?_⟩
   · by_contra! h
-    obtain ⟨ζ, hζre, hζim, hζ⟩ := exists_add_mul_cylindricalEndLift_eq (ha i) (hz.1 i) h
+    obtain ⟨ζ, hζre, hζim, hζ⟩ :=
+      exists_add_mul_cylindricalEndLift_eq (r := 1) (ha i) (hz.1 i) (by rwa [mul_one])
     refine hA (mem_iUnion.2 ⟨some i, Complex.equivRealProdCLM ζ,
       ⟨by simpa using hζre, by rw [hIco]; simpa using hζim⟩, ?_⟩)
     simp only [realChart_equivRealProdCLM, hζ, ContinuousLinearEquiv.apply_symm_apply]
   · by_contra! h
-    obtain ⟨ζ, hζre, hζim, hζ⟩ := exists_cylindricalEndLift_inf_eq h hz.2
+    obtain ⟨ζ, hζre, hζim, hζ⟩ := exists_cylindricalEndLift_inf_eq (r := 1) (by rwa [mul_one]) hz.2
     refine hA (mem_iUnion.2 ⟨none, Complex.equivRealProdCLM ζ,
       ⟨by simpa using hζre, by rw [hIco]; simpa using hζim⟩, ?_⟩)
     simp only [endChart_apply, ContinuousLinearEquiv.symm_apply_apply, hζ,
@@ -382,10 +383,10 @@ private theorem integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_im
           Complex.I) z (u z))
       (φ '' (Icc a₁ b₁ ×ˢ Ico (-1 / 2 : ℝ) (-1 / 2 + 1))) :=
   ω.integrableOn_hamiltonianCurvature_image_of_perturbationPullback hUo hφ hdet hUV hu
-    (fun w hw x ↦ (contMDiffAt_puncturedSpherePerturbation_real hH hHs hHout hHouts ha (hne w hw) x
-      1).mdifferentiableAt one_ne_zero)
-    (fun w hw x ↦ (contMDiffAt_puncturedSpherePerturbation_real hH hHs hHout hHouts ha (hne w hw) x
-      Complex.I).mdifferentiableAt one_ne_zero)
+    (fun w hw x ↦ (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha
+      (hne w hw) x 1).mdifferentiableAt one_ne_zero)
+    (fun w hw x ↦ (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha
+      (hne w hw) x Complex.I).mdifferentiableAt one_ne_zero)
     (fun w hw ↦ funext fun x ↦ by rw [hpull w hw]; simp)
     (fun w hw ↦ funext fun x ↦ by rw [hpull w hw]; simp) hP hHφ hrect hinj
 
@@ -416,7 +417,7 @@ private theorem integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_in
     (smoothTransition.contDiff.comp (contDiff_id.sub contDiff_const)) (hHs i)
     ((mapsTo_realChart_add_mul_cylindricalEndLift hsep hout i).mono_left
       (prod_mono subset_rfl (subset_univ _)))
-    (fun z hz ↦ show 1 / 2 < z.1 by linarith [hz.1.1])
+    (fun _ hz ↦ mem_ofPred.2 <| by linarith [hz.1.1])
     (injOn_realChart_add_mul_cylindricalEndLift (ha i))
 
 /-- Along a map `u` continuous on the truncation `Σ_R`, the curvature is integrable over the piece
@@ -512,10 +513,10 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePertu
             (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
           Complex.I) z (u z) :=
   hω.integral_floerEnergyDensity_image_of_perturbationPullback hUo hVo hφ hdet hUV hu
-    (fun w hw x ↦ (contMDiffAt_puncturedSpherePerturbation_real hH hHs hHout hHouts ha (hne w hw) x
-      1).mdifferentiableAt one_ne_zero)
-    (fun w hw x ↦ (contMDiffAt_puncturedSpherePerturbation_real hH hHs hHout hHouts ha (hne w hw) x
-      Complex.I).mdifferentiableAt one_ne_zero)
+    (fun w hw x ↦ (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha
+      (hne w hw) x 1).mdifferentiableAt one_ne_zero)
+    (fun w hw x ↦ (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha
+      (hne w hw) x Complex.I).mdifferentiableAt one_ne_zero)
     (fun w hw ↦ funext fun x ↦ by rw [hpull w hw]; simp)
     (fun w hw ↦ funext fun x ↦ by rw [hpull w hw]; simp) hP hHφ hab (by norm_num) hrect hinj
 
@@ -643,8 +644,8 @@ theorem
   have hKP (v : ℂ) : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
       (uncurry fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
         v) ((V ∩ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) ×ˢ univ) :=
-    fun p hp ↦ (contMDiffAt_puncturedSpherePerturbation_real hH hHs hHout hHouts ha hp.1.2 p.2
-      v).contMDiffWithinAt
+    fun p hp ↦ (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hp.1.2
+      p.2 v).contMDiffWithinAt
   exact hω.integrableOn_floerEnergyDensity (hVo.inter hPo) (hu.mono inter_subset_left)
     (hKP 1) (hKP Complex.I)
     (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
