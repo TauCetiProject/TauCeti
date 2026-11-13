@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
-public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Complex.Exponential
 
@@ -27,12 +26,6 @@ file records the estimates used to differentiate semilinear equations such as
   decays with the lower derivatives (`TauCeti.isBigO_norm_fderiv_iteratedFDeriv_exp_comp_sub_smul`);
 * if moreover `ℓ → 0`, the derivatives of `exp ∘ ℓ - 1` of every order are `O(g)`
   (`TauCeti.isBigO_norm_iteratedFDeriv_exp_comp_sub_one`).
-
-It also records two elementary facts about exponential weights `exp (-c ‖z‖)`: a mean value bound
-for a map whose derivative decays at that rate
-(`TauCeti.norm_sub_comp_add_le_of_norm_fderiv_le`), and the extraction of an explicit radius and
-a nonnegative constant from an `O(exp (-c ‖z‖))` bound at infinity
-(`TauCeti.exists_nonneg_forall_norm_le_mul_exp_of_isBigO`).
 -/
 
 public section
@@ -121,9 +114,9 @@ theorem norm_iteratedFDeriv_exp_comp_sub_smul_le {ℓ : E → ℝ} (hℓ : ContD
     simp [sub_smul]
   set Ψ := (continuousMultilinearCurryRightEquiv' ℝ k E ℝ).symm
   have hΨE : iteratedFDeriv ℝ (k + 1) Ex z = Ψ (iteratedFDeriv ℝ k (fderiv ℝ Ex) z) := by
-    rw [iteratedFDeriv_succ_eq_comp_right]; rfl
+    rw [iteratedFDeriv_succ_eq_comp_right, Function.comp_apply]
   have hΨℓ : iteratedFDeriv ℝ (k + 1) ℓ z = Ψ (iteratedFDeriv ℝ k (fderiv ℝ ℓ) z) := by
-    rw [iteratedFDeriv_succ_eq_comp_right]; rfl
+    rw [iteratedFDeriv_succ_eq_comp_right, Function.comp_apply]
   rw [hΨE, hΨℓ, ← Ψ.map_smul, ← Ψ.map_sub, Ψ.norm_map,
     fderiv_exp_comp (hℓ.differentiable (by simp)), hsub]
   refine (norm_iteratedFDeriv_smul_le hEc hℓ' z (by exact_mod_cast le_top)).trans_eq ?_
@@ -132,8 +125,8 @@ theorem norm_iteratedFDeriv_exp_comp_sub_smul_le {ℓ : E → ℝ} (hℓ : ContD
   refine Finset.sum_congr rfl fun j hj ↦ ?_
   have hj := Finset.mem_Ico.mp hj
   rw [norm_iteratedFDeriv_fderiv, show k - j + 1 = k + 1 - j by omega,
-    show (fun w ↦ Ex w - Ex z) = Ex - fun _ ↦ Ex z from rfl,
-    iteratedFDeriv_sub_apply (hE.contDiffAt.of_le (by exact_mod_cast le_top)) contDiffAt_const,
+    ← Pi.sub_def, iteratedFDeriv_sub_apply (hE.contDiffAt.of_le (by exact_mod_cast le_top))
+      contDiffAt_const,
     iteratedFDeriv_const_of_ne (by omega), Pi.zero_apply, sub_zero]
 
 /-- The derivative of the Leibniz residual `D^n (exp ∘ ℓ) - exp ℓ • D^n ℓ` is the residual of order
@@ -153,9 +146,9 @@ theorem norm_fderiv_iteratedFDeriv_exp_comp_sub_smul_le {ℓ : E → ℝ} (hℓ 
     (hℓ.differentiable_iteratedFDeriv (by exact_mod_cast WithTop.coe_lt_top _)) z
   set Φ := continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ E) ℝ
   have hΦE : fderiv ℝ (iteratedFDeriv ℝ n Ex) z = Φ (iteratedFDeriv ℝ (n + 1) Ex z) := by
-    rw [fderiv_iteratedFDeriv]; rfl
+    rw [fderiv_iteratedFDeriv, Function.comp_apply]
   have hΦℓ : fderiv ℝ (iteratedFDeriv ℝ n ℓ) z = Φ (iteratedFDeriv ℝ (n + 1) ℓ z) := by
-    rw [fderiv_iteratedFDeriv]; rfl
+    rw [fderiv_iteratedFDeriv, Function.comp_apply]
   have hEd : DifferentiableAt ℝ Ex z := hE.differentiable (by simp) z
   rw [fderiv_fun_sub (f := iteratedFDeriv ℝ n Ex) (g := fun w ↦ Ex w • iteratedFDeriv ℝ n ℓ w) hGd
     (DifferentiableAt.smul hEd hFd), fderiv_fun_smul hEd hFd, hΦE, hΦℓ, ← sub_sub, ← Φ.map_smul,
@@ -222,45 +215,8 @@ theorem isBigO_norm_iteratedFDeriv_exp_comp_sub_one {ℓ : E → ℝ} (hℓ : Co
   have h := isBigO_norm_iteratedFDeriv_exp_comp hℓ hg hbdd (N := n)
     (fun j _ hj ↦ hdec j hj) hn le_rfl
   refine IsBigO.trans (IsBigO.of_bound 1 (Eventually.of_forall fun z ↦ ?_)) h
-  rw [show (fun w ↦ Real.exp (ℓ w) - 1) = (fun w ↦ Real.exp (ℓ w)) - fun _ ↦ (1 : ℝ) from rfl,
-    iteratedFDeriv_sub_apply (hE.contDiffAt.of_le (by exact_mod_cast le_top)) contDiffAt_const,
+  rw [← Pi.sub_def, iteratedFDeriv_sub_apply (hE.contDiffAt.of_le (by exact_mod_cast le_top))
+      contDiffAt_const,
     iteratedFDeriv_const_of_ne (by omega), Pi.zero_apply, sub_zero, one_mul]
-
-/-- **A mean value bound for exponentially decaying derivatives.** If the derivative of `φ` is
-bounded by `K exp (-c ‖w‖)` outside the ball of radius `R`, where `c, K ≥ 0`, then for `‖z‖ ≥ R + 1`
-and `‖k‖ ≤ 1`, `‖φ z - φ (z + k)‖ ≤ K exp c exp (-c ‖z‖) ‖k‖`. -/
-theorem norm_sub_comp_add_le_of_norm_fderiv_le {B : Type*} [NormedAddCommGroup B]
-    [NormedSpace ℝ B] {φ : E → B} (hφ : Differentiable ℝ φ) {c K R : ℝ} (hc : 0 ≤ c)
-    (hK : 0 ≤ K) (hbd : ∀ w : E, R ≤ ‖w‖ → ‖fderiv ℝ φ w‖ ≤ K * Real.exp (-(c * ‖w‖)))
-    {z k : E} (hz : R + 1 ≤ ‖z‖) (hk : ‖k‖ ≤ 1) :
-    ‖φ z - φ (z + k)‖ ≤ K * Real.exp c * Real.exp (-(c * ‖z‖)) * ‖k‖ := by
-  have hball : ∀ w ∈ closedBall z 1,
-      ‖fderiv ℝ φ w‖ ≤ K * Real.exp c * Real.exp (-(c * ‖z‖)) := by
-    intro w hw
-    rw [mem_closedBall, dist_eq_norm] at hw
-    have hw' : ‖z‖ - 1 ≤ ‖w‖ := by
-      have := norm_sub_norm_le z w
-      rw [norm_sub_rev] at this
-      linarith
-    refine (hbd w (by linarith)).trans ?_
-    rw [mul_assoc, ← Real.exp_add]
-    exact mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (by nlinarith)) hK
-  have h := (convex_closedBall z 1).norm_image_sub_le_of_norm_fderiv_le (fun w _ ↦ hφ w) hball
-    (mem_closedBall_self zero_le_one)
-    (show z + k ∈ closedBall z 1 by rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left])
-  rwa [add_sub_cancel_left, norm_sub_rev] at h
-
-omit [NormedSpace ℝ E] in
-/-- An `O(exp (-c ‖z‖))` bound at infinity on a proper space holds outside an explicit ball, with a
-nonnegative constant. -/
-theorem exists_nonneg_forall_norm_le_mul_exp_of_isBigO [ProperSpace E] {f : E → ℝ} {c : ℝ}
-    (h : f =O[cocompact E] fun z ↦ Real.exp (-(c * ‖z‖))) :
-    ∃ K R, 0 ≤ K ∧ ∀ z : E, R ≤ ‖z‖ → ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK⟩ := h.bound
-  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.mp
-    (cobounded_eq_cocompact (α := E) ▸ hK)
-  refine ⟨max K 0, R, le_max_right _ _, fun z hz ↦ (hR hz).trans ?_⟩
-  rw [Real.norm_of_nonneg (Real.exp_pos _).le]
-  exact mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le
 
 end TauCeti

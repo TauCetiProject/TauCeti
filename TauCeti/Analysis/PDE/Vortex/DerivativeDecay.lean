@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Decay
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
@@ -190,42 +191,20 @@ private theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp_of_nonneg
     (lt_max_of_lt_right (by norm_num)).trans (hsR w hw)
   have hℓcd : ∀ w : ℂ, R - 1 ≤ ‖w‖ → ContDiffAt ℝ 2 ℓ w := fun w hw ↦
     hscd.contDiffAt.log (hpos w hw).ne'
-  -- A bound `L` for the gradient of `ℓ` on the annulus `R - 1 ≤ |w| ≤ R + 1`.
-  set A : Set ℂ := closedBall 0 (R + 1) ∩ {w | R - 1 ≤ ‖w‖}
-  have hAc : IsCompact A := (isCompact_closedBall 0 (R + 1)).inter_right
-    (isClosed_le continuous_const continuous_norm)
-  obtain ⟨L₀, hL₀⟩ := hAc.exists_bound_of_continuousOn (f := fun w ↦ fderiv ℝ ℓ w)
-    fun w hw ↦ ((hℓcd w hw.2).fderiv_right (m := 1) (by norm_num)).continuousAt.continuousWithinAt
-  set L := max L₀ 0
   -- The mean value inequality on unit discs centred on the circle `|z| = R`.
-  have hmv : ∀ z h : ℂ, ‖z‖ = R → ‖h‖ ≤ 1 → |ℓ (z + h) - ℓ z| ≤ L * ‖h‖ := by
-    intro z h hz hh
-    have hball : closedBall z 1 ⊆ A := fun w hw ↦ by
-      rw [mem_closedBall, dist_eq_norm] at hw
-      have := abs_norm_sub_norm_le w z
-      rw [abs_le] at this
-      exact ⟨mem_closedBall_zero_iff.mpr (by linarith), show R - 1 ≤ ‖w‖ by linarith⟩
-    have hzh : z + h ∈ closedBall z 1 := by
-      rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left]
-    have h := (convex_closedBall z 1).norm_image_sub_le_of_norm_fderiv_le (f := ℓ) (C := L)
-      (fun w hw ↦ (hℓcd w (hball hw).2).differentiableAt (by norm_num))
-      (fun w hw ↦ (hL₀ w (hball hw)).trans (le_max_left _ _)) (mem_closedBall_self zero_le_one)
-      hzh
-    rwa [add_sub_cancel_left, Real.norm_eq_abs] at h
+  obtain ⟨L, hL, hmv⟩ := exists_nonneg_forall_norm_sub_comp_add_le_of_contDiffAt (R := R)
+    fun w hw ↦ (hℓcd w hw).of_le (by norm_num)
   -- Dividing the decay of `ℓ - ℓ (· + h)` by `|h|` bounds the gradient of `ℓ`.
-  refine ⟨L * Real.exp (c * R), by positivity, ?_⟩
+  refine ⟨L * Real.exp (c * R), mul_nonneg hL (Real.exp_pos _).le, ?_⟩
   filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop R] with z hz
-  have hd : HasFDerivAt ℓ (fderiv ℝ ℓ z) z :=
-    ((hℓcd z (by linarith)).differentiableAt (by norm_num)).hasFDerivAt
-  have hC : 0 ≤ L * Real.exp (-(c * (‖z‖ - R))) := by positivity
-  have hle := hd.le_of_lip' hC (by
-    filter_upwards [closedBall_mem_nhds z one_pos] with y hy
-    rw [mem_closedBall, dist_eq_norm] at hy
-    have h := abs_log_normSq_sub_log_normSq_add_le_mul_exp hp hq hsol hlim hc₀ hR₀'
-      (le_max_right _ _) hpos (fun w hw ↦ (le_max_left _ _).trans (hsR w hw).le) hmv hy hz
-    rw [add_sub_cancel] at h
-    rw [Real.norm_eq_abs, abs_sub_comm]
-    exact h.trans_eq (by ring))
+  have hle := norm_fderiv_le_of_forall_norm_sub_comp_add_le
+    ((hℓcd z (by linarith)).differentiableAt (by norm_num))
+    (mul_nonneg hL (Real.exp_pos (-(c * (‖z‖ - R)))).le) fun h hh ↦ by
+      have hb := abs_log_normSq_sub_log_normSq_add_le_mul_exp hp hq hsol hlim hc₀ hR₀' hL hpos
+        (fun w hw ↦ (le_max_left _ _).trans (hsR w hw).le)
+        (fun w k hw hk ↦ by rw [abs_sub_comm, ← Real.norm_eq_abs]; exact hmv w k hw hk) hh hz
+      rw [Real.norm_eq_abs]
+      exact hb.trans_eq (by ring)
   calc ‖fderiv ℝ ℓ z‖ ≤ L * Real.exp (-(c * (‖z‖ - R))) := hle
     _ = L * Real.exp (c * R) * Real.exp (-(c * ‖z‖)) := by rw [exp_neg_mul_sub, mul_assoc]
 

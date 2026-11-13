@@ -187,7 +187,8 @@ theorem le_mul_exp_add_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R c δ
   set A := G / δ with hA
   have hA₀ : 0 ≤ A := by positivity
   have hGA : G = δ * A := by rw [hA]; field_simp
-  -- Subtracting the barrier `A exp (-c ‖x‖)` removes the forcing.
+  -- Subtracting the barrier `A exp (-c ‖x‖)` removes the forcing. It is written with the offset
+  -- `+ 0` so that `laplacian_exp_barrier_le` applies with `ε = 0`; `add_zero` then drops it.
   set b : E → ℝ := fun y ↦ A * Real.exp (-(c * ‖y‖)) + 0
   have hbcd : ∀ y : E, y ≠ 0 → ContDiffAt ℝ 2 b y := fun y hy ↦
     (((contDiffAt_norm ℝ hy).const_smul c).neg.exp.const_smul A).add contDiffAt_const

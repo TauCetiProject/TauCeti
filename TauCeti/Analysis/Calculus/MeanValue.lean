@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
+import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.RCLike.Basic
@@ -93,6 +94,15 @@ projection and the derivative of a map kills `ker π` on a ball about `0`, then 
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
+
+## Translation differences
+
+A map that is `C¹` near the sphere `‖w‖ = R` changes by at most `L ‖k‖` under translations by
+`‖k‖ ≤ 1` of points of that sphere
+(`TauCeti.exists_nonneg_forall_norm_sub_comp_add_le_of_contDiffAt`). Conversely, a bound
+`‖φ z - φ (z + k)‖ ≤ C ‖k‖` for all small translations `k` bounds the derivative of `φ` at `z` by
+`C` (`TauCeti.norm_fderiv_le_of_forall_norm_sub_comp_add_le`). Together they turn exterior decay
+estimates for translation differences into decay estimates for derivatives.
 -/
 
 public section
@@ -370,6 +380,47 @@ theorem norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero {E : Type*} [NormedAddCommG
     exact this.trans (mul_le_mul_of_nonneg_left hn hC0)
   · rw [hzero q hq, norm_zero]
     exact mul_nonneg hC0 (sub_nonneg.2 hab)
+
+section TranslationDifference
+
+open Filter Metric
+
+variable {B : Type*} [NormedAddCommGroup B] [NormedSpace ℝ B]
+
+/-- **Translation differences on a sphere.** If `φ` is `C¹` on `R - 1 ≤ ‖w‖`, there is `L ≥ 0`
+with `‖φ w - φ (w + k)‖ ≤ L ‖k‖` whenever `‖w‖ = R` and `‖k‖ ≤ 1`: any bound for the derivative
+of `φ` on the compact annulus `R - 1 ≤ ‖·‖ ≤ R + 1` will do. -/
+theorem exists_nonneg_forall_norm_sub_comp_add_le_of_contDiffAt [ProperSpace E] {φ : E → B}
+    {R : ℝ} (hφ : ∀ w : E, R - 1 ≤ ‖w‖ → ContDiffAt ℝ 1 φ w) :
+    ∃ L, 0 ≤ L ∧ ∀ w k : E, ‖w‖ = R → ‖k‖ ≤ 1 → ‖φ w - φ (w + k)‖ ≤ L * ‖k‖ := by
+  obtain ⟨L₀, hL₀⟩ := ((isCompact_closedBall (0 : E) (R + 1)).inter_right
+    (isClosed_le continuous_const continuous_norm)).exists_bound_of_continuousOn
+    (f := fderiv ℝ φ) fun w hw ↦ ((hφ w hw.2).continuousAt_fderiv one_ne_zero).continuousWithinAt
+  refine ⟨max L₀ 0, le_max_right _ _, fun w k hw hk ↦ ?_⟩
+  -- The unit ball about a point of the sphere lies in the annulus.
+  have hball : closedBall w 1 ⊆ closedBall 0 (R + 1) ∩ {v | R - 1 ≤ ‖v‖} := fun v hv ↦ by
+    rw [mem_closedBall, dist_eq_norm] at hv
+    have := abs_norm_sub_norm_le v w
+    rw [abs_le] at this
+    exact ⟨mem_closedBall_zero_iff.mpr (by linarith), show R - 1 ≤ ‖v‖ by linarith⟩
+  have h := (convex_closedBall w 1).norm_image_sub_le_of_norm_fderiv_le (f := φ) (C := max L₀ 0)
+    (fun v hv ↦ (hφ v (hball hv).2).differentiableAt one_ne_zero)
+    (fun v hv ↦ (hL₀ v (hball hv)).trans (le_max_left _ _)) (mem_closedBall_self zero_le_one)
+    (show w + k ∈ closedBall w 1 by rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left])
+  rwa [add_sub_cancel_left, norm_sub_rev] at h
+
+/-- **Derivatives from translation differences.** If `‖φ z - φ (z + k)‖ ≤ C ‖k‖` for every
+`‖k‖ ≤ 1`, then the derivative of `φ` at `z` has norm at most `C`. -/
+theorem norm_fderiv_le_of_forall_norm_sub_comp_add_le {φ : E → B} {z : E}
+    (hφ : DifferentiableAt ℝ φ z) {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ k : E, ‖k‖ ≤ 1 → ‖φ z - φ (z + k)‖ ≤ C * ‖k‖) : ‖fderiv ℝ φ z‖ ≤ C :=
+  hφ.hasFDerivAt.le_of_lip' hC <| by
+    filter_upwards [closedBall_mem_nhds z one_pos] with y hy
+    rw [mem_closedBall, dist_eq_norm] at hy
+    have h' := h (y - z) hy
+    rwa [add_sub_cancel, norm_sub_rev] at h'
+
+end TranslationDifference
 
 end TauCeti
 
