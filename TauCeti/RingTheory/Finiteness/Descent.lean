@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Finiteness.Descent
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
-import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.Algebra.Module.PseudoCoherent.Descent
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 
 /-!
@@ -34,19 +34,9 @@ variable {A B M : Type*} [CommRing A] [CommRing B] [Algebra A B] [AddCommGroup M
 lemma Module.FinitePresentation.of_finitePresentation_tensorProduct_of_faithfullyFlat
     [Module.FaithfullyFlat A B] [Module.FinitePresentation B (B ⊗[A] M)] :
     Module.FinitePresentation A M := by
-  have : Module.Finite A M := .of_finite_tensorProduct_of_faithfullyFlat B
-  obtain ⟨n, l, hl⟩ := Module.Finite.exists_fin' A M
-  rw [← Module.FinitePresentation.fg_ker_iff l hl]
-  have hbl : Function.Surjective (AlgebraTensorModule.lTensor B B l) :=
-    LinearMap.lTensor_surjective B hl
-  have hfg : (LinearMap.ker (AlgebraTensorModule.lTensor B B l)).FG :=
-    Module.FinitePresentation.fg_ker _ hbl
-  have : Module.Finite B (B ⊗[A] LinearMap.ker l) := by
-    have : Module.Finite B (LinearMap.ker (AlgebraTensorModule.lTensor B B l)) :=
-      Module.Finite.iff_fg.mpr hfg
-    exact Module.Finite.equiv (LinearMap.tensorKerEquiv B B l).symm
-  rw [← Module.Finite.iff_fg]
-  exact .of_finite_tensorProduct_of_faithfullyFlat B
+  exact TauCeti.Huber.IsPseudoCoherentOver.one_iff.mp
+    (TauCeti.Huber.IsPseudoCoherentOver.of_baseChange B
+      (TauCeti.Huber.IsPseudoCoherentOver.one_iff.mpr inferInstance))
 
 /-- Constant local rank descends along faithfully flat maps: if `B ⊗[A] M` has rank `r`
 at every prime of `B`, then `M` has rank `r` at every prime of `A`. -/
