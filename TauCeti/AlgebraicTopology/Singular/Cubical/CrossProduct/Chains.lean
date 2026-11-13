@@ -32,6 +32,8 @@ a factor has degree `0` are stated separately.
 ## Main results
 
 * `TauCeti.CubicalChain.crossProduct_single`: the cross product of two cubes.
+* `TauCeti.NormalizedCubicalChain.map_appendHomeomorph_crossProduct_ofCube_id`: the cross product
+  of the identity cubes of `Iᵖ` and `I^q` is the identity cube of `I^(p + q)`.
 * `TauCeti.CubicalChain.map_crossProduct`: naturality.
 * `TauCeti.CubicalChain.crossProduct_left_mem_degenerate`,
   `TauCeti.CubicalChain.crossProduct_right_mem_degenerate`: degenerate chains go to degenerate
@@ -299,6 +301,19 @@ theorem crossProduct_ofCube {p q : ℕ} (c : SingularCube X p) (d : SingularCube
       ofCube (X × Y) R (SingularCube.crossProduct c d) := by
   rw [ofCube_def, ofCube_def, ofCube_def, crossProduct_mk, CubicalChain.crossProduct_single,
     mul_one]
+
+/-- **The cross product of the fundamental chains of `Iᵖ` and `I^q` is the fundamental chain of
+`I^(p + q)`**: pushed to `I^(p + q)` along `Fin.appendHomeomorph : Iᵖ × I^q ≃ₜ I^(p + q)`, the cross
+product of the identity cubes of `Iᵖ` and `I^q` is the identity cube of `I^(p + q)`, on the
+nose. -/
+theorem map_appendHomeomorph_crossProduct_ofCube_id (p q : ℕ) :
+    map R (Fin.appendHomeomorph (X := I) p q : C((Fin p → I) × (Fin q → I), Fin (p + q) → I))
+        (p + q) (crossProduct (Fin p → I) (Fin q → I) R p q
+          (ofCube (Fin p → I) R (ContinuousMap.id _))
+          (ofCube (Fin q → I) R (ContinuousMap.id _))) =
+      ofCube (Fin (p + q) → I) R (ContinuousMap.id _) := by
+  rw [crossProduct_ofCube, map_ofCube, SingularCube.crossProduct_id_id,
+    Homeomorph.toContinuousMap_comp_symm]
 
 /-- The cross product of normalized chains is natural in both spaces. -/
 theorem map_crossProduct {p q : ℕ} (f : C(X, Z)) (g : C(Y, W)) (a : NormalizedCubicalChain X R p)
