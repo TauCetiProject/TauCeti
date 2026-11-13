@@ -204,9 +204,8 @@ the target line. For `b ≠ 0` the boundary hypothesis says precisely that the o
 takes the source line into the target line, and the target map is a genuine reflection. For
 `b = 0` the extension is the constant `q`, the hypothesis `hline` holds automatically, and the
 statement degenerates to `q = q`. -/
-theorem lineSchwarzReflection_sourceReflection {Ω : Set ℂ} {p a q b : ℂ} {f : ℂ → ℂ}
-    (ha : a ≠ 0) (hline : ∀ z ∈ Ω, ((z - p) / a).im = 0 → ((f z - q) / b).im = 0)
-    {z : ℂ} (hz : z ∈ Ω) :
+theorem lineSchwarzReflection_sourceReflection {p a q b : ℂ} {f : ℂ → ℂ}
+    (ha : a ≠ 0) {z : ℂ} (hline : ((z - p) / a).im = 0 → ((f z - q) / b).im = 0) :
     lineSchwarzReflection p a q b f
         (p + a * (starRingEnd ℂ) ((z - p) / a)) =
       q + b * (starRingEnd ℂ)
@@ -216,7 +215,7 @@ theorem lineSchwarzReflection_sourceReflection {Ω : Set ℂ} {p a q b : ℂ} {f
   let g := fun w : ℂ => (f (p + a * w) - q) / b
   have hgline : ((z - p) / a).im = 0 → (g ((z - p) / a)).im = 0 := by
     intro him
-    simpa only [g, affineChart_left_inv ha z] using hline z hz him
+    simpa only [g, affineChart_left_inv ha z] using hline him
   rw [lineSchwarzReflection_def, lineSchwarzReflection_def,
     affineChart_reflection_coord ha]
   rw [schwarzReflection_conj _ hgline]
@@ -245,6 +244,6 @@ theorem exists_differentiableOn_eqOn_lineReflection_of_symmetric
   · intro z hz
     exact lineSchwarzReflection_of_coord_im_nonneg f ha hb hz.2
   · intro z hz
-    exact lineSchwarzReflection_sourceReflection ha hline hz
+    exact lineSchwarzReflection_sourceReflection ha (hline z hz)
 
 end TauCeti

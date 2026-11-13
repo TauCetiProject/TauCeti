@@ -161,18 +161,12 @@ theorem logDeriv_deriv_conj_eq_conj_logDeriv_deriv (hΩopen : IsOpen Ω)
     {z : ℂ} (hz : z ∈ Ω) (hz' : (starRingEnd ℂ) z ∈ Ω) :
     logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) := by
   rcases eq_or_ne u 0 with rfl | hu
-  · -- `F` is the constant `c` on the open set `Ω' = conj⁻¹ Ω`, so every derivative of `F` vanishes
-    -- there.
-    have hΩ' : IsOpen {w : ℂ | (starRingEnd ℂ) w ∈ Ω} := hΩopen.preimage Complex.continuous_conj
-    have hconst : ∀ w ∈ {w : ℂ | (starRingEnd ℂ) w ∈ Ω}, F w = c := fun w hw => by
-      simpa using hrefl ((starRingEnd ℂ) w) hw
-    have hderiv : ∀ w ∈ {w : ℂ | (starRingEnd ℂ) w ∈ Ω}, deriv F w = 0 := fun w hw => by
-      rw [(Filter.eventuallyEq_of_mem (hΩ'.mem_nhds hw) hconst).deriv_eq, deriv_const]
-    have hderiv2 : ∀ w ∈ {w : ℂ | (starRingEnd ℂ) w ∈ Ω}, deriv (deriv F) w = 0 := fun w hw => by
-      rw [(Filter.eventuallyEq_of_mem (hΩ'.mem_nhds hw) hderiv).deriv_eq, deriv_const]
-    have hzz : z ∈ {w : ℂ | (starRingEnd ℂ) w ∈ Ω} := hz'
-    have hzz' : (starRingEnd ℂ) z ∈ {w : ℂ | (starRingEnd ℂ) w ∈ Ω} := by simpa using hz
-    simp [logDeriv_apply, hderiv z hzz, hderiv2 z hzz, hderiv _ hzz', hderiv2 _ hzz']
+  · -- `deriv F` vanishes at `z` and at `conj z`, so both pre-Schwarzian values are `_ / 0 = 0`.
+    have h1 : deriv F ((starRingEnd ℂ) z) = 0 := by
+      simpa using deriv_conj_eq_mul_conj_deriv hΩopen hrefl hz
+    have h2 : deriv F z = 0 := by
+      simpa using deriv_conj_eq_mul_conj_deriv hΩopen hrefl hz'
+    simp [logDeriv_apply, h1, h2]
   · exact logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_ne_zero hu hΩopen hrefl hz
 
 /-- **The pre-Schwarzian derivative of a reflection-symmetric function is real on the real axis.**
@@ -201,7 +195,7 @@ private theorem lineSchwarzReflection_conj_eq
   · simp
   have hbc : (starRingEnd ℂ) b ≠ 0 := by simpa using hb
   have h := lineSchwarzReflection_sourceReflection (p := 0) (a := 1) (q := q) (b := b) (f := f)
-    one_ne_zero (fun w hw hw0 => hline w hw (by simpa using hw0)) hz
+    one_ne_zero (z := z) (fun hz0 => hline z hz (by simpa using hz0))
   simp only [zero_add, one_mul, sub_zero, div_one] at h
   rw [h, map_div₀, map_sub]
   field_simp
