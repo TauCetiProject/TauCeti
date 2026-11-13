@@ -13,6 +13,7 @@ public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Topology.Category.TopPair
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
+import Mathlib.Topology.Coherent
 
 /-!
 # Sublevels of real functions
@@ -68,7 +69,9 @@ cobordism relative to its incoming boundary. Relative to its upper level, the ba
 `TauCeti.upperBandPair f : (f⁻¹[a, b], f⁻¹(b))`, the cobordism relative to its outgoing boundary;
 negating `f` exchanges the two (`TauCeti.bandPair_neg`). All sublevels together form the functor
 `TauCeti.sublevelFunctor f` from the levels to spaces, with the cocone `TauCeti.sublevelCocone f`
-of their inclusions into `X`.
+of their inclusions into `X`. Along levels tending to infinity the sublevels cover `X`
+(`TauCeti.iUnion_sublevel_eq_univ_of_tendsto`), and for continuous `f` the topology of `X` is
+coherent with them (`TauCeti.isCoherentWith_range_sublevel_of_tendsto`).
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -248,6 +251,24 @@ theorem isCoherentWith_range_sublevel {X β ι : Type*} [TopologicalSpace X] [Li
   exact ⟨_, mem_range_self i, Filter.mem_of_superset ((isOpen_Iio.preimage hf).mem_nhds hi)
     fun _ hy ↦ le_of_lt hy⟩
 
+open Filter in
+/-- The sublevels `{f ≤ a k}` along levels `a k` tending to infinity cover `X`. -/
+theorem iUnion_sublevel_eq_univ_of_tendsto {X ι β : Type*} [Preorder β] (f : X → β)
+    {l : Filter ι} [l.NeBot] {a : ι → β} (ha : Tendsto a l atTop) :
+    ⋃ k, {x | f x ≤ a k} = univ :=
+  eq_univ_of_forall fun x ↦ mem_iUnion.2 (ha.eventually_ge_atTop (f x)).exists
+
+open Filter Topology in
+/-- For continuous `f`, the space carries the topology coherent with the sublevels `{f ≤ a k}`
+along levels `a k` tending to infinity: every point has one of them as a neighbourhood. -/
+theorem isCoherentWith_range_sublevel_of_tendsto {X ι β : Type*} [TopologicalSpace X]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] [NoMaxOrder β] {f : X → β}
+    (hf : Continuous f) {l : Filter ι} [l.NeBot] {a : ι → β} (ha : Tendsto a l atTop) :
+    IsCoherentWith (range fun k ↦ {x | f x ≤ a k}) := .of_nhds fun x ↦ by
+  obtain ⟨k, hk⟩ := (ha.eventually_gt_atTop (f x)).exists
+  exact ⟨_, ⟨k, rfl⟩, mem_of_superset ((isOpen_lt hf continuous_const).mem_nhds hk)
+    fun _ hy ↦ le_of_lt hy⟩
+
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels of `f`, for `a ≤ b`. -/
 def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β) (a b : β)
     (hab : a ≤ b) : C({x | f x ≤ a}, {x | f x ≤ b}) :=
@@ -273,6 +294,13 @@ theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preo
     sublevelInclusion f a b hab =
       ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) :=
   (rfl)
+
+/-- The range of the inclusion `{f ≤ a} → {f ≤ b}` consists of the points of `{f ≤ b}` at which
+`f ≤ a`. -/
+theorem range_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) :
+    range (sublevelInclusion f a b hab) = ((↑) ⁻¹' {x | f x ≤ a} : Set {x | f x ≤ b}) :=
+  range_inclusion (sublevel_mono f hab)
 
 /-- When `f` is bounded above by `b` everywhere on `X`, the sublevel `{f ≤ b}` is homeomorphic to
 `X` via `Subtype.val`. -/

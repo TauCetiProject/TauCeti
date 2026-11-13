@@ -611,11 +611,12 @@ private theorem contDiff_hamiltonianOneForm_comp_equivRealProdCLM (hH : ContDiff
       (equivRealProdCLM z) x).comp (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) τ) ∧
     ∀ x, Periodic (fun z ↦ (ω.hamiltonianOneForm (fun _ _ ↦ 0) (fun w ↦ H w.2)
       (equivRealProdCLM z) x).comp (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) I := by
-  have h := ω.contDiffOn_hamiltonianOneForm (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) (n := 2)
-    isOpen_univ (contDiff_const (c := (0 : ℝ))).contDiffOn
-    (contDiff_uncurry_cylindrical hH).contDiffOn
+  have h := ω.contDiffOn_hamiltonianOneForm (Ks := fun (_ : Unit) _ _ ↦ 0)
+    (Kt := fun _ w ↦ H w.2) (n := 2) isOpen_univ (contDiff_const (c := (0 : ℝ))).contDiffOn
+    ((contDiff_uncurry_cylindrical hH).comp contDiff_snd).contDiffOn
   rw [contDiffOn_univ] at h
-  refine ⟨(h.comp ((equivRealProdCLM.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_comp
+  refine ⟨(h.comp ((contDiff_const (c := ())).prodMk
+    ((equivRealProdCLM.contDiff.comp contDiff_fst).prodMk contDiff_snd))).clm_comp
     contDiff_const, fun x τ z ↦ ?_, fun x z ↦ ?_⟩ <;> ext w <;> simp [hHper z.im]
 
 /-- **Floer cylinders in the complex coordinate.** Read in the coordinate `z = s + i t`, the
