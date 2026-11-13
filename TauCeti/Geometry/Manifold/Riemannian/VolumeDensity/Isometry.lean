@@ -161,9 +161,11 @@ theorem chartRiemannianVolume_image_of_inner_mfderiv {Φ : M → N} {α : M} {β
   have hg' (y : E) (hy : y ∈ A) : HasFDerivWithinAt g (fderivWithin ℝ g (range I) y) A y := by
     obtain ⟨x, hx, rfl⟩ := hy
     exact (hderiv x hx).differentiableWithinAt.hasFDerivWithinAt.mono hA_range
+  have : PolishSpace H := I.isClosedEmbedding.polishSpace
+  have : T2Space H' := I'.isClosedEmbedding.isEmbedding.t2Space
   have hΦs : MeasurableSet (Φ '' s) :=
-    hs.image_of_continuousOn_injOn_extChartAt (fun x hx ↦ (hΦ x hx).continuousAt.continuousWithinAt)
-      hinj hsα' fun x hx ↦ hsβ' (mem_image_of_mem Φ hx)
+    hs.image_of_continuousOn_injOn_chartAt (fun x hx ↦ (hΦ x hx).continuousAt.continuousWithinAt)
+      hinj hsα hsβ
   rw [chartRiemannianVolume_apply β hΦs, inter_eq_left.2 hsβ', ← himage,
     lintegral_image_eq_lintegral_abs_det_fderiv_mul (Module.finBasis ℝ E).addHaar hA hg' hinjA]
   apply setLIntegral_congr_fun hA
@@ -185,9 +187,10 @@ theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace
     (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
       ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     riemannianVolume I' N (Φ '' s) = riemannianVolume I M s := by
-  -- A Lindelöf manifold modelled on a finite-dimensional space is second countable, hence
-  -- hereditarily Lindelöf.
-  have : SecondCountableTopology H := I.secondCountableTopology
+  -- The models are a Polish space and a Hausdorff space, and a Lindelöf manifold modelled on a
+  -- finite-dimensional space is second countable, hence hereditarily Lindelöf.
+  have : PolishSpace H := I.isClosedEmbedding.polishSpace
+  have : T2Space H' := I'.isClosedEmbedding.isEmbedding.t2Space
   have := ChartedSpace.secondCountable_of_lindelof H M
   have hΦ (x : M) (hx : x ∈ s) : MDifferentiableAt I I' Φ x :=
     mdifferentiableAt_of_inner_mfderiv fun v ↦ hinner x hx v v
@@ -207,7 +210,7 @@ theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace
   have hf : ∀ t, MeasurableSet t → MeasurableSet (s.domRestrict Φ '' t) := fun t ht ↦ by
     have hts := Subtype.coe_image_subset s t
     rw [hf_image]
-    exact (hι.measurableSet_image' ht).image_of_continuousOn_injOn_chartedSpace I I'
+    exact (hι.measurableSet_image' ht).image_of_continuousOn_injOn_chartedSpace H H'
       (fun y hy ↦ (hΦ y (hts hy)).continuousAt.continuousWithinAt) (hinj.mono hts)
   suffices h : (riemannianVolume I' N).comap (s.domRestrict Φ) =
       (riemannianVolume I M).comap Subtype.val by
