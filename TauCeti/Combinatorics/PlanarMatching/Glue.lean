@@ -43,8 +43,12 @@ diagrams and `TauCeti.TLDiagram.tensor` juxtaposes them.
 * `TauCeti.PlanarMatching.glueMiddle_append_nested`,
   `TauCeti.PlanarMatching.glueMiddle_nested_append`: gluing next to a fully nested matching
   changes nothing.
-* `TauCeti.PlanarMatching.nest_val_castAdd_natAdd`, `TauCeti.PlanarMatching.nest_val_append`:
+* `TauCeti.PlanarMatching.nest_val_castAdd_natAdd`, `TauCeti.PlanarMatching.nest_val_append`,
+  `TauCeti.PlanarMatching.nest_val_castAdd_castAdd`, `TauCeti.PlanarMatching.nest_val_natAdd`:
   nesting keeps the arcs of both matchings.
+* `TauCeti.PlanarMatching.cast_nest_nest`, `TauCeti.PlanarMatching.nest_zero`,
+  `TauCeti.PlanarMatching.zero_nest`, `TauCeti.PlanarMatching.nested_nest`: nesting is
+  associative, has the empty matching as a unit, and nests fully nested matchings into one.
 
 ## Implementation notes
 
@@ -785,6 +789,37 @@ private theorem exists_shiftFrom_or_add (c L q : ℕ) :
   · exact Or.inr ⟨q - c, by omega, by omega⟩
   · exact Or.inl ⟨q - L, by rw [shiftFrom_of_le (by omega)]; omega⟩
 
+private theorem shiftFrom_add_add (c c' L i : ℕ) :
+    shiftFrom (c + c') L (c + i) = c + shiftFrom c' L i := by
+  unfold shiftFrom
+  split_ifs <;> omega
+
+private theorem shiftFrom_add_shiftFrom {c c' L₂ L₃ : ℕ} (h : c' ≤ L₂) (u : ℕ) :
+    shiftFrom (c + c') L₃ (shiftFrom c L₂ u) = shiftFrom c (L₂ + L₃) u := by
+  unfold shiftFrom
+  split_ifs <;> omega
+
+/-- Nesting is associative: nesting `χ` into the result of nesting `ψ` into `φ`, inside the
+block of `ψ`, is nesting into `φ` the result of nesting `χ` into `ψ`. -/
+private theorem nestFn_nestFn_assoc {c c' L₂ L₃ : ℕ} (φ ψ χ : ℕ → ℕ) (h : c' ≤ L₂) :
+    nestFn (c + c') L₃ (nestFn c L₂ φ ψ) χ = nestFn c (L₂ + L₃) φ (nestFn c' L₃ ψ χ) := by
+  funext q
+  rcases exists_shiftFrom_or_add (c + c') L₃ q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
+  · rw [nestFn_shiftFrom]
+    rcases exists_shiftFrom_or_add c L₂ v with ⟨w, rfl⟩ | ⟨i, hi, rfl⟩
+    · rw [nestFn_shiftFrom, shiftFrom_add_shiftFrom h, shiftFrom_add_shiftFrom h,
+        nestFn_shiftFrom]
+    · have : shiftFrom c' L₃ i < L₂ + L₃ := by unfold shiftFrom; split_ifs <;> omega
+      rw [nestFn_add _ _ _ hi, shiftFrom_add_add, shiftFrom_add_add, nestFn_add _ _ _ this,
+        nestFn_shiftFrom]
+  · rw [nestFn_add _ _ _ hj, Nat.add_assoc, Nat.add_assoc, nestFn_add _ _ _ (by omega),
+      nestFn_add _ _ _ hj]
+
+private theorem nestFn_zero (c : ℕ) (φ ψ : ℕ → ℕ) : nestFn c 0 φ ψ = φ := by
+  funext q
+  simp only [nestFn, shiftFrom, Nat.add_zero, Nat.sub_zero]
+  split_ifs <;> rfl
+
 /-! ### Nesting planar matchings -/
 
 section Nest
@@ -913,6 +948,7 @@ theorem nest_val_castAdd_natAdd (x : PlanarMatching (k + r)) (y : PlanarMatching
 
 /-- Nesting keeps the arcs of the outer matching: its first `k` points stay in place and its
 last `r` points move past the inserted block. -/
+@[simp]
 theorem nest_val_append (x : PlanarMatching (k + r)) (y : PlanarMatching l) (i : Fin (k + r)) :
     (x.nest y).1.val (Fin.append (Fin.castAdd r ∘ Fin.castAdd l) (Fin.natAdd (k + l)) i) =
       Fin.append (Fin.castAdd r ∘ Fin.castAdd l) (Fin.natAdd (k + l)) (x.1.val i) := by
@@ -927,6 +963,69 @@ theorem nest_val_append (x : PlanarMatching (k + r)) (y : PlanarMatching l) (i :
       omega
   refine Fin.ext ?_
   rw [← pv_coe, pv_nest, e, nestFn_shiftFrom, pv_coe, e]
+
+/-- Nesting keeps the arcs of the outer matching at its first `k` points, which stay in place. -/
+@[simp]
+theorem nest_val_castAdd_castAdd (x : PlanarMatching (k + r)) (y : PlanarMatching l)
+    (i : Fin k) :
+    (x.nest y).1.val (Fin.castAdd r (Fin.castAdd l i)) =
+      Fin.append (Fin.castAdd r ∘ Fin.castAdd l) (Fin.natAdd (k + l))
+        (x.1.val (Fin.castAdd r i)) := by
+  simpa using nest_val_append x y (Fin.castAdd r i)
+
+/-- Nesting keeps the arcs of the outer matching at its last `r` points, which move past the
+inserted block. -/
+@[simp]
+theorem nest_val_natAdd (x : PlanarMatching (k + r)) (y : PlanarMatching l) (i : Fin r) :
+    (x.nest y).1.val (Fin.natAdd (k + l) i) =
+      Fin.append (Fin.castAdd r ∘ Fin.castAdd l) (Fin.natAdd (k + l))
+        (x.1.val (Fin.natAdd k i)) := by
+  simpa using nest_val_append x y (Fin.natAdd k i)
+
+private theorem nestFn_zero_left {L : ℕ} (x : PlanarMatching (0 + 0)) (y : PlanarMatching L) :
+    nestFn 0 L (pv x) (pv y) = pv y := by
+  funext q
+  by_cases hq : q < L
+  · simpa only [Nat.zero_add] using nestFn_add 0 (pv x) (pv y) hq
+  · have e : q = shiftFrom 0 L (q - L) := by rw [shiftFrom_of_le (Nat.zero_le _)]; omega
+    rw [e, nestFn_shiftFrom, pv_of_le x (Nat.zero_le _), ← e, pv_of_le y (by omega)]
+
+/-- Nesting the empty planar matching changes nothing. -/
+@[simp]
+theorem nest_zero (x : PlanarMatching (k + r)) (y : PlanarMatching 0) : x.nest y = x :=
+  ext_pv fun q _ => by rw [pv_nest, nestFn_zero]
+
+/-- Nesting into the empty planar matching gives the inserted matching, up to the relabelling of
+the size. -/
+theorem zero_nest (x : PlanarMatching (0 + 0)) (y : PlanarMatching l) :
+    x.nest y = cast (by omega) y :=
+  ext_pv fun q _ => by rw [pv_nest, pv_cast, nestFn_zero_left]
+
+/-- Nesting a fully nested matching into a fully nested matching gives a fully nested matching,
+up to the relabelling of the size. -/
+@[simp]
+theorem nested_nest (n n' : ℕ) :
+    (nested n).nest (nested n') = cast (by omega) (nested (n + n')) := by
+  refine ext_pv fun q hq => ?_
+  rw [pv_nest, pv_cast, pv_nested (n + n') (by omega)]
+  rcases exists_shiftFrom_or_add n (n' + n') q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
+  · have hv : v < n + n := lt_of_shiftFrom_lt hq
+    rw [nestFn_shiftFrom, pv_nested n hv]
+    unfold shiftFrom
+    split_ifs <;> omega
+  · rw [nestFn_add _ _ _ hj, pv_nested n' hj]
+    omega
+
+/-- **Nesting is associative**: nesting `z` into the result of nesting `y` into `x`, inside the
+block of `y`, is nesting into `x` the result of nesting `z` into `y`, up to the relabelling of the
+sizes. -/
+theorem cast_nest_nest {k' r' r'' : ℕ} (h : k + (k' + r') + r = k + k' + r'')
+    (x : PlanarMatching (k + r)) (y : PlanarMatching (k' + r')) (z : PlanarMatching l) :
+    (cast h (x.nest y)).nest z = cast (by omega) (x.nest (y.nest z)) := by
+  have e : pv (cast h (x.nest y)) = pv (x.nest y) := funext (pv_cast h _)
+  refine ext_pv fun q _ => ?_
+  rw [pv_cast, pv_nest, e, pv_nest, pv_nest, pv_nest,
+    nestFn_nestFn_assoc _ _ _ (by omega : k' ≤ k' + r'), show k' + r' + l = k' + l + r' by omega]
 
 end Nest
 

@@ -27,9 +27,12 @@ juxtapositions is juxtaposing the two stacks, for the matchings and for the circ
 with `TauCeti.TLDiagram.id_tensor_id`, is the functoriality of juxtaposition for the composition
 `TauCeti.TLDiagram.comp`. Juxtaposition is also strictly associative and unital, up to the
 relabelling of the sizes (`TauCeti.TLDiagram.matching_tensor_assoc`,
-`TauCeti.TLDiagram.matching_id_zero_tensor`, `TauCeti.TLDiagram.matching_tensor_id_zero`). These
-are the diagram-level laws of the monoidal structure of the Temperley–Lieb diagram category, whose
-tensor product adds the numbers of boundary points.
+`TauCeti.TLDiagram.matching_zero_tensor`, `TauCeti.TLDiagram.matching_tensor_zero`,
+`TauCeti.TLDiagram.tensor_id_zero`). These are the diagram-level laws of the monoidal structure of
+the Temperley–Lieb diagram category, whose tensor product adds the numbers of boundary points. The
+two zigzags made of a cup, a cap and a strand straighten out to the identity strand
+(`TauCeti.TLDiagram.cup_tensor_id_comp_id_tensor_cap`,
+`TauCeti.TLDiagram.id_tensor_cup_comp_cap_tensor_id`).
 
 ## Main definitions
 
@@ -40,8 +43,11 @@ tensor product adds the numbers of boundary points.
 * `TauCeti.TLDiagram.tensor_comp_tensor`: the interchange law
   `(f ⊗ f') ≫ (g ⊗ g') = (f ≫ g) ⊗ (f' ≫ g')`.
 * `TauCeti.TLDiagram.id_tensor_id`: the juxtaposition of two identities is an identity.
-* `TauCeti.TLDiagram.matching_tensor_assoc`, `TauCeti.TLDiagram.matching_id_zero_tensor`,
-  `TauCeti.TLDiagram.matching_tensor_id_zero`: associativity and unitality of juxtaposition.
+* `TauCeti.TLDiagram.matching_tensor_assoc`, `TauCeti.TLDiagram.matching_zero_tensor`,
+  `TauCeti.TLDiagram.matching_tensor_zero`, `TauCeti.TLDiagram.tensor_id_zero`: associativity and
+  unitality of juxtaposition.
+* `TauCeti.TLDiagram.cup_tensor_id_comp_id_tensor_cap`,
+  `TauCeti.TLDiagram.id_tensor_cup_comp_cap_tensor_id`: the zigzag identities.
 
 ## Implementation notes
 
@@ -262,11 +268,6 @@ end Glue
 
 /-! ### Nesting, juxtaposition and nesting again -/
 
-private theorem shiftFrom_add_add (c c' L i : ℕ) :
-    shiftFrom (c + c') L (c + i) = c + shiftFrom c' L i := by
-  unfold shiftFrom
-  split_ifs <;> omega
-
 /-- Juxtaposing on the right does not move a block nested into the left factor. -/
 private theorem appendFn_nestFn_left {K K' c L : ℕ} (φ ψ χ : ℕ → ℕ) (hc : c ≤ K) :
     appendFn (K + L) K' (nestFn c L φ ψ) χ = nestFn c L (appendFn K K' φ χ) ψ := by
@@ -325,41 +326,6 @@ private theorem nestFn_nestFn_eq_nestFn_appendFn {c L L' : ℕ} (φ ψ χ : ℕ 
         appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left]
       omega
   · rw [nestFn_add _ _ _ hj, nestFn_add _ _ _ (by omega), appendFn_of_lt _ _ hj]
-
-private theorem shiftFrom_add_shiftFrom {c c' L₂ L₃ : ℕ} (h : c' ≤ L₂) (u : ℕ) :
-    shiftFrom (c + c') L₃ (shiftFrom c L₂ u) = shiftFrom c (L₂ + L₃) u := by
-  unfold shiftFrom
-  split_ifs <;> omega
-
-/-- Nesting is associative: nesting `χ` into the result of nesting `ψ` into `φ`, inside the
-block of `ψ`, is nesting into `φ` the result of nesting `χ` into `ψ`. -/
-private theorem nestFn_nestFn_assoc {c c' L₂ L₃ : ℕ} (φ ψ χ : ℕ → ℕ) (h : c' ≤ L₂) :
-    nestFn (c + c') L₃ (nestFn c L₂ φ ψ) χ = nestFn c (L₂ + L₃) φ (nestFn c' L₃ ψ χ) := by
-  funext q
-  rcases exists_shiftFrom_or_add (c + c') L₃ q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
-  · rw [nestFn_shiftFrom]
-    rcases exists_shiftFrom_or_add c L₂ v with ⟨w, rfl⟩ | ⟨i, hi, rfl⟩
-    · rw [nestFn_shiftFrom, shiftFrom_add_shiftFrom h, shiftFrom_add_shiftFrom h,
-        nestFn_shiftFrom]
-    · have : shiftFrom c' L₃ i < L₂ + L₃ := by unfold shiftFrom; split_ifs <;> omega
-      rw [nestFn_add _ _ _ hi, shiftFrom_add_add, shiftFrom_add_add, nestFn_add _ _ _ this,
-        nestFn_shiftFrom]
-  · rw [nestFn_add _ _ _ hj, Nat.add_assoc, Nat.add_assoc, nestFn_add _ _ _ (by omega),
-      nestFn_add _ _ _ hj]
-
-private theorem nestFn_zero (c : ℕ) (φ ψ : ℕ → ℕ) : nestFn c 0 φ ψ = φ := by
-  funext q
-  simp only [nestFn, shiftFrom, Nat.add_zero, Nat.sub_zero]
-  split_ifs <;> rfl
-
-private theorem nestFn_zero_left {L : ℕ} (x : PlanarMatching 0) (y : PlanarMatching L) :
-    nestFn 0 L (pv x) (pv y) = pv y := by
-  funext q
-  by_cases hq : q < L
-  · have h := nestFn_add 0 (pv x) (pv y) hq
-    rwa [Nat.zero_add, Nat.zero_add] at h
-  · have e : q = shiftFrom 0 L (q - L) := by rw [shiftFrom_of_le (Nat.zero_le _)]; omega
-    rw [e, nestFn_shiftFrom, pv_of_le x (Nat.zero_le _), ← e, pv_of_le y (by omega)]
 
 end PlanarMatching
 
@@ -443,21 +409,7 @@ theorem tensor_comp_tensor (f : TLDiagram n m) (g : TLDiagram m p) (f' : TLDiagr
 @[simp]
 theorem id_tensor_id (n n' : ℕ) : (id n).tensor (id n') = id (n + n') := by
   ext : 1
-  · apply eq_of_pv_eq
-    rw [matching_tensor, pv_cast_eq, pv_nest]
-    funext q
-    rcases exists_shiftFrom_or_add n (n' + n') q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
-    · rw [nestFn_shiftFrom]
-      by_cases hv : v < n + n
-      · rw [matching_id, pv_nested n hv, matching_id,
-          pv_nested (n + n') (by unfold shiftFrom; split_ifs <;> omega)]
-        unfold shiftFrom
-        split_ifs <;> omega
-      · rw [matching_id, pv_of_le _ (by omega), matching_id,
-          pv_of_le _ (by unfold shiftFrom; split_ifs <;> omega)]
-    · rw [nestFn_add _ _ _ hj, matching_id, matching_id, pv_nested n' hj,
-        pv_nested (n + n') (by omega)]
-      omega
+  · simp [matching_id]
   · simp
 
 /-- **Associativity of juxtaposition**: up to the relabelling of the sizes, `(f ⊗ g) ⊗ h` and
@@ -470,40 +422,62 @@ theorem matching_tensor_assoc (f : TLDiagram n m) (g : TLDiagram n' m') (h : TLD
   rw [nestFn_nestFn_assoc _ _ _ (by omega : n' ≤ n' + m'),
     show n' + m' + (n'' + m'') = n' + n'' + (m' + m'') by omega]
 
-/-- Juxtaposing with the empty diagram on the left changes nothing, up to the relabelling of the
-sizes. -/
-theorem matching_id_zero_tensor (f : TLDiagram n m) :
-    ((id 0).tensor f).matching = PlanarMatching.cast (by omega) f.matching := by
+/-- Juxtaposing with a diagram `0 → 0` on the left keeps the matching, up to the relabelling of
+the sizes. -/
+theorem matching_zero_tensor (g : TLDiagram 0 0) (f : TLDiagram n m) :
+    (g.tensor f).matching = PlanarMatching.cast (by omega) f.matching := by
+  rw [matching_tensor, zero_nest, PlanarMatching.cast_cast]
+
+/-- Juxtaposing with a diagram `0 → 0` on the right keeps the matching. -/
+theorem matching_tensor_zero (f : TLDiagram n m) (g : TLDiagram 0 0) :
+    (f.tensor g).matching = f.matching := by
   apply eq_of_pv_eq
-  rw [matching_tensor, pv_cast_eq, pv_cast_eq, pv_nest, nestFn_zero_left]
+  rw [matching_tensor, pv_cast_eq, nest_zero]
 
-/-- Juxtaposing with the empty diagram on the right changes nothing, up to the relabelling of the
-sizes. -/
-theorem matching_tensor_id_zero (f : TLDiagram n m) :
-    (f.tensor (id 0)).matching = PlanarMatching.cast (by omega) f.matching := by
-  apply eq_of_pv_eq
-  rw [matching_tensor, pv_cast_eq, pv_cast_eq, pv_nest, nestFn_zero]
+/-- Juxtaposing with the empty diagram on the right changes nothing. -/
+@[simp]
+theorem tensor_id_zero (f : TLDiagram n m) : f.tensor (id 0) = f := by
+  ext : 1
+  · exact matching_tensor_zero f (id 0)
+  · simp
 
-end TLDiagram
-
-open PlanarMatching in
 /-- **A zigzag**: a cup next to a strand, followed by the strand next to a cap, straightens out to
 the identity strand and closes no circle. -/
-example : (TLDiagram.cup.tensor (TLDiagram.id 1)).comp ((TLDiagram.id 1).tensor TLDiagram.cap) =
-    TLDiagram.id 1 := by
+@[simp]
+theorem cup_tensor_id_comp_id_tensor_cap : (cup.tensor (id 1)).comp ((id 1).tensor cap) = id 1 := by
   ext : 1
   · refine ext_pv fun q hq => ?_
-    simp only [TLDiagram.matching_comp, pv_glueMiddle, pv_append_eq, TLDiagram.matching_tensor,
-      pv_cast_eq, pv_nest, TLDiagram.matching_id]
+    simp only [matching_comp, pv_glueMiddle, pv_append_eq, matching_tensor, pv_cast_eq, pv_nest,
+      matching_id]
     obtain _ | _ | q := q <;>
       first
       | omega
       | simp [glueFn, contractFn, erasePair, splice, rejoin, skipN, unskipN, appendFn, nestFn,
-          shiftFrom, pv_nested, TLDiagram.pv_cup_matching, TLDiagram.pv_cap_matching]
-  · simp only [TLDiagram.circles_comp, TLDiagram.circles_tensor, glueMiddleCircles_eq,
-      pv_append_eq, TLDiagram.matching_tensor, pv_cast_eq, pv_nest, TLDiagram.matching_id]
+          shiftFrom, pv_nested, pv_cup_matching, pv_cap_matching]
+  · simp only [circles_comp, circles_tensor, glueMiddleCircles_eq, pv_append_eq, matching_tensor,
+      pv_cast_eq, pv_nest, matching_id]
     simp [glueCircles, contractFn, erasePair, splice, rejoin, skipN, unskipN, appendFn, nestFn,
-      shiftFrom, pv_nested, TLDiagram.pv_cup_matching, circleInd]
+      shiftFrom, pv_nested, pv_cup_matching, circleInd]
+
+/-- **The other zigzag**: a strand next to a cup, followed by a cap next to the strand, straightens
+out to the identity strand and closes no circle. -/
+@[simp]
+theorem id_tensor_cup_comp_cap_tensor_id : ((id 1).tensor cup).comp (cap.tensor (id 1)) = id 1 := by
+  ext : 1
+  · refine ext_pv fun q hq => ?_
+    simp only [matching_comp, pv_glueMiddle, pv_append_eq, matching_tensor, pv_cast_eq, pv_nest,
+      matching_id]
+    obtain _ | _ | q := q <;>
+      first
+      | omega
+      | simp [glueFn, contractFn, erasePair, splice, rejoin, skipN, unskipN, appendFn, nestFn,
+          shiftFrom, pv_nested, pv_cup_matching, pv_cap_matching]
+  · simp only [circles_comp, circles_tensor, glueMiddleCircles_eq, pv_append_eq, matching_tensor,
+      pv_cast_eq, pv_nest, matching_id]
+    simp [glueCircles, contractFn, erasePair, splice, rejoin, skipN, unskipN, appendFn, nestFn,
+      shiftFrom, pv_nested, pv_cup_matching, pv_cap_matching, circleInd]
+
+end TLDiagram
 
 /-- Juxtaposition is not commutative: a cap next to a strand on its right and a cap next to a
 strand on its left are different diagrams `3 → 1`. -/
