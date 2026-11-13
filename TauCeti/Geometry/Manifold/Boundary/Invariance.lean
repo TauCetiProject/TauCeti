@@ -26,6 +26,9 @@ carries interior points of the models to interior points. This file records the 
 * `OpenPartialHomeomorph.isInteriorPoint_iff_mem_interior_range` and
   `OpenPartialHomeomorph.isBoundaryPoint_iff_mem_frontier_range`: in particular, interior and
   boundary points are detected in *every* chart, not only in the preferred chart at the point.
+* `ModelWithCorners.isOpen_interior_of_finiteDimensional` and
+  `ModelWithCorners.isClosed_boundary_of_finiteDimensional`: hence the interior of a charted space
+  over a finite-dimensional real model is open and its boundary is closed.
 * `OpenPartialHomeomorph.coe_fst_apply_zero_eq_zero_of_notMem_interior`: let `A` be a subset of a
   finite-dimensional real normed space `E`, and let `φ` be a homeomorphism from an open subset of
   `A` onto an open subset of the half-space model `EuclideanHalfSpace m × V`, where
@@ -169,3 +172,23 @@ theorem isBoundaryPoint_iff_mem_frontier_range (e : OpenPartialHomeomorph M H) {
 end Manifold
 
 end OpenPartialHomeomorph
+
+namespace ModelWithCorners
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [TopologicalSpace M] [ChartedSpace H M]
+
+/-- Over a finite-dimensional real model, the interior of a charted space is open. Unlike
+Mathlib's `ModelWithCorners.isOpen_interior`, no `C^1` structure is needed. -/
+theorem isOpen_interior_of_finiteDimensional : IsOpen (I.interior M) := by
+  refine isOpen_iff_forall_mem_open.2 fun x hx ↦ ⟨_, fun y hy ↦ ?_,
+    isOpen_extChartAt_preimage (I := I) x isOpen_interior, mem_chart_source H x, hx⟩
+  exact ((chartAt H x).isInteriorPoint_iff_mem_interior_range I hy.1).2 hy.2
+
+/-- Over a finite-dimensional real model, the boundary of a charted space is closed. Unlike
+Mathlib's `ModelWithCorners.isClosed_boundary`, no `C^1` structure is needed. -/
+theorem isClosed_boundary_of_finiteDimensional : IsClosed (I.boundary M) := by
+  rw [← I.compl_interior, isClosed_compl_iff]
+  exact I.isOpen_interior_of_finiteDimensional
+
+end ModelWithCorners

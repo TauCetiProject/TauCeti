@@ -26,7 +26,9 @@ When the boundary is compact and `M` is Hausdorff, Brown's collaring theorem
 (`TauCeti.IsLocallyCollared.isCollared`) assembles these local collars into a single collar: an
 open embedding `c : ∂M × [0, 1) → M` with `c (x, 0) = x`
 (`TauCeti.isCollared_subtypeVal_boundary`). This holds in particular for compact `M`, whose
-boundary is closed (`TauCeti.isCollared_subtypeVal_boundary_of_compactSpace`).
+boundary is closed by invariance of domain
+(`ModelWithCorners.isClosed_boundary_of_finiteDimensional`,
+`TauCeti.isCollared_subtypeVal_boundary_of_compactSpace`).
 
 The collar is only a topological one. It is what comparisons of the relative homology
 `H_*(M, ∂M)` with the homology of `M` relative to an open neighbourhood of the boundary use, for
@@ -42,7 +44,7 @@ smooth collar, a diffeomorphism onto its image, is a stronger statement not trea
 * `TauCeti.isCollared_subtypeVal_boundary`: a compact boundary of a Hausdorff charted space over the
   half-space is collared.
 * `TauCeti.isCollared_subtypeVal_boundary_of_compactSpace`: the boundary of a compact Hausdorff
-  `C^k` manifold, `k ≠ 0`, is collared.
+  charted space over the half-space is collared.
 
 ## References
 
@@ -150,12 +152,10 @@ theorem isCollared_subtypeVal_boundary [T2Space M]
   have := isCompact_iff_compactSpace.1 hK
   isLocallyCollared_subtypeVal_boundary.isCollared Subtype.val_injective
 
-variable [IsManifold (𝓡∂ (n + 1)) k M]
-
-/-- **The boundary of a compact manifold is collared.** For a compact Hausdorff `C^k` manifold
-with boundary, `k ≠ 0`, there is an open embedding `c : ∂M × [0, 1) → M` with `c (x, 0) = x`. -/
-theorem isCollared_subtypeVal_boundary_of_compactSpace (hk : k ≠ 0) [CompactSpace M] [T2Space M] :
+/-- **The boundary of a compact manifold is collared.** For a compact Hausdorff charted space over
+the half-space, there is an open embedding `c : ∂M × [0, 1) → M` with `c (x, 0) = x`. -/
+theorem isCollared_subtypeVal_boundary_of_compactSpace [CompactSpace M] [T2Space M] :
     IsCollared ((↑) : (𝓡∂ (n + 1)).boundary M → M) :=
-  isCollared_subtypeVal_boundary ((𝓡∂ (n + 1)).isClosed_boundary hk).isCompact
+  isCollared_subtypeVal_boundary (𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional.isCompact
 
 end TauCeti
