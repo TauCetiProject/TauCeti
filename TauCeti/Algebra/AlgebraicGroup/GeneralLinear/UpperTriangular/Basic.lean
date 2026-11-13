@@ -143,7 +143,7 @@ noncomputable abbrev inclusion : groupScheme R n ⟶ GeneralLinear.groupScheme R
   GeneralLinear.weightParabolicInclusion R (weights n)
 
 /-- The upper-triangular coordinate Hopf algebra, bundled with its finite-type property. -/
-noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
+noncomputable abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
   GeneralLinear.weightParabolicFiniteTypeCoordinateHopfAlgebra R (weights n)
 
 /-- The finite-type package has the upper-triangular coordinate Hopf algebra as its object. -/

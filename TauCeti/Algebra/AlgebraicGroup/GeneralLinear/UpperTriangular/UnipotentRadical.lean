@@ -24,8 +24,7 @@ the unipotent radical of the upper-triangular affine group.
   group over every commutative value algebra.
 * `TauCeti.GeneralLinear.UpperTriangular.
     unipotentRadicalDefiningIdeal_finiteTypeCoordinateHopfAlgebra`:
-  after identifying the finite-type package's object with the upper-triangular coordinate
-  algebra, the relative upper-unitriangular Hopf ideal is the unipotent-radical defining ideal.
+  the relative upper-unitriangular Hopf ideal is the unipotent-radical defining ideal.
 
 ## References
 
@@ -79,46 +78,14 @@ theorem mem_upperUnitriangularPointsSubgroup_iff
 
 /-- **The unipotent radical of the standard upper-triangular group is its
 upper-unitriangular subgroup.** The relative ideal is identified pointwise by
-`mem_upperUnitriangularPointsSubgroup_iff`; the pullback presents the finite-type radical in that
-relative coordinate algebra. -/
-@[simp]
+`mem_upperUnitriangularPointsSubgroup_iff`. This is the weight-parabolic case
+`unipotentRadicalDefiningIdeal_weightParabolicFiniteTypeCoordinateHopfAlgebra` at the weights
+`weights n`. -/
 theorem unipotentRadicalDefiningIdeal_finiteTypeCoordinateHopfAlgebra
     (k : Type u) [Field k] (n : ℕ) :
-    (FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
-        (finiteTypeCoordinateHopfAlgebra k n)).comapOfSurjective
-      (eqToHom (finiteTypeCoordinateHopfAlgebra_obj k n).symm).hom
-      (ConcreteCategory.bijective_of_isIso
-        (eqToHom (finiteTypeCoordinateHopfAlgebra_obj k n).symm)).2 =
-      GeneralLinear.Dynamic.weightUnipotentInParabolicHopfIdeal k (weights n) := by
-  let e : finiteTypeCoordinateHopfAlgebra k n ≅
-      GeneralLinear.weightParabolicFiniteTypeCoordinateHopfAlgebra k (weights n) :=
-    ObjectProperty.isoMk _ <| eqToIso <|
-      finiteTypeCoordinateHopfAlgebra_obj k n |>.trans <|
-        (GeneralLinear.weightParabolicFiniteTypeCoordinateHopfAlgebra_obj k (weights n)).symm
-  have hRadical :=
-    FiniteTypeCommHopfAlgCat.comapOfSurjective_unipotentRadicalDefiningIdeal e
-  have hWeight :=
-    unipotentRadicalDefiningIdeal_weightParabolicFiniteTypeCoordinateHopfAlgebra
-      k (weights n)
-  ext x
-  rw [HopfIdeal.mem_comapOfSurjective, ← hRadical, HopfIdeal.mem_comapOfSurjective]
-  have hx := congrArg (fun I ↦ x ∈ I) hWeight
-  rw [HopfIdeal.mem_comapOfSurjective] at hx
-  have hcomp :
-      eqToHom (finiteTypeCoordinateHopfAlgebra_obj k n).symm ≫ e.hom.hom =
-        eqToHom
-          (GeneralLinear.weightParabolicFiniteTypeCoordinateHopfAlgebra_obj
-            k (weights n)).symm := by
-    simp only [e, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom, eqToIso.hom]
-    rw [eqToHom_trans]
-  have hcomp_apply :
-      e.hom.hom ((eqToHom (finiteTypeCoordinateHopfAlgebra_obj k n).symm).hom x) =
-        (eqToHom
-          (GeneralLinear.weightParabolicFiniteTypeCoordinateHopfAlgebra_obj
-            k (weights n)).symm).hom x := by
-    rw [← ConcreteCategory.comp_apply, hcomp]
-  rw [hcomp_apply]
-  exact iff_of_eq hx
+    FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal (finiteTypeCoordinateHopfAlgebra k n) =
+      GeneralLinear.Dynamic.weightUnipotentInParabolicHopfIdeal k (weights n) :=
+  unipotentRadicalDefiningIdeal_weightParabolicFiniteTypeCoordinateHopfAlgebra k (weights n)
 
 end
 
