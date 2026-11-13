@@ -181,19 +181,19 @@ theorem heatSemigroup_mono (hp : p ≠ ∞) (t : ℝ≥0) :
 
 /-- **The heat semigroup preserves mass on `L¹`**: `∫ e^{tΔ} f = ∫ f` for `f ∈ L¹`. -/
 @[simp]
-theorem integral_heatSemigroup (hp : (1 : ℝ≥0∞) ≠ ∞) (t : ℝ≥0)
-    (f : Lp F 1 (volume : Measure E)) : ∫ x, heatSemigroup hp t f x = ∫ x, f x := by
+theorem integral_heatSemigroup (t : ℝ≥0) (f : Lp F 1 (volume : Measure E)) :
+    ∫ x, heatSemigroup ENNReal.one_ne_top t f x = ∫ x, f x := by
   rcases eq_or_ne t 0 with rfl | ht
   · simp
   have ht' : 0 < (t : ℝ) := by positivity
-  rw [heatSemigroup_apply hp ht, integral_convolutionLp hp,
+  rw [heatSemigroup_apply ENNReal.one_ne_top ht, integral_convolutionLp,
     integral_heatKernel ht', one_smul]
 
 /-- On nonnegative functions the heat semigroup preserves the `L¹` norm: for `0 ≤ f ∈ L¹`,
 `‖e^{tΔ} f‖₁ = ‖f‖₁`. -/
-theorem norm_heatSemigroup_of_nonneg (hp : (1 : ℝ≥0∞) ≠ ∞) (t : ℝ≥0)
-    {f : Lp ℝ 1 (volume : Measure E)} (hf : 0 ≤ f) : ‖heatSemigroup hp t f‖ = ‖f‖ := by
-  rw [L1.norm_eq_integral_of_nonneg (heatSemigroup_nonneg hp t hf),
+theorem norm_heatSemigroup_of_nonneg (t : ℝ≥0) {f : Lp ℝ 1 (volume : Measure E)} (hf : 0 ≤ f) :
+    ‖heatSemigroup ENNReal.one_ne_top t f‖ = ‖f‖ := by
+  rw [L1.norm_eq_integral_of_nonneg (heatSemigroup_nonneg ENNReal.one_ne_top t hf),
     L1.norm_eq_integral_of_nonneg hf, integral_heatSemigroup]
 
 end TauCeti

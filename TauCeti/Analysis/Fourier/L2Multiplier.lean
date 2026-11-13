@@ -367,46 +367,50 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 /-- **Convolution with an integrable kernel is a Fourier multiplier on `L²`.** If `k` is
 integrable and the symbol `m ∈ L^∞` is almost everywhere the Fourier transform of `k`, then
 convolution with `k` on `L²` is the multiplier with symbol `m`. -/
-theorem convolutionLp_eq_fourierMultiplierCLM (hp : (2 : ℝ≥0∞) ≠ ∞) (hk : Integrable k)
+theorem convolutionLp_eq_fourierMultiplierCLM (hk : Integrable k)
     {m : Lp ℂ ∞ (volume : Measure E)} (hm : m =ᵐ[volume] 𝓕 (fun x ↦ (k x : ℂ))) :
-    (convolutionLp hp k volume : Lp F 2 (volume : Measure E) →L[ℝ] Lp F 2 (volume : Measure E)) =
+    (convolutionLp (p := 2) ENNReal.ofNat_ne_top k volume :
+        Lp F 2 (volume : Measure E) →L[ℝ] Lp F 2 (volume : Measure E)) =
       (Lp.fourierMultiplierCLM F m).restrictScalars ℝ := by
   -- Both sides are continuous, and they agree on the dense set of Schwartz functions.
   refine ContinuousLinearMap.coeFn_injective <|
-    (SchwartzMap.denseRange_toLpCLM (F := F) (E := E) hp).equalizer (map_continuous _)
-      (map_continuous _) (funext fun φ ↦ ?_)
+    (SchwartzMap.denseRange_toLpCLM (F := F) (E := E) (p := 2) ENNReal.ofNat_ne_top).equalizer
+      (map_continuous _) (map_continuous _) (funext fun φ ↦ ?_)
   simp only [Function.comp_apply, SchwartzMap.toLpCLM_apply, coe_restrictScalars']
-  have hφ : MemLp (φ : E → F) 2 := φ.memLp 2
-  have hconv : convolutionLp hp k volume (φ.toLp 2) =ᵐ[volume] k ⋆ (φ : E → F) :=
-    convolutionLp_ae_eq_convolution hp hk hφ
+  -- The class `φ.toLp 2` is represented by `φ`, so the operator is the convolution `k ⋆ φ`.
+  have hconv : convolutionLp (p := 2) ENNReal.ofNat_ne_top k volume (φ.toLp 2) =ᵐ[volume]
+      k ⋆ (φ : E → F) := by
+    have h := convolutionLp_ae_eq_convolution (p := 2) ENNReal.ofNat_ne_top hk
+      (Lp.memLp (φ.toLp 2))
+    rw [Lp.toLp_coeFn] at h
+    exact h.trans (.of_eq (convolution_congr _ (EventuallyEq.refl _ k) (φ.coeFn_toLp 2)))
   have hh₁ : Integrable (k ⋆ (φ : E → F)) := hk.integrable_convolution _ φ.integrable
   have hh₂ : MemLp (k ⋆ (φ : E → F)) 2 := (Lp.memLp _).ae_eq hconv
-  have hS : convolutionLp hp k volume (φ.toLp 2) = hh₂.toLp _ :=
+  have hS : convolutionLp (p := 2) ENNReal.ofNat_ne_top k volume (φ.toLp 2) = hh₂.toLp _ :=
     Lp.ext (hconv.trans hh₂.coeFn_toLp.symm)
   -- On the Fourier side, both sides are multiplication of `𝓕 φ` by `𝓕 k`.
   have key : (𝓕 (hh₂.toLp _) : Lp F 2 (volume : Measure E)) =
       𝓕 (Lp.fourierMultiplierCLM F m (φ.toLp 2)) := by
-    rw [Lp.fourier_fourierMultiplierCLM]
+    rw [Lp.fourier_fourierMultiplierCLM, SchwartzMap.toLp_fourier_eq]
     refine Lp.ext ?_
-    filter_upwards [hh₁.coeFn_fourier_toLp hh₂, Lp.coeFn_lpSMul (r := 2) m (𝓕 (φ.toLp 2)),
-      φ.integrable.coeFn_fourier_toLp hφ, hm] with ξ hhξ hmξ hφξ hkξ
-    rw [hhξ, hmξ, Pi.smul_apply', hkξ, Real.fourier_convolution_eq hk φ.integrable, ← hφξ]
-    -- `φ.toLp 2` is `hφ.toLp φ` by definition.
-    rfl
+    filter_upwards [hh₁.coeFn_fourier_toLp hh₂, Lp.coeFn_lpSMul (r := 2) m ((𝓕 φ).toLp 2),
+      (𝓕 φ).coeFn_toLp 2, hm] with ξ hhξ hmξ hφξ hkξ
+    rw [hhξ, hmξ, Pi.smul_apply', hkξ, hφξ, Real.fourier_convolution_eq hk φ.integrable,
+      SchwartzMap.fourier_coe]
   rw [hS]
   exact (Lp.fourierTransformₗᵢ E F).injective key
 
 /-- **The Fourier transform of a convolution on `L²`.** For an integrable kernel `k` and
 `f ∈ L²`, the `L²` Fourier transform of `k ⋆ f` is almost everywhere `ξ ↦ 𝓕 k ξ • 𝓕 f ξ`, with
 `k` viewed as complex valued. -/
-theorem coeFn_fourier_convolutionLp (hp : (2 : ℝ≥0∞) ≠ ∞) (hk : Integrable k)
-    (f : Lp F 2 (volume : Measure E)) :
-    ⇑(𝓕 (convolutionLp hp k volume f) : Lp F 2 (volume : Measure E)) =ᵐ[volume]
+theorem coeFn_fourier_convolutionLp (hk : Integrable k) (f : Lp F 2 (volume : Measure E)) :
+    ⇑(𝓕 (convolutionLp (p := 2) ENNReal.ofNat_ne_top k volume f) :
+        Lp F 2 (volume : Measure E)) =ᵐ[volume]
       fun ξ ↦ 𝓕 (fun x ↦ (k x : ℂ)) ξ • (𝓕 f : Lp F 2 (volume : Measure E)) ξ := by
   have hki : Integrable (fun x ↦ (k x : ℂ)) := hk.ofReal
   have hk' : MemLp (𝓕 (fun x ↦ (k x : ℂ))) ∞ volume :=
     (eLpNorm_fourier_top_le _).trans_lt (memLp_one_iff_integrable.2 hki).eLpNorm_lt_top
-  have h := congr($(convolutionLp_eq_fourierMultiplierCLM (F := F) hp hk hk'.coeFn_toLp) f)
+  have h := congr($(convolutionLp_eq_fourierMultiplierCLM (F := F) hk hk'.coeFn_toLp) f)
   rw [coe_restrictScalars'] at h
   rw [h, Lp.fourier_fourierMultiplierCLM]
   filter_upwards [Lp.coeFn_lpSMul (r := 2) (hk'.toLp _) (𝓕 f), hk'.coeFn_toLp] with ξ h₁ h₂
