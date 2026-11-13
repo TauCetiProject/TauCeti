@@ -52,6 +52,10 @@ and proves:
   smoothing symbol exactly when their homogeneous terms agree;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`;
+* `TauCeti.ClassicalSymbol.ofEqHomogeneous`: a symbol that agrees with a homogeneous symbol `h` at
+  all large frequencies is classical, with principal symbol `h` and no further terms; in
+  particular so is a coefficient that is smooth everywhere and homogeneous away from `ξ = 0`, such
+  as a homogeneous polynomial in `ξ` (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`);
 * `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
   of order `m`, with `k` leading terms equal to zero;
 * `TauCeti.ClassicalSymbol.tail`: the remainder `a - χ(ξ) a_m` after the principal term, a
@@ -435,6 +439,70 @@ theorem ofHomogeneous_zero : ofHomogeneous χ (0 : HomogeneousSymbol _ _ V W m) 
   ext (map_zero (cutoffSymbol χ))
 
 end Examples
+
+section EqHomogeneous
+
+/-- A symbol `a` of order `m` that agrees with a homogeneous symbol `h` of degree `m` at all
+frequencies of norm at least some `R` is a classical symbol, with principal symbol `h`
+(`TauCeti.ClassicalSymbol.principal_ofEqHomogeneous`) and no further homogeneous terms. It is
+the cut-off term `χ(ξ) h(x, ξ)` plus a smoothing symbol. -/
+def ofEqHomogeneous (a : Symbol n V W m)
+    (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+    (hah : ∃ R : ℝ, ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = h.coefficient (x, ξ)) :
+    ClassicalSymbol n V W m :=
+  ofHomogeneous default h + ofIsSmoothing (a - cutoffSymbol default h) (by
+    obtain ⟨R, hR⟩ := hah
+    refine Symbol.isSmoothing_of_coefficient_eq_zero (max R 2) fun x ξ hξ ↦ ?_
+    rw [Symbol.coefficient_sub, Pi.sub_apply, hR x ξ (le_of_max_le_left hξ),
+      coefficient_cutoffSymbol_of_two_le_norm _ _ (le_of_max_le_right hξ), sub_self])
+
+variable (a : Symbol n V W m) (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+  (hah : ∃ R : ℝ, ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = h.coefficient (x, ξ))
+
+@[simp]
+theorem toSymbol_ofEqHomogeneous : (ofEqHomogeneous a h hah).toSymbol = a := by
+  simp [ofEqHomogeneous]
+
+@[simp]
+theorem principal_ofEqHomogeneous : (ofEqHomogeneous a h hah).principal = h := by
+  rw [ofEqHomogeneous, principal_add, principal_ofHomogeneous, principal_def, term_ofIsSmoothing,
+    castDegree_zero, add_zero]
+
+@[simp]
+theorem term_ofEqHomogeneous_succ (j : ℕ) : (ofEqHomogeneous a h hah).term (j + 1) = 0 := by
+  simp [ofEqHomogeneous, term_ofIsSmoothing]
+
+/-- A coefficient `f` that is smooth on all of `ℝⁿ × ℝⁿ` and positively homogeneous of degree `m`
+in the frequency away from `ξ = 0` is a classical symbol of order `m`, whose principal symbol is
+`f` itself away from `ξ = 0` and whose other homogeneous terms vanish. -/
+def ofContDiffHomogeneous (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f)
+    (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) :
+    ClassicalSymbol n V W m :=
+  ofEqHomogeneous (Symbol.ofContDiffHomogeneous f hf hhom) (mk' f hf.contDiffOn hhom)
+    ⟨1, fun _ _ hξ ↦ by
+      rw [Symbol.coefficient_ofContDiffHomogeneous,
+        coefficient_mk'_of_ne_zero _ _ _ (norm_pos_iff.1 (lt_of_lt_of_le one_pos hξ))]⟩
+
+variable (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+  (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ))
+
+@[simp]
+theorem toSymbol_ofContDiffHomogeneous :
+    (ofContDiffHomogeneous f hf hhom).toSymbol = Symbol.ofContDiffHomogeneous f hf hhom := by
+  rw [ofContDiffHomogeneous, toSymbol_ofEqHomogeneous]
+
+@[simp]
+theorem principal_ofContDiffHomogeneous :
+    (ofContDiffHomogeneous f hf hhom).principal = mk' f hf.contDiffOn hhom := by
+  rw [ofContDiffHomogeneous, principal_ofEqHomogeneous]
+
+@[simp]
+theorem term_ofContDiffHomogeneous_succ (j : ℕ) :
+    (ofContDiffHomogeneous f hf hhom).term (j + 1) = 0 := by
+  rw [ofContDiffHomogeneous, term_ofEqHomogeneous_succ]
+
+end EqHomogeneous
 
 section PrincipalKernel
 
@@ -843,7 +911,7 @@ theorem term_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) (k : ℕ) :
 @[simp]
 theorem principal_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
     (spatialDeriv j a).principal = a.principal.spatialDeriv (EuclideanSpace.single j 1) :=
-  HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ => by simp [hξ]
+  HomogeneousSymbol.ext_of_ne_zero fun x ξ _ => by simp
 
 /-- The remainder of the frequency derivative of a classical symbol after `N` terms has order
 `m - 1 - N`. -/

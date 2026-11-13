@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Abelian.LeftDerived
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Resolution
+public import TauCeti.CategoryTheory.ObjectProperty.Homology
 
 /-!
 # Left derived functors on a projective presentation of length one
@@ -33,11 +34,15 @@ Over a principal ideal domain every module has such a presentation, by a free mo
 kernel, which is again free; applied to the tensor product, this computes `Tor₁` in the Künneth
 and universal coefficient theorems.
 
-The file also records two general facts. The natural transformation `LₙF ⟶ LₙG` induced by
+The file also records three general facts. The natural transformation `LₙF ⟶ LₙG` induced by
 `α : F ⟶ G` is additive in `α` (`CategoryTheory.NatTrans.leftDerived_add`), so that a derived
 functor depending on a parameter through a natural transformation, such as `Tor` in its underived
 variable, is an additive functor of that parameter. An exact additive functor has no positive left
-derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`).
+derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`). If an additive functor sends
+projective objects into a class closed under subobjects and quotients, for instance a Serre class,
+all its left derived functors take values in that class
+(`CategoryTheory.ObjectProperty.prop_leftDerived_obj`). Applied to tensoring with a fixed object,
+this turns closure of such a class under tensor products into closure under Tor.
 
 ## References
 
@@ -275,6 +280,16 @@ theorem Functor.isZero_leftDerived_succ (F : C ⥤ D) [F.Additive] [F.PreservesH
   rw [HomologicalComplex.homologyFunctor_obj, ← HomologicalComplex.exactAt_iff_isZero_homology,
     HomologicalComplex.exactAt_iff' _ (q + 2) (q + 1) q (by simp) (by simp)]
   exact (P.exact_succ q).map F
+
+/-- If an additive functor sends every projective object into a class closed under subobjects
+and quotients, all its left derived functors take values in that class. -/
+lemma ObjectProperty.prop_leftDerived_obj (P : ObjectProperty D) [P.IsClosedUnderSubobjects]
+    [P.IsClosedUnderQuotients] (F : C ⥤ D) [F.Additive]
+    (hF : ∀ (Y : C) [Projective Y], P (F.obj Y)) (X : C) (n : ℕ) :
+    P ((F.leftDerived n).obj X) := by
+  let Q := projectiveResolution X
+  exact P.prop_of_iso (Q.isoLeftDerivedObj F n).symm
+    (P.prop_homology ((F.mapHomologicalComplex _).obj Q.complex) n (hF _))
 
 end Additive
 
