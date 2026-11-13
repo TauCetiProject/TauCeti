@@ -36,6 +36,10 @@ def IsHive [Add R] [LE R] (h : Vertex n → R) : Prop :=
 theorem isHive_iff [Add R] [LE R] (h : Vertex n → R) :
     IsHive h ↔ ∀ ⦃a b c d⦄, IsRhombus a b c d → h b + h d ≤ h a + h c := Iff.rfl
 
+/-- Evaluate the short-diagonal inequality of a hive labelling on a unit rhombus. -/
+theorem IsHive.le [Add R] [LE R] {h : Vertex n → R} (hh : IsHive h)
+    {a b c d : Vertex n} (hr : IsRhombus a b c d) : h b + h d ≤ h a + h c := hh hr
+
 section Symmetry
 
 variable [Add R] [LE R]
@@ -170,6 +174,10 @@ def ofLabel (h : Vertex n → R) (hh : IsHive h) (hA : h (Vertex.cornerA n) = 0)
 /-- The underlying labelling of a normalized hive satisfies the rhombus inequalities. -/
 @[simp] theorem isHive (h : Hive n R) : IsHive (h : Vertex n → R) := h.property.1
 
+/-- A normalized hive satisfies the short-diagonal inequality on every unit rhombus. -/
+theorem rhombus_le (h : Hive n R) {a b c d : Vertex n} (hr : IsRhombus a b c d) :
+    h b + h d ≤ h a + h c := h.isHive.le hr
+
 @[simp] theorem apply_cornerA (h : Hive n R) : h (Vertex.cornerA n) = 0 := h.property.2
 
 @[simp] theorem zero_apply (p : Vertex n) : (0 : Hive n R) p = 0 := (rfl)
@@ -194,8 +202,24 @@ def affine (u v : R) : Hive n R :=
       _ = (a.y • u + c.y • u) + (a.z • v + c.z • v) := by rw [hy, hz]
       _ = (a.y • u + a.z • v) + (c.y • u + c.z • v) := by abel)) (by simp)
 
+/-- The labelling underlying an affine hive. -/
+theorem coe_affine (u v : R) :
+    (affine u v : Vertex n → R) = fun p => p.y • u + p.z • v := (rfl)
+
 @[simp] theorem affine_apply (u v : R) (p : Vertex n) :
     affine u v p = p.y • u + p.z • v := (rfl)
+
+/-- Zero slopes give the zero hive. -/
+@[simp] theorem affine_zero : affine (0 : R) 0 = (0 : Hive n R) := by
+  ext p
+  simp
+
+/-- Addition of affine hives adds their slopes. -/
+@[simp] theorem affine_add (u v u' v' : R) :
+    affine (u + u') (v + v') = (affine u v + affine u' v' : Hive n R) := by
+  ext p
+  simp only [affine_apply, add_apply, nsmul_add]
+  abel
 
 end AddMonoid
 
@@ -208,8 +232,30 @@ def normalize (h : Vertex n → R) (hh : IsHive h) : Hive n R :=
   ofLabel (fun p => h p - h (Vertex.cornerA n))
     ((isHive_sub_const_iff _ _).mpr hh) (sub_self _)
 
+/-- The labelling underlying normalization. -/
+theorem coe_normalize (h : Vertex n → R) (hh : IsHive h) :
+    (normalize h hh : Vertex n → R) = fun p => h p - h (Vertex.cornerA n) := (rfl)
+
 @[simp] theorem normalize_apply (h : Vertex n → R) (hh : IsHive h) (p : Vertex n) :
     normalize h hh p = h p - h (Vertex.cornerA n) := (rfl)
+
+/-- Normalization sends the zero labelling to the zero hive. -/
+@[simp] theorem normalize_zero : normalize (0 : Vertex n → R) isHive_zero = 0 := by
+  ext p
+  simp
+
+/-- Normalization sends every constant labelling to the zero hive. -/
+@[simp] theorem normalize_const (c : R) :
+    normalize (fun _ : Vertex n => c) (isHive_const c) = 0 := by
+  ext p
+  simp
+
+/-- Normalization commutes with pointwise addition. -/
+@[simp] theorem normalize_add (h k : Vertex n → R) (hh : IsHive h) (hk : IsHive k) :
+    normalize (h + k) (hh.add hk) = normalize h hh + normalize k hk := by
+  ext p
+  simp only [normalize_apply, add_apply, Pi.add_apply]
+  abel
 
 /-- Normalizing an already normalized hive leaves it unchanged. -/
 @[simp] theorem normalize_coe (h : Hive n R) : normalize (h : Vertex n → R) h.isHive = h := by
@@ -237,8 +283,33 @@ theorem normalize_eq_iff {h k : Vertex n → R} (hh : IsHive h) (hk : IsHive k) 
 def restrict {m : ℕ} (h : Hive (m + n) R) (p : Vertex m) : Hive n R :=
   normalize (fun q => h (p.add q)) (h.isHive.restrict p)
 
+/-- The labelling underlying normalized restriction. -/
+theorem coe_restrict {m : ℕ} (h : Hive (m + n) R) (p : Vertex m) :
+    (h.restrict p : Vertex n → R) = fun q => h (p.add q) - h (p.add (Vertex.cornerA n)) :=
+  (rfl)
+
 @[simp] theorem restrict_apply {m : ℕ} (h : Hive (m + n) R) (p : Vertex m)
     (q : Vertex n) : h.restrict p q = h (p.add q) - h (p.add (Vertex.cornerA n)) := (rfl)
+
+/-- Restriction sends the zero hive to the zero hive. -/
+@[simp] theorem restrict_zero {m : ℕ} (p : Vertex m) : (0 : Hive (m + n) R).restrict p = 0 := by
+  ext q
+  simp
+
+/-- Restriction commutes with addition of hives. -/
+@[simp] theorem restrict_add {m : ℕ} (h k : Hive (m + n) R) (p : Vertex m) :
+    (h + k).restrict p = h.restrict p + k.restrict p := by
+  ext q
+  simp only [restrict_apply, add_apply]
+  abel
+
+/-- Restriction preserves the slopes of an affine hive. -/
+@[simp] theorem restrict_affine {m : ℕ} (u v : R) (p : Vertex m) :
+    (affine u v : Hive (m + n) R).restrict p = affine u v := by
+  ext q
+  simp only [restrict_apply, affine_apply, Vertex.add_y, Vertex.add_z, add_nsmul,
+    Vertex.cornerA_y, Vertex.cornerA_z, add_zero]
+  abel
 
 end Group
 

@@ -42,6 +42,12 @@ def boundary (h : Vertex n → R) (s : Fin 3) (i : Fin n) : R :=
 theorem boundary_apply (h : Vertex n → R) (s : Fin 3) (i : Fin n) :
     boundary h s i = h (Vertex.edge n s i.succ) - h (Vertex.edge n s i.castSucc) := (rfl)
 
+/-- Rotating a labelling cycles its clockwise boundary sides. -/
+@[simp] theorem boundary_rotate (h : Vertex n → R) :
+    boundary (fun p => h p.rotate) = fun s => boundary h (s + 1) := by
+  funext s i
+  simp only [boundary, Vertex.rotate_edge]
+
 @[simp] theorem boundary_zero : boundary (0 : Vertex n → R) = 0 := by
   funext s i
   simp [boundary]
@@ -97,7 +103,7 @@ theorem sum_boundary (h : Vertex n → R) (s : Fin 3) :
   abel
 
 /-- Boundary restriction on the full space of labellings is linear. -/
-def boundaryLinearMap (K : Type*) [Semiring K] [Module K R] :
+def boundaryLinearMap (n : ℕ) (K R : Type*) [Semiring K] [AddCommGroup R] [Module K R] :
     (Vertex n → R) →ₗ[K] (Fin 3 → Fin n → R) where
   toFun := boundary
   map_add' := boundary_add
@@ -105,8 +111,12 @@ def boundaryLinearMap (K : Type*) [Semiring K] [Module K R] :
     funext s i
     simp [boundary, smul_sub]
 
+/-- The function underlying the ambient boundary linear map. -/
+@[simp] theorem coe_boundaryLinearMap (K : Type*) [Semiring K] [Module K R] :
+    ⇑(boundaryLinearMap n K R) = boundary := (rfl)
+
 @[simp] theorem boundaryLinearMap_apply (K : Type*) [Semiring K] [Module K R]
-    (h : Vertex n → R) : boundaryLinearMap K h = boundary h := (rfl)
+    (h : Vertex n → R) : boundaryLinearMap n K R h = boundary h := (rfl)
 
 end Group
 
@@ -115,8 +125,9 @@ section OrderedGroup
 variable [AddCommGroup R] [Preorder R] [IsOrderedAddMonoid R]
 
 /-- An affine hive has constant boundary slopes `u`, `v - u`, and `-v` clockwise. -/
-@[simp] theorem boundary_affine (u v : R) (s : Fin 3) (i : Fin n) :
-    boundary (affine u v : Vertex n → R) s i = ![u, v - u, -v] s := by
+@[simp] theorem boundary_affine (u v : R) :
+    boundary (affine u v : Vertex n → R) = fun s _ => ![u, v - u, -v] s := by
+  funext s i
   have hn : n - (i : ℕ) = (n - ((i : ℕ) + 1)) + 1 := by omega
   fin_cases s <;>
     simp [boundary, Vertex.edge_zero, Vertex.edge_one, Vertex.edge_two, hn, add_nsmul]

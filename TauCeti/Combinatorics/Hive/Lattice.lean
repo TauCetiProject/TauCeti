@@ -144,6 +144,15 @@ def edge (n : ℕ) (s : Fin 3) (i : Fin (n + 1)) : Vertex n :=
 @[simp] theorem edgeAB_last : edgeAB n (Fin.last n) = (cornerA n).rotate := by
   ext <;> simp [edgeAB]
 
+/-- Clockwise rotation advances the side of an edge vertex. -/
+@[simp] theorem rotate_edge (s : Fin 3) (i : Fin (n + 1)) :
+    (edge n s i).rotate = edge n (s + 1) i := by
+  fin_cases s <;> simp [edge]
+
+/-- The last vertex of each side is the first vertex of the next side. -/
+theorem edge_last (s : Fin 3) : edge n s (Fin.last n) = edge n (s + 1) 0 := by
+  fin_cases s <;> simp [edge, edgeAB_last, edgeAB_zero]
+
 /-- Add barycentric coordinates, embedding translated lattice triangles. -/
 def add {m : ℕ} (p : Vertex n) (q : Vertex m) : Vertex (n + m) :=
   ⟨p.x + q.x, p.y + q.y, p.z + q.z, by have := p.sum_eq; have := q.sum_eq; omega⟩
