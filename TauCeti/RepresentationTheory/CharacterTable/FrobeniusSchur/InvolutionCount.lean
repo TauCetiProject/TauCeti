@@ -51,7 +51,9 @@ required: nothing here uses the trichotomy, so the values `ν₂` takes are irre
 * `TauCeti.ClassFunction.card_squareRoot_eq_sum_frobeniusSchurIndicator`: **the involution-counting
   formula** `#{g : g² = x} = ∑_χ ν₂(χ) χ(x)`, over a complete family of irreducibles.
 * `TauCeti.frobeniusSchurIndicatorRow`: the indicator of the `i`-th row of `TauCeti.characterTable`,
-  and `TauCeti.frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable` reading it off the table.
+  and `TauCeti.frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable` reading it off the table;
+  the trivial row has indicator `1`
+  (`TauCeti.frobeniusSchurIndicatorRow_eq_one_of_irreducibleCharacter_eq_one`).
 * `TauCeti.card_squareRoot_eq_sum_frobeniusSchurIndicatorRow_mul_characterTable`: the same formula
   read off the rows of `TauCeti.characterTable`, and
   `TauCeti.card_squareRoot_one_eq_sum_frobeniusSchurIndicatorRow_mul_characterDegree` its value at
@@ -214,6 +216,17 @@ theorem frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable
       (Nat.card G : k)⁻¹ * ∑ g : G, characterTable k G i (ConjClasses.mk (g ^ 2)) := by
   rw [frobeniusSchurIndicatorRow_def, Representation.frobeniusSchurIndicator_def]
   simp
+
+variable {G} in
+/-- **The trivial row has Frobenius-Schur indicator `1`**: a row of the character table whose
+character is the constant `1` averages to `1` over the squares. -/
+theorem frobeniusSchurIndicatorRow_eq_one_of_irreducibleCharacter_eq_one
+    {i : Fin (Nat.card (ConjClasses G))} (hi : irreducibleCharacter k i = fun _ => 1) :
+    frobeniusSchurIndicatorRow k i = 1 := by
+  rw [frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable]
+  simp only [characterTable_apply, hi, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one,
+    ← Nat.card_eq_fintype_card]
+  exact inv_mul_cancel_of_invertible _
 
 variable {G} in
 /-- **The row indicator takes only the values `1`, `0` and `-1`** in characteristic zero, by the
