@@ -27,7 +27,10 @@ The squared norm of `‖x‖ • y - ‖x‖⁻¹ • x` also has the polynomial
 spherical inversion.
 
 Along a line `t ↦ x + t • ξ`, the squared distance to a point `y` is the quadratic polynomial
-`‖x - y‖² + 2 ⟪ξ, x - y⟫ t + ‖ξ‖² t²` in `t`.
+`‖x - y‖² + 2 ⟪ξ, x - y⟫ t + ‖ξ‖² t²` in `t`. Factoring `‖q - q₀‖²` out of `‖q - (q₀ + h)‖²` when
+`q ≠ q₀` writes the displaced squared distance in terms of the dimensionless quadratic perturbation
+`(2 ⟪q - q₀, h⟫ - ‖h‖²) / ‖q - q₀‖²`, bounded in absolute value by `2 (‖h‖ / δ) + (‖h‖ / δ)²`
+whenever `‖q - q₀‖ ≥ δ > 0`.
 
 ## Main declarations
 
@@ -40,6 +43,9 @@ Along a line `t ↦ x + t • ξ`, the squared distance to a point `y` is the qu
 * `TauCeti.norm_sq_norm_smul_sub_inv_norm_smul`: the squared norm of the normalized reflection
   vector as a polynomial.
 * `TauCeti.norm_add_smul_sub_sq`: the squared distance along a line as a quadratic polynomial.
+* `TauCeti.norm_sub_add_sq_eq`: the factored squared distance `‖q - (q₀ + h)‖²` for `q ≠ q₀`.
+* `TauCeti.abs_two_mul_inner_sub_norm_sq_div_le`: Cauchy–Schwarz bound on
+  `|(2 ⟪w, h⟫ - ‖h‖²) / ‖w‖²|` when `‖w‖ ≥ δ > 0`.
 * `TauCeti.norm_sub_le_add_div_sub_inner`: for unit vectors `a` and `ν`, the distance `‖a - ν‖`
   is bounded by `η / 2 + 1 / η - 1 / η * ⟪ν, a⟫` for every `η > 0`.
 * `TauCeti.one_sub_div_mul_norm_sq_sub_le_norm_sub_sq`: if `‖q‖ ≤ a r` with `0 ≤ a ≤ L`, then
@@ -163,6 +169,35 @@ theorem one_sub_div_mul_norm_sq_sub_le_norm_sub_sq {a L r : ℝ} (ha0 : 0 ≤ a)
   have hsplit : (1 - a / L) * ‖p‖ ^ 2 = ‖p‖ ^ 2 - a / L * ‖p‖ ^ 2 := by ring
   rw [hsplit]
   nlinarith
+
+/-- Factoring out `‖q - q₀‖²` from the squared distance to a displaced point `q₀ + h` when
+`q ≠ q₀`. -/
+theorem norm_sub_add_sq_eq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {q q₀ : E} (hq : q ≠ q₀) (h : E) :
+    ‖q - (q₀ + h)‖ ^ 2 =
+      ‖q - q₀‖ ^ 2 * (1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2) := by
+  have hw : ‖q - q₀‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 (sub_ne_zero.2 hq))
+  rw [sub_add_eq_sub_sub, norm_sub_sq_real, mul_sub, mul_one, mul_div_cancel₀ _ hw]
+  ring
+
+/-- Uniform Cauchy–Schwarz bound on the dimensionless perturbation `(2 ⟪w, h⟫ - ‖h‖²) / ‖w‖²`
+when `‖w‖ ≥ δ > 0`. -/
+theorem abs_two_mul_inner_sub_norm_sq_div_le {w h : F} {δ : ℝ} (hδ : 0 < δ) (hw : δ ≤ ‖w‖) :
+    |(2 * ⟪w, h⟫ - ‖h‖ ^ 2) / ‖w‖ ^ 2| ≤ 2 * (‖h‖ / δ) + (‖h‖ / δ) ^ 2 := by
+  have hw₀ : 0 < ‖w‖ := hδ.trans_le hw
+  have hdiv : ‖h‖ / ‖w‖ ≤ ‖h‖ / δ := div_le_div_of_nonneg_left (norm_nonneg h) hδ hw
+  calc |(2 * ⟪w, h⟫ - ‖h‖ ^ 2) / ‖w‖ ^ 2|
+    _ = |2 * ⟪w, h⟫ - ‖h‖ ^ 2| / ‖w‖ ^ 2 := by
+        rw [abs_div, abs_of_pos (pow_pos hw₀ 2)]
+    _ ≤ (2 * (‖w‖ * ‖h‖) + ‖h‖ ^ 2) / ‖w‖ ^ 2 := by
+        gcongr
+        refine (abs_sub _ _).trans (add_le_add ?_ (le_of_eq (abs_of_nonneg (sq_nonneg ‖h‖))))
+        rw [abs_mul, abs_of_pos zero_lt_two]
+        gcongr
+        exact abs_real_inner_le_norm w h
+    _ = 2 * (‖h‖ / ‖w‖) + (‖h‖ / ‖w‖) ^ 2 := by
+        field_simp
+    _ ≤ 2 * (‖h‖ / δ) + (‖h‖ / δ) ^ 2 := by gcongr
 
 end TauCeti
 
