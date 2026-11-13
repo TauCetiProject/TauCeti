@@ -53,30 +53,35 @@ noncomputable def a5FourthD4GlueModuleIsometry :
   a5FourthD4.glueModuleIsometry simplyLaced rfl (fun i ↦ by fin_cases i <;> rfl)
 
 /-- The displayed zero coordinate is the row's zero coordinate. -/
+@[simp]
 theorem a5FourthD4GlueModuleIsometry_zero (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry w 0 = w (0 : Fin 5) := by
   exact (glueModuleIsometry_apply _ _ _ _ w (0 : Fin 5)).trans
     ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
 
 /-- The displayed first coordinate is the row's first coordinate. -/
+@[simp]
 theorem a5FourthD4GlueModuleIsometry_one (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry w 1 = w (1 : Fin 5) := by
   exact (glueModuleIsometry_apply _ _ _ _ w (1 : Fin 5)).trans
     ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
 
 /-- The displayed second coordinate is the row's second coordinate. -/
+@[simp]
 theorem a5FourthD4GlueModuleIsometry_two (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry w 2 = w (2 : Fin 5) := by
   exact (glueModuleIsometry_apply _ _ _ _ w (2 : Fin 5)).trans
     ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
 
 /-- The displayed third coordinate is the row's third coordinate. -/
+@[simp]
 theorem a5FourthD4GlueModuleIsometry_three (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry w 3 = w (3 : Fin 5) := by
   exact (glueModuleIsometry_apply _ _ _ _ w (3 : Fin 5)).trans
     ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
 
 /-- The displayed fourth coordinate is the row's fourth coordinate. -/
+@[simp]
 theorem a5FourthD4GlueModuleIsometry_four (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry w 4 = w (4 : Fin 5) := by
   exact (glueModuleIsometry_apply _ _ _ _ w (4 : Fin 5)).trans
