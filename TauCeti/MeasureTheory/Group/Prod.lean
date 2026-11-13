@@ -9,37 +9,40 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasur
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Constructions.Baire.Haar
-import TauCeti.MeasureTheory.Group.ModularCharacter
+import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
 
 /-!
-# Product strong measurability on σ-compact locally compact Hausdorff groups
+# Product strong measurability on locally compact Hausdorff groups
 
 On a locally compact Hausdorff group `G` that is not assumed second countable, `borel (G × G)` can
 be strictly larger than the product σ-algebra `borel G × borel G`, so `G` need not satisfy
 `MeasurableMul₂ G` and the measurable-group product lemmas in `Mathlib.MeasureTheory.Group.Prod` do
 not apply directly.
 
-When `G` is σ-compact and `μ` is a regular Haar measure, Haar completion regularity
-(`MeasureTheory.AEStronglyMeasurable.exists_stronglyMeasurable_baire`) resolves this obstacle: any
-`μ`-almost everywhere strongly measurable function `f : G → β` agrees outside a Baire `μ`-null set
-`N` with a function `g` strongly measurable for `TauCeti.baire G`. Along a continuous map
-`Φ : X × Y → G` out of a product of σ-compact spaces (`T2Space Y`), `g ∘ Φ` is strongly measurable
-for the product σ-algebra (`Continuous.measurable_baire_prod_of_sigmaCompact`), and `Φ ⁻¹' N` is
+Along a continuous map `Φ : X × Y → G` out of a product of σ-compact spaces (`T2Space Y`) into a
+locally compact Hausdorff group `G` with a regular Haar measure `μ`, `range Φ` is σ-compact and
+therefore lies in a σ-compact open subgroup `H : OpenSubgroup G`
+(`IsSigmaCompact.exists_openSubgroup`). Applying Haar completion regularity
+(`MeasureTheory.AEStronglyMeasurable.exists_stronglyMeasurable_baire`) to the restriction of `f` on
+`(H, μ.comap (↑))` gives a `TauCeti.baire H`-strongly measurable representative outside a Baire
+null set `N₀ ⊆ H`. Pulling back along the factored map `Φ₀ : X × Y → H` yields strong measurability
+for the product σ-algebra (`Continuous.measurable_baire_prod_of_sigmaCompact`), while `Φ₀ ⁻¹' N₀` is
 measurable in `X × Y` of product measure zero whenever almost every horizontal slice of `Φ` is
-quasi-measure-preserving into `μ`. In particular, `(x, y) ↦ f (x⁻¹ * y)`, `(x, y) ↦ f (y⁻¹ * x)`,
-`(x, y) ↦ f (x * y)`, and `(x, y) ↦ f (y * x)` are almost everywhere strongly measurable for
-product measures without `MeasurableMul₂ G`.
+quasi-measure-preserving into `μ`. When `G` is σ-compact, `(x, y) ↦ f (x⁻¹ * y)`,
+`(x, y) ↦ f (y⁻¹ * x)`, `(x, y) ↦ f (x * y)`, and `(x, y) ↦ f (y * x)` are therefore almost
+everywhere strongly measurable for product measures without `MeasurableMul₂ G`.
 
 ## Main results
 
 * `MeasureTheory.AEStronglyMeasurable.comp_continuous_prod_of_sigmaCompact`: product
   `AEStronglyMeasurable` for `f ∘ Φ` along continuous slicewise quasi-measure-preserving maps into a
-  σ-compact locally compact Hausdorff group.
+  locally compact Hausdorff group.
 * `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_prod`,
   `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_swap_prod`,
   `MeasureTheory.AEStronglyMeasurable.comp_mul_prod`, and
   `MeasureTheory.AEStronglyMeasurable.comp_mul_swap_prod`: product strong measurability of
-  `(x, y) ↦ f (x⁻¹ * y)`, `(x, y) ↦ f (y⁻¹ * x)`, `(x, y) ↦ f (x * y)`, and `(x, y) ↦ f (y * x)`.
+  `(x, y) ↦ f (x⁻¹ * y)`, `(x, y) ↦ f (y⁻¹ * x)`, `(x, y) ↦ f (x * y)`, and `(x, y) ↦ f (y * x)` on
+  σ-compact locally compact Hausdorff groups.
 
 ## References
 
@@ -58,29 +61,46 @@ variable {X Y G β : Type*}
   [TopologicalSpace Y] [SigmaCompactSpace Y] [T2Space Y] [MeasurableSpace Y]
   [OpensMeasurableSpace Y]
   [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [T2Space G]
-  [SigmaCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [MeasurableSpace G] [BorelSpace G]
   {μ : Measure G} [μ.IsHaarMeasure] [μ.Regular]
   [TopologicalSpace β]
 
-/-- **Product strong measurability via Baire completion regularity.** Let `G` be a σ-compact locally
-compact Hausdorff group with a regular Haar measure `μ`, and let `Φ : X × Y → G` be a continuous map
-from a product of σ-compact spaces (`T2Space Y`) such that for `ν`-almost every `x : X`,
-`y ↦ Φ (x, y)` is quasi-measure-preserving from `η` to `μ`. Then `f ∘ Φ` is `(ν.prod η)`-almost
-everywhere strongly measurable for every `μ`-almost everywhere strongly measurable `f : G → β`,
-without assuming `borel (X × Y) = borel X × borel Y`. -/
+/-- **Product strong measurability via Baire completion regularity.** Let `G` be a locally compact
+Hausdorff group with a regular Haar measure `μ`, and let `Φ : X × Y → G` be a continuous map from a
+product of σ-compact spaces (`T2Space Y`) such that for `ν`-almost every `x : X`, `y ↦ Φ (x, y)` is
+quasi-measure-preserving from `η` to `μ`. Then `f ∘ Φ` is `(ν.prod η)`-almost everywhere strongly
+measurable for every `μ`-almost everywhere strongly measurable `f : G → β`, without assuming
+`SigmaCompactSpace G` or `borel (X × Y) = borel X × borel Y`. -/
 theorem AEStronglyMeasurable.comp_continuous_prod_of_sigmaCompact {ν : Measure X} {η : Measure Y}
     {f : G → β} (hf : AEStronglyMeasurable f μ) {Φ : X × Y → G} (hΦ : Continuous Φ)
     (hslice : ∀ᵐ x ∂ν, QuasiMeasurePreserving (fun y => Φ (x, y)) η μ) :
     AEStronglyMeasurable (f ∘ Φ) (ν.prod η) := by
-  obtain ⟨g, N, hg, -, hNb, hN0, hfg⟩ := hf.exists_stronglyMeasurable_baire
-  have hΦm : @Measurable (X × Y) G Prod.instMeasurableSpace (TauCeti.baire G) Φ :=
-    hΦ.measurable_baire_prod_of_sigmaCompact
-  refine (hg.comp_measurable hΦm).aestronglyMeasurable.congr ?_
-  have hM0 : (ν.prod η) (Φ ⁻¹' N) = 0 := by
-    refine Measure.measure_prod_null_of_ae_null (hΦm hNb) ?_
+  obtain ⟨H, hΦH, hH⟩ := (isSigmaCompact_range hΦ).exists_openSubgroup
+  have _ : SigmaCompactSpace H := isSigmaCompact_iff_sigmaCompactSpace.1 hH
+  have hcoe : MeasurableEmbedding ((↑) : H → G) :=
+    MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
+  let μ₀ : Measure H := μ.comap ((↑) : H → G)
+  have hqmp : QuasiMeasurePreserving ((↑) : H → G) μ₀ μ :=
+    (measurePreserving_subtype_coe (μa := μ)
+      H.isOpen.measurableSet).quasiMeasurePreserving.mono_right
+      Measure.restrict_le_self.absolutelyContinuous
+  obtain ⟨g₀, N₀, hg₀, -, hN₀b, hN₀0, hfg₀⟩ :=
+    (hf.comp_quasiMeasurePreserving hqmp).exists_stronglyMeasurable_baire
+  let Φ₀ : X × Y → H := fun p => ⟨Φ p, hΦH (mem_range_self p)⟩
+  have hΦ₀ : Continuous Φ₀ := hΦ.subtype_mk fun p => hΦH (mem_range_self p)
+  have hΦ₀m : @Measurable (X × Y) H Prod.instMeasurableSpace (TauCeti.baire H) Φ₀ :=
+    hΦ₀.measurable_baire_prod_of_sigmaCompact
+  refine (hg₀.comp_measurable hΦ₀m).aestronglyMeasurable.congr ?_
+  have hN0 : μ (((↑) : H → G) '' N₀) = 0 := by
+    rw [← hcoe.comap_apply, hN₀0]
+  have hM0 : (ν.prod η) (Φ₀ ⁻¹' N₀) = 0 := by
+    refine Measure.measure_prod_null_of_ae_null (hΦ₀m hN₀b) ?_
     filter_upwards [hslice] with x hx
-    exact hx.preimage_null hN0
-  exact ae_iff.2 (measure_mono_null (fun _ hp => hfg (Ne.symm hp)) hM0)
+    refine measure_mono_null ?_ (hx.preimage_null hN0)
+    exact fun y hy => ⟨Φ₀ (x, y), hy, rfl⟩
+  exact ae_iff.2 (measure_mono_null (fun _ hp => hfg₀ (Ne.symm hp)) hM0)
+
+variable [SigmaCompactSpace G]
 
 /-- On a σ-compact locally compact Hausdorff group `G` with a regular Haar measure `μ`,
 `(x, y) ↦ f (x⁻¹ * y)` is `(ν.prod μ)`-almost everywhere strongly measurable for any measure `ν` on
