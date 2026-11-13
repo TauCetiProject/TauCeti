@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Tree
+public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.Zorn
 
@@ -28,6 +29,8 @@ consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
 
 * `TauCeti.SerreGraph.SpanningTree`: a spanning tree of a Serre graph.
 * `TauCeti.SerreGraph.SpanningTree.path`: the reduced path between two vertices in a spanning tree.
+* `TauCeti.SerreGraph.SpanningTree.restrict`: a spanning tree contained in a subgraph, as a
+  spanning tree of the subgraph.
 
 ## Main results
 
@@ -36,6 +39,8 @@ consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
 * `TauCeti.SerreGraph.nonempty_spanningTree_iff`: a graph has a spanning tree exactly when it is
   connected.
 * `TauCeti.SerreGraph.SpanningTree.eq_path`: the tree path is the only reduced path in the tree.
+* `TauCeti.SerreGraph.SpanningTree.mapPath_path_of_injective`: a morphism injective on darts and
+  carrying one spanning tree into another sends tree paths to tree paths.
 
 ## References
 
@@ -237,6 +242,26 @@ theorem eq_path {a b : Γ.V} {p : Γ.Path a b} (hp : Path.IsReduced Γ p)
     (hpT : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) : p = T.path a b :=
   T.eq_of_isReduced hp (T.isReduced_path a b) hpT fun _ => T.mem_of_mem_darts_path
 
+/-- A path whose darts lie in a spanning tree reduces to the tree path between its endpoints. -/
+theorem reduce_eq_path {a b : Γ.V} (p : Γ.Path a b)
+    (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) : Path.reduce Γ p = T.path a b :=
+  T.eq_path (Path.isReduced_reduce Γ p) fun e he =>
+    hp e ((Path.darts_reduce_sublist Γ p).subset he)
+
+/-- A path whose darts lie in a spanning tree is backtrack homotopic to the tree path between
+its endpoints. -/
+theorem homotopic_path {a b : Γ.V} (p : Γ.Path a b)
+    (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) : Path.Homotopic Γ p (T.path a b) := by
+  simpa only [T.reduce_eq_path p hp] using Path.homotopic_reduce Γ p
+
+/-- Consecutive tree paths compose, up to backtrack homotopy, to the tree path between the
+outer endpoints. -/
+theorem homotopic_path_comp_path (a b c : Γ.V) :
+    Path.Homotopic Γ ((T.path a b).comp (T.path b c)) (T.path a c) :=
+  T.homotopic_path _ fun e he => by
+    rw [Path.darts_comp, List.mem_append] at he
+    exact he.elim T.mem_of_mem_darts_path T.mem_of_mem_darts_path
+
 @[simp] theorem path_self (a : Γ.V) : T.path a a = Quiver.Path.nil :=
   (T.eq_path (Path.isReduced_nil Γ a) (by simp)).symm
 
@@ -261,6 +286,78 @@ theorem eq_of_src_eq_of_tgt_eq {e f : Γ.E} (he : e ∈ T.darts) (hf : f ∈ T.d
 /-- A spanning tree contains no loop. -/
 theorem src_ne_tgt {e : Γ.E} (he : e ∈ T.darts) : Γ.src e ≠ Γ.tgt e :=
   T.isTree.isAcyclic.src_ne_tgt ⟨e, he⟩
+
+section Map
+
+variable {Δ : SerreGraph} (f : Γ.Hom Δ) (T' : Δ.SpanningTree)
+  (hT : ∀ e ∈ T.darts, f.mapE e ∈ T'.darts)
+include hT
+
+/-- A morphism of Serre graphs carrying a spanning tree `T` into a spanning tree `T'` sends the
+darts of the tree paths of `T` into `T'`. -/
+theorem mem_of_mem_darts_mapPath_path {a b : Γ.V} {e : Δ.E}
+    (he : e ∈ Path.darts Δ (f.toPrefunctor.mapPath (T.path a b))) : e ∈ T'.darts := by
+  rw [Hom.darts_mapPath] at he
+  obtain ⟨d, hd, rfl⟩ := List.mem_map.mp he
+  exact hT d (T.mem_of_mem_darts_path hd)
+
+/-- A morphism of Serre graphs carrying a spanning tree `T` into a spanning tree `T'` sends the
+tree paths of `T` to paths backtrack homotopic to the tree paths of `T'`. -/
+theorem homotopic_mapPath_path (a b : Γ.V) :
+    Path.Homotopic Δ (f.toPrefunctor.mapPath (T.path a b))
+      (T'.path (f.toPrefunctor.obj a) (f.toPrefunctor.obj b)) :=
+  T'.homotopic_path _ fun _ => T.mem_of_mem_darts_mapPath_path f T' hT
+
+/-- A morphism of Serre graphs injective on darts and carrying a spanning tree `T` into a
+spanning tree `T'` sends the tree paths of `T` to the tree paths of `T'`. -/
+theorem mapPath_path_of_injective (hf : Function.Injective f.mapE) (a b : Γ.V) :
+    f.toPrefunctor.mapPath (T.path a b) =
+      T'.path (f.toPrefunctor.obj a) (f.toPrefunctor.obj b) :=
+  T'.eq_path ((f.isReduced_mapPath_iff Γ hf _).mpr (T.isReduced_path a b)) fun _ =>
+    T.mem_of_mem_darts_mapPath_path f T' hT
+
+end Map
+
+section Restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- A spanning tree whose darts lie in a subgraph is a spanning tree of that subgraph. -/
+def restrict (hTS : T.darts ⊆ S) : (Γ.restrict S hS).SpanningTree where
+  darts := {e | e.1 ∈ T.darts}
+  rev_mem e he := T.rev_mem e.1 he
+  isTree := by
+    refine (isTree_iff _).mpr ⟨(connected_iff _).mpr ⟨((connected_iff _).mp T.isTree.connected).1,
+      (preconnected_restrict_iff _ _ _).mpr fun a b => ?_⟩,
+      (isAcyclic_restrict_iff _ _ _).mpr fun u p hp hpT => ?_⟩
+    · obtain ⟨p, hp⟩ := Γ.exists_restrict_path S hS (T.path a b)
+        fun e he => hTS (T.mem_of_mem_darts_path he)
+      have hmem (e : (Γ.restrict S hS).E) (he : e ∈ Path.darts (Γ.restrict S hS) p) :
+          e.1 ∈ Path.darts Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath p) := by
+        rw [Hom.darts_mapPath]
+        exact List.mem_map.mpr ⟨e, he, rfl⟩
+      exact ⟨p, fun e he => T.mem_of_mem_darts_path (a := a) (b := b) (hp ▸ hmem e he)⟩
+    · have hq := T.eq_path ((Γ.isReduced_restrictInclusion_mapPath_iff S hS p).mpr hp)
+        fun e he => by
+          rw [Hom.darts_mapPath] at he
+          obtain ⟨d, hd, rfl⟩ := List.mem_map.mp he
+          exact hpT d hd
+      refine Quiver.Path.eq_nil_of_length_zero p ?_
+      rw [← Prefunctor.length_mapPath (Γ.restrictInclusion S hS).toPrefunctor, hq, T.path_self,
+        Quiver.Path.length_nil]
+
+@[simp] theorem mem_restrict_darts (hTS : T.darts ⊆ S) {e : (Γ.restrict S hS).E} :
+    e ∈ (T.restrict S hS hTS).darts ↔ e.1 ∈ T.darts := Iff.rfl
+
+/-- The inclusion of a subgraph containing a spanning tree sends the tree paths of the restricted
+tree to the tree paths of the tree. -/
+@[simp] theorem mapPath_path_restrict (hTS : T.darts ⊆ S) (a b : Γ.V) :
+    (Γ.restrictInclusion S hS).toPrefunctor.mapPath ((T.restrict S hS hTS).path a b) =
+      T.path a b :=
+  (T.restrict S hS hTS).mapPath_path_of_injective (Γ.restrictInclusion S hS) T
+    (fun _ he => (T.mem_restrict_darts S hS hTS).mp he) Subtype.val_injective a b
+
+end Restrict
 
 end SpanningTree
 
