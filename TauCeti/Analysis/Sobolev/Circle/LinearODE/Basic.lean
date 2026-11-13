@@ -52,6 +52,11 @@ comparing weak and classical derivatives
 
 ## Main statements
 
+* `TauCeti.CircleSobolev.mulLoop_sub`, `TauCeti.CircleSobolev.mulLoop_smul`,
+  `TauCeti.CircleSobolev.loopOperator_sub`: the zero-order term and `L_S` depend linearly on the
+  coefficient loop `S`.
+* `TauCeti.CircleSobolev.mulLoop_const_smul_id`: multiplication by a constant complex scalar loop
+  is multiplication by that scalar.
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
 * `TauCeti.CircleSobolev.isFredholm_loopOperator`, `TauCeti.CircleSobolev.index_loopOperator`:
   `L_S` is a Fredholm operator of index zero.
@@ -117,6 +122,29 @@ theorem mulLoop_inclusion (ht : 1 / 2 < t) (h : t ≤ s) (S : C(AddCircle T, E �
     mulLoop T ht S (inclusion h a) = mulLoop T (ht.trans_le h) S a := by
   simp only [mulLoop_apply, toContinuousMap_inclusion]
 
+/-- Multiplication by a loop is additive in the loop. -/
+theorem mulLoop_sub (hs : 1 / 2 < s) (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
+    mulLoop T hs (S₁ - S₂) = mulLoop T hs S₁ - mulLoop T hs S₂ := by
+  ext a : 1
+  simp only [mulLoop_apply, map_sub, sub_apply]
+
+/-- Multiplication by a loop is real-homogeneous in the loop. -/
+theorem mulLoop_smul (hs : 1 / 2 < s) (c : ℝ) (S : C(AddCircle T, E →L[ℝ] E)) :
+    mulLoop T hs (c • S) = c • mulLoop T hs S := by
+  ext a : 1
+  simp only [mulLoop_apply, map_smul, smul_apply]
+  exact (ofContinuousMap T).map_smul_of_tower c _
+
+/-- Multiplication by the constant loop `z • id`, for a complex scalar `z`, is multiplication by
+`z` after the inclusion `H^s ⊆ H⁰`. -/
+theorem mulLoop_const_smul_id (hs : 1 / 2 < s) (z : ℂ) (a : CircleSobolev s E) :
+    mulLoop T hs (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) a =
+      z • inclusion (by linarith) a := by
+  rw [← ofContinuousMap_toContinuousMap T hs, ← map_smul, mulLoop_apply]
+  congr 1
+  ext x
+  simp
+
 /-- **The zero-order term is compact.** For `s > 1/2`, multiplication by a continuous loop `S` is
 a compact operator `H^s(E) → H⁰(E)`: it factors through the compact inclusion into `H^t` for any
 `1/2 < t < s`. -/
@@ -139,6 +167,12 @@ theorem loopOperator_apply (S : C(AddCircle T, E →L[ℝ] E)) (a : CircleSobole
     loopOperator T S a =
       derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a - mulLoop T (by norm_num) S a :=
   (rfl)
+
+/-- Subtracting `S₂` from the coefficient loop adds multiplication by `S₂` to `L_S`. -/
+theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
+    loopOperator T (S₁ - S₂) = loopOperator T S₁ + mulLoop T (by norm_num) S₂ := by
+  rw [loopOperator, loopOperator, mulLoop_sub]
+  abel
 
 /-- The periodic first-order operator depends continuously in operator norm on its
 coefficient loop, with the uniform norm on coefficients. -/
