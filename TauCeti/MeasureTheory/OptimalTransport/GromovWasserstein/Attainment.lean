@@ -180,9 +180,9 @@ theorem lowerSemicontinuousOn_gromovWassersteinDistortion
       (eventually_nhdsWithin_of_forall fun σ hσ ↦ ?_)
     beta_reduce
     rw [Function.comp_apply, gromovWassersteinDistortion_def,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop
         (IsCoupling.aestronglyMeasurable_edist hσ hωX hωY)]
-    simp only [enorm_eq_self]
+    simp only [eNorm_eq_self]
 
 /-- **Existence of an optimal Gromov–Wasserstein coupling for tight marginals.** For tight Borel
 probability measures `μ` and `ν` on second-countable metrizable spaces and almost-everywhere

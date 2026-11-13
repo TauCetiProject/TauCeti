@@ -33,7 +33,8 @@ the fundamental class generates `Hₙ(M; ℤ)` freely: `c ↦ c • o.fundamenta
 isomorphism from `ℤ`, so every class of `Hₙ(M; ℤ)` is an integer multiple of it.
 
 A continuous map `f : M → X` carries the fundamental class to a class `f_*[M] ∈ Hₙ(X; ℤ)`, which
-is functorial in `f` and depends only on the homotopy class of `f`.
+is functorial in `f` and depends only on the homotopy class of `f`. A homeomorphism `e : N ≃ₜ M`
+carries the fundamental class of the pulled-back orientation `o.comap` to that of `o`.
 
 The fundamental class is what cohomology classes are evaluated on, through the Kronecker map
 `TopCat.singularKronecker`, and what Poincaré duality caps with.
@@ -81,6 +82,10 @@ homology isomorphism directly, without requiring Poincaré duality.
   fundamental class to the same class.
 * `TauCeti.HomologicalOrientation.singularHomologyπ_mapFundamentalClass`: the image of `f_*[M]`
   in `Hₙ(X, X ∖ X; ℤ)` is the image of the fundamental class along `M` under the map of pairs `f`.
+* `TauCeti.HomologicalOrientation.mapFundamentalClass_comap`: a homeomorphism carries the
+  fundamental class of the pulled-back orientation to the fundamental class.
+* `TauCeti.HomologicalOrientation.mapFundamentalClass_comap_comp`: pushing the fundamental class
+  of the pulled-back orientation forward along `f ∘ e` is pushing that of `o` forward along `f`.
 * `TauCeti.HomologicalOrientation.exists_eq_zsmul_fundamentalClass`: on a compact connected
   oriented manifold, every top-dimensional class is a multiple of the fundamental class.
 
@@ -498,6 +503,37 @@ theorem singularHomologyπ_mapFundamentalClass (f : C(M, X)) :
   rw [← o.singularHomologyπ_fundamentalClass hn, localHomologyMap_def, mapFundamentalClass_def,
     TauCeti.singularHomologyFunctor_obj_map]
   exact h
+
+/-- **Fundamental classes are natural under homeomorphisms**: a homeomorphism `e : N ≃ₜ M`
+carries the fundamental class of the pulled-back orientation `o.comap` of `N` to the fundamental
+class of `o`. -/
+@[simp]
+theorem mapFundamentalClass_comap {N : Type} [TopologicalSpace N] [T2Space N] [ChartedSpace E N]
+    [CompactSpace N] (e : N ≃ₜ M) :
+    (o.comap e.isOpenEmbedding).mapFundamentalClass hn (e : C(N, M)) = o.fundamentalClass hn := by
+  -- `f_*[N]` lies in the singular homology of `TopCat.of M`, read as `SSet.homology` here.
+  refine o.eq_fundamentalClass hn
+    (γ := (o.comap e.isOpenEmbedding).mapFundamentalClass hn (e : C(N, M))) fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := e.surjective y
+  have hx : (e : C(N, M)) ⁻¹' {e x} ⊆ {x} := fun z hz ↦ e.injective hz
+  refine (singularHomologyToLocalHomology_apply _ (e x) _).trans ?_
+  rw [singularHomologyπ_mapFundamentalClass, ← ConcreteCategory.comp_apply,
+    localHomologyMap_comp_localHomologyRestriction,
+    ← localHomologyRestriction_comp_localHomologyMap (hS := singleton_subset_iff.2 (mem_univ x))
+      (h := hx),
+    ConcreteCategory.comp_apply, localHomologyRestriction_fundamentalClassOn (hx := mem_univ x),
+    comap_apply]
+  exact e.isOpenEmbedding.localHomologyMap_localOrientationEquiv_symm x (o (e x)) hx
+
+/-- The image of the fundamental class of the pulled-back orientation `o.comap` under a composite
+`f ∘ e`, for a homeomorphism `e : N ≃ₜ M`, is the image of the fundamental class of `o` under
+`f`. -/
+@[simp]
+theorem mapFundamentalClass_comap_comp {N : Type} [TopologicalSpace N] [T2Space N]
+    [ChartedSpace E N] [CompactSpace N] (e : N ≃ₜ M) (f : C(M, X)) :
+    (o.comap e.isOpenEmbedding).mapFundamentalClass hn (f.comp (e : C(N, M))) =
+      o.mapFundamentalClass hn f := by
+  rw [mapFundamentalClass_comp, mapFundamentalClass_comap, mapFundamentalClass_def]
 
 end Map
 
