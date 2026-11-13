@@ -6,6 +6,7 @@ Authors: Tau Ceti
 module
 
 public import TauCeti.MeasureTheory.Function.L0.Convergence
+public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
 public import Mathlib.Topology.MetricSpace.IsometricSMul
@@ -94,6 +95,20 @@ theorem toAEEqFun_mul (f g : L0 μ) : (f * g).toAEEqFun = f.toAEEqFun * g.toAEEq
   simpa only [Equiv.mulEquiv_apply, equivAEEqFun_apply] using
     (equivAEEqFun (μ := μ)).mulEquiv.map_mul f g
 
+/-- Forgetting the wrapper preserves finite sums. -/
+@[simp]
+theorem toAEEqFun_sum {ι : Type*} (s : Finset ι) (f : ι → L0 μ) :
+    (∑ i ∈ s, f i).toAEEqFun = ∑ i ∈ s, (f i).toAEEqFun := by
+  simpa only [Equiv.addEquiv_apply, equivAEEqFun_apply] using
+    map_sum (equivAEEqFun (μ := μ)).addEquiv f s
+
+/-- Forgetting the wrapper preserves finite products. -/
+@[simp]
+theorem toAEEqFun_prod {ι : Type*} (s : Finset ι) (f : ι → L0 μ) :
+    (∏ i ∈ s, f i).toAEEqFun = ∏ i ∈ s, (f i).toAEEqFun := by
+  simpa only [Equiv.mulEquiv_apply, equivAEEqFun_apply] using
+    map_prod (equivAEEqFun (μ := μ)).mulEquiv f s
+
 /-- Natural powers on `L0` are inherited from the native almost-everywhere quotient. -/
 @[simp]
 theorem toAEEqFun_pow (f : L0 μ) (n : ℕ) :
@@ -120,6 +135,30 @@ instance instAlgebra : Algebra ℝ (L0 μ) :=
       exact AEEqFun.induction_on₂ f.toAEEqFun g.toAEEqFun fun f hf g hg ↦ by
         simp only [AEEqFun.smul_mk, AEEqFun.mk_mul_mk, mul_smul_comm]))
 
+/-- Real constants are the native constant almost-everywhere classes. -/
+@[simp]
+theorem toAEEqFun_algebraMap (c : ℝ) :
+    (algebraMap ℝ (L0 μ) c).toAEEqFun = AEEqFun.const Ω c := by
+  simp only [Algebra.algebraMap_eq_smul_one, toAEEqFun_smul, toAEEqFun_one,
+    AEEqFun.one_def, AEEqFun.smul_mk, AEEqFun.const, AEEqFun.mk_eq_mk]
+  filter_upwards with x
+  simp
+
+/-- The representative of a real constant agrees almost everywhere with that constant. -/
+theorem coeFn_algebraMap (c : ℝ) :
+    ((algebraMap ℝ (L0 μ) c) : Ω → ℝ) =ᵐ[μ] Function.const Ω c := by
+  simpa only [← toAEEqFun_algebraMap] using (AEEqFun.coeFn_const Ω c (μ := μ))
+
+/-- Natural-number constants have the corresponding constant representatives almost everywhere. -/
+theorem coeFn_natCast (n : ℕ) :
+    ((n : L0 μ) : Ω → ℝ) =ᵐ[μ] Function.const Ω (n : ℝ) := by
+  simpa only [map_natCast] using (coeFn_algebraMap (μ := μ) (n : ℝ))
+
+/-- Integer constants have the corresponding constant representatives almost everywhere. -/
+theorem coeFn_intCast (n : ℤ) :
+    ((n : L0 μ) : Ω → ℝ) =ᵐ[μ] Function.const Ω (n : ℝ) := by
+  simpa only [map_intCast] using (coeFn_algebraMap (μ := μ) (n : ℝ))
+
 /-- The representative of zero vanishes almost everywhere. -/
 theorem coeFn_zero : ((0 : L0 μ) : Ω → ℝ) =ᵐ[μ] 0 := by
   simpa only [← toAEEqFun_zero] using (AEEqFun.coeFn_zero (α := Ω) (β := ℝ) (μ := μ))
@@ -141,19 +180,38 @@ theorem coeFn_pow (f : L0 μ) (n : ℕ) : ((f ^ n : L0 μ) : Ω → ℝ) =ᵐ[μ
   simpa only [← toAEEqFun_pow] using (AEEqFun.coeFn_pow f.toAEEqFun n)
 
 /-- Representatives of a sum agree almost everywhere with the pointwise sum. -/
-theorem coeFn_add (f g : L0 μ) : ((f + g : L0 μ) : Ω → ℝ) =ᵐ[μ] fun x ↦ f x + g x := by
+theorem coeFn_add (f g : L0 μ) : ((f + g : L0 μ) : Ω → ℝ) =ᵐ[μ] f + g := by
   filter_upwards [AEEqFun.coeFn_add f.toAEEqFun g.toAEEqFun] with x hx
   simpa only [toAEEqFun_add, Pi.add_apply] using hx
 
 /-- Representatives of a product agree almost everywhere with the pointwise product. -/
-theorem coeFn_mul (f g : L0 μ) : ((f * g : L0 μ) : Ω → ℝ) =ᵐ[μ] fun x ↦ f x * g x := by
+theorem coeFn_mul (f g : L0 μ) : ((f * g : L0 μ) : Ω → ℝ) =ᵐ[μ] f * g := by
   filter_upwards [AEEqFun.coeFn_mul f.toAEEqFun g.toAEEqFun] with x hx
   simpa only [toAEEqFun_mul, Pi.mul_apply] using hx
 
 /-- Representatives of a scalar multiple agree almost everywhere with the pointwise multiple. -/
-theorem coeFn_smul (c : ℝ) (f : L0 μ) : ((c • f : L0 μ) : Ω → ℝ) =ᵐ[μ] fun x ↦ c * f x := by
+theorem coeFn_smul (c : ℝ) (f : L0 μ) : ((c • f : L0 μ) : Ω → ℝ) =ᵐ[μ] c • (f : Ω → ℝ) := by
   filter_upwards [AEEqFun.coeFn_smul c f.toAEEqFun] with x hx
   simpa only [toAEEqFun_smul, Pi.smul_apply, smul_eq_mul] using hx
+
+/-- A finite sum has the pointwise sum as its representative almost everywhere. -/
+theorem coeFn_finsetSum {ι : Type*} (s : Finset ι) (f : ι → L0 μ) :
+    ((∑ i ∈ s, f i : L0 μ) : Ω → ℝ) =ᵐ[μ] ∑ i ∈ s, (f i : Ω → ℝ) := by
+  simpa only [← toAEEqFun_sum] using
+    (AEEqFun.coeFn_finsetSum s (fun i ↦ (f i).toAEEqFun))
+
+/-- A finite product has the pointwise product as its representative almost everywhere. -/
+theorem coeFn_finsetProd {ι : Type*} (s : Finset ι) (f : ι → L0 μ) :
+    ((∏ i ∈ s, f i : L0 μ) : Ω → ℝ) =ᵐ[μ] ∏ i ∈ s, (f i : Ω → ℝ) := by
+  simpa only [← toAEEqFun_prod] using
+    (AEEqFun.coeFn_finsetProd s (fun i ↦ (f i).toAEEqFun))
+
+/-- Constructing a constant function gives the algebra's corresponding real constant. -/
+@[simp]
+theorem ofFun_const (c : ℝ) :
+    ofFun (fun _ : Ω ↦ c) aestronglyMeasurable_const = algebraMap ℝ (L0 μ) c := by
+  apply ext
+  exact (coeFn_ofFun _ _).trans (coeFn_algebraMap c).symm
 
 /-- Constructing a sum agrees with adding the constructed random variables. -/
 @[simp]
@@ -213,7 +271,7 @@ theorem ofFun_sub_ofFun (f g : Ω → ℝ) (hf : AEStronglyMeasurable f μ)
 
 /-- Natural powers commute with constructing a random variable. -/
 @[simp]
-theorem pow_ofFun (f : Ω → ℝ) (hf : AEStronglyMeasurable f μ) (n : ℕ) :
+theorem ofFun_pow (f : Ω → ℝ) (hf : AEStronglyMeasurable f μ) (n : ℕ) :
     ofFun f hf ^ n = ofFun (f ^ n) (hf.pow n) := by
   apply equivAEEqFun.injective
   simpa only [equivAEEqFun_apply, toAEEqFun_pow, toAEEqFun_ofFun] using AEEqFun.mk_pow f hf n
@@ -229,6 +287,13 @@ theorem ofLp_zero {p : ℝ≥0∞} : ofLp (0 : Lp ℝ p μ) = (0 : L0 μ) := by
 theorem ofLp_add {p : ℝ≥0∞} (f g : Lp ℝ p μ) : ofLp (f + g) = ofLp f + ofLp g := by
   apply equivAEEqFun.injective
   simp [equivAEEqFun_apply]
+
+/-- The inclusion of `Lp` preserves finite sums. -/
+@[simp]
+theorem ofLp_sum {p : ℝ≥0∞} {ι : Type*} (s : Finset ι) (f : ι → Lp ℝ p μ) :
+    ofLp (∑ i ∈ s, f i) = ∑ i ∈ s, ofLp (f i) := by
+  apply toAEEqFun_injective
+  simp
 
 /-- The inclusion of `Lp` preserves negation. -/
 @[simp]
@@ -254,6 +319,13 @@ section FiniteMeasure
 
 variable [IsFiniteMeasure μ]
 
+/-- Including a constant `Lp` function gives the corresponding real constant. -/
+@[simp]
+theorem ofLp_const {p : ℝ≥0∞} (c : ℝ) :
+    ofLp (Lp.const p μ c) = algebraMap ℝ (L0 μ) c := by
+  apply toAEEqFun_injective
+  simp only [toAEEqFun_ofLp, Lp.const_val, toAEEqFun_algebraMap]
+
 /-- Translation preserves the bounded integral metric. -/
 instance instIsIsometricVAdd : IsIsometricVAdd (L0 μ) (L0 μ) where
   isometry_vadd f := Isometry.of_dist_eq fun g h ↦ by
@@ -262,7 +334,7 @@ instance instIsIsometricVAdd : IsIsometricVAdd (L0 μ) (L0 μ) where
     rw [dist_def, dist_def]
     apply integral_congr_ae
     filter_upwards [coeFn_add f g, coeFn_add f h] with x hx hy
-    simp only [hx, hy, add_sub_add_left_eq_sub]
+    simp only [hx, hy, Pi.add_apply, add_sub_add_left_eq_sub]
 
 /-- Subtraction is uniformly continuous for the bounded integral metric. -/
 instance instIsUniformAddGroup : IsUniformAddGroup (L0 μ) where

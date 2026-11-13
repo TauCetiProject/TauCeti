@@ -141,6 +141,25 @@ theorem tendsto_iff_tendstoInMeasure {ι : Type*} {l : Filter ι} {f : ι → L0
     simp only [Real.dist_eq] at hi
     linarith
 
+/-- Convergence to a constructed random variable is convergence in measure to its supplied
+representative. -/
+theorem tendsto_iff_tendstoInMeasure_ofFun {ι : Type*} {l : Filter ι} {f : ι → L0 μ}
+    {g : Ω → ℝ} (hg : AEStronglyMeasurable g μ) :
+    Tendsto f l (𝓝 (ofFun g hg)) ↔ TendstoInMeasure μ (fun i ↦ (f i : Ω → ℝ)) l g := by
+  rw [tendsto_iff_tendstoInMeasure]
+  exact ⟨fun h ↦ h.congr_right (coeFn_ofFun g hg),
+    fun h ↦ h.congr_right (coeFn_ofFun g hg).symm⟩
+
+/-- Constructed random variables converge exactly when the supplied functions converge in
+measure, for an arbitrary index filter. -/
+theorem tendsto_ofFun_iff_tendstoInMeasure {ι : Type*} {l : Filter ι}
+    {f : ι → Ω → ℝ} {g : Ω → ℝ} (hf : ∀ i, AEStronglyMeasurable (f i) μ)
+    (hg : AEStronglyMeasurable g μ) :
+    Tendsto (fun i ↦ ofFun (f i) (hf i)) l (𝓝 (ofFun g hg)) ↔ TendstoInMeasure μ f l g := by
+  rw [tendsto_iff_tendstoInMeasure_ofFun hg]
+  exact ⟨fun h ↦ h.congr_left (fun i ↦ coeFn_ofFun (f i) (hf i)),
+    fun h ↦ h.congr_left (fun i ↦ (coeFn_ofFun (f i) (hf i)).symm)⟩
+
 /-- Convergence in the native `Lp` norm implies convergence in the bounded integral metric. -/
 @[fun_prop]
 theorem continuous_ofLp {p : ℝ≥0∞} [Fact (1 ≤ p)] :

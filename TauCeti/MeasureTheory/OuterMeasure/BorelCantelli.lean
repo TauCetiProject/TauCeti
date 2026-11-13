@@ -24,7 +24,7 @@ summable measure imply that almost every pointwise sequence is Cauchy.
 ## Main statements
 
 * `TauCeti.MeasureTheory.ae_eventually_mem_iff_mem_liminf`
-* `TauCeti.MeasureTheory.ae_cauchySeq_of_summable_measure_dist`
+* `TauCeti.MeasureTheory.ae_cauchySeq_of_summable_of_tsum_measure_lt_dist_ne_top`
 -/
 
 public section
@@ -57,7 +57,7 @@ theorem ae_eventually_mem_iff_mem_liminf {s : ℕ → Set α}
 
 /-- If consecutive distances are bounded by a summable real sequence outside events of
 summable measure, then almost every pointwise sequence is Cauchy. -/
-theorem ae_cauchySeq_of_summable_measure_dist {E : Type*} [PseudoMetricSpace E]
+theorem ae_cauchySeq_of_summable_of_tsum_measure_lt_dist_ne_top {E : Type*} [PseudoMetricSpace E]
     {f : ℕ → α → E} {r : ℕ → ℝ} (hr : Summable r)
     (hμ : ∑' n, μ {x | r n < dist (f n x) (f (n + 1) x)} ≠ ∞) :
     ∀ᵐ x ∂μ, CauchySeq (fun n ↦ f n x) := by

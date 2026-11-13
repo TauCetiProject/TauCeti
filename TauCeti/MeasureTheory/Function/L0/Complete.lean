@@ -55,7 +55,7 @@ instance instCompleteSpace : CompleteSpace (L0 μ) := by
   have hsum' : (∑' n, ENNReal.ofReal (a n)) ≠ ∞ := by
     rw [← ENNReal.ofReal_tsum_of_nonneg (fun n ↦ (ha n).le) hsum]
     exact ENNReal.ofReal_ne_top
-  have hcauchy := TauCeti.MeasureTheory.ae_cauchySeq_of_summable_measure_dist hsum
+  have hcauchy := TauCeti.MeasureTheory.ae_cauchySeq_of_summable_of_tsum_measure_lt_dist_ne_top hsum
     (ne_top_of_le_ne_top hsum' (tsum_le_tsum hbound))
   obtain ⟨g, hg, hlim⟩ := exists_stronglyMeasurable_limit_of_tendsto_ae
     (fun n ↦ (f n).stronglyMeasurable.aestronglyMeasurable)
