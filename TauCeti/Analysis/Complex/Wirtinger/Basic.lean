@@ -613,22 +613,6 @@ theorem conjWirtingerDeriv_wirtingerDeriv_self {g : V → W} {x : V} (hg : ContD
   · ring
   · linear_combination (-4⁻¹ : ℂ) * I_mul_I
 
-/-- For a `C²` map, `∂_v \bar∂_v g` is also a quarter of the sum of the second real derivatives
-of `g` along `v` and along `I • v`. -/
-theorem wirtingerDeriv_conjWirtingerDeriv_self {g : V → W} {x : V} (hg : ContDiffAt ℝ 2 g x)
-    (v : V) :
-    wirtingerDeriv (fun y ↦ conjWirtingerDeriv g y v) x v =
-      (4 : ℂ)⁻¹ • (iteratedFDeriv ℝ 2 g x ![v, v] + iteratedFDeriv ℝ 2 g x ![I • v, I • v]) := by
-  have hsymm := hg.isSymmSndFDerivAt (by simp)
-  rw [wirtingerDeriv_apply, (hg.hasFDerivAt_conjWirtingerDeriv_apply v).fderiv,
-    iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
-  simp only [smul_apply, add_apply, ContinuousLinearMap.flip_apply, Matrix.cons_val_zero,
-    Matrix.cons_val_one, hsymm v (I • v)]
-  match_scalars
-  · ring
-  · ring
-  · linear_combination (-4⁻¹ : ℂ) * I_mul_I
-
 /-- **Mixed Wirtinger derivatives commute.** For a `C²` map, `∂_w \bar∂_v g = \bar∂_v ∂_w g`; on
 coordinate vectors this is `∂²g / ∂z_k ∂(conj z_j) = ∂²g / ∂(conj z_j) ∂z_k`. -/
 theorem wirtingerDeriv_conjWirtingerDeriv_comm {g : V → W} {x : V}
@@ -642,6 +626,15 @@ theorem wirtingerDeriv_conjWirtingerDeriv_comm {g : V → W} {x : V}
   simp only [smul_apply, add_apply, sub_apply, ContinuousLinearMap.flip_apply, hsymm w v,
     hsymm (I • w) v, hsymm w (I • v), hsymm (I • w) (I • v)]
   module
+
+/-- For a `C²` map, `∂_v \bar∂_v g` is also a quarter of the sum of the second real derivatives
+of `g` along `v` and along `I • v`. -/
+theorem wirtingerDeriv_conjWirtingerDeriv_self {g : V → W} {x : V} (hg : ContDiffAt ℝ 2 g x)
+    (v : V) :
+    wirtingerDeriv (fun y ↦ conjWirtingerDeriv g y v) x v =
+      (4 : ℂ)⁻¹ • (iteratedFDeriv ℝ 2 g x ![v, v] + iteratedFDeriv ℝ 2 g x ![I • v, I • v]) :=
+  (wirtingerDeriv_conjWirtingerDeriv_comm hg v v).trans
+    (conjWirtingerDeriv_wirtingerDeriv_self hg v)
 
 /-- **Symmetry of second Wirtinger derivatives.** For a `C²` map, `∂_w ∂_v g = ∂_v ∂_w g`; on
 coordinate vectors this is `∂²g / ∂z_j ∂z_k = ∂²g / ∂z_k ∂z_j`. -/

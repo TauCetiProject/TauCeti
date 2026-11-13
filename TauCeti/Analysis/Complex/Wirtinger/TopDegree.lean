@@ -11,9 +11,10 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 /-!
 # Top-degree `bar∂`-primitives from the Poisson equation
 
-On the coordinate space `ι → ℂ` of a finite linearly ordered index type `ι`, with coordinates
-`z_j = x_j + I y_j`, the top-degree `bar∂`-equation reduces to the Poisson equation for the real
-Laplacian `Δ = ∑_j (∂²/∂x_j² + ∂²/∂y_j²)`. Since `Δ = 4 ∑_j ∂²/∂(conj z_j) ∂z_j`
+On the coordinate space `ι → ℂ` of a finite linearly ordered index type `ι` with
+`n = Fintype.card ι` elements, with coordinates `z_j = x_j + I y_j`, the top-degree
+`bar∂`-equation reduces to the Poisson equation for the real Laplacian
+`Δ = ∑_j (∂²/∂x_j² + ∂²/∂y_j²)`. Since `Δ = 4 ∑_j ∂²/∂(conj z_j) ∂z_j`
 (`TauCeti.conjWirtingerDeriv_wirtingerDeriv_self`), for every `C²` function `v`
 
 `bar∂ (∑_j (-1)^(j-1) ∂v/∂z_j d(conj z)_[j]) = (Δv / 4) d(conj z_1) ∧ ⋯ ∧ d(conj z_n)`,
@@ -56,9 +57,10 @@ variable {ι : Type*} [LinearOrder ι] [Fintype ι] {F : Type*} [NormedAddCommGr
   [NormedSpace ℂ F]
 
 /-- The coefficients of the `(0,n-1)`-form `∑_j (-1)^(j-1) ∂v/∂z_j d(conj z)_[j]` on `ι → ℂ`,
-where `d(conj z)_[j]` is the wedge product of the `d(conj z_i)`, `i ≠ j`, in increasing order and
-`j - 1` is the number of indices below `j`. The coefficient of `d(conj z)_J` is
-`(-1)^#{i | i < j} ∂v/∂z_j` if `J` omits exactly the index `j`, and zero otherwise. -/
+where `n = Fintype.card ι`, `d(conj z)_[j]` is the wedge product of the `d(conj z_i)`, `i ≠ j`,
+in increasing order and `j - 1` is the number of indices below `j`. The coefficient of
+`d(conj z)_J` is `(-1)^#{i | i < j} ∂v/∂z_j` if `J` omits exactly the index `j`, and zero
+otherwise. -/
 noncomputable def topDegreeDelBarPrimitiveCoeff (v : (ι → ℂ) → F) (J : Finset ι) (z : ι → ℂ) :
     F :=
   ∑ j, if J = univ.erase j then (-1 : ℂ) ^ #{i | i < j} • wirtingerDeriv v z (Pi.single j 1)
@@ -95,7 +97,8 @@ theorem topDegreeDelBarPrimitiveCoeff_of_forall_ne (v : (ι → ℂ) → F) {J :
   ext z
   simp [topDegreeDelBarPrimitiveCoeff_def, hJ]
 
-/-- The coefficients of `topDegreeDelBarPrimitiveCoeff v` outside degree `n - 1` vanish. -/
+/-- The coefficients of `topDegreeDelBarPrimitiveCoeff v` outside degree `n - 1`, where
+`n = Fintype.card ι`, vanish. -/
 theorem topDegreeDelBarPrimitiveCoeff_of_card_add_one_ne (v : (ι → ℂ) → F) {J : Finset ι}
     (hJ : #J + 1 ≠ Fintype.card ι) : topDegreeDelBarPrimitiveCoeff v J = 0 := by
   refine topDegreeDelBarPrimitiveCoeff_of_forall_ne v fun j h ↦ hJ ?_
@@ -156,21 +159,21 @@ theorem topDegreeDelBarPrimitiveCoeff_neg (v : (ι → ℂ) → F) :
 /-- A coefficient of `topDegreeDelBarPrimitiveCoeff v` is `C^m` at a point where `v` is
 `C^(m+1)`. -/
 theorem _root_.ContDiffAt.topDegreeDelBarPrimitiveCoeff {v : (ι → ℂ) → F} {z : ι → ℂ}
-    {m n : WithTop ℕ∞} (hv : ContDiffAt ℝ n v z) (hmn : m + 1 ≤ n) (J : Finset ι) :
+    {m k : WithTop ℕ∞} (hv : ContDiffAt ℝ k v z) (hmk : m + 1 ≤ k) (J : Finset ι) :
     ContDiffAt ℝ m (topDegreeDelBarPrimitiveCoeff v J) z := by
   by_cases hJ : ∃ j, J = univ.erase j
   · obtain ⟨j, rfl⟩ := hJ
     rw [topDegreeDelBarPrimitiveCoeff_erase_univ_eq_fun]
-    exact (hv.wirtingerDeriv_apply hmn (Pi.single j 1)).const_smul _
+    exact (hv.wirtingerDeriv_apply hmk (Pi.single j 1)).const_smul _
   · rw [topDegreeDelBarPrimitiveCoeff_of_forall_ne v (not_exists.1 hJ)]
     exact contDiffAt_const
 
 /-- The coefficients of `topDegreeDelBarPrimitiveCoeff v` are `C^m` on an open set where `v` is
 `C^(m+1)`. -/
 theorem _root_.ContDiffOn.topDegreeDelBarPrimitiveCoeff_of_isOpen {v : (ι → ℂ) → F}
-    {Ω : Set (ι → ℂ)} {m n : WithTop ℕ∞} (hv : ContDiffOn ℝ n v Ω) (hΩ : IsOpen Ω)
-    (hmn : m + 1 ≤ n) (J : Finset ι) : ContDiffOn ℝ m (topDegreeDelBarPrimitiveCoeff v J) Ω :=
-  fun _ hz ↦ ((hv.contDiffAt (hΩ.mem_nhds hz)).topDegreeDelBarPrimitiveCoeff hmn J).contDiffWithinAt
+    {Ω : Set (ι → ℂ)} {m k : WithTop ℕ∞} (hv : ContDiffOn ℝ k v Ω) (hΩ : IsOpen Ω)
+    (hmk : m + 1 ≤ k) (J : Finset ι) : ContDiffOn ℝ m (topDegreeDelBarPrimitiveCoeff v J) Ω :=
+  fun _ hz ↦ ((hv.contDiffAt (hΩ.mem_nhds hz)).topDegreeDelBarPrimitiveCoeff hmk J).contDiffWithinAt
 
 /-- The `bar∂` of `∑_j (-1)^(j-1) ∂v/∂z_j d(conj z)_[j]` has no coefficients below top degree. -/
 theorem delBarCoeff_topDegreeDelBarPrimitiveCoeff_of_ne_univ (v : (ι → ℂ) → F) {I : Finset ι}
@@ -184,8 +187,8 @@ theorem delBarCoeff_topDegreeDelBarPrimitiveCoeff_of_ne_univ (v : (ι → ℂ) �
   exact fun h ↦ hI (eq_univ_of_card I h)
 
 /-- The `bar∂` of `∑_j (-1)^(j-1) ∂v/∂z_j d(conj z)_[j]` is
-`∑_j ∂²v/∂(conj z_j) ∂z_j d(conj z_1) ∧ ⋯ ∧ d(conj z_n)`: the signs of the primitive cancel those
-of `bar∂`. -/
+`∑_j ∂²v/∂(conj z_j) ∂z_j d(conj z_1) ∧ ⋯ ∧ d(conj z_n)`, where `n = Fintype.card ι`: the signs
+of the primitive cancel those of `bar∂`. -/
 theorem delBarCoeff_topDegreeDelBarPrimitiveCoeff_univ (v : (ι → ℂ) → F) (z : ι → ℂ) :
     delBarCoeff (topDegreeDelBarPrimitiveCoeff v) univ z =
       ∑ j, conjWirtingerDeriv (fun y ↦ wirtingerDeriv v y (Pi.single j 1)) z (Pi.single j 1) := by
@@ -196,8 +199,8 @@ theorem delBarCoeff_topDegreeDelBarPrimitiveCoeff_univ (v : (ι → ℂ) → F) 
 
 /-- **The top-degree `bar∂`-primitive.** For `v` that is `C²` at `z`, the `bar∂` of
 `∑_j (-1)^(j-1) ∂v/∂z_j d(conj z)_[j]` is `(Δv / 4) d(conj z_1) ∧ ⋯ ∧ d(conj z_n)` at `z`, where
-`Δv = ∑_j (∂²v/∂x_j² + ∂²v/∂y_j²)` is the real Laplacian of `v` in the coordinates
-`z_j = x_j + I y_j`. -/
+`n = Fintype.card ι` and `Δv = ∑_j (∂²v/∂x_j² + ∂²v/∂y_j²)` is the real Laplacian of `v` in the
+coordinates `z_j = x_j + I y_j`. -/
 theorem delBarCoeff_topDegreeDelBarPrimitiveCoeff_univ_eq_inv_four_smul_sum {v : (ι → ℂ) → F}
     {z : ι → ℂ} (hv : ContDiffAt ℝ 2 v z) :
     delBarCoeff (topDegreeDelBarPrimitiveCoeff v) univ z = (4 : ℂ)⁻¹ • ∑ j,
@@ -207,22 +210,22 @@ theorem delBarCoeff_topDegreeDelBarPrimitiveCoeff_univ_eq_inv_four_smul_sum {v :
   refine sum_congr rfl fun j _ ↦ ?_
   rw [conjWirtingerDeriv_wirtingerDeriv_self hv, ← Pi.single_smul, smul_eq_mul, mul_one]
 
-/-- **Top-degree `bar∂`-exactness from the Poisson equation.** If `v` is `C^n`, `n ≥ 2`, on an
+/-- **Top-degree `bar∂`-exactness from the Poisson equation.** If `v` is `C^k`, `k ≥ 2`, on an
 open set `Ω ⊆ ι → ℂ` and solves the Poisson equation `Δv = 4f` there, where
 `Δv = ∑_j (∂²v/∂x_j² + ∂²v/∂y_j²)` is the real Laplacian in the coordinates `z_j = x_j + I y_j`,
-then the top-degree form `f d(conj z_1) ∧ ⋯ ∧ d(conj z_n)` is the `bar∂` of a `(0,n-1)`-form with
-`C^m` coefficients on `Ω` for every `m` with `m + 1 ≤ n`. -/
+then, with `n = Fintype.card ι`, the top-degree form `f d(conj z_1) ∧ ⋯ ∧ d(conj z_n)` is the
+`bar∂` of a `(0,n-1)`-form with `C^m` coefficients on `Ω` for every `m` with `m + 1 ≤ k`. -/
 theorem exists_contDiffOn_delBarCoeff_univ_eq_of_sum_iteratedFDeriv_eq {Ω : Set (ι → ℂ)}
-    (hΩ : IsOpen Ω) {m n : WithTop ℕ∞} (hn : 2 ≤ n) (hmn : m + 1 ≤ n) {v f : (ι → ℂ) → F}
-    (hv : ContDiffOn ℝ n v Ω)
+    (hΩ : IsOpen Ω) {m k : WithTop ℕ∞} (hk : 2 ≤ k) (hmk : m + 1 ≤ k) {v f : (ι → ℂ) → F}
+    (hv : ContDiffOn ℝ k v Ω)
     (hvf : ∀ z ∈ Ω, ∑ j, (iteratedFDeriv ℝ 2 v z ![Pi.single j 1, Pi.single j 1] +
       iteratedFDeriv ℝ 2 v z ![Pi.single j I, Pi.single j I]) = (4 : ℂ) • f z) :
     ∃ u : Finset ι → (ι → ℂ) → F, (∀ J, ContDiffOn ℝ m (u J) Ω) ∧
       ∀ z ∈ Ω, delBarCoeff u univ z = f z := by
-  refine ⟨topDegreeDelBarPrimitiveCoeff v, hv.topDegreeDelBarPrimitiveCoeff_of_isOpen hΩ hmn,
+  refine ⟨topDegreeDelBarPrimitiveCoeff v, hv.topDegreeDelBarPrimitiveCoeff_of_isOpen hΩ hmk,
     fun z hz ↦ ?_⟩
   rw [delBarCoeff_topDegreeDelBarPrimitiveCoeff_univ_eq_inv_four_smul_sum
-    ((hv.contDiffAt (hΩ.mem_nhds hz)).of_le hn), hvf z hz, smul_smul, inv_mul_cancel₀ (by norm_num),
+    ((hv.contDiffAt (hΩ.mem_nhds hz)).of_le hk), hvf z hz, smul_smul, inv_mul_cancel₀ (by norm_num),
     one_smul]
 
 end TauCeti
