@@ -48,6 +48,8 @@ nontrivial.
 * `TauCeti.EqIneqSystem.systemSize_toWords_le`, `TauCeti.EqIneqSystem.numItems_genEq_le`: the size
   of the words of the system, and so the number of items of the generalised equation of a
   partition table, are at most `N ^ 2`.
+* `TauCeti.EqIneqSystem.isCancellationScheme_iff_witnessWord_ne_nil`: the cancellation schemes are
+  the partition tables in which the word map of every witness is nonempty.
 * `TauCeti.EqIneqSystem.isReduced_substituteVars_witnessWord`: in a solution of the generalised
   equation of a partition table, the word of every witness is reduced as written.
 * `TauCeti.EqIneqSystem.IsCancellationScheme.mk_substituteVars_witnessWord_ne_one`: in a solution
@@ -62,6 +64,9 @@ nontrivial.
   of a scheme gives a solution of `S`, inequations included.
 * `TauCeti.EqIneqSystem.card_cancellationFamily_le`: the cancellation family has at most
   `(2 (n + |A|) + 1) ^ n` members, for `n = systemSize S.toWords`.
+* `TauCeti.EqIneqSystem.cancellationFamily_empty`, `TauCeti.EqIneqSystem.genEq_empty`: the
+  cancellation family of the empty system has one member, the empty table, and its generalised
+  equation is empty.
 
 ## Implementation notes
 
@@ -128,6 +133,11 @@ theorem mem_toWords {S : EqIneqSystem X A} {w : List (((X ⊕ Fin S.ineqs.length
 @[simp]
 theorem toWords_empty : (empty X A).toWords = [] := by
   simp [toWords]
+
+/-- The empty system has no words, so no occurrences of letters. -/
+instance : IsEmpty (Fin (empty X A).toWords.length) := by
+  rw [toWords_empty, List.length_nil]
+  infer_instance
 
 /-- A system has one word for each equation and two for each inequation. -/
 @[simp]
@@ -275,17 +285,6 @@ private theorem IsCancellationScheme.getElem_tableEntries_ne_nil (hT : S.IsCance
   rw [← ho] at hi ⊢
   exact hT.ne_nil o k hi
 
-/-- In a partition table, two entries of the same letter have words which are empty together. -/
-private theorem getElem_tableEntries_eq_nil_iff (hT : IsPartitionTable S.toWords T)
-    {i j : Fin (tableEntries S.toWords T).length}
-    (h : (tableEntries S.toWords T)[i].1.1 = (tableEntries S.toWords T)[j].1.1) :
-    (tableEntries S.toWords T)[i].2 = [] ↔ (tableEntries S.toWords T)[j].2 = [] := by
-  obtain ⟨o, ho⟩ := mem_tableEntries.1 (List.getElem_mem i.isLt)
-  obtain ⟨o', ho'⟩ := mem_tableEntries.1 (List.getElem_mem j.isLt)
-  simp only [Fin.getElem_fin] at h ⊢
-  rw [← ho, ← ho'] at h ⊢
-  exact hT.eq_nil_iff o o' h
-
 /-- The word map of a witness is read at an entry of the witness, and the witness has a second
 entry. -/
 private theorem exists_witnessWord_eq (k : Fin S.ineqs.length) :
@@ -348,6 +347,24 @@ theorem IsCancellationScheme.witnessWord_ne_nil (hT : S.IsCancellationScheme T)
   rw [hw, ← List.length_pos_iff, length_segment_entryStart _ p.1.isLt]
   exact List.length_pos_iff.2 (hT.getElem_tableEntries_ne_nil p.1 hp)
 
+/-- In a partition table of the words of a system, the word map of a witness is empty exactly when
+the word of an occurrence of the witness is empty. -/
+theorem witnessWord_eq_nil_iff (hT : IsPartitionTable S.toWords T) {k : Fin S.ineqs.length}
+    {o : Occurrence S.toWords} (ho : S.toWords[o.1][o.2].1 = Sum.inl (Sum.inr k)) :
+    S.witnessWord T k = [] ↔ T o = [] := by
+  obtain ⟨p, -, hp, -, hw⟩ := exists_witnessWord_eq (T := T) k
+  rw [hw, ← List.length_eq_zero_iff, length_segment_entryStart _ p.1.isLt,
+    List.length_eq_zero_iff]
+  exact hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem p.1.isLt)
+    (mem_tableEntries.2 ⟨o, rfl⟩) (hp.trans ho.symm)
+
+/-- A cancellation scheme is a partition table of the words of the system in which the word map of
+every witness is nonempty. -/
+theorem isCancellationScheme_iff_witnessWord_ne_nil :
+    S.IsCancellationScheme T ↔ IsPartitionTable S.toWords T ∧ ∀ k, S.witnessWord T k ≠ [] :=
+  ⟨fun hT => ⟨hT.isPartitionTable, hT.witnessWord_ne_nil⟩,
+    fun h => ⟨h.1, fun _ k ho => (witnessWord_eq_nil_iff h.1 ho).not.1 (h.2 k)⟩⟩
+
 /-- In a solution of the generalised equation of a partition table of the words of a system, the
 word of every witness is reduced as written: it is empty, or it spans a base. -/
 theorem isReduced_substituteVars_witnessWord (hT : IsPartitionTable S.toWords T)
@@ -361,7 +378,8 @@ theorem isReduced_substituteVars_witnessWord (hT : IsPartitionTable S.toWords T)
   -- The two entries of the witness have nonempty words, so they are joined by dual bases.
   have hp : IsVarPair (tableEntries S.toWords T) p := (isVarPair_iff _).2 ⟨hne,
     (congrArg Sum.isLeft h₁).trans rfl, h₁.trans h₂.symm, h,
-    (getElem_tableEntries_eq_nil_iff hT (h₁.trans h₂.symm)).not.1 h⟩
+    (hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem p.1.isLt) (List.getElem_mem p.2.isLt)
+      (h₁.trans h₂.symm)).not.1 h⟩
   rw [hw]
   exact (U.isReduced_subst _ (mem_equations_ofEntries_of_isVarPair _ hp)).1
 
@@ -371,8 +389,7 @@ theorem IsCancellationScheme.mk_substituteVars_witnessWord_ne_one (hT : S.IsCanc
     (U : (S.genEq T).Solution) (k : Fin S.ineqs.length) :
     FreeGroup.mk (substituteVars U.word (S.witnessWord T k)) ≠ 1 := fun h =>
   U.substituteVars_word_ne_nil (hT.witnessWord_ne_nil k)
-    ((isReduced_substituteVars_witnessWord hT.isPartitionTable U k).eq_of_mk_eq
-      FreeGroup.IsReduced.nil (h.trans FreeGroup.one_eq_mk))
+    ((isReduced_substituteVars_witnessWord hT.isPartitionTable U k).eq_nil_of_mk_eq_one h)
 
 /-- At a solution of `Ω_T*`, the word maps solve the equations of a system and give each
 inequation the value of its witness. -/
@@ -467,6 +484,37 @@ theorem card_cancellationFamily_le [Fintype A] (S : EqIneqSystem X A) :
       (2 * (systemSize S.toWords + Fintype.card A) + 1) ^ systemSize S.toWords :=
   (Finset.card_le_card (cancellationFamily_subset S)).trans (GenEq.card_cancellationFamily_le _)
 
+/-! ### The empty system -/
+
+section Empty
+
+variable (T : Occurrence (empty X A).toWords → List ((Z ⊕ A) × Bool))
+
+/-- Every table of the words of the empty system is a cancellation scheme. -/
+@[simp]
+theorem isCancellationScheme_empty : (empty X A).IsCancellationScheme T :=
+  ⟨⟨isEmptyElim, isEmptyElim, isEmptyElim, fun o => isEmptyElim o, fun o => isEmptyElim o⟩,
+    fun o => isEmptyElim o⟩
+
+/-- The generalised equation of a table of the empty system is the empty generalised equation. -/
+theorem genEq_empty : (empty X A).genEq T = GenEq.empty :=
+  eq_empty_of_numItems_eq_zero (by rw [numItems_ofEntries, length_flatMap_tableEntries]; simp)
+
+/-- The word maps of a table of the empty system are empty. -/
+@[simp]
+theorem wordMap_empty (x : X) : (empty X A).wordMap T x = [] :=
+  wordMap_eq_nil _ fun k => (mem_tableEntries.1 (List.getElem_mem k.isLt)).elim fun o _ =>
+    isEmptyElim o
+
+/-- The cancellation family of the empty system has exactly one member, the empty table. -/
+@[simp]
+theorem cancellationFamily_empty [Finite A] :
+    (empty X A).cancellationFamily = {fun o => isEmptyElim o} :=
+  Finset.eq_singleton_iff_unique_mem.2
+    ⟨mem_cancellationFamily.2 (isCancellationScheme_empty _), fun _ _ => Subsingleton.elim _ _⟩
+
+end Empty
+
 /-! ### Examples -/
 
 section Examples
@@ -474,15 +522,8 @@ section Examples
 /-- For the empty system the empty generalised equation supplies the trivial cancellation
 scheme. -/
 example {X A : Type*} [DecidableEq X] [DecidableEq A] [Finite A] :
-    ∃ T ∈ (empty X A).cancellationFamily, (empty X A).genEq T = GenEq.empty := by
-  have h : IsEmpty (Fin (empty X A).toWords.length) := by
-    rw [toWords_empty, List.length_nil]
-    infer_instance
-  refine ⟨fun _ => [], mem_cancellationFamily.2 ⟨⟨fun o => (h.false o.1).elim,
-    fun i => (h.false i).elim, fun o => (h.false o.1).elim, fun o => (h.false o.1).elim,
-    fun o => (h.false o.1).elim⟩, fun o => (h.false o.1).elim⟩, eq_empty_of_numItems_eq_zero ?_⟩
-  rw [numItems_ofEntries, length_flatMap_tableEntries]
-  simp
+    ∃ T ∈ (empty X A).cancellationFamily, (empty X A).genEq T = GenEq.empty :=
+  ⟨fun o => isEmptyElim o, by simp, genEq_empty _⟩
 
 /-- For the inequation `x ≠ 1`, the table with empty words is a partition table of the words
 `x z⁻¹`, `z z⁻¹` of the system. -/

@@ -528,6 +528,10 @@ def systemSize {α : Type*} (r : List (List α)) : ℕ :=
 theorem systemSize_def {α : Type*} (r : List (List α)) :
     systemSize r = (r.map fun w => (w.length - 1) * w.length).sum := (rfl)
 
+/-- The empty system of words has size `0`. -/
+@[simp]
+theorem systemSize_nil {α : Type*} : systemSize ([] : List (List α)) = 0 := (rfl)
+
 /-- A system of words of total length `N` has size at most `(N - 1) N`. -/
 theorem systemSize_le {α : Type*} (r : List (List α)) :
     systemSize r ≤ ((r.map List.length).sum - 1) * (r.map List.length).sum := by
@@ -591,6 +595,14 @@ theorem exists_getElem_tableEntries (o : Occurrence r) :
     ∃ i : Fin (tableEntries r T).length, (tableEntries r T)[i] = (r[o.1][o.2], T o) := by
   obtain ⟨i, hi, h⟩ := List.getElem_of_mem (mem_tableEntries.2 ⟨o, rfl⟩)
   exact ⟨⟨i, hi⟩, h⟩
+
+/-- In a partition table, two entries of the same letter have words which are empty together. -/
+theorem IsPartitionTable.eq_nil_iff_of_mem_tableEntries (hT : IsPartitionTable r T)
+    {e e' : ((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool)} (he : e ∈ tableEntries r T)
+    (he' : e' ∈ tableEntries r T) (h : e.1.1 = e'.1.1) : e.2 = [] ↔ e'.2 = [] := by
+  obtain ⟨o, rfl⟩ := mem_tableEntries.1 he
+  obtain ⟨o', rfl⟩ := mem_tableEntries.1 he'
+  exact hT.eq_nil_iff o o' h
 
 /-- The concatenated word of a table has length the sum of the lengths of its words. -/
 theorem length_flatMap_tableEntries :
@@ -691,16 +703,12 @@ theorem IsPartitionTable.eval_eq_one_of_mem_V (hT : IsPartitionTable r T) {H : T
     simp only [mem_tableEntries, forall_exists_index]
     rintro _ o rfl a h
     exact hT.eq_of_eq_inr o h
-  have he : ∀ e ∈ tableEntries r T, ∀ e' ∈ tableEntries r T, e.1.1 = e'.1.1 →
-      (e.2 = [] ↔ e'.2 = []) := by
-    simp only [mem_tableEntries, forall_exists_index]
-    rintro _ o rfl _ o' rfl h
-    exact hT.eq_nil_iff o o' h
   set R := (List.finRange r[(⟨i, hi⟩ : Fin r.length)].length).map fun j =>
     (r[(⟨i, hi⟩ : Fin r.length)][j], T ⟨⟨i, hi⟩, j⟩) with hR
-  have := lift_mk_map_fst hc he hv hζ R fun e he => mem_tableEntries.2 (by
-    obtain ⟨j, -, rfl⟩ := List.mem_map.1 he
-    exact ⟨⟨⟨i, hi⟩, j⟩, rfl⟩)
+  have := lift_mk_map_fst hc (fun _ he _ he' => hT.eq_nil_iff_of_mem_tableEntries he he') hv hζ R
+    fun e he => by
+      obtain ⟨j, -, rfl⟩ := List.mem_map.1 he
+      exact mem_tableEntries.2 ⟨⟨⟨i, hi⟩, j⟩, rfl⟩
   have hfst : R.map Prod.fst = r[i] := by
     simp [hR, Function.comp_def, List.map_getElem_finRange]
   have hsnd : FreeGroup.mk (R.flatMap Prod.snd) = 1 := by
