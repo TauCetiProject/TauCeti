@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Composition
+public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Composition.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
@@ -30,7 +30,7 @@ supplies the hypotheses of `TauCeti.cotangentGeneratedMap`.
 
 The endpoint/internal-variable packaging and elimination construction follow
 `TauCeti.exists_cotangentGeneratingComposition` in
-`TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Composition`. Here that theorem is
+`TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Composition.Basic`. Here that theorem is
 applied with the two internal positions grouped into a single product space.
 
 ## References
