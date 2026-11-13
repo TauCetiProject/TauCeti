@@ -17,9 +17,10 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 /-!
 # The powers are open in the units of a normed field
 
-The `n`-th power map has derivative `n` at `1`, so by the inverse function theorem every complete
-normed field in which `n ≠ 0` has the `n`-th powers open in `Kˣ`. A discrete field is handled
-separately, since then `Kˣ` is discrete.
+Openness of the `n`-th powers, and in particular of the squares, in the units `Kˣ` of a complete
+normed field is what makes the square-class group `Kˣ ⧸ (Kˣ)²` discrete, so that invariants with
+values in it, such as the spinor norm, have open kernels. This is the `NormedField` counterpart of
+`TauCeti.isOpen_range_powMonoidHom`, which is stated for nonarchimedean local fields.
 
 ## Main results
 
@@ -35,8 +36,7 @@ namespace TauCeti
 
 open scoped Topology in
 /-- **The `n`-th powers are open in the units of a complete normed field** in which `n` is
-nonzero: the `n`-th power map has derivative `n` at `1`, so by the inverse function theorem the
-`n`-th powers contain a neighbourhood of `1`; a discrete field has discrete units. -/
+nonzero. -/
 theorem isOpen_range_powMonoidHom_units {K : Type*} [NormedField K] [CompleteSpace K] {n : ℕ}
     (hn : (n : K) ≠ 0) : IsOpen ((powMonoidHom n : Kˣ →* Kˣ).range : Set Kˣ) := by
   rcases NormedField.discreteTopology_or_nontriviallyNormedField K with h | ⟨⟨h', rfl⟩⟩

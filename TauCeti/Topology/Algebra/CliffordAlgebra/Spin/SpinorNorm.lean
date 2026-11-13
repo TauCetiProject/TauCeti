@@ -117,16 +117,16 @@ theorem isOpen_range_spinToSpecialOrthogonal (hQ : Q.Nondegenerate) :
   rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQ]
   exact isOpen_ker_spinorNorm Q hQ
 
-/-- **The spinor norm on `O(Q)` is continuous.** If `Q` is nondegenerate, then the spinor norm
-`O(Q) → Kˣ ⧸ (Kˣ)²` is continuous, where the square-class group
-carries its quotient topology from `Kˣ`. -/
+/-- **The spinor norm on `O(Q)` is continuous.** Under the hypotheses of
+`isOpen_ker_orthogonalSpinorNorm`, the spinor norm `O(Q) → Kˣ ⧸ (Kˣ)²` is continuous, where the
+square-class group carries its quotient topology from `Kˣ`. -/
 theorem continuous_orthogonalSpinorNorm (hQ : Q.Nondegenerate) :
     Continuous (orthogonalSpinorNorm Q hQ) :=
   (orthogonalSpinorNorm Q hQ).continuous_of_isOpen_ker (isOpen_ker_orthogonalSpinorNorm Q hQ)
 
-/-- **The spinor norm on `SO(Q)` is continuous.** If `Q` is nondegenerate, then the spinor norm
-`SO(Q) → Kˣ ⧸ (Kˣ)²` is continuous, where the square-class group
-carries its quotient topology from `Kˣ`. -/
+/-- **The spinor norm on `SO(Q)` is continuous.** Under the hypotheses of
+`isOpen_ker_orthogonalSpinorNorm`, the spinor norm `SO(Q) → Kˣ ⧸ (Kˣ)²` is continuous, where the
+square-class group carries its quotient topology from `Kˣ`. -/
 theorem continuous_spinorNorm (hQ : Q.Nondegenerate) :
     Continuous (spinorNorm Q hQ) :=
   (spinorNorm Q hQ).continuous_of_isOpen_ker (isOpen_ker_spinorNorm Q hQ)
