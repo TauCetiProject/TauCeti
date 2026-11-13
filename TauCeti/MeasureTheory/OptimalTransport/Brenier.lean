@@ -222,6 +222,7 @@ theorem ae_mem_subdifferential_fenchelConjugate_map_swap {u : E → EReal}
   simpa only [flip_innerₗ, Prod.fst_swap, Prod.snd_swap] using
     mem_subdifferential_fenchelConjugate_of_mem_subdifferential (innerₗ E) hz
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- For a coupling `π` of finite measures with finite second moments concentrated on the
 subdifferential graph of `u`, the real representatives of `u` and of its conjugate `v` are
 integrable for the marginals: on the support of `π` each is squeezed between an affine function and
@@ -271,6 +272,7 @@ private theorem IsCoupling.integrable_toReal_of_ae_mem_subdifferential [IsFinite
       linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) hz.1 hy₀,
         innerₗ_apply_apply z.1 y₀, hz.2.2]
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- A plan concentrated on the subdifferential graph of a function `u`, such that `u` and its
 Legendre–Fenchel conjugate are measurable, has the largest correlation among the couplings of its
 marginals, provided these have finite second moments. -/

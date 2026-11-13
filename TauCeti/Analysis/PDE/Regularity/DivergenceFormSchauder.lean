@@ -460,17 +460,14 @@ private theorem sq_setAverage_closedBall_norm_gradient_sub_mul_le
       ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 := by
   rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball z t)]
   have hpos := measureReal_ball_pos volume z ht
-  have hint := (Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball
-    measure_ball_lt_top.ne
   have hJ := sq_setAverage_norm_le_setAverage_norm_sq (measure_ball_pos volume z ht).ne'
-    measure_ball_lt_top.ne (hint.sub (integrableOn_const measure_ball_lt_top.ne))
+    measure_ball_lt_top.ne
     ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne
       (⨍ y in ball z t, W1p.gradient u y))
   have hav : ⨍ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 =
       (volume.real (ball z t))⁻¹ *
         ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 := by
     rw [setAverage_eq, smul_eq_mul]
-  simp only [Pi.sub_apply] at hJ
   rw [hav] at hJ
   calc _ ≤ _ := mul_le_mul_of_nonneg_right hJ hpos.le
     _ = _ := by field_simp

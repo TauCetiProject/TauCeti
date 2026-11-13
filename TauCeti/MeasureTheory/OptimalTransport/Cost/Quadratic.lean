@@ -145,6 +145,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
   [OpensMeasurableSpace (E × E)] {μ ν : Measure E} {σ : Measure (E × E)}
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- Against a coupling of two measures with finite second moments, the correlation
 `⟪x, y⟫` is integrable. -/
 theorem IsCoupling.integrable_inner (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ)
@@ -154,10 +155,13 @@ theorem IsCoupling.integrable_inner (hσ : IsCoupling σ μ ν) (hμ : MemLp id 
   have hν2 : Integrable (fun y : E => ‖y‖ ^ 2) ν :=
     (memLp_two_iff_integrable_sq_norm hν.aestronglyMeasurable).1 hν
   refine ((hσ.integrable_comp_fst hμ2).add (hσ.integrable_comp_snd hν2)).mono'
-    (continuous_fst.inner continuous_snd).aestronglyMeasurable (.of_forall fun z => ?_)
+    ((hμ.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_fst).inner
+      (hν.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_snd))
+    (.of_forall fun z => ?_)
   simp only [Pi.add_apply, Real.norm_eq_abs]
   nlinarith [abs_real_inner_le_norm z.1 z.2, sq_nonneg (‖z.1‖ - ‖z.2‖)]
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- **The quadratic cost of a plan is a second-moment term minus the correlation.** For a
 coupling `σ` of two measures with finite second moments,
 `∫ ‖x - y‖ ^ 2 / 2 dσ = (∫ ‖x‖ ^ 2 dμ + ∫ ‖y‖ ^ 2 dν) / 2 - ∫ ⟪x, y⟫ dσ`, so minimising the
@@ -186,6 +190,7 @@ theorem IsCoupling.lintegral_norm_sub_sq_div_two (hσ : IsCoupling σ μ ν) (h�
     integral_sub h₁₂ h₃, integral_div, integral_add h₁ h₂,
     hσ.integral_comp_fst hμ2.aestronglyMeasurable, hσ.integral_comp_snd hν2.aestronglyMeasurable]
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- **The correlation of a plan is bounded by the second moments.** For a coupling `σ` of two
 measures with finite second moments, `∫ ⟪x, y⟫ dσ ≤ (∫ ‖x‖ ^ 2 dμ + ∫ ‖y‖ ^ 2 dν) / 2`. -/
 theorem IsCoupling.integral_inner_le (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ)
