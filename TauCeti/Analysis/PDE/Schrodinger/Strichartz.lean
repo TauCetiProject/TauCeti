@@ -39,14 +39,14 @@ For every such pair with `2 < q < ∞`, that is every admissible pair other than
 
 ## Main declarations
 
-* `TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`: the dual estimate on the line at
-  `(4, ∞)`.
-* `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le`: the homogeneous estimate on the
-  line at `(4, ∞)`, in weak form.
-* `TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le_of_admissible`: the dual estimate in
-  every dimension.
-* `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le_of_admissible`: the homogeneous
-  estimate in every dimension, in weak form.
+* `TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le_of_finrank_eq_one`: the dual
+  estimate on the line at `(4, ∞)`.
+* `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le_of_finrank_eq_one`: the
+  homogeneous estimate on the line at `(4, ∞)`, in weak form.
+* `TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`: the dual estimate in every
+  dimension.
+* `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le`: the homogeneous estimate in
+  every dimension, in weak form.
 * `TauCeti.exists_lintegral_lintegral_enorm_inner_schrodingerPropagator_sub_le`: the bilinear
   estimate for the Duhamel pairings in every dimension.
 * `TauCeti.exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le`: the retarded
@@ -72,8 +72,8 @@ variable {E V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 /-- On the line, the time pairings of the Schrödinger propagator decay from `L¹` to `L^∞` like
 `|s - t| ^ (-1/2)`. -/
-private theorem eLpNorm_schrodingerPropagator_adjoint_le (hE : Module.finrank ℝ E = 1)
-    {s t : ℝ} (hst : s ≠ t) (g : Lp V 2 (volume : Measure E)) :
+private theorem eLpNorm_schrodingerPropagator_adjoint_le_of_finrank_eq_one
+    (hE : Module.finrank ℝ E = 1) {s t : ℝ} (hst : s ≠ t) (g : Lp V 2 (volume : Measure E)) :
     eLpNorm (schrodingerPropagator V s (((schrodingerPropagator V t)†) g)) ∞ volume ≤
       ENNReal.ofReal ((4 * Real.pi) ^ (-(2⁻¹ : ℝ))) *
         ‖s - t‖ₑ ^ (-(2 / (4 : ℝ≥0) : ℝ)) * eLpNorm g 1 volume := by
@@ -103,7 +103,8 @@ pair `(4, ∞)`. There is `C` such that for every almost everywhere strongly mea
 `F : ℝ → L²(E, V)` on a one-dimensional space `E` for which `s ↦ S(-s) F(s)` is integrable,
 
 `‖∫ S(-s) F(s) ds‖₂ ≤ C ‖F‖_{L^{4/3}_t L¹_x}`. -/
-theorem exists_enorm_integral_schrodingerPropagator_neg_le (hE : Module.finrank ℝ E = 1) :
+theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_finrank_eq_one
+    (hE : Module.finrank ℝ E = 1) :
     ∃ C : ℝ≥0, ∀ F : ℝ → Lp V 2 (volume : Measure E), AEStronglyMeasurable F →
       Integrable (fun s ↦ schrodingerPropagator V (-s) (F s)) →
       ‖∫ s, schrodingerPropagator V (-s) (F s)‖ₑ ≤
@@ -116,7 +117,7 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le (hE : Module.finrank 
     fun F hF hSF => ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
   simpa only [adjoint_phasePropagator] using hC (schrodingerPropagator V) _
-    (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le hE hst g) F hF
+    (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le_of_finrank_eq_one hE hst g) F hF
     (by simpa only [adjoint_phasePropagator] using hSF)
 
 /-- **The Strichartz estimate for the Schrödinger equation on the line**, at the admissible pair
@@ -127,7 +128,8 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le (hE : Module.finrank 
 `|∫ ⟪S(t) f, G(t)⟫ dt| ≤ C ‖f‖₂ ‖G‖_{L^{4/3}_t L¹_x}`.
 
 This is `‖S(t) f‖_{L⁴_t L^∞_x} ≤ C ‖f‖₂` tested against `G`. -/
-theorem exists_enorm_integral_inner_schrodingerPropagator_le (hE : Module.finrank ℝ E = 1) :
+theorem exists_enorm_integral_inner_schrodingerPropagator_le_of_finrank_eq_one
+    (hE : Module.finrank ℝ E = 1) :
     ∃ C : ℝ≥0, ∀ (f : Lp V 2 (volume : Measure E)) (G : ℝ → Lp V 2 (volume : Measure E)),
       AEStronglyMeasurable G → Integrable (fun t ↦ schrodingerPropagator V (-t) (G t)) →
       ‖∫ t, ⟪schrodingerPropagator V t f, G t⟫_ℂ‖ₑ ≤
@@ -140,7 +142,7 @@ theorem exists_enorm_integral_inner_schrodingerPropagator_le (hE : Module.finran
     fun f G hG hSG => ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
   exact hC (schrodingerPropagator V) _
-    (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le hE hst g) f G hG
+    (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le_of_finrank_eq_one hE hst g) f G hG
     (by simpa only [adjoint_phasePropagator] using hSG)
 
 /-! ### Every dimension, at the non-endpoint admissible pairs -/
@@ -152,7 +154,7 @@ variable {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 /-- In every dimension `n`, the time pairings `S(s) S(t)* = S(s - t)` of the Schrödinger
 propagator decay from `L^{r'}` to `L^r` like `|s - t| ^ (-2 / q)` along an admissible pair
 `2 / q + n / r = n / 2` with `2 < q`. -/
-private theorem eLpNorm_schrodingerPropagator_adjoint_le_of_admissible (hq : 2 < q)
+private theorem eLpNorm_schrodingerPropagator_adjoint_le (hq : 2 < q)
     (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2)
     {s t : ℝ} (hst : s ≠ t) (g : Lp ℂ 2 (volume : Measure E)) :
     eLpNorm (schrodingerPropagator ℂ s (((schrodingerPropagator ℂ t)†) g)) r volume ≤
@@ -214,7 +216,7 @@ theorem exists_lintegral_lintegral_enorm_inner_schrodingerPropagator_sub_le (hq 
       norm_inner_symm]
   simp_rw [hpair]
   calc _ ≤ _ := hC (schrodingerPropagator ℂ) _
-        (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le_of_admissible hq hqr hst g)
+        (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le hq hqr hst g)
         G F hG hF
     _ = _ := by ring
 
@@ -252,7 +254,7 @@ Hölder conjugates of `q` and `r`. There is `C` such that for every almost every
 measurable `F : ℝ → L²(E)` for which `s ↦ S(-s) F(s)` is integrable,
 
 `‖∫ S(-s) F(s) ds‖₂ ≤ C ‖F‖_{L^p_t L^{r'}_x}`. -/
-theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_admissible (hq : 2 < q)
+theorem exists_enorm_integral_schrodingerPropagator_neg_le (hq : 2 < q)
     (hpq : p.HolderConjugate q)
     (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
     ∃ C : ℝ≥0, ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
@@ -265,7 +267,7 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_admissible (hq : 2
     fun F hF hSF => ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
   simpa only [adjoint_phasePropagator] using hC (schrodingerPropagator ℂ) _
-    (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le_of_admissible hq hqr hst g) F hF
+    (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le hq hqr hst g) F hF
     (by simpa only [adjoint_phasePropagator] using hSF)
 
 /-- **The Strichartz estimate for the Schrödinger equation** in every dimension `n`, in weak
@@ -276,7 +278,7 @@ almost everywhere strongly measurable `G : ℝ → L²(E)` for which `t ↦ S(-t
 `|∫ ⟪S(t) f, G(t)⟫ dt| ≤ C ‖f‖₂ ‖G‖_{L^p_t L^{r'}_x}`.
 
 This is `‖S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖₂` tested against `G`. -/
-theorem exists_enorm_integral_inner_schrodingerPropagator_le_of_admissible (hq : 2 < q)
+theorem exists_enorm_integral_inner_schrodingerPropagator_le (hq : 2 < q)
     (hpq : p.HolderConjugate q)
     (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
     ∃ C : ℝ≥0, ∀ (f : Lp ℂ 2 (volume : Measure E)) (G : ℝ → Lp ℂ 2 (volume : Measure E)),
@@ -289,7 +291,7 @@ theorem exists_enorm_integral_inner_schrodingerPropagator_le_of_admissible (hq :
     fun f G hG hSG => ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
   exact hC (schrodingerPropagator ℂ) _
-    (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le_of_admissible hq hqr hst g) f G hG
+    (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le hq hqr hst g) f G hG
     (by simpa only [adjoint_phasePropagator] using hSG)
 
 end Admissible
