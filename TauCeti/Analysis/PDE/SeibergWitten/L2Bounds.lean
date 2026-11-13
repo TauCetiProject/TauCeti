@@ -23,34 +23,36 @@ writing `Δ = div ∘ grad`, so that `⟪∇*∇β, β⟫ = |∇β|² - Δ|β|²
 
 On a closed manifold `Δ|β|²` integrates to zero, and integrating this inequality gives Taubes's
 `L²` bound on `β` (`TauCeti.SeibergWitten.integral_norm_sq_add_mul_integral_norm_sq_le`): for
-`r ≥ 8 c`,
+`0 < r` with `r ≥ 8 c`,
 
 `‖∇β‖₂² + (r / 16) ‖β‖₂² ≤ (8 c² / r) (‖∇_a α‖₂² + ‖α‖₂²)`,
 
-that is `‖∇β‖₂ + √r ‖β‖₂ ≤ 16 c r^(-1/2) (‖∇_a α‖₂ + ‖α‖₂)`
+so, for `c ≥ 0`, `‖∇β‖₂ + √r ‖β‖₂ ≤ 16 c r^(-1/2) (‖∇_a α‖₂ + ‖α‖₂)`
 (`TauCeti.SeibergWitten.sqrt_integral_norm_sq_add_sqrt_mul_sqrt_integral_norm_sq_le`).
 
 Taubes's canonical connection `A₀` satisfies `D_{A₀} u₀ = 0`, so the Dirac equation `D_A ψ = 0`
 reads `√2 ∂bar_a α = -D_A β` and bounds `∂bar_a α` pointwise by `c (|∇β| + |β|)`. Since
-`|∇_a α|² = |∂_a α|² + |∂bar_a α|²`, the `β` bound then gives Taubes's `L²` bound on `∂bar_a α`
-in terms of `∂_a α`
+`∇_a α = ∂_a α + ∂bar_a α` gives `|∇_a α| ≤ |∂_a α| + |∂bar_a α|`, the `β` bound then gives
+Taubes's `L²` bound on `∂bar_a α` in terms of `∂_a α`
 (`TauCeti.SeibergWitten.integral_norm_sq_le_of_norm_le_mul_add_norm`): for `r ≥ 16` and
-`r ≥ 32 c⁴`,
+`r ≥ 64 c⁴`,
 
-`‖∂bar_a α‖₂² ≤ (32 c⁴ / r) (‖∂_a α‖₂² + ‖α‖₂²)`,
+`‖∂bar_a α‖₂² ≤ (64 c⁴ / r) (‖∂_a α‖₂² + ‖α‖₂²)`,
 
-so `‖∂bar_a α‖₂ ≤ 6 c² r^(-1/2) (‖∂_a α‖₂ + ‖α‖₂)`
+so `‖∂bar_a α‖₂ ≤ 8 c² r^(-1/2) (‖∂_a α‖₂ + ‖α‖₂)`
 (`TauCeti.SeibergWitten.sqrt_integral_norm_sq_le_of_norm_le_mul_add_norm`). When `‖α‖₂ ≤ K`, for
 instance under the pointwise bound `|α|² ≤ 1 + C / r` on a space of finite volume, this is the
-estimate `‖∂bar_a α‖₂ ≤ C' r^(-1/2) (‖∂_a α‖₂ + 1)` with `C' = 6 c² max 1 K`, which
+estimate `‖∂bar_a α‖₂ ≤ C' r^(-1/2) (‖∂_a α‖₂ + 1)` with `C' = 8 c² max 1 K`, which
 `TauCeti.SeibergWitten.integral_norm_sq_le_div` takes as a hypothesis.
 
-The measure-space statements take the fields as functions on an arbitrary measure space with
-values in arbitrary normed groups, and the function `g` standing for `Δ|β|²` as an integrable
-function of integral zero, so they apply on any domain where that integral vanishes. On a closed
-Riemannian manifold this is the divergence theorem, and
+Only the pointwise norms of the fields enter, so every statement takes the fields as sections of
+arbitrary families of seminormed groups, such as the fibres of a vector bundle. The measure-space
+statements work over an arbitrary measure space and take the function `g` standing for `Δ|β|²` as
+an integrable function of integral zero, so they apply on any domain where that integral vanishes.
+On a closed Riemannian manifold this is the divergence theorem, and
 `TauCeti.SeibergWitten.integral_norm_sq_add_mul_integral_norm_sq_le_of_laplaceBeltrami` states the
-`β` bound with the Laplace–Beltrami operator itself.
+`β` bound with the Laplace–Beltrami operator itself, for sections whose squared pointwise norms are
+continuous. The norm forms take the integrated `β` bound as a hypothesis, so they apply to both.
 
 ## References
 
@@ -67,10 +69,15 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.SeibergWitten
 
-variable {X A B F₁ F₂ F₃ F₄ : Type*} [MeasurableSpace X] {μ : Measure X}
-  [NormedAddCommGroup A] [NormedAddCommGroup B] [NormedAddCommGroup F₁] [NormedAddCommGroup F₂]
-  [NormedAddCommGroup F₃] [NormedAddCommGroup F₄] {α : X → A} {β : X → B} {Dα : X → F₁}
-  {Dβ : X → F₂} {c r : ℝ}
+variable {c r : ℝ}
+
+section MeasureSpace
+
+variable {X : Type*} {A B F₁ F₂ F₃ F₄ : X → Type*} [MeasurableSpace X] {μ : Measure X}
+  [∀ x, SeminormedAddCommGroup (A x)] [∀ x, SeminormedAddCommGroup (B x)]
+  [∀ x, SeminormedAddCommGroup (F₁ x)] [∀ x, SeminormedAddCommGroup (F₂ x)]
+  [∀ x, SeminormedAddCommGroup (F₃ x)] [∀ x, SeminormedAddCommGroup (F₄ x)]
+  {α : (x : X) → A x} {β : (x : X) → B x} {Dα : (x : X) → F₁ x} {Dβ : (x : X) → F₂ x}
 
 /-- The pointwise form of the `β` bound: the cross term of the projected Weitzenböck inequality
 is split between the potential and the derivative of `α`. Here `a`, `b`, `da`, `db` stand for the
@@ -102,7 +109,7 @@ private theorem neg_div_two_add_sq_add_mul_sq_le {a b da db g : ℝ} (hr : 0 < r
 /-- **Taubes's `L²` bound on `β`.** Let `g` be an integrable function of integral zero, standing
 for `Δ|β|²`, and suppose the projected Weitzenböck inequality
 `-g / 2 + |∇β|² + (r / 4) (|α|² + |β|² + 1) |β|² ≤ c |β| (|∇_a α| + |α| + |β|)` holds almost
-everywhere, with `8 c ≤ r`. Then
+everywhere, with `0 < r` and `8 c ≤ r`. Then
 `∫ |∇β|² + (r / 16) ∫ |β|² ≤ (8 c² / r) (∫ |∇_a α|² + ∫ |α|²)`. Here `∇_a α` and `∇β` are any
 functions `Dα` and `Dβ` satisfying these hypotheses. -/
 theorem integral_norm_sq_add_mul_integral_norm_sq_le {g : X → ℝ} (hr : 0 < r)
@@ -138,18 +145,16 @@ private theorem sqrt_le_div_sqrt_mul_add_sqrt {Z T T' K : ℝ} (hr : 0 < r) (hK 
   calc Z ≤ K ^ 2 / r * (T + T') := hZ
     _ ≤ K ^ 2 / r * (√T + √T') ^ 2 := by gcongr
 
-/-- **Taubes's `L²` bound on `β`, in norm form.** Under the hypotheses of
-`TauCeti.SeibergWitten.integral_norm_sq_add_mul_integral_norm_sq_le`,
+/-- **Taubes's `L²` bound on `β`, in norm form.** Let `0 < r` and `0 ≤ c`. If the integrated
+`β` bound `∫ |∇β|² + (r / 16) ∫ |β|² ≤ (8 c² / r) (∫ |∇_a α|² + ∫ |α|²)` holds, as given by
+`TauCeti.SeibergWitten.integral_norm_sq_add_mul_integral_norm_sq_le` or
+`TauCeti.SeibergWitten.integral_norm_sq_add_mul_integral_norm_sq_le_of_laplaceBeltrami`, then
 `‖∇β‖₂ + √r ‖β‖₂ ≤ 16 c r^(-1/2) (‖∇_a α‖₂ + ‖α‖₂)`, with `L²` norms written `√(∫ |f|²)`. -/
-theorem sqrt_integral_norm_sq_add_sqrt_mul_sqrt_integral_norm_sq_le {g : X → ℝ} (hr : 0 < r)
-    (hc : 0 ≤ c) (hcr : 8 * c ≤ r) (hg : Integrable g μ) (hg0 : ∫ x, g x ∂μ = 0)
-    (hα : Integrable (fun x ↦ ‖α x‖ ^ 2) μ) (hβ : Integrable (fun x ↦ ‖β x‖ ^ 2) μ)
-    (hDα : Integrable (fun x ↦ ‖Dα x‖ ^ 2) μ) (hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ)
-    (hW : ∀ᵐ x ∂μ, -g x / 2 + ‖Dβ x‖ ^ 2 + r / 4 * (‖α x‖ ^ 2 + ‖β x‖ ^ 2 + 1) * ‖β x‖ ^ 2 ≤
-      c * ‖β x‖ * (‖Dα x‖ + ‖α x‖ + ‖β x‖)) :
+theorem sqrt_integral_norm_sq_add_sqrt_mul_sqrt_integral_norm_sq_le (hr : 0 < r) (hc : 0 ≤ c)
+    (hbound : ∫ x, ‖Dβ x‖ ^ 2 ∂μ + r / 16 * ∫ x, ‖β x‖ ^ 2 ∂μ ≤
+      8 * c ^ 2 / r * (∫ x, ‖Dα x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ)) :
     √(∫ x, ‖Dβ x‖ ^ 2 ∂μ) + √r * √(∫ x, ‖β x‖ ^ 2 ∂μ) ≤
       16 * c / √r * (√(∫ x, ‖Dα x‖ ^ 2 ∂μ) + √(∫ x, ‖α x‖ ^ 2 ∂μ)) := by
-  have hbound := integral_norm_sq_add_mul_integral_norm_sq_le hr hcr hg hg0 hα hβ hDα hDβ hW
   set P := ∫ x, ‖Dβ x‖ ^ 2 ∂μ
   set Q := ∫ x, ‖β x‖ ^ 2 ∂μ
   set T₁ := ∫ x, ‖Dα x‖ ^ 2 ∂μ
@@ -175,19 +180,19 @@ theorem sqrt_integral_norm_sq_add_sqrt_mul_sqrt_integral_norm_sq_le {g : X → �
 
 /-- **Taubes's `L²` bound on `∂bar_a α`.** Suppose the `L²` bound on `β` of
 `TauCeti.SeibergWitten.integral_norm_sq_add_mul_integral_norm_sq_le` holds, the covariant
-derivative splits as `|∇_a α|² ≤ |∂_a α|² + |∂bar_a α|²`, and the Dirac equation gives
-`|∂bar_a α| ≤ c (|∇β| + |β|)`. If `16 ≤ r` and `32 c⁴ ≤ r`, then
-`∫ |∂bar_a α|² ≤ (32 c⁴ / r) (∫ |∂_a α|² + ∫ |α|²)`. Here `∇_a α`, `∇β`, `∂_a α` and `∂bar_a α`
+derivative satisfies `|∇_a α| ≤ |∂_a α| + |∂bar_a α|`, and the Dirac equation gives
+`|∂bar_a α| ≤ c (|∇β| + |β|)`. If `16 ≤ r` and `64 c⁴ ≤ r`, then
+`∫ |∂bar_a α|² ≤ (64 c⁴ / r) (∫ |∂_a α|² + ∫ |α|²)`. Here `∇_a α`, `∇β`, `∂_a α` and `∂bar_a α`
 are any functions `Dα`, `Dβ`, `Dα'` and `Dbar` satisfying these hypotheses. -/
-theorem integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : X → F₃} {Dbar : X → F₄}
-    (hr16 : 16 ≤ r) (hcr : 32 * c ^ 4 ≤ r) (hβ : Integrable (fun x ↦ ‖β x‖ ^ 2) μ)
-    (hDα : Integrable (fun x ↦ ‖Dα x‖ ^ 2) μ) (hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ)
-    (hDα' : Integrable (fun x ↦ ‖Dα' x‖ ^ 2) μ) (hDbar : Integrable (fun x ↦ ‖Dbar x‖ ^ 2) μ)
+theorem integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : (x : X) → F₃ x} {Dbar : (x : X) → F₄ x}
+    (hr16 : 16 ≤ r) (hcr : 64 * c ^ 4 ≤ r) (hβ : Integrable (fun x ↦ ‖β x‖ ^ 2) μ)
+    (hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ) (hDα' : Integrable (fun x ↦ ‖Dα' x‖ ^ 2) μ)
+    (hDbar : Integrable (fun x ↦ ‖Dbar x‖ ^ 2) μ)
     (hbound : ∫ x, ‖Dβ x‖ ^ 2 ∂μ + r / 16 * ∫ x, ‖β x‖ ^ 2 ∂μ ≤
       8 * c ^ 2 / r * (∫ x, ‖Dα x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ))
-    (hsplit : ∀ᵐ x ∂μ, ‖Dα x‖ ^ 2 ≤ ‖Dα' x‖ ^ 2 + ‖Dbar x‖ ^ 2)
+    (hsplit : ∀ᵐ x ∂μ, ‖Dα x‖ ≤ ‖Dα' x‖ + ‖Dbar x‖)
     (hdirac : ∀ᵐ x ∂μ, ‖Dbar x‖ ≤ c * (‖Dβ x‖ + ‖β x‖)) :
-    ∫ x, ‖Dbar x‖ ^ 2 ∂μ ≤ 32 * c ^ 4 / r * (∫ x, ‖Dα' x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ) := by
+    ∫ x, ‖Dbar x‖ ^ 2 ∂μ ≤ 64 * c ^ 4 / r * (∫ x, ‖Dα' x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ) := by
   have hr : 0 < r := by linarith
   set P := ∫ x, ‖Dβ x‖ ^ 2 ∂μ
   set Q := ∫ x, ‖β x‖ ^ 2 ∂μ
@@ -196,11 +201,16 @@ theorem integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : X → F₃} {Dbar : 
   set T' := ∫ x, ‖Dα' x‖ ^ 2 ∂μ
   set Z := ∫ x, ‖Dbar x‖ ^ 2 ∂μ
   have hQ : 0 ≤ Q := integral_nonneg fun x ↦ by positivity
+  have hT₂ : 0 ≤ T₂ := integral_nonneg fun x ↦ by positivity
   have hZ : 0 ≤ Z := integral_nonneg fun x ↦ by positivity
-  -- Integrate the splitting of `∇_a α` and the square of the Dirac bound.
-  have hT₁ : T₁ ≤ T' + Z := by
-    rw [← integral_add hDα' hDbar]
-    exact integral_mono_ae hDα (hDα'.add hDbar) hsplit
+  -- Integrate the square of the splitting of `∇_a α` and of the Dirac bound.
+  have hT₁ : T₁ ≤ 2 * (T' + Z) := by
+    rw [← integral_add hDα' hDbar, ← integral_const_mul]
+    refine integral_mono_of_nonneg (.of_forall fun x ↦ by positivity)
+      ((hDα'.add hDbar).const_mul _) ?_
+    filter_upwards [hsplit] with x hx
+    have hsq : ‖Dα x‖ ^ 2 ≤ (‖Dα' x‖ + ‖Dbar x‖) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hx 2
+    nlinarith [sq_nonneg (‖Dα' x‖ - ‖Dbar x‖)]
   have hZPQ : Z ≤ 2 * c ^ 2 * (P + Q) := by
     rw [← integral_add hDβ hβ, ← integral_const_mul]
     refine integral_mono_ae hDbar ((hDβ.add hβ).const_mul _) ?_
@@ -212,43 +222,43 @@ theorem integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : X → F₃} {Dbar : 
   have hPQ : P + Q ≤ 8 * c ^ 2 / r * (T₁ + T₂) := by
     have : Q ≤ r / 16 * Q := by nlinarith
     linarith
-  have hK : 16 * c ^ 4 / r ≤ 1 / 2 := by
+  have hK : 32 * c ^ 4 / r ≤ 1 / 2 := by
     rw [div_le_iff₀ hr]
     linarith
   have hc2 : 0 ≤ 2 * c ^ 2 := by positivity
-  -- `Z ≤ (16 c⁴ / r) (T' + T₂) + (16 c⁴ / r) Z`, and the last term is absorbed.
-  have hZ' : Z ≤ 16 * c ^ 4 / r * (T' + T₂) + 16 * c ^ 4 / r * Z := by
+  have h8 : 0 ≤ 8 * c ^ 2 / r := by positivity
+  -- `Z ≤ (32 c⁴ / r) (T' + T₂) + (32 c⁴ / r) Z`, and the last term is absorbed.
+  have hZ' : Z ≤ 32 * c ^ 4 / r * (T' + T₂) + 32 * c ^ 4 / r * Z := by
     calc Z ≤ 2 * c ^ 2 * (P + Q) := hZPQ
       _ ≤ 2 * c ^ 2 * (8 * c ^ 2 / r * (T₁ + T₂)) := mul_le_mul_of_nonneg_left hPQ hc2
-      _ ≤ 2 * c ^ 2 * (8 * c ^ 2 / r * (T' + Z + T₂)) := by
-          have : 0 ≤ 8 * c ^ 2 / r := by positivity
-          gcongr
-      _ = 16 * c ^ 4 / r * (T' + T₂) + 16 * c ^ 4 / r * Z := by ring
-  have hKZ : 16 * c ^ 4 / r * Z ≤ Z / 2 := by nlinarith
-  have : 32 * c ^ 4 / r * (T' + T₂) = 2 * (16 * c ^ 4 / r * (T' + T₂)) := by ring
+      _ ≤ 2 * c ^ 2 * (8 * c ^ 2 / r * (2 * (T' + Z) + 2 * T₂)) :=
+          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (by linarith) h8) hc2
+      _ = 32 * c ^ 4 / r * (T' + T₂) + 32 * c ^ 4 / r * Z := by ring
+  have hKZ : 32 * c ^ 4 / r * Z ≤ Z / 2 := by nlinarith
+  have : 64 * c ^ 4 / r * (T' + T₂) = 2 * (32 * c ^ 4 / r * (T' + T₂)) := by ring
   linarith
 
 /-- **Taubes's `L²` bound on `∂bar_a α`, in norm form.** Under the hypotheses of
 `TauCeti.SeibergWitten.integral_norm_sq_le_of_norm_le_mul_add_norm`,
-`‖∂bar_a α‖₂ ≤ 6 c² r^(-1/2) (‖∂_a α‖₂ + ‖α‖₂)`, with `L²` norms written `√(∫ |f|²)`. -/
-theorem sqrt_integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : X → F₃} {Dbar : X → F₄}
-    (hr16 : 16 ≤ r) (hcr : 32 * c ^ 4 ≤ r) (hβ : Integrable (fun x ↦ ‖β x‖ ^ 2) μ)
-    (hDα : Integrable (fun x ↦ ‖Dα x‖ ^ 2) μ) (hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ)
+`‖∂bar_a α‖₂ ≤ 8 c² r^(-1/2) (‖∂_a α‖₂ + ‖α‖₂)`, with `L²` norms written `√(∫ |f|²)`. -/
+theorem sqrt_integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : (x : X) → F₃ x}
+    {Dbar : (x : X) → F₄ x} (hr16 : 16 ≤ r) (hcr : 64 * c ^ 4 ≤ r)
+    (hβ : Integrable (fun x ↦ ‖β x‖ ^ 2) μ) (hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ)
     (hDα' : Integrable (fun x ↦ ‖Dα' x‖ ^ 2) μ) (hDbar : Integrable (fun x ↦ ‖Dbar x‖ ^ 2) μ)
     (hbound : ∫ x, ‖Dβ x‖ ^ 2 ∂μ + r / 16 * ∫ x, ‖β x‖ ^ 2 ∂μ ≤
       8 * c ^ 2 / r * (∫ x, ‖Dα x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ))
-    (hsplit : ∀ᵐ x ∂μ, ‖Dα x‖ ^ 2 ≤ ‖Dα' x‖ ^ 2 + ‖Dbar x‖ ^ 2)
+    (hsplit : ∀ᵐ x ∂μ, ‖Dα x‖ ≤ ‖Dα' x‖ + ‖Dbar x‖)
     (hdirac : ∀ᵐ x ∂μ, ‖Dbar x‖ ≤ c * (‖Dβ x‖ + ‖β x‖)) :
     √(∫ x, ‖Dbar x‖ ^ 2 ∂μ) ≤
-      6 * c ^ 2 / √r * (√(∫ x, ‖Dα' x‖ ^ 2 ∂μ) + √(∫ x, ‖α x‖ ^ 2 ∂μ)) := by
-  have hZ := integral_norm_sq_le_of_norm_le_mul_add_norm hr16 hcr hβ hDα hDβ hDα' hDbar
+      8 * c ^ 2 / √r * (√(∫ x, ‖Dα' x‖ ^ 2 ∂μ) + √(∫ x, ‖α x‖ ^ 2 ∂μ)) := by
+  have hZ := integral_norm_sq_le_of_norm_le_mul_add_norm hr16 hcr hβ hDβ hDα' hDbar
     hbound hsplit hdirac
   have hr : 0 < r := by linarith
   have hT' : 0 ≤ ∫ x, ‖Dα' x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
   have hT₂ : 0 ≤ ∫ x, ‖α x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
-  refine sqrt_le_div_sqrt_mul_add_sqrt hr (by positivity) hT' hT₂ (hZ.trans ?_)
-  gcongr
-  nlinarith [pow_nonneg (sq_nonneg c) 2]
+  exact sqrt_le_div_sqrt_mul_add_sqrt hr (by positivity) hT' hT₂ (hZ.trans_eq (by ring))
+
+end MeasureSpace
 
 section Manifold
 
@@ -261,21 +271,25 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  {A B F₁ F₂ : M → Type*} [∀ x, SeminormedAddCommGroup (A x)] [∀ x, SeminormedAddCommGroup (B x)]
+  [∀ x, SeminormedAddCommGroup (F₁ x)] [∀ x, SeminormedAddCommGroup (F₂ x)]
 
 local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := 1) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
 /-- **Taubes's `L²` bound on `β` on a closed manifold.** On a compact Riemannian manifold without
-boundary, let `α`, `β`, `∇_a α`, `∇β` be continuous fields with `|β|²` of class `C²`, satisfying the
-projected Weitzenböck inequality
+boundary, with a `C¹` Riemannian metric, let `α`, `β`, `Dα`, `Dβ` be sections of families of
+seminormed groups, standing for `α`, `β`, `∇_a α`, `∇β`, such that `|α|²`, `|∇_a α|²` and `|∇β|²`
+are continuous and `|β|²` is of class `C²`, satisfying the projected Weitzenböck inequality
 `-Δ|β|² / 2 + |∇β|² + (r / 4) (|α|² + |β|² + 1) |β|² ≤ c |β| (|∇_a α| + |α| + |β|)` with the
-Laplace–Beltrami operator `Δ = div ∘ grad`. If `8 c ≤ r`, then
+Laplace–Beltrami operator `Δ = div ∘ grad`. If `0 < r` and `8 c ≤ r`, then
 `∫ |∇β|² + (r / 16) ∫ |β|² ≤ (8 c² / r) (∫ |∇_a α|² + ∫ |α|²)` for the Riemannian volume. -/
 theorem integral_norm_sq_add_mul_integral_norm_sq_le_of_laplaceBeltrami
-    {α : M → A} {β : M → B} {Dα : M → F₁} {Dβ : M → F₂} (hr : 0 < r) (hcr : 8 * c ≤ r)
-    (hα : Continuous α) (hβ : ContMDiff I 𝓘(ℝ) 2 (fun x ↦ ‖β x‖ ^ 2))
-    (hDα : Continuous Dα) (hDβ : Continuous Dβ)
+    {α : (x : M) → A x} {β : (x : M) → B x} {Dα : (x : M) → F₁ x} {Dβ : (x : M) → F₂ x}
+    (hr : 0 < r) (hcr : 8 * c ≤ r) (hα : Continuous fun x ↦ ‖α x‖ ^ 2)
+    (hβ : ContMDiff I 𝓘(ℝ) 2 (fun x ↦ ‖β x‖ ^ 2)) (hDα : Continuous fun x ↦ ‖Dα x‖ ^ 2)
+    (hDβ : Continuous fun x ↦ ‖Dβ x‖ ^ 2)
     (hW : ∀ x, -laplaceBeltrami I (fun y ↦ ‖β y‖ ^ 2) x / 2 + ‖Dβ x‖ ^ 2 +
         r / 4 * (‖α x‖ ^ 2 + ‖β x‖ ^ 2 + 1) * ‖β x‖ ^ 2 ≤
       c * ‖β x‖ * (‖Dα x‖ + ‖α x‖ + ‖β x‖)) :
@@ -288,8 +302,8 @@ theorem integral_norm_sq_add_mul_integral_norm_sq_le_of_laplaceBeltrami
   exact integral_norm_sq_add_mul_integral_norm_sq_le hr hcr
     (hcpt _ (continuous_laplaceBeltrami hβ))
     (integral_laplaceBeltrami_eq_zero hβ (HasCompactSupport.of_compactSpace _))
-    (hcpt _ (hα.norm.pow 2)) (hcpt _ hβ.continuous) (hcpt _ (hDα.norm.pow 2))
-    (hcpt _ (hDβ.norm.pow 2)) (Filter.Eventually.of_forall hW)
+    (hcpt _ hα) (hcpt _ hβ.continuous) (hcpt _ hDα) (hcpt _ hDβ)
+    (Filter.Eventually.of_forall hW)
 
 end Manifold
 
