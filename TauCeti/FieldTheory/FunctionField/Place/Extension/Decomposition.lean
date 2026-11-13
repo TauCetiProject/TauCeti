@@ -8,6 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 public import TauCeti.FieldTheory.Galois.FixedField
+-- Proof-only: every place of the base has a place above it.
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
 /-!
 # The decomposition group and the decomposition field of a place
