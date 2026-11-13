@@ -129,9 +129,9 @@ restriction maps of `F`. -/
 @[expose]
 def supportedSectionsPresheaf : TopCat.Presheaf AddCommGrpCat.{u} X where
   obj W := AddCommGrpCat.of (F.supportedSections S W.unop)
-  map f := AddCommGrpCat.ofHom <| AddMonoidHom.mk'
-    (fun s ↦ ⟨F.obj.map f s, F.map_mem_supportedSections_of_le (leOfHom f.unop) s.2⟩)
-    fun s t ↦ Subtype.ext (map_add _ _ _)
+  map f := AddCommGrpCat.ofHom <|
+    ((F.obj.map f).hom.comp (F.supportedSections S _).subtype).codRestrict _
+      fun s ↦ F.map_mem_supportedSections_of_le (leOfHom f.unop) s.2
   map_id W := by
     ext s
     exact congr($(F.obj.map_id W) s.1)

@@ -702,7 +702,7 @@ This is deliberately a named equivalence rather than `ContinuousLinearEquiv.refl
 `TangentSpace` is not reducible, a statement phrased with `refl` is type-correct only after
 unfolding it, so `rw` and `simp` fail on such statements. Mathlib introduces
 `NormedSpace.fromTangentSpace` for the analogous identification for the same reason. -/
-noncomputable def tangentSpaceOpenEquiv {U : Opens M} (x : U) :
+def tangentSpaceOpenEquiv {U : Opens M} (x : U) :
     TangentSpace I x ≃L[𝕜] TangentSpace I (x : M) where
   toFun v := v
   invFun v := v
@@ -905,7 +905,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- Restrict a field of continuous bilinear maps on the tangent spaces of `M` to an open
 submanifold `U`, through the canonical tangent-space identification. -/
-noncomputable def restrictOpenTangentSpaceBilinear
+def restrictOpenTangentSpaceBilinear
     (b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F) (U : Opens M) (x : U) :
     TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F :=
   let e := tangentSpaceOpenEquiv (I := I) x
@@ -980,7 +980,7 @@ variable
 the tangent spaces of the factors. Both are Mathlib's type synonym for the product of the model
 vector spaces; as for `tangentSpaceOpenEquiv`, the identification is named so that statements
 using it are type-correct without unfolding `TangentSpace`. -/
-noncomputable def tangentSpaceProdEquiv (p : M × N) :
+def tangentSpaceProdEquiv (p : M × N) :
     TangentSpace (I.prod J) p ≃L[𝕜] TangentSpace I p.1 × TangentSpace J p.2 where
   toFun v := v
   invFun v := v

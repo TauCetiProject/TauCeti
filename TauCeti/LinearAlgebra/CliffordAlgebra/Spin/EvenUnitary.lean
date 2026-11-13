@@ -412,7 +412,7 @@ variable {A : Type w} [Semiring A] [Algebra R A] [StarMul A]
 
 /-- A reversal-preserving equivalence from the even Clifford algebra transports its even unitary
 carrier to the unitary group of the target algebra. -/
-noncomputable def evenUnitaryGroupEquivUnitaryOfAlgEquiv
+def evenUnitaryGroupEquivUnitaryOfAlgEquiv
     (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x)) :
     evenUnitaryGroup Q ≃* unitary A where
   toFun x := ⟨e (evenUnitaryGroupEvenPart Q x), by
@@ -467,7 +467,7 @@ variable {G : Type*} [Group G]
 
 /-- Transport the even unitary Clifford group through an algebra equivalence when a target group
 is exactly the subtype cut out by the transported reverse-norm-one predicate. -/
-noncomputable def evenUnitaryGroupEquivOfAlgEquiv
+def evenUnitaryGroupEquivOfAlgEquiv
     (e : even Q ≃ₐ[R] A) (P : A → Prop) (val : G →* A)
     (hval : Function.Injective val) (ofVal : ∀ a, P a → G)
     (val_ofVal : ∀ a ha, val (ofVal a ha) = a) (val_mem : ∀ g, P (val g))

@@ -227,32 +227,18 @@ variable (I : ModelWithCorners 𝕂 E H) (n : WithTop ℕ∞) [IsManifold I n M]
 
 /-- The extended chart at `x`, restricted to the interior of its target and regarded as a partial
 diffeomorphism from `M` to the model space `E`. -/
-def extChartPartialDiffeomorph (x : M) : PartialDiffeomorph I 𝓘(𝕂, E) M E n := by
-  let chart := extChartAt I x
-  let V := interior chart.target
-  have hsource : IsOpen (chart.source ∩ chart ⁻¹' V) := by
-    simpa only [chart, V] using
-      isOpen_extChartAt_preimage' (I := I) x isOpen_interior
-  let himage := PartialEquiv.IsImage.of_preimage_eq
-    (e := chart) (s := chart ⁻¹' V) (t := V) rfl
-  let ce := himage.restr
-  have htarget : ce.target = V := by
-    -- `ce` is exactly the restriction supplied by `himage`; expose it to use the named target
-    -- equation instead of unfolding the `PartialEquiv` constructor.
-    change himage.restr.target = V
-    rw [PartialEquiv.IsImage.restr_target]
-    exact inter_eq_right.2 interior_subset
-  exact {
-    toPartialEquiv := ce
-    open_source := hsource
-    open_target := htarget ▸ isOpen_interior
-    contMDiffOn_toFun := by
-      apply (contMDiffOn_extChartAt (I := I) (n := n) (x := x)).mono
-      intro y hy
-      simpa only [chart, extChartAt_source] using hy.1
-    contMDiffOn_invFun :=
-      (contMDiffOn_extChartAt_symm (I := I) x).mono fun _ hy => interior_subset hy.2
-  }
+def extChartPartialDiffeomorph (x : M) : PartialDiffeomorph I 𝓘(𝕂, E) M E n where
+  toPartialEquiv := (PartialEquiv.IsImage.of_preimage_eq (e := extChartAt I x)
+    (s := extChartAt I x ⁻¹' interior (extChartAt I x).target)
+    (t := interior (extChartAt I x).target) rfl).restr
+  open_source := isOpen_extChartAt_preimage' (I := I) x isOpen_interior
+  open_target := by
+    rw [PartialEquiv.IsImage.restr_target, inter_eq_right.2 interior_subset]
+    exact isOpen_interior
+  contMDiffOn_toFun := (contMDiffOn_extChartAt (I := I) (n := n) (x := x)).mono fun y hy ↦ by
+    simpa only [extChartAt_source] using hy.1
+  contMDiffOn_invFun :=
+    (contMDiffOn_extChartAt_symm (I := I) x).mono fun _ hy => interior_subset hy.2
 
 private theorem extChartPartialDiffeomorph_toPartialEquiv (x : M) :
     (extChartPartialDiffeomorph I n x).toPartialEquiv =
