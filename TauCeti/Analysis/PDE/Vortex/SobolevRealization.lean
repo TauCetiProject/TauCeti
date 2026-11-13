@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Distribution.TestFunction.Inner
 
 /-!
 # The gauge-fixed vortex operator on the Sobolev scale
@@ -75,31 +75,16 @@ theorem forall_integral_inner_gaugeFixedAdjoint_eq_iff {μ : Measure ℂ} [μ.Is
     (integral_inner_gaugeFixedOperator hx hy (hη.of_le (by exact_mod_cast le_top))
       (.inr hηc)).symm
   refine ⟨fun hweak ↦ ?_, fun heq η hη hηc ↦ by simp_rw [hparts η hη hηc, heq]⟩
-  set G := fun z ↦ gaugeFixedOperator x y z - f z
-  have hG : Continuous G := (continuous_gaugeFixedOperator hx hy).sub hf
-  -- Each coordinate of `G` integrates to zero against every test function, so it vanishes.
-  have hGi (i : Fin 4) : (fun z ↦ G z i) = 0 := by
-    have hGi : Continuous fun z ↦ G z i := (PiLp.continuous_apply 2 _ i).comp hG
-    refine (hGi.ae_eq_iff_eq μ continuous_const).1
-      (ae_eq_zero_of_integral_contDiff_smul_eq_zero hGi.locallyIntegrable fun φ hφ hφc ↦ ?_)
-    set η : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ φ z • EuclideanSpace.single i 1
-    have hη : ContDiff ℝ ∞ η := hφ.smul contDiff_const
-    have hηc : HasCompactSupport η := hφc.smul_right
-    have hint (g : ℂ → EuclideanSpace ℝ (Fin 4)) (hg : Continuous g) :
-        Integrable (fun z ↦ ⟪g z, η z⟫) μ :=
-      (hg.inner hη.continuous).integrable_of_hasCompactSupport
-        (hηc.mono fun z hz hgz ↦ hz (by simp [hgz]))
-    have h := hweak η hη hηc
-    rw [hparts η hη hηc] at h
-    calc ∫ z, φ z • G z i ∂μ = ∫ z, ⟪G z, η z⟫ ∂μ := by
-          simp [η, inner_smul_right, EuclideanSpace.inner_single_right]
-      _ = 0 := by
-          simp_rw [G, inner_sub_left]
-          rw [integral_sub (hint _ (continuous_gaugeFixedOperator hx hy)) (hint f hf), h, sub_self]
-  intro z
-  have h := fun i ↦ congrFun (hGi i) z
-  ext i
-  simpa [G, sub_eq_zero] using h i
+  -- Both sides are continuous and pair equally with every test field, so they agree.
+  have hL := continuous_gaugeFixedOperator hx hy
+  have hae : gaugeFixedOperator x y =ᵐ[μ] f := by
+    simpa using ae_eq_of_forall_integral_inner_eq (Ω := ⊤)
+      (hL.locallyIntegrable.locallyIntegrableOn _) (hf.locallyIntegrable.locallyIntegrableOn _)
+      fun φ ↦ by
+        have h := hweak φ φ.contDiff φ.hasCompactSupport
+        rw [hparts φ φ.contDiff φ.hasCompactSupport] at h
+        simpa only [real_inner_comm] using h
+  exact congrFun ((hL.ae_eq_iff_eq μ hf).1 hae)
 
 /-- A square-integrable weak solution of `L_x y = f`, with `f` in every `H^k`, lies in every
 `H^k` when `x` is smooth with bounded derivatives: the elliptic bootstrap at every order. -/
