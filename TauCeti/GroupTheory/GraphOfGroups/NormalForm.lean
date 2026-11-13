@@ -119,12 +119,9 @@ theorem edgePart_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).1) : d.edgePa
   rw [rep, (d e).2.equiv_mul_right_of_mem (MonoidHom.mem_range.2 ⟨c, rfl⟩), rep]
 
 @[simp] theorem edgePart_mul_αArrow (g : 𝔸.vertexGroup a) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
-    d.edgePart e (g * 𝔸.αArrow e c) = d.edgePart e g * c := by
-  simp only [edgePart, (d e).2.equiv_mul_right_of_mem (MonoidHom.mem_range.2 ⟨c, rfl⟩)]
-  rw [MulEquiv.symm_apply_eq, map_mul (MonoidHom.ofInjective _), MulEquiv.apply_symm_apply]
-  -- Both sides are the element `x α_e(c)` of `α_e(A_e)`, where `x` is the component of `g`
-  -- in `α_e(A_e)`; the product in the subgroup is the product of the underlying elements.
-  rfl
+    d.edgePart e (g * 𝔸.αArrow e c) = d.edgePart e g * c :=
+  𝔸.αArrow_injective e <| mul_left_cancel (a := d.rep e (g * 𝔸.αArrow e c)) <| by
+    rw [rep_mul_αArrow_edgePart, rep_mul_αArrow, map_mul, ← mul_assoc, rep_mul_αArrow_edgePart]
 
 /-- The representative of `g` lies in `α_e(A_e)` exactly when `g` does. -/
 theorem rep_mem_range_iff (g : 𝔸.vertexGroup a) :
@@ -313,7 +310,7 @@ theorem cancelDart_cons_reverse {b c : Γ.V} (q : 𝔸.AlternatingPath a c) (e :
       q.setLast (q.last * 𝔸.ωArrow e c₀) := by
   simp only [cancelDart]
   congr 3
-  exact (MonoidHom.ofInjective (𝔸.αArrow_injective e)).symm_apply_apply c₀
+  exact 𝔸.αArrow_injective e (by simp)
 
 open scoped Classical in
 /-- Appending the dart `e` to `p` and normalizing at the new end for the transversal `d`. If `p`
@@ -335,6 +332,11 @@ theorem appendDart_of_not_cancels {b c : Γ.V} {p : 𝔸.AlternatingPath a b} {e
     (h : ¬ p.Cancels e) :
     p.appendDart d e = cons (p.setLast (d.rep e p.last)) e (𝔸.ωArrow e (d.edgePart e p.last)) :=
   dite_eq_right h
+
+/-- Appending a dart to an alternating path of length zero never creates a backtracking. -/
+@[simp] theorem single_appendDart {c : Γ.V} (g : 𝔸.vertexGroup a) (e : a ⟶ c) :
+    (single g).appendDart d e = cons (single (d.rep e g)) e (𝔸.ωArrow e (d.edgePart e g)) :=
+  appendDart_of_not_cancels d (not_cancels_single g e)
 
 /-- Appending `e` after `rev e, α_e(c)` deletes the backtracking. -/
 theorem appendDart_cons_of_eq {b c : Γ.V} (q : 𝔸.AlternatingPath a c) {e' : c ⟶ b} {e : b ⟶ c}
@@ -471,6 +473,21 @@ noncomputable def appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
 @[simp] theorem single_one : single d (1 : 𝔸.vertexGroup a) = empty d a :=
   (rfl)
 
+@[simp] theorem toPath_single (g : 𝔸.vertexGroup a) : (single d g).toPath = Path.ofVertex g :=
+  (rfl)
+
+@[simp] theorem toPath_empty : (empty d a).toPath = Path.ofVertex 1 :=
+  (rfl)
+
+@[simp] theorem single_inj {g h : 𝔸.vertexGroup a} : single d g = single d h ↔ g = h := by
+  simp [NormalWord.ext_iff]
+
+@[simp] theorem single_eq_empty_iff {g : 𝔸.vertexGroup a} : single d g = empty d a ↔ g = 1 := by
+  rw [← single_one, single_inj]
+
+@[simp] theorem empty_eq_single_iff {g : 𝔸.vertexGroup a} : empty d a = single d g ↔ g = 1 := by
+  rw [eq_comm, single_eq_empty_iff]
+
 @[simp] theorem toAlternatingPath_mulLast {b : Γ.V} (w : NormalWord d a b) (g : 𝔸.vertexGroup b) :
     (w.mulLast g).toAlternatingPath = w.1.setLast (w.1.last * g) :=
   (rfl)
@@ -487,6 +504,13 @@ noncomputable def appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
 @[simp] theorem mulLast_one {b : Γ.V} (w : NormalWord d a b) : w.mulLast 1 = w := by
   ext1
   simp
+
+@[simp] theorem single_mulLast (g h : 𝔸.vertexGroup a) :
+    (single d g).mulLast h = single d (g * h) :=
+  (rfl)
+
+@[simp] theorem empty_mulLast (g : 𝔸.vertexGroup a) : (empty d a).mulLast g = single d g := by
+  rw [← single_one, single_mulLast, one_mul]
 
 /-- Appending a dart and then its reverse to a normal word gives the word back. -/
 @[simp] theorem appendDart_appendDart_reverse {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
@@ -612,7 +636,6 @@ theorem normalForm_def (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
 
 @[simp] theorem normalForm_ofVertex (g : 𝔸.vertexGroup a) :
     normalForm d (Path.ofVertex g) = NormalWord.single d g := by
-  ext1
   simp [normalForm_def]
 
 @[simp] theorem normalForm_ofDart (e : a ⟶ b) :
@@ -623,7 +646,7 @@ theorem normalForm_def (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
 theorem toPath_normalForm_homotopic (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
     Path.Homotopic (normalForm d p).toPath p :=
   (NormalWord.toPath_appendPath_homotopic _ p).trans <| by
-    simpa using NormalWord.toPath_empty_homotopic.comp (.refl p)
+    simpa using (NormalWord.toPath_empty_homotopic (d := d)).comp (.refl p)
 
 /-- Homotopic paths have the same normal form. -/
 theorem normalForm_eq_of_homotopic {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (h : p.Homotopic q) :
@@ -686,6 +709,9 @@ noncomputable def normalWordEquiv : π₁ 𝔸 a ≃ NormalWord d a a where
     (normalWordEquiv d a).symm w = mk w.toPath :=
   (rfl)
 
+@[simp] theorem mk_toPath_normalForm (p : 𝔸.Path ⟨a⟩ ⟨a⟩) : mk (normalForm d p).toPath = mk p :=
+  mk_eq_mk_iff.2 (toPath_normalForm_homotopic d p)
+
 end π₁
 
 /-! ### Injectivity of the vertex groups -/
@@ -699,8 +725,7 @@ homotopic only when they are equal. -/
 @[simp] theorem ofVertex_homotopic_ofVertex_iff {g h : 𝔸.vertexGroup a} :
     (ofVertex g).Homotopic (ofVertex h) ↔ g = h := by
   rw [← normalForm_eq_normalForm_iff default, normalForm_ofVertex, normalForm_ofVertex,
-    NormalWord.ext_iff]
-  simp
+    NormalWord.single_inj]
 
 /-- A nontrivial vertex group element, read as an `𝔸`-path consisting of a single vertex group
 letter, is not homotopic to the empty path. -/
@@ -708,6 +733,12 @@ letter, is not homotopic to the empty path. -/
     (ofVertex g).Homotopic Quiver.Path.nil ↔ g = 1 := by
   rw [← ofVertex_homotopic_ofVertex_iff]
   exact ⟨(·.trans Homotopic.ofVertex_one.symm), (·.trans Homotopic.ofVertex_one)⟩
+
+/-- The empty path is not homotopic to a nontrivial vertex group element. -/
+@[simp] theorem nil_homotopic_ofVertex_iff {g : 𝔸.vertexGroup a} :
+    Homotopic Quiver.Path.nil (ofVertex g) ↔ g = 1 := by
+  rw [← ofVertex_homotopic_nil_iff]
+  exact ⟨.symm, .symm⟩
 
 end Path
 
@@ -728,6 +759,22 @@ theorem vertexHom_injective (p : 𝔸.Path ⟨a⟩ ⟨b⟩) : Function.Injective
         ((Path.Homotopic.refl (Path.ofVertex k)).comp (Path.Homotopic.reverse_comp p))
   exact Path.ofVertex_homotopic_ofVertex_iff.1 <|
     (key g).symm.trans <| (((hgh.comp_left p.reverse).comp_right p)).trans (key h)
+
+@[simp] theorem vertexHom_inj (p : 𝔸.Path ⟨a⟩ ⟨b⟩) {g h : 𝔸.vertexGroup b} :
+    vertexHom p g = vertexHom p h ↔ g = h :=
+  (vertexHom_injective p).eq_iff
+
+@[simp] theorem vertexHom_eq_one_iff (p : 𝔸.Path ⟨a⟩ ⟨b⟩) {g : 𝔸.vertexGroup b} :
+    vertexHom p g = 1 ↔ g = 1 :=
+  map_eq_one_iff _ (vertexHom_injective p)
+
+@[simp] theorem mk_ofVertex_inj {g h : 𝔸.vertexGroup a} :
+    mk (Path.ofVertex g) = mk (Path.ofVertex h) ↔ g = h :=
+  mk_eq_mk_iff.trans Path.ofVertex_homotopic_ofVertex_iff
+
+@[simp] theorem mk_ofVertex_eq_one_iff {g : 𝔸.vertexGroup a} :
+    mk (Path.ofVertex g) = 1 ↔ g = 1 := by
+  rw [← mk_nil, mk_eq_mk_iff, Path.ofVertex_homotopic_nil_iff]
 
 end π₁
 

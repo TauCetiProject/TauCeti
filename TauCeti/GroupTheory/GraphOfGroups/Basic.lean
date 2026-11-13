@@ -184,16 +184,22 @@ theorem exists_αArrow_reverse_eq_and_ωArrow_reverse_eq (e : a ⟶ b)
     rw [αArrow_reverse_apply, MulEquiv.apply_symm_apply], by
     rw [ωArrow_reverse_apply, MulEquiv.apply_symm_apply]⟩
 
-theorem range_αArrow_reverse (e : a ⟶ b) :
+@[simp] theorem range_αArrow_reverse (e : a ⟶ b) :
     (𝔸.αArrow (Quiver.reverse e)).range = (𝔸.ωArrow e).range := by
   ext g
   refine ⟨fun ⟨c, hc⟩ ↦ ⟨_, (𝔸.αArrow_reverse_apply e c).symm.trans hc⟩, fun ⟨c, hc⟩ ↦ ?_⟩
   obtain ⟨c', hc', -⟩ := 𝔸.exists_αArrow_reverse_eq_and_ωArrow_reverse_eq e c
   exact ⟨c', hc'.trans hc⟩
 
-theorem range_ωArrow_reverse (e : a ⟶ b) :
+@[simp] theorem range_ωArrow_reverse (e : a ⟶ b) :
     (𝔸.ωArrow (Quiver.reverse e)).range = (𝔸.αArrow e).range := by
   rw [← 𝔸.range_αArrow_reverse, Quiver.reverse_reverse]
+
+@[simp] theorem range_αArrow_dart (e : Γ.E) : (𝔸.αArrow (Γ.dart e)).range = (𝔸.α e).range := by
+  rw [Γ.dart_def, αArrow_mk]
+
+@[simp] theorem range_ωArrow_dart (e : Γ.E) : (𝔸.ωArrow (Γ.dart e)).range = (𝔸.ω e).range := by
+  rw [Γ.dart_def, ωArrow_mk]
 
 /-- At a vertex where a dart `e'` is followed by its reverse `e`, the image of `ω_{e'}` is the
 image of `α_e`. -/

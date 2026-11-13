@@ -334,6 +334,9 @@ instance : Inv (π₁ 𝔸 a) where
 @[simp] theorem mk_nil : mk (Quiver.Path.nil : 𝔸.Path ⟨a⟩ ⟨a⟩) = 1 :=
   (rfl)
 
+@[simp] theorem mk_ofVertex_one : mk (Path.ofVertex (1 : 𝔸.vertexGroup a)) = 1 :=
+  mk_eq_mk_iff.2 Path.Homotopic.ofVertex_one
+
 @[simp] theorem mk_reverse (p : 𝔸.Path ⟨a⟩ ⟨a⟩) : mk p.reverse = (mk p)⁻¹ :=
   (rfl)
 
