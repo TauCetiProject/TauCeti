@@ -139,6 +139,23 @@ theorem fromAffine_map {G H : FiniteLocallyFreeCommAffineGroupSchemeCat R} (f : 
     (fromAffine R).map f = f.hom.hom :=
   (rfl)
 
+/-- Affine rebundling recovers an affine homomorphism from its underlying group homomorphism. -/
+@[simp]
+theorem toAffine_map_fromAffine_hom_hom {G H : FiniteLocallyFreeCommAffineGroupSchemeCat R}
+    (f : G ⟶ H) :
+    (toAffine R).map (X := (fromAffine R).obj G) (Y := (fromAffine R).obj H) f.hom.hom = f :=
+  (rfl)
+
+/-- Forgetting after affine rebundling recovers the original homomorphism. -/
+theorem fromAffine_map_toAffine_map {G H : FiniteFlatCommGroupScheme (Spec R)} (f : G ⟶ H) :
+    (fromAffine R).map ((toAffine R).map f) = f :=
+  (rfl)
+
+/-- Affine rebundling after forgetting recovers the original affine homomorphism. -/
+theorem toAffine_map_fromAffine_map {G H : FiniteLocallyFreeCommAffineGroupSchemeCat R}
+    (f : G ⟶ H) : (toAffine R).map ((fromAffine R).map f) = f :=
+  (rfl)
+
 /-- Rebundling in the affine category leaves the underlying group scheme unchanged. -/
 noncomputable def toAffineCompιIso :
     toAffine R ⋙ (finiteLocallyFreeCommAffineGroupSchemeProperty R).ι ⋙
@@ -186,6 +203,10 @@ noncomputable def affineEquivalence :
   inverse := fromAffine R
   unitIso := Iso.refl _
   counitIso := Iso.refl _
+
+instance : (toAffine R).IsEquivalence := (affineEquivalence R).isEquivalence_functor
+
+instance : (fromAffine R).IsEquivalence := (affineEquivalence R).isEquivalence_inverse
 
 /-- The affine equivalence sends a group scheme to its affine bundling. -/
 @[simp]

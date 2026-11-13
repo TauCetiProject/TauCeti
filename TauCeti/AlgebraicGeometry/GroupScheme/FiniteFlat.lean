@@ -193,14 +193,20 @@ additional dependent transports. -/
 noncomputable def baseChangeFunctor {S T : Scheme.{u}} (f : T ⟶ S) :
     FiniteFlatCommGroupScheme S ⥤ FiniteFlatCommGroupScheme T where
   obj G := G.baseChange f
-  map {G H} φ := (show Grp.mk (G.baseChange f).toOver ⟶ Grp.mk (H.baseChange f).toOver from
-    eqToHom (G.grpMk_baseChange f) ≫ (Over.pullback f).mapGrp.map φ ≫
-      eqToHom (H.grpMk_baseChange f).symm)
+  -- The intermediate pullback group objects live in `Grp (Over T)`, so compose there before
+  -- regarding the resulting homomorphism as one of finite flat group schemes.
+  map {G H} φ := (eqToHom (G.grpMk_baseChange f) ≫ (Over.pullback f).mapGrp.map φ ≫
+    eqToHom (H.grpMk_baseChange f).symm :
+      Grp.mk (G.baseChange f).toOver ⟶ Grp.mk (H.baseChange f).toOver)
   map_id G := by
+    -- The category instance uses group-object homomorphisms definitionally. Restate its identity
+    -- in `Grp (Over T)` so the pullback functor law and transport cancellation match syntactically.
     change eqToHom _ ≫ (Over.pullback f).mapGrp.map (𝟙 (Grp.mk G.toOver)) ≫ _ =
       𝟙 (Grp.mk (G.baseChange f).toOver)
     simp
   map_comp {G H K} φ ψ := by
+    -- Likewise expose composition in `Grp (Over T)`; rewriting object equalities alone does not
+    -- identify the category operations on finite flat group schemes with these operations.
     change eqToHom _ ≫ (Over.pullback f).mapGrp.map (φ ≫ ψ) ≫ _ =
       (eqToHom _ ≫ (Over.pullback f).mapGrp.map φ ≫ _) ≫
         (eqToHom _ ≫ (Over.pullback f).mapGrp.map ψ ≫ _)
@@ -213,13 +219,30 @@ theorem baseChangeFunctor_obj {S T : Scheme.{u}} (f : T ⟶ S)
   (rfl)
 
 /-- The base-change functor acts on homomorphisms by the pullback functor on group objects. -/
-@[simp]
 theorem baseChangeFunctor_map {S T : Scheme.{u}} (f : T ⟶ S)
     {G H : FiniteFlatCommGroupScheme S} (φ : G ⟶ H) :
-    (baseChangeFunctor f).map φ =
-      (show Grp.mk (G.baseChange f).toOver ⟶ Grp.mk (H.baseChange f).toOver from
-        eqToHom (G.grpMk_baseChange f) ≫ (Over.pullback f).mapGrp.map φ ≫
-          eqToHom (H.grpMk_baseChange f).symm) :=
+    (toGrp T).map ((baseChangeFunctor f).map φ) =
+      eqToHom (G.grpMk_baseChange f) ≫ (Over.pullback f).mapGrp.map ((toGrp S).map φ) ≫
+        eqToHom (H.grpMk_baseChange f).symm :=
+  (rfl)
+
+/-- Base change commutes with forgetting to group objects over the base. -/
+noncomputable def baseChangeFunctorCompToGrpIso {S T : Scheme.{u}} (f : T ⟶ S) :
+    baseChangeFunctor f ⋙ toGrp T ≅ toGrp S ⋙ (Over.pullback f).mapGrp :=
+  Iso.refl _
+
+/-- The forward base-change comparison is the canonical identification of group objects. -/
+@[simp]
+theorem baseChangeFunctorCompToGrpIso_hom_app {S T : Scheme.{u}} (f : T ⟶ S)
+    (G : FiniteFlatCommGroupScheme S) :
+    (baseChangeFunctorCompToGrpIso f).hom.app G = eqToHom (G.grpMk_baseChange f) :=
+  (rfl)
+
+/-- The inverse base-change comparison is the inverse identification of group objects. -/
+@[simp]
+theorem baseChangeFunctorCompToGrpIso_inv_app {S T : Scheme.{u}} (f : T ⟶ S)
+    (G : FiniteFlatCommGroupScheme S) :
+    (baseChangeFunctorCompToGrpIso f).inv.app G = eqToHom (G.grpMk_baseChange f).symm :=
   (rfl)
 
 section Kernel
