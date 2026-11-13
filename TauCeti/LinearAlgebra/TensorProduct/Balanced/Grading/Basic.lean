@@ -42,7 +42,7 @@ variable {R A M N : Type*} [CommRing R] [Semiring A] [Module R A]
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
   [AddCommGroup N] [Module R N] [Module A N]
   {𝒜 : ℤ → Submodule R A} [Decomposition 𝒜]
-  (G : InternalGrading R M) (H : InternalGrading R N)
+  (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
 
 private def homogeneousRelations : Set (M ⊗[R] N) :=
   {z | ∃ (p q r : ℤ) (a : A) (m : M) (n : N),
@@ -97,7 +97,7 @@ theorem isHomogeneous_relations :
     G.tmul_mem_tensorProduct H hm (SetLike.GradedSMul.smul_mem ha hn)
 
 /-- The total-degree grading of a tensor product balanced over homogeneous module actions. -/
-noncomputable def grading : InternalGrading R (BalancedTensorProduct R A M N) :=
+noncomputable def grading : InternalGrading R (BalancedTensorProduct R A M N) ℤ :=
   (G.tensorProduct H).quotient (balancedTensorRelations R A M N)
     (isHomogeneous_relations (𝒜 := 𝒜) G H)
 
@@ -165,7 +165,7 @@ section Map
 variable {M' N' : Type*}
   [AddCommGroup M'] [Module R M'] [Module Aᵐᵒᵖ M']
   [AddCommGroup N'] [Module R N'] [Module A N']
-  (G' : InternalGrading R M') (H' : InternalGrading R N')
+  (G' : InternalGrading R M' ℤ) (H' : InternalGrading R N' ℤ)
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece G'.piece]
   [SetLike.GradedSMul 𝒜 H'.piece]
 

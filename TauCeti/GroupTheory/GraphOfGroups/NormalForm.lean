@@ -203,7 +203,7 @@ theorem toPath_setLast_mul_homotopic {b : Γ.V} (p : 𝔸.AlternatingPath a b)
     (g : 𝔸.vertexGroup b) :
     Path.Homotopic (p.setLast (p.last * g)).toPath (p.toPath.cons (Letter.vertex g)) := by
   cases p with
-  | single h => simpa [Path.ofVertex_eq_nil_cons] using (Path.Homotopic.mul _ h g).symm
+  | single h => simpa [Path.ofVertex_def, Quiver.Hom.toPath] using (Path.Homotopic.mul _ h g).symm
   | cons p e h => exact (Path.Homotopic.mul _ h g).symm
 
 /-- `p.Cancels e` says that `p` ends with the dart `rev e` followed by an element of `α_e(A_e)`,
@@ -569,11 +569,11 @@ noncomputable def appendPath {x : 𝔸.LetterVertex} (w : NormalWord d a x.as) :
 
 @[simp] theorem appendPath_ofVertex {b : Γ.V} (w : NormalWord d a b) (g : 𝔸.vertexGroup b) :
     w.appendPath (Path.ofVertex g) = w.mulLast g := by
-  simp [Path.ofVertex_eq_nil_cons]
+  simp [Path.ofVertex_def, Quiver.Hom.toPath]
 
 @[simp] theorem appendPath_ofDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
     w.appendPath (Path.ofDart e) = w.appendDart e := by
-  simp [Path.ofDart_eq_nil_cons]
+  simp [Path.ofDart_def, Quiver.Hom.toPath]
 
 /-- Homotopic paths act in the same way on normal words. -/
 theorem appendPath_eq_of_homotopic {x y : 𝔸.LetterVertex} (w : NormalWord d a x.as)
