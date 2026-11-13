@@ -149,7 +149,7 @@ theorem integral_sq_le_mul_sq_integral_norm_fderiv (hE : finrank ℝ E = 2) {f :
   have hl : ∫⁻ x, ‖f x‖ₑ ^ (2 : ℝ) ∂μ = ENNReal.ofReal (∫ x, f x ^ 2 ∂μ) := by
     rw [ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun x ↦ sq_nonneg _)]
     refine lintegral_congr fun x ↦ ?_
-    rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
+    rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
       Real.rpow_two, sq_abs]
   have hr : ∫⁻ x, ‖fderiv ℝ f x‖ₑ ∂μ = ENNReal.ofReal (∫ x, ‖fderiv ℝ f x‖ ∂μ) := by
     rw [ofReal_integral_eq_lintegral_ofReal hintd (Eventually.of_forall fun x ↦ norm_nonneg _)]
@@ -196,8 +196,6 @@ private theorem integral_modularRoot_pow_three_sq_le (hE : finrank ℝ E = 2) {w
     (hrc.abs.memLp_of_hasCompactSupport (μ := μ) habs)
     (hdc.norm.memLp_of_hasCompactSupport hds.norm)
   simp only [sq_abs] at hCS
-  have hI0 : 0 ≤ ∫ x, ‖fderiv ℝ (fun x ↦ modularRoot (w x) ^ 3) x‖ ∂μ :=
-    integral_nonneg fun x ↦ norm_nonneg _
   calc ∫ x, (modularRoot (w x) ^ 3) ^ 2 ∂μ
       ≤ G * (∫ x, ‖fderiv ℝ (fun x ↦ modularRoot (w x) ^ 3) x‖ ∂μ) ^ 2 :=
         integral_sq_le_mul_sq_integral_norm_fderiv μ hE hf3 hf3s
@@ -279,8 +277,6 @@ private theorem le_two_mul_add_sq_mul_of_le_mul_add {W k Q Z S : ℝ} (hk : 0 �
       _ = k ^ 2 * Z ^ 2 := by ring
       _ ≤ k ^ 2 * (S * W) := by gcongr
   have h2 : W * W ≤ W * (2 * k * Q + k ^ 2 * S) := by
-    have e : W * (2 * k * Q + k ^ 2 * S) - W * W =
-        k ^ 2 * (S * W) - (W - k * Q) ^ 2 + (k * Q) ^ 2 := by ring
     linarith [sq_nonneg (k * Q)]
   exact le_of_mul_le_mul_left h2 (hkQ.trans_lt h)
 

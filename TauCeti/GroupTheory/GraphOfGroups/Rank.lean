@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.SpanningTree
 public import TauCeti.GroupTheory.GraphOfGroups.PathGroup
 public import TauCeti.GroupTheory.FreeGroup.Rank
 
@@ -21,10 +22,16 @@ killed dart set is required; it need not be a tree.
 These statements use the minimum number of group generators, not merely the size of a
 particular generating family. Loops and parallel edges remain distinct basis indices.
 
+For a connected graph with finitely many vertices whose path group is finitely generated, a
+spanning tree has one positive dart fewer than there are vertices, which gives the Euler form
+of the rank: the rank plus the number of vertices is the number of geometric edges plus one.
+In particular the path group of a rose has rank its number of petals.
+
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §§2.3–3.1.
 * A. Hatcher, *Algebraic Topology*, §1.A, Proposition 1A.2.
+* I. Kapovich, A. Myasnikov, *Stallings foldings and subgroups of free groups*, §8, Lemma 8.2.
 -/
 
 public section
@@ -49,6 +56,52 @@ theorem rank_pathGroup [Group.FG (PathGroup Γ v)] :
   (FreeGroupBasis.ofRepr (T.pathGroupEquivFreeGroup v hO)).rank_eq_nat_card
 
 end TauCeti.SerreGraph.SpanningTree
+
+namespace TauCeti.SerreGraph
+
+universe u w
+
+variable {Γ : SerreGraph.{u, w}}
+
+/-- The reduced closed-path group of a connected graph with finitely many geometric edges is
+finitely generated. -/
+theorem Connected.fg_pathGroup (h : Γ.Connected) [Finite Γ.GeomEdge] (v : Γ.V) :
+    Group.FG (PathGroup Γ v) := by
+  obtain ⟨T⟩ := Γ.exists_spanningTree h
+  obtain ⟨O, hO⟩ := Γ.exists_isOrientation
+  have : Finite O := Finite.of_injective _ hO.bijective_toGeomEdge.1
+  exact (T.fg_pathGroup_iff v hO).mpr (Finite.Set.subset O Set.sdiff_subset)
+
+/-- For a connected graph with finitely many vertices whose reduced closed-path group is
+finitely generated, the rank of that group plus the number of vertices is the number of
+positive darts plus one. -/
+theorem IsOrientation.rank_pathGroup_add_card {O : Set Γ.E} (hO : Γ.IsOrientation O)
+    (h : Γ.Connected) (v : Γ.V) [Finite Γ.V] [Group.FG (PathGroup Γ v)] :
+    Group.rank (PathGroup Γ v) + Nat.card Γ.V = Nat.card O + 1 := by
+  obtain ⟨T⟩ := Γ.exists_spanningTree h
+  have h₁ : Finite ↥(O \ T.darts) := (T.fg_pathGroup_iff v hO).mp inferInstance
+  have h₂ : Finite ↥(T.darts ∩ O) := (T.isSpanningForest hO).finite.to_subtype
+  have : Finite O := Finite.Set.subset (O \ T.darts ∪ T.darts ∩ O) (by grind)
+  rw [T.rank_pathGroup v hO, T.card_diff_add_card hO]
+
+/-- The Euler form of the rank of the reduced closed-path group of a connected graph with
+finitely many vertices, when that group is finitely generated (for instance when there are
+finitely many geometric edges, see `Connected.fg_pathGroup`): the rank plus the number of
+vertices is the number of geometric edges plus one. -/
+theorem Connected.rank_pathGroup_add_card (h : Γ.Connected) (v : Γ.V) [Finite Γ.V]
+    [Group.FG (PathGroup Γ v)] :
+    Group.rank (PathGroup Γ v) + Nat.card Γ.V = Nat.card Γ.GeomEdge + 1 := by
+  obtain ⟨O, hO⟩ := Γ.exists_isOrientation
+  rw [hO.rank_pathGroup_add_card h v, Nat.card_eq_of_bijective _ hO.bijective_toGeomEdge]
+
+/-- When the reduced closed-path group of a rose is finitely generated, its rank is the number
+of petals. -/
+theorem rank_pathGroup_rose (α : Type*) (v : (rose α).V) [Group.FG (PathGroup (rose α) v)] :
+    Group.rank (PathGroup (rose α) v) = Nat.card α := by
+  have h := (rose_connected α).rank_pathGroup_add_card v
+  rwa [Nat.card_congr (roseGeomEdgeEquiv α), Nat.card_unique, add_left_inj] at h
+
+end TauCeti.SerreGraph
 
 namespace TauCeti.GraphOfGroups.π₁Tree
 

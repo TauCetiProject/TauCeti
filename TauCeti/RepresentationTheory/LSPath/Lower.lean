@@ -301,9 +301,9 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
       PLPath.listMinHeight F (π.dirDurations.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam)) := by
     rw [toPLPath_def, PLPath.minHeight_ofSegments, map_snd_timed]
   rw [map_snd_timed] at hmin hrise hcross hlow
-  set D := π.dirDurations with hD
+  set D := π.dirDurations
   set seg : P.weylGroup × ℚ → V := fun p ↦ (p.2 : 𝕜) • f (p.1 • lam) with hseg
-  set H : P.weylGroup → ℚ := fun w ↦ (P.coroot' i (w • lam) : ℚ) with hH
+  set H : P.weylGroup → ℚ := fun w ↦ (P.coroot' i (w • lam) : ℚ)
   set hgt : ℕ → ℚ := fun k ↦ ((D.take k).map fun p ↦ p.2 * H p.1).sum with hhgt
   set cum : ℕ → ℚ := fun k ↦ ((D.take k).map Prod.snd).sum with hcum
   have hHdef : ∀ w, H w = (P.coroot' i (w • lam) : ℚ) := fun _ ↦ rfl

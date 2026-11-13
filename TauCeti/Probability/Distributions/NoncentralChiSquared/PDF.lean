@@ -261,7 +261,6 @@ theorem noncentralChiSquaredPDFReal_eq_besselI (hk : 0 ≤ k) (hl : 0 < l) (hx :
     noncentralChiSquaredPDFReal k l x =
       (1 / 2 : ℝ) * exp (-(x + l) / 2) * (x / l) ^ (k / 4 - 1 / 2) *
         besselI (k / 2 - 1) (sqrt ((l : ℝ) * x)) := by
-  have hl' : 0 < (l : ℝ) := hl
   have harg : (sqrt ((l : ℝ) * x) / 2) ^ 2 = (l : ℝ) * x / 4 := by
     rw [div_pow, sq_sqrt (by positivity)]
     norm_num

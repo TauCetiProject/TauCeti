@@ -394,7 +394,7 @@ theorem discPoint_mem_holedDisc_iff (e : K) (he : ‖e‖ ≤ 1) (hr₀ : 0 < r)
   refine and_congr_right' (forall_congr' fun i ↦ ?_)
   rw [discPoint_vle_iff, taylorHom_weightedC, ← NNReal.coe_le_coe,
     coe_closedDiscGaussValuation_taylorHom_weightedX_sub_weightedC he,
-    closedDiscGaussValuation_weightedC, coe_nnnorm, norm_sub_rev]
+    closedDiscGaussValuation_weightedC, coe_nnNorm, norm_sub_rev]
 
 /-- **The point `η_{e,r⁺}` lies in a holed disc exactly when `‖e - a‖ ≤ ‖c‖`, `r < ‖c‖` and
 `‖dᵢ‖ ≤ max r ‖e - bᵢ‖` for every `i`.** Only the outer disc distinguishes it from `η_{e,r}`:
@@ -671,7 +671,7 @@ private theorem setOf_vle_union_biUnion_closedSubdisc_eq {F : Finset (K × K)} (
         ((closedPolydisc_vle_weightedC_iff x _ _).mpr hτs.le) hx'
     · have hq₀τ : ‖q₀.2‖ < ‖τ‖ := (hρ q₀ hq₀).trans_lt hρτ
       refine ⟨Or.inl ((valuation_le_iff _ _ _).mp (valuation_prod_le_of_mem_closedSubdisc hq₀
-        (hρ q₀ hq₀) hq₀τ.le (fun q hq ↦ hdist q hq q₀ hq₀) hx)), fun q hq ↦ ?_⟩
+        (hρ q₀ hq₀) hq₀τ.le (fun q hq ↦ hdist q hq q₀ hq₀) hx)), fun q _ ↦ ?_⟩
       by_cases hq₀q : ‖q₀.1 - q.1‖ < ‖τ‖
       · exact Or.inr ⟨q₀, Finset.mem_filter.mpr ⟨hq₀, hq₀q⟩, hx⟩
       · -- a disc of another class lies at distance at least `τ` from `q.1`
@@ -751,16 +751,16 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
     (hρ _ (Finset.mem_image_of_mem _ hq₁)))
   -- the class of each centre is a proper subfamily
   set G : K × K → Finset (K × K) := fun q ↦ F.filter fun q'' ↦ ‖q''.1 - q.1‖ < ‖τ‖
-  have hGF {q : K × K} (hq : q ∈ F) : G q ⊂ F := by
+  have hGF (q : K × K) : G q ⊂ F := by
     refine Finset.filter_ssubset.mpr ?_
     by_contra! h
     have h' := IsUltrametricDist.norm_sub_le_max_norm_sub q'.1 q.1 q₁.1
     rw [hτq'] at h'
     exact (h'.trans_lt (max_lt (h q' hq') (h q₁ hq₁))).false
-  have hGrat {q : K × K} (hq : q ∈ F) :
+  have hGrat (q : K × K) :
       IsRat ({v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C τ) (T - C q.1)} ∪
         ⋃ q'' ∈ G q, closedSubdisc q''.1 q''.2) :=
-    ih (G q) (hGF hq) q.1 τ hτ₀ fun q'' hq'' ↦ by
+    ih (G q) (hGF q) q.1 τ hτ₀ fun q'' hq'' ↦ by
       obtain ⟨hq''F, hq''τ⟩ := Finset.mem_filter.mp hq''
       exact ⟨(hF q'' hq''F).1, hq''τ, hA q'' hq''F⟩
   -- the radius `ε = ρ τⁿ⁻¹` of the product of the linear factors
@@ -774,7 +774,7 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
   rw [setOf_vle_union_biUnion_closedSubdisc_eq ⟨q₁, hq₁⟩ (fun q hq ↦ (hF q hq).2.1) hτs
     (fun q hq ↦ hρ _ (Finset.mem_image_of_mem _ hq)) hρτ fun q hq q' hq' ↦ hdist hq hq']
   exact (isRat_setOf_vle_or_vle _ (mul_ne_zero hρ₀ (pow_ne_zero _ hτ₀)) hεs).inter
-    (isRat_biInter F fun q hq ↦ hGrat hq)
+    (isRat_biInter F fun q _ ↦ hGrat q)
 
 /-- Two complements of open discs cover the disc when the smaller open disc `D⁻(b₀, |d₀|)` lies
 outside the larger one `D⁻(b, |d|)`. -/
@@ -852,7 +852,7 @@ private theorem isRat_biUnion_closedSubdisc_union_biUnion_setOf_vle (𝒟 ℰ : 
   -- `isRat_setOf_vle_union_biUnion_closedSubdisc`.
   classical
   set U := (⋃ q ∈ 𝒟, closedSubdisc q.1 q.2) ∪
-    ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C e.2) (T - C e.1)} with hU
+    ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C e.2) (T - C e.1)}
   obtain ⟨σ, hσ⟩ := NormedField.exists_one_lt_norm K
   set ℰ' := insert (0, σ) ℰ
   have hℰ' {e : K × K} (he : e ∈ ℰ') :

@@ -35,6 +35,11 @@ Mathlib.
 * `TauCeti.QuotientGroup.quotientKerEquivRange_apply_mk`: the isomorphism
   `G ⧸ φ.ker ≃* φ.range` sends the class of `g` to `φ g`; its additive counterpart is
   `TauCeti.QuotientAddGroup.quotientKerEquivRange_apply_mk`.
+
+The first isomorphism theorem for the composite `H → G → G ⧸ N` of the inclusion of a subgroup
+and a quotient map identifies `H ⧸ N.subgroupOf H` with the image of `H` in `G ⧸ N`; this is
+`Subgroup.quotientSubgroupOfMulEquivMap`, with evaluation rule
+`Subgroup.coe_quotientSubgroupOfMulEquivMap_mk`.
 -/
 
 public section
@@ -73,3 +78,22 @@ theorem quotientKerEquivRange_apply_mk (g : G) :
 end QuotientGroup
 
 end TauCeti
+
+namespace Subgroup
+
+/-- For a normal subgroup `N` and any subgroup `H` of `G`, the quotient `H ⧸ N.subgroupOf H` is
+isomorphic to the image `H.map (mk' N)` of `H` in `G ⧸ N`: this is the first isomorphism theorem
+for the composite `H → G → G ⧸ N`, whose kernel is `N.subgroupOf H`. -/
+noncomputable def quotientSubgroupOfMulEquivMap {G : Type*} [Group G] (N H : Subgroup G)
+    [N.Normal] : H ⧸ N.subgroupOf H ≃* H.map (QuotientGroup.mk' N) :=
+  QuotientGroup.liftEquiv (N.subgroupOf H) ((QuotientGroup.mk' N).subgroupMap_surjective H)
+    (by rw [Subgroup.ker_subgroupMap, QuotientGroup.ker_mk'])
+
+/-- `quotientSubgroupOfMulEquivMap` sends the class of `h : H` to the class of `h` in `G ⧸ N`. -/
+@[simp]
+theorem coe_quotientSubgroupOfMulEquivMap_mk {G : Type*} [Group G] (N H : Subgroup G) [N.Normal]
+    (h : H) :
+    (quotientSubgroupOfMulEquivMap N H (h : H ⧸ N.subgroupOf H) : G ⧸ N) = (h : G) :=
+  (rfl)
+
+end Subgroup

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.Extension.Prod
+public import TauCeti.Topology.Homotopy.Extension.Sphere
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
+public import TauCeti.Topology.MappingSpace.Evaluation
 public import TauCeti.Topology.MappingSpace.FreeLoop
 import TauCeti.Topology.Homotopy.Extension.Cube
 
@@ -30,6 +32,14 @@ union of path components, is a Hurewicz fibration as well
 (`TauCeti.isHurewiczFibration_basepointContractibleLoop`). Both have the constant loops as a
 section.
 
+Restriction to a single point is evaluation, so evaluation `C(K, X) → X` at a point `b` whose
+inclusion is a closed cofibration is a Hurewicz fibration
+(`TauCeti.HasHomotopyExtensionProperty.isHurewiczFibration_mappingSpaceEval`). Every point of a
+sphere is one, so evaluation `Map(Sᵏ, X) → X` at any point of the unit sphere `Sᵏ ⊆ ℝᵏ⁺¹` is a
+Hurewicz fibration for every space `X` (`TauCeti.isHurewiczFibration_mappingSpaceEval_sphere`). Its
+fibre over `x` is the based mapping space `Map_*(Sᵏ, X)`, a copy of the `k`-fold loop space of `X`
+at `x`, and the constant maps are a section.
+
 ## References
 
 * G. W. Whitehead, *Elements of Homotopy Theory*, Chapter I, cofibrations and mapping spaces.
@@ -37,7 +47,7 @@ section.
 
 public section
 
-open Set unitInterval
+open Metric Set unitInterval
 
 universe w u v
 
@@ -73,6 +83,31 @@ theorem HasHomotopyExtensionProperty.isHurewiczFibration_restrict
     simpa only [G', F, ContinuousMap.curry_apply, ContinuousMap.comp_apply,
       ContinuousMap.coe_mk, ContinuousMap.uncurry_apply, Function.uncurry_apply_pair] using
       hG₀ (t, k)
+
+/-! ### Evaluation at a cofibrant point -/
+
+/-- **Evaluation at a cofibrant point is a Hurewicz fibration.** If the point `b` of a locally
+compact space `K` is closed and has the homotopy extension property, evaluation
+`C(K, X) → X` at `b` is a Hurewicz fibration: it is restriction to `{b}`, followed by the
+identification of `C({b}, X)` with `X`. -/
+theorem HasHomotopyExtensionProperty.isHurewiczFibration_mappingSpaceEval {b : K}
+    (h : HasHomotopyExtensionProperty ({b} : Set K)) (hb : IsClosed ({b} : Set K)) :
+    IsHurewiczFibration.{w} (mappingSpaceEval (X := X) b) := by
+  convert (Homeomorph.continuousMapOfUnique (X := ({b} : Set K)) (Y := X)).symm.isHurewiczFibration
+    |>.comp (h.isHurewiczFibration_restrict hb) using 1
+  funext f
+  simp only [mappingSpaceEval_apply, Function.comp_apply,
+    Homeomorph.continuousMapOfUnique_symm_apply, default_coe_singleton,
+    ContinuousMap.restrict_apply]
+
+/-- **Evaluation of maps out of a sphere is a Hurewicz fibration.** For every space `X` and every
+point `s₀` of the unit sphere `Sᵏ ⊆ ℝᵏ⁺¹`, evaluation `Map(Sᵏ, X) → X` at `s₀` is a Hurewicz
+fibration. -/
+theorem isHurewiczFibration_mappingSpaceEval_sphere (k : ℕ)
+    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
+    IsHurewiczFibration.{w} (mappingSpaceEval (X := X) s₀) :=
+  (hasHomotopyExtensionProperty_singleton_sphere k s₀).isHurewiczFibration_mappingSpaceEval
+    isClosed_singleton
 
 /-! ### Evaluation of free loops -/
 

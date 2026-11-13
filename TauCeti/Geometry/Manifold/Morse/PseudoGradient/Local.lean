@@ -167,8 +167,6 @@ theorem sum_weight_mul_linearFlow_sq_le {z : Fin (Module.finrank ℝ E) → ℝ}
     Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, nsmul_eq_mul] at hsum
   linarith [sq_nonneg ε]
 
-variable [FiniteDimensional ℝ E]
-
 /-- **The linear orbit is an integral curve.** If `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the
 Morse chart `φ` and the linear orbit of `z` stays in the chart for times in `s`, then the linear
 orbit, read on the manifold, is an integral curve of `X` on `s`. -/
@@ -178,6 +176,7 @@ theorem isMIntegralCurveOn_toChart_symm_linearFlow
     {z : Fin (Module.finrank ℝ E) → ℝ} {s : Set ℝ}
     (hz : ∀ t ∈ s, φ.coord.symm (φ.linearFlow t z) ∈ φ.toChart.target) :
     IsMIntegralCurveOn (fun t ↦ φ.toChart.symm (φ.coord.symm (φ.linearFlow t z))) X s := by
+  have := Module.Finite.equiv φ.coord.symm
   set ℓ : ℝ → E := fun t ↦ φ.coord.symm (φ.linearFlow t z)
   have hℓd (t : ℝ) :
       HasDerivAt ℓ (φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i)) t := by
@@ -386,12 +385,11 @@ the Morse chart `φ`. On a small coordinate cube around `x`, a point lies in the
 theorem exists_forall_mem_stableSet_iff (hX : IsAdaptedPseudoGradient f X)
     (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
-      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) :
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
     ∃ ε > 0, ∀ y ∈ φ.toChart.source, ‖φ.coord (φ.toChart y)‖ < ε →
       (y ∈ hX.flow.stableSet x ↔ ∀ i, φ.weight i < 0 → φ.coord (φ.toChart y) i = 0) := by
+  have hf := hX.mdifferentiable
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  have hn : (0 : ℝ) ≤ Module.finrank ℝ E := Nat.cast_nonneg _
   refine ⟨r / (4 * (Module.finrank ℝ E + 1)), by positivity, fun y hy hyε ↦ ⟨fun hs ↦ ?_, fun hu ↦
     hX.mem_stableSet_of_forall_coord_eq_zero φ hφ hrT hy (hyε.trans_le ?_) hu⟩⟩
   · by_contra hne
@@ -399,7 +397,7 @@ theorem exists_forall_mem_stableSet_iff (hX : IsAdaptedPseudoGradient f X)
     obtain ⟨j, hj, hjz⟩ := hne
     obtain ⟨T, hT⟩ := hX.exists_flow_lt_of_coord_ne_zero φ hφ hrT hy hyε hj hjz
     exact hT.not_ge (Flow.le_of_mem_stableSet_of_antitone (Flow.isInvariant_stableSet _ _ T hs)
-      hf.continuous.continuousAt (hX.antitone_flow hf _))
+      hf.continuous.continuousAt (hX.antitone_flow _))
   · gcongr
     linarith
 
@@ -410,12 +408,11 @@ of `y`. -/
 theorem exists_forall_coord_flow_eq_exp_smul (hX : IsAdaptedPseudoGradient f X)
     (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
-      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) :
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
     ∃ ρ > 0, ∀ y ∈ hX.flow.stableSet x, y ∈ φ.toChart.source → ‖φ.coord (φ.toChart y)‖ < ρ →
       ∀ t, 0 ≤ t → hX.flow t y ∈ φ.toChart.source ∧
         φ.coord (φ.toChart (hX.flow t y)) = Real.exp (-t) • φ.coord (φ.toChart y) := by
-  obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
+  obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
   refine ⟨min ε (r / 2), by positivity, fun y hys hy hyρ t ht ↦ ?_⟩
   set z := φ.coord (φ.toChart y)

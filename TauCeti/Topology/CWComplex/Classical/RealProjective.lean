@@ -286,7 +286,7 @@ def cellMap (i : Fin (n + 1)) : PartialEquiv (Fin i → ℝ) (RealProjectiveSpac
       Real.norm_eq_abs, abs_abs, div_self (abs_ne_zero.2 hyi), one_mul]
     nlinarith [norm_nonneg (truncate i y.1), sq_pos_of_ne_zero hyi]
   left_inv' x hx := by
-    set v := (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph.symm x with hv_def
+    set v := (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph.symm x
     have hv : ‖v‖ < 1 := by simpa [v] using hx
     have hpos : 0 < hemispherePoint n v i := by
       rw [hemispherePoint_apply_of_eq _ rfl]

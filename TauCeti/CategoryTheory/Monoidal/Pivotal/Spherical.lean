@@ -166,14 +166,9 @@ theorem trace_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
 theorem quantumDim_tensor (X Y : C) : quantumDim (X ⊗ Y) = quantumDim X ≫ quantumDim Y := by
   rw [← trace_id, ← trace_id, ← trace_id, ← id_tensorHom_id, trace_tensorHom]
 
-section Linear
+section Zero
 
-variable [Preadditive C] [MonoidalPreadditive C]
-
-/-- The trace is additive. -/
-@[simp]
-theorem trace_add {X : C} (f g : X ⟶ X) : trace (f + g) = trace f + trace g := by
-  simp only [trace_eq_leftTrace, leftTrace_add]
+variable [HasZeroMorphisms C]
 
 /-- The trace of zero is zero. -/
 @[simp]
@@ -184,6 +179,17 @@ theorem trace_zero (X : C) : trace (0 : X ⟶ X) = 0 := by
 @[simp]
 theorem quantumDim_zero [HasZeroObject C] : quantumDim (0 : C) = 0 := by
   rw [quantumDim_eq_leftDim, leftDim_zero]
+
+end Zero
+
+section Linear
+
+variable [Preadditive C] [MonoidalPreadditive C]
+
+/-- The trace is additive. -/
+@[simp]
+theorem trace_add {X : C} (f g : X ⟶ X) : trace (f + g) = trace f + trace g := by
+  simp only [trace_eq_leftTrace, leftTrace_add]
 
 /-- The trace commutes with finite sums. -/
 @[simp]

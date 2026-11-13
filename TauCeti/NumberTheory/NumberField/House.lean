@@ -40,7 +40,7 @@ theorem house_le_of_norm_embedding_eq {F : Type*} [Field F] [NumberField F] {g �
   have hH := P.supNorm_nonneg
   obtain ⟨σ, -, hσ⟩ :=
     Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : F →+* ℂ ↦ ‖φ γ‖₊
-  rw [house_eq_sup', hσ, coe_nnnorm, hγ]
+  rw [house_eq_sup', hσ, coe_nnNorm, hγ]
   calc s ^ P.natDegree * ‖aeval (σ g) P‖
       ≤ s ^ n * ((n + 1) * P.supNorm * max 1 ‖σ g‖ ^ n) := by
         gcongr
