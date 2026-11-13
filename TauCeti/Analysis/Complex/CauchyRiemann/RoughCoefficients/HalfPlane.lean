@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 public import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Complex.Wirtinger.HalfPlaneAdjoint.Variable
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -16,13 +18,11 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 Let `Ω ⊆ ℂ` be open, write `z = s + i t`, and consider the part `Ω ∩ {0 ≤ t}` of `Ω` in the
 closed upper half-plane. Let `V` be a real inner product space, `Λ ⊆ V` a real subspace (the
-boundary condition, `ℝⁿ ⊆ ℂⁿ` in the local model of a totally real boundary condition) and
-`J, S : ℂ → (V →L[ℝ] V)` coefficient fields, with `DJ` standing for the (weak) derivative of `J`.
-This file defines the weak form of the boundary value problem
-
-`∂_s ξ + J ∂_t ξ + S ξ = η` on `Ω ∩ {0 < t}`, `ξ(s) ∈ Λ` for real `s ∈ Ω`,
-
-`TauCeti.IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η`: `ξ` is locally `L^q` and `η` locally
+space of boundary values of the test functions, `ℝⁿ ⊆ ℂⁿ` in the local model of a totally real
+boundary condition) and `J, S : ℂ → (V →L[ℝ] V)` coefficient fields, with `DJ` standing for the
+(weak) derivative of `J`. This file defines the weak form of `∂_s ξ + J ∂_t ξ + S ξ = η` on
+`Ω ∩ {0 < t}` with the boundary condition carried by `Λ`,
+`TauCeti.IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η`: `ξ` is locally `L^q` and `η` locally
 integrable on `Ω ∩ {0 ≤ t}`, and for every test function `φ ∈ 𝓓(Ω, V)` with `φ(s) ∈ Λ` for real
 `s` the pairing `⟪D* φ, ξ⟫` is integrable on `{0 < t}` with
 
@@ -31,26 +31,39 @@ integrable on `Ω ∩ {0 ≤ t}`, and for every test function `φ ∈ 𝓓(Ω, V
 where `D* φ = -∂_s φ - Jᵀ ∂_t φ - (∂_t J)ᵀ φ + Sᵀ φ` is `TauCeti.crFormalAdjoint J DJ S`. The test
 functions are compactly supported in `Ω` but are not required to vanish on `ℝ`; only their values
 there are restricted. This is McDuff–Salamon's weak equation (B.4.3), with the zeroth-order term
-added, in the normalization of the interior weak equation `TauCeti.IsWeakCRSolution`. The
-boundary condition on `ξ` is not part of the definition: it is encoded by the boundary values of
-the test functions, as the Checks below show.
+added, in the normalization of the interior weak equation `TauCeti.IsWeakCRSolution`.
+
+No condition on `ξ` along `ℝ` is part of the definition. By Green's formula the boundary term of
+a classical solution is `∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds`, so restricting the test functions to
+`φ(s) ∈ Λ` weakly imposes `⟪Λ, J(s) ξ(s)⟫ = 0`, that is `J(s) ξ(s) ∈ Λᗮ`. This is the boundary
+condition `ξ(s) ∈ Λ` exactly when `J(s)⁻¹ Λᗮ = Λ`, for instance when `V = Λ ⊕ J(s) Λ` is an
+orthogonal decomposition, as for `J(s) = i` and `Λ = ℝⁿ ⊆ ℂⁿ` (the case of McDuff–Salamon and of
+the Checks below). For general `(J, Λ)` the two conditions differ: `Λ = ⊥` imposes nothing.
 
 ## Main results
 
-* Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolutionHalfOn.add`, `.const_smul`, `.neg`, `.sub`,
-  `TauCeti.isWeakCRSolutionHalfOn_zero`), restriction to smaller open sets
-  (`TauCeti.IsWeakCRSolutionHalfOn.mono`), lowering the exponent
-  (`TauCeti.IsWeakCRSolutionHalfOn.mono_exponent`) and invariance under changes of the data on
-  null subsets of `Ω ∩ {0 ≤ t}` (`TauCeti.isWeakCRSolutionHalfOn_congr_ae`).
-* `TauCeti.IsWeakCRSolutionHalfOn.isWeakCRSolution`: a weak solution up to the boundary is a weak
+* Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolutionHalf.add`, `.const_smul`, `.neg`, `.sub`,
+  `TauCeti.isWeakCRSolutionHalf_zero`), restriction to open sets with smaller part in
+  `{0 ≤ t}` (`TauCeti.IsWeakCRSolutionHalf.mono`), lowering the exponent
+  (`TauCeti.IsWeakCRSolutionHalf.mono_exponent`) and invariance under changes of the data on
+  null subsets of `Ω ∩ {0 ≤ t}` (`TauCeti.isWeakCRSolutionHalf_congr_ae`).
+* `TauCeti.IsWeakCRSolutionHalf.isWeakCRSolution`: a weak solution up to the boundary is a weak
   solution of the interior equation on the open upper part `Ω ∩ {0 < t}`.
-* `TauCeti.isWeakCRSolutionHalfOn_of_contDiffOn`: for `C¹` coefficients `J` with `DJ = fderiv ℝ J`
+* `TauCeti.setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn`: Green's formula
+  `∫_{0<t} ⟪D* φ, ξ⟫ = ∫_{0<t} ⟪φ, ∂_s ξ + J ∂_t ξ + S ξ⟫ + ∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds` for `C¹`
+  data with `DJ = fderiv ℝ J`.
+* `TauCeti.isWeakCRSolutionHalf_of_contDiffOn`: for `C¹` coefficients `J` with `DJ = fderiv ℝ J`
   and continuous `S`, a `C¹` field `ξ` solving the equation classically on `Ω ∩ {0 < t}`, with
-  `ξ(s) ∈ Λ` and `⟪Λ, J(s) Λ⟫ = 0` for real `s ∈ Ω`, is a weak solution.
-* Checks for `V = ℂ`, `J = i`, `S = 0`, `Λ = ℝ`: `ξ = z` is a weak solution of the homogeneous
-  equation (`TauCeti.isWeakCRSolutionHalfOn_id`); the constant `ξ = i`, which solves the equation
+  `⟪Λ, J(s) ξ(s)⟫ = 0` for real `s ∈ Ω`, is a weak solution;
+  `TauCeti.isWeakCRSolutionHalf_of_contDiffOn_of_mem` is the case `ξ(s) ∈ Λ`, `⟪Λ, J(s) Λ⟫ = 0`.
+  Conversely (`TauCeti.isWeakCRSolutionHalf_iff_of_contDiffOn`), for finite-dimensional `V` and
+  `η` continuous on `Ω ∩ {0 < t}`, a `C¹` weak solution solves the equation classically on
+  `Ω ∩ {0 < t}` and satisfies `J(s) ξ(s) ∈ Λᗮ` on `ℝ ∩ Ω`.
+* Checks for `V = ℂ`, `J = i`, `S = 0`, `Λ = ℝ` on any open `Ω` (meeting `ℝ` for the negative
+  checks): `ξ = z` is a weak solution of the homogeneous
+  equation (`TauCeti.isWeakCRSolutionHalf_id`); the constant `ξ = i`, which solves the equation
   in the interior but violates the boundary condition, is not
-  (`TauCeti.not_isWeakCRSolutionHalfOn_const_I`); and without the restriction on the boundary
+  (`TauCeti.not_isWeakCRSolutionHalf_const_I`); and without the restriction on the boundary
   values of the test functions even the constant `ξ = 1` would fail
   (`TauCeti.exists_setIntegral_inner_crFormalAdjoint_one_ne_zero`).
 
@@ -62,8 +75,8 @@ the test functions, as the Checks below show.
 
 public noncomputable section
 
-open MeasureTheory TopologicalSpace Complex Set
-open scoped InnerProductSpace ContDiff Distributions ENNReal
+open MeasureTheory TopologicalSpace Complex Set Filter
+open scoped InnerProductSpace ContDiff Distributions ENNReal Topology
 
 namespace TauCeti
 
@@ -71,18 +84,22 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteS
   {Ω Ω' : Opens ℂ} {Λ : Submodule ℝ V} {q r : ℝ≥0∞}
   {J J' S S' : ℂ → V →L[ℝ] V} {DJ DJ' : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ ξ' η η' : ℂ → V}
 
-/-- `IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η` says that `ξ` is a **weak solution up to the real
-axis** of `∂_s ξ + J ∂_t ξ + S ξ = η` on `Ω ∩ {0 ≤ t}` with boundary condition `Λ`, with `DJ`
-standing for the weak derivative of `J`: `ξ` is locally `L^q` and `η` is locally integrable on
-`Ω ∩ {0 ≤ t}`, and for every test function `φ ∈ 𝓓(Ω, V)` taking values in `Λ` on `ℝ` the pairing
-`⟪D* φ, ξ⟫` is integrable on the upper half-plane with
+/-- `IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η` says that `ξ` is a **weak solution up to the real
+axis** of `∂_s ξ + J ∂_t ξ + S ξ = η` on `Ω ∩ {0 ≤ t}`, with `DJ` standing for the weak
+derivative of `J` and `Λ` the subspace of admissible boundary values of the test functions: `ξ` is
+locally `L^q` and `η` is locally integrable on `Ω ∩ {0 ≤ t}`, and for every test function
+`φ ∈ 𝓓(Ω, V)` taking values in `Λ` on `ℝ` the pairing `⟪D* φ, ξ⟫` is integrable on the upper
+half-plane with
 
 `∫_{0 < t} ⟪D* φ, ξ⟫ = ∫_{0 < t} ⟪φ, η⟫`,
 
-where `D*` is `TauCeti.crFormalAdjoint J DJ S`. The test functions need not vanish on `ℝ`. As
-for `TauCeti.IsWeakCRSolution`, the integrability is part of the definition and the coefficients
-are unconstrained. -/
-def IsWeakCRSolutionHalfOn (q : ℝ≥0∞) (Ω : Opens ℂ) (Λ : Submodule ℝ V) (J : ℂ → V →L[ℝ] V)
+where `D*` is `TauCeti.crFormalAdjoint J DJ S`. The test functions need not vanish on `ℝ`. Through
+the boundary term `∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds` of Green's formula this weakly imposes
+`⟪Λ, J(s) ξ(s)⟫ = 0` on `ℝ ∩ Ω`, which is the boundary condition `ξ(s) ∈ Λ` when
+`J(s)⁻¹ Λᗮ = Λ` (for instance `J(s) = i` and `Λ = ℝⁿ ⊆ ℂⁿ`). As for
+`TauCeti.IsWeakCRSolution`, the integrability is part of the definition and the coefficients are
+unconstrained. -/
+def IsWeakCRSolutionHalf (q : ℝ≥0∞) (Ω : Opens ℂ) (Λ : Submodule ℝ V) (J : ℂ → V →L[ℝ] V)
     (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (S : ℂ → V →L[ℝ] V) (ξ η : ℂ → V) : Prop :=
   MemLpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ξ ∧
     LocallyIntegrableOn η ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ∧
@@ -91,8 +108,8 @@ def IsWeakCRSolutionHalfOn (q : ℝ≥0∞) (Ω : Opens ℂ) (Λ : Submodule ℝ
         ∫ z in {z : ℂ | 0 < z.im}, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
           ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z, η z⟫_ℝ
 
-/-- The constructor-and-eliminator form of `TauCeti.IsWeakCRSolutionHalfOn`. -/
-theorem isWeakCRSolutionHalfOn_iff : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η ↔
+/-- The constructor-and-eliminator form of `TauCeti.IsWeakCRSolutionHalf`. -/
+theorem isWeakCRSolutionHalf_iff : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η ↔
     MemLpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ξ ∧
       LocallyIntegrableOn η ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ∧
       ∀ φ : 𝓓(Ω, V), (∀ s : ℝ, (φ : ℂ → V) s ∈ Λ) →
@@ -101,67 +118,76 @@ theorem isWeakCRSolutionHalfOn_iff : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η
             ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z, η z⟫_ℝ :=
   Iff.rfl
 
-omit [CompleteSpace V] in
-/-- A test function on `Ω`, paired with a field that is locally integrable on `Ω ∩ {0 ≤ t}`, is
-integrable on the upper half-plane. -/
-private theorem integrableOn_im_pos_inner
-    (hη : LocallyIntegrableOn η ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (φ : 𝓓(Ω, V)) :
-    IntegrableOn (fun z => ⟪(φ : ℂ → V) z, η z⟫_ℝ) {z : ℂ | 0 < z.im} := by
-  set K := tsupport (φ : ℂ → V) ∩ {z : ℂ | 0 ≤ z.im}
-  have hK : IsCompact K :=
-    φ.hasCompactSupport.isCompact.inter_right (isClosed_le continuous_const continuous_im)
-  have hηK : IntegrableOn η K :=
-    hη.integrableOn_compact_subset (inter_subset_inter_left _ φ.tsupport_subset) hK
-  have hon : IntegrableOn (fun z => ⟪(φ : ℂ → V) z, η z⟫_ℝ) K := by
-    rw [IntegrableOn, ← memLp_one_iff_integrable]
-    exact (innerSL ℝ).memLp_of_bilin 1 φ.memLp_top (memLp_one_iff_integrable.2 hηK)
-  refine hon.of_forall_sdiff_eq_zero (measurableSet_lt measurable_const measurable_im)
-    fun z hz => ?_
-  have h0 : 0 < z.im := hz.1
-  have hz' : z ∉ tsupport (φ : ℂ → V) := fun h => hz.2 ⟨h, h0.le⟩
-  simp [image_eq_zero_of_notMem_tsupport hz']
-
-namespace IsWeakCRSolutionHalfOn
+namespace IsWeakCRSolutionHalf
 
 /-- A weak solution up to the boundary is locally `L^q` up to the boundary. -/
-theorem memLpLoc (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η) :
+theorem memLpLoc (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η) :
     MemLpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ξ := h.1
 
 /-- The right-hand side of a weak equation up to the boundary is locally integrable up to the
 boundary. -/
-theorem locallyIntegrableOn (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η) :
+theorem locallyIntegrableOn (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η) :
     LocallyIntegrableOn η ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := h.2.1
+
+/-- The pairing of a test function with the right-hand side of a weak equation up to the
+boundary is integrable on the upper half-plane. -/
+theorem integrableOn_inner (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η) (φ : 𝓓(Ω, V)) :
+    IntegrableOn (fun z => ⟪(φ : ℂ → V) z, η z⟫_ℝ) {z : ℂ | 0 < z.im} :=
+  IntegrableOn.mono_set (φ.integrable_inner (h.locallyIntegrableOn.restrict_of_inter Ω.isOpen
+    (isClosed_le continuous_const continuous_im))) fun _ hz => le_of_lt hz
 
 /-- The pairing of the formal adjoint of an admissible test function with a weak solution is
 integrable on the upper half-plane. -/
-theorem integrableOn_inner_crFormalAdjoint (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η)
+theorem integrableOn_inner_crFormalAdjoint (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η)
     (φ : 𝓓(Ω, V)) (hφ : ∀ s : ℝ, (φ : ℂ → V) s ∈ Λ) :
     IntegrableOn (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) {z : ℂ | 0 < z.im} :=
   (h.2.2 φ hφ).1
 
 /-- The integral identity defining a weak solution up to the boundary. -/
-theorem setIntegral_inner_crFormalAdjoint (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η)
+theorem setIntegral_inner_crFormalAdjoint (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η)
     (φ : 𝓓(Ω, V)) (hφ : ∀ s : ℝ, (φ : ℂ → V) s ∈ Λ) :
     ∫ z in {z : ℂ | 0 < z.im}, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
       ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z, η z⟫_ℝ :=
   (h.2.2 φ hφ).2
 
-/-- A weak solution on `Ω` is a weak solution on every open subset of `Ω`, with the same
-boundary condition. -/
-theorem mono (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η) (hΩ : Ω' ≤ Ω) :
-    IsWeakCRSolutionHalfOn q Ω' Λ J DJ S ξ η :=
-  ⟨h.memLpLoc.mono_set (inter_subset_inter_left _ hΩ),
-    h.locallyIntegrableOn.mono_set (inter_subset_inter_left _ hΩ), fun φ hφ =>
-    h.2.2 ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩ hφ⟩
+/-- A weak solution on `Ω` is a weak solution on every open set `Ω'` whose part in the closed
+upper half-plane lies in that of `Ω`, with the same boundary condition: a test function on `Ω'`
+agrees near `{0 ≤ t}` with its product by a cutoff, which is a test function on `Ω`. -/
+theorem mono (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η)
+    (hΩ : (Ω' : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :
+    IsWeakCRSolutionHalf q Ω' Λ J DJ S ξ η := by
+  refine ⟨h.memLpLoc.mono_set hΩ, h.locallyIntegrableOn.mono_set hΩ, fun φ hφ => ?_⟩
+  have hH : MeasurableSet {z : ℂ | 0 < z.im} := measurableSet_lt measurable_const measurable_im
+  obtain ⟨ψ, hψ, -, hψ1, hψc, hψΩ⟩ := (φ.hasCompactSupport.isCompact.inter_right
+    (isClosed_le continuous_const continuous_im)).exists_contDiff_cutoff Ω.isOpen
+    fun z hz => (hΩ ⟨φ.tsupport_subset hz.1, hz.2⟩).1
+  let φ' : 𝓓(Ω, V) := ⟨fun z => ψ z • (φ : ℂ → V) z, hψ.smul φ.contDiff,
+    hψc.smul_right, (tsupport_smul_subset_left _ _).trans hψΩ⟩
+  have hφ' {z : ℂ} (hz : 0 < z.im) : (φ' : ℂ → V) =ᶠ[𝓝 z] φ := by
+    by_cases hzφ : z ∈ tsupport (φ : ℂ → V)
+    · filter_upwards [mem_interior_iff_mem_nhds.1 (hψ1 ⟨hzφ, hz.le⟩)] with w hw
+      simp [φ', show ψ w = 1 from hw]
+    · filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hzφ] with w hw
+      simp [φ', show (φ : ℂ → V) w = 0 from hw]
+  have hadj {z : ℂ} (hz : z ∈ {z : ℂ | 0 < z.im}) :
+      ⟪crFormalAdjoint J DJ S φ' z, ξ z⟫_ℝ = ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ := by
+    simp only [crFormalAdjoint_def, (hφ' hz).fderiv_eq, (hφ' hz).eq_of_nhds]
+  have hrhs {z : ℂ} (hz : z ∈ {z : ℂ | 0 < z.im}) :
+      ⟪(φ' : ℂ → V) z, η z⟫_ℝ = ⟪(φ : ℂ → V) z, η z⟫_ℝ := by
+    rw [(hφ' hz).eq_of_nhds]
+  obtain ⟨hint, heq⟩ := h.2.2 φ' fun s => Λ.smul_mem (ψ s) (hφ s)
+  exact ⟨hint.congr_fun (fun z hz => hadj hz) hH, by
+    rwa [setIntegral_congr_fun hH fun z hz => hadj hz,
+      setIntegral_congr_fun hH fun z hz => hrhs hz] at heq⟩
 
 /-- A weak solution for the exponent `q` is a weak solution for every smaller exponent. -/
-theorem mono_exponent (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η) (hrq : r ≤ q) :
-    IsWeakCRSolutionHalfOn r Ω Λ J DJ S ξ η :=
+theorem mono_exponent (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η) (hrq : r ≤ q) :
+    IsWeakCRSolutionHalf r Ω Λ J DJ S ξ η :=
   ⟨h.memLpLoc.mono_exponent hrq, h.locallyIntegrableOn, h.2.2⟩
 
 /-- The weak equation up to the boundary is homogeneous in `(ξ, η)`. -/
-theorem const_smul (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η) (c : ℝ) :
-    IsWeakCRSolutionHalfOn q Ω Λ J DJ S (c • ξ) (c • η) := by
+theorem const_smul (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η) (c : ℝ) :
+    IsWeakCRSolutionHalf q Ω Λ J DJ S (c • ξ) (c • η) := by
   refine ⟨h.memLpLoc.const_smul c, h.locallyIntegrableOn.smul c, fun φ hφ => ⟨?_, ?_⟩⟩
   · simpa only [IntegrableOn, Pi.smul_apply, inner_smul_right] using
       (h.integrableOn_inner_crFormalAdjoint φ hφ).const_mul c
@@ -169,14 +195,14 @@ theorem const_smul (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η) (c : ℝ) :
       h.setIntegral_inner_crFormalAdjoint φ hφ]
 
 /-- The weak equation up to the boundary is compatible with negation of `(ξ, η)`. -/
-theorem neg (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η) :
-    IsWeakCRSolutionHalfOn q Ω Λ J DJ S (-ξ) (-η) := by
+theorem neg (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η) :
+    IsWeakCRSolutionHalf q Ω Λ J DJ S (-ξ) (-η) := by
   simpa using h.const_smul (-1)
 
 /-- The weak equation up to the boundary is additive in `(ξ, η)`. -/
-theorem add (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η)
-    (h' : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ' η') :
-    IsWeakCRSolutionHalfOn q Ω Λ J DJ S (ξ + ξ') (η + η') := by
+theorem add (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η)
+    (h' : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ' η') :
+    IsWeakCRSolutionHalf q Ω Λ J DJ S (ξ + ξ') (η + η') := by
   refine ⟨h.memLpLoc.add h'.memLpLoc, h.locallyIntegrableOn.add h'.locallyIntegrableOn,
     fun φ hφ => ⟨?_, ?_⟩⟩
   · simp only [Pi.add_apply, inner_add_right]
@@ -185,20 +211,19 @@ theorem add (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η)
   · simp only [Pi.add_apply, inner_add_right]
     rw [integral_add (h.integrableOn_inner_crFormalAdjoint φ hφ)
         (h'.integrableOn_inner_crFormalAdjoint φ hφ),
-      integral_add (integrableOn_im_pos_inner h.locallyIntegrableOn φ)
-        (integrableOn_im_pos_inner h'.locallyIntegrableOn φ),
+      integral_add (h.integrableOn_inner φ) (h'.integrableOn_inner φ),
       h.setIntegral_inner_crFormalAdjoint φ hφ, h'.setIntegral_inner_crFormalAdjoint φ hφ]
 
 /-- The weak equation up to the boundary is compatible with subtraction of `(ξ, η)`. -/
-theorem sub (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η)
-    (h' : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ' η') :
-    IsWeakCRSolutionHalfOn q Ω Λ J DJ S (ξ - ξ') (η - η') := by
+theorem sub (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η)
+    (h' : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ' η') :
+    IsWeakCRSolutionHalf q Ω Λ J DJ S (ξ - ξ') (η - η') := by
   simpa [sub_eq_add_neg] using h.add h'.neg
 
 /-- **Restriction to the interior.** A weak solution up to the boundary is a weak solution of the
 interior equation `TauCeti.IsWeakCRSolution` on the open upper part `Ω ∩ {0 < t}`: a test
 function supported there vanishes on `ℝ`, so it is admissible for every boundary condition. -/
-theorem isWeakCRSolution (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η) :
+theorem isWeakCRSolution (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η) :
     IsWeakCRSolution q Ω.upperHalf J DJ S ξ η := by
   have hsub : (Ω.upperHalf : Set ℂ) ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
     fun z hz => ⟨(Opens.mem_upperHalf.1 hz).1, (Opens.mem_upperHalf.1 hz).2.le⟩
@@ -226,22 +251,22 @@ theorem isWeakCRSolution (h : IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η) :
   · rwa [setIntegral_eq_integral_of_forall_compl_eq_zero hl,
       setIntegral_eq_integral_of_forall_compl_eq_zero hr] at heq
 
-end IsWeakCRSolutionHalfOn
+end IsWeakCRSolutionHalf
 
 /-- `ξ = 0` is a weak solution of the homogeneous equation for every boundary condition. -/
 @[simp]
-theorem isWeakCRSolutionHalfOn_zero : IsWeakCRSolutionHalfOn q Ω Λ J DJ S 0 0 :=
+theorem isWeakCRSolutionHalf_zero : IsWeakCRSolutionHalf q Ω Λ J DJ S 0 0 :=
   ⟨memLpLoc_zero, locallyIntegrableOn_zero, fun φ _ => by simp⟩
 
 /-- Replacing the coefficients, the solution or the right-hand side by functions agreeing with
 them almost everywhere on `Ω ∩ {0 ≤ t}` does not change the weak equation up to the boundary. -/
-theorem isWeakCRSolutionHalfOn_congr_ae
+theorem isWeakCRSolutionHalf_congr_ae
     (hJ : J =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] J')
     (hDJ : DJ =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] DJ')
     (hS : S =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] S')
     (hξ : ξ =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] ξ')
     (hη : η =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] η') :
-    IsWeakCRSolutionHalfOn q Ω Λ J DJ S ξ η ↔ IsWeakCRSolutionHalfOn q Ω Λ J' DJ' S' ξ' η' := by
+    IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η ↔ IsWeakCRSolutionHalf q Ω Λ J' DJ' S' ξ' η' := by
   have hH : MeasurableSet {z : ℂ | 0 < z.im} := measurableSet_lt measurable_const measurable_im
   have hrhs (φ : 𝓓(Ω, V)) : ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z, η z⟫_ℝ =
       ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z, η' z⟫_ℝ := by
@@ -260,17 +285,16 @@ theorem isWeakCRSolutionHalfOn_congr_ae
       simp only [crFormalAdjoint_def, hJz hz, hDJz hz, hSz hz, hξz hz]
     · have hz : z ∉ tsupport (φ : ℂ → V) := fun h' => hzΩ (φ.tsupport_subset h')
       simp [crFormalAdjoint_of_notMem_tsupport hz]
-  simp only [isWeakCRSolutionHalfOn_iff, hrhs, integral_congr_ae (hlhs _),
+  simp only [isWeakCRSolutionHalf_iff, hrhs, integral_congr_ae (hlhs _),
     IntegrableOn, integrable_congr (hlhs _)]
   exact and_congr ⟨fun h => h.congr_ae hξ, fun h => h.congr_ae hξ.symm⟩
     (and_congr ⟨fun h => h.congr hη, fun h => h.congr hη.symm⟩ Iff.rfl)
 
 /-! ### Classical solutions -/
 
-/-- Green's formula for `TauCeti.crFormalAdjoint` on the half-plane with `C¹` data: the
-`∂_t J` terms of `D*` and of the integration by parts cancel, leaving
-`∫_{0<t} ⟪D* φ, ξ⟫ = ∫_{0<t} ⟪φ, ∂_s ξ + J ∂_t ξ + S ξ⟫ + ∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds`. -/
-private theorem setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn {φ ξ : ℂ → V} {U : Set ℂ}
+/-- The integrability and the identity of Green's formula for `TauCeti.crFormalAdjoint`, proved
+together since they share the decomposition of the integrand. -/
+private theorem integrableOn_and_setIntegral_im_pos_inner_crFormalAdjoint {φ ξ : ℂ → V} {U : Set ℂ}
     (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
     (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U) :
     IntegrableOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) {z : ℂ | 0 < z.im} ∧
@@ -321,18 +345,36 @@ private theorem setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn {φ ξ : 
     hsplit]
   ring
 
+/-- For `C¹` data with `DJ = fderiv ℝ J`, the pairing of the formal adjoint of a compactly
+supported `C¹` field `φ` with `ξ` is integrable on the upper half-plane. -/
+theorem integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn {φ ξ : ℂ → V} {U : Set ℂ}
+    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
+    (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U) :
+    IntegrableOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) {z : ℂ | 0 < z.im} :=
+  (integrableOn_and_setIntegral_im_pos_inner_crFormalAdjoint hφ hφc hU hξ hJ hS hφU).1
+
+/-- **Green's formula** for `TauCeti.crFormalAdjoint` on the half-plane with `C¹` data and
+`DJ = fderiv ℝ J`: the `∂_t J` terms of `D*` and of the integration by parts cancel, leaving
+`∫_{0<t} ⟪D* φ, ξ⟫ = ∫_{0<t} ⟪φ, ∂_s ξ + J ∂_t ξ + S ξ⟫ + ∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds`. -/
+theorem setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn {φ ξ : ℂ → V} {U : Set ℂ}
+    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
+    (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U) :
+    ∫ z in {z : ℂ | 0 < z.im}, ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ =
+      (∫ z in {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)⟫_ℝ) +
+        ∫ s : ℝ, ⟪φ s, J s (ξ s)⟫_ℝ :=
+  (integrableOn_and_setIntegral_im_pos_inner_crFormalAdjoint hφ hφc hU hξ hJ hS hφU).2
+
 /-- **Classical solutions are weak solutions up to the boundary.** Let `J` be `C¹` on `Ω`, with
 `DJ = fderiv ℝ J`, and `S` continuous on `Ω`. If `ξ` is `C¹` on `Ω`, solves
-`∂_s ξ + J ∂_t ξ + S ξ = η` on `Ω ∩ {0 < t}`, and on `ℝ ∩ Ω` takes values in a subspace `Λ` with
-`⟪Λ, J(s) Λ⟫ = 0`, then `ξ` is a weak solution up to the boundary for every exponent `q`. The
-boundary term `∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds` of Green's formula vanishes because the admissible test
-functions take values in `Λ` on `ℝ`. -/
-theorem isWeakCRSolutionHalfOn_of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω) (hS : ContinuousOn S Ω)
+`∂_s ξ + J ∂_t ξ + S ξ = η` on `Ω ∩ {0 < t}`, and `⟪Λ, J(s) ξ(s)⟫ = 0` on `ℝ ∩ Ω`, then `ξ` is a
+weak solution up to the boundary for every exponent `q`: the boundary term
+`∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds` of Green's formula vanishes because the admissible test functions
+take values in `Λ` on `ℝ`. -/
+theorem isWeakCRSolutionHalf_of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω) (hS : ContinuousOn S Ω)
     (hξ : ContDiffOn ℝ 1 ξ Ω)
     (hη : ∀ z ∈ Ω.upperHalf, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z) = η z)
-    (hξΛ : ∀ s : ℝ, (s : ℂ) ∈ Ω → ξ s ∈ Λ)
-    (hJΛ : ∀ s : ℝ, (s : ℂ) ∈ Ω → ∀ v ∈ Λ, ∀ w ∈ Λ, ⟪v, J s w⟫_ℝ = 0) :
-    IsWeakCRSolutionHalfOn q Ω Λ J (fderiv ℝ J) S ξ η := by
+    (hJξ : ∀ s : ℝ, (s : ℂ) ∈ Ω → ∀ v ∈ Λ, ⟪v, J s (ξ s)⟫_ℝ = 0) :
+    IsWeakCRSolutionHalf q Ω Λ J (fderiv ℝ J) S ξ η := by
   have hH : MeasurableSet {z : ℂ | 0 < z.im} := measurableSet_lt measurable_const measurable_im
   set L : ℂ → V := fun z => fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)
   have hL : ContinuousOn L Ω := by
@@ -349,11 +391,11 @@ theorem isWeakCRSolutionHalfOn_of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω) (hS : 
     ((hL.mono inter_subset_left).locallyIntegrableOn
       (Ω.isOpen.measurableSet.inter (measurableSet_le measurable_const measurable_im))).congr hLη,
     fun φ hφΛ => ?_⟩
-  obtain ⟨hint, heq⟩ := setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn
+  obtain ⟨hint, heq⟩ := integrableOn_and_setIntegral_im_pos_inner_crFormalAdjoint
     (φ.contDiff.of_le (by simp)) φ.hasCompactSupport Ω.isOpen hξ hJ hS φ.tsupport_subset
   have hbdry (s : ℝ) : ⟪(φ : ℂ → V) s, J s (ξ s)⟫_ℝ = 0 := by
     by_cases hs : (s : ℂ) ∈ Ω
-    · exact hJΛ s hs _ (hφΛ s) _ (hξΛ s hs)
+    · exact hJξ s hs _ (hφΛ s)
     · simp [image_eq_zero_of_notMem_tsupport fun h => hs (φ.tsupport_subset h)]
   refine ⟨hint, heq.trans ?_⟩
   simp only [hbdry, integral_zero, add_zero]
@@ -362,83 +404,177 @@ theorem isWeakCRSolutionHalfOn_of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω) (hS : 
   · simp only [← hη z (Opens.mem_upperHalf.2 ⟨hzΩ, hz⟩)]
   · simp [image_eq_zero_of_notMem_tsupport fun h => hzΩ (φ.tsupport_subset h)]
 
-/-! ### Checks: `J = i`, `S = 0` and the real boundary condition on `ℂ` -/
+/-- **Classical solutions are weak solutions up to the boundary**, for the boundary condition
+`ξ(s) ∈ Λ` on `ℝ ∩ Ω` and coefficients with `⟪Λ, J(s) Λ⟫ = 0` there. -/
+theorem isWeakCRSolutionHalf_of_contDiffOn_of_mem (hJ : ContDiffOn ℝ 1 J Ω)
+    (hS : ContinuousOn S Ω) (hξ : ContDiffOn ℝ 1 ξ Ω)
+    (hη : ∀ z ∈ Ω.upperHalf, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z) = η z)
+    (hξΛ : ∀ s : ℝ, (s : ℂ) ∈ Ω → ξ s ∈ Λ)
+    (hJΛ : ∀ s : ℝ, (s : ℂ) ∈ Ω → ∀ v ∈ Λ, ∀ w ∈ Λ, ⟪v, J s w⟫_ℝ = 0) :
+    IsWeakCRSolutionHalf q Ω Λ J (fderiv ℝ J) S ξ η :=
+  isWeakCRSolutionHalf_of_contDiffOn hJ hS hξ hη fun s hs v hv => hJΛ s hs v hv _ (hξΛ s hs)
 
-/-- A smooth real bump on `ℂ`, equal to `1` near `0`, as a test function. -/
-private def realBump (c : ℂ) : 𝓓((⊤ : Opens ℂ), ℂ) :=
-  let ψ : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
+/-- **Classical solutions up to the boundary.** For `C¹` coefficients `J` on `Ω`, with
+`DJ = fderiv ℝ J`, continuous `S`, a `C¹` field `ξ` and a right-hand side `η` continuous on
+`Ω ∩ {0 < t}`, the weak equation up to the boundary is the classical equation
+`∂_s ξ + J ∂_t ξ + S ξ = η` on `Ω ∩ {0 < t}` together with the boundary condition
+`⟪Λ, J(s) ξ(s)⟫ = 0`, that is `J(s) ξ(s) ∈ Λᗮ`, on `ℝ ∩ Ω`, for every exponent `q`. The boundary
+condition is recovered by testing against bumps `ψ • v` with `v ∈ Λ`. -/
+theorem isWeakCRSolutionHalf_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : ContDiffOn ℝ 1 J Ω)
+    (hS : ContinuousOn S Ω) (hξ : ContDiffOn ℝ 1 ξ Ω) (hη : ContinuousOn η Ω.upperHalf) :
+    IsWeakCRSolutionHalf q Ω Λ J (fderiv ℝ J) S ξ η ↔
+      (∀ z ∈ Ω.upperHalf, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z) = η z) ∧
+        ∀ s : ℝ, (s : ℂ) ∈ Ω → ∀ v ∈ Λ, ⟪v, J s (ξ s)⟫_ℝ = 0 := by
+  refine ⟨fun h => ?_, fun h => isWeakCRSolutionHalf_of_contDiffOn hJ hS hξ h.1 h.2⟩
+  have hH : MeasurableSet {z : ℂ | 0 < z.im} := measurableSet_lt measurable_const measurable_im
+  have hU : (Ω.upperHalf : Set ℂ) ⊆ Ω := fun z hz => (Opens.mem_upperHalf.1 hz).1
+  have hint := (isWeakCRSolution_iff_of_contDiffOn (hJ.mono hU) (hS.mono hU) (hξ.mono hU)
+    hη).1 h.isWeakCRSolution
+  refine ⟨hint, fun s₀ hs₀ v hv => ?_⟩
+  -- `g = ⟪v, J ξ⟫` along `ℝ`; if `g(s₀) ≠ 0`, test against a bump on which `g(s₀) g > 0`.
+  set g : ℝ → ℝ := fun s => ⟪v, J s (ξ s)⟫_ℝ
+  have hO : IsOpen (((↑) : ℝ → ℂ) ⁻¹' Ω) := Ω.isOpen.preimage continuous_ofReal
+  have hg : ContinuousOn g (((↑) : ℝ → ℂ) ⁻¹' Ω) :=
+    continuousOn_const.inner ((hJ.continuousOn.comp continuous_ofReal.continuousOn
+      (mapsTo_preimage _ _)).clm_apply
+      (hξ.continuousOn.comp continuous_ofReal.continuousOn (mapsTo_preimage _ _)))
+  by_contra hc
+  obtain ⟨ε, hε, hpos⟩ := Metric.eventually_nhds_iff.1
+    ((continuousAt_const.mul (hg.continuousAt (hO.mem_nhds hs₀))).eventually
+      (lt_mem_nhds (mul_self_pos.2 hc)))
+  obtain ⟨ε', hε', hball⟩ := Metric.isOpen_iff.1 Ω.isOpen _ hs₀
+  have hδ : 0 < min ε ε' := lt_min hε hε'
+  let ψ : ContDiffBump (s₀ : ℂ) := ⟨min ε ε' / 4, min ε ε' / 2, by positivity, by linarith⟩
+  have hψΩ : tsupport ψ ⊆ Ω := by
+    rw [ψ.tsupport_eq]
+    exact (Metric.closedBall_subset_ball (by simp [ψ]; linarith [min_le_right ε ε'])).trans hball
+  let φ : 𝓓(Ω, V) := ⟨fun z => ψ z • g s₀ • v, ψ.contDiff.smul contDiff_const,
+    ψ.hasCompactSupport.smul_right, (tsupport_smul_subset_left _ _).trans hψΩ⟩
+  have hφΛ (s : ℝ) : (φ : ℂ → V) s ∈ Λ := Λ.smul_mem _ (Λ.smul_mem _ hv)
+  have hB : ∫ s : ℝ, ⟪(φ : ℂ → V) s, J s (ξ s)⟫_ℝ = 0 := by
+    have h1 := setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn
+      (φ.contDiff.of_le (by simp)) φ.hasCompactSupport Ω.isOpen hξ hJ hS φ.tsupport_subset
+    have h2 : ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z,
+        fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)⟫_ℝ =
+        ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z, η z⟫_ℝ := by
+      refine setIntegral_congr_fun hH fun z hz => ?_
+      by_cases hzΩ : z ∈ (Ω : Set ℂ)
+      · rw [hint z (Opens.mem_upperHalf.2 ⟨hzΩ, hz⟩)]
+      · simp [image_eq_zero_of_notMem_tsupport fun h => hzΩ (φ.tsupport_subset h)]
+    rw [h.setIntegral_inner_crFormalAdjoint φ hφΛ, h2] at h1
+    linarith
+  have hF (s : ℝ) : ⟪(φ : ℂ → V) s, J s (ξ s)⟫_ℝ = ψ s * (g s₀ * g s) := by
+    simp only [φ, TestFunction.coe_mk, real_inner_smul_left, g]
+  simp_rw [hF] at hB
+  refine (Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero
+    (continuous_of_tsupport fun s hs => ?_)
+    (ψ.hasCompactSupport.comp_isClosedEmbedding isometry_ofReal.isClosedEmbedding).mul_right
+    (fun s => ?_) (x := s₀) ?_).ne' hB
+  · have hsΩ : s ∈ ((↑) : ℝ → ℂ) ⁻¹' Ω :=
+      hψΩ (tsupport_comp_subset_preimage (ψ : ℂ → ℝ) continuous_ofReal
+        (tsupport_mul_subset_left hs))
+    exact (ψ.continuous.comp continuous_ofReal).continuousAt.mul
+      (continuousAt_const.mul (hg.continuousAt (hO.mem_nhds hsΩ)))
+  · change 0 ≤ ψ s * (g s₀ * g s)
+    by_cases hs : dist s s₀ < ε
+    · exact mul_nonneg ψ.nonneg (hpos hs).le
+    · rw [ψ.zero_of_le_dist (by
+        simp only [ψ, isometry_ofReal.dist_eq]; linarith [min_le_left ε ε']), zero_mul]
+  · simpa [ψ.one_of_mem_closedBall (Metric.mem_closedBall_self ψ.rIn_pos.le)] using hc
+
+/-! ### Checks: `J = i`, `S = 0` and the real boundary condition -/
+
+/-- An open set meeting `ℝ` contains the closed support of a smooth bump around a real point. -/
+private theorem exists_contDiffBump (hΩ : ∃ s : ℝ, (s : ℂ) ∈ Ω) :
+    ∃ (x : ℝ) (ψ : ContDiffBump (x : ℂ)), Metric.closedBall (x : ℂ) ψ.rOut ⊆ Ω := by
+  obtain ⟨x, hx⟩ := hΩ
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen _ hx
+  exact ⟨x, ⟨ε / 4, ε / 2, by positivity, by linarith⟩,
+    (Metric.closedBall_subset_ball (by linarith)).trans hball⟩
+
+/-- The multiple `c ψ` of a smooth real bump `ψ` supported in `Ω`, as a test function. -/
+private def bumpTest {x : ℝ} (ψ : ContDiffBump (x : ℂ))
+    (hψ : Metric.closedBall (x : ℂ) ψ.rOut ⊆ Ω) (c : ℂ) : 𝓓(Ω, ℂ) :=
   ⟨fun z => c * (ψ z : ℂ), contDiff_const.mul (ofRealCLM.contDiff.comp ψ.contDiff),
     (ψ.hasCompactSupport.comp_left (g := ((↑) : ℝ → ℂ)) ofReal_zero).mul_left,
-    subset_univ _⟩
+    (closure_minimal (fun z hz => Metric.ball_subset_closedBall (ψ.support_eq ▸
+      show ψ z ≠ 0 from fun h0 => hz (by simp [h0]))) Metric.isClosed_closedBall).trans hψ⟩
 
-/-- The boundary integral of the bump is positive. -/
-private theorem integral_realBump_pos :
-    0 < ∫ s : ℝ, ((realBump 1 : ℂ → ℂ) s).re := by
-  let ψ : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
-  have hψ (s : ℝ) : ((realBump 1 : ℂ → ℂ) s).re = ψ s := by simp [realBump, ψ]
-  simp_rw [hψ]
+private theorem bumpTest_apply {x : ℝ} (ψ : ContDiffBump (x : ℂ))
+    (hψ : Metric.closedBall (x : ℂ) ψ.rOut ⊆ Ω) (c z : ℂ) :
+    (bumpTest ψ hψ c : ℂ → ℂ) z = c * ψ z := rfl
+
+/-- The boundary integral of a bump around a real point is positive. -/
+private theorem integral_bumpTest_pos {x : ℝ} (ψ : ContDiffBump (x : ℂ))
+    (hψ : Metric.closedBall (x : ℂ) ψ.rOut ⊆ Ω) :
+    0 < ∫ s : ℝ, ((bumpTest ψ hψ 1 : ℂ → ℂ) s).re := by
+  have h (s : ℝ) : ((bumpTest ψ hψ 1 : ℂ → ℂ) s).re = ψ s := by simp [bumpTest_apply]
+  simp_rw [h]
   refine (ψ.continuous.comp continuous_ofReal).integral_pos_of_hasCompactSupport_nonneg_ne_zero
     (ψ.hasCompactSupport.comp_isClosedEmbedding isometry_ofReal.isClosedEmbedding)
-    (fun s => ψ.nonneg) (x := 0) ?_
-  simp [ψ.one_of_mem_closedBall (Metric.mem_closedBall_self (by norm_num : (0 : ℝ) ≤ 1))]
+    (fun s => ψ.nonneg) (x := x) ?_
+  simp [ψ.one_of_mem_closedBall (Metric.mem_closedBall_self ψ.rIn_pos.le)]
 
-/-- Green's formula of `TauCeti.isWeakCRSolutionHalfOn_of_contDiffOn` for `J = i`, `S = 0` and a
-constant field `c`: only the boundary term survives. -/
-private theorem setIntegral_inner_crFormalAdjoint_I_const (φ : 𝓓((⊤ : Opens ℂ), ℂ)) (c : ℂ) :
+/-- Green's formula of `TauCeti.setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn` for
+`J = i`, `S = 0` and a constant field `c`: only the boundary term survives. -/
+private theorem setIntegral_inner_crFormalAdjoint_I_const (φ : 𝓓(Ω, ℂ)) (c : ℂ) :
     ∫ z in {z : ℂ | 0 < z.im},
         ⟪crFormalAdjoint (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 φ z, c⟫_ℝ =
       ∫ s : ℝ, ⟪(φ : ℂ → ℂ) s, I * c⟫_ℝ := by
-  have h := (setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn (J := fun _ =>
+  have h := setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn (J := fun _ =>
     I • ContinuousLinearMap.id ℝ ℂ) (S := 0) (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-    isOpen_univ (contDiffOn_const (c := c)) contDiffOn_const continuousOn_const
-    (subset_univ _)).2
+    Ω.isOpen (contDiffOn_const (c := c)) contDiffOn_const continuousOn_const φ.tsupport_subset
   simpa [fderiv_const] using h
 
 /-- **Check: `ξ = z` is a weak solution.** For `J = i`, `S = 0` and the real boundary condition,
 the identity `ξ(z) = z` is holomorphic and real on `ℝ`, so it solves the homogeneous weak equation
-up to the boundary. -/
-theorem isWeakCRSolutionHalfOn_id :
-    IsWeakCRSolutionHalfOn q ⊤ (Submodule.span ℝ {(1 : ℂ)})
+up to the boundary on every open set. -/
+theorem isWeakCRSolutionHalf_id :
+    IsWeakCRSolutionHalf q Ω (Submodule.span ℝ {(1 : ℂ)})
       (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 id 0 := by
-  have h := isWeakCRSolutionHalfOn_of_contDiffOn (q := q) (Ω := ⊤)
+  have h := isWeakCRSolutionHalf_of_contDiffOn (q := q) (Ω := Ω)
     (Λ := Submodule.span ℝ {(1 : ℂ)}) (J := fun _ => I • ContinuousLinearMap.id ℝ ℂ) (S := 0)
     (η := 0) contDiffOn_const continuousOn_const contDiff_id.contDiffOn
-    (fun z _ => by simp) (fun s _ => Submodule.mem_span_singleton.2 ⟨s, by simp⟩) ?_
+    (fun z _ => by simp) ?_
   · simpa [fderiv_const] using h
-  rintro s - v hv w hw
+  rintro s - v hv
   obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hv
-  obtain ⟨b, rfl⟩ := Submodule.mem_span_singleton.1 hw
   simp
 
 /-- **Check: the boundary condition is encoded by the test functions.** For `J = i`, `S = 0` and
-the real boundary condition, the constant `ξ = i` solves `∂_s ξ + i ∂_t ξ = 0` in the interior but
-is not real on `ℝ`, and it is not a weak solution up to the boundary: for a real bump `φ = χ` the
-boundary term is `⟪χ, i · i⟫ = -χ`, with nonzero integral. -/
-theorem not_isWeakCRSolutionHalfOn_const_I :
-    ¬ IsWeakCRSolutionHalfOn q ⊤ (Submodule.span ℝ {(1 : ℂ)})
+the real boundary condition on an open set meeting `ℝ`, the constant `ξ = i` solves
+`∂_s ξ + i ∂_t ξ = 0` in the interior but is not real on `ℝ`, and it is not a weak solution up to
+the boundary: for a real bump `φ = χ` the boundary term is `⟪χ, i · i⟫ = -χ`, with nonzero
+integral. -/
+theorem not_isWeakCRSolutionHalf_const_I (hΩ : ∃ s : ℝ, (s : ℂ) ∈ Ω) :
+    ¬ IsWeakCRSolutionHalf q Ω (Submodule.span ℝ {(1 : ℂ)})
       (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 (fun _ => I) 0 := by
   intro h
-  have hφ (s : ℝ) : (realBump 1 : ℂ → ℂ) s ∈ Submodule.span ℝ {(1 : ℂ)} :=
-    Submodule.mem_span_singleton.2 ⟨((realBump 1 : ℂ → ℂ) s).re, by simp [realBump]⟩
+  obtain ⟨x, ψ, hψ⟩ := exists_contDiffBump hΩ
+  have hφ (s : ℝ) : (bumpTest ψ hψ 1 : ℂ → ℂ) s ∈ Submodule.span ℝ {(1 : ℂ)} :=
+    Submodule.mem_span_singleton.2 ⟨((bumpTest ψ hψ 1 : ℂ → ℂ) s).re, by simp [bumpTest_apply]⟩
   have h1 := h.setIntegral_inner_crFormalAdjoint _ hφ
   rw [setIntegral_inner_crFormalAdjoint_I_const] at h1
-  have h2 (s : ℝ) : ⟪(realBump 1 : ℂ → ℂ) s, I * I⟫_ℝ = -((realBump 1 : ℂ → ℂ) s).re := by
+  have h2 (s : ℝ) : ⟪(bumpTest ψ hψ 1 : ℂ → ℂ) s, I * I⟫_ℝ =
+      -((bumpTest ψ hψ 1 : ℂ → ℂ) s).re := by
     simp [Complex.inner]
   simp only [h2, integral_neg, Pi.zero_apply, inner_zero_right, integral_zero, neg_eq_zero] at h1
-  exact integral_realBump_pos.ne' h1
+  exact (integral_bumpTest_pos ψ hψ).ne' h1
 
-/-- **Check: the test functions must be restricted on `ℝ`.** For `J = i` and `S = 0`, the
-constant `ξ = 1` is holomorphic and real on `ℝ`, but the weak identity `∫ ⟪D* φ, 1⟫ = 0` fails
-for the test function `φ = i χ`, which is not real on `ℝ`: the boundary term is
-`∫_ℝ ⟪i χ, i⟫ = ∫_ℝ χ ≠ 0`. -/
-theorem exists_setIntegral_inner_crFormalAdjoint_one_ne_zero :
-    ∃ φ : 𝓓((⊤ : Opens ℂ), ℂ), ∫ z in {z : ℂ | 0 < z.im},
+/-- **Check: the test functions must be restricted on `ℝ`.** For `J = i` and `S = 0` on an open
+set meeting `ℝ`, the constant `ξ = 1` is holomorphic and real on `ℝ`, but the weak identity
+`∫ ⟪D* φ, 1⟫ = 0` fails for a test function `φ = i χ`, which is not real on `ℝ`: the boundary
+term is `∫_ℝ ⟪i χ, i⟫ = ∫_ℝ χ ≠ 0`. -/
+theorem exists_setIntegral_inner_crFormalAdjoint_one_ne_zero (hΩ : ∃ s : ℝ, (s : ℂ) ∈ Ω) :
+    ∃ φ : 𝓓(Ω, ℂ), ∫ z in {z : ℂ | 0 < z.im},
       ⟪crFormalAdjoint (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 φ z, 1⟫_ℝ ≠ 0 := by
-  refine ⟨realBump I, ?_⟩
+  obtain ⟨x, ψ, hψ⟩ := exists_contDiffBump hΩ
+  refine ⟨bumpTest ψ hψ I, ?_⟩
   rw [setIntegral_inner_crFormalAdjoint_I_const]
-  have h (s : ℝ) : ⟪(realBump I : ℂ → ℂ) s, I * 1⟫_ℝ = ((realBump 1 : ℂ → ℂ) s).re := by
-    simp [Complex.inner, realBump]
+  have h (s : ℝ) : ⟪(bumpTest ψ hψ I : ℂ → ℂ) s, I * 1⟫_ℝ =
+      ((bumpTest ψ hψ 1 : ℂ → ℂ) s).re := by
+    simp [Complex.inner, bumpTest_apply]
   simp only [h]
-  exact integral_realBump_pos.ne'
+  exact (integral_bumpTest_pos ψ hψ).ne'
 
 end TauCeti
