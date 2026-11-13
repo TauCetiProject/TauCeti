@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Basis
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 import TauCeti.Algebra.Lie.Orthogonal.TypeB.Killing
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
@@ -78,6 +79,20 @@ theorem typeBPinnedLieEquiv_lieBasis_f (i : Fin (n + 1)) :
   simpa only [typeBPinnedLieEquiv, typeBLieBasis_f] using
     (DynkinType.B (n + 1)).lieEquivOfBasis_lieBasis_f ht (typeBLieBasis (K := ℚ) n)
       (by simp) i
+
+/-- The pinned signed simple-root family maps to the native numbered root family. -/
+@[simp]
+theorem typeBPinnedLieEquiv_lieBasis_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    typeBPinnedLieEquiv n ht (((DynkinType.B (n + 1)).lieBasis ht).rootGenerator k) =
+      typeBSimpleRootGeneratorFamily k := by
+  -- The Dynkin rank reduces to n + 1 when matching the two signed families.
+  cases k with
+  | inl i =>
+      erw [LieAlgebra.Basis.rootGenerator_inl, typeBSimpleRootGeneratorFamily_inl,
+        typeBPinnedLieEquiv_lieBasis_e]
+  | inr i =>
+      erw [LieAlgebra.Basis.rootGenerator_inr, typeBSimpleRootGeneratorFamily_inr,
+        typeBPinnedLieEquiv_lieBasis_f]
 
 /-- The inverse identification preserves each numbered simple coroot. -/
 @[simp]
