@@ -25,9 +25,9 @@ of unity of `𝓞 K`. Together with `(0 / P)_n = 0` this is a multiplicative cha
 
 At primes whose norm is not prime to `n` the symbol is, by convention, the trivial character.
 Most lemmas below that describe its values assume `N P` prime to `n`, but
-`powerResidueSymbol_pow_eq_one`, `powerResidueSymbol_pow_eq_self`,
-`powerResidueSymbol_intCast_eq_one` and `map_powerResidueSymbol` hold at every maximal `P`. The
-symbol is the basic object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
+`powerResidueSymbol_pow_eq_one`, `powerResidueSymbol_pow_eq_self` and `map_powerResidueSymbol`
+hold at every maximal `P`. The symbol is the basic object of the higher (cubic, quartic and
+Eisenstein) reciprocity laws.
 
 ## Main definitions and results
 
