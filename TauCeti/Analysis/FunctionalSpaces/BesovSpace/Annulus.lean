@@ -148,7 +148,6 @@ theorem exists_hasSum_toDistr_and_norm_le_of_annulus (s : ℝ) {a : ℝ} (ha : 0
         HasSum (fun j ↦ (u j : 𝓢'(E, F))) v.toDistr ∧ ‖v‖ ≤ C * ‖w‖ := by
   obtain ⟨K, L, hK, hKL⟩ := exists_littlewoodPaleyBlock_eq_and_le_of_hasSum (F := F) φ s ha b
   refine ⟨K * (2 * L), fun {p} _ {q} _ u w hb ha' huw ↦ ?_⟩
-  have hq : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   obtain ⟨U, hU⟩ := exists_hasSum_of_annulus s ha b u w hb ha' huw
   obtain ⟨f, hf, hfu⟩ := hKL u hU hb ha'
   -- The window sums of `w`, as an element of `ℓ^q`; they dominate the weighted blocks of `U`.
@@ -156,25 +155,12 @@ theorem exists_hasSum_toDistr_and_norm_le_of_annulus (s : ℝ) {a : ℝ} (ha : 0
     ⟨fun k ↦ ∑ j ∈ Finset.Ico (k - L) (k + L), w j, (lp.memℓp w).sum_Ico_sub_add L⟩
   -- The entries of the anonymous `lp` element `W` are its defining sequence by definition.
   have hW (k : ℕ) : W k = ∑ j ∈ Finset.Ico (k - L) (k + L), w j := rfl
-  have hle (k : ℕ) : 2 ^ (s * k) * ‖f k‖ ≤ ‖(K • W) k‖ := by
+  have hle (k : ℕ) : 2 ^ (s * k) * ‖f k‖ ≤ (K • W) k := by
     rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hW]
-    exact (hfu k).trans <| (mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun j _ ↦ huw j) hK).trans
-      (Real.le_norm_self _)
-  have hmem : U.MemBesov φ s p q :=
-    memBesov_iff.2 ⟨f, hf, (lp.memℓp (K • W)).norm.mono fun k ↦ by
-      rw [Real.norm_of_nonneg (by positivity)]
-      exact hle k⟩
-  refine ⟨hmem.toBesovSpace, by rwa [MemBesov.toDistr_toBesovSpace], ?_⟩
-  have hblock (k : ℕ) : hmem.toBesovSpace.block k = f k :=
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block,
-        MemBesov.toDistr_toBesovSpace, hf k]
-  calc ‖hmem.toBesovSpace‖ ≤ ‖K • W‖ := by
-        rw [← norm_weightedBlocks]
-        refine lp.norm_mono hq fun k ↦ ?_
-        rw [norm_weightedBlocks_apply, hblock]
-        exact hle k
-    _ = K * ‖W‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
+    exact (hfu k).trans (mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun j _ ↦ huw j) hK)
+  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f _ hf hle
+  refine ⟨v, hv ▸ hU, hvn.trans ?_⟩
+  calc ‖K • W‖ = K * ‖W‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
     _ ≤ K * (2 * L * ‖w‖) := by
         gcongr
         exact lp.norm_le_of_forall_eq_sum_Ico_sub_add L hW
