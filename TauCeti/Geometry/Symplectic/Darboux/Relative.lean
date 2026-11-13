@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-import TauCeti.Analysis.Calculus.DifferentialForm.Relative
+import TauCeti.Analysis.Calculus.DifferentialForm.Relative.Basic
 import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 import TauCeti.Geometry.Symplectic.Darboux.Basic
 import TauCeti.Topology.Algebra.Module.Alternating.Basic

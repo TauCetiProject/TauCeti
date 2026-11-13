@@ -37,6 +37,7 @@ public section
 noncomputable section
 
 open Set MeasureTheory
+open scoped Interval
 
 namespace TauCeti
 
@@ -102,6 +103,37 @@ theorem fiberwisePoincareHomotopy_zeroSection
     ext v
     simp [Prod.mk_zero_zero]
   simp only [hz, intervalIntegral.integral_zero]
+
+/-- A uniform bound for the input along a normal segment bounds its relative Poincaré
+primitive by that bound times the length of the normal coordinate. -/
+theorem norm_fiberwisePoincareHomotopy_le
+    {ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F} {x : E × N} {B : ℝ}
+    (hB : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (x.1, t • x.2)‖ ≤ B) :
+    ‖fiberwisePoincareHomotopy ω x‖ ≤ B * ‖x.2‖ := by
+  rw [fiberwisePoincareHomotopy_apply]
+  have hnorm (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+      ‖((ContinuousLinearMap.id ℝ E).prodMap (t • ContinuousLinearMap.id ℝ N))‖ ≤ 1 := by
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
+    simpa [Prod.norm_def, norm_smul, abs_of_nonneg ht.1] using
+      max_le_max (le_refl ‖v.1‖) (mul_le_of_le_one_left (norm_nonneg v.2) ht.2)
+  have hle (t : ℝ) (ht : t ∈ Ι (0 : ℝ) 1) :
+      ‖((ω (x.1, t • x.2)).curryLeft (0, x.2)).compContinuousLinearMap
+        ((ContinuousLinearMap.id ℝ E).prodMap (t • ContinuousLinearMap.id ℝ N))‖ ≤
+          B * ‖x.2‖ := by
+    have ht' : t ∈ Icc (0 : ℝ) 1 := by
+      rw [uIoc_of_le zero_le_one] at ht
+      exact Ioc_subset_Icc_self ht
+    calc
+      _ ≤ ‖(ω (x.1, t • x.2)).curryLeft (0, x.2)‖ *
+          ‖((ContinuousLinearMap.id ℝ E).prodMap (t • ContinuousLinearMap.id ℝ N))‖ ^ k := by
+            simpa using ((ω (x.1, t • x.2)).curryLeft (0, x.2)).norm_compContinuousLinearMap_le
+              ((ContinuousLinearMap.id ℝ E).prodMap (t • ContinuousLinearMap.id ℝ N))
+      _ ≤ ‖(ω (x.1, t • x.2)).curryLeft (0, x.2)‖ :=
+        mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) (hnorm t ht'))
+      _ ≤ ‖ω (x.1, t • x.2)‖ * ‖x.2‖ := by
+        simpa using (ω (x.1, t • x.2)).curryLeft.le_opNorm (0, x.2)
+      _ ≤ B * ‖x.2‖ := mul_le_mul_of_nonneg_right (hB t ht') (norm_nonneg _)
+  simpa using intervalIntegral.norm_integral_le_of_norm_le_const hle
 
 private theorem mapsTo_fiberScaling_segment (x : E × N) :
     MapsTo fiberScaling ({x} ×ˢ Icc (0 : ℝ) 1) (segment ℝ (x.1, 0) x) := by
