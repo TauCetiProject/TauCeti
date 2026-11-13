@@ -26,9 +26,12 @@ vanishing on the algebraic set `V ⊆ F₂^X` they define, so `G` is the coordin
 free group `F₂` is equationally Noetherian, so `V` is a finite union of irreducible algebraic sets
 `V₁, …, Vₘ`, and the coordinate group of `V` embeds in the product of the coordinate groups of the
 `Vᵢ`. The coordinate group of an irreducible algebraic set is discriminated by `F₂`, that is, fully
-residually free. Kharlampovich and Myasnikov work with coefficients in a free group `F`, where `G`
-is a free factor of the coordinate group `F ∗ G`; here the coefficients are trivial, and `G` itself
-is the coordinate group.
+residually free. Kharlampovich and Myasnikov work with coefficients in a nonabelian free group
+`F`. There residual freeness shows that the coefficient-free words vanishing on the algebraic set
+over `F` are exactly the relations of `G`, so `G` embeds in the coordinate group over `F`. That
+coordinate group is a proper quotient of `F ∗ G` unless `G` is fully residually free, although
+their proof of Corollary 2 identifies the two; only the embedding is needed. Here the coefficients
+are trivial, and `G` itself is the coordinate group.
 
 The product `F₂ × F₂` shows that the factors cannot be dispensed with: it is residually free and a
 product of two limit groups, but it is not fully residually free
