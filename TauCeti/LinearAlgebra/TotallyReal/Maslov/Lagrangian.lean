@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
-public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.RealImage
 
 /-!
 # Deforming loops of totally real subspaces to Lagrangian loops
@@ -28,10 +28,6 @@ two loops.
 
 ## Main declarations
 
-* `TauCeti.TotallyRealLoop.ofRealImage`: the loop `t ↦ M t ℝⁿ` of a continuous path `M` of
-  invertible matrices whose images of `ℝⁿ` close up.
-* `TauCeti.TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy`: homotopy invariance of the
-  Maslov index along a continuous family of such paths.
 * `TauCeti.TotallyRealLoop.exists_unitary_maslovIndex_eq`: every loop of maximal totally real
   subspaces of `ℂⁿ` has the Maslov index of a loop `t ↦ U t ℝⁿ` with `U` a continuous path of
   unitary matrices.
@@ -57,42 +53,6 @@ namespace TauCeti
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-! ### Loops of totally real subspaces of `ℂⁿ` -/
-
-/-- The loop `t ↦ M t ℝⁿ` of maximal totally real subspaces of `ℂⁿ` framed by a continuous path
-`M` of invertible matrices whose images of `ℝⁿ` close up. -/
-def TotallyRealLoop.ofRealImage (M : I → GL n ℂ) (hM : Continuous M)
-    (h01 : (M 0 : Matrix n n ℂ).realImage = (M 1 : Matrix n n ℂ).realImage) :
-    TotallyRealLoop (EuclideanSpace ℂ n) where
-  toFun t := (M t : Matrix n n ℂ).realImage
-  exists_frame := ⟨realSubspace n, isMaximalTotallyReal_realSubspace,
-    fun t ↦ (M t : Matrix n n ℂ).toEuclideanCLE (M t).det_ne_zero,
-    GeneralLinearGroup.continuous_toEuclideanCLE hM, fun _ ↦ realImage_eq_map_toEuclideanCLE _⟩
-  toFun_zero_eq_toFun_one := h01
-
-/-- The loop of images of `ℝⁿ` under `M` at time `t` is `M t ℝⁿ`. -/
-@[simp]
-theorem TotallyRealLoop.ofRealImage_apply (M : I → GL n ℂ) (hM : Continuous M)
-    (h01 : (M 0 : Matrix n n ℂ).realImage = (M 1 : Matrix n n ℂ).realImage) (t : I) :
-    ofRealImage M hM h01 t = (M t : Matrix n n ℂ).realImage :=
-  (rfl)
-
-/-- **Homotopy invariance through images of `ℝⁿ`.** Two loops of maximal totally real subspaces of
-`ℂⁿ` have the same Maslov index when they are the loops `t ↦ F (0, t) ℝⁿ` and `t ↦ F (1, t) ℝⁿ`
-of a continuous family `F` of invertible matrices along which every loop `t ↦ F (s, t) ℝⁿ` closes
-up. -/
-theorem TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy
-    (Λ₀ Λ₁ : TotallyRealLoop (EuclideanSpace ℂ n)) (F : I × I → GL n ℂ) (hF : Continuous F)
-    (h₀ : ∀ t, Λ₀ t = (F (0, t) : Matrix n n ℂ).realImage)
-    (h₁ : ∀ t, Λ₁ t = (F (1, t) : Matrix n n ℂ).realImage)
-    (h01 : ∀ s, (F (s, 0) : Matrix n n ℂ).realImage = (F (s, 1) : Matrix n n ℂ).realImage) :
-    Λ₀.maslovIndex = Λ₁.maslovIndex := by
-  refine Λ₀.maslovIndex_eq_of_homotopy Λ₁ (L₀ := realSubspace n)
-    (fun p ↦ (F p : Matrix n n ℂ).toEuclideanCLE (F p).det_ne_zero)
-    (GeneralLinearGroup.continuous_toEuclideanCLE hF) (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)
-  · rw [h₀, realImage_eq_map_toEuclideanCLE]
-  · rw [h₁, realImage_eq_map_toEuclideanCLE]
-  · rw [← realImage_eq_map_toEuclideanCLE, ← realImage_eq_map_toEuclideanCLE]
-    exact h01 s
 
 /-- **Loops of totally real subspaces deform to Lagrangian loops.** Every loop `Λ` of maximal
 totally real subspaces of `ℂⁿ` has the Maslov index of a loop `t ↦ U t ℝⁿ` of Lagrangian

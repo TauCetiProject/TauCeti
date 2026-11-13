@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Orthogonal.Unitary
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
-public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Lagrangian
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.RealImage
 public import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
