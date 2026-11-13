@@ -381,8 +381,9 @@ private theorem taylor_comp_expHom_apply_eq_letter {e : ℕ} (he : 1 ≤ e) (f :
       (ℋ.grading.shift 1).piece 0) :
     ∀ z ∈ filtration R A (e + 1), ((ℋ.expHom hχ hχ₁ hδχ).comp f).taylor z = letter R A z := by
   intro z hz
+  have hft : f.taylor = letter R A + ψ := by rw [hψdef, add_sub_cancel]
   have hFz : f.barMap z = z + coderiv R ψ z := by
-    rw [f.barMap_eq_coalgHom, show f.taylor = letter R A + ψ by rw [hψdef, add_sub_cancel],
+    rw [f.barMap_eq_coalgHom, hft,
       coalgHom_letter_add_apply_of_mem_filtration hψe (filtration_monotone R A (by omega) hz)]
   have hw : z + coderiv R ψ z ∈ filtration R A (2 * e) :=
     filtration_monotone R A (by omega) (add_mem hz (coderiv_mem_filtration R ψ hz))

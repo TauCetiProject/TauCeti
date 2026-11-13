@@ -590,16 +590,17 @@ theorem homologyToLim_comp_homologyMap (s : Cone C) (φ : s.pt ⟶ C.limComplex)
       (C.homology j).limLift
         (fun n ↦ (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom)
         (transition_comp_homologyMap_π s j) := by
-  let f (n : ℕ) : s.pt.homology j →ₗ[R] (C.homology j).obj (op n) :=
-    (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom
-  change C.homologyToLim j ∘ₗ _ = (C.homology j).limLift f (transition_comp_homologyMap_π s j)
   refine (C.homology j).lim_hom_ext fun n ↦ LinearMap.ext fun x ↦ ?_
-  rw [ModuleTower.limπ_comp_limLift, LinearMap.comp_apply, LinearMap.comp_apply,
-    ModuleTower.limπ_apply, coe_homologyToLim_apply]
   have h := congrArg (fun g : s.pt ⟶ C.obj (op n) ↦ (HomologicalComplex.homologyMap g j).hom x)
     (hφ n)
   simp only [HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at h
-  exact h
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, ModuleTower.limπ_apply,
+    coe_homologyToLim_apply, h]
+  -- The legs are passed explicitly: the stated family lands in `Hⱼ(Cₙ)`, which equals the tower
+  -- term `(C.homology j).obj (op n)` only definitionally, so unification cannot infer it.
+  exact (LinearMap.congr_fun ((C.homology j).limπ_comp_limLift
+    (fun n ↦ (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom)
+    (transition_comp_homologyMap_π s j) n) x).symm
 
 /-- If the shift is surjective in every degree and `lim¹ Hᵢ(Cₙ)` vanishes for every `i` followed
 by `j`, then `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is bijective. -/

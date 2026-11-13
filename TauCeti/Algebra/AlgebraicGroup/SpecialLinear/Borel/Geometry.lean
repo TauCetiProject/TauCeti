@@ -217,7 +217,7 @@ def coordinateAlgEquiv :
 theorem coordinateAlgEquiv_diagonalUnit :
     coordinateAlgEquiv R (diagonalUnit R : coordinateHopfAlgebra R) =
       Polynomial.C (LaurentPolynomial.T 1) := by
-  change coordinateToPresentation R (diagonalUnit R : coordinateHopfAlgebra R) = _
+  rw [coordinateAlgEquiv, AlgEquiv.ofAlgHom_apply]
   simpa using congrArg Units.val (map_tautologicalUnit R)
 
 /-- The coordinate equivalence sends the upper-right coordinate to the polynomial generator. -/
