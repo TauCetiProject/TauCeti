@@ -21,15 +21,18 @@ any preconnected real parameter set.
 
 ## Main results
 
-* `ODE_solution_unique_of_eventually_nhdsWithin`: local uniqueness with a uniform state-space
-  Lipschitz constant on a neighborhood of the common phase.
+* `TauCeti.ODE_solution_unique_of_eventually_nhdsWithin`: local uniqueness with a uniform
+  state-space Lipschitz constant on a neighborhood of the common phase.
 * `ContDiffAt.ode_eventuallyEq_nhdsWithin`: C¹ local uniqueness.
 * `IsPreconnected.ode_eqOn`: locally Lipschitz uniqueness on a preconnected parameter set.
 * `IsPreconnected.ode_eqOn_of_contDiffAt`: the C¹ specialization.
 
 ## References
 
-* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Lemmas 6.8 and 6.10.
+* `Mathlib.Analysis.ODE.ExistUnique` for local Lipschitz uniqueness.
+* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Lemmas 6.8 and 6.10:
+  closed-endpoint ODE uniqueness is an analytic input to reduced-geodesic and variation
+  uniqueness there.
 * Public formalizations: [lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions)
   and [PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
@@ -44,7 +47,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Local uniqueness within an order-connected parameter set, with derivatives within that
 set. The Lipschitz bound is uniform in time but only compares states in each time slice. -/
-theorem ODE_solution_unique_of_eventually_nhdsWithin {K : ℝ≥0} {s : Set (ℝ × E)}
+theorem TauCeti.ODE_solution_unique_of_eventually_nhdsWithin {K : ℝ≥0} {s : Set (ℝ × E)}
     (hs : s ∈ 𝓝 (t0, f t0))
     (hv : ∀ t, LipschitzOnWith K (fun x ↦ V (t, x)) {x | (t, x) ∈ s})
     (hI : Set.OrdConnected I) (ht0 : t0 ∈ I) (heq : f t0 = g t0)
@@ -90,9 +93,8 @@ theorem ContDiffAt.ode_eventuallyEq_nhdsWithin
   obtain ⟨K, s, hs, hL⟩ := hV.exists_lipschitzOnWith
   have hLip : ∀ t, LipschitzOnWith K (fun x ↦ V (t, x)) {x | (t, x) ∈ s} := by
     intro t x hx y hy
-    simpa only [Prod.edist_eq, edist_self,
-      max_eq_right (show 0 ≤ edist x y from bot_le)] using hL hx hy
-  exact ODE_solution_unique_of_eventually_nhdsWithin hs hLip hI ht0 heq hf hg
+    simpa only [Prod.edist_eq, edist_self, zero_max] using hL hx hy
+  exact TauCeti.ODE_solution_unique_of_eventually_nhdsWithin hs hLip hI ht0 heq hf hg
 
 /-- Two solutions agree throughout a preconnected parameter set if they agree once and
 the field has a uniform state-space Lipschitz bound near each phase of the first solution.
@@ -112,7 +114,7 @@ theorem IsPreconnected.ode_eqOn (hI : IsPreconnected I)
     apply isOpen_iff_mem_nhds.mpr
     intro t ht
     obtain ⟨K, s, hs, hLip⟩ := hV t t.property
-    have hlocal := ODE_solution_unique_of_eventually_nhdsWithin hs hLip hI.ordConnected
+    have hlocal := TauCeti.ODE_solution_unique_of_eventually_nhdsWithin hs hLip hI.ordConnected
       t.property ht (eventually_nhdsWithin_of_forall hf) (eventually_nhdsWithin_of_forall hg)
     exact (eventually_nhds_subtype_iff I t (fun r ↦ f r = g r)).mpr hlocal
   have hAll : A = Set.univ := IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨⟨t0, ht0⟩, heq⟩
@@ -130,5 +132,4 @@ theorem IsPreconnected.ode_eqOn_of_contDiffAt (hI : IsPreconnected I)
   apply hI.ode_eqOn (fun t ht ↦ ?_) ht0 heq hf hg
   obtain ⟨K, s, hs, hL⟩ := (hV t ht).exists_lipschitzOnWith
   refine ⟨K, s, hs, fun r x hx y hy ↦ ?_⟩
-  simpa only [Prod.edist_eq, edist_self,
-    max_eq_right (show 0 ≤ edist x y from bot_le)] using hL hx hy
+  simpa only [Prod.edist_eq, edist_self, zero_max] using hL hx hy

@@ -27,7 +27,7 @@ particular it applies to velocity lifts of geodesic segments.
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 9.
 * Mathlib's `isMIntegralCurveOn_Ioo_eqOn_of_contMDiff` supplies the local-coordinate and
-  connectedness proof architecture. `ODE_solution_unique_of_eventually_nhdsWithin` supplies
+  connectedness proof architecture. `TauCeti.ODE_solution_unique_of_eventually_nhdsWithin` supplies
   relative local uniqueness; Mathlib's closed-interval comparisons supply the fixed-chart result.
 -/
 
@@ -111,7 +111,7 @@ theorem eventuallyEq_of_isPreconnected
     (hδ.continuousWithinAt ht).preimage_mem_nhdsWithin
       ((isOpen_extChartAt_source (γ t₀)).mem_nhds hδt)
   have hcoord : (φ ∘ γ) =ᶠ[𝓝[s] t₀] (φ ∘ δ) := by
-    apply ODE_solution_unique_of_eventually_nhdsWithin
+    apply TauCeti.ODE_solution_unique_of_eventually_nhdsWithin
       (V := fun p : ℝ × E ↦ w p.2) (s := Set.univ ×ˢ z)
       (prod_mem_nhds (by simp) hz)
       (fun _ ↦ by simpa only [Set.mem_prod, Set.mem_univ, true_and, Set.ofPred_mem_eq] using hlip)
