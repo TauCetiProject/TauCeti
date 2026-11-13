@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.Algebra.Lie.G2.ShortRoot.AdmissibleLattice
 import TauCeti.Algebra.Lie.Weights.Faithful
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootNormalization
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Killing
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
@@ -131,27 +132,29 @@ private theorem pinnedRepresentation_mem_lattice
   have hmap : map ℚ pinnedToSerre u ∈
       (kostantForm (G2.lieBasis valid_G2).rootGenerator (G2.lieBasis valid_G2).h).map
         (map ℚ pinnedToSerre).toRingHom := Subring.mem_map.mpr ⟨u, hu, rfl⟩
-  rw [map_kostantForm] at hmap
-  have hle : kostantForm (fun k => pinnedToSerre ((G2.lieBasis valid_G2).rootGenerator k))
-      (fun i => pinnedToSerre ((G2.lieBasis valid_G2).h i)) ≤ serreKostantForm CartanMatrix.G₂ := by
-    rw [UniversalEnvelopingAlgebra.kostantForm_le_iff, serreKostantForm_def]
-    constructor
-    · rintro (i | i) n <;>
-        simp only [LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr,
-          pinnedToSerre_e, pinnedToSerre_f]
-      · simpa only [serreRootGenerator_inl] using
-          UniversalEnvelopingAlgebra.dividedPower_mem_kostantForm
-            (serreRootGenerator CartanMatrix.G₂) (serreH ℚ CartanMatrix.G₂)
-            (.inl (Fin.cast rank_G2 i)) n
-      · simpa only [serreRootGenerator_inr] using
-          UniversalEnvelopingAlgebra.dividedPower_mem_kostantForm
-            (serreRootGenerator CartanMatrix.G₂) (serreH ℚ CartanMatrix.G₂)
-            (.inr (Fin.cast rank_G2 i)) n
-    · intro i n
-      rw [pinnedToSerre_h]
-      exact ringChoose_mem_kostantForm (serreRootGenerator CartanMatrix.G₂)
-        (serreH ℚ CartanMatrix.G₂) (Fin.cast rank_G2 i) n
-  exact rep_serreKostantForm_apply_mem_lattice (hle hmap) hv
+  have he (k : Fin G2.rank ⊕ Fin G2.rank) :
+      pinnedToSerre ((G2.lieBasis valid_G2).rootGenerator k) =
+        ((1 : ℤˣ) : ℤ) • serreRootGenerator CartanMatrix.G₂
+          (Sum.map (Fin.cast rank_G2) (Fin.cast rank_G2) k) := by
+    rcases k with i | i
+    · rw [LieAlgebra.Basis.rootGenerator_inl, pinnedToSerre_e, Sum.map_inl,
+        serreRootGenerator_inl]
+      simp only [Units.val_one, one_smul]
+    · rw [LieAlgebra.Basis.rootGenerator_inr, pinnedToSerre_f, Sum.map_inr,
+        serreRootGenerator_inr]
+      simp only [Units.val_one, one_smul]
+  have hh (i : Fin G2.rank) : pinnedToSerre ((G2.lieBasis valid_G2).h i) =
+      ((1 : ℤˣ) : ℤ) • serreH ℚ CartanMatrix.G₂ (Fin.cast rank_G2 i) := by
+    simp [pinnedToSerre_h]
+  have hcast : Function.Surjective (Fin.cast rank_G2) :=
+    fun i => ⟨Fin.cast rank_G2.symm i, Fin.ext rfl⟩
+  rw [map_kostantForm_of_root_units pinnedToSerre
+    (G2.lieBasis valid_G2).rootGenerator (G2.lieBasis valid_G2).h
+    (serreRootGenerator CartanMatrix.G₂) (serreH ℚ CartanMatrix.G₂)
+    (Sum.map (Fin.cast rank_G2) (Fin.cast rank_G2)) (Fin.cast rank_G2) 1 1
+    (Sum.map_surjective.mpr ⟨hcast, hcast⟩) hcast he hh,
+    ← serreKostantForm_def] at hmap
+  exact rep_serreKostantForm_apply_mem_lattice hmap hv
 
 private theorem pinnedRepresentation_cartan_apply (x : G2.cartanSubalgebra valid_G2)
     (v : Fin 7 → ℚ) (a : Fin 7) :
@@ -221,14 +224,6 @@ private theorem pinnedRepresentation_isCartanWeightVector (a : Fin 7) :
     (isCartanWeightVector_single a) (Fin.cast rank_G2 i)
   rwa [rep_ι_eq_toLinAlgEquiv', rationalSerreRepresentation_serreH] at h
 
-private theorem span_lattice : Submodule.span ℚ (lattice : Set (Fin 7 → ℚ)) = ⊤ := by
-  apply top_unique
-  rw [← (Pi.basisFun ℚ (Fin 7)).span_eq]
-  apply Submodule.span_mono
-  rintro _ ⟨a, rfl⟩
-  rw [Pi.basisFun_apply, ← coe_latticeBasis]
-  exact (latticeBasis a).property
-
 /-- The full-weight Chevalley datum on the seven-dimensional short-root module of type G₂,
 with its integral coordinate lattice and fundamental-weight torus coordinates. -/
 -- The carrier, dimension and lattice must compute in the dependent representation and basis API.
@@ -238,7 +233,12 @@ with its integral coordinate lattice and fundamental-weight torus coordinates. -
   injective_representation_ι := by exact pinnedRepresentation_injective
   lattice := lattice.toAddSubgroup
   representation_mem_lattice := by exact pinnedRepresentation_mem_lattice
-  span_lattice_eq_top := by exact span_lattice
+  span_lattice_eq_top := by
+    have hlattice : lattice = coordinateLattice (Fin 7) := by
+      ext v
+      simp only [mem_lattice_iff, mem_coordinateLattice_iff]
+    simpa only [Submodule.coe_toAddSubgroup, hlattice] using
+      (instIsLatticeCoordinateLattice (Fin 7)).span_eq_top
   dim := 7
   basis := latticeBasis
   weight a i := weight a (Fin.cast rank_G2 i)
