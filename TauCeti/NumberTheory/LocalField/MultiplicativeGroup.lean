@@ -82,8 +82,6 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
--- Provenance: the multiplicative decomposition below follows the human-authored specification
--- in `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.
 /-! ### The kernel of the normalized valuation -/
 
 attribute [simp] ker_normalizedValuation

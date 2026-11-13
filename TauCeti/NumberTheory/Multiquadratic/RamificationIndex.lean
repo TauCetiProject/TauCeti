@@ -121,7 +121,7 @@ theorem apply_mul_apply_eq_mul_of_mem_inertia (hr : ∀ i, r i ^ 2 = algebraMap 
       (by rwa [Int.dvd_ediv_iff_mul_dvd hi, ← pow_two])
       (by rwa [Int.dvd_ediv_iff_mul_dvd hj, ← pow_two])) Q hτ
   rw [map_div₀, map_mul, map_intCast] at h
-  exact (div_left_inj' hp0).mp h
+  exact (div_left_inj₀ hp0).mp h
 
 /-- **A Frobenius acts by one sign on two ramified roots exactly when their `p`-free parts have
 the same Legendre symbol.** Let `p` be an odd prime, let `r i`, `r j` be square roots of
@@ -141,7 +141,7 @@ theorem isArithFrobAt_apply_mul_apply_eq_mul_iff (hr : ∀ i, r i ^ 2 = algebraM
       (by rwa [Int.dvd_ediv_iff_mul_dvd hi, ← pow_two])
       (by rwa [Int.dvd_ediv_iff_mul_dvd hj, ← pow_two]))
       (mul_div_intCast_sq_eq (hr i) (hr j) hi hj hp0) Q hσ
-  rw [map_div₀, map_mul, map_intCast, div_left_inj' hp0, legendreSym.mul] at h
+  rw [map_div₀, map_mul, map_intCast, div_left_inj₀ hp0, legendreSym.mul] at h
   rw [h]
   -- Both symbols are `±1`, since the `p`-free parts are prime to `p`.
   have hunit {c : ℤ} (hc : (p : ℤ) ∣ c) (hc2 : ¬ (p : ℤ) ^ 2 ∣ c) :

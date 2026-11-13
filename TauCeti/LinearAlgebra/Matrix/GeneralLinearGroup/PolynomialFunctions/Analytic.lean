@@ -44,9 +44,9 @@ namespace TauCeti.Matrix.GeneralLinearGroup
 theorem contMDiff_of_mem_rationalFunctions {𝕜 : Type*}
     [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {n : ℕ} {f : GL (Fin n) 𝕜 → 𝕜}
     (hf : f ∈ rationalFunctions 𝕜 n) :
-    let _ : CompleteSpace (Matrix (Fin n) (Fin n) 𝕜) := FiniteDimensional.complete 𝕜 _
+    let _ : CompleteSpace (Matrix (Fin n) (Fin n) 𝕜) := FiniteDimensional.completeSpace 𝕜 _
     ContMDiff 𝓘(𝕜, Matrix (Fin n) (Fin n) 𝕜) 𝓘(𝕜) ω f := by
-  let _ : CompleteSpace (Matrix (Fin n) (Fin n) 𝕜) := FiniteDimensional.complete 𝕜 _
+  let _ : CompleteSpace (Matrix (Fin n) (Fin n) 𝕜) := FiniteDimensional.completeSpace 𝕜 _
   dsimp only
   obtain ⟨P, m, hP⟩ := mem_rationalFunctions_iff_inv.mp hf
   have hev (Q : MvPolynomial (Fin n × Fin n) 𝕜) :

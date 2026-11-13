@@ -26,7 +26,7 @@ universe u v w
 
 variable {R : Type u} [Semiring R] {M : Type v} {N : Type w}
   [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
-  (G : InternalGrading R M) (H : InternalGrading R N)
+  (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
 
 private def prodInl (p : ℤ) : G.piece p →ₗ[R] (G.piece p).prod (H.piece p) :=
   LinearMap.codRestrict _ ((LinearMap.inl R M N).comp (G.piece p).subtype)
@@ -84,7 +84,7 @@ private theorem prodDecompose_comp_coeLinearMap :
   exact prodDecompose_of_mem G H p x.1.1 x.1.2 x.2.1 x.2.2
 
 /-- The componentwise internal grading on a product of modules. -/
-noncomputable def prod : InternalGrading R (M × N) := by
+noncomputable def prod : InternalGrading R (M × N) ℤ := by
   letI := DirectSum.Decomposition.ofLinearMap (fun p ↦ (G.piece p).prod (H.piece p))
     (prodDecompose G H)
     (coeLinearMap_comp_prodDecompose G H) (prodDecompose_comp_coeLinearMap G H)

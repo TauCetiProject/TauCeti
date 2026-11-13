@@ -103,7 +103,7 @@ theorem tendstoInMeasure_of_tendsto_map_prodMk_self (hT : ∀ n, AEMeasurable (T
   intro δ hδ
   have hδ2 : 0 < δ / 2 := ENNReal.half_pos hδ.ne'
   obtain ⟨F, -, hF, hFμ, hFcont⟩ := hT₀.exists_isClosed_measure_sdiff_lt_continuousOn
-    MeasurableSet.univ (measure_ne_top _ _) hδ2.ne'
+    nullMeasurableSet_univ (measure_ne_top _ _) hδ2.ne'
   rw [← compl_eq_univ_sdiff] at hFμ
   set C : Set (X × Y) := F ×ˢ univ ∩ {z | ε ≤ edist z.2 (T₀ z.1)} with hC
   have hCclosed : IsClosed C := by

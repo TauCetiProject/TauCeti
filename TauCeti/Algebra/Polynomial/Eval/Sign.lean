@@ -14,8 +14,9 @@ import Mathlib.Basic.Sign.Basic
 
 Mapping coefficients and the evaluation point through a strictly monotone ring homomorphism
 preserves the sign of the value. This applies to embeddings into ordered real closures.
-Over an ordered commutative ring, rescaling the roots by a nonzero factor `a` and multiplying by
-`a ^ natDegree` preserves the sign at the correspondingly rescaled point.
+For a ring homomorphism `f` from any semiring into a linearly ordered commutative ring, rescaling
+the roots by a factor `a` with `f a ≠ 0` and multiplying by `a ^ natDegree` preserves the sign of
+`eval₂ f` at the correspondingly rescaled point.
 -/
 
 public section
@@ -34,7 +35,7 @@ theorem sign_eval_map {R S : Type*} [Semiring R] [LinearOrder R]
 /-- **Rescaling preserves signs.** Evaluating `C (a ^ q.natDegree) * q.scaleRoots a` at `f a * z`
 multiplies the value of `q` at `z` by the positive square `(f a * f a) ^ q.natDegree`. -/
 theorem sign_eval₂_C_pow_mul_scaleRoots {R S : Type*} [CommRing R] [LinearOrder R]
-    [IsStrictOrderedRing R] [CommSemiring S] (f : S →+* R) (q : S[X]) {a : S} (ha : f a ≠ 0)
+    [IsStrictOrderedRing R] [Semiring S] (f : S →+* R) (q : S[X]) {a : S} (ha : f a ≠ 0)
     (z : R) :
     SignType.sign ((C (a ^ q.natDegree) * q.scaleRoots a).eval₂ f (f a * z)) =
       SignType.sign (q.eval₂ f z) := by
