@@ -249,6 +249,13 @@ theorem stripInterpolationInv_snd (t : ℝ) (p : ℝ × ℝ) :
     (b₀.stripInterpolationInv b₁ t p).2 = p.2 :=
   (rfl)
 
+/-- At time `0` the inverse of the boundary interpolation is the identity. -/
+@[simp]
+theorem stripInterpolationInv_zero (p : ℝ × ℝ) : b₀.stripInterpolationInv b₁ 0 p = p := by
+  have e : (fun x ↦ (b₀.stripInterpolation b₁ 0 (x, p.2)).1) = id := funext fun x ↦ by simp
+  rw [stripInterpolationInv_apply, e]
+  exact Prod.ext (leftInverse_invFun injective_id p.1) rfl
+
 /-- On a horizontal line whose parameters lie in the domain, `B_t⁻¹ ∘ B_t` is the identity. -/
 @[simp]
 theorem stripInterpolationInv_stripInterpolation (h₀ : Differentiable ℝ b₀)
