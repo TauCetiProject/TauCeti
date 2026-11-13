@@ -104,10 +104,11 @@ theorem divisorProductOne_eq_tprod (f : ℂ → ℂ) (z : ℂ) :
 theorem divisorProductOne_zero (f : ℂ → ℂ) : divisorProductOne f 0 = 1 := by
   simp [divisorProductOne_def]
 
-/-- A point where an entire function does not vanish is off its whole-plane divisor support. -/
-theorem notMem_divisor_support_of_ne_zero {f : ℂ → ℂ} (hf : Differentiable ℂ f) {z : ℂ}
-    (hz : f z ≠ 0) : z ∉ (MeromorphicOn.divisor f Set.univ).support :=
-  Function.notMem_support.mpr ((hf.analyticAt z).divisor_apply_eq_zero hz)
+/-- A point where a function is analytic and nonzero is off the support of its divisor on any
+set. -/
+theorem _root_.AnalyticAt.notMem_divisor_support_of_ne_zero {f : ℂ → ℂ} {U : Set ℂ} {z : ℂ}
+    (hf : AnalyticAt ℂ f z) (hz : f z ≠ 0) : z ∉ (MeromorphicOn.divisor f U).support :=
+  Function.notMem_support.mpr (hf.divisor_apply_eq_zero hz)
 
 /-- The genus-one product of a function with zero whole-plane divisor is `1`. -/
 theorem divisorProductOne_eq_one_of_divisor_eq_zero {f : ℂ → ℂ}
@@ -184,8 +185,8 @@ theorem divisorProductOne_eq_zero_iff (z : ℂ) : divisorProductOne f z = 0 ↔ 
   constructor
   · intro hz
     by_contra hn
-    exact divisorProductOne_ne_zero hsum (notMem_divisor_support_of_ne_zero hf hf0)
-      (notMem_divisor_support_of_ne_zero hf hn) hz
+    exact divisorProductOne_ne_zero hsum ((hf.analyticAt 0).notMem_divisor_support_of_ne_zero hf0)
+      ((hf.analyticAt z).notMem_divisor_support_of_ne_zero hn) hz
   · rw [divisorProductOne_def, tprod_weierstrassFactorOne_pow_eq_zero_iff _ _ hsum]
     intro hz
     have hz0 : z ≠ 0 := by rintro rfl; exact hf0 hz
@@ -210,7 +211,7 @@ include hf hf0 hsum in
 /-- For an entire function nonzero at zero, the product has exactly its native divisor. -/
 theorem divisor_divisorProductOne :
     MeromorphicOn.divisor (divisorProductOne f) Set.univ = MeromorphicOn.divisor f Set.univ := by
-  have h0 := notMem_divisor_support_of_ne_zero hf hf0
+  have h0 := (hf.analyticAt 0).notMem_divisor_support_of_ne_zero (U := Set.univ) hf0
   have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
   have hpa : AnalyticOnNhd ℂ (divisorProductOne f) Set.univ :=
     fun z _ ↦ (differentiable_divisorProductOne hsum).analyticAt z
