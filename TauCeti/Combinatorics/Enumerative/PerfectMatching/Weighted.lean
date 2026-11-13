@@ -16,8 +16,8 @@ The edges of a perfect matching are unordered pairs, each counted once. A produc
 weights therefore needs neither an ordering of the vertices nor a choice of representatives.
 Removing one edge factors this product into its weight and the product for the remaining
 matching. Summing by the partner of a distinguished vertex gives the corresponding recurrence
-for the sum of weighted matchings. The decomposition reuses `PerfectMatching.fiberEquiv`,
-which identifies matchings with a prescribed edge with matchings of its complement.
+for the sum of weighted matchings. The decomposition reuses `PerfectMatching.partnerEquiv`,
+which groups matchings by the partner and the matching on the remaining vertices.
 
 This recurrence is the combinatorial step in Wick's formula: an edge carries the covariance
 of its two positions, and contracting one position removes it together with its partner.
@@ -166,7 +166,7 @@ theorem edgeFinset_extend {a b : α} (hab : a ≠ b)
           exact extend_apply_of_mem hab E u.2
 
 /-- Restricting away a matched pair erases exactly that edge. -/
-theorem edgeFinset_restrict (D : PerfectMatching α) {a b : α} (hab : D.val a = b) :
+theorem image_edgeFinset_restrict (D : PerfectMatching α) {a b : α} (hab : D.val a = b) :
     (D.restrict hab).edgeFinset.image (Sym2.map Subtype.val) =
       D.edgeFinset.erase s(a, b) := by
   have hnot : s(a, b) ∉ (D.restrict hab).edgeFinset.image (Sym2.map Subtype.val) := by
@@ -185,7 +185,7 @@ theorem prod_edgeFinset_extend [CommMonoid R] {a b : α} (hab : a ≠ b)
     (E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b}) (w : Sym2 α → R) :
     (∏ e ∈ (extend hab E).edgeFinset, w e) =
       w s(a, b) * ∏ e ∈ E.edgeFinset, w (Sym2.map Subtype.val e) := by
-  have himage := edgeFinset_restrict (extend hab E) (extend_apply_left hab E)
+  have himage := image_edgeFinset_restrict (extend hab E) (extend_apply_left hab E)
   rw [restrict_extend] at himage
   have hnot : s(a, b) ∉ E.edgeFinset.image (Sym2.map Subtype.val) := by
     rw [himage]
@@ -204,7 +204,7 @@ theorem prod_edgeFinset_eq_mul_prod_restrict [CommMonoid R] (D : PerfectMatching
 /-- The weighted matching sum satisfies the contraction recurrence at any distinguished
 vertex. No order on vertices or symmetry hypothesis on weights is needed, since weights
 are indexed by unordered pairs. -/
-theorem sum_prod_edgeFinset_eq_sum_partner [CommSemiring R] (w : Sym2 α → R) (a : α) :
+theorem sum_prod_edgeFinset_eq_sum_mul_sum [CommSemiring R] (w : Sym2 α → R) (a : α) :
     (∑ D : PerfectMatching α, ∏ e ∈ D.edgeFinset, w e) =
       ∑ b : {b : α // b ≠ a}, w s(a, b.val) *
         ∑ E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b.val},
@@ -216,10 +216,5 @@ theorem sum_prod_edgeFinset_eq_sum_partner [CommSemiring R] (w : Sym2 α → R) 
   apply sum_congr rfl
   intro E _
   simp only [partnerEquiv_symm_apply, prod_edgeFinset_extend]
-
-/-- The empty vertex type has one matching, whose edge-weight product is the empty product. -/
-theorem sum_prod_edgeFinset_of_isEmpty [IsEmpty α] [CommSemiring R] (w : Sym2 α → R) :
-    (∑ D : PerfectMatching α, ∏ e ∈ D.edgeFinset, w e) = 1 := by
-  simp
 
 end TauCeti.PerfectMatching

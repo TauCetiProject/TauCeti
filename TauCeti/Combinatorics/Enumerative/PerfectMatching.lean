@@ -594,16 +594,6 @@ theorem IsPerfectMatching.even_card_of_mapsTo {f : Equiv.Perm α} (hf : IsPerfec
   exact even_card_of_nonempty_perfectMatching _ ⟨⟨f.subtypePerm hiff,
     fun x => Subtype.ext (hf.1 x), fun x h => hf.2 x (congrArg Subtype.val h)⟩⟩
 
-/-- An empty type has exactly one perfect matching, the empty one. -/
-private theorem card_perfectMatching_of_isEmpty (α : Type u) [Fintype α] [DecidableEq α]
-    [IsEmpty α] :
-    Fintype.card (PerfectMatching α) = 1 := by
-  have : Subsingleton (PerfectMatching α) :=
-    ⟨fun D E => Subtype.ext (Equiv.ext fun x => isEmptyElim x)⟩
-  have : Unique (PerfectMatching α) :=
-    uniqueOfSubsingleton ⟨1, fun a => isEmptyElim a, fun a => isEmptyElim a⟩
-  exact Fintype.card_unique
-
 /-- There are as many perfect matchings pairing a fixed `a` with a fixed `b ≠ a` as there are
 perfect matchings of the complement of `{a, b}`. -/
 private theorem card_filter_val_eq_card_perfectMatching_compl {α : Type u} [Fintype α]
@@ -654,7 +644,7 @@ private theorem card_perfectMatching_aux :
   | zero =>
     intro α _ _ hcard
     have : IsEmpty α := Fintype.card_eq_zero_iff.mp (by omega)
-    rw [card_perfectMatching_of_isEmpty α]
+    rw [Fintype.card_unique]
     rfl
   | succ m ih =>
     intro α _ _ hcard
