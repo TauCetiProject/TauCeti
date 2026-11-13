@@ -402,13 +402,9 @@ theorem neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq {a b β γ : ℝ} (hv : Cont
   have hJ₀ : ∀ w, ‖J z w‖ ≤ a * ‖w‖ := fun w ↦ (J z).le_of_opNorm_le ha w
   have hB₀ : ∀ w, ‖B z w‖ ≤ β * ‖w‖ := fun w ↦ (B z).le_of_opNorm_le hβ w
   have hJ₁ : ∀ (d : ℂ) w, ‖d‖ ≤ 1 → ‖fderiv ℝ J z d w‖ ≤ b * ‖w‖ := fun d w hd ↦
-    ((fderiv ℝ J z d).le_opNorm w).trans (by
-      gcongr
-      exact ((fderiv ℝ J z).le_opNorm d).trans (by nlinarith [norm_nonneg (fderiv ℝ J z)]))
+    ((fderiv ℝ J z).le_of_opNorm₂_le_of_le hb hd le_rfl).trans_eq (by ring)
   have hB₁ : ∀ (d : ℂ) w, ‖d‖ ≤ 1 → ‖fderiv ℝ B z d w‖ ≤ γ * ‖w‖ := fun d w hd ↦
-    ((fderiv ℝ B z d).le_opNorm w).trans (by
-      gcongr
-      exact ((fderiv ℝ B z).le_opNorm d).trans (by nlinarith [norm_nonneg (fderiv ℝ B z)]))
+    ((fderiv ℝ B z).le_of_opNorm₂_le_of_le hγ hd le_rfl).trans_eq (by ring)
   -- `‖Δ v‖ ≤ (b + ab + aβ) ‖∂ₛv‖ + β ‖∂ₜv‖ + (aγ + γ) ‖v‖`.
   have hL : ‖Δ v z‖ ≤ (b + a * b + a * β) * ‖vs‖ + β * ‖vt‖ + (a * γ + γ) * ‖v z‖ := by
     rw [laplacian_eq_of_linear hv hJ hB heq hJsq]
