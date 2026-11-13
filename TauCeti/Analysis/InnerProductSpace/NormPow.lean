@@ -43,6 +43,7 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 ## Main declarations
 
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
+* `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
@@ -136,6 +137,23 @@ theorem hasFDerivAt_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
 theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
+
+/-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
+theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
+    ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x‖ = |p| * ‖x‖ ^ (p - 1) := by
+  have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hp : p - 2 + 1 = p - 1 := by ring
+  rw [fderiv_norm_rpow_of_ne p hx, norm_smul, innerSL_apply_norm, Real.norm_eq_abs, abs_mul,
+    abs_of_nonneg (Real.rpow_nonneg hx'.le _), mul_assoc, ← Real.rpow_add_one hx'.ne', hp]
+
+/-- The norm of the classical derivative `p ‖x‖ ^ (p - 2) ⟨x, ·⟩` of `x ↦ ‖x‖ ^ p` is at most
+`|p| ‖x‖ ^ (p - 1)`, with equality away from the origin (`norm_fderiv_norm_rpow_of_ne`). -/
+theorem norm_rpow_smul_innerSL_le (p : ℝ) (x : E) :
+    ‖(p * ‖x‖ ^ (p - 2)) • innerSL ℝ x‖ ≤ |p| * ‖x‖ ^ (p - 1) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp only [map_zero, smul_zero, norm_zero]
+    positivity
+  · rw [← fderiv_norm_rpow_of_ne p hx, norm_fderiv_norm_rpow_of_ne p hx]
 
 /-- Away from the origin, the derivative of `x ↦ log ‖x‖` is `‖x‖⁻² ⟨x, ·⟩`. -/
 theorem hasFDerivAt_log_norm_of_ne {x : E} (hx : x ≠ 0) :

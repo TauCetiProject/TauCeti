@@ -52,7 +52,7 @@ theorem cartanMatrix_simplyConnectedBase_apply (i j : Fin t.rank) :
     (t.simplyConnectedBase ht).cartanMatrix (t.simpleSupportEquivSimplyConnectedBase ht i)
         (t.simpleSupportEquivSimplyConnectedBase ht j) =
       t.cartanMatrix i j := by
-  simp [RootPairing.Base.cartanMatrixIn_def]
+  simp [RootPairing.Base.cartanMatrixIn_def, pairingIn_simpleIndex]
 
 /-- The numbered reflection on columns is the reflection of the numbered base, relabelled. -/
 theorem columnReflection_comp_simpleSupportEquiv (i : Fin t.rank)

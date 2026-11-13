@@ -307,7 +307,9 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
   set ν : WithLp 2 (ℝ × E) := WithLp.toLp 2 (1, 0)
   obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
     ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
-      (fun ξ => (hSA ξ).symm ▸ hA ξ)
+      (fun ξ => by rw [RCLike.re_to_real, hSA]; exact hA ξ)
+  -- over `ℝ` the scalar `(c : ℝ)` produced by the `RCLike` statement is `c` itself
+  rw [RCLike.ofReal_real_eq_id, id_eq] at hcν
   have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = (WithLp.ofLp x).1 := by
     simp [ν, WithLp.prod_inner_apply]
   -- `(e y).fst = ⟪e y, ν⟫ = ⟪y, e† ν⟫ = c y.fst`
@@ -348,7 +350,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
   -- `{a / c < x.fst}` onto `{a < x.fst}` and turns the equation into Poisson's equation.
   obtain ⟨e, c, hee, he, hH⟩ := exists_continuousLinearEquiv_preimage_normalHalfSpace hlam hA
   obtain ⟨v, -, hD, h0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
-  refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee hlam he (hH a) hD ?_
+  refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee he (hH a) hD ?_
     fun g hg => hC (a / c) v g (h0 hu) hg
   filter_upwards [hf, Wkp.adjoint_iteratedGradient_one_ae_eq u] with x h1 h2
   rw [A.traceCLM_symmPart_comp _ h2, h1]

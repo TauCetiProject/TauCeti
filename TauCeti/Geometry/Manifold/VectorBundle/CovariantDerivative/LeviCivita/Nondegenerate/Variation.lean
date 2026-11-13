@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Variati
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Family
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.KoszulVariation
 import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
 
@@ -62,6 +63,10 @@ parameter manifold along a parameter curve:
   with `h` the first variation of the family in the direction of the velocity of the curve.
 * `deriv_covariantDerivative_apply_eq_of_mfderiv_eq`: the variation of the connection depends only
   on the position and velocity of the curve.
+* `differentiableAt_difference_of_isLeviCivitaConnection` and
+  `two_mul_apply_deriv_difference_eq_derivBilinearTensor`: the same results for the difference
+  tensors `∇ˢ - ∇ᵗ` (Mathlib's `CovariantDerivative.difference`), whose derivative `Γ'` at `t` is
+  the tensor of the first variation formula.
 
 ## References
 
@@ -323,6 +328,58 @@ theorem two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection
     hcov (g.contMDiffAt_metric_comp hc)
     (fun y v w ↦ by simpa only [metric_apply] using g.hasDerivAt_apply_apply_comp hd y v w) hY v w
   simpa only [metric_apply] using h
+
+/-- **The difference tensors of a family of Levi-Civita connections vary differentiably.** Let
+`g` be a smooth family of nondegenerate metrics parametrized by `P`, let `c` be a parameter curve
+which is `C²` at `t`, and let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for every `s`. Then for
+every `y ∈ M` the curve `s ↦ (∇ˢ - ∇ᵗ)_y` of tensors at `y` is differentiable at `t`. -/
+theorem differentiableAt_difference_of_isLeviCivitaConnection
+    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
+    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s)) (y : M) :
+    DifferentiableAt ℝ (F := E →L[ℝ] E →L[ℝ] E)
+      (fun s ↦ (cov s).difference (cov t) y) t := by
+  refine (TauCeti.differentiableAt_clm_apply₂ (F := E) (F' := E) (G := E)).mpr
+    fun (u v : TangentSpace I y) ↦ ?_
+  have h := DifferentiableAt.sub_const (F := E)
+    (g.differentiableAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov
+      (mdifferentiableAt_extend I E u) v) (cov t (extend E u) y v)
+  exact h.congr_of_eventuallyEq (Eventually.of_forall fun s ↦
+    congrArg (fun A ↦ A v) ((cov s).difference_apply_eq_extend (cov t) y u))
+
+/-- **The variation of the Levi-Civita connection as a tensor.** Let `g` be a smooth family of
+nondegenerate metrics parametrized by `P`, let `c` be a parameter curve which is `C²` at `t`, and
+let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for every `s`. Write `h = δ_{c'(t)} g` for the
+first variation of `g` in the direction of the velocity of `c`, and `Γ'` for the derivative at `t`
+of the difference tensors `∇ˢ - ∇ᵗ` at `y`. Then for all `u, v, w ∈ T_y M`,
+
+`2 g_{c t}(Γ'(u, v), w) = (∇ᵗ_v h)(u, w) + (∇ᵗ_u h)(v, w) - (∇ᵗ_w h)(v, u)`,
+
+where `∇ᵗh` is the covariant derivative `CovariantDerivative.derivBilinearTensor` of `h` along
+`∇ᵗ`. -/
+theorem two_mul_apply_deriv_difference_eq_derivBilinearTensor
+    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
+    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s)) (y : M)
+    (u v w : TangentSpace I y) :
+    2 * g (c t, y) (deriv (fun s ↦ (cov s).difference (cov t) y) t u v) w =
+      (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y u w v +
+        (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y v w u -
+        (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y v u w := by
+  have hd := DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] E)
+    (g.differentiableAt_difference_of_isLeviCivitaConnection hc hcov y)
+  have hdu := (TauCeti.hasDerivAt_clm_apply₂ (F := E) (F' := E) (G := E)).mp hd u v
+  -- The curve `s ↦ Γ'` evaluated on `(u, v)` is `s ↦ ∇ˢ_v U` shifted by a constant.
+  have hext := HasDerivAt.sub_const (F := E) (cov t (extend E u) y v)
+    (DifferentiableAt.hasDerivAt (F := E)
+      (g.differentiableAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov
+        (mdifferentiableAt_extend I E u) v))
+  have heq : deriv (fun s ↦ (cov s).difference (cov t) y) t u v =
+      deriv (fun s ↦ cov s (extend E u) y v) t :=
+    hdu.unique (hext.congr_of_eventuallyEq (Eventually.of_forall fun s ↦
+      congrArg (fun A ↦ A v) ((cov s).difference_apply_eq_extend (cov t) y u)))
+  rw [heq]
+  simpa only [extend_apply_self] using
+    g.two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection hc hcov
+      (mdifferentiableAt_extend I E u) v w
 
 /-- **The variation of the Levi-Civita connection depends only on the position and velocity of
 the parameter curve.** Let `g` be a smooth family of nondegenerate metrics parametrized by `P`,

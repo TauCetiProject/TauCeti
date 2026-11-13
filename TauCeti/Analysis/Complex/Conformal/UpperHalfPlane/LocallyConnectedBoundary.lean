@@ -160,7 +160,7 @@ theorem subsingleton_real_fiber_of_isPreconnectedApproachAt {F : ℂ → ℂ} {p
   have hfd : DifferentiableOn ℂ (F ∘ κ) (ball 0 1) :=
     hFd.comp (fun w hw => (hasDerivAt_I_mul_one_add_div_one_sub
       (hball1 hw)).differentiableAt.differentiableWithinAt) hκH.mapsTo
-  have hsub := subsingleton_sphere_fiber_of_isPreconnectedApproachAt one_pos hfd
+  have hsub := subsingleton_sphere_fiber_of_isPreconnectedApproachAt hfd
     (hFi.comp hκH.injOn hκH.mapsTo) hGc (fun w hw => update_of_ne (hball1 hw) _ _)
     (by rwa [image_comp, hκH.image_eq])
   -- A real parameter `x` sits on the circle at its Cayley image, where the pulled-back map takes
