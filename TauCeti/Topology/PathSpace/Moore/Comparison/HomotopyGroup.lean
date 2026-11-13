@@ -18,6 +18,10 @@ the path components of the double Moore loop space with the elements of `π₂(X
 (`TauCeti.MooreLoopSpace.zerothHomotopyDoubleEquiv`), and shows that the double Moore loop space
 is path connected when `π₂(X, x)` vanishes.
 
+The shift is natural in based maps (`TauCeti.MooreLoopSpace.homotopyGroupMulEquiv_map`), so the
+Moore loop map of `f` is bijective on `πₖ(ΩᴹX, 1)` for positive `k` exactly when `f` is bijective
+on `πₖ₊₁(X, x)` (`TauCeti.MooreLoopSpace.bijective_homotopyGroup_map_iff`).
+
 The unit is not special: concatenation in front with a Moore loop `γ` is a homotopy equivalence
 of the Moore loop space carrying the unit to `γ`, so the positive homotopy groups of `ΩᴹX` at
 `γ` vanish exactly when the corresponding higher homotopy groups of `X` do
@@ -63,6 +67,39 @@ theorem homotopyGroupMulEquiv_apply (x : X) (n : ℕ)
   simp only [homotopyGroupMulEquiv, MulEquiv.trans_apply, mulEquivOfHomotopyEquiv_apply,
     homeomorphMulEquivOfEq_apply, HomotopyGroup.map_comp_apply]
   congr 1
+
+/-- The Moore loop-space shift is natural: the map induced on `πₖ(ΩᴹX, 1)` by the Moore loop map
+of `f` corresponds to the map induced by `f` on `πₖ₊₁(X, x)`. -/
+theorem homotopyGroupMulEquiv_map {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) {x : X} {y : Y}
+    (hf : f x = y) (n : ℕ) (a : π_ (n + 1) (MooreLoopSpace X x) 1) :
+    homotopyGroupMulEquiv y n
+        (HomotopyGroup.map (map f hf).toContinuousMap (map_one (map f hf)) a) =
+      HomotopyGroup.map f hf (homotopyGroupMulEquiv x n a) := by
+  subst hf
+  -- Normalizing Moore loops intertwines the Moore loop map with postcomposition of
+  -- fixed-interval loops (`toPath_map`), which commutes with the fixed-interval shift.
+  let F : C(Path x x, Path (f x) (f x)) :=
+    ⟨fun γ ↦ γ.map f.continuous,
+      continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp f).comp continuous_induced_dom)⟩
+  rw [homotopyGroupMulEquiv_apply, homotopyGroupMulEquiv_apply, HomotopyGroup.map_comp_apply,
+    ← f.pathLoopSpaceMulEquiv_map rfl F (fun _ _ ↦ rfl), HomotopyGroup.map_comp_apply]
+  refine congrArg _ (HomotopyGroup.map_congr (ContinuousMap.ext fun γ ↦ ?_) _ _ a)
+  simp [F, homotopyEquivPath_apply]
+
+/-- The Moore loop map of `f` is bijective on `πₖ(ΩᴹX, 1)` for positive `k` exactly when `f` is
+bijective on `πₖ₊₁(X, x)`. -/
+theorem bijective_homotopyGroup_map_iff {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) {x : X}
+    {y : Y} (hf : f x = y) (n : ℕ) :
+    Function.Bijective (HomotopyGroup.map (N := Fin (n + 1)) (map f hf).toContinuousMap
+        (map_one (map f hf))) ↔
+      Function.Bijective (HomotopyGroup.map (N := Fin (n + 2)) f hf) := by
+  have h : HomotopyGroup.map (N := Fin (n + 1)) (map f hf).toContinuousMap
+      (map_one (map f hf)) =
+        (homotopyGroupMulEquiv y n).symm ∘ HomotopyGroup.map f hf ∘ homotopyGroupMulEquiv x n := by
+    funext a
+    rw [Function.comp_apply, Function.comp_apply, MulEquiv.eq_symm_apply]
+    exact homotopyGroupMulEquiv_map f hf n a
+  rw [h, EquivLike.comp_bijective, EquivLike.bijective_comp]
 
 /-- **The path components of the double Moore loop space are the second homotopy group.** -/
 def zerothHomotopyDoubleEquiv (x : X) :

@@ -83,10 +83,10 @@ private lemma integral_ramp_le {b w : ℝ} (hw : 0 < w) (hb0 : 0 ≤ b) (hb1 : b
   have hc := continuous_ramp b w
   rw [← intervalIntegral.integral_add_adjacent_intervals (hc.intervalIntegrable 0 b)
     (hc.intervalIntegrable b 1)]
-  have h1 : ∫ u in (0 : ℝ)..b, ramp b w u ≤ ∫ u in (0 : ℝ)..b, (0 : ℝ) :=
+  have h1 : ∫ u in (0 : ℝ)..b, ramp b w u ≤ ∫ _ in (0 : ℝ)..b, (0 : ℝ) :=
     intervalIntegral.integral_mono_on hb0 (hc.intervalIntegrable _ _) intervalIntegrable_const
       fun u hu ↦ (ramp_eq_zero hw hu.2).le
-  have h2 : ∫ u in b..1, ramp b w u ≤ ∫ u in b..1, (1 : ℝ) :=
+  have h2 : ∫ u in b..1, ramp b w u ≤ ∫ _ in b..1, (1 : ℝ) :=
     intervalIntegral.integral_mono_on hb1 (hc.intervalIntegrable _ _) intervalIntegrable_const
       fun u _ ↦ ramp_le_one b w u
   simp only [intervalIntegral.integral_zero, intervalIntegral.integral_const, smul_eq_mul,
@@ -100,7 +100,7 @@ private lemma le_integral_ramp {b w : ℝ} (hw : 0 < w) (hb0 : 0 ≤ b) (hbw : b
     (hc.intervalIntegrable (b + w) 1)]
   have h1 : 0 ≤ ∫ u in (0 : ℝ)..(b + w), ramp b w u :=
     intervalIntegral.integral_nonneg (by linarith) fun u _ ↦ ramp_nonneg b w u
-  have h2 : ∫ u in (b + w)..1, (1 : ℝ) ≤ ∫ u in (b + w)..1, ramp b w u :=
+  have h2 : ∫ _ in (b + w)..1, (1 : ℝ) ≤ ∫ u in (b + w)..1, ramp b w u :=
     intervalIntegral.integral_mono_on hbw intervalIntegrable_const (hc.intervalIntegrable _ _)
       fun u hu ↦ (ramp_eq_one hw hu.1).ge
   simp only [intervalIntegral.integral_const, smul_eq_mul, mul_one] at h2

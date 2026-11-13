@@ -8,9 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
-import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
 # Degree-one forms as sections of the bundle of fibrewise linear maps
@@ -48,6 +48,8 @@ derivative applies.
   evaluates a tangent vector through the differential of the map.
 * `ContMDiff.contMDiff_totalSpaceMk_mvfderiv`: the differential of a `C^(n+1)` function is a
   `C^n` section of the bundle of linear maps, through the exterior derivative of its `0`-form.
+* `TauCeti.SmoothForm.degreeOneEquiv_mextDerivₗ`: the section of the exterior derivative `df` of a
+  smooth function is its manifold derivative.
 * `ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry`: the differentials of a jointly `C^(n+1)`
   family of functions are jointly `C^n`.
 -/
@@ -355,5 +357,19 @@ theorem degreeOneEquiv_mpullback_apply {E' H' M' : Type*} [NormedAddCommGroup E'
 end SmoothForm
 
 end OnceDifferentiable
+
+namespace SmoothForm
+
+variable [IsManifold I 2 M]
+
+/-- The section of the exterior derivative `df` of a smooth function is its differential: at each
+point it is the manifold derivative of the function. -/
+@[simp]
+theorem degreeOneEquiv_mextDerivₗ (f : SmoothForm I M F 0) (x : M) :
+    degreeOneEquiv (mextDerivₗ I 0 f) x = mvfderiv I (fun y ↦ f.1 y 0) x := by
+  ext v
+  rw [degreeOneEquiv_apply_apply_vec, mextDerivₗ_zero_apply]
+
+end SmoothForm
 
 end TauCeti

@@ -45,7 +45,7 @@ private theorem apply_prod_append_eq_zero (h : IsFreelyIndependent φ B)
     simpa using isFreelyIndependent_iff.1 h u (by simpa using hne)
       (by simpa using halt) hu (by simpa using hc)
   | cons x v ih =>
-    intro u hne halt hu hv hc
+    intro u _ halt hu hv hc
     let F (a : A) := φ ((u.map Prod.snd).prod *
       (a - algebraMap R A (φ a)) * (v.map Prod.snd).prod)
     have hF : Continuous F :=

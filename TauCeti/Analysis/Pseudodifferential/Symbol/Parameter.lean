@@ -677,7 +677,7 @@ private theorem mul_parameterWeight_sq_le_norm_laplacianSymbol {s c δ : ℝ} (h
   set a := ‖z‖
   have hc₀ : -1 ≤ c₀ := le_max_right _ _
   have hc₀' : c₀ < 1 := max_lt hc (by norm_num)
-  have hr : 0 ≤ r := by positivity
+  have _ : 0 ≤ r := by positivity
   have ha : 0 ≤ a := norm_nonneg z
   have hre : z.re ≤ c₀ * a := hz.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) ha)
   -- `‖r - z‖² = r² - 2 r Re z + ‖z‖²`.

@@ -339,7 +339,7 @@ private theorem exists_ideal_ne_top_of_not_isUnit_map_residue (P : Place k F) (y
   have hφ : φ.Monic := monic_of_map_eq_minpoly (F' := F') hmin
   set res := IsLocalRing.residue P.integers
   set γ := g.map res
-  set ev := P.integersEval (F' := F') y with hevdef
+  set ev := P.integersEval (F' := F') y
   have hspan : Ideal.span {γ} ≠ ⊤ := fun h ↦ hγ (Ideal.span_singleton_eq_top.mp h)
   have : Nontrivial (P.ResidueField[X] ⧸ Ideal.span {γ}) :=
     Ideal.Quotient.nontrivial_iff.mpr hspan

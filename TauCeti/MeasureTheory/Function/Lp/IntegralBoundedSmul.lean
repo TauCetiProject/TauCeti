@@ -57,8 +57,8 @@ theorem integrable_smul_and_norm_integral_smul_le {𝕜 : Type*} [NormedRing �
   refine (norm_integral_le_of_norm_le (hhW.norm.const_mul B) hbound).trans ?_
   rw [integral_const_mul]
   refine mul_le_mul_of_nonneg_left ?_ hB
-  rw [integral_norm_eq_lintegral_enorm (hh.restrict W).aestronglyMeasurable,
-    ← eLpNorm_one_eq_lintegral_enorm (hh.restrict W).aestronglyMeasurable]
+  rw [integral_norm_eq_lintegral_eNorm (hh.restrict W).aestronglyMeasurable,
+    ← eLpNorm_one_eq_lintegral_eNorm (hh.restrict W).aestronglyMeasurable]
   refine ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hexp hμW)
     hh.eLpNorm_ne_top) ?_
   calc eLpNorm h 1 (μ.restrict W)
