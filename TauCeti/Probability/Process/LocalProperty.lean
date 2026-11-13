@@ -52,19 +52,15 @@ open scoped Topology
 
 namespace ProbabilityTheory
 
-variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
-  [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
-  {ℱ : Filtration ι mΩ} {P : Measure Ω} {τ : ℕ → Ω → WithTop ι}
-  {X : ι → Ω → E} [Zero E]
-
-open scoped Classical in
 /-- Cutting a localizing sequence off at the initial time outside increasing initial-measurable
 events which eventually contain almost every sample point preserves localization. -/
-theorem IsLocalizingSequence.piecewise_bot (hτ : IsLocalizingSequence ℱ τ P)
-    {A : ℕ → Set Ω} (hA : ∀ n, MeasurableSet[ℱ ⊥] (A n)) (hmono : Monotone A)
+theorem IsLocalizingSequence.piecewise_bot {ι Ω : Type*} [Preorder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsLocalizingSequence ℱ τ P) {A : ℕ → Set Ω} [∀ n, DecidablePred (· ∈ A n)]
+    (hA : ∀ n, MeasurableSet[ℱ ⊥] (A n)) (hmono : Monotone A)
     (hexhaust : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ A n) :
     IsLocalizingSequence ℱ (fun n ↦ (A n).piecewise (τ n) (fun _ ↦ ⊥)) P := by
-  classical
   refine ⟨⟨fun n ↦ ?_, ?_⟩, ?_⟩
   · exact (hτ.isStoppingTime n).piecewise_of_le (isStoppingTime_const ℱ ⊥)
       (i := ⊥) (by simp) (by simp) (hA n)
@@ -75,6 +71,11 @@ theorem IsLocalizingSequence.piecewise_bot (hτ : IsLocalizingSequence ℱ τ P)
     · have hm : ω ∈ A m := hmono hnm hn
       simpa [Set.piecewise, hn, hm] using hω hnm
     · simp [Set.piecewise, hn]
+
+variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+  [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+  {ℱ : Filtration ι mΩ} {P : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+  {X : ι → Ω → E} [Zero E]
 
 /-- To establish a native local property, it suffices to establish it for stopped stages
 restricted to increasing, exhausting initial-measurable events. The localizers are cut off
