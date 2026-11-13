@@ -23,7 +23,7 @@ For a proper weight lattice over a general field the actual torus condition is e
 agreement on the image of the full-weight parametrization is not a substitute.
 
 The generation inputs are `ChevalleyDatum.rootSubgroupPoints_mem_closure` and
-`ChevalleyDatum.torusPoints_mem_closure_rootSubgroup_of_surjective`. The equalizer argument
+`ChevalleyDatum.torusPoints_mem_closure_rootSubgroup_of_mem_range`. The equalizer argument
 uses Mathlib's `MonoidHom.eqLocus` and `Subgroup.mem_map_iff_mem`.
 
 ## References
@@ -96,7 +96,7 @@ theorem rootTorusSubgroup_hom_ext_of_surjective
     (K := f.eqLocus g)
     (x := ⟨D.torusPoints A s, D.torusPoints_mem_rootTorusSubgroup A s⟩)).mp
       (D.closure_simpleRootPair_le_map_eqLocus f g hpos hneg
-        (D.torusPoints_mem_closure_rootSubgroup_of_surjective A hs s))
+        (D.torusPoints_mem_closure_rootSubgroup_of_mem_range A s (hs s)))
 
 /-- For a datum with full weight lattice, both signs of the simple root subgroups determine
 homomorphisms on the root-and-torus-generated group over every commutative ring. -/
