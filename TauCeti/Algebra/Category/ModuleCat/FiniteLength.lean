@@ -103,6 +103,9 @@ theorem isFiniteLength_inverseImage_restrictScalars_iff {R : Type*} [CommRing R]
     (isFiniteLength.{u} R).inverseImage (restrictScalars.{u} (algebraMap R B)) M ↔
       IsFiniteLength R M := by
   rw [ObjectProperty.prop_inverseImage_iff, isFiniteLength_iff]
+  -- `(restrictScalars (algebraMap R B)).obj M` has the same carrier as `M`, and its `R`-action
+  -- `r • m = algebraMap R B r • m` is by definition the one of `ModuleCat.moduleOfAlgebra`
+  -- (`Module.restrictScalars R B M`), so the two `IsFiniteLength R` statements agree.
   rfl
 
 end Algebra

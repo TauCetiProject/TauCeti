@@ -47,10 +47,6 @@ variable {R : Type*} [CommRing R] {A : Type*} [Ring A] [Algebra R A] [Module.Fin
 /-- A simple module over a finite `R`-algebra is killed by a maximal ideal of `R`. -/
 theorem isMaximal_annihilator_of_isSimpleModule [IsSimpleModule A M] :
     (Module.annihilator R M).IsMaximal := by
-  have : Module.Finite A M := by
-    have := IsSimpleModule.nontrivial A M
-    obtain ⟨x, hx⟩ := exists_ne (0 : M)
-    exact ⟨⟨{x}, by simpa using (IsSimpleModule.span_singleton_eq_top A hx)⟩⟩
   have : Module.Finite R M := Module.Finite.trans A M
   have hp : Module.annihilator R M ≠ ⊤ := by
     rw [Ne, Module.annihilator_eq_top_iff, not_subsingleton_iff_nontrivial]
@@ -83,10 +79,6 @@ theorem isMaximal_annihilator_of_isSimpleModule [IsSimpleModule A M] :
 
 /-- A simple module over a finite `R`-algebra has finite length over `R`. -/
 theorem isFiniteLength_of_isSimpleModule [IsSimpleModule A M] : IsFiniteLength R M := by
-  have : Module.Finite A M := by
-    have := IsSimpleModule.nontrivial A M
-    obtain ⟨x, hx⟩ := exists_ne (0 : M)
-    exact ⟨⟨{x}, by simpa using (IsSimpleModule.span_singleton_eq_top A hx)⟩⟩
   have : Module.Finite R M := Module.Finite.trans A M
   have h𝔪 := isMaximal_annihilator_of_isSimpleModule (R := R) (A := A) (M := M)
   let 𝔪 := Module.annihilator R M

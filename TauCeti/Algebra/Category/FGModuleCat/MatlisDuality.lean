@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
-public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality
+public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.FiniteLength
 public import TauCeti.RingTheory.Artinian.FiniteLength
 public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
@@ -16,7 +16,7 @@ public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 Let `R` be a commutative Artinian ring with an injective hull `E` of `R ⧸ J(R)`, and let `A` be an
 Artin `R`-algebra. Over `A` the finitely generated modules are the modules of finite length over
 `R`, so the Matlis duality `ModuleCat.matlisDualityOn` of
-`TauCeti/Algebra/Category/ModuleCat/MatlisDuality.lean` restricts to an anti-equivalence between
+`TauCeti/Algebra/Category/ModuleCat/MatlisDuality/FiniteLength.lean` restricts to an anti-equivalence between
 the finitely generated left `A`-modules and the finitely generated right `A`-modules, the modules
 over `Aᵐᵒᵖ`.
 
