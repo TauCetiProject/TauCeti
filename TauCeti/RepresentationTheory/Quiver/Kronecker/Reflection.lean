@@ -164,7 +164,7 @@ theorem subsingleton_reflectRep_indecProjRep_obj_tgt :
     Subsingleton ((reflectRep (indecProjRep k (Kronecker A) src) isSink_tgt).obj tgt) := by
   have hfd : FiniteDimensional k
       ((reflectRep (indecProjRep k (Kronecker A) src) isSink_tgt).obj tgt) :=
-    finiteDimensional_reflectRep_obj _ isSink_tgt (fun a ↦ by cases a <;> infer_instance) tgt
+    finiteDimensional_reflectRep_obj _ isSink_tgt (fun a _ ↦ by cases a <;> infer_instance) tgt
   have h := dimVector_reflectRep_self_add (indecProjRep k (Kronecker A) src) isSink_tgt
     (fun e ↦ by cases e.1 <;> infer_instance) surjective_incomingSum_indecProjRep_src
   have hA : Nat.card (Path (src : Kronecker A) tgt) = Fintype.card A := by
@@ -202,7 +202,7 @@ theorem nonempty_iso_reflectRep_indecProjRep_src_simpleRep_src :
     | src => exact absurd rfl ha
     | tgt => exact subsingleton_reflectRep_indecProjRep_obj_tgt
   · exact finiteDimensional_reflectRep_obj _ isSink_tgt
-      (fun a ↦ by cases a <;> infer_instance) src
+      (fun a _ ↦ by cases a <;> infer_instance) src
   · funext j
     refine Eq.trans ?_ (congrFun (dimVector_simpleRep
       (k := k) (Q := Reflect (Kronecker A) tgt) src) j).symm
@@ -230,7 +230,7 @@ theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep_tgt (hA : Fintype.car
   have hfdM : IsFinDim k (Reflect (Kronecker A) tgt)
       (reflectRep (simpleRep k (Kronecker A) src) isSink_tgt) :=
     isFinDim_iff.mpr fun a ↦
-      finiteDimensional_reflectRep_obj _ isSink_tgt (fun _ ↦ inferInstance) a
+      finiteDimensional_reflectRep_obj _ isSink_tgt (fun _ _ ↦ inferInstance) a
   have hfdN : IsFinDim k (Reflect (Kronecker A) tgt)
       (indecProjRep k (Reflect (Kronecker A) tgt) tgt) :=
     isFinDim_iff.mpr fun a ↦ by
