@@ -390,8 +390,7 @@ open Limits
 
 /-- **Pullback criterion along an open immersion.** A commutative square whose left side `iU` is
 an open immersion and whose right side `iV` is a monomorphism is a pullback square as soon as
-every point of `X` mapped by `g` into the image of `iV` lies in the image of `iU`: a cone over
-`cospan iV g` then factors through `iU` by the universal property of the open immersion. -/
+every point of `X` mapped by `g` into the image of `iV` lies in the image of `iU`. -/
 theorem isPullback {U V X Y : PreAdicSpace.{u}} (f : U ⟶ V) (iU : U ⟶ X) (iV : V ⟶ Y)
     (g : X ⟶ Y) [IsOpenImmersion iU] [Mono iV] (w : f ≫ iV = iU ≫ g)
     (hrange : g.base ⁻¹' Set.range iV.base ⊆ Set.range iU.base) : IsPullback f iU iV g := by

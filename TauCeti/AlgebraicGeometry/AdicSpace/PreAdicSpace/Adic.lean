@@ -43,8 +43,11 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
 * `TauCeti.PreAdicSpace.isAdic`: the adic spaces among the objects of `𝒱^pre`.
 * `TauCeti.AdicSpace`: Wedhorn's category `(Adic)`, the full subcategory of `𝒱^pre` of adic
   spaces.
+* `TauCeti.AdicSpace.liftOfIsOpenImmersion`: the factorisation of a morphism of adic spaces
+  through an open immersion whose image contains the image of the morphism.
 * `TauCeti.AdicSpace.restrict`, `TauCeti.AdicSpace.ofRestrict`: the open adic subspace of an adic
-  space on an open subset, and its inclusion, with the factorisation `TauCeti.AdicSpace.lift`.
+  space on an open subset, and its inclusion, with the factorisation
+  `TauCeti.AdicSpace.liftRestrict`.
 * `TauCeti.AdicSpace.restrictPreimage`: the restriction `f⁻¹(V) ⟶ V` of a morphism of adic spaces
   over an open of its target.
 
@@ -60,8 +63,11 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   is sheafy, so is its restriction to every smaller open.
 * `TauCeti.AdicSpace.isPullback_of_isOpenImmersion`: a commutative square of adic spaces with an
   open immersion opposite a monomorphism is a pullback once the preimage of the image of the
-  monomorphism lies in the image of the open immersion; `TauCeti.AdicSpace.hasPullback_of_left`:
-  pullbacks of open immersions exist in `(Adic)`.
+  monomorphism lies in the image of the open immersion;
+  `TauCeti.AdicSpace.hasPullback_of_isOpenImmersion_left`: pullbacks of open immersions exist in
+  `(Adic)` and are computed in `𝒱^pre`
+  (`TauCeti.AdicSpace.preservesLimit_cospan_of_isOpenImmersion_left`), and their base changes are
+  open immersions.
 * `TauCeti.AdicSpace.isPullback_restrictPreimage`: for any morphism `f : X ⟶ Y` of adic spaces and
   open `V ⊆ Y`, the open adic subspace `f⁻¹(V)` is the fibre product `X ×_Y V`.
 
@@ -285,38 +291,137 @@ instance mono_of_isOpenImmersion {X Y : AdicSpace.{u}} (f : X ⟶ Y)
     [PreAdicSpace.IsOpenImmersion f.hom] : Mono f :=
   (ObjectProperty.ι _).mono_of_mono_map (inferInstanceAs (Mono f.hom))
 
+section Lift
+
+variable {X Y Z : AdicSpace.{u}} (f : X ⟶ Z) [PreAdicSpace.IsOpenImmersion f.hom] (g : Y ⟶ Z)
+
+/-- For a morphism `f : X ⟶ Z` of adic spaces whose underlying morphism is an open immersion and a
+morphism `g : Y ⟶ Z` whose image lies in the image of `f`, the morphism `Y ⟶ X` through which `g`
+factors. -/
+noncomputable def liftOfIsOpenImmersion (H : Set.range g.hom.base ⊆ Set.range f.hom.base) :
+    Y ⟶ X :=
+  ObjectProperty.homMk (PreAdicSpace.IsOpenImmersion.lift f.hom g.hom H)
+
+/-- The underlying morphism of pre-adic spaces of the factorization through an open immersion. -/
+@[simp]
+theorem liftOfIsOpenImmersion_hom (H : Set.range g.hom.base ⊆ Set.range f.hom.base) :
+    (liftOfIsOpenImmersion f g H).hom = PreAdicSpace.IsOpenImmersion.lift f.hom g.hom H :=
+  (rfl)
+
+/-- Composing the factorization with the open immersion recovers the original morphism. -/
+@[reassoc (attr := simp)]
+theorem liftOfIsOpenImmersion_fac (H : Set.range g.hom.base ⊆ Set.range f.hom.base) :
+    liftOfIsOpenImmersion f g H ≫ f = g := by
+  ext1
+  exact PreAdicSpace.IsOpenImmersion.lift_fac _ _ _
+
+/-- The factorization through an open immersion is unique. -/
+theorem liftOfIsOpenImmersion_uniq (H : Set.range g.hom.base ⊆ Set.range f.hom.base) (l : Y ⟶ X)
+    (hl : l ≫ f = g) : l = liftOfIsOpenImmersion f g H := by
+  rw [← cancel_mono f, hl, liftOfIsOpenImmersion_fac]
+
+/-- A morphism factors through an open immersion exactly when its image lies in the image of the
+open immersion. -/
+theorem exists_comp_eq_iff_of_isOpenImmersion :
+    (∃ l : Y ⟶ X, l ≫ f = g) ↔ Set.range g.hom.base ⊆ Set.range f.hom.base := by
+  refine ⟨?_, fun H ↦ ⟨liftOfIsOpenImmersion f g H, liftOfIsOpenImmersion_fac f g H⟩⟩
+  rintro ⟨l, rfl⟩
+  rw [ObjectProperty.FullSubcategory.comp_hom, PreAdicSpace.comp_base, TopCat.coe_comp]
+  exact Set.range_comp_subset_range _ _
+
+end Lift
+
 /-- **Pullback criterion along an open immersion of adic spaces.** A commutative square of adic
-spaces whose left side `iU` is an open immersion and whose right side `iV` is a monomorphism of
-pre-adic spaces is a pullback square as soon as every point of `X` mapped by `g` into the image of
-`iV` lies in the image of `iU`. The pullback square of pre-adic spaces
-(`TauCeti.PreAdicSpace.IsOpenImmersion.isPullback`) is reflected by the fully faithful inclusion
-of adic spaces. -/
+spaces whose left side `iU` is an open immersion and whose right side `iV` is a monomorphism is a
+pullback square as soon as every point of `X` mapped by `g` into the image of `iV` lies in the
+image of `iU`. -/
 theorem isPullback_of_isOpenImmersion {U V X Y : AdicSpace.{u}} (f : U ⟶ V) (iU : U ⟶ X)
-    (iV : V ⟶ Y) (g : X ⟶ Y) [PreAdicSpace.IsOpenImmersion iU.hom] [Mono iV.hom]
+    (iV : V ⟶ Y) (g : X ⟶ Y) [PreAdicSpace.IsOpenImmersion iU.hom] [Mono iV]
     (w : f ≫ iV = iU ≫ g)
     (hrange : g.hom.base ⁻¹' Set.range iV.hom.base ⊆ Set.range iU.hom.base) :
-    IsPullback f iU iV g :=
-  IsPullback.of_map_of_faithful PreAdicSpace.isAdic.ι
-    (PreAdicSpace.IsOpenImmersion.isPullback f.hom iU.hom iV.hom g.hom
-      (congrArg (·.hom) w) hrange)
+    IsPullback f iU iV g := by
+  refine IsPullback.of_isLimit (c := PullbackCone.mk _ _ w) ?_
+  refine PullbackCone.isLimitAux' _ fun s ↦ ?_
+  have hs : Set.range s.snd.hom.base ⊆ Set.range iU.hom.base := by
+    rintro _ ⟨t, rfl⟩
+    exact hrange ⟨s.fst.hom.base t, congrArg (fun φ : s.pt ⟶ Y ↦ φ.hom.base t) s.condition⟩
+  refine ⟨liftOfIsOpenImmersion iU s.snd hs, ?_, liftOfIsOpenImmersion_fac _ _ _,
+    fun {m} _ hm ↦ liftOfIsOpenImmersion_uniq _ _ _ m hm⟩
+  rw [← cancel_mono iV, PullbackCone.mk_fst, Category.assoc, w,
+    liftOfIsOpenImmersion_fac_assoc, s.condition]
 
 section HasPullback
 
 variable {U X Y : AdicSpace.{u}} (i : U ⟶ Y) [PreAdicSpace.IsOpenImmersion i.hom] (f : X ⟶ Y)
 
-/-- Adic spaces have pullbacks of open immersions: the pullback of pre-adic spaces is the source
-of an open immersion into an adic space, hence adic. -/
-instance hasPullback_of_left : HasPullback i f := by
-  let P : AdicSpace.{u} := ⟨pullback i.hom f.hom,
-    PreAdicSpace.isAdic_of_isOpenImmersion X.property (pullback.snd i.hom f.hom)⟩
-  let fst : P ⟶ U := ObjectProperty.homMk (pullback.fst i.hom f.hom)
-  let snd : P ⟶ X := ObjectProperty.homMk (pullback.snd i.hom f.hom)
-  exact (IsPullback.of_map_of_faithful PreAdicSpace.isAdic.ι (f := fst) (g := snd)
-    (IsPullback.of_hasPullback i.hom f.hom)).hasPullback
+/-- The pullback of pre-adic spaces of an open immersion of adic spaces is a pullback square of
+adic spaces. -/
+private theorem exists_isPullback_of_isOpenImmersion :
+    ∃ (P : AdicSpace.{u}) (fst : P ⟶ U) (snd : P ⟶ X),
+      IsPullback fst snd i f ∧ IsPullback fst.hom snd.hom i.hom f.hom :=
+  ⟨⟨pullback i.hom f.hom,
+      PreAdicSpace.isAdic_of_isOpenImmersion X.property (pullback.snd i.hom f.hom)⟩,
+    ObjectProperty.homMk (pullback.fst i.hom f.hom),
+    ObjectProperty.homMk (pullback.snd i.hom f.hom),
+    IsPullback.of_map_of_faithful PreAdicSpace.isAdic.ι (IsPullback.of_hasPullback i.hom f.hom),
+    IsPullback.of_hasPullback i.hom f.hom⟩
 
 /-- Adic spaces have pullbacks of open immersions. -/
-instance hasPullback_of_right : HasPullback f i :=
+instance hasPullback_of_isOpenImmersion_left : HasPullback i f :=
+  let ⟨_, _, _, h, _⟩ := exists_isPullback_of_isOpenImmersion i f
+  h.hasPullback
+
+/-- Adic spaces have pullbacks of open immersions. -/
+instance hasPullback_of_isOpenImmersion_right : HasPullback f i :=
   hasPullback_symmetry i f
+
+/-- Pullbacks of open immersions of adic spaces are computed in `𝒱^pre`. -/
+instance preservesLimit_cospan_of_isOpenImmersion_left :
+    PreservesLimit (cospan i f) PreAdicSpace.isAdic.ι :=
+  let ⟨_, _, _, h, h'⟩ := exists_isPullback_of_isOpenImmersion i f
+  h.preservesLimit_cospan_iff.mpr h'
+
+/-- Pullbacks of open immersions of adic spaces are computed in `𝒱^pre`. -/
+instance preservesLimit_cospan_of_isOpenImmersion_right :
+    PreservesLimit (cospan f i) PreAdicSpace.isAdic.ι :=
+  preservesPullback_symmetry _ _ _
+
+/-- The pullback square of adic spaces of an open immersion is a pullback square of pre-adic
+spaces. -/
+theorem isPullback_pullback_hom_of_isOpenImmersion_left :
+    IsPullback (pullback.fst i f).hom (pullback.snd i f).hom i.hom f.hom :=
+  (IsPullback.of_hasPullback i f).map PreAdicSpace.isAdic.ι
+
+/-- Open immersions of adic spaces are stable under base change. -/
+instance isOpenImmersion_pullback_snd_of_left :
+    PreAdicSpace.IsOpenImmersion (pullback.snd i f).hom := by
+  rw [← (isPullback_pullback_hom_of_isOpenImmersion_left i f).isoPullback_hom_snd]
+  infer_instance
+
+/-- Open immersions of adic spaces are stable under base change. -/
+instance isOpenImmersion_pullback_fst_of_right :
+    PreAdicSpace.IsOpenImmersion (pullback.fst f i).hom := by
+  rw [← pullbackSymmetry_hom_comp_snd, ObjectProperty.FullSubcategory.comp_hom]
+  infer_instance
+
+/-- The image of the base change of an open immersion `i` along `f` is the preimage under `f` of
+the image of `i`. -/
+theorem range_pullback_snd_of_isOpenImmersion_left :
+    Set.range (pullback.snd i f).hom.base = f.hom.base ⁻¹' Set.range i.hom.base := by
+  rw [← (isPullback_pullback_hom_of_isOpenImmersion_left i f).isoPullback_hom_snd,
+    PreAdicSpace.comp_base, TopCat.coe_comp, Function.Surjective.range_comp ?_,
+    PreAdicSpace.IsOpenImmersion.range_pullback_snd_of_left]
+  exact (TopCat.homeoOfIso (PreAdicSpace.forgetToTop.mapIso _)).surjective
+
+/-- The image of the base change of an open immersion `i` along `f` is the preimage under `f` of
+the image of `i`. -/
+theorem range_pullback_fst_of_isOpenImmersion_right :
+    Set.range (pullback.fst f i).hom.base = f.hom.base ⁻¹' Set.range i.hom.base := by
+  rw [← pullbackSymmetry_hom_comp_snd, ObjectProperty.FullSubcategory.comp_hom,
+    PreAdicSpace.comp_base, TopCat.coe_comp, Function.Surjective.range_comp ?_,
+    range_pullback_snd_of_isOpenImmersion_left]
+  exact (TopCat.homeoOfIso (PreAdicSpace.forgetToTop.mapIso
+    (PreAdicSpace.isAdic.ι.mapIso (pullbackSymmetry f i)))).surjective
 
 end HasPullback
 
@@ -370,6 +475,18 @@ theorem restrictTopIso_hom : X.restrictTopIso.hom = X.ofRestrict ⊤ := by
   ext1
   exact X.obj.restrictTopIso_hom
 
+/-- The inverse of `restrictTopIso` is a left inverse of the inclusion of the open adic
+subspace. -/
+@[reassoc (attr := simp)]
+theorem restrictTopIso_inv_ofRestrict : X.restrictTopIso.inv ≫ X.ofRestrict ⊤ = 𝟙 X := by
+  rw [← restrictTopIso_hom, Iso.inv_hom_id]
+
+/-- The inverse of `restrictTopIso` is a right inverse of the inclusion of the open adic
+subspace. -/
+@[reassoc (attr := simp)]
+theorem ofRestrict_restrictTopIso_inv : X.ofRestrict ⊤ ≫ X.restrictTopIso.inv = 𝟙 _ := by
+  rw [← restrictTopIso_hom, Iso.hom_inv_id]
+
 instance : IsIso (X.ofRestrict ⊤) := by
   rw [← restrictTopIso_hom]
   infer_instance
@@ -380,6 +497,18 @@ noncomputable def restrictRestrictIso (V : Opens (X.restrict U).obj) :
     (X.restrict U).restrict V ≅ X.restrict (U.isOpenEmbedding.isOpenMap.functor.obj V) :=
   ObjectProperty.isoMk _ (X.obj.restrictRestrictIso U.isOpenEmbedding V)
 
+/-- The underlying isomorphism of pre-adic spaces of `restrictRestrictIso`. -/
+@[simp]
+theorem restrictRestrictIso_hom_hom (V : Opens (X.restrict U).obj) :
+    (X.restrictRestrictIso U V).hom.hom = (X.obj.restrictRestrictIso U.isOpenEmbedding V).hom :=
+  (rfl)
+
+/-- The underlying isomorphism of pre-adic spaces of `restrictRestrictIso`. -/
+@[simp]
+theorem restrictRestrictIso_inv_hom (V : Opens (X.restrict U).obj) :
+    (X.restrictRestrictIso U V).inv.hom = (X.obj.restrictRestrictIso U.isOpenEmbedding V).inv :=
+  (rfl)
+
 /-- The nested-restriction isomorphism commutes with the inclusions into `X`. -/
 @[reassoc (attr := simp)]
 theorem restrictRestrictIso_hom_ofRestrict (V : Opens (X.restrict U).obj) :
@@ -388,35 +517,36 @@ theorem restrictRestrictIso_hom_ofRestrict (V : Opens (X.restrict U).obj) :
   ext1
   exact X.obj.restrictRestrictIso_hom_ofRestrict U.isOpenEmbedding V
 
+/-- The inverse nested-restriction isomorphism commutes with the inclusions into `X`. -/
+@[reassoc (attr := simp)]
+theorem restrictRestrictIso_inv_ofRestrict (V : Opens (X.restrict U).obj) :
+    (X.restrictRestrictIso U V).inv ≫ (X.restrict U).ofRestrict V ≫ X.ofRestrict U =
+      X.ofRestrict _ := by
+  rw [Iso.inv_comp_eq, restrictRestrictIso_hom_ofRestrict]
+
 variable {X} {T : AdicSpace.{u}}
 
 /-- A morphism of adic spaces whose image lies in `U` factors through the open adic subspace on
 `U`. -/
-noncomputable def lift (g : T ⟶ X) (hg : Set.range g.hom.base ⊆ U) : T ⟶ X.restrict U :=
-  ObjectProperty.homMk (PreAdicSpace.IsOpenImmersion.lift (X.ofRestrict U).hom g.hom
-    (by rwa [range_ofRestrict]))
+noncomputable def liftRestrict (g : T ⟶ X) (hg : Set.range g.hom.base ⊆ U) : T ⟶ X.restrict U :=
+  liftOfIsOpenImmersion (X.ofRestrict U) g (by rwa [range_ofRestrict])
 
 /-- Composing the factorization with the inclusion recovers the original morphism. -/
 @[reassoc (attr := simp)]
-theorem lift_ofRestrict (g : T ⟶ X) (hg : Set.range g.hom.base ⊆ U) :
-    lift U g hg ≫ X.ofRestrict U = g := by
-  ext1
-  exact PreAdicSpace.IsOpenImmersion.lift_fac _ _ _
+theorem liftRestrict_ofRestrict (g : T ⟶ X) (hg : Set.range g.hom.base ⊆ U) :
+    liftRestrict U g hg ≫ X.ofRestrict U = g :=
+  liftOfIsOpenImmersion_fac _ _ _
 
 /-- The factorization through an open adic subspace is unique. -/
-theorem lift_uniq (g : T ⟶ X) (hg : Set.range g.hom.base ⊆ U) (l : T ⟶ X.restrict U)
-    (hl : l ≫ X.ofRestrict U = g) : l = lift U g hg := by
-  rw [← cancel_mono (X.ofRestrict U), hl, lift_ofRestrict]
+theorem liftRestrict_uniq (g : T ⟶ X) (hg : Set.range g.hom.base ⊆ U) (l : T ⟶ X.restrict U)
+    (hl : l ≫ X.ofRestrict U = g) : l = liftRestrict U g hg :=
+  liftOfIsOpenImmersion_uniq _ _ _ l hl
 
 /-- A morphism factors through the open adic subspace on `U` exactly when its image lies in
 `U`. -/
 theorem exists_comp_ofRestrict_eq_iff (g : T ⟶ X) :
     (∃ l : T ⟶ X.restrict U, l ≫ X.ofRestrict U = g) ↔ Set.range g.hom.base ⊆ U := by
-  refine ⟨?_, fun hg ↦ ⟨lift U g hg, lift_ofRestrict U g hg⟩⟩
-  rintro ⟨l, rfl⟩
-  rw [← range_ofRestrict X U, ObjectProperty.FullSubcategory.comp_hom,
-    PreAdicSpace.comp_base, TopCat.coe_comp]
-  exact Set.range_comp_subset_range _ _
+  rw [exists_comp_eq_iff_of_isOpenImmersion, range_ofRestrict]
 
 end Restrict
 
