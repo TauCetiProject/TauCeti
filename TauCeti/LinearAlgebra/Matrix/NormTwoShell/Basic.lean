@@ -147,6 +147,12 @@ theorem coe_normTwoShellSimple (i : I) : (normTwoShellSimple hdiag i : I → ℤ
 theorem normTwoShellSimple_injective : Function.Injective (normTwoShellSimple (B := B) hdiag) :=
   fun _ _ h ↦ Pi.single_left_injective one_ne_zero (congrArg Subtype.val h)
 
+/-- Equality of coordinate roots is equality of their indices. -/
+@[simp]
+theorem normTwoShellSimple_inj {i j : I} :
+    normTwoShellSimple hdiag i = normTwoShellSimple hdiag j ↔ i = j :=
+  (normTwoShellSimple_injective hdiag).eq_iff
+
 end Simple
 
 /-- Diagonal entries equal to two put a basis in the norm-two shell, so the shell spans. -/
