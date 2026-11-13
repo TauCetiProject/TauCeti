@@ -702,15 +702,7 @@ private theorem mem_localAbsoluteUpperRamificationGroup_of_vle_iff
       algebraMap_mem' := fun c ↦ Subfield.mem_comap.2 <| by
         rw [RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, he']
         exact M'.toIntermediateField.algebraMap_mem (e c) }
-  let eM : M ≃+* M' :=
-    { toFun := fun x ↦ ⟨e' x.1, x.2⟩
-      invFun := fun y ↦ ⟨e'.symm y.1, Subfield.mem_comap.2 <| by
-        rw [RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, e'.apply_symm_apply]
-        exact y.2⟩
-      left_inv := fun x ↦ Subtype.ext (e'.symm_apply_apply x.1)
-      right_inv := fun y ↦ Subtype.ext (e'.apply_symm_apply y.1)
-      map_mul' := fun x y ↦ Subtype.ext (map_mul e' x.1 y.1)
-      map_add' := fun x y ↦ Subtype.ext (map_add e' x.1 y.1) }
+  let eM : M ≃+* M' := e'.restrict M M'.toIntermediateField (fun _ ↦ Iff.rfl)
   have heM (c : K) : eM (algebraMap K M c) = algebraMap K' M' (e c) :=
     Subtype.ext (he' c)
   have hcomp_symm :

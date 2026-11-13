@@ -467,17 +467,11 @@ theorem comap_algAutCongr_lowerRamificationGroup_of_vle_iff
       lowerRamificationGroup K L i := by
   have hvle (x y : L) : eL x ≤ᵥ eL y ↔ x ≤ᵥ y :=
     eL.toRingHom.map_vle_map_iff_of_vle_iff e.toRingHom he heL x y
-  have hmem (x : L) : eL x ∈ 𝒪[L'] ↔ x ∈ 𝒪[L] := by
-    rw [Valuation.mem_integer_iff, Valuation.mem_integer_iff, ← map_one (valuation L'),
-      ← map_one (valuation L), ← (valuation L').vle_iff_le, ← (valuation L).vle_iff_le,
+  have hmem (x : L) : x ∈ 𝒪[L] ↔ eL x ∈ 𝒪[L'] := by
+    rw [Valuation.mem_integer_iff, Valuation.mem_integer_iff, ← map_one (valuation L),
+      ← map_one (valuation L'), ← (valuation L).vle_iff_le, ← (valuation L').vle_iff_le,
       ← map_one eL, hvle]
-  let fInt : 𝒪[L] ≃+* 𝒪[L'] :=
-    { toFun := fun x ↦ ⟨eL x.1, (hmem x.1).2 x.2⟩
-      invFun := fun y ↦ ⟨eL.symm y.1, (hmem _).1 (by simp)⟩
-      left_inv := fun x ↦ Subtype.ext (eL.symm_apply_apply x.1)
-      right_inv := fun y ↦ Subtype.ext (eL.apply_symm_apply y.1)
-      map_mul' := fun x y ↦ Subtype.ext (map_mul eL x.1 y.1)
-      map_add' := fun x y ↦ Subtype.ext (map_add eL x.1 y.1) }
+  let fInt : 𝒪[L] ≃+* 𝒪[L'] := eL.restrict 𝒪[L] 𝒪[L'] hmem
   have hpow (n : ℕ) :
       (IsLocalRing.maximalIdeal 𝒪[L'] ^ n).comap (fInt : 𝒪[L] →+* 𝒪[L']) =
         IsLocalRing.maximalIdeal 𝒪[L] ^ n := by

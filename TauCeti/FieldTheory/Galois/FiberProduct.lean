@@ -43,6 +43,8 @@ rather than in either of them, and the restriction maps to it are
   surjective iff the two subextensions meet in `F`.
 * `IntermediateField.mem_range_restrictNormalHomSupProd_iff`: the Galois group of a compositum of
   two finite Galois intermediate fields is the fibre product over their intersection.
+* `IntermediateField.fixingSubgroup_inf_of_normal_right`: inside any normal extension `E/F`, the
+  fixing subgroup of `K ⊓ L` is `K.fixingSubgroup ⊔ L.fixingSubgroup` whenever `L/F` is normal.
 * `IntermediateField.mem_range_restrictNormalHom_prod_restrictNormalHom_iff`: inside any normal
   extension `E/F`, a pair of automorphisms of two normal intermediate fields `K` and `L` extends to
   `Gal(E/F)` iff its restrictions to `K ⊓ L` agree.
@@ -225,6 +227,39 @@ section NormalAmbient
 
 open scoped Pointwise
 
+/-- **The fixing subgroup of an intersection with a normal intermediate field.** In any normal
+extension `E/F` (possibly infinite or inseparable), for intermediate fields `K` and `L` with `L/F`
+normal, the automorphisms fixing `K ⊓ L` pointwise form the subgroup `K.fixingSubgroup ⊔
+L.fixingSubgroup`. Unlike `IntermediateField.fixingSubgroup_inf`, neither finiteness nor
+separability is assumed; normality of `L/F` makes the product of the two compact fixing subgroups a
+closed subgroup of `Gal(E/F)`. -/
+theorem fixingSubgroup_inf_of_normal_right
+    {F E : Type*} [Field F] [Field E] [Algebra F E] [Normal F E]
+    (K L : IntermediateField F E) [Normal F L] :
+    (K ⊓ L).fixingSubgroup = K.fixingSubgroup ⊔ L.fixingSubgroup := by
+  have : T2Space Gal(E/F) := krullTopology_t2
+  have hcl :
+      IsClosed ((K.fixingSubgroup ⊔ L.fixingSubgroup : Subgroup Gal(E/F)) : Set Gal(E/F)) := by
+    rw [Subgroup.mul_normal]
+    exact ((fixingSubgroup_isClosed_of_isAlgebraic K).isCompact.mul
+      (fixingSubgroup_isClosed_of_isAlgebraic L).isCompact).isClosed
+  have hsep :
+      (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup) ⊓ separableClosure F E =
+        (K ⊓ L) ⊓ separableClosure F E := by
+    calc (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup) ⊓ separableClosure F E
+      _ = (fixedField (K ⊓ separableClosure F E).fixingSubgroup ⊓ separableClosure F E) ⊓
+            (fixedField (L ⊓ separableClosure F E).fixingSubgroup ⊓ separableClosure F E) := by
+            rw [fixingSubgroup_inf_separableClosure K, fixingSubgroup_inf_separableClosure L]
+            ac_rfl
+      _ = (K ⊓ separableClosure F E) ⊓ (L ⊓ separableClosure F E) := by
+            rw [fixedField_fixingSubgroup_inf_separableClosure inf_le_right,
+              fixedField_fixingSubgroup_inf_separableClosure inf_le_right]
+      _ = (K ⊓ L) ⊓ separableClosure F E := by ac_rfl
+  rw [← TauCeti.fixingSubgroup_fixedField hcl, Subgroup.fixedField_sup,
+    ← fixingSubgroup_inf_separableClosure
+      (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup),
+    hsep, fixingSubgroup_inf_separableClosure]
+
 /-- **Joint restriction to two normal intermediate fields of a normal extension.** For any normal
 extension `E/F` (possibly infinite or inseparable) and normal intermediate fields `K` and `L`
 (possibly infinite-dimensional or inseparable over `F`), a pair `(σ, τ) ∈ Gal(K/F) × Gal(L/F)` is
@@ -247,32 +282,9 @@ theorem mem_range_restrictNormalHom_prod_restrictNormalHom_iff
   · intro h
     obtain ⟨a, ha⟩ := AlgEquiv.restrictNormalHom_surjective E σ
     obtain ⟨b, hb⟩ := AlgEquiv.restrictNormalHom_surjective E τ
-    have : T2Space Gal(E/F) := krullTopology_t2
-    have hcl :
-        IsClosed ((K.fixingSubgroup ⊔ L.fixingSubgroup : Subgroup Gal(E/F)) : Set Gal(E/F)) := by
-      rw [Subgroup.mul_normal]
-      exact ((fixingSubgroup_isClosed_of_isAlgebraic K).isCompact.mul
-        (fixingSubgroup_isClosed_of_isAlgebraic L).isCompact).isClosed
-    have hfix : (K ⊓ L).fixingSubgroup = K.fixingSubgroup ⊔ L.fixingSubgroup := by
-      have hsep :
-          (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup) ⊓ separableClosure F E =
-            (K ⊓ L) ⊓ separableClosure F E := by
-        calc (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup) ⊓ separableClosure F E
-          _ = (fixedField (K ⊓ separableClosure F E).fixingSubgroup ⊓ separableClosure F E) ⊓
-                (fixedField (L ⊓ separableClosure F E).fixingSubgroup ⊓ separableClosure F E) := by
-                rw [fixingSubgroup_inf_separableClosure K, fixingSubgroup_inf_separableClosure L]
-                ac_rfl
-          _ = (K ⊓ separableClosure F E) ⊓ (L ⊓ separableClosure F E) := by
-                rw [fixedField_fixingSubgroup_inf_separableClosure inf_le_right,
-                  fixedField_fixingSubgroup_inf_separableClosure inf_le_right]
-          _ = (K ⊓ L) ⊓ separableClosure F E := by ac_rfl
-      rw [← TauCeti.fixingSubgroup_fixedField hcl, Subgroup.fixedField_sup,
-        ← fixingSubgroup_inf_separableClosure
-          (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup),
-        hsep, fixingSubgroup_inf_separableClosure]
     have hab : a⁻¹ * b ∈ K.fixingSubgroup ⊔ L.fixingSubgroup := by
-      rw [← hfix, ← IntermediateField.restrictNormalHom_ker, MonoidHom.mem_ker, map_mul, map_inv,
-        inv_mul_eq_one]
+      rw [← fixingSubgroup_inf_of_normal_right, ← IntermediateField.restrictNormalHom_ker,
+        MonoidHom.mem_ker, map_mul, map_inv, inv_mul_eq_one]
       have ha' : AlgEquiv.restrictNormalHom ↥(K ⊓ L) a =
           (inclusion (inf_le_left : K ⊓ L ≤ K)).restrictNormalHom σ := by
         rw [← ha, ← IntermediateField.restrictNormalHom_val,
