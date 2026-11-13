@@ -357,6 +357,26 @@ theorem re_endCoord_nonpos_of_le_norm_sub_endCenter {q : Puncture} (hq : q ≠ i
   rw [re_endCoord, neg_div, neg_nonpos]
   exact div_nonneg (Real.log_nonneg hn) (by positivity)
 
+/-- **The part `s > 0` of a positive end is far from the other finite end.** A point of the part
+`s > 0` of the end `q ≠ ∞` lies at distance at least `exp (-2π) / 2` from the center of the other
+finite end `r`. -/
+theorem exp_neg_two_pi_div_two_le_norm_sub_endCenter {q r : Puncture} (hq : q ≠ inf)
+    (hr : r ≠ inf) (hrq : r ≠ q) {w : ℂ} (h : 0 < (q.endCoord w).re) :
+    Real.exp (-(2 * π)) / 2 ≤ ‖w - r.endCenter‖ := by
+  have hlt : ‖w - q.endCenter‖ < 1 / 2 :=
+    not_le.1 fun h' => (not_le.2 h) (re_endCoord_nonpos_of_le_norm_sub_endCenter hq h')
+  linarith [one_sub_norm_sub_endCenter_le hq hr hrq w,
+    Real.exp_le_one_iff.2 (by linarith [Real.pi_pos] : -(2 * π) ≤ 0)]
+
+/-- **The part `s > 0` of a positive end lies in the disc `‖w‖ ≤ 2 exp (2π)`.** -/
+theorem norm_le_two_mul_exp_of_re_endCoord_pos {q : Puncture} (hq : q ≠ inf) {w : ℂ}
+    (h : 0 < (q.endCoord w).re) : ‖w‖ ≤ 2 * Real.exp (2 * π) := by
+  have hlt : ‖w - q.endCenter‖ < 1 / 2 :=
+    not_le.1 fun h' => (not_le.2 h) (re_endCoord_nonpos_of_le_norm_sub_endCenter hq h')
+  have h₁ := norm_add_le (w - q.endCenter) q.endCenter
+  rw [sub_add_cancel] at h₁
+  linarith [norm_endCenter_le_one q, Real.one_le_exp (by positivity : 0 ≤ 2 * π)]
+
 /-- Off the disc `‖w‖ < exp (-2π) / 2`, the longitudinal coordinate of the end at `0` is at most
 `1`. -/
 theorem re_endCoord_zero_le_one {w : ℂ} (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) :

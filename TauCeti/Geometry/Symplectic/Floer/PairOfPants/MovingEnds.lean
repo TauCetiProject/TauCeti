@@ -107,23 +107,17 @@ theorem inputEndPerturbation_add_mul (ha : a ≠ 0) (w : ℂ) (x : M) (v : ℂ) 
 theorem inputEndPerturbation_eq_zero_of_le_norm_sub {w : ℂ}
     (hw : ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c‖) (x : M) :
     inputEndPerturbation c a H w x = 0 := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · ext v
-    simp [inputEndPerturbation_apply]
-  · rw [inputEndPerturbation, positivePlanePerturbation_eq_zero_of_le_norm ?_ x,
-      ContinuousLinearMap.zero_comp]
-    rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
-    linarith
+  rw [inputEndPerturbation, positivePlanePerturbation_def,
+    smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub hw, zero_mul, zero_smul,
+    ContinuousLinearMap.zero_comp]
 
 /-- At its center `c`, where the end coordinate takes the junk longitudinal value `0` (from
 `Complex.log 0 = 0`), the input end datum is `0`. -/
 @[simp]
 theorem inputEndPerturbation_self (c a : ℂ) (H : ℝ → M → ℝ) (x : M) :
     inputEndPerturbation c a H c x = 0 := by
-  have h : (zero.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter zero
   ext v
-  simp [inputEndPerturbation_apply, positivePlanePerturbation_def, h,
-    smoothTransition.zero_of_nonpos]
+  simp [inputEndPerturbation_apply, positivePlanePerturbation_def]
 
 /-- The input end datum of the zero Hamiltonian vanishes. -/
 @[simp]
@@ -192,9 +186,7 @@ theorem puncturedSpherePerturbation_eq_pairOfPantsPerturbation (H : Puncture →
       ← pairOfPantsPerturbation_single_zero, pairOfPantsPerturbation_single]
   -- The input end at `1` is the image of the input end at `0` under `w ↦ 1 - w`.
   have hc : zero.endCoord ((w - 1) / -1) = one.endCoord w := by
-    rw [endCoord_def, endCoord_def, endCenter_zero, endCenter_one, endScale_zero, endScale_one]
-    congr 3
-    ring
+    simpa using endCoord_zero_sub_endCenter_div one w
   have h₁ : inputEndPerturbation 1 (-1) (H one) w x =
       (smoothTransition (one.endSign * (one.endCoord w).re - 1) *
         H one (one.endCoord w).im x) • one.endAngularForm w := by
@@ -311,11 +303,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
         (deriv inf.cylindricalEndLift z * v) =
       v.im * (smoothTransition (-z.re - 1) * Hout z.im x) := by
   have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
-    have h := norm_cylindricalEndLift_sub_endCenter inf z
-    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
-    rw [h]
-    gcongr
-    nlinarith [Real.pi_pos]
+    simpa only [mul_one] using two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1) hz
   rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i => ?_,
     negativePlanePerturbation_cylindricalEndLift_apply hH]
   have h := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
@@ -341,17 +329,22 @@ variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
 /-- The point `(w - c) / a` of the plane on which an input end with center `c` and scale `a` is
+modelled is `C^n` jointly in the center, the scale and the domain point `w`, at every point with
+`a ≠ 0`. -/
+theorem contDiffAt_sub_div {n : WithTop ℕ∞} {c a : ℂ} (ha : a ≠ 0) (w : ℂ) :
+    ContDiffAt ℝ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
+  have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
+    refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
+      (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
+  exact h.restrict_scalars ℝ
+
+/-- The point `(w - c) / a` of the plane on which an input end with center `c` and scale `a` is
 modelled, paired with the target point, is `C^n` jointly in the center, the scale, the domain point
 `w` and the target point, at every point with `a ≠ 0`. -/
-theorem contMDiffAt_sub_div_prodMk {n : ℕ∞} {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (x : M) :
+theorem contMDiffAt_sub_div_prodMk {n : WithTop ℕ∞} {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) (𝓘(ℝ, ℂ).prod I) n
-      (fun p : (ℂ × ℂ) × (ℂ × M) => ((p.2.1 - p.1.1) / p.1.2, p.2.2)) ((c, a), (w, x)) := by
-  have hcoord : ContDiffAt ℝ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-    have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-      refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
-        (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
-    exact h.restrict_scalars ℝ
-  exact (hcoord.contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1))
+      (fun p : (ℂ × ℂ) × (ℂ × M) => ((p.2.1 - p.1.1) / p.1.2, p.2.2)) ((c, a), (w, x)) :=
+  ((contDiffAt_sub_div ha w).contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1))
     ((c, a), (w, x)) (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))).prodMk
     (contMDiffAt_snd.comp _ contMDiffAt_snd)
 
@@ -378,12 +371,36 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
 /-- Evaluating the centers and the scales of a configuration at the input `i` is smooth. -/
-theorem contMDiff_configurationEval {n : ℕ∞} (i : ι) :
+theorem contMDiff_apply_prodMk {n : WithTop ℕ∞} (i : ι) :
     ContMDiff (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I))
       (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) n
       (fun p : ((ι → ℂ) × (ι → ℂ)) × (ℂ × M) => ((p.1.1 i, p.1.2 i), p.2)) :=
   have hL : ContDiff ℝ n (fun q : (ι → ℂ) × (ι → ℂ) => (q.1 i, q.2 i)) := by fun_prop
   (hL.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
+
+omit [Fintype ι] in
+/-- **Strict separation of the input discs is an open condition.** If the discs
+`‖w - c i‖ < ‖a i‖ exp (-2π) / 2` have strictly separated closures inside the open disc
+`‖w‖ < 2 exp (2π)`, the same holds at every configuration near `(c, a)`. -/
+theorem eventually_pairwise_add_lt_norm_sub_and_norm_add_lt [Finite ι] {c a : ι → ℂ}
+    (hsep : Pairwise fun i j =>
+      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 < ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 < 2 * Real.exp (2 * π)) :
+    ∀ᶠ ca : (ι → ℂ) × (ι → ℂ) in 𝓝 (c, a),
+      (Pairwise fun i j => ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 +
+        ‖ca.2 j‖ * Real.exp (-(2 * π)) / 2 < ‖ca.1 i - ca.1 j‖) ∧
+      ∀ i, ‖ca.1 i‖ + ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 < 2 * Real.exp (2 * π) := by
+  refine (Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => ?_).and
+    (Filter.eventually_all.2 fun i => ?_)
+  · by_cases hij : i = j
+    · exact Filter.Eventually.of_forall fun _ h => (h hij).elim
+    · have hc : Continuous fun ca : (ι → ℂ) × (ι → ℂ) => ‖ca.1 i - ca.1 j‖ := by fun_prop
+      have ha : Continuous fun ca : (ι → ℂ) × (ι → ℂ) =>
+          ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 + ‖ca.2 j‖ * Real.exp (-(2 * π)) / 2 := by fun_prop
+      exact (ha.continuousAt.eventually_lt hc.continuousAt (hsep hij)).mono fun _ h _ => h
+  · have h : Continuous fun ca : (ι → ℂ) × (ι → ℂ) =>
+        ‖ca.1 i‖ + ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 := by fun_prop
+    exact h.continuousAt.eventually_lt continuousAt_const (hout i)
 
 /-- **The datum is smooth in the configuration.** For period-one Hamiltonians of class `C^n` on
 `ℝ × M`, the perturbation datum is `C^n` jointly in the centers, the scales, the domain point and
@@ -400,7 +417,7 @@ theorem contMDiffAt_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Period
   refine (contMDiffAt_finsetSum fun i _ => ?_).add
     ((contMDiff_negativePlanePerturbation hHout hHouts).contMDiffAt.comp _ contMDiffAt_snd)
   exact (contMDiffAt_inputEndPerturbation (hH i) (hHs i) (ha i) (hw i) x).comp ((c, a), (w, x))
-    (contMDiff_configurationEval i).contMDiffAt
+    (contMDiff_apply_prodMk i).contMDiffAt
 
 end Smooth
 

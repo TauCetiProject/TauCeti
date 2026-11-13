@@ -301,13 +301,12 @@ theorem smoothTransition_endCoord_zero_eq_zero_of_le_norm {w : ℂ}
     smoothTransition ((zero.endCoord w).re - 1) = 0 :=
   smoothTransition.zero_of_nonpos (by linarith [re_endCoord_zero_le_one hw])
 
-/-- At the center `c` of an input end, where the end coordinate takes the junk longitudinal value
-`0` (from `Complex.log 0 = 0`), the weight `β(s₀((w - c) / a) - 1)` of the end vanishes. -/
-theorem smoothTransition_endCoord_zero_eq_zero_of_sub_div_eq_zero {c a w : ℂ}
-    (h : (w - c) / a = 0) :
-    smoothTransition ((zero.endCoord ((w - c) / a)).re - 1) = 0 := by
+/-- At the center `0` of the end at `0`, where the end coordinate takes the junk longitudinal value
+`0` (from `Complex.log 0 = 0`), the weight `β(s₀ - 1)` of the end vanishes. -/
+@[simp]
+theorem smoothTransition_endCoord_zero_zero : smoothTransition ((zero.endCoord 0).re - 1) = 0 := by
   have h0 : (zero.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter zero
-  rw [h, h0, zero_sub, smoothTransition.zero_of_nonpos (by norm_num)]
+  rw [h0, zero_sub, smoothTransition.zero_of_nonpos (by norm_num)]
 
 /-- The weight `β(s₀((w - c) / a) - 1)` of the input end with center `c` and scale `a` vanishes off
 the disc `‖w - c‖ < ‖a‖ exp (-2π) / 2`. -/
@@ -315,7 +314,7 @@ theorem smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub {c a w : ℂ}
     (h : ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c‖) :
     smoothTransition ((zero.endCoord ((w - c) / a)).re - 1) = 0 := by
   rcases eq_or_ne a 0 with rfl | ha
-  · exact smoothTransition_endCoord_zero_eq_zero_of_sub_div_eq_zero (div_zero _)
+  · rw [div_zero, smoothTransition_endCoord_zero_zero]
   · refine smoothTransition_endCoord_zero_eq_zero_of_le_norm ?_
     rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
     linarith

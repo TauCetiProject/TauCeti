@@ -77,10 +77,11 @@ private theorem receiving_eq_zero_of_lt_re_endCoord (hq : q ≠ inf) (hrq : r �
     (hL : 0 ≤ L) {w : ℂ} (h : L / 2 < (q.endCoord w).re) (H Hout : ℝ → M → ℝ) (x : M) :
     inputEndPerturbation r.endCenter (2 * r.endScale) H w x = 0 ∧
       negativePlanePerturbation Hout w x = 0 := by
-  obtain ⟨h₁, h₂⟩ := exp_neg_two_pi_div_two_le_norm_sub_endCenter_and_norm_le hq hrq hr hL h
+  have h₀ : 0 < (q.endCoord w).re := by linarith [(by positivity : 0 ≤ L / 2)]
   refine ⟨inputEndPerturbation_eq_zero_of_le_norm_sub ?_ x,
-    negativePlanePerturbation_eq_zero_of_norm_le h₂ x⟩
-  rwa [norm_two_mul_endScale hr, one_mul]
+    negativePlanePerturbation_eq_zero_of_norm_le (norm_le_two_mul_exp_of_re_endCoord_pos hq h₀) x⟩
+  rw [norm_two_mul_endScale hr, one_mul]
+  exact exp_neg_two_pi_div_two_le_norm_sub_endCenter hq hr hrq h₀
 
 /-- On the receiving part `Re z ≤ L/2` of the end `q`, the input ends of the inserted pair of pants
 vanish. -/
@@ -337,11 +338,7 @@ theorem plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le (hq : q ≠
     cases q
     exacts [⟨one, by decide, by decide⟩, ⟨zero, by decide, by decide⟩, absurd rfl hq]
   have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
-    have h := norm_cylindricalEndLift_sub_endCenter inf z
-    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
-    rw [h]
-    gcongr
-    nlinarith [Real.pi_pos]
+    simpa only [mul_one] using two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1) hz
   have hneck : plumbedPerturbation (Pi.single inf G) (Pi.single q G) q L
       (inf.cylindricalEndLift z) x = 0 := by
     refine plumbedPerturbation_single_inf_single_eq_zero hq hL G (Or.inr ?_) x
