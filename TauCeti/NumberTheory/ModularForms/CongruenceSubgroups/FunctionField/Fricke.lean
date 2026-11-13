@@ -262,7 +262,7 @@ private theorem exists_frickeFunction_eq_iff :
   have hc : ModularForm.E₄ τ * ModularForm.E₆ τ / _root_.ModularForm.discriminant τ ≠ 0 :=
     div_ne_zero (mul_ne_zero h₄ h₆) (_root_.ModularForm.discriminant_ne_zero τ)
   have hπ : ((2 * π * Complex.I) ^ 2 : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
-  rw [frickeFunction_def, frickeFunction_def, div_left_inj' hπ, mul_right_inj' hc]
+  rw [frickeFunction_def, frickeFunction_def, div_left_inj₀ hπ, mul_right_inj' hc]
 
 /-- Opposite residues give the same Fricke function. -/
 @[simp]
