@@ -213,7 +213,7 @@ theorem mul_measure_exists_le_lt_le_setIntegral [IsFiniteMeasure μ]
   have heq : {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} =ᵐ[μ]
       {ω | ∃ t ∈ S, (ε : ℝ) < f t ω} := by
     filter_upwards [hcont] with ω hω
-    exact propext ⟨fun ⟨t, ht, h⟩ ↦ by
+    exact ⟨fun ⟨t, ht, h⟩ ↦ by
       obtain ⟨s, hs, hεs⟩ := hS hω ht h
       exact ⟨s, hs, hεs⟩,
       fun ⟨t, ht, h⟩ ↦ ⟨t, hST ht, h⟩⟩
@@ -351,7 +351,7 @@ theorem measure_exists_le_norm_lt_le (hM : Martingale M ℱ μ) {T : ι}
     have heq : {ω | ∃ t ≤ T, ((0 : ℝ≥0) : ℝ) < ‖M t ω‖} =ᵐ[μ]
         {ω | ∃ t ∈ S, ((0 : ℝ≥0) : ℝ) < ‖M t ω‖} := by
       filter_upwards [hcont] with ω hω
-      exact propext ⟨fun ⟨t, ht, h⟩ ↦ by
+      exact ⟨fun ⟨t, ht, h⟩ ↦ by
         obtain ⟨s, hs, hεs⟩ := hS (fun t ht ↦ (hω t ht).norm) ht h
         exact ⟨s, hs, hεs⟩,
         fun ⟨t, ht, h⟩ ↦ ⟨t, hST ht, h⟩⟩
@@ -393,8 +393,8 @@ theorem tendsto_measure_exists_le_norm_sub_lt {α : Type*} {Y : ι → Ω → E}
     have h := ((hM n).sub hY).mul_measure_exists_le_norm_lt_le (T := T) (by
       filter_upwards [hMcont n, hYcont] with ω h₁ h₂ t ht
       exact (h₁ t ht).sub (h₂ t ht)) ε
-    rw [ofReal_integral_norm_eq_lintegral_enorm (((hM n).sub hY).integrable T)] at h
-    simpa only [mul_comm, Pi.sub_apply, eLpNorm_one_eq_lintegral_enorm
+    rw [ofReal_integral_norm_eq_lintegral_eNorm (((hM n).sub hY).integrable T)] at h
+    simpa only [mul_comm, Pi.sub_apply, eLpNorm_one_eq_lintegral_eNorm
       (((hM n).integrable T).sub (hY.integrable T)).aestronglyMeasurable] using h
   have hdiv := ENNReal.Tendsto.div_const hlim (.inr hε0)
   simp only [ENNReal.zero_div] at hdiv

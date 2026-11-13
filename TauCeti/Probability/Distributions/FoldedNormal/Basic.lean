@@ -485,7 +485,7 @@ density. -/
 theorem foldedNormalPDFReal_eq_noncentralChiPDFReal (m s x : ℝ) :
     foldedNormalPDFReal m s x = noncentralChiPDFReal 1 ‖m / s‖₊ s x := by
   by_cases hs : 0 < s
-  · rw [noncentralChiPDFReal_one, coe_nnnorm, Real.norm_eq_abs, abs_div, abs_of_pos hs,
+  · rw [noncentralChiPDFReal_one, coe_nnNorm, Real.norm_eq_abs, abs_div, abs_of_pos hs,
       div_mul_cancel₀ _ hs.ne', foldedNormalPDFReal_abs_loc]
   · rw [foldedNormalPDFReal_of_scale_nonpos (not_lt.mp hs),
       noncentralChiPDFReal_of_scale_nonpos (not_lt.mp hs)]

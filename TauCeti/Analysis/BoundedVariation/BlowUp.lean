@@ -284,17 +284,17 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
       (𝓝 (∫ y, g y * F.indicator 1 y ∂μ)) := by
     rw [tendsto_iff_edist_tendsto_0]
     have hK := ENNReal.Tendsto.const_mul (a := ‖C‖ₑ)
-      (hconv _ g.hasCompactSupport.isCompact) (.inr enorm_ne_top)
+      (hconv _ g.hasCompactSupport.isCompact) (.inr eNorm_ne_top)
     rw [mul_zero] at hK
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hK
       (.of_forall fun _ => zero_le) (hint.mono fun i hi => ?_)
-    rw [edist_eq_enorm_sub, ← integral_sub hi hJ]
-    refine (enorm_integral_le_lintegral_enorm _).trans <|
-      ((lintegral_mono fun y => ?_).trans_eq (lintegral_const_mul' _ _ enorm_ne_top)).trans
+    rw [eDist_eq_eNorm_sub, ← integral_sub hi hJ]
+    refine (eNorm_integral_le_lintegral_eNorm _).trans <|
+      ((lintegral_mono fun y => ?_).trans_eq (lintegral_const_mul' _ _ eNorm_ne_top)).trans
         (mul_le_mul_right (lintegral_indicator_one_le _) _)
-    rw [← mul_sub, enorm_mul]
+    rw [← mul_sub, eNorm_mul]
     by_cases hy : y ∈ tsupport g
-    · have hgy : ‖g y‖ₑ ≤ ‖C‖ₑ := enorm_le_iff_norm_le.2 ((hC y).trans (le_abs_self C))
+    · have hgy : ‖g y‖ₑ ≤ ‖C‖ₑ := eNorm_le_iff_norm_le.2 ((hC y).trans (le_abs_self C))
       by_cases h₁ : x + r i • y ∈ s <;> by_cases h₂ : y ∈ F <;>
         simp [S, mem_symmDiff, h₁, h₂, hy, hgy]
     · simp [image_eq_zero_of_notMem_tsupport hy]

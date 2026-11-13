@@ -73,6 +73,10 @@ both its tempered distribution and this `Lᵖ` data.
   is carried by the region where `ψⱼ = 1` lies in every Besov space, with norm `2^{js} ‖u‖_p`;
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_eq_of_norm_le` is the low-frequency case `j = 0`,
   where the norm is `‖u‖_p` for every `s`.
+* `TauCeti.two_rpow_mul_norm_sum_Ico_le`: the weighted estimate
+  `2^{ks} ‖∑_{k - L ≤ j < k + L} gⱼ‖ ≤ max C 0 2^{|s| L} ∑_{k - L ≤ j < k + L} 2^{js} ‖xⱼ‖` when
+  `‖gⱼ‖ ≤ C ‖xⱼ‖`, by which a block that is a sum of boundedly many pieces of nearby index is
+  controlled by the weighted pieces.
 
 ## References
 
@@ -92,6 +96,22 @@ open scoped ENNReal SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- **Weighted window sums.** If `‖gⱼ‖ ≤ C ‖xⱼ‖` for every `j`, then
+`2^{ks} ‖∑_{k - L ≤ j < k + L} gⱼ‖ ≤ max C 0 2^{|s| L} ∑_{k - L ≤ j < k + L} 2^{js} ‖xⱼ‖`. -/
+theorem TauCeti.two_rpow_mul_norm_sum_Ico_le {G H : Type*} [SeminormedAddCommGroup G]
+    [SeminormedAddCommGroup H] (s : ℝ) {C : ℝ} {g : ℕ → G} {x : ℕ → H}
+    (hg : ∀ j, ‖g j‖ ≤ C * ‖x j‖) (k L : ℕ) :
+    (2 : ℝ) ^ (s * k) * ‖∑ j ∈ Finset.Ico (k - L) (k + L), g j‖ ≤
+      max C 0 * 2 ^ (|s| * L) * ∑ j ∈ Finset.Ico (k - L) (k + L), 2 ^ (s * j) * ‖x j‖ := by
+  refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
+  rw [Finset.mul_sum, Finset.mul_sum]
+  refine Finset.sum_le_sum fun j hj ↦ ?_
+  calc 2 ^ (s * k) * ‖g j‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * j) * (max C 0 * ‖x j‖) := by
+        gcongr
+        · exact Real.rpow_mul_natCast_le_of_mem_Ico' one_le_two s hj
+        · exact (hg j).trans (by gcongr; exact le_max_left C 0)
+    _ = _ := by ring
 
 namespace TemperedDistribution
 
@@ -201,17 +221,7 @@ private theorem exists_littlewoodPaleyBlock_eq_and_le (φ φ' : ContDiffBump (0 
   · rw [hL j u]
     simp_rw [hf, hg]
     exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
-  · refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
-    rw [Finset.mul_sum, Finset.mul_sum]
-    refine Finset.sum_le_sum fun k hk ↦ ?_
-    calc 2 ^ (s * j) * ‖g j k‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * k) * (max C 0 * ‖f k‖) := by
-          gcongr
-          · rw [Finset.mem_Ico] at hk
-            refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s
-              (abs_sub_le_iff.2 ⟨?_, ?_⟩)
-            all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
-          · exact (hgC j k).trans (by gcongr; exact le_max_left C 0)
-      _ = _ := by ring
+  · exact TauCeti.two_rpow_mul_norm_sum_Ico_le s (hgC j) j L
 
 /-- **Independence of the bump function.** A tempered distribution in the Besov space `B^s_{p,q}`
 built from the Littlewood–Paley partition of `φ` lies in the Besov space `B^s_{p,q}` built from any

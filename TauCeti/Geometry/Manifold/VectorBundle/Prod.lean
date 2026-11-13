@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 
 /-!
 # Smooth maps into direct-sum bundles
 
 The native atlas of a direct-sum bundle has the pair of the two fibre coordinates. Thus a map
-into its total space is smooth exactly when its two component bundle maps are smooth, with the
-same base projection. This criterion needs no finite rank, completeness or manifold hypothesis.
+into its total space is smooth (or differentiable) exactly when its two component bundle maps are
+smooth (or differentiable), with the same base projection. This criterion needs no finite rank,
+completeness or manifold hypothesis.
 In particular the projections of a direct-sum bundle onto its summands, and the inclusions of the
 summands, are smooth maps of total spaces.
 -/
@@ -41,8 +43,8 @@ theorem Bundle.contMDiffAt_totalSpace_prod_iff {f : M → TotalSpace (F₁ × F�
         (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) x ∧
       ContMDiffAt J (I.prod 𝓘(𝕜, F₂)) n
         (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) x := by
-  rw [Bundle.contMDiffAt_totalSpace, Bundle.contMDiffAt_totalSpace,
-    Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff, Bundle.contMDiffAt_totalSpace_iff,
+    Bundle.contMDiffAt_totalSpace_iff]
   simp only [FiberBundle.prod_trivializationAt',
     contMDiffAt_prod_module_iff]
   constructor
@@ -94,3 +96,29 @@ theorem contMDiff_inr :
     ⟨((contMDiff_zeroSection 𝕜 E₁).comp (contMDiff_proj E₂)) v, contMDiffAt_id⟩
 
 end Bundle.Prod
+
+/-- A map into a direct-sum bundle is differentiable exactly when both component bundle maps are
+differentiable. -/
+theorem Bundle.mdifferentiableAt_totalSpace_prod_iff
+    {f : M → TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)} {x : M} :
+    MDifferentiableAt J (I.prod 𝓘(𝕜, F₁ × F₂)) f x ↔
+      MDifferentiableAt J (I.prod 𝓘(𝕜, F₁))
+        (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) x ∧
+      MDifferentiableAt J (I.prod 𝓘(𝕜, F₂))
+        (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) x := by
+  rw [mdifferentiableAt_totalSpace, mdifferentiableAt_totalSpace, mdifferentiableAt_totalSpace]
+  simp only [FiberBundle.prod_trivializationAt', mdifferentiableAt_prod_module_iff]
+  constructor
+  · rintro ⟨hb, h₁, h₂⟩
+    exact ⟨⟨hb, h₁⟩, hb, h₂⟩
+  · rintro ⟨⟨hb, h₁⟩, -, h₂⟩
+    exact ⟨hb, h₁, h₂⟩
+
+/-- A section of a direct-sum bundle is differentiable at a point exactly when both of its
+components are. -/
+theorem Bundle.mdifferentiableAt_section_prod_iff {σ : Π x, E₁ x × E₂ x} {x : B} :
+    MDifferentiableAt I (I.prod 𝓘(𝕜, F₁ × F₂))
+        (fun y ↦ TotalSpace.mk' (F₁ × F₂) (E := E₁ ×ᵇ E₂) y (σ y)) x ↔
+      MDifferentiableAt I (I.prod 𝓘(𝕜, F₁)) (fun y ↦ TotalSpace.mk' F₁ y (σ y).1) x ∧
+      MDifferentiableAt I (I.prod 𝓘(𝕜, F₂)) (fun y ↦ TotalSpace.mk' F₂ y (σ y).2) x :=
+  Bundle.mdifferentiableAt_totalSpace_prod_iff

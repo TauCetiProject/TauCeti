@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
@@ -19,7 +19,8 @@ and let `u ∈ Hⁿ(E, E₀; K)` be a relative class with coefficients in a comm
 `Φ_u : Hᵖ(B; M) ⟶ Hᵖ⁺ⁿ(E, E₀; M)`,  `a ↦ π^*a ⌣ u`,
 
 the pull-back along the projection `π : E ⟶ B` followed by the cup product of absolute and
-relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients `M`. When `u` is a
+relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients `M`: the map
+`TopPair.pullbackCup` of the Thom pair and its projection. When `u` is a
 Thom class of a real vector bundle of rank `n` this is the Thom isomorphism: Milnor and Stasheff
 (Theorem 10.4) and Hatcher (Theorem 4D.10) prove that it is bijective in every degree, first for a
 product bundle over a trivializing open set and then by Mayer–Vietoris over unions of such sets.
@@ -75,8 +76,7 @@ def thomMap (n p m : ℕ) (h : p + n = m) :
     (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n →ₗ[K]
       (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p →ₗ[K]
         (thomPair F E).singularCohomology (ModuleCat.of K K) K M m :=
-  ((thomPair F E).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p n m h ∘ₗ
-    (TopCat.singularCohomologyMap (thomPairProj F E) p).hom).flip
+  (thomPair F E).pullbackCup M (thomPairProj F E) n p m h
 
 variable {M}
 
@@ -87,7 +87,7 @@ theorem thomMap_apply {n p m : ℕ} (h : p + n = m)
     thomMap F E M n p m h u a =
       (thomPair F E).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p n m h
         (TopCat.singularCohomologyMap (thomPairProj F E) p a) u :=
-  (rfl)
+  TopPair.pullbackCup_apply _ _ h u a
 
 /-- **The Thom map sends `1` to `u`**: the image of the class of the constant `0`-cocycle with
 value `1 ∈ K` is `u`. -/
@@ -118,11 +118,8 @@ theorem thomMap_naturality {B' : Type w} [TopologicalSpace B'] {F' : Type*} [Top
     (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
     thomMap F' E' M n p m h (TopPair.singularCohomologyMap φ n u)
         (TopCat.singularCohomologyMap g p a) =
-      TopPair.singularCohomologyMap φ m (thomMap F E M n p m h u a) := by
-  rw [thomMap_apply, thomMap_apply, ← TopPair.singularCup_naturality, ← ConcreteCategory.comp_apply,
-    ← TopCat.singularCohomologyMap_comp, ← hφ, TopCat.singularCohomologyMap_comp,
-    ConcreteCategory.comp_apply]
-  rfl
+      TopPair.singularCohomologyMap φ m (thomMap F E M n p m h u a) :=
+  TopPair.pullbackCup_naturality φ _ _ g hφ h u a
 
 attribute [local instance] pullbackFiberZero in
 /-- **The Thom map of a pull-back bundle.** For a continuous map `f : B' ⟶ B`, the Thom map of
