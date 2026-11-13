@@ -351,7 +351,7 @@ private theorem isotropicOscillator_turningPoint_eq {r : ℝ} (hr : r ≠ 0)
 `m ν = 0`. -/
 private theorem isotropicOscillator_eq_zero_of_mul_eq_zero {r : ℝ} (hr : r ≠ 0) (hE : m * E = 0)
     (h : 2 * m * (E - m * ν ^ 2 * r ^ 2 / 2) = ℓ ^ 2 / r ^ 2) : ℓ = 0 ∧ m * ν = 0 := by
-  have h1 : -(m * ν * r) ^ 2 = ℓ ^ 2 / r ^ 2 := by
+  have _ : -(m * ν * r) ^ 2 = ℓ ^ 2 / r ^ 2 := by
     rw [← h]; linear_combination (-2) * hE
   have h2 : 0 ≤ ℓ ^ 2 / r ^ 2 := by positivity
   have h3 : (m * ν * r) ^ 2 = 0 := le_antisymm (by linarith) (sq_nonneg _)

@@ -84,7 +84,6 @@ theorem hyperplaneReflection_apply (ν : F) (c : ℝ) (x : F) :
 /-- The hyperplane reflection reverses the signed height `⟪x, ν⟫ - c` above the hyperplane. -/
 theorem inner_hyperplaneReflection {ν : F} (hν : ν ≠ 0) (c : ℝ) (x : F) :
     ⟪hyperplaneReflection ν c x, ν⟫_ℝ = 2 * c - ⟪x, ν⟫_ℝ := by
-  have hν2 : ‖ν‖ ^ 2 ≠ 0 := pow_ne_zero _ (norm_ne_zero_iff.2 hν)
   rw [hyperplaneReflection_apply, inner_sub_left, inner_smul_left, real_inner_self_eq_norm_sq,
     RCLike.conj_to_real]
   field_simp
@@ -231,7 +230,7 @@ theorem aestronglyMeasurable_piecewise_comp_hyperplaneReflection [FiniteDimensio
     filter_upwards [measure_eq_zero_iff_ae_notMem.1
       (Measure.addHaar_setOf_inner_eq μ hν c)] with x hx
     have hx' : ⟪x, ν⟫_ℝ ≠ c := hx
-    simp only [eq_iff_iff, Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt, hH]
+    simp only [Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt, hH]
     constructor
     · exact fun h => ⟨h.2, lt_of_le_of_ne h.1 (Ne.symm hx')⟩
     · exact fun h => ⟨h.2.le, h.1⟩
