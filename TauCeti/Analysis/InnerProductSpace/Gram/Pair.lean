@@ -17,7 +17,10 @@ The Gram determinant of two vectors, with inner products valued in a commutative
 denominator in the definition of sectional curvature.
 
 The results here specialize Mathlib's general Gram-matrix API to a pair, exposing the explicit
-formula without introducing a second notion of Gram determinant.  The real Gram determinant
+formula without introducing a second notion of Gram determinant, and record invariance of Gram
+matrices and linear independence under linear isometries (`LinearIsometry.gram_comp`,
+`LinearIsometry.gram_pair`, `LinearIsometry.det_gram_pair`, `LinearIsometry.linearIndependent_iff`,
+and `LinearIsometry.linearIndependent_pair_iff`).  The real Gram determinant
 `‖u‖² ‖v‖² - ⟪u, v⟫²` of a pair is also differentiated as a function of the pair
 (`TauCeti.hasStrictFDerivAt_sq_sub_inner_sq`); in mechanics it is the squared angular momentum
 `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of a phase-space point `(q, p)`.  Replacing the pair by
@@ -28,6 +31,56 @@ formula without introducing a second notion of Gram determinant.  The real Gram 
 public section
 
 open scoped InnerProductSpace Matrix
+
+namespace LinearIsometry
+
+section LinearIndependent
+
+variable {R ι E F : Type*} [Semiring R] [NormedAddCommGroup E] [SeminormedAddCommGroup F]
+  [Module R E] [Module R F] (l : E →ₗᵢ[R] F)
+
+/-- A linear isometry preserves linear independence of an indexed family. -/
+@[simp]
+theorem linearIndependent_iff {v : ι → E} :
+    LinearIndependent R (l ∘ v) ↔ LinearIndependent R v :=
+  l.toLinearMap.linearIndependent_iff_of_injOn l.injective.injOn
+
+/-- A linear isometry preserves linear independence of a pair. -/
+@[simp]
+theorem linearIndependent_pair_iff {u v : E} :
+    LinearIndependent R ![l u, l v] ↔ LinearIndependent R ![u, v] := by
+  have hcomp : (![l u, l v] : Fin 2 → F) = l ∘ ![u, v] :=
+    funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
+  rw [hcomp, l.linearIndependent_iff]
+
+end LinearIndependent
+
+section Gram
+
+variable {𝕜 ι E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (l : E →ₗᵢ[𝕜] F)
+
+/-- A linear isometry preserves the Gram matrix of an indexed family. -/
+@[simp]
+theorem gram_comp (v : ι → E) : Matrix.gram 𝕜 (l ∘ v) = Matrix.gram 𝕜 v := by
+  ext i j
+  exact l.inner_map_map (v i) (v j)
+
+/-- A linear isometry preserves the `2 × 2` Gram matrix of a pair. -/
+@[simp]
+theorem gram_pair (u v : E) : Matrix.gram 𝕜 ![l u, l v] = Matrix.gram 𝕜 ![u, v] := by
+  have hcomp : (![l u, l v] : Fin 2 → F) = l ∘ ![u, v] :=
+    funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
+  rw [hcomp, l.gram_comp]
+
+/-- A linear isometry preserves the Gram determinant of a pair. -/
+theorem det_gram_pair (u v : E) :
+    (Matrix.gram 𝕜 ![l u, l v]).det = (Matrix.gram 𝕜 ![u, v]).det := by
+  rw [l.gram_pair]
+
+end Gram
+
+end LinearIsometry
 
 namespace Matrix
 

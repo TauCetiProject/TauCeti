@@ -199,6 +199,8 @@ section Product
 
 open scoped TauCeti
 
+section Submersion
+
 variable [IsManifold I ∞ M] [IsManifold J ∞ N]
 
 /-- The first projection, with the product Riemannian metric, is a Riemannian submersion. -/
@@ -234,16 +236,40 @@ theorem horizontalLift_fst (p : M × N) (v : TangentSpace I p.1) :
     ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, add_zero,
     mfderiv_fst_apply, Manifold.tangentSpaceProdEquiv_apply]
 
-/-- For the product Riemannian submersion `Prod.fst : M × N → M`, the horizontal projection keeps
-the first tangent component and zeroes the second. -/
+end Submersion
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+
+/-- For the first projection `Prod.fst : M × N → M` with the product Riemannian metric, the
+orthogonal projection onto `(ker df_p)ᗮ` keeps the first tangent component and zeroes the
+second. -/
 theorem starProjection_orthogonal_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
     (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮ.starProjection v =
       (Manifold.tangentSpaceProdEquiv p).symm ((Manifold.tangentSpaceProdEquiv p v).1, 0) := by
-  rw [← (isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift_mfderiv,
-    horizontalLift_fst, mfderiv_fst_apply, Manifold.tangentSpaceProdEquiv_apply]
+  let u : TangentSpace (I.prod J) p :=
+    (Manifold.tangentSpaceProdEquiv p).symm ((Manifold.tangentSpaceProdEquiv p v).1, 0)
+  let w : TangentSpace (I.prod J) p :=
+    (Manifold.tangentSpaceProdEquiv p).symm (0, (Manifold.tangentSpaceProdEquiv p v).2)
+  have hu : u ∈ (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮ := by
+    rw [Submodule.mem_orthogonal]
+    intro z hz
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, mfderiv_fst_apply,
+      ← Manifold.tangentSpaceProdEquiv_apply (I := I) (J := J) p z] at hz
+    rw [Manifold.inner_tangentSpace_prod, ContinuousLinearEquiv.apply_symm_apply, hz,
+      inner_zero_left, inner_zero_right, add_zero]
+  have hw : w ∈ (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮᗮ := by
+    apply (mfderiv (I.prod J) I (@Prod.fst M N) p).ker.le_orthogonal_orthogonal
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, mfderiv_fst_apply,
+      ← Manifold.tangentSpaceProdEquiv_apply (I := I) (J := J) p w]
+    simp only [w, ContinuousLinearEquiv.apply_symm_apply]
+  have hv : v = u + w := by
+    apply (Manifold.tangentSpaceProdEquiv p).injective
+    rw [map_add, ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
+    ext <;> simp only [Prod.fst_add, Prod.snd_add, add_zero, zero_add]
+  exact Submodule.eq_starProjection_of_mem_orthogonal' hu hw hv
 
-/-- For the product Riemannian submersion `Prod.fst : M × N → M`, the vertical projection zeroes
-the first tangent component and keeps the second. -/
+/-- For the first projection `Prod.fst : M × N → M` with the product Riemannian metric, the
+orthogonal projection onto `ker df_p` zeroes the first tangent component and keeps the second. -/
 theorem starProjection_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
     (mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection v =
       (Manifold.tangentSpaceProdEquiv p).symm (0, (Manifold.tangentSpaceProdEquiv p v).2) := by

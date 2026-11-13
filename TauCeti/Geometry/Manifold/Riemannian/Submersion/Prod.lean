@@ -25,8 +25,8 @@ both O'Neill tensors `oneillA` and `oneillT` vanish identically, and horizontal 
   product vector field `(Y₁, Y₂)` along `Prod.fst` isolate `(Y₁, 0)` and `(0, Y₂)`.
 * `TauCeti.oneillA_fst` and `TauCeti.oneillT_fst`: O'Neill's fundamental tensors vanish identically
   for `Prod.fst : M × N → M`.
-* `TauCeti.riemannCurvatureTensor_fst_eq_horizontalLift` and
-  `TauCeti.sectionalCurvature_fst_eq_horizontalLift`: horizontal lifts along `Prod.fst` preserve
+* `TauCeti.riemannCurvatureTensor_horizontalLift_fst` and
+  `TauCeti.sectionalCurvature_horizontalLift_fst`: horizontal lifts along `Prod.fst` preserve
   Riemannian and sectional curvature regardless of the geometry of `N`.
 
 ## References
@@ -50,15 +50,15 @@ section Projections
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
 
-/-- For the product Riemannian submersion `Prod.fst : M × N → M`, the horizontal projection of a
-product vector field `(Y₁, Y₂)` is `(Y₁, 0)`. -/
+/-- For the first projection `Prod.fst : M × N → M` with the product Riemannian metric, the
+orthogonal projection onto `(ker df_p)ᗮ` sends a product vector field `(Y₁, Y₂)` to `(Y₁, 0)`. -/
 theorem starProjection_orthogonal_ker_fst_prodVectorField
     (Y₁ : Π x : M, TangentSpace I x) (Y₂ : Π y : N, TangentSpace J y) (p : M × N) :
     (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮ.starProjection
@@ -70,8 +70,8 @@ theorem starProjection_orthogonal_ker_fst_prodVectorField
     Manifold.tangentSpaceProdEquiv_prodVectorField]
   rfl
 
-/-- For the product Riemannian submersion `Prod.fst : M × N → M`, the vertical projection of a
-product vector field `(Y₁, Y₂)` is `(0, Y₂)`. -/
+/-- For the first projection `Prod.fst : M × N → M` with the product Riemannian metric, the
+orthogonal projection onto `ker df_p` sends a product vector field `(Y₁, Y₂)` to `(0, Y₂)`. -/
 theorem starProjection_ker_fst_prodVectorField
     (Y₁ : Π x : M, TangentSpace I x) (Y₂ : Π y : N, TangentSpace J y) (p : M × N) :
     (mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection
@@ -86,6 +86,7 @@ theorem starProjection_ker_fst_prodVectorField
 section ONeill
 
 variable
+  [IsManifold I ∞ M] [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
 
@@ -125,33 +126,30 @@ theorem oneillA_fst (p : M × N) :
 @[simp]
 theorem oneillT_fst (p : M × N) :
     (isRiemannianSubmersion_fst (I := I) (J := J)).oneillT p = 0 := by
-  ext u v
-  let Y₁ : Π x : M, TangentSpace I x :=
-    FiberBundle.extend E (Manifold.tangentSpaceProdEquiv p v).1
+  rw [(isRiemannianSubmersion_fst (I := I) (J := J)).oneillT_eq_zero_iff]
+  intro u v _ hv
   let Y₂ : Π y : N, TangentSpace J y :=
     FiberBundle.extend F (Manifold.tangentSpaceProdEquiv p v).2
-  have hY₁ : MDiffAt (T% Y₁) p.1 := FiberBundle.mdifferentiableAt_extend I E _
-  have hY₂ : MDiffAt (T% Y₂) p.2 := FiberBundle.mdifferentiableAt_extend J F _
   have h0M : MDiffAt (T% (0 : Π x : M, TangentSpace I x)) p.1 :=
     (contMDiff_zeroSection ℝ (TangentSpace I)).mdifferentiableAt one_ne_zero
-  have h0N : MDiffAt (T% (0 : Π y : N, TangentSpace J y)) p.2 :=
-    (contMDiff_zeroSection ℝ (TangentSpace J)).mdifferentiableAt one_ne_zero
-  have hY : MDiffAt (T% (Manifold.prodVectorField Y₁ Y₂)) p :=
-    Manifold.mdifferentiableAt_prodVectorField hY₁ hY₂
-  have hYp : Manifold.prodVectorField Y₁ Y₂ p = v := by
+  have hY₂ : MDiffAt (T% Y₂) p.2 := FiberBundle.mdifferentiableAt_extend J F _
+  have hY : MDiffAt (T% (Manifold.prodVectorField (0 : Π x : M, TangentSpace I x) Y₂)) p :=
+    Manifold.mdifferentiableAt_prodVectorField h0M hY₂
+  have hYp : Manifold.prodVectorField (0 : Π x : M, TangentSpace I x) Y₂ p = v := by
+    rw [← Submodule.starProjection_eq_self_iff.mpr hv, starProjection_ker_fst]
     apply (Manifold.tangentSpaceProdEquiv p).injective
-    rw [Manifold.tangentSpaceProdEquiv_prodVectorField]
-    ext <;> simp [Y₁, Y₂, FiberBundle.extend_apply_self]
-  simp only [zero_apply]
-  rw [← hYp, (isRiemannianSubmersion_fst (I := I) (J := J)).oneillT_apply hY u]
-  simp_rw [starProjection_ker_fst_prodVectorField,
-    starProjection_orthogonal_ker_fst_prodVectorField]
-  rw [starProjection_orthogonal_ker_fst, starProjection_ker_fst, starProjection_ker_fst,
+    rw [Manifold.tangentSpaceProdEquiv_prodVectorField, ContinuousLinearEquiv.apply_symm_apply]
+    ext <;> simp [Y₂, FiberBundle.extend_apply_self]
+  have hYv (q : M × N) :
+      Manifold.prodVectorField (0 : Π x : M, TangentSpace I x) Y₂ q ∈
+        (mfderiv (I.prod J) I (@Prod.fst M N) q).ker := by
+    rw [← Submodule.starProjection_eq_self_iff, starProjection_ker_fst_prodVectorField]
+  rw [← hYp, (isRiemannianSubmersion_fst
+        (I := I) (J := J)).oneillT_apply_of_eventually_mem_ker hY (.of_forall hYv),
+    starProjection_orthogonal_ker_fst,
     Manifold.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField h0M hY₂,
-    Manifold.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField hY₁ h0N,
-    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.zero,
-    (CovariantDerivative.leviCivitaConnection J N).isCovariantDerivativeOnUniv.zero]
-  simp only [zero_apply, Prod.mk_zero_zero, map_zero, add_zero]
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.zero]
+  simp only [zero_apply, Prod.mk_zero_zero, map_zero]
 
 section Curvature
 
@@ -160,29 +158,30 @@ variable [T2Space M] [T2Space N]
 /-- For the Riemannian product projection `Prod.fst : M × N → M`, O'Neill's horizontal curvature
 equation has vanishing `A`-correction, so horizontal lifts preserve the `(0, 4)` Riemann curvature
 tensor regardless of the geometry of `N`. -/
-theorem riemannCurvatureTensor_fst_eq_horizontalLift (p : M × N)
+theorem riemannCurvatureTensor_horizontalLift_fst (p : M × N)
     (u v w z : TangentSpace I p.1) :
-    (leviCivitaConnection I M).riemannCurvatureTensor p.1 u v w z =
-      (leviCivitaConnection (I.prod J) (M × N)).riemannCurvatureTensor p
+    (leviCivitaConnection (I.prod J) (M × N)).riemannCurvatureTensor p
         ((isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p u)
         ((isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p v)
         ((isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p w)
-        ((isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p z) :=
-  (isRiemannianSubmersion_fst (I := I) (J := J)).riemannCurvatureTensor_eq_of_oneillA_eq_zero
-    (oneillA_fst p) u v w z
+        ((isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p z) =
+      (leviCivitaConnection I M).riemannCurvatureTensor p.1 u v w z :=
+  ((isRiemannianSubmersion_fst (I := I) (J := J)).riemannCurvatureTensor_eq_of_oneillA_eq_zero
+    (oneillA_fst p) u v w z).symm
 
 /-- For the Riemannian product projection `Prod.fst : M × N → M`, horizontal lifts preserve
 sectional curvature regardless of the geometry of `N`. -/
-theorem sectionalCurvature_fst_eq_horizontalLift (p : M × N)
+theorem sectionalCurvature_horizontalLift_fst (p : M × N)
     (u v : TangentSpace I p.1) :
-    (leviCivitaConnection I M).sectionalCurvature
-        (isMetricCompatible_leviCivitaConnection I) p.1 u v =
-      (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
+    (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
         (isMetricCompatible_leviCivitaConnection (I.prod J)) p
         ((isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p u)
-        ((isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p v) :=
-  ((isRiemannianSubmersion_fst
-    (I := I) (J := J)).forall_sectionalCurvature_eq_horizontalLift_iff.mpr (oneillA_fst p)) u v
+        ((isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p v) =
+      (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) p.1 u v :=
+  (((isRiemannianSubmersion_fst
+      (I := I) (J := J)).forall_sectionalCurvature_eq_horizontalLift_iff.mpr
+    (oneillA_fst p)) u v).symm
 
 end Curvature
 

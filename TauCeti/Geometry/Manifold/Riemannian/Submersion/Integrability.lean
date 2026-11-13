@@ -57,9 +57,10 @@ is constant along the fibres.
   `A` is alternating on horizontal vectors.
 * `TauCeti.IsRiemannianSubmersion.starProjection_ker_mlieBracket`: `v [X, Y] = 2 A_X Y` for
   horizontal fields `X` and `Y`.
-* `TauCeti.IsRiemannianSubmersion.oneillA_eq_zero_iff` and
-  `TauCeti.IsRiemannianSubmersion.oneillA_eq_zero_iff_horizontalLift`: `A` vanishes at a point
-  precisely when it vanishes on horizontal pairs there.
+* `TauCeti.IsRiemannianSubmersion.oneillA_eq_zero_iff`,
+  `TauCeti.IsRiemannianSubmersion.oneillA_eq_zero_iff_horizontalLift`, and
+  `TauCeti.IsRiemannianSubmersion.oneillT_eq_zero_iff`: `A` and `T` vanish at a point precisely
+  when they vanish on horizontal (respectively vertical) pairs there.
 * `TauCeti.IsRiemannianSubmersion.oneillT_comm`: `T` is symmetric on vertical vectors.
 * `TauCeti.IsRiemannianSubmersion.mlieBracket_horizontalLift`,
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`, and
@@ -445,6 +446,28 @@ theorem oneillA_eq_zero_iff_horizontalLift :
     (h.horizontalLift_mem_orthogonal_ker x v), fun h0 u v hu hv ↦ ?_⟩
   rw [← h.horizontalLift_mfderiv_of_mem x hu, ← h.horizontalLift_mfderiv_of_mem x hv]
   exact h0 _ _
+
+/-- O'Neill's vertical tensor `T` vanishes at `x` if and only if it vanishes on every pair of
+vertical vectors at `x`. Skew-adjointness controls horizontal second arguments from vertical ones,
+and the first argument factors through its vertical projection. -/
+theorem oneillT_eq_zero_iff :
+    h.oneillT x = 0 ↔
+      ∀ u v : TangentSpace I x, u ∈ (mfderiv I J f x).ker →
+        v ∈ (mfderiv I J f x).ker → h.oneillT x u v = 0 := by
+  refine ⟨fun h0 u v _ _ ↦ by simp [h0], fun h0 ↦ ?_⟩
+  ext u v
+  simp only [zero_apply]
+  rw [← h.oneillT_starProjection_ker x u,
+    ← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal v, map_add,
+    h0 _ _ (Submodule.starProjection_apply_mem _ _) (Submodule.starProjection_apply_mem _ _),
+    zero_add]
+  set p := (mfderiv I J f x).ker.starProjection u
+  set q := (mfderiv I J f x).kerᗮ.starProjection v
+  have hpq : h.oneillT x p q ∈ (mfderiv I J f x).ker :=
+    h.oneillT_apply_mem_ker p (Submodule.starProjection_apply_mem _ _)
+  apply (inner_self_eq_zero (𝕜 := ℝ)).mp
+  rw [h.inner_oneillT, h0 p (h.oneillT x p q) (Submodule.starProjection_apply_mem _ _) hpq,
+    inner_zero_right, neg_zero]
 
 /-- When the vertical kernel at `x` is trivial, O'Neill's horizontal tensor vanishes at `x`. -/
 theorem oneillA_eq_zero_of_ker_eq_bot (hker : (mfderiv I J f x).ker = ⊥) :
