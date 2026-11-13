@@ -52,6 +52,21 @@ theorem lineSchwarzReflection_def (p a q b : ℂ) (f : ℂ → ℂ) (z : ℂ) :
       q + b * schwarzReflection (fun w => (f (p + a * w) - q) / b) ((z - p) / a) :=
   by rw [lineSchwarzReflection]
 
+/-- With a zero source direction the affine-line Schwarz reflection is the constant value at the
+base point `p`, read in the target chart. -/
+@[simp]
+theorem lineSchwarzReflection_zero_source_direction (p q b : ℂ) (f : ℂ → ℂ) :
+    lineSchwarzReflection p 0 q b f = fun _ => q + b * ((f p - q) / b) := by
+  funext z
+  simp [lineSchwarzReflection_def]
+
+/-- With a zero target direction the affine-line Schwarz reflection is the constant `q`. -/
+@[simp]
+theorem lineSchwarzReflection_zero_target_direction (p a q : ℂ) (f : ℂ → ℂ) :
+    lineSchwarzReflection p a q 0 f = fun _ => q := by
+  funext z
+  simp [lineSchwarzReflection_def]
+
 /-- On the closed positive side of the source line, affine-line Schwarz reflection agrees with
 the original function. -/
 @[simp]
@@ -164,8 +179,8 @@ theorem differentiableOn_lineSchwarzReflection_of_symmetric {Ω : Set ℂ} {p a 
     DifferentiableOn ℂ (lineSchwarzReflection p a q b f) Ω := by
   rcases eq_or_ne a 0 with rfl | ha
   · -- The source coordinate `(z - p) / 0` is `0`, so the extension is constant.
-    refine (differentiableOn_const (lineSchwarzReflection p 0 q b f p)).congr fun z _ => ?_
-    simp [lineSchwarzReflection_def]
+    simp only [lineSchwarzReflection_zero_source_direction]
+    exact differentiableOn_const _
   -- Read everything in the charts `φ w = p + a·w` and `ψ z = (z - p)/a`, where the source line is
   -- the real axis and the four hypotheses become those of the half-plane theorem.
   have hUopen : IsOpen ((fun w : ℂ => p + a * w) ⁻¹' Ω) :=
@@ -197,7 +212,7 @@ theorem lineSchwarzReflection_sourceReflection {Ω : Set ℂ} {p a q b : ℂ} {f
       q + b * (starRingEnd ℂ)
         ((lineSchwarzReflection p a q b f z - q) / b) := by
   rcases eq_or_ne b 0 with rfl | hb
-  · simp only [lineSchwarzReflection_def, zero_mul, add_zero]
+  · simp
   let g := fun w : ℂ => (f (p + a * w) - q) / b
   have hgline : ((z - p) / a).im = 0 → (g ((z - p) / a)).im = 0 := by
     intro him
