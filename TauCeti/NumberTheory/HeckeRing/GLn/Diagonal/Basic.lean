@@ -94,10 +94,15 @@ lemma natDiagGL_mul (a b : Fin n → ℕ) (ha : ∀ i, 0 < a i) (hb : ∀ i, 0 <
     natDiagGL_coe n (a * b) (pi_mul_pos n ha hb), Matrix.diagonal_mul_diagonal,
     Pi.mul_apply, Nat.cast_mul]
 
-lemma natDiagGL_det_pos (a : Fin n → ℕ) (ha : ∀ i, 0 < a i) :
+/-- The determinant of `natDiagGL n a` is positive, with no positivity hypothesis on `a`: when an
+entry is not positive the value is the identity, of determinant `1`. -/
+lemma natDiagGL_det_pos (a : Fin n → ℕ) :
     0 < (↑(natDiagGL n a) : Matrix (Fin n) (Fin n) ℚ).det := by
-  rw [natDiagGL_coe n a ha, det_diagonal]
-  exact Finset.prod_pos (fun i _ ↦ by positivity [ha i])
+  by_cases ha : ∀ i, 0 < a i
+  · rw [natDiagGL_coe n a ha, det_diagonal]
+    exact Finset.prod_pos (fun i _ ↦ by positivity [ha i])
+  · rw [natDiagGL_of_not_pos n ha]
+    simp
 
 lemma natDiagGL_det (a : Fin n → ℕ) (ha : ∀ i, 0 < a i) :
     (↑(natDiagGL n a) : Matrix (Fin n) (Fin n) ℚ).det = ∏ i, (a i : ℚ) := by

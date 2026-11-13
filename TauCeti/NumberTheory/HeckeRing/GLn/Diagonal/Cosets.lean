@@ -71,11 +71,7 @@ lemma hasIntEntries_natDiagGL (a : Fin n → ℕ) : HasIntEntries n (natDiagGL n
 
 /-- Membership in Shimura's `Δ` is unconditional: the junk value is the identity. -/
 lemma natDiagGL_mem_posDetInt (a : Fin n → ℕ) : natDiagGL n a ∈ posDetInt n := by
-  refine (mem_posDetInt_iff n).mpr ⟨hasIntEntries_natDiagGL n a, ?_⟩
-  by_cases ha : ∀ i, 0 < a i
-  · exact natDiagGL_det_pos n a ha
-  · rw [natDiagGL_of_not_pos n ha]
-    simp
+  exact (mem_posDetInt_iff n).mpr ⟨hasIntEntries_natDiagGL n a, natDiagGL_det_pos n a⟩
 
 end Diagonal
 

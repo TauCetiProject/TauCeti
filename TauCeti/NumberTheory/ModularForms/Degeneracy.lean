@@ -174,8 +174,9 @@ lemma coe_scaleGL [NeZero d] :
 /-- **`diag(d, 1)` over `ℚ`.** `scaleGL` is stated over `ℝ`, where the slash action lives, but
 some arguments need the same matrix over `ℚ`: the cusp argument, because what makes
 `diag(d, 1)⁻¹ · A` carry cusps to cusps is precisely that it is *rational*, and the Hecke
-operators, whose diagonal representative is `HeckeRing.GLn.natDiagGL 2 ![d, 1]`. That rational
-matrix maps to `scaleGL d`. -/
+operators, where `HeckeRing.GLn.natDiagGL 2 ![d, 1]` (`HeckeRing.GL2.scaleRep d`) is the
+rational scaling matrix in the diamond-twisted term of `T_p` for a prime `p` and in commuting
+Hecke operators past `V_d`. That rational matrix maps to `scaleGL d`. -/
 @[simp]
 lemma map_natDiagGL_d_one_eq_scaleGL [NeZero d] :
     Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (HeckeRing.GLn.natDiagGL 2 ![d, 1]) =

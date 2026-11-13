@@ -91,7 +91,7 @@ commutative semiring.
   `instCommRing_Gamma0`, all Apache-2.0 at commit
   `2baa76f742bdb4fb8ee323fabba41203bd390e08`. The source states its own transpose equivalence
   and diagonal-matrix API; here those come from `GLn/TransposeAntiInvolution.lean` and
-  `GLn/Diagonal/Cosets.lean` instead, and the four-field bundle is assembled by
+  `GLn/Diagonal/Basic.lean` instead, and the four-field bundle is assembled by
   `HeckeAntiInvolution.ofAmbient`. The source proves its own `Gamma0_AL_preserves_00` to see
   that the bar fixes the upper-left entry; here that is already visible in
   `atkinLehnerAntiInvolution_bar_val`, so the lemma is not reproduced. The source builds its

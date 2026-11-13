@@ -79,7 +79,7 @@ lemma natDiagGL_mem_Delta0_of_coprime (a : Fin 2 → ℕ)
   · rw [natDiagGL_coe 2 a ha]
     ext i j
     simp [Matrix.diagonal, Matrix.map_apply, apply_ite (Int.cast : ℤ → ℚ)]
-  · exact natDiagGL_det_pos 2 a ha
+  · exact natDiagGL_det_pos 2 a
   · simp [Matrix.diagonal_apply_ne]
   · simpa [Matrix.diagonal_apply_eq] using (ZMod.isUnit_iff_coprime (a 0) N).mpr (hgcd ha)
 
