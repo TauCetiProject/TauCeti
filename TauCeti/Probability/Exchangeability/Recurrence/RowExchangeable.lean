@@ -280,6 +280,24 @@ private def reindexEquiv (π : α → Equiv.Perm ℕ) (F : Finset (α × ℕ)) (
     Subtype.ext (reindexWord_symm_reindexWord (lastExitAdmissible_of_mem_horizonWords u.2.1))
   right_inv v := Subtype.ext (reindexWord_reindexWord_symm v.2.1)
 
+/-- **Along a recurrent sequence, each row of a finite set of cells is eventually either never
+visited or visited often enough.** For a finite set `S` of cells of the successor array, every long
+enough prefix either never visits the row of a cell `p ∈ S` (and then no term of the sequence is in
+that row), or has visited it more than `p.2 + 1` and more than `π p.1 p.2 + 1` times. -/
+private theorem eventually_forall_mem_ne_or_lt_visitCount {x : ℕ → α}
+    (hio : ∀ k, {n | x n = x k}.Infinite) {S : Set (α × ℕ)} (hS : S.Finite) :
+    ∀ᶠ m : ℕ in atTop, ∀ p ∈ S,
+      (∀ n, x n ≠ p.1) ∨ (p.2 + 1 < visitCount x p.1 m ∧ π p.1 p.2 + 1 < visitCount x p.1 m) := by
+  refine hS.eventually_all.2 fun p _ ↦ ?_
+  by_cases hvis : ∃ n, x n = p.1
+  · obtain ⟨n, hn⟩ := hvis
+    obtain ⟨j, -, hj⟩ := exists_visitCount_of_infinite (hn ▸ hio n)
+      (max (p.2 + 2) (π p.1 p.2 + 2))
+    refine eventually_atTop.2 ⟨j, fun m hjm ↦ Or.inr ?_⟩
+    have := visitCount_monotone x p.1 hjm
+    omega
+  · exact Eventually.of_forall fun _ ↦ Or.inl (not_exists.1 hvis)
+
 /-- **Along a recurrent sequence, the horizon cell words of its prefixes eventually describe the
 visited successor array itself.** Each relevant row is either never visited, and then no prefix
 visits it, or visited infinitely often, and then every long enough prefix has consumed its relevant
@@ -292,17 +310,7 @@ private theorem eventually_prefix_mem_iff {x : ℕ → α} (hio : ∀ k, {n | x 
       ∀ p : F, visitedSuccessorArray x (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) = g p := by
   have hfin : {p : α × ℕ | π p.1 p.2 ≠ p.2 ∨ p ∈ F}.Finite :=
     (hπ.union F.finite_toSet).subset fun _ hp ↦ hp
-  have hev : ∀ᶠ m : ℕ in atTop, ∀ p ∈ {p : α × ℕ | π p.1 p.2 ≠ p.2 ∨ p ∈ F},
-      (∀ n, x n ≠ p.1) ∨ (p.2 + 1 < visitCount x p.1 m ∧ π p.1 p.2 + 1 < visitCount x p.1 m) := by
-    refine hfin.eventually_all.2 fun p _ ↦ ?_
-    by_cases hvis : ∃ n, x n = p.1
-    · obtain ⟨n, hn⟩ := hvis
-      obtain ⟨j, -, hj⟩ := exists_visitCount_of_infinite (hn ▸ hio n)
-        (max (p.2 + 2) (π p.1 p.2 + 2))
-      refine eventually_atTop.2 ⟨j, fun m hjm ↦ Or.inr ?_⟩
-      have := visitCount_monotone x p.1 hjm
-      omega
-    · exact Eventually.of_forall fun _ ↦ Or.inl (not_exists.1 hvis)
+  have hev := eventually_forall_mem_ne_or_lt_visitCount (π := π) hio hfin
   filter_upwards [hev] with m hm
   set u : Fin (m + 1) → α := fun i ↦ x i.val
   have hxu : ∀ i ≤ m, x i = wordSeq u i := fun i hi ↦ (wordSeq_of_le u hi).symm
@@ -418,6 +426,17 @@ private theorem tendsto_prefixLaw_horizonWords_inter_cellWords [IsFiniteMeasure 
       MeasurableSet.of_discrete]
   rfl
 
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- The cell preimage of a finite window of the visited successor array read at the cells `τ p`:
+the set of outcomes whose visited successor array has the prescribed entries at those cells. -/
+private theorem preimage_restrict_visitedSuccessorProcess (τ : α × ℕ → α × ℕ)
+    (F : Finset (α × ℕ)) (g : F → α) :
+    (fun ω ↦ F.restrict fun p : α × ℕ ↦ visitedSuccessorProcess X (τ p) ω) ⁻¹' {g} =
+      {ω | ∀ p : F, visitedSuccessorArray (fun n ↦ X n ω) (τ p).1 (τ p).2 = g p} := by
+  ext ω
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
+    visitedSuccessorProcess_apply, Set.mem_ofPred_eq]
+
 /-- **The visited successor array of a recurrent Markov exchangeable process is row
 exchangeable.** Its law is unchanged when the entries of each row are permuted, with a permutation
 chosen separately for each row.
@@ -453,20 +472,8 @@ theorem MarkovExchangeable.rowExchangeable_visitedSuccessorProcess [IsFiniteMeas
     AEMeasurable.of_eval fun p ↦ hSA (p : α × ℕ)
   rw [Measure.map_apply_of_aemeasurable hm₁ MeasurableSet.of_discrete,
     Measure.map_apply_of_aemeasurable hm₂ MeasurableSet.of_discrete]
-  have hcellπ : (fun ω ↦ F.restrict fun p : α × ℕ ↦
-      visitedSuccessorProcess X (p.1, π p.1 p.2) ω) ⁻¹' {g} = {ω | ∀ p : F,
-        visitedSuccessorArray (fun n ↦ X n ω) (p : α × ℕ).1 (π (p : α × ℕ).1 (p : α × ℕ).2)
-          = g p} := by
-    ext ω
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
-      visitedSuccessorProcess_apply, Set.mem_ofPred_eq]
-  have hcellid : (fun ω ↦ F.restrict fun p : α × ℕ ↦ visitedSuccessorProcess X p ω) ⁻¹' {g}
-      = {ω | ∀ p : F, visitedSuccessorArray (fun n ↦ X n ω) (p : α × ℕ).1 (p : α × ℕ).2
-          = g p} := by
-    ext ω
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
-      visitedSuccessorProcess_apply, Set.mem_ofPred_eq]
-  rw [hcellπ, hcellid]
+  rw [preimage_restrict_visitedSuccessorProcess fun p : α × ℕ ↦ (p.1, π p.1 p.2),
+    preimage_restrict_visitedSuccessorProcess fun p : α × ℕ ↦ p]
   -- Both masses are limits of horizon prefix masses, and those agree term by term.
   exact tendsto_nhds_unique
     ((tendsto_prefixLaw_horizonWords_inter_cellWords h hrec hsupp fun _ ↦ Or.inr rfl).congr

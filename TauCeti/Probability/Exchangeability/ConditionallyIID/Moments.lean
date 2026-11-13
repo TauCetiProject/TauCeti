@@ -82,6 +82,21 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-! ### Weighted block identities -/
 
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- The indicator of a box evaluated at a block of coordinates is the indicator of the event that
+all the coordinates of the block land in the box's cell: the two indicators live on different
+domains but share a membership condition. -/
+private theorem indicator_univ_pi_eq_indicator_iInter {m : ℕ} (k : Fin m → ℕ) (ω : Ω) :
+    (Set.univ.pi fun _ : Fin m ↦ B).indicator (1 : (Fin m → α) → ℝ≥0∞) (fun i : Fin m ↦ X (k i) ω)
+      = (⋂ i : Fin m, X (k i) ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω := by
+  have hmem : (fun i : Fin m ↦ X (k i) ω) ∈ Set.univ.pi (fun _ : Fin m ↦ B)
+      ↔ ω ∈ ⋂ i : Fin m, X (k i) ⁻¹' B := by
+    simp only [Set.mem_univ_pi, Set.mem_iInter, Set.mem_preimage]
+  by_cases hω : ω ∈ ⋂ i : Fin m, X (k i) ⁻¹' B
+  · rw [Set.indicator_of_mem (hmem.mpr hω), Set.indicator_of_mem hω]
+    rfl
+  · rw [Set.indicator_of_notMem (fun hc ↦ hω (hmem.mp hc)), Set.indicator_of_notMem hω]
+
 /-- **The weighted block identity.** Integrating the joint-law disintegration of
 `ConditionallyIIDWith` against a weight `g (ν ω)` times the indicator of the event that a block of
 `m` distinct coordinates lands in `B` replaces the block by the power `(ν ω) B ^ m`.
@@ -115,19 +130,7 @@ theorem ConditionallyIIDWith.lintegral_mul_indicator_iInter
   calc ∫⁻ ω, g (ν ω) * (⋂ i : Fin m, X (k i) ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω ∂μ
       = ∫⁻ ω, F (ν ω, fun i : Fin m ↦ X (k i) ω) ∂μ := by
         refine lintegral_congr fun ω ↦ ?_
-        -- The two indicators live on different domains but share a membership condition.
-        have hind : (Set.univ.pi fun _ : Fin m ↦ B).indicator (1 : (Fin m → α) → ℝ≥0∞)
-            (fun i : Fin m ↦ X (k i) ω)
-            = (⋂ i : Fin m, X (k i) ⁻¹' B).indicator (1 : Ω → ℝ≥0∞) ω := by
-          have hmem : (fun i : Fin m ↦ X (k i) ω) ∈ Set.univ.pi (fun _ : Fin m ↦ B)
-              ↔ ω ∈ ⋂ i : Fin m, X (k i) ⁻¹' B := by
-            simp only [Set.mem_univ_pi, Set.mem_iInter, Set.mem_preimage]
-          by_cases hω : ω ∈ ⋂ i : Fin m, X (k i) ⁻¹' B
-          · rw [Set.indicator_of_mem (hmem.mpr hω), Set.indicator_of_mem hω]
-            rfl
-          · rw [Set.indicator_of_notMem (fun hc ↦ hω (hmem.mp hc)),
-              Set.indicator_of_notMem hω]
-        simp only [hF_def, hind]
+        simp only [hF_def, indicator_univ_pi_eq_indicator_iInter]
     _ = ∫⁻ ω, ∫⁻ z, F z ∂((Measure.dirac (ν ω)).prod
           (ProbabilityMeasure.pi fun _ : Fin m ↦ ν ω).toMeasure) ∂μ := key
     _ = ∫⁻ ω, g (ν ω) * (ν ω : Measure α) B ^ m ∂μ := by
