@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Fredholm
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
+public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Basic
 import TauCeti.Analysis.Calculus.Morse.GlobalChart
 import TauCeti.Analysis.Calculus.Morse.Transversality
 import TauCeti.Analysis.Calculus.TangentCone.Chart
@@ -63,6 +64,9 @@ the index `ind p - ind q` of `D` gives the surjectivity criterion.
   linearized operator has the dimension of `T_y W^u(p) ∩ T_y W^s(q)`.
 * `TauCeti.surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff`: the linearized
   operator is surjective exactly when `W^u(p)` and `W^s(q)` are transverse at `y`.
+* `TauCeti.isMorseSmale_iff_forall_surjective_trajectoryOperator_negativeGradientFlow`:
+  a function is Morse–Smale exactly when the linearized operator along each trajectory between
+  nondegenerate critical points is surjective.
 
 ## References
 
@@ -177,7 +181,7 @@ theorem mem_span_tangentConeAt_stableSet_iff_memLp (hq : IsNondegenerateCritical
     obtain ⟨e, hqe, hed, heC, heCs, heS⟩ :=
       hq.exists_stableSet_chart_hasFDerivAt_id (n := 1) hfs hf
     have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
-      (Submodule.closed_of_finiteDimensional _) (B := B) hqe hed heC heCs hc hcs
+      (Submodule.isClosed_of_finiteDimensional _) (B := B) hqe hed heC heCs hc hcs
     refine memLp_restrict_Ici_of_eventually_inner_nonneg hA hBsym hα hBα (hw v) ?_ 0
     filter_upwards [(Flow.mem_stableSet.1 hy).eventually hcone] with s hs
     rw [real_inner_comm]
@@ -224,7 +228,7 @@ theorem mem_span_tangentConeAt_unstableSet_iff_memLp (hp : IsNondegenerateCritic
     obtain ⟨e, hpe, hed, heC, heCs, heS⟩ :=
       hp.exists_unstableSet_chart_hasFDerivAt_id (n := 1) hfs hf
     have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
-      (Submodule.closed_of_finiteDimensional _) (B := -B) hpe hed heC heCs hc fun u hu ↦ by
+      (Submodule.isClosed_of_finiteDimensional _) (B := -B) hpe hed heC heCs hc fun u hu ↦ by
         rw [neg_apply, inner_neg_left]
         linarith [hcu u hu]
     refine memLp_restrict_Iic_of_eventually_inner_nonpos hA hBsym hα hBα (hw v) ?_ 0
@@ -368,5 +372,34 @@ theorem surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff
   · intro htop
     rw [htop, finrank_top] at hsum
     omega
+
+
+/-- **Morse–Smale functions are those whose linearized operators are onto.** A `C²` function with
+globally Lipschitz gradient on a finite-dimensional real inner product space is Morse–Smale if and
+only if, along every trajectory of its negative-gradient flow joining two nondegenerate critical
+points, the linearized operator `ξ ↦ ξ' + Hess f(φ s y) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is
+surjective. -/
+theorem isMorseSmale_iff_forall_surjective_trajectoryOperator_negativeGradientFlow
+    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) :
+    IsMorseSmale f hf ↔ ∀ ⦃p q y : E⦄, IsNondegenerateCriticalPoint f p →
+      IsNondegenerateCriticalPoint f q →
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p →
+      y ∈ Flow.stableSet (negativeGradientFlow f hf) q →
+      ∀ AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
+        AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+          (fun s ↦ hessianOperator f (negativeGradientFlow f hf s y)) →
+        Function.Surjective (WeakDerivStep.trajectoryOperator (p := 2) AL) := by
+  refine ⟨fun h p q y hp hq hyu hys AL hAL ↦
+    (surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff hp hq hfs hf hyu hys
+      hAL).2 (h.transverse_at hp hq ⟨hyu, hys⟩),
+    fun h ↦ .of_forall fun p q y hp hq hy ↦ ?_⟩
+  obtain ⟨hyu, hys⟩ := hy
+  -- The Hessian along the trajectory has an `L∞` class, to which the hypothesis applies.
+  have hmem := hfs.memLp_top_hessianOperator_comp
+    ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y).continuous
+    (Flow.mem_unstableSet.1 hyu) (Flow.mem_stableSet.1 hys)
+    (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
+  exact (surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff hp hq hfs hf hyu
+    hys hmem.coeFn_toLp).1 (h hp hq hyu hys _ hmem.coeFn_toLp)
 
 end TauCeti

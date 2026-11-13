@@ -91,14 +91,14 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
       (∀ᶠ z in 𝓝 0, ι z ∈ s ∧ g (ι z) = g y) ∧ HasStrictFDerivAt (fun z ↦ e (ι z)) ι' 0 ∧
       (P ∘L ι').IsInvertible ∧
       ∀ V ∈ 𝓝 (0 : F), ∀ᶠ w in 𝓝 y, w ∈ s → g w = g y → ∃ z ∈ V, ι z = w := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   set T := Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y)
   -- The differential of `g` at `y`, as a linear form on the model space.
   set dg : E →L[𝕜] 𝕜 := mvfderiv 𝓘(𝕜, E) g y
   replace hgv : dg v ≠ 0 := hgv
   -- In finite dimensions every subspace is complemented.
   have hcc (p : Submodule 𝕜 E) : p.ClosedComplemented :=
-    .of_finiteDimensional_quotient (Submodule.closed_of_finiteDimensional _)
+    .of_finiteDimensional_quotient (Submodule.isClosed_of_finiteDimensional _)
   have hrange : dg.range = ⊤ :=
     LinearMap.range_eq_top_of_surjective _ (LinearMap.surjective_of_ne_zero fun h ↦
       hgv (by simpa using LinearMap.congr_fun h v))
@@ -127,7 +127,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   have hA'F : ∀ z ∈ F, A'.symm z ∈ F := by
     intro z hz
     rw [← SetLike.mem_coe, ← tangentConeAt_preimage_symm_eq hs₀
-      (Submodule.closed_of_finiteDimensional _) hyq' ⟨hys, rfl⟩,
+      (Submodule.isClosed_of_finiteDimensional _) hyq' ⟨hys, rfl⟩,
       ← image_mtangentConeAt_eq_tangentConeAt hyq' hA', hmT] at hz
     obtain ⟨u, hu, rfl⟩ := hz
     rwa [ContinuousLinearEquiv.symm_apply_apply]
