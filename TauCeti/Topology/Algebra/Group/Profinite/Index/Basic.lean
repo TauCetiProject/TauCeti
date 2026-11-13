@@ -264,9 +264,9 @@ theorem _root_.Subgroup.not_dvd_profiniteIndex_iff_forall_not_dvd_index (H : Sub
 
 /-- The `ℓ`-adic valuation of the index of the image of a subgroup `X` in the finite quotient
 `G / N` is antitone in `N`: it increases when `N` shrinks to a smaller open normal subgroup `M`. -/
-theorem _root_.Subgroup.padicValNat_index_map_mk'_anti (X : Subgroup G) (ℓ : ℕ) [Fact ℓ.Prime]
+theorem _root_.Subgroup.padicValNat_index_map_mk'_anti (X : Subgroup G) (ℓ : ℕ)
     {N M : OpenNormalSubgroup G} (h : M ≤ N) :
-    (padicValNat ℓ (X.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) ≤
+    padicValNat ℓ (X.map (QuotientGroup.mk' N.toSubgroup)).index ≤
       padicValNat ℓ (X.map (QuotientGroup.mk' M.toSubgroup)).index := by
   rw [X.index_map_mk'_eq_index_sup N.toSubgroup, X.index_map_mk'_eq_index_sup M.toSubgroup]
   -- `h` compares open normal subgroups; the explicit arguments read it as an inequality of

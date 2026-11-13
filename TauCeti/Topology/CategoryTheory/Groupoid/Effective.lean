@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Quotient
+public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.CategoryTheory.Etale
 public import TauCeti.Topology.CategoryTheory.Functor.IsomorphismClasses
 public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
@@ -374,6 +375,66 @@ theorem card_ineffectiveKernel_eq_of_iso {x y : C} (e : x ≅ y) :
     Nat.card (ineffectiveKernel hs x) = Nat.card (ineffectiveKernel hs y) := by
   rw [← map_autMulEquivOfIso_ineffectiveKernel hs e]
   exact (Subgroup.card_map_of_injective (Aut.autMulEquivOfIso e).injective).symm
+
+/-- The ineffective kernel at an object is the fibre of the source map on ineffective arrows.
+Every automorphism is retained as a separate point of this fibre. -/
+noncomputable def ineffectiveKernelEquivFiber (x : C) :
+    ineffectiveKernel hs x ≃
+      (fun a : ineffectiveArrows C ↦ (a : Quiver.Total C).left) ⁻¹' {x} :=
+  Equiv.ofBijective
+    (fun g ↦ ⟨⟨⟨x, x, g.val.asIso.hom⟩, (mem_ineffectiveKernel hs).mp g.property⟩, rfl⟩) <| by
+    constructor
+    · intro g h heq
+      apply Subtype.ext
+      apply Aut.ext
+      apply Iso.ext
+      exact eq_of_heq (Quiver.Total.mk.inj
+        (congrArg (fun a ↦ a.val.val) heq)).2.2
+    · rintro ⟨⟨⟨a, b, f⟩, hf⟩, ha⟩
+      simp only [mem_preimage, mem_singleton_iff] at ha
+      subst a
+      have hb := left_eq_right_of_mem_ineffectiveArrows hf
+      dsimp only at hb
+      subst b
+      exact ⟨⟨Aut.of (asIso f), (mem_ineffectiveKernel hs).mpr hf⟩, rfl⟩
+
+/-- The fibre equivalence sends an ineffective automorphism to its actual total arrow. -/
+@[simp]
+theorem ineffectiveKernelEquivFiber_apply_val_val (x : C) (g : ineffectiveKernel hs x) :
+    (ineffectiveKernelEquivFiber hs x g).val.val = ⟨x, x, g.val.asIso.hom⟩ := (rfl)
+
+/-- The inverse fibre equivalence recovers the ineffective automorphism represented by a loop. -/
+@[simp]
+theorem ineffectiveKernelEquivFiber_symm_apply (x : C) (f : x ⟶ x)
+    (hf : (⟨x, x, f⟩ : Quiver.Total C) ∈ ineffectiveArrows C) :
+    (ineffectiveKernelEquivFiber hs x).symm ⟨⟨⟨x, x, f⟩, hf⟩, rfl⟩ =
+      ⟨Aut.of (asIso f), (mem_ineffectiveKernel hs).mpr hf⟩ := by
+  apply (ineffectiveKernelEquivFiber hs x).symm_apply_eq.mpr
+  rfl
+
+/-- The order of the ineffective kernel on the coarse quotient. As usual, `Nat.card` is zero
+for infinite groups; proper étale groupoids have finite ineffective kernels. -/
+noncomputable def coarseCardIneffectiveKernel : _root_.Quotient (isIsomorphicSetoid C) → ℕ :=
+  _root_.Quotient.lift (fun x ↦ Nat.card (ineffectiveKernel hs x)) fun _ _ ⟨e⟩ ↦
+    card_ineffectiveKernel_eq_of_iso hs e
+
+/-- At the class of an object, the coarse kernel order is the order of its ineffective kernel. -/
+@[simp]
+theorem coarseCardIneffectiveKernel_mk (x : C) :
+    coarseCardIneffectiveKernel hs (_root_.Quotient.mk (isIsomorphicSetoid C) x) =
+      Nat.card (ineffectiveKernel hs x) := (rfl)
+
+/-- The coarse kernel order is locally constant exactly when the order on objects is. -/
+theorem isLocallyConstant_coarseCardIneffectiveKernel_iff :
+    IsLocallyConstant (coarseCardIneffectiveKernel hs) ↔
+      IsLocallyConstant fun x : C ↦ Nat.card (ineffectiveKernel hs x) := by
+  have hquot : IsQuotientMap (_root_.Quotient.mk (isIsomorphicSetoid C)) :=
+    isQuotientMap_quotient_mk'
+  rw [IsLocallyConstant.iff_isOpen_fiber, IsLocallyConstant.iff_isOpen_fiber]
+  apply forall_congr'
+  intro k
+  rw [← hquot.isOpen_preimage]
+  simp only [Set.preimage_preimage, coarseCardIneffectiveKernel_mk]
 
 include hs in
 /-- In an étale groupoid the germ relation is a congruence. -/

@@ -114,7 +114,7 @@ theorem wellFoundedOn_setOf_degree_le_toColex_gt [WellFoundedGT α] (n : ℕ) :
           simp only [InvImage, F, hm, he]
           exact Prod.Lex.right _ (Prod.Lex.right _ ⟨hr, by simp only [Set.mem_ofPred_eq]; omega,
             by simp only [Set.mem_ofPred_eq]; omega⟩)
-    refine ⟨fun y ↦ ⟨_, fun x ⟨hxy, hx, hy⟩ ↦ ?_⟩⟩
+    refine ⟨fun y ↦ ⟨_, fun x ⟨hxy, hx, _⟩ ↦ ?_⟩⟩
     have hx0 : x ≠ 0 := by rintro rfl; exact (bot_le.not_gt hxy : _)
     exact hacc ⟨x, hx0⟩
 

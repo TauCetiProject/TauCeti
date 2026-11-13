@@ -16,8 +16,7 @@ faces are the nonempty disjoint unions of a face of `K` and a face of `L`, allow
 be empty. This file constructs the join first for `PreAbstractSimplicialComplex` and then for
 `AbstractSimplicialComplex`.
 
-Joins are standard infrastructure for the combinatorial-manifold part of the geometric-topology
-roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, layer 11). In particular, combinatorial
+Joins are standard infrastructure for combinatorial manifolds. In particular, combinatorial
 spheres are generated from the boundary of a simplex using subdivision and joins, links interact
 with joins, and the simplicial cylinder appearing in collapse arguments is built from closely
 related product constructions.

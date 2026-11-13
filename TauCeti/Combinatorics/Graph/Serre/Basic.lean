@@ -132,6 +132,29 @@ theorem IsOrientation.rev_notMem_of_mem {O : Set Γ.E} (hO : Γ.IsOrientation O)
     (e : Γ.E) (he : e ∈ O) : Γ.rev e ∉ O :=
   (hO e).mp he
 
+/-- An orientation contains exactly one dart above each geometric edge. -/
+theorem IsOrientation.bijective_toGeomEdge {O : Set Γ.E} (hO : Γ.IsOrientation O) :
+    Function.Bijective fun e : O => Γ.toGeomEdge e := by
+  refine ⟨fun e f h => Subtype.ext ?_, fun g => ?_⟩
+  · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.mp h with hf | hf
+    · exact hf.symm
+    · exact absurd (hf ▸ f.2) (hO.rev_notMem_of_mem Γ e e.2)
+  · obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective g
+    by_cases he : e ∈ O
+    · exact ⟨⟨e, he⟩, rfl⟩
+    · exact ⟨⟨Γ.rev e, (hO.mem_rev_iff Γ e).mpr he⟩, Γ.toGeomEdge_rev e⟩
+
+/-- Every Serre graph has an orientation: choose one dart above each geometric edge. -/
+theorem exists_isOrientation : ∃ O : Set Γ.E, Γ.IsOrientation O := by
+  choose out hout using Γ.toGeomEdge_surjective
+  have hmem (e : Γ.E) : e ∈ Set.range out ↔ out (Γ.toGeomEdge e) = e :=
+    ⟨by rintro ⟨g, rfl⟩; rw [hout], fun h => ⟨_, h⟩⟩
+  refine ⟨Set.range out, fun e => ?_⟩
+  rw [hmem, hmem, toGeomEdge_rev]
+  rcases Γ.toGeomEdge_eq_toGeomEdge_iff.mp (hout (Γ.toGeomEdge e)).symm with h | h
+  · simpa [h] using (Γ.rev_ne e).symm
+  · simpa [h] using Γ.rev_ne e
+
 /-- The quiver whose arrows are the actual darts from their source to their target. -/
 @[expose, instance_reducible] def toQuiver : Quiver Γ.V where
   Hom a b := {e : Γ.E // Γ.src e = a ∧ Γ.tgt e = b}
@@ -428,6 +451,9 @@ vertex `b` to the vertex `!b`. -/
 
 @[simp] theorem segment_src (b : Bool) : segment.src b = b := rfl
 
+/-- Every vertex of the segment is the source of a dart: the dart with the same Boolean label. -/
+theorem segment_src_surjective : Function.Surjective segment.src := fun b => ⟨b, segment_src b⟩
+
 @[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
 
 @[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl
@@ -454,8 +480,11 @@ end TauCeti
 
 namespace SimpleGraph
 
-/-- The Serre graph of a simple graph has its darts as directed edges. -/
-@[expose] def toSerreGraph {V : Type u} (G : SimpleGraph V) : TauCeti.SerreGraph.{u, u} where
+/-- The Serre graph of a simple graph has its darts as directed edges. The definition unfolds at
+instance transparency, so that a vertex or a dart of the simple graph is accepted as a vertex or a
+dart of its Serre graph by rewriting and simplification. -/
+@[expose, instance_reducible] def toSerreGraph {V : Type u} (G : SimpleGraph V) :
+    TauCeti.SerreGraph.{u, u} where
   V := V
   E := G.Dart
   src := fun e => e.fst

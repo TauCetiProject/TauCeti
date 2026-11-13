@@ -49,7 +49,10 @@ space, and develop the first operations of the symbol calculus:
   `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`; this estimate holds for every continuous
   bilinear map (`ContinuousLinearMap.norm_mixedDeriv_le_of_bilinear`). It is bilinear and
   associative, with the constant symbol `id` as identity, and spatial and frequency derivatives
-  obey the Leibniz rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`).
+  obey the Leibniz rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`);
+* `TauCeti.Symbol.poissonBracket`: the Poisson bracket
+  `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` of symbols of orders `m'` and `m` has
+  order `m' + m - 1`.
 
 A symbol is *smoothing* (`TauCeti.Symbol.IsSmoothing`) if it is a symbol of every order. Smoothing
 symbols are closed under the operations above, and they form a two-sided ideal under composition
@@ -62,7 +65,10 @@ constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
 by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`), and commutes with
 spatial and frequency derivatives (`TauCeti.Symbol.spatialDeriv_map`,
-`TauCeti.Symbol.frequencyDeriv_map`).
+`TauCeti.Symbol.frequencyDeriv_map`). In particular, if every value of a symbol commutes with an
+operator `T`, so do the values of its derivatives
+(`TauCeti.Symbol.commute_coefficient_spatialDeriv`,
+`TauCeti.Symbol.commute_coefficient_frequencyDeriv`).
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -266,7 +272,7 @@ theorem IsUniform.exists_norm_iteratedFDeriv_le {a : Symbol n V W m} (ha : a.IsU
         ‖iteratedFDeriv ℝ p (fun η ↦ a.coefficient (x, η)) ξ‖ ≤ C := by
   choose B hB0 hB using isUniform_iff.1 ha
   have hB' : ∀ α β x ξ, ‖mixedDeriv α β a.coefficient x ξ‖ ≤ B α β := fun α β x ξ ↦ by
-    have hβ : (0 : ℝ) ≤ β.length := Nat.cast_nonneg _
+    have _ : (0 : ℝ) ≤ β.length := Nat.cast_nonneg _
     refine (hB α β x ξ).trans (mul_le_of_le_one_right (hB0 α β)
       (Real.rpow_le_one_of_one_le_of_nonpos ?_ (by linarith)))
     nlinarith [sq_nonneg ‖ξ‖]
@@ -311,13 +317,20 @@ theorem exists_bound_coefficient_slice (a : Symbol n V W m) (x : CoordinateSpace
   obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
   exact ⟨C, hC0, hC x rfl⟩
 
+/-- A symbol of order `m` with estimates uniform in the position is bounded by `C ⟨ξ⟩ ^ m` at every
+position. -/
+theorem IsUniform.exists_bound_coefficient {a : Symbol n V W m} (ha : a.IsUniform) :
+    ∃ C, 0 ≤ C ∧ ∀ x ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, hC0, hC⟩ := ha [] []
+  exact ⟨C, hC0, fun x ξ ↦ by simpa [mixedDeriv_nil_nil] using hC x ξ⟩
+
 section Module
 
 instance : Zero (Symbol n V W m) where
   zero :=
     { coefficient := 0
       contDiff_coefficient := contDiff_const
-      exists_bound := fun _ _ α β => ⟨0, le_rfl, fun x ξ => by simp⟩ }
+      exists_bound := fun _ _ α β => ⟨0, le_rfl, fun x _ => by simp⟩ }
 
 instance : Add (Symbol n V W m) where
   add a b :=
@@ -701,7 +714,6 @@ theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
   have hv : ‖v‖ ≤ (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
     rw [← Real.sqrt_eq_rpow]
     exact Real.le_sqrt_of_sq_le (by linarith)
-  have hB0 : 0 ≤ B := by positivity
   have hsplit : (1 + ‖v‖ ^ 2) ^ ((|m - 1| + 1) / 2) =
       (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
     rw [← Real.rpow_add (by positivity)]
@@ -1186,6 +1198,29 @@ theorem frequencyDeriv_comp (j : Fin n) (b : Symbol n W U m') (a : Symbol n V W 
       ((b.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
       ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp)) j ξ
 
+/-! ### The Poisson bracket -/
+
+section PoissonBracket
+
+variable (a : Symbol n W U m') (b : Symbol n V W m)
+
+/-- The **Poisson bracket** `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` of a symbol
+`a` of order `m'` and a symbol `b` of order `m`, a symbol of order `m' + m - 1`. For symbols whose
+values commute with each other, `-i {a, b}` is the leading term of the composition symbol of the
+commutator `[Op(a), Op(b)]` (`exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket`). -/
+def poissonBracket : Symbol n V U (m' + m - 1) :=
+  ∑ j, (inclusion (by linarith) ((frequencyDeriv j a).comp (spatialDeriv j b)) -
+    inclusion (by linarith) ((spatialDeriv j a).comp (frequencyDeriv j b)))
+
+@[simp]
+theorem coefficient_poissonBracket (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.poissonBracket b).coefficient p =
+      ∑ j, (((frequencyDeriv j a).coefficient p).comp ((spatialDeriv j b).coefficient p) -
+        ((spatialDeriv j a).coefficient p).comp ((frequencyDeriv j b).coefficient p)) := by
+  simp [poissonBracket, coefficient_sum]
+
+end PoissonBracket
+
 end Comp
 
 section Smoothing
@@ -1406,6 +1441,37 @@ theorem frequencyDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a
     rw [coefficient_frequencyDeriv, coefficient_map, coefficient_frequencyDeriv]
     exact Φ.coordinateDeriv_comp_left [j]
       ((a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)) ξ)
+
+/-- A symbol commutes with `T` at every point exactly when its images under right and left
+composition with `T` agree. -/
+private theorem map_compL_flip_eq_map_compL {a : Symbol n V V m} {T : V →L[ℂ] V}
+    (h : ∀ p, Commute (a.coefficient p) T) :
+    a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ) =
+      a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ) :=
+  Symbol.ext (funext fun p ↦ by simpa [← ContinuousLinearMap.mul_def] using (h p).eq)
+
+private theorem commute_of_coefficient_map_compL_flip_eq {a : Symbol n V V m} {T : V →L[ℂ] V}
+    {p : CoordinateSpace n × CoordinateSpace n}
+    (h : (a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ)).coefficient p =
+      (a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ)).coefficient p) :
+    Commute (a.coefficient p) T := by
+  simpa [commute_iff_eq, ContinuousLinearMap.mul_def] using h
+
+/-- If every value of a symbol commutes with an operator `T`, so does every value of its spatial
+derivatives. -/
+theorem commute_coefficient_spatialDeriv {a : Symbol n V V m} {T : V →L[ℂ] V}
+    (h : ∀ p, Commute (a.coefficient p) T) (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
+    Commute ((spatialDeriv j a).coefficient p) T :=
+  commute_of_coefficient_map_compL_flip_eq (by
+    rw [← spatialDeriv_map, ← spatialDeriv_map, map_compL_flip_eq_map_compL h])
+
+/-- If every value of a symbol commutes with an operator `T`, so does every value of its frequency
+derivatives. -/
+theorem commute_coefficient_frequencyDeriv {a : Symbol n V V m} {T : V →L[ℂ] V}
+    (h : ∀ p, Commute (a.coefficient p) T) (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
+    Commute ((frequencyDeriv j a).coefficient p) T :=
+  commute_of_coefficient_map_compL_flip_eq (by
+    rw [← frequencyDeriv_map, ← frequencyDeriv_map, map_compL_flip_eq_map_compL h])
 
 /-- The image of a symbol with estimates uniform in the position under a continuous linear map of
 the coefficient spaces again has estimates uniform in the position. -/

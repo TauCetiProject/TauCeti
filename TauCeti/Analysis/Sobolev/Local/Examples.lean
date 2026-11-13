@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
@@ -40,6 +41,11 @@ This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
 * On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
   local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
   open half-disc it is in that class for every `p`, although it is continuous up to the axis.
+* The map `z ↦ ‖z‖⁻¹` and the components `Re z / ‖z‖²` and `Im z / ‖z‖²` of the gradient of
+  `log ‖z‖` are locally `Lᵖ` near the origin exactly when `p < 2`, and `log ‖z‖` is in the local
+  class `W^{1,p}` there exactly when `p < 2`. These are the exponents of the divergence-form
+  equation `Δ log ‖z‖ = ∂ₛ(Re z / ‖z‖²) + ∂ₜ(Im z / ‖z‖²)`
+  (`TauCeti.integral_log_norm_mul_laplacian`).
 
 ## References
 
@@ -337,7 +343,7 @@ theorem memWkpLoc_sqrt_im_iff :
   · intro hp
     refine memWkpLoc_succ_iff.2
       ⟨(by fun_prop : Continuous fun z : ℂ => √z.im).continuousOn.memLpLoc, D, hDU,
-        memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKU hK => ?_)⟩
+        memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKU _ => ?_)⟩
     have hKR : K ⊆ Icc (-1) 1 ×ℂ Icc 0 1 := fun z hz => by
       have hz1 : ‖z‖ < 1 := mem_ball_zero_iff.1 (hKU hz).1
       have hre := (Complex.abs_re_le_norm z).trans hz1.le
@@ -380,5 +386,96 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
       hasWeakFDerivOn_sqrt_im.mono fun z hz => (interior_subset (s := V) hz).2,
       memWkpLoc_zero_iff.2 (ContinuousOn.memLpLoc ?_)⟩
   fun_prop (disch := exact fun z hz => mul_ne_zero two_ne_zero (Real.sqrt_pos.2 hz.2).ne')
+
+/-! ### The logarithm of the norm and its gradient -/
+
+/-- **`‖z‖⁻¹` is locally `Lᵖ` near the origin exactly for `p < 2`.** -/
+theorem memLpLoc_norm_inv_iff (hU : U ∈ 𝓝 0) :
+    MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
+  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
+    hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
+  by_contra! hp2
+  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
+  exact not_memLp_norm_inv_closedBall hε (by simpa [Complex.finrank_real_complex] using hp2)
+    (memLpLoc_iff.1 h _ hεU (isCompact_closedBall 0 ε))
+
+/-- **The components of the gradient of `log ‖z‖` are locally `Lᵖ` near the origin exactly for
+`p < 2`.** These are `Re z / ‖z‖²` and `Im z / ‖z‖²`, the divergence-form data of `log ‖z‖`. -/
+theorem memLpLoc_re_div_and_im_div_iff (hU : U ∈ 𝓝 0) :
+    (MemLpLoc p U (fun z : ℂ => z.re / ‖z‖ ^ 2) ∧ MemLpLoc p U fun z : ℂ => z.im / ‖z‖ ^ 2) ↔
+      p < 2 := by
+  rw [← memLpLoc_norm_inv_iff hU]
+  have hdiv (a : ℝ) (z : ℂ) (hz : |a| ≤ ‖z‖) :
+      ‖a / ‖z‖ ^ 2‖ ≤ ‖‖z‖⁻¹‖ := by
+    rcases eq_or_ne z 0 with rfl | hz0
+    · simp
+    have hn : 0 < ‖z‖ := norm_pos_iff.2 hz0
+    rw [norm_div, norm_pow, norm_norm, Real.norm_eq_abs,
+      Real.norm_of_nonneg (inv_nonneg.2 hn.le), div_le_iff₀ (pow_pos hn 2)]
+    calc |a| ≤ ‖z‖ := hz
+      _ = ‖z‖⁻¹ * ‖z‖ ^ 2 := by field_simp
+  constructor
+  · rintro ⟨hf, hg⟩
+    refine memLpLoc_iff.2 fun K hKU hK => ?_
+    refine ((memLpLoc_iff.1 hf K hKU hK).norm.add
+      (memLpLoc_iff.1 hg K hKU hK).norm).of_le (by fun_prop) ?_
+    filter_upwards with z
+    rcases eq_or_ne z 0 with rfl | hz0
+    · simp
+    have hn : 0 < ‖z‖ := norm_pos_iff.2 hz0
+    have key : ‖z‖⁻¹ ≤ |z.re| / ‖z‖ ^ 2 + |z.im| / ‖z‖ ^ 2 := by
+      rw [← add_div, le_div_iff₀ (pow_pos hn 2)]
+      calc ‖z‖⁻¹ * ‖z‖ ^ 2 = ‖z‖ := by field_simp
+        _ ≤ |z.re| + |z.im| := Complex.norm_le_abs_re_add_abs_im z
+    rw [Real.norm_of_nonneg (inv_nonneg.2 hn.le), Pi.add_apply,
+      Real.norm_of_nonneg (add_nonneg (norm_nonneg _) (norm_nonneg _))]
+    simpa only [Real.norm_eq_abs, abs_div, abs_pow, abs_norm] using key
+  · intro h
+    exact ⟨memLpLoc_iff.2 fun K hKU hK => (memLpLoc_iff.1 h K hKU hK).of_le
+        (by fun_prop : Measurable fun z : ℂ => z.re / ‖z‖ ^ 2).aestronglyMeasurable
+        (ae_of_all _ fun z => hdiv _ z (Complex.abs_re_le_norm z)),
+      memLpLoc_iff.2 fun K hKU hK => (memLpLoc_iff.1 h K hKU hK).of_le
+        (by fun_prop : Measurable fun z : ℂ => z.im / ‖z‖ ^ 2).aestronglyMeasurable
+        (ae_of_all _ fun z => hdiv _ z (Complex.abs_im_le_norm z))⟩
+
+/-- **`log ‖z‖` is locally `W^{1,p}` near the origin exactly for `p < 2`.** -/
+theorem memWkpLoc_one_log_norm_iff {Ω : Opens ℂ} (h0 : (0 : ℂ) ∈ Ω) :
+    MemWkpLoc p Ω 1 (fun z : ℂ => Real.log ‖z‖) ↔ p < 2 := by
+  have hU : (Ω : Set ℂ) ∈ 𝓝 0 := Ω.isOpen.mem_nhds h0
+  have hmeas : AEStronglyMeasurable (fun z : ℂ => (‖z‖ ^ 2)⁻¹ • innerSL ℝ z) := by
+    fun_prop
+  -- Pointwise, the weak derivative of `log ‖z‖` has norm `‖z‖⁻¹`, both sides being `0` at `0`.
+  have hnorm (z : ℂ) : ‖(‖z‖ ^ 2)⁻¹ • innerSL ℝ z‖ = ‖z‖⁻¹ := by
+    rcases eq_or_ne z 0 with rfl | hz
+    · simp
+    rw [← (hasFDerivAt_log_norm_of_ne hz).fderiv, norm_fderiv_log_norm_of_ne hz]
+  simp only [memWkpLoc_succ_iff_of_isOpen, memWkpLoc_zero_iff]
+  rw [← memLpLoc_norm_inv_iff hU]
+  constructor
+  · rintro ⟨-, D, hD, hDp⟩
+    have hae := hD.ae_eq (hasWeakFDerivOn_log_norm Ω)
+    refine memLpLoc_iff.2 fun K hKU hK => ?_
+    have := (memLpLoc_iff.1 (hDp.congr_ae hae) K hKU hK).norm
+    simpa only [hnorm] using this
+  · intro h
+    refine ⟨memLpLoc_iff.2 fun K hKU hK => ?_, _, hasWeakFDerivOn_log_norm Ω,
+      memLpLoc_iff.2 fun K hKU hK => ?_⟩
+    · have hn : MemLp (fun z : ℂ => ‖z‖) p (volume.restrict K) :=
+        memLpLoc_iff.1 (continuous_norm.continuousOn.memLpLoc (p := p)) K subset_rfl hK
+      refine ((memLpLoc_iff.1 h K hKU hK).add hn).of_le
+        (Real.measurable_log.comp measurable_norm).aestronglyMeasurable (ae_of_all _ fun z => ?_)
+      rw [Pi.add_apply, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity)]
+      rcases eq_or_ne z 0 with rfl | hz0
+      · simp
+      have hn0 : 0 < ‖z‖ := norm_pos_iff.2 hz0
+      rw [abs_le]
+      constructor
+      · have := Real.log_le_sub_one_of_pos (inv_pos.2 hn0)
+        rw [Real.log_inv] at this
+        linarith
+      · linarith [Real.log_le_sub_one_of_pos hn0, inv_pos.2 hn0]
+    · exact (memLpLoc_iff.1 h K hKU hK).of_le hmeas.restrict
+        (ae_of_all _ fun z => by
+          rw [hnorm, Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg z))])
 
 end TauCeti

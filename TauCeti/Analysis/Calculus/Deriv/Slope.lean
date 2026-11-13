@@ -81,7 +81,7 @@ theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNorme
     · simp [ht, hn]
   -- `HasDerivAt` and `𝓝[≠] x` are by definition the filter forms used by `tendsto_slope`.
   refine (((HasDerivAtFilter.tendsto_slope hf).comp hlim).const_smul t).congr' ?_
-  filter_upwards [eventually_ne_atTop 0] with n hn
+  filter_upwards with n
   simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
 
 /-- If `f : ℝ → ℝ` has positive right derivative at `a`, then `f a < f x` for every `x > a`

@@ -218,6 +218,17 @@ theorem eight_dvd_sq_sub_one_of_isUnit {z : ℤ_[2]} (hz : IsUnit z) : (8 : ℤ_
   rw [eight_dvd_sub_iff_toZModPow_three_eq, map_one, map_pow, sq,
     isUnit_iff_toZModPow_three_mul_self.mp hz]
 
+/-- For a unit `a` of `ℤ_[2]`, a change by `5 a - a` is a change by `4` modulo `8`. -/
+theorem eight_dvd_sub_five_mul_sub_self_iff {a : ℤ_[2]} (ha : IsUnit a) {c : ℤ_[2]} :
+    (8 : ℤ_[2]) ∣ c - (5 * a - a) ↔ (8 : ℤ_[2]) ∣ c - 4 := by
+  have h4 : (8 : ℤ_[2]) ∣ 4 - 4 * a := by
+    rw [eight_dvd_sub_iff_toZModPow_three_eq, map_mul, map_ofNat]
+    have hA := isUnit_iff_toZModPow_three_mul_self.mp ha
+    generalize toZModPow 3 a = A at hA ⊢
+    revert A
+    decide
+  rw [show c - (5 * a - a) = c - 4 + (4 - 4 * a) by ring, dvd_add_left h4]
+
 /-- For `k ≥ 1`, a unit `c = a x² + 2ᵏ b y²` of `ℤ_[2]` is congruent to `a` or to `a + 2ᵏ b`
 modulo `8`: the values of the binary form `⟨a, 2ᵏ b⟩` that are units. -/
 theorem eight_dvd_sub_or_eight_dvd_sub_add_of_eq {a b c x y : ℤ_[2]} {k : ℕ}

@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Module.GradedModule.Internal
 /-!
 # Internal gradings and graded objects
 
-This file compares the two presentations of a graded module used by the `DGAInfinity` roadmap.
+This file compares two presentations of a graded module.
 An `InternalGrading R M ι` presents all degrees inside one total module `M`, while a
 `CategoryTheory.GradedObject ι (ModuleCat R)` presents the homogeneous modules separately.
 
