@@ -38,10 +38,11 @@ canonical norm.
   `∑ cₙ aⁿ` is summable for every family of coefficients `cₙ`.
 * `IsTopologicallyNilpotent.isUnit_one_sub` : the unit-hood half of Proposition 5.38.
 * `IsTopologicallyNilpotent.isUnit_one_add` : the `1 + a` form, which is the one consumers want.
-* `AddMonoidHom.tsum_iterate_sub_apply_tsum_iterate` : the Neumann series of a continuous additive
-  endomorphism `N`. If the iterates `Nⁿ x` tend to zero then `y = ∑ Nⁿ x` solves `y - N y = x`.
-  This is the operator form of the geometric series, for maps that are not multiplication by an
-  element of a ring.
+* `Summable.tsum_iterate_sub_apply_tsum_iterate` : the Neumann series of a continuous additive
+  endomorphism `N`. If `y = ∑ Nⁿ x` converges then `y - N y = x`. This is the operator form of the
+  geometric series, for maps that are not multiplication by an element of a ring.
+* `NonarchimedeanAddGroup.tsum_iterate_sub_apply_tsum_iterate` : in a complete nonarchimedean
+  group the same holds as soon as the iterates `Nⁿ x` tend to zero.
 
 ## Provenance
 
@@ -104,24 +105,31 @@ theorem IsTopologicallyNilpotent.isUnit_one_add {a : A} (ha : IsTopologicallyNil
 
 section NeumannSeries
 
-variable {G : Type*} [AddCommGroup G] [UniformSpace G] [IsUniformAddGroup G]
-  [NonarchimedeanAddGroup G] [CompleteSpace G] [T2Space G]
+variable {G F : Type*} [AddCommGroup G] [FunLike F G G] [AddMonoidHomClass F G G]
 
-/-- **The Neumann series of a continuous additive endomorphism.** In a complete Hausdorff
-nonarchimedean additive group, if the iterates `Nⁿ x` of a continuous additive endomorphism `N`
-tend to zero, then `y = ∑ Nⁿ x` solves `y - N y = x`; the series converges by
-`NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero`. For `N` multiplication by a
-topologically nilpotent `a` this is the identity `(1 - a) ∑ aⁿ = 1` behind
-`IsTopologicallyNilpotent.isUnit_one_sub`. -/
-theorem AddMonoidHom.tsum_iterate_sub_apply_tsum_iterate {N : G →+ G} (hN : Continuous N)
-    {x : G} (hx : Tendsto (fun n ↦ N^[n] x) atTop (𝓝 0)) :
+/-- **The Neumann series of a continuous additive endomorphism.** If the series `y = ∑ Nⁿ x` of
+iterates of a continuous additive endomorphism `N` converges in a Hausdorff topological additive
+group, then `y - N y = x`. For `N` multiplication by a topologically nilpotent `a` this is the
+identity `(1 - a) ∑ aⁿ = 1` behind `IsTopologicallyNilpotent.isUnit_one_sub`. -/
+theorem Summable.tsum_iterate_sub_apply_tsum_iterate [TopologicalSpace G]
+    [IsTopologicalAddGroup G] [T2Space G] {N : F} (hN : Continuous N) {x : G}
+    (hs : Summable fun n ↦ N^[n] x) :
     ∑' n, N^[n] x - N (∑' n, N^[n] x) = x := by
-  have hs : Summable fun n ↦ N^[n] x :=
-    NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero (Nat.cofinite_eq_atTop ▸ hx)
   have hmap : N (∑' n, N^[n] x) = ∑' n, N^[n + 1] x := by
     rw [(hs.hasSum.map N hN).tsum_eq.symm]
     simp only [Function.comp_def, Function.iterate_succ_apply']
   rw [hmap, hs.tsum_eq_zero_add, Function.iterate_zero_apply, add_sub_cancel_right]
+
+/-- **The Neumann series in a complete nonarchimedean group.** In a complete Hausdorff
+nonarchimedean additive group, if the iterates `Nⁿ x` of a continuous additive endomorphism `N`
+tend to zero, then `y = ∑ Nⁿ x` solves `y - N y = x`; the series converges by
+`NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero`. -/
+theorem NonarchimedeanAddGroup.tsum_iterate_sub_apply_tsum_iterate [UniformSpace G]
+    [IsUniformAddGroup G] [NonarchimedeanAddGroup G] [CompleteSpace G] [T2Space G] {N : F}
+    (hN : Continuous N) {x : G} (hx : Tendsto (fun n ↦ N^[n] x) atTop (𝓝 0)) :
+    ∑' n, N^[n] x - N (∑' n, N^[n] x) = x :=
+  (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+    (Nat.cofinite_eq_atTop ▸ hx)).tsum_iterate_sub_apply_tsum_iterate hN
 
 end NeumannSeries
 
