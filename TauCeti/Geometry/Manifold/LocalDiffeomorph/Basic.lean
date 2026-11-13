@@ -80,7 +80,8 @@ diffeomorphism of the model space read through it has explicit source and forwar
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq`: a maximal-atlas chart pulls back
   along a local diffeomorphism to a maximal-atlas chart.
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq`: the pulled back chart can
-  be chosen so that coordinate expressions of `g ∘ f` agree with those of `g`.
+  be chosen with the same extended coordinates at the basepoint, so that the coordinate expression
+  of `f` is the identity.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
 * `IsLocalDiffeomorphAt.exists_mem_nhds_injOn`: a local diffeomorphism is locally injective.
