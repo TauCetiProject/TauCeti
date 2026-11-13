@@ -223,6 +223,15 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
   filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
   exact congrArg f ((extChartAt I x).left_inv hy)
 
+/-- A point `y` of the closure of `s` is read in its preferred extended chart as a point of the
+closure of the chart image of `s`, intersected with the range of the model. -/
+theorem extChartAt_mem_closure_preimage_symm_inter_range {s : Set M} {y : M}
+    (hy : y ∈ closure s) :
+    extChartAt I y y ∈ closure ((extChartAt I y).symm ⁻¹' s ∩ Set.range I) := by
+  rw [mem_closure_iff_nhdsWithin_neBot] at hy ⊢
+  rw [← map_extChartAt_nhdsWithin]
+  exact hy.map _
+
 /-- A point of the chart source at `x` whose chart image lies in `s` lies in the extended chart
 source, and its chart image lies in `s ∩ range I`. -/
 theorem mem_extChartAt_source_and_mem_of_mem_preimage {x y : M} {s : Set E}
