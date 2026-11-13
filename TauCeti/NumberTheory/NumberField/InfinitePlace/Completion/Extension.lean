@@ -53,15 +53,15 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- If `w` lies over `v`, then `L_w` is a `K_v`-algebra through
 `AbsoluteValue.Completion.map`, so that `algebraMap K_v L_w` unfolds to the completion map. -/
-scoped instance : Algebra v.Completion w.Completion :=
+scoped instance instAlgebra : Algebra v.Completion w.Completion :=
   (AbsoluteValue.Completion.map v.1 w.1).toAlgebra
 
-scoped instance : IsScalarTower K v.Completion w.Completion :=
+scoped instance instIsScalarTower : IsScalarTower K v.Completion w.Completion :=
   IsScalarTower.of_algebraMap_eq fun x ↦ by
     change _ = AbsoluteValue.Completion.map v.1 w.1 (algebraMap K v.Completion x)
     simp [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply]
 
-scoped instance : ContinuousSMul v.Completion w.Completion :=
+scoped instance instContinuousSMul : ContinuousSMul v.Completion w.Completion :=
   continuousSMul_of_algebraMap v.Completion w.Completion
     (AbsoluteValue.Completion.continuous_map v.1 w.1)
 
