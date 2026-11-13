@@ -211,6 +211,64 @@ theorem mem_mapEdgeSet_iff (f : Iso G H) (F : Set β) (e : H.edgeSet) :
   · intro h
     exact ⟨e.2, by simpa only [Subtype.coe_eta] using h⟩
 
+/-- Transport of the empty vertex set is empty. -/
+@[simp]
+theorem mapVertexSet_empty (f : Iso G H) : f.mapVertexSet ∅ = ∅ := by
+  ext x
+  simp [mapVertexSet]
+
+/-- Vertex-set transport preserves intersections. -/
+@[simp]
+theorem mapVertexSet_inter (f : Iso G H) (X Y : Set α) :
+    f.mapVertexSet (X ∩ Y) = f.mapVertexSet X ∩ f.mapVertexSet Y := by
+  ext x
+  simp only [mapVertexSet, mem_ofPred, mem_inter_iff]
+  constructor
+  · rintro ⟨hx, hX, hY⟩
+    exact ⟨⟨hx, hX⟩, ⟨hx, hY⟩⟩
+  · rintro ⟨⟨hx, hX⟩, ⟨_, hY⟩⟩
+    exact ⟨hx, hX, hY⟩
+
+/-- All actual vertices are transported onto all actual target vertices. -/
+@[simp]
+theorem mapVertexSet_vertexSet (f : Iso G H) : f.mapVertexSet V(G) = V(H) := by
+  ext x
+  simp [mapVertexSet]
+
+/-- All actual edges are transported onto all actual target edges. -/
+@[simp]
+theorem mapEdgeSet_edgeSet (f : Iso G H) : f.mapEdgeSet E(G) = E(H) := by
+  ext e
+  simp [mapEdgeSet]
+
+/-- Vertex-set transport preserves unions. -/
+@[simp]
+theorem mapVertexSet_union (f : Iso G H) (X Y : Set α) :
+    f.mapVertexSet (X ∪ Y) = f.mapVertexSet X ∪ f.mapVertexSet Y := by
+  ext x
+  simp [mapVertexSet, exists_or]
+
+/-- Edge-set transport preserves unions. -/
+@[simp]
+theorem mapEdgeSet_union (f : Iso G H) (F F' : Set β) :
+    f.mapEdgeSet (F ∪ F') = f.mapEdgeSet F ∪ f.mapEdgeSet F' := by
+  ext e
+  simp [mapEdgeSet, exists_or]
+
+/-- Vertex-set transport preserves set differences. -/
+@[simp]
+theorem mapVertexSet_sdiff (f : Iso G H) (X Y : Set α) :
+    f.mapVertexSet (X \ Y) = f.mapVertexSet X \ f.mapVertexSet Y := by
+  ext x
+  by_cases hx : x ∈ V(H) <;> simp [mapVertexSet, hx]
+
+/-- Edge-set transport preserves set differences. -/
+@[simp]
+theorem mapEdgeSet_sdiff (f : Iso G H) (F F' : Set β) :
+    f.mapEdgeSet (F \ F') = f.mapEdgeSet F \ f.mapEdgeSet F' := by
+  ext e
+  by_cases he : e ∈ E(H) <;> simp [mapEdgeSet, he]
+
 /-- Transport of the empty edge set is empty. -/
 @[simp]
 theorem mapEdgeSet_empty (f : Iso G H) : f.mapEdgeSet ∅ = ∅ := by
