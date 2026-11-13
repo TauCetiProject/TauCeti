@@ -16,6 +16,7 @@ Let `E → B` be a real vector bundle whose fibres carry norms, such that the fi
 continuous function on the total space; for instance a continuous Riemannian vector bundle
 (`TauCeti.continuous_norm_bundle`). Its unit disc bundle `D(E)` and unit sphere bundle `S(E)` are
 the vectors of norm at most one and exactly one (`TauCeti.discBundle`, `TauCeti.sphereBundle`).
+The sphere bundle projects continuously onto the base (`TauCeti.sphereBundleProj`).
 
 Radial rescaling compares them with the Thom pair `(E, E₀)` of the bundle, where `E₀` is the
 complement of the zero section:
@@ -111,6 +112,23 @@ theorem discSpherePairMap_snd_apply (v : sphereBundle F E) :
   (rfl)
 
 end Sets
+
+section Proj
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F]
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [FiberBundle F E]
+
+/-- The projection `S(E) → B` of the unit sphere bundle of a bundle with normed fibres. -/
+def sphereBundleProj : C(sphereBundle F E, B) :=
+  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
+
+@[simp]
+theorem sphereBundleProj_apply (v : sphereBundle F E) :
+    sphereBundleProj F E v = (v : TotalSpace F E).proj :=
+  (rfl)
+
+end Proj
 
 variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
   (E : B → Type w) [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
