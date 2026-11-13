@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
-public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 
