@@ -76,6 +76,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 
 ## Main declarations
 
+* `ENNReal.pow_rpow_comm`: natural and real powers commute in `ℝ≥0∞`.
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
@@ -115,6 +116,10 @@ public section
 open scoped ENNReal NNReal Topology
 
 namespace ENNReal
+
+/-- Natural and real powers commute in `ℝ≥0∞`. -/
+theorem pow_rpow_comm (x : ℝ≥0∞) (n : ℕ) (y : ℝ) : (x ^ n) ^ y = (x ^ y) ^ n := by
+  rw [← rpow_natCast_mul, mul_comm, rpow_mul_natCast]
 
 /-- If `X ^ r ≤ C * X ^ (r - 1)` for a finite `X`, then `X ≤ C`. -/
 theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ ∞)

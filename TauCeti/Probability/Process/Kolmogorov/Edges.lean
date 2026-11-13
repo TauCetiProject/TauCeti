@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Process.Kolmogorov
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
 # Geometric edge estimates for Kolmogorov processes
@@ -21,12 +22,13 @@ finite random constant bounds every edge at every level, outside one common null
 These estimates are the probabilistic input to chaining: they do not assume that the
 edges form nets, and do not by themselves assert continuity of a modification.
 Neither independence nor probability normalization is needed. The value space may be
-an extended pseudometric space; native pair measurability suffices.
+an extended pseudometric space, and the estimates also apply to almost-everywhere
+modifications of native Kolmogorov processes.
 
 The argument is the weighted edge-sum estimate underlying Kolmogorov--Chentsov
 continuity proofs; see Krätschmer--Urusov, *A general Kolmogorov--Chentsov type theorem
 on general metric spaces*, arXiv:2107.13837v2, Theorem 1.1. We use Mathlib's
-`IsKolmogorovProcess`, nonnegative Tonelli theorem and geometric-series formula.
+`IsAEKolmogorovProcess`, nonnegative Tonelli theorem and geometric-series formula.
 -/
 
 public section
@@ -34,7 +36,7 @@ public section
 open MeasureTheory
 open scoped ENNReal NNReal
 
-namespace ProbabilityTheory.IsKolmogorovProcess
+namespace ProbabilityTheory.IsAEKolmogorovProcess
 
 variable {T Ω E : Type*} [PseudoEMetricSpace T] [PseudoEMetricSpace E]
   {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : T → Ω → E}
@@ -43,7 +45,7 @@ variable {T Ω E : Type*} [PseudoEMetricSpace T] [PseudoEMetricSpace E]
 
 /-- The supremum over geometrically sized edge families has a geometric moment bound.
 The edge count is allowed to be zero, and endpoints and edges may repeat. -/
-theorem lintegral_iSup_edist_div_pow_rpow_le (hX : IsKolmogorovProcess X P p q M)
+theorem lintegral_iSup_edist_div_pow_rpow_le (hX : IsAEKolmogorovProcess X P p q M)
     {C a r c : ℝ≥0} (hcard : ∀ n, (k n : ℝ≥0) ≤ C * a ^ n)
     (hedge : ∀ n i, edist (s n i) (t n i) ≤ (r : ℝ≥0∞) ^ n) :
     ∫⁻ ω, ⨆ n, ⨆ i, (edist (X (s n i) ω) (X (t n i) ω) /
@@ -64,8 +66,8 @@ theorem lintegral_iSup_edist_div_pow_rpow_le (hX : IsKolmogorovProcess X P p q M
           (c : ℝ≥0∞) ^ n) ^ p ∂P := by
       apply lintegral_tsum
       intro n
-      exact (Finset.measurable_sum _ fun i _ ↦
-        (hX.measurable_edist.div_const _).pow_const p).aemeasurable
+      exact Finset.aemeasurable_fun_sum _ fun i _ ↦
+        (hX.aemeasurable_edist.div_const _).pow_const p
     _ ≤ ∑' n, (C : ℝ≥0∞) * M *
           ((a : ℝ≥0∞) * (r : ℝ≥0∞) ^ q / (c : ℝ≥0∞) ^ p) ^ n := by
       -- At each level, combine the increment moment, edge length and edge count bounds.
@@ -75,9 +77,9 @@ theorem lintegral_iSup_edist_div_pow_rpow_le (hX : IsKolmogorovProcess X P p q M
         _ ≤ (M : ℝ≥0∞) * (∑ i, edist (s n i) (t n i) ^ q) /
             ((c : ℝ≥0∞) ^ n) ^ p := by
           simp_rw [ENNReal.div_rpow_of_nonneg _ _ hX.p_pos.le, div_eq_mul_inv]
-          rw [lintegral_finsetSum _ (fun i _ ↦
-            (hX.measurable_edist.pow_const p).mul_const _)]
-          simp_rw [lintegral_mul_const _ (hX.measurable_edist.pow_const p)]
+          rw [lintegral_finsetSum' _ (fun i _ ↦
+            (hX.aemeasurable_edist.pow_const p).mul_const _)]
+          simp_rw [lintegral_mul_const'' _ (hX.aemeasurable_edist.pow_const p)]
           rw [← Finset.sum_mul, Finset.mul_sum]
           gcongr
           exact hX.kolmogorovCondition _ _
@@ -91,16 +93,13 @@ theorem lintegral_iSup_edist_div_pow_rpow_le (hX : IsKolmogorovProcess X P p q M
           gcongr
           exact_mod_cast hcard n
         _ = _ := by
-          rw [← ENNReal.rpow_natCast_mul, mul_comm (n : ℝ) q,
-            ENNReal.rpow_mul_natCast, ← ENNReal.rpow_natCast_mul,
-            mul_comm (n : ℝ) p, ENNReal.rpow_mul_natCast]
-          simp only [mul_pow, div_eq_mul_inv, ENNReal.inv_pow]
+          simp only [ENNReal.pow_rpow_comm, mul_pow, div_eq_mul_inv, ENNReal.inv_pow]
           ring
     _ = _ := by rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
 
 /-- When the geometric ratio is less than one, a single finite constant bounds all
 normalized edges, simultaneously at every level. -/
-theorem ae_exists_edist_le_mul_pow (hX : IsKolmogorovProcess X P p q M)
+theorem ae_exists_edist_le_mul_pow (hX : IsAEKolmogorovProcess X P p q M)
     {C a r c : ℝ≥0} (hc : c ≠ 0)
     (hcard : ∀ n, (k n : ℝ≥0) ≤ C * a ^ n)
     (hedge : ∀ n i, edist (s n i) (t n i) ≤ (r : ℝ≥0∞) ^ n)
@@ -109,8 +108,8 @@ theorem ae_exists_edist_le_mul_pow (hX : IsKolmogorovProcess X P p q M)
       edist (X (s n i) ω) (X (t n i) ω) ≤ (K : ℝ≥0∞) * (c : ℝ≥0∞) ^ n := by
   let Z : Ω → ℝ≥0∞ := fun ω ↦ ⨆ n, ⨆ i,
     (edist (X (s n i) ω) (X (t n i) ω) / (c : ℝ≥0∞) ^ n) ^ p
-  have hZ : Measurable Z := Measurable.iSup fun n ↦ Measurable.iSup fun i ↦
-    (hX.measurable_edist.div_const _).pow_const p
+  have hZ : AEMeasurable Z P := AEMeasurable.iSup fun n ↦ AEMeasurable.iSup fun i ↦
+    (hX.aemeasurable_edist.div_const _).pow_const p
   have hratio' : (a : ℝ≥0∞) * (r : ℝ≥0∞) ^ q / (c : ℝ≥0∞) ^ p < 1 := by
     rw [← ENNReal.coe_rpow_of_nonneg _ hX.q_pos.le,
       ← ENNReal.coe_rpow_of_nonneg _ hX.p_pos.le, ← ENNReal.coe_mul,
@@ -122,7 +121,7 @@ theorem ae_exists_edist_le_mul_pow (hX : IsKolmogorovProcess X P p q M)
       (ENNReal.inv_ne_top.mpr (ne_of_gt (tsub_pos_iff_lt.mpr hratio')))
   have hZfinite : ∫⁻ ω, Z ω ∂P ≠ ⊤ := ne_top_of_le_ne_top hfinite
     (hX.lintegral_iSup_edist_div_pow_rpow_le hcard hedge)
-  filter_upwards [ae_lt_top hZ hZfinite] with ω hω
+  filter_upwards [ae_lt_top' hZ hZfinite] with ω hω
   refine ⟨(Z ω).toNNReal ^ p⁻¹, fun n i ↦ ?_⟩
   have hi : (edist (X (s n i) ω) (X (t n i) ω) /
       (c : ℝ≥0∞) ^ n) ^ p ≤ Z ω := le_iSup_of_le n (le_iSup_of_le i le_rfl)
@@ -136,7 +135,7 @@ theorem ae_exists_edist_le_mul_pow (hX : IsKolmogorovProcess X P p q M)
 This is a bound on the supplied edges, not yet on arbitrary pairs
 of parameter points. No topology or completeness assumption beyond the native
 Kolmogorov condition is required. -/
-theorem ae_exists_edist_le_mul_pow_rpow (hX : IsKolmogorovProcess X P p q M)
+theorem ae_exists_edist_le_mul_pow_rpow (hX : IsAEKolmogorovProcess X P p q M)
     {C r : ℝ≥0} {d γ : ℝ} (hr : 0 < r) (hr₁ : r < 1)
     (hcard : ∀ n, (k n : ℝ≥0) ≤ C * (r ^ (-d)) ^ n)
     (hedge : ∀ n i, edist (s n i) (t n i) ≤ (r : ℝ≥0∞) ^ n)
@@ -151,8 +150,6 @@ theorem ae_exists_edist_le_mul_pow_rpow (hX : IsKolmogorovProcess X P p q M)
     hcard hedge hratio] with ω hω
   obtain ⟨K, hK⟩ := hω
   refine ⟨K, fun n i ↦ ?_⟩
-  convert hK n i using 1
-  rw [ENNReal.coe_rpow_of_ne_zero hr.ne', ← ENNReal.rpow_mul_natCast,
-    mul_comm γ (n : ℝ), ENNReal.rpow_natCast_mul]
+  simpa only [ENNReal.coe_rpow_of_ne_zero hr.ne', ENNReal.pow_rpow_comm] using hK n i
 
-end ProbabilityTheory.IsKolmogorovProcess
+end ProbabilityTheory.IsAEKolmogorovProcess
