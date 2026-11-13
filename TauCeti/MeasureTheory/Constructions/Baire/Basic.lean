@@ -88,6 +88,13 @@ theorem baire_eq_borel [PerfectlyNormalSpace X] : baire X = borel X := by
   obtain ⟨f, rfl, -⟩ := perfectlyNormalSpace_iff_forall_isClosed_preimage_zero.1 ‹_› s hs
   exact f.measurable_baire (measurableSet_singleton 0)
 
+/-- Pulling back the Borel σ-algebra along a continuous map into a perfectly normal (for instance,
+pseudometrizable) space lands in the Baire σ-algebra of the domain. -/
+theorem _root_.Continuous.comap_borel_le_baire [PerfectlyNormalSpace Y] {q : X → Y}
+    (hq : Continuous q) : MeasurableSpace.comap q (borel Y) ≤ baire X := by
+  rw [← baire_eq_borel]
+  exact measurable_iff_comap_le.mp hq.measurable_baire
+
 /-- Every Baire set is the preimage of a measurable subset of `ℕ → ℝ` under a sequence of
 continuous real-valued functions. -/
 theorem measurableSet_baire_iff_exists_continuousMap {s : Set X} :
