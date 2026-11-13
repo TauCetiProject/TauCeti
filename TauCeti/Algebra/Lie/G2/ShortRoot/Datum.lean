@@ -164,22 +164,15 @@ private theorem pinnedRepresentation_mem_lattice
     ← serreKostantForm_def] at hmap
   exact rep_serreKostantForm_apply_mem_lattice hmap hv
 
-private theorem pinnedRepresentation_cartan_apply (x : G2.cartanSubalgebra valid_G2)
-    (v : Fin 7 → ℚ) (a : Fin 7) :
-    pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ (x : G2.lieAlgebra valid_G2)) v a =
-      ∑ i : Fin G2.rank, (G2.cartanBasis valid_G2).repr x i *
-        (weight a i : ℚ) * v a := by
-  have hx : (x : G2.lieAlgebra valid_G2) =
-      ∑ i, (G2.cartanBasis valid_G2).repr x i • (G2.lieBasis valid_G2).h i := by
-    simpa only [AddSubmonoidClass.coe_finsetSum, SetLike.val_smul, coe_cartanBasis] using
-      (congrArg Subtype.val ((G2.cartanBasis valid_G2).sum_repr x)).symm
-  rw [hx]
-  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, Finset.sum_apply,
-    Pi.smul_apply, smul_eq_mul, pinnedRepresentation_h, Matrix.toLinAlgEquiv'_apply,
-    Matrix.mulVec, dotProduct]
-  dsimp +instances only [rank]
-  simp only [cartanMatrixRat_apply, ite_mul, zero_mul, Finset.sum_ite_eq,
-    Finset.mem_univ, ite_true, mul_assoc]
+private theorem pinnedRepresentation_isCartanWeightVector (a : Fin 7) :
+    IsCartanWeightVector (G2.lieBasis valid_G2).h pinnedRepresentation
+      (weight a) (latticeBasis a : Fin 7 → ℚ) := by
+  apply (isCartanWeightVector_iff _ _).mpr
+  intro i
+  rw [pinnedRepresentation_ι, pinnedToSerre_h]
+  dsimp only [rank] at i ⊢
+  simpa only [Fin.cast_eq_self] using
+    (isCartanWeightVector_iff _ _).mp (isCartanWeightVector_latticeBasis a) i
 
 private theorem pinnedRepresentation_injective : Function.Injective
     (fun x : G2.lieAlgebra valid_G2 =>
@@ -193,11 +186,18 @@ private theorem pinnedRepresentation_injective : Function.Injective
     have hweight (a : Fin 7) :
         ∑ i : Fin G2.rank, (G2.cartanBasis valid_G2).repr x i *
           (weight a i : ℚ) = 0 := by
-      have h := congrFun (hx (Pi.single a 1)) a
+      have h := congrFun (hx (latticeBasis a)) a
       simp only [LieSubalgebra.coe_bracket_of_module, LieRingModule.compLieHom_apply,
-        ρ, LieHom.comp_apply, AlgHom.toLieHom_apply, Module.End.lie_apply,
-        Pi.zero_apply, pinnedRepresentation_cartan_apply, Pi.single_eq_same, mul_one] at h
-      exact h
+        ρ, LieHom.comp_apply, AlgHom.toLieHom_apply, Module.End.lie_apply, Pi.zero_apply] at h
+      have hcartan : (x : G2.lieAlgebra valid_G2) =
+          ∑ i, (G2.cartanBasis valid_G2).repr x i • (G2.lieBasis valid_G2).h i := by
+        simpa only [AddSubmonoidClass.coe_finsetSum, SetLike.val_smul, coe_cartanBasis] using
+          (congrArg Subtype.val ((G2.cartanBasis valid_G2).sum_repr x)).symm
+      rw [hcartan] at h
+      simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
+        (isCartanWeightVector_iff _ _).mp (pinnedRepresentation_isCartanWeightVector a)] at h
+      simpa only [Finset.sum_apply, Pi.smul_apply, coe_latticeBasis, Pi.single_eq_same,
+        smul_eq_mul, mul_one] using h
     have h0 := hweight 0
     have h1 := hweight 1
     dsimp +instances only [rank] at h0 h1
@@ -214,16 +214,6 @@ private theorem pinnedRepresentation_injective : Function.Injective
   intro v
   simpa only [LieRingModule.compLieHom_apply, ρ, LieHom.comp_apply,
     AlgHom.toLieHom_apply, Module.End.lie_apply] using congrArg (fun f => f v) hxy
-
-private theorem pinnedRepresentation_isCartanWeightVector (a : Fin 7) :
-    IsCartanWeightVector (G2.lieBasis valid_G2).h pinnedRepresentation
-      (weight a) (latticeBasis a : Fin 7 → ℚ) := by
-  apply (isCartanWeightVector_iff _ _).mpr
-  intro i
-  rw [pinnedRepresentation_ι, pinnedToSerre_h]
-  dsimp only [rank] at i ⊢
-  simpa only [Fin.cast_eq_self] using
-    (isCartanWeightVector_iff _ _).mp (isCartanWeightVector_latticeBasis a) i
 
 /-- The full-weight Chevalley datum on the seven-dimensional short-root module of type G₂,
 with its integral coordinate lattice and fundamental-weight torus coordinates. -/
@@ -248,11 +238,11 @@ with its integral coordinate lattice and fundamental-weight torus coordinates. -
     (LinearEquiv.ofTop _ span_range_weight_eq_top).symm
 
 /-- The datum uses the pinned short-root representation. -/
-@[simp] theorem chevalleyDatum_representation :
+theorem chevalleyDatum_representation :
     chevalleyDatum.representation = pinnedRepresentation := (rfl)
 
 /-- The Cartan generator of the datum is the existing diagonal weight matrix. -/
-@[simp↓] theorem chevalleyDatum_representation_h (i : Fin G2.rank) :
+theorem chevalleyDatum_representation_h (i : Fin G2.rank) :
     chevalleyDatum.representation
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).h i)) =
       Matrix.toLinAlgEquiv' (cartanMatrixRat i) := by
@@ -260,7 +250,7 @@ with its integral coordinate lattice and fundamental-weight torus coordinates. -
   exact pinnedRepresentation_h i
 
 /-- The raising generator of the datum is the existing integral raising matrix over ℚ. -/
-@[simp↓] theorem chevalleyDatum_representation_e (i : Fin G2.rank) :
+theorem chevalleyDatum_representation_e (i : Fin G2.rank) :
     chevalleyDatum.representation
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).e i)) =
       Matrix.toLinAlgEquiv' (raisingMatrixRat i) := by
@@ -268,26 +258,64 @@ with its integral coordinate lattice and fundamental-weight torus coordinates. -
   exact pinnedRepresentation_e i
 
 /-- The lowering generator of the datum is the existing integral lowering matrix over ℚ. -/
-@[simp↓] theorem chevalleyDatum_representation_f (i : Fin G2.rank) :
+theorem chevalleyDatum_representation_f (i : Fin G2.rank) :
     chevalleyDatum.representation
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).f i)) =
       Matrix.toLinAlgEquiv' (loweringMatrixRat i) := by
   dsimp only [chevalleyDatum]
   exact pinnedRepresentation_f i
 
+/-- The Cartan generator acts on datum vectors by the diagonal weight matrix. -/
+@[simp↓] theorem chevalleyDatum_representation_h_apply (i : Fin G2.rank)
+    (v : chevalleyDatum.carrier) (a : Fin 7) :
+    (chevalleyDatum.representation
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).h i)) v : Fin 7 → ℚ) a =
+      (cartanMatrixRat i).mulVec (fun b => (v : Fin 7 → ℚ) b) a := by
+  dsimp +instances only [chevalleyDatum] at v ⊢
+  exact (congrArg (fun f : Module.End ℚ (Fin 7 → ℚ) => f v a)
+    (pinnedRepresentation_h i)).trans (congrFun (Matrix.toLinAlgEquiv'_apply _ _) a)
+
+/-- The raising generator acts on datum vectors by the raising matrix. -/
+@[simp↓] theorem chevalleyDatum_representation_e_apply (i : Fin G2.rank)
+    (v : chevalleyDatum.carrier) (a : Fin 7) :
+    (chevalleyDatum.representation
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).e i)) v : Fin 7 → ℚ) a =
+      (raisingMatrixRat i).mulVec (fun b => (v : Fin 7 → ℚ) b) a := by
+  dsimp +instances only [chevalleyDatum] at v ⊢
+  exact (congrArg (fun f : Module.End ℚ (Fin 7 → ℚ) => f v a)
+    (pinnedRepresentation_e i)).trans (congrFun (Matrix.toLinAlgEquiv'_apply _ _) a)
+
+/-- The lowering generator acts on datum vectors by the lowering matrix. -/
+@[simp↓] theorem chevalleyDatum_representation_f_apply (i : Fin G2.rank)
+    (v : chevalleyDatum.carrier) (a : Fin 7) :
+    (chevalleyDatum.representation
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis valid_G2).f i)) v : Fin 7 → ℚ) a =
+      (loweringMatrixRat i).mulVec (fun b => (v : Fin 7 → ℚ) b) a := by
+  dsimp +instances only [chevalleyDatum] at v ⊢
+  exact (congrArg (fun f : Module.End ℚ (Fin 7 → ℚ) => f v a)
+    (pinnedRepresentation_f i)).trans (congrFun (Matrix.toLinAlgEquiv'_apply _ _) a)
+
 /-- The datum has seven coordinate basis vectors. -/
 theorem chevalleyDatum_dim : chevalleyDatum.dim = 7 := (rfl)
 
 /-- The datum uses the existing integral coordinate lattice. -/
-@[simp] theorem chevalleyDatum_lattice : chevalleyDatum.lattice = lattice.toAddSubgroup := (rfl)
+theorem chevalleyDatum_lattice : chevalleyDatum.lattice = lattice.toAddSubgroup := (rfl)
+
+/-- A datum vector belongs to the integral lattice exactly when each coordinate is integral. -/
+@[simp] theorem mem_chevalleyDatum_lattice_iff {v : chevalleyDatum.carrier} :
+    v ∈ chevalleyDatum.lattice ↔ ∀ a : Fin 7, ∃ z : ℤ, (z : ℚ) = (v : Fin 7 → ℚ) a := by
+  rw [chevalleyDatum_lattice]
+  exact mem_lattice_iff
 
 /-- The datum retains the integral coordinate basis. -/
-@[simp] theorem chevalleyDatum_basis : chevalleyDatum.basis = latticeBasis := (rfl)
+theorem chevalleyDatum_basis : chevalleyDatum.basis = latticeBasis := (rfl)
 
 /-- A datum basis vector is the corresponding rational coordinate vector. -/
-@[simp↓] theorem coe_chevalleyDatum_basis (a : Fin 7) :
-    ((chevalleyDatum.basis a).val : Fin 7 → ℚ) = Pi.single a 1 :=
-  coe_latticeBasis a
+@[simp↓] theorem coe_chevalleyDatum_basis (a : Fin chevalleyDatum.dim) :
+    ((chevalleyDatum.basis a).val : Fin 7 → ℚ) =
+      Pi.single (Fin.cast chevalleyDatum_dim a) 1 := by
+  dsimp only [chevalleyDatum, chevalleyDatum_dim]
+  exact coe_latticeBasis a
 
 /-- The weights of the datum are the native seven short-root weights, in the same numbering. -/
 @[simp] theorem chevalleyDatum_weight : chevalleyDatum.weight = weight := (rfl)
