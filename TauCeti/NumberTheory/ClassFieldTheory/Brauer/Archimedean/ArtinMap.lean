@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
 public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 
@@ -74,6 +75,8 @@ archimedean Artin maps are functorial for the norm of a finite extension
   at a real place the cyclotomic character of the Artin symbol of a negative element is `-1`.
 * `TauCeti.ClassFieldTheory.infiniteArtinAt_norm`: norm functoriality of the archimedean Artin
   maps.
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm`: the `p`-adic
+  cyclotomic character of the archimedean Artin symbol along a local norm.
 
 ## References
 
@@ -339,6 +342,26 @@ theorem infiniteArtinAt_norm (w : InfinitePlace L) (v : InfinitePlace K) [w.Lies
     rw [infiniteArtinAt_eq_one_of_isComplex v hv,
       Subsingleton.elim (absoluteGaloisGroupExtend v.Completion w.Completion iota τ) 1,
       QuotientGroup.mk_one]
+
+variable (p : ℕ) [Fact p.Prime]
+
+/-- **The cyclotomic character of archimedean Artin symbols along a local norm**, the
+archimedean analogue of `abelianizedLocalCyclotomicCharacter_artinMap_norm`. For a place `w` of
+`L` over the infinite place `v` of `K` and `x ∈ L_wˣ`, the `p`-adic cyclotomic character of
+`Art_w(x)` is that of `Art_v(N_{L_w/K_v} x)`. -/
+theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm (v : InfinitePlace K)
+    (w : InfinitePlace L) [w.LiesOver v] (x : w.Completionˣ) :
+    abelianizedLocalCyclotomicCharacter p w.Completion (infiniteArtinAt w x) =
+      abelianizedLocalCyclotomicCharacter p v.Completion
+        (infiniteArtinAt v (Algebra.normUnits v.Completion x)) := by
+  have : CharZero v.Completion := (Completion.extensionEmbedding v).charZero
+  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (infiniteArtinAt w x)
+  let iota : w.Completion →ₐ[v.Completion] SeparableClosure v.Completion := IsSepClosed.lift
+  have hx : Algebra.normUnits v.Completion x =
+      Units.map (Algebra.norm v.Completion : w.Completion →* v.Completion) x :=
+    Units.ext (by simp)
+  rw [← hτ, abelianizedLocalCyclotomicCharacter_mk, hx, ← infiniteArtinAt_norm w v iota x τ hτ,
+    abelianizedLocalCyclotomicCharacter_mk, localCyclotomicCharacter_absoluteGaloisGroupExtend]
 
 end Norm
 
