@@ -368,6 +368,41 @@ theorem ker_mobiusAutHom :
   rw [MonoidHom.mem_ker, mobiusAutHom, MonoidHom.coe_mk, OneHom.coe_mk, mobiusAut_eq_one_iff,
     Subgroup.inv_mem_iff]
 
+/-- Two coprime polynomials of degree at most one, one of them of degree exactly one and the second
+nonzero, have a nonzero determinant of coefficients. -/
+private theorem coeff_det_ne_zero_of_isCoprime {p q : Polynomial K} (hpq : IsCoprime p q)
+    (hp : p.natDegree ≤ 1) (hq : q.natDegree ≤ 1) (hmax : max p.natDegree q.natDegree = 1)
+    (hq0 : q ≠ 0) : p.coeff 1 * q.coeff 0 - p.coeff 0 * q.coeff 1 ≠ 0 := by
+  -- `a * d = b * c` gives `C c * p = C a * q`, and coprimality then forces whichever of
+  -- `p`, `q` has degree one to divide a nonzero constant
+  have hnum := Polynomial.eq_X_add_C_of_natDegree_le_one hp
+  have hden := Polynomial.eq_X_add_C_of_natDegree_le_one hq
+  set a := p.coeff 1 with ha
+  set b := p.coeff 0
+  set c := q.coeff 1 with hc
+  set d := q.coeff 0
+  intro hzero
+  have hCz := congrArg Polynomial.C hzero
+  simp only [map_sub, map_mul, map_zero] at hCz
+  have hkey : Polynomial.C c * p = Polynomial.C a * q := by
+    rw [hnum, hden]
+    linear_combination -hCz
+  rcases max_eq_iff.mp hmax with ⟨h1, -⟩ | ⟨h1, -⟩
+  · have hane : a ≠ 0 := by
+      rw [ha, ← h1]
+      exact Polynomial.leadingCoeff_ne_zero.mpr fun h0 ↦ by simp [h0] at h1
+    have := Polynomial.natDegree_eq_zero_of_isUnit
+      (hpq.isUnit_of_dvd' dvd_rfl
+        ((Polynomial.dvd_C_mul hane).mp ⟨Polynomial.C c, by rw [← hkey, mul_comm]⟩))
+    omega
+  · have hcne : c ≠ 0 := by
+      rw [hc, ← h1]
+      exact Polynomial.leadingCoeff_ne_zero.mpr hq0
+    have := Polynomial.natDegree_eq_zero_of_isUnit
+      (hpq.symm.isUnit_of_dvd' dvd_rfl
+        ((Polynomial.dvd_C_mul hcne).mp ⟨Polynomial.C a, by rw [hkey, mul_comm]⟩))
+    omega
+
 /-- **Every generator of `k(X)` over `k` is a linear fractional transformation**: its numerator and
 denominator have degree at most one, and the determinant of their coefficients is nonzero. -/
 theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
@@ -380,34 +415,12 @@ theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
   have hdenle : f.denom.natDegree ≤ 1 := le_of_max_le_right hmax.le
   have hnum := Polynomial.eq_X_add_C_of_natDegree_le_one hnumle
   have hden := Polynomial.eq_X_add_C_of_natDegree_le_one hdenle
-  set a := f.num.coeff 1 with ha
+  set a := f.num.coeff 1
   set b := f.num.coeff 0
-  set c := f.denom.coeff 1 with hc
+  set c := f.denom.coeff 1
   set d := f.denom.coeff 0
-  have hdet : a * d - b * c ≠ 0 := by
-    -- `a * d = b * c` gives `C c * num = C a * denom`, and coprimality then forces whichever of
-    -- `num`, `denom` has degree one to divide a nonzero constant
-    intro hzero
-    have hCz := congrArg Polynomial.C hzero
-    simp only [map_sub, map_mul, map_zero] at hCz
-    have hkey : Polynomial.C c * f.num = Polynomial.C a * f.denom := by
-      rw [hnum, hden]
-      linear_combination -hCz
-    rcases max_eq_iff.mp hmax with ⟨h1, -⟩ | ⟨h1, -⟩
-    · have hane : a ≠ 0 := by
-        rw [ha, ← h1]
-        exact Polynomial.leadingCoeff_ne_zero.mpr fun h0 ↦ by simp [h0] at h1
-      have := Polynomial.natDegree_eq_zero_of_isUnit
-        ((isCoprime_num_denom f).isUnit_of_dvd' dvd_rfl
-          ((Polynomial.dvd_C_mul hane).mp ⟨Polynomial.C c, by rw [← hkey, mul_comm]⟩))
-      omega
-    · have hcne : c ≠ 0 := by
-        rw [hc, ← h1]
-        exact Polynomial.leadingCoeff_ne_zero.mpr f.denom_ne_zero
-      have := Polynomial.natDegree_eq_zero_of_isUnit
-        ((isCoprime_num_denom f).symm.isUnit_of_dvd' dvd_rfl
-          ((Polynomial.dvd_C_mul hcne).mp ⟨Polynomial.C a, by rw [hkey, mul_comm]⟩))
-      omega
+  have hdet : a * d - b * c ≠ 0 :=
+    coeff_det_ne_zero_of_isCoprime (isCoprime_num_denom f) hnumle hdenle hmax f.denom_ne_zero
   refine ⟨a, b, c, d, hdet, ?_⟩
   rw [mobiusOf_def, ← num_div_denom f]
   conv_rhs => rw [hnum, hden]
