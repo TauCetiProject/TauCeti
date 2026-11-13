@@ -183,7 +183,7 @@ theorem free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt
   let F : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨f, hf⟩
   obtain ⟨g, hgm, hgp, hgbdd, -, -, -, hgidx⟩ :=
     F.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt q hq hp hbdd
-      isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      isClosed_empty isMorseOn_empty
   exact hgm.free_singularHomology_of_manifoldMorseIndex_le hgp hgbdd hgidx V
 
 /-- **Cohomology vanishing on manifolds with a smooth strongly `q`-pseudoconvex exhaustion.** If
@@ -200,7 +200,7 @@ theorem isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconv
   let F : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨f, hf⟩
   obtain ⟨g, hgm, hgp, hgbdd, -, -, -, hgidx⟩ :=
     F.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt q hq hp hbdd
-      isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      isClosed_empty isMorseOn_empty
   exact hgm.isZero_singularCohomology_of_manifoldMorseIndex_le hgp hgbdd hgidx V N hn
 
 /-- **Free top homology on manifolds with a smooth strictly plurisubharmonic exhaustion.** If `M`
