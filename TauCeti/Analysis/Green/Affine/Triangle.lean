@@ -113,7 +113,8 @@ theorem volume_convexHull_triangle (c p q : ℂ) :
     volume (convexHull ℝ {c, p, q}) =
       ENNReal.ofReal |triangleDet c p q| * volume standardTriangle := by
   by_cases hdet : triangleDet c p q = 0
-  · rw [volume_convexHull_triangle_eq_zero hdet, hdet, abs_zero, ENNReal.ofReal_zero, zero_mul]
+  · rw [volume.addHaar_convexHull_triangle_eq_zero hdet, hdet, abs_zero, ENNReal.ofReal_zero,
+      zero_mul]
   · rw [← affineMap_image_standardTriangle c p q hdet,
       volume_affineMap_image _ _ isCompact_standardTriangle.measurableSet.nullMeasurableSet,
       det_triangleCoordinates]
