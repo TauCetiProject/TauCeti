@@ -105,7 +105,7 @@ theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Io
           _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
       _ ≤ ∫ s in Icc a b, ‖f s‖ :=
           setIntegral_mono_set hf'.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
-            hsub.eventuallyLE
+            hsub.eventuallySubset
       _ = ∫ s in Ioo a b, ‖f s‖ := integral_Icc_eq_integral_Ioo
   have hm : AEStronglyMeasurable (fun t ↦ ∫ s in t₀..t, f s) (volume.restrict (Ioo a b)) :=
     ((continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).mono
@@ -114,8 +114,8 @@ theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Io
       ≤ volume.restrict (Ioo a b) univ ^ p.toReal⁻¹ *
           ENNReal.ofReal (∫ s in Ioo a b, ‖f s‖) := eLpNorm_le_of_ae_bound hm hbound
     _ = volume (Ioo a b) ^ p.toReal⁻¹ * eLpNorm f 1 (volume.restrict (Ioo a b)) := by
-      rw [Measure.restrict_apply_univ, ofReal_integral_norm_eq_lintegral_enorm hf,
-        eLpNorm_one_eq_lintegral_enorm hf.aestronglyMeasurable]
+      rw [Measure.restrict_apply_univ, ofReal_integral_norm_eq_lintegral_eNorm hf,
+        eLpNorm_one_eq_lintegral_eNorm hf.aestronglyMeasurable]
 
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s`, based at a point `t₀` of
 `[a, b]`, is at most `b - a` times the `Lᵖ(a, b)` norm of `f`, for `1 ≤ p ≤ ∞`. -/

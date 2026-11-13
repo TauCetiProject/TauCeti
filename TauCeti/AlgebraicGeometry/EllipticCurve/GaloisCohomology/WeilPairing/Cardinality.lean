@@ -5,21 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Cardinality
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
+public import Mathlib.NumberTheory.LocalField.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Isogeny
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Theorem
-import TauCeti.RepresentationTheory.Homological.ContCohomology.NatCardComparison
+import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Cardinality
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Cardinality
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
+import TauCeti.RepresentationTheory.Homological.ContCohomology.NatCardComparison
 
 /-!
 # Orders of local isogeny cohomology groups
 
-For an isogeny `φ : E₁ → E₂` of degree invertible in a nonarchimedean local field `K`,
-local Tate duality gives `#H²(K, E₁[φ]) = #E₂(K)[φ̂]`. Over a finite compatible extension
-of `ℚ_p`, the local Euler characteristic therefore computes `#H¹(K, E₁[φ])` from the
-rational kernels of `φ` and `φ̂` and the isogeny degree. These are the
-ambient cohomology orders needed to upgrade orthogonality of local Kummer images to
-exact annihilator statements. No rationality assumption on the geometric kernel is imposed.
+For an isogeny `φ` of degree invertible in a nonarchimedean local field `K`, local Tate
+duality identifies the order of `H²(K, E₁[φ])` with the order of the rational dual kernel
+`E₂(K)[φ̂]`. Over a finite compatible extension of `ℚ_p`, the local Euler characteristic
+then computes the order of `H¹(K, E₁[φ])` from the two rational kernel orders and the degree,
+including when `p` divides the degree.
+
+This is a cohomology order needed when comparing the local Kummer images of
+an isogeny and its dual with their annihilators. No rationality assumption is imposed on
+the geometric kernels or on the roots of unity.
 
 ## References
 
@@ -32,47 +37,30 @@ public noncomputable section
 
 namespace TauCeti.Isogeny
 
-open WeierstrassCurve TauCeti.ContCohomology TauCeti.ClassFieldTheory
-open Hom (ofIsogeny)
+open WeierstrassCurve ContCohomology ClassFieldTheory Hom
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [DecidableEq K]
-  {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+  [IsNonarchimedeanLocalField K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
 
 include hn in
-/-- The second cohomology of an isogeny kernel has the order of the rational dual kernel. -/
-theorem natCard_H2_kerCoeff :
+/-- For an isogeny `φ` of degree invertible in a nonarchimedean local field `K`,
+`#H²(K, E₁[φ]) = #E₂(K)[φ̂]`. -/
+theorem natCard_H2_kerCoeff [DecidableEq K] :
     Nat.card (H2 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) =
       Nat.card (ofIsogeny φ.dual).pointMapHom.ker := by
-  classical
   have := hn.neZero_natCast
-  let e := (muNRepH2Equiv φ.degree K).trans (h2MuEquivZMod K hn)
-  have hd := explicitCoeff0_bijective (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff
-    (φ.kerCoeffWeilDual_bijective hn)
-  have he : Nat.card (H0 (AbsoluteGaloisGroup K)
-      (InternalHom (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
-        (KummerCoeff K φ.degree))) =
-      Nat.card (H0 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :=
-    (Nat.card_congr (Equiv.ofBijective _ hd)).symm
-  rw [Nat.card_congr (Equiv.ofBijective _
-    (dualityMap2_kummerCoeff_bijective hn (ofIsogeny φ).KerCoeff
-      φ.degree_nsmul_kerCoeff_eq_zero)), e.natCard_addMonoidHom_zmod]
-  · rw [he, Hom.natCard_H0_kerCoeff]
-  · intro x
-    apply Subtype.ext
-    apply InternalHom.ext
-    apply AddMonoidHom.ext
-    intro P
-    simp only [AddSubgroup.coe_nsmul, InternalHom.toAddMonoidHom_nsmul,
-      AddMonoidHom.nsmul_apply, ZeroMemClass.coe_zero,
-      InternalHom.toAddMonoidHom_zero, AddMonoidHom.zero_apply]
-    rw [← map_nsmul, φ.degree_nsmul_kerCoeff_eq_zero, map_zero]
+  rw [Nat.card_congr (ofIsogeny φ.dual).kerPointMapEquivInvariants.toEquiv]
+  rw [natCard_H2_eq_natCard_H0_internalHom hn (ofIsogeny φ).KerCoeff
+    φ.degree_nsmul_kerCoeff_eq_zero]
+  exact Nat.card_congr (Equiv.ofBijective _
+    (explicitCoeff0_bijective _ _ (φ.kerCoeffWeilDual_bijective hn))).symm
 
 /-- Over a finite extension of `ℚ_p`, the order of first isogeny cohomology is the product of
 the two rational kernel orders and the inverse normalized absolute value of the degree.
 The prime `p` is allowed to divide the isogeny degree. -/
-theorem natCard_H1_kerCoeff (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p] :
+theorem natCard_H1_kerCoeff [DecidableEq K] (p : ℕ) [Fact p.Prime]
+    [FinitePadicExtension K p] :
     Nat.card (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) =
       Nat.card (ofIsogeny φ).pointMapHom.ker * Nat.card (ofIsogeny φ.dual).pointMapHom.ker *
         p ^ (Module.finrank ℚ_[p] K * padicValNat p φ.degree) := by
@@ -90,7 +78,6 @@ theorem natCard_H1_kerCoeff (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p] 
     (ofDiscreteModule_isSmoothDiscrete _ _ _).res
       (absoluteGaloisGroupRestrictEquiv K).continuous
   have : Fact (IsSmoothDiscrete (ZMod φ.degree) X) := ⟨hX⟩
-  have : DiscreteTopology X.V := hX.discreteTopology
   let := TopRep.distribMulAction X
   have := hX.continuousSMul
   let e : (ofIsogeny φ).KerCoeff ≃+ X.V := AddEquiv.refl _
@@ -124,8 +111,9 @@ theorem natCard_H1_kerCoeff (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p] 
   have hc₂ := @TopRep.natCard_H2_eq_natCard_continuousCohomology
     _ _ _ _ _ _ _ X hX.discreteTopology hX.continuousSMul inferInstance
   rw [← hc₀, ← hc₁, ← hc₂, ← h₀, ← h₁, ← h₂,
-    Hom.natCard_H0_kerCoeff, φ.natCard_H2_kerCoeff hn,
-    ← Nat.card_congr e.toEquiv, φ.natCard_kerCoeff] at h
+    ← Nat.card_congr (ofIsogeny φ).kerPointMapEquivInvariants.toEquiv,
+    φ.natCard_H2_kerCoeff hn, ← Nat.card_congr e.toEquiv,
+    φ.natCard_kerCoeff_eq_degree] at h
   exact h
 
 end TauCeti.Isogeny

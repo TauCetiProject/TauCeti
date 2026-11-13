@@ -687,7 +687,7 @@ theorem contMDiff_whitneySumTotalSpaceHomeomorph_symm (A D : FiniteRankBundleCor
       (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜)) n
       (whitneySumTotalSpaceHomeomorph A D).symm := by
   intro p₀
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   simp only [whitneySumTotalSpaceHomeomorph_symm_apply]
   refine ⟨(contMDiff_proj _).contMDiffAt, ?_⟩
   let S' : ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
