@@ -416,9 +416,10 @@ private theorem fderiv_ofReal_add_mul_I_apply {z : ℂ} (hh₁ : DifferentiableA
     (hh₂ : DifferentiableAt ℝ h₂ z) (v : ℂ) :
     fderiv ℝ (fun z ↦ (h₁ z : ℂ) + h₂ z * I) z v =
       (fderiv ℝ h₁ z v : ℂ) + fderiv ℝ h₂ z v * I := by
-  have hd := (ofRealCLM.hasFDerivAt.comp z hh₁.hasFDerivAt).add
-    ((ofRealCLM.hasFDerivAt.comp z hh₂.hasFDerivAt).mul_const I)
-  rw [show fderiv ℝ (fun z ↦ (h₁ z : ℂ) + h₂ z * I) z = _ from hd.fderiv]
+  have hd : HasFDerivAt (fun z ↦ (h₁ z : ℂ) + h₂ z * I) _ z :=
+    (ofRealCLM.hasFDerivAt.comp z hh₁.hasFDerivAt).add
+      ((ofRealCLM.hasFDerivAt.comp z hh₂.hasFDerivAt).mul_const I)
+  rw [hd.fderiv]
   simp [mul_comm I]
 
 /-- The Laplacian of `h₁ + i h₂` is `Δ h₁ + i Δ h₂`. -/
