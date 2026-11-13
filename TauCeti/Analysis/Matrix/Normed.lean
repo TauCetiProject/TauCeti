@@ -30,6 +30,8 @@ complete. Its completeness instance is activated by `Matrix.Norms.Operator`, alo
 * `Matrix.linftyOpTopologicalSpace_eq`: that topology is the entrywise topology on matrices.
 * `Matrix.linftyOpContinuousStar`: conjugate transposition is continuous for that topology.
 * `Matrix.linftyOpCompleteSpace`: completeness for the operator uniformity, scoped with the norm.
+* `Matrix.ofContinuousLinearEquiv`: `Matrix.of` as a continuous linear equivalence from entry
+  functions to matrices with the topology of the `L∞` operator norm.
 -/
 
 public section
@@ -75,6 +77,33 @@ protected theorem linftyOpContinuousStar (n : Type*) [Fintype n]
     (α : Type*) [SeminormedAddCommGroup α] [Star α] [ContinuousStar α] :
     ContinuousStar (Matrix n n α) :=
   linftyOpTopologicalSpace_eq n n α ▸ inferInstance
+
+end
+
+section
+
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+
+variable (R : Type*) {m n α : Type*} [Fintype m] [Fintype n] [Semiring R]
+  [SeminormedAddCommGroup α] [Module R α]
+
+/-- `Matrix.of` as a continuous linear equivalence from entry functions to matrices with the
+topology of the `L∞` operator norm. That topology is the entrywise topology
+(`Matrix.linftyOpTopologicalSpace_eq`), so both directions are continuous as the identity. -/
+def ofContinuousLinearEquiv : (m → n → α) ≃L[R] Matrix m n α :=
+  { ofLinearEquiv R with
+    continuous_toFun := continuous_id
+    continuous_invFun := continuous_id }
+
+@[simp]
+theorem coe_ofContinuousLinearEquiv :
+    ⇑(ofContinuousLinearEquiv R : (m → n → α) ≃L[R] Matrix m n α) = of :=
+  (rfl)
+
+@[simp]
+theorem coe_ofContinuousLinearEquiv_symm :
+    ⇑(ofContinuousLinearEquiv R : (m → n → α) ≃L[R] Matrix m n α).symm = of.symm :=
+  (rfl)
 
 end
 
