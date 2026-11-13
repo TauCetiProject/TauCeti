@@ -121,11 +121,11 @@ theorem reachable_def {s t : YSeed K P} :
 
 /-- Applying a word always gives a reachable seed. -/
 theorem reachable_mutationWord (s : YSeed K P) (w : List K) :
-    Reachable s (s.mutationWord w) := foldReachable_def.mpr ⟨w, rfl⟩
+    Reachable s (s.mutationWord w) := foldReachable_foldl mutation s w
 
 /-- A single mutation gives a reachable seed. -/
 theorem reachable_mutation (s : YSeed K P) (k : K) : Reachable s (s.mutation k) :=
-  foldReachable_def.mpr ⟨[k], rfl⟩
+  foldReachable_apply mutation s k
 
 /-- Every Y-seed is reachable from itself. -/
 @[refl, simp]
@@ -141,6 +141,10 @@ theorem Reachable.symm {s t : YSeed K P} (h : Reachable s t) : Reachable t s :=
 theorem Reachable.trans {s t u : YSeed K P} (h : Reachable s t) (h' : Reachable t u) :
     Reachable s u := FoldReachable.trans h h'
 
+/-- The endpoints of Y-seed reachability can be interchanged. -/
+theorem reachable_comm (s t : YSeed K P) : Reachable s t ↔ Reachable t s :=
+  FoldReachable.comm mutation_involutive s t
+
 /-- Mutation reachability is an equivalence relation. -/
 theorem reachable_equivalence : Equivalence (Reachable (K := K) (P := P)) :=
   FoldReachable.equivalence mutation_involutive
@@ -149,30 +153,33 @@ theorem reachable_equivalence : Equivalence (Reachable (K := K) (P := P)) :=
 theorem Reachable.reachable_iff {s t u : YSeed K P} (h : Reachable s t) :
     Reachable t u ↔ Reachable s u := FoldReachable.reachable_iff mutation_involutive h
 
+/-- Replacing the target seed by any reachable seed preserves reachability. -/
+theorem Reachable.reachable_right_iff {s t u : YSeed K P} (h : Reachable s t) :
+    Reachable u t ↔ Reachable u s := FoldReachable.reachable_right_iff mutation_involutive h
+
 /-- Mutation words on the initial seed do not alter its mutation class. -/
 @[simp]
 theorem reachable_mutationWord_left_iff (s t : YSeed K P) (w : List K) :
     Reachable (s.mutationWord w) t ↔ Reachable s t :=
-  (reachable_mutationWord s w).reachable_iff
+  foldReachable_foldl_left_iff mutation mutation_involutive s t w
 
 /-- Mutation words on the target seed do not alter its mutation class. -/
 @[simp]
 theorem reachable_mutationWord_right_iff (s t : YSeed K P) (w : List K) :
     Reachable s (t.mutationWord w) ↔ Reachable s t :=
-  ⟨fun h ↦ h.trans (reachable_mutationWord t w).symm,
-    fun h ↦ h.trans (reachable_mutationWord t w)⟩
+  foldReachable_foldl_right_iff mutation mutation_involutive s t w
 
 /-- A mutation of the initial seed does not alter its mutation class. -/
 @[simp]
 theorem reachable_mutation_left_iff (s t : YSeed K P) (k : K) :
-    Reachable (s.mutation k) t ↔ Reachable s t := by
-  simpa using reachable_mutationWord_left_iff s t [k]
+    Reachable (s.mutation k) t ↔ Reachable s t :=
+  foldReachable_apply_left_iff mutation (mutation_involutive k) s t
 
 /-- A mutation of the target seed does not alter its mutation class. -/
 @[simp]
 theorem reachable_mutation_right_iff (s t : YSeed K P) (k : K) :
-    Reachable s (t.mutation k) ↔ Reachable s t := by
-  simpa using reachable_mutationWord_right_iff s t [k]
+    Reachable s (t.mutation k) ↔ Reachable s t :=
+  foldReachable_apply_right_iff mutation (mutation_involutive k) s t
 
 /-- Specialization takes reachable seeds to reachable seeds, without injectivity assumptions. -/
 theorem Reachable.map {s t : YSeed K P} (h : Reachable s t)

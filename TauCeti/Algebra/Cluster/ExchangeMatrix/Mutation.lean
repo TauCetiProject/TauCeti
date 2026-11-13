@@ -296,6 +296,7 @@ theorem submatrix_mutation [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'} 
   · simp
 
 /-- Mutation commutes with passage to the principal block. -/
+@[simp]
 theorem principal_mutation (k : K) : (B.mutation k).principal = B.principal.mutation k := by
   ext : 1 <;> simp [matrixMutation_refl_submatrix_row]
 

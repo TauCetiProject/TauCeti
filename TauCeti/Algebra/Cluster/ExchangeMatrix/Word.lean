@@ -108,23 +108,37 @@ variable {I₁ I₂ K₁ K₂ : Type*} [DecidableEq I₁] [DecidableEq I₂]
   [DecidableEq K₁] [DecidableEq K₂]
   (row₁ : K₁ ↪ I₁) (row₂ : K₂ ↪ I₂) (B₁ : Matrix I₁ K₁ ℤ) (B₂ : Matrix I₂ K₂ ℤ)
 
+/-- An arbitrary interleaved word acts on each diagonal block by its corresponding subword. -/
+theorem matrixMutationWord_fromBlocks (w : List (K₁ ⊕ K₂)) :
+    matrixMutationWord (row₁.sumMap row₂) (Matrix.fromBlocks B₁ 0 0 B₂) w =
+      Matrix.fromBlocks (matrixMutationWord row₁ B₁ (w.filterMap Sum.getLeft?)) 0 0
+        (matrixMutationWord row₂ B₂ (w.filterMap Sum.getRight?)) := by
+  induction w generalizing B₁ B₂ with
+  | nil => simp
+  | cons k w ih =>
+    cases k with
+    | inl k =>
+      simpa only [matrixMutationWord_cons, List.filterMap_cons, Sum.getLeft?_inl,
+        Sum.getRight?_inl, List.foldl_cons, matrixMutation_fromBlocks_inl] using
+        ih (matrixMutation row₁ B₁ k) B₂
+    | inr k =>
+      simpa only [matrixMutationWord_cons, List.filterMap_cons, Sum.getLeft?_inr,
+        Sum.getRight?_inr, List.foldl_cons, matrixMutation_fromBlocks_inr] using
+        ih B₁ (matrixMutation row₂ B₂ k)
+
 /-- A word in the first block leaves the second block unchanged. -/
 @[simp]
 theorem matrixMutationWord_fromBlocks_inl (w : List K₁) :
     matrixMutationWord (row₁.sumMap row₂) (Matrix.fromBlocks B₁ 0 0 B₂) (w.map Sum.inl) =
       Matrix.fromBlocks (matrixMutationWord row₁ B₁ w) 0 0 B₂ := by
-  simp only [matrixMutationWord, List.foldl_map]
-  exact List.foldl_hom (fun B ↦ Matrix.fromBlocks B 0 0 B₂)
-    (fun B k ↦ matrixMutation_fromBlocks_inl row₁ row₂ B B₂ k)
+  simpa [Function.comp_def] using matrixMutationWord_fromBlocks row₁ row₂ B₁ B₂ (w.map Sum.inl)
 
 /-- A word in the second block leaves the first block unchanged. -/
 @[simp]
 theorem matrixMutationWord_fromBlocks_inr (w : List K₂) :
     matrixMutationWord (row₁.sumMap row₂) (Matrix.fromBlocks B₁ 0 0 B₂) (w.map Sum.inr) =
       Matrix.fromBlocks B₁ 0 0 (matrixMutationWord row₂ B₂ w) := by
-  simp only [matrixMutationWord, List.foldl_map]
-  exact List.foldl_hom (fun B ↦ Matrix.fromBlocks B₁ 0 0 B)
-    (fun B k ↦ matrixMutation_fromBlocks_inr row₁ row₂ B₁ B k)
+  simpa [Function.comp_def] using matrixMutationWord_fromBlocks row₁ row₂ B₁ B₂ (w.map Sum.inr)
 
 end fromBlocks
 
@@ -264,19 +278,27 @@ variable {I₁ I₂ K₁ K₂ : Type*} [DecidableEq I₁] [DecidableEq I₂]
   [DecidableEq K₁] [DecidableEq K₂] {row₁ : K₁ ↪ I₁} {row₂ : K₂ ↪ I₂}
   (B₁ : ExchangeMatrix row₁) (B₂ : ExchangeMatrix row₂)
 
+/-- Mutation by an arbitrary interleaved word splits into the two projected subwords. -/
+theorem mutationWord_sum (w : List (K₁ ⊕ K₂)) :
+    (B₁.sum B₂).mutationWord w =
+      (B₁.mutationWord (w.filterMap Sum.getLeft?)).sum
+        (B₂.mutationWord (w.filterMap Sum.getRight?)) := by
+  ext : 1
+  · simp only [mutationWord_matrix, sum_matrix]
+    exact matrixMutationWord_fromBlocks row₁ row₂ B₁.matrix B₂.matrix w
+  · simp
+
 /-- A mutation word in the first summand fixes the second summand. -/
 @[simp]
 theorem mutationWord_sum_inl (w : List K₁) :
     (B₁.sum B₂).mutationWord (w.map Sum.inl) = (B₁.mutationWord w).sum B₂ := by
-  simp only [mutationWord, List.foldl_map]
-  exact List.foldl_hom (fun B : ExchangeMatrix row₁ ↦ B.sum B₂) (fun B k ↦ mutation_sum_inl B B₂ k)
+  simpa [Function.comp_def] using mutationWord_sum B₁ B₂ (w.map Sum.inl)
 
 /-- A mutation word in the second summand fixes the first summand. -/
 @[simp]
 theorem mutationWord_sum_inr (w : List K₂) :
     (B₁.sum B₂).mutationWord (w.map Sum.inr) = B₁.sum (B₂.mutationWord w) := by
-  simp only [mutationWord, List.foldl_map]
-  exact List.foldl_hom (fun B : ExchangeMatrix row₂ ↦ B₁.sum B) (fun B k ↦ mutation_sum_inr B₁ B k)
+  simpa [Function.comp_def] using mutationWord_sum B₁ B₂ (w.map Sum.inr)
 
 end sum
 
