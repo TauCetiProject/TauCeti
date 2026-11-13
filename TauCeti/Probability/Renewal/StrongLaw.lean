@@ -11,11 +11,15 @@ public import TauCeti.Probability.StrongLaw
 /-!
 # The almost-sure renewal law of large numbers
 
-For pairwise independent, identically distributed nonnegative increments that are not almost
-surely zero, the number of arrivals per unit time converges almost surely to the reciprocal of
-the extended mean increment.
+For pairwise independent, identically distributed nonnegative increments, the number of arrivals
+per unit time converges almost surely to the reciprocal of the extended mean increment.
 The reciprocal is taken before conversion to a real number, so infinite mean gives rate zero.
 Zero increments, including genuine arrivals at time zero, are allowed.
+
+If the increments vanish almost surely, the true number of arrivals is infinite and the reciprocal
+of the mean is `⊤`; the theorems then hold only through conventions, with no hypothesis excluding
+this case. The reciprocal averages `n / 0` and `(⊤ : ℝ≥0∞).toReal` are both `0`, and
+`renewalCountNat` is `0` on explosive paths, so both sides are `0`.
 
 The deterministic inversion theorem transfers a limit for reciprocal arrival averages to a
 limit for the count at all real nonnegative times, not only at integer times. The probabilistic
@@ -48,26 +52,18 @@ theorem tendsto_renewalCountNat_div_of_tendsto {ω : Ω} {r : ℝ}
   by_cases hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop
   swap
   · simp only [renewalCountNat_eq_zero_of_not_tendsto T hω, Nat.cast_zero, zero_div]
-    obtain ⟨B, hB⟩ : ∃ B : ℝ≥0, ∀ n, arrival T n ω ≤ B := by
-      by_contra hcon
-      push Not at hcon
-      exact hω (tendsto_atTop_atTop_of_monotone (monotone_arrival T ω)
-        fun b ↦ (hcon b).imp fun n hn ↦ hn.le)
-    by_cases hall : ∀ n, arrival T n ω = 0
-    · have : r = 0 := tendsto_nhds_unique h (by simp [hall])
+    obtain ⟨B, hB⟩ := (tendsto_atTop_of_monotone (monotone_arrival T ω)).resolve_left hω
+    by_cases hB0 : B = 0
+    · have hall (n : ℕ) : arrival T n ω = 0 := by
+        simpa [hB0] using (monotone_arrival T ω).ge_of_tendsto hB n
+      have : r = 0 := tendsto_nhds_unique h (by simp [hall])
       simp [this]
-    · push Not at hall
-      obtain ⟨m, hm⟩ := hall
-      have hmpos : 0 < arrival T m ω := pos_iff_ne_zero.2 hm
-      exfalso
-      have hB0 : (0 : ℝ) < B := lt_of_lt_of_le hmpos (hB m)
+    · exfalso
+      have hBpos : (0 : ℝ) < B := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hB0)
       have hlarge : Tendsto (fun n : ℕ ↦ (n : ℝ) / (arrival T n ω : ℝ)) atTop atTop := by
-        refine tendsto_atTop_mono' _ ?_
-          ((tendsto_natCast_atTop_atTop (R := ℝ)).atTop_div_const hB0)
-        filter_upwards [eventually_ge_atTop m] with n hn
-        exact div_le_div_of_nonneg_left (Nat.cast_nonneg _)
-          (by exact_mod_cast hmpos.trans_le (monotone_arrival T ω hn))
-          (by exact_mod_cast hB n)
+        simp_rw [div_eq_mul_inv]
+        exact (tendsto_natCast_atTop_atTop (R := ℝ)).atTop_mul_pos (inv_pos.2 hBpos)
+          ((NNReal.tendsto_coe.2 hB).inv₀ hBpos.ne')
       exact not_tendsto_atTop_of_tendsto_nhds h hlarge
   have hN := tendsto_renewalCountNat_atTop hω
   have hN' : Tendsto (fun t ↦ renewalCountNat T t ω + 1) atTop atTop :=
@@ -96,10 +92,11 @@ theorem tendsto_renewalCountNat_div_of_tendsto {ω : Ω} {r : ℝ}
     exact div_le_div_of_nonneg_left (Nat.cast_nonneg _) ht
       (NNReal.coe_le_coe.2 (arrival_renewalCountNat_le hω t))
 
-variable [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+variable [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
 
-/-- The reciprocal arrival averages converge almost surely to the reciprocal extended mean.
-This includes infinite mean, where the limit is zero. -/
+/-- The reciprocal arrival averages converge almost surely to the real part of the reciprocal
+extended mean. This includes infinite mean, where the limit is zero. If the increments vanish
+almost surely, both the averages `n / 0` and the limit `(⊤ : ℝ≥0∞).toReal` are `0` by convention. -/
 theorem ae_tendsto_natCast_div_arrival
     (hindep : Pairwise fun i j ↦ IndepFun (T i) (T j) P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
@@ -124,33 +121,33 @@ theorem ae_tendsto_natCast_div_arrival
     simpa only [Function.comp_def, hsum, inv_div, hmean, ENNReal.inv_top,
       ENNReal.toReal_zero]
       using tendsto_inv_atTop_zero.comp hω
-  · have hint : Integrable (X 0) P :=
+  · by_cases h0 : ∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P = 0
+    · have h0' : ∀ᵐ ω ∂P, T 0 ω = 0 := by
+        filter_upwards [(lintegral_eq_zero_iff' (hid 0).aemeasurable_fst.coe_nnreal_ennreal).1 h0]
+          with ω hω
+        simpa using hω
+      have hz' (n : ℕ) : ∀ᵐ ω ∂P, T n ω = 0 :=
+        (hid n).symm.ae_mem_snd (measurableSet_singleton (0 : ℝ≥0)) h0'
+      filter_upwards [ae_all_iff.2 hz'] with ω hω
+      simp [h0, arrival_def, hω]
+    have hint : Integrable (X 0) P :=
       ⟨(hXm 0).aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal hpos).2
         (by simpa only [X, ENNReal.ofReal_coe_nnreal] using lt_top_iff_ne_top.2 hmean)⟩
     have hμ : ∫ ω, X 0 ω ∂P = (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P).toReal := by
       simpa only [X, ENNReal.ofReal_coe_nnreal] using
         integral_eq_lintegral_of_nonneg_ae hpos (hXm 0).aestronglyMeasurable
-    by_cases hμpos : 0 < ∫ ω, X 0 ω ∂P
-    swap
-    · have hz := (integral_eq_zero_iff_of_nonneg_ae hpos hint).1
-        (le_antisymm (not_lt.1 hμpos) (integral_nonneg_of_ae hpos))
-      have hz' (n : ℕ) : ∀ᵐ ω ∂P, T n ω = 0 := by
-        have h0 : ∀ᵐ ω ∂P, T 0 ω = 0 := by
-          filter_upwards [hz] with ω hω
-          simpa only [X, Pi.zero_apply, NNReal.coe_eq_zero] using hω
-        exact (hid n).symm.ae_mem_snd (measurableSet_singleton (0 : ℝ≥0)) h0
-      have hlin : ∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P = 0 := by
-        rw [lintegral_eq_zero_iff' (hid 0).aemeasurable_fst.coe_nnreal_ennreal]
-        exact (hz' 0).mono fun ω hω ↦ by simp [hω]
-      filter_upwards [ae_all_iff.2 hz'] with ω hω
-      simp [hlin, arrival_def, hω]
+    have hμne : ∫ ω, X 0 ω ∂P ≠ 0 := by
+      rw [hμ]
+      exact ENNReal.toReal_ne_zero.2 ⟨h0, hmean⟩
     filter_upwards [strong_law_ae_real X hint hXi hXd] with ω hω
     simpa only [hsum, inv_div, ENNReal.toReal_inv, hμ]
-      using hω.inv₀ hμpos.ne'
+      using hω.inv₀ hμne
 
 /-- **Almost-sure renewal law of large numbers.** The count per unit time converges to the
 reciprocal of the extended mean increment, with rate zero for infinite mean. The convergence
 holds along the full nonnegative real time axis on a single event of probability one.
+If the increments vanish almost surely the true count is infinite; the statement then holds by the
+conventions that `renewalCountNat` is `0` on explosive paths and `(⊤ : ℝ≥0∞).toReal = 0`.
 Pairwise independence suffices; the identical-distribution hypothesis supplies almost-everywhere
 measurability of the increments. -/
 theorem ae_tendsto_renewalCountNat_div
