@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.Process.QuadraticVariation
-import TauCeti.Probability.Moments.Chebyshev
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Brownian quadratic sums on deterministic partitions
@@ -98,15 +99,13 @@ theorem integral_sq_quadraticSum_sub_le (hB : IsPreBrownianReal B P) (ht : Monot
     {δ : ℝ} (hmesh : ∀ i : Fin n, (t i.succ : ℝ) - t i.castSucc ≤ δ) :
     ∫ ω, (quadraticSum B t ω - ((t (Fin.last n) : ℝ) - t 0)) ^ 2 ∂P ≤
       2 * ((t (Fin.last n) : ℝ) - t 0) * δ := by
-  rw [hB.integral_sq_quadraticSum_sub ht]
-  have hsum := Fin.sum_univ_succ_sub_castSucc (fun i ↦ (t i : ℝ))
-  calc
-    _ ≤ 2 * ∑ i : Fin n, (((t i.succ : ℝ) - t i.castSucc) * δ) := by
-      gcongr with i
-      have hpos : 0 ≤ (t i.succ : ℝ) - t i.castSucc :=
-        sub_nonneg.2 (by exact_mod_cast ht (Fin.castSucc_le_succ i))
-      nlinarith [mul_le_mul_of_nonneg_left (hmesh i) hpos]
-    _ = _ := by rw [← sum_mul, hsum]; ring
+  rw [hB.integral_sq_quadraticSum_sub ht, mul_assoc]
+  have hbound := sum_sq_le_sum_mul (s := univ)
+    (f := fun i : Fin n ↦ (t i.succ : ℝ) - t i.castSucc)
+    (fun i _ ↦ sub_nonneg.mpr (NNReal.coe_le_coe.mpr (ht (Fin.castSucc_le_succ i))))
+    (fun i _ ↦ hmesh i)
+  rw [Fin.sum_univ_succ_sub_castSucc (fun i ↦ (t i : ℝ))] at hbound
+  exact mul_le_mul_of_nonneg_left hbound (by norm_num)
 
 /-- Brownian quadratic sums converge in mean square to the elapsed time along every
 vanishing-mesh family of deterministic partitions of a fixed interval. -/
@@ -134,15 +133,11 @@ theorem tendstoInMeasure_quadraticSum (hB : IsPreBrownianReal B P)
     (hδ : Filter.Tendsto δ l (𝓝 0)) :
     TendstoInMeasure P (fun k ↦ quadraticSum B (grid k)) l (fun _ ↦ (b : ℝ) - a) := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
-  refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
-  have hlim := ENNReal.continuous_ofReal.continuousAt.tendsto.comp
-    ((hB.tendsto_integral_sq_quadraticSum_sub ht ha hb hmesh hδ).div_const (ε ^ 2))
-  simp only [zero_div, ENNReal.ofReal_zero, Function.comp_def] at hlim
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-    (fun _ ↦ zero_le) fun k ↦ ?_
-  simpa only [Pi.sub_apply, Real.norm_eq_abs, sq_abs] using
-    TauCeti.meas_ge_le_integral_norm_sq_div_sq
-      ((hB.memLp_quadraticSum (grid k)).sub (memLp_const ((b : ℝ) - a))).norm.integrable_sq hε
+  apply tendstoInMeasure_of_tendsto_integral_norm_sq
+  · exact Filter.Eventually.of_forall fun k ↦
+      ((hB.memLp_quadraticSum (grid k)).sub (memLp_const ((b : ℝ) - a))).norm.integrable_sq
+  · simpa only [Real.norm_eq_abs, sq_abs] using
+      hB.tendsto_integral_sq_quadraticSum_sub ht ha hb hmesh hδ
 
 end ProbabilityTheory.IsPreBrownianReal
 

@@ -63,6 +63,12 @@ theorem toLp_sum_smul_eval (hB : IsPreBrownianReal B P) {ι : Type*}
       simpa only [toL2, Pi.smul_def, smul_eq_mul] using
         MemLp.toLp_const_smul (w i) (hf i))
 
+/-- The Brownian evaluation class at time zero vanishes. -/
+@[simp]
+theorem toL2_zero (hB : IsPreBrownianReal B P) : hB.toL2 0 = 0 := by
+  exact Lp.eq_zero_iff_ae_eq_zero.2
+    ((hB.coeFn_toL2 0).trans hB.eval_zero_ae_eq_zero)
+
 /-- The inner product of two Brownian evaluation classes is their covariance `min s t`. -/
 @[simp]
 theorem inner_toL2 (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
