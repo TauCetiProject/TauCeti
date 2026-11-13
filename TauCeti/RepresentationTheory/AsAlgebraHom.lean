@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
+public import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The monoid-algebra action of a representation
@@ -51,6 +52,8 @@ divisors whose additive group has no `2`-torsion.
 * `Representation.asAlgebraHom_domCongr` and `Representation.asAlgebraHom_eq_sum`: the action of
   a transported element is the action through the pulled-back representation, and over a finite
   monoid the action of `x` is `∑ g, x g • ρ g`.
+* `Representation.Equiv.conjAlgEquiv_asAlgebraHom`: an equivalence of representations conjugates
+  the action of the monoid algebra.
 * `Representation.asAlgebraHom_quotient_mk`: the action on a quotient representation is induced
   by the action on the representation.
 * `Representation.asAlgebraHom_eq_zero_of_mul_single_eq_neg`: with doubling injective on `V`, an
@@ -146,6 +149,19 @@ theorem asAlgebraHom_domCongr {H : Type*} [Monoid H] (ρ : Representation k H V)
 theorem asAlgebraHom_eq_sum [Fintype G] (ρ : Representation k G V) (x : MonoidAlgebra k G) :
     ρ.asAlgebraHom x = ∑ g, x.coeff g • ρ g := by
   simp [Representation.asAlgebraHom_def, MonoidAlgebra.lift_apply, Finsupp.sum_fintype]
+
+/-- **An equivalence of representations conjugates the action of the monoid algebra**: if
+`e : V ≃ W` is equivariant, the action of `x` on `W` is `e ∘ ρ(x) ∘ e⁻¹`. -/
+theorem Equiv.conjAlgEquiv_asAlgebraHom {W : Type*} [AddCommMonoid W] [Module k W]
+    {ρ : Representation k G V} {σ : Representation k G W} (e : ρ.Equiv σ)
+    (x : MonoidAlgebra k G) :
+    e.toLinearEquiv.conjAlgEquiv k (ρ.asAlgebraHom x) = σ.asAlgebraHom x := by
+  refine LinearMap.ext fun w => ?_
+  obtain ⟨v, rfl⟩ := e.toLinearEquiv.surjective w
+  simp only [LinearEquiv.conjAlgEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_apply]
+  rw [Representation.Equiv.toLinearEquiv_apply]
+  exact e.toIntertwiningMap.apply_asAlgebraHom x v
 
 end Representation
 
