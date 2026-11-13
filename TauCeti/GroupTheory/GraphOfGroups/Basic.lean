@@ -279,17 +279,18 @@ variable {G : Type w} {C : Type x} [Group G] [Group C] (f g : C →* G)
 
 end loop
 
+-- Protected so that an unqualified `trivial` in this namespace still means `trivial : True`.
 /-- The graph of groups on `Γ` all of whose vertex and edge groups are trivial. -/
-def trivial (Γ : SerreGraph.{u, v}) : GraphOfGroups.{u, v, 0, 0} Γ where
+protected def trivial (Γ : SerreGraph.{u, v}) : GraphOfGroups.{u, v, 0, 0} Γ where
   vertexGroup _ := PUnit
   edgeGroup _ := PUnit
   ω _ := 1
   ω_injective _ := Function.injective_of_subsingleton _
 
-instance (a : Γ.V) : Subsingleton ((trivial Γ).vertexGroup a) :=
+instance (a : Γ.V) : Subsingleton ((GraphOfGroups.trivial Γ).vertexGroup a) :=
   inferInstanceAs (Subsingleton PUnit)
 
-instance (y : Γ.GeomEdge) : Subsingleton ((trivial Γ).edgeGroup y) :=
+instance (y : Γ.GeomEdge) : Subsingleton ((GraphOfGroups.trivial Γ).edgeGroup y) :=
   inferInstanceAs (Subsingleton PUnit)
 
 section restrict
