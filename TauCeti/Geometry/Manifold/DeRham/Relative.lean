@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Relative
 public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-public import Mathlib.Algebra.Homology.Embedding.Extend
+public import TauCeti.Geometry.Manifold.DeRham.Extend
 
 /-!
 # The relative de Rham complex of an open pair
@@ -83,51 +83,6 @@ namespace relativeDeRhamComplex
 
 variable {I} (W : Opens M)
 
-/-- The degree-`p` object of an extended de Rham complex is the space of smooth `k`-forms when
-`p = k`. -/
-private def extendXEquiv (N : Type*) [TopologicalSpace N] [ChartedSpace H N] [IsManifold I 2 N]
-    (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p) :
-    ((deRhamComplex I N).extend ComplexShape.embeddingUpNat).X p ≃ₗ[ℝ] SmoothForm I N ℝ k :=
-  ((deRhamComplex I N).extendXIso ComplexShape.embeddingUpNat hk ≪≫
-    deRhamComplexXIso I k).toLinearEquiv
-
-private lemma extendXEquiv_symm_apply (N : Type*) [TopologicalSpace N] [ChartedSpace H N]
-    [IsManifold I 2 N] (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p) (α : SmoothForm I N ℝ k) :
-    (extendXEquiv N p k hk).symm α =
-      ((deRhamComplex I N).extendXIso ComplexShape.embeddingUpNat hk).inv
-        ((deRhamComplexXIso I k).inv α) :=
-  rfl
-
-/-- The extended de Rham complexes vanish in negative degrees. -/
-private lemma subsingleton_extend_X (N : Type*) [TopologicalSpace N] [ChartedSpace H N]
-    [IsManifold I 2 N] {p : ℤ} (hp : p < 0) :
-    Subsingleton (((deRhamComplex I N).extend ComplexShape.embeddingUpNat).X p) :=
-  ModuleCat.subsingleton_of_isZero (HomologicalComplex.isZero_extend_X _ _ p fun k hk ↦ by
-    simp only [ComplexShape.embeddingUpNat_f] at hk
-    omega)
-
-private lemma extendXEquiv_symm_d (N : Type*) [TopologicalSpace N] [ChartedSpace H N]
-    [IsManifold I 2 N] (p p' : ℤ) (k : ℕ) (hk : (k : ℤ) = p) (hk' : ((k + 1 : ℕ) : ℤ) = p')
-    (α : SmoothForm I N ℝ k) :
-    ((deRhamComplex I N).extend ComplexShape.embeddingUpNat).d p p'
-        ((extendXEquiv N p k hk).symm α) =
-      (extendXEquiv N p' (k + 1) hk').symm (mextDerivₗ I (F := ℝ) k α) := by
-  rw [HomologicalComplex.extend_d_eq _ _ hk hk', extendXEquiv_symm_apply,
-    extendXEquiv_symm_apply]
-  simp [deRhamComplex_d_apply]
-
-private lemma extendMap_map_f_extendXEquiv_symm {E' : Type u} {H' : Type*}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-    {N N' : Type v} [TopologicalSpace N] [ChartedSpace H N] [IsManifold I 2 N]
-    [TopologicalSpace N'] [ChartedSpace H' N'] [IsManifold I' 2 N'] (g : N → N')
-    (hg : ContMDiff I I' ∞ g) (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p) (α : SmoothForm I' N' ℝ k) :
-    (HomologicalComplex.extendMap (deRhamComplex.map g hg) ComplexShape.embeddingUpNat).f p
-        ((extendXEquiv N' p k hk).symm α) =
-      (extendXEquiv N p k hk).symm (SmoothForm.mpullback g hg α) := by
-  rw [HomologicalComplex.extendMap_f _ _ hk, extendXEquiv_symm_apply, extendXEquiv_symm_apply]
-  simp only [ModuleCat.comp_apply, Iso.inv_hom_id_apply]
-  exact congrArg _ (deRhamComplex.map_f_inv_apply _ _ k α)
-
 /-- Under the canonical identifications of the objects with smooth forms, the restriction cochain
 map is restriction of forms to `W`. -/
 theorem restriction_f_extendXIso_inv (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p)
@@ -137,12 +92,13 @@ theorem restriction_f_extendXIso_inv (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p)
       ((deRhamComplex I W).extendXIso ComplexShape.embeddingUpNat hk).inv
         ((deRhamComplexXIso I k).inv
           (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)) :=
-  extendMap_map_f_extendXEquiv_symm _ _ p k hk α
+  deRhamComplex.extendMap_map_f_extendXEquiv_symm _ _ p k hk α
 
 private lemma restriction_f_extendXEquiv_symm (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p)
     (α : SmoothForm I M ℝ k) :
-    (restriction I W).f p ((extendXEquiv M p k hk).symm α) =
-      (extendXEquiv W p k hk).symm (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α) :=
+    (restriction I W).f p ((deRhamComplex.extendXEquiv I M p k hk).symm α) =
+      (deRhamComplex.extendXEquiv I W p k hk).symm
+        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α) :=
   restriction_f_extendXIso_inv W p k hk α
 
 /-- The coordinates of the relative de Rham complex in degree `p = k + 1`: a pair of a
@@ -151,34 +107,35 @@ projection of the shifted mapping cone, so that the differential is `(α, β) �
 def XEquiv (p : ℤ) (k : ℕ) (hk : ((k + 1 : ℕ) : ℤ) = p) :
     (relativeDeRhamComplex I M W).X p ≃ₗ[ℝ] SmoothForm I M ℝ (k + 1) × SmoothForm I W ℝ k :=
   (mappingCocone.relativeCoordinates (restriction I W) p k (by omega)).trans
-    ((extendXEquiv M p (k + 1) hk).prodCongr (extendXEquiv W k k rfl))
+    ((deRhamComplex.extendXEquiv I M p (k + 1) hk).prodCongr
+      (deRhamComplex.extendXEquiv I W k k rfl))
 
 /-- The coordinate of the relative de Rham complex in degree `0`: a smooth function on `M`. -/
 def XEquivZero : (relativeDeRhamComplex I M W).X 0 ≃ₗ[ℝ] SmoothForm I M ℝ 0 :=
   letI : Unique (((deRhamComplex I W).extend ComplexShape.embeddingUpNat).X (-1)) :=
-    @uniqueOfSubsingleton _ (subsingleton_extend_X (I := I) W (by norm_num)) 0
+    @uniqueOfSubsingleton _ (deRhamComplex.subsingleton_extend_X I W (by norm_num)) 0
   (mappingCocone.relativeCoordinates (restriction I W) 0 (-1) rfl).trans
-    (((extendXEquiv M 0 0 rfl).prodCongr (LinearEquiv.refl ℝ _)).trans
+    (((deRhamComplex.extendXEquiv I M 0 0 rfl).prodCongr (LinearEquiv.refl ℝ _)).trans
       (LinearEquiv.prodUnique (R := ℝ)))
 
 /-- The relative de Rham complex vanishes in negative degrees. -/
 theorem isZero_X_of_neg {p : ℤ} (hp : p < 0) : IsZero ((relativeDeRhamComplex I M W).X p) := by
-  have := subsingleton_extend_X (I := I) M hp
-  have := subsingleton_extend_X (I := I) W (p := p + -1) (by omega)
+  have := deRhamComplex.subsingleton_extend_X I M hp
+  have := deRhamComplex.subsingleton_extend_X I W (p := p + -1) (by omega)
   rw [ModuleCat.isZero_iff_subsingleton]
   exact (mappingCocone.relativeCoordinates (restriction I W) p (p + -1) rfl).toEquiv.subsingleton
 
 private lemma XEquiv_symm_eq (p : ℤ) (k : ℕ) (hk : ((k + 1 : ℕ) : ℤ) = p)
     (x : SmoothForm I M ℝ (k + 1) × SmoothForm I W ℝ k) :
     (XEquiv W p k hk).symm x = (mappingCocone.relativeCoordinates (restriction I W) p k
-      (by omega)).symm ((extendXEquiv M p (k + 1) hk).symm x.1,
-        (extendXEquiv W k k rfl).symm x.2) :=
+      (by omega)).symm ((deRhamComplex.extendXEquiv I M p (k + 1) hk).symm x.1,
+        (deRhamComplex.extendXEquiv I W k k rfl).symm x.2) :=
   rfl
 
 private lemma XEquivZero_symm_eq (α : SmoothForm I M ℝ 0) :
     (XEquivZero W).symm α =
       (mappingCocone.relativeCoordinates (restriction I W) 0 (-1) rfl).symm
-        ((extendXEquiv M 0 0 rfl).symm α, 0) := by
+        ((deRhamComplex.extendXEquiv I M 0 0 rfl).symm α, 0) := by
   apply (XEquivZero W).injective
   rw [LinearEquiv.apply_symm_apply]
   unfold XEquivZero
@@ -197,9 +154,10 @@ theorem d_XEquiv_symm (p p' : ℤ) (k : ℕ) (hk : ((k + 1 : ℕ) : ℤ) = p) (h
   subst hk hp'
   rw [XEquiv_symm_eq, XEquiv_symm_eq]
   refine (mappingCocone.d_relativeCoordinates_symm _ _ k (by omega) _).trans
-    (congrArg _ (Prod.ext (extendXEquiv_symm_d M _ _ _ _ _ _) ?_))
+    (congrArg _ (Prod.ext (deRhamComplex.extend_d_extendXEquiv_symm I M _ _ _ _ _ _) ?_))
   dsimp only
-  rw [map_sub, restriction_f_extendXEquiv_symm, extendXEquiv_symm_d W k _ k rfl rfl]
+  rw [map_sub, restriction_f_extendXEquiv_symm,
+    deRhamComplex.extend_d_extendXEquiv_symm I W k _ k rfl rfl]
 
 /-- In coordinates, the differential of the relative de Rham complex in degree `0` is
 `α ↦ (dα, α|_W)`. -/
@@ -208,10 +166,10 @@ theorem d_XEquivZero_symm (α : SmoothForm I M ℝ 0) :
     (relativeDeRhamComplex I M W).d 0 1 ((XEquivZero W).symm α) =
       (XEquiv W 1 0 rfl).symm
         (mextDerivₗ I 0 α, SmoothForm.mpullback Subtype.val contMDiff_subtype_val α) := by
-  have := subsingleton_extend_X (I := I) W (p := -1) (by norm_num)
+  have := deRhamComplex.subsingleton_extend_X I W (p := -1) (by norm_num)
   rw [XEquivZero_symm_eq, XEquiv_symm_eq]
   refine (mappingCocone.d_relativeCoordinates_symm _ 0 (-1) rfl _).trans
-    (congrArg _ (Prod.ext (extendXEquiv_symm_d M _ _ _ _ _ _) ?_))
+    (congrArg _ (Prod.ext (deRhamComplex.extend_d_extendXEquiv_symm I M _ _ _ _ _ _) ?_))
   dsimp only
   rw [map_zero, sub_zero]
   exact restriction_f_extendXEquiv_symm W 0 0 rfl α
@@ -463,8 +421,8 @@ theorem map_f_XEquiv_symm (f : M → M') (hf : ContMDiff I I' ∞ f) (hW : Set.M
   apply (mappingCocone.relativeCoordinates (restriction I W) p k (by omega)).injective
   rw [XEquiv_symm_eq, XEquiv_symm_eq, LinearEquiv.apply_symm_apply]
   refine (mappingCocone.relativeCoordinates_map _ _ _ _ _ p k (by omega) _).trans ?_
-  rw [LinearEquiv.apply_symm_apply, extendMap_map_f_extendXEquiv_symm,
-    extendMap_map_f_extendXEquiv_symm]
+  rw [LinearEquiv.apply_symm_apply, deRhamComplex.extendMap_map_f_extendXEquiv_symm,
+    deRhamComplex.extendMap_map_f_extendXEquiv_symm]
 
 /-- In degree `0`, the cochain map induced by a smooth map of pairs is pullback of functions. -/
 @[simp]
@@ -475,7 +433,7 @@ theorem map_f_XEquivZero_symm (f : M → M') (hf : ContMDiff I I' ∞ f) (hW : S
   apply (mappingCocone.relativeCoordinates (restriction I W) 0 (-1) rfl).injective
   rw [XEquivZero_symm_eq, XEquivZero_symm_eq, LinearEquiv.apply_symm_apply]
   refine (mappingCocone.relativeCoordinates_map _ _ _ _ _ 0 (-1) rfl _).trans ?_
-  rw [LinearEquiv.apply_symm_apply, extendMap_map_f_extendXEquiv_symm, map_zero]
+  rw [LinearEquiv.apply_symm_apply, deRhamComplex.extendMap_map_f_extendXEquiv_symm, map_zero]
 
 /-- The identity map of a pair induces the identity of its relative de Rham complex. -/
 @[simp]
@@ -505,23 +463,12 @@ end Map
 
 /-! ### The absolute case -/
 
-omit [IsManifold I 2 M] in
-/-- Smooth forms on an empty manifold are all zero. -/
-private lemma subsingleton_extend_X_of_isEmpty [IsEmpty W] (p : ℤ) :
-    Subsingleton (((deRhamComplex I W).extend ComplexShape.embeddingUpNat).X p) := by
-  rcases lt_or_ge p 0 with hp | hp
-  · exact subsingleton_extend_X W hp
-  · lift p to ℕ using hp
-    have : Subsingleton (SmoothForm I W ℝ p) :=
-      ⟨fun φ ψ ↦ SmoothBundleForm.ext fun x ↦ isEmptyElim x⟩
-    exact (extendXEquiv W p p rfl).toEquiv.subsingleton
-
 /-- For an empty open subset `W`, the first projection identifies the relative de Rham complex of
 `(M, W)` with the de Rham complex of `M` extended by zero. -/
 instance isIso_fst_of_isEmpty [IsEmpty W] : IsIso (mappingCocone.fst (restriction I W)) := by
   have (p : ℤ) : IsIso ((mappingCocone.fst (restriction I W)).f p) := by
     let : Unique (((deRhamComplex I W).extend ComplexShape.embeddingUpNat).X (p + -1)) :=
-      @uniqueOfSubsingleton _ (subsingleton_extend_X_of_isEmpty W (p + -1)) 0
+      @uniqueOfSubsingleton _ (deRhamComplex.subsingleton_extend_X_of_isEmpty I W (p + -1)) 0
     rw [ConcreteCategory.isIso_iff_bijective]
     have h : ⇑((mappingCocone.fst (restriction I W)).f p) =
         Prod.fst ∘ mappingCocone.relativeCoordinates (restriction I W) p (p + -1) rfl :=
