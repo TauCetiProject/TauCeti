@@ -161,7 +161,7 @@ private theorem mem_closure_range_of_mem_aeZeroOff [T2Space M] (hp : p ≠ ⊤)
   have hu' := aeZeroOff_mono hLψ hu
   -- Multiplication by `ψ`, read in chart `i`, on the chart-`i` Sobolev functions.
   let T : Wkp μ (A.image i) p k →L[ℝ] Wkp μ (A.image i) p k :=
-    Wkp.contDiffOnSMulL (A.chart i).open_target (A.isCompact_closure_image i)
+    Wkp.contDiffOnSMulL (A.chart i).open_target.uniqueDiffOn (A.isCompact_closure_image i)
       (A.closure_image_subset_target i) k (A.contDiffOn_comp_chart_symm hψ i)
   have hT (v : Wkp μ (A.image i) p k) : (Wkp.value k (T v) : E → ℝ)
       =ᵐ[μ.restrict (A.image i)] fun y ↦ ψ ((A.chart i).symm y) * Wkp.value k v y :=
