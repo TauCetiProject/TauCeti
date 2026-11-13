@@ -59,10 +59,10 @@ theorem IsUniform.exists_eLpNorm_quantizeSchwartzValue_le (ha : a.IsUniform) :
   obtain ⟨T, hT⟩ := a.exists_quantizeUniformOrderZeroLp ha
   refine ⟨‖T‖, norm_nonneg T, fun u ↦ ?_⟩
   have hTu : eLpNorm (quantizeSchwartzValue a.coefficient u) 2 volume = ‖T (u.toLp 2)‖ₑ := by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     exact eLpNorm_congr_ae (hT u).symm
   have hu : ‖u.toLp 2‖ₑ = eLpNorm u 2 volume := by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     exact eLpNorm_congr_ae (u.coeFn_toLp 2 volume)
   rw [hTu, ← hu, ofReal_norm T]
   exact T.le_opENorm _
