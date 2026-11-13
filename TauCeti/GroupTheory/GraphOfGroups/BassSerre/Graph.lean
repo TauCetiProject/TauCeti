@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Aut
 public import TauCeti.GroupTheory.GraphOfGroups.Path
-public import Mathlib.Algebra.Group.Subgroup.Ker
-public import Mathlib.GroupTheory.GroupAction.Defs
 
 /-!
 # The Bass–Serre graph of a graph of groups
@@ -463,10 +461,10 @@ def bassSerreAction : π₁ 𝔸 v₀ →* (𝔸.bassSerreGraph v₀).Aut where
       equivE := MulAction.toPerm g
       map_src := BassSerreDart.src_smul g
       map_rev d := (BassSerreDart.rev_smul g d).symm }
-  map_one' := SerreGraph.Aut.ext
+  map_one' := SerreGraph.Iso.ext
     (fun y ↦ (MulAction.toPerm_apply _ y).trans (one_smul (π₁ 𝔸 v₀) y))
     (fun d ↦ (MulAction.toPerm_apply _ d).trans (one_smul (π₁ 𝔸 v₀) d))
-  map_mul' g h := SerreGraph.Aut.ext (fun y ↦ mul_smul g h y) (fun d ↦ mul_smul g h d)
+  map_mul' g h := SerreGraph.Iso.ext (fun y ↦ mul_smul g h y) (fun d ↦ mul_smul g h d)
 
 /-- The automorphism given by `g` permutes the vertices as `g` does, `y ↦ g • y`. -/
 @[simp] theorem bassSerreAction_equivV (g : π₁ 𝔸 v₀) :
