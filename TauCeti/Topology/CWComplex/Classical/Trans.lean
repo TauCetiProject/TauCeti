@@ -31,10 +31,15 @@ cells of `D` (`TauCeti.finite_setOf_nonempty_inter_openCell_of_isCompact`); thos
 meet the boundary have dimension less than `n`. The weak topology of the composite combines the
 weak topologies of the two structures, because every closed cell of `D` lies in `D`.
 
+The simplest relative CW complex is a closed set `C` relative to itself, with no cells
+(`TauCeti.relCWComplexSelf`). It is the starting point for building a space from a given base,
+which need not carry any CW structure, by attaching cells.
+
 ## Main definitions
 
 * `TauCeti.relCWComplexTrans`: the CW structure on `C` relative to `E`.
 * `TauCeti.relCWComplexTransCellEquiv`: its `n`-cells are the `n`-cells of `D` and of `C`.
+* `TauCeti.relCWComplexSelf`: a closed set as a CW complex relative to itself, with no cells.
 
 ## References
 
@@ -198,5 +203,32 @@ lemma cellFrontier_relCWComplexTrans_inr (n : ℕ) (i : cell C n) :
     @cellFrontier X _ C E (relCWComplexTrans C D E h) n
       ((relCWComplexTransCellEquiv h n).symm (.inr i)) = cellFrontier n i :=
   (rfl)
+
+section Self
+
+variable {Y : Type*} [TopologicalSpace Y]
+
+variable (C : Set Y) in
+/-- A closed set `C` is a CW complex relative to itself, with no cells. -/
+@[instance_reducible]
+def relCWComplexSelf (hC : IsClosed C) : RelCWComplex C C where
+  cell _ := PEmpty
+  map _ i := i.elim
+  source_eq _ i := i.elim
+  continuousOn _ i := i.elim
+  continuousOn_symm _ i := i.elim
+  pairwiseDisjoint' := fun ⟨_, i⟩ ↦ i.elim
+  disjointBase' _ i := i.elim
+  mapsTo _ i := i.elim
+  closed' A hAC h := by simpa [inter_eq_left.2 hAC] using h.2
+  isClosedBase := hC
+  union' := by simp
+
+/-- A closed set has no cells as a CW complex relative to itself. -/
+instance isEmpty_cell_relCWComplexSelf {C : Set Y} (hC : IsClosed C) (n : ℕ) :
+    IsEmpty (@cell Y _ C C (relCWComplexSelf C hC) n) :=
+  inferInstanceAs (IsEmpty PEmpty)
+
+end Self
 
 end TauCeti

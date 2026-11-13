@@ -99,8 +99,7 @@ theorem rank_exteriorPower_apply (n : ℕ) (E : FiniteLocallyFreeSheaf X) (x : X
   -- Its instance arguments are passed explicitly: instance search does not see through
   -- `exteriorPower_obj_obj` to recognize the restriction of `⋀ⁿ E` they are stated for.
   rw [@rank_apply_eq_natCard _ ((exteriorPower X n).obj E) _ _ hx (σ.exteriorPower n)
-      (SheafOfModules.GeneratingSections.isIso_exteriorPower_π (R := X.sheaf) σ n)
-      (SheafOfModules.GeneratingSections.finite_exteriorPower_I (R := X.sheaf) σ n),
+      (SheafOfModules.GeneratingSections.isIso_exteriorPower_π (R := X.sheaf) σ n),
     E.rank_apply_eq_natCard hx σ]
   exact (congrArg Nat.card
     (SheafOfModules.GeneratingSections.exteriorPower_I (R := X.sheaf) σ n)).trans

@@ -23,9 +23,9 @@ Original source notice: Copyright (c) 2026 Claude. All rights reserved.
 
 public section
 
-noncomputable section
-
 namespace Matrix
+
+section MaximalMinor
 
 variable {R : Type*} [CommRing R] {m n : Type*} [Fintype m] [Fintype n]
 
@@ -48,7 +48,7 @@ theorem exists_mul_eq_of_isUnit_det_submatrix (A : Matrix m n R) {ρ : ℕ} (e�
     ∃ (L : Matrix m (Fin ρ) R) (M : Matrix (Fin ρ) n R) (L' : Matrix (Fin ρ) m R)
       (M' : Matrix n (Fin ρ) R), IsSplitFactorization A L M L' M' := by
   classical
-  set B := A.submatrix e₁ e₂ with hBdef
+  set B := A.submatrix e₁ e₂
   let := invertibleOfIsUnitDet B hB
   refine ⟨A.submatrix id e₂ * B⁻¹, A.submatrix e₁ id, (1 : Matrix m m R).submatrix e₁ id,
     (1 : Matrix n n R).submatrix id e₂ * B⁻¹, ?_, ?_, ?_⟩
@@ -67,13 +67,13 @@ theorem exists_mul_eq_of_isUnit_det_submatrix (A : Matrix m n R) {ρ : ℕ} (e�
       · obtain ⟨u, v, huv, hne⟩ := Function.not_injective_iff.mp hrow
         exact det_zero_of_row_eq hne (by ext k; exact congrArg (fun x ↦ A x _) huv)
     have hN' : N = fromBlocks B (A.submatrix e₁ fun _ : Fin 1 ↦ j)
-        (A.submatrix (fun _ : Fin 1 ↦ i) e₂) (Matrix.of fun _ _ : Fin 1 ↦ A i j) := by
-      ext (a | a) (b | b) <;> simp [N, B]
-    rw [hN', det_fromBlocks₁₁, Matrix.det_unique (n := Fin 1)] at hN
+        (A.submatrix (fun _ : Fin 1 ↦ i) e₂) (of fun _ _ : Fin 1 ↦ A i j) := by
+      ext (a | a) (b | _) <;> simp [N, B]
+    rw [hN', det_fromBlocks₁₁, det_unique (n := Fin 1)] at hN
     have h2 := ((isUnit_det_of_invertible B).mul_right_eq_zero).1 hN
     rw [Matrix.sub_apply, sub_eq_zero, invOf_eq_nonsing_inv] at h2
     refine h2.trans ?_
-    simp only [Matrix.mul_apply, Matrix.submatrix_apply, id]
+    simp only [Matrix.mul_apply, submatrix_apply, id]
   · rw [← Matrix.mul_assoc]
     have hrows := one_submatrix_mul e₁ (Equiv.refl m) (A.submatrix id e₂)
     simp only [Equiv.coe_refl, Function.comp_id, submatrix_submatrix,
@@ -87,9 +87,7 @@ theorem exists_mul_eq_of_isUnit_det_submatrix (A : Matrix m n R) {ρ : ℕ} (e�
     rw [hcols]
     exact mul_nonsing_inv B hB
 
-end Matrix
-
-namespace Matrix
+end MaximalMinor
 
 /-! ### Splitting the middle term of a complex of free modules -/
 

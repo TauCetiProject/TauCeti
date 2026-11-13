@@ -12,6 +12,9 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Contour.LogDerivFTC
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
+import TauCeti.Analysis.Contour.Winding.Number.Reparam
+import TauCeti.Analysis.Contour.Winding.Number.Scale
+
 /-!
 # The generalized winding number of a circle: `1` at the centre, `0` outside
 
@@ -58,6 +61,8 @@ across the whole disc, so its circle integral vanishes.
   `TauCeti.Contour.windingNumber_circleMap_center_eq_half` (`n_c(semicircle) = ½`, over `[0, π]`).
 * `TauCeti.Contour.windingNumber_circleMap_eq_zero_of_lt_dist` — `n_w(circle) = 0` for `w` outside
   the disc.
+* `TauCeti.Contour.windingNumber_const_mul_exp` — for `c ≠ 0` and `k : ℤ`, the harmonic loop
+  `t ↦ c * exp(2πikt)` on `[0, 1]` has winding number `k` about `0`.
 * `TauCeti.Contour.integral_circleMap_index_arcs_eq` and
   `TauCeti.Contour.integral_circleMap_index_lower_arc` — about a point inside the circle, the index
   integrals over `[0, π]` and `[π, 2π]` add up to `2πi`, and the one over the lower semicircle,
@@ -132,7 +137,7 @@ theorem indexIntegral_arc {z₀ : ℂ} {r : ℝ} (hr : r ≠ 0) (α : ℝ) :
 /-- **A full circle (`[0, 2π]`) has winding number `1`** — the closed-curve normalization, the
 `[0, 2π]` specialization of `indexIntegral_arc` (`2π / 2π = 1`). Its value also follows from
 Mathlib's `circleIntegral.integral_sub_center_inv`; this is the raw-index-integral form of that
-normalization used as a Layer-1 target. -/
+normalization. -/
 theorem windingNumber_circle {c : ℂ} {r : ℝ} (hr : r ≠ 0) : (2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
         ∫ θ in (0 : ℝ)..(2 * Real.pi), deriv (circleMap c r) θ / (circleMap c r θ - c)
       = 1 := by
@@ -289,6 +294,35 @@ theorem windingNumber_circleMap_eq_zero_of_lt_dist {c w : ℂ} {R : ℝ} (hR : 0
       (fun h => absurd (mem_closedBall.mp h) (not_le.mpr hw))
   rw [windingNumber_circleMap_eq_circleIntegral havoid,
     circleIntegral_sub_inv_eq_zero_of_lt_dist hR hw, mul_zero]
+
+/-- For `c ≠ 0` and `k : ℤ`, the harmonic loop `t ↦ c * exp(2πikt)` on `[0, 1]` has generalized
+winding number `k` about `0`. -/
+theorem windingNumber_const_mul_exp {c : ℂ} (hc : c ≠ 0) (k : ℤ) :
+    windingNumber (fun t : ℝ => c * Complex.exp (2 * Real.pi * Complex.I * k * t)) 0 1 0 = k := by
+  have hcurve :
+      (fun t : ℝ => c * Complex.exp (2 * Real.pi * Complex.I * k * t)) =
+        fun t : ℝ => c * (circleMap 0 1 ∘ fun s : ℝ => (2 * Real.pi * k) * s + 0) t := by
+    ext t
+    simp only [Function.comp_apply, circleMap, zero_add, Complex.ofReal_one, one_mul]
+    congr 2
+    push_cast
+    ring
+  have hscale :
+      windingNumber
+          (fun t : ℝ => c * (circleMap 0 1 ∘ fun s : ℝ => (2 * Real.pi * k) * s + 0) t) 0 1 0 =
+        windingNumber (circleMap 0 1 ∘ fun s : ℝ => (2 * Real.pi * k) * s + 0) 0 1 0 := by
+    simpa only [mul_zero] using
+      windingNumber_const_mul (γ := circleMap 0 1 ∘ fun s : ℝ => (2 * Real.pi * k) * s + 0)
+        (a := 0) (b := 1) (z₀ := 0) hc
+  rw [hcurve, hscale,
+    windingNumber_comp_mul_add (fun u _ => differentiable_circleMap 0 1 u)
+      (Complex.continuous_deriv_circleMap 0 1).continuousOn
+      (fun _ _ => circleMap_ne_center one_ne_zero),
+    windingNumber_circleMap_center one_ne_zero]
+  have hpi : (Real.pi : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
+  push_cast
+  field_simp
+  ring
 
 section InteriorArcs
 

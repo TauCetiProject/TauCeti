@@ -56,6 +56,8 @@ manifold structure.
 * `TauCeti.isCompact_stiefel`: the Stiefel manifold is compact.
 * `TauCeti.contMDiff_coe_stiefel` and `TauCeti.contMDiff_stiefelProj`: the inclusion into
   `Fin k → E` and the projections to the unit sphere are smooth.
+* `TauCeti.continuous_stiefelProj`: the projections to the unit sphere are continuous in every
+  dimension.
 * `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
   range of the differential of the inclusion, is the kernel of the derivative of the Gram map;
   `TauCeti.gramSym2Deriv_mfderiv_coe_stiefel` is the inclusion of the range in the kernel.
@@ -151,17 +153,36 @@ theorem gramSym2Deriv_surjective {v : Fin k → E} (hv : Orthonormal ℝ v) :
 variable {E k} in
 /-- At an orthonormal family, the derivative of the Gram map has index
 `k n - (k + 1).choose 2`, where `n = finrank ℝ E` and `(k + 1).choose 2` is the number of
-unordered pairs of indices. The truncated subtraction is harmless: the index is the dimension
-of the kernel, as the derivative is surjective. -/
-theorem index_gramSym2Deriv [FiniteDimensional ℝ E] {v : Fin k → E} (hv : Orthonormal ℝ v) :
+unordered pairs of indices.
+
+For finite-dimensional `E` the truncated subtraction is harmless: the derivative is surjective,
+so the index is the genuine dimension `k n - (k + 1).choose 2` of the kernel.
+
+For infinite-dimensional `E` the statement is a convention. If `k = 0`, the domain and the kernel
+are zero-dimensional and both sides vanish. If `k > 0`, the kernel is infinite-dimensional, so
+its `Module.finrank` is the junk value `0`, and the right-hand side is `0` because
+`finrank ℝ E = 0` (also a junk value) and natural subtraction truncates
+`0 - (k + 1).choose 2 = 0`. -/
+theorem index_gramSym2Deriv {v : Fin k → E} (hv : Orthonormal ℝ v) :
     (gramSym2Deriv E k v).index = (k * finrank ℝ E - (k + 1).choose 2 : ℕ) := by
   have h₁ := (gramSym2Deriv E k v).index_of_surjective (gramSym2Deriv_surjective hv)
-  have h₂ := (gramSym2Deriv E k v).index_eq_of_finiteDimensional
-  rw [Module.finrank_pi_fintype, Module.finrank_fintype_fun_eq_card, Sym2.card] at h₂
-  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at h₂
-  generalize k * finrank ℝ E = N at h₂ ⊢
-  generalize (k + 1).choose 2 = C at h₂ ⊢
-  omega
+  by_cases hE : FiniteDimensional ℝ E
+  · have h₂ := (gramSym2Deriv E k v).index_eq_of_finiteDimensional
+    rw [Module.finrank_pi_fintype, Module.finrank_fintype_fun_eq_card, Sym2.card] at h₂
+    simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at h₂
+    generalize k * finrank ℝ E = N at h₂ ⊢
+    generalize (k + 1).choose 2 = C at h₂ ⊢
+    omega
+  · rw [h₁, Module.finrank_of_not_finite hE, mul_zero, Nat.zero_sub]
+    obtain rfl | hk := k.eq_zero_or_pos
+    · have : Subsingleton (gramSym2Deriv E 0 v).ker := inferInstance
+      simp [Module.finrank_zero_of_subsingleton]
+    · have : ¬ Module.Finite ℝ (gramSym2Deriv E k v).ker := fun hker ↦ hE <| by
+        let T : (Fin k → E) →ₗ[ℝ] (Sym2 (Fin k) → ℝ) := gramSym2Deriv E k v
+        have : Module.Finite ℝ ((Fin k → E) ⧸ T.ker) := .equiv T.quotKerEquivRange.symm
+        have : Module.Finite ℝ (Fin k → E) := .of_submodule_quotient T.ker
+        exact Module.Finite.of_pi (fun _ : Fin k ↦ E) ⟨0, hk⟩
+      simp [Module.finrank_of_not_finite this]
 
 /-! ### The Stiefel manifold -/
 
@@ -308,6 +329,13 @@ variable {E k} in
 @[simp]
 theorem coe_stiefelProj (i : Fin k) (v : stiefel E k) : (stiefelProj E k i v : E) = v.1 i :=
   (rfl)
+
+variable {E k} in
+/-- The projection of a frame to its `i`th vector is continuous, for every real inner product
+space. -/
+@[fun_prop]
+theorem continuous_stiefelProj (i : Fin k) : Continuous (stiefelProj E k i) :=
+  continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtype_val)
 
 /-- The projection of a frame to its `i`th vector is smooth, for Mathlib's manifold structure on
 the unit sphere. The `FiniteDimensional` instance, which also follows from the `Fact`, is the one

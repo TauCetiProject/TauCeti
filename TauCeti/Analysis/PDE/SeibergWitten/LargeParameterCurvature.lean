@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Hermitian
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.PositiveCone
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
 
 /-!
@@ -52,12 +52,21 @@ are:
   `|F| ≤ (r / (2 √2)) w₊ + (2 K + 1) / (2 √2) + |η| + √2 C` (`norm_le_of_add_hodgeStar_eq`), so
   `F` is bounded independently of `r` where `w₊ = O(1 / r)`, provided `K`, `C` and `η` are
   bounded.
+* **The anti-`J`-invariant part.** The anti-self-dual part of `F` and `ω` are `J`-invariant, so
+  the anti-`J`-invariant part of `F` comes from the cross term `q'(φ, β)` and from `η`:
+  `D_J² F = 2 r q'(φ, β) - D_J² η / 2`, where `-D_J² / 4` is the projection onto the
+  anti-`J`-invariant forms (`lieMap_lieMap_eq_of_add_hodgeStar_eq`).
+* **The distance to the positive cone.** Under the coarse anti-self-dual bound
+  `|F⁻| ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`, the Hermitian part of `F` is only bounded below by
+  `-(C √r w₊ / 8 + O(1)) g`, and `F` is at distance at most
+  `r |α| |β| / (2 √2) + C √r w₊ / (4 √2) + C + K / (2 √2) + |η|` from the cone of positive
+  `(1,1)`-forms (`infDist_positiveCone_le_of_add_hodgeStar_eq`).
 
 The analytic inputs (the bounds on `|α|² + |β|²` and on `|β|²`, and the lower bound on the
-Hermitian part) are hypotheses here; they come from the maximum principle and the coupled
-curvature estimates for the large-parameter equations. The constants in the conclusions depend
-only on the constants in these hypotheses and on the perturbation `η`, so they are uniform in `r`
-and in the solution.
+Hermitian part or the coarse anti-self-dual bound) are hypotheses here; they come from the maximum
+principle and the coupled curvature estimates for the large-parameter equations. The constants in
+the conclusions depend only on the constants in these hypotheses and on the perturbation `η`, so
+they are uniform in `r` and in the solution.
 
 The anti-self-dual statements take a positively oriented orthonormal basis `e` with
 `J e₀ = e₁` and `J e₂ = e₃` as a witness that the orientation is the complex orientation of `J`,
@@ -75,7 +84,7 @@ public section
 
 namespace TauCeti.SeibergWitten
 
-open CliffordAlgebra Module
+open CliffordAlgebra Module Metric
 open scoped RealInnerProductSpace InnerProductSpace
 
 /-- A bound `b ≤ (K / r) m + K / r²` with `0 ≤ b`, `0 < r` and `0 ≤ m` forces `0 ≤ K`, since the
@@ -163,7 +172,7 @@ theorem norm_add_hodgeStar_add_sq_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v
       inner_quadraticTwoFormPolar_of_cliffordProjection o hQ hkl hω hρ hφ hβ, mul_zero, mul_zero]
   have hsum : F + o.hodgeStar hkl F + η =
       -((r / 4 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1)) • ω + r • X) := by
-    rw [hF, ← coe_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hω₂ hρ h₂ hφ hβ hr]
+    rw [hF, ← coe_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hρ h₂ hφ hβ hr]
     abel
   have hXle : ‖r • X‖ ^ 2 ≤ r ^ 2 * (‖φ‖ ^ 2 * ‖β‖ ^ 2 / 2) := by
     have h := norm_quadraticTwoFormPolar_le o hQ hkl hρ h₂ φ β
@@ -188,7 +197,6 @@ theorem norm_smul_add_hodgeStar_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v))
     ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ ≤
       r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + (K + 1) / (2 * √2) + ‖η‖ / 2 := by
   have hr0 : 0 ≤ r := by linarith
-  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
   set m := max (1 - ‖φ‖ ^ 2) 0
   have hm : 0 ≤ m := le_max_right _ _
   have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) (by linarith) hm hβK
@@ -280,15 +288,11 @@ theorem norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm (hr : 0 ≤ r)
     ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤
       r / (4 * √2) * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - ⟪J.kahlerForm, η⟫ / (2 * √2) + √2 * C := by
   have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := by
-    rw [AlmostComplexStructure.norm_kahlerForm_sq
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃),
-      Fact.out (p := finrank ℝ V = 4)]
-    norm_num
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)
   have h := AlmostComplexStructure.norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm_apply_self
     h₀ h₂₃ hkl he F hC
   rw [inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr hF] at h
-  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
   calc ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖
       ≤ √2 * (r / 8 * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - ⟪J.kahlerForm, η⟫ / 4 + C) := h
     _ = r / (4 * √2) * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - ⟪J.kahlerForm, η⟫ / (2 * √2) + √2 * C := by
@@ -310,7 +314,6 @@ theorem norm_smul_sub_hodgeStar_le (hr : 1 ≤ r) {K : ℝ}
       r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + K / (2 * √2) + ‖η‖ / 2 + √2 * C := by
   have hr0 : 0 < r := by linarith
   have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
-  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
   have h := norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm h₀ h₂₃ hQ hkl he hφ hβ hr0.le
     hF hC
   set m := max (1 - ‖φ‖ ^ 2) 0
@@ -325,10 +328,8 @@ theorem norm_smul_sub_hodgeStar_le (hr : 1 ≤ r) {K : ℝ}
   -- `-⟪ω, η⟫ ≤ ‖ω‖ ‖η‖ = √2 ‖η‖`.
   have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ := by
     have hω' : ‖J.kahlerForm‖ = √2 := by
-      rw [← Real.sqrt_sq (norm_nonneg _), AlmostComplexStructure.norm_kahlerForm_sq
-        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃),
-        Fact.out (p := finrank ℝ V = 4)]
-      norm_num
+      rw [← Real.sqrt_sq (norm_nonneg _), AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)]
     have := neg_le_abs ⟪J.kahlerForm, η⟫
     have := abs_real_inner_le_norm J.kahlerForm η
     rw [hω'] at this
@@ -373,7 +374,6 @@ theorem norm_le_of_add_hodgeStar_eq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)
   have hsplit : F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
     rw [← smul_add, add_add_sub_cancel, ← two_smul ℝ F, smul_smul]
     norm_num
-  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
   calc ‖F‖ ≤ ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ := by
         nth_rewrite 1 [hsplit]
         exact norm_add_le _ _
@@ -383,6 +383,165 @@ theorem norm_le_of_add_hodgeStar_eq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)
     _ = _ := by
         field_simp
         ring
+
+/-- **The anti-`J`-invariant part of the curvature is the cross term.** If
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` for the Kähler two-vector `ω` of `J`, then
+
+`D_J² F = 2 r q'(φ, β) - D_J² η / 2`,
+
+where `-D_J² / 4` is the projection onto the anti-`J`-invariant two-forms. Indeed the
+anti-self-dual part of `F` is `J`-invariant, `q(√r (φ + β))` differs from `r q'(φ, β)` by a multiple
+of `ω`, which is `J`-invariant, and `D_J² = -4` on the self-dual forms orthogonal to `ω`. -/
+theorem lieMap_lieMap_eq_of_add_hodgeStar_eq
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (hr : 0 ≤ r)
+    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
+      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η) :
+    exteriorPower.lieMap 2 J.toLinearMap (exteriorPower.lieMap 2 J.toLinearMap F) =
+      (2 * r) • (quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V) -
+        (2⁻¹ : ℝ) •
+          exteriorPower.lieMap 2 J.toLinearMap (exteriorPower.lieMap 2 J.toLinearMap η) := by
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
+  set D := exteriorPower.lieMap 2 J.toLinearMap
+  set X : ⋀[ℝ]^2 V := (quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V)
+  -- `F + ⋆F = -c ω - r X - η` for a scalar `c`.
+  have hsum : F + o.hodgeStar hkl F =
+      -((r / 4 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1)) • J.kahlerForm) - r • X - η := by
+    have h := coe_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hρ h₂ hφ hβ hr
+    rw [hF]
+    linear_combination (norm := module) -h
+  -- The anti-self-dual part of `F` is `J`-invariant.
+  have hASD : D ((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)) = 0 :=
+    AlmostComplexStructure.lieMap_of_hodgeStar_eq_neg h₀ h₂₃ hkl he
+      (o.hodgeStar_smul_sub_hodgeStar even_two hkl F)
+  -- `D_J² X = -4 X`, since `X` is self-dual and orthogonal to `ω`.
+  have hX : D (D X) = -(4 : ℝ) • X := by
+    have hXsd : o.hodgeStar hkl X = X :=
+      (Module.End.mem_eigenspace_iff.1 (quadraticTwoFormPolar o ρ hkl φ β).2).trans (one_smul ℝ _)
+    have hXω : ⟪J.kahlerForm, X⟫ = 0 := by
+      rw [real_inner_comm]
+      exact inner_quadraticTwoFormPolar_of_cliffordProjection o hQ hkl hω hρ hφ hβ
+    rw [AlmostComplexStructure.lieMap_lieMap_of_hodgeStar_eq_self h₀ h₂₃ hkl he hXsd, hXω,
+      mul_zero, zero_smul, zero_sub, neg_smul]
+  have hDω : D J.kahlerForm = 0 := AlmostComplexStructure.lieMap_kahlerForm hJ
+  have hsplit :
+      F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
+    module
+  rw [hsplit, map_add, hASD, add_zero, map_smul, map_smul, hsum]
+  simp only [map_sub, map_neg, map_smul, hDω, hX, smul_zero, neg_zero, zero_sub]
+  module
+
+/-- **The coarse lower bound on the Hermitian part of the curvature.** Let
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` for the Kähler two-vector `ω` of `J`, with `r ≥ 1`, and
+suppose Taubes's coarse bounds `‖φ‖² + ‖β‖² ≤ 1 + K / r`, `‖β‖² ≤ (K / r) w₊ + K / r²` and
+`‖F⁻‖ ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`, where `w₊ = max (1 - ‖φ‖²) 0` and
+`F⁻ = (F - ⋆F) / 2`. Then the Hermitian form `B(v, v) = F(v, J v)` satisfies
+
+`B(v, v) ≥ -(C √r w₊ / 8 + C / √2 + K / 4 + √2 ‖η‖ / 4) ‖v‖²`.
+
+Indeed the smallest eigenvalue of `B` is `⟪ω, F⟫ / 2 - ‖F⁻‖ / √2`
+(`TauCeti.AlmostComplexStructure.abs_hermitianForm_apply_self_sub_le`), and
+`⟪ω, F⟫ / 2 = r w₊ / 8 + O(1)` (`abs_inner_div_two_sub_le`), so the coarse anti-self-dual bound
+only allows a negative part of size `O(√r)`. -/
+theorem neg_mul_norm_sq_le_inner_ιMulti_of_add_hodgeStar_eq (hr : 1 ≤ r) {K : ℝ}
+    (hβK : ‖β‖ ^ 2 ≤ K / r * max (1 - ‖φ‖ ^ 2) 0 + K / r ^ 2)
+    (hφβ : ‖φ‖ ^ 2 + ‖β‖ ^ 2 ≤ 1 + K / r)
+    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
+      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
+    {C : ℝ} (hFm : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤
+      r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ‖ ^ 2) 0 + C) (v : V) :
+    -((C * √r * max (1 - ‖φ‖ ^ 2) 0 / 8 + C / √2 + K / 4 + √2 * ‖η‖ / 4) * ‖v‖ ^ 2) ≤
+      ⟪F, exteriorPower.ιMulti ℝ 2 ![v, J v]⟫ := by
+  have hr0 : 0 < r := by linarith
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
+  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
+  have hs2sq : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
+  have hsr : √r * √r = r := Real.mul_self_sqrt hr0.le
+  have hsr0 : √r ≠ 0 := (Real.sqrt_pos.2 hr0).ne'
+  set w := max (1 - ‖φ‖ ^ 2) 0
+  set Fm := ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖
+  set s := C * √r * w / 8 + C / √2 + K / 4 + √2 * ‖η‖ / 4 with hs_def
+  have hc := abs_inner_div_two_sub_le hQ hkl hω hω₂ hφ hβ hr hβK hφβ hF
+  -- `⟪ω, F⟫ / 2 - ‖F⁻‖ / √2 ≥ -s`.
+  have hmin : -s ≤ ⟪J.kahlerForm, F⟫ / 2 - Fm / √2 := by
+    have hFm' : Fm / √2 ≤ r / 8 * w + C * √r * w / 8 + C / √2 := by
+      rw [div_le_iff₀ hs2]
+      have hexp : r / (4 * √2) * (1 + C / √r) * w + C =
+          (r / 8 * w + C * √r * w / 8 + C / √2) * √2 := by
+        clear * - hs2 hs2sq hsr hsr0
+        grind
+      exact hexp ▸ hFm
+    have := (abs_le.1 hc).1
+    linarith
+  rw [← AlmostComplexStructure.hermitianForm_apply_self]
+  have h : -(Fm / √2 * ‖v‖ ^ 2) ≤ J.hermitianForm F v v - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2 :=
+    (abs_le.1 (AlmostComplexStructure.abs_hermitianForm_apply_self_sub_le h₀ h₂₃ hkl he F v)).1
+  nlinarith [mul_le_mul_of_nonneg_right hmin (sq_nonneg ‖v‖)]
+
+/-- **The coarse distance of the curvature to the positive cone.** Let
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` for the Kähler two-vector `ω` of `J`, with `r ≥ 1`, and
+suppose Taubes's coarse bounds `‖φ‖² + ‖β‖² ≤ 1 + K / r`, `‖β‖² ≤ (K / r) w₊ + K / r²` and
+`‖F⁻‖ ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`, where `w₊ = max (1 - ‖φ‖²) 0`,
+`F⁻ = (F - ⋆F) / 2` and `C ≥ 0`. Then the distance from `F` to the cone of positive
+`(1,1)`-forms satisfies
+
+`dist(F, positiveCone) ≤ r ‖φ‖ ‖β‖ / (2 √2) + C √r w₊ / (4 √2) + C + K / (2 √2) + ‖η‖`.
+
+The first term bounds the anti-`J`-invariant part, which is `r q'(φ, β)` up to `η`
+(`lieMap_lieMap_eq_of_add_hodgeStar_eq`); the second is the negative part `O(√r)` of the
+Hermitian form `B(v, v) = F(v, J v)` allowed by the coarse anti-self-dual bound
+(`neg_mul_norm_sq_le_inner_ιMulti_of_add_hodgeStar_eq`). Both are large only where `|α|` is
+small. -/
+theorem infDist_positiveCone_le_of_add_hodgeStar_eq
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (hr : 1 ≤ r) {K : ℝ}
+    (hβK : ‖β‖ ^ 2 ≤ K / r * max (1 - ‖φ‖ ^ 2) 0 + K / r ^ 2)
+    (hφβ : ‖φ‖ ^ 2 + ‖β‖ ^ 2 ≤ 1 + K / r)
+    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
+      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
+    {C : ℝ} (hC : 0 ≤ C)
+    (hFm : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤
+      r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ‖ ^ 2) 0 + C) :
+    infDist F (J.positiveCone : Set (⋀[ℝ]^2 V)) ≤
+      r * ‖φ‖ * ‖β‖ / (2 * √2) + C * √r * max (1 - ‖φ‖ ^ 2) 0 / (4 * √2) + C +
+        K / (2 * √2) + ‖η‖ := by
+  have hr0 : 0 < r := by linarith
+  have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
+  have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
+  have hs2 : √2 ≠ 0 := by positivity
+  have hs2sq : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
+  have hs : 0 ≤ C * √r * max (1 - ‖φ‖ ^ 2) 0 / 8 + C / √2 + K / 4 + √2 * ‖η‖ / 4 := by
+    have := le_max_right (1 - ‖φ‖ ^ 2) 0
+    positivity
+  refine (AlmostComplexStructure.infDist_positiveCone_le hJ hs
+    (neg_mul_norm_sq_le_inner_ιMulti_of_add_hodgeStar_eq h₀ h₂₃ hQ hkl he hφ hβ hr hβK hφβ hF
+      hFm)).trans ?_
+  -- The anti-`J`-invariant part.
+  have hD : ‖exteriorPower.lieMap 2 J.toLinearMap (exteriorPower.lieMap 2 J.toLinearMap F)‖ ≤
+      2 * r * (‖φ‖ * ‖β‖ / √2) + 2 * ‖η‖ := by
+    rw [lieMap_lieMap_eq_of_add_hodgeStar_eq h₀ h₂₃ hQ hkl he hφ hβ hρ h₂ hr0.le hF]
+    refine (norm_sub_le _ _).trans ?_
+    rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
+      Real.norm_of_nonneg (by norm_num)]
+    have h1 : ‖(quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V)‖ ≤ ‖φ‖ * ‖β‖ / √2 :=
+      norm_quadraticTwoFormPolar_le o hQ hkl hρ h₂ φ β
+    have h2 := AlmostComplexStructure.norm_lieMap_lieMap_le hJ η
+    have := mul_le_mul_of_nonneg_left h1 (by positivity : (0 : ℝ) ≤ 2 * r)
+    linarith
+  rw [hω']
+  have heq : (2 * r * (‖φ‖ * ‖β‖ / √2) + 2 * ‖η‖) / 4 +
+        (C * √r * max (1 - ‖φ‖ ^ 2) 0 / 8 + C / √2 + K / 4 + √2 * ‖η‖ / 4) * √2 =
+      r * ‖φ‖ * ‖β‖ / (2 * √2) + C * √r * max (1 - ‖φ‖ ^ 2) 0 / (4 * √2) + C +
+        K / (2 * √2) + ‖η‖ := by
+    clear * - hs2 hs2sq
+    grind
+  rw [← heq]
+  gcongr
 
 end AntiSelfDual
 

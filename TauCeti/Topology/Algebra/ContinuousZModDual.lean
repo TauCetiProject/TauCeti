@@ -36,8 +36,9 @@ the algebraic dual, injectively.
 * `TauCeti.continuousZModDual.evalₗ`: evaluation at a point, as a linear functional on the dual.
 * `TauCeti.continuousZModHom.evalₗ`: evaluation at a point, as a linear map on continuous
   homomorphisms into a `ZMod n`-module.
-* `TauCeti.continuousZModDualTensorEquiv`: for prime `p` and finite-dimensional discrete `A`,
-  evaluation identifies `continuousZModDual p G ⊗ A` with the continuous homomorphisms `G → A`.
+* `TauCeti.continuousZModDualTensorEquiv`: for a finite free discrete `ZMod n`-module `A` (for
+  prime `n = p`, any finite-dimensional discrete `𝔽_p`-vector space), evaluation identifies
+  `continuousZModDual n G ⊗ A` with the continuous homomorphisms `G → A`.
 * `ContinuousMonoidHom.continuousZModDualMap`: precomposition with a continuous homomorphism, the
   transpose map between continuous duals.
   The transpose of a topological group isomorphism is bijective
@@ -62,14 +63,19 @@ the continuous `𝔽_p`-dual, an `𝔽_p`-vector space. -/
 abbrev continuousZModDual (n : ℕ) (G : Type u) [Group G] [TopologicalSpace G] : Type u :=
   Additive (G →ₜ* Multiplicative (ZMod n))
 
-/-- The continuous `ZMod n`-valued characters form a `ZMod n`-module: the target has exponent
-dividing `n`, hence so does the character group. -/
-instance instModuleContinuousZModDual : Module (ZMod n) (continuousZModDual n G) :=
+/-- Continuous homomorphisms into a topological `ZMod n`-module `A` form a `ZMod n`-module
+pointwise: `n` kills `A`, hence also the homomorphism group. For `A = ZMod n` this is the
+`ZMod n`-module structure on the continuous `ZMod n`-dual. -/
+instance instModuleContinuousZModHom {A : Type*} [AddCommGroup A] [Module (ZMod n) A]
+    [TopologicalSpace A] [IsTopologicalAddGroup A] :
+    Module (ZMod n) (Additive (G →ₜ* Multiplicative A)) :=
   AddCommGroup.zmodModule fun x ↦ by
     apply Additive.toMul.injective
     rw [toMul_nsmul, toMul_zero]
-    ext g
-    simp [ContinuousMonoidHom.pow_apply, toAdd_pow, nsmul_eq_mul]
+    apply ContinuousMonoidHom.ext
+    intro g
+    apply Multiplicative.toAdd.injective
+    simpa using ZModModule.char_nsmul_eq_zero n (Multiplicative.toAdd (Additive.toMul x g))
 
 /-- **Evaluation at a point** `g : G`, as a `ZMod n`-linear functional on the continuous
 `ZMod n`-dual of `G`: a character `χ` goes to its value at `g`, read additively. -/
@@ -126,15 +132,10 @@ theorem _root_.ContinuousMonoidHom.continuousZModDualMap_comp (g : H →ₜ* K) 
 /-- **The transpose of a topological group isomorphism is bijective**: its inverse is the
 transpose of the inverse isomorphism. -/
 theorem _root_.ContinuousMulEquiv.continuousZModDualMap_bijective (e : G ≃ₜ* H) :
-    Function.Bijective ((e : G →ₜ* H).continuousZModDualMap (n := n)) := by
-  refine ⟨fun χ ψ hχψ ↦ Additive.toMul.injective (ContinuousMonoidHom.ext fun h ↦ ?_),
-    fun χ ↦ ⟨(e.symm : H →ₜ* G).continuousZModDualMap χ,
-      Additive.toMul.injective (ContinuousMonoidHom.ext fun g ↦ ?_)⟩⟩
-  · have := congrArg (fun x : continuousZModDual n G ↦ Additive.toMul x (e.symm h)) hχψ
-    have he : (e : G →ₜ* H) (e.symm h) = h := e.apply_symm_apply h
-    simpa only [ContinuousMonoidHom.toMul_continuousZModDualMap_apply, he] using this
-  · have he : (e.symm : H →ₜ* G) ((e : G →ₜ* H) g) = g := e.symm_apply_apply g
-    simp only [ContinuousMonoidHom.toMul_continuousZModDualMap_apply, he]
+    Function.Bijective ((e : G →ₜ* H).continuousZModDualMap (n := n)) :=
+  Function.bijective_iff_has_inverse.2 ⟨(e.symm : H →ₜ* G).continuousZModDualMap,
+    fun _ ↦ Additive.toMul.injective <| ContinuousMonoidHom.ext fun _ ↦ by simp,
+    fun _ ↦ Additive.toMul.injective <| ContinuousMonoidHom.ext fun _ ↦ by simp⟩
 
 end ZModDual
 
@@ -151,20 +152,8 @@ section
 
 variable [IsTopologicalAddGroup A]
 
-/-- Continuous homomorphisms into a `ZMod n`-module form a `ZMod n`-module pointwise. -/
-noncomputable instance instModuleContinuousZModHom :
-    Module (ZMod n) (Additive (G →ₜ* Multiplicative A)) :=
-  AddCommGroup.zmodModule fun x ↦ by
-    apply Additive.toMul.injective
-    rw [toMul_nsmul, toMul_zero]
-    apply ContinuousMonoidHom.ext
-    intro g
-    apply Multiplicative.toAdd.injective
-    simpa using ZModModule.char_nsmul_eq_zero n
-      (Multiplicative.toAdd (Additive.toMul x g))
-
 /-- **Evaluation of a continuous homomorphism at a point**, as a `ZMod n`-linear map. -/
-noncomputable def continuousZModHom.evalₗ (g : G) :
+def continuousZModHom.evalₗ (g : G) :
     Additive (G →ₜ* Multiplicative A) →ₗ[ZMod n] A :=
   AddMonoidHom.toZModLinearMap n
     { toFun := fun f ↦ Multiplicative.toAdd (Additive.toMul f g)
@@ -201,50 +190,32 @@ private theorem continuousZModDualTensorPure_apply
 
 @[simp]
 private theorem continuousZModDualTensorPure_zero (x : continuousZModDual n G) :
-    continuousZModDualTensorPure (A := A) x 0 = 0 := by
-  apply Additive.toMul.injective
-  apply ContinuousMonoidHom.ext
-  intro g
-  rw [continuousZModDualTensorPure_apply]
-  simp
+    continuousZModDualTensorPure (A := A) x 0 = 0 :=
+  Additive.toMul.injective <| ContinuousMonoidHom.ext fun _ ↦ by simp
 
 @[simp]
 private theorem continuousZModDualTensorPure_zero_left (a : A) :
-    continuousZModDualTensorPure (G := G) (0 : continuousZModDual n G) a = 0 := by
-  apply Additive.toMul.injective
-  apply ContinuousMonoidHom.ext
-  intro g
-  rw [continuousZModDualTensorPure_apply]
-  simp
+    continuousZModDualTensorPure (G := G) (0 : continuousZModDual n G) a = 0 :=
+  Additive.toMul.injective <| ContinuousMonoidHom.ext fun _ ↦ by simp
 
 variable [IsTopologicalAddGroup A]
 
 @[simp]
 private theorem continuousZModDualTensorPure_add (x : continuousZModDual n G) (a b : A) :
     continuousZModDualTensorPure x (a + b) =
-      continuousZModDualTensorPure x a + continuousZModDualTensorPure x b := by
-  apply Additive.toMul.injective
-  apply ContinuousMonoidHom.ext
-  intro g
-  rw [continuousZModDualTensorPure_apply]
-  simp only [toMul_add, ContinuousMonoidHom.mul_apply,
-    continuousZModDualTensorPure_apply]
-  exact congrArg Multiplicative.ofAdd (smul_add _ _ _)
+      continuousZModDualTensorPure x a + continuousZModDualTensorPure x b :=
+  Additive.toMul.injective <| ContinuousMonoidHom.ext fun _ ↦ by
+    simp [toMul_add, ContinuousMonoidHom.mul_apply, smul_add, ofAdd_add]
 
 @[simp]
 private theorem continuousZModDualTensorPure_add_left
     (x y : continuousZModDual n G) (a : A) :
     continuousZModDualTensorPure (x + y) a =
-      continuousZModDualTensorPure x a + continuousZModDualTensorPure y a := by
-  apply Additive.toMul.injective
-  apply ContinuousMonoidHom.ext
-  intro g
-  rw [continuousZModDualTensorPure_apply]
-  simp only [toMul_add, ContinuousMonoidHom.mul_apply,
-    continuousZModDualTensorPure_apply, toAdd_mul]
-  exact congrArg Multiplicative.ofAdd (add_smul _ _ _)
+      continuousZModDualTensorPure x a + continuousZModDualTensorPure y a :=
+  Additive.toMul.injective <| ContinuousMonoidHom.ext fun _ ↦ by
+    simp [toMul_add, ContinuousMonoidHom.mul_apply, add_smul, ofAdd_add]
 
-private noncomputable def continuousZModDualTensorBilinear :
+private def continuousZModDualTensorBilinear :
     continuousZModDual n G →ₗ[ZMod n] A →ₗ[ZMod n] Additive (G →ₜ* Multiplicative A) :=
   AddMonoidHom.toZModLinearMap n
     { toFun := fun x ↦ AddMonoidHom.toZModLinearMap n
@@ -256,7 +227,7 @@ private noncomputable def continuousZModDualTensorBilinear :
         continuousZModDualTensorPure_add_left x y a }
 
 /-- The canonical evaluation map `continuousZModDual n G ⊗ A → Hom_cont(G, A)`. -/
-noncomputable def continuousZModDualTensorMap :
+def continuousZModDualTensorMap :
     continuousZModDual n G ⊗[ZMod n] A →ₗ[ZMod n] Additive (G →ₜ* Multiplicative A) :=
   TensorProduct.lift continuousZModDualTensorBilinear
 
@@ -269,12 +240,11 @@ theorem continuousZModDualTensorMap_tmul_apply
   rw [continuousZModDualTensorMap, TensorProduct.lift.tmul]
   rfl
 
-variable [DiscreteTopology A]
+variable [DiscreteTopology A] {ι : Type*}
 
-private noncomputable def continuousZModHomCoord
-    (b : Module.Basis (Fin (Module.finrank (ZMod n) A)) (ZMod n) A)
-    (f : Additive (G →ₜ* Multiplicative A)) (i : Fin (Module.finrank (ZMod n) A)) :
-    continuousZModDual n G :=
+/-- The `i`-th coordinate, in the basis `b` of `A`, of a continuous homomorphism `G → A`. -/
+private noncomputable def continuousZModHomCoord (b : Module.Basis ι (ZMod n) A)
+    (f : Additive (G →ₜ* Multiplicative A)) (i : ι) : continuousZModDual n G :=
   Additive.ofMul
     { toFun := fun g ↦ Multiplicative.ofAdd
         (b.repr (Multiplicative.toAdd (Additive.toMul f g)) i)
@@ -288,118 +258,68 @@ private noncomputable def continuousZModHomCoord
 
 /-- A coordinate character evaluates by applying the corresponding basis coordinate. -/
 @[simp]
-private theorem continuousZModHomCoord_apply
-    (b : Module.Basis (Fin (Module.finrank (ZMod n) A)) (ZMod n) A)
-    (f : Additive (G →ₜ* Multiplicative A)) (i : Fin (Module.finrank (ZMod n) A)) (g : G) :
+private theorem continuousZModHomCoord_apply (b : Module.Basis ι (ZMod n) A)
+    (f : Additive (G →ₜ* Multiplicative A)) (i : ι) (g : G) :
     Additive.toMul (continuousZModHomCoord b f i) g =
       Multiplicative.ofAdd (b.repr (continuousZModHom.evalₗ (n := n) (A := A) g f) i) :=
   rfl
 
 @[simp]
-private theorem continuousZModHomCoord_zero
-    (b : Module.Basis (Fin (Module.finrank (ZMod n) A)) (ZMod n) A)
-    (i : Fin (Module.finrank (ZMod n) A)) :
-    continuousZModHomCoord (G := G) b 0 i = 0 := by
-  apply Additive.toMul.injective
-  apply ContinuousMonoidHom.ext
-  intro g
-  rw [continuousZModHomCoord_apply]
-  simp
+private theorem continuousZModHomCoord_zero (b : Module.Basis ι (ZMod n) A) (i : ι) :
+    continuousZModHomCoord (G := G) b 0 i = 0 :=
+  Additive.toMul.injective <| ContinuousMonoidHom.ext fun _ ↦ by simp
 
 @[simp]
-private theorem continuousZModHomCoord_add
-    (b : Module.Basis (Fin (Module.finrank (ZMod n) A)) (ZMod n) A)
-    (f h : Additive (G →ₜ* Multiplicative A)) (i : Fin (Module.finrank (ZMod n) A)) :
+private theorem continuousZModHomCoord_add (b : Module.Basis ι (ZMod n) A)
+    (f h : Additive (G →ₜ* Multiplicative A)) (i : ι) :
     continuousZModHomCoord b (f + h) i =
-      continuousZModHomCoord b f i + continuousZModHomCoord b h i := by
-  apply Additive.toMul.injective
-  apply ContinuousMonoidHom.ext
-  intro g
-  rw [continuousZModHomCoord_apply]
-  simp only [toMul_add, ContinuousMonoidHom.mul_apply, continuousZModHomCoord_apply,
-    continuousZModHom.evalₗ_apply, map_add]
-  simp
+      continuousZModHomCoord b f i + continuousZModHomCoord b h i :=
+  Additive.toMul.injective <| ContinuousMonoidHom.ext fun _ ↦ by
+    simp [toMul_add, ContinuousMonoidHom.mul_apply, ofAdd_add]
 
-variable [Fact n.Prime] [Module.Finite (ZMod n) A]
+/-- Taking a coordinate after evaluating a pure tensor scales the original character by that
+coordinate of the tensor's second factor. -/
+private theorem continuousZModHomCoord_tensorMap_tmul (b : Module.Basis ι (ZMod n) A)
+    (x : continuousZModDual n G) (a : A) (i : ι) :
+    continuousZModHomCoord b (continuousZModDualTensorMap (x ⊗ₜ a)) i = b.repr a i • x := by
+  apply Additive.toMul.injective
+  ext g
+  apply Multiplicative.toAdd.injective
+  -- The scalar action on characters is read off through the linear evaluation map at `g`.
+  rw [← continuousZModDual.evalₗ_apply g (b.repr a i • x), map_smul]
+  simp [mul_comm]
+
+variable [Module.Free (ZMod n) A] [Module.Finite (ZMod n) A]
 
 private noncomputable def continuousZModDualTensorInv :
     Additive (G →ₜ* Multiplicative A) →ₗ[ZMod n]
       continuousZModDual n G ⊗[ZMod n] A :=
-  let b := Module.finBasis (ZMod n) A
   AddMonoidHom.toZModLinearMap n
-    { toFun := fun f ↦ ∑ i, continuousZModHomCoord b f i ⊗ₜ[ZMod n] b i
-      map_zero' := by
-        apply Finset.sum_eq_zero
-        intro i _
-        simp
-      map_add' := fun f h ↦ by
-        rw [← Finset.sum_add_distrib]
-        apply Finset.sum_congr rfl
-        intro i _
-        rw [continuousZModHomCoord_add]
-        simp [TensorProduct.add_tmul] }
+    { toFun := fun f ↦ ∑ i, continuousZModHomCoord (Module.Free.chooseBasis (ZMod n) A) f i ⊗ₜ
+        Module.Free.chooseBasis (ZMod n) A i
+      map_zero' := by simp
+      map_add' := fun f h ↦ by simp [TensorProduct.add_tmul, Finset.sum_add_distrib] }
 
 /-- The basis-dependent inverse is the sum of its coordinate characters tensored with the
 corresponding basis vectors. -/
 private theorem continuousZModDualTensorInv_apply (f : Additive (G →ₜ* Multiplicative A)) :
     continuousZModDualTensorInv (n := n) (G := G) (A := A) f =
-      ∑ i, continuousZModHomCoord (Module.finBasis (ZMod n) A) f i ⊗ₜ[ZMod n]
-        (Module.finBasis (ZMod n) A) i := by
-  -- Unfold the private basis choice once; consumers use this computation theorem instead.
-  change (∑ i, continuousZModHomCoord (Module.finBasis (ZMod n) A) f i ⊗ₜ[ZMod n]
-    (Module.finBasis (ZMod n) A) i) = _
+      ∑ i, continuousZModHomCoord (Module.Free.chooseBasis (ZMod n) A) f i ⊗ₜ
+        Module.Free.chooseBasis (ZMod n) A i :=
   rfl
-
-/-- Taking a coordinate after evaluating a pure tensor scales the original character by that
-coordinate of the tensor's second factor. -/
-private theorem continuousZModHomCoord_tensorMap_tmul (x : continuousZModDual n G) (a : A)
-    (i : Fin (Module.finrank (ZMod n) A)) :
-    continuousZModHomCoord (Module.finBasis (ZMod n) A)
-        (continuousZModDualTensorMap (x ⊗ₜ a)) i =
-      ((Module.finBasis (ZMod n) A).repr a i) • x := by
-  apply Additive.toMul.injective
-  apply ContinuousMonoidHom.ext
-  intro g
-  rw [continuousZModHomCoord_apply, continuousZModHom.evalₗ_apply,
-    continuousZModDualTensorMap_tmul_apply]
-  simp only [toAdd_ofAdd, map_smul]
-  apply Multiplicative.toAdd.injective
-  -- The scalar action on the additive character is observed through its linear evaluation map.
-  change continuousZModDual.evalₗ g x *
-      ((Module.finBasis (ZMod n) A).repr a i) =
-    continuousZModDual.evalₗ g ((Module.finBasis (ZMod n) A).repr a i • x)
-  rw [map_smul, mul_comm]
-  exact (smul_eq_mul _ _).symm
 
 private theorem continuousZModDualTensorMap_inv (f : Additive (G →ₜ* Multiplicative A)) :
     continuousZModDualTensorMap
       (continuousZModDualTensorInv (n := n) (G := G) (A := A) f) = f := by
-  rw [continuousZModDualTensorInv_apply]
-  rw [map_sum]
   apply Additive.toMul.injective
-  apply ContinuousMonoidHom.ext
-  intro g
+  ext g
   apply Multiplicative.toAdd.injective
-  -- Evaluation is on the additive presentation of continuous homomorphisms, whereas extensionality
-  -- leaves the same underlying equality in the multiplicative presentation.
-  change continuousZModHom.evalₗ (n := n) (A := A) g
-      (∑ i, continuousZModDualTensorMap
-        (continuousZModHomCoord (Module.finBasis (ZMod n) A) f i ⊗ₜ
-          (Module.finBasis (ZMod n) A) i)) =
-    continuousZModHom.evalₗ (n := n) (A := A) g f
-  rw [map_sum]
-  -- Unwrap the additive presentation to apply the pure-tensor evaluation theorem.
-  change (∑ i, Multiplicative.toAdd (Additive.toMul
-      (continuousZModDualTensorMap
-        (continuousZModHomCoord (Module.finBasis (ZMod n) A) f i ⊗ₜ
-          (Module.finBasis (ZMod n) A) i)) g)) =
-    Multiplicative.toAdd (Additive.toMul f g)
-  simp_rw [continuousZModDualTensorMap_tmul_apply]
-  -- The remaining equality is precisely reconstruction from coordinates in `Module.finBasis`.
-  change (∑ i, (Module.finBasis (ZMod n) A).repr
-      (Multiplicative.toAdd (Additive.toMul f g)) i • (Module.finBasis (ZMod n) A) i) =
-    Multiplicative.toAdd (Additive.toMul f g)
-  exact (Module.finBasis (ZMod n) A).sum_repr _
+  -- Evaluation at `g` is linear, so it commutes with the sum defining the inverse.
+  rw [← continuousZModHom.evalₗ_apply (n := n), ← continuousZModHom.evalₗ_apply (n := n),
+    continuousZModDualTensorInv_apply, map_sum, map_sum]
+  simp_rw [continuousZModHom.evalₗ_apply, continuousZModDualTensorMap_tmul_apply,
+    toAdd_ofAdd, continuousZModHomCoord_apply, toAdd_ofAdd]
+  exact (Module.Free.chooseBasis (ZMod n) A).sum_repr _
 
 private theorem continuousZModDualTensorInv_map (x : continuousZModDual n G ⊗[ZMod n] A) :
     continuousZModDualTensorInv (n := n) (G := G) (A := A)
@@ -407,36 +327,21 @@ private theorem continuousZModDualTensorInv_map (x : continuousZModDual n G ⊗[
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp [hx, hy]
   | tmul x a =>
-      rw [continuousZModDualTensorInv_apply]
-      calc
-        _ = ∑ i, ((Module.finBasis (ZMod n) A).repr a i • x) ⊗ₜ[ZMod n]
-              (Module.finBasis (ZMod n) A) i := by
-            apply Finset.sum_congr rfl
-            intro i _
-            rw [continuousZModHomCoord_tensorMap_tmul]
-        _ = ∑ i, x ⊗ₜ[ZMod n] ((Module.finBasis (ZMod n) A).repr a i •
-              (Module.finBasis (ZMod n) A) i) := by
-            apply Finset.sum_congr rfl
-            intro i _
-            rw [TensorProduct.smul_tmul]
-        _ = x ⊗ₜ (∑ i, (Module.finBasis (ZMod n) A).repr a i •
-              (Module.finBasis (ZMod n) A) i) := by
-            rw [TensorProduct.tmul_sum]
-        _ = x ⊗ₜ a := by rw [(Module.finBasis (ZMod n) A).sum_repr]
+      simp_rw [continuousZModDualTensorInv_apply, continuousZModHomCoord_tensorMap_tmul,
+        TensorProduct.smul_tmul, ← TensorProduct.tmul_sum,
+        (Module.Free.chooseBasis (ZMod n) A).sum_repr]
 
-/-- For prime `p` and finite-dimensional `A` with the discrete topology, the canonical evaluation
-map from the tensor product to the space of continuous `A`-valued homomorphisms is bijective. -/
+/-- For finite free `A` with the discrete topology, the canonical evaluation map from the tensor
+product to the space of continuous `A`-valued homomorphisms is bijective. -/
 theorem continuousZModDualTensorMap_bijective :
     Function.Bijective (continuousZModDualTensorMap (n := n) (G := G) (A := A)) :=
-  ⟨fun x y h ↦ by
-      simpa only [continuousZModDualTensorInv_map] using
-        congrArg (continuousZModDualTensorInv (n := n) (G := G) (A := A)) h,
-    fun f ↦ ⟨continuousZModDualTensorInv (n := n) (G := G) (A := A) f,
-      continuousZModDualTensorMap_inv (n := n) (G := G) (A := A) f⟩⟩
+  Function.bijective_iff_has_inverse.2 ⟨continuousZModDualTensorInv,
+    continuousZModDualTensorInv_map, continuousZModDualTensorMap_inv⟩
 
-/-- **Tensoring the continuous `ZMod p`-dual with a finite vector space.** For prime `p` and a
-finite-dimensional `A` with the discrete topology, evaluation is the canonical equivalence
-`Hom_cont(G, ZMod p) ⊗ A ≃ Hom_cont(G, A)`. The inverse uses a basis only to prove
+/-- **Tensoring the continuous `ZMod n`-dual with a finite free module.** For a finite free
+`ZMod n`-module `A` with the discrete topology (for prime `n = p`: any finite-dimensional
+`𝔽_p`-vector space), evaluation is the canonical equivalence
+`Hom_cont(G, ZMod n) ⊗ A ≃ Hom_cont(G, A)`. The inverse uses a basis only to prove
 bijectivity; the exported forward map is basis-independent. -/
 noncomputable def continuousZModDualTensorEquiv :
     continuousZModDual n G ⊗[ZMod n] A ≃ₗ[ZMod n]
@@ -478,12 +383,9 @@ theorem continuousZModDualToDual_apply (x : continuousZModDual p W) (w : Additiv
   rfl
 
 theorem continuousZModDualToDual_injective :
-    Function.Injective (continuousZModDualToDual (p := p) (W := W)) := fun x y h ↦ by
-  apply Additive.toMul.injective
-  ext w
-  have hw := congrArg (fun f ↦ f (Additive.ofMul w)) h
-  simp only [continuousZModDualToDual_apply, toMul_ofMul] at hw
-  exact Multiplicative.toAdd.injective hw
+    Function.Injective (continuousZModDualToDual (p := p) (W := W)) := fun _ _ h ↦
+  Additive.toMul.injective <| ContinuousMonoidHom.ext fun w ↦ by
+    simpa using LinearMap.congr_fun h (Additive.ofMul w)
 
 theorem continuousZModDualToDual_eq_zero_iff {x : continuousZModDual p W} {w : Additive W} :
     continuousZModDualToDual x w = 0 ↔ Additive.toMul w ∈ (Additive.toMul x).ker := by

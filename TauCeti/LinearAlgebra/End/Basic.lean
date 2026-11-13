@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Module.Submodule.Invariant
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.SetTheory.Cardinal.NatCard
+import Mathlib.Algebra.Algebra.Equiv
 
 /-!
 # Basic facts about module endomorphisms
@@ -29,6 +30,9 @@ Rescaling an involution by a scalar `μ` with `μ * μ = 1` gives an endomorphis
 (`Module.End.smul_mul_smul_self_eq_one`).
 
 A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_natCard`).
+
+Of two endomorphisms conjugate by a linear equivalence, one squares to `κ • 1` exactly when the
+other does (`Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq`).
 
 An endomorphism acting as a scalar `a` from a monoid acting on the module has `k`-th power acting
 as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
@@ -94,6 +98,15 @@ theorem one_lt_natCard {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     [Finite M] : 1 < Nat.card (Module.End R M) := by
   have : Finite (Module.End R M) := Finite.of_injective _ DFunLike.coe_injective
   exact Finite.one_lt_card
+
+/-- If `e` conjugates `A` to `B`, then `A` squares to `κ • 1` exactly when `B` does. -/
+theorem mul_self_eq_smul_one_iff_of_forall_apply_eq {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {A : Module.End R M}
+    {B : Module.End R N} {e : M ≃ₗ[R] N} (hAB : ∀ v, e (A v) = B (e v)) (κ : R) :
+    A * A = κ • 1 ↔ B * B = κ • 1 := by
+  have hB : B = e.conjAlgEquiv R A := LinearMap.ext fun w ↦ by
+    simp [LinearEquiv.conjAlgEquiv_apply, hAB]
+  rw [hB, ← map_mul, ← map_one (e.conjAlgEquiv R), ← map_smul, EmbeddingLike.apply_eq_iff_eq]
 
 /-- The `k`-th power of an endomorphism acting as the scalar `a` acts as `a ^ k`. -/
 theorem pow_apply_eq_pow_smul {R M X : Type*} [Semiring R] [AddCommMonoid X] [Module R X]

@@ -463,18 +463,24 @@ theorem affineToricChartι_comp_algebraicMap (f : FanHom Φ Ψ) (σ : Φ.cones) 
   rw [← Fan.affineToricCocone_ι_app]
   exact Φ.isColimitAffineToricCocone.fac f.algebraicMapCocone σ)
 
-/-- If the least target cone containing the image of `σ` is `τ`, then on the chart of `σ` the
+/-- If the cone `τ` of the target fan contains the image of `σ`, then on the chart of `σ` the
 global algebraic map is the affine toric map into the chart of `τ`, followed by that chart's
 inclusion. -/
-theorem affineToricChartι_comp_algebraicMap_of_leastCone_eq (f : FanHom Φ Ψ) (σ : Φ.cones)
-    (τ : Ψ.cones) (h : f.leastCone σ.2 = τ.1)
-    (hmaps : Set.MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
+theorem affineToricChartι_comp_algebraicMap_of_mapsTo (f : FanHom Φ Ψ) (σ : Φ.cones)
+    (τ : Ψ.cones) (hmaps : Set.MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
     Φ.affineToricChartι σ ≫ f.algebraicMap =
       affineToricSchemeMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice hmaps ≫
         Ψ.affineToricChartι τ := by
-  obtain ⟨τ, hτ⟩ := τ
-  subst h
-  rw [affineToricChartι_comp_algebraicMap, affineToricChartMap_def]
+  have hface : (f.leastCone σ.2).IsFaceOf τ.1 :=
+    Ψ.isFaceOf_of_le τ.2 (f.leastCone_mem σ.2)
+      (f.leastCone_le σ.2 τ.2 fun x ⟨y, hy, hyx⟩ ↦ hyx ▸ hmaps hy)
+  rw [affineToricChartι_comp_algebraicMap,
+    ← Fan.faceAffineToricSchemeMap_comp_affineToricChartι
+      (τ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩)
+      (σ := τ) hface,
+    ← Category.assoc, affineToricChartMap_def, faceAffineToricSchemeMap_eq_affineToricSchemeMap,
+    affineToricSchemeMap_comp]
+  rfl
 
 /-- The algebraic map induced by the identity fan morphism is the identity. -/
 @[simp]

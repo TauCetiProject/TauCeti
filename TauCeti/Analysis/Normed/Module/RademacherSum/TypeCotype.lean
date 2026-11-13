@@ -134,7 +134,7 @@ theorem HasType.of_map [Fact (1 ≤ p)] (h : HasType F p C) (f : 𝓕) (hK : ∀
     rademacherSecondMoment_le_mul_map f K.2 hK y
   _ ≤ K * (C * (M * ‖WithLp.toLp p y‖)) := by
     gcongr
-    exact (h n _).trans (by gcongr; exact PiLp.norm_toLp_comp_le M.2 hM y)
+    exact (h n _).trans (by gcongr; exact PiLp.norm_toLp_comp_le hM y)
   _ = (K * C * M : ℝ≥0) * ‖WithLp.toLp p y‖ := by push_cast; ring
 
 /-- Cotype passes to the domain of an additive map `f` with `‖x‖ ≤ K ‖f x‖` and

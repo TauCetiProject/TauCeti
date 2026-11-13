@@ -60,6 +60,7 @@ def sUnitsEmptyIsoUnits :
     algebraMap (𝓞 L) L (σ • e u.toMul : 𝓞 L)
   simp [he]
 
+omit [NumberField K] in
 /-- The forward identification preserves the underlying element of the number field. -/
 @[simp]
 theorem algebraMap_sUnitsEmptyIsoUnits_hom_apply
@@ -77,6 +78,7 @@ theorem algebraMap_sUnitsEmptyIsoUnits_hom_apply
           (Additive.toMul (α := (primesAbove (𝓞 K) (𝓞 L) ∅).unit L) u)) : 𝓞 L) = _
   simp
 
+omit [NumberField K] in
 /-- The inverse identification preserves the underlying element of the number field. -/
 @[simp]
 theorem coe_sUnitsEmptyIsoUnits_inv_apply

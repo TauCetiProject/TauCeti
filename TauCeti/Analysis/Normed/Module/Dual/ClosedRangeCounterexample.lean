@@ -54,7 +54,7 @@ theorem dense_finiteSupportL2 : Dense (finiteSupportL2 𝕜 : Set (lp (fun _ : �
   apply Filter.Eventually.of_forall
   intro s
   apply Submodule.sum_mem
-  intro i hi
+  intro i _
   rw [mem_finiteSupportL2_iff]
   exact (lp.memℓp (lp.single (E := fun _ : ℕ ↦ 𝕜) 0 i (x i))).finite_dsupport
 

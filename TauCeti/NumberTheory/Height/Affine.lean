@@ -201,6 +201,7 @@ omit [NonnegHomClass F K ℝ] in
 lemma one_le_iSup_option_elim (v : F) (x : ι → K) : 1 ≤ ⨆ o : Option ι, v (o.elim 1 x) :=
   Finite.le_ciSup_of_le none (by simp)
 
+omit [NonnegHomClass F K ℝ] in
 /-- The local factor of the affine height: the local sup norm of a tuple with a coordinate `1`
 appended is `max (⨆ i, v (x i)) 1`. -/
 lemma iSup_option_elim_eq_max (v : F) (x : ι → K) :
@@ -209,16 +210,26 @@ lemma iSup_option_elim_eq_max (v : F) (x : ι → K) :
   · cases o with
     | none => simp
     | some i => exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
-  · exact Real.iSup_le (fun i ↦ Finite.le_ciSup_of_le (some i) le_rfl)
-      (Real.iSup_nonneg_of_nonnegHomClass v _)
+  · cases isEmpty_or_nonempty ι with
+    | inl h => simpa using zero_le_one.trans (one_le_iSup_option_elim v x)
+    | inr h => exact ciSup_le fun i ↦ Finite.le_ciSup_of_le (some i) le_rfl
 
+omit [Finite ι] in
 /-- The local factor of the affine height of a scalar multiple `c • x` is at most
 `max (v c * ⨆ i, v (x i)) 1`. -/
 lemma iSup_option_elim_smul_le (v : F) (c : K) (x : ι → K) :
     ⨆ o : Option ι, v (o.elim 1 (c • x)) ≤ max (v c * ⨆ i, v (x i)) 1 := by
-  rw [iSup_option_elim_eq_max]
-  simp only [Pi.smul_apply, smul_eq_mul, map_mul, ← Real.mul_iSup_of_nonneg (apply_nonneg v c),
-    le_refl]
+  rw [Real.mul_iSup_of_nonneg (apply_nonneg v c)]
+  by_cases hb : BddAbove (Set.range fun o : Option ι ↦ v (o.elim 1 (c • x)))
+  · refine ciSup_le fun o ↦ ?_
+    cases o with
+    | none => simp
+    | some i =>
+      refine le_max_of_le_left (le_ciSup_of_le (hb.mono ?_) i (by simp [map_mul]))
+      rintro _ ⟨j, rfl⟩
+      exact ⟨some j, by simp [map_mul]⟩
+  · rw [Real.iSup_of_not_bddAbove hb]
+    exact zero_le_one.trans (le_max_right _ _)
 
 /-- A logarithmic bound `m * log (v c) + m * log (⨆ i, v (x i)) ≤ B` with `0 ≤ m` and `0 ≤ B`
 bounds `m` times the logarithm of the local factor of the affine height of `c • x`. -/

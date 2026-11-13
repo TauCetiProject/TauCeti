@@ -58,8 +58,10 @@ whose weight `log N(I)` dominates `‖Λ(I)‖` by `norm_vonMangoldt_le_log`. Pa
 
 For general `D`, `PowerSeries.tsum_norm_coeff_logDeriv_mul_pow_succ_le` supplies the local
 majorant that gives absolute convergence of the von Mangoldt series. The general coefficient
-identity applies to data with an absolute-convergence point `σ` and zero-free local series on the
-corresponding disks.
+identity applies at every `s` strictly to the right of the ideal-indexed abscissa of absolute
+convergence, given local series zero-free on the disks of radius `N(P)⁻σ` for a real `σ < Re(s)`;
+the logarithmic weights are dominated using a real point of absolute convergence strictly between
+the abscissa and `Re(s)`.
 
 ## References
 
@@ -314,22 +316,23 @@ private theorem tsum_norm_idealTerm_vonMangoldt_le
   rw [tsum_congr hvm, tsum_mul_left, hlogT]
   nlinarith
 
-/-- **Absolute convergence of the von Mangoldt series of an Euler product.** Suppose `σ` lies
+/-- **Absolute convergence of the von Mangoldt series of an Euler product.** Suppose `Re(s)` lies
 strictly to the right of the ideal-indexed abscissa of absolute convergence of `D` and every local
-power series is zero-free on the disk of radius `N(P)⁻σ`. Then the ideal-indexed series of `Λ_D`
-converges absolutely at every `s` with `σ < Re(s)`. -/
+power series is zero-free on the disk of radius `N(P)⁻σ` for a real `σ < Re(s)`. Then the
+ideal-indexed series of `Λ_D` converges absolutely at `s`. -/
 theorem summable_idealTerm_vonMangoldt_of_zeroFree
-    (hσ : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < σ)
+    (habs : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < s.re)
     (hne : ∀ (P : HeightOneSpectrum (𝓞 K)) (z : ℂ),
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
         FormalMultilinearSeries.ofScalarsSum (E := ℂ)
           (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P)) z ≠ 0)
     (hs : σ < s.re) :
     Summable (idealTerm K D.vonMangoldt s) := by
-  have hσsum : Summable (idealTerm K D.toIdealArithmeticFunction σ) :=
-    summable_idealTerm_of_idealAbscissaOfAbsConv_lt_re K (by simpa using hσ)
+  -- A real point `y < Re(s)` of absolute convergence of `D` supplies the room to the left that
+  -- the logarithmic weights need.
+  obtain ⟨y, hy, hys⟩ := exists_summable_idealTerm_of_idealAbscissaOfAbsConv_lt_re K habs
   have hssum : Summable (idealTerm K D.toIdealArithmeticFunction s) :=
-    summable_idealTerm_of_idealAbscissaOfAbsConv_lt_re K (hσ.trans (by exact_mod_cast hs))
+    summable_idealTerm_of_idealAbscissaOfAbsConv_lt_re K habs
   -- `Λ_D` lives on the prime powers `P ^ (k + 1)`.
   have hg : Function.Injective fun Pk : HeightOneSpectrum (𝓞 K) × ℕ ↦
       Pk.1.primeIdealPow (Pk.2 + 1) := by
@@ -349,8 +352,7 @@ theorem summable_idealTerm_vonMangoldt_of_zeroFree
   refine Summable.of_norm ((summable_prod_of_nonneg fun _ ↦ norm_nonneg _).mpr ⟨fun P ↦ ?_, ?_⟩)
   · -- Each fibre converges by zero-freeness at `P`.
     have hloc := (summable_nat_add_iff 1).mpr
-      (D.summable_norm_coeff_localLogDerivSeries_of_zeroFree P
-        ((D.abscissaOfAbsConv_localArithmeticFactor_le P).trans_lt hσ) (hne P) hs)
+      (D.summable_norm_coeff_localLogDerivSeries_of_zeroFree P (hne P) hs)
     exact (hloc.mul_left (Real.log (Ideal.absNorm P.asIdeal))).congr fun k ↦
       (D.norm_idealTerm_vonMangoldt_primeIdealPow P s (k + 1)).symm
   · -- Away from finitely many primes, the fibre sums are dominated by the log-weighted terms of
@@ -358,8 +360,8 @@ theorem summable_idealTerm_vonMangoldt_of_zeroFree
     have hB : Summable fun P : HeightOneSpectrum (𝓞 K) ↦ ∑' e : ℕ,
         Real.log (Ideal.absNorm (P.primeIdealPow (e + 1) : Ideal (𝓞 K))) *
           ‖idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow (e + 1))‖ := by
-      have hlog := summable_log_absNorm_mul_norm_idealTerm_of_re_lt_re K (s := (σ : ℂ))
-        (by simpa using hs) hσsum
+      have hlog := summable_log_absNorm_mul_norm_idealTerm_of_re_lt_re K (s := (y : ℂ))
+        (by simpa using hys) hy
       refine (summable_tsum_norm_idealPrimePowerOf (g := fun I : (Ideal (𝓞 K))⁰ ↦
         Real.log (Ideal.absNorm (I : Ideal (𝓞 K))) *
           ‖idealTerm K D.toIdealArithmeticFunction s I‖)
@@ -375,17 +377,17 @@ theorem summable_idealTerm_vonMangoldt_of_zeroFree
     refine (hB.mul_left 2).of_norm_bounded_eventually ?_
     filter_upwards [htail.eventually (ge_mem_nhds (by norm_num : (0 : ℝ) < 1 / 2))] with P hP
     rw [Real.norm_of_nonneg (tsum_nonneg fun _ ↦ norm_nonneg _)]
-    exact D.tsum_norm_idealTerm_vonMangoldt_le hσsum hs P hP
+    exact D.tsum_norm_idealTerm_vonMangoldt_le hy hys P hP
 
-/-- **The logarithmic derivative of an Euler product as a von Mangoldt series.** Suppose `σ` lies
-strictly to the right of the ideal-indexed abscissa of absolute convergence of `D` and every local
-power series is zero-free on the disk of radius `N(P)⁻σ`. Then for `σ < Re(s)` the ideal-indexed
-series of `Λ_D` converges absolutely to `-L'(s)/L(s)`, where `L` is the `LSeries` of the norm
-coefficients of `D`:
+/-- **The logarithmic derivative of an Euler product as a von Mangoldt series.** Suppose `Re(s)`
+lies strictly to the right of the ideal-indexed abscissa of absolute convergence of `D` and every
+local power series is zero-free on the disk of radius `N(P)⁻σ` for a real `σ < Re(s)`. Then the
+ideal-indexed series of `Λ_D` converges absolutely at `s` to `-L'(s)/L(s)`, where `L` is the
+`LSeries` of the norm coefficients of `D`:
 
 `-logDeriv L(s) = ∑' A, Λ_D(A) / N(A) ^ s`. -/
 theorem hasSum_idealTerm_vonMangoldt_of_zeroFree
-    (hσ : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < σ)
+    (habs : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < s.re)
     (hne : ∀ (P : HeightOneSpectrum (𝓞 K)) (z : ℂ),
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
         FormalMultilinearSeries.ofScalarsSum (E := ℂ)
@@ -393,7 +395,7 @@ theorem hasSum_idealTerm_vonMangoldt_of_zeroFree
     (hs : σ < s.re) :
     HasSum (idealTerm K D.vonMangoldt s)
       (-logDeriv (LSeries (normCoeff K D.toIdealArithmeticFunction)) s) := by
-  have hsum := D.summable_idealTerm_vonMangoldt_of_zeroFree hσ hne hs
+  have hsum := D.summable_idealTerm_vonMangoldt_of_zeroFree habs hne hs
   have hsupp : Function.support (idealTerm K D.vonMangoldt s) ⊆
       {A : (Ideal (𝓞 K))⁰ | IsPrimePow (A : Ideal (𝓞 K))} := fun A hA ↦ by
     by_contra h
@@ -404,8 +406,7 @@ theorem hasSum_idealTerm_vonMangoldt_of_zeroFree
       (-(-Complex.log (Ideal.absNorm P.asIdeal : ℂ) *
         ∑' e : ℕ, PowerSeries.coeff e (D.localLogDerivSeries P) *
           ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e)) := by
-    have hloc := (D.summable_coeff_localLogDerivSeries_of_zeroFree P
-      ((D.abscissaOfAbsConv_localArithmeticFactor_le P).trans_lt hσ) (hne P) hs).hasSum
+    have hloc := (D.summable_coeff_localLogDerivSeries_of_zeroFree P (hne P) hs).hasSum
     rw [← hasSum_nat_add_iff' 1, Finset.sum_range_one, coeff_zero_localLogDerivSeries, zero_mul,
       sub_zero] at hloc
     rw [neg_mul, neg_neg, ← Complex.ofReal_natCast, ← Complex.ofReal_log (Nat.cast_nonneg _)]
@@ -415,13 +416,13 @@ theorem hasSum_idealTerm_vonMangoldt_of_zeroFree
   convert hsum.hasSum using 1
   rw [tsum_eq_tsum_idealPrimePower_of_support_subset hsum hsupp,
     tsum_congr fun P ↦ (hfib P).tsum_eq, tsum_neg,
-    (D.hasSum_tsum_coeff_localLogDerivSeries_of_zeroFree hσ hne hs).tsum_eq]
+    (D.hasSum_tsum_coeff_localLogDerivSeries_of_zeroFree habs hne hs).tsum_eq]
 
 /-- The norm-regrouped form of
 `TauCeti.EulerProductData.hasSum_idealTerm_vonMangoldt_of_zeroFree`: the Mathlib `LSeries` of the
 norm coefficients of `Λ_D` converges absolutely to `-L'(s)/L(s)`. -/
 theorem LSeriesHasSum_normCoeff_vonMangoldt_of_zeroFree
-    (hσ : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < σ)
+    (habs : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < s.re)
     (hne : ∀ (P : HeightOneSpectrum (𝓞 K)) (z : ℂ),
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
         FormalMultilinearSeries.ofScalarsSum (E := ℂ)
@@ -429,14 +430,14 @@ theorem LSeriesHasSum_normCoeff_vonMangoldt_of_zeroFree
     (hs : σ < s.re) :
     LSeriesHasSum (normCoeff K D.vonMangoldt) s
       (-logDeriv (LSeries (normCoeff K D.toIdealArithmeticFunction)) s) :=
-  regroupByNorm K (D.hasSum_idealTerm_vonMangoldt_of_zeroFree hσ hne hs)
+  regroupByNorm K (D.hasSum_idealTerm_vonMangoldt_of_zeroFree habs hne hs)
 
 /-- **The coefficient identity for the logarithmic derivative of an Euler product.** Under the
 hypotheses of `TauCeti.EulerProductData.hasSum_idealTerm_vonMangoldt_of_zeroFree`,
 
 `logDeriv L(s) = -LSeries (normCoeff Λ_D) s`. -/
 theorem logDeriv_LSeries_eq_neg_LSeries_normCoeff_vonMangoldt_of_zeroFree
-    (hσ : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < σ)
+    (habs : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < s.re)
     (hne : ∀ (P : HeightOneSpectrum (𝓞 K)) (z : ℂ),
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
         FormalMultilinearSeries.ofScalarsSum (E := ℂ)
@@ -444,7 +445,7 @@ theorem logDeriv_LSeries_eq_neg_LSeries_normCoeff_vonMangoldt_of_zeroFree
     (hs : σ < s.re) :
     logDeriv (LSeries (normCoeff K D.toIdealArithmeticFunction)) s =
       -LSeries (normCoeff K D.vonMangoldt) s := by
-  rw [(D.LSeriesHasSum_normCoeff_vonMangoldt_of_zeroFree hσ hne hs).LSeries_eq, neg_neg]
+  rw [(D.LSeriesHasSum_normCoeff_vonMangoldt_of_zeroFree habs hne hs).LSeries_eq, neg_neg]
 
 end Analytic
 
