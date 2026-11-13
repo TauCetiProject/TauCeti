@@ -33,7 +33,7 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
-private theorem eval_monomial_residual_eq (n : (ι ⊕ ι) →₀ ℕ) (c : ℝ) (z : ι → ℝ)
+private theorem eval_sumElim_sqrt_one_sub_sq_monomial (n : (ι ⊕ ι) →₀ ℕ) (c : ℝ) (z : ι → ℝ)
     (hz : ∀ i, |z i| ≤ 1) :
     MvPolynomial.eval (Sum.elim z (fun i ↦ Real.sqrt (1 - z i ^ 2)))
         (MvPolynomial.monomial n c) =
@@ -48,7 +48,7 @@ private theorem eval_monomial_residual_eq (n : (ι ⊕ ι) →₀ ℕ) (c : ℝ)
   rw [Real.rpow_div_two_eq_sqrt _ (sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).mpr (hz i))),
     Real.rpow_natCast]
 
-private theorem integrable_eval_monomial_residual (a : ι → ℝ) (ha : ∀ i, 0 < a i)
+private theorem integrable_eval_sumElim_sqrt_one_sub_sq_monomial (a : ι → ℝ) (ha : ∀ i, 0 < a i)
     (n : (ι ⊕ ι) →₀ ℕ) (c : ℝ) :
     Integrable (fun z : ι → ℝ ↦
       MvPolynomial.eval (Sum.elim z (fun i ↦ Real.sqrt (1 - z i ^ 2)))
@@ -59,23 +59,23 @@ private theorem integrable_eval_monomial_residual (a : ι → ℝ) (ha : ∀ i, 
       (fun i ↦ (n (Sum.inr i) : ℝ) / 2) (fun i ↦ n (Sum.inl i)) ha
       (fun i ↦ add_pos_of_pos_of_nonneg (ha i) (by positivity))).const_mul c)
   filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
-  exact (eval_monomial_residual_eq n c z fun i ↦ (hz i).le).symm
+  exact (eval_sumElim_sqrt_one_sub_sq_monomial n c z fun i ↦ (hz i).le).symm
 
 /-- Every polynomial in independent centered symmetric Beta coordinates and their residual
 square roots is integrable, including for an empty coordinate type. -/
-theorem integrable_eval_residual_pi_centered_betaMeasure (a : ι → ℝ)
+theorem integrable_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure (a : ι → ℝ)
     (ha : ∀ i, 0 < a i) (P : MvPolynomial (ι ⊕ ι) ℝ) :
     Integrable (fun z : ι → ℝ ↦
       MvPolynomial.eval (Sum.elim z (fun i ↦ Real.sqrt (1 - z i ^ 2))) P)
       (Measure.pi fun i ↦ (betaMeasure (a i) (a i)).map (fun x ↦ -1 + 2 * x)) := by
   conv in MvPolynomial.eval _ P => rw [P.as_sum]
   simp only [MvPolynomial.eval_sum]
-  exact integrable_finsetSum _ fun n _ ↦ integrable_eval_monomial_residual a ha n _
+  exact integrable_finsetSum _ fun n _ ↦ integrable_eval_sumElim_sqrt_one_sub_sq_monomial a ha n _
 
 /-- Expand a polynomial in independent centered symmetric Beta coordinates and their residual
 square roots into a finite sum of Beta products. Odd coordinate exponents contribute zero;
 residual square-root exponents contribute half their natural degree to the second Beta shape. -/
-theorem integral_eval_residual_pi_centered_betaMeasure (a : ι → ℝ)
+theorem integral_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure (a : ι → ℝ)
     (ha : ∀ i, 0 < a i) (P : MvPolynomial (ι ⊕ ι) ℝ) :
     ∫ z : ι → ℝ,
       MvPolynomial.eval (Sum.elim z (fun i ↦ Real.sqrt (1 - z i ^ 2))) P
@@ -88,12 +88,13 @@ theorem integral_eval_residual_pi_centered_betaMeasure (a : ι → ℝ)
     arg 2
     ext z
     rw [P.as_sum, MvPolynomial.eval_sum]
-  rw [integral_finsetSum _ fun n _ ↦ integrable_eval_monomial_residual a ha n _]
+  rw [integral_finsetSum _ fun n _ ↦ integrable_eval_sumElim_sqrt_one_sub_sq_monomial a ha n _]
   apply Finset.sum_congr rfl
   intro n _
   rw [integral_congr_ae (by
     filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
-    exact eval_monomial_residual_eq n (P.coeff n) z fun i ↦ (hz i).le), integral_const_mul]
+    exact eval_sumElim_sqrt_one_sub_sq_monomial n (P.coeff n) z fun i ↦ (hz i).le),
+    integral_const_mul]
   congr 1
   exact integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure a
     (fun i ↦ (n (Sum.inr i) : ℝ) / 2) (fun i ↦ n (Sum.inl i)) ha

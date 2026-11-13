@@ -37,37 +37,9 @@ open scoped BigOperators
 
 namespace TauCeti.Probability
 
-/-- Expand the entry monomial with exponent matrix `n` through the formal partial-correlation
-Gram matrix. Its left variables are partial correlations and its right variables are residual
-square roots. Its coefficients are obtained by ordinary finite polynomial arithmetic. -/
-def lkjMixedMomentPolynomial (p : ℕ) (n : Fin p → Fin p → ℕ) :
-    MvPolynomial (strictLowerTriangle p ⊕ strictLowerTriangle p) ℝ :=
-  ∏ i, ∏ j, partialCorrelationGramPolynomial p i j ^ n i j
-
-/-- The mixed-moment polynomial is the product of the formal Gram entries raised to their
-specified natural exponents. -/
-theorem lkjMixedMomentPolynomial_def (p : ℕ) (n : Fin p → Fin p → ℕ) :
-    lkjMixedMomentPolynomial p n =
-      ∏ i, ∏ j, partialCorrelationGramPolynomial p i j ^ n i j := (rfl)
-
-/-- Evaluation of the expanded polynomial is the original correlation-entry monomial. -/
-@[simp]
-theorem eval_lkjMixedMomentPolynomial {p : ℕ} (n : Fin p → Fin p → ℕ)
-    (z : strictLowerTriangle p → ℝ) :
-    MvPolynomial.eval (Sum.elim z (fun ij ↦ Real.sqrt (1 - z ij ^ 2)))
-        (lkjMixedMomentPolynomial p n) =
-      ∏ i, ∏ j, partialCorrelationGram z i j ^ n i j := by
-  simp [lkjMixedMomentPolynomial_def]
-
-/-- The zeroth entry monomial expands to the constant polynomial one, in every dimension. -/
-@[simp]
-theorem lkjMixedMomentPolynomial_zero (p : ℕ) :
-    lkjMixedMomentPolynomial p (fun _ _ ↦ 0) = 1 := by
-  simp [lkjMixedMomentPolynomial_def]
-
 /-- Every natural mixed entry monomial is absolutely integrable under an LKJ measure,
 including the zero measure at nonpositive shape. -/
-theorem integrable_prod_pow_coe_lkjMeasure {p : ℕ} {η : ℝ}
+theorem integrable_prod_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ}
     (n : Fin p → Fin p → ℕ) :
     Integrable (fun R ↦ ∏ i, ∏ j, (R.val i j) ^ n i j) (lkjMeasure p η) := by
   by_cases hη : 0 < η
@@ -78,19 +50,19 @@ theorem integrable_prod_pow_coe_lkjMeasure {p : ℕ} {η : ℝ}
       hcont.aestronglyMeasurable (by fun_prop)).mp
     rw [map_coe_lkjMeasure hη,
       integrable_map_measure hcont.aestronglyMeasurable (by fun_prop)]
-    simpa only [Function.comp_def, ← eval_lkjMixedMomentPolynomial] using
-      integrable_eval_residual_pi_centered_betaMeasure _
-        (lkjPartialCorrelationShape_pos hη) (lkjMixedMomentPolynomial p n)
+    simpa only [Function.comp_def, ← eval_partialCorrelationGramMonomialPolynomial] using
+      integrable_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure _
+        (lkjPartialCorrelationShape_pos hη) (partialCorrelationGramMonomialPolynomial p n)
   · simp [lkjMeasure_of_nonpos (not_lt.mp hη)]
 
 /-- Every natural mixed entry moment of a valid LKJ law equals a finite sum of Beta products.
 The exponents in each term are the coefficients' monomial indices in the explicit Gram
 expansion. Odd partial-correlation exponents vanish; residual exponents enter as half-integers. -/
-theorem integral_prod_pow_coe_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
+theorem integral_prod_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
     (n : Fin p → Fin p → ℕ) :
     ∫ R, (∏ i, ∏ j, (R.val i j) ^ n i j) ∂lkjMeasure p η =
-      ∑ d ∈ (lkjMixedMomentPolynomial p n).support,
-        (lkjMixedMomentPolynomial p n).coeff d * ∏ ij : strictLowerTriangle p,
+      ∑ d ∈ (partialCorrelationGramMonomialPolynomial p n).support,
+        (partialCorrelationGramMonomialPolynomial p n).coeff d * ∏ ij : strictLowerTriangle p,
           if Even (d (Sum.inl ij)) then
             beta (((d (Sum.inl ij) : ℝ) + 1) / 2)
                 (lkjPartialCorrelationShape p η ij + (d (Sum.inr ij) : ℝ) / 2) /
@@ -102,7 +74,7 @@ theorem integral_prod_pow_coe_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
       (∫ R, (∏ i, ∏ j, (R.val i j) ^ n i j) ∂lkjMeasure p η) =
         ∫ z : strictLowerTriangle p → ℝ,
           MvPolynomial.eval (Sum.elim z (fun ij ↦ Real.sqrt (1 - z ij ^ 2)))
-            (lkjMixedMomentPolynomial p n)
+            (partialCorrelationGramMonomialPolynomial p n)
           ∂(Measure.pi fun ij ↦
             (betaMeasure (lkjPartialCorrelationShape p η ij)
               (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) := by
@@ -110,9 +82,9 @@ theorem integral_prod_pow_coe_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
       (f := fun R : Matrix (Fin p) (Fin p) ℝ ↦ ∏ i, ∏ j, R i j ^ n i j)
       (by fun_prop) hcont.aestronglyMeasurable, hmap,
       integral_map (by fun_prop) hcont.aestronglyMeasurable]
-    simp only [eval_lkjMixedMomentPolynomial]
+    simp only [eval_partialCorrelationGramMonomialPolynomial]
   rw [htransfer]
-  exact integral_eval_residual_pi_centered_betaMeasure _
+  exact integral_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure _
     (lkjPartialCorrelationShape_pos hη) _
 
 end TauCeti.Probability
