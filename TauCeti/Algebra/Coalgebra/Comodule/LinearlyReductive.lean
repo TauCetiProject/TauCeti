@@ -631,45 +631,22 @@ private theorem equivariantProjection_apply_of_mem
   simpa only [Finsupp.sum, weightDecomposition_apply] using
     weightDecomposition_sum (R := k) (G := G) (V := V) v
 
-private theorem exists_equivariantProjection
-    (N : Subcomodule k (MonoidAlgebra k G) V) :
-    ∃ P : Hom k (MonoidAlgebra k G) V V,
-      LinearMap.range P.toLinearMap = N.toSubmodule ∧
-        IsIdempotentElem P.toLinearMap := by
-  classical
-  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  obtain ⟨Q, hNQ⟩ := Submodule.exists_isCompl N.toSubmodule
-  let p : V →ₗ[k] V := N.toSubmodule.projection Q hNQ
-  let P := equivariantProjectionHom k G V p
-  have hP : P.toLinearMap = equivariantProjection k G V p := by
-    simp only [P, equivariantProjectionHom, Hom.ofMapWeightSpace_toLinearMap]
-  refine ⟨P, ?_, ?_⟩
-  · rw [hP]
-    apply le_antisymm
-    · rintro _ ⟨v, rfl⟩
-      exact equivariantProjection_mem_subcomodule k G V N p
-        (fun w ↦ Submodule.projection_apply_mem hNQ w) v
-    · intro n hn
-      refine ⟨n, ?_⟩
-      exact equivariantProjection_apply_of_mem k G V N p
-        (fun hv ↦ Submodule.projection_apply_of_mem_left hNQ hv) hn
-  · unfold IsIdempotentElem
-    rw [hP]
-    ext v
-    apply equivariantProjection_apply_of_mem k G V N p
-      (fun hv ↦ Submodule.projection_apply_of_mem_left hNQ hv)
-    exact equivariantProjection_mem_subcomodule k G V N p
-      (fun w ↦ Submodule.projection_apply_mem hNQ w) v
-
 /-- Every comodule over a monoid-algebra coalgebra over a field is completely reducible. -/
 theorem isCompletelyReducible_monoidAlgebra :
     IsCompletelyReducible k (MonoidAlgebra k G) V := by
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  intro N
-  obtain ⟨P, hrange, hidem⟩ := exists_equivariantProjection k G V N
-  refine ⟨P.ker, ?_⟩
-  rw [Comodule.Hom.ker_toSubmodule, ← hrange]
-  exact LinearMap.IsIdempotentElem.isCompl (f := P.toLinearMap) hidem
+  refine isCompletelyReducible_iff_forall_exists_hom.2 fun N ↦ ?_
+  obtain ⟨Q, hNQ⟩ := Submodule.exists_isCompl N.toSubmodule
+  let p : V →ₗ[k] V := N.toSubmodule.projection Q hNQ
+  have hp : ∀ {v}, v ∈ N → p v = v := fun hv ↦ Submodule.projection_apply_of_mem_left hNQ hv
+  have hP : ∀ v, equivariantProjectionHom k G V p v = equivariantProjection k G V p v :=
+    LinearMap.congr_fun (by simp only [equivariantProjectionHom, Hom.ofMapWeightSpace_toLinearMap])
+  refine ⟨equivariantProjectionHom k G V p, fun v ↦ ?_, fun w hw ↦ ?_⟩
+  · rw [hP]
+    exact equivariantProjection_mem_subcomodule k G V N p
+      (fun w ↦ Submodule.projection_apply_mem hNQ w) v
+  · rw [hP]
+    exact equivariantProjection_apply_of_mem k G V N p hp hw
 
 end Projection
 

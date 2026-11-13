@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -211,13 +212,7 @@ theorem _root_.IsLocalDiffeomorphAt.range_mfderiv_comp
   · rw [mfderiv_comp x hg (hφ.mdifferentiableAt hn), ContinuousLinearMap.toLinearMap_comp]
     exact LinearMap.range_comp_of_range_eq_top _
       (LinearMap.range_eq_top.2 (hφ.isInvertible_mfderiv hn).surjective)
-  · have hgφ : ¬MDifferentiableAt I K (g ∘ φ) x := fun h => hg <| by
-      have hx : hφ.localInverse (φ x) = x := hφ.localInverse_left_inv hφ.localInverse_mem_target
-      have hinv : MDifferentiableAt J I hφ.localInverse (φ x) :=
-        (hφ.localInverse_isLocalDiffeomorphAt).mdifferentiableAt hn
-      refine (MDifferentiableAt.comp (φ x) (by rwa [hx]) hinv).congr_of_eventuallyEq ?_
-      filter_upwards [hφ.localInverse.open_source.mem_nhds hφ.localInverse_mem_source] with y hy
-      simp [hφ.localInverse_right_inv hy]
+  · have hgφ : ¬MDifferentiableAt I K (g ∘ φ) x := (hφ.mdifferentiableAt_comp_iff hn).not.mpr hg
     rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hgφ]
     simp
 
