@@ -22,7 +22,8 @@ cannot select a crossing-free component.
 
 The state-circle formula includes the empty surrounding diagram. Consequently the bracket
 formula compares the kink with `D.adjoinCircle`, with no nonemptiness assumption on `D`.
-The kink contributes one graph component and three faces, so adjoining it preserves planarity.
+The kink contributes one graph component and three faces, so adjoining it preserves planarity,
+as does adjoining the crossing-free circle itself, which leaves the underlying graph unchanged.
 The Kauffman bracket of `D.adjoinKink b` is the bracket of `D.adjoinCircle` multiplied by
 `-a³` when `b = true` and by `-a⁻³` when `b = false`.
 
@@ -281,6 +282,16 @@ components of the surrounding diagram. -/
     crossingRotation_adjoinKink, orbitCount_mul_adjoinKink_edgePair, hperm,
     ← faceCount_eq_orbitCount_crossingRotation_mul_edgePair]
   omega
+
+/-- Adjoining a crossing-free circle preserves planarity: the underlying graph, which carries no
+crossing-free circles, is unchanged. -/
+@[simp] theorem isPlanar_adjoinCircle_iff (D : PDCode n) :
+    D.adjoinCircle.IsPlanar ↔ D.IsPlanar := by
+  have h : D.adjoinCircle.toPermutationTriple = D.toPermutationTriple := by
+    apply PermutationTriple.ext_of_two
+    · simp [crossingRotation_def]
+    · simp
+  rw [isPlanar_def, isPlanar_def, h]
 
 /-- The first Reidemeister move on a crossing-free circle preserves planarity. -/
 @[simp] theorem isPlanar_adjoinKink_iff (D : PDCode n) (b : Bool) :
