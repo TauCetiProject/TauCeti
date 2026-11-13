@@ -238,7 +238,6 @@ theorem ncard_primesOver_eq_totient_iff_of_mod_four_eq_two (hn4 : n % 4 = 2) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = n.totient ↔ (p : ZMod (n / 2)) = 1 := by
   have : IsCyclotomicExtension {n / 2} ℚ K :=
     IsCyclotomicExtension.singleton_div_two_of_mod_four_eq_two hn4
-  have : NeZero (n / 2) := ⟨by omega⟩
   have hn : n = 2 * (n / 2) := by omega
   rw [hn, Nat.totient_two_mul_of_odd (Nat.odd_iff.2 (by omega)), ← hn]
   exact ncard_primesOver_eq_totient_iff (by omega)

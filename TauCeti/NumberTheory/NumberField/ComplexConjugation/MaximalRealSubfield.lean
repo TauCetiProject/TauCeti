@@ -90,14 +90,17 @@ through `φ` is an automorphism `c` of `K`; any other complex embedding is `φ �
 automorphism `σ`, and `σ` commutes with `c`. -/
 theorem mem_maximalRealSubfield_iff_star_eq (φ : K →+* ℂ) (x : K) :
     x ∈ maximalRealSubfield K ↔ star (φ x) = φ x := by
+  rw [mem_maximalRealSubfield_iff]
   refine ⟨fun hx ↦ hx φ, fun hx ψ ↦ ?_⟩
   obtain ⟨c, hc⟩ := ComplexEmbedding.exists_comp_symm_eq_of_comp_eq (k := ℚ) φ
     ((starRingEnd ℂ).comp φ) (Subsingleton.elim _ _)
   obtain ⟨σ, rfl⟩ :=
     ComplexEmbedding.exists_comp_symm_eq_of_comp_eq (k := ℚ) φ ψ (Subsingleton.elim _ _)
-  have hconj (y : K) : φ (c.symm y) = star (φ y) := congr($hc y)
-  have hcomm : c.symm (σ.symm x) = σ.symm (c.symm x) := congr($(mul_comm' c.symm σ.symm) x)
-  change star (φ (σ.symm x)) = φ (σ.symm x)
+  have hconj (y : K) : φ (c.symm y) = star (φ y) := by
+    simpa only [RingHom.comp_apply, RingHom.coe_coe, starRingEnd_apply] using congr($hc y)
+  have hcomm : c.symm (σ.symm x) = σ.symm (c.symm x) := by
+    simpa only [AlgEquiv.mul_apply] using congr($(mul_comm' c.symm σ.symm) x)
+  simp only [RingHom.comp_apply, RingHom.coe_coe]
   rw [← hconj, hcomm, φ.injective ((hconj x).trans hx)]
 
 end IsAbelianGalois
