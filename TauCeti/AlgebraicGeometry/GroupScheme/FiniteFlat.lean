@@ -25,13 +25,13 @@ affine base, see `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat`.
   `Over S`, with its commutative group-object instances `grpObj` and `isCommMonObj`.
 * `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.Section`: sections of the structure
   morphism.
-* `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.Hom`: group-scheme homomorphisms, giving
-  the category structure. The functor `toGrp` to `Grp (Over S)` is fully faithful.
+* Group-scheme homomorphisms give the category structure. The functor `toGrp` to `Grp (Over S)`
+  is fully faithful.
 * The comparison with the affine category is in `GroupScheme/FiniteFlat/Affine.lean`.
 * `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.baseChange`: base change along a morphism
   of schemes, with `grpMk_baseChange` identifying its group object with the image of that of `G`
-  under `(Over.pullback f).mapGrp`, and `Hom.baseChange`: base change of homomorphisms, with
-  `Hom.baseChange_eq`, `Hom.baseChange_id` and `Hom.baseChange_comp`.
+  under `(Over.pullback f).mapGrp`. The functor `baseChangeFunctor` bundles base change on
+  objects and homomorphisms.
 * `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.ofKernel`: the scheme-theoretic kernel of a
   finite locally free homomorphism out of a commutative group scheme, with `grpMk_ofKernel`
   identifying its group object with the categorical kernel, and its inclusion `ofKernelι`, a kernel
@@ -95,22 +95,35 @@ with `s ≫ G.structureMap = 𝟙 S`. -/
 def Section {S : Scheme.{u}} (G : FiniteFlatCommGroupScheme S) :=
   {s : S ⟶ G.carrier // s ≫ G.structureMap = 𝟙 S}
 
-/-- A homomorphism of finite flat commutative group schemes over `S`: a morphism of the underlying
-group objects in `Grp (Over S)`, that is, a morphism of schemes over `S` compatible with the group
-laws. -/
-abbrev Hom {S : Scheme.{u}} (G H : FiniteFlatCommGroupScheme S) : Type u :=
-  Grp.mk G.toOver ⟶ Grp.mk H.toOver
-
 /-- Finite locally free commutative group schemes form a category with their group-scheme
 homomorphisms as morphisms. -/
 noncomputable instance {S : Scheme.{u}} : Category (FiniteFlatCommGroupScheme S) where
-  Hom G H := G.Hom H
+  Hom G H := Grp.mk G.toOver ⟶ Grp.mk H.toOver
   id G := 𝟙 (Grp.mk G.toOver)
   comp f g := f ≫ g
 
+/-- Homomorphisms of finite locally free group schemes are determined by their maps over the
+base. -/
+@[ext]
+theorem hom_ext {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f g : G ⟶ H)
+    (h : f.hom.hom = g.hom.hom) : f = g :=
+  Grp.hom_ext f g h
+
+/-- The identity homomorphism has the identity as its underlying map over the base. -/
+@[simp]
+theorem id_hom_hom {S : Scheme.{u}} (G : FiniteFlatCommGroupScheme S) :
+    (𝟙 G : G ⟶ G).hom.hom = 𝟙 G.toOver :=
+  (rfl)
+
+/-- Composition of homomorphisms composes the underlying maps over the base. -/
+@[simp, reassoc]
+theorem comp_hom_hom {S : Scheme.{u}} {G H K : FiniteFlatCommGroupScheme S}
+    (f : G ⟶ H) (g : H ⟶ K) : (f ≫ g).hom.hom = f.hom.hom ≫ g.hom.hom :=
+  (rfl)
+
 /-- The fully faithful functor forgetting finiteness and commutativity of a finite locally free
-commutative group scheme. The object map is exposed so that its morphisms are the existing
-`Hom` type without transports. -/
+commutative group scheme. The object map is exposed so that its morphisms are the underlying
+group-object homomorphisms without transports. -/
 @[expose]
 noncomputable def toGrp (S : Scheme.{u}) : FiniteFlatCommGroupScheme S ⥤ Grp (Over S) where
   obj G := Grp.mk G.toOver
@@ -135,6 +148,18 @@ noncomputable def fullyFaithfulToGrp (S : Scheme.{u}) : (toGrp S).FullyFaithful 
 instance {S : Scheme.{u}} : (toGrp S).Full := (fullyFaithfulToGrp S).full
 
 instance {S : Scheme.{u}} : (toGrp S).Faithful := (fullyFaithfulToGrp S).faithful
+
+/-- The explicit fully faithful structure lifts a homomorphism without changing it. -/
+@[simp]
+theorem fullyFaithfulToGrp_preimage {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
+    (f : (toGrp S).obj G ⟶ (toGrp S).obj H) : (fullyFaithfulToGrp S).preimage f = f :=
+  (rfl)
+
+/-- The forgetful functor lifts a homomorphism without changing it. -/
+@[simp]
+theorem toGrp_preimage {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
+    (f : (toGrp S).obj G ⟶ (toGrp S).obj H) : (toGrp S).preimage f = f :=
+  (toGrp S).map_preimage f
 
 /-- The base change of a finite flat commutative group scheme `G` over `S` along `f : T ⟶ S`: the
 fibre product of `G.structureMap` and `f`, with the second projection as structure morphism and
@@ -161,33 +186,41 @@ theorem grpMk_baseChange {S T : Scheme.{u}} (G : FiniteFlatCommGroupScheme S) (f
     Grp.mk (G.baseChange f).toOver = (Over.pullback f).mapGrp.obj (Grp.mk G.toOver) :=
   (rfl)
 
-/-- The base change along `f : T ⟶ S` of a homomorphism of finite flat commutative group schemes
-over `S`: the image of the homomorphism under `(Over.pullback f).mapGrp`, read through
-`grpMk_baseChange`. -/
-noncomputable def Hom.baseChange {S T : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
-    (φ : G.Hom H) (f : T ⟶ S) : (G.baseChange f).Hom (H.baseChange f) :=
-  eqToHom (G.grpMk_baseChange f) ≫ (Over.pullback f).mapGrp.map φ ≫
-    eqToHom (H.grpMk_baseChange f).symm
+/-- Base change of finite locally free commutative group schemes and their homomorphisms.
+The object map is exposed so its morphisms can be read through `grpMk_baseChange` without
+additional dependent transports. -/
+@[expose]
+noncomputable def baseChangeFunctor {S T : Scheme.{u}} (f : T ⟶ S) :
+    FiniteFlatCommGroupScheme S ⥤ FiniteFlatCommGroupScheme T where
+  obj G := G.baseChange f
+  map {G H} φ := (show Grp.mk (G.baseChange f).toOver ⟶ Grp.mk (H.baseChange f).toOver from
+    eqToHom (G.grpMk_baseChange f) ≫ (Over.pullback f).mapGrp.map φ ≫
+      eqToHom (H.grpMk_baseChange f).symm)
+  map_id G := by
+    change eqToHom _ ≫ (Over.pullback f).mapGrp.map (𝟙 (Grp.mk G.toOver)) ≫ _ =
+      𝟙 (Grp.mk (G.baseChange f).toOver)
+    simp
+  map_comp {G H K} φ ψ := by
+    change eqToHom _ ≫ (Over.pullback f).mapGrp.map (φ ≫ ψ) ≫ _ =
+      (eqToHom _ ≫ (Over.pullback f).mapGrp.map φ ≫ _) ≫
+        (eqToHom _ ≫ (Over.pullback f).mapGrp.map ψ ≫ _)
+    simp
 
-/-- The base change of a homomorphism is the image of the homomorphism under
-`(Over.pullback f).mapGrp`, read through `grpMk_baseChange`. -/
-theorem Hom.baseChange_eq {S T : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (φ : G.Hom H)
-    (f : T ⟶ S) : φ.baseChange f = eqToHom (G.grpMk_baseChange f) ≫
-      (Over.pullback f).mapGrp.map φ ≫ eqToHom (H.grpMk_baseChange f).symm :=
+/-- The object map of the base-change functor is scheme-theoretic base change. -/
+@[simp]
+theorem baseChangeFunctor_obj {S T : Scheme.{u}} (f : T ⟶ S)
+    (G : FiniteFlatCommGroupScheme S) : (baseChangeFunctor f).obj G = G.baseChange f :=
   (rfl)
 
-/-- Base change of homomorphisms preserves identities. -/
+/-- The base-change functor acts on homomorphisms by the pullback functor on group objects. -/
 @[simp]
-theorem Hom.baseChange_id {S T : Scheme.{u}} (G : FiniteFlatCommGroupScheme S) (f : T ⟶ S) :
-    Hom.baseChange (𝟙 (Grp.mk G.toOver)) f = 𝟙 _ := by
-  simp [Hom.baseChange_eq]
-
-/-- Base change of homomorphisms preserves composition. -/
-@[simp]
-theorem Hom.baseChange_comp {S T : Scheme.{u}} {G H K : FiniteFlatCommGroupScheme S}
-    (φ : G.Hom H) (ψ : H.Hom K) (f : T ⟶ S) :
-    Hom.baseChange (φ ≫ ψ) f = φ.baseChange f ≫ ψ.baseChange f := by
-  simp [Hom.baseChange_eq]
+theorem baseChangeFunctor_map {S T : Scheme.{u}} (f : T ⟶ S)
+    {G H : FiniteFlatCommGroupScheme S} (φ : G ⟶ H) :
+    (baseChangeFunctor f).map φ =
+      (show Grp.mk (G.baseChange f).toOver ⟶ Grp.mk (H.baseChange f).toOver from
+        eqToHom (G.grpMk_baseChange f) ≫ (Over.pullback f).mapGrp.map φ ≫
+          eqToHom (H.grpMk_baseChange f).symm) :=
+  (rfl)
 
 section Kernel
 

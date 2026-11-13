@@ -32,6 +32,8 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
+open scoped MonObj GrpObj
+
 universe u
 
 namespace TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme
@@ -90,6 +92,47 @@ theorem fromAffine_obj_structureMap (G : FiniteLocallyFreeCommAffineGroupSchemeC
     ((fromAffine R).obj G).structureMap = G.obj.obj.X.hom :=
   (rfl)
 
+/-- Forgetting the affine bundling retains the scheme over the base. -/
+theorem fromAffine_obj_toOver (G : FiniteLocallyFreeCommAffineGroupSchemeCat R) :
+    ((fromAffine R).obj G).toOver = G.obj.obj.X :=
+  (rfl)
+
+/-- Forgetting the affine bundling retains the group object. -/
+@[simp]
+theorem grpMk_fromAffine_obj (G : FiniteLocallyFreeCommAffineGroupSchemeCat R) :
+    Grp.mk ((fromAffine R).obj G).toOver = G.obj.obj :=
+  (rfl)
+
+/-- Forgetting the affine bundling retains the unit section. -/
+@[simp]
+theorem fromAffine_obj_one (G : FiniteLocallyFreeCommAffineGroupSchemeCat R) :
+    η[((fromAffine R).obj G).toOver] = η[G.obj.obj.X] :=
+  (rfl)
+
+/-- Forgetting the affine bundling retains the multiplication. -/
+@[simp]
+theorem fromAffine_obj_mul (G : FiniteLocallyFreeCommAffineGroupSchemeCat R) :
+    μ[((fromAffine R).obj G).toOver] = μ[G.obj.obj.X] :=
+  (rfl)
+
+/-- Forgetting the affine bundling retains inversion. -/
+@[simp]
+theorem fromAffine_obj_inv (G : FiniteLocallyFreeCommAffineGroupSchemeCat R) :
+    ι[((fromAffine R).obj G).toOver] = ι[G.obj.obj.X] :=
+  (rfl)
+
+/-- Forgetting the affine bundling after affine rebundling recovers the original group scheme. -/
+@[simp]
+theorem fromAffine_obj_toAffine_obj (G : FiniteFlatCommGroupScheme (Spec R)) :
+    (fromAffine R).obj ((toAffine R).obj G) = G :=
+  (rfl)
+
+/-- Affine rebundling after forgetting the bundling recovers the original affine group scheme. -/
+@[simp]
+theorem toAffine_obj_fromAffine_obj (G : FiniteLocallyFreeCommAffineGroupSchemeCat R) :
+    (toAffine R).obj ((fromAffine R).obj G) = G :=
+  (rfl)
+
 /-- Forgetting the affine bundling retains the underlying homomorphism. -/
 @[simp]
 theorem fromAffine_map {G H : FiniteLocallyFreeCommAffineGroupSchemeCat R} (f : G ⟶ H) :
@@ -97,7 +140,7 @@ theorem fromAffine_map {G H : FiniteLocallyFreeCommAffineGroupSchemeCat R} (f : 
   (rfl)
 
 /-- Rebundling in the affine category leaves the underlying group scheme unchanged. -/
-noncomputable def toAffineCompForgetIso :
+noncomputable def toAffineCompιIso :
     toAffine R ⋙ (finiteLocallyFreeCommAffineGroupSchemeProperty R).ι ⋙
         (affineGroupSchemeProperty R).ι ≅ toGrp (Spec R) :=
   Iso.refl _
@@ -110,14 +153,14 @@ noncomputable def fromAffineCompToGrpIso :
 
 /-- The forward forgetful comparison has identity components. -/
 @[simp]
-theorem toAffineCompForgetIso_hom_app (G : FiniteFlatCommGroupScheme (Spec R)) :
-    (toAffineCompForgetIso R).hom.app G = 𝟙 (Grp.mk G.toOver) :=
+theorem toAffineCompιIso_hom_app (G : FiniteFlatCommGroupScheme (Spec R)) :
+    (toAffineCompιIso R).hom.app G = 𝟙 (Grp.mk G.toOver) :=
   (rfl)
 
 /-- The inverse forward forgetful comparison has identity components. -/
 @[simp]
-theorem toAffineCompForgetIso_inv_app (G : FiniteFlatCommGroupScheme (Spec R)) :
-    (toAffineCompForgetIso R).inv.app G = 𝟙 (Grp.mk G.toOver) :=
+theorem toAffineCompιIso_inv_app (G : FiniteFlatCommGroupScheme (Spec R)) :
+    (toAffineCompιIso R).inv.app G = 𝟙 (Grp.mk G.toOver) :=
   (rfl)
 
 /-- The backward forgetful comparison has identity components. -/
@@ -138,10 +181,11 @@ the underlying group scheme and every homomorphism unchanged. The directions are
 unit and counit components can be stated as identities without dependent transports. -/
 @[expose]
 noncomputable def affineEquivalence :
-    FiniteFlatCommGroupScheme (Spec R) ≌ FiniteLocallyFreeCommAffineGroupSchemeCat R :=
-  CategoryTheory.Equivalence.mk (toAffine R) (fromAffine R)
-    (NatIso.ofComponents (fun _ ↦ { hom := 𝟙 _, inv := 𝟙 _ }))
-    (NatIso.ofComponents (fun _ ↦ { hom := ⟨⟨𝟙 _⟩⟩, inv := ⟨⟨𝟙 _⟩⟩ }))
+    FiniteFlatCommGroupScheme (Spec R) ≌ FiniteLocallyFreeCommAffineGroupSchemeCat R where
+  functor := toAffine R
+  inverse := fromAffine R
+  unitIso := Iso.refl _
+  counitIso := Iso.refl _
 
 /-- The affine equivalence sends a group scheme to its affine bundling. -/
 @[simp]
@@ -156,19 +200,14 @@ theorem affineEquivalence_inverse : (affineEquivalence R).inverse = fromAffine R
 /-- The unit of the affine equivalence is the identity on underlying group objects. -/
 @[simp]
 theorem affineEquivalence_unitIso_hom_app (G : FiniteFlatCommGroupScheme (Spec R)) :
-    (affineEquivalence R).unitIso.hom.app G = 𝟙 G := by
-  simp [affineEquivalence, CategoryTheory.Equivalence.mk,
-    CategoryTheory.Equivalence.adjointifyη, NatIso.ofComponents, toAffine, fromAffine]
-  rfl
+    (affineEquivalence R).unitIso.hom.app G = 𝟙 G :=
+  (rfl)
 
 /-- The inverse unit of the affine equivalence is the identity on underlying group objects. -/
 @[simp]
 theorem affineEquivalence_unitIso_inv_app (G : FiniteFlatCommGroupScheme (Spec R)) :
-    (affineEquivalence R).unitIso.inv.app G = 𝟙 G := by
-  dsimp [affineEquivalence, CategoryTheory.Equivalence.mk,
-    CategoryTheory.Equivalence.adjointifyη, NatIso.ofComponents, toAffine, fromAffine]
-  simp only [Category.comp_id, Category.id_comp]
-  exact Category.comp_id (𝟙 (Grp.mk G.toOver))
+    (affineEquivalence R).unitIso.inv.app G = 𝟙 G :=
+  (rfl)
 
 /-- The counit of the affine equivalence is the identity. -/
 @[simp]
