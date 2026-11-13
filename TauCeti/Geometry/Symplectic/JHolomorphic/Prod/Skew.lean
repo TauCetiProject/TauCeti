@@ -20,6 +20,14 @@ exactly when `u` is differentiable there and `du(z) - A(z, u z)` is complex line
 `J₂(z, u z)` (`TauCeti.AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff`). Choosing
 `A` turns an inhomogeneous Cauchy–Riemann equation for `u` into the holomorphicity of its graph.
 
+The projection to `V` is holomorphic for `J₁`
+(`TauCeti.AlmostComplexStructure.isJHolomorphic_fst_skewProd`), so the first component of a
+`J`-holomorphic map is `J₁`-holomorphic (`TauCeti.IsJHolomorphicAt.fst_of_skewProd`). A map into a
+single fibre `{z} × W` is `J`-holomorphic exactly when it is holomorphic for the structures
+`J₂(z, ·)` of that fibre
+(`TauCeti.AlmostComplexStructure.isJHolomorphicAt_prodMk_right_skewProd_iff`,
+`TauCeti.AlmostComplexStructure.isJHolomorphic_prodMk_right_skewProd_iff`).
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, Section 8.1.
@@ -67,5 +75,57 @@ theorem isJHolomorphic_graph_skewProd_iff :
         ∀ z, IsComplexLinearMap (J₁ z) (J₂ (z, u z)) ((fderiv ℝ u z : V →ₗ[ℝ] W) - A (z, u z)) := by
   simp only [isJHolomorphic_iff, isJHolomorphicAt_graph_skewProd_iff]
   exact forall_and
+
+/-- **The projection to the base is holomorphic** from the pointwise skew product to `J₁`. -/
+theorem isJHolomorphic_fst_skewProd :
+    IsJHolomorphic (fun p ↦ (J₁ p.1).skewProd (J₂ p) (A p)) J₁ Prod.fst :=
+  (isJHolomorphic_iff _ _ _).2 fun _ ↦ isJHolomorphicAt_of_hasFDerivAt hasFDerivAt_fst
+    (isComplexLinearMap_skewProd_fst _ _ _)
+
+variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] {J : U → AlmostComplexStructure U}
+
+/-- The first component of a map holomorphic at `y` into the pointwise skew product of `J₁` and
+`J₂` is holomorphic at `y` for `J₁`. -/
+theorem _root_.TauCeti.IsJHolomorphicAt.fst_of_skewProd {f : U → V × W} {y : U}
+    (hf : IsJHolomorphicAt J (fun p ↦ (J₁ p.1).skewProd (J₂ p) (A p)) f y) :
+    IsJHolomorphicAt J J₁ (fun y ↦ (f y).1) y := by
+  obtain ⟨f', hf', hlin⟩ := (isJHolomorphicAt_iff _ _ _ _).mp hf
+  rw [isComplexLinearMap_skewProd_iff] at hlin
+  refine isJHolomorphicAt_of_hasFDerivAt (hasFDerivAt_fst.comp y hf') ?_
+  rw [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_fst]
+  exact hlin.1
+
+/-- **Vertical maps.** A map `y ↦ (z, g y)` into the fibre over a fixed point `z` is holomorphic
+at `y` into the pointwise skew product exactly when `g` is holomorphic at `y` for the structures
+`J₂(z, ·)` of that fibre. -/
+theorem isJHolomorphicAt_prodMk_right_skewProd_iff {g : U → W} {z : V} {y : U} :
+    IsJHolomorphicAt J (fun p ↦ (J₁ p.1).skewProd (J₂ p) (A p)) (fun y ↦ (z, g y)) y ↔
+      IsJHolomorphicAt J (fun w ↦ J₂ (z, w)) g y := by
+  have hvert {g' : U →L[ℝ] W} (hg : HasFDerivAt g g' y) :
+      HasFDerivAt (fun y ↦ (z, g y)) ((0 : U →L[ℝ] V).prod g') y :=
+    (hasFDerivAt_const z y).prodMk hg
+  have hlin (g' : U →L[ℝ] W) :
+      IsComplexLinearMap (J y) ((J₁ z).skewProd (J₂ (z, g y)) (A (z, g y)))
+          ((0 : U →L[ℝ] V).prod g' : U →ₗ[ℝ] V × W) ↔
+        IsComplexLinearMap (J y) (J₂ (z, g y)) (g' : U →ₗ[ℝ] W) := by
+    rw [isComplexLinearMap_skewProd_iff, ContinuousLinearMap.coe_prod, LinearMap.fst_prod,
+      LinearMap.snd_prod, ContinuousLinearMap.toLinearMap_zero, LinearMap.comp_zero, sub_zero]
+    exact and_iff_right (isComplexLinearMap_zero _ _)
+  rw [isJHolomorphicAt_iff, isJHolomorphicAt_iff]
+  constructor
+  · rintro ⟨f', hf', hf'lin⟩
+    have hg : DifferentiableAt ℝ g y := hf'.differentiableAt.snd
+    rw [hf'.unique (hvert hg.hasFDerivAt)] at hf'lin
+    exact ⟨_, hg.hasFDerivAt, (hlin _).mp hf'lin⟩
+  · rintro ⟨g', hg', hglin⟩
+    exact ⟨_, hvert hg', (hlin g').mpr hglin⟩
+
+/-- **Vertical maps, globally.** A map `y ↦ (z, g y)` into the fibre over a fixed point `z` is
+holomorphic into the pointwise skew product exactly when `g` is holomorphic for the structures
+`J₂(z, ·)` of that fibre. -/
+theorem isJHolomorphic_prodMk_right_skewProd_iff {g : U → W} {z : V} :
+    IsJHolomorphic J (fun p ↦ (J₁ p.1).skewProd (J₂ p) (A p)) (fun y ↦ (z, g y)) ↔
+      IsJHolomorphic J (fun w ↦ J₂ (z, w)) g := by
+  simp only [isJHolomorphic_iff, isJHolomorphicAt_prodMk_right_skewProd_iff]
 
 end TauCeti.AlmostComplexStructure

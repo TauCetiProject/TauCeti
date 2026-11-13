@@ -46,13 +46,15 @@ and on the fibre along the real-linear map `ξ ↦ -c conj ξ`. Then:
 * the projection to the base is `J_N`-holomorphic, and the fibres `{z₀} × ℂ` are
   `J_N`-holomorphic discs with the standard structure
   (`TauCeti.isJHolomorphic_fst_normalModelStructure`,
-  `TauCeti.isJHolomorphic_prodMk_right_normalModelStructure`);
+  `TauCeti.isJHolomorphic_prodMk_right_normalModelStructure`); a map into a single fibre is
+  `J_N`-holomorphic exactly when it is holomorphic into `ℂ`
+  (`TauCeti.isJHolomorphicAt_prodMk_right_normalModelStructure_iff`);
 * the graph of a section `s` is `J_N`-holomorphic exactly when `s` is differentiable and
   `∂bar s + ν s + μ conj s = 0` (`TauCeti.isJHolomorphicAt_graph_normalModelStructure_iff`,
   `TauCeti.isJHolomorphic_graph_normalModelStructure_iff`), where
   `∂bar s = TauCeti.conjWirtingerDeriv s z 1`;
 * since `c` is linear over `ℝ` in `w`, the fibrewise dilations `(z, w) ↦ (z, a w)`, `a ∈ ℝ`, are
-  `J_N`-holomorphic (`TauCeti.isJHolomorphic_map_smul_normalModelStructure`).
+  `J_N`-holomorphic (`TauCeti.isJHolomorphic_prodMap_id_smul_normalModelStructure`).
 
 ## The taming form
 
@@ -64,7 +66,8 @@ For a real connection one-form `A` on the base and a constant `K`, the one-form
 with `ω(u, v) = Im (conj u * v)` the standard area form, is `K λ₀ + (ρ² / 2) (dθ + A)` in polar
 coordinates `w = ρ e^{iθ}`, where `dλ₀ = ω` on the base. Its exterior derivative
 `Ω = dλ = K π^*ω + d((ρ² / 2) (dθ + A))` (`TauCeti.normalModelForm`) is closed
-(`TauCeti.extDeriv_normalModelForm`) and is given by (`TauCeti.normalModelForm_apply`)
+(`TauCeti.extDeriv_normalModelForm_apply`, `TauCeti.extDeriv_normalModelForm`) and is given by
+(`TauCeti.normalModelForm_apply`)
 
 `Ω(X, Y) = K ω(ξ, ξ') + ω(η, η') + ⟪w, η⟫ A(z) ξ' - ⟪w, η'⟫ A(z) ξ + (|w|² / 2) dA(z)(ξ, ξ')`
 
@@ -126,43 +129,51 @@ variable {ν μ : ℂ → ℂ}
 base. -/
 theorem isJHolomorphic_fst_normalModelStructure :
     IsJHolomorphic (normalModelStructure ν μ) (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ)
-      Prod.fst := by
-  refine (isJHolomorphic_iff _ _ _).2 fun p ↦ isJHolomorphicAt_of_hasFDerivAt
-    (hasFDerivAt_fst (p := p)) (AlmostComplexStructure.isComplexLinearMap_skewProd_fst _ _ _)
+      Prod.fst :=
+  AlmostComplexStructure.isJHolomorphic_fst_skewProd (J₁ := fun _ ↦ _)
+
+/-- **Vertical maps.** A map `y ↦ (z₀, g y)` into the fibre over `z₀` is `J_N`-holomorphic at `y`
+exactly when `g` is holomorphic at `y` into `ℂ` with its standard structure. -/
+theorem isJHolomorphicAt_prodMk_right_normalModelStructure_iff {U : Type*}
+    [NormedAddCommGroup U] [NormedSpace ℝ U] {J : U → AlmostComplexStructure U} {g : U → ℂ}
+    {z₀ : ℂ} {y : U} :
+    IsJHolomorphicAt J (normalModelStructure ν μ) (fun y ↦ (z₀, g y)) y ↔
+      IsJHolomorphicAt J (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) g y :=
+  AlmostComplexStructure.isJHolomorphicAt_prodMk_right_skewProd_iff (J₁ := fun _ ↦ _)
 
 /-- **The normal fibres are holomorphic discs**: `J_N` restricts to multiplication by `I` on the
 vertical tangent spaces, so every fibre `{z₀} × ℂ` is a `J_N`-holomorphic curve. -/
 theorem isJHolomorphic_prodMk_right_normalModelStructure (z₀ : ℂ) :
     IsJHolomorphic (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) (normalModelStructure ν μ)
-      (fun w ↦ (z₀, w)) := by
-  refine (isJHolomorphic_iff _ _ _).2 fun w ↦ isJHolomorphicAt_of_hasFDerivAt
-    (hasFDerivAt_prodMk_right z₀ w) (AlmostComplexStructure.isComplexLinearMap_skewProd_inr _ _ _)
+      (fun w ↦ (z₀, w)) :=
+  (isJHolomorphic_iff _ _ _).2 fun w ↦
+    isJHolomorphicAt_prodMk_right_normalModelStructure_iff.2 (isJHolomorphicAt_id _ w)
 
 /-- **Invariance under normal dilations.** For every real `a`, the fibrewise dilation
 `(z, w) ↦ (z, a w)` is `J_N`-holomorphic, because `J_N` depends linearly on the normal
 coordinate. This scale invariance is the one expected of a limit of normal rescalings. -/
-theorem isJHolomorphic_map_smul_normalModelStructure (a : ℝ) :
+theorem isJHolomorphic_prodMap_id_smul_normalModelStructure (a : ℝ) :
     IsJHolomorphic (normalModelStructure ν μ) (normalModelStructure ν μ)
-      (fun p : ℂ × ℂ ↦ (p.1, (a : ℂ) * p.2)) := by
+      (Prod.map id (a • ·)) := by
   refine (isJHolomorphic_iff _ _ _).2 fun p ↦ ?_
   refine isJHolomorphicAt_of_hasFDerivAt (f' := (ContinuousLinearMap.fst ℝ ℂ ℂ).prod
-      ((a : ℂ) • ContinuousLinearMap.snd ℝ ℂ ℂ)) ?_ ?_
-  · exact hasFDerivAt_fst.prodMk ((hasFDerivAt_snd (p := p)).const_smul (a : ℂ))
+      (a • ContinuousLinearMap.snd ℝ ℂ ℂ)) ?_ ?_
+  · exact hasFDerivAt_fst.prodMk ((hasFDerivAt_snd (p := p)).const_smul a)
   · rw [isComplexLinearMap_iff_apply]
     intro ξ
-    simp only [normalModelStructure_apply, ContinuousLinearMap.coe_coe,
-      ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst', smul_apply,
-      ContinuousLinearMap.coe_snd', smul_eq_mul, map_mul, conj_ofReal, Prod.mk.injEq, true_and]
+    simp only [normalModelStructure_apply, Prod.map_fst, Prod.map_snd, id_eq,
+      ContinuousLinearMap.coe_coe, ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst',
+      smul_apply, ContinuousLinearMap.coe_snd', Complex.real_smul, map_mul,
+      conj_ofReal, Prod.mk.injEq, true_and]
     ring
 
-/-- **Holomorphic sections are the kernel of the normal operator.** A section `s`, differentiable
-at `z`, has `J_N`-holomorphic graph at `z` exactly when it solves the real Cauchy–Riemann equation
-`∂bar s + ν s + μ conj s = 0` there. -/
-theorem isJHolomorphicAt_graph_normalModelStructure_iff {s : ℂ → ℂ} {z : ℂ}
-    (hs : DifferentiableAt ℝ s z) :
+/-- **Holomorphic sections are the kernel of the normal operator.** A section `s` has
+`J_N`-holomorphic graph at `z` exactly when it is differentiable at `z` and solves the real
+Cauchy–Riemann equation `∂bar s + ν s + μ conj s = 0` there. -/
+theorem isJHolomorphicAt_graph_normalModelStructure_iff {s : ℂ → ℂ} {z : ℂ} :
     IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) (normalModelStructure ν μ)
         (fun z ↦ (z, s z)) z ↔
-      conjWirtingerDeriv s z 1 + ν z * s z + μ z * conj (s z) = 0 := by
+      DifferentiableAt ℝ s z ∧ conjWirtingerDeriv s z 1 + ν z * s z + μ z * conj (s z) = 0 := by
   -- complex linearity of the graph derivative reduces to one complex identity in `ξ`
   have key : ∀ ξ : ℂ, (fderiv ℝ s z (I * ξ) =
       I * fderiv ℝ s z ξ + 2 * I * (ν z * s z + μ z * conj (s z)) * conj ξ) ↔
@@ -183,8 +194,8 @@ theorem isJHolomorphicAt_graph_normalModelStructure_iff {s : ℂ → ℂ} {z : �
       LinearMap.sub_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe,
       AlgEquiv.toLinearMap_apply, Complex.conjAe_coe, smul_eq_mul, map_mul, conj_I]
     constructor <;> intro h <;> linear_combination h
-  refine ((AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff (J₁ := fun _ ↦ _)).trans
-    ((and_iff_right hs).trans hlin)).trans ⟨fun h ↦ ?_, fun h ξ ↦ (key ξ).2 ?_⟩
+  refine (AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff (J₁ := fun _ ↦ _)).trans
+    (and_congr_right fun _ ↦ hlin.trans ⟨fun h ↦ ?_, fun h ξ ↦ (key ξ).2 ?_⟩)
   · simpa using (key 1).1 (h 1)
   · rw [h, mul_zero]
 
@@ -195,14 +206,8 @@ theorem isJHolomorphic_graph_normalModelStructure_iff {s : ℂ → ℂ} :
     IsJHolomorphic (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) (normalModelStructure ν μ)
         (fun z ↦ (z, s z)) ↔
       Differentiable ℝ s ∧ ∀ z, conjWirtingerDeriv s z 1 + ν z * s z + μ z * conj (s z) = 0 := by
-  rw [isJHolomorphic_iff]
-  constructor
-  · intro h
-    have hd : Differentiable ℝ s := fun z ↦
-      ((AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff (J₁ := fun _ ↦ _)).1 (h z)).1
-    exact ⟨hd, fun z ↦ (isJHolomorphicAt_graph_normalModelStructure_iff (hd z)).1 (h z)⟩
-  · rintro ⟨hd, h⟩ z
-    exact (isJHolomorphicAt_graph_normalModelStructure_iff (hd z)).2 (h z)
+  simp only [isJHolomorphic_iff, isJHolomorphicAt_graph_normalModelStructure_iff]
+  exact forall_and
 
 /-! ### The taming form -/
 
@@ -237,11 +242,14 @@ noncomputable def normalModelPrimitive (K : ℝ) (A : ℂ → ℂ [⋀^Fin 1]→
     ℂ × ℂ → (ℂ × ℂ) [⋀^Fin 1]→L[ℝ] ℝ :=
   ContinuousLinearMap.liouvilleFormCLM (normalModelBilin K) + normalModelConnection A
 
-theorem normalModelPrimitive_apply (K : ℝ) (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ) (p u : ℂ × ℂ) :
-    normalModelPrimitive K A p (fun _ ↦ u) =
-      (K * stdComplexSymplecticForm p.1 u.1 + stdComplexSymplecticForm p.2 u.2) / 2 +
-        ‖p.2‖ ^ 2 / 2 * A p.1 (fun _ ↦ u.1) := by
-  simp [normalModelPrimitive, normalModelConnection, normalModelBilin_apply, Function.comp_def]
+@[simp]
+theorem normalModelPrimitive_apply (K : ℝ) (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ) (p : ℂ × ℂ)
+    (v : Fin 1 → ℂ × ℂ) :
+    normalModelPrimitive K A p v =
+      (K * stdComplexSymplecticForm p.1 (v 0).1 + stdComplexSymplecticForm p.2 (v 0).2) / 2 +
+        ‖p.2‖ ^ 2 / 2 * A p.1 (fun _ ↦ (v 0).1) := by
+  have hv : (fun i ↦ (v i).1) = fun _ ↦ (v 0).1 := funext fun i ↦ by rw [Subsingleton.elim i 0]
+  simp [normalModelPrimitive, normalModelConnection, normalModelBilin_apply, Function.comp_def, hv]
   ring
 
 /-- The taming form `Ω = dλ` of the normal model (`normalModelPrimitive`). It is
@@ -269,13 +277,17 @@ theorem differentiableAt_normalModelPrimitive {p : ℂ × ℂ} (hA : Differentia
     DifferentiableAt ℝ (normalModelPrimitive K A) p :=
   (ContinuousLinearMap.differentiableAt _).add (differentiableAt_normalModelConnection hA)
 
-theorem contDiff_normalModelPrimitive {n : WithTop ℕ∞} (hA : ContDiff ℝ n A) :
-    ContDiff ℝ n (normalModelPrimitive K A) := by
-  have h₁ : ContDiff ℝ n (fun q : ℂ × ℂ ↦ ‖q.2‖ ^ 2 / 2) := by
-    have := ContDiff.norm_sq ℝ (contDiff_snd (𝕜 := ℝ) (E := ℂ) (F := ℂ) (n := n))
+theorem contDiffAt_normalModelPrimitive {n : WithTop ℕ∞} {p : ℂ × ℂ}
+    (hA : ContDiffAt ℝ n A p.1) : ContDiffAt ℝ n (normalModelPrimitive K A) p := by
+  have h₁ : ContDiffAt ℝ n (fun q : ℂ × ℂ ↦ ‖q.2‖ ^ 2 / 2) p := by
+    have := ContDiffAt.norm_sq ℝ (contDiffAt_snd (𝕜 := ℝ) (E := ℂ) (F := ℂ) (n := n) (p := p))
     fun_prop
-  exact (ContinuousLinearMap.contDiff _).add
-    (h₁.smul ((ContinuousLinearMap.contDiff _).comp (hA.comp contDiff_fst)))
+  exact (ContinuousLinearMap.contDiff _).contDiffAt.add
+    (h₁.smul ((ContinuousLinearMap.contDiff _).contDiffAt.comp p (hA.comp p contDiffAt_fst)))
+
+theorem contDiff_normalModelPrimitive {n : WithTop ℕ∞} (hA : ContDiff ℝ n A) :
+    ContDiff ℝ n (normalModelPrimitive K A) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_normalModelPrimitive hA.contDiffAt
 
 /-- The derivative of the coefficient `(|w|² / 2) A(z) ξ` of the connection part of the primitive
 in the direction `v`. -/
@@ -321,10 +333,16 @@ theorem normalModelForm_apply {p : ℂ × ℂ} (hA : DifferentiableAt ℝ A p.1)
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
   ring
 
+/-- **The taming form is closed** at every point over which the connection is `C²`: there it is
+exact, `Ω = dλ`. -/
+theorem extDeriv_normalModelForm_apply {p : ℂ × ℂ} (hA : ContDiffAt ℝ 2 A p.1) :
+    extDeriv (normalModelForm K A) p = 0 :=
+  extDeriv_extDeriv_apply (contDiffAt_normalModelPrimitive hA) (by simp)
+
 /-- **The taming form is closed**: it is exact, `Ω = dλ`, for a `C²` connection. -/
 theorem extDeriv_normalModelForm (hA : ContDiff ℝ 2 A) :
     extDeriv (normalModelForm K A) = 0 :=
-  extDeriv_extDeriv (contDiff_normalModelPrimitive hA) (by simp)
+  funext fun _ ↦ extDeriv_normalModelForm_apply hA.contDiffAt
 
 /-- On the vertical tangent spaces the taming form is the area form of the fibre. -/
 theorem normalModelForm_apply_vertical {p : ℂ × ℂ} (hA : DifferentiableAt ℝ A p.1) (η η' : ℂ) :
@@ -434,20 +452,22 @@ theorem le_normalModelForm_apply_normalModelStructure {p : ℂ × ℂ}
   linarith
 
 /-- **The taming form tames `J_N` on every bounded disc bundle.** Over a compact set `S` of the
-base on which `ν` and `μ` are continuous, for a `C¹` connection `A` and every radius `R`, there
+base on which `ν` and `μ` are continuous, for a connection `A` that is `C¹` at every point of
+`S`, and every radius `R`, there
 is `K₀` such that for all `K ≥ K₀` the form `Ω_K` tames `J_N` at every point `(z, w)` with
 `z ∈ S` and `|w| ≤ R`. -/
 theorem exists_forall_normalModelForm_apply_normalModelStructure_pos {S : Set ℂ} (hS : IsCompact S)
-    (hν : ContinuousOn ν S) (hμ : ContinuousOn μ S) (hA : ContDiff ℝ 1 A) (R : ℝ) :
+    (hν : ContinuousOn ν S) (hμ : ContinuousOn μ S) (hA : ∀ z ∈ S, ContDiffAt ℝ 1 A z) (R : ℝ) :
     ∃ K₀, ∀ K ≥ K₀, ∀ p : ℂ × ℂ, p.1 ∈ S → ‖p.2‖ ≤ R → ∀ X : ℂ × ℂ, X ≠ 0 →
       0 < normalModelForm K A p ![X, normalModelStructure ν μ p X] := by
   obtain ⟨m, hm⟩ := hS.exists_bound_of_continuousOn
     (f := fun z ↦ ‖ν z‖ + ‖μ z‖) (hν.norm.add hμ.norm)
-  obtain ⟨a, ha⟩ := hS.exists_bound_of_continuousOn hA.continuous.continuousOn
+  obtain ⟨a, ha⟩ := hS.exists_bound_of_continuousOn
+    fun z hz ↦ (hA z hz).continuousAt.continuousWithinAt
   obtain ⟨b, hb⟩ := hS.exists_bound_of_continuousOn
-    (contDiff_extDeriv (r := 0) hA (by simp)).continuous.continuousOn
+    fun z hz ↦ (contDiffAt_extDeriv (r := 0) (hA z hz) (by simp)).continuousAt.continuousWithinAt
   refine ⟨R ^ 2 * (3 * (m + a) ^ 2 + b) + 1, fun K hK p hp hpR X hX ↦ ?_⟩
-  have hA' : DifferentiableAt ℝ A p.1 := (hA.differentiable one_ne_zero) p.1
+  have hA' : DifferentiableAt ℝ A p.1 := (hA p.1 hp).differentiableAt one_ne_zero
   have hle := le_normalModelForm_apply_normalModelStructure (ν := ν) (μ := μ) hA'
     ((le_abs_self _).trans (hm p.1 hp)) (ha p.1 hp) (hb p.1 hp) hpR hK X
   refine lt_of_lt_of_le ?_ hle

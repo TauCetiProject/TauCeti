@@ -155,37 +155,15 @@ variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] {J' : U → Almo
 of `ℝ × ℝ`. -/
 theorem _root_.TauCeti.IsJHolomorphicAt.fst_of_floerGraphAlmostComplex {f : U → (ℝ × ℝ) × V}
     {y : U} (hf : IsJHolomorphicAt J' (ω.floerGraphAlmostComplex J Ks Kt) f y) :
-    IsJHolomorphicAt J' (fun _ ↦ AlmostComplexStructure.product ℝ) (fun y ↦ (f y).1) y := by
-  obtain ⟨f', hf', hlin⟩ := (isJHolomorphicAt_iff _ _ _ _).mp hf
-  rw [floerGraphAlmostComplex_def, AlmostComplexStructure.isComplexLinearMap_skewProd_iff] at hlin
-  refine isJHolomorphicAt_of_hasFDerivAt (hasFDerivAt_fst.comp y hf') ?_
-  rw [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_fst]
-  exact hlin.1
+    IsJHolomorphicAt J' (fun _ ↦ AlmostComplexStructure.product ℝ) (fun y ↦ (f y).1) y :=
+  IsJHolomorphicAt.fst_of_skewProd (J₁ := fun _ ↦ _) hf
 
 /-- **Vertical maps.** A map `y ↦ (z, g y)` into the fibre over a fixed domain point `z` is
 `J_K`-holomorphic exactly when `g` is holomorphic for the structure `J(z, ·)` frozen at `z`. -/
 theorem isJHolomorphicAt_prodMk_floerGraphAlmostComplex_iff {g : U → V} {z : ℝ × ℝ} {y : U} :
     IsJHolomorphicAt J' (ω.floerGraphAlmostComplex J Ks Kt) (fun y ↦ (z, g y)) y ↔
-      IsJHolomorphicAt J' (J z) g y := by
-  have hvert {g' : U →L[ℝ] V} (hg : HasFDerivAt g g' y) :
-      HasFDerivAt (fun y ↦ (z, g y)) ((0 : U →L[ℝ] ℝ × ℝ).prod g') y :=
-    (hasFDerivAt_const z y).prodMk hg
-  have hlin (g' : U →L[ℝ] V) :
-      IsComplexLinearMap (J' y) (ω.floerGraphAlmostComplex J Ks Kt (z, g y))
-          ((0 : U →L[ℝ] ℝ × ℝ).prod g' : U →ₗ[ℝ] (ℝ × ℝ) × V) ↔
-        IsComplexLinearMap (J' y) (J z (g y)) (g' : U →ₗ[ℝ] V) := by
-    rw [floerGraphAlmostComplex_def, AlmostComplexStructure.isComplexLinearMap_skewProd_iff,
-      ContinuousLinearMap.coe_prod, LinearMap.fst_prod, LinearMap.snd_prod,
-      ContinuousLinearMap.toLinearMap_zero, LinearMap.comp_zero, sub_zero]
-    exact and_iff_right (isComplexLinearMap_zero _ _)
-  rw [isJHolomorphicAt_iff, isJHolomorphicAt_iff]
-  constructor
-  · rintro ⟨f', hf', hf'lin⟩
-    have hg : DifferentiableAt ℝ g y := hf'.differentiableAt.snd
-    rw [hf'.unique (hvert hg.hasFDerivAt)] at hf'lin
-    exact ⟨_, hg.hasFDerivAt, (hlin _).mp hf'lin⟩
-  · rintro ⟨g', hg', hglin⟩
-    exact ⟨_, hvert hg', (hlin g').mpr hglin⟩
+      IsJHolomorphicAt J' (J z) g y :=
+  AlmostComplexStructure.isJHolomorphicAt_prodMk_right_skewProd_iff (J₁ := fun _ ↦ _)
 
 end AlmostComplex
 
