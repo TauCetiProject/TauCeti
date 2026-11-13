@@ -24,11 +24,6 @@ derivation--tangent-space equivalence used to define the abstract exponential.
 * `mulInvariantOneParameterSubgroup_eq_expUnitHom`: the tangent-space constructions coincide.
 * `oneParameterSubgroup_eq_expUnitHom`: the derivation-based subgroups coincide.
 * `lieExp_eq_expUnit`: the abstract and Banach-algebra exponentials coincide.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The matrix and circle shadows".
 -/
 
 public section
