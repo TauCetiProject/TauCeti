@@ -334,8 +334,7 @@ abbrev splitFace : SurfaceModel.{u, v, w} where
   hasSurfaceLink v := (S.hasSurfaceLink v).splitFace f p
 
 /-- Splitting a face of a surface model does not change its Euler characteristic. -/
-@[simp] theorem eulerChar_splitFace : (S.splitFace f p).eulerChar = S.eulerChar :=
-  haveI : Finite S.graph.GeomEdge := Finite.of_surjective _ S.graph.toGeomEdge_surjective
+theorem eulerChar_splitFace : (S.splitFace f p).eulerChar = S.eulerChar :=
   S.toPolygonalComplex.eulerChar_splitFace f p
 
 /-- Splitting a face of a surface model does not change its orientability. -/

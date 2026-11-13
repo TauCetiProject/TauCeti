@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.BarycentricSubdivision
-public import TauCeti.Combinatorics.Graph.Serre.Card
 public import TauCeti.Combinatorics.PolygonalComplex.Examples
 public import Mathlib.Basic.Finite.Sum
 import Mathlib.Tactic.FinCases

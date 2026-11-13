@@ -87,6 +87,10 @@ def toGeomEdge (e : Γ.E) : Γ.GeomEdge := Quot.mk _ e
 theorem toGeomEdge_surjective : Function.Surjective Γ.toGeomEdge :=
   Quot.mk_surjective
 
+/-- A Serre graph with finitely many darts has finitely many geometric edges. -/
+instance [Finite Γ.E] : Finite Γ.GeomEdge :=
+  .of_surjective _ Γ.toGeomEdge_surjective
+
 /-- Two darts have the same geometric edge exactly when they are equal or mutually reverse. -/
 theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
     Γ.toGeomEdge e = Γ.toGeomEdge f ↔ f = e ∨ f = Γ.rev e := by

@@ -12,8 +12,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 # Counting the edges of a Serre graph
 
 Every geometric edge of a Serre graph consists of two darts, a dart and its reverse. Hence a Serre
-graph with finitely many darts has finitely many geometric edges, and it has twice as many darts
-as geometric edges.
+graph has twice as many darts as geometric edges.
 
 ## References
 
@@ -28,10 +27,6 @@ namespace TauCeti
 namespace SerreGraph
 
 variable (Γ : SerreGraph.{u, v})
-
-/-- A Serre graph with finitely many darts has finitely many geometric edges. -/
-instance [Finite Γ.E] : Finite Γ.GeomEdge :=
-  .of_surjective _ Γ.toGeomEdge_surjective
 
 /-- A Serre graph has twice as many darts as geometric edges, finitely many or not: each geometric
 edge consists of two darts. -/
