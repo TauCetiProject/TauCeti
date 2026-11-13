@@ -38,7 +38,7 @@ A differential right module (`TauCeti.IsUngradedDGRightModule`) is an `A∞` mod
 operations `m_{n+1}` vanish for `n ≥ 2`, over a ring of characteristic two
 (`TauCeti.IsUngradedDGRightModule.toUngradedAInfinityRightModule`).
 
-Two constructions are developed.
+Two constructions are developed, together with strict units.
 
 * **Twisting.** For a Maurer–Cartan element `β`, that is `d β + β * β = 0`, the
   **twisted differential** `∂^β = ∑ₙ m_{n+1}(·, β, …, β)`
@@ -68,23 +68,19 @@ Two constructions are developed.
   `Y` crosses the off-diagonal block exactly once
   (`TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`).
 
-**Idempotents.** The type `A` modules of bordered Heegaard Floer homology are modules over a ring
-of idempotents of the algebra, whose higher operations `m_{n+1}`, `n ≥ 2`, vanish as soon as one
-input is an idempotent (`TauCeti.UngradedAInfinityRightModule.HigherActVanishesOn`). For such an
-element `e` with `d e = 0`, the `A∞` relations along `(e, a₁, …, aₙ₊₁)` and `(a₁, …, aₙ₊₁, e)`
-reduce to two terms each: `m₂(·, e)` moves from the module input onto `a₁`
-(`TauCeti.UngradedAInfinityRightModule.act_act_one`) and from the output onto `aₙ₊₁`
-(`TauCeti.UngradedAInfinityRightModule.act_one_act`). So it is absorbed by the next operation when
-`e * a₁ = a₁` (`TauCeti.UngradedAInfinityRightModule.act_act_one_of_mul_eq`) and fixes its
-output when `aₙ₊₁ * e = aₙ₊₁` (`TauCeti.UngradedAInfinityRightModule.act_one_act_of_mul_eq`). So
-the twisted differential of an element `β` with `e * β = β = β * e` commutes with `m₂(·, e)`
-(`TauCeti.UngradedAInfinityRightModule.act_one_twistedDifferential`). The higher operations of the
-matrix module vanish on the matrices whose entries are such elements or zero
-(`TauCeti.UngradedAInfinityRightModule.HigherActVanishesOn.matrix`). When such an element is a
-right unit for the column `z` of `C`, it fixes the `z`-component of the twisted differential along
-`C` of a row vector whose `z`-component it fixes
-(`TauCeti.UngradedAInfinityRightModule.act_one_twistedDifferential_apply_of_mul_eq`). The
-higher operations of a differential module vanish on every set.
+* **Strict units.** A module is strictly unital for a family `ι` of elements of the algebra
+  (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital`) when its operations `m_{n+1}`,
+  `n ≥ 2`, vanish on every tuple containing some `ι s`. If moreover `d (ι s) = 0`, the relation
+  with last input `ι s` reduces to
+  `m₂(m_{n+1}(m, a₁, …, aₙ), ι s) = m_{n+1}(m, a₁, …, aₙ ι s)`
+  (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_act`), and that of length one to
+  `m₂(m₁ m, ι s) = m₁ (m₂(m, ι s))`. So `m₂(·, ι s)` is a projection when `ι s` is idempotent, and
+  twisting by `β` with `β * ι s = β` preserves its fixed points. The matrix module of a strictly
+  unital module is strictly unital for the diagonal matrices of units
+  (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.matrix`). Along a matrix `β`, the
+  `z`-component of the twisted differential is fixed by `m₂(·, ι s)` as soon as `ι s` is a right
+  unit for the column `z` of `β` and fixes the `z`-component of the input; see
+  `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_matrix_twistedDifferential_apply`.
 
 Twisting the matrix module by the coefficient matrix of a type `D` structure gives the box tensor
 product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`.
@@ -99,8 +95,8 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   algebra.
 * `TauCeti.IsUngradedDGRightModule.toUngradedAInfinityRightModule`: a differential right module as
   an `A∞` module.
-* `TauCeti.UngradedAInfinityRightModule.HigherActVanishesOn`: the higher operations vanish as soon
-  as one input lies in a given set.
+* `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital`: strict unitality for a family of
+  elements of the algebra.
 
 ## Main results
 
@@ -119,15 +115,17 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   matrix operations restrict along an embedding whose range no path enters, respectively leaves.
 * `TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`: along block
   upper-triangular matrices, paths from `X` to `Y` see the off-diagonal block exactly once.
-* `TauCeti.UngradedAInfinityRightModule.act_one_twistedDifferential`: the twisted differential
-  commutes with `m₂(·, e)` for a cycle `e` on which the higher operations vanish and which is a
-  two-sided unit for the twisting element.
+* `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_act`: a unit acting on the output
+  of an operation multiplies its last input.
+* `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_twistedDifferential` and
+  `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_matrix_twistedDifferential_apply`:
+  twisting preserves the summands of the units.
 
 ## References
 
 * R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer.
   Math. Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687),
-  Chapter 2 (`A∞` modules over `𝔽₂` and the box tensor product).
+  Chapter 2 (`A∞` modules over `𝔽₂`, their strict unitality, and the box tensor product).
 * B. Keller, *Introduction to A-infinity algebras and modules*, Homology Homotopy Appl. **3**
   (2001), 1–35, Section 4 (`A∞` modules).
 -/
@@ -350,202 +348,142 @@ theorem twistedDifferential_twistedDifferential [CharP R 2] {β : A} (hβ : d β
     (hdβ ▸ Set.mem_insert_of_mem _ hββU) (hβ ▸ Set.mem_insert _ _) hU' m, hβ]
   simp
 
-/-! ### Idempotents of the ground ring -/
+/-! ### Strict units -/
 
-section Idempotent
+section StrictUnit
 
-/-- The **higher operations vanish on** a set `U` of the algebra when `m_{n+1}(m, a₁, …, aₙ) = 0`
-for every `n ≥ 2` as soon as one of the inputs `aᵢ` lies in `U`. For `U = {1}`, together with
-`m₂(m, 1) = m`, this is strict unitality. The type `A` modules of bordered Heegaard Floer homology
-are strictly unital `A∞` modules over the ring of idempotents `I = ⊕ₛ R ι(s)` of the algebra, with
-operations multilinear over `I`; moving `ι(s)` along the inputs by `I`-multilinearity, strict
-unitality makes their higher operations vanish on the idempotents `ι(s)`. In this generality the
-operations are only `R`-multilinear, and this vanishing is the hypothesis used here. -/
-def HigherActVanishesOn (U : Set A) : Prop :=
-  ∀ (n : ℕ) (a : Fin (n + 2) → A) (i : Fin (n + 2)), a i ∈ U → Mm.act (n + 2) a = 0
+variable {S : Type*} {ι : S → A}
 
-variable {Mm} {U : Set A} {e : A}
+/-- An ungraded `A∞` right module is **strictly unital** for a family `ι` of elements of the
+algebra, typically its idempotents, when every operation `m_{n+1}`, `n ≥ 2`, vanishes as soon as
+one of its algebra inputs is some `ι s`. The binary operation `m₂(·, ι s)` is not prescribed: over
+a ring of idempotents it is the action of `ι s`, a projection onto a summand of `M`
+(`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_act_one`). -/
+def IsStrictlyUnital (ι : S → A) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (a : Fin n → A) (i : Fin n) (s : S), a i = ι s → Mm.act n a = 0
 
-/-- The higher operations vanish on `U` exactly when `m_{n+3}(m, a₁, …, aₙ₊₂) = 0` whenever one of
-the inputs `aᵢ` lies in `U`. -/
-theorem higherActVanishesOn_iff :
-    Mm.HigherActVanishesOn U ↔
-      ∀ (n : ℕ) (a : Fin (n + 2) → A) (i : Fin (n + 2)), a i ∈ U → Mm.act (n + 2) a = 0 :=
+/-- The defining property of a strictly unital module, for proving strict unitality without
+unfolding the definition. -/
+theorem isStrictlyUnital_iff : Mm.IsStrictlyUnital ι ↔
+    ∀ n, 2 ≤ n → ∀ (a : Fin n → A) (i : Fin n) (s : S), a i = ι s → Mm.act n a = 0 :=
   Iff.rfl
 
-/-- An operation `m_{n+1}` with `n ≥ 2` vanishes when one of its inputs lies in a set on which the
-higher operations vanish. -/
-theorem HigherActVanishesOn.act_eq_zero (hU : Mm.HigherActVanishesOn U) {n : ℕ} (hn : 2 ≤ n)
-    (a : Fin n → A) (i : Fin n) (hi : a i ∈ U) : Mm.act n a = 0 := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  exact hU n a i hi
+variable {Mm}
 
-/-- Operations of equal arities agree on tuples that agree up to the cast between the arities. -/
-private theorem act_congr_of_eq {p q : ℕ} (h : p = q) {a : Fin p → A} {b : Fin q → A}
-    (hab : ∀ i, a i = b (Fin.cast h i)) : Mm.act p a = Mm.act q b := by
-  subst h
-  exact congrArg _ (funext hab)
+/-- A strictly unital module's operations of arity at least three vanish on a unit input. -/
+theorem IsStrictlyUnital.act_eq_zero (hMm : Mm.IsStrictlyUnital ι) {n : ℕ} (hn : 2 ≤ n)
+    {a : Fin n → A} {i : Fin n} {s : S} (hi : a i = ι s) : Mm.act n a = 0 :=
+  hMm n hn a i s hi
 
 variable (Mm) in
 /-- **`m₁` commutes with the action of a cycle.** Over a ring of characteristic two, if `d e = 0`
-then `m₁(m₂(m, e)) = m₂(m₁(m), e)`: this is the `A∞` relation of length one. -/
-theorem act_zero_act_one [CharP R 2] (hde : d e = 0) (a : Fin 0 → A) (m : M) :
-    Mm.act 0 a (Mm.act 1 (fun _ => e) m) = Mm.act 1 (fun _ => e) (Mm.act 0 a m) := by
+then `m₂(m₁ m, e) = m₁ (m₂(m, e))`: this is the relation of length one. -/
+theorem act_one_act_zero [CharP R 2] {e : A} (he : d e = 0) (a : Fin 0 → A) (m : M) :
+    Mm.act 1 (fun _ => e) (Mm.act 0 a m) = Mm.act 0 a (Mm.act 1 (fun _ => e) m) := by
   have h := Mm.stasheff 1 (fun _ => e) m
-  rw [ungradedStasheffComp, Fin.sum_univ_two] at h
-  simp only [ungradedStasheffDiff, ungradedStasheffMul_succ, Fin.sum_univ_one, Fin.sum_univ_zero,
-    add_zero, hde, MultilinearMap.map_update_zero, LinearMap.zero_apply, Fin.val_zero, Fin.val_one,
-    Nat.sub_zero] at h
-  rw [Subsingleton.elim a fun _ => e]
-  -- The remaining arity `1 - 1` of `h` reduces to `0`.
-  exact ((add_eq_zero_iff_eq_of_charTwo R).mp h).symm
-
-/-- **The first input absorbs `m₂(·, e)` from the module input.** Over a ring of
-characteristic two, let the higher operations vanish on a set containing the cycle `e`. Then
-`m_{n+2}(m₂(m, e), a₁, …, aₙ₊₁) = m_{n+2}(m, e * a₁, a₂, …, aₙ₊₁)`: in the `A∞` relation along
-`(e, a₁, …, aₙ₊₁)` every other term vanishes, by `d e = 0` or because `e` is an input of an
-operation of arity at least three. -/
-theorem act_act_one [CharP R 2] (hU : Mm.HigherActVanishesOn U) (he : e ∈ U) (hde : d e = 0)
-    {n : ℕ} (a : Fin (n + 1) → A) (m : M) :
-    Mm.act (n + 1) a (Mm.act 1 (fun _ => e) m) =
-      Mm.act (n + 1) (Function.update a 0 (e * a 0)) m := by
-  have hb (h : 0 < n + 2) : (Fin.cons e a : Fin (n + 2) → A) ⟨0, h⟩ = e := rfl
-  have h := Mm.stasheff (n + 2) (Fin.cons e a) m
-  -- Every composite term but the one with `m₂` inside has `e` among the inputs of an operation of
-  -- arity at least two.
-  rw [ungradedStasheffComp, Fintype.sum_eq_single (1 : Fin (n + 3)) fun k hk => ?comp,
-    ungradedStasheffDiff, Fintype.sum_eq_zero _ fun l => ?diff, ungradedStasheffMul_succ,
-    Fintype.sum_eq_single (0 : Fin (n + 1)) fun l hl => ?mul] at h
-  case comp =>
-    have hk1 : (k : ℕ) ≠ 1 := fun h => hk (Fin.ext (by simp [h]))
-    by_cases hk0 : (k : ℕ) = 0
-    · have := k.isLt
-      rw [hU.act_eq_zero (n := n + 2 - k) (by omega) _ ⟨0, by omega⟩, LinearMap.zero_apply]
-      convert he using 1
-      exact (congrArg _ (Fin.ext (by simp [hk0]))).trans (hb (by omega))
-    · rw [hU.act_eq_zero (n := k) (i := ⟨0, by omega⟩) (by omega) _ he, LinearMap.zero_apply,
-        map_zero]
-  case diff =>
-    by_cases hl : l = 0
-    · subst hl
-      rw [Fin.cons_zero, hde, MultilinearMap.map_update_zero, LinearMap.zero_apply]
-    · rw [hU.act_eq_zero (n := n + 2) (by omega) _ 0 (by rwa [Function.update_of_ne (Ne.symm hl)]),
-        LinearMap.zero_apply]
-  case mul =>
-    have hl1 : 1 ≤ (l : ℕ) := Nat.one_le_iff_ne_zero.mpr (Fin.val_ne_iff.mpr hl)
-    have := l.isLt
-    rw [hU.act_eq_zero (n := n + 1) (by omega) _ ⟨0, by omega⟩ (by
-      rwa [Fin.contractNth_apply_of_lt _ _ _ _ (by simp only [Fin.val_castSucc]; omega)]),
-      LinearMap.zero_apply]
-  -- The remaining product term contracts `e` and `a 0` to `e * a 0`.
-  have hc : (Fin.castSucc 0).contractNth (· * ·) (Fin.cons e a) =
-      Function.update a 0 (e * a 0) := by
-    conv_rhs => rw [← Fin.cons_self_tail a, Fin.update_cons_zero, Fin.cons_zero]
-    rw [Fin.castSucc_zero, Fin.contractNth_zero_cons]
-  have h₁ : Mm.act (n + 2 - ((1 : Fin (n + 3)) : ℕ))
-      (fun l => (Fin.cons e a : Fin (n + 2) → A) ⟨((1 : Fin (n + 3)) : ℕ) + l, by omega⟩) =
-      Mm.act (n + 1) a :=
-    act_congr_of_eq (by simp) fun l =>
-      (congrArg _ (Fin.ext (by simp [add_comm]))).trans (Fin.cons_succ (α := fun _ => A) e a _)
-  have h₂ : Mm.act ((1 : Fin (n + 3)) : ℕ)
-      (fun l => (Fin.cons e a : Fin (n + 2) → A) ⟨l, by omega⟩) = Mm.act 1 fun _ => e :=
-    act_congr_of_eq (by simp) fun l =>
-      (congrArg _ (Fin.ext (by have := l.isLt; simp at this ⊢; omega))).trans (Fin.cons_zero _ _)
-  rw [h₁, h₂, hc, add_zero] at h
+  rw [ungradedStasheffComp, ungradedStasheffDiff, ungradedStasheffMul_succ, Fin.sum_univ_succ,
+    Fin.sum_univ_one, Fin.sum_univ_one, Fin.sum_univ_zero, add_zero] at h
+  rw [(Mm.act 1).map_coord_zero 0 (by simp [he]), LinearMap.zero_apply, add_zero] at h
+  obtain rfl : a = fun _ => e := Subsingleton.elim _ _
   exact (add_eq_zero_iff_eq_of_charTwo R).mp h
 
-/-- **A left unit of the first input is absorbed by the module input.** Over a ring of
-characteristic two, let the higher operations vanish on a set containing the cycle `e`. If
-`e * a₁ = a₁`, then `m_{n+2}(m₂(m, e), a₁, …, aₙ₊₁) = m_{n+2}(m, a₁, …, aₙ₊₁)`. -/
-theorem act_act_one_of_mul_eq [CharP R 2] (hU : Mm.HigherActVanishesOn U) (he : e ∈ U)
-    (hde : d e = 0) {n : ℕ} (a : Fin (n + 1) → A) (ha : e * a 0 = a 0) (m : M) :
-    Mm.act (n + 1) a (Mm.act 1 (fun _ => e) m) = Mm.act (n + 1) a m := by
-  rw [act_act_one hU he hde, ha, Function.update_eq_self]
+/-- Operations of equal arity agree on tuples that agree after the cast of indices. -/
+private theorem act_congr {j k : ℕ} (h : j = k) {u : Fin j → A} {v : Fin k → A}
+    (huv : ∀ l, u l = v (Fin.cast h l)) (m : M) : Mm.act j u m = Mm.act k v m := by
+  subst h
+  rw [show u = v from funext huv]
 
-/-- **The last input moves `m₂(·, e)` off the output.** Over a ring of characteristic two, let the
-higher operations vanish on a set containing the cycle `e`. Then
-`m₂(m_{n+2}(m, a₁, …, aₙ₊₁), e) = m_{n+2}(m, a₁, …, aₙ, aₙ₊₁ * e)`: in the `A∞` relation along
-`(a₁, …, aₙ₊₁, e)` every other term vanishes, by `d e = 0` or because `e` is an input of an
-operation of arity at least three. -/
-theorem act_one_act [CharP R 2] (hU : Mm.HigherActVanishesOn U) (he : e ∈ U) (hde : d e = 0)
-    {n : ℕ} (a : Fin (n + 1) → A) (m : M) :
-    Mm.act 1 (fun _ => e) (Mm.act (n + 1) a m) =
-      Mm.act (n + 1) (Function.update a (Fin.last n) (a (Fin.last n) * e)) m := by
-  have hb (h : n + 1 < n + 2) : (Fin.snoc a e : Fin (n + 2) → A) ⟨n + 1, h⟩ = e :=
-    Fin.snoc_last (α := fun _ => A) (p := a) (x := e)
-  have h := Mm.stasheff (n + 2) (Fin.snoc a e) m
-  -- Every composite term but the one with `m₂` outside has `e` among the inputs of an operation
-  -- of arity at least two.
-  rw [ungradedStasheffComp, Fintype.sum_eq_single (⟨n + 1, by omega⟩ : Fin (n + 3))
-      fun k hk => ?comp, ungradedStasheffDiff, Fintype.sum_eq_zero _ fun l => ?diff,
-    ungradedStasheffMul_succ, Fintype.sum_eq_single (Fin.last n) fun l hl => ?mul] at h
-  case comp =>
-    have hk1 : (k : ℕ) ≠ n + 1 := fun h => hk (Fin.ext h)
-    have := k.isLt
-    by_cases hk2 : (k : ℕ) = n + 2
-    · rw [hU.act_eq_zero (n := k) (i := ⟨n + 1, by omega⟩) (by omega) _
-        (by simpa only [hb] using he), LinearMap.zero_apply, map_zero]
-    · rw [hU.act_eq_zero (n := n + 2 - k) (by omega) _ ⟨n + 1 - k, by omega⟩, LinearMap.zero_apply]
-      convert he using 1
-      exact (congrArg _ (Fin.ext (by simp; omega))).trans (hb (by omega))
-  case diff =>
+/-- **The action of a unit on the output of an operation.** For a strictly unital module over a
+ring of characteristic two, with `d (ι s) = 0`,
+`m₂(m_{n+2}(m, a₁, …, aₙ₊₁), ι s) = m_{n+2}(m, a₁, …, aₙ₊₁ ι s)`. This is the relation of length
+`n + 2` with inputs `a₁, …, aₙ₊₁, ι s`: every other term has `ι s` among the inputs of an operation
+of arity at least three. -/
+theorem IsStrictlyUnital.act_one_act [CharP R 2] (hMm : Mm.IsStrictlyUnital ι) {s : S}
+    (hs : d (ι s) = 0) {n : ℕ} (a : Fin (n + 1) → A) (m : M) :
+    Mm.act 1 (fun _ => ι s) (Mm.act (n + 1) a m) =
+      Mm.act (n + 1) (Function.update a (Fin.last n) (a (Fin.last n) * ι s)) m := by
+  set b : Fin (n + 2) → A := Fin.snoc a (ι s) with hb
+  have hbl : b (Fin.last (n + 1)) = ι s := by simp [hb]
+  have hbc (l : Fin (n + 1)) : b l.castSucc = a l := by simp [hb]
+  have h := Mm.stasheff (n + 2) b m
+  -- Among the composite terms only `m₂(m_{n+2}(m, a), ι s)` survives.
+  have hcomp : ungradedStasheffComp Mm.act (n + 2) b m =
+      Mm.act 1 (fun _ => ι s) (Mm.act (n + 1) a m) := by
+    rw [ungradedStasheffComp, Finset.sum_eq_single (⟨n + 1, by omega⟩ : Fin (n + 3))]
+    · rw [act_congr (h := (by simp : n + 2 - ((⟨n + 1, by omega⟩ : Fin (n + 3)) : ℕ) = 1))
+          (v := fun _ => ι s) (fun l => by
+            have hl := l.isLt
+            simp only [Fin.val_mk] at hl
+            rw [← hbl]; congr 1; ext; simp; omega),
+        act_congr (h := (rfl : ((⟨n + 1, by omega⟩ : Fin (n + 3)) : ℕ) = n + 1)) (v := a)
+          (fun l => by rw [← hbc]; rfl)]
+    · intro k _ hk
+      have hk' : (k : ℕ) ≠ n + 1 := fun h => hk (Fin.ext h)
+      rcases Nat.lt_or_gt_of_ne hk' with hlt | hgt
+      · rw [hMm.act_eq_zero (i := ⟨n + 1 - k, by omega⟩) (s := s) (by omega)
+          (by rw [← hbl]; congr 1; ext; simp; omega), LinearMap.zero_apply]
+      · rw [hMm.act_eq_zero (n := k) (i := ⟨n + 1, by omega⟩) (s := s) (by omega)
+          (by rw [← hbl]; congr 1), LinearMap.zero_apply, map_zero]
+    · simp
+  -- The differential terms vanish: `d (ι s) = 0`, and the unit remains in the other terms.
+  have hdiff : ungradedStasheffDiff Mm.act d (n + 2) b m = 0 := by
+    refine Finset.sum_eq_zero fun l _ => ?_
     by_cases hl : l = Fin.last (n + 1)
     · subst hl
-      rw [Fin.snoc_last, hde, MultilinearMap.map_update_zero, LinearMap.zero_apply]
-    · rw [hU.act_eq_zero (n := n + 2) (by omega) _ (Fin.last (n + 1)) (by
-        rwa [Function.update_of_ne (Ne.symm hl), Fin.snoc_last]), LinearMap.zero_apply]
-  case mul =>
-    have hl1 : (l : ℕ) < n := Fin.val_lt_last hl
-    rw [hU.act_eq_zero (n := n + 1) (by omega) _ (Fin.last n) (by
-      rwa [Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using hl1), Fin.succ_last,
-        Fin.snoc_last]), LinearMap.zero_apply]
-  -- The remaining product term contracts `a n` and `e` to `a n * e`.
-  have hc : (Fin.last n).castSucc.contractNth (· * ·) (Fin.snoc a e) =
-      Function.update a (Fin.last n) (a (Fin.last n) * e) := by
-    conv_rhs => rw [← Fin.snoc_init_self a, Fin.update_snoc_last, Fin.snoc_last]
-    rw [Fin.contractNth_castSucc_last_snoc]
-  have h₁ : Mm.act (n + 2 - ((⟨n + 1, by omega⟩ : Fin (n + 3)) : ℕ))
-      (fun l => (Fin.snoc a e : Fin (n + 2) → A)
-        ⟨((⟨n + 1, by omega⟩ : Fin (n + 3)) : ℕ) + l, by omega⟩) = Mm.act 1 fun _ => e :=
-    act_congr_of_eq (by simp) fun l =>
-      (congrArg _ (Fin.ext (by have := l.isLt; simp at this ⊢; omega))).trans (hb (by omega))
-  have h₂ : Mm.act ((⟨n + 1, by omega⟩ : Fin (n + 3)) : ℕ)
-      (fun l => (Fin.snoc a e : Fin (n + 2) → A) ⟨l, by omega⟩) = Mm.act (n + 1) a :=
-    act_congr_of_eq rfl fun l => Fin.snoc_castSucc (α := fun _ => A) (x := e) (p := a) _
-  rw [h₁, h₂, hc, add_zero] at h
+      rw [(Mm.act (n + 2)).map_coord_zero (Fin.last (n + 1)) (by simp [hbl, hs]),
+        LinearMap.zero_apply]
+    · rw [hMm.act_eq_zero (i := Fin.last (n + 1)) (s := s) (by omega)
+        (by rw [Function.update_of_ne (Ne.symm hl), hbl]), LinearMap.zero_apply]
+  -- Among the product terms only the product `aₙ₊₁ * ι s` of the last two inputs survives.
+  have hmul : ungradedStasheffMul Mm.act (n + 2) b m =
+      Mm.act (n + 1) (Function.update a (Fin.last n) (a (Fin.last n) * ι s)) m := by
+    rw [ungradedStasheffMul_succ, Finset.sum_eq_single (Fin.last n)]
+    · congr 2
+      funext k
+      by_cases hk : k = Fin.last n
+      · subst hk
+        rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Function.update_self, hbc, Fin.succ_last,
+          hbl]
+      · have hk' : (k : ℕ) < n := Fin.val_lt_last hk
+        rw [Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using hk'), hbc,
+          Function.update_of_ne hk]
+    · intro l _ hl
+      have hl' : (l : ℕ) < n := Fin.val_lt_last hl
+      rw [hMm.act_eq_zero (i := Fin.last n) (s := s) (by omega)
+        (by rw [Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using hl'), Fin.succ_last, hbl]),
+        LinearMap.zero_apply]
+    · simp
+  rw [hcomp, hdiff, hmul, add_zero] at h
   exact (add_eq_zero_iff_eq_of_charTwo R).mp h
 
-/-- **A right unit of the last input is a right unit of the output.** Over a ring of
-characteristic two, let the higher operations vanish on a set containing the cycle `e`. If
-`aₙ₊₁ * e = aₙ₊₁`, then `m₂(m_{n+2}(m, a₁, …, aₙ₊₁), e) = m_{n+2}(m, a₁, …, aₙ₊₁)`. -/
-theorem act_one_act_of_mul_eq [CharP R 2] (hU : Mm.HigherActVanishesOn U) (he : e ∈ U)
-    (hde : d e = 0) {n : ℕ} (a : Fin (n + 1) → A) (ha : a (Fin.last n) * e = a (Fin.last n))
-    (m : M) : Mm.act 1 (fun _ => e) (Mm.act (n + 1) a m) = Mm.act (n + 1) a m := by
-  rw [act_one_act hU he hde, ha, Function.update_eq_self]
+/-- For a strictly unital module over a ring of characteristic two, the action
+`m₂(·, ι s)` of an idempotent cycle `ι s` is a projection. -/
+theorem IsStrictlyUnital.act_one_act_one [CharP R 2] (hMm : Mm.IsStrictlyUnital ι) {s : S}
+    (hs : d (ι s) = 0) (hss : IsIdempotentElem (ι s)) (m : M) :
+    Mm.act 1 (fun _ => ι s) (Mm.act 1 (fun _ => ι s) m) = Mm.act 1 (fun _ => ι s) m := by
+  rw [hMm.act_one_act hs (n := 0), hss.eq]
+  congr 2
+  funext l
+  rw [Fin.fin_one_eq_zero l]
+  simp
 
-/-- **The twisted differential commutes with `m₂(·, e)`.** Over a ring of characteristic
-two, let the higher operations vanish on a set containing the cycle `e`, and let
-`e * β = β = β * e`. Then `m₂(∂^β m, e) = ∂^β (m₂(m, e))`: each operation `m_{n+1}(·, β, …, β)`
-commutes with `m₂(·, e)`. So `∂^β` preserves the elements fixed by `m₂(·, e)`. -/
-theorem act_one_twistedDifferential [CharP R 2] (hU : Mm.HigherActVanishesOn U) (he : e ∈ U)
-    (hde : d e = 0) {β : A} (hl : e * β = β) (hr : β * e = β) (m : M) :
-    Mm.act 1 (fun _ => e) (Mm.twistedDifferential β m) =
-      Mm.twistedDifferential β (Mm.act 1 (fun _ => e) m) := by
-  -- Each operation `m_{n+1}(·, β, …, β)` commutes with `m₂(·, e)`.
-  have key (n : ℕ) : Mm.act 1 (fun _ => e) ∘ₗ Mm.act n (fun _ => β) =
-      Mm.act n (fun _ => β) ∘ₗ Mm.act 1 (fun _ => e) := by
-    refine LinearMap.ext fun m => ?_
-    rcases n with _ | n
-    · exact (Mm.act_zero_act_one hde _ m).symm
-    · rw [LinearMap.comp_apply, LinearMap.comp_apply, act_one_act_of_mul_eq hU he hde _ hr,
-        act_act_one_of_mul_eq hU he hde _ hl]
+/-- **Twisting preserves the summand of a unit.** For a strictly unital module over a ring of
+characteristic two, with `d (ι s) = 0`, if `β * ι s = β` and `m₂(m, ι s) = m`, then also
+`m₂(∂^β m, ι s) = ∂^β m`. -/
+theorem IsStrictlyUnital.act_one_twistedDifferential [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
+    {s : S} (hs : d (ι s) = 0) {β : A} (hβ : β * ι s = β) {m : M}
+    (hm : Mm.act 1 (fun _ => ι s) m = m) :
+    Mm.act 1 (fun _ => ι s) (Mm.twistedDifferential β m) = Mm.twistedDifferential β m := by
   rw [twistedDifferential_def]
   by_cases hfin : (Function.support fun n => Mm.act n fun _ => β).Finite
-  · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, LinearMap.sum_apply, map_sum]
-    exact sum_congr rfl fun n _ => LinearMap.congr_fun (key n) m
-  · rw [finsum_of_infinite_support hfin, LinearMap.zero_apply, LinearMap.zero_apply, map_zero]
+  · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, map_sum]
+    refine Finset.sum_congr rfl fun n _ => ?_
+    cases n with
+    | zero => rw [Mm.act_one_act_zero hs, hm]
+    | succ n => rw [hMm.act_one_act hs, hβ, Function.update_eq_self]
+  · rw [finsum_of_infinite_support hfin, LinearMap.zero_apply, map_zero]
 
-end Idempotent
+end StrictUnit
 
 /-! ### The module of row vectors over the matrix algebra -/
 
@@ -732,56 +670,60 @@ theorem matrixAct_one_apply (F : Matrix X X A) (φ : X → M) (z : X) :
     Mm.matrixAct X 1 (fun _ => F) φ z = ∑ x, Mm.act 1 (fun _ => F x z) (φ x) := by
   rw [matrixAct_apply, Fintype.sum_finTwoArrow]
   simp only [Fin.last, Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_zero, Fin.castSucc_zero,
-    Fin.succ_zero_eq_one, Fin.fin_one_eq_zero, Finset.sum_ite_eq', mem_univ, ite_true]
+    Fin.succ_zero_eq_one, Fin.fin_one_eq_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
 
-/-- The operation `m₂(·, D)` of the matrix module along a diagonal matrix `D` acts on each
-component by the corresponding diagonal entry. -/
-@[simp]
+/-- The operation `m₂` of the matrix module along a diagonal matrix acts componentwise. -/
 theorem matrixAct_one_diagonal_apply (v : X → A) (φ : X → M) (z : X) :
     Mm.matrixAct X 1 (fun _ => Matrix.diagonal v) φ z = Mm.act 1 (fun _ => v z) (φ z) := by
   rw [matrixAct_one_apply, Fintype.sum_eq_single z fun x hx => by
     rw [Matrix.diagonal_apply_ne _ hx, (Mm.act 1).map_coord_zero 0 rfl, LinearMap.zero_apply],
     Matrix.diagonal_apply_eq]
 
-variable {Mm} in
-/-- If the higher operations of `M` vanish on `U`, those of the matrix module vanish on the
-matrices with entries in `U` or zero: along every path the entry of such a matrix is either in `U`
-or zero. -/
-theorem HigherActVanishesOn.matrix {U : Set A} (hU : Mm.HigherActVanishesOn U) :
-    (Mm.matrix X).HigherActVanishesOn {P | ∀ x y, P x y ∈ insert 0 U} := by
-  intro n F i hF
+variable {S : Type*} {ι : S → A} {Mm}
+
+/-- **The matrix module of a strictly unital module is strictly unital** for the diagonal
+matrices of units. -/
+theorem IsStrictlyUnital.matrix (hMm : Mm.IsStrictlyUnital ι) :
+    (Mm.matrix X).IsStrictlyUnital fun e : X → S => Matrix.diagonal fun x => ι (e x) := by
+  refine (isStrictlyUnital_iff _).2 fun n hn F i e hFi => ?_
   refine LinearMap.ext fun φ => funext fun z => ?_
   rw [matrix_act, matrixAct_apply, LinearMap.zero_apply, Pi.zero_apply]
-  refine sum_eq_zero fun x _ => ?_
-  have h0 : Mm.act (n + 2) (fun l => F l (x l.castSucc) (x l.succ)) = 0 := by
-    rcases hF (x i.castSucc) (x i.succ) with h | h
-    · exact (Mm.act (n + 2)).map_coord_zero i h
-    · exact hU n _ i h
-  rw [h0, LinearMap.zero_apply, ite_self]
+  refine Finset.sum_eq_zero fun x _ => ?_
+  split_ifs
+  · by_cases hx : x i.castSucc = x i.succ
+    · rw [hMm.act_eq_zero hn (i := i) (s := e (x i.castSucc)) (by simp [hFi, ← hx]),
+        LinearMap.zero_apply]
+    · rw [(Mm.act n).map_coord_zero i (by simp [hFi, Matrix.diagonal_apply_ne _ hx]),
+        LinearMap.zero_apply]
+  · rfl
 
-variable {Mm X} in
-/-- The `z`-component of the twisted differential of the matrix module along `C` is fixed by
-`m₂(·, e)` when `e` is a cycle on which the higher operations of `M` vanish, `e` is a right unit
-for the column `z` of `C`, and `m₂(ψ z, e) = ψ z`: the term of length zero commutes with `m₂(·, e)`
-by `TauCeti.UngradedAInfinityRightModule.act_zero_act_one`, and along every path the others are
-fixed by `TauCeti.UngradedAInfinityRightModule.act_one_act_of_mul_eq`. -/
-theorem act_one_twistedDifferential_apply_of_mul_eq [CharP R 2] {U : Set A}
-    (hU : Mm.HigherActVanishesOn U) {e : A} (he : e ∈ U) (hde : d e = 0) {C : Matrix X X A}
-    {z : X} (hC : ∀ y, C y z * e = C y z) {ψ : X → M} (hψ : Mm.act 1 (fun _ => e) (ψ z) = ψ z) :
-    Mm.act 1 (fun _ => e) ((Mm.matrix X).twistedDifferential C ψ z) =
-      (Mm.matrix X).twistedDifferential C ψ z := by
+/-- **Twisting the matrix module preserves the summands of the units.** For a strictly unital
+module over a ring of characteristic two, let the unit `ι s` be a cycle and a right unit for the
+column `z` of `β`, `β y z * ι s = β y z`. If `m₂(φ z, ι s) = φ z`, then also the `z`-component of
+`∂^β φ` is fixed by `m₂(·, ι s)`: the term of length zero commutes with `m₂(·, ι s)` by
+`TauCeti.UngradedAInfinityRightModule.act_one_act_zero`, and along every path ending at `z` the
+others are fixed by `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_act`. -/
+theorem IsStrictlyUnital.act_one_matrix_twistedDifferential_apply [CharP R 2]
+    (hMm : Mm.IsStrictlyUnital ι) {s : S} (hs : d (ι s) = 0) {β : Matrix X X A} {z : X}
+    (hβ : ∀ y, β y z * ι s = β y z) {φ : X → M} (hφ : Mm.act 1 (fun _ => ι s) (φ z) = φ z) :
+    Mm.act 1 (fun _ => ι s) ((Mm.matrix X).twistedDifferential β φ z) =
+      (Mm.matrix X).twistedDifferential β φ z := by
   rw [twistedDifferential_def]
-  by_cases hfin : (Function.support fun n => (Mm.matrix X).act n fun _ => C).Finite
+  by_cases hfin : (Function.support fun n => (Mm.matrix X).act n fun _ => β).Finite
   · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, Finset.sum_apply, map_sum]
-    refine sum_congr rfl fun n _ => ?_
+    refine Finset.sum_congr rfl fun n _ => ?_
     rw [matrix_act, matrixAct_apply, map_sum]
-    refine sum_congr rfl fun x _ => ?_
+    refine Finset.sum_congr rfl fun x _ => ?_
     split_ifs with hx
-    · rcases n with _ | n
-      · rw [Fin.last_zero] at hx
+    · cases n with
+      | zero =>
+        rw [Fin.last_zero] at hx
         subst hx
-        rw [← act_zero_act_one Mm hde, hψ]
-      · exact act_one_act_of_mul_eq hU he hde _ (by rw [Fin.succ_last, hx]; exact hC _) _
+        rw [Mm.act_one_act_zero hs, hφ]
+      | succ n =>
+        have h := hβ (x (Fin.last n).castSucc)
+        rw [← hx, ← Fin.succ_last] at h
+        rw [hMm.act_one_act hs, h, Function.update_eq_self]
     · exact map_zero _
   · rw [finsum_of_infinite_support hfin, LinearMap.zero_apply, Pi.zero_apply, map_zero]
 
@@ -1055,12 +997,14 @@ theorem toUngradedAInfinityRightModule_act_add_two [CharP R 2]
     hM.toUngradedAInfinityRightModule.act (n + 2) = 0 :=
   (rfl)
 
-/-- The higher operations of a differential module viewed as an `A∞` module vanish on every set. -/
-@[simp]
-theorem higherActVanishesOn_toUngradedAInfinityRightModule [CharP R 2]
-    (hM : IsUngradedDGRightModule d dM) (U : Set A) :
-    hM.toUngradedAInfinityRightModule.HigherActVanishesOn U := fun n _ _ _ => by
-  rw [toUngradedAInfinityRightModule_act_add_two, zero_apply]
+/-- A differential module viewed as an `A∞` module is strictly unital for every family of
+elements: its operations `m_{n+1}`, `n ≥ 2`, vanish. -/
+theorem isStrictlyUnital_toUngradedAInfinityRightModule [CharP R 2]
+    (hM : IsUngradedDGRightModule d dM) {S : Type*} (ι : S → A) :
+    hM.toUngradedAInfinityRightModule.IsStrictlyUnital ι := by
+  refine (UngradedAInfinityRightModule.isStrictlyUnital_iff _).2 fun n hn a _ _ _ => ?_
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  rw [hM.toUngradedAInfinityRightModule_act_add_two n, zero_apply]
 
 end IsUngradedDGRightModule
 
