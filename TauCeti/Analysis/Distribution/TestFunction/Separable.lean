@@ -70,17 +70,9 @@ into the continuous maps on `K`. It is the derivative given by
 vanishes. -/
 noncomputable def restrictStructureMapCLM (i : ℕ) :
     𝓓^{n}_{K}(E, F) →L[𝕜] C(K, E [×i]→L[ℝ] F) :=
-  ContDiffMapSupportedIn.mkCLMtoNormedSpace 𝕜 (G := C(K, E [×i]→L[ℝ] F))
-    (fun f ↦ (structureMapCLM 𝕜 n i f).toContinuousMap.restrict K)
-    (fun f g ↦ by ext1; simp only [ContinuousMap.restrict_apply, map_add, ContinuousMap.add_apply,
-      BoundedContinuousFunction.coe_toContinuousMap, FunLike.coe_add, Pi.add_apply])
-    (fun c f ↦ by ext1; simp only [ContinuousMap.restrict_apply, map_smul,
-      ContinuousMap.smul_apply, BoundedContinuousFunction.coe_toContinuousMap, FunLike.coe_smul,
-      Pi.smul_apply])
-    ⟨{i}, 1, zero_le_one, fun f ↦ by
-      rw [Finset.sup_singleton, one_mul, ContDiffMapSupportedIn.seminorm_apply]
-      refine (ContinuousMap.norm_le _ (by positivity)).2 fun x ↦ ?_
-      exact BoundedContinuousFunction.norm_coe_le_norm (structureMapCLM 𝕜 n i f) (x : E)⟩
+  (ContinuousMap.linearIsometryBoundedOfCompact K (E [×i]→L[ℝ] F) 𝕜).symm.toContinuousLinearEquiv
+    ∘L BoundedContinuousFunction.compContinuousCLM _ 𝕜 (ContinuousMap.subtypeVal (K : Set E))
+    ∘L structureMapCLM 𝕜 n i
 
 /-- The restricted derivative at a point of `K` is the structure map at that point. -/
 theorem restrictStructureMapCLM_apply_eq (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) (x : K) :
