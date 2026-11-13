@@ -47,8 +47,7 @@ uniqueness of optimal plans.
 * the corresponding declarations in `TauCeti.Coupling` specialize these results to the bundled
   probability-coupling type.
 
-This is Layer 0, item 3 of the optimal-transport roadmap. The construction and uniqueness theorem
-consume Mathlib's `MeasureTheory.Measure.disintegrate` and
+The construction and uniqueness theorem consume Mathlib's `MeasureTheory.Measure.disintegrate` and
 `ProbabilityTheory.eq_condKernel_of_measure_eq_compProd`; no disintegration is rebuilt here.
 
 ## References

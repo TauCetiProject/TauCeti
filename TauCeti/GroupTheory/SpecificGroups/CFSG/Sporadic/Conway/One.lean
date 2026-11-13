@@ -10,11 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the first Conway group
 
-This file carries the `Co₁` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records presentation `GPLTable.Co1.1` from Roderik
-Lindenbergh's Group Presentations Library as a `TauCeti.GroupPresentation`, together with the exact
-source, generator convention, transcription notes, expected counts, and decidable checks on the
-transcription.
+This file carries the `Co₁` row of the sporadic presentation data. It records presentation
+`GPLTable.Co1.1` from Roderik Lindenbergh's Group Presentations Library as a
+`TauCeti.GroupPresentation`, together with the exact source, generator convention, transcription
+notes, expected counts, and decidable checks on the transcription.
 
 The presentation uses the Coxeter graph encoded by
 
@@ -73,7 +72,7 @@ ac,ad,af,ag, bd,be,bf, cg,ch, de,dg,dh, eg,eh, gh.
 order, `a⁻¹(cf)²`, `e⁻¹(bg)²`, `b⁻¹(ef)³`, `d⁻¹(bh)²`, `d⁻¹(eah)³`, `(adfh)³`, `(baefg)³`,
 `(cef)⁷`, and `(adefcefgh)³⁹`. There is no change to any word or exponent and no dropped or
 duplicated relation, only the presentation-irrelevant renaming and regrouping just described. This
-closes the row's S1 source-to-Lean read-through.
+closes the row's source-to-Lean read-through.
 
 The independent `FiniteSimpleGroups` comparison does not apply: at commit
 `7f09e33a9ceef6b59ce03e34cd4f0558c763e325`, that development has sporadic constructions for

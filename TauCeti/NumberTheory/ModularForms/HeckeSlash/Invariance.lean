@@ -23,7 +23,7 @@ That is the content of Shimura's Proposition 3.37 — right multiplication by `�
 
 ⚠ The two groups are different: the hypothesis is invariance under `Γ₁` and the conclusion is
 invariance under `Γ₂`. They agree on a diagonal triple `HeckeCoset Δ Γ Γ`, which is where the
-Hecke operators of Layer 2(b) live, but nothing here needs them to.
+Hecke operators live, but nothing here needs them to.
 
 ## Main results
 
