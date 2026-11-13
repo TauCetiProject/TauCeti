@@ -453,10 +453,10 @@ theorem eLpNorm_map_prodMap_id_snd_le {π : Measure (X × Y)} {σ : Measure (Y �
     eLpNorm_map_measure hc₁.aestronglyMeasurable
       (measurable_id.prodMap measurable_fst).aemeasurable, ← hγσ, MeasureTheory.Measure.snd,
     eLpNorm_map_measure hc₂.aestronglyMeasurable measurable_snd.aemeasurable]
-  exact (eLpNorm_mono_enorm (hc.comp (measurable_id.prodMap measurable_snd)).aestronglyMeasurable
+  exact (eLpNorm_mono_eNorm (hc.comp (measurable_id.prodMap measurable_snd)).aestronglyMeasurable
     (g := c₁ ∘ Prod.map id Prod.fst + c₂ ∘ Prod.snd)
     fun ⟨x, y, z⟩ ↦ by
-      simpa only [enorm_eq_self, Pi.add_apply, Function.comp_apply, Prod.map_apply, id_eq] using
+      simpa only [eNorm_eq_self, Pi.add_apply, Function.comp_apply, Prod.map_apply, id_eq] using
         hle x y z).trans (eLpNorm_add_le hp)
 
 /-! ### Gluing over a countable middle space
