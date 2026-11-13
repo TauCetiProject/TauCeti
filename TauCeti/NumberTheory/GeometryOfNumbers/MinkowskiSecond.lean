@@ -656,8 +656,8 @@ theorem prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume (L : Submodul
 
 /-- **Minkowski's second theorem for bodies of measure at least `2ⁿ`.** If a convex body `K`
 symmetric about `0` has `2ⁿ ≤ μ K`, then the successive minima of `L` with respect to `K` satisfy
-`λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`. This applies, for instance, to the central
-slices of the cube `[-1, 1]ⁿ`, whose volume is at least `2ⁿ` by Vaaler's theorem. -/
+`λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`. This applies, for instance, to the `n`-dimensional central
+slices of a cube `[-1, 1]ᴺ`, whose `n`-dimensional volume is at least `2ⁿ` by Vaaler's theorem. -/
 theorem prod_successiveMin_le_covolume_of_two_pow_finrank_le (L : Submodule ℤ E)
     [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
     {K : ConvexBody E} (hKs : ∀ x ∈ K, -x ∈ K) (hμK : 2 ^ finrank ℝ E ≤ μ K) :
