@@ -174,12 +174,9 @@ theorem isDunfordPettis_iff_forall_isCompact_image {T : E →L[𝕜] F} :
   constructor
   · -- By Šmulian's theorem a weakly compact set is weakly sequentially compact.
     intro hT K hK
-    refine IsSeqCompact.isCompact fun y hy ↦ ?_
-    choose x hxK hxy using hy
-    obtain rfl : y = T ∘ x := funext fun n ↦ (hxy n).symm
-    obtain ⟨-, ⟨a, ha, rfl⟩, φ, hφ, hlim⟩ := TauCeti.isSeqCompact_toWeakSpace_of_isCompact hK
-      (x := fun n ↦ toWeakSpace 𝕜 E (x n)) fun n ↦ mem_image_of_mem _ (hxK n)
-    exact ⟨T a, mem_image_of_mem T ha, φ, hφ, hT (x := x ∘ φ) hlim⟩
+    have hseq : SeqContinuous (fun w : WeakSpace 𝕜 E ↦ T ((toWeakSpace 𝕜 E).symm w)) := hT
+    simpa only [image_image, LinearEquiv.symm_apply_apply] using
+      ((TauCeti.isSeqCompact_toWeakSpace_of_isCompact hK).image hseq).isCompact
   · -- A weakly convergent sequence together with its limit is weakly compact.
     intro h x a hx
     have hK := h (insert a (range x)) <| by
