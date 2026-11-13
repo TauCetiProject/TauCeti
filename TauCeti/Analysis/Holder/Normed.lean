@@ -479,12 +479,8 @@ theorem norm_constL_le_one : ‖constL (α := α) (X := X) (Y := Y)‖ ≤ 1 :=
 /-- On a nonempty domain with nontrivial values, the constant map has operator norm one. -/
 @[simp]
 theorem norm_constL [Nonempty X] [Nontrivial Y] :
-    ‖constL (α := α) (X := X) (Y := Y)‖ = 1 := by
-  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
-  refine le_antisymm norm_constL_le_one ?_
-  have h := (constL (α := α) (X := X)).le_opNorm y
-  simpa only [constL_apply, norm_const,
-    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+    ‖constL (α := α) (X := X) (Y := Y)‖ = 1 :=
+  ContinuousLinearMap.homothety_norm _ (by simp)
 
 /-- On a nonempty domain with nontrivial values, the inclusion has operator norm one. -/
 @[simp]
@@ -661,10 +657,8 @@ theorem mem_supportedHolderSubmodule_iff {X Y : Type*} [MetricSpace X]
 /-- A bounded Hölder function in the fixed-support submodule is supported in that set. -/
 theorem support_subset_of_mem_supportedHolderSubmodule {X Y : Type*} [MetricSpace X]
     [NormedAddCommGroup Y] [NormedSpace ℝ Y] {α : ℝ≥0} {s : Set X}
-    {f : HolderSpace α X Y} (hf : f ∈ supportedHolderSubmodule α s) : Function.support f ⊆ s := by
-  intro z hz
-  by_contra h
-  exact hz (hf z h)
+    {f : HolderSpace α X Y} (hf : f ∈ supportedHolderSubmodule α s) : Function.support f ⊆ s :=
+  Function.support_subset_iff'.2 hf
 
 /-- The fixed-support Hölder subspace is closed, as an intersection of kernels of evaluations. -/
 theorem isClosed_supportedHolderSubmodule {X Y : Type*} [MetricSpace X] [NormedAddCommGroup Y]
