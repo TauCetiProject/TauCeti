@@ -35,7 +35,8 @@ This is the gamma integral contributed by one unit orbit of lattice points when 
 of an ideal lattice is integrated over the cone above a fundamental domain for the units (Hecke's
 integral representation of a partial zeta function). The integrand is integrable
 (`TauCeti.LFunctions.integrable_archGaussian_mul_archNorm_cpow`), as the interchange of the
-lattice sum with the integral requires.
+lattice sum with the integral requires, and its norm is its value at `Re s`
+(`TauCeti.LFunctions.norm_archGaussian_mul_archNorm_cpow`).
 
 ## References
 
@@ -167,5 +168,15 @@ theorem integral_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 
     _ = _ := by
         rw [Finset.prod_mul_distrib, prod_Gammaℝ_mult_mul, mixedEmbedding.norm_apply,
           ofReal_prod_pow_mult_cpow fun w ↦ (ha w).le]
+
+/-- At a positive parameter `y`, the norm of the Gaussian against `N(y)^(s/2)` is its value at
+`Re s`, which is real; this dominates the integrand at `s` by the one at `Re s`. -/
+theorem norm_archGaussian_mul_archNorm_cpow {y : realSpace K} (hy : ∀ w, 0 < y w) :
+    ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ =
+      (archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2)).re := by
+  have hN := archNorm_pos hy
+  have hσ : (s.re : ℂ) / 2 = ((s.re / 2 : ℝ) : ℂ) := by push_cast; ring
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos hN, hσ, ← ofReal_cpow hN.le, archGaussian_apply,
+    ← ofReal_mul, ofReal_re, norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, div_ofNat_re]
 
 end TauCeti.LFunctions
