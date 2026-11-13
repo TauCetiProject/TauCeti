@@ -10,9 +10,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
-import TauCeti.Geometry.Manifold.VectorBundle.Pullback.TangentialCorrection
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -26,11 +25,11 @@ two sheets of an immersion through one image point keep separate normal spaces.
 The orthogonal projection onto the normal space removes the tangential component of an ambient
 vector. That component is recovered by inverting the pullback metric on `M`, which gives the
 formula `v ↦ v - df ((df* df)⁻¹ (df* v))`
-(`TauCeti.starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse`). Consequently the
-normal projection is a `C^m` self-map of the pulled-back tangent bundle `f *ᵖ TN` for a `C^n`
-immersion with `m + 1 ≤ n` and a `C^m` metric
-(`TauCeti.contMDiff_starProjection_orthogonalNormalSpace`), an instance of the smooth
-tangential correction `TauCeti.contMDiff_of_eq_sub_mfderiv_inverse`. Projecting local sections
+(`TauCeti.starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse`). The normal projection
+is a `C^m` self-map of the pulled-back tangent bundle `f *ᵖ TN` for a `C^n` immersion with
+`m + 1 ≤ n` and a `C^m` metric (`TauCeti.contMDiff_starProjection_orthogonalNormalSpace`), by
+the smooth normal-projection endomorphism field
+`ContMDiff.starProjection_orthogonal_range_mfderiv`. Projecting local sections
 of `f *ᵖ TN` through preimages of a basis of one normal space gives `C^m` local frames of the
 normal spaces
 (`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace`). By the smooth local frame
@@ -205,9 +204,9 @@ variable {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifold J 1 N]
 omit [FiniteDimensional ℝ E] in
 /-- **The normal projection is smooth.** For a `C^n` immersion `f` with `m + 1 ≤ n` and a `C^m`
 ambient metric, orthogonal projection onto the normal spaces is a `C^m` self-map of the
-pulled-back tangent bundle `f *ᵖ TN`. Both the base point and the ambient vector may vary. It is
-the tangential correction `TauCeti.contMDiff_of_eq_sub_mfderiv_inverse` for the ambient metric
-and the induced metric on `M`. -/
+pulled-back tangent bundle `f *ᵖ TN`. Both the base point and the ambient vector may vary. It
+applies the `C^m` normal-projection endomorphism field
+`ContMDiff.starProjection_orthogonal_range_mfderiv` to the pulled-back vector. -/
 theorem contMDiff_starProjection_orthogonalNormalSpace {f : K} (hf : ContMDiff I J n f)
     (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, V)) m
@@ -217,23 +216,14 @@ theorem contMDiff_starProjection_orthogonalNormalSpace {f : K} (hf : ContMDiff I
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
   · exact fun p ↦ isEmptyElim p.proj
   have := finiteDimensional_of_injective_mfderiv (hinj x₀)
-  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  -- The induced metric identifies tangent vectors with covectors on the source.
-  let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
-    (IB := J) (n := m) (F := V) (V := fun y : N ↦ TangentSpace J y)
-  let a := g.pullback f (hf.of_le hm) hinj
-  refine contMDiff_of_eq_sub_mfderiv_inverse f hf hm a.contMDiff
-    (fun x ↦ ContinuousLinearMap.isInvertible_of_pos (E := E) (a.pos x)) g.contMDiff
-    (fun x v ↦ (orthogonalNormalSpace I J f x).starProjection v) fun x v ↦ ?_
-  rw [starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse (hinj x)]
-  have hg : g.inner (f x) = RiemannianBundle.g.inner (f x) := by
-    ext w z
-    exact ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner _ _ _
-  have hflat : a.inner x = (ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
-      ((g.inner (f x)).comp (mfderiv I J f x)) := by
-    ext w z
-    exact ContMDiffRiemannianMetric.pullback_inner _ _ _ _ _ _ _
-  simp only [hflat, hg]
+  let fc : C^m⟮I, M; J, N⟯ := ⟨f, hf.of_le (le_self_add.trans hm)⟩
+  have hbase : ContMDiff (I.prod 𝓘(ℝ, V)) I m
+      (π V ((f : M → N) *ᵖ (TangentSpace J))) := contMDiff_proj _
+  have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
+      (Pullback.lift (f : M → N)) :=
+    Pullback.contMDiff_lift fc fc.contMDiff (E := fun y : N ↦ TangentSpace J y)
+  refine (Pullback.contMDiff_iff fc fc.contMDiff).mpr ⟨hbase, ?_⟩
+  exact ((hf.starProjection_orthogonal_range_mfderiv hm hinj).comp hbase).clm_bundle_apply hlift
 
 variable [IsManifold J (m + 1) N]
 

@@ -110,7 +110,7 @@ theorem isSpanningForest : Γ.IsSpanningForest O (T.darts ∩ O) where
     rw [hO.supportGraph_inter T.rev_mem]
     ext a b
     exact iff_of_true (T.reachable_supportGraph a b)
-      (hO.reachable_supportGraph_iff.mpr ⟨T.path a b⟩)
+      (hO.reachable_supportGraph_iff_nonempty_path.mpr ⟨T.path a b⟩)
 
 /-- A spanning tree of a graph with finitely many vertices has one positive dart fewer than
 there are vertices. -/
