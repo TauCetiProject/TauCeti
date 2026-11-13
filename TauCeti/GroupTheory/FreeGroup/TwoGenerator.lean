@@ -9,6 +9,7 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 import Mathlib.Data.ZMod.Basic
+import TauCeti.Algebra.Group.Torsion
 import TauCeti.GroupTheory.FreeGroup.Basis
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import TauCeti.GroupTheory.FreeGroup.Hopfian
@@ -31,10 +32,12 @@ commutative (`FreeGroupBasis.nontrivial_of_not_commute`). Hence the surjection
 because free groups of finite rank are Hopfian
 (`FreeGroupBasis.injective_of_surjective_of_card_le`).
 
-For distinct basis elements `a` and `b` of a free group and `n ≠ 0`, the elements `aⁿ` and `b` do
-not commute, so they freely generate the subgroup `⟨aⁿ, b⟩`. For `n ≠ 1` this subgroup does not
-contain `a`, as it lies in the kernel of the map to `ℤ/n` sending `a` to `1` and the other basis
-elements to `0`.
+As a free group has unique roots, nonzero powers `aᵐ` and `bⁿ` commute exactly when `a` and `b`
+do, so they freely generate a free group of rank two if and only if `a` and `b` do not commute.
+In particular, for distinct basis elements `a` and `b` of a free group and `n ≠ 0`, the elements
+`aⁿ` and `b` freely generate the subgroup `⟨aⁿ, b⟩`. For `n ≠ 1` this subgroup does not contain
+`a`, as it lies in the kernel of the map to `ℤ/n` sending `a` to `1` and the other basis elements
+to `0`.
 
 ## Main results
 
@@ -42,6 +45,11 @@ elements to `0`.
   group of rank two do not commute.
 * `IsFreeGroup.injective_lift_iff_not_commute`: the homomorphism `FreeGroup (Fin 2) →* F` sending
   the generators to `a` and `b` is injective if and only if `a` and `b` do not commute.
+* `IsFreeGroup.injective_lift_zpow_iff_not_commute`,
+  `IsFreeGroup.injective_lift_pow_iff_not_commute`: the same holds for nonzero powers `aᵐ` and
+  `bⁿ`.
+* `FreeGroup.injective_lift_of_pow_of_pow`: for distinct basis elements `a`, `b` and `m, n ≠ 0`,
+  the elements `aᵐ` and `bⁿ` freely generate a free group of rank two.
 * `FreeGroup.injective_lift_of_pow_of_ne`: for distinct basis elements `a`, `b` and `n ≠ 0`, the
   elements `aⁿ` and `b` freely generate a free group of rank two.
 * `FreeGroup.of_notMem_closure_of_pow_of_ne`: for distinct basis elements `a`, `b` and `n ≠ 1`,
@@ -88,22 +96,38 @@ theorem injective_lift_iff_not_commute {a b : F} :
     Function.Injective (FreeGroup.lift ![a, b]) ↔ ¬Commute a b :=
   ⟨FreeGroup.not_commute_of_injective_lift, injective_lift_of_not_commute⟩
 
+/-- Nonzero integer powers `aᵐ` and `bⁿ` of elements of a free group freely generate a free group
+of rank two if and only if `a` and `b` do not commute. -/
+theorem injective_lift_zpow_iff_not_commute {a b : F} {m n : ℤ} (hm : m ≠ 0) (hn : n ≠ 0) :
+    Function.Injective (FreeGroup.lift ![a ^ m, b ^ n]) ↔ ¬Commute a b := by
+  rw [injective_lift_iff_not_commute, Commute.zpow_left_iff hm, Commute.zpow_right_iff hn]
+
+/-- Nonzero powers `aᵐ` and `bⁿ` of elements of a free group freely generate a free group of rank
+two if and only if `a` and `b` do not commute. -/
+theorem injective_lift_pow_iff_not_commute {a b : F} {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0) :
+    Function.Injective (FreeGroup.lift ![a ^ m, b ^ n]) ↔ ¬Commute a b := by
+  simpa only [zpow_natCast] using
+    injective_lift_zpow_iff_not_commute (a := a) (b := b) (Nat.cast_ne_zero.2 hm)
+      (Nat.cast_ne_zero.2 hn)
+
 end IsFreeGroup
 
 namespace FreeGroup
 
-variable {α : Type*} {a b : α} {n : ℕ}
+variable {α : Type*} {a b : α} {m n : ℕ}
+
+/-- For distinct basis elements `a` and `b` of a free group and `m, n ≠ 0`, the elements `aᵐ` and
+`bⁿ` freely generate a free group of rank two. -/
+theorem injective_lift_of_pow_of_pow (hab : a ≠ b) (hm : m ≠ 0) (hn : n ≠ 0) :
+    Function.Injective (FreeGroup.lift ![of a ^ m, of b ^ n]) :=
+  (IsFreeGroup.injective_lift_pow_iff_not_commute hm hn).2 (hab ∘ eq_of_commute_of_of)
 
 /-- For distinct basis elements `a` and `b` of a free group and `n ≠ 0`, the elements `aⁿ` and `b`
 freely generate a free group of rank two; its image is the subgroup `⟨aⁿ, b⟩`
 (`FreeGroup.range_lift_eq_closure`). -/
 theorem injective_lift_of_pow_of_ne (hab : a ≠ b) (hn : n ≠ 0) :
     Function.Injective (FreeGroup.lift ![of a ^ n, of b]) := by
-  -- An element commuting with `b` is a power of `b`, and `aⁿ = bᵐ` forces `n = 0`.
-  refine IsFreeGroup.injective_lift_of_not_commute fun h => ?_
-  obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute h)
-  have := eq_of_of_zpow_eq_of_zpow hab (n := n) (m := m) (by simpa using hm.symm)
-  lia
+  simpa only [pow_one] using injective_lift_of_pow_of_pow hab hn one_ne_zero
 
 /-- For distinct basis elements `a` and `b` of a free group and `n ≠ 1`, the element `a` does not
 lie in the subgroup `⟨aⁿ, b⟩`. -/

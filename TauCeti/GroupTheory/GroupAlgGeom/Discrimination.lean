@@ -27,12 +27,17 @@ of quotients of free `G`-groups, even before the quotient is known to be a `G`-g
   discrimination and separation are transitive.
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.comp`, `TauCeti.GroupAlgGeom.IsSeparatedBy.comp`:
   discrimination and separation survive restriction of the coefficients.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.of_bijective`,
+  `TauCeti.GroupAlgGeom.IsSeparatedBy.of_bijective`: discrimination and separation transfer to
+  `G`-isomorphic groups.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.prod`: a product of groups separated by `H` is separated by
   `H`, through the two projections.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.isMulTorsionFree`: a group separated by a torsion-free
   group is torsion-free, so a nontrivial finite group is not separated by a torsion-free group
   (`TauCeti.GroupAlgGeom.not_isSeparatedBy_of_finite`); for instance `ℤ/2` is not separated by `ℤ`
   (`TauCeti.GroupAlgGeom.not_isSeparatedBy_zmod_two_int`).
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.isMulCommutative`: a group separated by a commutative group
+  is commutative.
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isCommTransitive`: a group discriminated by a
   commutative transitive group is commutative transitive.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
@@ -120,6 +125,13 @@ theorem of_injective {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
   intro k hk
   simpa [GHom.coe_comp] using hφ (f k) (Finset.mem_image.mpr ⟨k, hk, rfl⟩)
 
+/-- A group `G`-isomorphic to a group discriminated by `H` is discriminated by `H`: discrimination
+transfers along a bijective coefficient-preserving homomorphism. -/
+theorem of_bijective {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
+    (h : IsDiscriminatedBy ιK ιH) (f : GHom ιK ιL) (hf : Function.Bijective f) :
+    IsDiscriminatedBy ιL ιH :=
+  h.of_injective (f.symmOfBijective hf) (f.symmOfBijective_injective hf)
+
 /-- Every group with a coefficient map discriminates itself through the identity. -/
 theorem self (ιK : G →* K) : IsDiscriminatedBy ιK ιK := by
   intro s hs
@@ -168,6 +180,13 @@ theorem of_injective {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
   obtain ⟨φ, hφ⟩ := h (f k) ((map_ne_one_iff f hf).2 hk)
   exact ⟨φ.comp f, by simpa [GHom.coe_comp] using hφ⟩
 
+/-- A group `G`-isomorphic to a group separated by `H` is separated by `H`: separation transfers
+along a bijective coefficient-preserving homomorphism. -/
+theorem of_bijective {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
+    (h : IsSeparatedBy ιK ιH) (f : GHom ιK ιL) (hf : Function.Bijective f) :
+    IsSeparatedBy ιL ιH :=
+  h.of_injective (f.symmOfBijective hf) (f.symmOfBijective_injective hf)
+
 /-- Separation is transitive: if `K` is separated by `L` and `L` by `H`, all over `G`, then `K`
 is separated by `H`. -/
 theorem trans {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
@@ -202,6 +221,14 @@ theorem isMulTorsionFree [IsMulTorsionFree H] {ιK : G →* K} {ιH : G →* H}
   .of_not_isOfFinOrder fun k hk hfin =>
     let ⟨φ, hφ⟩ := h k hk
     not_isOfFinOrder_of_isMulTorsionFree hφ (MonoidHom.isOfFinOrder (φ : K →* H) hfin)
+
+/-- A group separated by a commutative group is commutative: a homomorphism keeping the nonidentity
+element `x * y * (y * x)⁻¹` nontrivial would give two noncommuting elements of `H`. -/
+theorem isMulCommutative [IsMulCommutative H] {ιK : G →* K} {ιH : G →* H}
+    (h : IsSeparatedBy ιK ιH) : IsMulCommutative K :=
+  .of_comm fun x y => by_contra fun hxy =>
+    let ⟨φ, hφ⟩ := h (x * y * (y * x)⁻¹) (mul_inv_eq_one.not.2 hxy)
+    hφ (by simp [mul_comm' (φ x)])
 
 /-- A nontrivial group separated by `H` admits a coefficient-preserving homomorphism to `H`. -/
 theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
