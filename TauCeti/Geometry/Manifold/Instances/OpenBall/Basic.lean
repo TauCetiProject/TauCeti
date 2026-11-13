@@ -28,6 +28,17 @@ noncomputable instance instChartedSpaceBall (c : M) (r : ℝ) : ChartedSpace H (
   inferInstanceAs (ChartedSpace H
     (⟨Metric.ball c r, Metric.isOpen_ball⟩ : TopologicalSpace.Opens M))
 
+/-- The charted-space structure on a ball is the one on the corresponding bundled open set. -/
+theorem instChartedSpaceBall_eq (c : M) (r : ℝ) :
+    instChartedSpaceBall (H := H) c r =
+      TopologicalSpace.Opens.instChartedSpace ⟨Metric.ball c r, Metric.isOpen_ball⟩ := (rfl)
+
+/-- The atlas of an open ball consists of the restrictions of its ambient charts. -/
+theorem atlas_ball (c : M) (r : ℝ) :
+    atlas H (Metric.ball c r) = ⋃ x : Metric.ball c r,
+      {(chartAt H (x : M)).subtypeRestr
+        (s := ⟨Metric.ball c r, Metric.isOpen_ball⟩) ⟨x⟩} := (rfl)
+
 /-- The induced atlas makes an open ball in a manifold a manifold with the same model. -/
 instance instIsManifoldBall {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
     [NormedSpace 𝕜 E] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω} [IsManifold I n M]
@@ -51,6 +62,11 @@ theorem contMDiff_subtypeVal_ball :
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N]
   [ChartedSpace H' N] (f : N → Metric.ball c r)
+
+/-- Restricting the source to an open ball preserves `C^n` regularity at its points. -/
+theorem contMDiffAt_ball_iff {g : M → N} {x : Metric.ball c r} :
+    ContMDiffAt I I' n (fun x : Metric.ball c r ↦ g x) x ↔ ContMDiffAt I I' n g x :=
+  contMDiffAt_subtype_iff (U := ⟨Metric.ball c r, Metric.isOpen_ball⟩)
 
 /-- A map into an open ball is `C^n` within a set at a point iff its ambient map is. -/
 @[simp] theorem contMDiffWithinAt_subtypeVal_ball_comp_iff (s : Set N) (x : N) :
