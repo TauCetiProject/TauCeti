@@ -17,6 +17,7 @@ that coordinate there.
 
 ## Main results
 
+* `HasDerivAt.eq_zero_of_eventually_const`: a derivative of a locally constant function is zero.
 * `TauCeti.deriv_eq_zero_of_not_mem_Ioo`: a function `ℝ → E` constant on `(-∞, a]` and on `[b, ∞)`
   has zero derivative outside `(a, b)`.
 * `TauCeti.deriv_prodMk_eq_zero_of_eventually_eq`: a function on `X × 𝕜` locally independent of
@@ -26,6 +27,13 @@ that coordinate there.
 public section
 
 open Filter Set Topology
+
+/-- A derivative of a function constant on a neighbourhood of the point is zero. -/
+theorem HasDerivAt.eq_zero_of_eventually_const {𝕜 E : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f : 𝕜 → E} {f' : E} {t : 𝕜} {c : E} (hf : HasDerivAt f f' t)
+    (h : f =ᶠ[𝓝 t] fun _ ↦ c) : f' = 0 :=
+  hf.unique ((hasDerivAt_const t c).congr_of_eventuallyEq h)
 
 namespace TauCeti
 
