@@ -281,6 +281,15 @@ def finiteTypeSplitTorusCoordinateIso :
   ObjectProperty.isoMk _ <| (splitTorusCoordinateIso R i half hi hhalf) ≪≫
     eqToIso (finiteTypeCoordinateHopfAlgebra_obj R 2).symm
 
+/-- The underlying morphism of `finiteTypeSplitTorusCoordinateIso` is the split-torus coordinate
+isomorphism followed by the identification of the finite-type package with its object. -/
+theorem finiteTypeSplitTorusCoordinateIso_hom :
+    (finiteTypeSplitTorusCoordinateIso R i half hi hhalf).hom.hom =
+      ((splitTorusCoordinateIso R i half hi hhalf) ≪≫
+        eqToIso (finiteTypeCoordinateHopfAlgebra_obj R 2).symm).hom := by
+  unfold finiteTypeSplitTorusCoordinateIso
+  rfl
+
 /-- When the base contains a square root of `-1` and a half, `SO₂` is a split torus.
 `finiteTypeSplitTorusCoordinateIso` identifies it with the rank-one split torus. -/
 theorem splitTorusCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_two

@@ -130,6 +130,13 @@ def coeffEquiv : BrauerAlgebra R δ k ≃ (BrauerDiagram k →₀ R) where
   left_inv _ := (rfl)
   right_inv _ := (rfl)
 
+@[simp]
+theorem coeffEquiv_apply (x : BrauerAlgebra R δ k) : coeffEquiv R δ k x = x.coeff := (rfl)
+
+@[simp]
+theorem coeffEquiv_symm_apply (f : BrauerDiagram k →₀ R) :
+    (coeffEquiv R δ k).symm f = ofCoeff f := (rfl)
+
 noncomputable instance : AddCommMonoid (BrauerAlgebra R δ k) := (coeffEquiv R δ k).addCommMonoid
 
 @[simp]
@@ -142,6 +149,13 @@ variable (R δ k) in
 /-- The coefficients in the diagram basis, as an additive equivalence. -/
 noncomputable def coeffAddEquiv : BrauerAlgebra R δ k ≃+ (BrauerDiagram k →₀ R) :=
   (coeffEquiv R δ k).addEquiv
+
+@[simp]
+theorem coeffAddEquiv_apply (x : BrauerAlgebra R δ k) : coeffAddEquiv R δ k x = x.coeff := (rfl)
+
+@[simp]
+theorem coeffAddEquiv_symm_apply (f : BrauerDiagram k →₀ R) :
+    (coeffAddEquiv R δ k).symm f = ofCoeff f := (rfl)
 
 noncomputable instance : Module R (BrauerAlgebra R δ k) := (coeffAddEquiv R δ k).module R
 

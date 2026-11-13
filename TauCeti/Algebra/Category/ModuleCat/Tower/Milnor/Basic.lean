@@ -167,10 +167,19 @@ theorem limComplex_X (i : ι) : C.limComplex.X i = ModuleCat.of R (C.term i).lim
 
 /-- The differential of the limit complex is the map induced on limits by the differentials of the
 tower. -/
-@[simp]
+-- Not `@[simp]`: the right-hand side lives on `(C.term i).lim`, which agrees with the carrier of
+-- `C.limComplex.X i` only after unfolding `limComplex`, so the tower simp set cannot fire after
+-- rewriting; use `limComplex_d_hom_apply` instead.
 theorem limComplex_d_hom (i j : ι) :
     (C.limComplex.d i j).hom = ModuleTower.limMap (C.dTower i j) :=
   (rfl)
+
+/-- The differential of the limit complex acts coordinatewise on the projections to the tower. -/
+@[simp]
+theorem limComplex_d_hom_apply (i j : ι) (x : C.limComplex.X i) (n : ℕ) :
+    (C.term j).limπ n ((C.limComplex.d i j).hom x) =
+      (C.obj (op n)).d i j ((C.term i).limπ n x) :=
+  LinearMap.congr_fun (ModuleTower.limπ_comp_limMap (C.dTower i j) n) x
 
 /-- The product complex of a tower of complexes: in degree `i`, the product of the degree-`i`
 terms, with the product of the differentials. -/
@@ -191,10 +200,18 @@ theorem productComplex_X (i : ι) : C.productComplex.X i = ModuleCat.of R (C.ter
 
 /-- The differential of the product complex is the map induced on products by the differentials of
 the tower. -/
-@[simp]
+-- Not `@[simp]`: the right-hand side lives on `(C.term i).Product`, which agrees with the carrier
+-- of `C.productComplex.X i` only after unfolding `productComplex`, so the tower simp set cannot
+-- fire after rewriting; use `productComplex_d_hom_apply` instead.
 theorem productComplex_d_hom (i j : ι) :
     (C.productComplex.d i j).hom = ModuleTower.productMap (C.dTower i j) :=
   (rfl)
+
+/-- The differential of the product complex acts coordinatewise. -/
+@[simp]
+theorem productComplex_d_hom_apply (i j : ι) (x : C.productComplex.X i) (n : ℕ) :
+    (C.productComplex.d i j).hom x n = (C.obj (op n)).d i j (x n) :=
+  ModuleTower.productMap_apply (C.dTower i j) x n
 
 /-- The inclusion of the limit complex into the product complex. -/
 def limComplexι : C.limComplex ⟶ C.productComplex where

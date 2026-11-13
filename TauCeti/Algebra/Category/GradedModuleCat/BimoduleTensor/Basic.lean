@@ -343,13 +343,34 @@ theorem bimoduleModuleTensorMap_comp (f : M ⟶ M') (g : N ⟶ N')
   simp
 
 @[simp]
+theorem bimoduleModuleTensorTmul_add_left (m m' : M) (n : N) :
+    bimoduleModuleTensorTmul Γ Δ M N (m + m') n =
+      bimoduleModuleTensorTmul Γ Δ M N m n + bimoduleModuleTensorTmul Γ Δ M N m' n :=
+  BalancedTensorProduct.add_tmul k B m m' n
+
+@[simp]
+theorem bimoduleModuleTensorTmul_add_right (m : M) (n n' : N) :
+    bimoduleModuleTensorTmul Γ Δ M N m (n + n') =
+      bimoduleModuleTensorTmul Γ Δ M N m n + bimoduleModuleTensorTmul Γ Δ M N m n' :=
+  BalancedTensorProduct.tmul_add k B m n n'
+
+@[simp]
+theorem bimoduleModuleTensorTmul_smul_left (r : k) (m : M) (n : N) :
+    bimoduleModuleTensorTmul Γ Δ M N (r • m) n = r • bimoduleModuleTensorTmul Γ Δ M N m n :=
+  BalancedTensorProduct.smul_tmul k B r m n
+
+@[simp]
+theorem bimoduleModuleTensorTmul_smul_right (r : k) (m : M) (n : N) :
+    bimoduleModuleTensorTmul Γ Δ M N m (r • n) = r • bimoduleModuleTensorTmul Γ Δ M N m n :=
+  BalancedTensorProduct.tmul_smul k B r m n
+
+@[simp]
 theorem bimoduleModuleTensorMap_add_left (f f' : M ⟶ M') (g : N ⟶ N') :
     bimoduleModuleTensorMap Γ Δ (f + f') g =
       bimoduleModuleTensorMap Γ Δ f g + bimoduleModuleTensorMap Γ Δ f' g := by
   apply bimoduleModuleTensor_hom_ext Γ Δ
   intro m n
-  simp only [hom_add, LinearMap.add_apply, bimoduleModuleTensorMap_tmul]
-  exact BalancedTensorProduct.add_tmul k B _ _ _
+  simp
 
 @[simp]
 theorem bimoduleModuleTensorMap_add_right (f : M ⟶ M') (g g' : N ⟶ N') :
@@ -357,24 +378,21 @@ theorem bimoduleModuleTensorMap_add_right (f : M ⟶ M') (g g' : N ⟶ N') :
       bimoduleModuleTensorMap Γ Δ f g + bimoduleModuleTensorMap Γ Δ f g' := by
   apply bimoduleModuleTensor_hom_ext Γ Δ
   intro m n
-  simp only [hom_add, LinearMap.add_apply, bimoduleModuleTensorMap_tmul]
-  exact BalancedTensorProduct.tmul_add k B _ _ _
+  simp
 
 @[simp]
 theorem bimoduleModuleTensorMap_smul_left (c : k) (f : M ⟶ M') (g : N ⟶ N') :
     bimoduleModuleTensorMap Γ Δ (c • f) g = c • bimoduleModuleTensorMap Γ Δ f g := by
   apply bimoduleModuleTensor_hom_ext Γ Δ
   intro m n
-  simp only [hom_smul, LinearMap.smul_apply, bimoduleModuleTensorMap_tmul]
-  exact BalancedTensorProduct.smul_tmul k B _ _ _
+  simp
 
 @[simp]
 theorem bimoduleModuleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N') :
     bimoduleModuleTensorMap Γ Δ f (c • g) = c • bimoduleModuleTensorMap Γ Δ f g := by
   apply bimoduleModuleTensor_hom_ext Γ Δ
   intro m n
-  simp only [hom_smul, LinearMap.smul_apply, bimoduleModuleTensorMap_tmul]
-  exact BalancedTensorProduct.tmul_smul k B _ _ _
+  simp
 
 /-- Balanced tensor action of graded bimodules on graded left modules. -/
 -- Expose the object assignment so action maps and associator components have computed types.
@@ -408,17 +426,11 @@ theorem bimoduleModuleTensor_obj_obj : ((bimoduleModuleTensor Γ Δ).obj M).obj 
 
 @[simp, reassoc]
 theorem bimoduleModuleTensor_obj_map (g : N ⟶ N') :
-    ((bimoduleModuleTensor Γ Δ).obj M).map g =
-      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
-        bimoduleModuleTensorMap Γ Δ (𝟙 M) g ≫
-        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N')).symm := (rfl)
+    ((bimoduleModuleTensor Γ Δ).obj M).map g = bimoduleModuleTensorMap Γ Δ (𝟙 M) g := (rfl)
 
 @[simp, reassoc]
 theorem bimoduleModuleTensor_map_app (f : M ⟶ M') :
-    ((bimoduleModuleTensor Γ Δ).map f).app N =
-      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
-        bimoduleModuleTensorMap Γ Δ f (𝟙 N) ≫
-        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M') (N := N)).symm := (rfl)
+    ((bimoduleModuleTensor Γ Δ).map f).app N = bimoduleModuleTensorMap Γ Δ f (𝟙 N) := (rfl)
 
 -- Grading projections may compute for concrete gradings, so do not index on them.
 instance : Functor.Additive
