@@ -226,7 +226,7 @@ theorem vertexPreReflection_reflect_apply (i j : V) (d : V → ℤ) (w : V) :
   · rw [hw, vertexPreReflection_apply_self (Quiver.Reflect V i) j d,
       vertexPreReflection_apply_self V j d]
     congr 1
-    refine Finset.sum_congr rfl fun x _ ↦ ?_
+    refine Finset.sum_congr rfl fun (x : V) _ ↦ ?_
     congr 1
     exact_mod_cast Quiver.card_reflectHom_add_swap i j x
   · rw [vertexPreReflection_apply_of_ne (Quiver.Reflect V i) j d hw,
@@ -236,7 +236,7 @@ theorem vertexPreReflection_reflect_apply (i j : V) (d : V → ℤ) (w : V) :
 
 /-- At a sink `i`, the Euler form of the quiver reflected at `i` is carried to the Euler form of
 the original quiver by the simple reflection `sᵢ` on dimension vectors:
-`⟨sᵢ d, sᵢ e⟩` for `Q.reflect i` equals `⟨d, e⟩` for `Q`.
+`⟨sᵢ d, sᵢ e⟩` for `TauCeti.Quiver.Reflect V i` equals `⟨d, e⟩` for `V`.
 
 This is the numerical identity behind the Bernstein-Gelfand-Ponomarev reflection functor at a
 sink, which realizes `sᵢ` on dimension vectors. -/
@@ -264,7 +264,7 @@ theorem eulerForm_reflect_vertexPreReflection {i : V} (h : Quiver.IsSink i) (d e
 
 /-- At a source `i`, the Euler form of the quiver reflected at `i` is carried to the Euler form of
 the original quiver by the simple reflection `sᵢ` on dimension vectors:
-`⟨sᵢ d, sᵢ e⟩` for `Q.reflect i` equals `⟨d, e⟩` for `Q`.
+`⟨sᵢ d, sᵢ e⟩` for `TauCeti.Quiver.Reflect V i` equals `⟨d, e⟩` for `V`.
 
 This is the numerical identity behind the Bernstein-Gelfand-Ponomarev reflection functor at a
 source, which realizes `sᵢ` on dimension vectors. -/

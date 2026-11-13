@@ -108,6 +108,8 @@ let alone a holomorphic map.
 
 * `IsPreconnected.inter_frontier_nonempty` — a preconnected set meeting both a set and its
   complement meets the frontier of that set.
+* `IsPreconnected.subset_of_disjoint_frontier` — a preconnected set that meets a set and misses its
+  frontier lies in that set.
 * `TauCeti.frontier_image_subset_image_union_frontier_image` — for a set split into two sides with
   disjoint open images plus a remainder, the frontier of the image of the side lying in that set
   lies on the image of the remainder and on the frontier of the image of the whole.
@@ -120,6 +122,8 @@ let alone a holomorphic map.
   set where it is continuous.
 * `TauCeti.disjoint_frontier_of_Ioo_subset_of_subset_Icc` — a set avoiding `a` and `b` is disjoint
   from the frontier of every set between `Ioo a b` and `Icc a b`.
+* `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
+  frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
 -/
 
 public section
@@ -157,6 +161,14 @@ theorem _root_.IsPreconnected.inter_frontier_nonempty (hS : IsPreconnected S)
     exact hxV (interior_subset (h hxS))
   · obtain ⟨x, hxS, hxV⟩ := h₁
     exact h hxS (subset_closure hxV)
+
+/-- A preconnected set that meets `V` and misses its frontier lies in `V`: otherwise it would
+straddle `V` and so meet `frontier V`. -/
+theorem _root_.IsPreconnected.subset_of_disjoint_frontier (hS : IsPreconnected S)
+    (hdisj : Disjoint S (frontier V)) (hmeet : (S ∩ V).Nonempty) : S ⊆ V := by
+  by_contra h
+  obtain ⟨p, hpS, hpf⟩ := hS.inter_frontier_nonempty hmeet (Set.not_subset.mp h)
+  exact hdisj.le_bot ⟨hpS, hpf⟩
 
 /-- **The connected component of a point in the complement of a set `F` stays inside any set
 containing the point whose frontier lies in `F`.** Otherwise the component, being preconnected,
@@ -347,5 +359,18 @@ theorem disjoint_frontier_of_Ioo_subset_of_subset_Icc (h₁ : Ioo a b ⊆ Ω) (h
   exact hint (interior_maximal h₁ isOpen_Ioo ⟨hax, hxb⟩)
 
 end Interval
+
+section Bound
+
+variable {X : Type*} [TopologicalSpace X] [PreconnectedSpace X] [NoncompactSpace X]
+
+/-- A nonempty compact set `K` in a preconnected noncompact space has a nonempty frontier, so a
+bound `M` for the absolute value of a function on `frontier K` is nonnegative. -/
+theorem nonneg_of_forall_abs_le_frontier {K : Set X} (hK : IsCompact K) (hne : K.Nonempty)
+    {f : X → ℝ} {M : ℝ} (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) : 0 ≤ M := by
+  obtain ⟨y, hy⟩ := nonempty_frontier_iff.2 ⟨hne, hK.ne_univ⟩
+  exact (abs_nonneg _).trans (hbdry hy)
+
+end Bound
 
 end TauCeti

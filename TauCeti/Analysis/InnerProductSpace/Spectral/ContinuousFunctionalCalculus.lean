@@ -133,7 +133,7 @@ theorem IsSelfAdjoint.cfc_indicator_eq_starProjection_ker {T : H →L[𝕜] H} (
     · exact (continuousWithinAt_const.sub (hf x hx)).div continuousWithinAt_id hx0
   have hsub : 1 - P = cfc g T * T := by
     calc 1 - P = cfc (fun x ↦ 1 - f x) T := by rw [cfc_sub (fun _ ↦ 1) f T, cfc_const_one ℝ T]
-      _ = cfc (fun x ↦ g x * x) T := cfc_congr fun x hx ↦ by
+      _ = cfc (fun x ↦ g x * x) T := cfc_congr fun x _ ↦ by
           by_cases hx0 : x = 0
           · simp [hx0, f, h0]
           · exact (div_mul_cancel₀ _ hx0).symm

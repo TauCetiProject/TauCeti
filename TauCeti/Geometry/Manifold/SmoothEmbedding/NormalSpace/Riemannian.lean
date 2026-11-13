@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Representative
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Topology.VectorBundle.Riemannian
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -16,7 +16,8 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 For a smooth embedding into a manifold whose tangent spaces carry a Riemannian metric, every
 intrinsic normal class has a unique representative orthogonal to the tangent space of the
 embedded submanifold. This identifies the intrinsic normal space with the orthogonal complement
-of the embedded tangent space, using Mathlib's `Submodule.quotientEquivOfIsTopCompl`.
+of the embedded tangent space, as the complement representatives
+(`TauCeti.SmoothEmbedding.complementRepresentative`) of the orthogonal complement.
 
 ## References
 
@@ -58,8 +59,7 @@ of the embedded tangent space in the ambient tangent space. -/
 def normalSpaceOrthogonalComplementEquiv
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     f.NormalSpace x hn ≃L[ℝ] Submodule.orthogonal (f.tangentRange x hn) :=
-  (f.tangentRange x hn).quotientEquivOfIsTopCompl _
-    (isTopCompl_tangentRange_orthogonal f x hn)
+  f.normalSpaceComplementEquiv x hn (isTopCompl_tangentRange_orthogonal f x hn)
 
 /-- The inverse orthogonal-representative equivalence takes the normal class of the given
 orthogonal vector. -/
@@ -68,10 +68,8 @@ theorem normalSpaceOrthogonalComplementEquiv_symm_apply
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (v : Submodule.orthogonal (f.tangentRange x hn)) :
     (f.normalSpaceOrthogonalComplementEquiv x hn).symm v =
-      f.normalClass x hn v := by
-  rw [normalClass_def]
-  exact Submodule.quotientEquivOfIsTopCompl_symm_apply
-    (isTopCompl_tangentRange_orthogonal f x hn) v
+      f.normalClass x hn v :=
+  f.normalSpaceComplementEquiv_symm_apply x hn _ v
 
 /-- The orthogonal representative of the class of an ambient tangent vector is its projection
 onto the orthogonal complement of the embedded tangent space. -/
@@ -93,16 +91,14 @@ theorem normalSpaceOrthogonalComplementEquiv_normalClass
 intrinsic normal class. -/
 def normalRepresentative (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     f.NormalSpace x hn →L[ℝ] TangentSpace J (f x) :=
-  (Submodule.orthogonal (f.tangentRange x hn)).subtypeL.comp
-    (f.normalSpaceOrthogonalComplementEquiv x hn).toContinuousLinearMap
+  f.complementRepresentative x hn (isTopCompl_tangentRange_orthogonal f x hn)
 
 /-- The normal representative is the orthogonal vector given by the orthogonal-representative
 equivalence. -/
 theorem normalRepresentative_apply
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn) :
-    f.normalRepresentative x hn v = f.normalSpaceOrthogonalComplementEquiv x hn v := by
-  rw [normalRepresentative, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-    ContinuousLinearEquiv.coe_coe]
+    f.normalRepresentative x hn v = f.normalSpaceOrthogonalComplementEquiv x hn v :=
+  f.complementRepresentative_apply x hn _ v
 
 /-- The representative of an ambient tangent class is its orthogonal projection to the normal
 directions. -/
@@ -120,18 +116,16 @@ theorem normalRepresentative_normalClass
 theorem normalClass_normalRepresentative
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (v : f.NormalSpace x hn) :
-    f.normalClass x hn (f.normalRepresentative x hn v) = v := by
-  rw [normalRepresentative_apply, ← normalSpaceOrthogonalComplementEquiv_symm_apply,
-    ContinuousLinearEquiv.symm_apply_apply]
+    f.normalClass x hn (f.normalRepresentative x hn v) = v :=
+  f.normalClass_complementRepresentative x hn _ v
 
 /-- Normal representatives are orthogonal to every tangent vector of the embedded
 submanifold. -/
 theorem normalRepresentative_mem_orthogonal
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (v : f.NormalSpace x hn) :
-    f.normalRepresentative x hn v ∈ Submodule.orthogonal (f.tangentRange x hn) := by
-  rw [normalRepresentative_apply]
-  exact (f.normalSpaceOrthogonalComplementEquiv x hn v).property
+    f.normalRepresentative x hn v ∈ Submodule.orthogonal (f.tangentRange x hn) :=
+  f.complementRepresentative_mem x hn _ v
 
 /-- The normal representative is the unique orthogonal ambient tangent vector in its normal
 class. -/
@@ -139,14 +133,8 @@ theorem normalRepresentative_eq_iff
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (v : f.NormalSpace x hn) (w : TangentSpace J (f x)) :
     f.normalRepresentative x hn v = w ↔
-      w ∈ Submodule.orthogonal (f.tangentRange x hn) ∧ f.normalClass x hn w = v := by
-  constructor
-  · rintro rfl
-    exact ⟨f.normalRepresentative_mem_orthogonal x hn v,
-      f.normalClass_normalRepresentative x hn v⟩
-  · rintro ⟨hw, hv⟩
-    rw [← hv, normalRepresentative_normalClass,
-      Submodule.starProjection_eq_self_iff.mpr hw]
+      w ∈ Submodule.orthogonal (f.tangentRange x hn) ∧ f.normalClass x hn w = v :=
+  f.complementRepresentative_eq_iff x hn _ v w
 
 /-- The normal representative is perpendicular to the differential of every tangent vector. -/
 theorem inner_normalRepresentative_mfderiv
@@ -176,7 +164,7 @@ theorem normalRepresentative_normalClass_eq_sub_mfderiv_inverse
   let d := mfderiv I J f x
   let a := (ContinuousLinearMap.precomp ℝ d).comp
     ((RiemannianBundle.g.inner (f x)).comp d)
-  let : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have ha : a.IsInvertible := ContinuousLinearMap.isInvertible_of_pos (E := E) fun w hw0 ↦
     RiemannianBundle.g.pos (f x) (d w)
       ((map_ne_zero_iff d (f.isImmersion.mfderiv_injective hn x)).mpr hw0)

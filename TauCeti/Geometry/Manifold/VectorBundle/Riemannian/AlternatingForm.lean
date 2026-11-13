@@ -73,7 +73,7 @@ theorem ContMDiffWithinAt.alternatingFormInner_bundle
       (t : powersetCard (Fin (Module.finrank ℝ F)) k) :
       ContMDiffWithinAt I 𝓘(ℝ) n
         (fun y ↦ γ y (fun i ↦ v (powersetCard.ofFinEmbEquiv.symm t i) y)) s x :=
-    (contMDiffWithinAt_totalSpace.1 (hγ.continuousAlternatingMap_bundle_apply
+    (contMDiffWithinAt_totalSpace_iff.1 (hγ.continuousAlternatingMap_bundle_apply
       (fun i ↦ (hv _).contMDiffWithinAt))).2
   have hs := contMDiffWithinAt_finsetSum (t := Finset.univ) fun t _ ↦
     (hval α hα t).mul (hval β hβ t)

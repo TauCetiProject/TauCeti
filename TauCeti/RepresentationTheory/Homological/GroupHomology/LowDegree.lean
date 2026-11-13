@@ -49,14 +49,14 @@ vanishes. -/
 theorem isZero_H1_of_forall_exists_zpow_eq [A.IsTrivial] (m : ℤ) (hG : ∀ g : G, ∃ x, x ^ m = g)
     (hA : ∀ a : A.V, m • a = 0) : CategoryTheory.Limits.IsZero (H1 A) := by
   rw [ModuleCat.isZero_iff_subsingleton]
-  suffices Subsingleton (Additive (Abelianization G) ⊗[ℤ] A) from
+  suffices Subsingleton (Additive (Group.Abelianization G) ⊗[ℤ] A) from
     (H1AddEquivOfIsTrivial A).injective.subsingleton
   rw [subsingleton_iff_forall_eq 0]
   intro z
   induction z using TensorProduct.inductionOn with
   | tmul x a =>
     -- the class of `g = yᵐ` is `m` times that of `y`, and `m` kills `a`
-    obtain ⟨g, hg⟩ : ∃ g, Abelianization.of g = x.toMul := QuotientGroup.mk_surjective x.toMul
+    obtain ⟨g, hg⟩ : ∃ g, Group.Abelianization.of g = x.toMul := QuotientGroup.mk_surjective x.toMul
     obtain ⟨y, rfl⟩ := hG g
     rw [← ofMul_toMul x, ← hg, map_zpow, ofMul_zpow, TensorProduct.smul_tmul, hA,
       TensorProduct.tmul_zero]

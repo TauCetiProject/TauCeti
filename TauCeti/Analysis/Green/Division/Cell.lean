@@ -208,11 +208,11 @@ def rectangle (a b c e : ℝ) (hab : a < b) (hce : c ≤ e) : GraphCell where
   ordered _ := hce
   lower_regular := ⟨∅, finite_empty, by
     refine (contDiffOn_const (c := c)).congr ?_
-    intro x hx
+    intro x _
     simp only [IccExtend_apply, ContinuousMap.coe_const, Function.const_apply]⟩
   upper_regular := ⟨∅, finite_empty, by
     refine (contDiffOn_const (c := e)).congr ?_
-    intro x hx
+    intro x _
     simp only [IccExtend_apply, ContinuousMap.coe_const, Function.const_apply]⟩
 
 @[simp]
