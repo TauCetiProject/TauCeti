@@ -19,6 +19,11 @@ the two-variable forms of Mathlib's bounds `(q - 1) ^ φ(n) < Φ_n(q) < (q + 1) 
 `q > 1`, obtained from `Φ_n(a, b) = Φ_n(a / b) b ^ φ(n)`; they are also stated for integer bases.
 For a prime `p` and bases `a, b ≥ 1`, the geometric sum
 `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` is at least `p`, and exceeds `p` once `a > 1`.
+Combining the lower and upper bounds across the expansion identity
+`Φ_{p m}(a, b) Φ_m(a, b) = Φ_m(a ^ p, b ^ p)` yields
+`((a ^ p - b ^ p) / (a + b)) ^ φ(m) < Φ_{p m}(a, b)` whenever `m ≠ 0` and `p ∤ m`, while for
+`b + 2 ≤ a` the lower bound `(a - b) ^ φ(n) ≥ 2 ^ (p - 1)` already exceeds every prime factor `p`
+of `n ≠ 0`.
 
 The lower bounds show that `Φ_n(a, b)` is large compared with the prime divisors of `n`, which is
 how the Bang–Zsigmondy theorem rules out cyclotomic values made only of nonprimitive prime
@@ -31,9 +36,16 @@ divisors.
 * `TauCeti.sub_pow_totient_le_homogeneousCyclotomic`,
   `TauCeti.homogeneousCyclotomic_le_add_pow_totient`: the non-strict bounds over `ℝ`, for every
   `n` and `0 ≤ b < a`.
+* `TauCeti.pow_sub_pow_div_add_pow_totient_lt_homogeneousCyclotomic`: for a prime `p`, `m ≠ 0`
+  with `p ∤ m`, and real `0 < b < a`, `((a ^ p - b ^ p) / (a + b)) ^ φ(m) < Φ_{p m}(a, b)`.
+* `TauCeti.natCast_lt_homogeneousCyclotomic_of_dvd`,
+  `Int.natCast_lt_homogeneousCyclotomic_of_dvd`: for a prime `p ∣ n`, `n ≠ 0`, `0 < b`, and
+  `b + 2 ≤ a`, `p < Φ_n(a, b)`.
+* `Int.natCast_lt_homogeneousCyclotomic_of_sq_dvd`: for a prime `p` with `p ^ 2 ∣ n`, `n ≠ 0`,
+  and integers `0 < b < a`, `p < Φ_n(a, b)`.
 * `Int.sub_pow_totient_lt_homogeneousCyclotomic`, `Int.homogeneousCyclotomic_lt_add_pow_totient`,
   `Int.sub_pow_totient_le_homogeneousCyclotomic`, `Int.homogeneousCyclotomic_le_add_pow_totient`:
-  the same bounds for integer bases.
+  the power bounds for integer bases.
 * `TauCeti.natCast_le_homogeneousCyclotomic_prime`,
   `TauCeti.natCast_lt_homogeneousCyclotomic_prime`: `p ≤ Φ_p(a, b)` for `a, b ≥ 1`, strictly if
   `a > 1`, in an ordered commutative ring.
@@ -95,6 +107,55 @@ theorem homogeneousCyclotomic_le_add_pow_totient (n : ℕ) {a b : ℝ} (hb : 0 �
         (cyclotomic_eval_le_add_one_pow_totient ((one_lt_div hb).2 hba) n) (pow_nonneg hb.le _)
     _ = (a + b) ^ n.totient := by rw [← mul_pow, add_one_mul, div_mul_cancel₀ a hb.ne']
 
+/-- For a prime `p`, `m ≠ 0` with `p ∤ m`, and real `0 < b < a`,
+`((a ^ p - b ^ p) / (a + b)) ^ φ(m) < Φ_{p m}(a, b)` (Roitman 1997, Lemma 1, pp. 1913–1914, for
+`b = 1`). -/
+theorem pow_sub_pow_div_add_pow_totient_lt_homogeneousCyclotomic {p m : ℕ} (hp : p.Prime)
+    (hm : m ≠ 0) (hpm : ¬p ∣ m) {a b : ℝ} (hb : 0 < b) (hba : b < a) :
+    ((a ^ p - b ^ p) / (a + b)) ^ m.totient < homogeneousCyclotomic (p * m) a b := by
+  have hΦpos : 0 < homogeneousCyclotomic m a b := homogeneousCyclotomic_pos hb.le hba m
+  have hap : b ^ p < a ^ p := pow_lt_pow_left₀ hba hb.le hp.ne_zero
+  have hab : 0 < a + b := by linarith
+  have hexp :
+      homogeneousCyclotomic (p * m) a b * homogeneousCyclotomic m a b =
+        homogeneousCyclotomic m (a ^ p) (b ^ p) := by
+    rw [mul_comm p m, homogeneousCyclotomic_mul_prime_mul_homogeneousCyclotomic hp hpm]
+  refine lt_of_mul_lt_mul_right ?_ hΦpos.le
+  rw [hexp]
+  obtain rfl | hm2 : m = 1 ∨ 2 ≤ m := by omega
+  · -- At `m = 1`, `Φ_1(a, b) = a - b < a + b` and `Φ_1(a ^ p, b ^ p) = a ^ p - b ^ p`.
+    simp only [Nat.totient_one, pow_one, homogeneousCyclotomic_one]
+    have hq : 0 < (a ^ p - b ^ p) / (a + b) := div_pos (sub_pos.2 hap) hab
+    calc (a ^ p - b ^ p) / (a + b) * (a - b)
+        < (a ^ p - b ^ p) / (a + b) * (a + b) := mul_lt_mul_of_pos_left (by linarith) hq
+      _ = a ^ p - b ^ p := div_mul_cancel₀ _ hab.ne'
+  · calc ((a ^ p - b ^ p) / (a + b)) ^ m.totient * homogeneousCyclotomic m a b
+        ≤ ((a ^ p - b ^ p) / (a + b)) ^ m.totient * (a + b) ^ m.totient :=
+          mul_le_mul_of_nonneg_left (homogeneousCyclotomic_le_add_pow_totient m hb.le hba)
+            (pow_nonneg (div_nonneg (sub_nonneg.2 hap.le) hab.le) _)
+      _ = (a ^ p - b ^ p) ^ m.totient := by
+          rw [div_pow, div_mul_cancel₀ _ (pow_ne_zero _ hab.ne')]
+      _ < homogeneousCyclotomic m (a ^ p) (b ^ p) :=
+          sub_pow_totient_lt_homogeneousCyclotomic hm2 (pow_pos hb p) hap
+
+/-- For a prime `p` dividing `n ≠ 0` and real `0 < b` with `b + 2 ≤ a`, `p < Φ_n(a, b)`. Both
+`0 < b` and `b + 2 ≤ a` are sharp (`Φ_2(2, 0) = 2` and `Φ_6(2, 1) = 3`). -/
+theorem natCast_lt_homogeneousCyclotomic_of_dvd {p n : ℕ} (hp : p.Prime) (hpn : p ∣ n)
+    (hn : n ≠ 0) {a b : ℝ} (hb : 0 < b) (hba : b + 2 ≤ a) :
+    (p : ℝ) < homogeneousCyclotomic n a b := by
+  have hn2 : 2 ≤ n := hp.two_le.trans (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) hpn)
+  have htot : p - 1 ≤ n.totient := by
+    rw [← Nat.totient_prime hp]
+    exact Nat.le_of_dvd (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn)) (Nat.totient_dvd_of_dvd hpn)
+  have hp2 : p ≤ 2 ^ (p - 1) := by
+    have := (p - 1).lt_two_pow_self
+    omega
+  calc (p : ℝ) ≤ (2 : ℝ) ^ (p - 1) := by exact_mod_cast hp2
+    _ ≤ (2 : ℝ) ^ n.totient := pow_le_pow_right₀ one_le_two htot
+    _ ≤ (a - b) ^ n.totient := pow_le_pow_left₀ zero_le_two (by linarith) _
+    _ < homogeneousCyclotomic n a b :=
+        sub_pow_totient_lt_homogeneousCyclotomic hn2 hb (by linarith)
+
 /-! ### Prime indices -/
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
@@ -151,5 +212,35 @@ theorem homogeneousCyclotomic_le_add_pow_totient (n : ℕ) {a b : ℤ} (hb : 0 �
     homogeneousCyclotomic n a b ≤ (a + b) ^ n.totient := by
   exact_mod_cast TauCeti.homogeneousCyclotomic_le_add_pow_totient n (a := a) (b := b)
     (by exact_mod_cast hb) (by exact_mod_cast hba)
+
+/-- For a prime `p` dividing `n ≠ 0` and integers `0 < b` with `b + 2 ≤ a`, `p < Φ_n(a, b)`. -/
+theorem natCast_lt_homogeneousCyclotomic_of_dvd {p n : ℕ} (hp : p.Prime) (hpn : p ∣ n)
+    (hn : n ≠ 0) {a b : ℤ} (hb : 0 < b) (hba : b + 2 ≤ a) :
+    (p : ℤ) < homogeneousCyclotomic n a b := by
+  exact_mod_cast TauCeti.natCast_lt_homogeneousCyclotomic_of_dvd hp hpn hn (a := a) (b := b)
+    (by exact_mod_cast hb) (by exact_mod_cast hba)
+
+/-- For a prime `p` with `p ^ 2 ∣ n`, `n ≠ 0`, and integers `0 < b < a`, `p < Φ_n(a, b)`.
+Unlike the power bounds, this uses the integrality gap `b + 1 ≤ a`: over `ℝ`,
+`Φ_18(a, 1) → 1 < 3` as `a → 1⁺`, while at `a = b = 1`, `Φ_4(1, 1) = 2`, and at `(2, 1, 6)`
+(`3 ∣ 6`, `3 ^ 2 ∤ 6`), `Φ_6(2, 1) = 3`. -/
+theorem natCast_lt_homogeneousCyclotomic_of_sq_dvd {p n : ℕ} (hp : p.Prime) (hpn : p ^ 2 ∣ n)
+    (hn : n ≠ 0) {a b : ℤ} (hb : 0 < b) (hba : b < a) :
+    (p : ℤ) < homogeneousCyclotomic n a b := by
+  obtain ⟨k, rfl⟩ := hpn
+  have hpk : p * k ≠ 0 := fun h0 => hn (by rw [sq, mul_assoc, h0, mul_zero])
+  rw [sq, mul_right_comm, homogeneousCyclotomic_mul_prime_of_dvd hp (dvd_mul_right p k)]
+  have hbern := pow_add_mul_le_add_pow hb.le (by omega : (0 : ℤ) ≤ 2 * b + 1) p
+  have hbp : 1 ≤ b ^ (p - 1) := one_le_pow₀ hb
+  have hp_le : (2 : ℤ) ≤ ↑p * b ^ (p - 1) * 1 := by
+    calc (2 : ℤ) ≤ ↑p * 1 * 1 := by simpa using Int.ofNat_le.2 hp.two_le
+      _ ≤ ↑p * b ^ (p - 1) * 1 := mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_left hbp (Nat.cast_nonneg p)) zero_le_one
+  have hgap : b ^ p + 2 ≤ a ^ p :=
+    calc b ^ p + 2 ≤ b ^ p + ↑p * b ^ (p - 1) * 1 := by linarith
+      _ ≤ (b + 1) ^ p := hbern
+      _ ≤ a ^ p := pow_le_pow_left₀ (by omega) (by omega) p
+  exact Int.natCast_lt_homogeneousCyclotomic_of_dvd hp (dvd_mul_right p k) hpk
+    (pow_pos hb p) hgap
 
 end Int
