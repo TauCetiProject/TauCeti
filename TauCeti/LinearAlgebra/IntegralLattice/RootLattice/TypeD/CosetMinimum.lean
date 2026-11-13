@@ -114,7 +114,7 @@ theorem sub_checkerboardVector_mem_and_form_self_eq_one_iff [NeZero n] (x : Fin 
         push_cast
         split_ifs <;> norm_num
       · simp [Finset.sum_sub_distrib]
-      · simp
+      · simp [Pi.single_apply]
 
 /-- **The minimum norm of the vector coset of `Dₙ` is `1`**: it is attained by `v = eₙ` and
 bounds the norm of every dual vector in the vector class. -/
