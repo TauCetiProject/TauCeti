@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.UniformSpace.HeineCantor
+import Mathlib.Topology.UniformSpace.Compact
 
 /-!
 # Composing uniformly convergent families with continuous maps
@@ -28,6 +29,9 @@ compact product `s ×ˢ t` suffices when all the values lie in `t`
 form in which the coefficients `J(z, u(z))` of a nonlinear equation converge along a sequence of
 maps `u` converging uniformly on a compact set.
 
+Uniform convergence to a limit mapping `s` into a compact set with a neighborhood `W` puts the
+values of the family on `s` eventually inside `W` (`TendstoUniformlyOn.eventually_mapsTo`).
+
 The file also records that a constant family converges uniformly
 (`TauCeti.tendstoUniformlyOn_const`), and that two families converging uniformly along the same
 filter converge jointly (`TendstoUniformlyOn.prodMk_same`), which is the form needed to compose
@@ -36,7 +40,7 @@ with maps of several variables.
 
 public section
 
-open Filter Set
+open Filter Set Topology
 
 variable {α β γ ι : Type*} [UniformSpace β] [UniformSpace γ]
   {F : ι → α → β} {f : α → β} {s : Set α} {g : β → γ} {p : Filter ι}
@@ -49,6 +53,15 @@ theorem IsCompact.comp_tendstoUniformlyOn (hf : IsCompact (f '' s))
     TendstoUniformlyOn (fun i x ↦ g (F i x)) (fun x ↦ g (f x)) p s := fun _ hu ↦ by
   filter_upwards [h _ (hf.uniformContinuousAt_of_continuousAt g hg hu)] with i hi x hx
   exact hi x hx (mem_image_of_mem f hx)
+
+/-- If `Fᵢ → f` uniformly on `s` and `f` maps `s` into a compact set `K` with a neighborhood `W`,
+then eventually every `Fᵢ` maps `s` into `W`. -/
+theorem TendstoUniformlyOn.eventually_mapsTo {K W : Set β} (h : TendstoUniformlyOn F f p s)
+    (hf : MapsTo f s K) (hK : IsCompact K) (hW : W ∈ 𝓝ˢ K) :
+    ∀ᶠ i in p, MapsTo (F i) s W := by
+  obtain ⟨V, hV, hVW⟩ := (hK.nhdsSet_basis_uniformity (uniformity β).basis_sets).mem_iff.1 hW
+  filter_upwards [h _ (tendsto_swap_uniformity hV)] with i hi x hx
+  exact hVW (mem_biUnion (hf hx) (hi x hx))
 
 namespace TauCeti
 
