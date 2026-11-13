@@ -35,6 +35,9 @@ by parts.
   reflection `gaussianPDFReal m v (-x) = gaussianPDFReal (-m) v x` and evenness at zero mean.
 * `TauCeti.Probability.antitoneOn_gaussianPDFReal` — the density decreases to the right of the
   mean.
+* `TauCeti.Probability.gaussianPDFReal_self`, `TauCeti.Probability.gaussianPDFReal_le_self`, and
+  `TauCeti.Probability.gaussianPDFReal_le` — the density attains its global maximum
+  `(√(2 * π * v))⁻¹` at the mean (with both sides vanishing when `v = 0`).
 * `TauCeti.Probability.tendsto_mul_gaussianPDFReal_zero_one_cocompact` — `x φ(x) → 0` as
   `|x| → ∞`, for the standard Gaussian density `φ`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
@@ -95,6 +98,25 @@ theorem antitoneOn_gaussianPDFReal (m : ℝ) (v : ℝ≥0) :
   have hx : 0 ≤ x - m := sub_nonneg.2 hx
   simp only [gaussianPDFReal]
   gcongr
+
+/-- At its mean `μ`, the Gaussian density equals `(√(2 * π * v))⁻¹` (and `0` when `v = 0`). -/
+@[simp]
+theorem gaussianPDFReal_self (μ : ℝ) (v : ℝ≥0) :
+    gaussianPDFReal μ v μ = (√(2 * π * (v : ℝ)))⁻¹ := by
+  simp [gaussianPDFReal]
+
+/-- The Gaussian density of `N(μ, v)` attains its global maximum at the mean `μ`. -/
+theorem gaussianPDFReal_le_self (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
+    gaussianPDFReal μ v x ≤ gaussianPDFReal μ v μ := by
+  rw [gaussianPDFReal_self, gaussianPDFReal]
+  refine mul_le_of_le_one_right (by positivity) (Real.exp_le_one_iff.2 ?_)
+  exact div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (sq_nonneg _)) (by positivity)
+
+/-- Uniform upper bound on the Gaussian density: `gaussianPDFReal μ v x ≤ (√(2 * π * v))⁻¹` for
+every variance `v`, including `v = 0` where both sides vanish. -/
+theorem gaussianPDFReal_le (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
+    gaussianPDFReal μ v x ≤ (√(2 * π * (v : ℝ)))⁻¹ :=
+  gaussianPDFReal_self μ v ▸ gaussianPDFReal_le_self μ v x
 
 /-- The standard Gaussian density decays faster than `1 / |x|`: `x φ(x) → 0` as `|x| → ∞`. -/
 theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :
