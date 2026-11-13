@@ -20,11 +20,15 @@ uniform order statements:
 * `IsPreconnected.forall_le_or_forall_ge`: a continuous function on `s` which never takes a value
   in the open interval `Ioo a b`, with `a < b`, lies below `a` on all of `s` or above `b` on all
   of `s`.
+
+A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
+`c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`.
 -/
 
 public section
 
 open Set
+open scoped Topology
 
 variable {X α : Type*} [TopologicalSpace X] [LinearOrder α] [TopologicalSpace α]
   [OrderClosedTopology α] {s : Set X}
@@ -71,3 +75,24 @@ theorem IsPreconnected.forall_le_or_forall_ge (hs : IsPreconnected s)
   exact (isPreconnected_iff_subset_of_disjoint_closed.1 (hs.image f hf) _ _ isClosed_Iic
     isClosed_Ici hcover hdisj).imp (fun h x hx ↦ h (mem_image_of_mem f hx))
     fun h x hx ↦ h (mem_image_of_mem f hx)
+
+/-- A function continuous on `Ioo a b`, eventually above `c` to the right of `a` and at most `c`
+somewhere in `Ioo a b`, has a least such point `t₁ ∈ Ioo a b`: `f t₁ ≤ c` and `c < f` on
+`Ioo a t₁`. -/
+theorem ContinuousOn.exists_mem_Ioo_le_and_forall_gt
+    [ConditionallyCompleteLinearOrder X] [OrderTopology X] {f : X → α} {a b : X} {c : α}
+    (hf : ContinuousOn f (Ioo a b)) (hpos : ∀ᶠ r in 𝓝[>] a, c < f r)
+    (hne : ∃ t ∈ Ioo a b, f t ≤ c) : ∃ t₁ ∈ Ioo a b, f t₁ ≤ c ∧ ∀ r ∈ Ioo a t₁, c < f r := by
+  obtain ⟨t, ht, hft⟩ := hne
+  set Z := Ioo a b ∩ {t | f t ≤ c}
+  have hZ : Z.Nonempty := ⟨t, ht, hft⟩
+  obtain ⟨u, hu, hsub⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' (ht.1.trans ht.2)).1 hpos
+  have hbdd : BddBelow Z := ⟨a, fun z hz ↦ hz.1.1.le⟩
+  have hut₁ : u ≤ sInf Z := le_csInf hZ fun z hz ↦ le_of_not_gt fun h ↦
+    hz.2.not_gt (hsub ⟨hz.1.1, h⟩)
+  have ht₁ : sInf Z ∈ Ioo a b :=
+    ⟨lt_of_lt_of_le hu hut₁, (csInf_le hbdd ⟨ht, hft⟩).trans_lt ht.2⟩
+  refine ⟨sInf Z, ht₁, ?_, fun r hr ↦ lt_of_not_ge fun h ↦
+    hr.2.not_ge (csInf_le hbdd ⟨⟨hr.1, hr.2.trans ht₁.2⟩, h⟩)⟩
+  exact ContinuousWithinAt.closure_le (csInf_mem_closure hZ hbdd)
+    ((hf _ ht₁).mono inter_subset_left) continuousWithinAt_const fun _ hz ↦ hz.2
