@@ -62,7 +62,7 @@ variable (ℱ : AInfinityFunctor 𝒷 𝒸)
 `Hom(Xₙ₋₁, Xₙ), …, Hom(X₀, X₁)`, as for the operations of an `A∞` category, and its
 value is a morphism from `ℱ.obj (X 0)` to `ℱ.obj (X (Fin.last n))`. -/
 noncomputable def component {n : ℕ} (X : Fin (n + 1) → C) :
-    MultilinearMap R
+    MultilinearMap (RingHom.id R)
       (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
       (homModule (R := R) (ℱ.obj (X 0)) (ℱ.obj (X (Fin.last n)))) :=
   (ℱ.toAInfinityHom.component n).restrictToPath (fun x ↦ ⟨x⟩) X

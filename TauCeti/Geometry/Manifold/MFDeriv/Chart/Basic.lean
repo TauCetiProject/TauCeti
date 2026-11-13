@@ -61,7 +61,12 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   manifold, a map into a normed space is differentiable at a point exactly when its preferred
   coordinate expression is differentiable at the chart image of the point.
 * `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
-  vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+  vector-valued manifold derivative is the Fréchet derivative of the coordinate expression;
+  `TauCeti.mvfderiv_comp_tangentSpaceCastModel_symm`,
+  `TauCeti.mvfderiv_apply_eq_fderiv_comp_extChartAt_symm`,
+  `TauCeti.range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm`, and
+  `TauCeti.injective_fderiv_comp_extChartAt_symm_iff` record the corresponding composition with
+  the model-space tangent cast, pointwise evaluation, range equality, and injectivity equivalence.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   differential of a map into a normed space vanishes at a point exactly when the
   Fréchet derivative of its preferred-chart coordinate expression does.
@@ -518,6 +523,50 @@ theorem TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm {e : OpenPartial
 
 end SelfModel
 
+namespace TauCeti
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, `mvfderiv I f x`, read on the model space `E`, agrees with the
+Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`, even without a
+differentiability hypothesis (both vanish when `f` is not differentiable at `x`). -/
+theorem mvfderiv_comp_tangentSpaceCastModel_symm (f : M → F) (x : M) :
+    (mvfderiv I f x).comp ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x) =
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  ext v
+  exact DFunLike.congr_fun (TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm (I := I)) v
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, `mvfderiv I f x` evaluated on `v` equals the Fréchet derivative of
+the preferred coordinate expression evaluated on `tangentSpaceCastModel I x v`, without any
+differentiability assumption. -/
+theorem mvfderiv_apply_eq_fderiv_comp_extChartAt_symm (f : M → F) (x : M)
+    (v : TangentSpace I x) :
+    mvfderiv I f x v =
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) (tangentSpaceCastModel I x v) := by
+  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, the range of `mvfderiv I f x` equals the range of the Fréchet
+derivative of the preferred coordinate expression at `extChartAt I x x`. -/
+theorem range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm (f : M → F) (x : M) :
+    (mvfderiv I f x).range = (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x)).range := by
+  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.range_comp_of_range_eq_top]
+  exact LinearMap.range_eq_top.mpr (tangentSpaceCastModel I x).symm.surjective
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, injectivity of `mvfderiv I f x` is equivalent to injectivity of the
+Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`. -/
+theorem injective_fderiv_comp_extChartAt_symm_iff :
+    Function.Injective (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x)) ↔
+      Function.Injective (mvfderiv I f x) := by
+  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe]
+  refine ⟨fun h u w huw ↦ ?_, fun h ↦ h.comp (tangentSpaceCastModel I x).symm.injective⟩
+  exact (tangentSpaceCastModel I x).injective (h (by simpa using huw))
+
+end TauCeti
 end Boundaryless
 
 /-! ### Preferred charts of a composite charted space -/
