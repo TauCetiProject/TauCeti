@@ -155,7 +155,7 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
     have hmono : ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 ≤
         ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 :=
       setIntegral_mono_set hint (ae_restrict_of_forall_mem measurableSet_ball
-        fun _ _ ↦ sq_nonneg _) (ball_subset_ball hρr.le).eventuallyLE
+        fun _ _ ↦ sq_nonneg _) (ball_subset_ball hρr.le).eventuallySubset
     have hπ : π * ρ ^ 2 ≤ π * r ^ 2 := by gcongr
     have h := hmean (u := fun w ↦ WithLp.toLp 2 (w, u w)) hρ
       (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_id.prodMk (hu.mono
@@ -658,7 +658,7 @@ private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of
     rw [← hint_eq]
     exact hn.trans (setIntegral_mono_set
       ((hint_iff _ _).2 ((hint (φ n)).mono_set inter_subset_right))
-      (Eventually.of_forall fun _ ↦ by positivity) hsub.eventuallyLE)
+      (Eventually.of_forall fun _ ↦ by positivity) hsub.eventuallySubset)
   · obtain ⟨M', hM'⟩ := hbd' (e ⁻¹' C) (e.toHomeomorph.isCompact_preimage.2 hC)
       (hpreZ ▸ preimage_mono hCZ)
     refine ⟨M' * ‖(e.symm : ℝ × ℝ →L[ℝ] ℂ)‖, fun n y hy ↦ ?_⟩

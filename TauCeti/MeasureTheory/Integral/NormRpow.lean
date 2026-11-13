@@ -48,6 +48,9 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
+* `TauCeti.memLp_div_pow_compl_closedBall_iff` and
+  `TauCeti.memLp_div_sub_pow_compl_closedBall_iff`: `a / (z - c) ^ m` is in `Lᵖ` off a disc
+  centred at `c` exactly when `2 < m p`.
 * `IsCompact.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`: `‖x‖⁻¹` is
   `Lʳ` on compact sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
@@ -260,7 +263,7 @@ theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E) {z : E}
         ∫ y in ball x (2 * R), ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu := by
       apply setIntegral_mono_set hintegrable
       · exact ae_of_all _ fun y => Real.rpow_nonneg (norm_nonneg _) _
-      · exact hsub.eventuallyLE
+      · exact hsub.eventuallySubset
     _ = (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * (2 * R) :=
       by rw [integral_norm_sub_rpow_ball (by linarith) htwoR, add_sub_cancel, Real.rpow_one,
         div_one]
@@ -278,7 +281,7 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
   · -- In dimension zero the exponent is positive, so the kernel vanishes identically.
     have hs0 : 0 < s := by simpa [Module.finrank_zero_of_subsingleton] using hs
     have h0 : (fun y : E => ‖x - y‖ₑ ^ s) = 0 := funext fun y => by
-      rw [Subsingleton.elim (x - y) 0, enorm_zero, ENNReal.zero_rpow_of_pos hs0, Pi.zero_apply]
+      rw [Subsingleton.elim (x - y) 0, eNorm_zero, ENNReal.zero_rpow_of_pos hs0, Pi.zero_apply]
     simp [h0, lintegral_zero_fun, Module.finrank_zero_of_subsingleton]
   have hball := mu.addHaar_closedBall_ae_eq_ball x R
   rw [Measure.restrict_congr_set hball, ← integral_norm_sub_rpow_ball hs hR x,
@@ -422,6 +425,20 @@ theorem memLp_div_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) {R : ℝ} (h
   simpa only [IntegrableOn, Complex.finrank_real_complex, Nat.cast_ofNat, neg_lt_neg_iff] using
     (TauCeti.integrableOn_norm_rpow_compl_closedBall_iff (E := ℂ) (mu := volume)
       (s := -((m : ℝ)*p.toReal)) hR)
+
+/-- The translate of `memLp_div_pow_compl_closedBall_iff` to an arbitrary centre `c`. -/
+theorem memLp_div_sub_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) (c : ℂ) {R : ℝ}
+    (hR : 0 < R) (m : ℕ) {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp_top : p ≠ ∞) :
+    MemLp (fun z : ℂ => a/(z - c)^m) p (volume.restrict (closedBall c R)ᶜ) ↔
+      2 < (m : ℝ)*p.toReal := by
+  have hpres := (measurePreserving_add_right (volume : Measure ℂ) c).restrict_preimage
+    (measurableSet_closedBall (x := c) (ε := R)).compl
+  have hpre : (fun z : ℂ => z + c) ⁻¹' (closedBall c R)ᶜ = (closedBall 0 R)ᶜ := by
+    ext z
+    simp [mem_closedBall, dist_eq_norm]
+  rw [hpre] at hpres
+  rw [← hpres.map_eq, (measurableEmbedding_addRight c).memLp_map_measure_iff]
+  simpa [Function.comp_def] using memLp_div_pow_compl_closedBall_iff ha hR m hp0 hp_top
 
 end TauCeti
 
