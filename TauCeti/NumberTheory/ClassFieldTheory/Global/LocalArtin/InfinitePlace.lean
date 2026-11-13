@@ -97,7 +97,7 @@ Galois group of a finite normal extension `L/K`: the archimedean Artin map of th
 read in `Gal(L/K)^ab` by restriction along a place of `L` above `v`
 (`TauCeti.decompositionRestrict`). It does not depend on the choice of that place. -/
 def infiniteLocalArtinAt (v : InfinitePlace K) :
-    v.Completionˣ →* Abelianization Gal(L/K) :=
+    v.Completionˣ →* Group.Abelianization Gal(L/K) :=
   (decompositionRestrict K v.Completion L).comp (infiniteArtinAt v)
 
 variable {K L}
@@ -117,7 +117,7 @@ theorem infiniteLocalArtinAt_eq_of_mk_eq_infiniteArtinAt (v : InfinitePlace K)
     (hτ : (τ : Field.absoluteGaloisGroupAbelianization v.Completion) = infiniteArtinAt v x)
     (j : L →ₐ[K] AlgebraicClosure v.Completion) (σ : Gal(L/K))
     (hσ : ∀ y : L, j (σ y) = τ.toRingEquiv (j y)) :
-    infiniteLocalArtinAt K L v x = Abelianization.of σ := by
+    infiniteLocalArtinAt K L v x = Group.Abelianization.of σ := by
   rw [infiniteLocalArtinAt_apply, ← hτ, decompositionRestrict_mk j τ σ hσ]
 
 /-- **Compatibility with restriction to a normal subextension.** For a `K`-embedding
@@ -125,7 +125,7 @@ theorem infiniteLocalArtinAt_eq_of_mk_eq_infiniteArtinAt (v : InfinitePlace K)
 restricted to `M` along `f`, is the local Artin symbol at `v` in `Gal(M/K)^ab`. -/
 theorem infiniteLocalArtinAt_comp (v : InfinitePlace K) {M : Type} [Field M] [Algebra K M]
     [FiniteDimensional K M] [Normal K M] (f : M →ₐ[K] L) :
-    (Abelianization.map f.restrictNormalHom).comp (infiniteLocalArtinAt K L v) =
+    (Group.Abelianization.map f.restrictNormalHom).comp (infiniteLocalArtinAt K L v) =
       infiniteLocalArtinAt K M v := by
   rw [infiniteLocalArtinAt, infiniteLocalArtinAt, ← MonoidHom.comp_assoc,
     decompositionRestrict_comp]
@@ -163,7 +163,7 @@ theorem infiniteLocalArtinAt_eq_of_decompositionHom {x : v.Completionˣ}
     (ι : w.Completion →ₐ[v.Completion] AlgebraicClosure v.Completion)
     (σ : MulAction.stabilizer Gal(L/K) w)
     (hσ : ∀ y, ι (decompositionHom v w σ y) = τ.toRingEquiv (ι y)) :
-    infiniteLocalArtinAt K L v x = Abelianization.of (σ : Gal(L/K)) := by
+    infiniteLocalArtinAt K L v x = Group.Abelianization.of (σ : Gal(L/K)) := by
   refine infiniteLocalArtinAt_eq_of_mk_eq_infiniteArtinAt v τ hτ
     ((ι.restrictScalars K).comp (IsScalarTower.toAlgHom K L w.Completion)) σ fun y ↦ ?_
   simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply, IsScalarTower.coe_toAlgHom',
@@ -210,7 +210,7 @@ theorem infiniteLocalArtinAt_eq_complexConjugationAt (hw : w.IsRamified K) {x : 
     (hx : Completion.extensionEmbeddingOfIsReal (hw.liesOver_isReal_under w v)
       (x : v.Completion) < 0) :
     infiniteLocalArtinAt K L v x =
-      Abelianization.of (NumberField.complexConjugationAt K w hw) := by
+      Group.Abelianization.of (NumberField.complexConjugationAt K w hw) := by
   have hv : v.IsReal := hw.liesOver_isReal_under w v
   obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (infiniteArtinAt v x)
   have hτ1 : τ ≠ 1 := by
@@ -255,7 +255,7 @@ place of `L` above `v`, the local Artin symbols at `v` are exactly the classes i
 the elements of the decomposition group of `w`. -/
 theorem range_infiniteLocalArtinAt :
     (infiniteLocalArtinAt K L v).range =
-      (MulAction.stabilizer Gal(L/K) w).map Abelianization.of := by
+      (MulAction.stabilizer Gal(L/K) w).map Group.Abelianization.of := by
   rcases w.isUnramified_or_isRamified K with h | h
   · rw [h.stabilizer_eq_bot, Subgroup.map_bot, eq_bot_iff]
     rintro _ ⟨x, rfl⟩
@@ -295,7 +295,7 @@ theorem infiniteLocalArtinAt_eq_one_iff_mem_normGroup [IsMulCommutative Gal(L/K)
   rw [infiniteLocalArtinAt_eq_complexConjugationAt v w h hneg] at h1
   -- `Gal(L/K)` is commutative, so it embeds in its abelianization
   exact NumberField.complexConjugationAt_ne_one K w h
-    (Abelianization.of_injective (h1.trans (map_one _).symm))
+    (Group.Abelianization.of_injective (h1.trans (map_one _).symm))
 
 end IsGalois
 

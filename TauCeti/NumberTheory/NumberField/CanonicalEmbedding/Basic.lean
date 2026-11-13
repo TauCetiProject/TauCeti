@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
+public import Mathlib.NumberTheory.NumberField.House
 
 /-!
-# Coordinatewise embeddings into the mixed space
+# Coordinatewise embeddings, sup norm, and the integer lattice in the mixed space
 
 Mathlib's `NumberField.mixedEmbedding K : K →+* mixedSpace K` sends a single field element `x : K`
 to its tuple of archimedean embeddings `(φ_w x)_w` across the real and complex infinite places of
@@ -17,11 +18,18 @@ the coefficients of place-dependent linear forms in Diophantine approximation �
 homomorphism `TauCeti.NumberField.mixedEmbedding.mixedDiag K` assembles `(g w)_w` into the element
 of `mixedSpace K` whose `w`-coordinate agrees with `mixedEmbedding K (g w)`.
 
+For a number field `K`, the sup norm of `mixedEmbedding K x` on `mixedSpace K` equals the house of
+`x` (`TauCeti.NumberField.norm_mixedEmbedding`), and `mixedEmbedding K` embeds `𝓞 K` injectively
+onto `NumberField.mixedEmbedding.integerLattice K ⊆ mixedSpace K`, packaged here as a `ℤ`-linear
+equivalence `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`.
+
 ## Main definitions
 
 * `TauCeti.NumberField.mixedEmbedding.mixedDiag`: the ring homomorphism
   `(InfinitePlace K → K) →+* mixedSpace K` taking `g` to
   `((φ_w (g w))_{w real}, (φ_w (g w))_{w complex})`.
+* `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`: the `ℤ`-linear equivalence
+  `𝓞 K ≃ₗ[ℤ] mixedEmbedding.integerLattice K` induced by `mixedEmbedding K`.
 
 ## Main results
 
@@ -34,6 +42,11 @@ of `mixedSpace K` whose `w`-coordinate agrees with `mixedEmbedding K (g w)`.
   `w`-coordinate of `x`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_mixedDiag`:
   `normAtPlace w (mixedDiag K g) = w (g w)`.
+* `TauCeti.NumberField.mixedEmbedding.normAtPlace_le_norm`: `normAtPlace w x ≤ ‖x‖`.
+* `TauCeti.NumberField.norm_mixedEmbedding`: `‖mixedEmbedding K x‖ = house x`.
+* `TauCeti.NumberField.mixedEmbedding.coe_integerLatticeEquiv` and
+  `TauCeti.NumberField.mixedEmbedding.mixedEmbedding_integerLatticeEquiv_symm`: coercing
+  `integerLatticeEquiv K x` and `(integerLatticeEquiv K).symm y` into `mixedSpace K`.
 -/
 
 public section
@@ -90,4 +103,54 @@ theorem normAtPlace_mixedDiag (w : InfinitePlace K) (g : InfinitePlace K → K) 
   rw [← normAtPlace_apply]
   exact normAtPlace_congr w (fun hw ↦ by simp) (fun hwc ↦ by simp)
 
+open scoped Classical in
+/-- At every infinite place `w`, the local norm `normAtPlace w x` is at most the sup norm `‖x‖` on
+`mixedSpace K`. -/
+theorem normAtPlace_le_norm [NumberField K] (w : InfinitePlace K) (x : mixedSpace K) :
+    normAtPlace w x ≤ ‖x‖ := by
+  rw [norm_eq_sup'_normAtPlace]
+  exact Finset.le_sup' (fun u ↦ normAtPlace u x) (Finset.mem_univ w)
+
+/-- The `ℤ`-linear equivalence `𝓞 K ≃ₗ[ℤ] mixedEmbedding.integerLattice K` induced by
+`mixedEmbedding K`. -/
+noncomputable def integerLatticeEquiv (K : Type*) [Field K] [NumberField K] :
+    𝓞 K ≃ₗ[ℤ] mixedEmbedding.integerLattice K :=
+  LinearEquiv.ofInjective
+    ((mixedEmbedding K).toIntAlgHom.toLinearMap.comp
+      ((Algebra.linearMap (𝓞 K) K).restrictScalars ℤ))
+    (fun _ _ hxy ↦ RingOfIntegers.ext <| mixedEmbedding_injective K (by simpa using hxy))
+
+/-- Coercing `integerLatticeEquiv K x` to `mixedSpace K` evaluates `mixedEmbedding K` at `x`. -/
+@[simp]
+theorem coe_integerLatticeEquiv [NumberField K] (x : 𝓞 K) :
+    (integerLatticeEquiv K x : mixedSpace K) = mixedEmbedding K (x : K) :=
+  (rfl)
+
+/-- Applying `mixedEmbedding K` to `(integerLatticeEquiv K).symm y` recovers `(y : mixedSpace K)`.
+-/
+@[simp]
+theorem mixedEmbedding_integerLatticeEquiv_symm [NumberField K]
+    (y : mixedEmbedding.integerLattice K) :
+    mixedEmbedding K (((integerLatticeEquiv K).symm y : 𝓞 K) : K) = (y : mixedSpace K) := by
+  rw [← coe_integerLatticeEquiv, LinearEquiv.apply_symm_apply]
+
 end TauCeti.NumberField.mixedEmbedding
+
+namespace TauCeti.NumberField
+
+open Classical in
+/-- On `mixedSpace K`, the sup norm of `mixedEmbedding K x` is the house of `x`. -/
+@[simp]
+theorem norm_mixedEmbedding {K : Type*} [Field K] [NumberField K] (x : K) :
+    ‖mixedEmbedding K x‖ = house x := by
+  refine le_antisymm ?_ ?_
+  · rw [norm_eq_sup'_normAtPlace]
+    refine Finset.sup'_le _ _ fun w _ ↦ ?_
+    rw [normAtPlace_apply, ← norm_embedding_eq]
+    exact norm_embedding_le_house x w.embedding
+  · rw [house, canonicalEmbedding.norm_le_iff]
+    intro φ
+    rw [← InfinitePlace.apply, ← normAtPlace_apply]
+    exact mixedEmbedding.normAtPlace_le_norm (InfinitePlace.mk φ) (mixedEmbedding K x)
+
+end TauCeti.NumberField

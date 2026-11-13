@@ -39,7 +39,7 @@ namespace TauCeti.PositiveDegrees
 
 open _root_.DirectSum
 
-variable {N : Type} {R L : Type*} [AddCommMonoid N] [CommRing R]
+variable {N R L : Type*} [AddCommMonoid N] [CommRing R]
   [LieRing L] [LieAlgebra R L]
   (d : PositiveDegrees N) (ℒ : N → Submodule R L)
 section Bracket
