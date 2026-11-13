@@ -18,8 +18,11 @@ and commute with extension to a larger open domain. Continuity uses Mathlib's
 For complex-valued smooth functions supported in a compact set, postcomposition with the real and
 imaginary parts `Complex.reCLM` and `Complex.imCLM` gives real-valued ones. This file records how
 these parts transform under complex scalars, that they recover a real function viewed as a complex
-one through `Complex.ofRealCLM`, and that they do not increase the `C^k` seminorms
-(`ContDiffMapSupportedIn.supSeminorm_postcompLM_le`).
+one through `Complex.ofRealCLM`, and that a complex function is `Re φ + i Im φ`.
+
+Postcomposition with `T` increases the `C^k` seminorms at most by the factor `‖T‖`
+(`ContDiffMapSupportedIn.supSeminorm_postcompCLM_le`), and these seminorms do not depend on the
+scalar field (`ContDiffMapSupportedIn.supSeminorm_eq_of_scalars`).
 -/
 
 public section
@@ -105,47 +108,77 @@ namespace ContDiffMapSupportedIn
 open Complex
 open scoped Distributions
 
+section Scalars
+
+variable {𝕜 E F F' : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+  [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace 𝕜 F'] [SMulCommClass ℝ 𝕜 F']
+  {K K₁ K₂ : TopologicalSpace.Compacts E} {n n₁ n₂ : ℕ∞}
+
+variable (𝕜) in
+/-- The `C^k` seminorms do not depend on the scalar field over which they are considered. -/
+theorem supSeminorm_eq_of_scalars (𝕜' : Type*) [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' F]
+    [SMulCommClass ℝ 𝕜' F] (k : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
+    ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K k f =
+      ContDiffMapSupportedIn.supSeminorm 𝕜' E F n K k f := by
+  simp only [ContDiffMapSupportedIn.supSeminorm, Seminorm.finset_sup_apply,
+    ContDiffMapSupportedIn.seminorm_apply, structureMapCLM_eq_of_scalars 𝕜 𝕜']
+
+/-- The `C^k` seminorms grow at most by the factor `‖T‖` under postcomposition with `T`. -/
+theorem supSeminorm_postcompCLM_le [LinearMap.CompatibleSMul F F' ℝ 𝕜] (T : F →L[𝕜] F')
+    (k : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
+    ContDiffMapSupportedIn.supSeminorm 𝕜 E F' n K k (postcompCLM T f) ≤
+      ‖T‖ * ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K k f :=
+  Seminorm.finset_sup_apply_le (by positivity) fun _ hi ↦ (seminorm_postcompLM_le 𝕜 T f).trans
+    (by gcongr; exact Seminorm.le_finset_sup_apply hi)
+
+/-- Postcomposition commutes with enlarging the compact set and lowering regularity, including the
+zero-map case of `monoCLM` when the compact sets or orders are incompatible. -/
+theorem postcompCLM_monoCLM [LinearMap.CompatibleSMul F F' ℝ 𝕜] (T : F →L[𝕜] F')
+    (f : 𝓓^{n₁}_{K₁}(E, F)) :
+    postcompCLM T (monoCLM 𝕜 f : 𝓓^{n₂}_{K₂}(E, F)) = monoCLM 𝕜 (postcompCLM T f) := by
+  ext x
+  by_cases h : n₂ ≤ n₁ ∧ K₁ ≤ K₂ <;> simp [h]
+
+end Scalars
+
+section Complex
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : TopologicalSpace.Compacts E}
   {n : ℕ∞}
 
-theorem postcompLM_reCLM_smul (c : ℂ) (φ : 𝓓^{n}_{K}(E, ℂ)) :
-    postcompLM (𝕜 := ℝ) reCLM (c • φ) =
-      c.re • postcompLM (𝕜 := ℝ) reCLM φ - c.im • postcompLM (𝕜 := ℝ) imCLM φ := by
+theorem postcompCLM_reCLM_smul (c : ℂ) (φ : 𝓓^{n}_{K}(E, ℂ)) :
+    postcompCLM (𝕜 := ℝ) reCLM (c • φ) =
+      c.re • postcompCLM (𝕜 := ℝ) reCLM φ - c.im • postcompCLM (𝕜 := ℝ) imCLM φ := by
   ext x
   simp
 
-theorem postcompLM_imCLM_smul (c : ℂ) (φ : 𝓓^{n}_{K}(E, ℂ)) :
-    postcompLM (𝕜 := ℝ) imCLM (c • φ) =
-      c.re • postcompLM (𝕜 := ℝ) imCLM φ + c.im • postcompLM (𝕜 := ℝ) reCLM φ := by
-  ext x
-  simp
-
-@[simp]
-theorem postcompLM_reCLM_ofRealCLM (φ : 𝓓^{n}_{K}(E, ℝ)) :
-    postcompLM (𝕜 := ℝ) reCLM (postcompLM (𝕜 := ℝ) ofRealCLM φ) = φ := by
+theorem postcompCLM_imCLM_smul (c : ℂ) (φ : 𝓓^{n}_{K}(E, ℂ)) :
+    postcompCLM (𝕜 := ℝ) imCLM (c • φ) =
+      c.re • postcompCLM (𝕜 := ℝ) imCLM φ + c.im • postcompCLM (𝕜 := ℝ) reCLM φ := by
   ext x
   simp
 
 @[simp]
-theorem postcompLM_imCLM_ofRealCLM (φ : 𝓓^{n}_{K}(E, ℝ)) :
-    postcompLM (𝕜 := ℝ) imCLM (postcompLM (𝕜 := ℝ) ofRealCLM φ) = 0 := by
+theorem postcompCLM_reCLM_ofRealCLM (φ : 𝓓^{n}_{K}(E, ℝ)) :
+    postcompCLM (𝕜 := ℝ) reCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = φ := by
   ext x
   simp
 
-/-- The `C^k` seminorms do not increase under postcomposition with a real-linear map
-`ℂ →L[ℝ] ℝ` of norm at most one, such as the real and imaginary parts. -/
-theorem supSeminorm_postcompLM_le {T : ℂ →L[ℝ] ℝ} (hT : ‖T‖ ≤ 1) (k : ℕ)
-    (φ : 𝓓^{n}_{K}(E, ℂ)) :
-    ContDiffMapSupportedIn.supSeminorm ℝ E ℝ n K k (postcompLM (𝕜 := ℝ) T φ) ≤
-      ContDiffMapSupportedIn.supSeminorm ℂ E ℂ n K k φ := by
-  refine Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun i hi ↦ ?_
-  calc ContDiffMapSupportedIn.seminorm ℝ E ℝ n K i (postcompLM (𝕜 := ℝ) T φ)
-      ≤ ‖T‖ * ContDiffMapSupportedIn.seminorm ℝ E ℂ n K i φ :=
-        seminorm_postcompLM_le ℝ T φ
-    _ ≤ ContDiffMapSupportedIn.seminorm ℂ E ℂ n K i φ := by
-        rw [ContDiffMapSupportedIn.seminorm_apply, ContDiffMapSupportedIn.seminorm_apply,
-          structureMapCLM_eq_of_scalars ℝ ℂ]
-        exact mul_le_of_le_one_left (by positivity) hT
-    _ ≤ _ := Seminorm.le_finset_sup_apply hi
+@[simp]
+theorem postcompCLM_imCLM_ofRealCLM (φ : 𝓓^{n}_{K}(E, ℝ)) :
+    postcompCLM (𝕜 := ℝ) imCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = 0 := by
+  ext x
+  simp
+
+/-- A complex function is the sum `Re φ + i Im φ` of its real and imaginary parts. -/
+theorem postcompCLM_re_add_I_smul_im (φ : 𝓓^{n}_{K}(E, ℂ)) :
+    postcompCLM (𝕜 := ℝ) ofRealCLM (postcompCLM (𝕜 := ℝ) reCLM φ) +
+      I • postcompCLM (𝕜 := ℝ) ofRealCLM (postcompCLM (𝕜 := ℝ) imCLM φ) = φ := by
+  ext x
+  simp [mul_comm I]
+
+end Complex
 
 end ContDiffMapSupportedIn

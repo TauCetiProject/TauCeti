@@ -83,30 +83,73 @@ theorem postcompCLM_postcompCLM_toSpanSingleton (f : F →L[ℝ] ℝ) (ψ : 𝓓
   rw [postcompCLM_postcompCLM, postcompCLM_apply]
   simp [mul_comm]
 
+section ToSupportedIn
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+
+variable (𝕜) in
 /-- A test function on an open set `Ω` contained in a compact set `K` is a function supported in
-`K`. This forgetful map `𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}_{K}(E, F)` is continuous for the LF topology. -/
+`K`. This forgetful map `𝓓^{n}(Ω, F) →L[𝕜] 𝓓^{n}_{K}(E, F)` is continuous for the LF topology. -/
 noncomputable def toSupportedInCLM {K : Compacts E} (hΩK : (Ω : Set E) ⊆ K) :
-    𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}_{K}(E, F) :=
-  TestFunction.mkCLM ℝ (fun φ ↦ .of_support_subset φ.contDiff
+    𝓓^{n}(Ω, F) →L[𝕜] 𝓓^{n}_{K}(E, F) where
+  toFun φ := .of_support_subset φ.contDiff ((subset_tsupport _).trans (φ.tsupport_subset.trans hΩK))
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  cont := (TestFunction.mkCLM ℝ (V := 𝓓^{n}_{K}(E, F)) (fun φ ↦ .of_support_subset φ.contDiff
       ((subset_tsupport _).trans (φ.tsupport_subset.trans hΩK)))
     (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
     (fun K' hK' ↦ (ContDiffMapSupportedIn.monoCLM ℝ (K₁ := K') (K₂ := K) (n₁ := n)
       (n₂ := n)).continuous.congr fun φ ↦ by
         ext x
-        simp [SetLike.coe_subset_coe.1 (hK'.trans hΩK)])
+        simp [SetLike.coe_subset_coe.1 (hK'.trans hΩK)])).continuous
 
 @[simp]
 theorem toSupportedInCLM_apply {K : Compacts E} (hΩK : (Ω : Set E) ⊆ K) (φ : 𝓓^{n}(Ω, F)) :
-    ⇑(toSupportedInCLM hΩK φ) = φ :=
+    ⇑(toSupportedInCLM 𝕜 hΩK φ) = φ :=
   (rfl)
+
+theorem toSupportedInCLM_eq_of_scalars (𝕜' : Type*) [NontriviallyNormedField 𝕜']
+    [NormedSpace 𝕜' F] [SMulCommClass ℝ 𝕜' F] {K : Compacts E} (hΩK : (Ω : Set E) ⊆ K) :
+    (toSupportedInCLM 𝕜 hΩK : 𝓓^{n}(Ω, F) → 𝓓^{n}_{K}(E, F)) = toSupportedInCLM 𝕜' hΩK := by
+  ext φ x
+  simp
 
 /-- A test function on `Ω'`, read as a function supported in a compact set `K ⊆ Ω` and then as a
 test function on `Ω`, is its extension by zero `monoCLM`. -/
 @[simp]
 theorem ofSupportedIn_toSupportedInCLM {Ω' : Opens E} {K : Compacts E}
     (hΩ'K : (Ω' : Set E) ⊆ K) (hKΩ : (K : Set E) ⊆ Ω) (φ : 𝓓^{n}(Ω', F)) :
-    ofSupportedIn hKΩ (toSupportedInCLM hΩ'K φ) = monoCLM ℝ φ := by
+    ofSupportedIn hKΩ (toSupportedInCLM 𝕜 hΩ'K φ) = monoCLM ℝ φ := by
   ext x
   simp [SetLike.coe_subset_coe.1 (hΩ'K.trans hKΩ)]
+
+/-- A function supported in `K'`, read as a test function on `Ω` and then as a function supported
+in a compact set `K ⊇ Ω`, is its inclusion `monoCLM` into the functions supported in `K`. -/
+@[simp]
+theorem toSupportedInCLM_ofSupportedIn {K K' : Compacts E} (hK'Ω : (K' : Set E) ⊆ Ω)
+    (hΩK : (Ω : Set E) ⊆ K) (φ : 𝓓^{n}_{K'}(E, F)) :
+    toSupportedInCLM 𝕜 hΩK (ofSupportedIn hK'Ω φ) = ContDiffMapSupportedIn.monoCLM 𝕜 φ := by
+  ext x
+  simp [SetLike.coe_subset_coe.1 (hK'Ω.trans hΩK)]
+
+/-- Reading a test function as supported in `K` and then in a larger compact set `K'` is reading
+it as supported in `K'`. -/
+theorem monoCLM_toSupportedInCLM {K K' : Compacts E} (hΩK : (Ω : Set E) ⊆ K) (hKK' : K ≤ K')
+    (φ : 𝓓^{n}(Ω, F)) :
+    (ContDiffMapSupportedIn.monoCLM 𝕜 (toSupportedInCLM 𝕜 hΩK φ) : 𝓓^{n}_{K'}(E, F)) =
+      toSupportedInCLM 𝕜 (hΩK.trans hKK') φ := by
+  ext x
+  simp [hKK']
+
+/-- Extending a test function from `Ω` to `Ω'` and reading it as supported in `K ⊇ Ω'` is reading
+it as supported in `K`. -/
+theorem toSupportedInCLM_monoCLM {Ω' : Opens E} {K : Compacts E} (hΩΩ' : Ω ≤ Ω')
+    (hΩ'K : (Ω' : Set E) ⊆ K) (φ : 𝓓^{n}(Ω, F)) :
+    toSupportedInCLM 𝕜 hΩ'K (monoCLM ℝ φ) =
+      toSupportedInCLM 𝕜 ((SetLike.coe_subset_coe.2 hΩΩ').trans hΩ'K) φ := by
+  ext x
+  simp [hΩΩ']
+
+end ToSupportedIn
 
 end TestFunction
