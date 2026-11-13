@@ -110,15 +110,33 @@ theorem toMatrix_mem_rowStochastic [Fintype α] [DecidableEq α]
   simp
 
 /-- Propagating an initial finite measure is multiplication of its mass row vector by the
-transition matrix. -/
+transition matrix. The target space needs no measurable singletons: the singleton mass is computed
+through a common measurable hull of `{b}` for the finitely many measures `κ a`. -/
 theorem comp_apply_singleton_eq_vecMul [Fintype α] [MeasurableSingletonClass α]
-    [MeasurableSingletonClass β] (κ : Kernel α β) [IsFiniteKernel κ]
+    (κ : Kernel α β) [IsFiniteKernel κ]
     (ν : Measure α) [IsFiniteMeasure ν] (b : β) :
     ((κ ∘ₘ ν) {b}).toNNReal = ((fun a => (ν {a}).toNNReal) ᵥ* κ.toMatrix) b := by
+  -- a common measurable hull of `{b}` for all the finitely many measures `κ a`
+  set t : Set β := ⋂ a, toMeasurable (κ a) {b}
+  have ht : MeasurableSet t := MeasurableSet.iInter fun a => measurableSet_toMeasurable _ _
+  have hbt : {b} ⊆ t := Set.subset_iInter fun a => subset_toMeasurable _ _
+  have hκt : ∀ a, κ a t = κ a {b} := fun a =>
+    le_antisymm ((measure_mono (Set.iInter_subset _ a)).trans_eq (measure_toMeasurable _))
+      (measure_mono hbt)
+  have hsum : ∀ s, MeasurableSet s → (κ ∘ₘ ν) s = ∑ a, κ a s * ν {a} := fun s hs => by
+    rw [Measure.bind_apply hs κ.aemeasurable, lintegral_fintype]
+  have hb : (κ ∘ₘ ν) {b} = ∑ a, κ a {b} * ν {a} := by
+    refine le_antisymm ?_ ?_
+    · calc (κ ∘ₘ ν) {b} ≤ (κ ∘ₘ ν) t := measure_mono hbt
+        _ = ∑ a, κ a {b} * ν {a} := by rw [hsum t ht]; simp_rw [hκt]
+    · rw [measure_eq_iInf]
+      refine le_iInf fun s => le_iInf fun hs => le_iInf fun hsm => ?_
+      rw [hsum s hsm]
+      exact Finset.sum_le_sum fun a _ => mul_le_mul_left (measure_mono hs) _
   apply ENNReal.coe_injective
   simp only [ENNReal.coe_toNNReal (measure_ne_top _ _), Matrix.vecMul, dotProduct,
     ENNReal.ofNNReal_finsetSum, ENNReal.coe_mul, coe_toMatrix_apply]
-  rw [Measure.bind_apply (measurableSet_singleton _) κ.aemeasurable, lintegral_fintype]
+  rw [hb]
   exact Finset.sum_congr rfl fun a _ => mul_comm _ _
 
 end ProbabilityTheory.Kernel
