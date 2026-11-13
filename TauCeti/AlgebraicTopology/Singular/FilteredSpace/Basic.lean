@@ -113,10 +113,8 @@ variable [∀ P : TopPair.{w}, Mono (Φ.map P.map)]
 
 /-- `Φ(X q)` is a subcomplex of `Φ(Y)`, also after reindexing. -/
 instance (q : ℤ) : Mono (chainFiltrationι Φ X q) := by
-  have (i : ℕ) : Mono ((Φ.map (TopPair.ofSubset (X q)).map).f i) :=
-    (HomologicalComplex.eval _ _ i).map_mono _
   rw [chainFiltrationι_def]
-  exact HomologicalComplex.mono_extendMap_of_mono_f _ _
+  exact HomologicalComplex.mono_extendMap _ _
 
 /-- The filtration of `Φ(Y)` by the `Φ(X q)`, with the chain complexes reindexed as cochain
 complexes in nonpositive degrees along `n ↦ -n`. -/
@@ -171,6 +169,7 @@ lemma chainFiltration_eq_bot {a : ℤ} (ha : IsZero (Φ.obj (TopPair.ofSubset (X
     (((ComplexShape.embeddingDownNat.extendFunctor A).map_isZero ha).eq_of_src _ _)
 
 /-- The stage of the filtration at the whole space is everything. -/
+@[simp]
 lemma chainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) : chainFiltration Φ X b = ⊤ := by
   have : IsIso (TopPair.ofSubset (X b)).map := by
     refine TopCat.isIso_of_bijective_of_isOpenMap _ ⟨Subtype.val_injective, fun y ↦ ?_⟩
@@ -184,12 +183,6 @@ lemma chainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) : chainFiltration �
 end Functor
 
 variable [HasCoproducts.{w} A] (R : A)
-
-/-- The inclusion of the singular chains of a subspace into those of the ambient space is a
-monomorphism, since the singular chain sequence of a pair is short exact. -/
-instance (P : TopPair.{w}) :
-    Mono (((AlgebraicTopology.singularChainComplexFunctor A).obj R).map P.map) :=
-  (P.shortExact_singularChainComplexShortComplex R).mono_f
 
 variable (X : ℤ → Set Y)
 
@@ -208,6 +201,9 @@ lemma singularChainFiltrationι_def (q : ℤ) :
     singularChainFiltrationι R X q =
       extendMap (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) R)
         ComplexShape.embeddingDownNat := by
+  -- `((singularChainComplexFunctor A).obj R).map f` is `SSet.chainComplexMap (toSSet.map f) R`
+  -- by definition of `singularChainComplexFunctor`; the singular filtration is stated with the
+  -- latter, as are the singular chain complexes of the pairs it is compared with.
   rw [singularChainFiltrationι, chainFiltrationι_def]
   rfl
 

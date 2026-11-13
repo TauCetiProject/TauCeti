@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.Acyclic
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 public import TauCeti.Algebra.Homology.Homotopy
+public import TauCeti.Algebra.Homology.HomotopyCofiber
 
 /-!
 # Mapping cones and homotopy equivalences
@@ -44,6 +45,8 @@ whose cones are acyclic.
   quasi-isomorphism exactly when its mapping cone is acyclic.
 * `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
   square is an isomorphism in each degree where the vertical maps are.
+* `CochainComplex.mappingCone.quasiIso_map`: the map of mapping cones induced by a commutative
+  square of quasi-isomorphisms is a quasi-isomorphism.
 
 ## Mapping cones of natural transformations and shifts
 
@@ -489,6 +492,31 @@ theorem quasiIso_iff_acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K �
     ← HomotopyCategory.quotient_obj_mem_subcategoryAcyclic_iff_acyclic]
   exact ObjectProperty.trW_iff_of_distinguished _ _
     (HomotopyCategory.mappingCone_triangleh_distinguished φ)
+
+namespace mappingCone
+
+/-- The map of mapping cones induced by a commutative square of quasi-isomorphisms is a
+quasi-isomorphism. -/
+lemma quasiIso_map {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂)
+    (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂) [QuasiIso a] [QuasiIso b] :
+    QuasiIso (map φ₁ φ₂ a b comm) := by
+  have hc : ∀ j : ℤ, ∃ i, (ComplexShape.up ℤ).Rel i j := fun j ↦ ⟨j - 1, by simp⟩
+  have h : map φ₁ φ₂ a b comm =
+      HomologicalComplex.homotopyCofiber.mapArrowHom φ₁ φ₂ hc (Arrow.homMk a b comm.symm) := by
+    ext n
+    refine ext_from _ (n + 1) n rfl ?_ ?_
+    · simp only [Int.reduceNeg, mappingCone.map, mappingCone.inl_v_desc_f,
+        HomComplex.Cochain.zero_cochain_comp_v, HomComplex.Cochain.ofHom_v]
+      exact (HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f
+        φ₁ φ₂ hc (Arrow.homMk a b comm.symm) (n + 1) n rfl).symm
+    · simp only [mappingCone.map, mappingCone.inr_f_desc_f]
+      exact (HomologicalComplex.homotopyCofiber.inrX_mapArrowHom_f
+        φ₁ φ₂ hc (Arrow.homMk a b comm.symm) n).symm
+  have : QuasiIso (Arrow.homMk a b comm.symm : Arrow.mk φ₁ ⟶ Arrow.mk φ₂).left := ‹QuasiIso a›
+  have : QuasiIso (Arrow.homMk a b comm.symm : Arrow.mk φ₁ ⟶ Arrow.mk φ₂).right := ‹QuasiIso b›
+  exact h ▸ HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom φ₁ φ₂ hc _
+
+end mappingCone
 
 end CochainComplex
 

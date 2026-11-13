@@ -94,22 +94,19 @@ lemma chainFiltrationMap_app_comp (a : EInt) :
 /-- On the stage `X q`, under the identifications of the stages with `Φ(X q)` and `Ψ(X q)`, the
 morphism of filtered complexes induced by `τ` is `τ.app (X q)`. -/
 lemma chainFiltrationMap_app_coe_comp (q : ℤ) :
-    (chainFiltrationMap τ hX).app q ≫ (CochainComplex.filtrationFunctorObjIso _ _ q).hom ≫
-        (Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ q)).hom ≫
-          (chainFiltrationIso Ψ X q).hom =
-      (CochainComplex.filtrationFunctorObjIso _ _ q).hom ≫
-        (Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ q)).hom ≫
-          (chainFiltrationIso Φ X q).hom ≫
-            extendMap (τ.app (TopPair.ofSubset (X q)).snd) ComplexShape.embeddingDownNat := by
+    (chainFiltrationMap τ hX).app q ≫ (CochainComplex.filtrationFunctorObjIsoOfEqMk _ _
+        (chainFiltrationι Ψ X) (chainFiltration_def Ψ X) q).hom =
+      (CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (chainFiltrationι Φ X)
+        (chainFiltration_def Φ X) q).hom ≫
+          extendMap (τ.app (TopPair.ofSubset (X q)).snd) ComplexShape.embeddingDownNat := by
   rw [← cancel_mono (chainFiltrationι Ψ X q)]
-  simp only [Subobject.isoOfEq, Category.assoc, chainFiltrationIso_hom_comp_chainFiltrationι,
-    Subobject.ofLE_arrow, ← chainFiltrationι_comp_extendMap_app,
-    chainFiltrationIso_hom_comp_chainFiltrationι_assoc, Subobject.ofLE_arrow_assoc,
-    chainFiltrationMap_app_comp]
+  simp only [Category.assoc, CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp,
+    ← chainFiltrationι_comp_extendMap_app,
+    CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp_assoc,
+    CochainComplex.filtrationFunctorArrow, chainFiltrationMap_app_comp]
 
 /-- If every component of `τ` is a quasi-isomorphism, so is every component of the morphism of
-filtered complexes it induces: at `⊥` both sides are zero, at `q` it is `τ.app (X q)`, and at `⊤`
-it is `τ.app Y`. -/
+filtered complexes it induces. -/
 instance quasiIso_chainFiltrationMap_app [∀ Z, QuasiIso (τ.app Z)] (a : EInt) :
     QuasiIso ((chainFiltrationMap τ hX).app a) := by
   induction a using WithBotTop.rec with
@@ -126,14 +123,11 @@ instance quasiIso_chainFiltrationMap_app [∀ Z, QuasiIso (τ.app Z)] (a : EInt)
         ComplexShape.embeddingDownNat) :=
       (quasiIso_extendMap_iff _ _).2 inferInstance
     exact (quasiIso_iff_of_arrow_mk_iso _
-      (extendMap (τ.app (TopPair.ofSubset (X q)).snd) ComplexShape.embeddingDownNat) (Arrow.isoMk
-      (CochainComplex.filtrationFunctorObjIso _ _ q ≪≫
-        Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ q) ≪≫ chainFiltrationIso Φ X q)
-      (CochainComplex.filtrationFunctorObjIso _ _ q ≪≫
-        Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ q) ≪≫ chainFiltrationIso Ψ X q)
-      (by
-        simp only [Arrow.mk_hom, Iso.trans_hom, Category.assoc]
-        exact (chainFiltrationMap_app_coe_comp τ hX q).symm))).2 inferInstance
+      (extendMap (τ.app (TopPair.ofSubset (X q)).snd) ComplexShape.embeddingDownNat)
+      (Arrow.isoMk (CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (chainFiltrationι Φ X)
+        (chainFiltration_def Φ X) q) (CochainComplex.filtrationFunctorObjIsoOfEqMk _ _
+          (chainFiltrationι Ψ X) (chainFiltration_def Ψ X) q)
+        (chainFiltrationMap_app_coe_comp τ hX q).symm)).2 inferInstance
   | top =>
     have : QuasiIso (extendMap (τ.app Y) ComplexShape.embeddingDownNat) :=
       (quasiIso_extendMap_iff _ _).2 inferInstance
