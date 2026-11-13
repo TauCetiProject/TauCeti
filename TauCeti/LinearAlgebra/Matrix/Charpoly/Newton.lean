@@ -45,6 +45,8 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
 * `Matrix.charpoly_eq_of_trace_pow_eq`, `LinearMap.charpoly_eq_of_trace_pow_eq`: without additive
   torsion, the traces of `A ^ j` for `0 < j ≤ d` already determine the characteristic polynomial
   of a `d × d` matrix, or of an endomorphism of a free module of rank `d`.
+* `LinearMap.trace_pow_eq_of_charpoly_eq`, `LinearMap.charpoly_eq_iff_trace_pow_eq`: the same
+  comparisons for endomorphisms of finite free modules.
 
 ## References
 
@@ -200,6 +202,17 @@ theorem mul_coeff_reverse_charpoly_eq_neg_sum (f : Module.End R M) (r : ℕ) :
   simp only [trace_eq_matrix_trace R (Module.Free.chooseBasis R M), ← LinearMap.toMatrix_pow]
   exact Matrix.mul_coeff_charpolyRev_eq_neg_sum _ r
 
+/-- Over any commutative ring, endomorphisms of finite free modules with the same characteristic
+polynomial have the same traces of all positive powers. The modules may be different. -/
+theorem trace_pow_eq_of_charpoly_eq {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N]
+    [Module.Finite R N] {f : Module.End R M} {g : Module.End R N} (h : f.charpoly = g.charpoly)
+    {j : ℕ} (hj : 0 < j) : trace R M (f ^ j) = trace R N (g ^ j) := by
+  rw [charpoly_def, charpoly_def] at h
+  simp only [trace_eq_matrix_trace R (Module.Free.chooseBasis R M),
+    trace_eq_matrix_trace R (Module.Free.chooseBasis R N), ← LinearMap.toMatrix_pow]
+  refine Matrix.trace_pow_eq_of_charpolyRev_eq ?_ hj
+  rw [← Matrix.reverse_charpoly, ← Matrix.reverse_charpoly, h]
+
 /-- Without additive torsion in the scalars, the traces of `f ^ j` for `0 < j ≤ d` determine the
 characteristic polynomial of an endomorphism `f` of a free module of rank `d`. -/
 theorem charpoly_eq_of_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N]
@@ -213,5 +226,15 @@ theorem charpoly_eq_of_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [M
     Module.finrank_eq_card_chooseBasisIndex] at h hMN
   rw [charpoly_def, charpoly_def]
   exact Matrix.charpoly_eq_of_trace_pow_eq hMN h
+
+/-- Without additive torsion in the scalars, endomorphisms of free modules of the same finite rank
+have the same characteristic polynomial if and only if they have the same traces of all positive
+powers. -/
+theorem charpoly_eq_iff_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N]
+    [Module.Finite R N] [IsAddTorsionFree R] {f : Module.End R M} {g : Module.End R N}
+    (hMN : Module.finrank R M = Module.finrank R N) :
+    f.charpoly = g.charpoly ↔ ∀ j, 0 < j → trace R M (f ^ j) = trace R N (g ^ j) :=
+  ⟨fun h _ ↦ trace_pow_eq_of_charpoly_eq h, fun h ↦
+    charpoly_eq_of_trace_pow_eq hMN fun j hj _ ↦ h j hj⟩
 
 end LinearMap
