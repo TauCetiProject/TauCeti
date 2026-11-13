@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Different.Complementary
 public import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 import TauCeti.FieldTheory.FunctionField.Different.Localization
+import TauCeti.FieldTheory.Separable.SimpleRoot
 
 /-!
 # The different exponent and derivatives of generating equations
@@ -189,46 +190,10 @@ theorem differentExponent_eq_zero_of_finrank_eq_one (P' : Place k' F')
       (by rw [IntermediateField.adjoin_zero, IntermediateField.finrank_bot', h]))
     monic_X (fun i ↦ by rw [coeff_X]; split_ifs <;> simp) (aeval_X 0) (by simp)
 
-omit [FiniteDimensional F F'] in
-/-- If `z` generates `F'` over `F` and satisfies `z² + u z - v = 0` with `2 z + u = 0`, then
-`F' = F`: the minimal polynomial `m` of the separable element `z` divides the quadratic
-`X² + u X - v`, and `m'(z) ≠ 0` forces `m²` to divide it too, so `m` is linear. -/
-private theorem finrank_eq_one_of_two_mul_add_eq_zero {u v : F} {z : F'} (hgen : F⟮z⟯ = ⊤)
-    (hz : z ^ 2 + algebraMap F F' u * z - algebraMap F F' v = 0)
-    (hd : 2 * z + algebraMap F F' u = 0) : Module.finrank F F' = 1 := by
-  obtain ⟨ψ, hψdef⟩ : ∃ ψ : F[X], ψ = X ^ 2 + C u * X - C v := ⟨_, rfl⟩
-  have hψm : ψ.Monic := by rw [hψdef]; monicity!
-  have hψz : aeval z ψ = 0 := by simpa [hψdef] using hz
-  have hderiv : aeval z (derivative ψ) = 0 := by
-    rw [← hd]
-    simp only [hψdef, derivative_sub, derivative_X_pow, derivative_C_mul_X, derivative_C, sub_zero,
-      map_add, map_mul, aeval_C, Nat.cast_ofNat, map_ofNat]
-    norm_num
-  obtain ⟨g, hg⟩ := minpoly.dvd F z hψz
-  have hsep := Algebra.IsSeparable.isSeparable F z
-  have hg0 : aeval z g = 0 := by
-    have h := congrArg (aeval z) (congrArg derivative hg)
-    rw [hderiv, derivative_mul, map_add, map_mul, map_mul, minpoly.aeval, zero_mul, add_zero] at h
-    exact (mul_eq_zero.mp h.symm).resolve_left (fun h0 ↦ hsep.aeval_derivative_ne_zero
-      (minpoly.aeval F z) h0)
-  have hmg : minpoly F z ∣ g := minpoly.dvd F z hg0
-  have hdeg : (minpoly F z * minpoly F z).natDegree ≤ 2 := by
-    have : (minpoly F z * minpoly F z) ∣ ψ := hg ▸ mul_dvd_mul_left _ hmg
-    exact (natDegree_le_of_dvd this hψm.ne_zero).trans (by rw [hψdef]; compute_degree)
-  have hint : IsIntegral F z := Algebra.IsIntegral.isIntegral z
-  have hpos := minpoly.natDegree_pos hint
-  rw [natDegree_mul (minpoly.ne_zero hint) (minpoly.ne_zero hint)] at hdeg
-  have h1 : z ∈ (algebraMap F F').range := by
-    rw [← minpoly.natDegree_eq_one_iff]
-    omega
-  have hbot : F⟮z⟯ = ⊥ := by
-    rw [IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
-    exact h1
-  rw [← IntermediateField.finrank_top', ← hgen, hbot, IntermediateField.finrank_bot]
-
 /-- **The different exponent of a quadratic equation**: if `F' = F(z)` with
-`z² + u z - v = 0` and `u, v ∈ F` regular at `P'`, then `d(P' ∣ P) ≤ ord_{P'} (2 z + u)`, as long
-as `2 z + u ≠ 0`. This is `differentExponent_le_ord_aeval_derivative` for `ψ = X² + u X - v`. -/
+`z² + u z - v = 0` and `u, v ∈ F` regular at `P'`, then `d(P' ∣ P) ≤ ord_{P'} (2 z + u)`. When
+`2 z + u = 0` the extension has degree one, so the different exponent and `P'.ord 0` both vanish.
+This is `differentExponent_le_ord_aeval_derivative` for `ψ = X² + u X - v`. -/
 theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u ∈ P'.integers)
     (hv : algebraMap F F' v ∈ P'.integers) {z : F'} (hgen : F⟮z⟯ = ⊤)
     (hz : z ^ 2 + algebraMap F F' u * z - algebraMap F F' v = 0) :
@@ -236,7 +201,7 @@ theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u �
   by_cases hne : 2 * z + algebraMap F F' u = 0
   · rw [hne, P'.ord_zero]
     exact_mod_cast (differentExponent_eq_zero_of_finrank_eq_one k F P'
-      (finrank_eq_one_of_two_mul_add_eq_zero F hgen hz hne)).le
+      (finrank_eq_one_of_two_mul_add_eq_zero hgen hz hne)).le
   have hψ : (X ^ 2 + C u * X - C v : F[X]).Monic := by monicity!
   have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : F[X])) =
       2 * z + algebraMap F F' u := by

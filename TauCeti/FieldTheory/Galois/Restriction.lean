@@ -51,7 +51,7 @@ of restriction of scalars.
   the image of restriction of scalars.
 * `AlgEquiv.restrictNormal_mul_restrictScalars`: multiplying by an automorphism of the top field
   over the intermediate one does not change the restriction.
-* `TauCeti.restrictNormalHom_of_compatible`: a compatible pair between normal intermediate fields
+* `MonoidHom.restrictNormalHom_of_compatible`: a compatible pair between normal intermediate fields
   of `Ω/K` carries restriction to the larger field to restriction to the smaller field.
 * `AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff`: restriction to a normal simple
   subextension `F⟮α⟯` is trivial precisely when the automorphism fixes `α`.
@@ -214,6 +214,8 @@ theorem _root_.AlgHom.restrictNormalHomOfLE_surjective (f : M →ₐ[F] K) [Norm
 
 end RestrictAlong
 
+end TauCeti
+
 /-! ### Restriction along compatible normal subextensions -/
 
 section CompatibleRestriction
@@ -230,15 +232,13 @@ include hpiiota hiota
 /-- Along a compatible pair `(pi, iota)` between normal intermediate fields of `Ω/K`, with `iota`
 compatible with their inclusions into `Ω`, `pi` carries restriction to `M` to restriction to
 `E`. -/
-theorem restrictNormalHom_of_compatible (g : Ω ≃ₐ[K] Ω) :
+theorem MonoidHom.restrictNormalHom_of_compatible (g : Ω ≃ₐ[K] Ω) :
     pi (AlgEquiv.restrictNormalHom M g) = AlgEquiv.restrictNormalHom E g :=
   AlgEquiv.ext fun x ↦ E.val.injective <| (hiota _).symm.trans <|
     (congrArg M.val (hpiiota _ x)).trans <| (AlgEquiv.restrictNormal_commutes g M (iota x)).trans <|
       (congrArg g (hiota x)).trans (AlgEquiv.restrictNormal_commutes g E x).symm
 
 end CompatibleRestriction
-
-end TauCeti
 
 /-! ### Restriction to an intermediate field in a tower -/
 
