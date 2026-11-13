@@ -47,9 +47,9 @@ theorem globalArtinMap_Qi_prime (ι : E →ₐ[ℚ] SeparableClosure ℚ)
     (v : HeightOneSpectrum (𝓞 ℚ)) (hm : (4 : 𝓞 ℚ) ∉ v.asIdeal) :
     globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) =
       if Ideal.absNorm v.asIdeal % 4 = 1 then 0
-      else .ofMul (Abelianization.of ((Rat.galEquivZMod 4 E).symm (-1))) := by
+      else .ofMul (Group.Abelianization.of ((Rat.galEquivZMod 4 E).symm (-1))) := by
   let _ := IsCyclotomicExtension.isAbelianGalois {4} ℚ E
-  obtain ⟨σ, hs⟩ := Abelianization.exists_eq_ofMul_of
+  obtain ⟨σ, hs⟩ := Group.Abelianization.exists_eq_ofMul_of
     (globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)))
   have hc := galEquivZMod_globalArtinMap_prime ι v hm hs
   have hval : ((Rat.galEquivZMod 4 E σ : ZMod 4)).val = Ideal.absNorm v.asIdeal % 4 := by
@@ -77,11 +77,11 @@ theorem globalArtinMap_Qi_prime_eq_zero_iff (ι : E →ₐ[ℚ] SeparableClosure
     globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = 0 ↔
       Ideal.absNorm v.asIdeal % 4 = 1 := by
   let _ := IsCyclotomicExtension.isAbelianGalois {4} ℚ E
-  have hn : Abelianization.of ((Rat.galEquivZMod 4 E).symm (-1)) ≠ 1 := by
+  have hn : Group.Abelianization.of ((Rat.galEquivZMod 4 E).symm (-1)) ≠ 1 := by
     intro h
     have h' : (Rat.galEquivZMod 4 E).symm (-1) = 1 :=
-      Abelianization.equivOfComm.injective (by
-        simpa only [Abelianization.equivOfComm_apply, map_one] using h)
+      Group.Abelianization.equivOfComm.injective (by
+        simpa only [Group.Abelianization.equivOfComm_apply, map_one] using h)
     have h'' := congrArg (Rat.galEquivZMod 4 E) h'
     rw [MulEquiv.apply_symm_apply, map_one] at h''
     exact (by decide : (-1 : (ZMod 4)ˣ) ≠ 1) h''
@@ -98,17 +98,17 @@ theorem globalArtinMap_Qi_prime_apply (ι : E →ₐ[ℚ] SeparableClosure ℚ)
     {ζ : E} (hζ : IsPrimitiveRoot ζ 4) (v : HeightOneSpectrum (𝓞 ℚ))
     (hm : (4 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
     (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) =
-      .ofMul (Abelianization.of σ)) :
+      .ofMul (Group.Abelianization.of σ)) :
     σ ζ = if Ideal.absNorm v.asIdeal % 4 = 1 then ζ else -ζ := by
   let _ := IsCyclotomicExtension.isAbelianGalois {4} ℚ E
   have heq := (globalArtinMap_Qi_prime ι v hm).symm.trans hσ
   split_ifs at heq ⊢ with h
-  · have hs : σ = 1 := Abelianization.equivOfComm.injective (by
-      simpa only [ofMul_one, Abelianization.equivOfComm_apply, map_one] using
+  · have hs : σ = 1 := Group.Abelianization.equivOfComm.injective (by
+      simpa only [ofMul_one, Group.Abelianization.equivOfComm_apply, map_one] using
         (Additive.ofMul.injective heq).symm)
     simp only [hs, AlgEquiv.one_apply]
   · have hs : σ = (Rat.galEquivZMod 4 E).symm (-1) :=
-      Abelianization.equivOfComm.injective (Additive.ofMul.injective heq).symm
+      Group.Abelianization.equivOfComm.injective (Additive.ofMul.injective heq).symm
     rw [hs, Rat.galEquivZMod_apply_of_pow_eq 4 E _ hζ.pow_eq_one]
     rw [MulEquiv.apply_symm_apply]
     norm_num only [Units.val_neg, Units.val_one, ZMod.val_neg_one]
