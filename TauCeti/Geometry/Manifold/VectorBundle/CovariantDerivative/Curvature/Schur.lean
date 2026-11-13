@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
-import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.SecondBianchi
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Einstein
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Schur's theorem
@@ -29,6 +28,10 @@ Inserting this into the second Bianchi identity and evaluating on three orthonor
 kills `dκ`; this is where `n ≥ 3` is used. In dimension two every tangent space has a single
 two-plane, so the curvature is pointwise isotropic for every metric, and the conclusion fails for
 any surface whose Gaussian curvature is not constant.
+
+The proof of Schur's theorem below goes through the Ricci tensor `(n - 1) κ g` and Einstein's
+constancy theorem (`CovariantDerivative.mfderiv_eq_zero_of_ricciTensor_eq_smul_inner`); the
+computation of `∇R` is kept for its use in `LocallySymmetric.lean`.
 
 ## Main results
 
@@ -159,37 +162,17 @@ theorem mfderiv_eq_zero_of_curvatureTensor_eq_smul_inner_sub
       curvature y w u v = κ y • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u)) :
     mfderiv I 𝓘(ℝ) κ x = 0 := by
   have hκx := cov.mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub (by omega) hκ
-  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  have ho := orthonormal_iff_ite.1 b.orthonormal
-  -- Evaluate the second Bianchi identity on three orthonormal fields `X, Y, Z` and `σ = Y`, and
-  -- pair it with `Z`: only the term `-dκ(X)` survives.
-  have hb (i : Fin (Module.finrank ℝ (TangentSpace I x))) : mvfderiv I κ x (b i) = 0 := by
-    obtain ⟨j, k, hij, hik, hjk⟩ : ∃ j k, i ≠ j ∧ i ≠ k ∧ j ≠ k := by
-      have h1 : 1 < ({i}ᶜ : Finset (Fin (Module.finrank ℝ (TangentSpace I x)))).card := by
-        rw [Finset.card_compl, Fintype.card_fin, Finset.card_singleton]
-        exact Nat.lt_sub_of_add_lt hdim
-      obtain ⟨j, hj, k, hk, hjk⟩ := Finset.one_lt_card.1 h1
-      simp only [Finset.mem_compl, Finset.mem_singleton] at hj hk
-      exact ⟨j, k, Ne.symm hj, Ne.symm hk, hjk⟩
-    obtain ⟨X, hX, hXx⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ (b i)
-    obtain ⟨Y, hY, hYx⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ (b j)
-    obtain ⟨Z, hZ, hZx⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ (b k)
-    have h := covariantDerivative_curvatureOperator_cyclic_eq_zero cov cov
-      ((isTorsionFree_iff_torsion_eq_zero cov).2 ht) hX hY hZ hY x
-    rw [hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul hκ hX hY hZ hY hκx,
-      hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul hκ hY hZ hX hY hκx,
-      hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul hκ hZ hX hY hY hκx,
-      hXx, hYx, hZx] at h
-    have h' := congrArg (fun v ↦ ⟪v, b k⟫_ℝ) h
-    simp only [inner_add_left, inner_sub_left, real_inner_smul_left, ho, inner_zero_left,
-      hij, hik, hjk, hjk.symm, ite_true, ite_false] at h'
+  -- Near `x` the Ricci tensor is `(n - 1) κ g`, so Einstein's constancy theorem applies.
+  have hn : ((Module.finrank ℝ E : ℝ) - 1) ≠ 0 := by
+    have : (3 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hdim
     linarith
-  have hL : mvfderiv I κ x = 0 := by
-    ext v
-    rw [← b.sum_repr v]
-    simp [map_sum, map_smul, hb]
-  ext v
-  simpa [mvfderiv] using congr($hL v)
+  have h := mfderiv_eq_zero_of_ricciTensor_eq_smul_inner hcov ht (by omega)
+    (a := ((Module.finrank ℝ E : ℝ) - 1) • κ) (x := x)
+    (hκ.mono fun y hy ↦ by
+      rw [cov.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub y (κ y) hy]
+      rw [Pi.smul_apply, smul_eq_mul, TauCeti.finrank_tangentSpace (I := I) (𝕜 := ℝ) y])
+  rw [(hκx.hasMFDerivAt.const_smul _).mfderiv] at h
+  exact (smul_eq_zero.1 h).resolve_left hn
 
 /-- **Schur's theorem.** Let a metric-compatible torsion-free connection on a preconnected
 manifold of dimension at least three have, at every point `x`, the same sectional curvature `κ x`
