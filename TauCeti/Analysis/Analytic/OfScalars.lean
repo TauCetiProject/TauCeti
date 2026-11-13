@@ -18,7 +18,8 @@ block. It also evaluates the change-of-origin series of a scalar series on const
 uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
 normed field, at any point of its ball of convergence, as the termwise differentiated series; at
 zero they recover the coefficients. Finally, it computes the scalar series of `z ↦ f (z ^ m)` on a
-ball of radius at most `1` from that of `f`, in any normed algebra with `‖1‖ = 1`.
+ball of radius at most `1` from that of `f`, in any normed algebra with `‖1‖ = 1`. In any normed
+algebra, a scalar series has radius at least that of the corresponding series in the scalars.
 -/
 
 public section
@@ -169,5 +170,31 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
       · exact absurd ⟨n / m, Nat.mul_div_cancel' h⟩ hn
       · exact zero_smul _ _
     · simp [Nat.mul_div_cancel_left _ hm, ← pow_mul]
+
+section NormedAlgebra
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+
+/-- A scalar series has radius in a normed algebra at least its radius in the scalars. -/
+theorem ofScalars_radius_le_ofScalars_radius (c : ℕ → 𝕜) :
+    (ofScalars 𝕜 c).radius ≤ (ofScalars A c).radius := by
+  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ le_radius_of_summable_norm _ ?_
+  refine Summable.of_norm_bounded_eventually ((ofScalars 𝕜 c).summable_norm_mul_pow hr) ?_
+  filter_upwards [Filter.eventually_cofinite_ne 0] with n hn
+  rw [norm_mul, norm_norm, norm_pow, NNReal.norm_eq, ofScalars_norm 𝕜 c n]
+  gcongr
+  exact ofScalars_norm_le A c n (Nat.pos_of_ne_zero hn)
+
+/-- Within the radius of the scalar series, the terms `c n • x ^ n` of a scalar series are
+absolutely summable in a normed algebra. -/
+theorem summable_norm_smul_pow_of_lt_ofScalars_radius (c : ℕ → 𝕜) {x : A}
+    (hx : (‖x‖₊ : ℝ≥0∞) < (ofScalars 𝕜 c).radius) :
+    Summable fun n ↦ ‖c n • x ^ n‖ := by
+  have hmem : x ∈ Metric.eball (0 : A) (ofScalars A c).radius := by
+    rw [mem_eball_zero_iff, eNorm_eq_nnNorm]
+    exact hx.trans_le (ofScalars_radius_le_ofScalars_radius c)
+  simpa [ofScalars_apply_eq] using (ofScalars A c).summable_norm_apply hmem
+
+end NormedAlgebra
 
 end FormalMultilinearSeries
