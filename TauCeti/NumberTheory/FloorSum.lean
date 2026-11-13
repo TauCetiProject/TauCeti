@@ -61,8 +61,8 @@ theorem Nat.Coprime.sum_range_div {h c : ℕ} (hhc : h.Coprime c) :
   rw [← hhc.sum_range_div_mul_two, Nat.mul_div_cancel _ (by decide)]
 
 /-- For coprime `h` and `c`, the floor sum is `(h - 1)(c - 1) / 2` in any
-division ring of characteristic zero. -/
-theorem Nat.Coprime.sum_range_natCast_div {K : Type*} [DivisionRing K] [CharZero K]
+division ring where `2 ≠ 0`. -/
+theorem Nat.Coprime.sum_range_natCast_div {K : Type*} [DivisionRing K] [NeZero (2 : K)]
     {h c : ℕ} (hhc : h.Coprime c) :
     ∑ r ∈ range c, ((h * r / c : ℕ) : K) = (h - 1) * (c - 1) / 2 := by
   rcases h.eq_zero_or_pos with rfl | hh
@@ -75,7 +75,7 @@ theorem Nat.Coprime.sum_range_natCast_div {K : Type*} [DivisionRing K] [CharZero
     simp
   have heq := congrArg (Nat.cast : ℕ → K) hhc.sum_range_div_mul_two
   push_cast [Nat.cast_sub hh, Nat.cast_sub hc] at heq
-  exact (eq_div_iff (by norm_num)).2 heq
+  exact (eq_div_iff two_ne_zero).2 heq
 
 /-- The second-moment identity `Nat.Coprime.mul_sum_range_natCast_div_sq` over `ℚ`, from which
 the versions in `ℕ` and in any division ring of characteristic zero follow. -/

@@ -25,7 +25,7 @@ values `∏ (1 - q^{-k})` of local densities.
 ## Main results
 
 * `Finset.sum_range_natCast`, `Finset.sum_range_natCast_sq`: sums of naturals and their squares in
-  a division ring of characteristic zero.
+  a division ring (with the relevant denominators nonzero).
 * `Finset.prod_pow_sub_one`: factoring `q ^ (∑ i ∈ s, f i)` out of `∏ i ∈ s, (q ^ f i - 1)`.
 * `Finset.sum_range_add_mul_add_div_two`: the increments of a quadratic along a uniform grid sum to
   the increment of the quadratic from `0` to the end of the grid.
@@ -54,8 +54,8 @@ theorem sum_range_add_mul_add_div_two {K : Type*} [Field K] [CharZero K] (a u X 
   | zero => simp
   | succ n ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
 
-/-- The sum of the natural numbers below `n`, cast into a division ring of characteristic zero. -/
-theorem sum_range_natCast {K : Type*} [DivisionRing K] [CharZero K] (n : ℕ) :
+/-- The sum of the natural numbers below `n`, cast into a division ring where `2 ≠ 0`. -/
+theorem sum_range_natCast {K : Type*} [DivisionRing K] [NeZero (2 : K)] (n : ℕ) :
     ∑ r ∈ range n, (r : K) = n * (n - 1) / 2 :=
   (eq_div_iff two_ne_zero).2 (sum_range_natCast_mul_two n)
 

@@ -73,7 +73,7 @@ open Finset
 namespace TauCeti
 
 /-- The **Dedekind sum** `s(d, c) = ∑_{r=1}^{c-1} (r / c) ((d r / c))`, where
-`((x))` is zero at integers and `Int.fract x - 1/2` otherwise. It vanishes for `c ≤ 1`.
+`((x))` is zero at integers and `Int.fract x - 1/2` otherwise. It vanishes for `c ≤ 2`.
 For `c ≥ 1` this is the classical sum of products of sawtooth functions. -/
 def dedekindSum (d c : ℤ) : ℚ :=
   ∑ r ∈ Ioo 0 c, (r / c : ℚ) * (if Int.fract ((d * r : ℤ) / c : ℚ) = 0 then 0
@@ -239,19 +239,31 @@ theorem dedekindSum_self_mul_sub (c k d : ℤ) :
     dedekindSum (c * k - d) c = -dedekindSum d c := by
   rw [sub_eq_neg_add, dedekindSum_add_self_mul, dedekindSum_neg]
 
-/-- The Dedekind sum `s(d, c)` is the empty sum for `c ≤ 1`. -/
+/-- The Dedekind sum `s(d, c)` vanishes for `c ≤ 2`. -/
 @[simp]
-theorem dedekindSum_eq_zero_of_le_one (d : ℤ) {c : ℤ} (hc : c ≤ 1) :
+theorem dedekindSum_eq_zero_of_le_two (d : ℤ) {c : ℤ} (hc : c ≤ 2) :
     dedekindSum d c = 0 := by
-  exact sum_eq_zero fun r hr ↦ absurd hr (by rw [mem_Ioo]; omega)
+  by_cases hc' : c ≤ 1
+  · exact sum_eq_zero fun r hr ↦ absurd hr (by rw [mem_Ioo]; omega)
+  obtain rfl : c = 2 := by omega
+  have hcongr : d ≡ 2 - d [ZMOD 2] := by
+    rw [Int.modEq_iff_dvd]
+    exact ⟨1 - d, by ring⟩
+  have h := dedekindSum_congr hcongr
+  rw [dedekindSum_self_sub] at h
+  linarith
 
 /-- The Dedekind sum `s(d, 0)` vanishes. -/
 theorem dedekindSum_zero_right (d : ℤ) : dedekindSum d 0 = 0 :=
-  dedekindSum_eq_zero_of_le_one d zero_le_one
+  dedekindSum_eq_zero_of_le_two d (by decide)
 
 /-- The Dedekind sum `s(d, 1)` vanishes. -/
 theorem dedekindSum_one_right (d : ℤ) : dedekindSum d 1 = 0 :=
-  dedekindSum_eq_zero_of_le_one d le_rfl
+  dedekindSum_eq_zero_of_le_two d (by decide)
+
+/-- The Dedekind sum `s(d, 2)` vanishes. -/
+theorem dedekindSum_two_right (d : ℤ) : dedekindSum d 2 = 0 :=
+  dedekindSum_eq_zero_of_le_two d le_rfl
 
 /-! ### The reciprocity law -/
 
