@@ -33,7 +33,7 @@ opposite group to reverse multiplication order.
 Adapted in full from `Mei/Geometry/Convex/Polyhedron/Path/Product.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), at
 `9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0).
-Original author credit is retained; the new file uses the requested Tau Ceti copyright header.
+Original author credit is retained.
 -/
 
 public section

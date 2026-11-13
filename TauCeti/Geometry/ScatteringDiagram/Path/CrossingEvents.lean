@@ -30,7 +30,7 @@ Mathlib's `Finset.sort`; its order is on crossing times alone.
 Adapted in full from `Mei/Geometry/Convex/Polyhedron/CrossingEvents.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), at
 `9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0).
-Original author credit is retained; the new file uses the requested Tau Ceti copyright header.
+Original author credit is retained.
 -/
 
 public section
@@ -107,11 +107,7 @@ theorem affineSpan_eq_of_mem_crossingWalls (e : x ⟶ y) {t : ℝ} {i j : ι}
     affineSpan ℝ (W i) = affineSpan ℝ (W j) := by
   obtain ⟨ht, hi⟩ := (mem_crossings x y i t).mp ((mem_crossingWalls x y t i).mp hi)
   obtain ⟨_, hj⟩ := (mem_crossings x y j t).mp ((mem_crossingWalls x y t j).mp hj)
-  have hd : (affineSpan ℝ (W i)).direction = (affineSpan ℝ (W j)).direction := by
-    by_contra hne
-    exact e.down.regular t ht (mem_singularSupport.mpr (Or.inr ⟨i, j, hne, hi, hj⟩))
-  exact AffineSubspace.ext_of_direction_eq hd
-    ⟨_, subset_affineSpan ℝ (W i) hi, subset_affineSpan ℝ (W j) hj⟩
+  exact affineSpan_eq_of_notMem_singularSupport (e.down.regular t ht) hi hj
 
 /-- Reversal reverses the distinct crossing times and reflects each parameter in `1/2`. -/
 theorem orderedCrossingTimes_reverse (e : x ⟶ y) :
