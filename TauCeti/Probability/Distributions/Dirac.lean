@@ -7,19 +7,24 @@ module
 
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+public import TauCeti.Probability.GeneratingFunction
 public import TauCeti.Probability.Quantile
 
 /-!
 # Distributional formulas for Dirac measures
 
 This file records the cumulative distribution and the lower and upper quantile functions of a real
-Dirac measure, and the exponential-integrability domain and cumulant-generating function of a
+Dirac measure, the cumulative mass and probability-generating function of a Dirac measure on the
+natural numbers, and the exponential-integrability domain and cumulant-generating function of a
 real-valued statistic under a Dirac measure. The moment-generating function is already available in
 Mathlib as `ProbabilityTheory.mgf_dirac'`.
 
 ## Main results
 
 * `TauCeti.Probability.cdf_dirac` — the cdf of a real Dirac measure;
+* `TauCeti.Probability.measureReal_Iic_dirac_nat` — the cumulative mass of a Dirac measure on the
+  natural numbers;
+* `TauCeti.Probability.pgf_dirac` — the probability-generating function of a Dirac measure;
 * `MeasureTheory.Measure.quantile_dirac` and `MeasureTheory.Measure.upperQuantile_dirac` — the
   lower and upper quantile functions of a Dirac measure;
 * `TauCeti.Probability.integrableExpSet_dirac` — every exponential moment exists under a Dirac
@@ -38,6 +43,17 @@ open MeasureTheory ProbabilityTheory Set
 theorem cdf_dirac (a x : ℝ) : cdf (Measure.dirac a) x = if a ≤ x then 1 else 0 := by
   rw [cdf_eq_real, measureReal_def]
   by_cases h : a ≤ x <;> simp [Measure.dirac_apply' _ measurableSet_Iic, h]
+
+/-- The cumulative mass of a Dirac measure on the natural numbers is the indicator of the upper
+set of its atom. -/
+theorem measureReal_Iic_dirac_nat (k n : ℕ) :
+    (Measure.dirac k).real (Iic n) = if k ≤ n then 1 else 0 := by
+  by_cases h : k ≤ n <;> simp [Measure.dirac_real_apply, Set.indicator, h]
+
+/-- The probability-generating function of a Dirac measure on the natural numbers is a monomial. -/
+@[simp]
+theorem pgf_dirac (k : ℕ) (z : ℝ) : pgf id (Measure.dirac k) z = z ^ k := by
+  simp [pgf_def]
 
 /-- Every exponential moment of a Dirac measure exists. -/
 @[simp]
