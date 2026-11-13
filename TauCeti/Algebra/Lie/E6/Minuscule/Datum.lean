@@ -48,6 +48,10 @@ def pinnedRepresentation :
   weightTable.pinnedRepresentation (t := E6) valid_E6 (by
     simpa only [cartanMatrix_E6, rank] using weightTable_cartanMatrix)
 
+/-- The pinned minuscule action specializes the general table action. -/
+theorem pinnedRepresentation_def (hCM : weightTable.cartanMatrix = E6.cartanMatrixᵀ) :
+    pinnedRepresentation = weightTable.pinnedRepresentation (t := E6) valid_E6 hCM := (rfl)
+
 /-- The numbered Cartan generator acts by the diagonal minuscule weight matrix. -/
 @[simp↓]
 theorem pinnedRepresentation_ι_lieBasis_h_apply (i : Fin E6.rank) (v : V) :
@@ -112,6 +116,11 @@ Its admissible lattice and basis are the existing integral coordinate lattice an
   weightTable.chevalleyDatum (t := E6) valid_E6
     (by simpa only [cartanMatrix_E6, rank] using weightTable_cartanMatrix)
     (by rw [weightTable_weight]; exact span_range_e6MinusculeWeight_eq_top)
+
+/-- The minuscule datum specializes the general full-weight table datum. -/
+theorem chevalleyDatum_def (hCM : weightTable.cartanMatrix = E6.cartanMatrixᵀ)
+    (hspan : Submodule.span ℤ (Set.range weightTable.weight) = ⊤) :
+    chevalleyDatum = weightTable.chevalleyDatum (t := E6) valid_E6 hCM hspan := (rfl)
 
 /-- The datum has dimension twenty-seven. -/
 @[simp] theorem chevalleyDatum_dim : chevalleyDatum.dim = 27 := rfl

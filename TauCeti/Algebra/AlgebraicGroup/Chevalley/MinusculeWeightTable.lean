@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MinusculeWeightTable
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
-import TauCeti.Algebra.Lie.Weights.Basic
-import TauCeti.Algebra.Lie.Weights.Faithful
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Representation
 
 /-!
 # Chevalley data from minuscule weight tables
@@ -44,74 +41,53 @@ variable {t : DynkinType} {ι : Type*} [Fintype ι] [DecidableEq ι]
   (T : MinusculeWeightTable (Fin t.rank) ι) (ht : t.Valid)
   (hCM : T.cartanMatrix = t.cartanMatrixᵀ)
 
-private def tableRepresentation : t.SerreLieAlgebra →ₗ⁅ℚ⁆ Matrix ι ι ℚ :=
-  TauCeti.serreLift (by rw [← hCM]; exact T.isSerreSystemQ)
-
 /-- The table representation transported to the pinned Lie algebra and extended to its
 universal enveloping algebra. -/
 def pinnedRepresentation :
     _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ (ι → ℚ) :=
-  _root_.UniversalEnvelopingAlgebra.lift ℚ
-    ((Matrix.toLinAlgEquiv' (R := ℚ) (n := ι)).toAlgHom.toLieHom.comp
-      ((tableRepresentation T hCM).comp (t.serreLiftEquiv ht).symm.toLieHom))
+  DynkinType.serreRepresentation ht hCM T.rep
 
-private theorem pinnedRepresentation_ι_apply (x : t.lieAlgebra ht) (v : ι → ℚ) :
-    T.pinnedRepresentation ht hCM (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
-      tableRepresentation T hCM ((t.serreLiftEquiv ht).symm x) *ᵥ v := by
-  simp only [pinnedRepresentation, _root_.UniversalEnvelopingAlgebra.lift_ι_apply,
-    LieHom.comp_apply, LieEquiv.coe_toLieHom, AlgHom.toLieHom_apply,
-    AlgEquiv.toAlgHom_apply, Matrix.toLinAlgEquiv'_apply]
+/-- The pinned action is the Serre transport of the existing table representation. -/
+theorem pinnedRepresentation_def :
+    T.pinnedRepresentation ht hCM = DynkinType.serreRepresentation ht hCM T.rep := (rfl)
 
 /-- The pinned Cartan generator acts by the table's diagonal weight matrix. -/
 @[simp↓]
 theorem pinnedRepresentation_ι_lieBasis_h_apply (i : Fin t.rank) (v : ι → ℚ) :
     T.pinnedRepresentation ht hCM (_root_.UniversalEnvelopingAlgebra.ι ℚ
       ((t.lieBasis ht).h i)) v = T.cartanGeneratorMatrixQ i *ᵥ v := by
-  rw [T.pinnedRepresentation_ι_apply, t.serreLiftEquiv_symm_lieBasis_h ht i,
-    tableRepresentation, TauCeti.serreLift_serreH]
+  rw [pinnedRepresentation, serreRepresentation_ι_lieBasis_h, T.rep_ι_apply,
+    T.rationalSerreRepresentation_serreH]
 
 /-- The pinned positive generator acts by the table's raising matrix. -/
 @[simp↓]
 theorem pinnedRepresentation_ι_lieBasis_e_apply (i : Fin t.rank) (v : ι → ℚ) :
     T.pinnedRepresentation ht hCM (_root_.UniversalEnvelopingAlgebra.ι ℚ
       ((t.lieBasis ht).e i)) v = T.raisingMatrixQ i *ᵥ v := by
-  rw [T.pinnedRepresentation_ι_apply, t.serreLiftEquiv_symm_lieBasis_e ht i,
-    tableRepresentation, TauCeti.serreLift_serreE]
+  rw [pinnedRepresentation, serreRepresentation_ι_lieBasis_e, T.rep_ι_apply,
+    T.rationalSerreRepresentation_serreE]
 
 /-- The pinned negative generator acts by the table's lowering matrix. -/
 @[simp↓]
 theorem pinnedRepresentation_ι_lieBasis_f_apply (i : Fin t.rank) (v : ι → ℚ) :
     T.pinnedRepresentation ht hCM (_root_.UniversalEnvelopingAlgebra.ι ℚ
       ((t.lieBasis ht).f i)) v = T.loweringMatrixQ i *ᵥ v := by
-  rw [T.pinnedRepresentation_ι_apply, t.serreLiftEquiv_symm_lieBasis_f ht i,
-    tableRepresentation, TauCeti.serreLift_serreF]
+  rw [pinnedRepresentation, serreRepresentation_ι_lieBasis_f, T.rep_ι_apply,
+    T.rationalSerreRepresentation_serreF]
 
 /-- The coordinate basis vectors retain the table's Cartan weights under transport. -/
 theorem isCartanWeightVector_pinnedRepresentation_coordinateLatticeBasis (a : ι) :
     UniversalEnvelopingAlgebra.IsCartanWeightVector (t.lieBasis ht).h
-      (T.pinnedRepresentation ht hCM) (T.weight a) (coordinateLatticeBasis ι a : ι → ℚ) := by
-  refine (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mpr fun i => ?_
-  rw [T.pinnedRepresentation_ι_lieBasis_h_apply]
-  simpa only [T.rep_ι_apply, T.rationalSerreRepresentation_serreH] using
-    (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
-      (T.isCartanWeightVector_coordinateLatticeBasis a) i
+      (T.pinnedRepresentation ht hCM) (T.weight a) (coordinateLatticeBasis ι a : ι → ℚ) :=
+  isCartanWeightVector_serreRepresentation ht hCM T.rep
+    (T.isCartanWeightVector_coordinateLatticeBasis a)
 
 /-- The transported action of a pinned root generator agrees with its Serre action. -/
 theorem pinnedRepresentation_ι_rootGenerator (k : Fin t.rank ⊕ Fin t.rank) :
     T.pinnedRepresentation ht hCM (_root_.UniversalEnvelopingAlgebra.ι ℚ
       ((t.lieBasis ht).rootGenerator k)) =
-      T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (serreRootGenerator T.cartanMatrix k)) := by
-  apply LinearMap.ext
-  intro v
-  cases k with
-  | inl i =>
-    rw [LieAlgebra.Basis.rootGenerator_inl, serreRootGenerator_inl,
-      T.pinnedRepresentation_ι_lieBasis_e_apply, T.rep_ι_apply,
-      T.rationalSerreRepresentation_serreE]
-  | inr i =>
-    rw [LieAlgebra.Basis.rootGenerator_inr, serreRootGenerator_inr,
-      T.pinnedRepresentation_ι_lieBasis_f_apply, T.rep_ι_apply,
-      T.rationalSerreRepresentation_serreF]
+      T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (serreRootGenerator T.cartanMatrix k)) :=
+  serreRepresentation_ι_rootGenerator ht hCM T.rep k
 
 /-- The coordinate lattice is stable under the pinned simple-generator Kostant form. -/
 theorem pinnedRepresentation_kostantForm_mem_coordinateLattice
@@ -119,72 +95,29 @@ theorem pinnedRepresentation_kostantForm_mem_coordinateLattice
     (hu : u ∈ UniversalEnvelopingAlgebra.kostantForm
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h)
     (v : ι → ℚ) (hv : v ∈ coordinateLattice ι) :
-    T.pinnedRepresentation ht hCM u v ∈ coordinateLattice ι := by
-  refine UniversalEnvelopingAlgebra.kostantForm_apply_mem_coordinateLattice _ _ _
-    (wt := T.weight) ?_ ?_ ?_ hu hv
-  · intro k
-    rw [T.pinnedRepresentation_ι_rootGenerator]
-    exact T.rep_serreRootGenerator_pow_two k
-  · intro k w hw
-    rw [T.pinnedRepresentation_ι_rootGenerator]
-    exact T.rep_serreRootGenerator_mem_lattice k hw
-  · intro a
-    have h := T.isCartanWeightVector_pinnedRepresentation_coordinateLatticeBasis ht hCM a
-    rwa [coe_coordinateLatticeBasis, Pi.basisFun_apply] at h
+    T.pinnedRepresentation ht hCM u v ∈ coordinateLattice ι :=
+  serreRepresentation_kostantForm_mem ht hCM T.rep (coordinateLattice ι).toAddSubgroup
+    (fun _ hu _ hv => T.rep_serreKostantForm_mem_lattice hu hv) u hu v hv
 
 /-- Weights spanning the rational weight space make the pinned table representation faithful. -/
 theorem pinnedRepresentation_ι_injective
     (hspan : Submodule.span ℚ (Set.range fun a i => (T.weight a i : ℚ)) = ⊤) :
     Function.Injective fun x : t.lieAlgebra ht =>
-      T.pinnedRepresentation ht hCM (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
-  let f := (T.pinnedRepresentation ht hCM).toLieHom.comp
-    (_root_.UniversalEnvelopingAlgebra.ι ℚ)
-  let := LieRingModule.compLieHom (ι → ℚ) f
-  let := LieModule.compLieHom (ι → ℚ) f
-  let b := t.cartanBasis ht
-  let χ := fun a => b.constr ℚ fun i => (T.weight a i : ℚ)
-  have hwt (a : ι) : (coordinateLatticeBasis ι a : ι → ℚ) ∈
-      LieModule.weightSpace (ι → ℚ) (χ a : t.cartanSubalgebra ht → ℚ) := by
-    apply (b.mem_weightSpace_iff_forall_basis _ _).mpr
-    intro i
-    rw [LieSubalgebra.coe_bracket_of_module, LieRingModule.compLieHom_apply,
-      Module.End.lie_apply, LieHom.comp_apply, AlgHom.toLieHom_apply]
-    simp only [χ, Module.Basis.constr_basis, b, t.coe_cartanBasis ht]
-    exact (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
-      (T.isCartanWeightVector_pinnedRepresentation_coordinateLatticeBasis ht hCM a) i
-  have hχ : Submodule.span ℚ (Set.range χ) = ⊤ := by
-    have hrange : Set.range χ = (b.constr ℚ) ''
-        Set.range (fun a i => (T.weight a i : ℚ)) := Set.range_comp _ _
-    rw [hrange, Submodule.span_image_linearEquiv, hspan, Submodule.map_top, LinearEquiv.range]
-  have : LieModule.IsFaithful ℚ (t.cartanSubalgebra ht) (ι → ℚ) :=
-    isFaithful_of_weight_vectors_span hwt
-      (fun a => by simpa only [coe_coordinateLatticeBasis] using (Pi.basisFun ℚ ι).ne_zero a) hχ
-  have := isFaithful_of_isFaithful_cartanSubalgebra
-    (K := ℚ) (L := t.lieAlgebra ht) (M := (ι → ℚ)) (H := t.cartanSubalgebra ht)
-  intro x y hxy
-  apply LieModule.ext_of_isFaithful (R := ℚ) (ι → ℚ)
-  intro v
-  simp only [LieRingModule.compLieHom_apply, Module.End.lie_apply, f,
-    LieHom.comp_apply, AlgHom.toLieHom_apply]
-  exact LinearMap.congr_fun hxy v
+      T.pinnedRepresentation ht hCM (_root_.UniversalEnvelopingAlgebra.ι ℚ x) :=
+  representation_ι_injective_of_span_range_eq_top ht (T.pinnedRepresentation ht hCM)
+    (T.isCartanWeightVector_pinnedRepresentation_coordinateLatticeBasis ht hCM)
+    (fun a => by simpa only [coe_coordinateLatticeBasis] using (Pi.basisFun ℚ ι).ne_zero a)
+    hspan
 
 /-- Integral spanning of the table's weights also implies faithfulness of the pinned action. -/
 theorem pinnedRepresentation_ι_injective_of_span_int
     (hspan : Submodule.span ℤ (Set.range T.weight) = ⊤) :
     Function.Injective fun x : t.lieAlgebra ht =>
-      T.pinnedRepresentation ht hCM (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
-  apply T.pinnedRepresentation_ι_injective ht hCM
-  let c : (Fin t.rank → ℤ) →ₗ[ℤ] (Fin t.rank → ℚ) :=
-    LinearMap.pi fun i => (Int.castAddHom ℚ).toIntLinearMap.comp (LinearMap.proj i)
-  have hc : (fun a i => (T.weight a i : ℚ)) = c ∘ T.weight := by
-    funext a i
-    rfl
-  rw [hc, ← Submodule.span_range_eq_span_range_comp_of_span_eq_top (S := ℚ) hspan c]
-  apply top_unique
-  rw [← (Pi.basisFun ℚ (Fin t.rank)).span_eq, Submodule.span_le]
-  rintro _ ⟨i, rfl⟩
-  apply Submodule.subset_span
-  exact ⟨Pi.single i 1, by ext j; simp [c, Pi.single_apply]⟩
+      T.pinnedRepresentation ht hCM (_root_.UniversalEnvelopingAlgebra.ι ℚ x) :=
+  representation_ι_injective_of_span_int ht (T.pinnedRepresentation ht hCM)
+    (T.isCartanWeightVector_pinnedRepresentation_coordinateLatticeBasis ht hCM)
+    (fun a => by simpa only [coe_coordinateLatticeBasis] using (Pi.basisFun ℚ ι).ne_zero a)
+    hspan
 
 end Transport
 

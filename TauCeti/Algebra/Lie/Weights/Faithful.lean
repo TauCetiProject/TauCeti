@@ -25,8 +25,8 @@ module span the dual of `H`, no nonzero element of `H` acts by zero, and the mod
 
 ## Main results
 
-* `TauCeti.isFaithful_of_weight_vectors_span`: nonzero weight vectors with weights spanning
-  the dual detect every element of the acting Lie algebra, over any field.
+* `TauCeti.isFaithful_of_mem_weightSpace_of_span_range_eq_top`: nonzero weight vectors whose
+  weights span the dual detect every element of the acting Lie algebra, over any field.
 * `TauCeti.isFaithful_of_isFaithful_cartanSubalgebra`: an `L`-module on which `H` acts faithfully
   is faithful.
 -/
@@ -39,7 +39,7 @@ open LieAlgebra LieModule LieAlgebra.IsKilling
 
 /-- A Lie module is faithful if its nonzero weight vectors have weights spanning the dual
 of the Lie algebra. The vectors need not span the module. -/
-theorem isFaithful_of_weight_vectors_span
+theorem isFaithful_of_mem_weightSpace_of_span_range_eq_top
     {K L M η : Type*} [Field K] [LieRing L] [LieAlgebra K L]
     [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
     {μ : η → Module.Dual K L} {v : η → M}
