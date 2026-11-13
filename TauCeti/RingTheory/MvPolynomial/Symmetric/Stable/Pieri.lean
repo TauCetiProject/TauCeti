@@ -8,9 +8,7 @@ module
 public import TauCeti.Combinatorics.Young.Interlacing
 public import TauCeti.Combinatorics.Young.VerticalStrip
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Omega
-import TauCeti.Combinatorics.Enumerative.Partition.Conjugate
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Pieri
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.JacobiTrudi
 
 /-!
 # The Pieri rules in the symmetric functions
@@ -29,8 +27,9 @@ The involution `ω` exchanges the two rules. It sends `h_r` to `e_r` and `s_μ` 
 when its transpose is a horizontal strip
 (`YoungDiagram.isVerticalStrip_iff_interlacedBy_transpose`).
 So applying `ω` to either rule for `νᵗ` and reindexing the sum by conjugation gives the other rule
-for `ν`. Here the horizontal-strip rule descends from the Pieri rule in finitely many variables,
-`TauCeti.hsymm_mul_schurPoly`, and the vertical-strip rule is recovered from it under `ω`.
+for `ν`, over any commutative ring. Here both rules instead descend from the Pieri rules in finitely
+many variables, `TauCeti.hsymm_mul_schurPoly` and `TauCeti.esymm_mul_schurPoly`, so they hold over
+any commutative semiring.
 
 ## Main results
 
@@ -73,32 +72,17 @@ open scoped Classical in
 /-- **The dual Pieri rule** in the symmetric functions: for a partition `ν` of `n` and every `r`,
 `e_r · s_ν = ∑_μ s_μ`, the sum running over the partitions `μ` of `n + r` whose Young diagram
 contains that of `ν` with a vertical strip as complement. -/
-theorem of_stableEsymm_mul_of_stableSchur {R : Type*} [CommRing R] {n : ℕ}
+theorem of_stableEsymm_mul_of_stableSchur {R : Type*} [CommSemiring R] {n : ℕ}
     (ν : n.Partition) (r : ℕ) :
     DirectSum.of _ r (stableEsymm R r) * DirectSum.of _ n (stableSchur R ν) =
       ∑ μ : (n + r).Partition with (ofPartition μ).IsVerticalStrip (ofPartition ν),
-        (DirectSum.of _ (n + r) (stableSchur R μ) : SymmetricFunction R) := by
-  -- Apply `ω` to the Pieri rule for `νᵗ`, then reindex the sum by conjugation, which matches
-  -- the horizontal strips over `νᵗ` with the vertical strips over `ν`.
-  have h := congrArg (omega R) (of_stableHsymm_mul_of_stableSchur (R := R) ν.conjugate r)
-  rw [map_mul, omega_of_stableHsymm, omega_of_stableSchur, Nat.Partition.conjugate_conjugate,
-    map_sum] at h
-  rw [h]
-  refine Finset.sum_nbij' Nat.Partition.conjugate Nat.Partition.conjugate ?_ ?_ ?_ ?_ ?_
-  · intro μ hμ
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hμ ⊢
-    rwa [isVerticalStrip_iff_interlacedBy_transpose, ← ofPartition_conjugate,
-      ← ofPartition_conjugate, Nat.Partition.conjugate_conjugate]
-  · intro μ hμ
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hμ ⊢
-    rwa [isVerticalStrip_iff_interlacedBy_transpose, ← ofPartition_conjugate,
-      ← ofPartition_conjugate] at hμ
-  · intro μ _
-    exact Nat.Partition.conjugate_conjugate μ
-  · intro μ _
-    exact Nat.Partition.conjugate_conjugate μ
-  · intro μ _
-    rw [omega_of_stableSchur]
+        (DirectSum.of _ (n + r) (stableSchur R μ) : SymmetricFunction R) :=
+  ext_specialization fun d => by
+    simp only [map_mul, map_sum, specialization_of, coe_stableSymmetricProj_stableEsymm,
+      coe_stableSymmetricProj_stableSchur]
+    -- As for the horizontal rule, the two `esymm (Fin d)` differ only in the decidable equality
+    -- instance on the alphabet.
+    convert esymm_mul_schurPoly (R := R) (σ := Fin d) ν r using 3
 
 end SymmetricFunction
 
