@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Maps between intrinsic normal spaces
@@ -232,7 +233,8 @@ theorem map_tangentRange_mfderiv (hn : n ≠ 0) (hm : m ≠ 0)
     (f.tangentRange x hn).map ((tangentSpaceCast J' (v (f x)) (g (u x))).toContinuousLinearMap.comp
         (mfderiv J J' v (f x))).toLinearMap =
       g.tangentRange (u x) hm := by
-  have hu := f.mdifferentiableAt_of_surjective_mfderiv g hv h hsurj
+  have hu := mdifferentiableAt_of_surjective_mfderiv (g.isEmbedding.isInducing.continuousAt_iff.mpr
+    ((hv.continuousAt.comp f.contMDiff.continuous.continuousAt).congr h)) hsurj
   apply le_antisymm
   · exact Submodule.map_le_iff_le_comap.mpr
       (f.tangentRange_le_comap_mfderiv g hn hm hu h)
@@ -276,8 +278,10 @@ theorem normalSpaceEquiv_toContinuousLinearMap {l : ℕ∞ω} (hn : n ≠ 0) (hm
     (hv : IsLocalDiffeomorphAt J J' l v (f x))
     (hsurj : Surjective (mfderiv I I' u x)) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
     (f.normalSpaceEquiv g hn hm hv hsurj hl h).toContinuousLinearMap =
-      f.normalMap g hn hm
-        (f.mdifferentiableAt_of_surjective_mfderiv g (hv.mdifferentiableAt hl) h hsurj) h := by
+      f.normalMap g hn hm (mdifferentiableAt_of_surjective_mfderiv
+        (g.isEmbedding.isInducing.continuousAt_iff.mpr
+          (((hv.mdifferentiableAt hl).continuousAt.comp
+            f.contMDiff.continuous.continuousAt).congr h)) hsurj) h := by
   ext z
   obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
   simp only [ContinuousLinearEquiv.coe_apply, normalSpaceEquiv,
