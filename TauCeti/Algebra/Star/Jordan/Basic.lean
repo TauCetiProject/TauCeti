@@ -101,11 +101,14 @@ theorem map_mul_self [StarModule ℂ A] (f : JordanStarMap A B) (x : A) : f (x *
   exact (smul_right_injective B (two_ne_zero : (2 : ℂ) ≠ 0)) h
 
 /-- Jordan star maps preserve multiplication in the symmetrized algebra. -/
-theorem map_sym_mul [StarModule ℂ A] (f : JordanStarMap A B) (x y : A) :
+theorem map_sym_mul [StarModule ℂ A] [Invertible (2 : A)] [Invertible (2 : B)]
+    (f : JordanStarMap A B) (x y : A) :
     SymAlg.sym (f (SymAlg.unsym (SymAlg.sym x * SymAlg.sym y))) =
       SymAlg.sym (f x) * SymAlg.sym (f y) := by
-  have ha : ⅟(2 : A) = algebraMap ℂ A ((2 : ℂ)⁻¹) := (rfl)
-  have hb : ⅟(2 : B) = algebraMap ℂ B ((2 : ℂ)⁻¹) := (rfl)
+  have ha : ⅟(2 : A) = algebraMap ℂ A ((2 : ℂ)⁻¹) := by
+    cases Subsingleton.elim ‹Invertible (2 : A)› (invertibleTwo A); rfl
+  have hb : ⅟(2 : B) = algebraMap ℂ B ((2 : ℂ)⁻¹) := by
+    cases Subsingleton.elim ‹Invertible (2 : B)› (invertibleTwo B); rfl
   simp only [SymAlg.sym_mul_sym, SymAlg.unsym_sym, ha, hb, ← Algebra.smul_def,
     map_smul, f.map_mul_add_mul]
 
@@ -235,13 +238,11 @@ theorem map_one [StarModule ℂ A] (e : JordanStarEquiv A B) : e 1 = 1 :=
 end JordanStarEquiv
 end TauCeti
 
-open scoped TauCeti
-
 /-- For an adjoint-preserving complex linear map, preserving self-adjoint squares is
  equivalent to preserving multiplication in the symmetrized algebra. -/
 theorem LinearMap.map_selfAdjoint_sq_iff_map_sym_mul
     {A B : Type*} [Ring A] [StarRing A] [Algebra ℂ A] [StarModule ℂ A]
-    [Ring B] [StarRing B] [Algebra ℂ B]
+    [Ring B] [StarRing B] [Algebra ℂ B] [Invertible (2 : A)] [Invertible (2 : B)]
     (f : A →ₗ[ℂ] B) (hstar : ∀ x, f (star x) = star (f x)) :
     (∀ x, IsSelfAdjoint x → f (x * x) = f x * f x) ↔
       (∀ x y, SymAlg.sym (f (SymAlg.unsym (SymAlg.sym x * SymAlg.sym y))) =
