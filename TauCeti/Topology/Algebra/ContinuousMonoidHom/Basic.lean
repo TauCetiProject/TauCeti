@@ -417,9 +417,8 @@ theorem quotientLift_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
 theorem quotientLift_unique {H : Type*} [Monoid H] [TopologicalSpace H]
     (f : G →ₜ* H) (N : Subgroup G) [N.Normal] (hf : N ≤ f.ker) (g : (G ⧸ N) →ₜ* H)
     (hg : ∀ x : G, g (x : G ⧸ N) = f x) : g = quotientLift f N hf := by
-  ext q
-  obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective N q
-  simpa only [QuotientGroup.mk'_apply, quotientLift_mk] using hg x
+  refine ContinuousMonoidHom.toMonoidHom_injective (QuotientGroup.monoidHom_ext N (MonoidHom.ext
+    fun x => (hg x).trans (quotientLift_mk f N hf x).symm))
 
 /-- The restriction of a continuous homomorphism `f : H → G` to the preimage of a subgroup `U`,
 both carrying the subspace topology, as a continuous homomorphism `f⁻¹(U) → U`: the continuous
@@ -450,7 +449,7 @@ theorem subgroupComap_smul {H : Type*} [Group H] [TopologicalSpace H] (f : H →
 theorem le_ker_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
     {N : Subgroup G} [N.Normal] (g : (G ⧸ N) →ₜ* H) :
     N ≤ ((g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H)).ker :=
-  fun x hx => by simp [MonoidHom.mem_ker, (QuotientGroup.eq_one_iff x).mpr hx]
+  QuotientGroup.le_comap_mk' N g.toMonoidHom.ker
 
 end ContinuousMonoidHom
 
