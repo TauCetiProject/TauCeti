@@ -24,10 +24,20 @@ namespace AddMonoidAlgebra
 variable {R S A B : Type*} [Semiring R] [Semiring S] [AddMonoid A]
   [LinearOrder B] [OrderBot B] {D : A → B}
 
-/-- A coefficient homomorphism preserves the leading coefficient when it does not kill it. -/
-theorem leadingCoeff_mapRingHom_of_ne_zero (hD : Function.Injective D)
+/-- A coefficient homomorphism cannot increase the supremum of the exponent degrees. -/
+theorem supDegree_mapRingHom_le (f : R →+* S) (p : R[A]) :
+    (mapRingHom A f p).supDegree D ≤ p.supDegree D := by
+  classical
+  apply Finset.sup_le
+  intro a ha
+  apply Finset.le_sup
+  simp only [Finsupp.mem_support_iff, coeff_mapRingHom] at ha ⊢
+  exact fun h ↦ ha (by simp [h])
+
+/-- A coefficient homomorphism preserves the supremum degree if it retains the leading term. -/
+theorem supDegree_mapRingHom_eq_of_leadingCoeff_ne_zero (hD : Function.Injective D)
     (f : R →+* S) {p : R[A]} (hp : f (p.leadingCoeff D) ≠ 0) :
-    (mapRingHom A f p).leadingCoeff D = f (p.leadingCoeff D) := by
+    (mapRingHom A f p).supDegree D = p.supDegree D := by
   classical
   have hp0 : p ≠ 0 := by
     rintro rfl
@@ -35,15 +45,25 @@ theorem leadingCoeff_mapRingHom_of_ne_zero (hD : Function.Injective D)
   obtain ⟨a, -, he⟩ := exists_supDegree_mem_support D hp0
   have hl : p.leadingCoeff D = p.coeff a := by
     rw [leadingCoeff, he, Function.leftInverse_invFun hD a]
-  have hd : (mapRingHom A f p).supDegree D = D a := by
-    apply supDegree_eq_of_max ⟨a, rfl⟩
-    · simpa only [Function.leftInverse_invFun hD a, Finsupp.mem_support_iff,
-        coeff_mapRingHom, ← hl] using hp
-    · intro b hb
-      have hb' : b ∈ p.coeff.support := by
-        simp only [Finsupp.mem_support_iff, coeff_mapRingHom] at hb ⊢
-        exact fun h ↦ hb (by simp [h])
-      exact he ▸ Finset.le_sup hb'
-  rw [leadingCoeff, hd, Function.leftInverse_invFun hD a, coeff_mapRingHom, hl]
+  apply le_antisymm (supDegree_mapRingHom_le f p)
+  rw [he]
+  apply Finset.le_sup
+  simpa only [Finsupp.mem_support_iff, coeff_mapRingHom, ← hl] using hp
+
+/-- A coefficient homomorphism preserves the leading coefficient when it does not kill it. -/
+theorem leadingCoeff_mapRingHom_of_leadingCoeff_ne_zero (hD : Function.Injective D)
+    (f : R →+* S) {p : R[A]} (hp : f (p.leadingCoeff D) ≠ 0) :
+    (mapRingHom A f p).leadingCoeff D = f (p.leadingCoeff D) := by
+  rw [leadingCoeff, supDegree_mapRingHom_eq_of_leadingCoeff_ne_zero hD f hp,
+    coeff_mapRingHom, leadingCoeff]
+
+/-- A coefficient homomorphism preserves a unit leading coefficient, including in a zero ring. -/
+theorem isUnit_leadingCoeff_mapRingHom (hD : Function.Injective D) (f : R →+* S)
+    {p : R[A]} (hp : IsUnit (p.leadingCoeff D)) :
+    IsUnit ((mapRingHom A f p).leadingCoeff D) := by
+  cases subsingleton_or_nontrivial S
+  · exact isUnit_of_subsingleton _
+  rw [leadingCoeff_mapRingHom_of_leadingCoeff_ne_zero hD f (hp.map f).ne_zero]
+  exact hp.map f
 
 end AddMonoidAlgebra

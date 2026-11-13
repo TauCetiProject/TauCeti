@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.Degree
 public import Mathlib.Algebra.Polynomial.Laurent
 
 /-!
@@ -70,37 +69,72 @@ open AddMonoidAlgebra
 
 variable {R : Type*} [Semiring R]
 
-/-- Shifting an ordinary polynomial by any Laurent monomial preserves its leading coefficient. -/
-theorem leadingCoeff_toLaurent_mul_T (p : Polynomial R) (n : ℤ) :
-    (p.toLaurent * T n).leadingCoeff ((↑) : ℤ → WithBot ℤ) = p.leadingCoeff := by
+/-- The leading coefficient of a constant is its value. -/
+@[simp]
+theorem leadingCoeff_C (r : R) :
+    (C r).leadingCoeff ((↑) : ℤ → WithBot ℤ) = r := by
+  rw [← single_eq_C]
+  exact leadingCoeff_single WithBot.coe_injective 0 r
+
+/-- A Laurent monomial has leading coefficient one, over every semiring. -/
+@[simp]
+theorem leadingCoeff_T (n : ℤ) :
+    (T n : LaurentPolynomial R).leadingCoeff ((↑) : ℤ → WithBot ℤ) = 1 := by
+  rw [T, leadingCoeff_single WithBot.coe_injective]
+
+/-- The polynomial inclusion preserves its leading coefficient. -/
+@[simp]
+theorem leadingCoeff_toLaurent (p : Polynomial R) :
+    p.toLaurent.leadingCoeff ((↑) : ℤ → WithBot ℤ) = p.leadingCoeff := by
   classical
   by_cases hp : p = 0
   · simp [hp]
-  have hc (k : ℕ) : (p.toLaurent * T n).coeff (k + n) = p.coeff k := by
-    rw [T, coeff_mul_single_add, mul_one, coeff_toLaurent]
-    -- `Polynomial.toLaurent` transports coefficients along `Nat.castEmbedding`.
-    -- Expose this representation to apply injectivity at the embedded natural exponent.
-    change p.coeff.mapDomain Nat.castEmbedding (Nat.castEmbedding k) = p.coeff k
-    rw [Finsupp.mapDomain_apply_of_injective Nat.castEmbedding.injective]
-  have hd : (p.toLaurent * T n).supDegree ((↑) : ℤ → WithBot ℤ) =
-      ↑((p.natDegree : ℤ) + n) := by
+  have hc (k : ℕ) : p.toLaurent.coeff (k : ℤ) = p.coeff k := by
+    rw [← coeff_trunc, Polynomial.trunc_toLaurent]
+  have hd : p.toLaurent.supDegree ((↑) : ℤ → WithBot ℤ) = ↑(p.natDegree : ℤ) := by
     apply supDegree_eq_of_max ⟨_, rfl⟩
-    · rw [Function.leftInverse_invFun WithBot.coe_injective (_ + n),
+    · rw [Function.leftInverse_invFun WithBot.coe_injective (p.natDegree : ℤ),
         Finsupp.mem_support_iff, hc]
       exact Polynomial.leadingCoeff_ne_zero.mpr hp
     · intro a ha
-      have hcoef := Finsupp.mem_support_iff.1 ha
-      rw [← LaurentPolynomial.T_mul, coeff_T_mul] at hcoef
-      have hm : a - n ∈ p.support.map Nat.castEmbedding := by
-        rw [← support_coeff_toLaurent]
-        exact Finsupp.mem_support_iff.2 hcoef
-      obtain ⟨k, hk, he⟩ := Finset.mem_map.1 hm
+      rw [support_coeff_toLaurent] at ha
+      obtain ⟨k, hk, he⟩ := Finset.mem_map.1 ha
+      rw [Nat.castEmbedding_apply] at he
       have hkn := Polynomial.le_natDegree_of_mem_supp k hk
-      have he' : (k : ℤ) = a - n := he
-      have ha_le : a ≤ (p.natDegree : ℤ) + n := by omega
-      exact WithBot.coe_le_coe.mpr ha_le
-  rw [leadingCoeff, hd, Function.leftInverse_invFun WithBot.coe_injective (_ + n), hc]
+      exact WithBot.coe_le_coe.mpr (by omega)
+  rw [leadingCoeff, hd,
+    Function.leftInverse_invFun WithBot.coe_injective (p.natDegree : ℤ), hc]
   rfl
+
+/-- Shifting an arbitrary Laurent polynomial preserves its highest coefficient. -/
+@[simp]
+theorem leadingCoeff_mul_T (f : LaurentPolynomial R) (n : ℤ) :
+    (f * T n).leadingCoeff ((↑) : ℤ → WithBot ℤ) =
+      f.leadingCoeff ((↑) : ℤ → WithBot ℤ) := by
+  by_cases hf : f = 0
+  · simp [hf]
+  classical
+  obtain ⟨a, ha, he⟩ := exists_supDegree_mem_support ((↑) : ℤ → WithBot ℤ) hf
+  have hc (b : ℤ) : (f * T n).coeff (b + n) = f.coeff b := by
+    rw [T, coeff_mul_single_add, mul_one]
+  have hd : (f * T n).supDegree ((↑) : ℤ → WithBot ℤ) = ↑(a + n) := by
+    apply supDegree_eq_of_max ⟨_, rfl⟩
+    · rw [Function.leftInverse_invFun WithBot.coe_injective (a + n),
+        Finsupp.mem_support_iff, hc]
+      exact Finsupp.mem_support_iff.mp ha
+    · intro b hb
+      have hcoef := Finsupp.mem_support_iff.mp hb
+      rw [← T_mul, coeff_T_mul] at hcoef
+      have hb' : b - n ∈ f.coeff.support := Finsupp.mem_support_iff.mpr hcoef
+      have hle : ((b - n : ℤ) : WithBot ℤ) ≤ ↑a := he ▸ Finset.le_sup hb'
+      exact WithBot.coe_le_coe.mpr (by have := WithBot.coe_le_coe.mp hle; omega)
+  rw [leadingCoeff, hd, Function.leftInverse_invFun WithBot.coe_injective (a + n),
+    hc, leadingCoeff, he, Function.leftInverse_invFun WithBot.coe_injective a]
+
+/-- Shifting an ordinary polynomial by any Laurent monomial preserves its leading coefficient. -/
+theorem leadingCoeff_toLaurent_mul_T (p : Polynomial R) (n : ℤ) :
+    (p.toLaurent * T n).leadingCoeff ((↑) : ℤ → WithBot ℤ) = p.leadingCoeff := by
+  rw [leadingCoeff_mul_T, leadingCoeff_toLaurent]
 
 end LeadingCoeff
 
