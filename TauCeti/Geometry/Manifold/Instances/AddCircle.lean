@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 
 /-!
 # The circle `AddCircle p` as a smooth manifold
@@ -64,6 +64,9 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
 * `AddCircle.coe_extChartAt_apply`, `AddCircle.coe_extChartAt_self`,
   `AddCircle.extChartAt_symm_apply`: the extended charts are local lifts, and their inverses are
   the quotient map on their targets.
+* `AddCircle.contDiffAt_chartAt_comp_coe`, `AddCircle.hasFDerivAt_chartAt_comp_coe`: a map out of
+  `AddCircle p`, lifted to `ℝ` and read in a chart of its target, keeps its smoothness and its
+  derivative.
 * `AddCircle.instLieAddGroup`: `AddCircle p` is an analytic additive Lie group. In particular,
   multiplication by an integer is analytic (`TauCeti.contMDiff_zsmul`).
 * `AddCircle.contMDiff_of_comp_coe_eq`, `AddCircle.hasMFDerivAt_of_comp_coe_eq`: a map
@@ -524,6 +527,35 @@ theorem mfderiv_extChartAt_symm (x : AddCircle p) {z : ℝ}
   rw [h.mfderiv_eq, mfderiv_coe]
   -- The identification `tangentSpaceCast` of tangent spaces at equal points is the identity.
   rfl
+
+variable {p} in
+/-- A `C^k` map out of `AddCircle p`, precomposed with the quotient map `ℝ → AddCircle p` and read
+in a chart of its target, is `C^k`. -/
+theorem contDiffAt_chartAt_comp_coe {E' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace N] [ChartedSpace E' N] {k : ℕ∞ω} {f : AddCircle p → N} {t : ℝ}
+    (hf : ContMDiffAt 𝓘(ℝ) 𝓘(ℝ, E') k f t) :
+    ContDiffAt ℝ k (fun s : ℝ ↦ chartAt E' (f t) (f s)) t := by
+  have h := (contMDiffAt_iff.1 (hf.comp t ((contMDiff_coe p k) t))).2
+  simpa [Function.comp_def, contDiffWithinAt_univ] using h
+
+variable {p} in
+/-- A map out of `AddCircle p` with derivative `L`, precomposed with the quotient map
+`ℝ → AddCircle p` and read in a chart of its target, has derivative `L`. -/
+theorem hasFDerivAt_chartAt_comp_coe {E' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace N] [ChartedSpace E' N] {f : AddCircle p → N} {t : ℝ} {L : ℝ →L[ℝ] E'}
+    (hf : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, E') f t L) :
+    HasFDerivAt (fun s : ℝ ↦ chartAt E' (f t) (f s)) L t := by
+  have h := (hf.comp t (hasMFDerivAt_coe p t)).2
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Function.comp_id, modelWithCornersSelf_coe, Set.range_id,
+    hasFDerivWithinAt_univ] at h
+  -- The tangent spaces are the model spaces, and the casts between them are identities.
+  convert h using 1
+  · funext s
+    simp
+  · ext
+    rfl
+  · rfl
 
 /-! ### Maps between circles lifting maps of `ℝ` -/
 

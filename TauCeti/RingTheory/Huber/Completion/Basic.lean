@@ -709,6 +709,15 @@ theorem Hom.ext_completion {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopo
   Hom.ext <| RingHom.coe_inj <| Completion.ext g.continuous_toRingHom h.continuous_toRingHom
     fun a ↦ by simpa using congrArg (fun f : Hom S U ↦ f.toRingHom a) hgh
 
+/-- **The completion map is a monomorphism into Hausdorff pairs**: two morphisms into a Hausdorff
+Huber pair `S` that agree after composing with the completion map `S.completionHom` are equal. -/
+theorem Hom.ext_of_completionHom_comp [T2Space A] {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] [IsHuberRing B] {S : Pair A} {T : Pair B} {a b : Hom T S}
+    (h : S.completionHom.comp a = S.completionHom.comp b) : a = b := by
+  ext x
+  exact Completion.coe_injective A
+    (by simpa using congrArg (fun k : Hom T S.completion ↦ k.toRingHom x) h)
+
 end Pair
 
 end TauCeti.Huber

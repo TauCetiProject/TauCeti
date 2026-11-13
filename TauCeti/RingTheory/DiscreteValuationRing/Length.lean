@@ -15,7 +15,7 @@ public import Mathlib.Algebra.Squarefree.Basic
 The length of `R/I` for a nonzero ideal of a discrete valuation ring is the exponent of its
 maximal ideal in `I`. This is the local length calculation used for different ideals.
 
-A nonzero element is squarefree exactly when the length of the quotient by its principal
+An element is squarefree exactly when the length of the quotient by its principal
 ideal (`Ring.ord`) is at most one. This detects reducedness of principal divisors at
 codimension-one points.
 -/
@@ -46,10 +46,12 @@ namespace TauCeti.Ring
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 
-/-- In a discrete valuation ring a nonzero element is squarefree exactly when the quotient by
+/-- In a discrete valuation ring an element is squarefree exactly when the quotient by
 its principal ideal has length at most one. -/
-theorem squarefree_iff_ord_le_one {f : R} (hf : f ≠ 0) :
+theorem squarefree_iff_ord_le_one {f : R} :
     Squarefree f ↔ Ring.ord R f ≤ 1 := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [Ring.ord_eq_addVal]
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible R
   obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hf hπ
   rw [Ring.ord_eq_addVal, IsDiscreteValuationRing.addVal_def' u hπ n]
