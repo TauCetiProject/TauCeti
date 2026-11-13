@@ -16,6 +16,13 @@ Over a field `F`, the Kummer ratio of `φ : E₁ → E₂` is
 image has finite index, and zero otherwise, following the convention for subgroup indices.
 It is multiplicative under composition, without a finite-index hypothesis.
 
+Over completions of a global field, these ratios are the local factors in the global Selmer-ratio
+formula used in Cassels' proof of isogeny invariance of the Birch–Swinnerton-Dyer quotient.
+Over `ℚ`, they are assembled in `TauCeti.Isogeny.kummerRatioProduct`.
+For a separable isogeny, the numerator `[E₂(F) : φ E₁(F)]` is the order of the
+Galois-cohomological Kummer image (`TauCeti.Isogeny.natCard_range_kummerMap`, with infinite
+orders read as zero). The ratio itself requires no separability hypothesis.
+
 ## References
 
 * J. W. S. Cassels, *Arithmetic on curves of genus 1. VIII. On conjectures of Birch and

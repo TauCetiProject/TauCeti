@@ -79,11 +79,13 @@ theorem index_range_comp_mul_card_ker_mul_card_ker (f : A →* B) (g : B →* C)
   rw [hrange, mul_assoc g.range.index, hker]
   ac_rfl
 
-/-- The rational cokernel/kernel ratio is multiplicative under composition when the kernels
-are finite. No finiteness of the indices is needed: an infinite index is read as zero. -/
+/-- The rational index/kernel ratio `[B : f(A)] / #ker(f)` is multiplicative under composition
+when the kernels are finite. No finiteness of the indices is needed: an infinite index is read
+as zero. -/
 @[to_additive AddMonoidHom.index_range_div_card_ker_comp
-  /-- The rational cokernel/kernel ratio is multiplicative under composition when the kernels
-  are finite. No finiteness of the indices is needed: an infinite index is read as zero. -/]
+  /-- The rational index/kernel ratio `[B : f(A)] / #ker(f)` is multiplicative under composition
+  when the kernels are finite. No finiteness of the indices is needed: an infinite index is read
+  as zero. -/]
 theorem index_range_div_card_ker_comp (f : A →* B) (g : B →* C)
     [Finite f.ker] [Finite g.ker] :
     ((g.comp f).range.index : ℚ) / Nat.card (g.comp f).ker =

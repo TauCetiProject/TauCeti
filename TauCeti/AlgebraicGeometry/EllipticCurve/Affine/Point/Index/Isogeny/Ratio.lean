@@ -83,7 +83,10 @@ theorem finiteKummerRatio_pos (φ : Isogeny W₁.toAffine W₂.toAffine)
   rw [finiteKummerRatio_def]
   exact kummerRatio_pos _
 
-/-- The finite local factor is one at good reduction away from the degree. -/
+/-- The finite local factor is one when the residue field `R ⧸ v.asIdeal` is finite,
+`W₁` and `W₂` themselves have elliptic integral models over `𝒪[v.adicCompletion K]`, and
+`v` does not divide the degree. The integral-model hypotheses concern the given equations,
+not equations obtained by a change of variables. -/
 theorem finiteKummerRatio_eq_one_of_isElliptic_integralModel
     (φ : Isogeny W₁.toAffine W₂.toAffine) (v : HeightOneSpectrum R)
     [Finite (R ⧸ v.asIdeal)] [Algebra K (v.adicCompletion K)]
