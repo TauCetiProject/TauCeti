@@ -534,7 +534,7 @@ Tate pairing of `σ ∈ Γ^ab` with the connecting class `δχ` of a character i
 sign it is `χ(σ)`, and the Artin map satisfies the classical character formula
 `χ(artinMap a) = inv(a₀ ∪ δχ)` instead of being the inverse of the classical reciprocity map. -/
 def tateHMinusTwoEquivAbelianization :
-    L.TrivialTateH (-2) ≃+ Additive (Abelianization L.Gal) :=
+    L.TrivialTateH (-2) ≃+ Additive (Group.Abelianization L.Gal) :=
   TauCeti.TateCohomology.HNegTwoAddEquivAbelianization.trans (AddEquiv.neg _)
 
 /-- The layer's degree-`-2` identification is the negative of the generic identification for its
@@ -548,14 +548,13 @@ theorem tateHMinusTwoEquivAbelianization_apply (x : L.TrivialTateH (-2)) :
 -- `Rep.trivial` is also an `abbrev` for `Rep.of`, so `simp` reduces its carrier as well.
 /-- The degree `-2` identification sends the standard first-homology class represented by
 `(g, 1)` to the class of `g⁻¹` in the additive abelianization. -/
-@[simp]
 theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
     (dsimp% only (L.tateHMinusTwoEquivAbelianization
       ((TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
             (Finsupp.single g 1)))))) =
-      Additive.ofMul (Abelianization.of g⁻¹) := by
+      Additive.ofMul (Group.Abelianization.of g⁻¹) := by
   rw [tateHMinusTwoEquivAbelianization_apply,
     TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_single_one, map_inv, ofMul_inv]
 
@@ -563,13 +562,14 @@ theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
 first-homology class represented by `(g⁻¹, 1)`. -/
 @[simp]
 theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
-    L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Abelianization.of g)) =
+    L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Group.Abelianization.of g)) =
       (TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app
         (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
-            (Finsupp.single g⁻¹ 1))) := by
-  simp [AddEquiv.symm_apply_eq]
+            (Finsupp.single g⁻¹ 1))) :=
+  (AddEquiv.symm_apply_eq _).2
+    ((L.tateHMinusTwoEquivAbelianization_single_one g⁻¹).trans (by rw [inv_inv])).symm
 
 /-- **In positive degrees the Tate cohomology of a finite normal layer is its ordinary
 cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, stated between the

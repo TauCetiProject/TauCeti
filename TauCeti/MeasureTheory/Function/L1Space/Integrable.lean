@@ -75,8 +75,8 @@ theorem Integrable.isFiniteMeasure_of_one_le_norm {X F : Type*} [MeasurableSpace
     [SeminormedAddGroup F] {f : X → F} {μ : Measure X} (hf : Integrable f μ)
     (h_one : ∀ᵐ x ∂μ, 1 ≤ ‖f x‖) : IsFiniteMeasure μ :=
   (hasFiniteIntegral_const_iff_isFiniteMeasure (one_ne_zero (α := ℝ))).1 <|
-    hf.hasFiniteIntegral.mono_enorm <| h_one.mono fun _ hx ↦ by
-      rwa [enorm_le_iff_norm_le, norm_one]
+    hf.hasFiniteIntegral.mono_eNorm <| h_one.mono fun _ hx ↦ by
+      rwa [eNorm_le_iff_norm_le, norm_one]
 
 /-- The pointwise supremum over a nonempty finset of integrable functions with values in a normed
 lattice is integrable. -/
@@ -117,7 +117,7 @@ theorem integrable_norm_rpow_of_memLp_id_ofReal {E : Type*} [SeminormedAddCommGr
     (hν : MemLp id (ENNReal.ofReal p) ν) : Integrable (fun x : E ↦ ‖x‖ ^ p) ν := by
   -- Apply the normed-target moment lemma to the real-valued norm.
   simpa only [ENNReal.toReal_ofReal hp, id_eq, norm_norm] using
-    (hν.of_le_enorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
+    (hν.of_le_eNorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
 
 /-- For a positive real order, `Lᵖ` membership of the identity on the real line is
 equivalent to integrability of the absolute power. -/
