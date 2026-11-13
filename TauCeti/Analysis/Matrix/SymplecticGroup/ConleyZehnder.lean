@@ -104,6 +104,14 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
+omit [Fintype n] in
+/-- The real matrix `1 + 1` is `2 • 1` as a complex matrix: the scalar in the graph frame of the
+identity and in the Gram matrix of the graph frame of an orthogonal matrix. -/
+private theorem map_ofReal_one_add_one :
+    (1 + 1 : Matrix (n ⊕ n) (n ⊕ n) ℝ).map ((↑) : ℝ → ℂ) = (2 : ℂ) • 1 := by
+  rw [Matrix.map_add _ Complex.ofReal_add, Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one,
+    two_smul]
+
 /-- The complex frame `N(A) = ((1 + A) + i J (1 - A)) / √2` of the graph of a real matrix `A` on
 `ℝ^(n ⊕ n)`: for real `x`, `N(A) x` is the image of `(x, A x)` under the isomorphism
 `(u, w) ↦ ((u + w) + i J (u - w)) / √2` from `ℝ^(n ⊕ n) × ℝ^(n ⊕ n)` to `ℂ^(n ⊕ n)`, which
@@ -154,14 +162,9 @@ carried to `ℝ^(n ⊕ n)`. -/
 @[simp]
 theorem symplecticGraphFrame_one :
     symplecticGraphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) = (Real.sqrt 2 : ℂ) • 1 := by
-  ext i j
-  rcases eq_or_ne i j with rfl | hij
-  · simp only [symplecticGraphFrame, sub_self, Matrix.mul_zero, Matrix.smul_apply,
-      Matrix.add_apply, Matrix.map_apply, Matrix.one_apply_eq, Matrix.zero_apply,
-      Complex.ofReal_zero, smul_eq_mul, mul_one]
-    rw [mul_zero, add_zero, Complex.ofReal_add, Complex.ofReal_one, one_add_one_eq_two,
-      ← ofReal_sqrt_two_sq, sq, inv_mul_cancel_left₀ ofReal_sqrt_two_ne_zero]
-  · simp [symplecticGraphFrame, Matrix.one_apply_ne hij]
+  rw [symplecticGraphFrame, sub_self, Matrix.mul_zero, Matrix.map_zero _ Complex.ofReal_zero,
+    smul_zero, add_zero, map_ofReal_one_add_one, smul_smul, ← ofReal_sqrt_two_sq, sq,
+    inv_mul_cancel_left₀ ofReal_sqrt_two_ne_zero]
 
 /-- **The graph of a symplectic matrix is Lagrangian.** The Gram matrix of the graph frame of a
 symplectic matrix `A` is the real matrix `1 + Aᵀ A`. The vanishing of its imaginary part is the
@@ -316,12 +319,7 @@ theorem coe_graphFrame_of_transpose_mul_self {A : GLSymplectic n ℝ}
       star_eq_conjTranspose,
       conjTranspose_symplecticGraphFrame_mul_self (mem_iff_mem_symplecticGroup.1 A.2), hA,
       star_inv_ofReal_sqrt_two_mul_inv]
-    ext i j
-    rcases eq_or_ne i j with rfl | hij
-    · simp only [Matrix.smul_apply, Matrix.map_apply, Matrix.add_apply, Matrix.one_apply_eq,
-        smul_eq_mul]
-      rw [Complex.ofReal_add, Complex.ofReal_one, one_add_one_eq_two, inv_mul_cancel₀ two_ne_zero]
-    · simp [Matrix.one_apply_ne hij]
+    rw [map_ofReal_one_add_one, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
   have hmul : (⟨_, hv⟩ : unitaryGroup (n ⊕ n) ℂ) *
       ((Real.sqrt 2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℂ)) = graphFrameUnit A := by
     rw [coe_graphFrameUnit, Matrix.mul_smul, Matrix.mul_one]

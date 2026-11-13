@@ -163,15 +163,8 @@ theorem exists_sqrt_conjTranspose_mul_self_eq_map_ofReal (M : GL n ℂ) {G : Mat
         simpa only [star_eq_conjTranspose] using star_mul_self_nonneg (M : Matrix n n ℂ)), ← hS]
     · rw [nonneg_iff_posSemidef, posSemidef_transpose_iff, ← nonneg_iff_posSemidef]
       exact hq0
-  -- A Hermitian symmetric matrix is real.
-  have hreal : q = (q.map Complex.re).map ((↑) : ℝ → ℂ) := by
-    ext i j
-    have h1 : star (q j i) = q i j := by
-      rw [← conjTranspose_apply, ← star_eq_conjTranspose, hq0.isSelfAdjoint.star_eq]
-    have h2 : q j i = q i j := by rw [← transpose_apply q i j, hqT]
-    rw [h2] at h1
-    simp only [map_apply]
-    exact (Complex.conj_eq_iff_re.1 h1).symm
+  have hreal : q = (q.map Complex.re).map ((↑) : ℝ → ℂ) :=
+    hq0.isSelfAdjoint.isHermitian.eq_map_ofReal_map_re_of_transpose_eq hqT
   refine ⟨q.map Complex.re, ?_, hreal⟩
   have hu : IsUnit q := by
     simpa only [hq, star_eq_conjTranspose] using (Units.isStrictlyPositive_sqrt_star_mul M).isUnit

@@ -22,6 +22,8 @@ is, in particular when `M` has independent columns.
 ## Main results
 
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
+* `Matrix.IsHermitian.eq_map_ofReal_map_re_of_transpose_eq`: a Hermitian complex matrix equal to
+  its transpose is real.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
 * `Matrix.conjTranspose_mul_self_map_ofReal_add_I_smul`: the Gram matrix of `P + i Q` for real
@@ -48,6 +50,15 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
     ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
     conjTranspose_eq_transpose_of_trivial]
   exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans ((congrArg _ hO).trans (map_one _))
+
+/-- A Hermitian complex matrix that is equal to its transpose is real. -/
+theorem IsHermitian.eq_map_ofReal_map_re_of_transpose_eq {q : Matrix n n ℂ} (hq : q.IsHermitian)
+    (hT : qᵀ = q) : q = (q.map Complex.re).map ((↑) : ℝ → ℂ) := by
+  ext i j
+  have h : star (q i j) = q i j := by
+    rw [← conjTranspose_apply, hq.eq, ← transpose_apply q i j, hT]
+  simp only [map_apply]
+  exact (Complex.conj_eq_iff_re.1 h).symm
 
 /-- The real Gram matrix `Re ((M N)ᴴ (M N))` of the columns of `M N`, for a real matrix `N`, is
 `Nᵀ Re (Mᴴ M) N`. -/
