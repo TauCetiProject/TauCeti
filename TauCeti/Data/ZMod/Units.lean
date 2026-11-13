@@ -269,14 +269,9 @@ theorem ZMod.zmultiples_coe_unit_eq_top (u : (ZMod d)ˣ) :
 with the same reductions modulo `a` and modulo `b` are equal. -/
 theorem ZMod.eq_of_cast_eq_of_coprime {a b : ℕ} (h : a.Coprime b) {x y : ZMod (a * b)}
     (ha : (x.cast : ZMod a) = y.cast) (hb : (x.cast : ZMod b) = y.cast) : x = y := by
-  obtain ⟨x, rfl⟩ := ZMod.intCast_surjective x
-  obtain ⟨y, rfl⟩ := ZMod.intCast_surjective y
-  rw [ZMod.cast_intCast (dvd_mul_right a b), ZMod.cast_intCast (dvd_mul_right a b),
-    ZMod.intCast_eq_intCast_iff_dvd_sub] at ha
-  rw [ZMod.cast_intCast (dvd_mul_left b a), ZMod.cast_intCast (dvd_mul_left b a),
-    ZMod.intCast_eq_intCast_iff_dvd_sub] at hb
-  rw [ZMod.intCast_eq_intCast_iff_dvd_sub, Nat.cast_mul]
-  exact h.isCoprime.mul_dvd ha hb
+  refine (ZMod.chineseRemainder h).injective (Prod.ext ?_ ?_)
+  · simpa [ZMod.chineseRemainder] using ha
+  · simpa [ZMod.chineseRemainder] using hb
 
 namespace TauCeti
 
