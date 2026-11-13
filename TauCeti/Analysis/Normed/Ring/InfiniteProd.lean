@@ -17,11 +17,32 @@ For `f` with summable norms, the infinite product `∏' i, (1 + f i)` in a norme
 has norm at most `exp (∑' i, ‖f i‖)`. Each finite partial product is bounded by
 `∏ (1 + ‖f i‖) ≤ exp (∑ ‖f i‖)`, and the bound passes to the limit. This is the estimate used to
 bound theta products and Siegel functions on the upper half-plane by elementary functions of
-`|q|`. The same argument, from Mathlib's `Finset.norm_prod_one_add_sub_one_le`, bounds the distance
+`|q|`. More generally, `HasProd.norm_le_exp_of_sum_le` bounds any supplied product from real
+exponential bounds on its factors and a common bound on all finite sums of the exponents.
+The same argument, from Mathlib's `Finset.norm_prod_one_add_sub_one_le`, bounds the distance
 `‖∏' i, (1 + f i) - 1‖` by `exp (∑' i, ‖f i‖) - 1`, which controls such a product near the identity.
 -/
 
 public section
+
+open scoped BigOperators
+
+/-- A supplied infinite product has norm at most `exp B` if each factor has norm at most
+`exp (b i)` and every finite sum of the real exponents is at most `B`. -/
+theorem HasProd.norm_le_exp_of_sum_le {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    {f : ι → R} {a : R} (hf : HasProd f a) {b : ι → ℝ} {B : ℝ}
+    (hb : ∀ i, ‖f i‖ ≤ Real.exp (b i))
+    (hB : ∀ s : Finset ι, ∑ i ∈ s, b i ≤ B) : ‖a‖ ≤ Real.exp B := by
+  refine le_of_tendsto' (Filter.Tendsto.norm hf) fun s ↦ ?_
+  have hfinite : ‖∏ i ∈ s, f i‖ ≤ Real.exp (∑ i ∈ s, b i) := by
+    classical
+    induction s using Finset.induction_on with
+    | empty => simp
+    | @insert i s hi ih =>
+      rw [Finset.prod_insert hi, Finset.sum_insert hi, Real.exp_add]
+      exact (norm_mul_le _ _).trans
+        (mul_le_mul (hb i) ih (norm_nonneg _) (Real.exp_pos _).le)
+  exact hfinite.trans (Real.exp_le_exp.mpr (hB s))
 
 namespace TauCeti
 
@@ -32,13 +53,12 @@ variable {ι R : Type*} [NormedCommRing R] [NormOneClass R]
 theorem norm_tprod_one_add_le_exp_tsum {f : ι → R} (hf : Summable fun i ↦ ‖f i‖) :
     ‖∏' i, (1 + f i)‖ ≤ Real.exp (∑' i, ‖f i‖) := by
   by_cases h : Multipliable fun i ↦ 1 + f i
-  · refine le_of_tendsto' (Filter.Tendsto.norm h.hasProd) fun s ↦ ?_
-    calc ‖∏ i ∈ s, (1 + f i)‖ ≤ ∏ i ∈ s, ‖1 + f i‖ := Finset.norm_prod_le s _
-      _ ≤ ∏ i ∈ s, (1 + ‖f i‖) := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
-          fun i _ ↦ (norm_add_le _ _).trans_eq (by rw [norm_one])
-      _ ≤ Real.exp (∑ i ∈ s, ‖f i‖) := Real.prod_one_add_le_exp_sum s fun _ ↦ norm_nonneg _
-      _ ≤ Real.exp (∑' i, ‖f i‖) :=
-          Real.exp_le_exp.2 (hf.sum_le_tsum s fun _ _ ↦ norm_nonneg _)
+  · refine h.hasProd.norm_le_exp_of_sum_le (b := fun i ↦ ‖f i‖) ?_ ?_
+    · intro i
+      calc
+        ‖1 + f i‖ ≤ 1 + ‖f i‖ := (norm_add_le _ _).trans_eq (by rw [norm_one])
+        _ ≤ Real.exp ‖f i‖ := by simpa only [add_comm] using Real.add_one_le_exp ‖f i‖
+    · exact fun s ↦ hf.sum_le_tsum s fun _ _ ↦ norm_nonneg _
   · rw [tprod_eq_one_of_not_multipliable h, norm_one]
     exact Real.one_le_exp (tsum_nonneg fun _ ↦ norm_nonneg _)
 
