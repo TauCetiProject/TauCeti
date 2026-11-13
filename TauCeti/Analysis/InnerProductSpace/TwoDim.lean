@@ -17,6 +17,15 @@ of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J 
 
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
 basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`.
+
+An orthonormal basis `b` of a Euclidean plane identifies the plane with `ℂ` by
+`Complex.isometryOfOrthonormal b`, and the complex coordinate so defined carries the orientation of
+`b` to the standard orientation of `ℂ` (`Complex.map_isometryOfOrthonormal_symm_orientation`). This
+is the hypothesis under which Mathlib computes the area form, the quarter turn, the Kähler form,
+the oriented angle and the rotations of an oriented plane in a complex coordinate
+(`Orientation.areaForm_map_complex`, `Orientation.rightAngleRotation_map_complex`,
+`Orientation.kahler_map_complex`, `Orientation.oangle_map_complex`,
+`Orientation.rotation_map_complex`).
 -/
 
 public section
@@ -48,9 +57,29 @@ theorem rightAngleRotation_basis_one (hb : b.toBasis.orientation = o) :
     o.rightAngleRotation (b 1) = -b 0 := by
   rw [← o.rightAngleRotation_basis_zero hb, rightAngleRotation_rightAngleRotation]
 
+/-- In an oriented plane, `o.areaForm a x = 0` implies the scaled identity
+`‖a‖ ^ 2 • x = ⟪a, x⟫ • a`, including when `a = 0`. -/
+theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
+    ‖a‖ ^ 2 • x = inner ℝ a x • a := by
+  refine ext_inner_right ℝ fun y ↦ ?_
+  rw [real_inner_smul_left, real_inner_smul_left, ← o.inner_mul_inner_add_areaForm_mul_areaForm,
+    h, zero_mul, add_zero]
+
 end Orientation
 
 namespace Complex
+
+/-- The complex coordinate of a Euclidean plane given by an orthonormal basis `b`, the inverse of
+`Complex.isometryOfOrthonormal b`, carries the orientation of `b` to the standard orientation of
+`ℂ`. -/
+theorem map_isometryOfOrthonormal_symm_orientation {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (b : OrthonormalBasis (Fin 2) ℝ E) :
+    Orientation.map (Fin 2) (Complex.isometryOfOrthonormal b).symm.toLinearEquiv
+      b.toBasis.orientation = Complex.orientation := by
+  rw [← Module.Basis.orientation_map, Complex.orientation]
+  congr 1
+  ext i
+  fin_cases i <;> simp [Complex.isometryOfOrthonormal_symm_apply]
 
 attribute [local instance] Complex.finrank_real_complex_fact
 

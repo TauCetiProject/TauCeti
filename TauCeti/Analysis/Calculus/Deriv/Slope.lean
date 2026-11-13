@@ -1,13 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
-import Mathlib.Analysis.Calculus.Deriv.Slope
+public import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.LinearAlgebra.AffineSpace.Ordered
 
@@ -33,6 +33,8 @@ For a real function, a positive one-sided derivative at `a` fixes the sign of `f
 Comparing the slopes of two curves leaving a common point with the same right derivative shows
 that they do not separate linearly: their distance is `o(s - t)` at parameter `s`.
 
+A negative right derivative at `x` forces nearby values to the right to lie strictly below `f x`.
+
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
@@ -42,6 +44,7 @@ that they do not separate linearly: their distance is `o(s - t)` at parameter `s
   makes `f` larger (smaller) than `f a` just to the right (left) of `a`.
 * `HasDerivWithinAt.nonpos_of_mul_le_norm_sub`: two curves with the same right derivative at a
   common point do not separate linearly.
+* `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
 -/
 
 public section
@@ -78,7 +81,7 @@ theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNorme
     · simp [ht, hn]
   -- `HasDerivAt` and `𝓝[≠] x` are by definition the filter forms used by `tendsto_slope`.
   refine (((HasDerivAtFilter.tendsto_slope hf).comp hlim).const_smul t).congr' ?_
-  filter_upwards [eventually_ne_atTop 0] with n hn
+  filter_upwards with n
   simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
 
 /-- If `f : ℝ → ℝ` has positive right derivative at `a`, then `f a < f x` for every `x > a`
@@ -109,3 +112,13 @@ theorem HasDerivWithinAt.nonpos_of_mul_le_norm_sub {E : Type*} [NormedAddCommGro
   filter_upwards [hle, self_mem_nhdsWithin] with s hs (hst : t < s)
   simpa [slope_def_module, h0, norm_smul, abs_of_pos (sub_pos.2 hst),
     le_inv_mul_iff₀ (sub_pos.2 hst)] using hs
+
+/-- A negative right derivative at `x` forces `f t < f x` for all `t > x` sufficiently close
+to `x`. -/
+theorem HasDerivWithinAt.eventually_lt_of_neg {f : ℝ → ℝ} {a x : ℝ}
+    (hf : HasDerivWithinAt f a (Ioi x) x) (ha : a < 0) :
+    ∀ᶠ t in 𝓝[>] x, f t < f x := by
+  filter_upwards [hf.limsup_slope_le' (lt_irrefl x) ha, self_mem_nhdsWithin]
+    with t ht hxt
+  rw [slope_def_field, div_lt_iff₀ (sub_pos.mpr hxt), zero_mul] at ht
+  exact sub_neg.mp ht

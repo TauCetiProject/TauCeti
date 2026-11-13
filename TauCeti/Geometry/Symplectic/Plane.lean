@@ -8,13 +8,15 @@ module
 public import Mathlib.Algebra.Lie.CartanSubalgebra
 public import Mathlib.Algebra.Lie.EngelSubalgebra
 public import Mathlib.Algebra.Lie.SkewAdjoint
-public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import Mathlib.LinearAlgebra.Center
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NoncommRing
 import TauCeti.Algebra.Lie.OfAssociative
 import TauCeti.Algebra.Lie.SkewAdjoint
+import TauCeti.Geometry.Symplectic.WittExtension
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.End.SquareZero
 
 /-!
@@ -29,6 +31,12 @@ bracket.
 
 * `TauCeti.SymplecticForm.not_linearIndependent_of_apply_eq_zero`: two vectors pairing trivially
   under `ω` are linearly dependent.
+* `TauCeti.SymplecticForm.exists_basis_coe_eq_of_apply_eq_one`,
+  `TauCeti.SymplecticForm.exists_eq_smul_add_smul`: a pair `(q, p)` with `ω(q, p) = 1` is a basis.
+* `TauCeti.SymplecticForm.exists_isSymplectomorphism_forall_apply_eq_of_pair`: endomorphisms acting
+  by the same matrix on such pairs are conjugate by a linear symplectomorphism.
+* `TauCeti.SymplecticForm.exists_apply_eq_smul_of_apply_eq_zero`: a nonzero `v` with
+  `ω(A v, v) = 0` is an eigenvector of `A`.
 * `TauCeti.SymplecticForm.exists_eq_smul_one_of_apply_left`: an endomorphism self-adjoint for `ω`
   is a homothety.
 * `TauCeti.SymplecticForm.eq_zero_of_smul_one_mem`: the only homothety in `sp(V, ω)` is `0`.
@@ -236,5 +244,86 @@ theorem not_isCartanSubalgebra_lieSpan_singleton (hV : finrank ℝ V = 2)
   have := congrArg (fun C : skewAdjointLieSubalgebra ω.toBilinForm ↦ (C : Module.End ℝ V) u) ht
   simp [B', hu, hBu] at this
   exact hli.ne_zero 1 (by simpa using this.symm)
+
+/-! ### Pairs with `ω(q, p) = 1` -/
+
+section Pair
+
+variable {W : Type*} [AddCommGroup W] [Module ℝ W] {ω' : SymplecticForm W}
+
+/-- In a symplectic plane, a pair `(q, p)` with `ω(q, p) = 1` is a basis. -/
+theorem exists_basis_coe_eq_of_apply_eq_one (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1) :
+    ∃ b : Basis (Fin 2) ℝ V, ⇑b = ![q, p] :=
+  ⟨basisOfLinearIndependentOfCardEqFinrank
+    (LinearIndependent.pair_symm_iff.1 (ω.isAlt.linearIndependent_pair_of_apply_eq_one h))
+    (by simp [hV]), coe_basisOfLinearIndependentOfCardEqFinrank _ _⟩
+
+/-- In a symplectic plane, a pair `(q, p)` with `ω(q, p) = 1` is a basis: every vector is
+`x q + y p`. -/
+theorem exists_eq_smul_add_smul (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1) (v : V) :
+    ∃ x y : ℝ, v = x • q + y • p := by
+  obtain ⟨b, hb⟩ := exists_basis_coe_eq_of_apply_eq_one hV h
+  refine ⟨b.repr v 0, b.repr v 1, ?_⟩
+  have hv := b.sum_repr v
+  rw [Fin.sum_univ_two, hb] at hv
+  simpa using hv.symm
+
+/-- In a symplectic plane, two linear maps agreeing on a pair `(q, p)` with `ω(q, p) = 1` are
+equal. -/
+theorem linearMap_ext_of_apply_eq_one (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1)
+    {f g : V →ₗ[ℝ] W} (hq : f q = g q) (hp : f p = g p) : f = g := by
+  ext v
+  obtain ⟨x, y, rfl⟩ := exists_eq_smul_add_smul hV h v
+  simp [hq, hp]
+
+/-- On a symplectic plane, a nonzero vector `v` with `ω(A v, v) = 0` is an eigenvector of `A`. -/
+theorem exists_apply_eq_smul_of_apply_eq_zero (hV : finrank ℝ V = 2) {A : Module.End ℝ V}
+    {v : V} (hv : v ≠ 0) (h : ω (A v) v = 0) : ∃ t : ℝ, A v = t • v := by
+  have h' : ω v (A v) = 0 := by rw [← ω.neg_eq, h, neg_zero]
+  have := not_linearIndependent_of_apply_eq_zero hV h'
+  rw [LinearIndependent.pair_iff' hv] at this
+  simp only [not_forall, not_not] at this
+  obtain ⟨t, ht⟩ := this
+  exact ⟨t, ht.symm⟩
+
+/-- On a symplectic plane, if `A² = κ` with `κ < 0`, then `ω(A v, v) ≠ 0` for every `v ≠ 0`. -/
+theorem apply_ne_zero_of_neg_of_mul_self_eq_smul_one (hV : finrank ℝ V = 2) {A : Module.End ℝ V}
+    {κ : ℝ} (hκ : κ < 0) (hAA : A * A = κ • 1) {v : V} (hv : v ≠ 0) : ω (A v) v ≠ 0 := by
+  intro h
+  obtain ⟨t, ht⟩ := exists_apply_eq_smul_of_apply_eq_zero hV hv h
+  have hAAv : A (A v) = κ • v := by simpa using LinearMap.congr_fun hAA v
+  rw [ht, map_smul, ht, smul_smul] at hAAv
+  have : t * t = κ := smul_left_injective ℝ hv hAAv
+  nlinarith
+
+/-- On a symplectic plane, if `A² = 0`, then `ω(A v, v) ≠ 0` whenever `A v ≠ 0`. -/
+theorem apply_ne_zero_of_mul_self_eq_zero (hV : finrank ℝ V = 2) {A : Module.End ℝ V}
+    (hAA : A * A = 0) {v : V} (hv : A v ≠ 0) : ω (A v) v ≠ 0 := by
+  intro h
+  have hv0 : v ≠ 0 := by rintro rfl; simp at hv
+  obtain ⟨t, ht⟩ := exists_apply_eq_smul_of_apply_eq_zero hV hv0 h
+  have hAAv : A (A v) = 0 := by simpa using LinearMap.congr_fun hAA v
+  rw [ht, map_smul, ht, smul_smul] at hAAv
+  have ht0 : t = 0 := by simpa [hv0] using hAAv
+  exact hv (by rw [ht, ht0, zero_smul])
+
+/-- Two endomorphisms of symplectic planes acting by the same matrix on pairs `(q, p)` and
+`(q', p')` with `ω(q, p) = 1 = ω'(q', p')` are conjugate by a linear symplectomorphism. -/
+theorem exists_isSymplectomorphism_forall_apply_eq_of_pair (hV : finrank ℝ V = 2)
+    (hW : finrank ℝ W = 2) {A : Module.End ℝ V} {B : Module.End ℝ W} {q p : V} {q' p' : W}
+    (h : ω q p = 1) (h' : ω' q' p' = 1) {x₁ y₁ x₂ y₂ : ℝ} (hAq : A q = x₁ • q + y₁ • p)
+    (hAp : A p = x₂ • q + y₂ • p) (hBq : B q' = x₁ • q' + y₁ • p')
+    (hBp : B p' = x₂ • q' + y₂ • p') :
+    ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω ω' e ∧ ∀ v, e (A v) = B (e v) := by
+  have := Module.finite_of_finrank_eq_succ hV
+  have := Module.finite_of_finrank_eq_succ hW
+  obtain ⟨e, he, heq, hep⟩ := exists_isSymplectomorphism_apply_eq (hV.trans hW.symm) h h'
+  refine ⟨e, he, fun v ↦ ?_⟩
+  have := linearMap_ext_of_apply_eq_one hV h (f := e.toLinearMap ∘ₗ A)
+    (g := B ∘ₗ e.toLinearMap)
+    (by simp [hAq, heq, hep, hBq]) (by simp [hAp, heq, hep, hBp])
+  exact LinearMap.congr_fun this v
+
+end Pair
 
 end TauCeti.SymplecticForm

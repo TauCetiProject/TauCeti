@@ -62,7 +62,7 @@ theorem exists_localMass_formCurrent_le (o : Orientation ℝ E (Fin (j + l))) (�
   by_cases hω : LocallyIntegrableOn ω Ω μ
   swap
   · simp [formCurrent_of_not_locallyIntegrableOn o Ω hω]
-  rw [formCurrent_apply_eq_signBasis_mul o Ω b hω, enorm_mul]
+  rw [formCurrent_apply_eq_signBasis_mul o Ω b hω, eNorm_mul]
   have hsign : ‖(o.signBasis b : ℝ)‖ₑ = 1 := by
     rcases Int.units_eq_one_or (o.signBasis b) with hs | hs <;> simp [hs]
   have hsupp : tsupport ζ ⊆ Ω ∩ U := Set.subset_inter ζ.tsupport_subset hζU
@@ -85,7 +85,7 @@ theorem exists_localMass_formCurrent_le (o : Orientation ℝ E (Fin (j + l))) (�
   calc ‖(o.signBasis b : ℝ)‖ₑ * ‖∫ x, wedge (ω x) (ζ x) b ∂b.addHaar‖ₑ
       ≤ ∫⁻ x, ‖wedge (ω x) (ζ x) b‖ₑ ∂b.addHaar := by
         rw [hsign, one_mul]
-        exact enorm_integral_le_lintegral_enorm _
+        exact eNorm_integral_le_lintegral_eNorm _
     _ ≤ ∫⁻ x, (tsupport ζ).indicator (fun x ↦ K * ‖ω x‖ₑ) x ∂b.addHaar := lintegral_mono hpt
     _ = ∫⁻ x in tsupport ζ, K * ‖ω x‖ₑ ∂b.addHaar :=
         lintegral_indicator (isClosed_tsupport _).measurableSet _

@@ -63,32 +63,32 @@ single automorphism of `E` if and only if `σ₁` and `σ₂` agree on the eleme
 `K₂` inside `E`. -/
 theorem mem_range_restrictNormalHom_prod_restrictNormalHom_iff
     [FiniteDimensional F E] [IsGalois F E] (σ₁ : Gal(K₁/F)) (σ₂ : Gal(K₂/F)) :
-    (σ₁, σ₂) ∈ ((AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).prod
-        (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂)).range ↔
+    (σ₁, σ₂) ∈ ((restrictNormalHom (F := F) (K₁ := E) K₁).prod
+        (restrictNormalHom (F := F) (K₁ := E) K₂)).range ↔
       ∀ x₁ x₂, algebraMap K₁ E x₁ = algebraMap K₂ E x₂ →
         algebraMap K₁ E (σ₁ x₁) = algebraMap K₂ E (σ₂ x₂) := by
   constructor
   · rintro ⟨g, hg⟩ x₁ x₂ hx
     obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 hg
-    simpa only [MonoidHom.prod_apply, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
-      AlgEquiv.restrictNormal_commutes] using congrArg g hx
+    simpa only [MonoidHom.prod_apply, restrictNormalHom, MonoidHom.mk'_apply,
+      restrictNormal_commutes] using congrArg g hx
   intro h
-  obtain ⟨a, rfl⟩ := AlgEquiv.restrictNormalHom_surjective (F := F) (K₁ := K₁) E σ₁
-  obtain ⟨b, rfl⟩ := AlgEquiv.restrictNormalHom_surjective (F := F) (K₁ := K₂) E σ₂
+  obtain ⟨a, rfl⟩ := restrictNormalHom_surjective (F := F) (K₁ := K₁) E σ₁
+  obtain ⟨b, rfl⟩ := restrictNormalHom_surjective (F := F) (K₁ := K₂) E σ₂
   -- `a⁻¹ * b` fixes the common part of `K₁` and `K₂`, so it factors through the two kernels.
-  have hab : a⁻¹ * b ∈ (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).ker ⊔
-      (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂).ker := by
-    rw [AlgEquiv.ker_restrictNormalHom, AlgEquiv.ker_restrictNormalHom, ← fixingSubgroup_inf,
+  have hab : a⁻¹ * b ∈ (restrictNormalHom (F := F) (K₁ := E) K₁).ker ⊔
+      (restrictNormalHom (F := F) (K₁ := E) K₂).ker := by
+    rw [ker_restrictNormalHom, ker_restrictNormalHom, ← fixingSubgroup_inf,
       IntermediateField.mem_fixingSubgroup_iff]
     intro x hx
     simp only [IntermediateField.mem_inf, AlgHom.mem_fieldRange, IsScalarTower.coe_toAlgHom'] at hx
     obtain ⟨⟨x₁, rfl⟩, ⟨x₂, hx⟩⟩ := hx
     have hb : b (algebraMap K₂ E x₂) = a (algebraMap K₁ E x₁) := by
-      simpa only [AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
-        AlgEquiv.restrictNormal_commutes] using (h _ _ hx.symm).symm
+      simpa only [restrictNormalHom, MonoidHom.mk'_apply,
+        restrictNormal_commutes] using (h _ _ hx.symm).symm
     calc (a⁻¹ * b) (algebraMap K₁ E x₁) = a⁻¹ (b (algebraMap K₂ E x₂)) := by
-          rw [AlgEquiv.mul_apply, hx]
-      _ = algebraMap K₁ E x₁ := by rw [hb, AlgEquiv.aut_inv, AlgEquiv.symm_apply_apply]
+          rw [mul_apply, hx]
+      _ = algebraMap K₁ E x₁ := by rw [hb, aut_inv, symm_apply_apply]
   obtain ⟨y, hy, z, hz, hyz⟩ := Subgroup.mem_sup_of_normal_right.1 hab
   refine ⟨a * y, Prod.ext ?_ ?_⟩
   · simp [(MonoidHom.mem_ker).1 hy]
@@ -101,8 +101,8 @@ theorem mem_range_restrictNormalHom_prod_restrictNormalHom_iff
 if and only if the two subextensions meet only in the base field. -/
 theorem restrictNormalHom_prod_restrictNormalHom_surjective_iff
     [FiniteDimensional F E] [IsGalois F E] :
-    Function.Surjective ((AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).prod
-        (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂)) ↔
+    Function.Surjective ((restrictNormalHom (F := F) (K₁ := E) K₁).prod
+        (restrictNormalHom (F := F) (K₁ := E) K₂)) ↔
       (IsScalarTower.toAlgHom F K₁ E).fieldRange ⊓ (IsScalarTower.toAlgHom F K₂ E).fieldRange =
         ⊥ := by
   rw [← MonoidHom.range_eq_top]
@@ -114,14 +114,14 @@ theorem restrictNormalHom_prod_restrictNormalHom_surjective_iff
     obtain ⟨⟨x₁, rfl⟩, ⟨x₂, hx⟩⟩ := hx
     -- The restriction of any `g` to `K₁` pairs with the identity of `K₂`, so `g` fixes the element.
     refine (IsGalois.mem_bot_iff_fixed _).2 fun g ↦ ?_
-    have hg := (AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff
-      (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁ g) 1).1
+    have hg := (mem_range_restrictNormalHom_prod_restrictNormalHom_iff
+      (restrictNormalHom (F := F) (K₁ := E) K₁ g) 1).1
         (htop ▸ Subgroup.mem_top _) x₁ x₂ hx.symm
-    simpa only [AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
-      AlgEquiv.restrictNormal_commutes, AlgEquiv.one_apply, hx] using hg
+    simpa only [restrictNormalHom, MonoidHom.mk'_apply,
+      restrictNormal_commutes, one_apply, hx] using hg
   · intro hbot
     refine eq_top_iff.2 fun ⟨σ₁, σ₂⟩ _ ↦ ?_
-    refine (AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff σ₁ σ₂).2
+    refine (mem_range_restrictNormalHom_prod_restrictNormalHom_iff σ₁ σ₂).2
       fun x₁ x₂ hx ↦ ?_
     have hmem : algebraMap K₁ E x₁ ∈ (⊥ : IntermediateField F E) :=
       hbot ▸ ⟨⟨x₁, rfl⟩, ⟨x₂, hx.symm⟩⟩
@@ -130,7 +130,7 @@ theorem restrictNormalHom_prod_restrictNormalHom_surjective_iff
       (algebraMap K₁ E).injective (by rw [← hc, IsScalarTower.algebraMap_apply F K₁ E])
     have h₂ : x₂ = algebraMap F K₂ c :=
       (algebraMap K₂ E).injective (by rw [← hx, ← hc, IsScalarTower.algebraMap_apply F K₂ E])
-    rw [h₁, h₂, AlgEquiv.commutes, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply,
+    rw [h₁, h₂, commutes, commutes, ← IsScalarTower.algebraMap_apply,
       ← IsScalarTower.algebraMap_apply]
 
 /-- **Galois groups of composita as fibre products over the common part.** In a finite Galois
@@ -141,13 +141,13 @@ restriction to the intersection of `K₁` and `K₂` inside `E`. So the image of
 `AlgHom.restrictNormalHomOfLE`. -/
 theorem mem_range_restrictNormalHom_prod_iff_restrictNormalHomOfLE_eq
     [FiniteDimensional F E] [IsGalois F E] (σ₁ : Gal(K₁/F)) (σ₂ : Gal(K₂/F)) :
-    (σ₁, σ₂) ∈ ((AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).prod
-        (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂)).range ↔
+    (σ₁, σ₂) ∈ ((restrictNormalHom (F := F) (K₁ := E) K₁).prod
+        (restrictNormalHom (F := F) (K₁ := E) K₂)).range ↔
       (IsScalarTower.toAlgHom F K₁ E).restrictNormalHomOfLE
           (inf_le_left : _ ⊓ (IsScalarTower.toAlgHom F K₂ E).fieldRange ≤ _) σ₁ =
         (IsScalarTower.toAlgHom F K₂ E).restrictNormalHomOfLE
           (inf_le_right : (IsScalarTower.toAlgHom F K₁ E).fieldRange ⊓ _ ≤ _) σ₂ := by
-  rw [AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff]
+  rw [mem_range_restrictNormalHom_prod_restrictNormalHom_iff]
   constructor
   · intro h
     ext z

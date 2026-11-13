@@ -132,7 +132,7 @@ private theorem enorm_fderiv_thickenedCutoff_le [NormedSpace ℝ E] (s : Set E) 
     exact ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ
       (lipschitzWith_thickenedCutoff s hε))
   rw [indicator_of_notMem hx, nonpos_iff_eq_zero]
-  suffices fderiv ℝ (thickenedCutoff s ε) x = 0 by simp [this, enorm_eq_nnnorm]
+  suffices fderiv ℝ (thickenedCutoff s ε) x = 0 by simp [this, eNorm_eq_nnNorm]
   rw [Set.mem_sdiff, not_and_or, not_not] at hx
   rcases hx with hx | hx
   · refine IsLocalMin.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
@@ -361,7 +361,6 @@ private theorem eventually_volume_thickening_sdiff_le {w : E → ℝ} (hw : Cont
     (divergenceCLM ψ).hasCompactSupport
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
   set m := min (min η₀ η₁) (ε / (C + 1))
-  have hm : 0 < m := lt_min (lt_min hη₀ hη₁) (by positivity)
   have hmε : 0 < m / (1 + ε) := by positivity
   filter_upwards [Ioo_mem_nhdsGT hmε] with r ⟨hr, hrm⟩
   -- Write `η = (1 + ε) r` for the width of the outer shell `S = {-η < w < 0}`.

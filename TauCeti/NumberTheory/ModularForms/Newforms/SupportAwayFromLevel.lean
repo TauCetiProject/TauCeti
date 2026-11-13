@@ -74,7 +74,6 @@ private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd_of_copr
   have hΓ := one_mem_strictPeriods_Gamma1_map M
   set c : ℂ := (q : ℂ) ^ (k - 1) * (χ (ZMod.unitOfCoprime q hqM) : ℂ)
   have hq0 : (q : ℂ) ^ (k - 1) ≠ 0 := zpow_ne_zero _ (Nat.cast_ne_zero.mpr hq.ne_zero)
-  have hc : c ≠ 0 := mul_ne_zero hq0 (Units.ne_zero _)
   refine ⟨c⁻¹ • (heckeTCuspNat k q A - B), Submodule.smul_mem _ _
     (Submodule.sub_mem _ (heckeTCuspNat_mem_cuspFormCharSpace k χ hq hA) hB), fun n ↦ ?_⟩
   rw [FunLike.coe_smul, ModularForm.qExpansion_smul one_pos hΓ, PowerSeries.coeff_smul,

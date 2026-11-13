@@ -75,7 +75,7 @@ theorem _root_.MeasureTheory.NullMeasurableSet.perimeter_setOf_lt_schwarzRearran
     exact (measure_ball_pos volume 0 hrpos).ne'
   apply (ENNReal.pow_le_pow_left_iff (n := finrank ℝ E) finrank_pos.ne').mp
   rw [perimeter_ball_pow finrank_pos.ne' hrpos, hr]
-  exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hfin finrank_pos.ne' hs0
+  exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hfin hs0
 
 variable {u : E → ℝ}
 
@@ -105,7 +105,7 @@ theorem totalVariationOn_toReal_schwarzRearrangement_le (hu : Integrable u volum
   · have hlevel : {x | t < v x} =ᵐ[volume]
         {x | ENNReal.ofReal t < schwarzRearrangement volume f x} := by
       filter_upwards [hae] with x hx
-      exact propext (ENNReal.ofReal_lt_iff_lt_toReal htpos.le hx).symm
+      exact (ENNReal.ofReal_lt_iff_lt_toReal htpos.le hx).symm
     have hsource : {x | ENNReal.ofReal t < f x} = {x | t < u x} := by
       ext x
       exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg htpos.le

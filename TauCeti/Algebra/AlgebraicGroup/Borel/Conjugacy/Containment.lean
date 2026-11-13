@@ -38,7 +38,7 @@ namespace TauCeti.HopfIdeal
 
 universe u
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
+variable {k : Type u} [Field k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} {B I : HopfIdeal k H}
 
 /-- Every smooth geometrically connected solvable closed subgroup can be conjugated into a
@@ -47,6 +47,7 @@ of the subgroup defined by `I` lies in the Borel defined by `B`. -/
 theorem IsBorelOverAlgClosed.exists_le_conjugate_of_isBorelCandidate
     (hB : IsBorelOverAlgClosed k H B) (hI : IsBorelCandidate k H I) :
     ∃ g : WithConv (H →ₐ[k] k), B ≤ I.conjugate g := by
+  have := ((isBorelOverAlgClosed_iff k H B).mp hB).1
   obtain ⟨D, hDI, hD⟩ := exists_minimal_isBorelCandidate_le H hI
   have hDb : IsBorelOverAlgClosed k H D :=
     (isBorelOverAlgClosed_iff k H D).mpr ⟨inferInstance, hD⟩

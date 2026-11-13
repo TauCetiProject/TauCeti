@@ -105,7 +105,7 @@ private theorem ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv_of_lt {c : 
     have := aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt (F := ℝ) volume
       hR.nullMeasurableSet
       (fun x hx ↦ (TauCeti.differentiableAt_of_fderiv_ne_zero hx).hasFDerivAt.hasFDerivWithinAt)
-      (measurable_fderiv ℝ h).enorm.inv
+      (measurable_fderiv ℝ h).eNorm.inv
     simpa only [finrank_self, Pi.inv_apply] using this
   -- The level integrals have finite integral over `(c, ∞)`.
   have hmc : ∫⁻ t in Ioi c, m t ≠ ∞ := by

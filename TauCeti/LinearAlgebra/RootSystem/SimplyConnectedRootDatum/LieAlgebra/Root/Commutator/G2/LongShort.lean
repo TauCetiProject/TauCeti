@@ -64,7 +64,6 @@ private theorem g2_chainBotCoeff_eq (p q : Fin G2.numRoots) :
 /-- The four integer coefficients in the short–long `G₂` straightening formula are units
 (that is, each is `1` or `-1`). The divisions are taken in `ℤ`, before any base change. -/
 theorem g2_short_long_coefficients_isUnit
-    (hα : g2Length α = 1) (hβ : g2Length β = 3)
     (hγ : g2Root γ = g2Root α + g2Root β)
     (hδ : g2Root δ = g2Root α + g2Root γ)
     (hε : g2Root ε = g2Root α + g2Root δ)
@@ -74,7 +73,7 @@ theorem g2_short_long_coefficients_isUnit
     let a := d * (G2.structureConstant ht α δ / 3)
     let b := d * c * (G2.structureConstant ht δ γ / 3)
     IsUnit c ∧ IsUnit d ∧ IsUnit a ∧ IsUnit b := by
-  obtain ⟨hij, hik, hil, hlk⟩ := g2_chainBotCoeff_of_short_add_long_eq_root α β γ δ ζ hα hβ
+  obtain ⟨hij, hik, hil, hlk⟩ := g2_chainBotCoeff_of_short_add_long_eq_root α β γ δ ζ
     (by simpa only [g2SimplyConnectedRootDatum_root] using hγ)
     (by simpa only [g2SimplyConnectedRootDatum_root] using hδ)
     (by simpa only [g2SimplyConnectedRootDatum_root] using hζ)
@@ -91,14 +90,13 @@ theorem g2_short_long_coefficients_isUnit
     rcases ha with ha | ha <;> rcases hb with hb | hb <;> norm_num [hc, hd, ha, hb]
 
 private theorem long_short_divisibility
-    (hα : g2Length α = 1) (hβ : g2Length β = 3)
     (hγ : g2Root γ = g2Root α + g2Root β)
     (hδ : g2Root δ = g2Root α + g2Root γ)
     (hζ : g2Root ζ = g2Root δ + g2Root γ) :
     (2 : ℤ) ∣ G2.structureConstant ht α γ ∧
       (3 : ℤ) ∣ G2.structureConstant ht α δ ∧
       (3 : ℤ) ∣ G2.structureConstant ht δ γ := by
-  obtain ⟨_, hik, hil, hlk⟩ := g2_chainBotCoeff_of_short_add_long_eq_root α β γ δ ζ hα hβ
+  obtain ⟨_, hik, hil, hlk⟩ := g2_chainBotCoeff_of_short_add_long_eq_root α β γ δ ζ
     (by simpa only [g2SimplyConnectedRootDatum_root] using hγ)
     (by simpa only [g2SimplyConnectedRootDatum_root] using hδ)
     (by simpa only [g2SimplyConnectedRootDatum_root] using hζ)
@@ -123,8 +121,7 @@ private theorem long_short_zero_brackets
       (heq : g2Root i + g2Root j = a • g2Root α + b • g2Root β) :
       ⁅G2.chevalleySystem ht i, G2.chevalleySystem ht j⁆ = 0 := by
     obtain ⟨hnot, hne⟩ :=
-      g2_smul_short_add_smul_long_notMem_range_root_and_ne_zero α β hα hβ
-        ⟨γ, by simpa only [g2SimplyConnectedRootDatum_root] using hγ⟩ a b hab
+      g2_smul_short_add_smul_long_notMem_range_root_and_ne_zero α β hα hβ a b hab
     simp only [g2SimplyConnectedRootDatum_root] at hnot hne
     apply lie_chevalleySystem_eq_zero (t := G2) (ht := ht) <;>
       rw [simplyConnectedRootDatum_G2]
@@ -141,7 +138,6 @@ private theorem long_short_zero_brackets
 noncomputable section
 
 private theorem long_short_scaled_brackets
-    (hα : g2Length α = 1) (hβ : g2Length β = 3)
     (hγ : g2Root γ = g2Root α + g2Root β)
     (hδ : g2Root δ = g2Root α + g2Root γ)
     (hε : g2Root ε = g2Root α + g2Root δ)
@@ -156,7 +152,7 @@ private theorem long_short_scaled_brackets
       (c • ⁅e α, e γ⁆ = (2 * d) • e δ) ∧
       (d • ⁅e α, e δ⁆ = (3 * a) • e ε) ∧
       ((d * c) • ⁅e δ, e γ⁆ = (3 * b) • e ζ) := by
-  obtain ⟨h2, h3, h3'⟩ := long_short_divisibility (ht := ht) hα hβ hγ hδ hζ
+  obtain ⟨h2, h3, h3'⟩ := long_short_divisibility (ht := ht) hγ hδ hζ
   dsimp only
   refine ⟨lie_chevalleySystem_eq_structureConstant_zsmul
     (g2_root_eq_add_of_coordinates hγ), ?_, ?_, ?_⟩
@@ -211,7 +207,7 @@ theorem chevalleyRootSubgroup_mul_of_g2_long_short
   let b := d * c * (N δ γ / 3)
   let E := fun i => ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (G2.chevalleySystem ht i))
   obtain ⟨hbracket, hscaled2, hscaled3, hscaled3'⟩ :=
-    long_short_scaled_brackets (ht := ht) hα hβ hγ hδ hε hζ
+    long_short_scaled_brackets (ht := ht) hγ hδ hε hζ
   obtain ⟨hαε, hαζ, hβγ, hδε, hγζ, hδζ, hεζ⟩ :=
     long_short_zero_brackets (ht := ht) hα hβ hγ hδ hε hζ
   -- Translate the native brackets into the scaled operator relations of the integral identity.

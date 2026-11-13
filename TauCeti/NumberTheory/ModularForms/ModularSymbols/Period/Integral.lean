@@ -197,7 +197,7 @@ theorem periodIntegrand_slash_apply {k : ℤ} (hk : k = w + 2) (f : ℍ → ℂ)
   -- homogeneity: `P(aτ + b, cτ + d) = (cτ + d) ^ w · P(g • τ, 1)`
   have hP : aeval ![num g' τ, denom g' τ] (P : MvPolynomial (Fin 2) R) =
       denom g' τ ^ w * aeval ![((g' • τ : ℍ) : ℂ), 1] (P : MvPolynomial (Fin 2) R) := by
-    have h := ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul ![((g' • τ : ℍ) : ℂ), 1]
+    have h := ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul_of_algebra ![((g' • τ : ℍ) : ℂ), 1]
       (denom g' τ)
     rw [smul_eq_mul] at h
     rw [← h]
@@ -497,7 +497,7 @@ theorem periodIntegrand_adjugate_slash {k : ℤ} (hk : k = w + 2) (f : ℍ → �
     fin_cases i <;>
       simp [adjugate_fin_two, num, denom, mulVec, dotProduct, Fin.sum_univ_two, hent] <;> ring
   rw [periodIntegrand_slash_apply hk f _ hg τ, periodIntegrand_apply, coe_binaryFormRep_apply,
-    aeval_linearSubst, ← hg', hvec, ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul,
+    aeval_linearSubst, ← hg', hvec, ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul_of_algebra,
     smul_eq_mul, _root_.zpow_neg, zpow_natCast]
   field_simp
 
