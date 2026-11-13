@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Continuous.Basic
 
 /-!
@@ -19,6 +20,8 @@ on each vector unchanged.
 * `ContRepresentation.toRepresentation_apply`: evaluation agrees with the continuous action.
 * `ContRepresentation.comp_inv_self`: the action operator of `g` composed with that of `g⁻¹` is
   the identity.
+* `ContRepresentation.apply_inr_apply_inl`: in a representation of a semidirect product
+  `N ⋊[φ] K`, the operator of `k : K` intertwines the action of `n : N` with that of `φ k n`.
 
 ## References
 
@@ -44,5 +47,15 @@ theorem comp_inv_self {R G V : Type*} [Ring R] [Group G] [AddCommGroup V] [Topol
     (ρ g).comp (ρ g⁻¹) = ContinuousLinearMap.id R V := by
   rw [← ContinuousLinearMap.mul_def, ← map_mul, mul_inv_cancel, map_one]
   rfl
+
+open SemidirectProduct in
+/-- In a representation of a semidirect product `N ⋊[φ] K`, the operator of `k : K` intertwines
+the action of `n : N` with the action of `φ k n`: `ρ k (ρ n v) = ρ (φ k n) (ρ k v)`. -/
+theorem apply_inr_apply_inl {R N K V : Type*} [Ring R] [Group N] [Group K] [AddCommGroup V]
+    [TopologicalSpace V] [IsTopologicalAddGroup V] [Module R V] {φ : K →* MulAut N}
+    (ρ : ContRepresentation R (N ⋊[φ] K) V) (k : K) (n : N) (v : V) :
+    ρ (inr k) (ρ (inl n) v) = ρ (inl (φ k n)) (ρ (inr k) v) := by
+  rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, inl_aut,
+    map_inv, inv_mul_cancel_right]
 
 end ContRepresentation
