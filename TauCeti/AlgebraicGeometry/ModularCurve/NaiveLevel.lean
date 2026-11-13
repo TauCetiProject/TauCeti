@@ -78,7 +78,7 @@ problem `[Γ(N)]` is relatively representable over every base (`ModuliProblem.ga
 Its representing schemes are open subschemes of `E[N] ×_S E[N]`, so they inherit from `E[N]` every
 property stable under base change and composition which open immersions have
 (`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation, and
-étaleness when `N` is invertible on `B` (`ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`).
+étaleness (`ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`).
 
 **Finiteness and surjectivity where `N` is invertible.** When `N` is invertible on `B`, the
 representing schemes of `[Γ₁(N)]` and `[Γ(N)]` are also closed in `E[N]` and `E[N] ×_S E[N]`, so
@@ -146,8 +146,9 @@ field of the base, the `N`-torsion of an elliptic curve is `(ℤ/Nℤ)²`, so ev
   morphisms of `[Γ₁(N)]` and `[Γ(N)]` inherit the properties of `E[N]` stable under base change
   and composition and holding for open immersions.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData` and
-  `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`: if `N` is
-  invertible on `B`, the naive problems `[Γ₁(N)]` and `[Γ(N)]` are étale over `Ell/B`.
+  `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`: the naive
+  problem `[Γ₁(N)]` is étale over `Ell/B` if `N` is invertible on `B`, and `[Γ(N)]` is étale over
+  every `B`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_isFinite_gammaOneNaiveRelRepData` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_isFinite_gammaNaiveRelRepData`: if `N` is
   invertible on `B`, the naive problems `[Γ₁(N)]` and `[Γ(N)]` are finite over `Ell/B`.
@@ -180,7 +181,7 @@ variable {B : Scheme.{u}}
 /-- **Naive `A`-structures pull back along arrows of `Ell/B`**: an arrow `f : X ⟶ Y` exhibits `X`
 as a base change of `Y`, and a homomorphism `A →* E(S)` injective on every fibre stays so after
 composing with base change of points along `f`. -/
-theorem EllObj.Hom.isFiberwiseInjective_pointsPullback {X Y : EllObj B} {A : Type} [Group A]
+theorem EllObj.Hom.isFiberwiseInjective_pointsPullback {X Y : EllObj B} {A : Type*} [Group A]
     {φ : A →* (𝟙_ (Over Y.base) ⟶ Over.mk Y.curve.structureMap)} (f : X ⟶ Y)
     (h : Y.curve.IsFiberwiseInjective φ) :
     X.curve.IsFiberwiseInjective
@@ -567,15 +568,14 @@ section Representable
 
 open EllipticCurveGeom
 
-variable {B} {X : EllObj B} {A : Type} [Group A] {H : Over X.base}
-  (u : A →* (H ⟶ Over.mk X.curve.structureMap))
+variable {B} {X : EllObj B}
 
 /-- **Injectivity on fibres of a base change, read on the original curve.** For an object
 `X = (E/S)` of `Ell/B` and a scheme `T` over `S`, a homomorphism `φ : A →* E_T(T)` is injective on
 every fibre of the base change `E_T` exactly when, for every `a ≠ 1`, the point of `E` with values
 in `T` given by `φ a` (`EllObj.baseChangePointsEquiv`) misses the zero section of `E` at every
 point of `T`. -/
-theorem isFiberwiseInjective_baseChange_iff {T : Over X.base}
+theorem isFiberwiseInjective_baseChange_iff {A : Type*} [Group A] {T : Over X.base}
     {φ : A →* (𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
       Over.mk (X.baseChangeFunctor.obj T).curve.structureMap)} :
     (X.baseChangeFunctor.obj T).curve.IsFiberwiseInjective φ ↔
@@ -589,6 +589,9 @@ theorem isFiberwiseInjective_baseChange_iff {T : Over X.base}
   -- the two sides differ only in the type of `t`: the base `(X.baseChangeFunctor.obj T).base` of
   -- the base change is `T.left` by definition
   exact Iff.rfl
+
+variable {A : Type} [Group A] {H : Over X.base}
+  (u : A →* (H ⟶ Over.mk X.curve.structureMap))
 
 variable [Finite A]
 
@@ -816,14 +819,88 @@ theorem hasProperty_gammaNaiveRelRepData_locallyOfFinitePresentation :
     (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @LocallyOfFinitePresentation :=
   hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun _ ↦ inferInstance
 
-/-- **The naive moduli problem `[Γ(N)]` is étale over `Ell/B` when `N` is invertible on `B`**
-(Katz–Mazur, 3.7.1): if `N` is invertible in every residue field of `B`, each representing scheme
-is étale over its base, as an open subscheme of `E[N] ×_S E[N]`. -/
-theorem hasProperty_etale_gammaNaiveRelRepData (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
-    (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @Etale :=
-  hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun X ↦
-    X.curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N) fun _ ↦ by
-      simpa using X.structureMap.natCast_residueField_ne_zero (hN _)
+/-- At a point of the naive locus of the universal pair of points of `E[N]`, `N` is nonzero in the
+residue field: a naive `[Γ(N)]`-structure exists only where `N` is invertible. -/
+theorem natCast_ne_zero_of_mem_naiveLocusOver_torsionPairHom
+    (X : EllObj B) (r : (EllipticCurveGeom.naiveLocusOver (X.curve.torsionPairHom N)).left) :
+    (N : (EllipticCurveGeom.naiveLocusOver (X.curve.torsionPairHom N)).left.residueField r) ≠
+      0 := by
+  intro hN0
+  let u := X.curve.torsionPairHom N
+  let R := EllipticCurveGeom.naiveLocusOver u
+  let K := R.left.residueField r
+  let t : Spec K ⟶ R.left := R.left.fromSpecResidueField r
+  let T : Over X.base := Over.mk (t ≫ R.hom)
+  let y : T ⟶ R := Over.homMk t rfl
+  have hφ := isFiberwiseInjective_naiveLocusHom u y
+  have hinj := ((X.baseChangeFunctor.obj T).curve.isFiberwiseInjective_iff_injective
+    (K := K) (naiveLocusHom u y)).mp hφ
+  let E'' : EllipticCurveGeom (Spec (.of K)) := (X.baseChangeFunctor.obj T).curve
+  let φ : Multiplicative (ZMod N × ZMod N) →
+      (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E''.structureMap) :=
+    fun a ↦ naiveLocusHom u y a
+  have hpow (a : Multiplicative (ZMod N × ZMod N)) : φ a ^ (N : ℤ) = 1 := by
+    have : a ^ N = 1 := Multiplicative.toAdd.injective (by ext <;> simp)
+    have h := congrArg (naiveLocusHom u y) this
+    rw [map_pow, map_one] at h
+    rw [zpow_natCast]
+    exact h
+  let g := fun a ↦ E''.torsionPointsEquiv N _ ⟨φ a, hpow a⟩
+  have hg : Function.Injective g := fun a b h ↦ hinj (by
+    have := congrArg Subtype.val ((E''.torsionPointsEquiv N _).injective h)
+    exact this)
+  have hfin := E''.finite_comp_mulBy_eq_one (n := (N : ℤ)) (by exact_mod_cast NeZero.ne N)
+  have hfin' : Finite (𝟙_ (Over (Spec (.of K))) ⟶ (E''.torsion N).X) := by
+    refine @Finite.of_equiv _ _ hfin ?_
+    exact (Equiv.subtypeEquivRight fun x ↦ by
+      rw [EllipticCurveGeom.comp_mulBy]).trans (E''.torsionPointsEquiv N _)
+  have hNK : ((N : ℤ) : K) = 0 := by exact_mod_cast hN0
+  have hlt := E''.natCard_torsion_lt (n := (N : ℤ)) (by exact_mod_cast NeZero.ne N) hNK
+  have hle := Nat.card_le_card_of_injective g hg
+  rw [Nat.card_eq_fintype_card, Fintype.card_multiplicative, Fintype.card_prod, ZMod.card] at hle
+  simp only [Int.natAbs_natCast] at hlt
+  nlinarith
+
+/-- **The naive moduli problem `[Γ(N)]` is étale over `Ell/B`**, over every
+base `B`: a naive `[Γ(N)]`-structure over a field forces `N` to be invertible there
+(`natCast_ne_zero_of_mem_naiveLocusOver_torsionPairHom`), so each representing scheme lies over the
+open set where `N` is invertible, where it is étale as an open subscheme of `E[N] ×_S E[N]`. -/
+theorem hasProperty_etale_gammaNaiveRelRepData :
+    (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @Etale := by
+  refine (RelRepData.hasProperty_iff _).mpr fun X ↦ ?_
+  let D := gammaNaiveRelRepData (B := B) (N := N)
+  let U : X.base.Opens := X.base.basicOpen (N : Γ(X.base, ⊤))
+  have hU (s : X.base) : s ∈ U ↔ (N : X.base.residueField s) ≠ 0 := by
+    rw [← X.base.evaluation_ne_zero_iff_mem_basicOpen s trivial, map_natCast]
+  let T : Over X.base := Over.mk U.ι
+  let X' := X.baseChangeFunctor.obj T
+  have hX' : Etale (D.rep X').hom := by
+    have h' : Etale (X'.curve.torsion N).X.hom :=
+      X'.curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N) fun u ↦ by
+        have := U.ι.natCast_residueField_ne_zero (x := u) (N := N) ((hU _).mp u.2)
+        exact_mod_cast this
+    exact EllipticCurveGeom.naiveLocusOver_hom_mem _ (fun _ _ _ _ ↦ inferInstance)
+      (MorphismProperty.comp_mem _ _ _ (MorphismProperty.pullback_fst _ _ h') h')
+  have h1 := D.isPullback (X.baseChangeFunctorHom T)
+  have h2 : IsPullback ((D.rep X).hom ⁻¹ᵁ U).ι ((D.rep X).hom ∣_ U) (D.rep X).hom
+      (X.baseChangeFunctorHom T).base := by
+    rw [EllObj.baseChangeFunctorHom_base]
+    exact (isPullback_morphismRestrict (D.rep X).hom U).flip
+  have hres : Etale ((D.rep X).hom ∣_ U) := by
+    have key := (Iso.eq_inv_comp _).mpr (h1.isoIsPullback_hom_snd _ _ h2)
+    have : Etale ((h1.isoIsPullback _ _ h2).inv ≫ (D.rep X').hom) := inferInstance
+    exact key ▸ this
+  have : MorphismProperty.RespectsRight @Etale @IsOpenImmersion :=
+    ⟨fun i hi f hf ↦ MorphismProperty.comp_mem _ _ _ hf (by have := hi; infer_instance)⟩
+  have : IsZariskiLocalAtTarget @Etale.{u} :=
+    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
+  refine IsZariskiLocalAtTarget.of_range_subset_iSup (fun _ : Unit ↦ U) ?_ fun _ ↦ hres
+  rintro _ ⟨r, rfl⟩
+  simp only [iSup_const]
+  refine (hU _).mpr fun h0 ↦ natCast_ne_zero_of_mem_naiveLocusOver_torsionPairHom X r ?_
+  have := congrArg ((D.rep X).hom.residueFieldMap r) h0
+  simp only [map_natCast, map_zero] at this
+  exact this
 
 /-- **The naive moduli problem `[Γ(N)]` is finite over `Ell/B` when `N` is invertible on `B`**:
 if `N` is invertible in every residue field of `B`, every representing scheme is finite over its
