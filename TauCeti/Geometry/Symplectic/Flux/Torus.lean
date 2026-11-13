@@ -105,7 +105,7 @@ theorem timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer
     (torusTranslationDiffeotopy p v).timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ := by
   have hslice : ⇑((torusTranslationDiffeotopy (n := ∞) p v).timeSlice t) =
       (· + fun i ↦ (((t : ℝ) * v i : ℝ) : AddCircle (p i))) :=
-    funext fun x ↦ torusTranslationDiffeotopy_apply p v (t, x)
+    funext fun x ↦ (Diffeotopy.timeSlice_apply _ t x).trans (torusTranslationDiffeotopy_apply p v _)
   refine SmoothForm.mem_diffeomorphStabilizer_iff_forall.2 fun x ↦
     ContinuousAlternatingMap.ext fun w ↦ ?_
   rw [TauCeti.mpullback_apply, hslice, AddCircle.mfderiv_pi_add_right]
@@ -116,8 +116,9 @@ theorem timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer
 every two-form with constant coefficients. -/
 theorem final_torusTranslationDiffeotopy_mem_diffeomorphStabilizer
     (hσ : ∀ x, (σ.1 x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) :
-    (torusTranslationDiffeotopy p v).final ∈ SmoothForm.diffeomorphStabilizer σ :=
-  timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer p v hσ 1
+    (torusTranslationDiffeotopy p v).final ∈ SmoothForm.diffeomorphStabilizer σ := by
+  rw [Diffeotopy.final_def]
+  exact timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer p v hσ 1
 
 end Constant
 
@@ -234,7 +235,7 @@ theorem exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq (m n : ℤ) :
     · exact ⟨-m, by simp [v]⟩
   have hslice := timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer p v
     (smul_torusVolumeForm_apply_eq p A)
-  refine ⟨torusTranslationDiffeotopy p v, hslice 1, hslice,
+  refine ⟨torusTranslationDiffeotopy p v, by rw [Diffeotopy.final_def]; exact hslice 1, hslice,
     (final_torusTranslationDiffeotopy_eq_refl_iff p v).2 hloop, ?_⟩
   rw [flux_torusTranslationDiffeotopy_smul_torusVolumeForm]
   simp only [v, Matrix.cons_val_zero, Matrix.cons_val_one, neg_smul, sub_neg_eq_add]
