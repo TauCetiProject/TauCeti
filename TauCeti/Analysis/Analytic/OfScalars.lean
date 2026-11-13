@@ -159,7 +159,7 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
     have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
     have hym : y ^ m ∈ Metric.eball (0 : A) r := by
       rw [mem_eball_zero_iff]
-      calc ‖y ^ m‖ₑ ≤ ‖y‖ₑ ^ m := by simpa [enorm_eq_nnnorm] using mod_cast nnnorm_pow_le y m
+      calc ‖y ^ m‖ₑ ≤ ‖y‖ₑ ^ m := by simpa [eNorm_eq_nnNorm] using mod_cast nnNorm_pow_le y m
         _ ≤ ‖y‖ₑ := pow_le_of_le_one zero_le hy1 hm.ne'
         _ < r := mem_eball_zero_iff.mp hy
     have hs := hf.hasSum hym

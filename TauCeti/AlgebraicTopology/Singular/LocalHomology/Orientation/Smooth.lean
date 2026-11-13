@@ -68,6 +68,8 @@ For a manifold modelled on an inner product space itself, with `L` the identity,
   first chart to the sign of its Jacobian times the one selected by the second.
 * `OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign_det_smul`: changing the chart
   multiplies the selected local orientation by the sign of the Jacobian of the transition map.
+* `OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart`: a continuous map which
+  reads as the identity in two charts carries the local orientations they select to each other.
 * `TauCeti.HasLinearModelCharts`, `TauCeti.chartedSpaceOfLinearModel`: charts in an inner product
   space obtained from the charts in a boundaryless model by a linear equivalence.
 * `TauCeti.Manifold.Orientation.toHomologicalOrientationOfLinearModel`: the homological
@@ -644,6 +646,44 @@ theorem hasLinearModelCharts_refl [ChartedSpace E M] :
   OpenPartialHomeomorph.ext _ _ (fun _ ↦ rfl) (fun _ ↦ rfl) rfl
 
 end LinearModel
+
+section ChartNaturality
+
+variable {M N : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace N] [T1Space N]
+  {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
+
+/-- **Naturality of oriented-chart local orientations.** Let `j : M → N` be continuous with
+`j ⁻¹' {j a} ⊆ {a}`, so that `a` is the only point of `M` sent to `j a`, and let `φ` and `ψ` be
+charts of `M` at `a` and of `N` at `j a` with `ψ ∘ j = φ` near `a`. Then the map of local
+homology induced by `j` carries the local orientation at `a` selected by an orientation `ω` of
+the model in `φ` to the one at `j a` selected by `ω` in `ψ`. -/
+theorem _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart
+    (j : C(M, N)) (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph N E) {a : M}
+    (ha : a ∈ φ.source) (hja : j a ∈ ψ.source) (hφψ : ψ ∘ j =ᶠ[𝓝 a] φ)
+    (h : j ⁻¹' {j a} ⊆ {a}) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j h (n + 1)
+        (φ.localOrientationOfOrientedChart ha ω hE).val =
+      (ψ.localOrientationOfOrientedChart hja ω hE).val := by
+  -- `j` read in the charts is the identity near `φ a`, so this is the sign-one case of
+  -- `OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationOfOrientedChart` on `univ`.
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
+  have hf : HasFDerivAt (ψ ∘ j ∘ φ.symm) (ContinuousLinearMap.id ℝ E) (φ a) := by
+    refine (hasFDerivAt_id (φ a)).congr_of_eventuallyEq ?_
+    filter_upwards [(φ.tendsto_symm ha).eventually hφψ, φ.eventually_right_inverse' ha]
+      with y hy hy'
+    exact hy.trans hy'
+  have hdet : (ContinuousLinearMap.id ℝ E).det = 1 := LinearMap.det_id
+  have key := φ.localHomologyMap_restrict_localOrientationOfOrientedChart ω hE ψ j ha hja
+    isOpen_univ (mem_univ a) (fun _ _ hz ↦ h hz) hf (hdet ▸ one_ne_zero)
+  rw [hdet, sign_one, SignType.coe_one, one_smul] at key
+  -- The restriction of `j` to `univ` is `j` after the inclusion of `univ`.
+  have h' := isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
+    ⟨a, mem_univ a⟩ (φ.localOrientationOfOrientedChart ha ω hE) fun _ hz ↦ Subtype.ext hz
+  rw [← h', ← ConcreteCategory.comp_apply]
+  exact (ConcreteCategory.congr_hom (localHomologyMap_comp _ _ j _ h (n + 1)) _).trans key
+
+end ChartNaturality
 
 section Manifold
 

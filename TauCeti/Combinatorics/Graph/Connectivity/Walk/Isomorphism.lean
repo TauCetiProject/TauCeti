@@ -16,7 +16,7 @@ import TauCeti.Data.List.Attach
 A multigraph isomorphism induces a prefunctor between the bidirected arrow families and hence
 transports edge-labelled walks between actual vertices. Transport respects the constructors,
 identity, composition, inverse, reversal, support, traversed edges, trails, paths, cycles, and
-reachability.
+reachability, including after deleting a transported edge set.
 
 ## Main definitions
 
@@ -411,6 +411,33 @@ theorem reachable_iff (f : Iso G H) (x y : G.vertexSet) :
       (congrArg Subtype.val (symm_vertexEquiv_apply_vertexEquiv f y))⟩
   · rintro ⟨p⟩
     exact ⟨f.mapWalk p⟩
+
+/-- An isomorphism transports reachability after deleting an edge set. Edges outside the
+actual edge set are discarded by `mapEdgeSet` and have no effect on reachability. -/
+theorem reachable_deleteEdges_mapEdgeSet_iff (f : Iso G H) (F : Set β) (x y : V(G)) :
+    (H.deleteEdges (f.mapEdgeSet F)).Reachable (f.vertexEquiv x) (f.vertexEquiv y) ↔
+      (G.deleteEdges F).Reachable x y := by
+  simp only [reachable_deleteEdges_iff_exists_walk, Subtype.prop, true_and]
+  constructor
+  · rintro ⟨p, hp⟩
+    have havoid : ∀ e ∈ (f.symm.mapWalk p).edges, e ∉ F := by
+      intro e he heF
+      let e' : G.edgeSet := ⟨e, (f.symm.mapWalk p).edges_subset_edgeSet he⟩
+      have hem : (f.edgeEquiv e' : β') ∈ p.edges :=
+        (f.symm.edgeEquiv_mem_edges_mapWalk_iff p (f.edgeEquiv e')).mp
+          (by simpa [e'] using he)
+      exact hp _ hem (by simpa using heF)
+    exact ⟨(f.symm.mapWalk p).copy
+      (congrArg Subtype.val (f.symm_vertexEquiv_apply_vertexEquiv x))
+      (congrArg Subtype.val (f.symm_vertexEquiv_apply_vertexEquiv y)), by
+        simpa using havoid⟩
+  · rintro ⟨p, hp⟩
+    refine ⟨f.mapWalk p, fun e he heF ↦ ?_⟩
+    let e' : H.edgeSet := ⟨e, (f.mapWalk p).edges_subset_edgeSet he⟩
+    have hem : (f.edgeEquiv.symm e' : β) ∈ p.edges :=
+      (f.edgeEquiv_mem_edges_mapWalk_iff p (f.edgeEquiv.symm e')).mp
+        (by simpa [e'] using he)
+    exact hp _ hem ((f.mem_mapEdgeSet_iff F e').mp heF)
 
 end Iso
 

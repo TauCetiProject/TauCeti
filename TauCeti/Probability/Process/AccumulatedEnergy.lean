@@ -156,7 +156,7 @@ theorem isStronglyPredictable_accumulatedEnergy (hH : IsStronglyProgressive ℱ 
   apply IsProgressive.isStronglyPredictable_setLIntegral_Iic (μ := μ)
   intro t
   let : MeasurableSpace Ω := ℱ t
-  exact (hH t).enorm.pow_const 2
+  exact (hH t).eNorm.pow_const 2
 
 /-- The finite-accumulated-energy set is predictable on a raw filtration. -/
 theorem measurableSet_accumulatedEnergy_lt_top (hH : IsStronglyProgressive ℱ H) :

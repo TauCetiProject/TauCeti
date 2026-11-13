@@ -331,7 +331,7 @@ private theorem norm_integral_mul_le_of_eLpNorm_le_one (T : SimpleFunc α ℂ �
       _ ≤ (M * eLpNorm u s μ) * 1 := by gcongr; exact hT u
       _ ≤ M * 1 * 1 := by gcongr
       _ = M := by simp
-  exact_mod_cast enorm_le_coe.1 h
+  exact_mod_cast eNorm_le_coe.1 h
 
 /-- The pairing of the image of a fibre indicator of `f` with a fibre indicator of `g` is
 integrable, when `f` and `g` have norm at most one in the interpolation spaces. -/

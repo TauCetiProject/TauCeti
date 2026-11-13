@@ -94,7 +94,9 @@ theorem signedCompMultilinearMap_apply
       fun ij ↦ negOnePowCast R ((∑ k, if ij.1 < k then q k else 0) * d ij) • x ij := by
     funext ij
     rw [(G ij.1 ij.2).koszulTwist_apply_of_mem (hx ij), negOnePowCast_eq_intCast]
-  rw [ht, MultilinearMap.map_smul_univ, ← negOnePowCast_sum]
+  rw [ht, MultilinearMap.map_smul_univ]
+  simp only [RingHom.id_apply]
+  rw [← negOnePowCast_sum]
   rfl
 
 /-- The Koszul exponent can equivalently be summed over operations and their preceding blocks. -/

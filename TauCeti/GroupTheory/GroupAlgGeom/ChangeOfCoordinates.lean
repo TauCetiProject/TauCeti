@@ -14,6 +14,9 @@ A coefficient-preserving word homomorphism acts on tuples by evaluation. When it
 this action transports solution sets and radicals, and induces an isomorphism of coordinate
 groups. The results apply to inconsistent systems and arbitrary coefficient homomorphisms.
 
+In particular a `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection `imageEquivV` between
+the solutions of a system `S` and those of its image `φ S`.
+
 The construction is the invertible case of the word-map correspondence of Baumslag, Myasnikov
 and Remeslennikov, *Algebraic geometry over groups I*, §3.5.
 -/
@@ -26,6 +29,8 @@ namespace GroupAlgGeom
 open Monoid.Coprod
 
 variable {G H X Y Z : Type*} [Group G] [Group H] (ι : G →* H)
+
+section CoordinateChange
 
 variable (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
     (hσ : Function.Bijective σ)
@@ -142,6 +147,44 @@ theorem equivOfCoordinateChange_symm_coeff (S : Set (GX G X)) (g : G) :
   simp
 
 end CoordGroup
+
+end CoordinateChange
+
+/-! ### `G`-isomorphisms -/
+
+section MulEquiv
+
+variable (φ : GX G X ≃* GX G Y) (hφ : ∀ g, φ (inl g) = inl g)
+
+/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection between the solutions of a system
+`S` and the solutions of its image `φ S`: a solution `v` of `S` goes to the point with
+coordinates the values at `v` of the words `φ⁻¹ y`. -/
+noncomputable def imageEquivV (S : Set (GX G X)) : V ι S ≃ V ι (φ '' S) :=
+  (coordinateChangeEquivV ι (GHom.ofMulEquiv φ.symm fun g => φ.symm_apply_eq.2 (hφ g).symm)
+    (GHom.ofMulEquiv_bijective _ _) S).trans <| Set.equivOfEq <| by
+      rw [GHom.coe_ofMulEquiv]
+      exact congrArg (V ι) (φ.toEquiv.image_eq_preimage_symm S).symm
+
+/-- On tuples, the solution bijection applies the word map of the words `φ⁻¹ y`. -/
+@[simp]
+theorem imageEquivV_apply_coe (S : Set (GX G X)) (v : V ι S) :
+    (imageEquivV ι φ hφ S v : Y → H) = wordMap ι (fun y => φ.symm (inr (FreeGroup.of y))) v := by
+  simp [imageEquivV]
+
+/-- On tuples, the inverse solution bijection applies the word map of the words `φ x`. -/
+@[simp]
+theorem imageEquivV_symm_apply_coe (S : Set (GX G X)) (v : V ι (φ '' S)) :
+    ((imageEquivV ι φ hφ S).symm v : X → H) = wordMap ι (fun x => φ (inr (FreeGroup.of x))) v := by
+  simp [imageEquivV]
+
+include hφ in
+/-- A point is a solution of the image `φ S` of a system under a `G`-isomorphism exactly when
+the point with coordinates its values at the words `φ x` is a solution of `S`. -/
+theorem mem_V_image_mulEquiv_iff (S : Set (GX G X)) (v : Y → H) :
+    v ∈ V ι (φ '' S) ↔ wordMap ι (fun x => φ (inr (FreeGroup.of x))) v ∈ V ι S := by
+  simpa using (Set.ext_iff.1 (preimage_wordMap_V_eq_V_image ι (GHom.ofMulEquiv φ hφ) S) v).symm
+
+end MulEquiv
 
 end GroupAlgGeom
 end TauCeti
