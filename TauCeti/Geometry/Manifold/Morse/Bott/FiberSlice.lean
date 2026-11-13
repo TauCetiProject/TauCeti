@@ -140,15 +140,6 @@ theorem bijective_normalClass_mfderiv_comp_mk_trivializationAt_symm
   exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin).mp hinj⟩
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] [FiniteDimensional ℝ P] in
-/-- The fibre of a `C²` map out of a vector bundle, read in the trivialization at `s`, is `C²` at
-`0`. -/
-private theorem contMDiffAt_comp_mk_trivializationAt_symm
-    (hΦ : ContMDiffAt (J.prod 𝓘(ℝ, P)) I 2 Φ (zeroSection P V s)) :
-    ContMDiffAt 𝓘(ℝ, P) I 2 (fun w : P ↦ Φ ⟨s, (trivializationAt P V s).symm s w⟩) 0 :=
-  ((TauCeti.Bundle.mk_trivializationAt_symm_zero (F := P) (V := V) ℝ s).symm ▸ hΦ).comp 0
-    (TauCeti.Bundle.contMDiff_mk_trivializationAt_symm (I := J) s 0)
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] [FiniteDimensional ℝ P] in
 /-- The fibre of `Φ` over `s` passes through `i s`. -/
 private theorem comp_mk_trivializationAt_symm_zero
     (hΦi : ∀ᶠ s' in 𝓝 s, Φ (zeroSection P V s') = i s') :
@@ -173,7 +164,7 @@ theorem isNondegenerateCriticalPoint_comp_mk_trivializationAt_symm
     IsNondegenerateCriticalPoint
       (fun w : P ↦ f (Φ ⟨s, (trivializationAt P V s).symm s w⟩)) 0 :=
   h.isNondegenerateCriticalPoint_comp hn (comp_mk_trivializationAt_symm_zero hΦi)
-    (contMDiffAt_comp_mk_trivializationAt_symm hΦ)
+    (TauCeti.Bundle.contMDiffAt_comp_mk_trivializationAt_symm hΦ)
     (bijective_normalClass_mfderiv_comp_mk_trivializationAt_symm hn hdim hΦi
       (hΦ.mdifferentiableAt two_ne_zero) hΦ')
 
@@ -196,7 +187,7 @@ theorem morseIndex_comp_mk_trivializationAt_symm
     morseIndex (fun w : P ↦ f (Φ ⟨s, (trivializationAt P V s).symm s w⟩)) 0 =
       manifoldMorseIndex I f (i s) :=
   h.morseIndex_comp hn (comp_mk_trivializationAt_symm_zero hΦi)
-    (contMDiffAt_comp_mk_trivializationAt_symm hΦ)
+    (TauCeti.Bundle.contMDiffAt_comp_mk_trivializationAt_symm hΦ)
     (bijective_normalClass_mfderiv_comp_mk_trivializationAt_symm hn hdim hΦi
       (hΦ.mdifferentiableAt two_ne_zero) hΦ')
 
@@ -206,19 +197,35 @@ section Diffeomorph
 
 variable {m : WithTop ℕ∞} {W : TopologicalSpace.Opens M}
 
+omit [I.Boundaryless] [IsManifold I 2 M] [∀ s, Module ℝ (V s)] [VectorBundle ℝ P V] in
+/-- If the derivative of `Φ` at `0_s` is invertible, the rank of the bundle is the codimension of
+`S`: the tangent space `E' × P` of the total space is isomorphic to the tangent space `E` of `M`. -/
+private theorem finrank_eq_sub_of_isInvertible_mfderiv
+    (hΦ' : (mfderiv (J.prod 𝓘(ℝ, P)) I Φ (zeroSection P V s)).IsInvertible) :
+    Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E' := by
+  obtain ⟨e, -⟩ := hΦ'
+  -- The tangent spaces of the total space and of `M` are by definition `E' × P` and `E`.
+  let e' : (E' × P) ≃ₗ[ℝ] E := e.toLinearEquiv
+  have : FiniteDimensional ℝ (E' × P) := e'.symm.finiteDimensional
+  have : FiniteDimensional ℝ E' :=
+    Module.Finite.of_injective (LinearMap.inl ℝ E' P) LinearMap.inl_injective
+  have h := e'.finrank_eq
+  rw [Module.finrank_prod] at h
+  omega
+
 namespace IsNondegenerateCriticalSubmanifold
 
 include hn in
 /-- **A Morse–Bott function along the fibres of a tubular neighbourhood.** Let `i` be a Morse–Bott
 critical submanifold of `f`, and let `Ψ` be a `C^m` diffeomorphism, `2 ≤ m`, from the total space
-of a vector bundle `V → S` whose rank is the codimension of `S` onto an open subset of `M`, with
-`Ψ (0_s) = i s` for all `s`. Then for every `s` the fibre slice `w ↦ f (Ψ ⟨s, e.symm s w⟩)` of
-`f ∘ Ψ` over `s`, read in the trivialization `e` at `s`, has a nondegenerate critical point at `0`.
+of a vector bundle `V → S` onto an open subset of `M`, so that the rank of `V` is the codimension
+of `S`, with `Ψ (0_s) = i s` for all `s`. Then for every `s` the fibre slice
+`w ↦ f (Ψ ⟨s, e.symm s w⟩)` of `f ∘ Ψ` over `s`, read in the trivialization `e` at `s`, has a
+nondegenerate critical point at `0`.
 The tubular neighbourhood of a smooth embedding
 (`TauCeti.SmoothEmbedding.exists_diffeomorph_normalBundle_subset`) is such a diffeomorphism. -/
 theorem isNondegenerateCriticalPoint_comp_diffeomorph
-    (h : i.IsNondegenerateCriticalSubmanifold f)
-    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (hm : 2 ≤ m)
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hm : 2 ≤ m)
     (Ψ : TotalSpace P V ≃ₘ^m⟮J.prod 𝓘(ℝ, P), I⟯ W) (hΨi : ∀ s, (Ψ (zeroSection P V s) : M) = i s)
     (s : S) :
     IsNondegenerateCriticalPoint
@@ -227,10 +234,10 @@ theorem isNondegenerateCriticalPoint_comp_diffeomorph
   have hloc : IsLocalDiffeomorphAt (J.prod 𝓘(ℝ, P)) I m (Subtype.val ∘ Ψ) (zeroSection P V s) :=
     IsLocalDiffeomorphAt.comp (K := I) (P := M) (Ψ.isLocalDiffeomorph _)
       (isLocalDiffeomorph_subtype_val _)
-  exact h.isNondegenerateCriticalPoint_comp_mk_trivializationAt_symm hn hdim
-    (Filter.Eventually.of_forall hΨi)
-    (hloc.contMDiffAt.of_le hm)
-    (hloc.isInvertible_mfderiv (lt_of_lt_of_le (by norm_num) hm).ne').injective
+  have hΨ' := hloc.isInvertible_mfderiv (lt_of_lt_of_le (by norm_num) hm).ne'
+  exact h.isNondegenerateCriticalPoint_comp_mk_trivializationAt_symm hn
+    (finrank_eq_sub_of_isInvertible_mfderiv hΨ') (Filter.Eventually.of_forall hΨi)
+    (hloc.contMDiffAt.of_le hm) hΨ'.injective
 
 end IsNondegenerateCriticalSubmanifold
 
@@ -239,12 +246,11 @@ namespace IsCriticalSubmanifold
 include hn in
 /-- **The index of a fibre slice of a tubular neighbourhood.** Let `i` be a critical submanifold of
 `f`, and let `Ψ` be a `C^m` diffeomorphism, `2 ≤ m`, from the total space of a vector bundle
-`V → S` whose rank is the codimension of `S` onto an open subset of `M`, with `Ψ (0_s) = i s` for
-all `s`. Then for every `s` the Morse index at `0` of the fibre slice
+`V → S` onto an open subset of `M`, so that the rank of `V` is the codimension of `S`, with
+`Ψ (0_s) = i s` for all `s`. Then for every `s` the Morse index at `0` of the fibre slice
 `w ↦ f (Ψ ⟨s, e.symm s w⟩)`, read in the trivialization `e` at `s`, is the Morse index of `f` at
 `i s`. -/
-theorem morseIndex_comp_diffeomorph (h : i.IsCriticalSubmanifold f)
-    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (hm : 2 ≤ m)
+theorem morseIndex_comp_diffeomorph (h : i.IsCriticalSubmanifold f) (hm : 2 ≤ m)
     (Ψ : TotalSpace P V ≃ₘ^m⟮J.prod 𝓘(ℝ, P), I⟯ W) (hΨi : ∀ s, (Ψ (zeroSection P V s) : M) = i s)
     (s : S) :
     morseIndex (fun w : P ↦ f (Ψ ⟨s, (trivializationAt P V s).symm s w⟩)) 0 =
@@ -253,9 +259,10 @@ theorem morseIndex_comp_diffeomorph (h : i.IsCriticalSubmanifold f)
   have hloc : IsLocalDiffeomorphAt (J.prod 𝓘(ℝ, P)) I m (Subtype.val ∘ Ψ) (zeroSection P V s) :=
     IsLocalDiffeomorphAt.comp (K := I) (P := M) (Ψ.isLocalDiffeomorph _)
       (isLocalDiffeomorph_subtype_val _)
-  exact h.morseIndex_comp_mk_trivializationAt_symm hn hdim (Filter.Eventually.of_forall hΨi)
-    (hloc.contMDiffAt.of_le hm)
-    (hloc.isInvertible_mfderiv (lt_of_lt_of_le (by norm_num) hm).ne').injective
+  have hΨ' := hloc.isInvertible_mfderiv (lt_of_lt_of_le (by norm_num) hm).ne'
+  exact h.morseIndex_comp_mk_trivializationAt_symm hn
+    (finrank_eq_sub_of_isInvertible_mfderiv hΨ') (Filter.Eventually.of_forall hΨi)
+    (hloc.contMDiffAt.of_le hm) hΨ'.injective
 
 end IsCriticalSubmanifold
 

@@ -25,7 +25,9 @@ In the preferred charts the zero section has derivative the first summand inclus
 (`TauCeti.Bundle.hasMFDerivAt_zeroSection`), and the fibre over `b`, parametrized by the model
 fibre through the trivialization at `b`, has derivative the second summand inclusion
 (`TauCeti.Bundle.hasMFDerivAt_mk_trivializationAt_symm`); it is `C^n`
-(`TauCeti.Bundle.contMDiff_mk_trivializationAt_symm`).
+(`TauCeti.Bundle.contMDiff_mk_trivializationAt_symm`), so a map out of the total space which is
+`C^n` at `0_b` is `C^n` at `0` along it
+(`TauCeti.Bundle.contMDiffAt_comp_mk_trivializationAt_symm`).
 
 The horizontal computation generalizes Mathlib's
 `TangentBundle.tangentMap_tangentBundle_pure`, by Sébastien Gouëzel and Floris van Doorn,
@@ -157,6 +159,16 @@ theorem contMDiff_mk_trivializationAt_symm {n : WithTop ℕ∞} (b : B) :
   contMDiffAt_totalSpace_iff.mpr ⟨contMDiffAt_const, contMDiffAt_id.congr_of_eventuallyEq
     (Eventually.of_forall fun w ↦ congrArg Prod.snd
       ((trivializationAt F V b).apply_mk_symm (mem_baseSet_trivializationAt F V b) w))⟩
+
+/-- A map out of the total space which is `C^n` at the zero vector over `b` is `C^n` at `0` along
+the fibre over `b`, parametrized by the model fibre through the trivialization at `b`. -/
+theorem contMDiffAt_comp_mk_trivializationAt_symm {E' H' M : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M]
+    [ChartedSpace H' M] {n : WithTop ℕ∞} {Φ : TotalSpace F V → M} {b : B}
+    (hΦ : ContMDiffAt (I.prod 𝓘(𝕜, F)) I' n Φ (zeroSection F V b)) :
+    ContMDiffAt 𝓘(𝕜, F) I' n (fun w : F ↦ Φ ⟨b, (trivializationAt F V b).symm b w⟩) 0 :=
+  ((mk_trivializationAt_symm_zero (F := F) (V := V) 𝕜 b).symm ▸ hΦ).comp 0
+    (contMDiff_mk_trivializationAt_symm b 0)
 
 /-- The fibre over `b`, parametrized by the model fibre through the trivialization at `b`, has
 derivative the second summand inclusion at every point: in the preferred charts it is
