@@ -21,7 +21,8 @@ every point lies in an affine open `Spec R ⟶ X` with `R` of finite type over `
 (`Scheme.Hom.exists_isOpenImmersion_finiteType`), and the sections over every affine open are of
 finite type over `A` (`Scheme.Hom.finiteType_ΓSpecIso_inv_comp_appLE`). The structure morphism
 `Spec B ⟶ Spec k` of a `k`-algebra `B` is locally of finite type exactly when `B` is of finite type
-over `k` (`LocallyOfFiniteType.spec_algebraMap_iff`).
+over `k` (`LocallyOfFiniteType.spec_algebraMap_iff`), and it is registered as an instance in the
+finite-type case (`LocallyOfFiniteType.spec_algebraMap`).
 
 This complements Mathlib's `Scheme.Hom.closedPoints_subset_preimage_closedPoints` with the
 lifting direction, needed to compare rational and topological orbit images.
@@ -64,10 +65,18 @@ theorem finiteType_ΓSpecIso_inv_comp_appLE {U : X.Opens} (hU : IsAffineOpen U) 
 
 /-- The structure morphism `Spec B ⟶ Spec k` of a `k`-algebra `B` is locally of finite type if
 and only if `B` is of finite type over `k`. -/
+@[simp]
 theorem _root_.AlgebraicGeometry.LocallyOfFiniteType.spec_algebraMap_iff {k B : Type u}
     [CommRing k] [CommRing B] [Algebra k B] :
     LocallyOfFiniteType (Spec.algebraMap k B) ↔ Algebra.FiniteType k B :=
   HasRingHomProperty.Spec_iff.trans RingHom.finiteType_algebraMap
+
+/-- The structure morphism `Spec B ⟶ Spec k` of a `k`-algebra `B` of finite type is locally of
+finite type. -/
+instance _root_.AlgebraicGeometry.LocallyOfFiniteType.spec_algebraMap {k B : Type u}
+    [CommRing k] [CommRing B] [Algebra k B] [Algebra.FiniteType k B] :
+    LocallyOfFiniteType (Spec.algebraMap k B) :=
+  LocallyOfFiniteType.spec_algebraMap_iff.mpr inferInstance
 
 end Chart
 
