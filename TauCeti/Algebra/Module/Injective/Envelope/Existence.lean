@@ -52,22 +52,12 @@ universe u v w
 variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
   {Q : Type w} [AddCommGroup Q] [Module R Q]
 
-/-- **Injective envelopes inside an injective module.** Every embedding into an injective module
-restricts to an injective envelope inside that module: some submodule `P` of `Q` containing the
-image is injective, with the image essential in `P`. -/
-theorem _root_.LinearMap.exists_isInjectiveEnvelope_submodule [Module.Injective R Q]
-    (i : M →ₗ[R] Q) (hi : Function.Injective i) :
-    ∃ (P : Submodule R Q) (hP : LinearMap.range i ≤ P),
-      IsInjectiveEnvelope (i.codRestrict P (fun x => hP ⟨x, rfl⟩)) := by
-  set N := LinearMap.range i
-  -- The essential extensions of `N` inside `Q`.
+/-- A maximal essential extension `E` of a submodule `N` inside an injective module `Q` is
+injective. -/
+private theorem injective_of_maximal_isEssential [Module.Injective R Q] {N E : Submodule R Q}
+    (hE : Maximal (fun P : Submodule R Q => N ≤ P ∧ IsEssential (N.comap P.subtype)) E) :
+    Module.Injective R E := by
   let S : Set (Submodule R Q) := {P | N ≤ P ∧ IsEssential (N.comap P.subtype)}
-  -- Zorn's lemma gives a maximal essential extension `E` of `N`.
-  obtain ⟨E, -, hE⟩ := zorn_le_nonempty₀ S (fun c hcS hc y hy =>
-      ⟨sSup c, ⟨(hcS hy).1.trans (le_sSup hy),
-        isEssential_comap_subtype_sSup hc.directedOn fun P hP => (hcS hP).2⟩,
-        fun z hz => le_sSup hz⟩)
-    N ⟨le_rfl, by rw [Submodule.comap_subtype_self]; exact isEssential_top⟩
   -- Zorn's lemma again gives `K` maximal among the submodules disjoint from `E`.
   obtain ⟨K, -, hK⟩ := zorn_le_nonempty₀ {K : Submodule R Q | Disjoint E K}
     (fun c hcS hc y _ =>
@@ -97,8 +87,25 @@ theorem _root_.LinearMap.exists_isInjectiveEnvelope_submodule [Module.Injective 
   -- So `Q → Q ⧸ K → E` retracts `Q` onto `E`, and `E` is injective.
   let ρ : Q →ₗ[R] E := (φ ∘ₗ K.mkQ).codRestrict E fun q => hφE ▸ ⟨K.mkQ q, rfl⟩
   have hρ (e : E) : ρ (E.subtype e) = e := Subtype.ext (hφj e)
-  have hEinj : Module.Injective R E :=
-    Module.Injective.of_leftInverse ‹_› E.subtype ρ hρ
+  exact Module.Injective.of_leftInverse ‹_› E.subtype ρ hρ
+
+/-- **Injective envelopes inside an injective module.** Every embedding into an injective module
+restricts to an injective envelope inside that module: some submodule `P` of `Q` containing the
+image is injective, with the image essential in `P`. -/
+theorem _root_.LinearMap.exists_isInjectiveEnvelope_submodule [Module.Injective R Q]
+    (i : M →ₗ[R] Q) (hi : Function.Injective i) :
+    ∃ (P : Submodule R Q) (hP : LinearMap.range i ≤ P),
+      IsInjectiveEnvelope (i.codRestrict P (fun x => hP ⟨x, rfl⟩)) := by
+  set N := LinearMap.range i
+  -- The essential extensions of `N` inside `Q`.
+  let S : Set (Submodule R Q) := {P | N ≤ P ∧ IsEssential (N.comap P.subtype)}
+  -- Zorn's lemma gives a maximal essential extension `E` of `N`.
+  obtain ⟨E, -, hE⟩ := zorn_le_nonempty₀ S (fun c hcS hc y hy =>
+      ⟨sSup c, ⟨(hcS hy).1.trans (le_sSup hy),
+        isEssential_comap_subtype_sSup hc.directedOn fun P hP => (hcS hP).2⟩,
+        fun z hz => le_sSup hz⟩)
+    N ⟨le_rfl, by rw [Submodule.comap_subtype_self]; exact isEssential_top⟩
+  have hEinj : Module.Injective R E := injective_of_maximal_isEssential hE
   refine ⟨E, hE.prop.1, hEinj, fun a b hab => hi (congrArg Subtype.val hab), ?_⟩
   rw [LinearMap.range_codRestrict]
   exact hE.prop.2
