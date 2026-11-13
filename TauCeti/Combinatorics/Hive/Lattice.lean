@@ -20,7 +20,10 @@ import Mathlib.Tactic.Ring
 The vertices of the size-`n` triangle are nonnegative barycentric triples of sum `n`.
 `Vertex.rotate` and `Vertex.reflect` give its dihedral symmetries, `Vertex.edgePoint`
 parameterizes the three sides along the clockwise perimeter `A → B → C → A`, and `Vertex.ofYZ`
-gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`. The planar embedding sends `(x,y,z)`
+gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`. `Vertex.chart` gives the triangular
+chart `(i, j) ↦ (n - j, j - i, i)` for `i ≤ j ≤ n`, with boundary equations and the three
+unit-rhombus orientations `chart_rhombus_left`, `chart_rhombus_right`, and
+`chart_rhombus_remaining`. The planar embedding sends `(x,y,z)`
 to `(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
 
 `IsRhombus a b c d` records a unit rhombus in perimeter order, with **obtuse** corners
@@ -287,6 +290,53 @@ theorem ofYZ_zero_left (n z : ℕ) (hz : z ≤ n) :
 theorem ofYZ_sub_left (n z : ℕ) (hz : z ≤ n) :
     ofYZ n (n - z) z (by omega) = edgePoint n 1 ⟨z, by omega⟩ := by ext <;> simp; omega
 
+/-- The triangular chart `(i, j) ↦ (n - j, j - i, i)` for `i ≤ j ≤ n`. -/
+def chart (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) : Vertex n :=
+  ⟨n - j, j - i, i, by omega⟩
+
+/-- The first barycentric coordinate in the triangular chart. -/
+@[simp] theorem chart_x (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) :
+    (chart n i j hij hj).x = n - j := (rfl)
+
+/-- The second barycentric coordinate in the triangular chart. -/
+@[simp] theorem chart_y (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) :
+    (chart n i j hij hj).y = j - i := (rfl)
+
+/-- The third barycentric coordinate in the triangular chart. -/
+@[simp] theorem chart_z (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) :
+    (chart n i j hij hj).z = i := (rfl)
+
+/-- The triangular chart identifies vertices exactly when both indices agree. -/
+@[simp] theorem chart_eq_iff {n i₁ j₁ i₂ j₂ : ℕ}
+    {hij₁ : i₁ ≤ j₁} {hj₁ : j₁ ≤ n} {hij₂ : i₂ ≤ j₂} {hj₂ : j₂ ≤ n} :
+    chart n i₁ j₁ hij₁ hj₁ = chart n i₂ j₂ hij₂ hj₂ ↔
+      i₁ = i₂ ∧ j₁ = j₂ := by
+  constructor
+  · intro h
+    have hi := congrArg Vertex.z h
+    have hj := congrArg Vertex.x h
+    simp only [chart_z, chart_x] at hi hj
+    omega
+  · rintro ⟨hi, hj⟩
+    subst hi
+    subst hj
+    rfl
+
+/-- The edge `i = 0` of the triangular chart runs along side `A → B`. -/
+theorem chart_zero {n : ℕ} (j : ℕ) (hj : j ≤ n) :
+    chart n 0 j (Nat.zero_le _) hj = edgePoint n 0 ⟨j, by omega⟩ := by
+  ext <;> simp [chart]
+
+/-- The diagonal `i = j` of the triangular chart runs backwards along side `C → A`. -/
+theorem chart_self {n : ℕ} (j : ℕ) (hj : j ≤ n) :
+    chart n j j le_rfl hj = edgePoint n 2 ⟨n - j, by omega⟩ := by
+  ext <;> simp [chart]; omega
+
+/-- The top row `j = n` of the triangular chart runs along side `B → C`. -/
+theorem chart_top {n : ℕ} (i : ℕ) (hi : i ≤ n) :
+    chart n i n hi le_rfl = edgePoint n 1 ⟨i, by omega⟩ := by
+  ext <;> simp [chart]
+
 end Vertex
 
 /-- A unit rhombus in perimeter order, with `a,c` the obtuse (short-diagonal) corners.
@@ -516,5 +566,49 @@ theorem isRhombus_of_hasStep_iff {n : ℕ} {p pv pw pvw : Vertex n} {v w : Fin 3
       by rw [sqDist_of_hasStep hpw]; exact hw.2,
       by rw [sqDist_of_hasStep hs1]; exact hv.2,
       by rw [Vertex.sqDist_comm, sqDist_of_hasStep hs2]; exact hw.2⟩
+
+/-- A unit cell in the triangular chart, with obtuse corners `(i, j)` and `(i + 1, j + 1)`. -/
+theorem chart_rhombus_left {n i j : ℕ} (hij : i < j) (hj : j < n) :
+    IsRhombus (Vertex.chart n i j (by omega) (by omega))
+      (Vertex.chart n (i + 1) j (by omega) (by omega))
+      (Vertex.chart n (i + 1) (j + 1) (by omega) (by omega))
+      (Vertex.chart n i (j + 1) (by omega) (by omega)) := by
+  let v : Fin 3 → ℤ := ![0, 1, -1]
+  let w : Fin 3 → ℤ := ![-1, 1, 0]
+  have hv : IsUnitStep v := by norm_num [isUnitStep_iff, v, Fin.sum_univ_three]
+  have hw : IsUnitStep w := by norm_num [isUnitStep_iff, w, Fin.sum_univ_three]
+  apply (isRhombus_of_hasStep_iff hv hw ?_ ?_ ?_).mpr
+    (by norm_num [v, w, Fin.sum_univ_three])
+  all_goals
+    rw [hasStep_iff]
+    intro k
+    fin_cases k <;> simp [Vertex.chart, v, w] <;> omega
+
+/-- The triangular-chart rhombus with obtuse corners `(i + 1, j)` and `(i + 1, j + 1)`. -/
+theorem chart_rhombus_right {n i j : ℕ} (hij : i < j) (hj : j < n) :
+    IsRhombus (Vertex.chart n (i + 1) j (by omega) (by omega))
+      (Vertex.chart n i j (by omega) (by omega))
+      (Vertex.chart n (i + 1) (j + 1) (by omega) (by omega))
+      (Vertex.chart n (i + 2) (j + 1) (by omega) (by omega)) := by
+  let v : Fin 3 → ℤ := ![0, -1, 1]
+  let w : Fin 3 → ℤ := ![-1, 0, 1]
+  have hv : IsUnitStep v := by norm_num [isUnitStep_iff, v, Fin.sum_univ_three]
+  have hw : IsUnitStep w := by norm_num [isUnitStep_iff, w, Fin.sum_univ_three]
+  apply (isRhombus_of_hasStep_iff hv hw ?_ ?_ ?_).mpr
+    (by norm_num [v, w, Fin.sum_univ_three])
+  all_goals
+    rw [hasStep_iff]
+    intro k
+    fin_cases k <;> simp [Vertex.chart, v, w] <;> omega
+
+/-- The third triangular-chart orientation, with obtuse corners `(i, j + 1)` and
+`(i + 1, j + 1)`. -/
+theorem chart_rhombus_remaining {n i j : ℕ} (hij : i ≤ j) (hj : j + 2 ≤ n) :
+    IsRhombus (Vertex.chart n i (j + 1) (by omega) (by omega))
+      (Vertex.chart n i j hij (by omega))
+      (Vertex.chart n (i + 1) (j + 1) (by omega) (by omega))
+      (Vertex.chart n (i + 1) (j + 2) (by omega) hj) := by
+  convert isRhombus_ofYZ_step (n := n) (y := j - i) (z := i) (by omega) using 1 <;>
+    ext <;> simp [Vertex.chart] <;> omega
 
 end TauCeti.Hive

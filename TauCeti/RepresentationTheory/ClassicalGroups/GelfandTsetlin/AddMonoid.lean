@@ -23,6 +23,7 @@ nonnegative ones for this order: those whose top weight is polynomial.
 * `TauCeti.GTPattern.instAddCancelCommMonoid`, `TauCeti.GTPattern.instPartialOrder` and
   `TauCeti.GTPattern.instIsOrderedCancelAddMonoid`: the entrywise additive and order structures.
 * `TauCeti.GTPattern.coeFnAddMonoidHom`: the array of entries, as an additive monoid homomorphism.
+* `TauCeti.GTPattern.rowWeight`: the weight whose coordinates are consecutive row-sum differences.
 * `TauCeti.GTPattern.const n m`: the pattern all of whose informative entries equal `m`.
 
 ## Main results
@@ -30,6 +31,7 @@ nonnegative ones for this order: those whose top weight is polynomial.
 * `TauCeti.GTPattern.zero_le_iff_topRow`: a pattern is nonnegative exactly when its top row is.
 * `TauCeti.GTPattern.zero_le_iff_isPolynomial`: a pattern is nonnegative exactly when its top
   weight is polynomial.
+* `TauCeti.GTPattern.sum_rowWeight`: the weight coordinates sum to the top-row sum.
 -/
 
 public section
@@ -113,6 +115,45 @@ theorem topRow_nsmul (k : ℕ) (P : GTPattern n) : (k • P).topRow = k • P.to
   funext i
   rw [topRow_apply, nsmul_apply, Pi.smul_apply, topRow_apply]
 
+/-! ### Row weights -/
+
+/-- The weight of a pattern: coordinate `r` is the sum of row `r + 1` minus the sum of row `r`.
+Unlike the top row, this weight need not be dominant. -/
+def rowWeight (P : GTPattern n) (r : Fin n) : ℤ :=
+  (∑ k ∈ Finset.range (r.val + 1), P k (r.val + 1)) -
+    ∑ k ∈ Finset.range r.val, P k r.val
+
+theorem rowWeight_apply (P : GTPattern n) (r : Fin n) :
+    P.rowWeight r = (∑ k ∈ Finset.range (r.val + 1), P k (r.val + 1)) -
+      ∑ k ∈ Finset.range r.val, P k r.val :=
+  (rfl)
+
+/-- Consecutive row-sum differences telescope to the top-row sum. -/
+theorem sum_rowWeight (P : GTPattern n) : ∑ r, P.rowWeight r = ∑ i, P.topRow i := by
+  simp_rw [rowWeight_apply, topRow_apply]
+  rw [Fin.sum_univ_eq_sum_range (fun r =>
+    (∑ k ∈ Finset.range (r + 1), P k (r + 1)) - ∑ k ∈ Finset.range r, P k r),
+    Finset.sum_range_sub (fun r => ∑ k ∈ Finset.range r, P k r),
+    Fin.sum_univ_eq_sum_range (fun k => P k n)]
+  simp
+
+@[simp]
+theorem rowWeight_zero : (0 : GTPattern n).rowWeight = 0 := by
+  funext r
+  simp [rowWeight_apply, zero_apply]
+
+@[simp]
+theorem rowWeight_add (P Q : GTPattern n) :
+    (P + Q).rowWeight = P.rowWeight + Q.rowWeight := by
+  funext r
+  simp only [rowWeight_apply, add_apply, Finset.sum_add_distrib, Pi.add_apply]
+  exact add_sub_add_comm _ _ _ _
+
+@[simp]
+theorem rowWeight_nsmul (k : ℕ) (P : GTPattern n) : (k • P).rowWeight = k • P.rowWeight := by
+  funext r
+  simp only [rowWeight_apply, nsmul_apply, Finset.sum_nsmul, nsmul_sub, Pi.smul_apply]
+
 /-! ### Constant patterns -/
 
 /-- The constant pattern: every informative entry equals `m`.  Adding it to a pattern is the
@@ -138,6 +179,18 @@ theorem topRow_const (m : ℤ) : (const n m).topRow = fun _ => m := by
   funext i
   rw [topRow_apply]
   exact const_apply_of_lt_of_le m i.2 le_rfl
+
+@[simp]
+theorem rowWeight_const (m : ℤ) : (const n m).rowWeight = fun _ => m := by
+  funext r
+  rw [rowWeight_apply]
+  have hsum (j : ℕ) (hj : j ≤ n) :
+      (∑ k ∈ Finset.range j, const n m k j) = j • m := by
+    simp only [Finset.sum_congr rfl (fun _ hk =>
+      const_apply_of_lt_of_le m (Finset.mem_range.1 hk) hj), Finset.sum_const,
+      Finset.card_range]
+  rw [hsum (r.val + 1) r.isLt, hsum r.val (Nat.le_of_lt r.isLt), succ_nsmul]
+  exact add_sub_cancel_left _ _
 
 @[simp]
 theorem const_zero : const n 0 = 0 := by

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Combinatorics.Hive.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.AddMonoid
 
@@ -20,6 +21,16 @@ Consequently the difference map is injective on hives with a fixed first boundar
 The construction uses normalized hives and the native pattern's convention of zero
 entries outside `i < j ≤ n`. It is a directional comparison: the third rhombus family
 imposes an additional condition on the image, so no surjectivity onto all patterns is asserted.
+
+## Main results
+
+* `toGTPattern`, `topRow_toGTPattern`, and `rowWeight_toGTPattern` give the directional
+  pattern and its boundary weights, including the signed product-boundary convention.
+* `gtCompletion` integrates row prefixes; its edge and `boundaryLinear` equations
+  describe the three boundaries without imposing rhombus concavity.
+* `gtCompletion_toGTPattern` and `toGTPattern_eq_of_coe_eq_gtCompletion` are the two
+  inverse laws when the lattice function is a hive.
+* `sum_toGTPattern_sub_le` records the third rhombus family's necessary image condition.
 
 ## References
 
@@ -38,60 +49,7 @@ namespace TauCeti.Hive
 
 variable {n : ℕ}
 
-private def chart (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) : Vertex n :=
-  ⟨n - j, j - i, i, by omega⟩
-
-private theorem chart_zero (j : ℕ) (hj : j ≤ n) :
-    chart n 0 j (Nat.zero_le _) hj = Vertex.edgePoint n 0 ⟨j, by omega⟩ := by
-  ext <;> simp [chart]
-
-private theorem chart_self (j : ℕ) (hj : j ≤ n) :
-    chart n j j le_rfl hj = Vertex.edgePoint n 2 ⟨n - j, by omega⟩ := by
-  ext <;> simp [chart]; omega
-
-private theorem chart_top (i : ℕ) (hi : i ≤ n) :
-    chart n i n hi le_rfl = Vertex.edgePoint n 1 ⟨i, by omega⟩ := by
-  ext <;> simp [chart]
-
-private theorem chart_rhombus_left {i j : ℕ} (hij : i < j) (hj : j < n) :
-    IsRhombus (chart n i j (by omega) (by omega))
-      (chart n (i + 1) j (by omega) (by omega))
-      (chart n (i + 1) (j + 1) (by omega) (by omega))
-      (chart n i (j + 1) (by omega) (by omega)) := by
-  let v : Fin 3 → ℤ := ![0, 1, -1]
-  let w : Fin 3 → ℤ := ![-1, 1, 0]
-  have hv : IsUnitStep v := by norm_num [isUnitStep_iff, v, Fin.sum_univ_three]
-  have hw : IsUnitStep w := by norm_num [isUnitStep_iff, w, Fin.sum_univ_three]
-  apply (isRhombus_of_hasStep_iff hv hw ?_ ?_ ?_).mpr
-    (by norm_num [v, w, Fin.sum_univ_three])
-  all_goals
-    rw [hasStep_iff]
-    intro k
-    fin_cases k <;> simp [chart, v, w] <;> omega
-
-private theorem chart_rhombus_right {i j : ℕ} (hij : i < j) (hj : j < n) :
-    IsRhombus (chart n (i + 1) j (by omega) (by omega))
-      (chart n i j (by omega) (by omega))
-      (chart n (i + 1) (j + 1) (by omega) (by omega))
-      (chart n (i + 2) (j + 1) (by omega) (by omega)) := by
-  let v : Fin 3 → ℤ := ![0, -1, 1]
-  let w : Fin 3 → ℤ := ![-1, 0, 1]
-  have hv : IsUnitStep v := by norm_num [isUnitStep_iff, v, Fin.sum_univ_three]
-  have hw : IsUnitStep w := by norm_num [isUnitStep_iff, w, Fin.sum_univ_three]
-  apply (isRhombus_of_hasStep_iff hv hw ?_ ?_ ?_).mpr
-    (by norm_num [v, w, Fin.sum_univ_three])
-  all_goals
-    rw [hasStep_iff]
-    intro k
-    fin_cases k <;> simp [chart, v, w] <;> omega
-
-private theorem chart_rhombus_remaining {i j : ℕ} (hij : i ≤ j) (hj : j + 2 ≤ n) :
-    IsRhombus (chart n i (j + 1) (by omega) (by omega))
-      (chart n i j hij (by omega))
-      (chart n (i + 1) (j + 1) (by omega) (by omega))
-      (chart n (i + 1) (j + 2) (by omega) hj) := by
-  convert isRhombus_ofYZ_step (n := n) (y := j - i) (z := i) (by omega) using 1 <;>
-    ext <;> simp [chart] <;> omega
+open Vertex (chart chart_zero chart_self chart_top)
 
 /-- The signed Gelfand–Tsetlin pattern obtained by taking consecutive differences
 along the lines of constant first barycentric coordinate. -/
@@ -112,25 +70,23 @@ def toGTPattern (h : IntegerHive n) : GTPattern n where
 @[simp] theorem toGTPattern_apply (h : IntegerHive n) {i j : ℕ}
     (hij : i < j) (hj : j ≤ n) :
     h.toGTPattern i j =
-      h ⟨n - j, j - (i + 1), i + 1, by omega⟩ -
-        h ⟨n - j, j - i, i, by omega⟩ := by
+      h (chart n (i + 1) j (by omega) hj) - h (chart n i j (by omega) hj) := by
   simp only [← GTPattern.entry_eq_coe, toGTPattern]
   rw [dite_eq_left ⟨hij, hj⟩]
-  rfl
-
-private theorem toGTPattern_chart (h : IntegerHive n) {i j : ℕ}
-    (hij : i < j) (hj : j ≤ n) :
-    h.toGTPattern i j =
-      h (chart n (i + 1) j (by omega) hj) - h (chart n i j (by omega) hj) := by
-  exact toGTPattern_apply h hij hj
 
 /-- The top row of the directional pattern is the hive's second clockwise boundary. -/
 @[simp] theorem topRow_toGTPattern (h : IntegerHive n) :
     h.toGTPattern.topRow = h.boundary 1 := by
   funext i
-  rw [GTPattern.topRow_apply, toGTPattern_chart h i.isLt le_rfl,
+  rw [GTPattern.topRow_apply, toGTPattern_apply h i.isLt le_rfl,
     chart_top _ (by omega), chart_top _ (by omega), boundary_apply]
   rfl
+
+/-- The top weight of the directional pattern is the second boundary weight. -/
+@[simp] theorem topWeight_toGTPattern (h : IntegerHive n) :
+    h.toGTPattern.topWeight = h.boundaryWeight 1 := by
+  apply Subtype.ext
+  simpa only [GTPattern.topWeight_coe, coe_boundaryWeight] using topRow_toGTPattern h
 
 /-- The directional difference map preserves the zero hive. -/
 @[simp] theorem toGTPattern_zero : (0 : IntegerHive n).toGTPattern = 0 := by
@@ -159,7 +115,13 @@ def toGTPatternHom (n : ℕ) : IntegerHive n →+ GTPattern n where
 @[simp] theorem toGTPatternHom_apply (h : IntegerHive n) :
     toGTPatternHom n h = h.toGTPattern := (rfl)
 
-private theorem sum_toGTPattern_chart (h : IntegerHive n) {i j : ℕ}
+/-- Directional differences commute with natural-number scaling. -/
+@[simp] theorem toGTPattern_nsmul (k : ℕ) (h : IntegerHive n) :
+    (k • h).toGTPattern = k • h.toGTPattern :=
+  (toGTPatternHom n).map_nsmul k h
+
+/-- A row prefix of directional differences telescopes to the corresponding hive values. -/
+theorem sum_toGTPattern_chart (h : IntegerHive n) {i j : ℕ}
     (hij : i ≤ j) (hj : j ≤ n) :
     (∑ k ∈ Finset.range i, h.toGTPattern k j) =
       h (chart n i j hij hj) - h (chart n 0 j (Nat.zero_le _) hj) := by
@@ -169,7 +131,7 @@ private theorem sum_toGTPattern_chart (h : IntegerHive n) {i j : ℕ}
         ∑ k ∈ Finset.range i, (f (k + 1) - f k) := by
       refine Finset.sum_congr rfl fun k hk => ?_
       have hk' : k < i := Finset.mem_range.mp hk
-      rw [toGTPattern_chart h (by omega) hj]
+      rw [toGTPattern_apply h (by omega) hj]
       simp only [f, Nat.min_eq_left (by omega : k + 1 ≤ j),
         Nat.min_eq_left (by omega : k ≤ j)]
     _ = f i - f 0 := Finset.sum_range_sub f i
@@ -191,31 +153,153 @@ theorem gtCompletion_apply (lam : Fin n → ℤ) (P : GTPattern n) (p : Vertex n
 length `j` and the pattern-row prefix of length `i`. -/
 theorem gtCompletion_chart (lam : Fin n → ℤ) (P : GTPattern n) {i j : ℕ}
     (hij : i ≤ j) (hj : j ≤ n) :
-    gtCompletion lam P ⟨n - j, j - i, i, by omega⟩ =
+    gtCompletion lam P (chart n i j hij hj) =
       (∑ r : Fin n with r.val < j, lam r) + ∑ k ∈ Finset.range i, P k j := by
   rw [gtCompletion_apply]
-  simp only
+  simp only [Vertex.chart_y, Vertex.chart_z]
   rw [Nat.sub_add_cancel hij]
 
 /-- Consecutive directional differences of a completion recover the original
 pattern on every informative cell, independently of the first boundary. -/
-theorem gtCompletion_step (lam : Fin n → ℤ) (P : GTPattern n) {i j : ℕ}
+theorem gtCompletion_sub_gtCompletion (lam : Fin n → ℤ) (P : GTPattern n) {i j : ℕ}
     (hij : i < j) (hj : j ≤ n) :
-    gtCompletion lam P ⟨n - j, j - (i + 1), i + 1, by omega⟩ -
-      gtCompletion lam P ⟨n - j, j - i, i, by omega⟩ = P i j := by
+    gtCompletion lam P (chart n (i + 1) j (by omega) hj) -
+      gtCompletion lam P (chart n i j (by omega) hj) = P i j := by
   rw [gtCompletion_chart lam P (by omega) hj, gtCompletion_chart lam P (by omega) hj,
     Finset.sum_range_succ]
   abel
 
+/-- A hive whose lattice function is a completion has the original pattern. -/
+theorem toGTPattern_eq_of_coe_eq_gtCompletion {lam : Fin n → ℤ} {P : GTPattern n}
+    {h : IntegerHive n} (heq : ⇑h = gtCompletion lam P) : h.toGTPattern = P := by
+  ext i j
+  by_cases hij : i < j ∧ j ≤ n
+  · rw [toGTPattern_apply h hij.1 hij.2, congrFun heq, congrFun heq,
+      gtCompletion_sub_gtCompletion lam P hij.1 hij.2]
+  · rw [GTPattern.entry_eq_zero _ (by omega), GTPattern.entry_eq_zero _ (by omega)]
+
+/-- A completion is normalized at the first corner. -/
+@[simp] theorem gtCompletion_cornerA (lam : Fin n → ℤ) (P : GTPattern n) :
+    gtCompletion lam P (Vertex.cornerA n) = 0 := by
+  simp [gtCompletion_apply]
+
+/-- On the first edge, completion has the prescribed boundary prefixes. -/
+@[simp] theorem gtCompletion_edgePoint_zero (lam : Fin n → ℤ) (P : GTPattern n)
+    (r : Fin (n + 1)) :
+    gtCompletion lam P (Vertex.edgePoint n 0 r) =
+      ∑ k : Fin n with k.val < r.val, lam k := by
+  simp [gtCompletion_apply]
+
+/-- On the second edge, completion integrates the top row after the first boundary. -/
+@[simp] theorem gtCompletion_edgePoint_one (lam : Fin n → ℤ) (P : GTPattern n)
+    (r : Fin (n + 1)) :
+    gtCompletion lam P (Vertex.edgePoint n 1 r) =
+      (∑ k : Fin n, lam k) + ∑ k ∈ Finset.range r.val, P k n := by
+  rw [gtCompletion_apply]
+  simp only [Vertex.edgePoint_one_y, Vertex.edgePoint_one_z,
+    Nat.sub_add_cancel (by omega : r.val ≤ n)]
+  simp
+
+/-- On the third edge, completion adds the two row prefixes of complementary length. -/
+@[simp] theorem gtCompletion_edgePoint_two (lam : Fin n → ℤ) (P : GTPattern n)
+    (r : Fin (n + 1)) :
+    gtCompletion lam P (Vertex.edgePoint n 2 r) =
+      (∑ k : Fin n with k.val < n - r.val, lam k) +
+        ∑ k ∈ Finset.range (n - r.val), P k (n - r.val) := by
+  simp [gtCompletion_apply]
+
+/-- The first clockwise boundary of a completion is its prescribed sequence. -/
+@[simp] theorem boundaryLinear_gtCompletion_zero (lam : Fin n → ℤ) (P : GTPattern n) :
+    boundaryLinear ℤ n ℤ (gtCompletion lam P) 0 = lam := by
+  funext r
+  have hs := prefixSum_succ r.isLt lam
+  rw [prefixSum_def, prefixSum_def] at hs
+  simp only [boundaryLinear_apply, gtCompletion_edgePoint_zero, Fin.val_succ,
+    Fin.val_castSucc, hs, add_sub_cancel_left]
+
+/-- The second clockwise boundary of a completion is the top row. -/
+@[simp] theorem boundaryLinear_gtCompletion_one (lam : Fin n → ℤ) (P : GTPattern n) :
+    boundaryLinear ℤ n ℤ (gtCompletion lam P) 1 = P.topRow := by
+  funext r
+  simp only [boundaryLinear_apply, gtCompletion_edgePoint_one, Fin.val_succ,
+    Fin.val_castSucc, Finset.sum_range_succ, GTPattern.topRow_apply]
+  abel
+
+/-- The third clockwise boundary is determined by the reversed row weight and first boundary. -/
+@[simp] theorem boundaryLinear_gtCompletion_two (lam : Fin n → ℤ) (P : GTPattern n) :
+    boundaryLinear ℤ n ℤ (gtCompletion lam P) 2 =
+      fun r => -P.rowWeight r.rev - lam r.rev := by
+  funext r
+  rw [boundaryLinear_apply, gtCompletion_edgePoint_two, gtCompletion_edgePoint_two,
+    GTPattern.rowWeight_apply]
+  have hsucc : n - r.castSucc.val = r.rev.val + 1 := by simp; omega
+  have hcast : n - r.succ.val = r.rev.val := by simp
+  have hs := prefixSum_succ r.rev.isLt lam
+  rw [prefixSum_def, prefixSum_def] at hs
+  rw [hsucc, hcast, hs]
+  abel
+
+/-- A completion has product boundary exactly as prescribed by its top row and row weight. -/
+theorem boundaryLinear_gtCompletion_of_topRow_of_rowWeight
+    {lam μ γ : DominantWeight n} {P : GTPattern n}
+    (htop : P.topRow = μ.1) (hweight : P.rowWeight = γ.1 - lam.1) :
+    boundaryLinear ℤ n ℤ (gtCompletion lam.1 P) = productBoundary lam μ γ := by
+  funext s
+  fin_cases s
+  · rw [show (⟨0, by decide⟩ : Fin 3) = 0 by decide]
+    simpa only [productBoundary_zero] using boundaryLinear_gtCompletion_zero lam.1 P
+  · rw [show (⟨1, by decide⟩ : Fin 3) = 1 by decide]
+    simp [htop]
+  · rw [show (⟨2, by decide⟩ : Fin 3) = 2 by decide,
+      boundaryLinear_gtCompletion_two, productBoundary_two]
+    ext r
+    simp [hweight]
+
+/-- Normalizing a rhombus-concave completion preserves its original pattern. -/
+@[simp] theorem toGTPattern_ofRhombusConcave_gtCompletion (lam : Fin n → ℤ) (P : GTPattern n)
+    (hf : IsRhombusConcave (gtCompletion lam P)) :
+    (ofRhombusConcave (gtCompletion lam P) hf).toGTPattern = P := by
+  apply toGTPattern_eq_of_coe_eq_gtCompletion (lam := lam)
+  funext p
+  simp
+
+/-- Bundling a rhombus-concave completion preserves its original pattern. -/
+@[simp] theorem toGTPattern_mk_gtCompletion (lam : Fin n → ℤ) (P : GTPattern n)
+    (hf : ∀ {a b c d : Vertex n}, IsRhombus a b c d →
+      gtCompletion lam P b + gtCompletion lam P d ≤
+        gtCompletion lam P a + gtCompletion lam P c) :
+    (Hive.mk (gtCompletion lam P) (gtCompletion_cornerA lam P) hf).toGTPattern = P := by
+  apply toGTPattern_eq_of_coe_eq_gtCompletion (lam := lam)
+  rfl
+
+/-- Completing zero data gives the zero lattice function. -/
+@[simp↓] theorem gtCompletion_zero : gtCompletion (0 : Fin n → ℤ) 0 = 0 := by
+  funext p
+  simp [gtCompletion_apply, GTPattern.zero_apply]
+
+/-- Completion commutes with addition of its boundary and pattern data. -/
+@[simp] theorem gtCompletion_add (lam μ : Fin n → ℤ) (P Q : GTPattern n) :
+    gtCompletion (lam + μ) (P + Q) = gtCompletion lam P + gtCompletion μ Q := by
+  funext p
+  simp only [gtCompletion_apply, Pi.add_apply, GTPattern.add_apply, Finset.sum_add_distrib]
+  abel
+
+/-- Completion commutes with natural-number scaling of its data. -/
+@[simp↓] theorem gtCompletion_nsmul (k : ℕ) (lam : Fin n → ℤ) (P : GTPattern n) :
+    gtCompletion (k • lam) (k • P) = k • gtCompletion lam P := by
+  funext p
+  simp only [gtCompletion_apply, Pi.smul_apply, GTPattern.nsmul_apply,
+    ← Finset.smul_sum, smul_add]
+
 /-- Every hive value is the prefix of the first boundary followed by the prefix
 of the corresponding row of its directional pattern. -/
-theorem apply_eq_boundary_prefix_add_sum_toGTPattern (h : IntegerHive n) (p : Vertex n) :
+theorem apply_eq_sum_boundary_zero_add_sum_toGTPattern (h : IntegerHive n) (p : Vertex n) :
     h p = (∑ r : Fin n with r.val < p.y + p.z, h.boundary 0 r) +
       ∑ k ∈ Finset.range p.z, h.toGTPattern k (p.y + p.z) := by
   have hj : p.y + p.z ≤ n := by have := p.sum_eq; omega
   have hv : chart n p.z (p.y + p.z) (by omega) hj = p := by
     have := p.sum_eq
-    ext <;> simp [chart]; omega
+    ext <;> simp; omega
   have hs := sum_toGTPattern_chart h (i := p.z) (j := p.y + p.z) (by omega) hj
   rw [hv, chart_zero, apply_edgePoint_zero] at hs
   exact eq_add_of_sub_eq' hs.symm
@@ -225,7 +309,7 @@ the original normalized hive as a lattice function. -/
 @[simp] theorem gtCompletion_toGTPattern (h : IntegerHive n) :
     gtCompletion (h.boundary 0) h.toGTPattern = ⇑h := by
   funext p
-  rw [gtCompletion_apply, ← apply_eq_boundary_prefix_add_sum_toGTPattern]
+  rw [gtCompletion_apply, ← apply_eq_sum_boundary_zero_add_sum_toGTPattern]
 
 /-- A hive is determined by its first boundary and its directional pattern. -/
 theorem eq_of_boundary_zero_eq_of_toGTPattern_eq {h k : IntegerHive n}
@@ -240,7 +324,7 @@ theorem boundary_zero_toGTPattern_injective :
   exact eq_of_boundary_zero_eq_of_toGTPattern_eq (congrArg Prod.fst heq) (congrArg Prod.snd heq)
 
 /-- The directional map is injective on the hives having any prescribed first boundary. -/
-theorem toGTPattern_injective_on_boundary_zero (lam : Fin n → ℤ) :
+theorem toGTPattern_subtype_boundary_zero_injective (lam : Fin n → ℤ) :
     Function.Injective (fun h : {h : IntegerHive n // h.boundary 0 = lam} =>
       h.1.toGTPattern) := by
   intro h k hP
@@ -249,10 +333,10 @@ theorem toGTPattern_injective_on_boundary_zero (lam : Fin n → ℤ) :
 /-- The difference between consecutive row sums is the negative reversed third
 boundary minus the first boundary. This is the signed pattern weight in cyclic
 hive coordinates. -/
-theorem rowWeight_toGTPattern (h : IntegerHive n) (r : Fin n) :
-    (∑ k ∈ Finset.range (r.val + 1), h.toGTPattern k (r.val + 1)) -
-      (∑ k ∈ Finset.range r.val, h.toGTPattern k r.val) =
-        -h.boundary 2 r.rev - h.boundary 0 r := by
+@[simp] theorem rowWeight_toGTPattern (h : IntegerHive n) :
+    h.toGTPattern.rowWeight = fun r => -h.boundary 2 r.rev - h.boundary 0 r := by
+  funext r
+  rw [GTPattern.rowWeight_apply]
   rw [sum_toGTPattern_chart h le_rfl (by omega),
     sum_toGTPattern_chart h le_rfl (by omega),
     chart_self, chart_self, chart_zero, chart_zero, boundary_apply, boundary_apply]
@@ -273,17 +357,24 @@ theorem topRow_toGTPattern_of_productBoundary {lam μ γ : DominantWeight n}
     h.toGTPattern.topRow = μ.1 := by
   rw [topRow_toGTPattern, hb, productBoundary_one]
 
+/-- In product boundary convention, the directional pattern has highest weight `μ`. -/
+theorem topWeight_toGTPattern_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) :
+    h.toGTPattern.topWeight = μ := by
+  apply Subtype.ext
+  simpa only [GTPattern.topWeight_coe] using topRow_toGTPattern_of_productBoundary hb
+
 /-- In product boundary convention, the pattern has weight `γ - λ`:
 the difference of the row sums of lengths `r+1` and `r` is `γᵣ - λᵣ`. -/
 theorem rowWeight_toGTPattern_of_productBoundary {lam μ γ : DominantWeight n}
-    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) (r : Fin n) :
-    (∑ k ∈ Finset.range (r.val + 1), h.toGTPattern k (r.val + 1)) -
-      (∑ k ∈ Finset.range r.val, h.toGTPattern k r.val) = γ.1 r - lam.1 r := by
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) :
+    h.toGTPattern.rowWeight = γ.1 - lam.1 := by
+  ext r
   simp [rowWeight_toGTPattern, hb]
 
 /-- The third rhombus family imposes an additional necessary inequality on the
 directional pattern. Unlike interlacing, it involves the first hive boundary. -/
-theorem remaining_inequality_toGTPattern (h : IntegerHive n) {i j : ℕ}
+theorem sum_toGTPattern_sub_le (h : IntegerHive n) {i j : ℕ}
     (hij : i ≤ j) (hj : j + 2 ≤ n) :
     (∑ k ∈ Finset.range (i + 1),
       (h.toGTPattern k (j + 2) - h.toGTPattern k (j + 1))) ≤
@@ -308,7 +399,7 @@ theorem remaining_inequality_toGTPattern (h : IntegerHive n) {i j : ℕ}
 
 /-- For product boundary `(λ, μ, γ*)`, the third rhombus family gives the
 remaining inequalities in the native Gelfand–Tsetlin image condition. -/
-theorem remaining_inequality_toGTPattern_of_productBoundary
+theorem sum_toGTPattern_sub_le_of_productBoundary
     {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) {i j : ℕ}
     (hij : i ≤ j) (hj : j + 2 ≤ n) :
@@ -316,16 +407,16 @@ theorem remaining_inequality_toGTPattern_of_productBoundary
       (h.toGTPattern k (j + 2) - h.toGTPattern k (j + 1))) ≤
         lam.1 ⟨j, by omega⟩ - lam.1 ⟨j + 1, by omega⟩ +
           ∑ k ∈ Finset.range i, (h.toGTPattern k (j + 1) - h.toGTPattern k j) := by
-  simpa [hb] using remaining_inequality_toGTPattern h hij hj
+  simpa [hb] using sum_toGTPattern_sub_le h hij hj
 
 /-- A hive in product convention is recovered from `λ` and the prefix sums of
 its directional pattern, without any positivity assumption on the weights. -/
-theorem apply_eq_prefix_add_sum_toGTPattern_of_productBoundary
+theorem apply_eq_sum_add_sum_toGTPattern_of_productBoundary
     {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) (p : Vertex n) :
     h p = (∑ r : Fin n with r.val < p.y + p.z, lam.1 r) +
       ∑ k ∈ Finset.range p.z, h.toGTPattern k (p.y + p.z) := by
-  simpa [hb] using apply_eq_boundary_prefix_add_sum_toGTPattern h p
+  simpa [hb] using apply_eq_sum_boundary_zero_add_sum_toGTPattern h p
 
 /-- Affine hives yield constant signed patterns: the first boundary value is
 subtracted from the third-coordinate slope. -/
@@ -336,10 +427,16 @@ subtracted from the third-coordinate slope. -/
   · rw [toGTPattern_apply _ hij.1 hij.2,
       GTPattern.const_apply_of_lt_of_le _ hij.1 hij.2]
     have hy : j - i = (j - (i + 1)) + 1 := by omega
-    simp only [affine_apply]
+    simp only [affine_apply, Vertex.chart_y, Vertex.chart_z]
     rw [hy]
     simp only [add_nsmul, one_nsmul]
     abel
   · rw [GTPattern.entry_eq_zero _ (by omega), GTPattern.entry_eq_zero _ (by omega)]
+
+/-- A constant first boundary and constant pattern integrate to an affine hive. -/
+@[simp] theorem gtCompletion_const (β m : ℤ) :
+    gtCompletion (fun _ : Fin n => β) (GTPattern.const n m) = ⇑(affine n β (β + m)) := by
+  have h := gtCompletion_toGTPattern (affine n β (β + m))
+  simpa using h
 
 end TauCeti.Hive
