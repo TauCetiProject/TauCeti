@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 Every narrow ideal class of a number field has an integral representative coprime to any prescribed
 nonzero ideal. This is the finite-place approximation input needed to evaluate genus characters on
-narrow ideal classes in Layer 3 of the multiquadratic roadmap.
+narrow ideal classes.
 
 The proof starts with the Dedekind-domain approximation
 `IsDedekindDomain.exists_sup_span_eq`, applied to `I * M ≤ I`. It gives an element `a ∈ I` such

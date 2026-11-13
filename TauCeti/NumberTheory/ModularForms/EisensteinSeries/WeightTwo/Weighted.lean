@@ -223,13 +223,8 @@ private lemma one_div_divisionPoint_sub_sq (b y : Fin 2 → ℤ) (z : ℍ) :
     1 / (divisionPoint N b z - (y 0 * z + y 1)) ^ 2 =
       (N : ℂ) ^ 2 * eisSummand 2 (b - N • y) z := by
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have h : ((b - N • y) 0 : ℂ) * z + (b - N • y) 1 =
-      N * (divisionPoint N b z - (y 0 * z + y 1)) := by
-    simp only [divisionPoint, Pi.sub_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply,
-      Int.cast_sub, Int.cast_mul, Int.cast_natCast]
-    field_simp
-    ring
-  rw [eisSummand, h, _root_.zpow_neg, zpow_ofNat, mul_pow, mul_inv, ← mul_assoc,
+  rw [divisionPoint, eisSummand, TauCeti.UpperHalfPlane.intCast_sub_nsmul_mul_add_intCast,
+    _root_.zpow_neg, zpow_ofNat, mul_pow, mul_inv, ← mul_assoc,
     mul_inv_cancel₀ (pow_ne_zero 2 hN), one_mul, one_div]
 
 private lemma one_div_sq_eq_eisSummand (y : Fin 2 → ℤ) (z : ℍ) :

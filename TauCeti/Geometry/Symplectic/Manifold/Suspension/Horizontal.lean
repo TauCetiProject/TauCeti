@@ -66,8 +66,13 @@ compatibility of `J` with the full symplectic form `Ω = ds ∧ dt + σ_v` is ne
   of `u` maps `e` into the line spanned by `T`.
 * `TauCeti.SmoothMappingTorus.isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace`:
   `T X_φ = V ⊕ H`.
+* `TauCeti.SmoothMappingTorus.symm_tangentSpaceProdEquiv_mem_suspensionVerticalSubspace_iff`,
+  `TauCeti.SmoothMappingTorus.mem_suspensionVerticalSubspace_mk_iff`: in the coordinates
+  `(s, t, x)`, the vertical vectors are those of the form `0 ∂_s + 0 ∂_t + v`.
 * `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_projection_projection`: `ω_v` only sees
   vertical components.
+* `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_mk`: in the coordinates `(s, t, x)`,
+  `ω_v` pairs `a ∂_s + b ∂_t + v` with `a' ∂_s + b' ∂_t + v'` to `σ(v, v')`.
 * `TauCeti.SmoothMappingTorus.apply_mem_suspensionHorizontalSubspace`: a block structure
   preserves `H`.
 * `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_apply_eq_projection`:
@@ -99,6 +104,7 @@ public section
 
 noncomputable section
 
+open Function
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -211,6 +217,37 @@ end Differential
 
 variable [IsManifold I ∞ M]
 
+/-- In the coordinates `(s, t, x)`, the tangent vector `a ∂_s + b ∂_t + v` of
+`X_φ = (ℝ / ℤ) × Y_φ` at `(θ, [t, x])` is vertical exactly when `a` and `b` vanish. -/
+theorem symm_tangentSpaceProdEquiv_mem_suspensionVerticalSubspace_iff (θ : UnitAddCircle) (t : ℝ)
+    (x : M) (a b : ℝ) (v : TangentSpace I x) :
+    (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) (θ, mk φ t x)).symm
+        (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+          ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) ∈
+        suspensionVerticalSubspace φ (θ, mk φ t x) ↔
+      a = 0 ∧ b = 0 := by
+  rw [mem_suspensionVerticalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
+  -- The circle component is `a`, and `dp` sends the mapping torus component to `b`.
+  dsimp only
+  rw [mfderiv_proj_mfderiv_uncurry_mk]
+  -- The circle tangent space `TangentSpace 𝓘(ℝ) θ` is `ℝ` by definition, so its zero is `0 : ℝ`.
+  exact Iff.rfl
+
+/-- At `(θ, [t, x])`, a tangent vector of `X_φ = (ℝ / ℤ) × Y_φ` is vertical exactly when, in the
+coordinates `(s, t, x)`, it is `0 ∂_s + 0 ∂_t + v` for a tangent vector `v` of `M` at `x`. -/
+theorem mem_suspensionVerticalSubspace_mk_iff {θ : UnitAddCircle} {t : ℝ} {x : M}
+    {ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (θ, mk φ t x)} :
+    ξ ∈ suspensionVerticalSubspace φ (θ, mk φ t x) ↔
+      ∃ v : TangentSpace I x, ξ = (Manifold.tangentSpaceProdEquiv _).symm
+        ((0 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+          ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), v))) := by
+  refine ⟨fun hξ ↦ ?_, fun ⟨v, hv⟩ ↦ hv ▸
+    (symm_tangentSpaceProdEquiv_mem_suspensionVerticalSubspace_iff θ t x 0 0 v).2 ⟨rfl, rfl⟩⟩
+  obtain ⟨a, b, v, rfl⟩ := exists_eq_symm_tangentSpaceProdEquiv θ t x ξ
+  obtain ⟨rfl, rfl⟩ :=
+    (symm_tangentSpaceProdEquiv_mem_suspensionVerticalSubspace_iff θ t x a b v).1 hξ
+  exact ⟨v, rfl⟩
+
 variable (φ q) in
 /-- The tangent space of `X_φ` is the direct sum `V ⊕ H` of the vertical space and the horizontal
 plane `span(∂_s, T)`. -/
@@ -285,6 +322,24 @@ theorem eval₂_mpullback_snd_fiberForm_projection_projection
     eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_left (hH ξ),
     eval₂_mpullback_snd_fiberForm_of_mem_suspensionHorizontalSubspace_left (hH ξ)]
   simp
+
+/-- In the coordinates `(s, t, x)` of `ℝ × ℝ × M`, the fiber form `σ_v` pulled back to `X_φ` is
+`σ`: at `(θ, [t, x])` it pairs `a ∂_s + b ∂_t + v` with `a' ∂_s + b' ∂_t + v'` to `σ(v, v')`. -/
+theorem eval₂_mpullback_snd_fiberForm_mk (θ : UnitAddCircle) (t : ℝ) (x : M) (a a' b b' : ℝ)
+    (v v' : TangentSpace I x) :
+    SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))
+        (θ, mk φ t x)
+        ((Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) _).symm
+          (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+            ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))))
+        ((Manifold.tangentSpaceProdEquiv _).symm
+          (a', mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+            ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b', v')))) =
+      SmoothBundleForm.eval₂ σ x v v' := by
+  rw [SmoothForm.eval₂_mpullback_snd]
+  simp only [ContinuousLinearEquiv.apply_symm_apply]
+  rw [eval₂_fiberForm_mfderiv_uncurry_mk]
+  simp only [ContinuousLinearEquiv.apply_symm_apply]
 
 /-! ### Block almost complex structures -/
 

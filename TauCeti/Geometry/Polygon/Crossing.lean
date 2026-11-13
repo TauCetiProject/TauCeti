@@ -108,7 +108,7 @@ theorem crossingCoordinates_eq_iff {poly : Polygon A n} {b : Basis (Fin 3) ℝ V
     {i j : Fin n} (h : (poly.crossingMatrix b d i j).det ≠ 0) (c : Fin 3 → ℝ) :
     poly.crossingCoordinates b d i j = c ↔
       poly.edgePath ℝ i (c 0) = c 2 • d +ᵥ poly.edgePath ℝ j (c 1) := by
-  rw [← crossingMatrix_mulVec_eq_iff]
+  rw [← crossingMatrix_mulVec_eq_iff poly b d i j c]
   constructor
   · intro hc
     rw [← hc, crossingCoordinates, Matrix.mulVec_mulVec,
