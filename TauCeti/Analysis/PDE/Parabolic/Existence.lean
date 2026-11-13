@@ -129,6 +129,41 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] {A : ℝ → V →L[ℝ] StrongDual ℝ V}
   {f : ℝ → StrongDual ℝ V} {a b α β Λ : ℝ}
 
+/-- The pointwise bound behind the integrand estimate of the variational formulation. -/
+private theorem norm_apply_sub_inner_le (ι : V →L[ℝ] H) {B : V →L[ℝ] StrongDual ℝ V}
+    {C₁ C₂ : ℝ} (hB : ‖B‖ ≤ Λ) {x p q : V} (hp : ‖p‖ ≤ C₁) (hq : ‖q‖ ≤ C₂) :
+    ‖B x p - ⟪ι x, ι q⟫_ℝ‖ ≤ (|Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂) * ‖x‖ :=
+  calc ‖B x p - ⟪ι x, ι q⟫_ℝ‖
+      ≤ ‖B x p‖ + ‖⟪ι x, ι q⟫_ℝ‖ := norm_sub_le _ _
+    _ ≤ ‖B‖ * ‖x‖ * ‖p‖ + ‖ι x‖ * ‖ι q‖ :=
+        add_le_add (B.le_opNorm₂ _ _) (norm_inner_le_norm _ _)
+    _ ≤ |Λ| * ‖x‖ * C₁ + ‖ι‖ * ‖x‖ * (‖ι‖ * C₂) := by
+        gcongr
+        · exact hB.trans (le_abs_self Λ)
+        · exact ι.le_opNorm _
+        · exact (ι.le_opNorm _).trans (by gcongr)
+    _ = (|Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂) * ‖x‖ := by ring
+
+/-- `t ↦ A(t) φ(t) φ(t)` is integrable on `(a, b)` for continuous `φ`. -/
+private theorem integrable_apply_self
+    (hA : ∀ u v, AEStronglyMeasurable (fun t => A t u v) (volume.restrict (Ioo a b)))
+    (hA_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖A t‖ ≤ Λ) {φ : ℝ → V} (hφ : Continuous φ) :
+    Integrable (fun t => A t (φ t) (φ t)) (volume.restrict (Ioo a b)) := by
+  set C := lpNorm φ ∞ (volume.restrict (Ioo a b))
+  have hC : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖φ t‖ ≤ C := ae_le_lpNorm_exponent_top <|
+    hφ.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
+      measurableSet_Ioo Ioo_subset_Icc_self
+  refine (MemLp.of_bound ((hφ.aestronglyMeasurable.prodMk
+    hφ.aestronglyMeasurable).apply_of_forall_of_continuousAt
+      (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2)
+      (ae_of_all _ fun t => (A t).continuous₂.continuousAt))
+    (Λ * C * C) ?_).integrable le_rfl
+  filter_upwards [hA_bound, hC] with t hAt hφt
+  have hΛ : 0 ≤ Λ := (norm_nonneg (A t)).trans hAt
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans hφt
+  calc ‖A t (φ t) (φ t)‖ ≤ ‖A t‖ * ‖φ t‖ * ‖φ t‖ := (A t).le_opNorm₂ _ _
+    _ ≤ Λ * C * C := by gcongr
+
 /-- For a `C¹` test function `φ`, the integrand `A(t) u(t) φ(t) - ⟪ι u(t), ι φ'(t)⟫` of the
 variational formulation is integrable for every `u ∈ L²(a, b; V)`, and its integral is bounded by
 a multiple of `‖u‖_{L²}`. -/
@@ -156,16 +191,7 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
       ∀ᵐ t ∂μ, ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ ≤ K * ‖u t‖ := by
     intro u
     filter_upwards [hA_bound, hC₁, hC₂] with t hAt h₁ h₂
-    calc ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖
-        ≤ ‖A t (u t) (φ t)‖ + ‖⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ := norm_sub_le _ _
-      _ ≤ ‖A t‖ * ‖u t‖ * ‖φ t‖ + ‖ι (u t)‖ * ‖ι (deriv φ t)‖ :=
-          add_le_add ((A t).le_opNorm₂ _ _) (norm_inner_le_norm _ _)
-      _ ≤ |Λ| * ‖u t‖ * C₁ + ‖ι‖ * ‖u t‖ * (‖ι‖ * C₂) := by
-          gcongr
-          · exact hAt.trans (le_abs_self Λ)
-          · exact ι.le_opNorm _
-          · exact (ι.le_opNorm _).trans (by gcongr)
-      _ = K * ‖u t‖ := by ring
+    exact norm_apply_sub_inner_le ι hAt h₁ h₂
   refine ⟨K * (μ univ ^ (1 - 1 / (2 : ℝ≥0∞).toReal)).toReal, fun u => ⟨?_, ?_⟩⟩
   · refine (((Lp.memLp u).integrable one_le_two).norm.const_mul K).mono' ?_ (hdom u)
     exact (((Lp.aestronglyMeasurable u).prodMk hφ.continuous.aestronglyMeasurable)
@@ -203,21 +229,8 @@ private theorem mul_setIntegral_norm_sq_add_le (ι : V →L[ℝ] H) (hab : a ≤
       intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo] at h
     linarith
   -- `t ↦ A(t) φ(t) φ(t)` is bounded and strongly measurable, hence integrable.
-  have hAφφ : Integrable (fun t => A t (φ t) (φ t)) (volume.restrict (Ioo a b)) := by
-    set C := lpNorm φ ∞ (volume.restrict (Ioo a b))
-    have hC : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖φ t‖ ≤ C := ae_le_lpNorm_exponent_top <|
-      hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
-        measurableSet_Ioo Ioo_subset_Icc_self
-    refine (MemLp.of_bound ((hφ.continuous.aestronglyMeasurable.prodMk
-      hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuousAt
-        (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2)
-        (ae_of_all _ fun t => (A t).continuous₂.continuousAt))
-      (Λ * C * C) ?_).integrable le_rfl
-    filter_upwards [hA_bound, hC] with t hAt hφt
-    have hΛ : 0 ≤ Λ := (norm_nonneg (A t)).trans hAt
-    have hC0 : 0 ≤ C := (norm_nonneg _).trans hφt
-    calc ‖A t (φ t) (φ t)‖ ≤ ‖A t‖ * ‖φ t‖ * ‖φ t‖ := (A t).le_opNorm₂ _ _
-      _ ≤ Λ * C * C := by gcongr
+  have hAφφ : Integrable (fun t => A t (φ t) (φ t)) (volume.restrict (Ioo a b)) :=
+    integrable_apply_self hA hA_bound hφ.continuous
   calc α * (∫ t in Ioo a b, ‖φ t‖ ^ 2) + ‖ι (φ a)‖ ^ 2 / 2
       = ∫ t in Ioo a b, (α * ‖φ t‖ ^ 2 - ⟪ι (φ t), ι (deriv φ t)⟫_ℝ) := by
         rw [integral_sub (hint hcont₁) (hint hcont₂), integral_const_mul, hftc]
