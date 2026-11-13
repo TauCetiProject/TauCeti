@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Blowup
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Sections
+import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.Blowup.Separation
-import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
@@ -42,8 +42,9 @@ morphism.
 
 * `TauCeti.Model.disjoint_range_genericι_support_ker_sup_ker`: the extensions of two distinct
   rational points meet only in the special fibre.
-* `TauCeti.Model.range_extendSection_blowup_subset`: on a blowup of `M` in a centre of the special
-  fibre, an extended section lies in the strict transform of the extended section on `M`.
+* `TauCeti.Model.range_extendSection_blowup`: on a blowup of `M` in a centre of the special fibre,
+  the image of an extended section is the strict transform of the image of the extended section on
+  `M`.
 * `TauCeti.Model.disjoint_range_extendSection_blowup`: on the blowup of their intersection, the
   extensions of two distinct rational points are disjoint.
 * `TauCeti.Model.disjoint_range_extendSection_of_hom`: disjointness of extensions pulls back along
@@ -86,13 +87,6 @@ theorem disjoint_range_extendSection_of_hom {M N : Model R K C toK} [M.IsProper]
     exact ⟨x, by rw [← extendSection_hom f r hr, Scheme.Hom.comp_apply]⟩
   exact (h.preimage _).mono (hsub p hp) (hsub q hq)
 
-/-- The extension of a rational point takes its generic value on the generic fibre. -/
-private lemma extendSection_specMap_apply (M : Model R K C toK) [M.IsProper]
-    {p : Spec (.of K) ⟶ C} (hp : p ≫ toK = 𝟙 _) (x : Spec (.of K)) :
-    M.extendSection p hp (Spec.map (CommRingCat.ofHom (algebraMap R K)) x) = M.genericι (p x) := by
-  simpa only [Scheme.Hom.comp_apply] using
-    congrArg (fun φ : Spec (.of K) ⟶ M.total ↦ φ x) (M.specMap_extendSection p hp)
-
 /-- **The extensions of two distinct rational points meet only in the special fibre.** The
 intersection of the images of the extensions, the support of `ker σ_p ⊔ ker σ_q`, does not meet the
 generic fibre. This is the hypothesis under which blowing up this intersection gives a model of
@@ -102,10 +96,6 @@ theorem disjoint_range_genericι_support_ker_sup_ker (M : Model R K C toK) [M.Is
     Disjoint (Set.range M.genericι)
       (((M.extendSection p hp).ker ⊔ (M.extendSection q hq).ker).support : Set M.total) := by
   have := M.isOpenImmersion_genericι
-  have : IsClosedImmersion (M.extendSection p hp) :=
-    (M.extendSection p hp).isClosedImmersion_of_comp_eq_id (M.extendSection_toBase p hp)
-  have : IsClosedImmersion (M.extendSection q hq) :=
-    (M.extendSection q hq).isClosedImmersion_of_comp_eq_id (M.extendSection_toBase q hq)
   refine Set.disjoint_left.mpr ?_
   rintro _ ⟨c, rfl⟩ hc
   rw [Scheme.IdealSheafData.support_sup, TopologicalSpace.Closeds.coe_inf, Scheme.Hom.support_ker,
@@ -126,30 +116,39 @@ theorem disjoint_range_genericι_support_ker_sup_ker (M : Model R K C toK) [M.Is
   rw [specMap_extendSection, specMap_extendSection, cancel_mono] at h
   exact hpq h
 
-/-- **Extended sections of a blowup lie in strict transforms.** On the blowup of `M` along an ideal
-sheaf `I` whose support misses the generic fibre, the extension of a rational point lies in the
-strict transform of its extension on `M`: the closure of the inverse image of the part of the
-image of that extension off the centre. -/
-theorem range_extendSection_blowup_subset (M : Model R K C toK) [M.IsProper]
+/-- **Extended sections of a blowup are strict transforms.** On the blowup of `M` along an ideal
+sheaf `I` whose support misses the generic fibre, the image of the extension of a rational point is
+the strict transform of the image of its extension on `M`: the closure of the inverse image of the
+part of that image off the centre. -/
+theorem range_extendSection_blowup (M : Model R K C toK) [M.IsProper]
     (I : M.total.IdealSheafData) (hC : Disjoint (Set.range M.genericι) (I.support : Set M.total))
     {r : Spec (.of K) ⟶ C} (hr : r ≫ toK = 𝟙 _) :
-    Set.range ((M.blowup I hC).extendSection r hr) ⊆
-      closure (I.blowupToBase ⁻¹'
-        (((M.extendSection r hr).ker.support : Set M.total) \ I.support)) := by
+    Set.range ((M.blowup I hC).extendSection r hr) =
+      closure (I.blowupToBase ⁻¹' (Set.range (M.extendSection r hr) \ I.support)) := by
   let t := Spec.map (CommRingCat.ofHom (algebraMap R K))
   have : IsDominant t := ⟨RingHom.denseRange_comap_of_injective _ (IsFractionRing.injective R K)⟩
-  refine (((M.blowup I hC).extendSection r hr).continuous.range_subset_closure_image_dense
-    t.denseRange).trans (closure_mono ?_)
-  rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-  -- The blowup morphism carries the generic value of the extension on the blowup to the generic
-  -- value of the extension on `M`, which lies on the generic fibre.
-  have hx : I.blowupToBase ((M.blowup I hC).extendSection r hr (t x)) =
-      M.extendSection r hr (t x) := by
+  -- The blowup morphism carries the extension on the blowup to the extension on `M`.
+  have hσ (y : Spec (.of R)) :
+      I.blowupToBase ((M.blowup I hC).extendSection r hr y) = M.extendSection r hr y := by
     rw [← Scheme.Hom.comp_apply, ← blowupHom_hom M I hC, extendSection_hom]
-  rw [Set.mem_preimage, hx]
-  refine ⟨(M.extendSection r hr).range_subset_ker_support ⟨t x, rfl⟩, ?_⟩
-  rw [extendSection_specMap_apply]
-  exact Set.disjoint_left.mp hC ⟨r x, rfl⟩
+  refine subset_antisymm ((((M.blowup I hC).extendSection r hr).continuous
+    |>.range_subset_closure_image_dense t.denseRange).trans (closure_mono ?_)) ?_
+  · rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
+    rw [Set.mem_preimage, hσ]
+    refine ⟨⟨t x, rfl⟩, ?_⟩
+    rw [extendSection_specMap_apply]
+    exact Set.disjoint_left.mp hC ⟨r x, rfl⟩
+  refine closure_minimal ?_ ((M.blowup I hC).extendSection r hr).isClosedEmbedding.isClosed_range
+  rintro z ⟨⟨y, hy⟩, hz⟩
+  -- The blowup morphism is injective over the complement of the centre.
+  have hinj : Set.InjOn I.blowupToBase (I.blowupToBase ⁻¹ᵁ I.support.compl) := by
+    intro a ha b hb hab
+    let a' : (I.blowupToBase ⁻¹ᵁ I.support.compl).toScheme := ⟨a, ha⟩
+    let b' : (I.blowupToBase ⁻¹ᵁ I.support.compl).toScheme := ⟨b, hb⟩
+    exact congrArg Subtype.val ((I.blowupToBase ∣_ I.support.compl).isOpenEmbedding.injective
+      (a₁ := a') (a₂ := b') (Subtype.ext ((morphismRestrict_base_coe _ _ a').trans
+        (hab.trans (morphismRestrict_base_coe _ _ b').symm))))
+  exact ⟨y, hinj (show _ ∉ I.support by rwa [hσ, hy]) hz (by rw [hσ, hy])⟩
 
 /-- **Blowing up the intersection separates the extensions of two distinct rational points.** On
 the blowup of a proper model along `ker σ_p ⊔ ker σ_q`, the extensions of the distinct rational
@@ -163,8 +162,12 @@ theorem disjoint_range_extendSection_blowup (M : Model R K C toK) [M.IsProper]
         (M.disjoint_range_genericι_support_ker_sup_ker hp hq hpq)).extendSection q hq)) := by
   have hsep := Scheme.IdealSheafData.disjoint_closure_preimage_support_sdiff_blowup
     (M.extendSection p hp).ker (M.extendSection q hq).ker
-  exact hsep.mono (range_extendSection_blowup_subset M _ _ hp)
-    (range_extendSection_blowup_subset M _ _ hq)
+  rw [range_extendSection_blowup, range_extendSection_blowup]
+  exact hsep.mono
+    (closure_mono (Set.preimage_mono (Set.sdiff_subset_sdiff_left
+      (M.extendSection p hp).range_subset_ker_support)))
+    (closure_mono (Set.preimage_mono (Set.sdiff_subset_sdiff_left
+      (M.extendSection q hq).range_subset_ker_support)))
 
 /-- Separate the extensions of the pairs in a finite set of index pairs, one blowup at a time. -/
 private lemma exists_hom_forall_mem_disjoint_range_extendSection (M : Model R K C toK)

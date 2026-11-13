@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
+import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 
 /-!
 # Extending markings to proper models
@@ -84,6 +85,20 @@ theorem specMap_extendSection (M : Model R K C toK) [M.IsProper]
     (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) :
     Spec.map (CommRingCat.ofHom (algebraMap R K)) ≫ M.extendSection p hp = p ≫ M.genericι :=
   (M.existsUnique_section p hp).choose_spec.1.2
+
+/-- The extension takes the value of the rational point at each point of the prescribed generic
+fibre. -/
+@[simp]
+theorem extendSection_specMap_apply (M : Model R K C toK) [M.IsProper]
+    (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) (x : Spec (.of K)) :
+    M.extendSection p hp (Spec.map (CommRingCat.ofHom (algebraMap R K)) x) = M.genericι (p x) := by
+  simpa only [Scheme.Hom.comp_apply] using
+    congrArg (fun φ : Spec (.of K) ⟶ M.total ↦ φ x) (M.specMap_extendSection p hp)
+
+/-- The extension is a closed immersion, as a section of a separated morphism. -/
+instance isClosedImmersion_extendSection (M : Model R K C toK) [M.IsProper]
+    (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) : IsClosedImmersion (M.extendSection p hp) :=
+  (M.extendSection p hp).isClosedImmersion_of_comp_eq_id (M.extendSection_toBase p hp)
 
 /-- Any section with the prescribed generic value is the extension. -/
 theorem eq_extendSection (M : Model R K C toK) [M.IsProper]
