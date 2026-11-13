@@ -83,6 +83,10 @@ theorem relCompProjection_surjective (L : Submodule R (M × N))
 def relCompExcess (L : Submodule R (M × N)) (K : Submodule R (N × P)) : Submodule R N :=
   L.comap (LinearMap.inr R M N) ⊓ K.comap (LinearMap.inl R N P)
 
+/-- The excess is the intersection of the middle slices of the two relations. -/
+theorem relCompExcess_def (L : Submodule R (M × N)) (K : Submodule R (N × P)) :
+    L.relCompExcess K = L.comap (LinearMap.inr R M N) ⊓ K.comap (LinearMap.inl R N P) := (rfl)
+
 /-- A middle vector is in the excess exactly when both zero-endpoint pairs lie in the relations. -/
 @[simp]
 theorem mem_relCompExcess {L : Submodule R (M × N)} {K : Submodule R (N × P)} {n : N} :
@@ -95,17 +99,24 @@ def relCompExcessInclusion (L : Submodule R (M × N)) (K : Submodule R (N × P))
   map_add' _ _ := by ext <;> simp
   map_smul' _ _ := by ext <;> simp
 
-/-- The first relation vector of an embedded excess vector is `(0, n)`. -/
+/-- An embedded excess vector is the matching pair `((0, n), (n, 0))`. -/
 @[simp]
-theorem relCompExcessInclusion_fst (L : Submodule R (M × N)) (K : Submodule R (N × P))
+theorem relCompExcessInclusion_apply (L : Submodule R (M × N)) (K : Submodule R (N × P))
     (n : L.relCompExcess K) :
-    (L.relCompExcessInclusion K n).1.1 = (0, (n : N)) := (rfl)
+    (L.relCompExcessInclusion K n : (M × N) × (N × P)) = ((0, (n : N)), ((n : N), 0)) := (rfl)
 
-/-- The second relation vector of an embedded excess vector is `(n, 0)`. -/
+/-- The endpoint projection kills every embedded excess vector. -/
 @[simp]
-theorem relCompExcessInclusion_snd (L : Submodule R (M × N)) (K : Submodule R (N × P))
-    (n : L.relCompExcess K) :
-    (L.relCompExcessInclusion K n).1.2 = ((n : N), 0) := (rfl)
+theorem relCompProjection_relCompExcessInclusion (L : Submodule R (M × N))
+    (K : Submodule R (N × P)) (n : L.relCompExcess K) :
+    L.relCompProjection K (L.relCompExcessInclusion K n) = 0 := (rfl)
+
+/-- The endpoint projection composed with the excess inclusion is zero. -/
+@[simp]
+theorem relCompProjection_comp_relCompExcessInclusion (L : Submodule R (M × N))
+    (K : Submodule R (N × P)) :
+    (L.relCompProjection K).comp (L.relCompExcessInclusion K) = 0 :=
+  LinearMap.ext (L.relCompProjection_relCompExcessInclusion K)
 
 /-- The excess inclusion is injective. -/
 theorem relCompExcessInclusion_injective (L : Submodule R (M × N))
@@ -134,21 +145,39 @@ theorem ker_relCompProjection (L : Submodule R (M × N)) (K : Submodule R (N × 
   · rintro ⟨n, rfl⟩
     exact LinearMap.mem_ker.mpr (Subtype.ext rfl)
 
-/-- The excess is canonically the kernel of the endpoint projection. -/
-noncomputable def relCompExcessEquivKer (L : Submodule R (M × N))
+/-- The excess is canonically the kernel of the endpoint projection; the inverse reads off the
+middle coordinate. -/
+def relCompExcessEquivKer (L : Submodule R (M × N))
     (K : Submodule R (N × P)) :
-    L.relCompExcess K ≃ₗ[R] LinearMap.ker (L.relCompProjection K) :=
-  (LinearEquiv.ofInjective (L.relCompExcessInclusion K)
-    (L.relCompExcessInclusion_injective K)).trans
-      (LinearEquiv.ofEq _ _ (L.ker_relCompProjection K).symm)
+    L.relCompExcess K ≃ₗ[R] LinearMap.ker (L.relCompProjection K) where
+  toFun n := ⟨L.relCompExcessInclusion K n,
+    LinearMap.mem_ker.mpr (L.relCompProjection_relCompExcessInclusion K n)⟩
+  invFun z := ⟨z.1.1.1.2, by
+    obtain ⟨n, hn⟩ := (L.ker_relCompProjection K ▸ z.2 :
+      z.1 ∈ LinearMap.range (L.relCompExcessInclusion K))
+    rw [← hn]
+    exact n.2⟩
+  map_add' _ _ := Subtype.ext (map_add _ _ _)
+  map_smul' _ _ := Subtype.ext (map_smul _ _ _)
+  left_inv _ := rfl
+  right_inv := by
+    rintro ⟨z, hz⟩
+    rw [L.ker_relCompProjection K] at hz
+    obtain ⟨n, rfl⟩ := hz
+    rfl
 
 /-- The kernel identification agrees with the excess inclusion into the matching space. -/
 @[simp]
 theorem relCompExcessEquivKer_apply (L : Submodule R (M × N)) (K : Submodule R (N × P))
     (n : L.relCompExcess K) :
     (L.relCompExcessEquivKer K n : L.relCompFiberProduct K) =
-      L.relCompExcessInclusion K n := by
-  simp [relCompExcessEquivKer]
+      L.relCompExcessInclusion K n := (rfl)
+
+/-- The inverse kernel identification reads off the common middle coordinate. -/
+@[simp]
+theorem relCompExcessEquivKer_symm_apply (L : Submodule R (M × N)) (K : Submodule R (N × P))
+    (z : LinearMap.ker (L.relCompProjection K)) :
+    ((L.relCompExcessEquivKer K).symm z : N) = z.1.1.1.2 := (rfl)
 
 end Semiring
 
@@ -174,13 +203,19 @@ noncomputable def relCompQuotientEquiv (L : Submodule R (M × N))
   (Submodule.quotEquivOfEq _ _ (L.ker_relCompProjection K).symm).trans
     ((L.relCompProjection K).quotKerEquivOfSurjective (L.relCompProjection_surjective K))
 
-/-- The quotient identification sends a matching class to its outer endpoints. -/
+/-- The quotient identification sends a matching class to its endpoint projection. -/
 @[simp]
-theorem relCompQuotientEquiv_mk (L : Submodule R (M × N)) (K : Submodule R (N × P))
+theorem relCompQuotientEquiv_apply_mk (L : Submodule R (M × N)) (K : Submodule R (N × P))
     (z : L.relCompFiberProduct K) :
-    (L.relCompQuotientEquiv K (Submodule.Quotient.mk z) : M × P) =
-      (z.1.1.1, z.1.2.2) := by
+    L.relCompQuotientEquiv K (Submodule.Quotient.mk z) = L.relCompProjection K z := by
   simp [relCompQuotientEquiv]
+
+/-- The inverse quotient identification sends an endpoint projection to its matching class. -/
+@[simp]
+theorem relCompQuotientEquiv_symm_apply (L : Submodule R (M × N)) (K : Submodule R (N × P))
+    (z : L.relCompFiberProduct K) :
+    (L.relCompQuotientEquiv K).symm (L.relCompProjection K z) = Submodule.Quotient.mk z :=
+  (LinearEquiv.symm_apply_eq _).mpr (L.relCompQuotientEquiv_apply_mk K z).symm
 
 end Ring
 
