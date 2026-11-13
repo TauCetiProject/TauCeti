@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Normal.Closure
-public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
 
 /-!
-# Normal closures in general and algebraically closed ambient fields
+# Normal closures in general, separably closed, and algebraically closed ambient fields
 
 For an arbitrary field extension `E / F`, `normalClosure F K E` lies in a normal intermediate field
 `M` if and only if `K ≤ M` (`normalClosure_le_iff_le_of_normal`), dropping `[Normal F E]` from
@@ -34,11 +34,12 @@ proved by working with the embedding images. For the same reason every homomorph
 ambient fields maps one normal closure into the other; in particular automorphisms of the ambient
 field restrict to the normal closure even when the ambient field is not normal.
 
-Whenever an algebraic extension `K / F` has every minimal polynomial splitting in `E` (and as
-typeclass instances when `E` is algebraically closed), `normalClosure F K E` is normal over `F`
-(`normal_normalClosure_of_splits`, `normal_normalClosure_of_isAlgClosed`), Galois when `K / F` is
-separable (`isGalois_normalClosure_of_splits`, `isGalois_normalClosure_of_isAlgClosed`), and
-monotone in `K` (`normalClosure_mono_of_splits`).
+Whenever an algebraic extension `K / F` has every minimal polynomial splitting in `E`,
+`normalClosure F K E` is normal over `F` (`normal_normalClosure_of_splits`, and as a typeclass
+instance `normal_normalClosure_of_isAlgClosed` when `E` is algebraically closed), Galois when
+`K / F` is separable (`isGalois_normalClosure_of_splits`, and as a typeclass instance
+`isGalois_normalClosure_of_isSepClosed` when `E` is separably closed), and monotone in `K`
+(`normalClosure_mono_of_splits`).
 Moreover, the normal closure of `F(S)` for a set `S` of separable elements whose minimal polynomials
 split in the ambient field is Galois; in particular finitely many algebraic numbers lie in a finite
 Galois subfield of `ℂ / ℚ`, which is how statements about algebraic numbers are reduced to
@@ -156,12 +157,13 @@ theorem isGalois_normalClosure_of_splits {K : Type*} [Field K] [Algebra F K]
   have : Normal F (normalClosure F K E) := normal_normalClosure_of_splits splits
   exact ⟨⟩
 
-/-- In an algebraically closed ambient field `E`, the normal closure of a separable extension
+/-- In a separably closed ambient field `E`, the normal closure of a separable extension
 `K / F` is Galois over `F`. -/
-instance isGalois_normalClosure_of_isAlgClosed {K : Type*} [Field K] [Algebra F K]
-    [Algebra.IsSeparable F K] [IsAlgClosed E] :
+instance isGalois_normalClosure_of_isSepClosed {K : Type*} [Field K] [Algebra F K]
+    [Algebra.IsSeparable F K] [IsSepClosed E] :
     IsGalois F (normalClosure F K E) :=
-  isGalois_normalClosure_of_splits fun _ ↦ IsAlgClosed.splits _
+  isGalois_normalClosure_of_splits fun x ↦
+    IsSepClosed.splits_codomain (minpoly F x) (Algebra.IsSeparable.isSeparable F x)
 
 /-- **Monotonicity of `normalClosure` under splitting.** Replacing `[Normal F E]` in
 `IntermediateField.normalClosure_mono` with `[Algebra.IsAlgebraic F K₂]` and splitting of all

@@ -41,9 +41,12 @@ not by the generally larger root quotient `G / H`, which indexes the embeddings 
   a root-stabilizer coset has as image the conjugate field indexed by its projection to the
   normalizer quotient.
 * `TauCeti.conjugateSimpleFieldsEquivConjugateSubgroups`: the conjugate fields
-  correspond to conjugates of a point stabilizer in the polynomial Galois group.
+  correspond to conjugates of any root's point stabilizer in the polynomial Galois group.
 * `TauCeti.ncard_conjugateSimpleFields`: the number of conjugate simple fields is the index of
   the normalizer of their fixing subgroup.
+* `TauCeti.ncard_conjugateSimpleFields_eq_index_normalizer`: the number of conjugate simple
+  fields is the index of the normalizer of any root's point stabilizer in the polynomial Galois
+  group.
 * `TauCeti.exists_root_ncard_conjugateSimpleFields_eq_index_normalizer`: the same formula with
   that fixing subgroup identified as a transported point stabilizer of `minpoly F x`.
 -/
@@ -108,30 +111,41 @@ theorem mem_conjugateSimpleFields_iff_adjoin_root {x : E} (hx : IsIntegral F x)
     rw [hbase, adjoin_map, Set.image_singleton]
     exact congrArg (fun z : N ↦ F⟮z⟯) hσ
 
-/-- For a root whose point stabilizer fixes `F⟮x⟯`, conjugates of the simple field correspond
-to conjugates of that stabilizer in the polynomial Galois group. Such a root exists by
-`exists_root_map_stabilizer_eq_fixingSubgroup`. -/
+/-- For any root `y` of `minpoly F x` in its splitting field, the conjugacy orbit of the
+transported point stabilizer in `Gal(normalClosure F F⟮x⟯ E/F)` coincides with the conjugacy orbit
+of the fixing subgroup of `F⟮x⟯`. -/
+private theorem orbit_map_stabilizer_galEquivNormalClosure {x : E} (hx : IsIntegral F x)
+    (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField) :
+    MulAction.orbit (ConjAct Gal(normalClosure F F⟮x⟯ E/F))
+        ((stabilizer (minpoly F x).Gal y).map (galEquivNormalClosure hx hsplit : _ →* _)) =
+      MulAction.orbit (ConjAct Gal(normalClosure F F⟮x⟯ E/F))
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup := by
+  obtain ⟨y₀, -, hy₀⟩ := exists_root_map_stabilizer_eq_fixingSubgroup hx hsplit
+  have := Polynomial.Gal.galActionAux_isPretransitive (minpoly.irreducible hx)
+  obtain ⟨g, rfl⟩ := exists_smul_eq (minpoly F x).Gal y₀ y
+  rw [stabilizer_smul_eq_stabilizer_map_conj, Subgroup.map_map_conj,
+    ← MulEquiv.toMonoidHom_eq_coe, hy₀, MulAction.orbit_eq_iff, mem_orbit_conjAct_iff]
+  exact ⟨galEquivNormalClosure hx hsplit g, rfl⟩
+
+/-- For any root `y` of `minpoly F x` in its splitting field, conjugates of `F⟮x⟯` in its
+normal closure correspond bijectively to conjugates of the point stabilizer of `y` in
+`(minpoly F x).Gal`. -/
 noncomputable def conjugateSimpleFieldsEquivConjugateSubgroups {x : E}
     (hsep : (minpoly F x).Separable)
     (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
-    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
-    (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit).toMonoidHom =
-        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField) :
     conjugateSimpleFields (F := F) x ≃
-      MulAction.orbit (ConjAct (minpoly F x).Gal) (stabilizer (minpoly F x).Gal y) := by
-  let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
+      MulAction.orbit (ConjAct (minpoly F x).Gal) (stabilizer (minpoly F x).Gal y) :=
+  letI : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple hsep hsplit
-  let e := MulEquiv.conjugateSubgroupsEquiv
-    (galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit)
-    (stabilizer (minpoly F x).Gal y)
-  have he : MulAction.orbit (ConjAct (minpoly F x).Gal) (stabilizer (minpoly F x).Gal y) ≃
-      MulAction.orbit (ConjAct Gal(normalClosure F F⟮x⟯ E/F))
-        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup :=
-    e.trans (Equiv.subtypeEquivRight fun J ↦ by
-      rw [← hy, MulEquiv.toMonoidHom_eq_coe])
-  exact (IntermediateField.conjugateFieldsEquivConjugateSubgroups
-    (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))).trans he.symm
+  (IntermediateField.conjugateFieldsEquivConjugateSubgroups
+    (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))).trans <|
+    ((MulEquiv.conjugateSubgroupsEquiv
+      (galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit)
+      (stabilizer (minpoly F x).Gal y)).trans
+        (Set.equivOfEq (orbit_map_stabilizer_galEquivNormalClosure
+          (IsSeparable.isIntegral hsep) hsplit y))).symm
 
 /-- The polynomial-group correspondence sends a conjugate simple field to the inverse image
 of its fixing subgroup under the normal-closure Galois-group equivalence. -/
@@ -140,36 +154,15 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_apply {x : E}
     (hsep : (minpoly F x).Separable)
     (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
-    (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit).toMonoidHom =
-        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (K : conjugateSimpleFields (F := F) x) :
-    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy K).1).map
+    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y K).1).map
       ((galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit) : _ →* _) =
       K.1.fixingSubgroup := by
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple hsep hsplit
-  let E₀ := F⟮x⟯.restrict (le_normalClosure F⟮x⟯)
-  let e := galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit
-  let f := IntermediateField.conjugateFieldsEquivConjugateSubgroups E₀
-  let g := MulEquiv.conjugateSubgroupsEquiv e (stabilizer (minpoly F x).Gal y)
-  let h : MulAction.orbit (ConjAct (minpoly F x).Gal)
-      (stabilizer (minpoly F x).Gal y) ≃
-      MulAction.orbit (ConjAct Gal(normalClosure F F⟮x⟯ E/F)) E₀.fixingSubgroup :=
-    g.trans (Equiv.subtypeEquivRight fun J ↦ by
-      rw [← hy, MulEquiv.toMonoidHom_eq_coe])
-  -- Expose the composite's inverse: `h.symm` transports the subgroup, then `f` takes
-  -- the fixing subgroup. The remaining calculation uses the two component apply lemmas.
-  change ((h.symm (f K)).1).map (e : _ →* _) = K.1.fixingSubgroup
-  have hh (J) : (h J).1 = J.1.map (e : _ →* _) := by
-    -- The subtype transport along `hy` preserves the subgroup value.
-    change (g J).1 = J.1.map (e : _ →* _)
-    exact MulEquiv.conjugateSubgroupsEquiv_apply e _ J
-  calc
-    ((h.symm (f K)).1).map (e : _ →* _) = (h (h.symm (f K))).1 := (hh _).symm
-    _ = (f K).1 := congrArg Subtype.val (h.apply_symm_apply _)
-    _ = K.1.fixingSubgroup :=
-      IntermediateField.conjugateFieldsEquivConjugateSubgroups_apply E₀ K
+  rw [← Subgroup.map_symm_eq_iff_map_eq]
+  unfold conjugateSimpleFieldsEquivConjugateSubgroups conjugateSimpleFields at *
+  simp
 
 /-- The fixing subgroup of the field corresponding to a conjugate point stabilizer is its
 transported subgroup. -/
@@ -177,15 +170,12 @@ theorem fixingSubgroup_conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply {
     (hsep : (minpoly F x).Separable)
     (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
-    (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit).toMonoidHom =
-        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (H : MulAction.orbit (ConjAct (minpoly F x).Gal)
       (stabilizer (minpoly F x).Gal y)) :
-    (((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy).symm H).1).fixingSubgroup =
+    (((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y).symm H).1).fixingSubgroup =
       H.1.map ((galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit) : _ →* _) := by
-  rw [← conjugateSimpleFieldsEquivConjugateSubgroups_apply hsep hsplit y hy
-    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy).symm H),
+  rw [← conjugateSimpleFieldsEquivConjugateSubgroups_apply hsep hsplit y
+    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y).symm H),
     Equiv.apply_symm_apply]
 
 /-- The field corresponding to a conjugate point stabilizer is the fixed field of its
@@ -195,17 +185,14 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply {x : E}
     (hsep : (minpoly F x).Separable)
     (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
-    (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit).toMonoidHom =
-        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (H : MulAction.orbit (ConjAct (minpoly F x).Gal)
       (stabilizer (minpoly F x).Gal y)) :
-    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy).symm H).1 =
+    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y).symm H).1 =
       fixedField (H.1.map
         ((galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit) : _ →* _)) := by
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple hsep hsplit
-  rw [← fixingSubgroup_conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply hsep hsplit y hy H,
+  rw [← fixingSubgroup_conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply hsep hsplit y H,
     InfiniteGalois.fixedField_fixingSubgroup]
 
 /-- A normalizer coset for the simple field specifies one of its conjugate images. -/
@@ -390,22 +377,17 @@ theorem ncard_conjugateSimpleFields {x : E} (hsep : (minpoly F x).Separable)
   exact IntermediateField.ncard_conjugateFields
     (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))
 
-/-- The number of conjugate simple fields is the index of the normalizer of a point
-stabilizer in the polynomial Galois group, when that stabilizer fixes the original field. -/
+/-- For any root `y` of `minpoly F x` in its splitting field, the number of conjugate simple
+fields is the index of the normalizer of the point stabilizer of `y` in `(minpoly F x).Gal`. -/
 theorem ncard_conjugateSimpleFields_eq_index_normalizer {x : E}
     (hsep : (minpoly F x).Separable)
     (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
-    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
-    (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit).toMonoidHom =
-        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField) :
     (conjugateSimpleFields (F := F) x).ncard =
       (Subgroup.normalizer
-        (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)).index := by
-  let e := galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit
-  rw [ncard_conjugateSimpleFields hsep hsplit, ← hy]
-  rw [← Subgroup.map_equiv_normalizer_eq]
-  exact Subgroup.index_map_equiv _ e
+        (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)).index :=
+  (Set.ncard_congr' (conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y)).trans
+    (Subgroup.index_normalizer_eq_ncard_orbit _).symm
 
 /-- A root corresponding to the original generator identifies the fixing subgroup of `F⟮x⟯`
 with its point stabilizer. Hence the number of conjugate fields is the index of the normalizer
