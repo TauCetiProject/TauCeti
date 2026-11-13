@@ -14,7 +14,7 @@ import TauCeti.Data.Finset.Sort
 # Deleting items of a generalised equation
 
 The removal of a lonely base (Kharlampovich–Myasnikov, §5.1, ET4) and the passage from a
-generalised equation `Ω` to the equation `Ω̄` without its free variables (§5.2, D4) delete items
+generalised equation `Ω` to the equation without its free variables (§5.2, D4) delete items
 of a generalised equation. This file deletes a set `S` of items which meets no variable base
 (`TauCeti.GenEq.deleteItems`): the remaining items keep their order, a boundary `j` becomes the
 boundary numbered by the remaining items before `j` (`TauCeti.GenEq.collapse`), so that the two
