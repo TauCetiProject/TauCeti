@@ -14,8 +14,7 @@ import Mathlib.Data.Set.Function
 # Multiplicative maps into rings
 
 The element `-1` squares to `1`. A multiplicative map into a ring without zero divisors
-therefore sends it to `1` or `-1`, and a ring endomorphism on a ring without zero divisors fixes
-every square root of `1`. This applies to ordinary ring-valued maps as well as to
+therefore sends it to `1` or `-1`. This applies to ordinary ring-valued maps as well as to
 unit-valued characters after composing with the coercion homomorphism.
 
 A ring homomorphism fixes natural number casts, so it preserves membership statements of the form
@@ -26,8 +25,6 @@ for Hazewinkel's functional equation.
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
-* `TauCeti.map_eq_self_of_mul_self_eq_one`: a ring homomorphism on a ring without zero divisors
-  fixes every `x` with `x * x = 1`.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
@@ -44,12 +41,6 @@ theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDis
     [NonAssocRing R] [NoZeroDivisors R] [FunLike F M R] [MonoidHomClass F M R] (f : F) :
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
-
-/-- A ring homomorphism on a ring without zero divisors fixes every square root of `1`
-(`1` and `-1`). -/
-theorem map_eq_self_of_mul_self_eq_one {F R : Type*} [NonAssocRing R] [NoZeroDivisors R]
-    [FunLike F R R] [RingHomClass F R R] (f : F) {x : R} (hx : x * x = 1) : f x = x := by
-  rcases mul_self_eq_one_iff.mp hx with rfl | rfl <;> simp
 
 end TauCeti
 

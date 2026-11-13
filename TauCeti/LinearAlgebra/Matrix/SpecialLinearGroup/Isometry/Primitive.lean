@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Isotropic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Group.Submonoid.Defs
-import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Nondegenerate
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
@@ -95,12 +94,12 @@ variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K] {Q : Matrix n n K} 
 /-! ### Stabilizer orbits on isotropic vectors -/
 
 /-- **An admissible Siegel transformation joins two isotropic vectors at a given nonzero pairing
-with `u`.** Let `σ` be an involution and let `Q` be an `ε`-Hermitian matrix with `ε * ε = 1`. If
-`u`, `x`, `y` are isotropic and `B(u, x) = B(u, y) ≠ 0`, then for some `w` orthogonal to `u` and
-some `c` with `c + ε σ(c) + ε B(w, w) = 0`, the Siegel transformation `S(u, w, c)` lies in
+with `u`.** Let `σ` be an involution and let `Q` be an `ε`-Hermitian matrix. If `u`, `x`, `y` are
+isotropic and `B(u, x) = B(u, y) ≠ 0`, then for some `w` orthogonal to `u` and some `c` with
+`c + ε σ(c) + ε B(w, w) = 0`, the Siegel transformation `S(u, w, c)` lies in
 `Q.specialIsometryGroup σ`, fixes `u`, and sends `x` to `y`. -/
 theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_mulVec_eq_self_and_mulVec_eq
-    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1)
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
     {u x y : n → K} (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
     (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
     (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) ≠ 0)
@@ -110,7 +109,6 @@ theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_mulVec_eq_self
         c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0 ∧
         (g : Matrix n n K) = Q.siegelTransvection σ ε u w c ∧
         (g : Matrix n n K) *ᵥ u = u ∧ (g : Matrix n n K) *ᵥ x = y := by
-  have hσε : σ ε = ε := TauCeti.map_eq_self_of_mul_self_eq_one σ hε
   -- Normalize `u` to `u' = σ(b)⁻¹ • u` so that `B(u', x) = B(u', y) = 1`.
   set b := (σ ∘ u) ⬝ᵥ (Q *ᵥ x)
   set u' := (σ b)⁻¹ • u
@@ -125,23 +123,25 @@ theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_mulVec_eq_self
     simp [w', mulVec_sub, mulVec_smul, hu'y, hu'x, hu']
   have hwu' : (σ ∘ w') ⬝ᵥ (Q *ᵥ u') = 0 :=
     (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hu'w'
-  have hxu' : (σ ∘ x) ⬝ᵥ (Q *ᵥ u') = ε := by
-    rw [comp_dotProduct_mulVec_swap hσ hQ hε, hu'x, map_one, mul_one]
-  have hxw' : (σ ∘ x) ⬝ᵥ (Q *ᵥ w') = 0 := by
-    simp only [w', mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul, hx, hxu']
-    linear_combination -((σ ∘ x) ⬝ᵥ (Q *ᵥ y)) * hε
-  have hwx : (σ ∘ w') ⬝ᵥ (Q *ᵥ x) = 0 :=
-    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hxw'
-  -- Isotropy of `y = (x + w') + c' • u'` gives `c' + ε σ(c') + ε B(w', w') = 0`.
+  have hσc' : σ c' = (σ ∘ y) ⬝ᵥ (Q *ᵥ x) :=
+    (congrArg σ (apply_comp_dotProduct_mulVec hσ hQ y x)).symm.trans (hσ _)
+  have hwx : (σ ∘ w') ⬝ᵥ (Q *ᵥ x) = 0 := by
+    simp [w', map_comp_sub, TauCeti.map_comp_smul, hx, hu'x, hσc']
+  have hxw' : (σ ∘ x) ⬝ᵥ (Q *ᵥ w') = 0 :=
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mpr hwx
+  -- Applying `σ` to `B((x + w') + c' • u', (x + w') + c' • u') = B(y, y) = 0` gives `hc'`.
   have hc' : c' + ε * σ c' + ε * ((σ ∘ w') ⬝ᵥ (Q *ᵥ w')) = 0 := by
     have hy_eq : (x + w') + c' • u' = y := by dsimp [w']; abel
-    have hxwu' : (σ ∘ (x + w')) ⬝ᵥ (Q *ᵥ u') = ε := by
-      simp [hxu', hwu']
-    have hxw_self : (σ ∘ (x + w')) ⬝ᵥ (Q *ᵥ (x + w')) = (σ ∘ w') ⬝ᵥ (Q *ᵥ w') := by
-      simp [mulVec_add, hx, hxw', hwx]
-    have h0 := comp_add_smul_dotProduct_mulVec_add_smul hσ hQ hε hu' (x + w') c'
-    rw [hy_eq, hy, hxw_self, hxwu', map_mul, hσε, mul_left_comm ε (σ c') ε, hε, mul_one] at h0
-    linear_combination -ε * h0 - c' * hε
+    have h0 : (σ ∘ w') ⬝ᵥ (Q *ᵥ w') + c' * ((σ ∘ x) ⬝ᵥ (Q *ᵥ u')) + σ c' = 0 := by
+      rw [← hy, ← hy_eq]
+      simp only [map_comp_add, TauCeti.map_comp_smul, add_dotProduct, smul_dotProduct,
+        mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul, smul_eq_mul,
+        hx, hu', hu'x, hu'w', hwu', hxw', hwx]
+      ring
+    have hσ0 := congrArg σ h0
+    simp only [map_zero, map_add, map_mul, hσ c', apply_comp_dotProduct_mulVec hσ hQ, hu'x,
+      mul_one] at hσ0
+    linear_combination hσ0
   obtain ⟨g, hg, hS⟩ :=
     exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ hu' hu'w' hc'
   have hσb : σ b ≠ 0 := (map_ne_zero σ).mpr hux
@@ -177,10 +177,6 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul
   · exact exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
       hσ hQ hdet htr hadm hx hy hx_span hy_span hux (h.mp hux)
   · have huy : (σ ∘ u) ⬝ᵥ (Q *ᵥ y) ≠ 0 := mt h.mpr hux
-    have hε : ε * ε = 1 := by
-      refine mul_self_eq_one_of_trace hσ hQ htr ?_
-      rintro rfl
-      simp at hux
     set c := ((σ ∘ u) ⬝ᵥ (Q *ᵥ x)) / ((σ ∘ u) ⬝ᵥ (Q *ᵥ y))
     have hc : c ≠ 0 := div_ne_zero hux huy
     have hcy : (σ ∘ (c • y)) ⬝ᵥ (Q *ᵥ (c • y)) = 0 := by
@@ -189,7 +185,7 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul
       rw [mulVec_smul, dotProduct_smul, smul_eq_mul, div_mul_cancel₀ _ huy]
     obtain ⟨g, hg, -, -, -, -, -, hgu, hgx⟩ :=
       exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_mulVec_eq_self_and_mulVec_eq
-        hσ hQ hε hu hx hcy hux hucy
+        hσ hQ hu hx hcy hux hucy
     exact ⟨g, hg, c, hc, hgu, hgx⟩
 
 /-! ### Block closure and primitivity -/
