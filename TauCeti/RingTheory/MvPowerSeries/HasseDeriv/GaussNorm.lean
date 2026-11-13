@@ -71,16 +71,6 @@ theorem norm_coeff_hasseDeriv_le (d m : σ →₀ ℕ) :
   rw [coeff_hasseDeriv, ← nsmul_eq_mul]
   exact IsUltrametricDist.norm_nsmul_le _ _
 
-omit [IsUltrametricDist R] in
-variable (f) in
-/-- The weight `cᵈ` times a coefficient norm of `∂^d f` at weight `cᵐ` is that coefficient norm at
-weight `cᵐ⁺ᵈ`. -/
-theorem prod_pow_mul_norm_coeff_hasseDeriv_eq (d m : σ →₀ ℕ) :
-    d.prod (c · ^ ·) * (‖coeff m (hasseDeriv d f)‖ * m.prod (c · ^ ·)) =
-      ‖coeff m (hasseDeriv d f)‖ * (m + d).prod (c · ^ ·) := by
-  rw [prod_pow_add]
-  ring
-
 variable (f) in
 /-- For a polyradius `c` whose weight `cᵐ⁺ᵈ` is nonnegative (for instance `c ≥ 0`), the weighted
 coefficient norms of `∂^d f`, multiplied by `cᵈ`, are bounded by those of `f`. -/
@@ -89,8 +79,8 @@ theorem prod_pow_mul_norm_coeff_hasseDeriv_le (d m : σ →₀ ℕ)
     d.prod (c · ^ ·) * (‖coeff m (hasseDeriv d f)‖ * m.prod (c · ^ ·)) ≤
       ‖coeff (m + d) f‖ * (m + d).prod (c · ^ ·) := by
   calc d.prod (c · ^ ·) * (‖coeff m (hasseDeriv d f)‖ * m.prod (c · ^ ·))
-      = ‖coeff m (hasseDeriv d f)‖ * (m + d).prod (c · ^ ·) :=
-        prod_pow_mul_norm_coeff_hasseDeriv_eq f d m
+      = ‖coeff m (hasseDeriv d f)‖ * (m + d).prod (c · ^ ·) := by
+        rw [mul_left_comm, mul_comm (d.prod _), ← prod_pow_add]
     _ ≤ ‖coeff (m + d) f‖ * (m + d).prod (c · ^ ·) :=
       mul_le_mul_of_nonneg_right (norm_coeff_hasseDeriv_le f d m) hmd
 
@@ -105,7 +95,7 @@ theorem prod_pow_mul_gaussNorm_hasseDeriv_le (hf : f.HasGaussNorm norm c) (d : �
   rw [gaussNorm, Real.mul_iSup_of_nonneg hd]
   refine Real.iSup_le (fun m ↦ ?_) hg
   rcases lt_or_ge ((m + d).prod (c · ^ ·)) 0 with hm | hm
-  · rw [prod_pow_mul_norm_coeff_hasseDeriv_eq]
+  · rw [mul_left_comm, mul_comm (d.prod _), ← prod_pow_add]
     exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg (coeff m (hasseDeriv d f))) hm.le).trans hg
   · exact (prod_pow_mul_norm_coeff_hasseDeriv_le f d m hm).trans
       (le_gaussNorm norm c f hf (m + d))
