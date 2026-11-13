@@ -10,9 +10,9 @@ public import TauCeti.Topology.Homotopy.Extension.Tower
 import Mathlib.CategoryTheory.Functor.OfSequence
 import TauCeti.Topology.Category.TopCat.ClosedEmbedding
 import TauCeti.Topology.Category.TopCat.DisjointOpens
+import TauCeti.Logic.Equiv.Sum
 import TauCeti.Topology.CWComplex.Abstract.Hausdorff
-import TauCeti.Topology.CWComplex.Classical.Tower.Union
-import TauCeti.Topology.Homotopy.Extension.Pushout
+import TauCeti.Topology.CWComplex.Classical.SequentialColimit
 
 /-!
 # CW models of towers of cell attachments
@@ -43,12 +43,13 @@ colimit `W` of the tower of closed embeddings `W 0 → W 1 → ⋯` in `TopCat`.
 
 * `W` is Hausdorff because each `W k → W (k + 1)` is a relative CW complex, so each `W k → W`
   extends disjoint open sets (`TauCeti.TopCat.t2Space_of_isColimit`).
-* `W` is the union of the images of the stages, which form a tower of CW complexes with the
-  topology coherent with them, so it is a CW complex (`TauCeti.cwSubcomplexTowerUnion`), whose
-  cells are those of `W 0` and the attached cells.
+* Each `W k → W (k + 1)` is a closed embedding carrying cells onto cells, so `W` is a CW complex
+  (`TauCeti.cwComplexOfIsColimit`), whose cells are those of `W 0` and the attached cells
+  (`TauCeti.cwComplexOfIsColimitCellEquiv`).
 * The homotopy equivalences `W k ≃ₕ Z k` commute strictly with the inclusions, so they induce a
   map `W → X`, which is a homotopy equivalence because both sides are unions of towers of
-  cofibrations (`TauCeti.exists_homotopyEquiv_of_isCoherentWith`).
+  cofibrations (`TauCeti.hasHomotopyExtensionProperty_preimage_range_ι` and
+  `TauCeti.exists_homotopyEquiv_of_isCoherentWith`).
 
 ## References
 
@@ -139,16 +140,6 @@ def Stage.next (Φ : Adj a ≃ₕ Y') : Stage Y' where
 
 end Next
 
-section Univ
-
-variable {Y : Type u} [TopologicalSpace Y]
-
-theorem exists_cwComplex_univ {C : Set Y} (h : CWComplex C) (hC : C = univ) :
-    ∃ h' : CWComplex (univ : Set Y), ∀ m, Nonempty (h'.cell m ≃ h.cell m) := by
-  subst hC
-  exact ⟨h, fun m ↦ ⟨Equiv.refl _⟩⟩
-
-end Univ
 
 variable (s₀ : Stage (Z 0)) (a : ∀ k i, C(TopCat.diskBoundary.{u} (n k i), Z k))
   (Φ : ∀ k, Adj (a k) ≃ₕ Z (k + 1))
@@ -170,33 +161,45 @@ theorem extendsDisjointOpens_incl (k : ℕ) : TopCat.extendsDisjointOpens (incl 
   let := sigmaDiskRelCWComplex (n k)
   exact (relCWAdjunctionSpaceRelativeCWComplex _ _).extendsDisjointOpens
 
-theorem hasHomotopyExtensionProperty_range_incl (k : ℕ) :
-    HasHomotopyExtensionProperty (range (incl s₀ a Φ k)) := by
-  let := sigmaDiskRelCWComplex (n k)
-  exact (IsPushout.of_hasPushout _ _).hasHomotopyExtensionProperty_range_inr
-    (isEmbedding_relCWBaseInclusion _) (hasHomotopyExtensionProperty_range_relCWBaseInclusion _)
-
 /-- The tower of stages, as a functor `ℕ ⥤ TopCat`. -/
 def tower : ℕ ⥤ TopCat.{u} := Functor.ofSequence (incl s₀ a Φ)
 
-theorem tower_map_succ (k : ℕ) :
-    (tower s₀ a Φ).map (homOfLE (Nat.le_add_right k 1)) = incl s₀ a Φ k :=
+theorem tower_map_succ (k : ℕ) : (tower s₀ a Φ).map (homOfLE k.le_succ) = incl s₀ a Φ k :=
   Functor.ofSequence_map_homOfLE_succ _ k
+
+theorem isClosedEmbedding_tower_map_succ (k : ℕ) :
+    IsClosedEmbedding ((tower s₀ a Φ).map (homOfLE k.le_succ)) := by
+  rw [tower_map_succ]
+  exact isClosedEmbedding_incl s₀ a Φ k
+
+instance (k : ℕ) : CWComplex (univ : Set ((tower s₀ a Φ).obj k)) := (stage s₀ a Φ k).cw
+
+instance (k : ℕ) : T2Space ((tower s₀ a Φ).obj k) := (stage s₀ a Φ k).t2
+
+/-- The cells of the next stage are the cells of a stage together with the attached cells. -/
+def cellEquiv (k m : ℕ) :
+    cell (univ : Set ((tower s₀ a Φ).obj (k + 1))) m ≃
+      cell (univ : Set ((tower s₀ a Φ).obj k)) m ⊕ {i : ι k // n k i = m} :=
+  letI := sigmaDiskRelCWComplex (n k)
+  sigmaDiskAdjunctionCWComplexCellEquiv (n k) _ ((stage s₀ a Φ k).nextAttach_mem (a k)) m
+
+/-- The cells of a stage, as cells of the next stage. -/
+def cellIncl (k m : ℕ) :
+    cell (univ : Set ((tower s₀ a Φ).obj k)) m → cell (univ : Set ((tower s₀ a Φ).obj (k + 1))) m :=
+  (cellEquiv s₀ a Φ k m).symm ∘ Sum.inl
+
+theorem coe_map_cellIncl (k m : ℕ) (j : cell (univ : Set ((tower s₀ a Φ).obj k)) m) :
+    ⇑(map m (cellIncl s₀ a Φ k m j)) = (tower s₀ a Φ).map (homOfLE k.le_succ) ∘ map m j := by
+  let := sigmaDiskRelCWComplex (n k)
+  rw [tower_map_succ]
+  exact funext <| sigmaDiskAdjunctionCWComplex_map_inl (n k) _
+    ((stage s₀ a Φ k).nextAttach_mem (a k)) m j
 
 /-- The colimit of the tower of stages. -/
 abbrev L : TopCat.{u} := colimit (tower s₀ a Φ)
 
 /-- The inclusion of a stage into the colimit. -/
 abbrev ιL (k : ℕ) : (stage s₀ a Φ k).W ⟶ L s₀ a Φ := colimit.ι (tower s₀ a Φ) k
-
-@[reassoc]
-theorem incl_ιL (k : ℕ) : incl s₀ a Φ k ≫ ιL s₀ a Φ (k + 1) = ιL s₀ a Φ k := by
-  rw [← tower_map_succ]
-  exact colimit.w _ _
-
-theorem ιL_incl_apply (k : ℕ) (w : (stage s₀ a Φ k).W) :
-    ιL s₀ a Φ (k + 1) (incl s₀ a Φ k w) = ιL s₀ a Φ k w :=
-  ConcreteCategory.congr_hom (incl_ιL s₀ a Φ k) w
 
 /-- The inclusion of the first stage into the colimit, as a transfinite composition of the
 inclusions of the stages. -/
@@ -211,111 +214,25 @@ def towerTransfiniteComposition (P : MorphismProperty TopCat.{u})
     rw [← tower_map_succ] at h
     exact h
 
-theorem isClosedEmbedding_ιL (k : ℕ) : IsClosedEmbedding (ιL s₀ a Φ k) :=
-  (TopCat.isClosedEmbedding_iff _).1 <|
-    (towerTransfiniteComposition s₀ a Φ TopCat.isClosedEmbedding fun k ↦
-      (TopCat.isClosedEmbedding_iff _).2 (isClosedEmbedding_incl s₀ a Φ k)).mem_incl_app k
-
 instance : T2Space (L s₀ a Φ) :=
-  have (k : ℕ) : T2Space ((tower s₀ a Φ).obj k) := (stage s₀ a Φ k).t2
   TopCat.t2Space_of_isColimit (colimit.isColimit _) fun k ↦
     (towerTransfiniteComposition s₀ a Φ TopCat.extendsDisjointOpens fun k ↦
       extendsDisjointOpens_incl s₀ a Φ k).mem_incl_app k
 
-theorem exists_ιL_eq (y : L s₀ a Φ) : ∃ k w, ιL s₀ a Φ k w = y :=
-  Types.jointly_surjective_of_isColimit
-    (isColimitOfPreserves (forget TopCat) (colimit.isColimit _)) y
-
-/-- The CW structure of a stage, carried to its image in the colimit. -/
+/-- The CW structure on the colimit, whose cells are those of the stages. -/
 @[instance_reducible]
-def stageCW (k : ℕ) : CWComplex (range (ιL s₀ a Φ k)) :=
-  letI := (isClosedEmbedding_ιL s₀ a Φ k).relCWComplex (C := univ) (D := ∅) image_univ
-    (image_empty _)
-  RelCWComplex.toCWComplex _
-
-/-- The cells of a stage, read in its image in the colimit, are the cells of the stage. -/
-def stageCWCellEquiv (k m : ℕ) :
-    (stageCW s₀ a Φ k).cell m ≃ cell (univ : Set (stage s₀ a Φ k).W) m :=
-  (isClosedEmbedding_ιL s₀ a Φ k).relCWComplexCellEquiv image_univ (image_empty _) m
-
-theorem coe_map_stageCW (k m : ℕ) (j : (stageCW s₀ a Φ k).cell m) :
-    ⇑((stageCW s₀ a Φ k).map m j) = ιL s₀ a Φ k ∘ map m (stageCWCellEquiv s₀ a Φ k m j) :=
-  IsClosedEmbedding.coe_map_relCWComplex _ image_univ (image_empty _) m j
-
-/-- The cells of a stage, as cells of the next stage. -/
-def cellIncl (k m : ℕ) : (stageCW s₀ a Φ k).cell m → (stageCW s₀ a Φ (k + 1)).cell m :=
-  letI := sigmaDiskRelCWComplex (n k)
-  fun j ↦ (stageCWCellEquiv s₀ a Φ (k + 1) m).symm
-    ((sigmaDiskAdjunctionCWComplexCellEquiv (n k) ((stage s₀ a Φ k).nextAttach (a k))
-      ((stage s₀ a Φ k).nextAttach_mem (a k)) m).symm (.inl (stageCWCellEquiv s₀ a Φ k m j)))
-
-theorem coe_map_cellIncl (k m : ℕ) (j : (stageCW s₀ a Φ k).cell m) :
-    ⇑((stageCW s₀ a Φ (k + 1)).map m (cellIncl s₀ a Φ k m j)) =
-      ⇑((stageCW s₀ a Φ k).map m j) := by
-  let := sigmaDiskRelCWComplex (n k)
-  have hj : stageCWCellEquiv s₀ a Φ (k + 1) m (cellIncl s₀ a Φ k m j) =
-      (sigmaDiskAdjunctionCWComplexCellEquiv (n k) ((stage s₀ a Φ k).nextAttach (a k))
-        ((stage s₀ a Φ k).nextAttach_mem (a k)) m).symm (.inl (stageCWCellEquiv s₀ a Φ k m j)) :=
-    Equiv.apply_symm_apply _ _
-  funext x
-  rw [coe_map_stageCW, coe_map_stageCW, Function.comp_apply, Function.comp_apply, hj]
-  exact (congrArg (ιL s₀ a Φ (k + 1)) (sigmaDiskAdjunctionCWComplex_map_inl (n k)
-    ((stage s₀ a Φ k).nextAttach (a k)) ((stage s₀ a Φ k).nextAttach_mem (a k)) m
-      (stageCWCellEquiv s₀ a Φ k m j) x)).trans
-      (ιL_incl_apply s₀ a Φ k _)
-
-/-- The cells of a stage which do not come from the previous stage are the attached cells. -/
-def newCellEquiv (k m : ℕ) :
-    {c : (stageCW s₀ a Φ (k + 1)).cell m // c ∉ range (cellIncl s₀ a Φ k m)} ≃
-      {i : ι k // n k i = m} :=
-  letI := sigmaDiskRelCWComplex (n k)
-  let E := stageCWCellEquiv s₀ a Φ k m
-  let e := (stageCWCellEquiv s₀ a Φ (k + 1) m).trans
-    (sigmaDiskAdjunctionCWComplexCellEquiv (n k) ((stage s₀ a Φ k).nextAttach (a k))
-      ((stage s₀ a Φ k).nextAttach_mem (a k)) m)
-  have he (j : (stageCW s₀ a Φ k).cell m) : cellIncl s₀ a Φ k m j = e.symm (.inl (E j)) := rfl
-  (Equiv.subtypeEquiv e fun c ↦ by
-    rcases h : e c with j | i
-    · simp only [Sum.isRight_inl, Bool.false_eq_true, iff_false, not_not]
-      exact ⟨E.symm j, by rw [he, E.apply_symm_apply, e.symm_apply_eq, h]⟩
-    · simp only [Sum.isRight_inr, iff_true]
-      rintro ⟨j, rfl⟩
-      rw [he, e.apply_symm_apply] at h
-      cases h).trans Equiv.sumIsRight
-
-theorem isClosed_of_forall_isClosed_inter (A : Set (L s₀ a Φ))
-    (hA : ∀ k, IsClosed (A ∩ range (ιL s₀ a Φ k))) : IsClosed A := by
-  rw [_root_.TopCat.isClosed_iff_of_isColimit _ (colimit.isColimit _)]
-  intro k
-  have h : ιL s₀ a Φ k ⁻¹' A = ιL s₀ a Φ k ⁻¹' (A ∩ range (ιL s₀ a Φ k)) := by
-    ext w
-    simp
-  exact h ▸ (hA k).preimage (ιL s₀ a Φ k).hom.continuous
-
-theorem iUnion_range_ιL : ⋃ k, range (ιL s₀ a Φ k) = univ :=
-  eq_univ_of_forall fun y ↦ by
-    obtain ⟨k, w, hw⟩ := exists_ιL_eq s₀ a Φ y
-    exact mem_iUnion.2 ⟨k, w, hw⟩
-
-/-- The CW structure on the colimit: the union of the tower of the stages. -/
-@[instance_reducible]
-def unionCW : CWComplex (⋃ k, range (ιL s₀ a Φ k)) :=
-  letI := stageCW s₀ a Φ
-  cwSubcomplexTowerUnion (ι := cellIncl s₀ a Φ) (coe_map_cellIncl s₀ a Φ)
-    fun A _ hA ↦ isClosed_of_forall_isClosed_inter s₀ a Φ A hA
+def cw : CWComplex (univ : Set (L s₀ a Φ)) :=
+  cwComplexOfIsColimit (isClosedEmbedding_tower_map_succ s₀ a Φ) (coe_map_cellIncl s₀ a Φ)
+    (colimit.isColimit _)
 
 /-- The cells of the colimit are the cells of the first stage and the attached cells. -/
-def unionCWCellEquiv (m : ℕ) :
-    (unionCW s₀ a Φ).cell m ≃ (s₀.cw.cell m ⊕ Σ k, {i : ι k // n k i = m}) :=
-  letI := stageCW s₀ a Φ
-  (cwSubcomplexTowerUnionCellEquiv (ι := cellIncl s₀ a Φ) (coe_map_cellIncl s₀ a Φ)
-    (fun A _ hA ↦ isClosed_of_forall_isClosed_inter s₀ a Φ A hA) m).trans <|
-  (Equiv.sigmaNatSucc _).trans <| Equiv.sumCongr
-    ((Equiv.subtypeUnivEquiv fun i ↦ isNewTowerCell_zero (cellIncl s₀ a Φ) i).trans
-      (stageCWCellEquiv s₀ a Φ 0 m))
-    (Equiv.sigmaCongrRight fun k ↦
-      (Equiv.subtypeEquivRight fun i ↦ isNewTowerCell_succ_iff (cellIncl s₀ a Φ) i).trans
-        (newCellEquiv s₀ a Φ k m))
+def cwCellEquiv (m : ℕ) :
+    @cell (L s₀ a Φ) _ univ ∅ (@CWComplex.instRelCWComplex _ _ _ (cw s₀ a Φ)) m ≃
+      (s₀.cw.cell m ⊕ Σ k, {i : ι k // n k i = m}) :=
+  (cwComplexOfIsColimitCellEquiv (isClosedEmbedding_tower_map_succ s₀ a Φ)
+    (coe_map_cellIncl s₀ a Φ) (colimit.isColimit _) m).trans <|
+  Equiv.sumCongr (Equiv.refl _) (Equiv.sigmaCongrRight fun k ↦
+    (cellEquiv s₀ a Φ k m).complRangeSymmInl)
 
 variable (hΦ : ∀ k (z : Z k), (Φ k (adjInr (a k) z) : X) = z)
 include hΦ
@@ -354,36 +271,22 @@ theorem monotone_Z : Monotone Z :=
 theorem exists_homotopyEquiv (hZX : ⋃ k, Z k = univ) (hZc : IsCoherentWith (range Z))
     (hZH : ∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' Z k : Set (Z (k + 1)))) :
     Nonempty (L s₀ a Φ ≃ₕ X) := by
-  let A (k : ℕ) : Set (L s₀ a Φ) := range (ιL s₀ a Φ k)
-  have hA : Monotone A := monotone_nat_of_le_succ fun k ↦ by
-    rintro _ ⟨w, rfl⟩
-    exact ⟨incl s₀ a Φ k w, ιL_incl_apply s₀ a Φ k w⟩
-  have hAc : IsCoherentWith (range A) := IsCoherentWith.of_isClosed fun t ht ↦
-    isClosed_of_forall_isClosed_inter s₀ a Φ t fun k ↦ by
-      rw [inter_comm, ← Subtype.image_preimage_coe]
-      exact (isClosedEmbedding_ιL s₀ a Φ k).isClosed_range.isClosedMap_subtype_val _
-        (ht _ (mem_range_self k))
+  have hc := colimit.isColimit (tower s₀ a Φ)
+  have hemb := TopCat.isClosedEmbedding_ι_of_isColimit_of_succ
+    (isClosedEmbedding_tower_map_succ s₀ a Φ) hc
   -- Each stage is homeomorphic to its image in the colimit.
-  let e (k : ℕ) : (stage s₀ a Φ k).W ≃ₜ A k :=
-    (isClosedEmbedding_ιL s₀ a Φ k).isEmbedding.toHomeomorph
-  have hAH (k : ℕ) : HasHomotopyExtensionProperty ((↑) ⁻¹' A k : Set (A (k + 1))) := by
-    convert (hasHomotopyExtensionProperty_range_incl s₀ a Φ k).image (e (k + 1)) using 1
-    ext ⟨_, w, rfl⟩
-    constructor
-    · rintro ⟨v, hv⟩
-      refine ⟨incl s₀ a Φ k v, ⟨v, rfl⟩, Subtype.ext ?_⟩
-      exact (ιL_incl_apply s₀ a Φ k v).trans hv
-    · rintro ⟨_, ⟨v, rfl⟩, hv⟩
-      exact ⟨v, (ιL_incl_apply s₀ a Φ k v).symm.trans (congrArg Subtype.val hv)⟩
-  obtain ⟨h, -, -⟩ := exists_homotopyEquiv_of_isCoherentWith hA (monotone_Z a Φ hΦ)
-    (iUnion_range_ιL s₀ a Φ) hZX hAc hZc hAH hZH (toX s₀ a Φ hΦ).hom
+  let e (k : ℕ) : (stage s₀ a Φ k).W ≃ₜ (range (ιL s₀ a Φ k) : Set (L s₀ a Φ)) :=
+    (hemb k).isEmbedding.toHomeomorph
+  obtain ⟨h, -, -⟩ := exists_homotopyEquiv_of_isCoherentWith (TopCat.monotone_range_ι _)
+    (monotone_Z a Φ hΦ) (TopCat.iUnion_range_ι_of_isColimit hc) hZX
+    (TopCat.isCoherentWith_range_ι_of_isColimit hc) hZc
+    (hasHomotopyExtensionProperty_preimage_range_ι (isClosedEmbedding_tower_map_succ s₀ a Φ)
+      (coe_map_cellIncl s₀ a Φ) hc) hZH (toX s₀ a Φ hΦ).hom
     (fun k ↦ (e k).symm.toHomotopyEquiv.trans (stage s₀ a Φ k).h) fun k ↦ by
       rintro ⟨_, w, rfl⟩
-      have hw : (e k).symm ⟨ιL s₀ a Φ k w, w, rfl⟩ = w :=
-        (isClosedEmbedding_ιL s₀ a Φ k).isEmbedding.toHomeomorph_symm_apply w
-      -- Unfold the composite homotopy equivalence on the stage.
-      change ((stage s₀ a Φ k).h ((e k).symm _) : X) = toX s₀ a Φ hΦ (ιL s₀ a Φ k w)
-      rw [hw, toX_ιL]
+      -- The composite inverts `ιL s₀ a Φ k` on its range and then applies the model of `Z k`.
+      exact (congrArg (fun v ↦ ((stage s₀ a Φ k).h v : X))
+        ((hemb k).isEmbedding.toHomeomorph_symm_apply w)).trans (toX_ιL s₀ a Φ hΦ k w).symm
   exact ⟨h⟩
 
 end TowerModel
@@ -411,10 +314,8 @@ public theorem exists_cwComplex_homotopyEquiv_of_isCoherentWith
       Nonempty (W ≃ₕ X) ∧ ∀ m, Nonempty (cell (univ : Set W) m ≃
         (cell (univ : Set W₀) m ⊕ Σ k, {i : ι k // n k i = m})) := by
   let s₀ : TowerModel.Stage (Z 0) := ⟨TopCat.of W₀, ‹_›, ‹_›, h₀⟩
-  obtain ⟨cw, hcw⟩ := TowerModel.exists_cwComplex_univ (TowerModel.unionCW s₀ a Φ)
-    (TowerModel.iUnion_range_ιL s₀ a Φ)
   obtain ⟨e⟩ := TowerModel.exists_homotopyEquiv s₀ a Φ hΦ hZX hZc hZH
-  exact ⟨TowerModel.L s₀ a Φ, inferInstance, inferInstance, cw, ⟨e⟩,
-    fun m ↦ ⟨(hcw m).some.trans (TowerModel.unionCWCellEquiv s₀ a Φ m)⟩⟩
+  exact ⟨TowerModel.L s₀ a Φ, inferInstance, inferInstance, TowerModel.cw s₀ a Φ, ⟨e⟩,
+    fun m ↦ ⟨TowerModel.cwCellEquiv s₀ a Φ m⟩⟩
 
 end TauCeti
