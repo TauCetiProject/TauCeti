@@ -186,7 +186,7 @@ private theorem image_actionAngleChart (A : (ι → ℝ) → ι → ℝ) (V : Se
     rw [mem_ofPred_eq, actions_actionAngleChart]
     exact ⟨A q.2, ⟨q.2, hq.2, rfl⟩, rfl⟩
   · rintro ⟨_, ⟨c, hcV, rfl⟩, hcξ⟩
-    obtain ⟨q₀, rfl⟩ := CotangentBundle.surjective_torusCover p ξ
+    obtain ⟨q₀, rfl⟩ := CotangentBundle.torusCover_surjective p ξ
     refine ⟨((p / (2 * π))⁻¹ • q₀.1, c), ⟨mem_univ _, hcV⟩, ?_⟩
     rw [actionAngleChart, smul_inv_smul₀ hκ]
     -- The actions of `q₀` are `(2π / p) A c`, and a covector is determined by its actions.
@@ -276,26 +276,25 @@ theorem exists_actionAngle (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
         (g.open_source.mem_nhds hA.localInverse_mem_source)).and
       (hA.eventually.mono fun c hcA ↦ contMDiffAt_iff_contDiffAt.1 hcA.contMDiffAt))
   obtain ⟨V, hVsub, hV, hxV⟩ := mem_nhds_iff.1 (hev.and hev')
-  have hP := fun c (hcV : c ∈ V) ↦ (hVsub hcV).1
+  choose hFs hsc hiso hlc hli hstab hAd _ hΨform using fun c (hcV : c ∈ V) ↦ (hVsub hcV).1
   have hVg := fun c (hcV : c ∈ V) ↦ (hVsub hcV).2
-  have hFs : ∀ c ∈ V, F (s c) = c := fun c hcV ↦ (hP c hcV).1
-  have hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s V := fun c hcV ↦ (hP c hcV).2.1.contMDiffWithinAt
-  have hl : ∀ i, ContDiffOn ℝ ∞ (l i) V := fun i c hcV ↦ ((hP c hcV).2.2.2.1 i).contDiffWithinAt
+  have hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s V := fun c hcV ↦ (hsc c hcV).contMDiffWithinAt
+  have hl : ∀ i, ContDiffOn ℝ ∞ (l i) V := fun i c hcV ↦ (hlc c hcV i).contDiffWithinAt
   have hps (i : ι) (c : ι → ℝ) (hcV : c ∈ V) :
       ∀ᶠ c' in 𝓝 c, l i c' ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c') :=
     eventually_of_mem (hV.mem_nhds hcV) fun c' hc' ↦
-      (hP c' hc').2.2.2.2.2.1 ▸ AddSubgroup.subset_closure (mem_range_self i)
+      hstab c' hc' ▸ AddSubgroup.subset_closure (mem_range_self i)
   set S : Set ((ι → ℝ) × (ι → ℝ)) := univ ×ˢ V
   have hSo : IsOpen S := isOpen_univ.prod hV
   set Ψ := hσ.angleMap hF hcomm hc s l with hΨ
   set χ := actionAngleChart p A
   have hΨloc (q) (hq : q ∈ S) : IsLocalDiffeomorphAt 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I ∞ Ψ q :=
-    hσ.isLocalDiffeomorphAt_angleMap hF hcomm hc hdim hV hq.2 hs hFs (hP _ hq.2).2.2.1 hl
-      (fun i ↦ hps i _ hq.2) (hP _ hq.2).2.2.2.2.1 q.1
+    hσ.isLocalDiffeomorphAt_angleMap hF hcomm hc hdim hV hq.2 hs hFs (hiso _ hq.2) hl
+      (fun i ↦ hps i _ hq.2) (hli _ hq.2) q.1
   have hΨeq (q) (hq : q ∈ S) (q') (hq' : q' ∈ S) :
       Ψ q = Ψ q' ↔ q'.2 = q.2 ∧ ∃ m : ι → ℤ, q'.1 = q.1 + fun i ↦ 2 * π * m i :=
     hσ.angleMap_eq_angleMap_iff_of_section hF hcomm hc (hFs _ hq.2) (hFs _ hq'.2)
-      (hP _ hq.2).2.2.2.2.1 (hP _ hq.2).2.2.2.2.2.1
+      (hli _ hq.2) (hstab _ hq.2)
   have hAinj : InjOn A V := fun c hcV c' hc'V h ↦ by
     rw [← hA.localInverse_left_inv (hVg c hcV).1, ← hA.localInverse_left_inv (hVg c' hc'V).1, h]
   have hχs : ContMDiffOn 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
@@ -350,7 +349,7 @@ theorem exists_actionAngle (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
     have hsurj := ((hΨloc q hq).isInvertible_mfderiv (by simp)).surjective
     obtain ⟨a, rfl⟩ := hsurj v
     obtain ⟨b, rfl⟩ := hsurj w
-    have hD := (hP _ hq.2).2.2.2.2.2.2.1
+    have hD := hAd _ hq.2
     have hA' : HasFDerivAt A (ContinuousLinearMap.pi fun i ↦
         (2 * π)⁻¹ • ∑ j, l i q.2 j • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j)
         q.2 := hasFDerivAt_pi.2 hD
@@ -358,7 +357,7 @@ theorem exists_actionAngle (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
     -- Both sides are `∑ᵢ dθᵢ ∧ dAᵢ` on `a = (a.1, a.2)` and `b = (b.1, b.2)`; the formula for `Ψ`
     -- is stated at `(q.1, q.2)`, which is `q` by eta for pairs.
     refine (eval₂_mfderiv_actionAngleChart p hA' a.1 b.1 a.2 b.2).trans
-      (Eq.trans ?_ ((hP _ hq.2).2.2.2.2.2.2.2.2 q.1 a.1 b.1 a.2 b.2).symm)
+      (Eq.trans ?_ (hΨform _ hq.2 q.1 a.1 b.1 a.2 b.2).symm)
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [(hD i).fderiv, ContinuousLinearMap.pi_apply, ContinuousLinearMap.pi_apply]
   have hlocdiff : IsLocalDiffeomorphOn I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod
@@ -372,17 +371,14 @@ theorem exists_actionAngle (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
       intro v hv
       refine (isNondegenerate_iff_separatingLeft.1 hσ.isNondegenerate) _ v fun w ↦ ?_
       rw [← hform q hq v w, hv]
-      simpa using SmoothBundleForm.eval₂_smul_left (CotangentBundle.symplecticForm
-        (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) (φ (Ψ q)) (0 : ℝ) 0
-        (mfderiv I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) φ
-          (Ψ q) w)
+      exact SmoothBundleForm.eval₂_zero_left _ _ _
     · rw [← hdim, Module.finrank_prod, Module.finrank_fintype_fun_eq_card,
         (ContinuousLinearEquiv.piRing (𝕜 := ℝ) (E := ℝ) ι).toLinearEquiv.finrank_eq,
         Module.finrank_fintype_fun_eq_card, two_mul]
   -- Step 4: `F` is `g` of the rescaled actions.
   refine ⟨Ψ '' S, hWo,
     connectedComponentIn_subset_image_angleMap hσ hF hcomm hc hdim hreg hsx hxV
-      (hP _ hxV).2.2.2.2.1,
+      (hli _ hxV),
     _, isOpenMap_smul₀ (inv_ne_zero hκ) _
       (hAV ▸ g.contMDiffOn_toFun.continuousOn.isOpen_inter_preimage g.open_source hV),
     φ, hinj, hlocdiff, ?_, ?_, fun a ↦ g ((p / (2 * π)) • a), ?_, ?_⟩

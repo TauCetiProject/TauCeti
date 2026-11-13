@@ -40,7 +40,7 @@ trivializations of `Tⁿ` are the identity (`AddCircle.symmL_trivializationAt_pi
 
 * `TauCeti.CotangentBundle.contMDiff_torusCover`,
   `TauCeti.CotangentBundle.isLocalDiffeomorph_torusCover`: it is a smooth local diffeomorphism.
-* `TauCeti.CotangentBundle.surjective_torusCover`,
+* `TauCeti.CotangentBundle.torusCover_surjective`,
   `TauCeti.CotangentBundle.torusCover_eq_torusCover_iff`: it is onto, and identifies two points
   exactly when their angles differ by `p ℤ^ι` and their covectors agree.
 * `TauCeti.CotangentBundle.mpullback_torusCover_liouvilleForm`: it pulls the Liouville form back
@@ -177,10 +177,7 @@ theorem isLocalDiffeomorph_torusCover :
   have h := eval₂_symplecticForm_mfderiv_torusCover p q v w
   rw [hv] at h
   refine h.symm.trans ?_
-  simpa using SmoothBundleForm.eval₂_smul_left (symplecticForm
-    (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) (torusCover p q) (0 : ℝ) 0
-    (mfderiv 𝓘(ℝ, (ι → ℝ) × ((ι → ℝ) →L[ℝ] ℝ))
-      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) (torusCover p) q w)
+  exact SmoothBundleForm.eval₂_zero_left _ _ _
 
 /-- **The fibres of the cover of `T*Tⁿ`.** Two points have the same image exactly when their
 angles differ by `p ℤ^ι` and their covectors agree. -/
@@ -207,7 +204,7 @@ theorem torusCover_eq_torusCover_iff {q q' : (ι → ℝ) × ((ι → ℝ) →L[
     exact QuotientAddGroup.eq_iff_sub_mem.mpr (by simp)
 
 /-- The cover of `T*Tⁿ` by the linear cotangent space is onto. -/
-theorem surjective_torusCover : Surjective (torusCover (ι := ι) p) := by
+theorem torusCover_surjective : Surjective (torusCover (ι := ι) p) := by
   intro z
   choose θ hθ using fun i ↦ QuotientAddGroup.mk_surjective (z.proj i)
   exact ⟨(θ, z.2), CotangentBundle.ext (funext hθ) fun _ ↦ rfl⟩
