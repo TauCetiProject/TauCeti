@@ -13,14 +13,15 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.TopologicalAddG
 # Complex elliptic curves are complex Lie groups
 
 Let `W` be an elliptic curve over `ℂ`. Its native projective points `W.Point` form a compact
-connected Riemann surface (`WeierstrassCurve.Projective.Point.instIsManifold`) and a topological
+Riemann surface (`WeierstrassCurve.Projective.Point.instIsManifold`) and a topological
 group (`WeierstrassCurve.Projective.Point.instIsTopologicalAddGroup`). This file proves that the
-group law is holomorphic, so that `W.Point` is a compact connected complex Lie group, directly
+group law is holomorphic, so that `W.Point` is a compact complex Lie group, directly
 from the projective Weierstrass equation and without any lattice or analytic uniformization.
 
 Near every point, the homogeneous coordinates normalized in a standard affine chart of `ℂℙ²` are
 holomorphic nonsingular representatives of the points
-(`WeierstrassCurve.Projective.Point.exists_contMDiffAt_mk_eq`). Negation is linear on homogeneous
+(`Projectivization.contMDiffOn_insertNth_affineChart` and
+`WeierstrassCurve.Projective.Point.exists_contMDiffAt_mk_eq`). Negation is linear on homogeneous
 coordinates, and near every pair of points the sum is given on homogeneous coordinates by one of
 the two polynomial addition laws `addXYZ` and `dblAddXYZ` of Bosma and Lenstra, whichever is
 nonzero there. Composing these polynomials with the local holomorphic representatives gives local
@@ -88,24 +89,6 @@ namespace Point
 
 variable {W : Projective ℂ} [W.IsElliptic]
 
-/-- **Local holomorphic representatives.** Near every point of a complex elliptic curve, the
-homogeneous coordinates of the points normalized in a standard affine chart of `ℂℙ²` are
-holomorphic nonsingular representatives of them. -/
-theorem exists_contMDiffAt_mk_eq (P₀ : W.Point) :
-    ∃ s : W.Point → Fin 3 → ℂ, ContMDiffAt 𝓘(ℂ) 𝓘(ℂ, Fin 3 → ℂ) ω s P₀ ∧
-      ∀ᶠ P in 𝓝 P₀, ∃ h : W.Nonsingular (s P),
-        Point.mk ((nonsingularLift_iff (s P)).mpr h) = P := by
-  obtain ⟨i, hi⟩ := exists_mem_affineOpen P₀.toProjectivization
-  have hU := (isOpen_affineOpen (K := ℂ) i).mem_nhds hi
-  refine ⟨fun P ↦ Fin.insertNth (α := fun _ ↦ ℂ) i 1 (affineChart i P.toProjectivization),
-    ((contMDiffOn_insertNth_affineChart i ω).contMDiffAt hU).comp P₀
-      ((isSmoothEmbedding_toProjectivization W ω).contMDiff P₀), ?_⟩
-  filter_upwards [continuous_toProjectivization.continuousAt.preimage_mem_nhds hU] with P hP
-  have h : Projectivization.mk ℂ _ (Fin.insertNth_one_ne_zero i _) = P.toProjectivization :=
-    (affineChart_symm_apply i _).symm.trans ((affineChart i).left_inv (by rwa [affineChart_source]))
-  exact ⟨(exists_toProjectivization_eq_mk_iff _ _).mp ⟨P, h.symm⟩,
-    toProjectivization_injective ((toProjectivization_mk _).trans h)⟩
-
 variable {r : ℕ∞ω}
 
 /-- Negation of the points of a complex elliptic curve is holomorphic: on local holomorphic
@@ -149,7 +132,7 @@ private theorem contMDiff_add' :
     exact ⟨hR, hR'.trans (by rw [hPs, hQt])⟩
 
 /-- **The points of a complex elliptic curve form a complex Lie group.** The group law of the
-compact connected Riemann surface `W.Point` is analytic, and so `C^r` for every `r`. -/
+compact Riemann surface `W.Point` is analytic, and so `C^r` for every `r`. -/
 instance instLieAddGroup (r : ℕ∞ω) : LieAddGroup 𝓘(ℂ) r W.Point where
   contMDiff_add := contMDiff_add'
   contMDiff_neg := contMDiff_neg'
