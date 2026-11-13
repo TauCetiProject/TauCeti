@@ -21,9 +21,9 @@ public section
 
 open Set TauCeti
 
-namespace Matrix
-
 variable {p q : ℕ}
+
+namespace TauCeti
 
 /-- The positive-semidefinite cone with a fixed upper rank bound is closed in the
 space of self-adjoint matrices. -/
@@ -32,7 +32,11 @@ theorem isClosed_setOf_posSemidef_rank_le (r : ℕ) :
       (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
         (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ r} :=
   (isClosed_setOfPred_posSemidef.preimage continuous_subtype_val).inter
-    (TauCeti.isClosed_setOfPred_rank_le r)
+    (isClosed_setOfPred_rank_le r)
+
+end TauCeti
+
+namespace Matrix
 
 /-- Rectangular congruence preserves positive semidefiniteness and an upper rank bound. -/
 theorem mapsTo_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le
@@ -77,15 +81,26 @@ theorem image_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le
       mapsTo_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le N r ⟨hA, hr⟩, ?_⟩
     rw [← LinearMap.comp_apply, ← symmetricCongruenceLinearMap_mul, hfix]
 
-/-- Congruence with a matrix admitting an inner inverse has closed image on every
-positive-semidefinite cone with a rank bound, even when the congruence is singular. -/
+/-- Rectangular congruence has closed image on every positive-semidefinite cone with a
+rank bound, even when the congruence is singular. -/
 theorem isClosed_image_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le
-    (M : Matrix (Fin q) (Fin p) ℝ) (N : Matrix (Fin p) (Fin q) ℝ)
-    (hMNM : M * N * M = M) (r : ℕ) :
+    (M : Matrix (Fin q) (Fin p) ℝ) (r : ℕ) :
     IsClosed (symmetricCongruenceLinearMap M ''
       {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
           (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ r}) := by
+  obtain ⟨g, hg⟩ := M.toLin'.rangeRestrict.exists_rightInverse_of_surjective
+    M.toLin'.range_rangeRestrict
+  obtain ⟨f, hf⟩ := g.exists_extend
+  let N := LinearMap.toMatrix' f
+  have hMNM : M * N * M = M := by
+    apply Matrix.toLin'.injective
+    simp only [Matrix.toLin'_mul, Matrix.toLin'_toMatrix', N]
+    apply LinearMap.ext
+    intro x
+    have hfx := LinearMap.congr_fun hf (M.toLin'.rangeRestrict x)
+    have hgx := congrArg Subtype.val (LinearMap.congr_fun hg (M.toLin'.rangeRestrict x))
+    exact (congrArg M.toLin' hfx).trans hgx
   rw [image_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le M N hMNM]
   simpa only [← Set.ofPred_and, id_eq, and_assoc] using
     (isClosed_setOf_posSemidef_rank_le r).inter

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.FunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.MoorePenrose
 public import TauCeti.Analysis.SpecificLimits.RegularizedInverse
 import TauCeti.Topology.Instances.Matrix
+import TauCeti.Analysis.Matrix.Sqrt
 
 /-!
 # The pseudoinverse of a covariance matrix
@@ -189,6 +190,20 @@ theorem toEuclideanLin_covariancePseudoInverse_mul {C : Matrix ι ι ℝ}
     (C.covariancePseudoInverse * C).toEuclideanLin = C.toEuclideanLin.range.starProjection := by
   rw [← (commute_covariancePseudoInverse C).eq]
   exact toEuclideanLin_mul_covariancePseudoInverse hC
+
+/-- A covariance matrix and its square root have the same orthogonal range projector,
+including the zero projectors returned for invalid covariances. -/
+@[simp]
+theorem sqrt_mul_covariancePseudoInverse_sqrt (C : Matrix ι ι ℝ) :
+    CFC.sqrt C * (CFC.sqrt C).covariancePseudoInverse = C * C.covariancePseudoInverse := by
+  by_cases hC : C.PosSemidef
+  · apply toEuclideanLin.injective
+    rw [toEuclideanLin_mul_covariancePseudoInverse
+      (nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg C)),
+      toEuclideanLin_mul_covariancePseudoInverse hC]
+    simp only [hC.range_toEuclideanLin_sqrt]
+  · have hn : ¬ 0 ≤ C := fun h ↦ hC (nonneg_iff_posSemidef.mp h)
+    simp [hC, CFC.sqrt_of_not_nonneg hn]
 
 /-- The covariance pseudoinverse is the limit of `(C² + ε I)⁻¹ C` as positive `ε` tends to zero.
 The limit includes zero covariance and empty coordinate types. -/
