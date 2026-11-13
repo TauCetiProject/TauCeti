@@ -53,11 +53,18 @@ has index `-1`. On a loop it is minus twice the Maslov index of the loop
 
 ## Main definitions
 
-* `TauCeti.GLSymplectic.graphUnitary`: the unitary frame of the graph of a symplectic matrix.
-* `TauCeti.GLSymplectic.graphDiagonalFrame`: the unitary frame of the graph, moved so that the
-  diagonal becomes the real points.
 * `TauCeti.GLSymplectic.conleyZehnderIndex`: the Conley–Zehnder index of a path of symplectic
   matrices.
+
+## Main results
+
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopic`,
+  `TauCeti.GLSymplectic.conleyZehnderIndex_trans`: homotopy invariance and catenation.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_sum_of_diagonal`: the index of a path of rotations.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_rotation`: a path of rotations from the identity
+  whose angles all end in `(2 π k, 2 π (k + 1))` has index `-(2 k + 1) n`.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_two_mul_maslovIndex`: on a loop the index is
+  minus twice the Maslov index.
 
 ## References
 
@@ -142,46 +149,36 @@ private theorem coe_graphDiagonalFrame_of_diagonal {A : GLSymplectic n ℝ} (ψ 
   have hAA : ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ) = 1 := by
     rw [hA, ← realify_conjTranspose, ← realify_mul, ← star_eq_conjTranspose,
       Unitary.star_mul_self_of_mem (diagonal_exp_mem_unitaryGroup (2 * ψ ·)), realify_one]
-  -- Write `e^{i x} = cos x + i sin x` (`Complex.exp_ofReal_mul_I`) and
-  -- `e^{2 i x} = (cos² x - sin² x) + i (2 sin x cos x)`.
-  have hre (x : ℝ) : (Complex.exp (2 * x * Complex.I)).re = Real.cos x ^ 2 - Real.sin x ^ 2 := by
-    rw [← Complex.ofReal_ofNat 2, ← Complex.ofReal_mul, Complex.exp_ofReal_mul_I_re,
-      Real.cos_two_mul]
-    linear_combination Real.sin_sq_add_cos_sq x
-  have him (x : ℝ) : (Complex.exp (2 * x * Complex.I)).im = 2 * Real.sin x * Real.cos x := by
-    rw [← Complex.ofReal_ofNat 2, ← Complex.ofReal_mul, Complex.exp_ofReal_mul_I_im,
-      Real.sin_two_mul]
-  -- Off the diagonal both sides vanish; the four diagonal entries are trigonometric identities,
-  -- from `sin² + cos² = 1` and `i² = -1`.
-  rw [coe_graphDiagonalFrame_of_transpose_mul_self hAA, hA]
-  ext (i | i) (j | j) <;>
-  by_cases hij : i = j <;>
-  simp only [hij, hre, him, one_div, graphFrame_def, toBlocks₁₁, Matrix.one_apply, Sum.inl.injEq,
-    toBlocks₂₁, ne_eq, reduceCtorEq, not_false_eq_true, Ne.symm, toBlocks₁₂, toBlocks₂₂,
-    Sum.inr.injEq, ofReal_mul, ofReal_ofNat, realify_apply_inl_inl, diagonal_apply,
-    RCLike.re_to_complex, apply_ite Complex.re, zero_re, realify_apply_inr_inl,
-    RCLike.im_to_complex, apply_ite Complex.im, zero_im, realify_apply_inl_inr,
-    realify_apply_inr_inr, Matrix.smul_apply, Matrix.mul_apply, conjTranspose_apply,
-    RCLike.star_def, Fintype.sum_sum_type, fromBlocks_apply₁₁, apply_ite (starRingEnd ℂ), map_one,
-    map_zero, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
-    fromBlocks_apply₂₁, Matrix.add_apply, map_apply, of_apply, apply_ite     ((↑) : ℝ → ℂ),
-    ofReal_one, ofReal_zero, smul_eq_mul, add_zero, ofReal_sub, ofReal_pow, ofReal_cos, ofReal_sin,
-    ite_mul, one_mul, zero_mul, exp_ofReal_mul_I, Sum.elim_inl, Finset.sum_ite_eq, add_re, mul_re,
-    I_re, sin_ofReal_im, I_im, sub_self, ofReal_cos_ofReal_re, fromBlocks_apply₁₂, Matrix.neg_apply,
-    mul_neg, Finset.sum_neg_distrib, fromBlocks_apply₂₂, ofReal_neg, add_im, cos_ofReal_im, mul_im,
-    zero_add, ofReal_sin_ofReal_re, neg_zero, map_neg, conj_I, neg_neg, neg_mul, Sum.elim_inr,
-    I_mul_I]
-  · linear_combination (-1 / 2 : ℂ) * Complex.sin_sq_add_cos_sq (ψ j : ℂ)
-  · linear_combination (Complex.I / 2) * Complex.sin_sq_add_cos_sq (ψ j : ℂ)
-  · linear_combination (-Complex.I / 2) * Complex.sin_sq_add_cos_sq (ψ j : ℂ) -
-      Complex.sin (ψ j : ℂ) * Complex.cos (ψ j : ℂ) * Complex.I_sq
-  · linear_combination (-1 / 2 : ℂ) * Complex.sin_sq_add_cos_sq (ψ j : ℂ) +
-      (Complex.sin (ψ j : ℂ) ^ 2 / 2 - Complex.cos (ψ j : ℂ) ^ 2 / 2) * Complex.I_sq
+  -- Both sides are block matrices: `F(1)ᴴ F(A) / 2` for the graph frames
+  -- `F(W.realify) = (1, -i; W, i W)`, and `diag (e^{i ψ}, e^{i ψ})` times the realification.
+  rw [coe_graphDiagonalFrame_of_transpose_mul_self hAA, hA, ← realify_one (𝕜 := ℂ),
+    graphFrame_realify, graphFrame_realify, ← fromBlocks_diagonal,
+    ← fromBlocks_toBlocks ((diagonal _).realify.map _), fromBlocks_conjTranspose,
+    fromBlocks_multiply, fromBlocks_multiply, fromBlocks_smul]
+  -- Every block is diagonal. On the diagonal, write `e^{i x} = cos x + i sin x` and use the
+  -- double angle formulas, `sin² x + cos² x = 1` and `i² = -1`.
+  congr 1 <;> ext i j <;> by_cases hij : i = j <;>
+    simp [hij, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, diagonal_mul, Complex.exp_mul_I]
+  · linear_combination (1 / 2 : ℂ) * Complex.cos_two_mul (ψ j : ℂ) +
+      Complex.I / 2 * Complex.sin_two_mul (ψ j : ℂ)
+  · linear_combination Complex.I / 2 * Complex.cos_two_mul (ψ j : ℂ) +
+      Complex.I ^ 2 / 2 * Complex.sin_two_mul (ψ j : ℂ) +
+      Complex.I * Complex.sin_sq_add_cos_sq (ψ j : ℂ) +
+      Complex.sin (ψ j) * Complex.cos (ψ j) * Complex.I_sq
+  · linear_combination -Complex.I / 2 * Complex.cos_two_mul (ψ j : ℂ) -
+      Complex.I ^ 2 / 2 * Complex.sin_two_mul (ψ j : ℂ) -
+      Complex.I * Complex.sin_sq_add_cos_sq (ψ j : ℂ) -
+      Complex.sin (ψ j) * Complex.cos (ψ j) * Complex.I_sq
+  · linear_combination -Complex.I ^ 2 / 2 * Complex.cos_two_mul (ψ j : ℂ) -
+      Complex.I ^ 3 / 2 * Complex.sin_two_mul (ψ j : ℂ) +
+      (1 / 2 - Complex.cos (ψ j) ^ 2 - Complex.sin (ψ j) * Complex.cos (ψ j) * Complex.I) *
+        Complex.I_sq
 
 /-- **Normalization by rotations.** For a path of rotations `γ t = diag (e^{i θ_j t})` of `ℂⁿ`, with
 continuous angles `θ_j`, the Conley–Zehnder index is `-2 ∑ j, (c(θ_j 1 / 2) - c(θ_j 0 / 2))`,
-where `c(x) = (⌊x / π⌋ + ⌈x / π⌉) / 2` is the half-integer count of the multiples of `π` below
-`x`. -/
+where `c(x) = (⌊x / π⌋ + ⌈x / π⌉) / 2` is the half-integer step function with `c(k π) = k` and
+`c(x) = k + 1/2` on `(k π, (k + 1) π)`. So `c(θ_j 1 / 2) - c(θ_j 0 / 2)` is the signed
+half-integer count of the multiples of `π` crossed by `θ_j / 2`. -/
 theorem conleyZehnderIndex_eq_sum_of_diagonal {A B : GLSymplectic n ℝ} (γ : Path A B)
     {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
     (hγ : ∀ t, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
@@ -226,17 +223,23 @@ theorem conleyZehnderIndex_eq_sum_of_diagonal {A B : GLSymplectic n ℝ} (γ : P
   refine Finset.sum_congr rfl fun j _ => ?_
   ring
 
-/-- A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ` starting at the identity, whose angles all end
-in `(2 π k, 2 π (k + 1))`, has Conley–Zehnder index `-(2 k + 1) n`. -/
-private theorem conleyZehnderIndex_eq_of_rotation {A B : GLSymplectic n ℝ} (γ : Path A B)
+/-- **Rotations by angles in a band.** A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ` starting at
+the identity, whose angles all end in `(2 π k, 2 π (k + 1))`, has Conley–Zehnder index
+`-(2 k + 1) n`. -/
+theorem conleyZehnderIndex_eq_of_rotation {A B : GLSymplectic n ℝ} (γ : Path A B)
     {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
     (hγ : ∀ t, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
-    (h0 : ∀ j, θ j 0 = 0) (k : ℤ) (h1 : ∀ j, θ j 1 / (2 * Real.pi) ∈ Set.Ioo (k : ℝ) (k + 1)) :
+    (h0 : ∀ j, θ j 0 = 0) (k : ℤ)
+    (h1 : ∀ j, θ j 1 ∈ Set.Ioo (2 * Real.pi * k) (2 * Real.pi * (k + 1))) :
     conleyZehnderIndex γ = -(2 * k + 1) * Fintype.card n := by
+  have hπ : 0 < 2 * Real.pi := by positivity
+  have h1' (j : n) : θ j 1 / (2 * Real.pi) ∈ Set.Ioo (k : ℝ) (k + 1) :=
+    ⟨(lt_div_iff₀ hπ).2 (by rw [mul_comm]; exact (h1 j).1),
+      (div_lt_iff₀ hπ).2 (by rw [mul_comm]; exact (h1 j).2)⟩
   have key (j : n) : (((⌊θ j 1 / (2 * Real.pi)⌋ + ⌈θ j 1 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2 -
       ((⌊θ j 0 / (2 * Real.pi)⌋ + ⌈θ j 0 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2) = k + 1 / 2 := by
-    rw [floor_add_ceil_of_mem_Ioo (h1 j), h0 j, zero_div, Int.floor_zero, Int.ceil_zero]
+    rw [floor_add_ceil_of_mem_Ioo (h1' j), h0 j, zero_div, Int.floor_zero, Int.ceil_zero]
     push_cast
     ring
   rw [conleyZehnderIndex_eq_sum_of_diagonal γ hθ hγ, Finset.sum_congr rfl fun j _ => key j,
@@ -252,11 +255,8 @@ theorem conleyZehnderIndex_eq_neg_card_of_rotation {A B : GLSymplectic n ℝ} (�
       (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
     (h0 : ∀ j, θ j 0 = 0) (h1 : ∀ j, θ j 1 ∈ Set.Ioo 0 (2 * Real.pi)) :
     conleyZehnderIndex γ = -Fintype.card n := by
-  have hπ : 0 < 2 * Real.pi := by positivity
-  rw [conleyZehnderIndex_eq_of_rotation γ hθ hγ h0 0 fun j => ?_]
-  · norm_num
-  · rw [Int.cast_zero, zero_add]
-    exact ⟨div_pos (h1 j).1 hπ, (div_lt_one hπ).2 (h1 j).2⟩
+  rw [conleyZehnderIndex_eq_of_rotation γ hθ hγ h0 0 fun j => by simpa using h1 j]
+  norm_num
 
 /-- **A clockwise rotation has index `n`.** A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ`
 starting at the identity, whose angles all end in `(-2π, 0)`, has Conley–Zehnder index `n`. In
@@ -267,11 +267,8 @@ theorem conleyZehnderIndex_eq_card_of_rotation {A B : GLSymplectic n ℝ} (γ : 
       (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
     (h0 : ∀ j, θ j 0 = 0) (h1 : ∀ j, θ j 1 ∈ Set.Ioo (-(2 * Real.pi)) 0) :
     conleyZehnderIndex γ = Fintype.card n := by
-  have hπ : 0 < 2 * Real.pi := by positivity
-  rw [conleyZehnderIndex_eq_of_rotation γ hθ hγ h0 (-1) fun j => ?_]
-  · norm_num
-  · rw [Int.cast_neg, Int.cast_one, neg_add_cancel]
-    exact ⟨(lt_div_iff₀ hπ).2 (by linarith [(h1 j).1]), div_neg_of_neg_of_pos (h1 j).2 hπ⟩
+  rw [conleyZehnderIndex_eq_of_rotation γ hθ hγ h0 (-1) fun j => by simpa using h1 j]
+  norm_num
 
 /-! ### Loops -/
 

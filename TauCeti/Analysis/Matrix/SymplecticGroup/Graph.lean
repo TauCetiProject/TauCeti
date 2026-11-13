@@ -97,6 +97,14 @@ theorem graphFrame_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
       (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑)) :=
   (rfl)
 
+omit [Fintype n] in
+/-- The graph frame of the realification of a complex matrix `W` is `fromBlocks 1 (-i) W (i W)`. -/
+theorem graphFrame_realify (W : Matrix n n ℂ) :
+    graphFrame W.realify = fromBlocks 1 (-(Complex.I • 1)) W (Complex.I • W) := by
+  rw [graphFrame_def]
+  congr 1 <;> ext i j <;> apply Complex.ext <;>
+    simp [toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂]
+
 /-- The graph frame sends the real point `x` to `(conj (φ x), φ (A x))`, where `φ (x, y) = x + i y`.
 -/
 theorem graphFrame_mulVec (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x : n ⊕ n → ℝ) :
@@ -182,6 +190,7 @@ noncomputable def graphSubspace (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
   (graphFrame A).realImage
 
 /-- The graph of `A` is the image of the real points under the graph frame. -/
+@[simp]
 theorem realImage_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     (graphFrame A).realImage = graphSubspace A :=
   (rfl)
@@ -219,26 +228,44 @@ frame have the real Gram matrix `1 + Aᵀ A`: the imaginary part of the Hermitia
 theorem conjTranspose_graphFrame_mul_graphFrame {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
     (hA : A ∈ symplecticGroup n ℝ) :
     (graphFrame A)ᴴ * graphFrame A = (1 + Aᵀ * A).map ((↑) : ℝ → ℂ) := by
-  -- Entrywise, the real parts agree, and the imaginary parts are entries of `Aᵀ J A = J`.
-  have h := fun i j => congrFun (congrFun (SymplecticGroup.mem_iff'.1 hA) i) j
-  ext (i | i) (j | j) <;> [have h1 := h (.inl i) (.inl j); have h1 := h (.inl i) (.inr j);
-    have h1 := h (.inr i) (.inl j); have h1 := h (.inr i) (.inr j)] <;>
-  by_cases hij : i = j <;>
-  apply Complex.ext <;>
-  simp only [J, Matrix.mul_apply, transpose_apply, Fintype.sum_sum_type, fromBlocks_apply₁₁,
-    fromBlocks_apply₁₂, fromBlocks_apply₂₁, fromBlocks_apply₂₂, Matrix.zero_apply, Matrix.one_apply,
-    Matrix.neg_apply, Matrix.add_apply, Matrix.smul_apply, map_apply, of_apply, conjTranspose_apply,
-    graphFrame_def, toBlocks₁₁, toBlocks₂₁, toBlocks₁₂, toBlocks₂₂, RCLike.star_def,
-    MonoidWithZeroHom.map_ite_one_zero, map_add, map_mul, map_neg, map_zero, Complex.conj_ofReal,
-    Complex.conj_I, Complex.add_re, Complex.add_im, Complex.one_re, Complex.one_im, Complex.re_sum,
-    Complex.im_sum, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-    Complex.neg_re, Complex.neg_im, Complex.I_re, Complex.I_im, Complex.I_mul_I, Complex.ofReal_add,
-    Complex.ofReal_one, Complex.ofReal_sum, Complex.ofReal_mul, smul_eq_mul, mul_zero, zero_mul,
-    mul_one, one_mul, mul_neg, neg_mul, neg_neg, neg_zero, mul_ite, ite_mul, add_zero, zero_add,
-    sub_zero, sub_self, sub_neg_eq_add, Finset.sum_const_zero, Finset.sum_ite_eq', Finset.mem_univ,
-    Finset.sum_neg_distrib, Finset.sum_add_distrib, ↓reduceIte, ne_eq, not_false_eq_true, Ne.symm,
-    Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, hij] at h1 ⊢ <;>
-  linear_combination -h1
+  -- Work with the ring homomorphism `Complex.ofRealHom.mapMatrix` of entrywise coercion.
+  have hc : (⇑Complex.ofRealHom : ℝ → ℂ) = (↑) := funext Complex.ofRealHom_eq_coe
+  -- The graph frame is `E₁ + E₂ A`, for the blocks `E₁ = (1, -i; 0, 0)` and `E₂ = (0, 0; 1, i)`.
+  have hF : graphFrame A = fromBlocks 1 (-(Complex.I • 1)) 0 0 +
+      fromBlocks 0 0 1 (Complex.I • 1) * Complex.ofRealHom.mapMatrix A := by
+    rw [RingHom.mapMatrix_apply, hc, ← fromBlocks_toBlocks A, fromBlocks_map, fromBlocks_multiply,
+      fromBlocks_add, graphFrame_def, fromBlocks_toBlocks]
+    simp only [Matrix.zero_mul, Matrix.one_mul, Matrix.smul_mul, zero_add, add_zero]
+  set E₁ : Matrix (n ⊕ n) (n ⊕ n) ℂ := fromBlocks 1 (-(Complex.I • 1)) 0 0
+  set E₂ : Matrix (n ⊕ n) (n ⊕ n) ℂ := fromBlocks 0 0 1 (Complex.I • 1)
+  have h12 : E₁ᴴ * E₂ = 0 := by
+    simp [E₁, E₂, fromBlocks_conjTranspose, fromBlocks_multiply]
+  have h21 : E₂ᴴ * E₁ = 0 := by
+    simp [E₁, E₂, fromBlocks_conjTranspose, fromBlocks_multiply]
+  have h11 : E₁ᴴ * E₁ = 1 + Complex.I • J n ℂ := by
+    simp [E₁, J, fromBlocks_conjTranspose, fromBlocks_multiply, fromBlocks_smul, ← fromBlocks_one,
+      fromBlocks_add, smul_smul]
+  have h22 : E₂ᴴ * E₂ = 1 - Complex.I • J n ℂ := by
+    simp [E₂, J, fromBlocks_conjTranspose, fromBlocks_multiply, fromBlocks_smul, ← fromBlocks_one,
+      sub_eq_add_neg, fromBlocks_neg, fromBlocks_add, smul_smul]
+  -- `A` is real and symplectic: `Aᴴ = Aᵀ` and `Aᵀ J A = J`.
+  have hA' : (Complex.ofRealHom.mapMatrix A)ᴴ = Complex.ofRealHom.mapMatrix Aᵀ := by
+    rw [RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, hc,
+      ← conjTranspose_map _ fun _ => (Complex.conj_ofReal _).symm,
+      conjTranspose_eq_transpose_of_trivial]
+  have hJ : Complex.ofRealHom.mapMatrix Aᵀ * J n ℂ * Complex.ofRealHom.mapMatrix A = J n ℂ := by
+    have hJ' : Complex.ofRealHom.mapMatrix (J n ℝ) = J n ℂ := by
+      unfold J
+      rw [RingHom.mapMatrix_apply, fromBlocks_map, Matrix.map_zero _ (map_zero _),
+        Matrix.map_neg _ (map_neg _), Matrix.map_one _ (map_zero _) (map_one _)]
+    rw [← hJ', ← map_mul, ← map_mul, SymplecticGroup.mem_iff'.1 hA]
+  -- So `(E₁ + E₂ A)ᴴ (E₁ + E₂ A) = (1 + i J) + Aᵀ (1 - i J) A = 1 + Aᵀ A`.
+  rw [← hc, ← RingHom.mapMatrix_apply, map_add, map_one, map_mul, hF, conjTranspose_add,
+    conjTranspose_mul, hA', Matrix.add_mul, Matrix.mul_add, Matrix.mul_add, h11,
+    ← Matrix.mul_assoc E₁ᴴ, h12, Matrix.mul_assoc, h21, Matrix.mul_assoc, ← Matrix.mul_assoc E₂ᴴ,
+    h22, ← Matrix.mul_assoc, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, hJ,
+    Matrix.zero_mul, Matrix.mul_zero, Matrix.mul_one]
+  abel
 
 end Matrix
 
@@ -418,18 +445,6 @@ theorem continuous_graphFrameUnit :
     simpa only [Function.comp_def, coe_graphFrameUnit] using
       continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val)
 
-/-- The real orthonormalization of the graph frame `F` of a symplectic matrix `A` is
-`F (1 + Aᵀ A) ^ (-1/2)`, since the real Gram matrix of `F` is `1 + Aᵀ A`. -/
-private theorem coe_realOrthonormalize_graphFrameUnit (A : GLSymplectic n ℝ) :
-    (realOrthonormalize (graphFrameUnit A) : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
-      graphFrame (A : GL (n ⊕ n) ℝ) *
-        ((1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ)) ^
-          (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) := by
-  have hre : (Complex.re ∘ ((↑) : ℝ → ℂ)) = id := funext Complex.ofReal_re
-  rw [coe_realOrthonormalize, coe_graphFrameUnit,
-    conjTranspose_graphFrame_mul_graphFrame (mem_iff_mem_symplecticGroup.1 A.2), Matrix.map_map,
-    hre, Matrix.map_id]
-
 /-- The real orthonormalization of the graph frame of a symplectic matrix is unitary, since the
 Gram matrix `1 + Aᵀ A` of the graph frame is real. -/
 private theorem realOrthonormalize_graphFrameUnit_mem (A : GLSymplectic n ℝ) :
@@ -452,13 +467,17 @@ theorem coe_graphUnitary_eq_realOrthonormalize (A : GLSymplectic n ℝ) :
     (graphUnitary A : Matrix (n ⊕ n) (n ⊕ n) ℂ) = realOrthonormalize (graphFrameUnit A) :=
   (rfl)
 
-/-- The unitary frame of the graph of `A` is `F (1 + Aᵀ A) ^ (-1/2)`, for the graph frame `F`. -/
+/-- The unitary frame of the graph of `A` is `F (1 + Aᵀ A) ^ (-1/2)`, for the graph frame `F`:
+the real Gram matrix of `F` is `1 + Aᵀ A`. -/
 theorem coe_graphUnitary (A : GLSymplectic n ℝ) :
     (graphUnitary A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
       graphFrame (A : GL (n ⊕ n) ℝ) *
         ((1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ)) ^
-          (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) :=
-  coe_realOrthonormalize_graphFrameUnit A
+          (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) := by
+  have hre : (Complex.re ∘ ((↑) : ℝ → ℂ)) = id := funext Complex.ofReal_re
+  rw [coe_graphUnitary_eq_realOrthonormalize, coe_realOrthonormalize, coe_graphFrameUnit,
+    conjTranspose_graphFrame_mul_graphFrame (mem_iff_mem_symplecticGroup.1 A.2), Matrix.map_map,
+    hre, Matrix.map_id]
 
 /-- The unitary frame of the graph of `A` frames the graph of `A`. -/
 @[simp]

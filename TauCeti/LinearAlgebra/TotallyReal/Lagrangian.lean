@@ -137,8 +137,9 @@ theorem realOrthonormalize_mem_unitaryGroup {M : GL n ℂ} {K : Matrix n n ℝ}
       ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
       conjTranspose_eq_transpose_of_trivial, Matrix.mul_assoc,
       ← Matrix.mul_assoc (M : Matrix n n ℂ)ᴴ, hK, ← Matrix.mul_assoc]
-    -- `Complex.ofRealHom.mapMatrix` is the entrywise coercion `(↑)` by definition.
-    rfl
+    -- `Complex.ofRealHom.mapMatrix` is the entrywise coercion `(↑)`.
+    have hc : (⇑Complex.ofRealHom : ℝ → ℂ) = (↑) := funext Complex.ofRealHom_eq_coe
+    simp only [RingHom.mapMatrix_apply, hc]
   -- Its real part is `1`, so it is `1`.
   have h1 := map_re_conjTranspose_mul_self_realOrthonormalize M
   rw [hG, RingHom.mapMatrix_apply, Matrix.map_map, Function.comp_def] at h1
