@@ -52,6 +52,36 @@ noncomputable def a5FourthD4GlueModuleIsometry :
         (![A 5, A 5, A 5, A 5, D 4] i).glueAlphabet (by fin_cases i <;> decide)) :=
   a5FourthD4.glueModuleIsometry simplyLaced rfl (fun i ↦ by fin_cases i <;> rfl)
 
+/-- The displayed zero coordinate is the row's zero coordinate. -/
+theorem a5FourthD4GlueModuleIsometry_zero (w : a5FourthD4.glueModule) :
+    a5FourthD4GlueModuleIsometry w 0 = w (0 : Fin 5) := by
+  exact (glueModuleIsometry_apply _ _ _ _ w (0 : Fin 5)).trans
+    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
+
+/-- The displayed first coordinate is the row's first coordinate. -/
+theorem a5FourthD4GlueModuleIsometry_one (w : a5FourthD4.glueModule) :
+    a5FourthD4GlueModuleIsometry w 1 = w (1 : Fin 5) := by
+  exact (glueModuleIsometry_apply _ _ _ _ w (1 : Fin 5)).trans
+    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
+
+/-- The displayed second coordinate is the row's second coordinate. -/
+theorem a5FourthD4GlueModuleIsometry_two (w : a5FourthD4.glueModule) :
+    a5FourthD4GlueModuleIsometry w 2 = w (2 : Fin 5) := by
+  exact (glueModuleIsometry_apply _ _ _ _ w (2 : Fin 5)).trans
+    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
+
+/-- The displayed third coordinate is the row's third coordinate. -/
+theorem a5FourthD4GlueModuleIsometry_three (w : a5FourthD4.glueModule) :
+    a5FourthD4GlueModuleIsometry w 3 = w (3 : Fin 5) := by
+  exact (glueModuleIsometry_apply _ _ _ _ w (3 : Fin 5)).trans
+    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
+
+/-- The displayed fourth coordinate is the row's fourth coordinate. -/
+theorem a5FourthD4GlueModuleIsometry_four (w : a5FourthD4.glueModule) :
+    a5FourthD4GlueModuleIsometry w 4 = w (4 : Fin 5) := by
+  exact (glueModuleIsometry_apply _ _ _ _ w (4 : Fin 5)).trans
+    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
+
 /-- The explicit glue coordinates preserve the Conway--Sloane digit list. -/
 @[simp]
 theorem encodeGlueWord_a5FourthD4GlueModuleIsometry (w : a5FourthD4.glueModule) :
@@ -68,14 +98,57 @@ def a5FourthD4ComponentRotation : Equiv.Perm (Fin 5) where
   right_inv := by decide
 
 /-- The component rotation reads positions in order `[0,3,1,2,4]`. -/
-@[simp]
 theorem a5FourthD4ComponentRotation_apply (i : Fin 5) :
     a5FourthD4ComponentRotation i = ![0, 3, 1, 2, 4] i := (rfl)
 
 /-- The inverse component rotation reads positions in order `[0,2,3,1,4]`. -/
-@[simp]
 theorem a5FourthD4ComponentRotation_symm_apply (i : Fin 5) :
     a5FourthD4ComponentRotation.symm i = ![0, 2, 3, 1, 4] i := (rfl)
+
+/-- The component rotation fixes position zero. -/
+@[simp] theorem a5FourthD4ComponentRotation_zero : a5FourthD4ComponentRotation 0 = 0 := (rfl)
+
+/-- The component rotation reads position three at position one. -/
+@[simp] theorem a5FourthD4ComponentRotation_one : a5FourthD4ComponentRotation 1 = 3 := (rfl)
+
+/-- The component rotation reads position one at position two. -/
+@[simp] theorem a5FourthD4ComponentRotation_two : a5FourthD4ComponentRotation 2 = 1 := (rfl)
+
+/-- The component rotation reads position two at position three. -/
+@[simp] theorem a5FourthD4ComponentRotation_three : a5FourthD4ComponentRotation 3 = 2 := (rfl)
+
+/-- The component rotation fixes position four. -/
+@[simp] theorem a5FourthD4ComponentRotation_four : a5FourthD4ComponentRotation 4 = 4 := (rfl)
+
+/-- The inverse component rotation fixes position zero. -/
+@[simp] theorem a5FourthD4ComponentRotation_symm_zero :
+    a5FourthD4ComponentRotation.symm 0 = 0 := (rfl)
+
+/-- The inverse component rotation reads position two at position one. -/
+@[simp] theorem a5FourthD4ComponentRotation_symm_one :
+    a5FourthD4ComponentRotation.symm 1 = 2 := (rfl)
+
+/-- The inverse component rotation reads position three at position two. -/
+@[simp] theorem a5FourthD4ComponentRotation_symm_two :
+    a5FourthD4ComponentRotation.symm 2 = 3 := (rfl)
+
+/-- The inverse component rotation reads position one at position three. -/
+@[simp] theorem a5FourthD4ComponentRotation_symm_three :
+    a5FourthD4ComponentRotation.symm 3 = 1 := (rfl)
+
+/-- The inverse component rotation fixes position four. -/
+@[simp] theorem a5FourthD4ComponentRotation_symm_four :
+    a5FourthD4ComponentRotation.symm 4 = 4 := (rfl)
+
+/-- The component rotation has cube equal to the identity. -/
+@[simp] theorem a5FourthD4ComponentRotation_pow_three :
+    a5FourthD4ComponentRotation ^ 3 = 1 := by decide
+
+/-- Applying the component rotation three times fixes every position. -/
+@[simp] theorem a5FourthD4ComponentRotation_apply_apply_apply (i : Fin 5) :
+    a5FourthD4ComponentRotation
+      (a5FourthD4ComponentRotation (a5FourthD4ComponentRotation i)) = i := by
+  fin_cases i <;> simp
 
 private noncomputable def componentIsometry (i : Fin 5) :
     FiniteQuadraticModule.Isometry ((types i).glueAlphabet (simplyLaced i))
@@ -127,22 +200,6 @@ private theorem rotation_of_ne_four (w : words) (i : Fin 5) (hi : i ≠ 4) :
   -- The identity isometry has the identity underlying function.
   rfl
 
-private theorem rotation_zero (w : words) : rotation w 0 = w 0 :=
-  (rotation_of_ne_four w 0 (by decide)).trans
-    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
-
-private theorem rotation_one (w : words) : rotation w 1 = w 3 :=
-  (rotation_of_ne_four w 1 (by decide)).trans
-    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
-
-private theorem rotation_two (w : words) : rotation w 2 = w 1 :=
-  (rotation_of_ne_four w 2 (by decide)).trans
-    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
-
-private theorem rotation_three (w : words) : rotation w 3 = w 2 :=
-  (rotation_of_ne_four w 3 (by decide)).trans
-    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
-
 private theorem rotation_four (w : words) :
     rotation w 4 = typeD4TrialityGlueAlphabetIsometry _ (w 4) :=
   (rotation_apply w 4).trans (by
@@ -155,28 +212,36 @@ private theorem rotation_four (w : words) :
 theorem a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_zero (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 0 =
       a5FourthD4GlueModuleIsometry w 0 := by
-  rw [coordinates_rotation, rotation_zero]
+  rw [coordinates_rotation]
+  exact (rotation_of_ne_four _ _ (by decide)).trans
+    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
 
 /-- In displayed coordinates the first marked component reads the third. -/
 @[simp]
 theorem a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_one (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 1 =
       a5FourthD4GlueModuleIsometry w 3 := by
-  rw [coordinates_rotation, rotation_one]
+  rw [coordinates_rotation]
+  exact (rotation_of_ne_four _ _ (by decide)).trans
+    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
 
 /-- In displayed coordinates the second marked component reads the first. -/
 @[simp]
 theorem a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_two (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 2 =
       a5FourthD4GlueModuleIsometry w 1 := by
-  rw [coordinates_rotation, rotation_two]
+  rw [coordinates_rotation]
+  exact (rotation_of_ne_four _ _ (by decide)).trans
+    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
 
 /-- In displayed coordinates the third marked component reads the second. -/
 @[simp]
 theorem a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_three (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 3 =
       a5FourthD4GlueModuleIsometry w 2 := by
-  rw [coordinates_rotation, rotation_three]
+  rw [coordinates_rotation]
+  exact (rotation_of_ne_four _ _ (by decide)).trans
+    ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
 
 /-- In displayed coordinates the `D₄` component undergoes glue-alphabet triality. -/
 @[simp]
@@ -198,22 +263,6 @@ theorem glueAlphabetIsometry_a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation
   rw [a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four]
   exact glueAlphabetIsometry_typeD4TrialityGlueAlphabetIsometry _ _
 
-private theorem label_rotation_four (w : words) :
-    ((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm (rotation w 4) =
-      typeD4TrialityLabel (((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm (w 4)) :=
-  (congrArg ((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm (rotation_four w)).trans
-    (glueLabelEquiv_symm_typeD4TrialityGlueAlphabetIsometry _ _)
-
-/-- The last displayed component's label undergoes the triality permutation. -/
-theorem glueLabelEquiv_symm_a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four
-    (w : a5FourthD4.glueModule) :
-    ((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm
-        (a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 4) =
-      typeD4TrialityLabel (((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm
-        (a5FourthD4GlueModuleIsometry w 4)) := by
-  rw [a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four]
-  exact glueLabelEquiv_symm_typeD4TrialityGlueAlphabetIsometry _ _
-
 private def rotatedDigits (d : ∀ i : Fin 5, Fin (types i).glueLabelCount) : List ℕ :=
   List.ofFn fun i ↦ if i = 4 then (typeD4TrialityLabel (d 4)).val
     else (d (a5FourthD4ComponentRotation i)).val
@@ -227,7 +276,9 @@ private theorem encode_rotation (w : words) :
   funext i
   by_cases hi : i = 4
   · subst i
-    exact congrArg Fin.val (label_rotation_four w)
+    exact congrArg Fin.val
+      ((congrArg ((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm (rotation_four w)).trans
+        (glueLabelEquiv_symm_typeD4TrialityGlueAlphabetIsometry _ _))
   · rw [ite_eq_right hi, rotation_of_ne_four w i hi]
     exact val_glueLabelEquiv_symm_ofEq (types_rotation i) _ _ _
 
@@ -313,14 +364,14 @@ theorem map_glueSubgroup_a5FourthD4GlueRotation :
     a5FourthD4.glueSubgroup.map
         (a5FourthD4GlueRotation : a5FourthD4.glueModule →+ a5FourthD4.glueModule) =
       a5FourthD4.glueSubgroup :=
-  a5FourthD4.map_glueSubgroup_of_mem_glueGenerators_iff a5FourthD4GlueRotation
+  a5FourthD4.map_glueSubgroup_of_apply_mem_glueGenerators_iff a5FourthD4GlueRotation
     a5FourthD4GlueRotation_mem_glueGenerators_iff
 
 /-- Membership in the glue subgroup is invariant under the corrected rotation. -/
 @[simp]
 theorem a5FourthD4GlueRotation_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
     a5FourthD4GlueRotation w ∈ a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup :=
-  a5FourthD4.mem_glueSubgroup_iff_of_mem_glueGenerators_iff a5FourthD4GlueRotation
+  a5FourthD4.apply_mem_glueSubgroup_iff_of_apply_mem_glueGenerators_iff a5FourthD4GlueRotation
     a5FourthD4GlueRotation_mem_glueGenerators_iff w
 
 end TauCeti.RootfulNiemeierType

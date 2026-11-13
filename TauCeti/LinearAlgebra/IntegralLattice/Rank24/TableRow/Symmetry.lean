@@ -134,7 +134,7 @@ theorem mem_glueSymmetries_of_glueWords {g : Equiv.Perm (Fin r.components.length
       encodeGlueWord_piGlueAlphabetCongr_eq_ofFn, encodeGlueWord_def]
     exact hw fun i ↦ (((r.componentType i).glueLabelEquiv
       (r.isSimplyLaced_componentType i)).symm (v i)).val
-  exact r.mem_glueSubgroup_iff_of_mem_glueGenerators_iff φ hgen w
+  exact r.apply_mem_glueSubgroup_iff_of_apply_mem_glueGenerators_iff φ hgen w
 
 /-- **Glue symmetries from the patterns**: a permutation preserving the component types is a glue
 symmetry of a row as soon as the expansion of every pattern of the row is invariant under it. -/

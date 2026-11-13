@@ -490,14 +490,44 @@ def typeD4TrialityLabel : Equiv.Perm (Fin 4) where
   right_inv := by decide
 
 /-- The explicit permutation of the four Conway--Sloane labels under triality. -/
-@[simp]
 theorem typeD4TrialityLabel_apply (i : Fin 4) :
     typeD4TrialityLabel i = ![0, 2, 3, 1] i := (rfl)
 
 /-- The inverse triality permutation reads labels in order `[0,3,1,2]`. -/
-@[simp]
 theorem typeD4TrialityLabel_symm_apply (i : Fin 4) :
     typeD4TrialityLabel.symm i = ![0, 3, 1, 2] i := (rfl)
+
+/-- Triality fixes the zero label. -/
+@[simp] theorem typeD4TrialityLabel_zero : typeD4TrialityLabel 0 = 0 := (rfl)
+
+/-- Triality sends label one to label two. -/
+@[simp] theorem typeD4TrialityLabel_one : typeD4TrialityLabel 1 = 2 := (rfl)
+
+/-- Triality sends label two to label three. -/
+@[simp] theorem typeD4TrialityLabel_two : typeD4TrialityLabel 2 = 3 := (rfl)
+
+/-- Triality sends label three to label one. -/
+@[simp] theorem typeD4TrialityLabel_three : typeD4TrialityLabel 3 = 1 := (rfl)
+
+/-- Inverse triality fixes the zero label. -/
+@[simp] theorem typeD4TrialityLabel_symm_zero : typeD4TrialityLabel.symm 0 = 0 := (rfl)
+
+/-- Inverse triality sends label one to label three. -/
+@[simp] theorem typeD4TrialityLabel_symm_one : typeD4TrialityLabel.symm 1 = 3 := (rfl)
+
+/-- Inverse triality sends label two to label one. -/
+@[simp] theorem typeD4TrialityLabel_symm_two : typeD4TrialityLabel.symm 2 = 1 := (rfl)
+
+/-- Inverse triality sends label three to label two. -/
+@[simp] theorem typeD4TrialityLabel_symm_three : typeD4TrialityLabel.symm 3 = 2 := (rfl)
+
+/-- The triality label permutation has cube equal to the identity. -/
+@[simp] theorem typeD4TrialityLabel_pow_three : typeD4TrialityLabel ^ 3 = 1 := by decide
+
+/-- Applying the triality label permutation three times fixes every label. -/
+@[simp] theorem typeD4TrialityLabel_apply_apply_apply (i : Fin 4) :
+    typeD4TrialityLabel (typeD4TrialityLabel (typeD4TrialityLabel i)) = i := by
+  fin_cases i <;> simp
 
 /-- The action of root-lattice triality on the `D₄` glue alphabet. -/
 noncomputable def typeD4TrialityGlueAlphabetIsometry : FiniteQuadraticModule.Isometry
