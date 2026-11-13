@@ -525,13 +525,10 @@ theorem cgf_id_neg (t : ℝ) : cgf id μ.neg t = cgf id μ (-t) := by
 theorem charFun_map_affine (t : ℝ) :
     charFun (μ.map fun x => a + b * x) t =
       Complex.exp (a * t * Complex.I) * charFun μ (b * t) := by
-  rw [charFun_apply_real, charFun_apply_real,
-    integral_map (measurable_affine a b).aemeasurable (by fun_prop), ← integral_const_mul]
-  refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  dsimp only
-  rw [← Complex.exp_add]
-  push_cast
-  ring_nf
+  rw [show (fun x => a + b * x) = (a + ·) ∘ (b * ·) from rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop), charFun_map_const_add, charFun_map_mul,
+    mul_comm]
+  simp [mul_comm]
 
 end TauCeti.Probability
 
