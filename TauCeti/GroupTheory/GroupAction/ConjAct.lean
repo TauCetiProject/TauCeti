@@ -31,6 +31,7 @@ by conjugation on every transitive normal subgroup.
 
 ## Main statements
 
+* `ConjAct.mk_eq_mk_iff_isConj`: conjugation orbits are the classes of `IsConj`.
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
 * `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
@@ -51,6 +52,13 @@ by conjugation on every transitive normal subgroup.
 -/
 
 public section
+
+/-- Two elements of a group lie in one orbit of the conjugation action exactly when they are
+conjugate. -/
+theorem ConjAct.mk_eq_mk_iff_isConj {G : Type*} [Group G] {x y : G} :
+    (Quotient.mk'' x : MulAction.orbitRel.Quotient (ConjAct G) G) = Quotient.mk'' y ↔
+      IsConj x y :=
+  Quotient.eq''.trans (by rw [ConjAct.orbitRel_conjAct])
 
 namespace MonoidHom
 
