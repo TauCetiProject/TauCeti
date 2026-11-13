@@ -26,6 +26,8 @@ then the two finsets have the same product.
 * `Finset.sum_withPartners_eq_zero`: cancellation of pairwise zero contributions.
 * `Finset.prod_bij_of_rel`, `Finset.sum_bij_of_rel`: equality of products or sums over two
   finsets matched one-to-one by a relation.
+* `Finset.sum_eq_sum_iff_sdiff`, `Finset.add_sum_eq_add_sum_iff_sdiff`: removing two subfinsets with
+  equal sums from both sides of an equation of sums.
 -/
 
 public section
@@ -80,5 +82,28 @@ theorem prod_bij_of_rel {κ : Type*} [CommMonoid M] {s : Finset α} {t : Finset 
       (h ▸ (hex a' ha').choose_spec.2.1)
   · obtain ⟨a, ha, hab⟩ := hsurj b hb
     exact ⟨a, ha, hright a ha _ (hex a ha).choose_spec.1 b hb (hex a ha).choose_spec.2.1 hab⟩
+
+section SDiff
+
+variable {β : Type*} [DecidableEq β] [AddCommMonoid M] [IsCancelAdd M]
+
+/-- Two sums are equal exactly when they stay equal after removing subfinsets with equal sums
+from both of them. -/
+theorem sum_eq_sum_iff_sdiff {A S : Finset α} {B T : Finset β} {f : α → M} {g : β → M}
+    (hS : S ⊆ A) (hT : T ⊆ B) (h : ∑ x ∈ S, f x = ∑ y ∈ T, g y) :
+    ∑ x ∈ A, f x = ∑ y ∈ B, g y ↔ ∑ x ∈ A \ S, f x = ∑ y ∈ B \ T, g y := by
+  rw [← sum_sdiff hS, ← sum_sdiff hT, h]
+  exact add_left_inj _
+
+/-- Two sums, each with a summand added, are equal exactly when they stay equal after removing
+subfinsets with equal sums from both of them. -/
+theorem add_sum_eq_add_sum_iff_sdiff {A S : Finset α} {B T : Finset β} {f : α → M} {g : β → M}
+    (hS : S ⊆ A) (hT : T ⊆ B) (h : ∑ x ∈ S, f x = ∑ y ∈ T, g y) (a b : M) :
+    a + ∑ x ∈ A, f x = b + ∑ y ∈ B, g y ↔
+      a + ∑ x ∈ A \ S, f x = b + ∑ y ∈ B \ T, g y := by
+  rw [← sum_sdiff hS, ← sum_sdiff hT, h, ← add_assoc, ← add_assoc]
+  exact add_left_inj _
+
+end SDiff
 
 end Finset

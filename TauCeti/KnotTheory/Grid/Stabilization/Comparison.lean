@@ -333,6 +333,32 @@ private theorem stabilizeXConeWeight_stabilizeXMatching
 
 /-! ### Rectangles lower the weight -/
 
+/-- A rectangle of the stabilization that covers only the column `s.castSucc` and avoids the marking
+`X₁ = (s.castSucc, (G.X s).succ)` lowers the cyclic position of the row used in the column
+`s.succ`. -/
+private theorem cyclicPosition_lt_of_coveredColumns_eq_singleton {y z : GridState (n + 1)}
+    (r : GridRectangleBetween y z)
+    (hX : Disjoint r.toGridRectangle.coveredSquares
+      (G.stabilizeX s.castSucc (G.X s).castSucc s).XSet)
+    (hcols : r.toGridRectangle.coveredColumns = {s.castSucc}) :
+    Grid.cyclicPosition (G.X s).succ (z s.succ) < Grid.cyclicPosition (G.X s).succ (y s.succ) := by
+  obtain ⟨hleft, hright, -⟩ := Grid.cIco_eq_singleton_iff.mp hcols
+  simp only [GridRectangleBetween.toGridRectangle_left,
+    GridRectangleBetween.toGridRectangle_right,
+    finRotate_apply, Fin.coeSucc_eq_succ] at hleft hright
+  have hzs : z s.succ = y s.castSucc := by
+    rw [← hright, ← hleft]
+    exact r.map_right
+  rw [hzs]
+  refine Grid.cyclicPosition_lt_of_notMem_cIco
+    (fun h ↦ (Fin.castSucc_lt_succ (i := s)).ne (y.toPerm.injective h)) fun hρ' ↦ ?_
+  refine Finset.disjoint_left.mp hX ((GridRectangle.mem_coveredSquares _ _).mpr ⟨?_, ?_⟩)
+    ((mk_mem_XSet _ s.castSucc (G.X s).succ).mpr (by simp))
+  · rw [hcols]
+    exact Finset.mem_singleton_self _
+  · simpa [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hleft, hright]
+      using hρ'
+
 /-- **Off-center to off-center.** A fully blocked rectangle of the stabilization between two
 off-center states strictly lowers the weight, unless it is the matching edge from a source to
 its partner. -/
@@ -361,25 +387,9 @@ private theorem stabilizeXConeWeight_lt_or_of_mem_fullyBlockedRectangles
     exact Or.inr ⟨G.stabilizeXMatchingSource_inl_of_mem_fullyBlockedRectangles s (y := ⟨y, hy⟩) hr,
       ((G.stabilizeXMatching_eq_inl_iff s _ _).mpr
         (by rw [stabilizeXConeStateEquiv_apply_inl])).symm⟩
-  · -- A rectangle in the column `s.castSucc` keeps the level and lowers the row position, since
-    -- it avoids the marking `X₁ = (s.castSucc, (G.X s).succ)`.
-    obtain ⟨hleft, hright, -⟩ := Grid.cIco_eq_singleton_iff.mp hcols
-    simp only [GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right,
-      finRotate_apply, Fin.coeSucc_eq_succ] at hleft hright
-    refine Or.inl (Or.inr ⟨(G.stabilizeXLevel_eq_of_disjoint s r hdisj).symm, ?_⟩)
-    have hzs : z s.succ = y s.castSucc := by
-      rw [← hright, ← hleft]
-      exact r.map_right
-    rw [hzs]
-    refine Grid.cyclicPosition_lt_of_notMem_cIco
-      (fun h ↦ (Fin.castSucc_lt_succ (i := s)).ne (y.toPerm.injective h)) fun hρ' ↦ ?_
-    refine Finset.disjoint_left.mp hX ((GridRectangle.mem_coveredSquares _ _).mpr ⟨?_, ?_⟩)
-      ((mk_mem_XSet _ s.castSucc (G.X s).succ).mpr (by simp))
-    · rw [hcols]
-      exact Finset.mem_singleton_self _
-    · simpa [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hleft, hright]
-        using hρ'
+  · -- A rectangle in the column `s.castSucc` keeps the level and lowers the row position.
+    exact Or.inl (Or.inr ⟨(G.stabilizeXLevel_eq_of_disjoint s r hdisj).symm,
+      G.cyclicPosition_lt_of_coveredColumns_eq_singleton s r hX hcols⟩)
 
 /-- **Off-center to center.** A rectangle counted by the reduced `H_I^N` strictly lowers the
 weight, unless it is the matching edge from a source to its partner. -/
@@ -419,23 +429,34 @@ private theorem stabilizeXConeWeight_lt_or_of_mem_XHomotopyRectangles
     ((G.stabilizeXMatching_eq_inr_iff s _ _).mpr
       (by rw [stabilizeXConeStateEquiv_apply_inl, hswap])).symm⟩
 
+/-- The center insertion identifies the fully blocked rectangles of `G` and of its stabilization,
+so a fully blocked rectangle of `G` gives one of the stabilization between the inserted states. -/
+private theorem nonempty_fullyBlockedRectangles_stabilizeX_insertPoint (x x' : GridState n)
+    {r : GridRectangleBetween x x'} (hr : r ∈ G.fullyBlockedRectangles x x') :
+    ((G.stabilizeX s.castSucc (G.X s).castSucc s).fullyBlockedRectangles
+      (x.insertPoint s.succ (G.X s).succ) (x'.insertPoint s.succ (G.X s).succ)).Nonempty := by
+  have hcard : ((G.stabilizeX s.castSucc (G.X s).castSucc s).fullyBlockedRectangles
+      (x.insertPoint s.succ (G.X s).succ) (x'.insertPoint s.succ (G.X s).succ)).card =
+        (G.fullyBlockedRectangles x x').card := by
+    have h := (G.stabilizeX s.castSucc (G.X s).castSucc
+      s).constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles ℕ
+        (x.insertPoint s.succ (G.X s).succ) (x'.insertPoint s.succ (G.X s).succ)
+    rw [unblockedCoefficient_stabilizeX_insertPoint, constantCoeff_rename,
+      constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles] at h
+    exact_mod_cast h.symm
+  rw [← Finset.card_pos, hcard]
+  exact Finset.card_pos.mpr ⟨r, hr⟩
+
 /-- **Center to center.** A fully blocked rectangle of `G` strictly lowers the weight of the
 corresponding center generators. -/
 private theorem stabilizeXConeWeight_lt_of_mem_fullyBlockedRectangles (x x' : GridState n)
     {r : GridRectangleBetween x x'} (hr : r ∈ G.fullyBlockedRectangles x x') :
     G.stabilizeXConeWeight s (.inr x') < G.stabilizeXConeWeight s (.inr x) := by
-  set G' := G.stabilizeX s.castSucc (G.X s).castSucc s with hG'
-  set y := x.insertPoint s.succ (G.X s).succ with hy
-  set z := x'.insertPoint s.succ (G.X s).succ with hz
-  -- The center insertion identifies the fully blocked rectangles of `G` and of `G'`.
-  have hcard : (G'.fullyBlockedRectangles y z).card = (G.fullyBlockedRectangles x x').card := by
-    have h := G'.constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles ℕ y z
-    rw [hy, hz, hG', unblockedCoefficient_stabilizeX_insertPoint, constantCoeff_rename,
-      constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles] at h
-    exact_mod_cast h.symm
-  obtain ⟨r', hr'⟩ : (G'.fullyBlockedRectangles y z).Nonempty := by
-    rw [← Finset.card_pos, hcard]
-    exact Finset.card_pos.mpr ⟨r, hr⟩
+  set G' := G.stabilizeX s.castSucc (G.X s).castSucc s
+  set y := x.insertPoint s.succ (G.X s).succ
+  set z := x'.insertPoint s.succ (G.X s).succ
+  obtain ⟨r', hr'⟩ : (G'.fullyBlockedRectangles y z).Nonempty :=
+    G.nonempty_fullyBlockedRectangles_stabilizeX_insertPoint s x x' hr
   have hO := r'.disjoint_coveredSquares_OSet_of_avoidsMarkings
     (avoidsMarkings_of_mem_fullyBlockedRectangles _ _ _ hr')
   have hys : y s.succ = (G.X s).succ := GridState.insertPoint_apply_newColumn _ _ _

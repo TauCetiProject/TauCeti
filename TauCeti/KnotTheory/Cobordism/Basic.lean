@@ -570,13 +570,44 @@ private theorem isImmersionAt_glueFun (hc : 0 < c)
   exact himm.congr_of_eventuallyEq <| eventuallyEq_of_mem (hU.mem_nhds hx') fun y hy ↦
     (glueFun_of_le_snd C hc hS hy.le).symm
 
+/-- Over the open slab above height `1 - 2 c`, the glued map is the rescaled concordance composed
+with the parameters of the cylinder over `K₁`, hence an embedding. -/
+private theorem isEmbedding_glueFun_comp_subtypeVal_upper (hc : 0 < c)
+    (hS : IsCylinderFrom S (1 - 2 * c)) :
+    IsEmbedding (glueFun C S hc ∘
+      (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) := by
+  have heq : glueFun C S hc ∘ (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier) =
+      rescale C hc ∘ (collarParam S ∘ Subtype.val) :=
+    funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.2)
+  have hP : Continuous (collarParam S ∘
+      (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) :=
+    continuous_iff_continuousAt.2 fun y ↦
+      (contMDiffAt_collarParam hS y.2).continuousAt.comp continuous_subtype_val.continuousAt
+  have hK : Continuous (Prod.map K₁ (id : ℝ → ℝ)) :=
+    K₁.isEmbedding.continuous.prodMap continuous_id
+  have hPK : Prod.map K₁ id ∘ (collarParam S ∘
+      (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) = S.toFun ∘ Subtype.val :=
+    funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.2))
+  rw [heq]
+  refine (rescale C hc).isEmbedding.comp (IsEmbedding.of_comp hP hK ?_)
+  rw [hPK]
+  exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
+
+/-- A point of the surface whose glued image lies in the slab below height `1 - c`, respectively
+above height `1 - 2 c`, lies in the matching slab of the original surface. -/
+private theorem lt_snd_toFun_of_lt_snd_glueFun (hc : 0 < c) (y : S.carrier)
+    (hy : 1 - 2 * c < (glueFun C S hc y).2) :
+    1 - 2 * c < (S.toFun y).2 := by
+  by_cases hle : (S.toFun y).2 ≤ 1 - c
+  · rwa [glueFun_of_le C hc hle] at hy
+  · linarith
+
 /-- The glued map is a topological embedding: the open slabs below height `1 - c` and above height
 `1 - 2 c` cover `Sⁿ × ℝ`, and over them it is the embedding of `S`, respectively the rescaled
 concordance composed with the parameters of the cylinder over `K₁`. -/
 private theorem isEmbedding_glueFun (hc : 0 < c)
     (hS : IsCylinderFrom S (1 - 2 * c)) :
     IsEmbedding (glueFun C S hc) := by
-  have hΦ := S.isSmoothEmbedding
   have hglue : Continuous (glueFun C S hc) := continuous_iff_continuousAt.2 fun x ↦
     (isImmersionAt_glueFun C hc hS x).continuousAt
   let U : Bool → TopologicalSpace.Opens (sphere (0 : E) 1 × ℝ) := fun b ↦ bif b
@@ -599,34 +630,15 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
       refine ⟨⟨y, ?_⟩, rfl⟩
       have hy' : (glueFun C S hc y).2 < 1 - c := hy
       rwa [glueFun_of_le C hc hle] at hy'
-    · have hy' : 1 - 2 * c < (glueFun C S hc y).2 := hy
-      have hlt : 1 - 2 * c < (S.toFun y).2 := by
-        by_cases hle : (S.toFun y).2 ≤ 1 - c
-        · rwa [glueFun_of_le C hc hle] at hy'
-        · linarith
-      exact ⟨⟨y, hlt⟩, rfl⟩
+    · exact ⟨⟨y, lt_snd_toFun_of_lt_snd_glueFun C hc y hy⟩, rfl⟩
   -- On each slab of the surface the glued map is an embedding.
   · rintro (_ | _)
     · have heq : glueFun C S hc ∘ (Subtype.val : W false → S.carrier) =
           S.toFun ∘ Subtype.val :=
         funext fun y ↦ glueFun_of_le C hc (le_of_lt y.2)
       rw [heq]
-      exact hΦ.isEmbedding.comp IsEmbedding.subtypeVal
-    · have heq : glueFun C S hc ∘ (Subtype.val : W true → S.carrier) =
-          rescale C hc ∘ (collarParam S ∘ Subtype.val) :=
-        funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.2)
-      have hP : Continuous (collarParam S ∘ (Subtype.val : W true → S.carrier)) :=
-        continuous_iff_continuousAt.2 fun y ↦
-          (contMDiffAt_collarParam hS y.2).continuousAt.comp continuous_subtype_val.continuousAt
-      have hK : Continuous (Prod.map K₁ (id : ℝ → ℝ)) :=
-        K₁.isEmbedding.continuous.prodMap continuous_id
-      have hPK : Prod.map K₁ id ∘ (collarParam S ∘ (Subtype.val : W true → S.carrier)) =
-          S.toFun ∘ Subtype.val :=
-        funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.2))
-      rw [heq]
-      refine (rescale C hc).isEmbedding.comp (IsEmbedding.of_comp hP hK ?_)
-      rw [hPK]
-      exact hΦ.isEmbedding.comp IsEmbedding.subtypeVal
+      exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
+    · exact isEmbedding_glueFun_comp_subtypeVal_upper C hc hS
 
 /-- The part of the glued surface over the slab `Sⁿ × [0, 1]` is compact. -/
 private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
