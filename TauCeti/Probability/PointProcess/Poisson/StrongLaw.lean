@@ -44,7 +44,7 @@ theorem ae_tendsto_nat_count_div {Ω : Type*} [MeasurableSpace Ω] {P : Measure 
   have : IsLocallyFiniteMeasure ((r : ℝ≥0∞) • nnvolume) :=
     nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
   exact h.hasIndepIncrements_nat_count.ae_tendsto_div_of_hasLaw_poissonMeasure
-    h.measurable_nat_count (ae_of_all _ (fun _ ↦ by simp)) h.ae_monotone_nat_count
+    h.ae_monotone_nat_count
     (fun _ _ hst ↦ h.hasLaw_nat_count_sub_smul_nnvolume hst)
 
 end TauCeti.Probability.IsPoissonRandomMeasure

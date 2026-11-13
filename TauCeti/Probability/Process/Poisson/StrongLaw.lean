@@ -7,20 +7,22 @@ module
 
 public import TauCeti.Probability.Renewal.Exponential.Process
 public import TauCeti.Analysis.SpecificLimits.Monotone
+import Mathlib.Probability.IdentDistribIndep
 
 /-!
 # The long-run rate of Poisson counts
 
-A nondecreasing count process starting at zero with stationary independent Poisson
+A nondecreasing count process with stationary independent Poisson
 increments satisfies `N t / t → r` almost surely, along all nonnegative real times.
 The rate may be zero. No path continuity or canonical sample space is required.
 
-For positive rate, the existing exponential-renewal path-law comparison transfers
+For positive rate, comparison of unit increments with exponential-renewal counts transfers
 the renewal strong law at integer times. Monotonicity then extends the limit to
 all times. Transferring only the countable-coordinate event is important: an
 arbitrary event about uncountably many time coordinates need not be measurable
-for the product sigma-algebra. At rate zero, simultaneous vanishing at integer
-times and monotonicity give simultaneous vanishing at all times.
+for the product sigma-algebra. At rate zero, simultaneous constancy at integer
+times and monotonicity give simultaneous constancy at all times. The initial count
+may be arbitrary, and coordinate measurability is not required.
 
 ## References
 
@@ -41,14 +43,12 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {N : ℝ≥0 → Ω → ℕ} {r : ℝ≥0}
 
 private theorem ae_tendsto_natCast_div_of_pos (hN : HasIndepIncrements N P)
-    (hm : ∀ t, Measurable (N t)) (h0 : ∀ᵐ ω ∂P, N 0 ω = 0)
     (hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω))
     (hlaw : ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω)
       (poissonMeasure (r * (t - s))) P) (hr : 0 < r) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦ (N n ω : ℝ) / n) atTop (𝓝 (r : ℝ)) := by
   -- Construct exponential increments on a product space, then use the existing renewal law.
-  have hr' : 0 < (r : ℝ) := hr
-  have := isProbabilityMeasure_expMeasure hr'
+  have := isProbabilityMeasure_expMeasure (NNReal.coe_pos.mpr hr)
   let Q : Measure (ℕ → ℝ) := Measure.infinitePi fun _ : ℕ ↦ expMeasure r
   let T (n : ℕ) (ω : ℕ → ℝ) : ℝ≥0 := (ω n).toNNReal
   have hT (n : ℕ) : Measurable (T n) := by fun_prop
@@ -60,42 +60,71 @@ private theorem ae_tendsto_natCast_div_of_pos (hN : HasIndepIncrements N P)
     apply (hcoord n).congr
     filter_upwards [ae_pos_of_hasLaw_expMeasure (hcoord n)] with ω hω
     exact Real.coe_toNNReal _ hω.le
-  have hid := identDistrib_renewalCountNat_of_hasLaw_poissonMeasure
-    hT hi hTL hN hm h0 hmono hlaw
-  have hnat := hid.comp (by fun_prop :
-    Measurable (fun w : ℝ≥0 → ℕ ↦ fun n : ℕ ↦ w n))
-  apply hnat.ae_snd (p := fun w : ℕ → ℕ ↦
-    Tendsto (fun n : ℕ ↦ (w n : ℝ) / n) atTop (𝓝 (r : ℝ)))
-    (measurableSet_tendsto (𝓝 (r : ℝ)) (fun n ↦ by fun_prop))
-  filter_upwards [ae_tendsto_renewalCountNat_div_of_expMeasure (fun _ _ h ↦ hi.indepFun h) hTL]
-    with ω hω
-  simpa only [Function.comp_def, NNReal.coe_natCast] using
-    hω.comp (tendsto_natCast_atTop_atTop (R := ℝ≥0))
+  let C := renewalCountNat T
+  have hid := IdentDistrib.pi (fun n : ℕ ↦ by
+    have h := hasLaw_renewalCountNat_sub_poissonMeasure hT hi hTL (n : ℝ≥0) 1
+    have h' := hlaw (n : ℝ≥0) (n + 1) (le_self_add)
+    simp only [mul_one] at h
+    simp only [add_tsub_cancel_left, mul_one] at h'
+    simpa only [Nat.cast_add, Nat.cast_one] using h.identDistrib h')
+    ((hasIndepIncrements_renewalCountNat_of_expMeasure hT hi hTL).nat
+      (Nat.mono_cast (α := ℝ≥0))) (hN.nat (Nat.mono_cast (α := ℝ≥0)))
+  have hsum : ∀ᵐ ω ∂P, Tendsto
+      (fun n : ℕ ↦ ((∑ i ∈ Finset.range n, (N ↑(i + 1) ω - N i ω) : ℕ) : ℝ) / n)
+      atTop (𝓝 (r : ℝ)) := by
+    apply hid.ae_snd (p := fun w : ℕ → ℕ ↦
+      Tendsto (fun n : ℕ ↦ ((∑ i ∈ Finset.range n, w i : ℕ) : ℝ) / n)
+        atTop (𝓝 (r : ℝ)))
+      (measurableSet_tendsto (𝓝 (r : ℝ)) (fun n ↦ by fun_prop))
+    have h0 : ∀ᵐ ω ∂Q, C 0 ω = 0 := by
+      have h := hasLaw_renewalCountNat_poissonMeasure hT hi hTL 0
+      simp only [mul_zero, poissonMeasure_zero] at h
+      exact h.ae_eq_of_dirac
+    filter_upwards [ae_tendsto_renewalCountNat_div_of_expMeasure
+      (fun _ _ h ↦ hi.indepFun h) hTL, h0] with ω hω hω0
+    have htel (n : ℕ) : ∑ i ∈ Finset.range n, (C ↑(i + 1) ω - C i ω) = C n ω := by
+      simpa only [Function.comp_apply, Nat.cast_zero,
+        show renewalCountNat T 0 ω = 0 from hω0, Nat.sub_zero] using
+        Finset.sum_range_tsub
+          ((monotone_renewalCountNat T ω).comp (Nat.mono_cast (α := ℝ≥0))) n
+    simpa only [Function.comp_def, htel, C, NNReal.coe_natCast] using
+      hω.comp (tendsto_natCast_atTop_atTop (R := ℝ≥0))
+  filter_upwards [hsum, hmono] with ω hω hmω
+  have htel (n : ℕ) : (∑ i ∈ Finset.range n, (N ↑(i + 1) ω - N i ω)) + N 0 ω = N n ω := by
+    calc
+      _ = (N n ω - N 0 ω) + N 0 ω := by
+        congr 1
+        simpa only [Function.comp_def, Nat.cast_zero] using
+          Finset.sum_range_tsub (hmω.comp (Nat.mono_cast (α := ℝ≥0))) n
+      _ = N n ω := Nat.sub_add_cancel (hmω bot_le)
+  have h := hω.add (tendsto_const_div_atTop_nhds_zero_nat (N 0 ω : ℝ))
+  simp only [add_zero] at h
+  convert h using 1
+  ext n
+  rw [← add_div, ← Nat.cast_add, htel]
 
-/-- **Strong law for Poisson counts.** Stationary independent rate-`r` Poisson increments,
-a zero initial count, and almost-sure monotonicity imply `N t / t → r` on one full-measure
-event along all nonnegative real times. This includes rate zero, and needs no continuity
-of the paths or usual conditions on a filtration. -/
+/-- **Strong law for Poisson counts.** Stationary independent rate-`r` Poisson increments
+and almost-sure monotonicity imply `N t / t → r` on one full-measure event along all
+nonnegative real times, with arbitrary initial counts. This includes rate zero, and needs
+no coordinate measurability, path continuity, or usual conditions on a filtration. -/
 theorem ae_tendsto_div_of_hasLaw_poissonMeasure (hN : HasIndepIncrements N P)
-    (hm : ∀ t, Measurable (N t)) (h0 : ∀ᵐ ω ∂P, N 0 ω = 0)
     (hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω))
     (hlaw : ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω)
       (poissonMeasure (r * (t - s))) P) :
     ∀ᵐ ω ∂P, Tendsto (fun t : ℝ≥0 ↦ (N t ω : ℝ) / t) atTop (𝓝 (r : ℝ)) := by
   by_cases hr : r = 0
   · subst r
-    have hz (n : ℕ) : ∀ᵐ ω ∂P, N n ω = 0 := by
+    have hz (n : ℕ) : ∀ᵐ ω ∂P, N n ω = N 0 ω := by
       have h := hlaw 0 n bot_le
       simp only [zero_mul, poissonMeasure_zero] at h
-      filter_upwards [h.ae_eq_of_dirac, h0] with ω hω hω0
-      simpa only [hω0, Nat.sub_zero] using hω
+      filter_upwards [h.ae_eq_of_dirac, hmono] with ω hω hmω
+      exact le_antisymm (Nat.sub_eq_zero_iff_le.mp hω) (hmω bot_le)
     filter_upwards [ae_all_iff.mpr hz, hmono] with ω hω hmω
-    have hzero (t : ℝ≥0) : N t ω = 0 := by
-      obtain ⟨n, hn⟩ := exists_nat_ge t
-      exact Nat.eq_zero_of_le_zero ((hmω hn).trans_eq (hω n))
-    simpa only [hzero, Nat.cast_zero, zero_div, NNReal.coe_zero] using
-      (tendsto_const_nhds : Tendsto (fun _ : ℝ≥0 ↦ (0 : ℝ)) atTop (𝓝 0))
-  · filter_upwards [ae_tendsto_natCast_div_of_pos hN hm h0 hmono hlaw
+    apply Monotone.tendsto_div_of_tendsto_natCast (f := fun t ↦ (N t ω : ℝ))
+      (fun _ _ hst ↦ Nat.cast_le.mpr (hmω hst))
+    simpa only [hω, NNReal.coe_zero] using
+      tendsto_const_div_atTop_nhds_zero_nat (N 0 ω : ℝ)
+  · filter_upwards [ae_tendsto_natCast_div_of_pos hN hmono hlaw
       (pos_iff_ne_zero.mpr hr), hmono] with ω hω hmω
     exact Monotone.tendsto_div_of_tendsto_natCast (f := fun t ↦ (N t ω : ℝ))
       (fun _ _ hst ↦ Nat.cast_le.mpr (hmω hst)) hω
