@@ -1028,6 +1028,7 @@ theorem isOfType_conjCoordForm (e : Fin k → ι) :
 
 /-- For injective `e`, the form `d(conj z_(e 0)) ∧ ⋯ ∧ d(conj z_(e (k - 1)))` takes the value `1`
 on the coordinate vectors `(e_(e 0), …, e_(e (k - 1)))`. -/
+@[simp]
 theorem conjCoordForm_apply_single_self [DecidableEq ι] {e : Fin k → ι}
     (he : Function.Injective e) : conjCoordForm e (fun a ↦ Pi.single (e a) 1) = 1 := by
   rw [conjCoordForm_apply, ← Matrix.det_one (n := Fin k) (R := ℂ)]
