@@ -41,9 +41,10 @@ because they are the Taylor terms of a harmonic function
 functions of degree at most `N` harmonic everywhere, uniformly together with all derivatives
 (`exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub`).
 The convergence of the derivatives comes from the interior derivative estimates for harmonic
-functions (`TendstoLocallyUniformlyOn.iteratedFDeriv_of_harmonicOnNhd`). A functional that
-annihilates the restrictions of all functions harmonic on an open set therefore annihilates the
-kernels whose poles lie far enough away; this is the step at infinity in the duality proof of
+functions (`TendstoLocallyUniformlyOn.iteratedFDeriv_of_harmonicOnNhd`). Hence a functional on
+functions on the closed ball of the approximation theorem, continuous for uniform convergence of the
+derivatives up to some finite order, which annihilates the polynomial functions harmonic
+everywhere, also annihilates `y ↦ Gₙ(x - y)`; this is the step at infinity in the duality proof of
 harmonic Runge approximation.
 
 ## Main declarations

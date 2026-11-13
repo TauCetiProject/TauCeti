@@ -24,9 +24,10 @@ Each homogeneous term `y ↦ pₖ (y, …, y)` is then harmonic on all of `E`
 the partial sums (`HasFPowerSeriesOnBall.tendstoUniformlyOn`), a harmonic function admitting a
 power series is, near each point, a uniform limit of polynomial functions harmonic on the whole
 space. This applies to every harmonic function with values in a finite-dimensional space, which
-is analytic (`InnerProductSpace.HarmonicAt.analyticAt`). This is how
-functionals annihilating every function harmonic on an open set are seen to annihilate the
-expansions of potentials whose poles lie far away.
+is analytic (`InnerProductSpace.HarmonicAt.analyticAt`). This is how functionals that annihilate
+every function harmonic on an open set, and are continuous for uniform convergence of
+derivatives up to some finite order, are seen to annihilate the expansions of potentials whose
+poles lie far away.
 
 ## The argument
 
