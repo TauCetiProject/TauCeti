@@ -22,9 +22,11 @@ instance if it is a proper map, every maximal integral curve of `X_f` stays in a
 fibres is needed, so critical levels are allowed. Two cases are singled out: a proper `C²`
 Hamiltonian has a complete Hamiltonian vector field, by conservation of energy; and if a
 completely integrable system `F : M → (ι → ℝ)` is a proper map, the Hamiltonian vector field of
-each of its integrals `F_i` is complete. The last statement is the completeness input of the
-Liouville–Arnold theorem: the Hamiltonian flows of the integrals of a proper integrable system are
-defined for all time. It applies to the harmonic oscillator on the plane.
+each of its integrals `F_i` is complete. The compact-fibre criterion is also what makes commuting
+Hamiltonian flows complete on a neighbourhood of a compact component of a level
+(`IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`), while the proper
+version gives completeness on the whole manifold, for instance for the harmonic oscillator on the
+plane.
 
 ## Main results
 
