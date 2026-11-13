@@ -21,11 +21,14 @@ import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
 /-!
-# Units of the `p`-adic integers
+# The `p`-adic integers: units, norms and local-global statements
 
-Complements to Mathlib's `PadicInt` API on the units of `ℤ_p`: `1 + x` is a unit whenever
+Complements to Mathlib's `PadicInt` API, chiefly on the units of `ℤ_p`: `1 + x` is a unit whenever
 `p ∣ x`, because `ℤ_p` is a local ring whose maximal ideal is `pℤ_p`. This is the criterion
-that makes `1 + p^f ℤ_p` a subgroup of `ℤ_pˣ`.
+that makes `1 + p^f ℤ_p` (for `f ≥ 1`) a subgroup of `ℤ_pˣ`. The file also contains summability
+and norm lemmas for `ℤ_p`, local-global statements for the ideals of `ℤ` (through the extensions
+to every `ℤ_p`), valuation lemmas for `ℚ_p`, and the vanishing of continuous additive
+homomorphisms `ℤ_p → ℤ`.
 
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
@@ -51,6 +54,11 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
+* `PadicInt.isUnit_natCast_of_coprime`: a natural number prime to `p` is a unit of `ℤ_[p]`.
+* `PadicInt.isUnit_natCard_of_isPGroup`: the order of a finite `ℓ`-group is a unit of `ℤ_[p]` for
+  a prime `ℓ ≠ p`.
+* `PadicInt.isUnit_natCast_or_isMaximal_span`: a prime is a unit of `ℤ_[p]` or generates a maximal
+  ideal.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
 * `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
@@ -216,8 +224,9 @@ theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ 
 
 /-- A natural number is a unit in `ℤ_p` exactly when `p` does not divide it.
 
-Not a `simp` lemma: `simp` rewrites the left-hand side by the general
-`IsLocalRing.isUnit_natCast_iff_not_dvd` first. -/
+Not tagged `simp`: in a module importing `TauCeti.Algebra.CharP.LocalRing`, `simp` rewrites the
+left-hand side by the general `IsLocalRing.isUnit_natCast_iff_not_dvd` first (in this module alone
+`simp` makes no progress on the statement). -/
 theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : ℤ_[p]) ↔ ¬p ∣ n := by
   rw [← Int.cast_natCast, isUnit_intCast_iff, Int.natCast_dvd_natCast]
 
