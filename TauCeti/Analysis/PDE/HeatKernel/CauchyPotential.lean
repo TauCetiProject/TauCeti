@@ -351,9 +351,9 @@ theorem hasFDerivAt_heatCauchyPotential {g' : E → E →L[ℝ] F} (hg : ∀ y, 
     HasFDerivAt (heatCauchyPotential g t) (heatCauchyPotential g' t x) x := by
   -- A bounded derivative makes `g` Lipschitz, hence `1`-Hölder, so its translates are integrable.
   have hlip : LipschitzWith M.toNNReal g := lipschitzOnWith_univ.1 <|
-    convex_univ.lipschitzOnWith_of_nnnorm_hasFDerivWithin_le
+    convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
       (fun y _ => (hg y).hasFDerivWithinAt) fun y _ => by
-        rw [← NNReal.coe_le_coe, coe_nnnorm]
+        rw [← NNReal.coe_le_coe, coe_nnNorm]
         exact (hM y).trans (Real.le_coe_toNNReal M)
   have hderiv : ∀ x' y, HasFDerivAt (fun x'' => heatKernel 1 y • g (x'' - √t • y))
       (heatKernel 1 y • g' (x' - √t • y)) x' := fun x' y => by
@@ -496,7 +496,6 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
   have hβ₁ : β - 1 ≤ 0 := by
     have : (α : ℝ) ≤ 2 := by exact_mod_cast hα
     linarith
-  have hH : (0 : ℝ) ≤ H := H.coe_nonneg
   set u : ℝ → F := fun r => heatCauchyPotential g r x
   -- `set` does not fold the applications `heatCauchyPotential g r x` into `u r`.
   change ‖u b - u a‖ ≤ _
@@ -506,7 +505,6 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
   rcases lt_or_gt_of_ne ha with ha | ha
   · rw [abs_of_neg ha]
     have hd : 0 < -a := neg_pos.2 ha
-    have hX : 0 ≤ H * (|b - a| * (-a) ^ (β - 1)) := by positivity
     calc ‖u b - u a‖ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
           norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hneg hrate ha b
       _ = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by ring
@@ -515,7 +513,6 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
         nlinarith
       _ = _ := by ring
   rw [abs_of_pos ha]
-  have hX : 0 ≤ H * (|b - a| * a ^ (β - 1)) := by positivity
   rcases le_or_gt (a / 2) b with hb | hb
   · -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
     have := norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt (u := u)

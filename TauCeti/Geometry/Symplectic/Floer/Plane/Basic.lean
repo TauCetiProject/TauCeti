@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -150,6 +151,15 @@ theorem periodic_cylindricalEndLift (p : PSSPlane) (s : ℝ) :
   simp only [cylindricalEndLift_def, h, Complex.exp_add]
   cases p <;> simp [Complex.exp_neg]
 
+/-- The end lift sends the circle `s = ε R` of the end to the circle of radius `exp (2πR)`,
+run through with angle `2π ε t`. -/
+theorem cylindricalEndLift_eq_circleMap (p : PSSPlane) (R t : ℝ) :
+    p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I) =
+      circleMap 0 (Real.exp (2 * π * R)) (p.endSign * (2 * π * t)) := by
+  rw [cylindricalEndLift_def, circleMap, zero_add, Complex.ofReal_exp, ← Complex.exp_add]
+  congr 1
+  cases p <;> push_cast [endSign_positive, endSign_negative] <;> ring
+
 /-- The end coordinate `ζ(w) = ε log w / (2π)`. It inverts the end lift on `ℂ ∖ {0}`
 (`cylindricalEndLift_endCoord`); its real part is the longitudinal coordinate `s` and its imaginary
 part an angular coordinate `t`, determined by the point only modulo `1`. -/
@@ -190,7 +200,6 @@ theorem endCoord_zero (p : PSSPlane) : p.endCoord 0 = 0 := by
 /-- The end coordinate is a right inverse of the end lift away from the pole. -/
 theorem cylindricalEndLift_endCoord (p : PSSPlane) {w : ℂ} (hw : w ≠ 0) :
     p.cylindricalEndLift (p.endCoord w) = w := by
-  have hπ : (2 * π : ℝ) ≠ 0 := by positivity
   rw [cylindricalEndLift_def, endCoord_def, ← mul_assoc, ← Complex.ofReal_mul,
     show 2 * π * p.endSign * (p.endSign / (2 * π)) = p.endSign * p.endSign by field_simp,
     endSign_mul_endSign, Complex.ofReal_one, one_mul, Complex.exp_log hw]

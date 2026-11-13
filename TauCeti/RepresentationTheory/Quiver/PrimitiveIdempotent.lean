@@ -55,12 +55,6 @@ needed; that computation plays no part here.
 
 Primitivity of `eᵥ` is a semiring-level statement. Additive inverses enter only with the corollary,
 the module characterization asking for a ring.
-
-## References
-
-This supplies the vertex-idempotent instance of the primitive idempotents of Layer 3A in
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose Layer 1 identifies
-`kQ eᵥ` with the indecomposable projective `Pᵥ`.
 -/
 
 public section

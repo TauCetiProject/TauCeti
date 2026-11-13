@@ -70,6 +70,13 @@ namespace SurfaceModel
 
 attribute [instance] finite_face
 
+/-- A surface model is determined by its underlying polygonal complex. -/
+theorem toPolygonalComplex_injective :
+    Function.Injective
+      (toPolygonalComplex : SurfaceModel.{u, v, w} → PolygonalComplex.{u, v, w}) := by
+  rintro ⟨⟩ ⟨⟩ rfl
+  rfl
+
 variable (S : SurfaceModel.{u, v, w})
 
 /-- Every germ of a surface model has degree one or two in its link. -/
@@ -85,14 +92,8 @@ theorem sideCount_rev_add_sideCount_eq_one_or_two (e : S.graph.E) :
 
 /-- Every dart of a surface model, or its reverse, is attached to a face side. -/
 theorem exists_outgoing_eq (e : S.graph.E) :
-    ∃ c : S.Corner, S.outgoing c = e ∨ S.outgoing c = S.graph.rev e := by
-  have h := S.sideCount_rev_add_sideCount_eq_one_or_two e
-  rcases Nat.eq_zero_or_pos (S.sideCount e) with he | he
-  · have hpos : 0 < S.sideCount (S.graph.rev e) := by omega
-    obtain ⟨c, hc⟩ := S.sideCount_pos_iff.1 hpos
-    exact ⟨c, .inr hc⟩
-  · obtain ⟨c, hc⟩ := S.sideCount_pos_iff.1 he
-    exact ⟨c, .inl hc⟩
+    ∃ c : S.Corner, S.outgoing c = e ∨ S.outgoing c = S.graph.rev e :=
+  S.exists_outgoing_of_linkDegree_ne_zero (by have := S.linkDegree_eq_one_or_two e; omega)
 
 /-- A surface model has finitely many darts: each of them lies, up to reversal, on a face side. -/
 instance instFiniteE : Finite S.graph.E :=
