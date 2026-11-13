@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Submonoid.Finiteness
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Basic
@@ -34,7 +35,12 @@ restricting representations of a finite group along a homomorphism. For any homo
 image of `p`, `R[N]` is a finite `R[M]`-module over any commutative semiring `R`
 (`TauCeti.MonoidAlgebra.mapDomainRingHom_moduleFinite_of_exists_finset_mul`), and hence
 `(mapDomainRingHom R p).Finite` holds over any commutative ring `R`
-(`TauCeti.MonoidAlgebra.mapDomainRingHom_finite_of_exists_finset_mul`).
+(`TauCeti.MonoidAlgebra.mapDomainRingHom_finite_of_exists_finset_mul`). Combining this with
+bounded-shift representatives for submonoid saturations shows that, for a finitely generated
+submonoid `S` of a torsion-free abelian group, the algebra of its saturation in an ambient
+finitely generated lattice or in `AddSubgroup.closure (S : Set G)` is finite over `R[S]`
+(`TauCeti.AddMonoidAlgebra.mapDomainRingHom_inclusion_nsmulSaturation_finite` and
+`TauCeti.AddMonoidAlgebra.mapDomainRingHom_inclusion_nsmulSaturation_inf_closure_finite`).
 -/
 
 public section
@@ -178,3 +184,31 @@ theorem mapDomainRingHom_finite_of_exists_finset_mul {M N : Type*} [CommMonoid M
   mapDomainRingHom_moduleFinite_of_exists_finset_mul p hF R
 
 end TauCeti.MonoidAlgebra
+
+namespace TauCeti.AddMonoidAlgebra
+
+open _root_.AddMonoidAlgebra
+
+/-- For a finitely generated submonoid `S` of a finitely generated torsion-free abelian group `L`,
+`R[S.nsmulSaturation]` is a finite `R[S]`-algebra over any commutative ring `R`. -/
+theorem mapDomainRingHom_inclusion_nsmulSaturation_finite {L : Type*} [AddCommGroup L]
+    [Module.Finite ℤ L] [HasUniqueDiv L] {S : AddSubmonoid L} (hS : S.FG)
+    (R : Type*) [CommRing R] :
+    (mapDomainRingHom R (AddSubmonoid.inclusion S.le_nsmulSaturation)).Finite :=
+  mapDomainRingHom_finite_of_exists_finset_add _
+    (AddSubmonoid.exists_finset_inclusion_add S.le_nsmulSaturation
+      hS.exists_finset_subset_nsmulSaturation_add) R
+
+/-- For a finitely generated submonoid `S` of a torsion-free abelian group `G`, the algebra of the
+saturation of `S` inside `AddSubgroup.closure (S : Set G)` is a finite `R[S]`-algebra over any
+commutative ring `R`. -/
+theorem mapDomainRingHom_inclusion_nsmulSaturation_inf_closure_finite {G : Type*} [AddCommGroup G]
+    [HasUniqueDiv G] {S : AddSubmonoid G} (hS : S.FG) (R : Type*) [CommRing R] :
+    (mapDomainRingHom R
+      (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).Finite :=
+  mapDomainRingHom_finite_of_exists_finset_add _
+    (AddSubmonoid.exists_finset_inclusion_add
+      (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
+      hS.exists_finset_subset_nsmulSaturation_inf_closure_add) R
+
+end TauCeti.AddMonoidAlgebra
