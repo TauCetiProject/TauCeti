@@ -49,21 +49,25 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 an ambient homeomorphism carrying the closures of the complementary domains containing the
 positive and negative sides of the bicollar onto the closed hemispheres around `p` and `-p`.
 Its boundary values satisfy `h (σ x) = equatorInclusion (p : F) (e x)` for the prescribed
-homeomorphism `e` of unit spheres. The point `x₀` selects a point on each side. -/
+homeomorphism `e` of unit spheres. The same hemisphere characterizations hold at every point
+of each side of the bicollar. -/
 theorem exists_homeomorph_eq_equatorInclusion
     (hb : IsBicollar σ b) (hEF : finrank ℝ F = finrank ℝ E + 1)
-    (hE : 1 < finrank ℝ E) (x₀ : sphere (0 : E) 1) (p : sphere (0 : F) 1)
+    (hE : 1 < finrank ℝ E) (p : sphere (0 : F) 1)
     (e : sphere (0 : E) 1 ≃ₜ sphere (0 : (ℝ ∙ (p : F))ᗮ) 1) :
     ∃ h : sphere (0 : F) 1 ≃ₜ sphere (0 : F) 1,
       (∀ x, h (σ x) = equatorInclusion (p : F) (e x)) ∧
-      (∀ y, 0 ≤ ⟪(h y : F), (p : F)⟫ ↔
-        y ∈ closure (connectedComponentIn (range σ)ᶜ (b (x₀, 1)))) ∧
-      (∀ y, ⟪(h y : F), (p : F)⟫ ≤ 0 ↔
-        y ∈ closure (connectedComponentIn (range σ)ᶜ (b (x₀, -1)))) := by
+      (∀ (x : sphere (0 : E) 1) {t : ℝ}, 0 < t → ∀ y, 0 ≤ ⟪(h y : F), (p : F)⟫ ↔
+        y ∈ closure (connectedComponentIn (range σ)ᶜ (b (x, t)))) ∧
+      (∀ (x : sphere (0 : E) 1) {t : ℝ}, t < 0 → ∀ y, ⟪(h y : F), (p : F)⟫ ≤ 0 ↔
+        y ∈ closure (connectedComponentIn (range σ)ᶜ (b (x, t)))) := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  obtain ⟨x₀⟩ : Nonempty (sphere (0 : E) 1) :=
+    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   let B : closedBall (0 : E) 1 ≃ₜ closedBall (0 : (ℝ ∙ (p : F))ᗮ) 1 :=
     e.radialExtension.subtype fun z ↦ by simp
   -- The complementary domains are the two sides of the bicollar.
-  obtain ⟨U, V, -, -, hUV, hcompl, hpos, hneg, hUc, hVc⟩ :=
+  obtain ⟨U, V, -, -, hUV, hcompl, -, -, hpos, hneg, hUc, hVc⟩ :=
     hb.exists_connectedComponentIn_eq hEF hE
   have hu : b (x₀, 1) ∈ U := hpos ⟨mem_univ _, by norm_num⟩
   have hv : b (x₀, -1) ∈ V := hneg ⟨mem_univ _, by norm_num⟩
@@ -97,14 +101,19 @@ theorem exists_homeomorph_eq_equatorInclusion
     (fun z ↦ by
       rw [Homeomorph.trans_apply, hB, ← mem_sphere_zero_iff_norm, hnC]
       simpa only [mem_inter_iff, A, C, z.2, and_true] using Set.ext_iff.1 hinter z)
-  refine ⟨h, fun x ↦ ?_, hhpos, hhneg⟩
-  have hxA : σ x ∈ A := (hA ▸ Or.inr (mem_range_self x))
-  rw [hhA ⟨σ x, hxA⟩]
-  have he : (B (eA ⟨σ x, hxA⟩) : (ℝ ∙ (p : F))ᗮ) = e x := by
-    simpa only [B, Homeomorph.subtype_apply_coe, heA ⟨σ x, hxA⟩ x rfl] using
-      e.radialExtension_coe_sphere x
-  apply Subtype.ext
-  simp [Homeomorph.trans_apply, coe_hemisphereHomeomorph_symm_apply,
-    coe_equatorInclusion_apply, he, norm_eq_of_mem_sphere]
+  refine ⟨h, ?_, ?_, ?_⟩
+  · intro x
+    have hxA : σ x ∈ A := (hA ▸ Or.inr (mem_range_self x))
+    rw [hhA ⟨σ x, hxA⟩]
+    have he : (B (eA ⟨σ x, hxA⟩) : (ℝ ∙ (p : F))ᗮ) = e x := by
+      simpa only [B, Homeomorph.subtype_apply_coe, heA ⟨σ x, hxA⟩ x rfl] using
+        e.radialExtension_coe_sphere x
+    apply Subtype.ext
+    simp [Homeomorph.trans_apply, coe_hemisphereHomeomorph_symm_apply,
+      coe_equatorInclusion_apply, he, norm_eq_of_mem_sphere]
+  · intro x t ht y
+    rw [hhpos, hUc _ hu, hUc _ (hpos (x := (x, t)) ⟨mem_univ x, mem_Ioi.2 ht⟩)]
+  · intro x t ht y
+    rw [hhneg, hVc _ hv, hVc _ (hneg (x := (x, t)) ⟨mem_univ x, mem_Iio.2 ht⟩)]
 
 end TauCeti.IsBicollar
