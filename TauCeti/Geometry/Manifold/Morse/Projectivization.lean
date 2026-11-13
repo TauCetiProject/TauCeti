@@ -61,6 +61,8 @@ makes the moment function Morse–Bott.
 * `TauCeti.image_criticalPoints_projectiveMomentFunction`: the critical values are the weights.
 * `TauCeti.criticalPoints_projectiveMomentFunction`: for distinct weights its critical points are
   the coordinate points `[eₖ]`.
+* `TauCeti.range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction`: the projective
+  subspace of the weight space of `c` is the set of critical points of value `c`.
 * `TauCeti.ProjectiveMomentChart.one_add_sum_mul_fderiv_fderiv_model_apply` and
   `TauCeti.ProjectiveMomentChart.fderiv_fderiv_model_apply_eq_zero_iff`: the Hessian of the chart
   model at an arbitrary critical point, and its kernel.
@@ -338,23 +340,14 @@ theorem finrank_ker_fderiv_fderiv_model {a : ℝ} {ν : Fin n → ℝ} {z : Fin 
     (hz : ∀ j, z j = 0 ∨ ν j = a) :
     Module.finrank ℝ (fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) z).ker =
       Module.finrank ℝ 𝕜 * {j | ν j = a}.ncard := by
-  set s : Set (Fin n) := {j | ν j = a}
-  -- Restricting a vector of the kernel to the coordinates of weight `a` is a linear isomorphism.
-  let φ : (fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) z).ker →ₗ[ℝ] s → 𝕜 :=
-    LinearMap.funLeft ℝ 𝕜 (Subtype.val : s → Fin n) ∘ₗ Submodule.subtype _
-  have hφ : Bijective φ := by
-    refine ⟨fun u u' h ↦ Subtype.ext (funext fun j ↦ ?_), fun g ↦ ?_⟩
-    · by_cases hj : ν j = a
-      · exact congrFun h ⟨j, hj⟩
-      · rw [(fderiv_fderiv_model_apply_eq_zero_iff hz _).1 u.2 j hj,
-          (fderiv_fderiv_model_apply_eq_zero_iff hz _).1 u'.2 j hj]
-    · refine ⟨⟨Function.ExtendByZero.linearMap ℝ 𝕜 (Subtype.val : s → Fin n) g,
-        (fderiv_fderiv_model_apply_eq_zero_iff hz _).2 fun j hj ↦ ?_⟩, ?_⟩
-      · exact Function.extend_apply' _ _ _ fun ⟨j', hj'⟩ ↦ hj (hj' ▸ j'.2)
-      · funext j
-        exact Subtype.val_injective.extend_apply _ _ j
-  rw [(LinearEquiv.ofBijective φ hφ).finrank_eq, Module.finrank_pi_fintype, Finset.sum_const,
-    Finset.card_univ, smul_eq_mul, mul_comm, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+  -- The kernel consists of the vectors supported on the coordinates of weight `a`.
+  have hker : (fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) z).ker =
+      (Pi.spanSubset 𝕜 {j | ν j = a}).restrictScalars ℝ := by
+    ext v
+    rw [Submodule.restrictScalars_mem, Pi.mem_spanSubset_iff]
+    exact fderiv_fderiv_model_apply_eq_zero_iff hz v
+  rw [hker, ((Submodule.restrictScalarsEquiv ℝ 𝕜 _ _).restrictScalars ℝ).finrank_eq,
+    ← Module.finrank_mul_finrank ℝ 𝕜, Pi.dim_spanSubset]
 
 /-- The Hessian quadratic form of the chart model at the origin is
 `v ↦ 2 * ∑ j, (ν j - a) * ‖v j‖ ^ 2`. -/
@@ -619,6 +612,7 @@ theorem projectiveMomentFunction_mem_range_of_mem_criticalPoints {w : Fin (n + 1
   exact ⟨k, (projectiveMomentFunction_eq_of_mem_criticalPoints hx hk).symm⟩
 
 /-- **The critical values of the moment function** are exactly the weights. -/
+@[simp]
 theorem image_criticalPoints_projectiveMomentFunction (w : Fin (n + 1) → ℝ) :
     projectiveMomentFunction 𝕜 w '' criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) =
       range w := by
@@ -643,6 +637,38 @@ theorem criticalPoints_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (hw : 
   · rintro ⟨k', rfl⟩
     rw [(mk_single_mem_affineOpen_iff k' k).mp hk]
 
+/-- **The projective subspace of a weight space is a critical set.** Let `L` be an injective linear
+map from `𝕜ᵐ⁺¹` into the weight space of `c`, the vectors whose coordinates of weight `w i ≠ c`
+vanish, and suppose that exactly `m + 1` coordinates have weight `c`. Then the induced map
+`ℙᵐ → ℙⁿ` is onto the critical points of the moment function of value `c`. -/
+theorem range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction {m : ℕ}
+    {w : Fin (n + 1) → ℝ} {c : ℝ} (L : (Fin (m + 1) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜)
+    (hL : Injective L) (hLw : ∀ u i, w i ≠ c → L u i = 0) (hm : {i | w i = c}.ncard = m + 1) :
+    range (map L hL) = criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) ∩
+      projectiveMomentFunction 𝕜 w ⁻¹' {c} := by
+  -- The weight space of `c` has dimension `m + 1`, so `L` is onto it.
+  have hrange : LinearMap.range L = Pi.spanSubset 𝕜 {i | w i = c} := by
+    refine Submodule.eq_of_le_of_finrank_le ?_ ?_
+    · rintro _ ⟨u, rfl⟩
+      exact Pi.mem_spanSubset_iff.2 (hLw u)
+    · rw [Pi.dim_spanSubset, hm, LinearMap.finrank_range_of_inj hL, Module.finrank_fin_fun]
+  ext x
+  induction x using ind with | h v hv =>
+  rw [mem_inter_iff, mem_preimage, mem_singleton_iff,
+    mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff]
+  constructor
+  · rintro ⟨s, hs⟩
+    induction s using ind with | h u hu =>
+    rw [map_mk, mk_eq_mk_iff] at hs
+    obtain ⟨a, ha⟩ := hs
+    intro i hi
+    have hai := congrFun ha i
+    rw [Pi.smul_apply, hLw u i hi, Units.smul_def, smul_eq_mul, mul_eq_zero] at hai
+    exact hai.resolve_left a.ne_zero
+  · intro h
+    obtain ⟨u, rfl⟩ : v ∈ LinearMap.range L := hrange ▸ Pi.mem_spanSubset_iff.2 h
+    exact ⟨mk 𝕜 u fun hu ↦ hv (by rw [hu, map_zero]), map_mk _ _ _ _⟩
+
 /-- At a coordinate point `[eₖ]` whose weight `w k` is simple, the moment function has a
 nondegenerate critical point. -/
 theorem isManifoldNondegenerateCriticalPoint_projectiveMomentFunction {w : Fin (n + 1) → ℝ}
@@ -666,18 +692,6 @@ theorem isManifoldNondegenerateCriticalPoint_projectiveMomentFunction_iff {w : F
     projectiveMomentFunction_comp_extend_symm, affineOpenPartialHomeomorph_extend_mk_single,
     isNondegenerateCriticalPoint_model_zero_iff]
   simp [Fin.forall_iff_succAbove k, Fin.succAbove_ne]
-
-/-- The coordinates `j` of the affine chart at `k` whose weight `w (k.succAbove j)` satisfies `p`
-correspond to the homogeneous coordinates other than `k` whose weight satisfies `p`. -/
-private theorem ncard_setOf_succAbove (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) (p : ℝ → Prop) :
-    {j | p (w (k.succAbove j))}.ncard = ({i | p (w i)} \ {k}).ncard := by
-  refine (Fin.succAbove_right_injective (p := k)).injOn.ncard_image.symm.trans
-    (congrArg ncard ?_)
-  ext i
-  simp only [mem_image, mem_ofPred_eq, mem_sdiff, mem_singleton_iff]
-  refine ⟨fun ⟨j, hj, hji⟩ ↦ hji ▸ ⟨hj, Fin.succAbove_ne k j⟩, fun ⟨hi, hik⟩ ↦ ?_⟩
-  obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq hik
-  exact ⟨j, hi, rfl⟩
 
 /-- A critical point of the moment function in the affine chart at `k` is a critical point of the
 chart model: every nonzero chart coordinate carries the weight `w k`. -/
@@ -708,7 +722,7 @@ theorem finrank_ker_criticalHessian_projectiveMomentFunction {w : Fin (n + 1) �
     projectiveMomentFunction_comp_extend_symm,
     finrank_ker_fderiv_fderiv_model (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk),
     projectiveMomentFunction_eq_of_mem_criticalPoints hx hk]
-  exact congrArg _ ((ncard_setOf_succAbove w k (· = w k)).trans
+  exact congrArg _ ((ncard_preimage_succAbove k {i | w i = w k}).trans
     (ncard_sdiff_singleton_of_mem (s := {i | w i = w k}) rfl))
 
 /-- **The Morse index of the moment function at a critical point.** At a critical point `x`, the
@@ -727,7 +741,7 @@ theorem manifoldMorseIndex_projectiveMomentFunction_of_mem_criticalPoints
     morseIndex_model (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk),
     projectiveMomentFunction_eq_of_mem_criticalPoints hx hk]
   -- The weights below `w k` all sit at indices other than `k`.
-  exact congrArg _ ((ncard_setOf_succAbove w k (· < w k)).trans
+  exact congrArg _ ((ncard_preimage_succAbove k {i | w i < w k}).trans
     (congrArg ncard (sdiff_singleton_eq_self (lt_irrefl (w k)))))
 
 /-- **The Morse index of the moment function.** At the coordinate point `[eₖ]` the Morse index of

@@ -53,8 +53,6 @@ open set where `G` does not vanish, and it is `C^r` there
   `r`.
 * `Projectivization.contMDiffOn_linearProjection`: the map induced by a linear map is `C^r` where
   the linear map does not vanish.
-* `Projectivization.isClosedEmbedding_map`: over `ℝ` or `ℂ`, the map induced by an injective
-  linear map is a closed embedding.
 * `Projectivization.isSmoothEmbedding_map`: over `ℝ` or `ℂ`, the map induced by an injective
   linear map is a `C^r` embedding for every `r ≥ 1`.
 * `Projectivization.mapDiffeomorph`: the `C^r` diffeomorphism induced by a linear equivalence.
@@ -217,13 +215,6 @@ namespace Projectivization
 
 variable {𝕜 𝕜' : Type*} [RCLike 𝕜] [RCLike 𝕜'] [NormedAlgebra 𝕜' 𝕜] [FiniteDimensional 𝕜' 𝕜]
   {m n : ℕ}
-
-/-- Over `ℝ` or `ℂ`, the map of projective spaces induced by an injective linear map out of a
-finite-dimensional normed space is a closed embedding, since projective space is compact. -/
-theorem isClosedEmbedding_map {V W : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-    [FiniteDimensional 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W] (f : V →ₗ[𝕜] W)
-    (hf : Function.Injective f) : Topology.IsClosedEmbedding (map f hf) :=
-  (continuous_map hf f.continuous_of_finiteDimensional).isClosedEmbedding (map_injective f hf)
 
 /-- **Linear embeddings of projective spaces.** Over `ℝ` or `ℂ`, the map `ℙᵐ → ℙⁿ` induced by an
 injective linear map `𝕜ᵐ⁺¹ → 𝕜ⁿ⁺¹` is a `C^r` embedding for every `r ≥ 1`, for the manifold

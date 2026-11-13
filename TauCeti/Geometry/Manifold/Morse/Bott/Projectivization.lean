@@ -39,8 +39,6 @@ and the projective line `{v₂ = 0}`, a circle of maxima of index `1`.
 
 ## Main results
 
-* `TauCeti.range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction`: the projective
-  subspace of the weight space of `c` is the set of critical points of value `c`.
 * `TauCeti.isNondegenerateCriticalSubmanifold_projectiveMomentFunction`: the projective subspace
   of a weight space is a Morse–Bott critical submanifold.
 * `TauCeti.exists_isMorseBottFamily_projectiveMomentFunction`: **the moment function is
@@ -65,50 +63,6 @@ namespace TauCeti
 open Projectivization
 
 variable {𝕜 : Type*} [RCLike 𝕜] {n m : ℕ} {w : Fin (n + 1) → ℝ} {c : ℝ}
-
-/-- **The projective subspace of a weight space is a critical set.** Let `L` be an injective linear
-map from `𝕜ᵐ⁺¹` into the weight space of `c`, the vectors whose coordinates of weight `w i ≠ c`
-vanish, and suppose that exactly `m + 1` coordinates have weight `c`. Then the induced map
-`ℙᵐ → ℙⁿ` is onto the critical points of the moment function of value `c`. -/
-theorem range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction
-    (L : (Fin (m + 1) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜) (hL : Injective L)
-    (hLw : ∀ u i, w i ≠ c → L u i = 0) (hm : {i | w i = c}.ncard = m + 1) :
-    range (map L hL) = criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) ∩
-      projectiveMomentFunction 𝕜 w ⁻¹' {c} := by
-  -- The weight space `V` of `c` has dimension `m + 1`, so `L` is onto it.
-  set V := LinearMap.ker (LinearMap.funLeft 𝕜 𝕜 (Subtype.val : {i // w i ≠ c} → Fin (n + 1)))
-  have hV : finrank 𝕜 V ≤ m + 1 := by
-    let ρ := LinearMap.funLeft 𝕜 𝕜 (Subtype.val : {i // w i = c} → Fin (n + 1)) ∘ₗ V.subtype
-    have hρ : Injective ρ := fun v v' h ↦ Subtype.ext (funext fun i ↦ by
-      by_cases hi : w i = c
-      · exact congrFun h ⟨i, hi⟩
-      · exact (congrFun (LinearMap.mem_ker.1 v.2) ⟨i, hi⟩).trans
-          (congrFun (LinearMap.mem_ker.1 v'.2) ⟨i, hi⟩).symm)
-    refine (LinearMap.finrank_le_finrank_of_injective hρ).trans_eq ?_
-    rw [Module.finrank_fintype_fun_eq_card, ← Nat.card_eq_fintype_card, ← hm]
-    exact Nat.card_coe_set_eq {i | w i = c}
-  have hrange : LinearMap.range L = V := by
-    refine Submodule.eq_of_le_of_finrank_le ?_ ?_
-    · rintro _ ⟨u, rfl⟩
-      exact funext fun i ↦ hLw u i i.2
-    · rw [LinearMap.finrank_range_of_inj hL, Module.finrank_fin_fun]
-      exact hV
-  ext x
-  induction x using ind with | h v hv =>
-  rw [mem_inter_iff, mem_preimage, mem_singleton_iff,
-    mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff]
-  constructor
-  · rintro ⟨s, hs⟩
-    induction s using ind with | h u hu =>
-    rw [map_mk, mk_eq_mk_iff] at hs
-    obtain ⟨a, ha⟩ := hs
-    intro i hi
-    have hai := congrFun ha i
-    rw [Pi.smul_apply, hLw u i hi, Units.smul_def, smul_eq_mul, mul_eq_zero] at hai
-    exact hai.resolve_left a.ne_zero
-  · intro h
-    obtain ⟨u, rfl⟩ : v ∈ LinearMap.range L := hrange ▸ funext fun i ↦ h i i.2
-    exact ⟨mk 𝕜 u fun hu ↦ hv (by rw [hu, map_zero]), map_mk _ _ _ _⟩
 
 /-- **Projective subspaces of weight spaces are Morse–Bott critical submanifolds.** Let `L` be an
 injective linear map from `𝕜ᵐ⁺¹` into the weight space of `c`, the vectors whose coordinates of

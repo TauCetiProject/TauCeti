@@ -16,6 +16,7 @@ import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -704,18 +705,6 @@ theorem criticalHessian_comp_apply {x : M} (hφx : φ y = x) (hf : ContMDiffAt I
 
 end Comp
 
-omit [I.Boundaryless] in
-/-- The derivative of an extended chart of the `C¹` maximal atlas, read as a map into the model
-space, is invertible at every point of the chart source. -/
-theorem isInvertible_mvfderiv_extend {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (hx : x ∈ e.source) :
-    (mvfderiv I (e.extend I) x).IsInvertible := by
-  -- `mvfderiv` is `mfderiv` followed by the identification `fromTangentSpace` of the tangent
-  -- space of `E` with `E`; both factors are invertible.
-  unfold mvfderiv
-  exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e.extend I x), rfl⟩
-    (isInvertible_mfderiv_extend he hx)
-
 section Chart
 
 variable {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 2 M)
@@ -780,16 +769,13 @@ theorem finrank_ker_criticalHessian_eq_of_mem_maximalAtlas (hf : ContMDiffAt I �
       fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x) (D u) (D t) := by
     rw [criticalHessian_apply_eq_of_mem_maximalAtlas he hx hf hcrit, ← hD]
     rfl
-  -- The derivative `D` of the chart carries one kernel onto the other.
-  have hmap : (criticalHessian I f x).ker.map (D.toLinearEquiv : TangentSpace I x →ₗ[ℝ] E) =
-      (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).ker := by
-    ext u
-    rw [Submodule.mem_map_equiv, LinearMap.mem_ker, LinearMap.mem_ker]
-    refine ⟨fun h ↦ ContinuousLinearMap.ext fun t ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun t ↦ ?_⟩
-    · have ht := congr($h (D.symm t))
-      simpa [hH] using ht
-    · simpa [hH] using congr($h (D t))
-  rw [← hmap, LinearEquiv.finrank_map_eq]
+  -- The derivative `D` of the chart is an isometry between the two Hessians, so it carries one
+  -- kernel onto the other.
+  let ι : (criticalHessian I f x).toBilinForm.IsometryEquiv
+      (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).toBilinForm :=
+    ⟨D.toLinearEquiv, fun u t ↦ (hH u t).symm⟩
+  rw [← ContinuousLinearMap.ker_toBilinForm, ← ContinuousLinearMap.ker_toBilinForm, ← ι.map_ker,
+    LinearEquiv.finrank_map_eq]
 
 /-- **Nondegeneracy in an arbitrary chart.** On a boundaryless manifold, `x` is a nondegenerate
 critical point of `f` exactly when the coordinate expression of `f` in any chart `e` of the `C²`
