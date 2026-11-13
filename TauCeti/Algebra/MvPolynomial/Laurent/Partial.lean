@@ -279,16 +279,6 @@ theorem partiallyLaurentEmptyEquiv_apply (p : MvPolynomial K R) :
   simp [partiallyLaurentEmptyEquiv, AlgEquiv.ofInjective_apply, coe_toPartiallyLaurent]
 
 @[simp]
-theorem partiallyLaurentEmptyEquiv_symm_toPartiallyLaurent (p : MvPolynomial K R) :
-    partiallyLaurentEmptyEquiv.symm (toPartiallyLaurent (S := ∅) p) = p := by
-  rw [← partiallyLaurentEmptyEquiv_apply, AlgEquiv.symm_apply_apply]
-
-@[simp]
-theorem toPartiallyLaurent_partiallyLaurentEmptyEquiv_symm (f : partiallyLaurent R (∅ : Set K)) :
-    toPartiallyLaurent (partiallyLaurentEmptyEquiv.symm f) = f := by
-  rw [← partiallyLaurentEmptyEquiv_apply, AlgEquiv.apply_symm_apply]
-
-@[simp]
 theorem toLaurent_partiallyLaurentEmptyEquiv_symm (f : partiallyLaurent R (∅ : Set K)) :
     MvPolynomial.toLaurent (partiallyLaurentEmptyEquiv.symm f) = (f : LaurentRing R K) := by
   rw [← coe_toPartiallyLaurent, ← partiallyLaurentEmptyEquiv_apply, AlgEquiv.apply_symm_apply]
@@ -641,11 +631,6 @@ theorem partialAeval_X_left :
       (fun _ hi ↦ isUnit_toPartiallyLaurent_X hi) = AlgHom.id R (partiallyLaurent R S) :=
   partialAlgHom_ext fun _ ↦ by simp
 
-theorem partialAeval_X_left_apply (p : partiallyLaurent R S) :
-    partialAeval (R := R) (fun i ↦ toPartiallyLaurent (MvPolynomial.X i))
-      (fun _ hi ↦ isUnit_toPartiallyLaurent_X hi) p = p := by
-  rw [partialAeval_X_left, AlgHom.id_apply]
-
 /-- Partial evaluation is natural under algebra homomorphisms of the target. -/
 theorem comp_partialAeval {B : Type*} [CommSemiring B] [Algebra R B]
     (φ : A →ₐ[R] B) (x : K → A) (hx : ∀ i ∈ S, IsUnit (x i)) :
@@ -957,17 +942,6 @@ theorem coe_partialRenameEquiv_symm_apply (e : K ≃ K') (p : partiallyLaurent R
     ((partialRenameEquiv R S e).symm p : LaurentRing R K) =
       rename e.symm (p : LaurentRing R K') := by
   simp
-
-theorem partialRenameEquiv_symm_partialRename (e : K ≃ K') (p : partiallyLaurent R S) :
-    (partialRenameEquiv R S e).symm
-      (partialRename (T := e '' S) e (Set.mapsTo_image e S) p) = p := by
-  rw [← partialRenameEquiv_apply, AlgEquiv.symm_apply_apply]
-
-theorem partialRename_partialRenameEquiv_symm (e : K ≃ K')
-    (p : partiallyLaurent R (e '' S)) :
-    partialRename (T := e '' S) e (Set.mapsTo_image e S)
-      ((partialRenameEquiv R S e).symm p) = p := by
-  rw [← partialRenameEquiv_apply, AlgEquiv.apply_symm_apply]
 
 /-- Arbitrary coefficient changes commute with variable renaming on partially Laurent rings. -/
 @[simp]
