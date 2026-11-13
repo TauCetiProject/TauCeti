@@ -41,7 +41,7 @@ The argument, for a root `α` and a linear form `χ`, runs as follows.
   that it is stable under `eₐ` and `fₐ`.
 * Inside the string the coroot `α^∨` separates the weights: it acts on `M_{k α + χ}` by
   `2k + χ(α^∨)`, and these scalars are distinct, so each summand of the string is recovered from a
-  single eigenspace of `α^∨` (`TauCeti.biSup_inf_eigenspace_eq_self`).
+  single eigenspace of `α^∨` (`Module.End.biSup_inf_genEigenspace_eq_of_mem`).
 * The `sl₂` engine says the `c`- and `(-c)`-eigenspaces of the Cartan element have equal dimension
   on the string. Reading that back through the previous step turns it into the equality of the
   multiplicities at `k α + χ` and at `(-k - χ(α^∨)) α + χ`, whose `k = 0` case is the reflection
@@ -143,8 +143,8 @@ private theorem chainSl2LieSubmodule_toSubmodule (ht : IsSl2Triple h e f) (he : 
 /-- **A weight space of a cut-off string is an eigenspace of the coroot on the string.** The coroot
 `α^∨` acts on `M_{j α + χ}` by the scalar `2 j + n`, where `n = χ(α^∨)`, and these scalars are
 distinct along the string; so each summand of the string is exactly the corresponding eigenspace of
-the restriction of `α^∨` to the string (`TauCeti.biSup_inf_eigenspace_eq_self`), and in particular
-has its dimension. -/
+the restriction of `α^∨` to the string (`Module.End.biSup_inf_genEigenspace_eq_of_mem`), and in
+particular has its dimension. -/
 private theorem finrank_weightSpace_eq_finrank_eigenspace_restrict {n : ℤ} (hα : α.IsNonZero)
     (hn : χ (IsKilling.coroot α) = (n : K)) {N : Submodule K M}
     (hN : N = (genWeightSpaceChain M (⇑α) χ p q).toSubmodule)
@@ -172,7 +172,7 @@ private theorem finrank_weightSpace_eq_finrank_eigenspace_restrict {n : ℤ} (h�
     simp only [genWeightSpace_eq_weightSpace, LieSubmodule.iSup_toSubmodule]
   rw [← Submodule.finrank_map_subtype_eq (genWeightSpaceChain M (⇑α) χ p q).toSubmodule,
     ← Submodule.inf_genEigenspace A _ hA, hNsup,
-    biSup_inf_eigenspace_eq_self (s := Set.Ioo p q) A
+    Module.End.biSup_inf_genEigenspace_eq_of_mem (s := Set.Ioo p q) A
       (fun i ↦ (weightSpace M (i • ⇑α + χ)).toSubmodule) g
       (fun i (_ : i ∈ Set.Ioo p q) m hm ↦ hWle i hm) hj
       fun i _ hij ↦ fun hcon ↦ hij (hginj hcon),

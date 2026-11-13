@@ -123,7 +123,7 @@ private def IsChainFin {n : ℕ} (p : Fin n → InducedQuiver C F × InducedQuiv
 quiver, the component between its endpoints of the operation of `𝒞` on the same morphisms; on
 any other string, zero. -/
 private noncomputable def inducedOperation : (n : ℕ) →
-    MultilinearMap R (fun _ : Fin n ↦ TotalHom R (InducedQuiver C F))
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R (InducedQuiver C F))
       (TotalHom R (InducedQuiver C F))
   | 0 => 0
   | n + 1 => by
