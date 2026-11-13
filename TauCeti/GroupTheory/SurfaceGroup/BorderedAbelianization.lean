@@ -53,14 +53,14 @@ variable (g m : ℕ)
 /-- The abelianization of the orientable surface group `S⁺(g, m + 1)` has rank `2g + m`. A basis is
 `(freeBasis g m).abelianizationBasis`, the classes of `a₁, …, a_g, b₁, …, b_g, p₁, …, p_m`. -/
 theorem finrank_abelianization :
-    Module.finrank ℤ (Additive (Abelianization (Orientable g (m + 1)))) = 2 * g + m := by
+    Module.finrank ℤ (Additive (Group.Abelianization (Orientable g (m + 1)))) = 2 * g + m := by
   rw [finrank_abelianization_eq_rank, rank_eq]
 
 /-- **The abelianization of an orientable surface group with boundary has rank `1 - χ`.** The
 abelianization of `S⁺(g, m + 1)`, which is free abelian (`TauCeti.instModuleFreeAbelianization`),
 has rank `1 - χ`, where `χ = 1 - 2g - m` is the Euler characteristic of the surface. -/
 theorem finrank_abelianization_eq_one_sub_eulerChar :
-    (Module.finrank ℤ (Additive (Abelianization (Orientable g (m + 1)))) : ℤ) =
+    (Module.finrank ℤ (Additive (Group.Abelianization (Orientable g (m + 1)))) : ℤ) =
       1 - eulerChar g (m + 1) := by
   rw [finrank_abelianization_eq_rank, rank_eq_one_sub_eulerChar]
 
@@ -73,14 +73,14 @@ variable (g m : ℕ)
 /-- The abelianization of the nonorientable surface group `S⁻(g, m + 1)` has rank `g + m`. A basis
 is `(freeBasis g m).abelianizationBasis`, the classes of `c₁, …, c_g, p₁, …, p_m`. -/
 theorem finrank_abelianization :
-    Module.finrank ℤ (Additive (Abelianization (Nonorientable g (m + 1)))) = g + m := by
+    Module.finrank ℤ (Additive (Group.Abelianization (Nonorientable g (m + 1)))) = g + m := by
   rw [finrank_abelianization_eq_rank, rank_eq]
 
 /-- **The abelianization of a nonorientable surface group with boundary has rank `1 - χ`.** The
 abelianization of `S⁻(g, m + 1)`, which is free abelian (`TauCeti.instModuleFreeAbelianization`),
 has rank `1 - χ`, where `χ = 1 - g - m` is the Euler characteristic of the surface. -/
 theorem finrank_abelianization_eq_one_sub_eulerChar :
-    (Module.finrank ℤ (Additive (Abelianization (Nonorientable g (m + 1)))) : ℤ) =
+    (Module.finrank ℤ (Additive (Group.Abelianization (Nonorientable g (m + 1)))) : ℤ) =
       1 - eulerChar g (m + 1) := by
   rw [finrank_abelianization_eq_rank, rank_eq_one_sub_eulerChar]
 

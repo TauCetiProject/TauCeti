@@ -129,8 +129,8 @@ theorem rank_eq_nat_card (b : FreeGroupBasis ι H) [Group.FG H] :
 of `H`, the classes of the elements `b i` form a basis of the abelianization of `H`, written
 additively, as a `ℤ`-module. -/
 noncomputable def abelianizationBasis (b : FreeGroupBasis ι H) :
-    Module.Basis ι ℤ (Additive (Abelianization H)) :=
-  -- `FreeAbelianGroup ι` is by definition `Additive (Abelianization (FreeGroup ι))`.
+    Module.Basis ι ℤ (Additive (Group.Abelianization H)) :=
+  -- `FreeAbelianGroup ι` is by definition `Additive (Group.Abelianization (FreeGroup ι))`.
   (FreeAbelianGroup.basis ι).map
     (AddEquiv.toIntLinearEquiv (M := FreeAbelianGroup ι) b.repr.symm.abelianizationCongr.toAdditive)
 
@@ -152,14 +152,14 @@ variable {H : Type*} [Group H]
 
 /-- The abelianization of a free group is a free `ℤ`-module. -/
 instance instModuleFreeAbelianization [IsFreeGroup H] :
-    Module.Free ℤ (Additive (Abelianization H)) :=
+    Module.Free ℤ (Additive (Group.Abelianization H)) :=
   .of_basis (IsFreeGroup.basis H).abelianizationBasis
 
 /-- **The rank of a free group is the rank of its abelianization.** For a finitely generated free
 group `H`, the rank of the abelianization of `H` as a `ℤ`-module is the rank of `H`, the least
 number of generators of `H`. -/
 theorem finrank_abelianization_eq_rank [IsFreeGroup H] [Group.FG H] :
-    Module.finrank ℤ (Additive (Abelianization H)) = Group.rank H := by
+    Module.finrank ℤ (Additive (Group.Abelianization H)) = Group.rank H := by
   rw [Module.finrank_eq_nat_card_basis (IsFreeGroup.basis H).abelianizationBasis,
     (IsFreeGroup.basis H).rank_eq_nat_card]
 
