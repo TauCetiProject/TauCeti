@@ -21,7 +21,7 @@ These uniform ellipticity bounds are used for segment-averaged inverse matrices.
 
 For a single matrix, `Matrix.toQuadraticForm'_le_sum_abs_mul_sq` gives the explicit upper bound
 `A.toQuadraticForm' ξ ≤ (∑ᵢⱼ |Aᵢⱼ|) ‖ξ‖²`, so a bound on the entries of a coefficient field is an
-upper ellipticity bound (`Matrix.toQuadraticForm'_le_of_forall_abs_le`).
+upper ellipticity bound.
 
 The statement is adapted from the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/tree/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Matrix).
@@ -39,14 +39,6 @@ theorem Matrix.toQuadraticForm'_le_sum_abs_mul_sq {ι : Type*} [Fintype ι] [Dec
     A.toQuadraticForm' ξ ≤ (∑ i, ∑ j, |A i j|) * ‖ξ‖ ^ 2 :=
   (TauCeti.PDE.toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A ξ).trans
     (mul_le_mul_of_nonneg_right (TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs A) (sq_nonneg _))
-
-/-- A bound `|Aᵢⱼ| ≤ M` on the entries of a real matrix gives the upper quadratic bound
-`A.toQuadraticForm' ξ ≤ (∑ᵢⱼ M) ‖ξ‖²`. -/
-theorem Matrix.toQuadraticForm'_le_of_forall_abs_le {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {A : Matrix ι ι ℝ} {M : ℝ} (hA : ∀ i j, |A i j| ≤ M) (ξ : EuclideanSpace ℝ ι) :
-    A.toQuadraticForm' ξ ≤ (∑ _i : ι, ∑ _j : ι, M) * ‖ξ‖ ^ 2 :=
-  (A.toQuadraticForm'_le_sum_abs_mul_sq ξ).trans (mul_le_mul_of_nonneg_right
-    (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ hA i j) (sq_nonneg _))
 
 namespace TauCeti
 

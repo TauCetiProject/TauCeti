@@ -29,7 +29,7 @@ of radius `r₀` about some point `z₀`
 (`TauCeti.ParabolicC2HolderSpace.exists_norm_le_of_spatialSecondFDerivL_eq_zero`).
 The radius and the constant are independent of `z₀` and of the coefficients within these bounds.
 An upper ellipticity bound is not a separate hypothesis: it follows from the bound on `a`
-(`Matrix.toQuadraticForm'_le_of_forall_abs_le`).
+(`Matrix.toQuadraticForm'_le_sum_abs_mul_sq`).
 
 This is the local step of the global Schauder estimate for variable coefficients. Applied to the
 localizations `χ u` of a map `u` by space-time cutoffs centred at every point, whose commutator
@@ -184,9 +184,11 @@ theorem exists_norm_le_of_spatialSecondFDerivL_eq_zero (hα₀ : 0 < α) (hα₁
     fun a b c hlow ha hb hc z₀ u hu ↦ ?_⟩
   -- The coefficient bound gives the upper ellipticity bound.
   have hup : ∀ p (ξ : EuclideanSpace ℝ ι), (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤
-      (∑ _i : ι, ∑ _j : ι, M) * ‖ξ‖ ^ 2 := fun p ↦
-    Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
-      ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (ha i j)
+      (∑ _i : ι, ∑ _j : ι, M) * ‖ξ‖ ^ 2 := fun p ξ ↦
+    (Matrix.toQuadraticForm'_le_sum_abs_mul_sq _ ξ).trans (mul_le_mul_of_nonneg_right
+      (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ by
+        rw [Matrix.of_apply, ← Real.norm_eq_abs]
+        exact (HolderSpace.norm_apply_le (a i j) p).trans (ha i j)) (sq_nonneg _))
   set X := ‖euclideanParabolicOperatorL hα₁.le a b c u‖
   set τ := ‖u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖
   set v := ‖valueL u‖

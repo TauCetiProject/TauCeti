@@ -72,7 +72,8 @@ number of cosets. The caller's finite enumeration of the cosets is retained. -/
     ρ.tensorInducedDiagonal s (r • x) = r ^ Fintype.card (G ⧸ U) •
       ρ.tensorInducedDiagonal s x := by
   apply Subtype.ext
-  simpa using (PiTensorProduct.tprod R : MultilinearMap R (fun _ : G ⧸ U ↦ M) _).map_smul_univ
+  simpa using (PiTensorProduct.tprod R : MultilinearMap (RingHom.id R) (fun _ : G ⧸ U ↦ M)
+      _).map_smul_univ
     (fun _ ↦ r) (fun _ ↦ (x : M))
 
 /-- The change-of-transversal comparison fixes the invariant diagonal tensor. -/
@@ -192,7 +193,7 @@ example (s : (⊥ : Subgroup (Multiplicative (ZMod 2))).LeftTransversal) :
   refine ⟨x, y, ?_⟩
   let e : G₂ ⧸ U₂ ≃ Fin 2 := QuotientGroup.quotientBot.toEquiv.trans
     (Multiplicative.toAdd.trans (ZMod.finEquiv 2).toEquiv.symm)
-  let μ : MultilinearMap F (fun _ : G₂ ⧸ U₂ ↦ F × F) F :=
+  let μ : MultilinearMap (RingHom.id F) (fun _ : G₂ ⧸ U₂ ↦ F × F) F :=
     (MultilinearMap.mkPiAlgebra F (G₂ ⧸ U₂) F).compLinearMap fun i ↦
       if e i = 0 then LinearMap.fst F F F else LinearMap.snd F F F
   let L := PiTensorProduct.lift μ

@@ -137,8 +137,7 @@ end Projection
 
 section Regularity
 
-variable [CompleteSpace V] [FiniteDimensional ℝ E] [I.Boundaryless]
-  {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
+variable [FiniteDimensional ℝ E] [I.Boundaryless] {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
 
 /-- The compression of the normal projection varies `C^n` along a `C^(n+1)` immersion. -/
 theorem contMDiff_normalCompression
@@ -148,6 +147,8 @@ theorem contMDiff_normalCompression
       (fun x => normalCompression I f x₀ x) :=
   contMDiff_const.clm_comp
     ((contMDiff_normalSubspace_starProjection hf himm).clm_comp contMDiff_const)
+
+variable [CompleteSpace V]
 
 /-- The ambient coordinate operator of a `C^(n+1)` map is `C^n` at an immersion point
 where the compression is invertible. -/
