@@ -104,7 +104,7 @@ theorem mem_conjF_iff (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) :
 @[simp]
 theorem conjF_conjF (hs : HodgeStructureOn W ω n) (p : ℤ) :
     (hs.conjF p).map ω.toEquiv.toLinearMap = hs.F p :=
-  ω.conjFiltration_conjFiltration hs.F p
+  ω.map_conjFiltration hs.F p
 
 /-- Opposedness expressed using `conjF`. -/
 theorem isCompl_F_conjF (hs : HodgeStructureOn W ω n) (p : ℤ) :
