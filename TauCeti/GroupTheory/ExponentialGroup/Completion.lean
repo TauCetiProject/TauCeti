@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Equiv.Defs
 public import Mathlib.Algebra.Group.TypeTags.Hom
 public import Mathlib.Data.Int.Cast.Lemmas
-public import TauCeti.GroupTheory.ExponentialGroup.Basic
 public import TauCeti.GroupTheory.ExponentialGroup.Hom
 
 /-!
@@ -31,8 +30,6 @@ additive group of `A`, with `n ↦ (n : A)`: the free `A`-group on one generator
   to an `A`-group.
 * `TauCeti.IsExponentialGroup.IsCompletion.mulEquiv`: the isomorphism between two
   `A`-completions of one group.
-* `TauCeti.IsExponentialGroup.powHom g`: the `A`-homomorphism `Multiplicative A → G`,
-  `ofAdd a ↦ g ^ a`, for an element `g` of an `A`-group over a commutative semiring `A`.
 
 ## Main results
 
@@ -52,8 +49,9 @@ therefore stated for two completions living in that universe.
 `IsCompletion` is a structure, whose target `K` carries its `A`-group structure as an instance
 argument: the universal property itself mentions only the exponentiation of `K`.
 
-`powHom` and `isCompletion_intCast` use the exponentiation of `Multiplicative A` by `A`, a scoped
-instance activated by `open scoped TauCeti.IsExponentialGroup.MultiplicativePow`.
+`isCompletion_intCast` uses the exponentiation of `Multiplicative A` by `A`, a scoped instance
+activated by `open scoped TauCeti.IsExponentialGroup.MultiplicativePow`, and the `A`-homomorphisms
+`TauCeti.IsExponentialGroup.powHom g : Multiplicative A → H`, `ofAdd a ↦ g ^ a`.
 
 ## References
 
@@ -209,23 +207,7 @@ section RankOne
 
 open scoped MultiplicativePow
 
-variable (A : Type uA) {G : Type uG} [Group G] [Pow G A]
-
-/-- For an element `g` of an `A`-group over a commutative semiring `A`, the homomorphism
-`Multiplicative A → G`, `ofAdd a ↦ g ^ a`; it commutes with exponentiation, where
-`Multiplicative A` carries `ofAdd a ^ b = ofAdd (b * a)`. -/
-def powHom [CommSemiring A] [IsExponentialGroup A G] (g : G) :
-    ExponentialHom A (Multiplicative A) G where
-  toFun x := g ^ x.toAdd
-  map_one' := by rw [toAdd_one, IsExponentialGroup.pow_zero]
-  map_mul' x y := by rw [toAdd_mul, IsExponentialGroup.pow_add]
-  map_pow' x a := by
-    rw [Multiplicative.toAdd_multiplicativePow, smul_eq_mul, mul_comm, IsExponentialGroup.pow_mul]
-
-@[simp]
-theorem powHom_apply [CommSemiring A] [IsExponentialGroup A G] (g : G)
-    (x : Multiplicative A) : powHom A g x = g ^ x.toAdd := by
-  rfl
+variable (A : Type uA)
 
 /-- The additive group of a commutative ring `A`, written multiplicatively and receiving the
 infinite cyclic group by `n ↦ (n : A)`, is the `A`-completion of the infinite cyclic group: it is

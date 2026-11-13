@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Hom.Defs
+public import TauCeti.GroupTheory.ExponentialGroup.Basic
 
 /-!
 # Homomorphisms commuting with exponentiation
@@ -21,6 +21,13 @@ group is defined.
 * `TauCeti.ExponentialHom A G H`: the monoid homomorphisms `G →* H` commuting with exponentiation
   by `A`.
 * `TauCeti.ExponentialHom.id`, `TauCeti.ExponentialHom.comp`: identity and composition.
+* `TauCeti.IsExponentialGroup.powHom g`: the `A`-homomorphism `Multiplicative A → G`,
+  `ofAdd a ↦ g ^ a`, for an element `g` of an `A`-group over a commutative semiring `A`.
+
+## Implementation notes
+
+`powHom` uses the exponentiation `ofAdd a ^ b = ofAdd (b * a)` of `Multiplicative A` by `A`, a
+scoped instance activated by `open scoped TauCeti.IsExponentialGroup.MultiplicativePow`.
 
 ## References
 
@@ -122,5 +129,27 @@ theorem comp_assoc (f : ExponentialHom A K L) (f' : ExponentialHom A H K)
   rfl
 
 end ExponentialHom
+
+namespace IsExponentialGroup
+
+open scoped MultiplicativePow
+
+variable (A : Type*) {G : Type*} [CommSemiring A] [Group G] [Pow G A] [IsExponentialGroup A G]
+
+/-- For an element `g` of an `A`-group over a commutative semiring `A`, the homomorphism
+`Multiplicative A → G`, `ofAdd a ↦ g ^ a`; it commutes with exponentiation, where
+`Multiplicative A` carries `ofAdd a ^ b = ofAdd (b * a)`. -/
+def powHom (g : G) : ExponentialHom A (Multiplicative A) G where
+  toFun x := g ^ x.toAdd
+  map_one' := by rw [toAdd_one, IsExponentialGroup.pow_zero]
+  map_mul' x y := by rw [toAdd_mul, IsExponentialGroup.pow_add]
+  map_pow' x a := by
+    rw [Multiplicative.toAdd_multiplicativePow, smul_eq_mul, mul_comm, IsExponentialGroup.pow_mul]
+
+@[simp]
+theorem powHom_apply (g : G) (x : Multiplicative A) : powHom A g x = g ^ x.toAdd := by
+  rfl
+
+end IsExponentialGroup
 
 end TauCeti
