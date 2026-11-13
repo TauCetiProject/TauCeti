@@ -29,15 +29,17 @@ representative modulo a `μ`-null symmetric difference, that exceptional null se
 Borel, so it need not pull back to a measurable set in `borel X × borel Y` along continuous maps
 `Φ : X × Y → G` out of σ-compact products (such as group multiplication in convolution).
 
-This file proves that a regular Haar measure `μ` on a locally compact Hausdorff group `G` is
-*completion regular*: every open set `U` with `[SigmaFinite (μ.restrict U)]` has an open Baire
-superset almost everywhere equal to it, every `μ`-null set is contained in a `Gδ` Baire `μ`-null
-set, every `μ`-null-measurable set `s` with `[SigmaFinite (μ.restrict s)]` differs from a σ-compact
-Baire set by a subset of a `Gδ` Baire `μ`-null set, and on σ-compact groups every almost everywhere
-strongly measurable function agrees outside a `Gδ` Baire `μ`-null set with a function strongly
-measurable for `TauCeti.baire G`. Enclosing exceptional sets inside Baire `μ`-null sets lets
-continuous maps into `G` pull both the representative and the null error back into the product
-σ-algebra.
+This file proves that a `[μ.Regular]` Haar measure `μ` on a locally compact Hausdorff group `G`
+is *completion regular* on `μ`-null sets and sets of σ-finite restriction (covering Halmos's
+σ-bounded Borel sets, and all of `borel G` when `G` is σ-compact; Fremlin §443M's unrestricted
+Borel statement uses inner-regular Radon Haar measure): every open set `U` with
+`[SigmaFinite (μ.restrict U)]` has an open Baire superset almost everywhere equal to it, every
+`μ`-null set is contained in a `Gδ` Baire `μ`-null set, every `μ`-null-measurable set `s` with
+`[SigmaFinite (μ.restrict s)]` differs from a σ-compact Baire set by a subset of a `Gδ` Baire
+`μ`-null set, and on σ-compact groups every almost everywhere strongly measurable function agrees
+outside a `Gδ` Baire `μ`-null set with a function strongly measurable for `TauCeti.baire G`.
+Enclosing exceptional sets inside Baire `μ`-null sets lets continuous maps into `G` pull both the
+representative and the null error back into the product σ-algebra.
 
 When `G` is σ-compact, an open Baire superset almost everywhere equal to an open set `U ⊆ G` is
 constructed as follows:
