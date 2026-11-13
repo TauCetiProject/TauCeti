@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Matrix.Exponential.Log
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import TauCeti.Topology.Algebra.Matrix.Realify
 
 /-!
@@ -95,14 +94,23 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- The **frame of the graph of `A` relative to the diagonal**: the complex matrix
 `(1 + A) + i J (1 - A)`. Its real image is the image of the graph `{(x, A x)}` of `A` under the
 isomorphism `(x, y) ↦ (x + y) + i J (x - y)` of `ℝ^{n ⊕ n} × ℝ^{n ⊕ n}` with `ℂ^{n ⊕ n}`, which
-carries the diagonal to `ℝ^{n ⊕ n}` and the form `(-ω) ⊕ ω` to twice `Im ⟪·, ·⟫`. -/
+carries the diagonal to `ℝ^{n ⊕ n}` and pulls back `Im ⟪·, ·⟫` to `2 ((-ω) ⊕ ω)`. -/
 noncomputable def diagonalGraphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     Matrix (n ⊕ n) (n ⊕ n) ℂ :=
   (1 + A).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - A)).map ((↑) : ℝ → ℂ)
 
+theorem diagonalGraphFrame_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    diagonalGraphFrame A =
+      (1 + A).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - A)).map ((↑) : ℝ → ℂ) :=
+  (rfl)
+
 /-- The Gram matrix `2 (1 + Aᵀ A)` of the frame of the graph of a symplectic matrix `A`. -/
 noncomputable def diagonalGraphGram (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ :=
   (2 : ℝ) • (1 + Aᵀ * A)
+
+theorem diagonalGraphGram_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    diagonalGraphGram A = (2 : ℝ) • (1 + Aᵀ * A) :=
+  (rfl)
 
 /-- The Gram matrix `2 (1 + Aᵀ A)` is positive definite. -/
 theorem posDef_diagonalGraphGram (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
@@ -169,6 +177,10 @@ when `A` is moreover symplectic, `S` is symmetric and the image of the graph of 
 `{x + i S x}` of `S` (`Matrix.diagonalGraphFrame_eq_mul`). -/
 noncomputable def cayleySymmetric (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ :=
   J n ℝ * (1 - A) * (1 + A)⁻¹
+
+theorem cayleySymmetric_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    cayleySymmetric A = J n ℝ * (1 - A) * (1 + A)⁻¹ :=
+  (rfl)
 
 @[simp]
 theorem cayleySymmetric_one : cayleySymmetric (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) = 0 := by
@@ -308,6 +320,10 @@ sign convention the small positive rotation of `ℝ²` has index `-1`
 (`TauCeti.GLSymplectic.conleyZehnderIndex_rotationPath_of_pos`). -/
 noncomputable def conleyZehnderIndex {A B : GLSymplectic n ℝ} (γ : Path A B) : ℝ :=
   -UnitaryGroup.maslovIndex (γ.map continuous_diagonalGraphUnitary)
+
+theorem conleyZehnderIndex_def {A B : GLSymplectic n ℝ} (γ : Path A B) :
+    conleyZehnderIndex γ = -UnitaryGroup.maslovIndex (γ.map continuous_diagonalGraphUnitary) :=
+  (rfl)
 
 /-- **Homotopy invariance.** Paths of symplectic matrices that are homotopic relative to their
 endpoints have the same Conley–Zehnder index. -/
