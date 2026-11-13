@@ -128,23 +128,23 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
 /-- **The derivatives of Floer solutions are equicontinuous.** There is `δ > 0`, depending only on
 `F`, with the following property. Let `J` and `X` be `C¹` on an open set `W ⊆ ℂ × F` containing
 `Ω × K`, for an open `Ω ⊆ ℂ` and a compact `K ⊆ F`, with `J(z, x)² = -1` and
-`‖J(z, x) w - i w‖ ≤ δ ‖w‖` on `Ω × K`. Let `uₙ` be smooth solutions of
-`∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` on `Ω` with values in `K`, whose derivatives are
-bounded on each compact subset of `Ω` uniformly in `n`. Then the derivatives `Duₙ` are
-equicontinuous on `Ω`. -/
-theorem exists_pos_forall_equicontinuousOn_fderiv_of_floer [FiniteDimensional ℂ F] :
+`‖J(z, x) w - i w‖ ≤ δ ‖w‖` on `Ω × K`. Let `uₙ`, indexed by `n` in any type `ι`, be smooth
+solutions of `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` on `Ω` with values in `K`, whose
+derivatives are bounded on each compact subset of `Ω` uniformly in `n`. Then the derivatives `Duₙ`
+are equicontinuous on `Ω`. -/
+theorem exists_pos_forall_equicontinuousOn_fderiv_of_floer {ι : Type*} [FiniteDimensional ℂ F] :
     ∃ δ : ℝ≥0, 0 < δ ∧ ∀ ⦃J : ℂ × F → F →L[ℝ] F⦄ ⦃X : ℂ × F → ℂ →L[ℝ] F⦄ ⦃W : Set (ℂ × F)⦄
       ⦃Ω : Set ℂ⦄ ⦃K : Set F⦄, IsOpen W → ContDiffOn ℝ 1 J W → ContDiffOn ℝ 1 X W →
       IsOpen Ω → IsCompact K → Ω ×ˢ K ⊆ W →
       (∀ z ∈ Ω, ∀ x ∈ K, ∀ w, J (z, x) (J (z, x) w) = -w) →
       (∀ z ∈ Ω, ∀ x ∈ K, ∀ w, ‖J (z, x) w - I • w‖ ≤ δ * ‖w‖) →
-      ∀ ⦃u : ℕ → ℂ → F⦄, (∀ n, ContDiffOn ℝ ∞ (u n) Ω) →
+      ∀ ⦃u : ι → ℂ → F⦄, (∀ n, ContDiffOn ℝ ∞ (u n) Ω) →
       (∀ n, ∀ y ∈ Ω, fderiv ℝ (u n) y I - X (y, u n y) I =
         J (y, u n y) (fderiv ℝ (u n) y 1 - X (y, u n y) 1)) →
       (∀ n, MapsTo (u n) Ω K) →
       (∀ C, IsCompact C → C ⊆ Ω → ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u n) y‖ ≤ M) →
       EquicontinuousOn (fun n ↦ fderiv ℝ (u n)) Ω := by
-  obtain ⟨δ, hδ0, hδ⟩ := exists_pos_forall_equicontinuousOn_fderiv (F := F) (ι := ℕ)
+  obtain ⟨δ, hδ0, hδ⟩ := exists_pos_forall_equicontinuousOn_fderiv (F := F) (ι := ι)
   refine ⟨δ, hδ0, fun J X W Ω K hW hJ hX hΩ hK hΩKW hJsq hJI u hu hCR huK hbd ↦ ?_⟩
   -- The right-hand side `h(z, x) = X(z, x) 1 + J(z, x) X(z, x) i` of the equation
   -- `∂ₛu + J(z, u) ∂ₜu = h(z, u)`.
@@ -199,7 +199,7 @@ private theorem equicontinuousAt_fderiv_of_floer {J : ℂ × V → V →L[ℝ] V
       (ContinuousLinearMap.ext (hJsq y₀ hy₀ _ hx₀))
   have hTJ (w : V) : T (J (y₀, v y₀) w) = I • T w := congr($hT w)
   obtain ⟨δ, hδ0, hδ⟩ := exists_pos_forall_equicontinuousOn_fderiv_of_floer
-    (F := EuclideanSpace ℂ (Fin m))
+    (F := EuclideanSpace ℂ (Fin m)) (ι := ℕ)
   -- The data `J' = T J T⁻¹` and `X' = T X` read in these coordinates.
   set Φ : ℂ × EuclideanSpace ℂ (Fin m) → ℂ × V := fun q ↦ (q.1, T.symm q.2)
   have hΦ : ContDiff ℝ 1 Φ := contDiff_fst.prodMk (T.symm.contDiff.comp contDiff_snd)
