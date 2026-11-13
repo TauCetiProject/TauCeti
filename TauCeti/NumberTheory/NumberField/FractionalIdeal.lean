@@ -7,9 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.NumberTheory.NumberField.FractionalIdeal
+public import Mathlib.RingTheory.ClassGroup.Basic
+import Mathlib.RingTheory.Norm.Basic
 
 /-!
-# The index of one fractional ideal in another
+# The index of one fractional ideal in another, and clearing denominators
 
 An invertible fractional ideal of a number field `K` is a full `ℤ`-lattice in `K`.  If `J ≤ I` are
 two such ideals, the index of `J` in `I` is the ratio of their absolute norms.  The index is
@@ -52,5 +54,30 @@ theorem relIndex_fractionalIdeal_eq_absNorm_div_absNorm {I J : (FractionalIdeal 
     ← det_basisOfFractionalIdeal_eq_absNorm K I (e I),
     ← det_basisOfFractionalIdeal_eq_absNorm K J (e J), ← (integralBasis K).det_mul_det (b I) (b J),
     abs_mul, mul_div_cancel_left₀ _ (abs_ne_zero.mpr ((integralBasis K).isUnit_det _).ne_zero)]
+
+/-- **Clearing the denominator of a fractional ideal.**  A nonzero integer multiple `n I` of an
+invertible fractional ideal `I` is a nonzero integral ideal. -/
+theorem exists_mk0_eq_toPrincipalIdeal_natCast_mul (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    ∃ (n : ℕ) (hn : (n : K) ≠ 0) (J : (Ideal (𝓞 K))⁰),
+      FractionalIdeal.mk0 K J = toPrincipalIdeal (𝓞 K) K (Units.mk0 (n : K) hn) * I := by
+  -- `n = N((d))` for the denominator `d` of `I` is a multiple `b d` of `d`, and `d I` is integral
+  set d : 𝓞 K := ((I : FractionalIdeal (𝓞 K)⁰ K).den : 𝓞 K)
+  have hd : d ≠ 0 := nonZeroDivisors.coe_ne_zero _
+  set n := Ideal.absNorm (Ideal.span {d})
+  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp (Ideal.absNorm_mem (Ideal.span {d}))
+  have hn : (n : K) ≠ 0 := by
+    simpa [n, Ideal.absNorm_span_singleton, Algebra.norm_eq_zero_iff] using hd
+  have hJ : ((Ideal.span {b} * (I : FractionalIdeal (𝓞 K)⁰ K).num : Ideal (𝓞 K)) :
+      FractionalIdeal (𝓞 K)⁰ K) =
+        FractionalIdeal.spanSingleton _ (n : K) * (I : FractionalIdeal (𝓞 K)⁰ K) := by
+    rw [FractionalIdeal.coeIdeal_mul, FractionalIdeal.coeIdeal_span_singleton,
+      ← FractionalIdeal.den_mul_self_eq_num', ← mul_assoc, ← map_mul, ← map_mul, hb,
+      map_natCast]
+  have hJ0 : Ideal.span {b} * (I : FractionalIdeal (𝓞 K)⁰ K).num ∈ (Ideal (𝓞 K))⁰ := by
+    rw [mem_nonZeroDivisors_iff_ne_zero, Ideal.zero_eq_bot,
+      ← FractionalIdeal.coeIdeal_ne_zero (K := K), hJ]
+    exact mul_ne_zero (FractionalIdeal.spanSingleton_ne_zero_iff.mpr hn) I.ne_zero
+  exact ⟨n, hn, ⟨_, hJ0⟩, Units.ext (by
+    rw [FractionalIdeal.coe_mk0, Units.val_mul, coe_toPrincipalIdeal, Units.val_mk0, hJ])⟩
 
 end NumberField

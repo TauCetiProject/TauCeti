@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCon
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Count.TrivialModulus
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 
@@ -187,30 +188,21 @@ theorem LSeries_rayClassCoeff_one_eq_tsum_idealSet {c : RayClassGroup (Modulus.o
 
 /-! ### Fractional ideals -/
 
-/-- A nonzero integer multiple `n I` of an invertible fractional ideal `I` is a nonzero integral
-ideal. -/
-private theorem exists_mk0_eq_toPrincipalIdeal_natCast_mul (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    ∃ (n : ℕ) (hn : (n : K) ≠ 0) (J : (Ideal (𝓞 K))⁰),
-      FractionalIdeal.mk0 K J = toPrincipalIdeal (𝓞 K) K (Units.mk0 (n : K) hn) * I := by
-  -- `n = N((d))` for the denominator `d` of `I` is a multiple `b d` of `d`, and `d I` is integral
-  set d : 𝓞 K := ((I : FractionalIdeal (𝓞 K)⁰ K).den : 𝓞 K)
-  have hd : d ≠ 0 := nonZeroDivisors.coe_ne_zero _
-  set n := absNorm (span {d})
-  obtain ⟨b, hb⟩ := mem_span_singleton'.mp (absNorm_mem (span {d}))
-  have hn : (n : K) ≠ 0 := by
-    simpa [n, absNorm_span_singleton, Algebra.norm_eq_zero_iff] using hd
-  have hJ : ((span {b} * (I : FractionalIdeal (𝓞 K)⁰ K).num : Ideal (𝓞 K)) :
-      FractionalIdeal (𝓞 K)⁰ K) =
-        FractionalIdeal.spanSingleton _ (n : K) * (I : FractionalIdeal (𝓞 K)⁰ K) := by
-    rw [FractionalIdeal.coeIdeal_mul, FractionalIdeal.coeIdeal_span_singleton,
-      ← FractionalIdeal.den_mul_self_eq_num', ← mul_assoc, ← map_mul, ← map_mul, hb]
-    rfl
-  have hJ0 : span {b} * (I : FractionalIdeal (𝓞 K)⁰ K).num ∈ (Ideal (𝓞 K))⁰ := by
-    rw [mem_nonZeroDivisors_iff_ne_zero, Ideal.zero_eq_bot,
-      ← FractionalIdeal.coeIdeal_ne_zero (K := K), hJ]
-    exact mul_ne_zero (FractionalIdeal.spanSingleton_ne_zero_iff.mpr hn) I.ne_zero
-  exact ⟨n, hn, ⟨_, hJ0⟩, Units.ext (by
-    rw [FractionalIdeal.coe_mk0, Units.val_mul, coe_toPrincipalIdeal, Units.val_mk0, hJ])⟩
+/-- An integral ideal `J = a I` differing from a fractional ideal `I` by a principal ideal `(a)`
+has the class of `I`. -/
+private theorem idealClass_eq_of_mk0_eq_toPrincipalIdeal_mul {c : RayClassGroup (Modulus.one K)}
+    {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    (hI : rayClassMk (Modulus.one K) ((idealsPrimeToEquiv Modulus.support_one).symm I) = c)
+    {a : Kˣ} {J : (Ideal (𝓞 K))⁰} (hJ : FractionalIdeal.mk0 K J = toPrincipalIdeal (𝓞 K) K a * I) :
+    idealClass (Modulus.one K) (integralIdealsPrimeToOneEquiv.symm J) = c := by
+  have h : NumberFieldArithmetic.integralIdealsAwayHom K (Modulus.one K).support
+      (integralIdealsPrimeToOneEquiv.symm J) =
+        (idealsPrimeToEquiv Modulus.support_one).symm (toPrincipalIdeal (𝓞 K) K a) *
+          (idealsPrimeToEquiv Modulus.support_one).symm I :=
+    Subtype.ext (Units.ext (by simp [← hJ]))
+  rw [← hI, idealClass_apply, h, map_mul,
+    rayClassMk_eq_one_iff.mpr (mem_ray_iff.mpr ⟨_, isCongrOne_one _,
+      (idealsPrimeToEquiv_symm_apply _ _).symm⟩), one_mul]
 
 /-- **The sum over the points of a fractional ideal in the fundamental cone.** For an invertible
 fractional ideal `I` whose class is the inverse of the class `c` of the trivial modulus, and
@@ -230,28 +222,11 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
   have hn' : n ≠ 0 := fun h ↦ hn (by simp [h])
   have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn'
   -- `J = n I` has the class of `I`, since `(n)` is principal
-  have hJc : idealClass (Modulus.one K) (integralIdealsPrimeToOneEquiv.symm J) = c⁻¹ := by
-    have h : NumberFieldArithmetic.integralIdealsAwayHom K (Modulus.one K).support
-        (integralIdealsPrimeToOneEquiv.symm J) =
-          (idealsPrimeToEquiv Modulus.support_one).symm
-            (toPrincipalIdeal (𝓞 K) K (Units.mk0 _ hn)) *
-            (idealsPrimeToEquiv Modulus.support_one).symm I :=
-      Subtype.ext (Units.ext (by simp [← hJ]))
-    rw [← hI, idealClass_apply, h, map_mul,
-      rayClassMk_eq_one_iff.mpr (mem_ray_iff.mpr ⟨_, isCongrOne_one _,
-        (idealsPrimeToEquiv_symm_apply _ _).symm⟩), one_mul]
+  have hJc := idealClass_eq_of_mk0_eq_toPrincipalIdeal_mul hI hJ
   -- multiplication by `n` carries the lattice of `I` onto the lattice of `J`
   have hmem (x : mixedSpace K) :
       (n : ℝ) • x ∈ idealLattice K (FractionalIdeal.mk0 K J) ↔ x ∈ idealLattice K I := by
-    simp only [mem_idealLattice, hJ, Units.val_mul, coe_toPrincipalIdeal, Units.val_mk0,
-      SetLike.mem_coe, FractionalIdeal.mem_singleton_mul]
-    have hσ (z : K) : mixedEmbedding K ((n : K) * z) = (n : ℝ) • mixedEmbedding K z := by
-      rw [map_mul, map_natCast, ← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℝ]
-    constructor
-    · rintro ⟨_, ⟨z, hz, rfl⟩, h⟩
-      exact ⟨z, hz, smul_right_injective _ hn0 ((hσ z).symm.trans h)⟩
-    · rintro ⟨z, hz, rfl⟩
-      exact ⟨_, ⟨z, hz, rfl⟩, hσ z⟩
+    rw [hJ, natCast_smul_mem_idealLattice_iff]
   let e : ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))) ≃ idealSet K J :=
     { toFun a := ⟨(n : ℝ) • (a : mixedSpace K), (smul_mem_iff_mem hn0).mpr a.2.1,
         (hmem _).mpr a.2.2⟩
@@ -273,7 +248,7 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
       ((n : ℂ) ^ Module.finrank ℚ K) ^ s * ((n : ℂ) ^ Module.finrank ℚ K * x) ^ (-s) =
         (x : ℂ) ^ (-s) := by
     have hc : (n : ℂ) ^ Module.finrank ℚ K = (((n : ℝ) ^ Module.finrank ℚ K : ℝ) : ℂ) := by
-      push_cast; rfl
+      rw [Complex.ofReal_pow, Complex.ofReal_natCast]
     rw [hc, Complex.mul_cpow_ofReal_nonneg (by positivity) hx, ← mul_assoc, Complex.cpow_neg,
       mul_inv_cancel₀ (by simp [Complex.cpow_eq_zero_iff, hn']), one_mul]
   have h := (e.hasSum_iff.mpr (hasSum_norm_cpow_idealSet J hs)).mul_left
