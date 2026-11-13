@@ -651,8 +651,9 @@ theorem diskBoundaryMap_sphereEquiv_symm (g : TopCat.diskBoundary.{u} (n + 1) �
     diskBoundaryMap ((sphereEquiv n X (g ⟨TauCeti.sphereNorthPole n⟩)).symm
       ⟨g.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩) = g := by
   ext s
-  exact DFunLike.congr_fun (congrArg Subtype.val ((sphereEquiv n X _).apply_symm_apply
-    ⟨g.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩)) s.down
+  rw [diskBoundaryMap_apply, ← coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  -- What remains is `g ⟨s.down⟩ = g s`, which holds by the `ULift` eta rule.
+  rfl
 
 end GenLoop
 
