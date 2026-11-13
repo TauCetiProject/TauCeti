@@ -34,8 +34,6 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `TauCeti.hasFiniteMulSupport_sum_type`: a family on `α ⊕ β` has finite multiplicative support as
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
-* `TauCeti.finprod_comp_eq_of_injective` and `TauCeti.finsum_comp_eq_of_injective`: reindex
-  along an injection when the family is trivial outside its range.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
 * `TauCeti.finprod_mem_fiberwise`: regroup a product over a preimage `g ⁻¹' t` by the fibers of
   `g` over `t`.
@@ -61,6 +59,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
+* `Function.Injective.finprod_comp` and `Function.Injective.finsum_comp`: reindex along an
+  injection when the family is trivial outside its range.
 * `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
   `finsum`, whatever the support.
 * `Multiset.finsum_count_eq_card`: the multiplicities of a multiset add up to its cardinality.
@@ -110,14 +110,6 @@ theorem finprod_sum_type (f : α ⊕ β → M) (hl : HasFiniteMulSupport (f ∘ 
   rw [← finprod_mem_univ, ← range_inl_union_range_inr,
     finprod_mem_union' isCompl_range_inl_range_inr.disjoint hfl hfr,
     finprod_mem_range Sum.inl_injective, finprod_mem_range Sum.inr_injective]
-
-/-- Reindex a product along an injection when every factor outside its range is `1`. -/
-@[to_additive /-- Reindex a sum along an injection when every term outside its range is `0`. -/]
-theorem finprod_comp_eq_of_injective {g : α → β} (hg : Function.Injective g) (F : β → M)
-    (hF : ∀ x ∉ Set.range g, F x = 1) : (∏ᶠ y, F (g y)) = ∏ᶠ x, F x := by
-  rw [← finprod_mem_range (f := F) hg, ← finprod_mem_univ (f := F)]
-  exact finprod_mem_inter_mulSupport_eq' _ _ _ fun x hx ↦
-    ⟨fun _ ↦ Set.mem_univ x, fun _ ↦ by_contra fun h ↦ hx (hF x h)⟩
 
 /-- Regroup a finitely supported product by the fibers of an arbitrary map. Neither the index
 sets nor the fibers need be finite. -/
@@ -319,6 +311,15 @@ theorem finprod_le_prod_of_le_one₀ (s : Finset ι) (hf : HasFiniteMulSupport f
 end OrderedWithZero
 
 end Finset
+
+/-- Reindex a product along an injection when every factor outside its range is `1`. -/
+@[to_additive /-- Reindex a sum along an injection when every term outside its range is `0`. -/]
+theorem Function.Injective.finprod_comp {α β M : Type*} [CommMonoid M] {g : α → β}
+    (hg : Function.Injective g) (F : β → M) (hF : ∀ x ∉ Set.range g, F x = 1) :
+    (∏ᶠ y, F (g y)) = ∏ᶠ x, F x := by
+  rw [← finprod_mem_range (f := F) hg, ← finprod_mem_univ (f := F)]
+  exact finprod_mem_inter_mulSupport_eq' _ _ _ fun x hx ↦
+    ⟨fun _ ↦ Set.mem_univ x, fun _ ↦ by_contra fun h ↦ hx (hF x h)⟩
 
 /-- Multiplication on the left by a left-regular element commutes with `finsum`, without any
 finiteness assumption on the support. This generalizes `mul_finsum`, which assumes that the ring

@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.KrullDimension.Field
 public import Mathlib.RingTheory.Length
-public import Mathlib.RingTheory.LocalRing.Length
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
 -- Proof-only: `QuotSMulTop` supplies the transport used to prove `length_quotient_lsmul_congr`;

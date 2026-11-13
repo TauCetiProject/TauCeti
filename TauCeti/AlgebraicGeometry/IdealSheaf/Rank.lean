@@ -106,7 +106,7 @@ theorem finrank_eq_finsum_of_isClosedImmersion {K : Type u} [Field K] {Z Y S : S
       (Module.length (Y.presheaf.stalk y) (Y.presheaf.stalk y ⧸ i.ker.stalkIdeal y)).toNat := by
   rw [h.finrank_eq_finsum_residueDegree_mul_length s]
   simp_rw [hf, i.length_stalk_of_isClosedImmersion]
-  apply TauCeti.finsum_comp_eq_of_injective i.isClosedEmbedding.injective
+  apply i.isClosedEmbedding.injective.finsum_comp
     (fun y : Y ↦ f.residueDegree y *
       (Module.length (Y.presheaf.stalk y) (Y.presheaf.stalk y ⧸ i.ker.stalkIdeal y)).toNat)
   intro y hy
