@@ -50,7 +50,7 @@ theorem lintegral_enorm_sq_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
   have hholding := isStronglyPredictable_simpleHolding ha
   have hm : Measurable[ℱ.predictable]
       (fun p : ℝ≥0 × Ω ↦ ‖simpleHolding τ n a p.1 p.2‖ₑ ^ 2) :=
-    hholding.enorm.pow_const 2
+    hholding.eNorm.pow_const 2
   rw [ℱ.lintegral_predictableMeasure P hm]
   rw [lintegral_lintegral_swap (hm.mono ℱ.predictable_le_prod le_rfl).aemeasurable]
   simp_rw [lintegral_enorm_sq_simpleHolding_timeMeasure hτ]

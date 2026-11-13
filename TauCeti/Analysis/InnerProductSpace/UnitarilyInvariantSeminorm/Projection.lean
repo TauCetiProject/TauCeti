@@ -109,7 +109,7 @@ theorem mul_map_sub_starProjection_le_map_comp_sub_comp [FiniteDimensional K E]
     {A B : E →L[K] E}
     (hAB : ((A - B : E →L[K] E) : E →ₗ[K] E).IsSymmetric)
     {U V : Submodule K E} [U.HasOrthogonalProjection]
-    [V.HasOrthogonalProjection] {delta : ℝ} (hdelta : 0 ≤ delta)
+    [V.HasOrthogonalProjection] {delta : ℝ}
     (hkyUV : ∀ k : Nat,
       (((delta : ℝ) : K) • (Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype)).kyFanSum k ≤
         (Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
@@ -125,6 +125,9 @@ theorem mul_map_sub_starProjection_le_map_comp_sub_comp [FiniteDimensional K E]
           (U.starProjection : E →ₗ[K] E)) -
         ((V.starProjection : E →ₗ[K] E) ∘ₗ
           ((B - A : E →L[K] E) : E →ₗ[K] E))) := by
+  -- For a negative `delta` the left side is nonpositive.
+  rcases lt_or_ge delta 0 with hneg | hdelta
+  · exact (mul_nonpos_of_nonpos_of_nonneg hneg.le (apply_nonneg N _)).trans (apply_nonneg N _)
   -- Orthogonal decompositions put both directed bounds on the diagonal of
   -- a block operator; block-sum majorization preserves constant one.
   let EU : E ≃ₗᵢ[K] WithLp 2 (U × Uᗮ) := U.orthogonalDecomposition
