@@ -20,6 +20,8 @@ stochastic integration, not assertions that a stochastic integral has already be
 
 For s-finite `P`, the expected-energy domain embeds into the pathwise-energy domain by Tonelli
 and a countable cofinal family of horizons. Both are closed under addition and scaling.
+The expected-energy domain is also closed under multiplication by predictable processes
+that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
 variable, held constant in time, belongs to the pathwise domain without any moment assumption.
@@ -118,6 +120,24 @@ theorem LocallyBrownianIntegrable.add (hH : LocallyBrownianIntegrable ℱ P H)
 theorem BrownianIntegrable.const_mul (h : BrownianIntegrable ℱ P H) (c : ℝ) :
     BrownianIntegrable ℱ P (fun t ω ↦ c * H t ω) :=
   ⟨h.isStronglyPredictable.const_mul c, fun T ↦ (h.memLp T).const_mul c⟩
+
+/-- Multiplication by a predictable process that is essentially bounded on every finite
+horizon preserves finite expected square energy. -/
+theorem BrownianIntegrable.mul (hH : BrownianIntegrable ℱ P H)
+    (hK : IsStronglyPredictable ℱ K)
+    (hb : ∀ T : ℝ≥0, MemLp (Function.uncurry K) ∞
+      (((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P)) :
+    BrownianIntegrable ℱ P (fun t ω ↦ H t ω * K t ω) :=
+  ⟨hH.isStronglyPredictable.mul hK, fun T ↦ (hH.memLp T).mul (hb T)⟩
+
+/-- Multiplication by a uniformly bounded predictable process preserves finite expected
+square energy. -/
+theorem BrownianIntegrable.mul_of_bound (hH : BrownianIntegrable ℱ P H)
+    (hK : IsStronglyPredictable ℱ K) (C : ℝ) (hb : ∀ t ω, ‖K t ω‖ ≤ C) :
+    BrownianIntegrable ℱ P (fun t ω ↦ H t ω * K t ω) :=
+  hH.mul hK fun _ ↦ memLp_top_of_bound
+    (hK.mono ℱ.predictable_le_prod).aestronglyMeasurable C
+    (Eventually.of_forall fun z ↦ hb z.1 z.2)
 
 /-- Scaling preserves finite pathwise square energy. -/
 theorem LocallyBrownianIntegrable.const_mul (h : LocallyBrownianIntegrable ℱ P H) (c : ℝ) :

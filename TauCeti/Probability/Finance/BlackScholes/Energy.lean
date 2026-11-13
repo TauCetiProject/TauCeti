@@ -19,8 +19,9 @@ where gamma can diverge. The result holds under any physical drift `μ`, not jus
 
 The driving process must be predictable with the pre-Brownian laws; neither path continuity
 nor increment independence from the filtration is needed. For filtered Brownian motion,
-a continuous predictable version exists on the original raw filtration by
-`IsFilteredPreBrownianReal.exists_isStronglyPredictable_isBrownianReal_indist`.
+an almost-surely continuous predictable indistinguishable version exists on the original raw
+filtration by
+`TauCeti.Probability.IsFilteredPreBrownianReal.exists_isStronglyPredictable_isBrownianReal_indist`.
 No usual-filtration assumption is required. The maturity slice is assigned zero explicitly;
 no terminal derivative of the payoff is assumed.
 
@@ -29,8 +30,11 @@ They do not construct a stochastic integral or assert self-financing or replicat
 Together with the existing pathwise drift/bond integrability and value-process martingale
 results, they supply the integrability inputs for verification of the delta hedge.
 
-The proof uses the bounded-delta formulas and
-`ProbabilityTheory.IsPreBrownianReal.brownianIntegrable_geometricBrownianMotion`.
+The general results `TauCeti.BrownianIntegrable.mul_deriv_callPrice_spot` and
+`TauCeti.BrownianIntegrable.mul_deriv_putPrice_spot` require only a positive spot process in
+the expected-energy domain and allow any constant prefactor. They use the bounded-delta
+formulas and `TauCeti.BrownianIntegrable.mul_of_bound`. The geometric Brownian specializations
+then use `ProbabilityTheory.IsPreBrownianReal.brownianIntegrable_geometricBrownianMotion`.
 
 ## References
 
@@ -45,56 +49,72 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Real Set Filter
 open scoped NNReal ENNReal
 
-namespace ProbabilityTheory.IsPreBrownianReal
-
 open TauCeti TauCeti.Probability TauCeti.BlackScholes
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-  {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {s σ K T : ℝ}
+  {ℱ : Filtration ℝ≥0 mΩ} {S W : ℝ≥0 → Ω → ℝ} {s σ K T : ℝ}
+
+namespace TauCeti.BrownianIntegrable
+
+/-- Multiplying an expected-square-integrable positive spot process by the zero-extended
+call delta and any constant preserves finite expected square energy. -/
+theorem mul_deriv_callPrice_spot (hS : BrownianIntegrable ℱ P S)
+    (hpos : ∀ (t : ℝ≥0) ω, (t : ℝ) < T → 0 < S t ω)
+    (hK : 0 < K) (hσ : σ ≠ 0) (r c : ℝ) :
+    BrownianIntegrable ℱ P (fun t ω ↦ c * S t ω *
+      (if (t : ℝ) < T then deriv (fun x ↦ callPrice x r σ K (T - t))
+        (S t ω) else 0)) := by
+  have hd := hS.isStronglyPredictable.deriv_callPrice_spot (r := r) hpos hK hσ
+  refine (hS.const_mul c).mul_of_bound hd 1 fun t ω ↦ ?_
+  split_ifs with ht
+  · have hdelta := deriv_callPrice_spot_mem_Ioo
+      (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht)
+    simpa only [Real.norm_eq_abs, abs_of_pos hdelta.1] using hdelta.2.le
+  · simp
+
+/-- Multiplying an expected-square-integrable positive spot process by the zero-extended
+put delta and any constant preserves finite expected square energy. -/
+theorem mul_deriv_putPrice_spot (hS : BrownianIntegrable ℱ P S)
+    (hpos : ∀ (t : ℝ≥0) ω, (t : ℝ) < T → 0 < S t ω)
+    (hK : 0 < K) (hσ : σ ≠ 0) (r c : ℝ) :
+    BrownianIntegrable ℱ P (fun t ω ↦ c * S t ω *
+      (if (t : ℝ) < T then deriv (fun x ↦ putPrice x r σ K (T - t))
+        (S t ω) else 0)) := by
+  have hd := hS.isStronglyPredictable.deriv_putPrice_spot (r := r) hpos hK hσ
+  refine (hS.const_mul c).mul_of_bound hd 1 fun t ω ↦ ?_
+  split_ifs with ht
+  · have hdelta := deriv_putPrice_spot_mem_Ioo
+      (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht)
+    rw [Real.norm_eq_abs, abs_of_neg hdelta.2]
+    linarith [hdelta.1]
+  · simp
+
+end TauCeti.BrownianIntegrable
+
+namespace ProbabilityTheory.IsPreBrownianReal
 
 /-- The call hedge's Brownian gains coefficient `σ S C_s`, extended by zero at and after
 maturity, is predictable and has finite expected square energy on every finite horizon.
 The stock may have any physical drift. -/
-theorem brownianIntegrable_call_hedge (hW : IsPreBrownianReal W P)
-    (hp : IsStronglyPredictable ℱ W)
+theorem brownianIntegrable_mul_deriv_callPrice_spot_geometricBrownianMotion
+    (hW : IsPreBrownianReal W P) (hp : IsStronglyPredictable ℱ W)
     (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (μ r : ℝ) :
     BrownianIntegrable ℱ P (fun t ω ↦ σ * geometricBrownianMotion s μ σ W t ω *
       (if (t : ℝ) < T then deriv (fun x ↦ callPrice x r σ K (T - t))
-        (geometricBrownianMotion s μ σ W t ω) else 0)) := by
-  have hS := hW.brownianIntegrable_geometricBrownianMotion hp s μ σ
-  have hd := hS.isStronglyPredictable.deriv_callPrice_spot
-    (r := r) (T := T) (fun t ω _ ↦ geometricBrownianMotion_pos hs μ σ W t ω) hK hσ
-  refine ⟨(hS.isStronglyPredictable.const_mul σ).mul hd, fun U ↦ ?_⟩
-  refine ((hS.memLp U).const_mul σ).mul
-    (memLp_top_of_bound (hd.mono ℱ.predictable_le_prod).aestronglyMeasurable 1 ?_)
-  exact Eventually.of_forall fun z ↦ by
-    split_ifs with ht
-    · have hdelta := deriv_callPrice_spot_mem_Ioo
-        (r := r) (geometricBrownianMotion_pos hs μ σ W z.1 z.2) hK hσ (sub_pos.mpr ht)
-      simpa only [Real.norm_eq_abs, abs_of_pos hdelta.1] using hdelta.2.le
-    · simp
+        (geometricBrownianMotion s μ σ W t ω) else 0)) :=
+  (hW.brownianIntegrable_geometricBrownianMotion hp s μ σ).mul_deriv_callPrice_spot
+    (fun t ω _ ↦ geometricBrownianMotion_pos hs μ σ W t ω) hK hσ r σ
 
 /-- The put hedge's Brownian gains coefficient `σ S P_s`, extended by zero at and after
 maturity, is predictable and has finite expected square energy on every finite horizon.
 No bound on gamma at expiry is needed. -/
-theorem brownianIntegrable_put_hedge (hW : IsPreBrownianReal W P)
-    (hp : IsStronglyPredictable ℱ W)
+theorem brownianIntegrable_mul_deriv_putPrice_spot_geometricBrownianMotion
+    (hW : IsPreBrownianReal W P) (hp : IsStronglyPredictable ℱ W)
     (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (μ r : ℝ) :
     BrownianIntegrable ℱ P (fun t ω ↦ σ * geometricBrownianMotion s μ σ W t ω *
       (if (t : ℝ) < T then deriv (fun x ↦ putPrice x r σ K (T - t))
-        (geometricBrownianMotion s μ σ W t ω) else 0)) := by
-  have hS := hW.brownianIntegrable_geometricBrownianMotion hp s μ σ
-  have hd := hS.isStronglyPredictable.deriv_putPrice_spot
-    (r := r) (T := T) (fun t ω _ ↦ geometricBrownianMotion_pos hs μ σ W t ω) hK hσ
-  refine ⟨(hS.isStronglyPredictable.const_mul σ).mul hd, fun U ↦ ?_⟩
-  refine ((hS.memLp U).const_mul σ).mul
-    (memLp_top_of_bound (hd.mono ℱ.predictable_le_prod).aestronglyMeasurable 1 ?_)
-  exact Eventually.of_forall fun z ↦ by
-    split_ifs with ht
-    · have hdelta := deriv_putPrice_spot_mem_Ioo
-        (r := r) (geometricBrownianMotion_pos hs μ σ W z.1 z.2) hK hσ (sub_pos.mpr ht)
-      rw [Real.norm_eq_abs, abs_of_neg hdelta.2]
-      linarith [hdelta.1]
-    · simp
+        (geometricBrownianMotion s μ σ W t ω) else 0)) :=
+  (hW.brownianIntegrable_geometricBrownianMotion hp s μ σ).mul_deriv_putPrice_spot
+    (fun t ω _ ↦ geometricBrownianMotion_pos hs μ σ W t ω) hK hσ r σ
 
 end ProbabilityTheory.IsPreBrownianReal

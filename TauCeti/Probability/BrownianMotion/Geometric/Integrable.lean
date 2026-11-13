@@ -40,9 +40,26 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Real Set Filter
 open scoped NNReal ENNReal
 
-namespace ProbabilityTheory.IsPreBrownianReal
-
 open TauCeti TauCeti.Probability
+
+namespace MeasureTheory.IsStronglyPredictable
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
+  {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+
+/-- The geometric Brownian formula preserves predictability, without any assumption on
+the law of the driving process. -/
+theorem geometricBrownianMotion (hp : IsStronglyPredictable ℱ W) (s μ σ : ℝ) :
+    IsStronglyPredictable ℱ (TauCeti.Probability.geometricBrownianMotion s μ σ W) := by
+  have ht := ℱ.measurable_fst_predictable.coe_nnreal_real
+  have hw := hp.measurable
+  simpa only [IsStronglyPredictable, Function.uncurry_def, geometricBrownianMotion_def,
+    Pi.add_apply] using
+    (((ht.const_mul (μ - σ ^ 2 / 2)).add (hw.const_mul σ)).exp.const_mul s).stronglyMeasurable
+
+end MeasureTheory.IsStronglyPredictable
+
+namespace ProbabilityTheory.IsPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
@@ -54,17 +71,12 @@ needed. -/
 theorem brownianIntegrable_geometricBrownianMotion (hW : IsPreBrownianReal W P)
     (hp : IsStronglyPredictable ℱ W)
     (s μ σ : ℝ) : BrownianIntegrable ℱ P (geometricBrownianMotion s μ σ W) := by
-  have hpred (a : ℝ) : IsStronglyPredictable ℱ (geometricBrownianMotion a μ σ W) := by
-    have ht := ℱ.measurable_fst_predictable.coe_nnreal_real
-    have hw := hp.measurable
-    simpa only [IsStronglyPredictable, Function.uncurry_def, geometricBrownianMotion_def,
-      Pi.add_apply] using
-      (((ht.const_mul (μ - σ ^ 2 / 2)).add (hw.const_mul σ)).exp.const_mul a).stronglyMeasurable
+  have hpred := hp.geometricBrownianMotion s μ σ
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  refine ⟨hpred s, fun T ↦ ?_⟩
+  refine ⟨hpred, fun T ↦ ?_⟩
   have hm : AEStronglyMeasurable (Function.uncurry (geometricBrownianMotion s μ σ W))
       (((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P) :=
-    ((hpred s).mono ℱ.predictable_le_prod).aestronglyMeasurable
+    (hpred.mono ℱ.predictable_le_prod).aestronglyMeasurable
   refine (memLp_two_iff_integrable_sq hm).2 ((integrable_prod_iff (hm.pow 2)).2 ⟨?_, ?_⟩)
   · exact Eventually.of_forall fun t ↦
       (hW.memLp_geometricBrownianMotion s μ σ t (by simp)).integrable_sq
