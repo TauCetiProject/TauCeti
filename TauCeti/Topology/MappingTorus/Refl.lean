@@ -123,11 +123,22 @@ def reflCircleHomeomorph : MappingTorus (Homeomorph.refl F) ≃ₜ Circle × F :
   reflHomeomorph.trans ((Homeomorph.prodComm F UnitAddCircle).trans
     ((AddCircle.homeomorphCircle one_ne_zero).prodCongr (Homeomorph.refl F)))
 
+@[simp]
+theorem reflCircleHomeomorph_mk (x : F) (t : ℝ) :
+    reflCircleHomeomorph (mk (Homeomorph.refl F) x t) =
+      (AddCircle.toCircle (t : UnitAddCircle), x) := by
+  simp [reflCircleHomeomorph, AddCircle.homeomorphCircle_apply]
+
+@[simp]
+theorem reflCircleHomeomorph_symm_apply (x : F) (t : ℝ) :
+    reflCircleHomeomorph.symm (AddCircle.toCircle (t : UnitAddCircle), x) =
+      mk (Homeomorph.refl F) x t := by
+  rw [Homeomorph.symm_apply_eq, reflCircleHomeomorph_mk]
+
 /-- `reflCircleHomeomorph` sends the fibre inclusion to the inclusion of `F` at `1`. -/
 theorem reflCircleHomeomorph_incl (x : F) :
     reflCircleHomeomorph (incl (Homeomorph.refl F) x) = (1, x) := by
-  rw [reflCircleHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply, reflHomeomorph_incl]
-  simp [AddCircle.homeomorphCircle_apply]
+  simp
 
 /-- The fibre inclusion of the mapping torus of the identity is, through `reflCircleHomeomorph`,
 the inclusion `y ↦ (1, y)` of `F` in `S¹ × F`. -/

@@ -12,6 +12,7 @@ public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 import TauCeti.AlgebraicTopology.NotSimplyConnected
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
+import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
@@ -116,8 +117,7 @@ private instance pathConnectedSpace_fiber : PathConnectedSpace ((hopfHom n).fibe
 theorem subsingleton_homotopyGroup_sphere [Finite N] (hN : Nat.card N < 2 * n + 1)
     (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     Subsingleton (HomotopyGroup N (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) x) :=
-  subsingleton_homotopyGroup_sphere_of_lt (by
-    rw [finrank_real_of_complex, finrank_euclideanSpace_fin]; ring) hN x
+  subsingleton_homotopyGroup_sphere_of_lt (finrank_real_euclideanSpace_complex n) hN x
 
 /-! ### Higher homotopy groups -/
 

@@ -108,20 +108,10 @@ private theorem singularHomologyMap_prodMk_const_one_eq (n : ℕ) :
             C(MappingTorus (Homeomorph.refl F), Circle × F))) := by
   rw [← MappingTorus.reflCircleHomeomorph_comp_incl, TopCat.ofHom_comp, Functor.map_comp]
 
-/-- On singular homology, the fibre inclusion of a mapping torus induces the homology map of
-`TauCeti.MappingTorus.fibreInclusionChainMap`. -/
-private theorem singularHomologyMap_incl_eq (n : ℕ) :
-    ((singularHomologyFunctor A n).obj R).map
-        (TopCat.ofHom (MappingTorus.incl (Homeomorph.refl F))) =
-      homologyMap (MappingTorus.fibreInclusionChainMap (Homeomorph.refl F) R) n := by
-  rw [MappingTorus.fibreInclusionChainMap_def]
-  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
-  rfl
-
 private instance mono_singularHomologyMap_incl_refl (n : ℕ) :
     Mono (((singularHomologyFunctor A n).obj R).map
       (TopCat.ofHom (MappingTorus.incl (Homeomorph.refl F)))) := by
-  rw [singularHomologyMap_incl_eq]
+  rw [MappingTorus.singularHomologyMap_incl_eq]
   exact MappingTorus.mono_homologyMap_fibreInclusionChainMap_refl F R n
 
 private instance isIso_singularHomologyMap_reflCircleHomeomorph (n : ℕ) :
@@ -146,7 +136,7 @@ instance isIso_singularHomologyMap_prodMk_const_one_zero :
       (TopCat.ofHom ((ContinuousMap.const F (1 : Circle)).prodMk (ContinuousMap.id F)))) := by
   have : Epi (((singularHomologyFunctor A 0).obj R).map
       (TopCat.ofHom (MappingTorus.incl (Homeomorph.refl F)))) := by
-    rw [singularHomologyMap_incl_eq]
+    rw [MappingTorus.singularHomologyMap_incl_eq]
     exact MappingTorus.epi_homologyMap_fibreInclusionChainMap_zero (Homeomorph.refl F) R
   have := isIso_of_mono_of_epi (((singularHomologyFunctor A 0).obj R).map
       (TopCat.ofHom (MappingTorus.incl (Homeomorph.refl F))))
@@ -159,7 +149,8 @@ theorem isIso_singularHomologyMap_prodMk_const_one_succ_iff (n : ℕ) :
     IsIso (((singularHomologyFunctor A (n + 1)).obj R).map
         (TopCat.ofHom ((ContinuousMap.const F (1 : Circle)).prodMk (ContinuousMap.id F)))) ↔
       IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of F)) := by
-  rw [singularHomologyMap_prodMk_const_one_eq, isIso_comp_right_iff, singularHomologyMap_incl_eq]
+  rw [singularHomologyMap_prodMk_const_one_eq, isIso_comp_right_iff,
+    MappingTorus.singularHomologyMap_incl_eq]
   exact (MappingTorus.shortExact_wang_refl F R n).isIso_f_iff
 
 /-- **`Hₙ₊₁(S¹ × F)` vanishes exactly when `Hₙ₊₁(F)` and `Hₙ(F)` do.** -/

@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Hurewicz
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 
 /-!
 # The homology of the loop space of `CPⁿ` up to degree `2n`
@@ -71,11 +72,6 @@ namespace TauCeti.ComplexProjectiveSpace
 
 variable {n : ℕ} (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1)
 
-/-- `ℂⁿ⁺¹` has real dimension `2n + 2`, so its unit sphere is `S²ⁿ⁺¹`. -/
-private theorem finrank_real_euclideanSpace_complex :
-    Module.finrank ℝ (EuclideanSpace ℂ (Fin (n + 1))) = 2 * n + 1 + 1 := by
-  rw [finrank_real_of_complex, finrank_euclideanSpace_fin]; ring
-
 /-- **The homology of `ΩCPⁿ` vanishes in the degrees `2, …, 2n - 1`**, with coefficients in any
 ring. -/
 theorem isZero_singularHomology_mooreLoopSpace (R : Type) [Ring R] {k : ℕ}
@@ -90,9 +86,9 @@ theorem isZero_singularHomology_mooreLoopSpace (R : Type) [Ring R] {k : ℕ}
   -- `ΩS²ⁿ⁺¹`.
   obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
   exact (isZero_singularHomology_circle_prod_succ_iff _ m).2
-    ⟨isZero_singularHomology_mooreLoopSpace_sphere finrank_real_euclideanSpace_complex v R
+    ⟨isZero_singularHomology_mooreLoopSpace_sphere (finrank_real_euclideanSpace_complex n) v R
         (by omega) (by omega),
-      isZero_singularHomology_mooreLoopSpace_sphere finrank_real_euclideanSpace_complex v R
+      isZero_singularHomology_mooreLoopSpace_sphere (finrank_real_euclideanSpace_complex n) v R
         (by omega) (by omega)⟩
 
 /-- **The looped Hopf map `Ωq : ΩS²ⁿ⁺¹ → ΩCPⁿ` is an isomorphism on `H_{2n}`**, with coefficients
@@ -111,7 +107,7 @@ theorem isIso_singularHomologyMap_mooreLoopSpaceMap (hn : n ≠ 0) (R : Type) [R
     obtain ⟨m, hm⟩ : ∃ m, 2 * n = m + 1 := ⟨2 * n - 1, by omega⟩
     rw [hm]
     exact (isIso_singularHomologyMap_prodMk_const_one_succ_iff _ m).2
-      (isZero_singularHomology_mooreLoopSpace_sphere finrank_real_euclideanSpace_complex v R
+      (isZero_singularHomology_mooreLoopSpace_sphere (finrank_real_euclideanSpace_complex n) v R
         (by omega) (by omega))
   infer_instance
 
