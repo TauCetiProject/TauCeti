@@ -138,11 +138,8 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
       MapsTo g (ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet ∧
       InjOn g (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) := by
   -- `w ↦ -w⁻¹` carries the closed half-plane near `0` to the closed half-plane near infinity
-  have hT : Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) (𝓝 p) := by
-    refine hp.comp (tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩)
-    · exact (tendsto_neg_cobounded.comp tendsto_inv₀_nhdsNE_zero).mono_left
-        (nhdsWithin_mono _ fun w hw => hw.2)
-    · exact eventually_nhdsWithin_of_forall fun w hw => im_neg_inv_nonneg.mpr hw.1
+  have hT : Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) (𝓝 p) :=
+    tendsto_comp_neg_inv_cobounded hp
   obtain ⟨r, hr, hball⟩ : ∃ r > 0, ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
       f (-w⁻¹) ∈ ball p ρ := by
     obtain ⟨r, hr, h⟩ := Metric.mem_nhdsWithin_iff.mp (hT (ball_mem_nhds p hρ))
