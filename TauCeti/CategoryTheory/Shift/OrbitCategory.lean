@@ -38,7 +38,7 @@ functor with these two properties is isomorphic to it.
 
 Descent is compatible with composition. Postcomposing `lift G φ` with an additive functor `H`
 gives the descent of `G ⋙ H`. An additive functor `F : D ⥤ D'` commuting with the shifts induces
-`map F : D/[n] ⥤ D'/[n]`, the descent of `F` followed by the projection; if `F ⋙ G' ≅ G`
+`map F : D/[n] ⥤ D'/[n]`, the descent of `F ⋙ projection` along `mapPeriodicity F`; if `F ⋙ G' ≅ G`
 compatibly with periodicity isomorphisms, then `map F` followed by the descent of `G'` is the
 descent of `G`. This compares orbit functors defined on different categories, such as a homotopy
 category and its localization. On orbit hom groups `map F` is the direct sum of the maps
@@ -196,6 +196,7 @@ theorem toAddMonoid_homOf {X Y : D} {A : Type*} [AddCommMonoid A]
     DirectSum.toAddMonoid φ (homOf i f) = φ i f := by
   rw [homOf_def, DirectSum.toAddMonoid_of]
 
+/-- Homogeneous pieces compose by `ShiftedHom.comp`, landing in any degree `k` with `i + j = k`. -/
 theorem homOf_comp_homOf_eq {X Y Z : D} {i j k : ℤ} (h : i + j = k)
     (f : ShiftedHom X Y (n * i)) (g : ShiftedHom Y Z (n * j)) :
     (homOf i f ≫ homOf j g : (⟨X⟩ : OrbitCategory D n) ⟶ ⟨Z⟩) =
@@ -587,7 +588,7 @@ theorem mapPeriodicity_hom_app (X : D) :
   simp [mapPeriodicity]
 
 /-- The functor `D/[n] ⥤ D'/[n]` induced on orbit categories by an additive functor commuting
-with the shifts: the descent of `F` followed by the projection. -/
+with the shifts: the descent of `F ⋙ projection` along `mapPeriodicity F`. -/
 -- Exposed and implicitly reducible, like `lift`, so that `(map F).obj X` is visibly
 -- `⟨F.obj X.obj⟩`, which the statements comparing descents along `map F` need in order to
 -- typecheck and their proofs need in order to rewrite with lemmas about `map F`.
