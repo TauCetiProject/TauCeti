@@ -165,7 +165,6 @@ are the trajectories of `Y`, on the middle level. -/
 theorem morseTrajectorySlice_prod_left {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (q q' : N) :
     (hX.prod hY hf hg).morseTrajectorySlice (x, q) (x, q') =
       (fun y ↦ (x, y)) '' hY.morseTrajectorySlice q q' := by
-  have hfd := hf.contMDiff.mdifferentiable (by simp)
   have hfix := hX.flow_apply_of_mfderiv_eq_zero hx
   ext z
   rw [(hX.prod hY hf hg).mem_morseTrajectorySlice (p := (x, q)) (q := (x, q')) (z := z)]
@@ -173,7 +172,7 @@ theorem morseTrajectorySlice_prod_left {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(�
     mem_morseTrajectorySlice, Pi.add_apply, Function.comp_apply]
   constructor
   · rintro ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, hz⟩
-    have hz₁ : z.1 = x := hX.eq_of_mem_unstableSet_inter_stableSet hfd ⟨hu₁, hs₁⟩
+    have hz₁ : z.1 = x := hX.eq_of_mem_unstableSet_inter_stableSet ⟨hu₁, hs₁⟩
     refine ⟨z.2, ⟨hu₂, hs₂, by rw [hz₁] at hz; linarith⟩, ?_⟩
     rw [← hz₁]
   · rintro ⟨y, ⟨hu, hs, hy⟩, rfl⟩
@@ -187,7 +186,6 @@ are the trajectories of `X`, on the middle level. -/
 theorem morseTrajectorySlice_prod_right {y : N} (hy : mfderiv 𝓘(ℝ, E') 𝓘(ℝ) g y = 0) (p p' : M) :
     (hX.prod hY hf hg).morseTrajectorySlice (p, y) (p', y) =
       (fun x ↦ (x, y)) '' hX.morseTrajectorySlice p p' := by
-  have hgd := hg.contMDiff.mdifferentiable (by simp)
   have hfix := hY.flow_apply_of_mfderiv_eq_zero hy
   ext z
   rw [(hX.prod hY hf hg).mem_morseTrajectorySlice (p := (p, y)) (q := (p', y)) (z := z)]
@@ -195,7 +193,7 @@ theorem morseTrajectorySlice_prod_right {y : N} (hy : mfderiv 𝓘(ℝ, E') 𝓘
     mem_morseTrajectorySlice, Pi.add_apply, Function.comp_apply]
   constructor
   · rintro ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, hz⟩
-    have hz₂ : z.2 = y := hY.eq_of_mem_unstableSet_inter_stableSet hgd ⟨hu₂, hs₂⟩
+    have hz₂ : z.2 = y := hY.eq_of_mem_unstableSet_inter_stableSet ⟨hu₂, hs₂⟩
     refine ⟨z.1, ⟨hu₁, hs₁, by rw [hz₂] at hz; linarith⟩, ?_⟩
     rw [← hz₂]
   · rintro ⟨x, ⟨hu, hs, hx⟩, rfl⟩
