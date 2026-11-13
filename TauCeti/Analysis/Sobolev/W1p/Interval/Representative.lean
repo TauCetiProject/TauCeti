@@ -17,9 +17,10 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 For every `1 ≤ p ≤ ∞`, a real Sobolev class on `(a,b)`, with `a < b`, has a unique
 continuous representative on `[a,b]`. The map `W1p.intervalRepresentativeL` into the
 supremum-normed continuous functions is bounded, with an explicit constant depending only
-on the interval length and `p`. Its representative is absolutely continuous and its
-classical derivative agrees almost everywhere with the weak gradient. In particular,
-evaluating it at the two endpoints defines the bounded trace `W1p.intervalTraceL`.
+on the interval length and `p`; in particular the Sobolev value is essentially bounded. Its
+representative is absolutely continuous and its classical derivative agrees almost everywhere
+with the weak gradient. In particular, evaluating it at the two endpoints defines the bounded
+trace `W1p.intervalTraceL`.
 
 The construction uses the weak fundamental theorem of calculus in
 `TauCeti.Analysis.Sobolev.WeakDeriv.Interval`, not smooth density, so it also applies at
@@ -194,6 +195,21 @@ theorem norm_intervalRepresentativeL_le (hab : a < b)
       (((b - a)⁻¹ + 1) *
         (ENNReal.ofReal (b - a) ^ (1 - 1 / p.toReal)).toReal) * ‖u‖ :=
   norm_intervalRepresentativeₗ_le hab u
+
+/-- The Sobolev value is essentially bounded by the supremum norm of the interval
+representative. -/
+theorem ae_norm_value_le (hab : a < b) (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    ∀ᵐ t ∂volume.restrict (Ioo a b), ‖value u t‖ ≤ ‖intervalRepresentativeL hab u‖ := by
+  filter_upwards [value_ae_eq_intervalRepresentativeL hab u] with t ht
+  rw [ht]
+  exact (intervalRepresentativeL hab u).norm_coe_le_norm _
+
+/-- On a bounded interval the Sobolev value is essentially bounded. -/
+theorem memLp_top_value (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    MemLp (value u) ⊤ (volume.restrict (Ioo a b)) := by
+  rcases le_or_gt b a with hab | hab
+  · simp [Ioo_eq_empty_of_le hab]
+  exact memLp_top_of_bound (Lp.memLp (value u)).aestronglyMeasurable _ (ae_norm_value_le hab u)
 
 /-- The representative is absolutely continuous on the closed interval, also at `p = ∞`. -/
 theorem absolutelyContinuousOnInterval_intervalRepresentativeL (hab : a < b)

@@ -195,13 +195,24 @@ theorem smul (h : IsIntervalWeakSupersolution a b c d u) {r : ℝ} (hr : 0 ≤ r
     simp only [h₁, h₂, Pi.smul_apply, smul_eq_mul]
     ring
 
-/-- On a bounded interval the value of a Sobolev function is essentially bounded by the sup norm
-of its continuous representative. -/
-private theorem ae_norm_value_le (hx : x₀ < x₁) (u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2) :
-    ∀ᵐ y ∂volume.restrict (Ioo x₀ x₁), ‖W1p.value u y‖ ≤ ‖W1p.intervalRepresentativeL hx u‖ := by
-  filter_upwards [W1p.value_ae_eq_intervalRepresentativeL hx u] with y hy
-  rw [hy]
-  exact (W1p.intervalRepresentativeL hx u).norm_coe_le_norm _
+/-- The sum of two weak supersolutions is a weak supersolution. -/
+theorem add (hu : IsIntervalWeakSupersolution a b c d u)
+    {v : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2} (hv : IsIntervalWeakSupersolution a b c d v) :
+    IsIntervalWeakSupersolution a b c d (u + v) := fun w hw ↦ by
+  have hg : ⇑(W1p.gradient (u + v)) =ᵐ[volume.restrict (Ioo x₀ x₁)]
+      ⇑(W1p.gradient u) + ⇑(W1p.gradient v) := by
+    rw [show W1p.gradient (u + v) = W1p.gradient u + W1p.gradient v by
+      simpa only [W1p.gradientL_apply] using map_add W1p.gradientL u v]
+    exact Lp.coeFn_add (W1p.gradient u) (W1p.gradient v)
+  refine ⟨((hu.integrableOn w hw).add (hv.integrableOn w hw)).congr_fun_ae ?_,
+    (add_nonneg (hu.integral_nonneg w hw) (hv.integral_nonneg w hw)).trans_eq ?_⟩
+  on_goal 2 =>
+    rw [← integral_add (hu.integrableOn w hw) (hv.integrableOn w hw)]
+    refine integral_congr_ae ?_
+  all_goals
+    filter_upwards [hg, W1p.value_add_ae u v] with y h₁ h₂
+    simp only [h₁, h₂, Pi.add_apply]
+    ring
 
 /-- **Introduction rule.** For `a ∈ L^∞`, `b ∈ L²`, `c ∈ L²` and `d ∈ L¹` the pairing is
 integrable for every `u` and `w`, since `u` is essentially bounded on the interval, so the
@@ -223,14 +234,13 @@ theorem of_integral_nonneg (ha : MemLp a ⊤ (volume.restrict (Ioo x₀ x₁)))
   set v : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2 := (w : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2)
   have hF : MemLp (fun y ↦ a y * W1p.gradient u y + b y * W1p.value u y) 2
       (volume.restrict (Ioo x₀ x₁)) :=
-    (ha.fun_mul (Lp.memLp (W1p.gradient u))).add (hb.fun_mul (memLp_top_of_bound
-      (Lp.memLp (W1p.value u)).aestronglyMeasurable _ (ae_norm_value_le hx u)))
+    (ha.fun_mul (Lp.memLp (W1p.gradient u))).add (hb.fun_mul (W1p.memLp_top_value u))
   have hG : Integrable (fun y ↦ c y * W1p.gradient u y + d y * W1p.value u y)
       (volume.restrict (Ioo x₀ x₁)) :=
     (hc.integrable_mul (Lp.memLp (W1p.gradient u))).add
-      (hd.mul_bdd (Lp.memLp (W1p.value u)).aestronglyMeasurable (ae_norm_value_le hx u))
+      (hd.mul_bdd (Lp.memLp (W1p.value u)).aestronglyMeasurable (W1p.ae_norm_value_le hx u))
   exact (hF.integrable_mul (Lp.memLp (W1p.gradient v))).sub
-    (hG.mul_bdd (Lp.memLp (W1p.value v)).aestronglyMeasurable (ae_norm_value_le hx v))
+    (hG.mul_bdd (Lp.memLp (W1p.value v)).aestronglyMeasurable (W1p.ae_norm_value_le hx v))
 
 end IsIntervalWeakSupersolution
 
@@ -314,18 +324,15 @@ private theorem integral_mul_deriv_ramp_sub (hΦ : IntegrableOn Φ (Ioo x₀ x�
     ∫ y in Ioo x₀ x₁, Φ y * deriv (ramp s δ - ramp t δ) y =
       (δ⁻¹ * ∫ y in Ioo s (s + δ), Φ y) - δ⁻¹ * ∫ y in Ioo t (t + δ), Φ y := by
   have hint : ∀ z, IntegrableOn (fun y ↦ Φ y * (Ioo z (z + δ)).indicator (fun _ ↦ δ⁻¹) y)
-      (Ioo x₀ x₁) := fun z ↦ hΦ.mul_bdd
-    ((measurable_const.indicator measurableSet_Ioo).aestronglyMeasurable) (c := δ⁻¹)
-    (.of_forall fun y ↦ (norm_indicator_le_norm_self _ _).trans (by simp [abs_of_pos hδ]))
+      (Ioo x₀ x₁) := fun z ↦ by
+    simp_rw [← indicator_mul_right]
+    exact (hΦ.mul_const δ⁻¹).indicator measurableSet_Ioo
   have hind : ∀ z, Ioo z (z + δ) ⊆ Ioo x₀ x₁ →
       ∫ y in Ioo x₀ x₁, Φ y * (Ioo z (z + δ)).indicator (fun _ ↦ δ⁻¹) y =
         δ⁻¹ * ∫ y in Ioo z (z + δ), Φ y := fun z hz ↦ by
-    have h : (fun y ↦ Φ y * (Ioo z (z + δ)).indicator (fun _ ↦ δ⁻¹) y) =
-        (Ioo z (z + δ)).indicator (fun y ↦ δ⁻¹ * Φ y) := by
-      ext y
-      by_cases hy : y ∈ Ioo z (z + δ) <;> simp [hy, mul_comm]
-    rw [h, integral_indicator measurableSet_Ioo, Measure.restrict_restrict measurableSet_Ioo,
-      inter_eq_left.2 hz, integral_const_mul]
+    simp_rw [← indicator_mul_right]
+    rw [setIntegral_indicator measurableSet_Ioo, inter_eq_right.2 hz, integral_mul_const,
+      mul_comm]
   calc ∫ y in Ioo x₀ x₁, Φ y * deriv (ramp s δ - ramp t δ) y
       = ∫ y in Ioo x₀ x₁, (Φ y * (Ioo s (s + δ)).indicator (fun _ ↦ δ⁻¹) y -
           Φ y * (Ioo t (t + δ)).indicator (fun _ ↦ δ⁻¹) y) :=
@@ -344,11 +351,9 @@ private theorem neg_setIntegral_abs_le_integral_mul_ramp_sub (hk : IntegrableOn 
   have hsub : Ioo s (t + δ) ⊆ Ioo x₀ x₁ := Ioo_subset_Ioo hs ht
   have hneg : ∫ y in Ioo x₀ x₁, -(Ioo s (t + δ)).indicator (fun y ↦ |k y|) y =
       -∫ y in Ioo s (t + δ), |k y| := by
-    rw [integral_neg, integral_indicator measurableSet_Ioo,
-      Measure.restrict_restrict measurableSet_Ioo, inter_eq_left.2 hsub]
+    rw [integral_neg, setIntegral_indicator measurableSet_Ioo, inter_eq_right.2 hsub]
   rw [← hneg]
-  refine integral_mono ((IntegrableOn.integrable_indicator (f := fun y ↦ |k y|)
-    (hk.mono_set hsub).abs measurableSet_Ioo).integrableOn.neg)
+  refine integral_mono (hk.abs.indicator measurableSet_Ioo).neg
     (hk.mul_bdd (((continuous_ramp s δ).sub (continuous_ramp t δ)).aestronglyMeasurable) (c := 1)
       (.of_forall fun y ↦ by
         rw [Real.norm_eq_abs, abs_le, Pi.sub_apply]
@@ -439,6 +444,29 @@ private theorem ae_sub_le_of_hasDerivAt
       (IntegrableOn.intervalIntegrable_of_mem_Icc hk.abs (left_mem_Icc.2 (hs.1.trans hs.2).le)
         ⟨hs.1.le, hs.2.le⟩)
   linarith
+
+/-- For an absolutely continuous `ψ ≥ 0` vanishing at both endpoints, with derivative in `L²`,
+the pairing with a weak supersolution is integrable. -/
+theorem IsIntervalWeakSupersolution.integrableOn_of_absolutelyContinuousOnInterval
+    (hx : x₀ < x₁)
+    {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2}
+    (hsuper : IsIntervalWeakSupersolution a b c d u)
+    {ψ : ℝ → ℝ} (hψ : AbsolutelyContinuousOnInterval ψ x₀ x₁)
+    (hdψ : MemLp (deriv ψ) 2 (volume.restrict (Ioo x₀ x₁))) (hψ₀ : ψ x₀ = 0) (hψ₁ : ψ x₁ = 0)
+    (hψnn : ∀ t ∈ Ioo x₀ x₁, 0 ≤ ψ t) :
+    IntegrableOn (fun x ↦
+      (a x * W1p.gradient u x + b x * W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le x)) *
+          deriv ψ x -
+        (c x * W1p.gradient u x + d x * W1p.intervalRepresentativeL hx u
+          (projIcc x₀ x₁ hx.le x)) * ψ x) (Ioo x₀ x₁) := by
+  obtain ⟨w, hw0, hwv, hwg⟩ :=
+    hψ.exists_mem_w1p0Submodule_value_gradient_ae_eq hdψ (by norm_num) hψ₀ hψ₁
+  have h := hsuper.integrableOn ⟨w, hw0⟩ (by
+    filter_upwards [hwv, ae_restrict_mem measurableSet_Ioo] with t ht hmem
+    simpa [ht] using hψnn t hmem)
+  refine h.congr_fun_ae ?_
+  filter_upwards [hwv, hwg, W1p.value_ae_eq_intervalRepresentativeL hx u] with t h1 h2 h3
+  rw [h1, h2, h3]
 
 /-- An absolutely continuous `ψ ≥ 0` vanishing at both endpoints, with derivative in `L²`,
 is an admissible test function in the weak supersolution inequality. -/
@@ -680,9 +708,6 @@ private theorem intervalIntegral_abs_le (hx : x₀ < x₁)
       Real.exp (∫ s, |q s|) * U * ∫ z in Ioo x₀ x₁, |d z - q z * b z| := by
   set L := ∫ s, |q s|
   have hU0 : 0 ≤ U := (abs_nonneg _).trans (hU x₀ (left_mem_Icc.2 hy.1.le))
-  have hey : IntervalIntegrable (fun z ↦ |d z - q z * b z|) volume x₀ y :=
-    IntegrableOn.intervalIntegrable_of_mem_Icc he.abs (left_mem_Icc.2 (hy.1.trans hy.2).le)
-      ⟨hy.1.le, hy.2.le⟩
   have hpt : ∀ z ∈ Icc x₀ y, |integratingFactor x₀ q z * ((d z - q z * b z) *
       W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le z))| ≤
         Real.exp L * U * |d z - q z * b z| := fun z hz ↦ by
@@ -693,26 +718,16 @@ private theorem intervalIntegral_abs_le (hx : x₀ < x₁)
           gcongr
           exacts [integratingFactor_le hq z, hU z hz]
       _ = Real.exp L * U * |d z - q z * b z| := by ring
-  have hmeas : AEStronglyMeasurable (fun z ↦ integratingFactor x₀ q z * ((d z - q z * b z) *
-      W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le z))) (volume.restrict (Ioc x₀ y)) :=
-    (continuous_integratingFactor hq).aestronglyMeasurable.mul
-      ((he.mono_set (Ioc_subset_Ioo_right hy.2)).aestronglyMeasurable.mul
-        (W1p.continuous_intervalRepresentativeL_projIcc hx u).aestronglyMeasurable)
-  have hki : IntervalIntegrable (fun z ↦ |integratingFactor x₀ q z * ((d z - q z * b z) *
-      W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le z))|) volume x₀ y := by
-    refine (hey.const_mul (Real.exp L * U)).mono_fun' ?_ ?_
-    · rw [uIoc_of_le hy.1.le]
-      exact hmeas.norm
-    · rw [uIoc_of_le hy.1.le]
-      filter_upwards [ae_restrict_mem measurableSet_Ioc] with z hz
-      rw [Real.norm_eq_abs, abs_abs]
-      exact hpt z (Ioc_subset_Icc_self hz)
   calc ∫ z in x₀..y, |integratingFactor x₀ q z * ((d z - q z * b z) *
         W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le z))|
-      ≤ ∫ z in x₀..y, Real.exp L * U * |d z - q z * b z| :=
-        intervalIntegral.integral_mono_on hy.1.le hki (hey.const_mul _) hpt
-    _ = Real.exp L * U * ∫ z in Ioc x₀ y, |d z - q z * b z| := by
-        rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_of_le hy.1.le]
+      = ∫ z in Ioc x₀ y, |integratingFactor x₀ q z * ((d z - q z * b z) *
+        W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le z))| :=
+        intervalIntegral.integral_of_le hy.1.le
+    _ ≤ ∫ z in Ioc x₀ y, Real.exp L * U * |d z - q z * b z| :=
+        integral_mono_of_nonneg (.of_forall fun _ ↦ abs_nonneg _)
+          ((he.mono_set (Ioc_subset_Ioo_right hy.2)).abs.const_mul (Real.exp L * U))
+          ((ae_restrict_mem measurableSet_Ioc).mono fun z hz ↦ hpt z (Ioc_subset_Icc_self hz))
+    _ = Real.exp L * U * ∫ z in Ioc x₀ y, |d z - q z * b z| := integral_const_mul _ _
     _ ≤ Real.exp L * U * ∫ z in Ioo x₀ x₁, |d z - q z * b z| :=
         mul_le_mul_of_nonneg_left (setIntegral_mono_set he.abs
           (.of_forall fun _ ↦ abs_nonneg _) (ae_of_all _ (Ioc_subset_Ioo_right hy.2)))
