@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Process.ElementaryDensity
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.Indicator
+import TauCeti.Probability.Martingale.Basic
 
 /-!
 # Martingale consistency of the predictable L² Brownian integral
@@ -48,36 +48,23 @@ private theorem condExp_rectangle (hW : IsFilteredPreBrownianReal ℱ W P)
     P[A.indicator (W t - W s) | ℱ S] =ᵐ[P]
       A.indicator (W (max s (min t S)) - W s) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hi := (hW.integrable_eval t).sub (hW.integrable_eval s)
+  have hM := (hW.martingale.const_min t).sub (hW.martingale.const_min s)
+  have hmul := hM.mul_left_of_eq_zero (r := s) (a := A.indicator 1)
+    (fun u hus ↦ by simp only [Pi.sub_apply, min_eq_right (hus.trans hst),
+      min_eq_right hus, sub_self])
+    (stronglyMeasurable_const.indicator hA)
+    (fun u ↦ by
+      simpa only [Pi.mul_def, ← indicator_mul_left, Pi.one_apply, one_mul] using
+        (hM.integrable u).indicator (ℱ.le s _ hA))
+  have hcond := hmul.condExp_ae_eq (le_max_right t S)
+  dsimp only [Pi.sub_apply] at hcond
+  simp only [min_eq_left (le_max_left t S), min_eq_left (hst.trans (le_max_left t S)),
+    Pi.mul_def, ← indicator_mul_left, Pi.one_apply, one_mul] at hcond
   by_cases hSs : S ≤ s
-  · have hz : P[A.indicator (W t - W s) | ℱ s] =ᵐ[P] 0 := by
-      filter_upwards [condExp_indicator hi hA, hW.condExp_sub hst] with ω h₁ h₂
-      simp [h₁, h₂]
-    have htower := condExp_condExp_of_le (ℱ.mono hSs) (ℱ.le s)
-      (f := A.indicator (W t - W s)) (μ := P)
-    have hh := (condExp_congr_ae (m := ℱ S) hz).symm.trans htower
-    simpa only [min_eq_right (hSs.trans hst), max_eq_left hSs, sub_self,
-      indicator_zero', condExp_zero] using hh.symm
-  · have hsS := le_of_not_ge hSs
-    have hAS := (ℱ.mono hsS) _ hA
-    by_cases htS : t ≤ S
-    · rw [min_eq_left htS, max_eq_right hst]
-      exact (condExp_of_stronglyMeasurable (ℱ.le S)
-        (((hW.adapted t).stronglyMeasurable.mono (ℱ.mono htS)).sub
-          ((hW.adapted s).stronglyMeasurable.mono (ℱ.mono hsS)) |>.indicator hAS)
-        (hi.indicator (ℱ.le s _ hA))).eventuallyEq
-    · have hSt := le_of_not_ge htS
-      filter_upwards [condExp_indicator hi hAS,
-        MeasureTheory.condExp_sub (m := ℱ S) (hW.integrable_eval t) (hW.integrable_eval s),
-        hW.martingale.condExp_ae_eq hSt] with ω h₁ h₂ h₃
-      rw [min_eq_right hSt, max_eq_right hsS]
-      rw [condExp_of_stronglyMeasurable (ℱ.le S)
-        ((hW.adapted s).stronglyMeasurable.mono (ℱ.mono hsS)) (hW.integrable_eval s)] at h₂
-      by_cases hω : ω ∈ A
-      · simp only [indicator_of_mem hω] at h₁ ⊢
-        rw [h₁, h₂]
-        simp only [Pi.sub_apply, h₃]
-      · simpa only [indicator_of_notMem hω] using h₁
+  · simpa only [min_eq_right (hSs.trans hst), min_eq_right hSs, max_eq_left hSs,
+      sub_self] using hcond
+  · simpa only [min_eq_left (le_of_not_ge hSs),
+      max_eq_right (le_min hst (le_of_not_ge hSs))] using hcond
 
 /-- Conditioning a terminal integral on an earlier date gives the integral of its restriction.
 The restricted input may be any L² class agreeing with the original input on the shorter
