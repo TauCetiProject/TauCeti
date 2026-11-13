@@ -100,7 +100,6 @@ theorem exists_subseq_tendsto_broken_of_tendsto_mem_stableSet (h : hX.IsMorseSma
       (∀ i, Tendsto (s i) atTop atTop) ∧
       (∀ i i', i < i' → Tendsto (fun j ↦ s i' j - s i j) atTop atTop) ∧
       ∀ i, Tendsto (fun j ↦ hX.flow (s i j) (v (n j))) atTop (𝓝 (z i)) := by
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   -- Break the limit at `b`, follow the outgoing orbit to the next critical point `b'`, of smaller
   -- index, and continue from there by induction on the index of `b`.
   induction hm : manifoldMorseIndex 𝓘(ℝ, E) f b using Nat.strong_induction_on
@@ -120,7 +119,7 @@ theorem exists_subseq_tendsto_broken_of_tendsto_mem_stableSet (h : hX.IsMorseSma
     have hwb' : w ∈ hX.flow.stableSet b' := Flow.mem_stableSet.2 hwb'
     have hbb' : b ≠ b' := by
       rintro rfl
-      exact hwb (hX.eq_of_mem_unstableSet_inter_stableSet hdf ⟨hwU, hwb'⟩)
+      exact hwb (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hwU, hwb'⟩)
     have hlt := h.manifoldMorseIndex_lt hf hbb' ⟨w, hwU, hwb'⟩
     obtain ⟨k, x, z, s, n, hn, hx0, hxk, hxc, hxi, hz, hs, hss, hzlim⟩ :=
       ih _ (hm ▸ hlt) hwb' (hlim.comp hψ.tendsto_atTop)
@@ -220,17 +219,17 @@ theorem exists_subseq_tendsto_broken_of_mem_level (h : hX.IsMorseSmale)
     refine lt_of_le_of_ne ?_ (hxc' 0).symm
     rw [hx0, ← (hu 0).2]
     exact Flow.le_of_mem_unstableSet_of_antitone (hu 0).1.1 hdf.continuous.continuousAt
-      (hX.antitone_flow hdf _)
+      (hX.antitone_flow _)
   have hcr : f (x (Fin.last k)) < c := by
     refine lt_of_le_of_ne ?_ (hxc' _)
     rw [hxk, ← (hu 0).2]
     exact Flow.le_of_mem_stableSet_of_antitone (hu 0).1.2 hdf.continuous.continuousAt
-      (hX.antitone_flow hdf _)
+      (hX.antitone_flow _)
   obtain ⟨i, hlo, hhi⟩ := Fin.exists_succ_lt_lt_castSucc (g := fun i ↦ f (x i)) hxc' hcp hcr
   -- The point `y` where this component crosses the level `c`. Shifting every time by `τ` moves
   -- the points `z i'` along their orbits, and makes `y` the point of this component.
   obtain ⟨τ, hτ, -⟩ :=
-    hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hdf (hne i) (hz i) hlo hhi
+    hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet (hne i) (hz i) hlo hhi
   set y := hX.flow τ (z i)
   have hy : y ∈ hX.flow.unstableSet (x i.castSucc) ∩ hX.flow.stableSet (x i.succ) :=
     ⟨Flow.isInvariant_unstableSet _ _ τ (hz i).1, Flow.isInvariant_stableSet _ _ τ (hz i).2⟩
@@ -245,9 +244,9 @@ theorem exists_subseq_tendsto_broken_of_mem_level (h : hX.IsMorseSmale)
   have hw : Tendsto w atTop (𝓝 y) := hzlim' i
   have huw : ∀ j, hX.flow (-σ j) (w j) = u (n j) := fun j ↦ by
     simp only [w, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
-  have hσ := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hdf (hne i) hy hw
+  have hσ := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet (hne i) hy hw
     (σ := fun j ↦ -σ j) fun j ↦ by rw [huw, (hu (n j)).2, hτ]
-  have hlim := hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hdf (hne i) hy
+  have hlim := hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet (hne i) hy
     (σ := 0) (by rw [Flow.map_zero_apply, hτ]) hw (s := fun j ↦ -σ j)
     fun j ↦ by rw [huw, (hu (n j)).2]
   rw [Flow.map_zero_apply] at hlim
