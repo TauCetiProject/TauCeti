@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Homology.DG.Algebra.TensorProduct
 import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation
 
 /-!
-# Differentials on products of signed symmetric algebras
+# Differentials on the signed symmetric algebra of a product
 
 For differential graded signed symmetric algebras `A(V)` and `A(W)`, the algebra
 `A(V × W)` has the differential determined on generators by the sum of the two
@@ -201,7 +201,7 @@ theorem dgToProd_apply (hV : IsDGAlgebra (signedSymPiece G) dV)
     (a : signedSymPiece G ᵍ⊗[R] signedSymPiece H) :
     dgToProd hV hW a = toProd G H a := (rfl)
 
-/-- The DG product comparisons compose to the identity on the product algebra. -/
+/-- The DG product comparisons compose to the identity on `A(V × W)`. -/
 @[simp]
 theorem dgToProd_comp_dgOfProd (hV : IsDGAlgebra (signedSymPiece G) dV)
     (hW : IsDGAlgebra (signedSymPiece H) dW) :
@@ -211,7 +211,7 @@ theorem dgToProd_comp_dgOfProd (hV : IsDGAlgebra (signedSymPiece G) dV)
   intro a
   simp
 
-/-- The DG product comparisons compose to the identity on the tensor algebra. -/
+/-- The DG product comparisons compose to the identity on the graded tensor product. -/
 @[simp]
 theorem dgOfProd_comp_dgToProd (hV : IsDGAlgebra (signedSymPiece G) dV)
     (hW : IsDGAlgebra (signedSymPiece H) dW) :
