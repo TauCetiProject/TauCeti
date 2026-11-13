@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Table
+public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 
 /-!
 # The Fourier transform of a finite group algebra
@@ -17,7 +17,8 @@ of operators `(∑_g f(g) ρᵢ(g))ᵢ`. Since the product of `k[G]` is the conv
 convolution into the product of operators, factor by factor. It is equivariant for the two-sided
 actions of `G`: on `k[G]` the pair `(a, b)` multiplies by `e_a` on the left and by `e_b` on the
 right, and on each `End(Vᵢ)` it multiplies by `ρᵢ(a)` and `ρᵢ(b)`. Changing a model `Vᵢ` by an
-equivalence of representations conjugates its block.
+equivalence of representations conjugates its block. The inversion formula below has the same
+two-sided equivariance and is invariant under such a change of models.
 
 Now let `G` be a finite group, `k` an algebraically closed field in which `|G|` is invertible, and
 let the `ρᵢ` be a **complete family of irreducibles**: pairwise inequivalent irreducible
@@ -25,11 +26,11 @@ representations, as many as `G` has conjugacy classes, so that every irreducible
 `G` is equivalent to exactly one of them (`TauCeti.ClassFunction.exists_nonempty_equiv`). The
 explicit **Fourier inversion formula**
 `f(g) = |G|⁻¹ ∑ᵢ dim(Vᵢ) trace(ρᵢ(g⁻¹) Tᵢ)` for `T = (Tᵢ)ᵢ` the transform of `f` recovers `f`,
-because `∑ᵢ dim(Vᵢ) χᵢ` is the character of the regular representation, `|G|` at the identity
-and `0` elsewhere. With the dimension count `∑ᵢ dim(Vᵢ)² = |G|`, the Fourier transform is an
-isomorphism of algebras `k[G] ≃ₐ[k] Π i, End(Vᵢ)`, a Wedderburn decomposition of the group
-algebra whose blocks are the endomorphism algebras of the given irreducibles, with the inversion
-formula as its inverse.
+because `∑ᵢ dim(Vᵢ) χᵢ` is `|G|` at the identity and `0` elsewhere
+(`TauCeti.sum_finrank_mul_character`). With the dimension count `∑ᵢ dim(Vᵢ)² = |G|`
+(`TauCeti.sum_finrank_sq_eq_card`), the Fourier transform is an isomorphism of algebras
+`k[G] ≃ₐ[k] Π i, End(Vᵢ)`, a Wedderburn decomposition of the group algebra whose blocks are the
+endomorphism algebras of the given irreducibles, with the inversion formula as its inverse.
 
 ## Main definitions
 
@@ -40,13 +41,11 @@ formula as its inverse.
 
 ## Main results
 
-* `TauCeti.fourierAlgHom_single_mul_mul_single`: the two-sided equivariance.
-* `TauCeti.fourierAlgHom_apply_eq_conjAlgEquiv`: changing the models conjugates the blocks.
-* `TauCeti.exists_bijective_nonempty_equiv_irreducibleRepresentation`: a complete family of
-  irreducibles is a relabelling of the rows of the character table.
-* `TauCeti.sum_finrank_sq_eq_card`: the squares of the dimensions of a complete family of
-  irreducibles add up to `|G|`.
-* `TauCeti.sum_finrank_mul_character`: `∑ᵢ dim(Vᵢ) χᵢ(g)` is `|G|` at `g = 1` and `0` elsewhere.
+* `TauCeti.fourierAlgHom_apply_eq_sum`: the `i`-th block is `∑_g f(g) ρᵢ(g)`.
+* `TauCeti.fourierAlgHom_single_mul_mul_single` and `TauCeti.fourierInv_mul_mul`: the two-sided
+  equivariance.
+* `TauCeti.fourierAlgHom_apply_eq_conjAlgEquiv`: changing the models conjugates the blocks, and
+  `TauCeti.fourierInv_conjAlgEquiv` is the matching invariance of the inversion formula.
 * `TauCeti.fourierInv_fourierAlgHom` and `TauCeti.fourierAlgHom_fourierInv`: **Fourier inversion**,
   in both directions.
 * `TauCeti.fourierAlgHom_bijective`: the Fourier transform of a complete family of irreducibles is
@@ -73,6 +72,19 @@ section FourierAlgHom
 variable {k : Type u} {G : Type v} [CommSemiring k] [Monoid G] {ι : Type*} {V : ι → Type w}
   [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)] (ρ : ∀ i, Representation k G (V i))
 
+/-- **An equivalence of representations conjugates the action of `k[G]`**: if `e : V ≃ W` is
+equivariant, the action of `f` on `W` is `e ∘ ρ(f) ∘ e⁻¹`. -/
+theorem _root_.Representation.Equiv.conjAlgEquiv_asAlgebraHom {V W : Type*} [AddCommMonoid V]
+    [Module k V] [AddCommMonoid W] [Module k W] {ρ : Representation k G V}
+    {σ : Representation k G W} (e : ρ.Equiv σ) (f : k[G]) :
+    e.toLinearEquiv.conjAlgEquiv k (ρ.asAlgebraHom f) = σ.asAlgebraHom f := by
+  refine LinearMap.ext fun w => ?_
+  obtain ⟨v, rfl⟩ := e.toLinearEquiv.surjective w
+  simp only [LinearEquiv.conjAlgEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_apply]
+  rw [Representation.Equiv.toLinearEquiv_apply]
+  exact e.toIntertwiningMap.apply_asAlgebraHom f v
+
 /-- **The Fourier transform** of the monoid algebra `k[G]` along a family of representations
 `ρᵢ` of `G`: it sends `f = ∑_g f(g) e_g` to the family of operators `(∑_g f(g) ρᵢ(g))ᵢ`, the
 action of `f` in each representation. -/
@@ -84,6 +96,28 @@ theorem fourierAlgHom_apply (f : k[G]) (i : ι) :
     fourierAlgHom ρ f i = (ρ i).asAlgebraHom f :=
   (rfl)
 
+/-- The Fourier transform of a basis element `c e_g` is the family `(c ρᵢ(g))ᵢ`. -/
+@[simp]
+theorem fourierAlgHom_single (g : G) (c : k) :
+    fourierAlgHom ρ (MonoidAlgebra.single g c) = fun i => c • ρ i g := by
+  ext1 i
+  simp
+
+/-- The Fourier transform of a group element `e_g` is the family `(ρᵢ(g))ᵢ`. -/
+theorem fourierAlgHom_of (g : G) : fourierAlgHom ρ (MonoidAlgebra.of k G g) = fun i => ρ i g := by
+  ext1 i
+  simp
+
+/-- The `i`-th block of the Fourier transform of `f` is `∑_g f(g) ρᵢ(g)`. -/
+theorem fourierAlgHom_apply_eq_sum [Fintype G] (f : k[G]) (i : ι) :
+    fourierAlgHom ρ f i = ∑ g, f.coeff g • ρ i g := by
+  classical
+  induction f using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add f₁ f₂ h₁ h₂ => simp only [map_add, Pi.add_apply, h₁, h₂, MonoidAlgebra.coeff_add,
+      Finsupp.add_apply, add_smul, Finset.sum_add_distrib]
+  | single h c => simp [MonoidAlgebra.coeff_single, Finsupp.single_apply, ite_smul]
+
 /-- **The Fourier transform is equivariant for the two-sided actions of `G`**: multiplying by
 `e_a` on the left and by `e_b` on the right multiplies each block by `ρᵢ(a)` on the left and by
 `ρᵢ(b)` on the right. -/
@@ -93,25 +127,20 @@ theorem fourierAlgHom_single_mul_mul_single (a b : G) (f : k[G]) (i : ι) :
   simp
 
 variable {W : ι → Type w'} [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
-  {σ : ∀ i, Representation k G (W i)}
+  (σ : ∀ i, Representation k G (W i))
 
 /-- **Changing a model by an equivalence of representations conjugates its block of the Fourier
 transform**: if `e : Vᵢ ≃ Wᵢ` is equivariant, the `i`-th block along `σ` is `e ∘ Tᵢ ∘ e⁻¹` for the
 `i`-th block `Tᵢ` along `ρ`. -/
 theorem fourierAlgHom_apply_eq_conjAlgEquiv (i : ι) (e : (ρ i).Equiv (σ i)) (f : k[G]) :
-    fourierAlgHom σ f i = e.toLinearEquiv.conjAlgEquiv k (fourierAlgHom ρ f i) := by
-  refine LinearMap.ext fun w => ?_
-  obtain ⟨v, rfl⟩ := e.toLinearEquiv.surjective w
-  simp only [fourierAlgHom_apply, LinearEquiv.conjAlgEquiv_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
-  rw [Representation.Equiv.toLinearEquiv_apply]
-  exact (e.toIntertwiningMap.apply_asAlgebraHom f v).symm
+    fourierAlgHom σ f i = e.toLinearEquiv.conjAlgEquiv k (fourierAlgHom ρ f i) :=
+  (e.conjAlgEquiv_asAlgebraHom f).symm
 
 end FourierAlgHom
 
 section FourierInv
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] {ι : Type*} [Fintype ι]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] {ι : Type*}
   {V : ι → Type w} [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   (ρ : ∀ i, Representation k G (V i))
 
@@ -121,18 +150,66 @@ coefficient at `g` is `|G|⁻¹ ∑ᵢ dim(Vᵢ) trace(ρᵢ(g⁻¹) Tᵢ)`.
 
 For a complete family of irreducibles this is the inverse of `TauCeti.fourierAlgHom`
 (`TauCeti.fourierInv_fourierAlgHom`, `TauCeti.fourierAlgHom_fourierInv`). -/
-noncomputable def fourierInv : (Π i, Module.End k (V i)) →ₗ[k] k[G] :=
+noncomputable def fourierInv [Finite ι] : (Π i, Module.End k (V i)) →ₗ[k] k[G] :=
+  let _ := Fintype.ofFinite ι
   (MonoidAlgebra.coeffLinearEquiv k).symm.toLinearMap ∘ₗ
     (Finsupp.linearEquivFunOnFinite k k G).symm.toLinearMap ∘ₗ
       LinearMap.pi fun g => (Nat.card G : k)⁻¹ • ∑ i, (finrank k (V i) : k) •
         (LinearMap.trace k (V i) ∘ₗ LinearMap.mulLeft k (ρ i g⁻¹) ∘ₗ LinearMap.proj i)
 
 @[simp]
-theorem coeff_fourierInv (T : Π i, Module.End k (V i)) (g : G) :
+theorem coeff_fourierInv [Fintype ι] (T : Π i, Module.End k (V i)) (g : G) :
     (fourierInv ρ T).coeff g =
       (Nat.card G : k)⁻¹ *
         ∑ i, (finrank k (V i) : k) * LinearMap.trace k (V i) (ρ i g⁻¹ * T i) := by
-  simp [fourierInv]
+  simp only [fourierInv, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    MonoidAlgebra.coeffLinearEquiv_symm_apply, Finsupp.linearEquivFunOnFinite_symm_apply,
+    LinearMap.pi_apply, LinearMap.smul_apply, LinearMap.coe_sum, LinearMap.coe_smul,
+    LinearMap.coe_proj, Finset.sum_apply, Pi.smul_apply, Function.eval, LinearMap.mulLeft_apply,
+    smul_eq_mul]
+  congr!
+
+/-- The inversion formula on a single block: the coefficient at `g` of the inverse transform of
+the family concentrated on the operator `A` at `i` is `|G|⁻¹ dim(Vᵢ) trace(ρᵢ(g⁻¹) A)`. -/
+@[simp]
+theorem coeff_fourierInv_single [Finite ι] [DecidableEq ι] (i : ι) (A : Module.End k (V i))
+    (g : G) :
+    (fourierInv ρ (Pi.single i A)).coeff g =
+      (Nat.card G : k)⁻¹ * ((finrank k (V i) : k) * LinearMap.trace k (V i) (ρ i g⁻¹ * A)) := by
+  let _ := Fintype.ofFinite ι
+  rw [coeff_fourierInv, Finset.sum_eq_single i (fun j _ hj => by simp [Pi.single_eq_of_ne hj])
+    (by simp), Pi.single_eq_same]
+
+/-- **The inversion formula is equivariant for the two-sided actions of `G`**: multiplying each
+block by `ρᵢ(a)` on the left and by `ρᵢ(b)` on the right multiplies the inverse transform by `e_a`
+on the left and by `e_b` on the right. -/
+theorem fourierInv_mul_mul [Finite ι] (a b : G) (T : Π i, Module.End k (V i)) :
+    fourierInv ρ (fun i => ρ i a * T i * ρ i b) =
+      MonoidAlgebra.single a 1 * fourierInv ρ T * MonoidAlgebra.single b 1 := by
+  let _ := Fintype.ofFinite ι
+  ext g
+  simp only [coeff_fourierInv, MonoidAlgebra.coeff_mul_single_apply,
+    MonoidAlgebra.coeff_single_mul_apply, one_mul, mul_one]
+  refine congrArg _ (Finset.sum_congr rfl fun i _ => congrArg _ ?_)
+  simp only [mul_inv_rev, inv_inv, map_mul (ρ i), ← mul_assoc]
+  rw [LinearMap.trace_mul_comm, ← mul_assoc, ← mul_assoc]
+
+variable {W : ι → Type w'} [∀ i, AddCommGroup (W i)] [∀ i, Module k (W i)]
+  {σ : ∀ i, Representation k G (W i)}
+
+/-- **The inversion formula is invariant under a change of models**: conjugating each block by an
+equivalence of representations `eᵢ : Vᵢ ≃ Wᵢ` does not change the inverse transform. -/
+theorem fourierInv_conjAlgEquiv [Finite ι] (e : ∀ i, (ρ i).Equiv (σ i))
+    (T : Π i, Module.End k (V i)) :
+    fourierInv σ (fun i => (e i).toLinearEquiv.conjAlgEquiv k (T i)) = fourierInv ρ T := by
+  let _ := Fintype.ofFinite ι
+  ext g
+  simp only [coeff_fourierInv]
+  refine congrArg _ (Finset.sum_congr rfl fun i _ => ?_)
+  rw [(e i).toLinearEquiv.finrank_eq, ← (σ i).asAlgebraHom_single_one,
+    ← (e i).conjAlgEquiv_asAlgebraHom, ← map_mul, LinearEquiv.conjAlgEquiv_apply,
+    ← LinearMap.comp_assoc, ← LinearEquiv.conj_apply, LinearMap.trace_conj',
+    Representation.asAlgebraHom_single_one]
 
 end FourierInv
 
@@ -147,56 +224,11 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k
 
 include hind hcard
 
-/-- **A complete family of irreducibles is a relabelling of the rows of the character table**: there
-is a bijection from its index to the rows matching each member with an equivalent row
-representation. -/
-theorem exists_bijective_nonempty_equiv_irreducibleRepresentation :
-    ∃ C : ι → Fin (Nat.card (ConjClasses G)), Function.Bijective C ∧
-      ∀ i, Nonempty ((ρ i).Equiv (irreducibleRepresentation k (C i))) := by
-  have : Finite ι := Nat.finite_of_card_ne_zero (by rw [hcard]; exact Nat.card_pos.ne')
-  let _ := Fintype.ofFinite ι
-  choose C hC using fun i => ClassFunction.exists_nonempty_equiv
-    (fun j : Fin (Nat.card (ConjClasses G)) => irreducibleRepresentation k j)
-    (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) (ρ i)
-  have hinj : Function.Injective C := by
-    intro i j hij
-    by_contra hne
-    exact (hind hne).elim ((hC i).some.trans ((hij ▸ (hC j).some).symm))
-  refine ⟨C, (Fintype.bijective_iff_injective_and_card C).2 ⟨hinj, ?_⟩, hC⟩
-  rw [Fintype.card_fin, Fintype.card_eq_nat_card, hcard]
-
-/-- **The squares of the dimensions of a complete family of irreducibles add up to `|G|`.** -/
-theorem sum_finrank_sq_eq_card [Fintype ι] : ∑ i, finrank k (V i) ^ 2 = Nat.card G := by
-  obtain ⟨C, hC, he⟩ := exists_bijective_nonempty_equiv_irreducibleRepresentation ρ hind hcard
-  rw [← sum_characterDegree_sq_eq_card (k := k) (G := G)]
-  refine Fintype.sum_bijective C hC _ _ fun i => ?_
-  rw [(he i).some.toLinearEquiv.finrank_eq, Module.finrank_fin_fun]
-
-/-- Each member of a complete family of irreducibles is finite-dimensional. -/
-private theorem finite_of_complete : ∀ i, Module.Finite k (V i) := by
-  obtain ⟨C, -, he⟩ := exists_bijective_nonempty_equiv_irreducibleRepresentation ρ hind hcard
-  exact fun i => Module.Finite.equiv (he i).some.toLinearEquiv.symm
-
-open scoped Classical in
-/-- **The character of the regular representation**, expanded along a complete family of
-irreducibles: `∑ᵢ dim(Vᵢ) χᵢ(g)` is `|G|` at the identity and `0` elsewhere. -/
-theorem sum_finrank_mul_character [Fintype ι] (g : G) :
-    ∑ i, (finrank k (V i) : k) * (ρ i).character g = if g = 1 then (Nat.card G : k) else 0 := by
-  have := finite_of_complete ρ hind hcard
-  split_ifs with hg
-  · subst hg
-    simp_rw [Representation.char_one, ← sq]
-    have h := congrArg (Nat.cast : ℕ → k) (sum_finrank_sq_eq_card ρ hind hcard)
-    push_cast at h
-    exact h
-  · have h := ClassFunction.sum_char_mul_char_inv ρ hind hcard g 1
-    simp only [isConj_one_left, hg, ite_false, inv_one, Representation.char_one] at h
-    simpa [mul_comm] using h
-
 /-- **Fourier inversion**: the inversion formula recovers an element of `k[G]` from its Fourier
 transform along a complete family of irreducibles. -/
-theorem fourierInv_fourierAlgHom [Fintype ι] (f : k[G]) : fourierInv ρ (fourierAlgHom ρ f) = f := by
+theorem fourierInv_fourierAlgHom [Finite ι] (f : k[G]) : fourierInv ρ (fourierAlgHom ρ f) = f := by
   classical
+  let _ := Fintype.ofFinite ι
   induction f using MonoidAlgebra.induction_linear with
   | zero => simp
   | add f₁ f₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
@@ -215,7 +247,7 @@ theorem fourierInv_fourierAlgHom [Fintype ι] (f : k[G]) : fourierInv ρ (fourie
 theorem fourierAlgHom_bijective : Function.Bijective (fourierAlgHom ρ) := by
   have : Finite ι := Nat.finite_of_card_ne_zero (by rw [hcard]; exact Nat.card_pos.ne')
   let _ := Fintype.ofFinite ι
-  have := finite_of_complete ρ hind hcard
+  have := fun i => (ρ i).asModuleEquiv.finiteDimensional
   have hinj : Function.Injective (fourierAlgHom ρ) :=
     Function.LeftInverse.injective (fourierInv_fourierAlgHom ρ hind hcard)
   refine ⟨hinj, ?_⟩
@@ -240,13 +272,13 @@ theorem fourierAlgEquiv_apply (f : k[G]) :
 
 /-- **Fourier inversion**, in the other direction: every family of operators is the Fourier
 transform of the element of `k[G]` given by the inversion formula. -/
-theorem fourierAlgHom_fourierInv [Fintype ι] (T : Π i, Module.End k (V i)) :
+theorem fourierAlgHom_fourierInv [Finite ι] (T : Π i, Module.End k (V i)) :
     fourierAlgHom ρ (fourierInv ρ T) = T := by
   obtain ⟨f, rfl⟩ := (fourierAlgHom_bijective ρ hind hcard).2 T
   rw [fourierInv_fourierAlgHom ρ hind hcard]
 
 @[simp]
-theorem fourierAlgEquiv_symm_apply [Fintype ι] (T : Π i, Module.End k (V i)) :
+theorem fourierAlgEquiv_symm_apply [Finite ι] (T : Π i, Module.End k (V i)) :
     (fourierAlgEquiv ρ hind hcard).symm T = fourierInv ρ T :=
   (fourierAlgEquiv ρ hind hcard).symm_apply_eq.2 (fourierAlgHom_fourierInv ρ hind hcard T).symm
 
