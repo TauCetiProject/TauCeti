@@ -391,29 +391,6 @@ theorem conleyZehnderIndex_eq_neg_signature_div_two {B : GLSymplectic n ℝ} (γ
 /-! ### Normalization on rotations -/
 
 variable (n) in
-/-- **The rotation** `e^{θJ} = cos θ + sin θ J` of `ℝ^{n ⊕ n}`, which rotates every coordinate
-plane by the angle `θ`, counterclockwise for `θ > 0`: the realification of the scalar unitary
-matrix `e^{iθ} • 1`. -/
-noncomputable def rotation (θ : ℝ) : GLSymplectic n ℝ :=
-  ofUnitary ⟨(Circle.exp θ : ℂ) • (1 : Matrix n n ℂ),
-    Unitary.smul_mem_of_mem (Circle.exp θ).coe_mem_unitary (one_mem _)⟩
-
-@[simp]
-theorem coe_rotation (θ : ℝ) :
-    ((rotation n θ : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
-      Real.cos θ • 1 + Real.sin θ • J n ℝ := by
-  rw [rotation, coe_ofUnitary]
-  ext (i | i) (j | j) <;> by_cases h : i = j <;>
-    simp [J, h, Circle.coe_exp, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
-
-@[simp]
-theorem rotation_zero : rotation n 0 = 1 :=
-  Subtype.ext <| Units.ext <| by simp
-
-theorem continuous_rotation : Continuous (rotation n) :=
-  continuous_ofUnitary.comp (Continuous.subtype_mk (by fun_prop) _)
-
-variable (n) in
 /-- The path of rotations `t ↦ e^{tθJ} = cos (tθ) + sin (tθ) J`, `0 ≤ t ≤ 1`, from the identity
 to `rotation n θ`: the solution of `Ψ' = J S Ψ`, `Ψ 0 = 1`, for `S = θ • 1`. -/
 noncomputable def rotationPath (θ : ℝ) : Path (1 : GLSymplectic n ℝ) (rotation n θ) where
@@ -425,19 +402,6 @@ noncomputable def rotationPath (θ : ℝ) : Path (1 : GLSymplectic n ℝ) (rotat
 @[simp]
 theorem rotationPath_apply (θ : ℝ) (t : I) : rotationPath n θ t = rotation n ((t : ℝ) * θ) :=
   (rfl)
-
-/-- When `cos θ ≠ -1`, the rotation `e^{θJ}` does not have the eigenvalue `-1`. -/
-theorem isUnit_det_one_add_rotation {θ : ℝ} (h : 0 < 1 + Real.cos θ) :
-    IsUnit (1 + ((rotation n θ : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det := by
-  have hJ := J_squared n ℝ
-  refine isUnit_det_of_right_inverse (B := (2 * (1 + Real.cos θ))⁻¹ •
-    ((1 + Real.cos θ) • 1 - Real.sin θ • J n ℝ)) ?_
-  rw [coe_rotation, Matrix.mul_smul]
-  simp only [add_mul, mul_sub, Matrix.one_mul, Matrix.mul_one, smul_mul_smul_comm, hJ, smul_neg]
-  rw [inv_smul_eq_iff₀ (by positivity)]
-  match_scalars
-  · linear_combination Real.sin_sq_add_cos_sq θ
-  · ring
 
 /-- The graph of the rotation `e^{θJ}` is the graph of `tan (θ / 2) • 1`, written
 `(sin θ / (1 + cos θ)) • 1`. -/

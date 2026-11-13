@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Unitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
 import TauCeti.Topology.Algebra.Star.Unitary
@@ -43,6 +43,8 @@ intersection of either of these groups with the realified `GL(n, ℂ)`.
   groups from `U(n)` onto the orthogonal symplectic matrices.
 * `TauCeti.GLSymplectic.ofUnitary`: the realification `U(n) →* Sp(2n, ℝ)`, a continuous group
   morphism (`TauCeti.GLSymplectic.continuous_ofUnitary`).
+* `TauCeti.GLSymplectic.rotation`: the rotation `e^{θJ} = cos θ + sin θ J` of every coordinate
+  plane, the realification of `e^{iθ} • 1` (`TauCeti.GLSymplectic.coe_rotation`).
 
 ## References
 
@@ -170,5 +172,43 @@ theorem continuous_ofUnitary : Continuous (ofUnitary : unitaryGroup n ℂ → GL
   refine continuous_induced_rng.2 ((continuous_subtype_val.comp
     (map_continuous (unitaryGroupEquivSymplecticInfOrthogonal (n := n)))).congr fun U ↦ ?_)
   rw [Function.comp_apply, Function.comp_apply, ofUnitary_apply, Subgroup.coe_inclusion]
+
+/-! ### Rotations -/
+
+variable (n) in
+/-- **The rotation** `e^{θJ} = cos θ + sin θ J` of `ℝ^{n ⊕ n}`, which rotates every coordinate
+plane by the angle `θ`, counterclockwise for `θ > 0`: the realification of the scalar unitary
+matrix `e^{iθ} • 1`. -/
+noncomputable def rotation (θ : ℝ) : GLSymplectic n ℝ :=
+  ofUnitary ⟨(Circle.exp θ : ℂ) • (1 : Matrix n n ℂ),
+    Unitary.smul_mem_of_mem (Circle.exp θ).coe_mem_unitary (one_mem _)⟩
+
+@[simp]
+theorem coe_rotation (θ : ℝ) :
+    ((rotation n θ : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+      Real.cos θ • 1 + Real.sin θ • J n ℝ := by
+  rw [rotation, coe_ofUnitary]
+  ext (i | i) (j | j) <;> by_cases h : i = j <;>
+    simp [J, h, Circle.coe_exp, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
+
+@[simp]
+theorem rotation_zero : rotation n 0 = 1 :=
+  Subtype.ext <| Units.ext <| by simp
+
+theorem continuous_rotation : Continuous (rotation n) :=
+  continuous_ofUnitary.comp (Continuous.subtype_mk (by fun_prop) _)
+
+/-- When `cos θ ≠ -1`, the rotation `e^{θJ}` does not have the eigenvalue `-1`. -/
+theorem isUnit_det_one_add_rotation {θ : ℝ} (h : 0 < 1 + Real.cos θ) :
+    IsUnit (1 + ((rotation n θ : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det := by
+  have hJ := J_squared n ℝ
+  refine isUnit_det_of_right_inverse (B := (2 * (1 + Real.cos θ))⁻¹ •
+    ((1 + Real.cos θ) • 1 - Real.sin θ • J n ℝ)) ?_
+  rw [coe_rotation, Matrix.mul_smul]
+  simp only [add_mul, mul_sub, Matrix.one_mul, Matrix.mul_one, smul_mul_smul_comm, hJ, smul_neg]
+  rw [inv_smul_eq_iff₀ (by positivity)]
+  match_scalars
+  · linear_combination Real.sin_sq_add_cos_sq θ
+  · ring
 
 end TauCeti.GLSymplectic
