@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.CharP.Subring
 public import TauCeti.RingTheory.Perfectoid.PrimitiveUntilt
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Gauge
-public import TauCeti.RingTheory.Perfectoid.UniformTilt.Tate
 public import TauCeti.RingTheory.Perfectoid.Padic
 public import TauCeti.NumberTheory.Padics.Complex.Basic
 

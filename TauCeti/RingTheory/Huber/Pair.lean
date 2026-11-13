@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Ring.Subring
 
@@ -41,6 +42,8 @@ than selected by a typeclass.
   ring of integral elements onto a ring of integral elements.
 * `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
   `A⁺ = A°` is a ring of integral elements, the largest one.
+* `TauCeti.Huber.Pair.instPerfectRingPlus`: the plus ring of a Huber pair on a perfect ring is
+  perfect.
 * `TauCeti.Huber.Pair.discrete`: a discrete ring is a Huber pair with `A⁺ = A`, so the
   definitions above are not vacuous.
 * `TauCeti.Huber.Pair.Hom.id`, `TauCeti.Huber.Pair.Hom.comp`: morphisms of Huber pairs compose,
@@ -297,6 +300,11 @@ def powerBounded : Pair A where
 /-- The ring of integral elements of the largest Huber pair is `A°`. -/
 @[simp]
 theorem powerBounded_plus : (powerBounded A).plus = powerBoundedSubring A := (rfl)
+
+/-- The plus ring of a Huber pair on a perfect ring is perfect. -/
+instance instPerfectRingPlus (P : Pair A) (p : ℕ) [PerfectRing A p] : PerfectRing P.plus p :=
+  have := P.isRingOfIntegralElements.isIntegrallyClosedIn
+  inferInstance
 
 end
 
