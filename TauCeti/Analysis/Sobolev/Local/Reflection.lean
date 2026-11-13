@@ -62,8 +62,9 @@ statement.
 * `TopologicalSpace.Opens.reflectionCore`: the reflection core of an open set `V`, an open set
   between `V ∩ {0 ≤ im}` and `V` that is stable under the node dilations below the real axis
   (`TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionCore`).
-* `TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`: without any symmetry of `Ω`, the
-  reflection is in `W^{k,p}_loc(V)` for an open `V` with `Ω ∩ {0 ≤ im} ⊆ V ⊆ Ω`.
+* `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore`: without any symmetry
+  of `Ω`, the reflection is in `W^{k,p}_loc` of the reflection core of `Ω`, an open set between
+  `Ω ∩ {0 ≤ im}` and `Ω`.
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
   constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights. The same bound for weak
   derivatives of every order is in `TauCeti.Analysis.Sobolev.Local.Reflection.Bound`.
@@ -881,11 +882,11 @@ theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_reflection
       (Icc (-1 : ℝ) 1 ×ˢ (K ∩ {z | z.im ≤ 0}))) :=
     hK.union ((isCompact_Icc.prod (hK.inter_right
       (isClosed_le Complex.continuous_im continuous_const))).image (by fun_prop))
-  obtain ⟨V, hVo, hKV, hVΩ, hVc⟩ := exists_open_between_and_isCompact_closure hK' Ω.isOpen (by
+  obtain ⟨V, hKV, hVΩ, hVc⟩ := Opens.exists_between_and_isCompact_closure hK' (by
     rintro _ (hz | ⟨⟨c, z⟩, ⟨hc, hzK, hz⟩, rfl⟩)
     · exact Ω.reflectionCore_le (hKΩ hz)
     · exact Opens.imDilation_mem_of_mem_reflectionCore (hKΩ hzK) hz hc)
-  refine ⟨⟨V, hVo⟩, hVc, hVΩ, fun z hz => Opens.mem_reflectionCore.2 ?_⟩
+  refine ⟨V, hVc, hVΩ, fun z hz => Opens.mem_reflectionCore.2 ?_⟩
   rcases lt_or_ge 0 z.im with h | h
   · exact Or.inl ⟨hKV (Or.inl hz), h⟩
   · exact Or.inr fun c hc => hKV (Or.inr ⟨(c, z), ⟨hc, hz, h⟩, rfl⟩)
@@ -903,16 +904,15 @@ theorem _root_.TopologicalSpace.Opens.closure_upperHalf_subset_reflectionCore {�
 /-! ### Reflection near a relatively open subset of the closed upper half-plane -/
 
 /-- **Reflection near a relatively open subset of the closed upper half-plane.** The order-`k`
-higher reflection of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) k` is in `MemWkpLoc p V k` on an open set
-`V` between `Ω ∩ {0 ≤ im}` and `Ω`. No symmetry of `Ω` is assumed. -/
-theorem MemWkpLoc.exists_opens_memWkpLoc_planarReflection {p : ℝ≥0∞}
+higher reflection of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) k` is in `MemWkpLoc p V k` on the reflection
+core `V = Ω.reflectionCore`, an open set between `Ω ∩ {0 ≤ im}` and `Ω`. No symmetry of `Ω` is
+assumed. -/
+theorem MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore {p : ℝ≥0∞}
     (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
-    ∃ V : Opens ℂ, (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V ∧ (V : Set ℂ) ⊆ Ω ∧
-      MemWkpLoc p V k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
-  ⟨Ω.reflectionCore, Ω.inter_setOf_im_nonneg_subset_reflectionCore, Ω.reflectionCore_le,
-    MemWkpLoc.planarReflection_higherReflectionCoeff hp
-      (fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le)
-      (hu.mono (inter_subset_inter_left _ Ω.reflectionCore_le))⟩
+    MemWkpLoc p Ω.reflectionCore k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
+  MemWkpLoc.planarReflection_higherReflectionCoeff hp
+    (fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le)
+    (by rwa [Opens.coe_reflectionCore_inter_setOf_im_nonneg])
 
 /-- At order one the reflection node is `-1`, so the node dilation is complex conjugation. -/
 theorem imDilation_higherReflectionNode_fin_one (j : Fin 1) (z : ℂ) :

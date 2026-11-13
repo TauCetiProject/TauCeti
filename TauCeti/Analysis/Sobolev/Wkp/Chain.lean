@@ -114,23 +114,19 @@ theorem exists_value_iteratedGradient_ae_eq_of_chain (n : ℕ) {u : E → ℝ}
       refine (h0.congr_ae hu.coeFn_toLp.symm).congr_ae_deriv ?_
       filter_upwards [hg.coeFn_toLp] with x hx
       rw [hx]
-    obtain ⟨v, hv, htop⟩ : ∃ v : Wkp mu Omega p 1, value 1 v =ᵐ[mu.restrict Omega] u ∧
-        iteratedGradient 0 v =ᵐ[mu.restrict Omega] G 0 :=
-      ⟨W1p.mk _ _ hw, (Filter.EventuallyEq.of_eq (congrArg
-        (fun f : Lp ℝ p (mu.restrict Omega) => (f : E → ℝ))
-        ((value_one (W1p.mk _ _ hw)).trans (W1p.value_mk _ _ hw)))).trans hu.coeFn_toLp,
-      (Filter.EventuallyEq.of_eq (congrArg (fun f : Lp E p (mu.restrict Omega) => (f : E → E))
+    refine ⟨W1p.mk _ _ hw, ?_, ?_, ?_⟩
+    · exact (Filter.EventuallyEq.of_eq (congrArg (fun f : Lp ℝ p (mu.restrict Omega) => (f : E → ℝ))
+        ((value_one (W1p.mk _ _ hw)).trans (W1p.value_mk _ _ hw)))).trans hu.coeFn_toLp
+    · exact (Filter.EventuallyEq.of_eq (congrArg (fun f : Lp E p (mu.restrict Omega) => (f : E → E))
         ((iteratedGradient_zero (W1p.mk _ _ hw)).trans (W1p.gradient_mk _ _ hw)))).trans
-        hg.coeFn_toLp⟩
-    refine ⟨v, hv, htop, ?_⟩
-    have hlow : ENNReal.ofReal ‖lowerOrder 0 v‖ = eLpNorm u p (mu.restrict Omega) := by
-      have hval : value 1 v = lowerOrder 0 v := by rw [value_succ, value_zero]
-      rw [← eLpNorm_congr_ae hv, ← Lp.eNorm_def, ← ofReal_norm, hval]
-    have hgrad : ENNReal.ofReal ‖iteratedGradient 0 v‖ = eLpNorm (G 0) p (mu.restrict Omega) := by
-      rw [← eLpNorm_congr_ae htop, ← Lp.eNorm_def, ← ofReal_norm]
-    rw [Finset.sum_range_one, ← hlow, ← hgrad]
-    exact (ENNReal.ofReal_le_ofReal (norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 _)).trans
-      ENNReal.ofReal_add_le
+        hg.coeFn_toLp
+    · have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 (W1p.mk _ _ hw)
+      rw [(lowerOrder_zero (W1p.mk _ _ hw)).trans (W1p.value_mk _ _ hw),
+        (iteratedGradient_zero (W1p.mk _ _ hw)).trans (W1p.gradient_mk _ _ hw), Lp.norm_toLp,
+        Lp.norm_toLp] at h
+      rw [Finset.sum_range_one]
+      exact (ENNReal.ofReal_le_ofReal h).trans (ENNReal.ofReal_add_le.trans
+        (add_le_add ENNReal.ofReal_toReal_le ENNReal.ofReal_toReal_le))
   | succ n ih =>
     obtain ⟨v, hv, htop, hvn⟩ := ih (fun i hi => hG i (by omega)) (fun i hi => hGp i (by omega))
     have hg := hGp (n + 1) le_rfl

@@ -39,9 +39,10 @@ With the Vandermonde weights the constant is `TauCeti.higherReflectionBound k p`
 
 * `TauCeti.weakDerivChainLe_planarReflection`: the all-order bound for the reflection with
   arbitrary weights.
-* `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_bound` and
-  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball_bound`: the packaged extension
-  with its bound.
+* `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_bound`,
+  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball_bound` and
+  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound`: the packaged
+  extension with its bound.
 
 ## References
 
@@ -242,5 +243,20 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_ball_bound {p : ℝ≥0
         (higherReflectionBound k p) k (TauCeti.planarReflection (higherReflectionCoeff k) u) u :=
   MemWkpLoc.planarReflection_higherReflectionCoeff_bound (Ω := ⟨_, Metric.isOpen_ball⟩) hp
     (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) hu
+
+/-- **Extension to the reflection core, with a bound.** A map `u` in
+`W^{k,p}_loc(Ω ∩ {0 ≤ im})` extends by the order-`k` higher reflection to a map in `W^{k,p}_loc` of
+the reflection core `Ω.reflectionCore`, whose iterated weak derivatives of order at most `k` are
+bounded in `Lᵖ` of the core by `higherReflectionBound k p` times the `Lᵖ(Ω ∩ {0 ≤ im})` norms of
+those of `u`. No symmetry of `Ω` is assumed. -/
+theorem MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound {p : ℝ≥0∞}
+    (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
+    MemWkpLoc p Ω.reflectionCore k (TauCeti.planarReflection (higherReflectionCoeff k) u) ∧
+      WeakDerivChainLe p Ω.reflectionCore ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})
+        (higherReflectionBound k p) k (TauCeti.planarReflection (higherReflectionCoeff k) u) u := by
+  simpa only [Opens.coe_reflectionCore_inter_setOf_im_nonneg] using
+    MemWkpLoc.planarReflection_higherReflectionCoeff_bound (Ω := Ω.reflectionCore) hp
+      (fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le)
+      (by rwa [Opens.coe_reflectionCore_inter_setOf_im_nonneg])
 
 end TauCeti

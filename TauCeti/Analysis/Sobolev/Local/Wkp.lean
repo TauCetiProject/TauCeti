@@ -51,9 +51,9 @@ On the unit disc `D₁` this gives `TauCeti.memWkpLoc_ball_one_iff`: membership 
   `TauCeti.memWkpLoc_succ_iff_exists_iteratedGradient_interior` is the form on an arbitrary set.
 * `TauCeti.memWkpLoc_of_iteratedGradient_chain`: a locally `Lᵖ` chain of iterated weak gradients on
   the interior of an arbitrary set `U` gives `MemWkpLoc` on `U`.
-* `TauCeti.eLpNorm_le_of_weakDerivChainLe_iteratedGradient`: a chain bound
-  `TauCeti.WeakDerivChainLe` read through a linear isometry bounds every later level of two chains
-  of iterated weak gradients.
+* `TauCeti.WeakDerivChainLe.eLpNorm_iteratedGradient_le`: a chain bound
+  `TauCeti.WeakDerivChainLe` between two real functions bounds every level of their chains of
+  iterated weak gradients.
 * `TauCeti.MemWkpLoc.exists_wkp_iteratedGradient_ae_eq`, `TauCeti.MemWkpLoc.exists_wkp`: a member
   is represented by an element of `Wkp` on every relatively compact open subset.
 * `TauCeti.memWkpLoc_of_forall_wkp`, `TauCeti.memWkpLoc_iff_forall_wkp`: the comparison.
@@ -98,16 +98,15 @@ theorem memWkpLoc_of_iteratedGradient_chain {U : Set ℂ} (n j : ℕ)
       ih (j + 1) (fun i hji hi => hG i (by omega) (by omega))
         fun i hji hi => hGp i (by omega) (by omega)⟩
 
-/-- `MemWkpLoc` for an iterated-gradient-valued field, through a chain of iterated gradients
-indexed by absolute level: a field `g` at level `j` is in `MemWkpLoc p U n` exactly when it is the
-level-`j` member of a chain whose fields from level `j` through `j + n` are locally `Lᵖ` on `U`,
-each the weak derivative on `interior U` of the previous one. -/
-private theorem memWkpLoc_iff_exists_chain {U : Set ℂ} (n : ℕ) (j : ℕ)
+/-- A field `g` at level `j` in `MemWkpLoc p U n` is the level-`j` member of a chain of iterated
+gradients, indexed by absolute level, whose fields from level `j` through `j + n` are locally `Lᵖ`
+on `U`, each the weak derivative on `interior U` of the previous one. The converse is
+`TauCeti.memWkpLoc_of_iteratedGradient_chain`. -/
+private theorem exists_iteratedGradient_chain_of_memWkpLoc {U : Set ℂ} (n : ℕ) (j : ℕ)
     (g : ℂ → IteratedGradient ℂ j) :
-    MemWkpLoc p U n g ↔ ∃ G : (i : ℕ) → ℂ → IteratedGradient ℂ i, G j = g ∧
+    MemWkpLoc p U n g → ∃ G : (i : ℕ) → ℂ → IteratedGradient ℂ i, G j = g ∧
       (∀ i, j ≤ i → i < j + n → HasWeakFDerivOn volume (Opens.interior U) (G i) (G (i + 1))) ∧
       ∀ i, j ≤ i → i ≤ j + n → MemLpLoc p U (G i) := by
-  refine ⟨?_, fun ⟨G, hGj, hG, hGp⟩ => hGj ▸ memWkpLoc_of_iteratedGradient_chain n j G hG hGp⟩
   induction n generalizing j g with
   | zero =>
     intro hg
@@ -145,15 +144,14 @@ theorem memWkpLoc_succ_iff_exists_iteratedGradient_interior (n : ℕ) {U : Set �
         ∀ i ≤ n, MemLpLoc p U (G i) := by
   rw [memWkpLoc_succ_iff]
   refine and_congr_right fun _ => ⟨fun ⟨D, hD, hDn⟩ => ?_, fun ⟨G, h0, hG, hGp⟩ => ?_⟩
-  · obtain ⟨G, hG0, hG, hGp⟩ := (memWkpLoc_iff_exists_chain n 0
-      (fun z => InnerProductSpace.toDualSymmL (D z))).1 (hDn.clm_comp InnerProductSpace.toDualSymmL)
+  · obtain ⟨G, hG0, hG, hGp⟩ := exists_iteratedGradient_chain_of_memWkpLoc n 0
+      (fun z => InnerProductSpace.toDualSymmL (D z)) (hDn.clm_comp InnerProductSpace.toDualSymmL)
     refine ⟨G, ?_, fun i hi => hG i (Nat.zero_le i) (by omega),
       fun i hi => hGp i (Nat.zero_le i) (by omega)⟩
     simpa only [hG0, InnerProductSpace.toDualSymmL_apply,
       InnerProductSpace.innerSL_toDual_symm] using hD
-  · have hG0 := (memWkpLoc_iff_exists_chain n 0 (G 0)).2
-      ⟨G, rfl, fun i _ hi => hG i (by omega), fun i _ hi => hGp i (by omega)⟩
-    exact ⟨_, h0, hG0.clm_comp (innerSL ℝ (E := ℂ))⟩
+  · exact ⟨_, h0, (memWkpLoc_of_iteratedGradient_chain n 0 G (fun i _ hi => hG i (by omega))
+      fun i _ hi => hGp i (by omega)).clm_comp (innerSL ℝ (E := ℂ))⟩
 
 /-- **`MemWkpLoc` through iterated gradients.** A real function `u` lies in
 `MemWkpLoc p Ω (n + 1)` exactly when it is locally `Lᵖ` on `Ω` and has locally `Lᵖ` iterated weak
@@ -169,12 +167,12 @@ theorem memWkpLoc_succ_iff_exists_iteratedGradient (n : ℕ) {u : ℂ → ℝ} :
   simpa only [Opens.interior_coe] using
     memWkpLoc_succ_iff_exists_iteratedGradient_interior n (p := p) (U := (Ω : Set ℂ))
 
-/-- **Chain bounds through iterated gradients.** Let `Gf` and `Gg` be chains of iterated weak
-gradients from level `j` through level `j + n`, on the interiors of `S` and `T` respectively. If
-the level-`j` fields, read through a linear isometry `L`, satisfy the chain bound
+/-- Chain bounds through iterated gradients, by induction on the level: let `Gf` and `Gg` be chains
+of iterated weak gradients from level `j` through level `j + n`, on the interiors of `S` and `T`
+respectively. If the level-`j` fields, read through a linear isometry `L`, satisfy the chain bound
 `WeakDerivChainLe p S T C n`, then every level `i` of `Gf` from `j` through `j + n` has `Lᵖ(S)` norm
 at most `C` times the `Lᵖ(T)` norm of the same level of `Gg`. -/
-theorem eLpNorm_le_of_weakDerivChainLe_iteratedGradient {S T : Set ℂ} {C : ℝ≥0∞}
+private theorem eLpNorm_le_of_weakDerivChainLe_iteratedGradient {S T : Set ℂ} {C : ℝ≥0∞}
     (n j : ℕ) {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (L : IteratedGradient ℂ j →ₗᵢ[ℝ] F) (Gf Gg : (i : ℕ) → ℂ → IteratedGradient ℂ i)
     (h : WeakDerivChainLe p S T C n (fun z => L (Gf j z)) (fun z => L (Gg j z)))
@@ -198,6 +196,28 @@ theorem eLpNorm_le_of_weakDerivChainLe_iteratedGradient {S T : Set ℂ} {C : ℝ
         (fun i hji hi => hGf i (by omega) (by omega))
         (fun i hji hi => hGg i (by omega) (by omega)) (by omega) (by omega)
     · simpa only [LinearIsometry.eLpNorm_comp] using h.eLpNorm_le
+
+/-- **Chain bounds through iterated gradients.** Let `f` and `g` be real functions with iterated
+weak gradients `Gf 0, …, Gf n` on the interior of `S` and `Gg 0, …, Gg n` on the interior of `T`:
+the weak derivatives of `f` and `g` are `innerSL ℝ ∘ Gf 0` and `innerSL ℝ ∘ Gg 0`, and each level
+is the weak derivative of the previous one. If `f` and `g` satisfy the chain bound
+`WeakDerivChainLe p S T C (n + 1)`, then every `Gf i` with `i ≤ n` has `Lᵖ(S)` norm at most `C`
+times the `Lᵖ(T)` norm of `Gg i`. -/
+theorem WeakDerivChainLe.eLpNorm_iteratedGradient_le {S T : Set ℂ} {C : ℝ≥0∞} {n : ℕ}
+    {f g : ℂ → ℝ} (h : WeakDerivChainLe p S T C (n + 1) f g)
+    {Gf Gg : (i : ℕ) → ℂ → IteratedGradient ℂ i}
+    (hf : HasWeakFDerivOn volume (Opens.interior S) f (fun z => innerSL ℝ (Gf 0 z)))
+    (hg : HasWeakFDerivOn volume (Opens.interior T) g (fun z => innerSL ℝ (Gg 0 z)))
+    (hGf : ∀ i < n, HasWeakFDerivOn volume (Opens.interior S) (Gf i) (Gf (i + 1)))
+    (hGg : ∀ i < n, HasWeakFDerivOn volume (Opens.interior T) (Gg i) (Gg (i + 1)))
+    {i : ℕ} (hi : i ≤ n) :
+    eLpNorm (Gf i) p (volume.restrict S) ≤ C * eLpNorm (Gg i) p (volume.restrict T) := by
+  have hc := h.weakFDeriv hf hg
+  simp only [← InnerProductSpace.toContinuousLinearMap_toDualMap,
+    LinearIsometry.coe_toContinuousLinearMap] at hc
+  exact eLpNorm_le_of_weakDerivChainLe_iteratedGradient n 0 (InnerProductSpace.toDualMap ℝ ℂ)
+    Gf Gg hc (fun i _ hi => hGf i (by omega)) (fun i _ hi => hGg i (by omega)) i (Nat.zero_le i)
+    (by omega)
 
 /-- The gluing step for iterated-gradient-valued fields: a field `g` at level `j` that, on every
 relatively compact open `W ⊆ Ω`, agrees almost everywhere with the level-`j` member of a chain of

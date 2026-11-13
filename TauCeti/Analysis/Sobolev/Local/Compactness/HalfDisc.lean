@@ -30,7 +30,8 @@ open upper half-plane together with the points `z` of `V` whose vertical segment
 reflection `TauCeti.planarReflection (higherReflectionCoeff (k + 1))` extends a map in
 `W^{k+1,p}_loc` of its closed upper half to a map in `W^{k+1,p}_loc` of the core, with every
 derivative bounded by `TauCeti.higherReflectionBound (k + 1) p` times the corresponding derivative
-of the original map (`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_bound`). Each
+of the original map
+(`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound`). Each
 relatively compact open subset of the core of `Ω` lies, with its closure, in the core of a
 relatively compact open subset `V` of `Ω`, so the reflected sequence is bounded in `W^{k+1,p}` on
 every relatively compact open subset of the core of `Ω`. The interior statement on the core then
@@ -84,36 +85,27 @@ private theorem exists_wkp_planarReflection_norm_le_of_wkp {V W : Opens ℂ} {u 
   have hp : 1 ≤ p := Fact.out
   set C := higherReflectionBound (k + 1) p
   set H := V.reflectionCore
-  set T : Set ℂ := (H : Set ℂ) ∩ {z | 0 ≤ z.im}
+  set T : Set ℂ := (V : Set ℂ) ∩ {z | 0 ≤ z.im}
   obtain ⟨G, h0, hG, -, hGn, -⟩ := Wkp.exists_iteratedGradient_chain k v
   -- Up to the real axis, which is null, `V ∩ {0 ≤ im}` is the upper half of `V`.
-  have hVae : (V : Set ℂ) ∩ {z | 0 ≤ z.im} =ᵐ[volume] (V.upperHalf : Set ℂ) := by
+  have hVae : T =ᵐ[volume] (V.upperHalf : Set ℂ) := by
     rw [Opens.coe_upperHalf]
     exact ae_eq_set_inter .rfl (Complex.setOf_le_im_ae_eq 0)
-  have hTH : T ⊆ (V : Set ℂ) ∩ {z | 0 ≤ z.im} := inter_subset_inter_left _ V.reflectionCore_le
-  have hint : Opens.interior T ≤ V.upperHalf :=
-    (Opens.interior_inter_setOf_im_nonneg_eq_upperHalf H).le.trans
-      (Opens.upperHalf_mono V.reflectionCore_le)
+  have hint := Opens.interior_inter_setOf_im_nonneg_eq_upperHalf V
   have hT : MemWkpLoc p T (k + 1) u := by
-    refine ((Wkp.memWkpLoc_value_of_ae_le (Opens.interior_inter_setOf_im_nonneg_eq_upperHalf V)
-      hVae.subset v).congr_ae ?_).mono hTH
+    refine (Wkp.memWkpLoc_value_of_ae_le hint hVae.subset v).congr_ae ?_
     rw [Measure.restrict_congr_set hVae]
     exact hv
   -- Reflect, and compare the iterated gradients of the reflection with those of `v`.
-  obtain ⟨hrefl, hchain⟩ := hT.planarReflection_higherReflectionCoeff_bound (Ω := H) hp
-    fun z hz hz0 j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz hz0.le
+  obtain ⟨hrefl, hchain⟩ := hT.planarReflection_higherReflectionCoeff_reflectionCore_bound hp
   obtain ⟨hrp, Gf, hf0, hfG, hfGp⟩ := (memWkpLoc_succ_iff_exists_iteratedGradient k).1 hrefl
-  have h0' := h0.congr_ae hv
-  have hc := hchain.weakFDeriv (Df := fun z => innerSL ℝ (Gf 0 z))
-    (Dg := fun z => innerSL ℝ (G 0 z)) (by rw [Opens.interior_coe]; exact hf0) (h0'.mono hint)
-  simp only [← InnerProductSpace.toContinuousLinearMap_toDualMap,
-    LinearIsometry.coe_toContinuousLinearMap] at hc
-  have hbd := eLpNorm_le_of_weakDerivChainLe_iteratedGradient k 0
-    (InnerProductSpace.toDualMap ℝ ℂ) Gf G hc
-    (fun i _ hi => by rw [Opens.interior_coe]; exact hfG i (by omega))
-    fun i _ hi => (hG i (by omega)).mono hint
+  have hbd : ∀ i ≤ k, eLpNorm (Gf i) p (volume.restrict H) ≤
+      C * eLpNorm (G i) p (volume.restrict T) := fun i hi =>
+    hchain.eLpNorm_iteratedGradient_le (by rw [Opens.interior_coe]; exact hf0)
+      (by rw [hint]; exact h0.congr_ae hv) (fun i hi => by rw [Opens.interior_coe]; exact hfG i hi)
+      (fun i hi => by rw [hint]; exact hG i hi) hi
   have hTV : volume.restrict T ≤ volume.restrict (V.upperHalf : Set ℂ) :=
-    (Measure.restrict_mono hTH le_rfl).trans (Measure.restrict_congr_set hVae).le
+    (Measure.restrict_congr_set hVae).le
   have hGT : ∀ i ≤ k, eLpNorm (G i) p (volume.restrict T) ≤ ENNReal.ofReal ‖v‖ := fun i hi =>
     (eLpNorm_mono_measure _ hTV).trans (hGn i hi)
   have huT : eLpNorm u p (volume.restrict T) ≤ ENNReal.ofReal ‖v‖ := by
@@ -133,9 +125,8 @@ private theorem exists_wkp_planarReflection_norm_le_of_wkp {V W : Opens ℂ} {u 
     (eLpNorm_mono_measure _ hWS).trans (hchain.eLpNorm_le.trans (by gcongr))
   have h2 : ∀ i ∈ Finset.range (k + 1), eLpNorm (Gf i) p (volume.restrict W) ≤
       C * ENNReal.ofReal ‖v‖ := fun i hi =>
-    (eLpNorm_mono_measure _ hWS).trans ((hbd i (Nat.zero_le i)
-      (by simpa using Finset.mem_range_succ_iff.1 hi)).trans
-        (by gcongr; exact hGT i (Finset.mem_range_succ_iff.1 hi)))
+    (eLpNorm_mono_measure _ hWS).trans ((hbd i (Finset.mem_range_succ_iff.1 hi)).trans
+      (by gcongr; exact hGT i (Finset.mem_range_succ_iff.1 hi)))
   calc _ ≤ C * ENNReal.ofReal ‖v‖ + ∑ _ ∈ Finset.range (k + 1), C * ENNReal.ofReal ‖v‖ :=
         add_le_add h1 (Finset.sum_le_sum h2)
     _ = ((k : ℝ≥0∞) + 2) * (C * ENNReal.ofReal ‖v‖) := by
@@ -172,34 +163,6 @@ private theorem exists_wkp_planarReflection_norm_le {Ω : Opens ℂ} {u : ℕ �
 
 variable {Ω : Opens ℂ}
 
-/-- **Local Rellich compactness up to the real axis.** Let `1 ≤ p ≤ ∞` and let `u m` be real
-functions bounded in `W^{k+1,p}` on the upper half `W ∩ {0 < im}` of every relatively compact open
-subset `W` of `Ω` (which may cross the real axis): each `u m` is represented there by an element
-of `Wkp volume W.upperHalf p (k + 1)` of norm at most a bound depending only on `W`. Then a
-subsequence `u (φ j)` converges in `W^{k,p}` on every such upper half to a limit `v` in
-`MemWkpLoc p (Ω ∩ {0 ≤ im}) k`: any representatives of `u (φ j)` in
-`Wkp volume W.upperHalf p k` converge to the representative of `v`. -/
-theorem exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp {u : ℕ → ℂ → ℝ}
-    (hu : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
-      ∃ R : ℝ, ∀ m, ∃ v : Wkp volume W.upperHalf p (k + 1),
-        ‖v‖ ≤ R ∧ Wkp.value (k + 1) v =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] u m) :
-    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : ℂ → ℝ,
-      MemWkpLoc p ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) k v ∧
-      ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
-        ∀ (y : ℕ → Wkp volume W.upperHalf p k) (w : Wkp volume W.upperHalf p k),
-          (∀ j, Wkp.value k (y j) =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] u (φ j)) →
-          Wkp.value k w =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] v →
-          Tendsto y atTop (𝓝 w) := by
-  obtain ⟨φ, hφ, v, hv, hlim⟩ := exists_subseq_memWkpLoc_tendsto_wkp (Ω := Ω.reflectionCore)
-    (u := fun m => planarReflection (higherReflectionCoeff (k + 1)) (u m))
-    fun W hWc hWΩ => exists_wkp_planarReflection_norm_le hu hWc hWΩ
-  refine ⟨φ, hφ, v, hv.mono Ω.inter_setOf_im_nonneg_subset_reflectionCore,
-    fun W hWc hWΩ y w hy hw => ?_⟩
-  refine hlim W.upperHalf (Opens.isCompact_closure_upperHalf hWc)
-    (Opens.closure_upperHalf_subset_reflectionCore hWΩ) y w (fun j => (hy j).trans ?_) hw
-  filter_upwards [ae_restrict_mem W.upperHalf.isOpen.measurableSet] with z hz
-  exact (planarReflection_of_nonneg _ _ (Opens.mem_upperHalf.1 hz).2.le).symm
-
 /-- **Local Rellich compactness up to the real axis for vector-valued functions.** Let `F` be a
 finite-dimensional real vector space with basis `b`, let `1 ≤ p ≤ ∞`, and let `u m : ℂ → F` have
 coordinates bounded in `W^{k+1,p}` on the upper half `W ∩ {0 < im}` of every relatively compact
@@ -233,5 +196,31 @@ theorem _root_.Module.Basis.exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendst
     (Opens.closure_upperHalf_subset_reflectionCore hWΩ) i y w (fun j => (hy j).trans ?_) hw
   filter_upwards [ae_restrict_mem W.upperHalf.isOpen.measurableSet] with z hz
   simp [planarReflection_of_nonneg _ _ (Opens.mem_upperHalf.1 hz).2.le]
+
+/-- **Local Rellich compactness up to the real axis.** Let `1 ≤ p ≤ ∞` and let `u m` be real
+functions bounded in `W^{k+1,p}` on the upper half `W ∩ {0 < im}` of every relatively compact open
+subset `W` of `Ω` (which may cross the real axis): each `u m` is represented there by an element
+of `Wkp volume W.upperHalf p (k + 1)` of norm at most a bound depending only on `W`. Then a
+subsequence `u (φ j)` converges in `W^{k,p}` on every such upper half to a limit `v` in
+`MemWkpLoc p (Ω ∩ {0 ≤ im}) k`: any representatives of `u (φ j)` in
+`Wkp volume W.upperHalf p k` converge to the representative of `v`. -/
+theorem exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp {u : ℕ → ℂ → ℝ}
+    (hu : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ R : ℝ, ∀ m, ∃ v : Wkp volume W.upperHalf p (k + 1),
+        ‖v‖ ≤ R ∧ Wkp.value (k + 1) v =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] u m) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : ℂ → ℝ,
+      MemWkpLoc p ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) k v ∧
+      ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+        ∀ (y : ℕ → Wkp volume W.upperHalf p k) (w : Wkp volume W.upperHalf p k),
+          (∀ j, Wkp.value k (y j) =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] u (φ j)) →
+          Wkp.value k w =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] v →
+          Tendsto y atTop (𝓝 w) := by
+  obtain ⟨φ, hφ, v, hv, hlim⟩ :=
+    (Module.Basis.singleton Unit ℝ).exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp
+      (p := p) (k := k) (Ω := Ω) (u := u) fun W hWc hWΩ _ => by
+        simpa only [Module.Basis.singleton_repr] using hu W hWc hWΩ
+  exact ⟨φ, hφ, v, hv, fun W hWc hWΩ y w hy hw => hlim W hWc hWΩ () y w
+    (by simpa only [Module.Basis.singleton_repr] using hy)
+    (by simpa only [Module.Basis.singleton_repr] using hw)⟩
 
 end TauCeti
