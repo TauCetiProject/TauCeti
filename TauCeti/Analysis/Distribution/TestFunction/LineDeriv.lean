@@ -27,6 +27,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`: `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
+* `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
+  factor equal to `1` on `Ω`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
   of `φ`.
 * `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
@@ -74,6 +76,15 @@ theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
     tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
   rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
   exact tsupport_fderiv_apply_subset ℝ v
+
+/-- Scaling a first derivative of a test function on `Ω` by a function equal to `1` on `Ω` does not
+change it, since the derivative vanishes off `Ω`. -/
+theorem smul_fderiv_apply_eq_of_eqOn_one (φ : 𝓓(Ω, F)) {χ : E → ℝ} (hχ : Set.EqOn χ 1 Ω)
+    (x v : E) : χ x • fderiv ℝ (φ : E → F) x v = fderiv ℝ (φ : E → F) x v := by
+  by_cases hx : x ∈ Ω
+  · rw [hχ hx, Pi.one_apply, one_smul]
+  · rw [fderiv_of_notMem_tsupport ℝ fun h => hx (φ.tsupport_subset h)]
+    simp
 
 /-- On the real line, the directional derivative of a test function in the direction `1` is its
 derivative. -/

@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Weyl
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
+public import Mathlib.LinearAlgebra.Complex.Module
+public import Mathlib.Topology.Algebra.Module.Star
+public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -29,6 +32,9 @@ below the axis; for `F = ℂ` it is `TauCeti.schwarzReflection`.
 
 ## Main results
 
+* `TauCeti.MemLpLoc.starSchwarzReflection` and `TauCeti.locallyIntegrableOn_starSchwarzReflection`:
+  local `Lᵖ` bounds and local integrability up to the boundary pass to the reflection on the
+  doubled domain.
 * `HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_starSchwarzReflection`:
   on a conjugation-invariant open set, the reflections of a weak solution with real boundary
   values solve the distributional equation `\bar∂ (Rξ) = Rη` on the doubled domain.
@@ -71,7 +77,53 @@ private theorem measurableSet_im_nonneg : MeasurableSet {z : ℂ | 0 ≤ z.im} :
 
 section LocallyIntegrable
 
-variable [NormedSpace ℝ F] [StarAddMonoid F] [StarModule ℝ F] [ContinuousStar F]
+variable [NormedSpace ℝ F] {p : ENNReal}
+
+/-- Reflecting by a continuous linear map `L` below the real axis preserves local `Lᵖ` bounds up
+to the boundary: if `f` is locally `Lᵖ` on `Ω ∩ {0 ≤ im}`, then the map equal to `f` on
+`0 ≤ im` and to `L (f (conj z))` below is locally `Lᵖ` on `Ω`. -/
+theorem MemLpLoc.ite_conj {Ω : Set ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (L : F →L[ℝ] F)
+    {f : ℂ → F} (hf : MemLpLoc p (Ω ∩ {z | 0 ≤ z.im}) f) :
+    MemLpLoc p Ω (fun z ↦ if 0 ≤ z.im then f z else L (f (conj z))) := by
+  refine memLpLoc_iff.2 fun K hKΩ hK ↦ ?_
+  have hL : MeasurableSet {z : ℂ | z.im < 0} :=
+    measurableSet_lt Complex.measurable_im measurable_const
+  have hsplit : (fun z ↦ if 0 ≤ z.im then f z else L (f (conj z))) =
+      {z : ℂ | 0 ≤ z.im}.indicator f + {z : ℂ | z.im < 0}.indicator (fun z ↦ L (f (conj z))) := by
+    funext z
+    by_cases hz : 0 ≤ z.im
+    · simp [hz]
+    · simp [hz, not_le.1 hz]
+  rw [hsplit]
+  refine MemLp.add ?_ ?_
+  · rw [memLp_indicator_iff_restrict measurableSet_im_nonneg.nullMeasurableSet,
+      Measure.restrict_restrict measurableSet_im_nonneg]
+    exact memLpLoc_iff.1 hf _ (fun z hz ↦ ⟨hKΩ hz.2, hz.1⟩) (hK.inter_left isClosed_im_nonneg)
+  · rw [memLp_indicator_iff_restrict hL.nullMeasurableSet, Measure.restrict_restrict hL]
+    let K' : Set ℂ := (conjLIE : ℂ → ℂ) ⁻¹' K ∩ {z | 0 ≤ z.im}
+    have hK' : IsCompact K' :=
+      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right isClosed_im_nonneg
+    have hK'Ω : K' ⊆ Ω ∩ {z | 0 ≤ z.im} := fun z hz ↦
+      ⟨by simpa using hΩ (hKΩ hz.1), hz.2⟩
+    have h2 := (memLpLoc_iff.1 hf _ hK'Ω hK').comp_measurePreserving
+      (conjLIE.measurePreserving.restrict_preimage_emb conjLIE.toHomeomorph.measurableEmbedding K')
+    simp only [Function.comp_def, Complex.conjLIE_apply] at h2
+    refine L.comp_memLp' (h2.mono_measure (Measure.restrict_mono ?_ le_rfl))
+    exact fun z hz ↦ ⟨by simpa using hz.2, by simpa using hz.1.out.le⟩
+
+variable [StarAddMonoid F] [StarModule ℝ F] [ContinuousStar F]
+
+/-- The reflection of a function locally `Lᵖ` up to the boundary is locally `Lᵖ` on the doubled
+domain. -/
+theorem MemLpLoc.starSchwarzReflection {Ω : Set ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    {f : ℂ → F} (hf : MemLpLoc p (Ω ∩ {z | 0 ≤ z.im}) f) :
+    MemLpLoc p Ω (starSchwarzReflection f) := by
+  have hR : TauCeti.starSchwarzReflection f =
+      fun z ↦ if 0 ≤ z.im then f z else star (f (conj z)) :=
+    funext (starSchwarzReflection_def f)
+  rw [hR]
+  simpa only [ContinuousLinearEquiv.coe_coe, starL'_apply] using
+    hf.ite_conj hΩ (starL' ℝ : F ≃L[ℝ] F).toContinuousLinearMap
 
 /-- The reflection of a function locally integrable up to the boundary is locally integrable on
 the doubled domain. -/
@@ -79,35 +131,11 @@ theorem locallyIntegrableOn_starSchwarzReflection
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {f : ℂ → F}
     (hf : LocallyIntegrableOn f ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) :
     LocallyIntegrableOn (starSchwarzReflection f) Ω := by
-  refine (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun K hKΩ hK ↦ ?_
-  have hKm : MeasurableSet K := hK.isClosed.measurableSet
-  have hHc : MeasurableSet {z : ℂ | z.im < 0} :=
-    measurableSet_lt Complex.measurable_im measurable_const
-  have hup : IntegrableOn (starSchwarzReflection f) (K ∩ {z | 0 ≤ z.im}) := by
-    refine (hf.integrableOn_compact_subset (inter_subset_inter_left _ hKΩ)
-      (hK.inter_right isClosed_im_nonneg)).congr_fun
-      (fun z hz ↦ (starSchwarzReflection_of_im_nonneg hz.2).symm)
-      (hKm.inter measurableSet_im_nonneg)
-  have hdown : IntegrableOn (starSchwarzReflection f) (K ∩ {z | z.im < 0}) := by
-    let K' : Set ℂ := (conjLIE : ℂ → ℂ) ⁻¹' K ∩ {z | 0 ≤ z.im}
-    have hK' : IsCompact K' :=
-      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right isClosed_im_nonneg
-    have hK'Ω : K' ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz ↦
-      ⟨by simpa using hΩ (hKΩ hz.1), hz.2⟩
-    have hi : IntegrableOn (fun z ↦ f (conj z)) ((conjLIE : ℂ → ℂ) ⁻¹' K') := by
-      have := (conjLIE.measurePreserving.integrableOn_comp_preimage
-        conjLIE.toHomeomorph.measurableEmbedding (f := f) (s := K')).2
-        (hf.integrableOn_compact_subset hK'Ω hK')
-      simpa [Function.comp_def] using this
-    have hi' : IntegrableOn (fun z ↦ star (f (conj z))) (K ∩ {z | z.im < 0}) :=
-      ((starL' ℝ : F ≃L[ℝ] F).toContinuousLinearMap.integrable_comp
-        (hi.mono_set fun z hz ↦ ⟨by simpa using hz.1, by simpa using hz.2.le⟩))
-    exact hi'.congr_fun (fun z hz ↦ (starSchwarzReflection_of_im_neg hz.2).symm)
-      (hKm.inter hHc)
-  refine (hup.union hdown).mono_set fun z hz ↦ ?_
-  by_cases h : 0 ≤ z.im
-  · exact Or.inl ⟨hz, h⟩
-  · exact Or.inr ⟨hz, not_le.1 h⟩
+  have hf' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) f :=
+    (memLpLoc_one_iff_locallyIntegrableOn
+      (Ω.isOpen.isLocallyClosed.inter isClosed_im_nonneg.isLocallyClosed)).2 hf
+  exact (memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).1
+    (hf'.starSchwarzReflection hΩ)
 
 end LocallyIntegrable
 

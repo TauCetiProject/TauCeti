@@ -66,9 +66,14 @@ function by a function of temperate growth multiplies the function pointwise
   transform, which pairs with `φ` as `∫ φ • 𝓕⁻ f`.
 * `MeasureTheory.Lp.ae_eq_fourierInv_of_fourier_eq`: an `Lᵖ` function whose Fourier transform is
   an `L¹` function `v` agrees almost everywhere with `𝓕⁻ v`.
+* `MeasureTheory.Lp.eq_fourierInv_of_ae_eq`: every continuous representative of such a function
+  is `𝓕⁻ v`.
 * `MeasureTheory.Lp.smulLeftCLM_toTemperedDistribution_apply`: the product of the tempered
   distribution of an `Lᵖ` function `u` with a function `g` of temperate growth pairs with `φ` as
   `∫ φ • (g • u)`.
+* `MeasureTheory.Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le`: the product with
+  a function `g` of temperate growth bounded by `G` is an `Lᵖ` function of norm at most
+  `G ‖u‖_p`.
 * `ContinuousLinearMap.exists_apply_eq_toTemperedDistribution_and_norm_le`: an operator
   `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
 * `BoundedContinuousFunction.toTemperedDistribution_toLpTop_injective`: for a measure positive on
@@ -155,6 +160,21 @@ theorem smulLeftCLM_toTemperedDistribution_apply {μ : Measure E} [μ.HasTempera
     TemperedDistribution.smulLeftCLM F g (u : 𝓢'(E, F)) φ = ∫ x, φ x • g x • u x ∂μ := by
   rw [TemperedDistribution.smulLeftCLM_apply_apply, Lp.toTemperedDistribution_apply]
   simp only [SchwartzMap.smulLeftCLM_apply_apply hg, smul_eq_mul, mul_comm (g _), mul_smul]
+
+omit [FiniteDimensional ℝ E] in
+/-- Multiplying the tempered distribution of an `Lᵖ` function `u` by a function `g` of temperate
+growth bounded by `G` gives an `Lᵖ` function of norm at most `G ‖u‖_p`. -/
+theorem exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le {μ : Measure E}
+    [μ.HasTemperateGrowth] {p : ENNReal} [Fact (1 ≤ p)] {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    {G : ℝ} (hG : ∀ x, ‖g x‖ ≤ G) (u : Lp F p μ) :
+    ∃ v : Lp F p μ, TemperedDistribution.smulLeftCLM F g (u : 𝓢'(E, F)) = v ∧ ‖v‖ ≤ G * ‖u‖ := by
+  have hG0 : 0 ≤ G := (norm_nonneg _).trans (hG 0)
+  have hmeas : AEStronglyMeasurable g μ := hg.1.continuous.aestronglyMeasurable
+  have hmem : MemLp g ⊤ μ := memLp_top_of_bound hmeas G (ae_of_all _ hG)
+  refine ⟨hmem.toLp g • u, (Lp.toTemperedDistribution_smul_eq hg hmem u).symm,
+    (Lp.norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
+  rw [Lp.norm_toLp g hmem, eLpNorm_exponent_top hmeas]
+  exact ENNReal.toReal_le_of_le_ofReal hG0 (eLpNormEssSup_le_of_ae_bound (ae_of_all _ hG))
 
 omit [FiniteDimensional ℝ E] in
 /-- Applying a continuous linear map `L` to the values of an `Lᵖ` function `u` applies `L` to the
@@ -250,6 +270,16 @@ theorem ae_eq_fourierInv_of_fourier_eq {p : ENNReal} [Fact (1 ≤ p)]
     rw [← h, FourierTransform.fourierInv_fourier_eq]
   refine ae_eq_of_toTemperedDistribution_apply_eq u hcont.locallyIntegrable fun φ => ?_
   rw [hu, fourierInv_toTemperedDistribution_apply v (L1.integrable_coeFn v) .rfl]
+
+/-- **The continuous representative of an `Lᵖ` function with integrable Fourier transform.** If
+the distributional Fourier transform of `u ∈ Lᵖ` is an `L¹` function `v`, then every continuous
+representative of `u` is the inverse Fourier transform `𝓕⁻ v`. -/
+theorem eq_fourierInv_of_ae_eq {p : ENNReal} [Fact (1 ≤ p)]
+    {u : Lp F p (volume : Measure E)} {v : Lp F 1 (volume : Measure E)}
+    (h : 𝓕 (u : 𝓢'(E, F)) = v) {g : E → F} (hg : Continuous g) (hug : u =ᵐ[volume] g) :
+    g = 𝓕⁻ (v : E → F) :=
+  (hg.ae_eq_iff_eq volume (L1.integrable_coeFn v).continuous_fourierInv).1
+    (hug.symm.trans (ae_eq_fourierInv_of_fourier_eq h))
 
 end InnerProductSpace
 
