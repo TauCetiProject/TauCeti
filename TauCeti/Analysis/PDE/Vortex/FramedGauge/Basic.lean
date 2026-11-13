@@ -419,12 +419,12 @@ instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) :=
   have hup := (mem_framedGaugeGroup _).mp u.property
   exact Subtype.ext (eq_one_of_gaugeTransform_eq_self (hup.1.differentiable (by simp)) hup.2 hu)
 
-/-- The logarithmic derivative of a smooth gauge is smooth as a one-form. -/
-theorem contDiff_gaugeForm {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ))) : ContDiff ℝ ∞ (gaugeForm u) := by
-  exact contDiff_const.clm_comp
-    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp hu) |>.clm_comp
-      (hu.fderiv_right (by simp)))
+/-- The logarithmic derivative of a `C^(n+1)` gauge is a `C^n` one-form. -/
+theorem contDiff_gaugeForm {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ))) : ContDiff ℝ n (gaugeForm u) :=
+  contDiff_const.clm_comp
+    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp (hu.of_le le_self_add))
+      |>.clm_comp (hu.fderiv_right le_rfl))
 
 /-- **A gauge is one order smoother than its logarithmic derivative.** If `u` is differentiable
 and `Im (u⁻¹ du)` is `C^n`, `n ≤ ∞`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
@@ -463,15 +463,16 @@ theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
         (hu.fderiv_right (by norm_num)))
   exact h.differentiableAt one_ne_zero
 
-/-- Smooth gauges preserve smooth fields. -/
-theorem contDiff_gaugeTransform {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ)))
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) :
-    ContDiff ℝ ∞ (gaugeTransform u x) := by
+/-- A `C^(n+1)` gauge preserves `C^n` fields: the connection loses one derivative of the gauge
+through `u⁻¹ du`, the section none. -/
+theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ)))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
+    ContDiff ℝ n (gaugeTransform u x) := by
   have hg := contDiff_gaugeForm hu
-  have hr := reCLM.contDiff.comp hu
-  have hi := imCLM.contDiff.comp hu
-  have hc (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) :=
+  have hr := reCLM.contDiff.comp (hu.of_le le_self_add)
+  have hi := imCLM.contDiff.comp (hu.of_le le_self_add)
+  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) :=
     (contDiff_piLp _).mp hx i
   apply (contDiff_piLp _).mpr
   intro i
