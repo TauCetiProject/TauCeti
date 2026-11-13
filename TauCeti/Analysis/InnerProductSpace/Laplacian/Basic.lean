@@ -582,41 +582,25 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis q b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
 
-open Gradient in
-/-- **The Laplacian of a plane wave.** For a vector `θ` and a function `g : ℝ → F` twice
-differentiable at `⟪θ, y⟫`, the function `z ↦ g ⟪θ, z⟫`, constant on the hyperplanes orthogonal
+/-- **The Laplacian of a plane wave.** For a vector `θ` and a function `g : ℝ → F` that is `C²`
+at `⟪θ, y⟫`, the function `z ↦ g ⟪θ, z⟫`, constant on the hyperplanes orthogonal
 to `θ`, has Laplacian `‖θ‖² g'' (⟪θ, y⟫)` at `y`. For instance `cosh (c ⟪θ, z⟫)` with `‖θ‖ = 1` is
 an eigenfunction of `Δ` with eigenvalue `c²`. -/
 theorem _root_.ContDiffAt.laplacian_comp_inner {g : ℝ → F} {θ y : E}
     (hg : ContDiffAt ℝ 2 g ⟪θ, y⟫_ℝ) :
     Δ (fun z ↦ g ⟪θ, z⟫_ℝ) y = ‖θ‖ ^ 2 • deriv (deriv g) ⟪θ, y⟫_ℝ := by
-  set q : E → ℝ := fun z ↦ ⟪θ, z⟫_ℝ
-  -- `q` is linear, with derivative `⟪θ, ·⟫` everywhere, so `∇q = θ` and `Δq = 0`.
-  have hqd (z : E) : HasFDerivAt q (innerSL ℝ θ) z := (innerSL ℝ θ).hasFDerivAt
-  have hgrad : ∇ q y = θ := by
-    refine HasGradientAt.gradient ?_
-    rw [hasGradientAt_iff_hasFDerivAt, show toDual ℝ E θ = innerSL ℝ θ by ext; simp]
-    exact hqd y
-  have hlap : Δ q y = 0 := by
-    have h : fderiv ℝ q = fun _ ↦ innerSL ℝ θ := funext fun z ↦ (hqd z).fderiv
-    rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-    simp [iteratedFDeriv_two_apply, h]
-  have hqc : ContDiffAt ℝ 2 q y := (innerSL ℝ θ).contDiff.contDiffAt
-  -- Test against continuous linear functionals, reducing to the scalar chain rule.
-  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun φ ↦ ?_
-  have hφ : deriv (deriv (φ ∘ g)) (q y) = φ (deriv (deriv g) (q y)) := by
-    have h := congrArg (fun L ↦ L fun _ ↦ (1 : ℝ)) (φ.iteratedFDeriv_comp_left hg (i := 2) le_rfl)
-    simp only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
-      ← iteratedDeriv_eq_iteratedFDeriv] at h
-    rwa [iteratedDeriv_succ, iteratedDeriv_one, iteratedDeriv_succ, iteratedDeriv_one] at h
-  have h := ContDiffAt.laplacian_comp (φ.contDiff.contDiffAt.comp _ hg) hqc
-  rw [hgrad, hlap, mul_zero, add_zero, hφ, mul_comm] at h
-  have h' := (hg.comp y hqc).laplacian_CLM_comp_left (l := φ)
-  rw [map_smul, smul_eq_mul, ← h]
-  exact h'.symm
+  have h : (fun z ↦ g ⟪θ, z⟫_ℝ) = g ∘ innerSL ℝ θ := rfl
+  have hL : fderiv ℝ (innerSL ℝ θ) = fun _ ↦ innerSL ℝ θ := funext fun _ ↦ (innerSL ℝ θ).fderiv
+  rw [h, laplacian_eq_traceL, traceL_apply]
+  simp_rw [fderiv_fderiv_scalar_comp_apply (f := innerSL ℝ θ) (x := y) hg
+    (innerSL ℝ θ).contDiff.contDiffAt, hL, fderiv_const_apply, zero_apply, zero_smul, add_zero,
+    innerSL_apply_apply]
+  rw [← Finset.sum_smul, ← (stdOrthonormalBasis ℝ E).sum_sq_inner_left θ]
+  simp_rw [sq]
+  rw [iteratedDeriv_succ, iteratedDeriv_one]
 
 /-- **The Laplacian of a shifted plane wave.** For a vector `θ`, a base point `x` and a function
-`g : ℝ → F` twice differentiable at `⟪θ, y - x⟫`, the function `z ↦ g ⟪θ, z - x⟫` has Laplacian
+`g : ℝ → F` that is `C²` at `⟪θ, y - x⟫`, the function `z ↦ g ⟪θ, z - x⟫` has Laplacian
 `‖θ‖² g'' (⟪θ, y - x⟫)` at `y`. -/
 theorem _root_.ContDiffAt.laplacian_comp_inner_sub {g : ℝ → F} {θ x y : E}
     (hg : ContDiffAt ℝ 2 g ⟪θ, y - x⟫_ℝ) :
@@ -626,18 +610,12 @@ theorem _root_.ContDiffAt.laplacian_comp_inner_sub {g : ℝ → F} {θ x y : E}
   rw [h, hg.laplacian_comp_inner]
 
 /-- **The Laplacian of a finite sum** is the sum of the Laplacians of the summands, when these are
-twice differentiable at the point. -/
+`C²` at the point. -/
 theorem laplacian_fun_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
     (hf : ∀ i ∈ s, ContDiffAt ℝ 2 (f i) x) :
     Δ (fun y ↦ ∑ i ∈ s, f i y) x = ∑ i ∈ s, Δ (f i) x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    simp_rw [Finset.sum_insert ha]
-    rw [← ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)]
-    exact (hf a (Finset.mem_insert_self a s)).laplacian_add
-      (ContDiffAt.sum fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
+  rw [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_fun_sum_apply hf, map_sum]
+  simp_rw [← laplacian_eq_traceL_iteratedFDeriv]
 
 /-- **The Laplacian of a finite sum**, point-free form of `TauCeti.laplacian_fun_sum`. -/
 theorem laplacian_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}

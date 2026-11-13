@@ -72,11 +72,11 @@ theorem inner_pos_of_le_inner (hx : ‖x‖ = 1) (ha : ‖a‖ = 1) (hu : ‖u�
 
 /-- **Finitely many caps cover the sphere.** In a finite-dimensional real inner product space, for
 `κ < 1` there are finitely many unit vectors `θ` such that every unit vector `v` satisfies
-`κ ≤ ⟪θ, v⟫` for one of them: take a `δ`-net of the unit sphere, since
-`⟪θ, v⟫ = 1 - ‖v - θ‖² / 2` for unit vectors. -/
+`κ ≤ ⟪θ, v⟫` for one of them. -/
 theorem exists_finset_forall_exists_le_inner [FiniteDimensional ℝ F] {κ : ℝ} (hκ : κ < 1) :
     ∃ S : Finset F, (∀ θ ∈ S, ‖θ‖ = 1) ∧ ∀ v : F, ‖v‖ = 1 → ∃ θ ∈ S, κ ≤ ⟪θ, v⟫ := by
   classical
+  -- Take a `δ`-net of the unit sphere, since `⟪θ, v⟫ = 1 - ‖v - θ‖² / 2` for unit vectors.
   set δ := min 1 (1 - κ)
   have hδ : 0 < δ := lt_min one_pos (by linarith)
   obtain ⟨t, hts, htf, hcov⟩ := Metric.finite_approx_of_totallyBounded
