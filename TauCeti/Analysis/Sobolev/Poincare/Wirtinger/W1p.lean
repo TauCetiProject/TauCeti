@@ -112,11 +112,11 @@ private theorem norm_value_sub_setAverage_restrictL_ofTestFunctionₗ_le (hp : p
   have havg : (⨍ y in S, W1p.value w y ∂mu) = ⨍ y in S, phi y ∂mu :=
     average_congr (haeU.filter_mono (ae_mono (Measure.restrict_mono hSU le_rfl)))
   have hmain := eLpNorm_sub_setAverage_le_of_convex (μ := mu) (u := fun x ↦ (phi : E → ℝ) x)
-    U.isOpen hUc hUb (phi.contDiff.of_le (by simp)).contDiffOn hSU hS0
+    hUc hUb (phi.contDiff.of_le (by simp)).contDiffOn hSU hS0
     (Fact.out : (1 : ℝ≥0∞) ≤ p) hp
   have hkey : ‖W1p.value w - Lp.const p (mu.restrict (U : Set E))
       (⨍ y in S, W1p.value w y ∂mu)‖ₑ ≤ ENNReal.ofReal C * ‖W1p.gradient w‖ₑ := by
-    rw [← eLpNorm_sub_const_eq_enorm, Lp.enorm_def]
+    rw [← eLpNorm_sub_const_eq_enorm, Lp.eNorm_def]
     calc eLpNorm (fun x ↦ W1p.value w x - ⨍ y in S, W1p.value w y ∂mu) p (mu.restrict U)
         = eLpNorm (fun x ↦ (phi : E → ℝ) x - ⨍ y in S, (phi : E → ℝ) y ∂mu) p
             (mu.restrict U) := by
@@ -224,11 +224,11 @@ private theorem eLpNorm_value_sub_setAverage_le_of_isCompact_closure (hp : p ≠
   have hgradle : ‖W1p.gradient v‖ₑ ≤ ‖W1p.gradient u‖ₑ :=
     calc ‖W1p.gradient v‖ₑ
         = eLpNorm (W1p.gradient u) p (mu.restrict V) := by
-          rw [Lp.enorm_def]
+          rw [Lp.eNorm_def]
           exact eLpNorm_congr_ae hgrad
       _ ≤ eLpNorm (W1p.gradient u) p (mu.restrict (Omega : Set E)) :=
           eLpNorm_mono_measure _ (Measure.restrict_mono hVsub le_rfl)
-      _ = ‖W1p.gradient u‖ₑ := (Lp.enorm_def _).symm
+      _ = ‖W1p.gradient u‖ₑ := (Lp.eNorm_def _).symm
   exact hcongr ▸ hbase.trans (mul_le_mul' (ENNReal.ofReal_le_ofReal hconst) hgradle)
 
 /-! ### The inequality on the whole domain -/
@@ -351,7 +351,7 @@ theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : �
     (Lp.memLp (W1p.value uB)).sub (memLp_const m)
   -- Convert the `eLpNorm` bound into a bound on integrals of squares.
   have hnorm : ‖hmem.toLp _‖ ≤ 2 ^ (finrank ℝ E + 1) * R * ‖W1p.gradient uB‖ := by
-    rw [Lp.norm_toLp, ← toReal_enorm (W1p.gradient uB),
+    rw [Lp.norm_toLp, ← toReal_eNorm (W1p.gradient uB),
       ← ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ 2 ^ (finrank ℝ E + 1) * R),
       ← ENNReal.toReal_mul]
     exact ENNReal.toReal_mono (by finiteness) hP
@@ -401,13 +401,13 @@ theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : 
   have hgint : IntegrableOn (W1p.gradient u) (ball c R) mu :=
     ((Lp.memLp (W1p.gradient u)).mono_measure hle).integrable Fact.out
   -- Both sides of `hP` are the integrals in the statement.
-  rw [eLpNorm_one_eq_lintegral_enorm (f := fun x ↦ W1p.value uB x - m)
+  rw [eLpNorm_one_eq_lintegral_eNorm (f := fun x ↦ W1p.value uB x - m)
       ((Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const),
-    Lp.enorm_def, eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _)] at hP
+    Lp.eNorm_def, eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _)] at hP
   simp_rw [← Real.norm_eq_abs]
   rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_mul (by positivity),
-    ofReal_integral_norm_eq_lintegral_enorm (f := fun x ↦ W1p.value u x - m)
-      (hint.sub (integrable_const m)), ofReal_integral_norm_eq_lintegral_enorm hgint]
+    ofReal_integral_norm_eq_lintegral_eNorm (f := fun x ↦ W1p.value u x - m)
+      (hint.sub (integrable_const m)), ofReal_integral_norm_eq_lintegral_eNorm hgint]
   refine le_of_eq_of_le (lintegral_congr_ae ?_) (hP.trans_eq ?_)
   · filter_upwards [hval] with x hx
     rw [hx]

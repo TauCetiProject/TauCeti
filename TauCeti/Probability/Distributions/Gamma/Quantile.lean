@@ -298,7 +298,7 @@ theorem tendsto_quantile_gammaMeasure_nhdsGT_zero (ha : 0 < a) (hr : 0 < r) :
       Filter.TendstoNhdsWithinIoi.const_mul (inv_pos.mpr hr)
         (tendsto_inverseRegularizedGamma_nhdsGT_zero ha)
   apply hlim.congr'
-  filter_upwards [Ioo_mem_nhdsGT one_pos] with u hu
+  filter_upwards [Ioo_mem_nhdsGT one_pos] with u _
   exact (quantile_gammaMeasure ha hr).symm
 
 /-- The quantile of a positive-parameter Gamma law tends to infinity as the level tends to `1`
@@ -308,7 +308,7 @@ theorem tendsto_quantile_gammaMeasure_nhdsLT_one (ha : 0 < a) (hr : 0 < r) :
   have hlim : Tendsto (fun u ↦ inverseRegularizedGamma a u / r) (𝓝[<] 1) atTop :=
     (tendsto_inverseRegularizedGamma_nhdsLT_one ha).atTop_div_const hr
   apply hlim.congr'
-  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u _
   exact (quantile_gammaMeasure ha hr).symm
 
 end Probability

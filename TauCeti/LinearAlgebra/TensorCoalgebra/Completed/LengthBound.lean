@@ -53,10 +53,10 @@ theorem component_gradedCoderiv_of_eq_zero (G : InternalGrading R M)
         rw [h, smul_zero]
       rw [gradedCoderiv_of_tprod, map_sum]
       apply Finset.sum_eq_zero
-      intro p hp
+      intro p _
       rw [map_sum]
       apply Finset.sum_eq_zero
-      intro d hd
+      intro d _
       by_cases hfit : 0 < d ∧ p + d ≤ n.1
       · by_cases hdc : c + 1 < d
         · have hzero : F (subword R x p d) = 0 := by
