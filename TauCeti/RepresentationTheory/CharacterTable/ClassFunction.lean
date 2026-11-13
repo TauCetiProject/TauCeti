@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.ConjFinite
 public import Mathlib.LinearAlgebra.Dimension.Constructions
-public import TauCeti.RepresentationTheory.Character
+public import TauCeti.RepresentationTheory.Character.Basic
 
 /-!
 # Class functions
