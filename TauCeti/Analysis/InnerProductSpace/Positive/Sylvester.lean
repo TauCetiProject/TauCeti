@@ -76,7 +76,7 @@ variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 Only `A` needs to be strictly positive; `B` may have a kernel. -/
 def positiveSylvesterEquiv (hA : IsStrictlyPositive A) (hB : 0 ≤ B) :
     (F →L[𝕜] E) ≃L[𝕜] (F →L[𝕜] E) :=
-  letI := FiniteDimensional.complete 𝕜 E
+  letI := FiniteDimensional.completeSpace 𝕜 E
   let h := sylvester_bijective (A := A) (B := -B)
     (nonneg_iff_isPositive.mp hA.nonneg).toLinearMap.isSymmetric
     (by

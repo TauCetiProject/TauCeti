@@ -19,9 +19,9 @@ three-arm star of finite type to the shapes underlying `A`, `D`, `E₆`, `E₇`,
 This file identifies each surviving model star with its standard Cartan matrix and proves the
 converse, completing the classification of the model stars themselves.
 
-This is the simply-laced fork assembly step in Layer 5 of the root-systems roadmap. Extracting such
-a star from an arbitrary connected finite-type diagram remains part of the assembly of the full
-Cartan--Killing classification.
+This is the simply-laced fork assembly step of the classification of finite-type Cartan matrices.
+Extracting such a star from an arbitrary connected finite-type diagram remains part of the
+assembly of the full Cartan--Killing classification.
 
 ## Main definitions
 

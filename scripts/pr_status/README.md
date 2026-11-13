@@ -89,7 +89,11 @@ use its stricter OWNER/MEMBER/COLLABORATOR comment policy.
 
 ## Zulip reactions
 
-[`zulip.py`](zulip.py) finds-or-creates the PR's message in the **PRs** topic and
+The PR status, backfill, and healthcheck workflows set `ZULIP_CHANNEL=rss` and
+`ZULIP_TOPIC=Tau Ceti PRs`. Pass these same overrides when running the shared
+Zulip client locally; its defaults are `Tau Ceti > PRs`.
+
+[`zulip.py`](zulip.py) finds-or-creates the PR's message in **rss > Tau Ceti PRs** and
 reconciles two independent, mutually-exclusive reaction groups from `core.derive`:
 
 | Group | State | Emoji |
@@ -239,7 +243,7 @@ a persistent Zulip config break, exactly like the healthcheck.
 ## One-time setup
 
 1. **Create a dedicated Zulip bot** (Zulip → Settings → Bots → Add a new bot,
-   type *Generic*). Subscribe it to the **Tau Ceti** channel: a bot can only
+   type *Generic*). Subscribe it to **rss** (PR posts) and **Tau Ceti** (alerts): a bot can only
    post and react in channels it belongs to.
 2. **Add repository secrets** on `TauCetiProject/TauCeti`:
    - `ZULIP_API_KEY`: the bot's API key
@@ -279,6 +283,7 @@ When a run is red, re-set `ZULIP_API_KEY` per the gotcha above, then confirm:
 
 ```bash
 export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
+export ZULIP_CHANNEL=rss ZULIP_TOPIC="Tau Ceti PRs"
 python3 scripts/pr_status/zulip.py check   # exits 0 and prints OK when healthy
 ```
 
@@ -295,6 +300,7 @@ python3 scripts/pr_status/labels.py reconcile-all
 # PR history in one low-request stream and edits existing posts in place,
 # including posts whose URL predates the FormalFrontier -> TauCetiProject transfer.
 export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
+export ZULIP_CHANNEL=rss ZULIP_TOPIC="Tau Ceti PRs"
 gh api --paginate \
   'repos/TauCetiProject/TauCeti/pulls?state=all&sort=created&direction=asc&per_page=100' \
   --jq '.[] | {

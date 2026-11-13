@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -27,6 +28,11 @@ for set and probability integrals.
 
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
+
+## Bounded multipliers
+
+* `MeasureTheory.norm_integral_smul_le_of_support_subset`: a multiplier `g` bounded by `K` on a
+  set containing the support of an integrable `f` gives `‖∫ g • f‖ ≤ K ∫ ‖f‖`.
 
 ## Differences of integrals
 
@@ -111,7 +117,7 @@ in the seminorm form `eLpNorm (f i - g) 1 μ → 0` (for instance by
   integrals of `‖f j‖` over sets `B j`, for `f j` eventually integrable on `B j`, into that
   of the lower Lebesgue integrals of `‖f j‖ₑ`.
 
-The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose home is
+The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_eNorm`, whose home is
 `Mathlib.MeasureTheory.Integral.Bochner.Basic`, plus continuity of `ENNReal.ofReal` at `0`.
 
 * `tendsto_integral_smul_of_tendsto_lintegral_enorm_sub` turns `L¹(s)` convergence into
@@ -183,6 +189,17 @@ theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
   simpa only [AddMonoidHom.coe_toRealLinearMap] using
     (T.toRealLinearMap hT).integral_comp_comm hf
 
+/-- The integral of `g • f`, for a multiplier bounded by `K` on a set containing the support of
+the integrable function `f`, is at most `K ∫ ‖f‖`. -/
+theorem MeasureTheory.norm_integral_smul_le_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [NormedSpace ℝ E] [MeasurableSpace α]
+    {μ : Measure α} {f : α → E} {g : α → 𝕜} {s : Set α} {K : ℝ} (hf : Integrable f μ)
+    (hsupp : Function.support f ⊆ s) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
+    ‖∫ x, g x • f x ∂μ‖ ≤ K * ∫ x, ‖f x‖ ∂μ := by
+  rw [← integral_const_mul]
+  exact norm_integral_le_of_norm_le (hf.norm.const_mul K)
+    (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
+
 namespace Multiset
 
 variable {X E : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [NormedAddCommGroup E]
@@ -193,7 +210,7 @@ theorem integrable_sum_map_dirac (s : Multiset X) (g : X → E) :
   induction s using Multiset.induction_on with
   | empty => simp
   | cons a s ih =>
-    simpa only [map_cons, sum_cons] using (integrable_dirac enorm_lt_top).add_measure ih
+    simpa only [map_cons, sum_cons] using (integrable_dirac eNorm_lt_top).add_measure ih
 
 /-- The integral against the counting measure of a multiset is the sum over the multiset. -/
 @[simp]
@@ -203,7 +220,7 @@ theorem integral_sum_map_dirac [NormedSpace ℝ E] [CompleteSpace E] (s : Multis
   | empty => simp
   | cons a s ih =>
     simp only [map_cons, sum_cons]
-    rw [integral_add_measure (integrable_dirac enorm_lt_top) (integrable_sum_map_dirac s g),
+    rw [integral_add_measure (integrable_dirac eNorm_lt_top) (integrable_sum_map_dirac s g),
       integral_dirac, ih]
 
 end Multiset
@@ -234,7 +251,7 @@ theorem enorm_integral_sub_integral_le_lintegral_enorm_sub {α E : Type*} [Measu
   have huv : Integrable (fun x => u x - v x) μ := ⟨hu.sub hv, lt_top_iff_ne_top.2 h⟩
   by_cases hvi : Integrable v μ
   · rw [← integral_sub ((huv.add hvi).congr (.of_forall fun x => by simp)) hvi]
-    exact enorm_integral_le_lintegral_enorm _
+    exact eNorm_integral_le_lintegral_eNorm _
   · have hui : ¬Integrable u μ := fun hui =>
       hvi ((hui.sub huv).congr (.of_forall fun x => by simp))
     simp [integral_undef hui, integral_undef hvi]
@@ -349,7 +366,7 @@ theorem setIntegral_norm_sub_sq_le_add_of_le {X F : Type*} [MeasurableSpace X] {
     simpa only [sub_add_sub_cancel', norm_sub_rev (K _) (f _)] using
       setIntegral_norm_add_sq_le hfc hKf
   have h3 : ∫ x in s, ‖f x - K x‖ ^ 2 ∂μ ≤ ∫ x in S, ‖f x - K x‖ ^ 2 ∂μ :=
-    setIntegral_mono_set hfK (ae_of_all _ fun _ => by positivity) hsS.eventuallyLE
+    setIntegral_mono_set hfK (ae_of_all _ fun _ => by positivity) hsS.eventuallySubset
   have hE0 : 0 ≤ ∫ x in S, ‖f x - K x‖ ^ 2 ∂μ :=
     setIntegral_nonneg_of_ae_restrict (ae_of_all _ fun _ => by positivity)
   have h4 := mul_le_mul_of_nonneg_left h2 (mul_nonneg hD hq0)
@@ -397,7 +414,7 @@ theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {X : Type*} [MeasurableSpace X
       setIntegral_congr_fun ht fun x hx => by rw [hψ1 hx, Pi.one_apply, one_pow, one_mul]
     _ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ :=
       setIntegral_mono_set hint
-        (hf0.mono fun x hx => mul_nonneg (sq_nonneg _) hx) hts.eventuallyLE
+        (hf0.mono fun x hx => mul_nonneg (sq_nonneg _) hx) hts.eventuallySubset
 
 /-- On a finite measure space where `f ≤ M` almost everywhere, the integral of the squared
 truncation `((f - l)⁺)²` is at most `(M - l)²` times the measure of the upper level set
@@ -468,7 +485,7 @@ theorem ofReal_integral_sq_div_le_lintegral_enorm {Ω : Type*} [MeasurableSpace 
   rw [← integral_div]
   refine ofReal_integral_le_lintegral_ofReal.trans (lintegral_mono_ae ?_)
   filter_upwards [hb] with x hx
-  rw [Real.enorm_eq_ofReal_abs]
+  rw [Real.eNorm_eq_ofReal_abs]
   refine ENNReal.ofReal_le_ofReal ?_
   rw [div_le_iff₀ hC, ← sq_abs]
   nlinarith [abs_nonneg (h x)]
@@ -545,8 +562,8 @@ theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [Meas
   refine Tendsto.congr' ?_ (by
     simpa only [ENNReal.ofReal_zero] using (ENNReal.continuous_ofReal.tendsto 0).comp h)
   filter_upwards [hf] with i hi
-  rw [eLpNorm_one_eq_lintegral_enorm hi.aestronglyMeasurable,
-    ← ofReal_integral_norm_eq_lintegral_enorm hi]
+  rw [eLpNorm_one_eq_lintegral_eNorm hi.aestronglyMeasurable,
+    ← ofReal_integral_norm_eq_lintegral_eNorm hi]
   simp only [Function.comp_apply, Pi.sub_apply]
 
 /-- If the integrals of `‖f j‖` over the sets `B j` tend to zero, and `f j` is eventually
@@ -558,7 +575,7 @@ theorem tendsto_lintegral_enorm_of_tendsto_integral_norm {α E ι : Type*} {m : 
     Tendsto (fun j ↦ ∫⁻ x in B j, ‖f j x‖ₑ ∂μ) l (𝓝 0) := by
   refine (ENNReal.tendsto_ofReal h).congr' ?_ |>.trans ?_
   · filter_upwards [hf] with j hj
-    exact ofReal_integral_norm_eq_lintegral_enorm hj
+    exact ofReal_integral_norm_eq_lintegral_eNorm hj
   · rw [ENNReal.ofReal_zero]
 
 /-- If `a i → b` in `L¹(s)`, then the integrals `∫ x, c x • a i x ∂μ` converge to
@@ -588,7 +605,7 @@ theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {α 𝕜 F ι : Typ
         filter_upwards [hK, hcsupp] with x hxK hxsupp
         rw [← smul_sub]
         by_cases hxs : x ∈ s
-        · rw [Set.indicator_of_mem hxs, enorm_smul]
+        · rw [Set.indicator_of_mem hxs, eNorm_smul]
           gcongr
           simpa only [← ofReal_norm] using ENNReal.ofReal_le_ofReal hxK
         · simp [Set.indicator_of_notMem hxs, hxsupp hxs]
@@ -795,7 +812,7 @@ theorem setIntegral_rpow_le_rpow_mul_setIntegral_rpow {X : Type*} [MeasurableSpa
     _ = F ^ (q - p) * ∫ x in s, w x ^ p ∂ν := integral_const_mul _ _
     _ ≤ F ^ (q - p) * ∫ x in t, w x ^ p ∂ν := by
         exact mul_le_mul_of_nonneg_left (setIntegral_mono_set hintp
-          (hw0.mono fun x hx => Real.rpow_nonneg hx p) hst.eventuallyLE)
+          (hw0.mono fun x hx => Real.rpow_nonneg hx p) hst.eventuallySubset)
           (Real.rpow_nonneg hF _)
 
 /-- A mean zero random variable with values in `[a, b]` has `a ≤ 0 ≤ b`. -/

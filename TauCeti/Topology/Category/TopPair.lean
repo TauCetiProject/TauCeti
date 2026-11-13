@@ -24,7 +24,8 @@ filtration of a CW complex, produces.  A continuous map `t → t'` carrying `s` 
 map of such pairs `TopPair.ofInclusionMap`, and a homotopy that keeps `s` inside `s'` at every
 time induces a homotopy of maps of pairs `TopPair.ofInclusionHomotopy`.  The pair `(t, s)` is
 isomorphic to the pair `TopPair.ofSubset` of `t` and the preimage of `s` in `t`
-(`TopPair.ofSubsetPreimageValIso`).
+(`TopPair.ofSubsetPreimageValIso`). When `t` contains every point of `X`, the pair `(t, s)` is the
+pair `(X, s)` (`TopPair.ofInclusionIsoOfSubset`).
 
 A map of pairs which is an isomorphism of the ambient spaces and is surjective on the subspaces is
 an isomorphism of pairs (`TopPair.isIso_of_isIso_fst_of_surjective_snd`): the inverse on the
@@ -36,6 +37,13 @@ with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of t
 
 A continuous map into the ambient space of a pair with values in the subspace corestricts to a
 continuous map into the subspace, `TopPair.liftSnd`, because the subspace is embedded.
+
+For `S ⊆ T`, the identity of `X` carries `X ∖ T` into `X ∖ S` (`TopCat.mapsTo_id_compl`), so it
+is a map of pairs `(X, X ∖ T) ⟶ (X, X ∖ S)`.
+
+The product `TopPair.prodRight P Y = (X × Y, A × Y)` of a pair `P = (X, A)` with a space `Y` has
+the embedding `P.map ▷ Y`. For the pair of a subset `A ⊆ X` it is the pair of the preimage of `A`
+under the first projection (`TopPair.ofSubsetProdRightIso`).
 
 For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` and `B` under the
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
@@ -170,6 +178,10 @@ variable {hst hst'}
 lemma ofInclusionMap_fst_apply (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
     (x : t) : Hom.fst (ofInclusionMap hst hst' g hg) x = g x := (rfl)
 
+/-- The map of ambient spaces of `ofInclusionMap hst hst' g hg` is `g`. -/
+lemma ofInclusionMap_fst (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s') :
+    Hom.fst (ofInclusionMap hst hst' g hg) = TopCat.ofHom g := (rfl)
+
 @[simp]
 lemma ofInclusionMap_snd_apply (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
     (x : s) : (Hom.snd (ofInclusionMap hst hst' g hg) x).1 = (g ⟨x.1, hst x.2⟩).1 := (rfl)
@@ -242,6 +254,41 @@ lemma ofSubsetPreimageValIso_inv_fst_apply (x : t) :
 @[simp]
 lemma ofSubsetPreimageValIso_inv_snd_apply (x : s) :
     (Hom.snd (ofSubsetPreimageValIso hst).inv x).1 = ⟨x.1, hst x.2⟩ := (rfl)
+
+variable (hst) in
+/-- When `t` contains every point of `X`, the pair `(t, s)` is the pair `(X, s')` for any `s'` with
+the same points as `s`. -/
+def ofInclusionIsoOfSubset (ht : ∀ x, x ∈ t) {s₀ : Set X} (hs : ∀ x, x ∈ s ↔ x ∈ s₀) :
+    ofInclusion hst ≅ ofSubset s₀ where
+  hom := TopPair.ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨x.1, (hs _).1 x.2⟩, by fun_prop⟩)
+  inv := TopPair.ofHom (TopCat.ofHom ⟨fun x ↦ ⟨x, ht x⟩, by fun_prop⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨x.1, (hs _).2 x.2⟩, by fun_prop⟩)
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+@[simp]
+lemma ofInclusionIsoOfSubset_hom_fst_apply (ht : ∀ x, x ∈ t) {s₀ : Set X}
+    (hs : ∀ x, x ∈ s ↔ x ∈ s₀) (x : t) :
+    Hom.fst (ofInclusionIsoOfSubset hst ht hs).hom x = x.1 := (rfl)
+
+@[simp]
+lemma ofInclusionIsoOfSubset_hom_snd_apply (ht : ∀ x, x ∈ t) {s₀ : Set X}
+    (hs : ∀ x, x ∈ s ↔ x ∈ s₀) (x : s) :
+    (Hom.snd (ofInclusionIsoOfSubset hst ht hs).hom x).1 = x.1 := (rfl)
+
+/-- Under `TopPair.ofInclusionIsoOfSubset`, the map of pairs induced by an inclusion `t ⊆ t'` is
+the map of pairs induced by the identity of `X`. -/
+@[reassoc]
+lemma ofInclusionMap_inclusion_comp_ofInclusionIsoOfSubset_hom {s₀ s₀' : Set X} {s' t' : Set X}
+    {hst' : s' ⊆ t'} (ht : ∀ x, x ∈ t) (ht' : ∀ x, x ∈ t') (hs : ∀ x, x ∈ s ↔ x ∈ s₀)
+    (hs' : ∀ x, x ∈ s' ↔ x ∈ s₀') (htt' : t ⊆ t')
+    (hss' : ∀ x : t, (x : X) ∈ s → (ContinuousMap.inclusion htt' x : X) ∈ s')
+    (h : Set.MapsTo (𝟙 X) s₀ s₀') :
+    ofInclusionMap hst hst' (ContinuousMap.inclusion htt') hss' ≫
+        (ofInclusionIsoOfSubset hst' ht' hs').hom =
+      (ofInclusionIsoOfSubset hst ht hs).hom ≫ ofSubsetMap (𝟙 X) h := by
+  ext : 2 <;> rfl
 
 end ofInclusion
 
@@ -381,6 +428,34 @@ theorem liftSnd_apply_eq_iff (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.
 
 end liftSnd
 
+section prodRight
+
+open MonoidalCategory
+
+/-- The product `(X × Y, A × Y)` of a topological pair `P = (X, A)` with a space `Y`: its
+embedding is `P.map ▷ Y`, the product of the embedding of `P` with the identity of `Y`. -/
+abbrev prodRight (P : TopPair.{u}) (Y : TopCat.{u}) : TopPair.{u} :=
+  TopPair.of (P.map ▷ Y) (P.isEmbedding_map.prodMap Topology.IsEmbedding.id)
+
+/-- For the pair of a subset `A ⊆ X`, the product pair `(X × Y, A × Y)` is the pair of the
+preimage of `A` under the first projection of `X × Y`. -/
+def ofSubsetProdRightIso {X : TopCat.{u}} (A : Set X) (Y : TopCat.{u}) :
+    (ofSubset A).prodRight Y ≅ ofSubset (X := TopCat.of (X × Y)) (Prod.fst ⁻¹' A) where
+  hom := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, x.2), x.1.2⟩, by fun_prop⟩)
+  inv := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ (⟨x.1.1, x.2⟩, x.1.2), by fun_prop⟩)
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+@[simp]
+lemma ofSubsetProdRightIso_hom_fst_apply {X : TopCat.{u}} (A : Set X) (Y : TopCat.{u})
+    (x : X × Y) : Hom.fst (ofSubsetProdRightIso A Y).hom x = x := (rfl)
+
+@[simp]
+lemma ofSubsetProdRightIso_inv_fst_apply {X : TopCat.{u}} (A : Set X) (Y : TopCat.{u})
+    (x : X × Y) : Hom.fst (ofSubsetProdRightIso A Y).inv x = x := (rfl)
+
+end prodRight
+
 end TopPair
 
 namespace IsCompact
@@ -396,6 +471,10 @@ end IsCompact
 namespace TopCat
 
 open MonoidalCategory CartesianMonoidalCategory
+
+/-- For `S ⊆ T`, the identity of `X` carries `X ∖ T` into `X ∖ S`. -/
+lemma mapsTo_id_compl {X : TopCat.{u}} {S T : Set X} (h : S ⊆ T) : Set.MapsTo (𝟙 X) Tᶜ Sᶜ :=
+  fun _ hx hS ↦ hx (h hS)
 
 section Preimage
 

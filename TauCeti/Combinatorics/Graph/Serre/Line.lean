@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Graph.Serre.Aut
 public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.Algebra.Group.Int.Defs
 public import Mathlib.Algebra.Group.Units.Equiv
+public import Mathlib.Algebra.Order.Ring.Abs
 
 /-!
 # The line
@@ -16,7 +17,8 @@ public import Mathlib.Algebra.Group.Units.Equiv
 The line is the Serre graph with the integers as vertices and one geometric edge between `n` and
 `n + 1`. It is the Cayley graph of the infinite cyclic group, that is of the free group of rank
 one, and it is a tree: a reduced path never turns back, so it moves monotonically and cannot
-close up.
+close up. The distance between two vertices is the absolute value of the difference of their
+coordinates.
 
 The coordinate `SerreGraph.lineVertexEquiv` identifies the vertices with the integers, and the
 integers act on the line by translation, `SerreGraph.lineShift`, with `k • n = k + n`.
@@ -151,6 +153,18 @@ theorem line_connected : line.Connected := by
 /-- The line is a tree. -/
 theorem line_isTree : line.IsTree :=
   (isTree_iff line).mpr ⟨line_connected, line_isAcyclic⟩
+
+/-- The distance between two vertices of the line is the absolute value of the difference of
+their coordinates. -/
+theorem line_dist (a b : line.V) :
+    (line.dist a b : ℤ) = |lineVertexEquiv a - lineVertexEquiv b| := by
+  obtain ⟨p, hp⟩ := line_isTree.existsUnique_isReduced a b |>.exists
+  rw [line_isAcyclic.dist_eq_length hp]
+  cases p with
+  | nil => simp
+  | cons q e =>
+    rw [lineVertexEquiv_eq_add_of_isReduced _ hp e.1 (by simp)]
+    split_ifs <;> simp [abs_eq_max_neg] <;> omega
 
 /-- The translation action of the integers on the line, `k • n = k + n`. -/
 def lineShift : Multiplicative ℤ →* line.Aut where

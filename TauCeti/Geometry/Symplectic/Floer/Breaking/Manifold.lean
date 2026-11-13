@@ -109,19 +109,6 @@ private theorem IsNondegenerate.continuous_hamiltonianVectorField_zero (hω : ω
       (uncurry fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) := contMDiff_const
   exact (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp) hK).continuous
 
-omit [FiniteDimensional ℝ E] in
-/-- The cylindrical perturbation `K = H_t dt` is invariant under the translations `(s, t) ↦
-(s + c, t)`, so the energy density of a translate of `u` is the energy density of `u` at the
-translated point. -/
-private theorem floerEnergyDensity_cylindrical_comp_add_right {z : ℝ × ℝ} {c : ℝ}
-    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (z + (c, 0))) :
-    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) z =
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) := by
-  have hK : (fun w : ℝ × ℝ ↦ H (w + (c, 0)).2) = fun w ↦ H w.2 := funext fun w ↦ by simp
-  have h := ω.perturbedMFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) hu
-  simp only [hK] at h
-  rw [floerEnergyDensity_def, floerEnergyDensity_def, h]
-
 /-- The energy of the limit of the translates over a rectangle `[a, b] × [0, 1]` vanishes, by
 Fatou's lemma: the energy densities of the translates converge pointwise to that of `v`, and the
 energy of `u` over the translated windows `[a + s_k, b + s_k] × [0, 1]` tends to zero. -/
@@ -171,8 +158,7 @@ private theorem setLIntegral_Icc_prod_floerEnergyDensity_eq_zero (hω : ω.IsNon
         (hdu z ⟨mem_univ _, hz.2⟩) hXs.continuousAt hXt.continuousAt)
     refine ((tendsto_add_atTop_iff_nat N).2 h).congr fun n ↦ ?_
     simp only [comp_apply, he]
-    rw [floerEnergyDensity_cylindrical_comp_add_right
-      ((hu.contMDiffAt (hU.mem_nhds (hDU (hmem hz)))).mdifferentiableAt one_ne_zero)]
+    rw [floerEnergyDensity_cylindrical_comp_add_right]
   -- The energies of `u` over the translated windows tend to zero.
   have hE : Tendsto (fun n : ℕ ↦ ∫⁻ z in W, e u (z + (s (n + N), 0))) atTop (𝓝 0) := by
     have h := tendsto_setLIntegral_of_eventually_subset hfin
@@ -219,17 +205,15 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add (hω : 
     setLIntegral_Icc_prod_floerEnergyDensity_eq_zero hω hH hU hu hDU hfin hs hW hdu _ _).le)
     zero_le
 
-/-- **The limit of translated Floer cylinders is a Floer cylinder.** Let `u` be differentiable on
-`D` and solve the Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` there, for the
-cylindrical perturbation `K = H_t dt` with `H` jointly `C¹` and structures `J_t` independent of
-`s`. Suppose that at every point `z` of the strip `ℝ × [0, 1]` the translates `z + (s_k, 0)`
-eventually lie in `D`, the derivatives of the translates
-`w ↦ u (w + (s_k, 0))` converge in the tangent bundle to the derivative of a map `v`, and that `J`
-is continuous at `(z.2, v z)` in the tangent coordinates at `v z`. Then `v` solves the Floer
-equation on the strip. -/
+/-- **The limit of translated Floer cylinders is a Floer cylinder.** Let `u` solve the Floer
+equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` on `D`, for the cylindrical perturbation
+`K = H_t dt` with `H` jointly `C¹` and structures `J_t` independent of `s`. Suppose that at every
+point `z` of the strip `ℝ × [0, 1]` the translates `z + (s_k, 0)` eventually lie in `D`, the
+derivatives of the translates `w ↦ u (w + (s_k, 0))` converge in the tangent bundle to the
+derivative of a map `v`, and that `J` is continuous at `(z.2, v z)` in the tangent coordinates at
+`v z`. Then `v` solves the Floer equation on the strip. -/
 theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
-    (hu : ∀ z ∈ D, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z)
     (hfloer : ∀ z ∈ D, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
       (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap)
     (hD : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ᶠ k in atTop, z + (s k, 0) ∈ D)
@@ -250,7 +234,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add (hω : �
     have hF := hfloer _ hzk
     have h2 : (z + (s k, 0)).2 = z.2 := by simp
     rw [h2] at hF
-    exact ω.isComplexLinearMap_perturbedMFDeriv_comp_add_right rfl (by simp) (hu _ hzk) hF
+    exact ω.isComplexLinearMap_perturbedMFDeriv_comp_add_right rfl (by simp) hF
   have hJ' := (hJ z hz).comp (x := (z, v z)) (f := fun p : (ℝ × ℝ) × M ↦ (p.1.2, p.2))
     (by fun_prop)
   exact ω.isComplexLinearMap_perturbedMFDeriv_of_tendsto (Ks := fun _ _ ↦ 0)
@@ -281,8 +265,7 @@ theorem IsNondegenerate.eq_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate
         (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z.2, v z))
     (hJt : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (v z)).Tames (J z.2 (v z))) :
     ∀ r, ∀ t ∈ Icc (0 : ℝ) 1, v (r, t) = v (0, t) := by
-  have hsol := isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add hω hH
-    (fun z hz ↦ (hu.contMDiffAt (hU.mem_nhds (hDU hz))).mdifferentiableAt one_ne_zero) hfloer
+  have hsol := isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add hω hH hfloer
     (fun z hz ↦ (hW z.1 z.1).mono fun _ hk ↦ hk ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩) hdu hJ
   refine (hω.lintegral_floerEnergyDensity_eq_zero_iff (J := fun z ↦ J z.2 (v z)) hH hv hJt
     (fun z hz ↦ ?_)).1 (lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add hω hH hU
@@ -322,8 +305,7 @@ private theorem IsNondegenerate.mfderiv_eq_of_tendsto_mfderiv_comp_add (hω : ω
   -- The Floer equation `∂_s v + J (∂_t v - X) = 0` with `∂_s v = 0` gives `J (∂_t v - X) = 0`, and
   -- an almost complex structure is injective, since `J (J w) = -w`.
   have hF := (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ v z _).1
-    (isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add hω hH
-      (fun z hz ↦ (hu.contMDiffAt (hU.mem_nhds (hDU hz))).mdifferentiableAt one_ne_zero) hfloer
+    (isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add hω hH hfloer
       (fun z hz ↦ (hW z.1 z.1).mono fun _ hk ↦ hk ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩)
       hdu hJ z hz)
   rw [hs0, hamiltonianVectorField_const, Pi.zero_apply, sub_zero, zero_add] at hF
