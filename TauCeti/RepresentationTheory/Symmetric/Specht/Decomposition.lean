@@ -426,6 +426,7 @@ noncomputable def spechtModuleℂYoungSymmetrizerVector (μ : d.Partition) :
 
 /-- The chosen vector `Nat.Partition.spechtModuleℂYoungSymmetrizerVector` of `c_μ S^μ_ℂ` is
 nonzero. -/
+@[simp]
 theorem spechtModuleℂYoungSymmetrizerVector_ne_zero (μ : d.Partition) :
     μ.spechtModuleℂYoungSymmetrizerVector ≠ 0 :=
   (Representation.exists_ne_zero_range_asAlgebraHom_youngSymmetrizer_of_character_eq

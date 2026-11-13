@@ -99,6 +99,43 @@ theorem DirectSum.restrictSubtypeLinearEquiv_symm_lof (p : ι → Prop) [Decidab
         (DirectSum.lof R {i // p i} (fun j ↦ M j) i x) = DirectSum.lof R ι M i x := by
   simp [DirectSum.restrictSubtypeLinearEquiv]
 
+/-- Each component of the subtype restriction of an element is the corresponding component of that
+element. -/
+@[simp]
+theorem DirectSum.restrictSubtypeLinearEquiv_apply (p : ι → Prop) [DecidablePred p]
+    (hp : ∀ i, ¬ p i → Subsingleton (M i)) (x : ⨁ i, M i) (i : {i // p i}) :
+    DirectSum.restrictSubtypeLinearEquiv (R := R) M p hp x i = x i := by
+  induction x using DirectSum.induction_on with
+  | zero => simp
+  | of j y =>
+    obtain ⟨i, hi⟩ := i
+    rw [← DirectSum.lof_eq_of R]
+    by_cases hj : p j
+    · rw [DirectSum.restrictSubtypeLinearEquiv_lof M p hp hj]
+      obtain rfl | hji := eq_or_ne j i
+      · simp
+      · rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of,
+          DirectSum.of_eq_of_ne _ _ _ (show (⟨i, hi⟩ : {i // p i}).1 ≠ j from hji.symm),
+          DirectSum.of_eq_of_ne _ _ _ (show (⟨i, hi⟩ : {i // p i}) ≠ ⟨j, hj⟩ by
+            simpa using hji.symm)]
+    · rw [DirectSum.restrictSubtypeLinearEquiv_lof_of_not M p hp hj, DirectSum.lof_eq_of,
+        DirectSum.of_eq_of_ne _ _ _ (show (⟨i, hi⟩ : {i // p i}).1 ≠ j by rintro rfl; exact hj hi)]
+      rfl
+  | add x y hx hy => simp [hx, hy]
+
+/-- Each component of the inverse subtype restriction is the corresponding component at an index
+satisfying `p`, and zero at an index outside `p`. -/
+@[simp]
+theorem DirectSum.restrictSubtypeLinearEquiv_symm_apply (p : ι → Prop) [DecidablePred p]
+    (hp : ∀ i, ¬ p i → Subsingleton (M i)) (y : ⨁ i : {i // p i}, M i) (i : ι) :
+    (DirectSum.restrictSubtypeLinearEquiv (R := R) M p hp).symm y i =
+      if hi : p i then y ⟨i, hi⟩ else 0 := by
+  split_ifs with hi
+  · rw [← DirectSum.restrictSubtypeLinearEquiv_apply (R := R) M p hp _ ⟨i, hi⟩,
+      LinearEquiv.apply_symm_apply]
+  · have := hp i hi
+    exact Subsingleton.elim _ _
+
 /-- **Restricting a direct sum to a finite set of indices.**  If every summand outside a finite
 set `s` is trivial, then `⨁ i, M i` is the direct sum of the summands indexed by `s`.  This is
 `TauCeti.DirectSum.restrictSubtypeLinearEquiv` for membership in `s`. -/
@@ -129,6 +166,23 @@ theorem DirectSum.restrictLinearEquiv_symm_lof (s : Finset ι) (hs : ∀ i ∉ s
     (DirectSum.restrictLinearEquiv (R := R) M s hs).symm
         (DirectSum.lof R s (fun j : s ↦ M j) i x) = DirectSum.lof R ι M i x :=
   DirectSum.restrictSubtypeLinearEquiv_symm_lof M (· ∈ s) hs i x
+
+/-- Each component of the restriction of an element is the corresponding component of that
+element. -/
+@[simp]
+theorem DirectSum.restrictLinearEquiv_apply (s : Finset ι) (hs : ∀ i ∉ s, Subsingleton (M i))
+    (x : ⨁ i, M i) (i : s) :
+    DirectSum.restrictLinearEquiv (R := R) M s hs x i = x i :=
+  DirectSum.restrictSubtypeLinearEquiv_apply M (· ∈ s) hs x i
+
+/-- Each component of the inverse restriction is the corresponding component at an index of `s`,
+and zero at an index outside `s`. -/
+@[simp]
+theorem DirectSum.restrictLinearEquiv_symm_apply (s : Finset ι)
+    (hs : ∀ i ∉ s, Subsingleton (M i)) (y : ⨁ i : s, M i) (i : ι) :
+    (DirectSum.restrictLinearEquiv (R := R) M s hs).symm y i =
+      if hi : i ∈ s then y ⟨i, hi⟩ else 0 :=
+  DirectSum.restrictSubtypeLinearEquiv_symm_apply M (· ∈ s) hs y i
 
 /-- **A direct sum concentrated in a single index is that summand.**  This is the extreme case of
 `TauCeti.DirectSum.restrictLinearEquiv`, in the form in which a grading concentrated in one degree
