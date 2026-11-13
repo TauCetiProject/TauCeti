@@ -98,16 +98,11 @@ theorem boundedBy_eq_bot (h : E x ≤ D x) : boundedBy D E x = ⊥ := by
 /-- For `D ≤ E`, the principal parts bounded by `E` are those which vanish relative to `E`. -/
 theorem boundedBy_eq_ker_mapOfLE (h : D ≤ E) (x : X) :
     boundedBy D E x = LinearMap.ker (mapOfLE h x) := by
-  ext μ
-  induction μ using Submodule.Quotient.induction_on with
-  | _ φ =>
-    rw [LinearMap.mem_ker, mapOfLE_mk, Submodule.Quotient.mk_eq_zero]
-    refine ⟨fun ⟨ψ, hψ, he⟩ ↦ ?_, mk_mem_boundedBy⟩
-    obtain ⟨χ, hχ, rfl⟩ : ∃ χ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-D x), φ = ψ + χ := by
-      refine ⟨φ - ψ, ?_, by abel⟩
-      rw [← Submodule.Quotient.eq]
-      exact he.symm
-    exact add_mem hψ (meromorphicGerms.orderGE_antitone _ (neg_le_neg (h x)) hχ)
+  have he :
+      mapOfLE h x = Submodule.factor (meromorphicGerms.orderGE_antitone _ (neg_le_neg (h x))) :=
+    Submodule.linearMap_qext _ (LinearMap.ext (mapOfLE_mk h x))
+  rw [he, Submodule.ker_mapQ, Submodule.comap_id]
+  rfl
 
 end LocalPrincipalPart
 
@@ -242,46 +237,6 @@ section LocalLifting
 
 variable [IsManifold 𝓘(ℂ) 1 X]
 
-/-- A section of `𝒪_E` whose germ satisfies the order bound of `𝒪_D` at `y` lifts near `y`
-through the divisor inclusion, including its normalization at allowed poles. -/
-private theorem exists_local_divisorLift (h : D ≤ E) (U : Opens X)
-    (f : (divisorSheaf E).obj.obj (op U)) (y : U)
-    (hb : ((-D y.1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
-      (Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 0) y.1) :
-    ∃ (V : Opens X) (_hyV : y.1 ∈ V) (hVU : V ≤ U) (t : (divisorSheaf D).obj.obj (op V)),
-      (divisorSheafMapOfLE h).hom.app (op V) t = (divisorSheaf E).obj.map (homOfLE hVU).op f := by
-  have := ChartedSpace.t1Space ℂ X
-  let F := Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 (0 : X → ℂ)
-  have hf : IsDivisorSectionAt E F y.1 :=
-    isDivisorSectionAt_extend (divisorSheafSectionsEquiv E U f).2 y
-  obtain ⟨g, hg, hFg⟩ := exists_isDivisorSectionAt hf.meromorphicAt hb
-  have hk : {z | E z ≤ 0}.indicator g =ᶠ[𝓝[≠] y.1] g := by
-    filter_upwards [E.eventually_eq_zero_nhdsNE y.1] with z hz
-    exact Set.indicator_of_mem (s := {z | E z ≤ 0}) hz.le g
-  have hEq := hf.eventuallyEq_of_nhdsNE (hg.indicator h) (hFg.trans hk.symm)
-  obtain ⟨v, hv, hvo, hyv⟩ := eventually_nhds_iff.1
-    ((hg.eventually.and (U.isOpen.mem_nhds y.2)).and hEq)
-  let V : Opens X := ⟨v, hvo⟩
-  have hVU : V ≤ U := fun z hz ↦ (hv z hz).1.2
-  let s : divisorSections D V := ⟨g ∘ Subtype.val,
-    comp_val_mem_divisorSections fun z hz ↦ (hv z hz).1.1⟩
-  refine ⟨V, hyv, hVU, (divisorSheafSectionsEquiv D V).symm s, ?_⟩
-  apply (divisorSheafSectionsEquiv E V).injective
-  apply Subtype.ext
-  funext z
-  rw [divisorSheafMapOfLE_app, divisorSheafSectionsEquiv_map]
-  simp only [LinearEquiv.apply_symm_apply]
-  -- Divisor inclusion is defined by normalization with this indicator on the open carrier.
-  change {z : V | E z ≤ 0}.indicator (g ∘ Subtype.val) z =
-    (divisorSheafSectionsEquiv E U f).1 ⟨z.1, hVU z.2⟩
-  calc
-    _ = {z | E z ≤ 0}.indicator g z.1 := by
-      simp only [Set.indicator_apply, Set.mem_ofPred_eq, Function.comp_apply]
-    _ = F z.1 := (hv z.1 z.2).2.symm
-    _ = (divisorSheafSectionsEquiv E U f).1 ⟨z.1, hVU z.2⟩ :=
-      Subtype.val_injective.extend_apply (divisorSheafSectionsEquiv E U f).1
-        (0 : X → ℂ) (⟨z.1, hVU z.2⟩ : U)
-
 /-- The **principal-parts sequence** `𝒪_D ⟶ 𝒪_E ⟶ 𝒫_{D,E}` of a divisor inclusion `D ≤ E`. -/
 @[expose] def principalPartsSequence (h : D ≤ E) :
     ShortComplex (TopCat.Sheaf (ModuleCat.{u} ℂ) (TopCat.of X)) :=
@@ -320,7 +275,7 @@ theorem principalPartsSequence_exact (h : D ≤ E) : (principalPartsSequence h).
     rw [← ConcreteCategory.comp_apply, (principalPartsMap D E).hom.naturality,
       ConcreteCategory.comp_apply]
     exact heq.trans (map_zero _)
-  obtain ⟨W, hyW, hWV, t, ht⟩ := exists_local_divisorLift h V fV ⟨y, hyV⟩
+  obtain ⟨W, hyW, hWV, t, ht⟩ := exists_divisorSheafMapOfLE_app_eq h V fV ⟨y, hyV⟩
     (neg_le_order_of_principalPartsMap_eq_zero fV hz ⟨y, hyV⟩)
   refine ⟨TopCat.Presheaf.germ (divisorSheaf D).obj W y hyW t, ?_⟩
   rw [TopCat.Presheaf.stalkFunctor_map_germ_apply, ht,
@@ -463,11 +418,6 @@ private theorem globalPrincipalParts_augmentation :
   ext f
   rfl
 
-private theorem displayedPrincipalParts_shortExact (h : D ≤ E) :
-    (ShortComplex.mk (divisorSheafMapOfLE h) (principalPartsMap D E)
-      (divisorSheafMapOfLE_comp_principalPartsMap h)).ShortExact :=
-  principalPartsSequence_shortExact h
-
 variable [CompactSpace X] [T2Space X]
 
 /-- The **connecting map of the principal-parts sequence**: a family of principal parts relative
@@ -476,7 +426,7 @@ principal parts of a global section of `𝒪_E`. -/
 def principalPartsConnecting (h : D ≤ E) :
     (∀ x : X, boundedBy D E x) →ₗ[ℂ] divisorCechCohomology D 1 :=
   ((principalPartsCechIso D E).hom ≫
-    (displayedPrincipalParts_shortExact h).cechCohomologyδ 0).hom
+    (principalPartsSequence_shortExact h).cechCohomologyδ 0).hom
 
 /-- The connecting map of principal parts is the Čech connecting map of the principal-parts
 sequence, after identifying families of principal parts with degree-zero cohomology. -/
@@ -489,7 +439,7 @@ section of `𝒪_E` if and only if its connecting obstruction vanishes. -/
 theorem exact_principalParts_connecting (h : D ≤ E) :
     Function.Exact (globalPrincipalParts D E) (principalPartsConnecting h) := by
   have he := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
-    ((displayedPrincipalParts_shortExact h).cechCohomology_exact₃ 0)
+    ((principalPartsSequence_shortExact h).cechCohomology_exact₃ 0)
   exact (Function.Exact.iff_of_ladder_linearEquiv
     (e₁ := (cechCohomologyZeroIso (divisorSheaf E)).toLinearEquiv)
     (e₂ := (principalPartsCechIso D E).toLinearEquiv)
@@ -502,9 +452,9 @@ principal parts bounded by `E`. -/
 theorem exact_principalPartsConnecting_cohomologyMap (h : D ≤ E) :
     Function.Exact (principalPartsConnecting h) (divisorCechCohomologyMapOfLE h 1) := by
   have he := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
-    ((displayedPrincipalParts_shortExact h).cechCohomology_exact₁ 0)
+    ((principalPartsSequence_shortExact h).cechCohomology_exact₁ 0)
   rw [divisorCechCohomologyMapOfLE_def]
-  exact (LinearEquiv.precomp_exact_iff_exact
+  exact (LinearEquiv.precomp_exact_iff_exact (N := divisorCechCohomology D 1)
     (e := (principalPartsCechIso D E).toLinearEquiv)).mpr he
 
 omit [IsManifold 𝓘(ℂ) 1 X] [T2Space X] in
