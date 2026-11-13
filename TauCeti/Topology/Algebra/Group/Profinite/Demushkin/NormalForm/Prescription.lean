@@ -438,7 +438,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordNeTwo_iff (hq : p ∣
     linear_combination hc - (χ (presentedProPGen p n _ 1) : ℤ_[p]) * hr
   · by_cases hin : i < n
     · exact hpartner i hi hin
-    · rw [presentedProPGen_eq_one_of_le p n _ (not_lt.1 hin), map_one]
+    · rw [presentedProPGen_eq_one_of_le p _ (not_lt.1 hin), map_one]
 
 /-- **The standard orientation of the `q ≠ 2` normal form has the prescription property**: for
 `1 < n`, the character with `χ(x₂) = u`, `u (1 - q) = 1`, and `χ(x_i) = 1` otherwise. -/
@@ -626,7 +626,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_iff (hf : 0 < 
     linear_combination hc - (χ (presentedProPGen 2 n _ 2) : ℤ_[2]) * hr
   · by_cases hin : i < n
     · exact hpartner i hi₀ hi₂ hin
-    · rw [presentedProPGen_eq_one_of_le 2 n _ (not_lt.1 hin), map_one]
+    · rw [presentedProPGen_eq_one_of_le 2 _ (not_lt.1 hin), map_one]
 
 /-- **The standard orientation of the `q = 2`, `n` odd normal form has the prescription
 property**: for `2 < n`, the character with `χ(x₁) = -1`, `χ(x₃) = u`, `u (1 - 2^f) = 1`, and
@@ -793,7 +793,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_iff (hn : O
   · exact hχ.apply_presentedProPGen_eq_one_of_partner hrels (s := 1) (t := 1)
       (fun j hj hjn F _ hF hFv hFr ↦ hval j hj hjn F hF hFv (hFr _ rfl)) (by omega)
       (fun ⟨m, hm⟩ ↦ ⟨by omega, by omega⟩) fun ⟨m, hm⟩ ↦ ⟨by omega, hin⟩
-  · rw [presentedProPGen_eq_one_of_le 2 n _ (not_lt.1 hin), map_one]
+  · rw [presentedProPGen_eq_one_of_le 2 _ (not_lt.1 hin), map_one]
 
 /-- **The standard orientation of the `q = 2`, `n` odd normal form at level `f = ∞` has the
 prescription property**; for `n = 0` the group is trivial. -/
@@ -890,7 +890,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoEvenPadic_of_apply
       rcases le_or_gt 3 n with hn₃ | hn₃
       · have hq : q = 0 := by
           have h₃' := h₃ (by omega)
-          rw [presentedProPGen_eq_one_of_le 2 n _ (by omega), map_one, Units.val_one, one_mul,
+          rw [presentedProPGen_eq_one_of_le 2 _ (by omega), map_one, Units.val_one, one_mul,
             sub_eq_self] at h₃'
           exact_mod_cast h₃'
         rw [hq, sum_range_zero, zero_mul]
@@ -1004,7 +1004,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoEvenPadic_iff (hα
   have hx2 : χ (presentedProPGen 2 n _ 2) = 1 := by
     rcases le_or_gt 4 n with hn₄ | hn₄
     · exact hpartner 2 le_rfl (by omega) (by omega)
-    · rw [presentedProPGen_eq_one_of_le 2 n _ (by omega), map_one]
+    · rw [presentedProPGen_eq_one_of_le 2 _ (by omega), map_one]
   refine ⟨
     apply_presentedProPGen_one_mul_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoEvenPadic
       α q χ hχ hrels (by omega) hx0, fun hn₂ ↦
@@ -1015,7 +1015,7 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoEvenPadic_iff (hα
     · obtain rfl : i = 0 := by omega
       exact hx0
     exact hpartner i h2 hi₃ hin
-  · rw [presentedProPGen_eq_one_of_le 2 n _ (not_lt.1 hin), map_one]
+  · rw [presentedProPGen_eq_one_of_le 2 _ (not_lt.1 hin), map_one]
 
 end TwoEvenPadic
 

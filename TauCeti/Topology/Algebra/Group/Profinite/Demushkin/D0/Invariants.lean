@@ -104,7 +104,7 @@ theorem hasPrescriptionProperty_standardD0Orientation :
   · rcases Nat.lt_or_ge i 3 with hi | hi
     · obtain rfl : i = 1 := by omega
       rw [h1, standardD0Orientation_d0S]
-    · rw [presentedProPGen_eq_one_of_le _ _ _ hi, map_one]
+    · rw [presentedProPGen_eq_one_of_le _ _ hi, map_one]
 
 /-- **The canonical character of `D₀` is its standard orientation**: the standard orientation has
 the prescription property, and the canonical character is the only continuous character that

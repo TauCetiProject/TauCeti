@@ -283,7 +283,7 @@ theorem not_marked_of_demushkinRank_le {i : ℕ} (hi : demushkinRank hG ≤ i) (
     (e : G ≃ₜ* presentedProP 2 (Fin (demushkinRank hG)) rels) :
     ¬ ((demushkinCharacter hG (e.symm (presentedProPGen 2 (demushkinRank hG) rels i)) : ℤ_[2]) *
         (1 - 2 ^ f) = 1) := by
-  rw [presentedProPGen_eq_one_of_le _ _ _ hi, map_one, map_one, Units.val_one, one_mul,
+  rw [presentedProPGen_eq_one_of_le _ _ hi, map_one, map_one, Units.val_one, one_mul,
     sub_eq_self]
   exact pow_ne_zero _ two_ne_zero
 
