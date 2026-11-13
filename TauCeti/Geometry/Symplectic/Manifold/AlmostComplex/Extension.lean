@@ -112,13 +112,17 @@ theorem cutoffInterp_of_eq_one {n : N} (hW : n ∈ W) (h : ρ n = 1) :
   exact (hK₀ n).cayleyInterp_one (V := E) (hK₁ n hW)
 
 /-- Where the prescribed structure is the background one, or outside `W`, cutoff interpolation is
-the background structure. -/
+the background structure, whatever the weight: the Cayley coordinate of a structure relative to
+itself is zero. -/
 @[simp]
 theorem cutoffInterp_of_eq {n : N} (h : n ∈ W → K₁ n = K₀ n) :
     cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₀ n := by
   by_cases hW : n ∈ W
   · rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ hW]
-    exact (hK₀ n).cayleyInterp_of_eq (V := E) (hK₁ n hW) (h hW) (hρ n)
+    generalize hK₁ n hW = h₁
+    revert h₁
+    rw [h hW]
+    exact fun h₁ => (hK₀ n).cayleyInterp_self (V := E) h₁ (hρ n)
   · exact cutoffInterp_of_notMem hσn hK₀ hK₁ ρ hρ hW
 
 /-- Over `W`, cutoff interpolation is the Cayley path expression in the operators of `K₀` and

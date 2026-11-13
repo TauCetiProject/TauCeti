@@ -47,6 +47,8 @@ normal closure of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.I ι Y`: the ideal `I_H(Y)`, a normal subgroup of `G[X]`.
 * `TauCeti.GroupAlgGeom.Rad ι S`: the radical `Rad_H(S) = I_H(V_H(S))`.
 * `TauCeti.GroupAlgGeom.CoordGroup ι S`: the coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)`.
+* `TauCeti.GroupAlgGeom.CoordGroup.genericPoint ι S`: the generic point of `S`, the tuple of the
+  images of the variables in `G_{R(S)}`.
 * `TauCeti.GroupAlgGeom.SystemGroup G S`: the group `G_S = G[X] ⧸ ncl(S)` of the system `S`.
 * `TauCeti.GroupAlgGeom.SystemGroup.toCoordGroup ι S`: the surjection `G_S →* G_{R(S)}`.
 
@@ -62,6 +64,11 @@ normal closure of `x ^ n` when `n ≠ 1`.
   `TauCeti.GroupAlgGeom.exists_subsingleton_V_eq`: with finitely many points, every system has a
   finite subsystem with the same solutions; with at most one point, for instance with no
   variables, a single equation suffices.
+* `TauCeti.GroupAlgGeom.exists_empty_eq_V_iff`: the empty set is algebraic exactly when some
+  coefficient remains nontrivial in `H`.
+* `TauCeti.GroupAlgGeom.mul_inv_mul_mem_V`, `TauCeti.GroupAlgGeom.not_exists_pair_eq_V`: in a
+  commutative group an algebraic set is closed under `(u, v, w) ↦ u * v⁻¹ * w`, so two tuples with
+  different squares do not form an algebraic set.
 * `TauCeti.GroupAlgGeom.I_singleton_comp`: the ideal of a point with coordinates `ι (g x)` is the
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
 * `TauCeti.GroupAlgGeom.GX.quotientHomEquiv`: `G`-homomorphisms from `G[X] ⧸ N` to `H`
@@ -70,6 +77,9 @@ normal closure of `x ^ n` when `n ≠ 1`.
   `G`-homomorphisms from `G_{R(S)}` or from `G_S` to `H` correspond to the solutions of `S` in `H`.
 * `TauCeti.GroupAlgGeom.CoordGroup.coeff_injective`: `G_{R(S)}` is a `G`-group when `S` has a
   solution in a `G`-group.
+* `TauCeti.GroupAlgGeom.CoordGroup.subsingleton_iff`: `G_{R(S)}` is trivial exactly when
+  evaluation at every solution of `S` in `H` is trivial, for instance when `S` has no solution in
+  `H` (`TauCeti.GroupAlgGeom.CoordGroup.subsingleton_of_V_eq_empty`) or `H` is trivial.
 * `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_id`,
   `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_comp`: a tuple of words mapping one
   algebraic set into another induces a coefficient-preserving homomorphism of coordinate groups
@@ -95,7 +105,8 @@ normal closure of `x ^ n` when `n ≠ 1`.
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §1 and §§3.1–3.4.
+  and ideal theory*, J. Algebra 219 (1999), §1 and §§3.1–3.4
+  (Example 4 of §3.2 for algebraic sets in abelian groups).
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
   (2005), §2.4.
 -/
@@ -257,6 +268,13 @@ theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
   ext v
   simp [hg]
 
+open scoped commutatorElement in
+/-- A point solves the equation `[x, y] = 1` if and only if its coordinates at `x` and `y`
+commute. -/
+theorem mem_V_commutator_iff {x y : X} :
+    v ∈ V ι {⁅(inr (FreeGroup.of x) : GX G X), inr (FreeGroup.of y)⁆} ↔ Commute (v x) (v y) := by
+  simp [commutatorElement_eq_one_iff_commute]
+
 /-- If a coefficient `c` remains nontrivial in `H`, an equation `u⁻¹ c u = 1` saying that a
 conjugate of `c` is trivial has no solutions; `V_singleton_inl_eq_empty` is the case `u = 1`. In
 particular, for a variable `z`, the equation `z⁻¹ c z = 1` has no solutions. -/
@@ -264,6 +282,63 @@ theorem V_singleton_inv_mul_inl_mul_eq_empty (u : GX G X) {c : G} (hc : ι c ≠
     V ι {u⁻¹ * inl c * u} = ∅ := by
   ext v
   simp [mul_eq_one_iff_eq_inv, hc]
+
+/-- If no coefficient survives in `H`, the trivial tuple solves every system. -/
+theorem one_mem_V (hι : ∀ g, ι g = 1) (S : Set (GX G X)) : (1 : X → H) ∈ V ι S := by
+  obtain rfl : ι = 1 := MonoidHom.ext hι
+  simp
+
+/-- The empty set is algebraic exactly when some coefficient remains nontrivial in `H`. -/
+theorem exists_empty_eq_V_iff :
+    (∃ S : Set (GX G X), (∅ : Set (X → H)) = V ι S) ↔ ∃ g, ι g ≠ 1 := by
+  refine ⟨?_, fun ⟨g, hg⟩ => ⟨{inl g}, (V_singleton_inl_eq_empty hg).symm⟩⟩
+  rintro ⟨S, hS⟩
+  by_contra! h
+  exact Set.notMem_empty _ (hS ▸ one_mem_V h S)
+
+/-- Over a trivial group every tuple solves every system. -/
+theorem V_eq_univ_of_subsingleton [Subsingleton H] (S : Set (GX G X)) : V ι S = Set.univ :=
+  Set.eq_univ_of_forall fun _ => mem_V.2 fun _ _ => Subsingleton.elim _ _
+
+/-- Over a torsion-free group in which no coefficient survives, a system in at most one variable
+with a nontrivial solution is solved by every tuple: each equation is then a power of the
+variable. -/
+theorem V_eq_univ_of_mem_of_ne_one [IsMulTorsionFree H] [Subsingleton X] (hι : ∀ g, ι g = 1)
+    (hvS : v ∈ V ι S) (hv : v ≠ 1) : V ι S = Set.univ := by
+  obtain rfl : ι = 1 := MonoidHom.ext hι
+  obtain ⟨x₀, hx₀⟩ := Function.ne_iff.1 hv
+  -- Every word evaluates to a fixed power of the value of the variable.
+  have key (u : X → H) : eval (1 : G →* H) u =
+      (zpowersHom H (u x₀)).comp (eval 1 fun _ => Multiplicative.ofAdd 1) :=
+    hom_ext (MonoidHom.ext fun g => by simp)
+      (FreeGroup.ext_hom _ _ fun x => by simp [Subsingleton.elim x x₀])
+  refine Set.eq_univ_of_forall fun u => mem_V.2 fun s hs => ?_
+  have h := mem_V.1 hvS s hs
+  rw [key, MonoidHom.comp_apply, zpowersHom_apply,
+    IsMulTorsionFree.zpow_eq_one_iff_right hx₀] at h
+  rw [key, MonoidHom.comp_apply, zpowersHom_apply, h, zpow_zero]
+
+/-- In a commutative group an algebraic set is closed under `(u, v, w) ↦ u * v⁻¹ * w`, which
+is the sense in which a nonempty algebraic set is a coset of a subgroup of tuples. -/
+theorem mul_inv_mul_mem_V {A : Type*} [CommGroup A] {ι : G →* A} {u v w : X → A} (hu : u ∈ V ι S)
+    (hv : v ∈ V ι S) (hw : w ∈ V ι S) : u * v⁻¹ * w ∈ V ι S :=
+  mem_V.2 fun s hs => by
+    simp [eval_mul_inv_mul, mem_V.1 hu s hs, mem_V.1 hv s hs, mem_V.1 hw s hs]
+
+/-- In a commutative group a set of two tuples with different squares is not algebraic: an
+algebraic set containing `a` and `b` also contains `a * b⁻¹ * a`. -/
+theorem not_exists_pair_eq_V {A : Type*} [CommGroup A] (ι : G →* A) {a b : X → A}
+    (hab : a ^ 2 ≠ b ^ 2) : ¬∃ S : Set (GX G X), ({a, b} : Set (X → A)) = V ι S := by
+  rintro ⟨S, hS⟩
+  have ha : a ∈ V ι S := hS ▸ Set.mem_insert a {b}
+  have hb : b ∈ V ι S := hS ▸ Set.mem_insert_of_mem a rfl
+  have h : a * b⁻¹ * a ∈ ({a, b} : Set (X → A)) := hS ▸ mul_inv_mul_mem_V ha hb ha
+  rcases h with h | h
+  · exact hab (by rw [mul_inv_eq_one.1 (mul_eq_right.1 h)])
+  · have h' : a * a = b * b := by
+      rw [← mul_inv_eq_iff_eq_mul, mul_right_comm]
+      exact h
+    exact hab (by rw [pow_two, pow_two, h'])
 
 @[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
@@ -279,6 +354,11 @@ theorem V_normalClosure (S : Set (GX G X)) : V ι (normalClosure S : Set (GX G X
   refine (V_antitone ι subset_normalClosure).antisymm fun v hv => ?_
   have : normalClosure S ≤ (eval ι v).ker := normalClosure_le_normal fun s hs => mem_V.1 hv s hs
   exact mem_V.2 fun s hs => this hs
+
+/-- A `G`-homomorphism maps solutions of a system to solutions of the same system. -/
+theorem GHom.comp_mem_V {K : Type*} [Group K] {κ : G →* K} (φ : GHom ι κ) (hv : v ∈ V ι S) :
+    φ ∘ v ∈ V κ S :=
+  mem_V.2 fun s hs => by rw [← map_eval, mem_V.1 hv s hs, map_one]
 
 /-! ### Finite subsystems -/
 
@@ -370,6 +450,16 @@ theorem Rad_normalClosure (S : Set (GX G X)) :
 @[simp]
 theorem Rad_empty : Rad ι (∅ : Set (GX G X)) = I ι Set.univ := by
   rw [Rad_def, V_empty]
+
+/-- The radical of `S` is the whole of `G[X]` if and only if evaluation at every solution of `S` in
+`H` is trivial. -/
+theorem Rad_eq_top_iff : Rad ι S = ⊤ ↔ ∀ v ∈ V ι S, eval ι v = 1 := by
+  simp only [eq_top_iff', mem_Rad, MonoidHom.ext_iff, MonoidHom.one_apply]
+  exact ⟨fun h v hv w => h w v hv, fun h w v hv => h v hv w⟩
+
+/-- The radical of a system without solutions in `H` is the whole of `G[X]`. -/
+theorem Rad_eq_top_of_V_eq_empty (hS : V ι S = ∅) : Rad ι S = ⊤ := by
+  rw [Rad_def, hS, I_empty]
 
 /-- For injective coefficients, the ideal of a point `ι ∘ g` with coordinates in the image of `G`
 is the normal closure of the equations `x (g x)⁻¹`, `x ∈ X`. -/
@@ -562,6 +652,61 @@ variable (ι) in
 @[simp]
 theorem toGGroup_coeff (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     (toGGroup ι hι hS).coeff = coeff ι S := (rfl)
+
+/-- The coordinate group of `S` is trivial if and only if evaluation at every solution of `S` in
+`H` is trivial. -/
+theorem subsingleton_iff : Subsingleton (CoordGroup ι S) ↔ ∀ v ∈ V ι S, eval ι v = 1 :=
+  QuotientGroup.subsingleton_iff.trans Rad_eq_top_iff
+
+/-- The coordinate group of a system without solutions in `H` is trivial. -/
+theorem subsingleton_of_V_eq_empty (hS : V ι S = ∅) : Subsingleton (CoordGroup ι S) :=
+  QuotientGroup.subsingleton_iff.2 (Rad_eq_top_of_V_eq_empty hS)
+
+/-- Every coordinate group over a trivial group is trivial. -/
+instance [Subsingleton H] : Subsingleton (CoordGroup ι S) :=
+  subsingleton_iff.2 fun _ _ => MonoidHom.ext fun _ => Subsingleton.elim _ _
+
+variable (ι) in
+/-- The generic point `μ : X → G_{R(S)}` of a system `S`: the tuple of the images of the
+variables in the coordinate group. -/
+def genericPoint (S : Set (GX G X)) : X → CoordGroup ι S :=
+  fun x => ((inr (FreeGroup.of x) : GX G X) : CoordGroup ι S)
+
+theorem genericPoint_apply (S : Set (GX G X)) (x : X) :
+    genericPoint ι S x = ((inr (FreeGroup.of x) : GX G X) : CoordGroup ι S) := (rfl)
+
+/-- Evaluating an equation at the generic point gives its class in the coordinate group. -/
+@[simp]
+theorem eval_genericPoint (S : Set (GX G X)) (w : GX G X) :
+    eval (coeff ι S) (genericPoint ι S) w = (w : CoordGroup ι S) :=
+  DFunLike.congr_fun (eval_eq_of_comp_inl (f := QuotientGroup.mk' (Rad ι S)) rfl) w
+
+/-- The generic point of `S` is a solution of `S` in the coordinate group. -/
+theorem genericPoint_mem_V (S : Set (GX G X)) : genericPoint ι S ∈ V (coeff ι S) S :=
+  mem_V.2 fun s hs => by
+    rw [eval_genericPoint]
+    exact (QuotientGroup.eq_one_iff s).2 (subset_Rad S hs)
+
+/-- Evaluation at a solution `v` sends each coordinate of the generic point to that of `v`. -/
+@[simp]
+theorem evalGHom_genericPoint (hv : v ∈ V ι S) (x : X) :
+    evalGHom v hv (genericPoint ι S x) = v x :=
+  eval_inr_of ι v x
+
+/-- Composing the generic point with evaluation at a solution `v` gives `v`. -/
+@[simp]
+theorem evalGHom_comp_genericPoint (hv : v ∈ V ι S) : evalGHom v hv ∘ genericPoint ι S = v :=
+  funext (evalGHom_genericPoint hv)
+
+/-- If every solution of `S` is the point with coordinates `ι (g x)`, the generic point of `S` has
+the coefficients `g x` as coordinates. -/
+theorem genericPoint_eq_coeff_comp {g : X → G} (hS : V ι S ⊆ {ι ∘ g}) :
+    genericPoint ι S = coeff ι S ∘ g := by
+  funext x
+  rw [genericPoint_apply, Function.comp_apply, coeff_apply, QuotientGroup.eq]
+  refine mem_Rad.2 fun v hv => ?_
+  obtain rfl := hS hv
+  simp
 
 variable {Y : Type*}
 variable (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G Y))

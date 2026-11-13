@@ -114,9 +114,11 @@ theorem line_stabilizer_vertex (v : line.V) : stabilizer (Multiplicative ℤ) v 
   eq_bot_iff.mpr fun _ hk => Subgroup.mem_bot.mpr <| of_not_not fun h =>
     isHyperbolic_iff.mp (line_isHyperbolic h) v (mem_stabilizer_iff.mp hk)
 
-/-- The line is relative to the trivial edge family and the trivial elliptic family. -/
-theorem line_isRelative : line.IsRelative {⊥} {⊥} :=
-  isRelative_iff.mpr ⟨fun e => line_stabilizer_dart e, fun _ hH => hH ▸ isEllipticSubgroup_bot line⟩
+/-- The line is relative to any family of subgroups containing the trivial subgroup and any family
+of trivial subgroups. -/
+theorem line_isRelative {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    line.IsRelative 𝒜 ℋ :=
+  isRelative_of_forall_stabilizer_eq_bot h𝒜 hℋ line_stabilizer_vertex
 
 /-- The one-vertex tree does not dominate the line, although the line dominates it. -/
 theorem not_point_dominates_line : ¬(point.{u, v} (Multiplicative ℤ)).Dominates line := by

@@ -412,7 +412,7 @@ continuous inverse on total spaces. No compactness or separation of the base is 
 theorem continuous_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2))) :
     Continuous (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.2)) := by
-  let := FiniteDimensional.complete 𝕜 F₁
+  let := FiniteDimensional.completeSpace 𝕜 F₁
   have h := (continuous_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).mpr he
   have hi := h.clm_bundle_inverse (fun x ↦ ContinuousLinearMap.isInvertible_equiv)
   have ha := (hi.comp (continuous_proj F₂ E₂)).clm_bundle_apply continuous_id
