@@ -83,6 +83,13 @@ theorem freeAbelianCharEquiv_symm_apply_ofAdd (c : σ → M) (m : σ →₀ ℤ)
       m.prod fun i n => c i ^ n := by
   simp [freeAbelianCharEquiv, Finsupp.prod, Finsupp.sum]
 
+/-- A homomorphism from the free abelian group is determined by its values on the generators. -/
+@[ext]
+theorem freeAbelianChar_hom_ext (f g : Multiplicative (σ →₀ ℤ) →* M)
+    (h : ∀ i, f (Multiplicative.ofAdd (Finsupp.single i 1)) =
+      g (Multiplicative.ofAdd (Finsupp.single i 1))) : f = g :=
+  freeAbelianCharEquiv.injective (funext h)
+
 /-- Reading off generator values is natural in the target group: post-composing with a
 homomorphism `ψ : M →* N` commutes with `freeAbelianCharEquiv`. -/
 theorem freeAbelianCharEquiv_comp {N : Type*} [CommGroup N] (ψ : M →* N)
