@@ -80,14 +80,14 @@ theorem exists_forall_transcendental_and_isSeparable_adjoin_add_smul
       Derivation.eq_of_formallyUnramified (S := A) fun x ↦ (hf i x).symm.trans (h x)
     obtain ⟨y, hy, hsep⟩ := finrank_kaehlerDifferential_eq_one_iff.mp (hdim i)
     exact D_ne_zero_of_separating hy (DFunLike.congr_fun hzero y)
-  let U := LinearMap.range (LinearMap.lsmul R A π)
-  have hU (i : ι) : ∃ x ∈ U, f i x ≠ 0 := by
-    obtain ⟨x, hx⟩ := hnonzero i
-    exact ⟨π • x, ⟨x, LinearMap.lsmul_apply π x⟩,
-      by simpa only [map_smul] using smul_ne_zero hπ hx⟩
-  obtain ⟨x, ⟨b, rfl⟩, hx⟩ := LinearMap.exists_mem_forall_apply_add_ne_zero f U hU a
+  have hπf (i : ι) : ∃ b : A, (π • f i) b ≠ -f i a := by
+    by_cases ha : f i a = 0
+    · obtain ⟨x, hx⟩ := hnonzero i
+      exact ⟨x, by simpa only [LinearMap.smul_apply, ha, neg_zero] using smul_ne_zero hπ hx⟩
+    · exact ⟨0, by rwa [map_zero, ne_comm, neg_ne_zero]⟩
+  obtain ⟨b, hb⟩ := LinearMap.exists_forall_apply_ne (fun i ↦ π • f i) (fun i ↦ -f i a) hπf
   refine ⟨b, fun i ↦ transcendental_and_isSeparable_adjoin_of_D_ne_zero (hdim i) ?_⟩
-  rw [← LinearMap.lsmul_apply, ← hf]
-  exact hx i
+  rw [← hf, map_add, map_smul, add_comm, Ne, ← eq_neg_iff_add_eq_zero]
+  simpa only [LinearMap.smul_apply] using hb i
 
 end TauCeti
