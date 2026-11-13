@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Geometry.Manifold.Morse.Cell.Map
+public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Algebra.Projectivization
 public import TauCeti.Topology.Sphere.StandardCircle
@@ -19,7 +20,8 @@ import TauCeti.Geometry.Manifold.Projectivization.Map
 # Morse cells of the real projective plane with attaching maps of degree `±2`
 
 On the real projective plane `ℝP² = ℙ ℝ (Fin 3 → ℝ)` consider the height
-`f [x : y : z] = (y² + 2z²) / (x² + y² + z²)` (`TauCeti.projectivePlaneHeight`), with minimum
+`f [x : y : z] = (y² + 2z²) / (x² + y² + z²)`, the projective moment function with weights
+`(0, 1, 2)` (`TauCeti.projectiveMomentFunction ℝ ![0, 1, 2]`), with minimum
 `[1 : 0 : 0]`, saddle `[0 : 1 : 0]` and maximum `[0 : 0 : 1]` at the values `0`, `1`, `2`. This
 file computes the cell attached when passing the maximum, as an example of how the attaching maps
 of Morse cells (`OpenPartialHomeomorph.morseAttachingMap`) depend on the chosen normal-form chart.
@@ -54,8 +56,8 @@ reflection `r` of their source.
 
 ## Main results
 
-* `TauCeti.projectivePlaneHeight_eq_of_mem_projectivePlaneTopChart_source`: the normal form at the
-  maximum.
+* `TauCeti.projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source`: the normal form at
+  the maximum.
 * `TauCeti.projectivePlaneAttachingMapReflect_eq_comp`: the strict relation `α₋ = α₊ ∘ r`.
 * `TauCeti.projectivePlaneSublevelHomotopyEquiv`, `TauCeti.projectivePlaneSublevelCircleEquiv`:
   the sublevels below the maximum are homotopy equivalent to the projective line and the circle.
@@ -80,24 +82,12 @@ open scoped LinearAlgebra.Projectivization
 
 namespace TauCeti
 
-/-- The height `[x : y : z] ↦ (y² + 2z²) / (x² + y² + z²)` on the real projective plane. -/
-def projectivePlaneHeight : ℙ ℝ (Fin 3 → ℝ) → ℝ :=
-  Projectivization.lift
-    (fun v ↦ (v.1 1 ^ 2 + 2 * v.1 2 ^ 2) / (v.1 0 ^ 2 + v.1 1 ^ 2 + v.1 2 ^ 2))
-    fun a b t h ↦ by
-      have ht : t ≠ 0 := by
-        rintro rfl
-        exact a.2 (by simpa using h)
-      simp only [h, Pi.smul_apply, smul_eq_mul, mul_pow]
-      rw [show t ^ 2 * b.1 1 ^ 2 + 2 * (t ^ 2 * b.1 2 ^ 2) = t ^ 2 * (b.1 1 ^ 2 + 2 * b.1 2 ^ 2)
-        by ring, show t ^ 2 * b.1 0 ^ 2 + t ^ 2 * b.1 1 ^ 2 + t ^ 2 * b.1 2 ^ 2 =
-          t ^ 2 * (b.1 0 ^ 2 + b.1 1 ^ 2 + b.1 2 ^ 2) by ring]
-      exact mul_div_mul_left _ _ (pow_ne_zero 2 ht)
-
-@[simp]
-theorem projectivePlaneHeight_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
-    projectivePlaneHeight (mk ℝ v hv) = (v 1 ^ 2 + 2 * v 2 ^ 2) / (v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2) :=
-  (rfl)
+/-- The height `[x : y : z] ↦ (y² + 2z²) / (x² + y² + z²)`, the projective moment function with
+weights `(0, 1, 2)`, in homogeneous coordinates. -/
+private theorem projectiveMomentFunction_zero_one_two_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+    projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) =
+      (v 1 ^ 2 + 2 * v 2 ^ 2) / (v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2) := by
+  simp [projectiveMomentFunction_mk, Fin.sum_univ_three]
 
 /-- The homogeneous coordinates `(u₀ / √2, u₁, √(1 - u₀² / 2 - u₁²))` of the inverse of the top
 chart `TauCeti.projectivePlaneTopChart` are nonzero everywhere: if the first two vanish then
@@ -158,9 +148,10 @@ private theorem affineChart_two_mk_one (v : Fin 3 → ℝ) (hv : v ≠ 0) :
   rw [affineChart_mk]
   rfl
 
-/-- The normalized Morse chart of `projectivePlaneHeight` at its maximum `[0 : 0 : 1]`: in the
-affine coordinates `a = x / z`, `b = y / z` it is `(√2 a, b) / √(1 + a² + b²)`. Its target is the
-open ellipse `u₀² / 2 + u₁² < 1`, and its inverse is `u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
+/-- The normalized Morse chart of `projectiveMomentFunction ℝ ![0, 1, 2]` at its maximum
+`[0 : 0 : 1]`: in the affine coordinates `a = x / z`, `b = y / z` it is
+`(√2 a, b) / √(1 + a² + b²)`. Its target is the open ellipse `u₀² / 2 + u₁² < 1`, and its inverse
+is `u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
 def projectivePlaneTopChart :
     OpenPartialHomeomorph (ℙ ℝ (Fin 3 → ℝ)) (EuclideanSpace ℝ (Fin 2)) where
   toFun y := topChartPlane (affineChart 2 y)
@@ -261,16 +252,17 @@ theorem projectivePlaneTopChart_symm_zero :
 
 /-- **The normal form at the maximum.** In the top chart the height is
 `2 - u₀² - u₁²`, the normal form `c - Σ_{j < 2} uⱼ²` of index `2` at the value `c = 2`. -/
-theorem projectivePlaneHeight_eq_of_mem_projectivePlaneTopChart_source {y : ℙ ℝ (Fin 3 → ℝ)}
+theorem projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source {y : ℙ ℝ (Fin 3 → ℝ)}
     (hy : y ∈ projectivePlaneTopChart.source) :
-    projectivePlaneHeight y = 2 + ∑ j : Fin 2,
+    projectiveMomentFunction ℝ ![0, 1, 2] y = 2 + ∑ j : Fin 2,
       (if j.val < 2 then -1 else 1) * projectivePlaneTopChart y j ^ 2 := by
   induction y using ind with | h v hv =>
   rw [projectivePlaneTopChart_source, mk_mem_affineOpen_iff] at hy
   have key := topChartPlane_normSq (affineChart 2 (mk ℝ v hv))
   rw [affineChart_two_mk_zero, affineChart_two_mk_one] at key
   simp only [Fin.sum_univ_two, Fin.val_zero, Fin.val_one, Nat.ofNat_pos, ↓reduceIte,
-    Nat.one_lt_ofNat, projectivePlaneTopChart_apply, neg_one_mul, projectivePlaneHeight_mk]
+    Nat.one_lt_ofNat, projectivePlaneTopChart_apply, neg_one_mul,
+    projectiveMomentFunction_zero_one_two_mk]
   rw [← neg_add, ← sub_eq_add_neg, key]
   field_simp
   ring
@@ -352,11 +344,12 @@ theorem projectivePlaneTopChartReflect_symm_apply (u : EuclideanSpace ℝ (Fin 2
   · simp [reflectFirst_apply_one]
 
 /-- The normal form at the maximum in the reflected chart. -/
-theorem projectivePlaneHeight_eq_of_mem_projectivePlaneTopChartReflect_source {y : ℙ ℝ (Fin 3 → ℝ)}
+theorem projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source
+    {y : ℙ ℝ (Fin 3 → ℝ)}
     (hy : y ∈ projectivePlaneTopChartReflect.source) :
-    projectivePlaneHeight y = 2 + ∑ j : Fin 2,
+    projectiveMomentFunction ℝ ![0, 1, 2] y = 2 + ∑ j : Fin 2,
       (if j.val < 2 then -1 else 1) * projectivePlaneTopChartReflect y j ^ 2 := by
-  rw [projectivePlaneHeight_eq_of_mem_projectivePlaneTopChart_source (by simpa using hy),
+  rw [projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source (by simpa using hy),
     Fin.sum_univ_two, Fin.sum_univ_two, projectivePlaneTopChartReflect_apply_zero,
     projectivePlaneTopChartReflect_apply_one, neg_sq]
 
@@ -380,18 +373,18 @@ private theorem piLpExtendByZero_castLEEmb_refl (w : EuclideanSpace ℝ (Fin 2))
 /-- The attaching map `α₊ : ∂D² → {f ≤ 2 - ε}` of the cell of the maximum in the top chart,
 `OpenPartialHomeomorph.morseAttachingMap` for `projectivePlaneTopChart`, at level `2 - ε`. -/
 abbrev projectivePlaneAttachingMap (hε : 0 ≤ ε) (hε1 : ε < 1) :
-    TopCat.diskBoundary.{0} 2 ⟶ TopCat.of {y | projectivePlaneHeight y ≤ 2 - ε} :=
+    TopCat.diskBoundary.{0} 2 ⟶ TopCat.of {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ 2 - ε} :=
   projectivePlaneTopChart.morseAttachingMap le_rfl hε
     (closedBall_subset_projectivePlaneTopChart_target hε1)
-    (fun _ ↦ projectivePlaneHeight_eq_of_mem_projectivePlaneTopChart_source)
+    (fun _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source)
 
 /-- The attaching map `α₋ : ∂D² → {f ≤ 2 - ε}` of the cell of the maximum in the reflected chart,
 `OpenPartialHomeomorph.morseAttachingMap` for `projectivePlaneTopChartReflect`. -/
 abbrev projectivePlaneAttachingMapReflect (hε : 0 ≤ ε) (hε1 : ε < 1) :
-    TopCat.diskBoundary.{0} 2 ⟶ TopCat.of {y | projectivePlaneHeight y ≤ 2 - ε} :=
+    TopCat.diskBoundary.{0} 2 ⟶ TopCat.of {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ 2 - ε} :=
   projectivePlaneTopChartReflect.morseAttachingMap le_rfl hε
     (closedBall_subset_projectivePlaneTopChartReflect_target hε1)
-    (fun _ ↦ projectivePlaneHeight_eq_of_mem_projectivePlaneTopChartReflect_source)
+    (fun _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source)
 
 /-- The attaching map `∂D² → {f ≤ 2 - ε}` of the top chart is `w ↦ ψ⁻¹(√ε • w)`. -/
 theorem coe_projectivePlaneAttachingMap_apply (hε : 0 ≤ ε) (hε1 : ε < 1)
@@ -488,9 +481,9 @@ private theorem sum_sq_pos {v : Fin 3 → ℝ} (hv : v ≠ 0) :
 
 /-- A point lies below the maximum value `2` exactly when it is off the maximum `[0 : 0 : 1]`,
 that is, when its first two homogeneous coordinates do not both vanish. -/
-private theorem projectivePlaneHeight_mk_lt_two_iff (v : Fin 3 → ℝ) (hv : v ≠ 0) :
-    projectivePlaneHeight (mk ℝ v hv) < 2 ↔ dropLast v ≠ 0 := by
-  rw [projectivePlaneHeight_mk, div_lt_iff₀ (sum_sq_pos hv), dropLast_apply]
+private theorem mk_lt_two_iff_dropLast_ne_zero (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+    projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) < 2 ↔ dropLast v ≠ 0 := by
+  rw [projectiveMomentFunction_zero_one_two_mk, div_lt_iff₀ (sum_sq_pos hv), dropLast_apply]
   simp only [ne_eq, Matrix.cons_eq_zero_iff, Matrix.zero_empty, and_true, not_and_or]
   constructor
   · intro h
@@ -544,17 +537,17 @@ private theorem continuous_flatten :
     fun_prop
 
 /-- Flattening towards the line `z = 0` lowers the height. -/
-private theorem projectivePlaneHeight_flatten_le {v : Fin 3 → ℝ} (hv : v ≠ 0)
+private theorem projectiveMomentFunction_flatten_le {v : Fin 3 → ℝ} (hv : v ≠ 0)
     (hd : dropLast v ≠ 0) {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :
-    projectivePlaneHeight (mk ℝ (flatten t v) (flatten_ne_zero hd t)) ≤
-      projectivePlaneHeight (mk ℝ v hv) := by
+    projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ (flatten t v) (flatten_ne_zero hd t)) ≤
+      projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) := by
   have hd' : 0 < 2 * v 0 ^ 2 + v 1 ^ 2 := by
-    have h := (projectivePlaneHeight_mk_lt_two_iff v hv).2 hd
-    rw [projectivePlaneHeight_mk, div_lt_iff₀ (sum_sq_pos hv)] at h
+    have h := (mk_lt_two_iff_dropLast_ne_zero v hv).2 hd
+    rw [projectiveMomentFunction_zero_one_two_mk, div_lt_iff₀ (sum_sq_pos hv)] at h
     linarith
   have hs₁ : (1 - t) ^ 2 ≤ 1 := by nlinarith
-  simp only [projectivePlaneHeight_mk, flatten_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, mul_pow]
+  simp only [projectiveMomentFunction_zero_one_two_mk, flatten_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, mul_pow]
   rw [div_le_div_iff₀ (by nlinarith [sq_nonneg (v 0), sq_nonneg (v 1)]) (sum_sq_pos hv)]
   nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hs₁) (sq_nonneg (v 2))) hd'.le]
 
@@ -573,27 +566,28 @@ private theorem continuousOn_linearProjection_flatten :
 variable {c : ℝ}
 
 private theorem mem_linearProjectionDomain_of_le (hc : c < 2) {y : ℙ ℝ (Fin 3 → ℝ)}
-    (hy : projectivePlaneHeight y ≤ c) : y ∈ linearProjectionDomain dropLast := by
+    (hy : projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c) : y ∈ linearProjectionDomain dropLast := by
   induction y using ind with | h v hv =>
-  rw [mk_mem_linearProjectionDomain_iff, ← projectivePlaneHeight_mk_lt_two_iff v hv]
+  rw [mk_mem_linearProjectionDomain_iff, ← mk_lt_two_iff_dropLast_ne_zero v hv]
   exact hy.trans_lt hc
 
-private theorem projectivePlaneHeight_linearProjection_flatten_le (hc : c < 2)
-    {y : ℙ ℝ (Fin 3 → ℝ)} (hy : projectivePlaneHeight y ≤ c) {t : ℝ} (ht₀ : 0 ≤ t)
-    (ht₁ : t ≤ 1) : projectivePlaneHeight (linearProjection (flatten t) y) ≤ c := by
+private theorem projectiveMomentFunction_linearProjection_flatten_le (hc : c < 2)
+    {y : ℙ ℝ (Fin 3 → ℝ)} (hy : projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c) {t : ℝ} (ht₀ : 0 ≤ t)
+    (ht₁ : t ≤ 1) : projectiveMomentFunction ℝ ![0, 1, 2] (linearProjection (flatten t) y) ≤ c := by
   induction y using ind with | h v hv =>
-  have hd : dropLast v ≠ 0 := (projectivePlaneHeight_mk_lt_two_iff v hv).1 (hy.trans_lt hc)
+  have hd : dropLast v ≠ 0 := (mk_lt_two_iff_dropLast_ne_zero v hv).1 (hy.trans_lt hc)
   rw [linearProjection_mk _ _ (flatten_ne_zero hd t)]
-  exact (projectivePlaneHeight_flatten_le hv hd ht₀ ht₁).trans hy
+  exact (projectiveMomentFunction_flatten_le hv hd ht₀ ht₁).trans hy
 
-private theorem projectivePlaneHeight_map_addLast_le_one (x : ℙ ℝ (Fin 2 → ℝ)) :
-    projectivePlaneHeight (map addLast addLast_injective x) ≤ 1 := by
+private theorem projectiveMomentFunction_map_addLast_le_one (x : ℙ ℝ (Fin 2 → ℝ)) :
+    projectiveMomentFunction ℝ ![0, 1, 2] (map addLast addLast_injective x : ℙ ℝ (Fin 3 → ℝ)) ≤
+      1 := by
   induction x using ind with | h w hw =>
   have hs : 0 < w 0 ^ 2 + w 1 ^ 2 := by
     obtain ⟨i, hi⟩ := Function.ne_iff.1 hw
     simpa [Fin.sum_univ_two] using
       Finset.sum_pos' (fun j _ ↦ sq_nonneg (w j)) ⟨i, Finset.mem_univ i, sq_pos_of_ne_zero hi⟩
-  rw [map_mk, projectivePlaneHeight_mk]
+  rw [map_mk, projectiveMomentFunction_zero_one_two_mk]
   simp only [addLast_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons]
   rw [div_le_one (by simpa using hs)]
@@ -601,16 +595,16 @@ private theorem projectivePlaneHeight_map_addLast_le_one (x : ℙ ℝ (Fin 2 →
 
 /-- The projection `[x : y : z] ↦ [x : y]` of a sublevel below `2` onto the projective line. -/
 private def sublevelToLine (hc : c < 2) :
-    C({y | projectivePlaneHeight y ≤ c}, ℙ ℝ (Fin 2 → ℝ)) where
+    C({y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}, ℙ ℝ (Fin 2 → ℝ)) where
   toFun y := linearProjection dropLast y.1
   continuous_toFun := (contMDiffOn_linearProjection dropLast 0).continuousOn.comp_continuous
     continuous_subtype_val fun y ↦ mem_linearProjectionDomain_of_le hc y.2
 
 /-- The inclusion `[x : y] ↦ [x : y : 0]` of the projective line into a sublevel above `1`. -/
 private def lineToSublevel (hc : 1 ≤ c) :
-    C(ℙ ℝ (Fin 2 → ℝ), {y | projectivePlaneHeight y ≤ c}) where
+    C(ℙ ℝ (Fin 2 → ℝ), {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}) where
   toFun x := ⟨map addLast addLast_injective x,
-    (projectivePlaneHeight_map_addLast_le_one x).trans hc⟩
+    (projectiveMomentFunction_map_addLast_le_one x).trans hc⟩
   continuous_toFun := (continuous_map addLast_injective
     addLast.continuous_of_finiteDimensional).subtype_mk _
 
@@ -619,7 +613,7 @@ private def flattenHomotopy (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     ContinuousMap.Homotopy (ContinuousMap.id _) ((lineToSublevel hc₁).comp (sublevelToLine hc₂))
     where
   toFun p := ⟨linearProjection (flatten p.1) p.2.1,
-    projectivePlaneHeight_linearProjection_flatten_le hc₂ p.2.2 p.1.2.1 p.1.2.2⟩
+    projectiveMomentFunction_linearProjection_flatten_le hc₂ p.2.2 p.1.2.1 p.1.2.2⟩
   continuous_toFun := (continuousOn_linearProjection_flatten.comp_continuous
     (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
     fun p ↦ ⟨mem_univ _, mem_linearProjectionDomain_of_le hc₂ p.2.2⟩).subtype_mk _
@@ -627,7 +621,7 @@ private def flattenHomotopy (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     obtain ⟨y, hy⟩ := y
     refine Subtype.ext ?_
     induction y using ind with | h v hv =>
-    have hd : dropLast v ≠ 0 := (projectivePlaneHeight_mk_lt_two_iff v hv).1 (hy.trans_lt hc₂)
+    have hd : dropLast v ≠ 0 := (mk_lt_two_iff_dropLast_ne_zero v hv).1 (hy.trans_lt hc₂)
     simp only [Icc.coe_zero, ContinuousMap.id_apply]
     rw [linearProjection_mk _ _ (flatten_ne_zero hd 0)]
     exact mk_eq_mk_of_eq (flatten_zero v)
@@ -635,7 +629,7 @@ private def flattenHomotopy (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     obtain ⟨y, hy⟩ := y
     refine Subtype.ext ?_
     induction y using ind with | h v hv =>
-    have hd : dropLast v ≠ 0 := (projectivePlaneHeight_mk_lt_two_iff v hv).1 (hy.trans_lt hc₂)
+    have hd : dropLast v ≠ 0 := (mk_lt_two_iff_dropLast_ne_zero v hv).1 (hy.trans_lt hc₂)
     simp only [Icc.coe_one, ContinuousMap.comp_apply, sublevelToLine, lineToSublevel,
       ContinuousMap.coe_mk]
     rw [linearProjection_mk _ _ (flatten_ne_zero hd 1), linearProjection_mk _ _ hd, map_mk]
@@ -646,7 +640,7 @@ projection `[x : y : z] ↦ [x : y]` is a homotopy equivalence from the sublevel
 the projective line, with homotopy inverse the inclusion `[x : y] ↦ [x : y : 0]` of the line
 `z = 0`; the homotopy is `[x : y : z] ↦ [x : y : (1 - t) z]`. -/
 def projectivePlaneSublevelHomotopyEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
-    {y | projectivePlaneHeight y ≤ c} ≃ₕ ℙ ℝ (Fin 2 → ℝ) where
+    {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c} ≃ₕ ℙ ℝ (Fin 2 → ℝ) where
   toFun := sublevelToLine hc₂
   invFun := lineToSublevel hc₁
   left_inv := ⟨(flattenHomotopy hc₁ hc₂).symm⟩
@@ -661,26 +655,27 @@ def projectivePlaneSublevelHomotopyEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     rw [h]
 
 private theorem projectivePlaneSublevelHomotopyEquiv_apply (hc₁ : 1 ≤ c) (hc₂ : c < 2)
-    (y : {y | projectivePlaneHeight y ≤ c}) :
+    (y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}) :
     projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = linearProjection dropLast y.1 :=
   (rfl)
 
 /-- A point `[x : y : z]` below the maximum value `2` has `(x, y) ≠ 0`. -/
-theorem coords_ne_zero_of_projectivePlaneHeight_lt_two {y : ℙ ℝ (Fin 3 → ℝ)}
-    (hy : projectivePlaneHeight y < 2) {v : Fin 3 → ℝ} {hv : v ≠ 0} (hyv : y = mk ℝ v hv) :
+theorem coords_ne_zero_of_projectiveMomentFunction_lt_two {y : ℙ ℝ (Fin 3 → ℝ)}
+    (hy : projectiveMomentFunction ℝ ![0, 1, 2] y < 2) {v : Fin 3 → ℝ} {hv : v ≠ 0}
+    (hyv : y = mk ℝ v hv) :
     ![v 0, v 1] ≠ 0 := by
   subst hyv
   rw [← dropLast_apply]
-  exact (projectivePlaneHeight_mk_lt_two_iff v hv).1 hy
+  exact (mk_lt_two_iff_dropLast_ne_zero v hv).1 hy
 
 /-- The projection of the sublevel onto the line in homogeneous coordinates:
 `[x : y : z] ↦ [x : y]`. -/
 theorem projectivePlaneSublevelHomotopyEquiv_apply_of_eq (hc₁ : 1 ≤ c) (hc₂ : c < 2)
-    {y : {y | projectivePlaneHeight y ≤ c}} {v : Fin 3 → ℝ} {hv : v ≠ 0}
+    {y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}} {v : Fin 3 → ℝ} {hv : v ≠ 0}
     (hy : (y : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ v hv) :
     projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = mk ℝ ![v 0, v 1]
-      (coords_ne_zero_of_projectivePlaneHeight_lt_two (lt_of_le_of_lt y.2 hc₂) hy) := by
-  have hd := coords_ne_zero_of_projectivePlaneHeight_lt_two (lt_of_le_of_lt y.2 hc₂) hy
+      (coords_ne_zero_of_projectiveMomentFunction_lt_two (lt_of_le_of_lt y.2 hc₂) hy) := by
+  have hd := coords_ne_zero_of_projectiveMomentFunction_lt_two (lt_of_le_of_lt y.2 hc₂) hy
   rw [projectivePlaneSublevelHomotopyEquiv_apply]
   refine (congrArg (linearProjection dropLast) hy).trans ?_
   rw [linearProjection_mk _ _ (by rwa [dropLast_apply])]
@@ -709,13 +704,13 @@ equivalence: the composite of the deformation retraction onto the line `z = 0`
 (`TauCeti.projectivePlaneSublevelHomotopyEquiv`) with the identification of the projective line
 with the circle. -/
 def projectivePlaneSublevelCircleEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
-    {y | projectivePlaneHeight y ≤ c} ≃ₕ Circle :=
+    {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c} ≃ₕ Circle :=
   (projectivePlaneSublevelHomotopyEquiv hc₁ hc₂).trans lineHomeomorphCircle.toHomotopyEquiv
 
 -- This holds by definition of `ContinuousMap.HomotopyEquiv.trans` and
 -- `Homeomorph.toHomotopyEquiv`; Mathlib has no `HomotopyEquiv.trans_apply`.
 private theorem projectivePlaneSublevelCircleEquiv_apply (hc₁ : 1 ≤ c) (hc₂ : c < 2)
-    (y : {y | projectivePlaneHeight y ≤ c}) :
+    (y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}) :
     projectivePlaneSublevelCircleEquiv hc₁ hc₂ y =
       lineHomeomorphCircle (projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y) :=
   (rfl)
@@ -723,7 +718,7 @@ private theorem projectivePlaneSublevelCircleEquiv_apply (hc₁ : 1 ≤ c) (hc�
 /-- The circle map of the sublevel in homogeneous coordinates:
 `[x : y : z] ↦ (x + i y)² / (x² + y²)`. -/
 theorem coe_projectivePlaneSublevelCircleEquiv_apply_of_eq (hc₁ : 1 ≤ c) (hc₂ : c < 2)
-    {y : {y | projectivePlaneHeight y ≤ c}} {v : Fin 3 → ℝ} {hv : v ≠ 0}
+    {y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}} {v : Fin 3 → ℝ} {hv : v ≠ 0}
     (hy : (y : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ v hv) :
     (projectivePlaneSublevelCircleEquiv hc₁ hc₂ y : ℂ) =
       (v 0 + v 1 * Complex.I) ^ 2 / (v 0 ^ 2 + v 1 ^ 2 : ℝ) := by
@@ -732,8 +727,8 @@ theorem coe_projectivePlaneSublevelCircleEquiv_apply_of_eq (hc₁ : 1 ≤ c) (hc
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- The point `[1 : 0 : 0]`, the minimum of the height, as a point of a sublevel. -/
-def projectivePlaneSublevelBase (hc : 0 ≤ c) : {y | projectivePlaneHeight y ≤ c} :=
-  ⟨mk ℝ ![1, 0, 0] (by simp), by simpa using hc⟩
+def projectivePlaneSublevelBase (hc : 0 ≤ c) : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c} :=
+  ⟨mk ℝ ![1, 0, 0] (by simp), by simpa [Fin.sum_univ_three] using hc⟩
 
 /-- The base point of the sublevel is `[1 : 0 : 0]`. -/
 @[simp]
@@ -749,16 +744,17 @@ theorem projectivePlaneCoreLoop_coords_ne_zero (θ : ℝ) :
   have h1 : Real.sin θ = 0 := congrFun h 1
   simpa [h0, h1] using Real.cos_sq_add_sin_sq θ
 
-private theorem projectivePlaneHeight_core (θ : ℝ) :
-    projectivePlaneHeight
+private theorem projectiveMomentFunction_core (θ : ℝ) :
+    projectiveMomentFunction ℝ ![0, 1, 2]
       (mk ℝ ![Real.cos θ, Real.sin θ, 0] (projectivePlaneCoreLoop_coords_ne_zero θ)) =
         Real.sin θ ^ 2 := by
+  rw [projectiveMomentFunction_zero_one_two_mk]
   simp [Real.cos_sq_add_sin_sq]
 
-private theorem projectivePlaneHeight_core_le (hc : 1 ≤ c) (θ : ℝ) :
-    projectivePlaneHeight
+private theorem projectiveMomentFunction_core_le (hc : 1 ≤ c) (θ : ℝ) :
+    projectiveMomentFunction ℝ ![0, 1, 2]
       (mk ℝ ![Real.cos θ, Real.sin θ, 0] (projectivePlaneCoreLoop_coords_ne_zero θ)) ≤ c := by
-  rw [projectivePlaneHeight_core]
+  rw [projectiveMomentFunction_core]
   exact (Real.sin_sq_le_one _).trans hc
 
 private theorem mk_core_pi :
@@ -775,7 +771,7 @@ def projectivePlaneCoreLoop (hc : 1 ≤ c) :
       (projectivePlaneSublevelBase (zero_le_one.trans hc)) where
   toFun t := ⟨mk ℝ ![Real.cos (π * t), Real.sin (π * t), 0]
       (projectivePlaneCoreLoop_coords_ne_zero _),
-    projectivePlaneHeight_core_le hc _⟩
+    projectiveMomentFunction_core_le hc _⟩
   continuous_toFun := (continuous_mk (by fun_prop) _).subtype_mk _
   source' := Subtype.ext (by simp)
   target' := Subtype.ext (by simpa using mk_core_pi)
