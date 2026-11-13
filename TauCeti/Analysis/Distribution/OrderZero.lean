@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Distribution
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Regular
+public import TauCeti.Analysis.Distribution.Mass.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Signed
@@ -296,18 +297,29 @@ private lemma bddAbove_extendₗ_image_Icc (f : C_c(Ω, ℝ)) :
 
 omit hT [FiniteDimensional ℝ E] in
 /-- **A distribution of order zero is a signed Radon measure.** A linear functional `T` on the
-test functions of `Ω` is bounded on each compact `K ⊆ Ω` in the sup norm, `|T φ| ≤ C_K ‖φ‖_∞` for
-the test functions `φ` supported in `K`, if and only if there are regular measures `ν₁` and `ν₂`
+test functions of `Ω` has locally finite mass (`Distribution.HasLocallyFiniteMass`: it is bounded
+on each compact `K ⊆ Ω` in the sup norm, `|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ` supported
+in `K`) if and only if there are regular measures `ν₁` and `ν₂`
 on `Ω` with `T φ = ∫ φ dν₁ - ∫ φ dν₂` for every test function `φ`. The measures are finite on
 compact subsets of `Ω` but need not be finite. The bound is the defining estimate of a
 distribution of order zero, so `T` need not be assumed continuous; the main case is a distribution
 `T : 𝓓'(Ω, ℝ)`. -/
 theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace E]
     (T : 𝓕) :
-    (∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K →
-      |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖) ↔
+    HasLocallyFiniteMass (T : 𝓓(Ω, ℝ) → ℝ) ↔
     ∃ ν₁ ν₂ : Measure Ω, ν₁.Regular ∧ ν₂.Regular ∧
       ∀ φ : 𝓓(Ω, ℝ), T φ = ∫ x, φ x ∂ν₁ - ∫ x, φ x ∂ν₂ := by
+  have hlfm : HasLocallyFiniteMass (T : 𝓓(Ω, ℝ) → ℝ) ↔ ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ C, ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K → |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖ := by
+    rw [hasLocallyFiniteMass_def]
+    refine ⟨fun h K hK hKΩ => ?_, fun h K hK hKΩ => ?_⟩
+    · obtain ⟨C, -, hC⟩ := h K hK hKΩ
+      exact ⟨C, fun φ hφ => by simpa [Real.norm_eq_abs] using hC φ hφ⟩
+    · obtain ⟨C, hC⟩ := h K hK hKΩ
+      exact ⟨max C 0, le_max_right _ _, fun φ hφ => by
+        rw [Real.norm_eq_abs]
+        exact (hC φ hφ).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))⟩
+  rw [hlfm]
   by_cases hE : FiniteDimensional ℝ E
   swap
   · -- In an infinite-dimensional space every test function vanishes.
