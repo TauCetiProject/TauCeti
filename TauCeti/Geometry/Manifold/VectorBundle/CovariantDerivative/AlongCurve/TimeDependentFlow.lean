@@ -111,7 +111,7 @@ theorem alongCurve_mfderiv_timeDependentFlowOf
     have hφ : MDifferentiableAt I I (timeDependentFlowOf X s u) (c 0) :=
       (((hflow.contMDiffAt (hopen.mem_nhds hu)).comp (c 0)
         (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt (by norm_num))
-    have hmap := curveVelocityWithin_map hφ uniqueDiffWithinAt_univ
+    have hmap := curveVelocityWithin_map (s := Set.univ) hφ
       (hc.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
     rw [curveVelocityWithin_univ, curveVelocityWithin_univ, hcv] at hmap
     -- The curve `timeDependentFlowOf X s u ∘ c` is `fun r ↦ F r u` by the definition of `F`.

@@ -92,7 +92,6 @@ theorem isGeodesicCurveOnFrom_comp {f : M → N} (hf : IsLocalRiemannianIsometry
   refine ⟨hf.isGeodesicCurveOn_comp hγ.isGeodesicCurveOn, hγ.zero_mem, ?_⟩
   have hlift := tangentMap_curveVelocityLiftWithin (hf.mdifferentiableAt (γ 0))
     (hγ.isGeodesicCurveOn.mdifferentiableOn 0 hγ.zero_mem)
-    (hγ.isGeodesicCurveOn.uniqueDiffOn 0 hγ.zero_mem).uniqueMDiffWithinAt
   rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply, hγ.initial_eq] at hlift
   rw [← hlift]
   rfl
@@ -112,7 +111,7 @@ theorem isGeodesicCurveOnFrom_comp_iff {f : M → N} (hf : IsLocalRiemannianIsom
   apply hf.mfderiv_injective (γ 0)
   have hvel := h.initial_eq
   rw [Function.comp_apply, TotalSpace.mk_inj, curveVelocityWithin_map (hf.mdifferentiableAt (γ 0))
-    (hgeo.uniqueDiffOn 0 h.zero_mem) (hgeo.mdifferentiableOn 0 h.zero_mem)] at hvel
+    (hgeo.mdifferentiableOn 0 h.zero_mem)] at hvel
   exact hvel
 
 end IsLocalRiemannianIsometry

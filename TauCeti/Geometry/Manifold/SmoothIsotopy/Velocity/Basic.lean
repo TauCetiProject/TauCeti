@@ -180,8 +180,8 @@ theorem exists_ambientVelocityField {n m : ℕ∞} [IsManifold I n M] {G : ℝ �
       rw [hχ1]
       exact (one_smul ℝ _).symm
     · simp only [mem_Icc, not_and_or, not_le] at hab
-      rw [hab.elim (Manifold.mfderiv_eq_zero_of_eqOn_Iic (fun s hs => ha s hs x hx))
-        (Manifold.mfderiv_eq_zero_of_eqOn_Ici (fun s hs => hb s hs x hx))]
+      rw [hab.elim (Manifold.mfderiv_eq_zero_of_eqOn_Iic (fun s hs => ha s hs x hx) ·.le)
+        (Manifold.mfderiv_eq_zero_of_eqOn_Ici (fun s hs => hb s hs x hx) ·.le)]
       exact (smul_zero _).symm
   · simp only [mem_Icc, not_and_or, not_le] at ht
     have hχ0 : χ t = 0 := by

@@ -169,13 +169,13 @@ theorem isMIntegralCurve_comp_of_mpullback_eq (hX : σ.IsHamiltonianVectorField 
   -- The velocity `Y` of `γ` is a lift of `X`, since `di Y` is the velocity of `i ∘ γ`.
   have hY : mfderiv I₀ I i (γ t) (Manifold.curveVelocity I₀ γ t) = X (i (γ t)) := by
     rw [← Manifold.curveVelocityWithin_univ, ← Manifold.curveVelocityWithin_map hdi
-      uniqueDiffWithinAt_univ (hγ t).mdifferentiableWithinAt]
+      (hγ t).mdifferentiableWithinAt]
     exact Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt (hiγ t).hasMFDerivWithinAt
       uniqueDiffWithinAt_univ
   have hpY := hη.mfderiv_eq_hamiltonianVectorField_of_mpullback_eq hi hp hpi hX hfF (hf t) (hF t)
     (hsurj t) hY
   -- So `p ∘ γ` has velocity `dp Y = X_F`.
-  have hvel := Manifold.curveVelocityWithin_map hdp uniqueDiffWithinAt_univ
+  have hvel := Manifold.curveVelocityWithin_map (s := Set.univ) hdp
     (hγ t).mdifferentiableWithinAt
   rw [Manifold.curveVelocityWithin_univ, Manifold.curveVelocityWithin_univ, hpY] at hvel
   simpa [hvel] using Manifold.hasMFDerivAt_curveVelocity (hdp.comp t (hγ t))

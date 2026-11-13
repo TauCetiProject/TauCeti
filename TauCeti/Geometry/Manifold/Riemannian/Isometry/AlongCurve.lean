@@ -79,7 +79,7 @@ theorem mfderiv_alongCurveWithin_mpullback (hf : IsLocalRiemannianIsometry I J f
   rw [alongCurveWithin_pullback (leviCivitaConnection J N) (f ∘ γ) Y hs
       (hasMFDerivWithinAt_curveVelocityWithin
         ((hf.mdifferentiableAt (γ t)).comp_mdifferentiableWithinAt t hγ)) hY]
-  rw [TauCeti.Manifold.curveVelocityWithin_map (hf.mdifferentiableAt (γ t)) hs hγ]
+  rw [TauCeti.Manifold.curveVelocityWithin_map (hf.mdifferentiableAt (γ t)) hγ]
   exact hf.mfderiv_leviCivitaConnection_mpullback hY _
 
 /-- For a differentiable curve, the unrestricted along-curve Levi-Civita derivative of a

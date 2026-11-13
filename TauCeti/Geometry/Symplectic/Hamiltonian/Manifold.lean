@@ -358,7 +358,7 @@ theorem apply_mfderiv_sinChartVariation [I.Boundaryless] {H : ℝ → M → ℝ}
       ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
       SmoothBundleForm.eval₂_apply, smul_eq_mul]
   · have hφt : φ t = 0 := image_eq_zero_of_notMem_tsupport fun h' ↦ htJ (hφJ h')
-    rw [Manifold.mfderiv_sinChartVariation_of_notMem hwd htJ, hφt, zero_mul]
+    rw [Manifold.mfderiv_sinChartVariation_of_notMem htJ, hφt, zero_mul]
     exact (σ.1 (γ t)).map_coord_zero 1 rfl
 
 namespace IsNondegenerate

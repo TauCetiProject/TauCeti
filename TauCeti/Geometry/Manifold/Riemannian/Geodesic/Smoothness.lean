@@ -248,7 +248,7 @@ theorem IsGeodesicCurveOn.contMDiffOn_of_le [I.Boundaryless]
     (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) :
     ContMDiffOn 𝓘(ℝ, ℝ) I (n + 2) γ s := by
   let _ : IsManifold I ((n + 1 : ℕ) + 1) M := IsManifold.of_le (n := m) (by exact_mod_cast hm)
-  have := contMDiffOn_succ_of_contMDiffOn_curveVelocityLiftWithin h.uniqueDiffOn
+  have := contMDiffOn_succ_of_contMDiffOn_curveVelocityLiftWithin
     h.mdifferentiableOn (by exact_mod_cast h.contMDiffOn_curveVelocityLiftWithin_of_le n hm hk)
   exact_mod_cast this
 

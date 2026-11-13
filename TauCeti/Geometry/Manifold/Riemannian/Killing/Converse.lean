@@ -64,7 +64,7 @@ theorem eventually_norm_sq_curveVelocity_flowOf_eq
     contMDiffAt_const contMDiffAt_id htd
   have hmap := curveVelocityWithin_map (s := univ)
     (by simpa only [hγ₀] using hslice.mdifferentiableAt one_ne_zero)
-    uniqueDiffWithinAt_univ hγ.mdifferentiableWithinAt
+    hγ.mdifferentiableWithinAt
   simp only [curveVelocityWithin_univ, Function.comp_def, id_eq, hvel] at hmap
   have hnorm : ‖curveVelocity I (fun q ↦ flowOf X t (γ q)) 0‖ =
         ‖mfderiv I I (flowOf X t) p u‖ := by

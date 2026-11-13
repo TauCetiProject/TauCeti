@@ -78,7 +78,7 @@ theorem isJacobiFieldOn_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f
   have hsecond := hf.mfderiv_alongCurveWithin_alongCurveWithin h.uniqueDiffOn h.contMDiffOn hr
   have hvel : curveVelocityWithin J (f ∘ γ) s r =
       mfderiv I J f (γ r) (curveVelocityWithin I γ s r) :=
-    curveVelocityWithin_map (hf.mdifferentiableAt (γ r)) (h.uniqueDiffOn r hr)
+    curveVelocityWithin_map (hf.mdifferentiableAt (γ r))
       (h.isGeodesicCurveOn.mdifferentiableOn r hr)
   -- Apply `df` to the Jacobi equation along `γ` at `r`.
   have heq := congrArg (mfderiv I J f (γ r)) (h.equation r hr)
@@ -101,7 +101,7 @@ theorem isJacobiFieldOn_comp_iff {f : M → N} (hf : IsLocalRiemannianIsometry I
   rw [map_add, map_zero,
     hf.mfderiv_alongCurveWithin_alongCurveWithin h.uniqueDiffOn hV hr,
     hf.mfderiv_curvatureTensor,
-    ← curveVelocityWithin_map (hf.mdifferentiableAt _) (h.uniqueDiffOn r hr)
+    ← curveVelocityWithin_map (hf.mdifferentiableAt _)
       ((hγ.mdifferentiableOn (by norm_num)) r hr)]
   exact h.equation r hr
 

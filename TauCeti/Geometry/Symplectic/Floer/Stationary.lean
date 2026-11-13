@@ -91,13 +91,13 @@ variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {x : ℝ → M} {z : �
 `(s, t) ↦ x(t)` solves the Floer equation at `z` exactly when `x'(t) = X_{H_t}(x(t))`, where
 `t = z.2`. -/
 theorem isComplexLinearMap_perturbedMFDeriv_comp_snd_iff
-    {J : AlmostComplexStructure (TangentSpace I (x z.2))} (hx : MDifferentiableAt 𝓘(ℝ) I x z.2) :
+    {J : AlmostComplexStructure (TangentSpace I (x z.2))} :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
         (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z).toLinearMap ↔
       Manifold.curveVelocity I x z.2 = ω.hamiltonianVectorField (H z.2) (x z.2) := by
   rw [ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ (fun w ↦ x w.2) z J,
-    stdComplexLineReal_eq, stdComplexLineImag_eq, Manifold.mfderiv_comp_snd_apply_one_zero hx,
-    Manifold.mfderiv_comp_snd_apply_zero_one hx, hamiltonianVectorField_const, Pi.zero_apply,
+    stdComplexLineReal_eq, stdComplexLineImag_eq, Manifold.mfderiv_comp_snd_apply_one_zero,
+    Manifold.mfderiv_comp_snd_apply_zero_one, hamiltonianVectorField_const, Pi.zero_apply,
     sub_zero, zero_add]
   -- An almost complex structure is injective, since `J (J v) = -v`.
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, sub_self, map_zero]⟩
@@ -115,7 +115,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_snd_of_mem_periodicSolutions {T
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z).toLinearMap := by
   have h := (mem_periodicSolutions.1 hx).1 z.2
-  rw [isComplexLinearMap_perturbedMFDeriv_comp_snd_iff h.mdifferentiableAt]
+  rw [isComplexLinearMap_perturbedMFDeriv_comp_snd_iff]
   simpa only [Manifold.curveVelocityWithin_univ] using
     Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt h.hasMFDerivWithinAt
       uniqueDiffWithinAt_univ
@@ -123,10 +123,10 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_snd_of_mem_periodicSolutions {T
 /-- **The energy density of a stationary map.** For the cylindrical perturbation `K = H_t dt`,
 the Floer energy density of `(s, t) ↦ x(t)` vanishes. -/
 @[simp]
-theorem floerEnergyDensity_comp_snd (hx : MDifferentiableAt 𝓘(ℝ) I x z.2) :
+theorem floerEnergyDensity_comp_snd :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z = 0 := by
   rw [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
-    stdComplexLineReal_eq, Manifold.mfderiv_comp_snd_apply_one_zero hx,
+    stdComplexLineReal_eq, Manifold.mfderiv_comp_snd_apply_one_zero,
     hamiltonianVectorField_const, Pi.zero_apply, sub_zero, SmoothBundleForm.eval₂_apply]
   exact ContinuousAlternatingMap.map_coord_zero _ 0 rfl
 
@@ -240,7 +240,7 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff (hω : ω.IsNon
         mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal = 0 := by
       rw [stdComplexLineReal_eq]
       exact Manifold.mfderiv_apply_one_zero_eq_zero_of_apply_eq
-        ((hu z).mdifferentiableAt one_ne_zero) fun s ↦ hst s z.2 hz.2
+        (Filter.Eventually.of_forall fun s ↦ hst s z.2 hz.2)
     rw [setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ by
       rw [(hiff z hz).2 (hs z hz), ENNReal.ofReal_zero]]
     exact lintegral_zero

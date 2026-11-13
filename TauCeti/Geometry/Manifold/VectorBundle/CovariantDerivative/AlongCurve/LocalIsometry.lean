@@ -91,7 +91,7 @@ theorem mfderiv_alongCurveWithin_mpullback (hf : g.IsLocalIsometry g' f)
       (hasMFDerivWithinAt_curveVelocityWithin hγ) (hf.mdifferentiableAt_mpullback hY),
     alongCurveWithin_pullback cov' (f ∘ γ) Y hs
       (hasMFDerivWithinAt_curveVelocityWithin (hfγ.comp_mdifferentiableWithinAt t hγ)) hY,
-    curveVelocityWithin_map hfγ hs hγ]
+    curveVelocityWithin_map hfγ hγ]
   exact hf.mfderiv_apply_mpullback_of_isLeviCivitaConnection h h' hY _
 
 /-- The unrestricted form of `IsLocalIsometry.mfderiv_alongCurveWithin_mpullback`. -/
@@ -179,7 +179,7 @@ theorem mfderiv_accelerationWithin (hf : g.IsLocalIsometry g' f)
     mfderiv I J f (γ t) (accelerationWithin cov γ s t) = accelerationWithin cov' (f ∘ γ) s t := by
   have hvelocity (r : ℝ) (hr : r ∈ s) :
       curveVelocityWithin J (f ∘ γ) s r = mfderiv I J f (γ r) (curveVelocityWithin I γ s r) :=
-    curveVelocityWithin_map (hf.contMDiff.mdifferentiableAt (by simp)) (hs r hr)
+    curveVelocityWithin_map (hf.contMDiff.mdifferentiableAt (by simp))
       ((hγ.mdifferentiableOn (by norm_num)) r hr)
   have hcoord : DifferentiableWithinAt ℝ
       (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t)) s t :=
