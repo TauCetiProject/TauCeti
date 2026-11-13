@@ -51,7 +51,7 @@ theorem souslinOperation_def (f : List ℕ → Set α) :
     souslinOperation f = ⋃ a : ℕ → ℕ, ⋂ n : ℕ,
       f (List.ofFn fun i : Fin (n + 1) ↦ a i) := (rfl)
 
-/-- Membership in the Souslin operation means that one branch satisfies every finite
+/-- Membership in the Souslin operation means that one branch satisfies every nonempty finite
 prefix constraint. -/
 @[simp, grind =]
 theorem mem_souslinOperation_iff {f : List ℕ → Set α} {x : α} :
@@ -59,7 +59,7 @@ theorem mem_souslinOperation_iff {f : List ℕ → Set α} {x : α} :
       ∃ a : ℕ → ℕ, ∀ n : ℕ, x ∈ f (List.ofFn fun i : Fin (n + 1) ↦ a i) := by
   simp [souslinOperation]
 
-/-- Enlarging every nonempty scheme set enlarges its Souslin operation. -/
+/-- Enlarging a scheme's values on every nonempty prefix enlarges its Souslin operation. -/
 @[gcongr]
 theorem souslinOperation_mono {f g : List ℕ → Set α} (h : ∀ l ≠ [], f l ⊆ g l) :
     souslinOperation f ⊆ souslinOperation g := by
@@ -103,7 +103,8 @@ theorem subset_souslinClosure {E : Set (Set α)} : E ⊆ souslinClosure E := by
 
 grind_pattern subset_souslinClosure => souslinClosure E
 
-/-- A scheme belongs to the Souslin closure if all its nonempty values are generators. -/
+/-- The Souslin operation of a scheme belongs to the Souslin closure if all its values on
+nonempty prefixes belong to the family. -/
 @[grind ←]
 theorem souslinOperation_mem_souslinClosure {E : Set (Set α)} {f : List ℕ → Set α}
     (hf : ∀ l ≠ [], f l ∈ E) : souslinOperation f ∈ souslinClosure E := by
