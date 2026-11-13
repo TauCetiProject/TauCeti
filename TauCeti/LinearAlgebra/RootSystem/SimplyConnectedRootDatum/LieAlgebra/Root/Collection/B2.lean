@@ -78,15 +78,15 @@ private theorem b2_positive_commutator_mem (A : CommAlgCat ℤ) (P : Subgroup
         (Multiplicative.ofAdd v)⁆ ∈ P := by
   by_cases h01 : i = 0 ∧ j = 1
   · rcases h01 with ⟨rfl, rfl⟩
-    have hc := commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
+    have hc := commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
       (t := B 2) (ht := ht) (α := b2Index 1) (β := b2Index 0) ρ M hM hnil
       (γ := b2Index 2) (δ := b2Index 3)
       (by simpa only [one_smul] using b2_root_eq_nsmul_add (ht := ht) 1 0 2 1 (by decide))
-      (b2_root_eq_nsmul_add 1 0 3 2 (by decide))
+      (by simpa only [one_smul] using b2_root_eq_nsmul_add (ht := ht) 1 2 3 1 (by decide))
       (by simpa only [one_smul] using
-        b2_nsmul_add_nsmul_not_mem_range (ht := ht) 1 0 3 1 (by decide))
+        b2_nsmul_add_nsmul_not_mem_range (ht := ht) 1 3 1 1 (by decide))
       (by simpa only [one_smul] using
-        b2_nsmul_add_nsmul_not_mem_range (ht := ht) 1 0 1 2 (by decide)) A u v
+        b2_nsmul_add_nsmul_not_mem_range (ht := ht) 0 2 1 1 (by decide)) A u v
     exact hc.symm ▸ P.mul_mem (hP 2 (by decide) ⟨_, rfl⟩) (hP 3 (by decide) ⟨_, rfl⟩)
   by_cases h12 : i = 1 ∧ j = 2
   · rcases h12 with ⟨rfl, rfl⟩

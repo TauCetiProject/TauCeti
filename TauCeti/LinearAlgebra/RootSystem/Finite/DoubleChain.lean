@@ -57,7 +57,8 @@ theorem chainBotCoeff_add_chainTopCoeff_le_two_of_pairingIn_mem_zero_one_two (α
 
 /-- In a double chain with Cartan integers bounded by two, the descending coefficient
 at the initial root is zero. -/
-theorem chainBotCoeff_eq_zero_of_pairingIn_mem_zero_one_two_of_double_chain {α β γ δ : ι}
+theorem chainBotCoeff_eq_zero_of_pairingIn_mem_zero_one_two_of_root_eq_add_of_root_eq_add
+    {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) : P.chainBotCoeff α β = 0 := by
   have hli := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
@@ -69,7 +70,8 @@ theorem chainBotCoeff_eq_zero_of_pairingIn_mem_zero_one_two_of_double_chain {α 
 
 /-- In a double chain with Cartan integers bounded by two, the ascending coefficient
 at the initial root is two. -/
-theorem chainTopCoeff_eq_two_of_pairingIn_mem_zero_one_two_of_double_chain {α β γ δ : ι}
+theorem chainTopCoeff_eq_two_of_pairingIn_mem_zero_one_two_of_root_eq_add_of_root_eq_add
+    {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) : P.chainTopCoeff α β = 2 := by
   have hli := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
@@ -81,7 +83,7 @@ theorem chainTopCoeff_eq_two_of_pairingIn_mem_zero_one_two_of_double_chain {α �
 omit hbound in
 /-- The sum `α + δ = 3α + β` is not a root if the `α`-string through `β` has top
 coefficient at most two, where `γ = α + β` and `δ = α + γ`. -/
-theorem root_step_add_last_notMem_range_root_of_chainTopCoeff_le_two {α β γ δ : ι}
+theorem root_add_root_notMem_range_root_of_chainTopCoeff_le_two {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ)
     (htop : P.chainTopCoeff α β ≤ 2) : P.root α + P.root δ ∉ Set.range P.root := by
@@ -97,7 +99,7 @@ theorem root_step_add_last_notMem_range_root_of_chainTopCoeff_le_two {α β γ �
 omit hbound [P.IsReduced] in
 /-- If the `α`-string through `β` starts at `β` and has top coefficient two, then
 `β + γ = α + 2β` is not a root, where `γ = α + β`. -/
-theorem root_initial_add_middle_notMem_range_root_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+theorem root_add_root_notMem_range_root_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
     {α β γ : ι} (hγ : P.root γ = P.root α + P.root β)
     (hbot : P.chainBotCoeff α β = 0) (htop : P.chainTopCoeff α β = 2) :
     P.root β + P.root γ ∉ Set.range P.root := by
@@ -118,22 +120,25 @@ theorem root_initial_add_middle_notMem_range_root_of_chainBotCoeff_eq_zero_of_ch
 
 /-- The sum `α + δ`, where `δ = 2α + β` is the last root of a double chain with
 Cartan integers bounded by two, is not a root. -/
-theorem root_step_add_last_notMem_range_root_of_pairingIn_mem_zero_one_two_of_double_chain
+theorem root_add_root_notMem_range_root_left_of_root_eq_add_of_root_eq_add
     {α β γ δ : ι} (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) :
     P.root α + P.root δ ∉ Set.range P.root := by
-  exact P.root_step_add_last_notMem_range_root_of_chainTopCoeff_le_two hγ hδ
-    (P.chainTopCoeff_eq_two_of_pairingIn_mem_zero_one_two_of_double_chain hbound hγ hδ).le
+  exact P.root_add_root_notMem_range_root_of_chainTopCoeff_le_two hγ hδ
+    (P.chainTopCoeff_eq_two_of_pairingIn_mem_zero_one_two_of_root_eq_add_of_root_eq_add
+      hbound hγ hδ).le
 
 /-- The sum `β + γ` of the initial and middle roots of a double chain with Cartan
 integers bounded by two is not a root. -/
-theorem root_initial_add_middle_notMem_range_root_of_pairingIn_mem_zero_one_two_of_double_chain
+theorem root_add_root_notMem_range_root_right_of_root_eq_add_of_root_eq_add
     {α β γ δ : ι} (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) :
     P.root β + P.root γ ∉ Set.range P.root := by
   exact
-    P.root_initial_add_middle_notMem_range_root_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two hγ
-      (P.chainBotCoeff_eq_zero_of_pairingIn_mem_zero_one_two_of_double_chain hbound hγ hδ)
-      (P.chainTopCoeff_eq_two_of_pairingIn_mem_zero_one_two_of_double_chain hbound hγ hδ)
+    P.root_add_root_notMem_range_root_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two hγ
+      (P.chainBotCoeff_eq_zero_of_pairingIn_mem_zero_one_two_of_root_eq_add_of_root_eq_add
+        hbound hγ hδ)
+      (P.chainTopCoeff_eq_two_of_pairingIn_mem_zero_one_two_of_root_eq_add_of_root_eq_add
+        hbound hγ hδ)
 
 end RootPairing

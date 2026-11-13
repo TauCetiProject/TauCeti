@@ -239,7 +239,7 @@ theorem isNotG2_rationalRootSystem (h : t ≠ .G2) :
 variable {t} in
 /-- Outside type `G₂`, the pinned datum has Cartan integers bounded by two, as required
 by the general double-chain lemmas. -/
-theorem pairingIn_mem_zero_one_two_of_ne_G2
+theorem pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2
     (h : t ≠ .G2) (α β : Fin t.numRoots) :
     (t.simplyConnectedRootDatum ht).pairingIn ℤ α β ∈ ({-2, -1, 0, 1, 2} : Set ℤ) := by
   let := t.isNotG2_rationalRootSystem ht h

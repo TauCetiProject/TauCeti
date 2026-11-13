@@ -47,7 +47,7 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
 * `TauCeti.DynkinType.chainBotCoeff_add_one_dvd_structureConstant`: `r + 1` divides `N_{α,β}`.
 * `TauCeti.DynkinType.structureConstant_eq_two_or_neg_two_of_pairingIn_eq_zero`:
   `N_{α,β} = ±2` for orthogonal roots whose sum is a root.
-* `TauCeti.DynkinType.structureConstant_eq_two_or_neg_two_of_double_chain_of_chainBotCoeff_eq_zero`:
+* `structureConstant_eq_two_or_neg_two_of_add_eq_of_add_eq_of_chainBotCoeff_eq_zero`:
   `N_{α,α+β} = ±2` when `α + β` and `2α + β` are roots and the `α`-string starts at `β`.
 * `TauCeti.DynkinType.structureConstant_ne_zero` and `TauCeti.DynkinType.structureConstant_eq_zero`:
   the constant vanishes exactly when `α + β` is not a root.
@@ -162,7 +162,7 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast {α β : Fin t.numRoots}
 
 /-- If `α + β` and `2α + β` are roots and the `α`-string starts at `β`, then
 `N_{α,α+β} = ±2`. -/
-theorem structureConstant_eq_two_or_neg_two_of_double_chain_of_chainBotCoeff_eq_zero
+theorem structureConstant_eq_two_or_neg_two_of_add_eq_of_add_eq_of_chainBotCoeff_eq_zero
     {α β γ δ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)

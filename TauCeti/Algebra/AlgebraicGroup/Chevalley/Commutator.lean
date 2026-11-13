@@ -35,7 +35,7 @@ and `F₄` all such pairs up to exchanging `α` and `β`. The formulas hold over
 ring, including rings of characteristic two and three. They are the identities
 `TauCeti.DynkinType.commute_chevalleyRootSubgroup`,
 `TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_root_eq_add` and
-`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add` on the
+`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq` on the
 lattice of `D`, written in its weight basis.
 
 ## Main results
@@ -125,9 +125,18 @@ theorem commutatorElement_rootSubgroup_of_root_eq_two_nsmul_add
               (u ^ 2 * v))) := by
   apply (D.points A).subtype_injective
   simp only [map_commutatorElement, map_mul, Subgroup.coe_subtype, coe_rootSubgroupPoints]
+  have hδ' : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ := by
+    rw [hδ, hγ]; module
+  have hαδ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root δ =
+      3 • (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β := by
+    rw [hδ]; module
+  have hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β := by
+    rw [hγ]; module
   rw [← map_commutatorElement, ← map_mul,
-    commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator hγ hδ hα hβ
-      (CommAlgCat.of ℤ A) u v]
+    commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator hγ hδ'
+      (hαδ ▸ hα) (hβγ ▸ hβ) (CommAlgCat.of ℤ A) u v]
 
 end TauCeti.DynkinType.ChevalleyDatum
