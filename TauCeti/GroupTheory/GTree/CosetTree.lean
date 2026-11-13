@@ -34,7 +34,7 @@ generated group fixing an end and no vertex.
 * `TauCeti.GTree.cosetTreeVertexEquiv`, `TauCeti.GTree.stabilizer_cosetTreeVertexEquiv_symm`:
   its vertices and their stabilizers.
 * `TauCeti.GTree.cosetTreeDartEquiv`, `TauCeti.GTree.cosetTreeVertexEquiv_src`,
-  `TauCeti.GTree.mem_stabilizer_cosetTreeDartEquiv_symm`: its darts, their endpoints and their
+  `TauCeti.GTree.stabilizer_cosetTreeDartEquiv_symm`: its darts, their endpoints and their
   stabilizers.
 * `TauCeti.GTree.cosetTree_isElliptic`: every element is elliptic.
 * `TauCeti.GTree.cosetTree_isEllipticSubgroup_top_iff`: the group fixes a vertex exactly when
@@ -77,11 +77,23 @@ theorem cosetParent_def (x : Σ n, G ⧸ H n) :
   rw [cosetParent_def, Subgroup.quotientMapOfLE_apply_mk]
 
 /-- The `k`-th iterated parent of the coset `g H n` is the coset `g H (n + k)`. -/
-theorem cosetParent_iterate_mk (k n : ℕ) (g : G) :
+@[simp] theorem cosetParent_iterate_mk (k n : ℕ) (g : G) :
     (cosetParent H)^[k] ⟨n, (g : G ⧸ H n)⟩ = ⟨n + k, (g : G ⧸ H (n + k))⟩ := by
   induction k with
   | zero => rfl
   | succ k ih => rw [Function.iterate_succ_apply', ih, cosetParent_mk, add_assoc]
+
+/-- The parent of the coset `H n` is the coset `H (n + 1)`, where for normal `H n` the coset
+`H n` is the identity of the quotient group. -/
+@[simp] theorem cosetParent_mk_one_of_normal (n : ℕ) [(H n).Normal] :
+    cosetParent H ⟨n, 1⟩ = ⟨n + 1, ((1 : G) : G ⧸ H (n + 1))⟩ := by
+  rw [← QuotientGroup.mk_one, cosetParent_mk]
+
+/-- The `k`-th iterated parent of the coset `H n` is the coset `H (n + k)`, where for normal
+`H n` the coset `H n` is the identity of the quotient group. -/
+@[simp] theorem cosetParent_iterate_mk_one_of_normal (k n : ℕ) [(H n).Normal] :
+    (cosetParent H)^[k] ⟨n, 1⟩ = ⟨n + k, ((1 : G) : G ⧸ H (n + k))⟩ := by
+  rw [← QuotientGroup.mk_one, cosetParent_iterate_mk]
 
 /-- Left translation commutes with the parent map. -/
 @[simp] theorem cosetParent_smul (g : G) (x : Σ n, G ⧸ H n) :
@@ -170,6 +182,11 @@ starts at the parent of `x`. -/
       (g • (cosetTreeDartEquiv H hH e).1, (cosetTreeDartEquiv H hH e).2) :=
   ofParentAction_equivE (cosetParent_smul H) g e
 
+/-- Left translation of cosets moves the corresponding darts of the coset tree. -/
+@[simp] theorem cosetTreeDartEquiv_symm_smul (g : G) (x : Σ n, G ⧸ H n) (d : Bool) :
+    (cosetTreeDartEquiv H hH).symm (g • x, d) = g • (cosetTreeDartEquiv H hH).symm (x, d) := by
+  rw [Equiv.symm_apply_eq, cosetTreeDartEquiv_smul, Equiv.apply_symm_apply]
+
 /-- An element `g` fixes the vertex `a H n` of the coset tree exactly when `a⁻¹ g a` lies in
 `H n`. -/
 theorem mem_stabilizer_cosetTreeVertexEquiv_symm {g a : G} {n : ℕ} :
@@ -195,29 +212,32 @@ theorem stabilizer_cosetTreeVertexEquiv_symm (n : ℕ) (a : G) :
 /-- The stabilizer of the vertex `H n` of the coset tree is `H n`, where for normal `H n` the
 coset `H n` is the identity of the quotient group. -/
 @[simp] theorem stabilizer_cosetTreeVertexEquiv_symm_one_of_normal (n : ℕ) [(H n).Normal] :
-    stabilizer G ((cosetTreeVertexEquiv H hH).symm ⟨n, 1⟩) = H n :=
-  stabilizer_cosetTreeVertexEquiv_symm_one H hH n
+    stabilizer G ((cosetTreeVertexEquiv H hH).symm ⟨n, 1⟩) = H n := by
+  rw [← QuotientGroup.mk_one, stabilizer_cosetTreeVertexEquiv_symm_one]
 
-/-- The stabilizer of a dart of the coset tree is the stabilizer of the coset it is attached to:
-for the darts joining `a H n` and `a H (n + 1)`, the conjugate `a (H n) a⁻¹`. -/
+/-- The stabilizer of a dart of the coset tree is the stabilizer of the coset it is attached
+to. -/
+@[simp] theorem stabilizer_cosetTreeDartEquiv_symm (x : Σ n, G ⧸ H n) (d : Bool) :
+    stabilizer G ((cosetTreeDartEquiv H hH).symm (x, d)) =
+      stabilizer G ((cosetTreeVertexEquiv H hH).symm x) := by
+  ext g
+  rw [mem_stabilizer_iff, mem_stabilizer_iff, ← (cosetTreeDartEquiv H hH).apply_eq_iff_eq,
+    ← (cosetTreeVertexEquiv H hH).apply_eq_iff_eq]
+  simp
+
+/-- The stabilizer of the darts of the coset tree joining `a H n` and `a H (n + 1)` is the
+conjugate `a (H n) a⁻¹`. -/
+theorem stabilizer_cosetTreeDartEquiv_symm_mk (n : ℕ) (a : G) (d : Bool) :
+    stabilizer G ((cosetTreeDartEquiv H hH).symm (⟨n, (a : G ⧸ H n)⟩, d)) =
+      (H n).map (MulAut.conj a).toMonoidHom := by
+  rw [stabilizer_cosetTreeDartEquiv_symm, stabilizer_cosetTreeVertexEquiv_symm]
+
+/-- An element `g` fixes the darts of the coset tree joining `a H n` and `a H (n + 1)` exactly
+when `a⁻¹ g a` lies in `H n`. -/
 theorem mem_stabilizer_cosetTreeDartEquiv_symm {g a : G} {n : ℕ} {d : Bool} :
     g ∈ stabilizer G ((cosetTreeDartEquiv H hH).symm (⟨n, (a : G ⧸ H n)⟩, d)) ↔
       a⁻¹ * g * a ∈ H n := by
-  rw [← mem_stabilizer_cosetTreeVertexEquiv_symm H hH, mem_stabilizer_iff, mem_stabilizer_iff,
-    ← (cosetTreeDartEquiv H hH).apply_eq_iff_eq, ← (cosetTreeVertexEquiv H hH).apply_eq_iff_eq]
-  simp
-
-/-- The stabilizer of the darts of the coset tree joining `H n` and `H (n + 1)` is `H n`. -/
-@[simp] theorem stabilizer_cosetTreeDartEquiv_symm_one (n : ℕ) (d : Bool) :
-    stabilizer G ((cosetTreeDartEquiv H hH).symm (⟨n, ((1 : G) : G ⧸ H n)⟩, d)) = H n := by
-  ext g
-  rw [mem_stabilizer_cosetTreeDartEquiv_symm, inv_one, one_mul, mul_one]
-
-/-- The stabilizer of the darts of the coset tree joining `H n` and `H (n + 1)` is `H n`, where
-for normal `H n` the coset `H n` is the identity of the quotient group. -/
-@[simp] theorem stabilizer_cosetTreeDartEquiv_symm_one_of_normal (n : ℕ) [(H n).Normal]
-    (d : Bool) : stabilizer G ((cosetTreeDartEquiv H hH).symm (⟨n, 1⟩, d)) = H n :=
-  stabilizer_cosetTreeDartEquiv_symm_one H hH n d
+  rw [stabilizer_cosetTreeDartEquiv_symm, mem_stabilizer_cosetTreeVertexEquiv_symm]
 
 variable {H hH}
 
@@ -266,8 +286,9 @@ theorem ratChain_apply (n : ℕ) :
 
 /-- A rational number lies in `(1 / n!) ℤ` exactly when its denominator divides `n!`. -/
 theorem mem_ratChain_iff {n : ℕ} {q : Multiplicative ℚ} :
-    q ∈ ratChain n ↔ q.toAdd.den ∣ n.factorial :=
-  Rat.mem_zmultiples_inv_natCast_iff n.factorial_ne_zero
+    q ∈ ratChain n ↔ q.toAdd.den ∣ n.factorial := by
+  rw [ratChain_apply, Multiplicative.mem_toSubgroup,
+    Rat.mem_zmultiples_inv_natCast_iff n.factorial_ne_zero]
 
 /-- Every rational number lies in some `(1 / n!) ℤ`. -/
 theorem exists_mem_ratChain (q : Multiplicative ℚ) : ∃ n, q ∈ ratChain n :=

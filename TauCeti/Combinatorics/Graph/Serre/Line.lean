@@ -102,13 +102,19 @@ def lineShift : Multiplicative ℤ →* line.Aut :=
 
 /-- Translation adds to the coordinate of a vertex. -/
 @[simp] theorem lineVertexEquiv_lineShift_smul (k : Multiplicative ℤ) (v : line.V) :
-    lineVertexEquiv (lineShift k • v) = k.toAdd + lineVertexEquiv v :=
-  congrArg lineVertexEquiv (ofParentAction_smul_vertex _ k v)
+    lineVertexEquiv (lineShift k • v) = k.toAdd + lineVertexEquiv v := by
+  rw [← vadd_eq_add, toAdd_vadd]
+  -- The graph `line` is `ofParent (· + 1)`, so `lineShift k` is the automorphism
+  -- `ofParentAction _ _ k`, and the coordinate `lineVertexEquiv` is the identity of `ℤ`.
+  exact ofParentAction_smul_vertex _ k v
 
 /-- Translation moves a dart without changing its orientation. -/
 @[simp] theorem lineShift_smul_dart (k : Multiplicative ℤ) (e : line.E) :
-    lineShift k • e = Prod.mk (k.toAdd + Prod.fst e) (Prod.snd e) :=
-  ofParentAction_smul_dart _ k e
+    lineShift k • e = Prod.mk (k.toAdd + Prod.fst e) (Prod.snd e) := by
+  rw [← vadd_eq_add, toAdd_vadd]
+  -- The graph `line` is `ofParent (· + 1)`, so `lineShift k` is the automorphism
+  -- `ofParentAction _ _ k`.
+  exact ofParentAction_smul_dart _ k e
 
 /-- Translation keeps the orientation of a dart, while reversal changes it: the integers act on
 the line without inversions. -/

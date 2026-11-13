@@ -51,8 +51,10 @@ variable {V : Type u} (p : V → V)
 
 /-- The Serre graph of a parent map `p : V → V`: its vertices are the elements of `V`, and each
 vertex `v` carries a dart `(v, true)` from `v` to its parent `p v` and the reverse dart
-`(v, false)` from `p v` to `v`. -/
-@[expose] def ofParent : SerreGraph.{u, u} where
+`(v, false)` from `p v` to `v`. The definition unfolds at instance transparency, so that an
+element of `V` or of `V × Bool` is accepted as a vertex or a dart by rewriting and
+simplification. -/
+@[expose, instance_reducible] def ofParent : SerreGraph.{u, u} where
   V := V
   E := V × Bool
   src e := if e.2 then e.1 else p e.1
@@ -240,15 +242,13 @@ variable {p}
 @[simp] theorem ofParentAction_equivE (h : ∀ (g : G) (v : V), p (g • v) = g • p v) (g : G)
     (e : V × Bool) : (ofParentAction p h g).equivE e = (g • e.1, e.2) := (rfl)
 
-/-- The automorphism attached to `g` moves a vertex `v` to `g • v`. The right-hand side names
-the action of `G` on `V` explicitly, since `v` has type `(ofParent p).V`. -/
+/-- The automorphism attached to `g` moves a vertex `v` to `g • v`. -/
 @[simp] theorem ofParentAction_smul_vertex (h : ∀ (g : G) (v : V), p (g • v) = g • p v) (g : G)
-    (v : (ofParent p).V) : ofParentAction p h g • v = @HSMul.hSMul G V V _ g v := (rfl)
+    (v : (ofParent p).V) : ofParentAction p h g • v = g • v := (rfl)
 
 /-- The automorphism attached to `g` moves the dart `(v, b)` to `(g • v, b)`. -/
 @[simp] theorem ofParentAction_smul_dart (h : ∀ (g : G) (v : V), p (g • v) = g • p v) (g : G)
-    (e : (ofParent p).E) : ofParentAction p h g • e = Prod.mk (g • Prod.fst e) (Prod.snd e) :=
-  (rfl)
+    (e : (ofParent p).E) : ofParentAction p h g • e = (g • e.1, e.2) := (rfl)
 
 /-- The action on the graph of a parent map has no inversions: it preserves the orientation of
 each edge towards the parent. -/
