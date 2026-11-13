@@ -16,11 +16,12 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 # The valuative relation on an adic completion
 
 Let `R` be a Dedekind domain with fraction field `K` and let `v` be a height-one prime of `R`. The
-completion `K_v` already carries the adic valuation `Valued.v`, with values in `ℤᵐ⁰`. This file
-equips `K_v` with the valuative relation that valuation induces, checks that its existing topology
-is the valuative topology and that the relation is nontrivial, and identifies the ring of integers
-and the residue field of the valuative relation with the ones `K_v` already has. When `K_v` is a
-nonarchimedean local field, the steps of its unit filtration are read off from `Valued.v`.
+completion `K_v` already carries the adic valuation `Valued.v`, with values in `ℤᵐ⁰`, and Mathlib
+(`Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion`) equips it with the valuative
+relation that valuation induces and shows that its topology is the valuative topology. This file
+checks that the relation is nontrivial, and identifies the ring of integers and the residue field of
+the valuative relation with the ones `K_v` already has. When `K_v` is a nonarchimedean local field,
+the steps of its unit filtration are read off from `Valued.v`.
 
 ## Main results
 
@@ -61,9 +62,10 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
 
 ## Implementation notes
 
-The valuative relation is the one induced by `Valued.v`, so `Valued.v` is `Valuation.Compatible`
-with it and the generic comparison lemmas `Valuation.vle_iff_le` and `Valuation.vle_one_iff`
-translate between the two languages; no comparison API specific to `K_v` is introduced.
+The valuative relation is Mathlib's, the one induced by `Valued.v`, so `Valued.v` is
+`Valuation.Compatible` with it and the generic comparison lemmas `Valuation.vle_iff_le` and
+`Valuation.vle_one_iff` translate between the two languages; no comparison API specific to `K_v` is
+introduced.
 
 The residue-field comparison rests on `residueFieldEquivAdicCompletionIntegers`, which compares
 `R ⧸ v` with the residue field of `𝒪_v`; only the passage from `𝒪_v` to the ring of integers of the
@@ -81,22 +83,6 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (v : HeightOneSpectrum R)
-
-/-- The valuative relation on an adic completion induced by its canonical adic valuation. -/
-noncomputable instance instValuativeRelAdicCompletion : ValuativeRel (v.adicCompletion K) :=
-  .ofValuation Valued.v
-
-/-- The canonical adic valuation is compatible with the valuative relation it induces. -/
-instance instCompatibleValuedAdicCompletion :
-    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).Compatible :=
-  .ofValuation _
-
-/-- The topology of an adic completion is induced by its canonical valuative relation. -/
-instance isValuativeTopologyAdicCompletion : IsValuativeTopology (v.adicCompletion K) := by
-  apply IsValuativeTopology.of_mem_nhds_zero_iff_vle
-    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)
-  intro s
-  exact Valued.is_topological_valuation s
 
 /-- The canonical valuative relation on an adic completion is nontrivial. -/
 instance isNontrivialAdicCompletion : ValuativeRel.IsNontrivial (v.adicCompletion K) :=
