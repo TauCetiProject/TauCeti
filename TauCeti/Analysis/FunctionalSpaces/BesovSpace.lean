@@ -49,9 +49,9 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace F φ s p q`: the bundled space, a complex normed space whose elements carry
   their tempered distribution `toDistr` and weighted blocks `weightedBlocks`.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
-  `TauCeti.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup`
-  (`q = ∞`) expressing the norm through the blocks, and the single-block bound
-  `TauCeti.BesovSpace.rpow_mul_norm_block_le`; conversely
+  `TauCeti.BesovSpace.norm_eq_tsum_rpow` and `TauCeti.BesovSpace.hasSum_norm` (`q < ∞`) and
+  `TauCeti.BesovSpace.norm_eq_ciSup` (`q = ∞`) expressing the norm through the blocks, and the
+  single-block bound `TauCeti.BesovSpace.rpow_mul_norm_block_le`; conversely
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq` bounds the norm of a
   distribution by any `ℓ^q` majorant of its weighted block norms.
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
@@ -539,6 +539,18 @@ theorem norm_eq_tsum_rpow (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
   rw [← norm_weightedBlocks,
     lp.norm_eq_tsum_rpow (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)]
   simp_rw [norm_weightedBlocks_apply]
+
+/-- For `q < ∞` the `q`-th power of the Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)^q`. -/
+theorem hasSum_norm (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
+    HasSum (fun j : ℕ ↦ (2 ^ (s * j) * ‖u.block j‖) ^ q.toReal) (‖u‖ ^ q.toReal) := by
+  have h := lp.hasSum_norm (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)
+    u.weightedBlocks
+  simpa only [norm_weightedBlocks_apply, norm_weightedBlocks] using h
+
+/-- For `q = 2` the squared Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)²`. -/
+theorem hasSum_norm_sq (u : BesovSpace F φ s p 2) :
+    HasSum (fun j : ℕ ↦ (2 ^ (s * j) * ‖u.block j‖) ^ 2) (‖u‖ ^ 2) := by
+  simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using hasSum_norm (by simp) u
 
 /-- For `q = ∞` the Besov norm is `supⱼ 2^{js} ‖Δⱼ u‖_p`. -/
 theorem norm_eq_ciSup (u : BesovSpace F φ s p ∞) :

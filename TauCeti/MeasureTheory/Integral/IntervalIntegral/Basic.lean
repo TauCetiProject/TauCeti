@@ -32,6 +32,10 @@ not belong to any particular application.
   `+∞` and to `-∞` at `-∞`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
+* `TauCeti.intervalIntegral.norm_integral_le_setIntegral_norm` and
+  `TauCeti.intervalIntegral.norm_integral_le_abs_of_ae_norm_le`: for such a function
+  and measure, the integral between two points of `[a, b]` is bounded by the `L¹(a, b)` norm, and
+  by the integral of a function dominating `‖f‖` almost everywhere on `(a, b)`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
@@ -197,6 +201,40 @@ theorem MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc {E : Type*}
     IntervalIntegrable f μ s t :=
   ((integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf |>.mono_set
     (uIcc_subset_Icc hs ht)).intervalIntegrable
+
+namespace TauCeti.intervalIntegral
+
+open scoped Interval
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {μ : Measure ℝ}
+  [NullSingletonClass μ] {a b s t : ℝ}
+
+/-- For a measure without mass at points, the integral of `f` between two points of `[a, b]` is
+bounded by the `L¹(a, b)` norm of `f`. -/
+theorem norm_integral_le_setIntegral_norm (hf : IntegrableOn f (Ioo a b) μ)
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖∫ x in s..t, f x ∂μ‖ ≤ ∫ x in Ioo a b, ‖f x‖ ∂μ := by
+  have hf' : IntegrableOn f (Icc a b) μ := (integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf
+  calc ‖∫ x in s..t, f x ∂μ‖ ≤ ∫ x in Ι s t, ‖f x‖ ∂μ :=
+        _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
+    _ ≤ ∫ x in Icc a b, ‖f x‖ ∂μ :=
+        setIntegral_mono_set hf'.norm (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _)
+          (uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)).eventuallySubset
+    _ = ∫ x in Ioo a b, ‖f x‖ ∂μ := integral_Icc_eq_integral_Ioo
+
+/-- For a measure without mass at points, if `‖f‖ ≤ g` almost everywhere on `(a, b)`, with `g`
+integrable there, then the integral of `f` between two points of `[a, b]` is bounded by the
+integral of `g` between them. -/
+theorem norm_integral_le_abs_of_ae_norm_le {g : ℝ → ℝ}
+    (hg : IntegrableOn g (Ioo a b) μ) (hfg : ∀ᵐ x ∂μ.restrict (Ioo a b), ‖f x‖ ≤ g x)
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖∫ x in s..t, f x ∂μ‖ ≤ |∫ x in s..t, g x ∂μ| := by
+  rw [restrict_Ioo_eq_restrict_Icc] at hfg
+  exact _root_.intervalIntegral.norm_integral_le_abs_of_norm_le
+    (ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)) hfg)
+    (hg.intervalIntegrable_of_mem_Icc hs ht)
+
+end TauCeti.intervalIntegral
 
 /-- A continuous linear equivalence commutes with interval integrals of arbitrary functions;
 compare `ContinuousLinearMap.intervalIntegral_comp_comm`, which needs integrability. -/

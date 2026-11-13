@@ -40,7 +40,9 @@ defined, it agrees with Mathlib's multipliers.
 * `MeasureTheory.Lp.norm_fourierMultiplierCLM_le`: the bound `‖T_m‖ ≤ ‖m‖_∞`.
 * `MeasureTheory.Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM`: `T_{m₁} ∘ T_{m₂} =
   T_{m₁ m₂}`, with linearity in the symbol and `T_c = c • id` for a constant symbol.
-* `MeasureTheory.Lp.adjoint_fourierMultiplierCLM`: the adjoint of `T_m` is `T_{star m}`.
+* `MeasureTheory.Lp.adjoint_fourierMultiplierCLM`: the adjoint of `T_m` is `T_{star m}`, so a
+  real symbol gives a self-adjoint multiplier
+  (`MeasureTheory.Lp.isSelfAdjoint_fourierMultiplierCLM`).
 * `SchwartzMap.toLp_fourierMultiplierCLM_eq` and
   `MeasureTheory.Lp.fourierMultiplierCLM_toTemperedDistribution_eq`: for a bounded symbol of
   temperate growth, `T_m` agrees with Mathlib's multipliers on Schwartz functions and, as a
@@ -189,6 +191,12 @@ theorem adjoint_fourierMultiplierCLM :
   filter_upwards [coeFn_lpSMul (r := 2) (star m) (𝓕 f), coeFn_lpSMul (r := 2) m (𝓕 g),
     Lp.coeFn_star m] with x h₁ h₂ h₃
   simp [h₁, h₂, h₃, inner_smul_left, inner_smul_right]
+
+variable {m} in
+/-- A real symbol, `star m = m`, gives a self-adjoint multiplier. -/
+theorem isSelfAdjoint_fourierMultiplierCLM (hm : star m = m) :
+    IsSelfAdjoint (fourierMultiplierCLM (E := E) F m) := by
+  rw [ContinuousLinearMap.isSelfAdjoint_iff', adjoint_fourierMultiplierCLM, hm]
 
 /-- The pairing of `g` with the multiplier `T_m f`, computed on the Fourier side:
 `⟪g, T_m f⟫ = ∫ m ξ ⟪𝓕 g ξ, 𝓕 f ξ⟫ dξ`. -/
