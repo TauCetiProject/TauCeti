@@ -290,29 +290,29 @@ instance {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) :
 instance : Abelian (GradedModuleCat.{v} 𝒜) :=
   Abelian.ofCoimageImageComparisonIsIso
 
+/-- The forgetful functor preserves homology because kernels and cokernels are formed on
+underlying modules. -/
+instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
+
+/-- The forgetful functor preserves finite limits, being an additive functor between abelian
+categories which preserves homology. -/
+instance : PreservesFiniteLimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteLimits_of_preservesHomology _
+
+/-- The forgetful functor preserves finite colimits, being an additive functor between abelian
+categories which preserves homology. -/
+instance : PreservesFiniteColimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteColimits_of_preservesHomology _
+
 /-- A morphism of graded modules is an epimorphism exactly when its underlying map is
 surjective. -/
-theorem epi_iff_surjective (f : M ⟶ N) : Epi f ↔ Function.Surjective f.hom := by
-  constructor
-  · intro hf
-    have hzero : cokernelπ f = 0 := (cancel_epi f).mp (by simp)
-    intro y
-    have hy := LinearMap.congr_fun (congrArg Hom.hom hzero) y
-    exact (Submodule.Quotient.mk_eq_zero _).mp hy
-  · intro hf
-    have : Epi (toModuleCat.map f) := (ModuleCat.epi_iff_surjective _).mpr hf
-    exact (toModuleCat (𝒜 := 𝒜)).epi_of_epi_map inferInstance
+theorem epi_iff_surjective (f : M ⟶ N) : Epi f ↔ Function.Surjective f.hom :=
+  ((toModuleCat (𝒜 := 𝒜)).epi_map_iff_epi f).symm.trans (ModuleCat.epi_iff_surjective _)
 
 /-- A morphism of graded modules is a monomorphism exactly when its underlying map is
 injective. -/
-theorem mono_iff_injective (f : M ⟶ N) : Mono f ↔ Function.Injective f.hom := by
-  constructor
-  · intro hf
-    have := NormalEpiCategory.preservesMonomorphisms_of_preservesKernels (toModuleCat (𝒜 := 𝒜))
-    exact (ModuleCat.mono_iff_injective (toModuleCat.map f)).1 inferInstance
-  · intro hf
-    have : Mono (toModuleCat.map f) := (ModuleCat.mono_iff_injective _).mpr hf
-    exact (toModuleCat (𝒜 := 𝒜)).mono_of_mono_map inferInstance
+theorem mono_iff_injective (f : M ⟶ N) : Mono f ↔ Function.Injective f.hom :=
+  ((toModuleCat (𝒜 := 𝒜)).mono_map_iff_mono f).symm.trans (ModuleCat.mono_iff_injective _)
 
 /-- A morphism of graded modules is an isomorphism exactly when its underlying map is
 bijective: the inverse of a bijective map of degree zero again has degree zero. -/
@@ -341,20 +341,6 @@ theorem isIso_biprod_desc_of_bijective {Q : GradedModuleCat.{v} 𝒜} (f : M ⟶
   have : PreservesBinaryBiproduct M N F := preservesBinaryBiproduct_of_preservesBiproduct F M N
   have : IsIso (F.map (biprod.desc f g)) := biprod.mapBiprod_hom_desc F M N f g ▸ inferInstance
   exact isIso_of_reflects_iso _ F
-
-/-- The forgetful functor preserves homology because kernels and cokernels are formed on
-underlying modules. -/
-instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
-
-/-- The forgetful functor preserves finite limits, being an additive functor between abelian
-categories which preserves homology. -/
-instance : PreservesFiniteLimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
-  Functor.preservesFiniteLimits_of_preservesHomology _
-
-/-- The forgetful functor preserves finite colimits, being an additive functor between abelian
-categories which preserves homology. -/
-instance : PreservesFiniteColimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
-  Functor.preservesFiniteColimits_of_preservesHomology _
 
 /-- A short complex of graded modules is exact exactly when its underlying linear maps are
 exact. No additional condition on the internal degrees is needed. -/
