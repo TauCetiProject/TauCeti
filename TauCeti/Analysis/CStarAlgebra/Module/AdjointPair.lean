@@ -229,7 +229,7 @@ variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
   {T : E →L[ℂ] F} {S : F →L[ℂ] E}
 
 /-- For a bounded C⋆-module adjoint pair, `‖T‖ ^ 2 ≤ ‖S ∘ T‖`. -/
-theorem sq_norm_le_norm_comp_cstarModule
+private theorem sq_norm_le_norm_comp_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) :
     ‖T‖ ^ 2 ≤ ‖S.comp T‖ := by
@@ -252,9 +252,9 @@ theorem norm_eq_cstarModule
     ‖S‖ = ‖T‖ := by
   -- Each norm is bounded by the other: `‖T‖ ^ 2 ≤ ‖S ∘ T‖ ≤ ‖S‖ * ‖T‖`, and symmetrically.
   have hT : ‖T‖ ^ 2 ≤ ‖S‖ * ‖T‖ :=
-    h.sq_norm_le_norm_comp_cstarModule.trans (S.opNorm_comp_le T)
+    (sq_norm_le_norm_comp_cstarModule h).trans (S.opNorm_comp_le T)
   have hS : ‖S‖ ^ 2 ≤ ‖T‖ * ‖S‖ :=
-    h.symm_cstarModule.sq_norm_le_norm_comp_cstarModule.trans (T.opNorm_comp_le S)
+    (sq_norm_le_norm_comp_cstarModule h.symm_cstarModule).trans (T.opNorm_comp_le S)
   apply le_antisymm <;> nlinarith [norm_nonneg T, norm_nonneg S]
 
 /-- The C⋆-identity for a bounded C⋆-module adjoint pair: `‖S ∘ T‖ = ‖T‖ ^ 2`. This is the
@@ -264,7 +264,7 @@ theorem norm_adjoint_comp_self_cstarModule
       (innerₛₗ (A := A) (E := F)).flip T S) :
     ‖S.comp T‖ = ‖T‖ ^ 2 :=
   le_antisymm ((S.opNorm_comp_le T).trans_eq (by rw [h.norm_eq_cstarModule, sq]))
-    h.sq_norm_le_norm_comp_cstarModule
+    (sq_norm_le_norm_comp_cstarModule h)
 
 end Norm
 
