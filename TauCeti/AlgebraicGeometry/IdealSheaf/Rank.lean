@@ -7,6 +7,9 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Rank
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Stalk
+public import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
 # Ranks of finite flat closed subschemes
@@ -22,8 +25,16 @@ image `V(J.comap ι_I)` of `V(J)` in `V(I)`. Both are the fibre product `V(I) ×
 same rank over the base (`Scheme.IdealSheafData.finrank_comap_subschemeι_comm`). For two curves on
 a surface, this is the symmetry of the length of their scheme-theoretic intersection.
 
+For a closed immersion `i : Z ⟶ Y` with `Z` finite over a field, its rank is the sum over `Y`
+of the lengths of `𝒪_{Y,y} ⧸ ker(i)_y` weighted by residue degrees. Points outside `Z` contribute
+zero. This formula requires no properness or dimension hypothesis on `Y`.
+
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Hom.finrank_eq_finsum_of_isClosedImmersion`: the local-length
+  formula for a closed immersion finite over a field, with compatible residue degrees;
+* `AlgebraicGeometry.Scheme.Hom.finrank_comp_eq_finsum_of_isClosedImmersion`: the specialization
+  when the structure morphism factors through the ambient scheme;
 * `AlgebraicGeometry.Scheme.IdealSheafData.eq_of_le_of_finrank_eq`: comparable ideal sheaves
   cutting out finite flat schemes of the same rank are equal;
 * `AlgebraicGeometry.Scheme.IdealSheafData.finrank_comap_subschemeι_comm`: the rank of
@@ -79,3 +90,45 @@ theorem finrank_comap_subschemeι_comm {I J : X.IdealSheafData} (f : I.subscheme
   rw [← he, Hom.finrank_comp_left_of_isIso]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+private theorem finsum_comp_eq_of_injective {α β M : Type*} [AddCommMonoid M]
+    {g : α → β} (hg : Function.Injective g) (F : β → M)
+    (hF : ∀ x ∉ Set.range g, F x = 0) : (∑ᶠ y, F (g y)) = ∑ᶠ x, F x := by
+  rw [← finsum_mem_range (f := F) hg]
+  exact finsum_congr fun x ↦ by
+    by_cases hx : x ∈ Set.range g
+    · simp only [hx, finsum_true]
+    · simp only [hx, finsum_false, hF x hx]
+
+/-- The rank of a closed subscheme finite over a field is the sum over the ambient scheme of
+local quotient lengths times compatible residue degrees. Stalk ideals off the image are the unit
+ideal, so those points contribute zero. -/
+theorem finrank_eq_finsum_of_isClosedImmersion {K : Type u} [Field K] {Z Y S : Scheme.{u}}
+    (h : Z ⟶ Spec (.of K)) [IsFinite h] (i : Z ⟶ Y) [IsClosedImmersion i] (f : Y ⟶ S)
+    (hf : ∀ z, h.residueDegree z = f.residueDegree (i z)) (s : Spec (.of K)) :
+    h.finrank s = ∑ᶠ y : Y, f.residueDegree y *
+      (Module.length (Y.presheaf.stalk y) (Y.presheaf.stalk y ⧸ i.ker.stalkIdeal y)).toNat := by
+  rw [h.finrank_eq_finsum_residueDegree_mul_length s]
+  simp_rw [hf, i.length_stalk_of_isClosedImmersion]
+  apply finsum_comp_eq_of_injective i.isClosedEmbedding.injective
+    (fun y : Y ↦ f.residueDegree y *
+      (Module.length (Y.presheaf.stalk y) (Y.presheaf.stalk y ⧸ i.ker.stalkIdeal y)).toNat)
+  intro y hy
+  simp [i.ker_stalkIdeal_eq_top_of_notMem_range hy]
+
+/-- A closed subscheme finite over `K` has rank equal to the residue-degree-weighted sum of
+its local quotient lengths on the ambient `K`-scheme. -/
+theorem finrank_comp_eq_finsum_of_isClosedImmersion {K : Type u} [Field K] {Z Y : Scheme.{u}}
+    (i : Z ⟶ Y) [IsClosedImmersion i] (f : Y ⟶ Spec (.of K)) [IsFinite (i ≫ f)]
+    (s : Spec (.of K)) :
+    (i ≫ f).finrank s = ∑ᶠ y : Y, f.residueDegree y *
+      (Module.length (Y.presheaf.stalk y) (Y.presheaf.stalk y ⧸ i.ker.stalkIdeal y)).toNat := by
+  apply finrank_eq_finsum_of_isClosedImmersion (i ≫ f) i f _ s
+  intro z
+  rw [residueDegree_comp, residueDegree_eq_one_of_surjectiveOnStalks i z, mul_one]
+
+end AlgebraicGeometry.Scheme.Hom

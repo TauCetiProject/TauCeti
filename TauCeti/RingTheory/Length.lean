@@ -45,6 +45,9 @@ applies to the quotients appearing here without any further appeal to defeq.
 
 ## Main results
 
+* `TauCeti.finrank_eq_length_mul_finrank_residueField`: for a local `k`-algebra `B`,
+  `dim_k M = ℓ_B(M) · [κ(B) : k]`.
+
 * `TauCeti.length_quotient_anti`: `M ⧸ Q` is no longer than `M ⧸ P` when `P ≤ Q`.
 * `TauCeti.length_quotient_eq_length_map_add_length_quotient_sup`: additivity along a filtration.
 * `TauCeti.length_map_mkQ`: the length of the image of `N` in `M ⧸ P`.
@@ -579,8 +582,8 @@ namespace Ideal
 /-- **Length of a quotient along a surjection.** For a surjective ring homomorphism `ψ : A → B`
 and an ideal `I` of `A`, the quotient `B ⧸ ψ(I)` has the same length over `B` as `A ⧸ (I + ker ψ)`
 over `A`, the two being identified by the semilinear bijection induced by `ψ`. -/
-theorem length_quotient_map_of_surjective {A B : Type*} [Ring A] [Ring B] (I : Ideal A)
-    {ψ : A →+* B} (hψ : Function.Surjective ψ) :
+theorem length_quotient_map_of_surjective {A B F : Type*} [Ring A] [Ring B]
+    [FunLike F A B] [RingHomClass F A B] (I : Ideal A) {ψ : F} (hψ : Function.Surjective ψ) :
     Module.length B (B ⧸ I.map ψ) = Module.length A (A ⧸ (I ⊔ RingHom.ker ψ)) := by
   rw [Module.length_quotient, Module.length_quotient,
     ← coheight_comap_of_surjective ψ hψ, comap_map_of_surjective' ψ hψ I]

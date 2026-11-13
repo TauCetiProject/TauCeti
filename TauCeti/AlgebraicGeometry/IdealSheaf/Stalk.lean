@@ -306,3 +306,19 @@ theorem stalkOrder_sup (I J : X.IdealSheafData) (x : X) :
   simp [stalkOrder]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+/-- The stalk of the kernel ideal sheaf of a closed immersion is the unit ideal off its image. -/
+theorem ker_stalkIdeal_eq_top_of_notMem_range {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [IsClosedImmersion f] {y : Y} (hy : y ∉ Set.range f) : f.ker.stalkIdeal y = ⊤ := by
+  by_contra h
+  apply hy
+  have hs := (f.ker.mem_support_iff_stalkIdeal_ne_top y).mpr h
+  have hset : (f.ker.support : Set Y) = Set.range f :=
+    f.support_ker.trans f.isClosedEmbedding.isClosed_range.closure_eq
+  exact hset ▸ hs
+
+end AlgebraicGeometry.Scheme.Hom

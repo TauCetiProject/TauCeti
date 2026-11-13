@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
-public import TauCeti.RingTheory.Artinian.Finrank
 public import TauCeti.RingTheory.Length
 public import TauCeti.RingTheory.Flat.Rank
 
@@ -235,6 +234,41 @@ theorem Scheme.Hom.finrank_eq_finrank_of_field {K : Type u} [Field K] {X : Schem
   -- The rank of a free module is the constant function with value its `finrank`.
   rfl
 
+private theorem finrank_residueField_stalk {K : Type u} [Field K] {X : Scheme.{u}}
+    (f : X ⟶ Spec (.of K)) (x : X) [Algebra K Γ(X, ⊤)]
+    (hf : algebraMap K Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom)
+    [Algebra K (X.presheaf.stalk x)]
+    (hx : algebraMap K (X.presheaf.stalk x) =
+      (X.presheaf.germ ⊤ x (TopologicalSpace.Opens.mem_top x)).hom.comp (algebraMap K Γ(X, ⊤))) :
+    Module.finrank K (IsLocalRing.ResidueField (X.presheaf.stalk x)) = f.residueDegree x := by
+  let : Algebra K (X.residueField x) := Algebra.compHom (X.residueField x)
+    ((X.Γevaluation x).hom.comp ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom)
+  rw [f.residueDegree_eq_finrank]
+  let q := CommRingCat.ofHom (IsLocalRing.residue (X.presheaf.stalk x))
+  have : IsLocalHom q.hom := inferInstanceAs
+    (IsLocalHom (IsLocalRing.residue (X.presheaf.stalk x)))
+  let e := X.descResidueField q
+  have he : Function.Bijective e.hom := by
+    refine ⟨e.hom.injective, fun a ↦ ?_⟩
+    obtain ⟨t, ht⟩ := IsLocalRing.residue_surjective (R := X.presheaf.stalk x) a
+    refine ⟨X.residue x t, ?_⟩
+    rw [← ht, ← CommRingCat.comp_apply, Scheme.residue_descResidueField]
+    rfl
+  have hc : X.Γevaluation x ≫ e = X.presheaf.germ ⊤ x (TopologicalSpace.Opens.mem_top x) ≫ q := by
+    exact (Category.assoc _ _ _).trans
+      (congrArg (fun g ↦ X.presheaf.germ ⊤ x (TopologicalSpace.Opens.mem_top x) ≫ g)
+        (Scheme.residue_descResidueField q))
+  refine (Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl K)
+    (RingEquiv.ofBijective e.hom he) ?_).symm
+  ext c
+  -- Unpack the transported algebra structures and the ring equivalence on the two residue fields.
+  change algebraMap K (IsLocalRing.ResidueField (X.presheaf.stalk x)) c =
+    e.hom ((X.Γevaluation x).hom (((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom c))
+  rw [← hf, IsScalarTower.algebraMap_apply K (X.presheaf.stalk x)
+    (IsLocalRing.ResidueField (X.presheaf.stalk x)), hx, RingHom.comp_apply]
+  exact (congrArg (fun g : Γ(X, ⊤) ⟶ CommRingCat.of
+    (IsLocalRing.ResidueField (X.presheaf.stalk x)) ↦ g (algebraMap K Γ(X, ⊤) c)) hc).symm
+
 /-- **Over a field, the rank is a sum of local lengths.** Let `f : X ⟶ Spec K` be finite.
 Then the rank of `f` is the sum over the finitely many points `x` of `X` of the length
 of the Artinian local ring `𝒪_{X,x}` times the residue degree `[κ(x) : K]`. -/
@@ -264,40 +298,10 @@ theorem Scheme.Hom.finrank_eq_finsum_residueDegree_mul_length {K : Type u} [Fiel
   have : IsScalarTower K Γ(X, ⊤) (X.presheaf.stalk x) := IsScalarTower.of_algebraMap_eq' rfl
   let φ := IsLocalization.algEquiv (hU.primeIdealOf ⟨x, trivial⟩).asIdeal.primeCompl
     (Localization.AtPrime (hU.primeIdealOf ⟨x, trivial⟩).asIdeal) (X.presheaf.stalk x)
-  have : Module.Finite K (X.presheaf.stalk x) :=
-    .of_surjective (IsScalarTower.toAlgHom K Γ(X, ⊤) (X.presheaf.stalk x)).toLinearMap
-      (IsArtinianRing.localization_surjective (hU.primeIdealOf ⟨x, trivial⟩).asIdeal.primeCompl _)
   have h := TauCeti.finrank_eq_length_mul_finrank_residueField K
     (X.presheaf.stalk x) (X.presheaf.stalk x)
   have he : e x = hU.primeIdealOf ⟨x, trivial⟩ := rfl
-  let : Algebra K (X.residueField x) := Algebra.compHom (X.residueField x)
-    ((X.Γevaluation x).hom.comp ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom)
-  rw [f.residueDegree_eq_finrank, mul_comm, he, (φ.restrictScalars K).toLinearEquiv.finrank_eq]
-  let q := CommRingCat.ofHom (IsLocalRing.residue (X.presheaf.stalk x))
-  have : IsLocalHom q.hom := inferInstanceAs
-    (IsLocalHom (IsLocalRing.residue (X.presheaf.stalk x)))
-  let e := X.descResidueField q
-  have he : Function.Bijective e.hom := by
-    refine ⟨e.hom.injective, fun a ↦ ?_⟩
-    obtain ⟨t, ht⟩ := IsLocalRing.residue_surjective (R := X.presheaf.stalk x) a
-    refine ⟨X.residue x t, ?_⟩
-    change (X.residue x ≫ e) t = a
-    rw [show X.residue x ≫ e = q from Scheme.residue_descResidueField q]
-    exact ht
-  have hc : X.Γevaluation x ≫ e = X.presheaf.germ ⊤ x (TopologicalSpace.Opens.mem_top x) ≫ q := by
-    exact (congrArg (fun g ↦ g ≫ e)
-      (X.germ_residue x (TopologicalSpace.Opens.mem_top x)).symm).trans
-        ((Category.assoc _ _ _).trans
-          (congrArg (fun g ↦ X.presheaf.germ ⊤ x (TopologicalSpace.Opens.mem_top x) ≫ g)
-            (Scheme.residue_descResidueField q)))
-  refine h.trans (congrArg (fun n ↦
-    (Module.length (X.presheaf.stalk x) (X.presheaf.stalk x)).toNat * n) ?_)
-  refine (Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl K)
-    (RingEquiv.ofBijective e.hom he) ?_).symm
-  ext c
-  change algebraMap K (IsLocalRing.ResidueField (X.presheaf.stalk x)) c =
-    e.hom ((X.Γevaluation x).hom (algebraMap K Γ(X, ⊤) c))
-  rw [← CommRingCat.comp_apply, hc]
-  rfl
+  rw [mul_comm, he, (φ.restrictScalars K).toLinearEquiv.finrank_eq, h,
+    finrank_residueField_stalk f x rfl rfl]
 
 end AlgebraicGeometry
