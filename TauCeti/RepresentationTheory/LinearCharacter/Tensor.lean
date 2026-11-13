@@ -45,9 +45,8 @@ private theorem lid_tensor_ρ_apply (χ ψ : G →* kˣ) (g : G)
         FDRep.of (Representation.ofLinearCharacter ψ)).ρ g x) =
       (FDRep.of (Representation.ofLinearCharacter (χ * ψ))).ρ g (TensorProduct.lid k k x) := by
   rw [tensor_ρ, of_ρ', of_ρ', ← Representation.tprod_apply,
-    Representation.lid_ofLinearCharacter_tprod_apply, of_ρ', Representation.ofLinearCharacter_apply,
-    Representation.ofLinearCharacter_apply, smul_eq_mul, MonoidHom.mul_apply, Units.val_mul,
-    mul_assoc]
+    Representation.lid_ofLinearCharacter_tprod_apply]
+  simp [mul_assoc]
 
 /-- **The multiplication `k ⊗ k ≃ k` intertwines `χ ⊗ ψ` with `χψ`**, on the unbundled lines
 `FDRep.of (Representation.ofLinearCharacter χ)`. -/

@@ -101,8 +101,9 @@ theorem tensorRightHomEquivOfIso_apply (e₁ : L ⊗ M ≅ 𝟙_ C) (e₂ : M �
   simp [tensorRightHomEquivOfIso, Iso.homToEquiv, tensorRightEquivalenceOfIso,
     Functor.FullyFaithful.homEquiv, Equivalence.mk]
 
-/-- The inverse of `tensorRightHomEquivOfIso` sends `g : X ⊗ L ⟶ Y` to the preimage of
-`g ≫ (Y ⊗ M) ⊗ L ≅ Y` under `- ⊗ L`, read through the unit of `tensorRightEquivalenceOfIso`. -/
+/-- The inverse of `tensorRightHomEquivOfIso` sends `g : X ⊗ L ⟶ Y` to the preimage under
+`- ⊗ L` of `g` followed by the inverse counit `Y ≅ (Y ⊗ M) ⊗ L`, read through the unit of
+`tensorRightEquivalenceOfIso`. -/
 theorem tensorRightHomEquivOfIso_symm_apply (e₁ : L ⊗ M ≅ 𝟙_ C) (e₂ : M ⊗ L ≅ 𝟙_ C) {X Y : C}
     (g : X ⊗ L ⟶ Y) :
     (tensorRightHomEquivOfIso e₁ e₂ X Y).symm g =
