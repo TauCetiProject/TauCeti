@@ -16,7 +16,9 @@ as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFD
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
 derivative fields. The first iterated derivative, uncurried, is the Fréchet derivative
 (`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`, with the function-level form
-`TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`). The file also supplies the
+`TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`), while evaluating the third iterated
+derivative on three directions gives the three-times curried Fréchet derivative
+(`TauCeti.iteratedFDeriv_three_apply`). The file also supplies the
 two-variable currying isometry used to identify continuous multilinear second derivatives with
 curried bilinear maps, and the corresponding exact comparison for differences of second
 derivatives, which transfers Hölder bounds between the two forms of the second derivative.
@@ -85,6 +87,13 @@ theorem continuousMultilinearCurryFin2_iteratedFDeriv_two (f : E → F) (x : E) 
   ext v w
   simp only [continuousMultilinearCurryFin2_apply, iteratedFDeriv_two_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+
+/-- Evaluating the third iterated derivative on three directions gives the three-times curried
+Fréchet derivative, including at points where these derivatives are junk-valued. -/
+theorem iteratedFDeriv_three_apply (f : E → F) (x : E) (m : Fin 3 → E) :
+    iteratedFDeriv 𝕜 3 f x m = fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 f)) x (m 0) (m 1) (m 2) := by
+  rw [iteratedFDeriv_succ_apply_right, iteratedFDeriv_two_apply]
+  rfl
 
 /-- Differences of curried second derivatives and multilinear second derivatives have
 exactly the same norm, without differentiability assumptions. -/
