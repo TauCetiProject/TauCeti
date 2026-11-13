@@ -23,9 +23,9 @@ is `AlgebraicGeometry.Scheme.Hom.coheight_eq_coheight_add_coheight_preimage` in
 
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_le_of_flat_of_surjective`: a flat,
   surjective morphism of schemes cannot increase dimension.
-* `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_eq_of_flat_of_surjective`: a flat,
+* `Scheme.Hom.topologicalKrullDim_eq_of_flat_of_surjective_of_locallyQuasiFinite`: a flat,
   surjective, locally quasi-finite morphism of schemes preserves dimension.
-* `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_opens_eq_of_flat_of_surjective`: the
+* `Scheme.Hom.topologicalKrullDim_opens_eq_of_flat_of_surjective_of_locallyQuasiFinite`: the
   condition that every nonempty open has a prescribed dimension descends along such a morphism.
 -/
 
@@ -47,7 +47,7 @@ theorem Scheme.Hom.topologicalKrullDim_le_of_flat_of_surjective (f : X ⟶ Y)
 
 /-- A flat, surjective, locally quasi-finite morphism of schemes preserves Krull dimension.
 In particular, this applies to finite faithfully flat covers. -/
-theorem Scheme.Hom.topologicalKrullDim_eq_of_flat_of_surjective (f : X ⟶ Y)
+theorem Scheme.Hom.topologicalKrullDim_eq_of_flat_of_surjective_of_locallyQuasiFinite (f : X ⟶ Y)
     [Flat f] [Surjective f] [LocallyQuasiFinite f] :
     topologicalKrullDim X = topologicalKrullDim Y :=
   le_antisymm f.topologicalKrullDim_le f.topologicalKrullDim_le_of_flat_of_surjective
@@ -55,15 +55,15 @@ theorem Scheme.Hom.topologicalKrullDim_eq_of_flat_of_surjective (f : X ⟶ Y)
 /-- If every nonempty open of the source of a flat, surjective, locally quasi-finite morphism
 has dimension `d`, the same holds for every nonempty open of its target. This is the dimension
 condition used together with descent of regularity along finite faithfully flat covers. -/
-theorem Scheme.Hom.topologicalKrullDim_opens_eq_of_flat_of_surjective (f : X ⟶ Y)
-    [Flat f] [Surjective f] [LocallyQuasiFinite f] {d : WithBot ℕ∞}
+theorem Scheme.Hom.topologicalKrullDim_opens_eq_of_flat_of_surjective_of_locallyQuasiFinite
+    (f : X ⟶ Y) [Flat f] [Surjective f] [LocallyQuasiFinite f] {d : WithBot ℕ∞}
     (hd : ∀ U : X.Opens, Nonempty U → topologicalKrullDim U = d)
     (U : Y.Opens) [Nonempty U] : topologicalKrullDim U = d := by
   have : Surjective (f ∣_ U) := IsZariskiLocalAtTarget.restrict ‹Surjective f› U
   have : Nonempty (f ⁻¹ᵁ U) := by
     obtain ⟨x, -⟩ := (f ∣_ U).surjective (Classical.choice ‹Nonempty U›)
     exact ⟨x⟩
-  rw [← (f ∣_ U).topologicalKrullDim_eq_of_flat_of_surjective]
+  rw [← (f ∣_ U).topologicalKrullDim_eq_of_flat_of_surjective_of_locallyQuasiFinite]
   exact hd (f ⁻¹ᵁ U) inferInstance
 
 end AlgebraicGeometry
