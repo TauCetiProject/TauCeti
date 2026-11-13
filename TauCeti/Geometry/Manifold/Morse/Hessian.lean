@@ -131,11 +131,10 @@ theorem fderiv_fderiv_comp_chartAt_symm {N : Type*} [TopologicalSpace N] [Charte
     {u : N → ℝ} {y : N} (v w : E) :
     fderiv ℝ (fderiv ℝ (u ∘ (chartAt E y).symm)) (chartAt E y y) v w =
       criticalHessian 𝓘(ℝ, E) u y v w := by
-  have hext : ((extChartAt 𝓘(ℝ, E) y).symm : E → N) = (chartAt E y).symm := by ext; simp
-  have hext' : extChartAt 𝓘(ℝ, E) y y = chartAt E y y := by simp
   have h : fderiv ℝ (fderiv ℝ (u ∘ (chartAt E y).symm)) (chartAt E y y) =
       criticalHessian 𝓘(ℝ, E) u y := by
-    rw [criticalHessian_def, hext, hext']
+    rw [criticalHessian_def, TauCeti.extChartAt_model_symm_eq_chartAt_symm,
+      TauCeti.extChartAt_model_apply_eq_chartAt_apply]
   -- `criticalHessian` is a form on `TangentSpace 𝓘(ℝ, E) y`, which is `E` by definition.
   exact congr($h v w)
 

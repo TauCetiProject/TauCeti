@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocallyFree
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Finite locally free sheaves on a scheme

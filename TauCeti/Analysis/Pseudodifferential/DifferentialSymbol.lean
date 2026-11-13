@@ -25,12 +25,6 @@ pointwise identity or its absolute convergence: at a fixed position these are fi
 many fixed linear maps applied to Fourier transforms of Schwartz derivatives. Smooth
 coefficients give smooth outputs. The support theorem records locality of these operators.
 
-Smooth coefficients also give a symbol that is smooth jointly in the position and the frequency
-(`TauCeti.contDiff_differentialSymbol`), and an expression whose derivatives all have order `d`
-has a symbol homogeneous of degree `d` in the frequency (`TauCeti.differentialSymbol_smul_snd`).
-These are the inputs for viewing the symbol as a classical symbol, in
-`TauCeti.Analysis.Pseudodifferential.Symbol.Differential`.
-
 ## References
 
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
@@ -111,33 +105,33 @@ theorem differentialSymbol_smul (s : Finset ι) (v : ∀ i, Fin (k i) → E)
   funext p
   simp [differentialSymbol, smul_comm _ z, Finset.smul_sum]
 
-/-- A differential expression all of whose derivatives have order `d` has a symbol that is
-homogeneous of degree `d` in the frequency, for every real scaling factor. -/
+/-- Coefficients of class `C^r` give a polynomial differential symbol of class `C^r` jointly in
+the position and the frequency. -/
+theorem contDiff_differentialSymbol {r : ℕ∞} (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+    {b : ι → E → V →L[ℂ] W} (hb : ∀ i ∈ s, ContDiff ℝ r (b i)) :
+    ContDiff ℝ r (differentialSymbol s v b) := by
+  refine ContDiff.sum fun i hi ↦ ?_
+  have hprod : ContDiff ℝ r fun p : E × E ↦ ∏ j, (Complex.I * (⟪p.2, v i j⟫ : ℂ)) :=
+    contDiff_prod fun j _ ↦ contDiff_const.mul
+      (Complex.ofRealCLM.contDiff.comp (contDiff_snd.inner ℝ contDiff_const))
+  exact hprod.smul ((hb i hi).comp contDiff_fst)
+
+/-- If every summand has order `d`, the polynomial differential symbol is homogeneous of
+degree `d` in the frequency. -/
 theorem differentialSymbol_smul_snd (s : Finset ι) (v : ∀ i, Fin (k i) → E)
-    (b : ι → E → V →L[ℂ] W) {d : ℕ} (hd : ∀ i ∈ s, k i = d) (x ξ : E) (t : ℝ) :
-    differentialSymbol s v b (x, t • ξ) = (t ^ d) • differentialSymbol s v b (x, ξ) := by
+    (b : ι → E → V →L[ℂ] W) {d : ℕ} (hk : ∀ i ∈ s, k i = d) (x ξ : E) (t : ℝ) :
+    differentialSymbol s v b (x, t • ξ) = t ^ d • differentialSymbol s v b (x, ξ) := by
   simp only [differentialSymbol_def, Finset.smul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  have hprod : ∏ j, (Complex.I * (⟪t • ξ, v i j⟫ : ℂ)) =
-      ((t ^ d : ℝ) : ℂ) * ∏ j, (Complex.I * (⟪ξ, v i j⟫ : ℂ)) := by
-    simp only [real_inner_smul_left, Complex.ofReal_mul, mul_left_comm Complex.I (t : ℂ),
-      Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin, hd i hi,
-      Complex.ofReal_pow]
-  rw [hprod, mul_smul, Complex.coe_smul]
-
-/-- Smooth coefficients give a smooth symbol, jointly in the position and the frequency. -/
-theorem contDiff_differentialSymbol {n : ℕ∞} (s : Finset ι) (v : ∀ i, Fin (k i) → E)
-    (b : ι → E → V →L[ℂ] W) (hb : ∀ i ∈ s, ContDiff ℝ n (b i)) :
-    ContDiff ℝ n (differentialSymbol s v b) := by
-  have h : differentialSymbol s v b =
-      fun p ↦ ∑ i ∈ s, (∏ j, (Complex.I * (⟪p.2, v i j⟫ : ℂ))) • b i p.1 :=
-    funext (differentialSymbol_def s v b)
-  rw [h]
-  refine ContDiff.sum fun i hi ↦ ?_
-  apply ContDiff.fun_smul
-  · refine contDiff_prod fun j _ ↦ contDiff_const.mul ?_
-    exact Complex.ofRealCLM.contDiff.comp (contDiff_snd.inner ℝ contDiff_const)
-  · exact (hb i hi).comp contDiff_fst
+  have h : ∏ j, (Complex.I * (⟪t • ξ, v i j⟫ : ℂ)) =
+      (t : ℂ) ^ d * ∏ j, (Complex.I * (⟪ξ, v i j⟫ : ℂ)) :=
+    calc ∏ j, (Complex.I * (⟪t • ξ, v i j⟫ : ℂ))
+        _ = ∏ j, ((t : ℂ) * (Complex.I * (⟪ξ, v i j⟫ : ℂ))) :=
+          Finset.prod_congr rfl fun j _ ↦ by rw [real_inner_smul_left, Complex.ofReal_mul]; ring
+        _ = _ := by
+          rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+            ← hk i hi]
+  rw [h, mul_smul, ← Complex.ofReal_pow, Complex.coe_smul]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
