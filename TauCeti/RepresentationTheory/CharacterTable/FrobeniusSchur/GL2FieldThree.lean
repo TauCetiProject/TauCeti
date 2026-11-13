@@ -62,7 +62,7 @@ open Matrix
 
 namespace TauCeti
 
-variable {F : Type} [Field F] [Fintype F]
+variable {F : Type*} [Field F] [Fintype F]
 
 /-- **`GL₂(𝔽₃)` has fourteen solutions of `g² = 1`**: the two central elements `1` and `-1`, and
 the twelve elements of the split semisimple class with characteristic polynomial `X² - 1`. -/
@@ -91,7 +91,7 @@ and the cuspidal character of row `2` are orthogonal, the two complex conjugate 
 of rows `3` and `4` are of complex type, and no row is quaternionic. Such an enumeration exists by
 `TauCeti.exists_equiv_submatrix_characterTable_eq_gl2FieldThreeCharacterTable`. -/
 theorem frobeniusSchurIndicatorRow_eq_of_submatrix_eq_gl2FieldThreeCharacterTable
-    [DecidableEq F] (hF : Fintype.card F = 3)
+    [Fintype (GL (Fin 2) F)] (hF : Fintype.card F = 3)
     (σ : Fin 8 ≃ Fin (Nat.card (ConjClasses (GL (Fin 2) F))))
     (hσ : (characterTable ℂ (GL (Fin 2) F)).submatrix σ
         (conjClassesGLFinTwoEquiv ∘ gl2FieldThreeClassIndex F) = gl2FieldThreeCharacterTable)
