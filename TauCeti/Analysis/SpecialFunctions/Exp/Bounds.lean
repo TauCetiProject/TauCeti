@@ -27,6 +27,8 @@ with the rescaled level `exp (-(t / ε))`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
+* `TauCeti.bddAbove_exp_neg_mul_mul_sub`: if `u` is bounded above on a slab `[0, T] × X`, then so is
+  `exp (-γ t) u - (M + t F)`, for `0 ≤ γ`, `0 ≤ M`, `0 ≤ F`.
 -/
 
 public section
@@ -91,5 +93,24 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
         rw [mul_pow, sq_abs, ← exp_nat_mul]; push_cast; ring_nf
     _ ≤ t ^ 2 * (2 * cosh (2 * t)) := by gcongr
     _ = 2 * t ^ 2 * cosh (2 * t) := by ring
+
+/-- If `u` is bounded above on `[0, T] × X` and `0 ≤ γ`, `0 ≤ M`, `0 ≤ F`, then
+`exp (-γ t) u - (M + t F)` is bounded above there. -/
+theorem bddAbove_exp_neg_mul_mul_sub {X : Type*} {u : ℝ → X → ℝ} {T M F γ : ℝ}
+    (hγ : 0 ≤ γ) (hM : 0 ≤ M) (hF : 0 ≤ F)
+    (hbdd : BddAbove (Function.uncurry u '' Set.Icc 0 T ×ˢ Set.univ)) :
+    BddAbove (Function.uncurry (fun t x ↦ exp (-(γ * t)) * u t x - (M + t * F)) ''
+      Set.Icc 0 T ×ˢ Set.univ) := by
+  obtain ⟨Mu, hMu⟩ := hbdd
+  refine ⟨max Mu 0, ?_⟩
+  rintro _ ⟨⟨t, x⟩, ⟨ht, -⟩, rfl⟩
+  have h1 : exp (-(γ * t)) ≤ 1 := exp_le_one_iff.mpr (by nlinarith [ht.1])
+  have h2 : u t x ≤ max Mu 0 :=
+    (hMu ⟨(t, x), ⟨ht, Set.mem_univ x⟩, rfl⟩).trans (le_max_left _ _)
+  have h3 : 0 ≤ M + t * F := by nlinarith [ht.1]
+  simp only [Function.uncurry_apply_pair]
+  nlinarith [exp_pos (-(γ * t)), le_max_right Mu 0,
+    mul_le_mul_of_nonneg_left h2 (exp_pos (-(γ * t))).le,
+    mul_le_mul_of_nonneg_right h1 (le_max_right Mu 0)]
 
 end TauCeti

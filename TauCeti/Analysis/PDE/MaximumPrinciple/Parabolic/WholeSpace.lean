@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.NonDivergence
 
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.InnerProductSpace.Young
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # The comparison principle for parabolic equations on the whole space
@@ -98,28 +101,6 @@ variable {a : ℝ → EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : ℝ → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : ℝ → EuclideanSpace ℝ ι → ℝ}
   {u v : ℝ → EuclideanSpace ℝ ι → ℝ} {T Lam β γ : ℝ}
 
-/-- The derivative of `s ↦ f s - ε (exp (K s) c)` at `t`, from that of `f`. -/
-private theorem hasDerivAt_sub_mul_exp_mul_mul_const {f : ℝ → ℝ} {f' t : ℝ} (K ε c : ℝ)
-    (hf : HasDerivAt f f' t) :
-    HasDerivAt (fun s ↦ f s - ε * (Real.exp (K * s) * c))
-      (f' - ε * (K * Real.exp (K * t) * c)) t := by
-  have hexp : HasDerivAt (fun s ↦ Real.exp (K * s)) (K * Real.exp (K * t)) t := by
-    have := ((hasDerivAt_id t).const_mul K).exp
-    simp only [id, mul_one] at this
-    rw [mul_comm]
-    exact this
-  exact hf.sub ((hexp.mul_const c).const_mul ε)
-
-/-- If `‖b‖ ≤ β (1 + ‖x‖)`, then `2 ⟪x, b⟫ ≤ 3 |β| (1 + ‖x‖²)`. -/
-private theorem two_mul_inner_le_of_norm_le_mul_add_norm {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] {x b : E} {β : ℝ} (hb : ‖b‖ ≤ β * (1 + ‖x‖)) :
-    2 * ⟪x, b⟫ ≤ 3 * |β| * (1 + ‖x‖ ^ 2) := by
-  have hb' : ‖b‖ ≤ |β| * (1 + ‖x‖) :=
-    hb.trans (mul_le_mul_of_nonneg_right (le_abs_self β) (by positivity))
-  have h1 : ⟪x, b⟫ ≤ ‖x‖ * (|β| * (1 + ‖x‖)) :=
-    (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left hb' (norm_nonneg _))
-  nlinarith [sq_nonneg (‖x‖ - 1), abs_nonneg β, mul_nonneg (abs_nonneg β) (sq_nonneg (‖x‖ - 1))]
-
 /-- The barrier step of the maximum principle: if `c ≤ 0` and `P u ≤ 0`, then at a point
 `(t₀, x₀)` of the open slab where `u` is positive, the function `u - ε exp (K t) (1 + ‖x‖²)` with
 `K = 2 |Λ| + 3 |β| + 1` does not attain its maximum over `[0, t₀] × ℝⁿ`. -/
@@ -161,7 +142,8 @@ private theorem not_forall_sub_mul_exp_mul_le
     sum_mul_fderiv_fderiv_add_fderiv_norm_sq] at hLf
   -- In time, `t₀` maximizes `s ↦ u s x₀ - ε exp (K s) (1 + q²)` from the left, so its derivative
   -- `∂ₜu - ε K e (1 + q²)` is nonnegative.
-  have hg := hasDerivAt_sub_mul_exp_mul_mul_const (K := K) ε (1 + q ^ 2) (hdiff ht₀ x₀).hasDerivAt
+  have hg := Real.hasDerivAt_sub_mul_exp_mul_mul_const (K := K) ε (1 + q ^ 2)
+    (hdiff ht₀ x₀).hasDerivAt
   have hleft : IsLocalMaxOn (fun s ↦ u s x₀ - ε * (Real.exp (K * s) * (1 + q ^ 2))) (Iic t₀) t₀ :=
     Filter.mem_of_superset (Icc_mem_nhdsLE ht₀.1) fun s hs ↦ hglob s hs x₀
   have htime := hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt
@@ -269,24 +251,6 @@ private theorem nonpos_of_deriv_le_of_nonpos
     fun ε hε ↦ ?_
   rw [zero_add]
   exact le_mul_exp_mul_of_deriv_le_of_nonpos ha htr hb hc hcont hbdd hcd hdiff hsub hinit hε hs x
-
-/-- If `u` is bounded above on `[0, T] × X` and `0 ≤ γ`, `0 ≤ M`, `0 ≤ F`, then
-`exp (-γ t) u - (M + t F)` is bounded above there. -/
-private theorem bddAbove_exp_neg_mul_mul_sub {X : Type*} {u : ℝ → X → ℝ} {T M F : ℝ}
-    (hγ : 0 ≤ γ) (hM : 0 ≤ M) (hF : 0 ≤ F)
-    (hbdd : BddAbove (Function.uncurry u '' Icc 0 T ×ˢ univ)) :
-    BddAbove (Function.uncurry (fun t x ↦ Real.exp (-(γ * t)) * u t x - (M + t * F)) ''
-      Icc 0 T ×ˢ univ) := by
-  obtain ⟨Mu, hMu⟩ := hbdd
-  refine ⟨max Mu 0, ?_⟩
-  rintro _ ⟨⟨t, x⟩, ⟨ht, -⟩, rfl⟩
-  have h1 : Real.exp (-(γ * t)) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith [ht.1])
-  have h2 : u t x ≤ max Mu 0 := (hMu ⟨(t, x), ⟨ht, mem_univ x⟩, rfl⟩).trans (le_max_left _ _)
-  have h3 : 0 ≤ M + t * F := by nlinarith [ht.1]
-  simp only [Function.uncurry_apply_pair]
-  nlinarith [Real.exp_pos (-(γ * t)), le_max_right Mu 0,
-    mul_le_mul_of_nonneg_left h2 (Real.exp_pos (-(γ * t))).le,
-    mul_le_mul_of_nonneg_right h1 (le_max_right Mu 0)]
 
 /-- **The a priori bound for parabolic equations on the whole space.** Let
 `P u = ∂ₜu - ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` where, for `0 < t < T`, the matrix `a(t, x)` has
