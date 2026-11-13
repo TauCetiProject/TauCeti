@@ -151,7 +151,7 @@ theorem gelfandNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
       ‖S ∘L M.1.subtypeL‖₊) fun M _ ↦ by
     refine ((S + T).gelfandNumber_le M.2.2).trans ?_
     rw [add_comp]
-    refine (nnnorm_add_le _ _).trans ?_
+    refine (nnNorm_add_le _ _).trans ?_
     gcongr
     exact (opNNNorm_comp_le _ _).trans <| mul_le_of_le_one_right' (by
       exact_mod_cast Submodule.norm_subtypeL_le M.1)
@@ -191,7 +191,7 @@ theorem gelfandNumber_id {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     rw [(Submodule.quotEquivOfEqBot ⊥ rfl).rank_eq] at hM
     exact hn.not_ge hM
   have : Nontrivial M := Submodule.nontrivial_iff_ne_bot.mpr hne
-  rw [id_comp, ← NNReal.coe_le_coe, coe_nnnorm, Submodule.norm_subtypeL]
+  rw [id_comp, ← NNReal.coe_le_coe, coe_nnNorm, Submodule.norm_subtypeL]
   simp
 
 end ContinuousLinearMap

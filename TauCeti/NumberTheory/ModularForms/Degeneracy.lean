@@ -39,8 +39,9 @@ the lower level. The `q`-expansion results go up only.
 * `TauCeti.scaleGLRat d`: the same diagonal element over `ℚ`.
 * `TauCeti.conjScale`: its conjugation action on an integral matrix whose lower-left entry is
   divisible by `d`, `(a, b; d c, e) ↦ (a, d b; c, e)`.
-* `TauCeti.gamma1Conj q N`: the conjugate `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, as a finite-index
-  subgroup of `SL(2, ℤ)`.
+* `TauCeti.gamma1Conj q N`: the intersection of `SL(2, ℤ)` with the conjugate
+  `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, a subgroup of `SL(2, ℤ)` of finite index for `N ≠ 0`; it is the
+  whole conjugate when `q ∣ N`.
 * `TauCeti.ModularForm.levelRaise`, `TauCeti.CuspForm.levelRaise`: the operator `V_d`, taking a
   form for `𝒢` to a form for any group `𝒢'` conjugated into `𝒢` by `diag(d, 1)`, together with
   their `ℂ`-linear packagings `levelRaiseₗ`.
@@ -51,11 +52,11 @@ the lower level. The `q`-expansion results go up only.
 * `TauCeti.ModularForm.levelRaise_apply`: `(V_d f) τ = f (d τ)`, the defining formula from which
   the algebraic properties (`levelRaise_one_apply`, `ModularForm.levelRaise_one`,
   `levelRaise_levelRaise`, `levelRaise_injective`) all follow by `ext`.
-* `TauCeti.slash_mapGL_eq_smul_of_unitsMap_eq`: a function whose level-raise carries a nebentypus
-  trivial on the kernel of `(ZMod N)ˣ → (ZMod (N/l))ˣ` transforms under each `γ' ∈ Γ₀(N / l)` by
-  the character value at any unit lying over the label of `γ'`.
+* `TauCeti.slash_mapGL_eq_smul_of_unitsMap_eq`: a `T`-periodic function whose level-raise carries a
+  nebentypus trivial on the kernel of `(ZMod N)ˣ → (ZMod (N/l))ˣ` transforms under each
+  `γ' ∈ Γ₀(N / l)` by the character value at any unit lying over the label of `γ'`.
 * `TauCeti.slash_mapGL_eq_self_of_mem_Gamma1_div`: the trivial-label case of the previous result —
-  such a function is invariant under all of `Γ₁(N / l)`.
+  such a `T`-periodic function is invariant under all of `Γ₁(N / l)`.
 * `TauCeti.Gamma1_map_le_conjAct_scaleGL`, `TauCeti.Gamma0_map_le_conjAct_scaleGL`: the level
   transport, `Γ₁(dM) ≤ diag(d,1)⁻¹ Γ₁(M) diag(d,1)` and likewise for `Γ₀`, which is what makes
   `V_d` a map `M_k(Γ₁(M)) → M_k(Γ₁(dM))`.
@@ -591,9 +592,10 @@ section Gamma1Conj
 
 variable {q N M : ℕ}
 
-/-- `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, as a subgroup of `SL(2, ℤ)` (Mathlib's `conjGL` at
-`diag(q, 1)⁻¹`): for `q ∣ N` it consists of the matrices `(a, q b; c, d)` with
-`(a, b; q c, d) ∈ Γ₁(N)` (`mem_gamma1Conj_iff`). -/
+/-- The intersection of `SL(2, ℤ)` with `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹` (Mathlib's `conjGL` at
+`diag(q, 1)⁻¹`), which is the whole conjugate when `q ∣ N` (`map_gamma1Conj`). It consists of the
+matrices `(a, q b; c, d)` with `(a, b; q c, d) ∈ Γ₁(N)` (`mem_gamma1Conj_iff`). It has finite index
+in `SL(2, ℤ)` when `N ≠ 0`. -/
 def gamma1Conj (q N : ℕ) [NeZero q] : Subgroup SL(2, ℤ) :=
   conjGL (Gamma1 N) (scaleGL q)⁻¹
 
@@ -1069,9 +1071,9 @@ character value `χ` reads off `γ`, if `f` is `T`-periodic, and if `χ` is triv
 the reduction `(ZMod N)ˣ → (ZMod (N/l))ˣ`, then `f` is invariant under all of `Γ₁(N / l)`.
 
 This is the step that converts a nebentypus into honest invariance, and it is where the conductor
-drops: a form whose character already factors through `N / l` is invariant under all of
-`Γ₁(N / l)`, the larger congruence subgroup at the lower level, which is what the conductor
-argument turns into a statement about newforms.
+drops: a `T`-periodic function whose level-raise carries a character that already factors through
+`N / l` is invariant under all of `Γ₁(N / l)`, the larger congruence subgroup at the lower level,
+which is what the conductor argument turns into a statement about newforms.
 
 Adapted from `conductor_slash_eq_self_of_mem_Gamma1_div` in AINTLIB
 (`Eigenforms/ConductorTheorem.lean`:217, Chris Birkbeck, Apache-2.0, commit

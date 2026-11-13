@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
+public import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.PointFaithful
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.ScalarExtension.Monoidal
 
@@ -26,7 +26,7 @@ when `H` is free as an `R`-module, this map from points to tensor automorphisms 
 
 Assembling an automorphism of scalar extension from a natural family of linear automorphisms is
 `TauCeti.FGComoduleCat.autOfComponents`, which needs only the coalgebra structure; adding the
-tensor-unit and tensor comparisons upgrades it to a tensor automorphism here.
+tensor comparison upgrades it to a tensor automorphism here; the tensor-unit comparison follows.
 
 This is the faithful direction of the tensor-automorphism formulation of Tannakian
 reconstruction. The converse, recovering a point from every tensor automorphism, remains a
@@ -34,8 +34,8 @@ separate theorem.
 
 ## Main declarations
 
-* `TauCeti.Tannaka.monoidalAutOfComponents`: the same, with the unit and tensor conditions, as a
-  tensor automorphism.
+* `TauCeti.Tannaka.monoidalAutOfComponents`: the same, with the tensor condition, as a tensor
+  automorphism.
 * `TauCeti.Tannaka.scalarExtensionComponent`: a tensor-automorphism component transported to an
   explicit scalar-extension tensor product.
 * `TauCeti.Tannaka.scalarExtensionComponent_tensor`: the elementwise tensor law for transported
@@ -401,7 +401,8 @@ theorem scalarExtensionComponent_eq_of_hom_app
   simp
 
 /-- A natural automorphism of scalar extension is monoidal when its transported linear
-components preserve the tensor unit and tensor products. -/
+components preserve tensor products. Preservation of the tensor unit follows
+(`CategoryTheory.NatTrans.IsMonoidal.of_tensor`). -/
 theorem isMonoidal_of_linear_components
     (F : ∀ M : FGComoduleCat.{u, v, u} R H,
       LinearMap.GeneralLinearGroup A (A ⊗[R] M))
@@ -411,7 +412,6 @@ theorem isMonoidal_of_linear_components
         eqToHom (FGComoduleCat.scalarExtensionFunctor_obj R H A M) ≫
           (F M).toLinearEquiv.toModuleIsoₛ.hom ≫
             eqToHom (FGComoduleCat.scalarExtensionFunctor_obj R H A M).symm)
-    (hunit : F (𝟙_ (FGComoduleCat R H)) = 1)
     (htensor : ∀ M N : FGComoduleCat.{u, v, u} R H,
       (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap.comp
           (TensorProduct.map (F M : Module.End A (A ⊗[R] M))
@@ -420,52 +420,42 @@ theorem isMonoidal_of_linear_components
           Module.End A (A ⊗[R] ((M ⊗ N : FGComoduleCat R H) : Type u))).comp
             (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap) :
     NatTrans.IsMonoidal η.asIso.hom := by
-  constructor
-  · rw [FGComoduleCat.scalarExtensionFunctor_ε, happ]
-    apply SemimoduleCat.hom_ext
-    apply LinearMap.ext
-    intro a
-    simp only [Category.assoc, SemimoduleCat.comp_apply,
-      LinearEquiv.toModuleIsoₛ_hom]
-    rw [hunit]
-    simp
-  · intro M N
-    -- The ascribed categorical type is load-bearing: `congrArg` on its own yields the
-    -- definitionally equal `LinearMap.comp`/`TensorProduct.map` spelling, which `erw` matches
-    -- syntactically and so would not find.
-    have htensor_cat :
-        SemimoduleCat.ofHom
-              (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap ≫
+  refine NatTrans.IsMonoidal.of_tensor _ fun M N ↦ ?_
+  -- The ascribed categorical type is load-bearing: `congrArg` on its own yields the
+  -- definitionally equal `LinearMap.comp`/`TensorProduct.map` spelling, which `erw` matches
+  -- syntactically and so would not find.
+  have htensor_cat :
+      SemimoduleCat.ofHom
+            (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap ≫
+          SemimoduleCat.ofHom
+            (F (M ⊗ N : FGComoduleCat R H) :
+              Module.End A (A ⊗[R] ((M ⊗ N : FGComoduleCat R H) : Type u))) =
+        (SemimoduleCat.ofHom
+              (F M : Module.End A (A ⊗[R] M)) ⊗ₘ
             SemimoduleCat.ofHom
-              (F (M ⊗ N : FGComoduleCat R H) :
-                Module.End A (A ⊗[R] ((M ⊗ N : FGComoduleCat R H) : Type u))) =
-          (SemimoduleCat.ofHom
-                (F M : Module.End A (A ⊗[R] M)) ⊗ₘ
-              SemimoduleCat.ofHom
-                (F N : Module.End A (A ⊗[R] N))) ≫
-            SemimoduleCat.ofHom
-              (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap :=
-      congrArg SemimoduleCat.ofHom (htensor M N).symm
-    erw [FGComoduleCat.scalarExtensionFunctor_μ,
-      happ, happ, happ]
-    rw [← MonoidalCategory.tensorHom_comp_tensorHom,
-      ← MonoidalCategory.tensorHom_comp_tensorHom]
-    simp only [Category.assoc]
-    rw [cancel_epi]
-    erw [Category.assoc, eqToHom_trans_assoc]
-    simp only [MonoidalCategory.tensorHom_comp_tensorHom_assoc, eqToHom_trans,
-      eqToHom_refl, Category.id_comp, Category.comp_id, LinearEquiv.toModuleIsoₛ_hom]
-    erw [← Category.assoc, htensor_cat, Category.assoc]
+              (F N : Module.End A (A ⊗[R] N))) ≫
+          SemimoduleCat.ofHom
+            (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap :=
+    congrArg SemimoduleCat.ofHom (htensor M N).symm
+  erw [FGComoduleCat.scalarExtensionFunctor_μ,
+    happ, happ, happ]
+  rw [← MonoidalCategory.tensorHom_comp_tensorHom,
+    ← MonoidalCategory.tensorHom_comp_tensorHom]
+  simp only [Category.assoc]
+  rw [cancel_epi]
+  erw [Category.assoc, eqToHom_trans_assoc]
+  simp only [MonoidalCategory.tensorHom_comp_tensorHom_assoc, eqToHom_trans,
+    eqToHom_refl, Category.id_comp, Category.comp_id, LinearEquiv.toModuleIsoₛ_hom]
+  erw [← Category.assoc, htensor_cat, Category.assoc]
 
 /-- A family of `A`-linear automorphisms of the scalar extensions of the finite comodules that is
-natural in the comodule, preserves the tensor unit, and is compatible with the tensor comparison,
-as a tensor automorphism of scalar extension. -/
+natural in the comodule and compatible with the tensor comparison, as a tensor automorphism of
+scalar extension. It automatically preserves the tensor unit. -/
 noncomputable def monoidalAutOfComponents
     (F : ∀ M : FGComoduleCat.{u, v, u} R H, LinearMap.GeneralLinearGroup A (A ⊗[R] M))
     (hnat : ∀ {M N : FGComoduleCat.{u, v, u} R H} (g : M ⟶ N),
       g.hom.toLinearMap.baseChange A ∘ₗ (F M : Module.End A (A ⊗[R] M)) =
         (F N : Module.End A (A ⊗[R] N)) ∘ₗ g.hom.toLinearMap.baseChange A)
-    (hunit : F (𝟙_ (FGComoduleCat R H)) = 1)
     (htensor : ∀ M N : FGComoduleCat.{u, v, u} R H,
       (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap.comp
           (TensorProduct.map (F M : Module.End A (A ⊗[R] M))
@@ -477,7 +467,7 @@ noncomputable def monoidalAutOfComponents
   Aut.of <| @LaxMonoidalFunctor.isoMk _ _ _ _ _ _ _ _
     (FGComoduleCat.autOfComponents R H A F hnat).asIso
     (isMonoidal_of_linear_components R H A F (FGComoduleCat.autOfComponents R H A F hnat)
-      (FGComoduleCat.autOfComponents_hom_app R H A F hnat) hunit htensor)
+      (FGComoduleCat.autOfComponents_hom_app R H A F hnat) htensor)
 
 /-- The transported component of the tensor automorphism assembled from a natural monoidal family
 of linear automorphisms is that family. -/
@@ -487,7 +477,6 @@ theorem scalarExtensionComponent_monoidalAutOfComponents
     (hnat : ∀ {M N : FGComoduleCat.{u, v, u} R H} (g : M ⟶ N),
       g.hom.toLinearMap.baseChange A ∘ₗ (F M : Module.End A (A ⊗[R] M)) =
         (F N : Module.End A (A ⊗[R] N)) ∘ₗ g.hom.toLinearMap.baseChange A)
-    (hunit : F (𝟙_ (FGComoduleCat R H)) = 1)
     (htensor : ∀ M N : FGComoduleCat.{u, v, u} R H,
       (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap.comp
           (TensorProduct.map (F M : Module.End A (A ⊗[R] M))
@@ -496,7 +485,7 @@ theorem scalarExtensionComponent_monoidalAutOfComponents
           Module.End A (A ⊗[R] ((M ⊗ N : FGComoduleCat R H) : Type u))).comp
             (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap)
     (M : FGComoduleCat.{u, v, u} R H) :
-    scalarExtensionComponent R H A (monoidalAutOfComponents R H A F hnat hunit htensor) M =
+    scalarExtensionComponent R H A (monoidalAutOfComponents R H A F hnat htensor) M =
       (F M : Module.End A (A ⊗[R] M)) :=
   scalarExtensionComponent_eq_of_hom_app R H A M (F M) _
     (FGComoduleCat.autOfComponents_hom_app R H A F hnat M)
@@ -551,7 +540,6 @@ theorem isMonoidal_fgPointNatIsoHom_hom (g : WithConv (H →ₐ[R] A)) :
   apply isMonoidal_of_linear_components R H A
     (fun M ↦ LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g))
   · exact fgPointNatIsoHom_hom_app R H A g
-  · exact ofLinearEquiv_pointsAction_tensorUnit_eq_one R H A g
   · exact distribBaseChange_comp_pointsAction R H A g
 
 /-- An algebra-valued point as a tensor automorphism of finite-comodule scalar extension. -/
