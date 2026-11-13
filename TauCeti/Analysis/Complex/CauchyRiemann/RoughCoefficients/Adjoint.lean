@@ -428,6 +428,7 @@ theorem IsSobolevCRCoefficients.forall_integral_inner_eq_zero_iff
 
 /-- For the standard complex structure `J = i` on `ℂ`, the reflected adjoint coefficient is again
 `i`: the adjoint of multiplication by `i` for the real inner product is multiplication by `-i`. -/
+@[simp]
 theorem crReflectedAdjointCoeff_mul_I :
     crReflectedAdjointCoeff (fun _ => ContinuousLinearMap.mul ℝ ℂ I) =
       fun _ => ContinuousLinearMap.mul ℝ ℂ I := by
