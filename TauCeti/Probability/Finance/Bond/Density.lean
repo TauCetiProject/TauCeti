@@ -76,7 +76,7 @@ theorem exists_seq_simpleHolding_tendsto_bondVariation
   let ν := (Probability.timeMeasure T).withDensity
     (fun t : ℝ≥0 ↦ ‖r t * bondPrice r β₀ t‖ₑ)
   have : IsFiniteMeasure ν :=
-    isFiniteMeasure_withDensity (hasFiniteIntegral_iff_enorm.mp hi.hasFiniteIntegral).ne
+    isFiniteMeasure_withDensity (hasFiniteIntegral_iff_eNorm.mp hi.hasFiniteIntegral).ne
   have hν : ν {0} = 0 :=
     (withDensity_absolutelyContinuous _ _)
       (Probability.timeMeasure_singleton_zero T)
@@ -84,7 +84,7 @@ theorem exists_seq_simpleHolding_tendsto_bondVariation
     ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one_ae ν hν P hb hb₁
   refine ⟨n, τ, a, C, hτ₀, hτ, ha, hbound, hmean, ?_⟩
   simpa only [ν, lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _
-    hi.aestronglyMeasurable.enorm (ae_of_all _ fun _ ↦ enorm_lt_top), Pi.mul_apply]
+    hi.aestronglyMeasurable.eNorm (ae_of_all _ fun _ ↦ eNorm_lt_top), Pi.mul_apply]
     using hpath
 
 end TauCeti.Finance

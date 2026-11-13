@@ -246,11 +246,11 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_ae
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       ENNReal.tendsto_inv_nat_nhds_zero (fun _ ↦ bot_le) fun m ↦ ?_
     simpa only [μ, eLpNorm_trim ℱ.predictable_le_prod (hmeas m)] using (herr m).le
-  have he m := ((hmeas m).mono ℱ.predictable_le_prod).enorm.aemeasurable (μ := ν.prod P)
+  have he m := ((hmeas m).mono ℱ.predictable_le_prod).eNorm.aemeasurable (μ := ν.prod P)
   obtain ⟨φ, hφ, hpath⟩ := TauCeti.exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
     (fun m ↦ (he m).lintegral_prod_left')
     (by simpa only [← lintegral_prod_symm _ (he _),
-      ← eLpNorm_one_eq_lintegral_enorm ((hmeas _).mono
+      ← eLpNorm_one_eq_lintegral_eNorm ((hmeas _).mono
         ℱ.predictable_le_prod).aestronglyMeasurable] using hlim)
   exact ⟨n ∘ φ, τ ∘ φ, a ∘ φ, C ∘ φ, fun m ↦ hτ₀ (φ m), fun m ↦ hτ (φ m),
     fun m ↦ ha (φ m), fun m ↦ hb (φ m), hlim.comp hφ.tendsto_atTop, hpath⟩
