@@ -96,7 +96,7 @@ theorem contMDiffOn_geodesicJacobiPropagator :
   have hι : ContMDiff (I.tangent.tangent.prod 𝓘(ℝ, ℝ))
       (I.tangent.prod 𝓘(ℝ, ℝ)).tangent ∞ ι :=
     contMDiff_equivTangentBundleProd_symm.comp
-      (contMDiff_fst.prodMk (contMDiff_tangentBundle_mk_zero contMDiff_snd))
+      (contMDiff_fst.prodMk (TauCeti.contMDiff_tangentBundle_mk_zero contMDiff_snd))
   intro q hq
   have hF := (contMDiffOn_maximalGeodesic (I := I) (M := M)).contMDiffAt
     (isOpen_setOfPred_mem_geodesicInterval.mem_nhds (x := (q.1.proj, q.2)) hq)

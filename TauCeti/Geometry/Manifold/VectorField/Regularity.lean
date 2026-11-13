@@ -22,8 +22,10 @@ manifold differential of a function to tangent vectors whose base point varies.
 
 ## Main results
 
-* `contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a varying point.
-* `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
+* `TauCeti.contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a
+  varying point.
+* `TauCeti.contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a
+  fixed point.
 * `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
   along a differentiable vector field is differentiable at the point.
 * `ContMDiffAt.contMDiffAt_mvfderiv_apply`: applying the differential of a function that is
@@ -88,6 +90,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {n m : ℕ∞ω}
 
+namespace TauCeti
+
 /-- A constant model vector gives a smooth section of the tangent bundle of a model space. -/
 theorem contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const
     (I : ModelWithCorners 𝕜 E H) (v : E) (n : ℕ∞ω) :
@@ -98,11 +102,15 @@ theorem contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const
   rw [chartedSpaceSelf_prod] at hpair
   exact contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair
 
+end TauCeti
+
 section TangentBundleInputs
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+namespace TauCeti
 
 /-- The zero tangent vector over a smoothly varying manifold point varies smoothly. -/
 theorem contMDiff_tangentBundle_mk_zero {f : N → M} (hf : ContMDiff J I n f) :
@@ -130,6 +138,8 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
       rw [tangentCoordChange_self hx]
     rw [hfun]
     exact hv p
+
+end TauCeti
 
 end TangentBundleInputs
 
@@ -189,7 +199,7 @@ theorem ContMDiffOn.contMDiffOn_mvfderiv_snd_apply {f : N × M → F} {W : Set (
   have hlift : ContMDiffOn (J.prod I) (J.prod I).tangent m
       (fun q ↦ (equivTangentBundleProd J N I M).symm (⟨q.1, 0⟩, ⟨q.2, A q⟩)) W :=
     contMDiff_equivTangentBundleProd_symm.comp_contMDiffOn
-      ((contMDiff_tangentBundle_mk_zero contMDiff_fst).contMDiffOn.prodMk hA)
+      ((TauCeti.contMDiff_tangentBundle_mk_zero contMDiff_fst).contMDiffOn.prodMk hA)
   refine (hf.contMDiffOn_mvfderiv_apply hW hlift hmn).congr fun q hq ↦ ?_
   have hfq : MDifferentiableAt (J.prod I) 𝓘(𝕜, F) f q :=
     ((hf q hq).contMDiffAt (hW.mem_nhds hq)).mdifferentiableAt
@@ -215,7 +225,7 @@ theorem ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_snd_apply
   have hlift : ContMDiffOn (J.prod I) (J.prod I).tangent m
       (fun q ↦ (equivTangentBundleProd J N I M).symm (⟨q.1, 0⟩, ⟨q.2, A q⟩)) W :=
     contMDiff_equivTangentBundleProd_symm.comp_contMDiffOn
-      ((contMDiff_tangentBundle_mk_zero contMDiff_fst).contMDiffOn.prodMk hA)
+      ((TauCeti.contMDiff_tangentBundle_mk_zero contMDiff_fst).contMDiffOn.prodMk hA)
   refine ((hf.contMDiffOn_tangentMapWithin hmn hW.uniqueMDiffOn).comp hlift
     fun q hq ↦ hq).congr fun q hq ↦ ?_
   have hfq : MDifferentiableAt (J.prod I) I'' f q :=
