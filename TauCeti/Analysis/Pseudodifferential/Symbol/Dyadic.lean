@@ -45,6 +45,8 @@ the pieces with constants independent of `j`.
   scale-invariant form in which they control the kernels of the pieces.
 * `TauCeti.Symbol.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow`: the dyadic estimates for
   positions in a compact set, for any symbol.
+* `TauCeti.Symbol.coefficient_frequencyLaplacianPow_eq_zero_of_isOpen`: `Δ_ξ^N a` vanishes
+  wherever `a` vanishes for all frequencies in an open set.
 * `TauCeti.Symbol.hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece`: the frequency
   Laplacian powers `Δ_ξ^N aⱼ` of the pieces sum to `Δ_ξ^N a`.
 * `TauCeti.Symbol.exists_integral_norm_frequencyLaplacianPow_littlewoodPaleyPiece_le`: the
@@ -266,6 +268,46 @@ theorem exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow (a : Symbol n V W
     positivity
 
 /-! ### Frequency Laplacians of the pieces -/
+
+/-- The coefficient of `Δ_ξ^N a` only depends on the coefficient of `a`, and not on the order at
+which `a` is regarded as a symbol. -/
+theorem coefficient_frequencyLaplacianPow_congr {m' : ℝ} {a : Symbol n V W m}
+    {b : Symbol n V W m'} (h : a.coefficient = b.coefficient) (N : ℕ) :
+    (frequencyLaplacianPow N a).coefficient = (frequencyLaplacianPow N b).coefficient := by
+  induction N generalizing m m' with
+  | zero => simpa using h
+  | succ N ih =>
+    rw [coefficient_frequencyLaplacianPow_succ, coefficient_frequencyLaplacianPow_succ]
+    exact ih (funext fun ⟨x, ξ⟩ => by simp only [coefficient_frequencyLaplacian, h])
+
+/-- The mixed derivatives of `Δ_ξ a` are the sums of the mixed derivatives of `a` with two more
+frequency derivatives along each coordinate. -/
+@[simp]
+theorem mixedDeriv_frequencyLaplacian (a : Symbol n V W m) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (frequencyLaplacian a).coefficient x ξ =
+      ∑ j, mixedDeriv α (β ++ [j, j]) a.coefficient x ξ := by
+  rw [frequencyLaplacian_eq_sum, coefficient_sum,
+    mixedDeriv_sum fun j _ => Symbol.contDiff_coefficient _]
+  simp [coefficient_inclusion]
+
+/-- **Locality of the frequency Laplacian.** If the coefficient of `a` vanishes at every position
+for all frequencies in an open set `U`, then so does the coefficient of `Δ_ξ^N a`. -/
+theorem coefficient_frequencyLaplacianPow_eq_zero_of_isOpen {U : Set (CoordinateSpace n)}
+    (hU : IsOpen U) {a : Symbol n V W m} (ha : ∀ x, ∀ ξ ∈ U, a.coefficient (x, ξ) = 0) (N : ℕ)
+    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ∈ U) :
+    (frequencyLaplacianPow N a).coefficient (x, ξ) = 0 := by
+  -- A coordinate derivative of a function vanishing on `U` vanishes on `U`.
+  have hderiv (f : CoordinateSpace n → V →L[ℂ] W) (hf : ∀ η ∈ U, f η = 0) (j : Fin n) :
+      ∀ η ∈ U, coordinateDeriv [j] f η = 0 := fun η hη => by
+    have h : f =ᶠ[nhds η] 0 := Filter.eventually_of_mem (hU.mem_nhds hη) hf
+    rw [(h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
+  induction N generalizing x ξ with
+  | zero => simpa using ha x ξ hξ
+  | succ N ih =>
+    rw [coefficient_frequencyLaplacianPow_succ', coefficient_frequencyLaplacian]
+    exact Finset.sum_eq_zero fun j _ =>
+      hderiv _ (hderiv _ (fun η hη => ih x hη) j) j ξ hξ
 
 /-- **The frequency Laplacian powers of the pieces sum to that of the symbol.** At every point
 `∑ⱼ Δ_ξ^N aⱼ = Δ_ξ^N a`, with only finitely many nonzero terms. -/

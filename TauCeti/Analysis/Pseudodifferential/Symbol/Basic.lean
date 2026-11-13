@@ -32,9 +32,7 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
 * `TauCeti.Symbol.frequencyLaplacian`: the frequency Laplacian `Δ_ξ = ∑ⱼ ∂²_{ξ_j}` lowers the
-  order by two, and `TauCeti.Symbol.frequencyLaplacianPow` iterates it; `Δ_ξ^N a` vanishes wherever
-  `a` vanishes for all frequencies in an open set
-  (`TauCeti.Symbol.coefficient_frequencyLaplacianPow_eq_zero_of_isOpen`);
+  order by two, and `TauCeti.Symbol.frequencyLaplacianPow` iterates it;
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order; spatial and
   frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_comm`,
   `TauCeti.Symbol.frequencyDeriv_comm`, `TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`);
@@ -802,46 +800,6 @@ theorem coefficient_frequencyLaplacianPow_succ' (N : ℕ) (a : Symbol n V W m) :
     funext ⟨x, ξ⟩
     rw [coefficient_frequencyLaplacianPow_succ, ih, coefficient_frequencyLaplacian,
       coefficient_frequencyLaplacian, coefficient_frequencyLaplacianPow_succ]
-
-/-- The coefficient of `Δ_ξ^N a` only depends on the coefficient of `a`, and not on the order at
-which `a` is regarded as a symbol. -/
-theorem coefficient_frequencyLaplacianPow_congr {m' : ℝ} {a : Symbol n V W m}
-    {b : Symbol n V W m'} (h : a.coefficient = b.coefficient) (N : ℕ) :
-    (frequencyLaplacianPow N a).coefficient = (frequencyLaplacianPow N b).coefficient := by
-  induction N generalizing m m' with
-  | zero => simpa using h
-  | succ N ih =>
-    rw [coefficient_frequencyLaplacianPow_succ, coefficient_frequencyLaplacianPow_succ]
-    exact ih (funext fun ⟨x, ξ⟩ => by simp only [coefficient_frequencyLaplacian, h])
-
-/-- The mixed derivatives of `Δ_ξ a` are the sums of the mixed derivatives of `a` with two more
-frequency derivatives along each coordinate. -/
-@[simp]
-theorem mixedDeriv_frequencyLaplacian (a : Symbol n V W m) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (frequencyLaplacian a).coefficient x ξ =
-      ∑ j, mixedDeriv α (β ++ [j, j]) a.coefficient x ξ := by
-  rw [frequencyLaplacian_eq_sum, coefficient_sum,
-    mixedDeriv_sum fun j _ => Symbol.contDiff_coefficient _]
-  simp [coefficient_inclusion]
-
-/-- **Locality of the frequency Laplacian.** If the coefficient of `a` vanishes at every position
-for all frequencies in an open set `U`, then so does the coefficient of `Δ_ξ^N a`. -/
-theorem coefficient_frequencyLaplacianPow_eq_zero_of_isOpen {U : Set (CoordinateSpace n)}
-    (hU : IsOpen U) {a : Symbol n V W m} (ha : ∀ x, ∀ ξ ∈ U, a.coefficient (x, ξ) = 0) (N : ℕ)
-    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ∈ U) :
-    (frequencyLaplacianPow N a).coefficient (x, ξ) = 0 := by
-  -- A coordinate derivative of a function vanishing on `U` vanishes on `U`.
-  have hderiv (f : CoordinateSpace n → V →L[ℂ] W) (hf : ∀ η ∈ U, f η = 0) (j : Fin n) :
-      ∀ η ∈ U, coordinateDeriv [j] f η = 0 := fun η hη => by
-    have h : f =ᶠ[nhds η] 0 := Filter.eventually_of_mem (hU.mem_nhds hη) hf
-    rw [(h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
-  induction N generalizing x ξ with
-  | zero => simpa using ha x ξ hξ
-  | succ N ih =>
-    rw [coefficient_frequencyLaplacianPow_succ', coefficient_frequencyLaplacian]
-    exact Finset.sum_eq_zero fun j _ =>
-      hderiv _ (hderiv _ (fun η hη => ih x hη) j) j ξ hξ
 
 theorem HasCompactSpatialSupport.frequencyDeriv {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (j : Fin n) :
