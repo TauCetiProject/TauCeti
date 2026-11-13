@@ -27,10 +27,10 @@ commutators with Malcev's word gives one word `malcevOrWord a b x y` that vanish
 equation; see `TauCeti.GroupTheory.GroupAlgGeom.SingleEquation`.
 
 Two facts about the equation `x ^ 2 * y ^ 2 * z ^ 2 = 1` in arbitrary groups lead to Lyndon's
-theorem. If `x * y * z` is central and squares to the identity, then `x`, `y` and `z` commute
-pairwise. If the abelianization of the group is torsion-free, then `x * y * z` lies in the
-commutator subgroup; since the commutators of the dihedral group of order `8` are central and
-square to the identity, every homomorphism to that dihedral group sends `x`, `y` and `z` to
+theorem. If `x * y * z` commutes with `x` and `y` and squares to the identity, then `x`, `y` and
+`z` commute pairwise. If the abelianization of the group is torsion-free, then `x * y * z` lies
+in the commutator subgroup; since the commutators of the dihedral group of order `8` are central
+and square to the identity, every homomorphism to that dihedral group sends `x`, `y` and `z` to
 pairwise commuting elements.
 
 ## Main definitions
@@ -43,9 +43,11 @@ pairwise commuting elements.
 
 * `Group.not_isVaught_dihedralGroup_four`: the dihedral group of order `8` does not satisfy
   Vaught's condition.
-* `TauCeti.pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_mem_center`: if
-  `a ^ 2 * b ^ 2 * c ^ 2 = 1` and `a * b * c` is central and squares to the identity, then `a`,
-  `b` and `c` commute pairwise.
+* `Group.IsVaught.isMulCommutative_closure`: in a group satisfying Vaught's condition, a solution
+  of `x ^ 2 * y ^ 2 * z ^ 2 = 1` generates a commutative subgroup.
+* `TauCeti.pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_commute`: if
+  `a ^ 2 * b ^ 2 * c ^ 2 = 1` and `a * b * c` commutes with `a` and `b` and squares to the
+  identity, then `a`, `b` and `c` commute pairwise.
 * `TauCeti.pairwise_commute_map_dihedralGroup_four_of_sq_mul_sq_mul_sq_eq_one`: in a group with
   torsion-free abelianization, every homomorphism to the dihedral group of order `8` sends a
   solution of `x ^ 2 * y ^ 2 * z ^ 2 = 1` to pairwise commuting elements.
@@ -87,6 +89,16 @@ theorem not_isVaught_dihedralGroup_four : ¬IsVaught (DihedralGroup 4) := fun h 
   absurd (h (DihedralGroup.r 1) (DihedralGroup.sr 0) (DihedralGroup.r 1) (by decide)).1.eq
     (by decide)
 
+variable {G}
+
+/-- In a group satisfying Vaught's condition, elements `x`, `y` and `z` with
+`x ^ 2 * y ^ 2 * z ^ 2 = 1` generate a commutative subgroup. -/
+theorem IsVaught.isMulCommutative_closure (hG : IsVaught G) {x y z : G}
+    (h : x ^ 2 * y ^ 2 * z ^ 2 = 1) : IsMulCommutative (Subgroup.closure ({x, y, z} : Set G)) := by
+  obtain ⟨hxy, hxz, hyz⟩ := hG x y z h
+  exact Subgroup.isMulCommutative_closure <| by
+    simp [Set.pairwise_insert, hxy, hxz, hyz, hxy.symm, hxz.symm, hyz.symm]
+
 end Group
 
 namespace TauCeti
@@ -95,24 +107,23 @@ open Group
 
 variable {G H : Type*} [Group G] [Group H]
 
-/-- If `a ^ 2 * b ^ 2 * c ^ 2 = 1` and `a * b * c` is a central element squaring to the identity,
-then `a`, `b` and `c` commute pairwise. -/
-theorem pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_mem_center {a b c : G}
-    (hc : a * b * c ∈ Subgroup.center G) (hc2 : (a * b * c) ^ 2 = 1)
+/-- If `a ^ 2 * b ^ 2 * c ^ 2 = 1` and `a * b * c` commutes with `a` and `b` and squares to the
+identity, then `a`, `b` and `c` commute pairwise. -/
+theorem pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_commute {a b c : G}
+    (ha : Commute a (a * b * c)) (hb : Commute b (a * b * c)) (hc2 : (a * b * c) ^ 2 = 1)
     (h : a ^ 2 * b ^ 2 * c ^ 2 = 1) : ({a, b, c} : Set G).Pairwise Commute := by
-  have hk : ∀ g, Commute g (a * b * c) := Subgroup.mem_center_iff.1 hc
   have hck : c = (a * b)⁻¹ * (a * b * c) := by group
   have hab : Commute a b := by
     have hc' : c ^ 2 = (a * b)⁻¹ ^ 2 := by
-      rw [hck, (hk _).mul_pow, hc2, mul_one]
+      rw [hck, (ha.mul_left hb).inv_left.mul_pow, hc2, mul_one]
     have : a ^ 2 * b ^ 2 * c ^ 2 = a * ⁅a, b⁆ * a⁻¹ := by
       rw [hc']
       simp only [commutatorElement_def, sq]
       group
     rw [← commutatorElement_eq_one_iff_commute]
     simpa [h] using this.symm
-  have hac : Commute a c := hck ▸ ((Commute.refl a).mul_right hab).inv_right.mul_right (hk a)
-  have hbc : Commute b c := hck ▸ (hab.symm.mul_right (Commute.refl b)).inv_right.mul_right (hk b)
+  have hac : Commute a c := hck ▸ ((Commute.refl a).mul_right hab).inv_right.mul_right ha
+  have hbc : Commute b c := hck ▸ (hab.symm.mul_right (Commute.refl b)).inv_right.mul_right hb
   simp [Set.pairwise_insert, hab, hac, hbc, hab.symm, hac.symm, hbc.symm]
 
 /-- In a group with torsion-free abelianization, every homomorphism to the dihedral group of order
@@ -128,11 +139,13 @@ theorem pairwise_commute_map_dihedralGroup_four_of_sq_mul_sq_mul_sq_eq_one
   have hc : π (x * y * z) ∈ Subgroup.center (DihedralGroup 4) := by
     have := Subgroup.mem_map_of_mem π hk
     rw [map_commutator_eq] at this
-    apply commutator_le_center_dihedralGroup_four
+    apply commutator_le_center_dihedralGroup_iff.2 dvd_rfl
     rw [commutator_def]
     exact Subgroup.commutator_mono le_top le_top this
-  exact pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_mem_center (by simpa using hc)
-    (by simpa using sq_eq_one_of_mem_center_dihedralGroup hc) (by simpa using congrArg π h)
+  have hc' : π x * π y * π z ∈ Subgroup.center (DihedralGroup 4) := by simpa using hc
+  exact pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_commute (Subgroup.mem_center_iff.1 hc' _)
+    (Subgroup.mem_center_iff.1 hc' _) (by simpa using sq_eq_one_of_mem_center_dihedralGroup hc)
+    (by simpa using congrArg π h)
 
 /-- Malcev's word `x ^ 2 * a * x ^ 2 * a⁻¹ * ((y * b * y * b⁻¹) ^ 2)⁻¹`. It vanishes exactly when
 `x ^ 2 * a * x ^ 2 * a⁻¹ = (y * b * y * b⁻¹) ^ 2`, which in a torsion-free CSA group satisfying
