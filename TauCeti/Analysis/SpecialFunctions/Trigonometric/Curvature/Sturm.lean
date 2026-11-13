@@ -135,8 +135,6 @@ theorem monotoneOn_div_curvatureSine (hb : 0 < κ → b ≤ π / √κ)
     (hf'' : ∀ t ∈ Ioo 0 b, HasDerivAt f' (f'' t) t)
     (hineq : ∀ t ∈ Ioo 0 b, 0 ≤ f'' t + κ * f t) :
     MonotoneOn (fun r ↦ f r / curvatureSine κ r) (Ioo 0 b) := by
-  rcases le_or_gt b 0 with hb0 | hb0
-  · exact (Ioo_eq_empty_of_le hb0 ▸ subsingleton_empty).monotoneOn _
   have hs (r : ℝ) (hr : r ∈ Ioo 0 b) : 0 < curvatureSine κ r :=
     curvatureSine_pos hr.1 fun hκ ↦ hr.2.trans_le (hb hκ)
   -- The Wronskian of `f` and the model sine, and the derivative of their quotient.
