@@ -103,6 +103,40 @@ theorem IsBlock.exists_adj_of_mem_of_ne (hB : G.IsBlock B) (huB : u ∈ B) (hvB 
   have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ huv (congrArg Subtype.val h)
   exact ⟨p.snd, p.snd.property, induce_adj.mp (p.adj_snd hp)⟩
 
+/-- Graph isomorphisms send blocks to blocks by taking the image of their vertex sets. -/
+theorem IsBlock.image {W : Type*} {H : SimpleGraph W} (hB : G.IsBlock B) (e : G ≃g H) :
+    H.IsBlock (e '' B) := by
+  have transport (C : Set V) (hconn : (G.induce C).Connected)
+      (hcut : ∀ v, ¬(G.induce C).IsCutVertex v) :
+      (H.induce (e '' C)).Connected ∧ ∀ w, ¬(H.induce (e '' C)).IsCutVertex w := by
+    let i := e.induce (e.injective.bijOn_image (s := C))
+    refine ⟨i.connected_iff.mp hconn, ?_⟩
+    intro w hw
+    obtain ⟨v, rfl⟩ := i.surjective w
+    exact hcut v (i.isCutVertex_iff.mp hw)
+  have hBC := transport B hB.connected hB.not_isCutVertex
+  refine isBlock_iff.mpr ⟨hBC.1, hBC.2, ?_⟩
+  intro C hconn hcut hsub
+  let i := e.symm.induce (e.symm.injective.bijOn_image (s := C))
+  have hc : (G.induce (e.symm '' C)).Connected := i.connected_iff.mp hconn
+  have hn : ∀ v, ¬(G.induce (e.symm '' C)).IsCutVertex v := by
+    intro v hv
+    obtain ⟨w, rfl⟩ := i.surjective v
+    exact hcut w (i.isCutVertex_iff.mp hv)
+  have hEq := hB.eq_of_subset hc hn (by
+    intro v hv
+    exact ⟨e v, hsub ⟨v, hv, rfl⟩, e.symm_apply_apply v⟩)
+  simpa [← Set.image_comp] using congrArg (fun S ↦ e '' S) hEq
+
+/-- A vertex set is a block if and only if its image under a graph isomorphism is. -/
+@[simp]
+theorem Iso.isBlock_image_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
+    H.IsBlock (e '' B) ↔ G.IsBlock B := by
+  constructor
+  · intro h
+    simpa [← Set.image_comp] using h.image e.symm
+  · exact fun h ↦ h.image e
+
 /-! ### Existence -/
 
 /-- In a finite graph, every connected induced subgraph without cut vertices is contained in a
