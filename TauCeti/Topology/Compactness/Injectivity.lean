@@ -7,27 +7,26 @@ module
 
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Separation.Hausdorff
-public import Mathlib.Topology.MetricSpace.Basic
-import Mathlib.Topology.Order.Compact
+public import Mathlib.Topology.SeparatedMap
 
 /-!
 # Compactness and local injectivity
 
-Distinct points in a compact set with the same image under a locally injective continuous
-map form a compact set of pairs. Thus a noninjective restriction to a compact metric set
-has a first collision: a pair minimizing the maximum distance from any chosen center.
-The domain need not be a vector space or have compact closed balls.
+For a continuous locally injective map to a Hausdorff space, the distinct equal-image pairs
+form a closed set. Restriction to a compact set therefore gives a compact set of such pairs;
+local injectivity is needed only in the relative topology.
 
-For a parameterized family, injectivity on a compact fiber persists near that parameter
-when the total map retaining the parameter is locally injective along the fiber. These
-are the compactness steps used in injectivity-radius estimates before the geometric
-return-direction argument; they do not construct an exponential map or a geodesic.
+Injectivity on a compact set persists along an arbitrary parameter filter when the family
+converges jointly along that filter and the compact set, and is eventually locally injective
+on relative neighbourhoods. A specialization handles locally injective total maps retaining
+the parameter, with joint continuity relative to the parameter and domain sets.
 
 ## Main results
 
-* `TauCeti.isCompact_colliding_pairs`: compactness of the set of distinct equal-image pairs.
-* `TauCeti.exists_minimal_collision`: attainment of a positive first collision radius.
-* `TauCeti.eventually_injOn_of_locally_injective_total_map`: stability on a compact fiber.
+* `IsLocallyInjective.isClosed_setOf_apply_eq_and_ne`: closedness of distinct equal-image pairs.
+* `IsCompact.isCompact_setOf_apply_eq_and_ne`: compactness after restriction to a compact set.
+* `IsCompact.eventually_injOn`: persistence of injectivity along a parameter filter.
+* `IsCompact.eventually_injOn_of_injOn_prodMk`: persistence for a locally injective total map.
 
 ## References
 
@@ -41,37 +40,40 @@ public section
 open Set Filter
 open scoped Topology
 
-namespace TauCeti
+/-- For a continuous locally injective map into a Hausdorff space, the set of distinct
+pairs with the same image is closed. No separation assumption on the domain is needed. -/
+theorem IsLocallyInjective.isClosed_setOf_apply_eq_and_ne
+    {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] [T2Space X]
+    {f : E → X} (hinj : IsLocallyInjective f) (hf : Continuous f) :
+    IsClosed {z : E × E | f z.1 = f z.2 ∧ z.1 ≠ z.2} := by
+  have heq : IsClosed {z : E × E | f z.1 = f z.2} :=
+    isClosed_eq (hf.comp continuous_fst) (hf.comp continuous_snd)
+  have hdiag := isLocallyInjective_iff_isOpen_diagonal.mp hinj
+  -- The pullback diagonal is the equality locus inside the equal-image subtype.
+  have hclosed : IsClosed {z : {z : E × E // f z.1 = f z.2} | z.1.1 ≠ z.1.2} :=
+    hdiag.isClosed_compl
+  convert heq.isClosedMap_subtype_val _ hclosed using 1
+  ext z
+  simp [and_comm]
 
-/-- For a continuous map locally injective along a compact set, the distinct pairs in that
-set with the same image form a compact set. Only the target must be Hausdorff. -/
-theorem isCompact_colliding_pairs
+namespace IsCompact
+
+/-- For a map continuous on a compact set and locally injective in its relative topology,
+the distinct equal-image pairs in that set form a compact set. The target is Hausdorff. -/
+theorem isCompact_setOf_apply_eq_and_ne
     {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] [T2Space X]
     {K : Set E} (hK : IsCompact K) {f : E → X} (hf : ContinuousOn f K)
-    (hinj : ∀ x ∈ K, ∃ U ∈ 𝓝 x, InjOn f U) :
+    (hinj : ∀ x ∈ K, ∃ U ∈ 𝓝[K] x, InjOn f U) :
     IsCompact {z : E × E | z.1 ∈ K ∧ z.2 ∈ K ∧ f z.1 = f z.2 ∧ z.1 ≠ z.2} := by
-  let S : Set (K × K) := {z | f z.1 = f z.2 ∧ z.1 ≠ z.2}
-  have hc : Continuous (fun x : K ↦ f x) := continuousOn_iff_continuous_domRestrict.mp hf
-  have heq : IsClosed {z : K × K | f z.1 = f z.2} :=
-    isClosed_eq (hc.comp continuous_fst) (hc.comp continuous_snd)
-  have hclosed : IsClosed S := by
-    apply isClosed_of_closure_subset
-    intro z hz
-    have hzEq := closure_minimal (show S ⊆ {z : K × K | f z.1 = f z.2} from
-      fun _ h ↦ h.1) heq hz
-    refine ⟨hzEq, ?_⟩
-    intro hdiag
-    obtain ⟨U, hU, hUi⟩ := hinj z.1 z.1.property
-    have hU' : U ∈ 𝓝 (z.2 : E) := congrArg Subtype.val hdiag ▸ hU
-    have hprod : (Subtype.val ⁻¹' U) ×ˢ (Subtype.val ⁻¹' U) ∈ 𝓝 z := by
-      rw [nhds_prod_eq]
-      exact prod_mem_prod
-        (continuous_subtype_val.continuousAt.preimage_mem_nhds hU)
-        (continuous_subtype_val.continuousAt.preimage_mem_nhds hU')
-    obtain ⟨w, hwU, hwS⟩ := mem_closure_iff_nhds.mp hz _ hprod
-    exact hwS.2 (Subtype.ext (hUi hwU.1 hwU.2 hwS.1))
+  have hc : Continuous (K.domRestrict f) := continuousOn_iff_continuous_domRestrict.mp hf
+  have hi : IsLocallyInjective (K.domRestrict f) := by
+    rw [isLocallyInjective_iff_nhds]
+    intro x
+    obtain ⟨U, hU, hUi⟩ := hinj x x.property
+    exact ⟨Subtype.val ⁻¹' U, preimage_coe_mem_nhds_subtype.mpr hU,
+      fun _ hv _ hw he ↦ Subtype.ext (hUi hv hw he)⟩
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  have hcompact := hclosed.isCompact.image
+  have hcompact := (hi.isClosed_setOf_apply_eq_and_ne hc).isCompact.image
     (continuous_subtype_val.prodMap continuous_subtype_val)
   convert hcompact using 1
   ext z
@@ -83,71 +85,78 @@ theorem isCompact_colliding_pairs
     exact ⟨w.1.property, w.2.property, hw.1,
       fun h ↦ hw.2 (Subtype.ext h)⟩
 
-/-- On any compact metric set, a locally injective continuous map that is not injective has
-a pair of distinct equal-image points minimizing their maximum distance from a chosen center.
-This minimum is positive. No properness or linear structure is required. -/
-theorem exists_minimal_collision
-    {E X : Type*} [MetricSpace E] [TopologicalSpace X] [T2Space X]
-    {K : Set E} (hK : IsCompact K) {f : E → X} (hf : ContinuousOn f K)
-    (hinj : ∀ x ∈ K, ∃ U ∈ 𝓝 x, InjOn f U) (hnot : ¬ InjOn f K) (c : E) :
-    ∃ v ∈ K, ∃ w ∈ K, f v = f w ∧ v ≠ w ∧ 0 < max (dist v c) (dist w c) ∧
-      ∀ x ∈ K, ∀ y ∈ K, f x = f y → x ≠ y →
-        max (dist v c) (dist w c) ≤ max (dist x c) (dist y c) := by
-  let S : Set (E × E) := {z | z.1 ∈ K ∧ z.2 ∈ K ∧ f z.1 = f z.2 ∧ z.1 ≠ z.2}
-  have hS : IsCompact S := isCompact_colliding_pairs hK hf hinj
-  have hSne : S.Nonempty := by
-    simp only [InjOn, not_forall] at hnot
-    obtain ⟨v, hv, w, hw, heq, hne⟩ := hnot
-    exact ⟨(v, w), hv, hw, heq, hne⟩
-  have hc : Continuous (fun z : E × E ↦ max (dist z.1 c) (dist z.2 c)) := by fun_prop
-  obtain ⟨z, hz, hmin⟩ := hS.exists_isMinOn hSne hc.continuousOn
-  refine ⟨z.1, hz.1, z.2, hz.2.1, hz.2.2.1, hz.2.2.2, ?_, ?_⟩
-  · by_contra h
-    have hzero := le_of_not_gt h
-    have hv : z.1 = c := dist_eq_zero.mp
-      (le_antisymm ((le_max_left _ _).trans hzero) dist_nonneg)
-    have hw : z.2 = c := dist_eq_zero.mp
-      (le_antisymm ((le_max_right _ _).trans hzero) dist_nonneg)
-    exact hz.2.2.2 (hv.trans hw.symm)
-  · intro x hx y hy he hne
-    exact hmin (show (x, y) ∈ S from ⟨hx, hy, he, hne⟩)
-
-/-- Fiberwise injectivity on a compact set persists near the parameter if the
-total map, retaining the parameter, is locally injective along that fiber. -/
-theorem eventually_injOn_of_locally_injective_total_map
-    {P E X : Type*} [TopologicalSpace P] [TopologicalSpace E]
-    [TopologicalSpace X] [T2Space X] {f : P → E → X} {p : P} {K : Set E}
-    (hK : IsCompact K) (hinj : InjOn (f p) K)
-    (hcont : ∀ v ∈ K, ContinuousAt (fun z : P × E ↦ f z.1 z.2) (p, v))
-    (hlocal : ∀ v ∈ K, ∃ U ∈ 𝓝 (p, v),
-      InjOn (fun z : P × E ↦ (z.1, f z.1 z.2)) U) :
-    ∀ᶠ q in 𝓝 p, InjOn (f q) K := by
-  have hpair : ∀ z ∈ K ×ˢ K,
-      ∀ᶠ t : P × (E × E) in 𝓝 (p, z),
-        f t.1 t.2.1 = f t.1 t.2.2 → t.2.1 = t.2.2 := by
-    rintro ⟨v, w⟩ ⟨hv, hw⟩
-    have hleft : ContinuousAt (fun t : P × (E × E) ↦ (t.1, t.2.1)) (p, v, w) :=
-      continuous_fst.continuousAt.prodMk continuous_snd.fst.continuousAt
-    have hright : ContinuousAt (fun t : P × (E × E) ↦ (t.1, t.2.2)) (p, v, w) :=
-      continuous_fst.continuousAt.prodMk continuous_snd.snd.continuousAt
+/-- Injectivity on a compact set persists along a parameter filter if the family converges
+jointly to an injective map into a Hausdorff space and is eventually injective on a relative
+neighbourhood of each point. The parameter type needs no topology. -/
+theorem eventually_injOn
+    {P E X : Type*} [TopologicalSpace E] [TopologicalSpace X] [T2Space X]
+    {l : Filter P} {f : P → E → X} {g : E → X} {K : Set E}
+    (hK : IsCompact K) (hinj : InjOn g K)
+    (hcont : ∀ v ∈ K, Tendsto (fun z : P × E ↦ f z.1 z.2) (l ×ˢ 𝓝[K] v) (𝓝 (g v)))
+    (hlocal : ∀ v ∈ K, ∃ V ∈ 𝓝[K] v, ∀ᶠ q in l, InjOn (f q) V) :
+    ∀ᶠ q in l, InjOn (f q) K := by
+  have : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  have hc (v : K) : Tendsto (fun z : P × K ↦ f z.1 z.2)
+      (l ×ˢ 𝓝 v) (𝓝 (g v)) := by
+    have hv : Tendsto ((↑) : K → E) (𝓝 v) (𝓝[K] (v : E)) := by
+      rw [← map_nhds_subtype_val v]
+      exact tendsto_map
+    simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using
+      (hcont v v.property).comp ((tendsto_id : Tendsto (id : P → P) l l).prodMap hv)
+  have hpair (v w : K) : ∀ᶠ t : P × (K × K) in l ×ˢ 𝓝 (v, w),
+      f t.1 t.2.1 = f t.1 t.2.2 → t.2.1 = t.2.2 := by
     by_cases h : v = w
     · subst w
-      obtain ⟨U, hU, hUi⟩ := hlocal v hv
-      filter_upwards [hleft.preimage_mem_nhds hU, hright.preimage_mem_nhds hU]
-        with t ht₁ ht₂
-      intro heq
-      exact congrArg Prod.snd (hUi ht₁ ht₂ (Prod.ext rfl heq))
-    · have hne : f p v ≠ f p w := fun heq ↦ h (hinj hv hw heq)
-      have hcont₁ : ContinuousAt (fun t : P × (E × E) ↦ f t.1 t.2.1) (p, v, w) :=
-        (hcont v hv).comp_of_eq hleft rfl
-      have hcont₂ : ContinuousAt (fun t : P × (E × E) ↦ f t.1 t.2.2) (p, v, w) :=
-        (hcont w hw).comp_of_eq hright rfl
-      have hnear := (hcont₁.ne_iff_eventually_ne hcont₂).mp hne
+      obtain ⟨V, hV, hVi⟩ := hlocal v v.property
+      have hV' : Subtype.val ⁻¹' V ∈ 𝓝 v := preimage_coe_mem_nhds_subtype.mpr hV
+      have hprod : (Subtype.val ⁻¹' V) ×ˢ (Subtype.val ⁻¹' V) ∈ 𝓝 (v, v) :=
+        prod_mem_nhds hV' hV'
+      filter_upwards [prod_mem_prod hVi hprod] with t ht
+      exact fun he ↦ Subtype.ext (ht.1 ht.2.1 ht.2.2 he)
+    · have hne : g v ≠ g w := fun he ↦ h (Subtype.ext (hinj v.property w.property he))
+      have hl : Tendsto (fun t : P × (K × K) ↦ f t.1 t.2.1)
+          (l ×ˢ 𝓝 (v, w)) (𝓝 (g v)) := by
+        simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using
+          (hc v).comp ((tendsto_id : Tendsto (id : P → P) l l).prodMap
+            (continuous_fst.continuousAt : Tendsto Prod.fst (𝓝 (v, w)) (𝓝 v)))
+      have hr : Tendsto (fun t : P × (K × K) ↦ f t.1 t.2.2)
+          (l ×ˢ 𝓝 (v, w)) (𝓝 (g w)) := by
+        simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using
+          (hc w).comp ((tendsto_id : Tendsto (id : P → P) l l).prodMap
+            (continuous_snd.continuousAt : Tendsto Prod.snd (𝓝 (v, w)) (𝓝 w)))
+      have hnear := (hl.prodMk_nhds hr).eventually
+        ((isOpen_ne_fun continuous_fst continuous_snd).mem_nhds hne)
       filter_upwards [hnear] with t ht
-      exact fun heq ↦ False.elim (ht heq)
-  filter_upwards [(hK.prod hK).eventually_forall_of_forall_eventually
-    (P := fun q z ↦ f q z.1 = f q z.2 → z.1 = z.2) hpair] with q hq
-  exact fun v hv w hw heq ↦ hq (v, w) ⟨hv, hw⟩ heq
+      exact fun he ↦ False.elim (ht he)
+  have hnear : ∀ᶠ t : P × (K × K) in l ×ˢ 𝓝ˢ (univ : Set (K × K)),
+      f t.1 t.2.1 = f t.1 t.2.2 → t.2.1 = t.2.2 :=
+    (isCompact_univ : IsCompact (univ : Set (K × K))).mem_prod_nhdsSet_of_forall
+      (fun z _ ↦ hpair z.1 z.2)
+  filter_upwards [hnear.curry] with q hq
+  intro v hv w hw he
+  exact congrArg Subtype.val (hq.self_of_nhdsSet (⟨v, hv⟩, ⟨w, hw⟩) (mem_univ _) he)
 
+/-- For a Hausdorff target, injectivity on a compact set persists near a parameter within
+`S` when the family is jointly continuous relative to `S ×ˢ K` along that parameter fibre,
+and the total map retaining the parameter is locally injective there. -/
+theorem eventually_injOn_of_injOn_prodMk
+    {P E X : Type*} [TopologicalSpace P] [TopologicalSpace E]
+    [TopologicalSpace X] [T2Space X] {f : P → E → X} {p : P} {S : Set P} {K : Set E}
+    (hK : IsCompact K) (hinj : InjOn (f p) K)
+    (hcont : ∀ v ∈ K, ContinuousWithinAt (fun z : P × E ↦ f z.1 z.2) (S ×ˢ K) (p, v))
+    (hlocal : ∀ v ∈ K, ∃ U ∈ 𝓝[S ×ˢ K] (p, v),
+      InjOn (fun z : P × E ↦ (z.1, f z.1 z.2)) U) :
+    ∀ᶠ q in 𝓝[S] p, InjOn (f q) K := by
+  apply hK.eventually_injOn hinj
+  · intro v hv
+    simpa only [ContinuousWithinAt, nhdsWithin_prod_eq] using hcont v hv
+  · intro v hv
+    obtain ⟨U, hU, hUi⟩ := hlocal v hv
+    obtain ⟨W, hW, V, hV, hWV⟩ := mem_nhdsWithin_prod_iff.mp hU
+    refine ⟨V, hV, ?_⟩
+    filter_upwards [hW] with q hq
+    intro x hx y hy he
+    exact congrArg Prod.snd (hUi (hWV (show (q, x) ∈ W ×ˢ V from ⟨hq, hx⟩))
+      (hWV (show (q, y) ∈ W ×ˢ V from ⟨hq, hy⟩)) (Prod.ext rfl he))
 
-end TauCeti
+end IsCompact
