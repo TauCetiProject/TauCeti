@@ -8,13 +8,18 @@ module
 public import Mathlib.Topology.CWComplex.Classical.Finite
 
 /-!
-# Finite CW complexes are compact
+# Finite CW complexes: compactness and dimension bounds
 
 A finite relative CW complex `C` over a compact base `D` is compact
 (`Topology.RelCWComplex.isCompact_of_finite`): it is the union of `D` and of its finitely many
 closed cells, each of which is the image of a closed ball. In particular a finite CW complex is
 compact (`Topology.CWComplex.isCompact_of_finite`), and a space carrying a finite CW structure on
 `univ` is a compact space, hence normal when it is Hausdorff.
+
+A relative or absolute CW complex with no cells in dimensions strictly above `d` is
+finite-dimensional (`Topology.RelCWComplex.finiteDimensional_of_isEmpty_cell_gt`,
+`Topology.CWComplex.finiteDimensional_of_isEmpty_cell_gt`), regardless of how many cells lie in
+dimensions at most `d`.
 -/
 
 public section
@@ -22,6 +27,15 @@ public section
 open Set
 
 namespace Topology
+
+/-- A relative CW complex with no cells in dimensions strictly above `d` is finite-dimensional,
+regardless of how many cells lie in dimensions at most `d`. -/
+@[alias_in CWComplex]
+lemma RelCWComplex.finiteDimensional_of_isEmpty_cell_gt {X : Type*} [TopologicalSpace X]
+    {D : Set X} (C : Set X) [RelCWComplex C D] {d : ℕ}
+    (h : ∀ m, d < m → IsEmpty (RelCWComplex.cell C m)) :
+    RelCWComplex.FiniteDimensional C :=
+  ⟨Filter.eventually_atTop.2 ⟨d + 1, fun m hm ↦ h m (Nat.lt_of_succ_le hm)⟩⟩
 
 variable {X : Type*} [TopologicalSpace X] {C D : Set X}
 
