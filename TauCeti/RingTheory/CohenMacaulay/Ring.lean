@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.SerreCondition.Basic
+public import TauCeti.RingTheory.SerreCondition.Localization
 import TauCeti.RingTheory.Localization.LocalizationLocalization
 import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
@@ -115,7 +115,8 @@ theorem IsCohenMacaulay.of_isLocalization [IsCohenMacaulay R]
     IsCohenMacaulay S := by
   have := IsLocalization.isNoetherianRing M S inferInstance
   exact isCohenMacaulay_iff_forall_satisfiesSerreS.mpr fun n ↦
-    (isCohenMacaulay_iff_forall_satisfiesSerreS.mp ‹IsCohenMacaulay R› n).localization_self M S
+    (isCohenMacaulay_iff_forall_satisfiesSerreS.mp ‹IsCohenMacaulay R› n).localization M S
+      (Algebra.linearMap R S)
 
 /-- The canonical localization of a Cohen–Macaulay ring is Cohen–Macaulay. -/
 instance IsCohenMacaulay.localization [IsCohenMacaulay R] (M : Submonoid R) :

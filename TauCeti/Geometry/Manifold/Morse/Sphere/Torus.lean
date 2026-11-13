@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.NormedProd
+public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Geometry.Manifold.Morse.Boundary.UniqueExtremum
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -32,9 +32,10 @@ intermediate index, so the Morse–Smale condition is a hypothesis.
 The Morse complex is defined for manifolds modelled on a normed space `F` with the model
 `𝓘(ℝ, F)`. Mathlib's product charts on `S¹ × S¹` take values in the type synonym `ModelProd`, with
 the product model `(𝓡 1).prod (𝓡 1)`. This file reads the same charts on the normed space
-`EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)` (`TauCeti.prodNormedChartedSpace`), and
-transports the Morse data along Mathlib's `modelWithCornersSelf_prod`. These differ from the charts
-`TauCeti.torusChartedSpace` on `Circle × Circle`, which take values in `EuclideanSpace ℝ (Fin 2)`.
+`EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)` (`TauCeti.chartedSpaceProd` and
+`TauCeti.isManifold_chartedSpaceProd`, local instances), and transports the Morse data along
+Mathlib's `modelWithCornersSelf_prod`. These differ from the charts `TauCeti.torusChartedSpace` on
+`Circle × Circle`, which take values in `EuclideanSpace ℝ (Fin 2)`.
 
 ## Main declarations
 
@@ -58,8 +59,9 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [Fact (finrank ℝ E = 1 + 1)]
   [Fact (finrank ℝ E' = 1 + 1)]
 
-attribute [local instance 10] prodNormedChartedSpace
-attribute [local instance] isManifold_prodNormedChartedSpace
+attribute [local instance low] chartedSpaceProd
+
+attribute [local instance] isManifold_chartedSpaceProd
 
 namespace IsAdaptedPseudoGradient.IsMorseSmale
 

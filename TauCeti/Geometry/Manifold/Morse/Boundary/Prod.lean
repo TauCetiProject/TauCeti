@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
-public import TauCeti.Geometry.Manifold.Morse.Stable.Prod
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Prod
 import TauCeti.LinearAlgebra.DirectSum.Finsupp
 
 /-!
@@ -15,8 +15,9 @@ import TauCeti.LinearAlgebra.DirectSum.Finsupp
 Let `f` be a Morse function on a compact boundaryless manifold `M` and `g` one on `N`, charted on
 finite-dimensional normed spaces `E` and `E'`, with Morse–Smale adapted pseudo-gradients `X` and
 `Y`. The product field `(x, y) ↦ (X x, Y y)` is a Morse–Smale pseudo-gradient adapted to the
-separated sum `f ∘ Prod.fst + g ∘ Prod.snd` on `M × N`, read on the normed space `E × E'`
-(`TauCeti.IsAdaptedPseudoGradient.prod`, `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.prod`), so
+separated sum `f ∘ Prod.fst + g ∘ Prod.snd` on `M × N`, read in the product charts with values
+in the normed space `E × E'` (`TauCeti.chartedSpaceProd`,
+`TauCeti.IsAdaptedPseudoGradient.prod`, `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.prod`), so
 it has a mod-two Morse boundary. This file computes it: the mod-two Morse complex of the product is
 the tensor product of the mod-two Morse complexes of the factors.
 
@@ -68,8 +69,8 @@ open scoped ContDiff Manifold TensorProduct
 
 namespace TauCeti
 
-attribute [local instance 10] prodNormedChartedSpace
-attribute [local instance] isManifold_prodNormedChartedSpace
+attribute [local instance low] chartedSpaceProd
+attribute [local instance] isManifold_chartedSpaceProd
 
 variable {E E' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -83,10 +84,11 @@ noncomputable def criticalPointsProdEquiv (hf : MDifferentiable 𝓘(ℝ, E) �
     criticalPoints 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) ≃
       criticalPoints 𝓘(ℝ, E) f × criticalPoints 𝓘(ℝ, E') g where
   toFun P :=
-    have h := (criticalPoints_comp_fst_add_comp_snd_prodNormed hf hg ▸ P.2 : (P : M × N) ∈ _ ×ˢ _)
+    have h := (criticalPoints_comp_fst_add_comp_snd_chartedSpaceProd hf hg ▸ P.2 :
+      (P : M × N) ∈ _ ×ˢ _)
     (⟨(P : M × N).1, h.1⟩, ⟨(P : M × N).2, h.2⟩)
   invFun pq := ⟨((pq.1 : M), (pq.2 : N)),
-    (criticalPoints_comp_fst_add_comp_snd_prodNormed hf hg).symm ▸ ⟨pq.1.2, pq.2.2⟩⟩
+    (criticalPoints_comp_fst_add_comp_snd_chartedSpaceProd hf hg).symm ▸ ⟨pq.1.2, pq.2.2⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -146,7 +148,7 @@ theorem manifoldMorseIndex_criticalPointsProdEquiv_symm (hf : IsMorse 𝓘(ℝ, 
   rw [coe_criticalPointsProdEquiv_symm]
   have hp := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
     (mem_criticalPoints_iff_mfderiv_eq_zero.1 pq.1.2)
-  exact hp.manifoldMorseIndex_comp_fst_add_comp_snd_prodNormed
+  exact hp.manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd
     (hg.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 pq.2.2))
 
@@ -163,12 +165,12 @@ namespace IsAdaptedPseudoGradient
 same critical point `x` of `f` in the first factor, the trajectories of the product pseudo-gradient
 are the trajectories of `Y`, on the middle level. -/
 theorem morseTrajectorySlice_prod_left {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (q q' : N) :
-    (hX.prod hY hf hg).morseTrajectorySlice (x, q) (x, q') =
+    (hX.prod hY).morseTrajectorySlice (x, q) (x, q') =
       (fun y ↦ (x, y)) '' hY.morseTrajectorySlice q q' := by
   have hfix := hX.flow_apply_of_mfderiv_eq_zero hx
   ext z
-  rw [(hX.prod hY hf hg).mem_morseTrajectorySlice (p := (x, q)) (q := (x, q')) (z := z)]
-  simp only [unstableSet_prod hX hY hf hg, stableSet_prod hX hY hf hg, mem_prod, mem_image,
+  rw [(hX.prod hY).mem_morseTrajectorySlice (p := (x, q)) (q := (x, q')) (z := z)]
+  simp only [unstableSet_prod hX hY, stableSet_prod hX hY, mem_prod, mem_image,
     mem_morseTrajectorySlice, Pi.add_apply, Function.comp_apply]
   constructor
   · rintro ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, hz⟩
@@ -184,12 +186,12 @@ theorem morseTrajectorySlice_prod_left {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(�
 same critical point `y` of `g` in the second factor, the trajectories of the product pseudo-gradient
 are the trajectories of `X`, on the middle level. -/
 theorem morseTrajectorySlice_prod_right {y : N} (hy : mfderiv 𝓘(ℝ, E') 𝓘(ℝ) g y = 0) (p p' : M) :
-    (hX.prod hY hf hg).morseTrajectorySlice (p, y) (p', y) =
+    (hX.prod hY).morseTrajectorySlice (p, y) (p', y) =
       (fun x ↦ (x, y)) '' hX.morseTrajectorySlice p p' := by
   have hfix := hY.flow_apply_of_mfderiv_eq_zero hy
   ext z
-  rw [(hX.prod hY hf hg).mem_morseTrajectorySlice (p := (p, y)) (q := (p', y)) (z := z)]
-  simp only [unstableSet_prod hX hY hf hg, stableSet_prod hX hY hf hg, mem_prod, mem_image,
+  rw [(hX.prod hY).mem_morseTrajectorySlice (p := (p, y)) (q := (p', y)) (z := z)]
+  simp only [unstableSet_prod hX hY, stableSet_prod hX hY, mem_prod, mem_image,
     mem_morseTrajectorySlice, Pi.add_apply, Function.comp_apply]
   constructor
   · rintro ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, hz⟩
@@ -203,6 +205,7 @@ theorem morseTrajectorySlice_prod_right {y : N} (hy : mfderiv 𝓘(ℝ, E') 𝓘
 
 variable {hX hY}
 
+include hf hg in
 /-- **No trajectory of index one moves both components.** For Morse–Smale `X` and `Y`, if the
 index of the separated sum drops by one from `(p, q)` to `(p', q')` with `p ≠ p'` and `q ≠ q'`,
 there is no trajectory between them. -/
@@ -210,11 +213,11 @@ theorem IsMorseSmale.morseTrajectorySlice_prod_eq_empty (h₁ : hX.IsMorseSmale)
     (h₂ : hY.IsMorseSmale) {p p' : M} {q q' : N} (hpp' : p ≠ p') (hqq' : q ≠ q')
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E') g q =
       manifoldMorseIndex 𝓘(ℝ, E) f p' + manifoldMorseIndex 𝓘(ℝ, E') g q' + 1) :
-    (hX.prod hY hf hg).morseTrajectorySlice (p, q) (p', q') = ∅ := by
+    (hX.prod hY).morseTrajectorySlice (p, q) (p', q') = ∅ := by
   -- Each component of a trajectory would lower the index of its factor by at least one.
   refine eq_empty_of_forall_notMem fun z hz ↦ ?_
-  rw [(hX.prod hY hf hg).mem_morseTrajectorySlice (p := (p, q)) (q := (p', q')) (z := z)] at hz
-  simp only [unstableSet_prod hX hY hf hg, stableSet_prod hX hY hf hg, mem_prod] at hz
+  rw [(hX.prod hY).mem_morseTrajectorySlice (p := (p, q)) (q := (p', q')) (z := z)] at hz
+  simp only [unstableSet_prod hX hY, stableSet_prod hX hY, mem_prod] at hz
   obtain ⟨⟨hu₁, hu₂⟩, ⟨hs₁, hs₂⟩, -⟩ := hz
   have i₁ := h₁.manifoldMorseIndex_lt hf hpp' ⟨z.1, hu₁, hs₁⟩
   have i₂ := h₂.manifoldMorseIndex_lt hg hqq' ⟨z.2, hu₂, hs₂⟩
@@ -230,7 +233,7 @@ boundary of `(p, q)` counts the trajectories of `Y` from `q` to `q'` when `p = p
 `X` from `p` to `p'` when `q = q'`; it vanishes when both components differ. -/
 theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
     (q q' : criticalPoints 𝓘(ℝ, E') g) :
-    (h₁.prod h₂ hf hg).morseBoundaryCoeff (hf.comp_fst_add_comp_snd_prodNormed hg)
+    (h₁.prod h₂).morseBoundaryCoeff (hf.comp_fst_add_comp_snd_chartedSpaceProd hg)
         ((criticalPointsProdEquiv (hf.contMDiff.mdifferentiable (by simp))
           (hg.contMDiff.mdifferentiable (by simp))).symm (p, q))
         ((criticalPointsProdEquiv (hf.contMDiff.mdifferentiable (by simp))
@@ -243,7 +246,7 @@ theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
       manifoldMorseIndex 𝓘(ℝ, E) f p' + manifoldMorseIndex 𝓘(ℝ, E') g q' + 1
   swap
   · -- The index does not drop by one, so every coefficient vanishes.
-    rw [(h₁.prod h₂ hf hg).morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one _
+    rw [(h₁.prod h₂).morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one _
       (by rw [hindP, hindQ]; exact hind)]
     have e₁ : (if p = p' then h₂.morseBoundaryCoeff hg q q' else 0) = 0 := by
       split_ifs with h
@@ -256,19 +259,19 @@ theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
         exact morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one _ _ (by omega)
       · rfl
     rw [e₁, e₂, add_zero]
-  rw [(h₁.prod h₂ hf hg).morseBoundaryCoeff_eq_ncard _ (by rw [hindP, hindQ]; exact hind),
+  rw [(h₁.prod h₂).morseBoundaryCoeff_eq_ncard _ (by rw [hindP, hindQ]; exact hind),
     coe_criticalPointsProdEquiv_symm, coe_criticalPointsProdEquiv_symm]
   by_cases hpp : p = p'
   · subst hpp
     have hqq : q ≠ q' := by rintro rfl; omega
-    rw [morseTrajectorySlice_prod_left hX hY hf hg
+    rw [morseTrajectorySlice_prod_left hX hY
         (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2),
       ncard_image_of_injective _ (Prod.mk_right_injective _),
       h₂.morseBoundaryCoeff_eq_ncard hg (p := q) (q := q') (by omega)]
     simp [hqq]
   by_cases hqq : q = q'
   · subst hqq
-    rw [morseTrajectorySlice_prod_right hX hY hf hg
+    rw [morseTrajectorySlice_prod_right hX hY
         (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2),
       ncard_image_of_injective _ (Prod.mk_left_injective _),
       h₁.morseBoundaryCoeff_eq_ncard hf (p := p) (q := p') (by omega)]
@@ -284,8 +287,8 @@ product of the chains of `f` and of `g`, the Morse boundary of the product pseud
 theorem morseChainProdEquiv_comp_morseBoundary :
     (morseChainProdEquiv (hf.contMDiff.mdifferentiable (by simp))
         (hg.contMDiff.mdifferentiable (by simp))).toLinearMap ∘ₗ
-      (h₁.prod h₂ hf hg).morseBoundary
-        (hf.comp_fst_add_comp_snd_prodNormed hg) =
+      (h₁.prod h₂).morseBoundary
+        (hf.comp_fst_add_comp_snd_chartedSpaceProd hg) =
       ((h₁.morseBoundary hf).rTensor (criticalPoints 𝓘(ℝ, E') g →₀ ZMod 2) +
           (h₂.morseBoundary hg).lTensor (criticalPoints 𝓘(ℝ, E) f →₀ ZMod 2)) ∘ₗ
         (morseChainProdEquiv (hf.contMDiff.mdifferentiable (by simp))
@@ -294,7 +297,7 @@ theorem morseChainProdEquiv_comp_morseBoundary :
   refine domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor _
     fun p p' q q' ↦ ?_
   rw [morseBoundary_single_apply, morseBoundary_single_apply,
-    (h₁.prod h₂ hf hg).morseBoundary_single_apply (hf.comp_fst_add_comp_snd_prodNormed hg),
+    (h₁.prod h₂).morseBoundary_single_apply (hf.comp_fst_add_comp_snd_chartedSpaceProd hg),
     morseBoundaryCoeff_prod hf hg h₁ h₂, one_mul, one_mul, one_mul]
 
 end IsMorseSmale

@@ -70,8 +70,7 @@ theorem integrableExpSet_id_map_cast_poissonMeasure_cond_compl_zero_atomMixture_
 theorem integral_id_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zero :
     ∫ x, x ∂((Po(r)[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * r / (1 - exp (-(r : ℝ))) := by
-  rw [Measure.integral_id_map_natCast_cond_compl_zero_atomMixture_zero _ _
-      ((memLp_id_map_cast_poissonMeasure r 1).integrable le_rfl),
+  rw [Measure.integral_id_map_natCast_cond_compl_zero_atomMixture_zero,
     integral_id_map_cast_poissonMeasure, poissonMeasure_real_singleton_zero]
 
 /-- The variance of the Poisson hurdle law, `(1 - w) r (1 + r) / (1 - exp (-r))` minus the square
