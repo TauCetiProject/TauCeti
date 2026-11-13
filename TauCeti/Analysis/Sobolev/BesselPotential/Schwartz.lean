@@ -41,6 +41,10 @@ normed complex `F`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM`: for Hilbert-space values, the `H^s` norm of a
   Schwartz function `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`.
 * `SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier`: `⟨ξ⟩ ^ s 𝓕 u` lies in every `L^q`.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`: the `H¹` norm of a Schwartz function in terms
+  of its first derivatives, `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the `H^s`
+  norm of a Schwartz function.
 
 ## References
 
@@ -129,6 +133,68 @@ theorem norm_toBesselPotentialSpaceCLM {F : Type*} [NormedAddCommGroup F] [Inner
       (eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) 2 volume).toReal := by
   rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM,
     norm_toLp_fourierMultiplierCLM_eq (by fun_prop)]
+
+open scoped LineDeriv Real RealInnerProductSpace in
+/-- **The `H¹` norm of a Schwartz function** in terms of its first derivatives: for an orthonormal
+basis `b` of `E`,
+
+`‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
+
+The factor `(2π)⁻²` comes from the Fourier transform of `∂_v u` being `2πi ⟪ξ, v⟫ 𝓕 u`. -/
+theorem norm_toBesselPotentialSpaceCLM_one_sq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
+      (∫ x, ‖u x‖ ^ 2) + (2 * π)⁻¹ ^ 2 * ∑ i, ∫ x, ‖∂_{b i} u x‖ ^ 2 := by
+  have hint (g : 𝓢(E, F)) : Integrable (fun ξ ↦ ‖𝓕 g ξ‖ ^ 2) :=
+    ((𝓕 g).memLp 2).integrable_norm_pow two_ne_zero
+  have hw := memLp_one_add_norm_sq_rpow_smul_fourier (F := F) 1 u 2
+  have hL : ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
+      ∫ ξ, ‖(((1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2) : ℝ) : ℂ) • 𝓕 u ξ‖ ^ 2 := by
+    rw [norm_toBesselPotentialSpaceCLM, hw.eLpNorm_eq_integral_rpow_norm two_ne_zero
+      ENNReal.ofNat_ne_top, ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat]
+    simp_rw [Real.rpow_two]
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
+    norm_num
+  rw [hL, ← integral_norm_sq_fourier u]
+  simp_rw [← integral_norm_sq_fourier (∂_{b _} u)]
+  rw [← integral_finsetSum _ fun i _ ↦ hint _, ← integral_const_mul,
+    ← integral_add (hint u) ((integrable_finsetSum _ fun i _ ↦ hint _).const_mul _)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun ξ ↦ ?_)
+  have hsum : ∑ i, ⟪ξ, b i⟫ ^ 2 = ‖ξ‖ ^ 2 := b.sum_sq_inner_left ξ
+  have hweight : |(1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2)| ^ 2 = 1 + ‖ξ‖ ^ 2 := by
+    rw [sq_abs, ← Real.sqrt_eq_rpow, Real.sq_sqrt (by positivity)]
+  simp only [fourier_lineDerivOp_apply, norm_smul, mul_pow, Complex.norm_real, Real.norm_eq_abs,
+    hweight, norm_mul, Complex.norm_I, Complex.norm_ofNat, Real.abs_pi, mul_one, sq_abs]
+  rw [← Finset.sum_mul, ← Finset.mul_sum, hsum]
+  field_simp
+
+open scoped LineDeriv Real in
+/-- The `H¹` norm of a Schwartz function bounds the `L²` norm of each of its first derivatives
+along an orthonormal basis `b`: `(2π)⁻² ∫ ‖∂_{bᵢ} u‖² ≤ ‖u‖²_{H¹}`. -/
+theorem inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) (i : ι) :
+    (2 * π)⁻¹ ^ 2 * ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 := by
+  rw [norm_toBesselPotentialSpaceCLM_one_sq b]
+  have hi : ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ∑ j, ∫ x, ‖∂_{b j} u x‖ ^ 2 :=
+    Finset.single_le_sum (f := fun j ↦ ∫ x, ‖∂_{b j} u x‖ ^ 2)
+      (fun j _ ↦ integral_nonneg fun _ ↦ by positivity) (Finset.mem_univ i)
+  have h0 : 0 ≤ ∫ x, ‖u x‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hi (by positivity : (0 : ℝ) ≤ (2 * π)⁻¹ ^ 2)]
+
+/-- **Translation is an isometry of `H^s`** on Schwartz functions with Hilbert-space values. -/
+@[simp]
+theorem norm_toBesselPotentialSpaceCLM_compSubConstCLM {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (u : 𝓢(E, F)) (a : E) :
+    ‖toBesselPotentialSpaceCLM s 2 (u.compSubConstCLM ℂ a)‖ =
+      ‖toBesselPotentialSpaceCLM s 2 u‖ := by
+  rw [norm_toBesselPotentialSpaceCLM, norm_toBesselPotentialSpaceCLM]
+  congr 1
+  refine eLpNorm_congr_norm_ae
+    (memLp_one_add_norm_sq_rpow_smul_fourier s _ 2).aestronglyMeasurable
+    (memLp_one_add_norm_sq_rpow_smul_fourier s u 2).aestronglyMeasurable (.of_forall fun ξ ↦ ?_)
+  simp [fourier_compSubConstCLM_apply, norm_smul]
 
 end SchwartzMap
 

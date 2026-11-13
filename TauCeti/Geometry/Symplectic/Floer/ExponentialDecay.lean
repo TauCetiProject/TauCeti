@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Periodic
-public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
+public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall

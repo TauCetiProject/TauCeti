@@ -42,6 +42,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 ## Main declarations
 
 * `ContDiffBump.littlewoodPaley`: the dyadic cutoff `ψⱼ`.
+* `ContDiffBump.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply`: `ψⱼ` is the rescaling
+  `ψ₀ (2^{-j} ·)`.
 * `ContDiffBump.sum_littlewoodPaley_Ioc`: the telescoping partial sums.
 * `ContDiffBump.hasSum_littlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for `ξ ≠ 0`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
@@ -159,6 +161,23 @@ theorem tsupport_littlewoodPaley_subset (j : ℤ) :
     exact hξ (φ.littlewoodPaley_eq_zero_of_le_norm (not_le.1 h).le)
   · exact (isClosed_le continuous_const continuous_norm).inter
       (isClosed_le continuous_norm continuous_const)
+
+/-- The cutoff `ψⱼ` vanishes near the origin: `0` is not in its topological support. -/
+theorem zero_notMem_tsupport_littlewoodPaley (j : ℤ) : (0 : E) ∉ tsupport (φ.littlewoodPaley j) :=
+  fun h ↦ by
+    have := (φ.tsupport_littlewoodPaley_subset j h).1
+    rw [norm_zero] at this
+    exact not_le.2 (mul_pos (zpow_pos two_pos _) φ.rIn_pos) this
+
+/-- **Scaling of the dyadic cutoffs.** Each `ψⱼ` is `ψ₀` rescaled to frequency `2^j`:
+`ψⱼ ξ = ψ₀ (2^{-j} ξ)`. -/
+theorem littlewoodPaley_apply_eq_littlewoodPaley_zero_apply (j : ℤ) (ξ : E) :
+    φ.littlewoodPaley j ξ = φ.littlewoodPaley 0 (((2 : ℝ) ^ j)⁻¹ • ξ) := by
+  have h : ((2 : ℝ) ^ ((0 : ℤ) - 1))⁻¹ * ((2 : ℝ) ^ j)⁻¹ = ((2 : ℝ) ^ (j - 1))⁻¹ := by
+    rw [← mul_inv, ← zpow_add₀ two_ne_zero]
+    congr 2
+    ring
+  simp only [littlewoodPaley_apply, zpow_zero, inv_one, smul_smul, h, one_mul]
 
 /-- The partial sums of the Littlewood–Paley cutoffs telescope:
 `∑_{a < j ≤ b} ψⱼ ξ = φ (2^{-b} ξ) - φ (2^{-a} ξ)`. -/
@@ -599,6 +618,12 @@ end HasContDiffBump
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] (φ : ContDiffBump (0 : E))
+
+/-- Each Littlewood–Paley cutoff `ψⱼ` is compactly supported. -/
+theorem hasCompactSupport_littlewoodPaley (j : ℤ) : HasCompactSupport (φ.littlewoodPaley j) :=
+  HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 ^ j * φ.rOut)) fun ξ hξ ↦
+    φ.littlewoodPaley_eq_zero_of_le_norm
+      (not_le.1 (by simpa [mem_closedBall_zero_iff] using hξ)).le
 
 /-- **Derivative bounds for the Littlewood–Paley cutoffs.** The `k`-th derivative of `ψⱼ` is
 bounded by `B / 2^{jk}`, with `B` independent of `j`. -/
