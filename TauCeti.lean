@@ -11,3 +11,4 @@
 
 
 module
+public import TauCeti.Algebra.Jordan.Basic
