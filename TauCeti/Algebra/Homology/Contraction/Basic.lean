@@ -239,10 +239,8 @@ private theorem homotopySq_def : c.homotopySq =
 private theorem homotopySq_comp_diff :
     c.homotopySq.comp (Cochain.diff K) (by lia : (-2 : ℤ) + 1 = -1) =
       (Cochain.diff K).comp c.homotopySq (by lia : (1 : ℤ) + (-2) = -1) := by
-  have h := c.δ_homotopySq
-  rw [δ_eq_comp_diff_add_diff_comp (-2) (-1) (by lia)] at h
-  simp only [Int.negOnePow_neg, Int.negOnePow_one, Units.neg_smul, one_smul] at h
-  rwa [← sub_eq_add_neg, sub_eq_zero] at h
+  simpa [Int.negOnePow_even 2 even_two] using
+    (δ_eq_zero_iff_comp_diff_eq_diff_comp (-2) (-1) (by lia) _).mp c.δ_homotopySq
 
 /-- The second normalization step, the classical product `h₂ = h₁ d h₁`. -/
 private def homotopy₂ : Cochain K K (-1) :=

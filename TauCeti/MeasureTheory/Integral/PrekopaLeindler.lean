@@ -259,16 +259,16 @@ namespace TauCeti.Real
 /-- At each level `s`, the weighted volumes of the superlevel sets of `f` and `g` are bounded by
 the volume of the superlevel set of `h`: below the common supremum the two sets are nonempty and
 one-dimensional Brunn–Minkowski applies, and above it they are empty. -/
-private theorem mul_volume_add_mul_volume_lt_le {f g h : ℝ → ℝ≥0∞} (hf : AEMeasurable f)
-    (hg : AEMeasurable g) (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d)
+private theorem mul_volume_add_mul_volume_lt_le {f g h : ℝ → ℝ≥0∞} (hg : AEMeasurable g)
+    (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d)
     (hmin : ∀ x y, min (f x) (g y) ≤ h (c * x + d * y)) (s : ℝ≥0∞) :
     ENNReal.ofReal c * volume {x | s < f x} + ENNReal.ofReal d * volume {y | s < g y} ≤
       volume {z | s < h z} := by
   by_cases hs : s < ⨆ x, f x
   · obtain ⟨x, hx⟩ := lt_iSup_iff.1 hs
     obtain ⟨y, hy⟩ := lt_iSup_iff.1 (hfg ▸ hs)
-    refine (mul_volume_add_mul_volume_le ⟨x, hx⟩ (hf.nullMeasurable measurableSet_Ioi)
-      ⟨y, hy⟩ (hg.nullMeasurable measurableSet_Ioi) hc hd).trans (measure_mono ?_)
+    refine (mul_volume_add_mul_volume_le ⟨x, hx⟩ ⟨y, hy⟩
+      (hg.nullMeasurable measurableSet_Ioi) hc hd).trans (measure_mono ?_)
     rintro _ ⟨_, ⟨x, hx, rfl⟩, _, ⟨y, hy, rfl⟩, rfl⟩
     exact (lt_min hx hy).trans_le (hmin x y)
   · have hf0 : {x | s < f x} = ∅ :=
@@ -291,7 +291,7 @@ private theorem mul_lintegral_add_mul_lintegral_le_of_nonneg {f g h : ℝ → �
   rw [hlayer hf, hlayer hg, hlayer hh, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
     ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   exact (le_lintegral_add _ _).trans <| lintegral_mono fun t ↦
-    mul_volume_add_mul_volume_lt_le hf hg hfg hc hd hmin _
+    mul_volume_add_mul_volume_lt_le hg hfg hc hd hmin _
 
 /-- **Prékopa–Leindler inequality for the minimum** on `ℝ`. If `f` and `g` have the same
 supremum and `h (c * x + d * y)` dominates `min (f x) (g y)` for all `x` and `y`, then

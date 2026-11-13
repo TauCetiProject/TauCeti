@@ -76,10 +76,11 @@ The same carrier-and-Frobenius material on the branches already assembled is in
 * `TauCeti.RankTwoBLieIndex.carrierNode`: the node correspondence `Fin d.1.rank ≃ Fin 2` between the
   Bourbaki numbering of `B₂` and the numbering of the rank-two type-`C` carrier.
 * `TauCeti.RankTwoBLieIndex.AmbientGroup`: the algebraic-closure-valued points of that carrier.
-* `TauCeti.RankTwoBLieIndex.simpleRootSubgroup`: the positive simple-root subgroup at a Bourbaki
-  node.
+* `TauCeti.RankTwoBLieIndex.simpleRootSubgroup` and
+  `TauCeti.RankTwoBLieIndex.negSimpleRootSubgroup`: the positive and negative simple-root
+  subgroups at a Bourbaki node.
 * `TauCeti.RankTwoBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex`: the character of
-  that subgroup is the corresponding simple root of the `B₂` root datum.
+  that positive subgroup is the corresponding simple root of the `B₂` root datum.
 * `TauCeti.RankTwoBLieIndex.frobenius`, `TauCeti.RankTwoBLieIndex.coe_frobenius_apply` and
   `TauCeti.RankTwoBLieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius, its entrywise
   description, and its simple-root-subgroup action formula `Frob_q (x_i(u)) = x_i(u ^ q)`.
@@ -172,6 +173,18 @@ theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i = SpStd.rootSubgroupPoints 1 (.inl (d.carrierNode i)) d.1.Closure :=
   (rfl)
 
+/-- The negative simple-root subgroup at the Bourbaki-numbered node `i` of the `B₂` diagram.
+It is the carrier's numbered lowering subgroup at the node that `carrierNode` names. -/
+def negSimpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
+  SpStd.rootSubgroupPoints 1 (.inr (d.carrierNode i)) d.1.Closure
+
+/-- The negative simple-root subgroup is the carrier's numbered lowering subgroup at the
+corresponding carrier node. This unfolding equation is not a `simp` lemma, so that action
+formulas stated against `negSimpleRootSubgroup` can fire without expanding the node adapter. -/
+theorem negSimpleRootSubgroup_def (i : Fin d.1.rank) :
+    d.negSimpleRootSubgroup i = SpStd.rootSubgroupPoints 1 (.inr (d.carrierNode i)) d.1.Closure :=
+  (rfl)
+
 /-- **The simple-root subgroups sit at the simple roots of the `B₂` root datum.** The character
 by which the carrier's split torus rescales the parameter of `simpleRootSubgroup i`, read in the
 same node correspondence, is the `i`-th simple root of
@@ -235,6 +248,16 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
   rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
+/-- The Frobenius fixes the Bourbaki numbering of a negative simple-root subgroup and raises
+its parameter to the `q`-th power. -/
+@[simp]
+theorem frobenius_negSimpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.frobenius (d.negSimpleRootSubgroup i u) =
+      d.negSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [frobenius_def, negSimpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
 /-- **The prime-field Frobenius endomorphism of the ambient group of an index on the `B₂`
 diagram**, the `p`-power map for `p` the defining characteristic. It agrees with the `q`-power map
 `TauCeti.RankTwoBLieIndex.frobenius` above exactly when the index has field order `p`, which
@@ -273,6 +296,15 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
       d.simpleRootSubgroup i
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
+
+/-- The prime-field Frobenius fixes the Bourbaki numbering of a negative simple-root subgroup
+and raises its parameter to the `p`-th power. -/
+@[simp]
+theorem primeFrobenius_negSimpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.negSimpleRootSubgroup i u) =
+      d.negSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, negSimpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
 
 -- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
 -- there being no power operation on `MonoidHom` itself; this is the form
