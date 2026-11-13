@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.DerivedCategory.Basic
 public import TauCeti.Algebra.Homology.CochainComplex.Double
-public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Mk
+public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Double
 
 /-!
 # The distinguished triangle of a conflation
@@ -190,38 +190,6 @@ private noncomputable abbrev bSingle (n : ℤ) (A : C) : HomotopyCategory.Bounde
 private noncomputable abbrev bDoubleι₁ {X₀ X₁ : C} (g : X₀ ⟶ X₁) : bSingle 1 X₁ ⟶ bDouble g :=
   mkMap (HomologicalComplex.doubleι₁ g ComplexShape.up_rel_zero_one zero_ne_one)
 
-/-- **Splitting off the top term of a two-term complex is a distinguished triangle of `Kᵇ(C)`**:
-the triangle `X₁[-1] ⟶ (X₀ ⟶ X₁) ⟶ X₀[0] ⟶ X₁[-1]⟦1⟧`, whose third morphism is `g` up to
-`X₁[0] ≅ X₁[-1]⟦1⟧`. -/
-private theorem double_distinguished {X₀ X₁ : C} (g : X₀ ⟶ X₁) :
-    Triangle.mk (bDoubleι₁ g)
-      (mkMap (HomologicalComplex.doubleπ₀ g ComplexShape.up_rel_zero_one zero_ne_one) :
-        bDouble g ⟶ bSingle 0 X₀)
-      ((mkMap ((HomologicalComplex.single C (.up ℤ) 0).map g) : bSingle 0 X₀ ⟶ bSingle 0 X₁) ≫
-        (mkSingleIsoShift 1 0 1 (by simp) X₁).hom) ∈ distTriang _ := by
-  -- The third morphism, mapped to the homotopy category, is the one of the split sequence.
-  have h₃ : (HomotopyCategory.Bounded.ι C).map
-      ((mkMap ((HomologicalComplex.single C (.up ℤ) 0).map g) : bSingle 0 X₀ ⟶ bSingle 0 X₁) ≫
-        (mkSingleIsoShift 1 0 1 (by simp) X₁).hom) ≫
-          ((HomotopyCategory.Bounded.ι C).commShiftIso (1 : ℤ)).hom.app (bSingle 1 X₁) =
-      (_root_.HomotopyCategory.quotient C (.up ℤ)).map (CochainComplex.homOfDegreewiseSplit _
-        (HomologicalComplex.doubleSplitting g ComplexShape.up_rel_zero_one zero_ne_one)) ≫
-        ((_root_.HomotopyCategory.quotient C (.up ℤ)).commShiftIso (1 : ℤ)).hom.app _ := by
-    rw [Functor.map_comp, HomotopyCategory.Bounded.ι_map_mkMap,
-      HomotopyCategory.Bounded.ι_map_mkSingleIsoShift_hom,
-      ← HomologicalComplex.homOfDegreewiseSplit_doubleSplitting_comp_shiftIso g
-        ComplexShape.up_rel_zero_one,
-      ← Iso.app_hom ((CochainComplex.singleFunctors C).shiftIso 1 0 1 (by simp)) X₁]
-    simp only [Functor.map_comp, Category.assoc, Iso.hom_inv_id_map_assoc, Iso.inv_hom_id_app]
-    -- The identity sits on `(ι ⋙ shift).obj _`, which `Category.comp_id` matches only up to
-    -- unfolding the composite functor.
-    exact (Category.assoc _ _ _).symm.trans (Category.comp_id _)
-  rw [← (HomotopyCategory.Bounded.ι C).map_distinguished_iff]
-  convert CochainComplex.trianglehOfDegreewiseSplit_distinguished _
-    (HomologicalComplex.doubleSplitting g ComplexShape.up_rel_zero_one zero_ne_one) using 1
-  -- Both triangles have the same objects and first two morphisms by definition.
-  exact congrArg (Triangle.mk _ _) h₃
-
 variable {S : ShortComplex C}
 
 private theorem isIso_Q_map_doubleι (hS : E.Conflation S) :
@@ -259,7 +227,8 @@ private noncomputable def δ' (hS : E.Conflation S) :
     (doubleιIso hS).inv⟦(1 : ℤ)⟧'
 
 /-- **The triangle of a conflation is distinguished**, for the classes of the complexes `X[0]`,
-`Y[0]`, `Z[0]`: it is the rotation of the triangle of `double_distinguished`, transported along
+`Y[0]`, `Z[0]`: it is the rotation of the triangle of
+`TauCeti.HomotopyCategory.Bounded.double_distinguished`, transported along
 `X ≅ (Y ⟶ Z)` and `Z[0] ≅ Z[-1]⟦1⟧`. -/
 private theorem distinguished' (hS : E.Conflation S) :
     Triangle.mk ((BoundedDerivedCategory.Q E).map
@@ -279,7 +248,8 @@ private theorem distinguished' (hS : E.Conflation S) :
         ((BoundedDerivedCategory.Q E).commShiftIso (1 : ℤ)).hom.app (bSingle 1 S.X₃))
       (-((BoundedDerivedCategory.Q E).map (bDoubleι₁ S.g))⟦(1 : ℤ)⟧') ∈ distTriang _ :=
     rot_of_distTriang _
-      ((BoundedDerivedCategory.Q E).map_distinguished _ (double_distinguished S.g))
+      ((BoundedDerivedCategory.Q E).map_distinguished _
+        (HomotopyCategory.Bounded.double_distinguished S.g))
   refine isomorphic_distinguished _ hR _
     (Triangle.isoMk _ _ (doubleιIso hS) (Iso.refl _) (shiftSingleIsoQ S.X₃) ?_ ?_ ?_)
   · simp only [Triangle.mk_mor₁, Iso.refl_hom, Category.comp_id, doubleιIso_hom]
