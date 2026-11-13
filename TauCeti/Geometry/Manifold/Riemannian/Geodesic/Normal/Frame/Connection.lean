@@ -207,13 +207,13 @@ theorem normalFrameConnectionCoefficient_add_swap (h : IsNormalDomain I M p U)
     (hq : q ∈ riemannianExp I M p '' U) :
     b.normalFrameConnectionCoefficient (U := U) v i j q +
       b.normalFrameConnectionCoefficient (U := U) v j i q = 0 := by
-  let hs := h.isLocalFrameOn_normalOrthonormalFrame b
+  have hs := h.isLocalFrameOn_normalOrthonormalFrame b
   rw [h.normalFrameConnectionCoefficient_eq_connectionForm b hs v i j hq,
-    h.normalFrameConnectionCoefficient_eq_connectionForm b hs v j i hq]
-  have hskew := hs.connectionForm_add_connectionForm_swap (by simp) h.isOpen_image
+    h.normalFrameConnectionCoefficient_eq_connectionForm b hs v j i hq,
+    IsLocalFrameOn.connectionForm_apply, IsLocalFrameOn.connectionForm_apply]
+  exact hs.coeff_covariantDerivative_add_eq_zero (by simp) h.isOpen_image
     (fun y hy ↦ h.orthonormal_normalOrthonormalFrame b hy)
-    (isMetricCompatible_leviCivitaConnection I (M := M)) j i
-  simpa using congrArg (fun A ↦ A q ![normalCoordinateField I M p U v q]) hskew
+    (isMetricCompatible_leviCivitaConnection I (M := M)) q i j _
 
 end IsNormalDomain
 

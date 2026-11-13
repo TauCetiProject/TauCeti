@@ -117,12 +117,7 @@ theorem coeff_curvatureOperator_eq_mextDeriv_add_wedge {x : M} (hx : x ∈ u)
       TauCeti.mextDeriv (hs.connectionForm cov j l) x ![X x, Y x] +
         ∑ m, ((hs.connectionForm cov m l).wedge (hs.connectionForm cov j m))
           x ![X x, Y x] := by
-  let hs₂ : IsLocalFrameOn I F 2 s u :=
-    { hs with contMDiffOn := fun i ↦ (hs.contMDiffOn i).of_le hn }
-  -- Lowering regularity changes only proofs, so the frame coefficients are unchanged.
-  have hcoeff (k : ι) : hs₂.coeff k = hs.coeff k := by rfl
-  have hcurv := hs₂.coeff_curvatureOperator hu cov hx hX hY j l
-  simp only [hcoeff] at hcurv
+  have hcurv := hs.coeff_curvatureOperator hn hu cov hx hX hY j l
   rw [TauCeti.mextDeriv_apply_one
     ((hs.contMDiffAt_connectionForm cov hn hu hx j l).mdifferentiableAt one_ne_zero)
     ((hX.contMDiffAt (hu.mem_nhds hx)).mdifferentiableAt one_ne_zero)
