@@ -21,6 +21,12 @@ The ambient group consists of algebraic-closure points of the explicit prime-fie
 carrier. A comparison with the pinned simply connected F4 group scheme requires an isomorphism
 preserving the root subgroups and exceptional endomorphism. No finiteness or simplicity is assumed
 or proved here. The conventions follow Carter, *Simple Groups of Lie Type*, §14.
+
+The root equations cover both positive and negative simple roots. They specialize
+`F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints` and use
+`SuzukiReeIndex.pow_fieldExponent_apply_lengthPerm` for the odd iterate, following A.-C. Radu,
+*On the cohomology of the Ree groups and kernels of exceptional isogenies*,
+arXiv:2108.06291v2, §2.2.
 -/
 
 /- Adapted from the family interface and odd-iterate construction in
@@ -48,14 +54,6 @@ theorem halfFrobenius_def :
   rw [halfFrobenius_def, primeFrobenius_def,
     F4ShortRoot.PrimeField.specialIsogeny_specialIsogeny]
 
-/-- The indexed length permutation reverses the short-root carrier's four nodes. -/
-theorem finCongr_lengthPerm (i : Fin d.1.rank) :
-    finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i) =
-      Fin.revPerm (finCongr d.rank_eq_four i) := by
-  obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
-  simp [toSuzukiReeIndex, SuzukiReeIndex.lengthPerm_reeF4, Equiv.permCongr_def,
-    lengthPermF4_apply]
-
 /-- The carrier's positive-root exponent agrees with the indexed source-root exponent. -/
 theorem isogenyExponent_inl_finCongr (i : Fin d.1.rank) :
     F4ShortRoot.isogenyExponent (.inl (finCongr d.rank_eq_four i)) =
@@ -75,6 +73,20 @@ theorem isogenyExponent_inl_finCongr (i : Fin d.1.rank) :
     F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints, simpleRootSubgroup_def,
     finCongr_lengthPerm, ← isogenyExponent_inl_finCongr]
   simp only [F4ShortRoot.isogenyReverse, Sum.map_inl]
+
+/-- The exceptional endomorphism reverses negative simple roots with the indexed source-root
+exponent: one on the long roots and two on the short roots. -/
+@[simp]
+theorem halfFrobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.halfFrobenius (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by
+  rw [halfFrobenius_def, negativeSimpleRootSubgroup_def,
+    F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints, negativeSimpleRootSubgroup_def,
+    finCongr_lengthPerm, ← isogenyExponent_inl_finCongr]
+  simp only [F4ShortRoot.isogenyReverse, Sum.map_inr,
+    F4ShortRoot.isogenyExponent_inr]
 
 /-- The Steinberg endomorphism is the recorded odd power of the exceptional endomorphism. -/
 def steinberg : d.AmbientGroup →* d.AmbientGroup :=
@@ -102,6 +114,21 @@ theorem steinberg_def :
   d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
     (x := fun j t => d.simpleRootSubgroup j t)
     (fun j t => d.halfFrobenius_simpleRootSubgroup j t) i u
+
+/-- The Ree Steinberg map has parameter exponent `p^m * aᵢ` on each negative simple root,
+where `aᵢ` is the exceptional exponent at the source node. -/
+@[simp]
+theorem steinberg_negativeSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.steinberg (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^
+          (d.1.characteristic ^ d.toSuzukiReeIndex.halfExponent *
+            d.toSuzukiReeIndex.exponent i))) := by
+  rw [steinberg_def]
+  exact d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
+    (x := fun j t => d.negativeSimpleRootSubgroup j t)
+    (fun j t => d.halfFrobenius_negativeSimpleRootSubgroup j t) i u
 
 /-- The fixed subgroup of the Ree F4 Steinberg endomorphism. -/
 abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)

@@ -44,6 +44,8 @@ maximal, or that any group is finite, perfect, or simple.
 * `TauCeti.TitsLieIndex.AmbientGroup`: the algebraic-closure-valued points of the short-root
   type-`F₄` carrier.
 * `TauCeti.TitsLieIndex.simpleRootSubgroup`: its positive simple-root subgroup at a numbered node.
+* `TauCeti.TitsLieIndex.negativeSimpleRootSubgroup`: its negative simple-root subgroup at a
+  numbered node.
 * `TauCeti.TitsLieIndex.frobenius`: the prime-field Frobenius of the ambient group.
 
 ## Main results
@@ -153,6 +155,15 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
     d.frobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
   rw [frobenius_def, simpleRootSubgroup_def,
+    F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
+
+/-- The Frobenius preserves each numbered negative simple-root subgroup and squares its
+parameter. -/
+@[simp]
+theorem frobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.frobenius (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
+  rw [frobenius_def, negativeSimpleRootSubgroup_def,
     F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
 
 -- This is not a simp lemma because `simp` already rewrites fixed-subgroup membership to an

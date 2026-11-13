@@ -17,7 +17,8 @@ The Ree family `²G₂(3^(2m+1))` is built inside the group of algebraic-closure
 the short-root type-`G₂` carrier over the prime field `𝔽₃`. That carrier is the closed subgroup
 scheme of `GL₇` generated over `𝔽₃` by the reductions of the numbered simple root subgroups and
 the weight torus of the Kostant toral closure of the seven-dimensional module `V(ϖ₁)`. This file
-attaches it to a validated Ree index, together with its numbered positive simple root subgroups,
+attaches it to a validated Ree index, together with its numbered positive and negative simple root
+subgroups,
 rank-indexed weight torus, and the two Frobenius endomorphisms used in the fixed-point construction.
 
 The carrier is taken over `𝔽₃`, rather than obtained by base change from its integral toral
@@ -50,6 +51,8 @@ that any group below is finite, perfect, or simple.
 
 * `TauCeti.ReeG2LieIndex.AmbientGroup`: the algebraic-closure-valued points of the carrier.
 * `TauCeti.ReeG2LieIndex.simpleRootSubgroup`: its positive simple-root subgroup at a
+  Bourbaki-numbered node.
+* `TauCeti.ReeG2LieIndex.negativeSimpleRootSubgroup`: its negative simple-root subgroup at a
   Bourbaki-numbered node.
 * `TauCeti.ReeG2LieIndex.weightTorus`: its weight torus in rank-indexed coordinates.
 * `TauCeti.ReeG2LieIndex.frobenius` and `TauCeti.ReeG2LieIndex.primeFrobenius`: the `q`-power and
@@ -173,6 +176,23 @@ theorem weightTorus_conj_simpleRootSubgroup (i : Fin d.1.rank)
   exact G2ShortRoot.PrimeField.weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex
     DynkinType.valid_G2 _ _ _ u
 
+/-- The weight torus rescales a negative simple-root parameter by the negative simple-root
+character, in the same Bourbaki numbering as the positive-root equation. -/
+@[simp]
+theorem weightTorus_conj_negativeSimpleRootSubgroup (i : Fin d.1.rank)
+    (s : Fin d.1.rank → d.1.Closureˣ) (u : Multiplicative d.1.Closure) :
+    d.weightTorus s * d.negativeSimpleRootSubgroup i u * (d.weightTorus s)⁻¹ =
+      d.negativeSimpleRootSubgroup i
+        (Multiplicative.ofAdd
+          ((torusCharacter (fun j => s ((finCongr d.rank_eq_two).symm j))
+              (-(DynkinType.G2.simplyConnectedRootDatum DynkinType.valid_G2).root
+                (DynkinType.G2.simpleIndex DynkinType.valid_G2
+                  (finCongr d.rank_eq_two i))) : d.1.Closure) *
+            Multiplicative.toAdd u)) := by
+  rw [weightTorus_apply, negativeSimpleRootSubgroup_def]
+  exact G2ShortRoot.PrimeField.weightTorusPoints_conj_rootSubgroupPoints_neg_root_simpleIndex
+    DynkinType.valid_G2 _ _ _ u
+
 /-! ## The Frobenius endomorphisms -/
 
 /-- **The `q`-power Frobenius endomorphism of the ambient group**, where
@@ -207,6 +227,17 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
       d.simpleRootSubgroup i
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def,
+    G2ShortRoot.PrimeField.frobenius_rootSubgroupPoints, d.fieldOrder_eq_three_pow]
+
+/-- The Frobenius preserves each numbered negative simple-root subgroup and raises its parameter
+to the `q`-th power. -/
+@[simp]
+theorem frobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.frobenius (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [frobenius_def, negativeSimpleRootSubgroup_def,
     G2ShortRoot.PrimeField.frobenius_rootSubgroupPoints, d.fieldOrder_eq_three_pow]
 
 /-- **A point is fixed by the `q`-power Frobenius exactly when all of its matrix entries lie in
@@ -251,6 +282,16 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank)
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 3)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def,
+    G2ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
+
+/-- The prime-field Frobenius preserves each numbered negative simple-root subgroup and cubes
+its parameter. -/
+@[simp]
+theorem primeFrobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 3)) := by
+  rw [primeFrobenius_def, negativeSimpleRootSubgroup_def,
     G2ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
 
 /-- **The `q`-power Frobenius is the recorded power of the prime-field Frobenius.** This is the

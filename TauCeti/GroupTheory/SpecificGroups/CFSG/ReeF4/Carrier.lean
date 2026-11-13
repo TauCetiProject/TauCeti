@@ -57,6 +57,8 @@ that any group below is finite, perfect, or simple.
   the group structure it inherits as a subgroup of `GL₂₆`.
 * `TauCeti.ReeF4LieIndex.simpleRootSubgroup`: its positive simple-root subgroup at a
   Bourbaki-numbered node.
+* `TauCeti.ReeF4LieIndex.negativeSimpleRootSubgroup`: its negative simple-root subgroup at a
+  Bourbaki-numbered node.
 * `TauCeti.ReeF4LieIndex.frobenius` and `TauCeti.ReeF4LieIndex.primeFrobenius`: the `q`-power and
   `2`-power Frobenius endomorphisms of the ambient group.
 
@@ -197,6 +199,17 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
   rw [frobenius_def, simpleRootSubgroup_def,
     F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, d.fieldOrder_eq_two_pow]
 
+/-- The Frobenius preserves each numbered negative simple-root subgroup and raises its parameter
+to the `q`-th power. -/
+@[simp]
+theorem frobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.frobenius (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [frobenius_def, negativeSimpleRootSubgroup_def,
+    F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, d.fieldOrder_eq_two_pow]
+
 -- As for `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_geckFrobenius_iff`, this is not a `simp`
 -- lemma: `TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites
 -- its left-hand side to `d.frobenius g = g` through `MonoidHom.mem_eqLocus`, and the `simpNF`
@@ -241,6 +254,16 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def,
+    F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
+
+/-- The prime-field Frobenius preserves each numbered negative simple-root subgroup and squares
+its parameter. -/
+@[simp]
+theorem primeFrobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
+  rw [primeFrobenius_def, negativeSimpleRootSubgroup_def,
     F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
 
 -- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
