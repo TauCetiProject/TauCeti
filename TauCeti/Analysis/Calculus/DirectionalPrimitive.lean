@@ -12,10 +12,11 @@ public import Mathlib.Analysis.Calculus.ParametricIntegral
 # Primitives in a constant direction
 
 Given a nonzero vector `v` and a continuous linear functional `ℓ` with `ℓ v = 1`, integrate a
-smooth function along the lines parallel to `v`, starting at the affine hyperplane
-`ℓ (x - a) = 0`. The resulting function is smooth, vanishes on that hyperplane, and its
-Fréchet derivative applied to `v` is the original function. This is the scalar transport
-equation in flow-box coordinates; the coefficients may also lie in a complete normed space.
+smooth function along the lines parallel to `v`, starting at the point `x - ℓ (x - a) • v`,
+which then lies on the affine hyperplane `ℓ (x - a) = 0`. The resulting function is smooth,
+vanishes on that hyperplane, and its Fréchet derivative applied to `v` is the original function.
+This is the scalar transport equation in flow-box coordinates; the coefficients may also lie in
+a complete normed space.
 
 ## References
 
@@ -33,12 +34,14 @@ namespace TauCeti
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- Integrate `f` in direction `v` from the affine hyperplane `ℓ (x - a) = 0`.
-When `ℓ v = 1`, this is a primitive of `f` in direction `v`. -/
+/-- Integrate `f` in direction `v` over the parameter interval `[0, ℓ (x - a)]`, starting at
+`x - ℓ (x - a) • v`. When `ℓ v = 1`, this starting point lies on the affine hyperplane
+`ℓ (x - a) = 0` and the result is a primitive of `f` in direction `v`. -/
 def directionalPrimitive (v : E) (ℓ : E →L[ℝ] ℝ) (a : E) (f : E → F) (x : E) : F :=
   ∫ t in (0 : ℝ)..ℓ (x - a), f (x - ℓ (x - a) • v + t • v)
 
-/-- The directional primitive is the line integral starting at the chosen affine hyperplane. -/
+/-- The directional primitive is the line integral of `f` along `v`, starting at
+`x - ℓ (x - a) • v` (a point of the hyperplane `ℓ (x - a) = 0` when `ℓ v = 1`). -/
 theorem directionalPrimitive_def (v : E) (ℓ : E →L[ℝ] ℝ) (a : E) (f : E → F) (x : E) :
     directionalPrimitive v ℓ a f x =
       ∫ t in (0 : ℝ)..ℓ (x - a), f (x - ℓ (x - a) • v + t • v) := (rfl)
@@ -84,6 +87,7 @@ variable [CompleteSpace F]
 
 /-- The derivative of the directional primitive in direction `v` is `f`, with the normalization
 `ℓ v = 1`. -/
+@[simp]
 theorem fderiv_directionalPrimitive_apply (v : E) (ℓ : E →L[ℝ] ℝ) (a : E)
     (hℓ : ℓ v = 1) {f : E → F} (hf : ContDiff ℝ 1 f) (x : E) :
     fderiv ℝ (directionalPrimitive v ℓ a f) x v = f x := by
@@ -106,8 +110,10 @@ theorem fderiv_directionalPrimitive_apply (v : E) (ℓ : E →L[ℝ] ℝ) (a : E
   have hval : x - ℓ (x - a) • v + ℓ (x - a) • v = x := sub_add_cancel _ _
   simpa only [one_smul, hval] using hd'.unique hd
 
-/-- Integrating the directional derivative recovers a function minus its initial value on the
-transverse hyperplane. -/
+/-- Integrating the directional derivative recovers a function minus its value at the starting
+point `x - ℓ (x - a) • v`, which lies on the transverse hyperplane `ℓ (x - a) = 0` when
+`ℓ v = 1`. -/
+@[simp]
 theorem directionalPrimitive_fderiv_apply (v : E) (ℓ : E →L[ℝ] ℝ) (a : E)
     {g : E → F} (hg : ContDiff ℝ 1 g) (x : E) :
     directionalPrimitive v ℓ a (fun y ↦ fderiv ℝ g y v) x =
