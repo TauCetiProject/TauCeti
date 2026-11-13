@@ -37,6 +37,8 @@ A measure of temperate growth is finite on compact sets.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
+* `Function.HasTemperateGrowth.comp_sub_left`, `Function.hasTemperateGrowth_comp_sub_left_iff`:
+  `y ↦ f (x - y)` has temperate growth exactly when `f` does.
 * `MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts`: a measure of temperate
   growth is finite on compact sets.
 -/
@@ -89,7 +91,22 @@ theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
     (fun x ↦ _root_.fderiv ℝ f x v).HasTemperateGrowth :=
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
 
+/-- Reflecting and translating, `y ↦ f (x - y)`, preserves temperate growth. -/
+theorem comp_sub_left (hf : f.HasTemperateGrowth) (x : E) :
+    (fun y ↦ f (x - y)).HasTemperateGrowth :=
+  hf.comp (by fun_prop)
+
 end Function.HasTemperateGrowth
+
+namespace Function
+
+/-- The reflected translate `y ↦ f (x - y)` has temperate growth exactly when `f` does. -/
+theorem hasTemperateGrowth_comp_sub_left_iff {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} (x : E) :
+    (fun y ↦ f (x - y)).HasTemperateGrowth ↔ f.HasTemperateGrowth :=
+  ⟨fun h ↦ by simpa using h.comp_sub_left x, fun h ↦ h.comp_sub_left x⟩
+
+end Function
 
 namespace Function
 

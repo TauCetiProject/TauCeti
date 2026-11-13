@@ -24,6 +24,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 
 * `SchwartzMap.one_add_norm_smul_sq_rpow_mul_norm_le`: `⟨c x⟩ ^ m ‖f x‖` is bounded by a finite
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
+* `SchwartzMap.smulLeftCLM_eq_zero_of_not_hasTemperateGrowth`: multiplication by a function
+  without temperate growth is the junk value `0`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
@@ -98,6 +100,19 @@ theorem one_add_norm_smul_sq_rpow_mul_norm_le (c m : ℝ) (k : ℕ) (f : 𝓢(E,
     _ = _ := by ring
 
 end Weight
+
+section SmulLeft
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- Multiplication by a function without temperate growth is the junk value `0`. -/
+@[simp]
+theorem smulLeftCLM_eq_zero_of_not_hasTemperateGrowth {g : E → 𝕜}
+    (hg : ¬g.HasTemperateGrowth) : smulLeftCLM F g = 0 := by
+  simp [smulLeftCLM, hg]
+
+end SmulLeft
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]
