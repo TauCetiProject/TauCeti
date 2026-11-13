@@ -20,7 +20,6 @@ import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Topology.MetricSpace.Bounded
@@ -39,9 +38,12 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
 1. **Zero-boundary uniqueness** (`TauCeti.Hive.boundary_eq_zero_iff`): the only normalized hive
    with zero boundary over any partially ordered abelian group is `0`.
 2. **Matrix presentations** (`TauCeti.Hive.eqMatrix`, `TauCeti.Hive.rhombusMatrix`,
-   `TauCeti.Hive.mem_fixedBoundary_iff_mulVec`): over any ring `R` (in particular `ℤ`, `ℚ`, `ℝ`),
-   fixed-boundary hives are the solutions of `eqMatrix R n *ᵥ f = eqRHS B` and
-   `rhombusMatrix R n *ᵥ f ≤ 0`, obtained by base change from `ℤ`.
+   `TauCeti.Hive.mem_fixedBoundary_iff_mulVec`): `eqMatrix R n` and `rhombusMatrix R n` are defined
+   over any ring `R` by base change from `ℤ` (`TauCeti.Hive.map_intCast_eqMatrix`,
+   `TauCeti.Hive.map_intCast_rhombusMatrix`), and over any partially ordered ring `R` with
+   order-compatible addition (`[IsOrderedAddMonoid R]`, in particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary
+   hives are characterized as the solutions of `eqMatrix R n *ᵥ f = eqRHS B` and
+   `rhombusMatrix R n *ᵥ f ≤ 0`.
 3. **Compact real polytopes and proper boundary projection** (`TauCeti.Hive.properCone`,
    `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
    `TauCeti.Hive.isProperMap_boundary_properCone`): `‖f‖ ≤ 3 * n * ‖boundaryLinear ℝ n ℝ f‖` makes
@@ -57,7 +59,6 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
 
 ## Main definitions
 
-* `TauCeti.Hive.Vertex.ofYZ`: chart `(y, z) ↦ (n - y - z, y, z)` on `Vertex n`.
 * `TauCeti.Hive.entryLowerBound`, `TauCeti.Hive.entryUpperBound`: linear boundary entry bounds.
 * `TauCeti.Hive.EqConstraintIndex`, `TauCeti.Hive.eqMatrix`, `TauCeti.Hive.eqRHS`,
   `TauCeti.Hive.rhombusMatrix`: finite equality and inequality matrices over any ring.
@@ -90,60 +91,7 @@ open scoped BigOperators Matrix
 
 namespace TauCeti.Hive
 
-@[elab_as_elim]
-private theorem fin3_cases {P : Fin 3 → Prop} (s : Fin 3) (h0 : P 0) (h1 : P 1) (h2 : P 2) : P s :=
-  match s with | ⟨0, _⟩ => h0 | ⟨1, _⟩ => h1 | ⟨2, _⟩ => h2
-
-private theorem sum_lt_add_sum_ge {n : ℕ} {R : Type*} [AddCommGroup R] (g : Fin n → R) (k : ℕ) :
-    (∑ i : Fin n with i.val < k, g i) + (∑ i : Fin n with k ≤ i.val, g i) = ∑ i : Fin n, g i := by
-  simpa [not_lt] using
-    Finset.sum_filter_add_sum_filter_not Finset.univ (fun i : Fin n => i.val < k) g
-
-/-! ### `(y, z)` chart and the parallelogram inequality -/
-
-namespace Vertex
-
-/-- Construct a lattice vertex `(n - y - z, y, z)` from nonnegative `(y, z)` with `y + z ≤ n`. -/
-def ofYZ (n : ℕ) (y z : ℕ) (h : y + z ≤ n) : Vertex n := ⟨n - y - z, y, z, by omega⟩
-
-@[simp] theorem ofYZ_x (n y z : ℕ) (h : y + z ≤ n) : (ofYZ n y z h).x = n - y - z := (rfl)
-@[simp] theorem ofYZ_y (n y z : ℕ) (h : y + z ≤ n) : (ofYZ n y z h).y = y := (rfl)
-@[simp] theorem ofYZ_z (n y z : ℕ) (h : y + z ≤ n) : (ofYZ n y z h).z = z := (rfl)
-
-@[simp] theorem ofYZ_eq_iff {n y₁ z₁ y₂ z₂ : ℕ} {h₁ : y₁ + z₁ ≤ n} {h₂ : y₂ + z₂ ≤ n} :
-    ofYZ n y₁ z₁ h₁ = ofYZ n y₂ z₂ h₂ ↔ y₁ = y₂ ∧ z₁ = z₂ :=
-  ⟨fun h => ⟨congrArg Vertex.y h, congrArg Vertex.z h⟩, fun ⟨hy, hz⟩ => by subst hy; subst hz; rfl⟩
-
-@[simp] theorem ofYZ_y_z {n : ℕ} (p : Vertex n) :
-    ofYZ n p.y p.z (by have := p.sum_eq; omega) = p := by ext <;> simp; have := p.sum_eq; omega
-
-@[simp] theorem ofYZ_zero_zero (n : ℕ) : ofYZ n 0 0 (Nat.zero_le n) = cornerA n := by ext <;> simp
-
-theorem ofYZ_zero_right (n y : ℕ) (hy : y ≤ n) :
-    ofYZ n y 0 (by omega) = edgePoint n 0 ⟨y, by omega⟩ := by ext <;> simp
-
-theorem ofYZ_zero_left (n z : ℕ) (hz : z ≤ n) :
-    ofYZ n 0 z (by omega) = edgePoint n 2 ⟨n - z, by omega⟩ := by ext <;> simp; omega
-
-theorem ofYZ_sub_left (n z : ℕ) (hz : z ≤ n) :
-    ofYZ n (n - z) z (by omega) = edgePoint n 1 ⟨z, by omega⟩ := by ext <;> simp; omega
-
-end Vertex
-
-/-- An elementary `(y, z)`-unit cell inside `Δₙ` forms a unit rhombus with obtuse corners
-`(y + 1, z)` and `(y, z + 1)` and acute corners `(y, z)` and `(y + 1, z + 1)`. -/
-theorem isRhombus_ofYZ_step {n y z : ℕ} (h : (y + 1) + (z + 1) ≤ n) :
-    IsRhombus (Vertex.ofYZ n (y + 1) z (by omega)) (Vertex.ofYZ n y z (by omega))
-      (Vertex.ofYZ n y (z + 1) (by omega)) (Vertex.ofYZ n (y + 1) (z + 1) h) := by
-  have hx00 : ((n - y - z : ℕ) : ℤ) = (n : ℤ) - y - z := by omega
-  have hx10 : ((n - (y + 1) - z : ℕ) : ℤ) = (n : ℤ) - y - z - 1 := by omega
-  have hx01 : ((n - y - (z + 1) : ℕ) : ℤ) = (n : ℤ) - y - z - 1 := by omega
-  have hx11 : ((n - (y + 1) - (z + 1) : ℕ) : ℤ) = (n : ℤ) - y - z - 2 := by omega
-  refine ⟨by simp; omega, by simp; omega, by simp, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals
-    rw [Vertex.sqDist_def]
-    simp only [Vertex.ofYZ_x, Vertex.ofYZ_y, Vertex.ofYZ_z, hx00, hx10, hx01, hx11, Nat.cast_add,
-      Nat.cast_one]; ring
+/-! ### Parallelogram inequality in the `(y, z)` chart -/
 
 section Parallelogram
 
@@ -247,11 +195,11 @@ theorem entryLowerBound_le (h : Hive n R) (p : Vertex n) : entryLowerBound h.bou
   rw [Vertex.ofYZ_y_z p, Vertex.ofYZ_zero_right n p.y (by omega),
     Vertex.ofYZ_sub_left n p.z (by omega), Vertex.ofYZ_zero_right n (n - p.z) (by omega),
     h.apply_edgePoint_zero, h.apply_edgePoint_one, h.apply_edgePoint_zero] at hpar
+  simp only at hpar
+  rw [← Finset.sum_filter_add_sum_filter_not Finset.univ
+    (fun i : Fin n => i.val < n - p.z) (h.boundary 0)] at hpar
+  simp only [not_lt] at hpar
   set s_lt := ∑ i : Fin n with i.val < n - p.z, h.boundary 0 i
-  change (∑ i : Fin n with i.val < p.y, h.boundary 0 i) +
-    ((∑ i : Fin n, h.boundary 0 i) + ∑ i : Fin n with i.val < p.z, h.boundary 1 i) ≤
-      s_lt + h p at hpar
-  rw [← sum_lt_add_sum_ge (h.boundary 0) (n - p.z)] at hpar
   refine le_of_add_le_add_right (a := s_lt) ?_
   calc entryLowerBound h.boundary p + s_lt
       = (∑ i : Fin n with i.val < p.y, h.boundary 0 i) +
@@ -326,7 +274,8 @@ def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n)
     (rhombusMatrix ℤ n).map (Int.cast : ℤ → R) = rhombusMatrix R n := by
   ext r q; simp [rhombusMatrix, Pi.single_apply]
 
-/-- Matrix characterization of fixed-boundary normalized hives over any partially ordered ring. -/
+/-- Matrix characterization of fixed-boundary normalized hives over any partially ordered ring with
+order-compatible addition. -/
 theorem mem_fixedBoundary_iff_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
     [IsOrderedAddMonoid R] (B : Fin 3 → Fin n → R) (f : Vertex n → R) :
     (f (Vertex.cornerA n) = 0 ∧ IsRhombusConcave f ∧ boundaryLinear ℤ n R f = B) ↔
@@ -597,7 +546,7 @@ theorem hiveCount_productBoundary_dual {n : ℕ} (lam μ γ : DominantWeight n) 
     hiveCount (productBoundary μ.dual lam.dual γ.dual) = hiveCount (productBoundary lam μ γ) := by
   have hdual_pb :
       productBoundary lam.dual.dual μ.dual.dual γ.dual.dual = productBoundary lam μ γ := by
-    ext s i; induction s using fin3_cases <;> simp
+    ext s i; fin_cases s <;> simp
   exact Fintype.card_congr
     { toFun := fun h =>
         ⟨h.1.reflect.rotate, (boundary_reflect_rotate_of_productBoundary h.2).trans hdual_pb⟩
@@ -622,7 +571,7 @@ theorem suffix_sum_le_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n
       ∑ i : Fin n with k ≤ i.val, γ.1 i := by
   let p : Vertex n := Vertex.edgePoint n 1 ⟨n - k, by omega⟩
   have hup := le_entryUpperBound h.rotate p
-  rw [apply_edgePoint_one] at hup; unfold entryUpperBound at hup
+  rw [apply_edgePoint_one, Fin.val_mk] at hup; unfold entryUpperBound at hup
   rw [show p.y = k by simp [p]; omega, show n - p.z = k by simp [p]; omega,
     show h.rotate.boundary 0 = μ.1 by simp [boundary_rotate, hb],
     show h.rotate.boundary 1 = γ.dual.1 by simp [boundary_rotate, hb],
@@ -636,9 +585,9 @@ theorem suffix_sum_le_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n
     by_cases hi : i.val < n - k
     · simp [hi, show k ≤ n - (i.val + 1) by omega]
     · simp [hi, show ¬ k ≤ n - (i.val + 1) by omega]
-  change (∑ i : Fin n, μ.1 i) + (∑ i : Fin n with i.val < n - k, γ.dual.1 i) ≤
-    (∑ i : Fin n with i.val < k, μ.1 i) - (∑ i : Fin n with k ≤ i.val, lam.1 i) at hup
-  rw [hdual, ← sum_lt_add_sum_ge μ.1 k] at hup; linarith
+  rw [hdual, ← Finset.sum_filter_add_sum_filter_not Finset.univ
+    (fun i : Fin n => i.val < k) μ.1] at hup
+  simp only [not_lt] at hup; linarith
 
 /-- **Dominance prefix-sum bound** for `productBoundary lam μ γ`. -/
 theorem prefix_sum_le_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n} {h : IntegerHive n}
@@ -646,8 +595,11 @@ theorem prefix_sum_le_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n
     (∑ i : Fin n with i.val < k, γ.1 i) ≤
       (∑ i : Fin n with i.val < k, lam.1 i) + ∑ i : Fin n with i.val < k, μ.1 i := by
   rcases le_or_gt k n with hk | hk
-  · linarith [sum_eq_of_productBoundary hb, suffix_sum_le_of_productBoundary hb hk,
-      sum_lt_add_sum_ge lam.1 k, sum_lt_add_sum_ge μ.1 k, sum_lt_add_sum_ge γ.1 k]
+  · have hsplit (g : Fin n → ℤ) :
+        (∑ i : Fin n with i.val < k, g i) + (∑ i : Fin n with k ≤ i.val, g i) = ∑ i, g i := by
+      simpa [not_lt] using Finset.sum_filter_add_sum_filter_not Finset.univ (fun i => i.val < k) g
+    linarith [sum_eq_of_productBoundary hb, suffix_sum_le_of_productBoundary hb hk,
+      hsplit lam.1, hsplit μ.1, hsplit γ.1]
   · rw [show ({i : Fin n | i.val < k} : Finset (Fin n)) = Finset.univ by
       ext i; simp [i.isLt.trans hk], ← sum_eq_of_productBoundary hb]
 
@@ -714,18 +666,6 @@ end IntegerFibre
 
 section RankTwoChecks
 
-/-- At size `2`, `Δ₂` has no strictly interior vertices, so `boundary` is injective. -/
-theorem boundary_injective_two {R : Type*} [AddCommGroup R] [PartialOrder R] :
-    Function.Injective (boundary (n := 2) (R := R)) := by
-  intro h₁ h₂ hb; ext p; have := p.sum_eq
-  rcases (by omega : p.z = 0 ∨ p.x = 0 ∨ p.y = 0) with hz | hx | hy
-  · rw [show p = Vertex.edgePoint 2 0 ⟨p.y, by omega⟩ by ext <;> simp [hz]; omega,
-      apply_edgePoint_zero, apply_edgePoint_zero, hb]
-  · rw [show p = Vertex.edgePoint 2 1 ⟨p.z, by omega⟩ by ext <;> simp [hx]; omega,
-      apply_edgePoint_one, apply_edgePoint_one, hb]
-  · rw [show p = Vertex.edgePoint 2 2 ⟨p.x, by omega⟩ by ext <;> simp [hy]; omega,
-      apply_edgePoint_two, apply_edgePoint_two, hb]
-
 instance subsingleton_fixedIntegerHive_two (B : Fin 3 → Fin 2 → ℤ) :
     Subsingleton (FixedIntegerHive B) :=
   ⟨fun h₁ h₂ => Subtype.ext (boundary_injective_two (h₁.2.trans h₂.2.symm))⟩
@@ -734,6 +674,7 @@ instance subsingleton_fixedIntegerHive_two (B : Fin 3 → Fin 2 → ℤ) :
 theorem hiveCount_le_one_two (B : Fin 3 → Fin 2 → ℤ) : hiveCount B ≤ 1 :=
   Fintype.card_le_one_iff_subsingleton.mpr inferInstance
 
+/-- Rank-`2` check `c^{(2, 0)}_{(1, 0), (1, 0)} = 1`. -/
 theorem hiveCount_two_std_std_sym :
     hiveCount
       (productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 0], by decide⟩) = 1 := by
@@ -743,39 +684,6 @@ theorem hiveCount_two_std_std_sym :
   have hle := hiveCount_le_one_two
     (productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 0], by decide⟩)
   omega
-
-/-- Rank-`2` check for `λ = μ = (1, 0)`, `γ = (1, 1)`: perimeter `(0, 1, 1, 2, 2, 1)`, slacks
-`(0, 1, 0)`. -/
-def detTwo : IntegerHive 2 where
-  value p := (p.z : ℤ) + if p.y = 0 then 0 else 1
-  value_cornerA' := by simp
-  le_of_isRhombus' {a b c d} hr := by
-    have hshort := hr.short; rw [Vertex.sqDist_def] at hshort
-    have hdy : ((a.y : ℤ) - c.y) ^ 2 ≤ 2 := by
-      linarith [sq_nonneg ((a.x : ℤ) - c.x), sq_nonneg ((a.z : ℤ) - c.z)]
-    have hbdy : -1 ≤ (a.y : ℤ) - c.y ∧ (a.y : ℤ) - c.y ≤ 1 := by
-      have hp : 0 < (2 + ((a.y : ℤ) - c.y)) * (2 - ((a.y : ℤ) - c.y)) := by
-        linarith [show (2 + ((a.y : ℤ) - c.y)) * (2 - ((a.y : ℤ) - c.y)) =
-          4 - ((a.y : ℤ) - c.y) ^ 2 by ring]
-      rcases mul_pos_iff.mp hp with ⟨_, _⟩ | ⟨_, _⟩ <;> omega
-    have := hr.midpoint_y; have := hr.midpoint_z
-    have := a.sum_eq; have := b.sum_eq; have := c.sum_eq; have := d.sum_eq; omega
-
-@[simp] theorem detTwo_apply (p : Vertex 2) :
-    detTwo p = (p.z : ℤ) + if p.y = 0 then 0 else 1 := (rfl)
-
-theorem boundary_detTwo :
-    detTwo.boundary =
-      productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩ := by
-  ext s i; fin_cases i <;> induction s using fin3_cases <;> simp [boundary_apply]
-
-theorem slacks_detTwo :
-    rhombusSlack detTwo ⟨1, 1, 0, rfl⟩ (Vertex.cornerA 2) ⟨1, 0, 1, rfl⟩ ⟨0, 1, 1, rfl⟩ = 0 ∧
-    rhombusSlack detTwo (⟨1, 1, 0, rfl⟩ : Vertex 2).rotate (Vertex.cornerA 2).rotate
-      (⟨1, 0, 1, rfl⟩ : Vertex 2).rotate (⟨0, 1, 1, rfl⟩ : Vertex 2).rotate = 1 ∧
-    rhombusSlack detTwo (⟨1, 1, 0, rfl⟩ : Vertex 2).rotate.rotate
-      (Vertex.cornerA 2).rotate.rotate (⟨1, 0, 1, rfl⟩ : Vertex 2).rotate.rotate
-      (⟨0, 1, 1, rfl⟩ : Vertex 2).rotate.rotate = 0 := by simp [rhombusSlack_def]
 
 /-- Rank-`2` check `c^{(1, 1)}_{(1, 0), (1, 0)} = 1`. -/
 theorem hiveCount_two_std_std_det :
@@ -797,7 +705,7 @@ theorem hiveCount_two_std_std_three_neg_one :
   rw [hiveCount_eq_zero_iff]
   refine ⟨fun ⟨_, hb⟩ => ?_⟩
   have hlast := last_le_of_productBoundary hb
-  change (0 : ℤ) + 0 ≤ -1 at hlast; omega
+  simp at hlast
 
 end RankTwoChecks
 
