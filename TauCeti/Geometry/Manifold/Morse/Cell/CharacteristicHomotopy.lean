@@ -202,9 +202,7 @@ theorem exists_homotopy_morseCharacteristicMap_polarFactor_family (hf : ContMDif
       (∀ p, ⇑(g p) = (ContinuousLinearMap.adjoint
           (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap ∘L D p 0 ∘L
             (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap).polarFactor) ∧
-      Continuous (fun p ↦ (ContinuousLinearMap.adjoint
-          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap ∘L D p 0 ∘L
-            (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap).polarFactor) ∧
+      Continuous (fun q : P × EuclideanSpace ℝ (Fin k) ↦ g q.1 q.2) ∧
       ∃ K : C(I × (P × TopCat.disk.{u} k), {x : M | f x ≤ c + ε}),
         (∀ p w, K (0, p, w) = (ψ₁ p).morseCharacteristicMap hk hε.le (hball₁ p) (hf₁ p) w) ∧
         (∀ p w, K (1, p, w) =
@@ -303,7 +301,7 @@ theorem exists_homotopy_morseCharacteristicMap_polarFactor_family (hf : ContMDif
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous)
       (preimage_mono (Icc_subset_Icc le_rfl (by linarith))))
     (fun x h₁ h₂ ↦ hreg x h₁ (by linarith)) G' hG'₀ hG'₁ hG'f hG'd
-  refine ⟨g, hg, hcont, ⟨fun q ↦ ⟨K q, hKf q⟩, by fun_prop⟩, fun p w ↦ Subtype.ext ?_,
+  refine ⟨g, hg, hgc, ⟨fun q ↦ ⟨K q, hKf q⟩, by fun_prop⟩, fun p w ↦ Subtype.ext ?_,
     fun p w ↦ Subtype.ext ?_, hKb⟩
   · exact (K.apply_zero _).trans (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply
       (hball₁ p) (hf₁ p) hk hε.le w).symm
