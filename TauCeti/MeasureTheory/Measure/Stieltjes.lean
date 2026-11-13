@@ -89,12 +89,21 @@ variable {Ω R : Type*} {mΩ : MeasurableSpace Ω}
   [LinearOrder R] [TopologicalSpace R] [OrderTopology R] [CompactIccSpace R]
   [MeasurableSpace R] [BorelSpace R] [SecondCountableTopology R] [DenselyOrdered R]
 
+/-- A Stieltjes measure restricted to a set of continuity points vanishes on singletons. -/
+theorem nullSingletonClass_restrict_measure (f : StieltjesFunction R) {s : Set R}
+    (hf : ∀ t ∈ s, ContinuousAt f t) : NullSingletonClass (f.measure.restrict s) :=
+  ⟨fun t ↦ by
+    rw [Measure.restrict_apply (measurableSet_singleton t)]
+    by_cases ht : t ∈ s
+    · rw [singleton_inter_of_mem ht, f.measure_singleton,
+        (hf t ht).continuousWithinAt.leftLim_eq, sub_self, ENNReal.ofReal_zero]
+    · rw [singleton_inter_of_notMem ht, measure_empty]⟩
+
 /-- The Stieltjes measure of a continuous Stieltjes function vanishes on singletons. -/
 theorem nullSingletonClass_measure_of_continuous (f : StieltjesFunction R)
-    (hf : Continuous f) : NullSingletonClass f.measure :=
-  ⟨fun t ↦ by
-    rw [f.measure_singleton, hf.continuousAt.continuousWithinAt.leftLim_eq, sub_self,
-      ENNReal.ofReal_zero]⟩
+    (hf : Continuous f) : NullSingletonClass f.measure := by
+  simpa only [Measure.restrict_univ] using
+    f.nullSingletonClass_restrict_measure (s := univ) (fun _ _ ↦ hf.continuousAt)
 
 /-- Integration of a locally integrable Banach-valued function against a Stieltjes function
 continuous on `(a,∞)` has a continuous accumulated integral. Jumps at or before `a` are allowed;
@@ -103,13 +112,8 @@ theorem continuous_setIntegral_Ioc {E : Type*} [NormedAddCommGroup E] [NormedSpa
     (f : StieltjesFunction R) (a : R) (hf : ContinuousOn f (Ioi a)) {H : R → E}
     (hH : ∀ T, IntegrableOn H (Ioc a T) f.measure) :
     Continuous (fun t ↦ ∫ u in Ioc a t, H u ∂f.measure) := by
-  have : NullSingletonClass (f.measure.restrict (Ioi a)) := ⟨fun t ↦ by
-    rw [Measure.restrict_apply (measurableSet_singleton t)]
-    by_cases ht : t ∈ Ioi a
-    · rw [singleton_inter_of_mem ht, f.measure_singleton,
-        (isOpen_Ioi.continuousOn_iff.mp hf ht).continuousWithinAt.leftLim_eq,
-        sub_self, ENNReal.ofReal_zero]
-    · rw [singleton_inter_of_notMem ht, measure_empty]⟩
+  have : NullSingletonClass (f.measure.restrict (Ioi a)) :=
+    f.nullSingletonClass_restrict_measure (fun _ ht ↦ isOpen_Ioi.continuousOn_iff.mp hf ht)
   have hi : ∀ T, IntegrableOn H (Ioc a T) (f.measure.restrict (Ioi a)) := by
     intro T
     simpa only [IntegrableOn, Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self] using hH T

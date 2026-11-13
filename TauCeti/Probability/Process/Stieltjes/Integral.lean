@@ -81,18 +81,21 @@ theorem isStronglyPredictable_setIntegral_stieltjesFunction
 Stieltjes integral admits a predictable, almost-surely continuous indistinguishable representative.
 No completeness, right continuity, or moment hypothesis is imposed on the raw basis. -/
 theorem exists_isStronglyPredictable_setIntegral_stieltjesFunction
-    [IsCompletelyMetrizableSpace E]
     (hH : IsStronglyProgressive ℱ H) (hf : Adapted ℱ (fun t ω ↦ f ω t))
     (a : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (f ω) (Ioi a))
     (hi : ∀ᵐ ω ∂P, ∀ T, IntegrableOn (H · ω) (Ioc a T) (f ω).measure) :
     ∃ I : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ I ∧
       (∀ᵐ ω ∂P, Continuous (I · ω)) ∧
       ∀ᵐ ω ∂P, ∀ t, I t ω = ∫ u in Ioc a t, H u ω ∂(f ω).measure := by
-  have hcont : ∀ᵐ ω ∂P,
-      Continuous (fun t ↦ ∫ u in Ioc a t, H u ω ∂(f ω).measure) := by
-    filter_upwards [hc, hi] with ω hc hi
-    exact (f ω).continuous_setIntegral_Ioc a hc hi
-  exact StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_continuous
-    (hH.setIntegral_stieltjesFunction hf a).stronglyAdapted hcont
+  by_cases hE : CompleteSpace E
+  · let := hE
+    have hcont : ∀ᵐ ω ∂P,
+        Continuous (fun t ↦ ∫ u in Ioc a t, H u ω ∂(f ω).measure) := by
+      filter_upwards [hc, hi] with ω hc hi
+      exact (f ω).continuous_setIntegral_Ioc a hc hi
+    exact StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_continuous
+      (hH.setIntegral_stieltjesFunction hf a).stronglyAdapted hcont
+  · exact ⟨fun _ _ ↦ 0, stronglyMeasurable_const, .of_forall fun _ ↦ continuous_const,
+      .of_forall fun _ _ ↦ (integral_of_not_completeSpace hE).symm⟩
 
 end MeasureTheory.IsStronglyProgressive
