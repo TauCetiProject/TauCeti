@@ -348,6 +348,27 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization
     ((hU hz.1).2 z.2 hz.2)
     (hξ.contDiffAt.of_le one_le_two)).continuousWithinAt
 
+omit [FiniteDimensional ℝ V] in
+/-- **Pointwise comparison of energy densities.** If `a₀ ‖w‖² ≤ g w` for all `w`, with `a₀ > 0`,
+and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖² ≤ (2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, since
+`‖q‖² ≤ 2 ‖q - S v‖² + 2 m² ‖v‖²`. -/
+private theorem norm_sq_add_norm_sq_add_norm_sq_le {g : V → ℝ} {a₀ m : ℝ} (ha₀ : 0 < a₀)
+    (hg : ∀ w, a₀ * ‖w‖ ^ 2 ≤ g w) {S : V →L[ℝ] V} (hS : ‖S‖ ≤ m) (p q v : V) :
+    ‖p‖ ^ 2 + ‖q‖ ^ 2 + ‖v‖ ^ 2 ≤ (2 + 2 * m ^ 2) / a₀ * (g p + g (q - S v) + g v) := by
+  have hm₀ : 0 ≤ m := (norm_nonneg _).trans hS
+  have hq : ‖q‖ ≤ ‖q - S v‖ + m * ‖v‖ :=
+    calc ‖q‖ = ‖(q - S v) + S v‖ := by rw [sub_add_cancel]
+      _ ≤ ‖q - S v‖ + ‖S v‖ := norm_add_le _ _
+      _ ≤ ‖q - S v‖ + m * ‖v‖ := by gcongr; exact S.le_of_opNorm_le hS v
+  have hq₂ : ‖q‖ ^ 2 ≤ 2 * ‖q - S v‖ ^ 2 + 2 * m ^ 2 * ‖v‖ ^ 2 := by
+    nlinarith [norm_nonneg q, sq_nonneg (‖q - S v‖ - m * ‖v‖), mul_nonneg hm₀ (norm_nonneg v)]
+  calc _ ≤ (2 + 2 * m ^ 2) * (‖p‖ ^ 2 + ‖q - S v‖ ^ 2 + ‖v‖ ^ 2) := by
+        nlinarith [mul_nonneg (sq_nonneg m) (sq_nonneg ‖p‖),
+          mul_nonneg (sq_nonneg m) (sq_nonneg ‖q - S v‖), sq_nonneg ‖p‖, sq_nonneg ‖v‖]
+    _ = (2 + 2 * m ^ 2) / a₀ * (a₀ * ‖p‖ ^ 2 + a₀ * ‖q - S v‖ ^ 2 + a₀ * ‖v‖ ^ 2) := by
+        field_simp
+    _ ≤ _ := by gcongr <;> exact hg _
+
 open MeasureTheory in
 /-- **The end estimate in the norm of `V`.** Let `x` be a nondegenerate one-periodic orbit of a
 one-periodic, jointly `C²` Hamiltonian `H` whose suspended vector field is globally Lipschitz,
@@ -416,14 +437,16 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization
       (Kt := fun w ↦ H w.2) (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
       contDiffAt_const (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
       ((hUab hz.1).2 z.2 hz.2) (hξ.contDiffAt.of_le one_le_two)).continuousWithinAt
-  have hG : ContinuousOn (fun z : ℝ × ℝ ↦
+  -- The energy density of `ξ` in the inner products `g_t`, as in the estimate `hest`.
+  set G : ℝ × ℝ → ℝ := fun z ↦
       (ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineReal)
           (fderiv ℝ ξ z stdComplexLineReal) +
         ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineImag -
             fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))
           (fderiv ℝ ξ z stdComplexLineImag -
             fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))) +
-        ω.associatedBilinForm (J z.2 (x z.2)) (ξ z) (ξ z)) (Icc a b ×ˢ Icc (0 : ℝ) 1) := by
+        ω.associatedBilinForm (J z.2 (x z.2)) (ξ z) (ξ z)
+  have hG : ContinuousOn G (Icc a b ×ˢ Icc (0 : ℝ) 1) := by
     have hSz : Continuous fun z : ℝ × ℝ ↦
         fderiv ℝ ξ z stdComplexLineImag -
           fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z) := by
@@ -434,54 +457,11 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization
       (hdξ.clm_apply continuous_const).continuousOn).add
       (ω.continuousOn_associatedBilinForm_apply_self hJzc hSz.continuousOn)).add
       (ω.continuousOn_associatedBilinForm_apply_self hJzc hξc.continuousOn)
-  calc _ ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, k *
-        ((ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineReal)
-            (fderiv ℝ ξ z stdComplexLineReal) +
-          ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineImag -
-              fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))
-            (fderiv ℝ ξ z stdComplexLineImag -
-              fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))) +
-          ω.associatedBilinForm (J z.2 (x z.2)) (ξ z) (ξ z)) := by
-        refine setIntegral_mono_on
-          (ContinuousOn.integrableOn_compact hrect (by fun_prop))
-          ((hG.integrableOn_compact hrect).const_mul k) hmeas fun z hz ↦ ?_
-        -- Pointwise, with `p = ∂s ξ`, `q = ∂t ξ`, `v = ξ` and `S = S_t`:
-        -- `‖q‖² ≤ 2 ‖q - S v‖² + 2 m² ‖v‖²` and `a₀ ‖·‖² ≤ g_t`.
-        set p := fderiv ℝ ξ z stdComplexLineReal
-        set q := fderiv ℝ ξ z stdComplexLineImag
-        set S := fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2)
-        have h₁ := (hg z.2 hz.2 p).1
-        have h₂ := (hg z.2 hz.2 (q - S (ξ z))).1
-        have h₃ := (hg z.2 hz.2 (ξ z)).1
-        have hq : ‖q‖ ≤ ‖q - S (ξ z)‖ + m * ‖ξ z‖ := by
-          calc ‖q‖ = ‖(q - S (ξ z)) + S (ξ z)‖ := by rw [sub_add_cancel]
-            _ ≤ ‖q - S (ξ z)‖ + ‖S (ξ z)‖ := norm_add_le _ _
-            _ ≤ ‖q - S (ξ z)‖ + m * ‖ξ z‖ := by
-                gcongr
-                exact (S.le_opNorm _).trans (by gcongr; exact hm z.2 hz.2)
-        have hm₀ : 0 ≤ m := (norm_nonneg _).trans (hm z.2 hz.2)
-        have hq₂ : ‖q‖ ^ 2 ≤ 2 * ‖q - S (ξ z)‖ ^ 2 + 2 * m ^ 2 * ‖ξ z‖ ^ 2 := by
-          have h₀ := norm_nonneg q
-          nlinarith [sq_nonneg (‖q - S (ξ z)‖ - m * ‖ξ z‖),
-            mul_nonneg hm₀ (norm_nonneg (ξ z))]
-        have hk : (2 + 2 * m ^ 2) * (‖p‖ ^ 2 + ‖q - S (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
-            k * ((ω.associatedBilinForm (J z.2 (x z.2)) p p +
-              ω.associatedBilinForm (J z.2 (x z.2)) (q - S (ξ z)) (q - S (ξ z))) +
-              ω.associatedBilinForm (J z.2 (x z.2)) (ξ z) (ξ z)) := by
-          rw [div_mul_eq_mul_div, le_div_iff₀ ha₀]
-          have h₄ : 0 ≤ 2 + 2 * m ^ 2 := by positivity
-          nlinarith [mul_le_mul_of_nonneg_left h₁ h₄, mul_le_mul_of_nonneg_left h₂ h₄,
-            mul_le_mul_of_nonneg_left h₃ h₄]
-        nlinarith [sq_nonneg ‖p‖, sq_nonneg ‖q - S (ξ z)‖, sq_nonneg ‖ξ z‖,
-          mul_nonneg (sq_nonneg m) (sq_nonneg ‖p‖), mul_nonneg (sq_nonneg m) (sq_nonneg ‖ξ z‖)]
-    _ = k * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
-        ((ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineReal)
-            (fderiv ℝ ξ z stdComplexLineReal) +
-          ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineImag -
-              fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))
-            (fderiv ℝ ξ z stdComplexLineImag -
-              fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))) +
-          ω.associatedBilinForm (J z.2 (x z.2)) (ξ z) (ξ z)) := integral_const_mul _ _
+  calc _ ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, k * G z :=
+        setIntegral_mono_on (ContinuousOn.integrableOn_compact hrect (by fun_prop))
+          ((hG.integrableOn_compact hrect).const_mul k) hmeas fun z hz ↦
+            norm_sq_add_norm_sq_add_norm_sq_le ha₀ (fun w ↦ (hg z.2 hz.2 w).1) (hm z.2 hz.2) _ _ _
+    _ = k * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, G z := integral_const_mul _ _
     _ ≤ k * (C₁ * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ω.associatedBilinForm (J z.2 (x z.2))
           (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
             (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z)
