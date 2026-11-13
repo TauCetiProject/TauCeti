@@ -83,7 +83,7 @@ theorem mass_segmentCurrent [FiniteDimensional ℝ E] {p q : E} (h : segment ℝ
         fun t ht => by simp [ω, α, hχγ t ht, hℓpq]]
     simp
   have := enorm_le_mass (f := (segmentCurrent p q : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ)) hω
-  rwa [hval, Real.enorm_of_nonneg (norm_nonneg _), ofReal_norm] at this
+  rwa [hval, Real.eNorm_of_nonneg (norm_nonneg _), ofReal_norm] at this
 
 /-- The boundary `∂[[p, q]] = δ_q - δ_p` of a segment current has mass at most `2`. -/
 theorem mass_segmentCurrent_comp_extDerivCLM_le (p q : E) :
@@ -101,7 +101,7 @@ theorem mass_segmentCurrent_comp_extDerivCLM_le (p q : E) :
 /-- **Segment currents are normal**: `[[p, q]]` and its boundary `δ_q - δ_p` have finite mass. -/
 theorem isNormal_segmentCurrent (p q : E) :
     IsNormal (segmentCurrent p q : 𝓓(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ) :=
-  isNormal_succ_iff.2 ⟨ne_top_of_le_ne_top enorm_ne_top (mass_segmentCurrent_le p q),
+  isNormal_succ_iff.2 ⟨ne_top_of_le_ne_top eNorm_ne_top (mass_segmentCurrent_le p q),
     ne_top_of_le_ne_top ENNReal.ofNat_ne_top (mass_segmentCurrent_comp_extDerivCLM_le p q)⟩
 
 end Distribution

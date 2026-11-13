@@ -61,6 +61,9 @@ spanned by `V_{ij}` at an occurrence `r_{ij} = x ^ ε`.
 * `TauCeti.GenEq.length_wordMap_le`: the word maps have length at most the number of items
   (Lemma 14(2)), which is at most `|S|` for a partition table
   (`TauCeti.GenEq.IsPartitionTable.numItems_ofEntries_le`).
+* `TauCeti.GenEq.Solution.substituteVars_segment_entryStart_eq_wordMap`: in a solution of `Ω_T`,
+  the value `P_x(U)` does not depend on the occurrence of `x` at which it is read, when the words
+  of the entries of `x` are empty together.
 * `TauCeti.GenEq.IsPartitionTable.eval_eq_one_of_mem_V`: if `v` is a solution of the system
   `Ω_T*` in a group over `F(A)`, then `x ↦ P_x(v)` is a solution of `S` there (Lemma 14(4)).
 * `TauCeti.GenEq.IsPartitionTable.eval_substituteVars_eq_one`: a solution of `Ω_T` gives the
@@ -358,6 +361,31 @@ theorem length_wordMap_le (x : X) : (wordMap E x).length ≤ (ofEntries E).numIt
   · rw [length_segment]
     lia
   · exact Nat.zero_le _
+
+variable {E} in
+/-- In a solution of `ofEntries E`, the items spanned by the word of an entry of a variable `x`
+spell the same word as the word map of `x`, letter by letter, when the words of the entries of `x`
+are empty together: the value of `x` does not depend on the occurrence at which it is read. -/
+theorem Solution.substituteVars_segment_entryStart_eq_wordMap (U : (ofEntries E).Solution)
+    {x : X} (he : ∀ e ∈ E, ∀ e' ∈ E, e.1.1 = Sum.inl x → e'.1.1 = Sum.inl x →
+      (e.2 = [] ↔ e'.2 = []))
+    {k : Fin E.length} (hk : E[k].1.1 = Sum.inl x) :
+    substituteVars U.word
+        ((ofEntries E).segment (entryStart E k) (entryStart E ((k : ℕ) + 1)) E[k].1.2) =
+      substituteVars U.word (wordMap E x) := by
+  obtain ⟨k₀, hk₀, hw⟩ := exists_wordMap_eq E k hk
+  have hiff := he _ (List.getElem_mem k.isLt) _ (List.getElem_mem k₀.isLt) hk hk₀
+  have hnil (k' : Fin E.length) (h : E[k'].2 = []) :
+      (ofEntries E).segment (entryStart E k') (entryStart E ((k' : ℕ) + 1)) E[k'].1.2 = [] :=
+    List.eq_nil_of_length_eq_zero <| (length_segment_entryStart E k'.isLt _).trans <|
+      List.length_eq_zero_iff.2 h
+  rw [hw]
+  by_cases h : k = k₀
+  · rw [h]
+  by_cases hne : E[k].2 = []
+  · rw [hnil k hne, hnil k₀ (hiff.1 hne)]
+  · exact U.subst_eq _ (mem_equations_ofEntries_of_isVarPair E (p := (k, k₀))
+      ((isVarPair_iff E).2 ⟨h, by rw [hk]; rfl, hk.trans hk₀.symm, hne, mt hiff.2 hne⟩))
 
 end Entries
 
