@@ -16,7 +16,9 @@ of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J 
 `J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn.
 
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
-basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`.
+basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`, and
+every real two-form on `ℂ` is a multiple of it
+(`ContinuousAlternatingMap.apply_eq_apply_one_I_mul_im`).
 -/
 
 public section
@@ -70,3 +72,21 @@ theorem orientation_volumeFormL_apply (v : Fin 2 → ℂ) :
   fin_cases i <;> rfl
 
 end Complex
+
+namespace ContinuousAlternatingMap
+
+open Complex
+
+/-- Every real two-form on `ℂ` is a multiple of the area form `dx ∧ dy`: on a pair of vectors
+`(v, w)` it is its value on the basis `(1, I)` times `Im (conj v * w)`. -/
+theorem apply_eq_apply_one_I_mul_im (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (v : Fin 2 → ℂ) :
+    α v = α ![1, I] * (conj (v 0) * v 1).im := by
+  have h := congrArg (· v) (α.toAlternatingMap.eq_smul_basis_det basisOneI)
+  simp only [_root_.smul_apply, coe_toAlternatingMap, coe_basisOneI, smul_eq_mul,
+    Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, coe_basisOneI_repr,
+    Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  rw [h]
+  simp only [mul_im, conj_re, conj_im]
+  ring
+
+end ContinuousAlternatingMap

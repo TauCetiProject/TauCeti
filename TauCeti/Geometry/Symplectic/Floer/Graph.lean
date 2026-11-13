@@ -163,7 +163,7 @@ theorem _root_.TauCeti.IsJHolomorphicAt.fst_of_floerGraphAlmostComplex {f : U �
 theorem isJHolomorphicAt_prodMk_floerGraphAlmostComplex_iff {g : U → V} {z : ℝ × ℝ} {y : U} :
     IsJHolomorphicAt J' (ω.floerGraphAlmostComplex J Ks Kt) (fun y ↦ (z, g y)) y ↔
       IsJHolomorphicAt J' (J z) g y :=
-  AlmostComplexStructure.isJHolomorphicAt_prodMk_right_skewProd_iff (J₁ := fun _ ↦ _)
+  AlmostComplexStructure.isJHolomorphicAt_prodMk_right_skewProd_iff
 
 end AlmostComplex
 
