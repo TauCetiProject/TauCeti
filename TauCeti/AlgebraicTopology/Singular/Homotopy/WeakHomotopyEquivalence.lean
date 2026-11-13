@@ -134,6 +134,33 @@ end ContinuousMap.IsWeakHomotopyEquivalence
 
 /-! ### Local coefficients -/
 
+namespace TauCeti
+
+open LocalCoefficientSystem
+
+/-- **The inclusion of a subspace with vanishing relative homotopy sets induces a
+quasi-isomorphism of singular chains with local coefficients.** If every point of `X` is joined by
+a path to a point of `A`, and the relative homotopy set `π_{n+1}(X, A, a)` is trivial for every
+`n` and every `a ∈ A`, then for every local coefficient system `L` on `X` the inclusion of `A`
+induces a quasi-isomorphism from the singular chains of `A` with coefficients in `L|_A` to those of
+`X` with coefficients in `L`. It is the simplicial counterpart of
+`TauCeti.quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomotopyGroup`. -/
+theorem quasiIso_twistedChainComplexMap_subtypeVal_of_relHomotopyGroup
+    {R : Type u} [Ring R] {X : TopCat.{v}} {A : Set X} (h₀ : ∀ x : X, ∃ a ∈ A, Joined x a)
+    (h : ∀ (n : ℕ) (a : A), Subsingleton (RelHomotopyGroup (Fin n) ⟨TopPair.ofSubset A, a⟩))
+    (L : LocalCoefficientSystem.{u, v, v} R X) :
+    QuasiIso (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L) := by
+  let i : TopCat.of A ⟶ X := TopCat.ofHom (ContinuousMap.subtypeVal A)
+  have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom L) :=
+    quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomotopyGroup h₀ h L
+  have h' := twistedCubicalToSingularMap_naturality i L
+  have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom L ≫
+      twistedCubicalToSingularMap L) := inferInstance
+  rw [h'] at this
+  exact quasiIso_of_comp_left (twistedCubicalToSingularMap _) _
+
+end TauCeti
+
 namespace ContinuousMap.IsWeakHomotopyEquivalence
 
 open LocalCoefficientSystem
@@ -151,19 +178,11 @@ theorem quasiIso_twistedChainComplexMap (hf : f.IsWeakHomotopyEquivalence)
   let ψ : X ≃ₜ A := MappingCylinder.inclHomeomorph f
   let i : TopCat.of A ⟶ TopCat.of (MappingCylinder f) := TopCat.ofHom (ContinuousMap.subtypeVal A)
   let p := TopCat.ofHom (MappingCylinder.homotopyEquiv f).toFun
-  -- The singular cubes of the mapping cylinder deform into the bottom face, so its inclusion
-  -- induces a quasi-isomorphism of cubical chains with local coefficients, and hence, through the
-  -- comparison of cubical and simplicial chains, of singular chains.
-  have : QuasiIso (twistedChainComplexMap i ((pullback p.hom).obj L)) := by
-    have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom ((pullback p.hom).obj L)) :=
-      quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomotopyGroup
-        (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-        (fun n ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin n)) _
-    have h := twistedCubicalToSingularMap_naturality i ((pullback p.hom).obj L)
-    have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom ((pullback p.hom).obj L) ≫
-        twistedCubicalToSingularMap ((pullback p.hom).obj L)) := inferInstance
-    rw [h] at this
-    exact quasiIso_of_comp_left (twistedCubicalToSingularMap _) _
+  -- The singular cubes of the mapping cylinder deform into the bottom face.
+  have : QuasiIso (twistedChainComplexMap i ((pullback p.hom).obj L)) :=
+    quasiIso_twistedChainComplexMap_subtypeVal_of_relHomotopyGroup
+      (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
+      (fun n ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin n)) _
   -- The other two factors of `f`, the bottom face `X ≃ₜ A` and the projection, are homotopy
   -- equivalences.
   have : QuasiIso (twistedChainComplexMap (TopCat.ofHom ψ.toHomotopyEquiv.toFun)
