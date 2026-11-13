@@ -383,7 +383,7 @@ theorem measure_mul_right_null_of_regular (g : G) {s : Set G} :
 @[fun_prop]
 theorem quasiMeasurePreserving_mul_right_of_regular (g : G) :
     QuasiMeasurePreserving (· * g) μ μ :=
-  ⟨measurable_mul_const g, by
+  ⟨(measurable_mul_const g).aemeasurable, by
     rw [map_right_mul_eq_modularCharacter_smul_of_regular]
     exact smul_absolutelyContinuous⟩
 
@@ -455,7 +455,7 @@ theorem measure_inv_null_of_regular {s : Set G} : μ s⁻¹ = 0 ↔ μ s = 0 := 
 /-- Inversion is quasi-measure-preserving for a regular Haar measure. -/
 @[fun_prop]
 theorem quasiMeasurePreserving_inv_of_regular : QuasiMeasurePreserving Inv.inv μ μ :=
-  ⟨measurable_inv, inv_absolutelyContinuous_of_regular μ⟩
+  ⟨measurable_inv.aemeasurable, inv_absolutelyContinuous_of_regular μ⟩
 
 /-- For a regular Haar measure, `y ↦ y⁻¹ * x` is quasi-measure-preserving: it is inversion
 followed by right translation by `x`. -/
