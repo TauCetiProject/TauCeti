@@ -74,10 +74,11 @@ half-plane.
 * `TauCeti.logDeriv_deriv_conj_eq_conj_logDeriv_deriv` -- applied to the first derivative: the
   pre-Schwarzian derivative intertwines conjugation with conjugation.
 * `TauCeti.im_logDeriv_deriv_eq_zero` -- so it is real on the real axis.
-* `TauCeti.deriv_conj_eq_mul_conj_deriv_of_im_ne_zero` and
-  `TauCeti.logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_im_ne_zero` -- a reflection identity
-  holding at the non-real points of an open set gives these identities at every point of the set,
-  real points included; the `_of_forall_im_ne_zero` forms are the case of the whole plane.
+* `TauCeti.deriv_conj_eq_mul_conj_deriv_of_isOpen_of_forall_im_ne_zero` and
+  `TauCeti.logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_isOpen_of_forall_im_ne_zero` -- a
+  reflection identity holding at the non-real points of an open set `Ω` gives these identities at
+  every point of `Ω` (for the second, every `z ∈ Ω` whose conjugate also lies in `Ω`), real points
+  included; the `_of_forall_im_ne_zero` forms are the case of the whole plane.
 * `TauCeti.im_div_deriv_lineSchwarzReflection_eq_zero` -- on the real axis the derivative of the
   reflected extension is a real multiple of the direction of the target line.
 * `TauCeti.logDeriv_deriv_lineSchwarzReflection_conj` -- the pre-Schwarzian derivative of the
@@ -219,7 +220,7 @@ open set `Ω`, then `deriv F` carries conjugation to `w ↦ u * conj w` at every
 points included. Neither differentiability nor continuity of `F` is assumed: where `F` is not
 differentiable both sides are `0`. At a real point the identity is read off from the upper
 half-plane, which accumulates there. -/
-theorem deriv_conj_eq_mul_conj_deriv_of_im_ne_zero (hΩopen : IsOpen Ω)
+theorem deriv_conj_eq_mul_conj_deriv_of_isOpen_of_forall_im_ne_zero (hΩopen : IsOpen Ω)
     (hrefl : ∀ z ∈ Ω, z.im ≠ 0 → F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
     {z : ℂ} (hz : z ∈ Ω) :
     deriv F ((starRingEnd ℂ) z) = u * (starRingEnd ℂ) (deriv F z) := by
@@ -259,13 +260,14 @@ theorem deriv_conj_eq_mul_conj_deriv_of_im_ne_zero (hΩopen : IsOpen Ω)
     (hHd.hasDerivWithinAt.congr_of_eventuallyEq hEq.symm hHz.symm)
 
 /-- **A reflection identity off the real axis passes to the derivative everywhere.** This is
-`deriv_conj_eq_mul_conj_deriv_of_im_ne_zero` on the whole plane: if `F` carries conjugation to
-`w ↦ c + u * conj w` at every non-real point, then `deriv F` carries conjugation to
+`deriv_conj_eq_mul_conj_deriv_of_isOpen_of_forall_im_ne_zero` on the whole plane: if `F` carries
+conjugation to `w ↦ c + u * conj w` at every non-real point, then `deriv F` carries conjugation to
 `w ↦ u * conj w` at every point, the real axis included. -/
 theorem deriv_conj_eq_mul_conj_deriv_of_forall_im_ne_zero
     (hrefl : ∀ z : ℂ, z.im ≠ 0 → F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z)) (z : ℂ) :
     deriv F ((starRingEnd ℂ) z) = u * (starRingEnd ℂ) (deriv F z) :=
-  deriv_conj_eq_mul_conj_deriv_of_im_ne_zero isOpen_univ (fun w _ => hrefl w) (mem_univ z)
+  deriv_conj_eq_mul_conj_deriv_of_isOpen_of_forall_im_ne_zero isOpen_univ (fun w _ => hrefl w)
+    (mem_univ z)
 
 /-- **The pre-Schwarzian derivative is conjugation-symmetric when a reflection identity holds off
 the real axis.** If `F` carries conjugation to the affine reflection `w ↦ c + u * conj w` at every
@@ -273,23 +275,25 @@ non-real point of an open set `Ω`, then `logDeriv (deriv F)` intertwines conjug
 conjugation at every point `z` of `Ω` whose conjugate also lies in `Ω`, real points included. The
 degenerate factor `u = 0` is allowed: then `deriv F` vanishes at `z` and at `conj z`, and both sides
 are `0`. -/
-theorem logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_im_ne_zero (hΩopen : IsOpen Ω)
+theorem logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_isOpen_of_forall_im_ne_zero
+    (hΩopen : IsOpen Ω)
     (hrefl : ∀ z ∈ Ω, z.im ≠ 0 → F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
     {z : ℂ} (hz : z ∈ Ω) (hz' : (starRingEnd ℂ) z ∈ Ω) :
     logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) :=
   logDeriv_conj_eq_conj_logDeriv hΩopen
-    (fun _ hw => deriv_conj_eq_mul_conj_deriv_of_im_ne_zero hΩopen hrefl hw) hz hz'
+    (fun _ hw => deriv_conj_eq_mul_conj_deriv_of_isOpen_of_forall_im_ne_zero hΩopen hrefl hw) hz hz'
 
 /-- **The pre-Schwarzian derivative is conjugation-symmetric everywhere when a reflection
 identity holds off the real axis.** This is
-`logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_im_ne_zero` on the whole plane: if `F` carries
-conjugation to `w ↦ c + u * conj w` at every non-real point, then `logDeriv (deriv F)` intertwines
-conjugation with conjugation at every point, the real axis included. -/
+`logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_isOpen_of_forall_im_ne_zero` on the whole plane: if
+`F` carries conjugation to `w ↦ c + u * conj w` at every non-real point, then
+`logDeriv (deriv F)` intertwines conjugation with conjugation at every point, the real axis
+included. -/
 theorem logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_forall_im_ne_zero
     (hrefl : ∀ z : ℂ, z.im ≠ 0 → F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z)) (z : ℂ) :
     logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) :=
-  logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_im_ne_zero isOpen_univ (fun w _ => hrefl w)
-    (mem_univ z) (mem_univ _)
+  logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_isOpen_of_forall_im_ne_zero isOpen_univ
+    (fun w _ => hrefl w) (mem_univ z) (mem_univ _)
 
 section LineReflection
 

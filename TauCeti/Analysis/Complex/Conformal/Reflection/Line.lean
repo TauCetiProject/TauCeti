@@ -52,8 +52,8 @@ theorem lineSchwarzReflection_def (p a q b : ℂ) (f : ℂ → ℂ) (z : ℂ) :
       q + b * schwarzReflection (fun w => (f (p + a * w) - q) / b) ((z - p) / a) :=
   by rw [lineSchwarzReflection]
 
-/-- With a zero source direction the affine-line Schwarz reflection is the constant value at the
-base point `p`, read in the target chart. -/
+/-- With a zero source direction the affine-line Schwarz reflection is the constant
+`q + b * ((f p - q) / b)`, which is `f p` when `b ≠ 0` and `q` when `b = 0`. -/
 @[simp]
 theorem lineSchwarzReflection_zero_source_direction (p q b : ℂ) (f : ℂ → ℂ) :
     lineSchwarzReflection p 0 q b f = fun _ => q + b * ((f p - q) / b) := by
