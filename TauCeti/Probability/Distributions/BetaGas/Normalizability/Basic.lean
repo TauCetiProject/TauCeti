@@ -49,7 +49,7 @@ private lemma betaGasVandermonde_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤
         simp)]
     simp only [Finset.prod_const, Fin.card_Ioi, f]
     apply Finset.prod_congr rfl
-    intro i hi
+    intro i _
     rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
   have hsnd :
       (∏ z ∈ betaGasPairs n, f z.2 ^ β) =
@@ -63,14 +63,14 @@ private lemma betaGasVandermonde_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤
         simp)]
     simp only [Finset.prod_const, Fin.card_Iio, f]
     apply Finset.prod_congr rfl
-    intro i hi
+    intro i _
     rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
   calc
     _ ≤ ∏ z ∈ betaGasPairs n, (f z.1 ^ β * f z.2 ^ β) := by
       apply Finset.prod_le_prod₀
-      · intro z hz
+      · intro z _
         positivity
-      intro z hz
+      intro z _
       calc
         |x z.1 - x z.2| ^ β ≤ (f z.1 * f z.2) ^ β :=
           Real.rpow_le_rpow (abs_nonneg _) (hdiff z.1 z.2) hβ
@@ -82,7 +82,7 @@ private lemma betaGasVandermonde_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤
         f i ^ (β * (i.val : ℝ))) := by rw [hfst, hsnd, Finset.prod_mul_distrib]
     _ = ∏ i : Fin n, f i ^ (β * ((n - 1 : ℕ) : ℝ)) := by
       apply Finset.prod_congr rfl
-      intro i hi
+      intro i _
       rw [← Real.rpow_add (by positivity)]
       have hpow : n - 1 - i.val + i.val = n - 1 := by omega
       have hpowR : ((n - 1 - i.val : ℕ) : ℝ) + (i.val : ℝ) =
@@ -191,7 +191,7 @@ private lemma betaGasWeight_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
       _ = ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * V (x i))) := by
         rw [← Finset.prod_mul_distrib]
         apply Finset.prod_congr rfl
-        intro i hi
+        intro i _
         ring
   exact hpoint
 
@@ -205,7 +205,7 @@ private lemma eventually_quadratic_log_ratio (c : ℝ) (hc : 0 < c) :
   have htA : 2 * c + 1 ≤ t := le_trans (le_max_left _ _) ht
   have htB : 2 ≤ t := le_trans (le_max_right _ _) ht
   have htpos : 0 < t := by linarith
-  have htgt : 1 < t := by linarith
+  have htgt : 1 < t := lt_of_lt_of_le one_lt_two htB
   have hlogpos : 0 < log t := Real.log_pos htgt
   have hlogle : log t ≤ t :=
     (Real.log_le_sub_one_of_pos htpos).trans (by linarith)
