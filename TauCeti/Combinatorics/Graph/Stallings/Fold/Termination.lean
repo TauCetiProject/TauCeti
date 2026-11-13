@@ -52,7 +52,7 @@ theorem FoldSequence.subgroup_base {S T : StallingsGraph.{u, v, w} α}
     (h : FoldSequence S T) : T.subgroup T.base = S.subgroup S.base := by
   induction h with
   | refl => rfl
-  | tail h hstep ih =>
+  | tail _ hstep ih =>
     obtain ⟨e, f, hsrc, hlabel, _, rfl⟩ := hstep
     exact (foldAt_subgroup_base _ e f hsrc hlabel).trans ih
 
@@ -61,7 +61,7 @@ theorem FoldSequence.finite_V {S T : StallingsGraph.{u, v, w} α}
     (h : FoldSequence S T) [Finite S.graph.V] : Finite T.graph.V := by
   induction h with
   | refl => infer_instance
-  | tail h hstep ih =>
+  | tail _ hstep ih =>
     obtain ⟨e, f, hsrc, hlabel, _, rfl⟩ := hstep
     let _ := ih
     infer_instance
@@ -71,7 +71,7 @@ theorem FoldSequence.finite_E {S T : StallingsGraph.{u, v, w} α}
     (h : FoldSequence S T) [Finite S.graph.E] : Finite T.graph.E := by
   induction h with
   | refl => infer_instance
-  | tail h hstep ih =>
+  | tail _ hstep ih =>
     obtain ⟨e, f, hsrc, hlabel, _, rfl⟩ := hstep
     let _ := ih
     infer_instance
@@ -81,7 +81,7 @@ theorem FoldSequence.connected {S T : StallingsGraph.{u, v, w} α}
     (h : FoldSequence S T) (hS : S.graph.Connected) : T.graph.Connected := by
   induction h with
   | refl => exact hS
-  | tail h hstep ih =>
+  | tail _ hstep ih =>
     obtain ⟨e, f, hsrc, hlabel, _, rfl⟩ := hstep
     exact connected_foldAt _ e f hsrc hlabel ih
 
@@ -97,7 +97,7 @@ theorem FoldSequence.exists_surjective_hom {S T : StallingsGraph.{u, v, w} α}
         (Function.surjective_id : Function.Surjective (id : S.graph.V → S.graph.V))
     · simpa only [Hom.id_graphHom, SerreGraph.Hom.id_mapE] using
         (Function.surjective_id : Function.Surjective (id : S.graph.E → S.graph.E))
-  | tail h hstep ih =>
+  | tail _ hstep ih =>
     obtain ⟨e, f, hsrc, hlabel, _, rfl⟩ := hstep
     obtain ⟨g, hgv, hge⟩ := ih
     refine ⟨Hom.comp (foldHom _ e f hsrc hlabel) g, ?_, ?_⟩

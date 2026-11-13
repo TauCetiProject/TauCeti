@@ -31,6 +31,9 @@ the base case of the induction on dimension through the suspension isomorphism.
   other than that of `p`.
 * `TauCeti.exists_continuous_injective_range_sphere_eq_pair`: two distinct points of a topological
   space are the image of a continuous injection of the `0`-sphere of `ℝ`.
+* `TauCeti.exists_homeomorph_apply_eq_of_finrank_eq_one`: a homeomorphism onto the closed unit
+  ball carrying exactly the image of an injection of the unit sphere onto the sphere can be chosen
+  to invert that injection.
 -/
 
 public section
@@ -140,5 +143,42 @@ theorem exists_continuous_injective_range_sphere_eq_pair {Y : Type*} [Topologica
     · rintro _ (rfl | rfl)
       · exact ⟨negOne, by simp [negOne, (by norm_num : (-1 : ℝ) ≠ 1)]⟩
       · exact ⟨one, by simp [one]⟩
+
+/-- A homeomorphism from a set `C` containing the image of an injective map `τ` on the unit sphere
+`S⁰` of a space of dimension `1` onto the closed unit ball of that space, carrying exactly the image
+of `τ` onto the unit sphere, can be chosen to invert `τ`: if it does not, its composite with the
+negation of the ball does. -/
+theorem exists_homeomorph_apply_eq_of_finrank_eq_one {X : Type*} [TopologicalSpace X]
+    {τ : sphere (0 : E) 1 → X} (hE : finrank ℝ E = 1) (hτ : Function.Injective τ) {C : Set X}
+    (hC : Set.range τ ⊆ C) (e : C ≃ₜ closedBall (0 : E) 1)
+    (he : ∀ y : C, (y : X) ∈ Set.range τ ↔ ‖(e y : E)‖ = 1) :
+    ∃ h : C ≃ₜ closedBall (0 : E) 1, ∀ (z : C) x, (z : X) = τ x → (h z : E) = x := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  obtain ⟨u⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  have hu : ‖(u : E)‖ = 1 := norm_eq_of_mem_sphere u
+  -- The unit sphere of `E` is `{u, -u}`.
+  have hpm {v : E} (hv : ‖v‖ = 1) : v = u ∨ v = -u :=
+    eq_or_eq_neg_of_norm_eq_of_finrank_eq_one hE (hv.trans hu.symm)
+  let z₀ : C := ⟨τ u, hC (Set.mem_range_self u)⟩
+  -- Compose `e` with the negation of the ball if necessary, so that `z₀` is sent to `u`.
+  obtain ⟨h, hh, hz₀⟩ : ∃ h : C ≃ₜ closedBall (0 : E) 1,
+      (∀ y : C, (y : X) ∈ Set.range τ ↔ ‖(h y : E)‖ = 1) ∧ (h z₀ : E) = u := by
+    rcases hpm ((he z₀).1 (Set.mem_range_self u)) with h₀ | h₀
+    · exact ⟨e, he, h₀⟩
+    · let ν : closedBall (0 : E) 1 ≃ₜ closedBall (0 : E) 1 :=
+        (Homeomorph.neg E).subtype fun v ↦ by simp
+      refine ⟨e.trans ν, fun y ↦ ?_, ?_⟩
+      · simpa [ν] using he y
+      · simp [ν, h₀]
+  refine ⟨h, fun z x hz ↦ ?_⟩
+  rcases hpm (norm_eq_of_mem_sphere x) with hx | hx
+  · have hzz : z = z₀ := Subtype.ext (hz.trans (congrArg τ (Subtype.ext hx)))
+    rw [hzz, hz₀, hx]
+  · rcases hpm ((hh z).1 (hz ▸ Set.mem_range_self x)) with hzu | hzu
+    · -- If `h z = u`, then `z = z₀`, so `x = u` by the injectivity of `τ`, contradicting `x = -u`.
+      have hzz : z = z₀ := h.injective (Subtype.ext (hzu.trans hz₀.symm))
+      have hxu : x = u := hτ (hz.symm.trans (congrArg Subtype.val hzz))
+      exact absurd (hxu ▸ hx) (ne_neg_of_mem_unit_sphere ℝ u ∘ Subtype.ext)
+    · rw [hzu, hx]
 
 end TauCeti
