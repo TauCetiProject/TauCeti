@@ -91,16 +91,9 @@ vanish, since `jacobiTheta` is `0` off the upper half-plane. -/
 theorem jacobiTheta_I_mul {y : ℝ} :
     jacobiTheta (I * y) = jacobiTheta (I / y) / √y := by
   rcases le_or_gt y 0 with hy | hy
-  · -- both theta values vanish since `im (I * y) = y ≤ 0` and `im (I / y) = 1 / y ≤ 0`
-    have h1 : jacobiTheta (I * y) = 0 := by
-      rw [jacobiTheta_eq_jacobiTheta₂]
-      exact jacobiTheta₂_undef 0 (by simpa using hy)
-    have h2 : jacobiTheta (I / y) = 0 := by
-      rw [jacobiTheta_eq_jacobiTheta₂]
-      refine jacobiTheta₂_undef 0 ?_
-      rw [div_ofReal_im, I_im]
-      exact div_nonpos_of_nonneg_of_nonpos zero_le_one hy
-    rw [h1, h2, zero_div]
+  · -- the right-hand side vanishes since `√y = 0`, the left-hand side since `im (I * y) = y ≤ 0`
+    rw [Real.sqrt_eq_zero_of_nonpos hy, ofReal_zero, div_zero, jacobiTheta_eq_jacobiTheta₂]
+    exact jacobiTheta₂_undef 0 (by simpa using hy)
   have hy0 : (y : ℂ) ≠ 0 := ofReal_ne_zero.2 hy.ne'
   rw [jacobiTheta_eq_jacobiTheta₂, jacobiTheta₂_functional_equation, jacobiTheta_eq_jacobiTheta₂]
   have h1 : -I * (I * y) = y := by rw [← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul]
@@ -128,14 +121,8 @@ Gaussian lattice sum `∑_n e^{-π (n - 1/2)² / y}` (`Real.gaussianLatticeSum_e
 theorem jacobiTheta_one_add_I_mul {y : ℝ} :
     jacobiTheta (1 + I * y) = ((∑' n : ℤ, Real.exp (-π * (n - 1 / 2) ^ 2 / y)) / √y : ℝ) := by
   rcases le_or_gt y 0 with hy | hy
-  · -- both sides vanish: the series on the left and on the right are not summable
-    have hns : ¬ Summable fun n : ℤ ↦ Real.exp (-π * (n - 1 / 2) ^ 2 / y) := fun h ↦ by
-      obtain ⟨n, hn⟩ := (h.tendsto_cofinite_zero.eventually (gt_mem_nhds one_pos)).exists
-      refine hn.not_ge (Real.one_le_exp ?_)
-      rw [mul_div_assoc]
-      exact mul_nonneg_of_nonpos_of_nonpos (by simp [Real.pi_pos.le])
-        (div_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hy)
-    rw [tsum_eq_zero_of_not_summable hns, jacobiTheta_eq_jacobiTheta₂]
+  · -- the right-hand side vanishes since `√y = 0`, the left-hand side since `im (1 + I * y) ≤ 0`
+    rw [Real.sqrt_eq_zero_of_nonpos hy, div_zero, jacobiTheta_eq_jacobiTheta₂]
     simpa using jacobiTheta₂_undef 0 (by simpa using hy)
   have hroot : √(2 * π) * |√(y / (2 * π))| = √y := by
     rw [abs_of_nonneg (Real.sqrt_nonneg _), ← Real.sqrt_mul (by positivity)]
