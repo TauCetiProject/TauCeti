@@ -11,9 +11,8 @@ public import TauCeti.Probability.Martingale.Reverse
 /-!
 # Process tails as infima of reverse filtrations
 
-This file records the Exchangeability roadmap Layer 2 adapter specializing finite-horizon reverse
-filtrations to the process-tail family `tailFamily X`, and identifying the process tail σ-algebra
-as the infimum of their time-zero levels.
+This file specializes finite-horizon reverse filtrations to the process-tail family
+`tailFamily X`, and identifies the process tail σ-algebra as the infimum of their time-zero levels.
 -/
 
 public section

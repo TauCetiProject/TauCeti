@@ -187,6 +187,27 @@ def dart (e : Γ.E) : Quiver.Hom (Γ.src e) (Γ.tgt e) :=
 @[simp] theorem dart_val (e : Γ.E) : (Γ.dart e).1 = e := by
   simp only [dart]
 
+theorem dart_def (e : Γ.E) : Γ.dart e = ⟨e, rfl, rfl⟩ :=
+  (rfl)
+
+/-- If the dart of `e : a ⟶ b` is the reverse of the dart of `f : c ⟶ d`, then `e` starts where
+`f` ends. -/
+theorem src_eq_tgt_of_val_eq_rev {a b c d : Γ.V} {e : Quiver.Hom a b} {f : Quiver.Hom c d}
+    (h : e.1 = Γ.rev f.1) : a = d := by
+  rw [← e.2.1, h, src_rev, f.2.2]
+
+/-- If the dart of `e : a ⟶ b` is the reverse of the dart of `f : c ⟶ d`, then `e` ends where
+`f` starts. -/
+theorem tgt_eq_src_of_val_eq_rev {a b c d : Γ.V} {e : Quiver.Hom a b} {f : Quiver.Hom c d}
+    (h : e.1 = Γ.rev f.1) : b = c := by
+  rw [← e.2.2, h, tgt_rev, f.2.1]
+
+/-- An arrow `e : b ⟶ a` whose dart is the reverse of the dart of `f : a ⟶ b` is the reverse
+of `f`. -/
+theorem eq_reverse_of_val_eq_rev {a b : Γ.V} {e : Quiver.Hom b a} {f : Quiver.Hom a b}
+    (h : e.1 = Γ.rev f.1) : e = Quiver.reverse f :=
+  Subtype.ext (h.trans (Γ.reverse_val f).symm)
+
 /-- An indexed path in a Serre graph is a path of its associated quiver. -/
 abbrev Path (a b : Γ.V) : Type (max u v) := Quiver.Path a b
 
@@ -240,6 +261,15 @@ attribute [simp] Hom.map_src Hom.map_rev
 @[simp] theorem Hom.map_tgt {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) (e : Γ.E) :
     Δ.tgt (f.mapE e) = f.mapV (Γ.tgt e) := by
   simp only [tgt, ← f.map_rev, f.map_src]
+
+/-- A morphism of Serre graphs sends darts with the same geometric edge to darts with the same
+geometric edge. -/
+theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {e e' : Γ.E} (h : Γ.toGeomEdge e = Γ.toGeomEdge e') :
+    Δ.toGeomEdge (f.mapE e) = Δ.toGeomEdge (f.mapE e') := by
+  obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 h
+  · rfl
+  · rw [f.map_rev, Δ.toGeomEdge_rev]
 
 /-- The quiver prefunctor underlying a Serre-graph morphism. -/
 @[expose] def Hom.toPrefunctor {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
@@ -451,6 +481,9 @@ vertex `b` to the vertex `!b`. -/
 
 @[simp] theorem segment_src (b : Bool) : segment.src b = b := rfl
 
+/-- Every vertex of the segment is the source of a dart: the dart with the same Boolean label. -/
+theorem segment_src_surjective : Function.Surjective segment.src := fun b => ⟨b, segment_src b⟩
+
 @[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
 
 @[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl
@@ -477,8 +510,11 @@ end TauCeti
 
 namespace SimpleGraph
 
-/-- The Serre graph of a simple graph has its darts as directed edges. -/
-@[expose] def toSerreGraph {V : Type u} (G : SimpleGraph V) : TauCeti.SerreGraph.{u, u} where
+/-- The Serre graph of a simple graph has its darts as directed edges. The definition unfolds at
+instance transparency, so that a vertex or a dart of the simple graph is accepted as a vertex or a
+dart of its Serre graph by rewriting and simplification. -/
+@[expose, instance_reducible] def toSerreGraph {V : Type u} (G : SimpleGraph V) :
+    TauCeti.SerreGraph.{u, u} where
   V := V
   E := G.Dart
   src := fun e => e.fst

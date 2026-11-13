@@ -40,14 +40,16 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 /-- Pinned simple Weyl representatives at a double bond satisfy the length-four braid
-relation over every commutative value ring. -/
+relation over every commutative value ring. The Cartan matrix is indexed by root, then coroot,
+so `j` is the long node and `i` the short node. -/
 theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
-    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -2)
+    (hji : t.cartanMatrix j i = -2)
     (A : Type*) [CommRing A] :
     D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 *
         D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 =
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 := by
+  have hij := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two i j (by omega)
   have h' := D.weylElement_word_eq_of_serre_word_eq [i, j, i, j] [j, i, j, i] (by
     intro H E F hs hE hF
     -- Serre's convention transposes the root-row Cartan matrix, so exchange the nodes.

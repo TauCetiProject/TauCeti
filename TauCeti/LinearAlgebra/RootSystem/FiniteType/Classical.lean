@@ -84,10 +84,9 @@ selects the first coordinate of the type `D` fork row.
 
 ## References
 
-This file supplies the classical half of the "finite-type condition" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The coordinate models are the standard
-ones of Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, plates I-IV, and of J. E. Humphreys,
-*Introduction to Lie Algebras and Representation Theory*, section 12.1.
+The coordinate models are the standard ones of Bourbaki, *Lie Groups and Lie Algebras, Chapters
+4-6*, plates I-IV, and of J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, section 12.1.
 -/
 
 public section

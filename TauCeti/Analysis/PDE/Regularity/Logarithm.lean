@@ -201,7 +201,7 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le :
             simp
       _ ≤ ∫ x in Omega, ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu :=
           setIntegral_mono_set hweighted (Filter.Eventually.of_forall fun x => by positivity)
-            ((Metric.ball_subset_ball (by linarith)).trans hball).eventuallyLE
+            ((Metric.ball_subset_ball (by linarith)).trans hball).eventuallySubset
   have hvol : mu.real (Metric.closedBall x₀ (3 * r / 2)) =
       (3 / 2) ^ Fintype.card ι * mu.real (Metric.ball x₀ r) := by
     rw [show 3 * r / 2 = 3 / 2 * r by ring,
