@@ -44,7 +44,9 @@ many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
 (`TauCeti.IsMorseBottFamily.isClosed_range`). The function takes a single value on each piece
 (`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so on a compact manifold it has finitely
 many critical values (`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`). The same family
-exhibits `-f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily.neg`).
+exhibits `-f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily.neg`). The conditions only
+involve the underlying maps of the embeddings, so a family with the same maps and possibly another
+order of smoothness is again Morse–Bott (`TauCeti.IsMorseBottFamily.congr`).
 
 Conversely, the last two conditions follow from the first three once the pieces are known to
 partition the critical set. A Morse–Bott critical submanifold is isolated in the critical set, so
@@ -208,6 +210,22 @@ theorem neg : IsMorseBottFamily i (-f) where
     rw [criticalPoints_neg]
     exact h.criticalPoints_subset_iUnion_range
   locallyFinite_range := h.locallyFinite_range
+
+/-- A Morse–Bott family depends on the embeddings only through their underlying maps, so it passes
+to a family of embeddings with the same maps and possibly another order of smoothness. -/
+theorem congr {n' : ℕ∞ω} {i' : ∀ a, SmoothEmbedding (J a) I n' (S a) M}
+    (hi : ∀ a, ⇑(i' a) = ⇑(i a)) : IsMorseBottFamily i' f where
+  contMDiff := h.contMDiff
+  isNondegenerateCriticalSubmanifold a := (h.isNondegenerateCriticalSubmanifold a).congr (hi a)
+  nonempty := h.nonempty
+  boundarylessManifold := h.boundarylessManifold
+  range_eq_connectedComponentIn a s := by
+    rw [hi]
+    exact h.range_eq_connectedComponentIn a s
+  range_injective := by simpa only [hi] using h.range_injective
+  criticalPoints_subset_iUnion_range := by
+    simpa only [hi] using h.criticalPoints_subset_iUnion_range
+  locallyFinite_range := by simpa only [hi] using h.locallyFinite_range
 
 omit h in
 /-- A family exhibits `-f` as a Morse–Bott function exactly when it exhibits `f` as one. -/

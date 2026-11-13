@@ -43,8 +43,10 @@ Morse index is the negative index of inertia of the critical Hessian.
   modelled on a real normed space).
 * `TauCeti.criticalHessian_apply_eq_of_mem_maximalAtlas`: at a critical point the critical Hessian
   is the Hessian in an arbitrary chart of the maximal atlas, composed with the chart derivative.
-* `TauCeti.finrank_ker_criticalHessian_eq_of_mem_maximalAtlas`: at a critical point the kernel of
-  the critical Hessian has the dimension of the kernel of the Hessian in any chart.
+* `TauCeti.ker_criticalHessian_eq_comap_of_mem_maximalAtlas` and
+  `TauCeti.finrank_ker_criticalHessian_eq_of_mem_maximalAtlas`: at a critical point the kernel of
+  the critical Hessian is the preimage, under the chart derivative, of the kernel of the Hessian in
+  any chart, so the two kernels have the same dimension.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
 * `TauCeti.criticalHessian_apply_eq_mvfderiv`: at a critical point, differentiating `df(Y)`
   computes the Hessian against the value of the vector field `Y`.
@@ -757,25 +759,41 @@ theorem criticalHessian_apply_eq_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(�
   exact key
 
 /-- **The kernel of the critical Hessian in an arbitrary chart.** At a critical point of a `C²`
-function on a boundaryless manifold, the kernel of the critical Hessian has the dimension of the
-kernel of the Hessian of the coordinate expression in any chart `e` of the `C²` maximal atlas. -/
-theorem finrank_ker_criticalHessian_eq_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+function on a boundaryless manifold, a tangent vector lies in the kernel of the critical Hessian
+exactly when its image under the derivative of a chart `e` of the `C²` maximal atlas lies in the
+kernel of the Hessian of the coordinate expression in `e`. -/
+theorem ker_criticalHessian_eq_comap_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (hcrit : mvfderiv I f x = 0) :
-    Module.finrank ℝ (criticalHessian I f x).ker =
-      Module.finrank ℝ (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).ker := by
+    (criticalHessian I f x).ker =
+      (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).ker.comap
+        (mvfderiv I (e.extend I) x).toLinearMap := by
   obtain ⟨D, hD⟩ :=
     isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
   have hH (u t : TangentSpace I x) : criticalHessian I f x u t =
       fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x) (D u) (D t) := by
     rw [criticalHessian_apply_eq_of_mem_maximalAtlas he hx hf hcrit, ← hD]
     rfl
-  -- The derivative `D` of the chart is an isometry between the two Hessians, so it carries one
-  -- kernel onto the other.
-  let ι : (criticalHessian I f x).toBilinForm.IsometryEquiv
-      (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).toBilinForm :=
-    ⟨D.toLinearEquiv, fun u t ↦ (hH u t).symm⟩
-  rw [← ContinuousLinearMap.ker_toBilinForm, ← ContinuousLinearMap.ker_toBilinForm, ← ι.map_ker,
-    LinearEquiv.finrank_map_eq]
+  ext u
+  rw [Submodule.mem_comap, LinearMap.mem_ker, LinearMap.mem_ker, ← hD]
+  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe]
+  -- The chart derivative `D` is onto, so `H (D u)` vanishes once it vanishes on every `D t`.
+  refine ⟨fun hu ↦ ContinuousLinearMap.ext fun t ↦ ?_, fun hu ↦ ContinuousLinearMap.ext fun t ↦ ?_⟩
+  · rw [← D.apply_symm_apply t, ← hH, hu, zero_apply, zero_apply]
+  · rw [hH, hu, zero_apply, zero_apply]
+
+/-- **The dimension of the kernel of the critical Hessian in an arbitrary chart.** At a critical
+point of a `C²` function on a boundaryless manifold, the kernel of the critical Hessian has the
+dimension of the kernel of the Hessian of the coordinate expression in any chart `e` of the `C²`
+maximal atlas. -/
+theorem finrank_ker_criticalHessian_eq_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (hcrit : mvfderiv I f x = 0) :
+    Module.finrank ℝ (criticalHessian I f x).ker =
+      Module.finrank ℝ (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).ker := by
+  obtain ⟨D, hD⟩ :=
+    isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
+  rw [ker_criticalHessian_eq_comap_of_mem_maximalAtlas he hx hf hcrit, ← hD]
+  -- The preimage of a subspace under the linear equivalence `D` is linearly equivalent to it.
+  exact (D.toLinearEquiv.ofSubmodule' _).finrank_eq
 
 /-- **Nondegeneracy in an arbitrary chart.** On a boundaryless manifold, `x` is a nondegenerate
 critical point of `f` exactly when the coordinate expression of `f` in any chart `e` of the `C²`

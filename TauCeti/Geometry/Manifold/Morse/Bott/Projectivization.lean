@@ -30,7 +30,8 @@ a nondegenerate critical submanifold
 the kernel of the critical Hessian, and that kernel has the real dimension of `ℙᵐ`
 (`TauCeti.finrank_ker_criticalHessian_projectiveMomentFunction`), so the two agree. Taking one
 projective subspace for each value of the weights gives a Morse–Bott family
-(`TauCeti.exists_isMorseBottFamily_projectiveMomentFunction`). The Morse index along the critical
+(`TauCeti.isMorseBottFamily_projectiveMomentFunction`,
+`TauCeti.exists_isMorseBottFamily_projectiveMomentFunction`). The Morse index along the critical
 set of value `c` is the real dimension of `𝕜` times the number of weights below `c`
 (`TauCeti.manifoldMorseIndex_projectiveMomentFunction_of_mem_criticalPoints`).
 
@@ -41,6 +42,8 @@ and the projective line `{v₂ = 0}`, a circle of maxima of index `1`.
 
 * `TauCeti.isNondegenerateCriticalSubmanifold_projectiveMomentFunction`: the projective subspace
   of a weight space is a Morse–Bott critical submanifold.
+* `TauCeti.isMorseBottFamily_projectiveMomentFunction`: the projective subspaces of the weight
+  spaces, given by explicit injective linear maps, form a Morse–Bott family.
 * `TauCeti.exists_isMorseBottFamily_projectiveMomentFunction`: **the moment function is
   Morse–Bott**, with one projective subspace for each value of the weights.
 
@@ -76,6 +79,7 @@ theorem isNondegenerateCriticalSubmanifold_projectiveMomentFunction
       (isSmoothEmbedding_map (𝕜' := ℝ) L hL hr)).IsNondegenerateCriticalSubmanifold
       (projectiveMomentFunction 𝕜 w) := by
   set i := SmoothEmbedding.ofIsSmoothEmbedding (map L hL) (isSmoothEmbedding_map (𝕜' := ℝ) L hL hr)
+    with hi
   have hr0 : r ≠ 0 := by
     rintro rfl
     simp at hr
@@ -84,7 +88,7 @@ theorem isNondegenerateCriticalSubmanifold_projectiveMomentFunction
         projectiveMomentFunction 𝕜 w (i s) = c := by
     have hs : map L hL s ∈ range (map L hL) := mem_range_self s
     rw [range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction L hL hLw hm] at hs
-    rwa [show i s = map L hL s from SmoothEmbedding.ofIsSmoothEmbedding_apply _ _ s]
+    rwa [hi, SmoothEmbedding.ofIsSmoothEmbedding_apply]
   have hcs : i.IsCriticalSubmanifold (projectiveMomentFunction 𝕜 w) :=
     ⟨fun _ ↦ (contMDiff_projectiveMomentFunction w).contMDiffAt, fun s ↦ (hcrit s).1⟩
   refine ⟨hcs, fun s ↦ ?_⟩
@@ -94,8 +98,43 @@ theorem isNondegenerateCriticalSubmanifold_projectiveMomentFunction
   rw [SmoothEmbedding.tangentRange,
     LinearMap.finrank_range_of_inj ((i.isImmersion.isImmersionAt s).mfderiv_injective hr0),
     finrank_ker_criticalHessian_projectiveMomentFunction (hcrit s).1, (hcrit s).2, hm,
-    Nat.add_sub_cancel, finrank_tangentSpace, Module.finrank_pi_fintype, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, smul_eq_mul, mul_comm]
+    finrank_tangentSpace]
+  simp [Module.finrank_pi_fintype, mul_comm]
+
+/-- **The moment function is Morse–Bott, for an explicit family.** Let `c : ι → ℝ` list the
+values of the weights without repetition. For each `a`, let `m a + 1` be the number of coordinates
+of weight `c a` and `L a` an injective linear map from `𝕜ᵐ⁺¹` into the weight space of `c a`. Then
+smooth embeddings `i a` whose underlying maps are the induced maps `ℙᵐ → ℙⁿ` form a Morse–Bott
+family for the moment function. -/
+theorem isMorseBottFamily_projectiveMomentFunction {ι : Type*} {c : ι → ℝ} (hc : Injective c)
+    (hwc : range w ⊆ range c) {m : ι → ℕ}
+    (L : ∀ a, (Fin (m a + 1) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜) (hL : ∀ a, Injective (L a))
+    (hLw : ∀ a u j, w j ≠ c a → L a u j = 0) (hm : ∀ a, {j | w j = c a}.ncard = m a + 1)
+    {r : ℕ∞ω} {i : ∀ a, SmoothEmbedding 𝓘(ℝ, Fin (m a) → 𝕜) 𝓘(ℝ, Fin n → 𝕜) r
+      (ℙ 𝕜 (Fin (m a + 1) → 𝕜)) (ℙ 𝕜 (Fin (n + 1) → 𝕜))}
+    (hi : ∀ a, ⇑(i a) = map (L a) (hL a)) :
+    IsMorseBottFamily i (projectiveMomentFunction 𝕜 w) := by
+  have hrange (a : ι) : range (map (L a) (hL a)) =
+      criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) ∩
+        projectiveMomentFunction 𝕜 w ⁻¹' {c a} :=
+    range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction _ _ (hLw a) (hm a)
+  -- Build the family for `C²` embeddings with the same underlying maps.
+  have h2 : (1 : ℕ∞ω) ≤ 2 := by norm_num
+  refine IsMorseBottFamily.congr (i := fun a ↦ SmoothEmbedding.ofIsSmoothEmbedding _
+    (isSmoothEmbedding_map (𝕜' := ℝ) _ (hL a) h2)) ?_ fun a ↦ by
+      rw [hi, SmoothEmbedding.coe_ofIsSmoothEmbedding]
+  refine IsMorseBottFamily.of_pairwise_disjoint le_rfl (contMDiff_projectiveMomentFunction w)
+    (fun a ↦ isNondegenerateCriticalSubmanifold_projectiveMomentFunction _ _ (hLw a) (hm a) h2)
+    (fun a b hab ↦ ?_) fun x hx ↦ ?_
+  · rw [onFun, SmoothEmbedding.coe_ofIsSmoothEmbedding, SmoothEmbedding.coe_ofIsSmoothEmbedding,
+      hrange, hrange]
+    exact Disjoint.inter_left' _ (Disjoint.inter_right' _
+      (Disjoint.preimage _ (disjoint_singleton.2 (hc.ne hab))))
+  · -- A critical value is a weight, hence one of the values `c a`.
+    obtain ⟨a, ha⟩ := hwc (projectiveMomentFunction_mem_range_of_mem_criticalPoints hx)
+    refine mem_iUnion.2 ⟨a, ?_⟩
+    rw [SmoothEmbedding.coe_ofIsSmoothEmbedding, hrange]
+    exact ⟨hx, ha.symm⟩
 
 /-! ### The projective subspaces of the weight spaces -/
 
@@ -112,7 +151,7 @@ private theorem ncard_eq_weightDim_add_one (hc : c ∈ range w) :
 /-- An enumeration of the coordinates of weight `c`. -/
 private def weightEquiv (hc : c ∈ range w) : Fin (weightDim w c + 1) ≃ {i // w i = c} :=
   (Fintype.equivFinOfCardEq (by
-    rw [← Nat.card_eq_fintype_card]
+    rw [← Nat.card_eq_fintype_card, ← ncard_ofPred]
     exact ncard_eq_weightDim_add_one hc)).symm
 
 /-- The linear isomorphism of `𝕜ᵐ⁺¹` onto the weight space of `c` given by the enumeration of the
@@ -133,13 +172,6 @@ private def weightEmbedding (𝕜 : Type*) [RCLike 𝕜] (hc : c ∈ range w) {r
     SmoothEmbedding 𝓘(ℝ, Fin (weightDim w c) → 𝕜) 𝓘(ℝ, Fin n → 𝕜) r
       (ℙ 𝕜 (Fin (weightDim w c + 1) → 𝕜)) (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
   .ofIsSmoothEmbedding _ (isSmoothEmbedding_map (𝕜' := ℝ) _ (injective_weightIncl hc) hr)
-
-private theorem isNondegenerateCriticalSubmanifold_weightEmbedding (hc : c ∈ range w) {r : ℕ∞ω}
-    (hr : 1 ≤ r) :
-    (weightEmbedding 𝕜 hc hr).IsNondegenerateCriticalSubmanifold
-      (projectiveMomentFunction 𝕜 w) :=
-  isNondegenerateCriticalSubmanifold_projectiveMomentFunction _ _ (fun u _ ↦
-    weightIncl_apply_of_ne hc u) (ncard_eq_weightDim_add_one hc) hr
 
 /-- The image of the projective subspace of the weight space of `c` is the set of critical points
 of value `c`. -/
@@ -173,29 +205,8 @@ theorem exists_isMorseBottFamily_projectiveMomentFunction (𝕜 : Type*) [RCLike
     fun c ↦ weightEmbedding 𝕜 c.2 hr, fun c ↦ ncard_eq_weightDim_add_one c.2,
     fun c u _ ↦ weightIncl_apply_of_ne c.2 u, fun _ ↦ SmoothEmbedding.coe_ofIsSmoothEmbedding _ _,
     fun c ↦ range_weightEmbedding c.2 hr,
-    ?_⟩
-  -- Build the family for `C²` embeddings; it has the same underlying maps.
-  have h2 : (1 : ℕ∞ω) ≤ 2 := by norm_num
-  have hfam := IsMorseBottFamily.of_pairwise_disjoint le_rfl (contMDiff_projectiveMomentFunction w)
-    (fun c : range w ↦ isNondegenerateCriticalSubmanifold_weightEmbedding (𝕜 := 𝕜) c.2 h2) ?_ ?_
-  · -- Apart from nondegeneracy, the conditions only involve the underlying maps, which do not
-    -- depend on the order of smoothness.
-    have hcoe (c : range w) : ⇑(weightEmbedding 𝕜 c.2 hr) = weightEmbedding 𝕜 c.2 h2 := by
-      simp only [weightEmbedding, SmoothEmbedding.coe_ofIsSmoothEmbedding]
-    refine ⟨hfam.contMDiff, fun c ↦ isNondegenerateCriticalSubmanifold_weightEmbedding c.2 hr,
-      hfam.nonempty, hfam.boundarylessManifold, fun c s ↦ ?_, ?_, ?_, ?_⟩
-    · rw [hcoe]
-      exact hfam.range_eq_connectedComponentIn c s
-    · simpa only [hcoe] using hfam.range_injective
-    · simpa only [hcoe] using hfam.criticalPoints_subset_iUnion_range
-    · simpa only [hcoe] using hfam.locallyFinite_range
-  · intro c c' hcc'
-    rw [Function.onFun, range_weightEmbedding, range_weightEmbedding]
-    exact Disjoint.inter_left' _ (Disjoint.inter_right' _
-      (Disjoint.preimage _ (disjoint_singleton.2 fun h ↦ hcc' (Subtype.ext h))))
-  · intro x hx
-    refine mem_iUnion.2 ⟨⟨_, projectiveMomentFunction_mem_range_of_mem_criticalPoints hx⟩, ?_⟩
-    rw [range_weightEmbedding]
-    exact ⟨hx, rfl⟩
+    isMorseBottFamily_projectiveMomentFunction Subtype.val_injective (fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩)
+      _ _ (fun c u _ ↦ weightIncl_apply_of_ne c.2 u) (fun c ↦ ncard_eq_weightDim_add_one c.2)
+      fun _ ↦ SmoothEmbedding.coe_ofIsSmoothEmbedding _ _⟩
 
 end TauCeti

@@ -351,6 +351,15 @@ theorem isNondegenerateCriticalSubmanifold_neg_iff :
     i.IsNondegenerateCriticalSubmanifold (-f) ↔ i.IsNondegenerateCriticalSubmanifold f :=
   ⟨fun h ↦ by simpa only [neg_neg] using h.neg, IsNondegenerateCriticalSubmanifold.neg⟩
 
+/-- Being a Morse–Bott critical submanifold depends on the embedding only through its underlying
+map, so it passes to an embedding with the same map and possibly another order of smoothness. -/
+theorem IsNondegenerateCriticalSubmanifold.congr {n' : ℕ∞ω} {i' : SmoothEmbedding J I n' S M}
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hi : ⇑i' = ⇑i) :
+    i'.IsNondegenerateCriticalSubmanifold f where
+  contMDiffAt s := hi ▸ h.contMDiffAt s
+  mem_criticalPoints s := hi ▸ h.mem_criticalPoints s
+  ker_criticalHessian_le s := hi ▸ h.ker_criticalHessian_le s
+
 section Boundaryless
 
 variable [I.Boundaryless] [IsManifold I 2 M]

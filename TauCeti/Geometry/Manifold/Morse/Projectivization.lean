@@ -66,6 +66,11 @@ makes the moment function Morse–Bott.
 * `TauCeti.ProjectiveMomentChart.one_add_sum_mul_fderiv_fderiv_model_apply` and
   `TauCeti.ProjectiveMomentChart.fderiv_fderiv_model_apply_eq_zero_iff`: the Hessian of the chart
   model at an arbitrary critical point, and its kernel.
+* `TauCeti.extend_apply_eq_zero_or_of_mem_criticalPoints`: in the affine chart at `k`, every
+  nonzero coordinate of a critical point carries the weight `w k`.
+* `TauCeti.one_add_sum_mul_criticalHessian_projectiveMomentFunction_apply` and
+  `TauCeti.mem_ker_criticalHessian_projectiveMomentFunction_iff`: the critical Hessian of the
+  moment function at a critical point, and its kernel, read in an affine chart.
 * `TauCeti.finrank_ker_criticalHessian_projectiveMomentFunction`: the kernel of the critical
   Hessian at a critical point `x` of the moment function `f` has real dimension
   `dim_ℝ 𝕜 * (#{i | w i = f x} - 1)`.
@@ -421,10 +426,8 @@ theorem morseIndex_model {a : ℝ} {ν : Fin n → ℝ} {z : Fin n → 𝕜}
   have hQ : hessianQuadraticForm (model 𝕜 a ν) z =
       (1 + weightedNormSq 1 z)⁻¹ • hessianQuadraticForm (model 𝕜 a ν) 0 := by
     ext v
-    rw [_root_.smul_apply, hessianQuadraticForm_apply, hessianQuadraticForm_apply,
-      smul_eq_mul, eq_inv_mul_iff_mul_eq₀ hpos.ne',
-      one_add_weightedNormSq_one_mul_fderiv_fderiv_model hz, fderiv_fderiv_model_zero, smul_apply,
-      smul_apply, nsmul_eq_mul, Nat.cast_ofNat]
+    simp [eq_inv_mul_iff_mul_eq₀ hpos.ne', one_add_weightedNormSq_one_mul_fderiv_fderiv_model hz,
+      fderiv_fderiv_model_zero]
   rw [morseIndex_def, hQ, QuadraticForm.sigNeg_smul_of_pos _ (inv_pos.2 hpos), ← morseIndex_def,
     morseIndex_model_zero]
 
@@ -695,7 +698,7 @@ theorem isManifoldNondegenerateCriticalPoint_projectiveMomentFunction_iff {w : F
 
 /-- A critical point of the moment function in the affine chart at `k` is a critical point of the
 chart model: every nonzero chart coordinate carries the weight `w k`. -/
-private theorem extend_apply_eq_zero_or_of_mem_criticalPoints {w : Fin (n + 1) → ℝ}
+theorem extend_apply_eq_zero_or_of_mem_criticalPoints {w : Fin (n + 1) → ℝ}
     {k : Fin (n + 1)} {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
     (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w))
     (hk : x ∈ affineOpen k) (j : Fin n) :
@@ -706,6 +709,48 @@ private theorem extend_apply_eq_zero_or_of_mem_criticalPoints {w : Fin (n + 1) �
     ← mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
       (affineOpenPartialHomeomorph_mem_maximalAtlas k) (by simpa using hk)]
   exact mem_criticalPoints.1 hx
+
+/-- **The critical Hessian of the moment function in an affine chart.** Let `x` be a critical
+point in the affine open where the `k`-th homogeneous coordinate is nonzero, with chart coordinates
+`z`, and let `D` be the derivative of the chart at `x`. Then `1 + ∑ j, ‖z j‖ ^ 2` times the
+critical Hessian at `x` is `(v, v') ↦ 2 * ∑ j, (w (k.succAbove j) - w k) * ⟪D v j, D v' j⟫`. -/
+theorem one_add_sum_mul_criticalHessian_projectiveMomentFunction_apply {w : Fin (n + 1) → ℝ}
+    {k : Fin (n + 1)} {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w))
+    (hk : x ∈ affineOpen k) (v v' : TangentSpace 𝓘(ℝ, Fin n → 𝕜) x) :
+    (1 + ∑ j, ‖(affineOpenPartialHomeomorph (K := 𝕜) k).extend 𝓘(ℝ, Fin n → 𝕜) x j‖ ^ 2) *
+        criticalHessian 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) x v v' =
+      2 * ∑ j, (w (k.succAbove j) - w k) *
+        ⟪mvfderiv 𝓘(ℝ, Fin n → 𝕜) ((affineOpenPartialHomeomorph k).extend 𝓘(ℝ, Fin n → 𝕜)) x v j,
+          mvfderiv 𝓘(ℝ, Fin n → 𝕜) ((affineOpenPartialHomeomorph k).extend 𝓘(ℝ, Fin n → 𝕜)) x
+            v' j⟫ := by
+  rw [criticalHessian_apply_eq_of_mem_maximalAtlas
+    (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k) (by simpa using hk)
+    ((contMDiff_projectiveMomentFunction w) _) (mem_criticalPoints.1 hx),
+    projectiveMomentFunction_comp_extend_symm]
+  exact one_add_sum_mul_fderiv_fderiv_model_apply
+    (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk) _ _
+
+/-- **The kernel of the critical Hessian of the moment function in an affine chart.** Let `x` be a
+critical point in the affine open where the `k`-th homogeneous coordinate is nonzero, and let `D`
+be the derivative of the chart at `x`. A tangent vector `v` lies in the kernel of the critical
+Hessian at `x` exactly when the chart coordinates `D v j` of weight `w (k.succAbove j) ≠ w k`
+vanish. -/
+theorem mem_ker_criticalHessian_projectiveMomentFunction_iff {w : Fin (n + 1) → ℝ}
+    {k : Fin (n + 1)} {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w))
+    (hk : x ∈ affineOpen k) (v : TangentSpace 𝓘(ℝ, Fin n → 𝕜) x) :
+    v ∈ (criticalHessian 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) x).ker ↔
+      ∀ j, w (k.succAbove j) ≠ w k →
+        mvfderiv 𝓘(ℝ, Fin n → 𝕜) ((affineOpenPartialHomeomorph k).extend 𝓘(ℝ, Fin n → 𝕜)) x v j =
+          0 := by
+  rw [ker_criticalHessian_eq_comap_of_mem_maximalAtlas
+      (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k) (by simpa using hk)
+      ((contMDiff_projectiveMomentFunction w) _) (mem_criticalPoints.1 hx),
+    Submodule.mem_comap, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.coe_coe, projectiveMomentFunction_comp_extend_symm]
+  exact fderiv_fderiv_model_apply_eq_zero_iff
+    (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk) _
 
 /-- **The kernel of the critical Hessian of the moment function.** At a critical point `x`, the
 kernel of the critical Hessian has real dimension `dim_ℝ 𝕜` times the number of coordinates whose
