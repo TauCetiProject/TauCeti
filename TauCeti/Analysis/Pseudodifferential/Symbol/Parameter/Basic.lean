@@ -122,20 +122,17 @@ theorem norm_le_parameterWeight_sq (ξ : CoordinateSpace n) (z : ℂ) :
   calc ‖z‖ = Real.sqrt ‖z‖ ^ 2 := (Real.sq_sqrt (norm_nonneg z)).symm
     _ ≤ parameterWeight ξ z ^ 2 := pow_le_pow_left₀ (Real.sqrt_nonneg _) h 2
 
-private theorem norm_sq_eq_sqrt_pow_four (z : ℂ) : ‖z‖ ^ 2 = Real.sqrt ‖z‖ ^ 4 := by
-  rw [show (4 : ℕ) = 2 * 2 from rfl, pow_mul, Real.sq_sqrt (norm_nonneg z)]
-
 /-- Where the quasi-norm `‖ξ‖⁴ + ‖z‖²` is at least `t⁴`, the weight is at least `t`. -/
 theorem le_parameterWeight_of_pow_four_le {t : ℝ} {ξ : CoordinateSpace n} {z : ℂ}
     (h : t ^ 4 ≤ ‖ξ‖ ^ 4 + ‖z‖ ^ 2) : t ≤ parameterWeight ξ z := by
   have ha := norm_nonneg ξ
   have hb := Real.sqrt_nonneg ‖z‖
+  have hz : ‖z‖ ^ 2 = Real.sqrt ‖z‖ ^ 4 := by
+    rw [show (4 : ℕ) = 2 * 2 from rfl, pow_mul, Real.sq_sqrt (norm_nonneg z)]
   refine le_of_pow_le_pow_left₀ four_ne_zero (parameterWeight_pos ξ z).le (h.trans ?_)
-  rw [norm_sq_eq_sqrt_pow_four, parameterWeight_def]
-  calc ‖ξ‖ ^ 4 + Real.sqrt ‖z‖ ^ 4 ≤ (‖ξ‖ + Real.sqrt ‖z‖) ^ 4 := by
-        nlinarith [mul_nonneg ha hb, pow_nonneg (mul_nonneg ha hb) 2,
-          mul_nonneg (mul_nonneg ha hb) (sq_nonneg ‖ξ‖),
-          mul_nonneg (mul_nonneg ha hb) (sq_nonneg (Real.sqrt ‖z‖))]
+  rw [hz, parameterWeight_def]
+  calc ‖ξ‖ ^ 4 + Real.sqrt ‖z‖ ^ 4 ≤ (‖ξ‖ + Real.sqrt ‖z‖) ^ 4 :=
+        pow_add_pow_le ha hb four_ne_zero
     _ ≤ (1 + ‖ξ‖ + Real.sqrt ‖z‖) ^ 4 := pow_le_pow_left₀ (by positivity) (by linarith) 4
 
 /-- Where the quasi-norm `‖ξ‖⁴ + ‖z‖²` is at most `s⁴`, the weight is at most `1 + 2 s`. -/
@@ -144,8 +141,8 @@ theorem parameterWeight_le_of_le_pow_four {s : ℝ} (hs : 0 ≤ s) {ξ : Coordin
   have hξ : ‖ξ‖ ≤ s :=
     le_of_pow_le_pow_left₀ four_ne_zero hs ((le_add_of_nonneg_right (sq_nonneg _)).trans h)
   have hz : Real.sqrt ‖z‖ ≤ s := by
-    refine le_of_pow_le_pow_left₀ four_ne_zero hs ?_
-    rw [← norm_sq_eq_sqrt_pow_four]
+    refine (Real.sqrt_le_left hs).2 (le_of_pow_le_pow_left₀ two_ne_zero (sq_nonneg s) ?_)
+    rw [← pow_mul]
     exact (le_add_of_nonneg_left (by positivity)).trans h
   rw [parameterWeight_def]
   linarith

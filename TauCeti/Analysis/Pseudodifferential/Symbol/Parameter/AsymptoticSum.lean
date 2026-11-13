@@ -137,14 +137,9 @@ theorem parameterCutoff_eq_zero_iff {t : ℝ} (ht : 0 < t)
 theorem parameterCutoff_eq_one_iff {t : ℝ} (ht : 0 < t)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} :
     parameterCutoff t p = 1 ↔ 2 * t ^ 4 ≤ ‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2 := by
-  rw [parameterCutoff_def]
-  refine ⟨fun h => ?_, fun h => Real.smoothTransition.one_of_one_le ?_⟩
-  · by_contra h'
-    refine (Real.smoothTransition.lt_one_of_lt_one ?_).ne h
-    rw [sub_lt_iff_lt_add, div_lt_iff₀ (by positivity)]
-    linarith [not_le.1 h']
-  · rw [le_sub_iff_add_le, le_div_iff₀ (by positivity)]
-    linarith
+  rw [parameterCutoff_def, Real.smoothTransition.eq_one_iff_one_le, le_sub_iff_add_le,
+    le_div_iff₀ (by positivity)]
+  constructor <;> intro h <;> linarith
 
 theorem parameterCutoff_eq_zero {t : ℝ} (ht : 0 < t)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : ‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2 ≤ t ^ 4) :
