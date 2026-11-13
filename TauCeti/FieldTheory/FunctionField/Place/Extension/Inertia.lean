@@ -549,12 +549,13 @@ theorem inertiaSubgroup_inertiaField_eq_top :
   exact (ValuationSubring.mem_inertiaSubgroup_iff _ h).mp hh x
 
 omit [FiniteDimensional F F'] in
-/-- **The degree of `F'` over the inertia field** is the order of the inertia group. -/
+/-- **The degree of `F'` over the inertia field** is the order of the inertia group. For an infinite
+inertia group both sides are `0`. -/
 theorem finrank_inertiaField_eq_card :
     Module.finrank (inertiaField F P) F' = Nat.card (P.integers.inertiaSubgroup F) := by
   rw [inertiaField, ← Subgroup.card_map_of_injective (Subgroup.subtype_injective _)]
   generalize (P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype = H
-  exact IntermediateField.finrank_fixedField_eq_natCard H
+  exact Subgroup.finrank_fixedField_eq_card H
 
 end FixedField
 
@@ -682,8 +683,9 @@ theorem finrank_inertiaField : Module.finrank (inertiaField F P) F' = ramificati
   rw [finrank_inertiaField_eq_card, card_inertiaSubgroup]
 
 omit [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField] in
-/-- **The restriction of a place to its inertia field is unramified over `F`** (Stichtenoth,
-Theorem 3.8.2). -/
+/-- **The restriction of a place to its inertia field has ramification index `1` over `F`**
+(Stichtenoth, Theorem 3.8.2). Separability of the residue extension is the further statement of
+`le_inertiaField_iff`. -/
 @[simp]
 theorem ramificationIdx_restrict_inertiaField :
     ramificationIdx F (restrict k (inertiaField F P) P) = 1 :=

@@ -346,19 +346,6 @@ theorem finite_of_finiteDimensional_fixedField (H : Subgroup (M ≃ₐ[K] M))
   have hH : H ≤ fixingSubgroup (fixedField H) := (le_fixedField_iff_le_fixingSubgroup _ _).mp le_rfl
   .of_injective (Set.inclusion hH) (Set.inclusion_injective hH)
 
-/-- **Artin's equality for fixed fields, without finiteness of `M / K`**: the degree of `M` over
-the fixed field of a subgroup `H` of `Gal(M/K)` is the order of `H`. For infinite `H` both sides
-are `0`. -/
-theorem finrank_fixedField_eq_natCard (H : Subgroup (M ≃ₐ[K] M)) :
-    Module.finrank (fixedField H) M = Nat.card H := by
-  by_cases hH : Finite H
-  · have := Fintype.ofFinite H
-    rw [Nat.card_eq_fintype_card]
-    exact FixedPoints.finrank_eq_card H M
-  · have := not_finite_iff_infinite.mp hH
-    rw [Nat.card_eq_zero_of_infinite]
-    exact Module.finrank_of_not_finite fun hfin ↦ hH (finite_of_finiteDimensional_fixedField H)
-
 /-- **The fixing subgroup of an intermediate field of finite degree is no larger than that
 degree**, the bound on the automorphisms of a finite extension. -/
 theorem card_fixingSubgroup_le (E : IntermediateField K M) [FiniteDimensional E M] :
@@ -508,6 +495,20 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
     simpa [MulAut.conj_apply] using congrArg σ.symm hx
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
     simpa [MulAut.conj_apply] using congrArg σ (hy h hh)
+
+/-- **Artin's equality for fixed fields, without finiteness of `M / K`**: the degree of `M` over
+the fixed field of a subgroup `H` of `Gal(M/K)` is the order of `H`. For infinite `H` both sides
+are `0`. -/
+theorem finrank_fixedField_eq_card (H : Subgroup (M ≃ₐ[K] M)) :
+    Module.finrank (fixedField H) M = Nat.card H := by
+  by_cases hH : Finite H
+  · have := Fintype.ofFinite H
+    rw [Nat.card_eq_fintype_card]
+    exact FixedPoints.finrank_eq_card H M
+  · have := not_finite_iff_infinite.mp hH
+    rw [Nat.card_eq_zero_of_infinite]
+    exact Module.finrank_of_not_finite fun hfin ↦
+      hH (IntermediateField.finite_of_finiteDimensional_fixedField H)
 
 end Subgroup
 

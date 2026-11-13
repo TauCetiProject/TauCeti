@@ -178,7 +178,8 @@ theorem monic_of_map_eq_minpoly {P : Place k F} {y : F'} {φ : P.integers[X]}
 
 omit [FiniteDimensional F F'] in
 /-- A polynomial over `𝒪_P` whose image in `F[X]` is the minimal polynomial of a generator `y` of
-`F' / F` has degree `[F' : F]`. -/
+`F' / F` has degree `[F' : F]`. For a transcendental generator `y` the extension `F' / F` is
+infinite, the minimal polynomial and hence `φ` are `0`, and both degrees are `0`. -/
 theorem natDegree_eq_finrank_of_map_eq_minpoly {P : Place k F} {y : F'}
     (hy : IntermediateField.adjoin F {y} = ⊤) {φ : P.integers[X]}
     (hmin : φ.map (algebraMap P.integers F) = minpoly F y) :
