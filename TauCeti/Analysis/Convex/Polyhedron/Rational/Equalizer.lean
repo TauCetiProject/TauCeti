@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.Convex.Polyhedron.Rational.Cone
-public import TauCeti.Geometry.Toric.Algebraic.RationalFunctional
+public import TauCeti.Analysis.Convex.Polyhedron.Rational.Basic
 
 /-!
 # Rational affine equalizers
