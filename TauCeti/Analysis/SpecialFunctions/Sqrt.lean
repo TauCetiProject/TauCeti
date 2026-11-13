@@ -9,14 +9,17 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Tactic.FieldSimp
 
+import Mathlib.Analysis.MeanInequalitiesPow
+
 /-!
 # Square-root displacement estimates and limits at zero
 
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
-`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, `|t / √(1 + t²)| ≤ 1` and
-`√(1 + t²) - 1 ≤ |t|`, that `c √u` tends to `0` as
+`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, `|t / √(1 + t²)| ≤ 1`, that the
+modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
+to `0` as
 `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
 `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`.
@@ -31,9 +34,13 @@ positive operators close to the identity. The file also records that the square 
 * `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
 * `Real.abs_div_sqrt_one_add_sq_le_one`: for every real `t`, `|t / √(1 + t²)| ≤ 1`.
 * `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
+* `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
+* `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
+  `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`.
 * `Real.le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `a ≤ √c * b`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
+* `Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq`: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
 * `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
   `c √u → 0⁺` as `u → 0⁺`.
@@ -64,18 +71,18 @@ namespace Real
 /-- For every real `μ`, the square root is no farther from `1` than `μ` is:
 `|√μ - 1| ≤ |μ - 1|`. -/
 theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :
-    |Real.sqrt μ - 1| ≤ |μ - 1| := by
+    |sqrt μ - 1| ≤ |μ - 1| := by
   rcases le_total 0 μ with hμ | hμ
-  · have hs : 0 ≤ Real.sqrt μ := Real.sqrt_nonneg μ
-    have hsq : Real.sqrt μ * Real.sqrt μ = μ := Real.mul_self_sqrt hμ
-    have key : |Real.sqrt μ - 1| * (Real.sqrt μ + 1) = |μ - 1| := by
-      rw [← abs_of_nonneg (by linarith : (0 : ℝ) ≤ Real.sqrt μ + 1), ← abs_mul]
+  · have hs : 0 ≤ sqrt μ := sqrt_nonneg μ
+    have hsq : sqrt μ * sqrt μ = μ := mul_self_sqrt hμ
+    have key : |sqrt μ - 1| * (sqrt μ + 1) = |μ - 1| := by
+      rw [← abs_of_nonneg (by linarith : (0 : ℝ) ≤ sqrt μ + 1), ← abs_mul]
       congr 1
       nlinarith [hsq]
-    nlinarith [key, mul_nonneg (abs_nonneg (Real.sqrt μ - 1)) hs]
-  · have hsqrt : Real.sqrt μ = 0 := Real.sqrt_eq_zero_of_nonpos hμ
+    nlinarith [key, mul_nonneg (abs_nonneg (sqrt μ - 1)) hs]
+  · have hsqrt : sqrt μ = 0 := sqrt_eq_zero_of_nonpos hμ
     calc
-      |Real.sqrt μ - 1| = 1 := by rw [hsqrt]; norm_num
+      |sqrt μ - 1| = 1 := by rw [hsqrt]; norm_num
       _ ≤ |μ - 1| := by
         rw [abs_of_nonpos (by linarith : μ - 1 ≤ 0)]
         linarith
@@ -85,12 +92,12 @@ theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :
 The hypotheses force `μ` to be positive and keep the inverse square root
 bounded near `1`. -/
 theorem abs_one_sub_inv_sqrt_le {μ δ : ℝ} (hδ : δ ≤ 1 / 2) (hμ : |μ - 1| ≤ δ) :
-    |1 - (Real.sqrt μ)⁻¹| ≤ δ := by
+    |1 - (sqrt μ)⁻¹| ≤ δ := by
   have hμlb : 1 - δ ≤ μ := by rw [abs_le] at hμ; linarith
   have hμpos : (0 : ℝ) < μ := by linarith
-  set s := Real.sqrt μ
-  have hs0 : 0 < s := Real.sqrt_pos.mpr hμpos
-  have hssq : s ^ 2 = μ := Real.sq_sqrt (le_of_lt hμpos)
+  set s := sqrt μ
+  have hs0 : 0 < s := sqrt_pos.mpr hμpos
+  have hssq : s ^ 2 = μ := sq_sqrt (le_of_lt hμpos)
   -- `s ≥ 1/2` (since `s² = μ ≥ 1/2`)
   have hssqlb : (1 : ℝ) / 2 ≤ s ^ 2 := by rw [hssq]; linarith
   have hsge : (1 : ℝ) / 2 ≤ s := by nlinarith [hs0, hssqlb]
@@ -146,6 +153,29 @@ theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| :=
   rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
   nlinarith [abs_nonneg t, sq_abs t]
 
+/-- The modular `√(1 + t²) - 1` is at most quadratic: `√(1 + t²) - 1 ≤ t² / 2`. -/
+theorem sqrt_one_add_sq_sub_one_le_sq_div_two (t : ℝ) : √(1 + t ^ 2) - 1 ≤ t ^ 2 / 2 := by
+  rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
+  nlinarith [sq_nonneg (t ^ 2)]
+
+/-- The modular `√(1 + t²) - 1` is locally Lipschitz with a linear modulus:
+`|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`. -/
+theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le (a b : ℝ) :
+    |√(1 + a ^ 2) - √(1 + b ^ 2)| ≤ |a - b| * (|a| + |b|) := by
+  have ha := one_le_sqrt_one_add_sq a
+  have hb := one_le_sqrt_one_add_sq b
+  have hA : √(1 + a ^ 2) ^ 2 = 1 + a ^ 2 := sq_sqrt (by positivity)
+  have hB : √(1 + b ^ 2) ^ 2 = 1 + b ^ 2 := sq_sqrt (by positivity)
+  have key : (√(1 + a ^ 2) - √(1 + b ^ 2)) * (√(1 + a ^ 2) + √(1 + b ^ 2)) =
+      (a - b) * (a + b) := by linear_combination hA - hB
+  calc |√(1 + a ^ 2) - √(1 + b ^ 2)|
+      ≤ |√(1 + a ^ 2) - √(1 + b ^ 2)| * (√(1 + a ^ 2) + √(1 + b ^ 2)) :=
+        le_mul_of_one_le_right (abs_nonneg _) (by linarith)
+    _ = |a - b| * |a + b| := by
+        rw [← abs_of_pos (by linarith : 0 < √(1 + a ^ 2) + √(1 + b ^ 2)), ← abs_mul, key,
+          abs_mul]
+    _ ≤ |a - b| * (|a| + |b|) := mul_le_mul_of_nonneg_left (abs_add_le a b) (abs_nonneg _)
+
 /-- If `a² ≤ c b²` with `0 ≤ b`, then `a ≤ √c * b`. -/
 theorem le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
     a ≤ √c * b :=
@@ -161,6 +191,10 @@ theorem abs_mul_inv_sqrt_sq_mul_mul {d c : ℝ} (hd : d ≠ 0) (hc : 0 ≤ c) (p
     |d| * (√(d ^ 2 * c * p))⁻¹ = (√c)⁻¹ * (√p)⁻¹ := by
   rw [sqrt_mul (mul_nonneg (sq_nonneg d) hc), sqrt_mul (sq_nonneg d), sqrt_sq_eq_abs, mul_inv,
     mul_inv, mul_assoc, mul_inv_cancel_left₀ (abs_ne_zero.2 hd)]
+
+/-- The vector `((√2)⁻¹, (√2)⁻¹)` has unit length: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`. -/
+theorem inv_sqrt_two_sq_add_inv_sqrt_two_sq : (√2)⁻¹ ^ 2 + (√2)⁻¹ ^ 2 = (1 : ℝ) := by
+  rw [inv_pow, sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
 
 /-- For every `c`, `c √u` tends to `0` as `u → 0`. -/
 theorem tendsto_mul_sqrt_nhds_zero (c : ℝ) : Tendsto (fun u => c * √u) (𝓝 0) (𝓝 0) := by
@@ -185,12 +219,12 @@ lemma contDiff_div_sqrt_pow {k : WithTop ℕ∞} {ψ : ℝ → ℝ} (hψ : ContD
   rw [contDiff_iff_contDiffAt]
   intro t
   by_cases ht : √t ∈ tsupport ψ
-  · have ht0 : 0 < t := Real.sqrt_pos.mp (hψs ht)
-    exact ((hψ.contDiffAt.comp t (Real.contDiffAt_sqrt ht0.ne')).div
-      ((Real.contDiffAt_sqrt ht0.ne').pow _) (pow_ne_zero _ (Real.sqrt_pos.mpr ht0).ne'))
+  · have ht0 : 0 < t := sqrt_pos.mp (hψs ht)
+    exact ((hψ.contDiffAt.comp t (contDiffAt_sqrt ht0.ne')).div
+      ((contDiffAt_sqrt ht0.ne').pow _) (pow_ne_zero _ (sqrt_pos.mpr ht0).ne'))
   · have hev : ∀ᶠ s in 𝓝 t, ψ (√s) / (√s) ^ n = 0 := by
       have : ∀ᶠ s in 𝓝 t, √s ∉ tsupport ψ :=
-        Real.continuous_sqrt.continuousAt.preimage_mem_nhds
+        continuous_sqrt.continuousAt.preimage_mem_nhds
           ((isClosed_tsupport ψ).isOpen_compl.mem_nhds ht)
       filter_upwards [this] with s hs
       simp [image_eq_zero_of_notMem_tsupport hs]
@@ -224,10 +258,22 @@ theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
     field_simp
     ring
   have hsqrt : √(((x ^ 2 - p) / (2 * x)) ^ 2 + p) = (x ^ 2 + p) / (2 * x) := by
-    rw [hradicand, Real.sqrt_sq (by positivity)]
+    rw [hradicand, sqrt_sq (by positivity)]
   rw [hsqrt]
   field_simp
   ring
+
+/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
+theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
+  rcases le_or_gt 0 a with ha | ha
+  · rcases le_or_gt 0 b with hb | hb
+    · have h := rpow_add_le_add_rpow (p := 1 / 2) (a := a) (b := b) ha hb (by norm_num)
+        (by norm_num)
+      simpa only [← sqrt_eq_rpow] using h
+    · rw [sqrt_eq_zero_of_nonpos hb.le, add_zero]
+      exact sqrt_le_sqrt (by linarith)
+  · rw [sqrt_eq_zero_of_nonpos ha.le, zero_add]
+    exact sqrt_le_sqrt (by linarith)
 
 end Real
 

@@ -215,7 +215,7 @@ theorem iIndepFun.hasLaw_sum_sq_gaussian (hindep : iIndepFun X P)
   have hindepSq : iIndepFun (fun i omega ↦ X i omega ^ 2) P := by
     simpa [Function.comp_def] using
       hindep.comp (fun (_ : iota) (x : ℝ) ↦ x ^ 2) (fun _ ↦ by fun_prop)
-  simpa using iIndepFun.hasLaw_sum_chiSquared hindepSq (fun _ ↦ zero_le_one) hlawSq
+  simpa using iIndepFun.hasLaw_sum_chiSquared hindepSq hlawSq
 
 /-- **The law of a sum of squared centred Gaussian coordinates of common variance.** Pushing a
 finite product of `gaussianReal 0 v` laws forward by the sum of the squared coordinates gives the

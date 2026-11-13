@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.PositiveSubsystem
 
 /-!
-# A positive Kostant subsystem group meets the opposite Borel-type group trivially
+# Opposite Kostant subsystems and uniqueness of big-cell factors
 
 Let a Kostant form act on an integral lattice `M` with a finite weight basis `b` indexed by a
 linearly ordered type, and let `S` and `S'` be two sets of distinguished root vectors. Suppose that
@@ -43,7 +43,10 @@ Taking `S'` empty gives `U_S(A) ∩ T(A) = 1`, and the same comparison of the tw
 the torus, gives `U_S(A) ∩ U_{S'}(A) = 1`.
 
 For a Chevalley group over a field this is the statement `U ∩ B⁻ = 1` behind the uniqueness of
-the normal form in the Bruhat decomposition.
+the normal form in the Bruhat decomposition. When the torus parametrization is injective,
+we also prove injectivity of multiplication `U_S(A) × T(A) × U_{S'}(A) → GL(A ⊗ M)`.
+Reversing the order gives uniqueness in the opposite order `U⁻ T U` as well. No existence of
+factorizations or openness of their image is asserted.
 
 ## Main results
 
@@ -57,6 +60,8 @@ All in the namespace `TauCeti.UniversalEnvelopingAlgebra`:
 * `kostantSubsystemSubgroup_inf_kostantSubsystemSubgroup_eq_bot` and
   `kostantSubsystemSubgroup_inf_range_kostantTorusPoints_eq_bot`: `U_S(A) ∩ U_{S'}(A) = 1` and
   `U_S(A) ∩ T(A) = 1`.
+* `kostantSubsystemSubgroup_mul_torus_mul_injective`: uniqueness of the three factors with
+  torus parameters in a faithful parametrization.
 
 ## References
 
@@ -142,13 +147,7 @@ theorem kostantSubsystemSubgroup_inf_kostantSubsystemSubgroup_sup_range_kostantT
   have := Fintype.ofFinite η
   -- Reverse the order of the basis, so that the root vectors indexed by `S'` become positive.
   -- The torus, and hence `B_{S'}(A)`, does not depend on how the weight basis is indexed.
-  have hT : kostantTorusPoints M (b.reindex OrderDual.toDual) (χ ∘ OrderDual.toDual.symm)
-      (CommAlgCat.of ℤ A) = kostantTorusPoints M b χ (CommAlgCat.of ℤ A) := by
-    refine MonoidHom.ext fun s => Units.ext <| (b.baseChange _).ext fun x => ?_
-    have hx : b x = b.reindex OrderDual.toDual (OrderDual.toDual x) := by simp
-    rw [Module.Basis.baseChange_apply, kostantTorusPoints_tmul_basis M b χ, hx,
-      kostantTorusPoints_tmul_basis]
-    simp
+  have hT := kostantTorusPoints_reindex M b χ (A := A) OrderDual.toDual
   have hneg' : ∀ i ∈ S', ∀ {r s : ηᵒᵈ} {m : ℕ}, 0 < m →
       (wt ∘ OrderDual.toDual.symm) r = (wt ∘ OrderDual.toDual.symm) s + m • α i → r < s :=
     fun i hi _ _ _ hm hrs => hneg i hi hm hrs
@@ -213,5 +212,61 @@ theorem kostantSubsystemSubgroup_inf_range_kostantTorusPoints_eq_bot [Finite η]
   simpa only [kostantSubsystemSubgroup_empty, bot_sup_eq] using
     kostantSubsystemSubgroup_inf_kostantSubsystemSubgroup_sup_range_kostantTorusPoints_eq_bot
       e h ρ M hM hnil b wt α χ hwt S ∅ hα (fun _ hi => hi.elim) hpos (fun _ hi => hi.elim) A
+
+/-! ## Uniqueness of the three factors -/
+
+/-- **The product of a positive subsystem, a faithful weight torus, and an opposite subsystem
+has unique factors.** The weights defining the torus may differ from the Cartan weights used
+to order the root subgroups. In particular, the torus may use coordinates in the actual
+character lattice of a representation rather than in the full weight lattice.
+
+This asserts uniqueness of factors on the image of multiplication, not existence of a
+factorization for every point or representability of that image as an open subscheme. -/
+theorem kostantSubsystemSubgroup_mul_torus_mul_injective [Finite η]
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V)) (S S' : Set ι)
+    (hα : ∀ i ∈ S, ∀ j, ⁅h j, e i⁆ = (α i j : ℚ) • e i)
+    (hα' : ∀ i ∈ S', ∀ j, ⁅h j, e i⁆ = (α i j : ℚ) • e i)
+    (hpos : ∀ i ∈ S, ∀ {r s : η} {m : ℕ}, 0 < m → wt r = wt s + m • α i → r < s)
+    (hneg : ∀ i ∈ S', ∀ {r s : η} {m : ℕ}, 0 < m → wt r = wt s + m • α i → s < r)
+    (A : Type v) [CommRing A]
+    (hT : Function.Injective (kostantTorusPoints M b χ (CommAlgCat.of ℤ A))) :
+    Function.Injective (fun x :
+      kostantSubsystemSubgroup e h ρ M hM hnil S (CommAlgCat.of ℤ A) ×
+        ((τ → Aˣ) × kostantSubsystemSubgroup e h ρ M hM hnil S' (CommAlgCat.of ℤ A)) =>
+      (x.1 : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) *
+        kostantTorusPoints M b χ (CommAlgCat.of ℤ A) x.2.1 * x.2.2) := by
+  classical
+  let U := kostantSubsystemSubgroup e h ρ M hM hnil S (CommAlgCat.of ℤ A)
+  let U' := kostantSubsystemSubgroup e h ρ M hM hnil S' (CommAlgCat.of ℤ A)
+  let T := kostantTorusPoints M b χ (CommAlgCat.of ℤ A)
+  let B := U' ⊔ T.range
+  have hUB : Disjoint U B := disjoint_iff.mpr <|
+    kostantSubsystemSubgroup_inf_kostantSubsystemSubgroup_sup_range_kostantTorusPoints_eq_bot
+      e h ρ M hM hnil b wt α χ hwt S S' hα hα' hpos hneg A
+  -- Reverse the weight order to separate the opposite subsystem from the same diagonal torus.
+  have hUT : Disjoint U' T.range := by
+    apply disjoint_iff.mpr
+    simpa only [kostantTorusPoints_reindex] using
+      kostantSubsystemSubgroup_inf_range_kostantTorusPoints_eq_bot
+        e h ρ M hM hnil (b.reindex OrderDual.toDual) (wt ∘ OrderDual.toDual.symm) α
+        (χ ∘ OrderDual.toDual.symm)
+        (isCartanWeightVector_reindex_toDual h ρ M b wt hwt) S' hα' hneg A
+  intro x y hxy
+  have hB (s : τ → Aˣ) (u : U') : T s * u ∈ B :=
+    B.mul_mem (Subgroup.mem_sup_right ⟨s, rfl⟩) (Subgroup.mem_sup_left u.2)
+  have hpair := Subgroup.mul_injective_of_disjoint hUB
+    (a₁ := (x.1, ⟨T x.2.1 * x.2.2, hB _ _⟩))
+    (a₂ := (y.1, ⟨T y.2.1 * y.2.2, hB _ _⟩))
+    (by simpa only [mul_assoc] using hxy)
+  have hmiddle := Subgroup.mul_injective_of_disjoint hUT.symm
+    (a₁ := (⟨T x.2.1, ⟨_, rfl⟩⟩, x.2.2))
+    (a₂ := (⟨T y.2.1, ⟨_, rfl⟩⟩, y.2.2))
+    (congrArg Subtype.val (congrArg Prod.snd hpair))
+  apply Prod.ext
+  · exact congrArg (fun z : U × B => z.1) hpair
+  · apply Prod.ext
+    · exact hT (congrArg
+        (fun z : T.range × U' => (z.1 : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M))) hmiddle)
+    · exact congrArg (fun z : T.range × U' => z.2) hmiddle
 
 end TauCeti.UniversalEnvelopingAlgebra

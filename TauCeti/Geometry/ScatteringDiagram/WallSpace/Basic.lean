@@ -18,6 +18,9 @@ vanish. These conditions force commutation for proportional normals, for normals
 annihilate each other's geometric direction, and vanishing of brackets whose total direction
 is annihilated by both normals.
 
+Pulling normals back along an additive homomorphism of tangent monoids relabels the
+tangent directions of a wall space (`DirectedWallSpaces.mapTangent`).
+
 The degree and tangent monoids are independent. No lattice basis, coefficient
 characteristic or positivity assumption is needed for these algebraic identities.
 
@@ -102,15 +105,8 @@ theorem wall_eq_of_ker_eq {Λ : Type*} [AddCommGroup Λ]
     {ρ : Γ →+ Λ} {ℒ : Γ → Submodule R L} (H : DirectedWallSpaces ρ ℒ)
     (n : Γ) {m m' : Λ →+ ℤ} (hker : m.ker = m'.ker) :
     H.wall n m = H.wall n m' := by
-  by_cases hm : m = 0
-  · subst m
-    have hm' : m' = 0 := by
-      apply AddMonoidHom.ker_eq_top_iff.mp
-      rw [← hker]
-      simp
-    rw [hm']
-  · obtain ⟨c, e, hc, he, hme⟩ := m.exists_ne_zero_zsmul_eq_of_ker_eq m' hm hker
-    rw [← H.rescale n m c hc, hme, H.rescale n m' e he]
+  obtain ⟨c, e, hc, he, hme⟩ := m.exists_ne_zero_zsmul_eq_of_ker_eq m' hker
+  rw [← H.rescale n m c hc, hme, H.rescale n m' e he]
 
 /-- Directed wall spaces are determined by their wall submodules. -/
 @[ext]
@@ -171,6 +167,44 @@ theorem lie_eq_zero_of_proportional {n n' : Γ} {m m' : Λ →+ ℤ} {x y : L}
   apply H.lie_eq_zero_of_same_normal (n := n) (n' := n') (m := c • m)
   · simpa only [H.rescale n m c hc] using hx
   · simpa only [h, H.rescale n' m' d hd] using hy
+
+section Tangent
+
+variable {Λ' : Type*} [AddCommMonoid Λ']
+
+/-- Relabel the tangent directions of a directed wall space along an additive homomorphism,
+leaving the degrees and the Lie algebra untouched. The geometric direction becomes
+`T ∘ ρ` and the wall space with normal `m` is that of the original with normal `m ∘ T`. -/
+def mapTangent (T : Λ →+ Λ') :
+    DirectedWallSpaces (T.comp ρ) ℒ where
+  wall n m := H.wall n (m.comp T)
+  wall_le_piece n m := H.wall_le_piece n _
+  zero_normal n := H.zero_normal n
+  nontangent n m hm := H.nontangent n _ hm
+  rescale n m c hc := by
+    simpa only [AddMonoidHom.smul_comp] using H.rescale n (m.comp T) c hc
+  bracket_mem {n n' m m' x y} hx hy := by
+    have hn : wallBracketNormal ρ n n' (m.comp T) (m'.comp T) =
+        (wallBracketNormal (T.comp ρ) n n' m m').comp T := by
+      ext v
+      simp
+    exact hn ▸ H.bracket_mem hx hy
+
+@[simp]
+theorem mapTangent_wall (T : Λ →+ Λ') (n : Γ) (m : Λ' →+ ℤ) :
+    (H.mapTangent T).wall n m = H.wall n (m.comp T) := (rfl)
+
+/-- Transporting a normal along `T` and pulling it back along `T⁻¹` returns the original
+wall space. -/
+theorem mapTangent_wall_comp_symm (T : Λ ≃+ Λ') (n : Γ)
+    (m : Λ →+ ℤ) :
+    (H.mapTangent (T : Λ →+ Λ')).wall n (m.comp (T.symm : Λ' →+ Λ)) = H.wall n m := by
+  rw [mapTangent_wall]
+  congr 1
+  ext v
+  simp
+
+end Tangent
 
 end DirectedWallSpaces
 

@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Exact.Glue
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.CategoryTheory.ObjectProperty.Shift
+public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 
 /-!
 # Acyclic complexes over an exact category
@@ -39,6 +40,12 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
 * `TauCeti.ExactStructure.acyclic_biprod`, and instances for isomorphisms, shifts and zero.
 * `TauCeti.ExactStructure.acyclic_mappingCone`: **Neeman's lemma**, the mapping cone of a chain
   map between acyclic complexes is acyclic.
+* `TauCeti.ExactStructure.acyclic_mappingCone_of_isPushout`: the mapping cone of a map built from
+  pushouts of inflations is acyclic, and `TauCeti.ExactStructure.acyclic_mappingCone_of_iso`:
+  acyclicity of mapping cones is invariant under isomorphisms of arrows.
+* `TauCeti.ExactStructure.AcyclicData.acyclic_of_truncation`: a complex mapping to an acyclic
+  complex by an isomorphism in negative degrees, onto the cycles `Z⁰` in degree `0`, and vanishing
+  above, is acyclic.
 
 ## References
 
@@ -168,6 +175,143 @@ noncomputable def shift {K : CochainComplex C ℤ} (h : E.AcyclicData K) (a : �
       Category.assoc, key (n + a + 1) (n + 1 + a) (by lia), reassoc_of% (h.fac (n + a)),
       key' _ _ (by lia)]
 
+section descZ
+
+variable {K : CochainComplex C ℤ} (h : E.AcyclicData K)
+
+/-- The morphism out of the cycles `Zⁿ⁺¹` induced by a morphism out of `Kⁿ` killing `Zⁿ ↣ Kⁿ`. -/
+noncomputable def descZ {T : C} (n : ℤ) (k : K.X n ⟶ T) (hk : h.i n ≫ k = 0) : h.Z (n + 1) ⟶ T :=
+  (E.isKernelCokernelPair _ (h.conflation n)).desc k hk
+
+@[reassoc (attr := simp)]
+theorem p_descZ {T : C} (n : ℤ) (k : K.X n ⟶ T) (hk : h.i n ≫ k = 0) :
+    h.p n ≫ h.descZ n k hk = k :=
+  (E.isKernelCokernelPair _ (h.conflation n)).g_desc k hk
+
+instance (n : ℤ) : Epi (h.p n) := (E.isDeflation_g (h.conflation n)).epi
+
+end descZ
+
+section ofTruncation
+
+/-! ### Truncation at an object of cycles
+
+Let `c : K ⟶ L` map a complex `K` vanishing in positive degrees to an acyclic complex `L`, such
+that `c` is an isomorphism in negative degrees and identifies `K⁰` with the cycles `Z⁰ ↣ L⁰`.
+Then `K = (⋯ → L⁻² → L⁻¹ ↠ Z⁰ → 0)` is acyclic, with cycles `Zᵐ` for `m ≤ 0`, and zero above:
+the conflation in degree `0` is `Z⁰ ≅ K⁰ ↠ 0`. -/
+
+variable {K L : CochainComplex C ℤ} (hL : E.AcyclicData L) (c : K ⟶ L)
+  (hc : ∀ m < 0, IsIso (c.f m)) (e : K.X 0 ≅ hL.Z 0)
+
+/-- The cycles of the truncation: those of `L` in degrees `≤ 0`, zero above. -/
+private noncomputable def truncZ : ℤ → C
+  | Int.ofNat 0 => hL.Z 0
+  | Int.ofNat (_ + 1) => 0
+  | Int.negSucc k => hL.Z (Int.negSucc k)
+
+include hc in
+/-- The inflations of the cycles of the truncation. -/
+private noncomputable def truncI : ∀ m, truncZ hL m ⟶ K.X m
+  | Int.ofNat 0 => e.inv
+  | Int.ofNat (_ + 1) => 0
+  | Int.negSucc k =>
+    have := hc (Int.negSucc k) (Int.negSucc_lt_zero k)
+    hL.i _ ≫ inv (c.f _)
+
+/-- The deflations of the truncation onto the next cycles. -/
+private noncomputable def truncP : ∀ m, K.X m ⟶ truncZ hL (m + 1)
+  | Int.negSucc 0 => c.f _ ≫ hL.p (Int.negSucc 0)
+  | Int.negSucc (k + 1) => c.f _ ≫ hL.p (Int.negSucc (k + 1))
+  | Int.ofNat _ => 0
+
+variable [K.IsStrictlyLE 0] (he : e.hom ≫ hL.i 0 = c.f 0)
+
+include he in
+private theorem truncP_truncI (m : ℤ) :
+    truncP hL c m ≫ truncI hL c hc e (m + 1) = K.d m (m + 1) :=
+  match m with
+  | Int.negSucc 0 => by
+    have : Mono (c.f 0) := by
+      rw [← he]
+      have := (E.isInflation_f (hL.conflation 0)).mono
+      infer_instance
+    -- `truncP` and `truncI` are defined by matching on the degree, and `Int.negSucc 0 + 1`
+    -- reduces to `0` only by evaluation, so their equation lemmas do not apply; `change` states
+    -- the unfolded morphisms.
+    change (c.f _ ≫ hL.p (Int.negSucc 0)) ≫ e.inv = K.d (Int.negSucc 0) 0
+    have h₁ : hL.p (Int.negSucc 0) ≫ hL.i 0 = L.d (Int.negSucc 0) 0 := hL.fac _
+    rw [← cancel_mono (c.f 0), ← c.comm, ← he, Category.assoc, e.inv_hom_id_assoc,
+      Category.assoc, h₁]
+  | Int.negSucc (k + 1) => by
+    have := hc (Int.negSucc k) (Int.negSucc_lt_zero k)
+    -- As above, `Int.negSucc (k + 1) + 1` reduces to `Int.negSucc k` only by evaluation.
+    change (c.f _ ≫ hL.p (Int.negSucc (k + 1))) ≫ hL.i (Int.negSucc k) ≫ inv (c.f (Int.negSucc k)) =
+      K.d (Int.negSucc (k + 1)) (Int.negSucc k)
+    have h₁ : hL.p (Int.negSucc (k + 1)) ≫ hL.i (Int.negSucc k) =
+        L.d (Int.negSucc (k + 1)) (Int.negSucc k) := hL.fac _
+    rw [Category.assoc, reassoc_of% h₁, c.comm_assoc, IsIso.hom_inv_id, Category.comp_id]
+  | Int.ofNat k => (K.isZero_of_isStrictlyLE 0 _ (by lia)).eq_of_tgt _ _
+
+/-- The acyclicity data of a truncation of an acyclic complex at an object of cycles. -/
+private noncomputable def ofTruncation : E.AcyclicData K where
+  Z := truncZ hL
+  i := truncI hL c hc e
+  p := truncP hL c
+  zero m := match m with
+    | Int.negSucc 0 => by
+      have := hc (Int.negSucc 0) (Int.negSucc_lt_zero 0)
+      -- Unfold the matches defining `truncI` and `truncP` in this degree, as in `truncP_truncI`.
+      change (hL.i _ ≫ inv (c.f _)) ≫ c.f _ ≫ hL.p (Int.negSucc 0) = 0
+      simp [hL.zero]
+    | Int.negSucc (k + 1) => by
+      have := hc (Int.negSucc (k + 1)) (Int.negSucc_lt_zero (k + 1))
+      -- Unfold the matches defining `truncI` and `truncP` in this degree, as in `truncP_truncI`.
+      change (hL.i _ ≫ inv (c.f _)) ≫ c.f _ ≫ hL.p (Int.negSucc (k + 1)) = 0
+      simp [hL.zero]
+    | Int.ofNat _ => comp_zero
+  conflation m := match m with
+    | Int.negSucc 0 =>
+      have := hc (Int.negSucc 0) (Int.negSucc_lt_zero 0)
+      -- The squares hold by unfolding the truncation, so they are given as terms.
+      E.conflation_of_iso (S := ShortComplex.mk _ _ (hL.zero (Int.negSucc 0)))
+        (ShortComplex.isoMk (Iso.refl _) (asIso (c.f _)).symm (Iso.refl _)
+          (Category.id_comp (truncI hL c hc e (Int.negSucc 0)))
+          ((IsIso.inv_hom_id_assoc (c.f (Int.negSucc 0)) (hL.p (Int.negSucc 0))).trans
+            (Category.comp_id _).symm)) (hL.conflation (Int.negSucc 0))
+    | Int.negSucc (k + 1) =>
+      have := hc (Int.negSucc (k + 1)) (Int.negSucc_lt_zero (k + 1))
+      -- The squares hold by unfolding the truncation, so they are given as terms.
+      E.conflation_of_iso (S := ShortComplex.mk _ _ (hL.zero (Int.negSucc (k + 1))))
+        (ShortComplex.isoMk (Iso.refl _) (asIso (c.f _)).symm (Iso.refl _)
+          (Category.id_comp (truncI hL c hc e (Int.negSucc (k + 1))))
+          ((IsIso.inv_hom_id_assoc (c.f (Int.negSucc (k + 1))) (hL.p (Int.negSucc (k + 1)))).trans
+            (Category.comp_id _).symm)) (hL.conflation (Int.negSucc (k + 1)))
+    | Int.ofNat 0 => E.conflation_of_splitting
+      { r := e.hom
+        s := 0
+        f_r := e.inv_hom_id
+        s_g := (isZero_zero C).eq_of_src _ _
+        id := by rw [comp_zero, add_zero]; exact e.hom_inv_id }
+    | Int.ofNat (k + 1) =>
+      have hK : IsZero (K.X (Int.ofNat (k + 1))) := K.isZero_of_isStrictlyLE 0 _ (by lia)
+      E.conflation_of_splitting
+        { r := 0
+          s := 0
+          f_r := (isZero_zero C).eq_of_src _ _
+          s_g := (isZero_zero C).eq_of_src _ _
+          id := hK.eq_of_src _ _ }
+  fac m := truncP_truncI hL c hc e he m
+
+include hL hc he in
+/-- **A truncation of an acyclic complex at an object of cycles is acyclic.** If `c : K ⟶ L` is
+an isomorphism in negative degrees, `K` vanishes in positive degrees and `c⁰` is an isomorphism
+`K⁰ ≅ Z⁰` followed by the inflation `Z⁰ ↣ L⁰`, then `K` is acyclic. -/
+theorem acyclic_of_truncation : E.acyclic K :=
+  (ofTruncation hL c hc e he).acyclic
+
+end ofTruncation
+
 end AcyclicData
 
 /-- An acyclic complex stays acyclic under isomorphism of complexes. -/
@@ -197,7 +341,6 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
   open CochainComplex.mappingCone in
   obtain ⟨A⟩ := hK
   obtain ⟨B⟩ := hL
-  have hA (n : ℤ) := E.isKernelCokernelPair _ (A.conflation n)
   have hB (n : ℤ) := E.isKernelCokernelPair _ (B.conflation n)
   -- The chain map restricts to the cycles.
   have hz (n : ℤ) : (A.i n ≫ φ.f n) ≫ B.p n = 0 := by
@@ -282,6 +425,79 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
     · simp [d_snd_v φ m (m + 1) rfl, huv]
     · simp [reassoc_of% (hke (m + 1))]
     · simp [hkv, B.fac]
+
+/-- **The mapping cone of a map built from pushouts of inflations is acyclic.** Let `φ : K ⟶ L`
+come with objects `Bᵐ`, inflations `j : Bᵐ ↣ Lᵐ` and pushout squares
+```text
+Bᵐ ──j──▶ Lᵐ
+│q        │u
+▼         ▼
+Kᵐ⁺¹ ─v─▶ Bᵐ⁺¹
+```
+such that the differential of `L` is `u ≫ j`, `φ` is `v ≫ j`, the differential of `K` is `v ≫ q`
+and `u ≫ q = 0`. Then the cone of `φ` is acyclic, with cycles `Bᵐ`: the pushout conflations
+`Bᵐ ↣ Lᵐ ⊞ Kᵐ⁺¹ ↠ Bᵐ⁺¹` are its degreewise conflations. This is the dual of the last step of
+Bühler's proof of Theorem 12.7, where such data come from a recursive construction. -/
+theorem acyclic_mappingCone_of_isPushout {K L : CochainComplex C ℤ} (φ : K ⟶ L) (B : ℤ → C)
+    (j : ∀ m, B m ⟶ L.X m) (q : ∀ m, B m ⟶ K.X (m + 1)) (u : ∀ m, L.X m ⟶ B (m + 1))
+    (v : ∀ m, K.X m ⟶ B m) (hj : ∀ m, E.IsInflation (j m))
+    (sq : ∀ m, IsPushout (j m) (q m) (u m) (v (m + 1)))
+    (hd : ∀ m, u m ≫ j (m + 1) = L.d m (m + 1)) (hφ : ∀ m, v m ≫ j m = φ.f m)
+    (hq : ∀ m, v m ≫ q m = K.d m (m + 1)) (huq : ∀ m, u m ≫ q (m + 1) = 0) :
+    E.acyclic (CochainComplex.mappingCone φ) := by
+  open CochainComplex.mappingCone in
+  refine ⟨{
+    Z := B
+    i m := j m ≫ (inr φ).f m - q m ≫ (inl φ).v (m + 1) m (by lia)
+    p m := (fst φ).1.v m (m + 1) rfl ≫ v (m + 1) + (snd φ).v m m (add_zero m) ≫ u m
+    zero m := by simp [(sq m).w]
+    conflation m := ?_
+    fac m := ?_ }⟩
+  · refine E.conflation_of_iso ?_
+      (E.conflation_shortComplex_of_isPushout_of_isInflation (hj m) (sq m))
+    let e := biprod.braiding _ _ ≪≫
+      (HomologicalComplex.homotopyCofiber.XIsoBiprod φ m (m + 1) rfl).symm
+    -- The isomorphism `Lᵐ ⊞ Kᵐ⁺¹ ≅ cone` is the decomposition of the cone into its two summands.
+    -- Mathlib's simp lemmas for `XIsoBiprod` carry their own biproduct instance, so they are
+    -- applied by unification rather than by `simp`.
+    have h₁ : biprod.inr ≫ (HomologicalComplex.homotopyCofiber.XIsoBiprod φ m (m + 1) rfl).inv =
+        (inr φ).f m :=
+      HomologicalComplex.homotopyCofiber.inr_XIsoBiprod_inv φ (m + 1) m rfl
+    have h₂ : biprod.inl ≫ (HomologicalComplex.homotopyCofiber.XIsoBiprod φ m (m + 1) rfl).inv =
+        (inl φ).v (m + 1) m (by lia) :=
+      HomologicalComplex.homotopyCofiber.inl_XIsoBiprod_inv φ (m + 1) m rfl
+    -- The last step of each case closes by unification, for the same reason.
+    have he : e.hom = biprod.desc ((inr φ).f m) ((inl φ).v (m + 1) m (by lia)) := by
+      apply biprod.hom_ext'
+      · simp only [e, Iso.trans_hom, Iso.symm_hom, biprod.braiding_hom, biprod.lift_eq,
+          Preadditive.add_comp, Category.assoc, h₁, Preadditive.comp_add,
+          BinaryBicone.inl_snd_assoc, zero_comp, zero_add]
+        exact (biprod.inl_fst_assoc _).trans (biprod.inl_desc _ _).symm
+      · simp only [e, Iso.trans_hom, Iso.symm_hom, biprod.braiding_hom, biprod.lift_eq,
+          Preadditive.add_comp, Category.assoc, h₂, Preadditive.comp_add,
+          BinaryBicone.inr_fst_assoc, zero_comp, add_zero]
+        exact (biprod.inr_snd_assoc _).trans (biprod.inr_desc _ _).symm
+    refine ShortComplex.isoMk (Iso.refl _) e (Iso.refl _) ?_ ?_
+    · dsimp only [CommSq.shortComplex]
+      rw [he]
+      apply ext_to φ m (m + 1) rfl <;> simp [sub_eq_add_neg]
+    · dsimp only [CommSq.shortComplex]
+      rw [he]
+      apply biprod.hom_ext' <;> simp
+  · apply ext_from φ (m + 1) m rfl <;> apply ext_to φ (m + 1) (m + 1 + 1) rfl
+    · simp [d_fst_v φ m (m + 1) (m + 1 + 1) rfl rfl, reassoc_of% (hq (m + 1))]
+    · simp [d_snd_v φ m (m + 1) rfl, hφ]
+    · simp [huq]
+    · simp [hd]
+
+/-- Acyclicity of mapping cones is invariant under isomorphisms of arrows, through Mathlib's
+`HomologicalComplex.homotopyCofiber.mapArrowIso`. -/
+theorem acyclic_mappingCone_of_iso {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} {φ₁ : K₁ ⟶ L₁}
+    {φ₂ : K₂ ⟶ L₂} (a : K₁ ≅ K₂) (b : L₁ ≅ L₂) (comm : φ₁ ≫ b.hom = a.hom ≫ φ₂)
+    (h : E.acyclic (CochainComplex.mappingCone φ₂)) :
+    E.acyclic (CochainComplex.mappingCone φ₁) :=
+  E.acyclic.prop_of_iso (HomologicalComplex.homotopyCofiber.mapArrowIso φ₂ φ₁
+    (fun j ↦ ⟨j - 1, by simp⟩) (Arrow.isoMk a b comm.symm).symm) h
 
 end ExactStructure
 

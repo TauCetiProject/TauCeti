@@ -43,10 +43,6 @@ presentation theory used to define the Auslander--Reiten translate and its inver
 
 ## References
 
-This supplies the injective half of sublayer 6B, "minimal projective/injective presentations", of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. That sublayer is an explicit
-prerequisite for the transpose, the Auslander--Reiten translate, and almost-split sequences.
-
 See M. Auslander, I. Reiten, S. Smalø, *Representation Theory of Artin Algebras*, CUP (1995),
 Chapter IV, and I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of
 Associative Algebras, Vol. 1*, CUP (2006), Section IV.2.

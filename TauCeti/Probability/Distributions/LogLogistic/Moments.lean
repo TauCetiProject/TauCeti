@@ -59,7 +59,7 @@ theorem integrable_rpow_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (q : �
   have hcomp : (fun x : ℝ => x ^ q) ∘ Real.exp = fun y => Real.exp (q * y) := by
     funext y
     rw [Function.comp_apply, ← Real.exp_mul, mul_comm]
-  rw [logLogisticMeasure_of_pos ha hb,
+  rw [logLogisticMeasure_of_pos ha,
     integrable_map_measure (by fun_prop) Real.measurable_exp.aemeasurable, hcomp,
     integrable_exp_mul_id_logisticMeasure_iff (inv_pos.mpr hb), div_inv_eq_mul, neg_one_mul,
     one_div, inv_inv, abs_lt]
@@ -78,7 +78,7 @@ theorem integral_rpow_logLogisticMeasure (ha : 0 < a) (hq : |q| < b) :
   have hmgf : ∫ y, Real.exp y ^ q ∂logisticMeasure (Real.log a) b⁻¹ =
       mgf id (logisticMeasure (Real.log a) b⁻¹) q := by
     simp only [mgf, id_eq, ← Real.exp_mul, mul_comm q]
-  rw [logLogisticMeasure_of_pos ha hb,
+  rw [logLogisticMeasure_of_pos ha,
     integral_map Real.measurable_exp.aemeasurable (by fun_prop), hmgf,
     mgf_id_logisticMeasure (inv_pos.mpr hb) hmem, Real.rpow_def_of_pos ha, inv_mul_eq_div]
   ring_nf
@@ -155,7 +155,7 @@ theorem integrable_exp_mul_id_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (
     TauCeti.integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable hnonneg⟩
   have hmom : ¬ Integrable (fun x : ℝ => id x ^ b) (logLogisticMeasure a b) := by
     simp [integrable_rpow_logLogisticMeasure_iff ha hb, abs_of_pos hb]
-  exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow b measurable_id.aemeasurable
+  exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow b
     hnonneg hb.le hmom ht h
 
 /-- The exact exponential-integrability domain of a log-logistic law is the nonpositive

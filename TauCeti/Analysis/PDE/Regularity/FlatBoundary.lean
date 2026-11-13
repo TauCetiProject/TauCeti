@@ -137,7 +137,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
   have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport ψ → W1p.value (v : W1p mu Omega 2) x = 0 := by
     filter_upwards [hv] with x hx hxψ
     rw [hx, image_eq_zero_of_notMem_tsupport hxψ, zero_mul]
-  have hmem := W1p.restrictL_mem_w1p0Submodule_of_isCompact (by norm_num) hψc hψs v.2 hv0
+  have hmem := W1p.restrictL_mem_w1p0Submodule_of_isCompact hψc hψs v.2 hv0
   have hψu : W1p.contDiffSMul ψ hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) u₁ =
       W1p.restrictL hΩ₁ (v : W1p mu Omega 2) := by
     refine W1p.ext_value (Lp.ext ?_)

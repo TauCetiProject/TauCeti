@@ -38,6 +38,10 @@ underlying real manifold.
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
 * `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
+* `ContMDiffSMul.mdifferentiableAt_smul_const`: the orbit maps of a `C^1` action are
+  differentiable.
+* `ContMDiffSMul.contMDiffOn_comp_smul_symm`: in the coordinates `(w, g) ↦ e (g • e.symm w)` of
+  a `C^n` partial homeomorphism `e` with `C^n` inverse, a `C^n` action is jointly `C^n`.
 * `ContinuousLinearEquiv.contMDiffConstSMul_transContinuousLinearEquiv_iff`: a linear change of
   the model vector space does not change whether an action is by `C^n` maps.
 * `ContMDiffConstSMul.restrictScalars`: an action by maps that are `C^n` over `𝕜'` is by maps that
@@ -87,6 +91,42 @@ theorem ContMDiffSMul.contMDiff_smul_const {𝕜 : Type*} [NontriviallyNormedFie
     {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
     [ContMDiffSMul I I' n G M] (x : M) : ContMDiff I I' n fun g : G ↦ g • x :=
   contMDiff_id.smul contMDiff_const
+
+/-- The orbit map `g ↦ g • x` of a `C^1` action is differentiable. -/
+@[to_additive /-- The orbit map `g ↦ g +ᵥ x` of a `C^1` additive action is differentiable. -/]
+theorem ContMDiffSMul.mdifferentiableAt_smul_const {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M]
+    [ContMDiffSMul I I' 1 G M] (x : M) (g : G) : MDifferentiableAt I I' (fun h : G ↦ h • x) g :=
+  (contMDiff_smul_const (n := 1) x).mdifferentiableAt one_ne_zero
+
+/-- In the coordinates of a `C^n` partial homeomorphism `e` with `C^n` inverse, a `C^n` action is
+the jointly `C^n` map `(w, g) ↦ e (g • e.symm w)` on the set of pairs for which it is defined.
+That set is open (`OpenPartialHomeomorph.isOpen_setOf_mem_target_smul_symm_mem_source`). -/
+@[to_additive /-- In the coordinates of a `C^n` partial homeomorphism `e` with `C^n` inverse, a
+`C^n` additive action is the jointly `C^n` map `(w, g) ↦ e (g +ᵥ e.symm w)` on the set of pairs
+for which it is defined. -/]
+theorem ContMDiffSMul.contMDiffOn_comp_smul_symm {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] {e : OpenPartialHomeomorph M F}
+    (he : ContMDiffOn I' 𝓘(𝕜, F) n e e.source) (hes : ContMDiffOn 𝓘(𝕜, F) I' n e.symm e.target) :
+    ContMDiffOn (𝓘(𝕜, F).prod I) 𝓘(𝕜, F) n (fun p : F × G ↦ e (p.2 • e.symm p.1))
+      {p : F × G | p.1 ∈ e.target ∧ p.2 • e.symm p.1 ∈ e.source} := by
+  have hj : ContMDiffOn (𝓘(𝕜, F).prod I) (I.prod I') n (fun p : F × G ↦ (p.2, e.symm p.1))
+      {p : F × G | p.1 ∈ e.target ∧ p.2 • e.symm p.1 ∈ e.source} :=
+    contMDiffOn_snd.prodMk (hes.comp contMDiffOn_fst fun p hp ↦ hp.1)
+  exact he.comp ((contMDiff_smul (I := I) (I' := I') (n := n)).comp_contMDiffOn hj)
+    fun p hp ↦ hp.2
 
 /-! ### Changes of model -/
 

@@ -17,7 +17,8 @@ The construction preserves the original norm and real scalar action. It is a nam
 structure rather than a global instance, since it depends on `J`.
 
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
-real inner product.
+real inner product, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
+`⟪J v, v⟫ = 0`.
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -36,6 +37,12 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 theorem norm_apply {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
     (v : V) : ‖J v‖ = ‖v‖ :=
   (J.toLinearMap.isometryOfInner hJ).norm_map v
+
+/-- An orthogonal almost complex structure turns every vector by a right angle, `⟪J v, v⟫ = 0`. -/
+theorem inner_apply_self {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    (v : V) : ⟪J v, v⟫ = 0 := by
+  rw [real_inner_comm]
+  exact J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun x y ↦ real_inner_comm y x⟩ hJ v
 
 /-- The complex inner product induced by an orthogonal complex structure, using the original
 norm on `V` and the scalar action `J.complexModule`. Its real part is the original inner product.

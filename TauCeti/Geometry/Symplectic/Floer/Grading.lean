@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.InjectiveGrading
+public import TauCeti.RingTheory.NovikovModule.DiscretePeriod
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 
 /-!
@@ -44,6 +45,18 @@ pants. A product kernel of raw degree `-n` therefore satisfies the potential bou
 outputs at each pair of inputs (`TauCeti.Floer.mem_novikovModule_of_ker_le`). This is the energy
 ceiling of the monotone branch. When `c₁` vanishes on spheres but the area does not, the grading
 gives no such bound.
+
+Without an energy ceiling, a geometric kernel still obeys the energy bound
+`A₀ p₀ ≤ A₁ p₁ + A₂ p₂ + C` of its configurations, but this bound and the grading together give
+the finiteness hypothesis of `TauCeti.NovikovModule.kernelProduct` exactly when the areas of the
+Chern-zero classes of `Γ` form a discrete subgroup of `ℝ`. Then only finitely many caps of each
+orbit have a given grading and action in a bounded window
+(`TauCeti.Floer.mem_novikovModule_of_discreteTopology`). This includes targets whose area periods
+are dense in `ℝ` while the Chern-zero periods are not. If instead the Chern-zero periods are dense,
+every capped generator carries a coefficient function of its own grading with action bounded by
+its own that is not a completed combination
+(`TauCeti.Floer.exists_notMem_novikovModule_of_dense`); finiteness of geometric counts below
+each energy level must then come from compactness.
 
 Otherwise the kernel's grading and support hypotheses remain explicit: establishing them for
 geometric counts requires the index and compactness theorems of the chosen Floer problem. No
@@ -194,5 +207,45 @@ theorem exists_abs_add_sub_le_of_ker_le {ι₁ ι₂ : Type*} [Finite ι₁] [Fi
   exact hC p₁ p₂ p₀ (by rw [h, sub_eq_add_neg])
 
 end KerLE
+
+section DiscreteChernZero
+
+variable {S : Type*} [AddGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
+  {ι₀ : Type*} {P₀ : ι₀ → Type*} [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
+  {A₀ : (Σ k, P₀ k) → ℝ} {μ₀ : (Σ k, P₀ k) → ℤ}
+  (hA₀ : ∀ k γ (D : P₀ k), A₀ ⟨k, γ +ᵥ D⟩ = PeriodGroup.area ω c γ + A₀ ⟨k, D⟩)
+  (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = PeriodGroup.degree ω c γ + μ₀ ⟨k, D⟩)
+include hA₀ hμ₀
+
+/-- If the areas of the Chern-zero classes of the period group form a discrete subgroup of `ℝ`,
+then a product kernel of raw Floer degree `-n` on capped output generators whose nonzero
+coefficients obey the energy bound `A₀ p₀ ≤ A₁ p₁ + A₂ p₂ + C` has completed rows. This is the
+finiteness hypothesis of `TauCeti.NovikovModule.kernelProduct`; the actions `A₀` and gradings
+`μ₀` obey the recapping laws for the area and twice the first Chern number. -/
+theorem mem_novikovModule_of_discreteTopology [Finite ι₀]
+    (hdisc : DiscreteTopology ((PeriodGroup.chern ω c).ker.map (PeriodGroup.area ω c)))
+    {R S₁ S₂ : Type*} [Semiring R] {A₁ : S₁ → ℝ} {A₂ : S₂ → ℝ} {μ₁ : S₁ → ℤ} {μ₂ : S₂ → ℤ}
+    {n : ℤ} {C : ℝ} {κ : S₁ → S₂ → (Σ k, P₀ k) → R}
+    (hκ : ∀ p₁ p₂ p₀, κ p₁ p₂ p₀ ≠ 0 → A₀ p₀ ≤ A₁ p₁ + A₂ p₂ + C)
+    (hμ : ∀ p₁ p₂ p₀, κ p₁ p₂ p₀ ≠ 0 → μ₀ p₀ = μ₁ p₁ + μ₂ p₂ - n) (p₁ : S₁) (p₂ : S₂) :
+    κ p₁ p₂ ∈ NovikovModule R A₀ :=
+  NovikovModule.mem_of_le_add_add_of_eq_add_add hA₀ hμ₀
+    (by rw [PeriodGroup.ker_degree]; exact PeriodGroup.disjoint_ker_area_ker_chern ω c)
+    (by rwa [PeriodGroup.ker_degree]) hκ
+    (fun p₁ p₂ p₀ h => by rw [hμ p₁ p₂ p₀ h, sub_eq_add_neg]) p₁ p₂
+
+/-- If the areas of the Chern-zero classes of the period group are dense in `ℝ`, every capped
+generator `p` carries a coefficient function supported in the grading of `p`, with action at most
+that of `p`, which is not a completed combination. Thus the energy bound and the grading of a
+product kernel do not imply the finiteness hypothesis of `TauCeti.NovikovModule.kernelProduct`. -/
+theorem exists_notMem_novikovModule_of_dense {R : Type*} [Semiring R] [Nontrivial R]
+    (hdense : Dense (((PeriodGroup.chern ω c).ker.map (PeriodGroup.area ω c) :
+      AddSubgroup ℝ) : Set ℝ))
+    (p : Σ k, P₀ k) :
+    ∃ a : (Σ k, P₀ k) → R, (∀ q, a q ≠ 0 → μ₀ q = μ₀ p ∧ A₀ q ≤ A₀ p) ∧
+      a ∉ NovikovModule R A₀ :=
+  NovikovModule.exists_notMem_of_dense hA₀ hμ₀ (by rwa [PeriodGroup.ker_degree]) p
+
+end DiscreteChernZero
 
 end TauCeti.Floer

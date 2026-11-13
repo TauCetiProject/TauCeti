@@ -32,6 +32,9 @@ normal domain inherits it without choosing a smaller ball.
   preserves inner products with the radial direction.
 * `TauCeti.Manifold.norm_mfderiv_riemannianExp_radial`: the differential of the exponential map
   preserves the norm of the radial direction.
+* `TauCeti.Manifold.inner_mfderiv_riemannianExp_unit_radial` and
+  `TauCeti.Manifold.inner_mfderiv_riemannianExp_radial_angular`: unit radial directions stay unit,
+  and stay orthogonal to perpendicular directions, under the differential of the exponential map.
 
 ## References
 
@@ -192,6 +195,51 @@ the norm of the radial direction at every vector in its natural domain. -/
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), sq, sq,
     ← real_inner_self_eq_norm_mul_norm, ← real_inner_self_eq_norm_mul_norm,
     inner_mfderiv_riemannianExp_radial hv]
+
+/-- The differential of the exponential map at `r • v` sends a unit radial direction `v` to a unit
+vector. -/
+theorem inner_mfderiv_riemannianExp_unit_radial [I.Boundaryless] [T2Space M] {p : M}
+    {v : TangentSpace I p} {r : ℝ} (hmem : r • v ∈ expDomain I M p) (hv : ‖v‖ = 1) :
+    inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) v)
+      (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) v) = 1 := by
+  have hvinner : inner ℝ v v = (1 : ℝ) := by rw [real_inner_self_eq_norm_sq, hv, one_pow]
+  rcases eq_or_ne r 0 with rfl | hr
+  · rw [zero_smul, mfderiv_riemannianExp_apply_zero, riemannianExp_zero, hvinner]
+  -- `L` is the differential with domain written as `T_p M` rather than as the tangent space of
+  -- `T_p M` at `r • v`; only in this form do the linear-map rewrites match syntactically.
+  let L : TangentSpace I p →L[ℝ] TangentSpace I (riemannianExp I M p (r • v)) :=
+    mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v)
+  have h : inner ℝ (L (r • v)) (L (r • v)) = inner ℝ (r • v) (r • v) :=
+    inner_mfderiv_riemannianExp_radial hmem
+  rw [L.map_smul, real_inner_smul_left, real_inner_smul_right,
+    real_inner_smul_left, real_inner_smul_right, hvinner] at h
+  have hL : inner ℝ (L v) (L v) = (1 : ℝ) := by
+    apply mul_left_cancel₀ hr
+    apply mul_left_cancel₀ hr
+    simpa only [mul_one] using h
+  exact hL
+
+/-- **Gauss orthogonality in radial and angular coordinates.** The differential of the exponential
+map at `r • v` sends a radial direction `v` and a vector `r • w` with `w ⟂ v` to orthogonal
+vectors. -/
+theorem inner_mfderiv_riemannianExp_radial_angular [I.Boundaryless] [T2Space M] {p : M}
+    {v w : TangentSpace I p} {r : ℝ} (hmem : r • v ∈ expDomain I M p)
+    (hvw : inner ℝ v w = (0 : ℝ)) :
+    inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) v)
+      (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) (r • w)) = 0 := by
+  -- `L` is the differential with domain written as `T_p M`, as in
+  -- `inner_mfderiv_riemannianExp_unit_radial`.
+  let L : TangentSpace I p →L[ℝ] TangentSpace I (riemannianExp I M p (r • v)) :=
+    mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v)
+  have hL : inner ℝ (L v) (L (r • w)) = (0 : ℝ) := by
+    rcases eq_or_ne r 0 with rfl | hr
+    · rw [zero_smul ℝ w, map_zero, inner_zero_right]
+    have h : inner ℝ (L (r • v)) (L (r • w)) = inner ℝ (r • v) (r • w) :=
+      inner_mfderiv_riemannianExp_radial hmem
+    rw [L.map_smul r v, real_inner_smul_left, real_inner_smul_left, real_inner_smul_right,
+      hvw, mul_zero, mul_zero] at h
+    exact (mul_eq_zero.mp h).resolve_left hr
+  exact hL
 
 end TauCeti.Manifold
 

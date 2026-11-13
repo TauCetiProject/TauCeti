@@ -79,27 +79,39 @@ theorem norm_integral_kernel_smul_sub_le (hK : Integrable K μ)
     _ = _ := integral_mul_const _ _
 
 /-- An integrable scalar kernel preserves a Hölder exponent and multiplies its constant by
-its `L¹` norm. Boundedness ensures that every convolution integral is well-defined. -/
+its `L¹` norm. No boundedness is needed: the Hölder condition makes any two translates of the
+integrand differ by an integrable function, so either every convolution integral is
+well-defined or none is, and then all of them vanish. -/
 theorem holderWith_integral_kernel_smul_sub (hK : Integrable K μ)
-    {H α : ℝ≥0} (hα : 0 < α) (hf : HolderWith H α f) (hM : ∀ x, ‖f x‖ ≤ M) :
+    {H α : ℝ≥0} (hα : 0 < α) (hf : HolderWith H α f) :
     HolderWith ((∫ z, ‖K z‖ ∂μ).toNNReal * H) α (fun w ↦ ∫ z, K z • f (w - z) ∂μ) := by
   rw [← holderOnWith_univ]
   apply HolderOnWith.of_dist_le
   intro w _ v _
-  rw [dist_eq_norm, ← integral_sub
-    (integrable_kernel_smul_sub hK (hf.continuous hα) hM w)
-    (integrable_kernel_smul_sub hK (hf.continuous hα) hM v)]
-  calc
-    _ ≤ ∫ z : E, ‖K z‖ * (H * dist w v ^ (α : ℝ)) ∂μ :=
-      norm_integral_le_of_norm_le (hK.norm.mul_const _)
-        (ae_of_all _ fun z ↦ by
-          rw [← smul_sub, norm_smul]
-          apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
-          simpa only [dist_sub_right, dist_eq_norm, sub_sub_sub_cancel_right] using
-            hf.dist_le (w - z) (v - z))
-    _ = _ := by
-      rw [integral_mul_const, NNReal.coe_mul,
-        Real.coe_toNNReal _ (integral_nonneg fun z ↦ norm_nonneg (K z))]
-      ring
+  have hmeas (x : E) : AEStronglyMeasurable (fun z ↦ K z • f (x - z)) μ :=
+    hK.aestronglyMeasurable.smul
+      ((hf.continuous hα).comp (continuous_const.sub continuous_id)).aestronglyMeasurable
+  have hbound (z : E) : ‖K z • f (w - z) - K z • f (v - z)‖ ≤ ‖K z‖ * (H * dist w v ^ (α : ℝ)) := by
+    rw [← smul_sub, norm_smul]
+    apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
+    simpa only [dist_sub_right, dist_eq_norm, sub_sub_sub_cancel_right] using
+      hf.dist_le (w - z) (v - z)
+  have hdiff : Integrable (fun z ↦ K z • f (w - z) - K z • f (v - z)) μ :=
+    (hK.norm.mul_const _).mono' ((hmeas w).sub (hmeas v)) (ae_of_all _ hbound)
+  by_cases hw : Integrable (fun z ↦ K z • f (w - z)) μ
+  · have hv : Integrable (fun z ↦ K z • f (v - z)) μ :=
+      (hw.sub hdiff).congr (ae_of_all _ fun z ↦ by simp)
+    rw [dist_eq_norm, ← integral_sub hw hv]
+    calc
+      _ ≤ ∫ z : E, ‖K z‖ * (H * dist w v ^ (α : ℝ)) ∂μ :=
+        norm_integral_le_of_norm_le (hK.norm.mul_const _) (ae_of_all _ hbound)
+      _ = _ := by
+        rw [integral_mul_const, NNReal.coe_mul,
+          Real.coe_toNNReal _ (integral_nonneg fun z ↦ norm_nonneg (K z))]
+        ring
+  · have hv : ¬ Integrable (fun z ↦ K z • f (v - z)) μ := fun hv ↦
+      hw ((hv.add hdiff).congr (ae_of_all _ fun z ↦ by simp))
+    rw [integral_undef hw, integral_undef hv, dist_self]
+    positivity
 
 end TauCeti

@@ -361,8 +361,7 @@ private theorem qExpansion_coeff_sum_levelRaise {l : ℕ}
   rw [hsum]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   have : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
-  exact CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _)
-    (one_mem_strictPeriods_Gamma1_map _) _ _ n
+  exact CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _) _ _ n
 
 /-- **The squarefree decomposition, as an identity of functions.** For `Δ ∈ S_k(Γ₁(M), χ)` with
 `a_n(Δ) = 0` at the indices coprime to a squarefree `l`, the peeled pieces `F_q` of level

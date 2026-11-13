@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Analysis.Real.Sqrt
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
-public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 
@@ -44,6 +48,9 @@ conjugating the coordinates exchanges them.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
+* `TauCeti.exists_frame_of_tame_of_finrank_eq_two`: a complex structure on a real plane, tamed by
+  an antisymmetric form, is identified with the complex line by a complex-linear isomorphism
+  pulling the form back to `⟪i x, y⟫_ℝ`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: the standard complex line is `ℝ²` with `J(x, y) = (-y, x)` and
@@ -226,5 +233,47 @@ theorem stdComplexSymplecticForm_tames_or_tames_transport_conj (J : AlmostComple
       stdComplexSymplecticForm.Tames (J.transport Complex.conjCLE.toLinearEquiv) := by
   rw [stdComplexSymplecticForm_tames_iff_im_pos, stdComplexSymplecticForm_tames_transport_conj_iff]
   exact (lt_or_gt_of_ne (AlmostComplexStructure.im_apply_one_ne_zero J)).symm
+
+open ContinuousLinearMap in
+open scoped RealInnerProductSpace in
+/-- **The complex line is the model of a tame plane.** A complex structure `K₀` on a real plane
+`V`, tamed by an antisymmetric continuous bilinear form `σ`, admits a complex-linear isomorphism
+`Φ₀ : ℂ → V` pulling `σ` back to `⟪i x, y⟫_ℝ`. -/
+theorem exists_frame_of_tame_of_finrank_eq_two {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [FiniteDimensional ℝ V] (hV : finrank ℝ V = 2) {σ : V →L[ℝ] V →L[ℝ] ℝ}
+    {K₀ : V →L[ℝ] V} (hK₀sq : ∀ x, K₀ (K₀ x) = -x) (hσ : ∀ x y, σ x y = -σ y x)
+    (htame : ∀ x, x ≠ 0 → 0 < σ x (K₀ x)) :
+    ∃ Φ₀ : ℂ →L[ℝ] V, Φ₀.IsInvertible ∧ K₀ ∘L Φ₀ = Φ₀ ∘L lsmul ℝ ℂ I ∧
+      ∀ x y, σ (Φ₀ x) (Φ₀ y) = ⟪lsmul ℝ ℂ I x, y⟫ := by
+  have : Nontrivial V := nontrivial_of_finrank_eq_succ hV
+  obtain ⟨x, hx⟩ := exists_ne (0 : V)
+  have hc : 0 < σ x (K₀ x) := htame x hx
+  set v := (√(σ x (K₀ x)))⁻¹ • x
+  have hv : σ v (K₀ v) = 1 := by
+    simp only [v, map_smul, smul_apply, smul_eq_mul]
+    have := Real.mul_self_sqrt hc.le
+    field_simp
+    linarith
+  have hσ0 (y : V) : σ y y = 0 := by linarith [hσ y y]
+  have hvK : σ (K₀ v) v = -1 := by rw [hσ, hv]
+  set Φ₀ : ℂ →L[ℝ] V := reCLM.smulRight v + imCLM.smulRight (K₀ v)
+  have hΦ₀ (z : ℂ) : Φ₀ z = z.re • v + z.im • K₀ v := by simp [Φ₀]
+  have hinj : Function.Injective Φ₀ := by
+    refine (injective_iff_map_eq_zero Φ₀).2 fun z hz => ?_
+    have h1 := congrArg (σ v) hz
+    have h2 := congrArg (σ (K₀ v)) hz
+    simp only [hΦ₀, map_add, map_smul, smul_eq_mul, hσ0, hv, hvK, map_zero] at h1 h2
+    apply Complex.ext <;> simp <;> linarith
+  let e : ℂ ≃L[ℝ] V := (LinearMap.linearEquivOfInjective (Φ₀ : ℂ →ₗ[ℝ] V) hinj
+    (by rw [Complex.finrank_real_complex, hV])).toContinuousLinearEquiv
+  refine ⟨Φ₀, ⟨e, by ext z; simp [e]⟩, ?_, fun x y => ?_⟩
+  · ext z
+    simp only [coe_comp, Function.comp_apply, hΦ₀, map_add, map_smul, hK₀sq,
+      lsmul_apply, smul_eq_mul, I_mul_re, I_mul_im, neg_smul, smul_neg]
+    abel
+  · simp only [hΦ₀, map_add, map_smul, add_apply,
+      smul_apply, smul_eq_mul, hσ0, hv, hvK, lsmul_apply,
+      Complex.inner, mul_re, mul_im, conj_re, conj_im, I_re, I_im]
+    ring
 
 end TauCeti

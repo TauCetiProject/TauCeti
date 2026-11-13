@@ -74,7 +74,7 @@ its conductor exponent. No squarefreeness of `d` is needed.
 
 public section
 
-open Polynomial NumberField Ideal Module RingOfIntegers UniqueFactorizationMonoid
+open Polynomial NumberField Ideal Module NumberField.RingOfIntegers UniqueFactorizationMonoid
 
 namespace NumberField
 
@@ -207,7 +207,8 @@ theorem ncard_primesOver_quadratic_iff {θ : 𝓞 K} {d : ℤ}
     {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) (hcop : ¬ (p : ℤ) ∣ d) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔ legendreSym p d = 1 := by
   have hp := not_dvd_exponent_of_minpoly_quadratic hmin hgen hodd hcop
-  rw [ncard_primesOver_eq_card_monicFactorsMod θ hp, finrank_rat_eq_two hmin hgen]
+  rw [_root_.RingOfIntegers.ncard_primesOver_eq_card_monicFactorsMod θ hp,
+    finrank_rat_eq_two hmin hgen]
   exact card_monicFactorsMod_quadratic_iff hmin hodd hcop
 
 /-- **A split prime is an ideal norm.** For `K = ℚ(√d)` and an odd prime `p` for which `d` is a
@@ -232,7 +233,7 @@ theorem exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one {θ : 𝓞 K} {d : �
   -- `h𝔮` and `hlo` are the prime and lies-over hypotheses of the norm computation; pass them
   -- explicitly rather than installing them as anonymous local instances.
   exact ⟨𝔮, h𝔮, hlo,
-    @Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank K _ _ p _ 𝔮 h𝔮 hlo hsplit⟩
+    @Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank K _ _ p 𝔮 h𝔮 hlo hsplit⟩
 
 /-! ### The prime `2` for `d ≡ 1 (mod 4)` -/
 

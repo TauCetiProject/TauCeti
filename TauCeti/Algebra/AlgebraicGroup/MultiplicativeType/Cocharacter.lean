@@ -328,16 +328,12 @@ noncomputable instance instCocharacterLatticeAddCommGroup
     AddCommGroup (cocharacterLattice T) :=
   (cocharacterLatticeEquivDual T).addCommGroup
 
-noncomputable instance instCocharacterLatticeModule (T : MultiplicativeTypeCommHopfAlgCat k) :
-    Module ℤ (cocharacterLattice T) :=
-  (cocharacterLatticeEquivDual T).addEquiv.module ℤ
-
 /-- The canonical equivalence from geometric cocharacters to the character dual, as a linear
 equivalence. -/
 noncomputable def cocharacterLatticeLinearEquivDual (T : MultiplicativeTypeCommHopfAlgCat k) :
     cocharacterLattice T ≃ₗ[ℤ]
       Module.Dual ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
-  (cocharacterLatticeEquivDual T).addEquiv.linearEquiv ℤ
+  (cocharacterLatticeEquivDual T).addEquiv.toIntLinearEquiv
 
 /-- Two geometric cocharacters are equal when their functionals agree on every character. -/
 theorem cocharacterLattice_ext {T : MultiplicativeTypeCommHopfAlgCat k}

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import Mathlib.Algebra.Regular.SMul
+public import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Regularity of the parameter on principal-adic completions
@@ -15,11 +16,18 @@ If multiplication by `r` is injective on a module, it remains injective on its `
 completion. This needs neither Noetherianity nor finite generation.
 In particular the parameter remains a non-zero-divisor
 when forming a localization of its own adic completion.
+
+An element that is regular modulo every power of an ideal `I` is regular on the `I`-adic
+completion. For a weakly regular pair `(a, b)` on `M`, the element `a` is regular on `M ⧸ bⁿ M`
+for every `n`, so it is regular on the `(b)`-adic completion of `M`, even when `b` itself is not
+regular on `M`. This is the form in which a
+regular pair `(p, v)` makes the `(v)`-adic completion `p`-torsion-free before it is completed a
+second time, `p`-adically.
 -/
 
 public section
 
-open AdicCompletion
+open AdicCompletion RingTheory.Sequence
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M] {r : R}
 
@@ -56,3 +64,18 @@ theorem IsRegular.adicCompletion (hr : IsRegular r) :
   (Commute.isRegular_iff fun _ ↦ Commute.all _ _).mpr
     ((isSMulRegular_algebraMap_iff (AdicCompletion (Ideal.span {r}) R)).mpr
       hr.left.isSMulRegular.adicCompletion)
+
+/-- An element that is regular on `M ⧸ Iⁿ M` for every `n` is regular on the `I`-adic completion
+of `M`. -/
+theorem AdicCompletion.isSMulRegular_of_forall_isSMulRegular_quotient {I : Ideal R}
+    (h : ∀ n : ℕ, IsSMulRegular (M ⧸ (I ^ n • ⊤ : Submodule R M)) r) :
+    IsSMulRegular (AdicCompletion I M) r :=
+  fun x y hxy ↦ AdicCompletion.ext fun n ↦ h n <| by
+    simpa only [val_smul_apply] using congrArg (fun z ↦ z.val n) hxy
+
+/-- For a weakly regular pair `(a, b)` on `M`, the element `a` is regular on the `(b)`-adic
+completion of `M`. The element `b` need not be regular on `M`. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_adicCompletion {a b : R}
+    (h : IsWeaklyRegular M [a, b]) : IsSMulRegular (AdicCompletion (Ideal.span {b}) M) a :=
+  AdicCompletion.isSMulRegular_of_forall_isSMulRegular_quotient
+    h.isSMulRegular_quotient_pow_smul_top

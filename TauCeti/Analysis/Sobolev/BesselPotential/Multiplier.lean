@@ -46,7 +46,7 @@ integer-order `H^{k,p}`. The product has a real `Lᵖ` representative with the a
 regularity. The coefficient need not decay or be integrable. -/
 theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
     {p : ENNReal} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ)
-    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ} (hM : 0 ≤ M)
+    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ}
     (hbound : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ M)
     {u : Lp ℝ p (volume : Measure E)} (hu : u ∈ realSobolevSubmodule E k p) :
     ∃ v : Lp ℝ p (volume : Measure E), v ∈ realSobolevSubmodule E k p ∧
@@ -65,7 +65,7 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
   have hvval (x : E) : v x = Wkp.value k v₀.val x := coeFn_castLpₗᵢ hvolume _ x
   have hv : (v : E → ℝ) =ᵐ[volume] fun x ↦ ψ x * Wkp.value k w x := by
     have h := Wkp0.value_contDiffSMulL_ae (mu := (volume : Measure E)) (Omega := ⊤)
-      (p := p) k hψ hM (fun j hj x _ ↦ hbound j hj x) ⟨w, hw₀⟩
+      (p := p) k hψ (fun j hj x _ ↦ hbound j hj x) ⟨w, hw₀⟩
     have h' := (ae_restrict_iff' (⊤ : TopologicalSpace.Opens E).isOpen.measurableSet).mp h
     filter_upwards [h'] with x hx
     exact (hvval x).trans (hx (Set.mem_univ x))
@@ -74,5 +74,29 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
     exact ⟨v₀.val, Filter.Eventually.of_forall fun x ↦ (hvval x).symm⟩
   · filter_upwards [hv, hw] with x hvx hwx
     rw [hvx, hwx]
+
+/-- A smooth real coefficient whose derivatives through order `k` are bounded preserves the
+pointwise representatives of real integer-order `H^{k,p}` functions. The bound on each
+derivative may depend on its order. -/
+theorem mul_mem_realSobolevFunctions_of_bounded_derivatives
+    {p : ENNReal} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ)
+    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hbound : ∀ j ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ C)
+    {f : E → ℝ} (hf : f ∈ realSobolevFunctions E k p) :
+    (fun x ↦ ψ x * f x) ∈ realSobolevFunctions E k p := by
+  -- Combine the bounds of the finitely many orders `j ≤ k` into one.
+  choose! C hC using fun j (hj : j ∈ Finset.range (k + 1)) ↦
+    hbound j (Nat.lt_succ_iff.1 (Finset.mem_range.1 hj))
+  have hM : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ ∑ i ∈ Finset.range (k + 1), |C i| :=
+    fun j hj x ↦ (hC j (Finset.mem_range.2 (Nat.lt_succ_of_le hj)) x).trans <|
+      (le_abs_self _).trans <| Finset.single_le_sum (fun i _ ↦ abs_nonneg (C i))
+        (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨v, hv, hvu⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives hp
+    hp_top k hψ hM
+    (mem_realSobolevSubmodule.2 hu)
+  refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hv) ?_
+  filter_upwards [hvu, huf] with x hx hux
+  rw [hx, hux]
 
 end TemperedDistribution

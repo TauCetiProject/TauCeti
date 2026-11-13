@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import TauCeti.Topology.VectorBundle.GramSchmidt
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Geometry.Manifold.Algebra.Structures
@@ -24,6 +26,13 @@ The sectionwise induction follows `ContinuousWithinAt.gramSchmidt_bundle` in
 `TauCeti.Topology.VectorBundle.GramSchmidt`, which adapts Patrick Massot and Michael Rothgang's
 construction in Mathlib PR [#26221](https://github.com/leanprover-community/mathlib4/pull/26221).
 Here smooth section operations replace the coordinate calculations of the continuity proof.
+In particular, the Gram–Schmidt orthonormal basis `Bundle.Trivialization.orthonormalBasis` of a
+compatible local trivialization of a finite-rank Riemannian bundle is smooth over its base set
+(`Bundle.Trivialization.contMDiffOn_orthonormalBasis`).
+
+Orthonormalizing the local frame of a bundle trivialization shows that every point of a `C^n`
+Riemannian vector bundle with finite-dimensional model fibre has a neighbourhood carrying a `C^n`
+orthonormal local frame (`TauCeti.exists_isLocalFrameOn_orthonormal`).
 -/
 
 public section
@@ -95,26 +104,73 @@ theorem ContMDiffAt.gramSchmidtNormed_bundle
         (gramSchmidt ℝ (fun i ↦ v i y) j)) hh
   exact (hn.inv₀ (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero j hli))).smul_section hg
 
+open scoped Classical in
+/-- The vectors of the Gram–Schmidt orthonormal basis `e.orthonormalBasis c` of the fibres over the
+base set of a compatible local trivialization are `C^n` sections over that base set (extended by
+`0` outside it, as for `Bundle.Trivialization.localFrame`). This is the smooth counterpart of
+`Bundle.Trivialization.continuous_orthonormalBasis`. -/
+theorem Bundle.Trivialization.contMDiffOn_orthonormalBasis [ContMDiffVectorBundle n F V I]
+    [Fintype ι] (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M))
+    [MemTrivializationAtlas e] (c : Module.Basis ι ℝ F) (i : ι) :
+    CMDiff[e.baseSet] n
+      (T% fun y ↦ (if hy : y ∈ e.baseSet then e.orthonormalBasis c ⟨y, hy⟩ i else 0 : V y)) := by
+  have hfr := e.isLocalFrameOn_localFrame_baseSet I n c
+  have heq {y : M} (hy : y ∈ e.baseSet) :
+      (if hy : y ∈ e.baseSet then e.orthonormalBasis c ⟨y, hy⟩ i else 0 : V y) =
+        gramSchmidtNormed ℝ (fun j ↦ e.localFrame c j y) i := by
+    rw [dite_eq_left_of_eq_true (eq_true hy), orthonormalBasis_apply]
+    congr 1
+    funext j
+    rw [e.localFrame_apply_of_mem_baseSet c hy, basisAt, Module.Basis.map_apply,
+      e.symmL_apply hy, e.linearEquivAt_symm_apply]
+  intro x hx
+  refine ((ContMDiffAt.gramSchmidtNormed_bundle (fun j ↦ hfr.contMDiffAt e.open_baseSet hx j)
+    (hfr.linearIndependent hx) i).contMDiffWithinAt).congr (fun y hy ↦ ?_) ?_
+  · exact congrArg (TotalSpace.mk' F y) (heq hy)
+  · exact congrArg (TotalSpace.mk' F x) (heq hx)
+
+variable [ContMDiffVectorBundle n F V I] [FiniteDimensional ℝ F] in
+/-- Every point of a `C^n` Riemannian vector bundle with finite-dimensional model fibre `F` has an
+open neighbourhood carrying a `C^n` local frame which is orthonormal at each of its points. -/
+theorem TauCeti.exists_isLocalFrameOn_orthonormal (x₀ : M) :
+    ∃ U : Set M, IsOpen U ∧ x₀ ∈ U ∧ ∃ u : Fin (Module.finrank ℝ F) → Π x : M, V x,
+      IsLocalFrameOn I F n u U ∧ ∀ x ∈ U, Orthonormal ℝ (u · x) := by
+  let e := trivializationAt F V x₀
+  have hs := e.isLocalFrameOn_localFrame_baseSet I n (Module.finBasis ℝ F)
+  refine ⟨e.baseSet, e.open_baseSet, FiberBundle.mem_baseSet_trivializationAt' x₀,
+    fun i x ↦ gramSchmidtNormed ℝ (fun j ↦ e.localFrame (Module.finBasis ℝ F) j x) i,
+    ⟨fun hx ↦ (gramSchmidtNormed_orthonormal (hs.linearIndependent hx)).linearIndependent,
+      fun hx ↦ ?_, fun i x hx ↦ ?_⟩,
+    fun x hx ↦ gramSchmidtNormed_orthonormal (hs.linearIndependent hx)⟩
+  · rw [span_gramSchmidtNormed_range, span_gramSchmidt]
+    exact hs.generating hx
+  · exact (ContMDiffAt.gramSchmidtNormed_bundle
+      (fun j ↦ hs.contMDiffAt e.open_baseSet hx j) (hs.linearIndependent hx) i).contMDiffWithinAt
+
 section Differentiable
 
 variable [IsContMDiffRiemannianBundle I 1 F V]
 
 omit [IsContMDiffRiemannianBundle I n F V] in
-/-- Fiberwise Gram–Schmidt preserves differentiability at a linearly independent family. -/
-theorem MDifferentiableAt.gramSchmidt_bundle
-    (hv : ∀ i, MDiffAt (T% (v i)) x)
-    (hli : LinearIndependent ℝ (fun i ↦ v i x)) (j : ι) :
+/-- Fiberwise Gram–Schmidt is differentiable at every point where the input sections up to and
+including the index are differentiable and the input vectors strictly before the index are linearly
+independent. The input vector at the index itself may lie in their span. -/
+theorem MDifferentiableAt.gramSchmidt_bundle (j : ι)
+    (hv : ∀ i ≤ j, MDiffAt (T% (v i)) x)
+    (hli : LinearIndepOn ℝ (fun i ↦ v i x) (Set.Iio j)) :
     MDiffAt (T% (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j)) x := by
   classical
   induction j using WellFoundedLT.induction with
   | ind j ih =>
-    have hg (i : ι) (hi : i < j) := ih i hi
+    have hg (i : ι) (hi : i < j) :=
+      ih i hi (fun k hk ↦ hv k (hk.trans hi.le)) (hli.mono (Set.Iio_subset_Iio hi.le))
     have hc (i : ι) (hi : i < j) :
         MDiffAt (fun y ↦ inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i) (v j y) /
           inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i)
             (gramSchmidt ℝ (fun k ↦ v k y) i)) x :=
-      ((hg i hi).inner_bundle (hv j)).div ((hg i hi).inner_bundle (hg i hi))
-        (inner_self_ne_zero.mpr (gramSchmidt_ne_zero i hli))
+      ((hg i hi).inner_bundle (hv j le_rfl)).div ((hg i hi).inner_bundle (hg i hi))
+        (inner_self_ne_zero.mpr (gramSchmidt_ne_zero_coe i
+          (hli.mono (Set.Iic_subset_Iio.2 hi)).linearIndependent))
     have hformula : (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j) =
         v j - ∑ i ∈ Finset.Iio j,
           (fun y ↦ inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i) (v j y) /
@@ -124,7 +180,7 @@ theorem MDifferentiableAt.gramSchmidt_bundle
       funext y
       simp only [Pi.sub_apply, Finset.sum_apply, real_inner_self_eq_norm_sq]
       exact eq_sub_of_add_eq (gramSchmidt_def'' ℝ (fun i ↦ v i y) j).symm
-    have hs := mdifferentiableAt_sub_section (hv j) (MDifferentiableAt.sum_section fun i hi ↦
+    have hs := mdifferentiableAt_sub_section (hv j le_rfl) (MDifferentiableAt.sum_section fun i hi ↦
       (hc i (Finset.mem_Iio.mp hi)).smul_section (hg i (Finset.mem_Iio.mp hi)))
     apply hs.congr_of_eventuallyEq
     apply Filter.Eventually.of_forall

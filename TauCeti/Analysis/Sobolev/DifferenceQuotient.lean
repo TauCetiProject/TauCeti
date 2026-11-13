@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Rademacher
+import TauCeti.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.Topology.Algebra.Group.Order
 
@@ -96,6 +97,7 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
     · rw [hwS hx]
     · simp [lineDeriv_of_notMem_tsupport hx]
   obtain ⟨L, hL⟩ := φ.contDiff.lipschitzWith_of_hasCompactSupport φ.hasCompactSupport (by simp)
+  obtain ⟨M, hφM⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
   -- For small `t`, the translation moves onto the test function.
   have hEq : ∀ᶠ t in 𝓝[≠] (0 : ℝ), ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ =
       ∫ x, t⁻¹ * (u (x + t • v) - u x) * φ x ∂μ := by
@@ -105,26 +107,16 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
       by_cases hx : x ∈ tsupport (φ : E → ℝ)
       · rw [ht x hx, hwS hx]
       · simp [image_eq_zero_of_notMem_tsupport hx]
-    obtain ⟨M, hM⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
-    have h1 : Integrable (fun x => w (x + t • v) * φ x) μ :=
-      (hw.comp_add_right (t • v)).mul_bdd φ.aestronglyMeasurable (ae_of_all _ hM)
-    have h2 : Integrable (fun x => w x * φ x) μ :=
-      hw.mul_bdd φ.aestronglyMeasurable (ae_of_all _ hM)
-    have h3 : Integrable (fun x => w x * φ (x + t • -v)) μ :=
-      hw.mul_bdd (φ.continuous.comp (continuous_id.add continuous_const)).aestronglyMeasurable
-        (ae_of_all _ fun x => hM _)
     simp_rw [hpt]
+    have key := integral_comp_add_sub_mul_eq hw φ.continuous.measurable hφM (t • v)
     calc ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ
-        = t⁻¹ * (∫ y, w y * φ (y + t • -v) ∂μ - ∫ y, w y * φ y ∂μ) := by
-          rw [← integral_sub h3 h2, ← integral_const_mul]
+        = ∫ y, t⁻¹ * ((φ (y - t • v) - φ y) * w y) ∂μ := by
           congr 1 with y
-          simp only [smul_eq_mul]
+          simp only [smul_eq_mul, smul_neg, sub_eq_add_neg]
           ring
-      _ = t⁻¹ * (∫ x, w (x + t • v) * φ x ∂μ - ∫ y, w y * φ y ∂μ) := by
-          rw [← integral_add_right_eq_self (fun y => w y * φ (y + t • -v)) (t • v)]
-          simp
+      _ = t⁻¹ * ∫ x, (w (x + t • v) - w x) * φ x ∂μ := by rw [integral_const_mul, key]
       _ = ∫ x, t⁻¹ * (w (x + t • v) - w x) * φ x ∂μ := by
-          rw [← integral_sub h1 h2, ← integral_const_mul]
+          rw [← integral_const_mul]
           congr 1 with x
           ring
   refine Tendsto.congr' hEq ?_
@@ -191,15 +183,15 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le {
   have hHolder : ‖∫ x in S, D x * φ x ∂μ‖ₑ ≤ ENNReal.ofReal C * eLpNorm (φ : E → ℝ) 2 μ := by
     let _ : ENNReal.HolderTriple 2 2 1 := ⟨by simp [ENNReal.inv_two_add_inv_two]⟩
     calc ‖∫ x in S, D x * φ x ∂μ‖ₑ ≤ eLpNorm (fun x => D x * φ x) 1 (μ.restrict S) :=
-          (enorm_integral_le_lintegral_enorm _).trans_eq
-            (eLpNorm_one_eq_lintegral_enorm (hDmeas.restrict.mul φ.aestronglyMeasurable)).symm
+          (eNorm_integral_le_lintegral_eNorm _).trans_eq
+            (eLpNorm_one_eq_lintegral_eNorm (hDmeas.restrict.mul φ.aestronglyMeasurable)).symm
       _ ≤ eLpNorm D 2 (μ.restrict S) * eLpNorm (φ : E → ℝ) 2 (μ.restrict S) := by
           simpa using eLpNorm_le_eLpNorm_mul_eLpNorm (p := 2) (q := 2) (r := 1)
             (· * ·) 1 continuous_mul hDmeas.restrict φ.aestronglyMeasurable
-            (Eventually.of_forall fun _ => by simp [nnnorm_mul])
+            (Eventually.of_forall fun _ => by simp [nnNorm_mul])
       _ ≤ ENNReal.ofReal C * eLpNorm (φ : E → ℝ) 2 μ :=
           mul_le_mul' hDbound (eLpNorm_restrict_le _ _ _ _)
-  rw [hint, ← Real.norm_eq_abs, ← toReal_enorm, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
+  rw [hint, ← Real.norm_eq_abs, ← toReal_eNorm, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).eLpNorm_ne_top) hHolder
 

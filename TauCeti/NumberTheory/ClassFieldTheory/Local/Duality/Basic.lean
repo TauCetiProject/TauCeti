@@ -148,13 +148,14 @@ instance instFiniteTateDual [NeZero n] (A : GalRep n F) [Finite A.V] : Finite (t
   inferInstanceAs (Finite (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V))
 
 /-- The Tate dual of a finite smooth discrete module is smooth discrete. -/
-theorem isSmoothDiscrete_tateDual (A : GalRep n F) [DiscreteTopology A.V] [Finite A.V]
+theorem isSmoothDiscrete_tateDual (A : GalRep n F) [Finite A.V]
     (hA : IsSmoothDiscrete (ZMod n) A) : IsSmoothDiscrete (ZMod n) (tateDual A) := by
+  let _ := hA.discreteTopology
   let _ := hA.continuousSMul
   exact ofDiscreteModule_isSmoothDiscrete (ZMod n) (Field.absoluteGaloisGroup F) _
 
 /-- Smoothness of the Tate dual, available to local-duality consumers by instance search. -/
-instance instFactIsSmoothDiscreteTateDual (A : GalRep n F) [DiscreteTopology A.V] [Finite A.V]
+instance instFactIsSmoothDiscreteTateDual (A : GalRep n F) [Finite A.V]
     [hA : Fact (IsSmoothDiscrete (ZMod n) A)] : Fact (IsSmoothDiscrete (ZMod n) (tateDual A)) :=
   ⟨isSmoothDiscrete_tateDual A hA.out⟩
 

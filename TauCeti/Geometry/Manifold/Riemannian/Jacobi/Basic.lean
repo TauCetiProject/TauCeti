@@ -122,7 +122,7 @@ theorem isJacobiFieldOn_zero (hγ : IsGeodesicCurveOn I γ s) :
     IsJacobiFieldOn I γ (fun r ↦ (0 : TangentSpace I (γ r))) s := by
   refine ⟨hγ, ?_, ?_⟩
   · exact (Bundle.contMDiff_zeroSection ℝ (TangentSpace I)).comp_contMDiffOn hγ.contMDiffOn
-  · intro r hr
+  · intro r _
     have hzero : alongCurveWithin (leviCivitaConnection I M) γ
         (fun r ↦ (0 : TangentSpace I (γ r))) s = fun r ↦ 0 := by
       funext r
@@ -221,10 +221,10 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_wronskian (hV : IsJacobiFieldOn I γ V 
         inner ℝ (V r) (alongCurveWithin (leviCivitaConnection I M) γ W s r)) 0 s t := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ := hV.isGeodesicCurveOn.mdifferentiableOn t ht
-  have h₁ := hm.hasDerivWithinAt_inner_alongCurveWithin (hV.uniqueDiffOn t ht) hγ
+  have h₁ := hm.hasDerivWithinAt_inner_alongCurveWithin hγ
     (hV.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
     (hW.differentiableWithinAt_sectionCoord ht)
-  have h₂ := hm.hasDerivWithinAt_inner_alongCurveWithin (hV.uniqueDiffOn t ht) hγ
+  have h₂ := hm.hasDerivWithinAt_inner_alongCurveWithin hγ
     (hV.differentiableWithinAt_sectionCoord ht)
     (hW.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
   have hcurv : inner ℝ

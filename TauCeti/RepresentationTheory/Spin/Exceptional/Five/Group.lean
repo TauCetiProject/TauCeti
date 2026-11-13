@@ -51,8 +51,7 @@ private noncomputable def spinFiveExteriorBasis
     Basis (Fin 2 ⊕ Fin 2) K (ExteriorAlgebra K P.W) :=
   b.ExteriorAlgebra.reindex spinFiveIndexEquiv
 
-private noncomputable def spinFiveEquivMatrix
-    [NeZero (2 : K)] [FiniteDimensional K V]
+private noncomputable def spinFiveEquivMatrix [NeZero (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W)
     (hV : finrank K V = 5) :
     ↥(CliffordAlgebra.even Q) ≃ₐ[K] Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) K :=
@@ -61,7 +60,7 @@ private noncomputable def spinFiveEquivMatrix
 
 /-- In the Fock coordinates, the spin representation acts through the matrix model of the even
 Clifford algebra. -/
-private theorem equivFun_spinRep_apply [NeZero (2 : K)] [FiniteDimensional K V]
+private theorem equivFun_spinRep_apply [NeZero (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W) (hV : finrank K V = 5)
     (s : spinGroup Q) (x : ExteriorAlgebra K P.W) :
     (spinFiveExteriorBasis P b).equivFun ((spinRep Q P) s x) =

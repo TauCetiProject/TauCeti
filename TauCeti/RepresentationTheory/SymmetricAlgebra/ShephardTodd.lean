@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.SymmetricAlgebra.Regular
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 import TauCeti.RepresentationTheory.SymmetricAlgebra.FiniteType
 import TauCeti.RepresentationTheory.SymmetricAlgebra.ProductOfDegrees
-import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
+import TauCeti.RingTheory.RegularLocalRing.Descent
 
 /-!
 # The Chevalley–Shephard–Todd theorem
@@ -127,12 +127,9 @@ theorem exists_bijective_aeval_symmetricAlgebraInvariants_of_faithfullyFlat
     ∃ f : Fin (Module.finrank k M) → ρ.symmetricAlgebraInvariants,
       (∀ i, ∃ d, 0 < d ∧ (f i : SymmetricAlgebra k M) ∈ homogeneousSubmodule k M d) ∧
         Function.Bijective (MvPolynomial.aeval (R := k) f) := by
-  have : IsNoetherianRing ρ.symmetricAlgebraInvariants := Algebra.FiniteType.isNoetherianRing k _
   -- Regularity of `Sym M` descends to `A`, in particular to its vertex.
   have : IsRegularRing ρ.symmetricAlgebraInvariants :=
-    TauCeti.IsRegularRing.of_faithfullyFlat (R := SymmetricAlgebra k M) <| by
-      rw [ringKrullDim_eq_finrank k M]
-      exact (WithBot.coe_lt_coe.mpr (ENat.natCast_lt_top _)).ne
+    TauCeti.IsRegularRing.of_faithfullyFlat (S := SymmetricAlgebra k M)
   have := IsRegularRing.isRegularLocalRing_localization
     ((HomogeneousIdeal.irrelevant (homogeneousSubmodule k M)).toIdeal.under
       ρ.symmetricAlgebraInvariants)

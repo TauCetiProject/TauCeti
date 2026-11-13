@@ -14,13 +14,13 @@ import Mathlib.Analysis.LocallyConvex.HahnBanach
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.LinearAlgebra.Multilinear.Basis
-import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
 
@@ -130,6 +130,16 @@ theorem translatePairing_zero (ρ : 𝓓(V, ℝ)) :
   ext x
   simp [translatePairing]
 
+/-- The regularization by the zero test function vanishes. -/
+@[simp]
+theorem translatePairing_zero_kernel (T : 𝓓'(Ω, F)) :
+    T.translatePairing (0 : 𝓓(V, ℝ)) = 0 := by
+  funext x
+  by_cases hx : MapsTo (· + x) (tsupport (0 : 𝓓(V, ℝ))) Ω
+  · rw [translatePairing_eq T (φ := 0) fun y => by simp]
+    simp
+  · exact translatePairing_eq_zero_of_not_mapsTo T hx
+
 /-- Regularization is additive in the distribution. -/
 @[simp]
 theorem translatePairing_add (T S : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
@@ -177,14 +187,17 @@ private theorem translatePairing_add_sub_sub_eq (T : 𝓓'(Ω, F)) (ρ : 𝓓(V,
     translatePairing_eq _ (translateOfMapsTo_apply ρ hx), lineDerivOp_apply_apply]
   simp [sub_eq_add_neg]
 
-variable [FiniteDimensional ℝ E]
-
 /-- The regularization is differentiable at every admissible translation, with derivative given
 by the regularizations of the distributional derivatives of `T`. -/
 private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
     (hx : MapsTo (· + x) (tsupport ρ) Ω) :
     ∃ L : E →L[ℝ] F, HasFDerivAt (T.translatePairing ρ) L x ∧
       ∀ v, L v = (∂_{v} T).translatePairing ρ x := by
+  rcases ρ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ ρ.contDiff.continuous with h | _
+  · -- If `ρ = 0` every translate is zero, so the regularization and its derivatives vanish.
+    obtain rfl : ρ = 0 := TestFunction.ext (congrFun h)
+    exact ⟨0, by rw [translatePairing_zero_kernel]; exact hasFDerivAt_const (0 : F) x,
+      fun v => by simp⟩
   let L : E →L[ℝ] F := LinearMap.toContinuousLinearMap
     { toFun := fun v => (∂_{v} T).translatePairing ρ x
       map_add' := fun v w => by simp [lineDerivOp_left_add]
@@ -196,42 +209,31 @@ private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : �
   obtain ⟨δ, hδ, hδΩ, hδx⟩ := exists_cthickening_tsupport_translateOfMapsTo_subset ρ hx
   let K : Compacts E := ⟨cthickening δ (tsupport φ₀), φ₀.hasCompactSupport.isCompact.cthickening⟩
   obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le (K := K) hδΩ
-  rw [hasFDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff]
-  intro c hc
-  -- Choose a radius on which all derivatives of order at most `N` of the Taylor remainder are
-  -- bounded by `c / (C + 1) * ‖h‖`.
-  have hε : 0 < c / (C + 1) := div_pos hc (by linarith)
-  have hrem := fun i => φ₀.hasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le
-    φ₀.contDiff (n := ∞) (i := i) (by exact_mod_cast le_top) hε
-  choose r hr hrem using hrem
-  let r₀ := min δ ((Finset.range (N + 1)).inf' (by simp) r)
-  have hr₀ : 0 < r₀ := lt_min hδ ((Finset.lt_inf'_iff _).2 fun i _ => hr i)
-  filter_upwards [ball_mem_nhds (0 : E) hr₀] with h hh
-  rw [mem_ball_zero_iff] at hh
-  have hhδ : ‖h‖ ≤ δ := hh.le.trans (min_le_left _ _)
-  -- The translate of `ρ` by `x + h`, and the Taylor remainder as a test function on `Ω`.
-  let φh : 𝓓(Ω, ℝ) := translateOfMapsTo ρ (hδx h hhδ)
-  let R : 𝓓(Ω, ℝ) := φh - φ₀ + ∂_{h} φ₀
-  have hR : (R : E → ℝ) = fun y => φ₀ (y - h) - φ₀ y + fderiv ℝ φ₀ y h := by
+  -- For `‖h‖ ≤ δ`, the Taylor remainder of the translates of `ρ`, as a test function on `Ω`.
+  let R (h : E) : 𝓓(Ω, ℝ) :=
+    if hh : ‖h‖ ≤ δ then translateOfMapsTo ρ (hδx h hh) - φ₀ + ∂_{h} φ₀ else 0
+  have hR (h : E) (hh : ‖h‖ ≤ δ) :
+      (R h : E → ℝ) = fun y => φ₀ (y - h) - φ₀ y + fderiv ℝ φ₀ y h := by
     ext y
     have hd := φ₀.contDiff.differentiable (by simp) y
-    simp [R, φh, hφ₀, translateOfMapsTo_apply, hd.lineDeriv_eq_fderiv, sub_sub, add_comm h x]
-  have hRK : tsupport R ⊆ K := by
-    rw [hR]
-    exact TauCeti.tsupport_sub_sub_add_fderiv_subset _ hhδ
-  have hRbound : ∀ i ≤ N, ∀ y, ‖iteratedFDeriv ℝ i R y‖ ≤ c / (C + 1) * ‖h‖ := by
-    intro i hi y
-    have hri : ‖h‖ < r i := hh.trans_le ((min_le_right _ _).trans
-      (Finset.inf'_le _ (Finset.mem_range.2 (Nat.lt_succ_of_le hi))))
-    rw [hR]
-    exact hrem i h hri y
-  rw [show L h = (∂_{h} T).translatePairing ρ x from rfl,
-    translatePairing_add_sub_sub_eq T ρ hx (hδx h hhδ)]
-  calc ‖T R‖ ≤ C * (c / (C + 1) * ‖h‖) :=
-        hT R hRK _ (by positivity) hRbound
-    _ = C / (C + 1) * (c * ‖h‖) := by ring
-    _ ≤ c * ‖h‖ :=
-      mul_le_of_le_one_left (by positivity) ((div_le_one (by linarith)).2 (by linarith))
+    simp [R, hh, hφ₀, translateOfMapsTo_apply, hd.lineDeriv_eq_fderiv, sub_sub, add_comm h x]
+  have hδ' : ∀ᶠ h in 𝓝 (0 : E), ‖h‖ ≤ δ := by
+    filter_upwards [closedBall_mem_nhds (0 : E) hδ] with h hh using mem_closedBall_zero_iff.1 hh
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero]
+  refine (isLittleO_apply_of_norm_iteratedFDeriv_le (R := R) hC hT ?_ fun i _ ε hε => ?_).congr' ?_
+    EventuallyEq.rfl
+  · filter_upwards [hδ'] with h hh
+    rw [hR h hh]
+    exact TauCeti.tsupport_sub_sub_add_fderiv_subset _ hh
+  · obtain ⟨r, hr, hrem⟩ := φ₀.hasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le
+      φ₀.contDiff (n := ∞) (i := i) (by exact_mod_cast le_top) hε
+    filter_upwards [hδ', ball_mem_nhds (0 : E) hr] with h hh hhr
+    rw [hR h hh]
+    exact hrem h (mem_ball_zero_iff.1 hhr)
+  · filter_upwards [hδ'] with h hh
+    rw [show L h = (∂_{h} T).translatePairing ρ x from rfl,
+      translatePairing_add_sub_sub_eq T ρ hx (hδx h hh)]
+    simp only [R, φ₀, hh, dite_true]
 
 /-- The regularization is differentiable at every admissible translation. -/
 theorem differentiableAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
@@ -252,6 +254,10 @@ theorem fderiv_translatePairing_apply (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x 
 set of translations for which `ρ (· - x)` is supported in `Ω`. -/
 theorem contDiffOn_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
     ContDiffOn ℝ ∞ (T.translatePairing ρ) {x | MapsTo (· + x) (tsupport ρ) Ω} := by
+  rcases ρ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ ρ.contDiff.continuous with h | _
+  · obtain rfl : ρ = 0 := TestFunction.ext (congrFun h)
+    rw [translatePairing_zero_kernel]
+    exact contDiffOn_const
   have hU := ρ.hasCompactSupport.isCompact.isOpen_setOf_mapsTo_add Ω.isOpen
   rw [contDiffOn_infty]
   intro n
@@ -278,6 +284,8 @@ theorem translatePairing_eq_of_lineDerivOp_eq_zero {T : 𝓓'(Ω, F)}
     (fun z hz => ?_) hx hy
   ext v
   simp [fderiv_translatePairing_apply T ρ (hU z hz), hT]
+
+variable [FiniteDimensional ℝ E]
 
 section Convolution
 
@@ -307,9 +315,6 @@ private theorem basisEvalCLM_injective (N : ℕ) : Injective (basisEvalCLM (E :=
 vectors. -/
 private theorem exists_norm_le_mul_norm_basisEvalCLM (N : ℕ) :
     ∃ C : ℝ≥0, ∀ A : Π i : Fin (N + 1), E [×i]→L[ℝ] ℝ, ‖A‖ ≤ C * ‖basisEvalCLM N A‖ := by
-  have _ (i : Fin (N + 1)) : FiniteDimensional ℝ (E [×i]→L[ℝ] ℝ) :=
-    Module.Finite.of_injective ContinuousMultilinearMap.toMultilinearMapLinear
-      ContinuousMultilinearMap.toMultilinearMap_injective
   obtain ⟨C, -, hC⟩ := (basisEvalCLM (E := E) N).toLinearMap.exists_antilipschitzWith
     (LinearMap.ker_eq_bot.2 (basisEvalCLM_injective N))
   exact ⟨C, ZeroHomClass.bound_of_antilipschitz _ hC⟩

@@ -27,7 +27,14 @@ rotation of the cylinder: `φ_∞(z + i/2) = -φ_∞(z)`
 (`Puncture.re_endCoord_inf_neg`), shifts the angular coordinate by `1/2` modulo `1`
 (`Puncture.exists_endCoord_inf_neg`), and reverses the angular form
 (`Puncture.endAngularForm_inf_neg`). The remaining translation by `1` moves the centre of the
-output end; it is absorbed by the input-exchange family of Floer perturbation data.
+output end; it is absorbed by the input-exchange family of Floer perturbation data. The domain
+of the member of that family whose output end is recentred at `c` is truncated by
+`TauCeti.ThricePuncturedSphere.exchangeTruncation c R`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`,
+bounded by the circle `s = -R` of the recentred output end, with the parts `s > R` of the two input
+ends removed. It is a compact subset of `S`
+(`TauCeti.ThricePuncturedSphere.isCompact_exchangeTruncation`,
+`TauCeti.ThricePuncturedSphere.exchangeTruncation_subset`), and for `c = 0` it is the truncation
+`S_R` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_zero`).
 
 ## References
 
@@ -106,4 +113,70 @@ theorem exists_endCoord_inf_neg {w : ℂ} (hw : w ≠ 0) :
   rw [hk]
   ring
 
+/-- Away from the centre of the end at `∞`, a function of period one takes the same value at the
+angular coordinate of `w` as at the angular coordinate of `-w` shifted by `1/2`. -/
+theorem apply_im_endCoord_inf_neg_add_half {α : Type*} {f : ℝ → α} (hf : Function.Periodic f 1)
+    {w : ℂ} (hw : w ≠ 0) : f ((inf.endCoord (-w)).im + 1 / 2) = f (inf.endCoord w).im := by
+  obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
+  have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
+    simp [hk]
+    ring
+  rw [him]
+  simpa using hf.int_mul (k + 1) (inf.endCoord w).im
+
 end TauCeti.ThricePuncturedSphere.Puncture
+
+namespace TauCeti.ThricePuncturedSphere
+
+open Puncture
+
+/-- A point at distance at least `r + 1/2` from a real number `c` within distance `r` of both
+inputs `0` and `1` is at distance at least `1/2` from both inputs. -/
+theorem half_le_norm_of_le_norm_sub {c r : ℝ} (h₀ : |c| ≤ r) (h₁ : |c - 1| ≤ r) {w : ℂ}
+    (hw : r + 1 / 2 ≤ ‖w - c‖) : 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ := by
+  have hc₁ : ‖(c : ℂ) - 1‖ = |c - 1| := by
+    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+  have hw₀ := norm_sub_le w (c : ℂ)
+  have hw₁ := norm_sub_le (w - 1) ((c : ℂ) - 1)
+  rw [Complex.norm_real, Real.norm_eq_abs] at hw₀
+  rw [sub_sub_sub_cancel_right, hc₁] at hw₁
+  constructor <;> linarith
+
+/-- The truncation of the thrice-punctured sphere `S = ℂ ∖ {0, 1}` with its output end recentred
+at `c`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`, bounded by the circle `s = -R` of the end at `∞`
+translated by `c`, with the open discs of radius `exp (-2πR) / 2` about `0` and `1`, the parts
+`s > R` of the two input ends, removed. -/
+noncomputable def exchangeTruncation (c R : ℝ) : Set ℂ :=
+  {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖} ∩ {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖} ∩
+    Metric.closedBall (c : ℂ) (2 * Real.exp (2 * π * R))
+
+@[simp]
+theorem mem_exchangeTruncation {c R : ℝ} {w : ℂ} :
+    w ∈ exchangeTruncation c R ↔ Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ ∧
+      Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ ∧ ‖w - c‖ ≤ 2 * Real.exp (2 * π * R) := by
+  simp [exchangeTruncation, dist_eq_norm, and_assoc]
+
+/-- Without recentring, the truncation is the truncation `S_R` of the thrice-punctured sphere. -/
+@[simp]
+theorem exchangeTruncation_zero (R : ℝ) : exchangeTruncation 0 R = truncation R := by
+  rw [truncation_eq, exchangeTruncation, Complex.ofReal_zero]
+
+/-- The truncation with recentred output end is closed. -/
+theorem isClosed_exchangeTruncation (c R : ℝ) : IsClosed (exchangeTruncation c R) :=
+  ((isClosed_le continuous_const continuous_norm).inter (isClosed_le continuous_const
+    (continuous_norm.comp (continuous_id.sub continuous_const)))).inter Metric.isClosed_closedBall
+
+/-- The truncation with recentred output end is compact. -/
+theorem isCompact_exchangeTruncation (c R : ℝ) : IsCompact (exchangeTruncation c R) :=
+  Metric.isCompact_of_isClosed_isBounded (isClosed_exchangeTruncation c R)
+    (Metric.isBounded_closedBall.subset Set.inter_subset_right)
+
+/-- The truncation with recentred output end lies in the thrice-punctured sphere
+`S = ℂ ∖ {0, 1}`. -/
+theorem exchangeTruncation_subset (c R : ℝ) : exchangeTruncation c R ⊆ {w | w ≠ 0 ∧ w ≠ 1} := by
+  intro w hw
+  obtain ⟨h₀, h₁, -⟩ := mem_exchangeTruncation.1 hw
+  have hr : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
+  exact ⟨fun h ↦ by simp [h] at h₀; linarith, fun h ↦ by simp [h] at h₁; linarith⟩
+
+end TauCeti.ThricePuncturedSphere

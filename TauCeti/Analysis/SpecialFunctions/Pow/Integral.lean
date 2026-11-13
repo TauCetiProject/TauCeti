@@ -44,6 +44,10 @@ exchanged: the integral converges at infinity and diverges at the origin, so the
 `s < -1` and the value is `∞` exactly when the threshold is `0`. The two together are what the
 real interpolation method between two finite exponents integrates against, the first for the part
 of a function above a height and the second for the part below it.
+`TauCeti.lintegral_indicator_ofReal_mul_rpow_lt_le` and
+`TauCeti.lintegral_indicator_le_ofReal_mul_rpow_le` bound the same two integrals when the linear
+threshold `c * t` is replaced by a power `c * t ^ γ` of either sign; this is the height at which
+off-diagonal interpolation splits a function.
 
 The layer cake formula `∫⁻ u ^ p = p * ∫⁻ t in (0, ∞), ν {u > t} * t ^ (p - 1)` is in Mathlib as
 `MeasureTheory.lintegral_rpow_eq_lintegral_meas_lt_mul`, but only for a nonnegative *real-valued*
@@ -67,14 +71,21 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
 * `TauCeti.lintegral_ofReal_pow_Ioo`: `∫⁻ t in (0, a), t ^ k = a ^ (k + 1) / (k + 1)` for a natural
   number `k` and `0 ≤ a`.
 * `TauCeti.lintegral_ofReal_rpow_Ioi`: `∫⁻ t in (0, ∞), t ^ s = ∞`, for every `s`.
+* `TauCeti.lintegral_ofReal_rpow_Ioi_of_lt`: `∫⁻ t in (c, ∞), t ^ s = -c ^ (s + 1) / (s + 1)` for
+  `s < -1` and `0 < c`.
 * `TauCeti.lintegral_indicator_ofReal_rpow_Ioi`: the same integral truncated at the height where
   `c * t` reaches `a : ℝ≥0∞`, evaluated to `c ^ (-(s + 1)) / (s + 1) * a ^ (s + 1)`.
 * `TauCeti.lintegral_indicator_le_ofReal_rpow_Ioi`: the integral over the complementary region,
   where `c * t` is at least `a`, evaluated to `c ^ (-(s + 1)) / (-(s + 1)) * a ^ (s + 1)` for
   `s < -1`.
+* `TauCeti.lintegral_indicator_ofReal_mul_rpow_lt_le` and
+  `TauCeti.lintegral_indicator_le_ofReal_mul_rpow_le`: the same two integrals cut off by the power
+  threshold `c * t ^ γ` instead of `c * t`, for either sign of `γ`.
 * `TauCeti.setLIntegral_Ioi_rpow_mul_ite_le`: an upper bound for the kernel `t ^ (-s - 1)`
   restricted by a linear threshold, with constant and linear weights.
 
+* `TauCeti.setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add`: the rescaling step of a good-`λ`
+  estimate, bounding `∫₀ᴺ m(t) t^(p-1) dt` by half of itself plus a layer cake integral.
 * `TauCeti.setLIntegral_Ioc_ite_rpow_le`: an upper-tail bound for a negative power restricted by
   a linear threshold.
 * `TauCeti.setLIntegral_Ioc_rpow_mul_ite_le`: the same bound with constant and linear weights.
@@ -138,6 +149,17 @@ theorem lintegral_ofReal_rpow_Ioi (s : ℝ) :
     exact Real.rpow_nonneg ht.le s
   exact not_integrableOn_Ioi_rpow s
     ((lintegral_ofReal_ne_top_iff_integrable (by fun_prop) hnn).1 hne)
+
+/-- The lower integral of `t ^ s` over a half-line `(c, ∞)`, for `s < -1` and `0 < c`: the power
+is integrable at infinity and the value is `-c ^ (s + 1) / (s + 1)`, as for the Bochner integral
+`integral_Ioi_rpow_of_lt`. -/
+theorem lintegral_ofReal_rpow_Ioi_of_lt (hs : s < -1) {c : ℝ} (hc : 0 < c) :
+    ∫⁻ t in Ioi c, ENNReal.ofReal (t ^ s) = ENNReal.ofReal (-c ^ (s + 1) / (s + 1)) := by
+  have hnn : 0 ≤ᵐ[volume.restrict (Ioi c)] fun t : ℝ => t ^ s := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    exact Real.rpow_nonneg (hc.trans ht).le s
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hs hc) hnn,
+    integral_Ioi_rpow_of_lt hs hc]
 
 /-- **A finite threshold on `c * t` cuts `(0, ∞)` down to a bounded interval.** For `0 < c` and
 `a ≠ ∞`, the indicator of `{t | ENNReal.ofReal (c * t) < a}` agrees at every positive `t` with the
@@ -248,9 +270,6 @@ theorem lintegral_indicator_le_ofReal_rpow_Ioi (hs : s < -1) {c : ℝ} (hc : 0 <
   have hb0 : 0 < b := ENNReal.toReal_pos ha0 ha
   have hbc : 0 < b / c := by positivity
   have hab : a = ENNReal.ofReal b := (ENNReal.ofReal_toReal ha).symm
-  have hnn : 0 ≤ᵐ[volume.restrict (Ioi (b / c))] fun t : ℝ => t ^ s := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-    exact Real.rpow_nonneg (hbc.trans ht).le s
   -- The elementary real identity behind the constant `c ^ (-(s + 1))`.
   have hreal : -(b / c) ^ (s + 1) / (s + 1) = c ^ (-(s + 1)) / (-(s + 1)) * b ^ (s + 1) := by
     have hcp : c ^ (s + 1) ≠ 0 := (Real.rpow_pos_of_pos hc _).ne'
@@ -258,10 +277,116 @@ theorem lintegral_indicator_le_ofReal_rpow_Ioi (hs : s < -1) {c : ℝ} (hc : 0 <
     field_simp
   rw [lintegral_indicator measurableSet_Ici, Measure.restrict_restrict measurableSet_Ici,
     Set.inter_eq_self_of_subset_left (Set.Ici_subset_Ioi.2 hbc),
-    ← setLIntegral_congr Ioi_ae_eq_Ici,
-    ← ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hs hbc) hnn,
-    integral_Ioi_rpow_of_lt hs hbc, hreal, hab, ENNReal.ofReal_rpow_of_pos hb0,
-    ← ENNReal.ofReal_mul hconst.le]
+    ← setLIntegral_congr Ioi_ae_eq_Ici, lintegral_ofReal_rpow_Ioi_of_lt hs hbc, hreal, hab,
+    ENNReal.ofReal_rpow_of_pos hb0, ← ENNReal.ofReal_mul hconst.le]
+
+/-- At a positive `t`, the power threshold `c * t ^ γ` is the `γ`-th power of the linear threshold
+`c ^ γ⁻¹ * t`. -/
+private theorem ofReal_mul_rpow_eq_ofReal_mul_rpow {c γ t : ℝ} (hc : 0 < c) (hγ : γ ≠ 0)
+    (ht : 0 < t) : ENNReal.ofReal (c * t ^ γ) = ENNReal.ofReal (c ^ γ⁻¹ * t) ^ γ := by
+  rw [ENNReal.ofReal_rpow_of_pos (by positivity), Real.mul_rpow (by positivity) ht.le,
+    Real.rpow_inv_rpow hc.le hγ]
+
+/-- Two cut-offs that agree at every positive `t` give the same integral over `(0, ∞)`. -/
+private theorem setLIntegral_Ioi_indicator_congr {S S' : Set ℝ}
+    (h : ∀ t : ℝ, 0 < t → (t ∈ S ↔ t ∈ S')) (g : ℝ → ℝ≥0∞) :
+    ∫⁻ t in Ioi (0 : ℝ), S.indicator g t = ∫⁻ t in Ioi (0 : ℝ), S'.indicator g t :=
+  setLIntegral_congr_fun measurableSet_Ioi fun t ht => by
+    by_cases hS : t ∈ S
+    · rw [indicator_of_mem hS, indicator_of_mem ((h t ht).1 hS)]
+    · rw [indicator_of_notMem hS, indicator_of_notMem (mt (h t ht).2 hS)]
+
+/-- The constant and the power of the level produced by the linear threshold `c ^ γ⁻¹ * t` and the
+level `a ^ γ⁻¹`, rewritten in terms of `c` and `a`. -/
+private theorem ofReal_rpow_inv_mul_rpow_inv_rpow {c γ : ℝ} (hc : 0 < c) (k : ℝ) (a : ℝ≥0∞) :
+    ENNReal.ofReal ((c ^ γ⁻¹) ^ (-(s + 1)) / k) * (a ^ γ⁻¹) ^ (s + 1) =
+      ENNReal.ofReal (c ^ (-((s + 1) / γ)) / k) * a ^ ((s + 1) / γ) := by
+  have h₁ : γ⁻¹ * -(s + 1) = -((s + 1) / γ) := by ring
+  have h₂ : γ⁻¹ * (s + 1) = (s + 1) / γ := by ring
+  rw [← Real.rpow_mul hc.le, ← ENNReal.rpow_mul, h₁, h₂]
+
+/-- The lower integral of `t ^ s` over `(0, ∞)`, cut off where the power threshold `c * t ^ γ`
+stays below a level `a : ℝ≥0∞`. For `0 < c` and `(s + 1) / γ > 0`,
+
+`∫⁻ t in (0, ∞), [c * t ^ γ < a] * t ^ s ≤ c ^ (-(s + 1) / γ) / |s + 1| * a ^ ((s + 1) / γ)`.
+
+For `γ > 0` the cut-off is the interval `(0, (a / c) ^ (1 / γ))` and `s > -1`; for `γ < 0` it is
+the half-line beyond that point and `s < -1`. The case `γ = 1` is
+`TauCeti.lintegral_indicator_ofReal_rpow_Ioi`. -/
+theorem lintegral_indicator_ofReal_mul_rpow_lt_le {c γ : ℝ} (hc : 0 < c)
+    (hsγ : 0 < (s + 1) / γ) (a : ℝ≥0∞) :
+    ∫⁻ t in Ioi (0 : ℝ),
+        {t : ℝ | ENNReal.ofReal (c * t ^ γ) < a}.indicator (fun t => ENNReal.ofReal (t ^ s)) t ≤
+      ENNReal.ofReal (c ^ (-((s + 1) / γ)) / |s + 1|) * a ^ ((s + 1) / γ) := by
+  have hγ : γ ≠ 0 := by rintro rfl; simp at hsγ
+  have hc' : 0 < c ^ γ⁻¹ := Real.rpow_pos_of_pos hc _
+  rw [← ofReal_rpow_inv_mul_rpow_inv_rpow hc]
+  rcases hγ.lt_or_gt with hγ | hγ
+  · -- For `γ < 0` the cut-off is a half-line, where `s < -1`.
+    have hs : s + 1 < 0 := by
+      by_contra! h
+      exact (div_nonpos_of_nonneg_of_nonpos h hγ.le).not_gt hsγ
+    rw [setLIntegral_Ioi_indicator_congr (S' := {t | a ^ γ⁻¹ < ENNReal.ofReal (c ^ γ⁻¹ * t)})
+      (fun t ht => by simp only [mem_ofPred_eq, ofReal_mul_rpow_eq_ofReal_mul_rpow hc hγ.ne ht,
+        ENNReal.rpow_inv_lt_iff_of_neg hγ]), abs_of_neg hs,
+      ← lintegral_indicator_le_ofReal_rpow_Ioi (by linarith) hc']
+    exact lintegral_mono fun t => indicator_le_indicator_of_subset
+      (ofPred_subset_ofPred.2 fun _ h => h.le)
+      (fun _ => zero_le) t
+  · -- For `γ > 0` the cut-off is a bounded interval, where `s > -1`.
+    have hs : 0 < s + 1 := by
+      by_contra! h
+      exact (div_nonpos_of_nonpos_of_nonneg h hγ.le).not_gt hsγ
+    rw [setLIntegral_Ioi_indicator_congr (S' := {t | ENNReal.ofReal (c ^ γ⁻¹ * t) < a ^ γ⁻¹})
+      (fun t ht => by simp only [mem_ofPred_eq, ofReal_mul_rpow_eq_ofReal_mul_rpow hc hγ.ne' ht,
+        ENNReal.lt_rpow_inv_iff hγ]), abs_of_pos hs,
+      lintegral_indicator_ofReal_rpow_Ioi (by linarith) hc']
+
+/-- The lower integral of `t ^ s` over `(0, ∞)`, cut off where the power threshold `c * t ^ γ`
+has reached a level `a : ℝ≥0∞`. For `0 < c` and `(s + 1) / γ < 0`,
+
+`∫⁻ t in (0, ∞), [a ≤ c * t ^ γ] * t ^ s ≤ c ^ (-(s + 1) / γ) / |s + 1| * a ^ ((s + 1) / γ)`.
+
+This is the region complementary to `TauCeti.lintegral_indicator_ofReal_mul_rpow_lt_le`; the case
+`γ = 1` is `TauCeti.lintegral_indicator_le_ofReal_rpow_Ioi`. -/
+theorem lintegral_indicator_le_ofReal_mul_rpow_le {c γ : ℝ} (hc : 0 < c)
+    (hsγ : (s + 1) / γ < 0) (a : ℝ≥0∞) :
+    ∫⁻ t in Ioi (0 : ℝ),
+        {t : ℝ | a ≤ ENNReal.ofReal (c * t ^ γ)}.indicator (fun t => ENNReal.ofReal (t ^ s)) t ≤
+      ENNReal.ofReal (c ^ (-((s + 1) / γ)) / |s + 1|) * a ^ ((s + 1) / γ) := by
+  have hγ : γ ≠ 0 := by rintro rfl; simp at hsγ
+  have hc' : 0 < c ^ γ⁻¹ := Real.rpow_pos_of_pos hc _
+  rw [← ofReal_rpow_inv_mul_rpow_inv_rpow hc]
+  rcases hγ.lt_or_gt with hγ | hγ
+  · -- For `γ < 0` the region is a bounded interval, where `s > -1`. It differs from the strict
+    -- cut-off only at the single point where `c ^ γ⁻¹ * t` equals the level.
+    have hs : 0 < s + 1 := by
+      by_contra! h
+      exact (div_nonneg_of_nonpos h hγ.le).not_gt hsγ
+    rw [setLIntegral_Ioi_indicator_congr (S' := {t | ENNReal.ofReal (c ^ γ⁻¹ * t) ≤ a ^ γ⁻¹})
+      (fun t ht => by simp only [mem_ofPred_eq, ofReal_mul_rpow_eq_ofReal_mul_rpow hc hγ.ne ht,
+        ENNReal.le_rpow_inv_iff_of_neg hγ]), abs_of_pos hs,
+      ← lintegral_indicator_ofReal_rpow_Ioi (by linarith) hc']
+    refine lintegral_mono_ae ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi,
+      ae_restrict_of_ae (Measure.ae_ne volume ((a ^ γ⁻¹).toReal / c ^ γ⁻¹))] with t ht hne
+    simp only [indicator_apply, mem_ofPred_eq]
+    split_ifs with h₁ h₂ h₂
+    · exact le_rfl
+    · refine absurd ?_ hne
+      have heq : ENNReal.ofReal (c ^ γ⁻¹ * t) = a ^ γ⁻¹ := le_antisymm h₁ (not_lt.1 h₂)
+      rw [← heq, ENNReal.toReal_ofReal (mul_pos hc' ht).le]
+      field_simp
+    · exact zero_le
+    · exact le_rfl
+  · -- For `γ > 0` the region is a half-line, where `s < -1`.
+    have hs : s + 1 < 0 := by
+      by_contra! h
+      exact (div_nonneg h hγ.le).not_gt hsγ
+    rw [setLIntegral_Ioi_indicator_congr (S' := {t | a ^ γ⁻¹ ≤ ENNReal.ofReal (c ^ γ⁻¹ * t)})
+      (fun t ht => by simp only [mem_ofPred_eq, ofReal_mul_rpow_eq_ofReal_mul_rpow hc hγ.ne' ht,
+        ENNReal.rpow_inv_le_iff hγ]), abs_of_neg hs,
+      lintegral_indicator_le_ofReal_rpow_Ioi (by linarith) hc']
 
 /-- The kernel `t ^ (-s - 1)`, integrated against the weight `a * r` over those `t ∈ (0, ∞)` with
 `r ≤ t * D`, is at most `D ^ s / s * a * r ^ (1 - s)`, for `0 < s` and `0 ≤ r`. For `0 < D` and
@@ -339,6 +464,62 @@ theorem setLIntegral_comp_mul_left_mul_rpow (g : ℝ → ℝ≥0∞) {c : ℝ} (
         rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_neg_one, ← Real.rpow_add hc,
           neg_add]
 
+/-- The rescaling step of the truncated Fefferman–Stein estimate. If `m (2 s)` is bounded by the
+good-`λ` inequality `K γ m s + σ (γ s)`, with `2^p K γ = 1 / 2` and `σ` measurable, then
+substituting `t = 2 s` bounds `∫₀ᴺ m(t) t^(p-1) dt` by half of itself plus `2^p γ^(-p) J`,
+where `J` is the layer cake integral of `σ`. -/
+theorem setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add
+    {m σ : ℝ → ℝ≥0∞} {p γ N : ℝ} (hγ : 0 < γ)
+    (hN : 0 ≤ N) {K J : ℝ≥0∞} (hσ : Measurable σ)
+    (hlevel : ∀ s : ℝ, 0 < s → m (2 * s) ≤ K * ENNReal.ofReal γ * m s + σ (γ * s))
+    (hJ : ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * ENNReal.ofReal (s ^ (p - 1)) =
+      ENNReal.ofReal (γ ^ (-p)) * J)
+    (hconst : ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ) = 2⁻¹) :
+    ∫⁻ t in Ioo 0 N, m t * ENNReal.ofReal (t ^ (p - 1)) ≤
+      2⁻¹ * (∫⁻ t in Ioo 0 N, m t * ENNReal.ofReal (t ^ (p - 1))) +
+        ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
+  set w : ℝ → ℝ≥0∞ := fun t => ENNReal.ofReal (t ^ (p - 1))
+  set I : ℝ → ℝ≥0∞ := fun N => ∫⁻ t in Ioo 0 N, m t * w t
+  have hw : Measurable w := ENNReal.measurable_ofReal.comp (measurable_id.pow_const _)
+  have hscale := setLIntegral_comp_mul_left_mul_rpow m two_pos measurableSet_Ioo
+    (S := Ioo 0 N) (T := Ioo 0 (N / 2)) (fun s => by
+      simp only [mem_Ioo]
+      constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith)
+    (fun s hs => le_of_lt hs.1) (p - 1)
+  rw [sub_add_cancel] at hscale
+  have h2p : ENNReal.ofReal (2 ^ p) * ENNReal.ofReal (2 ^ (-p)) = 1 := by
+    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add two_pos]
+    simp
+  have hK : K ≠ ∞ := by
+    rintro rfl
+    rw [ENNReal.top_mul (ENNReal.ofReal_pos.2 hγ).ne',
+      ENNReal.mul_top (ENNReal.ofReal_pos.2 (by positivity)).ne'] at hconst
+    exact ENNReal.inv_ne_top.2 two_ne_zero hconst.symm
+  have hσw : Measurable fun s => σ (γ * s) * w s :=
+    (hσ.comp (measurable_id.const_mul γ)).mul hw
+  -- fold the `set` abbreviations `I`, `w` in the goal; `set` cannot abstract under the binder
+  change I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J)
+  calc I N = ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2), m (2 * s) * w s := by
+        rw [hscale, ← mul_assoc, h2p, one_mul]
+    _ ≤ ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2),
+          (K * ENNReal.ofReal γ * (m s * w s) + σ (γ * s) * w s) := by
+        refine mul_le_mul' le_rfl (setLIntegral_mono' measurableSet_Ioo fun s hs => ?_)
+        rw [← mul_assoc, ← add_mul]
+        gcongr
+        exact hlevel s hs.1
+    _ = ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I (N / 2) +
+          ∫⁻ s in Ioo 0 (N / 2), σ (γ * s) * w s) := by
+        rw [lintegral_add_right' _ hσw.aemeasurable,
+          lintegral_const_mul' _ _ (ENNReal.mul_ne_top hK ENNReal.ofReal_ne_top)]
+    _ ≤ ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I N +
+          ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * w s) := by
+        gcongr
+        · exact lintegral_mono_set (Ioo_subset_Ioo_right (by linarith))
+        · exact Ioo_subset_Ioi_self
+    _ = 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
+        rw [hJ, mul_add, ← mul_assoc, ← mul_assoc, ← hconst]
+        ring
+
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f : α → ℝ≥0∞} {p : ℝ}
 
 /-- A function with a finite `L^p` norm is carried by a σ-finite part of the measure: the level
@@ -397,7 +578,7 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
     refine congrArg _ (setLIntegral_congr_fun measurableSet_Ioi fun t ht => congrArg₂ _ ?_ rfl)
     refine measure_congr ?_
     filter_upwards [hfin] with y hy
-    exact propext (ENNReal.ofReal_lt_iff_lt_toReal (le_of_lt ht) hy).symm
+    exact (ENNReal.ofReal_lt_iff_lt_toReal (le_of_lt ht) hy).symm
   · -- `u = ∞` on a set of positive measure: both sides are `∞`.
     have hL : ∫⁻ y, u y ^ p ∂ν = ∞ := by
       have hlevel : {y | u y ^ p = ∞} = {y | u y = ∞} :=

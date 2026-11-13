@@ -8,9 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
-import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
-import TauCeti.Geometry.Manifold.Riemannian.Codifferential
+public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 
 /-!
 # Self-dual and anti-self-dual forms on an oriented Riemannian manifold
@@ -40,8 +40,17 @@ and `TauCeti.SmoothForm.antiSelfDualForms`. Reversing the orientation negates `�
 the two parts (`TauCeti.RoughForm.selfDualPart_neg_orientation`,
 `TauCeti.RoughForm.antiSelfDualPart_neg_orientation`).
 
-On a boundaryless manifold, Stokes' theorem gives `∫_M β ∧ β = 0` for a compactly supported exact
-form `β = dα`, so its self-dual and anti-self-dual parts have the same energy,
+Integrating, a compactly supported form has `∫_M |α|² vol = ∫_M |α⁺|² vol + ∫_M |α⁻|² vol` and
+`∫_M α ∧ α = ∫_M |α⁺|² vol - ∫_M |α⁻|² vol`. On a boundaryless manifold, Stokes' theorem makes
+`∫_M ψ ∧ ψ` depend only on the de Rham class of a compactly supported closed form `ψ`
+(`TauCeti.integralTopForm_wedge_self_eq_of_sub_mem_exactForms`). So if `ψ - φ` is exact, then
+`∫_M |ψ⁺|² vol - ∫_M |ψ⁻|² vol = ∫_M |φ⁺|² vol - ∫_M |φ⁻|² vol` and
+`∫_M |ψ|² vol = 2 ∫_M |ψ⁺|² vol - (∫_M |φ⁺|² vol - ∫_M |φ⁻|² vol)`. For the curvature forms of
+two connections on a line bundle over a closed four-manifold, the difference is the exact form
+`da` of the difference of the connections. This is the Chern–Weil step in the `L²` curvature
+bounds of gauge theory: an equation prescribing the self-dual part `F⁺`, such as the curvature
+equation of the Seiberg–Witten equations, controls the whole energy of `F`. For an exact form
+`β = dα`, compared with `φ = 0`, the two parts have the same energy,
 `∫_M |β⁺|² vol = ∫_M |β⁻|² vol`. Hence `β⁺ = 0` or `β⁻ = 0` forces `β = 0`: on a closed
 four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 
@@ -79,6 +88,18 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 * `TauCeti.SmoothForm.isProj_selfDualPart`, `TauCeti.SmoothForm.isProj_antiSelfDualPart`: on
   smooth forms they are the projections onto the smooth `Ω⁺` and `Ω⁻`, which are the smooth forms
   lying in the rough `Ω⁺` and `Ω⁻` (`TauCeti.SmoothForm.coe_mem_selfDualForms_iff`).
+* `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_add`,
+  `TauCeti.SmoothForm.integralTopForm_wedge_self`: `∫_M |α|² vol = ∫_M |α⁺|² vol + ∫_M |α⁻|² vol`
+  and `∫_M α ∧ α = ∫_M |α⁺|² vol - ∫_M |α⁻|² vol` for a compactly supported form.
+* `integralTopForm_inner_selfDualPart_sub_inner_antiSelfDualPart_eq_of_sub_mem_exactForms`
+  (in the namespace `TauCeti.SmoothForm`): `∫_M |ψ⁺|² vol - ∫_M |ψ⁻|² vol` agrees for compactly
+  supported closed forms `φ`, `ψ` whose difference is exact.
+* `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_two_mul_sub`: the
+  energy of such a form is twice its self-dual energy, minus the invariant of its class.
+* `TauCeti.SmoothForm.selfDualPart_wedge_zero_right`,
+  `TauCeti.SmoothForm.alternatingFormEquiv_symm_selfDualPart`,
+  `TauCeti.SmoothForm.hodgeStar_alternatingFormEquiv_symm_of_mem_selfDualForms`: right
+  `C^∞(M)`-linearity and fibrewise `k`-vector characterization of smooth self-dual forms.
 * `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart`: a compactly
   supported exact form has `∫_M |β⁺|² vol = ∫_M |β⁻|² vol`.
 * `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_zero`,
@@ -88,6 +109,9 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 * `TauCeti.SmoothForm.eq_zero_of_selfDualPart_eq_zero`,
   `TauCeti.SmoothForm.eq_zero_of_antiSelfDualPart_eq_zero`: a compactly supported exact form with
   vanishing self-dual, or anti-self-dual, part is zero.
+* `TauCeti.SmoothForm.integralTopForm_inner_smul_riemannianVolumeForm_eq_poincarePairing`: for a
+  closed form `φ` and a compactly supported closed self-dual form `γ`, `∫_M ⟨φ, γ⟩ vol` is the
+  Poincaré pairing of their de Rham classes, so it depends only on the class of `φ`.
 
 ## References
 
@@ -543,6 +567,12 @@ smooth forms with `⋆α = α`. -/
 def selfDualForms : Submodule ℝ (SmoothForm I M ℝ k) :=
   Module.End.eigenspace (hodgeStar o rfl) 1
 
+instance instAddCommGroupSelfDualForms : AddCommGroup (selfDualForms o) :=
+  Submodule.addCommGroup _
+
+instance instModuleSelfDualForms : Module ℝ (selfDualForms o) :=
+  Submodule.module _
+
 /-- The **anti-self-dual** smooth middle-degree forms `Ω⁻`: the `-1` eigenspace of the Hodge star,
 the smooth forms with `⋆α = -α`. -/
 def antiSelfDualForms : Submodule ℝ (SmoothForm I M ℝ k) :=
@@ -554,6 +584,21 @@ variable {o} in
 theorem mem_selfDualForms {α : SmoothForm I M ℝ k} :
     α ∈ selfDualForms o ↔ hodgeStar o rfl α = α := by
   rw [selfDualForms, Module.End.mem_eigenspace_iff, one_smul]
+
+/-- A smooth self-dual form of positive middle degree is coclosed exactly when it is closed. -/
+theorem codifferential_eq_zero_iff_mextDeriv_eq_zero_of_mem_selfDualForms
+    (o : Manifold.Orientation I M (Fin ((k + 1) + (k + 1))))
+    {γ : SmoothForm I M ℝ (k + 1)} (hγ : γ ∈ selfDualForms o) :
+    codifferential o rfl γ = 0 ↔ mextDerivₗ I (k + 1) γ = 0 := by
+  have hstar := mem_selfDualForms.mp hγ
+  constructor
+  · intro h
+    -- The sign in ⋆d*γ = (-1)^(k+1) d⋆γ is nonzero, and ⋆γ = γ.
+    have hs := hodgeStar_codifferential o rfl (by omega) γ
+    rw [h, map_zero, hstar] at hs
+    exact (smul_eq_zero.mp hs.symm).resolve_left (pow_ne_zero _ (by norm_num))
+  · intro h
+    simp [codifferential_apply o rfl (by omega), hstar, h]
 
 variable {o} in
 /-- A smooth form is anti-self-dual exactly when `⋆α = -α`. -/
@@ -615,6 +660,52 @@ theorem ker_antiSelfDualPart :
   rw [LinearMap.mem_ker, ← coe_mem_selfDualForms_iff, ← RoughForm.ker_antiSelfDualPart,
     LinearMap.mem_ker, ← coe_antiSelfDualPart, ZeroMemClass.coe_eq_zero]
 
+/-- The self-dual projection commutes with right multiplication by a smooth zero-form. -/
+theorem selfDualPart_wedge_zero_right (φ : SmoothForm I M ℝ k) (f : SmoothForm I M ℝ 0) :
+    selfDualPart o (wedge φ f) = wedge (selfDualPart o φ) f := by
+  apply Subtype.ext
+  funext x
+  ext v
+  simp only [coe_selfDualPart, RoughForm.selfDualPart_apply, wedge_apply_zero_right,
+    Pi.smul_apply, Pi.add_apply, ContinuousAlternatingMap.smul_apply,
+    ContinuousAlternatingMap.add_apply, smul_eq_mul]
+  have hh := congrArg (fun ψ : SmoothForm I M ℝ k ↦ ψ.1 x v)
+    (hodgeStar_wedge_zero_right o rfl φ f)
+  simp only [coe_hodgeStar, wedge_apply_zero_right] at hh
+  rw [hh]
+  ring
+
+/-- Under `alternatingFormEquiv`, `SmoothForm.selfDualPart` acts fibrewise as `(1 / 2) (y + ⋆y)` on
+`⋀ᵏ T_x M`. -/
+theorem alternatingFormEquiv_symm_selfDualPart (η : SmoothForm I M ℝ k) (x : M) :
+    (letI := o.fact_finrank_tangentSpace x
+     (alternatingFormEquiv (TangentSpace I x) k).symm ((selfDualPart o η).1 x)) =
+      (letI := o.fact_finrank_tangentSpace x
+       (2⁻¹ : ℝ) • ((alternatingFormEquiv (TangentSpace I x) k).symm (η.1 x) +
+         (o.orientationAt x).hodgeStar (o.fact_finrank_tangentSpace x).out.symm
+           ((alternatingFormEquiv (TangentSpace I x) k).symm (η.1 x)))) := by
+  let _ := o.fact_finrank_tangentSpace x
+  apply (alternatingFormEquiv (TangentSpace I x) k).injective
+  rw [LinearEquiv.apply_symm_apply, map_smul, map_add,
+    ← (o.orientationAt x).formHodgeStar_alternatingFormEquiv, LinearEquiv.apply_symm_apply,
+    coe_selfDualPart, RoughForm.selfDualPart_apply, Pi.smul_apply, Pi.add_apply,
+    RoughForm.hodgeStar_apply]
+
+/-- Every smooth self-dual `k`-form `η ∈ selfDualForms o` corresponds at `x` to a self-dual
+`k`-vector under `alternatingFormEquiv`. -/
+theorem hodgeStar_alternatingFormEquiv_symm_of_mem_selfDualForms
+    {η : SmoothForm I M ℝ k} (hη : η ∈ selfDualForms o) (x : M) :
+    (letI := o.fact_finrank_tangentSpace x
+     (o.orientationAt x).hodgeStar (o.fact_finrank_tangentSpace x).out.symm
+       ((alternatingFormEquiv (TangentSpace I x) k).symm (η.1 x))) =
+      (letI := o.fact_finrank_tangentSpace x
+       (alternatingFormEquiv (TangentSpace I x) k).symm (η.1 x)) := by
+  let _ := o.fact_finrank_tangentSpace x
+  apply (alternatingFormEquiv (TangentSpace I x) k).injective
+  rw [← (o.orientationAt x).formHodgeStar_alternatingFormEquiv, LinearEquiv.apply_symm_apply]
+  simpa only [coe_hodgeStar, RoughForm.hodgeStar_apply] using
+    congrArg (fun ψ : SmoothForm I M ℝ k ↦ ψ.1 x) (mem_selfDualForms.1 hη)
+
 /-- The self-dual part of a compactly supported smooth form is compactly supported. -/
 theorem selfDualPart_mem_compactlySupportedForms {α : SmoothForm I M ℝ k}
     (hα : α ∈ compactlySupportedForms I M k) :
@@ -628,11 +719,117 @@ theorem antiSelfDualPart_mem_compactlySupportedForms {α : SmoothForm I M ℝ k}
     antiSelfDualPart o α ∈ compactlySupportedForms I M k := by
   simpa only [selfDualPart_neg_orientation] using selfDualPart_mem_compactlySupportedForms (-o) hα
 
-/-! ### Exact forms on a boundaryless manifold -/
+/-! ### Integrated energies -/
+
+/-- **Pythagoras for the `L²` energy**: on an oriented Riemannian manifold of dimension `k + k`
+with `k` even, a compactly supported smooth `k`-form `α` has
+`∫_M |α|² vol = ∫_M |α⁺|² vol + ∫_M |α⁻|² vol`. -/
+theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_add (hk : Even k)
+    {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (α.1 x) •
+        riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o α).1 x) ((selfDualPart o α).1 x) • riemannianVolumeForm o x) +
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((antiSelfDualPart o α).1 x) ((antiSelfDualPart o α).1 x) • riemannianVolumeForm o x) := by
+  have hsplit : (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (α.1 x) •
+        riemannianVolumeForm o x) =
+      (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o α).1 x) ((selfDualPart o α).1 x) • riemannianVolumeForm o x) +
+      fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((antiSelfDualPart o α).1 x) ((antiSelfDualPart o α).1 x) • riemannianVolumeForm o x := by
+    funext x
+    rw [RoughForm.alternatingFormInner_self_eq_add o hk, add_smul, Pi.add_apply,
+      coe_selfDualPart, coe_antiSelfDualPart]
+  rw [hsplit, integralTopForm_add o
+    ((isSmoothForm_inner_smul_riemannianVolumeForm o rfl _ _).of_le bot_le)
+    ((isSmoothForm_inner_smul_riemannianVolumeForm o rfl _ _).of_le bot_le)
+    (RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o _ _
+      ((mem_compactlySupportedForms I).mp (selfDualPart_mem_compactlySupportedForms o hα)))
+    (RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o _ _
+      ((mem_compactlySupportedForms I).mp (antiSelfDualPart_mem_compactlySupportedForms o hα)))]
+
+/-- **The integral of a wedge square**: on an oriented Riemannian manifold of dimension `k + k`
+with `k` even, a compactly supported smooth `k`-form `α` has
+`∫_M α ∧ α = ∫_M |α⁺|² vol - ∫_M |α⁻|² vol`. -/
+theorem integralTopForm_wedge_self (hk : Even k) {α : SmoothForm I M ℝ k}
+    (hα : α ∈ compactlySupportedForms I M k) :
+    integralTopForm o (RoughForm.wedge α.1 α.1) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o α).1 x) ((selfDualPart o α).1 x) • riemannianVolumeForm o x) -
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((antiSelfDualPart o α).1 x) ((antiSelfDualPart o α).1 x) • riemannianVolumeForm o x) := by
+  -- `|α⁺|² vol = α ∧ α + |α⁻|² vol` pointwise.
+  have hsplit : (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o α).1 x) ((selfDualPart o α).1 x) • riemannianVolumeForm o x) =
+      RoughForm.wedge α.1 α.1 + fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((antiSelfDualPart o α).1 x) ((antiSelfDualPart o α).1 x) • riemannianVolumeForm o x := by
+    funext x
+    ext v
+    simp only [RoughForm.wedge_self_apply o hk, coe_selfDualPart, coe_antiSelfDualPart,
+      Pi.add_apply, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
+      smul_eq_mul]
+    ring
+  have hw := (mem_compactlySupportedForms I).mp (wedge_mem_compactlySupportedForms α hα)
+  rw [coe_wedge] at hw
+  have hsw : IsSmoothForm I 0 (RoughForm.wedge α.1 α.1) := by
+    simpa only [coe_wedge] using (wedge α α).isSmoothForm.of_le (by simp)
+  rw [hsplit, integralTopForm_add o hsw
+      ((isSmoothForm_inner_smul_riemannianVolumeForm o rfl _ _).of_le bot_le) hw
+      (RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o _ _
+        ((mem_compactlySupportedForms I).mp (antiSelfDualPart_mem_compactlySupportedForms o hα))),
+    add_sub_cancel_right]
+
+/-! ### Closed and exact forms on a boundaryless manifold -/
 
 section Exact
 
 variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
+
+/-- **Chern–Weil invariance of the energy difference**: on an oriented boundaryless Riemannian
+manifold of dimension `k + k` with `k` even, compactly supported closed `k`-forms `φ` and `ψ` whose
+difference is exact satisfy
+`∫_M |ψ⁺|² vol - ∫_M |ψ⁻|² vol = ∫_M |φ⁺|² vol - ∫_M |φ⁻|² vol`.
+Both sides are the topological quantities `∫_M ψ ∧ ψ = ∫_M φ ∧ φ`. For the curvature forms of
+two connections on a line bundle over a closed four-manifold, this fixes the anti-self-dual
+energy of either curvature by its self-dual energy and a characteristic number. -/
+theorem integralTopForm_inner_selfDualPart_sub_inner_antiSelfDualPart_eq_of_sub_mem_exactForms
+    (hk : Even k) {φ ψ : SmoothForm I M ℝ k} (hφ : φ ∈ compactlySupportedClosedForms I M k)
+    (hψ : ψ ∈ compactlySupportedClosedForms I M k) (hψφ : ψ - φ ∈ exactForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o ψ).1 x) ((selfDualPart o ψ).1 x) • riemannianVolumeForm o x) -
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((antiSelfDualPart o ψ).1 x) ((antiSelfDualPart o ψ).1 x) • riemannianVolumeForm o x) =
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o φ).1 x) ((selfDualPart o φ).1 x) • riemannianVolumeForm o x) -
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((antiSelfDualPart o φ).1 x) ((antiSelfDualPart o φ).1 x) • riemannianVolumeForm o x) := by
+  rw [← integralTopForm_wedge_self o hk ((mem_compactlySupportedClosedForms I).mp hψ).1,
+    ← integralTopForm_wedge_self o hk ((mem_compactlySupportedClosedForms I).mp hφ).1]
+  exact integralTopForm_wedge_self_eq_of_sub_mem_exactForms o hk hφ hψ hψφ
+
+/-- **The energy of a closed form from its self-dual energy**: on an oriented boundaryless
+Riemannian manifold of dimension `k + k` with `k` even, compactly supported closed `k`-forms `φ`
+and `ψ` whose difference is exact satisfy
+`∫_M |ψ|² vol = 2 ∫_M |ψ⁺|² vol - (∫_M |φ⁺|² vol - ∫_M |φ⁻|² vol)`.
+With `φ` a fixed reference curvature, a bound on the self-dual energy of the curvature `ψ` of a
+connection on the same line bundle therefore bounds its whole energy. -/
+theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_two_mul_sub (hk : Even k)
+    {φ ψ : SmoothForm I M ℝ k} (hφ : φ ∈ compactlySupportedClosedForms I M k)
+    (hψ : ψ ∈ compactlySupportedClosedForms I M k) (hψφ : ψ - φ ∈ exactForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (ψ.1 x) (ψ.1 x) •
+        riemannianVolumeForm o x) =
+      2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o ψ).1 x) ((selfDualPart o ψ).1 x) • riemannianVolumeForm o x) -
+      (integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o φ).1 x) ((selfDualPart o φ).1 x) • riemannianVolumeForm o x) -
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((antiSelfDualPart o φ).1 x) ((antiSelfDualPart o φ).1 x) • riemannianVolumeForm o x)) := by
+  rw [integralTopForm_inner_self_smul_riemannianVolumeForm_eq_add o hk
+      ((mem_compactlySupportedClosedForms I).mp hψ).1,
+    ← integralTopForm_inner_selfDualPart_sub_inner_antiSelfDualPart_eq_of_sub_mem_exactForms
+      o hk hφ hψ hψφ]
+  ring
 
 /-- **The self-dual and anti-self-dual parts of an exact form have equal energy**: on an oriented
 boundaryless Riemannian manifold of dimension `k + k` with `k` even, a compactly supported exact
@@ -644,29 +841,13 @@ theorem integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart (hk : Even 
         ((selfDualPart o β).1 x) ((selfDualPart o β).1 x) • riemannianVolumeForm o x) =
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
         ((antiSelfDualPart o β).1 x) ((antiSelfDualPart o β).1 x) • riemannianVolumeForm o x) := by
-  -- `|β⁺|² vol = β ∧ β + |β⁻|² vol` pointwise.
-  have hsplit : (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((selfDualPart o β).1 x) ((selfDualPart o β).1 x) • riemannianVolumeForm o x) =
-      RoughForm.wedge β.1 β.1 + fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((antiSelfDualPart o β).1 x) ((antiSelfDualPart o β).1 x) • riemannianVolumeForm o x := by
-    funext x
-    ext v
-    simp only [RoughForm.wedge_self_apply o hk, coe_selfDualPart, coe_antiSelfDualPart,
-      Pi.add_apply, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
-      smul_eq_mul]
-    ring
-  have hw := (mem_compactlySupportedForms I).mp (wedge_mem_compactlySupportedForms β hc)
-  rw [coe_wedge] at hw
-  have hsw : IsSmoothForm I 0 (RoughForm.wedge β.1 β.1) := by
-    simpa only [coe_wedge] using (wedge β β).isSmoothForm.of_le (by simp)
-  rw [hsplit, integralTopForm_add o hsw
-      ((isSmoothForm_inner_smul_riemannianVolumeForm o rfl _ _).of_le bot_le) hw
-      (RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o _ _
-        ((mem_compactlySupportedForms I).mp (antiSelfDualPart_mem_compactlySupportedForms o hc))),
-    ← coe_wedge, integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
-      (wedge_mem_exactCompactlySupportedForms_of_left_mem hβ
-        ((mem_compactlySupportedClosedForms I).mpr ⟨hc, exactForms_le_closedForms I k hβ⟩)),
-    zero_add]
+  -- Compare `β` with the zero form, whose energies vanish.
+  have h := integralTopForm_inner_selfDualPart_sub_inner_antiSelfDualPart_eq_of_sub_mem_exactForms
+    o hk (zero_mem _)
+    ((mem_compactlySupportedClosedForms I).mpr ⟨hc, exactForms_le_closedForms I k hβ⟩)
+    (by rwa [sub_zero])
+  simpa only [coe_selfDualPart, coe_antiSelfDualPart, map_zero, ZeroMemClass.coe_zero,
+    Pi.zero_apply, LinearMap.zero_apply, zero_smul, sub_self, sub_eq_zero] using h
 
 /-- On an oriented boundaryless Riemannian manifold of dimension `k + k` with `k` even, a compactly
 supported exact `k`-form whose self-dual part vanishes is zero. In particular on a
@@ -740,6 +921,30 @@ theorem integralTopForm_inner_antiSelfDualPart_eq_zero (hk : Even k) {β : Smoot
   rw [h, ← coe_wedge]
   exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
     (wedge_mem_exactCompactlySupportedForms_of_left_mem hβ (neg_mem hγ))
+
+/-- **Pairings with a closed self-dual form are cohomological**: on an oriented boundaryless
+Riemannian manifold of dimension `k + k`, for a closed `k`-form `φ` and a compactly supported
+closed self-dual `k`-form `γ`, the integral `∫_M ⟨φ, γ⟩ vol` is the Poincaré pairing of the de Rham
+classes `[φ]` and `[γ]`. In particular it depends only on the class of `φ`: for the curvature
+`F_A` of a connection on a line bundle over a four-manifold, `∫_M ⟨i F_A, γ⟩ vol` depends only
+on the bundle, by Chern–Weil theory. -/
+theorem integralTopForm_inner_smul_riemannianVolumeForm_eq_poincarePairing
+    {φ : SmoothForm I M ℝ k} (hφ : φ ∈ closedForms I M k) {γ : SmoothForm I M ℝ k}
+    (hγ : γ ∈ compactlySupportedClosedForms I M k) (hγ' : γ ∈ selfDualForms o) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (φ.1 x) (γ.1 x) •
+      riemannianVolumeForm o x) =
+      poincarePairing I M o (deRhamCohomology.mk I k ⟨φ, hφ⟩)
+        (compactlySupportedDeRhamCohomology.mk I k ⟨γ, hγ⟩) := by
+  -- Pointwise `⟨φ, γ⟩ vol = φ ∧ ⋆γ = φ ∧ γ`.
+  have h : (fun x ↦ alternatingFormInner (TangentSpace I x) k (φ.1 x) (γ.1 x) •
+      riemannianVolumeForm o x) = RoughForm.wedge φ.1 γ.1 := by
+    funext x
+    ext v
+    have hd := congrFun (inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o rfl φ γ) x
+    rw [mem_selfDualForms.1 hγ'] at hd
+    rw [hd, cast_apply, coe_wedge]
+    simp only [Function.comp_def, Fin.cast_eq_self]
+  rw [h, poincarePairing_mk]
 
 end Exact
 

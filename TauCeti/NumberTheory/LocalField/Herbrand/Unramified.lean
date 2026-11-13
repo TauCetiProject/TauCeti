@@ -60,10 +60,7 @@ theorem lowerRamificationGroupReal_eq_bot_of_isUnramified {u : ℝ} (hu : 0 ≤ 
 /-- The Herbrand function of an unramified extension is the identity. -/
 @[simp]
 theorem herbrand_of_isUnramified (u : RamificationIndexDomain) : herbrand K L u = u := by
-  by_cases hu : (u : ℝ) ≤ 0
-  · exact herbrand_of_coe_le_zero K L hu
-  have hnonneg : 0 ≤ (u : ℝ) := le_of_not_ge hu
-  apply herbrand_eq_self_of_forall_eq K L hnonneg
+  apply herbrand_eq_self_of_forall_eq K L
   intro t ht0 _
   rw [lowerRamificationGroupReal_eq_bot_of_isUnramified K L ht0.le,
     lowerRamificationGroup_zero_eq_bot_of_isUnramified K L]

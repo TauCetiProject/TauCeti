@@ -63,11 +63,11 @@ over `ℝ`.
 
 public section
 
-open Module CategoryTheory
+open TauCeti Module CategoryTheory
 
 universe u v
 
-namespace TauCeti
+namespace FDRep
 
 variable {K L : Type u} [Field K] [Field L] [Algebra K L] [CharZero K]
 variable {G : Type v} [Group G] [Finite G]
@@ -78,7 +78,7 @@ of characteristic zero and `W` a representation of the finite group `G` over `L`
 endomorphisms are the scalars. If the character of `W` is the image of a virtual character `f` of
 `G` over `K`, then `W` is the scalar extension `L ⊗[K] V` of a simple representation `V` over `K`
 whose equivariant endomorphisms are again the scalars. -/
-theorem _root_.FDRep.exists_simple_nonempty_iso_baseChange_of_character_eq (W : FDRep L G)
+theorem exists_simple_nonempty_iso_baseChange_of_character_eq (W : FDRep L G)
     (hW : finrank L (W ⟶ W) = 1) {f : G → K} (hf : f ∈ virtualCharacters K G)
     (hχ : W.character = algebraMap K L ∘ f) :
     ∃ V : FDRep K G, Simple V ∧ finrank K (V ⟶ V) = 1 ∧
@@ -109,7 +109,7 @@ theorem _root_.FDRep.exists_simple_nonempty_iso_baseChange_of_character_eq (W : 
 fields of characteristic zero, a representation `W` of a finite group over `L` whose equivariant
 endomorphisms are the scalars is isomorphic to a scalar extension `L ⊗[K] V` exactly when its
 character is the image of a virtual character of `G` over `K`. -/
-theorem _root_.FDRep.exists_nonempty_iso_baseChange_iff (W : FDRep L G)
+theorem exists_nonempty_iso_baseChange_iff (W : FDRep L G)
     (hW : finrank L (W ⟶ W) = 1) :
     (∃ V : FDRep K G, Nonempty (FDRep.of (Representation.baseChange L V.ρ) ≅ W)) ↔
       ∃ f ∈ virtualCharacters K G, W.character = algebraMap K L ∘ f := by
@@ -123,10 +123,10 @@ theorem _root_.FDRep.exists_nonempty_iso_baseChange_iff (W : FDRep L G)
 exactly when its character is the image of a virtual character over the subfield.** For instance,
 an irreducible complex representation is realized over a subfield `K` of `ℂ` when its character
 is an integer combination of characters of representations over `K`. -/
-theorem _root_.FDRep.exists_nonempty_iso_baseChange_iff_of_simple [IsAlgClosed L]
+theorem exists_nonempty_iso_baseChange_iff_of_simple [IsAlgClosed L]
     (W : FDRep L G) [Simple W] :
     (∃ V : FDRep K G, Nonempty (FDRep.of (Representation.baseChange L V.ρ) ≅ W)) ↔
       ∃ f ∈ virtualCharacters K G, W.character = algebraMap K L ∘ f :=
   W.exists_nonempty_iso_baseChange_iff (finrank_endomorphism_simple_eq_one L W)
 
-end TauCeti
+end FDRep

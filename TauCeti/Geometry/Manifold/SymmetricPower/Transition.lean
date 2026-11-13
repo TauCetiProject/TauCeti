@@ -21,7 +21,7 @@ patch, applies the change of surface coordinate to them, and takes their element
 functions.
 
 This file proves that this transition is holomorphic. The analytic input is
-`TauCeti.Sym.analyticAt_sum_map_filter_coeffEquiv_symm`: sums of a holomorphic function over the
+`Sym.analyticAt_sum_map_filter_coeffEquiv_symm`: sums of a holomorphic function over the
 roots of a monic polynomial lying in a region depend analytically on the coefficients, colliding
 roots included. Applied to the power sums of the points of one target block, and combined with
 Newton's identities, it shows that each target block of coordinates is analytic in the source

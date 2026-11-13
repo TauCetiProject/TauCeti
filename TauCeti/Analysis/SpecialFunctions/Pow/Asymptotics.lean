@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Asymptotics.Lemmas
+public import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
 
 /-!
 # Power-law asymptotics
@@ -26,6 +27,16 @@ On a seminormed group, as `‖s‖ → ∞`:
 * every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`.
 
 These are the comparisons behind the order of growth of an entire function.
+
+## Positive powers near zero
+
+As `h → 0⁺`, every multiple `A * h ^ θ` of a positive power falls below any positive constant.
+This is how polynomial rates in a small scale `h` become inequalities for all small `h`.
+
+## Families bounded by integer powers
+
+A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a → -∞`,
+tends to zero. This is how valuation bounds on coefficients give convergence of series.
 
 ## Comparing exponents
 
@@ -83,6 +94,13 @@ open Asymptotics Bornology
 
 namespace TauCeti
 
+/-- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant. -/
+theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
+    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c := by
+  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto.const_mul A
+  rw [Real.zero_rpow hθ.ne', mul_zero] at ht
+  exact (ht.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hc)
+
 variable {E : Type*} [SeminormedAddCommGroup E]
 
 /-- For `a < b` and any real `c`, `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` as `‖s‖ → ∞`. -/
@@ -108,6 +126,16 @@ theorem isBigO_norm_pow_exp_norm_rpow (n : ℕ) {b : ℝ} (hb : 0 < b) :
     rw [Function.comp_apply, ← Real.rpow_mul hx, mul_div_cancel₀ _ hb.ne', Real.rpow_natCast]
   exact h.comp_tendsto tendsto_norm_cobounded_atTop
 
+/-- A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a`
+tending to `-∞`, tends to zero. -/
+theorem tendsto_zero_of_norm_le_zpow {α F : Type*} [SeminormedAddGroup F] {l : Filter α}
+    {f : α → F} {r : ℝ} (hr : 1 < r) {g : α → ℤ} (hf : ∀ a, ‖f a‖ ≤ r ^ g a)
+    (hg : Tendsto g l atBot) : Tendsto f l (𝓝 0) := by
+  refine squeeze_zero_norm hf ?_
+  have h := (tendsto_rpow_atBot_of_base_gt_one r hr).comp
+    ((tendsto_intCast_atBot_iff (R := ℝ)).2 hg)
+  simpa [Function.comp_def, Real.rpow_intCast] using h
+
 /-- If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`. -/
 theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
     (h : ∀ n : ℕ, ((n : ℝ) + 1) ^ a ≤ C * ((n : ℝ) + 1) ^ b) : a ≤ b := by
@@ -123,3 +151,50 @@ theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
   linarith
 
 end TauCeti
+
+namespace Real
+
+/-- The Mellin growth scale `(1+r) log (2+r)` is negligible compared with every power above one. -/
+theorem isLittleO_add_one_mul_log_add_two_rpow {p : ℝ} (hp : 1 < p) :
+    (fun r : ℝ ↦ (1 + r) * log (2 + r)) =o[atTop] fun r ↦ r ^ p := by
+  have hlin : (fun r : ℝ ↦ 1 + r) =O[atTop] fun r ↦ r := by
+    apply IsBigO.of_bound 2
+    filter_upwards [eventually_ge_atTop (1 : ℝ)] with r hr
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by linarith),
+      abs_of_nonneg (by linarith)]
+    linarith
+  have hlog : (fun r : ℝ ↦ log (2 + r)) =O[atTop] log := by
+    apply IsBigO.of_bound 2
+    filter_upwards [eventually_ge_atTop (2 : ℝ)] with r hr
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (log_nonneg (by linarith)),
+      abs_of_nonneg (log_nonneg (by linarith))]
+    calc
+      log (2 + r) ≤ log (r * r) := log_le_log (by linarith) (by nlinarith)
+      _ = 2 * log r := by rw [log_mul (by linarith) (by linarith)]; ring
+  refine (hlin.mul_isLittleO (hlog.trans_isLittleO
+    (isLittleO_log_rpow_atTop (sub_pos.mpr hp)))).congr' .rfl ?_
+  filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr
+  calc
+    r * r ^ (p - 1) = r ^ (1 + (p - 1)) := by rw [rpow_add hr, rpow_one]
+    _ = r ^ p := by congr 1; ring
+/-- The logarithmic growth scale is stable under nonnegative affine majorants. -/
+theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
+    (hA : 0 ≤ A) (htA : t ≤ A * (1 + r)) :
+    (1 + t) * log (2 + t) ≤ (A + 2) * (2 * (A + 2) + 1) * (1 + r) * log (2 + r) := by
+  let M := A + 2
+  have hM : 0 < M := by dsimp [M]; positivity
+  have hL := one_half_le_log_two_add hr
+  have h1 : 1 + t ≤ M * (1 + r) := by dsimp [M]; nlinarith
+  have h2 : 2 + t ≤ M * (2 + r) := by dsimp [M]; nlinarith
+  have hlog : log (2 + t) ≤ log M + log (2 + r) := by
+    rw [← log_mul hM.ne' (by positivity : 2 + r ≠ 0)]
+    exact log_le_log (by positivity) h2
+  have hlogM : log M ≤ M := (log_le_sub_one_of_pos hM).trans (by linarith)
+  have hlog' : log (2 + t) ≤ (2 * M + 1) * log (2 + r) := by
+    nlinarith [mul_le_mul_of_nonneg_left hL (by positivity : 0 ≤ 2 * M)]
+  calc
+    _ ≤ (M * (1 + r)) * ((2 * M + 1) * log (2 + r)) :=
+      mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
+    _ = _ := by dsimp [M]; ring
+
+end Real

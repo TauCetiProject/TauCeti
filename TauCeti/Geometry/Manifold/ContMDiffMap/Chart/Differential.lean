@@ -69,6 +69,7 @@ theorem tendsto_fderivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x : M} {y 
     self_mem_nhdsWithin] with p hp
   exact continuousMultilinearCurryFin1_iteratedFDerivWithin_extChartAt_target _ hp.2
 
+omit [LocallyCompactSpace E] in
 /-- On a compact subset of a source chart target which `f₀` maps into a target chart, the
 coordinate differentials of maps near `f₀` converge uniformly to those of `f₀`. -/
 theorem tendstoUniformlyOn_fderivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x : M} {y : N}
@@ -84,6 +85,7 @@ theorem tendstoUniformlyOn_fderivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} 
     (ContMDiffMap.tendstoUniformlyOn_iteratedFDerivWithin_extChartAt hC hCx hCy hn)).congr
       (Eventually.of_forall fun _ _ hw ↦ hc _ hw)).congr_right fun _ hw ↦ hc _ hw
 
+omit [LocallyCompactSpace E] in
 /-- On a compact subset of a source chart target which `f₀` maps into a target chart, the second
 coordinate derivatives of maps near `f₀` converge uniformly to those of `f₀`. -/
 theorem tendstoUniformlyOn_fderivWithin_fderivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x : M}

@@ -73,8 +73,6 @@ theorem existsUnique_forall_mk_eq (x : ∀ U : OpenNormalSubgroup G, G ⧸ (U : 
     (hcompat : ∀ (U V : OpenNormalSubgroup G) (_hle : (U : Subgroup G) ≤ V) (g : G),
       QuotientGroup.mk' (U : Subgroup G) g = x U → QuotientGroup.mk' (V : Subgroup G) g = x V) :
     ∃! g : G, ∀ U : OpenNormalSubgroup G, QuotientGroup.mk' (U : Subgroup G) g = x U := by
-  have hneIdx : Nonempty (OpenNormalSubgroup G) :=
-    ⟨{ toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }⟩
   have hne : ∀ U : OpenNormalSubgroup G,
       ((QuotientGroup.mk' (U : Subgroup G)) ⁻¹' {x U}).Nonempty := fun U =>
     QuotientGroup.mk'_surjective (U : Subgroup G) (x U)
@@ -293,8 +291,6 @@ theorem map_mk'_limitSubgroup [CompactSpace G]
             (H (V ⊓ W)).map (QuotientGroup.mapOfLE inf_le_right) :=
           ⟨QuotientGroup.mk g, hg, QuotientGroup.mapOfLE_mk _ g⟩
         rwa [hH inf_le_right] at this
-    let _ : Nonempty (OpenNormalSubgroup G) :=
-      ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }⟩
     obtain ⟨g, hg⟩ :=
       IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t ht_directed ht_nonempty
         (fun V ↦ (ht_closed V).isCompact) ht_closed

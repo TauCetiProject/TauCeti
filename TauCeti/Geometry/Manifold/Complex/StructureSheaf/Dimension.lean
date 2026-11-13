@@ -47,22 +47,9 @@ variable {E F : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
 stalks. No finite-dimensionality assumption is required for this comparison. -/
 theorem ringKrullDim_holomorphicStalk (e : E ≃L[ℂ] F) (a : E) :
     ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk a) =
-      ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, F) F).presheaf.stalk (e a)) := by
-  have hle : ∀ (V W : Type) [NormedAddCommGroup V] [NormedSpace ℂ V]
-      [NormedAddCommGroup W] [NormedSpace ℂ W] (e : V ≃L[ℂ] W) (v : V),
-      ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk v) ≤
-        ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, W) W).presheaf.stalk (e v)) := by
-    intro V W _ _ _ _ e v
-    apply ringKrullDim_le_of_surjective (stalkPrecomp 𝓘(ℂ, V) V e e.contDiff.contMDiff v)
-    rw [← stalkPullback_eq_stalkPrecomp]
-    exact stalkPullback_surjective_of_eventually_leftInverse _
-      (Eventually.of_forall fun _ ↦ e.symm.contDiff.contMDiff.contMDiffAt)
-      (Eventually.of_forall e.symm_apply_apply)
-  refine le_antisymm (hle E F e a) ?_
-  -- Transport the base point explicitly through the stalk's colimit carrier.
-  exact (hle F E e.symm (e a)).trans_eq
-    (congrArg (fun x ↦ ringKrullDim
-      ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x)) (e.symm_apply_apply a))
+      ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, F) F).presheaf.stalk (e a)) :=
+  (ringKrullDim_eq_of_ringEquiv
+    (RingEquiv.ofBijective _ (e.holomorphicStalkPullback_bijective a))).symm
 
 end ContinuousLinearEquiv
 

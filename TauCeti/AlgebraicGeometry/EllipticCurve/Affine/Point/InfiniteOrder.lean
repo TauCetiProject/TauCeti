@@ -13,8 +13,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TorsionReduct
 Let `A` be a Dedekind domain with fraction field `F`, and let `W` be an elliptic curve over `F`
 with good reduction at a height-one prime `u` of `A`, so that reduction of points is a group
 homomorphism `W(F) →+ W_k(k)` to the points of the reduced curve. Reduction is injective on the
-torsion of order prime to `u` (Silverman AEC VII.3.1). So if a prime `ℓ ∉ u` divides the order of
-a torsion point `P`, it also divides the order of the reduction of `P`
+torsion of order prime to `u` (Silverman AEC VII.3.1). So if a natural number `ℓ ∉ u` divides the
+order of a torsion point `P`, it also divides the order of the reduction of `P`
 (`WeierstrassCurve.Affine.Point.dvd_addOrderOf_reductionHom`).
 
 This gives a finite certificate that a rational point has infinite order. Suppose `P ≠ 0`, that
@@ -34,8 +34,8 @@ may reduce to zero modulo `u`.
 
 All results are in the namespace `WeierstrassCurve.Affine.Point`.
 
-* `dvd_addOrderOf_reductionHom`: at good reduction, a prime `ℓ ∉ u` dividing the order of a torsion
-  point divides the order of its reduction.
+* `dvd_addOrderOf_reductionHom`: at good reduction, a natural number `ℓ ∉ u` dividing the order of
+  a torsion point divides the order of its reduction.
 * `prime_dvd_mul_of_dvd_addOrderOf`: if `p ∈ u` and the reduction of a torsion point `P` is killed
   by `m`, every prime dividing the order of `P` divides `p * m`.
 * `not_isOfFinAddOrder_of_coprime`: the two-prime certificate that a point has infinite order.
@@ -71,28 +71,22 @@ variable [IsIntegral (u.valuation F).valuationSubring W]
   [(integralModel (u.valuation F).valuationSubring W).IsElliptic]
   [DecidableEq (ResidueField (u.valuation F).valuationSubring)]
 
-/-- **At good reduction, reduction keeps the primes `ℓ ∉ u` of the order of a torsion point**: if
-a prime `ℓ ∉ u` divides the order of a torsion point `P`, it divides the order of the reduction
-of `P`. -/
+/-- **At good reduction, reduction keeps the divisors `ℓ ∉ u` of the order of a torsion point**: if
+a natural number `ℓ ∉ u` divides the order of a torsion point `P`, it divides the order of the
+reduction of `P`. -/
 theorem dvd_addOrderOf_reductionHom {P : W.Point} (hP : IsOfFinAddOrder P) {ℓ : ℕ}
-    (hℓ : ℓ.Prime) (hℓu : (ℓ : A) ∉ u.asIdeal) (hℓP : ℓ ∣ addOrderOf P) :
+    (hℓu : (ℓ : A) ∉ u.asIdeal) (hℓP : ℓ ∣ addOrderOf P) :
     ℓ ∣ addOrderOf (reductionHom (u.valuation F) P) := by
-  obtain ⟨k, hk⟩ := hℓP
-  have hk0 : 0 < k := Nat.pos_of_ne_zero fun h ↦ by
-    rw [h, mul_zero] at hk
-    exact hP.addOrderOf_pos.ne' hk
-  -- `k • P` has order `ℓ`, so it is nonzero and its reduction is nonzero
-  have hkP : k • P ≠ 0 :=
-    nsmul_ne_zero_of_lt_addOrderOf hk0.ne' (by rw [hk]; nlinarith [hℓ.two_le])
-  by_contra hℓR
-  refine hkP (eq_zero_of_reductionHom_eq_zero_of_nsmul_eq_zero u hℓu ?_ ?_)
-  · -- the order of the reduction divides `ℓ * k` and is prime to `ℓ`, so it divides `k`
-    rw [map_nsmul]
-    refine addOrderOf_dvd_iff_nsmul_eq_zero.mp ?_
-    refine ((Nat.coprime_comm.mp (hℓ.coprime_iff_not_dvd.mpr hℓR)).dvd_of_dvd_mul_left ?_)
-    rw [← hk]
-    exact addOrderOf_map_dvd _ P
-  · rw [smul_smul, ← hk, addOrderOf_nsmul_eq_zero]
+  -- `Q = (n / ℓ) • P` has order `ℓ`
+  set Q := (addOrderOf P / ℓ) • P with hQ
+  have hQo : addOrderOf Q = ℓ := addOrderOf_nsmul_addOrderOf_sub hP.addOrderOf_pos.ne' hℓP
+  have hℓQ : ℓ • Q = 0 := hQo ▸ addOrderOf_nsmul_eq_zero Q
+  -- reduction is injective on `ℓ`-torsion, so `Q` and its reduction have the same order
+  have key : addOrderOf Q ∣ addOrderOf (reductionHom (u.valuation F) Q) :=
+    addOrderOf_dvd_of_nsmul_eq_zero (eq_zero_of_reductionHom_eq_zero_of_nsmul_eq_zero u hℓu
+      (by rw [map_nsmul, addOrderOf_nsmul_eq_zero]) (by rw [smul_comm, hℓQ, smul_zero]))
+  rw [hQo, hQ, map_nsmul] at key
+  exact key.trans (addOrderOf_smul_dvd _)
 
 /-- **The primes of the order of a torsion point, seen at one prime of good reduction**: if
 `p ∈ u` and the reduction of a torsion point `P` is killed by `m`, every prime dividing the order
@@ -104,7 +98,7 @@ theorem prime_dvd_mul_of_dvd_addOrderOf {P : W.Point} (hP : IsOfFinAddOrder P) {
   · -- `ℓ` and `p` both lie in `u`, so they are not coprime
     exact (by_contra fun h ↦ Ideal.IsPrime.notMem_of_isCoprime_of_mem
       ((hℓ.coprime_iff_not_dvd.mpr h).cast (R := A)) hℓu hp : ℓ ∣ p).mul_right m
-  · exact ((dvd_addOrderOf_reductionHom u hP hℓ hℓu hℓP).trans
+  · exact ((dvd_addOrderOf_reductionHom u hP hℓu hℓP).trans
       (addOrderOf_dvd_of_nsmul_eq_zero hm)).mul_left p
 
 end Prime

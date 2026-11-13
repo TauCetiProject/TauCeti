@@ -16,14 +16,18 @@ import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 Mathlib computes the argument of a quotient only modulo `2π` (`Complex.arg_div_coe_angle`), and
 of a product exactly when the sum of the arguments lies in `(-π, π]`
 (`Complex.arg_mul_eq_add_arg_iff`). This file records the analogue for quotients, and its most
-common instance: for two points of the open upper half-plane the arguments lie in `(0, π)`, so
-the argument of their quotient is the difference of their arguments. It also records that every
-complex number is rotated onto the nonpositive real axis by the square of a unit complex number.
+common instances: two points of the open upper half-plane, of the open lower half-plane or of the
+open right half-plane have arguments in a common open interval of length `π`, so the argument of
+their quotient is the difference of their arguments. It also records that every
+complex number is rotated onto the nonpositive real axis by the square of a unit complex number,
+and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by a punctured ball about its
-vertex, is the image of an open rectangle in polar coordinates. Finally, the argument is smooth on
-the slit plane, where its derivative is the imaginary part of that of the logarithm, and although it
-jumps across the negative real axis, a smooth `2π`-periodic function of the argument is smooth on
-the whole punctured plane: near the negative real axis it is computed from the argument of `-z`.
+vertex, is the image of an open rectangle in polar coordinates. On the slit plane `|arg z| < π`,
+and the exponential maps the horizontal strip `|im x| < π` into the slit plane. Finally, the
+argument is smooth on the slit plane, where its derivative is the imaginary part of that of the
+logarithm, and although it jumps across the negative real axis, a smooth `2π`-periodic function of
+the argument is smooth on the whole punctured plane: near the negative real axis it is computed
+from the argument of `-z`.
 Since the argument is continuous on the slit plane and blind to positive real scaling,
 `arg (f x) → arg Q` as soon as some positive real multiple of `f x` tends to `Q ∈ slitPlane`.
 
@@ -32,6 +36,8 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 * `Complex.arg_div_eq_sub_arg_iff`: `arg (x / y) = arg x - arg y` exactly when
   `arg x - arg y ∈ (-π, π]`.
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
+* `Complex.arg_div_of_im_neg`: if `x.im < 0` and `y.im < 0`, then `arg (x / y) = arg x - arg y`.
+* `Complex.arg_div_of_re_pos`: if `0 < x.re` and `0 < y.re`, then `arg (x / y) = arg x - arg y`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
@@ -39,7 +45,11 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
   rectangle.
+* `Complex.arg_neg_exp_of_div_pi_ne`: if `φ / π` is not an integer, then
+  `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
+* `Complex.abs_arg_lt_pi_of_mem_slitPlane`: on the slit plane, `|arg z| < π`.
+* `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
@@ -70,6 +80,24 @@ theorem arg_div_of_im_pos {x y : ℂ} (hx : 0 < x.im) (hy : 0 < y.im) :
     (fun h ↦ hy.ne' (by rw [h, zero_im]))).2
     ⟨by linarith [arg_nonneg_iff.2 hx.le, arg_lt_pi_iff.2 (Or.inr hy.ne')],
       by linarith [arg_nonneg_iff.2 hy.le, arg_le_pi x]⟩
+
+/-- The argument of the quotient of two points of the open lower half-plane is the difference of
+their arguments. -/
+theorem arg_div_of_im_neg {x y : ℂ} (hx : x.im < 0) (hy : y.im < 0) :
+    arg (x / y) = arg x - arg y :=
+  (arg_div_eq_sub_arg_iff (fun h ↦ hx.ne (by rw [h, zero_im]))
+    (fun h ↦ hy.ne (by rw [h, zero_im]))).2
+    ⟨by linarith [neg_pi_lt_arg x, arg_neg_iff.2 hy],
+      by linarith [arg_neg_iff.2 hx, neg_pi_lt_arg y]⟩
+
+/-- The argument of the quotient of two points of the open right half-plane is the difference of
+their arguments. -/
+theorem arg_div_of_re_pos {x y : ℂ} (hx : 0 < x.re) (hy : 0 < y.re) :
+    arg (x / y) = arg x - arg y := by
+  have hx' := abs_lt.1 (abs_arg_lt_pi_div_two_iff.2 (Or.inl hx))
+  have hy' := abs_lt.1 (abs_arg_lt_pi_div_two_iff.2 (Or.inl hy))
+  exact (arg_div_eq_sub_arg_iff (fun h ↦ hx.ne' (by rw [h, zero_re]))
+    (fun h ↦ hy.ne' (by rw [h, zero_re]))).2 ⟨by linarith, by linarith⟩
 
 /-- Swapping numerator and denominator preserves the absolute value of the argument of a
 quotient. -/
@@ -103,6 +131,28 @@ theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
         rw [h, exp_pi_mul_I]
         ring
 
+/-- If `φ / π` is not an integer, then `-e^{2iφ} = e^{iψ}` for the angle
+`ψ = 2φ - π - 2π⌊φ / π⌋`, which lies in `(-π, π)`, so `ψ` is the argument of `-e^{2iφ}`. -/
+theorem arg_neg_exp_of_div_pi_ne {φ : ℝ} (hφ : ∀ k : ℤ, φ / π ≠ k) :
+    arg (-exp (↑(2 * φ) * I)) = 2 * φ - π - 2 * π * ⌊φ / π⌋ := by
+  set x := φ / π with hx
+  have hlt : (⌊x⌋ : ℝ) < x := lt_of_le_of_ne (Int.floor_le x) fun h => hφ _ h.symm
+  have hlt' : x < ⌊x⌋ + 1 := Int.lt_floor_add_one x
+  set ψ := 2 * φ - π - 2 * π * ⌊x⌋ with hψ
+  have hφx : φ = x * π := by rw [hx]; field_simp
+  have hψlo : -π < ψ := by
+    rw [hψ, hφx]; nlinarith [pi_pos]
+  have hψhi : ψ < π := by
+    rw [hψ, hφx]; nlinarith [pi_pos]
+  have hneg : -exp (↑(2 * φ) * I) = exp (↑ψ * I) := by
+    have h2φ : (2 * φ : ℝ) = ψ + π + ⌊x⌋ * (2 * π) := by rw [hψ]; ring
+    rw [h2φ]
+    push_cast
+    rw [add_mul, add_mul, exp_add, exp_add, exp_pi_mul_I, mul_assoc (⌊x⌋ : ℂ),
+      exp_int_mul_two_pi_mul_I]
+    ring
+  rw [hneg, arg_exp_mul_I, (toIocMod_eq_self _).2 ⟨hψlo, by linarith⟩]
+
 /-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
 theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
     (Real.exp (u.arg * r))⁻¹ ≤ Real.exp (Real.pi * |r|) := by
@@ -130,6 +180,16 @@ theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
     simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
       contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
   exact (hp.pow m).contDiffWithinAt
+
+/-- On the slit plane the argument lies strictly between `-π` and `π`. -/
+theorem abs_arg_lt_pi_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) : |arg z| < π :=
+  abs_lt.2 ⟨neg_pi_lt_arg z, lt_of_le_of_ne (arg_le_pi z) (slitPlane_arg_ne_pi hz)⟩
+
+/-- The exponential of a point of the horizontal strip `|im x| < π` lies in the slit plane. -/
+theorem exp_mem_slitPlane_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : exp x ∈ slitPlane := by
+  obtain ⟨h₁, h₂⟩ := abs_lt.1 hx
+  rw [exp_mem_slitPlane, (toIocMod_eq_self _).2 ⟨h₁, by linarith [pi_pos]⟩]
+  exact h₂.ne
 
 /-- The argument is smooth on the slit plane, where it is the imaginary part of the principal
 logarithm. -/

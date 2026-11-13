@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Units
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.RingTheory.Polynomial.Selmer
+import TauCeti.Algebra.Polynomial.Cubic.Basic
 import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Invariants
 
 /-!
@@ -128,9 +130,9 @@ theorem discr_cubicCandidate (t : ℤ × ℤ × ℤ) :
 
 theorem cubicCandidate_injective : Function.Injective cubicCandidate := by
   intro t s h
-  have h2 := congrArg (coeff · 2) h
-  have h1 := congrArg (coeff · 1) h
-  have h0 := congrArg (coeff · 0) h
+  have h2 := congrArg (fun p : ℤ[X] ↦ p.coeff 2) h
+  have h1 := congrArg (fun p : ℤ[X] ↦ p.coeff 1) h
+  have h0 := congrArg (fun p : ℤ[X] ↦ p.coeff 0) h
   simp only [coeff_two_cubicCandidate, coeff_one_cubicCandidate, coeff_zero_cubicCandidate]
     at h2 h1 h0
   exact Prod.ext h2 (Prod.ext h1 h0)
@@ -138,14 +140,11 @@ theorem cubicCandidate_injective : Function.Injective cubicCandidate := by
 /-- A monic cubic is the candidate polynomial of its coefficients. -/
 theorem eq_cubicCandidate_of_monic {f : ℤ[X]} (hm : f.Monic) (hd : f.natDegree = 3) :
     f = cubicCandidate (f.coeff 2, f.coeff 1, f.coeff 0) := by
-  calc
-    f = Polynomial.monicOfCoeff (fun i : Fin 3 ↦ f.coeff (i : ℕ)) :=
-      (Polynomial.monicOfCoeff_coeff hm hd).symm
-    _ = cubicCandidate (f.coeff 2, f.coeff 1, f.coeff 0) := by
-      unfold cubicCandidate
-      congr 1
-      ext i
-      fin_cases i <;> rfl
+  have h := Polynomial.Monic.eq_X_pow_three_add
+    (monic_cubicCandidate (f.coeff 2, f.coeff 1, f.coeff 0))
+    (natDegree_cubicCandidate (f.coeff 2, f.coeff 1, f.coeff 0))
+  simp only [coeff_two_cubicCandidate, coeff_one_cubicCandidate, coeff_zero_cubicCandidate] at h
+  exact (Polynomial.Monic.eq_X_pow_three_add hm hd).trans h.symm
 
 /-- There are exactly `98` candidates. -/
 theorem card_cubicCandidates : cubicCandidates.card = 98 := by
@@ -258,9 +257,9 @@ private theorem eq_of_aeval_eq_zero {t : ℤ × ℤ × ℤ} (ht : aeval B (cubic
     have hq2 : q.degree ≤ 2 := by rw [hq]; compute_degree
     rw [h3] at this
     exact absurd (this.trans hq2) (by decide)
-  have h2 := congrArg (coeff · 2) hq_zero
-  have h1 := congrArg (coeff · 1) hq_zero
-  have h0 := congrArg (coeff · 0) hq_zero
+  have h2 := congrArg (fun p : ℚ[X] ↦ p.coeff 2) hq_zero
+  have h1 := congrArg (fun p : ℚ[X] ↦ p.coeff 1) hq_zero
+  have h0 := congrArg (fun p : ℚ[X] ↦ p.coeff 0) hq_zero
   simp only [hq, coeff_add, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C, coeff_zero] at h2 h1 h0
   norm_num at h2 h1 h0
   ext

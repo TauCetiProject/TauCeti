@@ -153,7 +153,7 @@ private theorem RoughForm.signedInChartAt_mpullback_eq_det_mul (φ : RoughForm J
       (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I) (extChartAt I β x)).det *
         φ.inChartAt α (extChartAt J α (f x)) (b.map C.toLinearEquiv)) * hσ
 
-omit [FiniteDimensional ℝ E'] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
 /-- On a Borel piece `s` of a chart overlap on which `f` is injective and differentiable, the
 unsigned coefficient of `f^*φ` is integrable on the chart image of `s` exactly when the unsigned
 coefficient of `φ` is integrable on the chart image of `f '' s`. The two model spaces are compared
@@ -168,6 +168,7 @@ theorem RoughForm.integrableOn_signedInChartAt_one_mpullback_iff (φ : RoughForm
         ((extChartAt I β) '' s) μ ↔
       IntegrableOn (φ.signedInChartAt (b.map C.toLinearEquiv) α (fun _ ↦ 1))
         ((extChartAt J α) '' (f '' s)) (μ.map C) := by
+  have := b.finiteDimensional_of_finite
   obtain ⟨hm, himage, hinjT, hD⟩ := coordinate_jacobian_data C hinj hf hs hsub
   have hC : MeasurableEmbedding C := C.toHomeomorph.measurableEmbedding
   rw [hC.integrableOn_map_iff, ← himage,
@@ -190,7 +191,7 @@ theorem RoughForm.integrableOn_signedInChartAt_one_mpullback_iff (φ : RoughForm
   simpa only [IntegrableOn, smul_eq_mul] using
     MeasureTheory.integrable_smul_iff_abs_smul (F := ℝ) hd
 
-omit [FiniteDimensional ℝ E'] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
 /-- On a Borel piece `s` of a chart overlap on which `f` is injective and differentiable, the
 lower integral of the absolute coefficient of `f^*φ` over the chart image of `s` equals the lower
 integral of the absolute coefficient of `φ` over the chart image of `f '' s`. The two model spaces
@@ -205,6 +206,7 @@ theorem RoughForm.setLIntegral_ofReal_abs_inChartAt_mpullback (φ : RoughForm J 
     ∫⁻ z in (extChartAt I β) '' s, ENNReal.ofReal |(mpullback I J f φ).inChartAt β z b| ∂μ =
       ∫⁻ w in (extChartAt J α) '' (f '' s),
         ENNReal.ofReal |φ.inChartAt α w (b.map C.toLinearEquiv)| ∂(μ.map C) := by
+  have := b.finiteDimensional_of_finite
   obtain ⟨hm, himage, hinjT, hD⟩ := coordinate_jacobian_data C hinj hf hs hsub
   have hC : MeasurableEmbedding C := C.toHomeomorph.measurableEmbedding
   rw [hC.restrict_map, hC.lintegral_map, ← himage,
@@ -225,7 +227,7 @@ theorem RoughForm.integral_signedInChartAt_mpullback_eq (φ : RoughForm J N ℝ 
     (b : Module.Basis (Fin k) ℝ E) (C : E ≃L[ℝ] E') (l : Manifold.OrientationLift I M (Fin k))
     (l' : Manifold.OrientationLift J N (Fin k))
     (hl : l'.modelOrientation = Orientation.map (Fin k) C.toLinearEquiv l.modelOrientation)
-    {f : M → N} {s : Set M} (hinj : InjOn f s) (hf : ∀ x ∈ s, MDifferentiableAt I J f x)
+    {f : M → N} {s : Set M} (hinj : InjOn f s)
     (ho : ∀ x ∈ s, Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.mk l)
       (Manifold.Orientation.mk l') f x)
     {β : M} {α : N} (hs : IsChartMeasurable I s)
@@ -235,6 +237,8 @@ theorem RoughForm.integral_signedInChartAt_mpullback_eq (φ : RoughForm J N ℝ 
         (mpullback I J f φ).signedInChartAt b β (fun x ↦ l.signAt β x) z ∂μ =
       ∫ w in (extChartAt J α) '' (f '' s),
         φ.signedInChartAt (b.map C.toLinearEquiv) α (fun y ↦ l'.signAt α y) w ∂(μ.map C) := by
+  have hf (x : M) (hx : x ∈ s) :=
+    mdifferentiableAt_of_isInvertible_mfderiv (ho x hx).isInvertible_mfderiv
   obtain ⟨hm, himage, hinjT, hD⟩ := coordinate_jacobian_data C hinj hf hs hsub
   have hC : MeasurableEmbedding C := C.toHomeomorph.measurableEmbedding
   rw [hC.setIntegral_map, ← himage,
@@ -267,6 +271,7 @@ open TauCeti
 
 variable (e : OpenPartialHomeomorph M N) {f : M → N}
 
+omit [FiniteDimensional ℝ E'] in
 /-- Let `e` be an open partial homeomorphism agreeing with a map `f` on its source, where `f` is
 differentiable, and let `φ` be an integrable top form supported in the target of `e`. If the two
 model spaces have the same dimension, a form `ψ` supported in the source of `e` that agrees there
@@ -284,6 +289,7 @@ theorem integrableTopForm_of_eq_mpullback (hfe : EqOn f e e.source)
   have : BorelSpace E' := ⟨rfl⟩
   have hψc := e.isCompact_tsupport_of_eq_mpullback hfe hφ.isCompact hφt hψ hψφ
   obtain ⟨-, ⟨b'⟩, hi⟩ := (integrableTopForm_iff φ).mp hφ
+  have := b'.finiteDimensional_of_finite
   let C := ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℝ) hE
   let b := b'.map C.symm.toLinearEquiv
   -- Over each point `p`, the part of the source of `e` in the chart at `p` whose image lies in
@@ -312,7 +318,6 @@ a chart of `N`, whose preimage piece `e.source ∩ e ⁻¹' t` is chart measurab
 `M`, the signed chart integral of `ψ` over the preimage piece equals that of `φ` over `t`. -/
 private theorem integral_signedInChartAt_source_inter_preimage_eq [MeasurableSpace E]
     [BorelSpace E] [MeasurableSpace E'] [BorelSpace E'] (hfe : EqOn f e e.source)
-    (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x)
     (b : Module.Basis (Fin k) ℝ E) (C : E ≃L[ℝ] E') (l : Manifold.OrientationLift I M (Fin k))
     (l' : Manifold.OrientationLift J N (Fin k))
     (hl : l'.modelOrientation = Orientation.map (Fin k) C.toLinearEquiv l.modelOrientation)
@@ -334,19 +339,19 @@ private theorem integral_signedInChartAt_source_inter_preimage_eq [MeasurableSpa
       inter_eq_right.mpr ht]
   have h := φ.integral_signedInChartAt_mpullback_eq b C l l' hl
     ((e.injOn.mono hse).congr fun x hx ↦ (hfe (hse hx)).symm)
-    (fun x hx ↦ hf x (hse hx)) (fun x hx ↦ ho x (hse hx)) hs hsub b.addHaar
+    (fun x hx ↦ ho x (hse hx)) hs hsub b.addHaar
   rw [himage, Module.Basis.map_addHaar] at h
   rw [← h]
   exact setIntegral_congr_fun (hs.image_extChartAt _ hβ)
     (RoughForm.eqOn_signedInChartAt_image (fun x hx ↦ hψφ x (hse hx)) b _ _ hβ)
 
 /-- **Change of variables for top forms along an open partial homeomorphism.** Let `e` agree on its
-source with a map `f` that is differentiable and orientation preserving there, and let `φ` be an
+source with a map `f` that is orientation preserving there, and let `φ` be an
 integrable top form supported in the target of `e`. A form `ψ` supported in the source of `e` that
 agrees there with `f^*φ` has the same integral as `φ`: `∫_M ψ = ∫_N φ`. The two manifolds may be
 modelled on different spaces. -/
 theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn f e e.source)
-    (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x) {o : Manifold.Orientation I M (Fin k)}
+    {o : Manifold.Orientation I M (Fin k)}
     {o' : Manifold.Orientation J N (Fin k)}
     (ho : ∀ x ∈ e.source, Manifold.Orientation.IsOrientationPreservingAt o o' f x)
     {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
@@ -359,6 +364,8 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
   have : BorelSpace E := ⟨rfl⟩
   let : MeasurableSpace E' := borel E'
   have : BorelSpace E' := ⟨rfl⟩
+  have hf (x : M) (hx : x ∈ e.source) :=
+    mdifferentiableAt_of_isInvertible_mfderiv (ho x hx).isInvertible_mfderiv
   have hE : Module.finrank ℝ E = Module.finrank ℝ E' := o.card_eq.symm.trans o'.card_eq
   have hψi := e.integrableTopForm_of_eq_mpullback hfe hf hE hφ hφt hψ hψφ
   -- Represent both orientations by lifts whose model orientations correspond under a fixed
@@ -411,7 +418,7 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
   have hβ : disjointed u i ⊆ (extChartAt I (e.symm (α i))).source :=
     (disjointed_subset u i).trans (hus i)
   rw [hdisj] at hs hβ ⊢
-  exact integral_signedInChartAt_source_inter_preimage_eq e hfe hf b C l l' hl ho hψφ
+  exact integral_signedInChartAt_source_inter_preimage_eq e hfe b C l l' hl ho hψφ
     ((disjointed_subset w i).trans fun y hy ↦ hy.1.1) hs hβ ((disjointed_subset w i).trans (hw i))
 
 /-- Change of variables for top forms along an open partial homeomorphism agreeing on its source
@@ -419,7 +426,7 @@ with an orientation-reversing map: under the hypotheses of
 `integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt` with `f` reversing orientation,
 `∫_M ψ = -∫_N φ`. -/
 theorem integralTopForm_of_eq_mpullback_of_isOrientationReversingAt (hfe : EqOn f e e.source)
-    (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x) {o : Manifold.Orientation I M (Fin k)}
+    {o : Manifold.Orientation I M (Fin k)}
     {o' : Manifold.Orientation J N (Fin k)}
     (ho : ∀ x ∈ e.source, Manifold.Orientation.IsOrientationReversingAt o o' f x)
     {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
@@ -428,7 +435,7 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationReversingAt (hfe : EqOn 
     (hψφ : ∀ x ∈ e.source, ψ x = mpullback I J f φ x) :
     integralTopForm o ψ = -integralTopForm o' φ := by
   rw [← integralTopForm_neg]
-  exact e.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt hfe hf
+  exact e.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt hfe
     (fun x hx ↦ (Manifold.Orientation.isOrientationPreservingAt_neg_right o o' f x).2 (ho x hx))
     hφ hφt hψ hψφ
 
@@ -501,7 +508,6 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
   let : MeasurableSpace E' := borel E'
   have : BorelSpace E' := ⟨rfl⟩
   have hd (x : M) := (ho x).isInvertible_mfderiv
-  have hmd (x : M) := mdifferentiableAt_of_isInvertible_mfderiv (hd x)
   have hE : Module.finrank ℝ E = Module.finrank ℝ E' := o.card_eq.symm.trans o'.card_eq
   have hint := hf.integrableTopForm_mpullback_iff hd hE hφ
   by_cases hφi : IntegrableTopForm φ
@@ -550,7 +556,7 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
     exact ((hv _).preimage hf.continuous).isChartMeasurable.diff
       (isOpen_biUnion fun j _ ↦ (hv _).preimage hf.continuous).isChartMeasurable
   have h := φ.integral_signedInChartAt_mpullback_eq b C l l' hl hf.injective.injOn
-    (fun x _ ↦ hmd x) (fun x _ ↦ ho x) hs
+    (fun x _ ↦ ho x) hs
     (fun x hx ↦ ⟨hu i (preimage_mono (disjointed_subset w i) hx),
       hw i (disjointed_subset w i hx)⟩) b.addHaar
   rwa [image_preimage_eq_of_subset ((disjointed_subset w i).trans

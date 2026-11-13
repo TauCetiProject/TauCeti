@@ -273,7 +273,7 @@ theorem HasParallelCurvature.inner_curvatureTensor_eq_of_alongCurveWithin_eq_zer
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
     inner ℝ (cov.curvatureTensor (γ a) (U a) (V a) (W a)) (Z a) =
       inner ℝ (cov.curvatureTensor (γ b) (U b) (V b) (W b)) (Z b) := by
-  exact hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ
+  exact hcov.inner_eq_of_alongCurveWithin_eq_zero hconn hγ
     (fun t ht ↦ cov.differentiableWithinAt_sectionCoord_curvatureTensor (hγ t ht)
       (hU t ht) (hV t ht) (hW t ht)) hZ
     (fun t ht ↦ h.alongCurveWithin_curvatureTensor_eq_zero cov (hs t ht) (hγ t ht)

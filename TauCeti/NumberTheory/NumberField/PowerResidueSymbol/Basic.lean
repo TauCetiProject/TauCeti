@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.NumberField.Ideal.RootsOfUnity
+import TauCeti.FieldTheory.Finite.RootsOfUnity
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
@@ -37,6 +38,8 @@ object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
   root of unity `ζ` of `𝓞 K`.
 * `Ideal.powerResidueSymbol_pow_div`: `((x / P)_n) ^ (n / d) = (x / P)_d` for `d ∣ n`.
 * `Ideal.orderOf_powerResidueSymbol`: the symbol has order `n`.
+* `Ideal.powerResidueSymbol_pow_eq_self`: the `q`-th power of the symbol is itself when
+  `n ∣ q - 1`.
 * `Ideal.powerResidueSymbol_intCast_eq_one`: `(m / P)_n = 1` for an integer `m` prime to the
   rational prime `q ∈ P` when `n (q - 1) ∣ N P - 1`.
 * `Ideal.map_powerResidueSymbol`: Galois equivariance, `σ ((α / P)_n) = (σ α / σ P)_n` for a ring
@@ -149,13 +152,14 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
   have hN : absNorm P - 1 ≠ 0 := by
     rw [absNorm_eq_natCard, ← Nat.card_units]
     exact Nat.card_pos.ne'
-  -- The symbol takes a primitive `n`-th root of unity as value at a generator of `(𝓞 K ⧸ P)ˣ`.
-  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := (𝓞 K ⧸ P)ˣ)
-  have hg' : IsPrimitiveRoot g (absNorm P - 1) := by
-    rw [absNorm_eq_natCard, ← Nat.card_units, ← orderOf_eq_card_of_forall_mem_zpowers hg]
-    exact IsPrimitiveRoot.orderOf g
+  -- The symbol takes a primitive `n`-th root of unity as value at a primitive `(N P - 1)`-st root
+  -- of unity `g` of the residue field.
+  obtain ⟨g, hg⟩ := TauCeti.exists_isPrimitiveRoot_of_dvd_natCard_sub_one (F := 𝓞 K ⧸ P)
+    (d := absNorm P - 1) (by rw [absNorm_eq_natCard])
+  lift g to (𝓞 K ⧸ P)ˣ using hg.isUnit hN
+  rw [IsPrimitiveRoot.coe_units_iff] at hg
   have hξ : IsPrimitiveRoot (powerResidueSymbol P n g) n := by
-    have h := hg'.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hdvd |>.mpr ⟨hN, NeZero.ne n⟩)
+    have h := hg.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hdvd |>.mpr ⟨hN, NeZero.ne n⟩)
       (Nat.div_dvd_of_dvd hdvd)
     rw [Nat.div_div_self hdvd hN] at h
     rw [powerResidueSymbol_coe_unit hP, IsPrimitiveRoot.coe_units_iff,
@@ -172,6 +176,17 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
 @[simp]
 theorem powerResidueSymbol_one : powerResidueSymbol P 1 = 1 :=
   orderOf_eq_one_iff.mp (orderOf_powerResidueSymbol (Nat.coprime_one_right _))
+
+/-- The `q`-th power of the power residue symbol of `P` is itself when `q` is positive and `n`
+divides `q - 1`. No condition on `N P` is needed, as the symbol is trivial when `N P` is not prime
+to `n`. -/
+theorem powerResidueSymbol_pow_eq_self {q : ℕ} (hnq : n ∣ q - 1) (hq : 0 < q) :
+    powerResidueSymbol P n ^ q = powerResidueSymbol P n := by
+  by_cases hP : (absNorm P).Coprime n
+  · have h0 : powerResidueSymbol P n ^ n = 1 := by
+      simpa [orderOf_powerResidueSymbol hP] using pow_orderOf_eq_one (powerResidueSymbol P n)
+    simpa only [pow_one] using (pow_eq_pow_of_modEq ((Nat.modEq_iff_dvd' hq).2 hnq) h0).symm
+  · rw [powerResidueSymbol_of_not_coprime hP, one_pow]
 
 /-- **Rational integers at a prime of large residue degree.** Let `q` be a rational prime in `P`
 with `n (q - 1) ∣ N P - 1`. Then `(m / P)_n = 1` for every integer `m` prime to `q`, since

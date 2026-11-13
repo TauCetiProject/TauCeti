@@ -58,6 +58,8 @@ In the statements, `n = m + 1`, so that `Sⁿ⁻¹ = Sᵐ` is modelled on `ℝ�
 * `TauCeti.mvfderiv_coe_sphereRotationFamily_apply`: its derivative.
 * `TauCeti.sphereRotationFamily_eq_sphereRotationFamily_iff`: the two preimages of a point
   `q ≠ ±p`.
+* `TauCeti.sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero`: points with `Im z = 0` are sent to
+  `±p`.
 * `TauCeti.isInvertible_mfderiv_sphereRotationFamily`: its derivative is invertible where
   `Im z ≠ 0`.
 * `Orientation.orientationSign_sphereRotationFamily`: its orientation sign there.
@@ -162,21 +164,9 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
         ((y.1 : (ℝ ∙ (p : E))ᗮ) : E)) x w =
       ((mvfderiv (𝓡 m) ((↑) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → (ℝ ∙ (p : E))ᗮ) x.1
         (Manifold.tangentSpaceProdEquiv x w).1 : (ℝ ∙ (p : E))ᗮ) : E) := by
-    have h := (ℝ ∙ (p : E))ᗮ.subtypeL.mvfderiv_comp_apply hι (Manifold.tangentSpaceProdEquiv x w).1
-    rw [Manifold.tangentSpaceProdEquiv_apply] at h ⊢
+    rw [Manifold.tangentSpaceProdEquiv_apply]
     -- The inclusion `Sᵐ ⊆ E` is the inclusion into `p^⊥` followed by `subtypeL` by definition.
-    exact (mvfderiv_comp_fst_apply
-      (fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦ ((v : (ℝ ∙ (p : E))ᗮ) : E)) x w).trans h
-  have hL (L : ℂ →L[ℝ] ℝ) : mvfderiv ((𝓡 m).prod (𝓡 1))
-      (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x w =
-      L (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
-        (Manifold.tangentSpaceProdEquiv x w).2) := by
-    -- `mvfderiv_comp_snd_apply` rewrites the derivative of a composition `g ∘ Prod.snd`, so the
-    -- map, a lambda, is first written definitionally in that form.
-    rw [show (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) =
-      (L ∘ ((↑) : sphere (0 : ℂ) 1 → ℂ)) ∘ Prod.snd from rfl, mvfderiv_comp_snd_apply,
-      Manifold.tangentSpaceProdEquiv_apply]
-    exact L.mvfderiv_comp_apply hκ _
+    exact (ℝ ∙ (p : E))ᗮ.subtypeL.mvfderiv_comp_fst_apply hι w
   -- Write the map as a sum of products of scalar and vector-valued functions.
   rw [show (fun y ↦ (sphereRotationFamily p y : E)) =
     ((fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ Complex.reCLM (y.2 : ℂ)) •
@@ -186,7 +176,8 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
     mvfderiv_add (hre.smul mdifferentiableAt_const) (him.smul hv),
     mvfderiv_smul hre mdifferentiableAt_const, mvfderiv_smul him hv]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
-  rw [hL Complex.reCLM, hL Complex.imCLM, hv', mvfderiv_const]
+  rw [Complex.reCLM.mvfderiv_comp_snd_apply hκ, Complex.imCLM.mvfderiv_comp_snd_apply hκ, hv',
+    mvfderiv_const, Manifold.tangentSpaceProdEquiv_apply]
   simp only [zero_apply, smul_zero, zero_add, Complex.reCLM_apply, Complex.imCLM_apply]
   abel
 
@@ -232,7 +223,7 @@ theorem sphereRotationFamily_eq_sphereRotationFamily_iff (p : sphere (0 : E) 1)
         smul_neg, neg_neg]
 
 /-- A point with `Im z = 0` is sent to `p` or to `-p`. -/
-private theorem sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero (p : sphere (0 : E) 1)
+theorem sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero (p : sphere (0 : E) 1)
     {x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im = 0) :
     sphereRotationFamily p x = p ∨ sphereRotationFamily p x = -p := by
   have hre : (x.2 : ℂ).re ^ 2 = 1 ^ 2 := by
@@ -343,17 +334,6 @@ private theorem volumeForm_cons_cons_mvfderiv (o : Orientation ℝ E (Fin (m + 1
 private def sphereTangentBasis {p : sphere (0 : E) 1} (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
     Basis (Fin m) ℝ (TangentSpace (𝓡 m) v) :=
   finBasisOfFinrankEq ℝ (TangentSpace (𝓡 m) v) (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
-
-/-- A positively oriented tangent basis of the unit circle of `ℂ` at `z`. -/
-private def circleTangentBasis (z : sphere (0 : ℂ) 1) : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z) :=
-  (finBasisOfFinrankEq ℝ (TangentSpace (𝓡 1) z)
-    ((Complex.orientation.sphereOrientation.finrank_tangentSpace_eq z).trans
-      (Fintype.card_fin 1))).adjustToOrientation
-      (Complex.orientation.sphereOrientation.orientationAt z)
-
-private theorem orientation_circleTangentBasis (z : sphere (0 : ℂ) 1) :
-    (circleTangentBasis z).orientation = Complex.orientation.sphereOrientation.orientationAt z :=
-  Basis.orientation_adjustToOrientation _ _
 
 /-- The product of tangent bases `b` of `Sᵐ` at `v` and `c` of `S¹` at `z`, with `b` first, as a
 basis of the tangent space of `Sᵐ × S¹` at `(v, z)`. -/

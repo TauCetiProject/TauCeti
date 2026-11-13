@@ -47,7 +47,7 @@ variable {X : Type u} [MeasurableSpace X] {μ : Measure X}
 its positive-mass singleton points. Unlike the support of a general atomic measure,
 it contains no additional accumulation points with zero mass. -/
 theorem IsIntegerValued.support_eq_positiveSingletons [TopologicalSpace X]
-    [OpensMeasurableSpace X] [μ.OuterRegular] (hμ : μ.IsIntegerValued) :
+    [μ.OuterRegular] (hμ : μ.IsIntegerValued) :
     μ.support = μ.positiveSingletons := by
   ext x
   constructor
@@ -57,7 +57,7 @@ theorem IsIntegerValued.support_eq_positiveSingletons [TopologicalSpace X]
     obtain ⟨U, hxU, hU, hmass⟩ :=
       ({x} : Set X).exists_isOpen_lt_of_lt (μ := μ) 1 (by simp [hz])
     have hpos := (mem_support_iff_forall x).1 hx U (hU.mem_nhds (hxU (mem_singleton x)))
-    exact hmass.not_ge (hμ.one_le_apply hU.measurableSet hpos.ne')
+    exact hmass.not_ge (hμ.one_le_apply hpos.ne')
   · intro hx
     refine (mem_support_iff_forall x).2 fun U hU ↦ ?_
     exact (pos_iff_ne_zero.2 ((mem_positiveSingletons_iff μ x).1 hx)).trans_le

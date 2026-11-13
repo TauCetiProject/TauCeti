@@ -33,11 +33,16 @@ Mathlib's differentiation theorem along closed balls with moving centres.
 
 * `TauCeti.dyadicIndex`, `TauCeti.dyadicCube`, `TauCeti.dyadicCube_eq_pi`: dyadic cubes and the
   position of the cube of a given level containing a point.
-* `TauCeti.dyadicCube_nonempty`: dyadic cubes are nonempty.
+* `TauCeti.dyadicCube_nonempty`, `TauCeti.centre_mem_dyadicCube`: dyadic cubes are nonempty, and
+  contain their centres.
 * `TauCeti.dyadicIndex_add_one`, `TauCeti.dyadicCube_subset_dyadicCube`,
   `TauCeti.dyadicCube_subset_or_disjoint`, `TauCeti.disjoint_dyadicCube`: the nesting of the
   dyadic levels.
 * `TauCeti.closure_dyadicCube`: the closure of a dyadic cube is a closed sup-norm ball.
+* `TauCeti.ball_subset_dyadicCube`: a dyadic cube contains the open sup-norm ball of half its side
+  length around its centre.
+* `TauCeti.dist_lt_of_mem_dyadicCube`: two points of a cube of level `k` are at sup distance less
+  than `2ᵏ`.
 * `TauCeti.volume_dyadicCube`, `TauCeti.volume_dyadicCube_add_one`: a cube of level `k` has
   volume `(2ᵏ)ⁿ`, so its parent is `2ⁿ` times larger.
 * `TauCeti.exists_forall_lt_of_mul_volume_dyadicCube_lt`: in positive dimension, the dyadic cubes
@@ -81,6 +86,11 @@ variable {j k : ℤ} {m m' : ι → ℤ} {x y : ι → ℝ}
 @[simp]
 theorem mem_dyadicCube : x ∈ dyadicCube k m ↔ dyadicIndex k x = m :=
   Iff.rfl
+
+/-- In dimension zero every dyadic cube is the whole space. -/
+@[simp]
+theorem dyadicCube_eq_univ [IsEmpty ι] (k : ℤ) (m : ι → ℤ) : dyadicCube k m = univ :=
+  eq_univ_of_forall fun _ => mem_dyadicCube.2 (Subsingleton.elim _ _)
 
 /-- Every point lies in the dyadic cube of each level indexed by its own dyadic index. -/
 theorem mem_dyadicCube_dyadicIndex (k : ℤ) (x : ι → ℝ) : x ∈ dyadicCube k (dyadicIndex k x) :=
@@ -126,6 +136,14 @@ theorem dyadicCube_subset_dyadicCube (hjk : j ≤ k) (hx : x ∈ dyadicCube j m)
 theorem dyadicCube_nonempty (k : ℤ) (m : ι → ℤ) : (dyadicCube k m).Nonempty :=
   ⟨fun i => m i * 2 ^ k, funext fun i => by
     rw [dyadicIndex_apply, mul_div_cancel_right₀ _ (zpow_ne_zero k two_ne_zero), Int.floor_intCast]⟩
+
+/-- The centre `(m + 1/2) 2ᵏ` of a dyadic cube lies in it. -/
+theorem centre_mem_dyadicCube (k : ℤ) (m : ι → ℤ) :
+    (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) ∈ dyadicCube k m := by
+  rw [dyadicCube_eq_pi]
+  intro i _
+  have h := zpow_pos (two_pos : (0 : ℝ) < 2) k
+  constructor <;> nlinarith
 
 /-- Two dyadic cubes of the same level are disjoint if and only if they are distinct. -/
 @[simp]
@@ -191,6 +209,17 @@ theorem dyadicCube_subset_closedBall (k : ℤ) (m : ι → ℤ) :
   rw [closedBall_dyadicCenter, dyadicCube_eq_pi]
   exact pi_mono fun _ _ => Ico_subset_Icc_self
 
+/-- A dyadic cube contains the open sup-norm ball around its centre whose radius is half its side
+length. -/
+theorem ball_subset_dyadicCube (k : ℤ) (m : ι → ℤ) :
+    ball (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (2 ^ k / 2) ⊆ dyadicCube k m := by
+  intro x hx
+  rw [dyadicCube_eq_pi]
+  intro i _
+  have hi := (dist_le_pi_dist x _ i).trans_lt hx
+  rw [Real.dist_eq, abs_sub_lt_iff] at hi
+  constructor <;> linarith
+
 /-- Up to a null set, a dyadic cube is the closed sup-norm ball around its centre whose radius is
 half its side length. -/
 theorem dyadicCube_ae_eq_closedBall (k : ℤ) (m : ι → ℤ) :
@@ -205,6 +234,17 @@ theorem closure_dyadicCube (k : ℤ) (m : ι → ℤ) :
   have h2 : (0 : ℝ) < 2 ^ k := zpow_pos two_pos k
   rw [closedBall_dyadicCenter, dyadicCube_eq_pi, closure_pi_set]
   exact pi_congr rfl fun i _ => closure_Ico (mul_lt_mul_of_pos_right (lt_add_one _) h2).ne
+
+/-- Two points of a dyadic cube of level `k` are at sup distance less than its side length `2ᵏ`. -/
+theorem dist_lt_of_mem_dyadicCube (hx : x ∈ dyadicCube k m) (hy : y ∈ dyadicCube k m) :
+    dist x y < 2 ^ k := by
+  rw [dyadicCube_eq_pi] at hx hy
+  rw [dist_pi_lt_iff (zpow_pos two_pos k)]
+  intro i
+  have hxi := hx i (mem_univ i)
+  have hyi := hy i (mem_univ i)
+  rw [Real.dist_eq, abs_sub_lt_iff]
+  constructor <;> nlinarith [hxi.1, hxi.2, hyi.1, hyi.2]
 
 /-- A dyadic cube of level `k` has volume `(2ᵏ)ⁿ`. -/
 theorem volume_dyadicCube (k : ℤ) (m : ι → ℤ) :

@@ -85,7 +85,12 @@ The definition only uses the algebra map and the two normalized valuations, so i
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
 `ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
 about it assumes compatibility, which makes the restricted valuation trivial on the units of
-`𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
+`𝒪[K]` and hence a power of `v_K`. The multiplicativity theorem `ramificationIndex_tower` is the
+exception: it assumes compatibility only for the top step `M/L`, as it compares indices through
+the valuations of `L` and `M` and never uses a valuation of `K`. The tame tower results
+`isTamelyRamified_tower_iff` and `IsTamelyRamified.tower_bot` still require the compatible bottom
+step `L/K` and its residue field. Finiteness of `L/K` is used by no statement in this
+file.
 
 ## References
 
@@ -567,19 +572,40 @@ theorem ramificationIndex_eq_ramificationIdx :
     pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
   omega
 
+/-- The normalized valuation of `M` on the image of `Lˣ` is that of `L` composed with the
+ramification-index power map. -/
+theorem normalizedValuation_comp_unitsMap_algebraMap (L M : Type*) [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M] [ValuativeExtension L M] :
+    (normalizedValuation M).comp (Units.map (algebraMap L M : L →* M)) =
+      (powMonoidHom (ramificationIndex L M)).comp (normalizedValuation L) := by
+  ext x
+  simp
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [ValuativeExtension K L] in
 /-- **Multiplicativity of the ramification index in a tower** `M/L/K`:
-`e(M/K) = e(L/K) · e(M/L)`. -/
+`e(M/K) = e(L/K) · e(M/L)`. Only the compatibility of the top step `M/L` is needed. -/
 theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
     [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     [ValuativeExtension L M] :
     ramificationIndex K M = ramificationIndex K L * ramificationIndex L M := by
-  have := ValuativeExtension.trans K L M
-  refine ramificationIndex_eq_iff.2 fun x ↦ ?_
-  have hx : Units.map (algebraMap K M : K →* M) x =
-      Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) x) := by
-    ext
-    simp [← IsScalarTower.algebraMap_apply]
-  rw [hx, normalizedValuation_algebraMap, normalizedValuation_algebraMap, pow_mul]
+  have hcomp : (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
+      (powMonoidHom (ramificationIndex L M)).comp
+        ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))) := by
+    rw [normalizedValuation_comp_unitsMap_tower K L M,
+      normalizedValuation_comp_unitsMap_algebraMap L M, MonoidHom.comp_assoc]
+  have hLM : ramificationIndex L M = (powMonoidHom (ramificationIndex L M) :
+      Multiplicative ℤ →* Multiplicative ℤ).range.index := by
+    refine ramificationIndex_def.trans ?_
+    rw [normalizedValuation_comp_unitsMap_algebraMap L M, MonoidHom.range_comp,
+      MonoidHom.range_eq_top.2 normalizedValuation_surjective, Subgroup.map_top]
+  have hinj : Function.Injective (powMonoidHom (ramificationIndex L M) :
+      Multiplicative ℤ →* Multiplicative ℤ) :=
+    pow_left_injective ramificationIndex_pos.ne'
+  rw [ramificationIndex_def, hcomp, MonoidHom.range_comp]
+  refine (Subgroup.index_map_of_injective _ hinj).trans ?_
+  rw [← hLM, ← ramificationIndex_def]
 
 /-- A tower of nonarchimedean local fields is tamely ramified exactly when each of its two
 steps is tamely ramified. The residue characteristics of `K` and `L` agree, and their

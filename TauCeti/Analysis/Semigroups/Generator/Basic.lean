@@ -236,16 +236,8 @@ theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
   have h := tendsto_average_Ioc_zero_of_stronglyMeasurableAtFilter_continuousWithinAt_Ioi
     (g := fun u => S.realOperator u x)
     (h_cont_Ioi.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Ioi 0)
-    ((S.realOperator_continuousWithinAt x 0 le_rfl).mono Set.Ioi_subset_Ici_self)
+    ((S.realOperator_continuousWithinAt x 0).mono Set.Ioi_subset_Ici_self)
   simpa using h
-
-private theorem StronglyContinuousSemigroup.intervalIntegrable_orbit
-    (S : StronglyContinuousSemigroup X) (x : X) {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
-    IntervalIntegrable (fun u => S.realOperator u x) volume a b := by
-  have h_cont : ContinuousOn (fun u => S.realOperator u x) (Set.Ici 0) :=
-    fun u hu => S.realOperator_continuousWithinAt x u hu
-  exact (h_cont.mono fun u hu => by
-    exact (le_inf ha hb).trans hu.1).intervalIntegrable
 
 private theorem StronglyContinuousSemigroup.local_integral_shift_identity
     (S : StronglyContinuousSemigroup X) (x : X) {t h : ℝ} (ht : 0 < t) (hh : 0 < h) :
@@ -254,11 +246,11 @@ private theorem StronglyContinuousSemigroup.local_integral_shift_identity
       (∫ u in t..t + h, S.realOperator u x) - ∫ u in (0 : ℝ)..h, S.realOperator u x := by
   set f := fun u => S.realOperator u x
   have hf_zero_t : IntervalIntegrable f volume (0 : ℝ) t :=
-    S.intervalIntegrable_orbit x le_rfl ht.le
+    (S.continuous_realOperator_apply x).intervalIntegrable _ _
   have hf_h_th : IntervalIntegrable f volume h (t + h) :=
-    S.intervalIntegrable_orbit x hh.le (by linarith)
+    (S.continuous_realOperator_apply x).intervalIntegrable _ _
   have hf_zero_h : IntervalIntegrable f volume (0 : ℝ) h :=
-    S.intervalIntegrable_orbit x le_rfl hh.le
+    (S.continuous_realOperator_apply x).intervalIntegrable _ _
   have hf_h_zero : IntervalIntegrable f volume h (0 : ℝ) := hf_zero_h.symm
   have h_push : S.realOperator h (∫ u in (0 : ℝ)..t, f u) = ∫ u in h..t + h, f u := by
     rw [← (S.realOperator h).intervalIntegral_comp_comm hf_zero_t]
@@ -280,21 +272,14 @@ private theorem StronglyContinuousSemigroup.local_integral_shift_identity
   rw [h_push, h_sub]
 
 private theorem StronglyContinuousSemigroup.tendsto_average_orbit_at
-    (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
+    (S : StronglyContinuousSemigroup X) (x : X) (t : ℝ) :
     Filter.Tendsto (fun h => (1 / h) • ∫ u in t..t + h, S.realOperator u x)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds (S.realOperator t x)) := by
   set f := fun u => S.realOperator u x
-  have h_cont_at : ContinuousAt f t := by
-    exact (S.realOperator_continuousWithinAt x t ht.le).continuousAt (Ici_mem_nhds ht)
+  have hf : Continuous f := S.continuous_realOperator_apply x
   have h_ftc : HasDerivAt (fun u => ∫ z in t..u, f z) (f t) t :=
-    intervalIntegral.integral_hasDerivAt_right
-      IntervalIntegrable.refl
-      ((ContinuousAt.stronglyMeasurableAtFilter (μ := volume) isOpen_Ioi
-        (s := Set.Ioi (0 : ℝ)) (f := f) (by
-          intro u hu
-          exact (S.realOperator_continuousWithinAt x u hu.le).continuousAt
-            (Ici_mem_nhds hu))) t ht)
-      h_cont_at
+    intervalIntegral.integral_hasDerivAt_right IntervalIntegrable.refl
+      (hf.stronglyMeasurableAtFilter volume _) hf.continuousAt
   have h_slope := h_ftc.tendsto_slope_zero_right
   simpa [f, one_div, intervalIntegral.integral_same] using h_slope
 
@@ -317,7 +302,7 @@ private theorem StronglyContinuousSemigroup.tendsto_quot_integral_orbit
   have h_t : Filter.Tendsto
       (fun h => (1 / h) • ∫ u in t..t + h, S.realOperator u x)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds (S.realOperator t x)) :=
-    S.tendsto_average_orbit_at x ht
+    S.tendsto_average_orbit_at x t
   have h_lim := h_t.sub h_zero
   have h_interval : Filter.Tendsto
       (fun h => (1 / h) • (S.realOperator h y - y))
@@ -329,22 +314,31 @@ private theorem StronglyContinuousSemigroup.tendsto_quot_integral_orbit
   simpa [y, intervalIntegral.integral_of_le ht.le] using h_interval
 
 /-- The local orbit integral `∫₀ᵗ S(u)x du` lies in the generator domain `D(A)`
-([EN] Lemma II.1.3). -/
+([EN] Lemma II.1.3). For `t ≤ 0` the integral is over an empty interval, hence `0`. -/
 theorem StronglyContinuousSemigroup.integral_orbit_mem_domain
-    (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
-    (∫ u in Set.Ioc 0 t, S.realOperator u x) ∈ S.domain :=
-  (S.mem_domain_iff_tendsto _).mpr ⟨_, S.tendsto_quot_integral_orbit x ht⟩
+    (S : StronglyContinuousSemigroup X) (x : X) (t : ℝ) :
+    (∫ u in Set.Ioc 0 t, S.realOperator u x) ∈ S.domain := by
+  rcases le_or_gt t 0 with ht | ht
+  · simp [Set.Ioc_eq_empty (not_lt.2 ht)]
+  · exact (S.mem_domain_iff_tendsto _).mpr ⟨_, S.tendsto_quot_integral_orbit x ht⟩
 
 /-- The generator value on the local orbit integral: `A (∫₀ᵗ S(u)x du) = S t x - x`
-([EN] Lemma II.1.3). -/
+([EN] Lemma II.1.3). For `t ≤ 0` both sides are `0`. -/
 theorem StronglyContinuousSemigroup.generator_integral_orbit
-    (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
+    (S : StronglyContinuousSemigroup X) (x : X) (t : ℝ) :
     S.generator ⟨∫ u in Set.Ioc 0 t, S.realOperator u x, by
       rw [S.generator_domain]
-      exact S.integral_orbit_mem_domain x ht⟩
-      = S.realOperator t x - x :=
-  S.generator_eq_of_tendsto (S.integral_orbit_mem_domain x ht)
-    (S.tendsto_quot_integral_orbit x ht)
+      exact S.integral_orbit_mem_domain x t⟩
+      = S.realOperator t x - x := by
+  rcases le_or_gt t 0 with ht | ht
+  · have h0 : (∫ u in Set.Ioc 0 t, S.realOperator u x) = 0 := by
+      simp [Set.Ioc_eq_empty (not_lt.2 ht)]
+    have h : (⟨∫ u in Set.Ioc 0 t, S.realOperator u x, by
+        rw [S.generator_domain]
+        exact S.integral_orbit_mem_domain x t⟩ : S.generator.domain) = 0 := Subtype.ext h0
+    rw [h, LinearPMap.map_zero, S.realOperator_of_nonpos_apply ht, sub_self]
+  · exact S.generator_eq_of_tendsto (S.integral_orbit_mem_domain x t)
+      (S.tendsto_quot_integral_orbit x ht)
 
 /-- The generator domain of a strongly continuous semigroup is dense
 ([EN] Lemma II.1.3 and its density corollary). -/
@@ -355,8 +349,8 @@ theorem StronglyContinuousSemigroup.dense_domain
     (f := fun t => (1 / t) • ∫ u in Set.Ioc 0 t, S.realOperator u x)
     (b := nhdsWithin 0 (Set.Ioi (0 : ℝ))) ?_ ?_
   · simpa using S.tendsto_average_orbit_zero x
-  · filter_upwards [self_mem_nhdsWithin] with t ht
-    exact S.domain.smul_mem (1 / t) (S.integral_orbit_mem_domain x ht)
+  · filter_upwards [self_mem_nhdsWithin] with t _
+    exact S.domain.smul_mem (1 / t) (S.integral_orbit_mem_domain x t)
 
 /-- Two continuous linear maps that agree on the (dense) generator domain are equal. -/
 theorem StronglyContinuousSemigroup.continuousLinearMap_ext_of_eqOn_domain

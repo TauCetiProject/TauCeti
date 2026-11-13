@@ -37,6 +37,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 
 * `ApproximatesLinearOn.norm_sub_le_of_hasFDerivAt`: on a set where `f` approximates `L` with
   constant `c`, every derivative of `f` at an interior point is within `c` of `L`.
+* `HasStrictFDerivAt.exists_mem_nhds_injOn`: a map with an invertible strict derivative at a point
+  is injective near it, without completeness.
 * `HasStrictFDerivAt.approximatesLinearOn_toOpenPartialHomeomorph_source`: the source of the
   inverse function theorem's homeomorphism carries the approximation estimate its construction
   chose.
@@ -48,18 +50,20 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 * `OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv`: a `C^n` open partial
   homeomorphism from a complete normed space whose derivative is invertible on its source has a
   `C^n` inverse on its target.
+* `ApproximatesLinearOn.contDiffOn_toOpenPartialHomeomorph_symm`: the same for the homeomorphism
+  of a `C^n` map approximating `L` on an open set with a constant less than `‖L⁻¹‖⁻¹`.
 * `TauCeti.ContDiffOn.exists_openPartialHomeomorph`: a `C^n` map (`1 ≤ n`) on an open set with
   invertible derivative at a point restricts to an `OpenPartialHomeomorph` around that point whose
   inverse is `C^n` on the whole target.
 * `ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`: the same local inverse
   carries a differential identity `dg_z u = v (g z)` over to `d(g⁻¹)_y (v y) = u`.
+* `Set.MapsTo.interior_of_contDiffOn`: a `C¹` map with invertible derivative on the interior of
+  `s` and mapping `s` into `t` maps `interior s` into `interior t`.
 
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS Colloquium
   Publications 52, 2012, Appendix A.3.
-* [The Hopf--Rinow roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "The manifold inverse-function theorem".
 -/
 
 public section
@@ -84,6 +88,15 @@ theorem ApproximatesLinearOn.norm_sub_le_of_hasFDerivAt {f : E → F} {L A : E �
 
 namespace HasStrictFDerivAt
 
+/-- **Local injectivity from a strict derivative.** A map whose strict derivative at `a` is a
+continuous linear equivalence is injective on a neighbourhood of `a`; no completeness is needed,
+since `ApproximatesLinearOn.injOn` only uses the approximation estimate. -/
+theorem exists_mem_nhds_injOn {f : E → F} {L : E ≃L[𝕜] F} {a : E}
+    (hf : HasStrictFDerivAt f (L : E →L[𝕜] F) a) : ∃ s ∈ 𝓝 a, InjOn f s := by
+  obtain ⟨s, has, hso, happ⟩ := hf.approximates_deriv_on_open_nhds
+  exact ⟨s, hso.mem_nhds has, happ.injOn (L.subsingleton_or_nnNorm_symm_pos.imp id
+    fun h => NNReal.half_lt_self (inv_pos.2 h).ne')⟩
+
 variable [CompleteSpace E] {f : E → F} {L : E ≃L[𝕜] F} {a : E}
 
 /-- On the source of the homeomorphism built by the inverse function theorem, `f` approximates its
@@ -106,7 +119,7 @@ theorem isInvertible_of_mem_toOpenPartialHomeomorph_source
   refine ContinuousLinearMap.isInvertible_of_norm_sub_le_half L ?_
   have hbound := hf.approximatesLinearOn_toOpenPartialHomeomorph_source.norm_sub_le_of_hasFDerivAt
     ((hf.toOpenPartialHomeomorph f).open_source.mem_nhds hx) hA
-  rwa [← NNReal.coe_le_coe, coe_nnnorm]
+  rwa [← NNReal.coe_le_coe, coe_nnNorm]
 
 /-- **The local inverse of the inverse function theorem is `C^n` at every point of its target.**
 The original inverse-function hypotheses provide an invertible derivative only at the base point.
@@ -166,6 +179,28 @@ theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSp
   rw [he]
   exact (hat.differentiableAt hn).hasFDerivAt
 
+/-- A map that is `C^n` on an open set `s` and approximates a continuous linear equivalence `L`
+there with a constant less than `‖L⁻¹‖⁻¹` restricts to an open partial homeomorphism with source
+`s` whose inverse is `C^n` on its target. -/
+theorem ApproximatesLinearOn.contDiffOn_toOpenPartialHomeomorph_symm [CompleteSpace E]
+    {n : ℕ∞ω} {f : E → F} {L : E ≃L[𝕜] F} {s : Set E} {c : ℝ≥0}
+    (hf : ApproximatesLinearOn f (L : E →L[𝕜] F) s c)
+    (hc : Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) (hs : IsOpen s)
+    (hcont : ContDiffOn 𝕜 n f s) :
+    ContDiffOn 𝕜 n (hf.toOpenPartialHomeomorph f s hc hs).symm
+      (hf.toOpenPartialHomeomorph f s hc hs).target := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact contDiffOn_zero.2 (hf.toOpenPartialHomeomorph f s hc hs).continuousOn_symm
+  refine (hf.toOpenPartialHomeomorph f s hc hs).contDiffOn_symm_of_isInvertible_fderiv
+    (by simpa using hcont) fun x hx ↦ ?_
+  simp only [toOpenPartialHomeomorph_source, toOpenPartialHomeomorph_coe] at hx ⊢
+  rcases hc with hE | hc
+  · exact ⟨L, by ext x; simp [Subsingleton.elim x 0]⟩
+  refine ContinuousLinearMap.isInvertible_of_norm_sub_lt L (lt_of_le_of_lt ?_ hc)
+  have h := hf.norm_sub_le_of_hasFDerivAt (hs.mem_nhds hx)
+    ((hcont.contDiffAt (hs.mem_nhds hx)).differentiableAt hn).hasFDerivAt
+  rwa [← NNReal.coe_le_coe, coe_nnNorm]
+
 end ContDiffInverse
 
 namespace TauCeti
@@ -223,6 +258,22 @@ theorem _root_.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq
     ((hd.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id _))
   simpa only [ContinuousLinearMap.comp_apply, hgu _ (hΘs hz), hgy,
     ContinuousLinearMap.id_apply] using h
+
+/-- **Invariance of the interior.** A map which is `C^n` on `s`, with `1 ≤ n`, has invertible
+derivative at every interior point of `s` and maps `s` into `t` also maps `interior s` into
+`interior t`: by the inverse function theorem it carries neighbourhoods to neighbourhoods. -/
+theorem _root_.Set.MapsTo.interior_of_contDiffOn {t : Set F} (h : MapsTo g s t)
+    (hg : ContDiffOn 𝕂 n g s) (hn : 1 ≤ n)
+    (hinv : ∀ x ∈ interior s, (fderiv 𝕂 g x).IsInvertible) :
+    MapsTo g (interior s) (interior t) := by
+  have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
+  intro x hx
+  have hs : s ∈ 𝓝 x := mem_interior_iff_mem_nhds.1 hx
+  have hat : ContDiffAt 𝕂 n g x := hg.contDiffAt hs
+  obtain ⟨e, he⟩ := hinv x hx
+  have hd : HasFDerivAt g (e : E →L[𝕂] F) x := he ▸ (hat.differentiableAt hn0).hasFDerivAt
+  rw [mem_interior_iff_mem_nhds, ← (hat.hasStrictFDerivAt hd hn0).map_nhds_eq_of_equiv]
+  exact mem_map.2 (mem_of_superset hs fun y hy => h hy)
 
 end TauCeti
 

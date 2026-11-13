@@ -177,12 +177,16 @@ theorem exists_cuspNhd_subset {D' : Γ.CuspDatum} (h : D'.cuspOrbit = D.cuspOrbi
   obtain ⟨a, -, hA⟩ := exists_cuspNhd_eq D' h.symm
   exact ⟨a * A', (hA A').le⟩
 
-/-- Cusp neighbourhoods at two cusp data are disjoint as soon as the horodisc images are and the
-cusp orbits differ. -/
-theorem disjoint_cuspNhd {D' : Γ.CuspDatum} {A' : ℝ} (hC : D.cuspOrbit ≠ D'.cuspOrbit)
+/-- Cusp neighbourhoods at two cusp data are disjoint as soon as the horodisc images are. The cusp
+orbits then differ, since horodisc images at equivalent cusps overlap. -/
+theorem disjoint_cuspNhd {D' : Γ.CuspDatum} {A' : ℝ}
     (h : Disjoint (Quotient.mk (orbitRel Γ ℍ) '' horodisc D A)
       (Quotient.mk (orbitRel Γ ℍ) '' horodisc D' A')) :
     Disjoint (cuspNhd D A) (cuspNhd D' A') := by
+  -- the cusp orbits differ: horodisc images at equivalent cusps share a nonempty horodisc image
+  have hC : D.cuspOrbit ≠ D'.cuspOrbit := fun hC =>
+    not_disjoint_image_quotientMk_horodisc_of_mem_orbit D D' ((D'.cuspOrbit_eq_iff D).mp hC.symm)
+      A A' h
   rw [disjoint_left]
   rintro x hx hx'
   cases x with
@@ -342,7 +346,7 @@ instance instT2Space : T2Space Γ.CompactifiedQuotient where
           hxy (congrArg ofCusp ((D'.cuspOrbit_eq_iff D).mpr h).symm)
         exact ⟨cuspNhd D D.width, cuspNhd D' D'.width, isOpen_cuspNhd D _, isOpen_cuspNhd D' _,
           ofCusp_mem_cuspNhd D _, ofCusp_mem_cuspNhd D' _,
-          disjoint_cuspNhd D _ (fun h ↦ hxy (congrArg ofCusp h))
+          disjoint_cuspNhd D _
             ((disjoint_image_quotientMk_horodisc_iff D D' D.width_pos.le le_rfl).mpr hc)⟩
 
 /-- A compact coarse quotient has no cusp orbits: its image in the Hausdorff compactification

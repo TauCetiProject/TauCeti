@@ -26,6 +26,8 @@ the infimum is attained, `TauCeti.Manifold.isGeodesicSpace_of_completeSpace`, th
 
 * `TauCeti.Manifold.isLengthSpace`: a manifold whose extended distance is the Riemannian distance
   is a length space.
+* `TauCeti.IsGeodesicSegment.pathELength_eq_edist`: the Riemannian length of a `C¹` piece of a
+  metric geodesic segment is the distance between its endpoints.
 
 ## References
 
@@ -56,3 +58,24 @@ theorem isLengthSpace : IsLengthSpace M := by
   exact ⟨γ, ⟨hγ.continuousOn, hx, hy⟩, (eVariationOn_le_pathELength hγ).trans_lt hlen⟩
 
 end TauCeti.Manifold
+
+namespace TauCeti
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [PseudoMetricSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+
+/-- On a subinterval `[a, b]` of `[0, 1]` where a metric geodesic segment is `C¹`, its Riemannian
+length is the distance between its endpoints: the segment realizes the Riemannian distance
+between any two of its points. -/
+theorem IsGeodesicSegment.pathELength_eq_edist {γ : ℝ → M} {p q : M}
+    (hγ : IsGeodesicSegment γ p q) {a b : ℝ} (ha : a ∈ Set.Icc (0 : ℝ) 1)
+    (hb : b ∈ Set.Icc (0 : ℝ) 1) (hab : a ≤ b) (hreg : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Set.Icc a b)) :
+    pathELength I γ a b = edist (γ a) (γ b) := by
+  rw [← Manifold.eVariationOn_eq_pathELength hreg]
+  exact hγ.eVariationOn_eq_edist ha hb hab
+
+end TauCeti

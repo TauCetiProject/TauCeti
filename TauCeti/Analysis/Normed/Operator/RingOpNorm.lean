@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Group.Basic
 public import TauCeti.Analysis.Normed.Ring.PseudoUniformizer
 
 /-!
@@ -80,9 +81,10 @@ variable {R E F 𝓕 : Type*} [SeminormedRing R]
 /-- A constant bound on a ball gives a global linear bound by rescaling with a multiplicative
 pseudo-uniformiser. Continuity of the linear map is not required. -/
 theorem bound_of_forall_norm_lt (ϖ : PseudoUniformizer R) (f : 𝓕)
-    {δ B : ℝ} (k : ℤ) (hδ : ‖(ϖ.unit : R)‖ ^ k < δ) (hB : 0 ≤ B)
+    {δ B : ℝ} (k : ℤ) (hδ : ‖(ϖ.unit : R)‖ ^ k < δ)
     (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) (x : E) :
     ‖f x‖ ≤ B * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ * ‖x‖ := by
+  have hB := nonneg_of_forall_norm_lt f ((zpow_pos ϖ.norm_pos k).trans hδ) hf
   set r := ‖(ϖ.unit : R)‖
   have hr0 : 0 < r := ϖ.norm_pos
   rcases eq_or_ne ‖x‖ 0 with hx | hx
@@ -127,7 +129,7 @@ theorem bound_of_continuous (f : 𝓕) (hf : Continuous f) :
     exists_pow_lt_of_lt_one hδ ϖ.norm_lt_one
   refine ⟨(‖(ϖ.unit : R)‖ ^ ((k : ℤ) + 1))⁻¹,
     inv_pos.mpr (zpow_pos ϖ.norm_pos _), fun x ↦ ?_⟩
-  simpa using ϖ.bound_of_forall_norm_lt f (k : ℤ) (by simpa using hk) zero_le_one
+  simpa using ϖ.bound_of_forall_norm_lt f (k : ℤ) (by simpa using hk)
     (fun x hx ↦ (hfδ x hx).le) x
 
 end NormedRing.IsTate
@@ -299,11 +301,12 @@ variable {R E F : Type*} [SeminormedRing R]
 pseudo-uniformiser on `R`, `‖(ϖ.unit : R)‖ ^ k < δ`, and `‖f x‖ ≤ B` for every `x` of norm `< δ`,
 then `‖f‖ ≤ B * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹`. -/
 theorem ringOpNorm_le_of_forall_norm_lt (ϖ : PseudoUniformizer R) (f : E →L[R] F)
-    {δ B : ℝ} (k : ℤ) (hδ : ‖(ϖ.unit : R)‖ ^ k < δ) (hB : 0 ≤ B)
+    {δ B : ℝ} (k : ℤ) (hδ : ‖(ϖ.unit : R)‖ ^ k < δ)
     (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
     ‖f‖ ≤ B * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ := by
+  have hB := nonneg_of_forall_norm_lt f ((zpow_pos ϖ.norm_pos k).trans hδ) hf
   exact f.ringOpNorm_le_bound (by positivity)
-    (ϖ.bound_of_forall_norm_lt f k hδ hB hf)
+    (ϖ.bound_of_forall_norm_lt f k hδ hf)
 
 end NormedRing.PseudoUniformizer
 

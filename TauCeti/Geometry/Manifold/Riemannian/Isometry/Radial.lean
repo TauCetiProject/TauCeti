@@ -109,7 +109,7 @@ theorem apply_riemannianExp_smul (hf : Isometry f) (h : IsNormalDomain J N (f p)
   obtain ⟨w, hw, hwv, -⟩ := exists_riemannianExp_eq_apply_riemannianExp hf h hU hmin hvr
   rw [← hwv, h.riemannianLog_riemannianExp (hU hw)]
   have hseg :=
-    (isGeodesicSegment_maximalGeodesic (mem_expDomain_of_norm_le_dist hmin) hmin).comp_isometry hf
+    (isGeodesicSegment_maximalGeodesic hmin).comp_isometry hf
   rw [← hwv] at hseg
   rw [riemannianExp_smul, ← Function.comp_apply (f := f)]
   exact h.eqOn_riemannianExp_smul_of_isGeodesicSegment hU hw hseg ht

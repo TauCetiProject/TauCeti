@@ -123,8 +123,8 @@ theorem W1p.norm_lipschitzChartLocalizeL_le
     ((W1p.norm_localizeL_le _ _ _ _ _ _ _).trans
       (mul_le_mul_of_nonneg_left (W1p.norm_restrictL_le inf_le_left u) (by positivity)))
 
-/-- Chart localization preserves zero boundary values for finite Sobolev exponent. -/
-theorem W1p.lipschitzChartLocalizeL_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0∞))
+/-- Chart localization preserves zero boundary values. -/
+theorem W1p.lipschitzChartLocalizeL_mem_w1p0Submodule
     (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
     (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
     (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
@@ -133,10 +133,10 @@ theorem W1p.lipschitzChartLocalizeL_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0
     W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u ∈
       w1p0Submodule volume (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩) p := by
   rw [W1p.lipschitzChartLocalizeL_apply]
-  apply W1p.compAffineIsometryEquivL_mem_w1p0Submodule hp
+  apply W1p.compAffineIsometryEquivL_mem_w1p0Submodule
   exact W1p.localizeL_restrictL_mem_w1p0Submodule
     (V := chartEpigraph e h.lipschitzWith.continuous)
-    hp hψ hM hψM hgM
+    hψ hM hψM hgM
     (chartEpigraph_inter_tsupport_subset h hs)
     (inter_tsupport_subset_chartEpigraph h hs) hu
 

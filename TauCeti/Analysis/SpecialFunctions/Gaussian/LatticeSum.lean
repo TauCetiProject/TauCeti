@@ -211,12 +211,15 @@ private theorem norm_deriv_pow_mul_exp_neg_sub_sq_le (k : ℕ) (n : ℤ) {c s x 
     _ = _ := by ring
 
 /-- **Termwise differentiation of weighted Gaussian lattice sums**: for every natural weight
-exponent `k` and nonzero width `s`, the derivative in the centre of
-`x ↦ ∑ n : ℤ, n ^ k * exp (-(n - x) ^ 2 / (2 * s ^ 2))` is the sum of the termwise derivatives. -/
-theorem hasDerivAt_tsum_pow_mul_exp_neg_sub_sq (k : ℕ) (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
+exponent `k` and every width `s`, the derivative in the centre of
+`x ↦ ∑ n : ℤ, n ^ k * exp (-(n - x) ^ 2 / (2 * s ^ 2))` is the sum of the termwise derivatives. At
+width zero the function is constant and every termwise derivative is `0`. -/
+theorem hasDerivAt_tsum_pow_mul_exp_neg_sub_sq (k : ℕ) (c : ℝ) (s : ℝ) :
     HasDerivAt (fun x => ∑' n : ℤ, (n : ℝ) ^ k * rexp (-((n : ℝ) - x) ^ 2 / (2 * s ^ 2)))
       (∑' n : ℤ, (n : ℝ) ^ k * (((n : ℝ) - c) / s ^ 2 *
         rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2)))) c := by
+  rcases eq_or_ne s 0 with rfl | hs
+  · simpa using hasDerivAt_const c (∑' n : ℤ, (n : ℝ) ^ k)
   have h4 : 0 < 4 * s ^ 2 := mul_pos four_pos (sq_pos_of_ne_zero hs)
   have hu := ((summable_abs_pow_mul_exp_neg_sub_sq_div (k + 1) c h4).add
     ((summable_abs_pow_mul_exp_neg_sub_sq_div k c h4).mul_left (|c| + 1))).mul_right
@@ -228,10 +231,10 @@ theorem hasDerivAt_tsum_pow_mul_exp_neg_sub_sq (k : ℕ) (c : ℝ) {s : ℝ} (hs
     (summable_pow_mul_exp_neg_sub_sq k c hs) hc
 
 /-- The derivative of the Gaussian lattice sum in the centre, computed termwise. -/
-theorem hasDerivAt_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
+theorem hasDerivAt_gaussianLatticeSum (c s : ℝ) :
     HasDerivAt (fun x => gaussianLatticeSum x s)
       (∑' n : ℤ, ((n : ℝ) - c) / s ^ 2 * rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2))) c := by
-  simpa [gaussianLatticeSum_def] using hasDerivAt_tsum_pow_mul_exp_neg_sub_sq 0 c hs
+  simpa [gaussianLatticeSum_def] using hasDerivAt_tsum_pow_mul_exp_neg_sub_sq 0 c s
 
 private theorem im_I_div_pos {s : ℝ} (hs : s ≠ 0) : 0 < (I / (2 * π * s ^ 2)).im := by
   have : (I / (2 * π * s ^ 2) : ℂ) = ((1 / (2 * π * s ^ 2) : ℝ) : ℂ) * I := by

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FiniteType
-public import Mathlib.Algebra.Polynomial.Basis
+public import TauCeti.Algebra.Polynomial.XPow.Span
+public import TauCeti.LinearAlgebra.Submodule.Quotient
+public import TauCeti.Order.CompleteLattice.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 
@@ -83,7 +85,6 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
     exact Finset.sum_congr rfl fun k _ ↦ (smul_comm _ _ _).symm
   have hFmono : Monotone F := fun i j hij ↦
     biSup_mono fun _ hk ↦ lt_of_lt_of_le hk hij
-  have hFsucc (j : ℕ) : F (j + 1) = F j ⊔ LinearMap.range (φ j) := Nat.iSup_lt_succ _ j
   have hF0 : F 0 = ⊥ := by simp [F]
   have hFX (j : ℕ) : (F j).map lX ≤ F (j + 1) := by
     simp only [F, Submodule.map_iSup, iSup_le_iff]
@@ -91,14 +92,10 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
     rw [← LinearMap.range_comp, ← hφX]
     exact le_iSup₂_of_le (i + 1) (by omega) le_rfl
   have hFtop : ⨆ j, F j = ⊤ := by
-    have hspan : Submodule.span R (Set.range fun i : ℕ ↦ (X ^ i : R[X])) = ⊤ := by
-      simpa [← Polynomial.X_pow_eq_monomial] using (Polynomial.basisMonomials R).span_eq
     rw [eq_top_iff, ← Submodule.restrictScalars_top R R[X] M, ← hm,
-      ← Submodule.span_smul_of_span_eq_top hspan, Submodule.span_le]
-    rintro _ ⟨_, ⟨i, rfl⟩, _, ⟨k, rfl⟩, rfl⟩
-    refine Submodule.mem_iSup_of_mem (i + 1) (Submodule.mem_iSup_of_mem i
-      (Submodule.mem_iSup_of_mem (Nat.lt_succ_self i) ⟨Pi.single k 1, ?_⟩))
-    simp [φ, Fintype.linearCombination_apply, Pi.single_apply]
+      ← TauCeti.iSup_span_range_X_pow_smul m, iSup_le_iff]
+    exact fun i ↦ (Fintype.range_linearCombination R _).ge.trans
+      (le_iSup_of_le (i + 1) (le_iSup₂_of_le i (Nat.lt_succ_self i) le_rfl))
   -- `K j` is the module of relations of the `j`-th subquotient; it increases with `j`.
   let K : ℕ →o Submodule R (Fin t → R) :=
     ⟨fun j ↦ (F j).comap (φ j), monotone_nat_of_le_succ fun j c hc ↦ by
@@ -110,30 +107,12 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
   have hNmono : Monotone N := fun _ _ hij ↦ Submodule.restrictScalars_mono A (hFmono hij)
   have hsub (j : ℕ) : freeLocus A ((Fin t → R) ⧸ K j) =
       freeLocus A (N (j + 1) ⧸ (N j).submoduleOf (N (j + 1))) := by
-    have hNsucc : N (j + 1) = N j ⊔ LinearMap.range ((φ j).restrictScalars A) := by
-      simp only [N, hFsucc, LinearMap.range_restrictScalars, Submodule.restrictScalars_sup]
-    have hmem (c : Fin t → R) : (φ j).restrictScalars A c ∈ N (j + 1) := by
-      rw [hNsucc]
-      exact Submodule.mem_sup_right ⟨c, rfl⟩
-    let ψ : (Fin t → R) →ₗ[A] N (j + 1) ⧸ (N j).submoduleOf (N (j + 1)) :=
-      ((N j).submoduleOf (N (j + 1))).mkQ ∘ₗ ((φ j).restrictScalars A).codRestrict _ hmem
-    have hψ : Function.Surjective ψ := by
-      apply LinearMap.range_eq_top.mp
-      simp only [ψ, LinearMap.range_comp, Submodule.map_mkQ_eq_top,
-        LinearMap.range_codRestrict]
-      exact
-        (Submodule.submoduleOf_sup_of_le (hNmono j.le_succ)
-          (le_sup_right.trans_eq hNsucc.symm)).symm.trans
-          (Submodule.submoduleOf_eq_top.mpr hNsucc.le)
-    have hker : LinearMap.ker ψ = (K j).restrictScalars A := by
-      ext c
-      simp only [LinearMap.mem_ker, ψ, LinearMap.comp_apply, Submodule.mkQ_apply,
-        Submodule.Quotient.mk_eq_zero]
-      simp only [N, K, OrderHom.coe_mk, Submodule.restrictScalars_mem, Submodule.submoduleOf,
-        Submodule.mem_comap, LinearMap.codRestrict_apply, LinearMap.restrictScalars_apply,
-        Submodule.coe_subtype]
-    exact freeLocus_congr ((Submodule.Quotient.restrictScalarsEquiv A (K j)).symm ≪≫ₗ
-      Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ ψ.quotKerEquivOfSurjective hψ)
+    have hFsucc : F j ⊔ LinearMap.range (φ j) = F (j + 1) := (Nat.iSup_lt_succ _ j).symm
+    have e := Submodule.quotientComapEquivSupQuotient (F j) (φ j)
+    generalize F j ⊔ LinearMap.range (φ j) = G at e hFsucc
+    subst hFsucc
+    exact freeLocus_congr (e.restrictScalars A ≪≫ₗ
+      (Submodule.Quotient.restrictScalarsEquiv A ((F j).submoduleOf (F (j + 1)))).symm)
   -- Only the finitely many subquotients with `j ≤ j₀` matter.
   let U := ⋂ j ∈ Finset.range (j₀ + 1), interior (freeLocus A ((Fin t → R) ⧸ K j))
   have hU : U ∈ 𝓝 ⟨p, hp.1.1⟩ :=
@@ -141,16 +120,11 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
       fun j _ ↦ mem_interior_iff_mem_nhds.mpr (hR ((Fin t → R) ⧸ K j) p hp)
   refine Filter.mem_of_superset hU (subset_trans ?_ (iInter_freeLocus_subquotient_subset_freeLocus
     N hNmono (by simp [N, hF0]) ?_))
-  · intro q hq
-    rw [Set.mem_iInter]
-    intro j
-    have hK : K j = K (min j j₀) := by
-      rcases le_total j j₀ with h | h
-      · rw [min_eq_left h]
-      · rw [min_eq_right h, hj₀ j h]
-    rw [← hsub, hK]
-    have hj : min j j₀ ∈ Finset.range (j₀ + 1) := Finset.mem_range.mpr (by omega)
-    exact interior_subset (Set.mem_iInter₂.mp hq (min j j₀) hj)
+  · have hstab := TauCeti.iInf_mem_range_succ_eq_iInf (fun j ↦ freeLocus A ((Fin t → R) ⧸ K j))
+      j₀ fun j hj ↦ by rw [hj₀ j hj]
+    simp only [Set.iInf_eq_iInter] at hstab
+    exact ((Set.iInter₂_mono fun _ _ ↦ interior_subset).trans hstab.subset).trans_eq
+      (Set.iInter_congr hsub)
   · simp only [N, ← Submodule.restrictScalars_iSup, hFtop, Submodule.restrictScalars_top]
 
 /-- Freeness of finite modules near the minimal primes of `A` transfers along a surjective

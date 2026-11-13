@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
@@ -16,10 +17,17 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Mean value estimates
+
+## Exact increments along continuous real paths
+
+`ContinuousOn.exists_deriv_comp_mul_sub_eq` realizes the mean value derivative at a time
+on a continuous real path. This supplies the exact per-cell increments used in the
+finite-variation chain rule, without requiring the path itself to be differentiable.
 
 ## A directional mean value inequality
 
@@ -53,6 +61,12 @@ For a function on the real line with derivative of norm at most `D r ^ (β - 1)`
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
 `a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
 
+## Space-time functions vanishing outside a time interval
+
+A function of time and space with derivative bounded by `C` that vanishes outside the time
+interval `(a, b)` is bounded by `C (b - a)`, by the mean value inequality from its value at the
+time `a` (`TauCeti.norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero`).
+
 ## Comparing maps with nearby derivatives
 
 If two maps on a convex set have derivatives within `ε` of a common linear map and agree at a
@@ -76,7 +90,9 @@ segment from `z` to `z + v` (`t` real, `0 ≤ t ≤ 1`) takes the same value at 
 `Convex.is_const_of_fderivWithin_eq_zero`, only the derivative in the direction `v` is assumed to
 vanish, so the map need not be constant near the segment. Consequently, if `π` is a continuous
 projection and the derivative of a map kills `ker π` on a ball about `0`, then near `0` the map
-only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`).
+only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
+compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
+(`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
 -/
 
 public section
@@ -97,6 +113,39 @@ theorem Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le {X Y : Type*} [NormedA
   rwa [hxy, sub_self, sub_zero] at h
 
 open Set
+
+/-- Along a continuous real path, some time realizes an exact mean value increment of `f`.
+Continuity is required on the image and the specified derivative only in its interior;
+no derivative of the path is needed. -/
+theorem ContinuousOn.exists_deriv_comp_mul_sub_eq {g f f' : ℝ → ℝ} {l u : ℝ}
+    (hgc : ContinuousOn g (Icc l u)) (hlu : l ≤ u)
+    (hfc : ContinuousOn f (g '' Icc l u))
+    (hf : ∀ x ∈ interior (g '' Icc l u), HasDerivAt f (f' x) x) :
+    ∃ t ∈ Icc l u, f' (g t) * (g u - g l) = f (g u) - f (g l) := by
+  have hmean {p q : ℝ} (hfc : ContinuousOn f (uIcc p q))
+      (hf : ∀ x ∈ interior (uIcc p q), HasDerivAt f (f' x) x) :
+      ∃ x ∈ uIcc p q, f' x * (q - p) = f q - f p := by
+    wlog hpq : p ≤ q generalizing p q
+    · obtain ⟨x, hx, he⟩ := this (by simpa only [uIcc_comm] using hfc)
+        (by simpa only [uIcc_comm] using hf) (le_of_not_ge hpq)
+      refine ⟨x, by simpa only [uIcc_comm] using hx, ?_⟩
+      rw [← neg_sub p q, mul_neg, he, neg_sub]
+    rcases hpq.eq_or_lt with rfl | hpq
+    · exact ⟨p, by simp, by simp⟩
+    obtain ⟨x, hx, he⟩ := exists_hasDerivAt_eq_slope f f' hpq
+      (by simpa only [uIcc_of_le hpq.le] using hfc)
+      (by simpa only [uIcc_of_le hpq.le, interior_Icc] using hf)
+    refine ⟨x, by simpa only [uIcc_of_le hpq.le] using Ioo_subset_Icc_self hx, ?_⟩
+    rw [he, div_mul_cancel₀ _ (sub_ne_zero.mpr hpq.ne')]
+  -- The intermediate value theorem turns the state-space mean value into a time tag.
+  have himage : uIcc (g l) (g u) ⊆ g '' Icc l u := by
+    simpa only [uIcc_of_le hlu] using
+      (intermediate_value_uIcc (a := l) (b := u) (f := g)
+        (by simpa only [uIcc_of_le hlu] using hgc))
+  obtain ⟨x, hx, he⟩ := hmean (hfc.mono himage)
+    (fun x hx ↦ hf x (interior_mono himage hx))
+  obtain ⟨t, ht, rfl⟩ := himage hx
+  exact ⟨t, ht, he⟩
 
 namespace Convex
 
@@ -280,7 +329,47 @@ theorem apply_proj_eq_of_fderiv_apply_eq_zero {g : F → G} {π : F →L[𝕂] F
   rw [add_sub_cancel] at h
   exact h.symm
 
+/-- A compactly supported differentiable map whose derivative in a fixed nonzero direction `v`
+vanishes identically is zero: moving along `v` does not change its value, and far enough along `v`
+the point leaves the support. -/
+theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
+    (hc : HasCompactSupport g) (hg : Differentiable 𝕂 g) {v : F} (hv : v ≠ 0)
+    (h0 : ∀ w, fderiv 𝕂 g w v = 0) (z : F) : g z = 0 := by
+  obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
+  set c : ℝ := (|R| + ‖z‖ + 1) / ‖v‖
+  have hconst := apply_add_eq_of_fderiv_apply_eq_zero (z := z) (v := (c : 𝕂) • v)
+    (fun _ _ ↦ hg _) fun _ _ ↦ by rw [map_smul, h0, smul_zero]
+  rw [← hconst]
+  refine image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_
+  have hle := mem_closedBall_zero_iff.1 (hR hmem)
+  have hcv : ‖(c : 𝕂) • v‖ = |R| + ‖z‖ + 1 := by
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by positivity),
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hv)]
+  have hlow := norm_sub_norm_le ((c : 𝕂) • v) (-z)
+  rw [sub_neg_eq_add, norm_neg, hcv, add_comm ((c : 𝕂) • v)] at hlow
+  linarith [le_abs_self R]
+
 end Direction
+
+/-- A function with derivative bounded by `C` that vanishes outside the time interval `(a, b)` is
+bounded by `C * (b - a)`, by the mean value inequality from its value at the time `a`. -/
+theorem norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {a b : ℝ} {φ : ℝ × E → ℝ} (hφd : Differentiable ℝ φ) {C : ℝ}
+    (hC : ∀ q, ‖fderiv ℝ φ q‖ ≤ C) (hzero : ∀ q : ℝ × E, q.1 ∉ Ioo a b → φ q = 0) (hab : a ≤ b)
+    (q : ℝ × E) : ‖φ q‖ ≤ C * (b - a) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  by_cases hq : q.1 ∈ Ioo a b
+  · have hq' : q - (a, q.2) = (q.1 - a, 0) := by ext <;> simp
+    have hn : ‖q - (a, q.2)‖ ≤ b - a := by
+      rw [hq', Prod.norm_def, norm_zero, Real.norm_eq_abs, max_eq_left (abs_nonneg _),
+        abs_of_pos (sub_pos.2 hq.1)]
+      linarith [hq.2]
+    have := convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun p _ ↦ hφd p) (fun p _ ↦ hC p)
+      (mem_univ (a, q.2)) (mem_univ q)
+    rw [hzero (a, q.2) (by simp), sub_zero] at this
+    exact this.trans (mul_le_mul_of_nonneg_left hn hC0)
+  · rw [hzero q hq, norm_zero]
+    exact mul_nonneg hC0 (sub_nonneg.2 hab)
 
 end TauCeti
 
@@ -388,3 +477,40 @@ theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
   have hmain := norm_image_sub_le_of_norm_deriv_le_segment'
     (fun t _ ↦ (hgd t).hasDerivWithinAt) hderiv s (right_mem_Icc.mpr hs.1)
   simpa only [g, zero_smul, add_zero, sub_zero, Real.norm_eq_abs] using hmain
+
+namespace ContDiff
+
+open Function
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Lipschitz bound for a jointly `C¹` family on a box.** If `Γ t s` is `C¹` in `(t, s)`, there is
+a constant `B` such that `‖Γ t₁ s₁ - Γ t₂ s₂‖ ≤ B * max |t₁ - t₂| |s₁ - s₂|` for all `t₁, t₂` in
+`[t₀, t₁']` and all `s₁, s₂` in `[a, b]`. -/
+theorem exists_norm_sub_le_mul_max_uncurry {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1 (uncurry Γ))
+    (t₀ t₀' a b : ℝ) :
+    ∃ B : NNReal, ∀ ⦃x₁ y₁ x₂ y₂ : ℝ⦄, x₁ ∈ Icc t₀ t₀' → y₁ ∈ Icc a b → x₂ ∈ Icc t₀ t₀' →
+      y₂ ∈ Icc a b → ‖Γ x₁ y₁ - Γ x₂ y₂‖ ≤ B * max |x₁ - x₂| |y₁ - y₂| := by
+  have hQc : IsCompact (Icc t₀ t₀' ×ˢ Icc a b) := isCompact_Icc.prod isCompact_Icc
+  have hQv : Convex ℝ (Icc t₀ t₀' ×ˢ Icc a b) := (convex_Icc _ _).prod (convex_Icc _ _)
+  obtain ⟨B, hB⟩ := hΓ.contDiffOn.exists_lipschitzOnWith one_ne_zero hQv hQc
+  refine ⟨B, fun x₁ y₁ x₂ y₂ hx₁ hy₁ hx₂ hy₂ ↦ ?_⟩
+  have := hB.dist_le_mul (x := (x₁, y₁)) (y := (x₂, y₂)) ⟨hx₁, hy₁⟩ ⟨hx₂, hy₂⟩
+  simpa [dist_eq_norm, Prod.dist_eq, Real.dist_eq] using this
+
+end ContDiff
+
+namespace IsPreconnected
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {f : ℝ → G} {s : Set ℝ}
+
+/-- A function on a preconnected subset of `ℝ` whose derivative within the set vanishes at every
+point of the set takes the same value at any two points of the set. -/
+theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
+    (hf : ∀ t ∈ s, HasDerivWithinAt f 0 s t) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
+    f a = f b := by
+  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
+    hf (C := 0) (fun _ _ ↦ by simp) ha hb
+  simpa [sub_eq_zero, eq_comm] using h
+
+end IsPreconnected

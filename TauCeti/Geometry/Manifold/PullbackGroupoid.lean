@@ -74,7 +74,7 @@ public section
 open Set ChartedSpace
 open scoped Manifold ContDiff
 
-variable {H : Type*} [TopologicalSpace H] {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+variable {H : Type*} [TopologicalSpace H] {M : Type*} [TopologicalSpace M] [cM : ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] {P : Type*} [TopologicalSpace P]
 
 namespace Homeomorph
@@ -182,10 +182,11 @@ theorem pullbackChartedSpace_extChartAt (e : N ≃ₜ M) (x : N) :
   exact e.toEquiv.transPartialEquiv_trans _ _
 
 /-- The structure pulled back from a `C^n` manifold along a homeomorphism is a `C^n` manifold. -/
-theorem pullback_isManifold (e : N ≃ₜ M) [IsManifold I n M] :
+theorem pullback_isManifold (e : N ≃ₜ M) [manifoldM : IsManifold I n M] :
     letI := e.pullbackChartedSpace (H := H)
     IsManifold I n N :=
   letI := e.pullbackChartedSpace (H := H)
+  letI : HasGroupoid M (contDiffGroupoid n I) := manifoldM.toHasGroupoid
   haveI := e.pullback_hasGroupoid (contDiffGroupoid n I)
   { }
 

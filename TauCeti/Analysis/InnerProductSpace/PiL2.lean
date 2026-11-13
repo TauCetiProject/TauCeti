@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
+public import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
@@ -54,7 +56,10 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
 * `EuclideanSpace.take`: the first `m` coordinates of a point of `𝕜ⁿ`, a left inverse of the
-  zero extension `LinearIsometry.piLpExtendByZero` along `Fin.castLEEmb`.
+  zero extension `LinearIsometry.piLpExtendByZero` along `Fin.castLEEmb`, and its adjoint
+  (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
+* `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
+  first factor of the splitting along `j < m`.
 -/
 
 public section
@@ -401,7 +406,78 @@ theorem sum_ite_neg_one_mul_sq_eq (x : EuclideanSpace ℝ ι) :
   simp only [norm_fst_sumComplEquivProd_sq, norm_snd_sumComplEquivProd_sq, Real.norm_eq_abs,
     sq_abs, ite_mul, neg_one_mul, one_mul, Finset.sum_ite, Finset.sum_neg_distrib]
 
+/-- Taking the first component of the splitting along `p` is adjoint to inserting a first
+component with zero second component. -/
+theorem inner_fst_sumComplEquivProd (x : EuclideanSpace 𝕜 ι) (u : EuclideanSpace 𝕜 {i // p i}) :
+    inner 𝕜 (sumComplEquivProd 𝕜 p x).1 u = inner 𝕜 x ((sumComplEquivProd 𝕜 p).symm (u, 0)) := by
+  simp only [PiLp.inner_apply, sumComplEquivProd_apply_fst, sumComplEquivProd_symm_apply]
+  rw [← Fintype.sum_subtype_add_sum_subtype p]
+  have hpos (i : {i // p i}) : p i := i.2
+  have hneg (i : {i // ¬p i}) : ¬p i := i.2
+  simp [hpos, hneg]
+
 end sumCompl
+
+section finCastLE
+
+variable {m n : ℕ}
+
+variable (𝕜) in
+/-- The first `m` coordinates of `𝕜ⁿ`, for `m ≤ n`, indexed by `Fin m` or by the subtype
+`{j : Fin n // j < m}`: the reindexing of `𝕜ᵐ` along `Fin.castLEOrderIso`. This identifies `𝕜ᵐ`
+with the first factor of the splitting `EuclideanSpace.sumComplEquivProd` along `j < m`. -/
+def finCastLEEquiv (hm : m ≤ n) :
+    EuclideanSpace 𝕜 (Fin m) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 {j : Fin n // j.val < m} :=
+  LinearIsometryEquiv.piLpCongrLeft 2 𝕜 𝕜 (Fin.castLEOrderIso hm).toEquiv
+
+@[simp]
+theorem finCastLEEquiv_apply (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
+    (j : {j : Fin n // j.val < m}) : finCastLEEquiv 𝕜 hm w j = w ⟨j.1, j.2⟩ := by
+  simp only [finCastLEEquiv, LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply,
+    OrderIso.coe_symm_toEquiv]
+  -- `Fin.castLEOrderIso_symm_apply` is stated with `RelIso.symm`, so `simp` cannot rewrite with it.
+  exact congrArg w (Fin.castLEOrderIso_symm_apply hm j)
+
+@[simp]
+theorem finCastLEEquiv_symm_apply (hm : m ≤ n) (v : EuclideanSpace 𝕜 {j : Fin n // j.val < m})
+    (i : Fin m) : (finCastLEEquiv 𝕜 hm).symm v i = v ⟨Fin.castLE hm i, i.2⟩ := by
+  simp [finCastLEEquiv, Equiv.piCongrLeft'_apply]
+
+/-- Inserting `w : 𝕜ᵐ` as the first factor of the splitting along `j < m`, with zero second
+factor, is the zero extension of `w` along `Fin.castLE`. -/
+@[simp]
+theorem sumComplEquivProd_symm_finCastLEEquiv (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m)) :
+    (sumComplEquivProd 𝕜 (fun j : Fin n ↦ j.val < m)).symm (finCastLEEquiv 𝕜 hm w, 0) =
+      LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm) w := by
+  ext j
+  rw [sumComplEquivProd_symm_apply]
+  split_ifs with hj
+  · simpa using (piLpExtendByZero_castLEEmb_apply_castLE hm w ⟨j, hj⟩).symm
+  · rw [piLpExtendByZero_castLEEmb_apply_of_le hm w (not_lt.1 hj)]
+    rfl
+
+/-- Read through `Fin.castLEOrderIso`, the first factor of the splitting along `j < m` is the
+first `m` coordinates. -/
+theorem finCastLEEquiv_symm_fst_sumComplEquivProd (hm : m ≤ n) (x : EuclideanSpace 𝕜 (Fin n)) :
+    (finCastLEEquiv 𝕜 hm).symm (sumComplEquivProd 𝕜 (fun j : Fin n ↦ j.val < m) x).1 =
+      take hm x := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext j
+  simp
+
+/-- Taking the first `m` coordinates is the adjoint of the zero extension along `Fin.castLE`. -/
+@[simp]
+theorem adjoint_piLpExtendByZero_castLEEmb_apply (hm : m ≤ n) (x : EuclideanSpace 𝕜 (Fin n)) :
+    ContinuousLinearMap.adjoint
+        (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm)).toContinuousLinearMap x =
+      take hm x := by
+  refine ext_inner_right 𝕜 fun w ↦ ?_
+  rw [ContinuousLinearMap.adjoint_inner_left, LinearIsometry.coe_toContinuousLinearMap,
+    ← finCastLEEquiv_symm_fst_sumComplEquivProd, LinearIsometryEquiv.inner_map_eq_flip,
+    LinearIsometryEquiv.symm_symm, inner_fst_sumComplEquivProd,
+    sumComplEquivProd_symm_finCastLEEquiv]
+
+end finCastLE
 
 end EuclideanSpace
 
@@ -420,6 +496,13 @@ theorem euclideanFiberSum_apply [DecidableEq κ] (f : ι → κ) (x : EuclideanS
     euclideanFiberSum f x j = ∑ i with f i = j, x i := by
   simp [euclideanFiberSum, FunOnFinite.map_apply_apply]
 
+/-- Fibrewise summation along an equivalence just reindexes the coordinates. -/
+@[simp]
+theorem euclideanFiberSum_equiv_apply (e : ι ≃ κ) (x : EuclideanSpace 𝕜 ι) (j : κ) :
+    euclideanFiberSum e x j = x (e.symm j) := by
+  classical
+  rw [euclideanFiberSum_apply, e.sum_fiber_eq]
+
 /-- Fibrewise summation is continuous. -/
 @[fun_prop]
 theorem continuous_euclideanFiberSum (f : ι → κ) :
@@ -432,5 +515,25 @@ theorem continuous_euclideanFiberSum (f : ι → κ) :
 theorem measurable_euclideanFiberSum [MeasurableSpace 𝕜] [BorelSpace 𝕜] (f : ι → κ) :
     Measurable (euclideanFiberSum (𝕜 := 𝕜) (ι := ι) f) :=
   (continuous_euclideanFiberSum (𝕜 := 𝕜) f).measurable
+
+/-- The image of the preimage of `s` under the projection onto coordinate `i`, composed with a
+function `g` of that coordinate, is the image of `s` under `g`. -/
+theorem image_comp_euclideanSpace_proj_preimage {ι : Type*} {α : Type*} (g : 𝕜 → α)
+    (s : Set 𝕜) (i : ι) :
+    (fun z : EuclideanSpace 𝕜 ι ↦ g (z i)) '' (EuclideanSpace.proj (𝕜 := 𝕜) i ⁻¹' s) =
+      g '' s := by
+  have hsurj : Function.Surjective (EuclideanSpace.proj (𝕜 := 𝕜) i : EuclideanSpace 𝕜 ι → 𝕜) :=
+    fun t ↦ ⟨(EuclideanSpace.equiv ι 𝕜).symm fun _ ↦ t, rfl⟩
+  exact (Set.image_comp g (EuclideanSpace.proj (𝕜 := 𝕜) i) _).trans
+    (congrArg (g '' ·) (hsurj.image_preimage s))
+
+/-- A function of the unique coordinate of a Euclidean line is injective on the preimage of `s`
+if it is injective on `s`. -/
+theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : Type*} {g : 𝕜 → α}
+    {s : Set 𝕜} (hg : Set.InjOn g s) (i : ι) :
+    Set.InjOn (fun z : EuclideanSpace 𝕜 ι ↦ g (z i)) (EuclideanSpace.proj (𝕜 := 𝕜) i ⁻¹' s) := by
+  have hinj : Function.Injective (EuclideanSpace.proj (𝕜 := 𝕜) i : EuclideanSpace 𝕜 ι → 𝕜) :=
+    fun x y h ↦ by ext j; rw [Subsingleton.elim j i]; exact h
+  exact hg.comp hinj.injOn (Set.mapsTo_preimage _ _)
 
 end TauCeti

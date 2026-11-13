@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Sequence
 public import TauCeti.Data.List.PermanencesMinusVariations
 public import TauCeti.RingTheory.Polynomial.Subresultant.Euclidean
 import TauCeti.Data.List.Range
+import TauCeti.Data.SignType.Basic
 
 /-! # Cauchy indices from signed subresultant coefficients
 
@@ -100,6 +101,17 @@ private theorem permanencesMinusVariations_signedPsc_eq_add {p q : K[X]} (hq : q
     linear_combination (sign p.leadingCoeff * sign q.leadingCoeff : ℤ) * h2
   · simp only [hke, mt hodd.1 hke, ↓reduceIte]
 
+/-- Across an even gap, the leading entry of the signed coefficients of `(p, q)` times the rescaling
+constant `c` of a Euclidean step has the sign of `q.leadingCoeff`. -/
+private theorem sign_mul_sign_signedPsc_scale {lc : K} {m n ρ : ℕ} (h : n < m) (hρ : ρ < n)
+    (hk : Even (n - (ρ + 1))) :
+    (SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - n)) : ℤ) *
+      SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - ρ)) = SignType.sign lc := by
+  refine sign_mul_pow_mul_sign_mul_pow_of_ne_zero ?_ lc ?_
+  · exact pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)
+  · obtain ⟨i, hi⟩ := hk
+    exact ⟨m - n + i, by omega⟩
+
 /-- After the leading entry, the signed coefficients of `(p, q)` and of `(q, -(p % q))` have the
 same permanences minus variations. -/
 private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
@@ -156,28 +168,8 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
     have htρ0 : t ρ ≠ 0 := by
       rw [htρ]
       exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (pow_ne_zero _ hlc)
-    rw [List.map_cons, List.permanencesMinusVariations_cons_replicate_zero_append
-        (mul_ne_zero hc htρ0), ← List.map_cons, List.permanencesMinusVariations_map_mul_left hc,
-      List.permanencesMinusVariations_cons_replicate_zero_append htρ0]
-    congr 1
-    split_ifs with hk
-    · -- Across an even gap, `s n * c` has the sign of `q.leadingCoeff ^ (odd)`.
-      have hodd : Odd ((m - n) + (m - ρ)) := by
-        obtain ⟨i, hi⟩ := hk
-        exact ⟨m - n + i, by omega⟩
-      have h1 : ((-1 : K) ^ (m - n).choose 2) ^ 2 = 1 := by
-        rw [← pow_mul, mul_comm, pow_mul]
-        simp
-      have hprod : (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) *
-          ((-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - ρ)) =
-            q.leadingCoeff ^ ((m - n) + (m - ρ)) := by
-        linear_combination (q.leadingCoeff ^ (m - n) * q.leadingCoeff ^ (m - ρ)) * h1
-      have key : (sign (s n) : ℤ) * sign c = sign q.leadingCoeff := by
-        rw [← SignType.coe_mul, ← sign_mul, hsn, hcdef, hprod]
-        simp [sign_pow, SignType.pow_odd _ hodd]
-      simp only [sign_mul, SignType.coe_mul]
-      linear_combination ((-1) ^ (n - (ρ + 1)).choose 2 * (sign (t ρ) : ℤ)) * key
-    · rfl
+    exact List.permanencesMinusVariations_cons_replicate_zero_append_map_mul_left hc htρ0 _ _
+      fun hk ↦ by rw [hsn, hcdef]; exact sign_mul_sign_signedPsc_scale h hρ hk
 
 end Ordered
 

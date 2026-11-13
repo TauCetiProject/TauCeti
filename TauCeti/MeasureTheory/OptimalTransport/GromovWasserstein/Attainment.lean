@@ -87,10 +87,10 @@ private theorem exists_isClosed_continuousOn_kernels
       ContinuousOn (fun q : (X × Y) × (X × Y) ↦ (ωX (q.1.1, q.2.1), ωY (q.1.2, q.2.2))) C ∧
       ∀ π : Measure (X × Y), IsCoupling π μ ν → π.prod π Cᶜ ≤ ε := by
   have hε2 : ε / 2 ≠ 0 := (ENNReal.half_pos hε).ne'
-  obtain ⟨K, -, hK, hKμ, hωK⟩ :=
-    hωX.exists_isClosed_measure_sdiff_lt_continuousOn MeasurableSet.univ (measure_ne_top _ _) hε2
-  obtain ⟨L, -, hL, hLν, hωL⟩ :=
-    hωY.exists_isClosed_measure_sdiff_lt_continuousOn MeasurableSet.univ (measure_ne_top _ _) hε2
+  obtain ⟨K, -, hK, hKμ, hωK⟩ := hωX.exists_isClosed_measure_sdiff_lt_continuousOn
+    nullMeasurableSet_univ (measure_ne_top _ _) hε2
+  obtain ⟨L, -, hL, hLν, hωL⟩ := hωY.exists_isClosed_measure_sdiff_lt_continuousOn
+    nullMeasurableSet_univ (measure_ne_top _ _) hε2
   rw [← compl_eq_univ_sdiff] at hKμ hLν
   have hfst : Continuous (Prod.map Prod.fst Prod.fst : (X × Y) × (X × Y) → X × X) := by fun_prop
   have hsnd : Continuous (Prod.map Prod.snd Prod.snd : (X × Y) × (X × Y) → Y × Y) := by fun_prop
@@ -115,7 +115,7 @@ private theorem exists_isClosed_continuousOn_kernels
 /-- For a lower semicontinuous measurable `g`, the integral of `g` of the kernel discrepancy
 against the square of a coupling is weakly lower semicontinuous on the couplings. -/
 private theorem lowerSemicontinuousOn_lintegral_comp_edist {g : ℝ≥0∞ → ℝ≥0∞}
-    (hg : LowerSemicontinuous g) (hgm : Measurable g)
+    (hg : LowerSemicontinuous g)
     (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
     LowerSemicontinuousOn
       (fun π : ProbabilityMeasure (X × Y) ↦ ∫⁻ q, g (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
@@ -131,13 +131,11 @@ private theorem lowerSemicontinuousOn_lintegral_comp_edist {g : ℝ≥0∞ → �
   refine LowerSemicontinuousOn.comp (g := fun π : ProbabilityMeasure (X × Y) ↦ π.prod π)
     (lowerSemicontinuousOn_lintegral_comp (S := (fun π ↦ π.prod π) '' K)
       (Φ := fun q : (X × Y) × (X × Y) ↦ (ωX (q.1.1, q.2.1), ωY (q.1.2, q.2.2)))
-      (hg.comp continuous_edist) (fun ε hε ↦ ?_) ?_) hsq.continuousOn (mapsTo_image _ _)
+      (hg.comp continuous_edist) (fun ε hε ↦ ?_)) hsq.continuousOn (mapsTo_image _ _)
   · obtain ⟨C, hC, hΦC, hCπ⟩ := exists_isClosed_continuousOn_kernels hωX hωY hε
     refine ⟨C, hC, hΦC, ?_⟩
     rintro _ ⟨π, hπ, rfl⟩
     exact hCπ π hπ
-  · rintro _ ⟨π, hπ, rfl⟩
-    exact hgm.comp_aemeasurable (hπ.aestronglyMeasurable_edist hωX hωY).aemeasurable
 
 /-- **Lower semicontinuity of the distortion.** On second-countable pseudometrizable carriers, the
 `p`-distortion of a coupling of two fixed finite measures is weakly lower semicontinuous in the
@@ -167,7 +165,7 @@ theorem lowerSemicontinuousOn_gromovWassersteinDistortion
         (not_le_of_gt hc) ((gromovWassersteinDistortion_top_le_iff hωX hωY hπ₀ c).mpr h)
     filter_upwards [lowerSemicontinuousOn_lintegral_comp_edist
       (isOpen_Ioi.lowerSemicontinuous_indicator zero_le_one)
-      (measurable_const.indicator measurableSet_Ioi) hωX hωY π₀ hπ₀ 0 h₀,
+      hωX hωY π₀ hπ₀ 0 h₀,
       self_mem_nhdsWithin] with π hπ hπK
     exact lt_of_not_ge fun h ↦
       hπ.ne' ((gromovWassersteinDistortion_top_le_iff hωX hωY hπK c).mp h)
@@ -175,16 +173,16 @@ theorem lowerSemicontinuousOn_gromovWassersteinDistortion
     -- `p`-th power of the discrepancy.
     have hint := lowerSemicontinuousOn_lintegral_comp_edist (μ := μ) (ν := ν)
       (ENNReal.continuous_rpow_const (y := p.toReal)).lowerSemicontinuous
-      (ENNReal.continuous_rpow_const.measurable) hωX hωY
+      hωX hωY
     have hcomp := (ENNReal.continuous_rpow_const (y := 1 / p.toReal)).comp_lowerSemicontinuousOn
       hint (ENNReal.monotone_rpow_of_nonneg (by positivity))
     refine fun π hπ ↦ LowerSemicontinuousWithinAt.congr_of_eventuallyEq (hcomp π hπ) hπ
       (eventually_nhdsWithin_of_forall fun σ hσ ↦ ?_)
     beta_reduce
     rw [Function.comp_apply, gromovWassersteinDistortion_def,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop
         (IsCoupling.aestronglyMeasurable_edist hσ hωX hωY)]
-    simp only [enorm_eq_self]
+    simp only [eNorm_eq_self]
 
 /-- **Existence of an optimal Gromov–Wasserstein coupling for tight marginals.** For tight Borel
 probability measures `μ` and `ν` on second-countable metrizable spaces and almost-everywhere

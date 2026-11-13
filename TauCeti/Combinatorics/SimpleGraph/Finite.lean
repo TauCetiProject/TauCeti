@@ -21,7 +21,12 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
 
 ## Main results
 
+* `SimpleGraph.neighborSetFintypeOfFinite` — a `Fintype` structure on the neighbour sets of a graph
+  on a finite vertex type, for local selection where decidable adjacency is unavailable.
 * `SimpleGraph.exists_minimum_weight_edge` — a finite nonempty edge set has a minimum-weight edge.
+* `SimpleGraph.Iso.sum_neighborFinset_comp` — neighbour sums commute with graph isomorphisms.
+* `SimpleGraph.edgeSet_fromEdgeSet_of_subset` — a set of edges of `G` is the edge set of the
+  graph it generates.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
@@ -36,6 +41,17 @@ namespace SimpleGraph
 
 variable {V K M : Type*}
 
+/-- The neighbour sets of a graph on a finite vertex type are finite, from finiteness alone. This
+is not an instance: with `DecidableRel G.Adj`, instance search finds the subtype `Fintype`
+(`Subtype.fintype`), and the two structures are not definitionally equal. Files that need a
+`Fintype` on neighbour sets without decidable adjacency select it as a local instance. It is
+exposed because it is instance-reducible: statements elaborated with it as a local instance
+record the unfolded `Fintype.ofFinite`, and importers must see the body to match them. -/
+@[instance_reducible, expose]
+noncomputable def neighborSetFintypeOfFinite [Finite V] (G : SimpleGraph V) (v : V) :
+    Fintype (G.neighborSet v) :=
+  Fintype.ofFinite _
+
 /-- A graph with a finite nonempty edge set has an edge of minimum weight. -/
 theorem exists_minimum_weight_edge (G : SimpleGraph V) [Finite G.edgeSet] (hG : G ≠ ⊥)
     [LinearOrder K] (w : Sym2 V → K) :
@@ -45,6 +61,24 @@ theorem exists_minimum_weight_edge (G : SimpleGraph V) [Finite G.edgeSet] (hG : 
   induction e using Sym2.inductionOn with
   | _ u v =>
     exact ⟨u, v, G.mem_edgeSet.1 (mem_edgeFinset.1 he), fun e he' ↦ hmin e (mem_edgeFinset.2 he')⟩
+
+/-- Summing a pulled-back function over neighbours commutes with a graph isomorphism. -/
+theorem Iso.sum_neighborFinset_comp {W R : Type*} [Fintype V] [Fintype W]
+    {G : SimpleGraph V} {H : SimpleGraph W}
+    [DecidableRel G.Adj] [DecidableRel H.Adj] [AddCommMonoid R]
+    (e : G ≃g H) (i : V) (a : W → R) :
+    ∑ j ∈ G.neighborFinset i, a (e j) = ∑ j ∈ H.neighborFinset (e i), a j := by
+  exact Finset.sum_equiv e.toEquiv
+    (fun j ↦ by
+      simpa only [mem_neighborFinset, RelIso.coe_fn_toEquiv] using e.map_adj_iff.symm)
+    (fun _ _ ↦ by rw [RelIso.coe_fn_toEquiv])
+
+/-- A set of pairs contained in the edges of a graph `G` carries no diagonal pair, so it is the
+edge set of the graph it generates. -/
+theorem edgeSet_fromEdgeSet_of_subset {G : SimpleGraph V} {s : Set (Sym2 V)}
+    (hs : s ⊆ G.edgeSet) : (fromEdgeSet s).edgeSet = s := by
+  rw [edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
+  exact fun e he ↦ not_isDiag_of_mem_edgeSet G (hs he)
 
 variable [Fintype V] [DecidableEq V] [CommMonoid M]
 
@@ -59,8 +93,8 @@ theorem prod_filter_le_le_eq_prod_Icc_edgeFinset (F H : SimpleGraph V)
   -- An edge set below `H.edgeFinset` carries no diagonal pair, so it is the edge set of a graph.
   have hset : ∀ s ∈ Icc F.edgeFinset H.edgeFinset,
       (fromEdgeSet (s : Set (Sym2 V))).edgeFinset = s := fun s hs ↦ coe_injective <| by
-    rw [coe_edgeFinset, edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
-    exact fun e he ↦ not_isDiag_of_mem_edgeSet H (mem_edgeFinset.1 ((mem_Icc.1 hs).2 he))
+    rw [coe_edgeFinset, edgeSet_fromEdgeSet_of_subset fun e he ↦
+      mem_edgeFinset.1 ((mem_Icc.1 hs).2 (mem_coe.1 he))]
   refine prod_nbij' (fun G ↦ G.edgeFinset) (fun s ↦ fromEdgeSet (s : Set (Sym2 V)))
     (fun G hG ↦ ?_) (fun s hs ↦ ?_) (fun G _ ↦ ?_) hset (fun G _ ↦ rfl)
   · simpa [edgeFinset_subset_edgeFinset] using hG

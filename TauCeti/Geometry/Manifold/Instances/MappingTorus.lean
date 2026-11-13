@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.Quotient.Descent
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.MappingTorus.Basic
+import TauCeti.Topology.MappingTorus.LocalProduct
 
 /-!
 # The smooth mapping torus of a diffeomorphism
@@ -70,7 +71,10 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
 * `TauCeti.SmoothMappingTorus.mk_eq_mk_iff`, `TauCeti.SmoothMappingTorus.mk_add_intCast`: when two
   points of `ℝ × M` have the same class.
 * `TauCeti.SmoothMappingTorus.contMDiff_proj`, `TauCeti.SmoothMappingTorus.range_mk`: the
-  projection is `C^n`, and its fibres are the images of the fibre inclusions.
+  projection is `C^n`, and its fibres are the images of the fibre inclusions. It is continuous
+  with no smoothness hypotheses (`TauCeti.SmoothMappingTorus.continuous_proj`).
+* `TauCeti.SmoothMappingTorus.isClosedEmbedding_mk`: each fibre inclusion `x ↦ [t, x]` is a closed
+  embedding onto the fibre over the class of `t`.
 * `TauCeti.SmoothMappingTorus.flow_one_mk`: the time-one map of the suspension flow is `φ` on
   each fibre.
 * `TauCeti.SmoothMappingTorus.isFixedPt_flow_mk_iff`: `[t, x]` is fixed by the time-`s` map
@@ -83,6 +87,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
 * `TauCeti.SmoothMappingTorus.mfderiv_mk_apply`,
   `TauCeti.SmoothMappingTorus.mfderiv_proj_mfderiv_uncurry_mk`: the differential of a fibre
   inclusion, and of the projection, in the coordinates `(t, x)`.
+* `TauCeti.SmoothMappingTorus.injective_mfderiv_mk`: the differential of a fibre inclusion is
+  injective.
 * `TauCeti.SmoothMappingTorus.range_mfderiv_mk`: the tangent space of the fibre through `[t, x]`
   is the kernel of the differential of the projection.
 
@@ -367,6 +373,12 @@ def proj : SmoothMappingTorus φ → UnitAddCircle :=
 theorem proj_mk (t : ℝ) (x : M) : proj φ (mk φ t x) = t :=
   MulAction.orbitRelQuotientLift_mk _
 
+/-- In the coordinates `(t, x)`, the projection `[t, x] ↦ [t]` is the first projection followed by
+the quotient map `ℝ → ℝ / ℤ`. -/
+theorem proj_comp_uncurry_mk :
+    proj φ ∘ Function.uncurry (mk φ) = ((↑) : ℝ → UnitAddCircle) ∘ Prod.fst :=
+  funext fun p ↦ proj_mk φ p.1 p.2
+
 /-- The projection of the mapping torus of a diffeomorphism of a nonempty manifold to the circle
 is surjective. -/
 theorem proj_surjective [Nonempty M] : Function.Surjective (proj φ) := by
@@ -597,6 +609,34 @@ theorem proj_homeomorphMappingTorus (z : SmoothMappingTorus φ) :
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
 
+/-- The projection of the mapping torus to the circle is continuous. -/
+theorem continuous_proj : Continuous (proj φ) := by
+  have h : proj φ = MappingTorus.proj _ ∘ homeomorphMappingTorus φ :=
+    funext fun z ↦ (proj_homeomorphMappingTorus φ z).symm
+  rw [h]
+  exact (MappingTorus.continuous_proj _).comp (homeomorphMappingTorus φ).continuous
+
+/-- The fibre inclusion at height zero is a topological embedding: through the homeomorphism with
+the topological mapping torus, it is the inclusion of the fibre over `0`. -/
+private theorem isEmbedding_mk_zero : IsEmbedding (mk φ 0) := by
+  have h : mk φ 0 = (homeomorphMappingTorus φ).symm ∘ MappingTorus.incl φ.toHomeomorph.symm :=
+    funext fun x ↦ by
+      rw [Function.comp_apply, MappingTorus.incl_apply, homeomorphMappingTorus_symm_mk]
+  rw [h]
+  exact (homeomorphMappingTorus φ).symm.isEmbedding.comp
+    (MappingTorus.isEmbedding_incl φ.toHomeomorph.symm)
+
+/-- For each real `t`, the fibre inclusion `x ↦ [t, x]` is a closed embedding of `M` onto the
+fibre over the class of `t`. -/
+theorem isClosedEmbedding_mk (t : ℝ) : IsClosedEmbedding (mk φ t) := by
+  refine ⟨?_, ?_⟩
+  · -- The fibre inclusion at height `t` is the one at height `0` followed by the time-`t` map.
+    have h : (flow φ).toHomeomorph t ∘ mk φ 0 = mk φ t :=
+      funext fun x ↦ by rw [Function.comp_apply, Flow.toHomeomorph_apply, flow_mk, zero_add]
+    rw [← h]
+    exact ((flow φ).toHomeomorph t).isEmbedding.comp (isEmbedding_mk_zero φ)
+  · rw [range_mk]
+    exact isClosed_singleton.preimage (continuous_proj φ)
 
 end SmoothMappingTorus
 
@@ -604,11 +644,13 @@ end SmoothMappingTorus
 
 namespace SmoothMappingTorus
 
-variable [T2Space M] [LocallyCompactSpace M] [IsManifold I ∞ M] (φ : M ≃ₘ⟮I, I⟯ M)
+section
+
+variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] (φ : M ≃ₘ^n⟮I, I⟯ M)
 
 /-- The differential of the inclusion `x ↦ [t, x]` of a fibre is the differential of
 `(t, x) ↦ [t, x]` on the tangent vectors `(0, v)`. -/
-theorem mfderiv_mk_apply (t : ℝ) (x : M) (v : TangentSpace I x) :
+theorem mfderiv_mk_apply (hn : n ≠ 0) (t : ℝ) (x : M) (v : TangentSpace I x) :
     mfderiv I (𝓘(ℝ).prod I) (mk φ t) x v =
       mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (Function.uncurry (mk φ)) (t, x)
         ((Manifold.tangentSpaceProdEquiv (t, x)).symm (0, v)) := by
@@ -616,12 +658,25 @@ theorem mfderiv_mk_apply (t : ℝ) (x : M) (v : TangentSpace I x) :
       ((0 : TangentSpace I x →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ (TangentSpace I x))) :=
     (hasMFDerivAt_const t x).prodMk (hasMFDerivAt_id x)
   have h := mfderiv_comp_apply_of_eq x
-    ((contMDiff_uncurry_mk φ (t, x)).mdifferentiableAt (by simp)) hincl.mdifferentiableAt rfl v
+    ((contMDiff_uncurry_mk φ (t, x)).mdifferentiableAt hn) hincl.mdifferentiableAt rfl v
   rw [hincl.mfderiv] at h
   rw [Manifold.tangentSpaceProdEquiv_symm_apply]
   -- `mk φ t` is `(t, x) ↦ [t, x]` composed with `x ↦ (t, x)`, whose differential sends `v` to
   -- `(0, v)`.
   exact h
+
+/-- The differential of the fibre inclusion `x ↦ [t, x]` is injective: it is `v ↦ (0, v)` followed
+by the invertible differential of the quotient map `(t, x) ↦ [t, x]`. -/
+theorem injective_mfderiv_mk (hn : n ≠ 0) (t : ℝ) (x : M) :
+    Function.Injective (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x) := by
+  intro v w hvw
+  rw [mfderiv_mk_apply φ hn, mfderiv_mk_apply φ hn] at hvw
+  exact congrArg Prod.snd ((Manifold.tangentSpaceProdEquiv (t, x)).symm.injective
+    (((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv hn (t, x)).injective hvw))
+
+end
+
+variable [T2Space M] [LocallyCompactSpace M] [IsManifold I ∞ M] (φ : M ≃ₘ⟮I, I⟯ M)
 
 /-- Every tangent vector of the mapping torus at `[t, x]` is the image of a tangent vector `(b, v)`
 of `ℝ × M` under the differential of `(t, x) ↦ [t, x]`. -/
@@ -641,13 +696,11 @@ theorem mfderiv_proj_mfderiv_uncurry_mk (t : ℝ) (x : M) (b : ℝ) (v : Tangent
     mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (mk φ t x)
         (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (Function.uncurry (mk φ)) (t, x)
           ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) = b := by
-  have hcomp : proj φ ∘ Function.uncurry (mk φ) = ((↑) : ℝ → UnitAddCircle) ∘ Prod.fst :=
-    funext fun p ↦ proj_mk φ p.1 p.2
   have h := mfderiv_comp_apply_of_eq (t, x)
     ((contMDiff_proj φ (mk φ t x)).mdifferentiableAt (by simp))
     ((contMDiff_uncurry_mk φ (t, x)).mdifferentiableAt (by simp)) rfl
     ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))
-  rw [hcomp, mfderiv_comp (t, x) (AddCircle.hasMFDerivAt_coe 1 t).mdifferentiableAt
+  rw [proj_comp_uncurry_mk, mfderiv_comp (t, x) (AddCircle.hasMFDerivAt_coe 1 t).mdifferentiableAt
     mdifferentiableAt_fst, AddCircle.mfderiv_coe, mfderiv_fst] at h
   -- The first projection sends `(b, v)` to `b`.
   exact h.symm.trans
@@ -663,14 +716,14 @@ theorem range_mfderiv_mk (t : ℝ) (x : M) :
   have hb := mfderiv_proj_mfderiv_uncurry_mk φ t x b v
   constructor
   · rintro ⟨v', hv'⟩
-    rw [ContinuousLinearMap.coe_coe, mfderiv_mk_apply] at hv'
+    rw [ContinuousLinearMap.coe_coe, mfderiv_mk_apply φ (by simp)] at hv'
     -- Comparing the real components of `(0, v')` and `(b, v)`, which have the same image.
     have h := congrArg Prod.fst ((Manifold.tangentSpaceProdEquiv (t, x)).symm.injective
       (((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv (by simp) (t, x)).injective hv'))
     exact LinearMap.mem_ker.2 (hb.trans h.symm)
   · intro hw
     obtain rfl : b = 0 := hb.symm.trans (LinearMap.mem_ker.1 hw)
-    exact ⟨v, mfderiv_mk_apply φ t x v⟩
+    exact ⟨v, mfderiv_mk_apply φ (by simp) t x v⟩
 
 end SmoothMappingTorus
 

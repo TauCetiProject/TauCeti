@@ -37,8 +37,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Metric Set Module TopologicalSpace
-open scoped Distributions ENNReal NNReal Gradient BoundedContinuousFunction
+open Filter MeasureTheory Metric Set Module TopologicalSpace
+open scoped Distributions ENNReal NNReal Gradient BoundedContinuousFunction Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -105,9 +105,9 @@ private theorem W1p.toReal_morreyEmbedding_bound (A : ℝ≥0) (V : ℝ≥0∞) 
         (A * ‖W1p.gradient u‖₊ : ℝ≥0) =
       (A : ℝ) * ‖W1p.gradient u‖ + V.toReal * ‖W1p.value u‖ +
         (A : ℝ) * ‖W1p.gradient u‖ := by
-  rw [ENNReal.toReal_add ENNReal.coe_ne_top (ENNReal.mul_ne_top hV enorm_ne_top),
-    ENNReal.toReal_mul, toReal_enorm]
-  simp only [ENNReal.coe_toReal, NNReal.coe_mul, coe_nnnorm]
+  rw [ENNReal.toReal_add ENNReal.coe_ne_top (ENNReal.mul_ne_top hV eNorm_ne_top),
+    ENNReal.toReal_mul, toReal_eNorm]
+  simp only [ENNReal.coe_toReal, NNReal.coe_mul, coe_nnNorm]
 
 private theorem W1p.exists_bound_morreyEmbeddingLinearMap
     (hp : (finrank ℝ E : ℝ≥0) < p) :
@@ -125,7 +125,7 @@ private theorem W1p.exists_bound_morreyEmbeddingLinearMap
       _ = eLpNorm (W1p.value u) (p : ℝ≥0∞) mu :=
         eLpNorm_congr_ae (W1p.value_ae_eq_morreyRepresentative u hp).symm
       _ = _ := by
-        rw [Lp.enorm_def]
+        rw [Lp.eNorm_def]
         simp only [Opens.coe_top, Measure.restrict_univ]
   have hV : V ≠ ∞ := by
     exact ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos mu 0 one_pos).ne'
@@ -192,5 +192,18 @@ theorem W1p.morreyEmbedding_injective (hp : (finrank ℝ E : ℝ≥0) < p) :
     rw [hu, hv]
     exact congrArg (fun g : HolderSpace (1 - finrank ℝ E / p) E ℝ => g x) huv
   simpa only [Opens.coe_top, Measure.restrict_univ] using hae
+
+/-- If Sobolev classes `a n` converge to `u`, their Morrey embeddings converge uniformly. -/
+theorem W1p.tendsto_enorm_morreyEmbedding_sub (hp : (finrank ℝ E : ℝ≥0) < p)
+    {a : ℕ → W1p mu ⊤ (p : ℝ≥0∞)} {u : W1p mu ⊤ (p : ℝ≥0∞)} (ha : Tendsto a atTop (𝓝 u)) :
+    Tendsto (fun n => ‖W1p.morreyEmbedding hp (a n) - W1p.morreyEmbedding hp u‖ₑ) atTop
+      (𝓝 0) := by
+  have ha_morrey : Tendsto (fun n => W1p.morreyEmbedding hp (a n)) atTop
+      (𝓝 (W1p.morreyEmbedding hp u)) :=
+    ((W1p.morreyEmbedding (mu := mu) hp).continuous.tendsto u).comp ha
+  have hsub : Tendsto (fun n => W1p.morreyEmbedding hp (a n) -
+      W1p.morreyEmbedding hp u) atTop (𝓝 0) := by
+    simpa only [sub_self] using ha_morrey.sub_const (W1p.morreyEmbedding hp u)
+  simpa only [Function.comp_def, eNorm_zero] using (continuous_eNorm.tendsto 0).comp hsub
 
 end TauCeti

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.NumberTheory.LocalField.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
+import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 
@@ -28,7 +29,8 @@ translates of that image, and Mathlib's `MeasureTheory.AddSubgroup.index_mul_mea
 into the measure identity. On a translate of a scaled box — that is, on a ball of `ι → K` — the
 same identity holds for every left-invariant measure, with no regularity hypothesis. For a general
 set the measure `s ↦ μ (A '' s)` is again a Haar measure, so by uniqueness of Haar measure it is a
-constant multiple of `μ`, and the box computes the constant; this needs `μ` to be regular.
+constant multiple of `μ`, and the box computes the constant; Haar measure on `ι → K` is
+automatically regular, since `ι → K` is second countable and locally compact.
 
 Specializing to diagonal matrices gives the volume of a box of ideals: the box whose `i`-th factor
 is `𝓂[K] ^ e i` is the image of the integer box under the diagonal matrix with entries `ϖ ^ e i`,
@@ -64,7 +66,7 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
   the box with factors `𝓂[K] ^ e i` has `q ^ (-∑ i, e i)` times the volume of the integer box.
 * `MeasureTheory.Measure.measure_integerBox_inter_coord_eq_zero`: a coordinate hyperplane
   inside an integer box of finite measure is null.
-* `MeasureTheory.Measure.addHaar_image_mulVec`: for a regular Haar measure `μ`,
+* `MeasureTheory.Measure.addHaar_image_mulVec`: for a Haar measure `μ`,
   `μ (A '' s) = q ^ (-k) * μ s` for every set `s`.
 
 ## References
@@ -300,10 +302,10 @@ theorem measure_image_mulVec_vadd_smul_integerBox (μ : Measure (ι → K))
     Matrix.coe_mulVecLin, h]
 
 /-- **The scaling law for Haar measure.** If the determinant of a square matrix `A` over `𝒪[K]`
-is associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every regular additive Haar measure `μ`
+is associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every additive Haar measure `μ`
 on `ι → K` and every set `s`, `μ (A '' s) = q ^ (-k) * μ s`, where `q = Nat.card 𝓀[K]`. This is
 the nonarchimedean analogue of `MeasureTheory.Measure.addHaar_image_linearMap`. -/
-theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure] [μ.Regular]
+theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure]
     {A : Matrix ι ι 𝒪[K]} {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) {k : ℕ}
     (hk : Associated A.det (ϖ ^ k)) (s : Set (ι → K)) :
     μ ((A.map (algebraMap 𝒪[K] K)).mulVec '' s) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k * μ s := by
