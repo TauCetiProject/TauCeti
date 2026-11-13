@@ -64,7 +64,7 @@ public section
 noncomputable section
 
 open Bundle Manifold Module
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti.CotangentBundle
 
@@ -140,6 +140,29 @@ theorem generatingCorrespondence_cotangentGeneratingReverse (y : N × M) :
     (congrArg (TotalSpace.mk' (E →L[ℝ] ℝ) y.2) ?_) <;>
     simp only [cotangentGeneratingReverse_apply, Prod.swap_prod_mk, mvfderiv_fun_neg, neg_neg,
       Prod.fst_swap, Prod.snd_swap]
+
+/-- Functions with the same germ have the same source covector. -/
+theorem _root_.Filter.EventuallyEq.generatingSource_eq {T : M × N → ℝ} {x : M × N}
+    (h : S =ᶠ[𝓝 x] T) :
+    TauCeti.CotangentBundle.generatingSource I S x =
+      TauCeti.CotangentBundle.generatingSource I T x := by
+  have hs : (fun q ↦ S (q, x.2)) =ᶠ[𝓝 x.1] fun q ↦ T (q, x.2) :=
+    (continuous_id.prodMk continuous_const).continuousAt.eventually h
+  apply TauCeti.CotangentBundle.ext (by simp)
+  simp only [TauCeti.CotangentBundle.generatingSource_snd]
+  exact DFunLike.congr_fun (hs.mvfderiv_eq (I := I))
+
+/-- Functions with the same germ have the same target covector. -/
+theorem _root_.Filter.EventuallyEq.generatingTarget_eq {T : M × N → ℝ} {x : M × N}
+    (h : S =ᶠ[𝓝 x] T) :
+    TauCeti.CotangentBundle.generatingTarget J S x =
+      TauCeti.CotangentBundle.generatingTarget J T x := by
+  have hs : (fun Q ↦ S (x.1, Q)) =ᶠ[𝓝 x.2] fun Q ↦ T (x.1, Q) :=
+    (continuous_const.prodMk continuous_id).continuousAt.eventually h
+  apply TauCeti.CotangentBundle.ext (by simp)
+  intro v
+  simp only [TauCeti.CotangentBundle.generatingTarget_snd]
+  exact congrArg (fun p : F →L[ℝ] ℝ ↦ (-p) v) (hs.mvfderiv_eq (I := J))
 
 /-! ### The relation as the graph of `dS` -/
 
