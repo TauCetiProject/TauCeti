@@ -91,8 +91,9 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
   the lattice.
 * `UpperHalfPlane.lattice_periodPair_smul`: the lattice of `γ z` is `(c z + d)⁻¹ (ℤ z + ℤ)`, as a
   rescaled period pair.
-* `UpperHalfPlane.intCast_mul_add_intCast_eq_zero_iff`: `z` and `1` are linearly independent
-  over `ℤ`.
+* `PeriodPair.intCast_mul_add_intCast_mul_eq_zero_iff`,
+  `UpperHalfPlane.intCast_mul_add_intCast_eq_zero_iff`: the periods `ω₁` and `ω₂`, in particular
+  `z` and `1`, are linearly independent over `ℤ`.
 * `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
 * `PeriodPair.lattice_smul_eq_self_of_pow_eq_one`: if a primitive `n`-th root of unity preserves a
   lattice, so does every `n`-th root of unity.
@@ -752,6 +753,13 @@ lemma ω₁_ne_zero : L.ω₁ ≠ 0 := by
 lemma ω₂_ne_zero : L.ω₂ ≠ 0 := by
   simpa using L.indep.ne_zero 1
 
+/-- The periods of a period pair are linearly independent over `ℤ`. -/
+lemma intCast_mul_add_intCast_mul_eq_zero_iff {m n : ℤ} :
+    (m : ℂ) * L.ω₁ + n * L.ω₂ = 0 ↔ m = 0 ∧ n = 0 := by
+  refine ⟨fun h ↦ ?_, fun ⟨hm, hn⟩ ↦ by simp [hm, hn]⟩
+  have := LinearIndependent.pair_iff.mp L.indep m n (by simpa [Complex.real_smul] using h)
+  exact_mod_cast this
+
 /-- The ratio of the two periods is not real. -/
 lemma im_ω₁_div_ω₂_ne_zero : (L.ω₁ / L.ω₂).im ≠ 0 := by
   intro h
@@ -793,10 +801,7 @@ lemma lattice_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) :
 /-- An integer combination `m z + n` of `z ∈ ℍ` and `1` vanishes only if `m = n = 0`. -/
 lemma intCast_mul_add_intCast_eq_zero_iff {z : ℍ} {m n : ℤ} :
     (m : ℂ) * z + n = 0 ↔ m = 0 ∧ n = 0 := by
-  refine ⟨fun h ↦ ?_, fun ⟨hm, hn⟩ ↦ by simp [hm, hn]⟩
-  have := LinearIndependent.pair_iff.mp z.periodPair.indep m n (by
-    simpa [Complex.real_smul] using h)
-  exact_mod_cast this
+  simpa using z.periodPair.intCast_mul_add_intCast_mul_eq_zero_iff (m := m) (n := n)
 
 /-- **Homothetic lattices `ℤ z + ℤ` are related by `SL(2, ℤ)`**: if `ℤ z' + ℤ = c (ℤ z + ℤ)`, then
 `z = γ z'` for some `γ ∈ SL(2, ℤ)` with `c = c_γ z' + d_γ`. This is the converse of
