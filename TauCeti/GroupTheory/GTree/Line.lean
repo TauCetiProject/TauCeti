@@ -44,10 +44,7 @@ infinite cyclic group, the free group of rank one. -/
   toSerreGraph := SerreGraph.line
   isTree := line_isTree
   action := lineShift
-  action_smul_ne_rev k e h := by
-    -- Translation keeps the orientation of a dart, while reversal changes it.
-    rw [← Aut.smul_dart_def, lineShift_smul_dart] at h
-    exact (Bool.eq_not_self _).mp (congrArg Prod.snd (h.trans (line_rev e)))
+  action_smul_ne_rev := lineShift_smul_ne_rev
 
 /-- The source of a dart of the line, as an integer. -/
 @[simp] theorem lineVertexEquiv_line_src (e : ℤ × Bool) :
@@ -109,9 +106,16 @@ theorem line_stabilizer_dart (e : line.E) : stabilizer (Multiplicative ℤ) e = 
   have h₁ : k.toAdd + Prod.fst e = Prod.fst e := congrArg Prod.fst h
   omega
 
-/-- The line is relative to the trivial edge family and the trivial elliptic family. -/
-theorem line_isRelative : line.IsRelative {⊥} {⊥} :=
-  isRelative_iff.mpr ⟨fun e => line_stabilizer_dart e, fun _ hH => hH ▸ isEllipticSubgroup_bot line⟩
+/-- The integers act freely on the vertices of the line. -/
+theorem line_stabilizer_vertex (v : line.V) : stabilizer (Multiplicative ℤ) v = ⊥ :=
+  eq_bot_iff.mpr fun _ hk => Subgroup.mem_bot.mpr <| of_not_not fun h =>
+    isHyperbolic_iff.mp (line_isHyperbolic h) v (mem_stabilizer_iff.mp hk)
+
+/-- The line is relative to any family of subgroups containing the trivial subgroup and any family
+of trivial subgroups. -/
+theorem line_isRelative {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    line.IsRelative 𝒜 ℋ :=
+  isRelative_of_forall_stabilizer_eq_bot h𝒜 hℋ line_stabilizer_vertex
 
 /-- The one-vertex tree does not dominate the line, although the line dominates it. -/
 theorem not_point_dominates_line : ¬(point.{u, v} (Multiplicative ℤ)).Dominates line := by

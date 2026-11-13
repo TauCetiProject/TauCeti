@@ -9,9 +9,10 @@ public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.Normed.Ring.Units
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
-# Continuous left inverses of injective operators
+# Continuity of inverses and left inverses of operators
 
 Mathlib's `ContinuousLinearMap.HasLeftInverse` records that a continuous linear map has a left
 inverse which is itself continuous and linear. This file adds two facts about it, and the
@@ -31,6 +32,10 @@ The second fact is what makes coordinates with respect to a moving family of lin
 independent vectors depend continuously on the base point, as in the local trivializations of a
 subbundle spanned by local frames.
 
+Inversion is also continuous along a continuous family of invertible operators between normed
+spaces without completeness, even when continuity and invertibility hold only near one point.
+This gives continuity of quotient-range coordinates for families of valid splittings.
+
 ## Main results
 
 * `ContinuousLinearMap.exists_comp_comp_eq_self`: a continuous linear map out of a
@@ -38,6 +43,10 @@ subbundle spanned by local frames.
 * `ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional_domain`: an injective
   continuous linear map out of a finite-dimensional space over `ℝ` or `ℂ` has a continuous left
   inverse.
+* `ContinuousAt.clm_inverse_of_eventually_isInvertible`: inversion preserves continuity at a point
+  where the family is eventually invertible, without completeness.
+* `Continuous.clm_inverse`: inversion is continuous along a continuous family
+  of invertible operators between normed spaces, with no completeness assumption.
 * `ContinuousAt.exists_continuousAt_leftInverse`: continuously varying left inverses of a
   continuous family of operators whose member at `x₀` has a continuous left inverse.
 -/
@@ -84,6 +93,55 @@ theorem HasLeftInverse.of_injective_of_finiteDimensional_domain [IsRCLikeNormedF
   exact ⟨g, fun v ↦ hf congr($hg v)⟩
 
 end ContinuousLinearMap
+
+/-- Inversion preserves continuity at a point of an eventually invertible operator family,
+without completeness of either space. -/
+theorem ContinuousAt.clm_inverse_of_eventually_isInvertible {X E F : Type*} [TopologicalSpace X]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : X → E →L[𝕜] F} {x₀ : X} (hf : ContinuousAt f x₀)
+    (h : ∀ᶠ y in 𝓝 x₀, (f y).IsInvertible) :
+    ContinuousAt (fun x => (f x).inverse) x₀ := by
+  set g : X → F →L[𝕜] E := fun y => (f y).inverse
+  have hfn : Tendsto (fun y => ‖f y - f x₀‖) (𝓝 x₀) (𝓝 0) :=
+    tendsto_iff_norm_sub_tendsto_zero.1 hf
+  have hsmall : ∀ᶠ y in 𝓝 x₀, ‖f y - f x₀‖ * ‖g x₀‖ ≤ 1 / 2 := by
+    have := hfn.mul_const ‖g x₀‖
+    rw [zero_mul] at this
+    exact (this.eventually (gt_mem_nhds (by norm_num : (0 : ℝ) < 1 / 2))).mono fun _ => le_of_lt
+  -- Squeeze the inverse difference by a constant multiple of the original difference.
+  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero' (Eventually.of_forall fun _ => norm_nonneg _) ?_
+    (by simpa using hfn.const_mul (2 * ‖g x₀‖ ^ 2))
+  filter_upwards [hsmall, h] with y hy hiy
+  have hsub : g y - g x₀ = g y ∘L (f x₀ - f y) ∘L g x₀ :=
+    hiy.inverse_sub_inverse h.self_of_nhds
+  have hd : ‖f x₀ - f y‖ = ‖f y - f x₀‖ := norm_sub_rev _ _
+  have he : ‖g y - g x₀‖ ≤ ‖g y‖ * ‖f y - f x₀‖ * ‖g x₀‖ := by
+    rw [hsub, ← hd]
+    calc ‖g y ∘L (f x₀ - f y) ∘L g x₀‖
+        ≤ ‖g y‖ * ‖(f x₀ - f y) ∘L g x₀‖ := ContinuousLinearMap.opNorm_comp_le _ _
+      _ ≤ ‖g y‖ * (‖f x₀ - f y‖ * ‖g x₀‖) := by
+        gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
+      _ = _ := by ring
+  have ha : ‖g y‖ ≤ ‖g x₀‖ + ‖g y - g x₀‖ := by
+    simpa using norm_add_le (g x₀) (g y - g x₀)
+  have ha0 := norm_nonneg (g y)
+  have hdc : 0 ≤ ‖f y - f x₀‖ * ‖g x₀‖ := by positivity
+  -- Absorb the small perturbation to bound the nearby inverses uniformly.
+  have h2 : ‖g y‖ ≤ 2 * ‖g x₀‖ := by
+    nlinarith [mul_le_mul_of_nonneg_left hy ha0]
+  calc ‖g y - g x₀‖ ≤ ‖g y‖ * (‖f y - f x₀‖ * ‖g x₀‖) := by rw [← mul_assoc]; exact he
+    _ ≤ (2 * ‖g x₀‖) * (‖f y - f x₀‖ * ‖g x₀‖) := mul_le_mul_of_nonneg_right h2 hdc
+    _ = 2 * ‖g x₀‖ ^ 2 * ‖f y - f x₀‖ := by ring
+
+/-- Inversion is continuous along a continuous family of invertible operators, without
+completeness of either space. -/
+theorem Continuous.clm_inverse {X E F : Type*} [TopologicalSpace X]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : X → E →L[𝕜] F} (hf : Continuous f) (h : ∀ x, (f x).IsInvertible) :
+    Continuous (fun x => (f x).inverse) :=
+  continuous_iff_continuousAt.mpr fun _ =>
+    hf.continuousAt.clm_inverse_of_eventually_isInvertible (.of_forall h)
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {X : Type*} [TopologicalSpace X]

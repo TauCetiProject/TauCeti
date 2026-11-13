@@ -59,6 +59,8 @@ the native Morrey embedding also gives a bounded interior inclusion into `L^∞`
   for finite source exponent `q` and target exponent `s` with `q ≤ s` and `1/q - 1/s < 1/n`.
 * `TauCeti.W1p.exists_lpInftyEmbeddingL_of_isCompact_closure`: the supercritical interior
   inclusion into `L^∞`.
+* `TauCeti.W1p.memLp_value_of_isCompact_closure_of_finrank_le`: for `n ≤ p ≤ ∞`, interior
+  integrability in `L^r(V)` for every finite `r`.
 
 ## References
 
@@ -177,7 +179,7 @@ theorem W1p.exists_lpEmbeddingL_of_eLpNorm_value_le {r : ℝ≥0∞} [Fact (1 �
   -- lets the public norm_toLp law apply without unfolding the representative itself.
   change ‖(hm u).toLp (W1p.value u)‖ ≤ _
   rw [Lp.norm_toLp]
-  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] using
+  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] using
     ENNReal.toReal_mono (by finiteness : C * ‖u‖ₑ ≠ ∞) (hC u)
 
 /-! ### The interior of a domain -/
@@ -368,5 +370,44 @@ theorem W1p.exists_lpInftyEmbeddingL_of_isCompact_closure
       rw [← ofReal_norm, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal (HolderSpace.norm_toBoundedContinuousFunction_le (H u))
     _ ≤ _ := H.le_opENorm u
+
+section FinrankLE
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+omit [Nontrivial E] in
+/-- **Interior integrability at and above the dimension.** If `n ≤ p ≤ ∞`, where `n` is the
+dimension, and `V` has compact closure contained in the open set `Ω`, every `u ∈ W^{1,p}(Ω)` lies
+in `L^r(V)` for every finite `r`. -/
+theorem W1p.memLp_value_of_isCompact_closure_of_finrank_le (hp : (finrank ℝ E : ℝ≥0∞) ≤ p)
+    {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) (r : ℝ≥0)
+    (u : W1p μ Ω p) : MemLp (W1p.value u) r (μ.restrict V) := by
+  have : IsFiniteMeasure (μ.restrict V) :=
+    isFiniteMeasure_restrict.2 (measure_ne_top_of_subset subset_closure hVc.measure_lt_top.ne)
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- On a trivial space every function is constant.
+    rw [show (W1p.value u : E → ℝ) = fun _ => W1p.value u 0 from
+      funext fun x => congrArg _ (Subsingleton.elim x 0)]
+    exact memLp_const _
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · -- For `p = ∞` the value is bounded, hence in every `L^r(V)`.
+    exact ((Lp.memLp (W1p.value u)).mono_measure
+      (Measure.restrict_mono (subset_closure.trans hVΩ) le_rfl)).mono_exponent le_top
+  lift p to ℝ≥0 using hptop
+  -- The borderline embedding into `L^m(V)`, `m = max p r`, then Hölder's inequality on `V`.
+  set m := max p r
+  have hp1 : (1 : ℝ≥0) ≤ p := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ p)
+  have hn : (0 : ℝ) < finrank ℝ E := by exact_mod_cast finrank_pos
+  have hgap : (p : ℝ)⁻¹ - (m : ℝ)⁻¹ < (finrank ℝ E : ℝ)⁻¹ := by
+    have hm : (0 : ℝ) < m := lt_of_lt_of_le (by exact_mod_cast zero_lt_one.trans_le hp1)
+      (by exact_mod_cast le_max_left p r)
+    have hpn : (p : ℝ)⁻¹ ≤ (finrank ℝ E : ℝ)⁻¹ := inv_anti₀ hn (by exact_mod_cast hp)
+    linarith [inv_pos.2 hm]
+  obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_value_le_of_subcritical_gain (μ := μ) (le_max_left p r)
+    hgap hVc hVΩ
+  exact (memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
+    : MemLp _ m _).mono_exponent (by exact_mod_cast le_max_right p r)
+
+end FinrankLE
 
 end TauCeti

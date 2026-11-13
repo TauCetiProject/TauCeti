@@ -19,11 +19,12 @@ identifies the two change-of-group maps in this degree under that identification
 * restriction to a subgroup `S ≤ G`, `H_Tate⁻²(G, A) ⟶ H_Tate⁻²(S, A)`, is the
   group-theoretic transfer (Verlagerung) `Gᵃᵇ → Sᵃᵇ`, tensored with `A`;
 * corestriction along a homomorphism `f : H →* G`, `H_Tate⁻²(H, A) ⟶ H_Tate⁻²(G, A)`, is
-  `Abelianization.map f`, tensored with `A`.
+  `Group.Abelianization.map f`, tensored with `A`.
 
 Together they make the identification `H_Tate⁻²(G, A) ≃ Gᵃᵇ ⊗ A` natural in the group: a
 statement about restriction or corestriction in Tate degree `-2` can be transported to the
-corresponding statement about the Verlagerung or `Abelianization.map`. For `A = ℤ`, these are the
+corresponding statement about the Verlagerung or `Group.Abelianization.map`. For `A = ℤ`, these are
+the
 compatibilities of the identification `H_Tate⁻²(G, ℤ) ≃ Gᵃᵇ` with restriction and corestriction
 that the reciprocity isomorphism `Gᵃᵇ ≃ H_Tate⁰(G, C)` inherits.
 
@@ -68,7 +69,8 @@ group-theoretic transfer. -/
 theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes [A.IsTrivial] (x : tateCohomology A (-2)) :
     HNegTwoAddEquivTensorOfIsTrivial (res S.subtype A) (HNegTwoRes A S x) =
       LinearMap.rTensor A (AddMonoidHom.toIntLinearMap
-        (Abelianization.lift (Abelianization.of : S →* Abelianization S).transfer).toAdditive)
+        (Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
+            S).transfer).toAdditive)
         (HNegTwoAddEquivTensorOfIsTrivial A x) := by
   rw [HNegTwoAddEquivTensorOfIsTrivial_apply,
     HNegTwoAddEquivTensorOfIsTrivial_apply,
@@ -80,13 +82,14 @@ end Restriction
 
 /-- **Corestriction in Tate degree `-2` is the map induced on abelianizations.** For a
 homomorphism `f : H →* G` of finite groups and trivial coefficients `A`, corestriction
-`H_Tate⁻²(H, A) ⟶ H_Tate⁻²(G, A)` becomes `Abelianization.map f ⊗ id : Hᵃᵇ ⊗ A → Gᵃᵇ ⊗ A` under the
+`H_Tate⁻²(H, A) ⟶ H_Tate⁻²(G, A)` becomes `Group.Abelianization.map f ⊗ id : Hᵃᵇ ⊗ A → Gᵃᵇ ⊗ A`
+under the
 identifications `H_Tate⁻² ≃ (-)ᵃᵇ ⊗ A`. -/
 @[simp]
 theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor {H : Type u} [Group H] [Fintype H]
     (A : Rep k G) [A.IsTrivial] (f : H →* G) (y : tateCohomology (res f A) (-2)) :
     HNegTwoAddEquivTensorOfIsTrivial A (HNegTwoCor A f y) =
-      LinearMap.rTensor A (AddMonoidHom.toIntLinearMap (Abelianization.map f).toAdditive)
+      LinearMap.rTensor A (AddMonoidHom.toIntLinearMap (Group.Abelianization.map f).toAdditive)
         (HNegTwoAddEquivTensorOfIsTrivial (res f A) y) := by
   rw [HNegTwoAddEquivTensorOfIsTrivial_apply,
     HNegTwoAddEquivTensorOfIsTrivial_apply,
@@ -107,12 +110,12 @@ group-theoretic transfer. -/
 @[simp]
 theorem HNegTwoAddEquivAbelianization_HNegTwoRes (S : Subgroup G)
     (x : tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :
-    TensorProduct.rid ℤ (Additive (Abelianization S))
+    TensorProduct.rid ℤ (Additive (Group.Abelianization S))
         (HNegTwoAddEquivTensorOfIsTrivial
           (Rep.res S.subtype (Rep.trivial ℤ G ℤ))
           (HNegTwoRes (Rep.trivial ℤ G ℤ) S x)) =
-      (Abelianization.lift
-        (Abelianization.of : S →* Abelianization S).transfer).toAdditive
+      (Group.Abelianization.lift
+        (Group.Abelianization.of : S →* Group.Abelianization S).transfer).toAdditive
         (HNegTwoAddEquivAbelianization x) := by
   rw [HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes,
     LinearMap.rid_rTensor_apply, HNegTwoAddEquivAbelianization_apply,
@@ -126,8 +129,8 @@ theorem HNegTwoAddEquivAbelianization_HNegTwoCor {H : Type} [Group H] [Fintype H
     (y : tateCohomology (Rep.res f (Rep.trivial ℤ G ℤ)) (-2)) :
     HNegTwoAddEquivAbelianization
         (HNegTwoCor (Rep.trivial ℤ G ℤ) f y) =
-      (Abelianization.map f).toAdditive
-        (TensorProduct.rid ℤ (Additive (Abelianization H))
+      (Group.Abelianization.map f).toAdditive
+        (TensorProduct.rid ℤ (Additive (Group.Abelianization H))
           (HNegTwoAddEquivTensorOfIsTrivial
             (Rep.res f (Rep.trivial ℤ G ℤ)) y)) := by
   rw [HNegTwoAddEquivAbelianization_apply,
