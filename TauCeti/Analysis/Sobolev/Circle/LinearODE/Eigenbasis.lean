@@ -42,7 +42,8 @@ real eigenvalues bounded away from `0` when the loop is nondegenerate.
   (`CircleSobolev.exists_hilbertBasis_I_smul_loopOperator_eq_smul`).
 * **Classical eigenfunctions.** An element `a ∈ H¹(F)` with continuous representative `ζ` is an
   eigenvector of `A` for the eigenvalue `λ` exactly when `ζ' = S_t ζ - λ J₀ ζ` holds classically
-  (`CircleSobolev.I_smul_loopOperator_eq_smul_iff`), that is, `J₀ (ζ' - S_t ζ) = λ ζ`.
+  (`CircleSobolev.I_smul_loopOperator_eq_smul_iff`), that is, `J₀ (ζ' - S_t ζ) = λ ζ`. This
+  uses no inner product and holds in any finite-dimensional complex normed space.
 
 In the eigenbasis the stationary cylinder operator `∂s + A` splits into the scalar operators
 `d/ds + λ`, one for each eigenvalue, each invertible on the line because `λ ≠ 0`, with inverses
@@ -71,8 +72,12 @@ namespace TauCeti
 
 namespace CircleSobolev
 
-variable (T : ℝ) [hT : Fact (0 < T)] {F : Type u} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-  [FiniteDimensional ℂ F] (S : C(AddCircle T, F →L[ℝ] F))
+variable (T : ℝ) [hT : Fact (0 < T)]
+
+section InnerProductSpace
+
+variable {F : Type u} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+  (S : C(AddCircle T, F →L[ℝ] F))
 
 /-- **The asymptotic operator is symmetric.** If every `S_t` is infinitesimally symplectic for the
 standard symplectic form `ω₀ = Im ⟪·, ·⟫`, then `A = J₀ (d/dt - S_t)` is symmetric for the real
@@ -155,26 +160,31 @@ theorem exists_hilbertBasis_I_smul_loopOperator_eq_smul
     exact inv_anti₀ (abs_pos.2 (hnu0 i)) (by linarith)
   · rw [map_smul, smul_comm, hLR, hb]
 
+end InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  (S : C(AddCircle T, E →L[ℝ] E))
+
 /-- **Eigenvectors of the asymptotic operator are classical eigenfunctions.** An element `a` of
 `H¹` with continuous representative `ζ` satisfies `A a = λ a` for `A = J₀ (d/dt - S_t)` exactly
 when `ζ' = S_t ζ - λ J₀ ζ` holds classically, that is, `J₀ (ζ' - S_t ζ) = λ ζ`. For `λ = 0` this is
 `CircleSobolev.loopOperator_eq_zero_iff`. -/
-theorem I_smul_loopOperator_eq_smul_iff (a : CircleSobolev 1 F) (lam : ℝ) :
+theorem I_smul_loopOperator_eq_smul_iff (a : CircleSobolev 1 E) (lam : ℝ) :
     I • loopOperator T S a = lam • inclusion zero_le_one a ↔ ∀ x : ℝ,
       HasDerivAt (fun y : ℝ ↦ toContinuousMap T (by norm_num) a y)
         (S x (toContinuousMap T (by norm_num) a x) -
           lam • I • toContinuousMap T (by norm_num) a x) x := by
-  have := FiniteDimensional.completeSpace ℂ F
+  have := FiniteDimensional.completeSpace ℂ E
   -- `A a = λ a` is `L_{S'} a = 0` for the shifted loop `S' = S - λ J₀`.
-  set S' : C(AddCircle T, F →L[ℝ] F) :=
-    S - lam • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ F) with hS'
+  set S' : C(AddCircle T, E →L[ℝ] E) :=
+    S - lam • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ E) with hS'
   have hL : loopOperator T S' a =
       loopOperator T S a + ((lam : ℂ) * I) • inclusion zero_le_one a := by
-    -- `L_S` is linear in the loop, and multiplication by the constant loop `J₀` is `J₀`.
+    -- `L_{S₁ - S₂} = L_{S₁} + mulLoop S₂`, and multiplication by the constant loop `J₀` is `J₀`.
     rw [hS', loopOperator_sub, add_apply, mulLoop_smul, smul_apply, mulLoop_const_smul_id,
       mul_smul, Complex.coe_smul]
   -- Multiplying by `-J₀` turns `J₀ y = λ z` into `y + λ J₀ z = 0`.
-  have hiff (y z : CircleSobolev 0 F) (c : ℂ) : I • y = c • z ↔ y + (c * I) • z = 0 := by
+  have hiff (y z : CircleSobolev 0 E) (c : ℂ) : I • y = c • z ↔ y + (c * I) • z = 0 := by
     constructor
     · intro h
       have hy : y = (-I) • (I • y) := by rw [smul_smul]; simp

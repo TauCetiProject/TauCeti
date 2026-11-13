@@ -52,9 +52,11 @@ comparing weak and classical derivatives
 
 ## Main statements
 
-* `TauCeti.CircleSobolev.mulLoop_sub`, `TauCeti.CircleSobolev.mulLoop_smul`,
-  `TauCeti.CircleSobolev.loopOperator_sub`: the zero-order term and `L_S` depend linearly on the
-  coefficient loop `S`.
+* `TauCeti.CircleSobolev.mulLoop_add`, `TauCeti.CircleSobolev.mulLoop_sub`,
+  `TauCeti.CircleSobolev.mulLoop_smul` and their companions: the zero-order term depends linearly
+  on the coefficient loop `S`.
+* `TauCeti.CircleSobolev.loopOperator_add`, `TauCeti.CircleSobolev.loopOperator_sub`: `L_S`
+  depends affinely on `S`, with `L_{S₁ ± S₂} = L_{S₁} ∓ mulLoop S₂`.
 * `TauCeti.CircleSobolev.mulLoop_const_smul_id`: multiplication by a constant complex scalar loop
   is multiplication by that scalar.
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
@@ -122,13 +124,35 @@ theorem mulLoop_inclusion (ht : 1 / 2 < t) (h : t ≤ s) (S : C(AddCircle T, E �
     mulLoop T ht S (inclusion h a) = mulLoop T (ht.trans_le h) S a := by
   simp only [mulLoop_apply, toContinuousMap_inclusion]
 
-/-- Multiplication by a loop is additive in the loop. -/
+/-- Multiplication by the zero loop is zero. -/
+@[simp]
+theorem mulLoop_zero (hs : 1 / 2 < s) : mulLoop (E := E) T hs 0 = 0 := by
+  ext a : 1
+  simp only [mulLoop_apply, map_zero, zero_apply]
+
+/-- Multiplication by a sum of loops is the sum of the multiplications. -/
+@[simp]
+theorem mulLoop_add (hs : 1 / 2 < s) (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
+    mulLoop T hs (S₁ + S₂) = mulLoop T hs S₁ + mulLoop T hs S₂ := by
+  ext a : 1
+  simp only [mulLoop_apply, map_add, add_apply]
+
+/-- Multiplication by the negative of a loop is the negative of the multiplication. -/
+@[simp]
+theorem mulLoop_neg (hs : 1 / 2 < s) (S : C(AddCircle T, E →L[ℝ] E)) :
+    mulLoop T hs (-S) = -mulLoop T hs S := by
+  ext a : 1
+  simp only [mulLoop_apply, map_neg, neg_apply]
+
+/-- Multiplication by a difference of loops is the difference of the multiplications. -/
+@[simp]
 theorem mulLoop_sub (hs : 1 / 2 < s) (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
     mulLoop T hs (S₁ - S₂) = mulLoop T hs S₁ - mulLoop T hs S₂ := by
   ext a : 1
   simp only [mulLoop_apply, map_sub, sub_apply]
 
 /-- Multiplication by a loop is real-homogeneous in the loop. -/
+@[simp]
 theorem mulLoop_smul (hs : 1 / 2 < s) (c : ℝ) (S : C(AddCircle T, E →L[ℝ] E)) :
     mulLoop T hs (c • S) = c • mulLoop T hs S := by
   ext a : 1
@@ -167,6 +191,12 @@ theorem loopOperator_apply (S : C(AddCircle T, E →L[ℝ] E)) (a : CircleSobole
     loopOperator T S a =
       derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a - mulLoop T (by norm_num) S a :=
   (rfl)
+
+/-- Adding `S₂` to the coefficient loop subtracts multiplication by `S₂` from `L_S`. -/
+theorem loopOperator_add (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
+    loopOperator T (S₁ + S₂) = loopOperator T S₁ - mulLoop T (by norm_num) S₂ := by
+  rw [loopOperator, loopOperator, mulLoop_add]
+  abel
 
 /-- Subtracting `S₂` from the coefficient loop adds multiplication by `S₂` to `L_S`. -/
 theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
