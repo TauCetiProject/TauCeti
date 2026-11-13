@@ -78,6 +78,11 @@ theorem indexClassicalClass_def {x y : P} (hxy : ind x = ind y + 1) :
       ⟨m.m x y, h.mem_cycles.mpr (m.d_m_eq_zero_of_eq_add_one hxy)⟩ :=
   (rfl)
 
+/-- The class of an entry of index difference one has degree zero: it lies in `H⁰(A)`. -/
+theorem indexClassicalClass_mem_cohomologyGrading_zero {x y : P} (hxy : ind x = ind y + 1) :
+    m.indexClassicalClass hxy ∈ h.cohomologyGrading 0 :=
+  h.mem_cohomologyGrading.mpr ⟨_, m.m_mem_zero_of_eq_add_one hxy, rfl⟩
+
 /-- **The entries of the classical complex are the actions of the classes of the entries of the
 twisting cocycle**: under the identifications `shiftedModuleComplexHomologyEquiv` of its terms
 with `H^k(ℳ)`, the entry of the classical complex in coefficient degree `k` between a generator `x`
