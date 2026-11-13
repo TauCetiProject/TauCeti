@@ -32,9 +32,10 @@ In particular, the vanishing of `R^q f_* M` can be checked on an open cover of t
 (`AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_iff_of_iSup_eq_top`).
 
 The same argument applies before sheafification. Restriction of presheaves of modules is exact
-(`AlgebraicGeometry.Scheme.PresheafOfModules.preservesHomology_restrictFunctor`), so restricting
-to `U` the presheaf of modules `V ↦ H^q(f⁻¹ V, M)`, whose sheafification is `R^q f_* M`, gives the
-corresponding presheaf for `f ∣_ U`
+(`AlgebraicGeometry.Scheme.PresheafOfModules.preservesFiniteLimits_restrictFunctor` and
+`AlgebraicGeometry.Scheme.PresheafOfModules.preservesFiniteColimits_restrictFunctor`), so
+restricting to `U` the presheaf of modules `V ↦ H^q(f⁻¹ V, M)`, whose sheafification is
+`R^q f_* M`, gives the corresponding presheaf for `f ∣_ U`
 (`AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheafRestrictIso`). This identifies the action
 of functions defined only over `U` on `H^q(f⁻¹ U, M)` with the action of global functions of the
 open subscheme `U`.

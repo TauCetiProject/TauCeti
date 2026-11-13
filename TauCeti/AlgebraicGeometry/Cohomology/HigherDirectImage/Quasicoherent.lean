@@ -37,10 +37,14 @@ scalar action is the action through pullback of functions
 `W`, the function `s` acts on `Hⁿ(f⁻¹ W, M)` only through the module structure of the presheaf.
 Restricting the presheaf to the open subscheme `W` gives the presheaf of `f ∣_ W`
 (`AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheafRestrictIso`), on which `s` is a global
-function, so the case `W = Y` applies. A presheaf of modules with this property on the basic opens
-of an affine open has the same sections there as its sheafification, which is quasi-coherent
-(`AlgebraicGeometry.IsAffineOpen.bijective_sheafificationAdjunction_unit_app_of_isLocalizedModule`
-and `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_sheafification_of_isLocalizedModule`).
+function, so the case `W = Y` applies
+(`Scheme.PresheafOfModules.isLocalizedModule_map_basicOpen_of_restrictFunctor_obj_iso`). When
+the restrictions of a presheaf of modules from an affine open to its basic opens are
+localizations, the presheaf has the same sections over that affine open as its sheafification
+(`AlgebraicGeometry.IsAffineOpen.bijective_sheafificationAdjunction_unit_app_of_isLocalizedModule`),
+and when this holds on an affine open cover, here all affine opens of `Y`, the sheafification is
+quasi-coherent
+(`AlgebraicGeometry.Scheme.Modules.isQuasicoherent_sheafification_of_isLocalizedModule`).
 
 ## Main declarations
 
@@ -108,29 +112,11 @@ private lemma isLocalizedModule_higherDirectImagePresheaf_map_basicOpen_top [Com
   · rw [cohomologyOnResLinear_apply]
     exact ConcreteCategory.congr_hom (e.hom.naturality (homOfLE (Y.basicOpen_le g)).op) x
 
-/-- A morphism out of the restriction of a presheaf of modules to an open subscheme `W` is linear
-for the functions on opens of `W`, acting on the restriction as on the sections over their
-images. -/
-private lemma restrictFunctor_ι_hom_app_smul {W : Y.Opens} {P : Y.PresheafOfModules}
-    {Q : W.toScheme.PresheafOfModules}
-    (φ : (Scheme.PresheafOfModules.restrictFunctor W.ι).obj P ⟶ Q)
-    (V : W.toScheme.Opens) (c : Γ(W, V)) (y : P.obj (.op (W.ι ''ᵁ V))) :
-    φ.app (.op V) ((show Y.ringCatSheaf.obj.obj (.op (W.ι ''ᵁ V)) from c) • y) =
-      (show W.toScheme.ringCatSheaf.obj.obj (.op V) from c) • φ.app (.op V) y := by
-  -- the scalars act on the restriction through `𝒪_W(V) ≅ 𝒪_Y(W.ι ''ᵁ V)`, the identity
-  have hc := Scheme.PresheafOfModules.restrictFunctor_obj_smul P V c y
-  rw [Scheme.Opens.ι_appIso, Iso.refl_inv] at hc
-  -- the identity ring map applies definitionally
-  exact (congrArg _ hc.symm).trans ((φ.app (.op V)).hom.map_smul c y)
-
-/-- **Higher direct images commute with localization.** Let `W` be an open of `Y` whose preimage
-`f⁻¹ W` is quasi-compact and quasi-separated, `M` a quasi-coherent module on `X` and `s` a function
-on `W`. Then the restriction of the presheaf of modules `V ↦ Hⁿ(f⁻¹ V, M)` from `W` to the basic
-open `D(s)` is the localization at the powers of `s`.
-
-The function `s` need not extend to `Y`. The presheaf restricted to `W` is the presheaf of the
-restriction `f ∣_ W` (`Scheme.Hom.higherDirectImagePresheafRestrictIso`), on which `s` is a global
-function. -/
+/-- **Higher direct image presheaves commute with localization.** Let `W` be an open of `Y` whose
+preimage `f⁻¹ W` is quasi-compact and quasi-separated, `M` a quasi-coherent module on `X` and `s` a
+function on `W`. Then the restriction of the presheaf of modules `V ↦ Hⁿ(f⁻¹ V, M)` from `W` to
+the basic open `D(s)` is the localization at the powers of `s`. The function `s` need not extend
+to `Y`. -/
 theorem isLocalizedModule_higherDirectImagePresheaf_map_basicOpen (M : X.Modules)
     [M.IsQuasicoherent] (n : ℕ) {W : Y.Opens} (hc : IsCompact (f ⁻¹ᵁ W : Set X))
     (hqs : IsQuasiSeparated (f ⁻¹ᵁ W : Set X)) (s : Γ(Y, W)) :
@@ -139,70 +125,10 @@ theorem isLocalizedModule_higherDirectImagePresheaf_map_basicOpen (M : X.Modules
   have : CompactSpace (f ⁻¹ᵁ W) := isCompact_iff_compactSpace.mp hc
   have : QuasiSeparatedSpace (f ⁻¹ᵁ W) :=
     (isQuasiSeparated_iff_quasiSeparatedSpace _ (f ⁻¹ᵁ W).isOpen).mp hqs
-  let P := (f.higherDirectImagePresheaf n).obj M
-  let Q : PresheafOfModulesOfCommRing W.toScheme.presheaf :=
-    ((f ∣_ W).higherDirectImagePresheaf n).obj (M.restrict (f ⁻¹ᵁ W).ι)
-  let e : (Scheme.PresheafOfModules.restrictFunctor W.ι).obj P ≅ Q :=
-    (f.higherDirectImagePresheafRestrictIso W n).app M
-  let s' : Γ(W, ⊤) := W.topIso.inv s
-  have hs : W.ι ''ᵁ W.toScheme.basicOpen s' = Y.basicOpen s :=
-    Scheme.Opens.ι_image_basicOpen_topIso_inv W s
-  have : IsLocalizedModule ((Submonoid.powers s).map W.topIso.inv.hom)
-      (PresheafOfModulesOfCommRing.map (R := W.toScheme.presheaf) Q
-        (homOfLE (W.toScheme.basicOpen_le s')).op).hom := by
-    rw [Submonoid.map_powers]
-    exact isLocalizedModule_higherDirectImagePresheaf_map_basicOpen_top (f ∣_ W) _ n s'
-  have : IsIso (e.hom.app (.op ⊤)) := inferInstanceAs
-    (IsIso ((PresheafOfModules.evaluation _ (.op ⊤)).map e.hom))
-  have : IsIso (e.hom.app (.op (W.toScheme.basicOpen s'))) := inferInstanceAs
-    (IsIso ((PresheafOfModules.evaluation _ (.op (W.toScheme.basicOpen s'))).map e.hom))
-  -- Compare `W` and `D(s)` with the images of `⊤` and `D(s')` under the inclusion of `W`, then
-  -- pass to the presheaf of `f ∣_ W`.
-  refine IsLocalizedModule.of_bijective_semilinearMap (σ := W.topIso.inv.hom) (.powers s)
-    (PresheafOfModulesOfCommRing.map (R := Y.presheaf) P (homOfLE (Y.basicOpen_le s)).op).hom
-    (PresheafOfModulesOfCommRing.map (R := W.toScheme.presheaf) Q
-        (homOfLE (W.toScheme.basicOpen_le s')).op).hom
-    { (e.hom.app (.op ⊤)).hom.toAddMonoidHom.comp
-        (P.map (eqToHom W.ι_image_top).op).hom.toAddMonoidHom with
-      map_smul' := fun r x ↦ ?_ }
-    { (e.hom.app (.op (W.toScheme.basicOpen s'))).hom.toAddMonoidHom.comp
-        (P.map (eqToHom hs).op).hom.toAddMonoidHom with
-      map_smul' := fun r x ↦ ?_ }
-    ((ConcreteCategory.bijective_of_isIso (e.hom.app (.op ⊤))).comp
-      (ConcreteCategory.bijective_of_isIso (P.presheaf.map (eqToHom W.ι_image_top).op)))
-    ((ConcreteCategory.bijective_of_isIso (e.hom.app (.op (W.toScheme.basicOpen s')))).comp
-      (ConcreteCategory.bijective_of_isIso (P.presheaf.map (eqToHom hs).op))) fun x ↦ ?_
-  · refine Eq.trans (congrArg (e.hom.app (.op ⊤)) ?_)
-      (restrictFunctor_ι_hom_app_smul e.hom ⊤ (W.topIso.inv r) _)
-    -- `W.topIso.inv` is the restriction of functions from `W` to `W.ι ''ᵁ ⊤`
-    exact (P.map (eqToHom W.ι_image_top).op).hom.map_smul r x
-  · refine Eq.trans (congrArg (e.hom.app (.op (W.toScheme.basicOpen s'))) ?_)
-      (restrictFunctor_ι_hom_app_smul e.hom _
-        (W.toScheme.presheaf.map (homOfLE le_top).op (W.topIso.inv r)) _)
-    refine ((P.map (eqToHom hs).op).hom.map_smul _ x).trans ?_
-    -- write the action through restriction of scalars as the action of the restricted function
-    erw [ModuleCat.restrictScalars.smul_def]
-    congr 1
-    -- both scalars are restrictions of `r` from `W` to `W.ι ''ᵁ D(s')`
-    have key : ∀ {U₁ U₂ : Y.Opens} (i₁ : op W ⟶ op U₁) (j₁ : op U₁ ⟶ op (W.ι ''ᵁ
-        W.toScheme.basicOpen s')) (i₂ : op W ⟶ op U₂)
-        (j₂ : op U₂ ⟶ op (W.ι ''ᵁ W.toScheme.basicOpen s')),
-        Y.presheaf.map j₁ (Y.presheaf.map i₁ r) = Y.presheaf.map j₂ (Y.presheaf.map i₂ r) := by
-      intro U₁ U₂ i₁ j₁ i₂ j₂
-      rw [← CommRingCat.comp_apply, ← CommRingCat.comp_apply, ← Functor.map_comp,
-        ← Functor.map_comp]
-      rfl
-    exact key _ _ _ _
-  · have h := PresheafOfModules.naturality_apply e.hom (homOfLE (W.toScheme.basicOpen_le s')).op
-      (P.map (eqToHom W.ι_image_top).op x)
-    refine Eq.trans (congrArg (fun y ↦ e.hom.app (.op (W.toScheme.basicOpen s')) y) ?_) h
-    -- both sides restrict `x` from `W` to `W.ι ''ᵁ D(s')`
-    have h3 : P.map (eqToHom hs).op (P.map (homOfLE (Y.basicOpen_le s)).op x) =
-        P.map (W.ι.opensFunctor.map (homOfLE (W.toScheme.basicOpen_le s'))).op
-          (P.map (eqToHom W.ι_image_top).op x) := by
-      rw [← PresheafOfModules.map_comp_apply, ← PresheafOfModules.map_comp_apply]
-      exact PresheafOfModules.congr_map_apply P (Subsingleton.elim _ _) x
-    exact h3.trans (Scheme.PresheafOfModules.restrictFunctor_obj_map_apply P _ _).symm
+  -- The presheaf restricted to `W` is that of `f ∣_ W`, on which `s` is a global function.
+  exact Scheme.PresheafOfModules.isLocalizedModule_map_basicOpen_of_restrictFunctor_obj_iso
+    ((f.higherDirectImagePresheafRestrictIso W n).app M) s
+    (isLocalizedModule_higherDirectImagePresheaf_map_basicOpen_top (f ∣_ W) _ n (W.topIso.inv s))
 
 section QuasiCompactQuasiSeparated
 
