@@ -134,7 +134,6 @@ theorem firstJetSplitting_apply (cov : CovariantDerivative I F V) (x : M)
     (Module.finBasis 𝕜 F) _ (mem_baseSet_trivializationAt F V x)]
 
 /-- The connection map is a left inverse of the inclusion `Hom(TₓM, Vₓ) → J¹Vₓ`. -/
-@[simp]
 theorem firstJetSplitting_ofDeriv (cov : CovariantDerivative I F V) (x : M)
     (L : TangentSpace I x →L[𝕜] V x) :
     cov.firstJetSplitting x (ofDeriv I F x L) = L := by
