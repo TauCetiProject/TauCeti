@@ -29,9 +29,7 @@ For an integer interval `[-a, b]` with `a, b : ℕ`, adding the term `F 0` to
 and the nonpositive part `∑ j ∈ range (a + 1), F (-(j : ℤ))`. In a ring, the partial sums
 `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are `0` or `1`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
-form of Gauss's sum. A sum over the triples `k + i + j = r` can be ordered by `k` first or by the
-pairs `(i, j)` first, as in the collection of the terms of a product of two expansions with a third
-index.
+form of Gauss's sum.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
 
@@ -47,8 +45,6 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   `1` for odd `n`.
 * `Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero`: twice `∑_{0 ≤ j < k} j - ∑_{k ≤ j < 0} j` is
   `k (k - 1)` for every `k : ℤ`.
-* `Finset.sum_range_sum_range_tsub_eq_sum_ite`: the two orderings of a sum over the triples
-  `k + i + j = r`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
 -/
@@ -153,39 +149,6 @@ theorem two_mul_sum_Ico_zero_sub_sum_Ico_zero (k : ℤ) :
     rw [Ico_eq_empty_of_le hi] at ih
     simp only [sum_empty, zero_sub] at ih ⊢
     linear_combination ih
-
-/-- **Reordering a sum over the triples `k + i + j = r`.** Summing over `k ≤ r` and `i ≤ r - k`,
-with `j = r - k - i`, gives the same as summing over the pairs `i + j ≤ r`, with
-`k = r - (i + j)`. -/
-theorem sum_range_sum_range_tsub_eq_sum_ite {M : Type*} [AddCommMonoid M] (F : ℕ → ℕ → ℕ → M)
-    (r : ℕ) :
-    ∑ k ∈ range (r + 1), ∑ i ∈ range (r - k + 1), F k i (r - k - i) =
-      ∑ i ∈ range (r + 1), ∑ j ∈ range (r + 1),
-        if i + j ≤ r then F (r - (i + j)) i j else 0 := by
-  -- Write both sides as sums over `k, i, j ≤ r` restricted to `k + i + j = r`.
-  have hL : ∀ k ∈ range (r + 1), ∑ i ∈ range (r - k + 1), F k i (r - k - i) =
-      ∑ i ∈ range (r + 1), ∑ j ∈ range (r + 1), if k + i + j = r then F k i j else 0 := by
-    intro k hk
-    have hk' := Nat.lt_succ_iff.1 (mem_range.1 hk)
-    rw [← sum_range_add_sum_Ico
-      (fun i ↦ ∑ j ∈ range (r + 1), if k + i + j = r then F k i j else 0)
-      (show r - k + 1 ≤ r + 1 by omega)]
-    rw [sum_eq_zero (s := Ico _ _) fun i hi ↦ sum_eq_zero fun j _ ↦ ite_eq_right (by
-      simp only [mem_Ico] at hi; omega), add_zero]
-    refine sum_congr rfl fun i hi ↦ ?_
-    have hi' := mem_range.1 hi
-    rw [sum_eq_single (r - k - i) (fun j _ hj ↦ ite_eq_right (by omega)) (fun h ↦ by
-      simp only [mem_range] at h; omega), ite_eq_left (by omega)]
-  have hR : ∀ i ∈ range (r + 1), ∀ j ∈ range (r + 1),
-      (if i + j ≤ r then F (r - (i + j)) i j else 0) =
-        ∑ k ∈ range (r + 1), if k + i + j = r then F k i j else 0 := by
-    intro i _ j _
-    split_ifs with h
-    · rw [sum_eq_single (r - (i + j)) (fun k _ hk ↦ ite_eq_right (by omega)) (fun h' ↦ by
-        simp only [mem_range] at h'; omega), ite_eq_left (by omega)]
-    · exact (sum_eq_zero fun k _ ↦ ite_eq_right (by omega)).symm
-  rw [sum_congr rfl hL, sum_congr rfl fun i hi ↦ sum_congr rfl (hR i hi)]
-  exact sum_comm.trans (sum_congr rfl fun i _ ↦ sum_comm)
 
 /-- A window sum `∑_{j - L ≤ k < j + L} f k` is the sum of `2 L` shifts of `f`: the `d`-th one
 reads `f` at `j + d - L`, where this index is defined. -/
