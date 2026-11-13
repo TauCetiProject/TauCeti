@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.GaloisCohomology.Kummer
+public import TauCeti.FieldTheory.GaloisCohomology.UnitsCoeffMap
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 
 /-!
