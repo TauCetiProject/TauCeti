@@ -131,6 +131,23 @@ theorem coeff_constantCoeff_tateParamHom (f : ℤ⟦X⟧) (a : ℕ) :
       if a = 0 then ((constantCoeff f : ℤ) : R) else 0 := by
   simpa using coeff_coeff_tateParamHom (R := R) f a 0
 
+/-- The constant coefficient in `u` of the coefficient of `vᵇ` in `f(u v)` is the constant
+coefficient of `f` when `b = 0`, and `0` otherwise. -/
+@[simp]
+theorem constantCoeff_coeff_tateParamHom (f : ℤ⟦X⟧) (b : ℕ) :
+    constantCoeff (coeff b (tateParamHom R f)) =
+      if b = 0 then ((constantCoeff f : ℤ) : R) else 0 := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_coeff_tateParamHom]
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp
+  · simp [Ne.symm hb, hb]
+
+/-- The constant coefficient of `f(u v)` in both variables is the constant coefficient of `f`. -/
+@[simp]
+theorem constantCoeff_constantCoeff_tateParamHom (f : ℤ⟦X⟧) :
+    constantCoeff (constantCoeff (tateParamHom R f)) = ((constantCoeff f : ℤ) : R) := by
+  simpa using constantCoeff_coeff_tateParamHom (R := R) f 0
+
 /-- The substitution `q = u v` sends `q` to the product of the inner variable `u` and the outer
 variable `v`. -/
 @[simp]
@@ -415,40 +432,51 @@ theorem coeff_tateFormalY_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
       Finset.sum_const_zero, sub_zero, add_zero]
 
 /-- The constant coefficient in `v` of `x` is `∑_{a ≥ 1} a uᵃ = u / (1 - u)²`. -/
-theorem coeff_zero_tateFormalX : coeff 0 (tateFormalX R) = mk fun a ↦ (a : R) := by
+@[simp]
+theorem constantCoeff_tateFormalX : constantCoeff (tateFormalX R) = mk fun a ↦ (a : R) := by
   refine PowerSeries.ext fun a ↦ ?_
-  rw [coeff_coeff_tateFormalX, coeff_mk]
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_coeff_tateFormalX, coeff_mk]
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   · simp [ha, Nat.dist_zero_right]
 
-/-- `coeff_zero_tateFormalX` in the simp normal form `constantCoeff`. -/
-@[simp]
-theorem constantCoeff_tateFormalX : constantCoeff (tateFormalX R) = mk fun a ↦ (a : R) := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_zero_tateFormalX]
-
 /-- The constant coefficient in `v` of `y` is `∑_{a ≥ 2} a (a - 1) / 2 · uᵃ = u² / (1 - u)³`. -/
-theorem coeff_zero_tateFormalY : coeff 0 (tateFormalY R) = mk fun a ↦ (a.choose 2 : R) := by
+@[simp]
+theorem constantCoeff_tateFormalY :
+    constantCoeff (tateFormalY R) = mk fun a ↦ (a.choose 2 : R) := by
   refine PowerSeries.ext fun a ↦ ?_
-  rw [coeff_coeff_tateFormalY, coeff_mk]
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_coeff_tateFormalY, coeff_mk]
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   · simp [ha, Nat.dist_zero_right, Nat.pos_of_ne_zero ha]
 
-/-- `coeff_zero_tateFormalY` in the simp normal form `constantCoeff`. -/
+/-- The constant coefficient in `u` of the coefficient of `vᵇ` in `x` is `b`. -/
 @[simp]
-theorem constantCoeff_tateFormalY :
-    constantCoeff (tateFormalY R) = mk fun a ↦ (a.choose 2 : R) := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_zero_tateFormalY]
+theorem constantCoeff_coeff_tateFormalX (b : ℕ) :
+    constantCoeff (coeff b (tateFormalX R)) = (b : R) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_coeff_tateFormalX]
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp
+  · simp [Ne.symm hb, Nat.dist_zero_left]
+
+/-- The constant coefficient in `u` of the coefficient of `vᵇ` in `y` is `-(b + 1) b / 2`. -/
+@[simp]
+theorem constantCoeff_coeff_tateFormalY (b : ℕ) :
+    constantCoeff (coeff b (tateFormalY R)) = -((b + 1).choose 2 : R) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_coeff_tateFormalY]
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp
+  · simp [Ne.symm hb, Nat.dist_zero_left]
 
 /-- `(1 - u)²` times the constant coefficient in `v` of `x` is `u`. -/
 theorem coeff_zero_tateFormalX_mul_one_sub_X_sq : coeff 0 (tateFormalX R) * (1 - X) ^ 2 = X := by
-  rw [coeff_zero_tateFormalX, mk_id_mul_one_sub_X_sq]
+  rw [coeff_zero_eq_constantCoeff_apply, constantCoeff_tateFormalX, mk_id_mul_one_sub_X_sq]
 
 /-- `(1 - u)³` times the constant coefficient in `v` of `y` is `u²`. -/
 theorem coeff_zero_tateFormalY_mul_one_sub_X_pow_three :
     coeff 0 (tateFormalY R) * (1 - X) ^ 3 = X ^ 2 := by
-  rw [coeff_zero_tateFormalY, mk_choose_two_mul_one_sub_X_pow_three]
+  rw [coeff_zero_eq_constantCoeff_apply, constantCoeff_tateFormalY,
+    mk_choose_two_mul_one_sub_X_pow_three]
 
 private theorem coeff_zero_two_mul_tateFormalY_add :
     coeff 0 (2 * tateFormalY ℚ + tateFormalX ℚ) = mk fun a ↦ (a : ℚ) ^ 2 := by
@@ -530,7 +558,8 @@ private theorem toLaurent_tateFormalX_mul :
   refine PowerSeries.ext fun N ↦ ?_
   rw [coeff_mul_C, coeff_toLaurent, coeff_map, map_add, coeff_one, coeff_C_mul]
   rcases eq_or_ne N 0 with rfl | hN
-  · rw [coeff_zero_tateFormalX, tP, coeff_mk, Nat.divisors_zero, Finset.sum_empty, mul_zero,
+  · rw [coeff_zero_eq_constantCoeff_apply (tateFormalX ℚ), constantCoeff_tateFormalX,
+      tP, coeff_mk, Nat.divisors_zero, Finset.sum_empty, mul_zero,
       add_zero, ite_eq_left rfl, psi.map_one, Nat.cast_zero, neg_zero, HahnSeries.single_zero_one,
       one_mul, ofPowerSeries_mk_id_mul_psi]
   · rw [single_mul_coeff_tateFormalX hN, ite_eq_right hN, zero_add, map_mul, mul_comm]
@@ -839,16 +868,23 @@ theorem coeff_tateClearedParamHom (f : ℤ⟦X⟧) (N : ℕ) :
     coeff N (tateClearedParamHom f) = Polynomial.X ^ N * Polynomial.C (coeff N f) := by
   rw [tateClearedParamHom, RingHom.comp_apply, coeff_rescale, coeff_map]
 
+/-- The constant coefficient in `v` of `f(u v)` is the constant coefficient of `f`. -/
+@[simp]
+theorem constantCoeff_tateClearedParamHom (f : ℤ⟦X⟧) :
+    constantCoeff (tateClearedParamHom f) = ((constantCoeff f : ℤ) : Polynomial ℤ) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_tateClearedParamHom, pow_zero, one_mul,
+    coeff_zero_eq_constantCoeff_apply, eq_intCast]
+
 /-- Viewed in `ℤ⟦u⟧⟦v⟧`, `tateClearedX` is `(1 - u)²` times the formal Tate coordinate `x`. -/
 theorem map_coeToPowerSeries_ringHom_tateClearedX :
     map Polynomial.coeToPowerSeries.ringHom tateClearedX = C ((1 - X) ^ 2) * tateFormalX ℤ := by
   refine PowerSeries.ext fun N ↦ ?_
-  rw [coeff_map, coeff_C_mul, tateClearedX, map_add, coeff_C, coeff_C_mul, coeff_mk]
+  rw [coeff_map, coeff_C_mul]
   rcases eq_or_ne N 0 with rfl | hN
-  · simp only [↓reduceIte, Nat.divisors_zero, Finset.sum_empty, mul_zero, add_zero,
-      mul_comm _ (coeff 0 _), coeff_zero_tateFormalX_mul_one_sub_X_sq,
-      Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
-  · simp only [hN, ↓reduceIte, zero_add, coeff_tateFormalX_of_ne_zero hN, map_add, map_mul,
+  · rw [coeff_zero_eq_constantCoeff_apply tateClearedX, constantCoeff_tateClearedX, mul_comm,
+      coeff_zero_tateFormalX_mul_one_sub_X_sq, Polynomial.coeToPowerSeries.ringHom_apply,
+      Polynomial.coe_X]
+  · simp only [coeff_tateClearedX_of_ne_zero hN, coeff_tateFormalX_of_ne_zero hN, map_add, map_mul,
       map_pow, map_sub, map_one, map_sum, map_natCast, map_ofNat,
       Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
 
@@ -856,12 +892,12 @@ theorem map_coeToPowerSeries_ringHom_tateClearedX :
 theorem map_coeToPowerSeries_ringHom_tateClearedY :
     map Polynomial.coeToPowerSeries.ringHom tateClearedY = C ((1 - X) ^ 3) * tateFormalY ℤ := by
   refine PowerSeries.ext fun N ↦ ?_
-  rw [coeff_map, coeff_C_mul, tateClearedY, map_add, coeff_C, coeff_C_mul, coeff_mk]
+  rw [coeff_map, coeff_C_mul]
   rcases eq_or_ne N 0 with rfl | hN
-  · simp only [↓reduceIte, Nat.divisors_zero, Finset.sum_empty, mul_zero, add_zero,
-      mul_comm _ (coeff 0 _), coeff_zero_tateFormalY_mul_one_sub_X_pow_three, map_pow,
+  · rw [coeff_zero_eq_constantCoeff_apply tateClearedY, constantCoeff_tateClearedY, mul_comm,
+      coeff_zero_tateFormalY_mul_one_sub_X_pow_three, map_pow,
       Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
-  · simp only [hN, ↓reduceIte, zero_add, coeff_tateFormalY_of_ne_zero hN, map_add, map_mul,
+  · simp only [coeff_tateClearedY_of_ne_zero hN, coeff_tateFormalY_of_ne_zero hN, map_add, map_mul,
       map_pow, map_sub, map_one, map_sum, map_natCast,
       Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
 
