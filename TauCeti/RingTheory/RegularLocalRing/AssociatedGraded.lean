@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.LocalRing.AssociatedGraded
 public import TauCeti.RingTheory.Regular.AssociatedGraded
 public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
@@ -37,27 +38,6 @@ function `ord(x) = sup {r : x ∈ 𝔪ʳ}` on a regular local ring.
 -/
 
 public section
-
-namespace IsLocalRing
-
-variable (R : Type*) [CommRing R] [IsLocalRing R]
-
-/-- The associated graded ring of the maximal ideal is an algebra over the residue field. -/
-noncomputable instance : Algebra (ResidueField R) (maximalIdeal R).AssociatedGraded :=
-  inferInstanceAs (Algebra (R ⧸ maximalIdeal R) (maximalIdeal R).AssociatedGraded)
-
-/-- Scalars from the local ring act through its residue field on the associated graded ring. -/
-instance : IsScalarTower R (ResidueField R) (maximalIdeal R).AssociatedGraded :=
-  inferInstanceAs (IsScalarTower R (R ⧸ maximalIdeal R) (maximalIdeal R).AssociatedGraded)
-
-/-- The degree-zero class of a residue is the scalar class of its representative. -/
-@[simp]
-theorem algebraMap_associatedGraded_residue (r : R) :
-    algebraMap (ResidueField R) (maximalIdeal R).AssociatedGraded (residue R r) =
-      algebraMap R (maximalIdeal R).AssociatedGraded r :=
-  Ideal.AssociatedGraded.algebraMap_quotient_mk r
-
-end IsLocalRing
 
 open _root_.IsLocalRing Ideal RingTheory.Sequence
 
