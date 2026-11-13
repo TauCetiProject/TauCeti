@@ -11,6 +11,9 @@ public import Mathlib.Topology.Algebra.Support
 /-!
 # Closed balls and annuli in pseudo-metric spaces
 
+Every neighbourhood of a point contains a closed ball about it of arbitrarily small positive
+radius (`TauCeti.exists_pos_lt_closedBall_subset`).
+
 The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two boundary spheres
 (`TauCeti.frontier_closedBall_sdiff_ball_subset`). A point outside a closed ball containing the
 support of a function lies outside its closed support
@@ -21,9 +24,17 @@ public section
 
 namespace TauCeti
 
-open Metric Set
+open Metric Set Topology
 
 variable {X : Type*} [PseudoMetricSpace X]
+
+/-- Every neighbourhood of `x` contains a closed ball about `x` of positive radius less than any
+given `ε > 0`. -/
+theorem exists_pos_lt_closedBall_subset {U : Set X} {x : X} (hU : U ∈ 𝓝 x) {ε : ℝ}
+    (hε : 0 < ε) : ∃ r, 0 < r ∧ r < ε ∧ closedBall x r ⊆ U := by
+  obtain ⟨δ, hδ, hδU⟩ := nhds_basis_closedBall.mem_iff.1 hU
+  exact ⟨min δ (ε / 2), lt_min hδ (half_pos hε), (min_le_right _ _).trans_lt (half_lt_self hε),
+    (closedBall_subset_closedBall (min_le_left _ _)).trans hδU⟩
 
 /-- The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two boundary
 spheres. -/
