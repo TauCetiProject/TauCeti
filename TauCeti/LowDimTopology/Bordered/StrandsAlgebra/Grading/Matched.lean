@@ -39,9 +39,21 @@ grading (`TauCeti.StrandsAlgebra.horizontalCompletion_mem_gradedPart`,
 grading `1`, and since these sums span the matched subalgebra, it is the sum of its intersections
 with the graded parts of the strands algebra, which are independent
 (`TauCeti.StrandsAlgebra.iSup_matchedSubalgebra_inf_gradedPart`,
-`TauCeti.StrandsAlgebra.iSupIndep_matchedSubalgebra_inf_gradedPart`). These intersections
-multiply according to the group law and the differential has degree `λ⁻¹`, by the corresponding
-properties of the graded parts of the strands algebra.
+`TauCeti.StrandsAlgebra.iSupIndep_matchedSubalgebra_inf_gradedPart`).
+
+As parts of the unital differential algebra `matchedSubalgebra R M` itself, these intersections
+are the graded parts `TauCeti.StrandsAlgebra.matchedGradedPart R M g` (and
+`TauCeti.StrandsAlgebra.matchedGradedPartBy R M d g` for a function `d`). They multiply according
+to the group law, the unit has grading `1` and the differential has degree `λ⁻¹`, by the
+corresponding properties of the graded parts of the strands algebra, and over a ring the matched
+subalgebra is their internal direct sum.
+
+## Main definitions
+
+* `TauCeti.StrandsAlgebra.matchedGradedPartBy R M d g`: the elements of the matched subalgebra of
+  degree `g` for a function `d` on strand diagrams.
+* `TauCeti.StrandsAlgebra.matchedGradedPart R M g`: the elements of the matched subalgebra of
+  grading `g`.
 
 ## Main results
 
@@ -62,6 +74,13 @@ properties of the graded parts of the strands algebra.
   `TauCeti.StrandsAlgebra.iSup_matchedSubalgebra_inf_gradedPartBy`,
   `TauCeti.StrandsAlgebra.iSupIndep_matchedSubalgebra_inf_gradedPartBy`: the same for any function
   on strand diagrams unchanged by moving a horizontal strand within a matched pair.
+* `TauCeti.StrandsAlgebra.one_mem_matchedGradedPart`,
+  `TauCeti.StrandsAlgebra.mul_mem_matchedGradedPart`,
+  `TauCeti.StrandsAlgebra.matchedDifferential_mem_matchedGradedPart`: the matched subalgebra is a
+  graded differential algebra, with differential of degree `λ⁻¹`.
+* `TauCeti.StrandsAlgebra.isInternal_matchedGradedPart`,
+  `TauCeti.StrandsAlgebra.isInternal_matchedGradedPartBy`: over a ring, the matched subalgebra is
+  the internal direct sum of its graded parts.
 
 ## References
 
@@ -166,6 +185,118 @@ theorem iSupIndep_matchedSubalgebra_inf_gradedPart :
   simp_rw [gradedPart_eq_gradedPartBy]
   exact iSupIndep_matchedSubalgebra_inf_gradedPartBy grading
 
+/-! ### The graded parts of the matched subalgebra -/
+
+section MatchedGradedPart
+
+variable (R M) in
+/-- The part of the matched subalgebra of degree `g` for a function `d` on strand diagrams: its
+elements lying in the part `gradedPartBy R d g` of the strands algebra. -/
+noncomputable def matchedGradedPartBy (d : StrandDiagram α → G) (g : G) :
+    Submodule R (matchedSubalgebra R M) :=
+  (gradedPartBy R d g).comap (matchedSubalgebra R M).toSubmodule.subtype
+
+@[simp]
+theorem mem_matchedGradedPartBy {g : G} {x : matchedSubalgebra R M} :
+    x ∈ matchedGradedPartBy R M d g ↔ (x : StrandsAlgebra R α) ∈ gradedPartBy R d g :=
+  Iff.rfl
+
+/-- If `d` is multiplicative on composable strand diagrams, the product of elements of the matched
+subalgebra of degrees `g` and `h` for `d` has degree `g * h`. -/
+theorem mul_mem_matchedGradedPartBy [Mul G]
+    (hd : ∀ {φ ψ : StrandDiagram α}, φ.Composable ψ → d (φ.trans ψ) = d φ * d ψ)
+    {g h : G} {x y : matchedSubalgebra R M}
+    (hx : x ∈ matchedGradedPartBy R M d g) (hy : y ∈ matchedGradedPartBy R M d h) :
+    x * y ∈ matchedGradedPartBy R M d (g * h) :=
+  mul_mem_gradedPartBy hd hx hy
+
+/-- If resolving any crossing of a strand diagram changes its degree for `d` by `f`, then the
+differential of the matched subalgebra maps its part of degree `g` for `d` to its part of
+degree `f g`. -/
+theorem matchedDifferential_mem_matchedGradedPartBy {f : G → G}
+    (hd : ∀ {φ : StrandDiagram α} {p : α × α}, p ∈ φ.resolvableInversions →
+      d (φ.resolve p) = f (d φ))
+    {g : G} {x : matchedSubalgebra R M} (hx : x ∈ matchedGradedPartBy R M d g) :
+    matchedDifferential R M x ∈ matchedGradedPartBy R M d (f g) := by
+  rw [mem_matchedGradedPartBy, coe_matchedDifferential]
+  exact differential_mem_gradedPartBy hd hx
+
+/-- The matched subalgebra is the sum of its parts of degree `g` for any function `d` on strand
+diagrams unchanged by moving a horizontal strand within a matched pair. -/
+theorem iSup_matchedGradedPartBy
+    (hd : ∀ φ a b, M a = M b → d (φ.swapHorizontal a b) = d φ) :
+    ⨆ g : G, matchedGradedPartBy R M d g = ⊤ := by
+  refine Submodule.map_injective_of_injective
+    (matchedSubalgebra R M).toSubmodule.injective_subtype ?_
+  rw [Submodule.map_iSup, Submodule.map_top, Submodule.range_subtype]
+  exact (iSup_congr fun g ↦ Submodule.map_comap_subtype _ (gradedPartBy R d g)).trans
+    (iSup_matchedSubalgebra_inf_gradedPartBy hd)
+
+/-- The parts of the matched subalgebra of different degrees for `d` are independent. -/
+theorem iSupIndep_matchedGradedPartBy (d : StrandDiagram α → G) :
+    iSupIndep (matchedGradedPartBy R M d) := by
+  refine fun g ↦ Submodule.disjoint_def.2 fun x hx hx' ↦
+    Subtype.ext (Submodule.disjoint_def.1 (iSupIndep_gradedPartBy d g) _ hx ?_)
+  exact Submodule.mem_comap.1 (iSup₂_le (fun h hh ↦ Submodule.comap_mono
+    (le_iSup₂ (f := fun h (_ : h ≠ g) ↦ gradedPartBy R d h) h hh)) hx')
+
+/-- Over a ring, the matched subalgebra is the internal direct sum of its parts of degree `g` for
+any function `d` on strand diagrams unchanged by moving a horizontal strand within a matched
+pair. -/
+theorem isInternal_matchedGradedPartBy {R : Type*} [CommRing R] [DecidableEq G]
+    (hd : ∀ φ a b, M a = M b → d (φ.swapHorizontal a b) = d φ) :
+    DirectSum.IsInternal (matchedGradedPartBy R M d) :=
+  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top (iSupIndep_matchedGradedPartBy d)
+    (iSup_matchedGradedPartBy hd)
+
+variable (R M) in
+/-- The part of the matched subalgebra of grading `g`: its elements lying in the part
+`gradedPart R g` of the strands algebra. -/
+noncomputable def matchedGradedPart (g : StrandGradingGroup α) :
+    Submodule R (matchedSubalgebra R M) :=
+  matchedGradedPartBy R M grading g
+
+/-- The part of grading `g` of the matched subalgebra is its part of degree `g` for the function
+`grading`. -/
+theorem matchedGradedPart_eq_matchedGradedPartBy (g : StrandGradingGroup α) :
+    matchedGradedPart R M g = matchedGradedPartBy R M grading g := by
+  rw [matchedGradedPart]
+
+@[simp]
+theorem mem_matchedGradedPart {g : StrandGradingGroup α} {x : matchedSubalgebra R M} :
+    x ∈ matchedGradedPart R M g ↔ (x : StrandsAlgebra R α) ∈ gradedPart R g := by
+  rw [matchedGradedPart_eq_matchedGradedPartBy, gradedPart_eq_gradedPartBy,
+    mem_matchedGradedPartBy]
+
+/-- **The matched subalgebra is graded by the grading group**: the product of elements of
+gradings `g` and `h` has grading `g * h`. -/
+theorem mul_mem_matchedGradedPart {g h : StrandGradingGroup α} {x y : matchedSubalgebra R M}
+    (hx : x ∈ matchedGradedPart R M g) (hy : y ∈ matchedGradedPart R M h) :
+    x * y ∈ matchedGradedPart R M (g * h) :=
+  mul_mem_matchedGradedPartBy grading_trans hx hy
+
+/-- **The differential of the matched subalgebra has degree `λ⁻¹`**: it maps the part of grading
+`g` to the part of grading `λ⁻¹ g`. -/
+theorem matchedDifferential_mem_matchedGradedPart {g : StrandGradingGroup α}
+    {x : matchedSubalgebra R M} (hx : x ∈ matchedGradedPart R M g) :
+    matchedDifferential R M x ∈ matchedGradedPart R M (lambda⁻¹ * g) :=
+  matchedDifferential_mem_matchedGradedPartBy (f := (lambda⁻¹ * ·)) grading_resolve hx
+
+/-- **The grading of the matched subalgebra**: it is the sum of its homogeneous parts. -/
+theorem iSup_matchedGradedPart : ⨆ g : StrandGradingGroup α, matchedGradedPart R M g = ⊤ :=
+  iSup_matchedGradedPartBy fun φ a b _ ↦ grading_swapHorizontal φ a b
+
+/-- The parts of the matched subalgebra of different gradings are independent. -/
+theorem iSupIndep_matchedGradedPart : iSupIndep (matchedGradedPart R M) :=
+  iSupIndep_matchedGradedPartBy grading
+
+/-- Over a ring, the matched subalgebra is the internal direct sum of its homogeneous parts. -/
+theorem isInternal_matchedGradedPart {R : Type*} [CommRing R]
+    [DecidableEq (StrandGradingGroup α)] : DirectSum.IsInternal (matchedGradedPart R M) :=
+  isInternal_matchedGradedPartBy fun φ a b _ ↦ grading_swapHorizontal φ a b
+
+end MatchedGradedPart
+
 variable [DecidableEq β]
 
 /-- **The generator `a(ρ, h)` has the grading of `ρ`**, when the pairs of `h` avoid those of the
@@ -190,6 +321,11 @@ theorem matchedIdem_mem_gradedPart (s : Finset β) :
 theorem matchedOne_mem_gradedPart : matchedOne R M ∈ gradedPart R 1 := by
   rw [matchedOne_def]
   exact Submodule.sum_mem _ fun s _ ↦ matchedIdem_mem_gradedPart s
+
+/-- The unit of the matched subalgebra has grading `1`. -/
+theorem one_mem_matchedGradedPart :
+    (1 : matchedSubalgebra R M) ∈ matchedGradedPart R M 1 :=
+  mem_matchedGradedPart.2 matchedOne_mem_gradedPart
 
 end StrandsAlgebra
 
