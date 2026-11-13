@@ -10,10 +10,6 @@ public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.AdmissibleLattice
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 import TauCeti.Algebra.Lie.Weights.Faithful
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
-import all TauCeti.LinearAlgebra.RootSystem.DynkinType
-import all TauCeti.Algebra.Lie.E6.DoubledMinuscule.AdmissibleLattice
-import all TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
-import all TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
 
 /-!
 # The doubled minuscule Chevalley datum of type E₆
@@ -56,31 +52,39 @@ noncomputable section
 local notation "L" => DynkinType.E6.lieAlgebra valid_E6
 local notation "V" => (Fin 27 ⊕ Fin 27) → ℚ
 
--- The native rank and Cartan matrix of E₆ reduce to 6 and (CartanMatrix.E 6)ᵀ;
--- this adapter normalizes both together without transporting the Serre algebra.
+-- Use the public Cartan-matrix equation to interpret the concrete Serre generators
+-- as a Serre system for the native E₆ presentation.
+private theorem concreteSerreSystem :
+    TauCeti.IsSerreSystem ℚ DynkinType.E6.cartanMatrixᵀ
+      (serreH ℚ (CartanMatrix.E 6)ᵀ) (serreE ℚ (CartanMatrix.E 6)ᵀ)
+      (serreF ℚ (CartanMatrix.E 6)ᵀ) := by
+  rw [cartanMatrix_E6]
+  exact TauCeti.isSerreSystem_serre ℚ (CartanMatrix.E 6)ᵀ
+
 private def serreInverse : L →ₗ⁅ℚ⁆ Matrix.ToLieAlgebra ℚ (CartanMatrix.E 6)ᵀ :=
-  (DynkinType.E6.serreLiftEquiv valid_E6).symm.toLieHom
+  (TauCeti.serreLift concreteSerreSystem).comp
+    (DynkinType.E6.serreLiftEquiv valid_E6).symm.toLieHom
 
 private theorem serreInverse_h (i : Fin DynkinType.E6.rank) :
     serreInverse ((DynkinType.E6.lieBasis valid_E6).h i) =
-      serreH ℚ (CartanMatrix.E 6)ᵀ (Fin.cast rank_E6 i) := by
-  -- Normalize the concrete Cartan matrix and its native node-index type together.
-  convert DynkinType.E6.serreLiftEquiv_symm_lieBasis_h valid_E6 i using 1
-  rfl
+      serreH ℚ (CartanMatrix.E 6)ᵀ i := by
+  exact (congrArg (TauCeti.serreLift concreteSerreSystem)
+    (DynkinType.E6.serreLiftEquiv_symm_lieBasis_h valid_E6 i)).trans
+      (TauCeti.serreLift_serreH concreteSerreSystem i)
 
 private theorem serreInverse_e (i : Fin DynkinType.E6.rank) :
     serreInverse ((DynkinType.E6.lieBasis valid_E6).e i) =
-      serreE ℚ (CartanMatrix.E 6)ᵀ (Fin.cast rank_E6 i) := by
-  -- Normalize the native E₆ Cartan matrix and node-index type as in serreInverse_h.
-  convert DynkinType.E6.serreLiftEquiv_symm_lieBasis_e valid_E6 i using 1
-  rfl
+      serreE ℚ (CartanMatrix.E 6)ᵀ i := by
+  exact (congrArg (TauCeti.serreLift concreteSerreSystem)
+    (DynkinType.E6.serreLiftEquiv_symm_lieBasis_e valid_E6 i)).trans
+      (TauCeti.serreLift_serreE concreteSerreSystem i)
 
 private theorem serreInverse_f (i : Fin DynkinType.E6.rank) :
     serreInverse ((DynkinType.E6.lieBasis valid_E6).f i) =
-      serreF ℚ (CartanMatrix.E 6)ᵀ (Fin.cast rank_E6 i) := by
-  -- Normalize the native E₆ Cartan matrix and node-index type as in serreInverse_h.
-  convert DynkinType.E6.serreLiftEquiv_symm_lieBasis_f valid_E6 i using 1
-  rfl
+      serreF ℚ (CartanMatrix.E 6)ᵀ i := by
+  exact (congrArg (TauCeti.serreLift concreteSerreSystem)
+    (DynkinType.E6.serreLiftEquiv_symm_lieBasis_f valid_E6 i)).trans
+      (TauCeti.serreLift_serreF concreteSerreSystem i)
 
 /-- The doubled minuscule action of the pinned type-E₆ Lie algebra, extended to its
 universal enveloping algebra. -/
@@ -98,31 +102,37 @@ private theorem pinnedRepresentation_ι_apply (x : L) (v : V) :
 theorem pinnedRepresentation_h_apply (i : Fin DynkinType.E6.rank) (v : V) :
     pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
       ((DynkinType.E6.lieBasis valid_E6).h i)) v =
-      cartanGeneratorMatrixQ (Fin.cast rank_E6 i) *ᵥ v := by
-  rw [pinnedRepresentation_ι_apply, serreInverse_h,
-    rationalSerreRepresentation_serreH]
+      cartanGeneratorMatrixQ i *ᵥ v := by
+  rw [pinnedRepresentation_ι_apply, serreInverse_h i,
+    rationalSerreRepresentation_serreH i]
 
 /-- A pinned positive generator acts by the doubled raising matrix. -/
 @[simp↓]
 theorem pinnedRepresentation_e_apply (i : Fin DynkinType.E6.rank) (v : V) :
     pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      ((DynkinType.E6.lieBasis valid_E6).e i)) v = raisingMatrixQ (Fin.cast rank_E6 i) *ᵥ v := by
-  rw [pinnedRepresentation_ι_apply, serreInverse_e,
-    rationalSerreRepresentation_serreE]
+      ((DynkinType.E6.lieBasis valid_E6).e i)) v = raisingMatrixQ i *ᵥ v := by
+  rw [pinnedRepresentation_ι_apply, serreInverse_e i,
+    rationalSerreRepresentation_serreE i]
 
 /-- A pinned negative generator acts by the doubled lowering matrix. -/
 @[simp↓]
 theorem pinnedRepresentation_f_apply (i : Fin DynkinType.E6.rank) (v : V) :
     pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      ((DynkinType.E6.lieBasis valid_E6).f i)) v = loweringMatrixQ (Fin.cast rank_E6 i) *ᵥ v := by
-  rw [pinnedRepresentation_ι_apply, serreInverse_f,
-    rationalSerreRepresentation_serreF]
+      ((DynkinType.E6.lieBasis valid_E6).f i)) v = loweringMatrixQ i *ᵥ v := by
+  rw [pinnedRepresentation_ι_apply, serreInverse_f i,
+    rationalSerreRepresentation_serreF i]
 
-private theorem pinnedRepresentation_cartanBasis_apply (i : Fin DynkinType.E6.rank) (v : V) :
-    pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      (DynkinType.E6.cartanBasis valid_E6 i : L)) v =
-      cartanGeneratorMatrixQ (Fin.cast rank_E6 i) *ᵥ v := by
-  rw [coe_cartanBasis, pinnedRepresentation_h_apply]
+/-- Each coordinate vector retains its doubled minuscule weight under the pinned action. -/
+theorem isCartanWeightVector_pinnedRepresentation_single (a : Fin 27 ⊕ Fin 27) :
+    UniversalEnvelopingAlgebra.IsCartanWeightVector
+      (DynkinType.E6.lieBasis valid_E6).h pinnedRepresentation
+      (e6DoubledMinusculeWeight a) (Pi.single a 1) := by
+  apply (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mpr
+  intro i
+  have h := (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
+    (isCartanWeightVector_single a) i
+  simpa only [pinnedRepresentation, AlgHom.comp_apply,
+    UniversalEnvelopingAlgebra.map_ι, serreInverse_h] using h
 
 private theorem isFaithful_cartanSubalgebra :
     let ρ := pinnedRepresentation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
@@ -134,28 +144,30 @@ private theorem isFaithful_cartanSubalgebra :
   let _ := LieRingModule.compLieHom V ρ
   let _ := LieModule.compLieHom V ρ
   have hact (x : L) (v : V) : ⁅x, v⁆ =
-      pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v := rfl
+      pinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v := by
+    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply]
+    rfl
   let H := DynkinType.E6.cartanSubalgebra valid_E6
   let b := DynkinType.E6.cartanBasis valid_E6
   suffices LieModule.IsFaithful ℚ H V from this
   rw [LieModule.isFaithful_iff']
   intro x hx
-  let f : (Fin 6 → ℤ) →ₗ[ℤ] ℚ := Fintype.linearCombination ℤ
-    (fun i => b.repr x (Fin.cast rank_E6.symm i))
+  let f : (Fin DynkinType.E6.rank → ℤ) →ₗ[ℤ] ℚ := Fintype.linearCombination ℤ
+    (fun i => b.repr x i)
   have hweight (a : Fin 27 ⊕ Fin 27) : f (e6DoubledMinusculeWeight a) = 0 := by
     have hz := hx (Pi.single a 1)
     rw [← b.sum_repr x] at hz
+    have hw := (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
+      (isCartanWeightVector_pinnedRepresentation_single a)
     simp only [sum_lie, smul_lie, LieSubalgebra.coe_bracket_of_module, hact,
-      b, pinnedRepresentation_cartanBasis_apply] at hz
+      b, coe_cartanBasis, hw] at hz
     have hz' := congrFun hz a
-    dsimp only [rank] at hz' ⊢
-    simp only [Fin.cast_eq_self, Matrix.mulVec_single, MulOpposite.op_one, one_smul,
-      Finset.sum_apply, Pi.smul_apply, Matrix.col_apply, cartanGeneratorMatrixQ_apply,
-      ↓reduceIte, smul_eq_mul, mul_comm, Pi.zero_apply] at hz'
-    simp only [f, Fintype.linearCombination_apply, zsmul_eq_mul, rank, Fin.cast, b]
-    -- Only the concrete/native rank casts remain after evaluating the Cartan action.
-    convert hz' using 1
-    rfl
+    simp only [rank_E6, Finset.sum_apply, Pi.smul_apply, Pi.single_eq_same,
+      smul_eq_mul, mul_comm, one_mul, Pi.zero_apply] at hz'
+    have hsum := Fintype.linearCombination_apply ℤ (fun i => b.repr x i)
+      (e6DoubledMinusculeWeight a)
+    simp only [zsmul_eq_mul] at hsum
+    exact hsum.trans hz'
   have hf : f = 0 := by
     apply LinearMap.ext_on (s := Set.range e6DoubledMinusculeWeight)
       span_range_e6DoubledMinusculeWeight_eq_top
@@ -164,13 +176,10 @@ private theorem isFaithful_cartanSubalgebra :
   apply b.repr.injective
   rw [map_zero]
   ext i
-  have hi := DFunLike.congr_fun hf (Pi.single (Fin.cast rank_E6 i) 1)
-  simp only [f, Fintype.linearCombination_apply_single, one_smul,
-    LinearMap.zero_apply] at hi
-  dsimp only [rank, Fin.cast] at hi ⊢
-  -- Native and concrete rank casts cancel in the coordinate detected by hi.
-  convert hi using 1
-  rfl
+  have hi := DFunLike.congr_fun hf (Pi.single i 1)
+  have hsingle := Fintype.linearCombination_apply_single ℤ (fun i => b.repr x i) i 1
+  simp only [one_smul] at hsingle
+  exact hsingle.symm.trans hi
 
 /-- The pinned doubled minuscule representation is faithful on the Lie algebra. -/
 theorem pinnedRepresentation_ι_injective :
@@ -199,12 +208,15 @@ theorem pinnedRepresentation_kostantForm_mem_lattice
       ((DynkinType.E6.lieBasis valid_E6).rootGenerator i)) =
       serreRootGenerator (CartanMatrix.E 6)ᵀ := by
     funext i
-    -- The root-generator family and the inverse casts reduce at the concrete rank 6.
     cases i with
     | inl i =>
-        convert serreInverse_e (Fin.cast rank_E6.symm i) using 1 <;> rfl
+        exact (congrArg serreInverse
+          (LieAlgebra.Basis.rootGenerator_inl (DynkinType.E6.lieBasis valid_E6) i)).trans
+          ((serreInverse_e i).trans (TauCeti.serreRootGenerator_inl _ i).symm)
     | inr i =>
-        convert serreInverse_f (Fin.cast rank_E6.symm i) using 1 <;> rfl
+        exact (congrArg serreInverse
+          (LieAlgebra.Basis.rootGenerator_inr (DynkinType.E6.lieBasis valid_E6) i)).trans
+          ((serreInverse_f i).trans (TauCeti.serreRootGenerator_inr _ i).symm)
   have hh : (fun i => serreInverse
       ((DynkinType.E6.lieBasis valid_E6).h i)) = serreH ℚ (CartanMatrix.E 6)ᵀ := by
     funext i
@@ -212,18 +224,6 @@ theorem pinnedRepresentation_kostantForm_mem_lattice
   dsimp only [rank] at hm he hh
   rw [he, hh] at hm
   exact hm ▸ Subring.mem_map.mpr ⟨u, hu, rfl⟩
-
-/-- Each coordinate vector retains its doubled minuscule weight under the pinned action. -/
-theorem isCartanWeightVector_pinnedRepresentation_single (a : Fin 27 ⊕ Fin 27) :
-    UniversalEnvelopingAlgebra.IsCartanWeightVector
-      (DynkinType.E6.lieBasis valid_E6).h pinnedRepresentation
-      (fun i => e6DoubledMinusculeWeight a (Fin.cast rank_E6 i)) (Pi.single a 1) := by
-  apply (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mpr
-  intro i
-  have h := (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
-    (isCartanWeightVector_single a) (Fin.cast rank_E6 i)
-  simpa only [pinnedRepresentation, AlgHom.comp_apply,
-    UniversalEnvelopingAlgebra.map_ι, serreInverse_h] using h
 
 /-- The full-weight Chevalley datum on `V(ϖ₁) ⊕ V(ϖ₆)`, with its coordinate lattice and
 fundamental-weight torus coordinates. -/
@@ -235,17 +235,16 @@ fundamental-weight torus coordinates. -/
   injective_representation_ι := pinnedRepresentation_ι_injective
   lattice := lattice.toAddSubgroup
   representation_mem_lattice := pinnedRepresentation_kostantForm_mem_lattice
-  span_lattice_eq_top := by
-    exact Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ)
-      (M := coordinateLattice (Fin 27 ⊕ Fin 27))
+  span_lattice_eq_top := Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ) (M := lattice)
   dim := 54
   basis := matrixBasis
-  weight := fun j i => matrixWeight j (Fin.cast rank_E6 i)
+  weight := matrixWeight
   isCartanWeightVector_basis := by
     intro j
-    simpa only [matrixBasis, Module.Basis.reindex_apply, coe_latticeBasis,
-      matrixWeight_apply] using
-      isCartanWeightVector_pinnedRepresentation_single (matrixIndexEquiv.symm j)
+    have hcoe := (congrArg (fun m : lattice => (m : V)) (matrixBasis_apply j)).trans
+      (coe_latticeBasis (matrixIndexEquiv.symm j))
+    rw [hcoe, matrixWeight_apply]
+    exact isCartanWeightVector_pinnedRepresentation_single (matrixIndexEquiv.symm j)
   weightLatticeBasis := (Pi.basisFun ℤ (Fin DynkinType.E6.rank)).map
     (LinearEquiv.ofTop _ span_range_matrixWeight_eq_top).symm
 
@@ -257,6 +256,10 @@ theorem chevalleyDatum_representation : chevalleyDatum.representation = pinnedRe
 /-- The datum uses the existing doubled minuscule coordinate lattice. -/
 @[simp]
 theorem chevalleyDatum_lattice : chevalleyDatum.lattice = lattice.toAddSubgroup := (rfl)
+
+/-- The doubled minuscule datum has dimension fifty-four. -/
+@[simp]
+theorem chevalleyDatum_dim : chevalleyDatum.dim = 54 := (rfl)
 
 /-- The numbered basis of the datum is the coordinate basis, in block order. -/
 @[simp]
@@ -273,9 +276,7 @@ theorem coe_chevalleyDatum_basis (j : Fin 54) :
 
 /-- The weights of the datum are the doubled minuscule weights, in block order. -/
 @[simp]
-theorem chevalleyDatum_weight (j : Fin 54) (i : Fin DynkinType.E6.rank) :
-    chevalleyDatum.weight j i =
-      matrixWeight j (Fin.cast rank_E6 i) := (rfl)
+theorem chevalleyDatum_weight : chevalleyDatum.weight = matrixWeight := (rfl)
 
 /-- The doubled minuscule datum has the full weight lattice, not just the root lattice. -/
 @[simp]
@@ -298,14 +299,24 @@ theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin DynkinType.E6.rank) :
 /-- The torus acts through the actual doubled minuscule weights in fundamental-weight
 coordinates, without a lattice-index correction. -/
 @[simp]
-theorem chevalleyDatum_coordinateWeight (j : Fin 54) (i : Fin DynkinType.E6.rank) :
-    chevalleyDatum.coordinateWeight j i =
-      matrixWeight j (Fin.cast rank_E6 i) := by
-  have h := congrFun (chevalleyDatum.sum_coordinateWeight_smul j) i
-  simpa only [Submodule.coe_sum, Submodule.coe_smul, Finset.sum_apply,
-    Pi.smul_apply, coe_chevalleyDatum_weightLatticeBasis, Pi.single_apply,
-    smul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ,
-    ite_true, chevalleyDatum_weight, Finset.sum_ite_eq] using h
+theorem chevalleyDatum_coordinateWeight : chevalleyDatum.coordinateWeight = matrixWeight := by
+  funext j
+  rw [ChevalleyDatum.coordinateWeight_def, chevalleyDatum_weightLatticeBasis,
+    Module.Basis.map_repr]
+  simp only [LinearEquiv.symm_symm, LinearEquiv.trans_apply, LinearEquiv.ofTop_apply]
+  ext i
+  exact Pi.basisFun_repr ℤ _ _ i
+
+/-- Root characters are the original roots in fundamental-weight coordinates. -/
+@[simp]
+theorem chevalleyDatum_coordinateRoot (γ : Fin DynkinType.E6.numRoots) :
+    chevalleyDatum.coordinateRoot γ =
+      (DynkinType.E6.simplyConnectedRootDatum valid_E6).root γ := by
+  rw [ChevalleyDatum.coordinateRoot_def, chevalleyDatum_weightLatticeBasis,
+    Module.Basis.map_repr]
+  simp only [LinearEquiv.symm_symm, LinearEquiv.trans_apply, LinearEquiv.ofTop_apply]
+  ext i
+  exact Pi.basisFun_repr ℤ _ _ i
 
 end
 
