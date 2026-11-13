@@ -150,6 +150,12 @@ theorem isFreelyIndecomposable_of_isMulCommutative (G : Type*) [Group G] [IsMulC
   have : Commute (Coprod.inl a : A ∗ B) (Coprod.inr b) := hAB.1 (by simp [mul_comm' (a : G)])
   simp_all
 
+/-- The trivial group is freely indecomposable. -/
+@[simp]
+theorem isFreelyIndecomposable_of_subsingleton (G : Type*) [Group G] [Subsingleton G] :
+    IsFreelyIndecomposable G :=
+  fun A _ _ => .inl (Subsingleton.elim A ⊥)
+
 /-- A free product of two nontrivial groups is not freely indecomposable. -/
 @[simp]
 theorem not_isFreelyIndecomposable_coprod (A B : Type*) [Group A] [Group B] [Nontrivial A]
@@ -182,7 +188,24 @@ namespace GrushkoDecomposition
 
 attribute [instance] nontrivial isEmpty_mulEquiv_int
 
-variable {G : Type*} [Group G] (D : GrushkoDecomposition G)
+variable {G : Type*} [Group G]
+
+/-- Two Grushko decompositions are equal when they have the same number `p` of factors, the same
+rank `q` of free factor, the same factors, and free factors agreeing on the generators, up to the
+reindexing along the equalities of `p` and of `q`. -/
+@[ext (iff := false)]
+theorem ext {D₁ D₂ : GrushkoDecomposition G} (hp : D₁.p = D₂.p) (hq : D₁.q = D₂.q)
+    (hfactor : ∀ i, D₁.factor i = D₂.factor (i.cast hp))
+    (hfree : ∀ j, D₁.free (.of j) = D₂.free (.of (j.cast hq))) : D₁ = D₂ := by
+  obtain ⟨p, q, factor, free⟩ := D₁
+  obtain ⟨p', q', factor', free'⟩ := D₂
+  obtain rfl : p = p' := hp
+  obtain rfl : q = q' := hq
+  obtain rfl : factor = factor' := funext fun i => by simpa using hfactor i
+  obtain rfl : free = free' := FreeGroup.ext_hom _ _ fun j => by simpa using hfree j
+  rfl
+
+variable (D : GrushkoDecomposition G)
 
 /-- The factors of a Grushko decomposition are nontrivial subgroups. -/
 @[simp]
@@ -241,6 +264,19 @@ def map {H : Type*} [Group H] (e : G ≃* H) : GrushkoDecomposition H where
         ((e : G →* H).comp D.free) = Ψ.toMonoidHom := by
       ext <;> simp [Ψ, MulEquiv.coprodCongr]
     exact this ▸ Ψ.bijective
+
+/-- Transporting a Grushko decomposition along the identity does not change it. -/
+@[simp]
+theorem map_refl : D.map (.refl G) = D :=
+  -- `map` keeps `p` and `q`, so the reindexing casts in `ext` are along `rfl`
+  ext rfl rfl (fun _ => Subgroup.map_id _) fun _ => rfl
+
+/-- Transporting a Grushko decomposition along two isomorphisms in turn is transporting it along
+their composite. -/
+@[simp]
+theorem map_trans {H K : Type*} [Group H] [Group K] (e₁ : G ≃* H) (e₂ : H ≃* K) :
+    (D.map e₁).map e₂ = D.map (e₁.trans e₂) :=
+  ext rfl rfl (fun _ => Subgroup.map_map _ _ _) fun _ => rfl
 
 /-- The Grushko decomposition of the free group of rank `n`, with no freely indecomposable
 factor and the whole group as free factor. -/
