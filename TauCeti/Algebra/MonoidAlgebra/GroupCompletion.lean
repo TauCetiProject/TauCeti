@@ -10,6 +10,7 @@ public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.Localization.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.Localization.LocalizationLocalization
 
 /-!
 # Localizing a semigroup algebra to its generated group
@@ -25,7 +26,8 @@ Every finite sum has a common monomial denominator, giving the native
 `IsLocalization` interface and its universal property. Over a commutative ring `R`,
 since coefficient-one monomials are non-zero-divisors in `R[S]`, the universal property
 induces an injective ring homomorphism `AddMonoidAlgebra.groupClosureToFractionRing` from
-`R[L_S]` into any fraction ring `K` of `R[S]`.
+`R[L_S]` into any fraction ring `K` of `R[S]`, making `K` a fraction ring of `R[L_S]` as well
+(`AddMonoidAlgebra.isFractionRing_groupClosure`).
 
 ## Main declarations
 
@@ -33,6 +35,8 @@ induces an injective ring homomorphism `AddMonoidAlgebra.groupClosureToFractionR
   `R[S]` at `MonoidHom.mrange (of R S)`.
 * `AddMonoidAlgebra.groupClosureToFractionRing`: canonical injective embedding of `R[L_S]` into
   any fraction ring `K` of `R[S]`.
+* `AddMonoidAlgebra.isFractionRing_groupClosure`: any fraction ring `K` of `R[S]` is also a
+  fraction ring of `R[L_S]` along `groupClosureToFractionRing`.
 
 ## References
 
@@ -154,5 +158,22 @@ theorem groupClosureToFractionRing_injective :
   rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply,
     groupClosureToFractionRing_mapDomain_toGroupClosure] at ha
   rw [(map_eq_zero_iff _ (IsFractionRing.injective (AddMonoidAlgebra R S) K)).mp ha, map_zero]
+
+/-- For any commutative ring `R`, any fraction ring `K` of `R[S]` is also a fraction ring of
+`R[AddSubgroup.closure (S : Set G)]` along `groupClosureToFractionRing`. -/
+theorem isFractionRing_groupClosure :
+    letI := (groupClosureToFractionRing S R K).toAlgebra
+    IsFractionRing (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K := by
+  let _ : Algebra (AddMonoidAlgebra R S) (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) :=
+    (mapDomainRingHom R S.toGroupClosure).toAlgebra
+  let _ : Algebra (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K :=
+    (groupClosureToFractionRing S R K).toAlgebra
+  have : IsScalarTower (AddMonoidAlgebra R S)
+      (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K :=
+    IsScalarTower.of_algebraMap_eq fun f =>
+      (groupClosureToFractionRing_mapDomain_toGroupClosure S R K f).symm
+  have := S.isLocalization_addMonoidAlgebra_groupClosure R
+  exact IsFractionRing.isFractionRing_of_isLocalization (MonoidHom.mrange (of R S))
+    (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K mrange_of_le_nonZeroDivisors
 
 end AddMonoidAlgebra
