@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Basic
+public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 
 /-!
@@ -25,8 +27,21 @@ of quotients of free `G`-groups, even before the quotient is known to be a `G`-g
   discrimination and separation are transitive.
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.comp`, `TauCeti.GroupAlgGeom.IsSeparatedBy.comp`:
   discrimination and separation survive restriction of the coefficients.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.prod`: a product of groups separated by `H` is separated by
+  `H`, through the two projections.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.isMulTorsionFree`: a group separated by a torsion-free
+  group is torsion-free, so a nontrivial finite group is not separated by a torsion-free group
+  (`TauCeti.GroupAlgGeom.not_isSeparatedBy_of_finite`); for instance `ℤ/2` is not separated by `ℤ`
+  (`TauCeti.GroupAlgGeom.not_isSeparatedBy_zmod_two_int`).
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isCommTransitive`: a group discriminated by a
+  commutative transitive group is commutative transitive.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
-  coefficient-preserving homomorphism to `H`.
+  coefficient-preserving homomorphism to `H`; with discrimination the group may be trivial
+  (`TauCeti.GroupAlgGeom.IsDiscriminatedBy.nonempty_gHom`).
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.injective_of_injective`: a group discriminated by a
+  `G`-group is a `G`-group.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.mem_range_of_pow_mem_range`: in a group with unique roots
+  separated by its coefficients `G` over `G`, the image of `G` is closed under roots.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_iInf_ker`: separation by `H` means the kernels of all
   coefficient-preserving homomorphisms to `H` intersect trivially.
 
@@ -77,6 +92,21 @@ theorem isSeparatedBy {ιK : G →* K} {ιH : G →* H}
   obtain ⟨φ, hφ⟩ := h {k} (by simpa using hk)
   exact ⟨φ, hφ k (by simp)⟩
 
+/-- A group discriminated by `H` admits a coefficient-preserving homomorphism to `H`. -/
+theorem nonempty_gHom {ιK : G →* K} {ιH : G →* H} (h : IsDiscriminatedBy ιK ιH) :
+    Nonempty (GHom ιK ιH) :=
+  let ⟨φ, _⟩ := h ∅ (by simp)
+  ⟨φ⟩
+
+/-- If `K` is discriminated by `H` over `G` and the coefficient map `ιH` is injective, so is
+`ιK`. -/
+theorem injective_of_injective {ιK : G →* K} {ιH : G →* H} (h : IsDiscriminatedBy ιK ιH)
+    (hH : Function.Injective ιH) : Function.Injective ιK := by
+  obtain ⟨φ⟩ := h.nonempty_gHom
+  apply Function.Injective.of_comp (f := φ) (g := ιK)
+  change Function.Injective ((φ : K →* H).comp ιK)
+  rwa [φ.comp_coeff]
+
 /-- The source of an injective coefficient-preserving map into a discriminated group is
 discriminated by the same target. -/
 theorem of_injective {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
@@ -116,6 +146,15 @@ theorem comp {G' : Type*} [Group G'] {ιK : G →* K} {ιH : G →* H}
   obtain ⟨φ, hφ⟩ := h s hs
   exact ⟨⟨φ, fun g => φ.map_coeff (f g)⟩, hφ⟩
 
+/-- A group discriminated by a commutative transitive group is commutative transitive: one
+homomorphism keeps any two nonidentity elements nontrivial. -/
+theorem isCommTransitive {ιK : G →* K} {ιH : G →* H} (h : IsDiscriminatedBy ιK ιH)
+    (hH : Group.IsCommTransitive H) : Group.IsCommTransitive K := by
+  classical
+  refine hH.of_forall_exists_monoidHom fun a b ha hb => ?_
+  obtain ⟨φ, hφ⟩ := h {a, b} (by simp [ha, hb])
+  exact ⟨φ, hφ a (by simp), hφ b (by simp)⟩
+
 end IsDiscriminatedBy
 
 namespace IsSeparatedBy
@@ -145,13 +184,56 @@ theorem comp {G' : Type*} [Group G'] {ιK : G →* K} {ιH : G →* H}
   obtain ⟨φ, hφ⟩ := h k hk
   exact ⟨⟨φ, fun g => φ.map_coeff (f g)⟩, hφ⟩
 
+/-- A product of two groups separated by `H` is separated by `H`, through the two projections.
+The coefficients of the product are the pair of the coefficients of the factors. -/
+theorem prod {ιK : G →* K} {ιL : G →* L} {ιH : G →* H} (hK : IsSeparatedBy ιK ιH)
+    (hL : IsSeparatedBy ιL ιH) : IsSeparatedBy (ιK.prod ιL) ιH := by
+  rintro ⟨k, l⟩ hkl
+  by_cases hk : k = 1
+  · obtain ⟨φ, hφ⟩ := hL l fun hl => hkl (by simp [hk, hl])
+    exact ⟨⟨(φ : L →* H).comp (MonoidHom.snd K L), fun _ => by simp⟩, by simpa using hφ⟩
+  · obtain ⟨φ, hφ⟩ := hK k hk
+    exact ⟨⟨(φ : K →* H).comp (MonoidHom.fst K L), fun _ => by simp⟩, by simpa using hφ⟩
+
+/-- A group separated by a torsion-free group is torsion-free: a homomorphism keeping a
+nonidentity element of finite order nontrivial would give one in `H`. -/
+theorem isMulTorsionFree [IsMulTorsionFree H] {ιK : G →* K} {ιH : G →* H}
+    (h : IsSeparatedBy ιK ιH) : IsMulTorsionFree K :=
+  .of_not_isOfFinOrder fun k hk hfin =>
+    let ⟨φ, hφ⟩ := h k hk
+    not_isOfFinOrder_of_isMulTorsionFree hφ (MonoidHom.isOfFinOrder (φ : K →* H) hfin)
+
 /-- A nontrivial group separated by `H` admits a coefficient-preserving homomorphism to `H`. -/
 theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
     (h : IsSeparatedBy ιK ιH) : Nonempty (GHom ιK ιH) :=
   let ⟨k, hk⟩ := exists_ne (1 : K)
   ⟨((isSeparatedBy_def _ _).1 h k hk).choose⟩
 
+/-- If a group `K` with unique roots is separated by the coefficients `G` over `G`, then the image
+of `G` in `K` contains every element of `K` having a nonzero power in it. -/
+theorem mem_range_of_pow_mem_range [HasUniqueRoots K] {ιK : G →* K}
+    (h : IsSeparatedBy ιK (.id G)) {k : K} {n : ℕ} (hn : n ≠ 0) (hk : k ^ n ∈ ιK.range) :
+    k ∈ ιK.range := by
+  -- An element outside the image is nontrivial, so some `G`-homomorphism `K → G` exists.
+  by_contra hk'
+  obtain ⟨φ, -⟩ := h k fun h1 => hk' (h1 ▸ one_mem _)
+  exact hk' (φ.mem_range_of_pow_mem_range hn hk)
+
 end IsSeparatedBy
+
+/-- A nontrivial finite group is not separated by a torsion-free group, whatever the
+coefficients: its nonidentity elements have finite order. -/
+theorem not_isSeparatedBy_of_finite [Finite K] [Nontrivial K] [IsMulTorsionFree H] (ιK : G →* K)
+    (ιH : G →* H) : ¬IsSeparatedBy ιK ιH := fun h =>
+  have := h.isMulTorsionFree
+  let ⟨k, hk⟩ := exists_ne (1 : K)
+  not_isOfFinOrder_of_isMulTorsionFree hk (isOfFinOrder_of_finite k)
+
+/-- The group `ℤ/2` is not separated by `ℤ`, with trivial coefficients: `ℤ` is torsion-free and
+`ℤ/2` is a nontrivial finite group. -/
+theorem not_isSeparatedBy_zmod_two_int :
+    ¬IsSeparatedBy (1 : Unit →* Multiplicative (ZMod 2)) (1 : Unit →* Multiplicative ℤ) :=
+  not_isSeparatedBy_of_finite _ _
 
 /-- Separation by `H` is equivalent to triviality of the intersection of kernels of all
 coefficient-preserving homomorphisms to `H`. -/

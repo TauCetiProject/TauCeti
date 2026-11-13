@@ -44,7 +44,7 @@ universe uk uA uM uN uP
 variable {k : Type uk} [Semiring k]
   {M : Type uM} [AddCommMonoid M] [Module k M]
   {N : Type uN} [AddCommMonoid N] [Module k N]
-  (G : InternalGrading k M) (H : InternalGrading k N)
+  (G : InternalGrading k M ℤ) (H : InternalGrading k N ℤ)
 
 -- Assemble additively so the scalar action on a map need not agree with the coefficient action.
 private def homogeneousPartAddHom (f : M →+ N) (r : ℤ) : M →+ N :=
@@ -139,7 +139,7 @@ theorem homogeneousPart_add (f g : M →ₗ[k] N) (r : ℤ) :
 
 section Composition
 
-variable {P : Type uP} [AddCommMonoid P] [Module k P] (I : InternalGrading k P)
+variable {P : Type uP} [AddCommMonoid P] [Module k P] (I : InternalGrading k P ℤ)
 
 -- Work with the shared additive construction: a graded-scalar map need not be coefficient-linear.
 private theorem comp_homogeneousPartAddHom_apply_of_mem {A : Type uA} [Semiring A]
@@ -285,7 +285,7 @@ theorem homogeneousPartOfGradedSMul_add (f g : M →ₗ[A] N) (r : ℤ) :
     G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 g r hx]
 
 variable {P : Type uP} [AddCommMonoid P] [Module k P] [Module A P]
-  (I : InternalGrading k P) [SetLike.GradedSMul 𝒜 I.piece]
+  (I : InternalGrading k P ℤ) [SetLike.GradedSMul 𝒜 I.piece]
 
 /-- Postcomposition by a degree-`s` homogeneous map shifts the selected component by `s`. -/
 theorem comp_homogeneousPartOfGradedSMul (f : M →ₗ[A] N) (r : ℤ) {g : N →ₗ[A] P} {s : ℤ}
@@ -308,7 +308,7 @@ end GradedSMul
 section Factorization
 
 variable {A : Type uA} [Semiring A] [Module A M] [Module A N]
-  {P : Type uP} [AddCommMonoid P] [Module k P] [Module A P] (I : InternalGrading k P)
+  {P : Type uP} [AddCommMonoid P] [Module k P] [Module A P] (I : InternalGrading k P ℤ)
 
 /-- **Homogeneous factorization through an injective map.** If `f` is injective and homogeneous
 of degree zero, then a map of degree `r` whose range lies in the range of `f` factors through `f`
