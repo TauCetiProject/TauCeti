@@ -157,9 +157,9 @@ theorem integrableOn_posDef_det_rpow_mul_exp_neg_trace (ha : ((p : ℝ) - 1) / 2
       ENNReal.ofReal (multivariateGamma p a) := by
     rw [← lintegral_posDef_multivariateGamma ha]
     refine setLIntegral_congr_fun (measurableSet_posDefMatrix p) fun A hA => ?_
-    exact Real.enorm_eq_ofReal
+    exact Real.eNorm_eq_ofReal
       (mul_nonneg (Real.rpow_nonneg hA.det_pos.le _) (Real.exp_nonneg _))
-  rw [hasFiniteIntegral_iff_enorm, henorm]
+  rw [hasFiniteIntegral_iff_eNorm, henorm]
   exact ENNReal.ofReal_lt_top
 
 /-- **The multivariate Gamma integral.** For `((p : ℝ) - 1) / 2 < a`, the integral of
@@ -383,9 +383,9 @@ theorem integrableOn_posDef_det_rpow_mul_exp_neg_trace_mul (hB : B.PosDef)
       ENNReal.ofReal ((B⁻¹).det ^ a) * ENNReal.ofReal (multivariateGamma p a) := by
     rw [← hscale]
     refine setLIntegral_congr_fun (measurableSet_posDefMatrix p) fun A hA => ?_
-    exact Real.enorm_eq_ofReal
+    exact Real.eNorm_eq_ofReal
       (mul_nonneg (Real.rpow_nonneg hA.det_pos.le _) (Real.exp_nonneg _))
-  rw [hasFiniteIntegral_iff_enorm, henorm]
+  rw [hasFiniteIntegral_iff_eNorm, henorm]
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top ENNReal.ofReal_lt_top
 
 end Matrix.PosDef

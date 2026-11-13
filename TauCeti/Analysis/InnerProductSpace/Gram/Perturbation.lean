@@ -112,8 +112,8 @@ theorem norm_adjoint_comp_self_sub_adjoint_comp_self_apply_le (A B : E →ₗ[�
     nonneg_of_mul_nonneg_left ((norm_nonneg (B x)).trans (hB x)) hxpos
   have hε : 0 ≤ ε :=
     nonneg_of_mul_nonneg_left ((norm_nonneg ((A - B) x)).trans (hAB x)) hxpos
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
   have hAop : ‖A.toContinuousLinearMap‖ ≤ a :=
     A.toContinuousLinearMap.opNorm_le_bound ha hA
   have hBop : ‖B.toContinuousLinearMap‖ ≤ b :=
@@ -145,8 +145,8 @@ theorem norm_self_comp_adjoint_sub_self_comp_adjoint_apply_le [Nontrivial E]
   have ha := nonneg_of_mul_nonneg_left ((norm_nonneg (A y)).trans (hA y)) hypos
   have hb := nonneg_of_mul_nonneg_left ((norm_nonneg (B y)).trans (hB y)) hypos
   have hε := nonneg_of_mul_nonneg_left ((norm_nonneg ((A - B) y)).trans (hAB y)) hypos
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   have hAop := A.toContinuousLinearMap.opNorm_le_bound ha hA
   have hBop := B.toContinuousLinearMap.opNorm_le_bound hb hB
   have hABop := (A.toContinuousLinearMap - B.toContinuousLinearMap).opNorm_le_bound hε hAB

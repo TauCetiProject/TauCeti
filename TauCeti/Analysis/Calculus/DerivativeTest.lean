@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.DerivativeTest
 public import TauCeti.Analysis.Calculus.Taylor.Integral
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
@@ -205,27 +206,17 @@ theorem fderiv_fderiv_self_nonneg_of_isLocalMin
     have ha (t : ℝ) : HasDerivAt a w t := by
       simpa only [a, id_eq, one_smul] using ((hasDerivAt_id t).smul_const w).const_add x
     have ha0 : a 0 = x := by simp only [a, zero_smul, add_zero]
-    have hfirst : deriv (f ∘ a) =ᶠ[𝓝 (0 : ℝ)] fun t ↦ fderiv ℝ f (a t) w := by
-      have hnear := ((ha 0).continuousAt.tendsto.mono_right (by rw [ha0])).eventually hf
-      filter_upwards [hnear] with t ht
-      exact (ht.hasFDerivAt.comp_hasDerivAt t (ha t)).deriv
-    have hsecond : HasDerivAt (fun t ↦ fderiv ℝ f (a t) w)
-        (fderiv ℝ (fderiv ℝ f) x w w) 0 := by
-      simpa [a] using
-        hasDerivAt_fderiv_apply_line (𝕜 := ℝ) (p := x) (q := w) (s := 0) (by simpa using hD) w
+    have hsecond : deriv (deriv (f ∘ a)) 0 = fderiv ℝ (fderiv ℝ f) x w w := by
+      simpa only [a, Function.comp_def, zero_smul, add_zero] using
+        (DifferentiableAt.hasDerivAt_deriv_comp_add_smul
+          (x := x) (t := (0 : ℝ)) (y := w) (by simpa using hD)
+          (by simpa using hf)).deriv
     have hminA : IsLocalMin f (a 0) := ha0.symm ▸ hmin
     have hc : ContinuousAt f (a 0) := ha0.symm ▸ hf.self_of_nhds.continuousAt
     have h := deriv_deriv_nonneg_of_isLocalMin (hc.comp (ha 0).continuousAt)
       (hminA.comp_continuous (ha 0).continuousAt)
-    rwa [hfirst.deriv_eq, hsecond.deriv] at h
+    rwa [hsecond] at h
   · simp [fderiv_zero_of_not_differentiableAt hD]
-
-/-- Negating the function negates its Hessian, including at points where it is not
-second differentiable. -/
-private theorem fderiv_fderiv_neg :
-    fderiv ℝ (fderiv ℝ (-f)) x = -fderiv ℝ (fderiv ℝ f) x := by
-  have hneg : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
-  rw [hneg, fderiv_neg]
 
 /-- At a local maximum of a function differentiable near `x`, every diagonal Hessian entry
 is nonpositive. -/

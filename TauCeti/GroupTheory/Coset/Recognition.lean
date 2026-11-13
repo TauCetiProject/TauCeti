@@ -44,10 +44,7 @@ theorem eq_of_le_of_check (hg : Subgroup.closure (Set.range g) = ⊤)
     (hrep : ∀ i, ((T.word i).map g).prod ∈ K → ((T.word i).map g).prod ∈ H) :
     H = K := by
   refine le_antisymm hHK fun x hx ↦ ?_
-  obtain ⟨i, hi⟩ := T.surjective_point hg hT hrels hstab (x : G ⧸ H)
-  have hcoset : ((T.word i).map g).prod⁻¹ * x ∈ H := by
-    apply QuotientGroup.eq.mp
-    simpa [point_def, MulAction.Quotient.smul_mk] using hi
+  obtain ⟨i, hcoset⟩ := T.exists_inv_word_mul_mem hg hT hrels hstab x
   have hword : ((T.word i).map g).prod ∈ K := by
     simpa using K.mul_mem hx (K.inv_mem (hHK hcoset))
   simpa using H.mul_mem (hrep i hword) hcoset

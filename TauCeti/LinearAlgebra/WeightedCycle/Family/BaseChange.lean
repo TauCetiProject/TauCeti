@@ -103,7 +103,7 @@ theorem fixedEquivSignedFamilyBaseChange_comparison
     · funext j
       apply Subtype.ext
       simp [Module.Basis.baseChange_repr_tmul,
-        b.fixedSignedFamily_repr_neg e ε hε f h v j]
+        b.fixedSignedFamily_repr_neg e ε f h v j]
   | add x y hx hy =>
     simp only [map_add, hx, hy, Prod.mk_add_mk, add_zero]
 
