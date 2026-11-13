@@ -18,9 +18,10 @@ that the arity `Sigma.fst` is primitive recursive on the primitively encoded fun
 `Σ n, L.Functions n`. Together with primitively encoded variables, this condition suffices for
 the encoding of terms to be primitive recursive (`FirstOrder.Language.Term.instPrimcodable`).
 
-The file supplies the code of the function symbols and the arity condition for a language with
-added constants `L[[A]]`, whose function symbols are coded as a function symbol of `L` or a
-constant from `A` (`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`).
+For a language with added constants `L[[A]]`, the file codes a function symbol as a function
+symbol of `L` or a constant from `A` (`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`).
+This gives an encoding of the function symbols of `L[[A]]` for encoded `Σ n, L.Functions n` and
+`A`, which is primitive for primitively encoded ones, and the arity condition for `L[[A]]`.
 -/
 
 public section
@@ -36,17 +37,36 @@ class PrimrecFunctionArity (L : Language.{u, v}) [Primcodable (Σ n, L.Functions
   /-- The arity of a function symbol is primitive recursive. -/
   primrec_fst : Primrec (Sigma.fst : (Σ n, L.Functions n) → ℕ)
 
-variable {L : Language.{u, v}} (A : Type w) [Primcodable (Σ n, L.Functions n)] [Primcodable A]
+variable {L : Language.{u, v}} (A : Type w)
+
+section Encodable
+
+variable [Encodable (Σ n, L.Functions n)] [Encodable A]
 
 /-- Function symbols of `L[[A]]` are coded as function symbols of `L` or elements of `A`. -/
-instance instPrimcodableSigmaFunctionsWithConstants : Primcodable (Σ n, L[[A]].Functions n) :=
-  Primcodable.ofEquiv _ (sigmaFunctionsWithConstantsEquiv A)
+instance instEncodableSigmaFunctionsWithConstants : Encodable (Σ n, L[[A]].Functions n) :=
+  Encodable.ofEquiv _ (sigmaFunctionsWithConstantsEquiv A)
 
 /-- The code of a function symbol of `L[[A]]` is the code of its description as a function
 symbol of `L` or a constant from `A`. -/
 theorem encode_sigmaFunctionsWithConstants (s : Σ n, L[[A]].Functions n) :
     encode s = encode (sigmaFunctionsWithConstantsEquiv A s) :=
   encode_ofEquiv _ s
+
+end Encodable
+
+variable [Primcodable (Σ n, L.Functions n)] [Primcodable A]
+
+/-- Function symbols of `L[[A]]` are primitively coded as function symbols of `L` or elements
+of `A`; the code is that of `FirstOrder.Language.instEncodableSigmaFunctionsWithConstants`. -/
+instance instPrimcodableSigmaFunctionsWithConstants : Primcodable (Σ n, L[[A]].Functions n) :=
+  Primcodable.ofEquiv _ (sigmaFunctionsWithConstantsEquiv A)
+
+/-- The primitive encoding of the function symbols of `L[[A]]` is their encoding. -/
+theorem toEncodable_instPrimcodableSigmaFunctionsWithConstants :
+    (Primcodable.toEncodable : Encodable (Σ n, L[[A]].Functions n)) =
+      instEncodableSigmaFunctionsWithConstants A :=
+  (rfl)
 
 instance [L.PrimrecFunctionArity] : L[[A]].PrimrecFunctionArity where
   primrec_fst := by

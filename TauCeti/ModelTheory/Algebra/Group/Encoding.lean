@@ -17,9 +17,10 @@ encoding of terms this makes the terms of `Language.group` and of the coefficien
 `Language.group[[A]]` primitively encoded, for primitively encoded coefficient names `A` and
 variables.
 
-Two properties of the codes of group terms are recorded. The multiplication symbol alone,
-without its two arguments, spells no term and its code decodes to no term: missing arguments are
-not filled in. The code of a variable is Mathlib's code of the one-letter list.
+Two properties of the codes of group terms are recorded, for any encoded coefficient names and
+variables. The multiplication symbol alone, without its two arguments, spells no term and its
+code decodes to no term: missing arguments are not filled in. The code of a variable is
+Mathlib's code of the one-letter list.
 
 The language is that of Kharlampovich and Myasnikov, *Implicit function theorem over free
 groups*, §2.3; the encoding of terms is the one of `Mathlib.ModelTheory.Encoding`.
@@ -93,7 +94,7 @@ theorem listEncode_ne_singleton_mul (t : Language.group[[A]].Term X) :
     t.listEncode ≠ [Sum.inr ⟨2, Sum.inl mulFunc⟩] :=
   Term.listEncode_ne_singleton_inr_add_one _ t
 
-variable [Primcodable A] [Encodable X]
+variable [Encodable A] [Encodable X]
 
 /-- The code of the multiplication symbol alone decodes to no group term: missing arguments
 are not filled in. -/
