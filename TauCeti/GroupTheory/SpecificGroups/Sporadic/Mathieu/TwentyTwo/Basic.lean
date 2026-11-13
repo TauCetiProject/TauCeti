@@ -56,6 +56,7 @@ most three of ten permutations given by tables of images: the ATLAS generators a
 elements of the model, each checked to be a word in the ATLAS generators. The same argument shows
 that `0, 1, 2, 3, 4` is a base: only the identity of the model fixes these five points. Through the
 surjection, the presented group has at least `443520` elements whenever it is finite.
+The first two lists also establish double transitivity of the model on its `22` points.
 
 ## Main declarations
 
@@ -68,6 +69,7 @@ surjection, the presented group has at least `443520` elements whenever it is fi
 * `TauCeti.Sporadic.exists_surjective_M22`: the presented group maps onto the model.
 * `TauCeti.Sporadic.card_M22`: the model has `443520` elements.
 * `TauCeti.Sporadic.M22.stabilizerChain_five_eq_bot`: the points `0, 1, 2, 3, 4` form a base.
+* `TauCeti.Sporadic.M22.isMultiplyPretransitive_two`: the model acts doubly transitively.
 * `TauCeti.Sporadic.le_natCard_group_M22`: the presented group, when finite, has at least
   `443520` elements.
 
@@ -503,6 +505,34 @@ all of them. -/
 theorem stabilizerChain_five_eq_bot : M22.stabilizerChain (Fin.ofNat 22) 5 = ⊥ :=
   Subgroup.stabilizerChain_eq_bot_of_siftCheck le_closure_tables
     transversalCheck_eq_true sift_tables siftCheck_eq_true
+
+/-- The model acts transitively on the `22` points. -/
+instance isPretransitive : MulAction.IsPretransitive M22 (Fin 22) := by
+  have h : ∀ x : Fin 22, ∃ r ∈ transversal 0, r 0 = x := by decide +kernel
+  refine MulAction.IsPretransitive.of_orbit (x₀ := 0) fun x ↦ ?_
+  obtain ⟨r, hr, hx⟩ := h x
+  exact ⟨⟨r, mem_of_mem_transversal hr⟩,
+    by simpa only [Subgroup.mk_smul, Equiv.Perm.smul_def] using hx⟩
+
+/-- The model acts doubly transitively on its `22` points. -/
+instance isMultiplyPretransitive_two : MulAction.IsMultiplyPretransitive M22 (Fin 22) 2 := by
+  have h : ∀ x : Fin 22, x ≠ 0 → ∃ r ∈ transversal 1, r 0 = 0 ∧ r 1 = x := by
+    decide +kernel
+  apply (SubMulAction.ofStabilizer.isMultiplyPretransitive (a := (0 : Fin 22))).mpr
+  apply MulAction.is_one_pretransitive_iff.mpr
+  refine MulAction.IsPretransitive.of_orbit
+    (x₀ := ⟨1, (SubMulAction.mem_ofStabilizer_iff M22 0).mpr (by decide)⟩) fun x ↦ ?_
+  obtain ⟨r, hr, hzero, hx⟩ := h x
+    ((SubMulAction.mem_ofStabilizer_iff M22 0).mp x.property)
+  refine ⟨⟨⟨r, mem_of_mem_transversal hr⟩, ?_⟩, ?_⟩
+  · simpa only [MulAction.mem_stabilizer_iff, Subgroup.mk_smul, Equiv.Perm.smul_def]
+      using hzero
+  · apply Subtype.ext
+    simpa only [SubMulAction.val_smul, Subgroup.mk_smul, Equiv.Perm.smul_def] using hx
+
+/-- The model acts primitively on its `22` points. -/
+instance isPreprimitive : MulAction.IsPreprimitive M22 (Fin 22) :=
+  MulAction.isPreprimitive_of_is_two_pretransitive isMultiplyPretransitive_two
 
 end M22
 
