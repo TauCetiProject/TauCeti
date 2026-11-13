@@ -22,6 +22,7 @@ compatibility under linear equivalences.
 * `Orientation.map_trans`: transport along a composite is the composite of the transports.
 * `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
 * `Orientation.reindex_trans`: reindexing along a composite is the composite of the reindexings.
+* `Orientation.reindex_finCongr_reindex_finCongr`: two successive casts of the index type compose.
 * `Orientation.map_units_smul`, `Orientation.reindex_units_smul`: transport and reindexing commute
   with scaling by units.
 * `Orientation.map_smulOfUnit`, `Orientation.map_smulOfUnit_of_pos`: scaling by a unit `u` scales
@@ -82,6 +83,15 @@ theorem Orientation.reindex_trans {ι' ι'' : Type*} (e : ι ≃ ι') (e' : ι' 
       Orientation.reindex R M e' (Orientation.reindex R M e x) := by
   induction x using Module.Ray.ind with | h v hv =>
     simp only [reindex_apply, AlternatingMap.domDomCongr_trans]
+
+/-- Reindexing along two casts `Fin m ≃ Fin n ≃ Fin k` is reindexing along their composite cast. -/
+@[simp]
+theorem Orientation.reindex_finCongr_reindex_finCongr {m n k : ℕ} (h : m = n) (h' : n = k)
+    (x : Orientation R M (Fin m)) :
+    Orientation.reindex R M (finCongr h') (Orientation.reindex R M (finCongr h) x) =
+      Orientation.reindex R M (finCongr (h.trans h')) x := by
+  subst h h'
+  simp [finCongr_refl, Orientation.reindex_refl]
 
 /-- Transporting an orientation along a linear equivalence commutes with scaling by a unit. -/
 @[simp]

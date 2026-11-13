@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
-public import TauCeti.Geometry.Manifold.TangentCone
+public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Dynamics.Flow.ConnectingOrbit
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
