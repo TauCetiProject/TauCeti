@@ -28,10 +28,12 @@ of the analysis of pseudoholomorphic curves:
 On both, forgetting the highest weak derivative is a compact operator `W^{k+1,p} → W^{k,p}` for
 every `k` and every `1 ≤ p ≤ ∞`, and for `2 < k p` every member of `W^{k,p}` has a representative
 which is Hölder of exponent `1 - 2/(k p)` up to the boundary, depending linearly and boundedly on
-it. For `p > 2`, members of `W^{j+1,p}` have `Cʲ` representatives whose derivatives of order at
-most `j` are Hölder of exponent `1 - 2/p` up to the boundary. These are global statements on the
-closed disc and the closed half-disc; the local forms on open subsets of `ℂ` and of the closed
-upper half-plane are stated for `TauCeti.MemWkpLoc` in `TauCeti.Analysis.Sobolev.Local`.
+it. These are global statements on the closed disc and the closed half-disc; local forms of the
+compactness and Morrey statements on open subsets of `ℂ` and of the closed upper half-plane are
+stated for `TauCeti.MemWkpLoc` in `TauCeti.Analysis.Sobolev.Local.Compactness`,
+`TauCeti.Analysis.Sobolev.Local.Morrey` and `TauCeti.Analysis.Sobolev.Local.Morrey.HalfDisc`.
+Finally, for `p > 2`, members of `W^{j+1,p}` have `Cʲ` representatives whose derivatives of order
+at most `j` are Hölder of exponent `1 - 2/p` up to the boundary.
 
 ## Main declarations
 
