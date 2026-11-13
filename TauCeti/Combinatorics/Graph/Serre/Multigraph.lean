@@ -21,8 +21,11 @@ loop represent inverse generators, even though they give the same one-edge undir
 A set `O` of darts is itself a multigraph on all the vertices, `SerreGraph.endpointGraph`: its
 edges are the darts of `O`, each joining its source to its target, so loops and parallel darts
 remain distinct edges. When `O` contains at least one dart of every reversal pair, in particular
-when it is an orientation, this multigraph has the components of the multigraph of reversal
-pairs, and it is connected exactly when the Serre graph is.
+when it is an orientation, this multigraph has the adjacency of the multigraph of reversal
+pairs: the identity of the vertices is an isomorphism of the underlying simple graphs
+(`SerreGraph.toSimpleGraphEndpointGraphIsoToGraph`). Hence two vertices are joined in it exactly
+when a path of the Serre graph joins them, the two multigraphs have the same number of
+components, and it is connected exactly when the Serre graph is.
 
 ## References
 
@@ -257,26 +260,28 @@ def endpointGraph : Graph Γ.V Γ.E where
   edge_mem_iff_exists_isLink e := ⟨fun he => ⟨_, _, he, rfl⟩, fun ⟨_, _, he, _⟩ => he⟩
   left_mem_of_isLink _ _ _ _ := Set.mem_univ _
 
-@[simp] theorem vertexSet_endpointGraph : (Γ.endpointGraph O).vertexSet = Set.univ := (rfl)
+@[simp, grind =] theorem vertexSet_endpointGraph :
+    (Γ.endpointGraph O).vertexSet = Set.univ := (rfl)
 
-@[simp] theorem edgeSet_endpointGraph : (Γ.endpointGraph O).edgeSet = O := (rfl)
+@[simp, grind =] theorem edgeSet_endpointGraph : (Γ.endpointGraph O).edgeSet = O := (rfl)
 
-@[simp] theorem endpointGraph_isLink (e : Γ.E) (x y : Γ.V) :
+@[simp, grind =] theorem endpointGraph_isLink (e : Γ.E) (x y : Γ.V) :
     (Γ.endpointGraph O).IsLink e x y ↔ e ∈ O ∧ s(Γ.src e, Γ.tgt e) = s(x, y) := Iff.rfl
 
+variable {Γ O} in
 /-- A chosen dart is an edge of the multigraph joining its source and its target. -/
 theorem endpointGraph_isLink_src_tgt {e : Γ.E} (he : e ∈ O) :
     (Γ.endpointGraph O).IsLink e (Γ.src e) (Γ.tgt e) :=
   ⟨he, rfl⟩
 
 /-- A dart is a loop of the multigraph exactly when it is chosen and its ends coincide. -/
-@[simp] theorem endpointGraph_isLoopAt_iff (e : Γ.E) (x : Γ.V) :
+@[simp, grind =] theorem endpointGraph_isLoopAt_iff (e : Γ.E) (x : Γ.V) :
     (Γ.endpointGraph O).IsLoopAt e x ↔ e ∈ O ∧ Γ.src e = x ∧ Γ.tgt e = x := by
   simp [← Graph.isLink_self_iff]
 
 /-- Two vertices are adjacent in the multigraph exactly when a chosen dart joins them, in
 either direction. -/
-@[simp] theorem endpointGraph_adj (x y : Γ.V) :
+@[simp, grind =] theorem endpointGraph_adj (x y : Γ.V) :
     (Γ.endpointGraph O).Adj x y ↔
       (∃ e ∈ O, Γ.src e = x ∧ Γ.tgt e = y) ∨ ∃ e ∈ O, Γ.src e = y ∧ Γ.tgt e = x := by
   simp only [Graph.Adj, endpointGraph_isLink, Sym2.eq_iff]
@@ -284,34 +289,91 @@ either direction. -/
 
 /-- A dart is incident to a vertex of the multigraph exactly when it is chosen and the vertex
 is one of its ends. -/
-@[simp] theorem endpointGraph_inc (e : Γ.E) (x : Γ.V) :
+@[simp, grind =] theorem endpointGraph_inc (e : Γ.E) (x : Γ.V) :
     (Γ.endpointGraph O).Inc e x ↔ e ∈ O ∧ (Γ.src e = x ∨ Γ.tgt e = x) := by
   simp only [Graph.Inc, endpointGraph_isLink, Sym2.eq_iff]
   grind
 
+variable {Γ} in
 /-- Enlarging the dart set enlarges the multigraph. -/
-theorem endpointGraph_mono {O O' : Set Γ.E} (h : O ⊆ O') :
+@[gcongr] theorem endpointGraph_mono {O O' : Set Γ.E} (h : O ⊆ O') :
     Γ.endpointGraph O ≤ Γ.endpointGraph O' :=
   ⟨subset_rfl, fun _ _ _ hl => ⟨h hl.1, hl.2⟩⟩
 
+/-- Without darts, the multigraph has no edges. -/
+@[simp] theorem endpointGraph_empty : Γ.endpointGraph ∅ = Graph.noEdge Set.univ Γ.E :=
+  Graph.ext rfl fun _ _ _ => by simp
+
+/-- Restricting the multigraph of the darts in `O` to a set `F` of edges gives the multigraph of
+the darts in `O ∩ F`. -/
+@[simp] theorem endpointGraph_restrict (F : Set Γ.E) :
+    (Γ.endpointGraph O).restrict F = Γ.endpointGraph (O ∩ F) :=
+  Graph.ext rfl fun _ _ _ => by simp [and_assoc, and_left_comm]
+
+/-- Deleting a set `F` of edges from the multigraph of the darts in `O` gives the multigraph of
+the darts in `O \ F`. -/
+@[simp] theorem endpointGraph_deleteEdges (F : Set Γ.E) :
+    (Γ.endpointGraph O).deleteEdges F = Γ.endpointGraph (O \ F) :=
+  Graph.ext rfl fun _ _ _ => by simp [and_right_comm]
+
 variable {Γ O}
+
+/-- For a dart set containing at least one dart of every reversal pair, two vertices are
+adjacent in the multigraph of its darts exactly when they are adjacent in the multigraph of
+reversal pairs. -/
+theorem endpointGraph_adj_iff_toGraph_adj (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) (x y : Γ.V) :
+    (Γ.endpointGraph O).Adj x y ↔ Γ.toGraph.Adj x y := by
+  rw [endpointGraph_adj, toGraph_adj]
+  refine ⟨?_, fun ⟨e, h₁, h₂⟩ => ?_⟩
+  · rintro (⟨e, -, h⟩ | ⟨e, -, h₁, h₂⟩)
+    exacts [⟨e, h⟩, ⟨Γ.rev e, by simpa using h₂, by simpa using h₁⟩]
+  · rcases hO e with he | he
+    exacts [.inl ⟨e, he, h₁, h₂⟩, .inr ⟨Γ.rev e, he, by simpa using h₂, by simpa using h₁⟩]
+
+/-- For an orientation, two vertices are adjacent in the multigraph of its darts exactly when
+they are adjacent in the multigraph of reversal pairs. -/
+theorem IsOrientation.endpointGraph_adj_iff_toGraph_adj (hO : Γ.IsOrientation O) (x y : Γ.V) :
+    (Γ.endpointGraph O).Adj x y ↔ Γ.toGraph.Adj x y :=
+  SerreGraph.endpointGraph_adj_iff_toGraph_adj hO.mem_or_rev_mem x y
+
+/-- For a dart set containing at least one dart of every reversal pair, the identity of the
+vertices is an isomorphism between the simple graphs underlying the multigraph of its darts and
+the multigraph of reversal pairs. -/
+def toSimpleGraphEndpointGraphIsoToGraph (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
+    (Γ.endpointGraph O).toSimpleGraph ≃g Γ.toGraph.toSimpleGraph where
+  toEquiv := Equiv.subtypeEquivRight fun x => by simp
+  map_rel_iff' := by simp [Subtype.ext_iff, endpointGraph_adj_iff_toGraph_adj hO]
+
+@[simp] theorem coe_toSimpleGraphEndpointGraphIsoToGraph_apply (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O)
+    (x : (Γ.endpointGraph O).vertexSet) :
+    (toSimpleGraphEndpointGraphIsoToGraph hO x : Γ.V) = x := (rfl)
+
+@[simp] theorem coe_toSimpleGraphEndpointGraphIsoToGraph_symm_apply
+    (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) (x : Γ.toGraph.vertexSet) :
+    ((toSimpleGraphEndpointGraphIsoToGraph hO).symm x : Γ.V) = x := (rfl)
+
+/-- For a dart set containing at least one dart of every reversal pair, two vertices are joined
+by a walk in the multigraph of its darts exactly when a path of the Serre graph joins them. -/
+theorem reachable_endpointGraph_iff (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) (x y : Γ.V) :
+    (Γ.endpointGraph O).Reachable x y ↔ Nonempty (Γ.Path x y) := by
+  rw [← Graph.toSimpleGraph_reachable_iff (u := ⟨x, by simp⟩) (v := ⟨y, by simp⟩),
+    ← (toSimpleGraphEndpointGraphIsoToGraph hO).reachable_iff, Graph.toSimpleGraph_reachable_iff,
+    ← reachable_toGraph_iff]
+  simp
+
+/-- For an orientation, two vertices are joined by a walk in the multigraph of its darts exactly
+when a path of the Serre graph joins them. -/
+theorem IsOrientation.reachable_endpointGraph_iff (hO : Γ.IsOrientation O) (x y : Γ.V) :
+    (Γ.endpointGraph O).Reachable x y ↔ Nonempty (Γ.Path x y) :=
+  SerreGraph.reachable_endpointGraph_iff hO.mem_or_rev_mem x y
 
 /-- For a dart set containing at least one dart of every reversal pair, the multigraph of its
 darts and the multigraph of reversal pairs have the same number of components. -/
 theorem componentCount_endpointGraph_eq_componentCount_toGraph
     (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
     (Γ.endpointGraph O).componentCount = Γ.toGraph.componentCount := by
-  have hadj (x y : Γ.V) : (Γ.endpointGraph O).Adj x y ↔ Γ.toGraph.Adj x y := by
-    rw [endpointGraph_adj, toGraph_adj]
-    refine ⟨?_, fun ⟨e, h₁, h₂⟩ => ?_⟩
-    · rintro (⟨e, -, h⟩ | ⟨e, -, h₁, h₂⟩)
-      exacts [⟨e, h⟩, ⟨Γ.rev e, by simpa using h₂, by simpa using h₁⟩]
-    · rcases hO e with he | he
-      exacts [.inl ⟨e, he, h₁, h₂⟩, .inr ⟨Γ.rev e, he, by simpa using h₂, by simpa using h₁⟩]
   simp only [Graph.componentCount_eq_natCard_toSimpleGraph]
-  exact Nat.card_congr (SimpleGraph.Iso.connectedComponentEquiv
-    { toEquiv := Equiv.subtypeEquivRight fun x => by simp
-      map_rel_iff' := by simp [Subtype.ext_iff, hadj] })
+  exact Nat.card_congr (toSimpleGraphEndpointGraphIsoToGraph hO).connectedComponentEquiv
 
 /-- For an orientation, the multigraph of its darts and the multigraph of reversal pairs have
 the same number of components. -/
@@ -322,17 +384,17 @@ theorem IsOrientation.componentCount_endpointGraph_eq_componentCount_toGraph
 
 /-- For a dart set containing at least one dart of every reversal pair, the multigraph of its
 darts is connected exactly when the Serre graph is. -/
-theorem connected_endpointGraph_iff_connected (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
+theorem connected_endpointGraph_iff (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
     (Γ.endpointGraph O).Connected ↔ Γ.Connected := by
-  rw [← Graph.componentCount_eq_one_iff,
-    componentCount_endpointGraph_eq_componentCount_toGraph hO, Graph.componentCount_eq_one_iff,
-    connected_toGraph_iff]
+  rw [Graph.connected_iff_toSimpleGraph_connected,
+    (toSimpleGraphEndpointGraphIsoToGraph hO).connected_iff,
+    ← Graph.connected_iff_toSimpleGraph_connected, connected_toGraph_iff]
 
 /-- The multigraph of the darts of an orientation is connected exactly when the Serre graph
 is. -/
-theorem IsOrientation.connected_endpointGraph_iff_connected (hO : Γ.IsOrientation O) :
+theorem IsOrientation.connected_endpointGraph_iff (hO : Γ.IsOrientation O) :
     (Γ.endpointGraph O).Connected ↔ Γ.Connected :=
-  SerreGraph.connected_endpointGraph_iff_connected hO.mem_or_rev_mem
+  SerreGraph.connected_endpointGraph_iff hO.mem_or_rev_mem
 
 end EndpointGraph
 
