@@ -148,14 +148,10 @@ integral-curve API, as the value of the manifold derivative on the unit tangent 
 theorem hasDerivWithinAt_comp_curve {g : M → F} (hg : MDifferentiableAt I 𝓘(𝕜, F) g (γ t))
     (hγ : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w)) :
     HasDerivWithinAt (g ∘ γ) (mvfderiv I g (γ t) w) s t := by
-  -- Composing the two manifold derivatives gives a continuous linear map out of the tangent
-  -- space to `𝕜` at `t`; rewriting it as a `smulRight` is what turns it into a `HasDerivWithinAt`.
-  have hcomp : (mfderiv I 𝓘(𝕜, F) g (γ t)).comp ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w)
-      = (1 : 𝕜 →L[𝕜] 𝕜).smulRight (mfderiv I 𝓘(𝕜, F) g (γ t) w) :=
-    ContinuousLinearMap.ext fun _ ↦ by simp
   have hmf : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) 𝓘(𝕜, F) (g ∘ γ) s t
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (mfderiv I 𝓘(𝕜, F) g (γ t) w)) :=
-    (hg.hasMFDerivAt.comp_hasMFDerivWithinAt t hγ).congr_mfderiv hcomp
+    (hg.hasMFDerivAt.comp_hasMFDerivWithinAt t hγ).congr_mfderiv
+      (ContinuousLinearMap.comp_toSpanSingleton (mfderiv I 𝓘(𝕜, F) g (γ t)) w)
   rw [hasDerivWithinAt_iff_hasFDerivWithinAt]
   exact hmf.hasFDerivWithinAt
 
@@ -227,21 +223,12 @@ theorem curveVelocityWithin_map
   rw [mfderiv_comp_mfderivWithin t hf hγ hs.uniqueMDiffWithinAt]
   rfl
 
-/-- Evaluating the `smulRight` presentation of a velocity at the unit tangent vector returns that
-velocity.  The tangent space of the scalar model is definitionally `𝕜`, but its instances block
-rewriting by `ContinuousLinearMap.smulRight_apply` until that identification is exposed, which is
-what the `change` below does. -/
-private theorem smulRight_one_apply_one {x : M} (v : TangentSpace I x) :
-    ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v) (1 : 𝕜) = v := by
-  change (1 : 𝕜) • v = v
-  rw [one_smul]
-
 /-- A continuous linear map out of the scalar model is determined by its value at `1`; this is the
 shape in which Mathlib's integral-curve API presents the velocity of a curve. -/
 private theorem mfderivWithin_eq_smulRight_curveVelocityWithin (γ : 𝕜 → M) (s : Set 𝕜) (t : 𝕜) :
     mfderivWithin 𝓘(𝕜, 𝕜) I γ s t = (1 : 𝕜 →L[𝕜] 𝕜).smulRight (curveVelocityWithin I γ s t) :=
   -- Reducing to the value at `1` needs `TangentSpace 𝓘(𝕜, 𝕜) t` to unfold to `𝕜`.
-  ContinuousLinearMap.ext_ring (smulRight_one_apply_one _).symm
+  ContinuousLinearMap.ext_ring (one_smul 𝕜 _).symm
 
 /-- A curve differentiable within `s` at `t` has `TauCeti.Manifold.curveVelocityWithin` as its
 velocity there. -/
@@ -262,7 +249,7 @@ theorem curveVelocityWithin_eq_of_hasMFDerivWithinAt
     (hs : UniqueDiffWithinAt 𝕜 s t) : curveVelocityWithin I γ s t = w := by
   rw [curveVelocityWithin_apply,
     hγ.mfderivWithin (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.mpr hs)]
-  exact smulRight_one_apply_one w
+  exact one_smul 𝕜 w
 
 /-- Restricting the parameter set does not change the velocity of a differentiable curve when
 the smaller set has a unique derivative at the parameter. -/
