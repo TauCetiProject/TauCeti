@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Ideal
 
 /-!
 # Common affine neighborhoods in projective spectra
@@ -66,13 +67,7 @@ theorem exists_homogeneous_notMem_of_finset (points : Finset (ProjectiveSpectrum
       have notBelow : ¬ point.1.asHomogeneousIdeal ≤ minimalPoint.asHomogeneousIdeal :=
         fun inclusion ↦ (Finset.mem_erase.mp point.2).1
           (le_antisymm inclusion (minimality.2 (Finset.mem_erase.mp point.2).2 inclusion))
-      obtain ⟨element, inPrime, outsidePrime⟩ := IsConcreteLE.not_le_iff_exists.mp notBelow
-      by_contra! contradiction
-      refine outsidePrime ?_
-      rw [← DirectSum.sum_support_decompose grading element]
-      exact minimalPoint.1.toIdeal.sum_mem fun degree _ ↦
-        contradiction degree _ (SetLike.coe_mem _)
-          (point.1.asHomogeneousIdeal.2 degree inPrime)
+      exact HomogeneousIdeal.exists_homogeneous_mem_notMem_of_not_le notBelow
     choose separatingDegree separatingElement separatingHomogeneous inOtherPrime
       outsideMinimalPrime using separatingSection
     let index := (AlgebraicGeometry.Proj.affineOpenCover grading).idx minimalPoint
@@ -82,9 +77,12 @@ theorem exists_homogeneous_notMem_of_finset (points : Finset (ProjectiveSpectrum
     have initialHomogeneous : initialElement ∈ grading initialDegree := index.2.property
     have initialOutside : initialElement ∉ minimalPoint.asHomogeneousIdeal := by
       have membership := (AlgebraicGeometry.Proj.affineOpenCover grading).covers minimalPoint
+      -- The chosen cover index is its away chart; exposing that chart identifies its
+      -- range with the basic open via opensRange_awayι.
       change minimalPoint ∈ (AlgebraicGeometry.Proj.awayι grading initialElement
         initialHomogeneous positiveInitialDegree).opensRange at membership
       rwa [AlgebraicGeometry.Proj.opensRange_awayι] at membership
+    -- Multiply the separating sections with a positive-degree section missing the minimum.
     let totalDegree := initialDegree +
       ∑ point ∈ (points.erase minimalPoint).attach, separatingDegree point
     let productSection := initialElement *
@@ -103,6 +101,7 @@ theorem exists_homogeneous_notMem_of_finset (points : Finset (ProjectiveSpectrum
         (Finset.dvd_prod_of_mem _ (Finset.mem_attach _ point)) (inOtherPrime point))
     have positiveTotalDegree : 0 < totalDegree :=
       lt_of_lt_of_le positiveInitialDegree (Nat.le_add_right _ _)
+    -- Raise both sections to a common degree before adding, preserving every avoidance.
     refine ⟨degree * totalDegree, Nat.mul_pos positiveDegree positiveTotalDegree,
       homogeneousElement ^ totalDegree + productSection ^ degree, add_mem ?_ ?_,
       fun point membership ↦ ?_⟩

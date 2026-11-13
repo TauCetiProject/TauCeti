@@ -59,6 +59,19 @@ public section
 
 open DirectSum
 
+/-- If one homogeneous ideal is not contained in another, a homogeneous element witnesses
+the failure of containment. The grading monoid and the coefficient semiring are arbitrary. -/
+theorem HomogeneousIdeal.exists_homogeneous_mem_notMem_of_not_le
+    {ι σ A : Type*} [Semiring A] [DecidableEq ι] [AddMonoid ι] [SetLike σ A]
+    [AddSubmonoidClass σ A] {𝒜 : ι → σ} [GradedRing 𝒜]
+    {I J : HomogeneousIdeal 𝒜} (h : ¬ I ≤ J) :
+    ∃ i, ∃ x ∈ 𝒜 i, x ∈ I ∧ x ∉ J := by
+  obtain ⟨x, hxI, hxJ⟩ := IsConcreteLE.not_le_iff_exists.mp h
+  by_contra! hsep
+  apply hxJ
+  exact (J.isHomogeneous.mem_iff).mpr fun i ↦
+    hsep i _ (SetLike.coe_mem _) ((I.isHomogeneous.mem_iff).mp hxI i)
+
 namespace Ideal
 
 variable {ι σ A : Type*} [Semiring A] [DecidableEq ι] [AddMonoid ι] [SetLike σ A]
