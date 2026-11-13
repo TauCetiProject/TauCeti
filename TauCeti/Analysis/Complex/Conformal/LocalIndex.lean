@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
 public import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import Mathlib.LinearAlgebra.Complex.Determinant
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Analytic.IsolatedCriticalPoints
 import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Complex.Determinant
 import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
@@ -97,10 +96,11 @@ same orientation of `ℂ` on source and target. -/
 @[simp]
 theorem localIndex_conj (z : ℂ) :
     o.localIndex o ⟨starRingEnd ℂ, continuous_conj⟩ z = -1 := by
-  have hdet : (conjCLE : ℂ →L[ℝ] ℂ).det = -1 := det_conjAe
-  have h := o.localIndex_eq_sign_det finrank_real_complex (f := ⟨starRingEnd ℂ, continuous_conj⟩)
-    (conjCLE.hasFDerivAt (x := z)) (by rw [hdet]; norm_num)
-  rw [h, hdet]
+  have hdet : (conjCLE : ℂ →L[ℝ] ℂ).det = -1 := by simp [ContinuousLinearMap.det]
+  have hderiv : HasFDerivAt (starRingEnd ℂ) (conjCLE : ℂ →L[ℝ] ℂ) z :=
+    conjCLE.hasFDerivAt.congr_of_eventuallyEq (.of_forall conjCLE_apply)
+  rw [o.localIndex_eq_sign_det finrank_real_complex (f := ⟨starRingEnd ℂ, continuous_conj⟩)
+    hderiv (by rw [hdet]; norm_num), hdet]
   simp
 
 /-- The local index of `f` at `z₀` is the order of vanishing of `f - f z₀` at `z₀`, given a closed
@@ -158,13 +158,14 @@ private theorem localIndex_eq_analyticOrderNatAt_of_closedBall {f : C(ℂ, ℂ)}
   rw [o.localDegree_eq_localIndex o hE hE g hfib₀,
     o.localIndex_congr o hE (hgf_nhds z₀ (mem_ball_self hr))] at hdeg₀
   -- ... and the number of preimages of `w`, each of local index `1`.
-  rw [hdeg₀, o.degree_eq_sum_localIndex o hE hE hgp hfin', Finset.sum_congr rfl fun x hx ↦ ?_,
-    Finset.sum_const, nsmul_eq_mul, mul_one, ← ncard_eq_toFinset_card _ hfin', hfibw, hncard]
-  rw [Finite.mem_toFinset, hfibw] at hx
-  have hxz : x ≠ z₀ := fun h ↦ hwne (h ▸ hx.2).symm
-  rw [o.localIndex_congr o hE (hgf_nhds x hx.1)]
-  exact o.localIndex_eq_one_of_hasDerivAt
-    (hfr x (ball_subset_closedBall hx.1)).differentiableAt.hasDerivAt (hderivr x hx.1 hxz)
+  have hidx (x : ℂ) (hx : x ∈ hfin'.toFinset) : o.localIndex o g x = 1 := by
+    rw [Finite.mem_toFinset, hfibw] at hx
+    have hxz : x ≠ z₀ := fun h ↦ hwne (h ▸ hx.2).symm
+    rw [o.localIndex_congr o hE (hgf_nhds x hx.1)]
+    exact o.localIndex_eq_one_of_hasDerivAt
+      (hfr x (ball_subset_closedBall hx.1)).differentiableAt.hasDerivAt (hderivr x hx.1 hxz)
+  rw [hdeg₀, o.degree_eq_sum_localIndex o hE hE hgp hfin', Finset.sum_eq_card_nsmul hidx,
+    ← ncard_eq_toFinset_card _ hfin', hfibw, hncard, nsmul_one]
 
 /-- **The local index of a holomorphic map is its order of vanishing.** If `f : ℂ → ℂ` is analytic
 at `z₀`, its local index at `z₀`, for the same orientation of `ℂ` on source and target, is the
@@ -178,26 +179,11 @@ theorem localIndex_eq_analyticOrderNatAt {f : C(ℂ, ℂ)} {z₀ : ℂ} (hf : An
     rw [o.localIndex_of_frequently_eq o f
       (eventually_nhdsWithin_of_eventually_nhds hconst).frequently, analyticOrderNatAt, htop,
       ENat.toNat_top, Nat.cast_zero]
-  -- A closed disc of radius `ε / 2` on which `f` is analytic, `z₀` is the only solution of
-  -- `f z = f z₀`, and `f'` vanishes nowhere except possibly at `z₀`.
-  have hderiv : ∀ᶠ z in 𝓝[≠] z₀, deriv f z ≠ 0 := by
-    obtain ⟨ε, hε, hεf⟩ := eventually_nhds_iff_ball.1 hf.eventually_analyticAt
-    refine AnalyticOnNhd.eventually_deriv_ne_zero_of_not_eqOn_const hεf
-      (convex_ball z₀ ε).isPreconnected (fun ⟨c, hc⟩ ↦ ?_) (mem_ball_self hε)
-    obtain ⟨z, hzε, hz⟩ :=
-      ((eventually_nhdsWithin_of_eventually_nhds (ball_mem_nhds z₀ hε)).and hisol).exists
-    exact hz ((hc hzε).trans (hc (mem_ball_self hε)).symm)
-  have hall : ∀ᶠ z in 𝓝 z₀, AnalyticAt ℂ f z ∧ (z ≠ z₀ → f z ≠ f z₀) ∧
-      (z ≠ z₀ → deriv f z ≠ 0) := by
-    filter_upwards [hf.eventually_analyticAt, eventually_nhdsWithin_iff.1 hisol,
-      eventually_nhdsWithin_iff.1 hderiv] with z h1 h2 h3
-    exact ⟨h1, h2, h3⟩
-  obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.1 hall
-  have hsub (z : ℂ) (hz : z ∈ closedBall z₀ (ε / 2)) : dist z z₀ < ε :=
-    (mem_closedBall.1 hz).trans_lt (half_lt_self hε)
-  exact localIndex_eq_analyticOrderNatAt_of_closedBall o (half_pos hε)
-    (fun z hz ↦ (hball (hsub z hz)).1) (fun z hz ↦ (hball (hsub z hz)).2.1)
-    (fun z hz ↦ (hball (hsub z (ball_subset_closedBall hz))).2.2)
+  -- A closed disc on which `f` is analytic, `z₀` is the only solution of `f z = f z₀`, and `f'`
+  -- vanishes nowhere except possibly at `z₀`.
+  obtain ⟨r, ⟨hfr, hisolr, hderivr⟩, hr⟩ :=
+    ((eventually_closedBall_isolated hf hisol).and self_mem_nhdsWithin).exists
+  exact localIndex_eq_analyticOrderNatAt_of_closedBall o hr hfr hisolr hderivr
 
 /-- **Positivity of the local index of a holomorphic map.** If `f` is analytic at `z₀`, its local
 index at `z₀` is positive if and only if `f` is not constant near `z₀`. -/
