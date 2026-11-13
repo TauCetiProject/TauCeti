@@ -177,6 +177,13 @@ variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDim
   (hQ : ∀ v, Q v = -‖v‖ ^ 2) (he : e.toBasis.orientation = o)
   (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
 
+variable (o ρ) in
+/-- The positive half-spinors are the `1`-eigenspace of the chirality, the domain of
+`spinCGroupHalfSpinRep`: `positiveHalfSpinors_eq_eigenspace` as a linear equivalence. -/
+private abbrev positiveHalfSpinorsEquiv :
+    positiveHalfSpinors o ρ ≃ₗ[ℂ] eigenspace (ρ (chirality Q o)) 1 :=
+  LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
+
 section Lift
 
 variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
@@ -201,7 +208,7 @@ theorem toSpecialOrthogonal_mem_unitaryGroup_of_mem_canonicalLineFixingSubgroup
   have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   obtain ⟨u, hu₀, hu, -⟩ :=
     exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_self_forall_eq_smul hQ he h₀ h₂ hW
-  set u' : eigenspace (ρ (chirality Q o)) 1 := ⟨u, (positiveHalfSpinors_eq_eigenspace o ρ).le u.2⟩
+  set u' := positiveHalfSpinorsEquiv o ρ u
   have hxu : spinCGroupHalfSpinRep o ρ 1 hQ₀ x u' = u' :=
     hx u' (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu)
   have hcl := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu
@@ -214,9 +221,8 @@ theorem toSpecialOrthogonal_mem_unitaryGroup_of_mem_canonicalLineFixingSubgroup
   rw [hxu] at h1 h2
   rw [halfSpinCliffordMul_apply_eq_smul (ψ := u') (hcl v), map_smul, Submodule.coe_smul,
     ← h2] at h1
-  rw [← hcl (A v)] at h1
   exact map_ι_apply_left_injective ρ (fun w hw ↦ by simpa [hQ] using hw)
-    (by simpa using hu₀ : (u : W) ≠ 0) h1
+    (by simpa using hu₀ : (u : W) ≠ 0) (h1.trans (hcl (A v)).symm)
 
 include hQ he h₀ h₂ hW in
 /-- **Only the identity fixes the canonical line and acts trivially on `V`**: the kernel of the
@@ -237,10 +243,10 @@ theorem eq_one_of_mem_canonicalLineFixingSubgroup_of_toSpecialOrthogonal_eq_one
   -- It acts on a nonzero vector of the canonical line by `w`.
   obtain ⟨u, hu₀, hu, -⟩ :=
     exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_self_forall_eq_smul hQ he h₀ h₂ hW
-  have h := congrArg Subtype.val (hx ⟨u, (positiveHalfSpinors_eq_eigenspace o ρ).le u.2⟩
+  have h := congrArg Subtype.val (hx (positiveHalfSpinorsEquiv o ρ u)
     (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu))
   rw [spinCGroupHalfSpinRep_ofCircle, LinearMap.smul_apply, one_apply_eq_self,
-    Submodule.coe_smul] at h
+    Submodule.coe_smul, LinearEquiv.coe_ofEq_apply] at h
   have hw : (w : ℂ) = 1 := by
     have h' : ((w : ℂ) - 1) • (u : W) = 0 := by rw [sub_smul, h, one_smul, sub_self]
     exact sub_eq_zero.1 ((smul_eq_zero.1 h').resolve_right (by simpa using hu₀))
@@ -262,28 +268,27 @@ theorem exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq_of_mem_uni
   obtain ⟨u, hu₀, hu, hspan⟩ :=
     exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_self_forall_eq_smul hQ he h₀ h₂ hW
   set x₀ := spinCGroup.ofSpin Q hQ₀ s
-  set u' : eigenspace (ρ (chirality Q o)) 1 := ⟨u, (positiveHalfSpinors_eq_eigenspace o ρ).le u.2⟩
+  set u' := positiveHalfSpinorsEquiv o ρ u
   have hx₀ : spinCGroup.toSpecialOrthogonal Q hQ₀ x₀ ∈ J.unitaryGroup Q := by
     rwa [spinCGroup.toSpecialOrthogonal_ofSpin, hs]
   -- `x₀` moves the canonical line to itself, so `x₀ u = c u`.
   have hP := (cliffordProjection_kahlerForm_apply_eq_self_iff hQ he h₀ h₂
-    (ψ := ⟨_, (positiveHalfSpinors_eq_eigenspace o ρ).ge
-      (spinCGroupHalfSpinRep o ρ 1 hQ₀ x₀ u').2⟩)).2
+    (ψ := (positiveHalfSpinorsEquiv o ρ).symm (spinCGroupHalfSpinRep o ρ 1 hQ₀ x₀ u'))).2
     (ι_apply_apply_spinCGroupHalfSpinRep hQ₀ hx₀
       ((cliffordProjection_kahlerForm_apply_eq_self_iff hQ he h₀ h₂).1 hu))
   obtain ⟨c, hc⟩ := hspan _ hP
-  have hc' : (spinCGroupHalfSpinRep o ρ 1 hQ₀ x₀ u' : W) = c • (u : W) := by
-    simpa using congrArg Subtype.val hc
+  have hc' : (spinCGroupHalfSpinRep o ρ 1 hQ₀ x₀ u' : W) = c • (u' : W) := by
+    rw [(positiveHalfSpinorsEquiv o ρ).symm_apply_eq.1 hc, map_smul, Submodule.coe_smul]
   -- The action is unitary, so `‖c‖ = 1`.
   have hnorm : ‖c‖ = 1 := by
     have hi := inner_spinCGroupHalfSpinRep_apply_spinCGroupHalfSpinRep_apply o 1 hρ hQ₀ x₀ u' u'
     rw [inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K] at hi
-    have hn : ‖(spinCGroupHalfSpinRep o ρ 1 hQ₀ x₀ u' : W)‖ = ‖(u : W)‖ := by
+    have hn : ‖(spinCGroupHalfSpinRep o ρ 1 hQ₀ x₀ u' : W)‖ = ‖(u' : W)‖ := by
       have := (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1
         (by exact_mod_cast hi : ‖spinCGroupHalfSpinRep o ρ 1 hQ₀ x₀ u'‖ ^ 2 = ‖u'‖ ^ 2)
       simpa using this
     rw [hc', norm_smul] at hn
-    exact (mul_eq_right₀ (by simpa using hu₀)).1 hn
+    exact (mul_eq_right₀ (by simpa [u'] using hu₀)).1 hn
   set z : Circle := ⟨c, mem_sphere_zero_iff_norm.2 hnorm⟩
   -- The coercion of `z` to `ℂ` is the scalar `c` it was built from.
   have hz : (z : ℂ) = c := rfl
@@ -291,8 +296,8 @@ theorem exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq_of_mem_uni
     rw [map_mul, spinCGroup.toSpecialOrthogonal_ofCircle, mul_one,
       spinCGroup.toSpecialOrthogonal_ofSpin, hs]⟩
   obtain ⟨d, hd⟩ := hspan _ (cliffordProjection_apply_eq_self_of_bivectorExterior_apply o ρ
-    (ψ := ⟨ψ, (positiveHalfSpinors_eq_eigenspace o ρ).ge ψ.2⟩) hψ)
-  have hd' : ψ = d • u' := Subtype.ext (by simpa using congrArg Subtype.val hd)
+    (ψ := (positiveHalfSpinorsEquiv o ρ).symm ψ) hψ)
+  have hd' : ψ = d • u' := by rw [(positiveHalfSpinorsEquiv o ρ).symm_apply_eq.1 hd, map_smul]
   have hc0 : c ≠ 0 := by rintro rfl; simp at hnorm
   rw [map_mul, mul_apply_eq_comp, spinCGroupHalfSpinRep_ofCircle, LinearMap.smul_apply,
     one_apply_eq_self, hd', map_smul, map_smul, Subtype.ext_iff]
@@ -402,32 +407,32 @@ theorem
       (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
       (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
         (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)) hW
-  set v : eigenspace (ρ (chirality Q o)) 1 := ⟨u, (positiveHalfSpinors_eq_eigenspace o ρ).le u.2⟩
-  set v' : eigenspace (ρ (chirality Q o)) 1 :=
-    ⟨u', (positiveHalfSpinors_eq_eigenspace o ρ).le u'.2⟩
+  set v := positiveHalfSpinorsEquiv o ρ u
+  set v' := positiveHalfSpinorsEquiv o ρ u'
   have hxA := toSpecialOrthogonal_mem_unitaryGroup_of_mem_canonicalLineFixingSubgroup
     hQ he h₀ h₂ hQ₀ hW hx
   -- `x` fixes `u` and moves `u'` to a multiple `c u'` of itself.
   have hxv : spinCGroupHalfSpinRep o ρ 1 hQ₀ x v = v :=
     hx v (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu)
-  obtain ⟨c, hc⟩ := hspan' ⟨_, (positiveHalfSpinors_eq_eigenspace o ρ).ge
-      (spinCGroupHalfSpinRep o ρ 1 hQ₀ x v').2⟩
+  obtain ⟨c, hc⟩ :=
+    hspan' ((positiveHalfSpinorsEquiv o ρ).symm (spinCGroupHalfSpinRep o ρ 1 hQ₀ x v'))
     ((cliffordProjection_kahlerForm_apply_eq_zero_iff hQ he h₀ h₂).2
       (ι_apply_apply_spinCGroupHalfSpinRep hQ₀ hxA
         ((cliffordProjection_kahlerForm_apply_eq_zero_iff hQ he h₀ h₂).1 hu')))
-  have hxv' : spinCGroupHalfSpinRep o ρ 1 hQ₀ x v' = c • v' :=
-    Subtype.ext (by simpa using congrArg Subtype.val hc)
+  have hxv' : spinCGroupHalfSpinRep o ρ 1 hQ₀ x v' = c • v' := by
+    rw [(positiveHalfSpinorsEquiv o ρ).symm_apply_eq.1 hc, map_smul]
   -- Computing the determinant in the basis `(u, u')` identifies `c` with `det x`.
   have hli : LinearIndependent ℂ ![v, v'] := by
     refine LinearIndependent.pair_iff.2 fun s t hst ↦ ?_
-    have hst' : s • u + t • u' = 0 := Subtype.ext (by simpa using congrArg Subtype.val hst)
+    have hst' : s • u + t • u' = 0 :=
+      (positiveHalfSpinorsEquiv o ρ).injective (by rwa [map_add, map_smul, map_smul, map_zero])
     have hs := congrArg (cliffordProjection o ρ J.kahlerForm) hst'
     rw [map_add, map_smul, map_smul, hu, hu', smul_zero, add_zero, map_zero] at hs
     have hs0 : s = 0 := (smul_eq_zero.1 hs).resolve_right hu₀
     rw [hs0, zero_smul, zero_add] at hst'
     exact ⟨hs0, (smul_eq_zero.1 hst').resolve_right hu'₀⟩
-  have hW' : finrank ℂ (eigenspace (ρ (chirality Q o)) 1) = 2 := by
-    rwa [← positiveHalfSpinors_eq_eigenspace]
+  have hW' : finrank ℂ (eigenspace (ρ (chirality Q o)) 1) = 2 :=
+    (positiveHalfSpinorsEquiv o ρ).finrank_eq.symm.trans hW
   have hdet := det_spinCGroupHalfSpinRep o ρ 1 hQ₀ hQ hW' x
   set b := basisOfLinearIndependentOfCardEqFinrank hli (by simp [hW'])
   have hT0 : spinCGroupHalfSpinRep o ρ 1 hQ₀ x (b 0) = b 0 := by simpa [b] using hxv
@@ -438,8 +443,8 @@ theorem
     Finsupp.single_eq_of_ne one_ne_zero, mul_zero, sub_zero, one_mul] at hdet
   -- Every vector of the complementary line is a multiple of `u'`.
   obtain ⟨d, hd⟩ := hspan' _ (cliffordProjection_apply_eq_zero_of_bivectorExterior_apply o ρ
-    (ψ := ⟨β, (positiveHalfSpinors_eq_eigenspace o ρ).ge β.2⟩) hβ)
-  have hd' : β = d • v' := Subtype.ext (by simpa using congrArg Subtype.val hd)
+    (ψ := (positiveHalfSpinorsEquiv o ρ).symm β) hβ)
+  have hd' : β = d • v' := by rw [(positiveHalfSpinorsEquiv o ρ).symm_apply_eq.1 hd, map_smul]
   rw [hd', map_smul, hxv', ← hdet, smul_comm]
 
 end Det
