@@ -66,6 +66,8 @@ function by a function of temperate growth multiplies the function pointwise
   transform, which pairs with `φ` as `∫ φ • 𝓕⁻ f`.
 * `MeasureTheory.Lp.ae_eq_fourierInv_of_fourier_eq`: an `Lᵖ` function whose Fourier transform is
   an `L¹` function `v` agrees almost everywhere with `𝓕⁻ v`.
+* `MeasureTheory.Lp.eq_fourierInv_of_ae_eq`: every continuous representative of such a function
+  is `𝓕⁻ v`.
 * `MeasureTheory.Lp.smulLeftCLM_toTemperedDistribution_apply`: the product of the tempered
   distribution of an `Lᵖ` function `u` with a function `g` of temperate growth pairs with `φ` as
   `∫ φ • (g • u)`.
@@ -268,6 +270,16 @@ theorem ae_eq_fourierInv_of_fourier_eq {p : ENNReal} [Fact (1 ≤ p)]
     rw [← h, FourierTransform.fourierInv_fourier_eq]
   refine ae_eq_of_toTemperedDistribution_apply_eq u hcont.locallyIntegrable fun φ => ?_
   rw [hu, fourierInv_toTemperedDistribution_apply v (L1.integrable_coeFn v) .rfl]
+
+/-- **The continuous representative of an `Lᵖ` function with integrable Fourier transform.** If
+the distributional Fourier transform of `u ∈ Lᵖ` is an `L¹` function `v`, then every continuous
+representative of `u` is the inverse Fourier transform `𝓕⁻ v`. -/
+theorem eq_fourierInv_of_ae_eq {p : ENNReal} [Fact (1 ≤ p)]
+    {u : Lp F p (volume : Measure E)} {v : Lp F 1 (volume : Measure E)}
+    (h : 𝓕 (u : 𝓢'(E, F)) = v) {g : E → F} (hg : Continuous g) (hug : u =ᵐ[volume] g) :
+    g = 𝓕⁻ (v : E → F) :=
+  (hg.ae_eq_iff_eq volume (L1.integrable_coeFn v).continuous_fourierInv).1
+    (hug.symm.trans (ae_eq_fourierInv_of_fourier_eq h))
 
 end InnerProductSpace
 
