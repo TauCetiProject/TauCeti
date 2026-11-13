@@ -286,24 +286,16 @@ theorem _root_.DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi {ι : Ty
     {h : (ι → ℂ) → E} {c : ι → ℂ} {r s ε : ℝ} (hh : DifferentiableOn ℂ h (ball c s))
     (hrs : r < s) (hε : 0 < ε) :
     ∃ P : (ι → ℂ) → E, Differentiable ℂ P ∧ ∀ z ∈ closedBall c r, ‖h z - P z‖ < ε := by
-  -- Transport to `Fin n → ℂ` along an enumeration `e` of `ι`; reindexing preserves sup norms.
+  -- Transport to `Fin n → ℂ` along the complex-linear isometry `L x = x ∘ e.symm` given by an
+  -- enumeration `e` of `ι`.
   let e := Fintype.equivFin ι
-  have hdist (x y : ι → ℂ) : dist (x ∘ e.symm) (y ∘ e.symm) = dist x y := by
-    refine le_antisymm ((dist_pi_le_iff dist_nonneg).2 fun i ↦ dist_le_pi_dist x y _) ?_
-    refine (dist_pi_le_iff dist_nonneg).2 fun i ↦ ?_
-    simpa using dist_le_pi_dist (x ∘ e.symm) (y ∘ e.symm) (e i)
-  have hΦ : Differentiable ℂ fun y : Fin (Fintype.card ι) → ℂ ↦ y ∘ e :=
-    differentiable_pi.2 fun i ↦ differentiable_apply (e i)
-  have hΨ : Differentiable ℂ fun x : ι → ℂ ↦ x ∘ e.symm :=
-    differentiable_pi.2 fun i ↦ differentiable_apply (e.symm i)
-  obtain ⟨P, hP, hPh⟩ := exists_differentiable_norm_sub_lt_of_fin (c := c ∘ e.symm)
-    (h := fun y ↦ h (y ∘ e)) (hh.comp hΦ.differentiableOn fun y hy ↦ by
-      rw [mem_ball, ← hdist]
-      convert mem_ball.1 hy using 2
-      ext; simp) hrs hε
-  refine ⟨fun x ↦ P (x ∘ e.symm), hP.comp hΨ, fun z hz ↦ ?_⟩
-  have := hPh (z ∘ e.symm) (by rw [mem_closedBall, hdist]; exact hz)
-  convert this using 4
-  ext; simp
+  let L := ContinuousLinearEquiv.piCongrLeft ℂ (fun _ : Fin (Fintype.card ι) ↦ ℂ) e
+  have hL (x y : ι → ℂ) : dist (L x) (L y) = dist x y :=
+    (IsometryEquiv.piCongrLeft (Y := fun _ : Fin (Fintype.card ι) ↦ ℂ) e).dist_eq x y
+  obtain ⟨P, hP, hPh⟩ := exists_differentiable_norm_sub_lt_of_fin (c := L c) (h := h ∘ L.symm)
+    (hh.comp L.symm.differentiable.differentiableOn fun y hy ↦ by
+      rwa [mem_ball, ← hL, L.apply_symm_apply]) hrs hε
+  refine ⟨P ∘ L, hP.comp L.differentiable, fun z hz ↦ ?_⟩
+  simpa using hPh (L z) (by rwa [mem_closedBall, hL])
 
 end TauCeti

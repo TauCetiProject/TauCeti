@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.PowerSeries.Polydisc
-import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
+import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Polydisc
 
@@ -116,27 +116,17 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_single_eq {f : ι → (ι → �
     exists_differentiableOn_eqOn_add_tsum hr_mono.monotone hP
       (fun k ↦ (hdiff k).mono (ball_subset_ball (hr_mono k.lt_succ_self).le)) hP_lt m
   -- Every point lies in some `ball 0 (r m)`, where `u` is `h m` plus a holomorphic function.
-  have hnear (z : ι → ℂ) : ∃ m, ∃ K : (ι → ℂ) → F, u =ᶠ[𝓝 z] h m + K ∧
-      ContDiffAt ℝ ∞ (h m) z ∧ ContDiffAt ℂ ∞ K z ∧
-      ∀ j, conjWirtingerDeriv (h m) z (Pi.single j 1) = f j z := by
-    obtain ⟨m, hm⟩ := exists_nat_gt ‖z‖
-    have hz : z ∈ ball (0 : ι → ℂ) (r m) := by
-      rw [mem_ball_zero_iff]; simp only [r]; linarith
-    have hz' : z ∈ ball (0 : ι → ℂ) (r (m + 1)) :=
-      ball_subset_ball (hr_mono m.lt_succ_self).le hz
-    obtain ⟨K, hK, huK⟩ := hkey m
-    exact ⟨m, K, huK.eventuallyEq_of_mem (isOpen_ball.mem_nhds hz),
-      (hh m).contDiffAt (isOpen_ball.mem_nhds hz'),
-      (hK.contDiffOn_of_finiteDimensional isOpen_ball).contDiffAt (isOpen_ball.mem_nhds hz),
-      hh_eq m z hz'⟩
-  refine ⟨u, contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun z j ↦ ?_⟩
-  · obtain ⟨m, K, huK, hhm, hK, -⟩ := hnear z
-    exact (hhm.add (hK.restrict_scalars ℝ)).congr_of_eventuallyEq huK
-  · obtain ⟨m, K, huK, hhm, hK, hhm_eq⟩ := hnear z
-    have hKd : DifferentiableAt ℂ K z := hK.differentiableAt (by simp)
-    rw [huK.conjWirtingerDeriv_eq, conjWirtingerDeriv_add (hhm.differentiableAt (by simp))
-      (hKd.restrictScalars ℝ), add_apply, hKd.conjWirtingerDeriv_eq_zero,
-      zero_apply, add_zero, hhm_eq j]
+  have hglue := contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add (G := u) (U := univ)
+    (v := fun j ↦ Pi.single j 1) (f := f) (n := ∞) (by simp) fun z _ ↦ by
+      obtain ⟨m, hm⟩ := exists_nat_gt ‖z‖
+      have hz : z ∈ ball (0 : ι → ℂ) (r m) := by
+        rw [mem_ball_zero_iff]; simp only [r]; linarith
+      obtain ⟨K, hK, huK⟩ := hkey m
+      have hsub : ball (0 : ι → ℂ) (r m) ⊆ ball 0 (r (m + 1)) :=
+        ball_subset_ball (hr_mono m.lt_succ_self).le
+      exact ⟨ball 0 (r m), isOpen_ball, hz, h m, K, (hh m).mono hsub,
+        fun w hw ↦ hh_eq m w (hsub hw), hK.contDiffOn_of_finiteDimensional isOpen_ball, huK⟩
+  exact ⟨u, contDiffOn_univ.1 hglue.1, fun z ↦ hglue.2 z trivial⟩
 
 omit [CompleteSpace F] in
 /-- **Holomorphic gauge.** Let `b = ∑ j, b_j d(conj z_j)` be a smooth `bar∂`-closed `(0,1)`-form
@@ -160,10 +150,11 @@ theorem exists_contDiff_differentiable_exp_smul {b : ι → (ι → ℂ) → ℂ
   refine (differentiableAt_iff_forall_conjWirtingerDeriv_apply_single_eq_zero
     (hed.fun_smul (hα z))).2 fun j ↦ ?_
   -- `\bar∂ (exp g) = exp g • \bar∂ g` by the chain rule through the holomorphic `exp`.
-  have hexp := conjWirtingerDeriv_comp (φ := cexp) differentiableAt_exp hgd
-  rw [Function.comp_def] at hexp
-  rw [conjWirtingerDeriv_smul_apply hed (hα z), hexp, ContinuousLinearMap.comp_apply, hgb z j,
-    (hasDerivAt_exp (g z)).hasFDerivAt.fderiv, ContinuousLinearMap.toSpanSingleton_apply,
-    smul_eq_mul, mul_comm, ← smul_smul, ← smul_add, hαb z j, smul_zero]
+  have hexp : conjWirtingerDeriv (fun y ↦ cexp (g y)) z (Pi.single j 1) = cexp (g z) * b j z := by
+    have hcomp := conjWirtingerDeriv_comp (φ := cexp) differentiableAt_exp hgd
+    rw [Function.comp_def] at hcomp
+    rw [hcomp, ContinuousLinearMap.comp_apply, hgb z j, (hasDerivAt_exp (g z)).hasFDerivAt.fderiv]
+    simp [mul_comm]
+  rw [conjWirtingerDeriv_smul_apply hed (hα z), hexp, mul_smul, ← smul_add, hαb z j, smul_zero]
 
 end TauCeti

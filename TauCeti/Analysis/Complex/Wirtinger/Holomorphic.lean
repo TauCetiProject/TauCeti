@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Holomorphy and the conjugate Wirtinger derivative
@@ -20,9 +21,12 @@ detects its vanishing.
 On the coordinate space `ι → ℂ` the conjugate Wirtinger derivative is conjugate-linear, so it
 vanishes as soon as it vanishes on the coordinate vectors: a real-differentiable map is holomorphic
 exactly when all its partial derivatives `∂g/∂(conj z_j)` vanish
-(`TauCeti.differentiableAt_iff_forall_conjWirtingerDeriv_apply_single_eq_zero`). Composing with a
-holomorphic map `φ` multiplies the conjugate Wirtinger derivative by the complex derivative of `φ`
-(`TauCeti.conjWirtingerDeriv_comp`).
+(`TauCeti.differentiableAt_iff_forall_conjWirtingerDeriv_apply_single_eq_zero`).
+
+Adding a holomorphic function does not change the conjugate Wirtinger derivative, so a function
+that is locally a `Cⁿ` function plus a holomorphic one is `Cⁿ` with the same conjugate Wirtinger
+derivatives (`TauCeti.contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add`). This glues the
+local solutions in exhaustion proofs of the `\bar∂`-lemma.
 
 These statements connect the real differential and its type decomposition with holomorphy.
 
@@ -33,7 +37,7 @@ These statements connect the real differential and its type decomposition with h
 
 public noncomputable section
 
-open Complex
+open Complex Set
 open scoped ComplexConjugate
 
 namespace TauCeti
@@ -76,14 +80,25 @@ theorem differentiableAt_iff_forall_conjWirtingerDeriv_apply_single_eq_zero {ι 
   rw [hv, map_sum]
   simp [h]
 
-/-- **The chain rule for the conjugate Wirtinger derivative** after a holomorphic map: if `φ` is
-complex differentiable at `g x`, then `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g`. -/
-theorem conjWirtingerDeriv_comp {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
-    {φ : W → X} {g : V → W} {x : V} (hφ : DifferentiableAt ℂ φ (g x))
-    (hg : DifferentiableAt ℝ g x) :
-    conjWirtingerDeriv (φ ∘ g) x = (fderiv ℂ φ (g x)).comp (conjWirtingerDeriv g x) := by
-  rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart,
-    fderiv_comp x (hφ.restrictScalars ℝ) hg, hφ.fderiv_restrictScalars ℝ,
-    ContinuousLinearMap.complexAntilinearPart_restrictScalars_comp]
+/-- **Gluing modulo holomorphic functions.** If near each point of `U` the function `G` is a
+`Cⁿ` function `a`, `n ≥ 1`, plus a holomorphic `Cⁿ` function, and the conjugate Wirtinger
+derivatives of `a` in the directions `v j` are `f j`, then `G` is `Cⁿ` on `U` with the same
+conjugate Wirtinger derivatives. -/
+theorem contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add {ι : Type*} {n : WithTop ℕ∞}
+    {G : V → W} {v : ι → V} {f : ι → V → W} {U : Set V} (hn : 1 ≤ n)
+    (hG : ∀ z ∈ U, ∃ O : Set V, IsOpen O ∧ z ∈ O ∧ ∃ a K : V → W, ContDiffOn ℝ n a O ∧
+      (∀ w ∈ O, ∀ j, conjWirtingerDeriv a w (v j) = f j w) ∧ ContDiffOn ℂ n K O ∧
+        EqOn G (a + K) O) :
+    ContDiffOn ℝ n G U ∧ ∀ z ∈ U, ∀ j, conjWirtingerDeriv G z (v j) = f j z := by
+  refine ⟨contDiffOn_of_locally_contDiffOn fun z hz ↦ ?_, fun z hz j ↦ ?_⟩
+  · obtain ⟨O, hO, hzO, a, K, ha, -, hK, hGK⟩ := hG z hz
+    exact ⟨O, hO, hzO, ((ha.add (hK.restrict_scalars ℝ)).congr hGK).mono inter_subset_right⟩
+  · obtain ⟨O, hO, hzO, a, K, ha, haf, hK, hGK⟩ := hG z hz
+    have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+    have hKz := (hK.contDiffAt (hO.mem_nhds hzO)).differentiableAt hn0
+    rw [(hGK.eventuallyEq_of_mem (hO.mem_nhds hzO)).conjWirtingerDeriv_eq,
+      conjWirtingerDeriv_add ((ha.contDiffAt (hO.mem_nhds hzO)).differentiableAt hn0)
+        (hKz.restrictScalars ℝ), add_apply, hKz.conjWirtingerDeriv_eq_zero, zero_apply,
+      add_zero, haf z hzO j]
 
 end TauCeti
