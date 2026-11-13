@@ -127,14 +127,14 @@ theorem laurentQExpansion_aeval_j (P : R[X]) :
       eval₂ (HahnSeries.C.comp (algebraMap R ℂ)) (UpperHalfPlane.laurentQExpansion 1 j) P := by
   induction P using Polynomial.induction_on' with
   | add p q hp hq =>
-    rw [aeval_j_add, UpperHalfPlane.laurentQExpansion_add one_pos
+    rw [aeval_j_add, UpperHalfPlane.laurentQExpansion_add
       (meromorphicAt_cuspFunction_aeval_j p) (meromorphicAt_cuspFunction_aeval_j q)]
     simp [hp, hq]
   | monomial n a =>
-    rw [aeval_j_monomial, UpperHalfPlane.laurentQExpansion_mul one_pos
+    rw [aeval_j_monomial, UpperHalfPlane.laurentQExpansion_mul
       (UpperHalfPlane.meromorphicAt_cuspFunction_const _)
       (UpperHalfPlane.meromorphicAt_cuspFunction_pow meromorphicAt_cuspFunction_j n),
-      UpperHalfPlane.laurentQExpansion_pow one_pos meromorphicAt_cuspFunction_j]
+      UpperHalfPlane.laurentQExpansion_pow meromorphicAt_cuspFunction_j]
     simp [UpperHalfPlane.laurentQExpansion_const]
 
 /-- **The Laurent `q`-coefficients of a polynomial in `j` over `R` lie in the image of `R`**, as
@@ -188,13 +188,13 @@ private theorem eq_laurentQExpansion_coeff_zero {f : ℍ → ℂ} (hf : MDiff f)
     (h0 : 0 ≤ meromorphicOrderAt (cuspFunction 1 f) 0) (τ : ℍ) :
     f τ = (UpperHalfPlane.laurentQExpansion 1 f).coeff 0 := by
   have han : AnalyticAt ℂ (cuspFunction 1 f) 0 := by
-    simpa using UpperHalfPlane.analyticAt_cuspFunction_qParam_pow_mul one_pos hmer (k := 0)
+    simpa using UpperHalfPlane.analyticAt_cuspFunction_qParam_pow_mul hmer (k := 0)
       (by simpa using h0)
   have hper : Function.Periodic (f ∘ ofComplex) 1 :=
     UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
       rw [← modular_T_smul]
       exact hinv _ τ
-  rw [UpperHalfPlane.laurentQExpansion_coeff_zero_of_analyticAt one_pos han]
+  rw [UpperHalfPlane.laurentQExpansion_coeff_zero_of_analyticAt han]
   exact levelOne_eq_of_tendsto_atImInfty hf hinv
     ((han.continuousAt.tendsto.comp (qParam_tendsto_atImInfty one_pos)).congr
       fun τ ↦ eq_cuspFunction τ one_ne_zero hper) τ
@@ -224,13 +224,13 @@ theorem exists_natDegree_le_and_aeval_j_eq {f : ℍ → ℂ} (hf : MDiff f)
     have hcoeff (n : ℤ) : (UpperHalfPlane.laurentQExpansion 1 g).coeff n =
         (UpperHalfPlane.laurentQExpansion 1 f).coeff n -
           algebraMap R ℂ c * (UpperHalfPlane.laurentQExpansion 1 j ^ (N + 1)).coeff n := by
-      rw [UpperHalfPlane.laurentQExpansion_sub one_pos hmer (meromorphicAt_cuspFunction_aeval_j Q),
+      rw [UpperHalfPlane.laurentQExpansion_sub hmer (meromorphicAt_cuspFunction_aeval_j Q),
         laurentQExpansion_aeval_j, HahnSeries.coeff_sub]
       simp [Q, Algebra.smul_def]
     have hfN := (HahnSeries.le_orderTop_iff_forall.mp
-      ((UpperHalfPlane.orderTop_laurentQExpansion one_pos hmer).symm ▸ hN))
+      ((UpperHalfPlane.orderTop_laurentQExpansion hmer).symm ▸ hN))
     have hgN : ((-N : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction 1 g) 0 := by
-      rw [← UpperHalfPlane.orderTop_laurentQExpansion one_pos hgmer,
+      rw [← UpperHalfPlane.orderTop_laurentQExpansion hgmer,
         HahnSeries.le_orderTop_iff_forall]
       intro n hn
       rw [hcoeff]
