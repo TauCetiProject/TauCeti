@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.PerfectoidSpace.SpaTilt
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
+public import TauCeti.RingTheory.Perfectoid.UniformTilt.Gauge
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.OfHom
 public import TauCeti.RingTheory.Perfectoid.Padic
 public import TauCeti.RingTheory.Valuation.Continuous.Valued
@@ -15,16 +16,17 @@ public import TauCeti.NumberTheory.Padics.Complex.Basic
 /-!
 # Checks for the tilting map on adic spectra
 
-We exercise `TauCeti.PerfectoidSpace.spaTilt` on `ℂ_p`, products `ℂ_p × ℂ_p`, characteristic-`p`
-rings, and the zero ring:
+We exercise `TauCeti.PerfectoidSpace.spaTilt` on `ℂ_p`, products `ℂ_p × ℂ_p`, perfect
+characteristic-`p` rings, and the zero ring:
 
 * On `ℂ_p`, every point of `Spa (ℂ_p, ℂ_p°)` tilts to the valuation comparing elements of `ℂ_p♭`
   by the norm of their zeroth coordinate, and no ring homomorphism `ℂ_p♭ →+* ℂ_p` exists that could
   realise `spaTilt` as a `comap`.
 * On `ℂ_p × ℂ_p`, tilting commutes with the pullbacks along both projections, and the compatible
   idempotent `(1, 0)` remains separated by the supports of the tilted projection pullbacks.
-* In characteristic `p`, `spaTilt` agrees with pullback along the inverse of the
-  characteristic-`p` ring isomorphism, while over a zero ring both domain and codomain are empty.
+* For a perfect ring of characteristic `p`, `spaTilt` agrees with pullback along
+  `Pair.tiltPairHomOfCharP` (`uniformTilt.equivOfCharP`) and is mutually inverse to pullback along
+  `Pair.tiltPairHomOfCharPSymm`, while over a zero ring both domain and codomain are empty.
 -/
 
 public section
@@ -34,15 +36,17 @@ open Filter Topology TauCeti.Huber TauCeti.Perfectoid TauCeti.PerfectoidSpace
 
 namespace TauCeti.Examples.SpaTilt
 
-section PadicComplex
+section PadicComplexAndProduct
 
 variable (p : ℕ) [Fact p.Prime]
 
 local instance : Fact (IsTopologicallyNilpotent (p : ℂ_[p])) :=
-  ⟨tendsto_pow_atTop_nhds_zero_of_norm_lt_one (PadicComplex.norm_p_lt_one p)⟩
+  ⟨IsPerfectoidTateRing.isTopologicallyNilpotent_natCast p⟩
 
 local instance : IsTateRing (uniformTilt p ℂ_[p]) :=
   (RingHom.id ℂ_[p]).isTateRing_uniformTilt (p := p) continuous_id
+
+section PadicComplex
 
 /-- The canonical valuation of `ℂ_p` defines a point of `Spa (ℂ_p, ℂ_p°)`. -/
 private noncomputable def padicComplexNormPoint : spa (Pair.powerBounded ℂ_[p]).plus :=
@@ -50,10 +54,8 @@ private noncomputable def padicComplexNormPoint : spa (Pair.powerBounded ℂ_[p]
     rw [isContinuous_ofValuation_iff]
     exact Valued.isContinuous_v,
   fun a ha ↦ by
-    rw [vle_ofValuation]
-    change (Valued.v a : NNReal) ≤ (Valued.v (1 : ℂ_[p]) : NNReal)
-    rw [← NNReal.coe_le_coe, PadicComplex.valuation_coe, PadicComplex.valuation_coe, norm_one,
-      ← isPowerBounded_iff_norm_le_one]
+    rw [vle_ofValuation, ← NNReal.coe_le_coe, PadicComplex.valuation_coe,
+      PadicComplex.valuation_coe, norm_one, ← isPowerBounded_iff_norm_le_one]
     rw [Pair.powerBounded_plus, mem_powerBoundedSubring] at ha
     exact ha⟩⟩
 
@@ -63,11 +65,11 @@ example (x : spa (Pair.powerBounded ℂ_[p]).plus) (f g : uniformTilt p ℂ_[p])
       ‖uniformTilt.coeff p ℂ_[p] 0 f‖ ≤ ‖uniformTilt.coeff p ℂ_[p] 0 g‖ := by
   rw [spaTilt_vle_iff, vle_iff_norm_le_of_mem_spa ((Pair.powerBounded_plus (A := ℂ_[p])) ▸ x.2)]
 
--- Uniqueness: any point comparing elements of `ℂ_p♭` by `‖·♯‖` equals `spaTilt` of the norm point.
+-- Uniqueness: `spaTilt` of the norm point equals any point comparing elements of `ℂ_p♭` by `‖·♯‖`.
 example (y : spa ((Pair.powerBounded ℂ_[p]).tilt (p := p)).plus)
     (hy : ∀ f g, y.1.toValuativeRel.vle f g ↔
       ‖uniformTilt.coeff p ℂ_[p] 0 f‖ ≤ ‖uniformTilt.coeff p ℂ_[p] 0 g‖) :
-    y = spaTilt (p := p) (Pair.powerBounded ℂ_[p]) (padicComplexNormPoint p) :=
+    spaTilt (p := p) (Pair.powerBounded ℂ_[p]) (padicComplexNormPoint p) = y :=
   spaTilt_eq_of_vle_iff (Pair.powerBounded ℂ_[p]) fun f g ↦
     (hy f g).trans (vle_iff_norm_le_of_mem_spa
       ((Pair.powerBounded_plus (A := ℂ_[p])) ▸ (padicComplexNormPoint p).2) _ _).symm
@@ -94,18 +96,8 @@ end PadicComplex
 
 section Product
 
-variable (p : ℕ) [Fact p.Prime]
-
-local instance : Fact (IsTopologicallyNilpotent (p : ℂ_[p])) :=
-  ⟨tendsto_pow_atTop_nhds_zero_of_norm_lt_one (PadicComplex.norm_p_lt_one p)⟩
-
-local instance : IsTateRing (uniformTilt p ℂ_[p]) :=
-  (RingHom.id ℂ_[p]).isTateRing_uniformTilt (p := p) continuous_id
-
 local instance : Fact (IsTopologicallyNilpotent (p : ℂ_[p] × ℂ_[p])) :=
-  ⟨Prod.isTopologicallyNilpotent_iff.mpr (by
-    simpa using And.intro (Fact.out : IsTopologicallyNilpotent (p : ℂ_[p]))
-      (Fact.out : IsTopologicallyNilpotent (p : ℂ_[p])))⟩
+  ⟨IsPerfectoidTateRing.isTopologicallyNilpotent_natCast p⟩
 
 local instance : IsTateRing (uniformTilt p (ℂ_[p] × ℂ_[p])) :=
   (RingHom.id (ℂ_[p] × ℂ_[p])).isTateRing_uniformTilt (p := p) continuous_id
@@ -147,17 +139,12 @@ example (x : spa (Pair.powerBounded ℂ_[p]).plus) :
       e ∈ (((sndPair p).tilt (p := p)).spaComap
         (spaTilt (p := p) (Pair.powerBounded ℂ_[p]) x)).1.supp := by
   intro e
-  rw [← spaTilt_spaComap (fstPair p) x, ← spaTilt_spaComap (sndPair p) x,
-    mem_supp_spaTilt_iff, mem_supp_spaTilt_iff, ValuationSpectrum.mem_supp_iff,
-    ValuationSpectrum.mem_supp_iff, Pair.Hom.spaComap_val, Pair.Hom.spaComap_val,
-    comap_vle, comap_vle, map_zero, map_zero]
-  dsimp [fstPair, sndPair, e]
-  rw [uniformTilt.coeff_mk]
-  dsimp
-  exact ⟨@TauCeti.ValuativeRel.not_vle_zero_of_isUnit _ _ x.1.toValuativeRel _ isUnit_one,
-    x.1.toValuativeRel.vle_refl 0⟩
+  let := x.1.toValuativeRel
+  simp [fstPair, sndPair, e]
 
 end Product
+
+end PadicComplexAndProduct
 
 section CharP
 
@@ -166,14 +153,16 @@ variable {p : ℕ} [Fact p.Prime] {B : Type*} [CommRing B] [UniformSpace B] [IsU
   [Fact (IsTopologicallyNilpotent (p : B))] [CharP B p] [PerfectRing B p]
   [IsTateRing (uniformTilt p B)]
 
--- In characteristic `p`, `spaTilt` and pullback along `charPTiltPairHom` are mutual inverses,
+-- For a perfect ring of characteristic `p`, `spaTilt` agrees with pullback along
+-- `Pair.tiltPairHomOfCharP`, is mutually inverse to pullback along `Pair.tiltPairHomOfCharPSymm`,
 -- and supports transform by `equivOfCharP`.
-example (P : Pair B) (x : spa P.plus) (b : B) :
-    spaTilt (p := p) P ((charPTiltPairHomSymm (p := p) P).spaComap
-        (spaTilt (p := p) P x)) = spaTilt (p := p) P x ∧
+example (P : Pair B) (x : spa P.plus) (y : spa (P.tilt (p := p)).plus) (b : B) :
+    spaTilt (p := p) P = (Pair.tiltPairHomOfCharP (p := p) P).spaComap ∧
+      (Pair.tiltPairHomOfCharPSymm (p := p) P).spaComap (spaTilt (p := p) P x) = x ∧
+      spaTilt (p := p) P ((Pair.tiltPairHomOfCharPSymm (p := p) P).spaComap y) = y ∧
       ((uniformTilt.equivOfCharP p B).symm b ∈ (spaTilt (p := p) P x).1.supp ↔
         b ∈ x.1.supp) := by
-  refine ⟨by simp, ?_⟩
+  refine ⟨spaTilt_eq_spaComap_tiltPairHomOfCharP P, by simp, by simp, ?_⟩
   rw [mem_supp_spaTilt_iff, ← uniformTilt.equivOfCharP_apply, RingEquiv.apply_symm_apply]
 
 end CharP
@@ -186,16 +175,8 @@ variable {p : ℕ} [Fact p.Prime] {B : Type*} [CommRing B] [UniformSpace B] [IsU
 
 -- Over a zero ring, both `Spa(B, B⁺)` and `Spa(B♭, B♭⁺)` are empty.
 example (P : Pair B) :
-    IsEmpty (spa P.plus) ∧ IsEmpty (spa (P.tilt (p := p)).plus) := by
-  refine ⟨⟨fun x ↦ ?_⟩, ⟨fun y ↦ ?_⟩⟩
-  · have h10 : (1 : B) = 0 := Subsingleton.elim 1 0
-    have hnot : ¬ x.1.toValuativeRel.vle 1 0 :=
-      @TauCeti.ValuativeRel.not_vle_zero_of_isUnit _ _ x.1.toValuativeRel _ isUnit_one
-    exact hnot (h10 ▸ x.1.toValuativeRel.vle_refl 0)
-  · have h10 : (1 : uniformTilt p B) = 0 := Subsingleton.elim 1 0
-    have hnot : ¬ y.1.toValuativeRel.vle 1 0 :=
-      @TauCeti.ValuativeRel.not_vle_zero_of_isUnit _ _ y.1.toValuativeRel _ isUnit_one
-    exact hnot (h10 ▸ y.1.toValuativeRel.vle_refl 0)
+    IsEmpty (spa P.plus) ∧ IsEmpty (spa (P.tilt (p := p)).plus) :=
+  ⟨inferInstance, inferInstance⟩
 
 end Zero
 

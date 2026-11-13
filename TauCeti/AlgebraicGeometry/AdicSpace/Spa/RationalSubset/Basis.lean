@@ -88,8 +88,9 @@ the basis arguments uses it.
 * `TauCeti.ValuationSpectrum.exists_unit_forall_mem_spa_exists_vlt`: for a finite standard cover
   of a Tate ring, a unit is strictly dominated at every point by some numerator.
 * `TauCeti.ValuationSpectrum.exists_rationalSubset_eq_insert_pseudoUniformizer_pow`: every
-  rational subset of a Tate ring with open numerator ideal can be presented with integral
-  numerators and denominator and a power of a given pseudouniformiser among its numerators.
+  rational subset with open numerator ideal can be presented as `R((insert (ϖ ^ N) T) / s)` with
+  `insert (ϖ ^ N) T ⊆ Aplus` and `s ∈ Aplus` for a given open subring `Aplus` and
+  pseudouniformiser `ϖ`.
 
 ## References
 
@@ -558,34 +559,51 @@ theorem exists_unit_forall_mem_spa_exists_vlt (Aplus : Subring A) {T : Finset A}
     ((spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus hT).subset hv)
   exact ⟨t, ht, hIt t ϖ (by simpa using Set.mem_iInter₂.mp hϖ t ht) v hvt⟩
 
+end Tate
+
+end TopologicalRing
+
+section PseudoUniformizer
+
+variable [SeparatelyContinuousMul A]
+
 open scoped Classical in
-/-- Over a Tate ring, every rational subset with open numerator ideal has a presentation
-`R((insert (ϖ ^ N) T) / s)` with all elements of `T` and `s` in a given open subring `Aplus`
-and a power of a given pseudouniformiser `ϖ` among its numerators. -/
+/-- Over a ring with separately continuous multiplication and a pseudouniformiser `ϖ`, every
+rational subset with open numerator ideal has a presentation `R((insert (ϖ ^ N) T) / s)` with all
+elements of `insert (ϖ ^ N) T` and `s` in a given open subring `Aplus` and a power of `ϖ` among
+its numerators. -/
 theorem exists_rationalSubset_eq_insert_pseudoUniformizer_pow (Aplus : Subring A)
     (hAplus : IsOpen (Aplus : Set A)) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
     (T₀ : Finset A) (s₀ : A) (hT₀ : IsOpen ((Ideal.span (T₀ : Set A) : Ideal A) : Set A)) :
     ∃ (N : ℕ) (T : Finset A) (s : A),
-      (∀ f ∈ T, f ∈ Aplus) ∧ s ∈ Aplus ∧
+      (∀ f ∈ insert (ϖ ^ N) T, f ∈ Aplus) ∧ s ∈ Aplus ∧
       rationalSubset Aplus T₀ s₀ = rationalSubset Aplus (insert (ϖ ^ N) T) s := by
+  have hnil := hϖ.isTopologicallyNilpotent
+  obtain ⟨n, hn⟩ :=
+    hnil.exists_pow_mem_of_mem_nhds (hT₀.mem_nhds (Ideal.span (T₀ : Set A)).zero_mem)
   have htop : Ideal.span (T₀ : Set A) = ⊤ :=
-    (IsTateRing.isOpen_iff_eq_top (Ideal.span (T₀ : Set A))).mp hT₀
+    Ideal.eq_top_of_isUnit_mem _ hn (hϖ.isUnit.pow n)
   have h1 : (1 : A) ∈ Ideal.span (T₀ : Set A) := htop ▸ Submodule.mem_top
   obtain ⟨c, -, hc⟩ := Submodule.mem_span_finset.mp h1
-  have hnil := hϖ.isTopologicallyNilpotent
-  have hM₀ : ∃ M₀ : ℕ, ∀ t ∈ T₀, c t * ϖ ^ M₀ ∈ Aplus :=
-    ((Filter.eventually_all_finite T₀.finite_toSet).mpr fun t _ ↦
-      eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus (c t)).exists
-  obtain ⟨M₀, hM₀⟩ := hM₀
-  have hM₁ : ∃ M₁ : ℕ, s₀ * ϖ ^ M₁ ∈ Aplus ∧ ∀ t ∈ T₀, t * ϖ ^ M₁ ∈ Aplus :=
-    ((eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus s₀).and
+  have hM₀ : ∃ M₀ : ℕ, ϖ ^ M₀ ∈ Aplus ∧ ∀ t ∈ T₀, c t * ϖ ^ M₀ ∈ Aplus :=
+    ((hnil.eventually_mem (hAplus.mem_nhds Aplus.zero_mem)).and
       ((Filter.eventually_all_finite T₀.finite_toSet).mpr fun t _ ↦
-        eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus t)).exists
-  obtain ⟨M₁, hs₁, hT₁⟩ := hM₁
+        eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus (c t))).exists
+  obtain ⟨M₀, hϖ₀, hM₀⟩ := hM₀
+  have hM₁ : ∃ M₁ : ℕ,
+      ϖ ^ M₁ ∈ Aplus ∧ s₀ * ϖ ^ M₁ ∈ Aplus ∧ ∀ t ∈ T₀, t * ϖ ^ M₁ ∈ Aplus :=
+    ((hnil.eventually_mem (hAplus.mem_nhds Aplus.zero_mem)).and
+      ((eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus s₀).and
+        ((Filter.eventually_all_finite T₀.finite_toSet).mpr fun t _ ↦
+          eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus t))).exists
+  obtain ⟨M₁, hϖ₁, hs₁, hT₁⟩ := hM₁
   refine ⟨M₀ + M₁, T₀.image (fun t ↦ t * ϖ ^ M₁), s₀ * ϖ ^ M₁, ?_, hs₁, ?_⟩
   · intro f hf
-    obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hf
-    exact hT₁ t ht
+    rcases Finset.mem_insert.mp hf with rfl | hf
+    · rw [pow_add]
+      exact mul_mem hϖ₀ hϖ₁
+    · obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hf
+      exact hT₁ t ht
   have hunit : IsUnit (ϖ ^ M₁) := hϖ.isUnit.pow M₁
   rw [← rationalSubset_image_mul_right Aplus T₀ s₀ (ϖ ^ M₁) hunit]
   symm
@@ -614,9 +632,7 @@ theorem exists_rationalSubset_eq_insert_pseudoUniformizer_pow (Aplus : Subring A
           _ = v.valuation s₀ := one_mul _
   gcongr
 
-end Tate
-
-end TopologicalRing
+end PseudoUniformizer
 
 end TauCeti.ValuationSpectrum
 

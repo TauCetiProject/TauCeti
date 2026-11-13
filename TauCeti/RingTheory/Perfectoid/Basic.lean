@@ -110,17 +110,18 @@ theorem IsPerfectoidTateRing.isReduced [IsPerfectoidTateRing p R] : IsReduced R 
   have := IsPerfectoidTateRing.isUniform p (R := R)
   IsUniform.isReduced
 
-/-- In a perfectoid Tate ring at `p ≠ 0`, `p` is topologically nilpotent, as `ϖ ^ p ∣ p` in
-`R°` for a pseudouniformiser `ϖ`. -/
-theorem IsPerfectoidTateRing.isTopologicallyNilpotent_natCast [NeZero p]
+/-- In a perfectoid Tate ring, `p` is topologically nilpotent: for `p ≠ 0`, `ϖ ^ p ∣ p` in `R°` for
+a pseudouniformiser `ϖ`, and for `p = 0` the cast is `0`. -/
+theorem IsPerfectoidTateRing.isTopologicallyNilpotent_natCast
     [IsPerfectoidTateRing p R] : IsTopologicallyNilpotent (p : R) := by
-  have := IsPerfectoidTateRing.isUniform p (R := R)
+  rcases eq_or_ne p 0 with rfl | hp
+  · simpa using IsTopologicallyNilpotent.zero
   obtain ⟨ϖ, hϖ, ⟨c, hc⟩, -, -⟩ := IsPerfectoidTateRing.exists_pseudoUniformizer (p := p) (R := R)
-  have hp : (p : R) = (c : R) * (ϖ : R) ^ p := by
+  have hp' : (p : R) = (c : R) * (ϖ : R) ^ p := by
     simpa [mul_comm] using congrArg (powerBoundedSubring R).subtype hc
-  rw [hp]
+  rw [hp']
   exact (mem_powerBoundedSubring.mp c.2).isTopologicallyNilpotent_mul
-    (hϖ.isTopologicallyNilpotent.pow (NeZero.ne p))
+    (hϖ.isTopologicallyNilpotent.pow hp)
 
 variable (R) in
 /-- **The zero ring is a perfectoid Tate ring**: `0` is a topologically nilpotent unit, and all
