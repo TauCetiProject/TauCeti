@@ -46,6 +46,8 @@ characteristic.
 ## Main results
 
 * `TauCeti.algebraMap_ratFuncAlgebraOfTranscendental_X`: the variable `X` acts as `x`.
+* `TauCeti.algebraMap_ratFuncAlgebraOfTranscendental_apply`: the structure map is the embedding
+  `k(X) ≃ k⟮x⟯` followed by the inclusion of `k⟮x⟯` in `F`.
 * `TauCeti.map_algebraMap_ratFuncAlgebraOfTranscendental`: a `k`-algebra map `f` of fields
   carries the structure induced by `x` to the structure induced by `f x`.
 * `TauCeti.isScalarTower_ratFuncAlgebraOfTranscendental`: the structure extends the given
@@ -71,6 +73,7 @@ characteristic.
   exactly when it is separable over `k(X)`.
 * `TauCeti.transcendental_of_aeval_eq`: if the variable `t` of `k(t)` acts on `F` as `q(x)`,
   then `x` is transcendental over `k`.
+* `TauCeti.natDegree_pos_of_aeval_eq`: in that situation `q` is not constant.
 * `TauCeti.finiteDimensional_of_aeval_eq` and `TauCeti.isSeparable_of_aeval_eq`: if `F = k(x)`
   over `k(t)` with `t = q(x)` for a polynomial `q`, then `F` is finite over `k(t)`, and separable
   when `q′ ≠ 0`.

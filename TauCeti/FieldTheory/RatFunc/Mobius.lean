@@ -35,7 +35,7 @@ invertible `2 × 2` matrix over `k` has nonzero determinant, so the construction
 * `RatFunc.mobiusAutHom`: the group homomorphism `GL₂(k) →* Aut(k(X)/k)`.
 * `RatFunc.pglEquivAlgEquiv`: the isomorphism `PGL₂(k) ≃* Aut(k(X)/k)`, evaluated on a class of
   matrices by `Matrix.GeneralLinearGroup.pglEquivAlgEquiv_mk`.
-* `RatFunc.translationAut`: the translation `X ↦ X + c`.
+* `RatFunc.translationAut`: the translation `X ↦ X + b`.
 * `RatFunc.branchPointAut`: the homomorphism `Perm (Fin 3) →* Aut(k(X)/k)` of the six
   substitutions `X`, `1 - X`, `X / (X - 1)`, `1 / X`, `(X - 1) / X` and `1 / (1 - X)` permuting
   `0, 1, ∞`, with its values at `X` on the five nonidentity permutations
@@ -46,9 +46,14 @@ invertible `2 × 2` matrix over `k` has nonzero determinant, so the construction
 * `RatFunc.transcendental_mobiusOf` and `RatFunc.adjoin_mobiusOf_eq_top`: a linear fractional
   transformation is a transcendental generator of `k(X)`.
 * `RatFunc.X_eq_div_mobiusOf`: the inverse coefficient matrix recovers `X`.
+* `RatFunc.exists_mobiusOf_eq_of_adjoin_eq_top`: every generator of `k(X)` over `k` is a linear
+  fractional transformation.
 * `Matrix.GeneralLinearGroup.mobiusAut_mobius` and `RatFunc.mobiusAutHom`: substitution composes
   the coefficient matrices in the opposite order, so inversion gives a group homomorphism
   `GL₂(k) →* Aut(k(X)/k)`.
+* `RatFunc.mobiusAutHom_surjective` and `RatFunc.ker_mobiusAutHom`: every automorphism of
+  `k(X)` over `k` is a linear fractional transformation, and the kernel of `mobiusAutHom` is the
+  centre of `GL₂(k)`.
 * `RatFunc.infinite_algEquiv`: over an infinite field the translations already make
   `Aut(k(X)/k)` infinite.
 * `RatFunc.finite_algEquiv` and `RatFunc.infinite_algEquiv_iff`: over a finite field
@@ -458,7 +463,7 @@ section Translation
 
 variable (b : K)
 
-/-- The **translation automorphism** `X ↦ X + c` of `k(X)`. -/
+/-- The **translation automorphism** `X ↦ X + b` of `k(X)`. -/
 noncomputable def translationAut : RatFunc K ≃ₐ[K] RatFunc K :=
   mobiusAutOf (a := 1) (b := b) (c := 0) (d := 1) (by simp)
 
