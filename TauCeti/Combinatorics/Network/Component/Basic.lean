@@ -108,6 +108,13 @@ theorem restrictComponent_apply (f : ExcessFlow lo hi d)
     (f.restrictComponent C).val e = f.val e :=
   (rfl)
 
+/-- Restriction of a prescribed-excess assignment retains the restricted arrow assignment. -/
+@[simp]
+theorem restrictComponent_val (f : ExcessFlow lo hi d) :
+    (f.restrictComponent C).val = f.val.restrictComponent C := by
+  funext x y e
+  simp
+
 end ExcessFlow
 
 namespace ExcessIntervalFlow
@@ -127,11 +134,12 @@ theorem restrictComponent_apply (f : ExcessIntervalFlow lo hi a b)
     (f.restrictComponent C).val e = f.val e :=
   (rfl)
 
+/-- Restriction of an interval-excess assignment retains the restricted arrow assignment. -/
 @[simp]
-theorem excessAt_restrictComponent (f : ExcessIntervalFlow lo hi a b)
-    (x : Quiver.ComponentVertex Q C) :
-    excessAt (f.restrictComponent C).val x = excessAt f.val x.1 :=
-  Assignment.excessAt_restrictComponent C f.val x
+theorem restrictComponent_val (f : ExcessIntervalFlow lo hi a b) :
+    (f.restrictComponent C).val = f.val.restrictComponent C := by
+  funext x y e
+  simp
 
 end ExcessIntervalFlow
 
