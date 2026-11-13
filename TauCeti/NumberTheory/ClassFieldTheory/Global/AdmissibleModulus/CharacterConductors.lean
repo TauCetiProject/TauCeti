@@ -11,16 +11,31 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.Reciprocity
 /-!
 # The conductor as a least common multiple of character conductors
 
-For a finite abelian extension `L/K`, a character's conductor means the conductor of the
-fixed field of its kernel. The conductor of `L/K` is their least common multiple: its
-exponent at a finite place is the maximum of their exponents, and its real places are
-the union of their real places.
+For a finite abelian extension `L/K`, characters are homomorphisms `χ : Gal(L/K) →* Mˣ`,
+where `M` is a commutative monoid satisfying
+`HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))`, for example `M = ℂ`.
+A character's conductor means the conductor of the fixed field of its kernel. The conductor
+of `L/K` is their least common multiple: its exponent at a finite place is the maximum of
+their exponents, and its real places are the union of their real places.
 
 The underlying norm criterion is global: an idele class is a norm from `L` exactly when
 it is a norm from every character's fixed field. This follows from functoriality of
 reciprocity and separation by characters of the finite abelian Galois group. Minimality
 of the conductor then gives the least-common-multiple characterization, including the
 infinite part, without imposing any condition on the ramification.
+
+## Main results
+
+* `TauCeti.ClassFieldTheory.abelianConductor_dvd_iff_forall_fixedField_ker`: the lcm property,
+  characterized by divisibility into a modulus.
+* `TauCeti.ClassFieldTheory.exponent_abelianConductor_eq_iSup_fixedField_ker`: the maximum formula
+  at finite places.
+* `TauCeti.ClassFieldTheory.mem_infinitePart_abelianConductor_iff_exists_fixedField_ker`: the union
+  formula at real places.
+
+These give the lcm half of the conductor–discriminant formula, complementing the product formula
+`TauCeti.ClassFieldTheory.relDiscr_eq_finprod_finitePart_abelianConductor` in
+`TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.ConductorDiscriminant`.
 
 ## References
 
@@ -40,8 +55,9 @@ variable (K L : Type) [Field K] [NumberField K] [Field L] [NumberField L] [Algeb
   [IsAbelianGalois K L]
 variable (M : Type*) [CommMonoid M] [HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))]
 
-/-- The conductor of an abelian extension is the least common multiple of its character
-conductors, characterized by divisibility into any modulus. -/
+/-- The conductor of an abelian extension is the least common multiple of the conductors of
+characters `χ : Gal(L/K) →* Mˣ`, characterized by divisibility into any modulus. Here `M` is a
+commutative monoid satisfying `HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))`. -/
 theorem abelianConductor_dvd_iff_forall_fixedField_ker (𝔪 : Modulus K) :
     abelianConductor K L ∣ 𝔪 ↔
       ∀ χ : Gal(L/K) →* Mˣ, abelianConductor K (fixedField χ.ker) ∣ 𝔪 := by
@@ -51,7 +67,9 @@ theorem abelianConductor_dvd_iff_forall_fixedField_ker (𝔪 : Modulus K) :
   exact ⟨fun h χ c hc ↦ h hc χ, fun h c hc χ ↦ h χ hc⟩
 
 /-- At each finite place, the conductor exponent of an abelian extension is the maximum
-of the conductor exponents of the subextensions cut out by its characters. -/
+of the conductor exponents of the subextensions cut out by characters `χ : Gal(L/K) →* Mˣ`.
+Here `M` is a commutative monoid satisfying
+`HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))`. -/
 theorem exponent_abelianConductor_eq_iSup_fixedField_ker (v : HeightOneSpectrum (𝓞 K)) :
     (abelianConductor K L).exponent v =
       ⨆ χ : Gal(L/K) →* Mˣ, (abelianConductor K (fixedField χ.ker)).exponent v := by
@@ -65,7 +83,9 @@ theorem exponent_abelianConductor_eq_iSup_fixedField_ker (v : HeightOneSpectrum 
   exact ⟨fun h χ u hu ↦ h u hu χ, fun h u hu χ ↦ h χ u hu⟩
 
 /-- A real place occurs in the conductor of an abelian extension exactly when it occurs
-in the conductor of a subextension cut out by a character. -/
+in the conductor of a subextension cut out by a character `χ : Gal(L/K) →* Mˣ`.
+Here `M` is a commutative monoid satisfying
+`HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))`. -/
 theorem mem_infinitePart_abelianConductor_iff_exists_fixedField_ker
     (w : {w : InfinitePlace K // w.IsReal}) :
     w ∈ (abelianConductor K L).infinitePart ↔
