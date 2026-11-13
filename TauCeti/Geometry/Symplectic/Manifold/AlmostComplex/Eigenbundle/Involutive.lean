@@ -156,6 +156,6 @@ theorem isInvolutiveComplexDistribution_eigenspace_neg_I_iff :
       eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-Complex.I) =
         eigenspace (((-J).almostComplexStructureAt x).toLinearMap.baseChange ℂ) Complex.I := by
     rw [neg_almostComplexStructureAt, AlmostComplexStructure.eigenspace_neg_baseChange_I]
-  rw [funext h, (-J).isInvolutiveComplexDistribution_eigenspace_I_iff, funext J.nijenhuis_neg]
+  rw [funext h, (-J).isInvolutiveComplexDistribution_eigenspace_I_iff, J.nijenhuis_neg]
 
 end TauCeti.SmoothAlmostComplexStructure

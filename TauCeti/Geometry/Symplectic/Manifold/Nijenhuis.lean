@@ -250,7 +250,8 @@ theorem nijenhuis_apply_both (v w : TangentSpace I x) :
 
 /-- The almost complex structures `J` and `-J` have the same Nijenhuis tensor. -/
 @[simp]
-theorem nijenhuis_neg (x : M) : (-J).nijenhuis x = J.nijenhuis x := by
+theorem nijenhuis_neg : (-J).nijenhuis = J.nijenhuis := by
+  funext x
   ext v w
   rw [nijenhuis_apply_extend, nijenhuis_apply_extend]
   -- `(-J) X = -(J X)` pointwise; `← Pi.neg_def` folds this into `-(J X)`, the form used by
@@ -517,8 +518,9 @@ theorem SmoothAlmostComplexStructure.nijenhuis_eq_fderiv
 /-- A constant almost complex structure on a finite-dimensional real vector space has vanishing
 Nijenhuis tensor. -/
 @[simp]
-theorem SmoothAlmostComplexStructure.nijenhuis_const (Jc : V →L[ℝ] V) (hJc : ∀ v, Jc (Jc v) = -v)
-    (x : V) : (SmoothAlmostComplexStructure.const Jc hJc).nijenhuis x = 0 := by
+theorem SmoothAlmostComplexStructure.nijenhuis_const (Jc : V →L[ℝ] V) (hJc : ∀ v, Jc (Jc v) = -v) :
+    (SmoothAlmostComplexStructure.const Jc hJc).nijenhuis = 0 := by
+  funext x
   -- Constant vector fields have constant images under a constant `J`, and all Lie brackets of
   -- constant vector fields on a vector space vanish by `mlieBracket_const_model_space`.
   have hconst (u : V) :=
@@ -555,7 +557,7 @@ theorem AlmostComplexStructure.nijenhuis_constSmooth (J : AlmostComplexStructure
       (SmoothAlmostComplexStructure.const_apply (LinearMap.toContinuousLinearMap J.toLinearMap)
         J.apply_apply x v).symm
   rw [h]
-  exact funext <| SmoothAlmostComplexStructure.nijenhuis_const _ _
+  exact SmoothAlmostComplexStructure.nijenhuis_const _ _
 
 end Const
 
