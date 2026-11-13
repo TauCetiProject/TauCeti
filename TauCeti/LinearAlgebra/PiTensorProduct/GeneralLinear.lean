@@ -73,7 +73,7 @@ theorem map_const_mem_span_range_map_const_units (f : V →ₗ[K] V) :
       h φ ((Submodule.mem_dualAnnihilator _).mp hφ)
   intro φ hφ
   set e := Module.finBasis K V with _
-  set Θ : MultilinearMap K
+  set Θ : MultilinearMap (RingHom.id K)
       (fun _ : ι => Matrix (Fin (Module.finrank K V)) (Fin (Module.finrank K V)) K) K :=
     (LinearMap.compMultilinearMap φ
       (mapMultilinear K (fun _ : ι => V) fun _ : ι => V)).compLinearMap

@@ -85,7 +85,7 @@ private theorem norm_holderBilinear_le (B : E →L[ℝ] F →L[ℝ] G)
       gcongr
       · simpa using f.toBoundedContinuousFunction.norm_coe_le_norm x
       · simpa using g.toBoundedContinuousFunction.norm_coe_le_norm x)
-  · simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnnorm,
+  · simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnNorm,
       HolderSpace.coe_toBoundedContinuousFunction]
     nlinarith [mul_nonneg (norm_nonneg B)
       (mul_nonneg (NNReal.coe_nonneg (nnHolderNorm α (f : X → E)))
@@ -315,7 +315,7 @@ private theorem norm_compHolder₂ExtendByZeroFun_le (B : E →L[ℝ] F →L[ℝ
   · rw [compHolder₂ExtendByZeroFun_apply]
     exact norm_comp₂_extendByZeroFun_le B f g x
   · rw [← Submodule.norm_coe]
-    simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnnorm,
+    simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnNorm,
       HolderSpace.coe_toBoundedContinuousFunction]
     nlinarith [mul_nonneg (norm_nonneg B)
       (mul_nonneg (NNReal.coe_nonneg (nnHolderNorm α (f' : X → F)))

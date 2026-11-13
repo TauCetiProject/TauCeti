@@ -198,7 +198,6 @@ theorem integral_comp_polarCoord_symm_Icc_Icc (f : ℂ → W) (z₀ : ℂ) {a b 
     filter_upwards [Ioi_ae_eq_Ici (μ := (volume : Measure ℝ)) (a := 0)] with r hr
     simp only [mem_inter_iff]
     rw [hr]
-    apply propext
     exact ⟨And.right, fun h ↦ ⟨ha.trans h.1, h⟩⟩
   have hang : Ioo (-π) π ∩ Icc c d =ᵐ[volume] Icc c d := by
     have h := ae_eq_set_inter (Ioo_ae_eq_Icc (μ := (volume : Measure ℝ)) (a := -π) (b := π))

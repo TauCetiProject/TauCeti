@@ -135,7 +135,7 @@ private theorem enorm_setIntegral_isCompact_le (hh : LocallyIntegrable h ρ)
     rw [hWK, withDensity_apply _ hK.measurableSet] at h
     refine h.congr fun n => ?_
     simp [withDensity_apply _ (hWo n).measurableSet]
-  exact le_of_tendsto_of_tendsto' ((continuous_enorm.tendsto _).comp hlim) hlimk
+  exact le_of_tendsto_of_tendsto' ((continuous_eNorm.tendsto _).comp hlim) hlimk
     fun n => H _ (hψ0 n) (hψ1 n) _ (hWo n) (hψW n)
 
 /-- The scalar case: a bound on pairings with nonnegative test functions bounds `|h|`. -/
@@ -164,7 +164,7 @@ private theorem ae_enorm_le_of_forall_nonneg (hh : LocallyIntegrable h ρ) (hkm 
     have hfin : ∫⁻ x in B ∩ L, k x ∂ρ ≠ ∞ :=
       ne_top_of_le_ne_top (hk L hL) (lintegral_mono_set inter_subset_right)
     rw [integral_toReal hkm.aemeasurable (ae_lt_top' hkm.aemeasurable hfin),
-      ← ENNReal.ofReal_le_iff_le_toReal hfin, ← Real.enorm_eq_ofReal_abs]
+      ← ENNReal.ofReal_le_iff_le_toReal hfin, ← Real.eNorm_eq_ofReal_abs]
     exact hB hL (hBm.inter hL.measurableSet) inter_subset_right
   have h₁ := ae_nonneg_of_forall_setIntegral_nonneg (hkint.sub hint) fun B hBm _ => by
     simp only [Pi.sub_apply]
@@ -175,7 +175,7 @@ private theorem ae_enorm_le_of_forall_nonneg (hh : LocallyIntegrable h ρ) (hkm 
     rw [integral_add hkint.integrableOn hint.integrableOn, ← neg_le_iff_add_nonneg']
     exact neg_le.1 ((neg_le_abs _).trans (hset B hBm))
   filter_upwards [h₁, h₂] with x h₁ h₂
-  rw [Real.enorm_eq_ofReal_abs]
+  rw [Real.eNorm_eq_ofReal_abs]
   refine (ENNReal.ofReal_le_ofReal (abs_le.2 ⟨?_, ?_⟩)).trans ENNReal.ofReal_toReal_le
   · simp only [Pi.add_apply, Pi.zero_apply] at h₂
     linarith
@@ -197,7 +197,7 @@ theorem ae_nonneg_of_forall_integral_mul_nonneg (hh : LocallyIntegrable h ρ)
     refine ae_enorm_le_of_forall_nonneg hh (ENNReal.measurable_ofReal.comp hgm)
       (fun K hK => ne_top_of_le_ne_top ((hh.congr hg).integrableOn_isCompact hK).2.ne
         (lintegral_mono fun x => ?_)) fun ψ hψ0 hψ1 W hW hψW => ?_
-    · rw [Real.enorm_eq_ofReal_abs]
+    · rw [Real.eNorm_eq_ofReal_abs]
       exact ENNReal.ofReal_le_ofReal (le_abs_self _)
     have hψ (x : Ω) (hx : x ∉ W) : ψ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx <| by
       obtain ⟨y, hy, hyx⟩ := hψW hx'
@@ -213,7 +213,7 @@ theorem ae_nonneg_of_forall_integral_mul_nonneg (hh : LocallyIntegrable h ρ)
         · exact Or.inr (mul_nonpos_of_nonneg_of_nonpos (hψ0 x) h0)
         · exact Or.inl (mul_le_of_le_one_left h0.le (hψ1 x))
       · simp [hψ x hxW]
-    rw [Real.enorm_eq_ofReal_abs, abs_of_nonneg (H ψ hψ0), ← lintegral_indicator hW.measurableSet]
+    rw [Real.eNorm_eq_ofReal_abs, abs_of_nonneg (H ψ hψ0), ← lintegral_indicator hW.measurableSet]
     refine le_trans ?_ (lintegral_mono_ae hpt)
     by_cases hint : Integrable (fun x : Ω => ψ x * h x) ρ
     · rw [integral_eq_lintegral_pos_part_sub_lintegral_neg_part hint]
@@ -221,7 +221,7 @@ theorem ae_nonneg_of_forall_integral_mul_nonneg (hh : LocallyIntegrable h ρ)
         ENNReal.ofReal_toReal_le
     · simp [integral_undef hint]
   filter_upwards [hle, hg] with x hx hxg
-  rw [← hxg, Real.enorm_eq_ofReal_abs] at hx
+  rw [← hxg, Real.eNorm_eq_ofReal_abs] at hx
   rcases ENNReal.ofReal_le_ofReal_iff'.1 hx with h' | h'
   · exact (abs_nonneg _).trans h'
   · exact (abs_nonpos_iff.1 h').ge
@@ -250,7 +250,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
         (hh.integrableOn_isCompact hK).apply_continuousLinearMap w)
       (hkm.const_mul _) (fun K hK => by
         rw [lintegral_const_mul _ hkm]
-        exact ENNReal.mul_ne_top enorm_ne_top (hk K hK))
+        exact ENNReal.mul_ne_top eNorm_ne_top (hk K hK))
       fun ψ hψ0 hψ1 W hW hψW => ?_
     rw [lintegral_const_mul _ hkm]
     rcases eq_or_ne w 0 with rfl | hw0
@@ -273,11 +273,11 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
         rw [hφ, norm_smul, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hw0),
           mul_one, Real.norm_of_nonneg (hψ0 x)]
         exact hψ1 x
-    rw [hint, enorm_mul, enorm_inv (by simpa using hw0), enorm_norm, Opens.coe_mk,
+    rw [hint, eNorm_mul, eNorm_inv (by simpa using hw0), eNorm_norm, Opens.coe_mk,
       preimage_image_eq W Subtype.val_injective] at hU
     calc ‖∫ x, ψ x * h x w ∂ρ‖ₑ
         = ‖w‖ₑ * (‖w‖ₑ⁻¹ * ‖∫ x, ψ x * h x w ∂ρ‖ₑ) := by
-          rw [← mul_assoc, ENNReal.mul_inv_cancel (by simpa using hw0) enorm_ne_top, one_mul]
+          rw [← mul_assoc, ENNReal.mul_inv_cancel (by simpa using hw0) eNorm_ne_top, one_mul]
       _ ≤ ‖w‖ₑ * ∫⁻ x in W, k x ∂ρ := by gcongr
   -- Combine the bounds along a dense sequence of directions.
   filter_upwards [ae_all_iff.2 fun n => hw (denseSeq F n)] with x hx
@@ -288,10 +288,10 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
     refine (denseRange_denseSeq F).induction_on w
       (isClosed_le (h x).continuous.norm (continuous_const.mul continuous_norm)) fun n => ?_
     have := hx n
-    rw [enorm_eq_nnnorm, enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] at this
+    rw [eNorm_eq_nnNorm, eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] at this
     rw [mul_comm]
     exact_mod_cast this
-  rw [enorm_eq_nnnorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnnorm]
+  rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]
   exact (h x).opNorm_le_bound q.2 hle
 
 end Dual
@@ -316,7 +316,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
     locallyIntegrable_iff.2 fun K hK => (innerSL ℝ).integrable_comp (hh.integrableOn_isCompact hK)
   filter_upwards [ae_enorm_le_of_forall_enorm_integral_apply_le hh' hkm hk fun U hU φ hφU hφ => by
     simpa only [innerSL_apply_apply, real_inner_comm] using H U hU φ hφU hφ] with x hx
-  rwa [← enorm_norm, innerSL_apply_norm, enorm_norm] at hx
+  rwa [← eNorm_norm, innerSL_apply_norm, eNorm_norm] at hx
 
 end Inner
 
