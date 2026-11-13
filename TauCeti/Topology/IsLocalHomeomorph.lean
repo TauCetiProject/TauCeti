@@ -265,4 +265,14 @@ theorem _root_.IsLocalHomeomorph.of_isEmbedding_of_range_eq {X' Y' : Type*}
 
 end Pullback
 
+/-- A map is a local homeomorphism if its composite with a surjective local homeomorphism is
+a local homeomorphism. -/
+theorem of_comp_of_surjective {X Y Z : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+    {f : X → Y} {g : Y → Z} (hgf : IsLocalHomeomorph (g ∘ f))
+    (hf : IsLocalHomeomorph f) (hsurj : Function.Surjective f) : IsLocalHomeomorph g := by
+  have h := hgf.isLocalHomeomorphOn.of_comp_right hf.isLocalHomeomorphOn
+    (s := Set.univ)
+  rwa [Set.image_univ, hsurj.range_eq, ← isLocalHomeomorph_iff_isLocalHomeomorphOn_univ] at h
+
 end IsLocalHomeomorph
