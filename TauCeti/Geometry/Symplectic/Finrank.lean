@@ -140,6 +140,17 @@ theorem span_pair_eq_top_of_finrank_eq_two (J : AlmostComplexStructure V)
   simpa [Matrix.range_cons_cons_empty, Set.pair_comm] using
     (J.linearIndependent_pair hv).span_eq_top_of_card_eq_finrank (by simpa using hV.symm)
 
+/-- A nonzero real covector on a complex line is nonzero on the complex span of every
+nonzero vector. -/
+theorem sq_apply_add_sq_ne_zero_of_finrank_eq_two (J : AlmostComplexStructure V)
+    (hV : Module.finrank ℝ V = 2) (ℓ : V →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0)
+    {v : V} (hv : v ≠ 0) : ℓ (J v) ^ 2 + ℓ v ^ 2 ≠ 0 := by
+  intro h
+  obtain ⟨hJv, hv'⟩ := sq_add_sq_eq_zero.1 h
+  apply hℓ
+  apply LinearMap.ext_on (J.span_pair_eq_top_of_finrank_eq_two hV hv)
+  rintro w (rfl | rfl) <;> simp [hv', hJv]
+
 /-- On a finite-dimensional real module of dimension at most two carrying an almost complex
 structure `J`, every nonzero vector `v` and its image `J v` span the module. -/
 theorem span_pair_eq_top_of_finrank_le_two [FiniteDimensional ℝ V] (J : AlmostComplexStructure V)

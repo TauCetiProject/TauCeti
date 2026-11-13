@@ -119,7 +119,7 @@ theorem leftInverse_cauchyRiemannSymbol_apply (j : AlmostComplexStructure U)
 
 /-- Evaluating the symbol at `v` is invertible whenever the covector is nonzero on the
 complex span of `v`. -/
-theorem bijective_cauchyRiemannSymbol_apply (j : AlmostComplexStructure U)
+theorem cauchyRiemannSymbol_apply_bijective (j : AlmostComplexStructure U)
     (J : AlmostComplexStructure V) (ℓ : U →ₗ[ℝ] ℝ) (v : U)
     (h : ℓ (j v) ^ 2 + ℓ v ^ 2 ≠ 0) :
     Function.Bijective (fun q ↦ cauchyRiemannSymbol j J ℓ q v) := by
@@ -136,20 +136,9 @@ theorem bijective_cauchyRiemannSymbol_apply (j : AlmostComplexStructure U)
         = (d⁻¹ * d) • q := by dsimp [d]; module
       _ = q := by rw [inv_mul_cancel₀ hd, one_smul]
 
-/-- A nonzero real covector on a complex line is nonzero on the complex span of every
-nonzero vector. -/
-theorem cauchyRiemannSymbol_denominator_ne_zero (j : AlmostComplexStructure U)
-    (hU : Module.finrank ℝ U = 2) (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0)
-    {v : U} (hv : v ≠ 0) : ℓ (j v) ^ 2 + ℓ v ^ 2 ≠ 0 := by
-  intro h
-  obtain ⟨hjv, hv'⟩ := sq_add_sq_eq_zero.1 h
-  apply hℓ
-  apply LinearMap.ext_on (j.span_pair_eq_top_of_finrank_eq_two hU hv)
-  rintro w (rfl | rfl) <;> simp [hv', hjv]
-
 /-- On a complex line the symbol at every nonzero real covector maps `V` bijectively onto
 complex-antilinear maps. This is ellipticity, without a choice of normal frame. -/
-theorem bijective_cauchyRiemannSymbolAntilinear (j : AlmostComplexStructure U)
+theorem cauchyRiemannSymbolAntilinear_bijective (j : AlmostComplexStructure U)
     (hU : Module.finrank ℝ U = 2) (J : AlmostComplexStructure V)
     (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0) :
     Function.Bijective (cauchyRiemannSymbolAntilinear j J ℓ) := by
@@ -158,8 +147,8 @@ theorem bijective_cauchyRiemannSymbolAntilinear (j : AlmostComplexStructure U)
     exact hℓ (LinearMap.ext fun v ↦ h v)
   obtain ⟨v, hv⟩ := hex
   have hv₀ : v ≠ 0 := by rintro rfl; simp at hv
-  have hb := bijective_cauchyRiemannSymbol_apply j J ℓ v
-    (cauchyRiemannSymbol_denominator_ne_zero j hU ℓ hℓ hv₀)
+  have hb := cauchyRiemannSymbol_apply_bijective j J ℓ v
+    (j.sq_apply_add_sq_ne_zero_of_finrank_eq_two hU ℓ hℓ hv₀)
   constructor
   · intro q r h
     apply hb.1
@@ -184,7 +173,7 @@ noncomputable def cauchyRiemannSymbolEquiv (j : AlmostComplexStructure U)
     (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0) :
     V ≃ₗ[ℝ] complexAntilinearMaps j.toLinearMap J.toLinearMap :=
   LinearEquiv.ofBijective (cauchyRiemannSymbolAntilinear j J ℓ)
-    (bijective_cauchyRiemannSymbolAntilinear j hU J ℓ hℓ)
+    (cauchyRiemannSymbolAntilinear_bijective j hU J ℓ hℓ)
 
 /-- The symbol equivalence has the corestricted symbol as its forward map. -/
 @[simp]
@@ -193,6 +182,36 @@ theorem cauchyRiemannSymbolEquiv_apply (j : AlmostComplexStructure U)
     (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0) (q : V) :
     cauchyRiemannSymbolEquiv j hU J ℓ hℓ q =
       cauchyRiemannSymbolAntilinear j J ℓ q := (rfl)
+
+/-- The inverse symbol cancels the corestricted symbol. -/
+@[simp]
+theorem cauchyRiemannSymbolEquiv_symm_apply_cauchyRiemannSymbolAntilinear
+    (j : AlmostComplexStructure U) (hU : Module.finrank ℝ U = 2)
+    (J : AlmostComplexStructure V) (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0) (q : V) :
+    (cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm
+      (cauchyRiemannSymbolAntilinear j J ℓ q) = q :=
+  (cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm_apply_apply q
+
+/-- The corestricted symbol cancels the inverse symbol. -/
+@[simp]
+theorem cauchyRiemannSymbolAntilinear_apply_cauchyRiemannSymbolEquiv_symm
+    (j : AlmostComplexStructure U) (hU : Module.finrank ℝ U = 2)
+    (J : AlmostComplexStructure V) (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0)
+    (f : complexAntilinearMaps j.toLinearMap J.toLinearMap) :
+    cauchyRiemannSymbolAntilinear j J ℓ ((cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm f) = f :=
+  (cauchyRiemannSymbolEquiv j hU J ℓ hℓ).apply_symm_apply f
+
+/-- The uncorestricted symbol of the inverse recovers the underlying antilinear map. -/
+@[simp]
+theorem cauchyRiemannSymbol_apply_cauchyRiemannSymbolEquiv_symm
+    (j : AlmostComplexStructure U) (hU : Module.finrank ℝ U = 2)
+    (J : AlmostComplexStructure V) (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0)
+    (f : complexAntilinearMaps j.toLinearMap J.toLinearMap) :
+    cauchyRiemannSymbol j J ℓ ((cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm f) =
+      (f : U →ₗ[ℝ] V) := by
+  simpa only [cauchyRiemannSymbolAntilinear_apply] using
+    congrArg Subtype.val
+      (cauchyRiemannSymbolAntilinear_apply_cauchyRiemannSymbolEquiv_symm j hU J ℓ hℓ f)
 
 /-- The inverse symbol recovers the vector in `V` from evaluation at any nonzero vector. -/
 theorem cauchyRiemannSymbolEquiv_symm_apply (j : AlmostComplexStructure U)
@@ -206,6 +225,6 @@ theorem cauchyRiemannSymbolEquiv_symm_apply (j : AlmostComplexStructure U)
   simp only [cauchyRiemannSymbolEquiv_apply, cauchyRiemannSymbolAntilinear_apply] at heval
   rw [← heval]
   exact (leftInverse_cauchyRiemannSymbol_apply j J ℓ v
-    (cauchyRiemannSymbol_denominator_ne_zero j hU ℓ hℓ hv) _).symm
+    (j.sq_apply_add_sq_ne_zero_of_finrank_eq_two hU ℓ hℓ hv) _).symm
 
 end TauCeti

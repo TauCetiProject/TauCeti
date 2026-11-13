@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Geometry.Symplectic.Cayley.Tangent
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Symbol
 
 /-!
 # Local-coordinate Cauchy–Riemann linearization
@@ -119,24 +119,29 @@ theorem cauchyRiemannLinearization_apply (j : U →L[ℝ] U) (J : V → V →L[�
 /-- At a pseudoholomorphic map, the linearization takes values in complex-antilinear
 maps, even when the target almost complex structure is not integrable. -/
 theorem isComplexAntilinear_cauchyRiemannLinearization
-    [FiniteDimensional ℝ U] [FiniteDimensional ℝ V]
-    (j : AlmostComplexStructure U) (J : V → AlmostComplexStructure V)
-    (u ξ : U → V) (x : U) (hu : IsJHolomorphicAt (fun _ ↦ j) J u x) :
+    {j : U →L[ℝ] U} {J : V → V →L[ℝ] V} {u : U → V} (ξ : U → V) {x : U}
+    (hj : ∀ v, j (j v) = -v)
+    (hJ : ∀ᶠ y in 𝓝 (u x), ∀ v, J y (J y v) = -v)
+    (hu : cauchyRiemannOperator j J u x = 0) :
     IsComplexAntilinear j.toLinearMap (J (u x)).toLinearMap
-      (cauchyRiemannLinearization j.toLinearMap.toContinuousLinearMap
-        (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) u ξ x).toLinearMap := by
-  have hT : ∀ v, fderiv ℝ (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) (u x)
-      (ξ x) (J (u x) v) =
-      -J (u x) (fderiv ℝ (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) (u x) (ξ x) v) := by
-    by_cases hJ : DifferentiableAt ℝ (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) (u x)
-    · exact AlmostComplexStructure.mem_tangentSpace_iff_apply.1
-        (AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt hJ.hasFDerivAt (ξ x))
-    · simp [fderiv_zero_of_not_differentiableAt hJ]
+      (cauchyRiemannLinearization j J u ξ x).toLinearMap := by
+  have hT (v : V) : fderiv ℝ J (u x) (ξ x) (J (u x) v) =
+      -J (u x) (fderiv ℝ J (u x) (ξ x) v) := by
+    by_cases hd : DifferentiableAt ℝ J (u x)
+    · have he : (fun y ↦ J y (J y v)) =ᶠ[𝓝 (u x)] fun _ ↦ -v :=
+        hJ.mono fun y hy ↦ hy v
+      have hder := hd.hasFDerivAt.clm_apply
+        (hd.hasFDerivAt.clm_apply (hasFDerivAt_const (x := u x) v))
+      have hzero := congrArg (fun L : V →L[ℝ] V ↦ L (ξ x))
+        (hder.unique ((hasFDerivAt_const (-v) (u x)).congr_of_eventuallyEq he))
+      simp only [add_apply, comp_apply, flip_apply, zero_apply, map_zero, zero_add] at hzero
+      exact eq_neg_of_add_eq_zero_right hzero
+    · simp [fderiv_zero_of_not_differentiableAt hd]
   apply isComplexAntilinear_of_apply
   intro v
   simp only [ContinuousLinearMap.coe_coe, cauchyRiemannLinearization_apply,
-    LinearMap.coe_toContinuousLinearMap', j.apply_apply, map_neg, hu.fderiv_apply_commute,
-    hT, AlmostComplexStructure.apply_sub, AlmostComplexStructure.apply_apply]
+    hj, map_neg, fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hu,
+    hT, map_sub, hJ.self_of_nhds]
   abel
 
 /-- The local-coordinate linearization is additive on differentiable directions. -/
@@ -277,5 +282,23 @@ theorem cauchyRiemannLinearization_fun_smul
   simp only [cauchyRiemannLinearization_apply, fderiv_fun_smul hf hξ, add_apply,
     smul_apply, smulRight_apply, map_add, map_smul, smul_sub]
   abel
+
+/-- The ambient Leibniz remainder is the intrinsic real Cauchy–Riemann symbol.
+Only the endomorphisms at the evaluation point must agree with the given structures. -/
+theorem cauchyRiemannLinearization_fun_smul_eq_smul_add_cauchyRiemannSymbol
+    {j : U →L[ℝ] U} {J : V → V →L[ℝ] V}
+    (j₀ : AlmostComplexStructure U) (J₀ : AlmostComplexStructure V)
+    (u ξ : U → V) (f : U → ℝ) (x : U)
+    (hj : j.toLinearMap = j₀.toLinearMap) (hJ₀ : (J (u x)).toLinearMap = J₀.toLinearMap)
+    (hf : DifferentiableAt ℝ f x) (hξ : DifferentiableAt ℝ ξ x) :
+    (cauchyRiemannLinearization j J u (fun y ↦ f y • ξ y) x).toLinearMap =
+      f x • (cauchyRiemannLinearization j J u ξ x).toLinearMap +
+        cauchyRiemannSymbol j₀ J₀ (fderiv ℝ f x).toLinearMap (ξ x) := by
+  ext v
+  have hjv : j v = j₀ v := LinearMap.congr_fun hj v
+  have hJξ : J (u x) (ξ x) = J₀ (ξ x) := LinearMap.congr_fun hJ₀ (ξ x)
+  simpa only [LinearMap.add_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe,
+    cauchyRiemannSymbol_apply, hjv, hJξ, add_sub_assoc] using
+    cauchyRiemannLinearization_fun_smul j J u ξ f x v hf hξ
 
 end TauCeti
