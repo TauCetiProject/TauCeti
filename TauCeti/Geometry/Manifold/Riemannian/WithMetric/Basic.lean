@@ -179,6 +179,28 @@ instance : MeasurableSpace (WithMetric g) := borel _
 
 instance : BorelSpace (WithMetric g) := ⟨rfl⟩
 
+/-- The projection from the metric copy is a measurable embedding for the Borel structures. -/
+theorem measurableEmbedding_ofWithMetric [MeasurableSpace M] [BorelSpace M] :
+    MeasurableEmbedding (ofWithMetric : WithMetric g → M) :=
+  (homeomorph g).measurableEmbedding
+
+/-- The inclusion into the metric copy is a measurable embedding for the Borel structures. -/
+theorem measurableEmbedding_toWithMetric [MeasurableSpace M] [BorelSpace M] :
+    MeasurableEmbedding (toWithMetric g) :=
+  (homeomorph g).symm.measurableEmbedding
+
+/-- The identity map from the copy of `M` carrying `g` to the copy carrying `g'` is a measurable
+embedding. -/
+theorem measurableEmbedding_toWithMetric_ofWithMetric {n' : ℕ∞ω}
+    (g' : ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)) :
+    MeasurableEmbedding fun x : WithMetric g ↦ toWithMetric g' x.ofWithMetric := by
+  have hcoe : ⇑((homeomorph g).trans (homeomorph g').symm) =
+      (fun x : WithMetric g ↦ toWithMetric g' x.ofWithMetric) := by
+    funext x
+    simp only [Homeomorph.trans_apply, coe_homeomorph, coe_homeomorph_symm]
+  rw [← hcoe]
+  exact ((homeomorph g).trans (homeomorph g').symm).measurableEmbedding
+
 /-- The copy of `M` carrying `g` has the charts of `M`, precomposed with `ofWithMetric`. -/
 instance : ChartedSpace H (WithMetric g) :=
   (homeomorph g).pullbackChartedSpace
