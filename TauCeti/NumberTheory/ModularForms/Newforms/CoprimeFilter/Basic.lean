@@ -6,127 +6,123 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Data.Nat.Squarefree
+import TauCeti.NumberTheory.ModularForms.CuspFormSubmodule
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.LevelSupported
 public import TauCeti.NumberTheory.ModularForms.Newforms.QSupport
 
 /-!
-# Coprime-index filters on `S_k(Γ₁(N), χ)`
+# Coprime-index filters on `M_k(Γ₁(N), χ)`: Miyake's Lemma 4.6.5
 
-Miyake's Lemma 4.6.5: a cusp form `f ∈ S_k(Γ₁(N), χ)` can be *filtered* at a divisor of the
-level. For a nonzero `L` all of whose primes already divide `N`, there is a cusp form `g` at a
-raised level, again with nebentypus `χ` read there, whose `q`-expansion keeps exactly the
-coefficients at indices coprime to `L`:
+For a modular form `f ∈ M_k(Γ₁(N), χ)` and a positive integer `L`, keeping only the
+coefficients of `f` at the indices coprime to `L` gives a modular form again:
 
-`aₙ(g) = aₙ(f)` when `(n, L) = 1`, and `aₙ(g) = 0` otherwise.
+`g = ∑_{(n, L) = 1} aₙ(f) qⁿ ∈ M_k(Γ₁(M), χ)`, where `M = N ∏_{p ∣ L, p ∣ N} p ∏_{p ∣ L, p ∤ N} p²`,
 
-Only the *primes* of `L` do any filtering, so the level `g` lives at is `∏ L.primeFactors`
-times `N`. For squarefree `L` that product is `L` itself, which is the level `L * N` at which
-Miyake states the lemma.
+and `g` is a cusp form when `f` is. This is Miyake's Lemma 4.6.5. A prime of `L` that divides
+`N` raises the level by a factor `p`, and a prime that does not by a factor `p²`. In Lean the
+level is `N * (∏ p ∈ L.primeFactors with p ∣ N, p) * ∏ p ∈ L.primeFactors with ¬p ∣ N, p ^ 2`,
+and the nebentypus of `g` is `χ` read modulo that level.
 
-Subtracting that filter from `f` leaves the complementary *`h`-form*. Under the same hypothesis
-on `L` it costs nothing extra, landing at the same `∏ L.primeFactors * N`. For an arbitrary
-nonzero `L` — neither squarefree, nor with its primes dividing `N` — one further raise is
-needed: reading `f` at `∏ L.primeFactors * N` makes the primes of `L` divide the level, and
-filtering there costs a further `∏ L.primeFactors`, for `∏ L.primeFactors * (∏ L.primeFactors * N)`.
-The construction never lowers a level.
+That level is the one Miyake's proof produces: at a prime `p` of `L` it reads `f` at level
+`N' = N` if `p ∣ N` and `N' = p N` otherwise, and filters at `p N'`. A transcription of the
+statement on p. 157 shows the two product conditions the other way round,
+`N ∏_{p ∣ L, p ∤ N} p ∏_{p ∣ L, p ∣ N} p²`. That reading is false in general: for `N = 1`,
+`L = 2` and `f = Δ` it gives level `2`, but the filter is `Δ(z) + 24 Δ(2z) + 2048 Δ(4z)`, which
+is not in `S_12(Γ₁(2))`, a space spanned by `Δ(z)` and `Δ(2z)`. Miyake also assumes `k > 0` in
+§4.6; the statements here hold for every weight.
+
+Subtracting the filter from `f` leaves the complementary *`h`-form* `∑_{(n, L) ≠ 1} aₙ(f) qⁿ`,
+which for a cusp form `f` is a cusp form at the same level.
 
 ## Main results
 
-* `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime`: the filter, for a nonzero
-  `L` whose primes divide `N`, at level `∏ L.primeFactors * N`.
-* `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_mul`:
-  the same filter read at level `L * N`, for a nonzero `L` whose primes divide `N`, through
-  `∏ L.primeFactors * N ∣ L * N`. For squarefree `L` this is Miyake's Lemma 4.6.5 as stated.
+* `TauCeti.exists_mem_modFormCharSpace_qExpansion_coeff_eq_ite_coprime`: Miyake's Lemma 4.6.5.
+  For `f ∈ M_k(Γ₁(N), χ)` and a nonzero `L`, the filter of `f` at `L` lies in `M_k(Γ₁(M), χ)` at
+  Miyake's level `M`, and it is a cusp form when `f` is.
+* `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime`: the same filter on
+  `S_k(Γ₁(N), χ)`, landing in `S_k(Γ₁(M), χ)`.
+* `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_mul`: when every prime of
+  `L` divides `N`, the cusp-form filter read at level `L * N`. Miyake's level is then
+  `∏ L.primeFactors * N`, which divides `L * N` and equals it exactly when `L` is squarefree.
+* `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero`: the `h`-form of a
+  cusp form, for any nonzero `L`, at Miyake's level.
+* `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq`: the same
+  `h`-form read at level `N * L ^ 2`, a multiple of Miyake's level.
 * `TauCeti.exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd`: for an `f` vanishing at every
-  index coprime to `p * L`, the filter is additionally **supported on the multiples of `p`** — the
-  hypothesis the Atkin–Lehner descent consumes — with
-  `TauCeti.exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_mul` the same result read at
-  level `L * N`, for any `L`.
-* `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero`: the complementary
-  filter, under the filter's own hypothesis and at its own level — a nonzero `L` whose primes
-  divide `N`, at level `∏ L.primeFactors * N`.
-* `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_prod_primeFactors_sq`:
-  the `h`-form, the complementary filter for an arbitrary nonzero `L`, at level
-  `∏ L.primeFactors * (∏ L.primeFactors * N)`, which divides `N * L ^ 2` and equals it exactly
-  when `L` is squarefree.
-* `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq`: that same
-  `h`-form read at Miyake's classical level `N * L ^ 2`, also for an arbitrary nonzero `L`.
+  index coprime to `p * L`, with every prime of `L` dividing `N`, the filter at level
+  `∏ L.primeFactors * N` is also **supported on the multiples of `p`**. This is the hypothesis
+  the Atkin–Lehner descent consumes.
+  `TauCeti.exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_mul` is the same result read at
+  level `L * N`.
 
 ## Implementation notes
 
-The construction is one prime at a time. At a single `p` the witness is `f - V_p (T_p f)`, read
-at level `p * N`; the `q`-expansion identities `TauCeti.CuspForm.qExpansion_levelRaise_coeff_Gamma1`
-and `HeckeRing.GL2.qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset` make the two
-contributions cancel at exactly the indices divisible by `p`. Neither of those needs `p` to be
-prime, only that its prime factors already divide the level, so the single-`p` step is stated
-at that generality; primality is used only to compose the filters, where
-`Nat.Coprime n (q * m)` has to split as `¬ q ∣ n` and `Nat.Coprime n m`.
+The construction runs on modular forms and handles one prime at a time. At a prime `q` dividing
+the current level `M`, the witness is `F - V_q (T_q F)`, read at level `q * M`. Because `q ∣ M`,
+`T_q` acts on coefficients by `aₘ(T_q F) = a_{qm}(F)`
+(`HeckeRing.GL2.qExpansion_coeff_heckeTNat_of_primeFactors_subset`). `V_q` puts those coefficients
+back at the multiples of `q` (`TauCeti.ModularForm.qExpansion_levelRaise_coeff_Gamma1`), so the
+difference keeps exactly the coefficients of `F` at the indices prime to `q`. This single step
+needs only that the prime factors of `q` divide the level, not that `q` is prime. Primality is
+used to compose the steps, where `Nat.Coprime n (q * m)` splits as `¬ q ∣ n` and
+`Nat.Coprime n m`.
 
-Iterating over `L.primeFactors` raises the level by one prime per step, so the induction is on
-the number of primes left to peel and the level it lands at is existentially quantified, with
-the equation `M' = ∏ S * M` recorded alongside. That keeps the recursion free of any transport
-along an equality of levels: the caller substitutes the equation once, at a concrete level.
+A prime of `L` that does not divide `N` does not divide the starting level, so `f` is first read
+at level `B * N`, where `B = ∏_{p ∣ L, p ∤ N} p`. Each prime of `L` then costs one more factor
+`p`, and the filter lands at `∏ L.primeFactors * (B * N)`, which is Miyake's level.
 
-The `h`-form adds no peeling of its own. Under the filter's own hypothesis on `L` it is just the
-subtraction, performed where the filter already lives, so only `f` is moved, along
-`CuspForm.restrict`, and the level is unchanged at `∏ L.primeFactors * N`; that is the general
-statement. The arbitrary-`L` form is its instance after one more raise: the filter needs the
-primes of `L` to divide the level it works over, which for an arbitrary `L` they need not, and
-reading `f` at `∏ L.primeFactors * N` first is what supplies that — `∏ L.primeFactors` has
-exactly the primes of `L`, so it is the uniform raise the construction uses for every `L`, and it
-is why the level lands at `∏ L.primeFactors * (∏ L.primeFactors * N)` rather than at
-`∏ L.primeFactors * (L * N)`. It is not minimal: only the primes of `L` absent from `N` are
-needed, and when all of them already divide `N` no raise is required at all — that case is the
-filter's own hypothesis.
-Neither statement is made at a level fixed in advance, so no equation of levels is transported.
-Since `∏ L.primeFactors ∣ L`, that level divides `N * L ^ 2`, with equality exactly when `L` is
-squarefree; reading the `h`-form at the classical `N * L ^ 2` is a `CuspForm.restrict` along that
-divisibility, which is the transport the rest of the file uses anyway.
+The induction runs over the finite set of primes still to be peeled, with the base level
+generalised. The target level is any multiple of the level the filter needs. It is reached by a
+single `ModularForm.restrict` when no prime is left, so no form is transported along an equality
+of levels.
+
+Restriction, `T_q` and `V_q` all send cusp forms to cusp forms, so every step carries
+`F.IsCuspForm → G.IsCuspForm` along. The cusp-form statements are read off from the modular-form
+construction through `CuspForm.toModularFormₗ` and `TauCeti.coe_mem_modFormCharSpace_iff`, so
+the file has a single construction.
 
 ## Provenance
 
 Adapted from AINTLIB's `StrongMultiplicityOne/LevelChangeCharSpace.lean` (see References): the
-declarations `miyake_4_6_5_single_prime_dvd_N` and `miyake_4_6_5_iterated_L` with their two
-`q`-expansion and `ite`-composition helpers. Deliberate differences from the source: the
-source's `hp : p.Prime` is dropped from the single-`p` step and from the `q`-expansion
-cancellation, neither proof using it; the `Squarefree (∏ S)` hypothesis the source threads
-through the recursion only to feed itself disappears once the conclusion is stated at the level
-`∏ S * M`; the filter is stated here for a nonzero, not-necessarily-squarefree `L` whose primes
-divide `N`, and the `h`-form for an arbitrary nonzero `L`, the source stating only squarefree
-forms at this stage (its `_general` variant generalizes the target level, not `L`). The `h`-form
-in particular is not built by a second recursion: in its general form it is one subtraction at
-the filter's own level, and each wider-`L` form adds a single `CuspForm.restrict` on top of it.
+declarations `miyake_4_6_5_single_prime_dvd_N` and `miyake_4_6_5_iterated_L`, with their
+`q`-expansion and `ite`-composition helpers, and `miyake_h_form_general`. The source states
+these for cusp forms only. Its filter `miyake_4_6_5_iterated_L` assumes a squarefree `L` whose
+primes divide `N`, at level `L * N`. Its `h`-form `miyake_h_form_general` assumes a squarefree `L`,
+at level `N * L ^ 2`. Deliberate differences from the source:
+
+* The construction runs on modular forms and carries cuspidality along, so the file states the
+  lemma for `M_k(Γ₁(N), χ)` as well as for cusp forms.
+* The filter is stated for every nonzero `L`, at Miyake's level. Squarefreeness is assumed
+  nowhere.
+* The source's `hp : p.Prime` is dropped from the single-prime step and from its `q`-expansion
+  computation, since neither proof uses it. The `Squarefree (∏ S)` hypothesis that the source
+  threads through the recursion only to feed itself disappears once the conclusion is stated at
+  a multiple of `∏ S * M`.
+* The source handles the primes of `L` that do not divide `N` by a second recursion, at a level
+  fixed in advance. That is the `miyake_4_6_5_single_prime_coprime_to_N` /
+  `miyake_4_6_5_iterated_helper_general` / `miyake_4_6_5_iterated_L_general` chain, with its
+  `dvd_conditions_*` side conditions and its `Eq.ndrec` cast along `p * (p * N) = N * p ^ 2`.
+  Here one restriction to level `B * N` makes those primes divide the level, so the single
+  recursion handles every prime of `L`.
+* The `h`-form is one subtraction at Miyake's level. Its level-`N * L ^ 2` form is that `h`-form
+  moved by one `CuspForm.restrict`, where the source casts with `Eq.ndrec`. The final
+  `q`-expansion computation uses `ModularForm.qExpansion_sub` directly in place of the source's
+  `sub_eq_add_neg` rewriting through `qExpansion_add` and `qExpansion_neg`.
 
 `exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd` and its level-`L * N` form `_mul` state
 AINTLIB's `miyake_g_p_supported`, which lives in
 `StrongMultiplicityOne/DescentCosets.lean` at the same pinned commit and license. The source
-states it for a squarefree `l'` and concludes membership in its `qSupportedOnDvdSubmodule`; here
-the primary statement holds for any `L`, the conclusion is the `QExpansionSupportedOnDvd`
-predicate this repository already uses, and the level-`L * N` form `_mul` is derived from it by
-`CuspForm.restrict` rather than proved separately; for squarefree `L` the two levels agree.
+states it for a squarefree `l'` and concludes membership in its `qSupportedOnDvdSubmodule`. Here
+the primary statement holds for any `L` whose primes divide `N`, and the conclusion is the
+`QExpansionSupportedOnDvd` predicate this repository already uses. The level-`L * N` form `_mul`
+is derived from it by `CuspForm.restrict` rather than proved separately; for squarefree `L` the
+two levels agree.
 
 `coprime_prod_primeFactors_iff` is AINTLIB's `coprime_prod_primeFactors_iff_coprime`, which
 lives one file up in `StrongMultiplicityOne.lean`. It is restated here for an arbitrary nonzero
 `L` rather than for the ambient level, and proved from `Nat.dvd_prod_primeFactors_pow_self`
 instead of by contradiction on a common prime divisor.
-
-The `h`-form corresponds to `miyake_h_form_general` in the same source file, but shares none of
-its proof. The source reaches the prescribed level `N * L ^ 2` by a *second* recursion over the
-primes of `L`, carried at a level fixed in advance — the `miyake_4_6_5_single_prime_coprime_to_N`
-/ `miyake_4_6_5_iterated_helper_general` / `miyake_4_6_5_iterated_L_general` chain, with its
-`dvd_conditions_*` side conditions and its `Eq.ndrec` cast along `p * (p * N) = N * p ^ 2`.
-Here there is no second recursion: the `h`-form applies the filter already proved above and
-subtracts at the level that filter lands on, moving only `f` along `CuspForm.restrict`, so the whole
-prescribed-level apparatus of the source disappears. The source's target level `N * L ^ 2`
-survives as a statement in its own right, but not as a squarefree one: it is
-`exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq`, the arbitrary-`L`
-`h`-form read along `∏ L.primeFactors * (∏ L.primeFactors * N) ∣ N * L ^ 2` by a single
-`CuspForm.restrict`, where the source casts with `Eq.ndrec`. Squarefreeness is not a hypothesis
-anywhere in the `h`-form chain; it is only the case in which that divisibility happens to be
-an equality. The final `q`-expansion computation uses
-`ModularForm.qExpansion_sub` directly in place of the source's `sub_eq_add_neg` rewriting
-through `qExpansion_add` and `qExpansion_neg`.
 
 ## References
 
@@ -153,16 +149,18 @@ variable {N : ℕ} [NeZero N] {k : ℤ}
 `T_p f` reproduces exactly the coefficients of `f` at the indices divisible by `p`, so the
 difference is `f` with those indices deleted. Primality of `p` is not needed: what makes
 `T_p` act by `aₘ(T_p f) = a_{p m}(f)` is that `p`'s prime factors already divide `N`. -/
-private theorem qExpansion_coeff_restrict_sub_levelRaise_heckeTCuspNat {p : ℕ} [NeZero p]
-    (hpN : p.primeFactors ⊆ N.primeFactors) (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (n : ℕ) :
-    (qExpansion 1 (CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd (Nat.dvd_mul_left N p)) f -
-          CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL N p)
-            (heckeTCuspNat (N := N) k p f))).coeff n =
+private theorem qExpansion_coeff_restrict_sub_levelRaise_heckeTNat {p : ℕ} [NeZero p]
+    (hpN : p.primeFactors ⊆ N.primeFactors) (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)
+    (n : ℕ) :
+    (qExpansion 1 (_root_.ModularForm.restrict
+          (Gamma1_map_le_Gamma1_map_of_dvd (Nat.dvd_mul_left N p)) f -
+          ModularForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL N p)
+            (heckeTNat (N := N) k p f))).coeff n =
       if p ∣ n then 0 else (qExpansion 1 f).coeff n := by
   rw [_root_.ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map _), map_sub,
-    CuspForm.qExpansion_levelRaise_coeff_Gamma1 N _ n,
-    qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k p hpN f (n / p),
-    CuspForm.coe_restrict]
+    ModularForm.qExpansion_levelRaise_coeff_Gamma1 N _ n,
+    qExpansion_coeff_heckeTNat_of_primeFactors_subset k p hpN f (n / p),
+    _root_.ModularForm.coe_restrict]
   by_cases hpn : p ∣ n <;> simp [hpn, Nat.mul_div_cancel']
 
 /-- **Composing a coprimality filter with a prime one.** Deleting the indices divisible by a
@@ -181,191 +179,225 @@ private theorem coprime_prod_primeFactors_iff {n L : ℕ} (hL : L ≠ 0) :
   ⟨fun h ↦ (h.pow_right L).coprime_dvd_right (Nat.dvd_prod_primeFactors_pow_self hL),
     fun h ↦ h.coprime_dvd_right (Nat.prod_primeFactors_dvd L)⟩
 
-/-- **The filter at a single level-supported `p`.** From `f ∈ S_k(Γ₁(N), χ)` and a nonzero `p`
-whose prime factors all divide `N`, the form `f - V_p (T_p f)` lies in `S_k(Γ₁(p * N), χ)` and
-carries the coefficients of `f` at the indices *not* divisible by `p`, the rest deleted. `p`
-need be neither prime nor a prime power; only its prime support is constrained. -/
-private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd (χ : (ZMod N)ˣ →* ℂˣ)
-    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) {p : ℕ} [NeZero p]
-    (hpN : p.primeFactors ⊆ N.primeFactors) :
-    ∃ g : CuspForm ((Gamma1 (p * N)).map (mapGL ℝ)) k,
-      g ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap (Nat.dvd_mul_left N p))) ∧
-      ∀ n, (qExpansion 1 g).coeff n = if p ∣ n then 0 else (qExpansion 1 f).coeff n :=
-  ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd (Nat.dvd_mul_left N p)) f -
-      CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL N p) (heckeTCuspNat (N := N) k p f),
-    Submodule.sub_mem _ (CuspForm.restrict_mem_cuspFormCharSpace χ _ hf)
-      (CuspForm.levelRaise_mem_cuspFormCharSpace N p χ
-        (heckeTCuspNat_mem_cuspFormCharSpace_of_primeFactors_subset k χ p hpN hf)),
-    qExpansion_coeff_restrict_sub_levelRaise_heckeTCuspNat hpN f⟩
+/-- **The filter at a single level-supported `p`.** From `f ∈ M_k(Γ₁(N), χ)` and a nonzero `p`
+whose prime factors all divide `N`, the form `f - V_p (T_p f)` lies in `M_k(Γ₁(p * N), χ)` and
+carries the coefficients of `f` at the indices *not* divisible by `p`, the rest deleted. It is a
+cusp form when `f` is, since restriction, `T_p` and `V_p` all preserve cusp forms. `p` need be
+neither prime nor a prime power; only its prime support is constrained. -/
+private theorem exists_mem_modFormCharSpace_qExpansion_coeff_eq_ite_dvd_zero
+    (χ : (ZMod N)ˣ →* ℂˣ) {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ modFormCharSpace k χ) {p : ℕ} [NeZero p] (hpN : p.primeFactors ⊆ N.primeFactors) :
+    ∃ g : ModularForm ((Gamma1 (p * N)).map (mapGL ℝ)) k,
+      g ∈ modFormCharSpace k (χ.comp (ZMod.unitsMap (Nat.dvd_mul_left N p))) ∧
+      (f.IsCuspForm → g.IsCuspForm) ∧
+      ∀ n, (qExpansion 1 g).coeff n = if p ∣ n then 0 else (qExpansion 1 f).coeff n := by
+  refine ⟨_root_.ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd (Nat.dvd_mul_left N p)) f -
+      ModularForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL N p) (heckeTNat (N := N) k p f),
+    Submodule.sub_mem _ (ModularForm.restrict_mem_modFormCharSpace χ _ hf)
+      (ModularForm.levelRaise_mem_modFormCharSpace N p χ
+        (heckeTNat_mem_modFormCharSpace_of_primeFactors_subset k χ p hpN hf)),
+    fun hfc ↦ Submodule.sub_mem _ (_root_.ModularForm.restrict_mem_cuspFormSubmodule _ hfc) ?_,
+    qExpansion_coeff_restrict_sub_levelRaise_heckeTNat hpN f⟩
+  -- `V_p (T_p f)` is the image of the cusp form `V_p (T_p f')` when `f` is that of `f'`
+  obtain ⟨f', rfl⟩ := hfc
+  refine ⟨CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL N p) (heckeTCuspNat (N := N) k p f'),
+    ?_⟩
+  ext τ
+  simp [CuspForm.toModularFormₗ_eq_coe]
 
-/-- The iterated filter, by induction on the number of primes still to be peeled off. The level
-it lands at is existentially quantified together with the equation naming it, so that no step of
-the recursion has to transport a cusp form along an equality of levels. -/
-private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_prod (m : ℕ) :
-    ∀ {M : ℕ} [NeZero M] {k : ℤ} (χ : (ZMod M)ˣ →* ℂˣ)
-      {g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k}, g ∈ cuspFormCharSpace k χ →
-      ∀ S : Finset ℕ, S ⊆ M.primeFactors → S.card = m → ∃ (M' : ℕ) (hMM' : M ∣ M'),
-        M' = S.prod id * M ∧ ∃ g' : CuspForm ((Gamma1 M').map (mapGL ℝ)) k,
-          g' ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap hMM')) ∧
-          ∀ n, (qExpansion 1 g').coeff n =
-            if Nat.Coprime n (S.prod id) then (qExpansion 1 g).coeff n else 0 := by
-  induction m with
-  | zero =>
-    intro M _ k χ g hg S _ hScard
-    obtain rfl := Finset.card_eq_zero.mp hScard
-    exact ⟨M, dvd_rfl, by simp, g, by simpa [ZMod.unitsMap_self] using hg,
-      fun _ ↦ by simp [Nat.Coprime]⟩
-  | succ m ih =>
-    intro M _ k χ g hg S hS hScard
-    obtain ⟨q, hqS⟩ := Finset.card_pos.mp (by omega : 0 < S.card)
-    have hqM : q ∈ M.primeFactors := hS hqS
+/-- **The filter at the primes of `S`.** For a finite set `S` of primes dividing `M` and
+`f ∈ M_k(Γ₁(M), χ)`, there is, at every multiple `M'` of `∏ S * M`, a form in
+`M_k(Γ₁(M'), χ)` that is a cusp form when `f` is and whose `q`-expansion is that of `f`
+restricted to the indices coprime to `∏ S`.
+
+The proof peels one prime of `S` at a time, each step multiplying the base level by that prime.
+The target level `M'` stays fixed and is reached by one restriction once `S` is empty, so no
+form is transported along an equality of levels. -/
+private theorem exists_mem_modFormCharSpace_qExpansion_coeff_eq_ite_coprime_prod {M M' : ℕ}
+    {S : Finset ℕ} (hS : S ⊆ M.primeFactors) (hM' : S.prod id * M ∣ M') (χ : (ZMod M)ˣ →* ℂˣ)
+    {f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
+    ∃ g : ModularForm ((Gamma1 M').map (mapGL ℝ)) k,
+      g ∈ modFormCharSpace k (χ.comp (ZMod.unitsMap ((Nat.dvd_mul_left M _).trans hM'))) ∧
+      (f.IsCuspForm → g.IsCuspForm) ∧
+      ∀ n, (qExpansion 1 g).coeff n =
+        if Nat.Coprime n (S.prod id) then (qExpansion 1 f).coeff n else 0 := by
+  induction S using Finset.induction_on generalizing M with
+  | empty =>
+    have hMM' : M ∣ M' := by simpa using hM'
+    refine ⟨_root_.ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hMM') f,
+      ModularForm.restrict_mem_modFormCharSpace χ hMM' hf,
+      _root_.ModularForm.restrict_mem_cuspFormSubmodule _, fun n ↦ ?_⟩
+    simp [_root_.ModularForm.coe_restrict]
+  | insert q S hqS ih =>
+    have hqM : q ∈ M.primeFactors := hS (Finset.mem_insert_self q S)
     have hq : q.Prime := Nat.prime_of_mem_primeFactors hqM
+    have : NeZero M := ⟨(Nat.mem_primeFactors.mp hqM).2.2⟩
     have : NeZero q := ⟨hq.ne_zero⟩
-    have hMqM : M ∣ q * M := Nat.dvd_mul_left M q
-    obtain ⟨g₁, hg₁, hg₁q⟩ :=
-      exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd χ hg
-        (Nat.primeFactors_mono (Nat.dvd_of_mem_primeFactors hqM) (NeZero.ne M))
-    have hprod : S.prod id = q * (S.erase q).prod id := (Finset.mul_prod_erase _ _ hqS).symm
-    obtain ⟨M', hM'dvd, hM'eq, g', hg', hg'q⟩ :=
-      ih _ hg₁ (S.erase q)
-        (fun _ hr ↦ Nat.primeFactors_mono hMqM (NeZero.ne _) (hS (Finset.mem_of_mem_erase hr)))
-        (by rw [Finset.card_erase_of_mem hqS, hScard]; omega)
-    refine ⟨M', hMqM.trans hM'dvd, by rw [hM'eq, hprod]; ring, g', ?_, fun n ↦ ?_⟩
-    · simpa only [MonoidHom.comp_assoc, ZMod.unitsMap_comp] using hg'
-    · rw [hg'q n, hg₁q n, hprod]
+    -- filter `q` out at level `q * M`, then the rest of `S` from there
+    obtain ⟨g₁, hg₁, hg₁c, hg₁q⟩ :=
+      exists_mem_modFormCharSpace_qExpansion_coeff_eq_ite_dvd_zero χ hf (p := q)
+        (by simpa [hq.primeFactors] using hqM)
+    have hS' : S ⊆ (q * M).primeFactors := fun r hr ↦
+      Nat.primeFactors_mono (Nat.dvd_mul_left M q) (NeZero.ne _) (hS (Finset.mem_insert_of_mem hr))
+    have hM'' : S.prod id * (q * M) ∣ M' := by
+      rwa [Finset.prod_insert hqS, id, mul_comm q, mul_assoc] at hM'
+    obtain ⟨g, hg, hgc, hgq⟩ := ih hS' hM'' _ hg₁
+    refine ⟨g, ?_, hgc ∘ hg₁c, fun n ↦ ?_⟩
+    · simpa only [MonoidHom.comp_assoc, ZMod.unitsMap_comp] using hg
+    · rw [hgq n, hg₁q n, Finset.prod_insert hqS, id]
       exact ite_coprime_ite_dvd_eq_ite_coprime_mul hq n _ _
 
-omit [NeZero N] in
-/-- **The coprime-index filter.** For `f ∈ S_k(Γ₁(N), χ)` and a nonzero `L` whose primes all
-divide `N`, there is a cusp form `g` of level `∏ L.primeFactors * N`, with the nebentypus `χ`
-read at that level, whose `q`-expansion is that of `f` restricted to the indices coprime to `L`:
+/-- **Miyake's level, as the filter reaches it.** Reading a form at level `B * N`, where `B` is
+the product of the primes of `L` not dividing `N`, and then multiplying the level by each prime
+of `L` once lands at `N ∏_{p ∣ L, p ∣ N} p ∏_{p ∣ L, p ∤ N} p²`. -/
+private theorem prod_primeFactors_mul_prod_filter_not_dvd_mul (N L : ℕ) :
+    L.primeFactors.prod id * ((∏ p ∈ L.primeFactors with ¬p ∣ N, p) * N) =
+      N * (∏ p ∈ L.primeFactors with p ∣ N, p) * ∏ p ∈ L.primeFactors with ¬p ∣ N, p ^ 2 := by
+  change (∏ p ∈ L.primeFactors, p) * _ = _
+  rw [← Finset.prod_filter_mul_prod_filter_not L.primeFactors (· ∣ N), Finset.prod_pow]
+  ring
+
+/-- **Miyake's Lemma 4.6.5.** For `f ∈ M_k(Γ₁(N), χ)` and a positive integer `L`, the series
+`∑_{(n, L) = 1} aₙ(f) qⁿ` is a modular form `g ∈ M_k(Γ₁(M), χ)` at level
+`M = N ∏_{p ∣ L, p ∣ N} p ∏_{p ∣ L, p ∤ N} p²`:
+
+`aₙ(g) = if (n, L) = 1 then aₙ(f) else 0`,
+
+and `g` is a cusp form when `f` is. The nebentypus of `g` is `χ` read modulo `M`. A prime of `L`
+dividing `N` raises the level by a factor `p`, and one not dividing `N` by a factor `p²`. This is
+the level Miyake's proof gives; the module documentation explains why the reading with the two
+product conditions swapped, found in a transcription of the statement, cannot be right. The
+same statement on `S_k(Γ₁(N), χ)` is
+`exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime`. -/
+theorem exists_mem_modFormCharSpace_qExpansion_coeff_eq_ite_coprime (χ : (ZMod N)ˣ →* ℂˣ)
+    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) {L : ℕ}
+    [NeZero L] :
+    ∃ g : ModularForm ((Gamma1 (N * (∏ p ∈ L.primeFactors with p ∣ N, p) *
+        ∏ p ∈ L.primeFactors with ¬p ∣ N, p ^ 2)).map (mapGL ℝ)) k,
+      g ∈ modFormCharSpace k (χ.comp (ZMod.unitsMap ((Nat.dvd_mul_right N _).mul_right _))) ∧
+      (f.IsCuspForm → g.IsCuspForm) ∧
+      ∀ n, (qExpansion 1 g).coeff n = if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 := by
+  -- read `f` at level `B * N`, where every prime of `L` divides the level, and filter there
+  set B := ∏ p ∈ L.primeFactors with ¬p ∣ N, p
+  have hB : B ≠ 0 := Finset.prod_ne_zero_iff.mpr fun p hp ↦
+    (Nat.prime_of_mem_primeFactors (Finset.mem_filter.mp hp).1).ne_zero
+  have hNB : N ∣ B * N := Nat.dvd_mul_left N B
+  have hLB : L.primeFactors ⊆ (B * N).primeFactors := fun p hp ↦ by
+    refine Nat.mem_primeFactors.mpr
+      ⟨Nat.prime_of_mem_primeFactors hp, ?_, Nat.mul_ne_zero hB (NeZero.ne N)⟩
+    by_cases hpN : p ∣ N
+    · exact dvd_mul_of_dvd_right hpN B
+    · exact dvd_mul_of_dvd_left (Finset.dvd_prod_of_mem _ (Finset.mem_filter.mpr ⟨hp, hpN⟩)) N
+  obtain ⟨g, hg, hgc, hgq⟩ := exists_mem_modFormCharSpace_qExpansion_coeff_eq_ite_coprime_prod hLB
+    (dvd_of_eq (prod_primeFactors_mul_prod_filter_not_dvd_mul N L)) (χ.comp (ZMod.unitsMap hNB))
+    (ModularForm.restrict_mem_modFormCharSpace χ hNB hf)
+  refine ⟨g, ?_, fun hfc ↦ hgc (_root_.ModularForm.restrict_mem_cuspFormSubmodule _ hfc),
+    fun n ↦ ?_⟩
+  · simpa only [MonoidHom.comp_assoc, ZMod.unitsMap_comp] using hg
+  · rw [hgq n, _root_.ModularForm.coe_restrict]
+    simp only [coprime_prod_primeFactors_iff (NeZero.ne L)]
+
+/-- **Miyake's Lemma 4.6.5 on cusp forms.** For `f ∈ S_k(Γ₁(N), χ)` and a positive integer `L`,
+there is a cusp form `g ∈ S_k(Γ₁(M), χ)` at Miyake's level
+`M = N ∏_{p ∣ L, p ∣ N} p ∏_{p ∣ L, p ∤ N} p²`, with the nebentypus `χ` read modulo `M`, whose
+`q`-expansion is that of `f` restricted to the indices coprime to `L`:
 
 `aₙ(g) = if (n, L) = 1 then aₙ(f) else 0`.
 
-Only the primes of `L` matter, both to the filter and to the level: `Nat.Coprime n L` depends
-only on `L`'s prime support, and the construction peels off one prime of `L` at a time. The
-same filter read at level `L * N`, where it is Miyake's statement for squarefree `L`, is
-`exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_mul`. -/
+It is read off from `exists_mem_modFormCharSpace_qExpansion_coeff_eq_ite_coprime` through the
+inclusion `S_k → M_k`: the filter of a cusp form is a cusp form. -/
 theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime (χ : (ZMod N)ˣ →* ℂˣ)
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) {L : ℕ}
-    [NeZero L] (hLN : L.primeFactors ⊆ N.primeFactors) :
-    ∃ g : CuspForm ((Gamma1 (L.primeFactors.prod id * N)).map (mapGL ℝ)) k,
-      g ∈ cuspFormCharSpace k
-        (χ.comp (ZMod.unitsMap (Nat.dvd_mul_left N (L.primeFactors.prod id)))) ∧
+    [NeZero L] :
+    ∃ g : CuspForm ((Gamma1 (N * (∏ p ∈ L.primeFactors with p ∣ N, p) *
+        ∏ p ∈ L.primeFactors with ¬p ∣ N, p ^ 2)).map (mapGL ℝ)) k,
+      g ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap ((Nat.dvd_mul_right N _).mul_right _))) ∧
       ∀ n, (qExpansion 1 g).coeff n = if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 := by
-  rcases Nat.eq_zero_or_pos N with rfl | hN
-  · -- at level `0` the hypothesis `hLN` forces `L = 1`, and the filter is the identity
-    have hL : L = 1 := by
-      have h : L.primeFactors = ∅ := Finset.subset_empty.mp (by simpa using hLN)
-      exact (Nat.primeFactors_eq_empty.mp h).resolve_left (NeZero.ne L)
-    have hNM := Nat.dvd_mul_left 0 (L.primeFactors.prod id)
-    refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hNM) f,
-      CuspForm.restrict_mem_cuspFormCharSpace χ hNM hf, fun n ↦ ?_⟩
-    simp [hL, CuspForm.coe_restrict]
-  have : NeZero N := ⟨hN.ne'⟩
-  obtain ⟨M', hM'dvd, hM'eq, g, hg, hgq⟩ :=
-    exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_prod L.primeFactors.card χ hf
-      L.primeFactors hLN rfl
-  subst hM'eq
-  exact ⟨g, hg, fun n ↦ by simp only [hgq n, coprime_prod_primeFactors_iff (NeZero.ne L)]⟩
+  obtain ⟨g, hg, hgc, hgq⟩ := exists_mem_modFormCharSpace_qExpansion_coeff_eq_ite_coprime χ
+    ((coe_mem_modFormCharSpace_iff k χ f).mpr hf) (L := L)
+  obtain ⟨g', rfl⟩ := hgc (ModularForm.CuspForm.isCuspForm_toModularFormₗ f)
+  exact ⟨g', (coe_mem_modFormCharSpace_iff k _ g').mp hg, hgq⟩
 
 omit [NeZero N] in
-/-- **Miyake's Lemma 4.6.5, the coprime-index filter at level `L * N`.** For
-`f ∈ S_k(Γ₁(N), χ)` and a nonzero `L` whose primes all divide `N`, there is a cusp form `g`
-of level `L * N`, with the nebentypus `χ` read at that level, whose `q`-expansion is that of
-`f` restricted to the indices coprime to `L`:
+/-- **The cusp-form filter when every prime of `L` divides `N`.** No prime of `L` then has to be
+brought into the level first, so the filter is available at every multiple of
+`∏ L.primeFactors * N`, which is Miyake's level in this case. Unlike the general statement this
+needs no `NeZero N`. -/
+private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_of_subset
+    (χ : (ZMod N)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ cuspFormCharSpace k χ) {L : ℕ} (hL : L ≠ 0) (hLN : L.primeFactors ⊆ N.primeFactors)
+    {M : ℕ} (hM : L.primeFactors.prod id * N ∣ M) :
+    ∃ g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k,
+      g ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap ((Nat.dvd_mul_left N _).trans hM))) ∧
+      ∀ n, (qExpansion 1 g).coeff n = if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 := by
+  obtain ⟨g, hg, hgc, hgq⟩ := exists_mem_modFormCharSpace_qExpansion_coeff_eq_ite_coprime_prod hLN
+    hM χ ((coe_mem_modFormCharSpace_iff k χ f).mpr hf)
+  obtain ⟨g', rfl⟩ := hgc (ModularForm.CuspForm.isCuspForm_toModularFormₗ f)
+  refine ⟨g', (coe_mem_modFormCharSpace_iff k _ g').mp hg, fun n ↦ ?_⟩
+  have h := hgq n
+  simp only [coprime_prod_primeFactors_iff hL] at h
+  exact h
+
+omit [NeZero N] in
+/-- **The coprime-index filter at level `L * N`, for `L` whose primes all divide `N`.** For
+`f ∈ S_k(Γ₁(N), χ)` and a nonzero `L` whose primes all divide `N`, there is a cusp form `g` of
+level `L * N`, with the nebentypus `χ` read at that level, whose `q`-expansion is that of `f`
+restricted to the indices coprime to `L`:
 
 `aₙ(g) = if (n, L) = 1 then aₙ(f) else 0`.
 
-This is `exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime` restricted along
-`∏ L.primeFactors * N ∣ L * N`. For squarefree `L` the two levels agree, which is Miyake's
-statement as given. -/
+When every prime of `L` divides `N`, Miyake's level `N ∏_{p ∣ L, p ∣ N} p ∏_{p ∣ L, p ∤ N} p²`
+is `∏ L.primeFactors * N`; it divides `L * N` and equals it exactly when `L` is squarefree. The
+hypothesis on the primes of `L` matters for this level: a prime `p ∤ N` costs Miyake's level a
+factor `p²`, more than `L * N` supplies when `p ^ 2 ∤ L`. For an arbitrary `L` see
+`exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime`. -/
 theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_mul
     (χ : (ZMod N)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ cuspFormCharSpace k χ) {L : ℕ} [NeZero L]
     (hLN : L.primeFactors ⊆ N.primeFactors) :
     ∃ g : CuspForm ((Gamma1 (L * N)).map (mapGL ℝ)) k,
       g ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap (Nat.dvd_mul_left N L))) ∧
-      ∀ n, (qExpansion 1 g).coeff n = if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 := by
-  have hpd : L.primeFactors.prod id ∣ L := by simpa using Nat.prod_primeFactors_dvd L
-  have hdvd : L.primeFactors.prod id * N ∣ L * N := mul_dvd_mul_right hpd N
-  obtain ⟨g, hgχ, hgq⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime χ hf hLN
-  refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hdvd) g,
-    CuspForm.restrict_mem_cuspFormCharSpace_comp χ _ hdvd hgχ, fun n ↦ ?_⟩
-  rw [CuspForm.coe_restrict]
-  exact hgq n
+      ∀ n, (qExpansion 1 g).coeff n = if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 :=
+  exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_of_subset χ hf (NeZero.ne L) hLN
+    (mul_dvd_mul_right (by simpa using Nat.prod_primeFactors_dvd L) N)
 
-omit [NeZero N] in
-/-- **The complementary filter.** For `f ∈ S_k(Γ₁(N), χ)` and a nonzero `L` whose primes all
-divide `N`, there is a cusp form `h` of level `∏ L.primeFactors * N`, with the nebentypus `χ`
-read at that level, whose `q`-expansion is that of `f` restricted to the indices *not* coprime
-to `L`:
+/-- **The complementary filter (the `h`-form).** For `f ∈ S_k(Γ₁(N), χ)` and a positive integer
+`L`, there is a cusp form `h` at Miyake's level `M = N ∏_{p ∣ L, p ∣ N} p ∏_{p ∣ L, p ∤ N} p²`,
+with the nebentypus `χ` read modulo `M`, whose `q`-expansion is that of `f` restricted to the
+indices *not* coprime to `L`:
 
 `aₙ(h) = if (n, L) = 1 then 0 else aₙ(f)`.
 
-This is the exact complement of
-`exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime`: same hypothesis on `L`, same
-level, complementary coefficients. For an `L` whose primes need not divide `N`, see
-`exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_prod_primeFactors_sq`. -/
+It is `f` minus the filter of `exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime`,
+both read at level `M`. -/
 theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero
     (χ : (ZMod N)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hf : f ∈ cuspFormCharSpace k χ) {L : ℕ} [NeZero L]
-    (hLN : L.primeFactors ⊆ N.primeFactors) :
-    ∃ h : CuspForm ((Gamma1 (L.primeFactors.prod id * N)).map (mapGL ℝ)) k,
-      h ∈ cuspFormCharSpace k
-        (χ.comp (ZMod.unitsMap (Nat.dvd_mul_left N (L.primeFactors.prod id)))) ∧
+    (hf : f ∈ cuspFormCharSpace k χ) {L : ℕ} [NeZero L] :
+    ∃ h : CuspForm ((Gamma1 (N * (∏ p ∈ L.primeFactors with p ∣ N, p) *
+        ∏ p ∈ L.primeFactors with ¬p ∣ N, p ^ 2)).map (mapGL ℝ)) k,
+      h ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap ((Nat.dvd_mul_right N _).mul_right _))) ∧
       ∀ n, (qExpansion 1 h).coeff n = if Nat.Coprime n L then 0 else (qExpansion 1 f).coeff n := by
-  have hNM : N ∣ L.primeFactors.prod id * N := Nat.dvd_mul_left N (L.primeFactors.prod id)
-  obtain ⟨g, hg, hgq⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime χ hf hLN
+  have hNM : N ∣ N * (∏ p ∈ L.primeFactors with p ∣ N, p) *
+      ∏ p ∈ L.primeFactors with ¬p ∣ N, p ^ 2 := (Nat.dvd_mul_right N _).mul_right _
+  obtain ⟨g, hg, hgq⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime χ hf (L := L)
   refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hNM) f - g,
     Submodule.sub_mem _ (CuspForm.restrict_mem_cuspFormCharSpace χ hNM hf) hg, fun n ↦ ?_⟩
   rw [FunLike.coe_sub, _root_.ModularForm.qExpansion_sub one_pos
     (one_mem_strictPeriods_Gamma1_map _), map_sub, CuspForm.coe_restrict, hgq n]
   split_ifs <;> simp
 
-/-- **Miyake's `h`-form.** For `f ∈ S_k(Γ₁(N), χ)` and any nonzero `L`, there is a cusp form
-`h` of level `∏ L.primeFactors * (∏ L.primeFactors * N)`, with the nebentypus `χ` read at that
-level, whose `q`-expansion is that of `f` restricted to the indices *not* coprime to `L`:
+/-- **The `h`-form at level `N * L ^ 2`.** For `f ∈ S_k(Γ₁(N), χ)` and any nonzero `L`, there is
+a cusp form `h` of level `N * L ^ 2`, with the nebentypus `χ` read at that level, whose
+`q`-expansion is that of `f` restricted to the indices *not* coprime to `L`:
 
 `aₙ(h) = if (n, L) = 1 then 0 else aₙ(f)`.
 
-Nothing is assumed about `L` beyond `L ≠ 0`: neither squarefreeness, nor any relation between
-the primes of `L` and those of `N`. The level divides `N * L ^ 2`, equals it exactly when `L`
-is squarefree, and is strictly smaller when `L` has a repeated prime; for that same `h`-form
-read at the classical level see
-`exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq`. -/
-theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_prod_primeFactors_sq
-    (χ : (ZMod N)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hf : f ∈ cuspFormCharSpace k χ) {L : ℕ} [NeZero L] :
-    ∃ h : CuspForm ((Gamma1 (L.primeFactors.prod id *
-        (L.primeFactors.prod id * N))).map (mapGL ℝ)) k,
-      h ∈ cuspFormCharSpace k
-          (χ.comp (ZMod.unitsMap
-            ((Nat.dvd_mul_left N (L.primeFactors.prod id)).trans (dvd_mul_left _ _)))) ∧
-      ∀ n, (qExpansion 1 h).coeff n = if Nat.Coprime n L then 0 else (qExpansion 1 f).coeff n := by
-  have hprodne : L.primeFactors.prod id ≠ 0 := by
-    simp [Finset.prod_eq_zero_iff]
-  have hne : L.primeFactors.prod id * N ≠ 0 := Nat.mul_ne_zero hprodne (NeZero.ne N)
-  have hNM : N ∣ L.primeFactors.prod id * N := Nat.dvd_mul_left N (L.primeFactors.prod id)
-  have : NeZero (L.primeFactors.prod id * N) := ⟨hne⟩
-  have hsub : L.primeFactors ⊆ (L.primeFactors.prod id * N).primeFactors :=
-    (Nat.prod_primeFactors_dvd_iff hne).mp (by simp)
-  obtain ⟨h, hh, hhq⟩ :=
-    exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero
-      (χ.comp (ZMod.unitsMap hNM)) (CuspForm.restrict_mem_cuspFormCharSpace χ hNM hf) hsub
-  refine ⟨h, ?_, fun n ↦ ?_⟩
-  · rwa [MonoidHom.comp_assoc, ZMod.unitsMap_comp] at hh
-  · rw [hhq n, CuspForm.coe_restrict]
-
-/-- **Miyake's `h`-form at the classical level.** For `f ∈ S_k(Γ₁(N), χ)` and any nonzero `L`,
-there is a cusp form `h` of level `N * L ^ 2`, with the nebentypus `χ` read at that level,
-whose `q`-expansion is that of `f` restricted to the indices *not* coprime to `L`:
-
-`aₙ(h) = if (n, L) = 1 then 0 else aₙ(f)`.
-
-The two levels are related: `∏ L.primeFactors * (∏ L.primeFactors * N)` divides `N * L ^ 2`, with
-equality exactly when `L` is squarefree. `N * L ^ 2` is the level at which Miyake states the
-lemma. -/
+`N * L ^ 2` is the level at which the source this file adapts (AINTLIB's
+`miyake_h_form_general`) states the `h`-form. It is a multiple of Miyake's level
+`N ∏_{p ∣ L, p ∣ N} p ∏_{p ∣ L, p ∤ N} p²`, equal to it exactly when `L` is squarefree and coprime
+to `N`, and `h` is the `h`-form of
+`exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero` restricted along that
+divisibility. -/
 theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq
     (χ : (ZMod N)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ cuspFormCharSpace k χ) {L : ℕ} [NeZero L] :
@@ -373,11 +405,14 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq
       h ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap (dvd_mul_right N (L ^ 2)))) ∧
       ∀ n, (qExpansion 1 h).coeff n = if Nat.Coprime n L then 0 else (qExpansion 1 f).coeff n := by
   have hpd : L.primeFactors.prod id ∣ L := by simpa using Nat.prod_primeFactors_dvd L
-  have hdvd : L.primeFactors.prod id * (L.primeFactors.prod id * N) ∣ N * L ^ 2 :=
-    (mul_dvd_mul hpd (mul_dvd_mul_right hpd N)).trans (dvd_of_eq (by ring))
-  obtain ⟨h, hh, hhq⟩ :=
-    exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_prod_primeFactors_sq
-      χ hf (L := L)
+  have hBd : ∏ p ∈ L.primeFactors with ¬p ∣ N, p ∣ L :=
+    (Finset.prod_dvd_prod_of_subset _ _ id (Finset.filter_subset _ _)).trans hpd
+  have hdvd : N * (∏ p ∈ L.primeFactors with p ∣ N, p) *
+      ∏ p ∈ L.primeFactors with ¬p ∣ N, p ^ 2 ∣ N * L ^ 2 := by
+    rw [← prod_primeFactors_mul_prod_filter_not_dvd_mul]
+    exact (mul_dvd_mul hpd (mul_dvd_mul_right hBd N)).trans (dvd_of_eq (by ring))
+  obtain ⟨h, hh, hhq⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero χ hf
+    (L := L)
   refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hdvd) h,
     CuspForm.restrict_mem_cuspFormCharSpace_comp χ _ hdvd hh, fun n ↦ ?_⟩
   rw [CuspForm.coe_restrict]
@@ -419,7 +454,9 @@ theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd
       · rw [h0]
         simp [Nat.coprime_zero_right, hn]
   have : NeZero L := ⟨hL.ne'⟩
-  obtain ⟨g, hgχ, hgq⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime χ hf hLN
+  obtain ⟨g, hgχ, hgq⟩ :=
+    exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_of_subset χ hf (NeZero.ne L) hLN
+      dvd_rfl
   refine ⟨g, hgχ, ?_, hgq⟩
   rw [qExpansionSupportedOnDvd_iff, PowerSeries.isSupportedOnDvd_iff]
   intro n hn
