@@ -25,8 +25,8 @@ by positive simple root groups nor uniqueness of the factors is asserted.
 Positive normalization follows from the commutator height bound in `Root.Collection.NotG2`:
 commutator factors have height greater than one, so cannot be the omitted simple root.
 Rank-one normalization and factorization then use
-`closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_range_le_normalizer` and
-`mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul_of_range_le_normalizer`
+`closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_le_normalizer` and
+`mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul_of_le_normalizer`
 from `Root.Positive`. The `IsNotG2` instances include F₄ and every simply-laced type.
 For positive-root collection in F₄, see
 [Tau Ceti PR #35745](https://github.com/TauCetiProject/TauCeti/pull/35745).
@@ -105,13 +105,13 @@ theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton
     Subgroup.normalizer
       (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) :=
-  closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_range_le_normalizer
+  closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_le_normalizer
     ρ M hM hnil i A
     (range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil i A)
 
 /-- Outside G₂, every positive element is a punctured-positive element followed by an element
 of the chosen simple root group. No uniqueness of the factors is asserted. -/
-theorem mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul
+theorem mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul
     (i : Fin t.rank) (A : CommAlgCat ℤ)
     (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) :
     g ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
@@ -119,7 +119,7 @@ theorem mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul
     ∃ q ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
       (chevalleyRootSubgroup ρ M hM hnil γ A).range),
       ∃ u, g = q * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A u :=
-  mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul_of_range_le_normalizer
+  mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul_of_le_normalizer
     ρ M hM hnil i A
     (range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil i A) g
 
