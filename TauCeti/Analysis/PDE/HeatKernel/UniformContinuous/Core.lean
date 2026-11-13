@@ -103,7 +103,7 @@ theorem generator_heatSemigroupBUC_hasCore_smoothBoundedDerivativesSubmodule :
     (heatSemigroupBUC (E := E) (F := F)).generator.HasCore
       (smoothBoundedDerivativesSubmodule ℝ E F) := by
   let S := (heatSemigroupBUC (E := E) (F := F)).toStronglyContinuousSemigroup
-  refine .of_graph_subset_closure S.isClosed_generator (fun f hf => ?_) ?_
+  refine (S.isClosed_generator.hasCore_iff_graph_subset_closure fun f hf => ?_).2 ?_
   · rw [S.generator_domain]
     exact (exists_generator_heatSemigroupBUC_eq_laplacian hf).choose
   · intro p hp

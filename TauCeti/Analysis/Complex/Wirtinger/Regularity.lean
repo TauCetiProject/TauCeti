@@ -41,6 +41,8 @@ that a weak directional derivative of a solution solves the differentiated equat
   exists near a compact set, with an `Lᵖ` bound, for an `Lʳ` solution on a fixed open set.
 * `HasWeakConjWirtingerDerivOn.memWkpLoc_one`: local `W^{1,p}` regularity.
 * `HasWeakConjWirtingerDerivOn.memWkpLoc_succ`: local `W^{k+1,p}` regularity for every `k`.
+  Both regularity statements hold for any finite-dimensional complex normed space `F`, by
+  transport to a Euclidean space.
 * `exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le` and
   `exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn`: the first-order interior estimate.
 * `exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn`: the interior `W^{k+1,p}` estimate.
@@ -62,8 +64,11 @@ namespace TauCeti
 open _root_.MeasureTheory TopologicalSpace ContinuousLinearMap Complex Set Filter LineDeriv
 open scoped ContDiff Distributions ENNReal NNReal
 
+variable {p : ℝ≥0∞}
+
+section InnerProductSpace
+
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
-  {p : ℝ≥0∞}
 
 /-- **Interior `W^{1,p}` estimate with a fixed outer domain.** For `1 < p < ∞`, an `Lʳ` solution
 of `\bar∂u = f` on `U` with `f ∈ Lᵖ(U)` and `p ≤ r ≤ ∞` has a weak derivative on an open
@@ -134,10 +139,9 @@ theorem exists_hasWeakFDerivOn_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le
           add_le_add ((eLpNorm_norm _ hm₁).trans_le hg₁n) ((eLpNorm_norm _ hmI).trans_le hgIn)
       _ = ↑(2 * (C₀ * C)) * A := by push_cast; ring
 
-/-- **Local `W^{1,p}` regularity for `\bar∂`.** For `1 < p < ∞`, a locally `Lᵖ` function whose
-distributional `\bar∂` derivative is locally `Lᵖ` on an open set lies in `W^{1,p}_loc` there.
-No weak derivative of the solution is assumed. -/
-theorem HasWeakConjWirtingerDerivOn.memWkpLoc_one (hp : 1 < p) (hp_top : p ≠ ⊤) {Ω : Opens ℂ}
+/-- Local `W^{1,p}` regularity for `\bar∂` with values in an inner product space; the general
+finite-dimensional statement `HasWeakConjWirtingerDerivOn.memWkpLoc_one` reduces to it. -/
+private theorem memWkpLoc_one_of_innerProductSpace (hp : 1 < p) (hp_top : p ≠ ⊤) {Ω : Opens ℂ}
     {u f : ℂ → F} (hu : MemLpLoc p Ω u) (hf : MemLpLoc p Ω f)
     (h : HasWeakConjWirtingerDerivOn volume Ω u f) : MemWkpLoc p Ω 1 u := by
   have := FiniteDimensional.completeSpace ℂ F
@@ -163,6 +167,31 @@ theorem HasWeakConjWirtingerDerivOn.memWkpLoc_one (hp : 1 < p) (hp_top : p ≠ �
   exact (hD'p.ae_eq ((hD.mono hVΩ).ae_eq hD').symm).mono_measure
     (Measure.restrict_mono hKV le_rfl)
 
+end InnerProductSpace
+
+section NormedSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- **Local `W^{1,p}` regularity for `\bar∂`.** For `1 < p < ∞`, a locally `Lᵖ` function whose
+distributional `\bar∂` derivative is locally `Lᵖ` on an open set lies in `W^{1,p}_loc` there.
+No weak derivative of the solution is assumed. The values lie in any finite-dimensional complex
+normed space, which is transported to a Euclidean space. -/
+theorem HasWeakConjWirtingerDerivOn.memWkpLoc_one (hp : 1 < p) (hp_top : p ≠ ⊤) {Ω : Opens ℂ}
+    {u f : ℂ → F} (hu : MemLpLoc p Ω u) (hf : MemLpLoc p Ω f)
+    (h : HasWeakConjWirtingerDerivOn volume Ω u f) : MemWkpLoc p Ω 1 u := by
+  have := FiniteDimensional.completeSpace ℂ F
+  let e : F ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ F)) :=
+    ContinuousLinearEquiv.ofFinrankEq (by simp)
+  have hu' : MemLpLoc p Ω (fun z => e (u z)) := by
+    simpa using hu.clm_comp (e.toContinuousLinearMap.restrictScalars ℝ)
+  have hf' : MemLpLoc p Ω (fun z => e (f z)) := by
+    simpa using hf.clm_comp (e.toContinuousLinearMap.restrictScalars ℝ)
+  have he : MemWkpLoc p Ω 1 (fun z => e (u z)) :=
+    memWkpLoc_one_of_innerProductSpace hp hp_top hu' hf'
+      (by simpa using h.clm_comp e.toContinuousLinearMap)
+  simpa using he.clm_comp (e.symm.toContinuousLinearMap.restrictScalars ℝ)
+
 /-- **Local `W^{k+1,p}` regularity for `\bar∂`.** For `1 < p < ∞` and every `k`, a locally `Lᵖ`
 function whose distributional `\bar∂` derivative lies in `W^{k,p}_loc` on an open set lies in
 `W^{k+1,p}_loc` there. -/
@@ -182,6 +211,12 @@ theorem HasWeakConjWirtingerDerivOn.memWkpLoc_succ (hp : 1 < p) (hp_top : p ≠ 
     refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hu, D, hD, ?_⟩
     rw [fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D]
     exact ((hv 1).clm_comp _).add ((hv I).clm_comp _)
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
 
 /-- **Interior `W^{1,p}` estimate for `\bar∂`.** For `1 < p < ∞`, `p ≤ r ≤ ∞` and a compact
 `K ⊆ Ω`, there are an open `Ω'` with `K ⊆ Ω'` and compact closure in `Ω`, and a constant `C`,
@@ -369,5 +404,7 @@ theorem exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn (hp : 1 < p) (hp_top
     exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (F := F) hp hp_top k hWc hWΩ
   exact ⟨⟨W, hW⟩, Ω', hKW, subset_closure.trans hWΩ', hΩ'c, hΩ'Ω, C,
     fun u f hu hf h => (eLpNormWkp_mono_set subset_closure).trans (hC u f hu hf h)⟩
+
+end InnerProductSpace
 
 end TauCeti
