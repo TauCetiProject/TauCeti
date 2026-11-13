@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.PDE.DirichletProblem
+import TauCeti.Analysis.PDE.WeakLaplacian
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
@@ -147,13 +148,11 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero [DecidableEq �
     {w : W1p mu Omega 2} (hw : ∀ φ : 𝓓(Omega, ℝ),
       energyFormH1 (fun _ => 1) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 φ) = 0) :
     ∃ h : EuclideanSpace ℝ ι → ℝ, HarmonicOnNhd h Omega ∧
-      (W1p.value w : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] h := by
-  refine WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq
-    (W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero fun φ => (Eq.trans ?_ (hw φ)))
-  rw [energyFormH1_zero_zero_eq_setIntegral, L2.inner_def]
-  congr 1
-  funext x
-  rw [matrixBilinearForm_one_apply, EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
+      (W1p.value w : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] h :=
+  WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq ((weaklyHarmonicOn_iff).2
+    ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ =>
+      neg_eq_zero.1 ((energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul
+        .rfl φ).symm.trans (hw φ))⟩)
 
 /-- **The weak gradient of a weakly harmonic Sobolev function is harmonic.** If the value of
 `w ∈ W^{1,p}(Ω)` is weakly harmonic on `Ω`, then the weak gradient of `w` agrees almost

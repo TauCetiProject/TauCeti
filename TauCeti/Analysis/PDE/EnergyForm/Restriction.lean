@@ -488,11 +488,7 @@ theorem forall_energyFormH1_restrictL_top_eq_setIntegral [DecidableEq ι] {v : W
       (∫ x, ⟪W1p.gradient v x, ∇ φ x⟫_ℝ ∂mu) + ∫ x, G x * φ x ∂mu = 0) :
     ∀ w : W1p0 mu Omega 2, energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL le_top v)
       (w : W1p mu Omega 2) = ∫ x in Omega, F x * W1p.value (w : W1p mu Omega 2) x ∂mu := by
-  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => (1 : Matrix ι ι ℝ)) x)
-      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-      ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤ (mu.restrict Omega) := by
-    simpa using memLp_top_const (μ := mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))
-      (energyIntegrand (1 : Matrix ι ι ℝ) 0 0)
+  have hcoeff := memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) 1
   intro w
   refine ((forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff (hF.toLp F)
     (W1p.restrictL le_top v)).2 (fun φ => ?_) w).trans (integral_congr_ae ?_)
