@@ -77,6 +77,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
 * `TauCeti.exists_finite_compact_chart_cover`: a compact manifold modelled on a locally compact
   space is covered by the relative interiors of finitely many compact coordinate sets.
+* `TauCeti.CompactChartAtlas`: a finite family of compact coordinate sets whose relative interiors
+  cover `M`; `TauCeti.CompactChartAtlas.instNonempty` provides one on a compact manifold modelled
+  on a locally compact space.
 * `TauCeti.exists_locallyFinite_compact_extChartAt_cover`: a locally finite compact coordinate
   cover of a locally compact, sigma-compact Hausdorff manifold.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
@@ -573,6 +576,33 @@ theorem exists_finite_compact_chart_cover [CompactSpace M] [LocallyCompactSpace 
   · have hmem := (hu i).2.2.2.2 (Set.mem_image_of_mem _ hz)
     rwa [(extChartAt I (α i)).right_inv z.2] at hmem
   · simpa only [Set.mem_ofPred_eq, (extChartAt I (α i)).left_inv hy] using hyi
+
+/-- A *compact chart atlas* of `M`: finitely many points `center i` of `M` with compact subsets
+`piece i` of the extended chart targets at them, whose relative interiors cover `M`. Every compact
+manifold modelled on a locally compact space has one (`TauCeti.CompactChartAtlas.instNonempty`). -/
+structure CompactChartAtlas (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] where
+  /-- The index type of the atlas. -/
+  ι : Type
+  /-- The atlas is finite. -/
+  [fintype : Fintype ι]
+  /-- The chart centers. -/
+  center : ι → M
+  /-- The compact coordinate pieces. -/
+  piece : ∀ i, TopologicalSpace.Compacts (extChartAt I (center i)).target
+  /-- The relative interiors of the pieces cover the manifold. -/
+  interior_cover : ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (center i)).source,
+    (⟨extChartAt I (center i) y, (extChartAt I (center i)).map_source hy⟩ :
+      (extChartAt I (center i)).target) ∈ interior (piece i : Set (extChartAt I (center i)).target)
+
+attribute [instance] CompactChartAtlas.fintype
+
+/-- **Existence of compact chart atlases.** A compact manifold modelled on a locally compact space
+has a compact chart atlas. -/
+instance CompactChartAtlas.instNonempty [CompactSpace M] [LocallyCompactSpace H] :
+    Nonempty (CompactChartAtlas I M) := by
+  obtain ⟨N, c, K, hK⟩ := exists_finite_compact_chart_cover (I := I) (M := M)
+  exact ⟨⟨Fin N, c, K, hK⟩⟩
 
 /-- A locally compact, sigma-compact Hausdorff manifold has a locally finite cover by compact
 coordinate sets in preferred extended charts. Their inverse images cover the manifold, including

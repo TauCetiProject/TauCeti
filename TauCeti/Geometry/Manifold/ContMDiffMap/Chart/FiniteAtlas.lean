@@ -105,6 +105,20 @@ theorem continuous_finiteAtlasSeminorm (k : ℕ) (hk : k ≤ n) :
 
 variable {c K}
 
+/-- Convergence in the finite-atlas `C^k` seminorm gives pointwise convergence of the coordinate
+derivatives of order at most `k` on the pieces. -/
+theorem tendsto_chartIteratedFDeriv_of_tendsto_finiteAtlasSeminorm {k : ℕ} {hk : k ≤ n}
+    {β : Type*} {l : Filter β} {u : β → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {g : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
+    (h : Tendsto (fun b ↦ finiteAtlasSeminorm c K k hk (u b - g)) l (𝓝 0)) (i : ι) {m : ℕ}
+    (hm : m ≤ k) {z : (extChartAt I (c i)).target} (hz : z ∈ K i) :
+    Tendsto (fun b ↦ chartIteratedFDeriv (u b) (c i) m ((Nat.cast_le.mpr hm).trans hk) z) l
+      (𝓝 (chartIteratedFDeriv g (c i) m ((Nat.cast_le.mpr hm).trans hk) z)) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun b ↦ ?_) h
+  have hb := (finiteAtlasSeminorm_le_iff c K k hk (u b - g) (apply_nonneg _ _)).mp le_rfl i m hm
+    z hz
+  rwa [chartIteratedFDeriv_sub, ContinuousMap.sub_apply] at hb
+
 section Cover
 
 variable (hK : ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (c i)).source,
