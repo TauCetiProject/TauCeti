@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.BrouwerFixedPoint
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Analysis.Convex.PartitionOfUnity
+import Mathlib.Topology.EMetricSpace.Paracompact
 
 /-!
 # Schauder's fixed-point theorem
@@ -47,6 +48,9 @@ a fixed point (`TauCeti.schaeferFixedPoint`).
   the ambient space.
 * `TauCeti.schauderFixedPoint_closedConvex`: Schauder's theorem for a bundled self-map.
 * `TauCeti.schauderFixedPoint_compactConvex`: Schauder's theorem for compact convex sets.
+* `TauCeti.exists_sum_smul_apply_apply_eq_self`: if `g` maps a closed convex set `C` into a
+  compact set covered by the preimages of the interior of `C` under finitely many maps `f i`,
+  then some `x ∈ C` is a convex combination of the points `f i (g x)`.
 * `TauCeti.leraySchauderFixedPoint_closedBall`: the Leray–Schauder boundary condition on a ball.
 * `TauCeti.schaeferFixedPoint`: Schaefer's a priori bound form.
 
@@ -152,6 +156,41 @@ theorem schauderFixedPoint_compactConvex (hC : IsCompact C) (hconv : Convex ℝ 
     (hne : C.Nonempty) (f : C(C, C)) : ∃ x, IsFixedPt f x :=
   schauderFixedPoint_closedConvex hC.isClosed hconv hne f <| hC.of_isClosed_subset
     isClosed_closure (closure_minimal (range_subset_iff.2 fun x ↦ (f x).2) hC.isClosed)
+
+/-- **Convex-combination fixed points**: let `g` map a nonempty closed convex set `C`
+continuously into a compact set `S`, and let `f i` be finitely many continuous maps such that each
+point of `S` is sent into the interior of `C` by some `f i`. Then some `x ∈ C` is a convex
+combination of the points `f i (g x)`. This is the fixed-point step of Lomonosov's lemma. -/
+theorem exists_sum_smul_apply_apply_eq_self {ι : Type*} [Fintype ι] (hC : IsClosed C)
+    (hconv : Convex ℝ C) (hne : C.Nonempty) {f : ι → E → E} (hf : ∀ i, Continuous (f i))
+    {g : E → E} (hg : ContinuousOn g C) {S : Set E} (hS : IsCompact S) (hgS : MapsTo g C S)
+    (hcover : S ⊆ ⋃ i, f i ⁻¹' interior C) :
+    ∃ x ∈ C, ∃ c : ι → ℝ, (∀ i, 0 ≤ c i) ∧ ∑ i, c i = 1 ∧ ∑ i, c i • f i (g x) = x := by
+  -- A partition of unity `w` on `S` subordinate to the cover averages the `f i` into a
+  -- continuous self-map `Ψ` of `C`.
+  obtain ⟨w, hw⟩ := PartitionOfUnity.exists_isSubordinate hS.isClosed
+    (fun i ↦ f i ⁻¹' interior C) (fun i ↦ isOpen_interior.preimage (hf i)) hcover
+  set Ψ : E → E := fun x ↦ ∑ᶠ i, w i (g x) • f i (g x)
+  have hΨc : ContinuousOn Ψ C :=
+    (w.continuous_finsum_smul fun i _ _ ↦ (hf i).continuousAt).comp_continuousOn hg
+  have hΨC : MapsTo Ψ C C := fun x hx ↦
+    w.finsum_smul_mem_convex (hgS hx) (fun i hi ↦ interior_subset (hw i (subset_tsupport _ hi)))
+      hconv
+  -- The image of `Ψ` lies in the compact image of `[0, 1]^ι × S` under `F`.
+  set F : (ι → ℝ) × E → E := fun p ↦ ∑ i, p.1 i • f i p.2
+  have hΨK : IsCompact (closure (Ψ '' C)) := by
+    have hcpt : IsCompact (F '' (univ.pi (fun _ : ι ↦ Icc (0 : ℝ) 1) ×ˢ S)) :=
+      ((isCompact_univ_pi fun _ ↦ isCompact_Icc).prod hS).image (by fun_prop)
+    refine hcpt.of_isClosed_subset isClosed_closure (closure_minimal ?_ hcpt.isClosed)
+    rintro _ ⟨x, hx, rfl⟩
+    exact ⟨(fun i ↦ w i (g x), g x), ⟨fun i _ ↦ ⟨w.nonneg i _, w.le_one i _⟩, hgS hx⟩,
+      (finsum_eq_sum_of_fintype _).symm⟩
+  obtain ⟨x, hxC, hfix⟩ := schauderFixedPoint_closedConvex_continuousOn hC hconv hne hΨc hΨC hΨK
+  refine ⟨x, hxC, fun i ↦ w i (g x), fun i ↦ w.nonneg i _, ?_, ?_⟩
+  · rw [← finsum_eq_sum_of_fintype]
+    exact w.sum_eq_one (hgS hxC)
+  · rw [← finsum_eq_sum_of_fintype]
+    exact hfix
 
 /-- **The Leray–Schauder fixed-point theorem** on a ball: let `T` be continuous on the closed
 ball of radius `R > 0` about the origin, with image of compact closure. If no `u` with
