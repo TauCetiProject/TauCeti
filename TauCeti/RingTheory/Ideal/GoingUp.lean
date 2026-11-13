@@ -15,7 +15,8 @@ to a prime ideal of `T`. This is Mathlib's `Ideal.exists_ideal_over_prime_of_isI
 directly for `g`, so callers need not install an algebra structure.
 
 Along an integral algebra, maximal ideals contract to maximal ideals, so the extension of an
-ideal contained in the Jacobson radical is again contained in the Jacobson radical.
+ideal contained in the Jacobson radical of the contraction of an ideal `J` is contained in the
+Jacobson radical of `J`.
 
 ## Main results
 
@@ -25,16 +26,17 @@ ideal contained in the Jacobson radical is again contained in the Jacobson radic
   `T` contracts to a prime alone above `p` in any intermediate ring over which `T` is integral.
 * `Ideal.comap_eq_maximalIdeal_of_isIntegral`: along an integral algebra over a local ring, every
   maximal ideal contracts to the maximal ideal.
-* `Ideal.map_le_jacobson_bot_of_isIntegral`: along an integral algebra, the extension of an ideal
-  in the Jacobson radical lies in the Jacobson radical.
+* `Ideal.map_le_jacobson_of_isIntegral`: along an integral algebra, the extension of an ideal in
+  the Jacobson radical of an ideal `K` lies in the Jacobson radical of any ideal `J` above `K`.
 
 ## References
 
 * Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `a39c3781b9850b9f3d5cbc9920322a3b8e365ef2` (Apache-2.0),
-  `lean/Pcf/Stacks/Purity/FiniteAlgebraIdempotents.lean`: `map_le_jacobson_bot_of_isIntegral` is
-  the algebra form of its `Pcf.Stacks.map_le_jacobson_bot_of_le_jacobson_of_isIntegral`.
+  `lean/Pcf/Stacks/Purity/FiniteAlgebraIdempotents.lean`: `map_le_jacobson_of_isIntegral`
+  generalises the algebra form of its `Pcf.Stacks.map_le_jacobson_bot_of_le_jacobson_of_isIntegral`
+  from the zero ideals to arbitrary ideals.
 -/
 
 public section
@@ -67,12 +69,15 @@ theorem primesOver_eq_singleton_under_of_primesOver_eq_singleton {R : Type*} [Co
   have hQ' : Q' = P := Set.mem_singleton_iff.mp <| h ▸ ⟨inferInstance, inferInstance⟩
   rw [LiesOver.over (P := Q') (p := Q), hQ']
 
-/-- Along an integral algebra `S → T`, the extension to `T` of an ideal of `S` contained in the
-Jacobson radical of `S` is contained in the Jacobson radical of `T`. -/
-theorem map_le_jacobson_bot_of_isIntegral [Algebra S T] [Algebra.IsIntegral S T] {I : Ideal S}
-    (hI : I ≤ jacobson ⊥) : I.map (algebraMap S T) ≤ jacobson ⊥ :=
-  le_sInf fun M ⟨_, _⟩ ↦ map_le_iff_le_comap.mpr <| hI.trans <|
-    sInf_le ⟨bot_le, IsMaximal.under S M⟩
+/-- Along an integral algebra `S → T`, let `K` be an ideal of `S` contained in the contraction of
+an ideal `J` of `T`. Then the extension to `T` of an ideal of `S` contained in the Jacobson radical
+of `K` is contained in the Jacobson radical of `J`. Taking `K = J.under S` gives the sharpest
+form; taking `K` and `J` to be `⊥` gives the statement for the Jacobson radicals of the rings. -/
+theorem map_le_jacobson_of_isIntegral [Algebra S T] [Algebra.IsIntegral S T] {I K : Ideal S}
+    {J : Ideal T} (hKJ : K ≤ J.under S) (hI : I ≤ K.jacobson) :
+    I.map (algebraMap S T) ≤ J.jacobson :=
+  le_sInf fun M ⟨hJM, _⟩ ↦ map_le_iff_le_comap.mpr <| hI.trans <|
+    sInf_le ⟨hKJ.trans (comap_mono hJM), IsMaximal.under S M⟩
 
 /-- Along an integral algebra over a local ring, every maximal ideal contracts to the maximal
 ideal. -/

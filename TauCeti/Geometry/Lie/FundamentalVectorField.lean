@@ -52,8 +52,19 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
   antihomomorphism of Lie algebras.
 * `TauCeti.adjointContinuousLinearMap_mem_isotropy_smul_iff`: the isotropy algebras along an orbit
-  are conjugate, `Ad_g ξ ∈ 𝔤_{g • x}` exactly when `ξ ∈ 𝔤_x`; in particular they vanish
-  together (`TauCeti.isotropy_smul_eq_bot_iff`).
+  are conjugate, `Ad_g ξ ∈ 𝔤_{g • x}` exactly when `ξ ∈ 𝔤_x`, that is
+  `𝔤_{g • x} = Ad_g 𝔤_x` (`TauCeti.isotropy_fundamental_smul`); in particular they vanish
+  together (`TauCeti.isotropy_smul_eq_bot_iff`) and have the same dimension
+  (`TauCeti.finrank_isotropy_fundamental_smul`).
+* `TauCeti.orbitTangent_fundamental_smul`: the orbit tangent spaces along an orbit correspond,
+  `T_{g • x}(G • x) = d(y ↦ g • y)_x (T_x(G • x))`; in particular they have the same dimension
+  (`TauCeti.finrank_orbitTangent_fundamental_smul`) and the fundamental vector fields span
+  `T_{g • x} M` exactly when they span `T_x M`
+  (`TauCeti.orbitTangent_fundamental_smul_eq_top_iff`).
+* `TauCeti.InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff`: `ξ_M` vanishes identically
+  exactly when every `exp (t ξ)` acts trivially.
+* `TauCeti.InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot`: for a faithful action,
+  `ξ ↦ ξ_M` is injective.
 
 ## References
 
@@ -489,24 +500,109 @@ theorem adjointContinuousLinearMap_mem_isotropy_smul_iff {g : G} {ξ : GroupLieA
   rwa [inv_smul_smul, ← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul,
     inv_mul_cancel, Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at this
 
+/-- **The isotropy algebras along an orbit are conjugate**: `𝔤_{g • x} = Ad_g 𝔤_x`. -/
+theorem isotropy_fundamental_smul (g : G) (x : M) :
+    (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) =
+      ((InfinitesimalAction.fundamental I G I' M).isotropy x).map
+        (Lie.tangentAd (I := I) g : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G) := by
+  ext ξ
+  rw [LieSubalgebra.mem_map]
+  simp only [LieEquiv.coe_toLieHom, Lie.tangentAd_apply]
+  constructor
+  · -- `ξ = Ad_g (Ad_{g⁻¹} ξ)`, and `Ad_{g⁻¹} ξ` lies in the isotropy algebra of `x`.
+    intro hξ
+    have hAd := Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv (I := I) g ξ
+    refine ⟨Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ, ?_, hAd⟩
+    rwa [← adjointContinuousLinearMap_mem_isotropy_smul_iff (g := g), hAd]
+  · rintro ⟨η, hη, rfl⟩
+    exact adjointContinuousLinearMap_mem_isotropy_smul_iff.mpr hη
+
 /-- The isotropy algebras along an orbit vanish together: `𝔤_{g • x} = 0` exactly when
 `𝔤_x = 0`, as the isotropy algebras are conjugate under `Ad_g`. So the action is locally free at
 `x` exactly when it is locally free along the orbit of `x`. -/
 theorem isotropy_smul_eq_bot_iff {g : G} {x : M} :
     (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) = ⊥ ↔
       (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
-  -- Pull an element of one isotropy algebra back along `Ad_g` or forward along `Ad_g⁻¹`.
-  have hAd (k : G) (ξ : GroupLieAlgebra I G) :
-      Lie.adjointContinuousLinearMap (I := I) k (Lie.adjointContinuousLinearMap (I := I) k⁻¹ ξ) =
-        ξ := by
-    rw [← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul, mul_inv_cancel,
-      Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
-  simp only [LieSubalgebra.eq_bot_iff]
-  refine ⟨fun h ξ hξ ↦ ?_, fun h ξ hξ ↦ ?_⟩
-  · have := h _ (adjointContinuousLinearMap_mem_isotropy_smul_iff.2 hξ)
-    rw [← hAd g⁻¹ ξ, inv_inv, this, map_zero]
-  · have := h _ (adjointContinuousLinearMap_mem_isotropy_smul_iff.1 ((hAd g ξ).symm ▸ hξ))
-    rw [← hAd g ξ, this, map_zero]
+  rw [isotropy_fundamental_smul]
+  simp only [LieSubalgebra.eq_bot_iff, LieSubalgebra.mem_map, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, LieEquiv.coe_toLieHom, EmbeddingLike.map_eq_zero_iff]
+
+/-- The isotropy algebras along an orbit have the same dimension. -/
+@[simp]
+theorem finrank_isotropy_fundamental_smul (g : G) (x : M) :
+    Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).isotropy (g • x)) =
+      Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).isotropy x) := by
+  rw [isotropy_fundamental_smul]
+  exact (LieSubalgebra.equivMapOfInjective _ _
+    (Lie.tangentAd (I := I) g).injective).toLinearEquiv.finrank_eq.symm
+
+/-- The orbit maps and translations only need a `C¹` action. -/
+local instance contMDiffSMulOneOfInfty : ContMDiffSMul I I' 1 G M :=
+  ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
+
+/-- **The orbit tangent spaces along an orbit correspond**: the differential of `y ↦ g • y` at `x`
+carries the orbit tangent space at `x` onto that at `g • x`. -/
+theorem orbitTangent_fundamental_smul (g : G) (x : M) :
+    (InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x) =
+      ((InfinitesimalAction.fundamental I G I' M).orbitTangent x).map
+        (mfderiv I' I' (fun y : M ↦ g • y) x).toLinearMap := by
+  ext v
+  simp only [Submodule.mem_map, InfinitesimalAction.mem_orbitTangent_iff,
+    InfinitesimalAction.fundamental_apply, ContinuousLinearMap.coe_coe]
+  constructor
+  · rintro ⟨ξ, rfl⟩
+    refine ⟨_, ⟨Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ, rfl⟩, ?_⟩
+    rw [mfderiv_smul_fundamentalVectorField,
+      Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv]
+  · rintro ⟨_, ⟨ξ, rfl⟩, rfl⟩
+    exact ⟨_, (mfderiv_smul_fundamentalVectorField g ξ x).symm⟩
+
+/-- The orbit tangent spaces along an orbit have the same dimension. -/
+@[simp]
+theorem finrank_orbitTangent_fundamental_smul (g : G) (x : M) :
+    Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x)) =
+      Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) := by
+  have hinv : (mfderiv I' I' (fun y : M ↦ g • y) x).IsInvertible :=
+    (Diffeomorph.smul I I' 1 g).isInvertible_mfderiv one_ne_zero
+  rw [orbitTangent_fundamental_smul]
+  exact (Submodule.equivMapOfInjective _ hinv.injective _).finrank_eq.symm
+
+/-- The fundamental vector fields span the tangent space at `g • x` exactly when they span it at
+`x`. -/
+@[simp]
+theorem orbitTangent_fundamental_smul_eq_top_iff (g : G) (x : M) :
+    (InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x) = ⊤ ↔
+      (InfinitesimalAction.fundamental I G I' M).orbitTangent x = ⊤ := by
+  obtain ⟨e, he⟩ : (mfderiv I' I' (fun y : M ↦ g • y) x).IsInvertible :=
+    (Diffeomorph.smul I I' 1 g).isInvertible_mfderiv one_ne_zero
+  rw [orbitTangent_fundamental_smul, ← he]
+  exact Submodule.map_eq_top_iff (e := e.toLinearEquiv)
+
+section Kernel
+
+variable [T2Space G] [BoundarylessManifold I G] [T2Space M] [BoundarylessManifold I' M]
+
+/-- **The infinitesimal kernel of an action.** The fundamental vector field `ξ_M` vanishes
+identically exactly when every element `exp (t ξ)` of the one-parameter subgroup generated by `ξ`
+acts trivially on `M`, that is, lies in the kernel `⋂ₓ G_x` of the action. -/
+theorem InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff {ξ : GroupLieAlgebra I G} :
+    ξ ∈ LinearMap.ker (InfinitesimalAction.fundamental I G I' M).toLinearMap ↔
+      ∀ (t : ℝ) (x : M), mulInvariantExp (I := I) (t • ξ) • x = x := by
+  have : ContMDiffSMul I I' 2 G M := ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
+  rw [LinearMap.mem_ker, InfinitesimalAction.coe_toLinearMap, fundamental_apply, forall_comm]
+  exact funext_iff.trans (forall_congr' fun _ ↦ mulInvariantExp_smul_smul_eq_iff.symm)
+
+/-- **Effective actions are infinitesimally effective.** For a faithful action, the infinitesimal
+action `ξ ↦ ξ_M` is injective: if `ξ_M` vanishes, every `exp (t ξ)` acts trivially, hence is the
+identity, and the exponential line of `ξ` is constant, so `ξ = 0`. -/
+theorem InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot [FaithfulSMul G M] :
+    LinearMap.ker (InfinitesimalAction.fundamental I G I' M).toLinearMap = ⊥ := by
+  refine eq_bot_iff.2 fun ξ hξ ↦ ?_
+  rw [mem_ker_toLinearMap_fundamental_iff] at hξ
+  exact forall_mulInvariantExp_smul_eq_one_iff.1 fun t ↦
+    FaithfulSMul.eq_of_smul_eq_smul fun x ↦ (hξ t x).trans (one_smul G x).symm
+
+end Kernel
 
 end InfinitesimalAction
 
