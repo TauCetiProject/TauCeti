@@ -20,7 +20,7 @@ including in bad characteristic and over nonreduced rings, not just in a Weyl qu
 The rational Serre-operator braid relation is first restricted to the datum's integral
 Kostant-stable lattice and then extended to the value ring. This avoids imposing any
 restriction on weight multiplicities or choosing a signed permutation weight basis.
-`weylElement_word_eq_of_weylUnit_word_eq` supplies this transport for arbitrary words
+`prod_map_weylElement_eq_of_prod_map_weylUnit_eq` supplies this transport for arbitrary words
 in the simple Weyl units, so the same construction applies to other bond types.
 
 ## References
@@ -43,7 +43,7 @@ variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 /-- An identity between words in the rational simple Weyl units descends to the
 integral admissible lattice, then holds in the datum's points over any commutative ring. -/
-theorem weylElement_word_eq_of_weylUnit_word_eq (l r : List (Fin t.rank))
+theorem prod_map_weylElement_eq_of_prod_map_weylUnit_eq (l r : List (Fin t.rank))
     (h :
       let n := fun k => weylUnit
         (D.isNilpotent_representation_rootGenerator (.inl k))
@@ -55,10 +55,7 @@ theorem weylElement_word_eq_of_weylUnit_word_eq (l r : List (Fin t.rank))
   let q := fun k => weylUnit
     (D.isNilpotent_representation_rootGenerator (.inl k))
     (D.isNilpotent_representation_rootGenerator (.inr k))
-  let z := fun k => kostantWeylRestrict (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-    D.representation D.lattice D.representation_mem_lattice
-    (D.isNilpotent_representation_rootGenerator (.inl k))
-    (D.isNilpotent_representation_rootGenerator (.inr k))
+  let z := D.simpleWeylLatticeEquiv
   -- Restriction respects each letter, and hence the action of every word.
   have hz (w : List (Fin t.rank)) (v : D.lattice) :
       ((w.map z).prod v : D.carrier) = ((w.map q).prod : Module.End ℚ D.carrier) v := by
@@ -66,45 +63,22 @@ theorem weylElement_word_eq_of_weylUnit_word_eq (l r : List (Fin t.rank))
     | nil => rfl
     | cons k w ih =>
       simp only [List.map_cons, List.prod_cons, mul_apply_eq_comp, Units.val_mul,
-        z, coe_kostantWeylRestrict_apply, Module.End.smul_def]
+        z, simpleWeylLatticeEquiv_def, coe_kostantWeylRestrict_apply, Module.End.smul_def]
       rw [ih]
-  have hZ : (l.map z).prod = (r.map z).prod := by
+  have hZ : D.weylWordLatticeEquiv l = D.weylWordLatticeEquiv r := by
+    simp only [weylWordLatticeEquiv_def]
     ext v
     rw [hz, hz]
     exact congrArg (fun u : (Module.End ℚ D.carrier)ˣ => (u : Module.End ℚ D.carrier) v) h
-  -- Multiplicativity of base change transports the integral word identity.
-  let n := fun k => kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-    D.representation D.lattice D.representation_mem_lattice
-    (D.isNilpotent_representation_rootGenerator (.inl k))
-    (D.isNilpotent_representation_rootGenerator (.inr k)) A
-  have hn (w : List (Fin t.rank)) :
-      ((w.map z).prod).toLinearMap.baseChange A =
-        ((w.map n).prod : Module.End A (A ⊗[ℤ] D.lattice)) := by
-    induction w with
-    | nil =>
-      simp only [List.map_nil, List.prod_nil, LinearEquiv.coe_toLinearMap_one,
-        LinearMap.baseChange_id, Units.val_one, Module.End.one_eq_id]
-    | cons k w ih =>
-      simp only [List.map_cons, List.prod_cons, LinearEquiv.coe_toLinearMap_mul,
-        LinearMap.baseChange_mul, Units.val_mul, ih, n, z, kostantWeylGL_val,
-        kostantWeylPoints_toLinearMap]
-  have hN : (l.map n).prod = (r.map n).prod := by
-    apply Units.ext
-    simpa only [hn] using congrArg
-      (fun e : D.lattice ≃ₗ[ℤ] D.lattice => e.toLinearMap.baseChange A) hZ
-  -- The chosen lattice basis identifies these operators with the datum's points.
-  let f := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
-  have hf (k : Fin t.rank) :
-      (D.weylElement (t.simpleIndex ht k) A 1 : Matrix.GeneralLinearGroup (Fin D.dim) A) =
-        f (n k) := D.coe_weylElement_simpleIndex_one k A
+  -- Reuse the integral-word matrix comparison shared with the big-cell argument.
   apply Subtype.ext
-  simpa only [SubmonoidClass.coe_list_prod, List.map_map, Function.comp_def, hf,
-    map_list_prod] using congrArg f hN
+  apply Units.ext
+  rw [← D.weylWordLatticeEquiv_matrix l A, ← D.weylWordLatticeEquiv_matrix r A, hZ]
 
 /-- A word identity valid for all nilpotent Serre systems on the datum's rational carrier,
 in the transposed Cartan convention, holds for its pinned simple Weyl representatives
 over every commutative ring. -/
-theorem weylElement_word_eq_of_serre_word_eq (l r : List (Fin t.rank))
+theorem prod_map_weylElement_eq_of_forall_isSerreSystem (l r : List (Fin t.rank))
     (h : ∀ {H E F : Fin t.rank → Module.End ℚ D.carrier},
       IsSerreSystem ℚ t.cartanMatrix.transpose H E F →
       ∀ (hE : ∀ k, IsNilpotent (E k)) (hF : ∀ k, IsNilpotent (F k)),
@@ -123,7 +97,7 @@ theorem weylElement_word_eq_of_serre_word_eq (l r : List (Fin t.rank))
     simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
       LieAlgebra.Basis.rootGenerator_inr] using
       D.isNilpotent_representation_rootGenerator (.inr k)
-  apply D.weylElement_word_eq_of_weylUnit_word_eq l r ?_ A
+  apply D.prod_map_weylElement_eq_of_prod_map_weylUnit_eq l r ?_ A
   simpa only [φ, Function.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
     LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using h hs hE hF
 
@@ -136,7 +110,7 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_one (i j : Fin t.rank)
         D.weylElement (t.simpleIndex ht i) A 1 =
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 := by
-  have h' := D.weylElement_word_eq_of_serre_word_eq [i, j, i] [j, i, j] (by
+  have h' := D.prod_map_weylElement_eq_of_forall_isSerreSystem [i, j, i] [j, i, j] (by
     intro H E F hs hE hF
     simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
       mul_one, mul_assoc] using hs.weylUnit_braid_of_cartan_eq_neg_one

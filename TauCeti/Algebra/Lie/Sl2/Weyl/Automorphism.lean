@@ -531,9 +531,15 @@ theorem coe_inv_weylUnit (hE : IsNilpotent E) (hF : IsNilpotent F) :
       IsNilpotent.exp (-E) * IsNilpotent.exp F * IsNilpotent.exp (-E) := by
   simp [weylUnit, mul_inv_rev, mul_assoc]
 
+/-- The pinned Weyl unit is trivial when both root operators vanish. -/
+theorem weylUnit_eq_one_of_eq_zero (hE : IsNilpotent E) (hF : IsNilpotent F)
+    (he : E = 0) (hf : F = 0) : weylUnit hE hF = 1 := by
+  apply Units.ext
+  simp [he, hf]
+
 /-- Conjugating both nilpotent root operators conjugates their pinned Weyl unit.
 No `sl₂` relations or nonvanishing hypotheses are needed. -/
-theorem weylUnit_conj_eq_of_conj {E' F' : A}
+theorem conj_weylUnit_of_conj_eq {E' F' : A}
     (hE : IsNilpotent E) (hF : IsNilpotent F)
     (hE' : IsNilpotent E') (hF' : IsNilpotent F') (u : Aˣ)
     (he : (u : A) * E * ↑u⁻¹ = E') (hf : (u : A) * F * ↑u⁻¹ = F') :

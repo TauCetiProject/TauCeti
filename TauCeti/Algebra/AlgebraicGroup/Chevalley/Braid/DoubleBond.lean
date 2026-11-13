@@ -50,7 +50,7 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 := by
   have hij := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two i j (by omega)
-  have h' := D.weylElement_word_eq_of_serre_word_eq [i, j, i, j] [j, i, j, i] (by
+  have h' := D.prod_map_weylElement_eq_of_forall_isSerreSystem [i, j, i, j] [j, i, j, i] (by
     intro H E F hs hE hF
     -- Serre's convention transposes the root-row Cartan matrix, so exchange the nodes.
     simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,

@@ -39,7 +39,7 @@ variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 in the actual point group over every commutative value ring. The Cartan convention has
 roots as rows, so `i` is the long node. -/
 theorem weylElement_braid_of_cartanMatrix_eq_neg_three (i j : Fin t.rank)
-    (hij : t.cartanMatrix i j = -3) (hji : t.cartanMatrix j i = -1)
+    (hij : t.cartanMatrix i j = -3)
     (A : Type*) [CommRing A] :
     D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 *
         D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 *
@@ -47,7 +47,8 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_three (i j : Fin t.rank)
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 := by
-  have h' := D.weylElement_word_eq_of_serre_word_eq
+  have hji := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two j i (by omega)
+  have h' := D.prod_map_weylElement_eq_of_forall_isSerreSystem
     [i, j, i, j, i, j] [j, i, j, i, j, i] (by
       intro H E F hs hE hF
       simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,

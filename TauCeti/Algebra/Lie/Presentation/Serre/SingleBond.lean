@@ -38,6 +38,7 @@ namespace TauCeti.IsSerreSystem
 open LieAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance] HasUniqueDiv.of_module_rat
 
 variable {B A : Type*} [Ring A] [Algebra ℚ A]
   {CM : Matrix B B ℤ} {H E F : B → A}
@@ -101,13 +102,14 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
     hs.weylUnit_conj_F_of_cartan_eq_neg_one hjj hji hEj hFj
   -- A zero Cartan operator forces all four root operators to vanish at a single bond.
   by_cases hH : H j = 0
-  · have hEi0 : E i = 0 := by simpa [hH, hji] using hs.lie_H_E j i
-    have hFi0 : F i = 0 := by simpa [hH, hji] using (hs.lie_H_F j i).symm
-    have hHi0 : H i = 0 := by rw [← hs.lie_E_F_self i, hEi0, zero_lie]
-    have hEj0 : E j = 0 := by simpa [hHi0, hij] using hs.lie_H_E i j
-    have hFj0 : F j = 0 := by simpa [hHi0, hij] using (hs.lie_H_F i j).symm
-    apply Units.ext
-    simp [hEi0, hFi0, hEj0, hFj0]
+  · have hHi0 := hs.H_eq_zero_of_H_eq_zero hH (by omega : CM j i ≠ 0)
+    have ha : weylUnit hEi hFi = 1 := weylUnit_eq_one_of_eq_zero hEi hFi
+      (hs.E_eq_zero_of_H_eq_zero hH (by omega : CM j i ≠ 0))
+      (hs.F_eq_zero_of_H_eq_zero hH (by omega : CM j i ≠ 0))
+    have hb : weylUnit hEj hFj = 1 := weylUnit_eq_one_of_eq_zero hEj hFj
+      (hs.E_eq_zero_of_H_eq_zero hHi0 (by omega : CM i j ≠ 0))
+      (hs.F_eq_zero_of_H_eq_zero hHi0 (by omega : CM i j ≠ 0))
+    simp only [ha, hb, one_mul]
   have ht := hs.isSl2Triple hjj hH
   have hbEj : c b (E j) = -F j := by
     simpa only [hc, b, coe_weylUnit, coe_inv_weylUnit] using weylUnit_conj_e ht hEj hFj
@@ -126,7 +128,7 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
       hs.lie_lie_F_F_E_of_ne hne
   -- Exponentiate this operator comparison, retaining the units rather than only their action.
   have hu : b * a * b * (b * a)⁻¹ = a :=
-    weylUnit_conj_eq_of_conj hEj hFj hEi hFi (b * a)
+    conj_weylUnit_of_conj_eq hEj hFj hEi hFi (b * a)
       (by simpa only [hc, Units.val_mul, mul_inv_rev, mul_assoc] using hE)
       (by simpa only [hc, Units.val_mul, mul_inv_rev, mul_assoc] using hF)
   calc

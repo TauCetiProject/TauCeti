@@ -153,25 +153,12 @@ theorem weylUnit_braid_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
       ConjAct.ofConjAct_toConjAct]
   -- Degenerate Serre systems are allowed: a zero Cartan operator kills this entire bond.
   by_cases hj : H j = 0
-  · have hEi0 : E i = 0 := by
-      have h := hs.lie_H_E j i
-      simp only [hj, zero_lie, hji] at h
-      exact (smul_eq_zero.mp (by simpa [← Int.cast_smul_eq_zsmul ℚ] using h.symm)).resolve_left
-        (by norm_num : (-2 : ℚ) ≠ 0)
-    have hFi0 : F i = 0 := by
-      have h := hs.lie_H_F j i
-      simp only [hj, zero_lie, hji] at h
-      exact (smul_eq_zero.mp (by simpa [← Int.cast_smul_eq_zsmul ℚ] using h.symm)).resolve_left
-        (by norm_num : (-(-2) : ℚ) ≠ 0)
-    have hi0 : H i = 0 := by rw [← hs.lie_E_F_self i, hEi0, zero_lie]
-    have hEj0 : E j = 0 := by simpa [hi0, hij] using hs.lie_H_E i j
-    have hFj0 : F j = 0 := by simpa [hi0, hij] using (hs.lie_H_F i j).symm
-    apply Units.ext
-    simp [hEi0, hFi0, hEj0, hFj0]
-  have hi : H i ≠ 0 := by
-    intro hi
-    have hEj0 : E j = 0 := by simpa [hi, hij] using hs.lie_H_E i j
-    exact hj (by rw [← hs.lie_E_F_self j, hEj0, zero_lie])
+  · have ha : weylUnit hEi hFi = 1 := weylUnit_eq_one_of_eq_zero hEi hFi
+      (hs.E_eq_zero_of_H_eq_zero hj (by omega : CM j i ≠ 0))
+      (hs.F_eq_zero_of_H_eq_zero hj (by omega : CM j i ≠ 0))
+    simp only [ha, one_mul, mul_one]
+  have hi : H i ≠ 0 := fun hz =>
+    hj (hs.H_eq_zero_of_H_eq_zero hz (by omega : CM i j ≠ 0))
   have hE : c a (c b (c a (E j))) = E j := by
     simpa only [hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using
       hs.weylUnit_conj_triple_E_of_doubleBond hii hjj hij hji hi hj hEi hFi hEj hFj
@@ -200,7 +187,7 @@ theorem weylUnit_braid_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
   have hwF : ((a * b * a : Aˣ) : A) * F j * ↑(a * b * a)⁻¹ = F j := by
     simpa only [hc, Units.val_mul, mul_inv_rev, mul_assoc] using hF
   have hu : (a * b * a) * b * (a * b * a)⁻¹ = b :=
-    weylUnit_conj_eq_of_conj hEj hFj hEj hFj (a * b * a) hwE hwF
+    conj_weylUnit_of_conj_eq hEj hFj hEj hFj (a * b * a) hwE hwF
   calc
     _ = b * (a * b * a) := mul_inv_eq_iff_eq_mul.mp hu
     _ = _ := by simp only [a, b, mul_assoc]
