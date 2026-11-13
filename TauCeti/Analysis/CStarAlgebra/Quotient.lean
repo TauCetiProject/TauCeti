@@ -445,21 +445,6 @@ theorem range_quotientKerHom : Set.range φ.quotientKerHom = Set.range φ := by
   · rintro ⟨a, rfl⟩
     exact ⟨TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a, φ.quotientKerHom_mk a⟩
 
-/-- If every element killed by `φ` is killed by a `⋆`-homomorphism `ψ` between C⋆-algebras, then
-`ψ` is dominated in norm by `φ`: `‖ψ a‖ ≤ ‖φ a‖`. -/
-theorem norm_apply_le_norm_apply_of_ker_le {C : Type*} [NonUnitalCStarAlgebra C]
-    {ψ : A →⋆ₙₐ[ℂ] C} (h : TwoSidedIdeal.ker φ ≤ TwoSidedIdeal.ker ψ) (a : A) :
-    ‖ψ a‖ ≤ ‖φ a‖ := by
-  -- `ψ` factors contractively through `A ⧸ ker φ`, which `φ` embeds isometrically
-  let q := TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker φ) ψ fun b hb =>
-    (TwoSidedIdeal.mem_ker ψ).1 (h hb)
-  calc ‖ψ a‖ = ‖q (TwoSidedIdeal.Quotient.mk _ a)‖ := by
-        rw [TwoSidedIdeal.Quotient.liftStarAlgHom_mk]
-    _ ≤ ‖TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a‖ :=
-        NonUnitalStarAlgHom.norm_apply_le q _
-    _ = ‖φ a‖ := by
-        rw [← φ.quotientKerHom_mk a, φ.isometry_quotientKerHom.norm_map_of_map_zero (map_zero _)]
-
 /-- Every `⋆`-algebra homomorphism between C⋆-algebras has closed range as a subset of `B`. -/
 theorem isClosed_setRange : IsClosed (Set.range φ) := by
   rw [← φ.range_quotientKerHom]
@@ -506,6 +491,30 @@ noncomputable def quotientKerEquivOfSurjective {φ : A →⋆ₙₐ[ℂ] B} (hφ
 theorem quotientKerEquivOfSurjective_mk {φ : A →⋆ₙₐ[ℂ] B} (hφ : Function.Surjective φ) (a : A) :
     quotientKerEquivOfSurjective hφ (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) = φ a :=
   φ.quotientKerHom_mk a
+
+end NonUnitalStarAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {F G A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  [NonUnitalCStarAlgebra C] [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
+  [FunLike G A C] [NonUnitalAlgHomClass G ℂ A C] [StarHomClass G A C]
+
+/-- If every element killed by `φ` is killed by a `⋆`-homomorphism `ψ` between C⋆-algebras, then
+`ψ` is dominated in norm by `φ`: `‖ψ a‖ ≤ ‖φ a‖`. -/
+theorem norm_apply_le_norm_apply_of_ker_le {φ : F} {ψ : G}
+    (h : TwoSidedIdeal.ker φ ≤ TwoSidedIdeal.ker ψ) (a : A) : ‖ψ a‖ ≤ ‖φ a‖ := by
+  -- `ψ` factors contractively through `A ⧸ ker φ`, which `φ` embeds isometrically
+  let φ' : A →⋆ₙₐ[ℂ] B := ofClass φ
+  let q := TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker φ') (ofClass ψ) fun b hb =>
+    (TwoSidedIdeal.mem_ker ψ).1 (h hb)
+  -- `ofClass φ` and `ofClass ψ` agree with `φ` and `ψ` definitionally
+  calc ‖ψ a‖ = ‖q (TwoSidedIdeal.Quotient.mk _ a)‖ :=
+        congrArg norm (TwoSidedIdeal.Quotient.liftStarAlgHom_mk _ (ofClass ψ) _ a).symm
+    _ ≤ ‖TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ') a‖ :=
+        NonUnitalStarAlgHom.norm_apply_le q _
+    _ = ‖φ a‖ := (φ'.isometry_quotientKerHom.norm_map_of_map_zero (map_zero _) _).symm.trans
+        (congrArg norm (φ'.quotientKerHom_mk a))
 
 end NonUnitalStarAlgHom
 

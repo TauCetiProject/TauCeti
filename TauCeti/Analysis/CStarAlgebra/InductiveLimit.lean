@@ -36,7 +36,7 @@ limit is a unital C⋆-algebra and the canonical maps are unital.
 * `TauCeti.SeminormedDirectLimit A f`: the algebraic direct limit with its C⋆-seminorm, identified
   with `DirectLimit A f` by `TauCeti.SeminormedDirectLimit.starAlgEquiv`.
 * `TauCeti.CStarInductiveLimit A f`: the C⋆-inductive limit, a nonunital C⋆-algebra.
-* `TauCeti.CStarInductiveLimit.coeHom`: the completion map of the algebraic direct limit.
+* `TauCeti.CStarInductiveLimit.toCompletion`: the completion map of the algebraic direct limit.
 * `TauCeti.CStarInductiveLimit.of A f i`: the canonical ⋆-homomorphism `A i → lim A`.
 * `TauCeti.CStarInductiveLimit.lift`: the ⋆-homomorphism out of the limit induced by a
   compatible family of ⋆-homomorphisms into a C⋆-algebra.
@@ -142,6 +142,13 @@ Mathlib's canonical map `DirectLimit.Module.of`. -/
 @[simp]
 theorem starAlgEquiv_of (i : ι) (a : A i) :
     starAlgEquiv A f (of A f i a) = DirectLimit.Module.of ℂ ι A f i a :=
+  (rfl)
+
+/-- Under the identification with the algebraic direct limit, the class of `a ∈ A i` is the image
+of `a` under the canonical map. -/
+@[simp]
+theorem starAlgEquiv_symm_mk (i : ι) (a : A i) :
+    (starAlgEquiv A f).symm ⟦⟨i, a⟩⟧ = of A f i a :=
   (rfl)
 
 /-- The canonical maps into the algebraic direct limit are compatible with the connecting maps. -/
@@ -289,7 +296,7 @@ instance : NonUnitalCStarAlgebra (CStarInductiveLimit A f) :=
 variable (A f) in
 /-- The completion map of the algebraic direct limit into the C⋆-inductive limit, as a
 ⋆-homomorphism. -/
-def coeHom : SeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A f where
+def toCompletion : SeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A f where
   toFun z := (z : Completion (SeminormedDirectLimit A f))
   map_smul' c z := Completion.coe_smul c z
   map_zero' := Completion.coe_zero
@@ -297,42 +304,43 @@ def coeHom : SeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A f
   map_mul' := Completion.coe_mul'
   map_star' := Completion.coe_star
 
-/-- The completion map `coeHom` is the coercion of the algebraic direct limit into its
+/-- The completion map `toCompletion` is the coercion of the algebraic direct limit into its
 completion, of which `CStarInductiveLimit A f` is a type synonym. -/
-private theorem coeHom_apply (z : SeminormedDirectLimit A f) :
-    coeHom A f z = (z : Completion (SeminormedDirectLimit A f)) :=
+private theorem toCompletion_apply (z : SeminormedDirectLimit A f) :
+    toCompletion A f z = (z : Completion (SeminormedDirectLimit A f)) :=
   (rfl)
 
 /-- The completion map preserves the C⋆-seminorm of the algebraic direct limit. -/
 @[simp]
-theorem norm_coeHom (z : SeminormedDirectLimit A f) : ‖coeHom A f z‖ = ‖z‖ :=
+theorem norm_toCompletion (z : SeminormedDirectLimit A f) : ‖toCompletion A f z‖ = ‖z‖ :=
   Completion.norm_coe z
 
 variable (A f) in
 /-- The completion map of the algebraic direct limit has dense range. -/
-theorem denseRange_coeHom : DenseRange (coeHom A f) :=
+theorem denseRange_toCompletion : DenseRange (toCompletion A f) :=
   Completion.denseRange_coe
 
 variable (A f) in
 /-- The canonical ⋆-homomorphism from a stage into the C⋆-inductive limit. -/
 def of (i : ι) : A i →⋆ₙₐ[ℂ] CStarInductiveLimit A f :=
-  (coeHom A f).comp (SeminormedDirectLimit.of A f i)
+  (toCompletion A f).comp (SeminormedDirectLimit.of A f i)
 
 /-- The canonical map of a stage into the C⋆-inductive limit is the completion map applied to
 the canonical map into the algebraic direct limit. -/
 @[simp]
-theorem coeHom_of (i : ι) (a : A i) : coeHom A f (SeminormedDirectLimit.of A f i a) = of A f i a :=
+theorem toCompletion_of (i : ι) (a : A i) :
+    toCompletion A f (SeminormedDirectLimit.of A f i a) = of A f i a :=
   (rfl)
 
 /-- The canonical maps are compatible with the connecting maps. -/
 @[simp]
 theorem of_f {i j : ι} (h : i ≤ j) (a : A i) : of A f j (f i j h a) = of A f i a := by
-  rw [← coeHom_of, SeminormedDirectLimit.of_f, coeHom_of]
+  rw [← toCompletion_of, SeminormedDirectLimit.of_f, toCompletion_of]
 
 /-- **The norm formula.** The norm of the image of `a ∈ A i` in the C⋆-inductive limit is the
 infimum of the norms of its images in the later stages, which decrease along `ι`. -/
 theorem norm_of (i : ι) (a : A i) : ‖of A f i a‖ = ⨅ j : {j // i ≤ j}, ‖f i j j.2 a‖ := by
-  rw [← coeHom_of, norm_coeHom, SeminormedDirectLimit.norm_of]
+  rw [← toCompletion_of, norm_toCompletion, SeminormedDirectLimit.norm_of]
 
 /-- An element of a stage dies in the C⋆-inductive limit exactly when its images in the later
 stages have arbitrarily small norm. -/
@@ -393,10 +401,10 @@ end Injective
 variable (A f) in
 /-- The union of the images of the stages is dense in the C⋆-inductive limit. -/
 theorem dense_iUnion_range_of : Dense (⋃ i, Set.range (of A f i)) := by
-  refine (denseRange_coeHom A f).mono ?_
+  refine (denseRange_toCompletion A f).mono ?_
   rintro _ ⟨z, rfl⟩
   obtain ⟨i, a, rfl⟩ := SeminormedDirectLimit.exists_of_eq z
-  exact Set.mem_iUnion.2 ⟨i, a, coeHom_of i a⟩
+  exact Set.mem_iUnion.2 ⟨i, a, toCompletion_of i a⟩
 
 /-- To prove a closed property of every element of the C⋆-inductive limit, it suffices to prove
 it on the images of the stages. -/
@@ -426,8 +434,9 @@ theorem induction_on₂ {p : CStarInductiveLimit A f → CStarInductiveLimit A f
 /-- Continuous linear maps out of the C⋆-inductive limit are determined by their values on the
 images of the stages. -/
 @[ext]
-theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
-    [Module ℂ E] {φ ψ : CStarInductiveLimit A f →L[ℂ] E}
+theorem continuousLinearMap_ext {R S E : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
+    [Module R (CStarInductiveLimit A f)] [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
+    [Module S E] {φ ψ : CStarInductiveLimit A f →SL[σ] E}
     (h : ∀ i a, φ (of A f i a) = ψ (of A f i a)) : φ = ψ :=
   ContinuousLinearMap.ext fun x => induction_on x (isClosed_eq φ.continuous ψ.continuous) h
 
@@ -478,14 +487,14 @@ def liftCLM : CStarInductiveLimit A f →L[ℂ] E :=
 
 /-- On the completion map, the induced continuous linear map is `liftCLMAux`, of which it is the
 extension to the completion. -/
-private theorem liftCLM_coeHom (z : SeminormedDirectLimit A f) :
-    liftCLM g hg hC (coeHom A f z) = liftCLMAux g hg hC z :=
+private theorem liftCLM_toCompletion (z : SeminormedDirectLimit A f) :
+    liftCLM g hg hC (toCompletion A f z) = liftCLMAux g hg hC z :=
   (liftCLMAux g hg hC).fromCompletion_apply_coe z
 
 /-- The induced continuous linear map extends each `g i`. -/
 @[simp]
 theorem liftCLM_of (i : ι) (a : A i) : liftCLM g hg hC (of A f i a) = g i a := by
-  rw [← coeHom_of, liftCLM_coeHom, liftCLMAux_of]
+  rw [← toCompletion_of, liftCLM_toCompletion, liftCLMAux_of]
 
 /-- The induced continuous linear map has norm at most the uniform bound `C`. -/
 theorem norm_liftCLM_le : ‖liftCLM g hg hC‖ ≤ C := by
@@ -540,7 +549,7 @@ theorem lift_unique (φ : CStarInductiveLimit A f →⋆ₙₐ[ℂ] B) :
 variable (A f) in
 /-- The ⋆-homomorphism induced by the canonical maps is the identity. -/
 @[simp]
-theorem lift_id : lift (of A f) (fun _ _ h a => of_f h a) = NonUnitalStarAlgHom.id ℂ _ :=
+theorem lift_of_eq_id : lift (of A f) (fun _ _ h a => of_f h a) = NonUnitalStarAlgHom.id ℂ _ :=
   hom_ext fun i => (lift_comp_of _ _ i).trans (NonUnitalStarAlgHom.id_comp _).symm
 
 /-- Composing the induced ⋆-homomorphism with a ⋆-homomorphism `ψ` induces the composite family. -/
@@ -573,8 +582,8 @@ theorem lift_injective_iff :
     | ih i a =>
       rw [lift_of]
       exact le_antisymm (by simpa using NonUnitalStarAlgHom.norm_apply_le (lift g hg) (of A f i a))
-        ((g i).norm_apply_le_norm_apply_of_ker_le (fun b hb => (TwoSidedIdeal.mem_ker _).2
-          (h i b ((TwoSidedIdeal.mem_ker _).1 hb))) a)
+        (NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le (φ := g i) (fun b hb =>
+          (TwoSidedIdeal.mem_ker _).2 (h i b ((TwoSidedIdeal.mem_ker _).1 hb))) a)
   exact hiso.injective
 
 section map
@@ -598,6 +607,32 @@ def map : CStarInductiveLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A' f' :=
 @[simp]
 theorem map_of (i : ι) (a : A i) : map φ hφ (of A f i a) = of A' f' i (φ i a) :=
   lift_of _ _ i a
+
+/-- The induced ⋆-homomorphism between C⋆-inductive limits composed with a canonical map is the
+canonical map composed with `φ i`. -/
+@[simp]
+theorem map_comp_of (i : ι) : (map φ hφ).comp (of A f i) = (of A' f' i).comp (φ i) :=
+  lift_comp_of _ _ i
+
+/-- The range of the induced ⋆-homomorphism between C⋆-inductive limits is the closure of the
+union of the images of the ranges of the `φ i`. -/
+theorem range_map :
+    Set.range (map φ hφ) = closure (⋃ i, Set.range ((of A' f' i).comp (φ i))) :=
+  range_lift _ _
+
+/-- The induced ⋆-homomorphism between C⋆-inductive limits is injective exactly when each `φ i`
+sends to an element dying in the limit only elements of `A i` dying in the limit. -/
+theorem map_injective_iff :
+    Function.Injective (map φ hφ) ↔ ∀ i a, of A' f' i (φ i a) = 0 → of A f i a = 0 :=
+  lift_injective_iff _ _
+
+/-- The ⋆-homomorphism induced by a compatible family `g` out of the target system, composed with
+the induced ⋆-homomorphism between C⋆-inductive limits, is induced by the composite family. -/
+theorem lift_comp_map {B : Type*} [NonUnitalCStarAlgebra B] (g : ∀ i, A' i →⋆ₙₐ[ℂ] B)
+    (hg : ∀ i j h a, g j (f' i j h a) = g i a) :
+    (lift g hg).comp (map φ hφ) =
+      lift (fun i => (g i).comp (φ i)) (fun i j h a => by simp [← hφ, hg]) :=
+  hom_ext fun i => NonUnitalStarAlgHom.ext fun a => by simp
 
 variable (A f) in
 /-- The identity maps of the stages induce the identity of the C⋆-inductive limit. -/
@@ -663,13 +698,18 @@ instance : CStarAlgebra (CStarInductiveLimit A f) :=
       norm_smul_le := norm_smul_le }
   inferInstanceAs (CStarAlgebra (Completion (SeminormedDirectLimit A f)))
 
-/-- The canonical maps of a unital directed system are unital. -/
+/-- The completion map of a unital algebraic direct limit is unital. -/
 @[simp]
-theorem of_one (i : ι) : of A f i 1 = 1 := by
-  rw [← coeHom_of, SeminormedDirectLimit.of_one, coeHom_apply]
+theorem toCompletion_one : toCompletion A f 1 = 1 := by
+  rw [toCompletion_apply]
   -- the unit of `CStarInductiveLimit A f` is the unit of the completion, reached through the
   -- `CStarAlgebra` instance rather than syntactically as `Completion`'s `One`
   exact Completion.coe_one _
+
+/-- The canonical maps of a unital directed system are unital. -/
+@[simp]
+theorem of_one (i : ι) : of A f i 1 = 1 := by
+  rw [← toCompletion_of, SeminormedDirectLimit.of_one, toCompletion_one]
 
 /-- The ⋆-homomorphism induced by a compatible family of unital ⋆-homomorphisms into a unital
 C⋆-algebra is unital. -/
@@ -758,7 +798,7 @@ theorem liftStarAlgHom_unique (φ : CStarInductiveLimit A f →⋆ₐ[ℂ] B) :
 variable (A f) in
 /-- The unital ⋆-homomorphism induced by the unital canonical maps is the identity. -/
 @[simp]
-theorem liftStarAlgHom_id :
+theorem liftStarAlgHom_ofStarAlgHom_eq_id :
     liftStarAlgHom (ofStarAlgHom A f) (fun _ _ h a => by simp) = StarAlgHom.id ℂ _ :=
   starAlgHom_ext fun i => (liftStarAlgHom_comp_ofStarAlgHom _ _ i).trans (StarAlgHom.id_comp _).symm
 
@@ -803,6 +843,47 @@ def mapStarAlgHom : CStarInductiveLimit A f →⋆ₐ[ℂ] CStarInductiveLimit A
 @[simp]
 theorem mapStarAlgHom_of (i : ι) (a : A i) : mapStarAlgHom φ hφ (of A f i a) = of A' f' i (φ i a) :=
   liftStarAlgHom_of _ _ i a
+
+/-- The unital ⋆-homomorphism between C⋆-inductive limits induced by `φ` is the ⋆-homomorphism
+induced by `φ`. -/
+@[simp]
+theorem toNonUnitalStarAlgHom_mapStarAlgHom :
+    (mapStarAlgHom φ hφ).toNonUnitalStarAlgHom = map (fun i => (φ i).toNonUnitalStarAlgHom) hφ :=
+  (rfl)
+
+/-- As a function, the unital ⋆-homomorphism between C⋆-inductive limits induced by `φ` is the
+⋆-homomorphism induced by `φ`. -/
+theorem coe_mapStarAlgHom :
+    ⇑(mapStarAlgHom φ hφ) = map (fun i => (φ i).toNonUnitalStarAlgHom) hφ :=
+  (rfl)
+
+/-- The induced unital ⋆-homomorphism between C⋆-inductive limits composed with a unital
+canonical map is the unital canonical map composed with `φ i`. -/
+@[simp]
+theorem mapStarAlgHom_comp_ofStarAlgHom (i : ι) :
+    (mapStarAlgHom φ hφ).comp (ofStarAlgHom A f i) = (ofStarAlgHom A' f' i).comp (φ i) :=
+  liftStarAlgHom_comp_ofStarAlgHom _ _ i
+
+/-- The range of the induced unital ⋆-homomorphism between C⋆-inductive limits is the closure of
+the union of the images of the ranges of the `φ i`. -/
+theorem range_mapStarAlgHom :
+    Set.range (mapStarAlgHom φ hφ) = closure (⋃ i, Set.range ((ofStarAlgHom A' f' i).comp (φ i))) :=
+  range_liftStarAlgHom _ _
+
+/-- The induced unital ⋆-homomorphism between C⋆-inductive limits is injective exactly when each
+`φ i` sends to an element dying in the limit only elements of `A i` dying in the limit. -/
+theorem mapStarAlgHom_injective_iff :
+    Function.Injective (mapStarAlgHom φ hφ) ↔ ∀ i a, of A' f' i (φ i a) = 0 → of A f i a = 0 :=
+  liftStarAlgHom_injective_iff _ _
+
+/-- The unital ⋆-homomorphism induced by a compatible family `g` out of the target system,
+composed with the induced unital ⋆-homomorphism between C⋆-inductive limits, is induced by the
+composite family. -/
+theorem liftStarAlgHom_comp_mapStarAlgHom {B : Type*} [CStarAlgebra B] (g : ∀ i, A' i →⋆ₐ[ℂ] B)
+    (hg : ∀ i j h a, g j (f' i j h a) = g i a) :
+    (liftStarAlgHom g hg).comp (mapStarAlgHom φ hφ) =
+      liftStarAlgHom (fun i => (g i).comp (φ i)) (fun i j h a => by simp [← hφ, hg]) :=
+  starAlgHom_ext fun i => StarAlgHom.ext fun a => by simp
 
 variable (A f) in
 /-- The identity maps of the stages induce the identity of the C⋆-inductive limit. -/
