@@ -93,6 +93,13 @@ theorem equivOfNormalClosureEq_symm_mk {α : Type*} {S T : Set (FreeGroup α)}
   apply (equivOfNormalClosureEq h).injective
   simp
 
+/-- The inverse change of relators also preserves every generator. -/
+@[simp]
+theorem equivOfNormalClosureEq_symm_of {α : Type*} {S T : Set (FreeGroup α)}
+    (h : Subgroup.normalClosure S = Subgroup.normalClosure T) (a : α) :
+    (equivOfNormalClosureEq h).symm (of a) = of a :=
+  equivOfNormalClosureEq_symm_mk h (FreeGroup.of a)
+
 /-- Relabeling generators relabels every word by the induced free-group isomorphism. -/
 @[simp]
 theorem equivPresentedGroup_mk {α β : Type*} (S : Set (FreeGroup α)) (e : α ≃ β)
@@ -139,20 +146,55 @@ def coprodFreeGroupEquiv :
     (equivPresentedGroup _ e).symm.trans <| (coprodPresentations rels ∅).trans <|
       MulEquiv.coprodCongr (.refl _) emptyEquivFreeGroup
 
+/-- The free-factor isomorphism sends a generator of `γ` to the generator of the factor it comes
+from. -/
 @[simp]
+theorem coprodFreeGroupEquiv_of (c : γ) :
+    coprodFreeGroupEquiv rels e (of c) =
+      Sum.elim (fun a => Monoid.Coprod.inl (of a)) (fun b => Monoid.Coprod.inr (FreeGroup.of b))
+        (e.symm c) := by
+  obtain ⟨c, rfl⟩ := e.surjective c
+  cases c <;>
+    simp [coprodFreeGroupEquiv, coprodPresentations, toCoprod, equivPresentedGroup_symm_apply_of]
+
+/-- The free-factor isomorphism sends the class of a word to the product of the images of its
+letters. -/
+@[simp]
+theorem coprodFreeGroupEquiv_mk (w : FreeGroup γ) :
+    coprodFreeGroupEquiv rels e (mk _ w) =
+      FreeGroup.lift (fun c => Sum.elim (fun a => Monoid.Coprod.inl (of a))
+        (fun b => Monoid.Coprod.inr (FreeGroup.of b)) (e.symm c)) w := by
+  induction w with
+  | one => simp
+  | of c => exact (coprodFreeGroupEquiv_of rels e c).trans FreeGroup.lift_apply_of.symm
+  | inv_of c h => simp [h]
+  | mul u v hu hv => simp [hu, hv]
+
 theorem coprodFreeGroupEquiv_of_inl (a : α) :
     coprodFreeGroupEquiv rels e (of (e (Sum.inl a))) = Monoid.Coprod.inl (of a) := by
-  simp [coprodFreeGroupEquiv, coprodPresentations, toCoprod, equivPresentedGroup_symm_apply_of]
+  simp
 
-@[simp]
 theorem coprodFreeGroupEquiv_of_inr (b : β) :
     coprodFreeGroupEquiv rels e (of (e (Sum.inr b))) = Monoid.Coprod.inr (FreeGroup.of b) := by
-  simp [coprodFreeGroupEquiv, coprodPresentations, toCoprod, equivPresentedGroup_symm_apply_of]
+  simp
 
 @[simp]
 theorem coprodFreeGroupEquiv_symm_inl_of (a : α) :
     (coprodFreeGroupEquiv rels e).symm (Monoid.Coprod.inl (of a)) = of (e (Sum.inl a)) := by
   simp [MulEquiv.symm_apply_eq]
+
+/-- The inverse of the free-factor isomorphism relabels a word of the presented factor along
+`e ∘ Sum.inl`. -/
+@[simp]
+theorem coprodFreeGroupEquiv_symm_inl_mk (w : FreeGroup α) :
+    (coprodFreeGroupEquiv rels e).symm (Monoid.Coprod.inl (mk rels w)) =
+      mk _ (FreeGroup.map (e ∘ Sum.inl) w) := by
+  rw [MulEquiv.symm_apply_eq]
+  induction w with
+  | one => simp
+  | of a => exact (coprodFreeGroupEquiv_of_inl rels e a).symm
+  | inv_of a h => simp [h]
+  | mul u v hu hv => simp [hu, hv]
 
 @[simp]
 theorem coprodFreeGroupEquiv_symm_inr_of (b : β) :

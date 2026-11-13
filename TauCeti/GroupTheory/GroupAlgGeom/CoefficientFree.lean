@@ -66,6 +66,12 @@ theorem coprodPresentedGroupEquiv_symm_inr_mk (w : FreeGroup X) :
       ((inr w : GX G X) : SystemGroup G _) :=
   quotientNormalClosureInrEquiv_symm_inr_mk R w
 
+@[simp]
+theorem coprodPresentedGroupEquiv_symm_inr_of (x : X) :
+    (coprodPresentedGroupEquiv G R).symm (inr (PresentedGroup.of x)) =
+      ((inr (FreeGroup.of x) : GX G X) : SystemGroup G _) :=
+  coprodPresentedGroupEquiv_symm_inr_mk R (FreeGroup.of x)
+
 end PresentedGroup
 
 section FreeGroup
@@ -89,18 +95,23 @@ theorem coprodPresentedGroupFreeGroupEquiv_mk_inl (g : G) :
   simp [coprodPresentedGroupFreeGroupEquiv]
 
 @[simp]
+theorem coprodPresentedGroupFreeGroupEquiv_mk_inr_of (x : X) :
+    coprodPresentedGroupFreeGroupEquiv G R e ((inr (FreeGroup.of x) : GX G X) : SystemGroup G _) =
+      inr (Sum.elim (fun a => inl (PresentedGroup.of a)) (fun b => inr (FreeGroup.of b))
+        (e.symm x)) := by
+  simp [coprodPresentedGroupFreeGroupEquiv]
+
 theorem coprodPresentedGroupFreeGroupEquiv_mk_inr_of_inl (a : α) :
     coprodPresentedGroupFreeGroupEquiv G R e
         ((inr (FreeGroup.of (e (Sum.inl a))) : GX G X) : SystemGroup G _) =
       inr (inl (PresentedGroup.of a)) := by
-  simp [coprodPresentedGroupFreeGroupEquiv, ← PresentedGroup.of.eq_def]
+  simp
 
-@[simp]
 theorem coprodPresentedGroupFreeGroupEquiv_mk_inr_of_inr (b : β) :
     coprodPresentedGroupFreeGroupEquiv G R e
         ((inr (FreeGroup.of (e (Sum.inr b))) : GX G X) : SystemGroup G _) =
       inr (inr (FreeGroup.of b)) := by
-  simp [coprodPresentedGroupFreeGroupEquiv, ← PresentedGroup.of.eq_def]
+  simp
 
 @[simp]
 theorem coprodPresentedGroupFreeGroupEquiv_symm_inl (g : G) :
@@ -113,6 +124,12 @@ theorem coprodPresentedGroupFreeGroupEquiv_symm_inr_inl_of (a : α) :
     (coprodPresentedGroupFreeGroupEquiv G R e).symm (inr (inl (PresentedGroup.of a))) =
       ((inr (FreeGroup.of (e (Sum.inl a))) : GX G X) : SystemGroup G _) := by
   simp [MulEquiv.symm_apply_eq]
+
+@[simp]
+theorem coprodPresentedGroupFreeGroupEquiv_symm_inr_inl_mk (u : FreeGroup α) :
+    (coprodPresentedGroupFreeGroupEquiv G R e).symm (inr (inl (PresentedGroup.mk R u))) =
+      ((inr (FreeGroup.map (e ∘ Sum.inl) u) : GX G X) : SystemGroup G _) := by
+  simp [coprodPresentedGroupFreeGroupEquiv]
 
 @[simp]
 theorem coprodPresentedGroupFreeGroupEquiv_symm_inr_inr_of (b : β) :

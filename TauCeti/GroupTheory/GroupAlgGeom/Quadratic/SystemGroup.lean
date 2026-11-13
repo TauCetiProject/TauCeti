@@ -160,9 +160,7 @@ noncomputable def orientableSystemGroupEquivOfSurjective
       Monoid.Coprod G (Orientable n 0) :=
   have : IsEmpty ↥(Set.range (Sum.elim x y))ᶜ := by simp [surj.range_eq]
   (orientableSystemGroupEquiv G hn inj).trans
-    (MulEquiv.coprodCongr (.refl G)
-      ((MulEquiv.coprodCongr (.refl _) (MulEquiv.ofUnique (N := PUnit.{1}))).trans
-        (MulEquiv.coprodPUnit _)))
+    (MulEquiv.coprodCongr (.refl G) GX.equivOfIsEmpty)
 
 variable (surj : (Sum.elim x y).Surjective)
 
@@ -293,9 +291,7 @@ noncomputable def nonorientableSystemGroupEquivOfSurjective (surj : x.Surjective
       Monoid.Coprod G (Nonorientable n 0) :=
   have : IsEmpty ↥(Set.range x)ᶜ := by simp [surj.range_eq]
   (nonorientableSystemGroupEquiv G hn inj).trans
-    (MulEquiv.coprodCongr (.refl G)
-      ((MulEquiv.coprodCongr (.refl _) (MulEquiv.ofUnique (N := PUnit.{1}))).trans
-        (MulEquiv.coprodPUnit _)))
+    (MulEquiv.coprodCongr (.refl G) GX.equivOfIsEmpty)
 
 variable (surj : x.Surjective)
 
