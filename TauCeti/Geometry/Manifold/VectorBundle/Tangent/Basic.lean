@@ -812,6 +812,52 @@ theorem tangentMap_subtype_val {U : Opens M}
       ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.2⟩ := by
   simp only [tangentMap, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
 
+section RestrictOpen
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- A map is differentiable at a point of an open subset exactly when its restriction to that
+subset is. -/
+@[simp]
+theorem mdifferentiableAt_comp_subtype_val_iff {U : Opens N} {f : N → M} {x : U} :
+    MDifferentiableAt J I (f ∘ (Subtype.val : U → N)) x ↔ MDifferentiableAt J I f (x : N) :=
+  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).symm
+
+/-- A map into an open subset is differentiable at a point exactly when its composition with the
+inclusion is. -/
+@[simp]
+theorem mdifferentiableAt_subtype_val_comp_iff {U : Opens M} {f : N → U} {x : N} :
+    MDifferentiableAt J I ((Subtype.val : U → M) ∘ f) x ↔ MDifferentiableAt J I f x :=
+  ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff f Set.univ x
+
+/-- Restricting a map to an open source does not change its differential. -/
+theorem mfderiv_comp_subtype_val_apply {U : Opens N} {f : N → M} {x : U}
+    (v : TangentSpace J x) :
+    mfderiv J I (f ∘ (Subtype.val : U → N)) x v = mfderiv J I f (x : N) v := by
+  by_cases hf : MDifferentiableAt J I f (x : N)
+  · rw [mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
+      ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+      tangentSpaceOpenEquiv_apply]
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_comp_subtype_val_iff.not.mpr hf)]
+    rfl
+
+/-- Following a map into an open target by the inclusion does not change its differential. -/
+theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
+    (v : TangentSpace J x) :
+    mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
+  by_cases hf : MDifferentiableAt J I f x
+  · rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
+      ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
+    exact tangentSpaceOpenEquiv_apply _ _
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
+    rfl
+
+end RestrictOpen
+
 /-- If a map `f` between open submanifolds is the restriction of a map `A` of the ambient
 manifolds, then under the canonical tangent-space identifications the differential of `f` at `x`
 is the differential of `A` at `x` (both are `0` when `f` is not differentiable at `x`). -/
@@ -823,28 +869,11 @@ theorem tangentSpaceOpenEquiv_mfderiv_apply
     (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (v : TangentSpace I x) :
     tangentSpaceOpenEquiv (I := I') (f x) (mfderiv I I' f x v) =
       mfderiv I I' A x (tangentSpaceOpenEquiv (I := I) x v) := by
-  by_cases hf : MDifferentiableAt I I' f x
-  · have hA : MDifferentiableAt I I' A x := by
-      have h1 : MDifferentiableAt I I' (Subtype.val ∘ f) x :=
-        (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).comp x hf
-      rw [hcomp] at h1
-      exact ((differentiableWithinAt_localInvariantProp (I := I)
-        (I' := I')).liftPropAt_iff_comp_subtype_val (U := U) A x).2 h1
-    have h := mfderiv_comp_apply x
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero (x := f x)) hf v
-    rw [hcomp, mfderiv_comp_apply x hA (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) v,
-      mfderiv_subtype_val, mfderiv_subtype_val] at h
-    exact h.symm
-  · have hA : ¬ MDifferentiableAt I I' A x := fun hA ↦ hf <| by
-      have h1 : MDifferentiableAt I I' (A ∘ Subtype.val) x :=
-        ((differentiableWithinAt_localInvariantProp (I := I)
-          (I' := I')).liftPropAt_iff_comp_subtype_val (U := U) A x).1 hA
-      rw [← hcomp] at h1
-      exact (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff f Set.univ x).1 h1
-    rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hA,
-      zero_apply, zero_apply, map_zero]
-    -- both zeros are the zero of the model space `E'`
-    rfl
+  have h : mfderiv I I' (Subtype.val ∘ f) x v = mfderiv I I' f x v :=
+    mfderiv_subtype_val_comp_apply v
+  rw [hcomp, mfderiv_comp_subtype_val_apply] at h
+  rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply]
+  exact h.symm
 
 /-- The differential of the inclusion of nested open submanifolds is the identity of the common
 model vector space. -/
