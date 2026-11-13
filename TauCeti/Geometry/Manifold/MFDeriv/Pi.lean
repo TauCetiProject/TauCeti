@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Pi
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Manifold.ContMDiff.Pi
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
@@ -25,7 +26,10 @@ derivatives of the two families of coordinate maps with the structure maps of th
 
 These are the finite-product analogues of Mathlib's `mfderiv_fst` and `mfderiv_prodMk_left`. They
 read forms and vector fields on a product, such as the coordinate time forms of a torus, through
-the factors. The smoothness of the coordinate insertions is `TauCeti.contMDiff_update`.
+the factors, and decompose the vector-valued differential `mvfderiv` into partial differentials
+along the coordinate fibers (`MDifferentiableAt.mvfderiv_pi_eq_sum`,
+`MDifferentiableAt.mvfderiv_pi_eq_zero_iff`). The smoothness of the coordinate insertions is
+`TauCeti.contMDiff_update`.
 
 A map into the product has derivative the product of the derivatives of its components
 (`TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`).
@@ -36,6 +40,9 @@ A map into the product has derivative the product of the derivatives of its comp
   projection.
 * `TauCeti.hasMFDerivAt_update`, `TauCeti.mfderiv_update`: the derivative of a coordinate
   insertion.
+* `MDifferentiableAt.mvfderiv_pi_eq_sum`, `MDifferentiableAt.mvfderiv_pi_eq_zero_iff`:
+  partial-derivative decomposition of vector-valued functions on a finite product, and
+  coordinatewise vanishing of `mvfderiv`.
 * `TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`: the derivative of a map into a product.
 
 ## References
@@ -156,5 +163,59 @@ theorem mfderiv_update (x : ∀ i, M i) (i : ι) (y : M i) :
     mfderiv (I i) (ModelWithCorners.pi I) (update x i) y =
       ContinuousLinearMap.pi (Pi.single i (ContinuousLinearMap.id 𝕜 (E i))) :=
   (hasMFDerivAt_update x i y).mfderiv
+
+/-- **Partial-derivative decomposition on a finite product.** The vector-valued differential of a
+differentiable map on `∀ i, M i` is the sum of its partial differentials along the coordinate
+fibers through `x` composed with the coordinate tangent projections. -/
+theorem _root_.MDifferentiableAt.mvfderiv_pi_eq_sum {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {g : (∀ i, M i) → F} {x : ∀ i, M i}
+    (hg : MDifferentiableAt (ModelWithCorners.pi I) 𝓘(𝕜, F) g x) :
+    mvfderiv (ModelWithCorners.pi I) g x =
+      ∑ i, (mvfderiv (I i) (fun y ↦ g (update x i y)) (x i)).comp
+        (mfderiv (ModelWithCorners.pi I) (I i) (fun z ↦ z i) x) := by
+  ext v
+  rw [FunLike.coe_sum, Finset.sum_apply]
+  -- Read `mvfderiv` in the product model space `∀ i, E i`, where `v` splits as `∑ i, Pi.single i`.
+  set L : (∀ i, E i) →L[𝕜] F :=
+    (mvfderiv (ModelWithCorners.pi I) g x).comp
+      (tangentSpaceCastModel (ModelWithCorners.pi I) x).symm.toContinuousLinearMap
+  set u : ∀ i, E i := tangentSpaceCastModel (ModelWithCorners.pi I) x v
+  have hL : mvfderiv (ModelWithCorners.pi I) g x v = L u := rfl
+  rw [hL, ← Finset.univ_sum_single u, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hc := mvfderiv_comp_apply_of_eq (f := update x i) (x i) hg
+    (hasMFDerivAt_update x i (x i)).mdifferentiableAt (update_eq_self i x)
+    (mfderiv (ModelWithCorners.pi I) (I i) (fun z ↦ z i) x v)
+  rw [Function.comp_def] at hc
+  -- Both arguments to `mvfderiv g x` have the same coordinates in `∀ j, E j`.
+  have hvec : tangentSpaceCastModel (ModelWithCorners.pi I) (update x i (x i))
+      (mfderiv (I i) (ModelWithCorners.pi I) (update x i) (x i)
+        (mfderiv (ModelWithCorners.pi I) (I i) (fun z ↦ z i) x v)) = Pi.single i (u i) := by
+    refine Eq.trans (b := (ContinuousLinearMap.pi
+      (Pi.single i (ContinuousLinearMap.id 𝕜 (E i)))) (u i)) ?_ ?_
+    · rw [mfderiv_update, mfderiv_apply]
+      rfl
+    · funext j
+      rcases eq_or_ne j i with rfl | hj
+      · simp
+      · simp [hj]
+  exact (congrArg L hvec.symm).trans hc.symm
+
+/-- **Critical-point criterion on a finite product.** The vector-valued differential of a
+differentiable map on `∀ i, M i` vanishes at `x` if and only if its differential along every
+coordinate fiber through `x` vanishes at `x i`. -/
+theorem _root_.MDifferentiableAt.mvfderiv_pi_eq_zero_iff {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {g : (∀ i, M i) → F} {x : ∀ i, M i}
+    (hg : MDifferentiableAt (ModelWithCorners.pi I) 𝓘(𝕜, F) g x) :
+    mvfderiv (ModelWithCorners.pi I) g x = 0 ↔
+      ∀ i, mvfderiv (I i) (fun y ↦ g (update x i y)) (x i) = 0 := by
+  refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
+  · ext w
+    have hc := mvfderiv_comp_apply_of_eq (f := update x i) (x i) hg
+      (hasMFDerivAt_update x i (x i)).mdifferentiableAt (update_eq_self i x) w
+    rw [Function.comp_def, h] at hc
+    exact hc
+  · rw [hg.mvfderiv_pi_eq_sum]
+    exact Finset.sum_eq_zero fun i _ ↦ by rw [h i, ContinuousLinearMap.zero_comp]
 
 end TauCeti

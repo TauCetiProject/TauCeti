@@ -68,6 +68,9 @@ fields on a product manifold.
   `y ↦ ((φ (a y)).1, (ψ (b y)).2)`.
 * `MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp`: the derivative of a
   fibre-product condition `(φ (a y)).2 = (ψ (b y)).1` along maps `a` and `b`.
+* `MDifferentiableAt.mvfderiv_comp_prodMk` and `MDifferentiableAt.mvfderiv_diag`: the
+  vector-valued derivative of `y ↦ h (a y, b y)` as the sum of the two partial derivatives along
+  `a` and `b`, and its specialization `d(y ↦ h (y, y)) = d₁h + d₂h` along the diagonal.
 -/
 
 public section
@@ -478,6 +481,32 @@ theorem MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp
   exact (hφ.comp x ha).mfderiv_snd_eq_mfderiv_fst_of_fiberProduct (hψ.comp x hb) hab v
 
 end Comp
+
+/-- **Two-factor chain rule for vector-valued functions.** The vector-valued differential of
+`y ↦ h (a y, b y)` at `x` is the sum of the two partial differentials of `h` at `(a x, b x)`
+precomposed with `da` and `db`. -/
+theorem MDifferentiableAt.mvfderiv_comp_prodMk {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    {h : N × N' → V} {a : M → N} {b : M → N'}
+    (hh : MDifferentiableAt (J.prod J') 𝓘(𝕜, V) h (a x, b x))
+    (ha : MDifferentiableAt I J a x) (hb : MDifferentiableAt I J' b x) :
+    mvfderiv I (fun y ↦ h (a y, b y)) x =
+      (mvfderiv J (fun z ↦ h (z, b x)) (a x)).comp (mfderiv I J a x) +
+        (mvfderiv J' (fun z ↦ h (a x, z)) (b x)).comp (mfderiv I J' b x) := by
+  ext v
+  have hc := mvfderiv_comp_apply x hh (ha.prodMk hb) v
+  rw [Function.comp_def, hh.mvfderiv_prod_eq_add_apply, ← (ha.prodMk hb).mfderiv_fst_apply,
+    ← (ha.prodMk hb).mfderiv_snd_apply] at hc
+  exact hc
+
+/-- **Differential along the diagonal.** For a function `h` on `M × M` differentiable at `(x, x)`,
+the differential of `y ↦ h (y, y)` at `x` is the sum of its two partial differentials at
+`(x, x)`. -/
+theorem MDifferentiableAt.mvfderiv_diag {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    {h : M × M → V} (hh : MDifferentiableAt (I.prod I) 𝓘(𝕜, V) h (x, x)) :
+    mvfderiv I (fun y ↦ h (y, y)) x =
+      mvfderiv I (fun y ↦ h (y, x)) x + mvfderiv I (fun y ↦ h (x, y)) x := by
+  simpa only [id_eq, mfderiv_id, ContinuousLinearMap.comp_id] using
+    hh.mvfderiv_comp_prodMk mdifferentiableAt_id mdifferentiableAt_id
 
 end Coordinates
 
