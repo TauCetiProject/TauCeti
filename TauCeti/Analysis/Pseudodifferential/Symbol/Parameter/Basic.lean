@@ -45,8 +45,8 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
   bounds;
 * `TauCeti.ParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m` has
   order `m' + m`;
-* `TauCeti.ParameterSymbol.IsSmoothing`: the symbols of every order, a submodule closed under
-  composition with arbitrary symbols;
+* `TauCeti.ParameterSymbol.IsSmoothing`: the predicate of having every order, closed under
+  addition, scalar multiplication and composition with arbitrary symbols;
 * `TauCeti.ParameterSymbol.inverse`: **uniform inverse estimates**. If `a` has order `m` and is
   elliptic with parameter (`TauCeti.ParameterSymbol.IsElliptic`: it is invertible, with
   `‖a⁻¹‖ ≤ C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (-m)`), its pointwise inverse has order `-m`;
@@ -439,7 +439,7 @@ private theorem Bounds.add (hΛ : IsOpen Λ) {g : (CoordinateSpace n × Coordina
   refine ⟨C + D, add_nonneg hC hD, fun x hx ξ z hz => ?_⟩
   have hU := (isOpen_univ.prod hΛ).mem_nhds (⟨mem_univ _, hz⟩ : ((x, ξ), z) ∈ univ ×ˢ Λ)
   have hk : ((k : ℕ∞ω)) ≤ ∞ := by exact_mod_cast le_top
-  rw [show (fun p => f p + g p) = f + g from rfl,
+  rw [← Pi.add_def,
     parameterIteratedFDeriv_add k ((hf.contDiffAt hU).of_le hk) ((hg.contDiffAt hU).of_le hk)]
   exact (norm_add_le _ _).trans (by linarith [hf' x hx ξ z hz, hg' x hx ξ z hz])
 

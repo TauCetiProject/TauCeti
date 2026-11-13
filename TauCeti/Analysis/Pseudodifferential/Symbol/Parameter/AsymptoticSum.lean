@@ -196,26 +196,29 @@ private theorem iteratedFDeriv_parameterCutoff_mk (t : ℝ) (k : ℕ) (x ξ : Co
   rw [iteratedFDeriv_comp_add_right]
   simp
 
-/-- The dilated derivatives of the cutoff of radius one are bounded. -/
+/-- The dilated derivatives of order at most `k` of the cutoff of radius one are bounded. -/
 private theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_one_le (k : ℕ) :
-    ∃ B, 0 ≤ B ∧ ∀ p, ‖parameterIteratedFDeriv k (parameterCutoff (n := n) 1) p‖ ≤ B := by
+    ∃ B, 0 ≤ B ∧ ∀ i ≤ k, ∀ p,
+      ‖parameterIteratedFDeriv i (parameterCutoff (n := n) 1) p‖ ≤ B := by
   have hK : IsCompact ((({0} : Set (CoordinateSpace n)) ×ˢ
       Metric.closedBall (0 : CoordinateSpace n) 5) ×ˢ Metric.closedBall (0 : ℂ) 25) :=
     (isCompact_singleton.prod (isCompact_closedBall _ _)).prod (isCompact_closedBall _ _)
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn
-    ((contDiff_parameterCutoff (n := n) 1).continuous_iteratedFDeriv (m := k)
-      (by exact_mod_cast le_top)).continuousOn
-  refine ⟨max 1 (M * 25 ^ k), le_max_of_le_left zero_le_one, fun p => ?_⟩
+  -- One bound on the compact set for the norms of the derivatives of all orders `i ≤ k`.
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (f := fun q (i : Fin (k + 1)) =>
+      ‖iteratedFDeriv ℝ i (parameterCutoff (n := n) 1) q‖)
+    (continuous_pi fun i : Fin (k + 1) => ((contDiff_parameterCutoff (n := n) 1)
+      |>.continuous_iteratedFDeriv (m := i) (by exact_mod_cast le_top)).norm).continuousOn
+  refine ⟨max 1 (M * 25 ^ k), le_max_of_le_left zero_le_one, fun i hi p => ?_⟩
   obtain ⟨⟨x, ξ⟩, z⟩ := p
   by_cases hfar : 2 < ‖ξ‖ ^ 4 + ‖z‖ ^ 2
   · -- Far out the cutoff is identically one.
     have hloc := parameterCutoff_eventuallyEq_one (n := n) (p := ((x, ξ), z)) one_pos
       (by simpa using hfar)
-    rcases Nat.eq_zero_or_pos k with rfl | hk
+    rcases Nat.eq_zero_or_pos i with rfl | hi
     · rw [norm_parameterIteratedFDeriv_zero, Real.norm_eq_abs,
         abs_of_nonneg (parameterCutoff_nonneg _ _)]
       exact (parameterCutoff_le_one _ _).trans (le_max_left _ _)
-    · rw [hloc.parameterIteratedFDeriv_eq k, Pi.one_def, parameterIteratedFDeriv_const_of_ne hk.ne',
+    · rw [hloc.parameterIteratedFDeriv_eq i, Pi.one_def, parameterIteratedFDeriv_const_of_ne hi.ne',
         norm_zero]
       exact zero_le_one.trans (le_max_left _ _)
   · -- Near the origin the weight is at most `5` and the derivative is bounded by compactness.
@@ -229,25 +232,26 @@ private theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_one_le (k : 
     have hD : ‖parameterDilation n (parameterWeight ξ z)‖ ≤ 25 := by
       have h1 := one_le_parameterWeight ξ z
       exact (norm_parameterDilation_le_sq h1).trans (by nlinarith)
-    have hM' : ‖iteratedFDeriv ℝ k (parameterCutoff (n := n) 1) ((x, ξ), z)‖ ≤ M := by
+    have hM' : ‖iteratedFDeriv ℝ i (parameterCutoff (n := n) 1) ((x, ξ), z)‖ ≤ M := by
       rw [iteratedFDeriv_parameterCutoff_mk]
-      exact hM _ ⟨⟨rfl, by simpa using hξ⟩, by simpa using hz⟩
+      simpa using (norm_le_pi_norm _ (⟨i, Nat.lt_succ_of_le hi⟩ : Fin (k + 1))).trans
+        (hM ((0, ξ), z) ⟨⟨rfl, by simpa using hξ⟩, by simpa using hz⟩)
     rw [parameterIteratedFDeriv_def]
     refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans
       (le_trans ?_ (le_max_right _ _))
     rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-    exact mul_le_mul hM' (pow_le_pow_left₀ (norm_nonneg _) hD k) (by positivity)
-      ((norm_nonneg _).trans hM')
+    exact mul_le_mul hM' ((pow_le_pow_left₀ (norm_nonneg _) hD i).trans
+      (pow_le_pow_right₀ (by norm_num) hi)) (by positivity) ((norm_nonneg _).trans hM')
 
 variable (n) in
-/-- **Uniform estimates for the cutoffs.** The dilated derivatives of the cutoffs of radius
-`t ≥ 1` are bounded independently of `t` and of the point: the cutoffs satisfy the dilated
-derivative estimates of order `0`, uniformly in `t ≥ 1`. -/
+/-- **Uniform estimates for the cutoffs.** The dilated derivatives of order at most `k` of the
+cutoffs of radius `t ≥ 1` are bounded independently of `t`, of the order and of the point: the
+cutoffs satisfy the dilated derivative estimates of order `0`, uniformly in `t ≥ 1`. -/
 theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ) :
-    ∃ B, 0 ≤ B ∧ ∀ t : ℝ, 1 ≤ t → ∀ p : (CoordinateSpace n × CoordinateSpace n) × ℂ,
-      ‖parameterIteratedFDeriv k (parameterCutoff t) p‖ ≤ B := by
+    ∃ B, 0 ≤ B ∧ ∀ i ≤ k, ∀ t : ℝ, 1 ≤ t → ∀ p : (CoordinateSpace n × CoordinateSpace n) × ℂ,
+      ‖parameterIteratedFDeriv i (parameterCutoff t) p‖ ≤ B := by
   obtain ⟨B, hB0, hB⟩ := exists_norm_parameterIteratedFDeriv_parameterCutoff_one_le (n := n) k
-  refine ⟨B, hB0, fun t ht p => ?_⟩
+  refine ⟨B, hB0, fun i hi t ht p => ?_⟩
   have ht0 : 0 < t := one_pos.trans_le ht
   obtain ⟨⟨x, ξ⟩, z⟩ := p
   set q := parameterDilation n t⁻¹ ((x, ξ), z) with hq
@@ -271,8 +275,8 @@ theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ) :
       (parameterDilation n w').comp (parameterDilation n (t⁻¹ * w / w')) := by
     rw [parameterDilation_comp_parameterDilation, parameterDilation_comp_parameterDilation,
       mul_div_cancel₀ _ hw'0.ne']
-  have key : parameterIteratedFDeriv k (parameterCutoff t) ((x, ξ), z) =
-      (parameterIteratedFDeriv k (parameterCutoff 1) q).compContinuousLinearMap fun _ =>
+  have key : parameterIteratedFDeriv i (parameterCutoff t) ((x, ξ), z) =
+      (parameterIteratedFDeriv i (parameterCutoff 1) q).compContinuousLinearMap fun _ =>
         parameterDilation n (t⁻¹ * w / w') := by
     rw [parameterIteratedFDeriv_def,
       parameterIteratedFDeriv_def, parameterCutoff_eq_comp ht0,
@@ -286,10 +290,10 @@ theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ) :
   rw [key]
   refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
   rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-  calc ‖parameterIteratedFDeriv k (parameterCutoff 1) q‖ *
-        ‖parameterDilation n (t⁻¹ * w / w')‖ ^ k
-      ≤ B * 1 ^ k := mul_le_mul (hB q)
-        (pow_le_pow_left₀ (norm_nonneg _) (norm_parameterDilation_le_one hr0 hr1) k)
+  calc ‖parameterIteratedFDeriv i (parameterCutoff 1) q‖ *
+        ‖parameterDilation n (t⁻¹ * w / w')‖ ^ i
+      ≤ B * 1 ^ i := mul_le_mul (hB i hi q)
+        (pow_le_pow_left₀ (norm_nonneg _) (norm_parameterDilation_le_one hr0 hr1) i)
         (by positivity) hB0
     _ = B := by rw [one_pow, mul_one]
 
@@ -299,25 +303,19 @@ variable {Λ : TopologicalSpace.Opens ℂ} {V W : Type*} [NormedAddCommGroup V] 
   [NormedAddCommGroup W] [NormedSpace ℂ W] {μ : ℝ}
 
 /-- The products `ψₜ a` of a parameter-dependent symbol `a` of order `μ` with the cutoffs `ψₜ` of
-radius `t ≥ 1` (`TauCeti.parameterCutoff`) satisfy the estimates of every order `m' ≥ μ`, with
-constants `C t^(μ - m')` where `C` depends neither on `t` nor on `m'`. -/
+radius `t ≥ 1` (`TauCeti.parameterCutoff`) satisfy the estimates of every order `m' ≥ μ` for the
+dilated derivatives of order at most `k`, with constants `C t^(μ - m')` where `C` depends neither
+on `t` nor on `m'`. -/
 theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_le (a : ParameterSymbol n Λ V W μ)
     {K : Set (CoordinateSpace n)} (hK : IsCompact K) (k : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ m' : ℝ, μ ≤ m' → ∀ x ∈ K, ∀ ξ, ∀ z ∈ Λ,
-      ‖parameterIteratedFDeriv k (fun p => parameterCutoff t p • a.coefficient p) ((x, ξ), z)‖ ≤
+    ∃ C, 0 ≤ C ∧ ∀ i ≤ k, ∀ t : ℝ, 1 ≤ t → ∀ m' : ℝ, μ ≤ m' → ∀ x ∈ K, ∀ ξ, ∀ z ∈ Λ,
+      ‖parameterIteratedFDeriv i (fun p => parameterCutoff t p • a.coefficient p) ((x, ξ), z)‖ ≤
         C * t ^ (μ - m') * parameterWeight ξ z ^ m' := by
-  -- One bound `B` for the dilated derivatives of order at most `k` of all the cutoffs.
-  choose B₀ hB₀0 hB₀ using exists_norm_parameterIteratedFDeriv_parameterCutoff_le (n := n)
-  set B := ∑ i ∈ Finset.range (k + 1), B₀ i
-  have hB0 : 0 ≤ B := Finset.sum_nonneg fun i _ => hB₀0 i
-  have hB : ∀ i ≤ k, ∀ t : ℝ, 1 ≤ t → ∀ p : (CoordinateSpace n × CoordinateSpace n) × ℂ,
-      ‖parameterIteratedFDeriv i (parameterCutoff t) p‖ ≤ B := fun i hi t ht p =>
-    (hB₀ i t ht p).trans (Finset.single_le_sum (fun j _ => hB₀0 j)
-      (Finset.mem_range.2 (Nat.lt_succ_of_le hi)))
+  obtain ⟨B, hB0, hB⟩ := exists_norm_parameterIteratedFDeriv_parameterCutoff_le n k
   obtain ⟨D, hD0, hD⟩ := a.exists_forall_le_bound hK k
   obtain ⟨E, hE0, hE⟩ := exists_norm_parameterIteratedFDeriv_bilinear_le n
     (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] W)) k
-  refine ⟨E * (B * D), by positivity, fun t ht m' hm' x hx ξ z hz => ?_⟩
+  refine ⟨E * (B * D), by positivity, fun i hi t ht m' hm' x hx ξ z hz => ?_⟩
   have ht0 : 0 < t := one_pos.trans_le ht
   set w := parameterWeight ξ z
   have hw0 : 0 < w := parameterWeight_pos ξ z
@@ -326,12 +324,12 @@ theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_le (a : ParameterSymbol 
     have hloc : (fun p => parameterCutoff t p • a.coefficient p) =ᶠ[𝓝 ((x, ξ), z)] 0 :=
       (parameterCutoff_eventuallyEq_zero (p := ((x, ξ), z)) ht0 hq).mono fun p hp => by
         simp [hp]
-    rw [hloc.parameterIteratedFDeriv_eq k, parameterIteratedFDeriv_zero, norm_zero]
+    rw [hloc.parameterIteratedFDeriv_eq i, parameterIteratedFDeriv_zero, norm_zero]
     positivity
   · have hwt : t ≤ w := le_parameterWeight_of_pow_four_le (not_lt.1 hq)
     have hL := hE (parameterCutoff t) a.coefficient ((x, ξ), z)
       (contDiff_parameterCutoff t).contDiffAt (a.contDiffAt_coefficient hz) B (D * w ^ μ)
-      (fun i hi => hB i hi t ht _) (fun i hi => hD i hi x hx ξ z hz) k le_rfl
+      (fun j hj => hB j hj t ht _) (fun j hj => hD j hj x hx ξ z hz) i hi
     simp only [ContinuousLinearMap.lsmul_apply] at hL
     -- `w ^ μ ≤ t ^ (μ - m') w ^ m'`, since `w ≥ t` and `μ ≤ m'`.
     have hpow : w ^ μ ≤ t ^ (μ - m') * w ^ m' := by
@@ -376,7 +374,7 @@ private theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_sub_le
         (by nlinarith [not_lt.1 hq, pow_pos ht0 4])
       linarith
     rw [parameterIteratedFDeriv_sub k (a.contDiffAt_cutoff_smul t hz) (a.contDiffAt_coefficient hz)]
-    have h1 := hC t ht μ le_rfl x hx ξ z hz
+    have h1 := hC k le_rfl t ht μ le_rfl x hx ξ z hz
     rw [sub_self, Real.rpow_zero, mul_one] at h1
     have hpow : w ^ μ ≤ (1 + 4 * t) ^ |μ - μ'| * w ^ μ' := by
       calc w ^ μ = w ^ (μ - μ') * w ^ μ' := by
@@ -400,23 +398,15 @@ private theorem exists_radius (a : ParameterSymbol n Λ V W μ) (j : ℕ) :
     ∃ t : ℝ, (j : ℝ) + 1 ≤ t ∧ ∀ i ≤ j, ∀ x ∈ Metric.closedBall (0 : CoordinateSpace n) j, ∀ ξ,
       ∀ z ∈ Λ, ‖parameterIteratedFDeriv i (fun p => parameterCutoff t p • a.coefficient p)
         ((x, ξ), z)‖ ≤ (1 / 2) ^ j * parameterWeight ξ z ^ (μ + 1) := by
-  -- One constant `C` for the estimates of order `μ + 1` of the derivatives of order at most `j`.
-  choose C₀ hC₀0 hC₀ using fun i => a.exists_norm_parameterIteratedFDeriv_cutoff_smul_le
-    (isCompact_closedBall (0 : CoordinateSpace n) j) i
-  set C := ∑ i ∈ Finset.range (j + 1), C₀ i
-  have hC : ∀ i ≤ j, ∀ t : ℝ, 1 ≤ t → ∀ x ∈ Metric.closedBall (0 : CoordinateSpace n) j, ∀ ξ,
-      ∀ z ∈ Λ, ‖parameterIteratedFDeriv i (fun p => parameterCutoff t p • a.coefficient p)
-        ((x, ξ), z)‖ ≤ C * t⁻¹ * parameterWeight ξ z ^ (μ + 1) := fun i hi t ht x hx ξ z hz => by
-    have h := hC₀ i t ht (μ + 1) (by linarith) x hx ξ z hz
-    rw [sub_add_cancel_left, Real.rpow_neg_one] at h
-    refine h.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
-      (Finset.single_le_sum (fun i _ => hC₀0 i) (Finset.mem_range.2 (Nat.lt_succ_of_le hi)))
-      (inv_nonneg.2 (zero_le_one.trans ht))) (Real.rpow_pos_of_pos (parameterWeight_pos ξ z) _).le)
+  obtain ⟨C, -, hC⟩ := a.exists_norm_parameterIteratedFDeriv_cutoff_smul_le
+    (isCompact_closedBall (0 : CoordinateSpace n) j) j
   refine ⟨max ((j : ℝ) + 1) (2 ^ j * C), le_max_left _ _, fun i hi x hx ξ z hz => ?_⟩
   set t := max ((j : ℝ) + 1) (2 ^ j * C)
   have ht1 : 1 ≤ t := le_max_of_le_left (by linarith [(Nat.cast_nonneg j : (0 : ℝ) ≤ j)])
   have ht0 : 0 < t := one_pos.trans_le ht1
-  refine (hC i hi t ht1 x hx ξ z hz).trans ?_
+  have h := hC i hi t ht1 (μ + 1) (by linarith) x hx ξ z hz
+  rw [sub_add_cancel_left, Real.rpow_neg_one] at h
+  refine h.trans ?_
   have hCt : C * t⁻¹ ≤ (1 / 2) ^ j := by
     rw [mul_inv_le_iff₀ ht0, one_div, inv_pow, ← div_eq_inv_mul, le_div_iff₀ (by positivity),
       mul_comm]
@@ -662,7 +652,7 @@ private theorem exists_norm_parameterIteratedFDeriv_borelSum_sub_le (hm : Antito
         (fun j hj => Finset.mem_range.2 (Finset.mem_Ico.1 hj).2)
         fun j _ _ => mul_nonneg (hD₂0 j) hw0))
     have hNj : N ≤ j := (Finset.mem_Ico.1 hj).1
-    have h := hD₂ j (t j) (ht1 j) (m j) le_rfl x hx ξ z hz
+    have h := hD₂ j k le_rfl (t j) (ht1 j) (m j) le_rfl x hx ξ z hz
     rw [sub_self, Real.rpow_zero, mul_one] at h
     exact h.trans (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le
       (one_le_parameterWeight ξ z) (hm hNj)) (hD₂0 j))
