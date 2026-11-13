@@ -22,15 +22,11 @@ intertwines the differential blocking column `i` with the one blocking column `f
 Both relabelings also identify the homogeneous pieces of the `(O-Maslov, Alexander)` bigrading of
 an odd-component grid in both directions.
 
-The column relabeling is defined, and both relabelings commute with specialization, for
-arbitrary permutations; only the comparison of differentials needs a cyclic permutation, since
-only cyclic permutations carry empty rectangles on the torus to empty rectangles. The chain
-identities hold over any commutative semiring.
-
-## Main definitions
-
-* `TauCeti.GridChain.simplyBlockedRelabelColumnsEquiv`: relabel the columns of a specialized
-  chain and rename its surviving variables, transporting the blocked column.
+The column relabeling `TauCeti.GridChain.simplyBlockedRelabelColumnsEquiv` is defined, and both
+relabelings commute with specialization, for arbitrary permutations in
+`TauCeti.KnotTheory.Grid.SimplyBlocked.Basic`; only the comparison of differentials needs a cyclic
+permutation, since only cyclic permutations carry empty rectangles on the torus to empty
+rectangles. The chain identities hold over any commutative semiring.
 
 ## Main results
 
@@ -54,79 +50,7 @@ open MvPolynomial
 
 namespace TauCeti
 
-namespace GridChain
-
 variable {n : ℕ} (R : Type*) [CommSemiring R]
-
-/-- Relabel the columns of a chain of the specialization `V_i = 0` by `κ`, renaming its surviving
-variables by `κ` as well, so that the blocked column becomes `κ i`. -/
-noncomputable def simplyBlockedRelabelColumnsEquiv (κ : Equiv.Perm (Fin n)) (i : Fin n) :
-    GridChainHat R n i ≃ₛₗ[((simplyBlockedRenameEquiv R κ i).toRingEquiv :
-      MvPolynomial {c : Fin n // c ≠ i} R →+* MvPolynomial {c : Fin n // c ≠ κ i} R)]
-      GridChainHat R n (κ i) :=
-  (Finsupp.mapRange.linearEquiv
-    (simplyBlockedRenameEquiv R κ i).toRingEquiv.toSemilinearEquiv).trans
-    (relabelColumnsEquiv κ)
-
-/-- The coefficient of a relabeled specialized chain is the renamed coefficient at the
-inverse-relabeled state. -/
-@[simp]
-theorem simplyBlockedRelabelColumnsEquiv_apply (κ : Equiv.Perm (Fin n)) (i : Fin n)
-    (c : GridChainHat R n i) (y : GridState n) :
-    simplyBlockedRelabelColumnsEquiv R κ i c y =
-      simplyBlockedRenameEquiv R κ i (c (y.relabelColumns κ.symm)) := by
-  simp only [simplyBlockedRelabelColumnsEquiv, LinearEquiv.trans_apply, relabelColumnsEquiv_apply,
-    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply,
-    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv]
-
-/-- The inverse relabeling reads coefficients at relabeled states and undoes the renaming. -/
-@[simp]
-theorem simplyBlockedRelabelColumnsEquiv_symm_apply (κ : Equiv.Perm (Fin n)) (i : Fin n)
-    (c : GridChainHat R n (κ i)) (y : GridState n) :
-    (simplyBlockedRelabelColumnsEquiv R κ i).symm c y =
-      (simplyBlockedRenameEquiv R κ i).symm (c (y.relabelColumns κ)) := by
-  rw [AlgEquiv.eq_symm_apply]
-  have h := congrArg (fun c => c (y.relabelColumns κ))
-    ((simplyBlockedRelabelColumnsEquiv R κ i).apply_symm_apply c)
-  simpa only [simplyBlockedRelabelColumnsEquiv_apply, GridState.relabelColumns_relabelColumns,
-    Equiv.self_trans_symm, GridState.relabelColumns_refl] using h
-
-/-- The column relabeling sends a generator to the relabeled generator with renamed
-coefficient. -/
-@[simp]
-theorem simplyBlockedRelabelColumnsEquiv_single (κ : Equiv.Perm (Fin n)) (i : Fin n)
-    (x : GridState n) (p : MvPolynomial {c : Fin n // c ≠ i} R) :
-    simplyBlockedRelabelColumnsEquiv R κ i (Finsupp.single x p) =
-      Finsupp.single (x.relabelColumns κ) (simplyBlockedRenameEquiv R κ i p) := by
-  simp only [simplyBlockedRelabelColumnsEquiv, LinearEquiv.trans_apply,
-    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_single, relabelColumnsEquiv_single,
-    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv]
-
-end GridChain
-
-variable {n : ℕ} (R : Type*) [CommSemiring R]
-
-/-- Row relabeling commutes with setting `V_i = 0`. -/
-@[simp]
-theorem simplyBlockedSpecialization_relabelRowsEquiv (ρ : Equiv.Perm (Fin n)) (i : Fin n)
-    (c : GridChainMinus R n) :
-    simplyBlockedSpecialization R i (GridChain.relabelRowsEquiv ρ c) =
-      GridChain.relabelRowsEquiv ρ (simplyBlockedSpecialization R i c) := by
-  ext y : 1
-  simp only [simplyBlockedSpecialization_apply, GridChain.relabelRowsEquiv_apply]
-
-/-- Column relabeling with renamed variables commutes with specialization, when the blocked
-column is relabeled too. -/
-@[simp]
-theorem simplyBlockedSpecialization_relabelColumnsRenameEquiv (κ : Equiv.Perm (Fin n))
-    (i : Fin n) (c : GridChainMinus R n) :
-    simplyBlockedSpecialization R (κ i) (GridChain.relabelColumnsRenameEquiv R κ c) =
-      GridChain.simplyBlockedRelabelColumnsEquiv R κ i (simplyBlockedSpecialization R i c) := by
-  ext y : 1
-  rw [simplyBlockedSpecialization_apply, ← LinearEquiv.coe_coe,
-    GridChain.relabelColumnsRenameEquiv_apply, GridChain.simplyBlockedRelabelColumnsEquiv_apply,
-    simplyBlockedSpecialization_apply, ← simplyBlockedRingHom_apply, ← simplyBlockedRingHom_apply,
-    simplyBlockedRingHom_rename]
 
 namespace GridDiagram
 
