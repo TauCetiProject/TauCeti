@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 import TauCeti.Algebra.Lie.Presentation.Serre.TripleBond
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
 /-!
 # The triple-bond braid relation in Chevalley data
@@ -48,23 +47,12 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_three (i j : Fin t.rank)
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 := by
-  let φ := D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
-  have hs := (t.isSerreSystem_lieBasis ht).map φ
-  have hE (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).e k)) := by
-    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl] using
-      D.isNilpotent_representation_rootGenerator (.inl k)
-  have hF (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).f k)) := by
-    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inr] using
-      D.isNilpotent_representation_rootGenerator (.inr k)
-  have h := hs.weylUnit_braid_of_cartan_eq_neg_three
-    (i := j) (j := i) (by simp) (by simp) hij hji (hE j) (hF j) (hE i) (hF i)
-  have h' := D.weylElement_word_eq_of_weylUnit_word_eq
+  have h' := D.weylElement_word_eq_of_serre_word_eq
     [i, j, i, j, i, j] [j, i, j, i, j, i] (by
-      simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
-        mul_assoc, φ, Function.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
-        LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using h.symm) A
+      intro H E F hs hE hF
+      simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+        mul_one, mul_assoc] using (hs.weylUnit_braid_of_cartan_eq_neg_three
+          (i := j) (j := i) (by simp) (by simp) hij hji (hE j) (hF j) (hE i) (hF i)).symm) A
   simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
     mul_one, mul_assoc] using h'
 

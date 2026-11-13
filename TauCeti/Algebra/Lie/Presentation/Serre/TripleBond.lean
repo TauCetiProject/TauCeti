@@ -48,10 +48,19 @@ section Lie
 variable {B L : Type*} [LieRing L] [LieAlgebra ℚ L]
   {CM : Matrix B B ℤ} {H E F : B → L}
 
+private theorem lie_H_triple_E (hs : IsSerreSystem ℚ CM H E F) (k i j : B) :
+    ⁅H k, ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆⁆ =
+      (3 * CM k i + CM k j) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆ := by
+  rw [leibniz_lie (H k) (E i) ⁅E i, ⁅E i, E j⁆⁆,
+    leibniz_lie (H k) (E i) ⁅E i, E j⁆, leibniz_lie (H k) (E i) (E j)]
+  simp only [hs.lie_H_E, zsmul_lie, lie_zsmul, lie_add]
+  module
+
 -- The two long roots at the far end of the short-node string form a length-two
 -- string for the long node. Record its orientation, including the returning minus sign.
 private theorem long_node_string (hs : IsSerreSystem ℚ CM H E F)
     {i j : B} (hjj : CM j j = 2) (hji : CM j i = -1) (hj : H j ≠ 0)
+    (hfa : ⁅F j, E i⁆ = 0)
     (hej : IsNilpotent (ad ℚ L (E j))) (hfj : IsNilpotent (ad ℚ L (F j))) :
     let b := weylAut (hs.isSl2Triple hjj hj)
       hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero
@@ -61,16 +70,11 @@ private theorem long_node_string (hs : IsSerreSystem ℚ CM H E F)
   let b := weylAut tj hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero
   let c := (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆
   let d := ⁅E j, c⁆
-  have hne : i ≠ j := by intro h; subst j; omega
   have hjc : ⁅H j, c⁆ = -c := by
     dsimp only [c]
-    rw [lie_smul, leibniz_lie (H j) (E i) ⁅E i, ⁅E i, E j⁆⁆,
-      leibniz_lie (H j) (E i) ⁅E i, E j⁆, leibniz_lie (H j) (E i) (E j)]
-    simp only [hs.lie_H_E, hjj, hji, smul_lie, lie_smul, lie_add]
+    rw [lie_smul, lie_H_triple_E hs, hji, hjj]
     module
   have hfjc : ⁅F j, c⁆ = 0 := by
-    have hfa : ⁅F j, E i⁆ = 0 := by
-      rw [← lie_skew, hs.lie_E_F_of_ne i j hne, neg_zero]
     dsimp only [c]
     rw [lie_smul, leibniz_lie (F j) (E i) ⁅E i, ⁅E i, E j⁆⁆, hfa, zero_lie, zero_add,
       leibniz_lie (F j) (E i) ⁅E i, E j⁆, hfa, zero_lie, zero_add,
@@ -138,9 +142,7 @@ private theorem fivefold_fixes_long_raising (hs : IsSerreSystem ℚ CM H E F)
     rw [leibniz_lie, hfi0, zero_lie, zero_add, hfc, lie_smul, hbc2, smul_zero]
   have hhc : ⁅H i, c⁆ = (3 : ℚ) • c := by
     dsimp only [c]
-    rw [lie_smul, leibniz_lie (H i) (E i) ⁅E i, ⁅E i, E j⁆⁆,
-      leibniz_lie (H i) (E i) ⁅E i, E j⁆, leibniz_lie (H i) (E i) (E j)]
-    simp only [hs.lie_H_E, hii, hij, smul_lie, lie_smul, lie_add]
+    rw [lie_smul, lie_H_triple_E hs, hii, hij]
     module
   have hhd : ⁅H i, d⁆ = (0 : ℚ) • d := by
     dsimp only [d]
@@ -153,7 +155,8 @@ private theorem fivefold_fixes_long_raising (hs : IsSerreSystem ℚ CM H E F)
     hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero ti
     (by rw [← lie_skew d (E i), hed, neg_zero])
     (by rw [← lie_skew d (F i), hfd, neg_zero])
-  obtain ⟨hbc, hbd⟩ := long_node_string hs hjj hji hj hej hfj
+  obtain ⟨hbc, hbd⟩ := long_node_string hs hjj hji hj
+    (by rw [← lie_skew, hs.lie_E_F_of_ne i j hne, neg_zero]) hej hfj
   -- Returning down the short-node string contributes the second minus sign.
   have hac : a c = -E j := by
     conv_lhs => dsimp only [c]

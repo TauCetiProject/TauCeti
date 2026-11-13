@@ -195,16 +195,12 @@ theorem weylUnit_braid_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
     simpa only [map_neg, neg_inj] using h
   -- Exponentiating gives commutation with the Weyl unit itself, not merely equality
   -- of conjugation actions. This eliminates any possible central discrepancy.
-  let d := (c a).toRingHom.comp ((c b).toRingHom.comp (c a).toRingHom)
-  have hdE : d (E j) = E j := hE
-  have hdF : d (F j) = F j := hF
-  have hd : d (b : A) = (b : A) := by
-    simp only [b, coe_weylUnit, map_mul, hEj.map_exp d, hFj.neg.map_exp d,
-      map_neg, hdE, hdF]
-  have hu : (a * b * a) * b * (a * b * a)⁻¹ = b := by
-    apply Units.ext
-    simpa only [d, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-      AlgEquiv.coe_toRingEquiv, hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using hd
+  have hwE : ((a * b * a : Aˣ) : A) * E j * ↑(a * b * a)⁻¹ = E j := by
+    simpa only [hc, Units.val_mul, mul_inv_rev, mul_assoc] using hE
+  have hwF : ((a * b * a : Aˣ) : A) * F j * ↑(a * b * a)⁻¹ = F j := by
+    simpa only [hc, Units.val_mul, mul_inv_rev, mul_assoc] using hF
+  have hu : (a * b * a) * b * (a * b * a)⁻¹ = b :=
+    weylUnit_conj_eq_of_conj hEj hFj hEj hFj (a * b * a) hwE hwF
   calc
     _ = b * (a * b * a) := mul_inv_eq_iff_eq_mul.mp hu
     _ = _ := by simp only [a, b, mul_assoc]

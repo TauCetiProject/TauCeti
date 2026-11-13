@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+public import TauCeti.Algebra.Lie.Presentation.Serre
 import TauCeti.Algebra.Lie.Presentation.Serre.SingleBond
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
@@ -80,7 +81,9 @@ theorem weylElement_word_eq_of_weylUnit_word_eq (l r : List (Fin t.rank))
       ((w.map z).prod).toLinearMap.baseChange A =
         ((w.map n).prod : Module.End A (A ⊗[ℤ] D.lattice)) := by
     induction w with
-    | nil => simp; rfl
+    | nil =>
+      simp only [List.map_nil, List.prod_nil, LinearEquiv.coe_toLinearMap_one,
+        LinearMap.baseChange_id, Units.val_one, Module.End.one_eq_id]
     | cons k w ih =>
       simp only [List.map_cons, List.prod_cons, LinearEquiv.coe_toLinearMap_mul,
         LinearMap.baseChange_mul, Units.val_mul, ih, n, z, kostantWeylGL_val,
@@ -98,15 +101,18 @@ theorem weylElement_word_eq_of_weylUnit_word_eq (l r : List (Fin t.rank))
   simpa only [SubmonoidClass.coe_list_prod, List.map_map, Function.comp_def, hf,
     map_list_prod] using congrArg f hN
 
-/-- Pinned simple Weyl representatives at a single bond satisfy the length-three braid
-relation over every commutative value ring. -/
-theorem weylElement_braid_of_cartanMatrix_eq_neg_one (i j : Fin t.rank)
-    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -1)
+/-- A word identity valid for all nilpotent Serre systems on the datum's rational carrier,
+in the transposed Cartan convention, holds for its pinned simple Weyl representatives
+over every commutative ring. -/
+theorem weylElement_word_eq_of_serre_word_eq (l r : List (Fin t.rank))
+    (h : ∀ {H E F : Fin t.rank → Module.End ℚ D.carrier},
+      IsSerreSystem ℚ t.cartanMatrix.transpose H E F →
+      ∀ (hE : ∀ k, IsNilpotent (E k)) (hF : ∀ k, IsNilpotent (F k)),
+        (l.map (fun k => weylUnit (hE k) (hF k))).prod =
+          (r.map (fun k => weylUnit (hE k) (hF k))).prod)
     (A : Type*) [CommRing A] :
-    D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 *
-        D.weylElement (t.simpleIndex ht i) A 1 =
-      D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
-        D.weylElement (t.simpleIndex ht j) A 1 := by
+    (l.map (fun k => D.weylElement (t.simpleIndex ht k) A 1)).prod =
+      (r.map (fun k => D.weylElement (t.simpleIndex ht k) A 1)).prod := by
   let φ := D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
   have hs := (t.isSerreSystem_lieBasis ht).map φ
   have hE (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).e k)) := by
@@ -117,12 +123,24 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_one (i j : Fin t.rank)
     simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
       LieAlgebra.Basis.rootGenerator_inr] using
       D.isNilpotent_representation_rootGenerator (.inr k)
-  have h := hs.weylUnit_braid_of_cartan_eq_neg_one
-    (i := i) (j := j) (by simp) (by simp) hji hij (hE i) (hF i) (hE j) (hF j)
-  have h' := D.weylElement_word_eq_of_weylUnit_word_eq [i, j, i] [j, i, j] (by
-    simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
-      mul_assoc, φ, Function.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using h) A
+  apply D.weylElement_word_eq_of_weylUnit_word_eq l r ?_ A
+  simpa only [φ, Function.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
+    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using h hs hE hF
+
+/-- Pinned simple Weyl representatives at a single bond satisfy the length-three braid
+relation over every commutative value ring. -/
+theorem weylElement_braid_of_cartanMatrix_eq_neg_one (i j : Fin t.rank)
+    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -1)
+    (A : Type*) [CommRing A] :
+    D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 *
+        D.weylElement (t.simpleIndex ht i) A 1 =
+      D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
+        D.weylElement (t.simpleIndex ht j) A 1 := by
+  have h' := D.weylElement_word_eq_of_serre_word_eq [i, j, i] [j, i, j] (by
+    intro H E F hs hE hF
+    simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+      mul_one, mul_assoc] using hs.weylUnit_braid_of_cartan_eq_neg_one
+        (i := i) (j := j) (by simp) (by simp) hji hij (hE i) (hF i) (hE j) (hF j)) A
   simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
     mul_one, mul_assoc] using h'
 
