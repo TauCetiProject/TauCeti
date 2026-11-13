@@ -29,29 +29,31 @@ the square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGrou
 
 ## Main definitions and results
 
-* `TauCeti.ClassGroup.ElementaryTwoQuotient`: the quotient `Cl(R) ⧸ Cl(R)²`, a `ZMod 2`-module.
-* `TauCeti.ClassGroup.elementaryTwoQuotientMk` and `elementaryTwoQuotientMk_eq_zero_iff`: the class
-  of an ideal class, trivial iff that class is a square; `elementaryTwoQuotientMk_mul`,
-  `elementaryTwoQuotientMk_one`, `elementaryTwoQuotientMk_inv`,
+* `ClassGroup.ElementaryTwoQuotient`: the quotient `Cl(R) ⧸ Cl(R)²`, a `ZMod 2`-module.
+* `ClassGroup.elementaryTwoQuotientMk`, `elementaryTwoQuotientMk_def`, and
+  `elementaryTwoQuotientMk_eq_zero_iff`: the class of an ideal class, its unfolding to
+  `TauCeti.elementaryTwoQuotientMk`, and triviality iff that class is a square;
+  `elementaryTwoQuotientMk_mul`, `elementaryTwoQuotientMk_one`, `elementaryTwoQuotientMk_inv`,
   `elementaryTwoQuotientMk_div`, `elementaryTwoQuotientMk_pow`, and
   `elementaryTwoQuotientMk_prod` record its additivity, while `elementaryTwoQuotientMk_surjective`
   and `elementaryTwoQuotientMk_eq_iff` give surjectivity and the equality criterion.
-* `TauCeti.ClassGroup.elementaryTwoQuotientCongr`: a multiplicative equivalence of class groups
-  induces a `ZMod 2`-linear equivalence of their elementary-2 quotients, with
+* `ClassGroup.elementaryTwoQuotientCongr` and `elementaryTwoQuotientCongr_def`: a multiplicative
+  equivalence of class groups induces a `ZMod 2`-linear equivalence of their elementary-2
+  quotients, unfolding to `TauCeti.elementaryTwoQuotientCongr`, with
   `elementaryTwoQuotientCongr_apply_eq_self_of_apply_eq_inv` recording that an automorphism acting
   pointwise by inversion (e.g. quadratic conjugation) is the identity on `Cl(R)/Cl(R)²`.
-* `TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`,
+* `ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`,
   the quotient and the 2-torsion subgroup have equal cardinality.
-* `TauCeti.ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
+* `ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|Cl(R)/Cl(R)²| = 2 ^ twoRank`.
-* `TauCeti.ClassGroup.card_elementaryTwoQuotient_dvd_card` and
-  `TauCeti.ClassGroup.two_pow_twoRank_dvd_card`: the quotient cardinality and its rank form divide
+* `ClassGroup.card_elementaryTwoQuotient_dvd_card` and
+  `ClassGroup.two_pow_twoRank_dvd_card`: the quotient cardinality and its rank form divide
   the class-group cardinality.
 -/
 
 public section
 
-namespace TauCeti.ClassGroup
+namespace ClassGroup
 
 variable (R : Type*) [CommRing R] [IsDomain R]
 
@@ -59,58 +61,63 @@ variable (R : Type*) [CommRing R] [IsDomain R]
 `TauCeti.ElementaryTwoQuotient` specialized to `ClassGroup R`. -/
 abbrev ElementaryTwoQuotient : Type _ := TauCeti.ElementaryTwoQuotient (ClassGroup R)
 
+variable {R}
+
 /-- The class of an ideal class in the maximal elementary-2 quotient `Cl(R)/Cl(R)²`. -/
 noncomputable def elementaryTwoQuotientMk (C : ClassGroup R) : ElementaryTwoQuotient R :=
   TauCeti.elementaryTwoQuotientMk C
 
+/-- The class-group quotient map `ClassGroup.elementaryTwoQuotientMk` is the generic
+`TauCeti.elementaryTwoQuotientMk` specialized to `ClassGroup R`. -/
+theorem elementaryTwoQuotientMk_def (C : ClassGroup R) :
+    elementaryTwoQuotientMk C = TauCeti.elementaryTwoQuotientMk C :=
+  (rfl)
+
 /-- An ideal class has trivial class in `Cl(R)/Cl(R)²` iff it is a square. -/
 @[simp] theorem elementaryTwoQuotientMk_eq_zero_iff (C : ClassGroup R) :
-    elementaryTwoQuotientMk R C = 0 ↔ IsSquare C :=
+    elementaryTwoQuotientMk C = 0 ↔ IsSquare C :=
   TauCeti.elementaryTwoQuotientMk_eq_zero_iff C
 
 /-- The class map to `Cl(R)/Cl(R)²` sends a product of ideal classes to the sum of the classes. -/
 @[simp] theorem elementaryTwoQuotientMk_mul (C D : ClassGroup R) :
-    elementaryTwoQuotientMk R (C * D) = elementaryTwoQuotientMk R C + elementaryTwoQuotientMk R D :=
+    elementaryTwoQuotientMk (C * D) = elementaryTwoQuotientMk C + elementaryTwoQuotientMk D :=
   TauCeti.elementaryTwoQuotientMk_mul C D
 
 /-- The class map to `Cl(R)/Cl(R)²` sends the trivial ideal class to `0`. -/
 @[simp] theorem elementaryTwoQuotientMk_one :
-    elementaryTwoQuotientMk R (1 : ClassGroup R) = 0 :=
+    elementaryTwoQuotientMk (1 : ClassGroup R) = 0 :=
   TauCeti.elementaryTwoQuotientMk_one
 
 /-- The class map to `Cl(R)/Cl(R)²` sends inverses to negatives. -/
 @[simp] theorem elementaryTwoQuotientMk_inv (C : ClassGroup R) :
-    elementaryTwoQuotientMk R C⁻¹ = -elementaryTwoQuotientMk R C :=
+    elementaryTwoQuotientMk C⁻¹ = -elementaryTwoQuotientMk C :=
   TauCeti.elementaryTwoQuotientMk_inv C
 
 /-- The class map to `Cl(R)/Cl(R)²` sends quotients to differences. -/
 @[simp] theorem elementaryTwoQuotientMk_div (C D : ClassGroup R) :
-    elementaryTwoQuotientMk R (C / D) =
-      elementaryTwoQuotientMk R C - elementaryTwoQuotientMk R D :=
+    elementaryTwoQuotientMk (C / D) = elementaryTwoQuotientMk C - elementaryTwoQuotientMk D :=
   TauCeti.elementaryTwoQuotientMk_div C D
 
 /-- The class map to `Cl(R)/Cl(R)²` sends powers to scalar multiples. -/
 @[simp] theorem elementaryTwoQuotientMk_pow (C : ClassGroup R) (n : ℕ) :
-    elementaryTwoQuotientMk R (C ^ n) = n • elementaryTwoQuotientMk R C :=
+    elementaryTwoQuotientMk (C ^ n) = n • elementaryTwoQuotientMk C :=
   TauCeti.elementaryTwoQuotientMk_pow C n
 
 /-- The class map to `Cl(R)/Cl(R)²` sends a finite product of ideal classes to the sum of the
 classes. -/
 theorem elementaryTwoQuotientMk_prod {ι : Type*} (S : Finset ι) (C : ι → ClassGroup R) :
-    elementaryTwoQuotientMk R (∏ i ∈ S, C i) = ∑ i ∈ S, elementaryTwoQuotientMk R (C i) :=
+    elementaryTwoQuotientMk (∏ i ∈ S, C i) = ∑ i ∈ S, elementaryTwoQuotientMk (C i) :=
   TauCeti.elementaryTwoQuotientMk_prod S C
 
 /-- Every element of `Cl(R)/Cl(R)²` is the class of some ideal class. -/
 theorem elementaryTwoQuotientMk_surjective :
-    Function.Surjective (elementaryTwoQuotientMk R) :=
+    Function.Surjective (elementaryTwoQuotientMk (R := R)) :=
   TauCeti.elementaryTwoQuotientMk_surjective
 
 /-- Two ideal classes have the same class in `Cl(R)/Cl(R)²` iff they differ by a square. -/
 theorem elementaryTwoQuotientMk_eq_iff (C D : ClassGroup R) :
-    elementaryTwoQuotientMk R C = elementaryTwoQuotientMk R D ↔ IsSquare (C / D) :=
+    elementaryTwoQuotientMk C = elementaryTwoQuotientMk D ↔ IsSquare (C / D) :=
   TauCeti.elementaryTwoQuotientMk_eq_iff C D
-
-variable {R}
 
 /-- A multiplicative equivalence of class groups induces a `ZMod 2`-linear equivalence on the
 maximal elementary-2 quotients. This is the transport API used when genus-field constructions
@@ -120,12 +127,19 @@ noncomputable def elementaryTwoQuotientCongr {S : Type*} [CommRing S] [IsDomain 
     ElementaryTwoQuotient R ≃ₗ[ZMod 2] ElementaryTwoQuotient S :=
   TauCeti.elementaryTwoQuotientCongr e
 
+/-- The induced equivalence `ClassGroup.elementaryTwoQuotientCongr` is the generic
+`TauCeti.elementaryTwoQuotientCongr` specialized to `ClassGroup`. -/
+theorem elementaryTwoQuotientCongr_def {S : Type*} [CommRing S] [IsDomain S]
+    (e : ClassGroup R ≃* ClassGroup S) :
+    elementaryTwoQuotientCongr e = TauCeti.elementaryTwoQuotientCongr e :=
+  (rfl)
+
 /-- The induced equivalence on `Cl/Cl²` sends the class of an ideal class to the class of its
 image. -/
 @[simp] theorem elementaryTwoQuotientCongr_mk {S : Type*} [CommRing S] [IsDomain S]
     (e : ClassGroup R ≃* ClassGroup S) (C : ClassGroup R) :
-    elementaryTwoQuotientCongr e (elementaryTwoQuotientMk R C) =
-      elementaryTwoQuotientMk S (e C) := by
+    elementaryTwoQuotientCongr e (elementaryTwoQuotientMk C) =
+      elementaryTwoQuotientMk (e C) := by
   -- Reduce the class-group wrapper names to the generic elementary-2 quotient statement.
   change TauCeti.elementaryTwoQuotientCongr e (TauCeti.elementaryTwoQuotientMk C) =
     TauCeti.elementaryTwoQuotientMk (e C)
@@ -135,8 +149,8 @@ image. -/
 of its inverse image. -/
 @[simp] theorem elementaryTwoQuotientCongr_symm_mk {S : Type*} [CommRing S] [IsDomain S]
     (e : ClassGroup R ≃* ClassGroup S) (C : ClassGroup S) :
-    (elementaryTwoQuotientCongr e).symm (elementaryTwoQuotientMk S C) =
-      elementaryTwoQuotientMk R (e.symm C) := by
+    (elementaryTwoQuotientCongr e).symm (elementaryTwoQuotientMk C) =
+      elementaryTwoQuotientMk (e.symm C) := by
   -- Reduce the class-group wrapper names to the generic elementary-2 quotient statement.
   change (TauCeti.elementaryTwoQuotientCongr e).symm (TauCeti.elementaryTwoQuotientMk C) =
     TauCeti.elementaryTwoQuotientMk (e.symm C)
@@ -189,6 +203,8 @@ theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
     Nat.card (ElementaryTwoQuotient R) = 2 ^ twoRank R :=
   TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank (ClassGroup R)
 
+variable {R}
+
 /-- Multiplicatively equivalent class groups have `Cl/Cl²` quotients with the same `ZMod 2`
 finrank. -/
 theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv {S : Type*} [CommRing S] [IsDomain S]
@@ -203,14 +219,16 @@ theorem twoRank_eq_of_mulEquiv {S : Type*} [CommRing S] [IsDomain S]
     twoRank R = twoRank S :=
   TauCeti.twoRank_eq_of_mulEquiv e
 
+variable (R)
+
 /-- The cardinality of `Cl(R)/Cl(R)²` divides the cardinality of `Cl(R)` when the class group is
 finite, and more generally in Mathlib's cardinal arithmetic. -/
 theorem card_elementaryTwoQuotient_dvd_card :
     Nat.card (ElementaryTwoQuotient R) ∣ Nat.card (ClassGroup R) :=
   TauCeti.card_elementaryTwoQuotient_dvd_card (ClassGroup R)
 
-/-- Rank form of `TauCeti.ClassGroup.card_elementaryTwoQuotient_dvd_card`:
-`2 ^ TauCeti.ClassGroup.twoRank R` divides the cardinality of `Cl(R)`. -/
+/-- Rank form of `ClassGroup.card_elementaryTwoQuotient_dvd_card`:
+`2 ^ ClassGroup.twoRank R` divides the cardinality of `Cl(R)`. -/
 theorem two_pow_twoRank_dvd_card :
     2 ^ twoRank R ∣ Nat.card (ClassGroup R) :=
   TauCeti.two_pow_twoRank_dvd_card (ClassGroup R)
@@ -227,8 +245,8 @@ theorem card_elementaryTwoQuotient_le_card :
     Nat.card (ElementaryTwoQuotient R) ≤ Nat.card (ClassGroup R) :=
   TauCeti.card_elementaryTwoQuotient_le_card (ClassGroup R)
 
-/-- Rank form of `TauCeti.ClassGroup.card_elementaryTwoQuotient_le_card`:
-`2 ^ TauCeti.ClassGroup.twoRank R` is bounded by the cardinality of `Cl(R)`. -/
+/-- Rank form of `ClassGroup.card_elementaryTwoQuotient_le_card`:
+`2 ^ ClassGroup.twoRank R` is bounded by the cardinality of `Cl(R)`. -/
 theorem two_pow_twoRank_le_card :
     2 ^ twoRank R ≤ Nat.card (ClassGroup R) :=
   TauCeti.two_pow_twoRank_le_card (ClassGroup R)
@@ -239,4 +257,4 @@ theorem card_elementaryTwoQuotient_eq_card_twoTorsion :
     Nat.card (ElementaryTwoQuotient R) = Nat.card {C : ClassGroup R // C ^ 2 = 1} :=
   TauCeti.card_elementaryTwoQuotient_eq_card_twoTorsion (ClassGroup R)
 
-end TauCeti.ClassGroup
+end ClassGroup

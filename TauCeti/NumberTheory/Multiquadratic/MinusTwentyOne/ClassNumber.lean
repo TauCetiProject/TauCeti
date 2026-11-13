@@ -176,7 +176,7 @@ divide the discriminant `-84`, so three primes ramify and the ramified-prime low
 `2`-rank at least `3 - 1 = 2`. -/
 private theorem two_le_twoRank_of_minpoly_eq_X_sq_add_twenty_one
     (hmin : minpoly ℤ θ = X ^ 2 - C (-21 : ℤ))
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : 2 ≤ TauCeti.ClassGroup.twoRank (𝓞 K) := by
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : 2 ≤ ClassGroup.twoRank (𝓞 K) := by
   have hdisc := discr_eq_neg_eighty_four hmin hgen
   have hram_card : 3 ≤ (ramifiedPrimes K).ncard := by
     have hsubset : ({2, 3, 7} : Set ℕ) ⊆ ramifiedPrimes K := by
@@ -203,18 +203,18 @@ theorem classNumber_eq_four_of_minpoly_eq_X_sq_add_twenty_one
     classNumber_le_five_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
   -- The three ramified primes give `2`-rank at least `2`, so `4` divides the class number and,
   -- in particular, bounds it from below.
-  have hrank : 2 ≤ TauCeti.ClassGroup.twoRank (𝓞 K) :=
+  have hrank : 2 ≤ ClassGroup.twoRank (𝓞 K) :=
     two_le_twoRank_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
   have hfourdvd : 4 ∣ NumberField.classNumber K := by
     calc
       (4 : ℕ) = 2 ^ 2 := by norm_num
-      _ ∣ 2 ^ TauCeti.ClassGroup.twoRank (𝓞 K) := pow_dvd_pow 2 hrank
+      _ ∣ 2 ^ ClassGroup.twoRank (𝓞 K) := pow_dvd_pow 2 hrank
       _ ∣ NumberField.classNumber K :=
         NumberField.two_pow_classGroupTwoRank_dvd_classNumber K
   have hlower : 4 ≤ NumberField.classNumber K := by
     calc
       4 = 2 ^ 2 := by norm_num
-      _ ≤ 2 ^ TauCeti.ClassGroup.twoRank (𝓞 K) :=
+      _ ≤ 2 ^ ClassGroup.twoRank (𝓞 K) :=
         pow_le_pow_right' (by norm_num) hrank
       _ ≤ NumberField.classNumber K :=
         NumberField.two_pow_classGroupTwoRank_le_classNumber K

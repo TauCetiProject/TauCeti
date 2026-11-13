@@ -84,7 +84,7 @@ prime-discriminant factors, so two primes ramify and the `2`-rank is `t - 2 = 0`
 the narrow `2`-rank `t - 1 = 1`. -/
 theorem twoRank_eq_zero_of_minpoly_eq_X_sq_sub_three
     (hmin : minpoly ℤ θ = X ^ 2 - C (3 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    TauCeti.ClassGroup.twoRank (𝓞 K) = 0 := by
+    ClassGroup.twoRank (𝓞 K) = 0 := by
   rw [twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg
       isPrimeDiscriminant_of_mem_neg_four_neg_three
       prod_neg_four_neg_three hmin hgen Int.prime_three.squarefree (by norm_num)
@@ -107,7 +107,7 @@ restricted to imaginary quadratic fields and the unrestricted formula
 group. -/
 theorem twoRank_ne_ncard_ramifiedPrimes_sub_one_of_minpoly_eq_X_sq_sub_three
     (hmin : minpoly ℤ θ = X ^ 2 - C (3 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    TauCeti.ClassGroup.twoRank (𝓞 K) ≠ (ramifiedPrimes K).ncard - 1 := by
+    ClassGroup.twoRank (𝓞 K) ≠ (ramifiedPrimes K).ncard - 1 := by
   rw [twoRank_eq_zero_of_minpoly_eq_X_sq_sub_three hmin hgen,
     ncard_ramifiedPrimes_eq_two_of_minpoly_eq_X_sq_sub_three hmin hgen]
   decide
@@ -147,7 +147,7 @@ theorem narrowTwoRank_adjoinRoot_sqrt_three_eq_one :
 ordinary class-group `2`-rank `0`, one less than the narrow one. Not `@[simp]`, for the same
 reason as `narrowTwoRank_adjoinRoot_sqrt_three_eq_one`. -/
 theorem twoRank_adjoinRoot_sqrt_three_eq_zero :
-    TauCeti.ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (3 : ℚ)))) = 0 := by
+    ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (3 : ℚ)))) = 0 := by
   obtain ⟨θ, hmin, hgen⟩ :=
     TauCeti.NumberField.exists_minpoly_eq_X_sq_sub_three_and_adjoin_eq_top
   exact twoRank_eq_zero_of_minpoly_eq_X_sq_sub_three hmin hgen
@@ -155,7 +155,7 @@ theorem twoRank_adjoinRoot_sqrt_three_eq_zero :
 /-- **The `t - 1` formula fails in the concrete model of `ℚ(√3)`.** Its ordinary class-group
 `2`-rank is not one less than the number of ramified rational primes. -/
 theorem twoRank_ne_ncard_ramifiedPrimes_sub_one_adjoinRoot_sqrt_three :
-    TauCeti.ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (3 : ℚ)))) ≠
+    ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (3 : ℚ)))) ≠
       (ramifiedPrimes (AdjoinRoot (X ^ 2 - C (3 : ℚ)))).ncard - 1 := by
   obtain ⟨θ, hmin, hgen⟩ :=
     TauCeti.NumberField.exists_minpoly_eq_X_sq_sub_three_and_adjoin_eq_top
