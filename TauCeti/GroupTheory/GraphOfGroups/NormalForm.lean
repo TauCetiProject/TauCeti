@@ -293,7 +293,7 @@ def IsNormalized : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → Prop
 
 /-- Deleting the backtracking `rev e, α_e(c), e` created by appending the dart `e` to `p`: the
 last dart and element of `p` are removed and `ω_e(c)` is multiplied onto the new last element. -/
-noncomputable def cancelDart :
+private noncomputable def cancelDart :
     ∀ {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c), p.Cancels e → 𝔸.AlternatingPath a c
   | _, _, single _, _, h => h.elim
   | _, c, cons q _ g, e, h =>
@@ -303,7 +303,7 @@ noncomputable def cancelDart :
 
 /-- Deleting the backtracking `rev e, α_e(c), e` from `q, rev e, α_e(c)` gives `q` with
 `ω_e(c)` multiplied onto its last element. -/
-theorem cancelDart_cons_reverse {b c : Γ.V} (q : 𝔸.AlternatingPath a c) (e : b ⟶ c)
+private theorem cancelDart_cons_reverse {b c : Γ.V} (q : 𝔸.AlternatingPath a c) (e : b ⟶ c)
     (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1))
     (h : (cons q (Quiver.reverse e) (𝔸.αArrow e c₀)).Cancels e) :
     (cons q (Quiver.reverse e) (𝔸.αArrow e c₀)).cancelDart e h =
@@ -324,7 +324,7 @@ noncomputable def appendDart {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b 
   if h : p.Cancels e then p.cancelDart e h
   else cons (p.setLast (d.rep e p.last)) e (𝔸.ωArrow e (d.edgePart e p.last))
 
-theorem appendDart_of_cancels {b c : Γ.V} {p : 𝔸.AlternatingPath a b} {e : b ⟶ c}
+private theorem appendDart_of_cancels {b c : Γ.V} {p : 𝔸.AlternatingPath a b} {e : b ⟶ c}
     (h : p.Cancels e) : p.appendDart d e = p.cancelDart e h :=
   dite_eq_left h
 
@@ -348,12 +348,27 @@ theorem appendDart_cons_of_eq {b c : Γ.V} (q : 𝔸.AlternatingPath a c) {e' : 
     ((cancels_cons_iff ..).2 ⟨Γ.reverse_val e, c₀, rfl⟩),
     cancelDart_cons_reverse]
 
+/-- Appending `e` after `rev e, α_e(c)` deletes the backtracking `rev e, α_e(c), e`. -/
+@[simp] theorem appendDart_cons_reverse_αArrow {b c : Γ.V} (q : 𝔸.AlternatingPath a c)
+    (e : b ⟶ c) (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    (cons q (Quiver.reverse e) (𝔸.αArrow e c₀)).appendDart d e =
+      q.setLast (q.last * 𝔸.ωArrow e c₀) :=
+  appendDart_cons_of_eq d q rfl rfl
+
+/-- Appending `rev e` after `e, ω_e(c)` deletes the backtracking `e, ω_e(c), rev e`. -/
+@[simp] theorem appendDart_cons_ωArrow_reverse {b c : Γ.V} (q : 𝔸.AlternatingPath a b)
+    (e : b ⟶ c) (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    (cons q e (𝔸.ωArrow e c₀)).appendDart d (Quiver.reverse e) =
+      q.setLast (q.last * 𝔸.αArrow e c₀) := by
+  obtain ⟨c', hα, hω⟩ := 𝔸.exists_αArrow_reverse_eq_and_ωArrow_reverse_eq e c₀
+  rw [appendDart_cons_of_eq d q (Quiver.reverse_reverse e).symm hα.symm, hω]
+
 /-- Appending a dart to a reduced path and normalizing gives a reduced path. -/
 theorem IsReduced.appendDart {b c : Γ.V} {p : 𝔸.AlternatingPath a b} (hp : p.IsReduced)
     (e : b ⟶ c) : (p.appendDart d e).IsReduced := by
   by_cases h : p.Cancels e
   · obtain ⟨q, c₀, rfl⟩ := cancels_iff.1 h
-    rw [appendDart_cons_of_eq d q rfl rfl, isReduced_setLast]
+    rw [appendDart_cons_reverse_αArrow, isReduced_setLast]
     exact hp.1
   · rw [appendDart_of_not_cancels d h, isReduced_cons_iff, isReduced_setLast,
       cancels_setLast (d.rep_mem_range_iff e _)]
@@ -364,7 +379,7 @@ theorem IsNormalized.appendDart {b c : Γ.V} {p : 𝔸.AlternatingPath a b} (hp 
     (e : b ⟶ c) : (p.appendDart d e).IsNormalized d := by
   by_cases h : p.Cancels e
   · obtain ⟨q, c₀, rfl⟩ := cancels_iff.1 h
-    rw [appendDart_cons_of_eq d q rfl rfl, isNormalized_setLast]
+    rw [appendDart_cons_reverse_αArrow, isNormalized_setLast]
     exact hp.1
   · rw [appendDart_of_not_cancels d h, isNormalized_cons_iff, isNormalized_setLast, last_setLast]
     exact ⟨hp, d.rep_mem e _⟩
@@ -380,11 +395,9 @@ theorem appendDart_appendDart_reverse {b c : Γ.V} {p : 𝔸.AlternatingPath a b
       refine (cancels_setLast ?_).not.2 hr.2
       rw [← hα]
       exact (𝔸.αArrow (Quiver.reverse e)).range.mul_mem_cancel_right ⟨_, rfl⟩
-    rw [appendDart_cons_of_eq d q rfl rfl, appendDart_of_not_cancels d hq]
+    rw [appendDart_cons_reverse_αArrow, appendDart_of_not_cancels d hq]
     simp [← hα, d.rep_of_mem _ hn.2, d.edgePart_of_mem _ hn.2, hω]
-  · obtain ⟨c', hα, hω⟩ := 𝔸.exists_αArrow_reverse_eq_and_ωArrow_reverse_eq e (d.edgePart e p.last)
-    simp [appendDart_of_not_cancels d h,
-      appendDart_cons_of_eq d _ (Quiver.reverse_reverse e).symm hα.symm, hω]
+  · simp [appendDart_of_not_cancels d h]
 
 /-- Moving an edge group element across an appended dart: appending `e` and then `ω_e(c)` is
 appending `α_e(c)` and then `e`. -/
@@ -394,7 +407,7 @@ theorem setLast_appendDart_ωArrow {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (
       (p.setLast (p.last * 𝔸.αArrow e c₀)).appendDart d e := by
   by_cases h : p.Cancels e
   · obtain ⟨q, c₁, rfl⟩ := cancels_iff.1 h
-    rw [appendDart_cons_of_eq d q rfl rfl, last_cons, setLast_cons,
+    rw [appendDart_cons_reverse_αArrow, last_cons, setLast_cons,
       appendDart_cons_of_eq d q rfl (map_mul _ _ _).symm]
     simp [mul_assoc]
   · have h' : ¬ (p.setLast (p.last * 𝔸.αArrow e c₀)).Cancels e := by
@@ -411,7 +424,7 @@ theorem toPath_appendDart_homotopic {b c : Γ.V} (p : 𝔸.AlternatingPath a b) 
     have h₁ := Path.Homotopic.dart_reverse
       (q.toPath.cons (Letter.vertex (𝔸.αArrow (Quiver.reverse e) c'))) (Quiver.reverse e)
     rw [Quiver.reverse_reverse] at h₁
-    rw [appendDart_cons_of_eq d q rfl rfl, toPath_cons, ← hω, ← hα]
+    rw [appendDart_cons_reverse_αArrow, toPath_cons, ← hω, ← hα]
     exact (q.toPath_setLast_mul_homotopic _).trans <| h₁.symm.trans <|
       ((Path.Homotopic.dart_ωArrow _ (Quiver.reverse e) c').cons _).symm
   · rw [appendDart_of_not_cancels d h, toPath_cons]
@@ -711,6 +724,24 @@ noncomputable def normalWordEquiv : π₁ 𝔸 a ≃ NormalWord d a a where
 
 @[simp] theorem mk_toPath_normalForm (p : 𝔸.Path ⟨a⟩ ⟨a⟩) : mk (normalForm d p).toPath = mk p :=
   mk_eq_mk_iff.2 (toPath_normalForm_homotopic d p)
+
+@[simp] theorem mk_toPath_normalWordEquiv (x : π₁ 𝔸 a) : mk (normalWordEquiv d a x).toPath = x :=
+  (normalWordEquiv d a).symm_apply_apply x
+
+/-- Multiplying on the right by the class of a closed path appends the path to the normal word. -/
+@[simp] theorem normalWordEquiv_mul_mk (x : π₁ 𝔸 a) (q : 𝔸.Path ⟨a⟩ ⟨a⟩) :
+    normalWordEquiv d a (x * mk q) = (normalWordEquiv d a x).appendPath q :=
+  induction_on x fun p ↦ by rw [← mk_comp, normalWordEquiv_mk, normalWordEquiv_mk, normalForm_comp]
+
+variable {d a}
+
+/-- Distinct normal words of closed paths define distinct elements of `π₁(𝔸, a)`. -/
+@[simp] theorem mk_toPath_inj {w w' : NormalWord d a a} : mk w.toPath = mk w'.toPath ↔ w = w' :=
+  mk_eq_mk_iff.trans (NormalWord.toPath_homotopic_toPath_iff d)
+
+@[simp] theorem mk_toPath_eq_one_iff {w : NormalWord d a a} :
+    mk w.toPath = 1 ↔ w = NormalWord.empty d a := by
+  rw [← normalWordEquiv_symm_apply, Equiv.symm_apply_eq, normalWordEquiv_one]
 
 end π₁
 
