@@ -64,6 +64,8 @@ double-cylinder identity `TauCeti.homotopyOperator_mpullback_one_sub_mpullback_z
   diffeomorphism have the same flux.
 * `TauCeti.Diffeotopy.flux_transDiffeomorph`: naturality of the flux under conjugation by a
   diffeomorphism.
+* `TauCeti.Diffeotopy.flux_transDiffeomorph_of_mem_diffeomorphStabilizer`: its specialization
+  to a self-diffeomorphism preserving `σ`.
 * `TauCeti.Diffeotopy.fluxForm_sub_fluxForm_mem_exactForms`: homotopy invariance of the flux
   form relative to both time ends.
 * `TauCeti.Diffeotopy.flux_eq_of_homotopy`: diffeotopies whose motions are homotopic relative to
@@ -392,6 +394,24 @@ theorem flux_transDiffeomorph (f : M ≃ₘ⟮J, J⟯ P) (σ : closedForms J P 2
   apply Subtype.ext
   simp only [closedForms.coe_mpullback]
   exact Φ.fluxForm_transDiffeomorph f σ.1
+
+/-- **Naturality of the flux under diffeomorphisms preserving `σ`.** Conjugating a diffeotopy by
+a diffeomorphism `f` preserving `σ` transports its flux by the pullback along `f⁻¹`. -/
+theorem flux_transDiffeomorph_of_mem_diffeomorphStabilizer {σ : closedForms J M 2}
+    {f : M ≃ₘ⟮J, J⟯ M} (hf : f ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (h : (Φ.transDiffeomorph f).final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+    (Φ.transDiffeomorph f).flux σ h =
+      deRhamCohomology.map f.symm f.symm.contMDiff 1 (Φ.flux σ hΦ) := by
+  have hpull : closedForms.mpullback f f.contMDiff 2 σ = σ :=
+    Subtype.ext ((closedForms.coe_mpullback f f.contMDiff 2 σ).trans
+      (SmoothForm.mem_diffeomorphStabilizer.1 hf))
+  -- The flux only depends on the form, not on the proof that `Φ.final` preserves it.
+  have key : ∀ (τ : closedForms J M 2) (h' : Φ.final ∈ SmoothForm.diffeomorphStabilizer τ.1),
+      τ = σ → Φ.flux τ h' = Φ.flux σ hΦ := by
+    rintro _ _ rfl
+    rfl
+  rw [Φ.flux_transDiffeomorph f σ (by rwa [hpull]), key _ _ hpull]
 
 end Naturality
 

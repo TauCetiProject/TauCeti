@@ -37,11 +37,15 @@ stabilizer (`TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`).
 
 ## Main results
 
+* `TauCeti.SmoothForm.timeSlice_trans_mem_diffeomorphStabilizer`,
+  `TauCeti.SmoothForm.timeSlice_symm_mem_diffeomorphStabilizer`,
+  `TauCeti.SmoothForm.timeSlice_transDiffeomorph_mem_diffeomorphStabilizer`: pointwise
+  composites, inverses and conjugates of `σ`-preserving diffeotopies preserve `σ`.
 * `TauCeti.SmoothForm.isotopyStabilizer_le_diffeomorphStabilizer`: these preserve `σ`.
 * `TauCeti.SmoothForm.mul_mul_inv_mem_isotopyStabilizer`: conjugation by an element of the
   stabilizer preserves the subgroup.
 * `TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`: the subgroup is normal in the
-  stabilizer of `σ`.
+  stabilizer of `σ` (an instance).
 
 ## References
 
@@ -60,8 +64,40 @@ namespace TauCeti
 namespace SmoothForm
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {J : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold J ∞ M]
+  {J : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold J 1 M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {σ : SmoothForm J M F k}
+
+/-- The time slices of the constant diffeotopy preserve `σ`. -/
+theorem timeSlice_refl_mem_diffeomorphStabilizer (t : unitInterval) :
+    (Diffeotopy.refl J ∞ M).timeSlice t ∈ diffeomorphStabilizer σ := by
+  rw [Diffeotopy.timeSlice_refl]
+  exact (diffeomorphStabilizer σ).one_mem
+
+/-- If two diffeotopies preserve `σ` at every time, so does their pointwise composite. -/
+theorem timeSlice_trans_mem_diffeomorphStabilizer {Φ Ψ : Diffeotopy J ∞ M}
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ)
+    (hΨ : ∀ t, Ψ.timeSlice t ∈ diffeomorphStabilizer σ) (t : unitInterval) :
+    (Φ.trans Ψ).timeSlice t ∈ diffeomorphStabilizer σ := by
+  rw [Diffeotopy.timeSlice_trans, ← Diffeomorph.mul_def]
+  exact (diffeomorphStabilizer σ).mul_mem (hΨ t) (hΦ t)
+
+/-- If a diffeotopy preserves `σ` at every time, so does its pointwise inverse. -/
+theorem timeSlice_symm_mem_diffeomorphStabilizer {Φ : Diffeotopy J ∞ M}
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ) (t : unitInterval) :
+    Φ.symm.timeSlice t ∈ diffeomorphStabilizer σ := by
+  rw [Diffeotopy.timeSlice_symm, ← Diffeomorph.inv_def]
+  exact (diffeomorphStabilizer σ).inv_mem (hΦ t)
+
+/-- If a diffeotopy `φ_t` preserves `σ` at every time and `f` preserves `σ`, then the conjugated
+diffeotopy `f ∘ φ_t ∘ f⁻¹` preserves `σ` at every time. -/
+theorem timeSlice_transDiffeomorph_mem_diffeomorphStabilizer {f : M ≃ₘ⟮J, J⟯ M}
+    {Φ : Diffeotopy J ∞ M} (hf : f ∈ diffeomorphStabilizer σ)
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ) (t : unitInterval) :
+    (Φ.transDiffeomorph f).timeSlice t ∈ diffeomorphStabilizer σ := by
+  rw [Diffeotopy.timeSlice_transDiffeomorph, ← Diffeomorph.diffCongr_apply,
+    Diffeomorph.diffCongr_apply_eq_mul_mul_inv]
+  exact (diffeomorphStabilizer σ).mul_mem ((diffeomorphStabilizer σ).mul_mem hf (hΦ t))
+    ((diffeomorphStabilizer σ).inv_mem hf)
 
 /-- The **isotopy stabilizer** of a smooth form `σ`: the final diffeomorphisms `φ₁` of the smooth
 diffeotopies `φ_t` all of whose time slices preserve `σ`. For a symplectic form these are the
@@ -69,20 +105,15 @@ symplectomorphisms joined to the identity by a smooth symplectic isotopy. -/
 def isotopyStabilizer (σ : SmoothForm J M F k) : Subgroup (M ≃ₘ⟮J, J⟯ M) where
   carrier := {φ | ∃ Φ : Diffeotopy J ∞ M,
     (∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ) ∧ Φ.final = φ}
-  one_mem' := ⟨Diffeotopy.refl J ∞ M, fun t ↦ by
-    rw [Diffeotopy.timeSlice_refl]
-    exact (diffeomorphStabilizer σ).one_mem, Diffeotopy.final_refl⟩
+  one_mem' := ⟨Diffeotopy.refl J ∞ M, timeSlice_refl_mem_diffeomorphStabilizer,
+    Diffeotopy.final_refl⟩
   mul_mem' := by
     rintro _ _ ⟨Φ, hΦ, rfl⟩ ⟨Ψ, hΨ, rfl⟩
-    exact ⟨Ψ.trans Φ, fun t ↦ by
-      rw [Diffeotopy.timeSlice_trans, ← Diffeomorph.mul_def]
-      exact (diffeomorphStabilizer σ).mul_mem (hΦ t) (hΨ t), by
+    exact ⟨Ψ.trans Φ, timeSlice_trans_mem_diffeomorphStabilizer hΨ hΦ, by
       rw [Diffeotopy.final_trans, Diffeomorph.mul_def]⟩
   inv_mem' := by
     rintro _ ⟨Φ, hΦ, rfl⟩
-    exact ⟨Φ.symm, fun t ↦ by
-      rw [Diffeotopy.timeSlice_symm, ← Diffeomorph.inv_def]
-      exact (diffeomorphStabilizer σ).inv_mem (hΦ t), by
+    exact ⟨Φ.symm, timeSlice_symm_mem_diffeomorphStabilizer hΦ, by
       rw [Diffeotopy.final_symm, Diffeomorph.inv_def]⟩
 
 /-- A diffeomorphism lies in the isotopy stabilizer of `σ` exactly when it is the final
@@ -118,18 +149,14 @@ theorem mul_mul_inv_mem_isotopyStabilizer {f φ : M ≃ₘ⟮J, J⟯ M}
     (hf : f ∈ diffeomorphStabilizer σ) (hφ : φ ∈ isotopyStabilizer σ) :
     f * φ * f⁻¹ ∈ isotopyStabilizer σ := by
   obtain ⟨Φ, hΦ, rfl⟩ := hφ
-  refine ⟨Φ.transDiffeomorph f, fun t ↦ ?_, ?_⟩
-  · rw [Diffeotopy.timeSlice_transDiffeomorph, ← Diffeomorph.diffCongr_apply,
-      Diffeomorph.diffCongr_apply_eq_mul_mul_inv]
-    exact (diffeomorphStabilizer σ).mul_mem ((diffeomorphStabilizer σ).mul_mem hf (hΦ t))
-      ((diffeomorphStabilizer σ).inv_mem hf)
-  · rw [Diffeotopy.final_transDiffeomorph, ← Diffeomorph.diffCongr_apply,
-      Diffeomorph.diffCongr_apply_eq_mul_mul_inv]
+  refine ⟨Φ.transDiffeomorph f, timeSlice_transDiffeomorph_mem_diffeomorphStabilizer hf hΦ, ?_⟩
+  rw [Diffeotopy.final_transDiffeomorph, ← Diffeomorph.diffCongr_apply,
+    Diffeomorph.diffCongr_apply_eq_mul_mul_inv]
 
 /-- The isotopy stabilizer of `σ` is a normal subgroup of the stabilizer of `σ`. For a
 symplectic form, the symplectomorphisms joined to the identity by a smooth symplectic isotopy form
 a normal subgroup of `Symp(M, ω)`. -/
-theorem normal_isotopyStabilizer_subgroupOf :
+instance normal_isotopyStabilizer_subgroupOf :
     ((isotopyStabilizer σ).subgroupOf (diffeomorphStabilizer σ)).Normal :=
   (Subgroup.normal_subgroupOf_iff isotopyStabilizer_le_diffeomorphStabilizer).2
     fun _ _ hφ hf ↦ mul_mul_inv_mem_isotopyStabilizer hf hφ
