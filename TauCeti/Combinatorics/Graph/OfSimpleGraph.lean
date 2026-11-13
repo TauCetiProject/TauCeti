@@ -19,8 +19,7 @@ subgraphs of `Graph.ofSimpleGraph G`, as an order isomorphism
 `SimpleGraph.Subgraph.toGraphOrderIso`.
 
 The correspondence sends the top subgraph to `Graph.ofSimpleGraph G`, singleton subgraphs to
-edgeless one-vertex graphs, suprema to unions, and the subgraph traced by a walk to the graph
-traced by the corresponding edge-labelled walk. These are the identities needed to transport
+edgeless one-vertex graphs, and suprema to unions. These are the identities needed to transport
 constructions built from subgraphs, such as ear decompositions, between the two interfaces.
 -/
 
@@ -102,7 +101,7 @@ theorem toGraph_sup (H K : G.Subgraph) :
 
 /-- Every subgraph of `Graph.ofSimpleGraph G` comes from a unique subgraph of `G`, so the subgraphs
 of a simple graph are order-isomorphic to the multigraph subgraphs of its multigraph. -/
-def toGraphOrderIso (G : SimpleGraph α) : G.Subgraph ≃o Set.Iic (Graph.ofSimpleGraph G) where
+def toGraphOrderIso {G : SimpleGraph α} : G.Subgraph ≃o Set.Iic (Graph.ofSimpleGraph G) where
   toFun H := ⟨H.toGraph, H.toGraph_le⟩
   invFun K :=
     { verts := V(K.1)
@@ -124,20 +123,20 @@ def toGraphOrderIso (G : SimpleGraph α) : G.Subgraph ≃o Set.Iic (Graph.ofSimp
 
 @[simp]
 theorem coe_toGraphOrderIso_apply (H : G.Subgraph) :
-    (toGraphOrderIso G H : Graph α (Sym2 α)) = H.toGraph := (rfl)
+    (toGraphOrderIso H : Graph α (Sym2 α)) = H.toGraph := (rfl)
 
 @[simp]
 theorem toGraph_toGraphOrderIso_symm_apply (K : Set.Iic (Graph.ofSimpleGraph G)) :
-    ((toGraphOrderIso G).symm K).toGraph = K := by
+    (toGraphOrderIso.symm K).toGraph = K := by
   rw [← coe_toGraphOrderIso_apply, OrderIso.apply_symm_apply]
 
 @[simp]
 theorem verts_toGraphOrderIso_symm_apply (K : Set.Iic (Graph.ofSimpleGraph G)) :
-    ((toGraphOrderIso G).symm K).verts = V(K.1) := (rfl)
+    (toGraphOrderIso.symm K).verts = V(K.1) := (rfl)
 
 @[simp]
 theorem toGraphOrderIso_symm_apply_adj (K : Set.Iic (Graph.ofSimpleGraph G)) :
-    ((toGraphOrderIso G).symm K).Adj x y ↔ K.1.Adj x y := by
+    (toGraphOrderIso.symm K).Adj x y ↔ K.1.Adj x y := by
   rw [← toGraph_adj, toGraph_toGraphOrderIso_symm_apply]
 
 end Subgraph
