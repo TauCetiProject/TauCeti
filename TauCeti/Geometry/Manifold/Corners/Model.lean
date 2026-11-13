@@ -106,6 +106,7 @@ theorem coe_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) (q : EuclideanQuadr
     (euclideanQuadrantFaceInclusion i q).1 = euclideanQuadrantFaceParam i q.1 :=
   (rfl)
 
+@[fun_prop]
 theorem continuous_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) :
     Continuous (euclideanQuadrantFaceInclusion (m := m) i) :=
   ((euclideanQuadrantFaceParam i).continuous.comp continuous_subtype_val).subtype_mk _
@@ -122,6 +123,7 @@ theorem coe_euclideanQuadrantFaceRetract (i : Fin (m + 1)) (z : EuclideanQuadran
     (euclideanQuadrantFaceRetract i z).1 = euclideanQuadrantFaceProj i z.1 :=
   (rfl)
 
+@[fun_prop]
 theorem continuous_euclideanQuadrantFaceRetract (i : Fin (m + 1)) :
     Continuous (euclideanQuadrantFaceRetract (m := m) i) :=
   ((euclideanQuadrantFaceProj i).continuous.comp continuous_subtype_val).subtype_mk _
@@ -131,6 +133,7 @@ theorem euclideanQuadrantFaceRetract_faceInclusion (i : Fin (m + 1)) (q : Euclid
     euclideanQuadrantFaceRetract i (euclideanQuadrantFaceInclusion i q) = q :=
   Subtype.ext <| by simp
 
+@[simp]
 theorem euclideanQuadrantFaceInclusion_faceRetract {i : Fin (m + 1)}
     {z : EuclideanQuadrant (m + 1)} (hz : z.1 i = 0) :
     euclideanQuadrantFaceInclusion i (euclideanQuadrantFaceRetract i z) = z :=
@@ -151,10 +154,21 @@ theorem modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam (i : F
   rw [← coe_euclideanQuadrantFaceInclusion, ← modelWithCornersEuclideanQuadrant_apply,
     ModelWithCorners.left_inv]
 
+/-- The insertion of a zero coordinate in slot `i` takes a vector into the range of the quadrant
+model exactly when the vector lies in the range of the quadrant model one dimension down. -/
+theorem euclideanQuadrantFaceParam_mem_range_iff (i : Fin (m + 1))
+    {y : EuclideanSpace ℝ (Fin m)} :
+    euclideanQuadrantFaceParam i y ∈ range (𝓡c (m + 1)) ↔ y ∈ range (𝓡c m) := by
+  rw [range_modelWithCornersEuclideanQuadrant, range_modelWithCornersEuclideanQuadrant]
+  refine ⟨fun hy k ↦ by simpa using hy (i.succAbove k), fun hy j ↦ ?_⟩
+  refine Fin.succAboveCases i ?_ (fun k ↦ ?_) j
+  · simp
+  · simpa using hy k
+
 /-- Every coordinate is nonnegative on the quadrant, so every coordinate gives faces. -/
 theorem nonneg_of_mem_range_modelWithCornersEuclideanQuadrant (i : Fin m) :
     ∀ z ∈ range (𝓡c m), 0 ≤ z i := by
-  rintro _ ⟨y, rfl⟩
-  exact y.2 i
+  rw [range_modelWithCornersEuclideanQuadrant]
+  exact fun _ hz ↦ hz i
 
 end TauCeti
