@@ -977,17 +977,20 @@ theorem presentedProP.mk_freeProPGen (i : ℕ) :
     presentedProP.mk p rels (freeProPGen p n i) = presentedProPGen p n rels i :=
   (rfl)
 
+variable {n} in
 /-- In range, `presentedProPGen p n rels i` is the `i`-th canonical generator. -/
 @[simp]
 theorem presentedProPGen_of_lt {i : ℕ} (h : i < n) :
     presentedProPGen p n rels i = presentedProP.of p rels ⟨i, h⟩ := by
   rw [← presentedProP.mk_freeProPGen, freeProPGen_of_lt p h, presentedProP.mk_of]
 
+variable {n} in
 /-- Out of range, `presentedProPGen p n rels i` is `1`. -/
 @[simp]
 theorem presentedProPGen_eq_one_of_le {i : ℕ} (h : n ≤ i) : presentedProPGen p n rels i = 1 := by
   rw [← presentedProP.mk_freeProPGen, freeProPGen_eq_one_of_le p h, map_one]
 
+variable {n} in
 /-- On the values of `Fin n`, `presentedProPGen p n rels` is the canonical generator. -/
 theorem presentedProPGen_val (i : Fin n) :
     presentedProPGen p n rels i = presentedProP.of p rels i := by
@@ -1000,8 +1003,8 @@ theorem map_presentedProPGen {K F : Type*} [MulOneClass K]
     φ (presentedProPGen p n rels i) =
       if h : i < n then φ (presentedProP.of p rels ⟨i, h⟩) else 1 := by
   split_ifs with h
-  · rw [presentedProPGen_of_lt p n rels h]
-  · rw [presentedProPGen_eq_one_of_le p n rels (not_lt.mp h), map_one]
+  · rw [presentedProPGen_of_lt p rels h]
+  · rw [presentedProPGen_eq_one_of_le p rels (not_lt.mp h), map_one]
 
 /-- The quotient map carries the tuple `freeProPGen` to the tuple `presentedProPGen`: the
 function-level form of `TauCeti.presentedProP.mk_freeProPGen`, which lets a word read on
@@ -1011,6 +1014,7 @@ theorem presentedProP.mk_comp_freeProPGen :
     ⇑(presentedProP.mk p rels) ∘ freeProPGen p n = presentedProPGen p n rels :=
   funext (presentedProP.mk_freeProPGen p n rels)
 
+variable {p n rels} in
 /-- A continuous homomorphism of the presented group, pulled back to the free group along the
 quotient map, takes on the `ℕ`-indexed free generators its values on `presentedProPGen`. -/
 theorem presentedProP.comp_mk_freeProPGen {K : Type*} [Monoid K] [TopologicalSpace K]
