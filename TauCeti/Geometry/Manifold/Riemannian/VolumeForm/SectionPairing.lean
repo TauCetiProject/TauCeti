@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
@@ -32,23 +31,29 @@ with a Hermitian metric, `h` is the real part of the Hermitian product, so this 
 `∫_Σ Re⟨ξ, η⟩ dA` against which McDuff–Salamon define the formal adjoint of a real
 Cauchy–Riemann operator (Lemma C.1.9).
 
-The pairing is symmetric, additive in each argument for continuous sections when either the
-other argument or both summands are compactly supported, homogeneous without any hypothesis,
-nonnegative on the diagonal, and definite on continuous compactly supported sections. A section
+The pairing is symmetric and homogeneous without any hypothesis. When the Riemannian metric of
+`M` is continuous, it is additive in each argument for continuous sections when either the other
+argument or both summands are compactly supported. When `M` has positive dimension, it is
+nonnegative on the diagonal, and, if moreover the Riemannian metric of `M` is continuous, definite
+on continuous compactly supported sections. The bundle metric `h` only needs to be continuous: a
+smooth metric `g` enters through `g.toContinuousRiemannianMetric`. A section
 `ξ` is compactly supported when the closure of `{x | ξ x ≠ 0}` is compact. No boundary condition is
 involved, and the base may have boundary.
 
 ## Main declarations
 
-* `Bundle.ContMDiffRiemannianMetric.l2Pairing`: the pairing `∫_M h(ξ, η) vol`, with defining
-  equation `Bundle.ContMDiffRiemannianMetric.l2Pairing_def`.
-* `Bundle.ContMDiffRiemannianMetric.l2Pairing_comm`,
-  `Bundle.ContMDiffRiemannianMetric.l2Pairing_add_left`,
-  `Bundle.ContMDiffRiemannianMetric.l2Pairing_smul_left` and their right-hand versions: it is
+* `Bundle.ContinuousRiemannianMetric.l2Pairing`: the pairing `∫_M h(ξ, η) vol`, with defining
+  equation `Bundle.ContinuousRiemannianMetric.l2Pairing_def`.
+* `Bundle.ContinuousRiemannianMetric.l2Pairing_comm`,
+  `Bundle.ContinuousRiemannianMetric.l2Pairing_add_left`,
+  `Bundle.ContinuousRiemannianMetric.l2Pairing_smul_left` and their right-hand versions: it is
   symmetric and bilinear.
-* `Bundle.ContMDiffRiemannianMetric.l2Pairing_self_nonneg` and
-  `Bundle.ContMDiffRiemannianMetric.l2Pairing_self_eq_zero_iff`: it is positive definite on
+* `Bundle.ContinuousRiemannianMetric.l2Pairing_self_nonneg` and
+  `Bundle.ContinuousRiemannianMetric.l2Pairing_self_eq_zero_iff`: it is positive definite on
   continuous compactly supported sections.
+* `Bundle.ContinuousRiemannianMetric.isSmoothForm_metricInner_smul_riemannianVolumeForm` and
+  `Bundle.ContinuousRiemannianMetric.isCompact_tsupport_metricInner_smul_riemannianVolumeForm`:
+  the integrand `h(ξ, η) vol` is a continuous top form, compactly supported when `ξ` or `η` is.
 
 ## References
 
@@ -65,7 +70,7 @@ noncomputable section
 open Bundle Set
 open scoped Manifold ContDiff
 
-namespace Bundle.ContMDiffRiemannianMetric
+namespace Bundle.ContinuousRiemannianMetric
 
 open TauCeti
 
@@ -75,16 +80,16 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
-  {n : ℕ∞ω} {m : ℕ}
+  {m : ℕ}
 
 /-- **The `L²` pairing of sections.** For an orientation `o` of a Riemannian manifold `M` and a
 bundle metric `h` on `V`, the pairing `∫_M h(ξ, η) vol` of two sections of `V`, integrating against
 the Riemannian volume form. It is zero when the integrand is not integrable. -/
-def l2Pairing (h : ContMDiffRiemannianMetric I n F V) (o : Manifold.Orientation I M (Fin m))
+def l2Pairing (h : ContinuousRiemannianMetric F V) (o : Manifold.Orientation I M (Fin m))
     (ξ η : ∀ x, V x) : ℝ :=
   integralTopForm o fun x ↦ h.inner x (ξ x) (η x) • riemannianVolumeForm o x
 
-variable (h : ContMDiffRiemannianMetric I n F V) (o : Manifold.Orientation I M (Fin m))
+variable (h : ContinuousRiemannianMetric F V) (o : Manifold.Orientation I M (Fin m))
 
 /-- The `L²` pairing is the integral of the pointwise inner product against the volume form. -/
 theorem l2Pairing_def (ξ η : ∀ x, V x) :
@@ -122,14 +127,36 @@ theorem l2Pairing_smul_right (c : ℝ) (ξ η : ∀ x, V x) :
     h.l2Pairing o ξ (c • η) = c * h.l2Pairing o ξ η := by
   rw [l2Pairing_comm, l2Pairing_smul_left, l2Pairing_comm]
 
-/-- The integrand of the pairing vanishes outside the support of the first section. -/
-private theorem tsupport_metricInner_smul_riemannianVolumeForm_subset (ξ η : ∀ x, V x) :
+/-- The `L²` pairing with a negated section on the left is the negated pairing. -/
+@[simp]
+theorem l2Pairing_neg_left (ξ η : ∀ x, V x) : h.l2Pairing o (-ξ) η = -h.l2Pairing o ξ η := by
+  rw [← neg_one_smul ℝ ξ, l2Pairing_smul_left, neg_one_mul]
+
+/-- The `L²` pairing with a negated section on the right is the negated pairing. -/
+@[simp]
+theorem l2Pairing_neg_right (ξ η : ∀ x, V x) : h.l2Pairing o ξ (-η) = -h.l2Pairing o ξ η := by
+  rw [l2Pairing_comm, l2Pairing_neg_left, l2Pairing_comm]
+
+/-- The integrand `h(ξ, η) vol` of the pairing vanishes outside the support of the first
+section. -/
+theorem tsupport_metricInner_smul_riemannianVolumeForm_subset (ξ η : ∀ x, V x) :
     _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
         (fun x ↦ h.inner x (ξ x) (η x) • riemannianVolumeForm o x) ⊆
       closure {x | ξ x ≠ 0} :=
   closure_mono fun x hx hξ ↦ (RoughForm.mem_support_iff
     (φ := fun x ↦ h.inner x (ξ x) (η x) • riemannianVolumeForm o x)).1 hx
     (by simp [hξ])
+
+/-- The integrand `h(ξ, η) vol` of the pairing is compactly supported when either section is. -/
+theorem isCompact_tsupport_metricInner_smul_riemannianVolumeForm {ξ η : ∀ x, V x}
+    (hc : IsCompact (closure {x | ξ x ≠ 0}) ∨ IsCompact (closure {x | η x ≠ 0})) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
+      (fun x ↦ h.inner x (ξ x) (η x) • riemannianVolumeForm o x)) := by
+  rcases hc with hc | hc
+  · exact hc.of_isClosed_subset (isClosed_tsupport _)
+      (tsupport_metricInner_smul_riemannianVolumeForm_subset h o ξ η)
+  · refine hc.of_isClosed_subset (isClosed_tsupport _) ?_
+    simpa only [h.symm] using tsupport_metricInner_smul_riemannianVolumeForm_subset h o η ξ
 
 /-- The integrand of the pairing of a section with itself is nonnegative on positively oriented
 bases. -/
@@ -142,17 +169,19 @@ private theorem metricInner_self_smul_riemannianVolumeForm_apply_nonneg (ξ : �
 
 variable [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
 
-/-- The integrand of the pairing of continuous sections is a continuous top form. -/
-private theorem isSmoothForm_metricInner_smul_riemannianVolumeForm {ξ η : ∀ x, V x}
+/-- The integrand `h(ξ, η) vol` of the pairing of continuous sections is a continuous top form,
+when the Riemannian metric of `M` is continuous. -/
+theorem isSmoothForm_metricInner_smul_riemannianVolumeForm {ξ η : ∀ x, V x}
     (hξ : Continuous fun x ↦ TotalSpace.mk' F x (ξ x))
     (hη : Continuous fun x ↦ TotalSpace.mk' F x (η x)) :
     IsSmoothForm I 0 fun x ↦ h.inner x (ξ x) (η x) • riemannianVolumeForm o x := by
   have : IsManifold I (0 + 1) M := by rw [zero_add]; infer_instance
   exact (isSmoothForm_riemannianVolumeForm (n := 0) o).fun_smul
-    (contMDiff_zero_iff.2 (h.toContinuousRiemannianMetric.continuous_inner_of_continuous hξ hη))
+    (contMDiff_zero_iff.2 (h.continuous_inner hξ hη))
 
 /-- **Additivity of the `L²` pairing** in its first argument, for continuous sections when either
-both summands or the second section are compactly supported. -/
+both summands or the second section are compactly supported, and the Riemannian metric of `M` is
+continuous. -/
 theorem l2Pairing_add_left {ξ₁ ξ₂ η : ∀ x, V x}
     (hξ₁ : Continuous fun x ↦ TotalSpace.mk' F x (ξ₁ x))
     (hξ₂ : Continuous fun x ↦ TotalSpace.mk' F x (ξ₂ x))
@@ -160,25 +189,18 @@ theorem l2Pairing_add_left {ξ₁ ξ₂ η : ∀ x, V x}
     (hc : IsCompact (closure {x | ξ₁ x ≠ 0}) ∧ IsCompact (closure {x | ξ₂ x ≠ 0}) ∨
       IsCompact (closure {x | η x ≠ 0})) :
     h.l2Pairing o (ξ₁ + ξ₂) η = h.l2Pairing o ξ₁ η + h.l2Pairing o ξ₂ η := by
-  have hcpt (ξ : ∀ x, V x)
-      (hc : IsCompact (closure {x | ξ x ≠ 0}) ∨ IsCompact (closure {x | η x ≠ 0})) :
-      IsCompact (_root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
-        (fun x ↦ h.inner x (ξ x) (η x) • riemannianVolumeForm o x)) := by
-    rcases hc with hc | hc
-    · exact hc.of_isClosed_subset (isClosed_tsupport _)
-        (tsupport_metricInner_smul_riemannianVolumeForm_subset h o ξ η)
-    · refine hc.of_isClosed_subset (isClosed_tsupport _) ?_
-      simpa only [h.symm] using tsupport_metricInner_smul_riemannianVolumeForm_subset h o η ξ
   rw [l2Pairing, l2Pairing, l2Pairing, ← integralTopForm_add o
     (isSmoothForm_metricInner_smul_riemannianVolumeForm h o hξ₁ hη)
     (isSmoothForm_metricInner_smul_riemannianVolumeForm h o hξ₂ hη)
-    (hcpt ξ₁ (hc.imp_left And.left)) (hcpt ξ₂ (hc.imp_left And.right))]
+    (isCompact_tsupport_metricInner_smul_riemannianVolumeForm h o (hc.imp_left And.left))
+    (isCompact_tsupport_metricInner_smul_riemannianVolumeForm h o (hc.imp_left And.right))]
   congr 1
   funext x
   simp [add_smul]
 
 /-- **Additivity of the `L²` pairing** in its second argument, for continuous sections when either
-the first section or both summands are compactly supported. -/
+the first section or both summands are compactly supported, and the Riemannian metric of `M` is
+continuous. -/
 theorem l2Pairing_add_right {ξ η₁ η₂ : ∀ x, V x}
     (hξ : Continuous fun x ↦ TotalSpace.mk' F x (ξ x))
     (hη₁ : Continuous fun x ↦ TotalSpace.mk' F x (η₁ x))
@@ -190,13 +212,15 @@ theorem l2Pairing_add_right {ξ η₁ η₂ : ∀ x, V x}
     l2Pairing_comm h o η₂]
 
 omit [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)] in
-/-- The `L²` pairing of a section with itself is nonnegative. -/
+/-- The `L²` pairing of a section with itself is nonnegative, over a manifold of positive
+dimension. -/
 theorem l2Pairing_self_nonneg [NeZero m] (ξ : ∀ x, V x) : 0 ≤ h.l2Pairing o ξ ξ :=
   integralTopForm_nonneg o fun x _ hc ↦
     metricInner_self_smul_riemannianVolumeForm_apply_nonneg h o ξ x hc
 
-/-- **The `L²` pairing is definite**: a continuous compactly supported section `ξ` has
-`∫_M h(ξ, ξ) vol = 0` exactly when it vanishes. -/
+/-- **The `L²` pairing is definite**: over a manifold of positive dimension with a continuous
+Riemannian metric, a continuous compactly supported section `ξ` has `∫_M h(ξ, ξ) vol = 0` exactly
+when it vanishes. -/
 theorem l2Pairing_self_eq_zero_iff [NeZero m] {ξ : ∀ x, V x}
     (hξ : Continuous fun x ↦ TotalSpace.mk' F x (ξ x)) (hc : IsCompact (closure {x | ξ x ≠ 0})) :
     h.l2Pairing o ξ ξ = 0 ↔ ξ = 0 := by
@@ -220,4 +244,4 @@ theorem l2Pairing_self_eq_zero_iff [NeZero m] {ξ : ∀ x, V x}
   · subst h0
     exact h.l2Pairing_zero_left o 0
 
-end Bundle.ContMDiffRiemannianMetric
+end Bundle.ContinuousRiemannianMetric

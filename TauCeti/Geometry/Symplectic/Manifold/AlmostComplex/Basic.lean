@@ -36,7 +36,8 @@ structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorph
   `TauCeti.SmoothAlmostComplexStructure.isComplexLinearMap_almostComplexStructureAt_model_iff`.
 * `TauCeti.SmoothAlmostComplexStructure.tangentEquiv`: the structure as a fibrewise continuous
   linear automorphism of the tangent spaces, a `C^n` section of the endomorphism bundle by
-  `TauCeti.SmoothAlmostComplexStructure.contMDiff_tangentEquiv`.
+  `TauCeti.SmoothAlmostComplexStructure.contMDiff_tangentEquiv`, with inverse the automorphism of
+  `-J` (`TauCeti.SmoothAlmostComplexStructure.neg_tangentEquiv`).
 * `TauCeti.SmoothAlmostComplexStructure.contMDiff_apply`: applying the structure to a `C^n` vector
   field along a `C^n` map gives a `C^n` vector field along that map.
 * `TauCeti.SmoothAlmostComplexStructure.mdifferentiableAt_apply`: the pointwise differentiable
@@ -199,12 +200,26 @@ theorem tangentEquiv_symm_apply (J : SmoothAlmostComplexStructure I M) (x : M)
     (v : TangentSpace I x) : (J.tangentEquiv x).symm v = -J x v :=
   (rfl)
 
+/-- As a continuous linear map, the tangent automorphism of `J` at `x` is `J` at `x`. -/
+@[simp]
+theorem tangentEquiv_toContinuousLinearMap (J : SmoothAlmostComplexStructure I M) (x : M) :
+    (J.tangentEquiv x).toContinuousLinearMap = J.toEndomorphism x :=
+  (rfl)
+
+/-- As a linear equivalence, the tangent automorphism of `J` at `x` is the linear equivalence of the
+pointwise almost complex structure. -/
+@[simp]
+theorem tangentEquiv_toLinearEquiv (J : SmoothAlmostComplexStructure I M) (x : M) :
+    (J.tangentEquiv x).toLinearEquiv = (J.almostComplexStructureAt x).linearEquiv :=
+  LinearEquiv.ext fun _ ↦ rfl
+
 /-- The tangent automorphisms `J` form a `C^n` section of the endomorphism bundle. -/
 theorem contMDiff_tangentEquiv {n : ℕ∞ω} [ENat.LEInfty n] (J : SmoothAlmostComplexStructure I M) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun x ↦ (⟨x, (J.tangentEquiv x).toContinuousLinearMap⟩ :
-        TotalSpace (E →L[ℝ] E) (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y))) :=
-  J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out
+        TotalSpace (E →L[ℝ] E) (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y))) := by
+  simp_rw [tangentEquiv_toContinuousLinearMap]
+  exact J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out
 
 section ContMDiffApply
 
@@ -277,6 +292,13 @@ pointwise structure. -/
 @[simp]
 lemma neg_almostComplexStructureAt (J : SmoothAlmostComplexStructure I M) (x : M) :
     (-J).almostComplexStructureAt x = -J.almostComplexStructureAt x := by
+  ext v
+  simp
+
+/-- The tangent automorphisms of `-J` are the inverses of those of `J`. -/
+@[simp]
+lemma neg_tangentEquiv (J : SmoothAlmostComplexStructure I M) (x : M) :
+    (-J).tangentEquiv x = (J.tangentEquiv x).symm := by
   ext v
   simp
 
