@@ -126,6 +126,46 @@ theorem exists_continuous_stronglyAdapted_version_of_summable
   filter_upwards [hlim, hsub] with ω hω hsubω
   exact tendsto_nhds_unique (((hω.2 t).tendsto_at le_rfl).comp hns.tendsto_atTop) hsubω
 
+omit [CompleteSpace E] in
+/-- A uniformly Cauchy sequence in probability converges uniformly in probability to any
+almost surely pointwise subsequential limit on the same horizon. -/
+private lemma tendsto_uniformlyInMeasure_of_cauchy_of_subseq_tendsto_ae
+    {Y : ℝ≥0 → Ω → E} {ns : ℕ → ℕ} {T : ℝ≥0}
+    (hC : ∀ ε : ℝ, 0 < ε → ∀ δ : ℝ≥0∞, 0 < δ →
+      ∃ N : ℕ, ∀ n ≥ N, ∀ m ≥ N,
+        P {ω | ∃ t ≤ T, ε < ‖X n t ω - X m t ω‖} ≤ δ)
+    (hns : Tendsto ns atTop atTop)
+    (hlim : ∀ᵐ ω ∂P, ∀ t ≤ T,
+      Tendsto (fun k ↦ X (ns k) t ω) atTop (𝓝 (Y t ω)))
+    (ε : ℝ) (hε : 0 < ε) :
+    Tendsto (fun n ↦ P {ω | ∃ t ≤ T, ε < ‖X n t ω - Y t ω‖}) atTop (𝓝 0) := by
+  -- Pass the Cauchy bound to the limit using continuity from below of outer measure.
+  apply ENNReal.tendsto_atTop_zero.mpr
+  intro δ hδ
+  obtain ⟨K, hK⟩ := hC (ε / 2) (by positivity) δ hδ
+  refine ⟨K, fun n hn ↦ ?_⟩
+  let A (k : ℕ) := {ω | ∃ t ≤ T, ε / 2 < ‖X n t ω - X (ns k) t ω‖}
+  let B (j : ℕ) := ⋂ k ≥ j, A k
+  obtain ⟨J, hJ⟩ := eventually_atTop.1 (hns.eventually_ge_atTop K)
+  have hB : ∀ j, P (B j) ≤ δ := by
+    intro j
+    exact (measure_mono (iInter_subset_of_subset (max j J)
+      (iInter_subset_of_subset (le_max_left _ _) Subset.rfl))).trans
+      (hK n hn (ns (max j J)) (hJ _ (le_max_right _ _)))
+  have hmono : Monotone B := by
+    intro i j hij ω hω
+    exact mem_iInter₂.mpr fun k hk ↦ mem_iInter₂.mp hω k (hij.trans hk)
+  have hsub : {ω | ∃ t ≤ T, ε < ‖X n t ω - Y t ω‖} ≤ᵐ[P] ⋃ j, B j := by
+    filter_upwards [hlim] with ω hω hbad
+    obtain ⟨t, ht, herr⟩ := hbad
+    have hp := hω t ht
+    have he : ∀ᶠ k in atTop, ε / 2 < ‖X n t ω - X (ns k) t ω‖ :=
+      ((tendsto_const_nhds.sub hp).norm).eventually
+        (lt_mem_nhds (by linarith : ε / 2 < ‖X n t ω - Y t ω‖))
+    obtain ⟨j, hj⟩ := eventually_atTop.1 he
+    exact mem_iUnion.mpr ⟨j, mem_iInter₂.mpr fun k hk ↦ ⟨t, ht, hj k hk⟩⟩
+  exact (measure_mono_ae hsub).trans (by rw [hmono.measure_iUnion]; exact iSup_le hB)
+
 /-- A continuous adapted sequence uniformly Cauchy in probability on each bounded horizon has
 an adapted, almost surely continuous limit. The entire sequence converges uniformly in
 probability; one strictly increasing subsequence converges almost surely uniformly on every
@@ -148,13 +188,8 @@ theorem exists_stronglyAdapted_tendsto_uniformlyInMeasure_of_cauchy [IsFiniteMea
   have hex (k : ℕ) := hC k ((1 / 2 : ℝ) ^ k) (by positivity)
     (ENNReal.ofReal ((1 / 2 : ℝ) ^ k)) (by positivity)
   choose N hN using hex
-  let ns : ℕ → ℕ := Nat.rec (N 0) (fun k v ↦ max (N (k + 1)) (v + 1))
-  have hnsN (k : ℕ) : N k ≤ ns k := by
-    cases k with
-    | zero => exact le_rfl
-    | succ k => exact le_max_left _ _
-  have hns : StrictMono ns := strictMono_nat_of_lt_succ fun k ↦
-    (Nat.lt_succ_self (ns k)).trans_le (le_max_right _ _)
+  obtain ⟨ns, hns, hnsN⟩ := Filter.extraction_forall_of_eventually'
+    (P := fun k n ↦ N k ≤ n) fun k ↦ ⟨N k, fun _ h ↦ h⟩
   have herr (T : ℕ) : (∑' k, P {ω | ∃ t ≤ (T : ℝ≥0),
       (1 / 2 : ℝ) ^ k < ‖X (ns (k + 1)) t ω - X (ns k) t ω‖}) ≠ ∞ := by
     let e (k : ℕ) := P {ω | ∃ t ≤ (T : ℝ≥0),
@@ -178,32 +213,8 @@ theorem exists_stronglyAdapted_tendsto_uniformlyInMeasure_of_cauchy [IsFiniteMea
   obtain ⟨Y, hY, hlim⟩ := exists_stronglyAdapted_tendstoUniformlyOn_of_summable
     (fun k ↦ hX (ns k)) (fun k ↦ hc (ns k)) hr herr
   refine ⟨Y, hY, ?_, ns, hns, hlim⟩
-  -- The Cauchy bound passes to the selected limit by continuity from below of outer measure.
   intro T ε hε
-  apply ENNReal.tendsto_atTop_zero.mpr
-  intro δ hδ
-  obtain ⟨K, hK⟩ := hC T (ε / 2) (by positivity) δ hδ
-  refine ⟨K, fun n hn ↦ ?_⟩
-  let A (k : ℕ) := {ω | ∃ t ≤ T, ε / 2 < ‖X n t ω - X (ns k) t ω‖}
-  let B (j : ℕ) := ⋂ k ≥ j, A k
-  obtain ⟨J, hJ⟩ := eventually_atTop.1 (hns.tendsto_atTop.eventually_ge_atTop K)
-  have hB : ∀ j, P (B j) ≤ δ := by
-    intro j
-    exact (measure_mono (iInter_subset_of_subset (max j J)
-      (iInter_subset_of_subset (le_max_left _ _) Subset.rfl))).trans
-      (hK n hn (ns (max j J)) (hJ _ (le_max_right _ _)))
-  have hmono : Monotone B := by
-    intro i j hij ω hω
-    exact mem_iInter₂.mpr fun k hk ↦ mem_iInter₂.mp hω k (hij.trans hk)
-  have hsub : {ω | ∃ t ≤ T, ε < ‖X n t ω - Y t ω‖} ≤ᵐ[P] ⋃ j, B j := by
-    filter_upwards [hlim] with ω hω hbad
-    obtain ⟨t, ht, herr⟩ := hbad
-    have hp := (hω.2 T).tendsto_at ht
-    have he : ∀ᶠ k in atTop, ε / 2 < ‖X n t ω - X (ns k) t ω‖ :=
-      ((tendsto_const_nhds.sub hp).norm).eventually
-        (lt_mem_nhds (by linarith : ε / 2 < ‖X n t ω - Y t ω‖))
-    obtain ⟨j, hj⟩ := eventually_atTop.1 he
-    exact mem_iUnion.mpr ⟨j, mem_iInter₂.mpr fun k hk ↦ ⟨t, ht, hj k hk⟩⟩
-  exact (measure_mono_ae hsub).trans (by rw [hmono.measure_iUnion]; exact iSup_le hB)
+  exact tendsto_uniformlyInMeasure_of_cauchy_of_subseq_tendsto_ae (hC T)
+    hns.tendsto_atTop (hlim.mono fun ω hω t ht ↦ (hω.2 T).tendsto_at ht) ε hε
 
 end TauCeti.Probability
