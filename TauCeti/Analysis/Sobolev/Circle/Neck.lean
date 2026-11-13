@@ -291,6 +291,49 @@ private theorem coeff_neckMode_apply (n : ℕ) (u : CircleSobolev s E) (k : ℤ)
 
 section Analytic
 
+/-- On the negative frequencies, `neckTransfer a + neckMode 0` scales the `m`-th coefficient by
+`a ^ m`: the transfer supplies the modes `m ≠ 0`, and `neckMode 0` the constant mode. -/
+private theorem coeff_neckTransfer_add_neckMode_zero_neg_natCast (ha : ‖a‖ ≤ 1)
+    (u : CircleSobolev s E) (m : ℕ) :
+    ((neckTransfer a + neckMode 0 : CircleSobolev s E →L[ℂ] CircleSobolev s E) u).coeff
+      (-(m : ℤ)) = a ^ m • u.coeff m := by
+  rw [add_apply, coeff_add, Pi.add_apply, coeff_neckMode_apply]
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp [coeff_neckTransfer_of_nonneg u le_rfl]
+  · simp [coeff_neckTransfer_neg_natCast ha u hm, hm]
+
+/-- The tail of the series of modes: `neckTransfer a + neckMode 0` minus its first `N` modes
+`u ↦ aⁱ uᵢ e^{-iθ}` has operator norm at most `‖a‖ ^ N`. -/
+private theorem norm_neckTransfer_add_neckMode_zero_sub_sum_le (ha : ‖a‖ ≤ 1) (N : ℕ) :
+    ‖(neckTransfer a + neckMode 0 - ∑ i ∈ Finset.range N, a ^ i • neckMode i :
+      CircleSobolev s E →L[ℂ] CircleSobolev s E)‖ ≤ ‖a‖ ^ N := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
+  rw [← LinearIsometryEquiv.norm_map reflect u]
+  refine norm_le_of_forall_le fun k ↦ ?_
+  rw [coeff_reflect, sub_apply, coeff_sub, Pi.sub_apply, sum_apply, coeff_sum, Finset.sum_apply]
+  simp only [smul_apply, coeff_smul, Pi.smul_apply, coeff_neckMode_apply]
+  rcases le_or_gt k 0 with hk | hk
+  · -- At a frequency `k = -m ≤ 0` the first `N` modes cancel the coefficient exactly when `m < N`.
+    obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = -m := ⟨(-k).toNat, by omega⟩
+    simp only [coeff_neckTransfer_add_neckMode_zero_neg_natCast ha, neg_inj, Nat.cast_inj,
+      smul_ite, smul_zero, Finset.sum_ite_eq, Finset.mem_range, neg_neg]
+    split_ifs with hm
+    · rw [sub_self, norm_zero, mul_zero]
+      exact mul_nonneg (pow_nonneg (norm_nonneg a) N)
+        (mul_nonneg (weight_nonneg s _) (norm_nonneg _))
+    · rw [sub_zero, norm_smul, norm_pow, weight_neg_right]
+      calc weight s m * (‖a‖ ^ m * ‖u.coeff m‖) = ‖a‖ ^ m * (weight s m * ‖u.coeff m‖) := by ring
+        _ ≤ ‖a‖ ^ N * (weight s m * ‖u.coeff m‖) :=
+          mul_le_mul_of_nonneg_right (pow_le_pow_of_le_one (norm_nonneg a) ha (not_lt.1 hm))
+            (mul_nonneg (weight_nonneg s _) (norm_nonneg _))
+  · -- At a positive frequency every term vanishes.
+    have hne (i : ℕ) : k ≠ -(i : ℤ) := by omega
+    rw [add_apply, coeff_add, Pi.add_apply, coeff_neckTransfer_of_nonneg u hk.le,
+      coeff_neckMode_apply]
+    simp only [hne, ↓reduceIte, smul_zero, Finset.sum_const_zero, add_zero, sub_self, norm_zero,
+      mul_zero]
+    exact mul_nonneg (pow_nonneg (norm_nonneg a) N) (mul_nonneg (weight_nonneg s _) (norm_nonneg _))
+
 private theorem hasSum_neckMode {y : ℂ} (hy : ‖y‖ < 1) :
     HasSum (fun n ↦ y ^ n • (neckMode n : CircleSobolev s E →L[ℂ] CircleSobolev s E))
       (neckTransfer y + neckMode 0) := by
@@ -303,55 +346,7 @@ private theorem hasSum_neckMode {y : ℂ} (hy : ‖y‖ < 1) :
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_)
     (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg y) hy)
   rw [norm_sub_rev]
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
-  rw [← LinearIsometryEquiv.norm_map reflect u]
-  refine norm_le_of_forall_le (C := ‖y‖ ^ N) fun k ↦ ?_
-  have hS : ((∑ i ∈ Finset.range N, y ^ i • (neckMode i : CircleSobolev s E →L[ℂ] _)) u).coeff k =
-      ∑ i ∈ Finset.range N, y ^ i • if k = -(i : ℤ) then u.coeff i else 0 := by
-    rw [← coeffCLM_apply, sum_apply, map_sum]
-    simp only [smul_apply, map_smul, coeffCLM_apply, coeff_neckMode_apply]
-  have hcoeff : ((neckTransfer y + neckMode 0 -
-      ∑ i ∈ Finset.range N, y ^ i • (neckMode i : CircleSobolev s E →L[ℂ] _) :
-        CircleSobolev s E →L[ℂ] CircleSobolev s E) u).coeff k =
-      if k ≤ 0 ∧ N ≤ (-k).toNat then y ^ (-k).toNat • u.coeff (-k).toNat else 0 := by
-    rw [sub_apply, add_apply, coeff_sub, coeff_add, Pi.sub_apply, Pi.add_apply, hS,
-      coeff_neckMode_apply]
-    by_cases hk : k ≤ 0
-    · obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = -m := ⟨(-k).toNat, by omega⟩
-      have hsum : ∑ i ∈ Finset.range N, y ^ i • (if -(m : ℤ) = -(i : ℤ) then u.coeff i else 0) =
-          if m < N then y ^ m • u.coeff m else 0 := by
-        by_cases hm : m < N
-        · rw [ite_eq_left hm, Finset.sum_eq_single m]
-          · simp
-          · intro i _ hi
-            rw [ite_eq_right (by omega), smul_zero]
-          · exact fun h ↦ absurd (Finset.mem_range.2 hm) h
-        · rw [ite_eq_right hm]
-          refine Finset.sum_eq_zero fun i hi ↦ ?_
-          rw [ite_eq_right (by have := Finset.mem_range.1 hi; omega), smul_zero]
-      rw [hsum, coeff_neckTransfer hy.le]
-      rcases eq_or_ne m 0 with rfl | hm0
-      · by_cases hN : N = 0 <;> simp [hN, Nat.pos_of_ne_zero]
-      · by_cases hm : m < N
-        · simp [hm0, hm, not_le.2 hm, Nat.pos_of_ne_zero hm0]
-        · simp [hm0, hm, not_lt.1 hm]
-    · have hk' : 0 < k := not_le.1 hk
-      have hz : ∑ i ∈ Finset.range N, (if k = -(i : ℤ) then y ^ i • u.coeff i else 0) = 0 :=
-        Finset.sum_eq_zero fun i _ ↦ ite_eq_right (by omega)
-      simp [coeff_neckTransfer_of_nonneg u hk'.le, hz, hk'.ne', hk]
-  rw [hcoeff, coeff_reflect]
-  split_ifs with h
-  · obtain ⟨hk, hN⟩ := h
-    obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = -m := ⟨(-k).toNat, by omega⟩
-    simp only [neg_neg, Int.toNat_natCast] at hN ⊢
-    rw [norm_smul, norm_pow, weight_neg_right]
-    calc weight s m * (‖y‖ ^ m * ‖u.coeff m‖) = ‖y‖ ^ m * (weight s m * ‖u.coeff m‖) := by ring
-      _ ≤ ‖y‖ ^ N * (weight s m * ‖u.coeff m‖) :=
-        mul_le_mul_of_nonneg_right (pow_le_pow_of_le_one (norm_nonneg y) hy.le hN)
-          (mul_nonneg (weight_nonneg s _) (norm_nonneg _))
-  · rw [norm_zero, mul_zero]
-    exact mul_nonneg (pow_nonneg (norm_nonneg y) N)
-      (mul_nonneg (weight_nonneg s _) (norm_nonneg _))
+  exact norm_neckTransfer_add_neckMode_zero_sub_sum_le hy.le N
 
 private theorem hasFPowerSeriesOnBall_neckTransfer_add :
     HasFPowerSeriesOnBall
