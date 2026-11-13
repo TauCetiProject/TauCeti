@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.LieGroup
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodLattice
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Lattice
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.Complex.Chart

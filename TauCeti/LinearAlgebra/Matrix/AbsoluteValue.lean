@@ -18,15 +18,17 @@ most the product over the rows of the `ℓ¹` norms of the rows:
 `abv A.det ≤ ∏ i, ∑ j, abv (A i j)`, and the same holds with columns in place of rows. When `abv`
 is nonarchimedean (`IsNonarchimedean abv`), the ultrametric inequality on the Leibniz sum replaces
 the `ℓ¹` sum by an entrywise row or column bound: if `abv (A i j) ≤ b i` (or `b j`), then
-`abv A.det ≤ ∏ i, b i` (or `∏ j, b j`).
+`abv A.det ≤ ∏ i, b i` (or `∏ j, b j`). For an arbitrary absolute value, the same entrywise row
+or column bounds give `abv A.det ≤ n! · ∏ i, b i`, one factor for each of the `n!` permutations.
 
 The proof is the Leibniz expansion. Each permutation contributes one product
 `∏ i, abv (A i (σ i))`, and expanding the product of the row sums gives the sum of
 `∏ i, abv (A i (f i))` over *all* maps `f`, of which the permutations are a part. In the
 nonarchimedean case, `IsNonarchimedean.finset_image_add_of_nonempty` bounds `abv A.det` by a single
 permutation term instead of the sum. These bounds complement Mathlib's `Matrix.det_le`, which
-bounds the determinant by `n! · x ^ n` from a uniform entrywise bound `x`; the `ℓ¹` form is sharper
-when the rows have very different sizes, as for the logarithmic embeddings of a family of units in
+bounds the determinant by `n! · x ^ n` from a uniform entrywise bound `x`; the factorial row form
+keeps a separate bound for each row, and the `ℓ¹` form is sharper when the rows have very different
+sizes, as for the logarithmic embeddings of a family of units in
 the bound on the regulator.
 
 ## Main results
@@ -42,6 +44,9 @@ the bound on the regulator.
   determinant specializations for a nonarchimedean absolute value.
 * `Matrix.abv_det_le_factorial_mul_of_forall_perm`: a bound on each permutation product gives
   the same bound on the determinant, multiplied by the factorial of the matrix size.
+* `Matrix.abv_det_le_factorial_prod` and `Matrix.abv_det_le_factorial_prod'`: for any absolute
+  value, entrywise row bounds `b i` or column bounds `b j` give
+  `abv A.det ≤ n! · ∏ i, b i` and `abv A.det ≤ n! · ∏ j, b j`.
 -/
 
 public section
@@ -153,5 +158,22 @@ theorem abv_det_le_factorial_mul_of_forall_perm (A : Matrix n n R) (abv : Absolu
       sum_congr rfl fun σ _ ↦ by rw [abv.map_units_int_smul, abv.map_prod]
     _ ≤ ∑ _σ : Perm n, B := sum_le_sum fun σ _ ↦ hA σ
     _ = (Fintype.card n).factorial * B := by simp [Fintype.card_perm]
+
+/-- **Factorial determinant bound, column form.** If column `j` of `A` is bounded entrywise in
+`abv` by `b j`, then `abv A.det ≤ n! · ∏ j, b j`, where `n` is the size of the matrix. This
+refines Mathlib's uniform `Matrix.det_le` to column-dependent bounds. -/
+theorem abv_det_le_factorial_prod' (A : Matrix n n R) (abv : AbsoluteValue R S) {b : n → S}
+    (hA : ∀ i j, abv (A i j) ≤ b j) :
+    abv A.det ≤ (Fintype.card n).factorial * ∏ j, b j :=
+  abv_det_le_factorial_mul_of_forall_perm A abv fun σ ↦ by gcongr with j; exact hA (σ j) j
+
+/-- **Factorial determinant bound, row form.** If row `i` of `A` is bounded entrywise in `abv` by
+`b i`, then `abv A.det ≤ n! · ∏ i, b i`, where `n` is the size of the matrix. This refines
+Mathlib's uniform `Matrix.det_le` to row-dependent bounds. -/
+theorem abv_det_le_factorial_prod (A : Matrix n n R) (abv : AbsoluteValue R S) {b : n → S}
+    (hA : ∀ i j, abv (A i j) ≤ b i) :
+    abv A.det ≤ (Fintype.card n).factorial * ∏ i, b i := by
+  simpa only [det_transpose, transpose_apply] using
+    abv_det_le_factorial_prod' Aᵀ abv fun i j ↦ hA j i
 
 end Matrix
