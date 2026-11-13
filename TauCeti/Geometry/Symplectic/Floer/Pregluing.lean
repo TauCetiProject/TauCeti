@@ -347,9 +347,9 @@ theorem norm_floerOperator_preglue_le (ω : SymplecticForm V) {J : ℝ × ℝ �
   have hM : 0 ≤ M := (norm_nonneg _).trans hJ
   have hB : 0 ≤ B := (abs_nonneg _).trans hB₁
   have ha : 0 ≤ a := norm_nonneg _
-  have hb : 0 ≤ b := norm_nonneg _
+  have _ : 0 ≤ b := norm_nonneg _
   have hc : 0 ≤ c := norm_nonneg _
-  have hd : 0 ≤ d := norm_nonneg _
+  have _ : 0 ≤ d := norm_nonneg _
   have hD := norm_fderiv_preglue_sub_le hx hu hv
   have hD' : ‖fderiv ℝ (preglue x u v R) z -
       (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H z.2) (x z.2))‖ ≤
@@ -359,7 +359,7 @@ theorem norm_floerOperator_preglue_le (ω : SymplecticForm V) {J : ℝ × ℝ �
   have hξ : ‖preglue x u v R z - x z.2‖ ≤ a + c := norm_preglue_sub_le
   have hM1 : 0 ≤ 1 + M := by linarith
   -- The excess of the claimed bound over the two terms of `norm_floerOperator_le` is nonnegative.
-  have hexcess : ((1 + M) * (1 + B) + M * L) * (a + b + (c + d)) -
+  have _ : ((1 + M) * (1 + B) + M * L) * (a + b + (c + d)) -
       ((1 + M) * (B * a + b + (B * c + d)) + M * (L * (a + c))) =
         (1 + M) * (a + c + B * b + B * d) + M * L * (b + d) := by ring
   have hpos : 0 ≤ (1 + M) * (a + c + B * b + B * d) + M * L * (b + d) := by positivity
@@ -397,7 +397,8 @@ theorem exists_eventually_norm_floerOperator_preglue_le (ω : SymplecticForm V)
   -- `X_{H_t}` is uniformly Lipschitz at `x(t)` on balls of radius `δ₁`.
   have hXc : ContDiff ℝ 1 (uncurry X) := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
   obtain ⟨δ₁, hδ₁, L₀, hL₀⟩ :=
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le_mul hXc hxc.continuousOn
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le_mul
+      (fun _ _ ↦ hXc.contDiffAt) hxc.continuousOn
   set L := max L₀ 0
   have hL : 0 ≤ L := le_max_right _ _
   -- `J_t` is uniformly bounded on the `δ₁`-neighbourhood of the orbit.

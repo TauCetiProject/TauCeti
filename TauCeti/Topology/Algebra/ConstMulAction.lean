@@ -16,6 +16,8 @@ public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.LocallyFinite
 
+import TauCeti.Topology.Compactness.Compact
+
 /-!
 # Transfer instances for restricted and properly discontinuous actions
 
@@ -45,6 +47,8 @@ set the orbit projection is an open embedding.
   every invariant subspace.
 * `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
   properly discontinuous subgroup `H` acts properly discontinuously.
+* `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
+  points whose whole orbit lies in an open set form an open set.
 * `TauCeti.isClosed_stabilizer`: the stabilizer of a point with continuous orbit map in a `T₁`
   space is closed.
 * `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
@@ -95,6 +99,15 @@ theorem isClosed_stabilizer {G X : Type*} [Group G] [MulAction G X] [Topological
     [TopologicalSpace X] [T1Space X] {x : X} (hx : Continuous fun g : G ↦ g • x) :
     IsClosed (MulAction.stabilizer G x : Set G) :=
   isClosed_singleton.preimage hx
+
+/-- Under a jointly continuous action of a compact space, the points whose whole orbit lies in an
+open set `s` form an open set. For a group action, this set is the largest invariant subset of
+`s`. -/
+theorem isOpen_setOf_forall_smul_mem {G X : Type*} [SMul G X] [TopologicalSpace G]
+    [CompactSpace G] [TopologicalSpace X] [ContinuousSMul G X] {s : Set X} (hs : IsOpen s) :
+    IsOpen {x : X | ∀ g : G, g • x ∈ s} :=
+  isOpen_forall_prodMk_mem (ι := id) continuous_id
+    (hs.preimage (continuous_snd.smul continuous_fst))
 
 /-- If every orbit of a group action is open, then every orbit is also closed: its complement is
 the union of the other orbits. -/

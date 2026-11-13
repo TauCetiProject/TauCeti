@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 
 /-!
-# Uncurrying alternating maps in the first argument
+# Currying and uncurrying alternating maps
 
 Mathlib's `AlternatingMap.curryLeft` turns an alternating map `f` in `n + 2` arguments into a
 linear family `x ↦ f.curryLeft x` of alternating maps in `n + 1` arguments, and every member of
@@ -26,6 +26,12 @@ interior products (`AlternatingMap.curryLeft_injective`) and that interior produ
 with `x` in some slot (`AlternatingMap.map_eq_zero_of_curryLeft_eq_zero`) and does not see the
 components of its arguments along `x` (`AlternatingMap.map_add_smul_of_curryLeft_eq_zero`): this
 is how a form whose contraction with a vector field vanishes descends along that field.
+
+Fixing the arguments of an alternating map `f` on `ι ⊕ κ` indexed by `ι` leaves an alternating map
+of the arguments indexed by `κ`, and this depends alternatingly on the fixed arguments:
+`AlternatingMap.currySum f` is the resulting alternating map with values in alternating maps, with
+`f.currySum x v = f (Sum.elim x v)`. It is linear in `f` (`AlternatingMap.currySumLinearMap`) and
+injective (`AlternatingMap.currySum_injective`).
 -/
 
 public section
@@ -140,6 +146,123 @@ theorem map_add_smul_of_curryLeft_eq_zero {f : M [⋀^Fin (n + 1)]→ₗ[R] N} {
       rw [Finset.sum_eq_single Finset.univ (fun s _ hs ↦ hterm s hs) (by simp)]
       simp
 
+section CurrySum
+
+variable {ι κ : Type*}
+
+/-- An alternating map on `ι ⊕ κ` as an alternating map of the arguments indexed by `ι`, with
+values in alternating maps of the arguments indexed by `κ`. -/
+def currySum (f : M [⋀^ι ⊕ κ]→ₗ[R] N) : M [⋀^ι]→ₗ[R] M [⋀^κ]→ₗ[R] N where
+  toFun x :=
+    { f.toMultilinearMap.currySum x with
+      map_eq_zero_of_eq' v i j hv hij :=
+        f.map_eq_zero_of_eq _ (i := .inr i) (j := .inr j) (by simpa using hv) (by simpa using hij) }
+  map_update_add' x i a b := by
+    ext v
+    exact congr($(f.toMultilinearMap.currySum.map_update_add x i a b) v)
+  map_update_smul' x i a b := by
+    ext v
+    exact congr($(f.toMultilinearMap.currySum.map_update_smul x i a b) v)
+  map_eq_zero_of_eq' x i j hx hij := by
+    ext v
+    exact f.map_eq_zero_of_eq _ (i := .inl i) (j := .inl j) (by simpa using hx) (by simpa using hij)
+
+/-- `f.currySum x v` evaluates `f` on the arguments `x` followed by the arguments `v`. -/
+@[simp]
+theorem currySum_apply (f : M [⋀^ι ⊕ κ]→ₗ[R] N) (x : ι → M) (v : κ → M) :
+    f.currySum x v = f (Sum.elim x v) := (rfl)
+
+/-- As a multilinear map, `f.currySum x` is the multilinear currying of `f` at `x`. -/
+@[simp]
+theorem currySum_apply_toMultilinearMap (f : M [⋀^ι ⊕ κ]→ₗ[R] N) (x : ι → M) :
+    (f.currySum x).toMultilinearMap = f.toMultilinearMap.currySum x := (rfl)
+
+/-- Currying the zero map along the sum gives zero. -/
+@[simp]
+theorem currySum_zero : currySum (0 : M [⋀^ι ⊕ κ]→ₗ[R] N) = 0 := by
+  ext x v
+  simp
+
+/-- Currying along the sum is additive. -/
+@[simp]
+theorem currySum_add (f g : M [⋀^ι ⊕ κ]→ₗ[R] N) : (f + g).currySum = f.currySum + g.currySum := by
+  ext x v
+  simp
+
+/-- Currying along the sum commutes with scalar multiplication. -/
+@[simp]
+theorem currySum_smul (r : R) (f : M [⋀^ι ⊕ κ]→ₗ[R] N) : (r • f).currySum = r • f.currySum := by
+  ext x v
+  simp
+
+/-- `AlternatingMap.currySum` as a linear map. -/
+def currySumLinearMap : (M [⋀^ι ⊕ κ]→ₗ[R] N) →ₗ[R] M [⋀^ι]→ₗ[R] M [⋀^κ]→ₗ[R] N where
+  toFun f := f.currySum
+  map_add' := currySum_add
+  map_smul' := currySum_smul
+
+/-- `AlternatingMap.currySumLinearMap` applies `AlternatingMap.currySum`. -/
+@[simp]
+theorem currySumLinearMap_apply (f : M [⋀^ι ⊕ κ]→ₗ[R] N) : currySumLinearMap f = f.currySum :=
+  (rfl)
+
+/-- An alternating map on `ι ⊕ κ` is determined by its currying along the sum. -/
+theorem currySum_injective :
+    Function.Injective (currySum : M [⋀^ι ⊕ κ]→ₗ[R] N → M [⋀^ι]→ₗ[R] M [⋀^κ]→ₗ[R] N) := by
+  intro f g h
+  ext w
+  have hw := congr(($h (w ∘ Sum.inl)) (w ∘ Sum.inr))
+  rwa [currySum_apply, currySum_apply, Sum.elim_comp_inl_inr] at hw
+
+/-- Two alternating maps on `ι ⊕ κ` agree if and only if their curryings along the sum agree. -/
+@[simp]
+theorem currySum_inj {f g : M [⋀^ι ⊕ κ]→ₗ[R] N} : f.currySum = g.currySum ↔ f = g :=
+  currySum_injective.eq_iff
+
+/-- The currying of `f` along the sum vanishes if and only if `f` does. -/
+@[simp]
+theorem currySum_eq_zero {f : M [⋀^ι ⊕ κ]→ₗ[R] N} : f.currySum = 0 ↔ f = 0 := by
+  rw [← currySum_zero, currySum_inj]
+
+/-- Currying along the sum commutes with composing with a linear map on the values. -/
+@[simp]
+theorem currySum_compAlternatingMap {N₂ : Type*} [AddCommMonoid N₂] [Module R N₂]
+    (g : N →ₗ[R] N₂) (f : M [⋀^ι ⊕ κ]→ₗ[R] N) (x : ι → M) :
+    (g.compAlternatingMap f).currySum x = g.compAlternatingMap (f.currySum x) := by
+  ext v
+  simp
+
+/-- Currying along the sum commutes with precomposing every argument with a linear map. -/
+@[simp]
+theorem currySum_compLinearMap {M₂ : Type*} [AddCommMonoid M₂] [Module R M₂] (g : M₂ →ₗ[R] M)
+    (f : M [⋀^ι ⊕ κ]→ₗ[R] N) (x : ι → M₂) :
+    (f.compLinearMap g).currySum x = (f.currySum (g ∘ x)).compLinearMap g := by
+  ext v
+  simp only [currySum_apply, compLinearMap_apply]
+  congr 1
+  ext (i | k) <;> simp
+
+end CurrySum
+
 end CommSemiring
+
+section AddCommGroup
+
+variable [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommGroup N] [Module R N]
+  {ι κ : Type*}
+
+/-- Currying along the sum commutes with negation. -/
+@[simp]
+theorem currySum_neg (f : M [⋀^ι ⊕ κ]→ₗ[R] N) : (-f).currySum = -f.currySum := by
+  ext x v
+  simp
+
+/-- Currying along the sum commutes with subtraction. -/
+@[simp]
+theorem currySum_sub (f g : M [⋀^ι ⊕ κ]→ₗ[R] N) : (f - g).currySum = f.currySum - g.currySum := by
+  ext x v
+  simp
+
+end AddCommGroup
 
 end AlternatingMap

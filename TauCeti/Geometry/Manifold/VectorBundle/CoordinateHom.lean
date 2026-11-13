@@ -137,7 +137,7 @@ theorem contMDiffOn_inChartCoordinates_add {a b : CoordinateHom Z W} {i : ι} {j
       (fun x ↦ Z.inChartCoordinates W i j x ((a + b).fiberMap x)) (Z.baseSet i ∩ W.baseSet j) := by
   intro x hx
   refine (contDiff_add.comp_contMDiffWithinAt ((ha x hx).prodMk_space (hb x hx))).congr
-    (fun y hy ↦ ?_) ?_
+    (fun y _ ↦ ?_) ?_
   · ext v
     simp [inChartCoordinates_apply]
   · ext v
@@ -150,7 +150,7 @@ theorem contMDiffOn_inChartCoordinates_neg {a : CoordinateHom Z W} {i : ι} {j :
     ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
       (fun x ↦ Z.inChartCoordinates W i j x ((-a).fiberMap x)) (Z.baseSet i ∩ W.baseSet j) := by
   intro x hx
-  refine (contDiff_neg.comp_contMDiffWithinAt (ha x hx)).congr (fun y hy ↦ ?_) ?_
+  refine (contDiff_neg.comp_contMDiffWithinAt (ha x hx)).congr (fun y _ ↦ ?_) ?_
   · ext v
     simp [inChartCoordinates_apply]
   · ext v
@@ -225,8 +225,8 @@ theorem contMDiff_totalSpaceMap_neg {a : CoordinateHom Z W}
     (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap) :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n (-a).totalSpaceMap := by
   intro p₀
-  have ha₀ := (Bundle.contMDiffAt_totalSpace.1 (ha p₀)).2
-  rw [Bundle.contMDiffAt_totalSpace]
+  have ha₀ := (Bundle.contMDiffAt_totalSpace_iff.1 (ha p₀)).2
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   simp only [totalSpaceMap_proj] at ha₀ ⊢
   refine ⟨(contMDiff_proj Z.Fiber).contMDiffAt, ?_⟩
   refine (contDiff_neg.comp_contMDiffAt ha₀).congr_of_eventuallyEq

@@ -116,7 +116,7 @@ private theorem ramificationIdx_mul_relativeDegree_eq_two_of_conorm_eq {P : Plac
   set f := relativeDegree k k⟮x⟯ P
   set c := D₀.coeff P₀
   have hc : 0 < c := by
-    rcases (Int.natCast_nonneg e).lt_or_eq with he | he
+    rcases (Int.natCast_nonneg e).lt_or_eq with _ | he
     · nlinarith
     · rw [← he] at hcoeff
       omega
