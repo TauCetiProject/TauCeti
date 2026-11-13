@@ -135,6 +135,7 @@ theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposit
 /-- The decomposition carried by `ofDecomposition ℳ` is the given one, on every component. The two
 instances are not definitionally equal (the one on `(ofDecomposition ℳ).piece` is chosen from
 internality), but decompositions are unique. -/
+@[simp]
 theorem coe_decompose_ofDecomposition_piece_apply (ℳ : ι → Submodule R M)
     [DirectSum.Decomposition ℳ] (x : M) (i : ι) :
     (DirectSum.decompose (ofDecomposition ℳ).piece x i : M) = DirectSum.decompose ℳ x i := by
