@@ -43,7 +43,9 @@ We also record the product trivialization's fibrewise inverse
 (`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
 bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear trivializations
 and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
-`Bundle.Trivialization.restrictScalars_coordChangeL`).
+`Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
+fields has the same continuous linear map at every point over either field
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
 -/
 
 public section
@@ -230,6 +232,19 @@ theorem restrictScalars_coordChangeL (𝕜' 𝕜 : Type*)
   by_cases hb : b ∈ e.baseSet ∩ e'.baseSet
   · ext v; simp [Trivialization.coordChangeL_apply' e e' hb]
   · ext v; simp [Trivialization.coordChangeL, hb]
+
+/-- A trivialization that is linear over both `𝕜'` and `𝕜` has the same continuous linear map at
+every point over either field. In particular the `𝕜'`-linear map of a trivialization of a
+`VectorBundle 𝕜 F E`, restricted to `𝕜'` by `VectorBundle.restrictScalars`, is `𝕜`-linear. -/
+theorem coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt (𝕜' 𝕜 : Type*)
+    [NontriviallyNormedField 𝕜'] [NontriviallyNormedField 𝕜] {F : Type*} {E : B → Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [∀ x, AddCommMonoid (E x)]
+    [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+    [∀ x, TopologicalSpace (E x)] [FiberBundle F E] (e : Trivialization F (π F E))
+    [e.IsLinear 𝕜'] [e.IsLinear 𝕜] (b : B) :
+    ⇑(e.continuousLinearMapAt 𝕜' b) = e.continuousLinearMapAt 𝕜 b := by
+  ext v
+  simp only [continuousLinearMapAt_apply, coe_linearMapAt]
 
 end Bundle.Trivialization
 
