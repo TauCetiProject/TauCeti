@@ -99,7 +99,8 @@ theorem mono (h : IsSpectralFlowPrimitive A t g) (hst : s ⊆ t) : IsSpectralFlo
 
 theorem add_const (h : IsSpectralFlowPrimitive A s g) (k : ℤ) :
     IsSpectralFlowPrimitive A s fun x ↦ g x + k :=
-  fun x₀ hx₀ ↦ (h x₀ hx₀).imp fun _ hc ↦ hc.mono fun _ ⟨hcut, heq⟩ ↦ ⟨hcut, by linarith⟩
+  fun x₀ hx₀ ↦ (h x₀ hx₀).imp fun _ hc ↦ hc.mono fun _ ⟨hcut, heq⟩ ↦
+    ⟨hcut, by rw [add_sub_right_comm, heq]; ring⟩
 
 /-- The operators of a family with a spectral flow primitive on `s` are self-adjoint on `s`. -/
 theorem isSelfAdjoint (h : IsSpectralFlowPrimitive A s g) {x : X} (hx : x ∈ s) :
