@@ -149,6 +149,23 @@ theorem singleton_mem_simplexBoundary {v : ι} : {v} ∈ simplexBoundary V ↔ v
   · exact fun ⟨hv, hne⟩ => ⟨hv, hne.symm⟩
   · exact fun ⟨hv, hne⟩ => ⟨hv, hne.symm⟩
 
+/-- No simplex boundary is equal to the simplex on a single vertex. -/
+theorem simplexBoundary_ne_simplex_singleton (W : Finset ι) (w : ι) :
+    simplexBoundary W ≠ simplex {w} := by
+  classical
+  intro h
+  have hwW : ({w} : Finset ι) ∈ simplexBoundary W := by
+    rw [h]; exact singleton_mem_simplex.mpr (Finset.mem_singleton_self w)
+  have hproper : ({w} : Finset ι) ⊂ W := (mem_simplexBoundary.mp hwW).2
+  have hw_mem : w ∈ W := Finset.singleton_subset_iff.mp hproper.subset
+  obtain ⟨u, huW, huw'⟩ := Finset.exists_of_ssubset hproper
+  have huw : u ≠ w := Finset.notMem_singleton.mp huw'
+  have huB : ({u} : Finset ι) ∈ simplexBoundary W :=
+    singleton_mem_simplexBoundary.mpr ⟨huW, fun hW =>
+      huw (Finset.mem_singleton.mp (hW ▸ hw_mem)).symm⟩
+  rw [h, singleton_mem_simplex, Finset.mem_singleton] at huB
+  exact huw huB
+
 /-- The boundary is a subcomplex of the simplex. -/
 theorem simplexBoundary_le_simplex : simplexBoundary V ≤ simplex V :=
   fun _ hσ => ⟨hσ.1, hσ.2.subset⟩

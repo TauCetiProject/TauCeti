@@ -61,6 +61,9 @@ the link of a simplex need not contain every vertex even when `K` does.
 * `PreAbstractSimplicialComplex.insert_mem_deletion_of_notMem` and
   `PreAbstractSimplicialComplex.deletion_deletion_singleton_of_mem`: deleting a face `σ` preserves
   domination of `v` by a vertex `w ∉ σ`, and does not affect a later deletion of `v ∈ σ`.
+* `PreAbstractSimplicialComplex.closedStar_inf_deletion_singleton`: the boundary of a vertex's
+  closed star is its link.
+* `PreAbstractSimplicialComplex.map_link`: injective vertex relabelings commute with links.
 * monotonicity of all three constructions in `K`.
 -/
 
@@ -355,6 +358,42 @@ theorem finite_faces_closedStar_iff :
     · exact mem_powerset.mpr inter_subset_right
     · exact sdiff_eq_empty_or_mem_link_of_mem_closedStar hρ
     · exact sup_inf_sdiff ρ σ
+
+/-- The boundary of the closed star of a singleton vertex is its link. -/
+@[simp]
+theorem closedStar_inf_deletion_singleton (w : ι) :
+    closedStar K {w} ⊓ deletion K {w} = link K {w} := by
+  refine SetLike.ext fun ρ => ?_
+  rw [mem_inf, mem_closedStar, mem_deletion, mem_link, Finset.singleton_subset_iff,
+    Finset.disjoint_singleton_right]
+  tauto
+
+/-- An injective vertex relabeling commutes with taking links. -/
+@[simp]
+theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (link K σ).map f = link (K.map f) (σ.image f) := by
+  refine SetLike.ext fun ω => ?_
+  rw [mem_map_iff, mem_link]
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hρK, hdis, hρσ⟩ := mem_link.mp hρ
+    refine ⟨mem_map_iff.mpr ⟨ρ, hρK, rfl⟩, ?_, ?_⟩
+    · rw [Finset.disjoint_left]
+      intro _ hy₁ hy₂
+      obtain ⟨x, hxρ, rfl⟩ := Finset.mem_image.mp hy₁
+      exact Finset.disjoint_left.mp hdis hxρ (hf.mem_finset_image.mp hy₂)
+    · rw [← Finset.image_union]
+      exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
+  · rintro ⟨hωK, hdis, hωσ⟩
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
+    rw [← Finset.image_union] at hωσ
+    obtain ⟨η, hηK, hη⟩ := mem_map_iff.mp hωσ
+    have hρσ : ρ ∪ σ = η := Finset.image_injective hf hη.symm
+    refine ⟨ρ, mem_link.mpr ⟨hρK, ?_, hρσ ▸ hηK⟩, rfl⟩
+    rw [Finset.disjoint_left]
+    intro x hx₁ hx₂
+    exact Finset.disjoint_left.mp hdis (Finset.mem_image_of_mem f hx₁)
+      (Finset.mem_image_of_mem f hx₂)
 
 section IsCone
 

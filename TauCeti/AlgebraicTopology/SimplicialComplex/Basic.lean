@@ -79,6 +79,12 @@ theorem finite_faces_map_iff_of_injective {κ : Type*} [DecidableEq κ]
   rw [faces_map]
   exact Set.finite_image_iff (Finset.image_injective hf).injOn
 
+/-- Mapping the void precomplex along any vertex function gives the void precomplex. -/
+@[simp]
+theorem map_bot {κ : Type*} [DecidableEq κ] (f : ι → κ) :
+    (⊥ : PreAbstractSimplicialComplex ι).map f = ⊥ :=
+  eq_bot_iff.mpr fun _ ⟨_, hσ, _⟩ => hσ.elim
+
 /-- A finite set is a face of an intersection of two precomplexes exactly when it is a face of
 both. -/
 @[simp]
@@ -88,6 +94,19 @@ theorem mem_inf {ρ : Finset ι} : ρ ∈ K ⊓ L ↔ ρ ∈ K ∧ ρ ∈ L :=
 /-- Every vertex of a face spans a singleton face. -/
 theorem singleton_mem_of_mem (hσ : σ ∈ K) (hv : v ∈ σ) : ({v} : Finset ι) ∈ K :=
   (K.isRelLowerSet_faces hσ).2 (Finset.singleton_subset_iff.mpr hv) (Finset.singleton_nonempty v)
+
+/-- A singleton belongs to an image precomplex exactly when it is the image of a singleton face of
+the source precomplex. Injectivity of `f` is not required. -/
+theorem singleton_mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ} {w : κ} :
+    ({w} : Finset κ) ∈ K.map f ↔ ∃ v : ι, ({v} : Finset ι) ∈ K ∧ f v = w := by
+  rw [mem_map_iff]
+  constructor
+  · rintro ⟨τ, hτ, hτw⟩
+    obtain ⟨v, hvτ⟩ := (K.isRelLowerSet_faces hτ).1
+    exact ⟨v, singleton_mem_of_mem hτ hvτ,
+      Finset.mem_singleton.mp (hτw ▸ Finset.mem_image_of_mem f hvτ)⟩
+  · rintro ⟨v, hvK, rfl⟩
+    exact ⟨{v}, hvK, Finset.image_singleton f v⟩
 
 /-- A vertex whose singleton is not a face occurs in no face at all.  This is the convenient way
 to say that a vertex is *unused* by a complex, as needed when a construction adjoins a fresh

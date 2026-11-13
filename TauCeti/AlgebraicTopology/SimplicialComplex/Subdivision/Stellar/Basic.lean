@@ -514,4 +514,38 @@ theorem dimension_stellarSubdivision_simplex_self (hV : V.Nonempty) :
   · rw [dimension_stellarSubdivision (fun h => hv (singleton_mem_simplex.mp h))
       hV, dimension_simplex hV]
 
+/-- Starring a zero-simplex at its sole vertex replaces that vertex by the starring vertex. -/
+@[simp]
+theorem stellarSubdivision_simplex_singleton_self (x v : ι) :
+    stellarSubdivision (simplex {x}) {x} v = simplex {v} := by
+  by_cases hvx : v = x
+  · subst hvx
+    exact stellarSubdivision_simplex_self_of_mem (Finset.mem_singleton_self v)
+  · refine PreAbstractSimplicialComplex.ext ?_
+    rw [faces_simplex_singleton]
+    ext ω
+    simp only [Set.mem_singleton_iff]
+    constructor
+    · intro hω
+      have hω' : ω ∈ stellarSubdivision (simplex {x}) {x} v := hω
+      by_cases hvω : v ∈ ω
+      · have hvω' : v ∉ ω.erase v := Finset.notMem_erase v ω
+        have hω_ins : insert v (ω.erase v) ∈ stellarSubdivision (simplex {x}) {x} v := by
+          rwa [Finset.insert_erase hvω]
+        obtain ⟨hnsub, hface⟩ := (insert_mem_stellarSubdivision_iff hvω').mp hω_ins
+        have hsub_x : ω.erase v ⊆ {x} :=
+          Finset.subset_union_left.trans (mem_simplex.mp hface).2
+        have hempty : ω.erase v = ∅ := by
+          rcases Finset.subset_singleton_iff.mp hsub_x with h0 | hx
+          · exact h0
+          · exact (hnsub (hx ▸ Finset.Subset.rfl)).elim
+        rw [← Finset.insert_erase hvω, hempty, Finset.insert_empty]
+      · obtain ⟨hωs, hnsub⟩ := (mem_stellarSubdivision_iff_of_notMem hvω).mp hω'
+        have hωx : ω = {x} :=
+          (mem_simplex.mp hωs).1.subset_singleton_iff.mp (mem_simplex.mp hωs).2
+        exact (hnsub (hωx ▸ Finset.Subset.rfl)).elim
+    · rintro rfl
+      exact singleton_mem_stellarSubdivision_iff.mpr
+        (singleton_mem_simplex.mpr (Finset.mem_singleton_self x))
+
 end PreAbstractSimplicialComplex
