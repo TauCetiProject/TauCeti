@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.Deriv.Matrix
-import TauCeti.Analysis.Calculus.FDeriv.Adjugate
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
@@ -49,30 +48,7 @@ theorem hasDerivAt_deriv_det {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   have hdA := hA.self_of_nhds
   have hd := hdA.matrix_det hdet
   have hne := hd.continuousAt.eventually_ne hdet.ne_zero
-  -- Entrywise adjugate calculus gives differentiability of the inverse without a Banach
-  -- algebra assumption. Differentiating A * A⁻¹ = 1 then determines its derivative.
-  have hAdj : DifferentiableAt 𝕜 (fun t ↦ (A t).adjugate) a := by
-    apply differentiableAt_pi.mpr
-    intro i
-    apply differentiableAt_pi.mpr
-    intro j
-    exact differentiableAt_adjugate_apply A a
-      (fun k l ↦ (differentiableAt_pi.mp (differentiableAt_pi.mp hdA.differentiableAt k) l)) i j
-  have hInv : DifferentiableAt 𝕜 (fun t ↦ (A t)⁻¹) a := by
-    simpa only [Matrix.inv_def, Ring.inverse_eq_inv] using!
-      (hd.differentiableAt.inv hdet.ne_zero).fun_smul hAdj
-  have hmul : (fun t ↦ A t * (A t)⁻¹) =ᶠ[𝓝 a] fun _ ↦ 1 := by
-    filter_upwards [hne] with t ht
-    exact mul_nonsing_inv (A t) ht.isUnit
-  have hzero := (hdA.fun_mul hInv.hasDerivAt).congr_of_eventuallyEq hmul.symm
-  have hInv' : HasDerivAt (fun t ↦ (A t)⁻¹)
-      (-((A a)⁻¹ * A' a * (A a)⁻¹)) a := by
-    apply hInv.hasDerivAt.congr_deriv
-    have hz : A' a * (A a)⁻¹ + A a * deriv (fun t ↦ (A t)⁻¹) a = 0 := by
-      simpa using! hzero.unique (hasDerivAt_const a (1 : Matrix ι ι 𝕜))
-    have hz' := congrArg (fun M ↦ (A a)⁻¹ * M) hz
-    simpa [mul_add, ← Matrix.mul_assoc, nonsing_inv_mul _ hdet,
-      eq_neg_iff_add_eq_zero, add_comm] using! hz'
+  have hInv' := hdA.matrix_inv hdet
   -- Differentiate Jacobi's first-derivative formula and identify it with deriv near a.
   have htr := (hInv'.fun_mul hA').matrix_trace
   have heq : deriv (fun t ↦ (A t).det) =ᶠ[𝓝 a]
