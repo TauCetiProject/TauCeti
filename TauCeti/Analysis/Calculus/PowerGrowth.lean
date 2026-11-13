@@ -41,7 +41,7 @@ the almost-everywhere Grönwall inequality for monotone functions in
 In the normalization `f(σ) ≤ (σ / 2) (1 + C σ) (1 + δ) f'(σ) + A σ ^ 4` the exponent is
 `2 / (1 + δ)` (`TauCeti.rpow_mul_le_rpow_mul_add_of_le_mul_deriv_add`). When `0 < h ≤ 1` and
 `δ ≤ K h`, the power `σ ^ (2 / (1 + δ))` is bounded by a constant times `σ ^ 2` for
-`c h ≤ σ ≤ 1`, with a constant independent of `h` (`TauCeti.rpow_two_div_one_add_le_exp_mul_sq`).
+`c h ≤ σ`, with a constant independent of `h` (`TauCeti.rpow_two_div_one_add_le_exp_mul_sq`).
 Consequently a bound on `f` at a fixed radius `σ₀ ≤ 1` gives the quadratic upper bound
 `f σ ≤ K' σ ^ 2` for `c h ≤ σ ≤ σ₀` (`TauCeti.le_mul_sq_of_le_mul_deriv_add`), and a lower bound
 `m h ^ 2 ≤ f (c h)` gives a quadratic lower bound `m' σ ^ 2 ≤ f σ + A σ ^ 4` for `c h ≤ σ ≤ 1`
@@ -90,12 +90,15 @@ theorem monotoneOn_div_rpow_of_mul_le_mul_deriv {f f' : ℝ → ℝ} {s : Set �
 
 /-- **Power growth from an almost-everywhere differential inequality.** Let `m` be monotone on
 `[0, r]`, nonnegative at `0` and positive on `(0, r)`. If `m(ρ) ^ (1 - a) ≤ K m'(ρ)` for almost
-every `ρ ∈ (0, r)`, where `a > 0` and `K ≥ 0`, then `a r ≤ K m(r) ^ a`. -/
+every `ρ ∈ (0, r)`, where `K ≥ 0`, then `a r ≤ K m(r) ^ a`. For `a ≤ 0` the inequality is
+immediate; the content is the case `a > 0`. -/
 theorem mul_le_mul_rpow_of_rpow_one_sub_le_mul_deriv {m : ℝ → ℝ} {a K r : ℝ} (hr : 0 ≤ r)
     (hm : MonotoneOn m (Icc 0 r)) (hm0 : 0 ≤ m 0) (hpos : ∀ ρ ∈ Ioo 0 r, 0 < m ρ)
-    (ha : 0 < a) (hK : 0 ≤ K)
-    (h : ∀ᵐ ρ, ρ ∈ Ioo 0 r → m ρ ^ (1 - a) ≤ K * deriv m ρ) :
+    (hK : 0 ≤ K) (h : ∀ᵐ ρ, ρ ∈ Ioo 0 r → m ρ ^ (1 - a) ≤ K * deriv m ρ) :
     a * r ≤ K * m r ^ a := by
+  have hmr : 0 ≤ m r := hm0.trans (hm ⟨le_rfl, hr⟩ ⟨hr, le_rfl⟩ hr)
+  rcases le_or_gt a 0 with ha | ha
+  · exact (mul_nonpos_of_nonpos_of_nonneg ha hr).trans (mul_nonneg hK (Real.rpow_nonneg hmr a))
   set g : ℝ → ℝ := fun ρ => m ρ ^ a
   have hg : MonotoneOn g (uIcc 0 r) := by
     rw [uIcc_of_le hr]
@@ -156,12 +159,6 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     add_le_add (hf hx hy hxy) (mul_le_mul_of_nonneg_left
       (pow_le_pow_left₀ (hσpos x hx).le hxy n) hB)
   have hgs : 0 ≤ g s := add_nonneg hfs (mul_nonneg hB (pow_nonneg hs.le n))
-  have hk : IntervalIntegrable k volume s t := by
-    refine ContinuousOn.intervalIntegrable
-      (continuousOn_const.mul (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_))
-    rw [uIcc_of_le hst] at hσ
-    have := hσpos σ hσ
-    positivity
   -- The forcing term is absorbed into `g = f + B σ ^ n`: `k g ≤ g'` almost everywhere.
   have hkg : ∀ᵐ σ, σ ∈ Ioo s t → k σ * g σ ≤ deriv g σ := by
     filter_upwards [h, (hf.mono Ioo_subset_Icc_self).ae_differentiableWithinAt_of_mem]
@@ -189,7 +186,7 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     rw [intervalIntegral.integral_const_mul, integral_inv_mul_one_add_mul hs ht hC,
       Real.rpow_def_of_pos (by positivity), Real.rpow_def_of_pos (by positivity), ← Real.exp_sub]
     ring_nf
-  have key := mul_exp_integral_le_of_mul_le_deriv hst hg hgs hk hkg
+  have key := mul_exp_integral_le_of_mul_le_deriv hst hg hgs hkg
   rw [hexp, mul_div_assoc', div_le_iff₀ (by positivity)] at key
   simp only [g] at key
   linarith
@@ -223,7 +220,6 @@ theorem rpow_mul_le_rpow_mul_add_of_le_mul_deriv_add {f : ℝ → ℝ} {s t C δ
     (mul_nonneg hp0 hA) hf hfs h'
   -- The constant `B = p A / (4 - p)` lies in `[0, A]` because `p ≤ 2`.
   set B := p * A / (((4 : ℕ) : ℝ) - p)
-  have hB0 : 0 ≤ B := div_nonneg (mul_nonneg hp0 hA) (by linarith)
   have hBA : B ≤ A := by
     rw [div_le_iff₀ (by linarith)]
     push_cast
@@ -237,16 +233,24 @@ theorem rpow_mul_le_rpow_mul_add_of_le_mul_deriv_add {f : ℝ → ℝ} {s t C δ
         gcongr
 
 /-- The power `s ^ (2 / (1 + δ))` is bounded by a constant times `s ^ 2`, uniformly on scales
-`c h ≤ s ≤ 1`, as long as `δ ≤ K h`: for `0 < h ≤ 1` and `c h ≤ s ≤ 1`,
+`c h ≤ s`, as long as `δ ≤ K h`: for `0 < h ≤ 1` and `c h ≤ s`,
 `s ^ (2 / (1 + δ)) ≤ exp (2 K (1 + |log c|)) s ^ 2`. The constant does not depend on `h`. -/
 theorem rpow_two_div_one_add_le_exp_mul_sq {s c h δ K : ℝ} (hc : 0 < c) (hh : 0 < h)
-    (hh1 : h ≤ 1) (hδ : 0 ≤ δ) (hδh : δ ≤ K * h) (hs : c * h ≤ s) (hs1 : s ≤ 1) :
+    (hh1 : h ≤ 1) (hδ : 0 ≤ δ) (hδh : δ ≤ K * h) (hs : c * h ≤ s) :
     s ^ (2 / (1 + δ)) ≤ Real.exp (2 * K * (1 + |Real.log c|)) * s ^ 2 := by
   have hch : 0 < c * h := mul_pos hc hh
   have hs0 : 0 < s := hch.trans_le hs
   have hK : 0 ≤ K := (mul_nonneg_iff_of_pos_right hh).1 (hδ.trans hδh)
   rw [Real.rpow_def_of_pos hs0, ← Real.exp_log (pow_pos hs0 2), ← Real.exp_add, Real.log_pow]
   gcongr
+  rcases le_or_gt s 1 with hs1 | hs1
+  swap
+  · -- For `1 < s` the exponent `2 / (1 + δ) ≤ 2` and `log s ≥ 0` give the bound directly.
+    have hp2 : 2 / (1 + δ) ≤ 2 := div_le_self zero_le_two (le_add_of_nonneg_right hδ)
+    have hlog := Real.log_nonneg hs1.le
+    have := mul_nonneg (mul_nonneg zero_le_two hK)
+      (add_nonneg zero_le_one (abs_nonneg (Real.log c)))
+    nlinarith
   -- With `L = -log s ≥ 0`, the claim is `L δ / (1 + δ) ≤ K (1 + |log c|)`.
   have hL : 0 ≤ -Real.log s := neg_nonneg.2 (Real.log_nonpos hs0.le hs1)
   have hLM : -Real.log s ≤ -Real.log c - Real.log h := by
@@ -272,15 +276,15 @@ theorem rpow_two_div_one_add_le_exp_mul_sq {s c h δ K : ℝ} (hc : 0 < c) (hh :
   nlinarith
 
 /-- The bound `rpow_two_div_one_add_le_exp_mul_sq` survives the factor `1 / (1 + C s)` for
-`C ≥ 0`: `(s / (1 + C s)) ^ (2 / (1 + δ)) ≤ exp (2 K (1 + |log c|)) s ^ 2` for `c h ≤ s ≤ 1`. -/
+`C ≥ 0`: `(s / (1 + C s)) ^ (2 / (1 + δ)) ≤ exp (2 K (1 + |log c|)) s ^ 2` for `c h ≤ s`. -/
 private theorem div_one_add_mul_rpow_two_div_one_add_le_exp_mul_sq {s c h δ K C : ℝ}
     (hC : 0 ≤ C) (hc : 0 < c) (hh : 0 < h) (hh1 : h ≤ 1) (hδ : 0 ≤ δ) (hδh : δ ≤ K * h)
-    (hs : c * h ≤ s) (hs1 : s ≤ 1) :
+    (hs : c * h ≤ s) :
     (s / (1 + C * s)) ^ (2 / (1 + δ)) ≤ Real.exp (2 * K * (1 + |Real.log c|)) * s ^ 2 := by
   have hs0 : 0 < s := (mul_pos hc hh).trans_le hs
   exact (Real.rpow_le_rpow (by positivity)
     (div_le_self hs0.le (le_add_of_nonneg_right (by positivity))) (by positivity)).trans
-    (rpow_two_div_one_add_le_exp_mul_sq hc hh hh1 hδ hδh hs hs1)
+    (rpow_two_div_one_add_le_exp_mul_sq hc hh hh1 hδ hδh hs)
 
 /-- **Quadratic upper bound from the monotonicity inequality.** Let `C, δ, A ≥ 0`,
 `0 < h ≤ 1`, `c > 0` and `δ ≤ K h`. Suppose `f` is monotone on `[σ, σ₀]`, where
@@ -297,7 +301,7 @@ theorem le_mul_sq_of_le_mul_deriv_add {f : ℝ → ℝ} {σ σ₀ C δ A c h K M
     (hfσ : 0 ≤ f σ) (hM : f σ₀ ≤ M)
     (hf' : ∀ᵐ τ, τ ∈ Ioo σ σ₀ → f τ ≤ τ / 2 * (1 + C * τ) * (1 + δ) * deriv f τ + A * τ ^ 4) :
     f σ ≤ Real.exp (2 * K * (1 + |Real.log c|)) * ((1 + C * σ₀) / σ₀) ^ 2 * (M + A) * σ ^ 2 := by
-  set p := 2 / (1 + δ) with hp_def
+  set p := 2 / (1 + δ)
   set Λ := Real.exp (2 * K * (1 + |Real.log c|))
   have hσ0 : 0 < σ := (mul_pos hc hh).trans_le hσ
   have hσ₀0 : 0 < σ₀ := hσ0.trans_le hσσ₀
@@ -309,7 +313,7 @@ theorem le_mul_sq_of_le_mul_deriv_add {f : ℝ → ℝ} {σ σ₀ C δ A c h K M
     exact mul_le_of_le_one_right hA (pow_le_one₀ hσ₀0.le hσ₀)
   -- `(σ / (1 + C σ)) ^ p ≤ σ ^ p ≤ Λ σ ^ 2`.
   have hb : (σ / (1 + C * σ)) ^ p ≤ Λ * σ ^ 2 :=
-    div_one_add_mul_rpow_two_div_one_add_le_exp_mul_sq hC hc hh hh1 hδ hδh hσ (hσσ₀.trans hσ₀)
+    div_one_add_mul_rpow_two_div_one_add_le_exp_mul_sq hC hc hh hh1 hδ hδh hσ
   -- `(σ₀ / (1 + C σ₀)) ^ (-p) = ((1 + C σ₀) / σ₀) ^ p ≤ ((1 + C σ₀) / σ₀) ^ 2`.
   have ha : ((σ₀ / (1 + C * σ₀)) ^ p)⁻¹ ≤ ((1 + C * σ₀) / σ₀) ^ 2 := by
     rw [← Real.inv_rpow (by positivity), inv_div, ← Real.rpow_two]
@@ -344,7 +348,7 @@ theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m :
       f τ ≤ τ / 2 * (1 + C * τ) * (1 + δ) * deriv f τ + A * τ ^ 4) :
     m / (c ^ 2 * (1 + C) ^ 2 * Real.exp (2 * K * (1 + |Real.log c|))) * σ ^ 2 ≤
       f σ + A * σ ^ 4 := by
-  set p := 2 / (1 + δ) with hp_def
+  set p := 2 / (1 + δ)
   set Λ := Real.exp (2 * K * (1 + |Real.log c|))
   have hch : 0 < c * h := mul_pos hc hh
   have hσ0 : 0 < σ := hch.trans_le hσ
@@ -367,13 +371,12 @@ theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m :
           Real.rpow_le_rpow_of_exponent_ge (by positivity) h1 hp2
   -- `(c h / (1 + C c h)) ^ p ≤ (c h) ^ p ≤ Λ (c h) ^ 2`.
   have ha : (c * h / (1 + C * (c * h))) ^ p ≤ Λ * (c * h) ^ 2 :=
-    div_one_add_mul_rpow_two_div_one_add_le_exp_mul_sq hC hc hh hh1 hδ hδh le_rfl (hσ.trans hσ1)
+    div_one_add_mul_rpow_two_div_one_add_le_exp_mul_sq hC hc hh hh1 hδ hδh le_rfl
   have hineq : (σ / (1 + C)) ^ 2 * (m * h ^ 2) ≤ Λ * (c * h) ^ 2 * (f σ + A * σ ^ 4) :=
     calc (σ / (1 + C)) ^ 2 * (m * h ^ 2) ≤ (σ / (1 + C * σ)) ^ p * f (c * h) := by
           gcongr
       _ ≤ (c * h / (1 + C * (c * h))) ^ p * (f σ + A * σ ^ 4) := key
       _ ≤ Λ * (c * h) ^ 2 * (f σ + A * σ ^ 4) := by gcongr
-  have h1C : 0 < 1 + C := by positivity
   -- Multiply `hineq` by `(1 + C) ^ 2` and cancel `h ^ 2`.
   rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
   refine le_of_mul_le_mul_right ?_ (pow_pos hh 2)

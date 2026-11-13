@@ -159,16 +159,14 @@ theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
           Fintype.linearCombination_apply]
     have := LinearMap.injective_coprod_linearCombination
       (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg) dF.toLinearMap
-      (fun i ↦ (hσ.isNondegenerate.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
+      (fun i ↦ (TauCeti.SmoothTwoForm.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
         fun j ↦ hcomm j i x') hdFs (S := S.toLinearMap)
     have h2 : Injective L.toLinearMap := by rw [hLeq]; exact this
     exact h2
   have hfin : finrank ℝ ((ι → ℝ) × (ι → ℝ)) = finrank ℝ E := by
     rw [Module.finrank_prod, Module.finrank_fintype_fun_eq_card, ← hdim, two_mul]
-  exact isLocalDiffeomorphAt_of_mfderiv_eq hPs hopen hmem
-    BoundarylessManifold.isInteriorPoint (by simp)
-    (e := (LinearMap.linearEquivOfInjective L.toLinearMap hinj hfin).toContinuousLinearEquiv)
-    (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hfin w)
+  exact isLocalDiffeomorphAt_of_injective_mfderiv hPs hopen hmem
+    BoundarylessManifold.isInteriorPoint (by simp) hinj hfin
 
 /-- **Small elements of the Hamiltonian flow action reach every nearby point of a regular level.**
 Let `x` be a regular point of `F` on a manifold of dimension `2 · |ι|`. For every neighbourhood
@@ -335,7 +333,7 @@ then no vector near `0` other than `0` fixes `x`. -/
 theorem eventually_eq_zero_of_hamiltonianFlowAction_apply_eq {x : M}
     (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) :
     ∀ᶠ v in 𝓝 (0 : ι → ℝ), (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x = x → v = 0 := by
-  set o : (ι → ℝ) → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x with ho
+  set o : (ι → ℝ) → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x
   have ho0 : o 0 = x := hσ.hamiltonianFlowAction_zero_apply hF hcomm hc x
   have hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F (o 0) := ho0 ▸ hx
   have hinj : Injective (mfderiv 𝓘(ℝ, ι → ℝ) I o 0) :=

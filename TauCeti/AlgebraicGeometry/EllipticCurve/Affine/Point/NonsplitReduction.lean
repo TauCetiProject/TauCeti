@@ -109,7 +109,7 @@ theorem exists_notMem_nonsingularReduction_of_tangentQuadratic_no_roots
     {z : v.valuationSubring} (hΔ : Associated (z ^ 2) (integralModel v.valuationSubring W).Δ) :
     ∃ P : W.Point, P ∉ W.nonsingularReduction v := by
   obtain ⟨x, y, hx, hy, hE⟩ :=
-    exists_equation_mem_maximalIdeal_of_tangentQuadratic_no_roots _ h₃ h₄ h₆ hroot hΔ
+    exists_equation_mem_maximalIdeal_of_tangentQuadratic_no_roots _ h₆ hroot hΔ
   have hF : W.Nonsingular x y :=
     W.equation_iff_nonsingular.1 ((equation_integralModel_iff v).1 hE)
   exact ⟨Point.some _ _ hF, (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ hF).2

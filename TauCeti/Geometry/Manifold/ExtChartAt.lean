@@ -28,16 +28,25 @@ even without Hausdorffness. On a sigma-compact Hausdorff manifold these compact 
 can instead be chosen to give a locally finite cover of the whole manifold.
 
 The extended chart of a product manifold has the product of the targets of the factor charts as
-its target (`TauCeti.extChartAt_prod_target`).
+its target (`TauCeti.extChartAt_prod_target`), and it and its inverse act componentwise
+(`TauCeti.extChartAt_prod_apply`, `TauCeti.extChartAt_prod_symm_apply`). The intrinsic chart
+source `TauCeti.chartSource` at a point is an open subset of the manifold; a product of such
+sources lies in the source of the extended product chart. On a product `M × E'` with a normed
+space `E'`, the extended chart is the chart of `M` on the first factor and the identity on `E'`
+(`TauCeti.extChartAt_prod_modelSpace_apply`, `TauCeti.extChartAt_prod_modelSpace_symm_apply`).
+Consequently, the slices of a coordinate expression of a function on `M × 𝕜` are the slices of the
+function itself, read in the chart of `M` (`TauCeti.comp_extChartAt_symm_prodMk_left`,
+`TauCeti.comp_extChartAt_symm_prodMk_right`), and local independence of the last coordinate
+passes to coordinate expressions (`TauCeti.eventually_comp_extChartAt_symm_eq`).
 
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
-without differentiability assumptions; for a boundaryless model, their domains are open. A compact
-coordinate set of a chart is covered by finitely many compact pieces, each in the overlap with
-one of a given family of charts at points of the manifold. On an
-open subset, extended chart targets lie in the ambient chart targets, and inverse charts agree
-through inclusion on the smaller target. Near a chart point the inverse charts of nested open
-subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has
-a convex neighbourhood within the model range, inside the chart target, on which flat calculus
+without differentiability assumptions, and they take values in the range of the model; for a
+boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
+finitely many compact pieces, each in the overlap with one of a given family of charts at points of
+the manifold. On an open subset, extended chart targets lie in the ambient chart targets, and
+inverse charts agree through inclusion on the smaller target. Near a chart point the inverse charts
+of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has a
+convex neighbourhood within the model range, inside the chart target, on which flat calculus
 applies even when the manifold has boundary.
 
 For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
@@ -47,6 +56,13 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 
 ## Main results
 
+* `TauCeti.extChartAt_prod_modelSpace_apply` and `TauCeti.extChartAt_prod_modelSpace_symm_apply`:
+  the extended chart of `M × E'` for a normed space `E'` is the identity on `E'`.
+* `TauCeti.comp_extChartAt_symm_prodMk_left`, `TauCeti.comp_extChartAt_symm_prodMk_right` and
+  `TauCeti.eventually_comp_extChartAt_symm_eq`: slices of coordinate expressions on `M × 𝕜`.
+* `TauCeti.extChartAt_model_symm_eq_chartAt_symm`,
+  `TauCeti.extChartAt_model_apply_eq_chartAt_apply`: on a manifold modelled on its model space, the
+  preferred extended chart is the preferred chart.
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
   composed with its chart agrees locally with the original function.
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
@@ -100,6 +116,101 @@ theorem extChartAt_prod_target {E' : Type*} [NormedAddCommGroup E'] [NormedSpace
       (extChartAt I x.1).target ×ˢ (extChartAt I' x.2).target := by
   rw [extChartAt_prod, PartialEquiv.prod_target]
 
+section ProdChart
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- The extended chart of a product manifold acts componentwise. -/
+theorem extChartAt_prod_apply (x y : M × M') :
+    extChartAt (I.prod I') x y = (extChartAt I x.1 y.1, extChartAt I' x.2 y.2) := by
+  rw [extChartAt_prod, PartialEquiv.prod_coe]
+
+/-- The inverse extended chart of a product manifold acts componentwise. -/
+theorem extChartAt_prod_symm_apply (x : M × M') (z : E × E') :
+    (extChartAt (I.prod I') x).symm z =
+      ((extChartAt I x.1).symm z.1, (extChartAt I' x.2).symm z.2) := by
+  rw [extChartAt_prod, PartialEquiv.prod_coe_symm]
+
+/-- The source of the preferred chart at `x`, as an open subset of the manifold. -/
+abbrev chartSource (x : M) : TopologicalSpace.Opens M :=
+  ⟨(chartAt H x).source, (chartAt H x).open_source⟩
+
+/-- A pair of points of the chart sources at the components of `x` lies in the source of the
+extended product chart at `x`. -/
+theorem mem_extChartAt_prod_source (x : M × M')
+    (r : chartSource (H := H) x.1 × chartSource (H := H') x.2) :
+    ((r.1 : M), (r.2 : M')) ∈ (extChartAt (I.prod I') x).source := by
+  rw [extChartAt_prod, PartialEquiv.prod_source, extChartAt_source, extChartAt_source]
+  exact ⟨r.1.property, r.2.property⟩
+
+/-- The centre of the product of the chart sources at the components of `x`. -/
+abbrev chartSourceCentre (x : M × M') : chartSource (H := H) x.1 × chartSource (H := H') x.2 :=
+  (⟨x.1, mem_chart_source H x.1⟩, ⟨x.2, mem_chart_source H' x.2⟩)
+
+/-- The product of the chart sources at the components of `x` is the whole source of its
+extended product chart at the centre. -/
+theorem mem_extChartAt_chartSourceCentre_source (x : M × M')
+    (r : chartSource (H := H) x.1 × chartSource (H := H') x.2) :
+    r ∈ (extChartAt (I.prod I') (chartSourceCentre x)).source := by
+  rw [extChartAt_prod, PartialEquiv.prod_source, extChartAt_source, extChartAt_source]
+  simp only [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
+    Set.mem_prod, Set.mem_preimage]
+  exact ⟨r.1.property, r.2.property⟩
+
+end ProdChart
+
+/-- On a product `M × E'` with a normed space `E'`, the extended chart at `x` is the extended
+chart of `M` at `x.1` on the first factor and the identity on `E'`. This is not a `simp` lemma:
+`simp` unfolds `extChartAt` on the left-hand side before this lemma could fire. -/
+theorem extChartAt_prod_modelSpace_apply {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    (x y : M × E') : extChartAt (I.prod 𝓘(𝕜, E')) x y = (extChartAt I x.1 y.1, y.2) := by
+  simp only [extChartAt_prod, PartialEquiv.prod_coe, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_coe, id_eq]
+
+/-- On a product `M × E'` with a normed space `E'`, the inverse of the extended chart at `x` is the
+inverse of the extended chart of `M` at `x.1` on the first factor and the identity on `E'`. -/
+theorem extChartAt_prod_modelSpace_symm_apply {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] (x : M × E') (u : E × E') :
+    (extChartAt (I.prod 𝓘(𝕜, E')) x).symm u = ((extChartAt I x.1).symm u.1, u.2) := by
+  simp only [extChartAt_prod, PartialEquiv.prod_coe_symm, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_symm, PartialEquiv.refl_coe, id_eq]
+
+/-- The slice of the coordinate expression of `f : M × 𝕜 → α` in the preferred chart at `z`
+through the chart image of a point `x` of the chart source is the slice of `f` through `x`. -/
+theorem comp_extChartAt_symm_prodMk_left {α : Type*} {f : M × 𝕜 → α} (z : M × 𝕜) {x : M}
+    (hx : x ∈ (extChartAt I z.1).source) :
+    (fun s ↦ (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z).symm) ((extChartAt I z.1 x, s))) =
+      fun s ↦ f (x, s) := by
+  funext s
+  simp only [Function.comp_apply, extChartAt_prod_modelSpace_symm_apply,
+    (extChartAt I z.1).left_inv hx]
+
+/-- The slice of the coordinate expression of `f : M × 𝕜 → α` in the preferred chart at `z` at a
+fixed last coordinate `s` is the coordinate expression of the slice of `f` at `s`. -/
+theorem comp_extChartAt_symm_prodMk_right {α : Type*} {f : M × 𝕜 → α} (z : M × 𝕜) (s : 𝕜) :
+    (fun v ↦ (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z).symm) (v, s)) =
+      (fun x ↦ f (x, s)) ∘ (extChartAt I z.1).symm := by
+  funext v
+  simp only [Function.comp_apply, extChartAt_prod_modelSpace_symm_apply]
+
+/-- A function on `M × 𝕜` independent of the last coordinate near `(p, t₀)` has a coordinate
+expression in the preferred chart at `(p, t₀)` independent of the last coordinate near the chart
+image of `(p, t₀)`. -/
+theorem eventually_comp_extChartAt_symm_eq {α : Type*} {f : M × 𝕜 → α} {p : M} {t₀ : 𝕜}
+    (hf : ∀ᶠ z in 𝓝 (p, t₀), f z = f (z.1, t₀)) :
+    ∀ᶠ w in 𝓝 (extChartAt I p p, t₀),
+      (f ∘ (extChartAt (I.prod 𝓘(𝕜)) (p, t₀)).symm) w =
+        (f ∘ (extChartAt (I.prod 𝓘(𝕜)) (p, t₀)).symm) (w.1, t₀) := by
+  have ht : Filter.Tendsto (extChartAt (I.prod 𝓘(𝕜)) (p, t₀)).symm (𝓝 (extChartAt I p p, t₀))
+      (𝓝 (p, t₀)) := by
+    have hc := (continuousAt_extChartAt_symm (I := I.prod 𝓘(𝕜)) (p, t₀)).tendsto
+    rwa [extChartAt_to_inv, extChartAt_prod_modelSpace_apply] at hc
+  filter_upwards [ht.eventually hf] with w hw
+  simp only [Function.comp_apply, extChartAt_prod_modelSpace_symm_apply] at hw ⊢
+  exact hw
+
 /-- Near the center of an extended chart, composing a chart representative with the chart
 recovers the original function. No continuity of the function is needed. -/
 theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M → α) (x : M) :
@@ -138,6 +249,13 @@ theorem injOn_extChartAt_coordChange (α β : M) {s : Set M}
     Set.mem_preimage, (extChartAt I α).left_inv (hsub hx).1]
   exact ⟨(extChartAt I α).map_source (hsub hx).1, (hsub hx).2⟩
 
+variable (I) in
+/-- A change of extended charts takes values in the range of the model. -/
+theorem mapsTo_extChartAt_comp_extChartAt_symm (j k : M) (s : Set E) :
+    Set.MapsTo (extChartAt I j ∘ (extChartAt I k).symm) s (Set.range I) := fun _ _ ↦ by
+  rw [Function.comp_apply, extChartAt_coe]
+  exact Set.mem_range_self _
+
 omit [ChartedSpace H M] in
 /-- For a boundaryless model, the domain of the change of coordinates between two charts is
 open. -/
@@ -170,11 +288,11 @@ theorem _root_.ModelWithCorners.extendCoordChange_apply {e e' : OpenPartialHomeo
 omit [ChartedSpace H M] in
 /-- Near a point in a chart overlap, changing coordinates and then applying the inverse of the
 second extended chart agrees with the inverse of the first extended chart. -/
-theorem _root_.ModelWithCorners.extend_symm_comp_extendCoordChange_eventuallyEq [I.Boundaryless]
+theorem _root_.ModelWithCorners.extend_symm_comp_extendCoordChange_eventuallyEq
     {e e' : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) (hx' : x ∈ e'.source) :
     (e'.extend I).symm ∘ I.extendCoordChange e e' =ᶠ[𝓝 (I (e x))] (e.extend I).symm := by
-  filter_upwards [I.extendCoordChange_source_mem_nhds hx hx'] with y hy
-  exact (e'.extend I).left_inv hy.2
+  filter_upwards [e.extend_preimage_mem_nhds (I := I) hx (e'.open_source.mem_nhds hx')] with y hy
+  exact (e'.extend I).left_inv (by rw [e'.extend_source]; exact hy)
 
 open Set in
 omit [ChartedSpace H M] in
@@ -608,6 +726,25 @@ theorem isCompact_extChartAt_symm_image_closedBall [FiniteDimensional ℝ E] {r 
   (isCompact_closedBall _ _).image_of_continuousOn ((continuousOn_extChartAt_symm x).mono hr)
 
 end ClosedBall
+
+section SelfModel
+
+variable {𝕜 E N : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace N] [ChartedSpace E N] {z : N}
+
+/-- On a manifold modelled on its model space, the inverse of the preferred extended chart is the
+inverse of the preferred chart. -/
+theorem extChartAt_model_symm_eq_chartAt_symm :
+    ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by
+  ext; simp
+
+/-- On a manifold modelled on its model space, the preferred extended chart sends every point to
+the same coordinate as the preferred chart. -/
+theorem extChartAt_model_apply_eq_chartAt_apply (x : N) :
+    extChartAt 𝓘(𝕜, E) z x = chartAt E z x := by
+  simp
+
+end SelfModel
 
 end TauCeti
 

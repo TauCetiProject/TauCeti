@@ -11,14 +11,14 @@ public import Mathlib.CategoryTheory.Subobject.FactorThru
 # Factorizations through subobjects
 
 This file records elementary forms of the universal property of a subobject. Factoring is
-unchanged by precomposition with an equality-induced isomorphism, it is transported along an
-isomorphism of ambient objects, and a factorization through a subobject is unique because its
-representing arrow is a monomorphism.
+unchanged by precomposition with a split epimorphism (for instance an isomorphism, or one induced
+by an equality of objects), it is transported along an isomorphism of ambient objects, and a
+factorization through a subobject is unique because its representing arrow is a monomorphism.
 
 ## Main declarations
 
-* `CategoryTheory.Subobject.factors_eqToHom_comp_iff`: precomposition by an equality-induced
-  isomorphism does not change whether a morphism factors through a subobject.
+* `CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi`: precomposition by a split
+  epimorphism does not change whether a morphism factors through a subobject.
 * `CategoryTheory.Subobject.factors_mapIsoToOrderIso_iff`: factoring through a subobject
   transported along an isomorphism of ambient objects.
 * `CategoryTheory.Subobject.factors_iff_existsUnique`: factoring through a subobject is equivalent
@@ -29,55 +29,35 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti
+namespace CategoryTheory.Subobject
 
 universe v u
 
 variable {C : Type u} [Category.{v} C] {X Y Z : C}
 
-/-- Factoring through a subobject is unchanged after precomposing with the isomorphism induced by
-an equality of source objects. -/
-theorem _root_.CategoryTheory.Subobject.factors_eqToHom_comp_iff (P : Subobject Z) (hXY : X = Y)
-    (f : Y ⟶ Z) : P.Factors (eqToHom hXY ≫ f) ↔ P.Factors f := by
-  constructor
-  · rw [Subobject.factors_iff, Subobject.factors_iff]
-    rintro ⟨g, hg⟩
-    refine ⟨eqToHom hXY.symm ≫ g, ?_⟩
-    rw [Category.assoc, hg, ← Category.assoc]
-    simp
-  · exact Subobject.factors_of_factors_right _
+/-- Factoring through a subobject is unchanged after precomposing with a split epimorphism, such
+as an isomorphism or the morphism `eqToHom h` induced by an equality of objects. -/
+@[simp]
+theorem factors_comp_iff_of_isSplitEpi (P : Subobject Z) (g : X ⟶ Y) [IsSplitEpi g]
+    (f : Y ⟶ Z) : P.Factors (g ≫ f) ↔ P.Factors f :=
+  ⟨fun h ↦ by simpa using factors_of_factors_right (section_ g) h, factors_of_factors_right g⟩
 
 /-- A morphism factors through the image of a subobject under an isomorphism `e` of ambient
 objects exactly when its composite with `e.inv` factors through the original subobject. -/
-theorem _root_.CategoryTheory.Subobject.factors_mapIsoToOrderIso_iff (e : Y ≅ Z)
+theorem factors_mapIsoToOrderIso_iff (e : Y ≅ Z)
     (P : Subobject Y) (f : X ⟶ Z) :
     (Subobject.mapIsoToOrderIso e P).Factors f ↔ P.Factors (f ≫ e.inv) := by
   induction P using Subobject.ind with
   | _ g =>
-    rw [Subobject.mapIsoToOrderIso_apply, Subobject.map_mk, Subobject.mk_factors_iff,
-      Subobject.mk_factors_iff]
-    constructor
-    · rintro ⟨h, hh⟩
-      refine ⟨h, ?_⟩
-      simp only [MonoOver.mk_arrow, Iso.eq_comp_inv] at hh ⊢
-      exact (Category.assoc _ _ _).trans hh
-    · rintro ⟨h, hh⟩
-      refine ⟨h, ?_⟩
-      simp only [MonoOver.mk_arrow, Iso.eq_comp_inv] at hh ⊢
-      exact (Category.assoc _ _ _).symm.trans hh
+    rw [mapIsoToOrderIso_apply, map_mk]
+    simp [MonoOver.Factors, Iso.eq_comp_inv]
 
 /-- A morphism factors through a subobject exactly when it has a unique lift through the
 subobject's representing arrow. -/
-theorem _root_.CategoryTheory.Subobject.factors_iff_existsUnique (P : Subobject Y) (f : X ⟶ Y) :
-    P.Factors f ↔ ∃! g : X ⟶ (P : C), g ≫ P.arrow = f := by
-  constructor
-  · intro hf
-    refine ⟨P.factorThru f hf, P.factorThru_arrow f hf, ?_⟩
-    intro g' hg'
-    apply (cancel_mono P.arrow).mp
-    rw [hg', P.factorThru_arrow]
-  · rintro ⟨g, hg, -⟩
-    rw [← hg]
-    exact Subobject.factors_comp_arrow g
+theorem factors_iff_existsUnique (P : Subobject Y) (f : X ⟶ Y) :
+    P.Factors f ↔ ∃! g : X ⟶ (P : C), g ≫ P.arrow = f :=
+  ⟨fun hf ↦ ⟨P.factorThru f hf, P.factorThru_arrow f hf, fun g hg ↦
+      (cancel_mono P.arrow).mp (by rw [hg, P.factorThru_arrow])⟩,
+    fun ⟨g, hg, _⟩ ↦ hg ▸ factors_comp_arrow g⟩
 
-end TauCeti
+end CategoryTheory.Subobject

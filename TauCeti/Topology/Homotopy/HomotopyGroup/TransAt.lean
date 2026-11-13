@@ -41,26 +41,21 @@ variable {N X : Type*} [TopologicalSpace X] {x : X} [DecidableEq N]
 theorem transAt_apply_of_le (i : N) (f g : Ω^ N X x) {t : I^N} (h : (t i : ℝ) ≤ 1 / 2) {a : I}
     (ha : (a : ℝ) = 2 * t i) :
     transAt i f g t = f (Function.update t i a) := by
-  simp only [transAt, coe_copy]
-  rw [ite_eq_left h, Set.projIcc_of_mem _ ⟨by rw [← ha]; exact a.2.1,
-    by rw [← ha]; exact a.2.2⟩]
-  exact congrArg (fun b ↦ f (Function.update t i b)) (Subtype.ext ha.symm)
+  rw [one_div] at h
+  simp [transAt, coe_copy, h, ← ha]
 
 /-- On the second half of the `i`-th direction, `transAt i f g` runs `g` at double speed. -/
 theorem transAt_apply_of_lt (i : N) (f g : Ω^ N X x) {t : I^N} (h : 1 / 2 < (t i : ℝ)) {a : I}
     (ha : (a : ℝ) = 2 * t i - 1) :
     transAt i f g t = g (Function.update t i a) := by
-  simp only [transAt, coe_copy]
-  rw [ite_eq_right (not_le.2 h), Set.projIcc_of_mem _ ⟨by rw [← ha]; exact a.2.1,
-    by rw [← ha]; exact a.2.2⟩]
-  exact congrArg (fun b ↦ g (Function.update t i b)) (Subtype.ext ha.symm)
+  rw [one_div] at h
+  simp [transAt, coe_copy, h.not_ge, ← ha]
 
 /-- `symmAt i f` runs `f` backwards in the `i`-th direction. -/
 @[simp]
 theorem symmAt_apply (i : N) (f : Ω^ N X x) (t : I^N) :
     symmAt i f t = f (Function.update t i (σ (t i))) := by
-  rw [symmAt, coe_copy]
-  exact congrArg f (funext fun j ↦ (Function.update_apply t i _ j).symm)
+  simp [symmAt, coe_copy, ← Function.update_apply]
 
 end GenLoop
 

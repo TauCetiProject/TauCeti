@@ -78,10 +78,13 @@ theorem eulerLogCoeff_eq_zero_of_not_isPrimePow {n : ℕ} (hn : ¬IsPrimePow n) 
     χ.eulerLogCoeff n = 0 := by
   simp [eulerLogCoeff, vonMangoldt_eq_zero_iff.mpr hn]
 
-/-- At a prime power `p ^ k` with `k ≠ 0`, the coefficient is `χ p ^ k / k`, the coefficient of
-`p ^ (-k s)` in the expansion `-log (1 - χ p * p ^ (-s)) = ∑ₖ χ p ^ k / k * p ^ (-k s)`. -/
-theorem eulerLogCoeff_prime_pow {p : ℕ} (hp : p.Prime) {k : ℕ} (hk : k ≠ 0) :
+/-- At a prime power `p ^ k`, the coefficient is `χ p ^ k / k`, the coefficient of
+`p ^ (-k s)` in the expansion `-log (1 - χ p * p ^ (-s)) = ∑ₖ χ p ^ k / k * p ^ (-k s)`. For
+`k = 0` both sides are `0`, the right side by the convention `x / 0 = 0`. -/
+theorem eulerLogCoeff_prime_pow {p : ℕ} (hp : p.Prime) {k : ℕ} :
     χ.eulerLogCoeff (p ^ k) = χ p ^ k / k := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
   have hlog : (Real.log p : ℂ) ≠ 0 := mod_cast hp.log_ne_zero
   rw [eulerLogCoeff, vonMangoldt_apply_pow hk, vonMangoldt_apply_prime hp]
   simp only [Nat.cast_pow, Real.log_pow, map_pow]
@@ -90,7 +93,7 @@ theorem eulerLogCoeff_prime_pow {p : ℕ} (hp : p.Prime) {k : ℕ} (hk : k ≠ 0
 /-- At a prime `p`, the coefficient is `χ p`. -/
 @[simp]
 theorem eulerLogCoeff_prime {p : ℕ} (hp : p.Prime) : χ.eulerLogCoeff p = χ p := by
-  simpa using χ.eulerLogCoeff_prime_pow hp one_ne_zero
+  simpa using χ.eulerLogCoeff_prime_pow (k := 1) hp
 
 /-- The coefficients are bounded by `1`, because `‖χ n‖ ≤ 1` and `Λ n ≤ log n`. -/
 theorem norm_eulerLogCoeff_le_one (n : ℕ) : ‖χ.eulerLogCoeff n‖ ≤ 1 := by

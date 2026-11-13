@@ -65,6 +65,7 @@ namespace MorseChart
 
 variable (φ : MorseChart E f x)
 
+omit [FiniteDimensional ℝ E] in
 /-- If, on the open coordinate cube of radius `ε` of a Morse chart, membership in `s` is read off
 the chart image by a predicate `P`, then it is read off by `P` on a neighbourhood of each point of
 that cube. -/
@@ -82,6 +83,7 @@ end MorseChart
 
 variable [IsManifold 𝓘(ℝ, E) ∞ M]
 
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- **A transverse disc read in split coordinates.** Let `φ` be a Morse chart and `pr` a
 surjection of the split model onto a finite-dimensional space, and let `s₂` be, on the open
 coordinate cube of radius `ε`, the set where `pr` vanishes on the split coordinates. A set `s₁`
@@ -115,7 +117,7 @@ private theorem exists_hasStrictFDerivAt_splitCoord {G : Type*} [NormedAddCommGr
       (fun z hz hzε ↦ (hs₂ z hz hzε).trans (by simp [π])) hyφ hyε
   obtain ⟨ψ, ψ', hψ, hπψ, hψ0, hψs⟩ :=
     exists_hasStrictFDerivAt_comp_eq_id_of_span_mtangentConeAt_sup_eq_top (by simp)
-      φ.mem_maximalAtlas hq hs₁ L.closed_of_finiteDimensional hyφ hyq hys₁ hπs hs₂' hys₂ htr
+      φ.mem_maximalAtlas hq hs₁ L.isClosed_of_finiteDimensional hyφ hyq hys₁ hπs hs₂' hys₂ htr
   refine ⟨fun z ↦ φ.splitCoordL (ψ z), (φ.splitCoordL : E →L[ℝ] _) ∘L ψ',
     φ.splitCoordL.hasStrictFDerivAt.comp 0 hψ, ?_, ?_, ?_⟩
   · rw [← hπψ, hπ, ContinuousLinearMap.comp_assoc]
@@ -138,10 +140,10 @@ which, read in the split coordinates `(u, v)` of `φ`, is a map `ψ` of the expa
 `ψ 0 = (u, v)(y)`, strictly differentiable at `0`, whose derivative is a section of the expanding
 coordinate `v`. -/
 theorem exists_hasStrictFDerivAt_mem_unstableSet (hMS : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (φ : MorseChart E f x)
+    (hf : IsMorse 𝓘(ℝ, E) f) (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
-    ∃ ε > 0, ∀ ⦃a y : M⦄, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 →
+    ∃ ε > 0, ∀ ⦃a y : M⦄,
       y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet x → y ∈ φ.toChart.source →
       ‖φ.coord (φ.toChart y)‖ < ε →
       ∃ (ψ : ({i // ¬φ.weight i = 1} → ℝ) →
@@ -155,13 +157,13 @@ theorem exists_hasStrictFDerivAt_mem_unstableSet (hMS : hX.IsMorseSmale)
         ∀ᶠ z in 𝓝 0, φ.coord.symm (φ.splitCoord.symm (ψ z)) ∈ φ.toChart.target ∧
           φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (ψ z))) ∈ hX.flow.unstableSet a := by
   obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
-    (hf.contMDiff.mdifferentiable (by simp))
-  refine ⟨ε, hε, fun a y ha hy hyφ hyε ↦ ?_⟩
-  obtain ⟨L, q, -, hyq, hq, hsq⟩ := hX.exists_isSliceChart_unstableSet hf ha hy.1
+  refine ⟨ε, hε, fun a y hy hyφ hyε ↦ ?_⟩
+  obtain ⟨L, q, -, hyq, hq, hsq⟩ :=
+    hX.exists_isSliceChart_unstableSet hf (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
   -- Near `x`, the stable set of `x` is the kernel of the expanding coordinate `v`.
   refine exists_hasStrictFDerivAt_splitCoord φ (fun v ↦ ⟨WithLp.toLp 2 (0, v), rfl⟩)
     (fun z hz hzε ↦ (hεs z hz hzε).trans ?_) hq hsq hyφ hyε hyq hy.1 hy.2
-    (hMS.span_mtangentConeAt_sup_eq_top ha hx hy)
+    (hMS.span_mtangentConeAt_sup_eq_top hy)
   simp [funext_iff, φ.weight_ne_one_iff]
 
 /-- **The stable manifold of `b` crosses a Morse box at `x` in transverse discs.** Let `φ` be a
@@ -171,10 +173,10 @@ which, read in the split coordinates `(u, v)` of `φ`, is a map `χ` of the cont
 `χ 0 = (u, v)(y)`, strictly differentiable at `0`, whose derivative is a section of the contracting
 coordinate `u`. -/
 theorem exists_hasStrictFDerivAt_mem_stableSet (hMS : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (φ : MorseChart E f x)
+    (hf : IsMorse 𝓘(ℝ, E) f) (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
-    ∃ ε > 0, ∀ ⦃b y : M⦄, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0 →
+    ∃ ε > 0, ∀ ⦃b y : M⦄,
       y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet b → y ∈ φ.toChart.source →
       ‖φ.coord (φ.toChart y)‖ < ε →
       ∃ (χ : ({i // φ.weight i = 1} → ℝ) →
@@ -188,18 +190,19 @@ theorem exists_hasStrictFDerivAt_mem_stableSet (hMS : hX.IsMorseSmale)
         ∀ᶠ z in 𝓝 0, φ.coord.symm (φ.splitCoord.symm (χ z)) ∈ φ.toChart.target ∧
           φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (χ z))) ∈ hX.flow.stableSet b := by
   -- Near `x`, the unstable set of `x` is the stable set of `x` for the reversed field `-X`.
-  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
+  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl)
   obtain ⟨ε, hε, hεs⟩ := (hX.neg hf).exists_forall_mem_stableSet_iff (φ.neg hnd)
-    (φ.coord_mfderiv_neg hφ hnd) (hf.neg.contMDiff.mdifferentiable (by simp))
+    (φ.coord_mfderiv_neg hφ hnd)
   simp only [MorseChart.neg_toChart, MorseChart.neg_coord, MorseChart.neg_weight, Pi.neg_apply,
     Left.neg_neg_iff, ← hX.unstableSet_eq_stableSet_neg hf] at hεs
-  refine ⟨ε, hε, fun b y hb hy hyφ hyε ↦ ?_⟩
+  refine ⟨ε, hε, fun b y hy hyφ hyε ↦ ?_⟩
   obtain ⟨L, q, -, hyq, hq, hsq⟩ :=
-    hX.exists_isSliceChart_stableSet (hf.contMDiff.mdifferentiable (by simp)) hb hy.2
+    hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
   -- Near `x`, the unstable set of `x` is the kernel of the contracting coordinate `u`.
   refine exists_hasStrictFDerivAt_splitCoord φ (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩)
     (fun z hz hzε ↦ (hεs z hz hzε).trans ?_) hq hsq hyφ hyε hyq hy.2 hy.1
-    (by rw [sup_comm]; exact hMS.span_mtangentConeAt_sup_eq_top hx hb hy)
+    (by rw [sup_comm]; exact hMS.span_mtangentConeAt_sup_eq_top hy)
   simp [funext_iff, φ.weight_eq_one_iff]
 
 end IsMorseSmale

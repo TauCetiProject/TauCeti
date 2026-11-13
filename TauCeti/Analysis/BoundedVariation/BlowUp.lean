@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.DensityEstimates
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import TauCeti.Analysis.BoundedVariation.Compactness
 import TauCeti.Analysis.BoundedVariation.Dilation
+import TauCeti.Analysis.BoundedVariation.HalfSpace
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Group.Integral
@@ -19,6 +21,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
@@ -31,8 +34,9 @@ preimages `(fun y => x + r • y) ⁻¹' s`. This file shows that, as `r → 0�
 relatively compact for local convergence in measure, that every limit has locally finite perimeter
 and fills a definite proportion of every ball around the origin together with its complement, and
 that the distributional derivative of `χ_{s_{x,r}}` points in the direction `-ν` up to an error that
-vanishes in the limit. These are the steps of De Giorgi's structure theorem that produce blow-up
-limits and identify their normal.
+vanishes in the limit. In dimension at least two these combine into the **blow-up theorem** of De
+Giorgi's structure theorem: the blow-ups converge locally in measure to the half-space
+`{y | ⟪y, ν⟫ < 0}`, and consequently `s` has density one half at `x`.
 
 * The scaling identities `TauCeti.perimeter_ball_zero_preimage_add_smul` and
   `MeasureTheory.Measure.addHaar_preimage_add_smul_inter_ball`, proved with the other dilation
@@ -72,6 +76,18 @@ limits and identify their normal.
   `Dχ_F = -ν m` for a positive measure `m`, that is, of the blow-up limit having constant outer
   normal `ν`.
 
+* `TauCeti.ae_eq_setOf_inner_lt_of_tendsto_measure_symmDiff_inter`: in dimension `n ≥ 2`, every
+  such blow-up limit agrees almost everywhere with `{y | ⟪y, ν⟫ < 0}`. A set with constant
+  distributional normal `ν` is `∅`, the whole space or a half-space `{y | ⟪y, ν⟫ < c}`
+  (`TauCeti.ae_eq_setOf_inner_lt_of_forall_integral_divergenceCLM_mul_indicator_nonneg`), and the
+  lower density estimates for the limit and its complement exclude every case but `c = 0`.
+* `TauCeti.tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter`: **the blow-up
+  theorem.** In dimension `n ≥ 2`, `μ((s_{x,r} ∆ {y | ⟪y, ν⟫ < 0}) ∩ K) → 0` as `r → 0⁺` for
+  every compact `K`. Every sequence of radii has a subsequence along which the blow-ups converge,
+  and the limit is always the same half-space.
+* `TauCeti.hasDensityAt_of_mem_reducedBoundary`: in dimension `n ≥ 2`, `s` has density one half at
+  every point of its reduced boundary, the density of the half-space at the origin.
+
 No finite perimeter or measurability of `s` is assumed: a point of the reduced boundary forces
 `s` to have locally finite perimeter in `Ω`.
 
@@ -100,20 +116,19 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- Replacing the outer normal `ν_s` by `ν = ν_s x` in the pairing of `Dχ_s` with a bounded field
 `ψ` that vanishes off `S` and satisfies `⟪ψ, ν⟫ ≥ 0` costs at most `M ∫_S ‖ν_s - ν‖ d|Dχ_s|`. -/
 private theorem neg_mul_setIntegral_le_integral_inner_outerNormal
-    (hx : x ∈ reducedBoundary μ Ω s) {ψ : 𝓓(Ω, E)} {S : Set Ω} (hSm : MeasurableSet S)
+    {ψ : 𝓓(Ω, E)} {S : Set Ω} (hSm : MeasurableSet S)
     (hSfin : variationMeasure μ Ω (s.indicator 1) S ≠ ∞) {M : ℝ} (hM : ∀ y, ‖ψ y‖ ≤ M)
     (hψν : ∀ y, 0 ≤ ⟪ψ y, outerNormal μ Ω s x⟫) (hψS : ∀ y : Ω, y ∉ S → ψ y = 0) :
     -(M * ∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖
         ∂variationMeasure μ Ω (s.indicator 1)) ≤
       ∫ y, ⟪ψ y, outerNormal μ Ω s y⟫ ∂variationMeasure μ Ω (s.indicator 1) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
   set ν := outerNormal μ Ω s x
   have hg : IntegrableOn (fun y : Ω => -(M * ‖outerNormal μ Ω s y - ν‖)) S
       (variationMeasure μ Ω (s.indicator 1)) :=
     (((integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)).norm.const_mul M).neg
   rw [← integral_const_mul, ← integral_neg, ← integral_indicator hSm]
   refine integral_mono (hg.integrable_indicator hSm) ?_ fun y => ?_
-  · refine (integrable_inner_polarDensity hu hfin ψ.continuous ψ.hasCompactSupport
+  · refine (integrable_inner_polarDensity ψ.continuous ψ.hasCompactSupport
       ψ.tsupport_subset).neg.congr ?_
     filter_upwards [ae_outerNormal_eq] with y hy
     simp [hy, inner_neg_right]
@@ -187,7 +202,6 @@ theorem eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage
   have hR' : 0 < R' := lt_max_of_lt_right one_pos
   set ω := μ.real (ball 0 1)
   set A := 4 * M' * n * ω * R' ^ m with hAdef
-  have hA : 0 ≤ A := by positivity
   set η := ε / (A + 1)
   have hη : 0 < η := div_pos hε (by positivity)
   have hRr : Tendsto (fun r => R' * r) (𝓝[>] 0) (𝓝[>] 0) :=
@@ -217,7 +231,7 @@ theorem eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage
     have h := ENNReal.toReal_mono (by finiteness) h2
     rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)] at h
   -- Replacing `ν_s` by `ν` in the pairing costs at most `M' ∫_S ‖ν_s - ν‖ d|Dχ_s|`.
-  have hlow := neg_mul_setIntegral_le_integral_inner_outerNormal hx hSm hSfin (M := M')
+  have hlow := neg_mul_setIntegral_le_integral_inner_outerNormal hSm hSfin (M := M')
     (fun y => by rw [hψ]; exact (hM _).trans (le_max_left _ _)) (fun y => by rw [hψ]; exact hφ _)
     hψS
   have hrn : r / r ^ n * (R' * r) ^ (n - 1) = R' ^ m := by
@@ -270,17 +284,17 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
       (𝓝 (∫ y, g y * F.indicator 1 y ∂μ)) := by
     rw [tendsto_iff_edist_tendsto_0]
     have hK := ENNReal.Tendsto.const_mul (a := ‖C‖ₑ)
-      (hconv _ g.hasCompactSupport.isCompact) (.inr enorm_ne_top)
+      (hconv _ g.hasCompactSupport.isCompact) (.inr eNorm_ne_top)
     rw [mul_zero] at hK
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hK
       (.of_forall fun _ => zero_le) (hint.mono fun i hi => ?_)
-    rw [edist_eq_enorm_sub, ← integral_sub hi hJ]
-    refine (enorm_integral_le_lintegral_enorm _).trans <|
-      ((lintegral_mono fun y => ?_).trans_eq (lintegral_const_mul' _ _ enorm_ne_top)).trans
+    rw [eDist_eq_eNorm_sub, ← integral_sub hi hJ]
+    refine (eNorm_integral_le_lintegral_eNorm _).trans <|
+      ((lintegral_mono fun y => ?_).trans_eq (lintegral_const_mul' _ _ eNorm_ne_top)).trans
         (mul_le_mul_right (lintegral_indicator_one_le _) _)
-    rw [← mul_sub, enorm_mul]
+    rw [← mul_sub, eNorm_mul]
     by_cases hy : y ∈ tsupport g
-    · have hgy : ‖g y‖ₑ ≤ ‖C‖ₑ := enorm_le_iff_norm_le.2 ((hC y).trans (le_abs_self C))
+    · have hgy : ‖g y‖ₑ ≤ ‖C‖ₑ := eNorm_le_iff_norm_le.2 ((hC y).trans (le_abs_self C))
       by_cases h₁ : x + r i • y ∈ s <;> by_cases h₂ : y ∈ F <;>
         simp [S, mem_symmDiff, h₁, h₂, hy, hgy]
     · simp [image_eq_zero_of_notMem_tsupport hy]
@@ -513,7 +527,8 @@ theorem ofReal_pow_le_mul_measure_inter_ball_of_tendsto_measure_symmDiff_inter {
     _ ≤ ENNReal.ofReal ((r i ^ finrank ℝ E)⁻¹) * (c * μ (s ∩ ball x (r i * ρ))) :=
         mul_le_mul_right (hsub ⟨mul_pos hri hρ, (lt_div_iff₀ hρ).1 hi.2⟩) _
     _ = c * μ ((fun y => x + r i • y) ⁻¹' s ∩ ball 0 ρ) := by
-        rw [Measure.addHaar_preimage_add_smul_inter_ball μ x hri, mul_left_comm]
+        rw [Measure.addHaar_preimage_add_smul_inter_ball μ x hri.ne', abs_of_pos hri,
+          abs_of_pos (by positivity), mul_left_comm]
     _ ≤ c * (μ (F ∩ ball 0 ρ) + μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ closedBall 0 ρ)) :=
         mul_le_mul_right ((measure_mono hsub').trans (measure_union_le _ _)) _
 
@@ -537,5 +552,135 @@ theorem ofReal_pow_le_mul_measure_ball_sdiff_of_tendsto_measure_symmDiff_inter {
   refine ofReal_pow_le_mul_measure_inter_ball_of_tendsto_measure_symmDiff_inter hp
     (s := sᶜ) (by rwa [reducedBoundary_compl]) ht hr (fun K hK => ?_) hρ
   simpa only [preimage_compl, compl_symmDiff_compl] using hconv K hK
+
+/-! ### The blow-up theorem -/
+
+/-- In dimension at least two, a blow-up limit and its complement both charge every ball centred at
+the origin. -/
+private theorem measure_inter_ball_ne_zero_and_measure_ball_sdiff_ne_zero_of_tendsto
+    (hn : 2 ≤ finrank ℝ E) (hx : x ∈ reducedBoundary μ Ω s) {ι : Type*} {l : Filter ι} [l.NeBot]
+    {r : ι → ℝ} (hr : Tendsto r l (𝓝[>] 0)) {F : Set E}
+    (hconv : ∀ K, IsCompact K →
+      Tendsto (fun i => μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ K)) l (𝓝 0))
+    {ρ : ℝ} (hρ : 0 < ρ) :
+    μ (F ∩ ball 0 ρ) ≠ 0 ∧ μ (ball 0 ρ \ F) ≠ 0 := by
+  have hp : NNReal.HolderConjugate (finrank ℝ E) (NNReal.conjExponent (finrank ℝ E)) :=
+    .conjExponent (by exact_mod_cast hn)
+  have hpos : ENNReal.ofReal (ρ ^ finrank ℝ E) ≠ 0 :=
+    (ENNReal.ofReal_pos.2 (pow_pos hρ _)).ne'
+  refine ⟨fun h0 => hpos ?_, fun h0 => hpos ?_⟩
+  · have h := ofReal_pow_le_mul_measure_inter_ball_of_tendsto_measure_symmDiff_inter hp hx
+      one_lt_two hr hconv hρ
+    rwa [h0, mul_zero, nonpos_iff_eq_zero] at h
+  · have h := ofReal_pow_le_mul_measure_ball_sdiff_of_tendsto_measure_symmDiff_inter hp hx
+      one_lt_two hr hconv hρ
+    rwa [h0, mul_zero, nonpos_iff_eq_zero] at h
+
+/-- **Blow-up limits are half-spaces.** Let `E` have dimension `n ≥ 2`, let `μ` be an additive Haar
+measure, and let `x` be a point of the reduced boundary of `s` in `Ω`, with outer normal
+`ν = ν_s x`. If the blow-ups `(fun y => x + r i • y) ⁻¹' s`, along radii `r i → 0⁺`, converge
+locally in measure to a null-measurable set `F`, then `F` agrees almost everywhere with the
+half-space `{y | ⟪y, ν⟫ < 0}`. -/
+theorem ae_eq_setOf_inner_lt_of_tendsto_measure_symmDiff_inter
+    (hn : 2 ≤ finrank ℝ E) (hx : x ∈ reducedBoundary μ Ω s) {ι : Type*} {l : Filter ι}
+    [l.NeBot] {r : ι → ℝ} (hr : Tendsto r l (𝓝[>] 0)) {F : Set E} (hF : NullMeasurableSet F μ)
+    (hconv : ∀ K, IsCompact K →
+      Tendsto (fun i => μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ K)) l (𝓝 0)) :
+    F =ᵐ[μ] {y | ⟪y, outerNormal μ Ω s x⟫ < 0} := by
+  set ν := outerNormal μ Ω s x
+  have hle (y : E) : |⟪y, ν⟫| ≤ ‖y‖ := by
+    simpa [ν, norm_outerNormal hx] using abs_real_inner_le_norm y ν
+  have hpos {ρ : ℝ} (hρ : 0 < ρ) :=
+    measure_inter_ball_ne_zero_and_measure_ball_sdiff_ne_zero_of_tendsto hn hx hr hconv hρ
+  -- The limit has constant normal `ν`, so it is `∅`, `univ` or a half-space `{⟪y, ν⟫ < c}`; the
+  -- lower density estimates leave only the half-space with `c = 0`.
+  rcases ae_eq_setOf_inner_lt_of_forall_integral_divergenceCLM_mul_indicator_nonneg hF
+    (integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_inter hx hr hF
+      hconv) with h | h | ⟨c, h⟩
+  · refine absurd ?_ (hpos one_pos).1
+    simpa using measure_congr (EventuallyEqSet.inter h (.refl _ (ball (0 : E) 1)))
+  · refine absurd ?_ (hpos one_pos).2
+    simpa using measure_congr (EventuallyEqSet.diff (.refl _ (ball (0 : E) 1)) h)
+  rcases lt_trichotomy c 0 with hc | rfl | hc
+  · -- The ball of radius `-c` misses the half-space.
+    refine absurd ?_ (hpos (neg_pos.2 hc)).1
+    rw [measure_congr (EventuallyEqSet.inter h .rfl)]
+    refine measure_mono_null (fun y ⟨hyH, hyρ⟩ => ?_) measure_empty
+    rw [mem_ball_zero_iff] at hyρ
+    have := neg_abs_le ⟪y, ν⟫
+    exact absurd hyH (by simp only [mem_ofPred_eq, not_lt]; linarith [hle y])
+  · exact h
+  · -- The ball of radius `c` lies in the half-space.
+    refine absurd ?_ (hpos hc).2
+    rw [measure_congr (EventuallyEqSet.diff .rfl h)]
+    refine measure_mono_null (fun y ⟨hyρ, hyH⟩ => hyH ?_) measure_empty
+    rw [mem_ball_zero_iff] at hyρ
+    exact (le_abs_self _).trans_lt ((hle y).trans_lt hyρ)
+
+/-- **The blow-up theorem.** Let `E` have dimension `n ≥ 2`, let `μ` be an additive Haar measure,
+and let `x` be a point of the reduced boundary of `s` in `Ω`, with outer normal `ν = ν_s x`. As
+`r → 0⁺`, the blow-ups `(fun y => x + r • y) ⁻¹' s` converge locally in measure to the half-space
+`{y | ⟪y, ν⟫ < 0}`: for every compact set `K`,
+
+`μ((s_{x,r} ∆ {y | ⟪y, ν⟫ < 0}) ∩ K) → 0`. -/
+theorem tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter
+    (hn : 2 ≤ finrank ℝ E) (hx : x ∈ reducedBoundary μ Ω s) {K : Set E} (hK : IsCompact K) :
+    Tendsto
+      (fun r : ℝ => μ ((((fun y => x + r • y) ⁻¹' s) ∆ {y | ⟪y, outerNormal μ Ω s x⟫ < 0}) ∩ K))
+      (𝓝[>] 0) (𝓝 0) := by
+  -- Every sequence of radii has a subsequence along which the blow-ups converge, and the limit is
+  -- the half-space.
+  refine tendsto_of_subseq_tendsto fun r hr => ?_
+  obtain ⟨F, hFm, φ, hφ, hconv⟩ :=
+    exists_subseq_tendsto_measure_symmDiff_inter_preimage_add_smul hx hr
+  have hH := ae_eq_setOf_inner_lt_of_tendsto_measure_symmDiff_inter hn hx
+    (hr.comp hφ.tendsto_atTop) hFm.nullMeasurableSet hconv
+  exact ⟨φ, (hconv K hK).congr fun j =>
+    measure_congr (EventuallyEqSet.inter (EventuallyEqSet.symmDiff .rfl hH) .rfl)⟩
+
+/-- **Points of the reduced boundary have density one half.** Let `E` have dimension `n ≥ 2` and
+let `μ` be an additive Haar measure. At every point `x` of the reduced boundary of `s` in `Ω`,
+
+`μ(s ∩ closedBall x r) / μ(closedBall x r) → 1 / 2`     as `r → 0⁺`. -/
+theorem hasDensityAt_of_mem_reducedBoundary (hn : 2 ≤ finrank ℝ E)
+    (hx : x ∈ reducedBoundary μ Ω s) : HasDensityAt μ s x (1 / 2) := by
+  set ν := outerNormal μ Ω s x
+  have hν : ν ≠ 0 := norm_ne_zero_iff.1 (by simp [ν, norm_outerNormal hx])
+  set H := {y : E | ⟪y, ν⟫ < 0}
+  set B := closedBall (0 : E) 1
+  set S : ℝ → Set E := fun r => (fun y => x + r • y) ⁻¹' s
+  have hB : μ B ≠ 0 := (measure_closedBall_pos μ 0 one_pos).ne'
+  have hB' : μ B ≠ ∞ := measure_closedBall_lt_top.ne
+  have hHB : μ (H ∩ B) ≠ ∞ :=
+    ((measure_mono inter_subset_right).trans_lt measure_closedBall_lt_top).ne
+  have hΔ : Tendsto (fun r => μ ((S r ∆ H) ∩ B)) (𝓝[>] 0) (𝓝 0) :=
+    tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter hn hx (isCompact_closedBall 0 1)
+  -- The volumes of the blow-ups in the unit ball converge to that of the half-ball.
+  have hlim : Tendsto (fun r => μ (S r ∩ B)) (𝓝[>] 0) (𝓝 (μ (H ∩ B))) := by
+    have hle (a b : Set E) : μ a ≤ μ (a ∆ b) + μ b :=
+      (measure_mono (le_symmDiff_sup_right a b)).trans (measure_union_le _ _)
+    have hlow := ENNReal.Tendsto.sub tendsto_const_nhds hΔ (.inl hHB)
+    have hup := hΔ.add_const (μ (H ∩ B))
+    rw [tsub_zero] at hlow
+    rw [zero_add] at hup
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le hlow hup (fun r => ?_) fun r => ?_
+    · rw [tsub_le_iff_right, add_comm, symmDiff_comm, inter_symmDiff_distrib_right]
+      exact hle _ _
+    · rw [inter_symmDiff_distrib_right]
+      exact hle _ _
+  have hval : μ (H ∩ B) / μ B = 1 / 2 := by
+    rw [μ.addHaar_setOf_inner_lt_inter_closedBall hν (inner_zero_left _), ENNReal.div_right_comm,
+      ENNReal.div_self hB hB']
+  -- Rescaling by `r` turns the density ratio of `s` at `x` into that of `S r` in the unit ball.
+  rw [hasDensityAt_iff, ← hval]
+  refine (ENNReal.Tendsto.div_const hlim (.inr hB)).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
+  have hc : ENNReal.ofReal (r ^ finrank ℝ E) * ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| = 1 := by
+    rw [← ENNReal.ofReal_mul (by positivity), abs_of_pos (by positivity),
+      mul_inv_cancel₀ (by positivity), ENNReal.ofReal_one]
+  rw [Measure.addHaar_closedBall' μ x hr.le,
+    Measure.addHaar_preimage_add_smul_inter_closedBall μ x hr.ne', abs_of_pos hr, mul_one,
+    ← ENNReal.mul_div_mul_left _ _ (left_ne_zero_of_mul_eq_one hc) ENNReal.ofReal_ne_top]
+  rw [← mul_assoc, hc, one_mul]
 
 end TauCeti

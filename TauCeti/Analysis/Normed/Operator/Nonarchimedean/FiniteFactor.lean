@@ -63,7 +63,7 @@ namespace TauCeti
 
 section Nilpotent
 
-variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [CompleteSpace R] [NormedRing.IsTate R] [IsReduced R]
   {M N P : Type*} [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
   [Module.Finite R M] [SeminormedAddCommGroup N] [Module R N]

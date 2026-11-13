@@ -28,8 +28,8 @@ ends. Its value at `w` is a real covector on `ℂ`, so the `ds` and `dt` compone
 along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results are:
 
 * `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
-* `TauCeti.Floer.pairOfPantsPerturbation_add`: the perturbation is additive in the end
-  Hamiltonians.
+* `TauCeti.Floer.pairOfPantsPerturbation_add`, `TauCeti.Floer.pairOfPantsPerturbation_smul`: the
+  perturbation is linear in the end Hamiltonians.
 * `TauCeti.Floer.pairOfPantsPerturbation_add_const`: adding functions `c_q` of time to the end
   Hamiltonians adds the perturbation of the target-independent Hamiltonians `c_q`, which does
   not depend on the target point (`TauCeti.Floer.pairOfPantsPerturbation_const_target`).
@@ -44,7 +44,8 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
 * `TauCeti.Floer.pairOfPantsEndComponent H q v`: the component of the pullback along the tangent
   vector `v` of the cylinder, in the end coordinates of the end `q`, so that `K_s` and `K_t` are
   its components along `v = 1` and `v = i`; `TauCeti.Floer.pairOfPantsEndComponent_of_pos`
-  computes them on the part `±s > 0` of the end.
+  computes them on the part `±s > 0` of the end, and
+  `TauCeti.Floer.pairOfPantsEndComponent_I_of_two_le` gives `K_t = H_q(t)` where `±s ≥ 2`.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
   in the parts `±s > 1` of the three ends, so it vanishes off the ends;
   `TauCeti.Floer.pairOfPantsPerturbation_eq_zero_of_forall_le` states this in end coordinates.
@@ -88,18 +89,18 @@ theorem pairOfPantsPerturbation_def (H : Puncture → ℝ → M → ℝ) (w : �
   rw [pairOfPantsPerturbation]
 
 /-- The pair-of-pants perturbation is additive in the end Hamiltonians. -/
-theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
-    pairOfPantsPerturbation (fun q t y ↦ H q t y + G q t y) w x =
-      pairOfPantsPerturbation H w x + pairOfPantsPerturbation G w x := by
-  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
+theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (H + G) = pairOfPantsPerturbation H + pairOfPantsPerturbation G := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.add_apply, mul_add, add_smul, Finset.sum_add_distrib]
 
 /-- **Normalizing the end Hamiltonians.** Adding functions `c_q` of time to the end Hamiltonians
 adds the pair-of-pants perturbation of the target-independent Hamiltonians `c_q`. -/
 theorem pairOfPantsPerturbation_add_const (H : Puncture → ℝ → M → ℝ) (c : Puncture → ℝ → ℝ)
     (w : ℂ) (x : M) :
     pairOfPantsPerturbation (fun q t y ↦ H q t y + c q t) w x =
-      pairOfPantsPerturbation H w x + pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x :=
-  pairOfPantsPerturbation_add H (fun q t _ ↦ c q t) w x
+      pairOfPantsPerturbation H w x + pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x := by
+  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
 
 /-- The pair-of-pants perturbation of target-independent Hamiltonians does not depend on the
 target point. -/
@@ -107,6 +108,13 @@ theorem pairOfPantsPerturbation_const_target (c : Puncture → ℝ → ℝ) (w :
     pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x =
       pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w y := by
   simp only [pairOfPantsPerturbation_def]
+
+/-- The pair-of-pants perturbation is homogeneous in the end Hamiltonians. -/
+theorem pairOfPantsPerturbation_smul (c : ℝ) (H : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (c • H) = c • pairOfPantsPerturbation H := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.smul_apply, smul_eq_mul, Finset.smul_sum, smul_smul,
+    mul_left_comm c]
 
 variable {H : Puncture → ℝ → M → ℝ}
 
@@ -155,7 +163,6 @@ theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :
     pairOfPantsPerturbation H q.endCenter x = 0 := by
   refine pairOfPantsPerturbation_eq_zero_of_forall_le (fun r => ?_) x
   have h : 0 ≤ Real.log 2 / (2 * π) := by have := Real.log_nonneg one_le_two; positivity
-  have hπ := Real.pi_pos
   cases q <;> cases r <;> simp [re_endCoord, neg_div] <;> linarith
 
 /-- On the part `±s > 0` of the end `q`, the cutoff of every other end `r` vanishes, since the
@@ -245,9 +252,14 @@ theorem pairOfPantsEndComponent_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ
   pairOfPantsPerturbation_cylindricalEndLift_of_pos hH hz x v
 
 /-- On the part `±s > 0` of the end `q`, the `ds` component of the perturbation vanishes. -/
-theorem pairOfPantsEndComponent_one_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+theorem pairOfPantsEndComponent_one_of_pos {z : ℝ × ℝ}
     (hz : 0 < q.endSign * z.1) (x : M) : pairOfPantsEndComponent H q 1 z x = 0 := by
-  simp [pairOfPantsEndComponent_of_pos hH hz]
+  rw [pairOfPantsEndComponent_def, pairOfPantsPerturbation, Finset.sum_eq_single q]
+  · rw [smul_apply, endAngularForm_cylindricalEndLift]
+    simp
+  · intro r _ hr
+    simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero (z := ⟨z.1, z.2⟩) hr hz]
+  · simp
 
 /-- On the part `±s > 0` of the end `q`, the `dt` component of the perturbation is
 `β(±s - 1) H_q(t)`. -/
@@ -256,6 +268,14 @@ theorem pairOfPantsEndComponent_I_of_pos (hH : Function.Periodic (H q) 1) {z : �
     pairOfPantsEndComponent H q Complex.I z x =
       smoothTransition (q.endSign * z.1 - 1) * H q z.2 x := by
   simp [pairOfPantsEndComponent_of_pos hH hz]
+
+/-- On the part `±s ≥ 2` of the end `q`, where the cutoff is `1`, the `dt` component of the
+perturbation is `H_q(t)`. -/
+theorem pairOfPantsEndComponent_I_of_two_le (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+    (hz : 2 ≤ q.endSign * z.1) : pairOfPantsEndComponent H q Complex.I z = H q z.2 := by
+  funext x
+  rw [pairOfPantsEndComponent_I_of_pos hH (by linarith),
+    smoothTransition.one_of_one_le (by linarith), one_mul]
 
 /-- The part `±s > 0` of the end `q`, in end coordinates, is open. -/
 private theorem isOpen_endSign_mul_fst_pos (q : Puncture) :
@@ -271,10 +291,22 @@ theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z
         fun w x ↦ smoothTransition (q.endSign * w.1 - 1) * H q w.2 x := by
   have h := (isOpen_endSign_mul_fst_pos q).mem_nhds hz
   refine ⟨?_, ?_⟩ <;> filter_upwards [h] with w hw <;> funext x
-  exacts [pairOfPantsEndComponent_one_of_pos hH hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
+  exacts [pairOfPantsEndComponent_one_of_pos hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+
+/-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` along a `C^n`
+family `f` of points of `ℂ`. -/
+theorem contMDiffAt_smoothTransition_endCoord_comp {F G' N : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace G'] {I' : ModelWithCorners ℝ F G'} [TopologicalSpace N]
+    [ChartedSpace G' N] {n : WithTop ℕ∞} [ENat.LEInfty n] (q : Puncture) (c : ℝ) {f : N → ℂ}
+    {y₀ : N} (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (hq : f y₀ ≠ q.endCenter) :
+    ContMDiffAt I' 𝓘(ℝ) n (fun y => smoothTransition (q.endSign * (q.endCoord (f y)).re - c))
+      y₀ :=
+  (((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contDiffAt.comp (f y₀)
+    ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).sub contDiffAt_const)).contMDiffAt.comp
+    y₀ hf
 
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` as a function
 on `ℂ × M` which ignores the point of `M`. -/
@@ -282,9 +314,7 @@ theorem contMDiffAt_smoothTransition_endCoord {n : ℕ∞} (q : Puncture) (c : �
     (hw : w ≠ q.endCenter) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
       (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - c)) (w, x) :=
-  (smoothTransition.contDiff.contDiffAt.comp w
-    ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hw)).sub contDiffAt_const)).contMDiffAt.comp
-    (w, x) contMDiffAt_fst
+  contMDiffAt_smoothTransition_endCoord_comp q c contMDiffAt_fst hw
 
 /-- **The perturbation is smooth.** For Hamiltonians of period one which are `C^n` on `ℝ × M`,
 the perturbation is `C^n` on `S × M`, where `S = ℂ ∖ {0, 1}` is the thrice-punctured sphere. -/

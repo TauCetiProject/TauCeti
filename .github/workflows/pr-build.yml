@@ -105,9 +105,10 @@ jobs:
       id-token: write  # telemetry-only grant stays outside candidate namespaces
     needs: pick-runner
     if: ${{ !cancelled() && needs.pick-runner.result != 'skipped' && needs.pick-runner.outputs.skip-pr-build != 'true' }}
-    # Exact fleet labels bind placement to one machine and guest. Stale picker
-    # output must never send a retry to a guest that has already retired. Staging
-    # waits for tauchonki2 when selection fails or is stale; other jobs use GitHub.
+    # PR fleet targets name the shared group and PR class; GitHub assigns the
+    # next matching runner, including replacements on another enrolled host.
+    # Picker outputs remain attempt-scoped. Staging retains exact guest labels
+    # and waits for tauchonki2 when selection fails or is stale.
     # Maintenance repairs must not wait behind the ordinary PR backlog. These
     # use the same vetted Namespace sandbox shape as ordinary overflow, with
     # the existing staging priority. This changes scheduling, never merge gates.
@@ -179,10 +180,10 @@ jobs:
             /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0a464c74bd1e73ad2bed538e9e1b65f7fd4a682
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: d0a464c74bd1e73ad2bed538e9e1b65f7fd4a682
+          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
@@ -799,46 +800,10 @@ jobs:
           # is load-bearing, and scripts/test_bwrap_pin.py checks it is still present and still
           # runs before anything that touches a candidate `.lake`.
           deb="bubblewrap_${BWRAP_VER}_amd64.deb"
-          if ! curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb \
-             && ! curl -sSL --fail "https://security.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb; then
-            echo "::error::bubblewrap ${BWRAP_VER} is gone from the Ubuntu pool. The sandbox cannot be installed, so no PR can build until the pin is moved."
-            printf '%s\n' \
-              '' \
-              "WHAT HAPPENED: BWRAP_VER is pinned to ${BWRAP_VER} from noble's release pocket," \
-              'which Ubuntu does not rewrite for the life of the release. Reaching this is' \
-              'unexpected: an archive outage, a runner image no longer on 24.04, or 24.04 gone' \
-              'end of life.' \
-              '' \
-              'HOW TO FIX IT. Take the version from a RELEASE pocket, never from -updates,' \
-              '-security or a development suite: those are superseded and deleted, so a pin' \
-              'to one expires and brings every required build down with it.' \
-              '' \
-              '  suite=noble        # or the release pocket of whatever image CI runs on' \
-              '  curl -s "https://archive.ubuntu.com/ubuntu/dists/$suite/main/binary-amd64/Packages.gz" \' \
-              "    | gunzip | awk '/^Package: bubblewrap\$/{f=1} f&&/^Version:/{print \$2; exit}'" \
-              '' \
-              'Download it and take both hashes:' \
-              '' \
-              '  curl -sSLO "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_${ver}_amd64.deb"' \
-              '  sha256sum "bubblewrap_${ver}_amd64.deb"   # BWRAP_DEB_SHA256' \
-              '  sudo dpkg -i "bubblewrap_${ver}_amd64.deb"' \
-              '  sha256sum /usr/bin/bwrap                  # BWRAP_SHA256' \
-              '' \
-              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all five of' \
-              '.github/workflows/{pr-build,pr-profile,nightly-verify,shadow-audits,warm-dependencies}.yml. They must agree;' \
-              'scripts/test_bwrap_pin.py fails if they do not.' \
-              '' \
-              'ON VERSIONS: 0.12.0 or newer is safe on its own. Below that, the' \
-              '"Normalise ... .lake" step is what keeps it safe, because earlier bubblewrap' \
-              'follows a symlink in a candidate checkout while creating the sandbox mount point' \
-              '(GHSA-pxhw-h44j-8pfx). If you pin below 0.12.0, check that step still runs before' \
-              'anything else touches .lake. Keep the step either way: the trusted-phase callers' \
-              'follow the symlink themselves and no bubblewrap version fixes that.' \
-              '' >&2
-            exit 1
-          fi
+          # The pinned tools bundle this exact Ubuntu package; no archive DNS is needed.
+          cp "$RUNNER_TEMP/tauceti-shared-scripts/vendor/$deb" bwrap.deb
           if ! echo "${BWRAP_DEB_SHA256}  bwrap.deb" | sha256sum -c -; then
-            echo "::error::bubblewrap ${BWRAP_VER} downloaded but does not match BWRAP_DEB_SHA256. Ubuntu does not rewrite published packages, so either the pin is wrong or the download was tampered with. Re-derive the hashes rather than relaxing this check."
+            echo "::error::Bundled bubblewrap ${BWRAP_VER} does not match BWRAP_DEB_SHA256; refusing to install it. Update the bundled package and both pins together."
             exit 1
           fi
           sudo dpkg -i bwrap.deb >/dev/null
@@ -1156,12 +1121,6 @@ jobs:
           REPAIR_OUTPUTS_REVS: ${{ format('{0} {1} {2}', steps.pr.outputs.sha, join(github.event.client_payload.repair_outputs_revs || fromJSON('[]'), ' '), steps.pr.outputs.base_sha) }}
         run: bash gate/scripts/repair-cache-get.sh pr "$STAGING_HEAD"
 
-      - name: Save verified Lake archive records before candidate code runs
-        if: ${{ env.INFRA != '1' && env.STAGE_LAKE_CACHE == '1' }}
-        # gate/ is mounted read-only below. Candidate builds overwrite the live
-        # cache records, so retain the downloaded associations and archive digests here.
-        run: python3 gate/scripts/lake_cache_reuse.py snapshot pr gate/lake-cache-reuse.json
-
       - name: Prepare trusted read-only Lean watchdog toolchain
         if: ${{ env.INFRA != '1' }}
         run: |
@@ -1272,18 +1231,14 @@ jobs:
             --chdir "$PWD/pr" \
             --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
             --unshare-cgroup --disable-userns --die-with-parent --new-session \
-            -- bash -euxo pipefail -c 'python3 ../gate/scripts/bulk-unpack-cache.py; exec bash ../gate/scripts/sandbox-build.sh'
+            -- bash -euxo pipefail -c 'exec bash ../gate/scripts/sandbox-build.sh'
 
       - name: Prepare merge-group cache artifact metadata
         id: cache_stage
         if: ${{ env.IS_BATCH == 'true' && env.STAGE_LAKE_CACHE == '1' && steps.build.outcome == 'success' }}
-        env:
-          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
-          LAKE_CACHE_FULL_PUBLICATION: ${{ vars.LAKE_CACHE_FULL_PUBLICATION }}
         run: |
           set -euo pipefail
-          python3 gate/scripts/lake_cache_publish.py stage pr "$RUNNER_TEMP/lake-cache-staging" \
-            --index gate/lake-cache-reuse.json
+          python3 gate/scripts/lake_cache_publish.py stage pr/.lake/publication-stage "$RUNNER_TEMP/lake-cache-staging"
           test -s "$RUNNER_TEMP/lake-cache-staging/outputs.jsonl"
           TOOLCHAIN="$(cat pr/lean-toolchain)"
           case "$TOOLCHAIN" in
@@ -1520,9 +1475,9 @@ jobs:
               echo 'publication-required=false'
             fi
           } >> "$GITHUB_OUTPUT"
-          # PR heads are reported immediately. A merge-group head is reported by the finalizer
-          # job below, after its exact revision map has reached the public cache endpoint.
-          if [ "${{ env.IS_BATCH }}" != "true" ]; then
+          # Failed batches and PR heads are reported immediately. Only a successful
+          # batch waits for the finalizer to confirm exact-revision cache publication.
+          if [ "${{ env.IS_BATCH }}" != "true" ] || [ "$state" = failure ]; then
             post_status build "$state" "$desc"
           fi
 
@@ -1558,6 +1513,8 @@ jobs:
           fi
           post_status scope "$sc_state" "$sc_desc"
 
+          # These are required queue verdicts. Keep bounded retries for transient
+          # GitHub failures, and leave undelivered intents to the retry workflow.
           CI_STATUS_MAX_WAIT=600 python3 gate/scripts/ci_status.py resume "$RUNNER_TEMP/tauceti-status-intents" || post_fail=1
 
           # A status we could not post leaves the commit in the wedged state described above, so
@@ -1683,17 +1640,14 @@ jobs:
   # The merge queue's required `build` status is posted only here. In a configured installation,
   # green therefore means both that the combined commit passed every sandboxed audit and that a
   # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
-  # Priority zero puts terminal reporting ahead of compiler jobs (priority one). Run-specific
-  # assignment prevents other runs from taking its runner. No candidate checkout, privileged
-  # container or persistent cache is needed here. See Namespace's job-ordering documentation.
+  # Queue control slots are reserved on tauchonki2 and cannot accept ordinary PR builds.
+  # Publication and finalization run concurrently on separate disposable guests.
   finalize-merge-group-build:
     # Start beside publication so an unacquired publisher cannot suppress terminal reporting.
     # Finalizer (2x4) + publisher (4x8) fit within the freed compiler allocation (8x16).
     needs: sandboxed-build
     if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
     timeout-minutes: 30
     permissions:
       contents: read  # sparse immutable finalization tools only
@@ -1706,6 +1660,7 @@ jobs:
       BUILD_DESCRIPTION: ${{ needs.sandboxed-build.outputs.build-description }}
       PUBLICATION_REQUIRED: ${{ needs.sandboxed-build.outputs.publication-required }}
       BORS_STAGING: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
+      CI_PUBLISHER_RUNNER_LABELS: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && '["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]' || '' }}
       BORS_BATCH_ID: ${{ github.event.client_payload.batch_id }}
       BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
       BORS_BASE_REF: ${{ github.event.client_payload.base_ref }}
@@ -1723,10 +1678,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: .
       - name: Select CI API credentials
         id: ci-api

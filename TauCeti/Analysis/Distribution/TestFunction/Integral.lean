@@ -181,7 +181,7 @@ theorem enorm_integral_inner_le_withDensity {U : Set E} (hU : MeasurableSet U)
       m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' U) := by
   rw [withDensity_apply _ (hU.preimage measurable_subtype_coe),
     ← lintegral_indicator (hU.preimage measurable_subtype_coe)]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
   by_cases hx : x ∈ ((↑) ⁻¹' U : Set Ω)
   · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
@@ -224,12 +224,14 @@ end IntegralOne
 
 section LineDeriv
 
-variable [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+variable [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
 /-- The directional derivative of a test function has integral zero against an additive Haar
 measure: `∫ ∂_w φ = 0`. -/
 theorem integral_lineDeriv_eq_zero (φ : 𝓓(Ω, ℝ)) (w : E) :
     ∫ x, lineDeriv ℝ (φ : E → ℝ) x w ∂μ = 0 := by
+  rcases φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous with h | hE
+  · simp [h, lineDeriv]
   have hd := φ.contDiff.differentiable (by simp)
   have hint (ψ : 𝓓(Ω, ℝ)) : Integrable ψ μ :=
     ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport

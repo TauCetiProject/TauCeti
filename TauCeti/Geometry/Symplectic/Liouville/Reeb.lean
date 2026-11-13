@@ -205,8 +205,7 @@ theorem isContactForm_mpullback (h : IsLiouvilleCompletion ω α W)
 `ι : S → M` be a smooth map with injective differentials into the frontier of the Liouville
 domain, from a manifold of one dimension less. For `t > 0`, the differential of `ψ_t ∘ ι` sends
 the Reeb vector field of the contact form `ι^* α` to `-X_r` at `ψ_t (ι s)`. -/
-theorem mfderiv_flowOf_comp_reebVectorField [FiniteDimensional ℝ E']
-    (h : IsLiouvilleCompletion ω α W)
+theorem mfderiv_flowOf_comp_reebVectorField (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
@@ -235,7 +234,6 @@ theorem mfderiv_flowOf_comp_reebVectorField [FiniteDimensional ℝ E']
     (K := liouvilleRadialCoordinate Z W) (s := s)
     (by rw [Submodule.coe_neg, mextDeriv_neg, h.mextDeriv_eq, Pi.neg_apply])
     (h.range_mfderiv_flowOf_comp hZ hι hιW hιs hdim ht s)
-    (by rw [comp_apply, hθ, hrx]; exact het)
   rw [hpull, hα₀.reebVectorField_smul (neg_ne_zero.2 het), map_smul, comp_apply, hθ, hrx] at key
   -- `key : (-e^t)⁻¹ • d(ψ_t ∘ ι)(R) = (e^t)⁻¹ • X_r`.
   calc mfderiv J I (flowOf Z t ∘ ι) s ((SmoothForm.mpullback ι hι α).reebVectorField s)
@@ -249,8 +247,7 @@ field.** Let `ι : S → M` be a smooth map with injective differentials into th
 Liouville domain, from a manifold of one dimension less, and let `γ` be an integral curve of the
 Reeb field of `ι^* α`. For `t > 0`, the curve `τ ↦ ψ_t (ι (γ (-τ)))`, on the level `e^t` of the
 radial coordinate, is an integral curve of `X_r`. -/
-theorem isMIntegralCurve_flowOf_comp_reebVectorField [FiniteDimensional ℝ E']
-    (h : IsLiouvilleCompletion ω α W)
+theorem isMIntegralCurve_flowOf_comp_reebVectorField (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
@@ -296,7 +293,7 @@ theorem exists_periodic_hamiltonianVectorField_iff_reebVectorField [FiniteDimens
     obtain ⟨s₀, hs₀⟩ := hWι (h.flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier hZ
       fun hi ↦ h0W (interior_subset hi))
     have hδ0 : flowOf Z (Real.log c) (ι s₀) = δ 0 := by
-      rw [hs₀, hδc, h.flowOf_flowOf hZ, add_neg_cancel, h.flowOf_zero hZ]
+      rw [hs₀, hδc, h.flowOf_flowOf hZ, add_neg_cancel, flowOf_zero Z]
     -- The Reeb field of the compact boundary is complete; follow its orbit through `s₀`.
     have hR : ContMDiff J J.tangent 1 (T% (SmoothForm.mpullback ι hι α).reebVectorField) :=
       (h.isContactForm_mpullback hZ hι hιW hιs hdim).contMDiff_reebVectorField.of_le (by simp)
