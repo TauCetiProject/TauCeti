@@ -90,17 +90,10 @@ omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
     [TopologicalSpace (TotalSpace F E)] in
 @[simp]
 theorem fiberEquiv_symm_apply {b : B} (o : Orientation ℝ (E b) ι) :
-    ((fiberEquiv F E ι b).symm o : VectorBundleOrientationCover F E ι) = ⟨b, o⟩ :=
+    (fiberEquiv F E ι b).symm o = ⟨⟨b, o⟩, rfl⟩ :=
   (rfl)
 
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-
-/-- The deck involution, restricted to the fibre over `b`, negates the orientation. -/
-theorem fiberMap_deck_mk {b : B} (o : Orientation ℝ (E b) ι) :
-    Function.fiberMap ⇑(deck (F := F) (E := E) (ι := ι) :
-        C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι))
-      proj_comp_deck b ⟨⟨b, o⟩, rfl⟩ = ⟨⟨b, -o⟩, rfl⟩ :=
-  Subtype.ext (by rw [Function.fiberMap_apply_coe, ContinuousMap.coe_ofClass, deck_apply])
 
 /-- The deck involution, read on the fibre over `b`, is the negation of orientations. -/
 theorem fiberEquiv_fiberMap_deck {b : B}
@@ -110,8 +103,7 @@ theorem fiberEquiv_fiberMap_deck {b : B}
       proj_comp_deck b p) = -fiberEquiv F E ι b p := by
   obtain ⟨⟨b', o⟩, h⟩ := p
   obtain rfl : b' = b := h
-  rw [fiberMap_deck_mk]
-  rfl
+  rw [fiberMap_deck_mk, fiberEquiv_mk, fiberEquiv_mk]
 
 variable [Fintype ι]
 
@@ -131,8 +123,8 @@ variable (hι : Fintype.card ι = finrank ℝ F) {b₀ b₁ b₂ : B}
 theorem orientationTransport_apply (γ : Path b₀ b₁) (o : Orientation ℝ (E b₀) ι) :
     orientationTransport E hι γ o =
       fiberEquiv F E ι b₁ ((isCoveringMap_proj hι).monodromy (.mk γ) ⟨⟨b₀, o⟩, rfl⟩) := by
-  simp only [orientationTransport, Equiv.trans_apply, coveringFiberEquiv_apply]
-  rfl
+  simp only [orientationTransport, Equiv.trans_apply, coveringFiberEquiv_apply,
+    fiberEquiv_symm_apply]
 
 /-- **Transport follows continuous lifts.** If `Γ` is a continuous path in the orientation double
 cover lying over `γ`, transport along `γ` sends the orientation at the start of `Γ` to the

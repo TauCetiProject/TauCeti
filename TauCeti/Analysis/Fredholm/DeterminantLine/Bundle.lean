@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Chart
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 import TauCeti.Analysis.Fredholm.Stabilization
 
 /-!
@@ -40,17 +39,11 @@ standard models `Λ = 𝕜ⁿ` and `G = 𝕜ᵐ` form a vector prebundle
 chart (`ContinuousLinearMap.IsFredholm.exists_isInvertible_prod_coprod`), by the stabilization
 theorem `ContinuousLinearMap.IsFredholm.exists_stabilization_kernel_coordinates`.
 
-A family of vectors is continuous in the total space exactly when it is continuous when read in a
-kernel chart, for every kernel chart and not only those with standard models
+A family of vectors over a continuous family of operators, all lying in the base set of one kernel
+chart `(D, q)`, is continuous in the total space exactly when its coordinate in `(D, q)` is
+continuous. This holds for every kernel chart and not only those with standard models
 (`TauCeti.FredholmDetLine.continuous_chartCoord`,
-`TauCeti.FredholmDetLine.continuous_of_continuous_chartCoord`). Over `ℝ` the bundle has an
-orientation double cover, and its projection is a covering map
-(`TauCeti.FredholmDetLine.isCoveringMap_proj`). Orientations of determinant lines are therefore
-transported along continuous paths of Fredholm operators by lifting to this cover
-(`TauCeti.VectorBundleOrientationCover.orientationTransport`), canonically and without any choice
-of connection. This transport is how orientations of moduli spaces in Morse and Floer theory,
-which are orientations of the determinant lines of their linearized operators, are compared along
-paths of operators.
+`TauCeti.FredholmDetLine.continuous_of_continuous_chartCoord`).
 
 ## Main definitions
 
@@ -69,10 +62,9 @@ paths of operators.
   lines form a vector bundle of rank one (`TauCeti.FredholmDetLine.finrank_eq_one`).
 * `TauCeti.FredholmDetLine.continuous_chartCoord`: every kernel chart is continuous on continuous
   families in the total space.
-* `TauCeti.FredholmDetLine.continuous_of_continuous_chartCoord`: conversely, a family is
-  continuous in the total space if it is continuous when read in a kernel chart.
-* `TauCeti.FredholmDetLine.isCoveringMap_proj`: over `ℝ`, the orientation double cover of the
-  determinant line bundle is a covering map.
+* `TauCeti.FredholmDetLine.continuous_of_continuous_chartCoord`: conversely, a family over a
+  continuous family of operators in the base set of a kernel chart is continuous in the total space
+  if its chart coordinate is continuous.
 
 ## References
 
@@ -391,6 +383,23 @@ section Continuity
 variable {X : Type*} [TopologicalSpace X] {D : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
   {σ : X → TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)}
 
+omit [CompleteSpace F] in
+/-- Along a continuous family of operators with two kernel charts `(D, q)` and `(D₃, q₃)`, a
+family of vectors continuous in the coordinate of `(D, q)` is continuous in the coordinate of
+`(D₃, q₃)`: the second coordinate is a continuous multiple of the first. -/
+private theorem continuous_chartCoord_of_continuous_chartCoord {D₃ : Λ₃ →L[𝕜] F}
+    {q₃ : E × Λ₃ →L[𝕜] G₃} (hp : Continuous fun x ↦ (σ x).proj)
+    (h : ∀ x, ((((σ x).proj).1.coprod D).prod q).IsInvertible)
+    (h₃ : ∀ x, ((((σ x).proj).1.coprod D₃).prod q₃).IsInvertible)
+    (hσ : Continuous fun x ↦ chartCoord D q (h x) (σ x).2) :
+    Continuous fun x ↦ chartCoord D₃ q₃ (h₃ x) (σ x).2 := by
+  refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul hp h h₃ x₀
+  let L : 𝕜 →ₗ[𝕜] 𝕜 := (chartCoord D₃ q₃ (h₃ x₀)).toLinearMap ∘ₗ
+    (chartCoord D q (h x₀)).symm.toLinearMap
+  refine ((hc.mul (L.continuous_of_finiteDimensional.comp hσ)).congr fun x ↦ ?_).continuousAt
+  simpa [L] using (hcv x (chartCoord D q (h x) (σ x).2)).symm
+
 /-- **Kernel charts read continuous families continuously.** Let `σ` be a continuous family of
 vectors of the determinant line bundle, and `(D, q)` a kernel chart of every operator `(σ x).proj`.
 Then `σ` read in the chart coordinate of `(D, q)` is continuous. This holds for every kernel chart,
@@ -401,29 +410,19 @@ theorem continuous_chartCoord (hσ : Continuous σ)
   refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
   obtain ⟨n, m, D₂, q₂, h₀⟩ := (σ x₀).proj.2.exists_isInvertible_prod_coprod
   let e := trivialization D₂ q₂
-  let W := σ ⁻¹' (π 𝕜 (FredholmDetLine 𝕜 E F) ⁻¹' e.baseSet)
-  have hW : IsOpen W := (e.open_baseSet.preimage (FiberBundle.continuous_proj 𝕜 _)).preimage hσ
-  have hx₀ : x₀ ∈ W := h₀
-  have h₂ (w : W) : ((((σ w).proj).1.coprod D₂).prod q₂).IsInvertible := w.2
+  let W := σ ⁻¹' e.source
+  have hW : IsOpen W := e.open_source.preimage hσ
+  have h₂ (w : W) : ((((σ w).proj).1.coprod D₂).prod q₂).IsInvertible := e.mem_source.1 w.2
   -- Along `σ`, the kernel chart `(D₂, q₂)` at `(σ x₀).proj` is continuous on `W`, being a
   -- trivialization.
   have hcoord : Continuous fun w : W ↦ chartCoord D₂ q₂ (h₂ w) (σ w).2 :=
     (continuous_snd.comp <| e.continuousOn.comp_continuous (hσ.comp continuous_subtype_val)
-      fun w ↦ e.mem_source.2 w.2).congr fun w ↦
-        congrArg Prod.snd (trivialization_apply_mk D₂ q₂ (h₂ w) (σ w).2)
-  -- On `W`, the chart `(D, q)` is a continuous multiple of the chart `(D₂, q₂)`.
-  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul
-    (S := fun w : W ↦ (σ w).proj)
-    ((FiberBundle.continuous_proj 𝕜 _).comp (hσ.comp continuous_subtype_val)) h₂
-    (fun w ↦ h w) ⟨x₀, hx₀⟩
-  let L : 𝕜 →ₗ[𝕜] 𝕜 := (chartCoord D q (h x₀)).toLinearMap ∘ₗ
-    (chartCoord D₂ q₂ h₀).symm.toLinearMap
-  have hval (w : W) : chartCoord D q (h w) (σ w).2 = c w * L (chartCoord D₂ q₂ (h₂ w) (σ w).2) := by
-    simpa [L] using hcv w (chartCoord D₂ q₂ (h₂ w) (σ w).2)
-  have hcont : ContinuousOn (fun x ↦ chartCoord D q (h x) (σ x).2) W := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    exact (hc.mul (L.continuous_of_finiteDimensional.comp hcoord)).congr fun w ↦ (hval w).symm
-  exact hcont.continuousAt (hW.mem_nhds hx₀)
+      fun w ↦ w.2).congr fun w ↦ congrArg Prod.snd (trivialization_apply_mk D₂ q₂ (h₂ w) (σ w).2)
+  have hcont : ContinuousOn (fun x ↦ chartCoord D q (h x) (σ x).2) W :=
+    continuousOn_iff_continuous_domRestrict.2 <| continuous_chartCoord_of_continuous_chartCoord
+      ((FiberBundle.continuous_proj 𝕜 _).comp (hσ.comp continuous_subtype_val)) h₂
+      (fun w ↦ h w) hcoord
+  exact hcont.continuousAt (hW.mem_nhds h₀)
 
 /-- **Continuity can be checked in any kernel chart.** Let `σ` be a family of vectors of the
 determinant line bundle over a continuous family of operators `(σ x).proj`, all in the base set of
@@ -437,49 +436,17 @@ theorem continuous_of_continuous_chartCoord (hp : Continuous fun x ↦ (σ x).pr
   let e := trivialization D₂ q₂
   let W := (fun x ↦ (σ x).proj) ⁻¹' e.baseSet
   have hW : IsOpen W := e.open_baseSet.preimage hp
-  have hx₀ : x₀ ∈ W := h₀
   have h₂ (w : W) : ((((σ w).proj).1.coprod D₂).prod q₂).IsInvertible := w.2
-  -- On `W`, the kernel chart `(D₂, q₂)` at `(σ x₀).proj` is a continuous multiple of `(D, q)`.
-  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul
-    (S := fun w : W ↦ (σ w).proj) (hp.comp continuous_subtype_val) (fun w ↦ h w) h₂ ⟨x₀, hx₀⟩
-  let L : 𝕜 →ₗ[𝕜] 𝕜 := (chartCoord D₂ q₂ h₀).toLinearMap ∘ₗ
-    (chartCoord D q (h x₀)).symm.toLinearMap
-  have hval (w : W) : chartCoord D₂ q₂ (h₂ w) (σ w).2 = c w * L (chartCoord D q (h w) (σ w).2) := by
-    simpa [L] using hcv w (chartCoord D q (h w) (σ w).2)
-  have hcoord : Continuous fun w : W ↦ chartCoord D₂ q₂ (h₂ w) (σ w).2 :=
-    (hc.mul (L.continuous_of_finiteDimensional.comp (hσ.comp continuous_subtype_val))).congr
-      fun w ↦ (hval w).symm
-  -- On `W`, `σ` is the inverse of the trivialization applied to its continuous coordinates.
-  have hσW : ContinuousOn σ W := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    refine (e.continuousOn_symm.comp_continuous
-      ((hp.comp continuous_subtype_val).prodMk hcoord) fun w ↦ ⟨w.2, mem_univ _⟩).congr
-      fun w ↦ ?_
-    have he : chartCoord D₂ q₂ (h₂ w) (σ w).2 = (e (σ w)).2 :=
-      (congrArg Prod.snd (trivialization_apply_mk D₂ q₂ (h₂ w) (σ w).2)).symm
-    simp only [Function.comp_apply, he]
-    exact (e.mk_symm w.2 _).trans (e.symm_apply_mk_proj (e.mem_source.2 w.2))
-  exact hσW.continuousAt (hW.mem_nhds hx₀)
+  -- On `W`, the trivialization at `(σ x₀).proj` reads `σ` in the kernel chart `(D₂, q₂)`.
+  have hcoord : ContinuousOn (fun x ↦ (e (σ x)).2) W := by
+    refine continuousOn_iff_continuous_domRestrict.2 <|
+      (continuous_chartCoord_of_continuous_chartCoord (hp.comp continuous_subtype_val)
+        (fun w ↦ h w) h₂ (hσ.comp continuous_subtype_val)).congr fun w ↦ ?_
+    exact (congrArg Prod.snd (trivialization_apply_mk D₂ q₂ (h₂ w) (σ w).2)).symm
+  exact (e.tendsto_nhds_iff (e.mem_source.2 h₀)).2
+    ⟨hp.continuousAt, hcoord.continuousAt (hW.mem_nhds h₀)⟩
 
 end Continuity
-
-/-! ### Orientation transport -/
-
-section Orientation
-
-variable (E F : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-
-/-- **The orientation double cover of the determinant line bundle is a covering map.** Lifting
-paths of Fredholm operators to it transports orientations of determinant lines
-(`TauCeti.VectorBundleOrientationCover.orientationTransport`). -/
-theorem isCoveringMap_proj :
-    IsCoveringMap (VectorBundleOrientationCover.proj :
-      VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) (Fin 1) →
-        {T : E →L[ℝ] F // T.IsFredholm}) :=
-  VectorBundleOrientationCover.isCoveringMap_proj (by simp)
-
-end Orientation
 
 end FredholmDetLine
 
