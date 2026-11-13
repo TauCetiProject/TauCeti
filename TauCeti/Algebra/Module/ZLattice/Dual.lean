@@ -21,15 +21,17 @@ For a `ℤ`-submodule `L` of a real inner product space `E`, the *dual lattice*
 
 is Mathlib's `BilinForm.dualSubmodule` of the inner product `innerₗ E`, with `ℤ` as
 the ring of coefficients. This file names that submodule `ZLattice.dual` and develops the part of
-its theory that holds for a full lattice in a finite-dimensional space: the dual of a full lattice
-is again a full lattice (`ZLattice.dual` carries `DiscreteTopology` and `IsZLattice` instances),
-and taking the dual twice gives the lattice back (`ZLattice.dual_dual`).
+its theory that holds in a finite-dimensional space: the dual of a full lattice is again a full
+lattice (`ZLattice.dual` carries `DiscreteTopology` and `IsZLattice` instances), and taking the
+dual twice gives back every discrete lattice, full or not (`ZLattice.dual_dual`).
 
 Both facts come from the dual-basis description of Mathlib: the dual of the `ℤ`-span of an
 `ℝ`-basis `b` is the `ℤ`-span of the basis dual to `b` for the inner product
 (`ZLattice.dual_span_basis`), and a full lattice is the `ℤ`-span of an `ℝ`-basis. In particular the
 `ℤ`-span of an orthonormal basis is its own dual (`ZLattice.dual_span_orthonormalBasis`), the
-self-duality of `ℤⁿ ⊆ ℝⁿ`.
+self-duality of `ℤⁿ ⊆ ℝⁿ`. A discrete lattice that does not span is full in its real span `K`, and
+every vector orthogonal to `K` lies in `L^∨` (`ZLattice.mem_dual_of_mem_orthogonal_span`) together
+with all its real multiples, so no vector outside `K` lies in the dual of `L^∨`.
 
 The dual is antitone, and it commutes with pulling a lattice back along a linear isometry
 equivalence (`ZLattice.dual_comap`), so every notion defined from it is an isometry invariant.
@@ -62,7 +64,11 @@ defined from it.
 * `ZLattice.dual_span_singleton`: the dual of `c ℤ ⊆ ℝ` (`c ≠ 0`) is `c⁻¹ ℤ`.
 * `ZLattice.inf_dual_span_singleton_eq_bot_of_irrational_sq`: when `c²` is irrational, `c ℤ ⊆ ℝ`
   meets its dual `c⁻¹ ℤ` only at `0`.
-* `ZLattice.dual_dual`: the dual of the dual of a full lattice is the lattice itself.
+* `ZLattice.mem_dual_of_mem_orthogonal_span`: a vector orthogonal to `L` lies in `L^∨`.
+* `ZLattice.dual_dual`: the dual of the dual of a discrete lattice in a finite-dimensional space is
+  the lattice itself.
+* `ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`: a lattice in a
+  finite-dimensional space with finite quotient `L^∨ / cL`, for some real `c`, spans the space.
 * `ZLattice.dual_comap`: the dual commutes with pulling back along a linear isometry equivalence.
 * `ZLattice.dual_comap_continuousLinearEquiv`: the dual of the pullback along a continuous linear
   equivalence `e` is the pullback of the dual along the adjoint of `e⁻¹`.
@@ -108,10 +114,17 @@ theorem le_dual_comm {L M : Submodule ℤ E} : L ≤ dual M ↔ M ≤ dual L := 
   have h : BilinForm.flip (innerₗ E) = innerₗ E := flip_innerₗ E
   rw [dual_def, dual_def, ← BilinForm.le_flip_dualSubmodule, h]
 
-/-- Every lattice is contained in the dual of its dual. Equality holds for a full lattice in a
+/-- Every lattice is contained in the dual of its dual. Equality holds for a discrete lattice in a
 finite-dimensional space, `dual_dual`. -/
 theorem le_dual_dual (L : Submodule ℤ E) : L ≤ dual (dual L) :=
   le_dual_comm.mpr le_rfl
+
+/-- A vector orthogonal to a lattice lies in its dual lattice, its inner products with the lattice
+being `0`. -/
+theorem mem_dual_of_mem_orthogonal_span {L : Submodule ℤ E} {x : E}
+    (hx : x ∈ (span ℝ (L : Set E))ᗮ) : x ∈ dual L :=
+  mem_dual.mpr fun _ hy ↦ ⟨0, by
+    rw [Submodule.inner_left_of_mem_orthogonal (subset_span hy) hx, Int.cast_zero]⟩
 
 /-- The dual of the `ℤ`-span of an `ℝ`-basis is the `ℤ`-span of the dual basis for the inner
 product. -/
@@ -271,9 +284,7 @@ theorem dual_dual : dual (dual L) = L := by
   -- The lattice is full in its real span `K`, where the dual-basis description applies.
   set K := span ℝ (L : Set E)
   let L' : Submodule ℤ K := ZLattice.comap ℝ L K.subtype
-  have : DiscreteTopology L' :=
-    ZLattice.comap_discreteTopology ℝ L continuous_subtype_val Subtype.val_injective
-  have : IsZLattice ℝ L' := ⟨Submodule.span_span_coe_preimage⟩
+  have : IsZLattice ℝ L' := ⟨by rw [ZLattice.coe_comap]; exact Submodule.span_span_coe_preimage⟩
   have key : dual (dual L') = L' := by
     obtain ⟨ι, _, _, b, hb⟩ := exists_basis_span_eq ℝ L'
     rw [← hb]
@@ -286,12 +297,8 @@ theorem dual_dual : dual (dual L) = L := by
     rw [← Submodule.orthogonal_orthogonal K, Submodule.mem_orthogonal]
     intro u hu
     by_contra h0
-    obtain ⟨m, hm⟩ := hy ((2 * inner ℝ u y)⁻¹ • u) (mem_dual.mpr fun w hw ↦ ⟨0, by
-      have hu0 : inner ℝ u w = 0 := by
-        rw [real_inner_comm]
-        exact Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hw) hu
-      rw [real_inner_smul_left, hu0]
-      simp⟩)
+    obtain ⟨m, hm⟩ := hy ((2 * inner ℝ u y)⁻¹ • u)
+      (mem_dual_of_mem_orthogonal_span (Submodule.smul_mem _ _ hu))
     rw [real_inner_smul_right, real_inner_comm u y] at hm
     have : (m : ℝ) * 2 = 1 := by
       rw [← hm]
@@ -303,11 +310,12 @@ theorem dual_dual : dual (dual L) = L := by
     rw [← key, mem_dual]
     intro z hz
     have hzE : (z : E) ∈ dual L := mem_dual.mpr fun w hw ↦ by
-      obtain ⟨m, hm⟩ := mem_dual.mp hz ⟨w, Submodule.subset_span hw⟩ hw
+      obtain ⟨m, hm⟩ := mem_dual.mp hz ⟨w, Submodule.subset_span hw⟩
+        ((ZLattice.mem_comap ℝ L K.subtype).mpr hw)
       exact ⟨m, by simpa using hm⟩
     obtain ⟨m, hm⟩ := hy z hzE
     exact ⟨m, by simpa using hm⟩
-  exact hyL
+  simpa using (ZLattice.mem_comap ℝ L K.subtype).mp hyL
 
 end FiniteDimensional
 
@@ -317,30 +325,28 @@ open scoped Pointwise
 
 variable {L : Submodule ℤ E}
 
-/-- A lattice with finite quotient `L^∨ / cL` in a finite-dimensional space spans: a nonzero vector
-`w` orthogonal to `L` would give infinitely many classes `n w`, `n : ℤ`. -/
-theorem span_eq_top_of_finite_quotient_smul_submoduleOf_dual [FiniteDimensional ℝ E] (c : ℕ)
-    [Finite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] : span ℝ (L : Set E) = ⊤ := by
+/-- A lattice in a finite-dimensional space with finite quotient `L^∨ / cL`, for some real `c`,
+spans: the orthogonal complement of its span lies in `L^∨` and meets `cL` only in `0`, so it would
+inject into the quotient. For `c = 1` the quotient is the discriminant group `L^∨ / L`. -/
+theorem span_eq_top_of_finite_quotient_smul_submoduleOf_dual [FiniteDimensional ℝ E] (c : ℝ)
+    [Finite (dual L ⧸ (c • L).submoduleOf (dual L))] : span ℝ (L : Set E) = ⊤ := by
   by_contra h
-  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (mt Submodule.orthogonal_eq_bot_iff.mp h)
-  have hwL (y : E) (hy : y ∈ L) : inner ℝ y w = 0 :=
-    Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hy) hw
-  have hmem (n : ℤ) : (n : ℝ) • w ∈ dual L := mem_dual.mpr fun y hy ↦
-    ⟨0, by rw [real_inner_smul_left, real_inner_comm, hwL y hy]; simp⟩
-  have : Infinite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L)) := Infinite.of_injective
-    (fun n : ℤ ↦ Submodule.Quotient.mk ⟨(n : ℝ) • w, hmem n⟩) fun n m hnm ↦ by
+  set K := span ℝ (L : Set E)
+  have : Nontrivial Kᗮ :=
+    Submodule.nontrivial_iff_ne_bot.mpr (by rwa [Ne, Submodule.orthogonal_eq_bot_iff])
+  have : Infinite Kᗮ := Module.Free.infinite ℝ _
+  have : Infinite (dual L ⧸ (c • L).submoduleOf (dual L)) := Infinite.of_injective
+    (fun w : Kᗮ ↦ Submodule.Quotient.mk ⟨w, mem_dual_of_mem_orthogonal_span w.2⟩) fun a b hab ↦ by
     rw [Submodule.Quotient.eq, submoduleOf, Submodule.mem_comap, subtype_apply,
-      mem_smul_pointwise_iff_exists] at hnm
-    obtain ⟨l, hl, hlw⟩ := hnm
-    have := congrArg (fun x ↦ inner ℝ x w) hlw
-    simp only [real_inner_smul_left, AddSubgroupClass.coe_sub, inner_sub_left, hwL l hl,
-      real_inner_self_eq_norm_sq] at this
-    rw [mul_zero, ← sub_mul] at this
-    rcases mul_eq_zero.mp this.symm with h0 | h0
-    · exact_mod_cast sub_eq_zero.mp h0
-    · exact absurd (pow_eq_zero_iff two_ne_zero |>.mp h0) (norm_ne_zero_iff.mpr hw0)
-  exact not_finite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))
+      mem_smul_pointwise_iff_exists] at hab
+    obtain ⟨l, hl, hlab⟩ := hab
+    -- `a - b = c • l` lies both in `K` and in `Kᗮ`, so it vanishes.
+    have hK : (a : E) - b ∈ K := by
+      simpa [hlab] using K.smul_mem c (subset_span hl : l ∈ K)
+    have h0 := Submodule.inner_right_of_mem_orthogonal hK (sub_mem a.2 b.2)
+    rw [inner_self_eq_zero, sub_eq_zero] at h0
+    exact Subtype.ext h0
+  exact not_finite (dual L ⧸ (c • L).submoduleOf (dual L))
 
 end Span
 

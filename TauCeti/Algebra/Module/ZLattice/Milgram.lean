@@ -11,10 +11,14 @@ public import TauCeti.LinearAlgebra.IntegralLattice.TwoElementary
 /-!
 # Even lattices of level dividing two
 
-Let `L` be an even full lattice in a finite-dimensional real inner product space `E`, and suppose
-that its level divides `2`, that is, `‖x‖²` is an integer for every `x` in the dual lattice `L^∨`.
-Then the rank `n` of `L` is divisible by `4`. Equivalently, writing `n = 2k`, the weight `k` of
-the theta series of `L` is even.
+Let `L` be an even lattice in a real inner product space `E`, and suppose that its level divides
+`2`, that is, `‖x‖²` is an integer for every `x` in the dual lattice `L^∨`. Then the dimension
+`n = finrank ℝ E` is divisible by `4`. Equivalently, writing `n = 2k`, the weight `k` of the theta
+series of `L` is even. If `E` is finite-dimensional, then the hypothesis on the level forces `L` to
+span `E`, since a lattice that does not span has level `0`
+(`ZLattice.level_eq_zero_of_span_ne_top`), so `L` is a full lattice of rank `n`. If `E` is
+infinite-dimensional, then `finrank ℝ E = 0` and the statement is trivial, although an even lattice
+of level `1` such as an orthogonal sum of infinitely many copies of `E₈` in `ℓ²` has infinite rank.
 
 This is a consequence of Milgram's theorem. The half-norm discriminant form
 `q_L(x + L) = ‖x‖² / 2 mod ℤ` takes values in `½ℤ/ℤ`, so every term `e(q_L(γ)) = ±1` of the Gauss
@@ -32,9 +36,9 @@ cosets of `L` in `L^∨` when the level divides `2`. The examples are `D₄`, of
 
 ## Main statements
 
-* `ZLattice.IsEven.four_dvd_finrank_of_level_dvd_two`: an even full lattice of level dividing `2`
-  has rank divisible by `4`.
-* `ZLattice.IsEven.even_of_level_dvd_two`: if moreover the rank is `2k`, then `k` is even.
+* `ZLattice.IsEven.four_dvd_finrank_of_level_dvd_two`: for an even lattice of level dividing `2`,
+  the dimension `finrank ℝ E` is divisible by `4`.
+* `ZLattice.IsEven.even_of_level_dvd_two`: if moreover `finrank ℝ E = 2k`, then `k` is even.
 
 ## References
 
@@ -48,11 +52,11 @@ open Module
 
 namespace ZLattice
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  {L : Submodule ℤ E} [DiscreteTopology L]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {L : Submodule ℤ E}
 
-omit [DiscreteTopology L] in
-/-- **An even lattice of level dividing `2` has rank divisible by `4`.** -/
+/-- **An even lattice of level dividing `2` lives in dimension divisible by `4`**: for an even
+lattice `L` with `level L ∣ 2`, the dimension `finrank ℝ E` is divisible by `4`. In finite
+dimension `L` is then a full lattice, so this is its rank. -/
 theorem IsEven.four_dvd_finrank_of_level_dvd_two (hL : IsEven L) (h2 : level L ∣ 2) :
     4 ∣ finrank ℝ E := by
   have := hL.discreteTopology
@@ -67,9 +71,8 @@ theorem IsEven.four_dvd_finrank_of_level_dvd_two (hL : IsEven L) (h2 : level L �
   · rw [finrank_of_not_finite hfd]
     exact dvd_zero _
 
-omit [DiscreteTopology L] in
-/-- **The weight of an even lattice of level dividing `2` is even**: if the rank is `2k`, then
-`k` is even. -/
+/-- **The weight of an even lattice of level dividing `2` is even**: if the dimension
+`finrank ℝ E` is `2k`, then `k` is even. -/
 theorem IsEven.even_of_level_dvd_two (hL : IsEven L) (h2 : level L ∣ 2) {k : ℕ}
     (hk : finrank ℝ E = 2 * k) : Even k := by
   obtain ⟨m, hm⟩ := hL.four_dvd_finrank_of_level_dvd_two h2

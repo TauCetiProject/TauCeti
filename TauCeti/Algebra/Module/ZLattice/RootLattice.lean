@@ -170,7 +170,7 @@ theorem level_sqrt_two_smul_realModel_typeE₈RootLattice :
   have := nontrivial_realModelSpace_typeE₈RootLattice
   exact_mod_cast ((isEven_realModel_iff _ _).mpr
     isEven_typeE₈RootLattice).level_sqrt_smul_of_isUnimodular
-    ((isUnimodular_realModel_iff _ _).mpr isUnimodular_typeE₈RootLattice) two_ne_zero
+    ((isUnimodular_realModel_iff _ _).mpr isUnimodular_typeE₈RootLattice) (m := 2)
 
 /-- The real model of `E₈` scaled by `√2` has signed discriminant `256 = 16²`. -/
 theorem signedDiscr_sqrt_two_smul_realModel_typeE₈RootLattice :

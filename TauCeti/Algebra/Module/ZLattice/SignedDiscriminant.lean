@@ -56,7 +56,7 @@ so its discriminant group and every quotient `L^∨ ⧸ (L^∨ ∩ a L^∨ ∩ L
   dimension.
 * `ZLattice.IsIntegral.signedDiscr_cast`, `ZLattice.IsIntegral.signedDiscr_ne_zero`,
   `ZLattice.IsEven.signedDiscr_eq_one_of_isUnimodular`: for integral full lattices
-  `D_L = (-1) ^ ⌊n / 2⌋ det L ≠ 0`, and `D_L = 1` for even unimodular full lattices.
+  `D_L = (-1) ^ ⌊n / 2⌋ det L ≠ 0`, and `D_L = 1` for every even unimodular lattice.
 * `ZLattice.IsIntegral.signedDiscr_sqrt_smul`,
   `ZLattice.IsIntegral.mul_signedDiscr_sqrt_level_smul_dual`: `D_{√m • L} = mⁿ D_L` and
   `D_L * D_{√N • L^∨} = Nⁿ`.
@@ -214,14 +214,15 @@ theorem IsIntegral.signedDiscr_eq_neg_one_pow_mul_det_toMatrix (h : IsIntegral L
       (-1) ^ (finrank ℝ E / 2) * (LinearMap.BilinForm.toMatrix b h.integralForm).det := by
   rw [signedDiscr_def, h.det_toMatrix_integralForm b]
 
-omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- **An even unimodular lattice has signed discriminant `1`**, since its rank is divisible
+omit [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- **An even unimodular lattice has signed discriminant `1`**: its discriminant group is trivial,
+and its level is `1` since `L^∨ = L` is even, so the ambient dimension `finrank ℝ E` is divisible
 by `4` (`ZLattice.IsEven.four_dvd_finrank_of_level_dvd_two`). -/
 theorem IsEven.signedDiscr_eq_one_of_isUnimodular (h : IsEven L) (hU : IsUnimodular L) :
     signedDiscr L = 1 := by
-  have := h.discreteTopology
   obtain ⟨m, hm⟩ := h.four_dvd_finrank_of_level_dvd_two
-    (by rw [h.level_eq_one_iff.mpr hU]; exact one_dvd 2)
+    ((level_dvd_iff.mpr fun x hx ↦ by simpa using isEven_iff.mp h x (hU.dual_eq ▸ hx)).trans
+      (one_dvd 2))
   rw [hU.signedDiscr_eq_neg_one_pow, show finrank ℝ E / 2 = 2 * m by omega, pow_mul, neg_one_sq,
     one_pow]
 
@@ -261,7 +262,6 @@ and level `N`, the signed discriminants of `L` and of its Fricke partner `√N �
 to `Nⁿ`. -/
 theorem IsIntegral.mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral L) :
     signedDiscr L * signedDiscr (√(level L : ℝ) • dual L) = (level L : ℤ) ^ finrank ℝ E := by
-  have := h.discreteTopology
   have hsign : ((-1 : ℤ) ^ (finrank ℝ E / 2)) * (-1) ^ (finrank ℝ E / 2) = 1 := by
     rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
   calc signedDiscr L * signedDiscr (√(level L : ℝ) • dual L)
