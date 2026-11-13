@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DirectSum.Module
+public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.AsModule
+public import TauCeti.RepresentationTheory.Intertwining.DirectSum
 
 /-!
 # The group-algebra module of a direct sum of representations
@@ -18,24 +19,25 @@ the summands, by a `k[G]`-linear equivalence `Representation.directSumAsModuleEq
 vector supported in summand `i` to the same vector in the `i`-th component.
 
 This is the dictionary between group representations and group-algebra modules
-(Fulton–Harris, *Representation Theory*, §3.4) applied to direct sums: a decomposition of
-`ρ.asModule` into a direct sum of `k[G]`-modules, as produced by the theory of semisimple modules,
-becomes a decomposition of the representation into a direct sum of representations once each
-summand is read back through `TauCeti.Representation.equivOfAsModuleLinearEquiv`.
+(Fulton–Harris, *Representation Theory*, §3.4) applied to direct sums. Suppose `ρ.asModule` is
+decomposed into a direct sum of `k[G]`-modules, as produced by the theory of semisimple modules,
+and each summand is identified with `(σ i).asModule` for a representation `σ i` (for instance via
+`Subrepresentation.asModuleEquivAsSubmodule`). Composing with
+`(Representation.directSumAsModuleEquiv σ).symm` gives a `k[G]`-linear equivalence
+`ρ.asModule ≃ₗ[k[G]] (directSum σ).asModule`, which
+`TauCeti.Representation.equivOfAsModuleLinearEquiv` turns into an equivalence of representations
+`ρ.Equiv (directSum σ)`.
+
+The direct sum of intertwining maps and the reindexing of a direct sum, which do not involve the
+group algebra, are in `TauCeti.RepresentationTheory.Intertwining.DirectSum`.
 
 ## Main definitions
 
-* `Representation.IntertwiningMap.directSumMap`: the direct sum of a family of intertwining maps,
-  compatible with identities and composition.
-* `Representation.directSumEquivCongrLeft`: reindexing a direct sum of representations along an
-  equivalence of index types.
 * `Representation.directSumAsModuleEquiv`: the `k[G]`-linear equivalence
   `(directSum ρ).asModule ≃ₗ[k[G]] Π₀ i, (ρ i).asModule`.
 
 ## Main results
 
-* `Representation.asAlgebraHom_directSum`: an element of `k[G]` acts on a direct sum summand by
-  summand.
 * `Representation.directSumAsModuleEquiv_symm_single`: the inverse sends the `i`-th component
   `v` to the vector `v` placed in summand `i`.
 * `Representation.directSumAsModuleEquiv_comp_directSumMap`: the comparison is natural for a
@@ -55,16 +57,6 @@ variable {k G ι : Type*} [CommSemiring k] [Monoid G]
   {V W : ι → Type*} [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)]
   [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
   (ρ : ∀ i, Representation k G (V i)) (σ : ∀ i, Representation k G (W i))
-
-/-- **The group algebra acts on a direct sum summand by summand.** The linear extension of the
-direct-sum representation to `k[G]` is the direct sum of the linear extensions of the
-summands. -/
-theorem asAlgebraHom_directSum (r : k[G]) :
-    asAlgebraHom (directSum ρ) r = DirectSum.lmap fun i ↦ asAlgebraHom (ρ i) r := by
-  induction r using MonoidAlgebra.induction_linear with
-  | zero => ext; simp
-  | add r s hr hs => ext; simp [hr, hs]
-  | single g t => ext; simp [asAlgebraHom_single, directSum_apply, DirectSum.smul_apply]
 
 /-- **The group-algebra module of a direct sum is the direct sum of the group-algebra modules.**
 The underlying map sends a vector of `⨁ i, V i` to the family of its components, each read as a
@@ -121,34 +113,6 @@ section Naturality
 
 variable {ρ σ}
 
-/-- **The direct sum of a family of intertwining maps**, acting summand by summand. -/
-noncomputable def IntertwiningMap.directSumMap (f : ∀ i, IntertwiningMap (ρ i) (σ i)) :
-    IntertwiningMap (directSum ρ) (directSum σ) where
-  toLinearMap := DirectSum.lmap fun i ↦ (f i).toLinearMap
-  isIntertwining' g := by
-    ext x i
-    simp [directSum_apply, (f i).isIntertwining]
-
-@[simp]
-theorem IntertwiningMap.directSumMap_apply (f : ∀ i, IntertwiningMap (ρ i) (σ i))
-    (x : ⨁ i, V i) (i : ι) : directSumMap f x i = f i (x i) :=
-  (rfl)
-
-/-- The direct sum of identity maps is the identity. -/
-@[simp]
-theorem IntertwiningMap.directSumMap_id :
-    directSumMap (fun i ↦ IntertwiningMap.id (ρ i)) = IntertwiningMap.id (directSum ρ) := by
-  ext x i
-  simp
-
-/-- The direct sum of composites is the composite of the direct sums. -/
-theorem IntertwiningMap.directSumMap_comp {U : ι → Type*} [∀ i, AddCommMonoid (U i)]
-    [∀ i, Module k (U i)] {τ : ∀ i, Representation k G (U i)}
-    (f : ∀ i, IntertwiningMap (σ i) (τ i)) (g : ∀ i, IntertwiningMap (ρ i) (σ i)) :
-    directSumMap (fun i ↦ (f i).comp (g i)) = (directSumMap f).comp (directSumMap g) := by
-  ext x i
-  simp
-
 /-- **The comparison is natural for a family of intertwining maps.** Under the comparisons, the
 `k[G]`-linear map attached to the direct sum of the `f i` is the direct sum of the `k[G]`-linear
 maps attached to the `f i`. -/
@@ -159,27 +123,13 @@ theorem directSumAsModuleEquiv_comp_directSumMap (f : ∀ i, IntertwiningMap (ρ
         (directSumAsModuleEquiv ρ).toLinearMap :=
   -- Both sides apply `f i` to the `i`-th component, through the identity maps
   -- `Representation.asModuleEquiv`.
-  LinearMap.ext fun _ ↦ DFinsupp.ext fun _ ↦ (rfl)
+  LinearMap.ext fun x ↦ DFinsupp.ext fun i ↦ IntertwiningMap.directSumMap_apply f x i
 
 end Naturality
 
 section Reindex
 
 variable {κ : Type*} (h : ι ≃ κ)
-
-/-- **Reindexing a direct sum of representations** along an equivalence `h : ι ≃ κ`: the
-summand of index `j` of the reindexed family is the summand of index `h.symm j` of the original
-one. The underlying linear equivalence is `DirectSum.lequivCongrLeft`. -/
-noncomputable def directSumEquivCongrLeft :
-    (directSum ρ).Equiv (directSum fun j ↦ ρ (h.symm j)) :=
-  .mk (DirectSum.lequivCongrLeft k h) fun g ↦ by
-    ext x j
-    simp [directSum_apply, DirectSum.lequivCongrLeft_apply]
-
-@[simp]
-theorem directSumEquivCongrLeft_apply (x : ⨁ i, V i) (j : κ) :
-    directSumEquivCongrLeft ρ h x j = x (h.symm j) :=
-  (rfl)
 
 /-- **The comparison commutes with reindexing the family.** Reindexing the direct-sum
 representation corresponds to reindexing the direct sum of the group-algebra modules by
