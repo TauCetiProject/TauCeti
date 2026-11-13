@@ -10,6 +10,9 @@ public import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 public import TauCeti.Probability.Process.ElementaryDensity
 public import TauCeti.Probability.Process.Predictable.Measure
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
+import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 
 /-!
 # Approximation by bounded finite-grid holdings
@@ -23,16 +26,26 @@ on which increment sums can be evaluated, as needed for completion of stochastic
 The first theorem allows any measure on the predictable sigma-algebra finite on bounded
 predictable rectangles, with no mass at time zero. The second gives the finite-horizon
 Lebesgue-time × sample-measure form.
-Finally, one sequence of finite-grid holdings approximates a Brownian-integrable process
-on every finite horizon.
+One sequence of finite-grid holdings approximates a Brownian-integrable process
+on every finite horizon. On a fixed finite horizon, a predictable real process with only
+almost surely finite pathwise square energy also admits bounded finite-grid approximations
+whose square errors converge to zero almost surely. No expected-energy bound is required
+for this pathwise result; its sequence and exceptional sample set may depend on the horizon.
+The errors use nonnegative lower integrals, so infinite energies are not replaced by
+default-valued Bochner integrals. Neither nesting nor a common height bound is asserted.
+
+The pathwise construction uses value truncations, the expected-energy density theorem
+`MeasureTheory.Filtration.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure`, and summably
+small expected approximation errors. Value truncation requires no stopping times.
 No Brownian motion, usual filtration conditions or path regularity is assumed. The grids
 start at zero; their last date need not equal the observation horizon. Approximation is
-in energy norm, not pointwise or uniform in time.
+in energy, not pointwise or uniform in time. These are integrand approximation theorems,
+not constructions of stochastic integrals.
 
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
-  Springer, 1991, §3.2.
+  Springer, 1991, §3.2 (in particular §3.2.D for pathwise-energy approximation).
 -/
 
 public section
@@ -165,6 +178,99 @@ theorem exists_simpleHolding_eLpNorm_sub_lt_timeMeasure
   rwa [ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hs] at herr
 
 end MeasureTheory.Filtration
+
+namespace MeasureTheory.IsStronglyPredictable
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
+  {P : Measure Ω} [IsFiniteMeasure P] {H : ℝ≥0 → Ω → ℝ}
+
+/-- A predictable process with finite pathwise square energy on a finite horizon has bounded
+finite-grid approximations converging in square energy on almost every sample path.
+The original process need not have a finite expected square energy. -/
+theorem exists_seq_simpleHolding_ae_tendsto_lintegral_eNorm_sub_sq
+    (hH : IsStronglyPredictable ℱ H) (T : ℝ≥0)
+    (hH₂ : ∀ᵐ ω ∂P, MemLp (fun t ↦ H t ω) 2 (TauCeti.Probability.timeMeasure T)) :
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
+      (∀ m, τ m 0 = 0) ∧ (∀ m, StrictMonoOn (τ m) (Iic (n m))) ∧
+      (∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)) ∧
+      (∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m) ∧
+      ∀ᵐ ω ∂P, Tendsto (fun m ↦ ∫⁻ t,
+        ‖simpleHolding (τ m) (n m) (a m) t ω - H t ω‖ₑ ^ 2
+          ∂TauCeti.Probability.timeMeasure T) atTop (𝓝 0) := by
+  classical
+  let ν := TauCeti.Probability.timeMeasure T
+  let K (m : ℕ) (t : ℝ≥0) (ω : Ω) := if ‖H t ω‖ ≤ m then H t ω else 0
+  have hK (m : ℕ) : IsStronglyPredictable ℱ (K m) :=
+    hH.ite (measurableSet_le hH.norm.measurable measurable_const) stronglyMeasurable_const
+  have hKbound (m : ℕ) (t : ℝ≥0) (ω : Ω) : ‖K m t ω‖ ≤ m := by
+    simp only [K]
+    split_ifs with h <;> simp_all
+  have hK₂ (m : ℕ) : MemLp (Function.uncurry (K m)) 2 (ν.prod P) := by
+    refine (memLp_const (m : ℝ)).mono'
+      ((hK m).mono ℱ.predictable_le_prod).aestronglyMeasurable ?_
+    exact Eventually.of_forall fun p ↦ hKbound m p.1 p.2
+  -- Approximate each bounded truncation with a summable sequence of expected errors.
+  have hex (m : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P T (hK m) (hK₂ m)
+    (ε := ((1 / 2 : ℝ≥0) ^ m : ℝ≥0∞)) (by positivity)
+  choose n τ a C hτ₀ hτ ha hb herr using hex
+  let L (m : ℕ) := simpleHolding (τ m) (n m) (a m)
+  let E (m : ℕ) (ω : Ω) := ∫⁻ t, ‖L m t ω - K m t ω‖ₑ ^ 2 ∂ν
+  have hpred (m : ℕ) : IsStronglyPredictable ℱ (fun t ω ↦ L m t ω - K m t ω) :=
+    (isStronglyPredictable_simpleHolding (ha m)).sub (hK m)
+  have hmeas (m : ℕ) : Measurable (fun p : ℝ≥0 × Ω ↦ ‖L m p.1 p.2 - K m p.1 p.2‖ₑ ^ 2) :=
+    ((hpred m).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2
+  have hE (m : ℕ) : Measurable (E m) := (hmeas m).lintegral_prod_left'
+  have hmean (m : ℕ) : ∫⁻ ω, E m ω ∂P ≤ (((1 / 2 : ℝ≥0) ^ 2) ^ m : ℝ≥0∞) := by
+    rw [← lintegral_lintegral_swap (hmeas m).aemeasurable]
+    rw [← lintegral_prod _ (hmeas m).aemeasurable]
+    have hpow := eLpNorm_nnreal_pow_eq_lintegral (p := (2 : ℝ≥0)) (by norm_num)
+      ((hpred m).mono ℱ.predictable_le_prod).aestronglyMeasurable (μ := ν.prod P)
+    simp only [NNReal.coe_ofNat, ENNReal.rpow_two, Function.uncurry_def,
+      ENNReal.coe_ofNat] at hpow
+    rw [← hpow]
+    simpa only [← ENNReal.coe_pow, ← pow_mul, Nat.mul_comm] using
+      pow_le_pow_left' (herr m).le 2
+  have hsum : (∑' m, (((1 / 2 : ℝ≥0) ^ 2) ^ m : ℝ≥0∞)) ≠ ∞ :=
+    ENNReal.tsum_coe_ne_top_iff_summable.2 (NNReal.summable_geometric (by norm_num))
+  have hELim : ∀ᵐ ω ∂P, Tendsto (fun m ↦ E m ω) atTop (𝓝 0) :=
+    ae_tendsto_zero_of_tsum_lintegral_ne_top (fun m ↦ (hE m).aemeasurable)
+      (ne_top_of_le_ne_top hsum (tsum_le_tsum hmean))
+  -- On each finite-energy path the value-truncation error vanishes by dominated convergence.
+  have htrunc : ∀ᵐ ω ∂P, Tendsto
+      (fun m ↦ ∫⁻ t, ‖K m t ω - H t ω‖ₑ ^ 2 ∂ν) atTop (𝓝 0) := by
+    filter_upwards [hH₂] with ω hω
+    simpa only [Function.comp_def, K, ENNReal.toReal_ofNat, ENNReal.rpow_two] using
+      (hω.tendsto_lintegral_eNorm_ite_sub_rpow (by norm_num) (by norm_num)).comp
+        tendsto_natCast_atTop_atTop
+  -- The square error is at most twice each of the two square errors.
+  refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, ?_⟩
+  filter_upwards [hELim, htrunc] with ω hEω hKω
+  have hbound (m : ℕ) : (∫⁻ t, ‖L m t ω - H t ω‖ₑ ^ 2 ∂ν) ≤
+      2 * E m ω + 2 * ∫⁻ t, ‖K m t ω - H t ω‖ₑ ^ 2 ∂ν := by
+    calc
+      _ ≤ ∫⁻ t, 2 * ‖L m t ω - K m t ω‖ₑ ^ 2 +
+          2 * ‖K m t ω - H t ω‖ₑ ^ 2 ∂ν := by
+        apply lintegral_mono
+        intro t
+        -- Transport the existing squared triangle inequality to the nonnegative energy.
+        have h := ENNReal.ofReal_le_ofReal
+          (norm_sub_sq_le_two_mul (L m t ω) (H t ω) (K m t ω))
+        simp only [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2),
+          ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _),
+          ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm, ENNReal.ofReal_ofNat] at h
+        simpa only [eNorm_sub_rev, mul_add] using h
+      _ = _ := by
+        have hmω : Measurable (fun t ↦ ‖L m t ω - K m t ω‖ₑ ^ 2) :=
+          (hmeas m).comp (measurable_id.prodMk (measurable_const (a := ω)))
+        rw [lintegral_add_left (hmω.const_mul 2),
+          lintegral_const_mul' _ _ (by norm_num), lintegral_const_mul' _ _ (by norm_num)]
+  have hlim := (ENNReal.Tendsto.const_mul (a := 2) hEω (Or.inr (by norm_num))).add
+    (ENNReal.Tendsto.const_mul (a := 2) hKω (Or.inr (by norm_num)))
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa only [mul_zero, zero_add] using hlim)
+    (Eventually.of_forall fun _ ↦ bot_le) (Eventually.of_forall hbound)
+
+end MeasureTheory.IsStronglyPredictable
 
 namespace TauCeti.BrownianIntegrable
 
