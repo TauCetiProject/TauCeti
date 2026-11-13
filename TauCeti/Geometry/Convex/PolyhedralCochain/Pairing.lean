@@ -16,30 +16,28 @@ public import TauCeti.LinearAlgebra.AffineSpace.Simplex.Conormal
 An affine test simplex of dimension `k` is given by its vertices `v : Fin (k + 1) → V`. It is
 the image `convexHull ℝ (range v)` of the standard simplex under the affine map sending the
 standard vertices to `v`, and its linear part sends the positively oriented standard frame to the
-edge frame `(v 1 - v 0, …, v k - v 0)`. The test is transverse to an oriented cell `σ` of
-codimension `k` when its image avoids the relative boundary of `σ` and, if it meets `σ`, its edge
-frame maps to a basis of the normal quotient `V ⧸ dir σ`. Every proper parameter face must
-avoid the support of the cell. If the test meets `σ`, it meets the
-affine span of `σ` in a single point, a relative interior point of `σ`. Disjoint tests may be
-degenerate.
+edge frame `(v 1 - v 0, …, v k - v 0)`. The test is transverse to the carrier of a codimension-`k`
+cell `σ` when its image avoids the relative boundary of `σ` and, if it meets `σ`, its edge
+frame maps to a basis of the normal quotient by the direction of `σ`. In that case the test
+meets the affine span of `σ` in a single point in the relative interior of `σ`. Disjoint tests
+may be degenerate.
 
 The local intersection index is the sign of the conormal orientation of `σ` on the edge frame
-when the test meets `σ`, and zero otherwise. For a transverse test it vanishes exactly when the
-test misses `σ`, and it changes sign with the orientation. Extending linearly gives the
-intersection pairing of a test with finite formal sums of oriented cells, with values in the
-coefficient module, natural in the coefficients.
+when the test meets `σ`, and zero otherwise. For a test transverse to the carrier, it vanishes
+exactly when the test misses `σ`. Extending linearly gives the intersection pairing with finite
+formal sums of oriented cells, natural in the coefficients.
 
-Complementary nondegenerate simplices are transverse when they avoid the cell frontier
-and their proper parameter faces avoid its support,
-using `Affine.Simplex.conormal_apply_ne_zero` on the normal quotient.
+The cochain relations preserve the pairing whenever the test is transverse to the carriers of
+the cells of both representatives (`PolyhedralCochain.intersectionPairing_eq_of_ofFinsupp_eq`).
+The intersection point may lie on a parameter face of the test simplex.
 
-The cochain relations preserve the pairing whenever the test is transverse to both
-representatives (`PolyhedralCochain.intersectionPairing_eq_of_ofFinsupp_eq`), although the cells
-of the connecting relation need not be transverse to the test.
+`OrientedCell.IsTransverse` also requires every proper parameter face to avoid the cell. This
+condition prevents counting the same intersection in multiple pieces of a test subdivision.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralCochain/Pairing.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
-commit `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
+commits `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` and
+`20afa0bb23652286da5d0967710a055aca2736e1` (Apache 2.0).
 -/
 
 public section
@@ -55,18 +53,14 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
 
 namespace OrientedCell
 
-/-- The affine test simplex with vertices `v` is transverse to the oriented cell `σ` of the same
-codimension: its image avoids the relative boundary of `σ` and, if it meets `σ`, its edge frame
-`(v 1 - v 0, …, v k - v 0)` is linearly independent modulo the direction of `σ`, so that the
-linear part of the test is an isomorphism onto the normal quotient. Its proper parameter faces
-avoid the support of the cell. -/
-structure IsTransverse (σ : OrientedCell h k) (v : Fin (k + 1) → V) : Prop where
+/-- A test of dimension `k` is transverse to the carrier of a codimension-`k` cell if
+it avoids the cell's relative frontier and, whenever it meets the cell, its
+edge vectors project to a basis of the normal quotient. The test may meet the cell
+on a proper parameter face. -/
+structure IsTransverseToCarrier (σ : OrientedCell h k) (v : Fin (k + 1) → V) : Prop where
   /-- The test avoids the relative boundary of the cell. -/
   disjoint_intrinsicFrontier :
     Disjoint (convexHull ℝ (range v)) (intrinsicFrontier ℝ σ.carrier)
-  /-- Every proper parameter face avoids the support. -/
-  disjoint_faces : ∀ j : Fin (k + 1),
-    Disjoint (convexHull ℝ (range (v ∘ j.succAbove))) σ.carrier
   /-- Where the test meets the cell, its edge frame is a basis of the normal quotient. -/
   linearIndependent : (convexHull ℝ (range v) ∩ σ.carrier).Nonempty →
     LinearIndependent ℝ
@@ -74,23 +68,20 @@ structure IsTransverse (σ : OrientedCell h k) (v : Fin (k + 1) → V) : Prop wh
 
 variable {σ : OrientedCell h k} {v : Fin (k + 1) → V}
 
-/-- A test missing a cell is transverse, including when the test is degenerate. -/
-theorem isTransverse_of_disjoint (σ : OrientedCell h k) {v : Fin (k + 1) → V}
-    (hv : Disjoint (convexHull ℝ (range v)) σ.carrier) : σ.IsTransverse v :=
+/-- A test missing a cell is transverse to its carrier, including when the test is degenerate. -/
+theorem isTransverseToCarrier_of_disjoint (σ : OrientedCell h k) {v : Fin (k + 1) → V}
+    (hv : Disjoint (convexHull ℝ (range v)) σ.carrier) : σ.IsTransverseToCarrier v :=
   ⟨hv.mono_right (intrinsicFrontier_subset σ.rational.isClosed),
-    fun _ => hv.mono_left (convexHull_mono (range_comp_subset_range _ _)),
     fun ⟨_, hx, hy⟩ => (Set.disjoint_left.mp hv hx hy).elim⟩
 
-/-- A simplex complementary to the cell direction is transverse when it avoids the cell's
-relative frontier and its proper parameter faces avoid the cell. -/
-theorem isTransverse_of_isCompl (σ : OrientedCell h k) (s : Affine.Simplex ℝ V k)
+/-- A simplex complementary to the cell direction is transverse to the carrier if it avoids the
+cell's relative frontier. -/
+theorem isTransverseToCarrier_of_isCompl (σ : OrientedCell h k) (s : Affine.Simplex ℝ V k)
     (hc : IsCompl (affineSpan ℝ σ.carrier).direction (vectorSpan ℝ (range s.points)))
-    (hf : Disjoint (convexHull ℝ (range s.points)) (intrinsicFrontier ℝ σ.carrier))
-    (hb : ∀ j : Fin (k + 1),
-      Disjoint (convexHull ℝ (range (s.points ∘ j.succAbove))) σ.carrier) :
-    σ.IsTransverse s.points := by
+    (hf : Disjoint (convexHull ℝ (range s.points)) (intrinsicFrontier ℝ σ.carrier)) :
+    σ.IsTransverseToCarrier s.points := by
   have := h.finiteDimensional
-  refine ⟨hf, hb, fun _ => ?_⟩
+  refine ⟨hf, fun _ => ?_⟩
   apply (σ.isConormal.evalSign_ne_zero_iff
     (σ.finrank_quotient_direction.trans (Fintype.card_fin k).symm) _).mp
   have he := Module.Ray.evalSign_rayOfNeZero σ.orientation.someVector_ne_zero
@@ -100,28 +91,26 @@ theorem isTransverse_of_isCompl (σ : OrientedCell h k) (s : Affine.Simplex ℝ 
   exact s.conormal_apply_ne_zero hc
     (Module.Ray.isConormal_iff.mp σ.isConormal) σ.orientation.someVector_ne_zero
 
-/-- Reversing a cell's orientation preserves transversality of an affine test simplex. -/
+/-- Reversing a cell's orientation preserves transversality to its carrier. -/
 @[simp]
-theorem isTransverse_reverse_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V) :
-    σ.reverse.IsTransverse v ↔ σ.IsTransverse v := by
+theorem isTransverseToCarrier_reverse_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V) :
+    σ.reverse.IsTransverseToCarrier v ↔ σ.IsTransverseToCarrier v := by
   constructor <;> intro hv <;>
-    refine ⟨by simpa only [reverse_carrier] using hv.disjoint_intrinsicFrontier,
-      by simpa only [reverse_carrier] using hv.disjoint_faces, ?_⟩
+    refine ⟨by simpa only [reverse_carrier] using hv.disjoint_intrinsicFrontier, ?_⟩
   · have hlin := hv.linearIndependent
     rw [reverse_carrier] at hlin
     exact hlin
   · rw [reverse_carrier]
     exact hv.linearIndependent
 
-/-- Restricting a transverse segment to a nontrivial parameter interval preserves
-transversality when the new endpoints avoid the cell. The parameters may occur in either
-order, and disjoint stationary tests are allowed. -/
-theorem IsTransverse.subsegment {σ : OrientedCell h 1} {x y a b : V}
-    (hv : σ.IsTransverse ![x, y]) {s u : ℝ}
+/-- Restricting a segment transverse to the carrier to a nontrivial parameter interval preserves
+transversality to the carrier, including when a new endpoint lies on the cell. The parameters
+may occur in either order. -/
+theorem IsTransverseToCarrier.subsegment {σ : OrientedCell h 1} {x y a b : V}
+    (hv : σ.IsTransverseToCarrier ![x, y]) {s u : ℝ}
     (hs : s ∈ Icc (0 : ℝ) 1) (hu : u ∈ Icc (0 : ℝ) 1) (hsu : s ≠ u)
-    (ha : a = AffineMap.lineMap x y s) (hb : b = AffineMap.lineMap x y u)
-    (haσ : a ∉ σ.carrier) (hbσ : b ∉ σ.carrier) :
-    σ.IsTransverse ![a, b] := by
+    (ha : a = AffineMap.lineMap x y s) (hb : b = AffineMap.lineMap x y u) :
+    σ.IsTransverseToCarrier ![a, b] := by
   have hseg : segment ℝ a b ⊆ segment ℝ x y := by
     apply (convex_segment x y).segment_subset
     · rw [ha, segment_eq_image_lineMap]
@@ -133,29 +122,76 @@ theorem IsTransverse.subsegment {σ : OrientedCell h 1} {x y a b : V}
   have hdiff : b - a = (u - s) • (y - x) := by
     rw [ha, hb, AffineMap.lineMap_apply_module', AffineMap.lineMap_apply_module']
     module
-  refine ⟨hv.disjoint_intrinsicFrontier.mono_left hhull, ?_, fun hm => ?_⟩
-  · intro j
-    rw [Set.range_unique, convexHull_singleton, Set.disjoint_singleton_left]
-    fin_cases j
-    · simpa using hbσ
-    · simpa using haσ
-  · have hlin := hv.linearIndependent (hm.mono (inter_subset_inter_left _ hhull))
-    rw [linearIndependent_unique_iff] at hlin ⊢
-    simp only [Function.comp_apply, Fin.default_eq_zero, Fin.succ_zero_eq_one,
-      Matrix.cons_val_one, Matrix.cons_val_zero] at hlin ⊢
-    rw [hdiff, map_smul, smul_ne_zero_iff]
-    exact ⟨sub_ne_zero.mpr hsu.symm, hlin⟩
+  refine ⟨hv.disjoint_intrinsicFrontier.mono_left hhull, fun hm => ?_⟩
+  have hlin := hv.linearIndependent (hm.mono (inter_subset_inter_left _ hhull))
+  rw [linearIndependent_unique_iff] at hlin ⊢
+  simp only [Function.comp_apply, Fin.default_eq_zero, Fin.succ_zero_eq_one,
+    Matrix.cons_val_one, Matrix.cons_val_zero] at hlin ⊢
+  rw [hdiff, map_smul, smul_ne_zero_iff]
+  exact ⟨sub_ne_zero.mpr hsu.symm, hlin⟩
 
-/-- A transverse test meeting a cell meets its affine span in only one point. -/
-theorem IsTransverse.subsingleton_convexHull_inter_affineSpan (hv : σ.IsTransverse v)
+/-- A test transverse to the carrier whose proper parameter faces all avoid the cell. -/
+structure IsTransverse (σ : OrientedCell h k) (v : Fin (k + 1) → V) : Prop
+    extends IsTransverseToCarrier σ v where
+  /-- Every proper parameter face avoids the support. -/
+  disjoint_faces : ∀ j : Fin (k + 1),
+    Disjoint (convexHull ℝ (range (v ∘ j.succAbove))) σ.carrier
+
+/-- A test missing a cell is transverse, including when the test is degenerate. -/
+theorem isTransverse_of_disjoint (σ : OrientedCell h k) {v : Fin (k + 1) → V}
+    (hv : Disjoint (convexHull ℝ (range v)) σ.carrier) : σ.IsTransverse v :=
+  ⟨σ.isTransverseToCarrier_of_disjoint hv,
+    fun _ => hv.mono_left (convexHull_mono (range_comp_subset_range _ _))⟩
+
+/-- A simplex complementary to the cell direction is transverse when it avoids the cell's
+relative frontier and its proper parameter faces avoid the cell. -/
+theorem isTransverse_of_isCompl (σ : OrientedCell h k) (s : Affine.Simplex ℝ V k)
+    (hc : IsCompl (affineSpan ℝ σ.carrier).direction (vectorSpan ℝ (range s.points)))
+    (hf : Disjoint (convexHull ℝ (range s.points)) (intrinsicFrontier ℝ σ.carrier))
+    (hb : ∀ j : Fin (k + 1),
+      Disjoint (convexHull ℝ (range (s.points ∘ j.succAbove))) σ.carrier) :
+    σ.IsTransverse s.points :=
+  ⟨σ.isTransverseToCarrier_of_isCompl s hc hf, hb⟩
+
+/-- Reversing a cell's orientation preserves transversality of an affine test simplex. -/
+@[simp]
+theorem isTransverse_reverse_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V) :
+    σ.reverse.IsTransverse v ↔ σ.IsTransverse v := by
+  constructor
+  · intro hv
+    exact ⟨(σ.isTransverseToCarrier_reverse_iff v).mp hv.toIsTransverseToCarrier,
+      by simpa only [reverse_carrier] using hv.disjoint_faces⟩
+  · intro hv
+    exact ⟨(σ.isTransverseToCarrier_reverse_iff v).mpr hv.toIsTransverseToCarrier,
+      by simpa only [reverse_carrier] using hv.disjoint_faces⟩
+
+/-- Restricting a transverse segment to a nontrivial parameter interval preserves
+transversality when the new endpoints avoid the cell. The parameters may occur in either
+order, and disjoint stationary tests are allowed. -/
+theorem IsTransverse.subsegment {σ : OrientedCell h 1} {x y a b : V}
+    (hv : σ.IsTransverse ![x, y]) {s u : ℝ}
+    (hs : s ∈ Icc (0 : ℝ) 1) (hu : u ∈ Icc (0 : ℝ) 1) (hsu : s ≠ u)
+    (ha : a = AffineMap.lineMap x y s) (hb : b = AffineMap.lineMap x y u)
+    (haσ : a ∉ σ.carrier) (hbσ : b ∉ σ.carrier) :
+    σ.IsTransverse ![a, b] := by
+  refine ⟨hv.toIsTransverseToCarrier.subsegment hs hu hsu ha hb, fun j => ?_⟩
+  rw [Set.range_unique, convexHull_singleton, Set.disjoint_singleton_left]
+  fin_cases j
+  · simpa using hbσ
+  · simpa using haσ
+
+/-- A test transverse to the carrier meets the affine span in at most one point if it meets
+the cell. -/
+theorem IsTransverseToCarrier.subsingleton_convexHull_inter_affineSpan
+    (hv : σ.IsTransverseToCarrier v)
     (hmeet : (convexHull ℝ (range v) ∩ σ.carrier).Nonempty) :
     (convexHull ℝ (range v) ∩ affineSpan ℝ σ.carrier).Subsingleton :=
   ((affineSpan ℝ σ.carrier).subsingleton_affineSpan_range_inter
     (hv.linearIndependent hmeet)).anti
     (inter_subset_inter_left _ (convexHull_subset_affineSpan _))
 
-/-- A transverse test meets a cell only at relative interior points. -/
-theorem IsTransverse.mem_intrinsicInterior (hv : σ.IsTransverse v) {x : V}
+/-- A test transverse to the carrier meets the cell only at relative interior points. -/
+theorem IsTransverseToCarrier.mem_intrinsicInterior (hv : σ.IsTransverseToCarrier v) {x : V}
     (hxv : x ∈ convexHull ℝ (range v)) (hxσ : x ∈ σ.carrier) :
     x ∈ intrinsicInterior ℝ σ.carrier := by
   rw [← intrinsicClosure_sdiff_intrinsicFrontier]
@@ -232,9 +268,9 @@ theorem intersectionIndex_reverse (σ : OrientedCell h k) (v : Fin (k + 1) → V
     rw [intersectionIndex_of_disjoint hdisj,
       intersectionIndex_of_disjoint (σ := σ.reverse) (by rwa [reverse_carrier]), neg_zero]
 
-/-- The intersection index of a transverse test vanishes exactly when the test misses the cell;
-otherwise it is `±1`. -/
-theorem IsTransverse.intersectionIndex_eq_zero_iff (hv : σ.IsTransverse v) :
+/-- For a test transverse to the carrier, the intersection index vanishes exactly when the
+test misses the cell. -/
+theorem IsTransverseToCarrier.intersectionIndex_eq_zero_iff (hv : σ.IsTransverseToCarrier v) :
     σ.intersectionIndex v = 0 ↔ Disjoint (convexHull ℝ (range v)) σ.carrier := by
   have := h.finiteDimensional
   refine ⟨fun hzero => ?_, intersectionIndex_of_disjoint⟩
@@ -247,8 +283,8 @@ theorem IsTransverse.intersectionIndex_eq_zero_iff (hv : σ.IsTransverse v) :
   generalize σ.orientation.evalSign _ = s at hzero hne
   cases s <;> simp_all
 
-/-- A transverse test meeting a cell has intersection index `1` or `-1`. -/
-theorem IsTransverse.intersectionIndex_eq_one_or_neg_one (hv : σ.IsTransverse v)
+/-- A test transverse to the carrier that meets the cell has intersection index `1` or `-1`. -/
+theorem IsTransverseToCarrier.intersectionIndex_eq_one_or_neg_one (hv : σ.IsTransverseToCarrier v)
     (hmeet : (convexHull ℝ (range v) ∩ σ.carrier).Nonempty) :
     σ.intersectionIndex v = 1 ∨ σ.intersectionIndex v = -1 := by
   have hne : σ.intersectionIndex v ≠ 0 := by
@@ -425,11 +461,11 @@ private theorem localCoeff_eq_zero {z : OrientedCell h k →₀ E}
 
 end relations
 
-/-- A cochain relation pairs to zero with every test transverse to all of its cells, although
-the relation may be generated by cells to which the test is not transverse. -/
+/-- A cochain relation pairs to zero with every test transverse to the carriers of the cells
+in its support. -/
 theorem intersectionPairing_eq_zero_of_mem_cochainRelations {v : Fin (k + 1) → V}
     {z : OrientedCell h k →₀ E} (hz : z ∈ cochainRelations R h E k)
-    (hv : ∀ σ ∈ z.support, σ.IsTransverse v) :
+    (hv : ∀ σ ∈ z.support, σ.IsTransverseToCarrier v) :
     intersectionPairing (R := R) v z = 0 := by
   classical
   -- The test meets each relevant span in a single point. Near that point in the span, the
@@ -481,12 +517,12 @@ open OrientedCell
 
 variable {R : Type*} [Ring R] {E : Type*} [AddCommGroup E] [Module R E]
 
-/-- The cochain relations preserve the intersection pairing whenever the test is transverse to
-both representatives: two formal sums representing the same cochain have the same pairing with
-every test transverse to all of their cells. -/
+/-- The intersection pairing is independent of the representative for tests transverse to the
+carriers of all cells in the two representatives. -/
 theorem intersectionPairing_eq_of_ofFinsupp_eq {v : Fin (k + 1) → V}
     {x y : OrientedCell h k →₀ E} (hxy : ofFinsupp (R := R) x = ofFinsupp y)
-    (hx : ∀ σ ∈ x.support, σ.IsTransverse v) (hy : ∀ σ ∈ y.support, σ.IsTransverse v) :
+    (hx : ∀ σ ∈ x.support, σ.IsTransverseToCarrier v)
+    (hy : ∀ σ ∈ y.support, σ.IsTransverseToCarrier v) :
     intersectionPairing (R := R) v x = intersectionPairing (R := R) v y := by
   classical
   rw [← sub_eq_zero, ← map_sub]
