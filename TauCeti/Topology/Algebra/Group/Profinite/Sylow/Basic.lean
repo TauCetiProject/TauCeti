@@ -174,8 +174,7 @@ theorem IsProPSylow.not_dvd_index_of_le [SeparatelyContinuousMul G] (hP : IsProP
     (V : OpenSubgroup G) (hPV : P ≤ V) : ¬ p ∣ V.toSubgroup.index := by
   -- the normal core of `V` is an open normal subgroup `N ≤ V`, and `[G : V]` is the index of the
   -- image of `V` in `G ⧸ N`, which divides the index of the image of `P`
-  obtain ⟨N, hNV, -⟩ :=
-    V.exists_openNormalSubgroup_le_of_index_ne_zero Subgroup.index_ne_zero_of_finite
+  obtain ⟨N, hNV, -⟩ := V.exists_openNormalSubgroup_le
   intro hdvd
   refine hP.not_dvd_index N (hdvd.trans ?_)
   calc V.toSubgroup.index

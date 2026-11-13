@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Index.PrimePart
 public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.NumberTheory.Supernatural
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
-import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import TauCeti.Topology.Algebra.Group.Profinite.Generation
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
 
@@ -116,9 +116,10 @@ theorem _root_.Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup (H : Subgroup 
     by_cases hU : U.1.toSubgroup.index = 0
     · rw [hU]
       simp [Nat.padicValNat_def]
-    obtain ⟨N, hNU, hN⟩ := U.1.exists_openNormalSubgroup_le_of_index_ne_zero hU
+    have : U.1.toSubgroup.FiniteIndex := ⟨hU⟩
+    obtain ⟨N, hNU, hN⟩ := U.1.exists_openNormalSubgroup_le
     have hsup : (H ⊔ N.toSubgroup).index ≠ 0 :=
-      ne_zero_of_dvd_ne_zero hN (Subgroup.index_dvd_of_le le_sup_right)
+      ne_zero_of_dvd_ne_zero hN.index_ne_zero (Subgroup.index_dvd_of_le le_sup_right)
     refine (Nat.cast_le.mpr (Subgroup.padicValNat_index_le_of_le (sup_le U.2 hNU) hsup ℓ)).trans ?_
     rw [← H.index_map_mk'_eq_index_sup N.toSubgroup]
     exact le_iSup (fun M : OpenNormalSubgroup G ↦
@@ -142,11 +143,12 @@ theorem _root_.Subgroup.profiniteIndex_anti {H K : Subgroup G} (h : H ≤ K) :
 /-- Primewise, the profinite index of an open subgroup of nonzero index is the valuation of its
 ordinary index. -/
 theorem _root_.OpenSubgroup.profiniteIndex_apply_eq_padicValNat (U : OpenSubgroup G)
-    (hU : U.toSubgroup.index ≠ 0) (ℓ : Nat.Primes) :
+    [U.toSubgroup.FiniteIndex] (ℓ : Nat.Primes) :
     Subgroup.profiniteIndex U.toSubgroup ℓ = (padicValNat ℓ U.toSubgroup.index : ℕ∞) := by
   have : Fact ℓ.val.Prime := ⟨ℓ.prop⟩
   rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup]
-  exact le_antisymm (iSup_le fun V ↦ Nat.cast_le.mpr (Subgroup.padicValNat_index_le_of_le V.2 hU ℓ))
+  exact le_antisymm (iSup_le fun V ↦ Nat.cast_le.mpr
+      (Subgroup.padicValNat_index_le_of_le V.2 Subgroup.FiniteIndex.index_ne_zero ℓ))
     (le_iSup_of_le (⟨U, le_rfl⟩ : {V : OpenSubgroup G // U.toSubgroup ≤ V.toSubgroup}) le_rfl)
 
 /-- **An open subgroup of prime-power index has that supernatural prime power as its index.**
@@ -159,7 +161,8 @@ theorem _root_.Subgroup.profiniteIndex_eq_primePower {H : Subgroup G} (hH : IsOp
     Subgroup.profiniteIndex H = Supernatural.primePower q k := by
   have hH0 : H.index ≠ 0 := by rw [h]; exact pow_ne_zero _ q.prop.ne_zero
   have hval : ∀ ℓ : Nat.Primes, Subgroup.profiniteIndex H ℓ = (padicValNat ℓ H.index : ℕ∞) :=
-    OpenSubgroup.profiniteIndex_apply_eq_padicValNat ⟨H, hH⟩ hH0
+    have : (OpenSubgroup.mk H hH).toSubgroup.FiniteIndex := ⟨hH0⟩
+    OpenSubgroup.profiniteIndex_apply_eq_padicValNat ⟨H, hH⟩
   refine Supernatural.ext fun ℓ ↦ ?_
   have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
   rw [hval, h]
@@ -215,7 +218,7 @@ theorem _root_.OpenSubgroup.profiniteIndex_eq_ofNat_index (U : OpenSubgroup G) :
         (⟨U.toSubgroup.index,
           Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) := by
   ext ℓ
-  rw [U.profiniteIndex_apply_eq_padicValNat Subgroup.index_ne_zero_of_finite]
+  rw [U.profiniteIndex_apply_eq_padicValNat]
   exact (Supernatural.ofNat_apply
     ⟨U.toSubgroup.index, Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ ℓ).symm
 

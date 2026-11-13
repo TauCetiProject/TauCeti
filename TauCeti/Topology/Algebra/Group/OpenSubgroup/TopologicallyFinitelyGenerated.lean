@@ -89,7 +89,8 @@ theorem finite_openSubgroup_index_eq_of_ne_zero (hG : IsTopologicallyFinitelyGen
     rw [hψ, MonoidHom.ker_mulEquiv_comp, ← Subgroup.normalCore_eq_ker]
   have hopen : ∀ U : S, IsOpen (((ψ U).ker : Subgroup G) : Set G) := fun U ↦ by
     rw [hker U]
-    exact U.1.isOpen_normalCore (hindex U)
+    have : (U.1 : Subgroup G).FiniteIndex := ⟨hindex U⟩
+    exact U.1.isOpen_normalCore
   -- `U` is exactly the stabilizer of the trivial coset under that representation.
   have hmem : ∀ (U : S) (g : G), g ∈ (U.1 : Subgroup G) ↔
       ψ U g (e U (QuotientGroup.mk 1)) = e U (QuotientGroup.mk 1) := fun U g ↦ by
