@@ -15,7 +15,8 @@ import TauCeti.CategoryTheory.Monoidal.Grp.Translation
 
 A group scheme is separated whenever its identity section is a closed immersion.
 Translation by the tautological point carries the base change of the identity section to the
-relative diagonal. Over a field, every section is closed, so every group scheme is separated.
+relative diagonal. Over a base with at most one point, every section is closed, so every
+group scheme is separated. This includes spectra of fields and Artinian local rings.
 Neither finite type nor commutativity is needed.
 
 ## References
@@ -54,9 +55,10 @@ theorem isSeparated_of_isClosedImmersion_one {S : Scheme.{u}} (G : Over S) [GrpO
   rw [hd, hdiag, Over.comp_left, Over.comp_left]
   infer_instance
 
-/-- Every group scheme over a field is separated, without finiteness assumptions. -/
-instance isSeparated_of_grpObj {k : Type u} [Field k]
-    (G : Over (Spec (.of k))) [GrpObj G] : IsSeparated G.hom := by
+/-- Every group scheme over a base with at most one point is separated,
+without finiteness assumptions. -/
+instance isSeparated_of_grpObj {S : Scheme.{u}} [Subsingleton S]
+    (G : Over S) [GrpObj G] : IsSeparated G.hom := by
   have : IsClosedImmersion η[G].left :=
     isClosedImmersion_of_comp_eq_id G.hom _ (Over.w η[G])
   exact isSeparated_of_isClosedImmersion_one G

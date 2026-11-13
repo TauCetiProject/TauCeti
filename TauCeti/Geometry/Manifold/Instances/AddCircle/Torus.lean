@@ -34,12 +34,17 @@ Hence the derivative of `x ↦ A • x` at every point is the matrix `A`, acting
 torus is choosing such an `A`: these maps are the changes of angle coordinates of action–angle
 charts.
 
+For a torus `∀ i, AddCircle (p i)` with arbitrary positive periods, every translation
+`x ↦ x + a` likewise has derivative the identity of `ι → ℝ` (`AddCircle.mfderiv_pi_add_right`).
+
 ## Main results
 
 * `AddCircle.instDistribMulActionGeneralLinearGroup`: the action of `GL(ι, ℤ)` on
   `ι → AddCircle p` by additive maps.
 * `AddCircle.instContMDiffConstSMulGeneralLinearGroup`: it acts by smooth maps.
 * `AddCircle.hasMFDerivAt_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` has derivative the identity.
+* `AddCircle.hasMFDerivAt_pi_add_right`, `AddCircle.mfderiv_pi_add_right`: translations of a torus
+  `∀ i, AddCircle (p i)` have derivative the identity.
 * `AddCircle.hasMFDerivAt_generalLinearGroup_smul`,
   `AddCircle.mfderiv_generalLinearGroup_smul_apply`: the derivative of `x ↦ A • x` is the matrix
   `A`.
@@ -80,6 +85,38 @@ theorem hasMFDerivAt_coe_pi (t : ι → ℝ) :
     rfl
 
 end Cover
+
+/-! ### Translations -/
+
+section Translation
+
+variable {p : ι → ℝ} [∀ i, Fact (0 < p i)]
+
+/-- Every translation `x ↦ x + a` of the torus `∀ i, AddCircle (p i)` has derivative the identity
+of `ι → ℝ`, the tangent spaces of the torus being read in its product charts. -/
+theorem hasMFDerivAt_pi_add_right (a x : ∀ i, AddCircle (p i)) :
+    HasMFDerivAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (· + a) x (ContinuousLinearMap.id ℝ (ι → ℝ)) := by
+  -- Each component is the projection followed by a translation of a circle, whose derivative is
+  -- the identity of `ℝ`.
+  have h (i : ι) : HasMFDerivAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) 𝓘(ℝ)
+      (fun z : ∀ i, AddCircle (p i) ↦ (z + a) i) x (ContinuousLinearMap.proj i) := by
+    have h₁ := ((contMDiff_add_right (I := 𝓘(ℝ)) (n := 1) (a := a i)).mdifferentiableAt
+      one_ne_zero (x := x i)).hasMFDerivAt
+    refine (h₁.comp x (TauCeti.hasMFDerivAt_apply i x)).congr_mfderiv ?_
+    rw [mfderiv_add_right]
+    exact ContinuousLinearMap.id_comp _
+  exact (TauCeti.hasMFDerivAt_pi h).congr_mfderiv ContinuousLinearMap.pi_proj
+
+/-- Every translation `x ↦ x + a` of the torus `∀ i, AddCircle (p i)` has derivative the identity
+of `ι → ℝ`. -/
+@[simp]
+theorem mfderiv_pi_add_right (a x : ∀ i, AddCircle (p i)) :
+    mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (· + a) x = ContinuousLinearMap.id ℝ (ι → ℝ) :=
+  (hasMFDerivAt_pi_add_right a x).mfderiv
+
+end Translation
 
 /-! ### The action of `GL(ι, ℤ)` -/
 
