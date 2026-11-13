@@ -18,8 +18,8 @@ has terms `M / Iⁿ⁺¹ M`. These comparisons specialize
 `TauCeti.ModuleTower.limMap_bijective_of_lim_eq_bot` from `Tower.Exact` and
 `TauCeti.ModuleTower.limMap_bijective_of_isProZero` from `Tower.ProZero`.
 
-In the scalar case `I = (f)`, the levelwise obstruction maps take values in a module `Q`
-and commute with the transitions on `G` and multiplication by `f` on `Q`. If a fixed power
+For scalar-multiplication obstructions, the levelwise obstruction maps take values in a module
+`Q` and commute with the transitions on `G` and multiplication by `f` on `Q`. If a fixed power
 `f ^ k` annihilates `Q`, every compatible obstruction family satisfies
 `qₙ = f ^ k • qₙ₊ₖ = 0`. Surjectivity of the obstruction maps is not required. The resulting
 bijection `M → lim G` is the complete-source form of
@@ -71,20 +71,20 @@ theorem limMap_comp_toLimReduction_bijective_of_isProZero
 
 variable {Q : Type v} [AddCommGroup Q] [Module R Q]
 
-/-- Let `iₙ : M / fⁿ⁺¹ M → Gₙ` be compatible injections whose obstructions lie in a
+/-- Let `iₙ : M / Iⁿ⁺¹ M → Gₙ` be compatible injections whose obstructions lie in a
 uniformly `f`-power-annihilated module and transition by multiplication by `f`. If `M` is
-`(f)`-adically complete, the canonical map `M → lim Gₙ` is bijective. This is the complete
+`I`-adically complete, the canonical map `M → lim Gₙ` is bijective. This is the complete
 module form of the bounded-obstruction comparison for sections of thickenings. -/
 theorem limMap_comp_toLimReduction_bijective_of_pow_smul_eq_zero
-    {M : Type v} [AddCommGroup M] [Module R M] (f : R)
-    [IsAdicComplete (Ideal.span {f}) M] {G : ModuleTower.{v} R}
-    (i : reduction (Ideal.span {f}) M ⟶ G) (δ : ∀ n, G.obj (op n) →ₗ[R] Q)
+    {M : Type v} [AddCommGroup M] [Module R M] (I : Ideal R) (f : R)
+    [IsAdicComplete I M] {G : ModuleTower.{v} R}
+    (i : reduction I M ⟶ G) (δ : ∀ n, G.obj (op n) →ₗ[R] Q)
     (hi : ∀ n, Function.Injective (i.app (op n)).hom)
     (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ n))
     (hδ : ∀ n x, δ n (G.transition n x) = f • δ (n + 1) x)
     (hQ : ∃ k : ℕ, ∀ x : Q, f ^ k • x = 0) :
-    Function.Bijective (limMap i ∘ₗ toLimReduction (Ideal.span {f}) M) :=
+    Function.Bijective (limMap i ∘ₗ toLimReduction I M) :=
   (limMap_bijective_of_pow_smul_eq_zero i f δ hi hex hδ hQ).comp
-    (toLimReduction_bijective (Ideal.span {f}) M)
+    (toLimReduction_bijective I M)
 
 end TauCeti.ModuleTower

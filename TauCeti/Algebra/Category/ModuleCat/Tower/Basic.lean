@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
-public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.CategoryTheory.Limits.IsLimit
@@ -662,14 +661,12 @@ theorem toSmulTower_app_apply {F : ModuleTower.{v} R} (f : R)
     ((toSmulTower f d hd).app (op n)).hom x = d n x :=
   (rfl)
 
-/-- Exactness with a component of `toSmulTower` is exactness with the supplied linear map. -/
-@[simp]
-theorem exact_toSmulTower_iff {F G : ModuleTower.{v} R} (i : F ⟶ G) (f : R)
-    (d : ∀ n, G.obj (op n) →ₗ[R] M)
-    (hd : ∀ n x, d n (G.transition n x) = f • d (n + 1) x) (n : ℕ) :
-    Function.Exact (i.app (op n)).hom ((toSmulTower f d hd).app (op n)).hom ↔
-      Function.Exact (i.app (op n)).hom (d n) :=
-  (Iff.rfl)
+/-- The component linear maps of `toSmulTower` are the supplied maps. -/
+theorem toSmulTower_app_hom {F : ModuleTower.{v} R} (f : R)
+    (d : ∀ n, F.obj (op n) →ₗ[R] M)
+    (hd : ∀ n x, d n (F.transition n x) = f • d (n + 1) x) (n : ℕ) :
+    ((toSmulTower f d hd).app (op n)).hom = d n :=
+  (rfl)
 
 end SMulTower
 

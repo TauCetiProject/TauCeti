@@ -265,7 +265,7 @@ theorem limMap_bijective_of_pow_smul_eq_zero
     (hQ : ∃ k : ℕ, ∀ x : Q, f ^ k • x = 0) :
     Function.Bijective (limMap i) :=
   limMap_bijective_of_isProZero i (toSmulTower f δ hδ) hi
-    (fun n ↦ (exact_toSmulTower_iff i f δ hδ n).2 (hex n)) ((isProZero_smulTower_iff f).2 hQ)
+    (fun n ↦ by rw [toSmulTower_app_hom]; exact hex n) ((isProZero_smulTower_iff f).2 hQ)
 
 end SMulTower
 
