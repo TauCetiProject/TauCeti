@@ -110,9 +110,11 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le (hE : Module.finrank 
   refine ⟨C * (ENNReal.ofReal ((4 * Real.pi) ^ (-(2⁻¹ : ℝ))) ^ (2⁻¹ : ℝ)).toNNReal,
     fun F hF hSF => ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
-  simpa only [adjoint_phasePropagator] using hC (schrodingerPropagator V) _
+  have h := hC (schrodingerPropagator V) _
     (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le hE hst g) F hF
     (by simpa only [adjoint_phasePropagator] using hSF)
+  simp only [adjoint_phasePropagator] at h
+  exact h
 
 /-- **The Strichartz estimate for the Schrödinger equation on the line**, at the admissible pair
 `(4, ∞)`, in weak form. There is `C` such that for every `f ∈ L²(E, V)` on a one-dimensional space
@@ -198,10 +200,12 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_admissible (hq : 2
   refine ⟨C * (ENNReal.ofReal ((4 * Real.pi) ^ (-(2 / q : ℝ))) ^ (2⁻¹ : ℝ)).toNNReal,
     fun F hF hSF => ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
-  simpa only [adjoint_phasePropagator] using hC (schrodingerPropagator ℂ) _
+  have h := hC (schrodingerPropagator ℂ) _
     (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le_of_admissible
       (zero_lt_two.trans hq) hqr hst g) F hF
     (by simpa only [adjoint_phasePropagator] using hSF)
+  simp only [adjoint_phasePropagator] at h
+  exact h
 
 /-- **The Strichartz estimate for the Schrödinger equation**, in every dimension `n` and at every
 non-endpoint admissible pair, in weak form: let `2 < q < ∞` with Hölder conjugate `p`, and let `r`
@@ -264,7 +268,7 @@ theorem exists_enorm_setIntegral_schrodingerPropagator_sub_le_of_admissible (hq 
   rw [hrw, ← ofReal_norm, norm_phasePropagator_apply, ofReal_norm]
   refine (hC _ (hF.indicator hA) (hind ▸ hSF.indicator hA)).trans ?_
   gcongr
-  refine eLpNorm_mono_enorm (AEStronglyMeasurable.aemeasurable_eLpNorm_Lp (hF.indicator hA) .rfl
+  refine eLpNorm_mono_eNorm (AEStronglyMeasurable.aemeasurable_eLpNorm_Lp (hF.indicator hA) .rfl
     r').aestronglyMeasurable fun s ↦ ?_
   by_cases hs : s ∈ A
   · simp [hs]
@@ -306,14 +310,14 @@ theorem exists_enorm_integral_inner_setIntegral_schrodingerPropagator_sub_le_of_
       norm_inner_symm]
   calc ‖∫ t, ⟪∫ s in A t, schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ
       ≤ ∫⁻ t, ‖⟪∫ s in A t, schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
-        enorm_integral_le_lintegral_enorm _
+        eNorm_integral_le_lintegral_eNorm _
     _ ≤ ∫⁻ t, ∫⁻ s, ‖⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ := by
         refine lintegral_mono fun t ↦ ?_
         have hint : IntegrableOn (fun s ↦ schrodingerPropagator ℂ (t - s) (F s)) (A t) := by
           simp_rw [hS t]
           exact ((schrodingerPropagator ℂ t).integrable_comp hSF).integrableOn
         rw [← ofReal_norm, norm_inner_symm, ofReal_norm, ← integral_inner hint]
-        refine (enorm_integral_le_lintegral_enorm _).trans
+        refine (eNorm_integral_le_lintegral_eNorm _).trans
           ((setLIntegral_le_lintegral _ _).trans_eq (lintegral_congr fun s ↦ ?_))
         rw [← ofReal_norm, norm_inner_symm, ofReal_norm]
     _ = ∫⁻ t, ∫⁻ s, ‖⟪((schrodingerPropagator ℂ t)†) (G t),
