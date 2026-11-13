@@ -480,7 +480,7 @@ private theorem isDFinite_of_recurrence {r : ℕ} {q : Fin (r + 1) → k[X]}
       simpa only [c, ← hdeg, Polynomial.coeff_taylor_natDegree] using
         Polynomial.leadingCoeff_ne_zero.mpr ht₁
     intro hb
-    have hcoeff := congrArg (Polynomial.coeff · (r - t₁ + e)) hb
+    have hcoeff := congrArg (fun p : k[X] ↦ p.coeff (r - t₁ + e)) hb
     simp only [Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul_X_pow,
       Polynomial.coeff_zero] at hcoeff
     rw [Finset.sum_eq_single t₁ (fun t _ ht ↦ ite_eq_right_iff.mpr fun h ↦
@@ -536,7 +536,7 @@ private theorem recurrencePoly_ne_zero {n d : ℕ} {p : Fin (n + 1) → k[X]}
   obtain ⟨j₀, hj₀⟩ : ∃ j₀ : Fin (d + 1), (j₀ : ℕ) = (p (Fin.last n)).natDegree :=
     ⟨⟨_, Nat.lt_succ_of_le hle⟩, rfl⟩
   intro hq
-  have hcoeff := congrArg (Polynomial.coeff · n)
+  have hcoeff := congrArg (fun p : k[X] ↦ p.coeff n)
     (congrFun hq (recurrenceShift n d (Fin.last n, j₀)))
   simp only [recurrencePoly, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul, Pi.zero_apply,
     Polynomial.coeff_zero] at hcoeff

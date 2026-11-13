@@ -18,11 +18,8 @@ As a first geometric consequence, isomorphic abelian varieties have the same dim
 the interface needed to compare constructions characterized by the Jacobian's universal property
 and to state its base-change compatibility as an isomorphism of abelian varieties.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, “Abelian variety = smooth,
-proper, geometrically connected group scheme over `k`; basic API, dim,” and prepares the
-isomorphisms in the end goal and Layer F. No external mathematics is vendored. The implementation
-reuses Mathlib's `Functor.mapIso`, `Over.forget.mapIso`, and invariance of topological Krull
-dimension under homeomorphism.
+No external mathematics is vendored. The implementation reuses Mathlib's `Functor.mapIso`,
+`Over.forget.mapIso`, and invariance of topological Krull dimension under homeomorphism.
 -/
 
 public section

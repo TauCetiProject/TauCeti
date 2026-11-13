@@ -60,9 +60,8 @@ the proof below uses them.
 
 Adapted from D. K. Angdinata's
 `projects/NagellLutz/LutzNagell/EllipticDivisibilitySequence.lean` in AINTLIB
-(`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at `dev/modular-curves @ 9fec8eba7652` — the revision
-`TauCetiRoadmap/EllipticCurves/README.md` pins for the NagellLutz project. Source declarations
-`invarNum_normEDS_two` (`:977`), `invarDenom_normEDS_two` (`:980`),
+(`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at `dev/modular-curves @ 9fec8eba7652`. Source
+declarations `invarNum_normEDS_two` (`:977`), `invarDenom_normEDS_two` (`:980`),
 `invar₂_normEDS_of_mem_nonZeroDivisors` (`:1485`) and `invar₂_normEDS` (`:1492`). That file's
 header reads `Authors: David Kurniadi Angdinata`; following this repository's convention for
 adapted material the upstream authorship is credited here rather than in the copyright header.
