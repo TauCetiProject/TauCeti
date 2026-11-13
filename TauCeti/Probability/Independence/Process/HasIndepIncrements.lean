@@ -333,6 +333,45 @@ end ProbabilityTheory
 
 namespace ProbabilityTheory
 
+/-- Almost-surely nondecreasing natural-valued processes starting at zero with independent
+increments have the same full path law when corresponding increment laws agree. -/
+theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [OrderBot T]
+    [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
+    {N : T → Ω → ℕ} {C : T → Ω' → ℕ} (hN : HasIndepIncrements N P)
+    (hC : HasIndepIncrements C Q) (hmN : ∀ t, Measurable (N t))
+    (hmC : ∀ t, Measurable (C t)) (h0N : ∀ᵐ ω ∂P, N ⊥ ω = 0)
+    (h0C : ∀ᵐ ω ∂Q, C ⊥ ω = 0)
+    (hmonoN : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω))
+    (hmonoC : ∀ᵐ ω ∂Q, Monotone (fun t ↦ C t ω))
+    (hlaw : ∀ s t, s ≤ t → IdentDistrib (fun ω ↦ N t ω - N s ω)
+      (fun ω ↦ C t ω - C s ω) P Q) :
+    IdentDistrib (fun ω t ↦ N t ω) (fun ω t ↦ C t ω) P Q := by
+  have hNZ (t : T) : Measurable (fun ω ↦ (N t ω : ℤ)) := by fun_prop
+  have hCZ (t : T) : Measurable (fun ω ↦ (C t ω : ℤ)) := by fun_prop
+  have h0NZ : ∀ᵐ ω ∂P, (N ⊥ ω : ℤ) = 0 := by
+    filter_upwards [h0N] with ω hω using by simp [hω]
+  have h0CZ : ∀ᵐ ω ∂Q, (C ⊥ ω : ℤ) = 0 := by
+    filter_upwards [h0C] with ω hω using by simp [hω]
+  -- Monotonicity makes integer casting commute with the truncated natural subtraction.
+  have hinc : ∀ s t, s ≤ t → IdentDistrib
+      (fun ω ↦ (N t ω : ℤ) - (N s ω : ℤ))
+      (fun ω ↦ (C t ω : ℤ) - (C s ω : ℤ)) P Q := by
+    intro s t hst
+    have h := (hlaw s t hst).comp (measurable_of_countable (Nat.cast : ℕ → ℤ))
+    have heqN : (fun ω ↦ ((N t ω - N s ω : ℕ) : ℤ)) =ᵐ[P]
+        (fun ω ↦ (N t ω : ℤ) - (N s ω : ℤ)) := by
+      filter_upwards [hmonoN] with ω hω using Int.ofNat_sub (hω hst)
+    have heqC : (fun ω ↦ ((C t ω - C s ω : ℕ) : ℤ)) =ᵐ[Q]
+        (fun ω ↦ (C t ω : ℤ) - (C s ω : ℤ)) := by
+      filter_upwards [hmonoC] with ω hω using Int.ofNat_sub (hω hst)
+    exact (IdentDistrib.of_ae_eq h.aemeasurable_fst heqN).symm.trans
+      (h.trans (IdentDistrib.of_ae_eq h.aemeasurable_snd heqC))
+  have hpaths := (hN.natCast hmonoN).identDistrib (hC.natCast hmonoC)
+    hNZ hCZ h0NZ h0CZ hinc
+  simpa only [Function.comp_def, Int.toNat_natCast] using hpaths.comp
+    (measurable_pi_iff.mpr fun t ↦
+      (measurable_of_countable Int.toNat).comp (measurable_pi_apply t))
+
 /-- A measurable process starting at zero with independent increments has its original full
 path law after shifting time by `t` and subtracting its current value, provided its increment
 laws are invariant under this fixed shift. -/

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 import TauCeti.Probability.PointProcess.Poisson.IntegerValued
-import TauCeti.Probability.Distributions.Poisson.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 import Mathlib.MeasureTheory.Function.Floor
@@ -83,15 +82,11 @@ theorem ae_monotone_nat_count [IsLocallyFiniteMeasure Λ]
 /-- If the intensity gives no mass to the origin, cumulative masses equal the natural-valued
 counts simultaneously at every time, on one event of full probability. In particular the
 identity is available for comparing full count-process and random-measure laws. -/
-theorem ae_forall_natCast_nat_count_Iic [IsLocallyFiniteMeasure Λ]
+theorem ae_forall_measure_Iic_eq_natCast_nat_count [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) (hΛ : Λ {0} = 0) :
     ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (⌊(M ω (Ioc 0 t)).toNNReal⌋₊ : ℝ≥0∞) := by
-  have hzero : ∀ᵐ ω ∂P, M ω {0} = 0 := by
-    have hz := h.hasLaw (A := {0}) (measurableSet_singleton 0) (by simp [hΛ])
-    have hz' : HasLaw (fun ω ↦ M ω {0}) (Measure.dirac 0) P := by
-      simpa [hΛ, poissonMeasure_zero] using hz
-    exact hz'.ae_eq_of_dirac
-  filter_upwards [h.ae_isIntegerValued, h.ae_isLocallyFiniteMeasure, hzero]
+  filter_upwards [h.ae_isIntegerValued, h.ae_isLocallyFiniteMeasure,
+    h.ae_eq_zero (measurableSet_singleton 0) hΛ]
     with ω hint hfin hz t
   let := hfin
   obtain ⟨n, hn⟩ := hint.exists_eq_natCast (A := Ioc 0 t)
@@ -100,7 +95,7 @@ theorem ae_forall_natCast_nat_count_Iic [IsLocallyFiniteMeasure Λ]
     have hu := measure_union (μ := M ω) (s₁ := Iic 0) (s₂ := Ioc 0 t)
       (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc
     have hbot : Iic (0 : ℝ≥0) = {0} := by ext x; simp
-    rw [Iic_union_Ioc_eq_Iic (show (0 : ℝ≥0) ≤ t from bot_le), hbot, hz, zero_add] at hu
+    rw [Iic_union_Ioc_eq_Iic (zero_le (a := t)), hbot, hz, zero_add] at hu
     exact hu
   simp [hinterval, hn]
 
