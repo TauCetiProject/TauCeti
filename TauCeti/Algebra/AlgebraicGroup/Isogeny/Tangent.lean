@@ -22,8 +22,9 @@ import TauCeti.RingTheory.Etale.Reduced
 /-!
 # Differentials of smooth affine isogenies
 
-An isogeny between smooth affine groups of finite type over a field preserves Lie dimension.
-Its differential is therefore bijective exactly when its scheme-theoretic kernel is étale.
+An isogeny onto a smooth affine group of finite type over a field does not decrease Lie dimension,
+and preserves it when the source group is smooth too. Its differential is therefore bijective
+exactly when its scheme-theoretic kernel is étale.
 In this case the differential gives a Lie algebra equivalence. The kernel need not be trivial:
 this comparison applies, for example, to central isogenies with nontrivial étale kernel.
 
@@ -31,8 +32,9 @@ The cotangent-dual version is `cotangentDualLieEquivOfEtaleKernel`. In character
 zero, `cotangentDualLieEquivOfCharZero` supplies this equivalence without additional
 smoothness or kernel hypotheses, using Cartier's theorem.
 
-Dimension equality uses the finite injective coordinate map after passage to an algebraic
-closure, where smoothness identifies Lie dimension with Krull dimension. The criterion then
+The dimension comparison uses the finite injective coordinate map after passage to an algebraic
+closure, where smoothness identifies Lie dimension with Krull dimension, which bounds the Lie
+dimension of any finite-type group from below. The criterion then
 uses the existing identification of the Lie algebra of the kernel with the kernel of the
 differential. No connectedness, centrality, or restriction on the characteristic is needed.
 
@@ -55,10 +57,43 @@ namespace TauCeti.CommHopfAlgCat.IsIsogeny
 
 universe u
 
-variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k}
-  [Algebra.Smooth k H] [Algebra.Smooth k K]
-  {f : H ⟶ K}
+variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k} {f : H ⟶ K}
 
+/-- After base change to an algebraic closure, the coordinate map of an isogeny is still finite
+and injective, so the two base-changed coordinate rings have the same Krull dimension. -/
+private theorem ringKrullDim_baseChange_eq (hf : IsIsogeny f) :
+    ringKrullDim (CommHopfAlgCat.baseChange (K := AlgebraicClosure k) K) =
+      ringKrullDim (CommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) := by
+  have hfL : IsIsogeny (baseChangeMap (K := AlgebraicClosure k) f) := hf.baseChange
+  let _ := (baseChangeMap (K := AlgebraicClosure k) f).hom.toAlgHom.toAlgebra
+  let _ : Module.Finite _ _ := hfL.finite
+  let _ : FaithfulSMul _ _ := (faithfulSMul_iff_algebraMap_injective _ _).mpr hfL.injective
+  exact ringKrullDim_eq_of_isIntegral_of_faithfulSMul
+
+variable [Algebra.Smooth k H]
+
+/-- An isogeny onto a smooth affine group over any field does not decrease Lie dimension: the
+Lie algebra of the target `Spec H` has dimension at most that of the source `Spec K`, which need
+not be smooth. The coordinate arrow reverses the group-scheme arrow. -/
+theorem finrank_lie_le (hf : IsIsogeny f) :
+    Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) ≤
+      Module.finrank k (Derivation k K (Bialgebra.CounitAlgebra k K k)) := by
+  let _ := hf.finiteType_target
+  let L := AlgebraicClosure k
+  let HL := CommHopfAlgCat.baseChange (K := L) H
+  let KL := CommHopfAlgCat.baseChange (K := L) K
+  let _ : Algebra.Smooth L HL := Algebra.Smooth.baseChange k H L
+  let _ : IsRegularRing HL := IsRegularRing.of_smooth (R := L)
+  have hlie : Module.finrank L (Derivation L HL (Bialgebra.CounitAlgebra L HL L)) ≤
+      Module.finrank L (Derivation L KL (Bialgebra.CounitAlgebra L KL L)) := by
+    have hH := (HopfAlgebra.isRegularLocalRing_augmentationStalk_iff
+      (k := L) (H := HL)).mp inferInstance
+    have h := hH.trans_le ((ringKrullDim_baseChange_eq hf).symm.trans_le
+      (HopfAlgebra.ringKrullDim_le_finrank_lie (k := L) (H := KL)))
+    exact_mod_cast h
+  simpa only [HL, KL, CommHopfAlgCat.baseChange, finrank_lie_baseChange] using hlie
+
+variable [Algebra.Smooth k K] in
 /-- An isogeny between smooth finite-type affine groups over any field preserves Lie dimension.
 The coordinate arrow reverses the group-scheme arrow. -/
 theorem finrank_lie_eq (hf : IsIsogeny f) :
@@ -67,18 +102,10 @@ theorem finrank_lie_eq (hf : IsIsogeny f) :
   let L := AlgebraicClosure k
   let HL := CommHopfAlgCat.baseChange (K := L) H
   let KL := CommHopfAlgCat.baseChange (K := L) K
-  let fL := baseChangeMap (K := L) f
-  have hfL : IsIsogeny fL := hf.baseChange
   let _ : Algebra.Smooth L HL := Algebra.Smooth.baseChange k H L
   let _ : Algebra.Smooth L KL := Algebra.Smooth.baseChange k K L
   let _ : IsRegularRing HL := IsRegularRing.of_smooth (R := L)
   let _ : IsRegularRing KL := IsRegularRing.of_smooth (R := L)
-  have hdim : ringKrullDim KL = ringKrullDim HL := by
-    let _ := fL.hom.toAlgHom.toAlgebra
-    let _ : Module.Finite HL KL := hfL.finite
-    let _ : FaithfulSMul HL KL :=
-      (faithfulSMul_iff_algebraMap_injective HL KL).mpr hfL.injective
-    exact ringKrullDim_eq_of_isIntegral_of_faithfulSMul
   have hlie : Module.finrank L
       (Derivation L KL (Bialgebra.CounitAlgebra L KL L)) =
         Module.finrank L (Derivation L HL (Bialgebra.CounitAlgebra L HL L)) := by
@@ -86,21 +113,25 @@ theorem finrank_lie_eq (hf : IsIsogeny f) :
       (k := L) (H := KL)).mp inferInstance
     have hH := (HopfAlgebra.isRegularLocalRing_augmentationStalk_iff
       (k := L) (H := HL)).mp inferInstance
-    have h := hK.trans (hdim.trans hH.symm)
+    have h := hK.trans ((ringKrullDim_baseChange_eq hf).trans hH.symm)
     exact_mod_cast h
   simpa only [HL, KL, CommHopfAlgCat.baseChange, finrank_lie_baseChange] using hlie
 
-/-- The differential of an isogeny between smooth finite-type affine groups is bijective
-exactly when its scheme-theoretic kernel is étale. This distinguishes separable isogenies
-from inseparable ones in positive characteristic. -/
+/-- The differential of an isogeny onto a smooth affine group is bijective exactly when its
+scheme-theoretic kernel is étale. This distinguishes separable isogenies from inseparable ones in
+positive characteristic. The source group need not be smooth: an injective differential forces
+equal Lie dimensions by `finrank_lie_le`. -/
 theorem algebraEtale_quotient_kernelHopfIdeal_iff_bijective_derivationCompLieHom
     (hf : IsIsogeny f) :
     Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal) ↔
       Function.Bijective (derivationCompLieHom (B := k) f.hom) := by
+  let _ := hf.finiteType_target
   rw [algebraEtale_quotient_kernelHopfIdeal_iff]
-  have hsurj := LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (f := (derivationCompLieHom (B := k) f.hom).toLinearMap) hf.finrank_lie_eq
-  exact ⟨fun hinj ↦ ⟨hinj, hsurj.mp hinj⟩, fun hbij ↦ hbij.1⟩
+  refine ⟨fun hinj ↦ ⟨hinj, ?_⟩, fun hbij ↦ hbij.1⟩
+  have hle := LinearMap.finrank_le_finrank_of_injective
+    (f := (derivationCompLieHom (B := k) f.hom).toLinearMap) hinj
+  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (hle.antisymm hf.finrank_lie_le)).mp hinj
 
 /-- The differential of a smooth affine isogeny with étale kernel, as a Lie algebra
 equivalence from the source group to the target group. -/
@@ -145,7 +176,7 @@ theorem lieEquivOfEtaleKernel_apply_apply (hf : IsIsogeny f)
   rw [lieEquivOfEtaleKernel_apply]
   exact algEquivSelf_derivationComp_apply f.hom d a
 
-omit [Algebra.Smooth k H] [Algebra.Smooth k K] in
+omit [Algebra.Smooth k H] in
 /-- The differential of an isogeny with étale kernel is bijective on cotangent duals: the
 coordinate map is then étale, hence formally unramified and formally smooth. Neither group needs
 to be smooth or of finite type. -/
@@ -218,8 +249,6 @@ noncomputable def cotangentDualLieEquivOfCharZero (hf : IsIsogeny f) :
   let _ := hf.finiteType_target
   let _ : Algebra.Smooth k H :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k H)
-  let _ : Algebra.Smooth k K :=
-    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k K)
   let Q := _root_.CommHopfAlgCat.quotient K (kernelHopfIdeal f)
   exact hf.cotangentDualLieEquivOfEtaleKernel (algebraEtale_iff_finite_and_isReduced.2
     ⟨moduleFinite_quotient_kernelHopfIdeal hf.finite, HopfAlgebra.isReduced_of_charZero k Q⟩)
