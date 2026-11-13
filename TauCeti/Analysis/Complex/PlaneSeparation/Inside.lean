@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
+public import TauCeti.Topology.JordanCurve.ClosedBall
 -- Supplies the locally convex, hence locally connected, instance on the complex plane.
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -47,6 +48,8 @@ components of `Jᶜ`.
   hence of its outside.
 * `TauCeti.IsJordanCurve.filledHull_frontier_eq` — conversely, a compact set with nonempty
   interior whose frontier is a Jordan curve is the filled hull of its frontier.
+* `Homeomorph.filledHull_frontier_eq_of_closedBall` — a planar subset homeomorphic to the
+  closed complex unit ball is the filled hull of its frontier; its interior is the inside.
 * `TauCeti.IsJordanCurve.interior_filledHull`, `TauCeti.IsJordanCurve.closure_filledHull_sdiff` and
   `TauCeti.IsJordanCurve.closure_compl_filledHull` — the inside is the interior of the filled hull,
   whose closure it is, and the closure of the outside is the complement of the inside.
@@ -273,3 +276,48 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
     exact hC.connectedComponentIn_eq_filledHull_sdiff_or_compl hz
 
 end TauCeti
+
+open Set Metric TauCeti
+open scoped Manifold
+
+namespace Homeomorph
+
+/-- A planar subset homeomorphic to the closed complex unit ball is the filled hull of its
+frontier. -/
+theorem filledHull_frontier_eq_of_closedBall
+    {D : Set ℂ} (e : D ≃ₜ closedBall (0 : ℂ) 1) : filledHull (frontier D) = D := by
+  have hD : IsCompact D := isCompact_iff_compactSpace.mpr e.symm.compactSpace
+  exact e.isJordanCurve_frontier_of_closedBall.filledHull_frontier_eq hD
+    ⟨_, e.symm.coe_apply_zero_mem_interior_of_closedBall 𝓘(ℝ, ℂ) rfl⟩
+
+/-- The interior of a planar subset homeomorphic to the closed complex unit ball is the
+inside of its Jordan frontier. -/
+theorem interior_eq_filledHull_sdiff_frontier_of_closedBall
+    {D : Set ℂ} (e : D ≃ₜ closedBall (0 : ℂ) 1) :
+    interior D = filledHull (frontier D) \ frontier D := by
+  rw [e.filledHull_frontier_eq_of_closedBall, self_sdiff_frontier]
+
+/-- A point of a planar subset homeomorphic to the closed complex unit ball lies inside its
+Jordan frontier exactly when its image has norm less than one. -/
+theorem coe_mem_filledHull_sdiff_frontier_iff_norm_lt_one_of_closedBall
+    {D : Set ℂ} (e : D ≃ₜ closedBall (0 : ℂ) 1) (x : D) :
+    x.val ∈ filledHull (frontier D) \ frontier D ↔ ‖(e x).val‖ < 1 := by
+  rw [← e.interior_eq_filledHull_sdiff_frontier_of_closedBall]
+  exact (e.norm_coe_apply_lt_one_iff_mem_interior_of_closedBall 𝓘(ℝ, ℂ) rfl x).symm
+
+/-- A homeomorphism from the closed complex unit ball to a planar subset maps a point inside
+the Jordan frontier exactly when that point has norm less than one. -/
+theorem coe_apply_mem_filledHull_sdiff_frontier_iff_norm_lt_one_of_closedBall
+    {D : Set ℂ} (e : closedBall (0 : ℂ) 1 ≃ₜ D) (z : closedBall (0 : ℂ) 1) :
+    (e z).val ∈ filledHull (frontier D) \ frontier D ↔ ‖z.val‖ < 1 := by
+  rw [← e.symm.interior_eq_filledHull_sdiff_frontier_of_closedBall]
+  exact e.coe_apply_mem_interior_iff_norm_lt_one_of_closedBall 𝓘(ℝ, ℂ) rfl z
+
+/-- The preimage of zero under a homeomorphism to the closed complex unit ball lies inside
+the Jordan frontier of its planar domain. -/
+theorem coe_symm_apply_zero_mem_filledHull_sdiff_frontier_of_closedBall
+    {D : Set ℂ} (e : D ≃ₜ closedBall (0 : ℂ) 1) :
+    (e.symm ⟨0, mem_closedBall_self zero_le_one⟩).val ∈ filledHull (frontier D) \ frontier D :=
+  (e.symm.coe_apply_mem_filledHull_sdiff_frontier_iff_norm_lt_one_of_closedBall _).mpr (by simp)
+
+end Homeomorph
