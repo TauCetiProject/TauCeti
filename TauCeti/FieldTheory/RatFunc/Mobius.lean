@@ -474,8 +474,8 @@ theorem translationAut_injective : Function.Injective (translationAut : K → _)
   exact C_injective hX
 
 /-- **The automorphism group of `k(X)` over an infinite field is infinite**, witnessed by the
-translations. This is why the finiteness of the automorphism group of a function field needs genus
-at least two. -/
+translations. This is why the finiteness of the automorphism group of a function field fails in
+genus zero; `TauCeti.IsEllipticFunctionField.infinite_algEquiv` is the genus-one counterpart. -/
 theorem infinite_algEquiv [Infinite K] : Infinite (RatFunc K ≃ₐ[K] RatFunc K) :=
   Infinite.of_injective _ (translationAut_injective (K := K))
 
