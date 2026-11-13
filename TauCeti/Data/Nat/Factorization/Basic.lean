@@ -21,6 +21,12 @@ factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product
 factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family of
 primes (or fixed positive powers of their casts in characteristic zero) are injective on finitely
 supported exponent tuples.
+
+## Provenance
+
+`Nat.coprime_prod_primeFactors_right_iff` restates `coprime_prod_primeFactors_iff_coprime` of
+AINTLIB's `LeanModularForms` project (Chris Birkbeck, <https://github.com/CBirkbeck/AINTLIB>,
+Apache-2.0, commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`, file `StrongMultiplicityOne.lean`).
 -/
 
 public section
@@ -37,12 +43,7 @@ theorem prod_dvd_of_subset_primeFactors {n : ℕ} {s : Finset ℕ} (h : s ⊆ n.
   (Finset.prod_dvd_prod_of_subset _ _ id h).trans (prod_primeFactors_dvd n)
 
 /-- **Coprimality only sees the prime factors.** For nonzero `L`, a number is coprime to the
-product of the prime factors of `L` exactly when it is coprime to `L`.
-
-This restates `coprime_prod_primeFactors_iff_coprime` of AINTLIB's `LeanModularForms` project
-(`StrongMultiplicityOne.lean`, <https://github.com/CBirkbeck/AINTLIB>, commit
-`2baa76f742bdb4fb8ee323fabba41203bd390e08`, Apache-2.0), proved from
-`Nat.dvd_prod_primeFactors_pow_self` instead of by contradiction on a common prime divisor. -/
+product of the prime factors of `L` exactly when it is coprime to `L`. -/
 @[simp]
 theorem coprime_prod_primeFactors_right_iff {n L : ℕ} (hL : L ≠ 0) :
     Coprime n (∏ p ∈ L.primeFactors, p) ↔ Coprime n L :=
