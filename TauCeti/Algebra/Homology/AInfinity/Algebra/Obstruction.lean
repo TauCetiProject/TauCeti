@@ -49,8 +49,8 @@ transformation adds `[m_𝒜, φ]` to the Taylor map, and `[m_𝒜, φ]` agrees 
 * `TauCeti.AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq`: two `A∞` structures with the same
   grading and the same operations of arity at most `n` have the same Taylor map on the words of
   length at most `n`.
-* `TauCeti.AInfinityAlgebra.obstruction_eq_zero_of_forall_m_eq`: the obstruction in arity `n`
-  vanishes when the operations of arity at most `n` agree.
+* `TauCeti.AInfinityAlgebra.obstruction_eq_zero_of_m_eq`: the obstruction in arity `n`
+  vanishes when the operations of arity `n` agree.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_taylor_sub_taylor`: the Maurer--Cartan
   equation `[m_ℋ, D] = -D{D}` for the difference of two `A∞` structures.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_eq_add_gerstenhaberBracket`: the Hochschild
@@ -182,15 +182,20 @@ theorem obstruction_apply_of_mem_filtration {n : ℕ}
     apply_lengthProj_of_mem_filtration R A (fun w hw ↦ by
       rw [LinearMap.sub_apply, h w hw, sub_self]) hz, LinearMap.sub_apply]
 
-/-- If two `A∞` structures with the same grading have the same operations of positive arity at most
-`n`, the obstruction in arity `n` vanishes. -/
-theorem obstruction_eq_zero_of_forall_m_eq (hG : 𝒜.grading = ℋ.grading)
-    {n : {n : ℕ // 0 < n}} (hm : ∀ k, 0 < k → k ≤ n.1 → 𝒜.m k = ℋ.m k) :
-    𝒜.obstruction ℋ n = 0 :=
-  LinearMap.ext fun z ↦ by
-    rw [obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply,
-      taylor_apply_eq_of_forall_m_eq hG hm (lengthProj_mem_filtration R A n z), sub_self,
-      LinearMap.zero_apply]
+/-- If two `A∞` structures with the same grading have the same operation of arity `n`, the
+obstruction in arity `n` vanishes. -/
+theorem obstruction_eq_zero_of_m_eq (hG : 𝒜.grading = ℋ.grading)
+    {n : {n : ℕ // 0 < n}} (hm : 𝒜.m n.1 = ℋ.m n.1) :
+    𝒜.obstruction ℋ n = 0 := by
+  have h : 𝒜.taylor ∘ₗ of R A n = ℋ.taylor ∘ₗ of R A n := by
+    apply PiTensorProduct.ext
+    apply MultilinearMap.ext
+    intro x
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply]
+    rw [taylor_of_tprod, taylor_of_tprod, hG, hm]
+  refine LinearMap.ext fun z ↦ ?_
+  rw [obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply, lengthProj_apply,
+    ← LinearMap.comp_apply 𝒜.taylor, h, LinearMap.comp_apply, sub_self, LinearMap.zero_apply]
 
 /-! ### The obstruction is a Hochschild cocycle -/
 

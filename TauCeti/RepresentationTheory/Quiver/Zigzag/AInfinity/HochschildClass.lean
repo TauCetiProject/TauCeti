@@ -685,9 +685,8 @@ theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra {n : ℕ}
         zigzagStrictAInfinityAlgebra_m_eq_zero h₂]
   rcases n.eq_zero_or_pos with rfl | hn
   · -- In arity two the obstruction vanishes: the two binary operations agree.
-    rw [AInfinityAlgebra.obstruction_eq_zero_of_forall_m_eq hG (n := ⟨0 + 2, by omega⟩)
-      fun r hr hr2 ↦ hm r hr (by simp only at hr2; omega),
-      AInfinityAlgebra.hochschildDifferential_zero]
+    rw [AInfinityAlgebra.obstruction_eq_zero_of_m_eq hG (n := ⟨0 + 2, by omega⟩)
+      (hm 2 two_pos (Or.inl rfl)), AInfinityAlgebra.hochschildDifferential_zero]
   exact AInfinityAlgebra.hochschildDifferential_obstruction isMinimal_zigzagStrictAInfinityAlgebra
     (fun r hr ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG (n := n + 1) (by omega)
     fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG
