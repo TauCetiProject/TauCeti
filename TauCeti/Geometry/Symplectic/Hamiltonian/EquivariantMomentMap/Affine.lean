@@ -22,8 +22,8 @@ In particular, `μ - ν` is coadjoint-equivariant exactly when `ν` is fixed by 
 action. Thus the action, rather than just its infinitesimal cocycle, records the obstruction
 to an equivariant normalization.
 
-The construction is algebraic; smoothness of the scalar components of the defect and its
-identity derivative are developed in `EquivariantMomentMap.Basic`. No topology on the
+The construction is algebraic; the identity derivative of the defect is computed by
+`IsMomentMap.mvfderiv_momentDefect_one` in `EquivariantMomentMap.Basic`. No topology on the
 algebraic dual is installed here, nor is the affine action a global instance.
 
 ## References
@@ -53,9 +53,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
   (hσ : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
     (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
 
-local instance lieGroupOne : LieGroup I 1 G :=
-  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
-    ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
+attribute [local instance] lieGroupOne
 
 /-- The affine coadjoint action for which `μ` is equivariant. The basepoint only evaluates
 its point-independent defect; `affineCoadjointAction_eq` shows the action is independent of it.
@@ -65,12 +63,36 @@ def affineCoadjointAction (x₀ : M) : MulAction G (Module.Dual ℝ (GroupLieAlg
   (Lie.coadjointRepresentation ℝ I G).affineMulAction (fun g ↦ momentDefect μ g x₀)
     (fun g k ↦ (h.momentDefect_mul_eq (hσ g) k x₀).trans (add_comm _ _))
 
+/-- The affine coadjoint action is the affine action of the moment-defect cocycle. -/
+theorem affineCoadjointAction_def (x₀ : M) :
+    h.affineCoadjointAction hσ x₀ =
+      (Lie.coadjointRepresentation ℝ I G).affineMulAction (fun g ↦ momentDefect μ g x₀)
+        (fun g k ↦ (h.momentDefect_mul_eq (hσ g) k x₀).trans (add_comm _ _)) :=
+  (rfl)
+
 /-- The action is the coadjoint representation plus the moment-map defect. -/
+@[simp high]
 theorem affineCoadjointAction_smul (x₀ : M) (g : G)
     (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
     letI := h.affineCoadjointAction hσ x₀
     g • ν = Lie.coadjointRepresentation ℝ I G g ν + momentDefect μ g x₀ :=
   Representation.affineMulAction_smul _ _ _ g ν
+
+/-- Differences transform by the linear coadjoint representation. -/
+theorem affineCoadjointAction_smul_sub_smul (x₀ : M) (g : G)
+    (ν ν' : Module.Dual ℝ (GroupLieAlgebra I G)) :
+    letI := h.affineCoadjointAction hσ x₀
+    g • ν - g • ν' = Lie.coadjointRepresentation ℝ I G g (ν - ν') := by
+  rw [affineCoadjointAction_def]
+  exact Representation.affineMulAction_smul_sub_smul _ _ _ g ν ν'
+
+/-- A covector is fixed exactly when the moment defect is its coadjoint coboundary. -/
+theorem affineCoadjointAction_smul_eq_self_iff (x₀ : M) (g : G)
+    (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
+    letI := h.affineCoadjointAction hσ x₀
+    g • ν = ν ↔ momentDefect μ g x₀ = ν - Lie.coadjointRepresentation ℝ I G g ν := by
+  rw [affineCoadjointAction_def]
+  exact Representation.affineMulAction_smul_eq_self_iff _ _ _ g ν
 
 /-- The affine coadjoint action does not depend on the chosen point. -/
 theorem affineCoadjointAction_eq (x₀ x₁ : M) :
@@ -92,12 +114,12 @@ theorem apply_smul_affineCoadjointAction (x₀ : M) (g : G) (x : M) :
 
 /-- Shifting a moment map by a constant conjugates its affine coadjoint action by the
 same translation. -/
-theorem affineCoadjointAction_add_const_smul (x₀ : M)
+theorem affineCoadjointAction_add_const_smul_add (x₀ : M)
     (c ν : Module.Dual ℝ (GroupLieAlgebra I G)) (g : G) :
     (letI := (h.add_const c).affineCoadjointAction hσ x₀; g • (ν + c)) =
       (letI := h.affineCoadjointAction hσ x₀; g • ν) + c := by
+  rw [affineCoadjointAction_def, affineCoadjointAction_def]
   apply Representation.affineMulAction_smul_add
-  intro k
   rw [momentDefect_add_const]
   abel
 
@@ -112,7 +134,7 @@ theorem isEquivariantMomentMap_sub_const_iff (x₀ : M)
   rw [hm.isEquivariantMomentMap_iff hσ x₀]
   apply forall_congr'
   intro g
-  rw [Representation.affineMulAction_smul_eq_self_iff, map_sub,
+  rw [h.affineCoadjointAction_smul_eq_self_iff hσ x₀, map_sub,
     h.apply_smul_eq_add_momentDefect (hσ g) x₀ x₀]
   rw [sub_eq_sub_iff_add_eq_add, add_assoc, add_left_cancel_iff, eq_sub_iff_add_eq]
 

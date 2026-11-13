@@ -49,7 +49,7 @@ theorem affineMulAction_smul (g : G) (v : V) :
   (rfl)
 
 /-- The difference of two points transforms by the linear part of the affine action. -/
-theorem affineMulAction_smul_sub (g : G) (v w : V) :
+theorem affineMulAction_smul_sub_smul (g : G) (v w : V) :
     letI := ρ.affineMulAction b hb
     g • v - g • w = ρ g (v - w) := by
   simp [map_sub]
@@ -63,8 +63,8 @@ theorem affineMulAction_smul_eq_self_iff (g : G) (v : V) :
 
 /-- Changing a cocycle by `c - ρ g c` conjugates its affine action by translation by `c`. -/
 theorem affineMulAction_smul_add {b' : G → V}
-    (hb' : ∀ g h, b' (g * h) = ρ g (b' h) + b' g) (c : V)
-    (hc : ∀ g, b' g = b g + c - ρ g c) (g : G) (v : V) :
+    (hb' : ∀ g h, b' (g * h) = ρ g (b' h) + b' g) {c : V} {g : G}
+    (hc : b' g = b g + c - ρ g c) (v : V) :
     (letI := ρ.affineMulAction b' hb'; g • (v + c)) =
       (letI := ρ.affineMulAction b hb; g • v) + c := by
   simp only [affineMulAction_smul, hc, map_add]
