@@ -131,8 +131,9 @@ private theorem planarSurface_subset_compl_range :
 /-! ### Pushing the punctured plane onto the planar surface -/
 
 variable (g) in
-/-- The radial push of the points inside each hole out to the boundary circle of the hole; it
-vanishes outside the holes. -/
+/-- The radial displacement pushing the points inside each hole out to the boundary circle of the
+hole: `z + holePush g z`, not `holePush g z`, lies on the circle. It vanishes outside the holes and
+at the hole centres (where `2⁻¹ / 0 = 0`). -/
 private def holePush (z : ℂ) : ℂ :=
   ∑ k : Fin g, (max (2⁻¹ / ‖z - holeCenter g k‖) 1 - 1) • (z - holeCenter g k)
 
@@ -361,13 +362,16 @@ variable (g) in
 private def holeWeight (k : Fin g) (z : ℂ) : ℝ := max 0 (1 - 4 * (‖z - holeCenter g k‖ - 2⁻¹))
 
 variable (g) in
-/-- The boundary weight: `1` on the boundary circles of the planar surface, `0` at distance at least
-`1 / 4` from them. -/
+/-- The boundary weight: on the planar surface it is `1` on the boundary circles and `0` at distance
+at least `1 / 4` from them. It is defined on all of `ℂ`, where it can exceed `1` (it is `5` at
+distance `1` from the only circle when `g = 0`). -/
 private def boundaryWeight (z : ℂ) : ℝ := outerWeight g z + ∑ k, holeWeight g k z
 
 variable (g) in
 /-- The boundary weight times the unit vector pointing radially towards the nearest boundary
-circle. -/
+circle. This description is for points of the planar surface; the definition is on all of `ℂ`,
+where it can differ (for `g = 1`, `boundaryNormal 1 (1 / 4) = -1` has norm `1` inside the hole,
+where the weight is `2`). -/
 private def boundaryNormal (z : ℂ) : ℂ :=
   outerWeight g z • (max ‖z‖ 2⁻¹)⁻¹ • z -
     ∑ k, holeWeight g k z • (max ‖z - holeCenter g k‖ 2⁻¹)⁻¹ • (z - holeCenter g k)
@@ -705,8 +709,9 @@ private theorem mem_frontier_boundaryDeformMap_one (x : boundaryNhd g) :
 
 /-! ### Path connectedness of the boundary surface -/
 
-/-- The point `(g + 1, 1)` of the boundary surface, where the outer boundary circle meets the
-top face. -/
+/-- The point `g + 1` of the outer boundary circle lies in the planar surface; with height `1` it
+is the point `(g + 1, 1)` of the boundary surface where the outer boundary circle meets the top
+face. -/
 private theorem outer_mem_planarSurface : ((g + 1 : ℝ) : ℂ) ∈ planarSurface g := by
   have hn : ‖((g + 1 : ℝ) : ℂ)‖ = g + 1 := by
     rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by positivity)]
