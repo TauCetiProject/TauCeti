@@ -44,11 +44,11 @@ with respect to the small monomorphic quasi-isomorphisms
 (`CochainComplex.exists_rlp_monoQuasiIsoOfCardinalLT_iff_of_isZero`).
 
 The class `monoQuasiIsoOfCardinalLT κ` need not be `w`-small. The theorem
-`CochainComplex.exists_isSmall_rlp_eq` supplies a `w`-small family of monomorphic
-quasi-isomorphisms with the same right lifting property as all monomorphic quasi-isomorphisms.
-In the injective model structure on unbounded complexes, this family serves as generating
-trivial cofibrations. Applying the small object argument to this family gives a monomorphic
-quasi-isomorphism from any complex into a K-injective complex of injectives.
+`CochainComplex.exists_isSmall_le_monomorphisms_inf_quasiIso_and_rlp_eq` supplies a `w`-small
+family of monomorphic quasi-isomorphisms with the same right lifting property as all monomorphic
+quasi-isomorphisms. In the injective model structure on unbounded complexes, this family serves as
+generating trivial cofibrations. Applying the small object argument to this family gives a
+monomorphic quasi-isomorphism from any complex into a K-injective complex of injectives.
 
 The key step enlarges a proper subcomplex `A` of a complex `M` with acyclic quotient `M / A`.
 A nonzero acyclic subcomplex `N` of `M / A` with terms of bounded size exists by
@@ -291,26 +291,37 @@ theorem exists_transfiniteCompositionOfShape_monoQuasiIsoOfCardinalLT :
   obtain ⟨J, _, _, _, _, ⟨t⟩⟩ := exists_transfiniteCompositionOfShape (isSeparator_separator C) hB f
   exact ⟨J, _, _, _, _, ⟨t.ofLE (pushouts_monotone (freeMonoQuasiIso_le hκ'))⟩⟩
 
-open MonoQuasiIso in
-/-- There is a `w`-small family `I` of monomorphic quasi-isomorphisms of cochain complexes over a
-Grothendieck abelian category, all of whose targets have fewer than `κ` subobjects for a regular
-cardinal `κ`, such that a morphism has the right lifting property with respect to `I` if and only
-if it has it with respect to all monomorphic quasi-isomorphisms. Unlike
-`monoQuasiIsoOfCardinalLT κ`, such a family can be used in the small object argument. -/
-theorem exists_isSmall_rlp_eq :
-    ∃ (I : MorphismProperty (CochainComplex C ℤ)) (κ : Cardinal.{w}),
-      I.IsSmall.{w} ∧ κ.IsRegular ∧ I ≤ monoQuasiIsoOfCardinalLT κ ∧
-        I.rlp = (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
-  obtain ⟨B, hB⟩ := (isSeparator_separator C).exists_bounded_nonzero_acyclic_subcomplex
-  obtain ⟨κ, hκ, hκ'⟩ :=
-    HasCardinalLT.exists_regular_cardinal.{w} (SubobjectFamilies (separator C) B)
-  refine ⟨freeMonoQuasiIso (separator C) B, κ, inferInstance, hκ, freeMonoQuasiIso_le hκ',
-    le_antisymm ?_ (antitone_rlp freeMonoQuasiIso_le_monomorphisms_inf_quasiIso)⟩
+omit [IsGrothendieckAbelian.{w} C] in
+/-- A morphism property `I` such that every monomorphic quasi-isomorphism is a transfinite
+composition of pushouts of morphisms in `I` has a right lifting property at least as strong as
+that of all monomorphic quasi-isomorphisms. -/
+private lemma rlp_le_rlp_monomorphisms_inf_quasiIso (I : MorphismProperty (CochainComplex C ℤ))
+    (h : ∀ {K L : CochainComplex C ℤ} (f : K ⟶ L) [Mono f] [QuasiIso f],
+      ∃ (J : Type w) (_ : LinearOrder J) (_ : OrderBot J) (_ : SuccOrder J) (_ : WellFoundedLT J),
+        Nonempty (MorphismProperty.TransfiniteCompositionOfShape I.pushouts J f)) :
+    I.rlp ≤ (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
   intro X Y p hp K L i hi
   have : Mono i := hi.1
   have : QuasiIso i := hi.2
-  obtain ⟨J, _, _, _, _, ⟨t⟩⟩ := exists_transfiniteCompositionOfShape (isSeparator_separator C) hB i
+  obtain ⟨J, _, _, _, _, ⟨t⟩⟩ := h i
   exact transfiniteCompositionsOfShape_le_llp_rlp _ _ _ t.mem _ (by simpa)
+
+open MonoQuasiIso in
+/-- There is a `w`-small family `I` of monomorphic quasi-isomorphisms of cochain complexes over a
+Grothendieck abelian category such that a morphism has the right lifting property with respect to
+`I` if and only if it has it with respect to all monomorphic quasi-isomorphisms. Unlike the class
+of all monomorphic quasi-isomorphisms, or `monoQuasiIsoOfCardinalLT κ`, such a family can be used
+in the small object argument. -/
+theorem exists_isSmall_le_monomorphisms_inf_quasiIso_and_rlp_eq :
+    ∃ I : MorphismProperty (CochainComplex C ℤ), I.IsSmall.{w} ∧
+      I ≤ monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ) ∧
+        I.rlp = (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
+  obtain ⟨B, hB⟩ := (isSeparator_separator C).exists_bounded_nonzero_acyclic_subcomplex
+  exact ⟨freeMonoQuasiIso (separator C) B, inferInstance,
+    freeMonoQuasiIso_le_monomorphisms_inf_quasiIso,
+    le_antisymm (rlp_le_rlp_monomorphisms_inf_quasiIso _ fun f _ _ ↦
+        exists_transfiniteCompositionOfShape (isSeparator_separator C) hB f)
+      (antitone_rlp freeMonoQuasiIso_le_monomorphisms_inf_quasiIso)⟩
 
 /-- For all sufficiently large cardinals `κ`, a morphism of cochain complexes over a Grothendieck
 abelian category has the right lifting property with respect to all monomorphic
@@ -321,12 +332,8 @@ theorem exists_rlp_monoQuasiIsoOfCardinalLT_eq :
       (monoQuasiIsoOfCardinalLT (C := C) κ).rlp =
         (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
   obtain ⟨κ₀, h⟩ := exists_transfiniteCompositionOfShape_monoQuasiIsoOfCardinalLT.{w} (C := C)
-  refine ⟨κ₀, fun κ hκ ↦ le_antisymm ?_ (antitone_rlp (monoQuasiIsoOfCardinalLT_le κ))⟩
-  intro X Y p hp A B i hi
-  have : Mono i := hi.1
-  have : QuasiIso i := hi.2
-  obtain ⟨J, _, _, _, _, ⟨t⟩⟩ := h κ hκ i
-  exact transfiniteCompositionsOfShape_le_llp_rlp _ _ _ t.mem _ (by simpa)
+  exact ⟨κ₀, fun κ hκ ↦ le_antisymm (rlp_le_rlp_monomorphisms_inf_quasiIso _ (h κ hκ))
+    (antitone_rlp (monoQuasiIsoOfCardinalLT_le κ))⟩
 
 /-- For all sufficiently large cardinals `κ`, a cochain complex `I` over a Grothendieck abelian
 category is a K-injective complex of injective objects if and only if its morphism to a zero

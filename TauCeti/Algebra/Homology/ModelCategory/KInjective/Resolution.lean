@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
 public import TauCeti.Algebra.Homology.ModelCategory.MonoQuasiIso
 
-import Mathlib.CategoryTheory.Subobject.HasCardinalLT
 import TauCeti.Algebra.Homology.HomologicalComplex.QuasiIso
 import TauCeti.CategoryTheory.Abelian.GrothendieckCategory.SmallObjectArgument
 
@@ -37,11 +36,11 @@ modules over a sheaf of rings on a small site, which form a Grothendieck abelian
 
 The small object argument is applied to a `w`-small family of monomorphic quasi-isomorphisms
 with the same right lifting property as all monomorphic quasi-isomorphisms
-(`CochainComplex.exists_isSmall_rlp_eq`). Its relative cell complexes are monomorphic
-quasi-isomorphisms because these are stable under coproducts, pushouts, transfinite compositions
-and retracts. The argument follows the proof that Grothendieck abelian categories have enough
-injectives in Mathlib's `Mathlib.CategoryTheory.Abelian.GrothendieckCategory.EnoughInjectives`,
-by Joël Riou.
+(`CochainComplex.exists_isSmall_le_monomorphisms_inf_quasiIso_and_rlp_eq`). Its relative cell
+complexes are monomorphic quasi-isomorphisms because these are stable under coproducts, pushouts,
+transfinite compositions and retracts. The argument follows the proof that Grothendieck abelian
+categories have enough injectives in Mathlib's
+`Mathlib.CategoryTheory.Abelian.GrothendieckCategory.EnoughInjectives`, by Joël Riou.
 
 ## References
 
@@ -65,12 +64,10 @@ private lemma exists_hasSmallObjectArgument :
     ∃ I : MorphismProperty (CochainComplex C ℤ), HasSmallObjectArgument.{w} I ∧
       I ≤ monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ) ∧
         I.rlp = (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
-  obtain ⟨I, κ, _, hκ, hI, hIrlp⟩ := exists_isSmall_rlp_eq.{w} (C := C)
-  have hI' := hI.trans (monoQuasiIsoOfCardinalLT_le κ)
-  refine ⟨I, IsGrothendieckAbelian.hasSmallObjectArgument_of_le_monomorphisms I
-    (fun _ _ _ hi ↦ (hI' _ hi).1) hκ fun _ _ i hi ↦ ?_, hI', hIrlp⟩
-  have : Mono i := (hI' _ hi).1
-  exact Subobject.hasCardinalLT_of_mono ((monoQuasiIsoOfCardinalLT_iff i).1 (hI _ hi)).2.2 i
+  obtain ⟨I, _, hI, hIrlp⟩ :=
+    exists_isSmall_le_monomorphisms_inf_quasiIso_and_rlp_eq.{w} (C := C)
+  exact ⟨I, IsGrothendieckAbelian.hasSmallObjectArgument_of_le_monomorphisms I
+    fun _ _ _ hi ↦ (hI _ hi).1, hI, hIrlp⟩
 
 /-- A morphism of cochain complexes over a Grothendieck abelian category has the left lifting
 property with respect to all morphisms which have the right lifting property with respect to the
