@@ -212,12 +212,12 @@ theorem coe_twoFieldSphereFamily_sphereCollapse (xq : twoFieldEquators u v) (y :
 tangent to `u x` and through the points of the inner circle `twoFieldInnerLoop`. -/
 theorem twoFieldSphereFamily_sphereCollapse (xq : twoFieldEquators u v) (y : I^(Fin 2)) :
     twoFieldSphereFamily h hu hv xq (sphereCollapse 2 Sphere2.north y) =
-      tangentCircleGenLoop (show ‖u xq.1.1‖ = 1 from (h xq.1.1).norm_eq_one 1)
+      tangentCircleGenLoop (by simpa using (h xq.1.1).norm_eq_one 1)
         (twoFieldInnerLoop h xq) y :=
   Subtype.ext (by
     rw [coe_twoFieldSphereFamily_sphereCollapse, coe_tangentCircleGenLoop_apply,
       coe_twoFieldInnerLoop_apply]
-    rfl)
+    simp only [Fin.tail, Fin.succ_zero_eq_one])
 
 /-- The two-sphere of `(x, q)` sends the north pole to `x`. -/
 @[simp]
