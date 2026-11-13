@@ -307,7 +307,7 @@ theorem ContMDiffOn.isImmersionAt_of_injective_mfderiv_of_isInteriorPoint
     IsImmersionAt I J n f x := by
   have : FiniteDimensional 𝕜 E :=
     FiniteDimensional.of_injective (mfderiv I J f x).toLinearMap hdf
-  have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
+  have : CompleteSpace E' := FiniteDimensional.completeSpace 𝕜 E'
   exact hf.isImmersionAt_of_hasLeftInverse_mfderiv_of_isInteriorPoint hs hx hn hxi hfxi
     (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
 

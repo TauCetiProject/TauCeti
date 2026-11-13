@@ -27,8 +27,16 @@ degree of the base through the tower law
 
 This is the relative-degree part of the genus-field construction. For negative `d`,
 `isGenusField_candidateGenusField` identifies the candidate with the maximal extension satisfying
-the required ramification conditions. The real case and the identification of its relative Galois
-group with `Cl/Cl²` remain future work.
+the required ramification conditions. For positive nonsquare `d`,
+`isGenusField_candidateGenusFieldReal` identifies the genus field with the maximal totally real
+subfield `candidateGenusFieldReal hd` of the candidate instead.
+
+For nonsquare `d`, the Galois group of the candidate over its quadratic base `K = ℚ(√d)` is
+identified with `Cl⁺(K)/Cl⁺(K)²` by `autCandidateGenusFieldEquivNarrowElementaryTwoQuotient`, and
+for negative `d` with `Cl(K)/Cl(K)²` by `autCandidateGenusFieldEquivElementaryTwoQuotient`, both in
+`CandidateGenusField/Relative/GenusCharacter`. For positive nonsquare `d`,
+`autCandidateGenusFieldRealEquivElementaryTwoQuotient` in `CandidateGenusField/Relative/Real`
+identifies the Galois group of the real subfield over `K` with `Cl(K)/Cl(K)²`.
 
 The prime-discriminant description of the genus field is classical; see D. A. Cox,
 *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.

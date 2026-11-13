@@ -95,7 +95,7 @@ private theorem exists_differentiableOn_exp_comp_ofScalarsSum_of_zeroFree (f : �
     ((FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).hasFPowerSeriesOnBall hfr).mono
       hRposE hR
   have hmem : ∀ w ∈ Metric.ball (0 : ℂ) R, ‖w‖ₑ < (R : ENNReal) := fun w hw ↦ by
-    rw [enorm_lt_coe]
+    rw [eNorm_lt_coe]
     exact NNReal.coe_lt_coe.mp (by simpa using Metric.mem_ball.mp hw)
   have hFd : DifferentiableOn ℂ
       (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) (Metric.ball 0 R) := by
@@ -222,7 +222,7 @@ theorem le_radius_ofScalars_logOf_of_zeroFree (f : ℂ⟦X⟧)
   refine ENNReal.le_of_forall_nnreal_lt fun t ht ↦ ?_
   apply FormalMultilinearSeries.le_radius_of_summable
   have h := summable_norm_coeff_logOf_mul_pow_of_zeroFree f hf0 hr hne
-    (z := ((t : ℝ) : ℂ)) (by simpa [enorm_eq_nnnorm] using ht)
+    (z := ((t : ℝ) : ℂ)) (by simpa [eNorm_eq_nnNorm] using ht)
   simpa [FormalMultilinearSeries.ofScalars_norm] using h
 
 /-- The evaluated formal logarithm is holomorphic on every zero-free disk of convergence. -/

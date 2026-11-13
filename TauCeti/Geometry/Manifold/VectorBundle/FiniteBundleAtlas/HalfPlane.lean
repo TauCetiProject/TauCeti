@@ -110,7 +110,7 @@ theorem interior_halfClosedImage (i : Fin A.n) :
 axis, so the image and its interior differ by a null set. -/
 theorem halfClosedImage_ae_le_halfImage (i : Fin A.n) :
     A.halfClosedImage i ≤ᵐ[volume] (A.halfImage i : Set ℂ) :=
-  (EventuallyEqSet.inter EventuallyEq.rfl (Complex.setOf_le_im_ae_eq 0)).le
+  (EventuallyEqSet.inter EventuallyEqSet.rfl (Complex.setOf_le_im_ae_eq 0)).subset
 
 /-- Every point of the image of chart `i` in `ℂ`, including the points on the real axis, is a
 limit of points of its interior. -/
