@@ -209,6 +209,15 @@ private def cdfFormula (μ lam x : ℝ) : ℝ :=
   cdf (gaussianReal 0 1) (√(lam / x) * (x / μ - 1)) +
     exp (2 * lam / μ) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1)))
 
+/-- The square root in the inverse Gaussian density splits as a quotient: writing the radicand as a
+quotient by the perfect square `(√(2 π) x) ^ 2`. -/
+private theorem sqrt_div_two_pi_mul_pow_three_eq (hx : 0 < x) :
+    √(lam / (2 * π * x ^ 3)) = √(lam / x) / (√(2 * π) * x) := by
+  have hrad : lam / (2 * π * x ^ 3) = (lam / x) / (√(2 * π) * x) ^ 2 := by
+    rw [mul_pow, sq_sqrt (by positivity)]
+    field_simp
+  rw [hrad, sqrt_div' _ (sq_nonneg _), sqrt_sq (by positivity)]
+
 /-- On the positive half-line, the closed-form cdf has the density as its derivative. The two
 Gaussian arguments `w₁ = √(lam / x) (x / μ - 1)` and `w₂ = √(lam / x) (x / μ + 1)` satisfy
 `w₂ ^ 2 - w₁ ^ 2 = 4 lam / μ`, so the factor `exp (2 lam / μ)` turns `φ(w₂)` into `φ(w₁)` and the
@@ -235,12 +244,8 @@ private theorem hasDerivAt_cdfFormula (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < 
     rw [neg_sq, mul_pow, mul_pow, hr2]
     field_simp
     ring
-  -- Write the radicand as a quotient by a perfect square, so that the square root splits.
-  have hrad : lam / (2 * π * x ^ 3) = (lam / x) / (√(2 * π) * x) ^ 2 := by
-    rw [mul_pow, sq_sqrt (by positivity)]
-    field_simp
-  have hS : √(lam / (2 * π * x ^ 3)) = r / (√(2 * π) * x) := by
-    rw [hrad, sqrt_div' _ (sq_nonneg _), sqrt_sq (by positivity)]
+  have hS : √(lam / (2 * π * x ^ 3)) = r / (√(2 * π) * x) :=
+    sqrt_div_two_pi_mul_pow_three_eq hx
   have hE : -(lam * (x - μ) ^ 2) / (2 * μ ^ 2 * x) = -(r * (x / μ + -1)) ^ 2 / 2 := by
     rw [mul_pow, hr2]
     field_simp
