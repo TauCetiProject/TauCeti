@@ -52,8 +52,8 @@ the existing formalization of `TauCeti.Vortex.exists_forall_sobolevReducedFuncti
   Euler–Lagrange equation of a minimizer.
 * `TauCeti.Manifold.SobolevH1.integral_exp_two_mul_eq_neg_integral_of_forall_dirichletForm_eq`:
   the area normalization of a weak solution.
-* `TauCeti.Manifold.SobolevH1.exists_forall_dirichletForm_eq_integral`: existence of a weak
-  solution of the curvature equation when `∫ K dV < 0`.
+* `TauCeti.Manifold.SobolevH1.exists_forall_dirichletForm_eq_integral_neg_add_exp_mul`:
+  existence of a weak solution of the curvature equation when `∫ K dV < 0`.
 
 ## References
 
@@ -172,9 +172,8 @@ theorem hasDerivAt_liouvilleEnergy_add_smul (hE : Module.finrank ℝ E = 2)
     filter_upwards [Lp.coeFn_add (toLp w) (s • toLp v), Lp.coeFn_smul s (toLp v)] with x hx hs
     rw [map_add, map_smul, hx, Pi.add_apply, hs, Pi.smul_apply, smul_eq_mul]
     ring_nf
-  have hexp := hasDerivAt_integral_exp_add_mul (μ := riemannianVolume I M)
-    ((Lp.aestronglyMeasurable (toLp v)).const_mul 2)
-    (fun s ↦ (integrable_exp_mul hE (w + s • v) 2).congr (hae s)) 0
+  have hexp := hasDerivAt_integral_exp_add_mul (μ := riemannianVolume I M) (t₀ := 0)
+    (.of_forall fun s ↦ (integrable_exp_mul hE (w + s • v) 2).congr (hae s))
   have hline (t : ℝ) : (w + t • v).liouvilleEnergy K =
       (dirichletForm w w + 2 * t * dirichletForm w v + t ^ 2 * dirichletForm v v) / 2 +
         (⟪K, toLp w⟫_ℝ + t * ⟪K, toLp v⟫_ℝ) +
@@ -331,7 +330,7 @@ theorem exists_forall_liouvilleEnergy_le (hE : Module.finrank ℝ E = 2)
 /-- **Existence of a weak solution of the curvature equation.** On a closed connected Riemannian
 surface, for `K ∈ L²(M)` with negative integral, there is `w ∈ H¹(M)` solving
 `Δ⁺w + K + e^(2w) = 0` weakly: `D(w, v) = -∫ (K + e^(2w)) v dV` for every `v ∈ H¹(M)`. -/
-theorem exists_forall_dirichletForm_eq_integral (hE : Module.finrank ℝ E = 2)
+theorem exists_forall_dirichletForm_eq_integral_neg_add_exp_mul (hE : Module.finrank ℝ E = 2)
     (K : Lp ℝ 2 (riemannianVolume I M)) (hK : ∫ x, K x ∂riemannianVolume I M < 0) :
     ∃ w : SobolevH1 I M, ∀ v : SobolevH1 I M, dirichletForm w v =
       ∫ x, -(K x + Real.exp (2 * toLp w x)) * toLp v x ∂riemannianVolume I M :=
