@@ -144,7 +144,7 @@ theorem isPretransitive_elementaryUnitaryGroup (hσ : Function.Involutive σ)
       exact hyx (by simp [hzero]))
     obtain ⟨g, c, -, hgx⟩ :=
       exists_elementaryUnitaryGroup_mulVec_eq_smul hσ hQ hε hadm hx hy hyx
-    refine ⟨g, TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hx0 hy0 ?_⟩
+    refine ⟨g, TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hx0 hy0 (c := c) ?_⟩
     rwa [Subgroup.smul_def, Subgroup.smul_def, SpecialLinearGroup.smul_def, smul_eq_mulVec]
   refine ⟨fun p q ↦ ?_⟩
   obtain ⟨p, hp⟩ := p
