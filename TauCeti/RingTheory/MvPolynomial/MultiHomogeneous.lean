@@ -250,10 +250,9 @@ theorem isMultiHomogeneous_rename_iff {τ : Type*} {f : κ → τ → ι}
       IsMultiHomogeneous d Q := by
   refine ⟨fun hhom h u hu ↦ ?_, fun hQ ↦ hQ.rename f⟩
   set emb : κ × τ → κ × ι := fun p ↦ (p.1, f p.1 p.2)
-  have hemb : Function.Injective emb := by
-    rintro ⟨h', a⟩ ⟨h'', b⟩ hc
-    obtain ⟨rfl, hc2⟩ := Prod.mk.inj hc
-    exact Prod.ext rfl (hf h' hc2)
+  have hemb : Function.Injective emb :=
+    (Equiv.sigmaEquivProd κ ι).injective.comp <|
+      (Function.injective_id.sigma_map hf).comp (Equiv.sigmaEquivProd κ τ).symm.injective
   have hc : (rename emb Q).coeff (u.mapDomain emb) ≠ 0 := by
     rwa [coeff_rename_mapDomain emb hemb]
   have hw := hhom h hc

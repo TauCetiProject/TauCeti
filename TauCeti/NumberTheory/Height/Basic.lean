@@ -16,8 +16,8 @@ import TauCeti.NumberTheory.Height.Affine
 
 The height of a ratio of two coordinates is bounded by the projective height of the tuple, and
 the height of a quotient by the sum of the heights of its numerator and denominator. Conversely,
-normalizing at any nonzero coordinate `x i₀ ≠ 0` embeds the tuple into the Segre product of the
-`(card ι - 1)` coordinate ratios `x i / x i₀` (`Height.mulHeight_le_prod_mulHeight₁_div`), so on a
+normalizing at any nonzero coordinate `x i₀ ≠ 0` bounds `mulHeight x` by the product of
+`mulHeight₁ (x i / x i₀)` over `i ≠ i₀` (`Height.mulHeight_le_prod_mulHeight₁_div`), so on a
 nontrivial index type at least one ratio has logarithmic height at least `h(x) / (card ι - 1)`
 (`Height.exists_logHeight_le_mul_logHeight₁_div`). If
 `t (x - θ₂ y) = x - θ₀ y`, the formula `x / y = (θ₀ - t θ₂) / (1 - t)` bounds the height of
@@ -86,11 +86,12 @@ lemma logHeight₁_div_le_logHeight (x : ι → K) (i j : ι) :
   simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq] using logHeight_comp_le ![i, j] x
 
 omit [Finite ι] in
-/-- Normalizing a tuple at a nonzero coordinate `x i₀ ≠ 0` embeds its projective height into the
-Segre product of the coordinate ratios `x i / x i₀`, `i ≠ i₀`. -/
+/-- For any nonzero coordinate `x i₀ ≠ 0`, the multiplicative height `mulHeight x` is at most the
+product of the heights `mulHeight₁ (x i / x i₀)` of the coordinate ratios for `i ≠ i₀`. -/
 lemma mulHeight_le_prod_mulHeight₁_div [Fintype ι] [DecidableEq ι] {x : ι → K} {i₀ : ι}
     (hx₀ : x i₀ ≠ 0) :
     mulHeight x ≤ ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) := by
+  -- Normalize `x` by `(x i₀)⁻¹` and bound the affine height by the product of coordinate heights.
   calc mulHeight x
       = mulHeight ((x i₀)⁻¹ • x) := (mulHeight_smul_eq_mulHeight x (inv_ne_zero hx₀)).symm
     _ = mulHeight (fun i ↦ x i / x i₀) :=
@@ -101,8 +102,8 @@ lemma mulHeight_le_prod_mulHeight₁_div [Fintype ι] [DecidableEq ι] {x : ι �
         rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀), div_self hx₀, mulHeight₁_one, one_mul]
 
 omit [Finite ι] in
-/-- Normalizing a tuple at a nonzero coordinate `x i₀ ≠ 0` bounds its logarithmic height by the sum
-of the logarithmic heights of the coordinate ratios `x i / x i₀`, `i ≠ i₀`. -/
+/-- For any nonzero coordinate `x i₀ ≠ 0`, the logarithmic height `logHeight x` is at most the sum
+of the logarithmic heights `logHeight₁ (x i / x i₀)` of the coordinate ratios for `i ≠ i₀`. -/
 lemma logHeight_le_sum_logHeight₁_div [Fintype ι] [DecidableEq ι] {x : ι → K} {i₀ : ι}
     (hx₀ : x i₀ ≠ 0) :
     logHeight x ≤ ∑ i ∈ Finset.univ.erase i₀, logHeight₁ (x i / x i₀) := by

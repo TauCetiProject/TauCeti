@@ -578,16 +578,18 @@ variable {K σ τ : Type*} [Field K] [Height.AdmissibleAbsValues K]
 `q.mulHeight ≤ p.mulHeight`. -/
 theorem mulHeight_le_of_forall_exists_coeff_eq {p : MvPolynomial σ K} {q : MvPolynomial τ K}
     (h : ∀ m ∈ q.support, ∃ n, q.coeff m = p.coeff n) :
-    q.mulHeight ≤ p.mulHeight :=
-  Finsupp.mulHeight_le_of_forall_exists_eq h
+    q.mulHeight ≤ p.mulHeight := by
+  rw [mulHeight_eq_finsupp, mulHeight_eq_finsupp]
+  exact Finsupp.mulHeight_le_of_forall_exists_eq
+    (by simpa only [finsupp_support_eq_support] using h)
 
 /-- If every nonzero coefficient of `q` occurs among the coefficients of `p`, then
 `q.logHeight ≤ p.logHeight`. -/
 theorem logHeight_le_of_forall_exists_coeff_eq {p : MvPolynomial σ K} {q : MvPolynomial τ K}
     (h : ∀ m ∈ q.support, ∃ n, q.coeff m = p.coeff n) :
     q.logHeight ≤ p.logHeight := by
-  rw [logHeight_eq_finsupp, logHeight_eq_finsupp]
-  exact Finsupp.logHeight_le_of_forall_exists_eq h
+  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight]
+  exact Real.log_le_log (mulHeight_pos q) (mulHeight_le_of_forall_exists_coeff_eq h)
 
 /-- Dividing by a monomial selects a subset of coefficients, so it cannot increase the
 multiplicative height. -/

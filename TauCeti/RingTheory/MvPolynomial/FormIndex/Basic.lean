@@ -46,6 +46,8 @@ products, by `MvPolynomial.iInf_support_weight_mul`.
 * `MvPolynomial.mem_formIdeal_iff`, `MvPolynomial.formIndex_eq_iInf`: the ideal and the index in
   the coordinates of `substFormInv`.
 * `MvPolynomial.mem_formIdeal_iff_le_formIndex`: the supremum defining the index is attained.
+* `MvPolynomial.coeff_eq_zero_of_mem_formIdeal`: coefficients of weighted degree below `t` vanish
+  on `formIdeal t d M`.
 * `MvPolynomial.formIndex_prod_pow`: the index of `∏ h, M h (X h) ^ j h` is `∑ h, j h / d h`.
 * `MvPolynomial.formIndex_eq_top_iff`, `MvPolynomial.min_formIndex_le_add`,
   `MvPolynomial.formIndex_mul`, `MvPolynomial.formIndex_pow`, `MvPolynomial.formIndex_smul`,
@@ -242,6 +244,43 @@ theorem mem_formIdeal_of_lt_formIndex (ht : t < formIndex d M P) : P ∈ formIde
   obtain ⟨s, hs⟩ := lt_iSup_iff.mp ht
   obtain ⟨hPs, hts⟩ := lt_iSup_iff.mp hs
   exact formIdeal_antitone d M hts.le hPs
+
+/-- Every coefficient of a polynomial in `formIdeal t d M` at an exponent `e` of
+`(1 / d h)`-weighted degree strictly below `t` vanishes. -/
+theorem coeff_eq_zero_of_mem_formIdeal (hP : P ∈ formIdeal t d M) {e : κ × ι →₀ ℕ}
+    (he : ∑ h, (∑ i, e (h, i) : ℝ≥0∞) / d h < t) : P.coeff e = 0 := by
+  classical
+  rw [formIdeal_def] at hP
+  induction hP using Submodule.span_induction generalizing e with
+  | mem g hg =>
+    -- Each generator is multihomogeneous of multidegree `j` with `t ≤ ∑ h, j h / d h`.
+    obtain ⟨j, hj, rfl⟩ := hg
+    by_contra hne
+    have hhom : IsMultiHomogeneous j (∏ h, (∑ i, C (M h i) * X (h, i)) ^ j h) := by
+      have hhom' : IsMultiHomogeneous (∑ h : κ, j h • Pi.single h 1)
+          (∏ h, (∑ i, C (M h i) * X (h, i)) ^ j h) :=
+        IsMultiHomogeneous.prod univ _ (fun h ↦ j h • Pi.single h 1) fun h _ ↦
+          (IsMultiHomogeneous.sum univ _ fun i _ ↦ (isMultiHomogeneous_X h i).C_mul _).pow (j h)
+      have hj_eq : (∑ h : κ, j h • Pi.single h 1) = j := by
+        ext h'
+        simp [Pi.single_apply]
+      rwa [hj_eq] at hhom'
+    have hej : ∀ h, ∑ i, e (h, i) = j h := isMultiHomogeneous_iff.mp hhom e hne
+    refine he.not_ge (hj.trans_eq (Finset.sum_congr rfl fun h _ ↦ ?_))
+    rw [← Nat.cast_sum, hej h]
+  | zero => simp
+  | add f g _ _ hf hg => simp [hf he, hg he]
+  | smul r f _ hf =>
+    -- Multiplying by `r` can only increase exponents coordinatewise, keeping `x.2 ≤ e`.
+    rw [smul_eq_mul, coeff_mul]
+    refine Finset.sum_eq_zero fun x hx ↦ ?_
+    have hxle (h : κ) (i : ι) : x.2 (h, i) ≤ e (h, i) := by
+      rw [← Finset.mem_antidiagonal.mp hx, Finsupp.add_apply]
+      exact Nat.le_add_left _ _
+    have hxlt : ∑ h, (∑ i, x.2 (h, i) : ℝ≥0∞) / d h < t :=
+      (Finset.sum_le_sum fun h _ ↦ ENNReal.div_le_div_right
+        (Finset.sum_le_sum fun i _ ↦ Nat.cast_le.mpr (hxle h i)) _).trans_lt he
+    rw [hf hxlt, mul_zero]
 
 @[simp]
 theorem formIndex_zero : formIndex d M 0 = ⊤ :=

@@ -86,8 +86,8 @@ theorem aeval_blockDehomogenize {S : Type*} [CommSemiring S] [Algebra R S] (a : 
 `p ↦ ![1, a p.1] p.2`. -/
 @[simp]
 theorem eval_blockDehomogenize (a : κ → R) (P : MvPolynomial (κ × Fin 2) R) :
-    eval a (blockDehomogenize P) = eval (fun p ↦ ![1, a p.1] p.2) P :=
-  aeval_blockDehomogenize a P
+    eval a (blockDehomogenize P) = eval (fun p ↦ ![1, a p.1] p.2) P := by
+  simpa only [aeval_eq_eval] using aeval_blockDehomogenize a P
 
 /-- Changing coefficients along a ring homomorphism commutes with `blockDehomogenize`. -/
 @[simp]

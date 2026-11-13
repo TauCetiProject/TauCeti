@@ -22,8 +22,9 @@ Consequently:
 * For arbitrary `P`, `formIndex d (fun h ↦ ![-α h, 1]) P ≤ weightedIndex d α (blockDehomogenize P)`
   (`MvPolynomial.formIndex_le_weightedIndex_blockDehomogenize`), because dehomogenization can only
   cancel terms.
-* When `P` is multihomogeneous of any multidegree `e`, no cancellation occurs in `substFormInv P`,
-  giving the exact equality
+* When `P` is multihomogeneous of any multidegree `e`, `substFormInv` preserves multihomogeneity,
+  so applying `blockDehomogenize` to `substFormInv (fun h ↦ ![-α h, 1]) (fun _ ↦ 1) P` causes no
+  cancellation between distinct monomials, giving the exact equality
   `formIndex d (fun h ↦ ![-α h, 1]) P = weightedIndex d α (blockDehomogenize P)`
   (`MvPolynomial.IsMultiHomogeneous.formIndex_eq_weightedIndex_blockDehomogenize`).
 
@@ -110,14 +111,7 @@ example :
     simp [Finsupp.weight_apply]
   have hf : formIndex ![1] (fun _ : Fin 1 ↦ ![(-0 : ℚ), 1]) P = 0 := by
     have hM : Fin 1 → (![(-0 : ℚ), 1] : Fin 2 → ℚ) 1 ≠ 0 := fun _ ↦ one_ne_zero
-    have hsub : substFormInv (fun _ : Fin 1 ↦ ![(-0 : ℚ), 1]) (fun _ ↦ 1) P = P := by
-      have herase : (univ : Finset (Fin 2)).erase 1 = {0} := by decide
-      have h1 := substFormInv_X_self (M := fun _ : Fin 1 ↦ ![(-0 : ℚ), 1])
-        (i₀ := fun _ ↦ 1) 0
-      simp only [herase, Finset.sum_singleton, Matrix.cons_val_zero, Matrix.cons_val_one,
-        Matrix.cons_val_fin_one, neg_zero, map_zero, zero_mul, sub_zero, inv_one, map_one,
-        one_mul] at h1
-      simp [P, h1]
+    have hsub : substFormInv (fun _ : Fin 1 ↦ ![(-0 : ℚ), 1]) (fun _ ↦ 1) P = P := by simp [P]
     have hsupp : Finsupp.single ((0 : Fin 1), (0 : Fin 2)) 1 ∈ P.support := by
       rw [mem_support_iff]
       simp [P, X_pow_eq_monomial, coeff_X, coeff_monomial, Finsupp.single_eq_single_iff]

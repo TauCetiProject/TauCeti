@@ -19,7 +19,8 @@ import TauCeti.NumberTheory.Height.Basic
 7.5.19) bounds the index `MvPolynomial.formIndex d M P` of a nonzero multihomogeneous polynomial
 `P` in `m ≥ 1` blocks of variables `Fin m × ι` over a number field `K` along a family of linear
 forms `M : Fin m → ι → K`. Assuming partial block degrees `e h ≤ d h` with rapidly decreasing
-weights `d (h + 1) ≤ σ d h` (`0 < σ ≤ 1 / 2`) and large projective heights of the forms,
+positive weights `0 < d h` satisfying `d (h + 1) ≤ σ d h` (`0 < σ ≤ 1 / 2`) and large projective
+heights of the forms,
 
 `(card ι - 1) σ⁻¹ (h(P) + 4 m d 0 [K : ℚ]) ≤ d h · h(M h)`
 
@@ -30,8 +31,8 @@ for every block `h : Fin m` (on a nontrivial index type `ι`), the index satisfi
 In Schmidt's proof of the Subspace Theorem, `P` is the multihomogeneous auxiliary polynomial built
 by Siegel's lemma, and `M h` is the normal form of the hyperplane `V(Q_h)` at `m` widely spaced
 levels `Q_0, …, Q_{m-1}` sharing the same subspace direction; the small-index bound produced here,
-combined with `MvPolynomial.exists_eval_hasseDeriv_ne_zero_of_ne_zero`, yields a low-order Hasse
-derivative of `P` that does not vanish identically on `∏ h, V(Q_h)`.
+combined with `MvPolynomial.exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero`, yields a
+low-order Hasse derivative of `P` that does not vanish identically on `∏ h, V(Q_h)`.
 
 ## Proof outline
 
@@ -165,8 +166,7 @@ example :
     have hsub : substFormInv M (fun _ ↦ ()) P = X (0, ()) := by
       simp [P, M, Finset.univ_unique]
     have hidx : formIndex d M P = 1 := by
-      rw [formIndex_eq_iInf hM, hsub, ← pow_one (X (0, ()) : MvPolynomial (Fin 1 × Unit) ℚ),
-        X_pow_eq_monomial, support_monomial, ite_eq_right one_ne_zero, Finset.iInf_singleton]
+      rw [formIndex_eq_iInf hM, hsub, support_X, Finset.iInf_singleton]
       simp [d]
     rw [hidx, not_le]
     have hlt : 2 * 1 * σ ^ ((1 : ℝ) / 2 ^ (1 - 1)) < 1 := by norm_num [σ]
@@ -204,10 +204,7 @@ example :
     have hd : (![1] : Fin 1 → ℕ) = Pi.single 0 1 := funext fun h ↦ by fin_cases h; rfl
     rw [hd]
     exact isMultiHomogeneous_X (0 : Fin 1) (1 : Fin 3)
-  have hPlog : P.logHeight = 0 := by
-    dsimp only [P]
-    rw [← pow_one (X (0, 1) : MvPolynomial (Fin 1 × Fin 3) ℚ), X_pow_eq_monomial,
-      logHeight_monomial]
+  have hPlog : P.logHeight = 0 := by simp [P]
   have hMlog : 50 * Real.log 2 ≤ Height.logHeight (M 0) := by
     have hdiv := Height.logHeight₁_div_le_logHeight (M 0) 0 1
     have hval : M 0 0 / M 0 1 = (2 : ℚ) ^ 50 := by simp [M]

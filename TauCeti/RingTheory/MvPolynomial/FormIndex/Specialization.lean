@@ -256,17 +256,11 @@ private theorem exists_eliminate_finset {d : κ → ℕ} {i₀ : κ → ι} (S :
       obtain ⟨n, hn, hc⟩ := hP₁coeff n₁ hn₁
       exact ⟨n, hn, hc₁.trans hc⟩
 
-omit [Field K] [Fintype κ] [DecidableEq κ] [Fintype ι] in
-private theorem twoCoordEmb_injective {i₀ i₁ : κ → ι} (hne : ∀ h, i₀ h ≠ i₁ h) :
-    Function.Injective (fun p : κ × Fin 2 ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)) := by
-  rintro ⟨h, c⟩ ⟨h', c'⟩ hc
-  obtain ⟨rfl, hc2⟩ := Prod.mk.inj hc
-  fin_cases c <;> fin_cases c' <;> simp_all [(hne h).symm]
-
 omit [DecidableEq κ] in
 /-- Pulling `formIndex` back along the injective two-coordinate embedding
 `emb (h, 0) = (h, i₁ h), emb (h, 1) = (h, i₀ h)` when all outside coefficients of `M'` vanish. -/
 private theorem formIndex_rename_twoCoord {d : κ → ℕ} {i₀ i₁ : κ → ι} (hne : ∀ h, i₀ h ≠ i₁ h)
+    (hemb : Function.Injective (fun p : κ × Fin 2 ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)))
     {M' : κ → ι → K} (hM' : ∀ h, M' h (i₀ h) ≠ 0)
     (hzero : ∀ h i, i ≠ i₀ h → i ≠ i₁ h → M' h i = 0) (Q : MvPolynomial (κ × Fin 2) K) :
     formIndex d M' (rename (fun p : κ × Fin 2 ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)) Q) =
@@ -274,7 +268,6 @@ private theorem formIndex_rename_twoCoord {d : κ → ℕ} {i₀ i₁ : κ → �
   classical
   set emb : κ × Fin 2 → κ × ι := fun p ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)
   set N : κ → Fin 2 → K := fun h ↦ ![M' h (i₁ h), M' h (i₀ h)]
-  have hemb : Function.Injective emb := twoCoordEmb_injective hne
   have hsub : substFormInv M' i₀ (rename emb Q) = rename emb (substFormInv N (fun _ ↦ 1) Q) := by
     suffices (substFormInv M' i₀).comp (rename emb) =
         (rename emb).comp (substFormInv N (fun _ ↦ 1)) from AlgHom.congr_fun this Q
@@ -295,17 +288,11 @@ private theorem formIndex_rename_twoCoord {d : κ → ℕ} {i₀ i₁ : κ → �
       · intro hnot
         exact (hnot (mem_erase.mpr ⟨(hne h).symm, mem_univ _⟩)).elim
   have hN : ∀ h, N h 1 ≠ 0 := fun h ↦ hM' h
-  rw [formIndex_eq_iInf hM', formIndex_eq_iInf hN, hsub, support_rename_of_injective hemb]
-  refine le_antisymm (le_iInf₂ fun u hu ↦ ?_) (le_iInf₂ fun m hm ↦ ?_)
-  · refine (iInf₂_le (u.mapDomain emb) (mem_image_of_mem _ hu)).trans_eq ?_
-    exact Finset.sum_congr rfl fun h _ ↦ by
-      have h1 : emb (h, 1) = (h, i₀ h) := rfl
-      rw [← h1, Finsupp.mapDomain_apply_of_injective hemb]
-  · obtain ⟨u, hu, rfl⟩ := mem_image.mp hm
-    refine (iInf₂_le u hu).trans_eq ?_
-    exact Finset.sum_congr rfl fun h _ ↦ by
-      have h1 : emb (h, 1) = (h, i₀ h) := rfl
-      rw [← h1, Finsupp.mapDomain_apply_of_injective hemb]
+  rw [formIndex_eq_iInf hM', formIndex_eq_iInf hN, hsub, support_rename_of_injective hemb,
+    Finset.iInf_finset_image]
+  refine iInf_congr fun u ↦ iInf_congr fun _ ↦ Finset.sum_congr rfl fun h _ ↦ ?_
+  have h1 : emb (h, 1) = (h, i₀ h) := by simp [emb]
+  rw [← h1, Finsupp.mapDomain_apply_of_injective hemb]
 
 /-- **Variable elimination to two coordinates per block.** Given a nonzero multihomogeneous
 polynomial `P` of multidegree `e` and two distinct coordinates `i₀ h ≠ i₁ h` per block with
@@ -326,9 +313,12 @@ theorem exists_elimination {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ :
   obtain ⟨P₁, e', M', hP₁, he', hP₁hom, hdisj, -, hM'out, hM'in, hP₁coeff, hidx⟩ :=
     exists_eliminate_finset (d := d) S (fun p hp ↦ (mem_filter.mp hp).2.1) hM hP hPhom
   set emb : κ × Fin 2 → κ × ι := fun p ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)
-  have hemb : Function.Injective emb := twoCoordEmb_injective hne
-  have hf (h : κ) : Function.Injective ![i₁ h, i₀ h] := fun a b hab ↦ by
-    fin_cases a <;> fin_cases b <;> simp_all [(hne h).symm]
+  have hf (h : κ) : Function.Injective ![i₁ h, i₀ h] :=
+    Matrix.injective_pair_iff_ne.mpr (hne h).symm
+  have hemb : Function.Injective emb :=
+    (Equiv.sigmaEquivProd κ ι).injective.comp <|
+      (Function.injective_id.sigma_map (β₁ := fun _ ↦ Fin 2) (β₂ := fun _ ↦ ι) hf).comp
+        (Equiv.sigmaEquivProd κ (Fin 2)).symm.injective
   have hrange : (P₁.vars : Set (κ × ι)) ⊆ Set.range emb := by
     rintro ⟨h, i⟩ hp
     have hnotS : (h, i) ∉ S := Finset.disjoint_left.mp hdisj hp
@@ -354,7 +344,7 @@ theorem exists_elimination {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ :
     fin_cases c <;> simp [hM'0, hM'1, div_eq_inv_mul, hM h]
   refine ⟨Q, e', hQne, he', (isMultiHomogeneous_rename_iff hf).mp (hQeq.symm ▸ hP₁hom),
     hQcoeff, hidx.trans_eq ?_⟩
-  rw [← hQeq, formIndex_rename_twoCoord hne (fun h ↦ (hM'0 h).symm ▸ hM h) hM'z,
+  rw [← hQeq, formIndex_rename_twoCoord hne hemb (fun h ↦ (hM'0 h).symm ▸ hM h) hM'z,
     ← formIndex_smul_form (c := fun h ↦ (M h (i₀ h))⁻¹)
       (fun h ↦ isUnit_iff_ne_zero.mpr (inv_ne_zero (hM h))), hscale]
 
