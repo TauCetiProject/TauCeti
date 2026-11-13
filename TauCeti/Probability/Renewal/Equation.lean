@@ -58,14 +58,16 @@ renewal-limit coefficients. For `u ≤ t`, the window is `(t - u, t]`; for `t < 
 * `TauCeti.Probability.apply_zero_of_eq_add_renewalConv` — the initial value
   `g 0 = h 0 / (1 - F.real {0})`.
 * `TauCeti.Probability.renewalConv_renewalMeasure_eq_add` — `h ∗ U` solves `g = h + g ∗ F`.
-* `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_conv` — the equivalent formula
-  `h ∗ U = h + h ∗ (F ∗ U)`.
+* `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_conv`,
+  `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_sub_dirac` — the equivalent formulas
+  `h ∗ U = h + h ∗ (F ∗ U) = h + h ∗ (U - δ₀)`.
 * `MeasureTheory.Measure.renewalConv_measureReal_Iic_renewalMeasure` — the convolution of
   `F [0, ·]` with `U` is the real-valued renewal function.
 * `TauCeti.Probability.eq_zero_of_renewalConv_eq_self` — the homogeneous equation `d = d ∗ F`
   has no nonzero locally bounded measurable solution.
-* `TauCeti.Probability.eq_renewalConv_renewalMeasure` — uniqueness of locally bounded measurable
-  solutions.
+* `TauCeti.Probability.eq_renewalConv_renewalMeasure`,
+  `TauCeti.Probability.eq_add_renewalConv_sub_dirac` — uniqueness of locally bounded measurable
+  solutions, in both `h ∗ U` and `h + h ∗ (U - δ₀)` forms.
 * `TauCeti.Probability.renewalConv_measureReal_Ioi_renewalMeasure`: the tail identity
   `∫_{[0, t]} F((t - s, ∞)) U(ds) = 1`.
 * `MeasureTheory.Measure.lintegral_tail_renewalMeasure`: its extended nonnegative form.
@@ -372,6 +374,15 @@ theorem renewalConv_renewalMeasure_eq_add_conv [SFinite μ] (hh : Measurable h)
     renewalConv_renewalConv hh hC measure_Iic_lt_top.ne measure_Iic_lt_top.ne,
     Measure.conv_comm]
 
+/-- The solution `h ∗ U` equals the forcing plus its convolution with `U - δ₀`, the renewal measure
+with the artificial initial point mass removed. -/
+theorem renewalConv_renewalMeasure_eq_add_sub_dirac [SFinite μ] (hh : Measurable h)
+    (hC : ∀ s ≤ t, |h s| ≤ C) :
+    renewalConv h μ.renewalMeasure t =
+      h t + renewalConv h (μ.renewalMeasure - Measure.dirac 0) t := by
+  rw [Measure.renewalMeasure_sub_dirac_zero]
+  exact renewalConv_renewalMeasure_eq_add_conv hh hC
+
 /-- **The homogeneous renewal equation has only the trivial solution.** If the renewal measure of
 `F` is locally finite and `d` is measurable, bounded on each `[0, t]`, and satisfies `d = d ∗ F`,
 then `d = 0`. -/
@@ -422,6 +433,17 @@ theorem eq_renewalConv_renewalMeasure [SFinite μ] (hh : Measurable h)
         (abs_renewalConv_renewalMeasure_le hC₂) measure_Iic_lt_top.ne),
       Pi.sub_apply, renewalConv_renewalMeasure_eq_add hh hC₂, congrFun hgeq t, Pi.add_apply]
     ring
+
+/-- Any measurable, locally bounded solution of `g = h + g ∗ F` equals `h + h ∗ (U - δ₀)`, where
+`U` is the locally finite renewal measure of `F`. -/
+theorem eq_add_renewalConv_sub_dirac [SFinite μ] (hh : Measurable h)
+    (hhb : ∀ t, ∃ C, ∀ s ≤ t, |h s| ≤ C) (hg : Measurable g)
+    (hgb : ∀ t, ∃ C, ∀ s ≤ t, |g s| ≤ C) (hgeq : g = h + renewalConv g μ) :
+    g = h + renewalConv h (μ.renewalMeasure - Measure.dirac 0) := by
+  rw [eq_renewalConv_renewalMeasure hh hhb hg hgb hgeq]
+  ext t
+  obtain ⟨_, hC⟩ := hhb t
+  exact renewalConv_renewalMeasure_eq_add_sub_dirac hh hC
 
 end RenewalEquation
 

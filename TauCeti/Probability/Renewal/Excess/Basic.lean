@@ -49,7 +49,10 @@ respectively. These representations are the input of the limit theorem for the e
 
 * `TauCeti.Probability.lt_renewalExcess_iff`: on a nonexplosive path, `x < E t` exactly when some
   arrival `arrival T n` is at most `t` while the next one is after `t + x`.
-* `TauCeti.Probability.measurable_renewalExcess`: measurability of the excess.
+* `TauCeti.Probability.measurable_renewalExcess`,
+  `TauCeti.Probability.aemeasurable_renewalExcess`,
+  `TauCeti.Probability.renewalExcess_congr_ae`: measurability and almost-everywhere invariance
+  of the excess.
 * `TauCeti.Probability.measure_lt_renewalExcess`,
   `TauCeti.Probability.measureReal_lt_renewalExcess`: the excess-tail representation
   `P(x < E t) = (F> (· + x) ∗ U) t`.
@@ -146,6 +149,24 @@ lemma measurable_renewalExcess (hT : ∀ n, Measurable (T n)) (t : ℝ≥0) :
   exact (harr.eval_index ((measurable_renewalCountNat hT t).add_const 1)).sub_const t
 
 variable {P : Measure Ω}
+
+/-- If two increment sequences agree almost everywhere at each index, then almost everywhere their
+excess processes agree at all times. -/
+theorem renewalExcess_congr_ae {T' : ℕ → Ω → ℝ≥0} (h : ∀ n, T n =ᵐ[P] T' n) :
+    ∀ᵐ ω ∂P, ∀ t, renewalExcess T t ω = renewalExcess T' t ω := by
+  filter_upwards [arrival_congr_ae h] with ω harr t
+  have hrc : renewalCount T t ω = renewalCount T' t ω := by
+    simp only [renewalCount_def, harr]
+  have hrcn : renewalCountNat T t ω = renewalCountNat T' t ω := by
+    rw [renewalCountNat_def, renewalCountNat_def, funext harr, hrc]
+  rw [renewalExcess_def, renewalExcess_def, hrcn, harr]
+
+/-- If every increment is almost-everywhere measurable, so is the excess at every time `t`. -/
+@[fun_prop]
+theorem aemeasurable_renewalExcess (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ≥0) :
+    AEMeasurable (renewalExcess T t) P :=
+  (measurable_renewalExcess (fun n ↦ (hT n).measurable_mk) t).aemeasurable.congr
+    ((renewalExcess_congr_ae fun n ↦ (hT n).ae_eq_mk.symm).mono fun _ hω ↦ hω t)
 
 /-- For i.i.d. increments with law `F`, the `n`-th arrival is at most `t` and the next one is
 after `t + x` with probability `∫_{[0, t]} F((t - s + x, ∞)) F^{∗n}(ds)`, because `arrival T n`
