@@ -71,7 +71,7 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι R (L := L)
 
 private noncomputable def wordMultilinear (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ L) U :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ L) U :=
   (MultilinearMap.mkPiAlgebraFin R n U).compLinearMap (fun _ ↦ (ι).toLinearMap)
 
 /-- The average of all ordered products of a symmetric tensor's Lie generators. -/

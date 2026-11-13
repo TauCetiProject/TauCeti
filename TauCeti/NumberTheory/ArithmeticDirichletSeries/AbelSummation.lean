@@ -399,7 +399,7 @@ theorem summatory_mul_le_of_summatory_le {a : ℝ} (hN : ∀ i, a ≤ N i) (w : 
     summatory N (fun i ↦ w i * g (N i)) x ≤ C * g a := by
   -- `g` is nonincreasing on `[a, x]`, so `deriv g` is integrable there.
   have hg_int : IntegrableOn (deriv g) (Set.Icc a x) := by
-    refine (integrableOn_Icc_iff_integrableOn_Ioc enorm_ne_top).2 ?_
+    refine (integrableOn_Icc_iff_integrableOn_Ioc eNorm_ne_top).2 ?_
     have h := intervalIntegral.integrableOn_deriv_of_nonneg
       (g := fun t ↦ -g t) (g' := fun t ↦ -deriv g t) (a := a) (b := x)
       (fun t ht ↦ (hg_diff t ht).continuousAt.neg.continuousWithinAt)
