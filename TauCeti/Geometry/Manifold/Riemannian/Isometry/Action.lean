@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
 
+import TauCeti.Geometry.Manifold.Riemannian.Basic
+
 /-!
 # The action of the isometry group
 
@@ -23,8 +25,7 @@ is the pair `(X, Isom(X))`.
 Conversely, each element of a group acting on `M` by a smooth map preserving the metric is an
 element of `Isom(M)`, and a group acting by such maps maps homomorphically to `Isom(M)`. The
 tangent representation of the stabilizer of a point acts by linear isometries whenever the
-differentials at that point preserve the metric, and such a differential at a fixed point preserves
-every ball around the origin of the tangent space.
+differentials at that point preserve the metric.
 
 ## Main definitions
 
@@ -43,8 +44,6 @@ every ball around the origin of the tangent space.
 
 * `TauCeti.inner_tangentRepresentation_apply`: inner products of vectors moved by the tangent
   representation of the stabilizer of a point are those of their images under the differentials.
-* `TauCeti.mfderiv_smul_mem_ball_of_smul_eq_self`: at a fixed point, a differential preserving
-  the metric there maps every ball around the origin of the tangent space into itself.
 
 ## References
 
@@ -172,14 +171,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-/-- The inner products of two vectors in the tangent spaces at two equal points agree. Both
-tangent spaces are the model space, so the vectors are compared there. -/
-private theorem inner_congr {q p : M} (h : q = p) {u w : TangentSpace I q}
-    {u' w' : TangentSpace I p} (hu : (u : E) = u') (hw : (w : E) = w') :
-    inner ℝ u w = inner ℝ u' w' := by
-  subst h hu hw
-  rfl
-
 /-- **Inner products under the tangent representation.** For `g` in the stabilizer of `x`, the
 inner product at `x` of two vectors moved by the tangent representation is the inner product at
 `g • x = x` of their images under the differential of `g • ·`. So the tangent representation acts
@@ -190,26 +181,7 @@ theorem inner_tangentRepresentation_apply {K : Type*} [Group K] [MulAction K M] 
     inner ℝ (tangentRepresentation hd g u) (tangentRepresentation hd g w) =
       inner ℝ (mfderiv I I ((g : K) • ·) x u) (mfderiv I I ((g : K) • ·) x w) := by
   rw [tangentRepresentation_apply]
-  exact inner_congr (I := I) g.2.symm rfl rfl
-
-/-- **Ball stability at a fixed point.** If `k` fixes `p` and its differential at `p` preserves
-the metric there, that differential maps every ball around the origin of `T_p M` into itself. -/
-theorem mfderiv_smul_mem_ball_of_smul_eq_self {K : Type*} [SMul K M] {k : K} {p : M}
-    (hkp : k • p = p) (hk : ∀ u w : TangentSpace I p,
-      inner ℝ (mfderiv I I (k • ·) p u) (mfderiv I I (k • ·) p w) = inner ℝ u w)
-    {r : ℝ} {w : TangentSpace I p} (hw : w ∈ Metric.ball (0 : TangentSpace I p) r) :
-    mfderiv I I (k • ·) p w ∈ (Metric.ball 0 r : Set (TangentSpace I p)) := by
-  -- Read the inner product of `mfderiv I I (k • ·) p w` with itself at `k • p` and at `p`.
-  have h := inner_congr (I := I) hkp (u := mfderiv I I (k • ·) p w)
-    (w := mfderiv I I (k • ·) p w) (u' := mfderiv I I (k • ·) p w)
-    (w' := mfderiv I I (k • ·) p w) rfl rfl
-  rw [hk w w] at h
-  have hn : @norm (TangentSpace I p) _ (mfderiv I I (k • ·) p w) = ‖w‖ :=
-    (norm_eq_sqrt_real_inner (F := TangentSpace I p) _).trans
-      (by rw [← h, ← norm_eq_sqrt_real_inner])
-  refine (mem_ball_zero_iff (E := TangentSpace I p)).2 ?_
-  rw [hn]
-  exact mem_ball_zero_iff.1 hw
+  exact inner_tangentSpace_congr (I := I) g.2.symm rfl rfl
 
 end TauCeti
 

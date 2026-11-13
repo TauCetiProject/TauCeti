@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 
+import TauCeti.Geometry.Manifold.Riemannian.Basic
+
 /-!
 # Fixed points of groups of Riemannian isometries
 
@@ -32,7 +34,7 @@ the metric and no compactness of `M` or `K` is needed.
 * At a fixed point the invariant vectors of the tangent representation are `V^K`
   (`TauCeti.mem_invariants_tangentRepresentation_iff_of_mem_fixedPoints`), and each `d(k •)_p`
   preserves every ball around the origin of `T_p M`
-  (`TauCeti.mfderiv_smul_mem_ball_of_smul_eq_self`).
+  (`TauCeti.mfderiv_mem_ball_of_apply_eq_self`).
 * A geodesic leaving a fixed point with fixed initial velocity stays in `M^K` for all times
   (`TauCeti.maximalGeodesic_mem_fixedPoints`): the fixed set is totally geodesic.
 * On a normal domain `U` at `p` stable under the derivatives, a vector `v` has `exp_p v ∈ M^K`
@@ -84,21 +86,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- Maximal geodesics from equal base points with equal initial vectors agree. Both tangent spaces
-are the model space, so the initial vectors are compared there. -/
-private theorem maximalGeodesic_congr {q p : M} (h : q = p) {w : TangentSpace I q}
-    {v : TangentSpace I p} (hw : (w : E) = v) (t : ℝ) :
-    maximalGeodesic I M q w t = maximalGeodesic I M p v t := by
-  subst h hw
-  rfl
-
-/-- The exponential maps at equal base points agree on equal vectors. -/
-private theorem riemannianExp_congr {q p : M} (h : q = p) {w : TangentSpace I q}
-    {v : TangentSpace I p} (hw : (w : E) = v) :
-    riemannianExp I M q w = riemannianExp I M p v := by
-  subst h hw
-  rfl
 
 variable [I.Boundaryless] [T2Space M]
 
@@ -185,7 +172,7 @@ theorem riemannianExp_mem_fixedPoints_iff_of_mem_ball {r : ℝ}
     (hv : v ∈ Metric.ball 0 r) :
     riemannianExp I M p v ∈ fixedPoints K M ↔ ∀ k : K, mfderiv I I (k • ·) p v = v :=
   hU.riemannianExp_mem_fixedPoints_iff hK hp
-    (fun k _ hw ↦ mfderiv_smul_mem_ball_of_smul_eq_self (hp k) (hK k p) hw) hv
+    (fun k _ hw ↦ mfderiv_mem_ball_of_apply_eq_self (hp k) (hK k p) hw) hv
 
 /-- **The fixed set is the exponential image of the fixed tangent vectors.** For a group acting
 by isometries fixing `p`, and a normal domain `U` at `p` mapped into itself by the differential at
@@ -210,7 +197,7 @@ theorem image_riemannianExp_ball_inter_eq_fixedPoints_inter {r : ℝ}
     riemannianExp I M p '' (Metric.ball 0 r ∩ {v | ∀ k : K, mfderiv I I (k • ·) p v = v}) =
       fixedPoints K M ∩ riemannianExp I M p '' Metric.ball 0 r :=
   hU.image_riemannianExp_inter_eq_fixedPoints_inter hK hp
-    fun k _ hw ↦ mfderiv_smul_mem_ball_of_smul_eq_self (hp k) (hK k p) hw
+    fun k _ hw ↦ mfderiv_mem_ball_of_apply_eq_self (hp k) (hK k p) hw
 
 /-- **The Riemannian logarithm is a slice chart for the fixed set.** For a group acting by
 isometries fixing `p`, and a normal domain `U` at `p` mapped into itself by the differential at
@@ -236,7 +223,7 @@ theorem isSliceChart_fixedPoints_of_ball {r : ℝ} (hU : IsNormalDomain I M p (M
     IsSliceChart hU.toPartialDiffeomorph.symm.toOpenPartialHomeomorph
       {v | ∀ k : K, mfderiv I I (k • ·) p v = v} (fixedPoints K M) :=
   hU.isSliceChart_fixedPoints hK hp
-    fun k _ hw ↦ mfderiv_smul_mem_ball_of_smul_eq_self (hp k) (hK k p) hw
+    fun k _ hw ↦ mfderiv_mem_ball_of_apply_eq_self (hp k) (hK k p) hw
 
 end Manifold.IsNormalDomain
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Subrepresentation
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Invariants
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.PolarCompatible
 
@@ -49,8 +50,6 @@ vectors again form a symplectic subspace
 
 ## Main results
 
-* `TauCeti.AlmostComplexStructure.invariants_mem_invtSubmodule`: the invariants of a
-  representation by maps complex linear for an almost complex structure `J` are `J`-stable.
 * `TauCeti.SymplecticForm.Tames.isSymplectic_invariants`: the invariants of a representation by
   maps complex linear for an almost complex structure `J` tamed by `ω` form a symplectic subspace.
 * `TauCeti.SymplecticForm.isComplexLinearMap_polarComplexStructure_of_inner`: a linear isometry
@@ -84,17 +83,6 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] {ω : SymplecticForm V}
 section Tames
 
 variable {J : AlmostComplexStructure V}
-
-/-- The vectors fixed by a representation of a group by maps complex linear for an almost complex
-structure `J` form a `J`-stable subspace. -/
-theorem _root_.TauCeti.AlmostComplexStructure.invariants_mem_invtSubmodule
-    (J : AlmostComplexStructure V) {G : Type*} [Group G] {ρ : Representation ℝ G V}
-    (hρ : ∀ g, IsComplexLinearMap J J (ρ g)) :
-    ρ.invariants ∈ Module.End.invtSubmodule J.toLinearMap :=
-  (Module.End.mem_invtSubmodule _).2 fun v hv ↦
-    (Representation.mem_invariants ρ _).2 fun g ↦ by
-      rw [(isComplexLinearMap_iff_apply J J (ρ g)).1 (hρ g) v,
-        (Representation.mem_invariants ρ v).1 hv g]
 
 /-- The vectors fixed by a representation of a group by maps complex linear for an almost complex
 structure tamed by `ω` form a symplectic subspace. -/

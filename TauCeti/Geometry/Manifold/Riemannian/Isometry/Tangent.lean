@@ -25,8 +25,6 @@ used for initial velocities and velocity lifts of curves.
   the differential of the inverse isometry.
 * `TauCeti.RiemannianIsometry.toDiffeomorph_tangent_apply`: the tangent-bundle lift has this
   fibrewise linear-isometry equivalence as its fibre map.
-* `TauCeti.RiemannianIsometry.mfderiv_mem_ball_of_apply_eq_self`: the differential of an
-  isometry fixing `p` maps every ball around the origin of `T_p M` into itself.
 -/
 
 public section
@@ -113,23 +111,6 @@ theorem toDiffeomorph_tangent_apply [IsManifold I 1 M] [IsManifold J 1 N]
       TotalSpace.mk' F (Φ z.1) (Φ.mfderivToLinearIsometryEquiv z.1 z.2) := by
   rw [Diffeomorph.coe_tangent, mfderivToLinearIsometryEquiv_apply]
   rfl
-
-/-- The norms of a vector in the tangent spaces at two equal points agree. Both tangent spaces
-are the model space, so the vectors are compared there. -/
-private theorem norm_congr {q p : M} (h : q = p) {w : TangentSpace I q} {v : TangentSpace I p}
-    (hw : (w : E) = v) : ‖w‖ = ‖v‖ := by
-  subst h hw
-  rfl
-
-/-- The differential of an isometry fixing `p` maps every ball around the origin of `T_p M` into
-itself. -/
-theorem mfderiv_mem_ball_of_apply_eq_self {Φ : RiemannianIsometry I I M M} {p : M}
-    (hp : Φ p = p) {r : ℝ} {w : TangentSpace I p} (hw : w ∈ Metric.ball (0 : TangentSpace I p) r) :
-    mfderiv I I Φ p w ∈ (Metric.ball 0 r : Set (TangentSpace I p)) := by
-  refine (mem_ball_zero_iff (E := TangentSpace I p)).2 ?_
-  have key := norm_congr (I := I) hp (w := mfderiv I I Φ p w) (v := mfderiv I I Φ p w) rfl
-  rw [Φ.norm_mfderiv] at key
-  exact key ▸ mem_ball_zero_iff.1 hw
 
 end TauCeti.RiemannianIsometry
 

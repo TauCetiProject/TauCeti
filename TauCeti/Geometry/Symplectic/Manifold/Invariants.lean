@@ -37,9 +37,11 @@ are the tangent vectors fixed by the differential of every element
 isometries, `M^G` is near each of its points the image of this subspace under the Riemannian
 exponential map, and the Riemannian logarithm is a smooth slice chart flattening `M^G` onto it
 (`TauCeti.Manifold.IsNormalDomain.isSliceChart_fixedPoints`,
-`TauCeti.exists_isSliceChart_fixedPoints`). The results here then show that, near each fixed
-point, `σ` restricts to a nondegenerate two-form on the fixed locus; the dimension of these
-subspaces may vary from one fixed point to another.
+`TauCeti.exists_isSliceChart_fixedPoints`), and the results here show that this subspace is
+symplectic for `σ_x`; its dimension may vary from one fixed point to another. Wherever `M^G` is a
+submanifold whose tangent space is the space of invariant vectors, this shows that `σ` restricts
+to a nondegenerate two-form on it; when `σ` is moreover closed, so is its restriction, and `M^G`
+is a symplectic submanifold.
 
 ## Main results
 
