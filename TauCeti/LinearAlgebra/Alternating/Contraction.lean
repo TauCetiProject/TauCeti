@@ -7,8 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Alternating.Conormal
 public import TauCeti.LinearAlgebra.Alternating.Curry
-public import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
-public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.LinearAlgebra.Alternating.TopDegree
 
 /-!
 # Contraction of conormal orientations
@@ -17,8 +16,9 @@ Contracting a top-degree conormal form by a vector outside the tangent subspace
 produces a nonzero conormal form for the enlarged tangent subspace. This is the
 orientation operation for a transverse polyhedral sweep.
 
-The construction uses Mathlib's `AlternatingMap.curryLeft` and `map_insertNth`,
-and descent through `Submodule.conormalFormsEquiv` to the normal quotient.
+The construction uses Mathlib's `AlternatingMap.curryLeft`, the top-degree vanishing criterion
+`AlternatingMap.eq_zero_of_curryLeft_eq_zero`, and descent through
+`Submodule.conormalFormsEquiv` to the normal quotient.
 
 ## Attribution
 
@@ -32,34 +32,6 @@ public section
 
 open Module
 
-namespace AlternatingMap
-
-variable {R M : Type*} [Field R] [AddCommGroup M] [Module R M] {k : ℕ}
-
-/-- Contraction of a nonzero top-degree form is injective in the contracting vector. -/
-theorem curryLeft_injective_of_ne_zero (α : M [⋀^Fin (k + 1)]→ₗ[R] R)
-    (b : Basis (Fin (k + 1)) R M) (hα : α ≠ 0) :
-    Function.Injective α.curryLeft := by
-  classical
-  apply LinearMap.ker_eq_bot.mp
-  apply le_antisymm ?_ bot_le
-  intro n hn
-  rw [Submodule.mem_bot]
-  by_contra hn0
-  obtain ⟨f, hf⟩ := Module.Projective.exists_dual_ne_zero R hn0
-  obtain ⟨s, b', j, hj, -⟩ := exists_basis_of_pairing_ne_zero hf
-  let e := b'.indexEquiv b
-  let b'' := b'.reindex e
-  have hj' : b'' (e j) = n := by simp [b'', hj]
-  have hz : α (Matrix.vecCons n ((e j).removeNth b'')) = 0 := by
-    simpa using congrArg (fun β : M [⋀^Fin k]→ₗ[R] R => β ((e j).removeNth b''))
-      (LinearMap.mem_ker.mp hn)
-  have hb : α b'' = 0 := by
-    rw [← (e j).insertNth_self_removeNth b'', hj', α.map_insertNth, hz, smul_zero]
-  exact ((α.map_basis_ne_zero_iff b'').mpr hα) hb
-
-end AlternatingMap
-
 namespace Submodule
 
 section CommRing
@@ -68,7 +40,7 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {k : ℕ}
 
 /-- Contraction of a conormal form annihilates both the old subspace and the
 contracting vector. -/
-theorem conormalForms_curryLeft {W : Submodule R M}
+theorem curryLeft_mem_conormalForms {W : Submodule R M}
     {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin (k + 1))) (n : M) :
     α.curryLeft n ∈ (W ⊔ R ∙ n).conormalForms (Fin k) := by
   rw [Submodule.mem_conormalForms] at hα ⊢
@@ -100,15 +72,26 @@ theorem conormalForms_curryLeft_eq_zero_iff
       W.conormalFormsEquiv_symm_apply_mk ⟨α, hα⟩ v
   have hβ0 : β ≠ 0 := by
     intro hz
-    simp [hz] at hβ
-    exact hα0 hβ.symm
+    exact hα0 (by rw [← hβ, hz, AlternatingMap.zero_compLinearMap])
   have hi := AlternatingMap.compLinearMap_inj W.mkQ W.mkQ_surjective (β.curryLeft (W.mkQ n)) 0
   rw [AlternatingMap.zero_compLinearMap] at hi
-  have hinj := β.curryLeft_injective_of_ne_zero (Module.finBasisOfFinrankEq R _ hk) hβ0
-  rw [← hβ, AlternatingMap.curryLeft_compLinearMap, hi,
-    ← (β.curryLeft).map_zero,
-    hinj.eq_iff,
-    Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+  rw [← hβ, AlternatingMap.curryLeft_compLinearMap, hi]
+  constructor
+  · intro hz
+    by_contra hn
+    have hn0 : W.mkQ n ≠ 0 := by
+      rw [Submodule.mkQ_apply, ne_eq, Submodule.Quotient.mk_eq_zero]
+      exact hn
+    exact hβ0 (AlternatingMap.eq_zero_of_curryLeft_eq_zero hk β hn0 hz)
+  · intro hn
+    rw [Submodule.mkQ_apply, (Submodule.Quotient.mk_eq_zero W).mpr hn, map_zero]
+
+/-- A transverse contraction of a nonzero top-degree conormal form is nonzero. -/
+theorem curryLeft_ne_zero_of_notMem
+    {W : Submodule R M} (hk : finrank R (M ⧸ W) = k + 1)
+    {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin (k + 1)))
+    (hα0 : α ≠ 0) {n : M} (hn : n ∉ W) : α.curryLeft n ≠ 0 :=
+  (conormalForms_curryLeft_eq_zero_iff hk hα hα0 n).not.mpr hn
 
 /-- Contraction by a transverse vector determines a top-degree conormal form. -/
 theorem conormalForms_curryLeft_inj
@@ -144,7 +127,7 @@ noncomputable def contract (o : Module.Ray R (M [⋀^Fin (k + 1)]→ₗ[R] R))
     (ho : o.IsConormal W) (hk : finrank R (M ⧸ W) = k + 1)
     (n : M) (hn : n ∉ W) : Module.Ray R (M [⋀^Fin k]→ₗ[R] R) :=
   rayOfNeZero R (o.someVector.curryLeft n) <| by
-    apply (Submodule.conormalForms_curryLeft_eq_zero_iff hk _ o.someVector_ne_zero n).not.mpr hn
+    apply Submodule.curryLeft_ne_zero_of_notMem hk _ o.someVector_ne_zero hn
     rwa [← o.someVector_ray, isConormal_rayOfNeZero_iff] at ho
 
 /-- Contraction can be computed using any nonzero representing form. -/
@@ -154,8 +137,8 @@ theorem contract_rayOfNeZero {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ≠
     (n : M) (hn : n ∉ W) :
     (rayOfNeZero R α hα).contract ho hk n hn =
       rayOfNeZero R (α.curryLeft n)
-        ((Submodule.conormalForms_curryLeft_eq_zero_iff hk
-          ((isConormal_rayOfNeZero_iff hα).mp ho) hα n).not.mpr hn) := by
+        (Submodule.curryLeft_ne_zero_of_notMem hk
+          ((isConormal_rayOfNeZero_iff hα).mp ho) hα hn) := by
   apply (ray_eq_iff _ _).mpr
   exact ((ray_eq_iff (Module.Ray.someVector_ne_zero _) hα).mp
     (Module.Ray.someVector_ray _)).map
@@ -181,7 +164,7 @@ theorem isConormal_contract (o : Module.Ray R (M [⋀^Fin (k + 1)]→ₗ[R] R))
   induction o using Module.Ray.ind with
   | h α hα =>
     rw [contract_rayOfNeZero, isConormal_rayOfNeZero_iff]
-    exact Submodule.conormalForms_curryLeft ((isConormal_rayOfNeZero_iff hα).mp ho) n
+    exact Submodule.curryLeft_mem_conormalForms ((isConormal_rayOfNeZero_iff hα).mp ho) n
 
 /-- Contraction commutes with reversal of the orientation. -/
 @[simp]
@@ -209,10 +192,10 @@ theorem contract_eq_contract_iff
       constructor
       · intro he
         obtain ⟨c, hc, he⟩ := he.exists_pos_left
-          ((Submodule.conormalForms_curryLeft_eq_zero_iff hk
-            ((isConormal_rayOfNeZero_iff hα).mp ho) hα n).not.mpr hn)
-          ((Submodule.conormalForms_curryLeft_eq_zero_iff hk
-            ((isConormal_rayOfNeZero_iff hβ).mp hp) hβ n).not.mpr hn)
+          (Submodule.curryLeft_ne_zero_of_notMem hk
+            ((isConormal_rayOfNeZero_iff hα).mp ho) hα hn)
+          (Submodule.curryLeft_ne_zero_of_notMem hk
+            ((isConormal_rayOfNeZero_iff hβ).mp hp) hβ hn)
         have hab : c • α = β := (Submodule.conormalForms_curryLeft_inj hk
           (Submodule.smul_mem _ c ((isConormal_rayOfNeZero_iff hα).mp ho))
           ((isConormal_rayOfNeZero_iff hβ).mp hp) hn).mp (by simpa using he)
@@ -233,7 +216,7 @@ theorem contract_congr (o p : Module.Ray R (M [⋀^Fin (k + 1)]→ₗ[R] R))
 
 /-- Successive transverse contractions anticommute. The dimension and transversality
 proofs simply ensure that both successive contractions are defined. -/
-theorem contract_contract (o : Module.Ray R (M [⋀^Fin (k + 2)]→ₗ[R] R))
+theorem contract_contract_eq_neg (o : Module.Ray R (M [⋀^Fin (k + 2)]→ₗ[R] R))
     (ho : o.IsConormal W) (hk : finrank R (M ⧸ W) = k + 2)
     (n m : M) (hn : n ∉ W) (hm : m ∉ W)
     (hkn : finrank R (M ⧸ (W ⊔ R ∙ n)) = k + 1)

@@ -196,7 +196,8 @@ theorem transverse_hom_ext (n : V) {M : Type*} [AddCommGroup M] [Module R M]
         _ = g ⟨D, hD⟩ + g ⟨D', hD'⟩ := congrArg₂ (· + ·) heD heD'
         _ = g ⟨D + D', add_mem hD hD'⟩ := (map_add g ⟨D, hD⟩ ⟨D', hD'⟩).symm
     · exact fun σ hn c => ⟨mk_mem_transverseSubmodule n σ hn c, H σ hn c⟩
-  exact he.choose_spec
+  obtain ⟨_, he⟩ := he
+  exact he
 
 /-- The zero vector is tangent to every cell, so its transverse part vanishes. -/
 @[simp]

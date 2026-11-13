@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.Nakayama
 
 /-!
-# Modules over a local ring with infinite residue field are not finite unions of submodules
+# Avoiding finite families of submodules
 
 A vector space over an infinite field is not a finite union of proper subspaces
 (`Submodule.exists_forall_notMem_of_forall_ne_top`). This file proves the same for any module
@@ -20,7 +20,11 @@ over a local ring whose residue field is infinite. This is the general-position 
 choosing elements of a module that avoid finitely many proper submodules at once, for instance
 elements whose images form bases of finitely many fibres simultaneously.
 
-The proof reduces to the field case. Pick `yᵢ ∉ pᵢ` and let `L` be the finitely generated
+The file also shows that the range of a spanning additive map into a characteristic-zero vector
+space contains a vector outside finitely many proper subspaces, by B. H. Neumann's coset-cover
+lemma. This supplies directions in an integral lattice transverse to finitely many cells.
+
+The local-ring proof reduces to the field case. Pick `yᵢ ∉ pᵢ` and let `L` be the finitely generated
 submodule they span. By Nakayama's lemma, each `pᵢ ∩ L + 𝔪 L` is still a proper submodule of `L`,
 so its image in the vector space `L / 𝔪 L` over the residue field is a proper subspace. An element
 of `L` whose image avoids these finitely many subspaces avoids every `pᵢ`.
