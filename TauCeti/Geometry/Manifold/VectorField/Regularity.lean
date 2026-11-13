@@ -456,9 +456,10 @@ theorem MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartA
 
 /-- A vector field which is `C^n` as a tangent-bundle section within a set has a `C^n`
 inverse-chart pullback within the corresponding chart set. Unlike
-`ContMDiffOn.contDiffOn_mpullback_extChartAt_symm`, no boundarylessness and no extra regularity of
-the manifold are needed: the pullback agrees with the vector bundle's preferred fibre
-coordinates. -/
+`ContMDiffOn.contDiffOn_mpullback_extChartAt_symm`, which concerns the unrestricted pullback on the
+interior of the chart target, this holds at the chart centre even when `x` is a boundary point,
+and it needs no extra regularity of the manifold: the pullback within `range I` agrees with the
+vector bundle's preferred fibre coordinates. -/
 theorem ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm
     (hV : ContMDiffWithinAt I I.tangent n (fun y ↦ (V y : TangentBundle I M)) s x) :
     ContDiffWithinAt 𝕜 n

@@ -19,11 +19,11 @@ equivalent to commutation of the two flows.
 
 Both consequences are local along orbits. If `[v, w]` vanishes along the orbit segment
 `{Φ_σ x | σ ∈ [[0, t]]}` of the flow `Φ` of `v`, then the pullback of `w` by `Φ_t` agrees with
-`w` at `x` (`TauCeti.pullback_flowOfLipschitz_apply_eq_of_lieBracket_eq_zero_on`), that is,
+`w` at `x` (`TauCeti.pullback_flowOfLipschitz_apply_eq_of_forall_lieBracket_eq_zero`), that is,
 `dΦ_t` sends `w x` to `w (Φ_t x)`
-(`TauCeti.fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero_on`). If `[v, w]` vanishes at the
+(`TauCeti.fderiv_flowOfLipschitz_apply_of_forall_lieBracket_eq_zero`). If `[v, w]` vanishes at the
 points `Φ_σ (Ψ_τ x)` with `σ ∈ [[0, s]]` and `τ ∈ [[0, t]]`, where `Ψ` is the flow of `w`, then
-`Φ_s (Ψ_t x) = Ψ_t (Φ_s x)` (`TauCeti.flowOfLipschitz_comm_of_lieBracket_eq_zero_on`). So if
+`Φ_s (Ψ_t x) = Ψ_t (Φ_s x)` (`TauCeti.flowOfLipschitz_comm_of_forall_lieBracket_eq_zero`). So if
 `[v, w]` vanishes near a point `a`, the flows commute for short times near `a`
 (`TauCeti.eventually_flowOfLipschitz_comm_of_lieBracket_eventuallyEq_zero`). This is what the
 straightening of commuting vector fields needs after cutting them off to globally Lipschitz fields.
@@ -70,7 +70,7 @@ theorem hasDerivAt_pullback_flowOfLipschitz (x : E) (t : ℝ)
 /-- **Local preservation of a field with vanishing bracket.** If `[v, w]` vanishes along the
 orbit segment `{Φ_σ x | σ ∈ [[0, t]]}` of the flow `Φ` of `v`, and `w` is differentiable there,
 then the pullback of `w` by the time-`t` map agrees with `w` at `x`. -/
-theorem pullback_flowOfLipschitz_apply_eq_of_lieBracket_eq_zero_on {t : ℝ} {x : E}
+theorem pullback_flowOfLipschitz_apply_eq_of_forall_lieBracket_eq_zero {t : ℝ} {x : E}
     (hw : ∀ σ ∈ Set.uIcc 0 t, DifferentiableAt ℝ w (flowOfLipschitz v hv σ x))
     (hvw : ∀ σ ∈ Set.uIcc 0 t, lieBracket ℝ v w (flowOfLipschitz v hv σ x) = 0) :
     pullback ℝ (flowOfLipschitz v hv t) w x = w x := by
@@ -90,7 +90,7 @@ theorem pullback_flowOfLipschitz_apply_eq_of_lieBracket_eq_zero_on {t : ℝ} {x 
 theorem pullback_flowOfLipschitz_eq_of_lieBracket_eq_zero (hw : Differentiable ℝ w)
     (hvw : lieBracket ℝ v w = 0) (t : ℝ) :
     pullback ℝ (flowOfLipschitz v hv t) w = w :=
-  funext fun _ ↦ pullback_flowOfLipschitz_apply_eq_of_lieBracket_eq_zero_on hv hvs
+  funext fun _ ↦ pullback_flowOfLipschitz_apply_eq_of_forall_lieBracket_eq_zero hv hvs
     (fun _ _ ↦ hw _) fun _ _ ↦ congrFun hvw _
 
 /-- A differentiable field has zero bracket with `v` exactly when the flow of `v` preserves it. -/
@@ -110,27 +110,28 @@ theorem lieBracket_eq_zero_iff_pullback_flowOfLipschitz_eq (hw : Differentiable 
 /-- **Local preservation of a field with vanishing bracket.** If `[v, w]` vanishes along the
 orbit segment `{Φ_σ x | σ ∈ [[0, t]]}` of the flow `Φ` of `v`, and `w` is differentiable there,
 then the differential of the time-`t` map sends `w x` to `w (Φ_t x)`. -/
-theorem fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero_on {t : ℝ} {x : E}
+theorem fderiv_flowOfLipschitz_apply_of_forall_lieBracket_eq_zero {t : ℝ} {x : E}
     (hw : ∀ σ ∈ Set.uIcc 0 t, DifferentiableAt ℝ w (flowOfLipschitz v hv σ x))
     (hvw : ∀ σ ∈ Set.uIcc 0 t, lieBracket ℝ v w (flowOfLipschitz v hv σ x) = 0) :
     fderiv ℝ (flowOfLipschitz v hv t) x (w x) = w (flowOfLipschitz v hv t x) := by
   have hd := differentiable_flowOfLipschitz_apply hv hvs
   have hi := (flowOfLipschitz v hv).isInvertible_fderiv (hd (-t) _) (hd t x)
-  rw [← pullback_flowOfLipschitz_apply_eq_of_lieBracket_eq_zero_on hv hvs hw hvw, pullback,
+  rw [← pullback_flowOfLipschitz_apply_eq_of_forall_lieBracket_eq_zero hv hvs hw hvw, pullback,
     hi.self_apply_inverse]
 
 /-- If the bracket vanishes, the differential of each time map carries `w` to `w`. -/
 theorem fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero (hw : Differentiable ℝ w)
     (hvw : lieBracket ℝ v w = 0) (t : ℝ) (x : E) :
     fderiv ℝ (flowOfLipschitz v hv t) x (w x) = w (flowOfLipschitz v hv t x) :=
-  fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero_on hv hvs (fun _ _ ↦ hw _)
+  fderiv_flowOfLipschitz_apply_of_forall_lieBracket_eq_zero hv hvs (fun _ _ ↦ hw _)
     fun _ _ ↦ congrFun hvw _
 
 /-- **Local commutation of flows with vanishing bracket.** Let `Φ` and `Ψ` be the flows of `v`
 and of a globally Lipschitz field `w`. If `[v, w]` vanishes at every point
 `Φ_σ (Ψ_τ x)` with `σ ∈ [[0, s]]` and `τ ∈ [[0, t]]`, and `w` is differentiable at these points,
 then `Φ_s (Ψ_t x) = Ψ_t (Φ_s x)`. -/
-theorem flowOfLipschitz_comm_of_lieBracket_eq_zero_on (hw : LipschitzWith L w) {s t : ℝ} {x : E}
+theorem flowOfLipschitz_comm_of_forall_lieBracket_eq_zero (hw : LipschitzWith L w) {s t : ℝ}
+    {x : E}
     (hwd : ∀ σ ∈ Set.uIcc 0 s, ∀ τ ∈ Set.uIcc 0 t,
       DifferentiableAt ℝ w (flowOfLipschitz v hv σ (flowOfLipschitz w hw τ x)))
     (hvw : ∀ σ ∈ Set.uIcc 0 s, ∀ τ ∈ Set.uIcc 0 t,
@@ -142,7 +143,7 @@ theorem flowOfLipschitz_comm_of_lieBracket_eq_zero_on (hw : LipschitzWith L w) {
       (fun _ y ↦ w y) (Set.uIcc 0 t) := fun τ hτ ↦ by
     have h := (differentiable_flowOfLipschitz_apply hv hvs s _).hasFDerivAt.comp_hasDerivAt τ
       (hasDerivAt_flowOfLipschitz hw x τ)
-    rw [Function.comp_def, fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero_on hv hvs
+    rw [Function.comp_def, fderiv_flowOfLipschitz_apply_of_forall_lieBracket_eq_zero hv hvs
       (fun σ hσ ↦ hwd σ hσ τ hτ) fun σ hσ ↦ hvw σ hσ τ hτ] at h
     exact h.hasDerivWithinAt
   simpa only [Flow.map_zero_apply] using eq_flowOfLipschitz_of_isIntegralCurveOn hw hγ le_rfl
@@ -178,7 +179,7 @@ theorem eventually_flowOfLipschitz_comm_of_lieBracket_eventuallyEq_zero (hw : Li
       DifferentiableAt ℝ w (flowOfLipschitz v hv σ (flowOfLipschitz w hw τ q.2.2)) ∧
         lieBracket ℝ v w (flowOfLipschitz v hv σ (flowOfLipschitz w hw τ q.2.2)) = 0 :=
     fun σ hσ τ hτ ↦ hball (y := (σ, τ, q.2.2)) (lt_of_le_of_lt ?_ hq)
-  · exact flowOfLipschitz_comm_of_lieBracket_eq_zero_on hv hvs hw
+  · exact flowOfLipschitz_comm_of_forall_lieBracket_eq_zero hv hvs hw
       (fun σ hσ τ hτ ↦ (hmem' σ hσ τ hτ).1) fun σ hσ τ hτ ↦ (hmem' σ hσ τ hτ).2
   have hσ' : dist σ 0 ≤ dist q.1 0 := by
     simpa [Real.dist_eq] using Set.abs_sub_left_of_mem_uIcc hσ
@@ -193,7 +194,7 @@ theorem flowOfLipschitz_comm_of_lieBracket_eq_zero (hw : LipschitzWith L w)
     (hwd : Differentiable ℝ w) (hvw : lieBracket ℝ v w = 0) (s t : ℝ) (x : E) :
     flowOfLipschitz v hv s (flowOfLipschitz w hw t x) =
       flowOfLipschitz w hw t (flowOfLipschitz v hv s x) :=
-  flowOfLipschitz_comm_of_lieBracket_eq_zero_on hv hvs hw (fun _ _ _ _ ↦ hwd _)
+  flowOfLipschitz_comm_of_forall_lieBracket_eq_zero hv hvs hw (fun _ _ _ _ ↦ hwd _)
     fun _ _ _ _ ↦ congrFun hvw _
 
 /-- Commuting flows force the bracket to vanish. Here too, the second field need only be

@@ -40,7 +40,7 @@ The chart argument follows the pullback idiom used for the manifold bracket in
 * `VectorField.lieBracket_mpullback_extChartAt_symm_eventuallyEq`: near the chart image of an
   interior point, the flat bracket of the coordinate expressions of two fields differentiable near
   that point is the coordinate expression of their manifold bracket.
-* `VectorField.lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero_of_mlieBracket_eq_zero`: if
+* `lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero_of_eventually_mlieBracket_eq_zero`: if
   the manifold bracket of two such fields vanishes near an interior point, the flat bracket of
   their coordinate expressions vanishes near its chart image.
 * `VectorField.lieBracketWithin_neg_right` and `VectorField.mlieBracket_neg_right`: the flat and
@@ -288,7 +288,7 @@ theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq
 /-- If two vector fields are differentiable near an interior point `x` and their manifold Lie
 bracket vanishes near `x`, then the flat Lie bracket of their pullbacks along the inverse extended
 chart at `x` vanishes near the chart image of `x`. -/
-theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero_of_mlieBracket_eq_zero
+theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero_of_eventually_mlieBracket_eq_zero
     {V W : ∀ y : M, TangentSpace I y} {x : M} (hx : I.IsInteriorPoint x)
     (hV : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) y)
     (hW : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, W y⟩ : TangentBundle I M)) y)

@@ -25,8 +25,8 @@ velocity `w a`.
 More generally, finitely many fields `w i` with linearly independent values at `a` and pairwise
 vanishing Lie brackets near `a` are straightened simultaneously: one `C^n` change of coordinates
 `φ` sends every `w i y` to `w i a`
-(`TauCeti.exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero`); a single
-nonvanishing field is the case of a one-element index set.
+(`TauCeti.exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eventuallyEq_zero`); a
+single nonvanishing field is the case of a one-element index set.
 
 Cut each field off to a globally Lipschitz `C^n` field `g i` that agrees with `w i` near `a`, and
 let `Φ i` be the global flow of `g i`, which is `C^n` jointly in the initial condition and time.
@@ -47,9 +47,9 @@ is the required `φ`.
 
 * `TauCeti.exists_openPartialHomeomorph_fderiv_eq_const`: a nonvanishing `C^n` vector field is
   constant in suitable `C^n` local coordinates.
-* `TauCeti.exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero`: finitely many
-  `C^n` vector fields with linearly independent values and vanishing brackets are simultaneously
-  constant in suitable `C^n` local coordinates.
+* `TauCeti.exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eventuallyEq_zero`:
+  finitely many `C^n` vector fields with linearly independent values and vanishing brackets are
+  simultaneously constant in suitable `C^n` local coordinates.
 
 ## References
 
@@ -254,8 +254,9 @@ pairwise Lie brackets vanish near `a`. Then the fields are simultaneously consta
 `C^n` coordinates: there is an open partial homeomorphism `φ`, `C^n` on its source with `C^n`
 inverse on its target, such that `a ∈ φ.source` and `dφ_y (w i y) = w i a` for every
 `y ∈ φ.source` and every `i`. -/
-theorem exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero {n : ℕ∞} (hn : 1 ≤ n)
-    {w : ι → E → E} {s : Set E} {a : E} (hw : ∀ i, ContDiffOn ℝ n (w i) s) (hs : s ∈ 𝓝 a)
+theorem exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eventuallyEq_zero {n : ℕ∞}
+    (hn : 1 ≤ n) {w : ι → E → E} {s : Set E} {a : E} (hw : ∀ i, ContDiffOn ℝ n (w i) s)
+    (hs : s ∈ 𝓝 a)
     (hli : LinearIndependent ℝ fun i ↦ w i a)
     (hbr : Pairwise fun i j ↦ VectorField.lieBracket ℝ (w i) (w j) =ᶠ[𝓝 a] 0) :
     ∃ φ : OpenPartialHomeomorph E E, a ∈ φ.source ∧ (∀ y ∈ φ.source, ContDiffAt ℝ n φ y) ∧
@@ -334,13 +335,14 @@ near a point `a` of a finite-dimensional real normed space, with `w a ≠ 0`, is
 `C^n` coordinates: there is an open partial homeomorphism `φ`, `C^n` on its source with `C^n`
 inverse on its target, such that `a ∈ φ.source` and `dφ_y (w y) = w a` for every `y ∈ φ.source`.
 This is the case of a single field in
-`TauCeti.exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero`. -/
+`TauCeti.exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eventuallyEq_zero`. -/
 theorem exists_openPartialHomeomorph_fderiv_eq_const {n : ℕ∞} (hn : 1 ≤ n) {w : E → E}
     {s : Set E} {a : E} (hw : ContDiffOn ℝ n w s) (hs : s ∈ 𝓝 a) (ha : w a ≠ 0) :
     ∃ φ : OpenPartialHomeomorph E E, a ∈ φ.source ∧ (∀ y ∈ φ.source, ContDiffAt ℝ n φ y) ∧
       (∀ z ∈ φ.target, ContDiffAt ℝ n φ.symm z) ∧ ∀ y ∈ φ.source, fderiv ℝ φ y (w y) = w a := by
   obtain ⟨φ, haφ, hφ, hφs, hφw⟩ :=
-    exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero hn (w := fun _ : Unit ↦ w)
+    exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eventuallyEq_zero hn
+      (w := fun _ : Unit ↦ w)
       (fun _ ↦ hw) hs (linearIndependent_unique_iff.2 ha)
       fun i j h ↦ (h (Subsingleton.elim i j)).elim
   exact ⟨φ, haφ, hφ, hφs, fun y hy ↦ hφw y hy ()⟩
