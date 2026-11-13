@@ -13,12 +13,15 @@ public import Mathlib.SetTheory.Cardinal.Finite
 /-!
 # Reduction of coordinate rectangles
 
-Coefficientwise reduction of an integral quadratic algebra is injective on a coordinate
-rectangle whenever integer reduction is injective on each coordinate set. At a positive
-modulus its image has the product cardinality, bounded by the square of the modulus.
-In particular, any two half-open integer intervals of length at most the modulus give
-an injectively reduced rectangle. Closed intervals must omit the last endpoint of a full
-period. No squarefreeness or irreducibility assumption on the quadratic presentation is needed.
+At positive modulus `m`, a coordinate rectangle with injectively reduced coordinates
+has cardinality at most `m ^ 2`. Reduction is injective on rectangles of half-open integer
+intervals with signed endpoint differences at most `m`, and of closed integer intervals
+with signed endpoint differences strictly less than `m`. Thus a closed interval cannot
+contain both endpoints of a full period. No squarefreeness or irreducibility assumption
+on the quadratic presentation is needed.
+
+General coordinate-rectangle injectivity and image cardinality for coefficient maps are
+provided in `TauCeti.Algebra.QuadraticAlgebra.CoordinateSet`, without a positivity assumption.
 -/
 
 public section
@@ -42,24 +45,25 @@ theorem ncard_setOf_re_mem_im_mem_le_sq [NeZero m] {U V : Set ℤ}
   simpa [Nat.card_congr (equivProd ((a : ZMod m)) ((b : ZMod m))),
     Nat.card_prod, Nat.card_zmod, pow_two, ncard_setOf_re_mem_im_mem] using h
 
-/-- Two half-open coordinate intervals of length at most the positive modulus reduce
-injectively, with arbitrary integer starting points. -/
-theorem injOn_mapRingHom_setOf_re_mem_Ico_im_mem_Ico [NeZero m]
+/-- Two half-open coordinate intervals with signed endpoint differences at most the modulus
+reduce injectively, with arbitrary integer endpoints. -/
+theorem injOn_mapRingHom_setOf_re_mem_Ico_im_mem_Ico
     (s t u v : ℤ) (hst : t - s ≤ m) (huv : v - u ≤ m) :
     Set.InjOn (mapRingHom (Int.castRingHom (ZMod m)) a b)
       {z : QuadraticAlgebra ℤ a b | z.re ∈ Set.Ico s t ∧ z.im ∈ Set.Ico u v} :=
   injOn_mapRingHom_setOf_re_mem_im_mem a b _
-    ((CharP.intCast_injOn_Ico_iff (ZMod m) m s t).mpr hst)
-    ((CharP.intCast_injOn_Ico_iff (ZMod m) m u v).mpr huv)
+    (CharP.intCast_injOn_Ico_of_sub_le (ZMod m) m hst)
+    (CharP.intCast_injOn_Ico_of_sub_le (ZMod m) m huv)
 
-/-- The endpoint-removed closed intervals `[s, s + m - 1]` and `[t, t + m - 1]`
-give an injectively reduced coordinate rectangle. -/
-theorem injOn_mapRingHom_setOf_re_mem_Icc_im_mem_Icc [NeZero m] (s t : ℤ) :
+/-- Two closed coordinate intervals with signed endpoint differences strictly less than the
+modulus reduce injectively, with arbitrary integer endpoints. -/
+theorem injOn_mapRingHom_setOf_re_mem_Icc_im_mem_Icc
+    (s t u v : ℤ) (hst : t - s < m) (huv : v - u < m) :
     Set.InjOn (mapRingHom (Int.castRingHom (ZMod m)) a b)
       {z : QuadraticAlgebra ℤ a b |
-        z.re ∈ Set.Icc s (s + m - 1) ∧ z.im ∈ Set.Icc t (t + m - 1)} :=
+        z.re ∈ Set.Icc s t ∧ z.im ∈ Set.Icc u v} :=
   injOn_mapRingHom_setOf_re_mem_im_mem a b _
-    ((CharP.intCast_injOn_Icc_iff (ZMod m) m s (s + m - 1)).mpr (by omega))
-    ((CharP.intCast_injOn_Icc_iff (ZMod m) m t (t + m - 1)).mpr (by omega))
+    (CharP.intCast_injOn_Icc_of_sub_lt (ZMod m) m hst)
+    (CharP.intCast_injOn_Icc_of_sub_lt (ZMod m) m huv)
 
 end QuadraticAlgebra
