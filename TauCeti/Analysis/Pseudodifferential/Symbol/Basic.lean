@@ -1425,9 +1425,12 @@ theorem coefficient_map_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W
   funext fun p ↦ by simp
 
 theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
-    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by
-  obtain ⟨K, hK, hKa⟩ := ha
-  exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
+    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport :=
+  ha.imp fun _ ⟨hK, hKa⟩ ↦ ⟨hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
+
+theorem IsSmoothing.map {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).IsSmoothing := fun m' ↦
+  (ha m').elim fun b hb ↦ ⟨b.map Φ, congrArg (Φ ∘ ·) hb⟩
 
 /-- Spatial derivatives commute with the image under a continuous linear map. -/
 @[simp]
