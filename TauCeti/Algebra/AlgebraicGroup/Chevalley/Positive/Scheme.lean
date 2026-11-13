@@ -61,12 +61,13 @@ theorem comp_rootProduct (l : List (Fin t.numRoots))
     p ≫ D.rootProduct l = (l.attach.map fun γ =>
       p ≫ Pi.π (fun _ : {γ // γ ∈ l} => (AdditiveGroup.groupScheme ℤ).X) γ ≫
         (D.rootSubgroup γ.val).hom.hom).prod := by
-  unfold rootProduct
-  generalize l.attach = L
-  induction L with
-  | nil => simp only [List.map_nil, List.prod_nil, MonObj.comp_one]
-  | cons γ L ih =>
-    simp only [List.map_cons, List.prod_cons, MonObj.comp_mul, ih]
+  let precomp : (t.rootProductParameters l ⟶ D.groupScheme.X) →* (S ⟶ D.groupScheme.X) :=
+    ((yonedaMonObj D.groupScheme.X).map p.op).hom
+  simpa only [rootProduct, precomp, yonedaMonObj, MonCat.hom_ofHom, MonoidHom.coe_mk,
+    OneHom.coe_mk, Quiver.Hom.unop_op, List.map_map, Function.comp_def, Category.assoc] using
+    precomp.map_list_prod (l.attach.map fun γ =>
+      Pi.π (fun _ : {γ // γ ∈ l} => (AdditiveGroup.groupScheme ℤ).X) γ ≫
+        (D.rootSubgroup γ.val).hom.hom)
 
 /-- Ordered root multiplication on ring-valued points is the ordered product of the root
 homomorphisms with the same additive coordinates. -/
