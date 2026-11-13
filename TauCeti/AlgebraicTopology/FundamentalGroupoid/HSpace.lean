@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.HSpaces
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
-import TauCeti.Topology.PathSpace.Prepend
+public import TauCeti.Topology.PathSpace.Prepend
 
 /-!
 # Products of path classes in an H-space
@@ -32,17 +32,12 @@ constant loop. A path in `Ω X x` from a loop `γ` to the constant loop is a dis
 `pathHmul` places two such discs side by side; the unit laws say that placing the constant disc
 beside a sphere at the constant loop does not change the sphere.
 
-Concatenation of paths is moreover associative up to a homotopy that is continuous in the three
-paths (`Path.transAssocHomotopy`): the triple concatenations `(γ₁ ⬝ γ₂) ⬝ γ₃` and
-`γ₁ ⬝ (γ₂ ⬝ γ₃)` differ by the reparametrization of Mathlib's `Path.Homotopy.trans_assoc_reparam`,
-and the straight-line homotopy from this reparametrization to the identity
-(`Path.reparamHomotopy`) gives a homotopy between the two maps
-`Path x₀ x₁ × Path x₁ x₂ × Path x₂ x₃ → Path x₀ x₃`. On the loop space `Ω X x`, its traces
-`Path.transAssoc γ₁ γ₂ γ₃` are natural for products of path classes
+Concatenation of paths is associative up to a homotopy `Path.transAssocHomotopy`, continuous in
+the three paths, with traces `Path.transAssoc γ₁ γ₂ γ₃` (in `TauCeti.Topology.PathSpace.Prepend`).
+On the loop space `Ω X x` these traces are natural for products of path classes
 (`Path.pathHmul_pathHmul_comp_transAssoc`), again by
-`FundamentalGroupoidFunctor.homotopicMapsNatIso`, and at the constant loops the trace is the
-constant path (`Path.transAssoc_refl`). For discs this says that placing three discs side by side
-does not depend on the bracketing, up to rebracketing their boundary loops.
+`FundamentalGroupoidFunctor.homotopicMapsNatIso`. For discs this says that placing three discs
+side by side does not depend on the bracketing, up to rebracketing their boundary loops.
 
 ## References
 
@@ -195,47 +190,7 @@ end HSpace
 
 namespace Path
 
-open unitInterval
-
-variable {X : Type*} [TopologicalSpace X] {x₀ x₁ x₂ x₃ : X}
-
-/-- **Concatenation of paths is homotopy associative**: a homotopy, continuous in the three paths,
-from `(γ₁, γ₂, γ₃) ↦ (γ₁ ⬝ γ₂) ⬝ γ₃` to `(γ₁, γ₂, γ₃) ↦ γ₁ ⬝ (γ₂ ⬝ γ₃)` as maps
-`Path x₀ x₁ × Path x₁ x₂ × Path x₂ x₃ → Path x₀ x₃`. At each triple of paths it is Mathlib's
-`Path.Homotopy.transAssoc` (`Path.transAssocHomotopy_apply`). -/
-def transAssocHomotopy :
-    ContinuousMap.Homotopy
-      (⟨fun γ : Path x₀ x₁ × Path x₁ x₂ × Path x₂ x₃ => (γ.1.trans γ.2.1).trans γ.2.2,
-        by fun_prop⟩ : C(Path x₀ x₁ × Path x₁ x₂ × Path x₂ x₃, Path x₀ x₃))
-      ⟨fun γ => γ.1.trans (γ.2.1.trans γ.2.2), by fun_prop⟩ :=
-  (((reparamHomotopy (fun t => ⟨Homotopy.transAssocReparamAux t,
-      Homotopy.transAssocReparamAux_mem_I t⟩) (by fun_prop)
-      (Subtype.ext Homotopy.transAssocReparamAux_zero)
-      (Subtype.ext Homotopy.transAssocReparamAux_one)).compContinuousMap
-      ⟨fun γ : Path x₀ x₁ × Path x₁ x₂ × Path x₂ x₃ => γ.1.trans (γ.2.1.trans γ.2.2),
-        by fun_prop⟩).symm).cast
-    (ContinuousMap.ext fun γ => (Homotopy.trans_assoc_reparam γ.1 γ.2.1 γ.2.2).symm)
-    (ContinuousMap.id_comp _)
-
-@[simp]
-theorem transAssocHomotopy_apply (θ : I) (γ₁ : Path x₀ x₁) (γ₂ : Path x₁ x₂)
-    (γ₃ : Path x₂ x₃) :
-    transAssocHomotopy (θ, (γ₁, γ₂, γ₃)) = (Homotopy.transAssoc γ₁ γ₂ γ₃).eval θ := by
-  ext t
-  simp [transAssocHomotopy, Homotopy.transAssoc]
-
-/-- **The associator of concatenation on path classes**: the class of the trace of
-`Path.transAssocHomotopy` at `(γ₁, γ₂, γ₃)`, a path in `Path x₀ x₃` from `(γ₁ ⬝ γ₂) ⬝ γ₃` to
-`γ₁ ⬝ (γ₂ ⬝ γ₃)`. -/
-def transAssoc (γ₁ : Path x₀ x₁) (γ₂ : Path x₁ x₂) (γ₃ : Path x₂ x₃) :
-    (⟨(γ₁.trans γ₂).trans γ₃⟩ : FundamentalGroupoid (Path x₀ x₃)) ⟶ ⟨γ₁.trans (γ₂.trans γ₃)⟩ :=
-  ⟦transAssocHomotopy.evalAt (γ₁, γ₂, γ₃)⟧
-
-theorem transAssoc_def (γ₁ : Path x₀ x₁) (γ₂ : Path x₁ x₂) (γ₃ : Path x₂ x₃) :
-    transAssoc γ₁ γ₂ γ₃ = ⟦transAssocHomotopy.evalAt (γ₁, γ₂, γ₃)⟧ :=
-  (rfl)
-
-variable {x : X}
+variable {X : Type*} [TopologicalSpace X] {x : X}
 
 /-- **Naturality of the associator of the loop space**: for path classes `pᵢ : γᵢ ⟶ γᵢ'` in the
 loop space, placing them side by side with either bracketing gives the same class, up to the
@@ -257,20 +212,7 @@ theorem pathHmul_pathHmul_comp_transAssoc {γ₁ γ₂ γ₃ γ₁' γ₂' γ₃
   induction p₁ using Path.Homotopic.Quotient.ind with | mk p₁ =>
   induction p₂ using Path.Homotopic.Quotient.ind with | mk p₂ =>
   induction p₃ using Path.Homotopic.Quotient.ind with | mk p₃ =>
+  rw [transAssoc_def, transAssoc_def]
   exact h
-
-/-- At the constant paths the associator is the constant path, transported along
-`(c ⬝ c) ⬝ c = c ⬝ (c ⬝ c)`. -/
-@[simp]
-theorem transAssoc_refl :
-    transAssoc (Path.refl x) (Path.refl x) (Path.refl x) =
-      eqToHom (congrArg FundamentalGroupoid.mk (by rw [refl_trans_refl, refl_trans_refl])) := by
-  rw [FundamentalGroupoid.eqToHom_eq (by rw [refl_trans_refl, refl_trans_refl])]
-  refine congrArg Path.Homotopic.Quotient.mk
-    (Path.ext (funext fun θ => Path.ext (funext fun t => ?_)))
-  simp [ContinuousMap.Homotopy.evalAt, Homotopy.transAssoc, Homotopy.reparam]
-  -- What remains is the reparametrizing homotopy of the constant path, a structure literal
-  -- whose value is `x` by definition.
-  rfl
 
 end Path
