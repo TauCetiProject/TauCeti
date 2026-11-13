@@ -450,28 +450,6 @@ variable {M' : Type w₁} [AddCommGroup M'] [Module R M'] [LieRingModule (Matrix
 
 /-! ### The diagonal argument -/
 
-variable (R n v v') in
-/-- The vectors of the first factor that the diagonal submodule contains. -/
-private def comapInl : LieSubmodule R (Matrix n n R) M :=
-  (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}).comap
-    (LieModuleHom.inl R (Matrix n n R) M M')
-
-private theorem mem_comapInl {x : M} :
-    x ∈ comapInl R n v v' ↔
-      ((x, 0) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} := by
-  simp only [comapInl, LieSubmodule.mem_comap, LieModuleHom.inl_apply]
-
-variable (R n v v') in
-/-- The vectors of the second factor that the diagonal submodule contains. -/
-private def comapInr : LieSubmodule R (Matrix n n R) M' :=
-  (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}).comap
-    (LieModuleHom.inr R (Matrix n n R) M M')
-
-private theorem mem_comapInr {y : M'} :
-    y ∈ comapInr R n v v' ↔
-      ((0, y) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} := by
-  simp only [comapInr, LieSubmodule.mem_comap, LieModuleHom.inr_apply]
-
 variable [LinearOrder n] {mu : n → R}
 
 /-- The diagonal of two highest weight vectors of the same weight is a highest weight vector of the
@@ -519,34 +497,40 @@ private theorem inr_notMem_lieSpan_prod (hv : IsGlHighestWeightVector mu v)
   rw [hc1, one_smul] at h1
   exact hv.ne_zero h1.symm
 
-/-- A vector of the first factor lying in the diagonal submodule is zero: those vectors form a Lie
-submodule of the irreducible `M`, and it is not everything. -/
+omit [LinearOrder n] [IsDomain R] [CharZero R] in
+/-- A vector whose image under a Lie module map out of an irreducible module lies in a Lie
+submodule `D` is zero, as soon as some vector's image is not in `D`: the preimage of `D` is a Lie
+submodule of the irreducible source, and it is not everything. -/
+private theorem eq_zero_of_apply_mem {M₁ M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
+    [LieRingModule (Matrix n n R) M₁] [LieModule.IsIrreducible R (Matrix n n R) M₁]
+    [AddCommGroup M₂] [Module R M₂] [LieRingModule (Matrix n n R) M₂]
+    (f : M₁ →ₗ⁅R,Matrix n n R⁆ M₂) (D : LieSubmodule R (Matrix n n R) M₂) {x₀ : M₁}
+    (h₀ : f x₀ ∉ D) {x : M₁} (hx : f x ∈ D) : x = 0 := by
+  rcases IsSimpleOrder.eq_bot_or_eq_top (D.comap f) with hb | ht
+  · have hxS : x ∈ D.comap f := hx
+    rw [hb, LieSubmodule.mem_bot] at hxS
+    exact hxS
+  · exact absurd (show x₀ ∈ D.comap f by rw [ht]; exact LieSubmodule.mem_top _) h₀
+
+/-- A vector of the first factor lying in the diagonal submodule is zero. -/
 private theorem eq_zero_of_inl_mem_lieSpan_prod
     [LieModule.IsIrreducible R (Matrix n n R) M] (hv : IsGlHighestWeightVector mu v)
     (hv' : IsGlHighestWeightVector mu v') {x : M}
     (hx : ((x, 0) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
-    x = 0 := by
-  rcases IsSimpleOrder.eq_bot_or_eq_top (comapInl R n v v' (M' := M')) with hb | ht
-  · have hxS : x ∈ comapInl R n v v' (M' := M') := mem_comapInl.mpr hx
-    rw [hb, LieSubmodule.mem_bot] at hxS
-    exact hxS
-  · refine absurd (mem_comapInl.mp ?_) (inl_notMem_lieSpan_prod hv hv')
-    rw [ht]
-    exact LieSubmodule.mem_top _
+    x = 0 :=
+  eq_zero_of_apply_mem (LieModuleHom.inl R (Matrix n n R) M M')
+    (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v)
+    (by simpa using inl_notMem_lieSpan_prod hv hv') (by simpa using hx)
 
 /-- A vector of the second factor lying in the diagonal submodule is zero. -/
 private theorem eq_zero_of_inr_mem_lieSpan_prod
     [LieModule.IsIrreducible R (Matrix n n R) M'] (hv : IsGlHighestWeightVector mu v)
     (hv' : IsGlHighestWeightVector mu v') {y : M'}
     (hy : ((0, y) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
-    y = 0 := by
-  rcases IsSimpleOrder.eq_bot_or_eq_top (comapInr R n v v' (M := M)) with hb | ht
-  · have hyS : y ∈ comapInr R n v v' (M := M) := mem_comapInr.mpr hy
-    rw [hb, LieSubmodule.mem_bot] at hyS
-    exact hyS
-  · refine absurd (mem_comapInr.mp ?_) (inr_notMem_lieSpan_prod hv hv')
-    rw [ht]
-    exact LieSubmodule.mem_top _
+    y = 0 :=
+  eq_zero_of_apply_mem (LieModuleHom.inr R (Matrix n n R) M M')
+    (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v')
+    (by simpa using inr_notMem_lieSpan_prod hv hv') (by simpa using hy)
 
 private theorem injective_prodFst [LieModule.IsIrreducible R (Matrix n n R) M']
     (hv : IsGlHighestWeightVector mu v) (hv' : IsGlHighestWeightVector mu v') :
