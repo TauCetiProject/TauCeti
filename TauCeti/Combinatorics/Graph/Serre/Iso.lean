@@ -93,8 +93,8 @@ theorem toHom_injective : Function.Injective (toHom : Γ.Iso Δ → Γ.Hom Δ) :
 @[simp] theorem map_tgt (φ : Γ.Iso Δ) (e : Γ.E) : Δ.tgt (φ.equivE e) = φ.equivV (Γ.tgt e) :=
   φ.toHom.map_tgt Γ e
 
-/-- The identity isomorphism. The body is exposed so that the automorphism group of a graph
-acts trivially on vertices and darts by definition. -/
+/-- The identity isomorphism. The body is exposed so that it fixes each vertex by definition: the
+image of a path under the identity then has the endpoints of that path. -/
 @[expose, refl] def refl (Γ : SerreGraph.{u, v}) : Γ.Iso Γ where
   equivV := Equiv.refl _
   equivE := Equiv.refl _
@@ -108,8 +108,8 @@ acts trivially on vertices and darts by definition. -/
 @[simp] theorem refl_toHom (Γ : SerreGraph.{u, v}) : (refl Γ).toHom = Hom.id Γ := by
   ext <;> simp
 
-/-- The inverse isomorphism. The body is exposed for the same reason as that of `refl`. -/
-@[expose, symm] def symm (φ : Γ.Iso Δ) : Δ.Iso Γ where
+/-- The inverse isomorphism. -/
+@[symm] def symm (φ : Γ.Iso Δ) : Δ.Iso Γ where
   equivV := φ.equivV.symm
   equivE := φ.equivE.symm
   map_src e := by rw [Equiv.eq_symm_apply, ← φ.map_src, Equiv.apply_symm_apply]
@@ -133,8 +133,9 @@ acts trivially on vertices and darts by definition. -/
     Γ.tgt (φ.equivE.symm e) = φ.equivV.symm (Δ.tgt e) :=
   φ.symm.map_tgt e
 
-/-- The composite of two isomorphisms, `φ` followed by `ψ`. The body is exposed so that
-composites act on vertices and darts by composition by definition. -/
+/-- The composite of two isomorphisms, `φ` followed by `ψ`. The body is exposed so that it maps a
+vertex to `ψ.equivV (φ.equivV v)` by definition: the image of a path under a composite then has
+the endpoints of the image under `φ` followed by `ψ`. -/
 @[expose, trans] def trans (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) : Γ.Iso Θ where
   equivV := φ.equivV.trans ψ.equivV
   equivE := φ.equivE.trans ψ.equivE
