@@ -271,6 +271,22 @@ variable {x y z : B.toGraphOfGroups.LetterVertex}
   rw [Quiver.Path.nil_comp] at h
   rw [h, pathMap_cons, pathMap_nil, Quiver.Path.nil_comp, letterPath_dart]
 
+/-- The path read along a dart `f`, from equalities for its start label, its type and its end
+label. -/
+theorem pathMap_ofDart_eq (f : B.graph.E)
+    {g : 𝔸.vertexGroup (B.typ.mapV (B.graph.src f))}
+    {d : B.typ.mapV (B.graph.src f) ⟶ B.typ.mapV (B.graph.tgt f)}
+    {h : 𝔸.vertexGroup (B.typ.mapV (B.graph.tgt f))}
+    (hg : MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) (B.labelα f) = g)
+    (hd : B.typ.mapE f = d.1)
+    (hh : MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) (B.labelω f) = h) :
+    B.pathMap (Path.ofDart (𝔸 := B.toGraphOfGroups) (B.graph.dart f)) =
+      ((Path.ofVertex g).comp (Path.ofDart d)).comp (Path.ofVertex h) := by
+  have e := Path.comp_ofDart (𝔸 := B.toGraphOfGroups) Quiver.Path.nil (B.graph.dart f)
+  rw [Quiver.Path.nil_comp] at e
+  rw [e, pathMap_cons, pathMap_nil, Quiver.Path.nil_comp]
+  exact B.letterPath_dart_eq f hg hd hh
+
 /-- The start label of a reversed arrow, transported to its source, is the inverse of the end
 label of the arrow. -/
 private theorem cast_labelα_reverse {a b : B.graph.V} (f : a ⟶ b) :
@@ -670,13 +686,12 @@ private theorem segment_pathMap_ofDart :
         (Path.ofDart ((segment f g hf hg P₀ Q₀ a b).graph.dart false)) =
       ((Path.ofVertex a).comp (Path.ofDart (SerreGraph.segment.dart false))).comp
         (Path.ofVertex b) :=
-  ((segment f g hf hg P₀ Q₀ a b).pathMap_ofDart false).trans <| congrArg₂
-    (fun (x : SerreGraph.segment.src false ⟶ SerreGraph.segment.tgt false) (y : Q) =>
-      ((Path.ofVertex (𝔸 := GraphOfGroups.segment f g hf hg)
-        (a := SerreGraph.segment.src false) a).comp (Path.ofDart x)).comp
-          (Path.ofVertex (𝔸 := GraphOfGroups.segment f g hf hg)
-            (a := SerreGraph.segment.tgt false) y))
-    (Subtype.ext rfl) (inv_inv b)
+  -- The type map of `segment` is the identity, by definition, so the transports of the labels
+  -- are along equalities `v = v`.
+  (segment f g hf hg P₀ Q₀ a b).pathMap_ofDart_eq false
+    ((MulEquiv.cast_apply _ _).trans (cast_eq _ a))
+    (SerreGraph.dart_val SerreGraph.segment false).symm
+    ((MulEquiv.cast_apply _ _).trans ((cast_eq _ _).trans (segment_labelω_false ..)))
 
 /-- The single edge `(a, e, b)` between vertices with groups `P₀ ≤ P` and `Q₀ ≤ Q` represents the
 subgroup `⟨P₀, (a e b) Q₀ (a e b)⁻¹⟩` of `π₁(𝔸, v₀)`, the fundamental group (in the path model) of

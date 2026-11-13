@@ -223,6 +223,14 @@ def toPath : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → 𝔸.Path ⟨a⟩ ⟨b
     (cons p e g).toPath = (p.toPath.cons (Letter.dart e)).cons (Letter.vertex g) :=
   (rfl)
 
+/-- The edge path underlying the `𝔸`-path spelled by an alternating path has as many edges as the
+alternating path has darts. -/
+@[simp] theorem length_edgePath_toPath {b : Γ.V} (p : 𝔸.AlternatingPath a b) :
+    p.toPath.edgePath.length = p.length := by
+  induction p with
+  | single g => simp
+  | cons p e g ih => simp [ih]
+
 /-- Multiplying the last element of an alternating path by `g` amounts, up to homotopy, to
 appending the vertex group letter `g`. -/
 theorem toPath_setLast_mul_homotopic {b : Γ.V} (p : 𝔸.AlternatingPath a b)
