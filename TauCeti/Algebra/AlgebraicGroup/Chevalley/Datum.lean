@@ -270,6 +270,15 @@ theorem sum_coordinateRoot_smul (γ : Fin t.numRoots) :
   have h := congrArg Subtype.val (D.weightLatticeBasis.sum_repr ⟨_, D.root_mem_weightLattice γ⟩)
   rwa [Submodule.coe_sum] at h
 
+/-- If the chosen weight-lattice basis consists of the fundamental weights, coordinate roots
+are the original fundamental-weight coordinate vectors. -/
+theorem coordinateRoot_eq_root
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1) :
+    D.coordinateRoot = (t.simplyConnectedRootDatum ht).root := by
+  ext γ i
+  have h := congrFun (D.sum_coordinateRoot_smul γ) i
+  simpa [hb, Pi.single_apply] using h
+
 /-! ## Nilpotence of the root generators -/
 
 /-- **The lattice spans the representation space through its weight basis.** -/

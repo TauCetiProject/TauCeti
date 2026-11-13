@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.IsSimple
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Faithfulness is detected on a Cartan subalgebra
@@ -24,6 +25,8 @@ module span the dual of `H`, no nonzero element of `H` acts by zero, and the mod
 
 ## Main results
 
+* `TauCeti.isFaithful_of_weight_vectors_span`: nonzero weight vectors with weights spanning
+  the dual detect every element of the acting Lie algebra, over any field.
 * `TauCeti.isFaithful_of_isFaithful_cartanSubalgebra`: an `L`-module on which `H` acts faithfully
   is faithful.
 -/
@@ -33,6 +36,25 @@ public section
 namespace TauCeti
 
 open LieAlgebra LieModule LieAlgebra.IsKilling
+
+/-- A Lie module is faithful if its nonzero weight vectors have weights spanning the dual
+of the Lie algebra. The vectors need not span the module. -/
+theorem isFaithful_of_weight_vectors_span
+    {K L M η : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+    [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+    {μ : η → Module.Dual K L} {v : η → M}
+    (hwt : ∀ a, v a ∈ weightSpace M (μ a : L → K)) (hv : ∀ a, v a ≠ 0)
+    (hspan : Submodule.span K (Set.range μ) = ⊤) : IsFaithful K L M := by
+  rw [isFaithful_iff']
+  intro x hx
+  have hμ (a : η) : μ a x = 0 := by
+    have h : μ a x • v a = 0 :=
+      ((mem_weightSpace (μ a : L → K) (v a)).mp (hwt a) x).symm.trans (hx (v a))
+    exact (smul_eq_zero.mp h).resolve_right (hv a)
+  apply (Module.forall_dual_apply_eq_zero_iff K x).mp
+  intro χ
+  exact LinearMap.eqOn_span (f := Module.Dual.eval K L x) (g := 0)
+    (by rintro _ ⟨a, rfl⟩; exact hμ a) (hspan ▸ Submodule.mem_top)
 
 variable {K L M : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
