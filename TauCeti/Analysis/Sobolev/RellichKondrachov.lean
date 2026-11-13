@@ -59,12 +59,12 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 /-- The value of a zero-boundary Sobolev function, extended by zero to the whole space. -/
 private def W1p0.valueExtendByZeroL : W1p0 mu Omega p →L[ℝ] Lp ℝ p mu :=
-  (castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_top mu)).toLinearIsometry.toContinuousLinearMap.comp <|
-    (W1p0.valueL (Omega := ⊤)).comp (W1p0.extendByZeroL le_top)
+  (castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top mu)).toLinearIsometry.toContinuousLinearMap
+    |>.comp <| (W1p0.valueL (Omega := ⊤)).comp (W1p0.extendByZeroL le_top)
 
 private theorem W1p0.valueExtendByZeroL_apply (u : W1p0 mu Omega p) :
     W1p0.valueExtendByZeroL u =
-      castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_top mu)
+      castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top mu)
         (W1p0.valueL (W1p0.extendByZeroL le_top u)) :=
   rfl
 

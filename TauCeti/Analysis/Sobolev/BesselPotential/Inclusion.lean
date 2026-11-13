@@ -42,16 +42,21 @@ common compact support, are statements about this map.
   maps into `H^{s,p}`.
 * `BesselPotentialSpace.inclusion`: the inclusion `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G)` for
   `r ≤ s`.
-* `BesselPotentialSpace.toDistr_inclusion`: it does not change the tempered distribution.
+* `BesselPotentialSpace.toDistr_inclusion`: it does not change the tempered distribution, and
+  `BesselPotentialSpace.inclusion_injective`: it is injective.
 * `BesselPotentialSpace.inclusion_self`, `BesselPotentialSpace.inclusion_inclusion`: the inclusion
   of a space into itself is the identity, and inclusions compose.
 * `BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM`: it is the identity on Schwartz
   functions.
 * `BesselPotentialSpace.inclusionLp`: the inclusion `H^{s,p}(E, G) →L[ℂ] Lᵖ(E, G)` for `0 ≤ s`,
-  with `BesselPotentialSpace.toTemperedDistribution_inclusionLp` and the normal forms
-  `BesselPotentialSpace.inclusionLp_zero`, `BesselPotentialSpace.inclusionLp_inclusion` and
+  characterised by `BesselPotentialSpace.toTemperedDistribution_inclusionLp` and
+  `BesselPotentialSpace.inclusionLp_eq_iff`, and injective
+  (`BesselPotentialSpace.inclusionLp_injective`). Its normal forms are
+  `BesselPotentialSpace.toLp_inclusion`, `BesselPotentialSpace.inclusionLp_zero`,
+  `BesselPotentialSpace.inclusionLp_inclusion` and
   `BesselPotentialSpace.inclusionLp_toBesselPotentialSpaceCLM`.
-* `BesselPotentialSpace.norm_inclusion_le`: for `p = 2` its operator norm is at most `1`, and
+* `BesselPotentialSpace.norm_inclusion_le`, `BesselPotentialSpace.norm_inclusionLp_le`: for `p = 2`
+  the operator norms of `inclusion` and `inclusionLp` are at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
   of `u ∈ H^s` has norm at most `‖u‖`.
 -/
@@ -103,6 +108,11 @@ def inclusion (h : r ≤ s) : H^{s, p}(E, G) →L[ℂ] H^{r, p}(E, G) :=
 theorem toDistr_inclusion (h : r ≤ s) (u : H^{s, p}(E, G)) : (inclusion h u).toDistr = u.toDistr :=
   MemSobolev.toBesselPotentialSpace_toDistr _
 
+/-- The inclusion `H^{s,p} ⊆ H^{r,p}` is injective. -/
+theorem inclusion_injective (h : r ≤ s) :
+    Function.Injective (inclusion h : H^{s, p}(E, G) → H^{r, p}(E, G)) := fun u v huv ↦
+  ext (by simpa using congrArg toDistr huv)
+
 /-- The inclusion of `H^{s,p}` into itself is the identity. -/
 @[simp]
 theorem inclusion_self (u : H^{s, p}(E, G)) : inclusion le_rfl u = u :=
@@ -133,16 +143,41 @@ theorem toTemperedDistribution_inclusionLp (hs : 0 ≤ s) (u : H^{s, p}(E, G)) :
     (inclusionLp hs u : 𝓢'(E, G)) = u.toDistr := by
   simpa [inclusionLp] using besselPotential_neg_toLp_eq (f := inclusion hs u)
 
+/-- On `H^{0,p}` the `Lᵖ` part `toLp` has tempered distribution `u.toDistr`. -/
+@[simp]
+theorem toTemperedDistribution_toLp_zero (u : H^{0, p}(E, G)) :
+    (u.toLp : 𝓢'(E, G)) = u.toDistr := by
+  simpa using besselPotential_neg_toLp_eq (f := u)
+
+/-- `inclusionLp hs u` is the `Lᵖ` function whose tempered distribution is `u.toDistr`. -/
+theorem inclusionLp_eq_iff (hs : 0 ≤ s) {u : H^{s, p}(E, G)} {f : Lp G p (volume : Measure E)} :
+    inclusionLp hs u = f ↔ (f : 𝓢'(E, G)) = u.toDistr := by
+  refine ⟨fun h ↦ h ▸ toTemperedDistribution_inclusionLp hs u, fun h ↦ ?_⟩
+  refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
+  simp [h]
+
+/-- The inclusion `H^{s,p} ⊆ Lᵖ` is injective. -/
+theorem inclusionLp_injective (hs : 0 ≤ s) :
+    Function.Injective (inclusionLp hs : H^{s, p}(E, G) → Lp G p (volume : Measure E)) :=
+  fun u v huv ↦ ext (by rw [← toTemperedDistribution_inclusionLp hs, huv,
+    toTemperedDistribution_inclusionLp])
+
+/-- The `Lᵖ` part of the inclusion of `u` in `H^{0,p}` is the inclusion of `u` into `Lᵖ`. -/
+@[simp]
+theorem toLp_inclusion (hs : 0 ≤ s) (u : H^{s, p}(E, G)) :
+    (inclusion hs u).toLp = inclusionLp hs u := by
+  simp [inclusionLp]
+
 /-- On `H^{0,p}` the inclusion into `Lᵖ` is the `Lᵖ` part `toLp`. -/
 @[simp]
 theorem inclusionLp_zero (u : H^{0, p}(E, G)) : inclusionLp le_rfl u = u.toLp := by
-  simp [inclusionLp]
+  rw [← toLp_inclusion, inclusion_self]
 
 /-- The inclusion into `Lᵖ` of an included element is the inclusion of the original element. -/
 @[simp]
 theorem inclusionLp_inclusion (h : r ≤ s) (hr : 0 ≤ r) (u : H^{s, p}(E, G)) :
     inclusionLp hr (inclusion h u) = inclusionLp (hr.trans h) u := by
-  simp [inclusionLp]
+  rw [← toLp_inclusion, inclusion_inclusion, toLp_inclusion]
 
 /-- On Schwartz functions the inclusion `H^{s,p} ⊆ Lᵖ` is the inclusion of `𝓢` into `Lᵖ`. -/
 @[simp]
@@ -206,6 +241,18 @@ theorem norm_inclusion_apply_le (h : r ≤ s) (u : H^{s}(E, F)) : ‖inclusion h
 theorem norm_inclusion_le (h : r ≤ s) : ‖(inclusion h : H^{s}(E, F) →L[ℂ] H^{r}(E, F))‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
     simpa only [one_mul] using norm_inclusion_apply_le h u
+
+/-- For `p = 2` and a Hilbert space, the inclusion `H^s ⊆ L²`, `0 ≤ s`, does not increase norms. -/
+theorem norm_inclusionLp_apply_le (hs : 0 ≤ s) (u : H^{s}(E, F)) : ‖inclusionLp hs u‖ ≤ ‖u‖ := by
+  rw [← toLp_inclusion, norm_toLp_eq]
+  exact norm_inclusion_apply_le hs u
+
+/-- For `p = 2` and a Hilbert space, the inclusion `H^s ⊆ L²`, `0 ≤ s`, has operator norm at
+most `1`. -/
+theorem norm_inclusionLp_le (hs : 0 ≤ s) :
+    ‖(inclusionLp hs : H^{s}(E, F) →L[ℂ] Lp F 2 (volume : Measure E))‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
+    simpa only [one_mul] using norm_inclusionLp_apply_le hs u
 
 /-- An element of `H^r` with the tempered distribution of `u ∈ H^s`, `r ≤ s`, is the image of `u`
 under the inclusion, so its norm is at most `‖u‖`. -/

@@ -56,7 +56,7 @@ namespace ContinuousLinearMap
 
 open MeasureTheory
 
-variable {α E F 𝕜 𝕜' : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞}
+variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
   [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F]
 

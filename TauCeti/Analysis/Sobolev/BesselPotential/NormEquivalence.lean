@@ -58,6 +58,8 @@ the measure of Mathlib's Bessel-potential spaces.
   `TauCeti.Wkp.toDistr_toBesselPotentialSpace_of_ae_eq`: its tempered distribution is the
   complexified value.
 * `TauCeti.Wkp.toBesselPotentialSpace_injective`: it is injective.
+* `TauCeti.Wkp.toBesselPotentialSpace_eq_iff`: it is characterised by its image in `Lᵖ`.
+* `TauCeti.Wkp.inclusion_toBesselPotentialSpace`: it is compatible with lowering the order.
 * `TauCeti.Wkp.exists_toBesselPotentialSpace_eq_iff`: its range consists of the elements of
   `H^{k,p}(E, ℂ)` given by real `Lᵖ` functions.
 * `TauCeti.Wkp.inclusionLp_toBesselPotentialSpace_of_ae_eq`,
@@ -67,8 +69,8 @@ the measure of Mathlib's Bessel-potential spaces.
 * `TauCeti.Wkp.exists_norm_le_mul_norm_toBesselPotentialSpace`: the reverse bound
   `‖u‖_{W^{k,p}} ≤ C ‖u‖_{H^{k,p}}`, so that the two norms are equivalent.
 * `TauCeti.Wkp.hasWeakLineDerivOn_iff_lineDerivOp_toDistr_toBesselPotentialSpace`,
-  `TauCeti.Wkp.lineDerivOp_toDistr_toBesselPotentialSpace`: the identification commutes with
-  directional derivatives.
+  `TauCeti.Wkp.lineDerivOp_toDistr_toBesselPotentialSpace_of_hasWeakLineDerivOn`: the
+  identification commutes with directional derivatives.
 
 ## References
 
@@ -93,7 +95,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- The value of a Sobolev function on the whole space, as a real `Lᵖ` function for `volume`. -/
 private def realValue (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k) :
     Lp ℝ p (volume : Measure E) :=
-  castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_top volume) (value k u)
+  castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) (value k u)
 
 private theorem value_ae_eq_realValue (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k) :
     (value k u : E → ℝ) =ᵐ[volume] realValue k u :=
@@ -103,7 +105,7 @@ private theorem value_ae_eq_realValue (k : ℕ) (u : Wkp (volume : Measure E) �
 private def complexValue (k : ℕ) :
     Wkp (volume : Measure E) ⊤ p k →L[ℝ] Lp ℂ p (volume : Measure E) :=
   (Complex.ofRealCLM.compLpL p volume).comp
-    ((castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_top volume)).toContinuousLinearEquiv
+    ((castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume)).toContinuousLinearEquiv
       |>.toContinuousLinearMap.comp (valueL k))
 
 private theorem complexValue_apply (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k) :
@@ -166,6 +168,7 @@ private theorem toDistr_toBesselPotentialSpace (k : ℕ) (u : Wkp (volume : Meas
 
 /-- The tempered distribution of `toBesselPotentialSpace u` pairs a Schwartz function `φ` with
 `u` by integration: it is `φ ↦ ∫ φ u`. -/
+@[simp]
 theorem toDistr_toBesselPotentialSpace_apply (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k)
     (φ : 𝓢(E, ℂ)) :
     (toBesselPotentialSpace hp hp_top k u).toDistr φ = ∫ x, φ x * (value k u x : ℂ) := by
@@ -218,11 +221,9 @@ real `Lᵖ` function agreeing almost everywhere with the value of `u`. -/
 theorem inclusionLp_toBesselPotentialSpace_of_ae_eq {k : ℕ} {u : Wkp (volume : Measure E) ⊤ p k}
     {g : Lp ℝ p (volume : Measure E)} (hg : (value k u : E → ℝ) =ᵐ[volume] g) :
     BesselPotentialSpace.inclusionLp (Nat.cast_nonneg k) (toBesselPotentialSpace hp hp_top k u) =
-      Complex.ofRealCLM.compLp g := by
-  refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
-  simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-    BesselPotentialSpace.toTemperedDistribution_inclusionLp]
-  exact toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top hg
+      Complex.ofRealCLM.compLp g :=
+  (BesselPotentialSpace.inclusionLp_eq_iff _).2
+    (toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top hg).symm
 
 /-- Through the inclusion `H^{k,p} ⊆ Lᵖ`, `toBesselPotentialSpace u` is almost everywhere the
 complexified value of `u`. -/
@@ -232,6 +233,29 @@ theorem coeFn_inclusionLp_toBesselPotentialSpace (k : ℕ) (u : Wkp (volume : Me
   rw [inclusionLp_toBesselPotentialSpace_of_ae_eq hp hp_top (value_ae_eq_realValue k u),
     ← complexValue_apply]
   exact complexValue_ae_eq k u
+
+/-- `toBesselPotentialSpace u` is the element of `H^{k,p}(E, ℂ)` that is almost everywhere the
+complexified value of `u` through the inclusion `H^{k,p} ⊆ Lᵖ`. -/
+theorem toBesselPotentialSpace_eq_iff {k : ℕ} {u : Wkp (volume : Measure E) ⊤ p k}
+    {h : H^{k, p}(E, ℂ)} :
+    toBesselPotentialSpace hp hp_top k u = h ↔
+      BesselPotentialSpace.inclusionLp (Nat.cast_nonneg k) h
+        =ᵐ[volume] fun x ↦ (value k u x : ℂ) := by
+  refine ⟨fun hu ↦ hu ▸ coeFn_inclusionLp_toBesselPotentialSpace hp hp_top k u, fun hh ↦ ?_⟩
+  refine BesselPotentialSpace.inclusionLp_injective (Nat.cast_nonneg k) (Lp.ext ?_)
+  exact (coeFn_inclusionLp_toBesselPotentialSpace hp hp_top k u).trans hh.symm
+
+/-- The identification is compatible with lowering the order: the inclusion
+`H^{k+1,p} ⊆ H^{k,p}` of `toBesselPotentialSpace u` is `toBesselPotentialSpace` of the lower-order
+part of `u`. -/
+theorem inclusion_toBesselPotentialSpace (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p (k + 1)) :
+    BesselPotentialSpace.inclusion (Nat.cast_le.2 k.le_succ)
+        (toBesselPotentialSpace hp hp_top (k + 1) u) =
+      toBesselPotentialSpace hp hp_top k (lowerOrder k u) :=
+  BesselPotentialSpace.ext <| by
+    ext φ
+    rw [BesselPotentialSpace.toDistr_inclusion, toDistr_toBesselPotentialSpace_apply,
+      toDistr_toBesselPotentialSpace_apply, value_succ]
 
 /-- The range of the identification `W^{k,p}(E) → H^{k,p}(E, ℂ)` is closed. -/
 theorem isClosed_range_toBesselPotentialSpace (k : ℕ) :
@@ -252,9 +276,7 @@ theorem isClosed_range_toBesselPotentialSpace (k : ℕ) :
   simp only [Set.mem_preimage, Set.mem_range, ContinuousLinearMap.compLpL_apply,
     exists_toBesselPotentialSpace_eq_iff hp hp_top k h]
   refine exists_congr fun g ↦ ⟨fun hg ↦ ?_, fun hg ↦ ?_⟩
-  · refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
-    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-      BesselPotentialSpace.toTemperedDistribution_inclusionLp, hg]
+  · exact ((BesselPotentialSpace.inclusionLp_eq_iff _).2 hg.symm).symm
   · rw [hg, BesselPotentialSpace.toTemperedDistribution_inclusionLp]
 
 /-- **The `W^{k,p}` and `H^{k,p}` norms are equivalent.** For `1 < p < ∞` there is `C` such that
@@ -290,8 +312,8 @@ theorem hasWeakLineDerivOn_iff_lineDerivOp_toDistr_toBesselPotentialSpace {q : �
 /-- **The identification commutes with derivatives.** If the value of `d ∈ W^{j,q}(E)` is a weak
 derivative in direction `v` of the value of `u ∈ W^{k,p}(E)`, then the tempered distribution of
 `d` is the derivative in direction `v` of the tempered distribution of `u`. -/
-theorem lineDerivOp_toDistr_toBesselPotentialSpace {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : 1 < q)
-    (hq_top : q ≠ ∞) {j k : ℕ} {u : Wkp (volume : Measure E) ⊤ p k}
+theorem lineDerivOp_toDistr_toBesselPotentialSpace_of_hasWeakLineDerivOn {q : ℝ≥0∞}
+    [Fact (1 ≤ q)] (hq : 1 < q) (hq_top : q ≠ ∞) {j k : ℕ} {u : Wkp (volume : Measure E) ⊤ p k}
     {d : Wkp (volume : Measure E) ⊤ q j} {v : E}
     (hd : HasWeakLineDerivOn volume ⊤ (value k u) (value j d) v) :
     ∂_{v} (toBesselPotentialSpace hp hp_top k u).toDistr =
