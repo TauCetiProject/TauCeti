@@ -411,19 +411,6 @@ theorem cocharacter_comp_geometricCharacterGroupSchemeMap
     DiagonalizableGroup.cocharacterGroupSchemeMap_comp_characterGroupSchemeMap,
     characterCocharacterPairing_apply, pairing_cocharacterMonoidHom]
 
-private theorem powEndGroupSchemeMap_injective :
-    Function.Injective (DiagonalizableGroup.powEndGroupSchemeMap (R := AlgebraicClosure k)) := by
-  intro m n h
-  -- Full faithfulness (`diagonalizableGroupSchemeHomEquiv`) recovers the lifted power maps of the
-  -- character group that induce the power maps. Expose the underlying lifted-power homomorphisms;
-  -- each is determined by its value at the generator.
-  simp only [DiagonalizableGroup.powEndGroupSchemeMap_def,
-    DiagonalizableGroup.characterGroupSchemeMap_def, ← diagonalizableGroupSchemeHomEquiv_apply,
-    EmbeddingLike.apply_eq_iff_eq, FGCommGrpCat.hom_ext_iff, FGCommGrpCat.hom_hom_ofHom] at h
-  -- `simp` does not unfold the carrier of `multiplicativeCharacterGroup` to `ULift`, so the lifted
-  -- exponents are compared by rewriting.
-  rwa [ULift.up_inj, EmbeddingLike.apply_eq_iff_eq] at h
-
 /-- The pairing is the unique exponent whose power map is the composite of the corresponding
 geometric cocharacter and character. -/
 theorem characterCocharacterPairing_eq_iff_comp_eq_powEndGroupSchemeMap
@@ -436,7 +423,7 @@ theorem characterCocharacterPairing_eq_iff_comp_eq_powEndGroupSchemeMap
   · intro h
     rw [cocharacter_comp_geometricCharacterGroupSchemeMap, h]
   · intro h
-    apply powEndGroupSchemeMap_injective (k := k)
+    apply DiagonalizableGroup.powEndGroupSchemeMap_injective (R := AlgebraicClosure k)
     rw [← cocharacter_comp_geometricCharacterGroupSchemeMap]
     exact h
 
