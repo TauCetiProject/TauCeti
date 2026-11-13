@@ -258,8 +258,11 @@ private theorem outgoing_subdivideCorner (f : C.Face)
 @[simp] theorem subdivideOriginCorner_fst (c : (C.subdivide a).Corner) :
     (C.subdivideOriginCorner a c).1 = c.1 := (rfl)
 
+-- Not `@[simp]`: `simp` would rewrite `C.subdivideFirstCorner a ⟨f, ⟨0, h⟩⟩` to a corner on which
+-- the simp lemmas `outgoing_subdivideFirstCorner`, `prevCorner_subdivideFirstCorner`, ... no
+-- longer fire.
 /-- The corner `0` of a face of `C` gives the corner `0` of that face in the subdivision. -/
-@[simp] theorem subdivideFirstCorner_zero (f : C.Face) (h : 0 < C.sides f) :
+theorem subdivideFirstCorner_zero (f : C.Face) (h : 0 < C.sides f) :
     C.subdivideFirstCorner a ⟨f, ⟨0, h⟩⟩ = ⟨f, ⟨0, (C.subdivide a).sides_pos f⟩⟩ :=
   Sigma.ext rfl (heq_of_eq (Fin.ext (by simp [subdivideFirstCorner, subdivideCorner])))
 
@@ -376,6 +379,13 @@ theorem eq_of_subdivideOriginCorner_eq_of_outgoing_eq {c c' : (C.subdivide a).Co
   rw [nextCorner_def, nextCorner_def]
   exact congrArg (Sigma.mk c.1) (C.finRotate_subdivideSides_of_eq a _ _ _
     (Nat.sub_add_cancel (C.subdivideLen_pos a _)))
+
+/-- The corner preceding the first corner on a side is the last corner on the previous side. -/
+@[simp] theorem prevCorner_subdivideFirstCorner (c : C.Corner) :
+    (C.subdivide a).prevCorner (C.subdivideFirstCorner a c) =
+      C.subdivideLastCorner a (C.prevCorner c) := by
+  rw [← (C.subdivide a).prevCorner_nextCorner (C.subdivideLastCorner a _),
+    nextCorner_subdivideLastCorner, nextCorner_prevCorner]
 
 variable {C a} in
 /-- On a side attached along the subdivided edge, the corner following the first corner is the
