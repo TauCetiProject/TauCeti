@@ -22,6 +22,8 @@ commutativity of `α` is assumed.
 
 * `Matrix.one_sub_smul_vecMulVec_mem_unitary`: the matrix `1 - c v vᴴ` is unitary when
   `vᴴ v = s` and `c² s = 2 c`.
+* `Matrix.one_sub_smul_vecMulVec_mulVec`: the matrix `1 - c v wᵀ` sends `x` to
+  `x - c v (w ⬝ᵥ x)`.
 -/
 
 public section
@@ -50,5 +52,12 @@ theorem one_sub_smul_vecMulVec_mem_unitary {v : n → α} {s c : R}
           module
       _ = 1 := by rw [hc, sub_self, zero_smul, sub_zero]
   exact ⟨by rw [hH, hHH], by rw [hH, hHH]⟩
+
+omit [StarRing R] [TrivialStar R] [StarRing α] [StarModule R α] in
+/-- The matrix `1 - c v wᵀ` sends `x` to `x - c v (w ⬝ᵥ x)`, with the scalar `w ⬝ᵥ x` acting on
+the right of `v`. -/
+theorem one_sub_smul_vecMulVec_mulVec (c : R) (v w x : n → α) :
+    (1 - c • vecMulVec v w) *ᵥ x = x - c • MulOpposite.op (w ⬝ᵥ x) • v := by
+  rw [sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec]
 
 end Matrix

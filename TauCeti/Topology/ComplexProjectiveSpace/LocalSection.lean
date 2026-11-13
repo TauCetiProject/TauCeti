@@ -119,7 +119,7 @@ private theorem sectionMatrix_mem_unitaryGroup (k : Fin (n + 1)) (z : Fin n → 
 private theorem sectionMatrix_mulVec_single_zero (k : Fin (n + 1)) (z : Fin n → ℂ) :
     sectionMatrix k z *ᵥ Pi.single 0 1 =
       (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp := by
-  set y := (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp
+  set y := (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp with hy
   set r := ‖affineVector k z‖⁻¹
   have hr : 0 ≤ r := inv_nonneg.2 (norm_nonneg _)
   have hyk : y k = (r : ℂ) := affineUnitVector_apply_self k z
@@ -132,7 +132,7 @@ private theorem sectionMatrix_mulVec_single_zero (k : Fin (n + 1)) (z : Fin n �
   -- The reflection in `e_k` sends `e_k` to `-e_k`.
   have hE : (1 - (2 : ℝ) • vecMulVec (Pi.single k (1 : ℂ)) (star (Pi.single k 1))) *ᵥ
       Pi.single k 1 = -Pi.single k 1 := by
-    rw [sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec]
+    rw [one_sub_smul_vecMulVec_mulVec]
     simp only [Pi.star_single, star_one, single_dotProduct, Pi.single_eq_same, one_mul,
       MulOpposite.op_one, one_smul]
     module
@@ -146,8 +146,8 @@ private theorem sectionMatrix_mulVec_single_zero (k : Fin (n + 1)) (z : Fin n �
       rw [Complex.real_smul]
       push_cast
       field_simp
-    rw [show reflectionAxis k z = Pi.single k 1 + y from rfl, sub_mulVec, one_mulVec, smul_mulVec,
-      vecMulVec_mulVec, dotProduct_single, op_smul_eq_smul, mul_one]
+    rw [reflectionAxis, ← hy, one_sub_smul_vecMulVec_mulVec, dotProduct_single, op_smul_eq_smul,
+      mul_one]
     simp only [Pi.star_apply, Pi.add_apply, Pi.single_eq_same, hyk, star_add, star_one,
       Complex.star_def, Complex.conj_ofReal]
     rw [← smul_assoc, hc, one_smul]
