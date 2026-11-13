@@ -387,10 +387,11 @@ def singularHomologyPreimageSphereIso (hp : serreFibrations p) (n m : ℕ)
 `(E, p⁻¹(Sʳ⁻¹)) ⟶ (E, p⁻¹(Dʳ ∖ {0}))` followed by `singularHomologyPreimageNeZeroIso`. -/
 @[reassoc]
 lemma singularHomologyPreimageSphereIso_hom (hp : serreFibrations p) (n m : ℕ)
-    (h : n + finrank ℝ V = m)
-    (hS : MapsTo (𝟙 E) (p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1}) (p ⁻¹' {x | (x : V) ≠ 0})) :
+    (h : n + finrank ℝ V = m) :
     (singularHomologyPreimageSphereIso R hp n m h).hom =
-      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E) hS) (ModuleCat.of R R) m ≫
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E)
+          (B := p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1}) (B' := p ⁻¹' {x | (x : V) ≠ 0})
+          fun _ hx ↦ ne_of_mem_sphere hx one_ne_zero) (ModuleCat.of R R) m ≫
         (singularHomologyPreimageNeZeroIso R hp (convex_closedBall 0 1)
           (closedBall_mem_nhds 0 one_pos) n m h).hom :=
   congrArg (fun φ ↦ TopPair.singularHomologyMap φ (ModuleCat.of R R) m ≫
@@ -415,11 +416,8 @@ theorem singularHomologyPreimageSphereIso_hom_naturality (hp : serreFibrations p
       TopPair.singularHomologyMap (TopPair.ofSubsetMap f
           (mapsTo_preimage_of_comp_eq hf {x | (x : V) ∈ sphere (0 : V) 1})) (ModuleCat.of R R) m ≫
         (singularHomologyPreimageSphereIso R hp' n m h).hom := by
-  have hS {E : _root_.TopCat.{u}} (p : E ⟶ _root_.TopCat.of (closedBall (0 : V) 1)) :
-      MapsTo (𝟙 E) (p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1}) (p ⁻¹' {x | (x : V) ≠ 0}) :=
-    fun _ hx ↦ unitSphere_subset_puncturedBall (V := V) hx
-  rw [singularHomologyPreimageSphereIso_hom R hp n m h (hS p),
-    singularHomologyPreimageSphereIso_hom R hp' n m h (hS p'), Category.assoc,
+  rw [singularHomologyPreimageSphereIso_hom R hp n m h,
+    singularHomologyPreimageSphereIso_hom R hp' n m h, Category.assoc,
     singularHomologyPreimageNeZeroIso_hom_naturality R hp hp' hf,
     ← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc]
   exact congrArg (fun φ ↦ TopPair.singularHomologyMap φ (ModuleCat.of R R) m ≫ _)
