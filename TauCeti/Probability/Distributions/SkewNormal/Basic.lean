@@ -113,13 +113,17 @@ theorem skewNormalPDFReal_of_pos (hs : 0 < s) (m α x : ℝ) :
 theorem skewNormalPDF_of_nonpos (hs : s ≤ 0) (m α x : ℝ) : skewNormalPDF m s α x = 0 := by
   rw [skewNormalPDF_eq_ofReal, skewNormalPDFReal_of_nonpos hs, ENNReal.ofReal_zero]
 
-/-- For a positive scale the `ℝ≥0∞`-valued density is the coercion of
-`2 / s * φ(y) * Φ(α * y)` with `y = (x - m) / s`. -/
-@[simp]
-theorem skewNormalPDF_of_pos (hs : 0 < s) (m α x : ℝ) :
+/-- The `ℝ≥0∞`-valued density is the coercion of `2 / s * φ(y) * Φ(α * y)` with
+`y = (x - m) / s`. For `s ≤ 0` both sides vanish, since the factor `2 / s` is nonpositive. -/
+theorem skewNormalPDF_apply (m s α x : ℝ) :
     skewNormalPDF m s α x = ENNReal.ofReal
       (2 / s * gaussianPDFReal 0 1 ((x - m) / s) * cdf (gaussianReal 0 1) (α * ((x - m) / s))) := by
-  rw [skewNormalPDF_eq_ofReal, skewNormalPDFReal_of_pos hs]
+  by_cases hs : 0 < s
+  · rw [skewNormalPDF_eq_ofReal, skewNormalPDFReal_of_pos hs]
+  · rw [skewNormalPDF_of_nonpos (not_lt.mp hs), eq_comm, ENNReal.ofReal_eq_zero]
+    exact mul_nonpos_of_nonpos_of_nonneg
+      (mul_nonpos_of_nonpos_of_nonneg (div_nonpos_of_nonneg_of_nonpos zero_le_two (not_lt.mp hs))
+        (gaussianPDFReal_nonneg _ _ _)) (cdf_nonneg _ _)
 
 /-- The skew-normal density is nonnegative at every parameter, valid or not. -/
 theorem skewNormalPDFReal_nonneg (m s α x : ℝ) : 0 ≤ skewNormalPDFReal m s α x := by
@@ -243,12 +247,12 @@ theorem skewNormalMeasure_of_nonpos (hs : s ≤ 0) (m α : ℝ) : skewNormalMeas
     rw [skewNormalPDF_of_nonpos hs, Pi.zero_apply]
   rw [skewNormalMeasure_eq_withDensity, h, withDensity_zero]
 
-/-- The skew-normal law of a measurable set is the integral of the real density over it. -/
-theorem skewNormalMeasure_apply (m s α : ℝ) {A : Set ℝ} (hA : MeasurableSet A) :
+/-- The skew-normal law of a set is the integral of the real density over it. -/
+theorem skewNormalMeasure_apply (m s α : ℝ) (A : Set ℝ) :
     skewNormalMeasure m s α A = ENNReal.ofReal (∫ y in A, skewNormalPDFReal m s α y) := by
   have hpdf : skewNormalPDF m s α = fun y => ENNReal.ofReal (skewNormalPDFReal m s α y) :=
     funext (skewNormalPDF_eq_ofReal m s α)
-  rw [skewNormalMeasure_eq_withDensity, withDensity_apply _ hA, hpdf,
+  rw [skewNormalMeasure_eq_withDensity, withDensity_apply', hpdf,
     ofReal_integral_eq_lintegral_ofReal (integrable_skewNormalPDFReal m s α).integrableOn
       (.of_forall (skewNormalPDFReal_nonneg m s α))]
 
@@ -256,7 +260,7 @@ theorem skewNormalMeasure_apply (m s α : ℝ) {A : Set ℝ} (hA : MeasurableSet
 theorem isProbabilityMeasure_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
     IsProbabilityMeasure (skewNormalMeasure m s α) := by
   constructor
-  rw [skewNormalMeasure_apply m s α MeasurableSet.univ, Measure.restrict_univ,
+  rw [skewNormalMeasure_apply m s α univ, Measure.restrict_univ,
     integral_skewNormalPDFReal hs, ENNReal.ofReal_one]
 
 /-- The skew-normal law of a lower half-line: the event `{X ≤ x}` has mass `Φ(y) - 2 * T(y, α)`
@@ -264,7 +268,7 @@ with `y = (x - m) / s`. -/
 theorem skewNormalMeasure_Iic (hs : 0 < s) (m α x : ℝ) :
     skewNormalMeasure m s α (Iic x) =
       ENNReal.ofReal (cdf (gaussianReal 0 1) ((x - m) / s) - 2 * Real.owensT ((x - m) / s) α) := by
-  rw [skewNormalMeasure_apply m s α measurableSet_Iic, integral_Iic_skewNormalPDFReal hs]
+  rw [skewNormalMeasure_apply m s α (Iic x), integral_Iic_skewNormalPDFReal hs]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
