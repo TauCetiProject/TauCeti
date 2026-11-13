@@ -370,30 +370,23 @@ example :
       μ (PiTensorProduct.tprod ℤ fun q ↦ if q = QuotientGroup.mk 1 then 3 else 2) = 6 :=
   ⟨modTwoTrivial_mul 2 3, modTwoTrivial_mul 3 2⟩
 
-/-- The involution of `ℤ[X]` sending `X` to `-X`. -/
-private noncomputable def polyNegXEquiv : Polynomial ℤ ≃ₐ[ℤ] Polynomial ℤ :=
-  AlgEquiv.ofAlgHom (aeval (-X : Polynomial ℤ)) (aeval (-X : Polynomial ℤ))
-    (Polynomial.algHom_ext <| by simp)
-    (Polynomial.algHom_ext <| by simp)
-
-private theorem polyNegXEquiv_sq : polyNegXEquiv ^ 2 = 1 := by
-  rw [sq]
-  exact AlgEquiv.ext fun p ↦ DFunLike.congr_fun
-    (Polynomial.algHom_ext (f := (aeval (-X : Polynomial ℤ)).comp (aeval (-X)))
-      (g := AlgHom.id ℤ (Polynomial ℤ)) (by simp)) p
-
 /-- Group homomorphism `Multiplicative (ZMod 2) →* (ℤ[X] ≃ₐ[ℤ] ℤ[X])` acting by `X ↦ -X`. -/
 private noncomputable def polyNegXAut :
     Multiplicative (ZMod 2) →* (Polynomial ℤ ≃ₐ[ℤ] Polynomial ℤ) where
-  toFun g := polyNegXEquiv ^ g.toAdd.val
+  toFun g := Polynomial.algEquivAevalNegX (R := ℤ) ^ g.toAdd.val
   map_one' := rfl
   map_mul' g h := by
+    have hsq : Polynomial.algEquivAevalNegX (R := ℤ) ^ 2 = 1 := by
+      rw [sq]
+      exact AlgEquiv.ext fun p ↦ by
+        simp only [AlgEquiv.mul_apply, algEquivAevalNegX_apply, ← comp_eq_aeval,
+          comp_neg_X_comp_neg_X, AlgEquiv.one_apply]
     rw [toAdd_mul, ZMod.val_add, ← pow_add]
     nth_rw 2 [← Nat.div_add_mod (g.toAdd.val + h.toAdd.val) 2]
-    rw [pow_add, pow_mul, polyNegXEquiv_sq, one_pow, one_mul]
+    rw [pow_add, pow_mul, hsq, one_pow, one_mul]
 
 private theorem polyNegXAut_apply (g : Multiplicative (ZMod 2)) :
-    polyNegXAut g = polyNegXEquiv ^ g.toAdd.val :=
+    polyNegXAut g = Polynomial.algEquivAevalNegX (R := ℤ) ^ g.toAdd.val :=
   rfl
 
 open scoped Classical in
@@ -430,7 +423,7 @@ private theorem modTwoPoly_mul (p q : Polynomial ℤ) :
     rw [MulAction.compHom_smul_def, polyNegXAut_apply]
     have hval : σ.toAdd.val = 1 := rfl
     rw [hval, pow_one]
-    rfl
+    exact Polynomial.algEquivAevalNegX_apply q
   rw [hσ]
 
 open scoped Classical in

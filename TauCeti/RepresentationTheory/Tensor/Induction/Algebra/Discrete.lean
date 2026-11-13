@@ -329,37 +329,25 @@ theorem smoothTensorInducedChangeTransversalIso_hom_comp_mulHom (t : U.LeftTrans
         ((toSmoothDiscrete R U).obj ({ V := A } : DiscreteRep.{u, v, max u v w} R U))).hom ≫
       smoothTensorInducedMulHom U hU s R A =
       smoothTensorInducedMulHom U hU t R A := by
-  let _ : Fintype (G ⧸ U) := U.fintypeQuotientOfFiniteIndex
-  let AU : SmoothDiscreteTopRep.{u, v, max u v w} R U :=
-    (toSmoothDiscrete R U).obj ({ V := A } : DiscreteRep.{u, v, max u v w} R U)
-  let c : (⨂[R] _ : G ⧸ U, A) →ₗ[R] ⨂[R] _ : G ⧸ U, A :=
-    (smoothTensorInducedChangeTransversalIso U hU s t AU).hom.hom.hom.toLinearMap
-  let ms : (⨂[R] _ : G ⧸ U, A) →ₗ[R] A :=
-    (smoothTensorInducedMulHom U hU s R A).hom.hom.toLinearMap
-  let mt : (⨂[R] _ : G ⧸ U, A) →ₗ[R] A :=
-    (smoothTensorInducedMulHom U hU t R A).hom.hom.toLinearMap
-  have hc (m : G ⧸ U → A) :
-      c (PiTensorProduct.tprod R m) =
-        PiTensorProduct.tprod R fun x ↦ (U.monomialChangeTransversal s t).left x • m x :=
-    smoothTensorInducedChangeTransversalIso_hom_apply_tprod U hU s t AU m
-  have hms (m : G ⧸ U → A) :
-      ms (PiTensorProduct.tprod R m) = ∏ x : G ⧸ U, U.leftTransversalRep s x • m x :=
-    smoothTensorInducedMulHom_apply_tprod U hU s R A m
-  have hmt (m : G ⧸ U → A) :
-      mt (PiTensorProduct.tprod R m) = ∏ x : G ⧸ U, U.leftTransversalRep t x • m x :=
-    smoothTensorInducedMulHom_apply_tprod U hU t R A m
-  suffices ∀ z : ⨂[R] _ : G ⧸ U, A, ms (c z) = mt z from
-    ObjectProperty.hom_ext _ (TopRep.hom_ext (DFunLike.ext _ _ this))
-  intro z
-  induction z using PiTensorProduct.induction_on with
-  | smul_tprod r m =>
-    simp only [map_smul, hc, hms, hmt]
-    congr 1
-    refine Finset.prod_congr rfl fun x _ ↦ ?_
-    rw [Subgroup.monomialChangeTransversal_left, Subgroup.mk_smul,
-      ← mul_smul, transversal_mul_transversalDiff]
-  | add x y hx hy =>
-    simp only [map_add, hx, hy]
+  -- `smoothTensorInducedChangeTransversalIso` is not exposed, so identify its forward map with
+  -- `(toSmoothDiscrete R G).map` of the discrete comparison on pure tensors before transporting.
+  have hhom :
+      (smoothTensorInducedChangeTransversalIso U hU s t
+          ((toSmoothDiscrete R U).obj ({ V := A } : DiscreteRep.{u, v, max u v w} R U))).hom =
+        (toSmoothDiscrete R G).map
+          (DiscreteRep.tensorInducedChangeTransversalIso U hU s t
+            ({ V := A } : DiscreteRep.{u, v, max u v w} R U)).hom := by
+    refine ObjectProperty.hom_ext _ (TopRep.hom_ext (DFunLike.ext _ _ (LinearMap.congr_fun
+      (PiTensorProduct.ext (MultilinearMap.ext fun m ↦ ?_)))))
+    exact (LinearMap.compMultilinearMap_apply _ _ m).trans <|
+      (smoothTensorInducedChangeTransversalIso_hom_apply_tprod U hU s t _ m).trans <|
+        (DiscreteRep.tensorInducedChangeTransversalIso_hom_apply_tprod U hU s t _ m).symm.trans <|
+          (toSmoothDiscrete_map_hom_hom_apply R G _ _).symm.trans
+            (LinearMap.compMultilinearMap_apply _ _ m).symm
+  exact (congrArg (· ≫ smoothTensorInducedMulHom U hU s R A) hhom).trans <|
+    ((toSmoothDiscrete R G).map_comp _ _).symm.trans <|
+      congrArg (toSmoothDiscrete R G).map
+        (DiscreteRep.tensorInducedChangeTransversalIso_hom_comp_mulHom U hU s R A t)
 
 /-- `smoothTensorInducedMulHom` intertwines the tensor induction of a multiplicative `TopPairing` on
 `U` with a multiplicative `TopPairing` on `G` (for instance `ofDiscreteModulePairing` of
