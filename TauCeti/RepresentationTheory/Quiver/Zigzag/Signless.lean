@@ -42,6 +42,8 @@ is the class of a path of the doubled quiver.
   a `TauCeti.signlessArrow`.
 * `TauCeti.sum_signlessArrow_mul_signlessArrow`: the relation at a vertex, as a sum over all
   vertices.
+* `TauCeti.sum_signlessArrow_mul_signlessArrow_of_forall_adj_mem`: the same relation, summed over
+  any finite set of numbers containing the neighbours of the vertex.
 * `TauCeti.signlessWord_mul_signlessWord`: walk classes multiply by concatenation.
 * `TauCeti.exists_ofPath_eq_signlessWord`: the class of a walk is the class of a path through the
   same vertices.
@@ -77,11 +79,6 @@ theorem signlessPreprojectiveRelator_vertex (v : V) [Fintype (G.neighborSet v)] 
   rfl
 
 /-! ### Arrow classes of a graph on `Fin n` -/
-
-/-- A sign in a ring is the integer sign acting by `zsmul`. -/
-theorem neg_one_pow_mul_eq_zsmul {A : Type*} [Ring A] (r : ℕ) (a : A) :
-    (-1) ^ r * a = ((-1 : ℤ) ^ r) • a := by
-  simp [zsmul_eq_mul]
 
 section FinArrow
 
@@ -187,6 +184,24 @@ theorem sum_signlessArrow_mul_signlessArrow (v : Fin n) :
         rw [← ofArrow_symm_mul_ofArrow _ k w.2, map_mul, ← signlessArrow_of_adj k w.2,
           ← signlessArrow_of_adj k (G.adj_symm w.2)]
 
+variable (G) in
+/-- **The signless relation at a vertex `v`, summed over a finite set `S`** of numbers containing
+every neighbour of `v`. For `v ≥ n` every summand vanishes, so no bound on `v` is assumed. -/
+theorem sum_signlessArrow_mul_signlessArrow_of_forall_adj_mem (v : ℕ) (S : Finset ℕ)
+    (hS : ∀ (hv : v < n) w (hw : w < n), G.Adj ⟨v, hv⟩ ⟨w, hw⟩ → w ∈ S) :
+    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 := by
+  by_cases hv : v < n
+  swap
+  · exact Finset.sum_eq_zero fun w _ => by
+      rw [signlessArrow_eq_zero k (i := w) (j := v) fun _ hv' => absurd hv' hv, zero_mul]
+  have h := sum_signlessArrow_mul_signlessArrow k G ⟨v, hv⟩
+  rw [Fin.sum_univ_eq_sum_range (fun w => signlessArrow k G w v * signlessArrow k G v w) n] at h
+  rw [← h]
+  refine Finset.sum_congr_of_eq_on_inter (fun w _ hw => ?_) (fun w _ hwS => ?_) fun _ _ _ => rfl
+  · rw [signlessArrow_eq_zero k (i := w) (j := v) fun hw' _ => absurd (Finset.mem_range.2 hw') hw,
+      zero_mul]
+  · rw [signlessArrow_eq_zero k (j := w) fun _ hw' hadj => hwS (hS hv w hw' hadj), mul_zero]
+
 /-- **The signless relation at a vertex `v` of a graph whose edges join consecutive vertices**:
 the backtrack through `v + 1` cancels the backtrack through `v - 1`.
 At an end vertex the missing backtrack is zero. -/
@@ -194,41 +209,13 @@ theorem signlessArrow_relation_of_consecutive
     (hconsecutive : ∀ i j : Fin n, G.Adj i j → (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) (v : ℕ) :
     signlessArrow k G (v + 1) v * signlessArrow k G v (v + 1) +
       signlessArrow k G (v - 1) v * signlessArrow k G v (v - 1) = 0 := by
-  by_cases hv : v < n
-  swap
-  · rw [signlessArrow_eq_zero k (i := v + 1) (fun _ => by omega),
-      signlessArrow_eq_zero k (i := v - 1) (fun _ _ => by omega), zero_mul, zero_mul, add_zero]
-  let F : ℕ → signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
-    fun w => signlessArrow k G w v * signlessArrow k G v w
-  have hF (w : ℕ) (hw : ¬(w + 1 = v ∨ v + 1 = w)) : F w = 0 := by
-    simp only [F, signlessArrow_eq_zero k (fun _ _ hij => hw (hconsecutive _ _ hij)), zero_mul]
-  -- Only the neighbours `v - 1` and `v + 1` contribute to the relation at `v`.
-  have hrel := sum_signlessArrow_mul_signlessArrow k G (⟨v, hv⟩ : Fin n)
-  rw [Fin.sum_univ_eq_sum_range F n] at hrel
-  rw [← hrel]
-  refine (Finset.sum_eq_add (v + 1) (v - 1) (by omega) (fun w _ hw => hF w (by omega))
-    (fun h => ?_) (fun h => absurd (Finset.mem_range.2 (by omega)) h)).symm
-  simp only [F]
-  rw [signlessArrow_eq_zero k (i := v + 1) (j := v) fun hi _ => absurd (Finset.mem_range.2 hi) h,
-    zero_mul]
-
-variable (G) in
-/-- **The signless relation at a vertex `v`, summed over a finite set `S`** of numbers containing
-every neighbour of `v`. -/
-theorem sum_signlessArrow_mul_signlessArrow_of_subset {v : ℕ} (hv : v < n) (S : Finset ℕ)
-    (hS : ∀ w (hw : w < n), G.Adj ⟨v, hv⟩ ⟨w, hw⟩ → w ∈ S) :
-    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 := by
-  classical
-  have h := sum_signlessArrow_mul_signlessArrow k G ⟨v, hv⟩
-  rw [Fin.sum_univ_eq_sum_range (fun w => signlessArrow k G w v * signlessArrow k G v w) n] at h
-  calc ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w
-      = ∑ w ∈ S ∪ Finset.range n, signlessArrow k G w v * signlessArrow k G v w := by
-        refine Finset.sum_subset Finset.subset_union_left fun w _ hwS => ?_
-        rw [signlessArrow_eq_zero k (j := w) fun _ hw'' hadj => hwS (hS w hw'' hadj), mul_zero]
-    _ = ∑ w ∈ Finset.range n, signlessArrow k G w v * signlessArrow k G v w := by
-        refine (Finset.sum_subset Finset.subset_union_right fun w _ hw => ?_).symm
-        rw [signlessArrow_eq_zero k (by simp at hw; omega), zero_mul]
-    _ = 0 := h
+  rw [← Finset.sum_pair (f := fun w => signlessArrow k G w v * signlessArrow k G v w)
+    (by omega : v + 1 ≠ v - 1)]
+  refine sum_signlessArrow_mul_signlessArrow_of_forall_adj_mem k G v _ fun _ w _ hadj => ?_
+  simp only [Finset.mem_insert, Finset.mem_singleton]
+  have := hconsecutive _ _ hadj
+  simp only at this
+  omega
 
 /-! ### Classes of walks given by their vertices -/
 

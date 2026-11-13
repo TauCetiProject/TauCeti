@@ -15,6 +15,8 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
+-- Proof-only: signs act on the signless algebra by `zsmul`.
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # The preprojective algebras of `E₆`, `E₇`, and `E₈` are finite-dimensional
@@ -197,11 +199,11 @@ private theorem signlessArrow_e_eq_zero {i j : ℕ} (h : ¬(i < n ∧ j < n ∧ 
   signlessArrow_eq_zero k fun hi hj hij => h ⟨hi, hj, (diagramGraph_E_adj _ _).1 hij⟩
 
 /-- The relation at a node `v`, summed over a set `S` of numbers containing its neighbours. -/
-private theorem sum_e_relation (v : ℕ) (hv : v < n) (S : Finset ℕ)
-    (hnbr : ∀ w < n, EAdj v w → w ∈ S) :
+private theorem sum_e_relation (v : ℕ) (S : Finset ℕ)
+    (hnbr : v < n → ∀ w < n, EAdj v w → w ∈ S) :
     ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 :=
-  sum_signlessArrow_mul_signlessArrow_of_subset k G hv S fun w hw hadj =>
-    hnbr w hw ((diagramGraph_E_adj _ _).1 hadj)
+  sum_signlessArrow_mul_signlessArrow_of_forall_adj_mem k G v S fun hv w hw hadj =>
+    hnbr hv w hw ((diagramGraph_E_adj _ _).1 hadj)
 
 variable (hn : 4 ≤ n)
 include hn
@@ -211,7 +213,7 @@ branch node cancels the backtrack towards it; beyond the end of the arm both van
 private theorem eDown_mul_eUp_add (a : Fin 3) (w : ℕ) :
     eDown k n a (w + 1) * eUp k n a (w + 1) + eUp k n a w * eDown k n a w = 0 := by
   by_cases hp : eArm n a (w + 1) < n
-  · have h := sum_e_relation k _ hp {eArm n a w, eArm n a (w + 2)} fun j _ hj => by
+  · have h := sum_e_relation k (n := n) _ {eArm n a w, eArm n a (w + 2)} fun _ j _ hj => by
       rcases eq_eArm_of_eAdj (by omega) hp hj with rfl | rfl <;> simp
     have hne : eArm n a w ≠ eArm n a (w + 2) := by
       obtain _ | _ | w := w
@@ -225,19 +227,21 @@ private theorem eDown_mul_eUp_add (a : Fin 3) (w : ℕ) :
       signlessArrow_e_eq_zero k (by omega)
     simp only [eDown, eUp, h₁, h₂, zero_mul, add_zero]
 
+omit hn in
 /-- **The relation at the branch node**: the backtracks into the three arms sum to zero. -/
 private theorem eTurn_add_eTurn_add_eTurn : eTurn k n 0 + eTurn k n 1 + eTurn k n 2 = 0 := by
-  have h := sum_e_relation k (n := n) 3 (by omega) {1, 2, 4} fun j _ hj => by
+  have h := sum_e_relation k (n := n) 3 {1, 2, 4} fun _ j _ hj => by
     obtain ⟨a, rfl⟩ := exists_eq_eArm_of_eAdj n hj
     fin_cases a <;> simp [eArm]
   rw [Finset.sum_insert (by simp), Finset.sum_pair (by simp)] at h
   simpa [eTurn, eDown, eUp, eArm, add_assoc] using h
 
+omit hn in
 /-- The backtrack into the long arm is minus the sum of the other two; in particular every
 backtrack at the branch node lies in their span. -/
 private theorem eTurn_mem_eSpan (a : Fin 3) : eTurn k n a ∈ eSpan k n := by
   have h₂ : eTurn k n 2 ∈ eSpan k n := by
-    rw [eq_neg_of_add_eq_zero_right (eTurn_add_eTurn_add_eTurn k hn)]
+    rw [eq_neg_of_add_eq_zero_right (eTurn_add_eTurn_add_eTurn k)]
     exact neg_mem (add_mem (Submodule.subset_span (by simp)) (Submodule.subset_span (by simp)))
   fin_cases a
   · exact Submodule.subset_span (by simp)
@@ -357,7 +361,7 @@ private theorem eNormalForm_cons_climb {i₀ j j' L : ℕ}
     refine .inr ⟨a, c, h, t + 1, s₀, ε, ((-1 : ℤ) ^ h) • (eTurn k n a * w), ?_, hs₀,
       by rw [Nat.add_sub_cancel], by omega, ?_⟩
     · rw [pow_succ']
-      exact Submodule.smul_mem _ _ (Submodule.mul_mem_mul (eTurn_mem_eSpan k hn a) hw)
+      exact Submodule.smul_mem _ _ (Submodule.mul_mem_mul (eTurn_mem_eSpan k a) hw)
     · have harr : signlessArrow k G (eArm n a (h + 1)) (eArm n a h) = eDown k n a h := by
         rw [eDown]
       rw [Nat.add_sub_cancel, ← mul_assoc, ← mul_assoc, harr,
@@ -445,7 +449,7 @@ private def e6Coloring : (diagramGraph DynkinType.E6.cartanMatrix).Coloring Bool
 /-- **Every product of six backtracks at the branch node of `E₆` vanishes.** -/
 private theorem eSpan_six_pow_six (k : Type*) [CommRing k] : eSpan k 6 ^ 6 = ⊥ := by
   have hsum : eTurn k 6 0 + eTurn k 6 1 = -eTurn k 6 2 :=
-    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k (by norm_num))
+    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k)
   refine span_pair_pow_six_eq_bot (eTurn_zero_sq k (by norm_num))
     (eTurn_one_pow_three k (by norm_num)) ?_
   rw [hsum, neg_pow, eTurn_two_pow k (n := 6) (by norm_num), mul_zero]
@@ -531,7 +535,7 @@ end Field
 /-- **Every product of fifteen backtracks at the branch node of `E₈` vanishes.** -/
 private theorem eSpan_eight_pow_fifteen (k : Type*) [CommRing k] : eSpan k 8 ^ 15 = ⊥ := by
   have hsum : eTurn k 8 0 + eTurn k 8 1 = -eTurn k 8 2 :=
-    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k (by norm_num))
+    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k)
   refine span_pair_pow_fifteen_eq_bot (eTurn_zero_sq k (by norm_num))
     (eTurn_one_pow_three k (by norm_num)) ?_
   rw [hsum, neg_pow, eTurn_two_pow k (n := 8) (by norm_num), mul_zero]
