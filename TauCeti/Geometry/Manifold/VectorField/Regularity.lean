@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
-import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -22,6 +21,8 @@ manifold differential of a function to tangent vectors whose base point varies.
 
 ## Main results
 
+* `contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const`: a constant model vector gives a
+  smooth section of the tangent bundle of a model space.
 * `contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a varying point.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
 * `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
