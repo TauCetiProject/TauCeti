@@ -18,8 +18,9 @@ public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 Let `q : S²ⁿ⁺¹ → CPⁿ` be the Hopf fibration, `n ≥ 1`, and `ΩCPⁿ` the Moore loop space at the image
 of a unit vector `v`. The based Hopf product `j ⋆ Ωq : S¹ × ΩS²ⁿ⁺¹ → ΩCPⁿ` is a weak homotopy
 equivalence (`TauCeti.ComplexProjectiveSpace.exists_isWeakHomotopyEquivalence_hopfProduct`), and
-the loop space `ΩS²ⁿ⁺¹` is `(2n - 1)`-connected. This file reads off the homology of `ΩCPⁿ` up to
-degree `2n` from the homology of a product with a circle
+the loop space `ΩS²ⁿ⁺¹` is `(2n - 1)`-connected
+(`TauCeti.subsingleton_homotopyGroup_mooreLoopSpace_sphere`). This file reads off the homology of
+`ΩCPⁿ` up to degree `2n` from the homology of a product with a circle
 (`TauCeti.isIso_singularHomologyMap_prodMk_const_one_succ_iff` and
 `TauCeti.isZero_singularHomology_circle_prod_succ_iff`), with coefficients in any ring `R`:
 
@@ -70,29 +71,18 @@ namespace TauCeti.ComplexProjectiveSpace
 
 variable {n : ℕ} (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1)
 
-/-- The loop space of `S²ⁿ⁺¹` is `(2n - 1)`-connected. -/
-private theorem subsingleton_homotopyGroup_mooreLoopSpace_sphere {k : ℕ} (hk : k < 2 * n) :
-    Subsingleton (π_ k (MooreLoopSpace (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v) 1) :=
-  (MooreLoopSpace.subsingleton_homotopyGroup_iff v k).2
-    (subsingleton_homotopyGroup_sphere (N := Fin (k + 1)) (by simp; omega) v)
-
-/-- The homology of the loop space of `S²ⁿ⁺¹` vanishes in the degrees `1, …, 2n - 1`. -/
-private theorem isZero_singularHomology_mooreLoopSpace_sphere (R : Type) [Ring R] {m : ℕ}
-    (hm0 : m ≠ 0) (hm : m < 2 * n) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{0} R) m).obj (ModuleCat.of R R)).obj
-      (TopCat.of (MooreLoopSpace (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v))) :=
-  isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup
-    (X := TopCat.of (MooreLoopSpace (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v))
-    (x := (1 : MooreLoopSpace _ v))
-    (fun _ hk ↦ subsingleton_homotopyGroup_mooreLoopSpace_sphere v hk) R hm0 hm
+/-- `ℂⁿ⁺¹` has real dimension `2n + 2`, so its unit sphere is `S²ⁿ⁺¹`. -/
+private theorem finrank_real_euclideanSpace_complex :
+    Module.finrank ℝ (EuclideanSpace ℂ (Fin (n + 1))) = 2 * n + 1 + 1 := by
+  rw [finrank_real_of_complex, finrank_euclideanSpace_fin]; ring
 
 /-- **The homology of `ΩCPⁿ` vanishes in the degrees `2, …, 2n - 1`**, with coefficients in any
 ring. -/
-theorem isZero_singularHomology_mooreLoopSpace (hn : n ≠ 0) (R : Type) [Ring R] {k : ℕ}
+theorem isZero_singularHomology_mooreLoopSpace (R : Type) [Ring R] {k : ℕ}
     (hk₂ : 2 ≤ k) (hk : k < 2 * n) :
     IsZero (((singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
       (TopCat.of (MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)))) := by
-  obtain ⟨j, -, hw⟩ := exists_isWeakHomotopyEquivalence_hopfProduct v hn
+  obtain ⟨j, -, hw⟩ := exists_isWeakHomotopyEquivalence_hopfProduct v (by omega)
   have := hw.isIso_singularHomologyMap (ModuleCat.of R R) k
   refine IsZero.of_iso ?_ (asIso (((singularHomologyFunctor (ModuleCat.{0} R) k).obj
     (ModuleCat.of R R)).map (TopCat.ofHom (hopfProduct v j)))).symm
@@ -100,8 +90,10 @@ theorem isZero_singularHomology_mooreLoopSpace (hn : n ≠ 0) (R : Type) [Ring R
   -- `ΩS²ⁿ⁺¹`.
   obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
   exact (isZero_singularHomology_circle_prod_succ_iff _ m).2
-    ⟨isZero_singularHomology_mooreLoopSpace_sphere v R (by omega) hk,
-      isZero_singularHomology_mooreLoopSpace_sphere v R (by omega) (by omega)⟩
+    ⟨isZero_singularHomology_mooreLoopSpace_sphere finrank_real_euclideanSpace_complex v R
+        (by omega) (by omega),
+      isZero_singularHomology_mooreLoopSpace_sphere finrank_real_euclideanSpace_complex v R
+        (by omega) (by omega)⟩
 
 /-- **The looped Hopf map `Ωq : ΩS²ⁿ⁺¹ → ΩCPⁿ` is an isomorphism on `H_{2n}`**, with coefficients
 in any ring, for `n ≥ 1`. -/
@@ -119,7 +111,8 @@ theorem isIso_singularHomologyMap_mooreLoopSpaceMap (hn : n ≠ 0) (R : Type) [R
     obtain ⟨m, hm⟩ : ∃ m, 2 * n = m + 1 := ⟨2 * n - 1, by omega⟩
     rw [hm]
     exact (isIso_singularHomologyMap_prodMk_const_one_succ_iff _ m).2
-      (isZero_singularHomology_mooreLoopSpace_sphere v R (by omega) (by omega))
+      (isZero_singularHomology_mooreLoopSpace_sphere finrank_real_euclideanSpace_complex v R
+        (by omega) (by omega))
   infer_instance
 
 /-! ### The integral generator -/

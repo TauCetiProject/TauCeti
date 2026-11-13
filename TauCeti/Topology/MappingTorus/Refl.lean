@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MappingTorus.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
 # The mapping torus of the identity
@@ -14,7 +15,9 @@ The mapping torus of the identity of a space `F` is the product `F × S¹`: the 
 modulo the translations `(x, t) ↦ (x, t + n)` is `F × (ℝ / ℤ)`. The homeomorphism
 `TauCeti.MappingTorus.reflHomeomorph` sends the class of `(x, t)` to `(x, t mod 1)`. Its second
 coordinate is the projection `TauCeti.MappingTorus.proj` to the circle, and it sends the fibre
-inclusion `TauCeti.MappingTorus.incl` to the inclusion `x ↦ (x, 0)` of `F` at `0`.
+inclusion `TauCeti.MappingTorus.incl` to the inclusion `x ↦ (x, 0)` of `F` at `0`. Reading the
+circle as the unit circle `Circle` of `ℂ`, `TauCeti.MappingTorus.reflCircleHomeomorph` identifies
+the mapping torus with `S¹ × F`, and the fibre inclusion with the inclusion `y ↦ (1, y)`.
 
 Through it, the theory of mapping tori, in particular the Wang sequence, applies to products with
 a circle.
@@ -23,6 +26,8 @@ a circle.
 
 * `TauCeti.MappingTorus.reflHomeomorph`: the homeomorphism
   `MappingTorus (Homeomorph.refl F) ≃ₜ F × UnitAddCircle`.
+* `TauCeti.MappingTorus.reflCircleHomeomorph`: the homeomorphism
+  `MappingTorus (Homeomorph.refl F) ≃ₜ Circle × F`.
 -/
 
 public section
@@ -111,5 +116,25 @@ theorem snd_reflHomeomorph (z : MappingTorus (Homeomorph.refl F)) :
 /-- `reflHomeomorph` sends the fibre inclusion to the inclusion of `F` at `0`. -/
 theorem reflHomeomorph_incl (x : F) : reflHomeomorph (incl (Homeomorph.refl F) x) = (x, 0) := by
   simp
+
+/-- The mapping torus of the identity of `F` is `S¹ × F`, with the circle the unit circle `Circle`
+of `ℂ` and the fibre at `1`. -/
+def reflCircleHomeomorph : MappingTorus (Homeomorph.refl F) ≃ₜ Circle × F :=
+  reflHomeomorph.trans ((Homeomorph.prodComm F UnitAddCircle).trans
+    ((AddCircle.homeomorphCircle one_ne_zero).prodCongr (Homeomorph.refl F)))
+
+/-- `reflCircleHomeomorph` sends the fibre inclusion to the inclusion of `F` at `1`. -/
+theorem reflCircleHomeomorph_incl (x : F) :
+    reflCircleHomeomorph (incl (Homeomorph.refl F) x) = (1, x) := by
+  rw [reflCircleHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply, reflHomeomorph_incl]
+  simp [AddCircle.homeomorphCircle_apply]
+
+/-- The fibre inclusion of the mapping torus of the identity is, through `reflCircleHomeomorph`,
+the inclusion `y ↦ (1, y)` of `F` in `S¹ × F`. -/
+theorem reflCircleHomeomorph_comp_incl :
+    (reflCircleHomeomorph (F := F) : C(MappingTorus (Homeomorph.refl F), Circle × F)).comp
+        (incl (Homeomorph.refl F)) =
+      (ContinuousMap.const F (1 : Circle)).prodMk (ContinuousMap.id F) :=
+  ContinuousMap.ext reflCircleHomeomorph_incl
 
 end TauCeti.MappingTorus

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Wang
 public import TauCeti.Topology.MappingTorus.Refl
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
 # The homology of a product with a circle
@@ -18,10 +17,9 @@ so the Wang sequence breaks into short exact sequences
 `0 ⟶ Hₙ₊₁(F) ⟶ Hₙ₊₁(T) ⟶ Hₙ(F) ⟶ 0`
 
 (`TauCeti.MappingTorus.shortExact_wang_refl`), with coefficients in any object of an abelian
-category with coproducts. The mapping torus of the identity is the product `F × S¹`
-(`TauCeti.MappingTorus.reflHomeomorph`), so this describes the homology of a product with a
-circle without any hypothesis on `F`: the Künneth theorem would need the homology of `F` to be
-projective.
+category with coproducts. The mapping torus of the identity is the product `S¹ × F`
+(`TauCeti.MappingTorus.reflCircleHomeomorph`), so this describes the homology of a product with a
+circle, for any space `F` and with coefficients in any such abelian category.
 
 Reading it on `S¹ × F`, with the circle the unit circle `Circle` of `ℂ`, the inclusion
 `F → S¹ × F`, `y ↦ (1, y)`, is a monomorphism on homology in every degree
@@ -98,19 +96,6 @@ end MappingTorus
 variable {F : Type w} [TopologicalSpace F]
   {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
-/-- The mapping torus of the identity of `F` is `S¹ × F`, with the fibre at `1`. -/
-private def mappingTorusReflHomeomorph : MappingTorus (Homeomorph.refl F) ≃ₜ Circle × F :=
-  MappingTorus.reflHomeomorph.trans ((Homeomorph.prodComm F UnitAddCircle).trans
-    ((AddCircle.homeomorphCircle one_ne_zero).prodCongr (Homeomorph.refl F)))
-
-/-- The fibre inclusion of the mapping torus of the identity is the inclusion of `F` in `S¹ × F`
-at `1`. -/
-private theorem mappingTorusReflHomeomorph_comp_incl :
-    (mappingTorusReflHomeomorph (F := F) : C(MappingTorus (Homeomorph.refl F), Circle × F)).comp
-        (MappingTorus.incl (Homeomorph.refl F)) =
-      (ContinuousMap.const F (1 : Circle)).prodMk (ContinuousMap.id F) := by
-  ext x <;> simp [mappingTorusReflHomeomorph, AddCircle.homeomorphCircle_apply]
-
 /-- The map `Hₙ(F) → Hₙ(S¹ × F)` induced by `y ↦ (1, y)` is the map induced by the fibre
 inclusion of the mapping torus of the identity, followed by an isomorphism. -/
 private theorem singularHomologyMap_prodMk_const_one_eq (n : ℕ) :
@@ -119,9 +104,9 @@ private theorem singularHomologyMap_prodMk_const_one_eq (n : ℕ) :
       ((singularHomologyFunctor A n).obj R).map
           (TopCat.ofHom (MappingTorus.incl (Homeomorph.refl F))) ≫
         ((singularHomologyFunctor A n).obj R).map
-          (TopCat.ofHom (mappingTorusReflHomeomorph (F := F) :
+          (TopCat.ofHom (MappingTorus.reflCircleHomeomorph (F := F) :
             C(MappingTorus (Homeomorph.refl F), Circle × F))) := by
-  rw [← mappingTorusReflHomeomorph_comp_incl, TopCat.ofHom_comp, Functor.map_comp]
+  rw [← MappingTorus.reflCircleHomeomorph_comp_incl, TopCat.ofHom_comp, Functor.map_comp]
 
 /-- On singular homology, the fibre inclusion of a mapping torus induces the homology map of
 `TauCeti.MappingTorus.fibreInclusionChainMap`. -/
@@ -139,13 +124,13 @@ private instance mono_singularHomologyMap_incl_refl (n : ℕ) :
   rw [singularHomologyMap_incl_eq]
   exact MappingTorus.mono_homologyMap_fibreInclusionChainMap_refl F R n
 
-private instance isIso_singularHomologyMap_mappingTorusReflHomeomorph (n : ℕ) :
+private instance isIso_singularHomologyMap_reflCircleHomeomorph (n : ℕ) :
     IsIso (((singularHomologyFunctor A n).obj R).map
-      (TopCat.ofHom (mappingTorusReflHomeomorph (F := F) :
+      (TopCat.ofHom (MappingTorus.reflCircleHomeomorph (F := F) :
         C(MappingTorus (Homeomorph.refl F), Circle × F)))) :=
   (((singularHomologyFunctor A n).obj R).mapIso
     (TopCat.isoOfHomeo (X := TopCat.of _) (Y := TopCat.of _)
-      (mappingTorusReflHomeomorph (F := F)))).isIso_hom
+      (MappingTorus.reflCircleHomeomorph (F := F)))).isIso_hom
 
 /-- **The inclusion `F → S¹ × F`, `y ↦ (1, y)`, is a monomorphism on singular homology** in every
 degree. -/
@@ -174,29 +159,8 @@ theorem isIso_singularHomologyMap_prodMk_const_one_succ_iff (n : ℕ) :
     IsIso (((singularHomologyFunctor A (n + 1)).obj R).map
         (TopCat.ofHom ((ContinuousMap.const F (1 : Circle)).prodMk (ContinuousMap.id F)))) ↔
       IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of F)) := by
-  have hS := MappingTorus.shortExact_wang_refl F R n
-  rw [singularHomologyMap_prodMk_const_one_eq, isIso_comp_right_iff]
-  constructor
-  · -- The fibre inclusion is epi, so the Wang connecting morphism, an epimorphism, vanishes.
-    intro _
-    have hE : Epi (homologyMap
-        (MappingTorus.fibreInclusionChainMap (Homeomorph.refl F) R) (n + 1)) := by
-      have h : Epi (((singularHomologyFunctor A (n + 1)).obj R).map
-          (TopCat.ofHom (MappingTorus.incl (Homeomorph.refl F)))) := inferInstance
-      rw [singularHomologyMap_incl_eq] at h
-      exact h
-    refine @IsZero.of_epi_eq_zero _ _ _ _ _ (MappingTorus.wangδ (Homeomorph.refl F) R n)
-      (MappingTorus.epi_wangδ_refl F R n) ?_
-    exact (cancel_epi (homologyMap
-      (MappingTorus.fibreInclusionChainMap (Homeomorph.refl F) R) (n + 1))).1
-        ((MappingTorus.homologyMap_fibreInclusionChainMap_comp_wangδ _ R n).trans comp_zero.symm)
-  · -- Conversely the Wang connecting morphism vanishes, so the fibre inclusion is epi.
-    intro h
-    have hE : Epi (((singularHomologyFunctor A (n + 1)).obj R).map
-        (TopCat.ofHom (MappingTorus.incl (Homeomorph.refl F)))) := by
-      rw [singularHomologyMap_incl_eq]
-      exact hS.exact.epi_f (h.eq_of_tgt _ _)
-    exact isIso_of_mono_of_epi _
+  rw [singularHomologyMap_prodMk_const_one_eq, isIso_comp_right_iff, singularHomologyMap_incl_eq]
+  exact (MappingTorus.shortExact_wang_refl F R n).isIso_f_iff
 
 /-- **`Hₙ₊₁(S¹ × F)` vanishes exactly when `Hₙ₊₁(F)` and `Hₙ(F)` do.** -/
 theorem isZero_singularHomology_circle_prod_succ_iff (n : ℕ) :
@@ -206,7 +170,7 @@ theorem isZero_singularHomology_circle_prod_succ_iff (n : ℕ) :
   have hS := MappingTorus.shortExact_wang_refl F R n
   rw [← (((singularHomologyFunctor A (n + 1)).obj R).mapIso
     (TopCat.isoOfHomeo (X := TopCat.of _) (Y := TopCat.of _)
-      (mappingTorusReflHomeomorph (F := F)))).isZero_iff]
+      (MappingTorus.reflCircleHomeomorph (F := F)))).isZero_iff]
   -- The middle term of a short exact sequence vanishes exactly when the outer two do.
   refine ⟨fun h ↦ ⟨@IsZero.of_mono _ _ _ _ _ _
     (MappingTorus.mono_homologyMap_fibreInclusionChainMap_refl F R (n + 1)) h,
