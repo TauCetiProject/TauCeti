@@ -69,9 +69,10 @@ variable {Ω : Opens ℂ} {k : ℕ}
 
 /-- **The partial derivatives of a `W^{k+1,q}_loc` map.** For a weak derivative `Dξ` of
 `ξ ∈ W^{k+1,q}_loc`, the pair `Ξ = (∂_s ξ, ∂_t ξ) = (Dξ(·) 1, Dξ(·) I)` is in `W^{k,q}_loc`. -/
-theorem MemWkpLoc.memWkpLoc_partials_of_hasWeakFDerivOn [CompleteSpace V] {q : ℝ≥0∞} {ξ : ℂ → V}
+theorem MemWkpLoc.memWkpLoc_partials_of_hasWeakFDerivOn {q : ℝ≥0∞} {ξ : ℂ → V}
     {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : MemWkpLoc q Ω (k + 1) ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ) :
     MemWkpLoc q Ω k (fun z => (Dξ z 1, Dξ z I)) := by
+  have := hξ.completeSpace
   have h := hξ.memWkpLoc_of_hasWeakFDerivOn hDξ
   exact (h.clm_comp (ContinuousLinearMap.apply ℝ V 1)).prodMk
     (h.clm_comp (ContinuousLinearMap.apply ℝ V I))
