@@ -308,7 +308,7 @@ theorem cauchyIndex_Ioo_eq_add {p q : R[X]} {a b c : R} (hab : a < b) (hbc : b <
   have hdisj : Disjoint (Ioc a b) (Ioo b c) :=
     disjoint_left.mpr fun _ hx hx' ↦ hx'.1.not_ge hx.2
   rw [← Ioc_union_Ioo_eq_Ioo hab.le hbc, cauchyIndex_union _ _ hdisj,
-    ← Ioo_insert_right hab, cauchyIndex_insert _ _ (by simp)]
+    ← insert_right_Ioo hab, cauchyIndex_insert _ _ (by simp)]
   ring
 
 /-- Cancelling a common nonzero factor of `p` and `q` does not change the jumps of `q / p`. -/

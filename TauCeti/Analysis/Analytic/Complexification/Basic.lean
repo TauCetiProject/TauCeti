@@ -333,7 +333,7 @@ theorem eventually_eq_zero_of_eventually_real {E : Type*} [NormedAddCommGroup E]
       simpa [Function.comp_def, hu] using h0.apply_eq_zero n y) z
   filter_upwards [Metric.eball_mem_nhds _ hQ.r_pos] with z hz
   have hz' : z - (fun i ↦ (a i : ℂ)) ∈ Metric.eball 0 r := by
-    rwa [Metric.mem_eball, edist_zero_right, ← edist_eq_enorm_sub]
+    rwa [Metric.mem_eball, edist_zero_right, ← eDist_eq_eNorm_sub]
   have hsum := hQ.hasSum hz'
   rw [add_sub_cancel] at hsum
   simp only [hQ0] at hsum

@@ -205,7 +205,7 @@ theorem one_le_dist_of_gradient_ae_eq_sign {a b : ℝ} (ha : a < 0) (hb : 0 < b)
       (W1p.gradient w), hu, hw'g] with t ht hsub hut hwt
     rw [hsub, Pi.sub_apply, hut, hwt, gradient_eq_deriv'] at ht
     have htop := eLpNorm_exponent_top (Lp.aestronglyMeasurable G)
-    rw [← Real.norm_eq_abs, ← toReal_enorm, hr_def, Lp.norm_def, htop]
+    rw [← Real.norm_eq_abs, ← toReal_eNorm, hr_def, Lp.norm_def, htop]
     exact ENNReal.toReal_mono (htop ▸ Lp.eLpNorm_ne_top G) ht
   have hdist : r ≤ dist u w := by
     simpa only [dist_eq_norm, r, G, W1p.gradient_sub] using W1p.norm_gradient_le (u - w)

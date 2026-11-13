@@ -501,7 +501,7 @@ private theorem exists_tendstoUniformly_of_mapClusterPt (hu : ContDiffOn ℝ 1 u
   -- By the mean value inequality on the convex half-cylinder, `u` is `C`-Lipschitz, and so is
   -- each of its slices `s ↦ u (s, t)`.
   have hL : LipschitzOnWith C.toNNReal u (Ioi a ×ˢ univ) :=
-    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le
+    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt
         ((isOpen_Ioi.prod isOpen_univ).mem_nhds hz))
       fun z hz ↦ (Real.le_toNNReal_iff_coe_le hC0).2 (hC z hz)
@@ -592,7 +592,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC (a + 1, 0) ⟨lt_add_one a, trivial⟩)
   -- By the mean value inequality on the convex half-cylinder, `u` is `C`-Lipschitz.
   have hL : LipschitzOnWith C.toNNReal u (Ioi a ×ˢ univ) :=
-    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le
+    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt
         ((isOpen_Ioi.prod isOpen_univ).mem_nhds hz))
       fun z hz ↦ (Real.le_toNNReal_iff_coe_le hC0).2 (hC z hz)
