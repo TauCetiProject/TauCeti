@@ -31,47 +31,80 @@ variable {Q : V → V → Type v} {R : W → W → Type v'} {K : Type w}
 
 /-- The arrow family obtained by taking the disjoint union of two arrow families. There are no
 arrows between the two vertex summands. -/
-inductive DisjointUnionHom (Q : V → V → Type v) (R : W → W → Type v') :
-    V ⊕ W → V ⊕ W → Type (max u u' v v') where
-  /-- An arrow inherited from the left summand. -/
-  | inl {x y : V} (e : Q x y) : DisjointUnionHom Q R (.inl x) (.inl y)
-  /-- An arrow inherited from the right summand. -/
-  | inr {x y : W} (e : R x y) : DisjointUnionHom Q R (.inr x) (.inr y)
+@[expose] def DisjointUnionHom (Q : V → V → Type v) (R : W → W → Type v') :
+    V ⊕ W → V ⊕ W → Type (max v v')
+  | .inl x, .inl y => ULift.{v'} (Q x y)
+  | .inr x, .inr y => ULift.{v} (R x y)
+  | _, _ => PEmpty
 
 namespace DisjointUnionHom
 
+/-- An arrow inherited from the left summand. -/
+def inl {x y : V} (e : Q x y) : DisjointUnionHom Q R (.inl x) (.inl y) :=
+  ULift.up e
+
+/-- An arrow inherited from the right summand. -/
+def inr {x y : W} (e : R x y) : DisjointUnionHom Q R (.inr x) (.inr y) :=
+  ULift.up e
+
 instance instIsEmptyInlInr (x : V) (y : W) :
-    IsEmpty (DisjointUnionHom Q R (.inl x) (.inr y)) where
-  false e := by cases e
+    IsEmpty (DisjointUnionHom Q R (.inl x) (.inr y)) :=
+  inferInstanceAs (IsEmpty PEmpty)
 
 instance instIsEmptyInrInl (x : W) (y : V) :
-    IsEmpty (DisjointUnionHom Q R (.inr x) (.inl y)) where
-  false e := by cases e
+    IsEmpty (DisjointUnionHom Q R (.inr x) (.inl y)) :=
+  inferInstanceAs (IsEmpty PEmpty)
 
 /-- The left arrow carrier is equivalent to its carrier in the disjoint union. -/
 def inlEquiv (x y : V) : Q x y ≃ DisjointUnionHom Q R (.inl x) (.inl y) where
-  toFun := .inl
-  invFun
-    | .inl e => e
+  toFun := inl
+  invFun e := e.down
   left_inv _ := rfl
-  right_inv
-    | .inl _ => rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem inlEquiv_apply {x y : V} (e : Q x y) :
+    inlEquiv (R := R) x y e = inl e :=
+  (rfl)
+
+@[simp]
+theorem inlEquiv_symm_inl {x y : V} (e : Q x y) :
+    (inlEquiv (R := R) x y).symm (inl e) = e :=
+  (rfl)
+
+@[simp]
+theorem inl_inlEquiv_symm {x y : V} (e : DisjointUnionHom Q R (.inl x) (.inl y)) :
+    inl ((inlEquiv x y).symm e) = e :=
+  (rfl)
 
 /-- The right arrow carrier is equivalent to its carrier in the disjoint union. -/
 def inrEquiv (x y : W) : R x y ≃ DisjointUnionHom Q R (.inr x) (.inr y) where
-  toFun := .inr
-  invFun
-    | .inr e => e
+  toFun := inr
+  invFun e := e.down
   left_inv _ := rfl
-  right_inv
-    | .inr _ => rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem inrEquiv_apply {x y : W} (e : R x y) :
+    inrEquiv (Q := Q) x y e = inr e :=
+  (rfl)
+
+@[simp]
+theorem inrEquiv_symm_inr {x y : W} (e : R x y) :
+    (inrEquiv (Q := Q) x y).symm (inr e) = e :=
+  (rfl)
+
+@[simp]
+theorem inr_inrEquiv_symm {x y : W} (e : DisjointUnionHom Q R (.inr x) (.inr y)) :
+    inr ((inrEquiv x y).symm e) = e :=
+  (rfl)
 
 instance instFintype [∀ x y, Fintype (Q x y)] [∀ x y, Fintype (R x y)] :
     ∀ x y, Fintype (DisjointUnionHom Q R x y)
   | .inl x, .inl y => Fintype.ofEquiv (Q x y) (inlEquiv x y)
   | .inr x, .inr y => Fintype.ofEquiv (R x y) (inrEquiv x y)
-  | .inl _, .inr _ => ⟨∅, fun e ↦ by cases e⟩
-  | .inr _, .inl _ => ⟨∅, fun e ↦ by cases e⟩
+  | .inl _, .inr _ => inferInstanceAs (Fintype PEmpty)
+  | .inr _, .inl _ => inferInstanceAs (Fintype PEmpty)
 
 /-- A property holds for every arrow of a disjoint union exactly when it holds for the arrows in
 both summands. -/
@@ -79,9 +112,11 @@ theorem forall_iff {P : ∀ ⦃x y⦄, DisjointUnionHom Q R x y → Prop} :
     (∀ ⦃x y⦄ (e : DisjointUnionHom Q R x y), P e) ↔
       (∀ ⦃x y⦄ (e : Q x y), P (inl e)) ∧ ∀ ⦃x y⦄ (e : R x y), P (inr e) := by
   refine ⟨fun h ↦ ⟨fun _ _ e ↦ h _, fun _ _ e ↦ h _⟩, ?_⟩
-  rintro ⟨hQ, hR⟩ _ _ (e | e)
-  · exact hQ e
-  · exact hR e
+  rintro ⟨hQ, hR⟩ (x | x) (y | y) e
+  · exact hQ e.down
+  · exact e.elim
+  · exact e.elim
+  · exact hR e.down
 
 end DisjointUnionHom
 
@@ -90,8 +125,10 @@ namespace Assignment
 /-- Combine assignments on two arrow families into an assignment on their disjoint union. -/
 def disjointUnion (f : Assignment Q K) (g : Assignment R K) :
     Assignment (DisjointUnionHom Q R) K
-  | _, _, .inl e => f e
-  | _, _, .inr e => g e
+  | .inl _, .inl _, e => f e.down
+  | .inl _, .inr _, e => e.elim
+  | .inr _, .inl _, e => e.elim
+  | .inr _, .inr _, e => g e.down
 
 /-- Restrict an assignment on a disjoint union to its left summand. -/
 def restrictLeft (f : Assignment (DisjointUnionHom Q R) K) : Assignment Q K :=
@@ -131,15 +168,27 @@ theorem restrictRight_disjointUnion (f : Assignment Q K) (g : Assignment R K) :
     (f.disjointUnion g).restrictRight = g :=
   (rfl)
 
+/-- Combining both restrictions recovers an assignment on a disjoint union. -/
+@[simp]
+theorem restrictLeft_disjointUnion_restrictRight
+    (f : Assignment (DisjointUnionHom Q R) K) :
+    f.restrictLeft.disjointUnion f.restrictRight = f := by
+  funext x y e
+  rcases x with x | x <;> rcases y with y | y
+  · cases e
+    rfl
+  · exact e.elim
+  · exact e.elim
+  · cases e
+    rfl
+
 /-- Assignments on a disjoint union are equivalently pairs of assignments on its summands. -/
 def disjointUnionEquiv :
     Assignment Q K × Assignment R K ≃ Assignment (DisjointUnionHom Q R) K where
   toFun f := f.1.disjointUnion f.2
   invFun f := ⟨f.restrictLeft, f.restrictRight⟩
-  left_inv f := rfl
-  right_inv f := by
-    funext x y e
-    cases e <;> rfl
+  left_inv _ := rfl
+  right_inv f := restrictLeft_disjointUnion_restrictRight f
 
 @[simp]
 theorem disjointUnionEquiv_apply (f : Assignment Q K × Assignment R K) :
@@ -151,35 +200,70 @@ theorem disjointUnionEquiv_symm_apply (f : Assignment (DisjointUnionHom Q R) K) 
     disjointUnionEquiv.symm f = ⟨f.restrictLeft, f.restrictRight⟩ :=
   (rfl)
 
+@[simp]
+theorem disjointUnion_inj {f f' : Assignment Q K} {g g' : Assignment R K} :
+    f.disjointUnion g = f'.disjointUnion g' ↔ f = f' ∧ g = g' := by
+  constructor
+  · intro h
+    have hp : (f, g) = (f', g') :=
+      (disjointUnionEquiv (Q := Q) (R := R) (K := K)).injective h
+    exact ⟨congrArg Prod.fst hp, congrArg Prod.snd hp⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
+
+@[simp]
+theorem disjointUnion_le_disjointUnion_iff [LE K]
+    {f f' : Assignment Q K} {g g' : Assignment R K} :
+    f.disjointUnion g ≤ f'.disjointUnion g' ↔ f ≤ f' ∧ g ≤ g' := by
+  simp only [Pi.le_def, DisjointUnionHom.forall_iff, disjointUnion_inl, disjointUnion_inr]
+
+@[simp]
+theorem disjointUnion_zero [Zero K] :
+    (0 : Assignment Q K).disjointUnion (0 : Assignment R K) = 0 := by
+  rw [← restrictLeft_disjointUnion_restrictRight (0 : Assignment (DisjointUnionHom Q R) K)]
+  rfl
+
+@[simp]
+theorem restrictLeft_zero [Zero K] :
+    restrictLeft (0 : Assignment (DisjointUnionHom Q R) K) = 0 :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_zero [Zero K] :
+    restrictRight (0 : Assignment (DisjointUnionHom Q R) K) = 0 :=
+  (rfl)
+
+/-- Pointwise bounds on a disjoint-union assignment are equivalent to the corresponding bounds on
+both restrictions. -/
+theorem mem_Icc_iff [Preorder K]
+    {f lo hi : Assignment (DisjointUnionHom Q R) K} :
+    f ∈ Set.Icc lo hi ↔
+      f.restrictLeft ∈ Set.Icc lo.restrictLeft hi.restrictLeft ∧
+        f.restrictRight ∈ Set.Icc lo.restrictRight hi.restrictRight := by
+  simp only [Set.mem_Icc, Pi.le_def, DisjointUnionHom.forall_iff,
+    restrictLeft_apply, restrictRight_apply]
+  tauto
+
 /-- An assignment on a disjoint union satisfies pointwise bounds exactly when its restrictions
 satisfy the corresponding bounds on both summands. -/
 theorem disjointUnion_mem_Icc [Preorder K]
     (f lo hi : Assignment Q K) (g lo' hi' : Assignment R K) :
     f.disjointUnion g ∈ Set.Icc (lo.disjointUnion lo') (hi.disjointUnion hi') ↔
       f ∈ Set.Icc lo hi ∧ g ∈ Set.Icc lo' hi' := by
-  simp only [Set.mem_Icc, Pi.le_def, DisjointUnionHom.forall_iff,
-    disjointUnion_inl, disjointUnion_inr]
-  tauto
+  rw [mem_Icc_iff]
+  simp
 
 /-- Restricting a bounded assignment on a disjoint union preserves the left arrow bounds. -/
 theorem restrictLeft_mem_Icc [Preorder K]
-    {f : Assignment (DisjointUnionHom Q R) K} {lo hi : Assignment Q K}
-    {lo' hi' : Assignment R K}
-    (hf : f ∈ Set.Icc (lo.disjointUnion lo') (hi.disjointUnion hi')) :
-    f.restrictLeft ∈ Set.Icc lo hi := by
-  constructor <;> intro x y e
-  · exact hf.1 (.inl x) (.inl y) (DisjointUnionHom.inl e)
-  · exact hf.2 (.inl x) (.inl y) (DisjointUnionHom.inl e)
+    {f lo hi : Assignment (DisjointUnionHom Q R) K} (hf : f ∈ Set.Icc lo hi) :
+    f.restrictLeft ∈ Set.Icc lo.restrictLeft hi.restrictLeft :=
+  mem_Icc_iff.mp hf |>.1
 
 /-- Restricting a bounded assignment on a disjoint union preserves the right arrow bounds. -/
 theorem restrictRight_mem_Icc [Preorder K]
-    {f : Assignment (DisjointUnionHom Q R) K} {lo hi : Assignment Q K}
-    {lo' hi' : Assignment R K}
-    (hf : f ∈ Set.Icc (lo.disjointUnion lo') (hi.disjointUnion hi')) :
-    f.restrictRight ∈ Set.Icc lo' hi' := by
-  constructor <;> intro x y e
-  · exact hf.1 (.inr x) (.inr y) (DisjointUnionHom.inr e)
-  · exact hf.2 (.inr x) (.inr y) (DisjointUnionHom.inr e)
+    {f lo hi : Assignment (DisjointUnionHom Q R) K} (hf : f ∈ Set.Icc lo hi) :
+    f.restrictRight ∈ Set.Icc lo.restrictRight hi.restrictRight :=
+  mem_Icc_iff.mp hf |>.2
 
 end Assignment
 
@@ -213,23 +297,41 @@ theorem disjointUnion_upper [LE K] (N : Network K V) (M : Network K W) :
 
 end Network
 
-section Excess
+section Sums
 
-variable [∀ x y, Fintype (Q x y)] [∀ x y, Fintype (R x y)] [AddCommGroup K]
+variable [∀ x y, Fintype (Q x y)] [∀ x y, Fintype (R x y)] [AddCommMonoid K]
 
 /-- A sum over a left-to-left arrow carrier is the corresponding sum in the left family. -/
-private theorem DisjointUnionHom.sum_inl {x y : V}
+@[simp]
+theorem DisjointUnionHom.sum_inl {x y : V}
     (f : DisjointUnionHom Q R (.inl x) (.inl y) → K) :
     ∑ e, f e = ∑ e : Q x y, f (DisjointUnionHom.inl e) :=
   (Fintype.sum_equiv (DisjointUnionHom.inlEquiv x y)
     (fun e ↦ f (DisjointUnionHom.inl e)) f fun _ ↦ rfl).symm
 
 /-- A sum over a right-to-right arrow carrier is the corresponding sum in the right family. -/
-private theorem DisjointUnionHom.sum_inr {x y : W}
+@[simp]
+theorem DisjointUnionHom.sum_inr {x y : W}
     (f : DisjointUnionHom Q R (.inr x) (.inr y) → K) :
     ∑ e, f e = ∑ e : R x y, f (DisjointUnionHom.inr e) :=
   (Fintype.sum_equiv (DisjointUnionHom.inrEquiv x y)
     (fun e ↦ f (DisjointUnionHom.inr e)) f fun _ ↦ rfl).symm
+
+/-- Arrow sums on a disjoint union split into the corresponding arrow sums on both summands. -/
+theorem arrowSum_disjointUnion (f : Assignment Q K) (g : Assignment R K)
+    (S T : Finset (V ⊕ W)) :
+    arrowSum (f.disjointUnion g) S T =
+      arrowSum f S.toLeft T.toLeft + arrowSum g S.toRight T.toRight := by
+  simp only [arrowSum_def, Finset.sum_sum_eq_sum_toLeft_add_sum_toRight,
+    DisjointUnionHom.sum_inl, DisjointUnionHom.sum_inr, Assignment.disjointUnion_inl,
+    Assignment.disjointUnion_inr]
+  simp
+
+end Sums
+
+section Excess
+
+variable [∀ x y, Fintype (Q x y)] [∀ x y, Fintype (R x y)] [AddCommGroup K]
 
 variable [Fintype V] [Fintype W]
 
@@ -253,6 +355,12 @@ theorem excessAt_restrictRight (f : Assignment (DisjointUnionHom Q R) K) (x : W)
     excessAt f.restrictRight x = excessAt f (.inr x) := by
   simp [excessAt_def, DisjointUnionHom.sum_inr]
 
+@[simp]
+theorem isCirculation_disjointUnion_iff (f : Assignment Q K) (g : Assignment R K) :
+    IsCirculation (f.disjointUnion g) ↔ IsCirculation f ∧ IsCirculation g := by
+  simp only [isCirculation_iff, Sum.forall, excessAt_disjointUnion_inl,
+    excessAt_disjointUnion_inr]
+
 section Bounded
 
 variable [Preorder K]
@@ -265,18 +373,13 @@ namespace ExcessFlow
 prescribed-excess assignments on its two summands. -/
 def disjointUnionEquiv :
     ExcessFlow lo hi d × ExcessFlow lo' hi' d' ≃
-      ExcessFlow (lo.disjointUnion lo') (hi.disjointUnion hi') (Sum.elim d d') where
-  toFun f := ⟨f.1.val.disjointUnion f.2.val,
-    (Assignment.disjointUnion_mem_Icc _ _ _ _ _ _).2 ⟨f.1.mem_Icc, f.2.mem_Icc⟩,
-    funext fun x ↦ by cases x <;> simp⟩
-  invFun f :=
-    ⟨⟨f.val.restrictLeft, Assignment.restrictLeft_mem_Icc f.mem_Icc,
-        funext fun x ↦ by simp [f.excessAt_eq]⟩,
-      ⟨f.val.restrictRight, Assignment.restrictRight_mem_Icc f.mem_Icc,
-        funext fun x ↦ by simp [f.excessAt_eq]⟩⟩
-  left_inv f := by
-    apply Prod.ext <;> apply Subtype.ext <;> rfl
-  right_inv f := Subtype.ext (Assignment.disjointUnionEquiv.apply_symm_apply f.val)
+      ExcessFlow (lo.disjointUnion lo') (hi.disjointUnion hi') (Sum.elim d d') :=
+  Equiv.subtypeProdEquivProd.symm.trans <|
+    Assignment.disjointUnionEquiv.subtypeEquiv fun ⟨f, g⟩ ↦ by
+      simp only [Assignment.disjointUnionEquiv_apply, Assignment.disjointUnion_mem_Icc,
+        funext_iff, Sum.forall, excessAt_disjointUnion_inl, excessAt_disjointUnion_inr,
+        Sum.elim_inl, Sum.elim_inr]
+      tauto
 
 @[simp]
 theorem disjointUnionEquiv_apply_val (f : ExcessFlow lo hi d × ExcessFlow lo' hi' d') :
@@ -304,25 +407,13 @@ assignments on its two summands. -/
 def disjointUnionEquiv :
     ExcessIntervalFlow lo hi a b × ExcessIntervalFlow lo' hi' a' b' ≃
       ExcessIntervalFlow (lo.disjointUnion lo') (hi.disjointUnion hi')
-        (Sum.elim a a') (Sum.elim b b') where
-  toFun f := ⟨f.1.val.disjointUnion f.2.val,
-    (Assignment.disjointUnion_mem_Icc _ _ _ _ _ _).2 ⟨f.1.mem_Icc, f.2.mem_Icc⟩,
-    ⟨fun
-        | .inl x => by simpa using f.1.excessAt_mem_Icc.1 x
-        | .inr x => by simpa using f.2.excessAt_mem_Icc.1 x,
-      fun
-        | .inl x => by simpa using f.1.excessAt_mem_Icc.2 x
-        | .inr x => by simpa using f.2.excessAt_mem_Icc.2 x⟩⟩
-  invFun f :=
-    ⟨⟨f.val.restrictLeft, Assignment.restrictLeft_mem_Icc f.mem_Icc,
-        ⟨fun x ↦ by simpa using f.excessAt_mem_Icc.1 (.inl x),
-          fun x ↦ by simpa using f.excessAt_mem_Icc.2 (.inl x)⟩⟩,
-      ⟨f.val.restrictRight, Assignment.restrictRight_mem_Icc f.mem_Icc,
-        ⟨fun x ↦ by simpa using f.excessAt_mem_Icc.1 (.inr x),
-          fun x ↦ by simpa using f.excessAt_mem_Icc.2 (.inr x)⟩⟩⟩
-  left_inv f := by
-    apply Prod.ext <;> apply Subtype.ext <;> rfl
-  right_inv f := Subtype.ext (Assignment.disjointUnionEquiv.apply_symm_apply f.val)
+        (Sum.elim a a') (Sum.elim b b') :=
+  Equiv.subtypeProdEquivProd.symm.trans <|
+    Assignment.disjointUnionEquiv.subtypeEquiv fun ⟨f, g⟩ ↦ by
+      rw [Assignment.disjointUnionEquiv_apply, Assignment.disjointUnion_mem_Icc]
+      simp only [Set.mem_Icc, Pi.le_def, Sum.forall, excessAt_disjointUnion_inl,
+        excessAt_disjointUnion_inr, Sum.elim_inl, Sum.elim_inr]
+      tauto
 
 @[simp]
 theorem disjointUnionEquiv_apply_val
