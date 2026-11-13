@@ -121,7 +121,7 @@ theorem isPartiallySemialgebraic_graphOn_regionBetweenMap
       simpa [height, val, z] using hs.symm
     · simp [z, Prod.map_apply]
   · rintro ⟨p, hp, rfl⟩
-    obtain ⟨hu, hgy, ha, hb, hyT, hc, hd, hlo, hhi, hs⟩ := hp
+    obtain ⟨hu, hgy, ha, hb, _, hc, hd, hlo, hhi, hs⟩ := hp
     refine ⟨⟨hu, ha ▸ hlo, hb ▸ hhi⟩, ?_⟩
     funext i
     cases i with
