@@ -328,8 +328,9 @@ theorem exists_w1p_intervalRepresentativeL_eq (hx : x₀ < x₁) (hlam : 0 < lam
     refine (W1p.intervalRepresentativeL_eq_iff hx u w).2 ?_
     filter_upwards [hu, ae_restrict_mem measurableSet_Ioo] with t ht hmem
     rw [ht, projIcc_of_mem hx.le (Ioo_subset_Icc_self hmem)]
-    rfl
-  refine ⟨u, fun y => by rw [hrep]; rfl, ?_, fun φ => ?_⟩
+    exact (intervalDirichletSolution_apply hx.le g₀ g₁ _ ⟨t, _⟩).symm
+  refine ⟨u, fun y => by rw [hrep]; exact intervalDirichletSolution_apply hx.le g₀ g₁ _ y, ?_,
+    fun φ => ?_⟩
   · rw [W1p.intervalTraceL_apply, hrep]
     exact Prod.ext (intervalDirichletSolution_left ..)
       (intervalDirichletSolution_right hx hlam g₀ g₁ ha hla hG _)
