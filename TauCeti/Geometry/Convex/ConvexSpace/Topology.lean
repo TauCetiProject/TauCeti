@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
+public import Mathlib.Topology.Bases
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
@@ -27,7 +28,8 @@ The prefix sums `TauCeti.prefixSum N x.weights` of the weights depend continuous
 of `StdSimplex R (Fin n)` (`Convexity.StdSimplex.continuous_prefixSum_weights`).
 
 A standard simplex over a Hausdorff ring is Hausdorff (`Convexity.StdSimplex.t2Space`), so
-continuous surjections onto it from compact spaces are quotient maps.
+continuous surjections onto it from compact spaces are quotient maps. A finite standard simplex
+over a first-countable ring is first-countable (`Convexity.StdSimplex.firstCountableTopology`).
 -/
 
 public section
@@ -117,6 +119,11 @@ lemma continuous_prefixSum_weights {n : ℕ} {Z : Type*} [TopologicalSpace Z]
     Continuous fun z ↦ TauCeti.prefixSum N (f z).weights := by
   simp only [TauCeti.prefixSum_def]
   exact continuous_finsetSum _ fun j _ ↦ (continuous_weights_apply R j).comp hf
+
+/-- A finite standard simplex over a first-countable ring is first-countable. -/
+instance firstCountableTopology [FirstCountableTopology R] [Finite N] :
+    FirstCountableTopology (StdSimplex R N) :=
+  (isEmbedding_toFun_comp_weights R N).firstCountableTopology
 
 /-- A standard simplex over a Hausdorff ring is Hausdorff. -/
 instance t2Space [T2Space R] : T2Space (StdSimplex R N) :=

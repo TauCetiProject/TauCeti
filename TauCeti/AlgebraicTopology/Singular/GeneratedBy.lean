@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Topology.Convenient.CompactlyGenerated
-public import TauCeti.Geometry.Convex.ConvexSpace.Topology
-public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
 /-!
 # Singular chains and generated topologies
@@ -41,12 +40,12 @@ public section
 
 noncomputable section
 
-universe t u v w
+universe t u v w w'
 
-open CategoryTheory Convexity Topology
+open CategoryTheory Convexity Topology TopCat
 open scoped Simplicial
 
-namespace TopCat
+namespace TauCeti.TopCat
 
 variable {ι : Type t} (G : ι → Type v) [∀ i, TopologicalSpace (G i)]
 
@@ -61,13 +60,15 @@ theorem bijective_toSSet_map_generatedByCounit_app (X : TopCat.{u}) (n : Simplex
     ext z
     apply (WithGeneratedByTopology.equiv (X := G)).injective
     have hc := congrArg (toSSetObjEquiv X n) h
-    rw [toSSetObjEquiv_map, toSSetObjEquiv_map] at hc
-    simpa only [hom_ofHom, ContinuousMap.comp_apply, WithGeneratedByTopology.counit_apply]
+    rw [toSSetObjEquiv_toSSet_map_app, toSSetObjEquiv_toSSet_map_app] at hc
+    simpa only [ConcreteCategory.hom_ofHom, ContinuousMap.comp_apply,
+      WithGeneratedByTopology.counit_apply]
       using! ContinuousMap.congr_fun hc z
   · intro σ
     refine ⟨(toSSetObjEquiv _ n).symm ((toSSetObjEquiv X n σ).toGeneratedBy G), ?_⟩
     apply (toSSetObjEquiv X n).injective
-    simp only [toSSetObjEquiv_map, hom_ofHom, Equiv.apply_symm_apply,
+    simp only [toSSetObjEquiv_toSSet_map_app, ConcreteCategory.hom_ofHom,
+      Equiv.apply_symm_apply,
       ContinuousMap.equiv_comp_toGeneratedBy]
 
 variable [∀ n : ℕ, IsGeneratedBy G (StdSimplex ℝ (Fin (n + 1)))]
@@ -100,9 +101,8 @@ theorem toSSetGeneratedByIso_hom_app (X : TopCat.{u}) :
   (rfl)
 
 /-- The inverse singular-set comparison lifts precisely the same continuous simplex to the
-refined topology. This is a rewrite lemma: its dependent source involves the functorial
-presentation of the refined space. -/
-theorem toSSetObjEquiv_toSSetGeneratedByIso_inv_app (X : TopCat.{u}) (n : SimplexCategoryᵒᵖ)
+refined topology. -/
+theorem toSSetObjEquiv_toSSetGeneratedByIso_inv_app_app (X : TopCat.{u}) (n : SimplexCategoryᵒᵖ)
     (σ : (toSSet.obj X).obj n) :
     toSSetObjEquiv ((TopCat.toGeneratedByTopCat (X := G)).obj X).obj n
         (((toSSetGeneratedByIso G).inv.app X).app n σ) =
@@ -116,18 +116,24 @@ theorem toSSetObjEquiv_toSSetGeneratedByIso_inv_app (X : TopCat.{u}) (n : Simple
       ConcreteCategory.congr_hom
         (NatTrans.congr_app ((toSSetGeneratedByIso G).app X).inv_hom_id n) σ
   have hc := congrArg (toSSetObjEquiv X n) h
-  rw [toSSetObjEquiv_map, GeneratedByTopCat.adjCounit_app_hom] at hc
-  have hf : (WithGeneratedByTopology.counit G X).comp f = toSSetObjEquiv X n σ := hc
+  rw [toSSetObjEquiv_toSSet_map_app] at hc
+  have hf : (WithGeneratedByTopology.counit G X).comp f = toSSetObjEquiv X n σ := by
+    simpa only [← GeneratedByTopCat.adjCounit_app_hom, Hom.hom] using! hc
   exact (ContinuousMap.toGeneratedBy_equiv_comp f).symm.trans
     (congrArg (fun τ : C(StdSimplex ℝ (Fin (n.unop.len + 1)), X) ↦ τ.toGeneratedBy G) hf)
 
-end TopCat
+-- Exercise compact generation with independent test-space and target universes.
+example (X : TopCat.{u}) :
+    IsIso (toSSet.map ((GeneratedByTopCat.adjCounit
+      (X := fun K : CompHaus.{v} ↦ K)).app X)) := inferInstance
+
+end TauCeti.TopCat
 
 namespace TauCeti
 
 variable {ι : Type t} (G : ι → Type v) [∀ i, TopologicalSpace (G i)]
   [∀ n : ℕ, IsGeneratedBy G (StdSimplex ℝ (Fin (n + 1)))]
-  {C : Type w} [Category.{u} C] [Preadditive C] [Limits.HasCoproducts.{u} C] (R : C)
+  {C : Type w} [Category.{w'} C] [Preadditive C] [Limits.HasCoproducts.{u} C] (R : C)
 
 /-- The generated-topology counit induces an isomorphism on singular chains, with arbitrary
 coefficients in a preadditive category with coproducts. -/
@@ -154,9 +160,16 @@ theorem singularChainComplexFunctorGeneratedByIso_hom_app (X : TopCat.{u}) :
         ((GeneratedByTopCat.adjCounit (X := G)).app X) :=
   (rfl)
 
+/-- The inverse chain comparison is induced by the inverse singular-set comparison. -/
+@[simp]
+theorem singularChainComplexFunctorGeneratedByIso_inv_app (X : TopCat.{u}) :
+    (singularChainComplexFunctorGeneratedByIso G R).inv.app X =
+      SSet.chainComplexMap ((TopCat.toSSetGeneratedByIso G).inv.app X) R :=
+  (rfl)
+
 /-- On each singular-chain summand, the inverse comparison is induced by lifting its simplex
 to the generated topology. -/
-@[simp, reassoc]
+@[reassoc]
 theorem ιChainComplex_singularChainComplexFunctorGeneratedByIso_inv_app_f
     (X : TopCat.{u}) {n : ℕ} (σ : (TopCat.toSSet.obj X).obj (Opposite.op ⦋n⦌)) :
     (TopCat.toSSet.obj X).ιChainComplex σ ≫
@@ -165,5 +178,10 @@ theorem ιChainComplex_singularChainComplexFunctorGeneratedByIso_inv_app_f
         GeneratedByTopCat.toTopCat).obj X)).ιChainComplex
           ((((TopCat.toSSetGeneratedByIso G).inv.app X).app (Opposite.op ⦋n⦌)) σ) :=
   SSet.ι_chainComplexMap_f _ _ _ R σ
+
+-- The coefficient morphism universe is also independent of both space universes.
+example (X : TopCat.{u}) :
+    IsIso (((AlgebraicTopology.singularChainComplexFunctor C).obj R).map
+      ((GeneratedByTopCat.adjCounit (X := fun K : CompHaus.{v} ↦ K)).app X)) := inferInstance
 
 end TauCeti
