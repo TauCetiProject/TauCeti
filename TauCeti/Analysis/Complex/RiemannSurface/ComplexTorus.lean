@@ -30,7 +30,9 @@ projection `ℂ → ℂ / L` through the covering `ℂ → ℂ / L'` to a holomo
 `l ∈ L` the difference `F (z + l) - F z` is a continuous function with values in the discrete set
 `L'`, hence constant, so `F'` is `L`-periodic and bounded, and constant by Liouville's theorem.
 
-For a biholomorphism of `ℂ / L` the factor `a` is a unit with `a L = L`, an element of the lattice
+If `f` is injective, then `a ≠ 0`, since `L` is not all of `ℂ`, and `a⁻¹ L' ⊆ L`, so `a L = L'`
+and the two lattices are homothetic (`ContMDiff.exists_units_smul_eq_of_injective`). In particular,
+for a biholomorphism of `ℂ / L` the factor `a` is a unit with `a L = L`, an element of the lattice
 stabilizer `MulAction.stabilizer ℂˣ L` (`Diffeomorph.exists_apply_mk_eq_mul_add`). So every
 automorphism of `ℂ / L` is a translation composed with a linear automorphism `[z] ↦ [u z]`, and
 the stabilizer, which contains `-1`, is finite (`Submodule.finite_stabilizer_units`). An
@@ -112,6 +114,36 @@ theorem ContMDiff.exists_apply_mk_eq_mul_add [IsZLattice ℝ L]
   have := hmem (z := l) (w := 0) (by simpa using hl)
   rwa [hFa l, add_sub_cancel_right] at this
 
+/-- **Injective holomorphic maps of complex tori.** An injective holomorphic map
+`f : ℂ / L → ℂ / L'` between one-dimensional complex tori, with `L` a full lattice, is induced by
+an affine map `z ↦ u * z + b` of `ℂ` whose linear part is a unit carrying `L` onto `L'`,
+`u • L = L'`. In particular the two lattices are homothetic. -/
+theorem ContMDiff.exists_units_smul_eq_of_injective [IsZLattice ℝ L]
+    {f : AddAction.orbitRel.Quotient L ℂ → AddAction.orbitRel.Quotient L' ℂ}
+    (hf : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n f) (hn : n ≠ 0) (hinj : Function.Injective f) :
+    ∃ u : ℂˣ, u • L = L' ∧ ∃ b : ℂ,
+      ∀ z, f (Quotient.mk _ z) = Quotient.mk (AddAction.orbitRel L' ℂ) (u * z + b) := by
+  obtain ⟨a, b, ha, hfa⟩ := hf.exists_apply_mk_eq_mul_add hn
+  -- Injectivity: if `a z` and `a w` agree modulo `L'`, then `z` and `w` agree modulo `L`.
+  have hmem {z w : ℂ} (h : a * z - a * w ∈ L') : z - w ∈ L := by
+    rw [← L.orbitRelQuotient_mk_eq_mk_iff]
+    refine hinj ?_
+    rw [hfa, hfa, L'.orbitRelQuotient_mk_eq_mk_iff]
+    convert h using 1
+    ring
+  -- For `a = 0` every point of `ℂ` would lie in the discrete subgroup `L`.
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    exact one_ne_zero <| isPreconnected_univ.constant_of_mapsTo (T := (L : Set ℂ))
+      (isDiscrete_iff_discreteTopology.mpr ‹_›) (continuousOn_id (s := univ))
+      (fun z _ ↦ by simpa using hmem (z := z) (w := 0) (by simp)) (mem_univ 1) (mem_univ 0)
+  refine ⟨Units.mk0 a ha0, le_antisymm ?_ fun l hl ↦ ?_, b, hfa⟩
+  · rintro _ ⟨l, hl, rfl⟩
+    exact ha l hl
+  · refine Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mpr ⟨a⁻¹ * l, ?_, ?_⟩
+    · simpa using hmem (z := a⁻¹ * l) (w := 0) (by simpa [mul_inv_cancel_left₀ ha0] using hl)
+    · simp [Units.smul_def, mul_inv_cancel_left₀ ha0]
+
 namespace Diffeomorph
 
 /-- **Biholomorphisms of a complex torus.** Every biholomorphism of a one-dimensional complex torus
@@ -122,20 +154,8 @@ theorem exists_apply_mk_eq_mul_add [IsZLattice ℝ L]
     (hn : n ≠ 0) :
     ∃ u ∈ MulAction.stabilizer ℂˣ L, ∃ b : ℂ,
       ∀ z, φ (Quotient.mk _ z) = Quotient.mk (AddAction.orbitRel L ℂ) (u * z + b) := by
-  obtain ⟨a, b, ha, hφ⟩ := φ.contMDiff.exists_apply_mk_eq_mul_add hn
-  obtain ⟨a', b', ha', hφ'⟩ := φ.symm.contMDiff.exists_apply_mk_eq_mul_add hn
-  -- `φ⁻¹ ∘ φ = id` lifts to `z ↦ (a' * a - 1) * z + (a' * b + b')`, with values in `L`.
-  have hmem (z : ℂ) : (a' * a - 1) * z + (a' * b + b') ∈ L := by
-    have := φ.symm_apply_apply (Quotient.mk _ z)
-    rw [hφ, hφ', L.orbitRelQuotient_mk_eq_mk_iff] at this
-    convert this using 1
-    ring
-  have haa : a' * a = 1 := by
-    linear_combination isPreconnected_univ.constant_of_mapsTo
-      (isDiscrete_iff_discreteTopology.mpr ‹_›) (by fun_prop) (fun z _ ↦ hmem z) (mem_univ 1)
-      (mem_univ 0)
-  let u : ℂˣ := ⟨a, a', by linear_combination haa, haa⟩
-  exact ⟨u, Submodule.mem_stabilizer_units_iff.mpr ⟨ha, ha'⟩, b, hφ⟩
+  simpa only [MulAction.mem_stabilizer_iff] using
+    φ.contMDiff.exists_units_smul_eq_of_injective hn φ.injective
 
 /-- The biholomorphisms of a complex torus fixing a point are finite in number: such a map is
 `[z] ↦ [u * (z - p) + p]`, determined by its linear part `u` in the finite lattice stabilizer. -/
