@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RingTheory.DualNumber
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import Mathlib.RingTheory.ZMod.LocalRing
-public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.CategoryTheory.Exact.YonedaExt.AlmostSplit
 public import TauCeti.Data.ZMod.LocalRing
 public import TauCeti.RingTheory.LocalRing.Module
