@@ -274,11 +274,9 @@ noncomputable def graphFrame (A : GLSymplectic n ℝ) : unitaryGroup (n ⊕ n) �
 
 /-- The unitary graph frame depends continuously on the symplectic matrix. -/
 @[fun_prop]
-theorem continuous_graphFrame : Continuous (graphFrame : GLSymplectic n ℝ → _) := by
-  have h := Units.continuous_val.comp
-    ((contMDiff_toUnits_polarUnitary (n := n ⊕ n) (𝕜 := ℂ) (k := 0)).continuous.comp
-      continuous_graphFrameUnit)
-  exact continuous_induced_rng.2 h
+theorem continuous_graphFrame : Continuous (graphFrame : GLSymplectic n ℝ → _) :=
+  ((contMDiff_coe_polarUnitary (n := n ⊕ n) (𝕜 := ℂ) (k := 0)).continuous.comp
+    continuous_graphFrameUnit).subtype_mk _
 
 /-- **The polar decomposition of the graph frame.** The unitary graph frame of `A` is the unitary
 polar factor of `N(A)`: `N(A) = graphFrame A * √(N(A)ᴴ N(A))`. -/
