@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.Sets.Opens
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Images of opens and preimages of balls under an open partial homeomorphism
@@ -19,12 +20,12 @@ metric model space pull back to coordinate balls of `X`. This file records both 
 spaces can be indexed by them and nested covers by coordinate balls can be built.
 
 * `OpenPartialHomeomorph.imageOpens`: the open `e '' (e.source ∩ V)` of `Y` for an open `V` of
-  `X`, written as `e.target ∩ e.symm ⁻¹' V`. When `Y` is Hausdorff and `closure V'` is compact and
+  `X`, written as `e.target ∩ e.symm ⁻¹' V`. When `Y` is R₁ and `closure V'` is compact and
   lies in `e.source`, `e.imageOpens V'` has compact closure
   (`OpenPartialHomeomorph.isCompact_closure_imageOpens`), contained in `e.imageOpens V` whenever
   `closure V' ⊆ V` (`OpenPartialHomeomorph.closure_imageOpens_subset`).
 * `OpenPartialHomeomorph.preimageBall`: for a pseudometric codomain, the coordinate ball
-  `e.source ∩ e ⁻¹' ball c r`, which is `e.symm.imageOpens (ball c r)`. When `X` is Hausdorff,
+  `e.source ∩ e ⁻¹' ball c r`, which is `e.symm.imageOpens (ball c r)`. When `X` is R₁,
   `Y` is proper and `closedBall c r ⊆ e.target`, its closure is compact
   (`OpenPartialHomeomorph.isCompact_closure_preimageBall`) and lies in the coordinate ball of any
   larger radius (`OpenPartialHomeomorph.closure_preimageBall_subset`).
@@ -69,14 +70,16 @@ theorem map_mem_imageOpens {x : X} (hxe : x ∈ e.source) (hx : x ∈ V) :
 
 /-- If `closure V'` is compact and lies in `e.source`, the closure of `e.imageOpens V'` lies in the
 image of `closure V'`. -/
-theorem closure_imageOpens_subset_image [T2Space Y] (hK : IsCompact (closure (V' : Set X)))
+theorem closure_imageOpens_subset_image [R1Space Y] (hK : IsCompact (closure (V' : Set X)))
     (hKe : closure (V' : Set X) ⊆ e.source) :
     closure (e.imageOpens V' : Set Y) ⊆ e '' closure (V' : Set X) :=
   closure_minimal (fun z hz ↦ ⟨e.symm z, subset_closure hz.2, e.right_inv hz.1⟩)
-    (hK.image_of_continuousOn (e.continuousOn.mono hKe)).isClosed
+    (e.isClosed_image_of_closure_subset_target isClosed_closure hKe
+      ((hK.image_of_continuousOn (e.continuousOn.mono hKe)).closure_subset_of_isOpen
+        e.open_target (e.mapsTo.mono_left hKe).image_subset))
 
 /-- If `closure V'` is compact and lies in `e.source`, `e.imageOpens V'` has compact closure. -/
-theorem isCompact_closure_imageOpens [T2Space Y] (hK : IsCompact (closure (V' : Set X)))
+theorem isCompact_closure_imageOpens [R1Space Y] (hK : IsCompact (closure (V' : Set X)))
     (hKe : closure (V' : Set X) ⊆ e.source) :
     IsCompact (closure (e.imageOpens V' : Set Y)) :=
   (hK.image_of_continuousOn (e.continuousOn.mono hKe)).closure_of_subset
@@ -84,7 +87,7 @@ theorem isCompact_closure_imageOpens [T2Space Y] (hK : IsCompact (closure (V' : 
 
 /-- If `closure V'` is compact and lies in `V` and in `e.source`, the closure of `e.imageOpens V'`
 lies in `e.imageOpens V`. -/
-theorem closure_imageOpens_subset [T2Space Y] (hK : IsCompact (closure (V' : Set X)))
+theorem closure_imageOpens_subset [R1Space Y] (hK : IsCompact (closure (V' : Set X)))
     (hKe : closure (V' : Set X) ⊆ e.source) (hKV : closure (V' : Set X) ⊆ V) :
     closure (e.imageOpens V' : Set Y) ⊆ e.imageOpens V := by
   refine (closure_imageOpens_subset_image hK hKe).trans ?_
@@ -99,7 +102,8 @@ section Ball
 
 variable {Y : Type*} [PseudoMetricSpace Y] {e : OpenPartialHomeomorph X Y}
 
-/-- The coordinate ball `e.source ∩ e ⁻¹' ball c r`, the image of `ball c r` under `e.symm`. -/
+/-- The coordinate ball `e.source ∩ e ⁻¹' ball c r`, the image of `e.target ∩ ball c r` under
+`e.symm`. -/
 def preimageBall (e : OpenPartialHomeomorph X Y) (c : Y) (r : ℝ) : Opens X :=
   e.symm.imageOpens ⟨Metric.ball c r, Metric.isOpen_ball⟩
 
@@ -116,7 +120,7 @@ theorem preimageBall_subset_source {c : Y} {r : ℝ} : (e.preimageBall c r : Set
 
 /-- If `closedBall c r` lies in the chart target, the coordinate ball of radius `r` has compact
 closure. -/
-theorem isCompact_closure_preimageBall [T2Space X] [ProperSpace Y] {c : Y} {r : ℝ}
+theorem isCompact_closure_preimageBall [R1Space X] [ProperSpace Y] {c : Y} {r : ℝ}
     (hr : Metric.closedBall c r ⊆ e.target) :
     IsCompact (closure (e.preimageBall c r : Set X)) :=
   e.symm.isCompact_closure_imageOpens
@@ -126,7 +130,7 @@ theorem isCompact_closure_preimageBall [T2Space X] [ProperSpace Y] {c : Y} {r : 
 
 /-- If `closedBall c r` lies in the chart target, the closure of the coordinate ball of radius `r`
 lies in the coordinate ball of any larger radius. -/
-theorem closure_preimageBall_subset [T2Space X] [ProperSpace Y] {c : Y} {r s : ℝ}
+theorem closure_preimageBall_subset [R1Space X] [ProperSpace Y] {c : Y} {r s : ℝ}
     (hr : Metric.closedBall c r ⊆ e.target) (hrs : r < s) :
     closure (e.preimageBall c r : Set X) ⊆ e.preimageBall c s :=
   e.symm.closure_imageOpens_subset (V := ⟨Metric.ball c s, Metric.isOpen_ball⟩)
