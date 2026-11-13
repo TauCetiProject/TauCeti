@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
@@ -35,6 +36,7 @@ the compactified quotient and its complex structure already exist.
 ## Main results
 
 * `TauCeti.ModularGroup.eulerChar_compactifiedQuotient`: `χ(X(1)) = 2`.
+* `TauCeti.ModularGroup.genus_compactifiedQuotient`: `X(1)` has topological genus `0`.
 * `TauCeti.ModularGroup.ellipticOrbits_psl2zToPSL2RRange`: the elliptic orbits are those of `ρ`
   and `i`.
 * `TauCeti.ModularGroup.finsum_mem_ellipticOrbits_psl2zToPSL2RRange`:
@@ -73,6 +75,13 @@ theorem eulerChar_compactifiedQuotient :
     eulerChar psl2zToPSL2R.range.CompactifiedQuotient = 2 := by
   rw [jBiholomorph.toHomeomorph.eulerChar_eq, eulerChar_onePoint, Complex.finrank_real_complex]
   norm_num
+
+/-- **The level-one modular curve has genus `0`**: its topological genus
+`TauCeti.RiemannSurface.genus` is read off `χ(X(1)) = 2 = 2 - 2 · 0`. -/
+@[simp]
+theorem genus_compactifiedQuotient :
+    RiemannSurface.genus psl2zToPSL2R.range.CompactifiedQuotient = 0 :=
+  RiemannSurface.genus_eq_of_eulerChar_eq (by rw [eulerChar_compactifiedQuotient]; norm_num)
 
 /-- **The elliptic orbits of the modular group** are the orbits of `ρ` and of `i`. -/
 theorem ellipticOrbits_psl2zToPSL2RRange :

@@ -45,6 +45,9 @@ conditions are closed under uniform convergence, which gives completeness.
   regularity of an element; `TauCeti.CkHolderSpace.ofContDiff` is the converse constructor.
 * `TauCeti.CkHolderSpace.norm_eq`: the norm is the sum of the supremum norms of the derivatives
   through order `k` and the `α`-Hölder seminorm of the `k`-th derivative.
+* `TauCeti.CkHolderSpace.toBoundedContinuousFunction` and `TauCeti.CkHolderSpace.fderivBCF`: the
+  underlying function and its curried derivative as bounded continuous fields, with the supremum
+  norms of the derivative fields of orders zero and one.
 * `TauCeti.CkHolderSpace.norm_fderiv_le_iteratedFDeriv_one`,
   `TauCeti.CkHolderSpace.norm_fderiv_fderiv_le_iteratedFDeriv_two` and
   `TauCeti.CkHolderSpace.holderWith_fderiv_fderiv`: bounds on the curried derivatives `Df` and
@@ -427,6 +430,49 @@ theorem holderWith_fderiv_fderiv (f : CkHolderSpace 2 α E F) :
   simpa [Function.comp_def, he] using
     (continuousMultilinearCurryFin2 ℝ E F).isometry.lipschitzWith.holderWith.comp
       f.memHolder_iteratedFDeriv.holderWith
+
+/-- The underlying function of a bounded `C^{k,α}` map, as a bounded continuous function. -/
+def toBoundedContinuousFunction (f : CkHolderSpace k α E F) : E →ᵇ F :=
+  BoundedContinuousFunction.ofNormedAddCommGroup f f.contDiff.continuous ‖f‖ f.norm_apply_le
+
+@[simp]
+theorem coe_toBoundedContinuousFunction (f : CkHolderSpace k α E F) :
+    ⇑f.toBoundedContinuousFunction = f :=
+  BoundedContinuousFunction.coe_ofNormedAddCommGroup ..
+
+/-- The supremum norm of the underlying function is that of the order-zero derivative field. -/
+theorem norm_toBoundedContinuousFunction (f : CkHolderSpace k α E F) :
+    ‖f.toBoundedContinuousFunction‖ = ‖f.iteratedFDeriv 0‖ := by
+  rw [BoundedContinuousFunction.norm_eq_iSup_norm,
+    BoundedContinuousFunction.norm_eq_iSup_norm (f.iteratedFDeriv 0),
+    coe_toBoundedContinuousFunction]
+  congr 1 with x
+  rw [← iteratedFDeriv_eq, Fin.val_zero, norm_iteratedFDeriv_zero]
+
+/-- The derivative of a bounded `C^{k+1,α}` map, in curried form, as a bounded continuous
+field. -/
+def fderivBCF (f : CkHolderSpace (k + 1) α E F) : E →ᵇ (E →L[ℝ] F) :=
+  BoundedContinuousFunction.ofNormedAddCommGroup (fderiv ℝ f)
+    (f.contDiff.continuous_fderiv (by simp)) ‖f‖ fun x ↦ by
+      simpa using f.norm_iteratedFDeriv_apply_le (i := 1) (by omega) x
+
+@[simp]
+theorem coe_fderivBCF (f : CkHolderSpace (k + 1) α E F) : ⇑f.fderivBCF = fderiv ℝ f :=
+  BoundedContinuousFunction.coe_ofNormedAddCommGroup ..
+
+/-- The supremum norm of the curried derivative is that of the first derivative field. -/
+theorem norm_fderivBCF (f : CkHolderSpace (k + 1) α E F) :
+    ‖f.fderivBCF‖ = ‖f.iteratedFDeriv 1‖ := by
+  rw [BoundedContinuousFunction.norm_eq_iSup_norm,
+    BoundedContinuousFunction.norm_eq_iSup_norm (f.iteratedFDeriv 1), coe_fderivBCF]
+  congr 1 with x
+  rw [← iteratedFDeriv_eq, Fin.val_one, norm_iteratedFDeriv_one]
+
+/-- The derivative field `fderivBCF` is the Fréchet derivative of a bounded `C^{k+1,α}` map. -/
+theorem hasFDerivAt (f : CkHolderSpace (k + 1) α E F) (x : E) :
+    HasFDerivAt f (f.fderivBCF x) x := by
+  rw [coe_fderivBCF]
+  exact ((f.contDiff.differentiable (by simp)) x).hasFDerivAt
 
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields. It is
 bounded by the `C^{k,α}` norm pointwise, by `CkHolderSpace.norm_iteratedFDeriv_le`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.UniformSpace.HeineCantor
 import Mathlib.Topology.UniformSpace.Compact
+import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 
 /-!
 # Composing uniformly convergent families with continuous maps
@@ -31,6 +32,11 @@ maps `u` converging uniformly on a compact set.
 
 Uniform convergence to a limit mapping `s` into a compact set with a neighborhood `W` puts the
 values of the family on `s` eventually inside `W` (`TendstoUniformlyOn.eventually_mapsTo`).
+
+When the inner maps vary too, a uniformly convergent family `G i → g` can be composed with a
+uniformly convergent family `F i → f`, provided `g` is uniformly continuous on a set containing all
+the values (`TendstoUniformlyOn.comp_tendstoUniformlyOn`). This is the form needed to compare
+maps read at moving base points, such as `z ↦ G i (x i + z)` with `x i → x`.
 
 The file also records that a constant family converges uniformly
 (`TauCeti.tendstoUniformlyOn_const`), and that two families converging uniformly along the same
@@ -62,6 +68,19 @@ theorem TendstoUniformlyOn.eventually_mapsTo {K W : Set β} (h : TendstoUniforml
   obtain ⟨V, hV, hVW⟩ := (hK.nhdsSet_basis_uniformity (uniformity β).basis_sets).mem_iff.1 hW
   filter_upwards [h _ (tendsto_swap_uniformity hV)] with i hi x hx
   exact hVW (mem_biUnion (hf hx) (hi x hx))
+
+/-- Let `G i → g` uniformly on `t`, with `g` uniformly continuous on `t`, and let `F i → f`
+uniformly on `s`, where `f` and eventually every `F i` map `s` into `t`. Then `G i ∘ F i → g ∘ f`
+uniformly on `s`. Mathlib's `UniformContinuousOn.comp_tendstoUniformlyOn_eventually` is the case of
+a constant outer family. -/
+theorem TendstoUniformlyOn.comp_tendstoUniformlyOn {t : Set β} {G : ι → β → γ}
+    (hG : TendstoUniformlyOn G g p t) (hg : UniformContinuousOn g t)
+    (h : TendstoUniformlyOn F f p s) (hF : ∀ᶠ i in p, MapsTo (F i) s t) (hf : MapsTo f s t) :
+    TendstoUniformlyOn (fun i x ↦ G i (F i x)) (fun x ↦ g (f x)) p s := fun u hu ↦ by
+  obtain ⟨v, hv, hvu⟩ := comp_mem_uniformity_sets hu
+  filter_upwards [hG v hv, hg.comp_tendstoUniformlyOn_eventually
+    (hF.mono fun _ hFi _ hx ↦ hFi hx) hf h v hv, hF] with i hGi hgi hFi x hx
+  exact hvu (SetRel.prodMk_mem_comp (hgi x hx) (hGi _ (hFi hx)))
 
 namespace TauCeti
 
