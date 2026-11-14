@@ -44,8 +44,10 @@ weak Harnack inequality.
   is at most `(1 - δ) L + K ρ ‖f‖_{Lⁿ} / λ`.
 * **Iteration.** On the balls of radii `ρ / 4ʲ` the quantity `Lⱼ + 4 K (ρ / 4ʲ) ‖f‖ / λ` decreases
   geometrically, with ratio `θ = max (1 - δ) (1 / 2)`.
-* **Hölder bound.** With `θ = 4^(-α)`, two points at distance `d ≤ r / 4ʲ` differ by at most
-  `θʲ (2 M + 4 K r ‖f‖ / λ) ≤ 4 (d / r)^α (2 M + 4 K r ‖f‖ / λ)`.
+* **Hölder bound.** Let `θ = 4^(-α)` and let two points be at distance `0 < d < r`. Choose `j`
+  with `r / 4ʲ⁺¹ < d ≤ r / 4ʲ`. Then their values differ by at most
+  `θʲ (2 M + 4 K r ‖f‖ / λ) ≤ 4 (d / r)^α (2 M + 4 K r ‖f‖ / λ)`. Coincident points are trivial,
+  and for `d ≥ r` the bound `|u| ≤ M` suffices.
 
 ## Main declarations
 
