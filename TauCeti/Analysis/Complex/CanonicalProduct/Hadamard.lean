@@ -96,13 +96,6 @@ theorem summable_divisor_toNat_mul_norm_inv_sq {f : ℂ → ℂ}
   rw [(hf.analyticAt ρ).natCast_toNat_divisor, Real.rpow_neg (norm_nonneg _), Real.rpow_two,
     norm_inv, inv_pow]
 
-/-- The genus-one native divisor product of an entire function of order at most `1` is entire. -/
-@[fun_prop]
-theorem differentiable_divisorProductOne {f : ℂ → ℂ}
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) :
-    Differentiable ℂ (divisorProductOne f) :=
-  TauCeti.differentiable_divisorProductOne (h.summable_divisor_toNat_mul_norm_inv_sq hf)
-
 /-- Rewrites the finite partial-fraction sum over `closedBall 0 R` at `z₀ = 0` as the finite sum
 over the norm-`R` sublevel of the whole-plane divisor support. -/
 private theorem finsum_divisor_closedBall_eq_sum_sublevel {f : ℂ → ℂ}
@@ -357,10 +350,13 @@ theorem summable_divisor_toNat_mul_re_one_div {f : ℂ → ℂ}
     ((h.summable_divisor_toNat_mul_norm_inv_sq hf).mul_left (max B 0)) fun ρ ↦ ?_
   have hρ := (hre ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero ρ.property)).trans
     (le_max_left B 0)
-  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (Nat.cast_nonneg _), one_div, inv_re, abs_div,
-    abs_of_nonneg (normSq_nonneg _), normSq_eq_norm_sq, norm_inv, inv_pow, ← mul_assoc,
-    mul_comm (max B 0), mul_assoc, ← div_eq_mul_inv]
-  exact mul_le_mul_of_nonneg_left (div_le_div_of_nonneg_right hρ (sq_nonneg _)) (Nat.cast_nonneg _)
+  set m : ℕ := (MeromorphicOn.divisor f Set.univ ρ).toNat
+  calc ‖(m : ℝ) * (1 / (ρ : ℂ)).re‖
+      = (m : ℝ) * (|(ρ : ℂ).re| / ‖(ρ : ℂ)‖ ^ 2) := by simp [inv_re, normSq_eq_norm_sq]
+    _ ≤ (m : ℝ) * (max B 0 / ‖(ρ : ℂ)‖ ^ 2) := by gcongr
+    _ = max B 0 * ((m : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2) := by
+        simp only [norm_inv, inv_pow]
+        ring
 
 /-- For an entire function `f` of growth order at most `1` whose zeros have bounded real part
 (`|ρ.re| ≤ B`), the unsubtracted real-part series `ρ ↦ m_ρ * Re (1 / (s - ρ))` is summable on the
