@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ScalarTopology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 
 /-!
@@ -16,13 +18,19 @@ import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 
 Compactly supported native bundle sections carry the final locally convex topology of their
 fixed-compact support stages. Each stage has the subspace topology of the compact derivative
-section topology. Linear maps from this space into locally convex real topological vector
-spaces are continuous exactly when they are continuous on every stage. This is the fixed-support
-presentation of the topology used for bundle-valued tests.
+section topology. Linear maps (over `ℝ` or any `ℝ`-algebra) from this space into locally convex
+real topological vector spaces are continuous exactly when they are continuous on every stage.
+This is the fixed-support presentation of the topology used for bundle-valued tests.
+
+When the vector bundle also carries a compatible structure over a normed `ℝ`-algebra `𝕜'` (in
+particular `𝕜' = ℂ`), constant `𝕜'`-scalar multiplication is continuous on compactly supported
+sections, and when `𝕜'` is finite-dimensional over `ℝ` the `𝕜'`-scalar action is jointly
+continuous.
 
 A native test function on the target of a smooth chart, read in a smooth bundle frame, extends by
-zero to a compactly supported section (`Bundle.Trivialization.chartTestSection`). These chart
-extensions are continuous from the native LF topology of `TestFunction`
+zero to a compactly supported section (`Bundle.Trivialization.chartTestSection`), commuting with
+any compatible extension-scalar action (`Bundle.Trivialization.chartTestSectionOfNormedAlgebra`).
+These chart extensions are continuous from the native LF topology of `TestFunction`
 (`Bundle.Trivialization.continuous_chartTestSection`), so precomposing a continuous linear
 functional on bundle tests with a chart extension gives a continuous linear functional on the
 native test functions of the chart target. In any smooth frame the coefficients of an extended
@@ -66,6 +74,39 @@ def compactlySupportedTopology : TopologicalSpace (compactlySupported I F n V) :
   letI := frameTopology (I := I) (n := n) e U hU
   TauCeti.finalLocallyConvexTopology (ofSupportedIn (I := I) (F := F) (V := V) (n := n))
 
+/-- Unfolding equation expressing `compactlySupportedTopology` as the final locally convex topology
+of its fixed-compact support stages. -/
+theorem compactlySupportedTopology_eq_finalLocallyConvexTopology :
+    letI := frameTopology (I := I) (n := n) e U hU
+    compactlySupportedTopology (I := I) (n := n) e U hU =
+      TauCeti.finalLocallyConvexTopology (ofSupportedIn (I := I) (F := F) (V := V) (n := n)) :=
+  (rfl)
+
+/-- Addition and negation are continuous in `compactlySupportedTopology`. -/
+theorem isTopologicalAddGroup_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    IsTopologicalAddGroup (compactlySupported I F n V) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  infer_instance
+
+/-- Real scalar multiplication is jointly continuous in `compactlySupportedTopology`. -/
+theorem continuousSMul_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    ContinuousSMul ℝ (compactlySupported I F n V) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  infer_instance
+
+/-- Compactly supported bundle sections with `compactlySupportedTopology` form a locally convex
+real topological vector space. -/
+theorem locallyConvexSpace_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    LocallyConvexSpace ℝ (compactlySupported I F n V) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  infer_instance
+
 /-- Every fixed-compact support inclusion is continuous. -/
 theorem continuous_ofSupportedIn (K : Compacts M) :
     letI := frameTopology (I := I) (n := n) e U hU
@@ -78,11 +119,13 @@ theorem continuous_ofSupportedIn (K : Compacts M) :
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
   [IsTopologicalAddGroup G] [ContinuousSMul ℝ G] [LocallyConvexSpace ℝ G]
 
-/-- The linear universal property of compactly supported section tests for maps into locally
-convex real topological vector spaces. Continuity is checked on fixed-compact stages, not just
-on individual section values. -/
-theorem continuous_compactlySupportedTopology_iff
-    (g : compactlySupported I F n V →ₗ[ℝ] G) :
+/-- The linear universal property of compactly supported section tests for maps over an
+`ℝ`-algebra into locally convex real topological vector spaces. Continuity is checked on
+fixed-compact stages, not just on individual section values. -/
+theorem continuous_compactlySupportedTopology_iff {𝕜 : Type*} [Semiring 𝕜] [Algebra ℝ 𝕜]
+    [Module 𝕜 (compactlySupported I F n V)] [IsScalarTower ℝ 𝕜 (compactlySupported I F n V)]
+    [Module 𝕜 G] [IsScalarTower ℝ 𝕜 G]
+    (g : compactlySupported I F n V →ₗ[𝕜] G) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     Continuous g ↔ ∀ K : Compacts M, Continuous (g ∘ ofSupportedIn K) := by
@@ -143,6 +186,53 @@ theorem compactlySupportedTopology_eq_induced [CompactSpace M] :
           Continuous (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯)))) K R
     (fun s => Subtype.ext (ofSupportedIn_apply K (R s)))
 
+section ExtensionScalars
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra ℝ 𝕜']
+  [NormedSpace 𝕜' F] [IsScalarTower ℝ 𝕜' F]
+  [∀ x, Module 𝕜' (V x)] [∀ x, IsScalarTower ℝ 𝕜' (V x)] [VectorBundle 𝕜' F V]
+
+/-- Constant multiplication by an extension scalar `c : 𝕜'` is continuous for the fixed-compact
+inductive topology on compactly supported sections. -/
+theorem continuousConstSMul_compactlySupportedTopology_ofNormedAlgebra :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    ContinuousConstSMul 𝕜' (compactlySupported I F n V) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  refine ⟨fun c ↦ ?_⟩
+  let lc : compactlySupported I F n V →ₗ[ℝ] compactlySupported I F n V :=
+    { toFun s := c • s
+      map_add' := smul_add c
+      map_smul' r s := by
+        rw [RingHom.id_apply, ← algebraMap_smul 𝕜' r (c • s), ← algebraMap_smul 𝕜' r s,
+          smul_smul, mul_comm, mul_smul] }
+  refine (continuous_compactlySupportedTopology_iff e U hU lc).2 fun K ↦ ?_
+  let := continuousSMul_supportedIn_ofNormedAlgebra (𝕜' := 𝕜') (I := I) (n := n) e U hU (K := K)
+  exact ((continuous_ofSupportedIn e U hU K).comp (continuous_const_smul c)).congr fun _ ↦
+    Subtype.ext (by simp [lc])
+
+/-- When the extension field `𝕜'` is finite-dimensional over `ℝ` (in particular `𝕜' = ℂ`), scalar
+multiplication by `𝕜'` is jointly continuous on compactly supported sections. -/
+theorem continuousSMul_compactlySupportedTopology_ofNormedAlgebra [FiniteDimensional ℝ 𝕜'] :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    ContinuousSMul 𝕜' (compactlySupported I F n V) := by
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  let := continuousConstSMul_compactlySupportedTopology_ofNormedAlgebra
+    (𝕜' := 𝕜') (I := I) (n := n) e U hU
+  let b := Module.finBasis ℝ 𝕜'
+  have hb : Continuous b.equivFun :=
+    LinearMap.continuous_of_finiteDimensional b.equivFun.toLinearMap
+  refine ⟨(continuous_finsetSum Finset.univ fun i _ ↦
+    Continuous.smul (f := fun p : 𝕜' × compactlySupported I F n V ↦ b.equivFun p.1 i)
+      (g := fun p : 𝕜' × compactlySupported I F n V ↦ b i • p.2)
+      ((continuous_apply i).comp (hb.comp continuous_fst))
+      ((continuous_const_smul (b i)).comp continuous_snd)).congr fun p ↦ ?_⟩
+  conv_rhs => rw [← b.sum_equivFun p.1, Finset.sum_smul]
+  simp only [smul_assoc]
+  rfl
+
+end ExtensionScalars
+
 section Cover
 
 variable [LocallyCompactSpace E] (hcover : ∀ x : M, ∃ i, x ∈ U i)
@@ -180,6 +270,56 @@ namespace Bundle.Trivialization
 
 open ContMDiffSection
 open scoped Distributions TauCeti.ManifoldWeakWhitney
+
+section ExtensionScalars
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra ℝ 𝕜']
+  [NormedSpace 𝕜' F] [IsScalarTower ℝ 𝕜' F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, Module 𝕜' (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle 𝕜' F V]
+  {n : ℕ∞} [ContMDiffVectorBundle n F V I]
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+  (c : OpenPartialHomeomorph M E)
+  (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) (hct : c.source ⊆ t.baseSet)
+
+/-- Extending native test functions through an extension-linear bundle frame commutes with
+extension scalars. -/
+theorem chartTestSection_smul_ofNormedAlgebra (a : 𝕜')
+    (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    t.chartTestSection c hc hct (a • φ) = a • t.chartTestSection c hc hct φ := by
+  apply Subtype.ext
+  ext x
+  by_cases hx : x ∈ c.source
+  · rw [t.chartTestSection_apply_of_mem c hc hct _ hx,
+      coe_smul_compactlySupported_of_normedAlgebra, coe_smul_of_normedAlgebra, Pi.smul_apply,
+      t.chartTestSection_apply_of_mem c hc hct _ hx, t.symmL_apply (hct hx),
+      t.symmL_apply (hct hx), ← t.symmL_apply (R := 𝕜') (hct hx),
+      ← t.symmL_apply (R := 𝕜') (hct hx), FunLike.coe_smul, Pi.smul_apply, map_smul]
+  · rw [t.chartTestSection_apply_of_notMem c hc hct _ hx,
+      coe_smul_compactlySupported_of_normedAlgebra, coe_smul_of_normedAlgebra, Pi.smul_apply,
+      t.chartTestSection_apply_of_notMem c hc hct _ hx, smul_zero]
+
+variable (𝕜') in
+/-- Chart extension of native test functions regarded as a `𝕜'`-linear map into compactly
+supported sections. -/
+def chartTestSectionOfNormedAlgebra :
+    𝓓^{n}(⟨c.target, c.open_target⟩, F) →ₗ[𝕜'] compactlySupported I F n V where
+  toFun := t.chartTestSection c hc hct
+  map_add' := (t.chartTestSection c hc hct).map_add
+  map_smul' := t.chartTestSection_smul_ofNormedAlgebra c hc hct
+
+@[simp]
+theorem coe_chartTestSectionOfNormedAlgebra :
+    ⇑(t.chartTestSectionOfNormedAlgebra 𝕜' c hc hct) = t.chartTestSection c hc hct :=
+  (rfl)
+
+end ExtensionScalars
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
