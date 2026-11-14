@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
+public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -21,7 +22,8 @@ The defining equations use contraction of the coproduct, not a chosen representa
 We also give their Sweedler-sum forms for any `Coalgebra.Repr`. On a projective module,
 the equations are equivalent to the right and left integral equations for convolution.
 For finite projective bialgebras the scalar in these equations is precisely the counit
-of `TauCeti.ConvolutionDual`.
+of `TauCeti.ConvolutionDual`, identifying `rightCointegrals` and `leftCointegrals` with the
+right and left integral submodules of `TauCeti.ConvolutionDual`.
 
 ## References
 
@@ -178,5 +180,80 @@ theorem isLeftCointegral_iff_convMul [Module.Projective k H] (φ : Module.Dual k
   have heq := congrArg (fun f : ConvolutionDual k H => f h) (hφ (WithConv.toConv ψ))
   rw [ConvolutionDual.mul_apply_eq_lTensor] at heq
   simpa [mul_comm] using heq
+
+section Bialgebra
+
+variable {k H : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
+  [Module.Finite k H] [Module.Projective k H]
+
+/-- Over a finite projective bialgebra, the right integrals of the convolution dual are
+precisely the right cointegrals. -/
+@[simp]
+theorem mem_rightIntegral_convolutionDual_iff (ψ : ConvolutionDual k H) :
+    ψ ∈ rightIntegral k (ConvolutionDual k H) ↔ IsRightCointegral ψ.ofConv := by
+  rw [mem_rightIntegral_iff, isRightCointegral_iff_convMul, WithConv.toConv_ofConv]
+  rfl
+
+/-- Over a finite projective bialgebra, the left integrals of the convolution dual are
+precisely the left cointegrals. -/
+@[simp]
+theorem mem_leftIntegral_convolutionDual_iff (ψ : ConvolutionDual k H) :
+    ψ ∈ leftIntegral k (ConvolutionDual k H) ↔ IsLeftCointegral ψ.ofConv := by
+  rw [mem_leftIntegral_iff, isLeftCointegral_iff_convMul, WithConv.toConv_ofConv]
+  rfl
+
+variable (k H) in
+/-- Over a finite projective bialgebra, the right-cointegral submodule is linearly equivalent to
+the right-integral submodule of the convolution dual. -/
+noncomputable def rightCointegralsEquivRightIntegral :
+    rightCointegrals k H ≃ₗ[k] rightIntegral k (ConvolutionDual k H) :=
+  (WithConv.linearEquiv k (Module.Dual k H)).symm.ofSubmodules
+    (rightCointegrals k H) (rightIntegral k (ConvolutionDual k H)) <| by
+    ext ψ
+    simp [Submodule.mem_map_equiv]
+
+/-- `rightCointegralsEquivRightIntegral` acts on carriers via `WithConv.toConv`. -/
+@[simp]
+theorem rightCointegralsEquivRightIntegral_apply (φ : rightCointegrals k H) :
+    (rightCointegralsEquivRightIntegral k H φ : ConvolutionDual k H) =
+      WithConv.toConv (φ : Module.Dual k H) :=
+  (rfl)
+
+/-- The inverse of `rightCointegralsEquivRightIntegral` acts on carriers via `WithConv.ofConv`. -/
+@[simp]
+theorem rightCointegralsEquivRightIntegral_symm_apply
+    (ψ : rightIntegral k (ConvolutionDual k H)) :
+    ((rightCointegralsEquivRightIntegral k H).symm ψ : Module.Dual k H) =
+      (ψ : ConvolutionDual k H).ofConv := by
+  rw [rightCointegralsEquivRightIntegral, LinearEquiv.ofSubmodules_symm_apply]
+  rfl
+
+variable (k H) in
+/-- Over a finite projective bialgebra, the left-cointegral submodule is linearly equivalent to
+the left-integral submodule of the convolution dual. -/
+noncomputable def leftCointegralsEquivLeftIntegral :
+    leftCointegrals k H ≃ₗ[k] leftIntegral k (ConvolutionDual k H) :=
+  (WithConv.linearEquiv k (Module.Dual k H)).symm.ofSubmodules
+    (leftCointegrals k H) (leftIntegral k (ConvolutionDual k H)) <| by
+    ext ψ
+    simp [Submodule.mem_map_equiv]
+
+/-- `leftCointegralsEquivLeftIntegral` acts on carriers via `WithConv.toConv`. -/
+@[simp]
+theorem leftCointegralsEquivLeftIntegral_apply (φ : leftCointegrals k H) :
+    (leftCointegralsEquivLeftIntegral k H φ : ConvolutionDual k H) =
+      WithConv.toConv (φ : Module.Dual k H) :=
+  (rfl)
+
+/-- The inverse of `leftCointegralsEquivLeftIntegral` acts on carriers via `WithConv.ofConv`. -/
+@[simp]
+theorem leftCointegralsEquivLeftIntegral_symm_apply
+    (ψ : leftIntegral k (ConvolutionDual k H)) :
+    ((leftCointegralsEquivLeftIntegral k H).symm ψ : Module.Dual k H) =
+      (ψ : ConvolutionDual k H).ofConv := by
+  rw [leftCointegralsEquivLeftIntegral, LinearEquiv.ofSubmodules_symm_apply]
+  rfl
+
+end Bialgebra
 
 end TauCeti

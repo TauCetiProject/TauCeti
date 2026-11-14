@@ -25,6 +25,10 @@ endomorphism, representing inversion on a commutative affine group.
 
 * `TauCeti.HopfAlgebra.antipode_comul_antidistrib`: the identity as an equality of linear maps.
 * `TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply`: the pointwise form.
+* `TauCeti.HopfAlgebra.mul_includeRight_comul_antipode_apply`: cancelling `(1 ⊗ c₁) * Δ(S(c₂))` to
+  `S(c) ⊗ 1` in `C ⊗[R] C`.
+* `TauCeti.HopfAlgebra.mul_comul_antipode_includeLeft_apply`: cancelling `Δ(S(c₁)) * (c₂ ⊗ 1)` to
+  `1 ⊗ S(c)` in `C ⊗[R] C`.
 * `TauCeti.HopfAlgebra.antipode_antipode`: the antipode of a commutative Hopf algebra is
   involutive.
 * `TauCeti.HopfAlgebra.antipodeAlgEquiv`: the antipode as an algebra equivalence in the
@@ -233,6 +237,61 @@ theorem antipode_comul_antidistrib_apply (c : C) :
       TensorProduct.map (antipode R) (antipode R)
         ((TensorProduct.comm R C C) (Coalgebra.comul c)) :=
   LinearMap.congr_fun antipode_comul_antidistrib c
+
+/-- Postcomposing the antipode convolution identity `LinearMap.id_mul_antipode` with an algebra
+homomorphism `f`: the map `f ∘ₗ antipode` is a right convolution inverse of `f`. -/
+private lemma algHom_mul_comp_antipode {D : Type w} [Semiring D] [Algebra R D]
+    (f : C →ₐ[R] D) :
+    (toConv f.toLinearMap : WithConv (C →ₗ[R] D)) *
+        toConv (f.toLinearMap ∘ₗ antipode R) = 1 := by
+  refine WithConv.ofConv_injective ?_
+  calc ((toConv f.toLinearMap : WithConv (C →ₗ[R] D)) *
+        toConv (f.toLinearMap ∘ₗ antipode R)).ofConv
+      = f.toLinearMap ∘ₗ
+          (toConv LinearMap.id * toConv (antipode R) : WithConv (C →ₗ[R] C)).ofConv := by
+        rw [LinearMap.algHom_comp_convMul_distrib]
+        simp
+    _ = (1 : WithConv (C →ₗ[R] D)).ofConv := by
+        rw [LinearMap.id_mul_antipode]
+        ext c
+        simp
+
+/-- Multiplying `(1 ⊗ c₁)` on the right by `Δ(S(c₂))` in `C ⊗[R] C` cancels the middle leg and
+leaves `S(c) ⊗ 1`. -/
+theorem mul_includeRight_comul_antipode_apply (c : C) :
+    LinearMap.mul' R (C ⊗[R] C)
+        (TensorProduct.map
+          (Algebra.TensorProduct.includeRight (R := R) (A := C) (B := C)).toLinearMap
+          (Coalgebra.comul ∘ₗ antipode R) (Coalgebra.comul c)) =
+      antipode R c ⊗ₜ[R] 1 := by
+  have hconv :
+      (toConv (Algebra.TensorProduct.includeRight (R := R) (A := C) (B := C)).toLinearMap :
+          WithConv (C →ₗ[R] C ⊗[R] C)) *
+        toConv (Coalgebra.comul ∘ₗ antipode R) =
+      toConv ((Algebra.TensorProduct.includeLeft (R := R) (A := C) (B := C)).toLinearMap ∘ₗ
+        antipode R) := by
+    rw [antipode_comul_antidistrib, map_comp_comm_comp_comul_eq_convMul (antipode R), ← mul_assoc,
+      algHom_mul_comp_antipode (Algebra.TensorProduct.includeRight : C →ₐ[R] C ⊗[R] C), one_mul]
+  simpa [LinearMap.convMul_def] using
+    LinearMap.congr_fun (congrArg WithConv.ofConv hconv) c
+
+/-- Multiplying `Δ(S(c₁))` on the right by `(c₂ ⊗ 1)` in `C ⊗[R] C` cancels the middle leg and
+leaves `1 ⊗ S(c)`. -/
+theorem mul_comul_antipode_includeLeft_apply (c : C) :
+    LinearMap.mul' R (C ⊗[R] C)
+        (TensorProduct.map (Coalgebra.comul ∘ₗ antipode R)
+          (Algebra.TensorProduct.includeLeft (R := R) (A := C) (B := C)).toLinearMap
+          (Coalgebra.comul c)) =
+      1 ⊗ₜ[R] antipode R c := by
+  have hconv :
+      (toConv (Coalgebra.comul ∘ₗ antipode R) : WithConv (C →ₗ[R] C ⊗[R] C)) *
+        toConv (Algebra.TensorProduct.includeLeft (R := R) (A := C) (B := C)).toLinearMap =
+      toConv ((Algebra.TensorProduct.includeRight (R := R) (A := C) (B := C)).toLinearMap ∘ₗ
+        antipode R) := by
+    rw [antipode_comul_antidistrib, map_comp_comm_comp_comul_eq_convMul (antipode R), mul_assoc,
+      algHom_comp_antipode_mul_self (Algebra.TensorProduct.includeLeft : C →ₐ[R] C ⊗[R] C), mul_one]
+  simpa [LinearMap.convMul_def] using
+    LinearMap.congr_fun (congrArg WithConv.ofConv hconv) c
 
 /-- The antipode of a commutative and cocommutative Hopf algebra, as a bialgebra
 endomorphism. Contravariantly, this represents inversion on a commutative affine group. -/
