@@ -70,6 +70,46 @@ theorem IdealSheafData.ideal_le_ker_appLE_of_le
   rw [RingHom.mem_ker, ← Scheme.Hom.appLE_map f e (homOfLE hV).op, CommRingCat.comp_apply,
     RingHom.mem_ker.1 hx, map_zero]
 
+/-- If `I` lies in the kernel of `f : X ⟶ Z`, then the sections of `I` over an affine open `U` die
+under `f.appLE U V e` for every open `V ⊆ f⁻¹ U`. -/
+theorem IdealSheafData.ideal_le_ker_appLE {X Z : Scheme.{u}} (I : Z.IdealSheafData) {f : X ⟶ Z}
+    (h : I ≤ f.ker) (U : Z.affineOpens) {V : X.Opens} (e : V ≤ f ⁻¹ᵁ U) :
+    I.ideal U ≤ RingHom.ker (f.appLE U V e).hom :=
+  (h U).trans ((f.ideal_ker_le U).trans (f.ker_app_le_ker_appLE e))
+
+/-- An ideal sheaf `I` lies in the kernel of `f : X ⟶ Z` as soon as, around each point `p` of `X`,
+the sections of `I` over some affine open `U` of `Z` die under `f.appLE U W e` for an open
+neighbourhood `W ⊆ f⁻¹ U` of `p`. -/
+theorem IdealSheafData.le_ker_of_forall_exists {X Z : Scheme.{u}} (I : Z.IdealSheafData)
+    (f : X ⟶ Z)
+    (h : ∀ p : X, ∃ (U : Z.affineOpens) (W : X.Opens) (e : W ≤ f ⁻¹ᵁ U), p ∈ W ∧
+      I.ideal U ≤ RingHom.ker (f.appLE U W e).hom) :
+    I ≤ f.ker := by
+  refine le_ofIdeals_iff.2 fun V x hx ↦ RingHom.mem_ker.2 <| X.IsSheaf.section_ext fun p hp ↦ ?_
+  -- near `p`, refine `V` to an affine open `V' ⊆ V ∩ U` of `Z` containing `f p`
+  obtain ⟨U, W, e, hpW, hU⟩ := h p
+  obtain ⟨_, ⟨V', hV', rfl⟩, hpV', hV'le⟩ := Z.isBasis_affineOpens.exists_subset_of_mem_open
+    (show f p ∈ V.1 ⊓ U.1 from ⟨hp, e hpW⟩) (V.1 ⊓ U.1).2
+  have hV'V : (⟨V', hV'⟩ : Z.affineOpens) ≤ V := fun y hy ↦ (hV'le hy).1
+  have hV'U : (⟨V', hV'⟩ : Z.affineOpens) ≤ U := fun y hy ↦ (hV'le hy).2
+  refine ⟨W ⊓ f ⁻¹ᵁ V', inf_le_right.trans (f.preimage_mono hV'V), ⟨hpW, hpV'⟩, ?_⟩
+  have := I.ideal_le_ker_appLE_of_le f (U' := ⟨V', hV'⟩) hV'U (inf_le_left : W ⊓ f ⁻¹ᵁ V' ≤ W) e
+    inf_le_right hU (I.ideal_le_comap_ideal hV'V hx)
+  rw [RingHom.mem_ker, ← CommRingCat.comp_apply, Scheme.Hom.map_appLE] at this
+  simpa [Scheme.Hom.appLE] using this
+
+/-- An ideal sheaf `I` lies in the kernel of `f : X ⟶ Z` if and only if its sections over every
+affine open `U` of `Z` die under `f.appLE U V e` for every affine open `V ⊆ f⁻¹ U` of `X`. -/
+theorem IdealSheafData.le_ker_iff {X Z : Scheme.{u}} (I : Z.IdealSheafData) (f : X ⟶ Z) :
+    I ≤ f.ker ↔ ∀ (U : Z.affineOpens) (V : X.affineOpens) (e : V.1 ≤ f ⁻¹ᵁ U.1),
+      I.ideal U ≤ RingHom.ker (f.appLE U V e).hom := by
+  refine ⟨fun h U V e ↦ I.ideal_le_ker_appLE h U e, fun h ↦ I.le_ker_of_forall_exists f fun p ↦ ?_⟩
+  obtain ⟨_, ⟨U, hU, rfl⟩, hpU, -⟩ := Z.isBasis_affineOpens.exists_subset_of_mem_open
+    (Set.mem_univ (f p)) isOpen_univ
+  obtain ⟨_, ⟨V, hV, rfl⟩, hpV, hVle⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
+    (show p ∈ (f ⁻¹ᵁ U).1 from hpU) (f ⁻¹ᵁ U).2
+  exact ⟨⟨U, hU⟩, V, hVle, hpV, h ⟨U, hU⟩ ⟨V, hV⟩ hVle⟩
+
 /-- Ideal sheaves with equal pullbacks to every member of an open cover are equal. -/
 theorem IdealSheafData.ext_of_comap_openCover
     {I J : X.IdealSheafData} (𝒰 : X.OpenCover)
