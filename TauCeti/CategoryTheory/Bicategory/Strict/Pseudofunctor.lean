@@ -56,6 +56,7 @@ lemma isoMapOfCommSq_hom_whiskerLeft_mapId' {X Y : B₀} {t : X ⟶ X} {u : X �
 /-- Horizontal pasting: the square isomorphism of the composite of two horizontally adjacent
 commutative squares is the pasting of their square isomorphisms, up to the composition
 comparisons of the top edges `t₁ ≫ t₂ = t` and the bottom edges `b₁ ≫ b₂ = b`. -/
+@[to_app]
 lemma isoMapOfCommSq_hom_whiskerLeft_mapComp' {X₁ Y₁ Z₁ X₂ Y₂ Z₂ : B₀}
     {t₁ : X₁ ⟶ Y₁} {t₂ : Y₁ ⟶ Z₁} {t : X₁ ⟶ Z₁} {l : X₁ ⟶ X₂} {m : Y₁ ⟶ Y₂} {r : Z₁ ⟶ Z₂}
     {b₁ : X₂ ⟶ Y₂} {b₂ : Y₂ ⟶ Z₂} {b : X₂ ⟶ Z₂}
@@ -100,6 +101,7 @@ lemma isoMapOfCommSq_hom_whiskerRight_mapId' {X Y : B₀} {t : X ⟶ Y} {l : X �
 /-- Vertical pasting: the square isomorphism of the composite of two vertically adjacent
 commutative squares is the pasting of their square isomorphisms, up to the composition
 comparisons of the left edges `l₁ ≫ l₂ = l` and the right edges `r₁ ≫ r₂ = r`. -/
+@[to_app]
 lemma isoMapOfCommSq_hom_whiskerRight_mapComp' {X₁ Y₁ X₂ Y₂ X₃ Y₃ : B₀}
     {t : X₁ ⟶ Y₁} {l₁ : X₁ ⟶ X₂} {r₁ : Y₁ ⟶ Y₂} {m : X₂ ⟶ Y₂} {l₂ : X₂ ⟶ X₃} {r₂ : Y₂ ⟶ Y₃}
     {b : X₃ ⟶ Y₃} {l : X₁ ⟶ X₃} {r : Y₁ ⟶ Y₃}
