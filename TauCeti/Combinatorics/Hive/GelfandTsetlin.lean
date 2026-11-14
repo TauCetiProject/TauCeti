@@ -344,20 +344,9 @@ hive coordinates. -/
 @[simp] theorem rowWeight_toGTPattern (h : IntegerHive n) :
     h.toGTPattern.rowWeight = fun r => -h.boundary 2 r.rev - h.boundary 0 r := by
   funext r
-  rw [GTPattern.rowWeight_apply]
-  rw [sum_toGTPattern_chart h le_rfl (by omega),
-    sum_toGTPattern_chart h le_rfl (by omega),
-    chart_self, chart_self, chart_zero, chart_zero, boundary_apply, boundary_apply]
-  have h2s : Vertex.edgePoint n 2 r.rev.succ =
-      Vertex.edgePoint n 2 ⟨n - r.val, by omega⟩ := by
-    ext <;> simp <;> omega
-  have h2c : Vertex.edgePoint n 2 r.rev.castSucc =
-      Vertex.edgePoint n 2 ⟨n - (r.val + 1), by omega⟩ := by
-    ext <;> simp
-  have h0s : r.succ = (⟨r.val + 1, by omega⟩ : Fin (n + 1)) := Fin.ext (by simp)
-  have h0c : r.castSucc = (⟨r.val, by omega⟩ : Fin (n + 1)) := Fin.ext (by simp)
-  rw [h2s, h2c, h0s, h0c]
-  abel
+  have hb := congrFun (boundaryLinear_gtCompletion_two (h.boundary 0) h.toGTPattern) r.rev
+  simp only [gtCompletion_toGTPattern, boundaryLinear_coe, Fin.rev_rev] at hb
+  omega
 
 /-- In product boundary convention, the top row of the directional pattern is `μ`. -/
 theorem topRow_toGTPattern_of_productBoundary {lam μ γ : DominantWeight n}
