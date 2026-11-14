@@ -67,7 +67,7 @@ theorem exists_mfderiv_central_eq (Φ : Isom J Nil) :
           (0, 0, ε) := by
   let a : P → ℝ := fun p => (fderiv ℝ (toProd ∘ Φ ∘ toProd.symm) p (0, 0, 1)).2.2
   have ha : Continuous a :=
-    (((contDiff_toProd_isometry Φ).continuous_fderiv_apply (by simp)).comp
+    ((((contDiff_toProd_conj_iff (f := Φ)).2 Φ.contMDiff).continuous_fderiv_apply (by simp)).comp
       (continuous_id.prodMk continuous_const)).snd.snd
   have hmaps : MapsTo a univ ({1, -1} : Set ℝ) := fun p _ => by
     simpa only [mem_insert_iff, mem_singleton_iff] using (central_derivative Φ p).2.2
@@ -92,7 +92,7 @@ theorem exists_central_eq (Φ : Isom J Nil) :
     rw [← fderiv_toProd_conj_apply] at h
     simpa only [ContinuousLinearEquiv.apply_symm_apply, Equiv.apply_symm_apply] using h
   have h := apply_add_smul_eq_of_fderiv_apply_eq
-    ((contDiff_toProd_isometry Φ).differentiable (by simp)) hder (toProd p) t
+    (((contDiff_toProd_conj_iff (f := Φ)).2 Φ.contMDiff).differentiable (by simp)) hder (toProd p) t
   have hq : toProd.symm (toProd p + t • ((0, 0, 1) : P)) = mk p.x p.y (p.z + t) := by
     rw [Equiv.symm_apply_eq, toProd_mk]
     ext <;> simp [fst_toProd, fst_snd_toProd, snd_snd_toProd]
