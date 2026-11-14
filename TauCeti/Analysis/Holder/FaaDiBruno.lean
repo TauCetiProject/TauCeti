@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Holder.IsBigO
 
 /-!
 # Hölder continuity of the top derivative of a composite
@@ -22,8 +23,8 @@ derivatives of `τ` at `z` of order at most `k`, and Mathlib's
 `FormalMultilinearSeries.taylorComp_sub_taylorComp_isBigO` reduces the Hölder estimate to Hölder
 estimates for those factors. The derivatives of `τ`, and those of `g` of order less than `k`, are
 `C^1`, hence locally Lipschitz, and a Lipschitz bound gives an `α`-Hölder bound at distances at
-most one. The derivative of order `k` of `g` is Hölder by hypothesis, and `τ` is locally
-Lipschitz.
+most one (`ContDiffAt.isBigO_sub_dist_rpow`). The derivative of order `k` of `g` is Hölder by
+hypothesis, and `τ` is locally Lipschitz (`HolderOnWith.isBigO_comp_sub_dist_rpow`).
 
 This is the estimate behind the independence of the Hölder spaces `C^{k,α}` of a compact manifold
 from the choice of charts: with `τ` a transition map between two charts.
@@ -39,55 +40,6 @@ namespace TauCeti
 variable {𝕜 : Type*} [RCLike 𝕜]
   {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
   [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-
-/-- Near the diagonal, the difference of two points is `O(‖z - w‖ ^ α)` for `α ≤ 1`. -/
-theorem isBigO_sub_dist_rpow {α : ℝ≥0} (hα : α ≤ 1) (z₀ : E) :
-    (fun a : E × E ↦ a.1 - a.2) =O[𝓝 z₀ ×ˢ 𝓝 z₀] fun a ↦ dist a.1 a.2 ^ (α : ℝ) := by
-  have hlim : Tendsto (fun a : E × E ↦ dist a.1 a.2) (𝓝 z₀ ×ˢ 𝓝 z₀) (𝓝 0) := by
-    rw [← dist_self z₀, ← nhds_prod_eq]
-    exact continuous_dist.tendsto (z₀, z₀)
-  refine .of_bound 1 ?_
-  filter_upwards [hlim.eventually (gt_mem_nhds zero_lt_one)] with a ha
-  rw [one_mul, Real.norm_of_nonneg (by positivity), ← dist_eq_norm]
-  calc dist a.1 a.2 = dist a.1 a.2 ^ (1 : ℝ) := (Real.rpow_one _).symm
-    _ ≤ dist a.1 a.2 ^ (α : ℝ) :=
-      Real.rpow_le_rpow_of_exponent_ge' dist_nonneg ha.le α.coe_nonneg (by exact_mod_cast hα)
-
-/-- A map that is `C^1` at `z₀` has differences `O(‖z - w‖ ^ α)` near `(z₀, z₀)` for `α ≤ 1`. -/
-theorem _root_.ContDiffAt.isBigO_sub_dist_rpow {φ : E → F} {z₀ : E} (hφ : ContDiffAt 𝕜 1 φ z₀)
-    {α : ℝ≥0} (hα : α ≤ 1) :
-    (fun a : E × E ↦ φ a.1 - φ a.2) =O[𝓝 z₀ ×ˢ 𝓝 z₀] fun a ↦ dist a.1 a.2 ^ (α : ℝ) := by
-  rw [← nhds_prod_eq]
-  refine (hφ.hasStrictFDerivAt_fderiv one_ne_zero).isBigO_sub.trans ?_
-  rw [nhds_prod_eq]
-  exact TauCeti.isBigO_sub_dist_rpow hα z₀
-
-/-- A map continuous at `z₀`, evaluated at either coordinate, is bounded near `(z₀, z₀)`. -/
-private theorem isBoundedUnder_norm_comp_fst_snd {φ : E → F} {z₀ : E} (hφ : ContinuousAt φ z₀) :
-    (𝓝 z₀ ×ˢ 𝓝 z₀).IsBoundedUnder (· ≤ ·) (fun a : E × E ↦ ‖φ a.1‖) ∧
-      (𝓝 z₀ ×ˢ 𝓝 z₀).IsBoundedUnder (· ≤ ·) (fun a : E × E ↦ ‖φ a.2‖) :=
-  ⟨(hφ.tendsto.comp tendsto_fst).norm.isBoundedUnder_le,
-    (hφ.tendsto.comp tendsto_snd).norm.isBoundedUnder_le⟩
-
-omit [NormedSpace 𝕜 G] in
-/-- The top derivative of `g`, Hölder on a neighbourhood of `τ z₀`, composed with a map `τ` that
-is `C^1` at `z₀`, has differences `O(‖z - w‖ ^ α)` near `(z₀, z₀)`. -/
-private theorem isBigO_holder_comp {τ : E → F} {z₀ : E} (hτ : ContDiffAt 𝕜 1 τ z₀) {K : Set F}
-    (hK : K ∈ 𝓝 (τ z₀)) {ψ : F → G} {C α : ℝ≥0} (hH : HolderOnWith C α ψ K) :
-    (fun a : E × E ↦ ψ (τ a.1) - ψ (τ a.2)) =O[𝓝 z₀ ×ˢ 𝓝 z₀]
-      fun a ↦ dist a.1 a.2 ^ (α : ℝ) := by
-  obtain ⟨c, hc, hcτ⟩ := (by
-    rw [← nhds_prod_eq]
-    exact (hτ.hasStrictFDerivAt_fderiv one_ne_zero).isBigO_sub :
-      (fun a : E × E ↦ τ a.1 - τ a.2) =O[𝓝 z₀ ×ˢ 𝓝 z₀] fun a ↦ a.1 - a.2).exists_pos
-  have hτK : ∀ᶠ z in 𝓝 z₀, τ z ∈ K := hτ.continuousAt.preimage_mem_nhds hK
-  refine .of_bound (C * c ^ (α : ℝ)) ?_
-  filter_upwards [hcτ.bound, prod_mem_prod hτK hτK] with a ha hK
-  rw [Real.norm_of_nonneg (by positivity), ← dist_eq_norm, mul_assoc,
-    ← Real.mul_rpow hc.le dist_nonneg]
-  rw [← dist_eq_norm, ← dist_eq_norm] at ha
-  refine (hH.dist_le hK.1 hK.2).trans ?_
-  gcongr
 
 variable {g : F → G} {τ : E → F} {s : Set E} {t : Set F} {k : ℕ} {α : ℝ≥0} {z₀ : E}
 
@@ -126,7 +78,7 @@ theorem exists_holderOnWith_iteratedFDerivWithin_comp (hα : α ≤ 1) (hs : s �
     (q₁ := fun a : E × E ↦ ftaylorSeriesWithin 𝕜 τ s a.1)
     (q₂ := fun a : E × E ↦ ftaylorSeriesWithin 𝕜 τ s a.2)
     (f := fun a : E × E ↦ dist a.1 a.2 ^ (α : ℝ)) (l := 𝓝 z₀ ×ˢ 𝓝 z₀)
-    (fun m hm ↦ (isBoundedUnder_norm_comp_fst_snd (hgc m hm)).1)
+    (fun m hm ↦ ((hgc m hm).tendsto.comp tendsto_fst).norm.isBoundedUnder_le)
     (fun m hm ↦ by
       rcases hm.lt_or_eq with hm | rfl
       · -- Below the top order, the derivatives of `g` along `τ` are `C^1`.
@@ -135,10 +87,10 @@ theorem exists_holderOnWith_iteratedFDerivWithin_comp (hα : α ≤ 1) (hs : s �
         exact (ContDiffWithinAt.comp z₀ (ContDiffWithinAt.iteratedFDerivWithin_right (hg _ hτt)
           hut (by exact_mod_cast (by omega : 1 + m ≤ k)) hτt)
           (ContDiffWithinAt.of_le (hτ z₀ hz₀) (by simp)) hst).contDiffAt hs
-      · exact isBigO_holder_comp
-          ((ContDiffWithinAt.of_le (hτ z₀ hz₀) (by simp)).contDiffAt hs) hK hH)
-    (fun m hm ↦ (isBoundedUnder_norm_comp_fst_snd (hτm m hm).continuousAt).1)
-    (fun m hm ↦ (isBoundedUnder_norm_comp_fst_snd (hτm m hm).continuousAt).2)
+      · exact hH.isBigO_comp_sub_dist_rpow hK
+          ((ContDiffWithinAt.of_le (hτ z₀ hz₀) (by simp)).contDiffAt hs))
+    (fun m hm ↦ ((hτm m hm).continuousAt.tendsto.comp tendsto_fst).norm.isBoundedUnder_le)
+    (fun m hm ↦ ((hτm m hm).continuousAt.tendsto.comp tendsto_snd).norm.isBoundedUnder_le)
     (fun m hm ↦ (hτm m hm).isBigO_sub_dist_rpow hα)
   obtain ⟨c, hc, hcO⟩ := hO.exists_pos
   obtain ⟨u, hu, hub⟩ := eventually_prod_self_iff'.mp
