@@ -260,23 +260,35 @@ theorem map_disjointUnion {L : Type*} (f : Assignment Q K) (g : Assignment R K) 
   apply eq_iff_restrictLeft_restrictRight.2
   exact ⟨rfl, rfl⟩
 
-@[simp]
 theorem disjointUnion_add [Add K] (f f' : Assignment Q K) (g g' : Assignment R K) :
     (f + f').disjointUnion (g + g') = f.disjointUnion g + f'.disjointUnion g' := by
   apply eq_iff_restrictLeft_restrictRight.2
   exact ⟨rfl, rfl⟩
 
 @[simp]
+theorem add_disjointUnion [Add K] (f f' : Assignment Q K) (g g' : Assignment R K) :
+    f.disjointUnion g + f'.disjointUnion g' = (f + f').disjointUnion (g + g') :=
+  (disjointUnion_add f f' g g').symm
+
 theorem disjointUnion_neg [Neg K] (f : Assignment Q K) (g : Assignment R K) :
     (-f).disjointUnion (-g) = -(f.disjointUnion g) := by
   apply eq_iff_restrictLeft_restrictRight.2
   exact ⟨rfl, rfl⟩
 
 @[simp]
+theorem neg_disjointUnion [Neg K] (f : Assignment Q K) (g : Assignment R K) :
+    -(f.disjointUnion g) = (-f).disjointUnion (-g) :=
+  (disjointUnion_neg f g).symm
+
 theorem disjointUnion_sub [Sub K] (f f' : Assignment Q K) (g g' : Assignment R K) :
     (f - f').disjointUnion (g - g') = f.disjointUnion g - f'.disjointUnion g' := by
   apply eq_iff_restrictLeft_restrictRight.2
   exact ⟨rfl, rfl⟩
+
+@[simp]
+theorem sub_disjointUnion [Sub K] (f f' : Assignment Q K) (g g' : Assignment R K) :
+    f.disjointUnion g - f'.disjointUnion g' = (f - f').disjointUnion (g - g') :=
+  (disjointUnion_sub f f' g g').symm
 
 @[simp]
 theorem disjointUnion_zero [Zero K] :
@@ -294,8 +306,8 @@ def disjointUnionEquiv :
   right_inv := disjointUnion_restrictLeft_restrictRight
 
 @[simp]
-theorem disjointUnionEquiv_apply (f : Assignment Q K) (g : Assignment R K) :
-    disjointUnionEquiv (f, g) = f.disjointUnion g :=
+theorem disjointUnionEquiv_apply (p : Assignment Q K × Assignment R K) :
+    disjointUnionEquiv p = p.1.disjointUnion p.2 :=
   (rfl)
 
 @[simp]
@@ -323,6 +335,30 @@ theorem disjointUnion_le_disjointUnion [LE K] {f f' : Assignment Q K}
     f.disjointUnion g ≤ f'.disjointUnion g' ↔ f ≤ f' ∧ g ≤ g' := by
   simp only [le_iff_restrictLeft_restrictRight, restrictLeft_disjointUnion,
     restrictRight_disjointUnion]
+
+@[simp]
+theorem zero_le_disjointUnion [Zero K] [LE K] {f : Assignment Q K} {g : Assignment R K} :
+    0 ≤ f.disjointUnion g ↔ 0 ≤ f ∧ 0 ≤ g := by
+  simp only [le_iff_restrictLeft_restrictRight, restrictLeft_zero, restrictRight_zero,
+    restrictLeft_disjointUnion, restrictRight_disjointUnion]
+
+@[simp]
+theorem disjointUnion_le_zero [Zero K] [LE K] {f : Assignment Q K} {g : Assignment R K} :
+    f.disjointUnion g ≤ 0 ↔ f ≤ 0 ∧ g ≤ 0 := by
+  simp only [le_iff_restrictLeft_restrictRight, restrictLeft_zero, restrictRight_zero,
+    restrictLeft_disjointUnion, restrictRight_disjointUnion]
+
+@[simp]
+theorem disjointUnion_eq_zero [Zero K] {f : Assignment Q K} {g : Assignment R K} :
+    f.disjointUnion g = 0 ↔ f = 0 ∧ g = 0 := by
+  simp only [eq_iff_restrictLeft_restrictRight, restrictLeft_zero, restrictRight_zero,
+    restrictLeft_disjointUnion, restrictRight_disjointUnion]
+
+@[simp]
+theorem zero_eq_disjointUnion [Zero K] {f : Assignment Q K} {g : Assignment R K} :
+    0 = f.disjointUnion g ↔ 0 = f ∧ 0 = g := by
+  simp only [eq_iff_restrictLeft_restrictRight, restrictLeft_zero, restrictRight_zero,
+    restrictLeft_disjointUnion, restrictRight_disjointUnion]
 
 /-- Arbitrary bounds on a disjoint-union assignment hold exactly when their restrictions hold. -/
 theorem mem_Icc_iff_restrictLeft_restrictRight [Preorder K]
@@ -360,7 +396,7 @@ theorem DisjointUnionHom.sum_inr {x y : W}
   (Fintype.sum_equiv DisjointUnionHom.inrEquiv _ _ fun _ ↦ rfl).symm
 
 /-- An arrow sum on a disjoint union is the sum of its two restricted arrow sums. -/
-theorem arrowSum_eq_add_restrictLeft_restrictRight
+theorem arrowSum_eq_restrictLeft_add_restrictRight
     (f : Assignment (DisjointUnionHom Q R) K) (S T : Finset (V ⊕ W)) :
     arrowSum f S T =
       arrowSum f.restrictLeft S.toLeft T.toLeft +
@@ -376,7 +412,7 @@ theorem arrowSum_disjointUnion (f : Assignment Q K) (g : Assignment R K)
       arrowSum f S T + arrowSum g S' T' := by
   simpa only [Finset.toLeft_disjSum, Finset.toRight_disjSum,
     Assignment.restrictLeft_disjointUnion, Assignment.restrictRight_disjointUnion] using
-    arrowSum_eq_add_restrictLeft_restrictRight (f.disjointUnion g)
+    arrowSum_eq_restrictLeft_add_restrictRight (f.disjointUnion g)
       (S.disjSum S') (T.disjSum T')
 
 end Sums
@@ -619,8 +655,9 @@ def disjointUnionEquiv :
   (restrictEquiv (lo.disjointUnion lo') (hi.disjointUnion hi') (Sum.elim b b')).symm
 
 @[simp]
-theorem disjointUnionEquiv_apply (f : ExcessFlow lo hi b) (g : ExcessFlow lo' hi' b') :
-    disjointUnionEquiv (f, g) = f.disjointUnion g :=
+theorem disjointUnionEquiv_apply
+    (p : ExcessFlow lo hi b × ExcessFlow lo' hi' b') :
+    disjointUnionEquiv p = p.1.disjointUnion p.2 :=
   Subtype.ext rfl
 
 @[simp]
@@ -780,9 +817,9 @@ def disjointUnionEquiv :
     (Sum.elim a a') (Sum.elim b b')).symm
 
 @[simp]
-theorem disjointUnionEquiv_apply (f : ExcessIntervalFlow lo hi a b)
-    (g : ExcessIntervalFlow lo' hi' a' b') :
-    disjointUnionEquiv (f, g) = f.disjointUnion g :=
+theorem disjointUnionEquiv_apply
+    (p : ExcessIntervalFlow lo hi a b × ExcessIntervalFlow lo' hi' a' b') :
+    disjointUnionEquiv p = p.1.disjointUnion p.2 :=
   Subtype.ext rfl
 
 @[simp]
