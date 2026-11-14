@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Aut
+public import TauCeti.Combinatorics.Graph.Serre.Quotient
 public import TauCeti.GroupTheory.GroupAction.Hom
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.Hom
@@ -19,6 +19,9 @@ A `G`-tree is a Serre tree with an action of `G` by graph automorphisms without 
 element maps a dart to its reverse. This file sets up the vocabulary of Bass–Serre theory for
 such actions.
 
+* The quotient graph `T / G` of a `G`-tree (`GTree.quotient`) has the orbits of vertices and
+  of darts as its vertices and darts; it is connected, and the projection `GTree.quotientMap`
+  onto it is surjective with the orbits as fibres.
 * An element is *elliptic* when it fixes a vertex and *hyperbolic* otherwise; a subgroup is
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
   set, and an element is elliptic exactly when its translation length
@@ -48,6 +51,8 @@ exchanges the endpoints of a dart.
 ## Main declarations
 
 * `TauCeti.GTree`: a Serre tree with an action of `G` without inversions.
+* `TauCeti.GTree.quotient`, `TauCeti.GTree.quotientMap`: the quotient graph and the projection
+  onto it.
 * `TauCeti.GTree.IsElliptic`, `TauCeti.GTree.IsHyperbolic`,
   `TauCeti.GTree.IsEllipticSubgroup`: elliptic and hyperbolic elements, elliptic subgroups.
 * `TauCeti.GTree.translationLength`: the translation length of an element.
@@ -114,6 +119,56 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 /-- Any two vertices of a `G`-tree are joined by a path. -/
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b
+
+/-! ### The quotient graph -/
+
+section Quotient
+
+/-- The quotient graph `T / G` of a `G`-tree. -/
+abbrev quotient : SerreGraph.{u, v} :=
+  T.toSerreGraph.quotient T.action T.smul_ne_rev
+
+/-- The projection of a `G`-tree to its quotient graph. -/
+abbrev quotientMap : T.toSerreGraph.Hom T.quotient :=
+  T.toSerreGraph.quotientMap T.action T.smul_ne_rev
+
+/-- Every vertex of the quotient graph is the image of a vertex of the tree. -/
+theorem quotientMap_mapV_surjective : Function.Surjective T.quotientMap.mapV :=
+  SerreGraph.quotientMap_mapV_surjective _ _ _
+
+/-- Every dart of the quotient graph is the image of a dart of the tree. -/
+theorem quotientMap_mapE_surjective : Function.Surjective T.quotientMap.mapE :=
+  SerreGraph.quotientMap_mapE_surjective _ _ _
+
+/-- The quotient graph of a `G`-tree is connected. -/
+theorem quotient_connected : T.quotient.Connected :=
+  SerreGraph.quotient_connected T.isTree.connected
+
+variable {T}
+
+/-- Two vertices of a `G`-tree have the same image in the quotient graph exactly when they are in
+the same orbit. -/
+theorem quotientMap_mapV_eq_iff {a b : T.V} :
+    T.quotientMap.mapV a = T.quotientMap.mapV b ↔ ∃ g : G, g • a = b :=
+  SerreGraph.quotientMap_mapV_eq_iff
+
+/-- Two darts of a `G`-tree have the same image in the quotient graph exactly when they are in
+the same orbit. -/
+theorem quotientMap_mapE_eq_iff {e f : T.E} :
+    T.quotientMap.mapE e = T.quotientMap.mapE f ↔ ∃ g : G, g • e = f :=
+  SerreGraph.quotientMap_mapE_eq_iff
+
+/-- A vertex of a `G`-tree and its translates have the same image in the quotient graph. -/
+@[simp] theorem quotientMap_mapV_smul (g : G) (a : T.V) :
+    T.quotientMap.mapV (g • a) = T.quotientMap.mapV a :=
+  SerreGraph.quotientMap_mapV_smul g a
+
+/-- A dart of a `G`-tree and its translates have the same image in the quotient graph. -/
+@[simp] theorem quotientMap_mapE_smul (g : G) (e : T.E) :
+    T.quotientMap.mapE (g • e) = T.quotientMap.mapE e :=
+  SerreGraph.quotientMap_mapE_smul g e
+
+end Quotient
 
 section Translate
 
