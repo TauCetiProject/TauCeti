@@ -27,9 +27,11 @@ for a discrete module over a topological *group* is exactly continuity of the ac
 discrete `G`-modules whose `G`-action is continuous — not on all of them — the two translations are
 shown to be mutually inverse, both on objects and on morphisms.
 
-The construction `TauCeti.ofDiscreteModule` itself is available for *every* discrete `G`-module,
-since a discrete module makes each operator continuous whatever the action does in the group
-variable. It is only its *smoothness* that needs `ContinuousSMul G M`, and that hypothesis cannot
+The construction `TauCeti.ofDiscreteModule` itself is available for every discrete `G`-module
+with continuous scalar action `ContinuousSMul R M` (automatic when `R` is discrete, as for the
+coefficients `ℤ`), since a discrete module makes each operator continuous whatever the action does
+in the group variable. It is only its *smoothness* that needs `ContinuousSMul G M`, and that
+hypothesis cannot
 be dropped: `TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod` exhibits a discrete module
 with a discontinuous action whose object is discrete but not smooth. So the source side of the
 dictionary is the discrete `G`-modules with continuous `G`-action, and the image of the
@@ -211,11 +213,13 @@ variable (R : Type u) [Ring R] [TopologicalSpace R] (G : Type v) [Monoid G]
   [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M]
 
 /-- A discrete `G`-module, in Mathlib's unbundled classes, as an object of `TopRep R G`. Every
-operator is continuous because the module is discrete, which is all this construction needs;
+operator is continuous because the module is discrete, which is all this construction needs
+beyond the continuity of the scalar action `ContinuousSMul R M` (automatic when `R` is discrete);
 continuity in the group variable is a separate hypothesis `ContinuousSMul G M`, carried by
 `TauCeti.ofDiscreteModule_isSmoothDiscrete`. So the result is a discrete object of `TopRep R G`
-for any discrete module, and a *smooth* discrete one as soon as that hypothesis is available;
-`TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod` is a module where it is not.
+for any discrete module with `ContinuousSMul R M`, and a *smooth* discrete one as soon as that
+hypothesis is available; `TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod` is a module
+where it is not.
 
 This is the continuous counterpart of `Rep.ofDistribMulAction`. The body is `@[expose]`d because a
 consumer must see that the underlying module of the result is `M` itself before it can state
