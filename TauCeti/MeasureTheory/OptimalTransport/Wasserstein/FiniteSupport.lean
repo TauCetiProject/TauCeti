@@ -292,7 +292,7 @@ theorem exists_map_range_wassersteinEDist_le
   have hdisp : Measurable fun x ↦ edist x (u (Nat.find (hidx x))) :=
     hd.comp (measurable_id.prodMk hT_meas)
   refine (wassersteinEDist_map_le hd hT_meas.aemeasurable p).trans ?_
-  refine le_trans (eLpNorm_mono_enorm hdisp.aestronglyMeasurable
+  refine le_trans (eLpNorm_mono_eNorm hdisp.aestronglyMeasurable
     (g := fun _ : X ↦ ENNReal.ofReal δ) fun x ↦ ?_) ?_
   · simpa [edist_dist] using ENNReal.ofReal_le_ofReal (Nat.find_spec (hidx x)).le
   · rcases eq_or_ne p 0 with rfl | hp0
@@ -361,7 +361,7 @@ theorem exists_eLpNorm_edist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabili
       eLpNorm_rpow_eq_lintegral hp0 hp_top hf_meas.aemeasurable, withDensity_apply _ (hA_meas n)]
   calc eLpNorm (fun x ↦ edist x (T x)) p μ
       ≤ eLpNorm ((fun _ : X ↦ ENNReal.ofReal δ) + (A n).indicator f) p μ :=
-        eLpNorm_mono_enorm
+        eLpNorm_mono_eNorm
           (measurable_edist.comp (measurable_id.prodMk hT_meas)).aestronglyMeasurable
           fun x ↦ by simpa using hbound x
     _ ≤ ENNReal.ofReal δ + ENNReal.ofReal δ := by

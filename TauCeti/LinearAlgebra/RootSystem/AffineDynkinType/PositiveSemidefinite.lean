@@ -52,10 +52,8 @@ with the semidefiniteness that makes the null space the radical of the form.
 
 ## References
 
-This is the positive-semidefiniteness and radical clause of Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`. See V. Kac, *Infinite dimensional Lie algebras*,
-3rd ed., Theorem 4.3 and Chapter 4, where the affine diagrams are exactly the connected diagrams
-of this semidefinite type.
+See V. Kac, *Infinite dimensional Lie algebras*, 3rd ed., Theorem 4.3 and Chapter 4, where the
+affine diagrams are exactly the connected diagrams of this semidefinite type.
 -/
 
 public section
