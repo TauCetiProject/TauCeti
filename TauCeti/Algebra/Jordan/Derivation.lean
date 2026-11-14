@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Jordan.Basic
+public import TauCeti.Algebra.Jordan.Basic
 public import TauCeti.Algebra.Lie.Derivation.Basic
 
 /-!
@@ -52,29 +52,16 @@ namespace TauCeti
 variable {R A : Type*} [CommRing R] [NonUnitalNonAssocCommRing A] [Module R A]
   [SMulCommClass R A A] [IsScalarTower R A A] [IsCommJordan A] [Invertible (2 : R)]
 
-omit [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] in
-/-- The fully linearized Jordan identity evaluated at a fourth element `d`, up to the factor `2`. -/
-private theorem two_nsmul_linearized_jordan (a b c d : A) :
-    (2 : ℕ) • (a * (b * c * d) - b * c * (a * d) + (b * (c * a * d) - c * a * (b * d))
-      + (c * (a * b * d) - a * b * (c * d))) = 0 := by
-  have h := DFunLike.congr_fun (two_nsmul_lie_lmul_lmul_add_add_eq_zero a b c) d
-  simp only [Ring.lie_def] at h
-  -- Evaluating an additive endomorphism at `d` commutes definitionally with the ring operations
-  -- of `AddMonoid.End A`, which carry no `simp` lemmas of their own for `nsmul` and `sub`.
-  exact h
-
 variable (R) in
 /-- **The commutator of two multiplication operators of a commutative Jordan algebra is a
 derivation**: `⁅L_a, L_b⁆ = L_a L_b - L_b L_a`, the inner derivation of `a` and `b`. -/
 theorem lie_mulLeft_mulLeft_mem_derivationLieAlgebra (a b : A) :
     ⁅(LinearMap.mulLeft R a : Module.End R A), LinearMap.mulLeft R b⁆ ∈
       derivationLieAlgebra R A := by
-  have cancel : ∀ x : A, (2 : ℕ) • x = 0 → x = 0 := fun x hx => by
-    simpa [← Nat.cast_smul_eq_nsmul R, smul_smul] using congrArg (⅟(2 : R) • ·) hx
   rw [mem_derivationLieAlgebra]
   intro x y
-  have h₁ := cancel _ (two_nsmul_linearized_jordan y b x a)
-  have h₂ := cancel _ (two_nsmul_linearized_jordan y a x b)
+  have h₁ := Jordan.mul_mul_mul_sub_add_add_eq_zero (Jordan.isSMulRegular_two R A) y b x a
+  have h₂ := Jordan.mul_mul_mul_sub_add_add_eq_zero (Jordan.isSMulRegular_two R A) y a x b
   simp only [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, LinearMap.mulLeft_apply]
   rw [← sub_eq_zero]
   have key : a * (b * (x * y)) - b * (a * (x * y)) -
