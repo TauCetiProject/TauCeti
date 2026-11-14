@@ -33,10 +33,12 @@ More generally, a matrix `w j k` dominated by a summable kernel `a : ℤ → ℝ
 this is how an operator that moves the Littlewood–Paley blocks of a function to blocks of nearby
 index, with geometric decay in the distance, is bounded on dyadic sequence spaces.
 
-Similarly, for `0 ≤ r < 1` the **geometric tail sums** `j ↦ ∑_{d ≥ 0} r ^ d f (j + d)` of a
-sequence in `ℓᵖ`, `1 ≤ p`, form a sequence in `ℓᵖ` of norm at most `(1 - r)⁻¹ ‖f‖`
-(`lp.exists_forall_hasSum_pow_smul_add_and_norm_le`): they are an absolutely convergent series of
-shifts. Such sums arise when each dyadic piece interacts with all the pieces of higher index, with
+Similarly, for `0 ≤ r < 1` the **geometric tail sums** `j ↦ ∑_{d ≥ 0} r ^ d f (j + d)` and
+**geometric prefix sums** `m ↦ ∑_{k < m} r ^ (m - k) f k` of a sequence in `ℓᵖ`, `1 ≤ p`, form
+sequences in `ℓᵖ` of norm at most `(1 - r)⁻¹ ‖f‖` and `r (1 - r)⁻¹ ‖f‖`
+(`lp.exists_forall_hasSum_pow_smul_add_and_norm_le`,
+`lp.exists_forall_eq_sum_pow_smul_and_norm_le`): both are absolutely convergent series of shifts,
+arising when each dyadic piece interacts with all pieces of higher or lower index with
 geometrically decaying weights.
 -/
 
@@ -228,3 +230,57 @@ theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [Norme
     simpa [lp.coeFnAddMonoidHom_apply, lp.coeFn_smul, hT] using h
   · calc ‖∑' d, r ^ d • T d‖ ≤ ∑' d, ‖f‖ * r ^ d := tsum_of_norm_bounded hgeom.hasSum hbound
       _ = (1 - r)⁻¹ * ‖f‖ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, mul_comm]
+
+/-- **Geometric prefix sums in `ℓᵖ`.** For `1 ≤ p` and `0 ≤ r < 1`, the prefix sums
+`m ↦ ∑_{k < m} r ^ (m - k) • f k` of a sequence `f ∈ ℓᵖ` form a sequence in `ℓᵖ` of norm at most
+`r (1 - r)⁻¹ ‖f‖`. -/
+theorem lp.exists_forall_eq_sum_pow_smul_and_norm_le [Fact (1 ≤ p)] [NormedSpace ℝ G]
+    [CompleteSpace G] (f : lp (fun _ : ℕ ↦ G) p) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
+    ∃ g : lp (fun _ : ℕ ↦ G) p, (∀ m, g m = ∑ k ∈ Finset.range m, r ^ (m - k) • f k) ∧
+      ‖g‖ ≤ r * (1 - r)⁻¹ * ‖f‖ := by
+  have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  have hinj (d : ℕ) : {m | d + 1 ≤ m}.InjOn fun m ↦ m - (d + 1) :=
+    fun _ hm _ hm' h ↦ tsub_inj_left hm hm' h
+  -- The right-shift `T d` reads `f (m - d - 1)` for `d + 1 ≤ m` and has norm at most `‖f‖`.
+  set T : ℕ → lp (fun _ : ℕ ↦ G) p := fun d ↦
+    ⟨{m | d + 1 ≤ m}.indicator (f ∘ fun m ↦ m - (d + 1)), (lp.memℓp f).indicator_comp (hinj d)⟩
+  have hT (d m : ℕ) : T d m = if d + 1 ≤ m then f (m - (d + 1)) else 0 := by
+    by_cases hm : d + 1 ≤ m
+    · simp only [T, hm, ↓reduceIte]
+      exact Set.indicator_of_mem hm _
+    · simp only [T, hm, ↓reduceIte]
+      exact Set.indicator_of_notMem hm _
+  have hbound (d : ℕ) : ‖r ^ (d + 1) • T d‖ ≤ r * ‖f‖ * r ^ d := by
+    rw [norm_smul, Real.norm_of_nonneg (by positivity), pow_succ']
+    calc r * r ^ d * ‖T d‖ ≤ r * r ^ d * ‖f‖ := by
+          gcongr
+          exact lp.norm_le_of_forall_eq_indicator_comp hp (hinj d) fun _ ↦ rfl
+      _ = r * ‖f‖ * r ^ d := by ring
+  have hgeom := (summable_geometric_of_lt_one hr0 hr1).mul_left (r * ‖f‖)
+  have hsum : Summable fun d ↦ r ^ (d + 1) • T d := Summable.of_norm_bounded hgeom hbound
+  refine ⟨∑' d, r ^ (d + 1) • T d, fun m ↦ ?_, ?_⟩
+  · have h := Pi.hasSum.1 (hsum.hasSum.map (lp.coeFnAddMonoidHom (fun _ : ℕ ↦ G) p)
+      lp.uniformContinuous_coe.continuous) m
+    have hfin : HasSum (fun d ↦ r ^ (d + 1) • T d m)
+        (∑ d ∈ Finset.range m, r ^ (d + 1) • T d m) :=
+      hasSum_sum_of_ne_finset_zero fun d hd ↦ by
+        rw [Finset.mem_range, not_lt] at hd
+        simp [hT, Nat.not_le.2 (Nat.lt_succ_of_le hd)]
+    rw [lp.coeFnAddMonoidHom_apply] at h
+    have hval : (∑' d, r ^ (d + 1) • T d) m =
+        ∑ d ∈ Finset.range m, r ^ (d + 1) • f (m - (d + 1)) := by
+      rw [(h.congr_fun fun d ↦ by simp [lp.coeFn_smul]).unique hfin]
+      exact Finset.sum_congr rfl fun d hd ↦ by simp [hT, Finset.mem_range.1 hd]
+    rw [hval]
+    refine Finset.sum_bij (fun d _ ↦ m - (d + 1)) (fun d hd ↦ ?_) (fun a ha b hb hab ↦ ?_)
+      (fun k hk ↦ ⟨m - (k + 1), ?_, ?_⟩) fun d hd ↦ ?_
+    · rw [Finset.mem_range] at hd ⊢; omega
+    · rw [Finset.mem_range] at ha hb; omega
+    · rw [Finset.mem_range] at hk ⊢; omega
+    · rw [Finset.mem_range] at hk; omega
+    · rw [Finset.mem_range] at hd
+      have hd' : m - (m - (d + 1)) = d + 1 := by omega
+      rw [hd']
+  · calc ‖∑' d, r ^ (d + 1) • T d‖ ≤ ∑' d, r * ‖f‖ * r ^ d :=
+          tsum_of_norm_bounded hgeom.hasSum hbound
+      _ = r * (1 - r)⁻¹ * ‖f‖ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]; ring

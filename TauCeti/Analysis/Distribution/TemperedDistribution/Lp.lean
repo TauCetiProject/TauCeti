@@ -107,6 +107,14 @@ variable [NormedSpace ℝ E] {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNRe
 theorem toTemperedDistribution_zero : ((0 : Lp F p μ) : 𝓢'(E, F)) = 0 :=
   map_zero (toTemperedDistributionCLM F μ p)
 
+/-- The constant function `1` in `L∞(μ)` defines `μ` as a tempered distribution. -/
+@[simp]
+theorem toTemperedDistribution_one [SecondCountableTopology E] :
+    ((1 : Lp ℂ ⊤ μ) : 𝓢'(E, ℂ)) = μ.toTemperedDistribution := by
+  ext g
+  rw [toTemperedDistribution_apply, MeasureTheory.Measure.toTemperedDistribution_apply μ]
+  exact integral_congr_ae ((coeFn_one (E := ℂ) (μ := μ)).mono fun _ hx ↦ by simp [hx])
+
 @[simp]
 theorem toTemperedDistribution_add (f g : Lp F p μ) :
     ((f + g : Lp F p μ) : 𝓢'(E, F)) = (f : 𝓢'(E, F)) + (g : 𝓢'(E, F)) :=

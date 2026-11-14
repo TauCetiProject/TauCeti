@@ -17,11 +17,33 @@ support of a smooth bump function centred at its centre.
 
 * `TauCeti.exists_contDiffBump_tsupport_subset_ball`: a bump centred at `c` whose topological
   support lies in the ball of radius `r` around `c`.
+* `ContDiffBump.exists_rOut_lt_two_pow_mul_rIn` and
+  `ContDiffBump.one_le_of_rOut_lt_two_pow_mul_rIn`: existence and positivity of a dyadic exponent
+  `N` separating the inner and outer radii by `φ.rOut < 2 ^ N * φ.rIn`.
 -/
 
 public section
 
 open Metric
+
+namespace ContDiffBump
+
+variable {E : Type*} {c : E}
+
+/-- Every bump function `φ` admits a dyadic exponent `N : ℕ` with `φ.rOut < 2 ^ N * φ.rIn`. -/
+theorem exists_rOut_lt_two_pow_mul_rIn (φ : ContDiffBump c) :
+    ∃ N : ℕ, φ.rOut < 2 ^ N * φ.rIn := by
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) one_lt_two
+  exact ⟨N, (div_lt_iff₀ φ.rIn_pos).1 hN⟩
+
+/-- Any exponent `N` satisfying `φ.rOut < 2 ^ N * φ.rIn` is at least `1`, since `φ.rIn < φ.rOut`. -/
+theorem one_le_of_rOut_lt_two_pow_mul_rIn {φ : ContDiffBump c} {N : ℕ}
+    (hN : φ.rOut < 2 ^ N * φ.rIn) : 1 ≤ N := by
+  by_contra! h0
+  obtain rfl : N = 0 := Nat.lt_one_iff.1 h0
+  linarith [φ.rIn_lt_rOut]
+
+end ContDiffBump
 
 namespace TauCeti
 

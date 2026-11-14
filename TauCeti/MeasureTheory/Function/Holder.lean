@@ -27,11 +27,15 @@ integration-by-parts arguments:
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
+* `MeasureTheory.Lp.lpSMul_comm`, `MeasureTheory.Lp.tendsto_lpSMul`, and
+  `MeasureTheory.Lp.continuous_lpSMul`: commutativity over a commutative normed ring and joint
+  continuity of heterogeneous `Lp` scalar multiplication.
 -/
 
 public section
 
-open scoped ENNReal
+open Filter
+open scoped ENNReal Topology
 
 namespace MeasureTheory.MemLp
 
@@ -114,6 +118,42 @@ protected theorem smul_sum (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q
   induction s using Finset.induction_on with
   | empty => simp
   | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
+
+/-- When `R` is a commutative normed ring, the heterogeneous `Lp` product is commutative:
+`(f • g : Lp R r μ) = g • f` for `f ∈ Lᵖ` and `g ∈ L^q` with `1/p + 1/q = 1/r`. -/
+theorem lpSMul_comm {R : Type*} [NormedCommRing R] (f : Lp R p μ) (g : Lp R q μ) :
+    (f • g : Lp R r μ) = g • f := by
+  ext
+  filter_upwards [coeFn_lpSMul (r := r) f g, coeFn_lpSMul (r := r) g f] with x h₁ h₂
+  simp [h₁, h₂, mul_comm]
+
+/-- If `f i → f₀` in `Lᵖ` and `g i → g₀` in `L^q` (`1/p + 1/q = 1/r`), then `f i • g i → f₀ • g₀`
+in `Lʳ`. -/
+theorem tendsto_lpSMul [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)] {l : Filter ι}
+    {f : ι → Lp 𝕜 p μ} {g : ι → Lp E q μ} {f₀ : Lp 𝕜 p μ} {g₀ : Lp E q μ}
+    (hf : Tendsto f l (𝓝 f₀)) (hg : Tendsto g l (𝓝 g₀)) :
+    Tendsto (fun i ↦ (f i • g i : Lp E r μ)) l (𝓝 (f₀ • g₀)) := by
+  have hsub (a : Lp 𝕜 p μ) (b : Lp E q μ) :
+      (a • b : Lp E r μ) - f₀ • g₀ =
+        (a - f₀) • (b - g₀) + (a - f₀) • g₀ + f₀ • (b - g₀) := by
+    simp only [sub_eq_add_neg, Lp.smul_add, Lp.add_smul, Lp.smul_neg, Lp.neg_smul]
+    abel
+  have hzero : Tendsto (fun i ↦ ‖f i - f₀‖ * ‖g i - g₀‖ + ‖f i - f₀‖ * ‖g₀‖ +
+      ‖f₀‖ * ‖g i - g₀‖) l (𝓝 0) := by
+    have hf0 := tendsto_iff_norm_sub_tendsto_zero.1 hf
+    have hg0 := tendsto_iff_norm_sub_tendsto_zero.1 hg
+    simpa using ((hf0.mul hg0).add (hf0.mul_const ‖g₀‖)).add (hg0.const_mul ‖f₀‖)
+  refine tendsto_iff_norm_sub_tendsto_zero.2 <|
+    squeeze_zero (fun _ ↦ norm_nonneg _) (fun i ↦ ?_) hzero
+  rw [hsub]
+  exact norm_add₃_le.trans <|
+    add_le_add_three (Lp.norm_smul_le _ _) (Lp.norm_smul_le _ _) (Lp.norm_smul_le _ _)
+
+/-- The heterogeneous `Lp` scalar multiplication `Lᵖ × L^q → Lʳ` is jointly continuous. -/
+theorem continuous_lpSMul [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)] :
+    Continuous fun x : Lp 𝕜 p μ × Lp E q μ ↦ (x.1 • x.2 : Lp E r μ) :=
+  continuous_iff_continuousAt.2 fun _ ↦
+    tendsto_lpSMul continuous_fst.continuousAt continuous_snd.continuousAt
 
 end MeasureTheory.Lp
 
