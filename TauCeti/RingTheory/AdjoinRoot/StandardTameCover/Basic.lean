@@ -13,9 +13,12 @@ public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Separable
-import Mathlib.RingTheory.Ideal.GoingUp
+import Mathlib.LinearAlgebra.Dimension.Localization
+import Mathlib.RingTheory.Etale.Pi
 import Mathlib.RingTheory.Flat.TorsionFree
+import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Etale.AdjoinRoot
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
@@ -61,23 +64,39 @@ residue field as `A`; to use the residue-field API, first install
   of standard tamely ramified covers along `f` with exponents invertible in `A`.
 * `TauCeti.standardTameCoverQuotientSpanRootAlgEquiv`: for `e ≥ 1`, the quotient of the cover by
   the root is `A ⧸ (f)`.
-* `TauCeti.standardTameCoverAwayAlgEquiv`: the localization of the cover at `f` is the standard
-  cover of `A_f` along the image of `f`.
+* `TauCeti.standardTameCoverBaseChangeAlgEquiv`: base change of `A[x]/(x^e − f)` to `B` is
+  `B[x]/(x^e − f)`.
+* `TauCeti.standardTameCoverAwayAlgEquiv`, `TauCeti.standardTameCoverPiAwayAlgEquiv`: the
+  localization of a standard cover (or a finite product of standard covers) away from `f` is the
+  corresponding cover (or product of covers) of `A_f` along the image of `f`.
 * `TauCeti.standardTameCoverAlgHomOfDvd`: for `e ∣ e'`, the map `A[x]/(x^e − f) → A[x]/(x^e' − f)`
   sending `x` to `x ^ (e' / e)`.
 * `TauCeti.standardTameCoverAut`: the action `x ↦ ζ x` of the `e`-th roots of unity of `A` on
   `A[x]/(x^e − f)`.
+* `TauCeti.standardTameCoverAlgEquivOfMulPowEq`: for a unit `u` with `u ^ e * g = f`, scaling
+  identifies `R[x]/(x^e − g)` with `R[x]/(x^e − f)`.
 
 ## Main results
 
-* `TauCeti.standardTameCover_free`: for `e ≥ 1` the cover is free of rank `e`.
+* `TauCeti.standardTameCover_free`, `TauCeti.standardTameCover_finrank_fractionRing`: for `e ≥ 1`
+  the cover is free of rank `e`, and any fraction ring of it has `finrank` equal to `e` over any
+  fraction ring of `A`.
+* `TauCeti.finrank_dvd_of_algHom_standardTameCover`,
+  `TauCeti.not_dvd_natCast_finrank_of_algHom_standardTameCover`: if a field `L` embeds over `K`
+  into a fraction field of `A[x]/(x^e − f)`, then `[L : K]` divides `e` (when `e ≥ 1`), so `f`
+  does not divide `[L : K]` in `A` when `¬ f ∣ (e : A)`.
 * For `e ≠ 0` the cover is a finite `A`-module (an instance).
 * `TauCeti.isFiniteProductOfStandardTameCovers_iff`: unfolding of the predicate.
 * `TauCeti.IsFiniteProductOfStandardTameCovers.finite`,
   `TauCeti.IsFiniteProductOfStandardTameCovers.free`: a finite product of standard covers is
   finite free over `A`, including the empty product and the zero base ring.
-* `TauCeti.IsFiniteProductOfStandardTameCovers.of_algEquiv`: transport along `A`-algebra
-  isomorphisms.
+* `TauCeti.IsFiniteProductOfStandardTameCovers.of_algEquiv`,
+  `TauCeti.IsFiniteProductOfStandardTameCovers.baseChange`,
+  `TauCeti.IsFiniteProductOfStandardTameCovers.away`: invariance under `A`-algebra isomorphisms,
+  base change, and localization away from `f`.
+* `TauCeti.IsFiniteProductOfStandardTameCovers.etale`,
+  `TauCeti.IsFiniteProductOfStandardTameCovers.etale_away`: étaleness of a finite product of
+  standard covers when `f` is a unit, and away from `f`.
 * `TauCeti.isFiniteProductOfStandardTameCovers_standardTameCover`: a single standard cover with
   invertible exponent is a finite product of standard covers.
 * `TauCeti.standardTameCover_root_mem_nonZeroDivisors_iff`: for `e ≥ 1`, the root is a
@@ -140,6 +159,55 @@ theorem standardTameCover_free [Nontrivial A] (f : A) (e : ℕ) (he : 1 ≤ e) :
   rw [(AdjoinRoot.powerBasis' hmonic).finrank, AdjoinRoot.powerBasis'_dim, natDegree_X_pow_sub_C]
 
 variable {A}
+
+/-- In any scalar tower `A → A[x]/(x^e − f) → B`, the image of the root `x` in `B` has `e`-th
+power equal to the image of `f`. -/
+@[simp]
+theorem standardTameCover_algebraMap_root_pow {B : Type*} [CommRing B] [Algebra A B] {f : A}
+    {e : ℕ} [Algebra (standardTameCover A f e) B] [IsScalarTower A (standardTameCover A f e) B] :
+    algebraMap (standardTameCover A f e) B (AdjoinRoot.root _) ^ e = algebraMap A B f := by
+  rw [← map_pow, AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq,
+    ← IsScalarTower.algebraMap_apply A (standardTameCover A f e) B]
+
+/-- For `e ≥ 1`, any fraction ring `L` of `A[x]/(x^e − f)` has `finrank` equal to `e` over any
+nontrivial fraction ring `K` of `A`. -/
+theorem standardTameCover_finrank_fractionRing (f : A) {e : ℕ} (he : 1 ≤ e) (K L : Type*)
+    [CommRing K] [Nontrivial K] [CommRing L] [Module K L] [Algebra A K] [Algebra A L]
+    [IsScalarTower A K L] [Algebra (standardTameCover A f e) L]
+    [IsScalarTower A (standardTameCover A f e) L] [IsFractionRing A K]
+    [IsFractionRing (standardTameCover A f e) L] :
+    Module.finrank K L = e := by
+  have : Nontrivial A := (algebraMap A K).domain_nontrivial
+  exact (IsFractionRing.finrank_eq A K (standardTameCover A f e) L).trans
+    (standardTameCover_free A f e he).2
+
+/-- If a field `L` embeds over a fraction field `K` of `A` into a fraction field `K'` of
+`A[x]/(x^e − f)` with `1 ≤ e`, then `[L : K]` divides `e`. -/
+theorem finrank_dvd_of_algHom_standardTameCover (f : A) {e : ℕ} (he : 1 ≤ e)
+    {K K' L : Type*} [Field K] [Algebra A K] [IsFractionRing A K]
+    [Field K'] [Algebra A K'] [Algebra K K'] [IsScalarTower A K K']
+    [Algebra (standardTameCover A f e) K'] [IsScalarTower A (standardTameCover A f e) K']
+    [IsFractionRing (standardTameCover A f e) K']
+    [Field L] [Algebra K L] (φ : L →ₐ[K] K') :
+    Module.finrank K L ∣ e := by
+  let _ : Algebra L K' := φ.toRingHom.toAlgebra
+  have : IsScalarTower K L K' := .of_algHom φ
+  rw [← standardTameCover_finrank_fractionRing f he K K']
+  exact Module.finrank_dvd_finrank_right K L K'
+
+/-- If a field `L` embeds over a fraction field `K` of `A` into a fraction field `K'` of
+`A[x]/(x^e − f)` with `¬ f ∣ (e : A)`, then `f` does not divide `[L : K]` in `A`. -/
+theorem not_dvd_natCast_finrank_of_algHom_standardTameCover {f : A} {e : ℕ}
+    (hfe : ¬ f ∣ (e : A)) {K K' L : Type*} [Field K] [Algebra A K] [IsFractionRing A K]
+    [Field K'] [Algebra A K'] [Algebra K K'] [IsScalarTower A K K']
+    [Algebra (standardTameCover A f e) K'] [IsScalarTower A (standardTameCover A f e) K']
+    [IsFractionRing (standardTameCover A f e) K']
+    [Field L] [Algebra K L] (φ : L →ₐ[K] K') :
+    ¬ f ∣ (Module.finrank K L : A) := by
+  have he : 1 ≤ e := Nat.one_le_iff_ne_zero.mpr fun h ↦ hfe (by simp [h])
+  intro hdvd
+  obtain ⟨k, hk⟩ := finrank_dvd_of_algHom_standardTameCover f he φ
+  exact hfe (by rw [hk, Nat.cast_mul]; exact dvd_mul_of_dvd_left hdvd _)
 
 variable (A) in
 /-- `C` is `A`-isomorphic to a finite product of standard tamely ramified covers along `f` with
@@ -276,6 +344,16 @@ theorem standardTameCover_etale {f : A} {e : ℕ} (hf : IsUnit f) (he : IsUnit (
   have := hmonic.isStandardEtale_adjoinRoot (separable_X_pow_sub_C_unit hf.unit he)
   infer_instance
 
+/-- If `f` is a unit of `A`, any finite product of standard tame covers along `f` is étale over
+`A`. -/
+theorem IsFiniteProductOfStandardTameCovers.etale {C : Type v} [CommRing C] [Algebra A C]
+    {f : A} (h : IsFiniteProductOfStandardTameCovers A C f) (hf : IsUnit f) :
+    Algebra.Etale A C := by
+  obtain ⟨ι, _, e, -, heu, ⟨σ⟩⟩ := (isFiniteProductOfStandardTameCovers_iff f).mp h
+  have (i : ι) : Algebra.Etale A (standardTameCover A f (e i)) :=
+    standardTameCover_etale hf (heu i)
+  exact .of_equiv σ.symm
+
 /-- For `e ≠ 0` the standard cover `A[x]/(x^e − f)` is a finite `A`-module, since `x ^ e - f` is
 monic. -/
 instance (f : A) (e : ℕ) [NeZero e] : Module.Finite A (standardTameCover A f e) :=
@@ -364,7 +442,108 @@ theorem standardTameCoverAut_comp_standardTameCoverAlgHomOfDvd (h : e ∣ e')
       (standardTameCoverAlgHomOfDvd f h).comp (standardTameCoverAut f ξ) :=
   AdjoinRoot.algHom_ext (by simp [mul_pow, hξ, -AdjoinRoot.algebraMap_eq])
 
+/-- If `u` is a unit of `R` with `u ^ e * g = f`, scaling the root by `u` identifies
+`R[x]/(x^e − g)` with `R[x]/(x^e − f)`: the root of `X^e − g` maps to `u⁻¹ · root`, and the
+inverse sends the root of `X^e − f` to `u · root`. -/
+noncomputable def standardTameCoverAlgEquivOfMulPowEq {R : Type*} [CommRing R] {g f u : R}
+    {e : ℕ} (hu : IsUnit u) (huf : u ^ e * g = f) :
+    standardTameCover R g e ≃ₐ[R] standardTameCover R f e :=
+  let uinv : R := ↑hu.unit⁻¹
+  have huinv_pow : uinv ^ e * f = g := by
+    rw [← huf, ← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul]
+  let F : standardTameCover R g e →ₐ[R] standardTameCover R f e :=
+    (AdjoinRoot.algHomEquiv _ _).symm
+      ⟨algebraMap R _ uinv * AdjoinRoot.root _, by
+        rw [map_sub, map_pow, aeval_X, aeval_C, mul_pow, AdjoinRoot.algebraMap_eq,
+          AdjoinRoot.root_X_pow_sub_C_pow, ← map_pow, ← map_mul, huinv_pow, sub_self]⟩
+  let G : standardTameCover R f e →ₐ[R] standardTameCover R g e :=
+    (AdjoinRoot.algHomEquiv _ _).symm
+      ⟨algebraMap R _ u * AdjoinRoot.root _, by
+        rw [map_sub, map_pow, aeval_X, aeval_C, mul_pow, AdjoinRoot.algebraMap_eq,
+          AdjoinRoot.root_X_pow_sub_C_pow, ← map_pow, ← map_mul, huf, sub_self]⟩
+  AlgEquiv.ofAlgHom F G
+    (AdjoinRoot.algHom_ext <| by
+      simp only [F, G, uinv, AlgHom.comp_apply, AlgHom.id_apply,
+        AdjoinRoot.algHomEquiv_symm_apply_root, map_mul, AlgHom.commutes]
+      rw [← mul_assoc, ← map_mul, hu.mul_val_inv, (algebraMap R _).map_one, one_mul])
+    (AdjoinRoot.algHom_ext <| by
+      simp only [F, G, uinv, AlgHom.comp_apply, AlgHom.id_apply,
+        AdjoinRoot.algHomEquiv_symm_apply_root, map_mul, AlgHom.commutes]
+      rw [← mul_assoc, ← map_mul, hu.val_inv_mul, (algebraMap R _).map_one, one_mul])
+
+/-- `standardTameCoverAlgEquivOfMulPowEq` sends the root of `X^e − g` to `u⁻¹ · root`. -/
+@[simp]
+theorem standardTameCoverAlgEquivOfMulPowEq_root {R : Type*} [CommRing R] {g f u : R} {e : ℕ}
+    (hu : IsUnit u) (huf : u ^ e * g = f) :
+    standardTameCoverAlgEquivOfMulPowEq hu huf (AdjoinRoot.root _) =
+      algebraMap R _ (↑hu.unit⁻¹ : R) * AdjoinRoot.root _ :=
+  AdjoinRoot.algHomEquiv_symm_apply_root _
+
+/-- The inverse of `standardTameCoverAlgEquivOfMulPowEq` sends the root of `X^e − f` to
+`u · root`. -/
+@[simp]
+theorem standardTameCoverAlgEquivOfMulPowEq_symm_root {R : Type*} [CommRing R] {g f u : R}
+    {e : ℕ} (hu : IsUnit u) (huf : u ^ e * g = f) :
+    (standardTameCoverAlgEquivOfMulPowEq hu huf).symm (AdjoinRoot.root _) =
+      algebraMap R _ u * AdjoinRoot.root _ :=
+  AdjoinRoot.algHomEquiv_symm_apply_root _
+
 end Maps
+
+section BaseChange
+
+/-- Base change of a standard tamely ramified cover `A[x]/(x^e − f)` to an `A`-algebra `B` gives
+the standard cover `B[x]/(x^e − f)` over `B`, sending `1 ⊗ x` to `x`. -/
+noncomputable def standardTameCoverBaseChangeAlgEquiv (B : Type*) [CommRing B] [Algebra A B]
+    (f : A) (e : ℕ) :
+    B ⊗[A] standardTameCover A f e ≃ₐ[B] standardTameCover B (algebraMap A B f) e :=
+  (AdjoinRoot.algebraTensorAlgEquiv B (X ^ e - C f)).trans
+    (AdjoinRoot.mapAlgEquiv AlgEquiv.refl _ _ (.of_eq (by simp)))
+
+/-- The base-change equivalence sends `1 ⊗ root` to `root`. -/
+@[simp]
+theorem standardTameCoverBaseChangeAlgEquiv_one_tmul_root (B : Type*) [CommRing B] [Algebra A B]
+    (f : A) (e : ℕ) :
+    standardTameCoverBaseChangeAlgEquiv B f e (1 ⊗ₜ AdjoinRoot.root _) = AdjoinRoot.root _ := by
+  simp [standardTameCoverBaseChangeAlgEquiv]
+
+/-- The inverse of `standardTameCoverBaseChangeAlgEquiv` sends `root` to `1 ⊗ root`. -/
+@[simp]
+theorem standardTameCoverBaseChangeAlgEquiv_symm_root (B : Type*) [CommRing B] [Algebra A B]
+    (f : A) (e : ℕ) :
+    (standardTameCoverBaseChangeAlgEquiv B f e).symm (AdjoinRoot.root _) =
+      1 ⊗ₜ AdjoinRoot.root _ := by
+  rw [AlgEquiv.symm_apply_eq, standardTameCoverBaseChangeAlgEquiv_one_tmul_root]
+
+/-- `standardTameCoverBaseChangeAlgEquiv` sends `1 ⊗ mk _ p` to `mk _ (p.map (algebraMap A B))`. -/
+@[simp]
+theorem standardTameCoverBaseChangeAlgEquiv_one_tmul_mk (B : Type*) [CommRing B] [Algebra A B]
+    (f : A) (e : ℕ) (p : A[X]) :
+    standardTameCoverBaseChangeAlgEquiv B f e (1 ⊗ₜ AdjoinRoot.mk _ p) =
+      AdjoinRoot.mk _ (p.map (algebraMap A B)) := by
+  let φ₁ : A[X] →ₐ[A] standardTameCover B (algebraMap A B f) e :=
+    ((standardTameCoverBaseChangeAlgEquiv B f e).toAlgHom.restrictScalars A).comp
+      (Algebra.TensorProduct.includeRight.comp (AdjoinRoot.mkₐ _))
+  let φ₂ : A[X] →ₐ[A] standardTameCover B (algebraMap A B f) e :=
+    ((AdjoinRoot.mkₐ _).restrictScalars A).comp (Polynomial.mapAlgHom (Algebra.ofId A B))
+  have hφ : φ₁ = φ₂ := Polynomial.algHom_ext (by simp [φ₁, φ₂])
+  exact DFunLike.congr_fun hφ p
+
+/-- Being a finite product of standard tame covers is stable under base change to any `A`-algebra
+`B`. -/
+theorem IsFiniteProductOfStandardTameCovers.baseChange (B : Type*) [CommRing B] [Algebra A B]
+    {C : Type v} [CommRing C] [Algebra A C] {f : A}
+    (h : IsFiniteProductOfStandardTameCovers A C f) :
+    IsFiniteProductOfStandardTameCovers B (B ⊗[A] C) (algebraMap A B f) := by
+  classical
+  obtain ⟨ι, _, e, he, heu, ⟨σ⟩⟩ := (isFiniteProductOfStandardTameCovers_iff f).mp h
+  refine (isFiniteProductOfStandardTameCovers_iff _).mpr
+    ⟨ι, inferInstance, e, he, fun i ↦ by simpa using (heu i).map (algebraMap A B), ⟨?_⟩⟩
+  exact (Algebra.TensorProduct.congr AlgEquiv.refl σ).trans <|
+    (Algebra.TensorProduct.piRight A B B _).trans <|
+      AlgEquiv.piCongrRight fun i ↦ standardTameCoverBaseChangeAlgEquiv B f (e i)
+
+end BaseChange
 
 section Away
 
@@ -374,27 +553,20 @@ variable (f : A) (e : ℕ) (Af Cf : Type*) [CommRing Af] [Algebra A Af] [IsLocal
   [IsScalarTower A (standardTameCover A f e) Cf] [Algebra Af Cf] [IsScalarTower A Af Cf]
 
 /-- Localizing the standard cover `A[x]/(x^e − f)` away from `f` gives the standard cover of
-`A_f` along the image of `f`. It composes the base change of `AdjoinRoot`
-(`AdjoinRoot.algebraTensorAlgEquiv`) with the pushout square of the localization. -/
+`A_f` along the image of `f`. It composes `standardTameCoverBaseChangeAlgEquiv.symm` with the
+pushout square of the localization. -/
 noncomputable def standardTameCoverAwayAlgEquiv :
     standardTameCover Af (algebraMap A Af f) e ≃ₐ[Af] Cf :=
-  have : IsLocalization
-      (Algebra.algebraMapSubmonoid (standardTameCover A f e) (.powers f)) Cf := by
-    rw [Algebra.algebraMapSubmonoid, Submonoid.map_powers]
-    infer_instance
   have := (Algebra.isPushout_of_isLocalization (.powers f) Af (standardTameCover A f e) Cf).symm
-  (AdjoinRoot.mapAlgEquiv AlgEquiv.refl _ _ (.of_eq (by simp))).trans <|
-    (AdjoinRoot.algebraTensorAlgEquiv Af (X ^ e - C f)).symm.trans
-      (Algebra.IsPushout.equiv A Af _ Cf)
+  (standardTameCoverBaseChangeAlgEquiv Af f e).symm.trans (Algebra.IsPushout.equiv A Af _ Cf)
 
 /-- The isomorphism `A_f[x]/(x^e − f) ≃ A[x]/(x^e − f)_f` sends the root to the root. -/
 @[simp]
 theorem standardTameCoverAwayAlgEquiv_root :
     standardTameCoverAwayAlgEquiv f e Af Cf (AdjoinRoot.root _) =
       algebraMap (standardTameCover A f e) Cf (AdjoinRoot.root _) := by
-  rw [standardTameCoverAwayAlgEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
-    AdjoinRoot.coe_mapAlgEquiv, AdjoinRoot.map_root, AdjoinRoot.algebraTensorAlgEquiv_symm_root,
-    Algebra.IsPushout.equiv_tmul, map_one, one_mul]
+  rw [standardTameCoverAwayAlgEquiv, AlgEquiv.trans_apply,
+    standardTameCoverBaseChangeAlgEquiv_symm_root, Algebra.IsPushout.equiv_tmul, map_one, one_mul]
 
 variable {e} in
 include f in
@@ -417,6 +589,60 @@ theorem standardTameCover_etale_away_iff (he : e ≠ 0) :
     have := Algebra.Etale.of_equiv (standardTameCoverAwayAlgEquiv f e Af Cf).symm
     exact isUnit_natCast_of_formallyUnramified_adjoinRoot_X_pow_sub_C (algebraMap A Af f) he
   · exact standardTameCover_etale_away f Af Cf
+
+/-- Localizing an `A`-algebra `C ≃ₐ[A] ∀ i, A[x]/(x^{e i} − f)` away from `f` identifies its
+localization `Sf` with `∀ i, A_f[x]/(x^{e i} − f)` over `A_f`. -/
+noncomputable def standardTameCoverPiAwayAlgEquiv {C : Type*} (Sf : Type*) [CommRing C]
+    [Algebra A C] [CommRing Sf] [Algebra A Sf] [Algebra Af Sf] [IsScalarTower A Af Sf]
+    [Algebra C Sf] [IsScalarTower A C Sf]
+    [IsLocalization (Algebra.algebraMapSubmonoid C (.powers f)) Sf]
+    {ι : Type*} [Finite ι] {e_idx : ι → ℕ}
+    (Φ : C ≃ₐ[A] ∀ i : ι, standardTameCover A f (e_idx i)) :
+    Sf ≃ₐ[Af] ∀ i : ι, standardTameCover Af (algebraMap A Af f) (e_idx i) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  have := (Algebra.isPushout_of_isLocalization (.powers f) Af C Sf).symm
+  exact (Algebra.IsPushout.equiv A Af C Sf).symm.trans <|
+    (Algebra.TensorProduct.congr AlgEquiv.refl Φ).trans <|
+      (Algebra.TensorProduct.piRight A Af Af _).trans <|
+        AlgEquiv.piCongrRight fun i ↦ standardTameCoverBaseChangeAlgEquiv Af f (e_idx i)
+
+/-- `standardTameCoverPiAwayAlgEquiv` sends `algebraMap C Sf c` at `i` to the base-changed image of
+`Φ c i`. -/
+@[simp]
+theorem standardTameCoverPiAwayAlgEquiv_algebraMap {C : Type*} (Sf : Type*) [CommRing C]
+    [Algebra A C] [CommRing Sf] [Algebra A Sf] [Algebra Af Sf] [IsScalarTower A Af Sf]
+    [Algebra C Sf] [IsScalarTower A C Sf]
+    [IsLocalization (Algebra.algebraMapSubmonoid C (.powers f)) Sf]
+    {ι : Type*} [Finite ι] {e_idx : ι → ℕ}
+    (Φ : C ≃ₐ[A] ∀ i : ι, standardTameCover A f (e_idx i)) (c : C) (i : ι) :
+    standardTameCoverPiAwayAlgEquiv f Af Sf Φ (algebraMap C Sf c) i =
+      standardTameCoverBaseChangeAlgEquiv Af f (e_idx i) (1 ⊗ₜ Φ c i) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  have := (Algebra.isPushout_of_isLocalization (.powers f) Af C Sf).symm
+  simp [standardTameCoverPiAwayAlgEquiv, Algebra.IsPushout.equiv_symm_algebraMap_right]
+
+/-- Localizing a finite product of standard tame covers away from `f` yields a finite product of
+standard tame covers over `A_f` along the image of `f`. -/
+theorem IsFiniteProductOfStandardTameCovers.away {C : Type v} [CommRing C] [Algebra A C] {f : A}
+    (h : IsFiniteProductOfStandardTameCovers A C f) (Af Cf : Type*) [CommRing Af] [Algebra A Af]
+    [IsLocalization.Away f Af] [CommRing Cf] [Algebra A Cf] [Algebra Af Cf]
+    [IsScalarTower A Af Cf] [Algebra C Cf] [IsScalarTower A C Cf]
+    [IsLocalization.Away (algebraMap A C f) Cf] :
+    IsFiniteProductOfStandardTameCovers Af Cf (algebraMap A Af f) := by
+  have := (Algebra.isPushout_of_isLocalization (.powers f) Af C Cf).symm
+  exact (h.baseChange Af).of_algEquiv (Algebra.IsPushout.equiv A Af C Cf)
+
+/-- Localizing a finite product of standard tame covers away from `f` produces an étale
+`A_f`-algebra. -/
+theorem IsFiniteProductOfStandardTameCovers.etale_away {C : Type v} [CommRing C] [Algebra A C]
+    {f : A} (h : IsFiniteProductOfStandardTameCovers A C f) (Af Cf : Type*) [CommRing Af]
+    [Algebra A Af] [IsLocalization.Away f Af] [CommRing Cf] [Algebra A Cf] [Algebra Af Cf]
+    [IsScalarTower A Af Cf] [Algebra C Cf] [IsScalarTower A C Cf]
+    [IsLocalization.Away (algebraMap A C f) Cf] :
+    Algebra.Etale Af Cf :=
+  (h.away Af Cf).etale (IsLocalization.Away.algebraMap_isUnit (S := Af) f)
 
 end Away
 
