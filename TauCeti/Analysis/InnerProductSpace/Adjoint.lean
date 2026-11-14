@@ -75,7 +75,8 @@ Similarly, if `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`, then `‖M‖ ≤ λ⁻¹ �
 (`ContinuousLinearEquiv.norm_le_inv_mul_norm_adjoint_comp_comp`).
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
-endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
+endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`), and likewise for
+the adjoint equivalence (`ContinuousLinearEquiv.det_adjointEquiv`). For a surjective
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
 
@@ -622,3 +623,24 @@ instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap
+
+namespace ContinuousLinearEquiv
+
+omit [FiniteDimensional 𝕜 E] in
+/-- The determinant of the adjoint equivalence is the conjugate of the determinant. -/
+@[simp]
+theorem det_adjointEquiv [CompleteSpace E] (A : E ≃L[𝕜] E) :
+    LinearMap.det (A.adjointEquiv : E →ₗ[𝕜] E) = star (LinearMap.det (A : E →ₗ[𝕜] E)) := by
+  -- In infinite dimensions both determinants are `1`.
+  by_cases hE : FiniteDimensional 𝕜 E
+  swap
+  · simp [LinearMap.det_eq_one_of_not_module_finite hE]
+  have h : (A.adjointEquiv : E →ₗ[𝕜] E) = LinearMap.adjoint (A : E →ₗ[𝕜] E) := by
+    have hA : LinearMap.toContinuousLinearMap (A : E →ₗ[𝕜] E) = (A : E →L[𝕜] E) := by
+      ext; simp
+    ext x
+    rw [LinearMap.adjoint_eq_toCLM_adjoint, hA]
+    simp [adjointEquiv_apply]
+  rw [h, LinearMap.det_adjoint]
+
+end ContinuousLinearEquiv
