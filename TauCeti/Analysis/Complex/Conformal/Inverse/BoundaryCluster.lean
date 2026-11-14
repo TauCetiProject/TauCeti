@@ -190,7 +190,7 @@ theorem
         (clusterSetOn g (f '' U) a) :=
     isPreconnected_clusterSetOn
       hUb.isCompact_closure
-      (fun z hz ↦ subset_closure (hgU hz)) hgc (isPreconnectedApproachAt_def.mp hloc)
+      (fun z hz ↦ subset_closure (hgU hz)) hgc hloc
   rw [← IsInducing.subtypeVal.isPreconnected_image]
   have himage :
       Subtype.val '' {z : frontier U | F z = a} =

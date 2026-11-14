@@ -79,8 +79,7 @@ theorem continuousOn_extendFrom_of_polynomial_root
     (fun y hy ↦ subset_closure (mem_image_of_mem f hy)) hx ?_
   exact subsingleton_clusterSetOn_of_polynomial_root hp hroot (hne x hx)
     (isPreconnected_clusterSetOn hbdd.isCompact_closure
-      (fun y hy ↦ subset_closure (mem_image_of_mem f hy)) hf
-      (isPreconnectedApproachAt_def.mp (hconn x hx)))
+      (fun y hy ↦ subset_closure (mem_image_of_mem f hy)) hf (hconn x hx))
 
 /-- The continuous extension of a root section still solves the same polynomial equation
 on the closure, even where distinct roots coalesce. -/

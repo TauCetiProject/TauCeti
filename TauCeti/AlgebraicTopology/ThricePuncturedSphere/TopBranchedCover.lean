@@ -690,7 +690,8 @@ private theorem exists_tendsto_comap_val_nhds
     exact eq_of_nhds_neBot (h.neBot.mono (inf_le_inf_left _
       ((X.π.continuous.tendsto x).mono_left nhdsWithin_le_nhds)))
   exact (isPreconnected_clusterSetOn isCompact_univ (mapsTo_univ _ _) hgc
-    fun _ ↦ X.exists_mem_nhds_isPreconnected_inter hx).isDiscrete_iff_subsingleton.1
+    (isPreconnectedApproachAt_def.mpr fun _ ↦
+      X.exists_mem_nhds_isPreconnected_inter hx)).isDiscrete_iff_subsingleton.1
       ((Y.finite_preimage_singleton _).subset hsub).isDiscrete
 
 /-- The extension of a continuous map over the thrice-punctured sphere from the unbranched part of

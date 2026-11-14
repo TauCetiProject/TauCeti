@@ -277,7 +277,8 @@ theorem isConnected_clusterSetOn_ball_inter_sphere
     IsConnected (clusterSetOn f (ball c r ∩ sphere ζ ρ) e) := by
   have hecl : e ∈ closedBall c r ∩ sphere ζ ρ := ⟨sphere_subset_closedBall he.1, he.2⟩
   refine isConnected_clusterSetOn_of_isBounded hfc hb
-    (by rw [closure_ball_inter_sphere hζ hρ hρr]; exact hecl) fun s hs => ?_
+    (by rw [closure_ball_inter_sphere hζ hρ hρr]; exact hecl)
+    (isPreconnectedApproachAt_def.mpr fun s hs => ?_)
   obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.mp hs
   exact ⟨ball e δ, ball_mem_nhds e hδ, hball,
     isPreconnected_ball_inter_sphere_inter_ball hζ hecl δ⟩
