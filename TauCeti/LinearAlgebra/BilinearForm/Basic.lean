@@ -49,6 +49,8 @@ maps valued in an arbitrary module.
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero`: a subspace on which the diagonal
+  has no nonzero zeros meets every subspace of isotropic vectors trivially.
 * `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
   by a regular element `a` is `a` times a form.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
@@ -161,6 +163,14 @@ theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMono
   · obtain ⟨c, hc⟩ := h x y
     exact LinearMap.mem_range.mpr ⟨c, by simp [hc]⟩
   · simpa using B.codRestrict₂_apply _ hi _ x y
+
+/-- A subspace on whose nonzero vectors the diagonal of a bilinear form does not vanish meets every
+subspace of isotropic vectors (those `x` with `B x x = 0`) trivially. -/
+theorem inf_eq_bot_of_forall_apply_self_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {N W : Submodule R M}
+    (hN : ∀ x ∈ N, x ≠ 0 → B x x ≠ 0) (hW : ∀ x ∈ W, B x x = 0) : N ⊓ W = ⊥ :=
+  (Submodule.eq_bot_iff _).2 fun x hx ↦ by_contra fun hx0 ↦
+    hN x (Submodule.mem_inf.1 hx).1 hx0 (hW x (Submodule.mem_inf.1 hx).2)
 
 end LinearMap.BilinForm
 

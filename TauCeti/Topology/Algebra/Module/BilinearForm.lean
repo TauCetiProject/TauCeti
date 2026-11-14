@@ -51,8 +51,6 @@ use.
   the dual is symmetric if and only if the map takes symmetric values.
 * `ContinuousLinearMap.ker_toBilinForm`: the kernel of the bilinear form of a continuous linear
   map into the dual is the kernel of the map.
-* `ContinuousLinearMap.inf_eq_bot_of_le_ker`: a subspace on which the diagonal of the form has no
-  nonzero zeros meets every subspace of the kernel trivially.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
@@ -60,7 +58,7 @@ use.
 * `ContinuousLinearMap.isInvertible_of_separatingLeft`: in finite dimensions, a map into the dual
   with left-separating bilinear form is invertible.
 * `TauCeti.isOpen_setOf_nondegenerate`: nondegeneracy is open for a family of bilinear forms
-  on a finite-dimensional space with continuous scalar evaluations.
+  on a finite free module over a `T₁` topological domain with continuous scalar evaluations.
 * `ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm`: in finite dimensions,
   the continuous bilinear forms with nondegenerate bilinear form are an open set.
 * `ContinuousAt.eventually_toBilinForm_nondegenerate`: in finite dimensions, nondegeneracy of a
@@ -141,15 +139,6 @@ theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E �
     L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
   LinearMap.BilinForm.isSymm_def
 
-/-- A subspace on whose nonzero vectors the diagonal of a continuous bilinear form does not vanish
-meets every subspace of the kernel of the form trivially. -/
-theorem _root_.ContinuousLinearMap.inf_eq_bot_of_le_ker {L : E →L[𝕜] E →L[𝕜] 𝕜}
-    {N M : Submodule 𝕜 E} (hN : ∀ x ∈ N, x ≠ 0 → L x x ≠ 0) (hM : M ≤ L.ker) : N ⊓ M = ⊥ := by
-  refine eq_bot_iff.2 fun x hx ↦ ?_
-  by_contra hx0
-  have h : L x = 0 := hM hx.2
-  exact hN x hx.1 hx0 (by simp [h])
-
 end
 
 section FiniteDimensional
@@ -212,11 +201,12 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
 
 end FiniteDimensional
 
-/-- Nondegeneracy is open for a family of bilinear forms on a finite-dimensional space.
-Only continuity of each scalar evaluation is required. -/
+/-- Nondegeneracy is open for a family of bilinear forms on a finite free module over a `T₁`
+topological domain. Only continuity of each scalar evaluation is required. -/
 theorem isOpen_setOf_nondegenerate
-    {𝕜 V X : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] [T1Space 𝕜]
-    [AddCommGroup V] [Module 𝕜 V] [FiniteDimensional 𝕜 V] [TopologicalSpace X]
+    {𝕜 V X : Type*} [CommRing 𝕜] [IsDomain 𝕜] [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜]
+    [T1Space 𝕜] [AddCommGroup V] [Module 𝕜 V] [Module.Free 𝕜 V] [Module.Finite 𝕜 V]
+    [TopologicalSpace X]
     {B : X → LinearMap.BilinForm 𝕜 V}
     (hB : ∀ v w, Continuous fun x ↦ B x v w) :
     IsOpen {x | (B x).Nondegenerate} := by
