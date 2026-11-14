@@ -177,11 +177,8 @@ lemma MulAction.orbitRelQuotientBot_mk_eq_iff (x y : X) :
     (Quotient.mk'' x : MulAction.orbitRel.Quotient (⊥ : Subgroup G) X) =
         Quotient.mk'' y ↔
       x = y := by
-  constructor
-  · intro h
-    exact congrArg (MulAction.orbitRelQuotientBotEquiv (G := G) (X := X)) h
-  · intro h
-    rw [h]
+  rw [← MulAction.orbitRelQuotientBotEquiv_symm_apply,
+    ← MulAction.orbitRelQuotientBotEquiv_symm_apply, Equiv.apply_eq_iff_eq]
 
 /-- Orbit relations are monotone in the acting subgroup. -/
 lemma MulAction.orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
@@ -860,10 +857,8 @@ its composite with the orbit projection is `f`. -/
   /-- **Uniqueness of the descent**: a map out of the orbit space is the descent of `f` exactly
 when its composite with the orbit projection is `f`. -/]
 theorem MulAction.eq_orbitRelQuotientLift_iff {φ : MulAction.orbitRel.Quotient G X → Y} :
-    φ = MulAction.orbitRelQuotientLift f hf ↔ φ ∘ Quotient.mk (MulAction.orbitRel G X) = f := by
-  refine ⟨fun h ↦ h ▸ MulAction.orbitRelQuotientLift_comp_mk, fun h ↦ funext fun q ↦ ?_⟩
-  induction q using Quotient.inductionOn with
-  | h x => exact congrFun h x
+    φ = MulAction.orbitRelQuotientLift f hf ↔ φ ∘ Quotient.mk (MulAction.orbitRel G X) = f :=
+  (Quotient.mk_surjective.injective_comp_right.eq_iff' MulAction.orbitRelQuotientLift_comp_mk).symm
 
 /-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/
 theorem MulAction.comp_orbitRelQuotientLift (h : Y → Z) :
