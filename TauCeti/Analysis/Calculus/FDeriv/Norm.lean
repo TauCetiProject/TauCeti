@@ -9,14 +9,16 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.FDeriv.Norm
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
 # Derivatives and norms
 
-A map whose norm is locally constant has derivative orthogonal to its value. In particular, the
-derivative of a map into a sphere is tangent to the sphere. Away from the origin, a vanishing
-derivative of a norm-composition forces the one-dimensional profile derivative to vanish.
+At a local extremum of the norm of a map, its derivative is orthogonal to its value. In
+particular, the derivative of a map into a sphere is tangent to the sphere. Away from the origin,
+a vanishing derivative of a norm-composition forces the one-dimensional profile derivative to
+vanish.
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -29,8 +31,7 @@ origin.
 
 public section
 
-open Filter
-open scoped Topology RealInnerProductSpace
+open scoped RealInnerProductSpace
 
 namespace TauCeti
 
@@ -48,18 +49,19 @@ theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero {v : ℝ → E} {x : F} (hx : 
     hn.hasFDerivAt).fderiv.symm.trans hcrit) x)
   exact hv (by simpa [hn.fderiv_norm_self, hx] using h)
 
-/-- A map whose norm is constant near `w` has Fréchet derivative at `w` orthogonal to its
-value. In particular, the derivative of a map into a sphere is tangent to the sphere.
-At nondifferentiable points, the Fréchet derivative is zero by definition. -/
-theorem inner_fderiv_eq_zero_of_eventually_norm_eq {ψ : E → F} {w : E}
-    (hψ : ∀ᶠ y in 𝓝 w, ‖ψ y‖ = ‖ψ w‖) (u : E) :
+/-- At a local extremum `w` of `‖ψ‖`, the Fréchet derivative of `ψ` is orthogonal to `ψ w`. This
+covers a map whose norm is constant near `w`: the derivative of a map into a sphere is tangent to
+the sphere. At nondifferentiable points, the Fréchet derivative is zero by definition. -/
+theorem _root_.IsLocalExtr.inner_fderiv_eq_zero {ψ : E → F} {w : E}
+    (hψ : IsLocalExtr (fun y ↦ ‖ψ y‖) w) (u : E) :
     ⟪ψ w, fderiv ℝ ψ w u⟫ = 0 := by
   by_cases hd : DifferentiableAt ℝ ψ w
-  · have h₁ := HasFDerivAt.norm_sq hd.hasFDerivAt
-    have h₂ : HasFDerivAt (fun y => ‖ψ y‖ ^ 2) (0 : E →L[ℝ] ℝ) w :=
-      (hasFDerivAt_const (‖ψ w‖ ^ 2) w).congr_of_eventuallyEq
-        (hψ.mono fun y hy => by simp [hy])
-    simpa using congrArg (fun L : E →L[ℝ] ℝ => L u) (h₁.unique h₂)
+  · -- Squaring is monotone on `[0, ∞)`, so `‖ψ‖ ^ 2` also has a local extremum at `w`.
+    have hsq : IsLocalExtr (fun y ↦ ‖ψ y‖ ^ 2) w := hψ.elim
+      (fun h ↦ IsMinFilter.isExtrFilter <| h.mono fun _ hy ↦ pow_le_pow_left₀ (norm_nonneg _) hy 2)
+      (fun h ↦ IsMaxFilter.isExtrFilter <| h.mono fun _ hy ↦ pow_le_pow_left₀ (norm_nonneg _) hy 2)
+    -- Fermat's theorem: the derivative `2 ⟪ψ w, fderiv ℝ ψ w ·⟫` of `‖ψ‖ ^ 2` vanishes at `w`.
+    simpa using congr($(IsLocalExtr.hasFDerivAt_eq_zero hsq hd.hasFDerivAt.norm_sq) u)
   · simp [fderiv_zero_of_not_differentiableAt hd]
 
 /-- The squared operator norm of the derivative of a map from `ℂ` to a Euclidean space is at most
