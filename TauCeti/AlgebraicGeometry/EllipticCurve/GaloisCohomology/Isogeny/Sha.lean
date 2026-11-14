@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Map
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.NumberField
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Add
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
 
 /-!
 # Isogenies on Shafarevich–Tate groups
@@ -26,6 +28,13 @@ multiplication by `deg f` in either order, so the kernel of `f.shafarevichTateMa
 `deg f`-torsion of `Sha(W₁)`. Hence, whenever the `deg f`-torsion of both groups is finite, one
 group is finite exactly when the other is (`TauCeti.Isogeny.Hom.finite_shafarevichTateGroup_iff`).
 
+If `n` kills `Sha(W₂)`, then both `n • f` and its dual `(n • f)^ = n • f̂` induce the zero map on
+Shafarevich–Tate groups. When `Sha(W₂)` is finite, its order is such an `n`, so every nonzero `f`
+has a nonzero multiple `ψ = n • f`, an isogeny, for which `Sha(W₁)[ψ] = Sha(W₁)` and
+`Sha(W₂)[ψ̂] = Sha(W₂)` (`TauCeti.Isogeny.Hom.exists_isogeny_shafarevichTateMap_eq_zero`). This is
+how the orders of the full Shafarevich–Tate groups enter the descent sequences of an isogeny and
+its dual, as in Cassels' comparison of Birch–Swinnerton-Dyer quotients of isogenous curves.
+
 Over a number field the `m`-torsion of `Sha(E/K)` is finite for every `m ≠ 0`
 (`WeierstrassCurve.finite_torsionBy_sha`, from the finiteness of the `m`-Selmer group). This gives
 the **isogeny invariance of the finiteness of `Sha(E/K)`**
@@ -43,6 +52,8 @@ it enters the isogeny invariance of the Birch–Swinnerton-Dyer quotient (Cassel
   `TauCeti.Isogeny.Hom.shafarevichTateMap_dual_shafarevichTateMap`: composing with the dual is
   multiplication by the degree.
 * `TauCeti.Isogeny.Hom.ker_shafarevichTateMap_le_torsionBy`: the kernel is killed by the degree.
+* `TauCeti.Isogeny.Hom.exists_isogeny_shafarevichTateMap_eq_zero`: if `Sha(W₂)` is finite, a
+  nonzero multiple of a nonzero morphism is an isogeny inducing zero on Sha, as does its dual.
 * `TauCeti.Isogeny.Hom.finite_shafarevichTateGroup_iff`: finiteness transfers along a morphism
   when the degree-torsion of both Shafarevich–Tate groups is finite.
 * `TauCeti.Isogeny.Hom.finite_sha_iff`: over a number field, `Sha(W₁/K)` is finite if and only if
@@ -144,6 +155,23 @@ theorem shafarevichTateMap_natCast (n : ℕ) (c : W₁.shafarevichTateGroup τ) 
   ext
   simp
 
+/-- Multiplying a morphism by `n` multiplies its induced map on Shafarevich–Tate groups by `n`. -/
+@[simp]
+theorem shafarevichTateMap_nsmul (n : ℕ) (f : Hom W₁.toAffine W₂.toAffine) :
+    (n • f).shafarevichTateMap τ = n • f.shafarevichTateMap τ := by
+  have hf : n • f = (n : Hom W₂.toAffine W₂.toAffine).comp f := by
+    rw [← nsmul_one, one_def, nsmul_comp, id_comp]
+  refine AddMonoidHom.ext fun c ↦ ?_
+  rw [hf, shafarevichTateMap_comp, AddMonoidHom.comp_apply, shafarevichTateMap_natCast,
+    AddMonoidHom.nsmul_apply]
+
+/-- If `n` kills `Sha(W₂)`, then `n • f` induces the zero map `Sha(W₁) → Sha(W₂)`. -/
+theorem shafarevichTateMap_nsmul_eq_zero {n : ℕ}
+    (hn : ∀ c : W₂.shafarevichTateGroup τ, n • c = 0) (f : Hom W₁.toAffine W₂.toAffine) :
+    (n • f).shafarevichTateMap τ = 0 := by
+  refine AddMonoidHom.ext fun c ↦ ?_
+  rw [shafarevichTateMap_nsmul, AddMonoidHom.nsmul_apply, hn, AddMonoidHom.zero_apply]
+
 /-! ### The dual isogeny -/
 
 /-- **A morphism followed by its dual is multiplication by the degree** on the Shafarevich–Tate
@@ -169,6 +197,15 @@ theorem ker_shafarevichTateMap_le_torsionBy (f : Hom W₁.toAffine W₂.toAffine
     (f.shafarevichTateMap τ).ker ≤ AddSubgroup.torsionBy (W₁.shafarevichTateGroup τ) f.degree :=
   fun c hc ↦ AddSubgroup.torsionBy.nsmul_iff.2 <| by
     rw [← dual_shafarevichTateMap_shafarevichTateMap, AddMonoidHom.mem_ker.1 hc, map_zero]
+
+/-- If `n` kills `Sha(W₂)`, then the dual of `n • f`, which is `n • f̂`, induces the zero map
+`Sha(W₂) → Sha(W₁)`. -/
+theorem dual_nsmul_shafarevichTateMap_eq_zero {n : ℕ}
+    (hn : ∀ c : W₂.shafarevichTateGroup τ, n • c = 0) (f : Hom W₁.toAffine W₂.toAffine) :
+    (n • f).dual.shafarevichTateMap τ = 0 := by
+  refine AddMonoidHom.ext fun c ↦ ?_
+  rw [dual_nsmul, shafarevichTateMap_nsmul, AddMonoidHom.nsmul_apply, ← AddMonoidHom.map_nsmul,
+    hn, map_zero, AddMonoidHom.zero_apply]
 
 /-! ### Finiteness -/
 
@@ -199,6 +236,25 @@ theorem finite_shafarevichTateGroup_iff (f : Hom W₁.toAffine W₂.toAffine)
   have : Finite (AddSubgroup.torsionBy (W₂.shafarevichTateGroup τ) f.dual.degree) := by
     rwa [degree_dual]
   exact f.dual.finite_shafarevichTateGroup_of_finite τ
+
+/-- **An isogeny killing Sha in both directions**: if `Sha(W₂)` is finite, then for every nonzero
+morphism `f : W₁ → W₂` the multiple `ψ = #Sha(W₂) • f` is an isogeny such that both `ψ` and its
+dual `ψ̂` induce the zero map on Shafarevich–Tate groups. -/
+theorem exists_isogeny_shafarevichTateMap_eq_zero {f : Hom W₁.toAffine W₂.toAffine} (hf : f ≠ 0)
+    [Finite (W₂.shafarevichTateGroup τ)] :
+    ∃ ψ : Isogeny W₁.toAffine W₂.toAffine,
+      ofIsogeny ψ = Nat.card (W₂.shafarevichTateGroup τ) • f ∧
+        (ofIsogeny ψ).shafarevichTateMap τ = 0 ∧ (ofIsogeny ψ.dual).shafarevichTateMap τ = 0 := by
+  have hn (c : W₂.shafarevichTateGroup τ) : Nat.card (W₂.shafarevichTateGroup τ) • c = 0 :=
+    card_nsmul_eq_zero'
+  have hψ : Nat.card (W₂.shafarevichTateGroup τ) • f ≠ 0 := by
+    rw [Ne, ← degree_eq_zero_iff, degree_nsmul]
+    exact mul_ne_zero (pow_ne_zero _ Nat.card_pos.ne') ((degree_eq_zero_iff f).not.2 hf)
+  refine ⟨toIsogeny hψ, ofIsogeny_toIsogeny hψ, ?_, ?_⟩
+  · rw [ofIsogeny_toIsogeny]
+    exact shafarevichTateMap_nsmul_eq_zero τ hn f
+  · rw [← dual_ofIsogeny, ofIsogeny_toIsogeny]
+    exact dual_nsmul_shafarevichTateMap_eq_zero τ hn f
 
 /-! ### Number fields -/
 
