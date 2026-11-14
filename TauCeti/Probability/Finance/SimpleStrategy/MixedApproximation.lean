@@ -58,7 +58,7 @@ distinct drift-variation and diffusion-energy topologies for stock holdings. The
 only be almost-everywhere predictable, and no L² hypothesis for `μ` is imposed. -/
 theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_two
     (μ ν : @Measure (ℝ≥0 × Ω) ℱ.predictable) [IsFiniteMeasure μ]
-    (hνfin : ∀ s t A, MeasurableSet[ℱ s] A → ν (Ioc s t ×ˢ A) ≠ ∞)
+    (hνfin : ∀ t, ν (Ioc 0 t ×ˢ (univ : Set Ω)) ≠ ∞)
     (hμ₀ : μ ({0} ×ˢ (univ : Set Ω)) = 0)
     (hν₀ : ν ({0} ×ˢ (univ : Set Ω)) = 0)
     {H : ℝ≥0 → Ω → ℝ}
@@ -88,9 +88,11 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_two
   have hzero : (μ + ν) ({0} ×ˢ (univ : Set Ω)) = 0 := by simp [hμ₀, hν₀]
   -- Bounded quantizations belong to L² of the sum measure and admit trading grids.
   have hex (k : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt (μ + ν)
-    (fun s t A hA ↦ by
+    (fun s t A _ ↦ by
       simpa only [FunLike.coe_add, Pi.add_apply] using
-        ENNReal.add_ne_top.2 ⟨measure_ne_top _ _, hνfin s t A hA⟩)
+        ENNReal.add_ne_top.2 ⟨measure_ne_top _ _,
+          ne_top_of_le_ne_top (hνfin t)
+            (measure_mono (prod_mono (Ioc_subset_Ioc_left bot_le) (subset_univ A)))⟩)
     hzero
     (H := fun t ω ↦ f k (t, ω))
     (((f k).memLp_of_isFiniteMeasure 2 μ).add_measure
@@ -150,8 +152,8 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_mul_one_two
     {H D V : ℝ≥0 → Ω → ℝ}
     (hH : AEStronglyMeasurable[ℱ.predictable] (Function.uncurry H) (ρ.trim hm))
     (hD₁ : MemLp (Function.uncurry D) 1 ρ)
-    (hV₂ : ∀ s t A, MeasurableSet[ℱ s] A →
-      MemLp (Function.uncurry V) 2 (ρ.restrict (Ioc s t ×ˢ A)))
+    (hV₂ : ∀ t, MemLp (Function.uncurry V) 2
+      (ρ.restrict (Ioc 0 t ×ˢ (univ : Set Ω))))
     (hHD₁ : MemLp (Function.uncurry D * Function.uncurry H) 1 ρ)
     (hHV₂ : MemLp (Function.uncurry V * Function.uncurry H) 2 ρ) :
     ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
@@ -174,7 +176,7 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_mul_one_two
       exact (hp k (pos_iff_ne_zero.2 h)).not_ge hk
     rw [← Measure.restrict_eq_self_of_ae_mem hcover]
     exact AEStronglyMeasurable.iUnion fun k ↦
-      (hV₂ 0 k univ MeasurableSet.univ).aestronglyMeasurable
+      (hV₂ k).aestronglyMeasurable
   -- Weighting by a coefficient turns its products into predictable seminorms.
   have hweight {w g : ℝ≥0 × Ω → ℝ} {p : ℝ≥0∞} (hp : p ≠ ∞) (hw : AEStronglyMeasurable w ρ)
       (hg : AEStronglyMeasurable[ℱ.predictable] g (ρ.trim hm)) :
@@ -197,12 +199,11 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_mul_one_two
     isFiniteMeasure_withDensity
       (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top one_ne_zero (by simp)
         hD₁.eLpNorm_lt_top).ne
-  have hνfin (s t : ℝ≥0) (A : Set Ω) (hA : MeasurableSet[ℱ s] A) :
-      ν (Ioc s t ×ˢ A) ≠ ∞ := by
-    have hrect := measurableSet_predictable_Ioc_prod s t hA
+  have hνfin (t : ℝ≥0) : ν (Ioc 0 t ×ˢ (univ : Set Ω)) ≠ ∞ := by
+    have hrect := measurableSet_predictable_Ioc_prod (𝓕 := ℱ) 0 t MeasurableSet.univ
     rw [trim_measurableSet_eq hm hrect, withDensity_apply _ (hm _ hrect)]
     exact (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top two_ne_zero (by simp)
-      (hV₂ s t A hA).eLpNorm_lt_top).ne
+      (hV₂ t).eLpNorm_lt_top).ne
   have hH₁ : MemLp (Function.uncurry H) 1 μ := by
     rw [memLp_iff, ← hweight (by simp) hD₁.aestronglyMeasurable hH]
     exact hHD₁.eLpNorm_lt_top
@@ -225,13 +226,15 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_mul_one_two
 /-- On the finite-horizon Lebesgue-time × sample measure, one stock holding is approximated
 simultaneously in its drift and diffusion gains coefficients. The coefficients need only be
 almost-everywhere strongly measurable for the time-product sigma-algebra, as progressive
-coefficients are, while the holding is predictable. -/
+coefficients are, while the holding need only be almost-everywhere predictable for
+`ℱ.predictableMeasure P T`. The drift coefficient and gains need L¹, and the diffusion
+coefficient and gains need L². -/
 theorem exists_seq_simpleHolding_tendsto_eLpNorm_mul_one_two_timeMeasure
     (P : Measure Ω) [SFinite P] (T : ℝ≥0)
-    {H D V : ℝ≥0 → Ω → ℝ} (hH : IsStronglyPredictable ℱ H)
+    {H D V : ℝ≥0 → Ω → ℝ}
+    (hH : AEStronglyMeasurable[ℱ.predictable] (Function.uncurry H) (ℱ.predictableMeasure P T))
     (hD₁ : MemLp (Function.uncurry D) 1 ((TauCeti.Probability.timeMeasure T).prod P))
-    (hV₂ : ∀ s t A, MeasurableSet[ℱ s] A → MemLp (Function.uncurry V) 2
-      (((TauCeti.Probability.timeMeasure T).prod P).restrict (Ioc s t ×ˢ A)))
+    (hV₂ : MemLp (Function.uncurry V) 2 ((TauCeti.Probability.timeMeasure T).prod P))
     (hHD₁ : MemLp (Function.uncurry D * Function.uncurry H) 1
       ((TauCeti.Probability.timeMeasure T).prod P))
     (hHV₂ : MemLp (Function.uncurry V * Function.uncurry H) 2
@@ -247,6 +250,7 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_mul_one_two_timeMeasure
         (simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2)) 2
           ((TauCeti.Probability.timeMeasure T).prod P)) atTop (𝓝 0) :=
   ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_mul_one_two ℱ.predictable_le_prod _
-    (by simp [Measure.prod_prod]) hH.aestronglyMeasurable hD₁ hV₂ hHD₁ hHV₂
+    (by simp [Measure.prod_prod]) (ℱ.predictableMeasure_def P T ▸ hH) hD₁
+    (fun t ↦ hV₂.restrict _) hHD₁ hHV₂
 
 end MeasureTheory.Filtration
