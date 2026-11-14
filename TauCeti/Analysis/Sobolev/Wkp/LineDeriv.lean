@@ -37,7 +37,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
 * `TauCeti.Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq`: the first derivatives
   of an element of `W^{2,p}(Ω)` lie in `W^{1,p}(Ω)`, with gradients given by the weak Hessian.
 * `TauCeti.Wkp.lineDerivL`: the directional weak derivative as a bounded operator
-  `W^{k+1,p}(Ω) → W^{k,p}(Ω)`, characterised by `TauCeti.Wkp.hasWeakLineDerivOn_lineDerivL`.
+  `W^{k+1,p}(Ω) → W^{k,p}(Ω)`, characterised by `TauCeti.Wkp.hasWeakLineDerivOn_lineDerivL`, and
+  bundled bilinearly in the direction and function as `TauCeti.Wkp.lineDerivCLM`.
 * `TauCeti.Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn`: if the weak derivatives of
   `u ∈ Lᵖ(Ω)` along an orthonormal basis lie in `W^{k,p}(Ω)`, then `u ∈ W^{k+1,p}(Ω)`.
 * `TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`: the two combined.
@@ -52,6 +53,7 @@ No boundedness or boundary regularity of `Ω` is assumed.
 * `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq`: the weak Hessian is symmetric.
 * `TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`: the weak Hessian is self-adjoint almost
   everywhere.
+* `TauCeti.Wkp.lineDerivL_comm`: bundled directional derivatives commute at every Sobolev order.
 
 ## References
 
@@ -271,6 +273,105 @@ theorem Wkp.lineDerivL_eq_of_hasWeakLineDerivOn {v : E} {k : ℕ} {w : Wkp mu Om
     (h : HasWeakLineDerivOn mu Omega (Wkp.value (k + 1) w) (Wkp.value k d) v) :
     Wkp.lineDerivL v k w = d :=
   Wkp.eq_of_hasWeakLineDerivOn (Wkp.hasWeakLineDerivOn_lineDerivL v k w) h
+
+/-- Scaling the direction scales `TauCeti.Wkp.lineDerivL` by the same scalar. -/
+theorem Wkp.lineDerivL_smul_left (c : ℝ) (v : E) (k : ℕ) :
+    Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (c • v) k =
+      c • Wkp.lineDerivL v k := by
+  refine ContinuousLinearMap.ext fun w => Wkp.lineDerivL_eq_of_hasWeakLineDerivOn (p := p) ?_
+  refine ((Wkp.hasWeakLineDerivOn_lineDerivL v k w).smul_direction c).congr_ae_deriv ?_
+  rw [smul_apply, Wkp.value_smul]
+  exact (Lp.coeFn_smul c (Wkp.value k (Wkp.lineDerivL v k w))).symm
+
+/-- Differentiating in the zero direction is the zero operator. -/
+@[simp]
+theorem Wkp.lineDerivL_zero_left (k : ℕ) :
+    Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (0 : E) k = 0 := by
+  simpa using Wkp.lineDerivL_smul_left (mu := mu) (Omega := Omega) (p := p) 0 (0 : E) k
+
+/-- The bundled directional derivative is additive in the direction. -/
+theorem Wkp.lineDerivL_add_left (v₁ v₂ : E) (k : ℕ) :
+    Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (v₁ + v₂) k =
+      Wkp.lineDerivL v₁ k + Wkp.lineDerivL v₂ k := by
+  refine ContinuousLinearMap.ext fun w => Wkp.lineDerivL_eq_of_hasWeakLineDerivOn (p := p) ?_
+  refine ((Wkp.hasWeakLineDerivOn_lineDerivL v₁ k w).add_direction
+    (Wkp.hasWeakLineDerivOn_lineDerivL v₂ k w)).congr_ae_deriv ?_
+  rw [add_apply, Wkp.value_add]
+  exact (Lp.coeFn_add _ _).symm
+
+/-- Negating the direction negates `TauCeti.Wkp.lineDerivL`. -/
+@[simp]
+theorem Wkp.lineDerivL_neg_left (v : E) (k : ℕ) :
+    Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (-v) k =
+      -Wkp.lineDerivL v k := by
+  simpa using Wkp.lineDerivL_smul_left (mu := mu) (Omega := Omega) (p := p) (-1) v k
+
+/-- Subtracting directions subtracts the corresponding directional derivative operators. -/
+theorem Wkp.lineDerivL_sub_left (v₁ v₂ : E) (k : ℕ) :
+    Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (v₁ - v₂) k =
+      Wkp.lineDerivL v₁ k - Wkp.lineDerivL v₂ k := by
+  rw [sub_eq_add_neg, Wkp.lineDerivL_add_left, Wkp.lineDerivL_neg_left, sub_eq_add_neg]
+
+/-- **The directional derivative, bundled in both the direction and the function.** Because `E` is
+finite-dimensional, the linear dependence `v ↦ TauCeti.Wkp.lineDerivL v k` is continuous. -/
+def Wkp.lineDerivCLM (k : ℕ) :
+    E →L[ℝ] Wkp mu Omega p (k + 1) →L[ℝ] Wkp mu Omega p k :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun v => Wkp.lineDerivL v k
+      map_add' := fun v₁ v₂ => Wkp.lineDerivL_add_left v₁ v₂ k
+      map_smul' := fun c v => Wkp.lineDerivL_smul_left c v k }
+
+-- The dependent successor index in the codomain prevents this rule from matching in `simp`.
+theorem Wkp.lineDerivCLM_apply (k : ℕ) (v : E) :
+    Wkp.lineDerivCLM (mu := mu) (Omega := Omega) (p := p) k v = Wkp.lineDerivL v k :=
+  (rfl)
+
+theorem Wkp.lineDerivCLM_apply_apply (k : ℕ) (v : E) (w : Wkp mu Omega p (k + 1)) :
+    Wkp.lineDerivCLM k v w = Wkp.lineDerivL v k w :=
+  (rfl)
+
+/-- At order zero, `TauCeti.Wkp.lineDerivL` pairs the weak gradient with the direction `v` in
+`Lᵖ(Ω)`. -/
+theorem Wkp.lineDerivL_zero_apply (v : E) (w : Wkp mu Omega p 1) :
+    Wkp.lineDerivL v 0 w = (innerSL ℝ v).compLp (Wkp.iteratedGradient 0 w) :=
+  Wkp.lineDerivL_eq_of_hasWeakLineDerivOn (Wkp.hasWeakLineDerivOn_value_innerSL_compLp v w)
+
+/-- Two Sobolev functions of possibly different positive orders with the same `Lᵖ` value have the
+same `Lᵖ` directional derivative in every direction. -/
+theorem Wkp.value_lineDerivL_eq_of_value_eq {k₁ k₂ : ℕ} {u₁ : Wkp mu Omega p (k₁ + 1)}
+    {u₂ : Wkp mu Omega p (k₂ + 1)} (h : Wkp.value (k₁ + 1) u₁ = Wkp.value (k₂ + 1) u₂) (v : E) :
+    Wkp.value k₁ (Wkp.lineDerivL v k₁ u₁) = Wkp.value k₂ (Wkp.lineDerivL v k₂ u₂) := by
+  apply Lp.ext
+  have h₁ := Wkp.hasWeakLineDerivOn_lineDerivL v k₁ u₁
+  rw [h] at h₁
+  exact h₁.ae_eq (Wkp.hasWeakLineDerivOn_lineDerivL v k₂ u₂)
+
+/-- Forgetting the highest weak derivative commutes with `TauCeti.Wkp.lineDerivL`. -/
+theorem Wkp.lowerOrder_lineDerivL (v : E) (k : ℕ) (w : Wkp mu Omega p (k + 2)) :
+    Wkp.lowerOrder k (Wkp.lineDerivL v (k + 1) w) =
+      Wkp.lineDerivL v k (Wkp.lowerOrder (k + 1) w) :=
+  Wkp.ext k ((Wkp.value_succ k _).symm.trans
+    (Wkp.value_lineDerivL_eq_of_value_eq (Wkp.value_succ (k + 1) w) v))
+
+/-- Operator form of `TauCeti.Wkp.lowerOrder_lineDerivL`. -/
+theorem Wkp.lowerOrderL_comp_lineDerivL (v : E) (k : ℕ) :
+    (Wkp.lowerOrderL k).comp (Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) v (k + 1)) =
+      (Wkp.lineDerivL v k).comp (Wkp.lowerOrderL (k + 1)) :=
+  ContinuousLinearMap.ext fun w => by
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Wkp.lowerOrderL_apply,
+      Wkp.lowerOrderL_apply, Wkp.lowerOrder_lineDerivL]
+
+/-- At every positive order, the `Lᵖ` value of `TauCeti.Wkp.lineDerivL v k w` is the `v`-component
+of the weak gradient of the first-order part of `w`. -/
+theorem Wkp.value_lineDerivL (v : E) (k : ℕ) (w : Wkp mu Omega p (k + 1)) :
+    Wkp.value k (Wkp.lineDerivL v k w) =
+      (innerSL ℝ v).compLp (W1p.gradient (Wkp.firstOrder k w)) := by
+  let u₁ : Wkp mu Omega p 1 := Wkp.firstOrder k w
+  have hval : Wkp.value (k + 1) w = Wkp.value 1 u₁ := by
+    rw [Wkp.value_one u₁]
+    exact (Wkp.value_firstOrder k w).symm
+  rw [Wkp.value_lineDerivL_eq_of_value_eq hval v, Wkp.value_zero,
+    Wkp.lineDerivL_zero_apply v u₁, Wkp.iteratedGradient_zero u₁]
 
 /-! ### From the directional derivatives to `W^{k+1,p}` -/
 
@@ -510,5 +611,22 @@ theorem Wkp.adjoint_iteratedGradient_one_ae_eq (u : Wkp mu Omega p 2) :
   refine (LinearMap.eq_adjoint_iff_basis b.toBasis b.toBasis _ _).2 fun i j => ?_
   simpa only [ContinuousLinearMap.coe_coe, OrthonormalBasis.coe_toBasis] using
     (hx i j).trans (real_inner_comm _ _).symm
+
+/-- **Bundled directional derivatives commute.** For `u ∈ W^{k+2,p}(Ω)` and directions `v, w : E`,
+differentiating in direction `w` and then `v` gives the same element of `W^{k,p}(Ω)` as
+differentiating in direction `v` and then `w`. -/
+theorem Wkp.lineDerivL_comm (v w : E) (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
+    Wkp.lineDerivL v k (Wkp.lineDerivL w (k + 1) u) =
+      Wkp.lineDerivL w k (Wkp.lineDerivL v (k + 1) u) := by
+  have hv := Wkp.hasWeakLineDerivOn_lineDerivL v (k + 1) u
+  have hw := Wkp.hasWeakLineDerivOn_lineDerivL w (k + 1) u
+  have hvw := Wkp.hasWeakLineDerivOn_lineDerivL w k (Wkp.lineDerivL v (k + 1) u)
+  exact Wkp.lineDerivL_eq_of_hasWeakLineDerivOn (hv.comm hvw hw)
+
+/-- Operator form of `TauCeti.Wkp.lineDerivL_comm`. -/
+theorem Wkp.lineDerivL_comp_lineDerivL_comm (v w : E) (k : ℕ) :
+    (Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) v k).comp (Wkp.lineDerivL w (k + 1)) =
+      (Wkp.lineDerivL w k).comp (Wkp.lineDerivL v (k + 1)) :=
+  ContinuousLinearMap.ext fun u => Wkp.lineDerivL_comm v w k u
 
 end TauCeti
