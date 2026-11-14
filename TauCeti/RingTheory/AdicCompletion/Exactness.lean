@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Exactness
+public import TauCeti.LinearAlgebra.Exact
 public import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.LinearAlgebra.Quotient.BoundedTorsion
 
 /-!
-# Exactness of adic completion from filtration bounds
+# Exactness and kernel comparison for adic completion
 
 Completion preserves injectivity and right exactness when a uniform shift bounds the induced
 filtration on the first module by its adic filtration. In particular, this applies when the
@@ -27,10 +29,26 @@ next cohomology group controls the discrepancy between reduction of a kernel and
 of reduction. This is the algebraic filtration step in the formal-section comparisons of
 Stacks, Lemmas 52.3.2 (0BLD) and 52.12.7 (0EII); no sheaf-cohomology comparison is asserted here.
 
-The proof uses the compatible-residue model of completion due to Judith Ludwig and Christian
-Merten in Mathlib. The filtration argument parallels Mathlib's finite-module exactness proof,
-replacing its Artin–Rees input with an explicit bound. Finite-level right exactness is supplied
-by `TauCeti.RingTheory.QuotSMulTop`; no new completion carrier is introduced.
+For a complex, bounds in both ranges and the next homology group supply middle exactness;
+an annihilating power for homology is a special case. This does not assert a sheaf comparison
+or completeness of the section module.
+
+`Function.Exact.linearEquivOfInjective` packages injectivity of the completed kernel inclusion
+and middle exactness as the canonical kernel comparison over the completed ring: apply it to
+the exact pair of completed maps and the injectivity of the completed inclusion.
+
+The compatible-residue model of `AdicCompletion` and its residue evaluations are due to
+Kenny Lau. Judith Ludwig and Christian Merten refactored the construction and supplied its
+completed-ring module structure and functorial maps. The filtration-shift proofs adapt their
+`AdicCompletion.map_injective` and `AdicCompletion.map_exact` in
+`Mathlib.RingTheory.AdicCompletion.Exactness`, isolating the uniform shift from the Noetherian
+Artin–Rees input. The finite-level exactness results are those of
+`TauCeti.RingTheory.QuotSMulTop`; no new completion carrier is introduced.
+
+## References
+
+* [Stacks Project, Lemma 52.12.7](https://stacks.math.columbia.edu/tag/0EII),
+  the bounded-torsion argument in formal-section comparison.
 -/
 
 public section
@@ -200,20 +218,52 @@ theorem map_span_singleton_exact_of_isSMulRegular
   map_span_singleton_exact_of_bounded_torsion (k := 0) hfg hg
     fun n x h ↦ by simpa using (hr.pow n).right_eq_zero_of_smul h
 
-/-- Principal-adic completion preserves exactness of the kernel sequence for a map whose
-range and cokernel have bounded `r`-power torsion. Every element in the kernel of the
-completed map comes from the completion of the original kernel. -/
-theorem map_span_singleton_exact_ker_subtype_of_bounded_torsion {j : ℕ}
-    (htorsRange : ∀ (n : ℕ) (x : f.range), r ^ n • x = 0 → r ^ j • x = 0)
-    (htors : ∀ (n : ℕ) (x : N ⧸ f.range), r ^ n • x = 0 → r ^ k • x = 0) :
-    Function.Exact (map (Ideal.span {r}) f.ker.subtype) (map (Ideal.span {r}) f) := by
-  have hinj := map_span_singleton_injective_of_bounded_torsion f.range.injective_subtype
-    (LinearMap.exact_subtype_mkQ f.range) htors
-  have hex : Function.Exact f.ker.subtype f.rangeRestrict :=
-    LinearMap.exact_iff.mpr (by simp)
-  have he := map_span_singleton_exact_of_bounded_torsion hex f.surjective_rangeRestrict
-    htorsRange
-  rw [← f.subtype_comp_rangeRestrict, ← map_comp]
-  exact hinj.comp_exact_iff_exact.mpr he
+/-- An inclusion in an exact pair remains injective after principal-adic completion when
+parameter-power torsion in the last map's range is bounded. -/
+theorem map_span_singleton_injective_of_bounded_torsion_range {l : ℕ}
+    (hf : Function.Injective f) (hfg : Function.Exact f g)
+    (hrange : ∀ (n : ℕ) (y : g.range), r ^ n • y = 0 → r ^ l • y = 0) :
+    Function.Injective (map (Ideal.span {r}) f) :=
+  map_span_singleton_injective_of_bounded_torsion hf hfg.rangeRestrict hrange
+
+/-- Completion preserves middle exactness when parameter-power torsion is bounded in both
+the last map's range and its cokernel. The last map need not be surjective. For the kernel
+sequence, apply this to `g.exact_subtype_ker_map`. -/
+theorem map_span_singleton_exact_of_bounded_torsion_range_of_bounded_torsion_coker {l : ℕ}
+    (hfg : Function.Exact f g)
+    (hrange : ∀ (n : ℕ) (y : g.range), r ^ n • y = 0 → r ^ l • y = 0)
+    (hbound : ∀ (n : ℕ) (x : P ⧸ g.range), r ^ n • x = 0 → r ^ k • x = 0) :
+    Function.Exact (map (Ideal.span {r}) f) (map (Ideal.span {r}) g) := by
+  have hi := map_span_singleton_injective_of_bounded_torsion g.range.injective_subtype
+    (LinearMap.exact_subtype_mkQ g.range) hbound
+  have hc := map_span_singleton_exact_of_bounded_torsion hfg.rangeRestrict
+    g.surjective_rangeRestrict hrange
+  rw [← g.subtype_comp_rangeRestrict, ← map_comp]
+  exact hi.comp_exact_iff_exact.mpr hc
+
+variable {Q : Type*} [AddCommMonoid Q] [Module R Q] {h : P →ₗ[R] Q} {l m : ℕ}
+
+/-- For an exact sequence extending to a complex, bounds on parameter-power torsion in
+both ranges and in the next homology group ensure middle exactness after completion. -/
+theorem map_span_singleton_exact_of_bounded_torsion_homology
+    (hfg : Function.Exact f g) (hgh : h ∘ₗ g = 0)
+    (hrange : ∀ (n : ℕ) (y : g.range), r ^ n • y = 0 → r ^ l • y = 0)
+    (hrangeP : ∀ (n : ℕ) (z : h.range), r ^ n • z = 0 → r ^ m • z = 0)
+    (hH : ∀ (n : ℕ) (y : P), y ∈ h.ker → r ^ n • y ∈ g.range → r ^ k • y ∈ g.range) :
+    Function.Exact (map (Ideal.span {r}) f) (map (Ideal.span {r}) g) :=
+  map_span_singleton_exact_of_bounded_torsion_range_of_bounded_torsion_coker hfg hrange
+    (g.pow_smul_eq_zero_coker_of_bounded_torsion_homology hgh hrangeP hH)
+
+/-- In an exact sequence extending to a complex, completion preserves middle exactness if
+power torsion is bounded in both ranges and a fixed power kills `ker h / range g`.
+In a Čech complex the latter is the first-cohomology obstruction. -/
+theorem map_span_singleton_exact_of_bounded_torsion_range_of_pow_smul_mem_range
+    (hfg : Function.Exact f g) (hgh : h ∘ₗ g = 0)
+    (hrange : ∀ (n : ℕ) (y : g.range), r ^ n • y = 0 → r ^ l • y = 0)
+    (hrangeP : ∀ (n : ℕ) (z : h.range), r ^ n • z = 0 → r ^ m • z = 0)
+    (hkill : ∀ y ∈ h.ker, r ^ k • y ∈ g.range) :
+    Function.Exact (map (Ideal.span {r}) f) (map (Ideal.span {r}) g) :=
+  map_span_singleton_exact_of_bounded_torsion_homology hfg hgh hrange hrangeP
+    (fun _ y hy _ ↦ hkill y hy)
 
 end AdicCompletion
