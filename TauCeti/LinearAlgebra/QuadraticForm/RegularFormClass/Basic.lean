@@ -38,7 +38,6 @@ rank is additive.
 * `TauCeti.presentedForm`: the weighted sum of squares a presentation stands for.
 * `TauCeti.RegularFormClass`: isometry classes of regular finite-dimensional quadratic forms.
 * `TauCeti.RegularFormClass.rank`: the common rank of the presentations in a class.
-* `TauCeti.RegularFormClass.mk_rankOne_inv`: `⟨a⁻¹⟩ ≅ ⟨a⟩`.
 * `TauCeti.RegularFormPresentation.append`: concatenation of presentations.
 * `TauCeti.formClass`: the class of a regular form on a finite-dimensional space.
 
@@ -66,6 +65,7 @@ rank is additive.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
 * `TauCeti.RegularFormClass.mk_succ_eq_mk_rankOne_add`: the class of a presentation of positive
   rank is the rank-one class of its first weight plus the class of the remaining weights.
+* `TauCeti.RegularFormClass.mk_rankOne_inv`: `⟨a⁻¹⟩ ≅ ⟨a⟩`.
 * `TauCeti.RegularFormClass.induction_on_rankOne`: every class is a sum of rank-one classes.
 * `TauCeti.RegularFormClass.exists_eq_add_mk_rankOne` and
   `TauCeti.RegularFormClass.exists_eq_mk_binary_add`: a class of positive rank splits off a line,
