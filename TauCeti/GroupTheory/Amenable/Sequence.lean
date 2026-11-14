@@ -20,7 +20,8 @@ The sets in the resulting sequence need not be nested or exhaust the group.
 
 ## Main results
 
-* `TauCeti.hasFoelnerSets_iff_exists_seq`: the countable Følner sequence criterion.
+* `TauCeti.hasFoelnerSets_iff_exists_seq` and `TauCeti.hasAddFoelnerSets_iff_exists_seq`: the
+  countable Følner sequence criteria for multiplicative and additive groups.
 
 ## References
 
@@ -39,6 +40,9 @@ variable {G : Type*} [Group G] [DecidableEq G]
 
 /-- A countable group has Følner sets exactly when there is a sequence of finite nonempty
 sets whose relative translation boundaries tend to zero for every group element. -/
+@[to_additive hasAddFoelnerSets_iff_exists_seq /-- A countable additive group has Følner sets
+exactly when there is a sequence of finite nonempty sets whose relative translation boundaries tend
+to zero for every group element. -/]
 theorem hasFoelnerSets_iff_exists_seq [Countable G] : HasFoelnerSets G ↔
     ∃ F : ℕ → Finset G, (∀ n, (F n).Nonempty) ∧
       ∀ g : G, Tendsto (fun n => (#((g • F n) ∆ F n) : ℝ) / #(F n)) atTop (𝓝 0) := by
