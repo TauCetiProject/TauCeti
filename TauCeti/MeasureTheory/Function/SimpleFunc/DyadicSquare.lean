@@ -217,7 +217,7 @@ theorem tendsto_eLpNorm_dyadicSquareApprox_sub_sq {Ω : Type*} [MeasurableSpace 
     (Eventually.of_forall fun k ↦ (hf.dyadicSquareApprox k).aestronglyMeasurable) hf
     (Eventually.of_forall fun k ↦ Eventually.of_forall fun ω ↦ ?_)
     (Eventually.of_forall fun ω ↦ tendsto_dyadicSquareApprox (f ω))
-  simp only [ENNReal.coe_one, one_mul, enorm_le_iff_norm_le, Real.norm_eq_abs, abs_sq]
+  simp only [ENNReal.coe_one, one_mul, eNorm_le_iff_norm_le, Real.norm_eq_abs, abs_sq]
   rw [abs_of_nonpos (sub_nonpos.mpr (dyadicSquareApprox_le_sq _ _))]
   linarith [dyadicSquareApprox_nonneg k (f ω)]
 
