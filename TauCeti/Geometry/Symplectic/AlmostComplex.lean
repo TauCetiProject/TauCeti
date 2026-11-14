@@ -851,6 +851,18 @@ lemma associatedBilinForm_apply_apply_self_eq (ω : SymplecticForm V)
     _ = ω.associatedBilinForm J v v := by
       rw [associatedBilinForm_apply]
 
+/-- The endomorphism `a - b J`, multiplication by the complex number `a - b i`, scales the diagonal
+of the associated bilinear form by `a² + b²`. -/
+lemma associatedBilinForm_smul_sub_smul_apply_self (ω : SymplecticForm V)
+    (J : AlmostComplexStructure V) (a b : ℝ) (v : V) :
+    ω.associatedBilinForm J (a • v - b • J v) (a • v - b • J v) =
+      (a ^ 2 + b ^ 2) * ω.associatedBilinForm J v v := by
+  have h := ω.neg_eq v (J v)
+  simp only [associatedBilinForm_apply, map_sub, map_smul, map_neg,
+    AlmostComplexStructure.apply_apply, LinearMap.sub_apply, LinearMap.smul_apply,
+    ω.self_eq_zero, smul_eq_mul]
+  linear_combination (b ^ 2) * h
+
 lemma Compatible.associated_pos {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) {v : V} (hv : v ≠ 0) : 0 < ω v (J v) :=
   h.tames v hv
