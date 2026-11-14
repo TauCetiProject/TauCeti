@@ -231,8 +231,8 @@ private theorem setLIntegral_closedBall_lt_top {e₁ e₂ e₃ : ℂ} (h₁₂ :
           simp only [← ofReal_norm]
           rw [hfac, ← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
           exact ENNReal.ofReal_le_ofReal (by linarith)
-        · rw [ENNReal.mul_rpow_of_ne_top (ENNReal.mul_ne_top enorm_ne_top enorm_ne_top)
-            enorm_ne_top, ENNReal.mul_rpow_of_ne_top enorm_ne_top enorm_ne_top]
+        · rw [ENNReal.mul_rpow_of_ne_top (ENNReal.mul_ne_top eNorm_ne_top eNorm_ne_top)
+            eNorm_ne_top, ENNReal.mul_rpow_of_ne_top eNorm_ne_top eNorm_ne_top]
           exact hle x
     _ = K * ((∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₁‖ₑ ^ (-2⁻¹ : ℝ)) +
           (∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₂‖ₑ ^ (-2⁻¹ : ℝ)) +

@@ -57,7 +57,7 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
 It is obtained by restricting scalars along `(GradedOpposite G)ᵐᵒᵖ ≃ₐ[R] A` and conjugating the
 result by the quadratic twist of the module grading. -/
 @[instance_reducible]
-noncomputable def leftToRightModule (G : InternalGrading R A) (H : InternalGrading R M) :
+noncomputable def leftToRightModule (G : InternalGrading R A ℤ) (H : InternalGrading R M ℤ) :
     Module (GradedOpposite G)ᵐᵒᵖ M := by
   letI : Module (GradedOpposite G)ᵐᵒᵖ M :=
     Module.compHom M (opAlgEquiv G).toRingHom
@@ -66,7 +66,7 @@ noncomputable def leftToRightModule (G : InternalGrading R A) (H : InternalGradi
 omit [IsScalarTower R A M] in
 /-- The graded-opposite action is conjugation of scalar restriction by the quadratic twist. -/
 @[simp]
-theorem leftToRight_smul (G : InternalGrading R A) (H : InternalGrading R M)
+theorem leftToRight_smul (G : InternalGrading R A ℤ) (H : InternalGrading R M ℤ)
     (s : (GradedOpposite G)ᵐᵒᵖ) (x : M) :
     letI : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
     s • x = H.quadraticTwist
@@ -78,8 +78,8 @@ theorem leftToRight_smul (G : InternalGrading R A) (H : InternalGrading R M)
   rw [H.quadraticTwistEquiv_symm_apply, H.quadraticTwistEquiv_apply]
 
 /-- The ground-ring action commutes with the transported graded-opposite action. -/
-theorem leftToRight_isScalarTower (G : InternalGrading R A)
-    (H : InternalGrading R M) :
+theorem leftToRight_isScalarTower (G : InternalGrading R A ℤ)
+    (H : InternalGrading R M ℤ) :
     letI : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
     IsScalarTower R (GradedOpposite G)ᵐᵒᵖ M := by
   let _ : Module (GradedOpposite G)ᵐᵒᵖ M :=
@@ -94,7 +94,7 @@ theorem leftToRight_isScalarTower (G : InternalGrading R A)
 omit [IsScalarTower R A M] in
 /-- A homogeneous scalar of degree `p` acts on a homogeneous module element of degree `q` by the
 original left action multiplied by the Koszul sign `(-1) ^ (p * q)`. -/
-theorem leftToRight_smul_of_mem (G : InternalGrading R A) (H : InternalGrading R M)
+theorem leftToRight_smul_of_mem (G : InternalGrading R A ℤ) (H : InternalGrading R M ℤ)
     [SetLike.GradedSMul G.piece H.piece]
     {p q : ℤ} {a : A} (ha : a ∈ G.piece p) {x : M} (hx : x ∈ H.piece q) :
     letI : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
@@ -143,7 +143,7 @@ omit [IsScalarTower R A M] in
 /-- A homogeneous scalar of even degree acts through the graded opposite by the original left
 action, on every module element: the Koszul sign `(-1) ^ (p * q)` is trivial on each homogeneous
 component. -/
-theorem leftToRight_smul_of_mem_of_even (G : InternalGrading R A) (H : InternalGrading R M)
+theorem leftToRight_smul_of_mem_of_even (G : InternalGrading R A ℤ) (H : InternalGrading R M ℤ)
     [SetLike.GradedSMul G.piece H.piece]
     {p : ℤ} {a : A} (ha : a ∈ G.piece p) (hp : Even p) (x : M) :
     letI : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
@@ -157,7 +157,7 @@ theorem leftToRight_smul_of_mem_of_even (G : InternalGrading R A) (H : InternalG
 
 omit [IsScalarTower R A M] in
 /-- The transported graded-opposite action adds the scalar degree to the module degree. -/
-theorem leftToRight_gradedSMul (G : InternalGrading R A) (H : InternalGrading R M)
+theorem leftToRight_gradedSMul (G : InternalGrading R A ℤ) (H : InternalGrading R M ℤ)
     [SetLike.GradedSMul G.piece H.piece] :
     letI : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
     SetLike.GradedSMul
@@ -192,7 +192,7 @@ by their respective theories.
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module A M]
-  (G : InternalGrading R A) (H : InternalGrading R M) [SetLike.GradedSMul G.piece H.piece]
+  (G : InternalGrading R A ℤ) (H : InternalGrading R M ℤ) [SetLike.GradedSMul G.piece H.piece]
   {d : A →ₗ[R] A} {dM : M →ₗ[R] M}
 
 /-- The two Leibniz rules agree on a homogeneous scalar and a homogeneous module element. Both
