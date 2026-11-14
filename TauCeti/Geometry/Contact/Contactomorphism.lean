@@ -61,6 +61,10 @@ when `c > 0`, and it is strict exactly when `c = 1`
   `Diffeomorph.preservesCoorientation_iff_exists_fun_smul`: descriptions by smooth multipliers.
 * `Diffeomorph.IsContactomorphism.preservesCoorientation_or_neg`: on a connected manifold, a
   contactomorphism preserves or reverses the coorientation.
+* `PartialDiffeomorph.isStrictContactomorphism_toDiffeomorphSourceTarget_iff`,
+  `PartialDiffeomorph.isStrictContactomorphism_toDiffeomorphSourceTarget_modelSpace_iff`: a partial
+  diffeomorphism restricts to a strict contactomorphism between its open source and target if and
+  only if it pulls the target one-form back to the source one-form on its source.
 * `TauCeti.exists_isContactomorphism_not_preservesCoorientation`,
   `TauCeti.exists_preservesCoorientation_not_isStrictContactomorphism`: the three notions differ.
 
@@ -323,6 +327,60 @@ theorem IsStrictContactomorphism.mfderiv_reebVectorField [FiniteDimensional ℝ 
     (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) x
 
 end Diffeomorph
+
+/-! ### Strict contactomorphisms on open domains -/
+
+namespace PartialDiffeomorph
+
+/-- A smooth partial diffeomorphism `e` restricts to a strict contactomorphism between its open
+source and open target, for the restrictions of smooth one-forms `α` and `β`, if and only if at
+every point of `e.source` the differential of `e` pulls `β` back to `α`. -/
+theorem isStrictContactomorphism_toDiffeomorphSourceTarget_iff
+    (e : PartialDiffeomorph I J M N ∞) (α : SmoothForm I M ℝ 1) (β : SmoothForm J N ℝ 1) :
+    e.toDiffeomorphSourceTarget.IsStrictContactomorphism
+        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)
+        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val β) ↔
+      ∀ x ∈ e.source, ∀ v : TangentSpace I x, β.1 (e x) ![mfderiv I J e x v] = α.1 x ![v] := by
+  let U : TopologicalSpace.Opens M := ⟨e.source, e.open_source⟩
+  let W : TopologicalSpace.Opens N := ⟨e.target, e.open_target⟩
+  have hcomp : (Subtype.val : W → N) ∘ e.toDiffeomorphSourceTarget = e ∘ (Subtype.val : U → M) :=
+    funext fun x ↦ e.toDiffeomorphSourceTarget_apply_coe x
+  have hpull (x : U) (v : TangentSpace I x) :
+      (SmoothForm.mpullback e.toDiffeomorphSourceTarget e.toDiffeomorphSourceTarget.contMDiff
+        (SmoothForm.mpullback (Subtype.val : W → N) contMDiff_subtype_val β)).1 x ![v] =
+        β.1 (e x) ![mfderiv I J e x (Manifold.tangentSpaceOpenEquiv x v)] := by
+    have he : MDifferentiableAt I J e x := e.mdifferentiableAt (n := ∞) (by simp) x.2
+    rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_apply_one, hcomp, Function.comp_apply,
+      mfderiv_comp x he ((contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)),
+      ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
+  have hrhs (x : U) (v : TangentSpace I x) :
+      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val α).1 x ![v] =
+        α.1 x ![Manifold.tangentSpaceOpenEquiv x v] := by
+    rw [SmoothForm.mpullback_apply_one, Manifold.mfderiv_subtype_val,
+      ContinuousLinearEquiv.coe_coe]
+  rw [Diffeomorph.isStrictContactomorphism_def, Subtype.ext_iff, funext_iff]
+  refine ⟨fun h x hx w ↦ ?_, fun h x ↦ ContinuousAlternatingMap.ext_fin_one fun v ↦ ?_⟩
+  · let x' : U := ⟨x, hx⟩
+    let v : TangentSpace I x' := (Manifold.tangentSpaceOpenEquiv x').symm w
+    have hv := congrArg (fun A ↦ A ![v]) (h x')
+    rwa [hpull, hrhs, ContinuousLinearEquiv.apply_symm_apply] at hv
+  · rw [hpull, hrhs]
+    exact h x.1 x.2 _
+
+/-- For a partial diffeomorphism into a normed space, `e.toDiffeomorphSourceTarget` is a strict
+contactomorphism between the restrictions of `α` and `β` if and only if `mvfderiv I e` pulls `β`
+back to `α` on `e.source`. -/
+theorem isStrictContactomorphism_toDiffeomorphSourceTarget_modelSpace_iff
+    (e : PartialDiffeomorph I 𝓘(ℝ, F) M F ∞) (α : SmoothForm I M ℝ 1)
+    (β : SmoothForm 𝓘(ℝ, F) F ℝ 1) :
+    e.toDiffeomorphSourceTarget.IsStrictContactomorphism
+        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)
+        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val β) ↔
+      ∀ x ∈ e.source, ∀ v : TangentSpace I x, β.1 (e x) ![mvfderiv I e x v] = α.1 x ![v] := by
+  simp only [e.isStrictContactomorphism_toDiffeomorphSourceTarget_iff α β,
+    mvfderiv_apply_eq_mfderiv_apply]
+
+end PartialDiffeomorph
 
 /-! ### The standard contact form -/
 

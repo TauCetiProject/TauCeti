@@ -28,6 +28,8 @@ form a complex vector space, and these operations are complex-linear or conjugat
   scalars of the codomain.
 * `ContinuousLinearMap.compContinuousAlternatingMapSemilinear`: postcomposition with a semilinear
   map as a semilinear map of alternating maps.
+* `ContinuousAlternatingMap.ext_fin_one`, `ContinuousAlternatingMap.ext_fin_two`: extensionality
+  of continuous alternating maps of one or two vectors.
 * `ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one`: an alternating map of one vector
   vanishes exactly when it vanishes on every vector.
 * `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
@@ -69,16 +71,32 @@ theorem compContinuousLinearMapLinear_apply (f : M →L[A] M') (g : M' [⋀^ι]�
     compContinuousLinearMapLinear S f g = g.compContinuousLinearMap f :=
   (rfl)
 
+/-- Two continuous alternating maps of one vector agree when they agree on every vector. -/
+theorem ext_fin_one {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    {α β : M [⋀^Fin 1]→L[R] N} (h : ∀ v, α ![v] = β ![v]) : α = β := by
+  ext w
+  obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, funext fun i ↦ by rw [Fin.fin_one_eq_zero i]; rfl⟩
+  exact h v
+
+/-- Two continuous alternating maps of two vectors agree when they agree on every pair of
+vectors. -/
+theorem ext_fin_two {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    {α β : M [⋀^Fin 2]→L[R] N} (h : ∀ u v, α ![u, v] = β ![u, v]) : α = β := by
+  ext w
+  obtain ⟨u, v, rfl⟩ : ∃ u v, w = ![u, v] := ⟨w 0, w 1, funext (Fin.forall_fin_two.2 ⟨rfl, rfl⟩)⟩
+  exact h u v
+
 /-- A continuous alternating map of one vector vanishes exactly when it vanishes on every
 vector. -/
 theorem eq_zero_iff_forall_apply_fin_one {R M N : Type*} [Semiring R]
     [AddCommMonoid M] [Module R M] [TopologicalSpace M]
     [AddCommMonoid N] [Module R N] [TopologicalSpace N]
-    (α : M [⋀^Fin 1]→L[R] N) : α = 0 ↔ ∀ v, α ![v] = 0 := by
-  refine ⟨fun h v ↦ by simp [h], fun h ↦ ?_⟩
-  ext w
-  obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, funext fun i ↦ by rw [Fin.fin_one_eq_zero i]; rfl⟩
-  exact h v
+    (α : M [⋀^Fin 1]→L[R] N) : α = 0 ↔ ∀ v, α ![v] = 0 :=
+  ⟨fun h v ↦ by simp [h], fun h ↦ ext_fin_one fun v ↦ by simpa using h v⟩
 
 section CompComp
 

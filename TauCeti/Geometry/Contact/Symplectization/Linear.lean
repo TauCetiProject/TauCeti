@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Basic
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
-import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.Algebra.Module.Contact
 
 /-!
 # The continuous symplectization form of a covector and a two-form
@@ -18,11 +17,15 @@ For a covector `a` and a two-form `b` on a finite-dimensional normed space `V`, 
 form `((s, v), (s', w)) ↦ s a(w) - s' a(v) + b(v, w)` on `𝕜 × V`
 (`Module.Dual.symplectizationForm`) is a continuous bilinear map
 (`ContinuousAlternatingMap.symplectizationFormCLM`). It depends smoothly on `a` and `b`
-(`ContDiffOn.symplectizationFormCLM`), and at a point where a real one-form `α` is a contact form,
-the symplectization form of `α` and `dα` is invertible
-(`TauCeti.IsContactFormAt.isInvertible_symplectizationFormCLM`), by
+(`ContDiffOn.symplectizationFormCLM`), and a real one-form `α` is a contact form at `x` if and only
+if the symplectization form of `α` and `dα` at `x` is invertible
+(`TauCeti.isInvertible_symplectizationFormCLM_iff`,
+`TauCeti.IsContactFormAt.isInvertible_symplectizationFormCLM`), by
 `TauCeti.isContactFormAt_modelSpace_iff_isContact` and
-`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`.
+`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`. Since contactness of a continuous
+covector/bilinear-form family is open (`TauCeti.isOpen_setOf_isContact`), a one-form of class `C¹`
+at `x` that is a contact form at `x` remains a contact form on a neighbourhood of `x`
+(`TauCeti.IsContactFormAt.eventually`).
 
 This is the linear algebra of the contact Moser method: pairing a conformal factor and a vector
 field with `𝕜 × V` turns the contact Moser equations into a Moser contraction equation for the
@@ -33,7 +36,11 @@ symplectization form.
 * `ContinuousAlternatingMap.symplectizationFormCLM`: the symplectization form as a continuous
   bilinear map, with `ContinuousAlternatingMap.symplectizationFormCLM_apply`.
 * `ContDiffOn.symplectizationFormCLM`: smooth dependence on the covector and the two-form.
-* `TauCeti.IsContactFormAt.isInvertible_symplectizationFormCLM`: invertibility at a contact point.
+* `TauCeti.isInvertible_symplectizationFormCLM_iff`,
+  `TauCeti.IsContactFormAt.isInvertible_symplectizationFormCLM`: invertibility characterization of
+  contactness at a point.
+* `TauCeti.IsContactFormAt.eventually`: openness of the pointwise contact condition for `C¹`
+  one-forms on a finite-dimensional space.
 
 ## References
 
@@ -43,7 +50,8 @@ symplectization form.
 
 public section
 
-open scoped Manifold
+open Filter
+open scoped Manifold Topology
 
 namespace ContinuousAlternatingMap
 
@@ -85,14 +93,46 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
+/-- On a finite-dimensional real normed space, the symplectization form of `α` and `dα` at `x` is
+invertible if and only if `α` is a contact form at `x`. -/
+theorem isInvertible_symplectizationFormCLM_iff
+    {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x : V} :
+    ((α x).symplectizationFormCLM (extDeriv α x)).IsInvertible ↔
+      IsContactFormAt (I := 𝓘(ℝ, V)) α x := by
+  rw [ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm,
+    ContinuousAlternatingMap.symplectizationFormCLM,
+    LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap,
+    isContactFormAt_modelSpace_iff_isContact,
+    Module.Dual.isContact_iff_nondegenerate_symplectizationForm]
+
 /-- At a point where a one-form is a contact form, its symplectization form is invertible, by
-`TauCeti.isContactFormAt_modelSpace_iff_isContact` and
-`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`. -/
+`TauCeti.isInvertible_symplectizationFormCLM_iff`. -/
 theorem IsContactFormAt.isInvertible_symplectizationFormCLM
     {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x : V} (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x) :
     ((α x).symplectizationFormCLM (extDeriv α x)).IsInvertible :=
-  isInvertible_toContinuousBilinearMap_iff_separatingLeft.2
-    (Module.Dual.isContact_iff_nondegenerate_symplectizationForm.1
-      (isContactFormAt_modelSpace_iff_isContact.1 hc)).1
+  isInvertible_symplectizationFormCLM_iff.2 hc
+
+/-- **Openness of the contact condition.** On a finite-dimensional real normed space, a one-form
+that is `C¹` at `x` and is a contact form at `x` remains a contact form on a neighbourhood of
+`x`. -/
+theorem IsContactFormAt.eventually {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x : V}
+    (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x) (hα : ContDiffAt ℝ 1 α x) :
+    ∀ᶠ y in 𝓝 x, IsContactFormAt (I := 𝓘(ℝ, V)) α y := by
+  simp only [isContactFormAt_modelSpace_iff_isContact] at hc ⊢
+  have hopen : IsOpen {p : (V [⋀^Fin 1]→L[ℝ] ℝ) × (V [⋀^Fin 2]→L[ℝ] ℝ) |
+      Module.Dual.IsContact (ContinuousAlternatingMap.toDual p.1 : V →ₗ[ℝ] ℝ)
+        (ContinuousAlternatingMap.flatL ℝ V ℝ p.2).toLinearMap₁₂} :=
+    isOpen_setOf_isContact
+      (fun v ↦ by
+        simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply]
+        exact (ContinuousAlternatingMap.apply ℝ V ℝ (![v] : Fin 1 → V)).continuous.comp
+          continuous_fst)
+      (fun v w ↦ by
+        simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+          ContinuousAlternatingMap.flatL_apply_apply]
+        exact (ContinuousAlternatingMap.apply ℝ V ℝ (![v, w] : Fin 2 → V)).continuous.comp
+          continuous_snd)
+  exact (hα.continuousAt.prodMk
+    (contDiffAt_extDeriv hα (r := 0) (by simp)).continuousAt).eventually (hopen.mem_nhds hc)
 
 end TauCeti
