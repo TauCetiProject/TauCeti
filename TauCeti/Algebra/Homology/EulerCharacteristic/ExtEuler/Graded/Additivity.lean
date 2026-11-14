@@ -31,7 +31,6 @@ extension-closure results of `TauCeti.Algebra.Homology.EulerCharacteristic.ExtEu
   exact Ext sequences underlying ordinary Euler additivity.
 * Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices", Section 2.2, for the
   Laurent-polynomial-valued Ext-Euler form.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 6, "q-Euler form".
 -/
 
 public section
