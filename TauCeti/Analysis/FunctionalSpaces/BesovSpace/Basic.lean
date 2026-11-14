@@ -70,6 +70,9 @@ both its tempered distribution and this `Lᵖ` data.
 * `TemperedDistribution.MemBesov.of_bump` and `TauCeti.BesovSpace.bumpEquiv`: the Besov space does
   not depend on the bump function; the identity on tempered distributions is an isomorphism of
   normed spaces between the Besov spaces built from two bump functions.
+* `TauCeti.BesovSpace.continuous_block`: each block depends continuously on the element.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero`: an `Lᵖ`
+  function whose blocks vanish from some index on lies in `B^s_{p,∞}`.
 * `TauCeti.BesovSpace.inclusionOfExponentLE`: the Bernstein embedding
   `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}` for `p ≤ r` in dimension `n`, bounded uniformly in `s`
   and `q` (`TauCeti.BesovSpace.exists_norm_inclusionOfExponentLE_le`); at the level of the
@@ -551,6 +554,14 @@ theorem rpow_mul_norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
   rw [← norm_weightedBlocks_apply, ← norm_weightedBlocks]
   exact lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' _ j
 
+/-- **The blocks depend continuously on the element:** `‖Δⱼ u‖_p ≤ 2^{-js} ‖u‖`. -/
+theorem continuous_block (j : ℕ) : Continuous fun u : BesovSpace F φ s p q ↦ u.block j := by
+  refine AddMonoidHomClass.continuous_of_bound
+    (AddMonoidHom.mk' (fun u : BesovSpace F φ s p q ↦ u.block j) fun u v ↦ block_add u v j)
+    ((2 : ℝ) ^ (s * j))⁻¹ fun u ↦ ?_
+  rw [AddMonoidHom.mk'_apply, inv_mul_eq_div, le_div_iff₀' (by positivity)]
+  exact rpow_mul_norm_block_le u j
+
 /-- For `q < ∞` the Besov norm is `(∑ⱼ (2^{js} ‖Δⱼ u‖_p)^q)^{1/q}`. -/
 theorem norm_eq_tsum_rpow (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
     ‖u‖ = (∑' j : ℕ, (2 ^ (s * j) * ‖u.block j‖) ^ q.toReal) ^ (1 / q.toReal) := by
@@ -853,6 +864,46 @@ theorem norm_inclusionOfLT_le (hs : s' < s) (u : BesovSpace F φ s p q) :
   norm_le_of_toDistr_eq_of_lt hs (toDistr_inclusionOfLT hs u).symm
 
 end Inclusion
+
+section BandLimited
+
+variable (F φ) in
+/-- **Band-limited `Lᵖ` functions lie in `B^s_{p,∞}`.** There is `C`, depending only on `φ`, such
+that if the blocks `Δₖ r` of `r ∈ Lᵖ` vanish for `k ≥ M`, then `r ∈ B^s_{p,∞}` with
+`‖r‖_{B^s_{p,∞}} ≤ 2^{|s| M} C ‖r‖_p`. -/
+theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (s : ℝ) (M : ℕ)
+      (r : Lp F p (volume : Measure E)),
+      (∀ k, M ≤ k → littlewoodPaleyBlock F φ k (r : 𝓢'(E, F)) = 0) →
+        ∃ x : BesovSpace F φ s p ∞, x.toDistr = r ∧ ‖x‖ ≤ 2 ^ (|s| * M) * C * ‖r‖ := by
+  obtain ⟨C₁, hC₁⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  refine ⟨max C₁ 0, le_max_right _ _, fun {p} _ s M r hr ↦ ?_⟩
+  choose f hf hfr using fun k ↦ hC₁ k r
+  -- Below `M` the weight `2^{ks}` is at most `2^{|s| M}`; from `M` on the blocks vanish.
+  have hbound (k : ℕ) : 2 ^ (s * k) * ‖f k‖ ≤ 2 ^ (|s| * M) * max C₁ 0 * ‖r‖ := by
+    rcases lt_or_ge k M with hk | hk
+    · have hsk : s * k ≤ |s| * M :=
+        (mul_le_mul_of_nonneg_right (le_abs_self s) (Nat.cast_nonneg k)).trans
+          (mul_le_mul_of_nonneg_left (Nat.cast_le.2 hk.le) (abs_nonneg s))
+      calc 2 ^ (s * k) * ‖f k‖ ≤ 2 ^ (|s| * M) * (max C₁ 0 * ‖r‖) :=
+            mul_le_mul (Real.rpow_le_rpow_of_exponent_le one_le_two hsk)
+              ((hfr k).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg r)))
+              (norm_nonneg _) (by positivity)
+        _ = _ := by ring
+    · have hf0 : f k = 0 := Lp.toTemperedDistribution_injective <| by
+        simp only [← hf k, hr k hk, Lp.toTemperedDistribution_zero]
+      rw [hf0, norm_zero, mul_zero]
+      positivity
+  -- The constant sequence `2^{|s| M} C ‖r‖` lies in `ℓ^∞` and bounds the weighted blocks.
+  set c : ℝ := 2 ^ (|s| * M) * max C₁ 0 * ‖r‖
+  have hc : 0 ≤ c := by positivity
+  let b : lp (fun _ : ℕ ↦ ℝ) ∞ := ⟨fun _ ↦ c, memℓp_infty ⟨c, by
+    rintro _ ⟨k, rfl⟩
+    exact (Real.norm_of_nonneg hc).le⟩⟩
+  obtain ⟨x, hx, hxb⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f b hf hbound
+  exact ⟨x, hx, hxb.trans (lp.norm_le_of_forall_le hc fun _ ↦ (Real.norm_of_nonneg hc).le)⟩
+
+end BandLimited
 
 section Bernstein
 

@@ -101,7 +101,9 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.littlewoodPaleyBlock_eq_sum_Ico_of_hasSum`: the block `Δₖ` of a series
   whose terms have `Δₖ uⱼ = 0` unless `k - L ≤ j < k + L` is the finite sum over that window.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality, also
-  between the blocks of two bump functions.
+  between the blocks of two bump functions, and
+  `TemperedDistribution.exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock`, its form for the
+  low-pass truncations.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`: each block of one bump function
   is a sum of boundedly many blocks of another, composed with it.
 * `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`: the blocks commute with the
@@ -120,7 +122,8 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.littlewoodPaleyBlock_delta_zero`: the blocks of the Dirac mass `δ₀` are
   the kernels `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
-  `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
+  `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass truncations, uniformly in `N`, by
+  `‖𝓕⁻ φ‖₁` (`TemperedDistribution.exists_sum_littlewoodPaleyBlock_eq_and_norm_le`).
 * `TemperedDistribution.ae_eq_convolution_of_littlewoodPaleyBlock_eq`: on `Lᵖ`, the block `Δⱼ` is
   convolution with `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le`: the commutator of
@@ -483,6 +486,31 @@ theorem exists_littlewoodPaleyBlock_eq_sum_Ico (φ' : ContDiffBump (0 : E)) :
   · exact congr($((hL₁ k j (by omega)).2) u)
   · exact congr($((hL₂ j k (by omega)).1) u)
 
+/-- **Low-pass truncations against single blocks.** There is `L`, depending only on `φ`, such
+that the low-pass truncation `S_N = ∑_{j ≤ N} Δⱼ` fixes the block `Δₖ u` when `k + L ≤ N`, and the
+block `Δₖ` annihilates `S_N u` when `N + L ≤ k`. -/
+theorem exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock :
+    ∃ L : ℕ, ∀ k N : ℕ,
+      (k + L ≤ N → ∀ u : 𝓢'(E, F),
+        ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j (littlewoodPaleyBlock F φ k u) =
+          littlewoodPaleyBlock F φ k u) ∧
+      (N + L ≤ k → ∀ u : 𝓢'(E, F),
+        littlewoodPaleyBlock F φ k (∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j u) =
+          0) := by
+  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ φ
+  refine ⟨L, fun k N ↦ ⟨fun hkN u ↦ ?_, fun hNk u ↦ ?_⟩⟩
+  · refine sum_littlewoodPaleyBlock_eq_self φ _ fun j hj ↦ ?_
+    have hkj : k + L ≤ j := by
+      have := Finset.mem_range.not.1 hj
+      omega
+    simpa using DFunLike.congr_fun (hL k j hkj).2 u
+  · rw [map_sum]
+    refine Finset.sum_eq_zero fun j hj ↦ ?_
+    have hjk : j + L ≤ k := by
+      have := Finset.mem_range.1 hj
+      omega
+    simpa using DFunLike.congr_fun (hL j k hjk).2 u
+
 /-- The Littlewood–Paley blocks commute with every Fourier multiplier of temperate growth. -/
 theorem littlewoodPaleyBlock_fourierMultiplierCLM_comm {g : E → ℂ} (hg : g.HasTemperateGrowth)
     (j : ℕ) (u : 𝓢'(E, F)) :
@@ -575,6 +603,29 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
     exists_fourierMultiplierCLM_eq_and_norm_le (φ.inhomogeneousLittlewoodPaleySchwartz j) f
   rw [φ.coe_inhomogeneousLittlewoodPaleySchwartz] at hg hgf
   exact ⟨g, hg, hgf.trans (mul_le_mul_of_nonneg_right hK (norm_nonneg f))⟩
+
+/-- **The low-pass truncations are bounded on `Lᵖ` uniformly in `N`.** For every `1 ≤ p ≤ ∞`,
+every `N` and every `f ∈ Lᵖ`, the truncation `S_N f = ∑_{j ≤ N} Δⱼ f` is a function in `Lᵖ` with
+`‖S_N f‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p`. The truncation is the Fourier multiplier by `φ (2^{-N} ·)`, whose
+kernel is an `L¹`-normalised dilate of `𝓕⁻ φ`. -/
+theorem exists_sum_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (N : ℕ) (f : Lp F p (volume : Measure E)) :
+    ∃ g : Lp F p (volume : Measure E),
+      ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g ∧
+        ‖g‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
+  have hc : ((2 : ℝ) ^ N)⁻¹ ≠ 0 := by positivity
+  -- The symbol `φ (2^{-N} ·)` is smooth and compactly supported, hence a Schwartz function.
+  have hσ : HasCompactSupport fun ξ : E ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) :=
+    (φ.hasCompactSupport.comp_smul hc).comp_left Complex.ofReal_zero
+  set σ : 𝓢(E, ℂ) := hσ.toSchwartzMap
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
+  have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) :=
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
+  rw [hσ_coe] at hg hgf
+  refine ⟨g, ?_, ?_⟩
+  · rw [← _root_.sum_apply, sum_littlewoodPaleyBlock_range, hg]
+  · rwa [TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ ξ : ℂ)) hc] at hgf
 
 open ContinuousLinearMap in
 open scoped Convolution in
