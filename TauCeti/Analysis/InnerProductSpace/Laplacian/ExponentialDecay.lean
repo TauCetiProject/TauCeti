@@ -40,7 +40,7 @@ sphere, with `M ≥ 0`, then for every `κ < 1`
 
 with a constant `N` depending only on the space and `κ`, not on `c`, `R` or `u`. Here the barrier
 is a sum `∑_θ cosh (c ⟪θ, y - x⟫)` of plane waves along finitely many unit vectors `θ`, an
-eigenfunction of `Δ` with eigenvalue `c²` (`ContDiffAt.laplacian_comp_inner_sub`). The directions
+eigenfunction of `Δ` with eigenvalue `c²` (`TauCeti.laplacian_comp_inner_sub`). The directions
 are chosen so that every unit vector `v` has `⟪θ, v⟫ ≥ κ` for one of them, so on the boundary
 sphere one plane wave is at least `exp (κ c R) / 2`, while at the centre the barrier is the number
 of plane waves. The loss from the sharp rate `c` to `κ c` is the price of this finite barrier.
@@ -253,10 +253,8 @@ theorem le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R 
 eigenvalue `c²`. -/
 private theorem laplacian_cosh_mul_inner_sub (c : ℝ) {θ : E} (hθ : ‖θ‖ = 1) (x y : E) :
     Δ (fun z ↦ Real.cosh (c * ⟪θ, z - x⟫_ℝ)) y = c ^ 2 * Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
-  rw [ContDiffAt.laplacian_comp_inner_sub (g := (Real.cosh <| c * ·))
-    (Real.contDiff_cosh.comp (contDiff_const.mul contDiff_id)).contDiffAt,
-    deriv_deriv_comp_mul_left, Real.deriv_cosh, Real.deriv_sinh, hθ, one_pow, one_smul,
-    smul_eq_mul]
+  rw [laplacian_comp_inner_sub (Real.cosh <| c * ·), deriv_deriv_comp_mul_left, Real.deriv_cosh,
+    Real.deriv_sinh, hθ, one_pow, one_smul, smul_eq_mul]
 
 omit [FiniteDimensional ℝ E] in
 /-- On the sphere `‖y - x‖ = R`, the sum of the plane waves `cosh (c ⟪θ, y - x⟫)` over directions

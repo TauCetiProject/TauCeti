@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 
 /-!
 # Caps of a unit sphere
@@ -75,23 +76,12 @@ theorem inner_pos_of_le_inner (hx : ‖x‖ = 1) (ha : ‖a‖ = 1) (hu : ‖u�
 `κ ≤ ⟪θ, v⟫` for one of them. -/
 theorem exists_finset_forall_exists_le_inner [FiniteDimensional ℝ F] {κ : ℝ} (hκ : κ < 1) :
     ∃ S : Finset F, (∀ θ ∈ S, ‖θ‖ = 1) ∧ ∀ v : F, ‖v‖ = 1 → ∃ θ ∈ S, κ ≤ ⟪θ, v⟫ := by
-  classical
-  -- Take a `δ`-net of the unit sphere, since `⟪θ, v⟫ = 1 - ‖v - θ‖² / 2` for unit vectors.
-  set δ := min 1 (1 - κ)
-  have hδ : 0 < δ := lt_min one_pos (by linarith)
-  obtain ⟨t, hts, htf, hcov⟩ := Metric.finite_approx_of_totallyBounded
-    (isCompact_sphere (0 : F) 1).totallyBounded δ hδ
-  refine ⟨htf.toFinset, fun θ hθ ↦ by simpa using hts (htf.mem_toFinset.1 hθ), fun v hv ↦ ?_⟩
-  obtain ⟨θ, hθt, hvθ⟩ := Set.mem_iUnion₂.1 (hcov (by simpa using hv))
-  refine ⟨θ, htf.mem_toFinset.2 hθt, ?_⟩
-  have hθ : ‖θ‖ = 1 := by simpa using hts hθt
-  have hd : ‖v - θ‖ < δ := by simpa [dist_eq_norm] using hvθ
-  have h1 : ‖v - θ‖ ^ 2 ≤ δ := by
-    have : ‖v - θ‖ ≤ 1 := hd.le.trans (min_le_left _ _)
-    nlinarith [norm_nonneg (v - θ)]
-  have h2 : δ ≤ 1 - κ := min_le_right _ _
-  have hsq := norm_sub_sq_real v θ
-  rw [hv, hθ, real_inner_comm] at hsq
-  nlinarith
+  -- Cover the unit sphere by finitely many balls of radius `1 - κ` around unit vectors.
+  obtain ⟨S, hSs, hcov⟩ := (isCompact_sphere (0 : F) 1).elim_nhds_subcover
+    (Metric.ball · (1 - κ)) fun θ _ ↦ Metric.ball_mem_nhds θ (sub_pos.2 hκ)
+  refine ⟨S, fun θ hθ ↦ by simpa using hSs θ hθ, fun v hv ↦ ?_⟩
+  obtain ⟨θ, hθS, hvθ⟩ := Set.mem_iUnion₂.1 (hcov (by simpa using hv))
+  have hd : ‖v - θ‖ < 1 - κ := by simpa [dist_eq_norm] using hvθ
+  exact ⟨θ, hθS, by linarith [one_sub_norm_sub_le_inner (by simpa using hSs θ hθS) v]⟩
 
 end TauCeti
