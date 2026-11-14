@@ -50,9 +50,9 @@ main results are:
 * `TauCeti.Floer.cappedExchangeAlmostComplex_eq_of_norm_le`: for `L > 2` and `0 ≤ c ≤ 1` every
   member is `J₀` on the disc of radius `exp (-2π(L - 1)) / 2` about the capped puncture `0`, where
   the perturbation vanishes as well (`TauCeti.Floer.cappedExchangePerturbation_eq_zero`).
-* `TauCeti.Floer.contMDiffAt_cappedExchangeAlmostComplex`: for period-one `C^n` end families and
-  `L > 4`, the family is `C^n` jointly in the parameter `-1 < c < 2`, the point of the capped domain
-  `ℂ ∖ {1}` and the point `x`.
+* `TauCeti.Floer.contMDiffAt_cappedExchangeAlmostComplex`: for period-one `C^n` end families, the
+  family is `C^n` jointly in the neck length `L > 4`, the parameter `-1 < c < 2`, the point of the
+  capped domain `ℂ ∖ {1}` and the point `x`.
 * `TauCeti.Floer.isComplexLinearMap_perturbedFDeriv_cappedExchange_one`: for a symplectic vector
   space target, if `u` solves the Floer equation at `σ(z)` for the exchanged data capped at `1`,
   then `u ∘ σ` solves it at `z` for the member `c = 1` of the family, perturbation and almost
@@ -82,10 +82,6 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 namespace TauCeti.Floer
 
 variable {M V : Type*}
-
-/-- The radius `2 exp (2π)` of the disc on which the negative plane data are trivial exceeds `3`. -/
-private theorem three_lt_two_mul_exp_two_pi : 3 < 2 * Real.exp (2 * π) := by
-  nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
 
 section Algebraic
 
@@ -184,6 +180,7 @@ theorem cappedExchangeAlmostComplex_of_lt_re_endCoord (h₀ : ω.Compatible J₀
 /-- **The start of the family is the capping structure at `0`.** For `L ≥ 2`, the member `c = 0` of
 the family is the structure obtained by plumbing the negative plane with end structure `J_0` into
 the end at `0` of the pair of pants with end structures `J`. -/
+@[simp]
 theorem cappedExchangeAlmostComplex_zero (h₀ : ω.Compatible J₀) (hL : 2 ≤ L) :
     cappedExchangeAlmostComplex h₀ J hJ L 0 =
       plumbedAlmostComplex h₀ h₀ (update (fun _ _ _ => J₀) inf (J zero)) J
@@ -291,21 +288,22 @@ variable [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] {L : ℝ}
 
 /-- **The family is smooth.** For families `J q t x` of `ω`-tame structures which have period one
-in `t` and are `C^n` on `ℝ × M`, and a neck length `L > 4`, the input-exchange family capped at `0`
-is `C^n` jointly in the parameter `c`, the point of the capped domain `ℂ ∖ {1}` and the point `x`,
-at every parameter `-1 < c < 2`. Near the disc `‖w‖ ≤ 1/2` it is the capping structure at `0`, which
-does not depend on `c`, and off the disc `‖w‖ ≤ exp (-2π) / 2` it is the input-exchange family. -/
+in `t` and are `C^n` on `ℝ × M`, the input-exchange family capped at `0` is `C^n` jointly in the
+neck length `L`, the parameter `c`, the point of the capped domain `ℂ ∖ {1}` and the point `x`, at
+every neck length `L > 4` and parameter `-1 < c < 2`. Near the disc `‖w‖ ≤ 1/2` it is the capping
+structure at `0`, which does not depend on `c`, and off the disc `‖w‖ ≤ exp (-2π) / 2` it is the
+input-exchange family, which does not depend on `L`. -/
 theorem contMDiffAt_cappedExchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ∞}
     (hJp : ∀ q, Periodic (J q) 1)
     (hJs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, V →L[ℝ] V) n
       (fun p : ℝ × M => (J q p.1 p.2).toLinearMap.toContinuousLinearMap))
     (hL : 4 < L) {c : ℝ} (hc : c ∈ Ioo (-1) 2) {w : ℂ} (hw : w ≠ 1) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, V →L[ℝ] V) n
-      (fun p : ℝ × (ℂ × M) =>
-        (cappedExchangeAlmostComplex h₀ J hJ L p.1 p.2.1 p.2.2).toLinearMap.toContinuousLinearMap)
-      (c, (w, x)) := by
-  have hnorm : Continuous fun p : ℝ × (ℂ × M) => ‖p.2.1‖ :=
-    (continuous_fst.comp continuous_snd).norm
+    ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I))) 𝓘(ℝ, V →L[ℝ] V) n
+      (fun p : ℝ × (ℝ × (ℂ × M)) => (cappedExchangeAlmostComplex h₀ J hJ p.1 p.2.1 p.2.2.1
+        p.2.2.2).toLinearMap.toContinuousLinearMap)
+      (L, (c, (w, x))) := by
+  have hnorm : Continuous fun p : ℝ × (ℝ × (ℂ × M)) => ‖p.2.2.1‖ :=
+    (continuous_fst.comp (continuous_snd.comp continuous_snd)).norm
   rcases lt_or_ge ‖w‖ (1 / 2) with hlt | hge
   · -- Near the disc `‖w‖ < 1/2` the family is the capped input part, which does not depend on the
     -- parameter.
@@ -321,14 +319,14 @@ theorem contMDiffAt_cappedExchangeAlmostComplex (h₀ : ω.Compatible J₀) {n :
         rcases eq_or_ne w 0 with rfl | h₀'
         · exact Or.inl endCenter_zero.symm
         · exact Or.inr ⟨h₀', hw⟩) x
-    refine (hin.comp (c, (w, x)) (contMDiffAt_const.prodMk contMDiffAt_snd)).congr_of_eventuallyEq
-      ?_
+    refine (hin.comp (L, (c, (w, x)))
+      (contMDiffAt_fst.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).congr_of_eventuallyEq ?_
     filter_upwards [hnorm.continuousAt.eventually (gt_mem_nhds hlt),
-      continuous_fst.continuousAt.eventually (isOpen_Ioo.mem_nhds hc)] with p hp hpc
-    have hn : ‖p.2.1 - p.1‖ ≤ 2 * Real.exp (2 * π) := by
-      have h := norm_sub_le p.2.1 (p.1 : ℂ)
+      continuous_snd.fst.continuousAt.eventually (isOpen_Ioo.mem_nhds hc)] with p hp hpc
+    have hn : ‖p.2.2.1 - p.2.1‖ ≤ 2 * Real.exp (2 * π) := by
+      have h := norm_sub_le p.2.2.1 (p.2.1 : ℂ)
       rw [Complex.norm_real, Real.norm_eq_abs] at h
-      have : |p.1| ≤ 2 := abs_le.2 ⟨by linarith [hpc.1], hpc.2.le⟩
+      have : |p.2.1| ≤ 2 := abs_le.2 ⟨by linarith [hpc.1], hpc.2.le⟩
       linarith [three_lt_two_mul_exp_two_pi]
     simp only [Function.comp_apply, cappedExchangeAlmostComplex_of_norm_le h₀ hn]
     rw [plumbedAlmostComplex_update_inf_update_zero (hJ := hJ)]
@@ -338,12 +336,13 @@ theorem contMDiffAt_cappedExchangeAlmostComplex (h₀ : ω.Compatible J₀) {n :
       rw [norm_zero] at hge
       linarith
     have hex := contMDiffAt_exchangeAlmostComplex h₀ (hJ := hJ) hJp hJs hc ⟨w, hw₀, hw⟩ x
-    refine hex.congr_of_eventuallyEq ?_
+    refine (hex.comp (L, (c, (w, x))) contMDiffAt_snd).congr_of_eventuallyEq ?_
     have hsmall : Real.exp (-(2 * π)) / 2 < 1 / 2 := by
       have : Real.exp (-(2 * π)) < 1 := Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
       linarith
-    filter_upwards [hnorm.continuousAt.eventually (lt_mem_nhds (hsmall.trans_le hge))] with p hp
-    rw [cappedExchangeAlmostComplex_of_re_endCoord_le h₀
+    filter_upwards [hnorm.continuousAt.eventually (lt_mem_nhds (hsmall.trans_le hge)),
+      continuous_fst.continuousAt.eventually (lt_mem_nhds (show 2 < L by linarith))] with p hp hpL
+    rw [Function.comp_apply, cappedExchangeAlmostComplex_of_re_endCoord_le h₀
       ((re_endCoord_zero_le_one hp.le).trans (by linarith))]
 
 end Smooth

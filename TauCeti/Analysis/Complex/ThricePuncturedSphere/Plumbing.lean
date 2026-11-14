@@ -126,6 +126,12 @@ theorem plumbingFactor_one (L : ℝ) : one.plumbingFactor L = -zero.plumbingFact
   simp only [plumbingFactor_def, endScale_one, endScale_zero]
   ring
 
+/-- The exchange `w ↦ 1 - w` carries the plumbing map at `0` to the plumbing map at `1`. -/
+theorem one_sub_plumbingMap_zero (L : ℝ) (w : ℂ) :
+    1 - zero.plumbingMap L w = one.plumbingMap L w := by
+  rw [plumbingMap_apply, plumbingMap_apply, plumbingFactor_one, endCenter_one, endCenter_zero]
+  ring
+
 /-- The plumbing factor is the end scale times the positive real number `e^{-2πL} / 2`. -/
 theorem plumbingFactor_eq_mul_ofReal (q : Puncture) (L : ℝ) :
     q.plumbingFactor L = q.endScale * ((Real.exp (-(2 * π * L)) / 2 : ℝ) : ℂ) := by

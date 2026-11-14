@@ -90,14 +90,6 @@ theorem cappedExchangePerturbation_def (H : Puncture → ℝ → M → ℝ) (L c
         negativePlanePerturbation (H inf) (w - c) x :=
   (rfl)
 
-/-- For `L ≥ 2`, at distance at least `1/2` from `0` the longitudinal coordinate of the end at `0`
-is at most `L / 2`, so the plumbing at `0` along a neck of length `L` leaves the receiving datum
-unchanged there. -/
-theorem re_endCoord_zero_le_div_two (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) :
-    (zero.endCoord w).re ≤ L / 2 := by
-  have h : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-  linarith [re_endCoord_zero_le_one (w := w) (by linarith)]
-
 /-- The translated output datum vanishes within distance `1/2` of `0`, for `0 ≤ c ≤ 1`. -/
 private theorem negativePlanePerturbation_sub_eq_zero_of_norm_le {H : ℝ → M → ℝ} (hc₀ : 0 ≤ c)
     (hc₁ : c ≤ 1) {w : ℂ} (hw : ‖w‖ ≤ 1 / 2) (x : M) :

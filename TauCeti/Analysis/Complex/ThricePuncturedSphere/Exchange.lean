@@ -130,6 +130,11 @@ namespace TauCeti.ThricePuncturedSphere
 
 open Puncture
 
+/-- The radius `2 exp (2π)` of the disc `‖w - c‖ ≤ 2 exp (2π)`, bounded by the circle `s = -1` of
+the output end recentred at `c`, exceeds `3`. -/
+theorem three_lt_two_mul_exp_two_pi : 3 < 2 * Real.exp (2 * π) := by
+  nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
+
 /-- A point at distance at least `r + 1/2` from a real number `c` within distance `r` of both
 inputs `0` and `1` is at distance at least `1/2` from both inputs. -/
 theorem half_le_norm_of_le_norm_sub {c r : ℝ} (h₀ : |c| ≤ r) (h₁ : |c - 1| ≤ r) {w : ℂ}
