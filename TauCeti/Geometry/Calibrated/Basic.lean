@@ -35,11 +35,13 @@ metric), restriction to open submanifolds, and Riemannian isometries.
   `‖φ x‖ ≤ 1` in the metric inner product.
 * `TauCeti.isCalibration_iff_apply_le_one`: in positive degree, the one-sided bound `φ_x(v) ≤ 1`
   on orthonormal frames suffices.
-* `TauCeti.isCalibration_zero_iff`: degree-zero calibrations are locally constant functions into
-  `[-1, 1]`.
-* `TauCeti.IsCalibration.pullback`, `TauCeti.IsCalibration.restrictOpenTangentSpace`,
-  `TauCeti.IsCalibration.of_riemannianIsometry`: functoriality under immersions, open restriction,
-  and Riemannian isometries.
+* `TauCeti.isCalibration_iff_isLocallyConstant_and_abs_apply_le_one`: degree-zero calibrations are
+  locally constant functions into `[-1, 1]`.
+* `TauCeti.IsCalibration.mpullback_of_inner_eq`, `TauCeti.IsCalibration.pullback`,
+  `TauCeti.IsCalibration.restrictOpenTangentSpace`,
+  `TauCeti.IsCalibration.mpullback_riemannianIsometry`, and
+  `TauCeti.isCalibration_mpullback_riemannianIsometry_iff`: functoriality under metric-preserving
+  smooth maps, immersions, open restriction, and Riemannian isometries.
 
 ## References
 
@@ -185,17 +187,13 @@ theorem isCalibration_iff_apply_le_one [NeZero k]
   linarith
 
 /-- In degree zero, a calibration is a locally constant function with values in `[-1, 1]`. -/
-theorem isCalibration_zero_iff
+theorem isCalibration_iff_isLocallyConstant_and_abs_apply_le_one
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (φ : RoughForm I M ℝ 0) :
     IsCalibration g φ ↔ IsLocallyConstant (fun x ↦ φ x ![]) ∧ ∀ x, |φ x ![]| ≤ 1 := by
   rw [isCalibration_iff]
   have hfn : φ = RoughForm.ofFunction I (fun x ↦ φ x ![]) := by
-    refine (RoughForm.eq_ofFunction φ).trans ?_
-    congr 1
-    ext x
-    congr 1
-    exact Subsingleton.elim _ _
+    simpa only [Subsingleton.elim (0 : Fin 0 → _) ![]] using RoughForm.eq_ofFunction φ
   constructor
   · rintro ⟨hsm, hd, hbd⟩
     rw [hfn, isSmoothForm_ofFunction_iff] at hsm
@@ -209,13 +207,32 @@ theorem isCalibration_zero_iff
       exact hsm
     · rw [hfn]
       exact (mextDeriv_ofFunction_eq_zero_iff (hsm.mdifferentiable (by simp))).2 hlc
-    · have hv : v = ![] := Subsingleton.elim v ![]
-      simpa [hv] using hbd x
+    · rw [Subsingleton.elim v ![]]
+      exact hbd x
 
 section Functoriality
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Pulling back a calibration along a smooth map whose differential preserves the Riemannian inner
+products yields a calibration on the source manifold, without assuming finite-dimensionality. -/
+theorem IsCalibration.mpullback_of_inner_eq [IsManifold I 2 M] [IsManifold I' 2 N]
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {g' : ContMDiffRiemannianMetric I' ∞ E' (fun x : N ↦ TangentSpace I' x)}
+    {k : ℕ} {φ : RoughForm I M ℝ k} (hφ : IsCalibration g φ)
+    {f : N → M} (hf : ContMDiff I' I ∞ f)
+    (hinner : ∀ x (v w : TangentSpace I' x),
+      g.inner (f x) (mfderiv I' I f x v) (mfderiv I' I f x w) = g'.inner x v w) :
+    IsCalibration g' (mpullback I' I f φ) := by
+  have : IsManifold I' 1 N := IsManifold.of_le (n := 2) (by norm_num)
+  refine ⟨hφ.isSmoothForm.mpullback hf,
+    (hφ.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero hφ.mextDeriv_eq_zero
+      (hf.of_le (by simp)),
+    fun x v hv ↦ ?_⟩
+  rw [mpullback_apply]
+  exact hφ.abs_apply_le_one (f x) (mfderiv I' I f x ∘ v) fun i j ↦ by
+    rw [Function.comp_apply, Function.comp_apply, hinner, hv i j]
 
 /-- Pulling back a calibration along a smooth immersion yields a calibration for the pulled-back
 metric. -/
@@ -223,29 +240,25 @@ theorem IsCalibration.pullback [FiniteDimensional ℝ E'] [IsManifold I 2 M] [Is
     {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {k : ℕ} {φ : RoughForm I M ℝ k} (hφ : IsCalibration g φ)
     {f : N → M} (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x)) :
-    IsCalibration (g.pullback f (by simpa using hf) hinj) (mpullback I' I f φ) := by
-  refine ⟨hφ.isSmoothForm.mpullback (by simpa using hf), ?_, fun x v hv ↦ ?_⟩
-  · have hφ1 : IsSmoothBundleForm I ℝ (Trivial M ℝ) 1 φ :=
-      (isSmoothBundleForm_def 1 φ).mpr (hφ.isSmoothForm.contMDiff.of_le (by simp))
-    rw [← mpullback_mextDeriv (hf.of_le (by simp)) hφ1, hφ.mextDeriv_eq_zero, mpullback_zero]
-  · rw [mpullback_apply]
-    exact hφ.abs_apply_le_one (f x) (mfderiv I' I f x ∘ v) fun i j ↦ by
-      simpa [ContMDiffRiemannianMetric.pullback_inner] using hv i j
+    IsCalibration (g.pullback f hf hinj) (mpullback I' I f φ) :=
+  hφ.mpullback_of_inner_eq hf fun x v w ↦
+    (ContMDiffRiemannianMetric.pullback_inner g f hf hinj x v w).symm
 
 /-- Restricting a calibration to an open submanifold yields a calibration for the restricted
 metric. -/
-theorem IsCalibration.restrictOpenTangentSpace [FiniteDimensional ℝ E] [IsManifold I 2 M]
+theorem IsCalibration.restrictOpenTangentSpace [IsManifold I 2 M]
     {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {k : ℕ} {φ : RoughForm I M ℝ k} (hφ : IsCalibration g φ) (U : Opens M) :
-    IsCalibration (g.restrictOpenTangentSpace U) (mpullback I I (Subtype.val : U → M) φ) := by
-  rw [ContMDiffRiemannianMetric.restrictOpenTangentSpace_eq_pullback]
-  exact hφ.pullback contMDiff_subtype_val (Manifold.mfderiv_subtype_val_injective (I := I))
+    IsCalibration (g.restrictOpenTangentSpace U) (mpullback I I (Subtype.val : U → M) φ) :=
+  hφ.mpullback_of_inner_eq contMDiff_subtype_val fun x v w ↦ by
+    rw [ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner,
+      TauCeti.Manifold.mfderiv_subtype_val]
+    rfl
 
 /-- Pulling back a calibration along a smooth Riemannian isometry yields a calibration on the
 source manifold. -/
-theorem IsCalibration.of_riemannianIsometry [FiniteDimensional ℝ E'] [IsManifold I 2 M]
-    [IsManifold I' 2 N]
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+theorem IsCalibration.mpullback_riemannianIsometry [IsManifold I 2 M] [IsManifold I' 2 N]
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     (g' : ContMDiffRiemannianMetric I' ∞ E' (fun x : N ↦ TangentSpace I' x))
     (Φ : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
       letI : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨g'.toRiemannianMetric⟩
@@ -254,14 +267,33 @@ theorem IsCalibration.of_riemannianIsometry [FiniteDimensional ℝ E'] [IsManifo
     IsCalibration g' (mpullback I' I Φ φ) := by
   let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨g'.toRiemannianMetric⟩
-  have hpull := hφ.pullback Φ.toDiffeomorph.contMDiff
-    fun x ↦ (Φ.toDiffeomorph.isInvertible_mfderiv (x := x) (by simp)).injective
-  refine ⟨hpull.isSmoothForm, hpull.mextDeriv_eq_zero, fun x v hv ↦ ?_⟩
-  refine hpull.abs_apply_le_one x v fun i j ↦ ?_
-  rw [ContMDiffRiemannianMetric.pullback_inner]
-  change inner ℝ (mfderiv I' I Φ x (v i)) (mfderiv I' I Φ x (v j)) = if i = j then 1 else 0
-  rw [Φ.inner_mfderiv]
-  exact hv i j
+  refine hφ.mpullback_of_inner_eq (by simpa only [RiemannianIsometry.coe_toDiffeomorph] using
+    Φ.toDiffeomorph.contMDiff) fun x v w ↦ ?_
+  rw [← ContMDiffRiemannianMetric.inner_riemannianBundle g,
+    ← ContMDiffRiemannianMetric.inner_riemannianBundle g']
+  exact Φ.inner_mfderiv x v w
+
+/-- Pulling back along a smooth Riemannian isometry preserves the calibration property in both
+directions. -/
+@[simp]
+theorem isCalibration_mpullback_riemannianIsometry_iff [IsManifold I 2 M] [IsManifold I' 2 N]
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (g' : ContMDiffRiemannianMetric I' ∞ E' (fun x : N ↦ TangentSpace I' x))
+    (Φ : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      letI : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨g'.toRiemannianMetric⟩
+      RiemannianIsometry I' I N M)
+    {k : ℕ} (φ : RoughForm I M ℝ k) :
+    IsCalibration g' (mpullback I' I Φ φ) ↔ IsCalibration g φ := by
+  have : IsManifold I' 1 N := IsManifold.of_le (n := 2) (by norm_num)
+  refine ⟨fun h ↦ ?_, fun h ↦ h.mpullback_riemannianIsometry g' Φ⟩
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨g'.toRiemannianMetric⟩
+  have hsymm := h.mpullback_riemannianIsometry g Φ.symm
+  have hcomp : mpullback I I' Φ.symm (mpullback I' I Φ φ) = φ := by
+    rw [← mpullback_comp Φ.symm.mdifferentiable Φ.mdifferentiable,
+      show (Φ : N → M) ∘ (Φ.symm : M → N) = id from funext Φ.apply_symm_apply,
+      mpullback_id]
+  rwa [hcomp] at hsymm
 
 end Functoriality
 

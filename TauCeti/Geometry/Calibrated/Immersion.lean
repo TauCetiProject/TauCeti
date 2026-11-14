@@ -9,36 +9,56 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Integral
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
+import TauCeti.Geometry.Manifold.Orientation.Pullback
 
 /-!
 # Immersion volume and calibrated immersions
 
 The **immersion volume** `TauCeti.immersionVolume` of an oriented smooth immersion `f : N → M` into
-a Riemannian manifold `(M, g)` is the integral over `N` of the Riemannian volume form of the
-pulled-back metric `f^* g`. It is independent of the choice of orientation on `N`. An oriented
-immersion `f` is **calibrated** by a `k`-form `φ` (`TauCeti.IsCalibratedImmersion`) when
-`f^* φ = dvol_{f^* g}`.
+a Riemannian manifold `(M, g)` is defined as `integralTopForm o (riemannianVolumeForm o)` for the
+pulled-back metric `f^* g`. On a compact source `N`, it equals the total Riemannian volume
+`TauCeti.riemannianTotalVolume` of `N` equipped with `f^* g`
+(`TauCeti.immersionVolume_eq_riemannianTotalVolume`); on a noncompact source `N`, it evaluates to
+`0` by `TauCeti.integralTopForm`'s compact-support convention
+(`TauCeti.immersionVolume_eq_zero_of_not_compactSpace`), even when `f^* g` has finite Riemannian
+volume. In all cases it is independent of the choice of orientation on `N`
+(`TauCeti.immersionVolume_congr_orientation`).
+
+An oriented immersion `f` is **calibrated** by a `k`-form `φ` (`TauCeti.IsCalibratedImmersion`)
+when `f^* φ = dvol_{f^* g}`.
 
 ## Main definitions
 
-* `TauCeti.immersionVolume`: the volume of an oriented smooth immersion with respect to the
-  pulled-back Riemannian metric.
+* `TauCeti.immersionVolume`: the top-form integral over `N` of the Riemannian volume form of the
+  pulled-back Riemannian metric `f^* g`.
 * `TauCeti.IsCalibratedImmersion`: an oriented smooth immersion whose pullback of `φ` equals the
   Riemannian volume form of the pulled-back metric.
 
 ## Main results
 
-* `TauCeti.isCalibratedImmersion_iff_forall_orthonormal_basis` and
-  `TauCeti.isCalibratedImmersion_iff_exists_orthonormal_basis`: positive-degree characterizations on
-  positively oriented orthonormal tangent frames.
-* `TauCeti.immersionVolume_neg` and `TauCeti.isCalibratedImmersion_neg_iff`: orientation-reversal
-  properties.
-* `TauCeti.integralTopForm_mpullback_eq_immersionVolume`: for a calibrated immersion,
-  `∫_N f^* φ = Vol(f)`.
-* `TauCeti.immersionVolume_comp_diffeomorph` and `TauCeti.IsCalibratedImmersion.comp_diffeomorph`:
-  invariance under orientation-preserving diffeomorphisms of the source.
+* `TauCeti.immersionVolume_eq_riemannianTotalVolume` and
+  `TauCeti.immersionVolume_eq_zero_of_not_compactSpace`: identification with
+  `riemannianTotalVolume` on compact `N` and `0` fallback on noncompact `N`.
+* `TauCeti.immersionVolume_congr_orientation`, `TauCeti.immersionVolume_neg`,
+  `TauCeti.immersionVolume_nonneg`, and `TauCeti.immersionVolume_pos`: orientation independence,
+  nonnegativity, and positivity on nonempty compact sources.
+* `TauCeti.isCalibratedImmersion_iff_forall_orthonormal_basis`,
+  `TauCeti.isCalibratedImmersion_iff_exists_orthonormal_basis`, and
+  `TauCeti.isCalibratedImmersion_zeroDim_iff`: tangent-frame characterizations in positive degree
+  and degree zero.
+* `TauCeti.IsCalibratedImmersion.neg`, `TauCeti.isCalibratedImmersion_neg_right_iff`, and
+  `TauCeti.isCalibratedImmersion_neg_neg_iff`: orientation-reversal properties.
+* `TauCeti.IsCalibratedImmersion.integralTopForm_mpullback_eq_immersionVolume` and
+  `TauCeti.IsCalibratedImmersion.integralTopForm_mpullback_eq_riemannianTotalVolume`: integral of
+  `f^* φ` along a calibrated immersion.
+* `TauCeti.immersionVolume_comp_diffeomorph`,
+  `TauCeti.IsCalibratedImmersion.comp_diffeomorph_of_isOrientationPreservingAt`, and
+  `TauCeti.isCalibratedImmersion_comp_diffeomorph_iff_of_isOrientationPreservingAt`: invariance of
+  `immersionVolume` under arbitrary diffeomorphisms and of `IsCalibratedImmersion` under
+  orientation-preserving diffeomorphisms of the source.
 
 ## References
 
@@ -68,9 +88,12 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold I' 1 N]
 
-/-- The volume of a smooth immersion `f : N → M` of an oriented `k`-manifold: the integral over
-`N`, against its orientation `o`, of the Riemannian volume form of the pulled-back metric `f^* g`.
-It does not depend on the orientation chosen. -/
+/-- The volume of a smooth immersion `f : N → M` of an oriented `k`-manifold: the top-form integral
+over `N`, against its orientation `o`, of the Riemannian volume form of the pulled-back metric
+`f^* g`. On compact `N` this equals the total Riemannian volume of `f^* g`
+(`immersionVolume_eq_riemannianTotalVolume`), whereas on noncompact `N` it returns `0` via
+`integralTopForm`'s compact-support convention (`immersionVolume_eq_zero_of_not_compactSpace`). It
+does not depend on the orientation chosen (`immersionVolume_congr_orientation`). -/
 def immersionVolume {k : ℕ}
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
@@ -89,6 +112,90 @@ theorem immersionVolume_def {k : ℕ}
         ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
       integralTopForm o (riemannianVolumeForm o) :=
   (rfl)
+
+/-- On a noncompact source `N`, `immersionVolume` evaluates to `0` via `integralTopForm`'s
+compact-support fallback, because `riemannianVolumeForm` has support `Set.univ`. -/
+theorem immersionVolume_eq_zero_of_not_compactSpace {k : ℕ} (hnc : ¬CompactSpace N)
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin k)) :
+    immersionVolume g f hf hinj o = 0 := by
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+  rw [immersionVolume_def]
+  exact integralTopForm_riemannianVolumeForm_eq_zero_of_not_compactSpace o hnc
+
+/-- On a compact source `N`, `immersionVolume` equals the total Riemannian volume of `N` equipped
+with the pulled-back metric `f^* g` (`WithMetric (g.pullback f ...)`), in every degree `k : ℕ`. -/
+theorem immersionVolume_eq_riemannianTotalVolume [CompactSpace N] {k : ℕ}
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin k)) :
+    immersionVolume g f hf hinj o =
+      riemannianTotalVolume I' (WithMetric (g.pullback f (by simpa using hf) hinj)) := by
+  set g' := g.pullback f (by simpa using hf) hinj
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨g'.toRiemannianMetric⟩
+  let Φ : WithMetric g' ≃ₘ^∞⟮I', I'⟯ N := WithMetric.diffeomorph g' ∞
+  let oW : Manifold.Orientation I' (WithMetric g') (Fin k) :=
+    o.pullback (Φ.contMDiff.of_le (by simp)) (fun x ↦ Φ.isInvertible_mfderiv (by simp)) o.card_eq
+  have ho : ∀ x, oW.IsOrientationPreservingAt o Φ x :=
+    o.isOrientationPreservingAt_pullback (Φ.contMDiff.of_le (by simp))
+      (fun x ↦ Φ.isInvertible_mfderiv (by simp)) o.card_eq
+  have hvol : mpullback I' I' Φ (riemannianVolumeForm o) = riemannianVolumeForm oW :=
+    mpullback_riemannianVolumeForm_of_isOrientationPreservingAt ho fun x v w ↦ by
+      rw [WithMetric.coe_diffeomorph, g'.inner_riemannianBundle]
+      exact (WithMetric.inner_def x v w).symm
+  rw [immersionVolume_def,
+    ← Φ.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt ho
+      (by simp),
+    Φ.coe_toHomeomorph, hvol, integralTopForm_riemannianVolumeForm_eq_riemannianTotalVolume oW]
+
+/-- `immersionVolume` is independent of the orientation chosen on `N` (even across disconnected
+components). -/
+theorem immersionVolume_congr_orientation {k : ℕ}
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o₁ o₂ : Manifold.Orientation I' N (Fin k)) :
+    immersionVolume g f hf hinj o₁ = immersionVolume g f hf hinj o₂ := by
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+  have : IsContinuousRiemannianBundle E' (fun x : N ↦ TangentSpace I' x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I') (n := ∞)
+  rw [immersionVolume_def, immersionVolume_def]
+  exact integralTopForm_riemannianVolumeForm_congr o₁ o₂
+
+/-- Reversing the orientation of the source does not change `immersionVolume`. -/
+@[simp]
+theorem immersionVolume_neg {k : ℕ}
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin k)) :
+    immersionVolume g f hf hinj (-o) = immersionVolume g f hf hinj o :=
+  immersionVolume_congr_orientation g f hf hinj (-o) o
+
+/-- The volume of an oriented smooth immersion is nonnegative. -/
+theorem immersionVolume_nonneg {k : ℕ}
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin k)) :
+    0 ≤ immersionVolume g f hf hinj o := by
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+  rw [immersionVolume_def]
+  exact integralTopForm_riemannianVolumeForm_nonneg o
+
+/-- The volume of a nonempty compact oriented smooth immersion is positive. -/
+theorem immersionVolume_pos [CompactSpace N] [Nonempty N] {k : ℕ}
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin k)) :
+    0 < immersionVolume g f hf hinj o := by
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+  have : IsContinuousRiemannianBundle E' (fun x : N ↦ TangentSpace I' x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I') (n := ∞)
+  rw [immersionVolume_def]
+  exact integralTopForm_riemannianVolumeForm_pos o
 
 /-- The oriented immersion `f` is calibrated by the `k`-form `φ`: `f^* φ` is the Riemannian volume
 form of the pulled-back metric `f^* g` for the orientation `o`. -/
@@ -113,6 +220,18 @@ theorem isCalibratedImmersion_iff {k : ℕ}
       mpullback I' I f φ = riemannianVolumeForm o :=
   Iff.rfl
 
+/-- Equal immersions are calibrated by the same forms regardless of the smoothness and injectivity
+proofs supplied. -/
+theorem isCalibratedImmersion_congr {k : ℕ}
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {φ : RoughForm I M ℝ k} {f₁ f₂ : N → M} (h : f₁ = f₂)
+    {hf₁ : ContMDiff I' I ∞ f₁} {hinj₁ : ∀ x, Function.Injective (mfderiv I' I f₁ x)}
+    {hf₂ : ContMDiff I' I ∞ f₂} {hinj₂ : ∀ x, Function.Injective (mfderiv I' I f₂ x)}
+    {o : Manifold.Orientation I' N (Fin k)} :
+    IsCalibratedImmersion g φ f₁ hf₁ hinj₁ o ↔ IsCalibratedImmersion g φ f₂ hf₂ hinj₂ o := by
+  subst h
+  rfl
+
 /-- In positive degree, an immersion is calibrated by `φ` iff `φ` evaluates to `1` on the image
 of every positively oriented `f^* g`-orthonormal tangent basis. -/
 theorem isCalibratedImmersion_iff_forall_orthonormal_basis {k : ℕ} [NeZero k]
@@ -130,39 +249,32 @@ theorem isCalibratedImmersion_iff_forall_orthonormal_basis {k : ℕ} [NeZero k]
     ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
   constructor
   · intro h x b hb horth
-    let b' : OrthonormalBasis (Fin k) ℝ (TangentSpace I' x) :=
-      OrthonormalBasis.mk (orthonormal_iff_ite.2 fun i j ↦ by
-        rw [ContMDiffRiemannianMetric.inner_riemannianBundle,
-          ContMDiffRiemannianMetric.pullback_inner]
-        exact horth i j)
-        b.span_eq.ge
-    have hb'_fun : (⇑b' : Fin k → TangentSpace I' x) = ⇑b := OrthonormalBasis.coe_mk _ _
-    have hb_eq : b'.toBasis = b := by
-      ext i
-      rw [b'.coe_toBasis]
-      exact congrFun hb'_fun i
-    have hb' : b'.toBasis.orientation = o.orientationAt x := hb_eq ▸ hb
+    have hb_orth : Orthonormal ℝ b := orthonormal_iff_ite.2 fun i j ↦ by
+      rw [ContMDiffRiemannianMetric.inner_riemannianBundle,
+        ContMDiffRiemannianMetric.pullback_inner]
+      exact horth i j
+    let b' := b.toOrthonormalBasis hb_orth
+    have hb' : b'.toBasis.orientation = o.orientationAt x := by
+      rwa [b.toBasis_toOrthonormalBasis]
     rw [isCalibratedImmersion_iff] at h
     have hx := DFunLike.congr_fun (congrFun h x) ⇑b'
-    rw [mpullback_apply, riemannianVolumeForm_apply_orthonormal o x b' hb', hb'_fun] at hx
-    exact hx
+    rwa [mpullback_apply, riemannianVolumeForm_apply_orthonormal o x b' hb',
+      b.coe_toOrthonormalBasis] at hx
   · intro h
     ext x v
-    have := o.fact_finrank_tangentSpace x
-    obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne k)
-    let b : OrthonormalBasis (Fin (m + 1)) ℝ (TangentSpace I' x) :=
-      ((stdOrthonormalBasis ℝ (TangentSpace I' x)).reindex
-        (finCongr (by simpa using o.finrank_tangentSpace_eq x))).adjustToOrientation
-        (o.orientationAt x)
+    let := o.fact_finrank_tangentSpace x
+    let b : OrthonormalBasis (Fin k) ℝ (TangentSpace I' x) :=
+      (o.orientationAt x).finOrthonormalBasis (NeZero.pos k)
+        (by simpa using o.finrank_tangentSpace_eq x)
     have hb : b.toBasis.orientation = o.orientationAt x :=
-      OrthonormalBasis.orientation_adjustToOrientation _ _
+      (o.orientationAt x).finOrthonormalBasis_orientation (NeZero.pos k) _
     have horth : ∀ i j, g.inner (f x) (mfderiv I' I f x (b.toBasis i))
         (mfderiv I' I f x (b.toBasis j)) = if i = j then 1 else 0 := fun i j ↦ by
       rw [← ContMDiffRiemannianMetric.pullback_inner,
-        ← ContMDiffRiemannianMetric.inner_riemannianBundle]
+        ← ContMDiffRiemannianMetric.inner_riemannianBundle, b.coe_toBasis]
       exact orthonormal_iff_ite.mp b.orthonormal i j
     have hEq := eq_riemannianVolumeForm_of_apply_orthonormal o x (mpullback I' I f φ x) b hb (by
-      rw [mpullback_apply]
+      rw [mpullback_apply, ← b.coe_toBasis]
       exact h x b.toBasis hb horth)
     exact DFunLike.congr_fun hEq v
 
@@ -183,83 +295,97 @@ theorem isCalibratedImmersion_iff_exists_orthonormal_basis {k : ℕ} [NeZero k]
     ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
   constructor
   · intro h x
-    have := o.fact_finrank_tangentSpace x
-    obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne k)
-    let b : OrthonormalBasis (Fin (m + 1)) ℝ (TangentSpace I' x) :=
-      ((stdOrthonormalBasis ℝ (TangentSpace I' x)).reindex
-        (finCongr (by simpa using o.finrank_tangentSpace_eq x))).adjustToOrientation
-        (o.orientationAt x)
+    let := o.fact_finrank_tangentSpace x
+    let b : OrthonormalBasis (Fin k) ℝ (TangentSpace I' x) :=
+      (o.orientationAt x).finOrthonormalBasis (NeZero.pos k)
+        (by simpa using o.finrank_tangentSpace_eq x)
     have hb : b.toBasis.orientation = o.orientationAt x :=
-      OrthonormalBasis.orientation_adjustToOrientation _ _
+      (o.orientationAt x).finOrthonormalBasis_orientation (NeZero.pos k) _
     have horth : ∀ i j, g.inner (f x) (mfderiv I' I f x (b.toBasis i))
         (mfderiv I' I f x (b.toBasis j)) = if i = j then 1 else 0 := fun i j ↦ by
       rw [← ContMDiffRiemannianMetric.pullback_inner,
-        ← ContMDiffRiemannianMetric.inner_riemannianBundle]
+        ← ContMDiffRiemannianMetric.inner_riemannianBundle, b.coe_toBasis]
       exact orthonormal_iff_ite.mp b.orthonormal i j
-    exact ⟨b.toBasis, hb, horth,
-      (isCalibratedImmersion_iff_forall_orthonormal_basis g φ f hf hinj o).1 h x b.toBasis hb horth⟩
+    rw [isCalibratedImmersion_iff] at h
+    have hval := DFunLike.congr_fun (congrFun h x) ⇑b
+    rw [mpullback_apply, riemannianVolumeForm_apply_orthonormal o x b hb, ← b.coe_toBasis] at hval
+    exact ⟨b.toBasis, hb, horth, hval⟩
   · intro h
     ext x v
     obtain ⟨b, hb, horth, hval⟩ := h x
-    let b' : OrthonormalBasis (Fin k) ℝ (TangentSpace I' x) :=
-      OrthonormalBasis.mk (orthonormal_iff_ite.2 fun i j ↦ by
-        rw [ContMDiffRiemannianMetric.inner_riemannianBundle,
-          ContMDiffRiemannianMetric.pullback_inner]
-        exact horth i j)
-        b.span_eq.ge
-    have hb'_fun : (⇑b' : Fin k → TangentSpace I' x) = ⇑b := OrthonormalBasis.coe_mk _ _
-    have hb_eq : b'.toBasis = b := by
-      ext i
-      rw [b'.coe_toBasis]
-      exact congrFun hb'_fun i
-    have hb' : b'.toBasis.orientation = o.orientationAt x := hb_eq ▸ hb
+    have hb_orth : Orthonormal ℝ b := orthonormal_iff_ite.2 fun i j ↦ by
+      rw [ContMDiffRiemannianMetric.inner_riemannianBundle,
+        ContMDiffRiemannianMetric.pullback_inner]
+      exact horth i j
+    let b' := b.toOrthonormalBasis hb_orth
+    have hb' : b'.toBasis.orientation = o.orientationAt x := by
+      rwa [b.toBasis_toOrthonormalBasis]
     have hEq := eq_riemannianVolumeForm_of_apply_orthonormal o x (mpullback I' I f φ x) b' hb' (by
-      rw [mpullback_apply]
-      have hsub : (fun i ↦ mfderiv I' I f x (b' i)) = mfderiv I' I f x ∘ b := by
-        rw [hb'_fun]
-        rfl
-      rw [hsub]
-      exact hval)
+      rwa [mpullback_apply, b.coe_toOrthonormalBasis])
     exact DFunLike.congr_fun hEq v
 
-/-- Reversing the source orientation reverses the sign of the calibration. -/
+open scoped Classical in
+/-- In degree zero, an oriented immersion is calibrated by `φ` if and only if `φ (f x) ![]` equals
+`1` at positively oriented points of `N` and `-1` at negatively oriented points. -/
+theorem isCalibratedImmersion_zeroDim_iff
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (φ : RoughForm I M ℝ 0) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin 0)) :
+    IsCalibratedImmersion g φ f hf hinj o ↔
+      ∀ x, φ (f x) ![] = if o.orientationAt x = positiveOrientation then 1 else -1 := by
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+  rw [isCalibratedImmersion_iff]
+  refine ⟨fun h x ↦ ?_, fun h ↦ ?_⟩
+  · have hx := DFunLike.congr_fun (congrFun h x) ![]
+    rw [mpullback_apply, riemannianVolumeForm_zeroDim_apply,
+      Subsingleton.elim (fun i : Fin 0 ↦ mfderiv I' I f x (![] i)) ![]] at hx
+    exact hx
+  · ext x v
+    rw [mpullback_apply, riemannianVolumeForm_zeroDim_apply,
+      Subsingleton.elim (fun i : Fin 0 ↦ mfderiv I' I f x (v i)) ![], h x]
+
+/-- An immersion is calibrated for the opposite source orientation `-o` by `φ` if and only if it is
+calibrated for `o` by `-φ`. -/
 @[simp]
-theorem isCalibratedImmersion_neg_iff {k : ℕ}
+theorem isCalibratedImmersion_neg_right_iff {k : ℕ}
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (φ : RoughForm I M ℝ k) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin k)) :
+    IsCalibratedImmersion g φ f hf hinj (-o) ↔ IsCalibratedImmersion g (-φ) f hf hinj o := by
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+  rw [isCalibratedImmersion_iff, isCalibratedImmersion_iff, riemannianVolumeForm_neg,
+    ← neg_one_smul ℝ φ, mpullback_smul, neg_one_smul, neg_eq_iff_eq_neg.symm]
+
+/-- Reversing both the calibrating form and the source orientation preserves
+`IsCalibratedImmersion`. Not tagged `@[simp]` because `simp` already reduces the left-hand side via
+`isCalibratedImmersion_neg_right_iff` and `neg_neg`. -/
+theorem isCalibratedImmersion_neg_neg_iff {k : ℕ}
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (φ : RoughForm I M ℝ k) (f : N → M) (hf : ContMDiff I' I ∞ f)
     (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
     (o : Manifold.Orientation I' N (Fin k)) :
     IsCalibratedImmersion g (-φ) f hf hinj (-o) ↔ IsCalibratedImmersion g φ f hf hinj o := by
-  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
-  have hvol : riemannianVolumeForm (-o) = -riemannianVolumeForm o := by
-    ext x v
-    simp [riemannianVolumeForm_apply, _root_.Orientation.volumeForm_neg_orientation]
-  have hmp : mpullback I' I f (-φ) = -mpullback I' I f φ := by
-    ext x v
-    simp [mpullback_apply]
-  rw [isCalibratedImmersion_iff, hvol, hmp, neg_inj, isCalibratedImmersion_iff]
+  simp
 
-/-- Reversing the orientation of the source does not change `immersionVolume`. -/
-@[simp]
-theorem immersionVolume_neg {k : ℕ}
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k)) :
-    immersionVolume g f hf hinj (-o) = immersionVolume g f hf hinj o := by
-  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
-  have hvol : riemannianVolumeForm (-o) = -riemannianVolumeForm o := by
-    ext x v
-    simp [riemannianVolumeForm_apply, _root_.Orientation.volumeForm_neg_orientation]
-  rw [immersionVolume_def, immersionVolume_def, hvol, integralTopForm_neg,
-    show -riemannianVolumeForm o = (-1 : ℝ) • riemannianVolumeForm o from (neg_one_smul ℝ _).symm,
-    integralTopForm_smul, neg_one_mul, neg_neg]
+/-- If `f` is calibrated by `φ` for `o`, then `f` is calibrated by `-φ` for `-o`. -/
+theorem IsCalibratedImmersion.neg {k : ℕ}
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {φ : RoughForm I M ℝ k} {f : N → M} {hf : ContMDiff I' I ∞ f}
+    {hinj : ∀ x, Function.Injective (mfderiv I' I f x)}
+    {o : Manifold.Orientation I' N (Fin k)}
+    (hcal : IsCalibratedImmersion g φ f hf hinj o) :
+    IsCalibratedImmersion g (-φ) f hf hinj (-o) :=
+  (isCalibratedImmersion_neg_neg_iff g φ f hf hinj o).2 hcal
 
-/-- If `f` is calibrated by `φ` and its pullback `f^* φ` is integrable (in particular on a compact
-source), then `∫_N f^* φ = Vol(f)`. -/
-theorem integralTopForm_mpullback_eq_immersionVolume {k : ℕ}
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+/-- For an oriented immersion `f` calibrated by `φ`, `integralTopForm o (mpullback I' I f φ)`
+unconditionally equals `immersionVolume g f hf hinj o` (evaluating to the total Riemannian volume on
+compact `N` and to `0` on noncompact `N`). -/
+theorem IsCalibratedImmersion.integralTopForm_mpullback_eq_immersionVolume {k : ℕ}
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {φ : RoughForm I M ℝ k} {f : N → M} {hf : ContMDiff I' I ∞ f}
     {hinj : ∀ x, Function.Injective (mfderiv I' I f x)}
     {o : Manifold.Orientation I' N (Fin k)}
@@ -268,136 +394,107 @@ theorem integralTopForm_mpullback_eq_immersionVolume {k : ℕ}
   rw [immersionVolume_def]
   exact congrArg (integralTopForm o) hcal
 
+/-- On a compact source `N`, the integral of `f^* φ` along an immersion calibrated by `φ` equals the
+total Riemannian volume of `N` equipped with `f^* g`. -/
+theorem IsCalibratedImmersion.integralTopForm_mpullback_eq_riemannianTotalVolume [CompactSpace N]
+    {k : ℕ} {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {φ : RoughForm I M ℝ k} {f : N → M} {hf : ContMDiff I' I ∞ f}
+    {hinj : ∀ x, Function.Injective (mfderiv I' I f x)}
+    {o : Manifold.Orientation I' N (Fin k)}
+    (hcal : IsCalibratedImmersion g φ f hf hinj o) :
+    integralTopForm o (mpullback I' I f φ) =
+      riemannianTotalVolume I' (WithMetric (g.pullback f (by simpa using hf) hinj)) :=
+  hcal.integralTopForm_mpullback_eq_immersionVolume.trans
+    (immersionVolume_eq_riemannianTotalVolume g f hf hinj o)
+
 section Transport
 
 variable {E'' H'' N' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
   [FiniteDimensional ℝ E''] [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
   [TopologicalSpace N'] [ChartedSpace H'' N'] [IsManifold I'' 1 N']
 
-/-- The Riemannian volume form of a pullback metric along an orientation-preserving diffeomorphism
-is the pullback of the Riemannian volume form. -/
-private theorem riemannianVolumeForm_pullback_diffeomorph {k : ℕ}
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k)) (Φ : N' ≃ₘ^∞⟮I'', I'⟯ N)
-    (o' : Manifold.Orientation I'' N' (Fin k))
-    (ho : ∀ x, o'.IsOrientationPreservingAt o Φ x) :
-    letI : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-      ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
-    letI : RiemannianBundle (fun x : N' ↦ TangentSpace I'' x) :=
-      ⟨(g.pullback (f ∘ Φ) (by simpa using hf.comp Φ.contMDiff) fun x ↦ by
-        rw [mfderiv_comp x (hf.mdifferentiableAt (by simp))
-          (Φ.contMDiff.mdifferentiableAt (by simp))]
-        exact (hinj (Φ x)).comp
-          (Φ.isInvertible_mfderiv (x := x) (by simp)).injective).toRiemannianMetric⟩
-    riemannianVolumeForm o' = mpullback I'' I' Φ (riemannianVolumeForm o) := by
-  let hfΦ : ContMDiff I'' I ∞ (f ∘ Φ) := hf.comp Φ.contMDiff
-  let hinjΦ : ∀ x, Function.Injective (mfderiv I'' I (f ∘ Φ) x) := fun x ↦ by
-    rw [mfderiv_comp x (hf.mdifferentiableAt (by simp)) (Φ.contMDiff.mdifferentiableAt (by simp))]
-    exact (hinj (Φ x)).comp (Φ.isInvertible_mfderiv (x := x) (by simp)).injective
-  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
-  let : RiemannianBundle (fun x : N' ↦ TangentSpace I'' x) :=
-    ⟨(g.pullback (f ∘ Φ) (by simpa using hfΦ) hinjΦ).toRiemannianMetric⟩
-  ext x v
-  have := o'.fact_finrank_tangentSpace x
-  have := o.fact_finrank_tangentSpace (Φ x)
-  obtain ⟨e, he, hmap⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1 (ho x)
-  rcases k with - | k
-  · have hv : v = ![] := Subsingleton.elim v ![]
-    subst hv
-    rw [riemannianVolumeForm_apply, mpullback_apply, riemannianVolumeForm_apply]
-    have hcomp : (fun i : Fin 0 ↦ mfderiv I'' I' Φ x (![] i)) = ![] := Subsingleton.elim _ _
-    rw [hcomp]
-    rcases (o'.orientationAt x).eq_or_eq_neg_of_isEmpty with h | h <;>
-      simp [← hmap, h]
-  · let b : OrthonormalBasis (Fin (k + 1)) ℝ (TangentSpace I'' x) :=
-      ((stdOrthonormalBasis ℝ (TangentSpace I'' x)).reindex
-        (finCongr (by simpa using o'.finrank_tangentSpace_eq x))).adjustToOrientation
-        (o'.orientationAt x)
-    have hb : b.toBasis.orientation = o'.orientationAt x :=
-      OrthonormalBasis.orientation_adjustToOrientation _ _
-    let dΦ : TangentSpace I'' x ≃ₗᵢ[ℝ] TangentSpace I' (Φ x) :=
-      { toLinearEquiv := e.toLinearEquiv
-        norm_map' := fun u ↦ by
-          rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner]
-          congr 1
-          rw [ContMDiffRiemannianMetric.inner_riemannianBundle,
-            ContMDiffRiemannianMetric.pullback_inner,
-            ContMDiffRiemannianMetric.inner_riemannianBundle,
-            ContMDiffRiemannianMetric.pullback_inner]
-          have heu : mfderiv I'' I' Φ x u = e u := congrFun (congrArg DFunLike.coe he.symm) u
-          rw [mfderiv_comp x (hf.mdifferentiableAt (by simp))
-            (Φ.contMDiff.mdifferentiableAt (by simp)), ContinuousLinearMap.comp_apply, heu]
-          rfl }
-    let b' : OrthonormalBasis (Fin (k + 1)) ℝ (TangentSpace I' (Φ x)) := b.map dΦ
-    have hb' : b'.toBasis.orientation = o.orientationAt (Φ x) := by
-      have hb_map : b'.toBasis = b.toBasis.map e.toLinearEquiv := by
-        ext i
-        rfl
-      rw [hb_map, Module.Basis.orientation_map, hb, hmap]
-    have hEq := eq_riemannianVolumeForm_of_apply_orthonormal o' x
-      (mpullback I'' I' Φ (riemannianVolumeForm o) x) b hb (by
-        have h1 := riemannianVolumeForm_apply_orthonormal o (Φ x) b' hb'
-        have hcomp : (fun i ↦ mfderiv I'' I' Φ x (b i)) = fun i ↦ b' i := by
-          ext i
-          exact congrFun (congrArg DFunLike.coe he.symm) (b i)
-        simpa [mpullback_apply, hcomp] using h1)
-    exact (DFunLike.congr_fun hEq v).symm
+omit [IsManifold I 1 M] [FiniteDimensional ℝ E'] [IsManifold I' 1 N] [FiniteDimensional ℝ E'']
+  [IsManifold I'' 1 N'] in
+/-- Precomposing a map whose manifold derivative is everywhere injective with a diffeomorphism
+preserves injectivity of the manifold derivative. -/
+theorem mfderiv_comp_diffeomorph_injective {f : N → M} (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x)) (Φ : N' ≃ₘ^∞⟮I'', I'⟯ N) (x : N') :
+    Function.Injective (mfderiv I'' I (f ∘ Φ) x) := by
+  rw [mfderiv_comp x (hf.mdifferentiableAt (by simp)) (Φ.contMDiff.mdifferentiableAt (by simp))]
+  exact (hinj (Φ x)).comp (Φ.isInvertible_mfderiv (x := x) (by simp)).injective
 
-/-- Precomposing an immersion with an orientation-preserving diffeomorphism preserves its
-volume. -/
+/-- Precomposing an immersion with any diffeomorphism preserves `immersionVolume` (regardless of
+whether the diffeomorphism preserves or reverses orientations). -/
 theorem immersionVolume_comp_diffeomorph {k : ℕ}
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
     (o : Manifold.Orientation I' N (Fin k)) (Φ : N' ≃ₘ^∞⟮I'', I'⟯ N)
-    (o' : Manifold.Orientation I'' N' (Fin k))
-    (ho : ∀ x, o'.IsOrientationPreservingAt o Φ x) :
+    (o' : Manifold.Orientation I'' N' (Fin k)) :
     immersionVolume g (f ∘ Φ) (hf.comp Φ.contMDiff)
-        (fun x ↦ by
-          rw [mfderiv_comp x (hf.mdifferentiableAt (by simp))
-            (Φ.contMDiff.mdifferentiableAt (by simp))]
-          exact (hinj (Φ x)).comp (Φ.isInvertible_mfderiv (x := x) (by simp)).injective) o' =
+        (mfderiv_comp_diffeomorph_injective hf hinj Φ) o' =
       immersionVolume g f hf hinj o := by
-  let hfΦ : ContMDiff I'' I ∞ (f ∘ Φ) := hf.comp Φ.contMDiff
-  let hinjΦ : ∀ x, Function.Injective (mfderiv I'' I (f ∘ Φ) x) := fun x ↦ by
-    rw [mfderiv_comp x (hf.mdifferentiableAt (by simp)) (Φ.contMDiff.mdifferentiableAt (by simp))]
-    exact (hinj (Φ x)).comp (Φ.isInvertible_mfderiv (x := x) (by simp)).injective
-  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
-  let : RiemannianBundle (fun x : N' ↦ TangentSpace I'' x) :=
-    ⟨(g.pullback (f ∘ Φ) (by simpa using hfΦ) hinjΦ).toRiemannianMetric⟩
-  have hvol := riemannianVolumeForm_pullback_diffeomorph g f hf hinj o Φ o' ho
-  rw [immersionVolume_def, immersionVolume_def, hvol]
+  let oΦ : Manifold.Orientation I'' N' (Fin k) :=
+    o.pullback (Φ.contMDiff.of_le (by simp)) (fun x ↦ Φ.isInvertible_mfderiv (by simp)) o'.card_eq
+  have ho : ∀ x, oΦ.IsOrientationPreservingAt o Φ x :=
+    o.isOrientationPreservingAt_pullback (Φ.contMDiff.of_le (by simp))
+      (fun x ↦ Φ.isInvertible_mfderiv (by simp)) o'.card_eq
+  rw [immersionVolume_congr_orientation g (f ∘ Φ) _ _ o' oΦ]
+  set gN := g.pullback f (by simpa using hf) hinj
+  set gN' := g.pullback (f ∘ Φ) (by simpa using hf.comp Φ.contMDiff)
+    (mfderiv_comp_diffeomorph_injective hf hinj Φ)
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨gN.toRiemannianMetric⟩
+  let : RiemannianBundle (fun x : N' ↦ TangentSpace I'' x) := ⟨gN'.toRiemannianMetric⟩
+  have hvol : mpullback I'' I' Φ (riemannianVolumeForm o) = riemannianVolumeForm oΦ :=
+    mpullback_riemannianVolumeForm_of_isOrientationPreservingAt ho fun x v w ↦ by
+      rw [gN.inner_riemannianBundle, gN'.inner_riemannianBundle,
+        ContMDiffRiemannianMetric.pullback_inner, ContMDiffRiemannianMetric.pullback_inner,
+        mfderiv_comp x (hf.mdifferentiableAt (by simp)) (Φ.contMDiff.mdifferentiableAt (by simp)),
+        ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Function.comp_apply]
+  rw [immersionVolume_def, immersionVolume_def, ← hvol, ← Φ.coe_toHomeomorph]
   exact Φ.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt ho
     (by simp)
 
 /-- Precomposing a calibrated immersion with an orientation-preserving diffeomorphism gives a
 calibrated immersion. -/
-theorem IsCalibratedImmersion.comp_diffeomorph {k : ℕ}
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+theorem IsCalibratedImmersion.comp_diffeomorph_of_isOrientationPreservingAt {k : ℕ}
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {φ : RoughForm I M ℝ k} {f : N → M} {hf : ContMDiff I' I ∞ f}
     {hinj : ∀ x, Function.Injective (mfderiv I' I f x)}
     {o : Manifold.Orientation I' N (Fin k)} (hcal : IsCalibratedImmersion g φ f hf hinj o)
     (Φ : N' ≃ₘ^∞⟮I'', I'⟯ N) (o' : Manifold.Orientation I'' N' (Fin k))
     (ho : ∀ x, o'.IsOrientationPreservingAt o Φ x) :
     IsCalibratedImmersion g φ (f ∘ Φ) (hf.comp Φ.contMDiff)
-      (fun x ↦ by
-        rw [mfderiv_comp x (hf.mdifferentiableAt (by simp))
-          (Φ.contMDiff.mdifferentiableAt (by simp))]
-        exact (hinj (Φ x)).comp (Φ.isInvertible_mfderiv (x := x) (by simp)).injective) o' := by
-  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
-  let : RiemannianBundle (fun x : N' ↦ TangentSpace I'' x) :=
-    ⟨(g.pullback (f ∘ Φ) (by simpa using hf.comp Φ.contMDiff) fun x ↦ by
-      rw [mfderiv_comp x (hf.mdifferentiableAt (by simp))
-        (Φ.contMDiff.mdifferentiableAt (by simp))]
-      exact (hinj (Φ x)).comp
-        (Φ.isInvertible_mfderiv (x := x) (by simp)).injective).toRiemannianMetric⟩
+      (mfderiv_comp_diffeomorph_injective hf hinj Φ) o' := by
+  set gN := g.pullback f (by simpa using hf) hinj
+  set gN' := g.pullback (f ∘ Φ) (by simpa using hf.comp Φ.contMDiff)
+    (mfderiv_comp_diffeomorph_injective hf hinj Φ)
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) := ⟨gN.toRiemannianMetric⟩
+  let : RiemannianBundle (fun x : N' ↦ TangentSpace I'' x) := ⟨gN'.toRiemannianMetric⟩
   rw [isCalibratedImmersion_iff,
     mpullback_comp (Φ.contMDiff.mdifferentiable (by simp)) (hf.mdifferentiable (by simp)),
-    (isCalibratedImmersion_iff g φ f hf hinj o).1 hcal,
-    ← riemannianVolumeForm_pullback_diffeomorph g f hf hinj o Φ o' ho]
+    (isCalibratedImmersion_iff g φ f hf hinj o).1 hcal]
+  exact mpullback_riemannianVolumeForm_of_isOrientationPreservingAt ho fun x v w ↦ by
+    rw [gN.inner_riemannianBundle, gN'.inner_riemannianBundle,
+      ContMDiffRiemannianMetric.pullback_inner, ContMDiffRiemannianMetric.pullback_inner,
+      mfderiv_comp x (hf.mdifferentiableAt (by simp)) (Φ.contMDiff.mdifferentiableAt (by simp)),
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Function.comp_apply]
+
+/-- Precomposing an immersion with an orientation-preserving diffeomorphism preserves
+`IsCalibratedImmersion` in both directions. -/
+theorem isCalibratedImmersion_comp_diffeomorph_iff_of_isOrientationPreservingAt {k : ℕ}
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {φ : RoughForm I M ℝ k} {f : N → M} {hf : ContMDiff I' I ∞ f}
+    {hinj : ∀ x, Function.Injective (mfderiv I' I f x)}
+    {o : Manifold.Orientation I' N (Fin k)}
+    (Φ : N' ≃ₘ^∞⟮I'', I'⟯ N) (o' : Manifold.Orientation I'' N' (Fin k))
+    (ho : ∀ x, o'.IsOrientationPreservingAt o Φ x) :
+    IsCalibratedImmersion g φ (f ∘ Φ) (hf.comp Φ.contMDiff)
+        (mfderiv_comp_diffeomorph_injective hf hinj Φ) o' ↔
+      IsCalibratedImmersion g φ f hf hinj o :=
+  ⟨fun h ↦ (isCalibratedImmersion_congr (funext fun y ↦ congrArg f (Φ.apply_symm_apply y))).1
+    (h.comp_diffeomorph_of_isOrientationPreservingAt Φ.symm o
+      fun y ↦ (ho (Φ.symm y)).diffeomorph_symm (by simp)),
+   fun h ↦ h.comp_diffeomorph_of_isOrientationPreservingAt Φ o' ho⟩
 
 end Transport
 

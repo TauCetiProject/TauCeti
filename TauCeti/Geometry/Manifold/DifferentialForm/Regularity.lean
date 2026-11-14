@@ -512,24 +512,17 @@ theorem exists_mextDeriv_eq_of_forall_eventuallyEq_add_const [IsManifold I 1 M]
 end Regularity
 
 /-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
-theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace M] [ChartedSpace E M]
-    [IsManifold 𝓘(ℝ, E) 1 M]
+theorem isSmoothForm_zeroDim {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {n : WithTop ℕ∞}
-    (φ : RoughForm 𝓘(ℝ, E) M F k) :
-    IsSmoothForm 𝓘(ℝ, E) n φ := by
-  rw [isSmoothForm_def]
-  intro x
-  rw [Bundle.contMDiffAt_section_iff x, contMDiffAt_iff_source,
-    contMDiffWithinAt_iff_contDiffWithinAt]
-  have hflat (f : E →
-      E [⋀^Fin k]→L[ℝ] F)
-      (s : Set (E)) (z : E) :
-      ContDiffWithinAt ℝ n f s z := by
-    have he : f = fun _ ↦ f 0 := funext fun y ↦ congrArg f (Subsingleton.elim y 0)
-    rw [he]
-    exact contDiffWithinAt_const
-  exact hflat _ _ _
+    (φ : RoughForm I M F k) :
+    IsSmoothForm I n φ := by
+  refine IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ ?_
+  have he : φ.inChartAt x = fun _ ↦ φ.inChartAt x 0 :=
+    funext fun y ↦ congrArg (φ.inChartAt x) (Subsingleton.elim y 0)
+  rw [he]
+  exact contDiffWithinAt_const
 
 /-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section exactly when it is a `C^n`
 function into the space of alternating maps. -/
