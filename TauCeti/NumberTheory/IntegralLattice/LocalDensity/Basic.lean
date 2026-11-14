@@ -84,8 +84,12 @@ the reduction is split; the hyperbolic plane at `p = 3` has `det = -1`, a nonsqu
   dividing `2 det A`.
 * `Matrix.tendsto_localDensityCount_div_of_card_eq_two_mul_add_one`,
   `Matrix.tendsto_localDensityCount_div_of_card_eq_two_mul_add_two`: the closed values of the
-  local density at such a prime, in odd and in even rank.
-* `Matrix.tendsto_localDensityCount_div_hyperbolicPlane_three`: the hyperbolic plane at `p = 3`.
+  local density at such a prime, in odd and in even rank, and
+  `Matrix.localDensity_eq_of_card_eq_two_mul_add_one`,
+  `Matrix.localDensity_eq_of_card_eq_two_mul_add_two`: the same values as equations for
+  `Matrix.localDensity`.
+* `Matrix.tendsto_localDensityCount_div_hyperbolicPlane_three`,
+  `Matrix.localDensity_hyperbolicPlane_three`: the hyperbolic plane at `p = 3`.
 
 ## References
 
@@ -728,6 +732,15 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_one (hp : p ≠ 2)
   field_simp
   ring
 
+/-- **The local density at a prime not dividing `2 det A`, in odd rank**: the value
+`α_p(A) = 2 ∏_{i=1}^{m} (1 - p^{-2i})` of `Matrix.localDensity`. -/
+theorem localDensity_eq_of_card_eq_two_mul_add_one (hp : p ≠ 2)
+    {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A) (hdet : IsUnit A.det) {m : ℕ}
+    (hn : Fintype.card n = 2 * m + 1) :
+    A.localDensity = 2 * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹) :=
+  tendsto_nhds_unique (tendsto_localDensityCount_div_of_det_ne_zero hA hdet.ne_zero)
+    (tendsto_localDensityCount_div_of_card_eq_two_mul_add_one hp hA hdet hn)
+
 /-- **The local density at a prime not dividing `2 det A`, in even rank.** If `p` is odd and `A`
 is a symmetric `(2m + 2) × (2m + 2)` matrix over `ℤ_p` with unit determinant, the normalized count
 `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` converges to
@@ -756,6 +769,18 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (hp : p ≠ 2)
   field_simp
   ring
 
+/-- **The local density at a prime not dividing `2 det A`, in even rank**: the value
+`α_p(A) = 2 (1 - ε p^{-(m+1)}) ∏_{i=1}^{m} (1 - p^{-2i})` of `Matrix.localDensity`, where
+`ε = ((-1)^{m+1} det A | p)`. -/
+theorem localDensity_eq_of_card_eq_two_mul_add_two (hp : p ≠ 2)
+    {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A) (hdet : IsUnit A.det) {m : ℕ}
+    (hn : Fintype.card n = 2 * m + 2) :
+    A.localDensity =
+      2 * (1 - quadraticChar (ZMod p) ((-1) ^ (m + 1) * (A.map PadicInt.toZMod).det) *
+        ((p : ℚ) ^ (m + 1))⁻¹) * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹) :=
+  tendsto_nhds_unique (tendsto_localDensityCount_div_of_det_ne_zero hA hdet.ne_zero)
+    (tendsto_localDensityCount_div_of_card_eq_two_mul_add_two hp hA hdet hn)
+
 /-- **The hyperbolic plane at `p = 3` has local density `4/3`.** Its Gram matrix `!![0, 1; 1, 0]`
 has determinant `-1`, a nonsquare modulo `3`, yet the plane is split: the sign in the even-rank
 density is the character of the signed determinant `(-1)^1 · (-1) = 1`, not of the determinant. -/
@@ -770,5 +795,10 @@ theorem tendsto_localDensityCount_div_hyperbolicPlane_three :
     (m := 0) (by simp) using 2
   simp [det_fin_two]
   norm_num
+
+/-- The local density of the hyperbolic plane at `p = 3` is `4/3`. -/
+theorem localDensity_hyperbolicPlane_three :
+    (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ_[3]).localDensity = 4 / 3 :=
+  tendsto_localDensityCount_div_hyperbolicPlane_three.limUnder_eq
 
 end Matrix
