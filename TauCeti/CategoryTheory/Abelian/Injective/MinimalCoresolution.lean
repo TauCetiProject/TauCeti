@@ -21,8 +21,9 @@ termwise retract of every injective coresolution of `X`
 (`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.nonempty_retract_obj'`), by
 induction on the cosyzygies through
 `TauCeti.IsEssentialMono.nonempty_retract_and_nonempty_retract_cokernel`. Two minimal injective
-coresolutions of the same object have isomorphic terms
-(`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.nonempty_iso_obj'`). Minimal
+coresolutions of the same object are isomorphic as composable arrows, by an isomorphism extending
+a given one of the resolved objects
+(`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.exists_iso`). Minimal
 injective coresolutions are spliced from injective envelopes
 (`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.coresolutionCons`), so they exist
 for objects in a property `Q` closed under injective envelopes and their cokernels, and hence for
@@ -39,8 +40,9 @@ every object when every object has an injective envelope
 
 * `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.nonempty_retract_obj'`: a minimal
   injective coresolution is a termwise retract of any injective coresolution.
-* `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.nonempty_iso_obj'`: minimal
-  injective coresolutions are unique up to isomorphism of their terms.
+* `CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.exists_iso`: minimal injective
+  coresolutions of the same object are isomorphic as composable arrows, compatibly with a given
+  isomorphism of the resolved objects.
 * `CategoryTheory.ComposableArrows.exists_isMinimalInjectiveCoresolution`: existence, given
   injective envelopes.
 
@@ -248,24 +250,79 @@ theorem exists_iso_obj'_comm (hE : E.IsMinimalInjectiveCoresolution)
   exact (hE.isEssentialMono_cosyzygyι i hi).exists_iso
     ((isEssentialMono_isIso_comp_iff a.hom _).2 (hS.isEssentialMono_cosyzygyι i hi))
 
-/-- The cosyzygies of two minimal injective coresolutions of the same object are isomorphic. -/
-theorem nonempty_iso_cosyzygy (hE : E.IsMinimalInjectiveCoresolution)
+/-- The isomorphisms of cosyzygies of two minimal injective coresolutions of the same object,
+built from `e : E.obj' 1 ≅ S.obj' 1` one cosyzygy at a time through
+`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.exists_iso_obj'_comm`. -/
+private noncomputable def isoCosyzygy (hE : E.IsMinimalInjectiveCoresolution)
     (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) :
-    ∀ (i : ℕ) (hi : i ≤ n), Nonempty (E.cosyzygy i ≅ S.cosyzygy i)
-  | 0, _ => ⟨hE.cosyzygyZeroIso ≪≫ e ≪≫ hS.cosyzygyZeroIso.symm⟩
-  | i + 1, hi => by
-    obtain ⟨a⟩ := nonempty_iso_cosyzygy hE hS e i (by omega)
-    obtain ⟨b, hb⟩ := exists_iso_obj'_comm hE hS i (by omega) a
-    exact ⟨hE.cosyzygySuccIso i ≪≫ cokernel.mapIso _ _ a b hb ≪≫ (hS.cosyzygySuccIso i).symm⟩
+    ∀ (i : ℕ) (hi : i ≤ n), E.cosyzygy i ≅ S.cosyzygy i
+  | 0, _ => hE.cosyzygyZeroIso ≪≫ e ≪≫ hS.cosyzygyZeroIso.symm
+  | i + 1, hi =>
+    hE.cosyzygySuccIso i (by omega) ≪≫
+      cokernel.mapIso _ _ (isoCosyzygy hE hS e i (by omega))
+        (exists_iso_obj'_comm hE hS i (by omega) (isoCosyzygy hE hS e i (by omega))).choose
+        (exists_iso_obj'_comm hE hS i (by omega) (isoCosyzygy hE hS e i (by omega))).choose_spec ≪≫
+      (hS.cosyzygySuccIso i (by omega)).symm
 
-/-- **Minimal injective coresolutions have isomorphic terms.** Two minimal injective coresolutions
-with `n` terms of the same object have isomorphic terms. -/
-theorem nonempty_iso_obj' (hE : E.IsMinimalInjectiveCoresolution)
+/-- The isomorphisms of terms extending `isoCosyzygy`. -/
+private noncomputable def isoTerm (hE : E.IsMinimalInjectiveCoresolution)
     (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) (i : ℕ) (hi : i < n) :
-    Nonempty (E.obj' (i + 2) ≅ S.obj' (i + 2)) := by
-  obtain ⟨a⟩ := hE.nonempty_iso_cosyzygy hS e i (by omega)
-  obtain ⟨b, -⟩ := exists_iso_obj'_comm hE hS i hi a
-  exact ⟨b⟩
+    E.obj' (i + 2) ≅ S.obj' (i + 2) :=
+  (exists_iso_obj'_comm hE hS i hi (isoCosyzygy hE hS e i (by omega))).choose
+
+private theorem cosyzygyι_isoTerm_hom (hE : E.IsMinimalInjectiveCoresolution)
+    (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) (i : ℕ) (hi : i < n) :
+    hE.cosyzygyι i ≫ (isoTerm hE hS e i hi).hom =
+      (isoCosyzygy hE hS e i (by omega)).hom ≫ hS.cosyzygyι i :=
+  (exists_iso_obj'_comm hE hS i hi (isoCosyzygy hE hS e i (by omega))).choose_spec
+
+private theorem π_isoCosyzygy_zero_hom (hE : E.IsMinimalInjectiveCoresolution)
+    (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) :
+    cokernel.π (E.map' 0 1) ≫ (isoCosyzygy hE hS e 0 (by omega)).hom =
+      e.hom ≫ cokernel.π (S.map' 0 1) := by
+  rw [isoCosyzygy, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, hS.cosyzygyZeroIso_inv,
+    hE.π_cosyzygyZeroIso_hom_assoc]
+
+private theorem π_isoCosyzygy_succ_hom (hE : E.IsMinimalInjectiveCoresolution)
+    (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) (i : ℕ) (hi : i < n) :
+    cokernel.π (E.map' (i + 1) (i + 2)) ≫ (isoCosyzygy hE hS e (i + 1) (by omega)).hom =
+      (isoTerm hE hS e i hi).hom ≫ cokernel.π (S.map' (i + 1) (i + 2)) := by
+  simp [isoCosyzygy, isoTerm, hE.π_cosyzygySuccIso_hom_assoc i hi, hS.π_cosyzygySuccIso_inv i hi]
+
+/-- **Minimal injective coresolutions are unique up to isomorphism.** Two minimal injective
+coresolutions `E` and `S` with `n` terms of the same object are isomorphic as composable arrows,
+by an isomorphism extending a given isomorphism `e : E.obj' 1 ≅ S.obj' 1` of the resolved
+objects. It is built term by term: an isomorphism of `i`-th cosyzygies extends along the injective
+envelopes to an isomorphism of `i`-th terms
+(`CategoryTheory.ComposableArrows.IsMinimalInjectiveCoresolution.exists_iso_obj'_comm`), which
+induces one of the next cosyzygies. -/
+theorem exists_iso (hE : E.IsMinimalInjectiveCoresolution)
+    (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) :
+    ∃ f : E ≅ S, app' f.hom 1 = e.hom := by
+  let app : ∀ i : Fin (n + 2), E.obj i ≅ S.obj i
+    | ⟨0, _⟩ => hE.isZero_left.iso hS.isZero_left
+    | ⟨1, _⟩ => e
+    | ⟨k + 2, hk⟩ => isoTerm hE hS e k (by omega)
+  refine ⟨isoMk app fun i hi ↦ ?_, rfl⟩
+  match i, hi with
+  | 0, _ => exact hE.isZero_left.eq_of_src _ _
+  | 1, _ =>
+    -- The components at `1` and `2` are `e` and `isoTerm … 0`.
+    change E.map' 1 2 ≫ (isoTerm hE hS e 0 (by omega)).hom = e.hom ≫ S.map' 1 2
+    rw [← hE.π_cosyzygyι 0, Category.assoc, cosyzygyι_isoTerm_hom, ← Category.assoc,
+      π_isoCosyzygy_zero_hom, Category.assoc, hS.π_cosyzygyι 0]
+  | k + 2, _ =>
+    -- The components at `k + 2` and `k + 3` are `isoTerm … k` and `isoTerm … (k + 1)`.
+    change E.map' (k + 2) (k + 3) ≫ (isoTerm hE hS e (k + 1) (by omega)).hom =
+      (isoTerm hE hS e k (by omega)).hom ≫ S.map' (k + 2) (k + 3)
+    rw [← hE.π_cosyzygyι (k + 1), Category.assoc, cosyzygyι_isoTerm_hom, ← Category.assoc,
+      π_isoCosyzygy_succ_hom, Category.assoc, hS.π_cosyzygyι (k + 1)]
+
+/-- Two minimal injective coresolutions with `n` terms of isomorphic objects are isomorphic as
+composable arrows. -/
+theorem nonempty_iso (hE : E.IsMinimalInjectiveCoresolution)
+    (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) : Nonempty (E ≅ S) :=
+  ⟨(hE.exists_iso hS e).choose⟩
 
 end IsMinimalInjectiveCoresolution
 
