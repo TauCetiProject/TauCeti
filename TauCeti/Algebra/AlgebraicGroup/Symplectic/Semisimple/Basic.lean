@@ -80,7 +80,7 @@ theorem eq_augmentation_of_isNormal_of_isSolvable
     let _ : NeZero (n + 1 + (n + 1)) := ⟨by omega⟩
     let _ : IsReduced H := isReduced_of_smooth k H
     let _ : ConnectedSpace (PrimeSpectrum H) :=
-      geometricallyConnectedCommHopfAlgProperty.connectedSpace k H
+      geometricallyConnectedCommHopfAlgProperty.connectedSpace
         (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k (n + 1))
     -- The alternating form confines the scalars to square roots of one.
     exact HopfIdeal.eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one
