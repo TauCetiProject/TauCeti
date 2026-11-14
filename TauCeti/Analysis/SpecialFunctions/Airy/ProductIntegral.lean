@@ -50,13 +50,14 @@ that `Ai² + Bi²` solves the third-order product differential equation `w''' �
 * `TauCeti.hasDerivAt_integral_pow_mul_cexp_sub_cube_div_twelve_mul_cpow` and
   `TauCeti.iterate_deriv_airyAi_sq_add_airyBi_sq_eq_integral` — iterated derivatives of
   `Ai² + Bi²` as moment integrals on `(0, ∞)`.
-* `TauCeti.airyAi_sq_add_airyBi_sq_productEquation` — `Ai² + Bi²` satisfies
+* `TauCeti.airyAi_sq_add_airyBi_sq_differential_equation` — `Ai² + Bi²` satisfies
   `w''' − 4 z w' − 2 w = 0`.
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, §§9.8(iii), 9.11(i)–(ii),
+* NIST Digital Library of Mathematical Functions, §§9.8(ii), 9.11(i)–(iii),
   <https://dlmf.nist.gov/9.8>, <https://dlmf.nist.gov/9.11>.
+* F. W. J. Olver, *Asymptotics and Special Functions*, Academic Press, 1974, Chapter 11.
 * O. Vallée and M. Soares, *Airy Functions and Applications to Physics*, Imperial College Press,
   2004, §3.4.
 -/
@@ -128,11 +129,6 @@ theorem airyAi_zero_sq_add_airyBi_zero_sq : airyAi 0 ^ 2 + airyBi 0 ^ 2 = 4 * ai
 
 /-! ### Integrability and moment evaluation on `(0, ∞)` -/
 
-private theorem ofReal_cpow_neg_half {t : ℝ} (ht : 0 < t) :
-    (t : ℂ) ^ (-1 / 2 : ℂ) = ((t ^ (-1 / 2 : ℝ) : ℝ) : ℂ) := by
-  have hexp : (-1 / 2 : ℂ) = ((-1 / 2 : ℝ) : ℂ) := by push_cast; ring
-  rw [hexp, ofReal_cpow ht.le]
-
 private theorem norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow {t : ℝ} (ht : 0 < t) (n : ℕ)
     (z : ℂ) :
     ‖(t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ)‖ =
@@ -144,9 +140,10 @@ private theorem norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow {t : ℝ} (ht : 0
       ring
     rw [sub_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, hcube]
   rw [norm_mul, norm_mul, norm_pow, Complex.norm_of_nonneg ht.le, Complex.norm_exp, hre,
-    ofReal_cpow_neg_half ht, Complex.norm_of_nonneg (Real.rpow_pos_of_pos ht _).le,
-    ← Real.rpow_natCast t n, mul_right_comm, ← Real.rpow_add ht]
+    Complex.norm_cpow_eq_rpow_re_of_pos ht, ← Real.rpow_natCast t n, mul_right_comm,
+    ← Real.rpow_add ht]
   congr 2
+  norm_num
   ring
 
 /-- For every complex `z` and natural number `n`, the `n`-th moment integrand
@@ -191,9 +188,10 @@ private theorem integral_pow_mul_cexp_neg_cube_div_twelve_mul_cpow (m : ℕ) :
       (Ioi 0) := by
     intro t (ht : 0 < t)
     dsimp only
+    have hnh : (-1 / 2 : ℂ) = ((-1 / 2 : ℝ) : ℂ) := by push_cast; ring
     have hexp : -((t : ℂ) ^ 3 / 12) = ((-(1 / 12) * t ^ (3 : ℝ) : ℝ) : ℂ) := by
       rw [Real.rpow_ofNat]; push_cast; ring
-    rw [ofReal_cpow_neg_half ht, hexp, ← ofReal_exp, ← ofReal_pow, ← ofReal_mul, ← ofReal_mul]
+    rw [hnh, ← ofReal_cpow ht.le, hexp, ← ofReal_exp, ← ofReal_pow, ← ofReal_mul, ← ofReal_mul]
     congr 1
     rw [← Real.rpow_natCast t m, mul_right_comm, ← Real.rpow_add ht]
     congr 2
@@ -428,10 +426,6 @@ private theorem cast_airy_product_rhs (m : ℕ) :
   push_cast
   rfl
 
-private theorem eval_ascPochhammer_ofReal (c : ℝ) (n : ℕ) :
-    (ascPochhammer ℂ n).eval (c : ℂ) = (((ascPochhammer ℝ n).eval c : ℝ) : ℂ) := by
-  simpa using Polynomial.eval_map_apply Complex.ofRealHom c (p := ascPochhammer ℝ n)
-
 private theorem hasSum_airyAi_sq_add_airyBi_sq_grouped (z : ℂ) :
     HasSum
       (fun n : ℕ =>
@@ -442,6 +436,7 @@ private theorem hasSum_airyAi_sq_add_airyBi_sq_grouped (z : ℂ) :
           (π : ℂ) ^ (-3 / 2 : ℂ) * (12 : ℂ) ^ ((((3 * n + 2 : ℕ) : ℂ) + 1 / 2) / 3) *
             Gamma ((((3 * n + 2 : ℕ) : ℂ) + 1 / 2) / 3) / (3 * (3 * n + 2)!) * z ^ (3 * n + 2))
       (airyAi z ^ 2 + airyBi z ^ 2) := by
+  -- Combine the three `₀F₁` Cauchy product series corresponding to `z ^ (3 * n + r)`.
   have h₀ := (hasSum_regularizedHGFun_zero_singleton_mul (2 / 3) (2 / 3) (z ^ 3 / 9)).mul_left
     (4 * (3 : ℂ) ^ (-4 / 3 : ℂ))
   have h₁ := (hasSum_regularizedHGFun_zero_singleton_mul (2 / 3) (4 / 3) (z ^ 3 / 9)).mul_left
@@ -463,6 +458,7 @@ private theorem hasSum_airyAi_sq_add_airyBi_sq_grouped (z : ℂ) :
     rw [airyAi_sq_add_airyBi_sq_eq_regularizedHGFun]
     ring
   rw [hsum_val] at hsum
+  -- Match each residue-class coefficient with the Gamma moment formula cast from `ℝ` to `ℂ`.
   refine hsum.congr_fun fun n => ?_
   have hc₀ := congrArg (fun x : ℝ => (x : ℂ) * z ^ (3 * n)) (real_pochhammer_airy_coeff_mod_zero n)
   have hc₁ := congrArg (fun x : ℝ => (x : ℂ) * z ^ (3 * n + 1))
@@ -470,6 +466,9 @@ private theorem hasSum_airyAi_sq_add_airyBi_sq_grouped (z : ℂ) :
   have hc₂ := congrArg (fun x : ℝ => (x : ℂ) * z ^ (3 * n + 2))
     (real_pochhammer_airy_coeff_mod_two n)
   rw [cast_airy_product_rhs] at hc₀ hc₁ hc₂
+  have heval (c : ℝ) :
+      (ascPochhammer ℂ n).eval (c : ℂ) = (((ascPochhammer ℝ n).eval c : ℝ) : ℂ) := by
+    simpa using Polynomial.eval_map_apply Complex.ofRealHom c (p := ascPochhammer ℝ n)
   have hz9 : (z ^ 3 / 9) ^ n = ((1 / 9 : ℝ) ^ n : ℂ) * z ^ (3 * n) := by
     rw [div_eq_mul_inv, mul_pow, ← pow_mul, mul_comm]
     push_cast; ring
@@ -492,8 +491,7 @@ private theorem hasSum_airyAi_sq_add_airyBi_sq_grouped (z : ℂ) :
   have hg₂₃ : (2 / 3 : ℂ) + n = ((2 / 3 + (n : ℝ) : ℝ) : ℂ) := by push_cast; ring
   have hg₄₃ : (4 / 3 : ℂ) + n = ((4 / 3 + (n : ℝ) : ℝ) : ℂ) := by push_cast; ring
   rw [← hc₀, ← hc₁, ← hc₂, hz9, h3a, h3b, hp₀, hp₁, hp₂, hg₂₃, hg₄₃,
-    eval_ascPochhammer_ofReal, eval_ascPochhammer_ofReal, eval_ascPochhammer_ofReal,
-    Gamma_ofReal, Gamma_ofReal, pow_add, pow_one]
+    heval, heval, heval, Gamma_ofReal, Gamma_ofReal, pow_add, pow_one]
   push_cast
   ring
 
@@ -528,9 +526,10 @@ theorem airyAi_sq_add_airyBi_sq_ofReal (x : ℝ) :
       (Ioi 0) := by
     intro t (ht : 0 < t)
     dsimp only
+    have hnh : (-1 / 2 : ℂ) = ((-1 / 2 : ℝ) : ℂ) := by push_cast; ring
     have hexp : (x : ℂ) * t - (t : ℂ) ^ 3 / 12 = ((x * t - t ^ 3 / 12 : ℝ) : ℂ) := by
       push_cast; ring
-    rw [ofReal_cpow_neg_half ht, hexp, ← ofReal_exp, ← ofReal_mul]
+    rw [hnh, ← ofReal_cpow ht.le, hexp, ← ofReal_exp, ← ofReal_mul]
   have hpi : (π : ℂ) ^ (-3 / 2 : ℂ) = ((π ^ (-3 / 2 : ℝ) : ℝ) : ℂ) := by
     have he : (-3 / 2 : ℂ) = ((-3 / 2 : ℝ) : ℂ) := by push_cast; ring
     rw [he, ofReal_cpow Real.pi_nonneg]
@@ -571,8 +570,8 @@ theorem four_mul_airyAi_zero_sq :
 
 /-! ### Iterated derivatives and the product differential equation -/
 
-/-- Differentiating `w ↦ ∫₀^∞ tⁿ exp(w t − t³ / 12) t^{−1/2} dt` under the integral sign multiplies
-the integrand by `t`. -/
+/-- The derivative of `w ↦ ∫₀^∞ tⁿ exp(w t − t³ / 12) t^{−1/2} dt` is obtained by multiplying the
+integrand by `t`. -/
 theorem hasDerivAt_integral_pow_mul_cexp_sub_cube_div_twelve_mul_cpow (n : ℕ) (z : ℂ) :
     HasDerivAt
       (fun w : ℂ =>
@@ -634,6 +633,8 @@ private theorem integral_product_equation_kernel (z : ℂ) :
     ∫ t in Ioi (0 : ℝ),
         ((t : ℂ) ^ 3 - 4 * z * t - 2) *
           cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ) = 0 := by
+  -- Express the integrand as the derivative of `g(t) = -4 √t exp(z t - t³ / 12)`, which vanishes
+  -- at `0` and `∞`, and apply the fundamental theorem of calculus on `(0, ∞)`.
   let g : ℝ → ℂ := fun t => -4 * (Real.sqrt t : ℂ) * cexp (z * t - (t : ℂ) ^ 3 / 12)
   have hcont : Continuous g :=
     (continuous_const.mul (continuous_ofReal.comp Real.continuous_sqrt)).mul
@@ -657,8 +658,8 @@ private theorem integral_product_equation_kernel (z : ℂ) :
     have hd := (hsqrt_deriv.const_mul (-4 : ℂ)).mul hexp_arg.cexp
     refine hd.congr_deriv ?_
     have hcpow : (t : ℂ) ^ (-1 / 2 : ℂ) = (Real.sqrt t : ℂ)⁻¹ := by
-      have hnh : (-1 / 2 : ℝ) = -(1 / 2 : ℝ) := by ring
-      rw [ofReal_cpow_neg_half ht, hnh, Real.rpow_neg ht.le, ← Real.sqrt_eq_rpow, ofReal_inv]
+      have hnh : (-1 / 2 : ℂ) = ((-(1 / 2) : ℝ) : ℂ) := by push_cast; ring
+      rw [hnh, ← ofReal_cpow ht.le, Real.rpow_neg ht.le, ← Real.sqrt_eq_rpow, ofReal_inv]
     have hmul : (Real.sqrt t : ℂ) * (Real.sqrt t : ℂ)⁻¹ = 1 :=
       mul_inv_cancel₀ (ofReal_ne_zero.mpr (Real.sqrt_pos.mpr ht).ne')
     have hsq : (Real.sqrt t : ℂ) = (t : ℂ) * (Real.sqrt t : ℂ)⁻¹ := by
@@ -670,6 +671,7 @@ private theorem integral_product_equation_kernel (z : ℂ) :
     rw [hcpow]
     push_cast
     linear_combination -4 * (z - (t : ℂ) ^ 2 / 4) * cexp (z * t - (t : ℂ) ^ 3 / 12) * hsq
+  -- Bochner integrability follows from the `t³`, `t`, and `t⁰` moment integrability bounds.
   have hint : IntegrableOn
       (fun t : ℝ =>
         ((t : ℂ) ^ 3 - 4 * z * t - 2) *
@@ -681,6 +683,7 @@ private theorem integral_product_equation_kernel (z : ℂ) :
     refine ((h3.sub h1).sub h0).congr_fun (fun t _ => ?_) measurableSet_Ioi
     simp only [Pi.sub_apply, pow_one]
     ring
+  -- Dominate `‖g(t)‖` by `4 t exp(-t)` for `t ≥ 12 (|Re z| + 1)` to show `g(t) → 0` as `t → ∞`.
   have htend : Tendsto g atTop (𝓝 0) := by
     rw [tendsto_zero_iff_norm_tendsto_zero]
     have hlim : Tendsto (fun t : ℝ => 4 * t * Real.exp (-t)) atTop (𝓝 0) := by
@@ -711,7 +714,7 @@ private theorem integral_product_equation_kernel (z : ℂ) :
 
 /-- `Ai(z)² + Bi(z)²` satisfies the third-order product differential equation
 `w''' − 4 z w' − 2 w = 0` (DLMF 9.8.18, 9.11.1). -/
-theorem airyAi_sq_add_airyBi_sq_productEquation (z : ℂ) :
+theorem airyAi_sq_add_airyBi_sq_differential_equation (z : ℂ) :
     deriv^[3] (fun w => airyAi w ^ 2 + airyBi w ^ 2) z -
       4 * z * deriv (fun w => airyAi w ^ 2 + airyBi w ^ 2) z -
       2 * (airyAi z ^ 2 + airyBi z ^ 2) = 0 := by

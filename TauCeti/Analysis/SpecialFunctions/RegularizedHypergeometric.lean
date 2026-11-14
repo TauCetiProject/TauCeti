@@ -212,10 +212,6 @@ theorem hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
         ≤ n * R ^ (n - 1) * ((n ! : ℝ)⁻¹ * C) := by gcongr
       _ = C * (n * R ^ (n - 1) / n !) := by ring
 
-private theorem descPochhammer_int_smeval_eq_eval (z : ℂ) (m : ℕ) :
-    (descPochhammer ℤ m).smeval z = (descPochhammer ℂ m).eval z := by
-  rw [← Polynomial.aeval_eq_smeval, Polynomial.aeval_def, ← Polynomial.eval_map, descPochhammer_map]
-
 /-- The finite convolution of the coefficients of `₀F₁(; a; z)` and `₀F₁(; b; z)`, valid at every
 pair of complex parameters `a`, `b`, including poles of `Γ`. -/
 theorem sum_regularizedHGFunCoeff_zero_singleton_mul (a b : ℂ) (n : ℕ) :
@@ -234,14 +230,16 @@ theorem sum_regularizedHGFunCoeff_zero_singleton_mul (a b : ℂ) (n : ℕ) :
         (descPochhammer ℤ (n - k)).smeval (a + n - 1) * (Gamma (a + n))⁻¹ := by
       have han : a + k + ((n - k : ℕ) : ℂ) = a + n := by rw [Nat.cast_sub hk]; ring
       have hsub : a + n - 1 - ((n - k : ℕ) : ℂ) + 1 = a + k := by rw [Nat.cast_sub hk]; ring
-      rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (a + k) (n - k), han, ← hsub,
-        ← descPochhammer_eval_eq_ascPochhammer, descPochhammer_int_smeval_eq_eval]
+      rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (a + k) (n - k), han,
+        Polynomial.descPochhammer_smeval_eq_ascPochhammer,
+        Polynomial.ascPochhammer_smeval_eq_eval, hsub]
     have hb : (Gamma (b + (n - k : ℕ)))⁻¹ =
         (descPochhammer ℤ k).smeval (b + n - 1) * (Gamma (b + n))⁻¹ := by
       have hbn : b + ((n - k : ℕ) : ℂ) + k = b + n := by rw [Nat.cast_sub hk]; ring
       have hsub : b + n - 1 - k + 1 = b + ((n - k : ℕ) : ℂ) := by rw [Nat.cast_sub hk]; ring
-      rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (b + (n - k : ℕ)) k, hbn, ← hsub,
-        ← descPochhammer_eval_eq_ascPochhammer, descPochhammer_int_smeval_eq_eval]
+      rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (b + (n - k : ℕ)) k, hbn,
+        Polynomial.descPochhammer_smeval_eq_ascPochhammer,
+        Polynomial.ascPochhammer_smeval_eq_eval, hsub]
     have hfac : (k ! : ℂ)⁻¹ * ((n - k)! : ℂ)⁻¹ = (n.choose k : ℂ) * (n ! : ℂ)⁻¹ := by
       have hchoose : (n.choose k : ℂ) * k ! * (n - k)! = n ! := by
         exact_mod_cast Nat.choose_mul_factorial_mul_factorial hk
@@ -258,8 +256,9 @@ theorem sum_regularizedHGFunCoeff_zero_singleton_mul (a b : ℂ) (n : ℕ) :
     ← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l =>
       (n.choose k : ℂ) *
         ((descPochhammer ℤ k).smeval (b + n - 1) * (descPochhammer ℤ l).smeval (a + n - 1)),
-    ← Ring.descPochhammer_smeval_add n (Commute.all _ _), descPochhammer_int_smeval_eq_eval,
-    descPochhammer_eval_eq_ascPochhammer, harg]
+    ← Ring.descPochhammer_smeval_add n (Commute.all _ _),
+    Polynomial.descPochhammer_smeval_eq_ascPochhammer,
+    Polynomial.ascPochhammer_smeval_eq_eval, harg]
 
 private theorem sum_range_regularizedHGFun_zero_singleton_mul (a b z : ℂ) (n : ℕ) :
     ∑ k ∈ Finset.range (n + 1),
