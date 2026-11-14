@@ -172,6 +172,20 @@ private theorem coordinateDeriv_snd_pullbackTerm (hκ : ContDiff ℝ ∞ κ) (hM
     fderiv_apply_eq_sum_coordinateDeriv (b.contDiff_coefficient.differentiable (by simp) _)]
   simp [pullbackTerm, Finset.smul_sum, smul_smul]
 
+/-- The coordinates `((D_{x_j} M y ∘ (M y)⁻¹) e_i)_l`, the coefficients with which a position
+derivative of `M y ξ` is expressed through `M y ξ` itself. -/
+private def derivInverseCoeff (M : CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (j i l : Fin n) (y : CoordinateSpace n) : ℝ :=
+  ((fderiv ℝ M y (EuclideanSpace.single j 1)).comp (M y).inverse (EuclideanSpace.single i 1)) l
+
+private theorem contDiff_derivInverseCoeff (hM : ContDiff ℝ ∞ M)
+    (hMinv : ∀ x, (M x).IsInvertible) (j i l : Fin n) :
+    ContDiff ℝ ∞ (derivInverseCoeff M j i l) :=
+  have hDM : ContDiff ℝ ∞ (fderiv ℝ M) := (contDiff_infty_iff_fderiv.1 hM).2
+  have hinv : ContDiff ℝ ∞ fun y ↦ (M y).inverse :=
+    contDiff_iff_contDiffAt.2 fun y ↦ ContDiffAt.clm_inverse hM.contDiffAt (hMinv y)
+  contDiff_euclidean.1 (((hDM.clm_apply contDiff_const).clm_comp hinv).clm_apply contDiff_const) l
+
 /-- A position derivative of `c(x) b(κ x, M x ξ)`. Besides the derivative of `c` and the position
 derivatives of `b`, it has the terms `⟪D_{x_j} M x ξ, ∂_ξ⟫ b`; writing
 `D_{x_j} M x ξ = (D_{x_j} M x ∘ (M x)⁻¹) (M x ξ)`, these are combinations of the symbols
@@ -183,9 +197,7 @@ private theorem coordinateDeriv_fst_pullbackTerm (hκ : ContDiff ℝ ∞ κ) (hM
       pullbackTerm κ M (coordinateDeriv [j] c) b (x, ξ) +
       ∑ l, pullbackTerm κ M (fun y ↦ c y * fderiv ℝ κ y (EuclideanSpace.single j 1) l)
         (spatialDeriv l b) (x, ξ) +
-      ∑ l, ∑ i, pullbackTerm κ M (fun y ↦ c y *
-          ((fderiv ℝ M y (EuclideanSpace.single j 1)).comp (M y).inverse
-            (EuclideanSpace.single i 1)) l)
+      ∑ l, ∑ i, pullbackTerm κ M (fun y ↦ c y * derivInverseCoeff M j i l y)
         ((frequencyDeriv l b).comp (ofInner (EuclideanSpace.single i 1))) (x, ξ) := by
   have hN : fderiv ℝ M x (EuclideanSpace.single j 1) ξ = ∑ i, (M x ξ) i •
       (fderiv ℝ M x (EuclideanSpace.single j 1)).comp (M x).inverse
@@ -197,15 +209,85 @@ private theorem coordinateDeriv_fst_pullbackTerm (hκ : ContDiff ℝ ∞ κ) (hM
     fderiv_pullbackTerm_apply hκ hM hc b,
     fderiv_apply_eq_sum_coordinateDeriv (b.contDiff_coefficient.differentiable (by simp) _)]
   simp only [map_zero, add_zero, hN]
-  simp [pullbackTerm, coordinateDeriv_cons, Finset.smul_sum, Finset.sum_smul, smul_smul, add_assoc,
-    EuclideanSpace.inner_single_right, mul_comm, mul_left_comm]
+  simp [pullbackTerm, derivInverseCoeff, coordinateDeriv_cons, Finset.smul_sum, Finset.sum_smul,
+    smul_smul, add_assoc, EuclideanSpace.inner_single_right, mul_comm, mul_left_comm]
+
+/-- The zeroth-order bound: `‖c(x) b(κ x, M x ξ)‖ ≤ C ⟨ξ⟩ ^ m` for positions in a compact set, by
+the growth bound of `b` and the comparison of `⟨M x ξ⟩` with `⟨ξ⟩`. -/
+private theorem exists_norm_pullbackTerm_le (hκ : Continuous κ) (hM : Continuous M)
+    (hMinv : ∀ x, (M x).IsInvertible) {c : CoordinateSpace n → ℝ} (hc : Continuous c) {m : ℝ}
+    (b : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖pullbackTerm κ M c b (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn hc.continuousOn
+  obtain ⟨B, hB⟩ := b.exists_norm_coefficient_le _ (hK.image hκ)
+  obtain ⟨c₀, hc₀, hM₀⟩ := hK.exists_norm_apply_le_mul_norm_and_norm_le_mul_norm_apply M
+    (fun x _ ↦ hM.continuousAt) fun x _ ↦ hMinv x
+  refine ⟨|A| * |B| * c₀ ^ |m|, by positivity, fun x hx ξ ↦ ?_⟩
+  calc ‖pullbackTerm κ M c b (x, ξ)‖ = ‖c x‖ * ‖b.coefficient (κ x, M x ξ)‖ := norm_smul _ _
+    _ ≤ |A| * (|B| * (1 + ‖M x ξ‖ ^ 2) ^ (m / 2)) := by
+        gcongr
+        · exact (hA x hx).trans (le_abs_self A)
+        · exact (hB _ (Set.mem_image_of_mem κ hx) _).trans (by gcongr; exact le_abs_self B)
+    _ ≤ |A| * (|B| * (c₀ ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2))) := by
+        gcongr
+        exact one_add_norm_sq_rpow_le_of_norm_le_mul hc₀ m (hM₀ x hx ξ).1 (hM₀ x hx ξ).2
+    _ = |A| * |B| * c₀ ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by ring
+
+/-- The position-derivative step of the symbol estimates: if the position derivatives `∂_x^α` of
+all functions `c(x) b(κ x, M x ξ)` satisfy the symbol estimates, so do the derivatives
+`∂_x^α ∂_{x_j}`. By `coordinateDeriv_fst_pullbackTerm` the derivative `∂_{x_j}` is a sum of such
+functions, for `b`, for its position derivatives and for the symbols `η_i ∂_{η_l} b` of order
+`m - 1 + 1`. -/
+private theorem exists_norm_mixedDeriv_concat_nil_pullbackTerm_le (hκ : ContDiff ℝ ∞ κ)
+    (hM : ContDiff ℝ ∞ M) (hMinv : ∀ x, (M x).IsInvertible) {α : List (Fin n)}
+    {K : Set (CoordinateSpace n)}
+    (ih : ∀ {m : ℝ} (b : Symbol n V W m) {c : CoordinateSpace n → ℝ}, ContDiff ℝ ∞ c →
+      ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α [] (pullbackTerm κ M c b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    {m : ℝ} (b : Symbol n V W m) {c : CoordinateSpace n → ℝ} (hc : ContDiff ℝ ∞ c) (j : Fin n) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv (α ++ [j]) [] (pullbackTerm κ M c b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  have hDκ : ContDiff ℝ ∞ (fderiv ℝ κ) := (contDiff_infty_iff_fderiv.1 hκ).2
+  have hc₁ : ContDiff ℝ ∞ (coordinateDeriv [j] c) := hc.coordinateDeriv [j]
+  have hc₂ (l : Fin n) : ContDiff ℝ ∞ fun y ↦ c y * fderiv ℝ κ y (EuclideanSpace.single j 1) l :=
+    hc.mul (contDiff_euclidean.1 (hDκ.clm_apply contDiff_const) l)
+  have hc₃ (l i : Fin n) : ContDiff ℝ ∞ fun y ↦ c y * derivInverseCoeff M j i l y :=
+    hc.mul (contDiff_derivInverseCoeff hM hMinv j i l)
+  set F₂ : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W := fun q ↦ ∑ l, pullbackTerm κ M
+    (fun y ↦ c y * fderiv ℝ κ y (EuclideanSpace.single j 1) l) (spatialDeriv l b) q
+  set F₃ : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W := fun q ↦ ∑ l, ∑ i,
+    pullbackTerm κ M (fun y ↦ c y * derivInverseCoeff M j i l y)
+      ((frequencyDeriv l b).comp (ofInner (EuclideanSpace.single i 1))) q
+  have hF₂ : ContDiff ℝ ∞ F₂ := ContDiff.sum fun l _ ↦ contDiff_pullbackTerm hκ hM (hc₂ l) _
+  have hF₃ : ContDiff ℝ ∞ F₃ :=
+    ContDiff.sum fun l _ ↦ ContDiff.sum fun i _ ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _
+  have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
+      coordinateDeriv [j] (fun y ↦ pullbackTerm κ M c b (y, q.2)) q.1) =
+        pullbackTerm κ M (coordinateDeriv [j] c) b + (F₂ + F₃) := by
+    funext q
+    rw [Pi.add_apply, Pi.add_apply, coordinateDeriv_fst_pullbackTerm hκ hM hMinv hc b j q.1 q.2,
+      add_assoc]
+  have h₂ := exists_norm_mixedDeriv_sum_le Finset.univ
+    (fun l _ ↦ contDiff_pullbackTerm hκ hM (hc₂ l) _) fun l _ ↦ ih (spatialDeriv l b) (hc₂ l)
+  have h₃ := exists_norm_mixedDeriv_sum_le (ρ := fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ (m / 2)) Finset.univ
+    (fun l _ ↦ ContDiff.sum fun i _ ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _)
+    fun l _ ↦ exists_norm_mixedDeriv_sum_le Finset.univ
+      (fun i _ ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _)
+      fun i _ ↦ (ih ((frequencyDeriv l b).comp (ofInner (EuclideanSpace.single i 1))) (hc₃ l i)).imp
+        fun C hC ↦ ⟨hC.1, fun x hx ξ ↦ (hC.2 x hx ξ).trans_eq (by rw [sub_add_cancel])⟩
+  obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_add_le (contDiff_pullbackTerm hκ hM hc₁ b)
+    (hF₂.add hF₃) (ih b hc₁) (exists_norm_mixedDeriv_add_le hF₂ hF₃ h₂ h₃)
+  refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+  rw [← mixedDeriv_coordinateDeriv_fst (contDiff_pullbackTerm hκ hM hc b), hfun]
+  exact hC x hx ξ
 
 /-- **The symbol estimates of a pullback.** Every mixed derivative `∂_x^α ∂_ξ^β` of
 `c(x) b(κ x, M x ξ)` is bounded by `C ⟨ξ⟩ ^ (m - |β|)` for positions in a compact set. By the chain
 rule (`coordinateDeriv_snd_pullbackTerm`, `coordinateDeriv_fst_pullbackTerm`) a derivative of such
 a function is a finite sum of functions of the same kind, built from symbols of order `m - 1` for a
 frequency derivative and of order `m` for a position derivative; the induction on the number of
-derivatives ends with the growth bound of `b` and the comparison of `⟨M x ξ⟩` with `⟨ξ⟩`. -/
+derivatives ends with the zeroth-order bound `exists_norm_pullbackTerm_le`. -/
 private theorem exists_norm_mixedDeriv_pullbackTerm_le (hκ : ContDiff ℝ ∞ κ)
     (hM : ContDiff ℝ ∞ M) (hMinv : ∀ x, (M x).IsInvertible) (D : ℕ) :
     ∀ {m : ℝ} (b : Symbol n V W m) {c : CoordinateSpace n → ℝ}, ContDiff ℝ ∞ c →
@@ -213,79 +295,22 @@ private theorem exists_norm_mixedDeriv_pullbackTerm_le (hκ : ContDiff ℝ ∞ �
         IsCompact K → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
           ‖mixedDeriv α β (pullbackTerm κ M c b) x ξ‖ ≤
             C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  have hDκ : ContDiff ℝ ∞ (fderiv ℝ κ) := (contDiff_infty_iff_fderiv.1 hκ).2
-  have hDM : ContDiff ℝ ∞ (fderiv ℝ M) := (contDiff_infty_iff_fderiv.1 hM).2
-  have hinv : ContDiff ℝ ∞ fun y ↦ (M y).inverse :=
-    contDiff_iff_contDiffAt.2 fun y ↦ ContDiffAt.clm_inverse hM.contDiffAt (hMinv y)
   induction D with
   | zero =>
     intro m b c hc α β hD K hK
     obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by simpa [List.length_eq_zero_iff] using hD
-    obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn hc.continuous.continuousOn
-    obtain ⟨B, hB⟩ := b.exists_norm_coefficient_le _ (hK.image hκ.continuous)
-    obtain ⟨c₀, hc₀, hM₀⟩ := hK.exists_norm_apply_le_mul_norm_and_norm_le_mul_norm_apply M
-      (fun x _ ↦ hM.continuous.continuousAt) fun x _ ↦ hMinv x
-    refine ⟨|A| * |B| * c₀ ^ |m|, by positivity, fun x hx ξ ↦ ?_⟩
-    rw [mixedDeriv_nil_nil, List.length_nil, Nat.cast_zero, sub_zero]
-    calc ‖pullbackTerm κ M c b (x, ξ)‖ = ‖c x‖ * ‖b.coefficient (κ x, M x ξ)‖ := norm_smul _ _
-      _ ≤ |A| * (|B| * (1 + ‖M x ξ‖ ^ 2) ^ (m / 2)) := by
-          gcongr
-          · exact (hA x hx).trans (le_abs_self A)
-          · exact (hB _ (Set.mem_image_of_mem κ hx) _).trans (by gcongr; exact le_abs_self B)
-      _ ≤ |A| * (|B| * (c₀ ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2))) := by
-          gcongr
-          exact one_add_norm_sq_rpow_le_of_norm_le_mul hc₀ m (hM₀ x hx ξ).1 (hM₀ x hx ξ).2
-      _ = |A| * |B| * c₀ ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by ring
+    simpa only [mixedDeriv_nil_nil, List.length_nil, Nat.cast_zero, sub_zero] using
+      exists_norm_pullbackTerm_le hκ.continuous hM.continuous hMinv hc.continuous b hK
   | succ D ih =>
     intro m b c hc α β hD K hK
-    have hF := contDiff_pullbackTerm hκ hM hc b
     rcases List.eq_nil_or_concat' β with rfl | ⟨β, j, rfl⟩
     · rcases List.eq_nil_or_concat' α with rfl | ⟨α, j, rfl⟩
       · simp at hD
       have hlen : α.length + ([] : List (Fin n)).length = D := by simpa using hD
-      -- A position derivative: the derivative of `c`, the position derivatives of `b`, and the
-      -- symbols `η_i ∂_{η_l} b` of order `m - 1 + 1`.
-      have hc₁ : ContDiff ℝ ∞ (coordinateDeriv [j] c) := hc.coordinateDeriv [j]
-      have hc₂ (l : Fin n) : ContDiff ℝ ∞ fun y ↦
-          c y * fderiv ℝ κ y (EuclideanSpace.single j 1) l :=
-        hc.mul (contDiff_euclidean.1 (hDκ.clm_apply contDiff_const) l)
-      have hc₃ (l i : Fin n) : ContDiff ℝ ∞ fun y ↦ c y *
-          ((fderiv ℝ M y (EuclideanSpace.single j 1)).comp (M y).inverse
-            (EuclideanSpace.single i 1)) l :=
-        hc.mul (contDiff_euclidean.1
-          (((hDM.clm_apply contDiff_const).clm_comp hinv).clm_apply contDiff_const) l)
-      set F₂ : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W := fun q ↦ ∑ l, pullbackTerm κ M
-        (fun y ↦ c y * fderiv ℝ κ y (EuclideanSpace.single j 1) l) (spatialDeriv l b) q
-      set F₃ : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W := fun q ↦ ∑ l, ∑ i,
-        pullbackTerm κ M (fun y ↦ c y * ((fderiv ℝ M y (EuclideanSpace.single j 1)).comp
-          (M y).inverse (EuclideanSpace.single i 1)) l)
-        ((frequencyDeriv l b).comp (ofInner (EuclideanSpace.single i 1))) q
-      have hF₂ : ContDiff ℝ ∞ F₂ := ContDiff.sum fun l _ ↦ contDiff_pullbackTerm hκ hM (hc₂ l) _
-      have hF₃ : ContDiff ℝ ∞ F₃ :=
-        ContDiff.sum fun l _ ↦ ContDiff.sum fun i _ ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _
-      have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-          coordinateDeriv [j] (fun y ↦ pullbackTerm κ M c b (y, q.2)) q.1) =
-            pullbackTerm κ M (coordinateDeriv [j] c) b + (F₂ + F₃) := by
-        funext q
-        rw [Pi.add_apply, Pi.add_apply, coordinateDeriv_fst_pullbackTerm hκ hM hMinv hc b j q.1 q.2,
-          add_assoc]
-      have h₂ := exists_norm_mixedDeriv_sum_le (α := α) (β := []) (K := K)
-        (ρ := fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - ([] : List (Fin n)).length) / 2)) Finset.univ
-        (fun l _ ↦ contDiff_pullbackTerm hκ hM (hc₂ l) _)
-        fun l _ ↦ ih (spatialDeriv l b) (hc₂ l) α [] hlen hK
-      have h₃ := exists_norm_mixedDeriv_sum_le (α := α) (β := []) (K := K)
-        (ρ := fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - ([] : List (Fin n)).length) / 2)) Finset.univ
-        (fun l _ ↦ ContDiff.sum fun i _ ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _)
-        fun l _ ↦ exists_norm_mixedDeriv_sum_le Finset.univ
-          (fun i _ ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _)
-          fun i _ ↦ (ih ((frequencyDeriv l b).comp (ofInner (EuclideanSpace.single i 1))) (hc₃ l i)
-            α [] hlen hK).imp fun C hC ↦
-              ⟨hC.1, fun x hx ξ ↦ (hC.2 x hx ξ).trans_eq (by rw [sub_add_cancel])⟩
-      obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_add_le (contDiff_pullbackTerm hκ hM hc₁ b)
-        (hF₂.add hF₃) (ih b hc₁ α [] hlen hK) (exists_norm_mixedDeriv_add_le hF₂ hF₃ h₂ h₃)
-      refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
-      rw [← mixedDeriv_coordinateDeriv_fst hF, hfun]
-      exact hC x hx ξ
+      simpa only [List.length_nil, Nat.cast_zero, sub_zero] using
+        exists_norm_mixedDeriv_concat_nil_pullbackTerm_le hκ hM hMinv
+          (fun {_} b {_} hc ↦ by
+            simpa only [List.length_nil, Nat.cast_zero, sub_zero] using ih b hc α [] hlen hK) b hc j
     · have hlen : α.length + β.length = D := by
         simp only [List.length_append, List.length_singleton] at hD
         omega
@@ -338,7 +363,7 @@ theorem pullback_id (hκ : ContDiff ℝ ∞ (id : CoordinateSpace n → Coordina
     (hM : ContDiff ℝ ∞ fun _ : CoordinateSpace n ↦ ContinuousLinearMap.id ℝ (CoordinateSpace n))
     (hMinv : ∀ _ : CoordinateSpace n, (ContinuousLinearMap.id ℝ (CoordinateSpace n)).IsInvertible)
     (a : Symbol n V W m) : pullback id (fun _ ↦ ContinuousLinearMap.id ℝ _) hκ hM hMinv a = a :=
-  (rfl)
+  Symbol.ext <| funext fun p ↦ by simp
 
 /-- Pulling back along `(κ₁, M₁)` and then along `(κ₂, M₂)` is pulling back along
 `(κ₁ ∘ κ₂, x ↦ M₁ (κ₂ x) ∘ M₂ x)`. -/
@@ -350,7 +375,7 @@ theorem pullback_pullback {κ₁ κ₂ : CoordinateSpace n → CoordinateSpace n
     pullback κ₂ M₂ hκ₂ hM₂ hM₂inv (pullback κ₁ M₁ hκ₁ hM₁ hM₁inv a) =
       pullback (κ₁ ∘ κ₂) (fun x ↦ (M₁ (κ₂ x)).comp (M₂ x)) (hκ₁.comp hκ₂)
         ((hM₁.comp hκ₂).clm_comp hM₂) (fun x ↦ (hM₁inv (κ₂ x)).comp (hM₂inv x)) a :=
-  (rfl)
+  Symbol.ext <| funext fun p ↦ by simp
 
 /-- Pulling back commutes with the pointwise composition of symbols. -/
 @[simp]

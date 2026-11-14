@@ -496,7 +496,7 @@ theorem pullback_pullback {g' : Z → Y} {L' : Z → G →L[ℝ] F} (hg' : ContD
     (a.pullback g L hg hL hLinj).pullback g' L' hg' hL' hL'inj =
       a.pullback (g ∘ g') (fun z ↦ (L (g' z)).comp (L' z)) (hg.comp hg')
         ((hL.comp hg').clm_comp hL') (fun z ↦ (hLinj (g' z)).comp (hL'inj z)) :=
-  (rfl)
+  HomogeneousSymbol.ext <| funext fun p ↦ Eq.trans (by simp) (coefficient_pullback _ _ _ a p).symm
 
 end Pullback
 
