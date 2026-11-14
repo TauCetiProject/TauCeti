@@ -315,6 +315,17 @@ theorem contMDiff_hom_bundle_of_inCoordinates_eq_const
     (mem_baseSet_trivializationAt F₂ W a)] with x hx₁ hx₂
   exact hϕ a x hx₁ hx₂
 
+/-- The fibrewise identity is a `C^n` endomorphism section of any vector bundle.
+No regularity assumption on the bundle's transition functions is needed. -/
+theorem contMDiff_id_endomorphism
+    [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)] :
+    ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₁)) n
+      (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₁)
+        (E := fun x ↦ V x →L[𝕜] V x) x (ContinuousLinearMap.id 𝕜 (V x))) :=
+  contMDiff_hom_bundle_of_inCoordinates_eq_const
+    (c := fun _ ↦ ContinuousLinearMap.id 𝕜 F₁)
+    fun _ _ hx _ ↦ ContinuousLinearMap.inCoordinates_id hx
+
 end ConstantCoordinates
 
 end TauCeti
