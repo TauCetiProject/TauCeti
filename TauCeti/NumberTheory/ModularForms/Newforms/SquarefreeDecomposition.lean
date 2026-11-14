@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Newforms.CoprimeFilter.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.CharacterSpace
 import Mathlib.Data.Nat.Squarefree
+import TauCeti.Algebra.BigOperators.Group.Finset.Attach
 
 /-!
 # The squarefree decomposition of a form with vanishing coprime coefficients
@@ -118,22 +119,11 @@ private theorem squarefreeDecomposition_of_insert {χ : (ZMod N)ˣ →* ℂˣ} {
   · intro n
     rw [hcoeff n]
     symm
-    -- both sums over `attach` become sums over the sets, the summand guarded by membership
-    rw [← Finset.univ_eq_attach, ← Finset.sum_dite_of_true (fun _ hi ↦ hi) (fun q' hq' ↦
-        if q' ∣ n then (qExpansion 1
-          ((fun q' hq' ↦ if h : q' = q then h ▸ F else F' q' (hmem hq' h)) q' hq')).coeff (n / q')
-        else 0) fun _ _ ↦ 0,
-      Finset.sum_congr hpf fun _ _ ↦ rfl, Finset.sum_insert hql', ← Finset.univ_eq_attach,
-      ← Finset.sum_dite_of_true (fun _ hi ↦ hi) (fun q' hq' ↦ if q' ∣ n then
-        (qExpansion 1 (F' q' hq')).coeff (n / q') else 0) fun _ _ ↦ 0]
-    have hqpf : q ∈ l.primeFactors := hpf ▸ Finset.mem_insert_self q _
+    rw [Finset.sum_attach_eq_of_eq_insert hql' hpf]
     congr 1
-    · rw [dite_eq_left hqpf]
-      simp
-    · refine Finset.sum_congr rfl fun q' hq' ↦ ?_
-      have hne : q' ≠ q := fun h ↦ hql' (h ▸ hq')
-      have hq'pf : q' ∈ l.primeFactors := hpf ▸ Finset.mem_insert_of_mem hq'
-      rw [dite_eq_left hq'pf, dite_eq_left hq']
+    · simp
+    · refine Finset.sum_congr rfl fun q' _ ↦ ?_
+      have hne : q'.1 ≠ q := fun h ↦ hql' (h ▸ q'.2)
       simp [hne]
 
 /-- **Peeling a prime off `f`.** The multiples-of-`q` part `h` of `f`, read at level `N q²`
