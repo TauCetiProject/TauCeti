@@ -89,7 +89,7 @@ apply to all three ends.
 * `TauCeti.Floer.isComplexLinearMap_fderiv_positiveEndChart`,
   `TauCeti.Floer.det_fderiv_positiveEndChart_pos`, `TauCeti.Floer.injOn_positiveEndChart`,
   `TauCeti.Floer.positiveEndChart_add_one`: the positive end chart is holomorphic, orientation
-  preserving, injective on the band `ℝ × (0, 1)` and `1`-periodic in `t`.
+  preserving, injective on every band `ℝ × [t₀, t₀ + 1)` and `1`-periodic in `t`.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
   `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
   perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
@@ -629,20 +629,23 @@ theorem positiveEndChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ �
   refine endChart_mem_thricePuncturedSphereReal ?_
   simpa [← mul_assoc] using hz
 
-/-- The positive end chart is injective on the open band `ℝ × (0, 1)`. -/
-theorem injOn_positiveEndChart (q : Puncture) :
-    InjOn (positiveEndChart q) (univ ×ˢ Ioo 0 1) := by
+/-- The positive end chart is injective on every band `ℝ × [t₀, t₀ + 1)` of angular width one. -/
+theorem injOn_positiveEndChart (q : Puncture) (t₀ : ℝ) :
+    InjOn (positiveEndChart q) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
   intro a ha b hb hab
-  -- The reflection `v ↦ ±v` moves the band `ℝ × (0, 1)` into a band of width one.
-  obtain ⟨t₀, ht₀⟩ : ∃ t₀ : ℝ, ∀ c : ℝ × ℝ, c ∈ univ ×ˢ Ioo (0 : ℝ) 1 →
-      q.endSign • c ∈ univ ×ˢ Ico t₀ (t₀ + 1) := by
-    rcases q.endSign_eq_one_or_eq_neg_one with h | h
-    · refine ⟨0, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
-        simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
-    · refine ⟨-1, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
-        simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
-  exact smul_right_injective _ q.endSign_ne_zero
-    (injOn_endChart_univ_prod_Ico q t₀ (ht₀ a ha) (ht₀ b hb) hab)
+  -- The reflection `v ↦ ±v` keeps the angular coordinates within distance one of each other, so
+  -- both reflected points lie in the band of width one starting at the smaller of them.
+  have hd : |q.endSign * a.2 - q.endSign * b.2| < 1 := by
+    rw [← mul_sub, abs_mul, abs_endSign, one_mul, abs_sub_lt_iff]
+    constructor <;> linarith [ha.2.1, ha.2.2, hb.2.1, hb.2.2]
+  obtain ⟨hab₁, hab₂⟩ := abs_sub_lt_iff.1 hd
+  refine smul_right_injective _ q.endSign_ne_zero (injOn_endChart_univ_prod_Ico q
+    (min (q.endSign * a.2) (q.endSign * b.2)) ⟨mem_univ _, ?_, ?_⟩ ⟨mem_univ _, ?_, ?_⟩ hab) <;>
+    simp only [Prod.smul_snd, smul_eq_mul]
+  · exact min_le_left _ _
+  · rcases min_cases (q.endSign * a.2) (q.endSign * b.2) with h | h <;> linarith [h.1]
+  · exact min_le_right _ _
+  · rcases min_cases (q.endSign * a.2) (q.endSign * b.2) with h | h <;> linarith [h.1]
 
 /-- The Hamiltonian of the end `q` in its positive end chart: `H'_q(t, x) = ±H_q(±t, x)` with the
 sign of the end. It is `H_q` on the input ends and `(t, x) ↦ -H_∞(-t, x)` on the output end. -/

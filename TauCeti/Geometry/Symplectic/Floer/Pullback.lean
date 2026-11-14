@@ -146,6 +146,15 @@ theorem perturbationPullback_comp {φ ψ : ℝ × ℝ → ℝ × ℝ} (Ks Kt : �
     comp_apply, h, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
   ring
 
+/-- Pulling back along `w ↦ φ (w + c)` is pulling back along `φ` at the translated point, since a
+translation of the domain has the identity as derivative. -/
+theorem perturbationPullback_comp_add_right (φ : ℝ × ℝ → ℝ × ℝ) (Ks Kt : ℝ × ℝ → X → ℝ)
+    (c v w : ℝ × ℝ) :
+    perturbationPullback (fun w ↦ φ (w + c)) Ks Kt v w =
+      perturbationPullback φ Ks Kt v (w + c) := by
+  funext x
+  simp only [perturbationPullback_apply, fderiv_comp_add_right]
+
 /-- The domain derivative of a component of the pullback `φ^*K`, by the product and chain rules:
 the second derivative of `φ` falls on the coefficient and the first derivative of `φ` on `K`. -/
 theorem fderiv_perturbationPullback_apply {φ : ℝ × ℝ → ℝ × ℝ} {Ks Kt : ℝ × ℝ → X → ℝ}
