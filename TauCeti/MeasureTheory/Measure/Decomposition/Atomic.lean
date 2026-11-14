@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Atom
 public import Mathlib.MeasureTheory.Measure.AEMeasurable
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+public import Mathlib.MeasureTheory.Measure.MutuallySingular
 public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 
 /-!
@@ -34,6 +36,10 @@ restricting it to the complement gives a measure with zero mass on every singlet
 * `MeasureTheory.Measure.atomicPart_add_diffusePart`: `atomicPart μ + diffusePart μ = μ`.
 * `MeasureTheory.Measure.eq_atomicPart_and_eq_diffusePart_of_eq_add`: the split is unique among
   sums of a countably carried measure and a measure with zero singleton masses.
+* `MeasureTheory.Measure.mutuallySingular_atomicPart`: the atomic part is mutually singular to
+  every measure with zero singleton masses.
+* `MeasureTheory.Measure.not_isAtom_diffusePart`: on a countably separated space, the diffuse part
+  of a σ-finite measure has no atoms.
 -/
 
 public section
@@ -110,9 +116,25 @@ instance diffusePart_isFiniteMeasure (μ : Measure X) [IsFiniteMeasure μ] :
   unfold diffusePart
   infer_instance
 
+/-- The atomic part of a σ-finite measure is σ-finite. -/
+instance atomicPart_sigmaFinite (μ : Measure X) [SigmaFinite μ] :
+    SigmaFinite (atomicPart μ) := by
+  unfold atomicPart
+  infer_instance
+
 /-- The diffuse part of a σ-finite measure is σ-finite. -/
 instance diffusePart_sigmaFinite (μ : Measure X) [SigmaFinite μ] :
     SigmaFinite (diffusePart μ) := by
+  unfold diffusePart
+  infer_instance
+
+/-- The atomic part of an s-finite measure is s-finite. -/
+instance atomicPart_sFinite (μ : Measure X) [SFinite μ] : SFinite (atomicPart μ) := by
+  unfold atomicPart
+  infer_instance
+
+/-- The diffuse part of an s-finite measure is s-finite. -/
+instance diffusePart_sFinite (μ : Measure X) [SFinite μ] : SFinite (diffusePart μ) := by
   unfold diffusePart
   infer_instance
 
@@ -193,6 +215,15 @@ theorem atomicPart_apply_compl (μ : Measure X) [SFinite μ] :
   rw [atomicPart_apply μ _ (measurableSet_positiveSingletons μ).compl]
   simp
 
+/-- On a space with measurable singletons, the atomic part of an s-finite measure is mutually
+singular to every measure with zero singleton masses. -/
+theorem mutuallySingular_atomicPart (μ ν : Measure X) [SFinite μ] [NullSingletonClass ν] :
+    atomicPart μ ⟂ₘ ν :=
+  ⟨(positiveSingletons μ)ᶜ, (measurableSet_positiveSingletons μ).compl,
+    atomicPart_apply_compl μ, by
+      rw [compl_compl]
+      exact (countable_positiveSingletons μ).measure_zero ν⟩
+
 /-- The point-mass part and the diffuse remainder sum to the original s-finite measure. -/
 theorem atomicPart_add_diffusePart (μ : Measure X) [SFinite μ] :
     atomicPart μ + diffusePart μ = μ := by
@@ -233,6 +264,13 @@ theorem eq_atomicPart_and_eq_diffusePart_of_eq_add {μ ν₁ ν₂ : Measure X} 
       restrict_eq_self_of_ae_mem (mem_ae_iff.2 h₁)]
   · rw [diffusePart, hres, restrict_eq_zero.2 h₁, zero_add,
       restrict_eq_self_of_ae_mem (s := (positiveSingletons μ)ᶜ) (compl_mem_ae_iff.2 h₂)]
+
+omit [MeasurableSingletonClass X] in
+/-- The diffuse part of a σ-finite measure on a countably separated space has no atoms. -/
+theorem not_isAtom_diffusePart [MeasurableSpace.CountablySeparated X] (μ : Measure X)
+    [SigmaFinite μ] (s : Set X) : ¬ (diffusePart μ).IsAtom s :=
+  have := MeasurableSpace.measurableSingletonClass_of_countablySeparated (α := X)
+  not_isAtom_of_nullSingletonClass s
 
 end MeasureTheory.Measure
 
