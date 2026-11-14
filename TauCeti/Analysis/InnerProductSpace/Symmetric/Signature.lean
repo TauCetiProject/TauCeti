@@ -42,6 +42,8 @@ In the namespace `LinearMap.IsSymmetric`:
   negative point-spectral subspace of `T`.
 * `sigPos_eq_finrank_pointSpectralSubspace`: the positive index of `Q` is the dimension of the
   positive point-spectral subspace of `T`.
+* `sign_det_eq_neg_one_pow_sigNeg`: when `T` is injective, the sign of its determinant is
+  `(-1) ^ sigNeg Q`, since the determinant is the product of the eigenvalues.
 * `isSymm_toBilinForm_innerSL_comp`, `sigNeg_toBilinForm_innerSL_comp`,
   `sigPos_toBilinForm_innerSL_comp`: the continuous bilinear form `⟪T ·, ·⟫` is symmetric, and its
   negative and positive indices count the negative and positive eigenvalues of `T`.
@@ -132,6 +134,30 @@ theorem sigPos_eq_finrank_pointSpectralSubspace (hT : T.IsSymmetric)
     sigPos Q = Module.finrank ℝ (Module.End.pointSpectralSubspace T (Ioi 0)) := by
   rw [hT.finrank_pointSpectralSubspace rfl, hT.sigPos_eq_ncard_eigenvalues_pos rfl hQ]
   simp only [Set.mem_Ioi]
+
+/-- **The sign of the determinant of a symmetric operator.** If `T` is an injective symmetric
+operator, the sign of its determinant is `(-1)` to the negative index of the quadratic form
+`x ↦ ⟪T x, x⟫`: the determinant is the product of the eigenvalues, none of which vanishes, and
+exactly `sigNeg Q` of them are negative. -/
+theorem sign_det_eq_neg_one_pow_sigNeg (hT : T.IsSymmetric) (hker : LinearMap.ker T = ⊥)
+    (hQ : ∀ x, Q x = ⟪T x, x⟫_ℝ) :
+    SignType.sign (LinearMap.det T) = (-1) ^ sigNeg Q := by
+  classical
+  -- An eigenvalue `0` would put its eigenvector in the kernel.
+  have hμ (i : Fin (Module.finrank ℝ E)) : hT.eigenvalues rfl i ≠ 0 := by
+    intro h0
+    have hv : hT.eigenvectorBasis rfl i ∈ LinearMap.ker T := by
+      simp [LinearMap.mem_ker, hT.apply_eigenvectorBasis, h0]
+    rw [hker, Submodule.mem_bot] at hv
+    exact (hT.eigenvectorBasis rfl).orthonormal.ne_zero i hv
+  rw [hT.det_eq_prod_eigenvalues rfl, hT.sigNeg_eq_ncard_eigenvalues_neg rfl hQ,
+    Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
+  simp only [RCLike.ofReal_real_eq_id, id_eq]
+  rw [← signHom_apply, map_prod, Finset.card_filter, ← Finset.prod_pow_eq_pow_sum]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rcases (hμ i).lt_or_gt with h | h
+  · simp [h, sign_neg h]
+  · simp [h.not_gt, sign_pos h]
 
 /-! ### The bilinear form of an operator -/
 
