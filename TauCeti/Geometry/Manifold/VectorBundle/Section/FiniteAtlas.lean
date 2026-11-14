@@ -45,8 +45,8 @@ finite chart-frame atlas with covering relative interiors generates
 over `RCLike` normed fields when the model fibre is complete
 (`ContMDiffSection.completeSpace_finiteAtlas`). Every open cover on a compact manifold modelled on
 a locally compact space admits a subordinate finite compact chart cover
-(`TauCeti.exists_finite_compact_opens_chart_cover`), so `ContMDiffSection.frameTopology` on `C^k`
-sections is normable (`ContMDiffSection.isNormableSpace_frameTopology_of_compactSpace`).
+(`TauCeti.exists_finite_compact_chart_cover_of_opens_cover`), so `ContMDiffSection.frameTopology`
+on `C^k` sections is normable (`ContMDiffSection.isNormableSpace_frameTopology_of_compactSpace`).
 
 Derivatives are taken within extended chart targets and interiors are relative to them, so
 boundary and corner charts are included throughout (except for completeness, which assumes a
@@ -62,8 +62,6 @@ boundaryless model). Neither finite rank of the fibres nor Hausdorffness of the 
 
 ## Main results
 
-* `TauCeti.exists_finite_compact_opens_chart_cover`: subordinate finite compact chart cover of any
-  open cover on a compact manifold.
 * `Bundle.Trivialization.chartDerivativeSeminorm_le_chartCkSeminorm` and
   `Bundle.Trivialization.exists_chartCkSeminorm_le_coordChange`: derivative-order and simultaneous
   frame-and-chart change bounds for compact chart-frame `C^k` seminorms.
@@ -74,11 +72,13 @@ boundaryless model). Neither finite rank of the fibres nor Hausdorffness of the 
   `ContMDiffSection.finiteAtlasSeminorm_eq_zero_iff`, and
   `ContMDiffSection.exists_pos_forall_mem_of_isOpen_totalSpace`: pointwise frame-coordinate
   control, separation of points, and uniform stability of open conditions in the total space.
-* `ContMDiffSection.withSeminorms_finiteAtlasSeminorm`,
+* `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_subtype`,
+  `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_subtype_of_cover`,
+  `ContMDiffSection.withSeminorms_finiteAtlasSeminorm`,
   `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_of_cover`,
   `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_infty`, and
   `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_infty_of_cover`: generation of
-  `ContMDiffSection.frameTopology` on `C^k` and `C^∞` sections.
+  `ContMDiffSection.frameTopology` on `C^n`, `C^k`, and `C^∞` sections.
 * `ContMDiffSection.completeSpace_finiteAtlas` and
   `ContMDiffSection.isNormableSpace_frameTopology_of_compactSpace`: Banach completeness on
   boundaryless models and normability on compact manifolds.
@@ -95,60 +95,6 @@ public noncomputable section
 
 open Bundle Set Filter Topology TopologicalSpace
 open scoped ContDiff Manifold TauCeti.ManifoldWeakWhitney
-
-namespace TauCeti
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- **Existence of finite compact chart covers subordinate to an open cover.** On a compact
-manifold modelled on a locally compact space `H`, any open cover `U` of `M` admits a finite
-refinement by inherited extended charts at points `c i : U (r i)` with compact coordinate pieces
-`K i` whose relative interiors cover `M`, including boundary and corner charts. -/
-theorem exists_finite_compact_opens_chart_cover [CompactSpace M] [LocallyCompactSpace H]
-    {κ : Type*} (U : κ → Opens M) (hcover : ∀ y : M, ∃ j, y ∈ U j) :
-    ∃ (N : ℕ) (r : Fin N → κ) (c : ∀ i, U (r i))
-      (K : ∀ i, Compacts (extChartAt I (c i)).target),
-      ∀ y : M, ∃ i, ∃ hyU : y ∈ U (r i),
-        ∃ hy : (⟨y, hyU⟩ : U (r i)) ∈ (extChartAt I (c i)).source,
-          (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-            (extChartAt I (c i)).target) ∈
-            interior (K i : Set (extChartAt I (c i)).target) := by
-  classical
-  choose j hj using hcover
-  choose u b hu hmemu hsource hb htarget himage using fun x : M ↦
-    exists_precompact_extChartAt_neighborhood (I := I) (⟨x, hj x⟩ : U (j x))
-  have hopen (x : M) : IsOpen (Subtype.val '' u x : Set M) :=
-    (U (j x)).isOpen.isOpenMap_subtype_val (u x) (hu x)
-  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover (fun x ↦ Subtype.val '' u x) hopen
-    fun x _ ↦ mem_iUnion.mpr ⟨x, ⟨⟨x, hj x⟩, hmemu x, rfl⟩⟩
-  let α : Fin t.card → M := fun i ↦ (t.equivFin.symm i).val
-  let r : Fin t.card → κ := fun i ↦ j (α i)
-  let c : ∀ i, U (r i) := fun i ↦ ⟨α i, hj (α i)⟩
-  have hK (i : Fin t.card) :
-      IsCompact (Subtype.val ⁻¹' b (α i) : Set (extChartAt I (c i)).target) := by
-    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.mpr (htarget (α i))]
-    exact hb (α i)
-  refine ⟨t.card, r, c, fun i ↦ ⟨_, hK i⟩, fun y ↦ ?_⟩
-  obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.mp (ht (mem_univ y))
-  let i : Fin t.card := t.equivFin ⟨x, hx⟩
-  have hα : x = α i := by simp [α, i]
-  rw [hα] at hyx
-  rcases hyx with ⟨q, hqu, rfl⟩
-  refine ⟨i, q.2, hsource (α i) hqu, ?_⟩
-  have hO : IsOpen {z : (extChartAt I (c i)).target | (extChartAt I (c i)).symm z ∈ u (α i)} :=
-    (hu (α i)).preimage (continuousOn_iff_continuous_domRestrict.mp
-      (continuousOn_extChartAt_symm (c i)))
-  refine interior_maximal (fun z hz ↦ ?_) hO ?_
-  · have hmem := himage (α i) (mem_image_of_mem _ hz)
-    rwa [(extChartAt I (c i)).right_inv z.2] at hmem
-  · have hmem : (extChartAt I (c i)).symm (extChartAt I (c i) q) ∈ u (α i) := by
-      rwa [(extChartAt I (c i)).left_inv (hsource (α i) hqu)]
-    exact hmem
-
-end TauCeti
 
 namespace Bundle.Trivialization
 
@@ -173,53 +119,6 @@ theorem chartDerivativeSeminorm_le_chartCkSeminorm
   (e.chartDerivativeSeminorm_le_iff hU x K m _ s (apply_nonneg _ _)).mpr fun z hz ↦
     (e.chartCkSeminorm_le_iff hU x K k hk s (apply_nonneg _ _)).mp le_rfl m hmk z hz
 
-private theorem exists_open_extChartAt_overlap {U₁ U₂ : Opens M} (x₁ : U₁) (x₂ : U₂)
-    (P : Compacts (extChartAt I x₁).target)
-    (hoverlap : ∀ z ∈ P, ∃ hy₂ : ((extChartAt I x₁).symm z : M) ∈ U₂,
-      (⟨((extChartAt I x₁).symm z : M), hy₂⟩ : U₂) ∈ (extChartAt I x₂).source) :
-    ∃ W : Set E, IsOpen W ∧
-      Subtype.val '' (P : Set (extChartAt I x₁).target) ⊆ (extChartAt I x₁).target ∩ W ∧
-      (∀ z ∈ (extChartAt I x₁).target ∩ W,
-        (extChartAt I (x₁ : M)).symm z ∈ (U₂ : Set M) ∩ (extChartAt I (x₂ : M)).source) ∧
-      (extChartAt I x₁).target ∩ W ⊆
-        (I.extendCoordChange (chartAt H (x₁ : M)) (chartAt H (x₂ : M))).source ∧
-      MapsTo (I.extendCoordChange (chartAt H (x₁ : M)) (chartAt H (x₂ : M)))
-        ((extChartAt I x₁).target ∩ W) (extChartAt I x₂).target := by
-  let V₂ : Set M := (U₂ : Set M) ∩ (extChartAt I (x₂ : M)).source
-  have hV₂ : IsOpen V₂ := U₂.isOpen.inter (isOpen_extChartAt_source (x₂ : M))
-  have hsymm : Continuous (fun z : (extChartAt I x₁).target ↦ (extChartAt I (x₁ : M)).symm z) :=
-    continuousOn_iff_continuous_domRestrict.mp
-      ((continuousOn_extChartAt_symm (x₁ : M)).mono (U₁.extChartAt_target_subset x₁))
-  obtain ⟨W, hW, hOW⟩ := isOpen_induced_iff.mp (hV₂.preimage hsymm)
-  have hmemS {z : E} (hz : z ∈ (extChartAt I x₁).target ∩ W) :
-      (extChartAt I (x₁ : M)).symm z ∈ V₂ := by
-    have hz' : (⟨z, hz.1⟩ : (extChartAt I x₁).target) ∈ Subtype.val ⁻¹' W := hz.2
-    rwa [hOW] at hz'
-  refine ⟨W, hW, ?_, fun _ hz ↦ hmemS hz, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · rintro _ ⟨z, hzP, rfl⟩
-    obtain ⟨hy₂, hy⟩ := hoverlap z hzP
-    have hysrc : ((extChartAt I x₁).symm z : M) ∈ (extChartAt I (x₂ : M)).source := by
-      simp only [extChartAt_source, Opens.chartAt_eq,
-        OpenPartialHomeomorph.subtypeRestr_source] at hy ⊢
-      exact hy
-    have hzV₂ : (extChartAt I (x₁ : M)).symm z ∈ V₂ := by
-      rw [← U₁.coe_extChartAt_symm_apply x₁ z.2]
-      exact ⟨hy₂, hysrc⟩
-    have hzW : z ∈ Subtype.val ⁻¹' W := by
-      rw [hOW]
-      exact hzV₂
-    exact ⟨z.2, hzW⟩
-  · rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
-    exact ⟨U₁.extChartAt_target_subset x₁ hz.1, (hmemS hz).2⟩
-  · rw [U₂.extChartAt_target_eq x₂]
-    have hsrc := (hmemS hz).2
-    refine ⟨(extChartAt I (x₂ : M)).map_source hsrc, ?_⟩
-    rw [mem_preimage]
-    have hτz : I.extendCoordChange (chartAt H (x₁ : M)) (chartAt H (x₂ : M)) z =
-        extChartAt I (x₂ : M) ((extChartAt I (x₁ : M)).symm z) := rfl
-    rw [hτz, (extChartAt I (x₂ : M)).left_inv hsrc]
-    exact (hmemS hz).1
-
 omit [IsManifold I n M] in
 private theorem eqOn_frameCoordinates_comp_symm
     (e₁ e₂ : Trivialization F (π F V)) [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₂]
@@ -239,7 +138,7 @@ private theorem eqOn_frameCoordinates_comp_symm
   have hpt : ((extChartAt I x₂).symm
       (I.extendCoordChange (chartAt H (x₁ : M)) (chartAt H (x₂ : M)) w) : M) =
       ((extChartAt I x₁).symm w : M) := by
-    rw [hcoe₂, hcoe₁]
+    rw [hcoe₂, hcoe₁, I.extendCoordChange_chartAt_apply]
     exact (extChartAt I (x₂ : M)).left_inv (hmemS w hw).2
   simp only [Function.comp_apply, frameCoordinates_apply, ContinuousLinearEquiv.coe_coe]
   rw [hpt, ← hcoe₁]
@@ -247,26 +146,6 @@ private theorem eqOn_frameCoordinates_comp_symm
     hU₁ ((extChartAt I x₁).symm w).2⟩ _).trans
     (congrArg (fun v ↦ (e₁ ⟨((extChartAt I x₁).symm w : M), v⟩).2)
       (e₂.symm_apply_apply_mk (hU₂ (by rw [hcoe₁]; exact (hmemS w hw).1)) _))).symm
-
-private theorem contDiffOn_coordChangeL_comp_symm
-    (e₁ e₂ : Trivialization F (π F V)) [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₂]
-    {U₁ U₂ : Opens M} (hU₁ : (U₁ : Set M) ⊆ e₁.baseSet) (hU₂ : (U₂ : Set M) ⊆ e₂.baseSet)
-    (x₁ : U₁) (x₂ : U₂) {S : Set E} (hS₁ : S ⊆ (extChartAt I x₁).target)
-    (hmemS : ∀ z ∈ S,
-      (extChartAt I (x₁ : M)).symm z ∈ (U₂ : Set M) ∩ (extChartAt I (x₂ : M)).source)
-    (k : ℕ) (hk : k ≤ n) :
-    ContDiffOn 𝕜 k
-      (fun z ↦ (e₂.coordChangeL 𝕜 e₁ ((extChartAt I (x₁ : M)).symm z) : F →L[𝕜] F)) S :=
-  fun z hz ↦ by
-    have hy₁ : (extChartAt I (x₁ : M)).symm z ∈ e₁.baseSet :=
-      hU₁ (by rw [← U₁.coe_extChartAt_symm_apply x₁ (hS₁ hz)]; exact ((extChartAt I x₁).symm _).2)
-    have htr : ContMDiffAt I 𝓘(𝕜, F →L[𝕜] F) n
-        (fun p ↦ (e₂.coordChangeL 𝕜 e₁ p : F →L[𝕜] F)) ((extChartAt I (x₁ : M)).symm z) :=
-      contMDiffAt_coordChangeL (e := e₂) (e' := e₁) (hU₂ (hmemS z hz).1) hy₁
-    have hsymm : ContMDiffWithinAt 𝓘(𝕜, E) I n (extChartAt I (x₁ : M)).symm S z :=
-      (contMDiffOn_extChartAt_symm (x₁ : M) z (U₁.extChartAt_target_subset x₁ (hS₁ hz))).mono
-        fun w hw ↦ U₁.extChartAt_target_subset x₁ (hS₁ hw)
-    exact ((htr.comp_contMDiffWithinAt z hsymm).contDiffWithinAt).of_le hk
 
 /-- On a compact overlap of two bundle trivializations and inherited charts (boundary and corner
 charts included), the `C^k` seminorm in the first trivialization and chart is bounded by a positive
@@ -284,11 +163,18 @@ theorem exists_chartCkSeminorm_le_coordChange
     (k : ℕ) (hk : k ≤ n) :
     ∃ C : ℝ, 0 < C ∧ ∀ s : Cₛ^n⟮I; F, V⟯,
       e₁.chartCkSeminorm hU₁ x₁ P k hk s ≤ C * e₂.chartCkSeminorm hU₂ x₂ Q k hk s := by
-  obtain ⟨W, hW, hPS, hmemS, hSτ, hST⟩ := exists_open_extChartAt_overlap x₁ x₂ P
+  obtain ⟨W, hW, hPS, hmemS, hSτ, hST⟩ := TauCeti.exists_open_extChartAt_overlap x₁ x₂
+    (P := (P : Set (extChartAt I x₁).target))
     fun z hz ↦ let ⟨hy₂, hy, _⟩ := hoverlap z hz; ⟨hy₂, hy⟩
   set S : Set E := (extChartAt I x₁).target ∩ W
   set τ := I.extendCoordChange (chartAt H (x₁ : M)) (chartAt H (x₂ : M))
-  have hL := contDiffOn_coordChangeL_comp_symm e₁ e₂ hU₁ hU₂ x₁ x₂ inter_subset_left hmemS k hk
+  have hL : ContDiffOn 𝕜 k
+      (fun z ↦ (e₂.coordChangeL 𝕜 e₁ ((extChartAt I (x₁ : M)).symm z) : F →L[𝕜] F)) S :=
+    (e₂.contDiffOn_coordChangeL_comp_symm e₁ (x₁ : M)
+      (inter_subset_left.trans (U₁.extChartAt_target_subset x₁)) fun z hz ↦
+        ⟨hU₂ (hmemS z hz).1, hU₁ (by
+          rw [← U₁.coe_extChartAt_symm_apply x₁ hz.1]
+          exact ((extChartAt I x₁).symm z).2)⟩).of_le hk
   have hτ : ContDiffOn 𝕜 k τ S :=
     ((I.contDiffOn_extendCoordChange (StructureGroupoid.chart_mem_maximalAtlas _ (x₁ : M))
       (StructureGroupoid.chart_mem_maximalAtlas _ (x₂ : M))).mono hSτ).of_le hk
@@ -317,13 +203,8 @@ theorem exists_chartCkSeminorm_le_coordChange
     obtain ⟨hy₂, hy, hQ⟩ := hoverlap w hwP
     have hτeq : (⟨extChartAt I x₂ ⟨((extChartAt I x₁).symm w : M), hy₂⟩,
         (extChartAt I x₂).map_source hy⟩ : (extChartAt I x₂).target) =
-        ⟨τ w, hST (hPS ⟨w, hwP, rfl⟩)⟩ := by
-      ext
-      have hcoe := U₁.coe_extChartAt_symm_apply x₁ w.2
-      simp only [τ, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply, extChartAt,
-        Opens.chartAt_eq, OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.subtypeRestr_coe,
-        Function.comp_apply, domRestrict_apply]
-      exact congrArg (I ∘ chartAt H (x₂ : M)) hcoe
+        ⟨τ w, hST (hPS ⟨w, hwP, rfl⟩)⟩ :=
+      Subtype.ext (Opens.extendCoordChange_chartAt_coe_apply x₁ x₂ w.2).symm
     have hQj := (e₂.chartCkSeminorm_le_iff hU₂ x₂ Q k hk s hδ).mp le_rfl j (hj.trans hm) _ hQ
     rwa [hτeq, ContMDiffMap.chartIteratedFDeriv_self_target_apply] at hQj
   · exact mul_le_mul_of_nonneg_right ((le_abs_self _).trans <|
@@ -365,10 +246,9 @@ theorem finiteAtlasSeminorm_def (k : ℕ) (hk : k ≤ n) :
 
 /-- On an empty index type, the finite-atlas `C^k` seminorm is zero. -/
 @[simp]
-theorem finiteAtlasSeminorm_bot [IsEmpty ι] (k : ℕ) (hk : k ≤ n) :
+theorem finiteAtlasSeminorm_of_isEmpty [IsEmpty ι] (k : ℕ) (hk : k ≤ n) :
     finiteAtlasSeminorm e U hU c K k hk = 0 := by
-  rw [finiteAtlasSeminorm_def, Finset.univ_eq_empty, Finset.sup_empty]
-  rfl
+  rw [finiteAtlasSeminorm_def, Finset.univ_eq_empty, Finset.sup_empty, Seminorm.bot_eq_zero]
 
 /-- Each piece's compact chart-frame `C^k` seminorm is bounded by the finite-atlas seminorm. -/
 theorem chartCkSeminorm_le_finiteAtlasSeminorm (k : ℕ) (hk : k ≤ n) (i : ι) :
@@ -393,10 +273,8 @@ theorem norm_frameCoordinates_apply_le_finiteAtlasSeminorm (k : ℕ) (hk : k ≤
   have hle := ((e i).chartDerivativeSeminorm_le_iff (hU i) (c i) (K i) 0 (by simp) s
     (apply_nonneg _ _)).mp
       (chartDerivativeSeminorm_le_finiteAtlasSeminorm e U hU c K k hk i (Nat.zero_le k) s) z hz
-  rw [← ContMDiffMap.chartIteratedFDeriv_zero_apply ((e i).frameCoordinates (hU i) s) (c i) z
-    Fin.elim0]
-  exact ((ContinuousMultilinearMap.le_opNorm _ _).trans_eq
-    (by rw [Finset.univ_eq_empty, Finset.prod_empty, mul_one]; rfl)).trans hle
+  rwa [ContMDiffMap.chartIteratedFDeriv_self_target_apply, norm_iteratedFDerivWithin_zero,
+    Function.comp_apply] at hle
 
 /-- A nonnegative bound on the finite-atlas `C^k` seminorm is simultaneous control of every
 frame-coordinate derivative through order `k` on every compact piece. -/
@@ -507,27 +385,6 @@ variable (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
     (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
       (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
 
-omit [Fintype ι] in
-private theorem isOpen_preimage_extChartAt_interior {U' : Opens M} (x : U') (i : ι) :
-    IsOpen {z : (extChartAt I x).target | ∃ hyU : ((extChartAt I x).symm z : M) ∈ U i,
-      ∃ hy : (⟨((extChartAt I x).symm z : M), hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨((extChartAt I x).symm z : M), hyU⟩,
-          (extChartAt I (c i)).map_source hy⟩ : (extChartAt I (c i)).target) ∈
-          interior (K i : Set (extChartAt I (c i)).target)} := by
-  let Wi : Set (U i) := {q : U i | ∃ hy : q ∈ (extChartAt I (c i)).source,
-    (⟨extChartAt I (c i) q, (extChartAt I (c i)).map_source hy⟩ :
-      (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)}
-  have hWi : IsOpen (Subtype.val '' Wi : Set M) :=
-    (U i).isOpen.isOpenMap_subtype_val Wi (TauCeti.isOpen_setOf_extChartAt_mem (c i)
-      isOpen_interior)
-  have hsymm : Continuous (fun z : (extChartAt I x).target ↦ ((extChartAt I x).symm z : M)) :=
-    continuous_subtype_val.comp
-      (continuousOn_iff_continuous_domRestrict.mp (continuousOn_extChartAt_symm x))
-  convert hWi.preimage hsymm using 1
-  ext z
-  exact ⟨fun ⟨hyU, hy, hint⟩ ↦ ⟨⟨_, hyU⟩, ⟨hy, hint⟩, rfl⟩,
-    by rintro ⟨⟨y, hyU⟩, ⟨hy, hint⟩, rfl⟩; exact ⟨hyU, hy, hint⟩⟩
-
 include hK in
 /-- If the relative interiors of the compact pieces cover `M`, every compact chart-frame `C^k`
 seminorm in any smooth trivialization is bounded by a positive multiple of the finite-atlas `C^k`
@@ -549,7 +406,7 @@ theorem exists_chartCkSeminorm_le_finiteAtlasSeminorm
     obtain ⟨i, hi⟩ := hK ((extChartAt I x).symm z : M)
     exact mem_biUnion (Finset.mem_univ i) hi
   obtain ⟨P, hP, hPO, hLP⟩ := L.isCompact.finite_compact_cover Finset.univ O
-    (fun i _ ↦ isOpen_preimage_extChartAt_interior U x i) hc
+    (fun i _ ↦ TauCeti.isOpen_setOf_extChartAt_symm_mem x (c i) isOpen_interior) hc
   choose C hC hbound using fun i : ι ↦
     e'.exists_chartCkSeminorm_le_coordChange (e i) hU' (hU i) x (c i) ⟨P i, hP i⟩ (K i)
       (fun z hz ↦ let ⟨hyU, hy, hint⟩ := hPO i hz; ⟨hyU, hy, interior_subset hint⟩) k hk
@@ -695,6 +552,62 @@ theorem exists_pos_forall_mem_of_isOpen_totalSpace
 
 end FiniteAtlasSeminorm
 
+section GeneralWithSeminorms
+
+variable {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  {ι : Type*} [Fintype ι]
+  (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
+  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+  {c : ∀ i, U i} {K : ∀ i, Compacts (extChartAt I (c i)).target}
+
+/-- **The finite-atlas `C^k` seminorms (`k ≤ n`) generate `ContMDiffSection.frameTopology`** on
+`C^n` sections when the relative interiors of the compact pieces cover `M`, for any regularity
+`n : ℕ∞ω` (neither local compactness of the model nor absence of boundary is required). -/
+theorem withSeminorms_finiteAtlasSeminorm_subtype
+    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
+      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
+        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
+          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    WithSeminorms
+      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  have hp := withSeminorms_frameSeminormFamily (I := I) (n := n) e U hU
+  let _ := hp.isTopologicalAddGroup
+  refine hp.congr ?_ (Seminorm.IsBounded.of_real ?_)
+  · intro k
+    obtain ⟨s, C, -, hbound⟩ := Seminorm.bound_of_continuous hp _
+      (continuous_finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2)
+    exact ⟨s, C, by simpa only [Seminorm.comp_id] using hbound⟩
+  · rintro ⟨i, x, ⟨m, hm⟩, L⟩
+    obtain ⟨C, -, hbound⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm (n := n) e U hU hK
+      (e i) (hU i) x L m hm
+    refine ⟨{⟨m, hm⟩}, C, fun s ↦ ?_⟩
+    simpa only [LinearMap.id_apply, frameSeminormFamily_apply, Finset.sup_singleton] using
+      ((e i).chartDerivativeSeminorm_le_chartCkSeminorm (hU i) x L le_rfl hm s).trans (hbound s)
+
+/-- On a locally compact model space, the finite-atlas `C^k` seminorms (`k ≤ n`) of any finite
+chart-frame atlas whose compact pieces have relative interiors covering `M` generate
+`ContMDiffSection.frameTopology` on `C^n` sections for *any* covering smooth frame system. -/
+theorem withSeminorms_finiteAtlasSeminorm_subtype_of_cover [LocallyCompactSpace E]
+    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
+      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
+        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
+          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
+    {κ : Type*} (e' : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)]
+    (U' : κ → Opens M) (hU' : ∀ j, (U' j : Set M) ⊆ (e' j).baseSet)
+    (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
+    letI := frameTopology (I := I) (n := n) e' U' hU'
+    WithSeminorms
+      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2) := by
+  have heq : frameTopology (I := I) (n := n) e' U' hU' =
+      frameTopology (I := I) (n := n) e U hU :=
+    frameTopology_eq_of_covers e' U' hU' hcover' e U hU (TauCeti.cover_of_extChartAt_cover hK)
+  rw [heq]
+  exact withSeminorms_finiteAtlasSeminorm_subtype e U hU hK
+
+end GeneralWithSeminorms
+
 section Topology
 
 variable (k : ℕ) [ContMDiffVectorBundle k F V I] [IsManifold I k M]
@@ -702,6 +615,21 @@ variable (k : ℕ) [ContMDiffVectorBundle k F V I] [IsManifold I k M]
   (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
   {c : ∀ i, U i} {K : ∀ i, Compacts (extChartAt I (c i)).target}
+
+private theorem withSeminorms_unit_of_subtype [TopologicalSpace Cₛ^k⟮I; F, V⟯]
+    (hp : WithSeminorms
+      (fun m : {m : ℕ // (m : ℕ∞ω) ≤ k} ↦ finiteAtlasSeminorm (n := k) e U hU c K m.1 m.2)) :
+    WithSeminorms (fun _ : Unit ↦ finiteAtlasSeminorm (n := k) e U hU c K k le_rfl) := by
+  refine hp.congr ?_ ?_
+  · intro _
+    refine ⟨{⟨k, le_rfl⟩}, 1, ?_⟩
+    rw [Finset.sup_singleton, one_smul]
+    rfl
+  · intro m
+    have hmk : m.1 ≤ k := Nat.cast_le.mp m.2
+    refine ⟨{()}, 1, ?_⟩
+    rw [Finset.sup_singleton, one_smul]
+    exact finiteAtlasSeminorm_le_of_le (n := k) e U hU c K hmk le_rfl
 
 /-- **The finite-atlas `C^k` norm generates `ContMDiffSection.frameTopology`** on `C^k` sections
 when the relative interiors of its compact pieces cover `M`. Neither local compactness of the model
@@ -714,20 +642,8 @@ theorem withSeminorms_finiteAtlasSeminorm
     letI := frameTopology (I := I) (n := k) e U hU
     WithSeminorms (fun _ : Unit ↦ finiteAtlasSeminorm (n := k) e U hU c K k le_rfl) := by
   let _ := frameTopology (I := I) (n := k) e U hU
-  have hp := withSeminorms_frameSeminormFamily (I := I) (n := k) e U hU
-  let _ := hp.isTopologicalAddGroup
-  refine hp.congr ?_ (Seminorm.IsBounded.of_real ?_)
-  · intro _
-    obtain ⟨s, C, -, hbound⟩ := Seminorm.bound_of_continuous hp _
-      (continuous_finiteAtlasSeminorm (n := k) e U hU c K k le_rfl)
-    exact ⟨s, C, by simpa only [Seminorm.comp_id] using hbound⟩
-  · rintro ⟨i, x, ⟨m, hm⟩, L⟩
-    have hmk : m ≤ k := by exact_mod_cast hm
-    obtain ⟨C, -, hbound⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm (n := k) e U hU hK
-      (e i) (hU i) x L k le_rfl
-    refine ⟨{()}, C, fun s ↦ ?_⟩
-    simpa only [LinearMap.id_apply, frameSeminormFamily_apply, Finset.sup_singleton] using
-      ((e i).chartDerivativeSeminorm_le_chartCkSeminorm (hU i) x L hmk le_rfl s).trans (hbound s)
+  exact withSeminorms_unit_of_subtype k e U hU
+    (withSeminorms_finiteAtlasSeminorm_subtype (n := k) e U hU hK)
 
 /-- On a locally compact model space, a finite chart-frame `C^k` norm whose compact pieces have
 relative interiors covering `M` generates `ContMDiffSection.frameTopology` for *any* covering
@@ -742,12 +658,9 @@ theorem withSeminorms_finiteAtlasSeminorm_of_cover [LocallyCompactSpace E]
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
     letI := frameTopology (I := I) (n := k) e' U' hU'
     WithSeminorms (fun _ : Unit ↦ finiteAtlasSeminorm (n := k) e U hU c K k le_rfl) := by
-  have hcover : ∀ y : M, ∃ i, y ∈ U i := fun y ↦ let ⟨i, hyU, _⟩ := hK y; ⟨i, hyU⟩
-  have heq : frameTopology (I := I) (n := k) e' U' hU' =
-      frameTopology (I := I) (n := k) e U hU :=
-    frameTopology_eq_of_covers e' U' hU' hcover' e U hU hcover
-  rw [heq]
-  exact withSeminorms_finiteAtlasSeminorm k e U hU hK
+  let _ := frameTopology (I := I) (n := k) e' U' hU'
+  exact withSeminorms_unit_of_subtype k e U hU
+    (withSeminorms_finiteAtlasSeminorm_subtype_of_cover (n := k) e U hU hK e' U' hU' hcover')
 
 /-- The normed group of `C^k` bundle sections equipped with the `C^k` norm of a finite chart-frame
 atlas whose compact pieces have relative interiors covering `M`. Its topology is definitionally
@@ -767,7 +680,7 @@ def finiteAtlasNormedAddCommGroup
       norm_smul a s := map_smul_eq_mul _ a s
       norm_triangle s t := map_add_le_add _ s t
       norm_eq_zero_iff s := finiteAtlasSeminorm_eq_zero_iff e U hU
-        (fun y ↦ (hK y).imp fun _ ⟨hyU, hy, hyK⟩ ↦ ⟨hyU, hy, interior_subset hyK⟩) k le_rfl s }
+        (TauCeti.extChartAt_cover_of_interior_cover hK) k le_rfl s }
     ((withSeminorms_finiteAtlasSeminorm k e U hU hK).topologicalSpace_eq_iInf.trans ciInf_unique)
 
 /-- The normed space structure on `C^k` bundle sections for a covering finite chart-frame atlas. -/
@@ -831,13 +744,16 @@ theorem completeSpace_finiteAtlas [IsRCLikeNormedField 𝕜] [LocallyCompactSpac
     letI := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
     CompleteSpace Cₛ^k⟮I; F, V⟯ := by
   let _ := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
-  have hcover : ∀ y : M, ∃ i, y ∈ U i := fun y ↦ let ⟨i, hyU, _⟩ := hK y; ⟨i, hyU⟩
+  have htop : (PseudoMetricSpace.toUniformSpace : UniformSpace Cₛ^k⟮I; F, V⟯).toTopologicalSpace =
+      (frameUniformSpace (I := I) (n := k) e U hU).toTopologicalSpace :=
+    (topologicalSpace_finiteAtlasNormedAddCommGroup k e U hU hK).trans
+      (frameUniformSpace_toTopologicalSpace (I := I) (n := k) e U hU).symm
   have e_unif : (PseudoMetricSpace.toUniformSpace : UniformSpace Cₛ^k⟮I; F, V⟯) =
       frameUniformSpace (I := I) (n := k) e U hU :=
     IsUniformAddGroup.ext inferInstance
-      (isUniformAddGroup_frameUniformSpace (I := I) (n := k) e U hU) rfl
+      (isUniformAddGroup_frameUniformSpace (I := I) (n := k) e U hU) (by rw [htop])
   rw [e_unif]
-  exact completeSpace_frameTopology (I := I) (n := k) e U hU hcover
+  exact completeSpace_frameTopology (I := I) (n := k) e U hU (TauCeti.cover_of_extChartAt_cover hK)
 
 end Topology
 
@@ -861,19 +777,8 @@ theorem withSeminorms_finiteAtlasSeminorm_infty
     letI := frameTopology (I := I) (n := ∞) e U hU
     WithSeminorms (fun k : ℕ ↦ finiteAtlasSeminorm (n := ∞) e U hU c K k (by simp)) := by
   let _ := frameTopology (I := I) (n := ∞) e U hU
-  have hp := withSeminorms_frameSeminormFamily (I := I) (n := ∞) e U hU
-  let _ := hp.isTopologicalAddGroup
-  refine hp.congr ?_ (Seminorm.IsBounded.of_real ?_)
-  · intro k
-    obtain ⟨s, C, -, hbound⟩ := Seminorm.bound_of_continuous hp _
-      (continuous_finiteAtlasSeminorm (n := ∞) e U hU c K k (by simp))
-    exact ⟨s, C, by simpa only [Seminorm.comp_id] using hbound⟩
-  · rintro ⟨i, x, ⟨m, hm⟩, L⟩
-    obtain ⟨C, -, hbound⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm (n := ∞) e U hU hK
-      (e i) (hU i) x L m hm
-    refine ⟨{m}, C, fun s ↦ ?_⟩
-    simpa only [LinearMap.id_apply, frameSeminormFamily_apply, Finset.sup_singleton] using
-      ((e i).chartDerivativeSeminorm_le_chartCkSeminorm (hU i) x L le_rfl hm s).trans (hbound s)
+  exact (withSeminorms_finiteAtlasSeminorm_subtype (n := ∞) e U hU hK).congr_equiv
+    (Equiv.subtypeUnivEquiv fun k : ℕ ↦ (by simp : (k : ℕ∞ω) ≤ ∞)).symm
 
 /-- On a locally compact model space, the countable sequence of `C^k` norms of any finite
 chart-frame atlas with covering relative interiors generates `ContMDiffSection.frameTopology` on
@@ -888,12 +793,9 @@ theorem withSeminorms_finiteAtlasSeminorm_infty_of_cover [LocallyCompactSpace E]
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
     letI := frameTopology (I := I) (n := ∞) e' U' hU'
     WithSeminorms (fun k : ℕ ↦ finiteAtlasSeminorm (n := ∞) e U hU c K k (by simp)) := by
-  have hcover : ∀ y : M, ∃ i, y ∈ U i := fun y ↦ let ⟨i, hyU, _⟩ := hK y; ⟨i, hyU⟩
-  have heq : frameTopology (I := I) (n := ∞) e' U' hU' =
-      frameTopology (I := I) (n := ∞) e U hU :=
-    frameTopology_eq_of_covers e' U' hU' hcover' e U hU hcover
-  rw [heq]
-  exact withSeminorms_finiteAtlasSeminorm_infty e U hU hK
+  let _ := frameTopology (I := I) (n := ∞) e' U' hU'
+  exact (withSeminorms_finiteAtlasSeminorm_subtype_of_cover (n := ∞) e U hU hK e' U' hU'
+    hcover').congr_equiv (Equiv.subtypeUnivEquiv fun k : ℕ ↦ (by simp : (k : ℕ∞ω) ≤ ∞)).symm
 
 end SmoothTopology
 
@@ -913,7 +815,8 @@ theorem isNormableSpace_frameTopology_of_compactSpace (k : ℕ)
     IsNormableSpace 𝕜 Cₛ^k⟮I; F, V⟯ := by
   let _ := I.locallyCompactSpace
   let _ := frameTopology (I := I) (n := k) e U hU
-  obtain ⟨N, r, c, K, hK⟩ := TauCeti.exists_finite_compact_opens_chart_cover (I := I) U hcover
+  obtain ⟨N, r, c, K, hK⟩ :=
+    TauCeti.exists_finite_compact_chart_cover_of_opens_cover (I := I) U hcover
   exact ⟨⟨_, withSeminorms_finiteAtlasSeminorm_of_cover k
     (fun i ↦ e (r i)) (fun i ↦ U (r i)) (fun i ↦ hU (r i)) hK e U hU hcover⟩⟩
 

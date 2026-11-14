@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartSectionTopology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.FiniteAtlas
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Cone
 import TauCeti.Topology.VectorBundle.Bilinear
 
@@ -48,7 +49,7 @@ symmetric sections admits uniform finite-atlas `C^k` margins
 (`TauCeti.Manifold.exists_pos_mem_positiveDefiniteSymmetricSections_of_finiteAtlasSeminorm_lt`), is
 open in the finite-atlas `C^k` (in particular `C²`) normed space, and receives `toSymmetricSection`
 as an open embedding
-(`Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_finiteAtlas`, and
+(`Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_finiteAtlas`, complementing
 `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_frameTopology` on a compact
 base for any covering frame system).
 
@@ -67,9 +68,9 @@ base for any covering frame system).
 * `TauCeti.Manifold.exists_pos_mem_positiveDefiniteSymmetricSections_of_finiteAtlasSeminorm_lt` and
   `TauCeti.Manifold.isOpen_positiveDefiniteSymmetricSections_finiteAtlas`: uniform finite-atlas
   margins and openness of the metric cone (in particular for `C²` and `C^∞` sections).
-* `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_finiteAtlas` and
-  `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_frameTopology`: open
-  embedding of native `C^k` and `C^n` metrics into symmetric tensor sections.
+* `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_finiteAtlas`: open
+  embedding of native `C^k` metrics into the finite-atlas `C^k` normed space of symmetric tensor
+  sections.
 * `Bundle.ContMDiffRiemannianMetric.exists_finiteAtlasDist_le` and
   `Bundle.ContMDiffRiemannianMetric.finiteAtlasTopology_eq_of_covers`: Lipschitz equivalence and
   atlas independence of the finite-atlas `C^k` topology on smooth metrics, including boundary
@@ -167,7 +168,7 @@ theorem isOpen_positiveDefiniteSymmetricSections_finiteAtlas
   intro σ₀ hσ₀
   obtain ⟨δ, hδ, hball⟩ :=
     exists_pos_mem_positiveDefiniteSymmetricSections_of_finiteAtlasSeminorm_lt e U hU
-      (fun y ↦ (hK y).imp fun _ ⟨hyU, hy, hyK⟩ ↦ ⟨hyU, hy, interior_subset hyK⟩) k le_rfl hσ₀
+      (TauCeti.extChartAt_cover_of_interior_cover hK) k le_rfl hσ₀
   refine ⟨δ, hδ, fun σ hσ ↦ hball σ ?_⟩
   rwa [Metric.mem_ball, ContMDiffSection.dist_finiteAtlas k e U hU hK] at hσ
 
@@ -212,27 +213,6 @@ theorem isOpenEmbedding_toSymmetricSection_finiteAtlas
     exact ContMDiffSection.topologicalSpace_finiteAtlasNormedAddCommGroup k e U hU hK
   · rw [range_toSymmetricSection]
     exact isOpen_positiveDefiniteSymmetricSections_finiteAtlas k e U hU hK
-
-/-- On a compact base (possibly with boundary or corners) modelled on a locally compact space,
-`toSymmetricSection` is an open embedding of `C^n` metrics with `frameTopology` into `C^n`
-symmetric sections with `ContMDiffSection.frameTopology`, for every regularity `n` (in particular
-`n = 2` and `n = ∞`). -/
-theorem isOpenEmbedding_toSymmetricSection_frameTopology [LocallyCompactSpace EB] [CompactSpace B]
-    {n : ℕ∞ω} [IsManifold IB n B] [ContMDiffVectorBundle n F V IB]
-    {ι : Type*}
-    (e : ι → Trivialization (symmetricBilinearMaps ℝ F ℝ)
-      (π (symmetricBilinearMaps ℝ F ℝ) (fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ)))
-    [∀ i, MemTrivializationAtlas (e i)]
-    (U : ι → Opens B) (hU : ∀ i, (U i : Set B) ⊆ (e i).baseSet)
-    (hcover : ∀ x, ∃ i, x ∈ U i) :
-    letI := frameTopology IB n e U hU
-    letI := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
-    IsOpenEmbedding (toSymmetricSection (IB := IB) (n := n) (F := F) (V := V)) := by
-  let _ := frameTopology IB n e U hU
-  let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
-  refine ⟨isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := n) e U hU, ?_⟩
-  rw [range_toSymmetricSection]
-  exact isOpen_positiveDefiniteSymmetricSections_frameTopology e U hU hcover
 
 end OpenCone
 
@@ -367,14 +347,10 @@ theorem tendsto_finiteAtlasTopology_iff (k : ℕ) {P : Type*} {l : Filter P}
     Tendsto g l (𝓝 g₀) ↔
       Tendsto (fun p ↦ finiteAtlasDist e U hU c K k (g p) g₀) l (𝓝 0) := by
   let _ := finiteAtlasPseudoMetricSpace e U hU c K k
-  have h : @Tendsto _ _ g l (@nhds _
-      (finiteAtlasPseudoMetricSpace e U hU c K k).toUniformSpace.toTopologicalSpace g₀) ↔
-      Tendsto (fun p ↦ finiteAtlasDist e U hU c K k (g p) g₀) l (𝓝 0) := by
-    rw [Metric.tendsto_nhds, Metric.tendsto_nhds]
-    refine forall₂_congr fun ε _ ↦ eventually_congr (Eventually.of_forall fun p ↦ ?_)
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg (finiteAtlasDist_nonneg e U hU c K k _ _),
-      dist_finiteAtlasPseudoMetricSpace]
-  exact h
+  rw [← topologicalSpace_finiteAtlasPseudoMetricSpace, Metric.tendsto_nhds, Metric.tendsto_nhds]
+  refine forall₂_congr fun ε _ ↦ eventually_congr (Eventually.of_forall fun p ↦ ?_)
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg (finiteAtlasDist_nonneg e U hU c K k _ _),
+    dist_finiteAtlasPseudoMetricSpace]
 
 /-- Open sets in `finiteAtlasTopology` are characterized by positive `finiteAtlasDist` balls. -/
 theorem isOpen_finiteAtlasTopology_iff (k : ℕ)
@@ -383,12 +359,8 @@ theorem isOpen_finiteAtlasTopology_iff (k : ℕ)
     IsOpen S ↔ ∀ g₀ ∈ S, ∃ δ : ℝ, 0 < δ ∧
       ∀ g, finiteAtlasDist e U hU c K k g g₀ < δ → g ∈ S := by
   let _ := finiteAtlasPseudoMetricSpace e U hU c K k
-  have h : @IsOpen _
-      (finiteAtlasPseudoMetricSpace e U hU c K k).toUniformSpace.toTopologicalSpace S ↔
-      ∀ g₀ ∈ S, ∃ δ : ℝ, 0 < δ ∧ ∀ g, finiteAtlasDist e U hU c K k g g₀ < δ → g ∈ S := by
-    simp only [Metric.isOpen_iff, subset_def, Metric.mem_ball]
-    rfl
-  exact h
+  rw [← topologicalSpace_finiteAtlasPseudoMetricSpace]
+  simp only [Metric.isOpen_iff, subset_def, Metric.mem_ball, dist_finiteAtlasPseudoMetricSpace]
 
 /-- Increasing `k` refines the finite-atlas `C^k` topology on smooth metrics. -/
 theorem antitone_finiteAtlasTopology : Antitone (finiteAtlasTopology IB e U hU c K) := by
@@ -526,14 +498,18 @@ theorem finiteAtlasTopology_eq_frameCkTopology
     finiteAtlasTopology IB e U hU c K k = frameCkTopology IB e U hU k := by
   let φ : ContMDiffRiemannianMetric IB ∞ F V →
       Cₛ^k⟮IB; symmetricBilinearMaps ℝ F ℝ, fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯ :=
-    fun g ↦ (g.ofLE (m := k) (by simp)).toSymmetricSection
+    toSymmetricSection ∘ fun g : ContMDiffRiemannianMetric IB ∞ F V ↦
+      g.ofLE (n := ∞) (m := k) (by simp)
   let mS := ContMDiffSection.finiteAtlasNormedAddCommGroup (𝕜 := ℝ) k e U hU hK
   have hm : finiteAtlasPseudoMetricSpace e U hU c K k =
       PseudoMetricSpace.induced φ mS.toPseudoMetricSpace := by
     refine PseudoMetricSpace.ext ?_
     ext g₁ g₂
-    exact ((ContMDiffSection.dist_finiteAtlas k e U hU hK (φ g₁) (φ g₂)).trans
-      (finiteAtlasSeminorm_ofLE_sub e U hU c K k g₁ g₂)).symm
+    have hd := ContMDiffSection.dist_finiteAtlas k e U hU hK
+      ((g₁.ofLE (m := k) (by simp)).toSymmetricSection)
+      ((g₂.ofLE (m := k) (by simp)).toSymmetricSection)
+    rw [finiteAtlasSeminorm_ofLE_sub e U hU c K k g₁ g₂] at hd
+    exact hd.symm
   have hframe : frameTopology IB k e U hU =
       .induced toSymmetricSection (ContMDiffSection.frameTopology (I := IB) (n := k) e U hU) := by
     let _ := ContMDiffSection.frameTopology (I := IB) (n := k) e U hU
@@ -542,12 +518,12 @@ theorem finiteAtlasTopology_eq_frameCkTopology
   calc finiteAtlasTopology IB e U hU c K k
       = (PseudoMetricSpace.induced φ mS.toPseudoMetricSpace).toUniformSpace.toTopologicalSpace :=
         congrArg (fun m ↦ m.toUniformSpace.toTopologicalSpace) hm
-    _ = .induced φ mS.toUniformSpace.toTopologicalSpace := rfl
+    _ = .induced φ mS.toUniformSpace.toTopologicalSpace :=
+        UniformSpace.toTopologicalSpace_comap
     _ = .induced φ (ContMDiffSection.frameTopology (I := IB) (n := k) e U hU) := by
         rw [ContMDiffSection.topologicalSpace_finiteAtlasNormedAddCommGroup k e U hU hK]
     _ = frameCkTopology IB e U hU k := by
         rw [frameCkTopology_def, hframe, induced_compose]
-        rfl
 
 /-- On a locally compact model space (such as Euclidean half-space), any finite chart-frame atlas
 with covering relative interiors generates `frameCkTopology` for *any* covering smooth frame
@@ -564,9 +540,8 @@ theorem finiteAtlasTopology_eq_frameCkTopology_of_cover [LocallyCompactSpace EB]
     (U' : κ → Opens B) (hU' : ∀ j, (U' j : Set B) ⊆ (e' j).baseSet)
     (hcover' : ∀ x, ∃ j, x ∈ U' j) (k : ℕ) :
     finiteAtlasTopology IB e U hU c K k = frameCkTopology IB e' U' hU' k := by
-  have hcover : ∀ x, ∃ i, x ∈ U i := fun x ↦ let ⟨i, hx, _⟩ := hK x; ⟨i, hx⟩
   rw [finiteAtlasTopology_eq_frameCkTopology e U hU hK k,
-    frameCkTopology_eq_of_covers e U hU k hcover e' U' hU' hcover']
+    frameCkTopology_eq_of_covers e U hU k (TauCeti.cover_of_extChartAt_cover hK) e' U' hU' hcover']
 
 /-- The metric space structure on smooth Riemannian metrics for a finite chart-frame atlas with
 covering relative interiors, carrying `frameCkTopology` as its underlying topology and
@@ -582,7 +557,7 @@ def finiteAtlasMetricSpace
   MetricSpace.replaceTopology
     { finiteAtlasPseudoMetricSpace e U hU c K k with
       eq_of_dist_eq_zero := (finiteAtlasDist_eq_zero_iff e U hU
-        (fun y ↦ (hK y).imp fun _ ⟨hyU, hy, hyK⟩ ↦ ⟨hyU, hy, interior_subset hyK⟩) k _ _).mp }
+        (TauCeti.extChartAt_cover_of_interior_cover hK) k _ _).mp }
     (finiteAtlasTopology_eq_frameCkTopology e U hU hK k).symm
 
 /-- The distance in `finiteAtlasMetricSpace` is `finiteAtlasDist`. -/
@@ -666,7 +641,8 @@ theorem metrizableSpace_frameCkTopology_of_compactSpace [CompactSpace B] [Locall
     letI := frameCkTopology IB e' U' hU' k
     MetrizableSpace (ContMDiffRiemannianMetric IB ∞ F V) := by
   let _ := IB.locallyCompactSpace
-  obtain ⟨N, r, c₀, K₀, hK₀⟩ := TauCeti.exists_finite_compact_opens_chart_cover (I := IB) U' hcover'
+  obtain ⟨N, r, c₀, K₀, hK₀⟩ :=
+    TauCeti.exists_finite_compact_chart_cover_of_opens_cover (I := IB) U' hcover'
   have heq := finiteAtlasTopology_eq_frameCkTopology_of_cover
     (fun i ↦ e' (r i)) (fun i ↦ U' (r i)) (fun i ↦ hU' (r i)) hK₀ e' U' hU' hcover' k
   let m := finiteAtlasMetricSpace (fun i ↦ e' (r i)) (fun i ↦ U' (r i)) (fun i ↦ hU' (r i)) hK₀ k
@@ -792,8 +768,7 @@ theorem chartCkTopology_eq_finiteAtlasTopology
           (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
     (k : ℕ) :
     chartCkTopology (I := I) (M := M) k = finiteAtlasTopology I e U hU c K k := by
-  have hcover : ∀ x, ∃ i, x ∈ U i := fun x ↦ let ⟨i, hx, _⟩ := hK x; ⟨i, hx⟩
-  rw [chartCkTopology_eq_frameCkTopology k e U hU hcover,
+  rw [chartCkTopology_eq_frameCkTopology k e U hU (TauCeti.cover_of_extChartAt_cover hK),
     finiteAtlasTopology_eq_frameCkTopology e U hU hK k]
 
 /-- **The boundaryless chart `C²` topology agrees with the finite-atlas `C²` topology.** -/
@@ -813,8 +788,7 @@ theorem chartCInftyTopology_eq_iInf_finiteAtlasTopology
         (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
           (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
     chartCInftyTopology (I := I) (M := M) = ⨅ k : ℕ, finiteAtlasTopology I e U hU c K k := by
-  have hcover : ∀ x, ∃ i, x ∈ U i := fun x ↦ let ⟨i, hx, _⟩ := hK x; ⟨i, hx⟩
-  rw [chartCInftyTopology_eq_frameTopology e U hU hcover,
+  rw [chartCInftyTopology_eq_frameTopology e U hU (TauCeti.cover_of_extChartAt_cover hK),
     frameTopology_infty_eq_iInf_finiteAtlasTopology e U hU hK]
 
 /-- Convergence of smooth metrics in `chartCInftyTopology` is convergence in `finiteAtlasDist ... k`
@@ -830,8 +804,7 @@ theorem tendsto_chartCInftyTopology_iff_finiteAtlasDist
     letI := chartCInftyTopology (I := I) (M := M)
     Tendsto g l (𝓝 g₀) ↔
       ∀ k : ℕ, Tendsto (fun p ↦ finiteAtlasDist e U hU c K k (g p) g₀) l (𝓝 0) := by
-  have hcover : ∀ x, ∃ i, x ∈ U i := fun x ↦ let ⟨i, hx, _⟩ := hK x; ⟨i, hx⟩
-  rw [chartCInftyTopology_eq_frameTopology e U hU hcover]
+  rw [chartCInftyTopology_eq_frameTopology e U hU (TauCeti.cover_of_extChartAt_cover hK)]
   exact tendsto_frameTopology_infty_iff_finiteAtlasDist e U hU hK
 
 /-- Open sets in `chartCInftyTopology` are characterized by finite-order `finiteAtlasDist` balls. -/
@@ -844,8 +817,7 @@ theorem isOpen_chartCInftyTopology_iff_finiteAtlasDist
     letI := chartCInftyTopology (I := I) (M := M)
     IsOpen S ↔ ∀ g₀ ∈ S, ∃ (k : ℕ) (δ : ℝ), 0 < δ ∧
       ∀ g, finiteAtlasDist e U hU c K k g g₀ < δ → g ∈ S := by
-  have hcover : ∀ x, ∃ i, x ∈ U i := fun x ↦ let ⟨i, hx, _⟩ := hK x; ⟨i, hx⟩
-  rw [chartCInftyTopology_eq_frameTopology e U hU hcover]
+  rw [chartCInftyTopology_eq_frameTopology e U hU (TauCeti.cover_of_extChartAt_cover hK)]
   exact isOpen_frameTopology_infty_iff_finiteAtlasDist e U hU hK
 
 end BoundarylessChartComparison

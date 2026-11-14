@@ -53,6 +53,9 @@ section.
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
 * `Bundle.Trivialization.contMDiffOn_section_symm`: a `C^n` family of vectors of the model fibre,
   read through an atlas trivialization, is a `C^n` section over its base set.
+* `Bundle.Trivialization.contDiffOn_coordChangeL_comp_symm`: the bundle transition operator
+  composed with an inverse extended chart is `C^n` on subsets of the chart target whose
+  inverse-chart images lie in both trivialization base sets.
 * `Bundle.Trivialization.isOpen_interior_extChartAt_target_inter_symm_preimage_baseSet`: the
   interior of an extended chart target intersected with the inverse-chart preimage of a
   trivialization's base set is open.
@@ -310,6 +313,17 @@ theorem frameTransitionMap_apply (x : U) :
       (e.coordChangeL 𝕜 e' x : F →L[𝕜] F) := by
   rfl
 
+/-- Composing the bundle transition operator `e.coordChangeL 𝕜 e'` with the inverse of an extended
+chart at `x` gives a `C^n` map on any subset `S` of `(extChartAt I x).target` whose inverse-chart
+images lie in both trivialization base sets (boundary and corner charts included). -/
+theorem contDiffOn_coordChangeL_comp_symm [IsManifold I n M] (x : M) {S : Set E}
+    (hS : S ⊆ (extChartAt I x).target)
+    (hbase : ∀ z ∈ S, (extChartAt I x).symm z ∈ e.baseSet ∩ e'.baseSet) :
+    ContDiffOn 𝕜 n (fun z ↦ (e.coordChangeL 𝕜 e' ((extChartAt I x).symm z) : F →L[𝕜] F)) S :=
+  fun z hz ↦
+    ((contMDiffAt_coordChangeL (e := e) (e' := e') (hbase z hz).1
+      (hbase z hz).2).comp_contMDiffWithinAt z
+        ((contMDiffOn_extChartAt_symm x z (hS hz)).mono hS)).contDiffWithinAt
 
 end Bundle.Trivialization
 
