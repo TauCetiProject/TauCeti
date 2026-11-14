@@ -158,10 +158,10 @@ theorem irreducible_map_dehomogenize (hn : 2 ≤ n) {G : MvPolynomial (Fin (n + 
   by_contra! hfg'
   obtain ⟨hf, hg⟩ := hfg'
   -- The affine equation is nonzero, since `G' = 0` would be singular everywhere.
-  have hG'0 : dehomogenize i G' ≠ 0 := fun h0 ↦ by
-    have : G' = 0 := dehomogenize_injOn i d hG' (isHomogeneous_zero _ _ _) (by rw [h0, map_zero])
-    obtain ⟨l, hl⟩ := hsm' 1 one_ne_zero (by simp [this])
-    simp [this] at hl
+  have hG'0 : dehomogenize i G' ≠ 0 :=
+    dehomogenize_ne_zero_of_isHomogeneous i hG' fun h0 ↦ by
+      obtain ⟨l, hl⟩ := hsm' 1 one_ne_zero (by simp [h0])
+      simp [h0] at hl
   have hfg0 : f * g ≠ 0 := hfg ▸ hG'0
   have hf0 : f ≠ 0 := left_ne_zero_of_mul hfg0
   have hg0 : g ≠ 0 := right_ne_zero_of_mul hfg0

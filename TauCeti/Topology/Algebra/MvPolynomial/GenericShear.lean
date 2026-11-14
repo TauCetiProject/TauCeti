@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
+public import TauCeti.RingTheory.MvPolynomial.GenericShear
 public import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
 public import Mathlib.Topology.Algebra.MvPolynomial
 
@@ -64,24 +64,8 @@ theorem dense_setOf_forall_eval_insertNth_homogeneousComponent_ne_zero
     (p : ι → MvPolynomial (Fin (n + 1)) R) (i : Fin (n + 1)) :
     Dense {a : Fin n → R | ∀ k, p k ≠ 0 →
       eval (i.insertNth 1 a) (homogeneousComponent (p k).totalDegree (p k)) ≠ 0} := by
-  classical
-  cases nonempty_fintype ι
-  let H (k : ι) : MvPolynomial (Fin n) R :=
-    if p k = 0 then 1 else dehomogenize i (homogeneousComponent (p k).totalDegree (p k))
-  have hH (k : ι) : H k ≠ 0 := by
-    by_cases hk : p k = 0
-    · simp [H, hk]
-    · simp only [H, hk, ite_false]
-      intro hzero
-      apply (p k).homogeneousComponent_totalDegree_ne_zero hk
-      exact dehomogenize_injOn i (p k).totalDegree
-        (homogeneousComponent_isHomogeneous _ _) (isHomogeneous_zero _ _ _)
-        (by simpa using hzero)
-  have hprod : (∏ k, H k) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun k _ ↦ hH k
-  convert (∏ k, H k).dense_setOf_eval_ne_zero hprod using 1
-  ext a
-  simp only [mem_ofPred_eq, map_prod, Finset.prod_ne_zero_iff, Finset.mem_univ, true_implies]
-  apply forall_congr' fun k ↦ ?_
-  by_cases hk : p k = 0 <;> simp [H, hk]
+  obtain ⟨P, hP, hiff⟩ :=
+    exists_ne_zero_and_eval_ne_zero_iff_forall_eval_insertNth_homogeneousComponent_ne_zero p i
+  simpa only [hiff] using P.dense_setOf_eval_ne_zero hP
 
 end TauCeti
