@@ -10,8 +10,9 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, and an estimate
-for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+This file records elementary consequences of the submultiplicativity of the norm, an estimate
+for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative, and convergence to `0` of finite
+partial products when factors tend to `0` cofinitely (`TauCeti.tendsto_finsetProd_cofinite_zero`).
 -/
 
 public section
@@ -124,6 +125,44 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
   simp at hz
+
+/-- If `f` tends to `0` along the cofinite filter in a seminormed commutative ring, then so do its
+finite partial products `s ↦ ∏ i ∈ s, f i`. -/
+theorem tendsto_finsetProd_cofinite_zero {ι R : Type*} [SeminormedCommRing R] {f : ι → R}
+    (hf : Filter.Tendsto f Filter.cofinite (nhds 0)) :
+    Filter.Tendsto (fun s : Finset ι ↦ ∏ i ∈ s, f i) Filter.cofinite (nhds 0) := by
+  classical
+  have hfin (δ : ℝ) (hδ : 0 < δ) : {i : ι | δ ≤ ‖f i‖}.Finite :=
+    (Filter.eventually_cofinite.mp (Metric.tendsto_nhds.mp hf δ hδ)).subset fun i hi ↦ by
+      simpa [dist_zero_right] using hi
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  have hB := hfin 1 zero_lt_one
+  set M := ∏ i ∈ hB.toFinset, max 1 ‖f i‖
+  have hM1 : 1 ≤ M := Finset.one_le_prod₀ fun _ _ ↦ le_max_left 1 _
+  have hC := hfin (min 1 (ε / M)) (lt_min zero_lt_one (div_pos hε (zero_lt_one.trans_le hM1)))
+  refine (Finset.finite_toSet (insert ∅ hC.toFinset.powerset)).subset fun s hs ↦ ?_
+  rw [Set.mem_compl_iff, Set.mem_ofPred_eq, dist_zero_right, not_lt] at hs
+  rw [Finset.mem_coe, Finset.mem_insert, Finset.mem_powerset]
+  by_contra! h
+  obtain ⟨j, hj, hjC⟩ := Finset.not_subset.mp h.2
+  have hjlt : ‖f j‖ < ε / M :=
+    (not_le.mp (hC.mem_toFinset.not.mp hjC)).trans_le (min_le_right _ _)
+  have herase : ∏ i ∈ s.erase j, ‖f i‖ ≤ M := by
+    rw [← Finset.prod_inter_mul_prod_sdiff (s.erase j) hB.toFinset]
+    refine (mul_le_of_le_one_right (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)
+      (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i hi ↦
+        le_of_not_ge (hB.mem_toFinset.not.mp (Finset.mem_sdiff.mp hi).2))).trans ?_
+    exact (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ le_max_right 1 ‖f i‖).trans
+      (Finset.prod_le_prod_of_subset_of_one_le₀ Finset.inter_subset_right
+        (fun _ _ ↦ by positivity) fun _ _ _ ↦ le_max_left 1 _)
+  have hprod : ‖∏ i ∈ s, f i‖ < ε := by
+    calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := norm_prod_le_prod_norm_of_nonempty ⟨j, hj⟩ f
+      _ = ‖f j‖ * ∏ i ∈ s.erase j, ‖f i‖ := (Finset.mul_prod_erase s _ hj).symm
+      _ ≤ ‖f j‖ * M := mul_le_mul_of_nonneg_left herase (norm_nonneg _)
+      _ < ε / M * M := mul_lt_mul_of_pos_right hjlt (zero_lt_one.trans_le hM1)
+      _ = ε := div_mul_cancel₀ ε (zero_lt_one.trans_le hM1).ne'
+  exact hs.not_gt hprod
 
 end TauCeti
 
