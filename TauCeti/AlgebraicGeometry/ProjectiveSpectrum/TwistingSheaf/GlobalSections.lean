@@ -106,7 +106,7 @@ takes the value `q / 1` at every point. -/
 private theorem exists_forall_apply_eq (b : Module.Basis κ R M) [Nontrivial κ] {n : ℤ}
     (i : κ) (s : Γ(Proj.twistingSheaf 𝒜 n, ⊤)) :
     ∃ (k j : ℕ) (_ : (j : ℤ) = k + n) (q : _root_.SymmetricAlgebra R M),
-      ι R M (b i) ^ k * q ∈ 𝒜 j ∧ ∀ y, s.1 y = Localization.mk q 1 := by
+      ι R M (b i) ^ k * q ∈ 𝒜 j ∧ ∀ y : (⊤ : (Proj 𝒜).Opens), s.1 y = Localization.mk q 1 := by
   -- on each chart `D₊(Xₗ)`, the section is a fraction `r l / Xₗ ^ k l`
   choose k j h r hr H using fun l : κ ↦ Proj.twistingSheaf.exists_eq_const_basicOpen
     (ι_mem_homogeneousSubmodule R M (b l)) one_pos
@@ -147,9 +147,8 @@ theorem twistingSheaf_top_eq_zero_of_neg {n : ℤ} (hn : n < 0) (b : Module.Basi
   have hq0 : ι R M (b i) ^ k * q = 0 := by
     rw [← DirectSum.decompose_of_mem_same 𝒜 hq,
       DirectSum.coe_decompose_mul_of_left_mem_of_not_le 𝒜 hpow (by omega)]
-  refine Proj.twistingSheaf.ext fun y ↦ (hs y).trans ?_
-  rw [((isRegular_ι_basis b i).pow k).left.mul_left_eq_zero_iff.mp hq0, Localization.mk_zero]
-  exact (Proj.twistingSheaf.zero_apply y).symm
+  ext y
+  simp [hs, ((isRegular_ι_basis b i).pow k).left.mul_left_eq_zero_iff.mp hq0, Localization.mk_zero]
 
 /-- **The global sections of `𝒪(j)` on projective space are the forms of degree `j`**: for
 `M` free of rank at least two, the map `r ↦ r / 1` from the homogeneous elements of degree `j` of
