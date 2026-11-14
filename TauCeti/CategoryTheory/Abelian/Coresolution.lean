@@ -193,7 +193,6 @@ noncomputable def obj (X I : C) (T : ComposableArrows C (n + 1)) : Fin (n + 3) �
 
 /-- The arrows `0 ⟶ X`, `ι`, `I ⟶ cokernel ι ≅ T.obj' 1 ⟶ T.obj' 2` and then those of `T`, of
 `coresolutionCons ι T e`. -/
-@[expose]
 noncomputable def map {X I : C} (ι : X ⟶ I) (T : ComposableArrows C (n + 1))
     (e : cokernel ι ≅ T.obj' 1) : ∀ i : Fin (n + 2), obj X I T i.castSucc ⟶ obj X I T i.succ
   | ⟨0, _⟩ => 0
@@ -295,7 +294,6 @@ noncomputable def obj (S : ComposableArrows C (n + 2)) : Fin (n + 2) → C
   | ⟨k + 2, _⟩ => S.obj' (k + 3)
 
 /-- The arrows of the tail of `S`. -/
-@[expose]
 noncomputable def map {S : ComposableArrows C (n + 2)} (hS : S.IsCoresolution) :
     ∀ i : Fin (n + 1), obj S i.castSucc ⟶ obj S i.succ
   | ⟨0, _⟩ => 0
