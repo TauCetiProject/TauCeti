@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Derivatives of powers of the Japanese bracket
@@ -42,6 +43,9 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`, in the form of symbol estimates of order `s`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
+* `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_add_sq_rpow_le`: the derivative bounds for the
+  translated bracket power `(1 + ‖x + y‖ ^ 2) ^ (s / 2)`, uniformly in the translation `y` up to
+  the factor `⟨y⟩ ^ (|s| + k)` from Peetre's inequality.
 * `TauCeti.exists_norm_iteratedFDeriv_cutoff_smul_le`: the derivative bounds for a symbol of order
   `m`, such as a bracket power, times a smooth cutoff `χ` localized where `1 + ‖x‖ ^ 2 ≍ R ^ 2` and
   adapted to the scale `R`: the product is `O(R ^ m / R ^ k)` in its `k`-th derivative.
@@ -309,6 +313,36 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (r : ℝ) (k : ℕ) :
     convert hC x using 3
     push_cast
     ring
+
+/-- **Derivative bounds for a translated bracket power.** For every real `s` and every `k`,
+`‖D^k (1 + ‖x + y‖ ^ 2) ^ (s / 2)‖ ≤ A ⟨x⟩ ^ (s - k) ⟨y⟩ ^ (|s| + k)`, where
+`⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`, with `A` independent of `x` and of the translation `y`: the
+derivative bounds at `x + y`, moved to `x` by Peetre's inequality. -/
+theorem exists_norm_iteratedFDeriv_one_add_norm_add_sq_rpow_le (s : ℝ) (k : ℕ) :
+    ∃ A, 0 ≤ A ∧ ∀ x y : E,
+      ‖iteratedFDeriv ℝ k (fun x ↦ (1 + ‖x + y‖ ^ 2) ^ (s / 2)) x‖ ≤
+        A * (1 + ‖x‖ ^ 2) ^ ((s - k) / 2) * (1 + ‖y‖ ^ 2) ^ ((|s| + k) / 2) := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E) (s / 2) k
+  refine ⟨max C 0 * 2 ^ ((|s| + k) / 2), by positivity, fun x y ↦ ?_⟩
+  rw [iteratedFDeriv_comp_add_right' (f := fun x : E ↦ (1 + ‖x‖ ^ 2) ^ (s / 2))]
+  have hP := one_add_norm_add_sq_rpow_le_mul (s - k) x y
+  have habs : |s - k| ≤ |s| + k := by
+    calc |s - k| ≤ |s| + |(k : ℝ)| := abs_sub _ _
+      _ = |s| + k := by rw [Nat.abs_cast]
+  have h2 : (2 : ℝ) ^ (|s - k| / 2) ≤ 2 ^ ((|s| + k) / 2) :=
+    Real.rpow_le_rpow_of_exponent_le (by norm_num) (by linarith)
+  have hy : (1 + ‖y‖ ^ 2) ^ (|s - k| / 2) ≤ (1 + ‖y‖ ^ 2) ^ ((|s| + k) / 2) :=
+    Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖y‖]) (by linarith)
+  calc _ ≤ C * (1 + ‖x + y‖ ^ 2) ^ (s / 2 - k / 2) := hC _
+    _ ≤ max C 0 * (1 + ‖x + y‖ ^ 2) ^ ((s - k) / 2) := by
+        rw [show s / 2 - (k : ℝ) / 2 = (s - k) / 2 by ring]
+        gcongr
+        exact le_max_left _ _
+    _ ≤ max C 0 * (2 ^ (|s - k| / 2) * (1 + ‖x‖ ^ 2) ^ ((s - k) / 2) *
+          (1 + ‖y‖ ^ 2) ^ (|s - k| / 2)) := by gcongr
+    _ ≤ max C 0 * (2 ^ ((|s| + k) / 2) * (1 + ‖x‖ ^ 2) ^ ((s - k) / 2) *
+          (1 + ‖y‖ ^ 2) ^ ((|s| + k) / 2)) := by gcongr
+    _ = _ := by ring
 
 /-- **The complex Bessel weight is a symbol.** The complex-valued bracket power
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` satisfies the symbol estimates of order `s`:
