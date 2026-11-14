@@ -46,9 +46,9 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
 
 ## References
 
-* J. Leech and N. J. A. Sloane, *Sphere packing and error-correcting codes*, Canadian Journal of
-  Mathematics 23 (1971), reprinted as Chapter 5 of J. H. Conway and N. J. A. Sloane,
-  *Sphere Packings, Lattices and Groups*.
+* J. Leech and N. J. A. Sloane, *Sphere Packings and Error-Correcting Codes*, Canadian Journal of
+  Mathematics 23 (1971), no. 4, 718-745, reprinted as Chapter 5 of J. H. Conway and N. J. A.
+  Sloane, *Sphere Packings, Lattices and Groups*.
 -/
 
 public section
