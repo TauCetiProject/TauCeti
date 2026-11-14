@@ -369,7 +369,8 @@ theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
   rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
     Matrix.vecMul_neg, dotProduct_neg, neg_neg]
 
-/-- The transported alternating form is a unit, with inverse its negative. -/
+/-- The transported alternating form is a unit, since `JFin_mul_self` gives
+`JFin m R * JFin m R = -1`. -/
 theorem isUnit_JFin : IsUnit (JFin m R) :=
   Matrix.isUnit_of_mul_self_eq_neg_one (JFin_mul_self m R)
 
