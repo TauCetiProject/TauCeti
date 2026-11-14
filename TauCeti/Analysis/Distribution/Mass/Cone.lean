@@ -120,6 +120,7 @@ theorem mass_cone_le_of_subset_ball (x₀ : E) {r : ℝ}
         congr 1
   · simp [cone_of_not_isCompact_and_subset hc]
 
+omit [FiniteDimensional ℝ E] in
 /-- **Sharp Euclidean closed-ball mass bound for the cone.** If
 `dsupport T ⊆ Metric.closedBall x₀ r` and either `0 < r` or `mass T ≠ ⊤`, then
 `mass (cone x₀ T) ≤ ENNReal.ofReal (r / (k + 1)) * mass T`. At `r = 0`, `mass T ≠ ⊤` cannot be
@@ -292,6 +293,7 @@ theorem exists_isNormal_comp_extDerivCLM_finZero_eq_of_subset_ball {x₀ : E} {r
     cone_comp_extDerivCLM_finZero_of_augmentation_eq_zero T hc hTΩ haug, ?_⟩
   simpa using mass_cone_le_of_subset_ball x₀ hsub
 
+omit [FiniteDimensional ℝ E] in
 /-- **Mass of the cone over a point current.** For any `x₀, p : E` and `ℓ` on `k`-forms,
 `mass (cone x₀ δ_p) ≤ ENNReal.ofReal (dist p x₀ / (k + 1)) * ‖ℓ‖ₑ`. -/
 theorem mass_cone_comp_evalCLM_le (x₀ p : E) (ℓ : (E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) :

@@ -202,8 +202,6 @@ theorem mapCLM_conj_mapCLM_conj (T : 𝓓'^{n}(Ω, ℂ)) :
   ext φ
   simp [mapCLM_apply]
 
-variable [FiniteDimensional ℝ E]
-
 /-- The complex-linear extension of `T` depends only on the germ of the test function along the
 support of `T`. -/
 theorem complexPairing_eq_of_eventuallyEq (T : 𝓓'^{n}(Ω, ℂ)) {φ ψ : 𝓓^{n}(Ω, ℂ)}

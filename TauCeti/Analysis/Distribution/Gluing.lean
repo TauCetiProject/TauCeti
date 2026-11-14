@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 /-!
 # Gluing distributions and currents on an open cover
 
-Let `Ω` be an open subset of a finite-dimensional real normed space `E`, covered by open sets
+Let `Ω` be an open subset of a real normed space `E`, covered by open sets
 `U i`. Suppose that for every `i` a continuous linear map `T i : 𝓓^{n}(U i, F) →L[ℝ] V` is given,
 with values in a locally convex space `V`, and that these maps are compatible: `T i` and `T j`
 agree on tests supported in `U i ∩ U j`. Then there is a unique continuous linear map
@@ -26,7 +26,8 @@ The glued map is `S φ = ∑ i ∈ s, T i (χ i • φ)` for finitely many smoot
 on the cutoffs: for a second family `χ'`, both sums equal `∑ i, ∑ j, T (χ i • χ' j • φ)`. Using one
 family of cutoffs for all tests supported in a fixed compact set gives continuity for the LF
 topology. Uniqueness is the localization principle
-`AddMonoidHom.eq_zero_of_locally_vanishing`.
+`AddMonoidHom.eq_zero_of_locally_vanishing`. On an infinite-dimensional space every test function
+is zero (`TestFunction.eq_zero_of_not_finiteDimensional`), and the glued map is zero.
 
 ## Main declarations
 
@@ -104,8 +105,6 @@ private theorem sum_cutoffCLM_eq
         refine Finset.sum_congr rfl fun j _ ↦ ?_
         rw [hsplit (hχ' j) (hχ'U j) (c := χ) (fun i ↦ hprod i j) (fun i ↦ hprodr i j) hs, map_sum]
 
-variable [FiniteDimensional ℝ E]
-
 /-- **Locality.** Two continuous linear maps on tests on `Ω` are equal if their restrictions to
 every member of an open cover `U` of `Ω` are equal. -/
 theorem eq_of_forall_comp_monoCLM_eq (hU : ⨆ i, U i = Ω) {S S' : 𝓓^{n}(Ω, F) →L[ℝ] V}
@@ -123,6 +122,23 @@ theorem eq_of_forall_comp_monoCLM_eq (hU : ⨆ i, U i = Ω) {S S' : 𝓓^{n}(Ω,
     have hψ : monoCLM ℝ ψ = φ := TestFunction.ext fun y ↦ by simp [ψ, hU ▸ le_iSup U i]
     simpa [hψ, sub_eq_zero] using DFunLike.congr_fun (h i) ψ
 
+/-- Every compact subset of `Ω` carries finitely many smooth cutoffs subordinate to an open cover
+of `Ω` and summing to one on it. -/
+private theorem exists_sum_cutoff_eq_one [FiniteDimensional ℝ E] (hU : ⨆ i, U i = Ω) (K : Set E)
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ (s : Finset ι) (χ : ι → E → ℝ)
+      (_ : ∀ i, ContDiff ℝ n (χ i)), (∀ i, tsupport (χ i) ∩ Ω ⊆ U i) ∧
+        ∀ x ∈ K, ∑ i ∈ s, χ i x = 1 := by
+  classical
+  have hKU : K ⊆ ⋃ i, (U i : Set E) := by rwa [← Opens.coe_iSup, hU]
+  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, E) hK.isClosed
+    (fun i ↦ (U i : Set E)) (fun i ↦ (U i).isOpen) hKU
+  have hfin := ρ.locallyFinite.finite_nonempty_inter_compact hK
+  refine ⟨hfin.toFinset, fun i ↦ ρ i, fun i ↦ (ρ i).contMDiff.contDiff.of_le (by simp),
+    fun i ↦ inter_subset_left.trans (hρ i), fun x hx ↦ ?_⟩
+  refine ρ.toPartitionOfUnity.sum_finsupport' hx fun i hi ↦ ?_
+  rw [PartitionOfUnity.mem_finsupport] at hi
+  exact hfin.mem_toFinset.2 ⟨x, hi, hx⟩
+
 variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [LocallyConvexSpace ℝ V]
 
 /-- **Gluing of distributions and currents.** Let the open sets `U i` cover `Ω`. Continuous linear
@@ -132,22 +148,12 @@ theorem existsUnique_gluing (hU : ⨆ i, U i = Ω)
     (hT : ∀ i j (φ : 𝓓^{n}(U i ⊓ U j, F)), T i (monoCLM ℝ φ) = T j (monoCLM ℝ φ)) :
     ∃! S : 𝓓^{n}(Ω, F) →L[ℝ] V, ∀ i, S ∘L monoCLM ℝ = T i := by
   classical
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · refine ⟨0, fun i ↦ ?_, fun S _ ↦ ?_⟩ <;> ext φ <;>
+      simp [eq_zero_of_not_finiteDimensional φ hE]
   have hUΩ (i : ι) : U i ≤ Ω := hU ▸ le_iSup U i
-  -- Every compact subset of `Ω` carries finitely many smooth cutoffs subordinate to the cover and
-  -- summing to one on it.
-  have hcut (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ (s : Finset ι) (χ : ι → E → ℝ)
-      (_ : ∀ i, ContDiff ℝ n (χ i)), (∀ i, tsupport (χ i) ∩ Ω ⊆ U i) ∧
-        ∀ x ∈ K, ∑ i ∈ s, χ i x = 1 := by
-    have hKU : K ⊆ ⋃ i, (U i : Set E) := by rwa [← Opens.coe_iSup, hU]
-    obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, E) hK.isClosed
-      (fun i ↦ (U i : Set E)) (fun i ↦ (U i).isOpen) hKU
-    have hfin := ρ.locallyFinite.finite_nonempty_inter_compact hK
-    refine ⟨hfin.toFinset, fun i ↦ ρ i, fun i ↦ (ρ i).contMDiff.contDiff.of_le (by simp),
-      fun i ↦ inter_subset_left.trans (hρ i), fun x hx ↦ ?_⟩
-    refine ρ.toPartitionOfUnity.sum_finsupport' hx fun i hi ↦ ?_
-    rw [PartitionOfUnity.mem_finsupport] at hi
-    exact hfin.mem_toFinset.2 ⟨x, hi, hx⟩
-  choose s χ hχ hχU hsum using hcut
+  choose s χ hχ hχU hsum using exists_sum_cutoff_eq_one (n := n) hU
   -- The glued value on `φ`, computed with the cutoffs chosen for `tsupport φ`.
   let S₀ : 𝓓^{n}(Ω, F) → V := fun φ ↦
     ∑ i ∈ s _ φ.hasCompactSupport φ.tsupport_subset,

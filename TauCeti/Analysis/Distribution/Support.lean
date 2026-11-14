@@ -14,7 +14,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 /-!
 # Localization of distributions and the augmentation
 
-Let `Ω` be an open subset of a finite-dimensional real normed space `E`. Mathlib's `dsupport T`
+Let `Ω` be an open subset of a real normed space `E`. Mathlib's `dsupport T`
 of a map `T` on test functions is the complement of the union of the open sets on which `T`
 vanishes. For an additive map on test functions, such as a distribution or a current, the
 *localization principle* says that `T` vanishes on that union, so on the complement of its
@@ -145,9 +145,8 @@ theorem isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM
 
 section Localization
 
-variable [FiniteDimensional ℝ E] [AddCommMonoid V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
-  [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕) {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V]
-  [AddMonoidHomClass 𝓖 𝓓^{n}(Ω, F) V]
+variable [AddCommMonoid V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+  {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓖 𝓓^{n}(Ω, F) V]
 
 /-- **Localization principle.** An additive map on test functions that vanishes on each member of
 a family of open sets vanishes on their union. -/
@@ -215,8 +214,7 @@ end Add
 
 section Group
 
-variable [FiniteDimensional ℝ E] [AddCommGroup V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
-  [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+variable [AddCommGroup V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
 
 /-- The value of an additive map on test functions depends only on the germ of the test along the
 support of the map. -/
@@ -277,6 +275,20 @@ theorem augmentation_of_not_exists {f : 𝓓^{n}(Ω, F) → V}
     (h : ¬∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport f), χ x = 1) (c : F) :
     augmentation f c = 0 := by
   rw [augmentation, dite_eq_right h]
+
+/-- On an infinite-dimensional space every map on test functions has augmentation zero: every test
+function is zero, so a cutoff equal to one near the support exists only when the support is empty,
+and then the map vanishes at the zero test. -/
+theorem augmentation_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional ℝ E)
+    (f : 𝓓^{n}(Ω, F) → V) (c : F) : augmentation f c = 0 := by
+  rw [augmentation]
+  split_ifs with h
+  · obtain ⟨χ, hχ⟩ := h
+    have h0 : (0 : E) ∉ dsupport f := fun hx ↦ by
+      simpa [TestFunction.eq_zero_of_not_finiteDimensional χ hE] using hχ.self_of_nhdsSet 0 hx
+    obtain ⟨s, hs, -, -⟩ := (notMem_dsupport_iff 0).1 h0
+    exact (congrArg f (TestFunction.eq_zero_of_not_finiteDimensional _ hE)).trans (hs 0 (by simp))
+  · rfl
 
 /-- If a test function equals `1` on a neighbourhood of `dsupport f`, then `dsupport f` is a
 compact subset of `Ω`. -/
@@ -363,9 +375,8 @@ end AugmentationConst
 
 section AugmentationGroup
 
-variable [FiniteDimensional ℝ E] [AddCommGroup V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
-  [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕) {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V]
-  [AddMonoidHomClass 𝓖 𝓓^{n}(Ω, F) V]
+variable [AddCommGroup V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+  {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓖 𝓓^{n}(Ω, F) V]
 
 /-- **Independence of the cutoff.** The augmentation of an additive map on test functions is its
 value on `χ • c` for any test function `χ` equal to one on a neighbourhood of its support. -/
@@ -381,6 +392,9 @@ theorem augmentation_eq {χ : 𝓓^{n}(Ω, ℝ)} (hχ : ∀ᶠ x in 𝓝ˢ (dsup
 theorem augmentation_add (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω)
     (hS : IsCompact (dsupport S)) (hSΩ : dsupport S ⊆ Ω) (c : F) :
     augmentation (⇑T + ⇑S) c = augmentation T c + augmentation S c := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [augmentation_eq_zero_of_not_finiteDimensional hE]
   obtain ⟨χ, hχ, -⟩ :=
     TestFunction.exists_eventually_eq_one (n := n) (hT.union hS) (union_subset hTΩ hSΩ)
   let A : 𝓓^{n}(Ω, F) →+ V := (T : 𝓓^{n}(Ω, F) →+ V) + S
@@ -397,6 +411,9 @@ theorem augmentation_add (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsuppo
 theorem augmentation_sub (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω)
     (hS : IsCompact (dsupport S)) (hSΩ : dsupport S ⊆ Ω) (c : F) :
     augmentation (⇑T - ⇑S) c = augmentation T c - augmentation S c := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [augmentation_eq_zero_of_not_finiteDimensional hE]
   let N : 𝓓^{n}(Ω, F) →+ V := -(S : 𝓓^{n}(Ω, F) →+ V)
   have hN_coe : ⇑N = -⇑S := by
     ext φ
@@ -412,6 +429,8 @@ theorem augmentation_sub (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsuppo
     rw [hN_coe, ← sub_eq_add_neg]
   rw [hTN, hNS] at h
   rw [h, sub_eq_add_neg]
+
+variable [FiniteDimensional ℝ E]
 
 /-- **The augmentation of a point evaluation.** For `x ∈ Ω` and an additive map `ℓ`, the
 evaluation `φ ↦ ℓ (φ x)` has augmentation `ℓ c` at `c`. For the degree-zero point current and the
@@ -470,8 +489,7 @@ end Module
 
 section Boundary
 
-variable [FiniteDimensional ℝ E] [AddCommGroup V] {k : ℕ}
-  [FunLike 𝓕 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) V]
+variable [AddCommGroup V] {k : ℕ} [FunLike 𝓕 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) V]
   [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) V] (T : 𝓕)
 
 /-- **The augmentation of a boundary vanishes.** If the support of `T` is a compact subset of `Ω`,
@@ -479,6 +497,9 @@ then the boundary `T ∘ d` has augmentation zero at every constant `k`-form: th
 of a cutoff equal to one near the support vanishes there. -/
 theorem augmentation_comp_extDerivCLM (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω)
     (c : E [⋀^Fin k]→L[ℝ] F) : augmentation (T ∘ TestFunction.extDerivCLM) c = 0 := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact augmentation_eq_zero_of_not_finiteDimensional hE _ c
   obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT hTΩ
   let A : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →+ V :=
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →+ V).comp
@@ -501,7 +522,7 @@ end Boundary
 
 section Obstruction
 
-variable [FiniteDimensional ℝ E] [TopologicalSpace V] [AddCommGroup V] [Module ℝ V] {k : ℕ}
+variable [TopologicalSpace V] [AddCommGroup V] [Module ℝ V] {k : ℕ}
 
 /-- **Augmentation obstruction to compactly supported filling.** A `k`-current `T` whose
 augmentation is nonzero at some constant `k`-form cannot equal `Q ∘L extDerivCLM` for any
@@ -517,7 +538,7 @@ theorem not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero
 
 /-- A single point `k`-current `ω ↦ ℓ (ω p)` at `p ∈ Ω` with `ℓ ≠ 0` has nonzero augmentation and
 therefore admits no compactly supported `(k + 1)`-current filling on `Ω`. -/
-theorem not_exists_comp_extDerivCLM_eq_comp_evalCLM {p : E} (hp : p ∈ Ω)
+theorem not_exists_comp_extDerivCLM_eq_comp_evalCLM [FiniteDimensional ℝ E] {p : E} (hp : p ∈ Ω)
     {ℓ : (E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} (hℓ : ℓ ≠ 0) :
     ¬∃ Q : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V,
       IsCompact (dsupport Q) ∧ dsupport Q ⊆ Ω ∧

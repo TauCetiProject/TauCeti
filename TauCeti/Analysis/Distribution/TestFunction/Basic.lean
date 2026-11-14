@@ -17,10 +17,13 @@ Conversely, for a real test function `ψ` and a vector `v : F`, any continuous l
 `f` on `F` sends the test function `ψ • v` to the multiple `f v • ψ`; in particular the components
 of `ψ • v` are the multiples `b.repr v i • ψ`. These identities reduce statements about
 `F`-valued test functions to statements about real-valued ones. Pointwise complex conjugation,
-postcomposition with `Complex.conjCLE`, is an involution on complex test functions.
+postcomposition with `Complex.conjCLE`, is an involution on complex test functions. On an
+infinite-dimensional space every test function is zero (Riesz).
 
 ## Main declarations
 
+* `TestFunction.eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space every test
+  function is zero.
 * `TestFunction.postcompCLM_postcompCLM`: postcomposing with `L₁` and then with `L₂` is
   postcomposing with `L₂ ∘L L₁`.
 * `TestFunction.postcompCLM_conj_postcompCLM_conj`: conjugating a complex test function twice
@@ -47,6 +50,14 @@ theorem toBoundedContinuousFunction_eq_zero (φ : 𝓓^{n}(Ω, F)) :
     (φ : E →ᵇ F) = 0 ↔ φ = 0 := by
   simpa only [map_zero, toBoundedContinuousFunctionCLM_apply] using
     ((injective_toBoundedContinuousFunctionCLM ℝ).eq_iff (a := φ) (b := 0))
+
+/-- On an infinite-dimensional space every test function is zero: a nonzero continuous function
+with compact support forces finite dimension (Riesz,
+`HasCompactSupport.eq_zero_or_finiteDimensional`). -/
+theorem eq_zero_of_not_finiteDimensional (φ : 𝓓^{n}(Ω, F)) (hE : ¬FiniteDimensional ℝ E) :
+    φ = 0 :=
+  DFunLike.coe_injective <|
+    (φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous).resolve_right hE
 
 /-- Postcomposing a test function with `L₁` and then with `L₂` is postcomposing it with
 `L₂ ∘L L₁`. Unlike `SchwartzMap.postcompCLM_postcompCLM`, this is not a simp lemma: it would merge
