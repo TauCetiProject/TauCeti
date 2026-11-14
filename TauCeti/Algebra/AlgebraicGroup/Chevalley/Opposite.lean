@@ -259,10 +259,9 @@ theorem negativePoints_eq_closure (A : Type v) [CommRing A] :
     MonoidHom.map_closure, MonoidHom.map_closure]
   congr 1
   ext g
-  constructor
+  refine ⟨?_, ?_⟩
   · rintro ⟨_, ⟨γ, hγ, u, rfl⟩, h⟩
-    exact ⟨D.rootSubgroupPoints γ A u, ⟨γ, hγ, u, rfl⟩,
-      (D.coe_rootSubgroupPoints γ A u).trans h⟩
+    exact ⟨_, ⟨γ, hγ, u, rfl⟩, (D.coe_rootSubgroupPoints γ A u).trans h⟩
   · rintro ⟨_, ⟨γ, hγ, u, rfl⟩, h⟩
     exact ⟨_, ⟨γ, hγ, u, rfl⟩, (D.coe_rootSubgroupPoints γ A u).symm.trans h⟩
 
@@ -272,11 +271,7 @@ theorem negativePoints_le_iff {A : Type v} [CommRing A] {P : Subgroup (D.points 
       ∀ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht), ∀ u,
         D.rootSubgroupPoints γ A u ∈ P := by
   rw [D.negativePoints_eq_closure, Subgroup.closure_le]
-  constructor
-  · intro h γ hγ u
-    exact h ⟨γ, hγ, u, rfl⟩
-  · rintro h _ ⟨γ, hγ, u, rfl⟩
-    exact h γ hγ u
+  exact ⟨fun h γ hγ u => h ⟨γ, hγ, u, rfl⟩, fun h _ ⟨γ, hγ, u, hu⟩ => hu ▸ h γ hγ u⟩
 
 /-- Each negative root element belongs to the negative point subgroup. -/
 @[simp]
@@ -313,21 +308,22 @@ private theorem map_range_torusPoints_subtype (A : Type v) [CommRing A] :
   simp only [Subgroup.mem_map, MonoidHom.mem_range, exists_exists_eq_and, Subgroup.coe_subtype,
     D.coe_torusPoints, basisMatrix_kostantTorusPoints]
 
+private theorem units_map_toMatrix_injective (A : Type v) [CommRing A] :
+    Function.Injective (Units.map
+      ((LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv :
+        (A ⊗[ℤ] D.lattice →ₗ[A] A ⊗[ℤ] D.lattice) →* Matrix (Fin D.dim) (Fin D.dim) A)) := by
+  simpa using Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
+
 /-- Inside the datum points, the positive subgroup meets the join of the negative subgroup and the
 actual torus trivially over every commutative ring. -/
 @[simp]
 theorem positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot
     (A : Type v) [CommRing A] :
     D.positivePoints A ⊓ (D.negativePoints A ⊔ (D.torusPoints A).range) = ⊥ := by
-  have hm : Function.Injective (Units.map
-      ((LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv :
-        (A ⊗[ℤ] D.lattice →ₗ[A] A ⊗[ℤ] D.lattice) →* Matrix (Fin D.dim) (Fin D.dim) A)) := by
-    simpa using
-      Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
   apply Subgroup.map_injective (D.points A).subtype_injective
   rw [Subgroup.map_bot, Subgroup.map_inf_eq _ _ _ (D.points A).subtype_injective, Subgroup.map_sup,
     D.map_positivePoints_subtype, D.map_negativePoints_subtype, D.map_range_torusPoints_subtype,
-    ← Subgroup.map_sup, ← Subgroup.map_inf_eq _ _ _ hm,
+    ← Subgroup.map_sup, ← Subgroup.map_inf_eq _ _ _ (D.units_map_toMatrix_injective A),
     D.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot A, Subgroup.map_bot]
 
 /-- Inside the datum points, the negative subgroup meets the join of the positive subgroup and the
@@ -336,15 +332,10 @@ actual torus trivially over every commutative ring. -/
 theorem negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot
     (A : Type v) [CommRing A] :
     D.negativePoints A ⊓ (D.positivePoints A ⊔ (D.torusPoints A).range) = ⊥ := by
-  have hm : Function.Injective (Units.map
-      ((LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv :
-        (A ⊗[ℤ] D.lattice →ₗ[A] A ⊗[ℤ] D.lattice) →* Matrix (Fin D.dim) (Fin D.dim) A)) := by
-    simpa using
-      Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
   apply Subgroup.map_injective (D.points A).subtype_injective
   rw [Subgroup.map_bot, Subgroup.map_inf_eq _ _ _ (D.points A).subtype_injective, Subgroup.map_sup,
     D.map_negativePoints_subtype, D.map_positivePoints_subtype, D.map_range_torusPoints_subtype,
-    ← Subgroup.map_sup, ← Subgroup.map_inf_eq _ _ _ hm,
+    ← Subgroup.map_sup, ← Subgroup.map_inf_eq _ _ _ (D.units_map_toMatrix_injective A),
     D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A, Subgroup.map_bot]
 
 /-- The positive and negative point subgroups intersect trivially over every commutative ring. -/

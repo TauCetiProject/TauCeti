@@ -153,41 +153,26 @@ private theorem apply_eq_one_apply_of_mem_positivePoints_of_weightDegree_le
     let _ : LinearOrder (WeightIdx D.dim) := D.weightIdxLinearOrder e
     rw [← hgv, Module.Basis.baseChange_reindex]
     simp [weightIdxEquiv, LinearMap.toMatrixAlgEquiv_apply, Module.Basis.reindex_apply]
+  have hoff (e : Equiv.Perm (Fin D.dim))
+      (h : toLex (OrderDual.toDual (t.weightDegree ht (D.weight q)), e q) <
+        toLex (OrderDual.toDual (t.weightDegree ht (D.weight r)), e r)) :
+      ((g : Matrix.GeneralLinearGroup (Fin D.dim) A) :
+        Matrix (Fin D.dim) (Fin D.dim) A) r q = 0 := by
+    let _ : LinearOrder (WeightIdx D.dim) := D.weightIdxLinearOrder e
+    rw [hentry e]
+    apply (D.isUpperUnitriangular_reindex_of_mem_positivePoints hv e).isUpperTriangular
+    exact h
   by_cases hrq : r = q
   · subst q
     let _ : LinearOrder (WeightIdx D.dim) := D.weightIdxLinearOrder (Equiv.refl _)
-    have htri := D.isUpperUnitriangular_reindex_of_mem_positivePoints hv (Equiv.refl _)
     rw [hentry (Equiv.refl _), Matrix.one_apply_eq]
-    exact htri.apply_diag (.ofFin r)
+    exact (D.isUpperUnitriangular_reindex_of_mem_positivePoints hv (Equiv.refl _)).apply_diag _
   · rw [Matrix.one_apply_ne hrq]
     rcases lt_or_eq_of_le hdeg with hlt | heq
-    · let _ : LinearOrder (WeightIdx D.dim) := D.weightIdxLinearOrder (Equiv.refl _)
-      have htri := D.isUpperUnitriangular_reindex_of_mem_positivePoints hv (Equiv.refl _)
-      rw [hentry (Equiv.refl _)]
-      apply htri.isUpperTriangular
-      -- Expose the lexicographic comparison defining `weightIdxLinearOrder`.
-      change toLex (OrderDual.toDual (t.weightDegree ht (D.weight q)), q) <
-        toLex (OrderDual.toDual (t.weightDegree ht (D.weight r)), r)
-      exact Prod.Lex.left _ _ hlt
+    · exact hoff (Equiv.refl _) (Prod.Lex.left _ _ hlt)
     · rcases lt_or_gt_of_ne hrq with hlt | hgt
-      · let _ : LinearOrder (WeightIdx D.dim) := D.weightIdxLinearOrder Fin.revPerm
-        have htri := D.isUpperUnitriangular_reindex_of_mem_positivePoints hv Fin.revPerm
-        rw [hentry Fin.revPerm]
-        apply htri.isUpperTriangular
-        -- Expose the lexicographic comparison defining `weightIdxLinearOrder`.
-        change toLex (OrderDual.toDual (t.weightDegree ht (D.weight q)), Fin.revPerm q) <
-          toLex (OrderDual.toDual (t.weightDegree ht (D.weight r)), Fin.revPerm r)
-        rw [heq]
-        exact Prod.Lex.right _ (Fin.rev_lt_rev.mpr hlt)
-      · let _ : LinearOrder (WeightIdx D.dim) := D.weightIdxLinearOrder (Equiv.refl _)
-        have htri := D.isUpperUnitriangular_reindex_of_mem_positivePoints hv (Equiv.refl _)
-        rw [hentry (Equiv.refl _)]
-        apply htri.isUpperTriangular
-        -- Expose the lexicographic comparison defining `weightIdxLinearOrder`.
-        change toLex (OrderDual.toDual (t.weightDegree ht (D.weight q)), q) <
-          toLex (OrderDual.toDual (t.weightDegree ht (D.weight r)), r)
-        rw [heq]
-        exact Prod.Lex.right _ hgt
+      · exact hoff Fin.revPerm (by rw [heq]; exact Prod.Lex.right _ (Fin.rev_lt_rev.mpr hlt))
+      · exact hoff (Equiv.refl _) (by rw [heq]; exact Prod.Lex.right _ hgt)
 
 private theorem weylProjection_eq_one_of_mem_positivePoints (k : Type v) [Field k]
     {u : D.points k} (huU : u ∈ D.positivePoints k) (huW : u ∈ D.weylSubgroup k) :
@@ -204,16 +189,13 @@ private theorem weylProjection_eq_one_of_mem_positivePoints (k : Type v) [Field 
   have hγ_neg : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
     rw [negRoots_eq_compl, t.posRoots_rationalRootSystem ht, Set.mem_compl_iff, mem_posRoots]
     exact hinv.2
-  have hmem : D.rootSubgroupPoints γ k (ofAdd 1) ∈
+  obtain ⟨_, ⟨a, rfl⟩, hconj⟩ : D.rootSubgroupPoints γ k (ofAdd 1) ∈
       (D.rootSubgroupPoints j k).range.map (MulAut.conj u).toMonoidHom := by
     rw [D.map_range_rootSubgroupPoints_conj k ⟨u, huW⟩ j]
     exact ⟨ofAdd 1, rfl⟩
-  obtain ⟨_, ⟨a, rfl⟩, hconj⟩ := hmem
   have hposU : MulAut.conj u (D.rootSubgroupPoints j k a) ∈ D.positivePoints k := by
     rw [MulAut.conj_apply]
-    exact (D.positivePoints k).mul_mem
-      ((D.positivePoints k).mul_mem huU (D.rootSubgroupPoints_mem_positivePoints k hj_pos a))
-      ((D.positivePoints k).inv_mem huU)
+    exact mul_mem (mul_mem huU (D.rootSubgroupPoints_mem_positivePoints k hj_pos a)) (inv_mem huU)
   have hB : D.rootSubgroupPoints γ k (ofAdd 1) ∈ D.borelSubgroup k :=
     D.positivePoints_le_borelSubgroup k (hconj ▸ hposU)
   exact D.rootSubgroupPoints_ofAdd_one_ne_one k γ
@@ -252,15 +234,12 @@ theorem positivePoints_inf_weylSubgroup_eq_bot (k : Type v) [Field k] :
     have hentry := congrArg (fun M : Matrix.GeneralLinearGroup (Fin D.dim) K =>
       (M : Matrix (Fin D.dim) (Fin D.dim) K) r q) hcomm
     simp only [Units.val_mul, diagGL_coe, Matrix.mul_diagonal, Matrix.diagonal_mul] at hentry
-    have hzero : ((torusCharacter s (D.weight q) : K) -
-        (torusCharacter s (D.weight r) : K)) *
+    have hzero : ((torusCharacter s (D.weight q) : K) - (torusCharacter s (D.weight r) : K)) *
         ((uK : Matrix.GeneralLinearGroup (Fin D.dim) K) :
           Matrix (Fin D.dim) (Fin D.dim) K) r q = 0 := by
       rw [sub_mul, mul_comm, hentry, mul_comm, sub_self]
-    have hsub_ne : (torusCharacter s (D.weight q) : K) -
-        (torusCharacter s (D.weight r) : K) ≠ 0 :=
-      sub_ne_zero.mpr fun h => hchar (Units.ext h.symm)
-    exact (mul_eq_zero.mp hzero).resolve_left hsub_ne
+    exact (mul_eq_zero.mp hzero).resolve_left
+      (sub_ne_zero.mpr fun h => hchar (Units.ext h.symm))
 
 /-- Inside the points of a Chevalley datum over any field, the Weyl subgroup meets the positive
 unipotent subgroup trivially. -/

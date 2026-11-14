@@ -83,32 +83,20 @@ theorem eq_and_eq_of_mul_mul_eq_of_mem_positivePoints_inf_map_negativePoints_con
     (hb₁ : b₁ ∈ D.borelSubgroup A) (hb₂ : b₂ ∈ D.borelSubgroup A)
     (heq : u₁ * g * b₁ = u₂ * g * b₂) :
     u₁ = u₂ ∧ b₁ = b₂ := by
-  have hu_diff : u₂⁻¹ * u₁ ∈ (D.negativePoints A).map (MulAut.conj g).toMonoidHom :=
+  obtain ⟨v, hv, hgv⟩ : u₂⁻¹ * u₁ ∈ (D.negativePoints A).map (MulAut.conj g).toMonoidHom :=
     mul_mem (inv_mem hu₂.2) hu₁.2
-  obtain ⟨v, hv, hgv⟩ := hu_diff
-  have hv_eq : v = b₂ * b₁⁻¹ := by
-    have h1 : (u₂⁻¹ * u₁) * g = g * (b₂ * b₁⁻¹) := by
-      calc
-        (u₂⁻¹ * u₁) * g = u₂⁻¹ * (u₁ * g * b₁) * b₁⁻¹ := by group
-        _ = u₂⁻¹ * (u₂ * g * b₂) * b₁⁻¹ := by rw [heq]
-        _ = g * (b₂ * b₁⁻¹) := by group
-    have h2 : g * v = g * (b₂ * b₁⁻¹) := by
-      calc
-        g * v = (g * v * g⁻¹) * g := by group
-        _ = (u₂⁻¹ * u₁) * g := by
-              rw [← MulAut.conj_apply, ← MulEquiv.coe_toMonoidHom, hgv]
-        _ = g * (b₂ * b₁⁻¹) := h1
-    exact mul_left_cancel h2
-  have hb_diff : b₂ * b₁⁻¹ ∈ D.borelSubgroup A := mul_mem hb₂ (inv_mem hb₁)
-  have hv_bot : v ∈ (⊥ : Subgroup (D.points A)) := by
+  have hv_eq : v = b₂ * b₁⁻¹ := mul_left_cancel (a := g) <| by
+    calc
+      g * v = (g * v * g⁻¹) * g := by group
+      _ = (u₂⁻¹ * u₁) * g := by rw [← MulAut.conj_apply, ← MulEquiv.coe_toMonoidHom, hgv]
+      _ = u₂⁻¹ * (u₁ * g * b₁) * b₁⁻¹ := by group
+      _ = u₂⁻¹ * (u₂ * g * b₂) * b₁⁻¹ := by rw [heq]
+      _ = g * (b₂ * b₁⁻¹) := by group
+  have hv1 : v = 1 := Subgroup.mem_bot.mp <| by
     rw [← D.negativePoints_inf_borelSubgroup_eq_bot A]
-    exact ⟨hv, hv_eq ▸ hb_diff⟩
-  have hv1 : v = 1 := Subgroup.mem_bot.mp hv_bot
-  have hb : b₁ = b₂ := (eq_of_mul_inv_eq_one (hv_eq.symm.trans hv1)).symm
-  have hu : u₁ = u₂ := by
-    rw [hv1, map_one] at hgv
-    exact (eq_of_inv_mul_eq_one hgv.symm).symm
-  exact ⟨hu, hb⟩
+    exact ⟨hv, hv_eq ▸ (mul_mem hb₂ (inv_mem hb₁) : b₂ * b₁⁻¹ ∈ D.borelSubgroup A)⟩
+  rw [hv1, map_one] at hgv
+  exact ⟨(eq_of_inv_mul_eq_one hgv.symm).symm, (eq_of_mul_inv_eq_one (hv_eq.symm.trans hv1)).symm⟩
 
 end CommRing
 
@@ -139,12 +127,11 @@ theorem iSup_rootSubgroupPoints_inversions_le_positivePoints_inf_map_negativePoi
   have hnβ : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n) β = γ := by
     simp only [β, ← Equiv.Perm.mul_apply, ← map_mul, mul_inv_cancel, map_one,
       Equiv.Perm.one_apply]
-  have hmem_range : D.rootSubgroupPoints γ k u ∈
+  obtain ⟨_, ⟨a, rfl⟩, hx⟩ : D.rootSubgroupPoints γ k u ∈
       (D.rootSubgroupPoints β k).range.map (MulAut.conj (n : D.points k)).toMonoidHom := by
     rw [D.map_range_rootSubgroupPoints_conj k n β, hnβ]
     exact ⟨u, rfl⟩
-  obtain ⟨x, ⟨a, rfl⟩, hx⟩ := hmem_range
-  exact ⟨D.rootSubgroupPoints β k a, D.rootSubgroupPoints_mem_negativePoints k hβ_neg a, hx⟩
+  exact ⟨_, D.rootSubgroupPoints_mem_negativePoints k hβ_neg a, hx⟩
 
 private theorem map_iSup_inversions_conj_weylElement_le
     (i : Fin t.rank) (w : (t.simplyConnectedRootDatum ht).weylGroup)
@@ -219,18 +206,13 @@ theorem exists_mem_iSup_inversions_mul_borelSubgroup_eq
     intro q hlen n hqn g hg
     obtain ⟨l, hl, hllen, hprod⟩ := (D.titsSystem k).exists_prod_eq_of_wordLength q
     rcases l with _ | ⟨s, l'⟩
-    · rw [List.length_nil] at hllen
-      omega
-    · rw [List.forall_mem_cons] at hl
-      obtain ⟨hs, hl'⟩ := hl
-      have hs' := hs
-      rw [D.titsSystem_simple] at hs'
-      obtain ⟨i, rfl⟩ := hs'
+    · simp [hlen] at hllen
+    · obtain ⟨hs, hl'⟩ := List.forall_mem_cons.mp hl
+      obtain ⟨i, rfl⟩ := (D.titsSystem_simple k).subset hs
       dsimp only at hs hllen hprod
       let q' : (D.titsSystem k).WeylGroup := l'.prod
       have hq_eq : (QuotientGroup.mk (D.titsSystemSimpleRep k i) :
-          (D.titsSystem k).WeylGroup) * q' = q := by
-        simpa only [q', List.prod_cons] using hprod
+          (D.titsSystem k).WeylGroup) * q' = q := by simpa only [q', List.prod_cons] using hprod
       have hlen_q' : (D.titsSystem k).simpleGenerators.wordLength q' = m := by
         have hle1 : (D.titsSystem k).simpleGenerators.wordLength q' ≤ l'.length :=
           (D.titsSystem k).wordLength_prod_le hl'
@@ -238,35 +220,21 @@ theorem exists_mem_iSup_inversions_mul_borelSubgroup_eq
         rw [hq_eq, hlen] at hle2
         rw [List.length_cons, hlen] at hllen
         omega
-      have hlt_q' : (D.titsSystem k).simpleGenerators.wordLength q' <
-          (D.titsSystem k).simpleGenerators.wordLength
-            (QuotientGroup.mk (D.titsSystemSimpleRep k i) * q') := by
-        rw [hq_eq, hlen, hlen_q']
-        exact Nat.lt_succ_self m
       have hnot_inv_q' : t.simpleIndex ht i ∉
           inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
             (D.titsSystemWeylGroupMulEquiv k q')⁻¹ :=
-        (D.wordLength_lt_wordLength_titsSystemSimpleRep_mul_iff k i q').mp hlt_q'
+        (D.wordLength_lt_wordLength_titsSystemSimpleRep_mul_iff k i q').mp
+          (by rw [hq_eq, hlen, hlen_q']; exact Nat.lt_succ_self m)
       let n_i : D.weylSubgroup k :=
         ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩
       let n' : D.weylSubgroup k := n_i⁻¹ * n
       have hq'n' : D.titsSystemWeylGroupMulEquiv k q' = D.weylProjection k n' := by
-        have h1 : D.weylProjection k n_i =
-            D.titsSystemWeylGroupMulEquiv k (QuotientGroup.mk (D.titsSystemSimpleRep k i)) := by
-          rw [D.titsSystemWeylGroupMulEquiv_simpleRep, D.weylProjection_weylElement]
-        calc
-          D.titsSystemWeylGroupMulEquiv k q'
-              = (D.titsSystemWeylGroupMulEquiv k
-                  (QuotientGroup.mk (D.titsSystemSimpleRep k i)))⁻¹ *
-                D.titsSystemWeylGroupMulEquiv k
-                  (QuotientGroup.mk (D.titsSystemSimpleRep k i) * q') := by
-                rw [map_mul, inv_mul_cancel_left]
-          _ = (D.weylProjection k n_i)⁻¹ * D.weylProjection k n := by rw [← h1, hq_eq, hqn]
-          _ = D.weylProjection k n' := by simp [n']
+        apply mul_left_cancel (a := D.weylProjection k n_i)
+        rw [← map_mul, mul_inv_cancel_left, ← hqn, ← hq_eq, map_mul,
+          D.titsSystemWeylGroupMulEquiv_simpleRep, D.weylProjection_weylElement]
       have hnot_inv : t.simpleIndex ht i ∉
           inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-            (D.weylProjection k n')⁻¹ := by
-        rwa [← hq'n']
+            (D.weylProjection k n')⁻¹ := hq'n' ▸ hnot_inv_q'
       obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
       obtain ⟨v, hv, r, hvr⟩ := (D.mem_borelSubgroup_iff k).mp hb₁
       have htR : (n : D.points k)⁻¹ * D.torusPoints k r * (n : D.points k) ∈
@@ -286,17 +254,14 @@ theorem exists_mem_iSup_inversions_mul_borelSubgroup_eq
       have hn_proj_inv : (D.weylProjection k n)⁻¹ =
           (D.weylProjection k n')⁻¹ *
             RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
-        have hn_eq : n = n_i * n' := by simp [n']
-        rw [hn_eq, map_mul, mul_inv_rev, D.weylProjection_weylElement,
+        rw [show n = n_i * n' by simp [n'], map_mul, mul_inv_rev, D.weylProjection_weylElement,
           RootPairing.weylGroup.ofIdx_inv_eq]
-      have hi_pos : (t.simplyConnectedBase ht).IsPos (t.simpleIndex ht i) :=
-        RootPairing.Base.isPos_of_mem_support
-          (t.support_rationalBase ht ▸ t.simpleIndex_mem_support i)
+      have hi_pos := RootPairing.Base.isPos_of_mem_support
+        (t.support_rationalBase ht ▸ t.simpleIndex_mem_support i)
       have hi_mem_inv : t.simpleIndex ht i ∈
           inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
             (D.weylProjection k n)⁻¹ := by
-        rw [hn_proj_inv, mem_inversions_mul_ofIdx_iff_not_mem _ _ _ hi_pos]
-        exact hnot_inv
+        rwa [hn_proj_inv, mem_inversions_mul_ofIdx_iff_not_mem _ _ _ hi_pos]
       have hx_mem : D.rootSubgroupPoints (t.simpleIndex ht i) k a ∈
           ⨆ γ ∈ inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
             (D.weylProjection k n)⁻¹, (D.rootSubgroupPoints γ k).range :=
@@ -407,19 +372,15 @@ theorem doubleCoset_borelSubgroup_eq_iff (n₁ n₂ : D.weylSubgroup k) :
         QuotientGroup.mk (D.toTitsSystemSubgroupN k n₂) :=
       (D.titsSystemWeylGroupMulEquiv k).injective
         (by simpa only [D.titsSystemWeylGroupMulEquiv_mk_toTitsSystemSubgroupN] using h)
-    ext g
-    constructor
-    · intro hg
-      let x : D.extendedElementarySubgroup k :=
-        ⟨g, D.doubleCoset_borelSubgroup_le_extendedElementary k n₁ hg⟩
-      exact (D.mem_bruhatCell_titsSystem_mk_toTitsSystemSubgroupN_iff k n₂ (x := x)).mp
-        (hmk ▸ (D.mem_bruhatCell_titsSystem_mk_toTitsSystemSubgroupN_iff k n₁ (x := x)).mpr hg)
-    · intro hg
-      let x : D.extendedElementarySubgroup k :=
-        ⟨g, D.doubleCoset_borelSubgroup_le_extendedElementary k n₂ hg⟩
-      exact (D.mem_bruhatCell_titsSystem_mk_toTitsSystemSubgroupN_iff k n₁ (x := x)).mp
-        (hmk.symm ▸
-          (D.mem_bruhatCell_titsSystem_mk_toTitsSystemSubgroupN_iff k n₂ (x := x)).mpr hg)
+    have hsub (a b : D.weylSubgroup k)
+        (hab : (QuotientGroup.mk (D.toTitsSystemSubgroupN k a) : (D.titsSystem k).WeylGroup) =
+          QuotientGroup.mk (D.toTitsSystemSubgroupN k b)) :
+        DoubleCoset.doubleCoset (a : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) ⊆
+          DoubleCoset.doubleCoset (b : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) :=
+      fun g hg ↦ (D.mem_bruhatCell_titsSystem_mk_toTitsSystemSubgroupN_iff k b
+        (x := ⟨g, D.doubleCoset_borelSubgroup_le_extendedElementary k a hg⟩)).mp
+        (hab ▸ (D.mem_bruhatCell_titsSystem_mk_toTitsSystemSubgroupN_iff k a).mpr hg)
+    exact Set.Subset.antisymm (hsub n₁ n₂ hmk) (hsub n₂ n₁ hmk.symm)
 
 /-- Over any field, two `B(k)`-double cosets represented by `n₁, n₂ ∈ D.weylSubgroup k` are
 disjoint inside `D.points k` precisely when `n₁` and `n₂` have distinct Weyl projections. -/
@@ -499,13 +460,8 @@ theorem existsUnique_bruhatDecomposition_of_mem_extendedElementarySubgroup
   obtain ⟨n₀, hn₀⟩ := (D.mem_extendedElementarySubgroup_iff_exists_mem_doubleCoset k g).mp hg
   let w₀ := D.weylProjection k n₀
   have hcell : g ∈ DoubleCoset.doubleCoset (σ w₀ : D.points k)
-      (D.borelSubgroup k) (D.borelSubgroup k) := by
-    have heq : DoubleCoset.doubleCoset (σ w₀ : D.points k)
-          (D.borelSubgroup k) (D.borelSubgroup k) =
-        DoubleCoset.doubleCoset (n₀ : D.points k)
-          (D.borelSubgroup k) (D.borelSubgroup k) :=
-      (D.doubleCoset_borelSubgroup_eq_iff k (σ w₀) n₀).mpr (hσ w₀)
-    exact heq.symm ▸ hn₀
+      (D.borelSubgroup k) (D.borelSubgroup k) :=
+    ((D.doubleCoset_borelSubgroup_eq_iff k (σ w₀) n₀).mpr (hσ w₀)).symm ▸ hn₀
   obtain ⟨⟨u₀, b₀⟩, hub₀, -⟩ := D.existsUnique_bruhatNormalForm k (σ w₀) hcell
   refine ⟨(w₀, u₀.1, b₀.1), ⟨u₀.2, b₀.2, hub₀⟩, ?_⟩
   rintro ⟨w, u, b⟩ ⟨hu, hb, hub⟩
@@ -515,10 +471,8 @@ theorem existsUnique_bruhatDecomposition_of_mem_extendedElementarySubgroup
       ⟨u, D.positivePoints_le_borelSubgroup k hu.1, b, hb, hub.symm⟩
   have hw : w = w₀ := by
     by_contra hne
-    have hproj_ne : D.weylProjection k (σ w) ≠ D.weylProjection k (σ w₀) := by
-      rwa [hσ, hσ]
-    exact Set.disjoint_left.mp
-      ((D.disjoint_doubleCoset_borelSubgroup_iff k (σ w) (σ w₀)).mpr hproj_ne) hg_w hcell
+    exact Set.disjoint_left.mp ((D.disjoint_doubleCoset_borelSubgroup_iff k (σ w) (σ w₀)).mpr
+      (by rwa [hσ, hσ])) hg_w hcell
   subst hw
   have hpair := D.eq_and_eq_of_mul_mul_eq_of_mem_positivePoints_inf_map_negativePoints_conj k
     hu u₀.2 hb b₀.2 (hub.trans hub₀.symm)
