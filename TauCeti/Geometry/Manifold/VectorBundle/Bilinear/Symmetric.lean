@@ -35,8 +35,8 @@ The `C^n` structure follows Mathlib's `C^n` bundle of continuous alternating map
 
 * `ContMDiffVectorBundle.symmetricBilinearMaps`: the bundle of symmetric bilinear maps on a `C^n`
   vector bundle is a `C^n` vector bundle.
-* `TauCeti.Manifold.contMDiffWithinAt_symmetricBilinearMaps_section_iff`: regularity of a field of
-  symmetric bilinear maps agrees in the symmetric and in the ambient bilinear bundle.
+* `TauCeti.Manifold.contMDiffWithinAt_symmetricBilinearMaps_iff`: regularity of a map into
+  the symmetric bilinear bundle agrees with regularity into the ambient bilinear bundle.
 * `TauCeti.Manifold.symmetricBilinearSectionEquiv`: `C^n` sections of the symmetric bundle are the
   symmetric `C^n` bilinear sections.
 -/
@@ -148,19 +148,26 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 variable [NeZero (2 : 𝕜)]
 
-/-- A field of symmetric bilinear maps is `C^n` as a section of the symmetric bundle exactly when
-it is `C^n` as a section of the bundle of all bilinear maps. -/
-theorem contMDiffWithinAt_symmetricBilinearMaps_section_iff
-    {b : ∀ x, symmetricBilinearMaps 𝕜 (V x) G} {s : Set B} {x₀ : B} :
-    ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, symmetricBilinearMaps 𝕜 F G)) n
-        (fun x ↦ TotalSpace.mk' (symmetricBilinearMaps 𝕜 F G) x (b x)) s x₀ ↔
-      ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
-        (fun x ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) x (b x : V x →L[𝕜] V x →L[𝕜] G)) s x₀ := by
-  rw [contMDiffWithinAt_section_iff, contMDiffWithinAt_section_iff]
-  have hx₀ := mem_baseSet_trivializationAt F V x₀
-  have hev : ∀ᶠ x in 𝓝[s] x₀, x ∈ (trivializationAt F V x₀).baseSet :=
-    eventually_nhdsWithin_of_eventually_nhds
-      ((trivializationAt F V x₀).open_baseSet.mem_nhds hx₀)
+/-- A map into the symmetric bilinear bundle is `C^n` exactly when the corresponding map into
+its ambient bilinear bundle is `C^n`. The base map need not be assumed regular: its regularity is
+part of either side of the equivalence. -/
+theorem contMDiffWithinAt_symmetricBilinearMaps_iff
+    {EN : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN]
+    {HN : Type*} [TopologicalSpace HN] {IN : ModelWithCorners 𝕜 EN HN}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace HN N]
+    {f : N → B} {b : ∀ x, symmetricBilinearMaps 𝕜 (V (f x)) G} {s : Set N} {x₀ : N} :
+    ContMDiffWithinAt IN (IB.prod 𝓘(𝕜, symmetricBilinearMaps 𝕜 F G)) n
+        (fun x ↦ TotalSpace.mk' (E := fun y ↦ symmetricBilinearMaps 𝕜 (V y) G)
+          (symmetricBilinearMaps 𝕜 F G) (f x) (b x)) s x₀ ↔
+      ContMDiffWithinAt IN (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
+        (fun x ↦ TotalSpace.mk' (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G)
+          (F →L[𝕜] F →L[𝕜] G) (f x)
+          (b x : V (f x) →L[𝕜] V (f x) →L[𝕜] G)) s x₀ := by
+  rw [contMDiffWithinAt_totalSpace_iff, contMDiffWithinAt_totalSpace_iff]
+  refine and_congr_right fun hf ↦ ?_
+  have hx₀ := mem_baseSet_trivializationAt F V (f x₀)
+  have hev : ∀ᶠ x in 𝓝[s] x₀, f x ∈ (trivializationAt F V (f x₀)).baseSet :=
+    hf.continuousWithinAt ((trivializationAt F V (f x₀)).open_baseSet.mem_nhds hx₀)
   constructor
   · intro h
     refine ((symmetricBilinearMaps 𝕜 F G).subtypeL.contDiff.comp_contMDiffWithinAt
@@ -183,7 +190,7 @@ theorem contMDiffAt_symmetricBilinearMaps_section_iff
         (fun x ↦ TotalSpace.mk' (symmetricBilinearMaps 𝕜 F G) x (b x)) x₀ ↔
       ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
         (fun x ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) x (b x : V x →L[𝕜] V x →L[𝕜] G)) x₀ :=
-  contMDiffWithinAt_symmetricBilinearMaps_section_iff
+  contMDiffWithinAt_symmetricBilinearMaps_iff
 
 /-- A field of symmetric bilinear maps is a `C^n` section of the symmetric bundle exactly when it
 is a `C^n` section of the bundle of all bilinear maps. -/
