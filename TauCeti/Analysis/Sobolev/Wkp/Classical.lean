@@ -13,8 +13,10 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 A smooth representative of a weak Sobolev function has classical derivatives equal almost
 everywhere to its recorded weak derivatives. The nested iterated-gradient fields have exactly
-the same pointwise norms as Mathlib's multilinear derivatives. Consequently smooth Sobolev
-representatives satisfy the integrability hypotheses of classical higher-order cutoff estimates.
+the same pointwise norms as Mathlib's multilinear derivatives
+(`TauCeti.norm_iteratedGradientChain`), also for differences of `C^{k+1}` functions.
+Consequently smooth Sobolev representatives satisfy the integrability hypotheses of classical
+higher-order cutoff estimates.
 Conversely, a function that is `Cᵏ` on the domain and whose classical derivatives through order
 `k` lie in `Lᵖ` represents an element of `W^{k,p}` (`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn`),
 whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
@@ -41,31 +43,6 @@ open scoped ENNReal ContDiff
 section Classical
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-
-/-- Taking `i` further derivatives of the `k`th iterated-gradient field has the same norm as
-taking `i + k + 1` derivatives of the original scalar function. No smoothness is needed. -/
-theorem norm_iteratedFDeriv_iteratedGradientChain (f : E → ℝ) (i k : ℕ) (x : E) :
-    ‖iteratedFDeriv ℝ i (iteratedGradientChain f k) x‖ =
-      ‖iteratedFDeriv ℝ (i + k + 1) f x‖ := by
-  induction k generalizing i with
-  | zero =>
-      rw [iteratedGradientChain_zero]
-      -- The gradient is the inverse Riesz isometry applied to the Fréchet derivative.
-      exact ((InnerProductSpace.toDual ℝ E).symm.norm_iteratedFDeriv_comp_left
-        (fderiv ℝ f) x i).trans norm_iteratedFDeriv_fderiv
-  | succ k ih =>
-      rw [iteratedGradientChain_succ, norm_iteratedFDeriv_fderiv]
-      exact (ih (i + 1)).trans (congrArg
-        (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (by omega))
-
-/-- The nested iterated-gradient field has the same norm as the corresponding multilinear
-derivative of the scalar function. -/
-@[simp]
-theorem norm_iteratedGradientChain (f : E → ℝ) (k : ℕ) (x : E) :
-    ‖iteratedGradientChain f k x‖ = ‖iteratedFDeriv ℝ (k + 1) f x‖ :=
-  (norm_iteratedFDeriv_zero (f := iteratedGradientChain f k) (x := x)).symm.trans
-    ((norm_iteratedFDeriv_iteratedGradientChain f 0 k x).trans
-      (congrArg (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (Nat.zero_add k)))
 
 /-- Iterated-gradient fields through order `k + 1` preserve subtraction of scalar functions
 that are `C^{k+1}` at the point of evaluation. -/

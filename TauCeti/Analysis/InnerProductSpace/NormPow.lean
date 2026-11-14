@@ -9,11 +9,14 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
+import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
 # Real powers of the norm
@@ -45,8 +48,18 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
+* `gradient_norm_rpow_of_ne`, `norm_gradient_norm_rpow_of_ne`: the gradient `p ‖x‖ ^ (p - 2) x`
+  of an arbitrary real power away from zero, and its norm `|p| ‖x‖ ^ (p - 1)`.
+* `iteratedGradientChain_one_norm_rpow_apply`, `inner_iteratedGradientChain_one_norm_rpow_apply`:
+  the Hessian of an arbitrary real power away from zero as the derivative of its gradient, and its
+  bilinear form; `inner_iteratedGradientChain_one_norm_rpow_apply_self`: its radial value
+  `p (p - 1) ‖x‖ ^ p`; `sum_inner_iteratedGradientChain_one_norm_rpow_apply`: its trace in an
+  orthonormal basis.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
-* `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
+* `norm_iteratedFDeriv_two_norm_rpow_le`, `norm_iteratedGradientChain_one_norm_rpow_le`: the
+  Hessian is `O(‖x‖ ^ (p - 2))`;
+  `abs_mul_rpow_le_finrank_mul_norm_iteratedGradientChain_one_norm_rpow`: for `p ≠ 0` and
+  `dim E + p ≠ 2` it is at least a positive multiple of `‖x‖ ^ (p - 2)`.
 * `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
   in operator norm when a nonzero direction is orthogonal to `x`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
@@ -138,6 +151,14 @@ theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
 
+/-- Away from the origin, the gradient of `‖x‖ ^ p` is `p ‖x‖ ^ (p - 2) x`. -/
+theorem gradient_norm_rpow_of_ne [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
+    ∇ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • x := by
+  refine HasGradientAt.gradient (hasGradientAt_iff_hasFDerivAt.2 ?_)
+  convert hasFDerivAt_norm_rpow_of_ne p hx using 1
+  ext v
+  simp [InnerProductSpace.toDual_apply_apply]
+
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
 theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x‖ = |p| * ‖x‖ ^ (p - 1) := by
@@ -145,6 +166,46 @@ theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
   have hp : p - 2 + 1 = p - 1 := by ring
   rw [fderiv_norm_rpow_of_ne p hx, norm_smul, innerSL_apply_norm, Real.norm_eq_abs, abs_mul,
     abs_of_nonneg (Real.rpow_nonneg hx'.le _), mul_assoc, ← Real.rpow_add_one hx'.ne', hp]
+
+/-- Away from the origin, the gradient of `‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
+theorem norm_gradient_norm_rpow_of_ne [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
+    ‖∇ (fun y : E ↦ ‖y‖ ^ p) x‖ = |p| * ‖x‖ ^ (p - 1) := by
+  rw [gradient, LinearIsometryEquiv.norm_map, norm_fderiv_norm_rpow_of_ne p hx]
+
+/-- Away from the origin, the classical Hessian of `‖x‖ ^ p`, the derivative of its gradient, is
+`v ↦ p ‖x‖ ^ (p - 2) v + p (p - 2) ‖x‖ ^ (p - 4) ⟪x, v⟫ x`. -/
+theorem iteratedGradientChain_one_norm_rpow_apply [CompleteSpace E] {p : ℝ} {x : E}
+    (hx : x ≠ 0) (v : E) :
+    iteratedGradientChain (fun y : E ↦ ‖y‖ ^ p) 1 x v =
+      (p * ‖x‖ ^ (p - 2)) • v + (p * (p - 2) * ‖x‖ ^ (p - 4) * ⟪x, v⟫) • x := by
+  have hev : (∇ fun y : E ↦ ‖y‖ ^ p) =ᶠ[𝓝 x] fun y ↦ (p * ‖y‖ ^ (p - 2)) • y :=
+    (eventually_ne_nhds hx).mono fun y hy ↦ gradient_norm_rpow_of_ne hy
+  have hd : HasFDerivAt (fun y : E ↦ (p * ‖y‖ ^ (p - 2)) • y) _ x :=
+    ((hasFDerivAt_norm_rpow_of_ne (p - 2) hx).const_mul p).smul (hasFDerivAt_id x)
+  rw [iteratedGradientChain_succ, iteratedGradientChain_zero, hev.fderiv_eq, hd.fderiv,
+    add_apply, smul_apply, ContinuousLinearMap.id_apply, ContinuousLinearMap.smulRight_apply]
+  simp only [smul_apply, coe_innerSL_apply, smul_eq_mul, show p - 2 - 2 = p - 4 by ring, mul_assoc]
+
+/-- Away from the origin, the bilinear form of the classical Hessian of `‖x‖ ^ p` is
+`⟪D²u(x) v, w⟫ = p ‖x‖ ^ (p - 2) ⟪v, w⟫ + p (p - 2) ‖x‖ ^ (p - 4) ⟪x, v⟫ ⟪x, w⟫`. -/
+theorem inner_iteratedGradientChain_one_norm_rpow_apply [CompleteSpace E] {p : ℝ} {x : E}
+    (hx : x ≠ 0) (v w : E) :
+    ⟪iteratedGradientChain (fun y : E ↦ ‖y‖ ^ p) 1 x v, w⟫ =
+      p * ‖x‖ ^ (p - 2) * ⟪v, w⟫ + p * (p - 2) * ‖x‖ ^ (p - 4) * (⟪x, v⟫ * ⟪x, w⟫) := by
+  rw [iteratedGradientChain_one_norm_rpow_apply hx, inner_add_left, real_inner_smul_left,
+    real_inner_smul_left, mul_assoc _ ⟪x, v⟫]
+
+/-- Away from the origin, the Hessian of `‖x‖ ^ p` in the radial direction is
+`⟪D²u(x) x, x⟫ = p (p - 1) ‖x‖ ^ p`. -/
+theorem inner_iteratedGradientChain_one_norm_rpow_apply_self [CompleteSpace E] {p : ℝ} {x : E}
+    (hx : x ≠ 0) :
+    ⟪iteratedGradientChain (fun y : E ↦ ‖y‖ ^ p) 1 x x, x⟫ = p * (p - 1) * ‖x‖ ^ p := by
+  have hN := norm_pos_iff.2 hx
+  rw [inner_iteratedGradientChain_one_norm_rpow_apply hx, real_inner_self_eq_norm_sq,
+    Real.rpow_sub hN, Real.rpow_sub hN]
+  norm_cast
+  field_simp
+  ring
 
 /-- The norm of the classical derivative `p ‖x‖ ^ (p - 2) ⟨x, ·⟩` of `x ↦ ‖x‖ ^ p` is at most
 `|p| ‖x‖ ^ (p - 1)`, with equality away from the origin (`norm_fderiv_norm_rpow_of_ne`). -/
@@ -309,6 +370,14 @@ theorem norm_iteratedFDeriv_two_norm_rpow_le (p : ℝ) {x : E} (hx : x ≠ 0) :
     _ = |p| * (|p - 2| + 1) * ‖x‖ ^ (p - 2) * (‖m 0‖ * ‖m 1‖) := by
         rw [← h42]
         ring
+
+/-- Away from the origin, the Hessian of `‖x‖ ^ p`, the derivative of its gradient, has operator
+norm at most `|p| (|p - 2| + 1) ‖x‖ ^ (p - 2)`. -/
+theorem norm_iteratedGradientChain_one_norm_rpow_le [CompleteSpace E] (p : ℝ) {x : E}
+    (hx : x ≠ 0) :
+    ‖iteratedGradientChain (fun y : E ↦ ‖y‖ ^ p) 1 x‖ ≤ |p| * (|p - 2| + 1) * ‖x‖ ^ (p - 2) := by
+  rw [norm_iteratedGradientChain]
+  exact norm_iteratedFDeriv_two_norm_rpow_le p hx
 
 /-- Away from the origin, the second derivative of the norm has operator norm at least `‖x‖⁻¹`
 when some nonzero direction `v` is orthogonal to `x`: by the Hessian formula for `‖·‖ ^ p` with
@@ -497,6 +566,35 @@ theorem laplacian_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
       _ = ‖x‖ ^ (p - 2) := by ring_nf
   rw [mul_assoc (p * (p - 2)), hrpow]
   ring
+
+omit [FiniteDimensional ℝ E] in
+/-- Away from the origin, the trace of the Hessian of `‖x‖ ^ p`, computed in any orthonormal
+basis, is the Laplacian `p (dim E + p - 2) ‖x‖ ^ (p - 2)`. -/
+theorem sum_inner_iteratedGradientChain_one_norm_rpow_apply [CompleteSpace E] {ι : Type*}
+    [Fintype ι] {p : ℝ} {x : E} (hx : x ≠ 0) (v : OrthonormalBasis ι ℝ E) :
+    ∑ i, ⟪iteratedGradientChain (fun y : E ↦ ‖y‖ ^ p) 1 x (v i), v i⟫ =
+      p * (Module.finrank ℝ E + p - 2) * ‖x‖ ^ (p - 2) := by
+  -- A finite orthonormal basis makes `E` finite-dimensional.
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis v.toBasis
+  have h := laplacian_eq_trace_iteratedGradientChain_one (fun y : E ↦ ‖y‖ ^ p) x
+  rw [laplacian_norm_rpow_of_ne p hx, LinearMap.trace_eq_sum_inner _ v] at h
+  simp only [ContinuousLinearMap.coe_coe] at h
+  rw [Finset.sum_congr rfl fun i _ ↦ real_inner_comm (v i) _, ← h]
+  ring
+
+/-- Away from the origin, the operator norm of the Hessian of `‖x‖ ^ p` is at least
+`|p (dim E + p - 2)| / dim E · ‖x‖ ^ (p - 2)`: its trace, the Laplacian, is
+`p (dim E + p - 2) ‖x‖ ^ (p - 2)`. -/
+theorem abs_mul_rpow_le_finrank_mul_norm_iteratedGradientChain_one_norm_rpow (p : ℝ) {x : E}
+    (hx : x ≠ 0) :
+    |p * (Module.finrank ℝ E + p - 2)| * ‖x‖ ^ (p - 2) ≤
+      Module.finrank ℝ E * ‖iteratedGradientChain (fun y : E ↦ ‖y‖ ^ p) 1 x‖ := by
+  have h := norm_laplacian_le (fun y : E ↦ ‖y‖ ^ p) x
+  rw [laplacian_norm_rpow_of_ne p hx, Real.norm_eq_abs, abs_mul,
+    abs_of_pos (Real.rpow_pos_of_pos (norm_pos_iff.2 hx) _), ← norm_iteratedFDeriv_one,
+    norm_iteratedFDeriv_fderiv, ← norm_iteratedGradientChain,
+    show p + (Module.finrank ℝ E : ℝ) - 2 = Module.finrank ℝ E + p - 2 by ring] at h
+  exact h
 
 open Gradient in
 /-- **The radial Laplacian.** Away from the origin, a radial function `x ↦ F ‖x‖` has Laplacian
