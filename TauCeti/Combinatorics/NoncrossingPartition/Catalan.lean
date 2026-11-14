@@ -270,7 +270,7 @@ private theorem glue_restrict (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
     rw [key ha, key hbs, (P.mem_part_iff_part_eq_part hbs ha).1 hb]
 
 /-- The last position of the part containing the first position `s.min' hs`. -/
-private noncomputable def lastOfFirstPart (hs : s.Nonempty) (P : NoncrossingPartition s) : α :=
+private def lastOfFirstPart (hs : s.Nonempty) (P : NoncrossingPartition s) : α :=
   (P.1.part (s.min' hs)).max' (P.1.part_nonempty.2 (s.min'_mem hs))
 
 private theorem lastOfFirstPart_mem (hs : s.Nonempty) (P : NoncrossingPartition s) :
