@@ -11,24 +11,12 @@ public import Mathlib.Geometry.Diffeology.Basic
 # Basic lemmas and instances on diffeological spaces
 
 This file provides foundational lemmas and instances complementing
-`Mathlib.Geometry.Diffeology.Basic`:
-
-* Continuity out of the D-topology (`TauCeti.Diffeology.continuous_dTopology_iff`): a map from a
-  diffeological space equipped with its D-topology into a topological space is continuous if and
-  only if its composite with every plot is continuous.
-* Subsingletons (`TauCeti.Diffeology.isPlot_of_subsingleton`,
-  `TauCeti.Diffeology.dSmooth_of_subsingleton`): every Cartesian map into a subsingleton
-  diffeological space is a plot, every map into a subsingleton diffeological space is smooth, and
-  every topological or real normed subsingleton space is compatible with any diffeology on it
-  (`TauCeti.Diffeology.instIsDTopologyCompatibleOfSubsingleton`,
-  `TauCeti.Diffeology.instIsContDiffCompatibleOfSubsingleton`).
-* The unique diffeology on `PUnit` (`TauCeti.Diffeology.instDiffeologicalSpacePUnit`), whose
-  D-topology is definitionally the standard topology.
+`Mathlib.Geometry.Diffeology.Basic`: continuity out of the D-topology tested against plots,
+automatic smoothness and compatibility on subsingletons, and the canonical diffeology on `PUnit`.
 
 ## Main declarations
 
-* `TauCeti.Diffeology.continuous_dTopology_iff`: plot-testing characterization of continuity out
-  of `dTopology`.
+* `TauCeti.Diffeology.continuous_dTopology_iff`: continuity out of `dTopology` tested on plots.
 * `TauCeti.Diffeology.isPlot_of_subsingleton`, `TauCeti.Diffeology.dSmooth_of_subsingleton`:
   automatic plot and smoothness into subsingleton spaces.
 * `TauCeti.Diffeology.instIsDTopologyCompatibleOfSubsingleton`,
@@ -44,7 +32,7 @@ This file provides foundational lemmas and instances complementing
 
 public noncomputable section
 
-open Function Set
+open Function Set _root_.Diffeology
 open scoped ContDiff Topology
 
 namespace TauCeti.Diffeology
@@ -56,35 +44,32 @@ local macro:max "𝔼" noWs n:superscript(term) : term =>
 its composite with every plot is continuous. -/
 theorem continuous_dTopology_iff {X W : Type*} [DiffeologicalSpace X] [tW : TopologicalSpace W]
     {f : X → W} :
-    Continuous[_root_.Diffeology.dTopology, tW] f ↔
-      ∀ (n : ℕ) (p : 𝔼ⁿ → X), _root_.Diffeology.IsPlot p → Continuous (f ∘ p) := by
-  let : TopologicalSpace X := _root_.Diffeology.dTopology
-  simp_rw [continuous_def, _root_.Diffeology.isOpen_iff_preimages_plots, preimage_comp]
+    Continuous[dTopology, tW] f ↔ ∀ (n : ℕ) (p : 𝔼ⁿ → X), IsPlot p → Continuous (f ∘ p) := by
+  let : TopologicalSpace X := dTopology
+  simp_rw [continuous_def, isOpen_iff_preimages_plots, preimage_comp]
   exact ⟨fun h n p hp s hs ↦ h s hs n p hp, fun h s hs n p hp ↦ h n p hp s hs⟩
 
 /-! ### Subsingletons and `PUnit` -/
 
-/-- Every map from a Cartesian space into a subsingleton diffeological space is a plot, since it
-is constant. -/
+/-- Every map from a Cartesian space into a subsingleton diffeological space is a plot. -/
 theorem isPlot_of_subsingleton {X : Type*} [DiffeologicalSpace X] [Subsingleton X] {n : ℕ}
-    (p : 𝔼ⁿ → X) : _root_.Diffeology.IsPlot p := by
-  convert _root_.Diffeology.isPlot_const (x := p 0)
+    (p : 𝔼ⁿ → X) : IsPlot p := by
+  convert isPlot_const (x := p 0)
 
 /-- Every map into a subsingleton diffeological space is smooth. -/
 theorem dSmooth_of_subsingleton {X Y : Type*} [DiffeologicalSpace X] [DiffeologicalSpace Y]
-    [Subsingleton Y] (f : X → Y) : _root_.Diffeology.DSmooth f :=
+    [Subsingleton Y] (f : X → Y) : DSmooth f :=
   fun _ p _ ↦ isPlot_of_subsingleton (f ∘ p)
 
 /-- On a subsingleton type, every topology agrees with the D-topology of any diffeology. -/
 instance (priority := 100) instIsDTopologyCompatibleOfSubsingleton {X : Type*}
-    [TopologicalSpace X] [DiffeologicalSpace X] [Subsingleton X] :
-    _root_.Diffeology.IsDTopologyCompatible X :=
+    [TopologicalSpace X] [DiffeologicalSpace X] [Subsingleton X] : IsDTopologyCompatible X :=
   ⟨Subsingleton.elim _ _⟩
 
 /-- On a subsingleton real normed space, every diffeology agrees with the `ContDiff` diffeology. -/
 instance (priority := 100) instIsContDiffCompatibleOfSubsingleton {X : Type*}
     [NormedAddCommGroup X] [NormedSpace ℝ X] [DiffeologicalSpace X] [Subsingleton X] :
-    _root_.Diffeology.IsContDiffCompatible X :=
+    IsContDiffCompatible X :=
   ⟨⟨fun _ ↦ contDiff_of_subsingleton, fun _ ↦ isPlot_of_subsingleton _⟩⟩
 
 /-- The unique diffeology on `PUnit`, whose D-topology is definitionally the standard topology.
