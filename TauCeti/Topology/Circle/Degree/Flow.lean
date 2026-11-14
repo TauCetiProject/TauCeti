@@ -80,7 +80,7 @@ theorem exists_flow_degree_secant_eq (q : C(AddCircle (1 : ℝ), X)) (hq : Injec
     (fun θ τ ↦ hq (by simpa [hqψ] using hρinv (-θ) τ))
     (hρne.mono fun θ hθ τ h ↦ hθ τ (by rw [← hqψ, h])) hδ hP
   have hqd (τ : AddCircle (1 : ℝ)) : q (τ + d τ) = ρ (c, q τ) := by rw [← (hd τ).2, hqψ]
-  refine ⟨c, hc0, hcP, δ, hδ, fun r hr τ ↦ q.secant_ne_zero hq hzero
+  refine ⟨c, hc0, hcP, δ, hδ, fun r hr τ ↦ hq.secant_ne_zero hzero
     ⟨hr.1, hr.2.trans_le (by linarith)⟩ (hsec r (abs_lt.2 ⟨by linarith [hr.1], hr.2⟩) τ), ?_⟩
   intro r hr v w γ η hγ hη
   exact q.degree_secant_eq hq hzero (hδ4.trans (by norm_num)) hsec hdc (fun τ ↦ (hd τ).1) hr γ η hγ

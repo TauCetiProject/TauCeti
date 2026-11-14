@@ -58,7 +58,7 @@ theorem degree_secant_eq (q : C(AddCircle (1 : ℝ), X)) (hq : Injective q)
   refine Circle.degree_eq_of_homotopy_div_norm γ η G (fun ut ↦ ?_) (fun t ↦ ?_) (fun t ↦ ?_)
     fun u ↦ ?_
   · rw [hG]
-    exact q.secant_ne_zero hq hzero ⟨(hm ut).1, (hm ut).2.trans_le hδ⟩
+    exact hq.secant_ne_zero hzero ⟨(hm ut).1, (hm ut).2.trans_le hδ⟩
       (hsec _ (abs_lt.2 ⟨by linarith [(hm ut).1, (hm ut).2], (hm ut).2⟩) _)
   · simp [hG, m, p, hγ]
   · simp [hG, m, p, hη]

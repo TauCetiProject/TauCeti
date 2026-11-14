@@ -21,9 +21,10 @@ are `0` and the half period `T / 2`.
 Applied to both factors, it identifies the torus `S¹ × S¹` with the standard torus
 `UnitAddTorus (Fin 2) = ℝ² / ℤ²`. Applied coordinatewise, it identifies the standard torus
 `UnitAddTorus ι` with the product of circles `ι → Circle` as topological groups.
-Finally, a continuous family of maps of `AddCircle T` starting at the identity and without fixed
-points at small positive times moves, at some small time, every point forward by a small continuous
-amount, and the short secants `(q τ, q (τ + w))` of a loop `q` stay near the diagonal.
+Finally, a continuous family `ψ (θ, ·)` of maps of `AddCircle T` starting at the identity, with
+`ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at small positive times, moves,
+at some small time, every point forward by a small continuous amount, and the short secants
+`(q τ, q (τ + w))` of a loop `q` stay near the diagonal.
 
 ## Main definitions
 
@@ -42,10 +43,11 @@ amount, and the short secants `(q τ, q (τ + w))` of a loop `q` stay near the d
   to `-1`, so it is not `0`.
 * `AddCircle.im_toCircle_eq_zero_iff` — `0` and the half period are the only points at which
   `AddCircle.toCircle` is real.
-* `AddCircle.exists_forall_eq_add_pos` — a continuous family of maps of the circle, the identity
-  at time `0` and without fixed points at small positive times, moves every point forward by a
-  small continuous amount at some arbitrarily small nonzero time.
-* `ContinuousMap.secant_ne_zero` — a short forward secant of an injective loop is nonzero
+* `AddCircle.exists_forall_eq_add_pos` — a continuous family `ψ (θ, ·)` of maps of the circle, the
+  identity at time `0`, with `ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at
+  small positive times, moves every point forward by a small continuous amount at some arbitrarily
+  small nonzero time.
+* `Function.Injective.secant_ne_zero` — a short forward secant of an injective circle map is nonzero
   when its defining function has no zeros off the diagonal.
 * `ContinuousMap.exists_pos_forall_secant_mem` — the short secants `(q τ, q (τ + w))` of a loop
   `q` lie in any given open neighborhood of the diagonal.
@@ -215,18 +217,25 @@ theorem exists_pos_forall_secant_mem (q : C(AddCircle T, X)) {U : Set (X × X)}
   obtain ⟨δ, hδ, hsub⟩ := Metric.eventually_nhds_iff.mp hnear
   exact ⟨δ, hδ, fun w hw τ ↦ hsub (by rwa [Real.dist_eq, sub_zero]) τ (mem_univ τ)⟩
 
-/-- A secant of an injective loop with a step in `(0, 1)` is nonzero if `S` has no zeros
-off the diagonal in the neighborhood containing the pair. -/
-theorem secant_ne_zero (q : C(AddCircle (1 : ℝ), X)) (hq : Function.Injective q)
-    {S : C(X × X, ℂ)} {U : Set (X × X)} (hzero : ∀ x y, (x, y) ∈ U → S (x, y) = 0 → x = y)
-    {w : ℝ} (hw : w ∈ Ioo 0 1) {τ : AddCircle (1 : ℝ)} (hU : (q τ, q (τ + w)) ∈ U) :
+end ContinuousMap
+
+namespace Function.Injective
+
+open Set
+
+/-- A secant of an injective map from `AddCircle T` with a step in `(0, T)` is nonzero if `S`
+has no zeros off the diagonal in the neighborhood containing the pair. -/
+theorem secant_ne_zero {X Y : Type*} [Zero Y] {T : ℝ} [Fact (0 < T)]
+    {q : AddCircle T → X} (hq : Function.Injective q) {S : X × X → Y} {U : Set (X × X)}
+    (hzero : ∀ x y, (x, y) ∈ U → S (x, y) = 0 → x = y)
+    {w : ℝ} (hw : w ∈ Ioo 0 T) {τ : AddCircle T} (hU : (q τ, q (τ + w)) ∈ U) :
     S (q τ, q (τ + w)) ≠ 0 := by
   intro h
-  have hw0 : ((w : ℝ) : AddCircle (1 : ℝ)) = 0 := by
+  have hw0 : ((w : ℝ) : AddCircle T) = 0 := by
     simpa using (hq (hzero _ _ hU h)).symm
   exact hw.1.ne' ((AddCircle.coe_eq_zero_iff_of_mem_Ico ⟨hw.1.le, hw.2⟩).1 hw0)
 
-end ContinuousMap
+end Function.Injective
 
 namespace TauCeti
 
