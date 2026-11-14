@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Integral.PeakFunction
 import Mathlib.Topology.UniformSpace.HeineCantor
@@ -180,16 +181,9 @@ theorem tendsto_smulRight_mul [IsFiniteMeasureOnCompacts μ] {ι : Type*} {l : F
     obtain ⟨r, hr, t, ht, rfl⟩ := support_convolution_subset α μ _ g h
     refine ⟨r, (hiV (subset_tsupport _ fun h0 => hr (by simp [h0]))).2, t, subset_tsupport _ ht,
       rfl⟩
-  · -- `e * α r (g (r⁻¹ * s)) - g s = e * (α r (g (r⁻¹ * s)) - g s) + (e * g s - g s)`.
-    have h1 : ‖e * (α r (g (r⁻¹ * s)) - g s)‖ ≤ δ :=
-      (norm_mul_le _ _).trans (by
-        simpa using mul_le_mul hien (hunif r (hiV hr) s) (norm_nonneg _) zero_le_one)
-    have h2 : ‖e * g s - g s‖ ≤ δ := by
-      simpa [dist_eq_norm, norm_sub_rev] using (hie (g s) (mem_range_self s)).le
-    calc ‖e * α r (g (r⁻¹ * s)) - g s‖ = ‖e * (α r (g (r⁻¹ * s)) - g s) + (e * g s - g s)‖ := by
-          rw [mul_sub, sub_add_sub_cancel]
-      _ ≤ δ + δ := (norm_add_le _ _).trans (add_le_add h1 h2)
-      _ = 2 * δ := by ring
+  · -- Both `α r (g (r⁻¹ * s))` and `e * g s` are `δ`-close to `g s`, and `‖e‖ ≤ 1`.
+    refine norm_mul_sub_le_two_mul hien (hunif r (hiV hr) s) ?_
+    simpa [dist_eq_norm, norm_sub_rev] using (hie (g s) (mem_range_self s)).le
 
 /-- **Right approximation.** Let `φ i` be eventually nonnegative real functions of unit integral
 whose supports shrink to the identity, and let `lA` be an increasing approximate unit of `A`.
