@@ -192,12 +192,16 @@ theorem TauCeti.bijOn_genericPoints_iff_of_isOpenEmbedding
 schemes, such that `Z ↦ closure (f '' Z)` maps the irreducible components of the source
 bijectively onto those of the target. Then `W ↦ f ⁻¹' W` maps the irreducible components of the
 target bijectively onto those of the source, inverting that bijection. -/
-theorem GeneralizingMap.bijOn_preimage_irreducibleComponents [QuasiSober Y] {f : X → Y}
+theorem GeneralizingMap.invOn_preimage_closure_image_irreducibleComponents
+    [QuasiSober Y] {f : X → Y}
     (hf : GeneralizingMap f)
     (h : BijOn (fun Z ↦ closure (f '' Z)) (irreducibleComponents X)
       (irreducibleComponents Y)) :
-    BijOn (f ⁻¹' ·) (irreducibleComponents Y) (irreducibleComponents X) := by
-  have key {Z : Set X} (hZ : Z ∈ irreducibleComponents X) : f ⁻¹' closure (f '' Z) = Z := by
+    InvOn (f ⁻¹' ·) (fun Z ↦ closure (f '' Z))
+      (irreducibleComponents X) (irreducibleComponents Y) := by
+  have key : LeftInvOn (f ⁻¹' ·) (fun Z ↦ closure (f '' Z))
+      (irreducibleComponents X) := by
+    intro Z hZ
     refine subset_antisymm (fun x hx ↦ ?_)
       ((subset_preimage_image f Z).trans (preimage_mono subset_closure))
     -- The generic point of the component `closure (f '' Z)` generalizes `f x`; lift it to a
@@ -214,12 +218,15 @@ theorem GeneralizingMap.bijOn_preimage_irreducibleComponents [QuasiSober Y] {f :
         ⟨x', hsub (subset_closure (mem_singleton x')), hx'⟩)
     have hZZ' : Z' = Z := h.injOn hZ' hZ (subset_antisymm (hW.2 (h.mapsTo hZ').1 hle) hle)
     exact hZZ' ▸ hsub (specializes_iff_mem_closure.mp hx'x)
-  refine ⟨fun W hW ↦ ?_, fun W hW W' hW' hWW' ↦ ?_, fun Z hZ ↦ ⟨_, h.mapsTo hZ, key hZ⟩⟩
-  · obtain ⟨Z, hZ, rfl⟩ := h.surjOn hW
-    simpa only [key hZ] using hZ
-  · obtain ⟨Z, hZ, rfl⟩ := h.surjOn hW
-    obtain ⟨Z', hZ', rfl⟩ := h.surjOn hW'
-    simp only [key hZ, key hZ'] at hWW'
-    rw [hWW']
+  exact ⟨key, h.surjOn.leftInvOn_of_rightInvOn key⟩
+
+/-- For a generalizing map into a quasi-sober space, a closure-of-image bijection on
+irreducible components induces a preimage bijection in the opposite direction. -/
+theorem GeneralizingMap.bijOn_preimage_irreducibleComponents [QuasiSober Y] {f : X → Y}
+    (hf : GeneralizingMap f)
+    (h : BijOn (fun Z ↦ closure (f '' Z)) (irreducibleComponents X)
+      (irreducibleComponents Y)) :
+    BijOn (f ⁻¹' ·) (irreducibleComponents Y) (irreducibleComponents X) :=
+  h.symm (hf.invOn_preimage_closure_image_irreducibleComponents h).symm
 
 end Maps

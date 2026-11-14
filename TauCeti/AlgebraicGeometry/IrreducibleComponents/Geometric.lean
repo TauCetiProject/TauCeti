@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
+public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.FieldTheory.SeparableClosure
 public import TauCeti.AlgebraicGeometry.IrreducibleComponents.Basic
 public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 public import TauCeti.RingTheory.Spectrum.Prime.ComponentDescent
 import Mathlib.AlgebraicGeometry.Morphisms.Flat
-import Mathlib.FieldTheory.SeparableDegree
-import Mathlib.RingTheory.TensorProduct.Nontrivial
+import TauCeti.Algebra.TensorProduct.CommonOverfield
 import TauCeti.Topology.Irreducible
 
 /-!
@@ -61,30 +60,6 @@ open scoped TensorProduct
 universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
-
-/-- A quasi-compact scheme locally of finite type over `K` is covered by finitely many open
-charts `Spec (A i)`, each `A i` a finitely generated `K`-algebra compatibly with the structure
-morphism. -/
-private theorem exists_finite_affine_charts {K : Type u} [CommRing K] {X : Scheme.{u}}
-    (f : X ⟶ Spec (.of K)) [QuasiCompact f] [LocallyOfFiniteType f] :
-    ∃ (ι : Type u) (_ : Finite ι) (A : ι → Type u) (_ : ∀ i, CommRing (A i))
-      (_ : ∀ i, Algebra K (A i)) (_ : ∀ i, Algebra.FiniteType K (A i))
-      (φ : ∀ i, Spec (.of (A i)) ⟶ X), (∀ i, IsOpenImmersion (φ i)) ∧
-        (∀ i, φ i ≫ f = Spec.algebraMap K (A i)) ∧ ∀ x, ∃ i y, φ i y = x := by
-  have := QuasiCompact.compactSpace_of_compactSpace f
-  let 𝒰 := X.affineCover.finiteSubcover
-  have (i : 𝒰.I₀) : IsAffine (𝒰.X i) :=
-    (OpenCover.finiteSubcover_X X.affineCover i).symm ▸ inferInstance
-  let φ (i : 𝒰.I₀) : Spec Γ(𝒰.X i, ⊤) ⟶ X := (𝒰.X i).isoSpec.inv ≫ 𝒰.f i
-  let _ (i : 𝒰.I₀) : Algebra K Γ(𝒰.X i, ⊤) := (Spec.preimage (φ i ≫ f)).hom.toAlgebra
-  have hφ (i : 𝒰.I₀) : φ i ≫ f = Spec.algebraMap K Γ(𝒰.X i, ⊤) := (Spec.map_preimage _).symm
-  refine ⟨𝒰.I₀, inferInstance, fun i ↦ Γ(𝒰.X i, ⊤), inferInstance, inferInstance,
-    fun i ↦ ?_, φ, fun i ↦ inferInstance, hφ, fun x ↦ ?_⟩
-  · have : LocallyOfFiniteType (Spec.algebraMap K Γ(𝒰.X i, ⊤)) := hφ i ▸ inferInstance
-    rw [HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)] at this
-    exact RingHom.finiteType_algebraMap.mp this
-  · obtain ⟨i, y, hy⟩ := 𝒰.exists_eq x
-    exact ⟨i, (𝒰.X i).isoSpec.hom y, by simp [φ, hy]⟩
 
 /-- **Components over an algebraic extension are distinguished over a finite subextension.**
 Let `f : X ⟶ Spec K` be quasi-compact and locally of finite type, and let `L / K` be algebraic.
@@ -156,77 +131,93 @@ theorem exists_finiteDimensional_forall_bijOn_closure_image_irreducibleComponent
   exact (g.bijOn_closure_image_irreducibleComponents_iff_of_isPullback 𝒱 hp).mpr
     fun i ↦ hbij F hF i
 
-/-- Two field extensions `M` and `Ω` of `E` embed into a common field `N` over `E`: a quotient
-of `M ⊗[E] Ω` by a maximal ideal. -/
-private theorem exists_field_spec_comp_eq {E M Ω : Type u} [Field E] [Field M] [Field Ω]
-    [Algebra E M] [Algebra E Ω] :
-    ∃ (N : Type u) (_ : Field N) (_ : Algebra M N) (_ : Algebra Ω N),
-      Spec.algebraMap M N ≫ Spec.algebraMap E M = Spec.algebraMap Ω N ≫ Spec.algebraMap E Ω := by
-  have := Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_isDomain E M Ω
-    (algebraMap E M).injective (algebraMap E Ω).injective
-  obtain ⟨𝔪, _⟩ := Ideal.exists_maximal (M ⊗[E] Ω)
-  let _ : Field (M ⊗[E] Ω ⧸ 𝔪) := Ideal.Quotient.field 𝔪
-  refine ⟨M ⊗[E] Ω ⧸ 𝔪, inferInstance,
-    ((Ideal.Quotient.mk 𝔪).comp Algebra.TensorProduct.includeLeftRingHom).toAlgebra,
-    ((Ideal.Quotient.mk 𝔪).comp Algebra.TensorProduct.includeRight.toRingHom).toAlgebra, ?_⟩
-  rw [← Spec.map_comp, ← Spec.map_comp]
-  congr 1
-  ext e
-  simp [RingHom.algebraMap_toAlgebra, Algebra.TensorProduct.tmul_one_eq_one_tmul]
-
 /-- **The irreducible components become geometrically irreducible over a finite separable
 extension.** Let `f : X ⟶ Spec K` be quasi-compact and locally of finite type. There is a finite
-separable extension `L / K` such that for every base change `X_L` of `X` to `L`, every field
-extension `M / L` and every base change `h : X_M ⟶ X_L` of `Spec M ⟶ Spec L`, the map
-`Z ↦ h ⁻¹' Z` is a bijection from the irreducible components of `X_L` onto those of `X_M`. -/
+separable extension `L / K` such that for every further field extension `F / L`, every base
+change `X_F` of `X` to `F`, every field extension `M / F` and every base change
+`h : X_M ⟶ X_F` of `Spec M ⟶ Spec F`, the map `Z ↦ h ⁻¹' Z` is a bijection from the
+irreducible components of `X_F` onto those of `X_M`. -/
 theorem exists_forall_bijOn_preimage_irreducibleComponents {K : Type u} [Field K]
     {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [QuasiCompact f] [LocallyOfFiniteType f] :
     ∃ (L : Type u) (_ : Field L) (_ : Algebra K L) (_ : Module.Finite K L)
       (_ : Algebra.IsSeparable K L),
-      ∀ {XL : Scheme.{u}} {pL : XL ⟶ X} {fL : XL ⟶ Spec (.of L)},
-        IsPullback pL fL f (Spec.algebraMap K L) →
-        ∀ (M : Type u) [Field M] [Algebra L M] {XM : Scheme.{u}} {h : XM ⟶ XL}
-          {fM : XM ⟶ Spec (.of M)}, IsPullback h fM fL (Spec.algebraMap L M) →
-          BijOn (h ⁻¹' ·) (irreducibleComponents XL) (irreducibleComponents XM) := by
+      ∀ (F : Type u) [Field F] [Algebra K F] [Algebra L F] [IsScalarTower K L F]
+        {XF : Scheme.{u}} {pF : XF ⟶ X} {fF : XF ⟶ Spec (.of F)},
+        IsPullback pF fF f (Spec.algebraMap K F) →
+        ∀ (M : Type u) [Field M] [Algebra F M] {XM : Scheme.{u}} {h : XM ⟶ XF}
+          {fM : XM ⟶ Spec (.of M)}, IsPullback h fM fF (Spec.algebraMap F M) →
+          BijOn (h ⁻¹' ·) (irreducibleComponents XF) (irreducibleComponents XM) := by
   let Ω := SeparableClosure K
   obtain ⟨E, hE, hbij⟩ :=
     f.exists_finiteDimensional_forall_bijOn_closure_image_irreducibleComponents (L := Ω)
   have : Algebra.IsSeparable K E := Algebra.isSeparable_tower_bot_of_isSeparable K E Ω
-  refine ⟨E, inferInstance, inferInstance, hE, inferInstance,
-    fun {XL pL fL} HL M _ _ XM h fM HM ↦ ?_⟩
-  -- Over the separable closure `Ω`, preimage is a bijection on components, `X_Ω ⟶ X_E` being
-  -- flat with the components of `X_Ω` distinguished over `E`.
-  let gΩ := pullback.fst fL (Spec.algebraMap E Ω)
-  have : Flat (Spec.algebraMap E Ω) := by
-    rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]
-    infer_instance
-  have hΩ : BijOn (gΩ ⁻¹' ·) (irreducibleComponents XL) (irreducibleComponents _) :=
-    (Flat.generalizingMap gΩ).bijOn_preimage_irreducibleComponents
-      (hbij E le_rfl HL (IsPullback.of_hasPullback _ _))
-  -- A field `N` containing both `M` and `Ω` over `E`.
-  obtain ⟨N, _, _, _, hMΩ⟩ := exists_field_spec_comp_eq (E := E) (M := M) (Ω := Ω)
-  -- `X_N ⟶ X_M` is surjective, and `X_N ⟶ X_E` factors through `X_Ω` as a base change of
-  -- `Spec N ⟶ Spec Ω`.
-  let hN := pullback.fst fM (Spec.algebraMap M N)
-  have HN := (IsPullback.of_hasPullback fM (Spec.algebraMap M N)).paste_horiz HM
-  rw [hMΩ] at HN
-  obtain ⟨ℓ, HΩ, hℓ⟩ : ∃ ℓ : pullback fM (Spec.algebraMap M N) ⟶ pullback fL (Spec.algebraMap E Ω),
-      IsPullback ℓ (pullback.snd _ _) (pullback.snd _ _) (Spec.algebraMap Ω N) ∧ ℓ ≫ gΩ = hN ≫ h :=
-    ⟨_, IsPullback.of_right' HN (IsPullback.of_hasPullback _ _), IsPullback.lift_fst _ _ _ _⟩
-  have hNΩ := TauCeti.AlgebraicGeometry.bijOn_preimage_irreducibleComponents_of_isSepClosed HΩ
-  have hsurj (A B : Type u) [Field A] [Field B] [Algebra A B] :
-      Surjective (Spec.algebraMap A B) :=
-    ⟨fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
-  have : Surjective h := MorphismProperty.of_isPullback HM.flip (hsurj E M)
-  have : Surjective hN := MorphismProperty.of_isPullback
-    (IsPullback.of_hasPullback fM (Spec.algebraMap M N)).flip (hsurj M N)
-  refine h.surjective.bijOn_preimage_irreducibleComponents h.continuous fun Z hZ ↦ ?_
-  -- The preimage of `Z` in `X_N` is a component, so its image in `X_M` is irreducible.
-  have hpre : hN ⁻¹' (h ⁻¹' Z) = ℓ ⁻¹' (gΩ ⁻¹' Z) := by
-    ext x
-    simp only [Set.mem_preimage]
-    rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, hℓ]
-  rw [← image_preimage_eq (h ⁻¹' Z) hN.surjective, hpre]
-  exact (hNΩ.mapsTo (hΩ.mapsTo hZ)).1.image _ hN.continuous.continuousOn
+  have hgeom {XL : Scheme.{u}} {pL : XL ⟶ X} {fL : XL ⟶ Spec (.of E)}
+      (HL : IsPullback pL fL f (Spec.algebraMap K E))
+      (M : Type u) [Field M] [Algebra E M] {XM : Scheme.{u}} {h : XM ⟶ XL}
+      {fM : XM ⟶ Spec (.of M)} (HM : IsPullback h fM fL (Spec.algebraMap E M)) :
+      BijOn (h ⁻¹' ·) (irreducibleComponents XL) (irreducibleComponents XM) := by
+    -- Over the separable closure `Ω`, preimage is a bijection on components, `X_Ω ⟶ X_E` being
+    -- flat with the components of `X_Ω` distinguished over `E`.
+    let gΩ := pullback.fst fL (Spec.algebraMap E Ω)
+    have : Flat (Spec.algebraMap E Ω) := by
+      rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]
+      infer_instance
+    have hΩ : BijOn (gΩ ⁻¹' ·) (irreducibleComponents XL) (irreducibleComponents _) :=
+      (Flat.generalizingMap gΩ).bijOn_preimage_irreducibleComponents
+        (hbij E le_rfl HL (IsPullback.of_hasPullback _ _))
+    -- A field `N` containing both `M` and `Ω` over `E`.
+    let d := TauCeti.Algebra.TensorProduct.commonOverfield E M Ω
+    let N := d.Ω
+    let _ : Algebra E N := d.algebraOmega
+    let _ : Algebra M N := d.algebraKΩ
+    have : IsScalarTower E M N := d.isScalarTower
+    let _ : Algebra Ω N := d.right.toRingHom.toAlgebra
+    -- Keep the common overfield's scalar action rather than restriction through `Ω`.
+    let _ : SMul E N := d.algebraOmega.toSMul
+    have : IsScalarTower E Ω N := .of_algHom d.right
+    have hMΩ : Spec.algebraMap M N ≫ Spec.algebraMap E M =
+        Spec.algebraMap Ω N ≫ Spec.algebraMap E Ω := by
+      simp only [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
+    -- `X_N ⟶ X_M` is surjective, and `X_N ⟶ X_E` factors through `X_Ω` as a base change of
+    -- `Spec N ⟶ Spec Ω`.
+    let hN := pullback.fst fM (Spec.algebraMap M N)
+    have HN := (IsPullback.of_hasPullback fM (Spec.algebraMap M N)).paste_horiz HM
+    rw [hMΩ] at HN
+    obtain ⟨ℓ, HΩ, hℓ⟩ :
+        ∃ ℓ : pullback fM (Spec.algebraMap M N) ⟶ pullback fL (Spec.algebraMap E Ω),
+          IsPullback ℓ (pullback.snd _ _) (pullback.snd _ _) (Spec.algebraMap Ω N) ∧
+            ℓ ≫ gΩ = hN ≫ h :=
+      ⟨_, IsPullback.of_right' HN (IsPullback.of_hasPullback _ _), IsPullback.lift_fst _ _ _ _⟩
+    have hNΩ := TauCeti.AlgebraicGeometry.bijOn_preimage_irreducibleComponents_of_isSepClosed HΩ
+    have : Surjective h := MorphismProperty.of_isPullback HM.flip inferInstance
+    refine h.surjective.bijOn_preimage_irreducibleComponents h.continuous fun Z hZ ↦ ?_
+    -- The preimage of `Z` in `X_N` is a component, so its image in `X_M` is irreducible.
+    have hpre : hN ⁻¹' (h ⁻¹' Z) = ℓ ⁻¹' (gΩ ⁻¹' Z) := by
+      ext x
+      simp only [Set.mem_preimage]
+      rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, hℓ]
+    rw [← image_preimage_eq (h ⁻¹' Z) hN.surjective, hpre]
+    exact (hNΩ.mapsTo (hΩ.mapsTo hZ)).1.image _ hN.continuous.continuousOn
+  refine ⟨E, inferInstance, inferInstance, hE, inferInstance, ?_⟩
+  intro F _ _ _ _ XF pF fF HF M _ _ XM h fM HM
+  -- Compare both extensions to the same base change over `E`, then cancel its component
+  -- bijection to obtain the component bijection over `F`.
+  have HKF : Spec.algebraMap K F = Spec.algebraMap E F ≫ Spec.algebraMap K E := by
+    rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
+  rw [HKF] at HF
+  have HE := IsPullback.of_hasPullback f (Spec.algebraMap K E)
+  have HFE := IsPullback.of_right' HF HE
+  have hF := hgeom HE F HFE
+  let _ : Algebra E M := ((algebraMap F M).comp (algebraMap E F)).toAlgebra
+  have : IsScalarTower E F M := .of_algebraMap_eq' rfl
+  have HME := HM.paste_horiz HFE
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq] at HME
+  have hM := hgeom HE M HME
+  have hc : BijOn ((h ⁻¹' ·) ∘ (HE.lift pF (fF ≫ Spec.algebraMap E F) HF.w ⁻¹' ·))
+      (irreducibleComponents _) (irreducibleComponents XM) := by
+    convert hM using 1
+    ext Z x
+    simp only [Function.comp_apply, Set.mem_preimage, Scheme.Hom.comp_apply]
+  simpa only [hF.image_eq] using (Set.bijOn_comp_iff hF.injOn).mp hc
 
 end AlgebraicGeometry.Scheme.Hom

@@ -19,8 +19,8 @@ extension `L / K`, both become disjoint unions of rational points: the singular 
 base change `X_L` is `Spec (Fin n → L)`, a labelling of the `n` nodes, and its branch scheme is
 `Spec (Fin 2 → Fin n → L)` over it, two copies of the nodes. So every node of `X_L` is a rational
 point with two rational branches, labelled by `Fin 2`, and the pairing involution exchanging the
-two branches through each node is the swap of the two copies. These labels persist over every
-further field extension of `L`.
+two branches through each node is the swap of the two copies. The splitting, with the same node
+count, persists over every further field extension of `L`.
 
 The splitting applies to every chosen base change of the curve: the singular subscheme and the
 branch scheme commute with the flat base change `Spec L → Spec K`
@@ -111,9 +111,9 @@ theorem exists_split_branchScheme {K : Type u} [Field K]
   have hS := Over.w eS.hom
   have hB := Over.w eB.hom
   simp only [Over.mk_hom] at hS hB
-  obtain ⟨e, he⟩ := Scheme.Hom.exists_split_of_isPullback
+  obtain ⟨e, he, _⟩ := CategoryTheory.IsPullback.exists_split (ι := Fin n)
     (IsPullback.of_right' Hbase (IsPullback.of_hasPullback _ _)) ((Over.forget _).mapIso eS) hS
-  obtain ⟨eE, hE⟩ := Scheme.Hom.exists_split_of_isPullback
+  obtain ⟨eE, hE, _⟩ := CategoryTheory.IsPullback.exists_split (ι := Fin m)
     (IsPullback.of_right' Hbr' (IsPullback.of_hasPullback _ _)) ((Over.forget _).mapIso eB) hB
   -- Every node has two branches, so the branch scheme is two copies of the nodes.
   obtain ⟨e', he'⟩ := Scheme.Hom.exists_split_of_finrank_eq _
@@ -121,14 +121,14 @@ theorem exists_split_branchScheme {K : Type u} [Field K]
   exact ⟨e, e', he, he'⟩
 
 /-- **Nodes, branches and geometric components of a proper nodal curve split over one finite
-separable extension.** There are a finite separable extension `L / K` and `n : ℕ` such that every
-base change `X'` of the curve to `L` satisfies:
-* the singular subscheme of `X'` is `Spec (Fin n → L)` over `L`, and the branch scheme of `X'` is
-  `Spec (Fin 2 → Fin n → L)` over the singular subscheme, so the `n` nodes are labelled rational
+separable extension.** There are a finite separable extension `L / K` and `n : ℕ` such that for
+every further field extension `F / L`, every base change `X'` of the curve to `F` satisfies:
+* the singular subscheme of `X'` is `Spec (Fin n → F)` over `F`, and the branch scheme of `X'` is
+  `Spec (Fin 2 → Fin n → F)` over the singular subscheme, so the `n` nodes are labelled rational
   points, each with two rational branches labelled by `Fin 2`, the pairing involution of the
   branches being the swap of the two indices;
 * every irreducible component of `X'` is geometrically irreducible: for every field extension
-  `M / L` and every base change `h : X'' ⟶ X'` of `Spec M ⟶ Spec L`, the map `Z ↦ h ⁻¹' Z` is a
+  `M / F` and every base change `h : X'' ⟶ X'` of `Spec M ⟶ Spec F`, the map `Z ↦ h ⁻¹' Z` is a
   bijection from the irreducible components of `X'` onto those of `X''`. Thus the irreducible
   components of `X'` label the geometric components of the curve. -/
 theorem exists_split_branchScheme_irreducibleComponents {K : Type u} [Field K]
@@ -136,19 +136,20 @@ theorem exists_split_branchScheme_irreducibleComponents {K : Type u} [Field K]
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
     ∃ (L : Type u) (_ : Field L) (_ : Algebra K L)
       (_ : Module.Finite K L) (_ : Algebra.IsSeparable K L) (n : ℕ),
-      ∀ (X' : Scheme.{u}) (_ : X'.Over (Spec (.of L))) (g : X' ⟶ X)
-        (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
-          (Spec.algebraMap K L)),
-        (letI : SyntomicOfRelativeDimension 1 (X' ↘ Spec (.of L)) :=
+      ∀ (F : Type u) [Field F] [Algebra K F] [Algebra L F] [IsScalarTower K L F]
+        (X' : Scheme.{u}) (_ : X'.Over (Spec (.of F))) (g : X' ⟶ X)
+        (H : IsPullback g (X' ↘ Spec (.of F)) (X ↘ Spec (.of K))
+          (Spec.algebraMap K F)),
+        (letI : SyntomicOfRelativeDimension 1 (X' ↘ Spec (.of F)) :=
           (MorphismProperty.of_isPullback H hnodal).syntomic
-        ∃ (e : (X'.singularLocus L).subscheme ≅ Spec (.of (Fin n → L)))
-          (e' : X'.branchScheme L ≅ Spec (.of (Fin 2 → Fin n → L))),
-          e.hom ≫ Spec.algebraMap L (Fin n → L) =
-              (X'.singularLocus L).subschemeι ≫ (X' ↘ Spec (.of L)) ∧
-            e'.hom ≫ Spec.algebraMap (Fin n → L) (Fin 2 → Fin n → L) =
-              X'.branchSchemeToSingularLocus L ≫ e.hom) ∧
-        ∀ (M : Type u) [Field M] [Algebra L M] {X'' : Scheme.{u}} {h : X'' ⟶ X'}
-          {q : X'' ⟶ Spec (.of M)}, IsPullback h q (X' ↘ Spec (.of L)) (Spec.algebraMap L M) →
+        ∃ (e : (X'.singularLocus F).subscheme ≅ Spec (.of (Fin n → F)))
+          (e' : X'.branchScheme F ≅ Spec (.of (Fin 2 → Fin n → F))),
+          e.hom ≫ Spec.algebraMap F (Fin n → F) =
+              (X'.singularLocus F).subschemeι ≫ (X' ↘ Spec (.of F)) ∧
+            e'.hom ≫ Spec.algebraMap (Fin n → F) (Fin 2 → Fin n → F) =
+              X'.branchSchemeToSingularLocus F ≫ e.hom) ∧
+        ∀ (M : Type u) [Field M] [Algebra F M] {X'' : Scheme.{u}} {h : X'' ⟶ X'}
+          {q : X'' ⟶ Spec (.of M)}, IsPullback h q (X' ↘ Spec (.of F)) (Spec.algebraMap F M) →
           Set.BijOn (h ⁻¹' ·) (irreducibleComponents X') (irreducibleComponents X'') := by
   -- Split the nodes and branches over a finite Galois `L₁ / K`, then the geometric components
   -- of the base change `X₁` of `X` to `L₁` over a finite separable `L / L₁`.
@@ -159,18 +160,18 @@ theorem exists_split_branchScheme_irreducibleComponents {K : Type u} [Field K]
   have : IsScalarTower K L₁ L := .of_algebraMap_eq' rfl
   have : Module.Finite K L := .trans L₁ L
   have : Algebra.IsSeparable K L := .trans K L₁ L
-  -- Every base change of `X` to `L` is a base change of `X₁` along `Spec L ⟶ Spec L₁`.
-  have hKL : Spec.algebraMap K L = Spec.algebraMap L₁ L ≫ Spec.algebraMap K L₁ := by
+  refine ⟨L, inferInstance, inferInstance, inferInstance, inferInstance, n, ?_⟩
+  intro F _ _ _ _ X' _ g H
+  let _ : Algebra L₁ F := ((algebraMap L F).comp (algebraMap L₁ L)).toAlgebra
+  have : IsScalarTower L₁ L F := .of_algebraMap_eq' rfl
+  have : IsScalarTower K L₁ F := .of_algebraMap_eq' (by
+    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_assoc,
+      ← IsScalarTower.algebraMap_eq, ← IsScalarTower.algebraMap_eq])
+  -- Compare the base change over `F` with the curve over `L₁`.
+  have hKF : Spec.algebraMap K F = Spec.algebraMap L₁ F ≫ Spec.algebraMap K L₁ := by
     rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
-  have H₁ {X' : Scheme.{u}} {fX : X' ⟶ Spec (.of L)} {g : X' ⟶ X}
-      (H : IsPullback g fX (X ↘ Spec (.of K)) (Spec.algebraMap K L)) :
-      ∃ p₁ : X' ⟶ pullback (X ↘ Spec (.of K)) (Spec.algebraMap K L₁),
-        IsPullback p₁ fX f₁ (Spec.algebraMap L₁ L) := by
-    rw [hKL] at H
-    exact ⟨_, IsPullback.of_right' H (IsPullback.of_hasPullback _ _)⟩
-  refine ⟨L, inferInstance, inferInstance, inferInstance, inferInstance, n,
-    fun X' _ g H ↦ ⟨hsplit L X' _ g H, fun M _ _ X'' h q HM ↦ ?_⟩⟩
-  obtain ⟨p₁, H'⟩ := H₁ H
-  exact hcomp H' M HM
+  refine ⟨hsplit F X' _ g H, ?_⟩
+  rw [hKF] at H
+  exact hcomp F (IsPullback.of_right' H (IsPullback.of_hasPullback _ _))
 
 end AlgebraicGeometry.Scheme
