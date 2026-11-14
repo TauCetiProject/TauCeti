@@ -224,14 +224,6 @@ theorem closure_image_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : Upp
     induction x using OnePoint.rec with
     | infty =>
       rw [schwarzChristoffelCompactifiedBoundary_infty]
-      have hne : (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet).NeBot := by
-        refine inf_principal_neBot_iff.mpr fun U hU => ?_
-        obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.mem_iff.mp hU
-        have hpos : (0 : ℝ) < |R| + 1 := by positivity
-        refine ⟨((|R| + 1 : ℝ) : ℂ) * Complex.I, hR ?_, by simpa using hpos⟩
-        rw [Set.mem_ofPred_eq, norm_mul, Complex.norm_I, mul_one, Complex.norm_real,
-          Real.norm_of_nonneg hpos.le]
-        linarith [le_abs_self R]
       exact mem_closure_of_tendsto (tendsto_schwarzChristoffelPrimitive_atInfinity a e z₀ hinfty)
         (eventually_inf_principal.mpr (Eventually.of_forall fun z hz => mem_image_of_mem F hz))
     | coe x =>
