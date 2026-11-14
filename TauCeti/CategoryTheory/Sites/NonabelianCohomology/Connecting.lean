@@ -42,6 +42,10 @@ This file constructs the connecting map and proves the exactness statements whic
 * `CategoryTheory.Sheaf.NonabelianH1.connecting_eq_one_iff`: exactness at `Q(C)`.
 * `CategoryTheory.Sheaf.NonabelianH1.connecting_eq_connecting_iff`: the fibres of the connecting
   map are the orbits of `B(C)`.
+* `CategoryTheory.Sheaf.NonabelianH1.mk_mem_range_connecting`: an `A`-torsor with an
+  `i`-equivariant morphism to `B` is a torsor of lifts.
+* `CategoryTheory.Sheaf.NonabelianH1.connecting_eq_connecting_of_comp_eq`: the connecting map is
+  natural in morphisms of extensions of `A` which are the identity on `A`.
 
 ## References
 
@@ -314,6 +318,62 @@ theorem connecting_eq_connecting_iff (q q' : (Q.obj ⋙ forget GrpCat).sections)
       (hE.liftsObjEquiv q' _ (e.hom.hom.hom.app _ j.2.some)).2]
     -- Multiplication and inversion of global sections are computed objectwise.
     rfl
+
+/-- An `A`-torsor `P` with an `i`-equivariant morphism `u : P → B` is a torsor of lifts: `π ∘ u`
+is constant on `P`, so it is a global section `q` of `Q`, and `u` identifies `P` with the torsor of
+lifts of `q`. -/
+theorem mk_mem_range_connecting {P : Torsor A} (u : P.sheaf ⟶ (Torsor.trivial B).sheaf)
+    (hu : ∀ (U : Cᵒᵖ) (a : A.obj.obj U) (p : P.sheaf.obj.obj U),
+      u.hom.app U (a • p) = i.hom.app U a • u.hom.app U p) :
+    mk P ∈ Set.range (connecting hE) := by
+  -- `π ∘ u` is `A`-invariant, hence the restriction of a global section `q` of `Q`.
+  obtain ⟨q, hq⟩ : ∃ q : (Q.obj ⋙ forget GrpCat).sections,
+      ∀ U p, π.hom.app U (u.hom.app U p) = q.1 U :=
+    P.exists_sections_eq_of_smul_invariant (u ≫ (sheafCompose J (forget GrpCat.{w})).map π)
+      fun U a p ↦ by
+        refine (congrArg (π.hom.app U) (hu U a p)).trans ?_
+        exact (map_mul (π.hom.app U).hom (i.hom.app U a) (u.hom.app U p)).trans
+          ((congrArg (· * _) (hE.app_app_eq_one a)).trans (one_mul _))
+  refine ⟨q, (connecting_def hE q).trans (mk_eq_mk_of_hom ⟨ObjectProperty.homMk
+    { app U := ↾fun p ↦ (hE.liftsObjEquiv q U).symm ⟨u.hom.app U p, hq U p⟩
+      naturality U V f := by
+        ext p
+        refine (hE.liftsObjEquiv q V).injective (Subtype.ext ?_)
+        simp only [Functor.comp_obj, TypeCat.Fun.toFun_apply, comp_apply, TypeCat.hom_ofHom,
+          TypeCat.Fun.coe_mk, NatTrans.naturality_apply, Equiv.apply_symm_apply,
+          IsGroupExtension.liftsObjEquiv_map]
+        -- The restriction maps of the trivial torsor are those of `B`.
+        rfl }, fun U a p ↦ ?_⟩).symm⟩
+  refine (hE.liftsObjEquiv q U).injective (Subtype.ext ?_)
+  rw [hE.liftsObjEquiv_smul]
+  simp only [ObjectProperty.homMk_hom, TypeCat.hom_ofHom, TypeCat.Fun.coe_mk,
+    Equiv.apply_symm_apply]
+  -- The action of `B` on the trivial torsor is multiplication.
+  exact hu U a p
+
+/-- The connecting map is natural in extensions of `A`: for a morphism from the extension
+`1 → A → B → Q → 1` to an extension `1 → A → B' → Q' → 1` which is the identity on `A`, given by
+`β : B ⟶ B'` and `γ : Q ⟶ Q'`, the torsor of lifts of a global section `q` of `Q` is isomorphic
+to the torsor of lifts of its image in `Q'`, through `b ↦ β b`. -/
+theorem connecting_eq_connecting_of_comp_eq {B' Q' : Sheaf J GrpCat.{w}} {i' : A ⟶ B'}
+    {π' : B' ⟶ Q'} (hE' : IsGroupExtension i' π') (β : B ⟶ B') (γ : Q ⟶ Q') (hβ : i ≫ β = i')
+    (hγ : β ≫ π' = π ≫ γ) (q : (Q.obj ⋙ forget GrpCat).sections)
+    (q' : (Q'.obj ⋙ forget GrpCat).sections) (hq : ∀ U, γ.hom.app U (q.1 U) = q'.1 U) :
+    connecting hE q = connecting hE' q' := by
+  refine mk_eq_mk_of_hom ⟨ObjectProperty.homMk
+    { app U := ↾fun b ↦ (hE'.liftsObjEquiv q' U).symm
+        ⟨β.hom.app U (hE.liftsObjEquiv q U b).1, by
+          simpa [(hE.liftsObjEquiv q U b).2, hq] using
+            ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hγ) U)
+              (hE.liftsObjEquiv q U b).1⟩
+      naturality U V f := by
+        ext b
+        refine (hE'.liftsObjEquiv q' V).injective (Subtype.ext ?_)
+        simp [NatTrans.naturality_apply] }, fun U a b ↦ ?_⟩
+  refine (hE'.liftsObjEquiv q' U).injective (Subtype.ext ?_)
+  simp only [ObjectProperty.homMk_hom, TypeCat.hom_ofHom, TypeCat.Fun.coe_mk,
+    Equiv.apply_symm_apply, IsGroupExtension.liftsObjEquiv_smul, map_mul]
+  simpa using ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hβ) U) a
 
 end NonabelianH1
 
