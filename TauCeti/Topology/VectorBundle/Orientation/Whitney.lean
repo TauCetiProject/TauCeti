@@ -23,10 +23,10 @@ For orientations `o₁` and `o₂`, the direct sum carries the orientation `o₁
 factor before the second. Normalize Thom classes as in
 `TauCeti.VectorBundleOrientation.thomClassOfModel`, by orientations `ω₁`, `ω₂` of the model fibres
 and classes `g₁ ∈ Hᵖ(F₁, F₁ ∖ {0})`, `g₂ ∈ H^q(F₂, F₂ ∖ {0})`, and normalize the class of the
-direct sum by `ω₁.prod ω₂` and the product `TauCeti.complZeroPairCross` of `g₁` and `g₂`. Then
-the class of the direct sum so normalized is the product of the classes of `E₁` and `E₂`
-(`TauCeti.VectorBundleOrientation.thomClassOfModel_prod`), and so its Euler class is the cup
-product of their Euler classes
+direct sum by `ω₁.prod ω₂` and the product `TauCeti.complSingletonPairCross` of `g₁` and `g₂` at
+`(0 : F₁)` and `(0 : F₂)`. Then the class of the direct sum so normalized is the product of the
+classes of `E₁` and `E₂` (`TauCeti.VectorBundleOrientation.thomClassOfModel_prod`), and so its Euler
+class is the cup product of their Euler classes
 (`TauCeti.VectorBundleOrientation.eulerClass_thomClassOfModel_prod`). Both hold over an arbitrary
 base, for any commutative ring `K`, projective coefficient modules `R₁`, `R₂`, `R₃` over `K`,
 arbitrary coefficient modules `M₁`, `M₂`, `M₃`, arbitrary pairings and arbitrary model classes.
@@ -39,7 +39,7 @@ These identities are the Whitney product formulas `U(E₁ ⊕ E₂) = p₁^* U(E
 are isomorphic to `K` (`Rᵢ ≃ₗ[K] K`, `Mᵢ ≃ₗ[K] K`), the pairings `u : R₃ ⟶ R₁ ⊗ R₂` and
 `μ : M₁ ⊗ M₂ ⟶ M₃` are isomorphisms — in particular for scalar coefficients `ModuleCat.of K K` with
 the standard unitor pairings — and `g₁`, `g₂` generate local cohomology of `F₁`, `F₂`
-(`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_isIso`,
+(`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso`,
 `TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod`). The integral form for
 `TauCeti.VectorBundleOrientation.thomClass`, normalized by the
 generators `Orientation.localCohomologyClass`, further needs the product of the generators
@@ -51,7 +51,7 @@ selected by `ω₁` and `ω₂` to be the generator selected by `ω₁.prod ω�
   by the product of the model classes is the product of the normalized classes of the factors.
 * `TauCeti.VectorBundleOrientation.eulerClass_thomClassOfModel_prod`: its Euler class is the cup
   product of the Euler classes of the factors.
-* `TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_isIso` and
+* `TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso` and
   `TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod`: for coefficient modules
   isomorphic to `K` and isomorphism pairings `u`, `μ` (in particular scalar coefficients
   `ModuleCat.of K K` with the standard unitor pairings), when `g₁` and `g₂` generate local
@@ -97,10 +97,10 @@ product `p₁^* U₁ ⌣ p₂^* U₂` of the normalized classes `U₁`, `U₂` o
 (`TauCeti.thomPairCup`). For coefficient modules isomorphic to `K` and isomorphism pairings `u`, `μ`
 (in particular scalar coefficients `ModuleCat.of K K` with the standard unitor pairings), when `g₁`
 and `g₂` generate the local cohomology over `K`, so does their product
-(`TauCeti.span_complZeroPairCross_eq_top_iff_of_isIso`,
-`TauCeti.span_complZeroPairCross_eq_top_iff`),
-giving the Whitney product formula for Thom classes
-(`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_isIso`,
+(`TauCeti.span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso`,
+`TauCeti.span_complSingletonPairCross_eq_top_iff`), giving the Whitney product formula for Thom
+classes
+(`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso`,
 `TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod`). -/
 theorem thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
     (o₂ : VectorBundleOrientation F₂ E₂ (Fin n)) (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n)
@@ -111,7 +111,8 @@ theorem thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
     (g₂ : (TopPair.ofSubset (X := TopCat.of F₂) ({0}ᶜ : Set F₂)).singularCohomology R₂ K M₂
       (finrank ℝ F₂)) :
     (o₁.prod o₂ hm hn).thomClassOfModel (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn])
-        (ω₁.prod ω₂ hm hn) (complZeroPairCross K F₁ F₂ u μ _ _ _ Module.finrank_prod.symm g₁ g₂) =
+        (ω₁.prod ω₂ hm hn)
+        (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁ g₂) =
       thomPairCup K F₁ E₁ F₂ E₂ u μ _ _ _ Module.finrank_prod.symm
         (o₁.thomClassOfModel (by rw [Fintype.card_fin, hm]) ω₁ g₁)
         (o₂.thomClassOfModel (by rw [Fintype.card_fin, hn]) ω₂ g₂) := by
@@ -130,7 +131,7 @@ theorem thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
     exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel o₂
       (by rw [Fintype.card_fin, hn]) ω₂ g₂ e₂ hb₂
   refine ⟨e₁.prod e₂, inferInstance, hb,
-    complZeroPairCross K F₁ F₂ u μ _ _ _ Module.finrank_prod.symm g₁' g₂', ?_, ?_⟩
+    complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁' g₂', ?_, ?_⟩
   · -- The product trivialization reads the product orientation as the product of the readings,
     -- and reversing either factor reverses both the orientation and the product class.
     rw [prod_apply, Trivialization.mapOrientation_prod e₁ e₂ hb₁ hb₂ _ _ hm hn]
@@ -139,17 +140,14 @@ theorem thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
     · exact Or.inl ⟨rfl, rfl⟩
     · exact Or.inr ⟨Orientation.prod_neg_right _ _ _ _, map_neg _ _⟩
     · exact Or.inr ⟨Orientation.prod_neg_left _ _ _ _,
-        by simp only [complZeroPairCross_def, map_neg, LinearMap.neg_apply]⟩
+        by simp only [complSingletonPairCross_def, map_neg, LinearMap.neg_apply]⟩
     · exact Or.inl ⟨Orientation.prod_neg_neg _ _ _ _,
-        by simp only [complZeroPairCross_def, map_neg, LinearMap.neg_apply, neg_neg]⟩
-  · -- The fibres are T1, being homeomorphic to the model fibres.
-    have : T1Space (E₁ b) :=
-      (e₁.continuousLinearEquivAt ℝ b hb₁).toHomeomorph.isEmbedding.t1Space
-    have : T1Space (E₂ b) :=
-      (e₂.continuousLinearEquivAt ℝ b hb₂).toHomeomorph.isEmbedding.t1Space
-    rw [singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complZeroPairCross, hr₁, hr₂,
+        by simp only [complSingletonPairCross_def, map_neg, LinearMap.neg_apply, neg_neg]⟩
+  · have := FiberBundle.t1Space F₁ E₁ b
+    have := FiberBundle.t1Space F₂ E₂ b
+    rw [singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complSingletonPairCross, hr₁, hr₂,
       Trivialization.continuousLinearEquivAt_prod]
-    exact complZeroPairCross_singularCohomologyMap_complZeroPairIso_hom K u μ
+    exact complSingletonPairCross_singularCohomologyMap_complZeroPairIso_hom K u μ
       (e₁.continuousLinearEquivAt ℝ b hb₁) (e₂.continuousLinearEquivAt ℝ b hb₂) _ _ _ _ g₁' g₂'
 
 /-- **The Euler class of a normalized class of a direct sum.** For orientations `o₁` and `o₂` of
@@ -160,7 +158,7 @@ classes of `E₁` and `E₂` normalized by `ω₁, g₁` and `ω₂, g₂`. For 
 `K` and isomorphism pairings `u`, `μ` (in particular scalar coefficients `ModuleCat.of K K` with the
 standard unitor pairings), when `g₁` and `g₂` generate the local cohomology over `K`, all three
 classes are Thom classes
-(`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_isIso`,
+(`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso`,
 `TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod`), giving the Whitney product
 formula `e(E₁ ⊕ E₂) = e(E₁) ⌣ e(E₂)`. -/
 theorem eulerClass_thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
@@ -174,7 +172,7 @@ theorem eulerClass_thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E�
     TauCeti.eulerClass R₃ K M₃ (F₁ × F₂) (E₁ ×ᵇ E₂) _
         ((o₁.prod o₂ hm hn).thomClassOfModel
           (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn]) (ω₁.prod ω₂ hm hn)
-          (complZeroPairCross K F₁ F₂ u μ _ _ _ Module.finrank_prod.symm g₁ g₂)) =
+          (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁ g₂)) =
       (TopCat.of B).singularCup K u μ _ _ _ Module.finrank_prod.symm
         (TauCeti.eulerClass R₁ K M₁ F₁ E₁ _
           (o₁.thomClassOfModel (by rw [Fintype.card_fin, hm]) ω₁ g₁))
@@ -186,7 +184,8 @@ omit [Module.Projective K R₁] [Module.Projective K R₂] in
 /-- **The normalized product class of an oriented direct sum is a Thom class**, for coefficient
 modules isomorphic to `K`, isomorphism pairings `u` and `μ`, and generators `g₁` and `g₂` over
 `K`. -/
-theorem isThomClass_thomClassOfModel_prod_of_isIso (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
+theorem isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso
+    (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
     (o₂ : VectorBundleOrientation F₂ E₂ (Fin n)) (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n)
     (ω₁ : Orientation ℝ F₁ (Fin m)) (ω₂ : Orientation ℝ F₂ (Fin n))
     (eR₁ : R₁ ≃ₗ[K] K) (eR₂ : R₂ ≃ₗ[K] K) (eR₃ : R₃ ≃ₗ[K] K)
@@ -200,9 +199,9 @@ theorem isThomClass_thomClassOfModel_prod_of_isIso (o₁ : VectorBundleOrientati
     IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂)
       ((o₁.prod o₂ hm hn).thomClassOfModel
         (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn]) (ω₁.prod ω₂ hm hn)
-        (complZeroPairCross K F₁ F₂ u μ _ _ _ Module.finrank_prod.symm g₁ g₂)) :=
+        (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁ g₂)) :=
   (o₁.prod o₂ hm hn).isThomClass_thomClassOfModel _ (ω₁.prod ω₂ hm hn)
-    ((span_complZeroPairCross_eq_top_iff_of_isIso eR₁ eR₂ eR₃ eM₁ eM₂ eM₃
+    ((span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso eR₁ eR₂ eR₃ eM₁ eM₂ eM₃
       Module.finrank_prod.symm g₁ g₂).2 ⟨hg₁, hg₂⟩)
 
 /-- **The normalized product class of an oriented direct sum is a Thom class** over any commutative
@@ -218,10 +217,10 @@ theorem isThomClass_thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E
     IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂)
       ((o₁.prod o₂ hm hn).thomClassOfModel
         (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn]) (ω₁.prod ω₂ hm hn)
-        (complZeroPairCross K F₁ F₂ (λ_ (ModuleCat.of K K)).inv (λ_ (ModuleCat.of K K)).hom
-          _ _ _ Module.finrank_prod.symm g₁ g₂)) :=
-  isThomClass_thomClassOfModel_prod_of_isIso o₁ o₂ hm hn ω₁ ω₂ (.refl K K) (.refl K K) (.refl K K)
-    (.refl K K) (.refl K K) (.refl K K) hg₁ hg₂
+        (complSingletonPairCross K (0 : F₁) (0 : F₂) (λ_ (ModuleCat.of K K)).inv
+          (λ_ (ModuleCat.of K K)).hom _ _ _ Module.finrank_prod.symm g₁ g₂)) :=
+  isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso o₁ o₂ hm hn ω₁ ω₂
+    (.refl K K) (.refl K K) (.refl K K) (.refl K K) (.refl K K) (.refl K K) hg₁ hg₂
 
 end Whitney
 

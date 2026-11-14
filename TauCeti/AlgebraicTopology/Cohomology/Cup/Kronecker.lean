@@ -11,25 +11,38 @@ public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
 public import TauCeti.AlgebraicTopology.Singular.RelativeCrossProduct
 
 /-!
-# The Kronecker pairing of relative cross and cup products
+# The Kronecker pairing of relative cross products and pulled-back cup products
 
 For open subsets `A ⊆ X` and `B ⊆ Y`, the relative cohomology cross product
 `TauCeti.singularRelativeCross` pairs `Hᵖ(X, A; R, M)` and `H^q(Y, B; S, N)` into
 `Hⁿ(X × Y, A × Y ∪ X × B; R ⊗ S, L)` (`p + q = n`), while `TopCat.singularRelativeHomologyCross`
-maps `Hₚ(X, A; R) ⊗ H_q(Y, B; S)` into `Hₙ(X × Y, A × Y ∪ X × B; R ⊗ S)`. Under the small-chain
-isomorphism (`TauCeti.homologyMap_cochainComplexMap_singularRelativeCross`) and the relative
-Eilenberg–Zilber homotopy (`TopCat.relativeShuffleAlexanderWhitneyHomotopy`), their Kronecker
-pairing reduces to `ChainComplex.homologyCross_comp_kronecker_cup`: `⟨a × b, x × y⟩ =
-μ (⟨a, x⟩ ⊗ ⟨b, y⟩)` with no sign
-(`TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross`), and `0` when
-degrees differ
-(`TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_of_ne`).
+maps `Hₚ(X, A; R) ⊗ H_q(Y, B; S)` into `Hₙ(X × Y, A × Y ∪ X × B; R ⊗ S)`. Under the relative
+Kronecker pairing `TopPair.singularKronecker`, the two cross products are dual with no sign:
+`⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)` in matching bidegrees, and `0` in distinct bidegrees of the
+same total degree. The same multiplicativity and off-diagonal vanishing extend to
+`TopCat.singularRelativeCupPullback` along the projections `fst` and `snd` whenever `Z` agrees with
+`fst⁻¹(A) ∪ snd⁻¹(B)` and the chain-coefficient morphisms satisfy `v ≫ u = 𝟙 (R ⊗ S)`.
 
-Via `TauCeti.singularRelativeCup_eq_homologyMap_singularRelativeCup`, when `v ≫ u = 𝟙 (R ⊗ S)` and
-`Z` agrees with `fst⁻¹(A) ∪ snd⁻¹(B)`, pushing `TopCat.singularRelativeHomologyCross` forward along
-`v` pairs multiplicatively with `TopCat.singularRelativeCupPullback` along `fst` and `snd`
-(`TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback`,
-`TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback_of_ne`).
+These pairing formulas allow downstream files (`TauCeti.AlgebraicTopology.Cohomology.Local.Cross`,
+`TauCeti.Topology.VectorBundle.Thom.Prod`) to detect local-cohomology and Thom-class cross-product
+generators directly by Kronecker evaluation on relative homology classes, without flatness or
+Künneth hypotheses on the coefficient ring or spaces.
+
+As in `TauCeti.AlgebraicTopology.Singular.RelativeCrossProduct`, the theorems assume discrete
+colimit preservation for `tensorLeft` and `tensorRight`, together with cokernel preservation
+(`PreservesColimitsOfShape WalkingParallelPair`) for `tensorLeft` of `Hₚ(X, A; R)` and `tensorRight`
+of `Z_q(Y, B; S)` and `C_{q+1}(Y, B; S)`.
+
+## Main results
+
+* `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross` and
+  `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_of_ne`:
+  multiplicativity and off-diagonal vanishing of `TopPair.singularKronecker` on
+  `TauCeti.singularRelativeCross` against `TopCat.singularRelativeHomologyCross`.
+* `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback` and
+  `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback_of_ne`:
+  the corresponding formulas for `TopCat.singularRelativeCupPullback` along `fst` and `snd` on
+  `(X × Y, Z)` when `Z = fst⁻¹(A) ∪ snd⁻¹(B)` and `v ≫ u = 𝟙 (R ⊗ S)`.
 
 ## References
 
@@ -180,7 +193,10 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCro
         X Y hA hB μ p q n h a b))).trans
     (ChainComplex.homologyCross_comp_kronecker_cup _ _ μ p q n h a b)
 
-/-- **Off-diagonal vanishing for relative cross products** when `p ≠ p'`. -/
+/-- **Off-diagonal vanishing for the Kronecker pairing of relative cross products**: for
+`p + q = n = p' + q'` with `p ≠ p'`, the degree-`(p', q')` cohomology cross product
+`TauCeti.singularRelativeCross` evaluates to zero under `TopPair.singularKronecker` on
+`TopCat.singularRelativeHomologyCross` in bidegree `(p, q)`. -/
 theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_of_ne
     (X Y : TopCat.{w}) {A : Set X} {B : Set Y} (hA : IsOpen A) (hB : IsOpen B)
     (μ : M ⊗ N ⟶ L) {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n) (hp : p ≠ p')
@@ -203,8 +219,11 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCro
         X Y hA hB μ p' q' n h' a b))).trans
     (ChainComplex.homologyCross_comp_kronecker_cup_of_ne _ _ μ p q h h' hp a b)
 
-/-- **The Kronecker pairing of `TopCat.singularRelativeCupPullback` along `fst` and `snd`** when
-`v ≫ u = 𝟙 (R ⊗ S)` and `Z` agrees with `fst⁻¹(A) ∪ snd⁻¹(B)`. -/
+/-- **The Kronecker pairing of `TopCat.singularRelativeCupPullback` along `fst` and `snd`**: when
+`v ≫ u = 𝟙 (R ⊗ S)` and `Z` agrees with `fst⁻¹(A) ∪ snd⁻¹(B)`, evaluating
+`TopCat.singularRelativeCupPullback` along `fst` and `snd` via `TopPair.singularKronecker` on
+`TopCat.singularRelativeHomologyCross` pushed forward along `v` into `(X × Y, Z)` equals the tensor
+product of the relative Kronecker evaluations of `a` and `b` followed by `μ`. -/
 theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback
     (X Y : TopCat.{w}) {A : Set X} {B : Set Y} (hA : IsOpen A) (hB : IsOpen B)
     {Z : Set ↥(X ⊗ Y)} (hZ : Z ⊆ fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)
@@ -238,8 +257,12 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCup
     (singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross
       X Y hA hB μ p q n h a b)
 
-/-- **Off-diagonal vanishing for `TopCat.singularRelativeCupPullback` along `fst` and `snd`** when
-`p ≠ p'`, `v ≫ u = 𝟙 (R ⊗ S)`, and `Z` agrees with `fst⁻¹(A) ∪ snd⁻¹(B)`. -/
+/-- **Off-diagonal vanishing for the Kronecker pairing of `TopCat.singularRelativeCupPullback` along
+`fst` and `snd`**: for `p + q = n = p' + q'` with `p ≠ p'`, `v ≫ u = 𝟙 (R ⊗ S)`, and `Z` equal to
+`fst⁻¹(A) ∪ snd⁻¹(B)`, the degree-`(p', q')` product `TopCat.singularRelativeCupPullback` along
+`fst` and `snd` evaluates to zero under `TopPair.singularKronecker` on
+`TopCat.singularRelativeHomologyCross` in bidegree `(p, q)` pushed forward along `v` into
+`(X × Y, Z)`. -/
 theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback_of_ne
     (X Y : TopCat.{w}) {A : Set X} {B : Set Y} (hA : IsOpen A) (hB : IsOpen B)
     {Z : Set ↥(X ⊗ Y)} (hZ : Z ⊆ fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)

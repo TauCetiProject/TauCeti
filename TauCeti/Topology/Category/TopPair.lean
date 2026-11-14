@@ -49,8 +49,10 @@ For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` 
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
-them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`). For spaces with a zero, the union of
-the preimages of `{0}ᶜ` is `{0}ᶜ` (`TauCeti.compl_zero_prod_eq`).
+them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`). For points `x₁ : V₁` and `x₂ : V₂`,
+the union of the preimages of `{x₁}ᶜ` and `{x₂}ᶜ` is `{(x₁, x₂)}ᶜ`
+(`TauCeti.compl_singleton_prod_eq`), and a product of maps preserving singleton complements
+preserves the complement of the pair (`TopCat.mapsTo_tensorHom_compl_singleton`).
 
 For a map `π : X → Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
 `S` includes into `(X, Z)` (`TopCat.restrictPreimagePairMap`), isomorphically when `S` contains
@@ -683,40 +685,53 @@ lemma restrictPreimagePairRestrictPreimageIso_inv_fst (hSW : S ⊆ W) :
 
 end RestrictPreimage
 
+/-- The product of two continuous maps carrying `{x₁}ᶜ` into `{y₁}ᶜ` and `{x₂}ᶜ` into `{y₂}ᶜ`
+carries `{(x₁, x₂)}ᶜ` into `{(y₁, y₂)}ᶜ`. -/
+lemma mapsTo_tensorHom_compl_singleton {V₁ V₂ W₁ W₂ : Type u} [TopologicalSpace V₁]
+    [TopologicalSpace V₂] [TopologicalSpace W₁] [TopologicalSpace W₂] {x₁ : V₁} {x₂ : V₂}
+    {y₁ : W₁} {y₂ : W₂} (g₁ : TopCat.of V₁ ⟶ TopCat.of W₁) (g₂ : TopCat.of V₂ ⟶ TopCat.of W₂)
+    (hg₁ : Set.MapsTo g₁ ({x₁}ᶜ : Set V₁) ({y₁}ᶜ : Set W₁))
+    (hg₂ : Set.MapsTo g₂ ({x₂}ᶜ : Set V₂) ({y₂}ᶜ : Set W₂)) :
+    Set.MapsTo (g₁ ⊗ₘ g₂) ({(x₁, x₂)}ᶜ : Set (V₁ × V₂)) ({(y₁, y₂)}ᶜ : Set (W₁ × W₂)) := by
+  rintro ⟨v₁, v₂⟩ hv hvy
+  rcases not_and_or.1 (mt (fun h : v₁ = x₁ ∧ v₂ = x₂ ↦ Prod.ext h.1 h.2) hv) with h₁ | h₂
+  · exact hg₁ h₁ (congrArg Prod.fst hvy)
+  · exact hg₂ h₂ (congrArg Prod.snd hvy)
+
 end TopCat
 
 namespace TauCeti
 
-/-- If a point of a product of two spaces with zero is nonzero, then one of its components is
-nonzero. -/
-theorem compl_zero_prod_subset (V₁ V₂ : Type u) [TopologicalSpace V₁] [TopologicalSpace V₂]
-    [Zero V₁] [Zero V₂] :
-    ({0}ᶜ : Set (TopCat.of (V₁ × V₂))) ⊆
-      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {0}ᶜ ∪
-        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {0}ᶜ := by
+/-- A point of `V₁ × V₂` distinct from `(x₁, x₂)` differs from `x₁` in its first component or from
+`x₂` in its second component. -/
+theorem compl_singleton_prod_subset {V₁ V₂ : Type u} [TopologicalSpace V₁] [TopologicalSpace V₂]
+    (x₁ : V₁) (x₂ : V₂) :
+    ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) ⊆
+      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
+        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ := by
   intro v hv
   by_contra hc
   simp only [Set.mem_union, Set.mem_preimage, Set.mem_compl_singleton_iff, not_or, not_not] at hc
   exact hv (Prod.ext hc.1 hc.2)
 
-/-- If a point of a product of two spaces with zero has a nonzero component, then it is
-nonzero. -/
-theorem subset_compl_zero_prod (V₁ V₂ : Type u) [TopologicalSpace V₁] [TopologicalSpace V₂]
-    [Zero V₁] [Zero V₂] :
-    (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {0}ᶜ ∪
-      (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {0}ᶜ ⊆
-        ({0}ᶜ : Set (TopCat.of (V₁ × V₂))) := by
+/-- A point of `V₁ × V₂` that differs from `x₁` in its first component or from `x₂` in its second
+component is distinct from `(x₁, x₂)`. -/
+theorem subset_compl_singleton_prod {V₁ V₂ : Type u} [TopologicalSpace V₁] [TopologicalSpace V₂]
+    (x₁ : V₁) (x₂ : V₂) :
+    (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
+      (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ ⊆
+        ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) := by
   rintro v (hv | hv) h0
   · exact Set.mem_compl_singleton_iff.1 hv (congrArg Prod.fst h0)
   · exact Set.mem_compl_singleton_iff.1 hv (congrArg Prod.snd h0)
 
-/-- A point of a product of two spaces with zero is nonzero if and only if one of its components
-is nonzero. -/
-theorem compl_zero_prod_eq (V₁ V₂ : Type u) [TopologicalSpace V₁] [TopologicalSpace V₂]
-    [Zero V₁] [Zero V₂] :
-    ({0}ᶜ : Set (TopCat.of (V₁ × V₂))) =
-      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {0}ᶜ ∪
-        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {0}ᶜ :=
-  Set.Subset.antisymm (compl_zero_prod_subset V₁ V₂) (subset_compl_zero_prod V₁ V₂)
+/-- The complement of `{(x₁, x₂)}` in `V₁ × V₂` is the union of the preimages of `{x₁}ᶜ` and
+`{x₂}ᶜ` under the two projections. -/
+theorem compl_singleton_prod_eq {V₁ V₂ : Type u} [TopologicalSpace V₁] [TopologicalSpace V₂]
+    (x₁ : V₁) (x₂ : V₂) :
+    ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) =
+      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
+        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ :=
+  Set.Subset.antisymm (compl_singleton_prod_subset x₁ x₂) (subset_compl_singleton_prod x₁ x₂)
 
 end TauCeti
