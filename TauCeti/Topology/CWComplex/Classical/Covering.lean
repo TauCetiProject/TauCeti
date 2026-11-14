@@ -642,6 +642,32 @@ theorem isCancelSMul_cellPreimage :
   refine ⟨fun g g' c h ↦ IsCancelSMul.right_cancel g g' ((cellPreimageEquiv C _ n c).2 : E) ?_⟩
   rw [← coe_cellPreimageEquiv_smul_snd C hG, ← coe_cellPreimageEquiv_smul_snd C hG, h]
 
+open scoped Pointwise in
+/-- Translation by `g` carries the open cell of a lifted cell onto the open cell of its
+translate. -/
+theorem smul_openCell_cellPreimage (g : G)
+    (c : letI := cwComplexPreimage C hG.isCoveringMap; cell (p ⁻¹' C) n) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    letI := cellPreimageMulAction C hG n
+    g • openCell n c = openCell n (g • c) := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  let := cellPreimageMulAction C hG n
+  change (g • ·) '' (map n c '' ball 0 1) = map n (g • c) '' ball 0 1
+  rw [← image_comp]
+  exact image_congr fun x _ ↦ (map_smul_cellPreimage C hG g c x).symm
+
+open scoped Pointwise in
+/-- Only the identity carries the open cell of a lifted cell onto itself. -/
+theorem eq_one_of_smul_openCell_cellPreimage {g : G}
+    {c : letI := cwComplexPreimage C hG.isCoveringMap; cell (p ⁻¹' C) n}
+    (h : letI := cwComplexPreimage C hG.isCoveringMap; g • openCell n c = openCell n c) :
+    g = 1 := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  let := cellPreimageMulAction C hG n
+  have := isCancelSMul_cellPreimage C hG (n := n)
+  exact IsCancelSMul.eq_one_of_smul (x := c)
+    (openCell_congr n ((smul_openCell_cellPreimage C hG g c).symm.trans h))
+
 /-- Two lifted cells lie in the same `G`-orbit exactly when they lift the same cell of `C`. -/
 theorem exists_smul_eq_iff_cellPreimageEquiv_fst_eq
     (c c' : letI := cwComplexPreimage C hG.isCoveringMap; cell (p ⁻¹' C) n) :
