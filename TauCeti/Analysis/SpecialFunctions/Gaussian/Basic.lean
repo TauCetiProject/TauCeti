@@ -12,13 +12,14 @@ import Mathlib.Tactic.GCongr
 /-!
 # Elementary Gaussian bounds
 
-A polynomial weight times a real Gaussian is bounded. This file records an explicit bound for
-`(1 + r) ^ m * exp (-a r²)`, the scalar estimate behind the decay of Gaussian Schwartz
-functions.
+A polynomial weight times a real Gaussian is bounded above. This file records an explicit
+upper bound for `(1 + r) ^ m * exp (-a r²)`, the scalar estimate behind the decay of Gaussian
+Schwartz functions.
 
 ## Main results
 
-* `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`: an explicit bound for `(1 + r) ^ m * exp (-a r²)`.
+* `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`: an explicit upper bound for
+  `(1 + r) ^ m * exp (-a r²)`.
 -/
 
 public section
@@ -27,7 +28,7 @@ open scoped Nat
 
 namespace TauCeti
 
-/-- For `0 < a`, the function `r ↦ (1 + r) ^ m * exp (-a r²)` is bounded by the explicit
+/-- For `0 < a`, the function `r ↦ (1 + r) ^ m * exp (-a r²)` is bounded above by the explicit
 constant `m! / (a / 2) ^ m * exp a`. -/
 theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : ℝ} :
     (1 + r) ^ m * Real.exp (-a * r ^ 2) ≤ m ! / (a / 2) ^ m * Real.exp a := by
