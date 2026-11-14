@@ -40,6 +40,8 @@ the point factors uniquely through the quotient algebra.
   quotient morphism, with the pullback written through `quotientPointsHom`.
 * `BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
   quotient-subgroup membership along a surjective bialgebra morphism.
+* `CommHopfAlgCat.range_mapDomain_mkQuotient`: the image of `(mkQuotient H I).hom` under
+  `BialgHom.mapDomain` on `A`-valued points is `quotientPointsSubgroup H I (CommAlgCat.of R A)`.
 
 ## Implementation notes
 
@@ -288,6 +290,24 @@ lemma quotientPointsHom_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v
     (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
     quotientPointsHom H I A f ∈ quotientPointsSubgroup H I A :=
   ⟨f, rfl⟩
+
+/-- On `A`-valued points, the image of `(mkQuotient H I).hom` under `BialgHom.mapDomain` is the
+underlying set of `quotientPointsSubgroup H I (CommAlgCat.of R A)`. -/
+theorem _root_.CommHopfAlgCat.range_mapDomain_mkQuotient (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A : Type w} [CommRing A] [Algebra R A] :
+    Set.range (BialgHom.mapDomain (A := A) (mkQuotient H I).hom) =
+      (quotientPointsSubgroup H I (CommAlgCat.of R A) :
+        Set (HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R A))) := by
+  have hfun : (BialgHom.mapDomain (A := A) (mkQuotient H I).hom :
+        HopfAlgebra.points (R := R) (H := quotient H I) (CommAlgCat.of R A) →
+          HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R A)) =
+      quotientPointsHom H I (CommAlgCat.of R A) := by
+    funext f
+    rw [BialgHom.mapDomain_apply, quotientPointsHom_apply]
+  ext g
+  rw [hfun, SetLike.mem_coe]
+  exact (mem_range_quotientPointsHom_iff H I (CommAlgCat.of R A) g).trans
+    (mem_quotientPointsSubgroup_iff H I (CommAlgCat.of R A) g).symm
 
 end CommHopfAlgCat
 

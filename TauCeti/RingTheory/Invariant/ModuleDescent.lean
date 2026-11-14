@@ -11,6 +11,7 @@ import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import TauCeti.Algebra.Algebra.SMulDistribClass
 import TauCeti.Algebra.Group.Action.MulDistribMulAction
 public import TauCeti.LinearAlgebra.TensorProduct.SMulDistribClass
+import TauCeti.Algebra.BigOperators.Finset.Average
 import TauCeti.RepresentationTheory.NormInvariants
 import TauCeti.RingTheory.Invariant.Basic
 
@@ -42,7 +43,8 @@ The descent isomorphisms are
   (`TauCeti.MulSemiringAction.baseChangeInvariantsEquiv`);
 * `M ≃ₗ[A] (B ⊗[A] M)ᴳ`, `m ↦ 1 ⊗ m`, for every `A`-module, when moreover `A → B` is injective
   (`TauCeti.MulSemiringAction.invariantsBaseChangeEquiv`). This one only needs an element of
-  trace `1` in place of freeness, so it also covers non-free actions with `|G|` invertible.
+  trace `1` in place of freeness, so it also covers non-free actions with `|G|` invertible
+  (`TauCeti.MulSemiringAction.exists_sum_smul_eq_one_of_isUnit_card`).
 
 The first needs no injectivity of `A → B`. The second does: for `A = A₁ × A₂` acting on a torsor
 `B` over `A₁` through the first factor, the invariants of `B ⊗[A] A = B` are `A₁`, not `A`.
@@ -51,7 +53,8 @@ Both proofs are explicit. Freeness gives elements `xᵢ, yᵢ ∈ B` with
 `∑ i, xᵢ * g • yᵢ = 1` for `g = 1` and `0` otherwise, and then every `n ∈ N` is
 `n = ∑ i, xᵢ • ∑ g, g • (yᵢ • n)` (`TauCeti.MulSemiringAction.sum_smul_sum_smul_smul`), which
 inverts the first map. For the second, an element `c ∈ B` of trace `∑ g, g • c = 1`, which exists
-for a free action (`TauCeti.MulSemiringAction.exists_sum_smul_eq_one`), gives the `A`-linear
+for a free action (`TauCeti.MulSemiringAction.exists_sum_smul_eq_one`) or whenever `|G|` is a unit
+in `A` (`TauCeti.MulSemiringAction.exists_sum_smul_eq_one_of_isUnit_card`), gives the `A`-linear
 retraction `b ↦ ∑ g, g • (c * b)` of `A → B` (`TauCeti.MulSemiringAction.traceCoord`), and every
 invariant `z ∈ B ⊗[A] M` is
 `z = ∑ g, g • (c • z)`, which is `1 ⊗ m` for the image `m` of `z` under that retraction.
@@ -72,6 +75,19 @@ public section
 open TensorProduct
 
 namespace TauCeti.MulSemiringAction
+
+/-- When `(Nat.card G : A)` is a unit in `A`, the constant element `⅟(|G| : A) • (1 : B)` has
+`G`-trace `1` in `B`. -/
+theorem exists_sum_smul_eq_one_of_isUnit_card {A B G : Type*} [CommSemiring A] [Semiring B]
+    [Algebra A B] [Monoid G] [Fintype G] [MulSemiringAction G B] [SMulCommClass G A B]
+    (hG : IsUnit (Nat.card G : A)) :
+    ∃ c : B, ∑ g : G, g • c = 1 := by
+  let _ : Invertible (Fintype.card G : A) := (Nat.card_eq_fintype_card (α := G) ▸ hG).invertible
+  refine ⟨⅟(Fintype.card G : A) • (1 : B), ?_⟩
+  have hsmul (g : G) : g • (⅟(Fintype.card G : A) • (1 : B)) = ⅟(Fintype.card G : A) • (1 : B) := by
+    rw [smul_comm, smul_one]
+  simp_rw [hsmul]
+  rw [← Finset.smul_sum, Fintype.invOf_card_smul_sum_const]
 
 variable {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B] [Group G]
   [MulSemiringAction G B] [SMulCommClass G A B]
