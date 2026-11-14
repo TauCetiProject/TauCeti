@@ -127,9 +127,10 @@ theorem _root_.Continuous.pointPickingWeight {f : X → ℝ}
     (hf : Continuous f) (x₀ : X) (R : ℝ) : Continuous (pointPickingWeight x₀ R f) := by
   exact (continuous_const.sub (continuous_id.dist continuous_const)).mul hf
 
-/-- If the weight is positive somewhere on the compact set `S`, it attains a positive maximum
-at `q ∈ S ∩ ball x₀ R`, with `0 < f q`. For `ρ = (R - dist q x₀) / 2`, the ball `ball q ρ`
-lies in `ball x₀ R`, its scaled radius is at least half the starting weight, and
+/-- Let `S ⊆ closedBall x₀ R` be compact and `f` continuous on `S`. If `x ∈ S` satisfies
+`0 < pointPickingWeight x₀ R f x`, the weight attains a positive maximum at
+`q ∈ S ∩ ball x₀ R`, with `0 < f q`. For `ρ = (R - dist q x₀) / 2`, the ball `ball q ρ`
+lies in `ball x₀ R`, its scaled radius is at least `pointPickingWeight x₀ R f x / 2`, and
 `f y ≤ 2 * f q` for `y ∈ S ∩ ball q ρ`. -/
 theorem _root_.IsCompact.exists_mem_ball_isMaxOn_pointPickingWeight
     {x₀ : X} {R : ℝ} {S : Set X} {f : X → ℝ}
@@ -178,8 +179,10 @@ theorem _root_.IsCompact.exists_mem_ball_isMaxOn_pointPickingWeight
       exact le_of_mul_le_mul_left hhalf hρ
     · linarith
 
-/-- There are `q ∈ S ∩ ball x₀ R` and `ρ = (R - dist q x₀) / 2 > 0` with `0 < f q`,
-`ball q ρ ⊆ ball x₀ R`, and scaled radius `f q * ρ` at least half the starting weight.
+/-- Let `S ⊆ closedBall x₀ R` be compact and `f` continuous on `S`. If `x ∈ S` satisfies
+`0 < pointPickingWeight x₀ R f x`, there are `q ∈ S ∩ ball x₀ R` and
+`ρ = (R - dist q x₀) / 2 > 0` with `0 < f q`, `ball q ρ ⊆ ball x₀ R`, and scaled radius
+`f q * ρ` at least `pointPickingWeight x₀ R f x / 2`.
 The normalized value `f y / f q` is at most two for `y ∈ S` whose distance from `q`,
 scaled by `f q`, is less than this scaled radius. -/
 theorem _root_.IsCompact.exists_pointPickingWeight_div_two_le_and_div_le_two
