@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
+public import TauCeti.CategoryTheory.Exact.KernelCokernelPair
+import TauCeti.CategoryTheory.Exact.HomologicalComplex
 
 /-!
 # The short exact sequence of cycles of a complex
@@ -19,15 +21,15 @@ and the projections are chain maps, and they form a short complex of complexes
 
 `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0`
 
-(`K.cyclesComplexShortComplex`), functorial in `K`.  It is short exact, since degreewise the
-inclusion of the cycles is a kernel of the projection onto their cokernel.  In each degree
-where the inclusion of the cycles of `K` is a split monomorphism, so is the first map of this
-sequence; in an abelian category the sequence is then split in that degree, as happens for a
-complex of projective modules over a principal ideal domain.  The inclusion of the cycles induces
-an epimorphism on homology, and the projection onto `K / Z(K)` induces zero on homology, so in the
-abelian case the long exact homology sequence shows that the connecting morphisms are
-monomorphisms.  In a degree where the differential out of `K` vanishes, so does the homology of
-`K / Z(K)`.
+(`K.cyclesComplexShortComplex`), functorial in `K`.  It is a kernel–cokernel pair, since
+degreewise the inclusion of the cycles is a kernel of the projection onto their cokernel, and
+hence short exact.  In each degree where the inclusion of the cycles of `K` is a split
+monomorphism, so is the first map of this sequence; in an abelian category the sequence is then
+split in that degree, as happens for a complex of projective modules over a principal ideal
+domain.  The inclusion of the cycles induces an epimorphism on homology, and the projection onto
+`K / Z(K)` induces zero on homology, so in the abelian case the long exact homology sequence shows
+that the connecting morphisms are monomorphisms.  In a degree where the differential out of `K`
+vanishes, so does the homology of `K / Z(K)`.
 
 Tensoring this sequence with a second complex compares the homology of a tensor product with
 tensor products of homology, which is how it enters the Künneth formula.
@@ -36,7 +38,9 @@ tensor products of homology, which is how it enters the Künneth formula.
 
 * `HomologicalComplex.cyclesComplex`, `HomologicalComplex.cyclesCokernelComplex` and
   `HomologicalComplex.cyclesComplexShortComplex`: the complexes and the short complex.
-* `HomologicalComplex.cyclesComplexShortComplex_shortExact`: it is short exact.
+* `HomologicalComplex.cyclesComplexShortComplex_isKernelCokernelPair` and
+  `HomologicalComplex.cyclesComplexShortComplex_shortExact`: it is a kernel–cokernel pair, and
+  short exact.
 * `HomologicalComplex.cyclesComplexShortComplexMap`: the morphism of short complexes induced by a
   chain map.
 * `HomologicalComplex.epi_homologyMap_cyclesComplexShortComplex_f`: the inclusion of the cycles
@@ -153,66 +157,39 @@ instance epi_cyclesComplexShortComplex_g_f (i : ι) : Epi (K.cyclesComplexShortC
 instance epi_cyclesComplexShortComplex_g : Epi K.cyclesComplexShortComplex.g :=
   epi_of_epi_f _ inferInstance
 
-/-- The sequence of complexes `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0` is short exact: its first map is a
-kernel of the second and the second is a cokernel of the first, since this holds in each degree. -/
-lemma cyclesComplexShortComplex_shortExact : K.cyclesComplexShortComplex.ShortExact := by
-  let S := K.cyclesComplexShortComplex
-  -- Kernels and cokernels of complexes are computed degreewise. In degree `i`, the cycles are a
-  -- kernel of the differential, which factors through the projection onto their cokernel.
-  have hf : IsLimit (KernelFork.ofι S.f S.zero) :=
-    isLimitOfEval _ _ fun i ↦ (isLimitMapConeForkEquiv' (eval C c i) S.zero).symm
-      (isKernelOfComp _ _ (K.sc i).cyclesIsKernel (cokernel.condition (K.iCycles i))
-        (cokernel.π_desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d i _)))
-  have hg : IsColimit (CokernelCofork.ofπ S.g S.zero) :=
-    isColimitOfEval _ _ fun i ↦ (isColimitMapCoconeCoforkEquiv' (eval C c i) S.zero).symm
-      (cokernelIsCokernel (K.iCycles i))
-  -- The complex of the cokernels of the identities of the `Kᵢ` is a zero object; it serves as the
-  -- homology of `S`, with `S.f` as cycles and `S.g` as opcycles.
-  have hZ : IsZero (graded c fun i ↦ cokernel (𝟙 (K.X i))) := by
-    rw [IsZero.iff_id_eq_zero]
-    exact hom_ext _ _ fun i ↦ (isZero_cokernel_of_epi (𝟙 (K.X i))).eq_of_src _ _
-  -- The maps induced by `S.f` on cycles and by `S.g` on opcycles are identities.
-  have hepi : Epi (hf.lift (KernelFork.ofι S.f S.zero)) := by
-    rw [show hf.lift (KernelFork.ofι S.f S.zero) = 𝟙 S.X₁ from Fork.IsLimit.hom_ext hf (by simp)]
-    exact (inferInstance : Epi (𝟙 S.X₁))
-  have hmono : Mono (hg.desc (CokernelCofork.ofπ S.g S.zero)) := by
-    rw [show hg.desc (CokernelCofork.ofπ S.g S.zero) = 𝟙 S.X₃ from
-      Cofork.IsColimit.hom_ext hg (by simp)]
-    exact (inferInstance : Mono (𝟙 S.X₃))
-  refine .mk' ⟨⟨
-    { left :=
-        { K := S.X₁
-          H := graded c fun i ↦ cokernel (𝟙 (K.X i))
-          i := S.f
-          π := 0
-          wi := S.zero
-          hi := hf
-          wπ := comp_zero
-          hπ := CokernelCofork.IsColimit.ofEpiOfIsZero _ hepi hZ }
-      right :=
-        { Q := S.X₃
-          H := graded c fun i ↦ cokernel (𝟙 (K.X i))
-          p := S.g
-          ι := 0
-          wp := S.zero
-          hp := hg
-          wι := zero_comp
-          hι := KernelFork.IsLimit.ofMonoOfIsZero _ hmono hZ }
-      iso := Iso.refl _
-      comm := by simp }, hZ⟩⟩ inferInstance inferInstance
+/-- The first map `Z(K) ⟶ K` of the cycle sequence is a kernel of the second, and the second
+map `K ⟶ K / Z(K)` is a cokernel of the first. -/
+lemma cyclesComplexShortComplex_isKernelCokernelPair :
+    TauCeti.IsKernelCokernelPair K.cyclesComplexShortComplex :=
+  -- In degree `i`, the cycles are a kernel of the differential, which factors through the
+  -- projection onto their cokernel.
+  .of_eval fun i ↦
+    { nonempty_fIsKernel := ⟨isKernelOfComp _ _ (K.sc i).cyclesIsKernel
+        (cokernel.condition (K.iCycles i))
+        (cokernel.π_desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d i _))⟩
+      nonempty_gIsCokernel := ⟨cokernelIsCokernel (K.iCycles i)⟩ }
 
-/-- The inclusion of the cycles induces an epimorphism on homology: up to the identification of
-its source, it is the morphism `K.fromGraded` given by the identities of the cycles. -/
+/-- The sequence of complexes `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0` is short exact. -/
+lemma cyclesComplexShortComplex_shortExact : K.cyclesComplexShortComplex.ShortExact := by
+  -- The complex of the cokernels of the identities of the `Kᵢ` is a zero object.
+  have : HasZeroObject (HomologicalComplex C c) := ⟨graded c fun i ↦ cokernel (𝟙 (K.X i)), by
+    rw [IsZero.iff_id_eq_zero]
+    exact hom_ext _ _ fun i ↦ (isZero_cokernel_of_epi (𝟙 (K.X i))).eq_of_src _ _⟩
+  have := K.cyclesComplexShortComplex_isKernelCokernelPair.hasHomology
+  exact K.cyclesComplexShortComplex_isKernelCokernelPair.shortExact
+
+/-- The inclusion of the cycles induces an epimorphism on homology. -/
 instance epi_homologyMap_cyclesComplexShortComplex_f (i : ι) :
     Epi (homologyMap K.cyclesComplexShortComplex.f i) := by
+  -- Up to the identification of `Z(K)` with `graded c fun j ↦ K.cycles j`, the inclusion of the
+  -- cycles is the morphism `K.fromGraded` given by their identities.
   have hf : K.cyclesComplexShortComplex.f = K.fromGraded fun j ↦ 𝟙 (K.cycles j) := by
     ext j
     simp [cyclesComplexShortComplex]
   rw [hf]
   exact K.epi_homologyMap_fromGraded _ i
 
-/-- The projection of `K` onto `K / Z(K)` induces zero on cycles, since `K / Z(K)` has zero
-differential and the projection kills the cycles of `K`. -/
+/-- The projection of `K` onto `K / Z(K)` induces zero on cycles. -/
 @[simp]
 lemma cyclesMap_cyclesComplexShortComplex_g (i : ι) :
     cyclesMap K.cyclesComplexShortComplex.g i = 0 := by

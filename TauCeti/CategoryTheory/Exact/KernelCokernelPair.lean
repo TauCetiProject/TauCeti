@@ -58,8 +58,9 @@ category with homology the notion coincides with Mathlib's
 * `TauCeti.IsKernelCokernelPair.biprod`: a direct sum of kernel–cokernel pairs is a
   kernel–cokernel pair.
 * `TauCeti.IsKernelCokernelPair.hasHomology`: with a zero object, a kernel–cokernel pair has
-  homology, with no balancedness or (co)completeness assumption, so it is short exact
-  (`TauCeti.IsKernelCokernelPair.shortExact`) in any exact category.
+  homology, with no balancedness or (co)completeness assumption. A kernel–cokernel pair with
+  homology is short exact in any category with zero morphisms
+  (`TauCeti.IsKernelCokernelPair.shortExact`), so every conflation of an exact category is.
 * `TauCeti.isKernelCokernelPair_iff_shortExact`: in a balanced preadditive category the
   kernel–cokernel pairs among the short complexes with homology are exactly the short exact
   ones. These are the conflations of the canonical exact structure on an abelian category.
@@ -206,6 +207,12 @@ theorem hasHomology [HasZeroObject C] (h : IsKernelCokernelPair S) : S.HasHomolo
           hι := KernelFork.IsLimit.ofMonoOfIsZero _ hmono (isZero_zero C) }
       iso := Iso.refl _
       comm := by simp }
+
+/-- A kernel–cokernel pair with homology is a short exact short complex. -/
+theorem shortExact [S.HasHomology] (h : IsKernelCokernelPair S) : S.ShortExact := by
+  -- The cycles factor through the kernel `S.f`, which the opcycles projection kills.
+  refine .mk' (S.exact_iff_iCycles_pOpcycles_zero.2 ?_) h.mono_f h.epi_g
+  rw [← h.lift_f S.iCycles S.iCycles_g, Category.assoc, S.f_pOpcycles, comp_zero]
 
 /-- Being a kernel–cokernel pair is invariant under isomorphism of short complexes; this is the
 closure property an exact structure demands of its class of conflations. -/
@@ -399,12 +406,6 @@ noncomputable def splittingOfSection (h : IsKernelCokernelPair S) (s : S.X₃ �
 @[simp] theorem splittingOfSection_r (h : IsKernelCokernelPair S) (s : S.X₃ ⟶ S.X₂)
     (hs : s ≫ S.g = 𝟙 S.X₃) :
     (h.splittingOfSection s hs).r = h.lift (𝟙 S.X₂ - S.g ≫ s) (by simp [hs]) := (rfl)
-
-/-- A kernel–cokernel pair with homology is a short exact short complex. -/
-theorem shortExact [S.HasHomology] (h : IsKernelCokernelPair S) : S.ShortExact where
-  exact := ShortComplex.exact_of_f_is_kernel S h.fIsKernel
-  mono_f := h.mono_f
-  epi_g := h.epi_g
 
 /-- In a balanced preadditive category, a short exact short complex is a kernel–cokernel
 pair. -/
