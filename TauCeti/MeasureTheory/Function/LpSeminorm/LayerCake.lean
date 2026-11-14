@@ -26,7 +26,7 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [SigmaFinite μ]
+variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [SFinite μ]
   [NormedAddCommGroup F] {f : α → F}
 
 /-- The `Lᵖ` seminorm is bounded by the integral of the `p`th roots of the measures of
@@ -49,7 +49,7 @@ theorem eLpNorm_le_lintegral_measure_norm_gt (hf : AEStronglyMeasurable f μ)
     simp [H, lintegral_indicator, Measure.restrict_apply, Iio_inter_Ioi]
   have hnorm : eLpNorm f p μ =
       (∫⁻ x, (∫⁻ t in Ioi (0 : ℝ), H x t) ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (zero_lt_one.trans_le hp).ne' hp_top hf]
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (zero_lt_one.trans_le hp).ne' hp_top hf]
     simp_rw [hlayer]
     congr 1
     apply lintegral_congr_ae
@@ -61,7 +61,7 @@ theorem eLpNorm_le_lintegral_measure_norm_gt (hf : AEStronglyMeasurable f μ)
       (μ.prod (volume.restrict (Ioi (0 : ℝ)))))
     (by simpa using ENNReal.toReal_mono hp_top hp)).trans_eq ?_
   apply setLIntegral_congr_fun measurableSet_Ioi
-  intro t ht
+  intro t _
   have hpow : (fun x ↦ H x t ^ p.toReal) = {x | t < g x}.indicator 1 := by
     ext x
     by_cases hx : t < g x <;> simp [H, hx, ENNReal.toReal_pos

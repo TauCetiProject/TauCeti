@@ -51,7 +51,6 @@ antiderivative `-exp (-(x / lam) ^ k)` of the density.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 3, **Weibull**.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley (1994), chapter on Weibull distributions.
 -/
@@ -267,7 +266,6 @@ private lemma not_integrable_weibullPDFReal_mul_rpow_of_le
     (hk : 0 < k) (hlam : 0 < lam) (hq : q ≤ -k) :
     ¬ Integrable (fun y ↦ weibullPDFReal k lam y * y ^ q) := by
   intro hint
-  have hkq : k + q ≤ 0 := by linarith
   have hsmall : IntegrableOn (fun y ↦ weibullPDFReal k lam y * y ^ q) (Ioo 0 1) :=
     hint.integrableOn
   have hscaled : IntegrableOn

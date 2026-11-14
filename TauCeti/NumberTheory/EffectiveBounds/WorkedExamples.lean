@@ -18,15 +18,14 @@ import Mathlib.FieldTheory.KummerPolynomial
 /-!
 # Worked examples: the effective bounds on the named quadratic fields
 
-The effective-bounds roadmap keeps its estimates honest with two arithmetic worked examples,
-each asking that a general bound be exercised on a *named* number field rather than a
-same-shape analogue:
+This file exercises two of the general effective bounds on *named* number fields rather than
+same-shape analogues:
 
 * the discriminant bound recovers `|d_{ℚ(i)}| = 4` from the integral basis `{1, i}`;
 * the class-number bound is non-vacuous on `ℚ(√-5)`, giving `h ≤ 64·5`.
 
-This file realises both worked examples on concrete `NumberField` instances, each exercising
-the repo's own effective-bound machinery rather than citing a closed formula from Mathlib.
+Both examples are realised on concrete `NumberField` instances, each exercising the repo's own
+effective-bound machinery rather than citing a closed formula from Mathlib.
 
 For `ℚ(√-5)` we take `AdjoinRoot (X² + 5)` over `ℚ` (a field because `X² + 5` is irreducible,
 having no rational root), a degree-two number field with a square root of `-5`, and feed it to
@@ -73,8 +72,8 @@ instance : Fact (Irreducible (X ^ 2 - C (-5 : ℚ))) := ⟨by
     (fun q hq => by nlinarith [sq_nonneg q])⟩
 
 /-- **The class-number bound on `ℚ(√-5)`.** The class number of `ℚ(√-5)`, modelled as
-`AdjoinRoot (X² + 5)`, is at most `64·5 = 320`; this is the roadmap's non-vacuity worked
-example for the effective class-number bound. -/
+`AdjoinRoot (X² + 5)`, is at most `64·5 = 320`, so the effective class-number bound is
+non-vacuous on a named field. -/
 theorem classNumber_adjoinRoot_sqrt_neg_five_le :
     NumberField.classNumber (AdjoinRoot (X ^ 2 - C (-5 : ℚ))) ≤ 320 := by
   set f : ℚ[X] := X ^ 2 - C (-5 : ℚ) with hf
