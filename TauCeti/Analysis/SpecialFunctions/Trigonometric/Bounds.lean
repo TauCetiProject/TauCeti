@@ -22,7 +22,12 @@ nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is po
 angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`). On
 `(-π / 2, π / 2)` the square of the sine is less than `1`, so `sin (x / 2) ^ 2 < 1` for `|x| < π`.
 If `cos (2πr) < cos (2πx)` with `r ≥ 0`, then `x` lies within `r` of an integer
-(`TauCeti.exists_abs_sub_int_lt_of_cos_lt`).
+(`TauCeti.exists_abs_sub_int_lt_of_cos_lt`). Every real number is within `π / 2` of an integer
+multiple of `π` (`TauCeti.exists_abs_sub_int_mul_pi_le`), `sin (2 x)` vanishes at distance exactly
+`π / 2` from one (`TauCeti.sin_two_mul_eq_zero_of_abs_sub_int_mul_pi_eq`), and the odd multiples of
+`π / 2` are at distance at least `π / 2` from `0`
+(`TauCeti.pi_div_two_le_abs_int_mul_pi_sub_pi_div_two`), so they differ from the integer multiples
+of `π` (`TauCeti.add_int_mul_pi_ne_add_pi_div_two_add_int_mul_pi`).
 
 For angles `α, β > 0` and `γ ≥ 0` with
 `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
@@ -186,5 +191,43 @@ theorem exists_cosine_rule_parameter {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < 
   refine ⟨cosh d, exp d, hK, Real.one_lt_exp_iff.2 hd, ?_⟩
   rw [cosh_eq, exp_neg]
   field_simp
+
+/-- Every real number is within `π / 2` of an integer multiple of `π`. -/
+theorem exists_abs_sub_int_mul_pi_le (x : ℝ) : ∃ n : ℤ, |x - n * π| ≤ π / 2 := by
+  refine ⟨round (x / π), ?_⟩
+  have h := abs_sub_round (x / π)
+  calc |x - round (x / π) * π| = |x / π - round (x / π)| * π := by
+        rw [← abs_of_pos pi_pos, ← abs_mul, abs_of_pos pi_pos, sub_mul,
+          div_mul_cancel₀ _ pi_ne_zero]
+    _ ≤ 1 / 2 * π := by gcongr
+    _ = π / 2 := by ring
+
+/-- At distance exactly `π / 2` from an integer multiple of `π`, `sin (2 x)` vanishes. -/
+theorem sin_two_mul_eq_zero_of_abs_sub_int_mul_pi_eq {x : ℝ} {n : ℤ}
+    (h : |x - n * π| = π / 2) : sin (2 * x) = 0 := by
+  rcases (abs_eq (by positivity)).1 h with h | h
+  · rw [show 2 * x = ((2 * n + 1 : ℤ) : ℝ) * π by push_cast; linarith, sin_int_mul_pi]
+  · rw [show 2 * x = ((2 * n - 1 : ℤ) : ℝ) * π by push_cast; linarith, sin_int_mul_pi]
+
+/-- An odd multiple of `π / 2` is at distance at least `π / 2` from `0`. -/
+theorem pi_div_two_le_abs_int_mul_pi_sub_pi_div_two (N : ℤ) :
+    π / 2 ≤ |N * π - π / 2| := by
+  have h : (1 : ℝ) ≤ |((2 * N - 1 : ℤ) : ℝ)| := by
+    rw [← Int.cast_abs]
+    exact_mod_cast Int.one_le_abs (by omega)
+  calc π / 2 = 1 * (π / 2) := by ring
+    _ ≤ |((2 * N - 1 : ℤ) : ℝ)| * (π / 2) := by gcongr
+    _ = |N * π - π / 2| := by
+        rw [← abs_of_pos (half_pos pi_pos), ← abs_mul, abs_of_pos (half_pos pi_pos)]
+        push_cast
+        ring_nf
+
+/-- An integer multiple of `π` is not an odd multiple of `π / 2`, after any common shift `c`. -/
+theorem add_int_mul_pi_ne_add_pi_div_two_add_int_mul_pi (c : ℝ) (n m : ℤ) :
+    c + n * π ≠ c + π / 2 + m * π := by
+  intro h
+  have h' := pi_div_two_le_abs_int_mul_pi_sub_pi_div_two (n - m)
+  rw [show ((n - m : ℤ) : ℝ) * π - π / 2 = 0 by push_cast; linarith, abs_zero] at h'
+  linarith [pi_pos]
 
 end TauCeti

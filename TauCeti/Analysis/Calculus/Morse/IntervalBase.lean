@@ -61,6 +61,9 @@ bijective.
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
+* `TauCeti.tendsto_intervalBaseTimeCoordinate_nhdsGT_zero` and
+  `TauCeti.tendsto_intervalBaseTimeCoordinate_nhdsLT_one`: `U` tends to `-∞` at `0` and to `+∞`
+  at `1`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
   `TauCeti.intervalBaseFlow_add`: the flow.
 * `TauCeti.intervalBaseTimeCoordinate_intervalBaseFlow`, `TauCeti.strictMonoOn_intervalBaseFlow`,
@@ -579,6 +582,24 @@ theorem tendsto_nhds_one_of_tendsto_intervalBaseTimeCoordinate_atTop {α : Type*
     (h : Tendsto (fun i ↦ intervalBaseTimeCoordinate (x i)) l atTop) : Tendsto x l (𝓝 1) :=
   ((tendsto_intervalBaseOrbit_atTop one_pos).comp h).congr' <| hx.mono fun _ hi ↦
     intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
+
+/-- The time coordinate tends to `-∞` at the source end `t = 0` of `(0, 1)`. -/
+theorem tendsto_intervalBaseTimeCoordinate_nhdsGT_zero :
+    Tendsto intervalBaseTimeCoordinate (𝓝[>] 0) atBot := by
+  refine tendsto_atBot.2 fun y ↦ ?_
+  have hq := intervalBaseOrbit_mem_Ioo 1 y
+  filter_upwards [Ioo_mem_nhdsGT hq.1] with t ht
+  simpa only [intervalBaseTimeCoordinate_intervalBaseOrbit, one_mul] using
+    (strictMonoOn_intervalBaseTimeCoordinate ⟨ht.1, ht.2.trans hq.2⟩ hq ht.2).le
+
+/-- The time coordinate tends to `+∞` at the target end `t = 1` of `(0, 1)`. -/
+theorem tendsto_intervalBaseTimeCoordinate_nhdsLT_one :
+    Tendsto intervalBaseTimeCoordinate (𝓝[<] 1) atTop := by
+  refine tendsto_atTop.2 fun y ↦ ?_
+  have hq := intervalBaseOrbit_mem_Ioo 1 y
+  filter_upwards [Ioo_mem_nhdsLT hq.2] with t ht
+  simpa only [intervalBaseTimeCoordinate_intervalBaseOrbit, one_mul] using
+    (strictMonoOn_intervalBaseTimeCoordinate hq ⟨hq.1.trans ht.1, ht.2⟩ ht.1).le
 
 /-! ### The flow and the time coordinate -/
 
