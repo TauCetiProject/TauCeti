@@ -14,7 +14,9 @@ import Mathlib.Tactic.NormNum.LegendreSymbol
 The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker character
 `TauCeti.kroneckerChar` of `D`. At an odd natural number `n` its value is `jacobiSym D n`, including
 zero when `n` is not coprime to `D`. At even arguments the Jacobi symbol need not agree with the
-character.
+character. Since `fundamentalDiscriminant d` differs from `d` by `1` or `4`, its Jacobi symbol and
+quadratic-residue status modulo odd arguments, as well as its Legendre symbol at odd primes,
+coincide with those of `d`.
 
 This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
 and `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -33,6 +35,58 @@ theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
     fundamentalDiscriminantChar D hD (n : ℤ) = jacobiSym D n := by
   rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_jacobiSym D hn]
+
+/-- At an odd natural number `n`, `fundamentalDiscriminant d` has the same Jacobi symbol as `d`,
+since the two differ by `1` or `4`, both squares prime to `n`. -/
+theorem jacobiSym_fundamentalDiscriminant (d : ℤ) {n : ℕ} (hn : Odd n) :
+    jacobiSym (fundamentalDiscriminant d) n = jacobiSym d n := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+  have hcop : c.gcd n = 1 := by
+    rcases hc with rfl | rfl
+    · exact Int.gcd_one_left n
+    · exact hn.coprime_two_left
+  rw [← hcd, jacobiSym.mul_left, jacobiSym.sq_one' hcop, one_mul]
+
+/-- At an odd prime `p`, `fundamentalDiscriminant d` has the same Legendre symbol as `d`,
+including `0` at primes dividing `d`. -/
+theorem legendreSym_fundamentalDiscriminant (d : ℤ) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    legendreSym p (fundamentalDiscriminant d) = legendreSym p d := by
+  rw [jacobiSym.legendreSym.to_jacobiSym, jacobiSym.legendreSym.to_jacobiSym,
+    jacobiSym_fundamentalDiscriminant d ((Fact.out : p.Prime).odd_of_ne_two hp)]
+
+/-- Modulo an odd natural number `n`, `fundamentalDiscriminant d` is a square if and only if `d`
+is a square. -/
+theorem isSquare_fundamentalDiscriminant_zmod_iff (d : ℤ) {n : ℕ} (hn : Odd n) :
+    IsSquare ((fundamentalDiscriminant d : ℤ) : ZMod n) ↔ IsSquare (d : ZMod n) := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+  have hu : IsUnit (c : ZMod n) := by
+    rcases hc with rfl | rfl
+    · rw [Int.cast_one]
+      exact isUnit_one
+    · rw [← Nat.cast_two, Int.cast_natCast]
+      exact (ZMod.isUnit_iff_coprime 2 n).mpr hn.coprime_two_left
+  rw [← hcd, Int.cast_mul, Int.cast_pow]
+  refine ⟨fun h ↦ ?_, (IsSquare.sq (c : ZMod n)).mul⟩
+  have hinv : ((hu.unit⁻¹ : Units (ZMod n)) : ZMod n) ^ 2 *
+      ((c : ZMod n) ^ 2 * (d : ZMod n)) = (d : ZMod n) := by
+    rw [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul]
+  exact hinv ▸ (IsSquare.sq ((hu.unit⁻¹ : Units (ZMod n)) : ZMod n)).mul h
+
+/-- At an odd natural number `n`, the character of `fundamentalDiscriminant d` equals
+`jacobiSym d n`, including `0` when `n` is not coprime to `d`. -/
+theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast_eq_jacobiSym {d : ℤ}
+    (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d)) {n : ℕ} (hn : Odd n) :
+    fundamentalDiscriminantChar (fundamentalDiscriminant d) hD (n : ℤ) = jacobiSym d n := by
+  rw [fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn,
+    jacobiSym_fundamentalDiscriminant d hn]
+
+/-- At an odd prime `p`, the character of `fundamentalDiscriminant d` equals `legendreSym p d`,
+including `0` when `p ∣ d`. -/
+theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast_eq_legendreSym {d : ℤ}
+    (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d)) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    fundamentalDiscriminantChar (fundamentalDiscriminant d) hD (p : ℤ) = legendreSym p d := by
+  rw [fundamentalDiscriminantChar_natCast_eq_legendreSym hD hp,
+    legendreSym_fundamentalDiscriminant d hp]
 
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/
