@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.Algebra.Frobenius.Coalgebra.Graded
+public import TauCeti.Algebra.DualNumber.Grading
 public import TauCeti.Algebra.Module.GradedModule.Finsupp
 public import TauCeti.Algebra.Module.GradedModule.GradedObject
 public import TauCeti.Algebra.Module.GradedModule.Shift
@@ -32,7 +34,10 @@ grading once each resolution is shifted by its number of `1`-smoothings.
 
 With the shift convention `(M⟨k⟩)ⱼ = Mⱼ₋ₖ`, the regraded algebra `W = V⟨-1⟩`, which is
 `(TauCeti.Khovanov.quantumGrading R).shift 1`, has its unit and multiplication in degree `0` and
-`X` in degree `-2`: it is a graded algebra.
+`X` in degree `-2`: it is an even-supported graded Frobenius algebra whose counit has degree `2`
+and coproduct has degree `-2`. In the opposite degree-two algebra grading
+`TauCeti.dualNumberIntegerGrade R` (with `deg 1 = 0` and `deg X = 2`), the counit has degree `-2`,
+the coproduct has degree `2`, and the handle element `2 • X` lies in degree `2`.
 
 The homogeneous pieces of `V` form a Mathlib graded object of `R`-modules,
 `TauCeti.Khovanov.quantumGradedObject R`, whose categorical total is identified with the
@@ -55,6 +60,14 @@ underlying algebra `R[ε]` by `TauCeti.InternalGrading.totalIso`.
 * `TauCeti.Khovanov.isHomogeneous_mul'`, `TauCeti.Khovanov.isHomogeneous_comul`,
   `TauCeti.Khovanov.isHomogeneous_algebraLinearMap`, `TauCeti.Khovanov.isHomogeneous_counit`:
   the degrees of the four structure maps.
+* `TauCeti.Khovanov.parityGrading_quantumGrading_shift_one_one`,
+  `TauCeti.Khovanov.isHomogeneous_counit_shift_one`, and
+  `TauCeti.Khovanov.isHomogeneous_comul_shift_one`: even support and degrees `2`, `-2` on
+  `W = V⟨-1⟩`.
+* `TauCeti.Khovanov.isHomogeneous_counit_dualNumberIntegerGrade`,
+  `TauCeti.Khovanov.isHomogeneous_comul_dualNumberIntegerGrade`, and
+  `TauCeti.Khovanov.handleElem_mem_dualNumberIntegerGrade_two`: degrees `-2`, `2` for
+  `deg X = 2`.
 
 ## References
 
@@ -70,6 +83,8 @@ open CategoryTheory TensorProduct DualNumber TrivSqZeroExt
 namespace TauCeti.Khovanov
 
 universe u
+
+section CommRing
 
 variable (R : Type u) [CommRing R]
 
@@ -257,13 +272,78 @@ noncomputable instance instGradedAlgebraShiftOne :
   { instGradedMonoidShiftOne R,
     (inferInstance : DirectSum.Decomposition ((quantumGrading R).shift 1).piece) with }
 
+/-- The regraded Khovanov algebra `W = V⟨-1⟩` is concentrated in even degrees (`0` and `-2`). -/
+@[simp] theorem parityGrading_quantumGrading_shift_one_one :
+    parityGrading ((quantumGrading R).shift 1).piece 1 = ⊥ :=
+  parityGrading_one_eq_bot_iff.mpr fun k => by
+    rw [InternalGrading.shift_piece]; exact quantumGrading_piece_eq_bot (by omega) (by omega)
+
 variable {R}
 
 /-- In the regrading `W = V⟨-1⟩`, the generator `X = ε` has degree `-2`. -/
 theorem eps_mem_quantumGrading_shift_one_piece_neg_two :
-    (ε : R[ε]) ∈ ((quantumGrading R).shift 1).piece (-2) := by
-  simp
+    (ε : R[ε]) ∈ ((quantumGrading R).shift 1).piece (-2) := by simp
+
+/-- In the regrading `W = V⟨-1⟩` (`deg 1 = 0`, `deg X = -2`), the counit has degree `2`. -/
+theorem isHomogeneous_counit_shift_one :
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
+      ((quantumGrading R).shift 1).piece (trivialGrading R R) 2 :=
+  TauCeti.LinearMap.isHomogeneous_def.mpr fun _ _ hx => by
+    rw [InternalGrading.shift_piece] at hx
+    simpa [add_assoc] using isHomogeneous_counit.map_mem hx
+
+/-- In the regrading `W = V⟨-1⟩` (`deg 1 = 0`, `deg X = -2`), the coproduct has degree `-2`. -/
+theorem isHomogeneous_comul_shift_one :
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
+      ((quantumGrading R).shift 1).piece
+      (((quantumGrading R).shift 1).tensorProduct ((quantumGrading R).shift 1)).piece (-2) :=
+  (Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul_piece
+    ((quantumGrading R).shift 1) (-2)).mp (by simpa using isHomogeneous_counit_shift_one)
 
 end Shift
+
+end CommRing
+
+section PositiveDegreeTwo
+
+/-! ### The positive degree-two grading (`deg 1 = 0`, `deg X = 2`) -/
+
+variable {R : Type u} [CommSemiring R]
+
+/-- With `deg 1 = 0` and `deg X = 2` (`TauCeti.dualNumberIntegerGrade R`), the Khovanov counit has
+degree `-2`. -/
+theorem isHomogeneous_counit_dualNumberIntegerGrade :
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
+      (dualNumberIntegerGrade R) (trivialGrading R R) (-2) :=
+  TauCeti.LinearMap.isHomogeneous_def.mpr fun p x hx => by
+    by_cases hp2 : p = 2
+    · subst hp2; simp
+    · by_cases hp0 : p = 0
+      · subst hp0
+        rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero] at hx
+        simp [hx]
+      · rw [dualNumberIntegerGrade_eq_bot R hp0 hp2, Submodule.mem_bot] at hx; simp [hx]
+
+/-- With `deg 1 = 0` and `deg X = 2` (`TauCeti.dualNumberIntegerGrade R`), the Khovanov coproduct
+has degree `2`. -/
+theorem isHomogeneous_comul_dualNumberIntegerGrade :
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
+      (dualNumberIntegerGrade R)
+      ((dualNumberIntegerInternalGrading R).tensorProduct
+        (dualNumberIntegerInternalGrading R)).piece 2 := by
+  let _ : GradedAlgebra (dualNumberIntegerInternalGrading R).piece :=
+    (dualNumberIntegerInternalGrading_piece R).symm ▸ dualNumberIntegerGradedAlgebra R
+  rw [← dualNumberIntegerInternalGrading_piece R]
+  exact (Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul_piece
+    (dualNumberIntegerInternalGrading R) 2).mp
+    (by simpa using isHomogeneous_counit_dualNumberIntegerGrade)
+
+/-- With `deg 1 = 0` and `deg X = 2`, the handle element `2 • X` has degree `2`. -/
+theorem handleElem_mem_dualNumberIntegerGrade_two :
+    Coalgebra.handleElem R R[ε] ∈ dualNumberIntegerGrade R 2 := by
+  rw [handleElem_eq]
+  exact (dualNumberIntegerGrade R 2).smul_mem 2 (eps_mem_dualNumberIntegerGrade_two R)
+
+end PositiveDegreeTwo
 
 end TauCeti.Khovanov

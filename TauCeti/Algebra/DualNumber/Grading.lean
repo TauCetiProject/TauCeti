@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.Module.GradedModule.Coarsen
 public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 
 /-!
@@ -329,5 +330,35 @@ degrees. This is a definition rather than a global instance, like `dualNumberGra
 noncomputable def dualNumberIntegerGradedAlgebra : GradedAlgebra (dualNumberIntegerGrade R) :=
   let _ := dualNumberGradedAlgebra R
   Graded.gradedAlgebraExtendByZero (dualNumberGrade R)
+
+/-- In the integer grading of the dual numbers, every piece outside degrees zero and two
+vanishes. -/
+theorem dualNumberIntegerGrade_eq_bot {d : ℤ} (h0 : d ≠ 0) (h2 : d ≠ 2) :
+    dualNumberIntegerGrade R d = ⊥ := by
+  rcases lt_or_ge d 0 with hd | hd
+  · exact dualNumberIntegerGrade_eq_bot_of_neg R hd
+  · lift d to ℕ using hd
+    rw [dualNumberIntegerGrade_ofNat]
+    exact dualNumberGrade_eq_bot R (by omega) (by omega)
+
+/-- The integer grading of the dual numbers is concentrated in even degrees (`0` and `2`). -/
+@[simp]
+theorem parityGrading_dualNumberIntegerGrade_one :
+    parityGrading (dualNumberIntegerGrade R) 1 = ⊥ :=
+  parityGrading_one_eq_bot_iff.mpr fun _ => dualNumberIntegerGrade_eq_bot R (by omega) (by omega)
+
+/-- `TauCeti.dualNumberIntegerGrade` packaged as an `InternalGrading`. -/
+noncomputable def dualNumberIntegerInternalGrading : InternalGrading R (DualNumber R) ℤ where
+  piece := dualNumberIntegerGrade R
+  isInternal := by
+    let _ := dualNumberIntegerGradedAlgebra R
+    exact DirectSum.Decomposition.isInternal (dualNumberIntegerGrade R)
+
+/-- The homogeneous pieces of `TauCeti.dualNumberIntegerInternalGrading` are
+`TauCeti.dualNumberIntegerGrade`. -/
+@[simp]
+theorem dualNumberIntegerInternalGrading_piece :
+    (dualNumberIntegerInternalGrading R).piece = dualNumberIntegerGrade R :=
+  (rfl)
 
 end TauCeti
