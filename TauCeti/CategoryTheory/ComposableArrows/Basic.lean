@@ -105,6 +105,13 @@ theorem totalArrow_precomp_zero_succ (F : ComposableArrows C n) {X : C} (f : X �
       ((Category.comp_id f).symm.trans (by rw [← F.map_id]; rfl))
   · rfl
 
+/-- The morphism from the new first vertex of a prepended string to a shifted vertex is the
+prepended arrow followed by a morphism of the original string. -/
+theorem precomp_map_zero_succ (F : ComposableArrows C n) {X : C} (f : X ⟶ F.left)
+    (j : Fin (n + 1)) :
+    (F.precomp f).map (homOfLE (Fin.zero_le j.succ)) = f ≫ F.map (homOfLE (Fin.zero_le j)) :=
+  eq_of_heq (Quiver.Total.mk.inj (totalArrow_precomp_zero_succ F f j)).2.2
+
 /-- Arrows between shifted vertices of a prepended string are the arrows of the original
 string. -/
 @[simp]
