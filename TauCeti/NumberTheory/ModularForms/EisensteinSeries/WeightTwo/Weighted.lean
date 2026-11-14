@@ -800,6 +800,16 @@ theorem weightedG2_sub_const (W : (Fin 2 → ZMod N) → ℂ) (m : ℂ) :
 
 /-! ### Changing the level -/
 
+/-- Subtracting the mean `N⁻² ∑ b, W b` from a weight leaves a weight of total mass zero. -/
+private theorem sum_sub_mean_eq_zero (W : (Fin 2 → ZMod N) → ℂ) :
+    ∑ a, (W a - ((N : ℂ) ^ 2)⁻¹ * ∑ b, W b) = 0 := by
+  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card,
+    Fintype.card_fin, nsmul_eq_mul]
+  push_cast
+  field_simp
+  ring
+
 variable {M : ℕ} [NeZero M]
 
 /-- The change of level for a weight of total mass zero: both series are
@@ -866,13 +876,8 @@ private lemma weightedG2_comp_castHom_of_sum_eq_zero (h : M ∣ N) {W : (Fin 2 �
 theorem weightedG2_comp_castHom (h : M ∣ N) (W : (Fin 2 → ZMod M) → ℂ) :
     weightedG2 (fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom h (ZMod M) ∘ c)) = weightedG2 W := by
   -- split off a constant weight, whose series vanishes at every level
-  set m : ℂ := (∑ a, W a) / (M : ℂ) ^ 2
-  have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
-  have hmass : ∑ a, (W a - m) = 0 := by
-    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card,
-      Fintype.card_fin, nsmul_eq_mul]
-    push_cast
-    rw [show (M : ℂ) ^ 2 * m = ∑ a, W a from mul_div_cancel₀ _ (pow_ne_zero 2 hM), sub_self]
+  set m : ℂ := ((M : ℂ) ^ 2)⁻¹ * ∑ a, W a
+  have hmass : ∑ a, (W a - m) = 0 := sum_sub_mean_eq_zero W
   rw [← weightedG2_sub_const (fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom h (ZMod M) ∘ c)) m,
     ← weightedG2_sub_const W m]
   exact weightedG2_comp_castHom_of_sum_eq_zero h (W := fun a ↦ W a - m) hmass
@@ -1055,14 +1060,7 @@ undone. -/
 theorem tsum_weightedG2Row (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
     ∑' c, weightedG2Row W z c = weightedG2 W z + ((N : ℂ) ^ 2)⁻¹ * (∑ a, W a) * G2 z := by
   set m : ℂ := ((N : ℂ) ^ 2)⁻¹ * ∑ a, W a
-  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have hmass : ∑ a, (W a - m) = 0 := by
-    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card,
-      Fintype.card_fin, nsmul_eq_mul]
-    push_cast
-    simp only [m]
-    field_simp
-    ring
+  have hmass : ∑ a, (W a - m) = 0 := sum_sub_mean_eq_zero W
   -- split off a constant weight, whose series vanishes and whose rows are those of `G₂`
   have hG := weightedG2_sub_const W m
   have h1 (c : ℤ) : weightedG2Row (1 : (Fin 2 → ZMod N) → ℂ) z c = e2Summand c z := by
