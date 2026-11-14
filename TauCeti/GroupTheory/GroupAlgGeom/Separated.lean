@@ -36,6 +36,17 @@ its normal closure are both everything, so its group is trivial and separated by
 although the coefficients do not embed in it and it has no coefficient-preserving homomorphism to
 `F(a, b)`.
 
+The second criterion extends to a normal subgroup `N` of `G[X]` between a system `S` and its
+radical: `G[X] ⧸ N` is separated by `H` exactly when `N` is the radical of `S`. Hence if
+`G[X] ⧸ N` embeds over `G` in a group separated by `H`, then `N = Rad_H(S)`, and the coordinate
+group `G_{R(S)}` embeds in the same group by the same map on the classes of the elements of
+`G[X]`. This is how Kharlampovich and Myasnikov compute radicals of quadratic equations: for
+`N = ncl(S)` one direction of the criterion is their Lemma 3, and for a standard quadratic
+equation with a solution in general position they embed `G_S` in an iterated extension of
+centralizers of `G`, so that `G_S = G_{R(S)}`. The subgroup `N` may be strictly larger than the
+normal closure of the system: over `F(a, b)`, the radical of `x² a²` is the normal closure of
+`x a`, the ideal of the point `x = a⁻¹`.
+
 Combined with the characterization of irreducible algebraic sets by discrimination, this gives a
 recognition theorem for discriminated groups: if `H` is equationally Noetherian and `X` is finite,
 then `K` is discriminated by `H` if and only if it is `G`-isomorphic to the coordinate group of an
@@ -88,6 +99,15 @@ also cover systems without solutions, whose coordinate group is trivial.
   to one.
 * `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_iff`: `G_S` is separated by `H` if and
   only if `Rad_H(S) = ncl(S)`.
+* `TauCeti.GroupAlgGeom.GX.isSeparatedBy_quotientCoeff_iff_of_subset`: for `S ⊆ N ≤ Rad_H(S)`,
+  `G[X] ⧸ N` is separated by `H` if and only if `Rad_H(S) = N`;
+  `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_iff_of_subset` is the same criterion for
+  `N = ncl(T)`.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.exists_injective_gHom_coordGroup_of_injective`: for
+  `S ⊆ N ≤ Rad_H(S)`, an embedding over `G` of `G[X] ⧸ N` in a group separated by `H` gives one of
+  `G_{R(S)}`;
+  `TauCeti.GroupAlgGeom.IsSeparatedBy.exists_injective_gHom_coordGroup_of_injective_systemGroup`
+  is the same statement for `N = ncl(T)`.
 * `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_range_inr_of_mul_inv_inl`: for injective
   coefficients, the group of a system prescribing the value of every variable is separated by `H`.
 * `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of`: the trivial group
@@ -159,6 +179,15 @@ theorem isSeparatedBy_quotientCoeff_iff (N : Subgroup (GX G X)) [N.Normal] :
     simp only [mem_Rad, not_forall] at hw
     obtain ⟨v, hv, hvw⟩ := hw
     exact ⟨quotientEvalGHom v hv, by simpa using hvw⟩
+
+/-- Let `N` be a normal subgroup of `G[X]` between a system `S` and its radical over `H`. Then
+`G[X] ⧸ N` is separated by `H` over `G` if and only if `N` is the radical of `S`. -/
+theorem isSeparatedBy_quotientCoeff_iff_of_subset {S : Set (GX G X)} {N : Subgroup (GX G X)}
+    [N.Normal] (hSN : S ⊆ N) (hN : N ≤ Rad ι S) :
+    IsSeparatedBy (quotientCoeff N) ι ↔ Rad ι S = N := by
+  -- `N` has the same radical as `S`, lying between `S` and `Rad_H(S)`.
+  rw [isSeparatedBy_quotientCoeff_iff, le_antisymm
+    (by simpa using Rad_monotone ι (SetLike.coe_subset_coe.2 hN)) (Rad_monotone ι hSN)]
 
 end GX
 
@@ -257,11 +286,20 @@ theorem CoordGroup.isSeparatedBy_of_bijective {S : Set (GX G X)}
   (CoordGroup.isSeparatedBy_coeff S).of_injective (φ.symmOfBijective hφ)
     (φ.symmOfBijective_injective hφ)
 
+/-- Let `T` be a system whose normal closure contains a system `S` and whose equations lie in the
+radical of `S` over `H`. Then the group `G_T = G[X] ⧸ ncl(T)` is separated by `H` if and only if
+the radical of `S` over `H` is the normal closure of `T`. -/
+theorem SystemGroup.isSeparatedBy_coeff_iff_of_subset {S T : Set (GX G X)}
+    (hST : S ⊆ normalClosure T) (hTS : T ⊆ Rad ι S) :
+    IsSeparatedBy (SystemGroup.coeff T) ι ↔ Rad ι S = normalClosure T := by
+  rw [SystemGroup.coeff_def]
+  exact GX.isSeparatedBy_quotientCoeff_iff_of_subset hST (normalClosure_le_normal hTS)
+
 /-- The group `G_S = G[X] ⧸ ncl(S)` of a system is separated by `H` if and only if the radical of
 `S` over `H` is the normal closure of `S`. -/
 theorem SystemGroup.isSeparatedBy_coeff_iff (S : Set (GX G X)) :
-    IsSeparatedBy (SystemGroup.coeff S) ι ↔ Rad ι S = normalClosure S := by
-  rw [SystemGroup.coeff_def, GX.isSeparatedBy_quotientCoeff_iff, Rad_normalClosure]
+    IsSeparatedBy (SystemGroup.coeff S) ι ↔ Rad ι S = normalClosure S :=
+  SystemGroup.isSeparatedBy_coeff_iff_of_subset subset_normalClosure (subset_Rad S)
 
 /-- Over `F(a, b)` with one variable `x`, the group of the system `x² = 1` is not separated by
 `F(a, b)`: the radical of `x²` is the normal closure of `x`, not that of `x²`. -/
@@ -297,6 +335,70 @@ theorem SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of :
       (.id (FreeGroup (Fin 2))) := by
   rw [SystemGroup.isSeparatedBy_coeff_iff, Rad_inl_of_inl_of_inr_of_eq_top,
     normalClosure_inl_of_inl_of_inr_of_eq_top]
+
+/-! ### Coordinate groups through quotients embedded in separated groups -/
+
+/-- Let `N` be a normal subgroup of `G[X]` between a system `S` and its radical over `H`. If
+`G[X] ⧸ N` embeds over `G`, through `f`, in a group `K` separated by `H`, then so does the
+coordinate group `G_{R(S)}`, through the embedding sending the class of each `w ∈ G[X]` to the image
+under `f` of its class modulo `N`. -/
+theorem IsSeparatedBy.exists_injective_gHom_coordGroup_of_injective (h : IsSeparatedBy κ ι)
+    {S : Set (GX G X)} {N : Subgroup (GX G X)} [N.Normal] (hSN : S ⊆ N) (hN : N ≤ Rad ι S)
+    (f : GHom (GX.quotientCoeff N) κ) (hf : Function.Injective f) :
+    ∃ f' : GHom (CoordGroup.coeff ι S) κ, Function.Injective f' ∧
+      ∀ w : GX G X, f' (w : CoordGroup ι S) = f (w : GX G X ⧸ N) := by
+  -- `G[X] ⧸ N` is separated by `H`, so `N` is the radical of `S`.
+  obtain rfl := (GX.isSeparatedBy_quotientCoeff_iff_of_subset hSN hN).1 (h.of_injective f hf)
+  rw [CoordGroup.coeff_def]
+  exact ⟨f, hf, fun _ => rfl⟩
+
+/-- Let `T` be a system whose normal closure contains a system `S` and whose equations lie in the
+radical of `S` over `H`. If `G_T = G[X] ⧸ ncl(T)` embeds over `G`, through `f`, in a group `K`
+separated by `H`, then so does the coordinate group `G_{R(S)}`, through the embedding sending
+the class of each `w ∈ G[X]` to the image under `f` of its class in `G_T`. -/
+theorem IsSeparatedBy.exists_injective_gHom_coordGroup_of_injective_systemGroup
+    (h : IsSeparatedBy κ ι) {S T : Set (GX G X)} (hST : S ⊆ normalClosure T)
+    (hTS : T ⊆ Rad ι S) (f : GHom (SystemGroup.coeff T) κ) (hf : Function.Injective f) :
+    ∃ f' : GHom (CoordGroup.coeff ι S) κ, Function.Injective f' ∧
+      ∀ w : GX G X, f' (w : CoordGroup ι S) = f (w : SystemGroup G T) := by
+  revert f
+  rw [SystemGroup.coeff_def]
+  exact fun f hf => h.exists_injective_gHom_coordGroup_of_injective hST
+    (normalClosure_le_normal hTS) f hf
+
+section Example
+
+open FreeGroup
+
+/-- Over `F(a, b)` with one variable `x`, the radical of `x² a²` is the normal closure `N` of
+`x a`, which strictly contains the normal closure of `x² a²`
+(`inr_of_mul_inl_notMem_normalClosure_pow_mul_inl`): `N` is the ideal of the point `x = a⁻¹`, so
+evaluation at that point embeds `G[x] ⧸ N` in `F(a, b)`. The conclusion is the case `n = 2` of
+`Rad_pow_mul_inl_pow_eq_normalClosure`; here it is reached through the separation criterion. -/
+example :
+    Rad (.id (FreeGroup (Fin 2)))
+        {(inr (of ()) : GX (FreeGroup (Fin 2)) Unit) ^ 2 * inl (of 0 ^ 2)} =
+      normalClosure {inr (of ()) * inl (of 0)} := by
+  set N := normalClosure {(inr (of ()) : GX (FreeGroup (Fin 2)) Unit) * inl (of 0)}
+  -- `N` is the ideal of the point `x = a⁻¹`.
+  have hN : I (.id (FreeGroup (Fin 2))) {MonoidHom.id _ ∘ fun _ : Unit => (of 0)⁻¹} = N := by
+    rw [I_singleton_comp Function.injective_id]
+    simp [N, Set.range_unique]
+  have hv : (fun _ => (of 0)⁻¹) ∈ V (.id (FreeGroup (Fin 2))) (N : Set (GX _ Unit)) :=
+    hN ▸ subset_V_I _ rfl
+  refine (GX.isSeparatedBy_quotientCoeff_iff_of_subset ?_ ?_).1
+    ((IsDiscriminatedBy.self _).isSeparatedBy.of_injective (GX.quotientEvalGHom _ hv) ?_)
+  · rw [← hN, subset_I_iff]
+    simp
+  · rw [Rad_pow_mul_inl_pow two_ne_zero]
+    exact normalClosure_le_Rad _
+  · -- The kernel of evaluation at `x = a⁻¹` is the ideal of that point.
+    refine (injective_iff_map_eq_one _).2 fun q hq => ?_
+    obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
+    rw [QuotientGroup.eq_one_iff, ← hN]
+    simpa using hq
+
+end Example
 
 /-- A group `K` generated over `G` by the images of the variables `X` is separated by `H` if and
 only if it is `G`-isomorphic to a coordinate group over `H` in the variables `X`. -/
