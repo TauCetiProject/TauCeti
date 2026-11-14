@@ -169,7 +169,7 @@ private theorem integrableOn_and_sign_mul_integral_chart_piece [MeasurableSpace 
         ∫ z in D ∩ Q i ⁻¹' s, V i z ∂B.addHaar :=
     l.integrableOn_and_integral_chart_parameter_piece B φ hi α (hS i) (d i) (hderiv i)
       (hΨinj i) (V i) fun z hz ↦ htransport i z hz.1 (hsrc hz.2)
-  exact ⟨fun i ↦ (hpiece i).1, mul_integral_image_eq_sum_pieces hZ himage hdisj
+  exact ⟨fun i ↦ (hpiece i).1, mul_integral_image_eq_sum_pieces hZ.countable himage hdisj
     ((extChartAt I α).injOn.mono hsrc) B.addHaar hC.integrableOn _ V
     (fun i ↦ measurable_image_of_fderivWithin (hS i) (hderiv i) (hΨinj i))
     fun i ↦ (hpiece i).2⟩

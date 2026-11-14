@@ -259,8 +259,8 @@ theorem sturmEDist_map_left [OpensMeasurableSpace (X × X')] [OpensMeasurableSpa
       rfl
     refine (sturmEDist_le hg hcoup p).trans ?_
     rw [eLpNorm_map_measure hg.continuous.aestronglyMeasurable hTπ]
-    exact eLpNorm_mono_enorm (hg.continuous.aestronglyMeasurable.comp_aemeasurable hTπ) fun z ↦ by
-      simpa only [Function.comp_apply, id_eq, edist_self, zero_add, enorm_eq_self] using
+    exact eLpNorm_mono_eNorm (hg.continuous.aestronglyMeasurable.comp_aemeasurable hTπ) fun z ↦ by
+      simpa only [Function.comp_apply, id_eq, edist_self, zero_add, eNorm_eq_self] using
         iInf_le (fun x ↦ edist (T z.1) (T x) + f x z.2) z.1
   · calc sturmEDist p μ ν ≤ sturmEDist p μ (μ.map T) + sturmEDist p (μ.map T) ν :=
           sturmEDist_triangle hp μ (μ.map T) ν

@@ -56,6 +56,7 @@ theorem isFiniteLocallyFree_ihom_free (I : Type u) [Finite I]
     (isFiniteLocallyFree (ringCatSheaf R)).prop_tensor hfree hN
   exact (isFiniteLocallyFree (ringCatSheaf R)).prop_of_iso (ihomFreeIso I N).symm htensor
 
+omit [HasSheafify J AddCommGrpCat.{u}] in
 /-- Internal Hom from a sheaf isomorphic to a finite free sheaf preserves finite local
 freeness. -/
 theorem isFiniteLocallyFree_ihom_of_iso_free (I : Type u) [Finite I]
