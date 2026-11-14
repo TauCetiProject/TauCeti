@@ -12,6 +12,7 @@ public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Interval
+public import TauCeti.Data.Nat.Factorial.NatCast
 
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import TauCeti.Algebra.Order.AbsoluteValue.Basic
@@ -54,7 +55,10 @@ Roth's theorem.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
   `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
-* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`.
+* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`, giving
+  `MvPolynomial.iterate_pderiv_eq_zero_iff` and `MvPolynomial.eval_iterate_pderiv_eq_zero_iff`
+  (and their `_of_lt_expChar` specialisations) when `k!` is a unit, and
+  `MvPolynomial.iterate_pderiv_eq_zero_of_char_le` when `k ≥ p` in positive characteristic `p`.
 * `MvPolynomial.hasseDeriv_single_toMvPolynomial`,
   `MvPolynomial.hasseDeriv_toMvPolynomial_eq_zero`: on a polynomial in the single variable `Xᵢ`,
   `∂^(k eᵢ)` is the univariate `k`-th Hasse derivative, and `∂^d` vanishes whenever `d`
@@ -259,6 +263,42 @@ theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ
   | succ k ih =>
     rw [Function.iterate_succ_apply', ← ih, map_nsmul, pderiv_hasseDeriv_single, smul_smul,
       Nat.factorial_succ, mul_comm]
+
+open scoped Nat in
+/-- When `k !` is a unit in `R`, the `k`-th ordinary partial derivative of `P` in `Xᵢ` vanishes if
+and only if `∂^(k eᵢ) P` vanishes. -/
+theorem iterate_pderiv_eq_zero_iff {i : σ} {k : ℕ} (hk : IsUnit (k ! : R))
+    (P : MvPolynomial σ R) : (pderiv i)^[k] P = 0 ↔ hasseDeriv (single i k) P = 0 := by
+  rw [← factorial_smul_hasseDeriv_single, ← Nat.cast_smul_eq_nsmul R, hk.smul_eq_zero]
+
+open scoped Nat in
+/-- When `k !` is a unit in `R`, the `k`-th ordinary partial jet of `P` in `Xᵢ` at `x` vanishes if
+and only if the Hasse jet `(∂^(k eᵢ) P)(x)` vanishes. -/
+theorem eval_iterate_pderiv_eq_zero_iff {i : σ} {k : ℕ} (hk : IsUnit (k ! : R)) (x : σ → R)
+    (P : MvPolynomial σ R) :
+    eval x ((pderiv i)^[k] P) = 0 ↔ eval x (hasseDeriv (single i k) P) = 0 := by
+  rw [← factorial_smul_hasseDeriv_single, map_nsmul, nsmul_eq_mul, hk.mul_right_eq_zero]
+
+/-- In exponential characteristic `p`, an ordinary partial derivative of order `k < p` in `Xᵢ`
+vanishes if and only if `∂^(k eᵢ) P` vanishes. -/
+theorem iterate_pderiv_eq_zero_iff_of_lt_expChar {p : ℕ} [ExpChar R p] {i : σ} {k : ℕ}
+    (hk : k < p) (P : MvPolynomial σ R) :
+    (pderiv i)^[k] P = 0 ↔ hasseDeriv (single i k) P = 0 :=
+  iterate_pderiv_eq_zero_iff (IsUnit.natCast_factorial_of_expChar p hk) P
+
+/-- In exponential characteristic `p`, an ordinary partial jet of order `k < p` in `Xᵢ` at `x`
+vanishes if and only if `(∂^(k eᵢ) P)(x)` vanishes. -/
+theorem eval_iterate_pderiv_eq_zero_iff_of_lt_expChar {p : ℕ} [ExpChar R p] {i : σ} {k : ℕ}
+    (hk : k < p) (x : σ → R) (P : MvPolynomial σ R) :
+    eval x ((pderiv i)^[k] P) = 0 ↔ eval x (hasseDeriv (single i k) P) = 0 :=
+  eval_iterate_pderiv_eq_zero_iff (IsUnit.natCast_factorial_of_expChar p hk) x P
+
+/-- In positive characteristic `p`, every iterated ordinary partial derivative of order `k ≥ p`
+vanishes identically. -/
+theorem iterate_pderiv_eq_zero_of_char_le {p : ℕ} [CharP R p] [NeZero p] (i : σ) {k : ℕ}
+    (hk : p ≤ k) (P : MvPolynomial σ R) : (pderiv i)^[k] P = 0 := by
+  rw [← factorial_smul_hasseDeriv_single, ← Nat.cast_smul_eq_nsmul R,
+    Nat.cast_factorial_eq_zero_of_le (NeZero.pos p) (CharP.cast_eq_zero R p) hk, zero_smul]
 
 /-- On a polynomial in the single variable `Xᵢ`, the Hasse derivative `∂^(k eᵢ)` is the
 univariate `k`-th Hasse derivative. -/
