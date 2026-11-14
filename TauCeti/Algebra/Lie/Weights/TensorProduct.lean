@@ -40,6 +40,8 @@ weight spaces of `M ⊗ N` and must agree with it termwise
 * `TauCeti.genWeightSpace_tensorProduct_eq_iSup`: **the weight-space decomposition of a tensor
   product.** The `χ`-weight space of `M ⊗ N` is the supremum, over the pairs `(μ, ν)` with
   `μ + ν = χ`, of the submodules spanned by `Mμ ⊗ Nν`.
+* `TauCeti.genWeightSpace_toSubmodule_tensorProduct`: the same decomposition, indexed by pairs of
+  bundled `Weight`s of `M` and `N` summing to `χ`.
 * `TauCeti.genWeightSpace_tensorProduct_ne_bot` and `TauCeti.exists_weight_add_eq`: **the weights of
   `M ⊗ N` are exactly the sums of a weight of `M` and a weight of `N`.**
 * `TauCeti.exists_mem_weight_tensorProduct`: if the weights of `M` and of `N` lie in an
@@ -263,6 +265,35 @@ instance instLinearWeightsTensorProduct [LinearWeights K L M] [LinearWeights K L
   refine ⟨?_, ?_, ?_⟩ <;> intro χ hχ <;>
     obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq (⟨χ, hχ⟩ : Weight K L (M ⊗[K] N)) <;>
     simp only [Weight.coe_weight_mk] at hμν <;> subst hμν <;> simp [add_add_add_comm, mul_add]
+
+variable [LinearWeights K L M] [LinearWeights K L N] in
+open scoped Classical in
+/-- **The weight-space decomposition of a tensor product, indexed by weights.** The generalized
+`χ`-weight space of a tensor product is the supremum of the tensor products of
+generalized weight spaces over the pairs of weights summing to `χ`. -/
+theorem genWeightSpace_toSubmodule_tensorProduct (χ : Dual K L) :
+    (genWeightSpace (M ⊗[K] N) (χ : L → K)).toSubmodule =
+      ⨆ p : {p : Weight K L M × Weight K L N // (p.1 : Dual K L) + (p.2 : Dual K L) = χ},
+        Submodule.map₂ (TensorProduct.mk K M N) (genWeightSpace M p.1.1).toSubmodule
+          (genWeightSpace N p.1.2).toSubmodule := by
+  apply le_antisymm
+  · rw [genWeightSpace_tensorProduct_eq_iSup]
+    refine iSup₂_le fun μ ν ↦ iSup_le fun hμν ↦ ?_
+    by_cases hμ : genWeightSpace M μ = ⊥
+    · simp [hμ]
+    by_cases hν : genWeightSpace N ν = ⊥
+    · simp [hν]
+    let m : Weight K L M := ⟨μ, hμ⟩
+    let n : Weight K L N := ⟨ν, hν⟩
+    have hadd : (m : Dual K L) + (n : Dual K L) = χ := by
+      ext x
+      simpa [m, n] using congrFun hμν x
+    exact le_iSup_of_le ⟨(m, n), hadd⟩ le_rfl
+  · refine iSup_le fun p ↦ ?_
+    have hp : (p.1.1 : L → K) + (p.1.2 : L → K) = (χ : L → K) := by
+      exact congrArg (fun f : Dual K L ↦ (f : L → K)) p.property
+    rw [← hp]
+    exact map₂_mk_genWeightSpace_le M N p.1.1 p.1.2
 
 end Field
 
