@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.NoncentralBeta.Moments
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import TauCeti.Probability.Moments.WeakConvergence
+import TauCeti.Probability.Moments.MethodOfMoments.CompactSupport
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 
 /-!

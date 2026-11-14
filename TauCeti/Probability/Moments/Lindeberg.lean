@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Taylor.Basic
 public import TauCeti.MeasureTheory.Integral.Pi
 public import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Lindeberg replacement
@@ -74,14 +75,11 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsFiniteMeasure μ]
     intro ρ _ h k hk
     have hklt : k < r + 1 := Finset.mem_range.mp hk
     have hkle : k ≤ r + 1 := (Nat.le_of_lt_succ hklt).trans (Nat.le_succ r)
-    have hpow : Integrable (fun t : ℝ ↦ ‖t‖ ^ (r + 1)) ρ := by
-      simpa [Real.norm_eq_abs] using h
-    have hlow : Integrable (fun t : ℝ ↦ ‖t‖ ^ k) ρ :=
-      integrable_norm_pow_of_le aestronglyMeasurable_id hkle hpow
-    have hpoly : Integrable (fun t : ℝ ↦ t ^ k) ρ := by
+    have hpow : Integrable (fun t : ℝ ↦ t ^ (r + 1)) ρ := by
       apply (integrable_norm_iff
-        (by fun_prop : AEStronglyMeasurable (fun t : ℝ ↦ t ^ k) ρ)).1
-      simpa only [norm_pow] using hlow
+        (by fun_prop : AEStronglyMeasurable (fun t : ℝ ↦ t ^ (r + 1)) ρ)).1
+      simpa only [Real.norm_eq_abs, norm_pow] using h
+    have hpoly := integrable_pow_of_le aestronglyMeasurable_id hkle hpow
     have hterm := (hpoly.const_mul (iteratedDeriv k g 0)).div_const (k !)
     simpa [smul_eq_mul, sub_zero, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using hterm
   have hPint : ∀ (ρ : Measure ℝ) [IsFiniteMeasure ρ],

@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Tight
 public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 
 /-!
-# Tightness of a finite family of finite measures
+# Basic tightness criteria for measures
 
 Mathlib's `MeasureTheory.isTightMeasureSet_singleton` says that a single finite measure on a
 complete second-countable pseudo-metrizable space is tight, and `IsTightMeasureSet.union` says
@@ -29,6 +29,7 @@ the finitely many exceptional members of a family for which a uniform tail bound
 public section
 
 open Filter MeasureTheory Set
+open scoped Topology
 
 namespace TauCeti
 
