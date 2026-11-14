@@ -28,6 +28,8 @@ together with the vanishing it gives when `U` and `V` cover `X`.
   `Scheme.Modules.mayerVietorisSequence_def` identifies each of its objects and arrows with
   restriction maps and the connecting map `Scheme.Modules.mayerVietorisδ`, and
   `Scheme.Modules.mayerVietorisSequence_exact` is its exactness;
+* `Scheme.Modules.cohomologyOnMap_mayerVietorisδ`: the connecting map is natural in the
+  coefficient sheaf;
 * `Scheme.Modules.epi_mayerVietorisδ`: if `Hⁿ⁺¹(U, M)` and `Hⁿ⁺¹(V, M)` vanish, then the
   connecting map `Hⁿ(U ⊓ V, M) ⟶ Hⁿ⁺¹(U ⊔ V, M)` is an epimorphism;
 * `Scheme.Modules.subsingleton_cohomologyOn_sup_succ`: if moreover `Hⁿ(U ⊓ V, M)` vanishes,
@@ -80,6 +82,16 @@ noncomputable abbrev mayerVietorisδ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     cohomologyOn M n₀ (U ⊓ V) ⟶ cohomologyOn M n₁ (U ⊔ V) :=
   (Opens.mayerVietorisSquare U V).δ
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n₀ n₁ h
+
+variable {M} in
+/-- The maps on cohomology induced by a morphism of sheaves commute with the Mayer-Vietoris
+connecting maps. -/
+lemma cohomologyOnMap_mayerVietorisδ {N : X.Modules} (f : M ⟶ N) (n₀ n₁ : ℕ)
+    (h : n₀ + 1 = n₁) (x : cohomologyOn M n₀ (U ⊓ V)) :
+    Scheme.Modules.cohomologyOnMap f n₁ (U ⊔ V) (mayerVietorisδ M U V n₀ n₁ h x) =
+      mayerVietorisδ N U V n₀ n₁ h (Scheme.Modules.cohomologyOnMap f n₀ (U ⊓ V) x) :=
+  ConcreteCategory.congr_hom ((Opens.mayerVietorisSquare U V).δ_naturality_right _
+    ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f) n₀ n₁ h) x
 
 /-- Six consecutive terms of the Mayer-Vietoris long exact sequence of two open subsets, running
 from `Hⁿ⁰(U ⊔ V, M)` to `Hⁿ¹(U ⊓ V, M)`. -/

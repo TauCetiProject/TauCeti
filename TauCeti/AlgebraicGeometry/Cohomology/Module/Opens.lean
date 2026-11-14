@@ -41,11 +41,12 @@ The pair of restriction maps `Scheme.Modules.mayerVietorisToProdLinear` and thei
 biproducts of abelian groups, make the Mayer-Vietoris sequence an exact sequence of modules
 (`Scheme.Modules.exact_mayerVietorisToProdLinear_mayerVietorisFromProdLinear`,
 `Scheme.Modules.exact_mayerVietorisFromProdLinear_mayerVietorisδLinear` and
-`Scheme.Modules.exact_mayerVietorisδLinear_mayerVietorisToProdLinear`). Five lemmas over this
-sequence carry module-theoretic properties from affine opens to quasi-compact quasi-separated
-ones. For a scheme over a commutative ring `R`, `Hⁿ(U, M)` is also an `R`-module through global
-functions (`Scheme.Modules.cohomologyOnBaseModule`). The terminal-open comparison is also
-linear over `R` (`Scheme.Modules.cohomologyOnTopBaseLinearEquiv`).
+`Scheme.Modules.exact_mayerVietorisδLinear_mayerVietorisToProdLinear`), which starts with the
+injective map `Scheme.Modules.mayerVietorisToProdLinear_zero_injective` in degree zero. Five
+lemmas over this sequence carry module-theoretic properties from affine opens to quasi-compact
+quasi-separated ones. For a scheme over a commutative ring `R`, `Hⁿ(U, M)` is also an `R`-module
+through global functions (`Scheme.Modules.cohomologyOnBaseModule`). The terminal-open comparison
+is also linear over `R` (`Scheme.Modules.cohomologyOnTopBaseLinearEquiv`).
 -/
 
 public section
@@ -170,9 +171,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear (n : ℕ) {U V
   map_add' := map_add _
   map_smul' r x := by
     rw [RingHom.id_apply, cohomologyOn_smul_def, cohomologyOn_smul_def]
-    exact (ConcreteCategory.congr_hom
-      (((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
-        ((toSheaf X).map (M.globalSectionsSmul r))).naturality (homOfLE h).op) x).symm
+    exact (cohomologyOnMap_cohomologyOnRes _ n h x).symm
 
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_apply (n : ℕ)
@@ -188,9 +187,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.mayerVietorisδLinear (U V : X.Opens
   map_add' := map_add _
   map_smul' r x := by
     rw [cohomologyOn_smul_def, cohomologyOn_smul_def]
-    exact (ConcreteCategory.congr_hom ((Opens.mayerVietorisSquare U V).δ_naturality_right _
-      ((toSheaf X).map (M.globalSectionsSmul r)) n₀ n₁ h)
-      x).symm
+    exact (cohomologyOnMap_mayerVietorisδ U V _ n₀ n₁ h x).symm
 
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.mayerVietorisδLinear_apply (U V : X.Opens)
@@ -297,6 +294,39 @@ lemma mayerVietorisFromProdLinear_comp_prodMap (n : ℕ) {U V U' V' : X.Opens}
   refine LinearMap.ext fun p ↦ ?_
   simp only [LinearMap.comp_apply, LinearMap.prodMap_apply, mayerVietorisFromProdLinear_apply,
     cohomologyOnResLinear_apply, map_sub, cohomologyOnRes_comp_apply]
+
+/-- In degree zero, a class over `U ⊔ V` is determined by its restrictions to `U` and to `V`,
+by the sheaf condition for the cover of `U ⊔ V` by `U` and `V`. -/
+lemma mayerVietorisToProdLinear_zero_injective (U V : X.Opens) :
+    Function.Injective (mayerVietorisToProdLinear M U V 0) := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  rw [mayerVietorisToProdLinear_apply, Prod.mk_eq_zero] at hx
+  refine (cohomologyOnZeroEquiv M (U ⊔ V)).injective (TopCat.Sheaf.eq_of_locally_eq₂
+    (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) (homOfLE le_sup_left)
+    (homOfLE le_sup_right) le_rfl _ _ ?_ ?_)
+  · rw [map_zero, map_zero, ← cohomologyOnZeroEquiv_cohomologyOnRes, hx.1, map_zero]
+  · rw [map_zero, map_zero, ← cohomologyOnZeroEquiv_cohomologyOnRes, hx.2, map_zero]
+
+variable {M} in
+/-- The pair of restriction maps of the Mayer-Vietoris sequence is natural in the coefficient
+sheaf. -/
+lemma mayerVietorisToProdLinear_cohomologyOnMap {N : X.Modules} (f : M ⟶ N) (U V : X.Opens)
+    (n : ℕ) (x : cohomologyOn M n (U ⊔ V)) :
+    mayerVietorisToProdLinear N U V n (cohomologyOnMap f n (U ⊔ V) x) =
+      Prod.map (cohomologyOnMap f n U) (cohomologyOnMap f n V)
+        (mayerVietorisToProdLinear M U V n x) := by
+  simp only [mayerVietorisToProdLinear_apply, Prod.map_apply, cohomologyOnMap_cohomologyOnRes]
+
+variable {M} in
+/-- The difference of restriction maps of the Mayer-Vietoris sequence is natural in the
+coefficient sheaf. -/
+lemma mayerVietorisFromProdLinear_prodMap_cohomologyOnMap {N : X.Modules} (f : M ⟶ N)
+    (U V : X.Opens) (n : ℕ) (p : cohomologyOn M n U × cohomologyOn M n V) :
+    mayerVietorisFromProdLinear N U V n
+        (Prod.map (cohomologyOnMap f n U) (cohomologyOnMap f n V) p) =
+      cohomologyOnMap f n (U ⊓ V) (mayerVietorisFromProdLinear M U V n p) := by
+  simp only [mayerVietorisFromProdLinear_apply, Prod.map_fst, Prod.map_snd, map_sub,
+    cohomologyOnMap_cohomologyOnRes]
 
 /-- Under `AddCommGrpCat.biprodIsoProd`, the Mayer-Vietoris map out of the biproduct is
 `mayerVietorisFromProdLinear`. -/
