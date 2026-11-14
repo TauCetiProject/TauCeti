@@ -9,53 +9,68 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 public import Mathlib.Geometry.Manifold.SmoothApprox
 public import Mathlib.Topology.Homotopy.Path
+import TauCeti.Geometry.Manifold.ModelTransport.Interior
 import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
 # Whitney approximation for maps into manifolds
 
 A continuous map `f : N → M` between manifolds is homotopic to a smooth map. More precisely, if
-`f` is already `C^n` on a neighbourhood of a closed set `S`, then it is homotopic relative to `S`
-to a `C^n` map (`TauCeti.SmoothEmbedding.exists_contMDiff_homotopicRel`). This is the Whitney
-approximation theorem for maps into manifolds, J. M. Lee, *Introduction to Smooth Manifolds*,
-Theorem 6.26, here for a target `M` with a smooth embedding into a finite-dimensional real normed
-space `V`. Consequently homotopic `C^n` maps are joined by a `C^n` homotopy
+`f` is already `C^n` on a neighbourhood of a closed set `S`, then for every neighbourhood `D` of
+the diagonal of `M` there are a `C^n` map `g` and a homotopy `K` from `f` to `g` relative to `S`
+such that `(K (t, x), f x) ∈ D` throughout (`TauCeti.SmoothEmbedding.exists_contMDiff_homotopyRel`
+and `TauCeti.SmoothEmbedding.exists_contMDiff_homotopicRel`). This is the Whitney approximation
+theorem for maps into manifolds, J. M. Lee, *Introduction to Smooth Manifolds*, Theorem 6.26, here
+for a boundaryless target `M` with a smooth embedding into a finite-dimensional real normed space
+`V`. Consequently homotopic `C^n` maps are joined by a `C^n` homotopy
 (`TauCeti.SmoothEmbedding.exists_contMDiff_homotopy`, Lee, Theorem 6.29), as needed to compare
 integrals of closed forms along homotopic maps.
 
 No embedding is needed among the hypotheses when the image of `f` has compact closure in a
 Hausdorff target `M`, for instance when the source `N` is compact
-(`ContinuousMap.exists_contMDiff_homotopicRel_of_isCompact_closure_range`). Such an image lies in
-an open submanifold of `M` with a smooth embedding into a Euclidean space
+(`ContinuousMap.exists_contMDiff_homotopyRel_of_isCompact_closure_range` and
+`ContinuousMap.exists_contMDiff_homotopicRel_of_isCompact_closure_range`). After re-charting `M`
+over its model vector space via `TauCeti.BoundarylessModel`, such an image lies in an open
+submanifold with a smooth embedding into a Euclidean space
 (`IsCompact.exists_opens_nonempty_smoothEmbedding_euclidean`), and the embedded case applies there.
-In particular this holds for every map into a compact manifold. Continuous maps from a compact
-manifold, such as the singular manifolds representing homology classes, can therefore be replaced
-by homotopic smooth ones in an arbitrary boundaryless target.
+In particular this holds for every map into a compact boundaryless manifold
+(`ContinuousMap.exists_contMDiff_homotopyRel` and `ContinuousMap.exists_contMDiff_homotopicRel`).
+Continuous maps from a compact manifold, such as the singular manifolds representing homology or
+bordism classes, can therefore be replaced by homotopic smooth ones with arbitrarily fine control
+over the homotopy.
 
 The proof follows Lee. The intrinsic normal bundle of a smooth embedding `e` is diffeomorphic to
 an open neighbourhood `W` of its image
 (`TauCeti.SmoothEmbedding.exists_diffeomorph_normalBundle_subset`), so projecting to the base
 gives a smooth retraction `r` of `W` onto the embedded manifold
-(`TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`). Mathlib's relative approximation
-theorem for vector-valued maps (`Continuous.exists_contMDiff_approx_and_eqOn`) gives a `C^n` map
-`G : N → V` equal to `e ∘ f` on `S`, and so close to it that every segment from `e (f x)` to `G x`
-lies in `W`. Then `r ∘ G` is `C^n`, and `(t, x) ↦ r (e (f x) + t (G x - e (f x)))` is a homotopy
-from `f` to `r ∘ G` which is constant on `S`.
+(`TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`). A partition-of-unity selection into
+convex sets (`exists_contMDiffMap_forall_mem_convex_of_local_const`) produces a positive continuous
+radius `ε` so small that the `ε x`-ball around `e (f x)` stays inside `W` and retracts into the
+`D`-slice of `f x`. Mathlib's relative approximation theorem for vector-valued maps
+(`Continuous.exists_contMDiff_approx_and_eqOn`) then gives a `C^n` map `G : N → V` equal to
+`e ∘ f` on `S` within distance `ε` of `e ∘ f`. Then `r ∘ G` is `C^n`, and
+`(t, x) ↦ r (e (f x) + t (G x - e (f x)))` is a homotopy from `f` to `r ∘ G` relative to `S`
+whose track stays in `D`.
 
 The source `N` may have boundary or corners; it is Hausdorff and σ-compact, so that it has
-smooth partitions of unity. The target `M` is boundaryless.
+smooth partitions of unity. The target `M` is a boundaryless manifold whose model with corners may
+still have boundary (`[BoundarylessManifold J M]`).
 
 ## Main results
 
-* `TauCeti.SmoothEmbedding.exists_contMDiff_homotopicRel`: relative Whitney approximation into a
-  manifold with a smooth embedding into a finite-dimensional normed space.
+* `TauCeti.SmoothEmbedding.exists_contMDiff_homotopyRel`,
+  `TauCeti.SmoothEmbedding.exists_contMDiff_homotopicRel`: relative Whitney approximation, with
+  diagonal-neighbourhood control on the homotopy, into a manifold with a smooth embedding into a
+  finite-dimensional normed space.
 * `TauCeti.SmoothEmbedding.exists_contMDiff_homotopy`: homotopic `C^n` maps into such a manifold
   are `C^n` homotopic.
-* `ContinuousMap.exists_contMDiff_homotopicRel_of_isCompact_closure_range`,
+* `ContinuousMap.exists_contMDiff_homotopyRel_of_isCompact_closure_range`,
+  `ContinuousMap.exists_contMDiff_homotopicRel_of_isCompact_closure_range`,
   `ContinuousMap.exists_contMDiff_homotopic_of_isCompact_closure_range`,
   `ContinuousMap.Homotopy.exists_contMDiff_homotopy_of_isCompact_closure_range`: the same for maps
   and homotopies whose image has compact closure in a Hausdorff target.
-* `ContinuousMap.exists_contMDiff_homotopicRel`, `ContinuousMap.exists_contMDiff_homotopic`,
+* `ContinuousMap.exists_contMDiff_homotopyRel`,
+  `ContinuousMap.exists_contMDiff_homotopicRel`, `ContinuousMap.exists_contMDiff_homotopic`,
   `ContinuousMap.Homotopic.exists_contMDiff_homotopy`: the same for a compact target.
 * `Path.exists_homotopic_contMDiff_extend`: every path in a Hausdorff boundaryless manifold is
   homotopic, relative to its endpoints, to a path whose extension to `ℝ` is `C^n`.
@@ -77,14 +92,125 @@ namespace TauCeti.SmoothEmbedding
 
 section Approximation
 
+/-- Choose a smooth positive radius `ε : C^∞(N, ℝ)` around `F = e ∘ f` whose ball stays inside the
+tubular neighbourhood `W` and retracts under `r` into the `D`-slice of `f x`. -/
+private theorem exists_contMDiffMap_ball_retract_mem
+    {E H N M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N] [SigmaCompactSpace N] [T2Space N]
+    [TopologicalSpace M] [PseudoMetricSpace V]
+    {f : C(N, M)} {F : N → V} (hF : Continuous F) {W : Set V} (hW : IsOpen W)
+    (hFW : ∀ x, F x ∈ W) {r : V → M} (hrc : ContinuousOn r W) (hre : ∀ x, r (F x) = f x)
+    {D : Set (M × M)} (hD : D ∈ 𝓝ˢ (diagonal M)) :
+    ∃ ε : C^∞⟮I, N; 𝓘(ℝ), ℝ⟯, ∀ x, 0 < ε x ∧
+      ∀ y, dist y (F x) < ε x → y ∈ W ∧ (r y, f x) ∈ D := by
+  let t : N → Set ℝ := fun x ↦ {δ : ℝ | 0 < δ ∧ ∀ y, dist y (F x) < δ → y ∈ W ∧ (r y, f x) ∈ D}
+  have ht (x : N) : Convex ℝ (t x) := by
+    rintro a ⟨ha0, ha⟩ b ⟨hb0, hb⟩ u v hu hv huv
+    refine ⟨convex_Ioi (0 : ℝ) ha0 hb0 hu hv huv, fun y hy ↦ ?_⟩
+    simp only [smul_eq_mul] at hy
+    rcases le_total a b with hab | hba
+    · exact hb y (hy.trans_le (by nlinarith))
+    · exact ha y (hy.trans_le (by nlinarith))
+  have hloc (x₀ : N) : ∃ c : ℝ, ∀ᶠ x in 𝓝 x₀, c ∈ t x := by
+    obtain ⟨A, hA, B, hB, hAB⟩ := mem_nhds_prod_iff.1 (mem_nhdsSet_iff_forall.1 hD _ rfl)
+    have hrA : r ⁻¹' A ∩ W ∈ 𝓝 (F x₀) := Filter.inter_mem
+      ((hrc.continuousAt (hW.mem_nhds (hFW x₀))).preimage_mem_nhds (by simpa [hre] using hA))
+      (hW.mem_nhds (hFW x₀))
+    obtain ⟨ε₀, hε₀, hball⟩ := Metric.mem_nhds_iff.1 hrA
+    refine ⟨ε₀ / 2, ?_⟩
+    filter_upwards [hF.continuousAt.preimage_mem_nhds (Metric.ball_mem_nhds (F x₀) (half_pos hε₀)),
+      f.continuous.continuousAt.preimage_mem_nhds hB] with x hxF hxf
+    refine ⟨half_pos hε₀, fun y hy ↦ ?_⟩
+    have hy0 : y ∈ Metric.ball (F x₀) ε₀ :=
+      Metric.mem_ball.2 ((dist_triangle y (F x) (F x₀)).trans_lt
+        (by linarith [Metric.mem_ball.1 hxF]))
+    exact ⟨(hball hy0).2, hAB ⟨(hball hy0).1, hxf⟩⟩
+  exact exists_contMDiffMap_forall_mem_convex_of_local_const (n := ⊤) I ht hloc
+
 variable {E F V H G M N : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   [TopologicalSpace H] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ F G} [J.Boundaryless]
+  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ F G}
   [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N] [SigmaCompactSpace N] [T2Space N]
   [TopologicalSpace M] [ChartedSpace G M] [IsManifold J ∞ M]
+
+/-- Auxiliary form of `exists_contMDiff_homotopyRel` when the target model `J` itself is
+boundaryless, so that `exists_contMDiffOn_retraction` applies directly. -/
+private theorem exists_contMDiff_homotopyRel_of_boundaryless [J.Boundaryless]
+    (e : SmoothEmbedding J 𝓘(ℝ, V) ∞ M V) (n : ℕ∞) (f : C(N, M)) {S U : Set N}
+    (hS : IsClosed S) (hU : U ∈ 𝓝ˢ S) (hfU : ContMDiffOn I J n f U)
+    {D : Set (M × M)} (hD : D ∈ 𝓝ˢ (diagonal M)) :
+    ∃ g : C(N, M), ContMDiff I J n g ∧
+      ∃ K : f.HomotopyRel g S, ∀ t x, (K (t, x), f x) ∈ D := by
+  rcases isEmpty_or_nonempty N with hN | hN
+  · exact ⟨f, fun x ↦ isEmptyElim x, .refl f S, fun _ x ↦ isEmptyElim x⟩
+  have : Nonempty M := ⟨f hN.some⟩
+  obtain ⟨W, hW, heW, -, r, hr, -, hre⟩ :=
+    e.exists_contMDiffOn_retraction isOpen_univ (subset_univ _)
+  let F : N → V := e ∘ f
+  have hF : Continuous F := e.contMDiff.continuous.comp f.continuous
+  have hrc : ContinuousOn r W := hr.continuousOn
+  obtain ⟨ε, hεt⟩ := exists_contMDiffMap_ball_retract_mem (I := I) hF hW
+    (fun x ↦ heW (mem_range_self (f x))) hrc (fun x ↦ hre (f x)) hD
+  obtain ⟨G, hGF, hGS, -⟩ := hF.exists_contMDiff_approx_and_eqOn I n ε.contMDiff.continuous
+    (fun x ↦ (hεt x).1) hS hU
+    (e.contMDiff.of_le (WithTop.coe_le_coe.2 le_top) |>.comp_contMDiffOn hfU)
+  let φ : unitInterval × N → V := fun p ↦ F p.2 + (p.1 : ℝ) • (G p.2 - F p.2)
+  have hφ : Continuous φ := by fun_prop
+  have hφt (p : unitInterval × N) : φ p ∈ W ∧ (r (φ p), f p.2) ∈ D := by
+    refine (hεt p.2).2 _ ?_
+    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg p.1.2.1, ← dist_eq_norm]
+    exact (mul_le_of_le_one_left dist_nonneg p.1.2.2).trans_lt (hGF p.2)
+  have hGW (x : N) : G x ∈ W := by simpa [φ] using (hφt (1, x)).1
+  let g : C(N, M) := ⟨r ∘ G, hrc.comp_continuous G.contMDiff.continuous hGW⟩
+  refine ⟨g, (hr.of_le (WithTop.coe_le_coe.2 le_top)).comp_contMDiff G.contMDiff hGW, ?_, ?_⟩
+  · exact
+      { toFun := r ∘ φ
+        continuous_toFun := hrc.comp_continuous hφ fun p ↦ (hφt p).1
+        map_zero_left := fun x ↦ by simp [φ, F, hre]
+        map_one_left := fun x ↦ by simp [φ, g]
+        prop' := fun t x hx ↦ by simp [φ, F, hGS hx, hre] }
+  · exact fun t x ↦ (hφt (t, x)).2
+
+variable [BoundarylessManifold J M]
+
+/-- **Relative Whitney approximation with diagonal control into an embedded manifold.** Let `M` be
+a boundaryless manifold with a smooth embedding `e` into a finite-dimensional real normed space,
+and let `f : N → M` be continuous and `C^n` on a neighbourhood `U` of a closed set `S`. For every
+neighbourhood `D` of the diagonal of `M`, there exist a `C^n` map `g : C(N, M)` and a homotopy `K`
+from `f` to `g` relative to `S` such that `(K (t, x), f x) ∈ D` for all `t` and `x`. -/
+theorem exists_contMDiff_homotopyRel (e : SmoothEmbedding J 𝓘(ℝ, V) ∞ M V) (n : ℕ∞)
+    (f : C(N, M)) {S U : Set N} (hS : IsClosed S) (hU : U ∈ 𝓝ˢ S)
+    (hfU : ContMDiffOn I J n f U) {D : Set (M × M)} (hD : D ∈ 𝓝ˢ (diagonal M)) :
+    ∃ g : C(N, M), ContMDiff I J n g ∧
+      ∃ K : f.HomotopyRel g S, ∀ t x, (K (t, x), f x) ∈ D := by
+  let M' := TauCeti.BoundarylessModel J M
+  let := TauCeti.BoundarylessModel.interiorChartedSpace J (M := M)
+  let φ : M ≃ₘ^∞⟮J, 𝓘(ℝ, F)⟯ M' := TauCeti.BoundarylessModel.interiorDiffeomorph J (M := M) ∞
+  let e' : SmoothEmbedding 𝓘(ℝ, F) 𝓘(ℝ, V) ∞ M' V :=
+    .ofIsSmoothEmbedding (e ∘ φ.symm)
+      ⟨(e.contMDiff.comp φ.symm.contMDiff).isImmersion_of_injective_mfderiv (by simp) fun x ↦ by
+          rw [mfderiv_comp x (e.contMDiff.mdifferentiableAt (by simp))
+            (φ.symm.contMDiff.mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
+          exact (e.isImmersion.mfderiv_injective (by simp) _).comp
+            (φ.symm.isInvertible_mfderiv (by simp)).injective,
+        e.isEmbedding.comp φ.symm.toHomeomorph.isEmbedding⟩
+  let f' : C(N, M') := ⟨φ ∘ f, φ.continuous.comp f.continuous⟩
+  have hD' : Prod.map φ.symm φ.symm ⁻¹' D ∈ 𝓝ˢ (diagonal M') := by
+    rw [mem_nhdsSet_iff_forall]
+    rintro ⟨y, _⟩ (rfl : y = _)
+    exact (φ.symm.continuous.prodMap φ.symm.continuous).continuousAt.preimage_mem_nhds
+      (mem_nhdsSet_iff_forall.1 hD (φ.symm y, φ.symm y) rfl)
+  obtain ⟨g', hg', K', hK'D⟩ := exists_contMDiff_homotopyRel_of_boundaryless e' n f' hS hU
+    ((φ.contMDiff.of_le (WithTop.coe_le_coe.2 le_top)).comp_contMDiffOn hfU) hD'
+  let ψ : C(M', M) := ⟨φ.symm, φ.symm.continuous⟩
+  have hψf : ψ.comp f' = f := ContinuousMap.ext fun x ↦ φ.left_inv (f x)
+  exact ⟨ψ.comp g', (φ.symm.contMDiff.of_le (WithTop.coe_le_coe.2 le_top)).comp hg',
+    (K'.compContinuousMap ψ).cast hψf rfl,
+    fun t x ↦ by simpa [ψ, f', φ.left_inv (f x)] using hK'D t x⟩
 
 /-- **Relative Whitney approximation into an embedded manifold.** Let `M` be a boundaryless
 manifold with a smooth embedding `e` into a finite-dimensional real normed space, and let
@@ -94,43 +220,8 @@ theorem exists_contMDiff_homotopicRel (e : SmoothEmbedding J 𝓘(ℝ, V) ∞ M 
     (f : C(N, M)) {S U : Set N} (hS : IsClosed S) (hU : U ∈ 𝓝ˢ S)
     (hfU : ContMDiffOn I J n f U) :
     ∃ g : C(N, M), ContMDiff I J n g ∧ f.HomotopicRel g S := by
-  rcases isEmpty_or_nonempty N with hN | hN
-  · exact ⟨f, fun x ↦ isEmptyElim x, ⟨.refl f S⟩⟩
-  have : Nonempty M := ⟨f hN.some⟩
-  obtain ⟨W, hW, heW, -, r, hr, hre⟩ := e.exists_contMDiffOn_retraction isOpen_univ (subset_univ _)
-  let F : N → V := e ∘ f
-  have hF : Continuous F := e.contMDiff.continuous.comp f.continuous
-  have hFW (x : N) : F x ∈ W := heW (mem_range_self (f x))
-  -- A continuous positive radius `ε` such that the `ε x`-ball about `F x` lies in `W`.
-  obtain ⟨ε, hε, hεpos, hεW⟩ : ∃ ε : N → ℝ, Continuous ε ∧ (∀ x, 0 < ε x) ∧
-      ∀ x y, dist y (F x) < ε x → y ∈ W := by
-    rcases (Wᶜ).eq_empty_or_nonempty with h | h
-    · exact ⟨fun _ ↦ 1, continuous_const, fun _ ↦ one_pos, fun _ y _ ↦ by
-        simpa using congrArg (y ∈ ·) h⟩
-    · refine ⟨fun x ↦ infDist (F x) Wᶜ, (continuous_infDist_pt _).comp hF,
-        fun x ↦ (hW.isClosed_compl.notMem_iff_infDist_pos h).1 (not_not_intro (hFW x)),
-        fun x y hy ↦ ?_⟩
-      exact not_not.1 (notMem_of_dist_lt_infDist (dist_comm y (F x) ▸ hy))
-  obtain ⟨G, hGF, hGS, -⟩ := hF.exists_contMDiff_approx_and_eqOn I n hε hεpos hS hU
-    (e.contMDiff.of_le (WithTop.coe_le_coe.2 le_top) |>.comp_contMDiffOn hfU)
-  -- The segment from `F x` to `G x` stays in `W`.
-  let φ : unitInterval × N → V := fun p ↦ F p.2 + (p.1 : ℝ) • (G p.2 - F p.2)
-  have hφ : Continuous φ := by fun_prop
-  have hφW (p : unitInterval × N) : φ p ∈ W := by
-    refine hεW p.2 _ ?_
-    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg p.1.2.1, ← dist_eq_norm]
-    exact (mul_le_of_le_one_left dist_nonneg p.1.2.2).trans_lt (hGF p.2)
-  have hGW (x : N) : G x ∈ W := by simpa [φ] using hφW (1, x)
-  have hrc : ContinuousOn r W := hr.continuousOn
-  let g : C(N, M) := ⟨r ∘ G, hrc.comp_continuous G.contMDiff.continuous hGW⟩
-  refine ⟨g, (hr.of_le (WithTop.coe_le_coe.2 le_top)).comp_contMDiff G.contMDiff hGW, ⟨?_⟩⟩
-  refine
-    { toFun := r ∘ φ
-      continuous_toFun := hrc.comp_continuous hφ hφW
-      map_zero_left := fun x ↦ by simp [φ, F, hre]
-      map_one_left := fun x ↦ by simp [φ, g]
-      prop' := fun t x hx ↦ ?_ }
-  simp [φ, F, hGS hx, hre]
+  obtain ⟨g, hg, K, -⟩ := e.exists_contMDiff_homotopyRel n f hS hU hfU Filter.univ_mem
+  exact ⟨g, hg, ⟨K⟩⟩
 
 /-- **Homotopic `C^n` maps into an embedded manifold are `C^n` homotopic.** Let `M` be a
 boundaryless manifold with a smooth embedding `e` into a finite-dimensional real normed space.
@@ -189,9 +280,46 @@ variable {E F H G M N : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace H] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ F G} [J.Boundaryless]
+  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ F G}
   [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N] [SigmaCompactSpace N] [T2Space N]
-  [TopologicalSpace M] [ChartedSpace G M] [IsManifold J ∞ M] [T2Space M]
+  [TopologicalSpace M] [ChartedSpace G M] [IsManifold J ∞ M] [BoundarylessManifold J M] [T2Space M]
+
+/-- **Relative Whitney approximation with relatively compact image and diagonal control.** A
+continuous map `f` from a σ-compact Hausdorff manifold, possibly with corners, into a Hausdorff
+boundaryless manifold, whose image has compact closure and which is `C^n` on a neighbourhood `U` of
+a closed set `S`, admits for every neighbourhood `D` of the diagonal of `M` a `C^n` map `g` and a
+homotopy `K` from `f` to `g` relative to `S` with `(K (t, x), f x) ∈ D` for all `t` and `x`. -/
+theorem exists_contMDiff_homotopyRel_of_isCompact_closure_range (n : ℕ∞) (f : C(N, M))
+    (hf : IsCompact (closure (range f))) {S U : Set N} (hS : IsClosed S) (hU : U ∈ 𝓝ˢ S)
+    (hfU : ContMDiffOn I J n f U) {D : Set (M × M)} (hD : D ∈ 𝓝ˢ (diagonal M)) :
+    ∃ g : C(N, M), ContMDiff I J n g ∧
+      ∃ K : f.HomotopyRel g S, ∀ t x, (K (t, x), f x) ∈ D := by
+  let M' := TauCeti.BoundarylessModel J M
+  let := TauCeti.BoundarylessModel.interiorChartedSpace J (M := M)
+  have : T2Space M' := inferInstanceAs (T2Space M)
+  let φ : M ≃ₘ^∞⟮J, 𝓘(ℝ, F)⟯ M' := TauCeti.BoundarylessModel.interiorDiffeomorph J (M := M) ∞
+  have hfc : IsCompact (closure (range (φ ∘ f))) := by
+    refine (hf.image φ.continuous).closure_of_subset ?_
+    rw [range_comp]
+    exact image_mono subset_closure
+  obtain ⟨W, hW, -, _, ⟨e⟩⟩ := hfc.exists_opens_nonempty_smoothEmbedding_euclidean (I := 𝓘(ℝ, F))
+  let f' : C(N, W) := ⟨_, (φ.continuous.comp f.continuous).subtype_mk fun x ↦
+    hW (subset_closure (mem_range_self x))⟩
+  have hf'U : ContMDiffOn I 𝓘(ℝ, F) n f' U :=
+    (TauCeti.ContMDiffOn.subtypeVal_comp_iff W f' U).1
+      ((φ.contMDiff.of_le (WithTop.coe_le_coe.2 le_top)).comp_contMDiffOn hfU)
+  let j : C(W, M) := ⟨φ.symm ∘ Subtype.val, φ.symm.continuous.comp continuous_subtype_val⟩
+  have hDW : Prod.map j j ⁻¹' D ∈ 𝓝ˢ (diagonal W) := by
+    rw [mem_nhdsSet_iff_forall]
+    rintro ⟨w, _⟩ (rfl : w = _)
+    exact (j.continuous.prodMap j.continuous).continuousAt.preimage_mem_nhds
+      (mem_nhdsSet_iff_forall.1 hD (j w, j w) rfl)
+  obtain ⟨g', hg', K', hK'D⟩ := e.exists_contMDiff_homotopyRel n f' hS hU hf'U hDW
+  have hjf : j.comp f' = f := ContinuousMap.ext fun x ↦ φ.left_inv (f x)
+  exact ⟨j.comp g',
+    (φ.symm.contMDiff.of_le (WithTop.coe_le_coe.2 le_top)).comp (contMDiff_subtype_val.comp hg'),
+    (K'.compContinuousMap j).cast hjf rfl,
+    fun t x ↦ by simpa [j, f', φ.left_inv (f x)] using hK'D t x⟩
 
 /-- **Relative Whitney approximation with relatively compact image.** A continuous map `f` from a
 σ-compact Hausdorff manifold, possibly with corners, into a Hausdorff boundaryless manifold, whose
@@ -201,14 +329,9 @@ theorem exists_contMDiff_homotopicRel_of_isCompact_closure_range (n : ℕ∞) (f
     (hf : IsCompact (closure (range f))) {S U : Set N} (hS : IsClosed S) (hU : U ∈ 𝓝ˢ S)
     (hfU : ContMDiffOn I J n f U) :
     ∃ g : C(N, M), ContMDiff I J n g ∧ f.HomotopicRel g S := by
-  -- `f` takes values in an open submanifold `W` with a smooth embedding into a Euclidean space.
-  obtain ⟨W, hW, -, _, ⟨e⟩⟩ := hf.exists_opens_nonempty_smoothEmbedding_euclidean (I := J)
-  let f' : C(N, W) := ⟨_, f.continuous.subtype_mk fun x ↦ hW (subset_closure (mem_range_self x))⟩
-  obtain ⟨g', hg', hfg'⟩ := e.exists_contMDiff_homotopicRel n f' hS hU
-    ((TauCeti.ContMDiffOn.subtypeVal_comp_iff W f' U).1 hfU)
-  let i : C(W, M) := ⟨Subtype.val, continuous_subtype_val⟩
-  have hif : i.comp f' = f := ContinuousMap.ext fun _ ↦ rfl
-  exact ⟨i.comp g', contMDiff_subtype_val.comp hg', hif ▸ hfg'.comp_continuousMap i⟩
+  obtain ⟨g, hg, K, -⟩ :=
+    f.exists_contMDiff_homotopyRel_of_isCompact_closure_range n hf hS hU hfU Filter.univ_mem
+  exact ⟨g, hg, ⟨K⟩⟩
 
 /-- **Whitney approximation with relatively compact image.** Every continuous map from a
 σ-compact Hausdorff manifold, possibly with corners, into a Hausdorff boundaryless manifold, whose
@@ -231,20 +354,47 @@ theorem Homotopy.exists_contMDiff_homotopy_of_isCompact_closure_range {f₀ f₁
     (hf₀ : ContMDiff I J n f₀) (hf₁ : ContMDiff I J n f₁) :
     ∃ K : N × ℝ → M, ContMDiff (I.prod 𝓘(ℝ, ℝ)) J n K ∧ (∀ x, K (x, 0) = f₀ x) ∧
       ∀ x, K (x, 1) = f₁ x := by
-  -- `H` takes values in an open submanifold `W` with a smooth embedding into a Euclidean space.
-  obtain ⟨W, hW, -, _, ⟨e⟩⟩ := hH.exists_opens_nonempty_smoothEmbedding_euclidean (I := J)
-  have hHW (p : unitInterval × N) : H p ∈ W := hW (subset_closure (mem_range_self p))
-  let f₀' : C(N, W) := ⟨_, f₀.continuous.subtype_mk fun x ↦ by simpa using hHW (0, x)⟩
-  let f₁' : C(N, W) := ⟨_, f₁.continuous.subtype_mk fun x ↦ by simpa using hHW (1, x)⟩
+  let M' := TauCeti.BoundarylessModel J M
+  let := TauCeti.BoundarylessModel.interiorChartedSpace J (M := M)
+  have : T2Space M' := inferInstanceAs (T2Space M)
+  let φ : M ≃ₘ^∞⟮J, 𝓘(ℝ, F)⟯ M' := TauCeti.BoundarylessModel.interiorDiffeomorph J (M := M) ∞
+  have hHc : IsCompact (closure (range (φ ∘ H))) := by
+    refine (hH.image φ.continuous).closure_of_subset ?_
+    rw [range_comp]
+    exact image_mono subset_closure
+  obtain ⟨W, hW, -, _, ⟨e⟩⟩ := hHc.exists_opens_nonempty_smoothEmbedding_euclidean (I := 𝓘(ℝ, F))
+  have hHW (p : unitInterval × N) : φ (H p) ∈ W := hW (subset_closure (mem_range_self p))
+  let f₀' : C(N, W) :=
+    ⟨_, (φ.continuous.comp f₀.continuous).subtype_mk fun x ↦ by simpa using hHW (0, x)⟩
+  let f₁' : C(N, W) :=
+    ⟨_, (φ.continuous.comp f₁.continuous).subtype_mk fun x ↦ by simpa using hHW (1, x)⟩
   let H' : f₀'.Homotopy f₁' :=
-    { toContinuousMap := ⟨_, H.continuous.subtype_mk hHW⟩
-      map_zero_left x := Subtype.ext (H.apply_zero x)
-      map_one_left x := Subtype.ext (H.apply_one x) }
+    { toContinuousMap := ⟨_, (φ.continuous.comp H.continuous).subtype_mk hHW⟩
+      map_zero_left x := Subtype.ext (congrArg φ (H.apply_zero x))
+      map_one_left x := Subtype.ext (congrArg φ (H.apply_one x)) }
   obtain ⟨K', hK', hK'₀, hK'₁⟩ := e.exists_contMDiff_homotopy n
-    ((TauCeti.ContMDiff.subtypeVal_comp_iff W f₀').1 hf₀)
-    ((TauCeti.ContMDiff.subtypeVal_comp_iff W f₁').1 hf₁) ⟨H'⟩
-  exact ⟨Subtype.val ∘ K', contMDiff_subtype_val.comp hK', fun x ↦ congr_arg Subtype.val (hK'₀ x),
-    fun x ↦ congr_arg Subtype.val (hK'₁ x)⟩
+    ((TauCeti.ContMDiff.subtypeVal_comp_iff W f₀').1
+      ((φ.contMDiff.of_le (WithTop.coe_le_coe.2 le_top)).comp hf₀))
+    ((TauCeti.ContMDiff.subtypeVal_comp_iff W f₁').1
+      ((φ.contMDiff.of_le (WithTop.coe_le_coe.2 le_top)).comp hf₁)) ⟨H'⟩
+  refine ⟨fun p ↦ φ.symm (K' p),
+    (φ.symm.contMDiff.of_le (WithTop.coe_le_coe.2 le_top)).comp (contMDiff_subtype_val.comp hK'),
+    fun x ↦ ?_, fun x ↦ ?_⟩
+  · simpa [f₀'] using congrArg (fun w : W ↦ φ.symm w) (hK'₀ x)
+  · simpa [f₁'] using congrArg (fun w : W ↦ φ.symm w) (hK'₁ x)
+
+/-- **Relative Whitney approximation with diagonal control into a compact manifold.** A continuous
+map `f` from a σ-compact Hausdorff manifold, possibly with corners, into a compact boundaryless
+manifold which is `C^n` on a neighbourhood `U` of a closed set `S` admits, for every neighbourhood
+`D` of the diagonal of `M`, a `C^n` map `g` and a homotopy `K` from `f` to `g` relative to `S` with
+`(K (t, x), f x) ∈ D` for all `t` and `x`. -/
+theorem exists_contMDiff_homotopyRel [CompactSpace M] (n : ℕ∞) (f : C(N, M)) {S U : Set N}
+    (hS : IsClosed S) (hU : U ∈ 𝓝ˢ S) (hfU : ContMDiffOn I J n f U)
+    {D : Set (M × M)} (hD : D ∈ 𝓝ˢ (diagonal M)) :
+    ∃ g : C(N, M), ContMDiff I J n g ∧
+      ∃ K : f.HomotopyRel g S, ∀ t x, (K (t, x), f x) ∈ D :=
+  f.exists_contMDiff_homotopyRel_of_isCompact_closure_range n
+    isClosed_closure.isCompact hS hU hfU hD
 
 /-- **Relative Whitney approximation into a compact manifold.** A continuous map `f` from a
 σ-compact Hausdorff manifold, possibly with corners, into a compact boundaryless manifold which is
@@ -278,8 +428,9 @@ end ContinuousMap
 namespace Path
 
 variable {F G M : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [TopologicalSpace G] {J : ModelWithCorners ℝ F G} [J.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace G M] [IsManifold J ∞ M] [T2Space M] {x y : M}
+  [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  [TopologicalSpace M] [ChartedSpace G M] [IsManifold J ∞ M] [BoundarylessManifold J M] [T2Space M]
+  {x y : M}
 
 /-- **Smooth representatives of path classes.** Every path in a Hausdorff boundaryless manifold
 is homotopic, relative to its endpoints, to a path whose extension to `ℝ`, constant before `0`

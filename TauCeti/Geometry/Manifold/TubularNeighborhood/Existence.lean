@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.DeformationRetract
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Coordinates
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -24,8 +26,8 @@ An auxiliary smooth Riemannian metric is chosen on the ambient tangent bundle us
 coordinates. The conclusion uses the intrinsic quotient normal bundle and its existing
 complementary-coordinate atlas, both independent of that metric.
 
-Projecting the tubular neighbourhood to the base gives a smooth retraction of an open
-neighbourhood of the image onto the embedded manifold
+Projecting the tubular neighbourhood to the base gives a smooth submersive retraction of an
+open neighbourhood of the image onto the embedded manifold
 (`TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`).
 
 The tubular neighbourhood also supplies `TauCeti.IsTubularNeighborhood` data on the whole normal
@@ -84,12 +86,13 @@ theorem exists_diffeomorph_normalBundle_subset
 /-- **Smooth retractions onto embedded submanifolds.** A smooth embedding `f : M → N` of a
 nonempty boundaryless manifold into a second countable Hausdorff boundaryless manifold has a
 smooth retraction `r : N → M` on an open neighbourhood `W` of its image, inside any prescribed
-open neighbourhood `O` of the image: `r` is smooth on `W` and `r ∘ f = id`. Outside `W` the
-values of `r` are arbitrary. -/
+open neighbourhood `O` of the image: `r` is smooth with surjective differential at every point of
+`W`, and `r ∘ f = id`. Outside `W` the values of `r` are arbitrary. -/
 theorem exists_contMDiffOn_retraction [Nonempty M] (f : SmoothEmbedding I J ∞ M N) {O : Set N}
     (hO : IsOpen O) (hfO : range f ⊆ O) :
     ∃ W : Set N, IsOpen W ∧ range f ⊆ W ∧ W ⊆ O ∧
-      ∃ r : N → M, ContMDiffOn J I ∞ r W ∧ ∀ x, r (f x) = x := by
+      ∃ r : N → M, ContMDiffOn J I ∞ r W ∧ (∀ y ∈ W, IsRegularPoint J I r y) ∧
+        ∀ x, r (f x) = x := by
   classical
   have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
@@ -100,14 +103,32 @@ theorem exists_contMDiffOn_retraction [Nonempty M] (f : SmoothEmbedding I J ∞ 
   obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
   let r : N → M := fun y ↦ if h : y ∈ W then (Φ.symm ⟨y, h⟩).proj else Classical.arbitrary M
   have hrW (w : W) : r w = (Φ.symm w).proj := by simp [r, w.2]
+  have hsmooth : ContMDiff J I ∞ fun w : W ↦ r w := by
+    simp only [hrW]
+    exact (contMDiff_proj (fun x ↦ f.NormalSpace x hn)).comp Φ.symm.contMDiff
   have hfW (x : M) : f x ∈ W := by
     rw [← hΦ x]
     exact (Φ _).2
-  refine ⟨W, W.isOpen, range_subset_iff.2 hfW, hWO, r, fun y hy ↦ ?_, fun x ↦ ?_⟩
-  · have hsmooth : ContMDiff J I ∞ fun w : W ↦ r w := by
-      simp only [hrW]
-      exact (contMDiff_proj (fun x ↦ f.NormalSpace x hn)).comp Φ.symm.contMDiff
-    exact (contMDiffAt_subtype_iff (x := ⟨y, hy⟩).1 (hsmooth _)).contMDiffWithinAt
+  refine ⟨W, W.isOpen, range_subset_iff.2 hfW, hWO, r, fun y hy ↦ ?_, fun y hy ↦ ?_, fun x ↦ ?_⟩
+  · exact (contMDiffAt_subtype_iff (x := ⟨y, hy⟩).1 (hsmooth _)).contMDiffWithinAt
+  · rw [isRegularPoint_iff]
+    let w : W := ⟨y, hy⟩
+    have hrd : MDifferentiableAt J I r y :=
+      (contMDiffAt_subtype_iff (x := w).1 (hsmooth w)).mdifferentiableAt hn
+    have heq : r ∘ (Subtype.val : W → N) =
+        π P (fun x ↦ f.NormalSpace x hn) ∘ Φ.symm := funext hrW
+    have hsurj : Function.Surjective
+        (mfderiv J I (π P (fun x ↦ f.NormalSpace x hn) ∘ Φ.symm) w) := by
+      rw [mfderiv_comp w ((contMDiff_proj _ _).mdifferentiableAt hn)
+        (Φ.symm.contMDiff.mdifferentiableAt hn), ContinuousLinearMap.coe_comp]
+      exact (Bundle.mfderiv_proj_surjective (Φ.symm w)).comp
+        (Φ.symm.isInvertible_mfderiv hn).surjective
+    rw [← heq] at hsurj
+    intro v
+    obtain ⟨u, rfl⟩ := hsurj v
+    refine ⟨mfderiv J J (Subtype.val : W → N) w u, ?_⟩
+    rw [← ContinuousLinearMap.comp_apply,
+      ← mfderiv_comp w hrd (contMDiff_subtype_val.mdifferentiableAt hn)]
   · have h : Φ.symm ⟨f x, hfW x⟩ = zeroSection P (fun x ↦ f.NormalSpace x hn) x :=
       Φ.symm_apply_eq.2 (Subtype.ext (hΦ x).symm)
     rw [hrW ⟨f x, hfW x⟩, h, zeroSection_proj]
