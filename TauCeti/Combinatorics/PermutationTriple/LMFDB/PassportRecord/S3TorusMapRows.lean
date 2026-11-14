@@ -11,8 +11,8 @@ public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Examp
 /-!
 # The map rows `3T2-3_2.1_2.1-a` and `4T1-4_4_2.2-a`
 
-This file certifies the frozen LMFDB map row `3T2-3_2.1_2.1-a` and a reconstruction of
-`4T1-4_4_2.2-a`, belonging respectively to the passport rows
+This file certifies the frozen LMFDB map rows `3T2-3_2.1_2.1-a` and `4T1-4_4_2.2-a`, with their
+stored triples, belonging respectively to the passport rows
 `TauCeti.PermutationTriple.LMFDB.s3PassportRecord` and
 `TauCeti.PermutationTriple.LMFDB.torusPassportRecord`. Each row is
 valid for its passport (`TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor`), its stored map
@@ -34,12 +34,12 @@ The passport row `3T2-3_2.1_2.1` is primitive and stores this map row as its own
 and the row certifies it
 (`TauCeti.PermutationTriple.LMFDB.isPrimitivizationOf_s3PassportRecord`).
 
-The genus-one row `4T1-4_4_2.2-a` is the superelliptic curve `y⁴ = t (t - 1)` with `β = t`. Its
-stored triple here is the database form, under
-`TauCeti.PermutationTriple.equivOppositeConvention`, of `TauCeti.PermutationTriple.torusTriple`.
-This triple is a representative of the passport chosen in this file and is not checked against the
-literal stored permutations of the frozen record; since the passport has a single isomorphism
-class, any representative is isomorphic to it.
+The genus-one row `4T1-4_4_2.2-a` is the superelliptic curve `y⁴ = t (t - 1)` with `β = t`. It
+stores the triple `(1,2,3,4)`, `(1,2,3,4)`, `(1,3)(2,4)`, which is `finRotate 4`, `finRotate 4`,
+`finRotate 4 ^ 2` on zero-based sheets, as in the frozen record of
+`TauCeti.PermutationTriple.LMFDB.smallDegreeRecords`. Its translation is isomorphic to
+`TauCeti.PermutationTriple.torusTriple` under the sheet reversal `Fin.revPerm`
+(`TauCeti.PermutationTriple.LMFDB.equivalent_toTriple_torusStoredTriple`).
 
 The equations, the curve links, and the labels of related objects of both rows are carrier data
 that validity does not read (`TauCeti.PermutationTriple.LMFDB.BelyiRecord.isValidFor_congr`); they
@@ -54,9 +54,10 @@ carry.
   `3T2-3_2.1_2.1-a` does not satisfy this library's relation.
 * `TauCeti.PermutationTriple.LMFDB.equivalent_toTriple_s3StoredTriple`: its translation is
   isomorphic to `s3Triple`.
+* `TauCeti.PermutationTriple.LMFDB.equivalent_toTriple_torusStoredTriple`: the translation of the
+  stored triple of `4T1-4_4_2.2-a` is isomorphic to `torusTriple`.
 * `TauCeti.PermutationTriple.LMFDB.isValidFor_s3BelyiRecord` and
-  `TauCeti.PermutationTriple.LMFDB.isValidFor_torusBelyiRecord`: the frozen genus-zero row and the
-  reconstructed genus-one row are valid.
+  `TauCeti.PermutationTriple.LMFDB.isValidFor_torusBelyiRecord`: the two rows are valid.
 * `TauCeti.PermutationTriple.LMFDB.mapRowClasses_s3PassportRecord` and
   `TauCeti.PermutationTriple.LMFDB.mapRowClasses_torusPassportRecord`: each map row represents
   exactly the classes of its passport.
@@ -150,11 +151,35 @@ theorem isValidFor_s3BelyiRecord {P : PassportSpec 3}
 
 /-! ### The genus-one row `4T1-4_4_2.2-a` -/
 
-/-- A reconstruction of the map row `4T1-4_4_2.2-a`, with stored triple the database form
-`(r⁻¹, r⁻¹, r²)` of `torusTriple = (r, r, r⁻²)`, for the rotation `r` of the four sheets, over the
-base field stored as the root `1` of `X - 1`. The stored triple is a representative of the passport
-rather than a copy of the frozen record. The equations, the curve link and the labels of related
-objects are carrier data that validity does not read, and are left empty rather than
+/-- The stored triple of the map row `4T1-4_4_2.2-a`, in the database's convention: the stored
+cycles `(1,2,3,4)`, `(1,2,3,4)` and `(1,3)(2,4)`, which are `finRotate 4`, `finRotate 4` and
+`finRotate 4 ^ 2` on zero-based sheets. -/
+@[expose] def torusStoredTriple : StoredTriple 4 :=
+  ⟨(finRotate 4, finRotate 4, finRotate 4 ^ 2), by decide⟩
+
+/-- The stored triple of `4T1-4_4_2.2-a` denotes the triple whose components over `0` and `1` are
+the inverse rotation. -/
+theorem toTriple_torusStoredTriple :
+    torusStoredTriple.toTriple = ofTwo (finRotate 4)⁻¹ (finRotate 4)⁻¹ :=
+  ext_of_two (by simp [torusStoredTriple]) (by simp [torusStoredTriple])
+
+/-- The translation of the stored triple of `4T1-4_4_2.2-a` is connected. -/
+theorem isConnected_toTriple_torusStoredTriple : torusStoredTriple.toTriple.IsConnected := by
+  rw [toTriple_torusStoredTriple]
+  decide
+
+/-- The translation of the stored triple of `4T1-4_4_2.2-a` is isomorphic to `torusTriple`:
+relabeling the sheets by the reversal `i ↦ 3 - i` turns the inverse rotation into the rotation. -/
+theorem equivalent_toTriple_torusStoredTriple :
+    torusStoredTriple.toTriple.Equivalent torusTriple := by
+  rw [toTriple_torusStoredTriple]
+  exact equivalent_iff_exists_smul_eq.2
+    ⟨Fin.revPerm, ext_of_two (by simp only [smul_σ0, ofTwo_σ0, torusTriple_σ0]; decide)
+      (by simp only [smul_σ1, ofTwo_σ1, torusTriple_σ1]; decide)⟩
+
+/-- The map row `4T1-4_4_2.2-a`: the genus-one cover of degree four with cyclic monodromy, with
+base field stored as the root `1` of `X - 1`. The equations, the curve link and the labels of
+related objects are carrier data that validity does not read, and are left empty rather than
 reproduced. -/
 @[expose] def torusBelyiRecord : BelyiRecord 4 where
   label := "4T1-4_4_2.2-a"
@@ -165,8 +190,8 @@ reproduced. -/
   orbitSize := 1
   baseField := [-1, 1]
   embeddings := [(1, 0)]
-  triples := [equivOppositeConvention 4 torusTriple]
-  triplesCyc := [([[0, 3, 2, 1]], [[0, 3, 2, 1]], [[0, 2], [1, 3]])]
+  triples := [torusStoredTriple]
+  triplesCyc := [([[0, 1, 2, 3]], [[0, 1, 2, 3]], [[0, 2], [1, 3]])]
   curve := ""
   map := ""
   planeModel := ""
@@ -175,20 +200,19 @@ reproduced. -/
   friends := []
   storedEmbeddingCount_eq_triplesLength := rfl
 
-/-- The reconstructed map row `4T1-4_4_2.2-a` is valid for every passport of `torusTriple`. -/
+/-- The map row `4T1-4_4_2.2-a` is valid for every passport of `torusTriple`. -/
 theorem isValidFor_torusBelyiRecord {P : PassportSpec 4}
     (hP : PassportSpec.HasPassport ⟨torusTriple, isConnected_torusTriple⟩ P) :
     torusBelyiRecord.IsValidFor P := by
-  have hr : (finRotate 4)⁻¹.IsCycleNotation [[0, 3, 2, 1]] :=
-    ⟨by decide, by decide, by decide⟩
-  have hinf : (finRotate 4 ^ 2).IsCycleNotation [[0, 2], [1, 3]] :=
-    ⟨by decide, by decide, by decide⟩
+  have he := equivalent_toTriple_torusStoredTriple
   refine BelyiRecord.isValidFor_of_triples_eq_singleton rfl rfl rfl rfl
-    ⟨by simpa using hr, by simpa using hr, by simpa using hinf⟩
-    (by simpa using isConnected_torusTriple) (by simpa using hP) ?_ ?_
-  · rw [StoredTriple.toTriple_equivOppositeConvention, cycleData_torusTriple]
+    ⟨⟨by decide, by decide, by decide⟩, ⟨by decide, by decide, by decide⟩,
+      ⟨by decide, by decide, by decide⟩⟩ isConnected_toTriple_torusStoredTriple
+    ((PassportSpec.hasPassport_iff_of_equivalent (ConnectedIsoClass.mk_eq_mk_iff.mp
+      (ConnectedIsoClass.mk_eq_mk_iff_equivalent.mpr he)) P).mpr hP) ?_ ?_
+  · rw [cycleData_eq_of_equivalent he, cycleData_torusTriple]
     rfl
-  · rw [StoredTriple.toTriple_equivOppositeConvention, genus_torusTriple]
+  · rw [genus_eq_of_equivalent he, genus_torusTriple]
     rfl
 
 /-! ### The map labels -/
