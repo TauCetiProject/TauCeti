@@ -74,8 +74,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   `‖𝓕⁻ (∂_m^N σ) x‖² = (2π) ^ (2N) ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²`.
 * `SchwartzMap.exists_seminorm_fourier_le_sum_seminorm`: each seminorm `‖ξ‖ ^ k ‖𝓕 g ξ‖` of the
   Fourier transform is bounded by finitely many Schwartz seminorms of `g`.
-* `SchwartzMap.fourierInv_postcompCLM_apply`: the inverse Fourier transform commutes with
-  postcomposition by a continuous linear map.
+* `SchwartzMap.fourier_postcompCLM_apply`, `SchwartzMap.fourierInv_postcompCLM_apply`: the
+  Fourier transform and its inverse commute with postcomposition by a continuous linear map.
 * `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
 * `SchwartzMap.norm_toLp_fourierMultiplierCLM_eq`: Plancherel's theorem for Fourier multipliers,
   `‖𝓕⁻ (w • 𝓕 f)‖_{L²} = ‖w • 𝓕 f‖_{L²}`.
@@ -360,6 +360,19 @@ theorem exists_seminorm_fourier_le_sum_seminorm (k : ℕ) :
   obtain ⟨s, c, -, hc⟩ := Seminorm.bound_sum_of_continuous (schwartz_withSeminorms ℂ _ _) _ hq
   refine ⟨s, c, c.2, fun g ↦ (hc g).trans_eq ?_⟩
   simp [schwartzSeminormFamily, NNReal.smul_def]
+
+/-- The Fourier transform of a Schwartz function commutes with postcomposition by a continuous
+complex-linear map: `𝓕 (L ∘ f) = L ∘ 𝓕 f`. -/
+@[simp]
+theorem fourier_postcompCLM_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    [CompleteSpace F] [CompleteSpace G] (L : F →L[ℂ] G) (f : 𝓢(E, F)) (x : E) :
+    𝓕 (postcompCLM L f) x = L (𝓕 f x) := by
+  rw [fourier_coe, fourier_coe, Real.fourier_eq, Real.fourier_eq, ← L.integral_comp_comm]
+  · simp [Circle.smul_def]
+  · refine f.integrable.norm.mono' ?_ (.of_forall fun v ↦ ?_)
+    · exact ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg).smul
+        f.continuous).aestronglyMeasurable
+    · simp [Circle.norm_smul]
 
 /-- The inverse Fourier transform of a Schwartz function commutes with postcomposition by a
 continuous complex-linear map: `𝓕⁻ (L ∘ f) = L ∘ 𝓕⁻ f`. -/
