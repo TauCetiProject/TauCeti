@@ -55,8 +55,9 @@ skew-adjoint everywhere without changing that value.
 * `TauCeti.SmoothTwoForm.contMDiffAt_sectionAlong_flatL` and
   `TauCeti.SmoothTwoForm.contMDiffAt_sectionAlong_flat`: the flat maps of a smooth family of
   two-forms along a map depend smoothly on the parameter.
-* `TauCeti.SmoothTwoForm.isNondegenerate_iff_isInvertible_flat`: nondegeneracy is invertibility of
-  the flat maps, in finite dimensions.
+* `TauCeti.SmoothTwoForm.isNondegenerate_iff_isInvertible_flat`,
+  `TauCeti.SmoothTwoForm.isInvertible_flat_iff`: nondegeneracy is invertibility of the flat maps,
+  globally and at each point, in finite dimensions.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`: a linear map between tangent
   spaces preserving a nondegenerate form is surjective, in finite dimensions.
 * `TauCeti.SmoothTwoForm.interiorₗ`: contraction of smooth vector fields, as a linear map to smooth
@@ -95,6 +96,12 @@ continuous linear map from the tangent space to its dual. -/
 def flat (σ : SmoothTwoForm I M) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
   -- The tangent space is the model space `E`, whose norm gives continuous currying.
   ContinuousAlternatingMap.flatL ℝ E ℝ (σ.1 x)
+
+/-- The flat map at a point is the currying `ContinuousAlternatingMap.flatL` of the value of the
+form there. -/
+theorem flat_def (σ : SmoothTwoForm I M) (x : M) :
+    σ.flat x = ContinuousAlternatingMap.flatL ℝ E ℝ (σ.1 x) :=
+  (rfl)
 
 /-- The flat map evaluates as the two-form. -/
 @[simp]
@@ -194,15 +201,29 @@ theorem toBilinForm_flat (σ : SmoothTwoForm I M) (x : M) :
   ext v w
   simp
 
+/-- In finite dimensions, the flat map of a two-form at a point is invertible exactly when the
+form is nondegenerate there. -/
+theorem isInvertible_flat_iff [FiniteDimensional ℝ E] {x : M} :
+    (σ.flat x).IsInvertible ↔ (σ.bilinFormAt x).Nondegenerate := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ContinuousLinearMap.isInvertible_of_separatingLeft (E := E)
+    fun (v : TangentSpace I x) hv ↦ h.1 v fun w ↦ (SmoothForm.bilinFormAt_apply σ x v w).trans
+      ((flat_apply σ x v w).symm.trans (hv w))⟩
+  apply (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+    (SmoothForm.isAlt_bilinFormAt σ x).isRefl).mpr
+  intro v hv
+  apply h.injective
+  ext w
+  simpa using hv w
+
 /-- In finite dimensions, a two-form is nondegenerate exactly when all its flat maps are
 invertible. -/
 theorem isNondegenerate_iff_isInvertible_flat [FiniteDimensional ℝ E] :
     σ.IsNondegenerate ↔ ∀ x, (σ.flat x).IsInvertible := by
-  rw [isNondegenerate_iff_separatingLeft]
-  refine ⟨fun h x ↦ ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun v hv ↦
-    h x v fun w ↦ (flat_apply σ x v w).symm.trans (hv w), fun h x v hv ↦ (h x).injective ?_⟩
-  ext w
-  simpa using hv w
+  rw [isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot]
+  -- For the alternating form at `x`, nondegeneracy is triviality of the kernel.
+  refine forall_congr' fun x ↦ Iff.symm <| isInvertible_flat_iff.trans ?_
+  exact (SmoothForm.isAlt_bilinFormAt σ x).isRefl.nondegenerate_iff_separatingLeft.trans
+    LinearMap.separatingLeft_iff_ker_eq_bot
 
 /-- The flat maps of a nondegenerate two-form on a finite-dimensional manifold are invertible. -/
 theorem IsNondegenerate.isInvertible_flat [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
