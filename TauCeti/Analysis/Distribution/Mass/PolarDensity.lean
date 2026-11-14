@@ -38,7 +38,7 @@ finite near its frontier, so the density is only locally integrable.
 
 The proof assembles the scalar distributions `ψ ↦ T (ψ • bᵢ)` along a basis `b` of `F`. Each has
 order zero, so it is a difference of two regular measures
-(`Distribution.forall_exists_abs_le_iff_exists_regular`). With respect to a common reference
+(`Distribution.hasLocallyFiniteMass_iff_exists_regular`). With respect to a common reference
 measure `ρ`, which also dominates `‖T‖` (`MeasureTheory.Measure.exists_common_density_sub`),
 their densities form a dual-valued field `g` with `T φ = ∫ g(x) (φ x) dρ`. A test of norm at
 most one supported in an open `U` has `|T φ| ≤ ‖T‖(U)`, so the dual norm of `g` is at most the
@@ -100,7 +100,8 @@ private theorem exists_measurable_dual_density (hT : HasLocallyFiniteMass T) :
   have hS (i) : HasLocallyFiniteMass (S i) :=
     hT.comp_of_norm_apply_le (L := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i)))
       continuous_const (b := fun _ => ‖b i‖) fun ψ x => by simp [norm_smul, mul_comm]
-  choose ν₁ ν₂ h₁ h₂ hν using fun i => (forall_exists_abs_le_iff_exists_regular (S i)).1 (hS i)
+  choose ν₁ ν₂ h₁ h₂ hν using fun i =>
+    (hasLocallyFiniteMass_iff_exists_regular (S i)).1 (hS i)
   -- Densities `f i` of the scalar distributions against a reference measure `ρ` dominating `‖T‖`.
   have (i : _) : IsFiniteMeasureOnCompacts (ν₁ i) := ⟨fun _ hK => (h₁ i).lt_top_of_isCompact hK⟩
   have (i : _) : IsFiniteMeasureOnCompacts (ν₂ i) := ⟨fun _ hK => (h₂ i).lt_top_of_isCompact hK⟩
